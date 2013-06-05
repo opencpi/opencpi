@@ -19,7 +19,7 @@ typedef struct {
   uint16_t rand_i;
   uint16_t rand_q;
 } MyState;
-static uint32_t mysizes[] = {sizeof(MyState), 0};
+static size_t mysizes[] = {sizeof(MyState), 0};
 
 NOISE_GEN_COMPLEX_METHOD_DECLARATIONS;
 RCCDispatch noise_gen_complex = {
@@ -115,7 +115,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  case NOISE_GEN_COMPLEX_IN_IQ:
    {
 #ifndef NDEBUG
-     printf("%s got %d bytes of data\n", __FILE__,  in->input.length);
+     printf("%s got %zu bytes of data\n", __FILE__,  in->input.length);
 #endif
      random_noise( s );
      if ( ! p->mask ) {

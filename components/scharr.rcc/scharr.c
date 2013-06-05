@@ -44,7 +44,7 @@ typedef struct {
   RCCBuffer buffers[HISTORY_SIZE]; // buffer history (ring)
 } ScharrState;
 
-static uint32_t sizes[] = {sizeof(ScharrState), 0};
+static size_t sizes[] = {sizeof(ScharrState), 0};
 
 SCHARR_METHOD_DECLARATIONS;
 RCCDispatch scharr = {

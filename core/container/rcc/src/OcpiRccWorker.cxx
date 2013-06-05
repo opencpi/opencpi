@@ -127,8 +127,8 @@ Worker( Application & app, Artifact *art, const char *name,
 
 void 
 Worker::
-read(uint32_t offset, 
-     uint32_t nBytes, 
+read(size_t offset, 
+     size_t nBytes, 
      void * p_data  )
 {
   OU::AutoMutex guard(m_mutex);
@@ -140,8 +140,8 @@ read(uint32_t offset,
 
 void 
 Worker::
-write(uint32_t offset, 
-      uint32_t nBytes, 
+write(size_t offset, 
+      size_t nBytes, 
       const void * p_data  )
 {
   OU::AutoMutex guard (m_mutex);
@@ -200,12 +200,12 @@ Worker::
 static void
   rccSetError(const char *fmt, ...),
   rccRelease(RCCBuffer *),
-  rccSend(RCCPort *, RCCBuffer*, RCCOrdinal op, uint32_t length),
+  rccSend(RCCPort *, RCCBuffer*, RCCOpCode op, size_t length),
   rccTake(RCCPort *,RCCBuffer *old_buffer, RCCBuffer *new_buffer);
 static RCCBoolean
-  rccRequest(RCCPort *port, uint32_t maxlength),
-  rccAdvance(RCCPort *port, uint32_t maxlength),
-  rccWait(RCCPort *, uint32_t max, uint32_t usecs);
+  rccRequest(RCCPort *port, size_t maxlength),
+  rccAdvance(RCCPort *port, size_t maxlength),
+  rccWait(RCCPort *, unsigned max, unsigned usecs);
 
 static void rccSetError(const char *fmt, ...)
 {
@@ -226,7 +226,7 @@ static void rccRelease( RCCBuffer* buffer )
     throw OU::Error("RCC release container function called on an output port, which is not supported");
   port->release(dti_buffer);    
 }
-static void rccSend( ::RCCPort* rccPort, ::RCCBuffer* rccBuffer, ::RCCOrdinal op, ::uint32_t len )
+static void rccSend( ::RCCPort* rccPort, ::RCCBuffer* rccBuffer, ::RCCOpCode op, size_t len )
 {
   Port* port = rccPort->containerPort;
   ocpiAssert(port);
@@ -238,18 +238,18 @@ static void rccSend( ::RCCPort* rccPort, ::RCCBuffer* rccBuffer, ::RCCOrdinal op
     throw OU::Error("Cannot send a buffer from a different output port");
   port->send(buffer, len, op);
 }
-static RCCBoolean rccAdvance( ::RCCPort* rccPort, ::uint32_t max )
+static RCCBoolean rccAdvance( ::RCCPort* rccPort, size_t max )
 {
   Port *port = rccPort->containerPort; 
   ocpiAssert(port);
   bool ready = port->advance();
   if (ready && max && max > rccPort->current.maxLength)
-    throw OU::Error("Output buffer request/advance (size %u) greater than buffer size (%u)",
+    throw OU::Error("Output buffer request/advance (size %zu) greater than buffer size (%zu)",
 		    max, rccPort->current.maxLength);
   return ready;
 }
 
-static RCCBoolean rccRequest( ::RCCPort* rccPort, ::uint32_t max )
+static RCCBoolean rccRequest( ::RCCPort* rccPort, size_t max )
 {
   if (rccPort->current.data )
     return true;
@@ -261,7 +261,7 @@ static RCCBoolean rccRequest( ::RCCPort* rccPort, ::uint32_t max )
   return ready;
 }
 
-static RCCBoolean rccWait( ::RCCPort* port, ::uint32_t max, ::uint32_t usec )
+static RCCBoolean rccWait( ::RCCPort* port, unsigned max, unsigned usec )
 {
   // Not implemented yet
   ( void ) port;
@@ -287,7 +287,7 @@ initializeContext()
   // Create our memory spaces
   int idx=0;
   while( wd->memSizes && wd->memSizes[idx] ) {
-    ocpiDebug("Allocating %d bytes of data for worker memory\n", wd->memSizes[idx] );
+    ocpiDebug("Allocating %zu bytes of data for worker memory\n", wd->memSizes[idx] );
     idx++;
   }
   int mcount = idx;
@@ -343,7 +343,7 @@ initializeContext()
 
   // Now after error checking we start to allocate resources
   // Create our context
-  unsigned n = sizeof(RCCWorker) + m_nPorts * sizeof(RCCPort);
+  size_t n = sizeof(RCCWorker) + m_nPorts * sizeof(RCCPort);
   m_context = (RCCWorker *)new char[n];
   memset(m_context, 0, n);
   m_context->properties = 0;
@@ -411,10 +411,8 @@ createPort(const OCPI::Metadata::Port& mp, const OCPI::Util::PValue *params)
   if (m_dispatch->portInfo)
     for (RCCPortInfo* pi = m_dispatch->portInfo; pi->port != RCC_NO_ORDINAL; pi++)
       if (pi->port == mp.ordinal) {
-#ifndef NDEBUG
-        printf("\nWorker PortInfo for port %d, bc,s: %d,%d, metadata is %d,%d\n",
+        ocpiDebug("Worker PortInfo for port %d, bc,s: %d,%zu, metadata is %zu,%zu",
 	       mp.ordinal, pi->minBuffers, pi->maxLength, mp.minBufferCount, mp.m_minBufferSize);
-#endif
 	if (pi->minBuffers > mp.minBufferCount) // bad: worker needs more than metadata   
 	  throw OU::EmbeddedException(OU::PORT_NOT_FOUND,
 				      "Worker metadata inconsistent with RCC PortInfo",
@@ -457,8 +455,8 @@ createPort(const OCPI::Metadata::Port& mp, const OCPI::Util::PValue *params)
 // list of properties.
 static  OC::Port &
 createTestPort( Worker *w, OM::PortOrdinal portId,
-                OS::uint32_t bufferCount,
-                OS::uint32_t bufferSize, 
+                size_t bufferCount,
+                size_t bufferSize, 
 		bool isProvider,
 		const OU::PValue* props) {
 #if 0
@@ -488,8 +486,8 @@ createTestPort( Worker *w, OM::PortOrdinal portId,
 Worker::
 createOutputPort( 
                  OM::PortOrdinal     portId,
-                 OS::uint32_t    bufferCount,
-                 OS::uint32_t    bufferSize, 
+                 size_t    bufferCount,
+                 size_t    bufferSize, 
                  const OU::PValue*              props            
                  )
   throw ( OU::EmbeddedException )
@@ -506,8 +504,8 @@ OC::Port &
 Worker::
 createInputPort( 
 		OM::PortOrdinal    portId,   
-                 OS::uint32_t   bufferCount,
-                 OS::uint32_t   bufferSize, 
+                 size_t   bufferCount,
+                 size_t   bufferSize, 
                  const OU::PValue*             props            
                  )
   throw ( OU::EmbeddedException )
@@ -850,16 +848,16 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
           throw; /*"worker has errors after write */                            \
       }                                                                         \
   void Worker::set##pretty##SequenceProperty(const OA::Property &p,const run *vals, \
-					 unsigned length) const {		\
+					 size_t length) const {		\
         if (p.m_info.m_writeError)                                              \
           throw; /*"worker has errors before write */                           \
 	if (p.m_info.m_isSequence) {     					\
 	  memcpy((void *)(getPropertyVaddr() + p.m_info.m_offset + p.m_info.m_align), vals, \
-		 length * sizeof(run));					\
-	  *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset) = length/p.m_info.m_nItems; \
-	} else								\
-	  memcpy((void *)(getPropertyVaddr() + p.m_info.m_offset), vals, \
-		 length * sizeof(run));					\
+		 length * sizeof(run));					        \
+	  *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset) = (uint32_t)(length/p.m_info.m_nItems); \
+	} else								        \
+	  memcpy((void *)(getPropertyVaddr() + p.m_info.m_offset), vals,        \
+		 length * sizeof(run));					        \
         if (p.m_info.m_writeError)                                              \
           throw; /*"worker has errors after write */                            \
       }
@@ -869,7 +867,7 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
       // and structure padding are assumed to do this.
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                   \
   void Worker::set##pretty##Property(const OA::Property &p, const run val) const { \
-        unsigned ocpi_length;                                                      \
+        size_t ocpi_length;                                                      \
         if (!val || (ocpi_length = strlen(val)) > p.m_info.m_stringLength)         \
           throw; /*"string property too long"*/;                                   \
         if (p.m_info.m_writeError)                                                 \
@@ -885,17 +883,17 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
           throw; /*"worker has errors after write */                               \
       }                                                                            \
   void Worker::set##pretty##SequenceProperty(const OA::Property &p,const run *vals,\
-					 unsigned length) const {		   \
+					 size_t length) const {		   \
         if (p.m_info.m_writeError)                                                 \
           throw; /*"worker has errors before write */                              \
         char *cp = (char *)(getPropertyVaddr() + p.m_info.m_offset + 32/CHAR_BIT); \
         for (unsigned i = 0; i < length; i++) {                                    \
-          unsigned len = strlen(vals[i]);                                          \
+          size_t len = strlen(vals[i]);                                          \
           if (len > p.m_info.m_stringLength)	                                   \
             throw; /* "string in sequence too long" */                             \
           memcpy(cp, vals[i], len+1);                                              \
         }                                                                          \
-        *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset) = length;            \
+        *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset) = (uint32_t)length; \
         if (p.m_info.m_writeError)                                                 \
           throw; /*"worker has errors after write */                               \
       }
@@ -921,12 +919,12 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
       }									    \
       unsigned Worker::get##pretty##SequenceProperty(const OA::Property &p, \
 					     run *vals,			    \
-					     unsigned length) const {	    \
+					     size_t length) const {	    \
         if (p.m_info.m_readError )					    \
           throw; /*"worker has errors before read "*/			    \
 	if (p.m_info.m_isSequence) {					\
 	  uint32_t nSeq = *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset); \
-	  uint32_t n = nSeq * p.m_info.m_nItems;					\
+	  size_t n = nSeq * p.m_info.m_nItems;					\
 	  if (n > length)						\
 	    throw "sequence longer than provided buffer";		\
 	  memcpy(vals,							\
@@ -939,7 +937,7 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
 		 length * sizeof(run));					\
 	if (p.m_info.m_readError )					\
 	  throw; /*"worker has errors after read */			\
-	return length;							\
+	return (unsigned)length;         				\
       }
 
       // ASSUMPTION:  strings always occupy at least 4 bytes, and
@@ -947,8 +945,8 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
       // and structure padding are assumed to do this.
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)	    \
       void Worker::get##pretty##Property(const OA::Property &p, char *cp,   \
-					   unsigned length) const {	    \
-	  unsigned stringLength = p.m_info.m_stringLength;                  \
+					   size_t length) const {	    \
+	  size_t stringLength = p.m_info.m_stringLength;                    \
 	  if (length < stringLength+1)			                    \
 	    throw; /*"string buffer smaller than property"*/;		    \
 	  if (p.m_info.m_readError)					    \
@@ -961,13 +959,13 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
 	    throw; /*"worker has errors after write */			    \
 	}								    \
       unsigned Worker::get##pretty##SequenceProperty			    \
-	(const OA::Property &p, char **vals, unsigned length, char *buf,    \
-	 unsigned space) const {					    \
+	(const OA::Property &p, char **vals, size_t length, char *buf,      \
+	 size_t space) const {					            \
         if (p.m_info.m_readError)					    \
           throw; /*"worker has errors before read */                        \
         uint32_t                                                            \
-          n = *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset),        \
-          wlen = p.m_info.m_stringLength + 1;                               \
+          n = *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset);	    \
+	size_t wlen = p.m_info.m_stringLength + 1;			    \
         if (n > length)                                                     \
           throw; /* sequence longer than provided buffer */                 \
         char *cp = (char *)(getPropertyVaddr() + p.m_info.m_offset + 32/CHAR_BIT); \
@@ -977,7 +975,7 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
           memcpy(buf, cp, wlen);                                            \
           cp += wlen;                                                       \
           vals[i] = buf;                                                    \
-          unsigned slen = strlen(buf) + 1;                                  \
+          size_t slen = strlen(buf) + 1;                                  \
           buf += slen;                                                      \
           space -= slen;                                                    \
         }                                                                   \
@@ -989,8 +987,8 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
 #undef OCPI_DATA_TYPE_S
 #undef OCPI_DATA_TYPE
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
-      void Worker::setPropertyBytes(const OCPI::API::PropertyInfo &/*info*/, uint32_t offset,
-			    const uint8_t *data, unsigned nBytes) const {
+      void Worker::setPropertyBytes(const OCPI::API::PropertyInfo &/*info*/, size_t offset,
+			    const uint8_t *data, size_t nBytes) const {
         memcpy((void *)(getPropertyVaddr() + offset), data, nBytes);
       }
       void Worker::setProperty8(const OCPI::API::PropertyInfo &info, uint8_t data) const {
@@ -1005,8 +1003,8 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
       void Worker::setProperty64(const OCPI::API::PropertyInfo &info, uint64_t data) const {
         *(uint64_t *)(getPropertyVaddr() + info.m_offset) = data;
       }
-      void Worker::getPropertyBytes(const OCPI::API::PropertyInfo &/*info*/, uint32_t offset,
-			    uint8_t *data, unsigned nBytes) const {
+      void Worker::getPropertyBytes(const OCPI::API::PropertyInfo &/*info*/, size_t offset,
+			    uint8_t *data, size_t nBytes) const {
         memcpy(data, (void *)(getPropertyVaddr() + offset), nBytes);
       }
       uint8_t Worker::getProperty8(const OCPI::API::PropertyInfo &info) const {

@@ -55,8 +55,8 @@ namespace OCPI {
       bool           provider;
       bool           optional;
       bool           bidirectional;   // implementation-defined value
-      uint32_t       minBufferCount;  // implementation-defined value
-      uint32_t       bufferSize;      // metadata protocol override, if non-zero
+      size_t         minBufferCount;  // implementation-defined value
+      size_t         bufferSize;      // metadata protocol override, if non-zero
       ezxml_t        myXml;
     };
 

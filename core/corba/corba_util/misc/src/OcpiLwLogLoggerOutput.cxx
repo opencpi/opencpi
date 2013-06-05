@@ -201,7 +201,7 @@ overflow (int_type c)
 {
   ocpiAssert (m_locked);
 
-  if (traits_type::eq (c, traits_type::eof())) {
+  if (traits_type::eq_int_type (c, traits_type::eof())) {
     return traits_type::not_eof (c);
   }
 

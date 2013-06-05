@@ -85,8 +85,8 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   ( void ) timedout;
   ( void ) newRunCondition;
   uint32_t n;
-  uint32_t len;
-  int      *b;
+  size_t len;
+  uint32_t      *b;
   ProducerWorkerProperties *props = this_->properties;
   char* out_buffer = (char*)this_->ports[ProducerWorker_Data_Out_Port].current.data;
 
@@ -105,12 +105,12 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   len = this_->ports[ProducerWorker_Data_Out_Port].current.maxLength;
 
 #ifndef NDEBUG
-  printf("Producing len = %d\n", len );
+  printf("Producing len = %zu\n", len );
 #endif
 
   len = len - (props->buffersProcessed%22);
 
-  b = (int*)out_buffer;
+  b = (uint32_t*)out_buffer;
   *b = props->buffersProcessed;
   for ( n=4; n<len; n++ ) out_buffer[n] = (char)(n+props->buffersProcessed)%23; 
 
@@ -136,7 +136,7 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
      this_->container.advance( &this_->ports[ProducerWorker_Data_Out_Port], 0 );
   }
 
-  props->bytesProcessed += len;
+  props->bytesProcessed += (uint32_t)len;
 
 #ifdef TIME_IT
   OCPI_TIME_EMIT_C( "Producer End Send" ); 
@@ -222,8 +222,8 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 {
   ( void ) timedout;
   ( void ) newRunCondition;
-  int ncount, *b;
-  uint32_t len,n;
+  uint32_t ncount, *b;
+  size_t len,n;
 //  ConsumerWorkerStaticMemory *mem = this_->memories[0];
   ConsumerWorkerProperties *props = this_->properties;
   int passed = 1;
@@ -256,7 +256,7 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   }
 #endif
 
-  props->bytesProcessed += len;
+  props->bytesProcessed += (uint32_t)len;
                           
   if ( len == 0 ) {
 #ifndef NDEBUG
@@ -267,8 +267,8 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   }
   len -= 4;
                               
-  b = (int*)(in_buffer);
-  if ( *b != (int)props->buffersProcessed ) {
+  b = (uint32_t*)(in_buffer);
+  if ( *b != props->buffersProcessed ) {
 #ifndef NDEBUG
     printf("ERROR!! Dropped a buffer, got buffer %d, expected %d\n", 
            *b, props->buffersProcessed );
@@ -283,8 +283,8 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
     if ( (in_buffer[n] != (char)(n+props->buffersProcessed)%23) && (ncount++ < 100) ) {
                                         
 #ifndef NDEBUG
-      printf("\nConsumer(b-> %d): Data integrity error(%d) !!, expected %d, got %d\n", 
-             props->buffersProcessed,n, (char)(n+props->buffersProcessed)%23, in_buffer[n]);
+      printf("\nConsumer(b-> %d): Data integrity error(%zu) !!, expected %d, got %d\n", 
+             props->buffersProcessed, n, (char)(n+props->buffersProcessed)%23, in_buffer[n]);
 #endif
       passed = 0;
     }
@@ -351,7 +351,7 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
                                                                                             
                                                       
 #define CON_PROPERTY_SIZE  sizeof( ConsumerWorkerProperties )
-static uint32_t memSizes[] = {sizeof(ConsumerWorkerStaticMemory), 1024*10, 0 };
+static size_t memSizes[] = {sizeof(ConsumerWorkerStaticMemory), 1024*10, 0 };
 //static uint32_t ConsumerPortRunConditions[] = { (1<<ConsumerWorker_Data_In_Port) , 0, 0 }; 
 //static RCCRunCondition workerRunConditions[] = { {ConsumerPortRunConditions}, {0,0,0} , {0,0,0} };
 static RCCPortInfo ConsumerPortInfo[] = { {0,1024,MIN_CONSUMER_BUFFERS}, {RCC_NO_ORDINAL,0,0} };
@@ -400,9 +400,9 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 {
   ( void ) timedout;
   ( void ) newRunCondition;
-  uint32_t len;
-  uint32_t cplen;
-  int      oc;
+  size_t len;
+  size_t cplen;
+  RCCOpCode oc;
     
 //  LoopbackWorkerStaticMemory *mem = this_->memories[0];
 //  LoopbackWorkerProperties *props = this_->properties;
@@ -414,7 +414,7 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   oc  = this_->ports[LoopbackWorker_Data_In_Port].input.u.operation;
 
 #ifndef NDEBUG
-  printf("In LB run, len = %d...\n", len);
+  printf("In LB run, len = %zu...\n", len);
 #endif
 
   /*              
@@ -510,7 +510,7 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
  */
          
 #define LB_PROPERTY_SIZE      sizeof( LoopbackWorkerProperties )
-static uint32_t LBmemSizes[] = {sizeof(LoopbackWorkerStaticMemory), 0 };
+static size_t LBmemSizes[] = {sizeof(LoopbackWorkerStaticMemory), 0 };
 static uint32_t LBPortRunConditions[] = { (1<<LoopbackWorker_Data_In_Port) | (1<<LoopbackWorker_Data_Out_Port), 0, 0 };
 static RCCRunCondition LBWorkerRunConditions[] = { {LBPortRunConditions,0,0}, {0,0,0} , {0,0,0} };
 RCCDispatch UTZCopyLoopbackWorkerDispatchTable = { RCC_VERSION, 1, 1, 

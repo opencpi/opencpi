@@ -69,7 +69,7 @@ namespace DataTransfer {
       // These are arguments to allow different defaults
       FactoryConfig(uint32_t retryCount = 0);
       void parse(FactoryConfig *p, ezxml_t config );
-      uint32_t m_retryCount;
+      size_t m_retryCount;
       ezxml_t  m_xml; // the element that these attributes were parsed from
     };
 
@@ -180,7 +180,7 @@ namespace DataTransfer {
        * Queue Msg Transfer Request
        */
       virtual void sendOutputBuffer(OCPI::DataTransport::BufferUserFacet* buffer,
-				    uint32_t msg_size, uint8_t opcode = 0 ) = 0;
+				    size_t msg_size, uint8_t opcode = 0 ) = 0;
 
       /*
        * Release a buffer previously leased by nextMsg
@@ -191,13 +191,13 @@ namespace DataTransfer {
        * Get a free output buffer if one is available
        */
       virtual  OCPI::DataTransport::BufferUserFacet*
-	getNextEmptyOutputBuffer(void *&data, uint32_t &length) = 0;    
+	getNextEmptyOutputBuffer(void *&data, size_t &length) = 0;    
 
       /*
        *  Get data on the channel, If no data is available this may block
        */
       virtual OCPI::DataTransport::BufferUserFacet*
-	getNextFullInputBuffer(void *&data, uint32_t & length, uint8_t &opcode ) = 0;
+	getNextFullInputBuffer(void *&data, size_t & length, uint8_t &opcode ) = 0;
 
       // Destructor - Note that invoking OcpiXferServices::Release is the preferred method.
       virtual ~MsgChannel () {};

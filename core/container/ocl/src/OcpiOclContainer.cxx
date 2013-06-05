@@ -43,6 +43,7 @@
 #include "OCL_Worker.h"
 #include "OcpiWorker.h"
 #include "OcpiOsTimer.h"
+#include "OcpiUtilMisc.h"
 #include "OcpiContainerMisc.h"
 #include "OcpiContainerManager.h"
 #include "OcpiOclPlatformManager.h"
@@ -62,7 +63,7 @@ namespace OCPI
     typedef struct
     {
       uint32_t length;
-      uint32_t opcode;
+      uint8_t opcode;
       uint32_t tag;
       uint32_t interval;
 
@@ -379,7 +380,7 @@ namespace OCPI
         {
           OCLBuffer current;
           OCLPortAttr* attr;
-          uint32_t dataValueWidthInBytes;
+          size_t dataValueWidthInBytes;
         };
 
         bool isEnabled;
@@ -777,12 +778,12 @@ namespace OCPI
           updatePortsPostRun();
         }
 
-        void read ( uint32_t, uint32_t, void* )
+        void read ( size_t, size_t, void* )
         {
           ocpiAssert ( 0 );
         }
 
-        void write ( uint32_t, uint32_t, const void* )
+        void write (size_t, size_t, const void* )
         {
           ocpiAssert ( 0 );
         }
@@ -817,13 +818,13 @@ namespace OCPI
 
 
         OC::Port& createOutputPort ( OM::PortOrdinal portId,
-                                     OS::uint32_t bufferCount,
-                                     OS::uint32_t bufferSize,
+                                     size_t bufferCount,
+                                     size_t bufferSize,
                                      const OA::PValue* props ) throw();
 
         OC::Port&createInputPort ( OM::PortOrdinal portId,
-                                   OS::uint32_t bufferCount,
-                                   OS::uint32_t bufferSize,
+                                   size_t bufferCount,
+                                   size_t bufferSize,
                                    const OA::PValue* props ) throw();
 
 #undef OCPI_DATA_TYPE_S
@@ -843,11 +844,11 @@ namespace OCPI
         if (p.m_info.m_writeError) \
           throw; /*"worker has errors after write */ \
       } \
-      void set##pretty##SequenceProperty(const OA::Property &p,const run *vals, unsigned length) const { \
+      void set##pretty##SequenceProperty(const OA::Property &p,const run *vals, size_t length) const { \
         if (p.m_info.m_writeError) \
           throw; /*"worker has errors before write */ \
         memcpy((void *)(myProperties + p.m_info.m_offset + p.m_info.m_align), vals, length * sizeof(run)); \
-        *(volatile uint32_t *)(myProperties + p.m_info.m_offset) = length; \
+        *(volatile uint32_t *)(myProperties + p.m_info.m_offset) = (uint32_t)length; \
         if (p.m_info.m_writeError) \
           throw; /*"worker has errors after write */ \
       }
@@ -857,7 +858,7 @@ namespace OCPI
       // and structure padding are assumed to do this.
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store) \
       virtual void set##pretty##Property(const OA::Property &p, const run val) const { \
-        unsigned ocpi_length; \
+        size_t ocpi_length; \
         if (!val || (ocpi_length = strlen(val)) > p.m_info.m_stringLength) \
           throw; /*"string property too long"*/; \
         if (p.m_info.m_writeError) \
@@ -872,19 +873,19 @@ namespace OCPI
         if (p.m_info.m_writeError) \
           throw; /*"worker has errors after write */ \
       } \
-      void set##pretty##SequenceProperty(const OA::Property &p, const run *vals, unsigned length) const { \
+      void set##pretty##SequenceProperty(const OA::Property &p, const run *vals, size_t length) const { \
         if (length > p.m_info.m_sequenceLength) \
           throw; \
         if (p.m_info.m_writeError) \
           throw; /*"worker has errors before write */ \
         char *cp = (char *)(myProperties + p.m_info.m_offset + 32/CHAR_BIT); \
-        for (unsigned i = 0; i < length; i++) { \
-          unsigned len = strlen(vals[i]); \
+        for (size_t i = 0; i < length; i++) { \
+          size_t len = strlen(vals[i]); \
           if (len > p.m_info.m_sequenceLength) \
             throw; /* "string in sequence too long" */ \
           memcpy(cp, vals[i], len+1); \
         } \
-        *(uint32_t *)(myProperties + p.m_info.m_offset) = length; \
+        *(uint32_t *)(myProperties + p.m_info.m_offset) = (uint32_t)length; \
         if (p.m_info.m_writeError) \
           throw; /*"worker has errors after write */ \
       }
@@ -908,7 +909,7 @@ namespace OCPI
           throw; /*"worker has errors after read */ \
         return u.r; \
       } \
-      unsigned get##pretty##SequenceProperty(const OA::Property &p, run *vals, unsigned length) const { \
+      unsigned get##pretty##SequenceProperty(const OA::Property &p, run *vals, size_t length) const { \
         if (p.m_info.m_readError) \
           throw; /*"worker has errors before read "*/ \
         uint32_t n = *(uint32_t *)(myProperties + p.m_info.m_offset); \
@@ -925,8 +926,8 @@ namespace OCPI
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this. FIXME redundant length check
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store) \
-      virtual void get##pretty##Property(const OA::Property &p, char *cp, unsigned length) const { \
-        unsigned stringLength = p.m_info.m_stringLength; \
+      virtual void get##pretty##Property(const OA::Property &p, char *cp, size_t length) const { \
+        size_t stringLength = p.m_info.m_stringLength; \
         if (length < stringLength + 1) \
           throw; /*"string buffer smaller than property"*/; \
         if (p.m_info.m_readError) \
@@ -939,12 +940,11 @@ namespace OCPI
           throw; /*"worker has errors after write */ \
       } \
       unsigned get##pretty##SequenceProperty \
-      (const OA::Property &p, char **vals, unsigned length, char *buf, unsigned space) const { \
+      (const OA::Property &p, char **vals, size_t length, char *buf, size_t space) const { \
         if (p.m_info.m_readError) \
           throw; /*"worker has errors before read */ \
-        uint32_t \
-          n = *(uint32_t *)(myProperties + p.m_info.m_offset), \
-          wlen = p.m_info.m_stringLength + 1; \
+        uint32_t n = *(uint32_t *)(myProperties + p.m_info.m_offset);	       \
+        size_t wlen = p.m_info.m_stringLength + 1;		       \
         if (n > length) \
           throw; /* sequence longer than provided buffer */ \
         char *cp = (char *)(myProperties + p.m_info.m_offset + 32/CHAR_BIT); \
@@ -954,7 +954,7 @@ namespace OCPI
           memcpy(buf, cp, wlen); \
           cp += wlen; \
           vals[i] = buf; \
-          unsigned slen = strlen(buf) + 1; \
+          size_t slen = strlen(buf) + 1; \
           buf += slen; \
           space -= slen; \
         } \
@@ -973,10 +973,10 @@ namespace OCPI
       PUT_GET_PROPERTY(16)
       PUT_GET_PROPERTY(32)
       PUT_GET_PROPERTY(64)
-      void setPropertyBytes(const OA::PropertyInfo &, uint32_t,
-			    const uint8_t *, unsigned ) const {}
-      void getPropertyBytes(const OA::PropertyInfo &, uint32_t,
-			    uint8_t *, unsigned ) const {}
+      void setPropertyBytes(const OA::PropertyInfo &, size_t,
+			    const uint8_t *, size_t ) const {}
+      void getPropertyBytes(const OA::PropertyInfo &, size_t,
+			    uint8_t *, size_t ) const {}
 
     }; // End: class Worker
 
@@ -1018,14 +1018,14 @@ namespace OCPI
 
         void release();
 
-        void put ( uint32_t dataLength,
+        void put ( size_t dataLength,
                    uint8_t opcode,
                    bool endOfData )
         {
           (void)endOfData;
           ocpiAssert(dataLength <= length);
           metadata->opcode = opcode;
-          metadata->length = dataLength;
+          metadata->length = (uint32_t)dataLength;
           release();
         }
 
@@ -1108,7 +1108,7 @@ namespace OCPI
           myDesc.emptyFlagValue = 1;
           myDesc.emptyFlagBaseAddr = 0;
 
-          unsigned int nAlloc =
+          size_t nAlloc =
               OC::roundup ( myDesc.dataBufferPitch * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN) +
               OC::roundup ( myDesc.metaDataPitch * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN) +
               OC::roundup ( sizeof(uint32_t) * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN) + // local flags
@@ -1118,8 +1118,8 @@ namespace OCPI
               OC::roundup ( sizeof(uint32_t) * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN);
 
           // FIXME how do we set these?
-          int mailbox = 6;
-          int max_mailbox = 10;
+          uint16_t mailbox = 6;
+          uint16_t max_mailbox = 10;
 
           int pid = getpid ( );
 
@@ -1127,7 +1127,7 @@ namespace OCPI
 
           snprintf ( myDesc.oob.oep,
                      sizeof ( myDesc.oob.oep ),
-                     "ocpi-smb-pio:pioXfer%d:%d.%d.%d",
+                     "ocpi-smb-pio:pioXfer%d:%zu.%hu.%hu",
                      pid,
                      nAlloc,
                      mailbox,
@@ -1140,7 +1140,7 @@ namespace OCPI
             throw OC::ApiError( "OCL failed to allocate external port buffers." );
           }
 
-          myDesc.dataBufferBaseAddr = reinterpret_cast<uint64_t>(allocation);
+          myDesc.dataBufferBaseAddr = OCPI_UTRUNCATE(DtOsDataTypes::Offset, allocation);
           uint8_t* buffer = allocation;
           allocation += OC::roundup(myDesc.dataBufferPitch * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN);
 
@@ -1150,7 +1150,7 @@ namespace OCPI
             buffer += myDesc.dataBufferPitch;
           }
 
-          myDesc.metaDataBaseAddr = reinterpret_cast<uint64_t>(allocation);
+          myDesc.metaDataBaseAddr = OCPI_UTRUNCATE(DtOsDataTypes::Offset, allocation);
           allocation += OC::roundup(myDesc.metaDataPitch * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN);
 
           localFlags = (uint32_t*)allocation;
@@ -1165,7 +1165,7 @@ namespace OCPI
           shadow = farFlags;
 
           myDesc.emptyFlagBaseAddr = 0;
-          myDesc.fullFlagBaseAddr = reinterpret_cast<uint64_t>( local );
+          myDesc.fullFlagBaseAddr = OCPI_UTRUNCATE(DtOsDataTypes::Offset, local);
 
           // Allow default connect params on port construction prior to connect
           applyConnectParams(NULL, params);
@@ -1389,8 +1389,9 @@ namespace OCPI
             ocpiport = ocpiport->nextChild() )
       {
         size_t n = ocpiport->portOrdinal ( );
-        ocpiport->nextLocal->metadata->length = myPorts [ n ].attr->length;
-        ocpiport->nextLocal->metadata->opcode = myPorts [ n ].attr->u.operation;
+        ocpiport->nextLocal->metadata->length = (uint32_t)myPorts [ n ].attr->length;
+	// FIXME: figure out a way to make the OCL stuff actually 8 bites..
+        ocpiport->nextLocal->metadata->opcode = (uint8_t)myPorts [ n ].attr->u.operation;
         myPorts [ n ].current.data = 0;
         myPorts [ n ].current.maxLength = 0;
         myPorts [ n ].attr->length = 0;
@@ -1463,8 +1464,8 @@ namespace OCPI
         else
         {
           bool end = false;
-          ocpiport->currentBuffer->put ( myPorts [ n ].attr->length,
-                                         myPorts [ n ].attr->u.operation,
+          ocpiport->currentBuffer->put (myPorts [ n ].attr->length,
+					(uint8_t)myPorts [ n ].attr->u.operation, //FIXME
                                          end );
         }
       }
@@ -1477,8 +1478,8 @@ namespace OCPI
     }
 
     OC::Port& Worker::createOutputPort ( OM::PortOrdinal portId,
-                                         OS::uint32_t bufferCount,
-                                         OS::uint32_t bufferSize,
+                                         size_t bufferCount,
+                                         size_t bufferSize,
                                          const OA::PValue* props )
     throw()
     {
@@ -1490,8 +1491,8 @@ namespace OCPI
     }
 
     OC::Port& Worker::createInputPort ( OM::PortOrdinal portId,
-                                        OS::uint32_t bufferCount,
-                                        OS::uint32_t bufferSize,
+                                        size_t bufferCount,
+                                        size_t bufferSize,
                                         const OA::PValue* props )
     throw()
     {
@@ -1520,14 +1521,14 @@ namespace OCPI
 
         void release();
 
-        void put ( uint32_t dataLength,
+        void put ( size_t dataLength,
                    uint8_t opcode,
                    bool endOfData )
         {
           (void)endOfData;
           ocpiAssert(dataLength <= length);
           metadata->opcode = opcode;
-          metadata->length = dataLength;
+          metadata->length = (uint32_t)dataLength;
           release();
         }
     }; // End: class ExternalBuffer
@@ -1590,7 +1591,7 @@ namespace OCPI
 
           // Allocate my local memory, making everything on a nice boundary.
           // (assume empty flag pitch same as full flag pitch)
-          unsigned int nAlloc =
+          size_t nAlloc =
               OC::roundup ( myDesc.dataBufferPitch * nLocal, OCLDP_LOCAL_BUFFER_ALIGN) +
               OC::roundup ( myDesc.metaDataPitch * nLocal, OCLDP_LOCAL_BUFFER_ALIGN) +
               OC::roundup ( sizeof(uint32_t) * nLocal, OCLDP_LOCAL_BUFFER_ALIGN) + // local flags
@@ -1600,13 +1601,13 @@ namespace OCPI
               OC::roundup ( sizeof(uint32_t) * nFar, OCLDP_LOCAL_BUFFER_ALIGN);
 
           // FIXME where do we get the mailbox information?
-          int mailbox = 7;
-          int max_mailbox = 10;
+          uint16_t mailbox = 7;
+          uint16_t max_mailbox = 10;
           int pid = getpid ( );
           myDesc.oob.port_id = port.metaPort().ordinal;
           snprintf ( myDesc.oob.oep,
                      sizeof ( myDesc.oob.oep ),
-                     "ocpi-smb-pio:pioXfer%d:%u.%d.%d",
+                     "ocpi-smb-pio:pioXfer%d:%zu.%hu.%hu",
                      pid,
                      nAlloc,
                      mailbox,
@@ -1639,7 +1640,7 @@ namespace OCPI
           shadow = farFlags;
 
           myDesc.emptyFlagBaseAddr = 0;
-          myDesc.fullFlagBaseAddr  = reinterpret_cast<uint64_t>( local );
+          myDesc.fullFlagBaseAddr  = OCPI_UTRUNCATE(DtOsDataTypes::Offset, local );
 
           uint32_t* otherRemote = reinterpret_cast<uint32_t*> ( parent().getData().data.desc.fullFlagBaseAddr );
 
@@ -1687,7 +1688,7 @@ namespace OCPI
         }
 
         OA::ExternalBuffer* getBuffer ( uint8_t*& bdata,
-                                        uint32_t& length,
+                                        size_t& length,
                                         uint8_t& opcode,
                                         bool& end )
         {
@@ -1708,7 +1709,7 @@ namespace OCPI
         }
 
         OA::ExternalBuffer* getBuffer ( uint8_t*& bdata,
-                                        uint32_t& length )
+                                        size_t& length )
         {
           ocpiAssert(parent().isProvider());
           if ( !getLocal() )

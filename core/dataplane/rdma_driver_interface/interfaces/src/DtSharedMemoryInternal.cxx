@@ -55,31 +55,36 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <DtTransferInternal.h>
-#include <DtSharedMemoryInternal.h>
-#include <OcpiUtilHash.h>
-#include <OcpiRes.h>
-#include <OcpiOsAssert.h>
-#include <OcpiRDTInterface.h>
+#include "OcpiOsAssert.h"
+#include "OcpiOsSizeCheck.h"
+#include "OcpiOsMisc.h"
+#include "OcpiUtilHash.h"
+#include "OcpiUtilMisc.h"
+#include "OcpiRes.h"
+#include "DtTransferInternal.h"
+#include "DtSharedMemoryInternal.h"
+#include "DtHandshakeControl.h"
 
 namespace OU = OCPI::Util;
-using namespace DataTransfer;
+namespace OS = OCPI::OS;
+namespace DDT = DtOsDataTypes;
+namespace DataTransfer {
+
+static int check = compileTimeSizeCheck<sizeof(DDT::Offset),sizeof(OCPI::Util::ResAddr)>();
 
 SmemServices::
 SmemServices (/*XferFactory * parent, */EndPoint& ep)
   : /* OCPI::Util::Child<XferFactory,SmemServices>(*parent), */ m_endpoint(ep)
 {
-
 }
 
 SmemServices::
 ~SmemServices()
 {
-
-
 }
 
-EndPoint::EndPoint( std::string& end_point, OCPI::OS::uint32_t psize, bool l )
+EndPoint::
+EndPoint( std::string& end_point, size_t psize, bool l )
   :mailbox(0),maxCount(0),size(psize),address(0),local(l),factory(NULL),refCount(0)
 {
   if ( ! size ) {
@@ -88,13 +93,15 @@ EndPoint::EndPoint( std::string& end_point, OCPI::OS::uint32_t psize, bool l )
   setEndpoint( end_point);
 }
 
-EndPoint::~EndPoint() {
+EndPoint::
+~EndPoint() {
   if (factory)
     factory->removeEndPoint(*this);
   delete resources.sMemServices;
 }
 
-void EndPoint::release() {
+void EndPoint::
+release() {
   ocpiAssert(refCount);
   ocpiInfo("Releasing ep %p refCount %u", this, refCount);
   if (--refCount == 0)
@@ -102,114 +109,53 @@ void EndPoint::release() {
 }
 
 // Sets smem location data based upon the specified endpoint
-OCPI::OS::int32_t EndPoint::setEndpoint( std::string& ep )
+OCPI::OS::int32_t
+EndPoint::setEndpoint(std::string& ep)
 {
-  char buf[OCPI::RDT::MAX_PROTOS_SIZE];
+  char buf[ep.length() + 1]; //::MAX_PROTOS_SIZE];
   end_point = ep;
   getProtocolFromString(ep.c_str(), protocol);
-  getResourceValuesFromString(ep.c_str() ,buf,&mailbox,&maxCount,&size);
+  getResourceValuesFromString(ep.c_str(), buf, &mailbox, &maxCount, &size);
   return 0;
 }
 
 
 // Endpoint parsing
-void EndPoint::getProtocolFromString( const char* ep, std::string &proto )
+void EndPoint::
+getProtocolFromString( const char* ep, std::string &proto )
 {
   const char *colon = strchr(ep, ':');
   proto.assign(ep, colon ? colon - ep : strlen(ep));
 }
 
-void EndPoint::getResourceValuesFromString( const char* ep, 
-                                            char*, 
-                                            uint16_t* mailBox, 
-                                            uint16_t* maxMb, 
-                                            OCPI::OS::uint32_t* size
-                                            )
+void EndPoint::
+getResourceValuesFromString( const char* ep, 
+			     char*, 
+			     uint16_t* mailBox, 
+			     uint16_t* maxMb, 
+			     size_t* size)
 {
   const char *semi = strrchr(ep, ';');
+
   if (!semi ||
-      sscanf(semi+1, "%" SCNu32 ".%" SCNu16 ".%" SCNu16,
+      sscanf(semi+1, "%zu.%" SCNu16 ".%" SCNu16,
 	     size, mailBox, maxMb) != 3)
     throw OU::Error("Invalid endpoint: %s", ep);
-#if 0
-	     
-  *size = 0;
-  int item_count = 0;
-  int cs_index = 0;
-  for ( ssize_t n=strlen(ep)-1; n>=0; n-- ) {
-    if ( ep[n] == '.' ) { 
-      if ( item_count == 1 ) { //  mailbox value
-        if ( cs_index > 1 ) {
-          char tmp = cs[0];
-          for ( int y=0; y<cs_index-1; y++) {
-            cs[y] = cs[cs_index-1-y];
-          }
-          cs[cs_index-1] = tmp;
-        }
-        cs[cs_index] = 0;
-        *mailBox = atoi(cs);
-        cs_index = 0;
-        item_count++;
-      }
-      else if ( item_count == 0 ) { // max mailbox value
-        if ( cs_index > 1 ) {
-          char tmp = cs[0];
-          for ( int y=0; y<cs_index-1; y++) {
-            cs[y] = cs[cs_index-1-y];
-          }
-          cs[cs_index-1] = tmp;
-        }
-        cs[cs_index] = 0;
-        *maxMb = atoi(cs);
-        cs_index = 0;
-        item_count++;
-      }
-    }
-    else if ( ep[n] == ':'  || ep[n] == ';') { 
-      if ( cs_index > 0  ) {  // buffer size
-        if ( cs_index > 1 ) {
-          char tmp = cs[0];
-          for ( int y=0; y<cs_index-1; y++) {
-            cs[y] = cs[cs_index-1-y];
-          }
-          cs[cs_index-1] = tmp;
-        }
-        cs[cs_index] = 0;
-        *size = atoi(cs);
-        cs_index = 0;
-      }
-      break;
-    }
-    else {
-      cs[cs_index++] = ep[n];
-    }
-  }
-#endif
 }
 
 void EndPoint::
 finalize() {
   getSmemServices();
-  if (!resources.sMemResourceMgr) {
-    ocpiDebug("Finalizing endpoint %p %s %p %p %p", this, end_point.c_str(),
-	     resources.sMemServices, resources.sMemResourceMgr, resources.m_comms);
-    resources.sMemResourceMgr = CreateResourceServices();
-    resources.sMemResourceMgr->createLocal(size);
-    uint32_t offset;
-    if (resources.sMemResourceMgr->alloc( sizeof(ContainerComms), 0, &offset) != 0)
-      throw OCPI::Util::EmbeddedException(  NO_MORE_SMB, end_point.c_str() );
-    resources.m_comms = static_cast<DataTransfer::ContainerComms*>
-      (resources.sMemServices->map(offset, sizeof(ContainerComms)));
-  }
+  resources.finalize(*this);
 }
 
-bool DataTransfer::EndPoint::
+bool EndPoint::
 canSupport(const char *remoteEndpoint) {
   std::string remoteProtocol;
-  DataTransfer::EndPoint::getProtocolFromString(remoteEndpoint, remoteProtocol);
+  EndPoint::getProtocolFromString(remoteEndpoint, remoteProtocol);
   char *cs = strdup(remoteEndpoint);
   uint16_t mailBox, maxMb;
-  uint32_t size;
+  size_t size;
   getResourceValuesFromString(remoteEndpoint, cs, &mailBox, &maxMb, &size);
   bool ret = 
     protocol == remoteProtocol &&
@@ -218,17 +164,17 @@ canSupport(const char *remoteEndpoint) {
   return ret;
 }
 
-SmemServices *DataTransfer::EndPoint::
+SmemServices *EndPoint::
 getSmemServices() {
   return resources.sMemServices ?
     resources.sMemServices : (resources.sMemServices = &createSmemServices());
 }
 
-class ResourceServicesImpl : public DataTransfer::ResourceServices
+class ResourceServicesImpl : public ResourceServices
 {
 public:
   // Create a local resource pool
-  int createLocal (uint32_t size)
+  int createLocal (size_t size)
   {
     (void)terminate ();
     try {
@@ -241,13 +187,13 @@ public:
   }
 
   // Allocate from pool
-  int alloc (uint32_t nbytes, unsigned alignment, OCPI::Util::ResAddrType* addr_p)
+  int alloc (size_t nbytes, unsigned alignment, OCPI::Util::ResAddrType* addr_p)
   {
     return m_pool->alloc ( nbytes, alignment, *addr_p );
   }
 
   // Free back to pool
-  int free (uint32_t addr, uint32_t nbytes)
+  int free (OCPI::Util::ResAddrType addr, size_t nbytes)
   {
     ( void ) nbytes;
     return m_pool->free ( addr );
@@ -283,15 +229,92 @@ private:
 };
 
 // Platform dependent global that creates an instance
-DataTransfer::ResourceServices* DataTransfer::CreateResourceServices ()
+ResourceServices* CreateResourceServices ()
 {
   return new ResourceServicesImpl ();
 }
 
 
-DataTransfer::SMBResources::SMBResources()
- : sMemServices(0), sMemResourceMgr(0), m_comms(0) {
+SMBResources::
+SMBResources()
+  : sMemServices(0), sMemResourceMgr(0), m_comms(0) {
 }
-DataTransfer::SMBResources::~SMBResources() {
+
+SMBResources::
+~SMBResources() {
   delete sMemResourceMgr;
+}
+
+void SMBResources::
+finalize(EndPoint &ep) {
+  if (!sMemResourceMgr) {
+    ocpiDebug("Finalizing endpoint %p %s %p %p %p", &ep, ep.end_point.c_str(),
+	     sMemServices, sMemResourceMgr, m_comms);
+    sMemResourceMgr = CreateResourceServices();
+    sMemResourceMgr->createLocal(ep.size);
+    OCPI::Util::ResAddr offset;
+    if (sMemResourceMgr->alloc( sizeof(ContainerComms), 0, &offset) != 0)
+      throw OCPI::Util::EmbeddedException(  NO_MORE_SMB, ep.end_point.c_str() );
+    m_comms = static_cast<ContainerComms*>
+      (sMemServices->map(offset, sizeof(ContainerComms)));
+  }
+}
+
+// FIXME: move this to a new file along with the handshake stuff
+bool XferMailBox::
+makeRequest( SMBResources* source, SMBResources* target )
+{
+
+  ocpiDebug("In makerequest from %s to %s\n",
+	    source->sMemServices->endpoint()->end_point.c_str(),
+	    target->sMemServices->endpoint()->end_point.c_str() );
+
+
+#ifdef MULTI_THREADED
+  // Lock the mailbox
+  if ( ! lockMailBox() ) {
+    return false;
+  }
+#endif
+
+  /* Attempt to get or make a transfer template */
+  XferServices* ptemplate =
+    XferFactoryManager::getFactoryManager().getService(
+						       source->sMemServices->endpoint(),
+						       target->sMemServices->endpoint() );
+  if ( ! ptemplate ) {
+    ocpiAssert(0);
+  }
+
+  DDT::Offset offset =
+    OCPI_SIZEOF(DDT::Offset, ContainerComms::MailBox) * m_slot + OCPI_SIZEOF(DDT::Offset, UpAndRunning);
+
+  ocpiDebug("In make request with offset = %d\n", offset );
+
+  XferRequest * ptransfer = ptemplate->createXferRequest();
+
+  // create the copy in the template
+  ptransfer->copy (
+		   offset + OCPI_SIZEOF(DDT::Offset, ContainerComms::RequestHeader),
+		   offset + OCPI_SIZEOF(DDT::Offset, ContainerComms::RequestHeader),
+		   sizeof(ContainerComms::MailBox) - sizeof(ContainerComms::RequestHeader),
+		   XferRequest::DataTransfer );
+
+  ptransfer->copy (
+		   offset,
+		   offset,
+		   sizeof(ContainerComms::RequestHeader),
+		   XferRequest::FlagTransfer );
+
+  // Start the transfer
+  ptransfer->post();
+
+  while( ptransfer->getStatus() ) {
+    OS::sleep(0);
+  }
+
+  delete ptransfer;
+
+  return true;
+}
 }

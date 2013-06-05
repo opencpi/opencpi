@@ -89,9 +89,9 @@ namespace DataTransfer {
 
       DataTransfer::XferRequest & group( DataTransfer::XferRequest* lhs );
       
-      DataTransfer::XferRequest* copy (OCPI::OS::uint32_t srcoff, 
-			 OCPI::OS::uint32_t dstoff, 
-			 OCPI::OS::uint32_t nbytes, 
+      DataTransfer::XferRequest* copy (DtOsDataTypes::Offset srcoff, 
+			 DtOsDataTypes::Offset dstoff, 
+			 size_t nbytes, 
 			 DataTransfer::XferRequest::Flags flags
 			 );
 
@@ -105,7 +105,7 @@ namespace DataTransfer {
       virtual ~XferRequest ();
       
       // Modify the source buffer offfsets
-      void modify( OCPI::OS::uint32_t new_offsets[], OCPI::OS::uint32_t old_offsets[] );
+      void modify(DtOsDataTypes::Offset new_offsets[], DtOsDataTypes::Offset old_offsets[] );
 
       // Data members accessible from this/derived class
     protected:
@@ -212,7 +212,7 @@ namespace DataTransfer {
 
       // Each device can support N endpoints, we hold the device context for our endpoint
       ibv_gid               m_gid;
-      uint32_t              m_lid;
+      uint16_t              m_lid;
       uint32_t              m_psn;
       uint32_t              m_rkey;
       uint32_t              m_lkey;
@@ -229,7 +229,7 @@ namespace DataTransfer {
 
       OCPI::OS::int32_t attach ( DataTransfer::EndPoint* ){return 0;};
       OCPI::OS::int32_t detach (){return 0;}
-      void* map (uint32_t offset, uint32_t/* size */)
+      void* map (DtOsDataTypes::Offset offset, size_t/* size */)
       {
 	// Local memory, just pass back the pointer
 	return &m_mem[offset];
@@ -284,7 +284,7 @@ namespace DataTransfer {
 	const char *err;
 	if ((err = OX::checkAttrs(x, OFED_DEVICE_ATTRS, NULL)) ||
 	    (err = OX::getNumber(x, "port", &m_port, NULL, 0, false)) ||
-	    (err = OX::getNumber(x, "hop_limit", &m_hopLimit, NULL, 0, false)) ||
+	    (err = OX::getNumber8(x, "hop_limit", &m_hopLimit, NULL, 0, false)) ||
 	    (err = OX::getNumber8(x, "ibv_qp_timeout", &m_ibv_qp_timeout,
 				  NULL, 0, false)) ||
 	    (err = OX::getNumber8(x, "ibv_qp_retry_cnt", &m_ibv_qp_retry_cnt,
@@ -296,8 +296,8 @@ namespace DataTransfer {
 	  throw err; // FIXME API configuration error exception
       }
  
-      uint32_t m_port;
-      uint32_t m_hopLimit;
+      size_t m_port;
+      uint8_t  m_hopLimit;
       uint8_t  m_ibv_qp_timeout;
       uint8_t  m_ibv_qp_retry_cnt;
       uint8_t  m_ibv_qp_rnr_retry;
@@ -635,12 +635,12 @@ namespace DataTransfer {
       if ( ! d )
 	throw DataTransfer::DataTransferEx( DEV_NOT_FOUND , "OFED" );
       // First get the entry point from the properties
-      unsigned int port = d->m_port;
-      unsigned int size = d->m_SMBSize;
+      size_t port = d->m_port;
+      size_t size = d->m_SMBSize;
 
       // This will be the non-finalized version of the ep
       char buf[512];
-      snprintf( buf, 512, "ocpi-ofed-rdma:%s:%d:%lld.%lld:%d:%d:%d:%llu:%d.%d.%d",
+      snprintf( buf, 512, "ocpi-ofed-rdma:%s:%zu:%lld.%lld:%d:%d:%d:%llu:%zu.%d.%d",
 		d->name().c_str(), port, (long long)0, (long long)0, 0, 0, 0,
 		(unsigned long long)0, size, mailBox, maxMailBoxes);
       std::string ep = buf;
@@ -675,7 +675,7 @@ namespace DataTransfer {
       // This will be the non-finalized version of the ep
       char buf[512];
       snprintf( buf, 512,
-		"ocpi-ofed-rdma:%s:%d:%lld.%lld:%d:%d:%d:%llu:%d.%d.%d",
+		"ocpi-ofed-rdma:%s:%u:%lld.%lld:%u:%u:%u:%llu:%zu.%d.%d",
 		m_device->name().c_str(),
 		m_port, (long long)m_gid.global.subnet_prefix,
 		(long long)m_gid.global.interface_id, m_lid,
@@ -692,7 +692,7 @@ namespace DataTransfer {
       char buf[128];
       int tport;
       int c = sscanf(ep.c_str(),"ocpi-ofed-rdma:%[^:]:%d:%" SCNu64 " .%" SCNu64
-		     ":%d:%d:%d:%" SCNu64 ":%d.%" SCNu16 ".%" SCNu16,
+		     ":%hu:%u:%u:%" SCNu64 ":%zu.%" SCNu16 ".%" SCNu16,
 		     buf, &tport, 
 		     &m_gid.global.subnet_prefix, 
 		     &m_gid.global.interface_id, 
@@ -714,7 +714,7 @@ namespace DataTransfer {
     }
 
     void XferRequest::
-    modify( OCPI::OS::uint32_t new_offsets[], OCPI::OS::uint32_t old_offsets [] )
+    modify(DtOsDataTypes::Offset new_offsets[], DtOsDataTypes::Offset old_offsets [] )
     {
       int n=0;
       if ( ! m_wr ) return;
@@ -722,7 +722,8 @@ namespace DataTransfer {
       while ( wr && new_offsets[n] ) {
 	ocpiAssert(wr->sg_list);
 	XferServices &xferServices = parent();
-	old_offsets[n] = wr->sg_list->addr - (uint64_t)xferServices.m_sourceSmb->map(0,1);
+	old_offsets[n] =
+	  (uint32_t)(wr->sg_list->addr - (uint64_t)xferServices.m_sourceSmb->map(0,1));
 	wr->sg_list->addr = (uint64_t)xferServices.m_sourceSmb->map(0,1) + new_offsets[n];
 	MASK_ADDR( wr->sg_list->addr );
 	n++;
@@ -929,9 +930,9 @@ namespace DataTransfer {
     // Create a transfer request
     DataTransfer::XferRequest* 
     XferRequest::
-    copy (OCPI::OS::uint32_t srcoffs, 
-	  OCPI::OS::uint32_t dstoffs, 
-	  OCPI::OS::uint32_t nbytes, 
+    copy (DtOsDataTypes::Offset srcoffs, 
+	  DtOsDataTypes::Offset dstoffs, 
+	  size_t nbytes, 
 	  DataTransfer::XferRequest::Flags flags 
 	  )
     {
@@ -946,7 +947,7 @@ namespace DataTransfer {
 #ifndef NDEBUG
       printf("local addr = %llu\n", (unsigned long long )sge->addr );
 #endif
-      sge->length = nbytes;
+      sge->length = (uint32_t)nbytes;
       sge->lkey = xferServices.m_sourceSmb->getMr()->lkey;
       wr->wr_id = (uint64_t)this;
       wr->sg_list = sge;
@@ -954,9 +955,8 @@ namespace DataTransfer {
       wr->opcode = IBV_WR_RDMA_WRITE;
       wr->next = NULL;
       wr->wr.rdma.remote_addr =  static_cast<EndPoint*>(xferServices.m_targetSmb->endpoint())->m_vaddr + dstoffs;
-#ifndef NDEBUG
-      printf("***** Remote vaddr = %llu, offset = %d, nbytes = %d\n",(long long) wr->wr.rdma.remote_addr, dstoffs, nbytes );
-#endif
+      ocpiDebug("***** Remote vaddr = %" PRIu64 ", offset = %" DTOSDATATYPES_OFFSET_PRIu ",nbytes = %zu",
+		 wr->wr.rdma.remote_addr, dstoffs, nbytes );
       wr->wr.rdma.rkey = static_cast<EndPoint*>(xferServices.m_targetSmb->endpoint())->m_rkey;
       wr->send_flags = IBV_SEND_SIGNALED;
 

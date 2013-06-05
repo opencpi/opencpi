@@ -295,7 +295,7 @@ namespace OCPI {
       OCPI::DataTransport::Port *m_dtPort;
       ExternalBuffer();
       void release();
-      void put( uint32_t length, uint8_t opCode, bool /*endOfData*/);
+      void put( size_t length, uint8_t opCode, bool /*endOfData*/);
     };
 
     // The direct interface for non-components to talk directly to the port,
@@ -308,8 +308,8 @@ namespace OCPI {
 		   const OCPI::Util::PValue *connParams);
       virtual ~ExternalPort();
       OCPI::API::ExternalBuffer
-        *getBuffer(uint8_t *&data, uint32_t &length, uint8_t &opCode, bool &end),
-	*getBuffer(uint8_t *&data, uint32_t &length);
+        *getBuffer(uint8_t *&data, size_t &length, uint8_t &opCode, bool &end),
+	*getBuffer(uint8_t *&data, size_t &length);
       void endOfData();
       bool tryFlush();
     };

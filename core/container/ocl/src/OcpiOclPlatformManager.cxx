@@ -435,9 +435,10 @@ namespace OCPI
             if ( *cp == 'X' && isdigit ( cp [ 1 ] ) )
             {
               char *end;
-              long long n = strtoll (cp + 1, &end, 10 );
+              long l = strtol (cp + 1, &end, 10 );
+	      off_t n = OCPI_STRUNCATE(off_t, l);
               // strtoll error reporting is truly bizarre
-              if ( n != LLONG_MAX && n >= 0 && cp[1] && isspace(*end ) )
+              if ( l != LONG_MAX && l > 0 && cp[1] && isspace(*end ) )
               {
                 off_t metaStart = fileLength - sizeof(buf) + (cp - buf) - n;
                 if ( lseek ( fd, metaStart, SEEK_SET ) != -1 )
@@ -686,7 +687,7 @@ namespace OCPI
       cl_int rc;
 
       cl_program program = clCreateProgramWithSource ( context,
-                                                       mapped_code.size ( ),
+                                                       OCPI_UTRUNCATE(cl_uint, mapped_code.size ( )),
                                                        &mapped_code[0],
                                                        &mapped_code_size[0],
                                                        &rc );
@@ -1340,7 +1341,7 @@ void OCPI::OCL::DeviceWorker::Impl::run ( const OCPI::OCL::Grid& grid )
 
   cl_int rc = clEnqueueNDRangeKernel ( d_cmdq,
                                        d_kernel,
-                                       grid.dim,
+                                       OCPI_UTRUNCATE(cl_uint,grid.dim),
                                        grid.gtid_offset,
                                        gtid,
                                        d_work_group_size,
@@ -1376,7 +1377,7 @@ void OCPI::OCL::DeviceWorker::Impl::setKernelArg ( size_t arg_idx,
   }
 
   cl_int rc = clSetKernelArg ( d_kernel,
-                               arg_idx,
+                               OCPI_UTRUNCATE(cl_uint,arg_idx),
                                sizeof ( cl_mem ),
                                (void*) &it->second.mem );
   if ( rc )
@@ -1390,7 +1391,7 @@ void OCPI::OCL::DeviceWorker::Impl::setKernelArg ( size_t arg_idx,
                                                    void* arg )
 {
   cl_int rc = clSetKernelArg ( d_kernel,
-                               arg_idx,
+                               OCPI_UTRUNCATE(cl_uint,arg_idx),
                                sizeof_arg,
                                arg );
   if ( rc )

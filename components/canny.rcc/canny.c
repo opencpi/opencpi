@@ -44,7 +44,7 @@ typedef struct {
   uchar **stack;
 } CState;
 
-static uint32_t sizes[] = {sizeof(CState), 0 };
+static size_t sizes[] = {sizeof(CState), 0 };
 
 CANNY_METHOD_DECLARATIONS;
 RCCDispatch canny = {

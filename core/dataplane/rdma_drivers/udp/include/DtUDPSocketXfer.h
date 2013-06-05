@@ -96,7 +96,7 @@ namespace DataTransfer {
 	
 	SmemServices &createSmemServices();
         std::string ipAddress;
-        unsigned  portNum;
+        uint16_t  portNum;
   };
 
 
@@ -139,7 +139,7 @@ namespace DataTransfer {
      *  Set (unparse, snprintf) the endpoint string
      ***************************************/
     static void setEndpointString(std::string &str, const char *ipAddr, unsigned port,
-				  unsigned size, uint16_t mbox, uint16_t maxCount);
+				  size_t size, uint16_t mbox, uint16_t maxCount);
     /***************************************
      *  This method is used to dynamically allocate
      *  an endpoint for an application running on "this"
@@ -181,8 +181,8 @@ namespace DataTransfer {
 	MutiAck
 
       };
-      uint16_t    type;
-      uint64_t   offset;
+      uint16_t   type;
+      DtOsDataTypes::Offset offset;
       uint32_t   length;
       uint64_t   transaction_cookie;
       uint16_t   transaction_length;
@@ -213,17 +213,17 @@ namespace DataTransfer {
     virtual ~UDPSocketXferRequest ();
 
     XferRequest & group( XferRequest* lhs );
-    void modify( OCPI::OS::uint32_t new_offsets[], OCPI::OS::uint32_t old_offsets[] );
+    void modify(DtOsDataTypes::Offset new_offsets[], DtOsDataTypes::Offset old_offsets[] );
 
-    XferRequest* copy (OCPI::OS::uint32_t srcoff, 
-		       OCPI::OS::uint32_t dstoff, 
-		       OCPI::OS::uint32_t nbytes, 
+    XferRequest* copy (DtOsDataTypes::Offset srcoff, 
+		       DtOsDataTypes::Offset dstoff, 
+		       size_t nbytes, 
 		       XferRequest::Flags flags
 		       );
 
     // Data members accessible from this/derived class
   private:
-    uint32_t     m_txTotal;   // Total number of datagrams that make up this transaction - flag transfer
+    size_t     m_txTotal;   // Total number of datagrams that make up this transaction - flag transfer
 
   
     struct TxPacket {
@@ -241,8 +241,8 @@ namespace DataTransfer {
       TxPacket() 
 	: m_init(false), m_nAcksTx(0), m_nAcksRx(0),m_id(0){}
       ~TxPacket(){}
-      void init( uint32_t nPackets, TxTemplate * temp  );
-      void add( UDPSocketXferRequest* rqst, uint8_t * src, uint64_t dst_offset, uint32_t length, uint32_t tx_total );
+      void init(size_t nPackets, TxTemplate * temp  );
+      void add( UDPSocketXferRequest* rqst, uint8_t * src, DtOsDataTypes::Offset, size_t length, size_t tx_total );
 
       bool            m_init;
       uint32_t        m_nAcksTx;

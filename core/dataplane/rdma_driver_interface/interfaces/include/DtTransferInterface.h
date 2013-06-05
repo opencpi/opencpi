@@ -59,6 +59,7 @@
 #include <OcpiUtilSelfMutex.h>
 #include <OcpiList.h>
 #include <OcpiDriverManager.h>
+#include "DtOsDataTypes.h"
 
 // Forward declarations to avoid circular dependencies.
 typedef struct XFTransfer* XF_transfer;
@@ -138,8 +139,8 @@ namespace DataTransfer {
      *        Throws:
      *                DataTransferEx for all exception conditions
      */
-    virtual void modify( OCPI::OS::uint32_t new_offsets[],
-			 OCPI::OS::uint32_t old_offsets[] );
+    virtual void modify( DtOsDataTypes::Offset new_offsets[],
+			 DtOsDataTypes::Offset old_offsets[] );
 
 
     /*
@@ -155,9 +156,9 @@ namespace DataTransfer {
      *        Errors:
      *                DataTransferEx for all exception conditions
      */
-    virtual XferRequest* copy (OCPI::OS::uint32_t srcoff, 
-                               OCPI::OS::uint32_t dstoff, 
-                               OCPI::OS::uint32_t nbytes, 
+    virtual XferRequest* copy (DtOsDataTypes::Offset srcoff, 
+                               DtOsDataTypes::Offset dstoff, 
+                               size_t nbytes, 
                                XferRequest::Flags flags
                                );
 
@@ -237,10 +238,10 @@ namespace DataTransfer {
   class FactoryConfig {
   public:
     // These are arguments to allow different defaults
-    FactoryConfig(uint32_t smbSize = 0, uint32_t retryCount = 0);
+    FactoryConfig(size_t smbSize = 0, size_t retryCount = 0);
     void parse(FactoryConfig *p, ezxml_t config );
-    uint32_t m_SMBSize;
-    uint32_t m_retryCount;
+    size_t m_SMBSize;
+    size_t m_retryCount;
     ezxml_t  m_xml; // the element that these attributes were parsed from
   };
          

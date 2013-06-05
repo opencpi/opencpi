@@ -51,8 +51,8 @@ typedef unsigned long ulong;
 struct  XFTemplate {
   DataTransfer::SmemServices* s_smem;
   DataTransfer::SmemServices* t_smem;
-  int                         s_off;
-  int                         t_off;
+  uint32_t                    s_off;
+  uint32_t                    t_off;
 };
 class Mapit {
  public:
@@ -72,14 +72,14 @@ typedef XFTransfer* XF_transfer;
 typedef struct pio_template_ * PIO_template;
 
 /* External functions */
-extern long xfer_create(DataTransfer::SmemServices*, DataTransfer::SmemServices*, OCPI::OS::int32_t , XF_template *);
-extern long xfer_copy(XF_template, OCPI::OS::uint32_t, OCPI::OS::uint32_t, OCPI::OS::uint32_t, OCPI::OS::int32_t, XF_transfer *);
-extern long xfer_group(XF_transfer *, OCPI::OS::int32_t, XF_transfer *);
-extern long xfer_release(XF_transfer, OCPI::OS::int32_t);
-extern long xfer_destroy(XF_template, OCPI::OS::int32_t);
-extern long xfer_start(XF_transfer, OCPI::OS::int32_t);
+extern long xfer_create(DataTransfer::SmemServices*, DataTransfer::SmemServices*, int32_t , XF_template *);
+extern long xfer_copy(XF_template, DtOsDataTypes::Offset, DtOsDataTypes::Offset, size_t, int32_t, XF_transfer *);
+extern long xfer_group(XF_transfer *, int32_t, XF_transfer *);
+extern long xfer_release(XF_transfer, int32_t);
+extern long xfer_destroy(XF_template, int32_t);
+extern long xfer_start(XF_transfer, int32_t);
 extern long xfer_get_status(XF_transfer);
-extern long xfer_modify( XF_transfer, OCPI::OS::uint32_t* noff, OCPI::OS::uint32_t* ooff );
+extern long xfer_modify( XF_transfer, DtOsDataTypes::Offset* noff, DtOsDataTypes::Offset* ooff );
 extern void xfer_pio_action_transfer(PIO_transfer);
 
 #endif /* !defined XFER_IF_H */

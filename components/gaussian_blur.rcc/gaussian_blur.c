@@ -45,7 +45,7 @@ typedef struct {
   RCCBuffer buffers[HISTORY_SIZE]; // buffer history (ring)
 } Gaussian_blurState;
 
-static uint32_t sizes[] = {sizeof(Gaussian_blurState), 0};
+static size_t sizes[] = {sizeof(Gaussian_blurState), 0};
 static RCCPortInfo pinfo[] = { {GAUSSIAN_BLUR_IN,0,KERNEL_SIZE+1},{GAUSSIAN_BLUR_OUT,0,2},{-1,0,0} };
 
 GAUSSIAN_BLUR_METHOD_DECLARATIONS;

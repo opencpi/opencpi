@@ -25,7 +25,7 @@ typedef struct {
   unsigned input_idx;
   unsigned remainder;
 } MyState;
-static uint32_t mysizes[] = {sizeof(MyState), 0};
+static size_t mysizes[] = {sizeof(MyState), 0};
 
 CIC_HPFILTER_COMPLEX_METHOD_DECLARATIONS;
 RCCDispatch cic_hpfilter_complex = {
@@ -91,7 +91,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
      unsigned i, samp;
 
 #ifndef NDEBUG
-      printf("%s got %d bytes of data\n", __FILE__,  in->input.length);
+      printf("%s got %zu bytes of data\n", __FILE__,  in->input.length);
 #endif
 
      // We may need to generate more output data from the last input

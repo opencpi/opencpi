@@ -39,7 +39,7 @@ typedef struct {
   int *gridSize;
 } GFState;
 
-static uint32_t sizes[] = {sizeof(GFState), 0 };
+static size_t sizes[] = {sizeof(GFState), 0 };
 
 GOOD_FEATURES_TO_TRACK_METHOD_DECLARATIONS;
 RCCDispatch good_features_to_track = {

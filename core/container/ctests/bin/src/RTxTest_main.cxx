@@ -45,6 +45,7 @@
 
 #include <OcpiOsMisc.h>
 #include <OcpiOsAssert.h>
+#include <OcpiUtilMisc.h>
 #include <OcpiContainerInterface.h>
 #include <DtTransferInternal.h>
 #include <OcpiContainerPort.h>
@@ -222,7 +223,7 @@ int client_connect(const char *servername,int port) {
  *
  ******************************************************************************/
 static 
-int server_connect(int port)
+int server_connect(uint16_t port)
 {
 #if 0
   struct addrinfo *res, *t;
@@ -301,30 +302,31 @@ static
 void swrite( std::string & s )
 {
   ocpiDebug("Entering write %zd", s.size());
-  uint32_t  l = s.size();
+  size_t l = s.size();
+  uint32_t n = OCPI_UTRUNCATE(uint32_t, l);
   if (l) {
-    ocpiCheck(write( socket_fd, &l, 4 ) == 4);  
-    ocpiCheck(write( socket_fd, s.c_str(), l ) == l);  
+    ocpiCheck(write( socket_fd, &n, 4 ) == 4);  
+    ocpiCheck(write( socket_fd, s.c_str(), l ) == (ssize_t)l);  
   }
 }
 
 static 
-int
+size_t
 sread( std::string & s  )
 {
   ocpiDebug("Entering read");
-  uint32_t size;
+  size_t size;
   char buf[2048];
-  unsigned int l = read( socket_fd, &size, 4 );
+  ssize_t l = read( socket_fd, &size, 4 );
   if ( l == 0 ) return 0;
   ssize_t nread;
-  unsigned done = 0;
-  for (unsigned todo = size; todo; done += nread, todo -= nread) {
+  ssize_t done = 0;
+  for (size_t todo = size; todo; done += nread, todo -= nread) {
     nread = read( socket_fd, buf + done, todo);
     ocpiCheck(nread >= 0);
   }
   s.assign(buf, size);
-  ocpiDebug("Leaving sread %d", size);
+  ocpiDebug("Leaving sread %zu", size);
   return size;
 }
 

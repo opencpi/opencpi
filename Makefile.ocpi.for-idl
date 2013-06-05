@@ -53,11 +53,11 @@ ALLINC += $(wildcard ../../*/idl) $(EXTRA_INCLUDES)
 ALLIDLINC += $(wildcard ../../*/idl)
 
 IDLFILES = $(wildcard *.idl)
-IDLCSOURCES = $(patsubst %.idl,%.cxx,$(IDLFILES))
+IDLCSOURCES = $(patsubst %.idl,%_c.cxx,$(IDLFILES))
 IDLSSOURCES = $(patsubst %.idl,%_s.cxx,$(IDLFILES))
 IDLCHEADERS = $(patsubst %.idl,%.h,$(IDLFILES))
 IDLSHEADERS = $(patsubst %.idl,%_s.h,$(IDLFILES))
-IDLCOBJECTS = $(patsubst %.idl,$(OBJDIR)/%.obj,$(IDLFILES))
+IDLCOBJECTS = $(patsubst %.idl,$(OBJDIR)/%_c.obj,$(IDLFILES))
 IDLSOBJECTS = $(patsubst %.idl,$(OBJDIR)/%_s.obj,$(IDLFILES))
 IDLDEPENDS = $(patsubst %.idl,%.d,$(IDLFILES))
 
@@ -95,8 +95,9 @@ distclean: distcleanup
 # files.
 #
 
-$(IDLCOBJECTS) $(IDLSOBJECTS): $(OBJDIR)/%.obj: %.cxx %.h $(IDLSOURCES)
-$(IDLCSOURCES): %.cxx: %.idl
+$(IDLCOBJECTS): $(OBJDIR)/%_c.obj: %_c.cxx %.h $(IDLSOURCES)
+$(IDLSOBJECTS): $(OBJDIR)/%_s.obj: %_s.cxx %.h $(IDLSOURCES)
+$(IDLCSOURCES): %_c.cxx: %.idl
 $(IDLSSOURCES): %_s.cxx: %.idl
 $(IDLCHEADERS): %.h: %.idl
 $(IDLSHEADERS): %_s.h: %.idl

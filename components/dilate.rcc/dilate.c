@@ -43,7 +43,7 @@ typedef struct {
   RCCBuffer buffers[HISTORY_SIZE]; // buffer history (ring)
 } DilateState;
 
-static uint32_t sizes[] = {sizeof(DilateState), 0};
+static size_t sizes[] = {sizeof(DilateState), 0};
 
 DILATE_METHOD_DECLARATIONS;
 RCCDispatch dilate = {

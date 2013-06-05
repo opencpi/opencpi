@@ -117,7 +117,7 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 {
   ( void ) timedout;
   ( void ) newRunCondition;
-  uint32_t len;
+  size_t len;
 
   //  LoopbackWorkerStaticMemory *mem = this_->memories[0];
   LoopbackWorkerProperties *props = this_->properties;
@@ -132,8 +132,8 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 
 #define CHECK_DATA
 #ifdef CHECK_DATA
-  { int *b = (int*)(in_buffer);
-    int *mem = (int *)&props->longProperty;
+  { uint32_t *b = (uint32_t*)(in_buffer);
+    uint32_t *mem = &props->longProperty;
     unsigned ncount, n, passed = 0;
 #define RESYNC
 #ifdef RESYNC
@@ -149,8 +149,8 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 
     ncount = 0;
     for (n=4; n<len; n++) {
-      if ( (in_buffer[n] != (char)(n+*mem)%23) && (ncount++ < 100000) ) {
-	printf("Consumer(%u, %u, b-> %d): Data integrity error(%d) !!, expected %d, got %d\n", 
+      if (in_buffer[n] != (char)(n+*mem)%23 && ncount++ < 100000) {
+	printf("Consumer(%u, %zu, b-> %u): Data integrity error(%d) !!, expected %d, got %d\n", 
 	       props->startIndex, len, *mem, n, (char)(n+*mem)%23, in_buffer[n]);
 	passed = 0;
       }
@@ -208,7 +208,7 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 #define NUM_INPUT_PORTS    1
 #define NUM_OUTPUT_PORTS   1
 #define PROPERTY_SIZE      sizeof( LoopbackWorkerProperties )
-static uint32_t memSizes[] = {sizeof(LoopbackWorkerStaticMemory), 1024*10, 0 };
+static size_t memSizes[] = {sizeof(LoopbackWorkerStaticMemory), 1024*10, 0 };
 
 #ifdef NZCOPYIO
 static uint32_t portRunConditions[] = { ((1<<LoopbackWorker_Data_In_Port) | (1<<LoopbackWorker_Data_Out_Port)), 0 };

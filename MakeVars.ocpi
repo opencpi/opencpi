@@ -340,8 +340,6 @@ endif
 # ----------------------------------------------------------------------
 #
 
-CFLAGS += -Wall -Wextra -Wfloat-equal -fno-strict-aliasing
-CXXFLAGS += -Wall -Wextra -Wfloat-equal -fno-strict-aliasing
 
 SCAVERSION = 2.2.2
 

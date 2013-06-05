@@ -49,7 +49,7 @@ typedef struct {
   float *bdy;
 } OFState;
 
-static uint32_t sizes[] = {sizeof(OFState), 0 };
+static size_t sizes[] = {sizeof(OFState), 0 };
 
 OPTICAL_FLOW_PYR_LK_METHOD_DECLARATIONS;
 RCCDispatch optical_flow_pyr_lk = {
@@ -128,8 +128,8 @@ void calcOpticalFlowPyrLK( OFState *myState,
   size_t derivIWinBufStep = 6 * cn * winWidth * sizeof(float);
   size_t derivIElemSize1 = sizeof(float);
   size_t derivJElemSize1 = sizeof(float);
-  size_t derivIRows = H+2*winHeight;
-  size_t derivJRows = H+2*winHeight;
+  int derivIRows = H+2*winHeight;
+  int derivJRows = H+2*winHeight;
   int derivICols = W+2*winWidth;
   int derivJCols = W+2*winWidth;
 

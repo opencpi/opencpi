@@ -56,8 +56,9 @@ namespace OCPI {
       d.role = NoRole;
       d.options = xferOptions;
       bzero((void *)&d.desc, sizeof(d.desc));
-      d.desc.nBuffers = DEFAULT_NBUFFERS > mPort.minBufferCount ? DEFAULT_NBUFFERS : mPort.minBufferCount;
-      if (!(d.desc.dataBufferSize = mPort.bufferSize))
+      d.desc.nBuffers =
+	(uint32_t)(DEFAULT_NBUFFERS > mPort.minBufferCount ? DEFAULT_NBUFFERS : mPort.minBufferCount);
+      if (!(d.desc.dataBufferSize = (uint32_t)mPort.bufferSize))
 	d.desc.dataBufferSize = DEFAULT_BUFFER_SIZE;
       setPortParams(mPort, params);
     }
@@ -409,6 +410,39 @@ namespace OCPI {
       return 0;
       }
     */
+    static void putOffset(OU::CDR::Encoder &packer, DtOsDataTypes::Offset val) {
+      packer.
+#if OCPI_EP_SIZE_BITS == 64
+      putULongLong(val);
+#else
+      putULong(val);
+#endif
+    }
+    static void putFlag(OU::CDR::Encoder &packer, DtOsDataTypes::Flag val) {
+      packer.
+#if OCPI_EP_FLAG_BITS == 64
+      putULongLong(val);
+#else
+      putULong(val);
+#endif
+    }
+    static void getOffset(OU::CDR::Decoder &unpacker, DtOsDataTypes::Offset &val) {
+      unpacker.
+#if OCPI_EP_SIZE_BITS == 64
+      getULongLong(val);
+#else
+      getULong(val);
+#endif
+    }
+    static void getFlag(OU::CDR::Decoder &unpacker, DtOsDataTypes::Flag &val) {
+      unpacker.
+#if OCPI_EP_FLAG_BITS == 64
+      getULongLong(val);
+#else
+      getULong(val);
+#endif
+    }
+
     void Port::packPortDesc(const Descriptors & desc, std::string &out)
       throw()
     {
@@ -419,19 +453,19 @@ namespace OCPI {
       packer.putULong     (desc.options);
       const Desc_t & d = desc.desc;
       packer.putULong     (d.nBuffers);
-      packer.putULongLong (d.dataBufferBaseAddr);
+      putOffset(packer, d.dataBufferBaseAddr);
       packer.putULong     (d.dataBufferPitch);
       packer.putULong     (d.dataBufferSize);
-      packer.putULongLong (d.metaDataBaseAddr);
+      putOffset(packer, d.metaDataBaseAddr);
       packer.putULong     (d.metaDataPitch);
-      packer.putULongLong (d.fullFlagBaseAddr);
+      putOffset(packer, d.fullFlagBaseAddr);
       packer.putULong     (d.fullFlagSize);
       packer.putULong     (d.fullFlagPitch);
-      packer.putULongLong (d.fullFlagValue);
-      packer.putULongLong (d.emptyFlagBaseAddr);
+      putFlag(packer, d.fullFlagValue);
+      putOffset(packer, d.emptyFlagBaseAddr);
       packer.putULong     (d.emptyFlagSize);
       packer.putULong     (d.emptyFlagPitch);
-      packer.putULongLong (d.emptyFlagValue);
+      putFlag(packer, d.emptyFlagValue);
       packer.putULongLong (d.oob.port_id);
       packer.putString    (d.oob.oep);
       packer.putULongLong (d.oob.cookie);
@@ -452,19 +486,19 @@ namespace OCPI {
         unpacker.getULong (desc.options);
 	Desc_t & d = desc.desc;
 	unpacker.getULong     (d.nBuffers);
-	unpacker.getULongLong (d.dataBufferBaseAddr);
+	getOffset(unpacker, d.dataBufferBaseAddr);
 	unpacker.getULong     (d.dataBufferPitch);
 	unpacker.getULong     (d.dataBufferSize);
-	unpacker.getULongLong (d.metaDataBaseAddr);
+	getOffset(unpacker, d.metaDataBaseAddr);
 	unpacker.getULong     (d.metaDataPitch);
-	unpacker.getULongLong (d.fullFlagBaseAddr);
+	getOffset(unpacker, d.fullFlagBaseAddr);
 	unpacker.getULong     (d.fullFlagSize);
 	unpacker.getULong     (d.fullFlagPitch);
-	unpacker.getULongLong (d.fullFlagValue);
-	unpacker.getULongLong (d.emptyFlagBaseAddr);
+	getFlag(unpacker, d.fullFlagValue);
+	getOffset(unpacker, d.emptyFlagBaseAddr);
 	unpacker.getULong     (d.emptyFlagSize);
 	unpacker.getULong     (d.emptyFlagPitch);
-	unpacker.getULongLong (d.emptyFlagValue);
+	getFlag(unpacker, d.emptyFlagValue);
 	unpacker.getULongLong (d.oob.port_id);
         std::string oep;
 	unpacker.getString (oep);
@@ -624,7 +658,7 @@ namespace OCPI {
       }
     }
     void ExternalBuffer::
-    put( uint32_t length, uint8_t opCode, bool /*endOfData*/) {
+    put( size_t length, uint8_t opCode, bool /*endOfData*/) {
       m_dtPort->sendOutputBuffer(m_dtBuffer, length, opCode);
       m_dtBuffer = NULL;
     }
@@ -686,7 +720,7 @@ namespace OCPI {
 	m_dtPort->reset();
     }
     OA::ExternalBuffer *ExternalPort::
-    getBuffer(uint8_t *&data, uint32_t &length, uint8_t &opCode, bool &end) {
+    getBuffer(uint8_t *&data, size_t &length, uint8_t &opCode, bool &end) {
 	end = false;
 	ocpiAssert(m_lastBuffer.m_dtBuffer == NULL);
 	void *vdata;
@@ -697,7 +731,7 @@ namespace OCPI {
 	return NULL;
       }
     OA::ExternalBuffer *ExternalPort::
-    getBuffer(uint8_t *&data, uint32_t &length) {
+    getBuffer(uint8_t *&data, size_t &length) {
       ocpiAssert(m_lastBuffer.m_dtBuffer == NULL);
       void *vdata;
       if ((m_lastBuffer.m_dtBuffer = m_dtPort->getNextEmptyOutputBuffer(vdata, length))) {
@@ -708,7 +742,7 @@ namespace OCPI {
     }
     void ExternalPort::
     endOfData() {
-      ocpiAssert(!"No EndOfData support for external ports");
+      ocpiAssert("No EndOfData support for external ports"==0);
     }
     bool ExternalPort::
     tryFlush() {

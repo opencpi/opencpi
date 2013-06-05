@@ -62,9 +62,9 @@ namespace DataTransfer {
 
     static void 
     setEndpointString(std::string &ep, const char *ipAddr, unsigned port,
-		      unsigned size, uint16_t mbox, uint16_t maxCount)
+		      size_t size, uint16_t mbox, uint16_t maxCount)
     {
-      OCPI::Util::formatString(ep, "ocpi-udp-rdma:%s;%u;%u.%" PRIu16 ".%" PRIu16,
+      OCPI::Util::formatString(ep, "ocpi-udp-rdma:%s;%u;%zu.%" PRIu16 ".%" PRIu16,
 			       ipAddr, port, size, mbox, maxCount);
     }
 
@@ -77,7 +77,7 @@ namespace DataTransfer {
       DatagramEndPoint( std::string& ep, bool local, uint32_t size=0)
 	: EndPoint(ep, size, local) { 
 	char ipaddr[80];
-	int rv = sscanf(ep.c_str(), "ocpi-udp-rdma:%[^;];%u;", ipaddr, &m_portNum);
+	int rv = sscanf(ep.c_str(), "ocpi-udp-rdma:%[^;];%" SCNu16 ";", ipaddr, &m_portNum);
 	if (rv != 2) {
 	  fprintf( stderr, "DatagramEndPoint  ERROR: Bad socket endpoint format (%s)\n", ep.c_str() );
 	  throw DataTransfer::DataTransferEx( UNSUPPORTED_ENDPOINT, ep.c_str() );	  
@@ -98,7 +98,7 @@ namespace DataTransfer {
 	}
       }
       inline struct sockaddr_in &sockaddr() { return m_sockaddr; }
-      void updatePortNum(unsigned short portNum) {
+      void updatePortNum(uint16_t portNum) {
 	if (portNum != m_portNum) {
 	  m_portNum = portNum;
 	  m_sockaddr.sin_port = htons(m_portNum);
@@ -113,10 +113,10 @@ namespace DataTransfer {
       }
     public:
       virtual const char* getAddress(){return m_ipAddress.c_str();}
-      unsigned & getId() { return m_portNum;}
+      uint16_t & getId() { return m_portNum;}
     private:
       std::string m_ipAddress;
-      unsigned  m_portNum;
+      uint16_t  m_portNum;
       struct sockaddr_in m_sockaddr;
     };
 
@@ -142,12 +142,12 @@ namespace DataTransfer {
 	catch( std::string & err ) {
 	  m_error=true;
 	  ocpiBad("DatagramSocket bind error. %s", err.c_str() );
-	  ocpiAssert(!"Unable to bind to socket");
+	  ocpiAssert("Unable to bind to socket"==0);
 	  return;
 	}
 	catch( ... ) {
 	  m_error=true;
-	  ocpiAssert(!"Unable to bind to socket");
+	  ocpiAssert("Unable to bind to socket"==0);
 	  return;
 	}
 	sep->updatePortNum(m_server.getPortNo());
@@ -164,11 +164,11 @@ namespace DataTransfer {
 	m_msghdr.msg_iovlen = frame.iovlen;
 	m_socket.sendmsg(&m_msghdr, 0);
       }
-      unsigned
-      receive(uint8_t *buffer, unsigned &offset) {
+      size_t
+      receive(uint8_t *buffer, size_t &offset) {
 	struct sockaddr sad;
-	unsigned long size = sizeof(struct sockaddr);
-	unsigned n = (unsigned)m_socket.recvfrom((char*)buffer, DATAGRAM_PAYLOAD_SIZE, 0, (char*)&sad, &size, 200);
+	size_t size = sizeof(struct sockaddr);
+	size_t n = m_socket.recvfrom((char*)buffer, DATAGRAM_PAYLOAD_SIZE, 0, (char*)&sad, &size, 200);
 	offset = 0;
 #ifdef DEBUG_TxRx_Datagram
 	// All DEBUG
@@ -234,7 +234,7 @@ namespace DataTransfer {
 	}
 	const char* mb = getenv("OCPI_MAILBOX");    
 	if ( mb ) {
-	  mailBox = atoi(mb);
+	  mailBox = (uint16_t)atoi(mb);
 	}
 	setEndpointString(ep, ip_addr, port, parent().getSMBSize(), mailBox, maxMailBoxes);
 	return ep;

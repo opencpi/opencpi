@@ -61,7 +61,7 @@ struct ConsumerWorkerStaticMemory_ {
 };
 
 typedef struct ConsumerWorkerStaticMemory_ ConsumerWorkerStaticMemory;
-static uint32_t memSizes[] = {sizeof(ConsumerWorkerStaticMemory), 1024*10, 0 };
+static size_t memSizes[] = {sizeof(ConsumerWorkerStaticMemory), 1024*10, 0 };
 
 CONSUMERWORKER_METHOD_DECLARATIONS;
 RCCDispatch ConsumerWorker = {

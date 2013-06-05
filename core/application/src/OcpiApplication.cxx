@@ -255,14 +255,14 @@ namespace OCPI {
 	if (!eq)
 	  throw OU::Error("Parameter assignment '%s' is invalid. "
 			  "Format is: <instance>=<parameter-value>", assign);
-	unsigned len = eq - assign;
+	size_t len = eq - assign;
 	for (unsigned nn = 0; assign && nn < m_nInstances; nn++)
 	  if (!strncasecmp(assign, m_assembly.m_instances[nn].m_name.c_str(), len) &&
 	      assign[len] == '=')
 	    assign = NULL;
 	if (assign && checkMapped) {
 	  OU::Assembly::MappedProperty *mp = &m_assembly.m_mappedProperties[0];
-	  for (unsigned nn = m_assembly.m_mappedProperties.size(); assign && nn; nn--, mp++)
+	  for (size_t nn = m_assembly.m_mappedProperties.size(); assign && nn; nn--, mp++)
 	    if (!strncasecmp(assign, mp->m_name.c_str(), len) &&
 		assign[len] == '=')
 	      assign = NULL;
@@ -291,7 +291,7 @@ namespace OCPI {
 	  if (!aProps[p].m_hasValue)
 	    continue;
 	}
-	unsigned pLength = strlen(pName);
+	size_t pLength = strlen(pName);
 	// Check for override value - if we find one skip this xml prop value
 	for (unsigned n = 0; OU::findAssignNext(params, "property", name, propAssign, n); )
 	  if (!strncasecmp(propAssign, pName, pLength) && propAssign[pLength] == '=') {
@@ -300,7 +300,7 @@ namespace OCPI {
 	  }
 	if (pName) {
 	  OU::Assembly::MappedProperty *mp = &m_assembly.m_mappedProperties[0];
-	  for (unsigned n = m_assembly.m_mappedProperties.size(); n; n--, mp++) {
+	  for (size_t n = m_assembly.m_mappedProperties.size(); n; n--, mp++) {
 	    unsigned nn = 0;
 	    if (mp->m_instance == nInstance && !strcasecmp(mp->m_instPropName.c_str(), pName) &&
 		OU::findAssignNext(params, "property", mp->m_name.c_str(), propAssign, nn)) {
@@ -325,7 +325,7 @@ namespace OCPI {
       }
       // Now deal with mapped property parameters
       OU::Assembly::MappedProperty *mp = &m_assembly.m_mappedProperties[0];
-      for (unsigned n = m_assembly.m_mappedProperties.size(); n; n--, mp++) {
+      for (size_t n = m_assembly.m_mappedProperties.size(); n; n--, mp++) {
 	unsigned nn = 0;
 	if (mp->m_instance == nInstance &&
 	    OU::findAssignNext(params, "property", mp->m_name.c_str(), propAssign, nn))
@@ -341,7 +341,7 @@ namespace OCPI {
 	// The chosen, best, feasible implementation for the instance
 	const char *name = m_assembly.m_instances[n].m_name.c_str();
 	const OU::Assembly::Properties &aProps = m_assembly.m_instances[n].m_properties;
-	unsigned nPropValues = aProps.size();
+	size_t nPropValues = aProps.size();
 	const char *sDummy;
 	// Count any properties that were provided in parameters specific to instance
 	for (unsigned nn = 0; OU::findAssignNext(params, "property", name, sDummy, nn); )
@@ -349,7 +349,7 @@ namespace OCPI {
 	// Count any parameter properties that were mapped to this instance
 	OU::Assembly::MappedProperty *mp = &m_assembly.m_mappedProperties[0];
 	unsigned nDummy = 0;
-	for (unsigned nn = m_assembly.m_mappedProperties.size(); nn; nn--, mp++)
+	for (size_t nn = m_assembly.m_mappedProperties.size(); nn; nn--, mp++)
 	  if (mp->m_instance == n &&
 	      OU::findAssignNext(params, "property", mp->m_name.c_str(), sDummy, nDummy))
 	    nPropValues++;
@@ -370,7 +370,7 @@ namespace OCPI {
       // Over allocate: mapped ones plus all the instances' ones
       Property *p = m_properties = new Property[m_nProperties];
       OU::Assembly::MappedProperty *mp = &m_assembly.m_mappedProperties[0];
-      for (unsigned n = m_assembly.m_mappedProperties.size(); n; n--, mp++, p++) {
+      for (size_t n = m_assembly.m_mappedProperties.size(); n; n--, mp++, p++) {
 	p->m_property =
 	  m_instances[mp->m_instance].m_impl->m_metadataImpl.
 	  whichProperty(mp->m_instPropName.c_str());
@@ -503,7 +503,7 @@ namespace OCPI {
       // First pass - make sure there are some containers to support some candidate
       // and remember which containers can support which candidates
       Instance *i = m_instances;
-      for (unsigned n = 0; n < m_nInstances; n++, i++) {
+      for (size_t n = 0; n < m_nInstances; n++, i++) {
 	OL::Candidates &cs = m_assembly.m_candidates[n];
 	OU::Assembly::Instance &ai = m_assembly.m_instances[n];
 	i->m_nCandidates = cs.size();
@@ -543,7 +543,7 @@ namespace OCPI {
 	    }
 	  }
 	  throw OU::Error("For instance \"%s\" for spec \"%s\": "
-			  "no feasible containers found for %sthe %u implementation%s found.",
+			  "no feasible containers found for %sthe %zu implementation%s found.",
 			  ai.m_name.c_str(), ai.m_specName.c_str(),
 			  i->m_nCandidates == 1 ? "" : "any of ",
 			  i->m_nCandidates,
@@ -619,7 +619,7 @@ namespace OCPI {
 
     void ApplicationI::initialize() {
       m_nInstances = m_assembly.m_instances.size();
-      ocpiDebug("Mapped %d instances to %d containers", m_nInstances, m_nContainers);
+      ocpiDebug("Mapped %zu instances to %d containers", m_nInstances, m_nContainers);
 
       m_containers = new OC::Container *[m_nContainers];
       m_containerApps = new OC::Application *[m_nContainers];
@@ -833,7 +833,7 @@ namespace OCPI {
     bool Application::wait( unsigned timeout_us ) {
       OS::Timer *timer = NULL;
       if (timeout_us) 
-	timer = new OS::Timer(timeout_us/1000000ul, (timeout_us%1000000) * 1000ull);
+	timer = new OS::Timer((uint32_t)(timeout_us/1000000ul), (uint32_t)((timeout_us%1000000) * 1000ull));
       bool r = m_application.wait(timer);
       delete timer;
       return r;

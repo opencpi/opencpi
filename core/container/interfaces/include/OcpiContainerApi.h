@@ -51,7 +51,7 @@ namespace OCPI {
       // For consumer buffers
       virtual void release() = 0;
       // For producer buffers
-      virtual void put( uint32_t length, uint8_t opCode = 0, bool endOfData = false) = 0;
+      virtual void put( size_t length, uint8_t opCode = 0, bool endOfData = false) = 0;
     };
     class ExternalPort {
     protected:
@@ -62,9 +62,9 @@ namespace OCPI {
       // This means NO MESSAGE, not a zero length message.
       // I.e. if "data" is null, length is not valid.
       virtual ExternalBuffer *
-        getBuffer(uint8_t *&data, uint32_t &length, uint8_t &opCode, bool &endOfData) = 0;
+        getBuffer(uint8_t *&data, size_t &length, uint8_t &opCode, bool &endOfData) = 0;
       // Return zero when no buffers are available.
-      virtual ExternalBuffer *getBuffer(uint8_t *&data, uint32_t &length) = 0;
+      virtual ExternalBuffer *getBuffer(uint8_t *&data, size_t &length) = 0;
       // Use this when end of data indication happens AFTER the last message.
       // Use the endOfData argument to put, when it is known at that time
       virtual void endOfData() = 0;
@@ -122,7 +122,7 @@ namespace OCPI {
       virtual void set##pretty##Property(const Property &,const run) const = 0; \
       virtual void set##pretty##SequenceProperty(const Property &,        \
 						 const run *,		  \
-						 unsigned nElements) const = 0;
+						 size_t nElements) const = 0;
 
     OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
@@ -132,14 +132,14 @@ namespace OCPI {
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		     \
       virtual run get##pretty##Property(const Property &) const = 0;		     \
       virtual unsigned get##pretty##SequenceProperty(const Property&, run *, \
-						     unsigned length) const = 0;
+						     size_t length) const = 0;
 
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)   \
       virtual void get##pretty##Property(const Property &, char *, \
-					 unsigned length) const = 0;	   \
+					 size_t length) const = 0;	   \
       virtual unsigned get##pretty##SequenceProperty               \
-        (const Property &, char **, unsigned length, char *buf,    \
-	 unsigned space) const = 0;
+        (const Property &, char **, size_t length, char *buf,    \
+	 size_t space) const = 0;
     OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE_S
@@ -221,8 +221,8 @@ namespace OCPI {
       Worker &m_worker;               // which worker do I belong to
       bool m_readSync, m_writeSync;   // these exist to avoid exposing the innards of m_info.
     public:
-      void checkTypeAlways(BaseType ctype, unsigned n, bool write) const;
-      inline void checkType(BaseType ctype, unsigned n, bool write) const {
+      void checkTypeAlways(BaseType ctype, size_t n, bool write) const;
+      inline void checkType(BaseType ctype, size_t n, bool write) const {
 #if !defined(NDEBUG) || defined(OCPI_API_CHECK_PROPERTIES)
         checkTypeAlways(ctype, n, write);
 #endif
@@ -247,7 +247,7 @@ namespace OCPI {
         else                                                                \
           m_worker.set##pretty##Property(*this, val);			    \
       }                                                                     \
-      inline void set##pretty##SequenceValue(const run *vals, unsigned n) const { \
+      inline void set##pretty##SequenceValue(const run *vals, size_t n) const { \
         checkType(OCPI_##pretty, n, true);				    \
         m_worker.set##pretty##SequenceProperty(*this, vals, n);             \
       }                                                                     \
@@ -260,7 +260,7 @@ namespace OCPI {
         } else                                                              \
           return m_worker.get##pretty##Property(*this);                     \
       }                                                                     \
-      inline unsigned get##pretty##SequenceValue(run *vals, unsigned n) const {   \
+      inline unsigned get##pretty##SequenceValue(run *vals, size_t n) const {   \
         checkType(OCPI_##pretty, n, false);				    \
         return m_worker.get##pretty##SequenceProperty(*this, vals, n);      \
       }
@@ -271,16 +271,16 @@ namespace OCPI {
         checkType(OCPI_##pretty, 1, true);				    \
         m_worker.set##pretty##Property(*this, val);                         \
       }                                                                     \
-      inline void set##pretty##SequenceValue(const run *vals, unsigned n) const { \
+      inline void set##pretty##SequenceValue(const run *vals, size_t n) const { \
         checkType(OCPI_##pretty, n, true);				    \
         m_worker.set##pretty##SequenceProperty(*this, vals, n);             \
       }                                                                     \
-      inline void get##pretty##Value(char *val, unsigned length) const {    \
+      inline void get##pretty##Value(char *val, size_t length) const {    \
         checkType(OCPI_##pretty, 1, false);				    \
         m_worker.get##pretty##Property(*this, val, length);                 \
       }                                                                     \
       inline unsigned get##pretty##SequenceValue                            \
-        (char **vals, unsigned n, char *buf, unsigned space) const {        \
+        (char **vals, size_t n, char *buf, size_t space) const {        \
         checkType(OCPI_##pretty, n, false);				    \
         return m_worker.get##pretty##SequenceProperty                       \
           (*this, vals, n, buf, space);                                     \

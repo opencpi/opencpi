@@ -161,7 +161,7 @@ allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBo
   OCPI::Util::SelfAutoMutex guard (this); 
   std::string ep;
 
-  OCPI::Util::formatString(ep, "ocpi-smb-pio:pioXfer%d%d;%" PRIu32 ".%" PRIu16 ".%" PRIu16,
+  OCPI::Util::formatString(ep, "ocpi-smb-pio:pioXfer%d%d;%zu.%" PRIu16 ".%" PRIu16,
 		   getpid(), smb_count++, m_SMBSize, mailBox, maxMailBoxes);
   return ep;
 }

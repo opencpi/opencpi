@@ -266,7 +266,7 @@ static void initWorkerProperties(int mode, std::vector<CApp>& ca )
 static  OCPI::API::ExternalBuffer * in_buffer = NULL;
 static  uint8_t  in_opCode;
 static  uint8_t* in_data;
-static  uint32_t in_length;
+static  size_t   in_length;
 static  bool     in_endOfData=false;
 static bool run_ap_test(std::vector<CApp>& ca, std::vector<CWorker*>& workers, int mode)
 {
@@ -316,7 +316,7 @@ static bool run_ap_test(std::vector<CApp>& ca, std::vector<CWorker*>& workers, i
     // We will take the producer data and hand it to the consumer.
     if ( in_buffer ) {
       uint8_t* data;
-      uint32_t length;
+      size_t length;
       OCPI::API::ExternalBuffer* eb =
         external_output_port->getBuffer( data, length );
       if ( eb ) {

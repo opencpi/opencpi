@@ -132,11 +132,11 @@ namespace OCPI {
       for (x = ezxml_cchild(xml, "property"); x; x = ezxml_next(x), prop++)
       {
         if ((err = prop->parse(x, readableConfigs, writableConfigs,
-			       sub32Configs, true, prop - myProps)))
+			       sub32Configs, true, (unsigned)(prop - myProps))))
           throw OU::ApiError("Invalid xml property description:", err, NULL);
       }
       prop = myProps;
-      unsigned offset = 0;
+      size_t offset = 0;
       uint64_t totalSize = 0;
       for (unsigned n = 0; n < nProps; n++, prop++)
 	prop->offset(offset, totalSize);

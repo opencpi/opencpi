@@ -45,7 +45,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
     memcpy(out->current.data, data, left);
     memcpy(out->current.data + left, p->data, length - left);
   } else
-    memcpy(out->current.data, &p->data[p->nextData], length);
+    memcpy(out->current.data, data, length);
   if (!(p->control & 2))
     p->nextData = (p->nextData + length) % sizeof(p->data);
   if (p->nextMeta >= p->metadataCount)

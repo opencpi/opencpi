@@ -72,7 +72,7 @@ namespace OU = OCPI::Util;
 static double freq = FREQ;
 static void
 doCosine(int16_t *data, unsigned length) {
-  unsigned npts = (length + sizeof(*data) - 1) / sizeof(*data);
+  size_t npts = (length + sizeof(*data) - 1) / sizeof(*data);
   double phi = 0.0, dphi = 2.*PI / freq;
 
   for (unsigned i=0; i<npts ;i++, phi += dphi) {
@@ -83,7 +83,7 @@ doCosine(int16_t *data, unsigned length) {
   }
 }
 
-static void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
+static void memcpy64(uint64_t *to, uint64_t *from, size_t nbytes)
 {
   while (nbytes > 128) {
     *to++ = *from++;
@@ -133,12 +133,12 @@ namespace {
 }
 
 static OA::PValue *
-mkParams(unsigned long bufferCount, unsigned bufferSize, const char *xfer) {
+mkParams(unsigned long bufferCount, size_t bufferSize, const char *xfer) {
   OA::PValue *params, *p = params = new OA::PValue[4];
   if (bufferCount)
-    *p++ = OA::PVULong("bufferCount", bufferCount);
+    *p++ = OA::PVULong("bufferCount", (uint32_t)bufferCount);
   if (bufferSize)
-    *p++ = OA::PVULong("bufferSize", bufferSize);
+    *p++ = OA::PVULong("bufferSize", (uint32_t)bufferSize);
   if (xfer)
     *p++ = OA::PVString("xferRole", xfer);
   *p++ = OA::PVEnd;
@@ -287,7 +287,7 @@ int main(int argc, char *argv[])
 	{
 	  char *p = strchr(setProp, '=');
 	  *p++ = 0;
-	  setValue = strtoul(p, NULL, 0);
+	  setValue = (uint32_t)strtoul(p, NULL, 0);
 	}
 	break;
       case 'y':
@@ -556,7 +556,7 @@ int main(int argc, char *argv[])
       OA::Property dlyHoldoffBytes(*w[2], "dlyHoldoffBytes");
       OA::Property dlyHoldoffCycles(*w[2], "dlyHoldoffCycles");
       dlyCtrl.setULongValue(7);
-      dlyHoldoffBytes.setULongValue(delay);
+      dlyHoldoffBytes.setULongValue((uint32_t)delay);
       w[12]->start();
     }
 
@@ -587,7 +587,7 @@ int main(int argc, char *argv[])
       w[4]->start();
     if (rccFile)
       w[13]->start();
-    unsigned outLeft = 0, inLeft = 0, inN = 0, outN = 0;
+    size_t outLeft = 0, inLeft = 0, inN = 0, outN = 0;
     int ifd = -1, cfd = -1, ofd = -1;
     off_t bytes;
     static int16_t cosineBuf[4096];
@@ -623,10 +623,10 @@ int main(int argc, char *argv[])
     if (doTick)
       get_tick_count(&ticks[tick++]);
     while (outLeft || inLeft) {
-      uint32_t length;
+      size_t length;
       uint8_t *data;
       OA::ExternalBuffer *cBuffer;
-      uint32_t nIO; // number actually read or written
+      size_t nIO; // number actually read or written
       size_t n;
       if (!acquire) {
 	OA::ExternalBuffer *pBuffer;
@@ -639,7 +639,7 @@ int main(int argc, char *argv[])
 	  nIO = outLeft > ioSize ? ioSize : outLeft;
 	  if (file) {
 	    if ((n = read(ifd, data, nIO)) != (size_t)nIO) {
-	      fprintf(stderr, "Error reading input file: wanted %u, got %zd, errno %d\n",
+	      fprintf(stderr, "Error reading input file: wanted %zu, got %zd, errno %d\n",
 		      nIO, n, errno);
 	      return 1;
 	    }
@@ -647,10 +647,10 @@ int main(int argc, char *argv[])
 	    memcpy64((uint64_t*)data, (uint64_t*)cosineBuf, nIO);
 	  else if (!dummy)
 	    for (unsigned i = 0; i < ioSize/sizeof(uint32_t); i++)
-	      ((uint32_t *)(data))[i] = outN * (ioSize/sizeof(uint32_t)) + i;
+	      ((uint32_t *)(data))[i] = (uint32_t)(outN * (ioSize/sizeof(uint32_t)) + i);
 	  if (doTick)
 	    get_tick_count(&ticks[tick++]);
-	  pBuffer->put(ioSize, outN, false);
+	  pBuffer->put(ioSize, (uint8_t)outN, false);
 	  if (doTick) {
 	    get_tick_count(&ticks[tick++]);
 	    if (tick >= NTICKS)
@@ -668,37 +668,37 @@ int main(int argc, char *argv[])
 	   inLeft -= nIO, inN++) {
 	uint32_t *d32 = (uint32_t*)data;
 	const char *oops = 0;
-	uint32_t nWant = inLeft > ioSize ? ioSize : inLeft;
+	size_t nWant = inLeft > ioSize ? ioSize : inLeft;
 	if (acquire) {
 #if 0
 	  if (inN == 0) {
 	    if (opCode != 1 || nIO != 0) {
 	      oops = "Initial Acquire opcode/length not 1/0";
-	      fprintf(stderr, "Bad opcode %u, len %u inN %u should be 1\n",
+	      fprintf(stderr, "Bad opcode %u, len %zu inN %u should be 1\n",
                       opCode, nIO, inN);
 	    }
 	  } else
 #endif
 	    if (opCode != 0) {
 	      oops = "Acquire opcode after first not 0";
-	      fprintf(stderr, "Bad opcode %u, len %u inN %u should be 0\n",
+	      fprintf(stderr, "Bad opcode %u, len %zu inN %zu should be 0\n",
                       opCode, nIO, inN);
             }
 	} else {
 	  if (opCode != (inN & 0xff)) {
-	    fprintf(stderr, "Bad opcode %u, len %u inN %u should be 0x%x\n",
+	    fprintf(stderr, "Bad opcode %u, len %zu inN %zu should be 0x%zx\n",
 		    opCode, nIO, inN, inN & 0xff);
 	    oops = "Opcode mismatch on input";
 	  }
 	  if (nIO != nWant) {
-	    fprintf(stderr, "Len (%u) should be %u (d[0] %x, inN %u op %u)\n",
+	    fprintf(stderr, "Len (%zu) should be %zu (d[0] %x, inN %zu op %u)\n",
 		    nIO, nWant, d32[0], inN, opCode);
 	    oops = "Length mismatch on input";
 	  }
 	}
 	if (file && !ofile) {
 	  if ((n = read(cfd, cbuf, nWant)) != (size_t)nWant) {
-	    fprintf(stderr, "Error reading input file for compare: wanted %u, got %zd, errno %d\n",
+	    fprintf(stderr, "Error reading input file for compare: wanted %zu, got %zd, errno %d\n",
 		    nWant, n, errno);
 	    return 1;
 	  }
@@ -706,9 +706,11 @@ int main(int argc, char *argv[])
 	    oops = "Data mismatch on file data";
 	} else if (ofile) {
 	  struct {
-	    uint32_t length, opcode, pad[2];
+	    uint32_t length;
+	    uint8_t opcode;
+	    uint32_t pad[2];
 	  } head;
-	  head.length = nIO;
+	  head.length = (uint32_t)nIO;
 	  head.opcode = opCode;
 	  struct iovec io[2] = {
 	    {&head, sizeof(head)},
@@ -733,7 +735,7 @@ int main(int argc, char *argv[])
 	} else if (!dummy)
 	  for (unsigned i = 0; i < nIO/sizeof(uint32_t); i++)
 	    if (d32[i] != inN * nIO/sizeof(uint32_t) + i) {
-	      fprintf(stderr, "Bad data 0x%x, len %d w %d inN %d should be 0x%lx\n",
+	      fprintf(stderr, "Bad data 0x%x, len %zu w %d inN %zu should be 0x%zx\n",
 		      d32[i], nIO, i, inN, inN * nIO/sizeof(uint32_t) + i);
 	      oops = "Data mismatch on input";
 	    }

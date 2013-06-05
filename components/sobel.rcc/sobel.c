@@ -25,7 +25,7 @@ typedef struct {
   RCCBuffer *oldest;               // oldest in history, initially null
 } SobelState;
 
-static uint32_t sizes[] = {sizeof(SobelState), 0};
+static size_t sizes[] = {sizeof(SobelState), 0};
 static RCCPortInfo pinfo[] = { {SOBEL_IN,0,KERNEL_SIZE+1},{-1,0,0} };
 
 SOBEL_METHOD_DECLARATIONS;

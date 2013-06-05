@@ -130,19 +130,19 @@ namespace {
       argv (0),
       pid (0)
   {
-    unsigned int numParams = parameters.size();
+    unsigned int numParams = (unsigned)parameters.size();
     unsigned int i, l;
     char * p;
 
     argv = new char* [numParams + 2];
 
-    l = executable.length();
+    l = (unsigned)executable.length();
     argv[0] = p = new char [l + 1];
     std::memcpy (p, executable.data(), l);
     p[l] = 0;
 
     for (i=0; i<numParams; i++) {
-      l = parameters[i].length();
+      l = (unsigned)parameters[i].length();
       argv[i+1] = p = new char [l + 1];
       std::memcpy (p, parameters[i].data(), l);
       p[l] = 0;

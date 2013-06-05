@@ -16,7 +16,7 @@
 typedef struct {
   double lastAngle;
 } MyState;
-static uint32_t mysizes[] = {sizeof(MyState), 0};
+static size_t mysizes[] = {sizeof(MyState), 0};
 
 
 FM_DEMOD_COMPLEX_METHOD_DECLARATIONS;
@@ -84,7 +84,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  case FM_DEMOD_COMPLEX_IN_IQ:
    {
 #ifndef NDEBUG
-      printf("%s got %d bytes of data\n", __FILE__,  in->input.length);
+      printf("%s got %zu bytes of data\n", __FILE__,  in->input.length);
 #endif
      unsigned len = byteLen2Complex(in->input.length);
      unsigned samp;

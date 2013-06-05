@@ -137,14 +137,14 @@ namespace OCPI {
       void setProperty(unsigned ordinal, OCPI::Util::Value &value);
       void setProperties(const char *props[][2]);
       void setProperties(const OCPI::API::PValue *props);
-      virtual void setPropertyBytes(const OCPI::API::PropertyInfo &info, uint32_t offset,
-				    const uint8_t *data, unsigned nBytes) const = 0;
+      virtual void setPropertyBytes(const OCPI::API::PropertyInfo &info, size_t offset,
+				    const uint8_t *data, size_t nBytes) const = 0;
       virtual void setProperty8(const OCPI::API::PropertyInfo &info, uint8_t data) const = 0;
       virtual void setProperty16(const OCPI::API::PropertyInfo &info, uint16_t data) const = 0;
       virtual void setProperty32(const OCPI::API::PropertyInfo &info, uint32_t data) const = 0;
       virtual void setProperty64(const OCPI::API::PropertyInfo &info, uint64_t data) const = 0;
-      virtual void getPropertyBytes(const OCPI::API::PropertyInfo &info, uint32_t offset,
-				    uint8_t *data, unsigned nBytes) const = 0;
+      virtual void getPropertyBytes(const OCPI::API::PropertyInfo &info, size_t offset,
+				    uint8_t *data, size_t nBytes) const = 0;
       virtual uint8_t getProperty8(const OCPI::API::PropertyInfo &info) const = 0;
       virtual uint16_t getProperty16(const OCPI::API::PropertyInfo &info) const = 0;
       virtual uint32_t getProperty32(const OCPI::API::PropertyInfo &info) const = 0;
@@ -159,18 +159,18 @@ namespace OCPI {
       OCPI::API::Port &getPort(const char *name, const OCPI::API::PValue *props = NULL);
 
       virtual Port & createOutputPort(OCPI::Metadata::PortOrdinal portId,
-                                     OCPI::OS::uint32_t bufferCount,
-                                     OCPI::OS::uint32_t bufferSize, 
+				      size_t bufferCount,
+				      size_t bufferSize, 
                                       const OCPI::Util::PValue* props) 
         throw ( OCPI::Util::EmbeddedException ) = 0;
 
       virtual Port & createInputPort(OCPI::Metadata::PortOrdinal portId,
-                                     OCPI::OS::uint32_t bufferCount,
-                                     OCPI::OS::uint32_t bufferSize, 
+                                     size_t bufferCount,
+                                     size_t bufferSize, 
                                      const OCPI::Util::PValue* props) 
         throw ( OCPI::Util::EmbeddedException ) = 0;
-      virtual void read(uint32_t offset, uint32_t size, void *data) = 0;
-      virtual void write(uint32_t offset, uint32_t size, const void *data) = 0;
+      virtual void read(size_t offset, size_t size, void *data) = 0;
+      virtual void write(size_t offset, size_t size, const void *data) = 0;
 #define CONTROL_OP(x, c, t, s1, s2, s3) \
       void x();
     OCPI_CONTROL_OPS

@@ -157,9 +157,9 @@ namespace DataTransfer {
 	}
 	throw OU::Error("Error sending ether packet: %s", error.empty() ? "timeout" : error.c_str());
       }
-      unsigned
-      receive(uint8_t *buffer, unsigned &offset) {
-	unsigned length;
+      size_t
+      receive(uint8_t *buffer, size_t &offset) {
+	size_t length;
 	OE::Address from;
 	std::string error;
 	if (m_socket->receive(buffer, offset, length, 500, from, error))
@@ -203,7 +203,7 @@ namespace DataTransfer {
 	if (error.size())
 	  throw OU::Error(OCPI_ETHER_RDMA ": bad ethernet interface: %s", error.c_str());
 	std::string ep;
-	OCPI::Util::formatString(ep, OCPI_ETHER_RDMA ":%s/%s;%u.%" PRIu16".%" PRIu16,
+	OCPI::Util::formatString(ep, OCPI_ETHER_RDMA ":%s/%s;%zu.%" PRIu16".%" PRIu16,
 				 ifc.name.c_str(), ifc.addr.pretty(), parent().getSMBSize(),
 				 mailBox, maxMailBoxes);
 	return ep;

@@ -62,7 +62,7 @@ typedef struct MmapInfo
 
 #define MMAP_INFO_INDEX 0
 
-static uint32_t memories [ ] =
+static size_t memories [ ] =
 {
   sizeof ( MmapInfo  ), /* mmap() file information */
   0

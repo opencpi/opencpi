@@ -76,7 +76,7 @@ OCPI::OS::ServerSocket::ServerSocket ()
   o2fd (m_osOpaque) = -1;
 }
 
-OCPI::OS::ServerSocket::ServerSocket (unsigned int portNo, bool reuse )
+OCPI::OS::ServerSocket::ServerSocket (uint16_t portNo, bool reuse )
   throw (std::string)
 {
   ocpiAssert ((compileTimeSizeCheck<sizeof (m_osOpaque), sizeof (int)> ()));
@@ -94,7 +94,7 @@ OCPI::OS::ServerSocket::~ServerSocket ()
 }
 
 OCPI::OS::Socket
-OCPI::OS::ServerSocket::bind (unsigned int portNo, bool reuse, bool udp )
+OCPI::OS::ServerSocket::bind (uint16_t portNo, bool reuse, bool udp )
   throw (std::string)
 {
   ocpiAssert (o2fd (m_osOpaque) == -1);
@@ -150,7 +150,7 @@ OCPI::OS::ServerSocket::bind (unsigned int portNo, bool reuse, bool udp )
   return OCPI::OS::Socket( fd2o );
 }
 
-unsigned int
+uint16_t
 OCPI::OS::ServerSocket::getPortNo ()
   throw (std::string)
 {

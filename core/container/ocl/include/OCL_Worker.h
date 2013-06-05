@@ -98,7 +98,7 @@ typedef struct
 {
   OCLBoolean optional;
   OCLBoolean connected;
-  unsigned int length;
+  unsigned length;
   union
   {
     OCLOrdinal operation;

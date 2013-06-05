@@ -58,15 +58,15 @@ namespace DataTransfer {
 
       // Properties of an BaseSmem instance
   public:
-    std::string                         m_name;                        // Name of this shared memory area
-    EndPoint                         *m_location;        // Location of this shared memory area
-    OCPI::OS::uint32_t                 m_size;                        // Size of area
-    int                                 m_refcnt;                // Reference count of create/attach calls
-    int                                 m_mapcnt;                // Reference count of number of successful map calls
-    void*                         m_mappedva;                // Virtual address of mapped area
-    OCPI::OS::uint32_t                 m_mappedoffset;        // Offset of where mapping was actually done (what mappedva points to)
-    OCPI::OS::uint32_t                 m_reqoffset;        // Offset that was request in last Map call
-    OCPI::OS::uint32_t                 m_mappedsize;        // Size of area that was mapped
+    std::string                         m_name;         // Name of this shared memory area
+    EndPoint                           *m_location;     // Location of this shared memory area
+    size_t                              m_size;         // Size of area
+    int                                 m_refcnt;       // Reference count of create/attach calls
+    int                                 m_mapcnt;       // Reference count of number of successful map calls
+    void*                               m_mappedva;     // Virtual address of mapped area
+    uint64_t                            m_mappedoffset; // Offset of where mapping was actually done (what mappedva points to)
+    uint64_t                            m_reqoffset;    // Offset that was request in last Map call
+    size_t                              m_mappedsize;   // Size of area that was mapped
   };
 
   class BaseSmemServices : public DataTransfer::SmemServices
@@ -87,7 +87,7 @@ namespace DataTransfer {
     virtual OCPI::OS::int32_t detach () = 0;
 
     // Map a view of the shared memory area at some offset/size and return the virtual address.
-    virtual void* map (uint32_t offset, uint32_t size ) = 0;
+    virtual void* map(DtOsDataTypes::Offset offset, size_t size ) = 0;
 
     // Unmap the current mapped view.
     virtual OCPI::OS::int32_t unMap () = 0;

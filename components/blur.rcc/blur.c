@@ -44,7 +44,7 @@ typedef struct {
   RCCBuffer buffers[HISTORY_SIZE]; // buffer history (ring)
 } BlurState;
 
-static uint32_t sizes[] = {sizeof(BlurState), 0};
+static size_t sizes[] = {sizeof(BlurState), 0};
 
 BLUR_METHOD_DECLARATIONS;
 RCCDispatch blur = {

@@ -25,7 +25,7 @@ typedef struct {
   unsigned sample;
   unsigned out_idx;
 } MyState;
-static uint32_t mysizes[] = {sizeof(MyState), 0};
+static size_t mysizes[] = {sizeof(MyState), 0};
 
 
 CIC_LPFILTER_COMPLEX_METHOD_DECLARATIONS;
@@ -83,7 +83,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
      unsigned i;
 
 #ifndef NDEBUG
-     printf("%s got %d bytes of data\n", __FILE__,  in->input.length);
+     printf("%s got %zu bytes of data\n", __FILE__,  in->input.length);
 #endif
 
      len = min(out->current.maxLength-out_idx, len);

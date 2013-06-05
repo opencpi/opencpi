@@ -89,8 +89,8 @@ static RCCResult UTGProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
   ( void ) timedout;
   ( void ) newRunCondition;
   uint32_t n;
-  uint32_t len;
-  int      *b;
+  size_t len;
+  uint32_t *b;
   UTGProducerWorkerProperties *props = this_->properties;
   char* out_buffer = (char*)this_->ports[UTGProducerWorker_Data_Out_Port0].current.data;
 
@@ -124,10 +124,10 @@ static RCCResult UTGProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
   len = this_->ports[UTGProducerWorker_Data_Out_Port0].current.maxLength;
 
 #ifndef NDEBUG
-  printf("lenght = %d\n", len);
+  printf("lenght = %zu\n", len);
 #endif
 
-  b = (int*)out_buffer;
+  b = (uint32_t*)out_buffer;
   *b = props->buffersProcessed;
   for ( n=4; n<len; n++ ) out_buffer[n] = (char)(n+props->buffersProcessed)%23; 
 
@@ -312,8 +312,8 @@ static RCCResult UTGConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
   ( void ) timedout;
   ( void ) newRunCondition;
 
-  int ncount, *b;
-  uint32_t len,n;
+  uint32_t ncount, *b;
+  size_t len,n;
 //  UTGConsumerWorkerStaticMemory *mem = this_->memories[0];
   UTGConsumerWorkerProperties *props = this_->properties;
   int passed = 1;
@@ -344,8 +344,8 @@ static RCCResult UTGConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
   }
   len -= 4;
   
-  b = (int*)(in_buffer);
-  if ( *b != (int)props->buffersProcessed ) {
+  b = (uint32_t*)(in_buffer);
+  if ( *b != props->buffersProcessed ) {
 #ifndef NDEBUG
     printf("ERROR!! Dropped a buffer, got buffer %d, expected %d\n", 
            *b, props->buffersProcessed );
@@ -358,7 +358,7 @@ static RCCResult UTGConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
   ncount = 0;
   for (n=4; n<len+4; n++) {
     if ( (in_buffer[n] != (char)(n+props->buffersProcessed)%23) && (ncount++ < 100000) ) {
-      printf("UTGConsumer(b-> %d): Data integrity error(%d) !!, expected %d, got %d\n", 
+      printf("UTGConsumer(b-> %d): Data integrity error(%zu) !!, expected %d, got %d\n", 
              props->buffersProcessed,n, (char)(n+props->buffersProcessed)%23, in_buffer[n]);
       passed = 0;
     }
@@ -403,7 +403,7 @@ static RCCResult UTGConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
  */
 
 #define CON_PROPERTY_SIZE  sizeof( UTGConsumerWorkerProperties )
-static uint32_t memSizes[] = {sizeof(UTGConsumerWorkerStaticMemory), 1024*10, 0 };
+static size_t memSizes[] = {sizeof(UTGConsumerWorkerStaticMemory), 1024*10, 0 };
 //static uint32_t CPortRunConditions[] = { (1<<UTGConsumerWorker_Data_In_Port0) , 0, 0 }; 
 //static RCCRunCondition CWorkerRunConditions[] = { {CPortRunConditions,0,0}, {0,0,0} , {0,0,0} };
 #define CoptionalPorts (                                                \
@@ -469,7 +469,7 @@ static RCCResult UTGLoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
    ( void ) timedout;
    ( void ) newRunCondition;
 
-    uint32_t len;
+    size_t len;
 
 //  UTGLoopbackWorkerStaticMemory *mem = this_->memories[0];
 //  UTGLoopbackWorkerProperties *props = this_->properties;
@@ -487,7 +487,7 @@ static RCCResult UTGLoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
     {
       this_->container.send( &this_->ports[UTGLoopbackWorker_Data_Out_Port0], 
                               &this_->ports[UTGLoopbackWorker_Data_In_Port0].current, 0x54, len );
-      printf("LB len %u\n", len);
+      printf("LB len %zu\n", len);
     }
     break;
 
@@ -542,7 +542,7 @@ static RCCResult UTGLoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
  */
 
 #define LB_PROPERTY_SIZE      sizeof( UTGLoopbackWorkerProperties )
-static uint32_t LBmemSizes[] = {sizeof(UTGLoopbackWorkerStaticMemory), 0 };
+static size_t LBmemSizes[] = {sizeof(UTGLoopbackWorkerStaticMemory), 0 };
 static uint32_t LBPortRunConditions[] = { (1<<UTGLoopbackWorker_Data_In_Port0) /* | (1<<UTGLoopbackWorker_Data_Out_Port)*/, 0 };
 static RCCRunCondition LBWorkerRunConditions[] = { {LBPortRunConditions, 0, 0 } };
 //static RCCPortInfo portInfo[] = { {0, 1024*3, 1}, {RCC_NO_ORDINAL, 0, 0} };

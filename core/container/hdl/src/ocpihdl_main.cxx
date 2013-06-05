@@ -94,7 +94,7 @@ static std::string name, error, endpoint;
 static OH::Driver *driver;
 static OH::Device *dev;
 static OH::Access *cAccess, *dAccess, wAccess, confAccess;
-static unsigned worker;
+static size_t worker;
 static const unsigned
   WORKER = 1,
   DEVICE = 2,
@@ -410,7 +410,7 @@ static void emulate(const char **) {
       bool haveTag = false;
       OE::Address to;
       do {
-	unsigned length;
+	size_t length;
 	OE::Address from;
 	if (s.receive(rFrame, length, 0, from, error)) {
 	  if (from == eif.addr)
@@ -445,21 +445,21 @@ static void emulate(const char **) {
 		  ocpiDebug("Read offset out of range: 0x%" PRIx32 ", returning 0\n", offset);
 		  ecrr.data = 0;
 		} else if (offset >= offsetof(OH::OccpSpace, config)) {
-		  unsigned
+		  size_t
 		    worker = (offset - offsetof(OH::OccpSpace, config)) / OCCP_WORKER_CONFIG_SIZE,
 		    woffset = (offset - offsetof(OH::OccpSpace, config)) % OCCP_WORKER_CONFIG_SIZE;
-		  printf("Worker %2d config read 0x%x\n", worker, woffset);
+		  printf("Worker %2zd config read 0x%zx\n", worker, woffset);
 		  if (worker == 13 && woffset == 0x4c)
 		    ecrr.data = htonl(0x8000);
 		} else if (offset >= offsetof(OH::OccpSpace, worker)) {
-		  unsigned
+		  size_t
 		    worker = (offset - offsetof(OH::OccpSpace, worker)) / sizeof(OH::OccpWorker),
 		    woffset = (offset - offsetof(OH::OccpSpace, worker)) % sizeof(OH::OccpWorker);
 		  if (woffset < offsetof(OH::OccpWorkerRegisters, control)) {
-		    printf("Worker %2d control operation read: %s\n", worker, ops[woffset/sizeof(uint32_t)]);
+		    printf("Worker %2zd control operation read: %s\n", worker, ops[woffset/sizeof(uint32_t)]);
 		    ecrr.data = htonl(OCCP_SUCCESS_RESULT);
 		  } else
-		    printf("Worker %2d register read: %s\n", worker, 
+		    printf("Worker %2zd register read: %s\n", worker, 
 			   woffset == offsetof(OH::OccpWorkerRegisters, control) ? "control" :
 			   woffset == offsetof(OH::OccpWorkerRegisters, window) ? "window" :
 			   woffset == offsetof(OH::OccpWorkerRegisters, clearError) ? "clearError" :
@@ -474,20 +474,20 @@ static void emulate(const char **) {
 		if (offset > sizeof(cadmin)) {
 		  ocpiDebug("Write offset out of range: 0x%" PRIx32 "\n", offset);
 		} else if (offset > offsetof(OH::OccpSpace, config)) {
-		  unsigned
+		  size_t
 		    worker = (offset - offsetof(OH::OccpSpace, config)) / OCCP_WORKER_CONFIG_SIZE,
 		    woffset = (offset - offsetof(OH::OccpSpace, config)) % OCCP_WORKER_CONFIG_SIZE;
-		  printf("Worker %2d config write 0x%x: 0x%" PRIx32 "\n", worker, woffset, data);
+		  printf("Worker %2zd config write 0x%zx: 0x%" PRIx32 "\n", worker, woffset, data);
 		  *(uint32_t *)&cadmin[offset] = data;
 		} else if (offset > offsetof(OH::OccpSpace, worker)) {
-		  unsigned
+		  size_t
 		    worker = (offset - offsetof(OH::OccpSpace, worker)) / sizeof(OH::OccpWorker),
 		    woffset = (offset - offsetof(OH::OccpSpace, worker)) % sizeof(OH::OccpWorker);
 		  if (woffset < offsetof(OH::OccpWorkerRegisters, control)) {
-		    printf("Worker %2d control operation write???: %s\n",
+		    printf("Worker %2zd control operation write???: %s\n",
 			   worker, ops[woffset/sizeof(uint32_t)]);
 		  } else {
-		    printf("Worker %2d register write of 0x%" PRIx32 " to %s\n", worker, data,
+		    printf("Worker %2zd register write of 0x%" PRIx32 " to %s\n", worker, data,
 			   woffset == offsetof(OH::OccpWorkerRegisters, control) ? "control" :
 			   woffset == offsetof(OH::OccpWorkerRegisters, window) ? "window" :
 			   woffset == offsetof(OH::OccpWorkerRegisters, clearError) ? "clearError" :
@@ -569,29 +569,29 @@ ethers(const char **) {
 static void
 testdma(const char **) {
   const char *dmaEnv;
-  unsigned dmaMeg;
-  unsigned long long dmaBase, dmaSize;
+  size_t dmaMeg;
+  uint64_t dmaBase, dmaSize;
   int fd;
   volatile uint8_t *cpuBase;
 
   if (!(dmaEnv = getenv("OCPI_DMA_MEMORY")))
     bad("Warning: You must set the OCPI_DMA_MEMORY environment variable before using any OpenCPI FPGA device.\n"
 	"         Use \"sudo -E\" to allow this program to have access to environmant variables");
-  if (sscanf(dmaEnv, "%uM$0x%llx", &dmaMeg, (unsigned long long *) &dmaBase) != 2)
+  if (sscanf(dmaEnv, "%zuM$0x%" SCNx64, &dmaMeg, &dmaBase) != 2)
     bad("The OCPI_DMA_MEMORY environment variable is not formatted correctly");
-  dmaSize = dmaMeg * 1024ull * 1024ull;
-  printf("The OCPI_DMA_MEMORY environment variable indicates %uMB at 0x%llx, ending at 0x%llx\n",
+  dmaSize = (uint64_t)dmaMeg * 1024 * 1024;
+  printf("The OCPI_DMA_MEMORY environment variable indicates %zuMB at 0x%"PRIx64", ending at 0x%"PRIx64"\n",
 	 dmaMeg, dmaBase, dmaBase + dmaSize);
   int pageSize = getpagesize();
   if (dmaBase & (pageSize - 1))
-    bad("DMA memory starting address 0x%llx does not start on a page boundary, %u (0x%x)", 
+    bad("DMA memory starting address 0x%"PRIx64" does not start on a page boundary, %u (0x%x)", 
 	dmaBase, pageSize, pageSize);
   if (dmaSize & (pageSize -1))
-    bad("DMA memory size %ull (0x%llx) does not start on a page boundary, %u (0x%x)", 
+    bad("DMA memory size %"PRIu64" (0x%"PRIx64") does not start on a page boundary, %u (0x%x)", 
 	dmaSize, dmaSize, pageSize, pageSize);
   if ((fd = open("/dev/mem", O_RDWR|O_SYNC)) < 0 ||
-	     (cpuBase = (uint8_t*)mmap(NULL, (unsigned long long)dmaMeg * 1024 * 1024,
-				       PROT_READ|PROT_WRITE, MAP_SHARED, fd, dmaBase)) ==
+	     (cpuBase = (uint8_t*)mmap(NULL, dmaMeg * 1024 * 1024,
+				       PROT_READ|PROT_WRITE, MAP_SHARED, fd, (off_t)dmaBase)) ==
 	     MAP_FAILED)
     bad("Can't map to local DMA memory defined in OCPI_DMA_MEMORY using /dev/mem (%s/%d). Forgot sudo -E?",
 	strerror(errno), errno);
@@ -655,14 +655,14 @@ admin(const char **) {
   printf(" timeControl:  0x%08x\n", cAccess->get32Register(timeControl, OH::OccpAdminRegisters));
   uint64_t gpsTime = cAccess->get64Register(time, OH::OccpAdminRegisters);
   //  cAccess.set64Register(timeDelta, OH::OccpAdminRegisters, gpsTime);
-  uint32_t gpsTimeLS = gpsTime >> 32;
-  uint32_t gpsTimeMS = gpsTime & 0xffffffffll;
+  uint32_t gpsTimeLS = (uint32_t)(gpsTime >> 32);
+  uint32_t gpsTimeMS = (uint32_t)(gpsTime & 0xffffffffll);
   time_t gpsNow = gpsTimeMS;
   ntime = gmtime(&gpsNow); 
   uint64_t deltaTime = cAccess->get64Register(timeDelta, OH::OccpAdminRegisters);
-  uint32_t deltaTimeLS = deltaTime >> 32;
-  uint32_t deltaTimeMS = deltaTime & 0xffffffffll;
-  uint32_t deltaTimeNS = ((deltaTimeLS * 1000000000ull) + (1ull << 31)) / (1ull << 32);
+  uint32_t deltaTimeLS = (uint32_t)(deltaTime >> 32);
+  uint32_t deltaTimeMS = (uint32_t)(deltaTime & 0xffffffffll);
+  uint32_t deltaTimeNS = (uint32_t)(((deltaTimeLS * 1000000000ull) + (1ull << 31)) / (1ull << 32));
   printf(" gpsTime:      0x%16llx (%llu)\n", (unsigned long long)gpsTime, (unsigned long long)gpsTime);
   printf(" gpsTimeMS:    0x%08x (%u) %s", gpsTimeMS,  gpsTimeMS, asctime(ntime));
   printf(" gpsTimeLS:    0x%08x (%u)\n",  gpsTimeLS,  gpsTimeLS);
@@ -717,14 +717,14 @@ bram(const char **ap) {
     zs.zalloc = zalloc;
     zs.zfree = zfree;
     zs.next_in = in;
-    zs.avail_in = length;
+    zs.avail_in = (uInt)length;
     zs.next_out = out;
-    zs.avail_out = length;
+    zs.avail_out = (uInt)length;
     zs.data_type = Z_TEXT;
     if (deflateInit(&zs, 9) == Z_OK &&
 	deflate(&zs, Z_FINISH) == Z_STREAM_END &&
 	deflateEnd(&zs) == Z_OK) {
-      unsigned oWords = (zs.total_out + 3)/4;
+      size_t oWords = (zs.total_out + 3)/4;
       fprintf(ofp, "%08lx\n%08lx\n%08lx\n%08lx\n", 1ul, zs.total_out, (unsigned long)length, zs.adler);
       for (uint32_t *u32p = (uint32_t *)out; oWords; oWords--)
 	fprintf(ofp, "%08x\n", *u32p++);
@@ -752,7 +752,7 @@ unbram(const char **ap) {
   size_t version, bytes, length, adler;
   if (fscanf(ifp, "%zx\n%zx\n%zx\n%zx\n", &version, &bytes, &length, &adler) != 4)
     bad("Input file has bad format");
-  unsigned
+  size_t
     nWords = (bytes + 3)/4,
     nBytes = nWords * sizeof(uint32_t);
   unsigned char *in = (unsigned char *)malloc(nBytes);
@@ -762,8 +762,8 @@ unbram(const char **ap) {
   if (!out)
     bad("Error allocating %zu bytes for input file", length);
   for (uint32_t *u32p = (uint32_t *)in; nWords; nWords--) {
-    size_t n;
-    if (fscanf(ifp, "%zx\n", &n) != 1)
+    uint32_t n;
+    if (fscanf(ifp, "%" SCNx32 "\n", &n) != 1)
       bad("Error reading input file");
     *u32p++ = n;
   }
@@ -772,9 +772,9 @@ unbram(const char **ap) {
   zs.zfree = zfree;
   zs.data_type = Z_TEXT;
   zs.next_in = in;
-  zs.avail_in = nBytes;
+  zs.avail_in = (uInt)nBytes;
   zs.next_out = out;
-  zs.avail_out = length;
+  zs.avail_out = (uInt)length;
   if (inflateInit(&zs) == Z_OK &&
       inflate(&zs, Z_FINISH) == Z_STREAM_END &&
       inflateEnd(&zs) == Z_OK) {
@@ -808,7 +808,7 @@ uuid(const char **ap) {
   OU::Uuid uuid;
   OU::generateUuid(uuid);
   memcpy(uuidRegs.uuid, uuid, sizeof(uuidRegs.uuid));
-  uuidRegs.birthday = time(0);
+  uuidRegs.birthday = (uint32_t)time(0);
   strncpy(uuidRegs.platform, platform.c_str(), sizeof(uuidRegs.platform));
   strncpy(uuidRegs.device, part, sizeof(uuidRegs.device));
   strncpy(uuidRegs.load, "", sizeof(uuidRegs.load));
@@ -919,8 +919,8 @@ static void
 settime(const char **) {
   struct timeval tv;
   gettimeofday(&tv, NULL); 
-  uint32_t fraction =
-    (((uint64_t)tv.tv_usec * 1000 * (1ull << 32) ) + 500000000ull) / 1000000000ull;
+  uint32_t fraction = (uint32_t)
+    ((((uint64_t)tv.tv_usec * 1000 * (1ull << 32) ) + 500000000ull) / 1000000000ull);
   // Write 64 bit value
   // When it goes on the PCIe wire, it will be "endianized".
   // On intel, first DW will be LSB.  On PPC, first DW will be MSB.
@@ -969,12 +969,12 @@ deltatime(const char **) {
 	 ticks2ns(delta[0]), ticks2ns(delta[99]), ticks2ns(sum));
   uint64_t time = swap32(cAccess->get64Register(time, OH::OccpAdminRegisters));
   cAccess->set64Register(timeDelta, OH::OccpAdminRegisters, swap32(time + sum));
-  int32_t deltatime = swap32(cAccess->get64Register(timeDelta, OH::OccpAdminRegisters));
+  int32_t deltatime = (int32_t)swap32(cAccess->get64Register(timeDelta, OH::OccpAdminRegisters));
   printf("Now after correction, delta is: %"PRIi64"ns\n", dticks2ns(deltatime));
 }
 static void
 wdump(const char **) {
-  printf("Worker %u on device %s\n", worker, device);
+  printf("Worker %zu on device %s\n", worker, device);
   uint32_t i = wAccess.get32Register(status, OH::OccpWorkerRegisters);
   printf(" Status:     0x%08x", i);
   if (i & OCCP_STATUS_CONTROL_ERROR)
@@ -1013,7 +1013,7 @@ wwreset(OH::Access &w) {
 static void
 wreset(const char **) {
   uint32_t i = wwreset(wAccess);
-  printf("Worker %u on device %s: reset asserted, was %s\n", 
+  printf("Worker %zu on device %s: reset asserted, was %s\n", 
 	 worker, device, (i & OCCP_WORKER_CONTROL_ENABLE) ? "deasserted" : "already asserted");
 }
 static int
@@ -1025,7 +1025,7 @@ wwunreset(OH::Access &w) {
 static void
 wunreset(const char **) {
   uint32_t i = wwunreset(wAccess);
-  printf("Worker %u on device %s: reset deasserted, was %s\n", 
+  printf("Worker %zu on device %s: reset deasserted, was %s\n", 
 	 worker, device, (i & OCCP_WORKER_CONTROL_ENABLE) ? "already deasserted" : "asserted");
 }
 
@@ -1034,7 +1034,7 @@ static uint32_t
 wwop(OH::Access &w, const char *op) {
   for (unsigned i = 0; ops[i]; i++) 
     if (!strcasecmp(ops[i], op)) {
-      ocpiDebug("Worker control op: %s, %d offset %lx", op, i,
+      ocpiDebug("Worker control op: %s, %u offset %zx", op, i,
 		offsetof(OH::OccpWorkerRegisters, initialize) + i * sizeof(uint32_t));
      return w.get32RegisterOffset(offsetof(OH::OccpWorkerRegisters, initialize) +
 				   i * sizeof(uint32_t));
@@ -1051,7 +1051,7 @@ wop(const char **ap) {
   if (parseable)
     printf("0x%" PRIx32 "\n", r);
   else
-    printf("Worker %u on device %s: the '%s' control operation was performed with result '%s' (0x%x)\n",
+    printf("Worker %zu on device %s: the '%s' control operation was performed with result '%s' (0x%x)\n",
 	   worker, device, *ap,
 	   r == OCCP_ERROR_RESULT ? "error" :
 	   r == OCCP_TIMEOUT_RESULT ? "timeout" :
@@ -1065,7 +1065,7 @@ static void
 wwctl(const char **ap) {
   uint32_t i = (uint32_t)atoi_any(*ap++, 0);
   wAccess.set32Register(control, OH::OccpWorkerRegisters, i);
-  printf("Worker %u on device %s: writing control register value: 0x%x\n",
+  printf("Worker %zu on device %s: writing control register value: 0x%x\n",
 	 worker, device, i);
 }
 static void
@@ -1073,14 +1073,14 @@ wclear(const char **) {
   uint32_t i = wAccess.get32Register(control, OH::OccpWorkerRegisters);
   wAccess.set32Register(control, OH::OccpWorkerRegisters,
 			i | OCCP_STATUS_SFLAG | OCCP_STATUS_WRITE_TIMEOUT);
-  printf("Worker %u on device %s: clearing errors from status register\n",
+  printf("Worker %zu on device %s: clearing errors from status register\n",
 	 worker, device);
 }
 static void
 wwpage(const char **ap) {
   uint32_t i = (uint32_t)atoi_any(*ap++, 0);
   wAccess.set32Register(window, OH::OccpWorkerRegisters, i);
-  printf("Worker %u on device %s: setting window register to 0x%x (%u)\n",
+  printf("Worker %zu on device %s: setting window register to 0x%x (%u)\n",
 	 worker, device, i, i);
 }
 static void
@@ -1089,7 +1089,7 @@ wread(const char **ap) {
   unsigned off = (unsigned)atoi_any(*ap++, &size);
   unsigned n = *ap ? (unsigned)atoi_any(*ap, 0) : 1;
   if (!parseable)
-    printf("Worker %u on device %s: read config offset 0x%x size %u count %u\n",
+    printf("Worker %zu on device %s: read config offset 0x%x size %u count %u\n",
 	   worker, device, off, size, n);
 
   for (unsigned n = *ap ? (unsigned)atoi_any(*ap, 0) : 1; n--; off += size) {
@@ -1127,7 +1127,7 @@ wwrite(const char **ap) {
   case 8:
     confAccess.set64RegisterOffset(off, val); break;
   }
-  printf("Worker %u on device %s: wrote config offset 0x%x size %u: value is 0x%" PRIx64 "(%" PRIu64 ")\n",
+  printf("Worker %zu on device %s: wrote config offset 0x%x size %u: value is 0x%" PRIx64 "(%" PRIu64 ")\n",
 	 worker, device, off, size, val, val);
 }
 static OE::Socket *getSock() {
@@ -1150,7 +1150,7 @@ sendData(const char **ap) {
   OE::Socket *s = getSock();
   OE::Packet p;
   ((uint16_t *)p.payload)[1] = 123;
-  for (unsigned n = 0; n < 10; n++) {
+  for (uint8_t n = 0; n < 10; n++) {
     p.payload[4] = n;
     if (!s->send(p, 5, a, 0, NULL, error))
       bad("sending");
@@ -1162,7 +1162,7 @@ receiveData(const char **/*ap*/) {
   OE::Packet p;
   OE::Address from;
   for (unsigned n = 0; n < 10; n++) {
-    unsigned len;
+    size_t len;
     if (!s->receive(p, len, 0, from, error))
       bad("receiving");
     if (p.payload[2] != 123 || p.payload[4] != n)
@@ -1338,11 +1338,14 @@ receiveRDMA(const char **ap) {
     edpConfAccess.set32Register(control, OH::OcdpProperties,
 				OCDP_CONTROL(OCDP_CONTROL_PRODUCER, OH::OCDP_ACTIVE_MESSAGE));
     edpConfAccess.set32Register(nRemoteBuffers, OH::OcdpProperties, myInputDesc.desc.nBuffers);
-    edpConfAccess.set32Register(remoteBufferBase, OH::OcdpProperties, myInputDesc.desc.dataBufferBaseAddr);
-    edpConfAccess.set32Register(remoteMetadataBase, OH::OcdpProperties, myInputDesc.desc.metaDataBaseAddr);
+    edpConfAccess.set32Register(remoteBufferBase, OH::OcdpProperties,
+				(uint32_t)myInputDesc.desc.dataBufferBaseAddr);
+    edpConfAccess.set32Register(remoteMetadataBase, OH::OcdpProperties,
+				(uint32_t)myInputDesc.desc.metaDataBaseAddr);
     edpConfAccess.set32Register(remoteBufferSize, OH::OcdpProperties, myInputDesc.desc.dataBufferPitch);
     edpConfAccess.set32Register(remoteMetadataSize, OH::OcdpProperties, myInputDesc.desc.metaDataPitch);
-    edpConfAccess.set32Register(remoteFlagBase, OH::OcdpProperties, myInputDesc.desc.fullFlagBaseAddr);
+    edpConfAccess.set32Register(remoteFlagBase, OH::OcdpProperties,
+				(uint32_t)myInputDesc.desc.fullFlagBaseAddr);
     edpConfAccess.set32Register(remoteFlagPitch, OH::OcdpProperties, myInputDesc.desc.fullFlagPitch);
     // Program the source/destination ids for remote DMA
     uint32_t val = myInputDesc.desc.oob.mailBox | (theOutputDesc.desc.oob.mailBox << 16);
@@ -1352,8 +1355,10 @@ receiveRDMA(const char **ap) {
     // Program the local part of the output side - how data is placed in local buffers
     edpConfAccess.set32Register(nLocalBuffers, OH::OcdpProperties, theOutputDesc.desc.nBuffers);
     edpConfAccess.set32Register(localBufferSize, OH::OcdpProperties, theOutputDesc.desc.dataBufferPitch);
-    edpConfAccess.set32Register(localBufferBase, OH::OcdpProperties, theOutputDesc.desc.dataBufferBaseAddr);
-    edpConfAccess.set32Register(localMetadataBase, OH::OcdpProperties, theOutputDesc.desc.metaDataBaseAddr);
+    edpConfAccess.set32Register(localBufferBase, OH::OcdpProperties, 
+				(uint32_t)theOutputDesc.desc.dataBufferBaseAddr);
+    edpConfAccess.set32Register(localMetadataBase, OH::OcdpProperties,
+				(uint32_t)theOutputDesc.desc.metaDataBaseAddr);
     edpConfAccess.set32Register(localMetadataSize, OH::OcdpProperties, theOutputDesc.desc.metaDataPitch);
     // 4. The GBE worker that inserts the MAC header fields.
     OE::Address addr(strchr(myInputDesc.desc.oob.oep, '/') + 1);
@@ -1378,7 +1383,7 @@ receiveRDMA(const char **ap) {
   }
   for (unsigned n = 0; n < 10; n++) {
     uint8_t opCode;
-    uint32_t length;
+    size_t length;
     void *vdata;
     OD::BufferUserFacet *buf;
     unsigned t;
@@ -1387,7 +1392,7 @@ receiveRDMA(const char **ap) {
     if (t == 1000000)
       ocpiBad("Receive DMA timeout\n");
     else {
-      ocpiDebug("Received RDMA buffer: first DW 0x%" PRIx32 ", length %" PRIu32 ", op %u\n",
+      ocpiDebug("Received RDMA buffer: first DW 0x%" PRIx32 ", length %zu, op %u\n",
 		*(uint32_t *)vdata, length, opCode);
       if (opCode != n)
 	ocpiBad("Bad opcode: wanted %u, got %u", n, opCode);
@@ -1481,7 +1486,7 @@ sendRDMA(const char **ap) {
   }
   for (unsigned n = 0; n < 10; n++) {
     void *vdata;
-    uint32_t length;
+    size_t length;
     OD::BufferUserFacet *buf;
     unsigned t;
     for (t = 0; t < 1000000 && !(buf = port.getNextEmptyOutputBuffer(vdata, length)); t++)
@@ -1491,8 +1496,8 @@ sendRDMA(const char **ap) {
     else {
       for (unsigned d = 0; d < length/sizeof(uint32_t); d++)
 	((uint32_t *)vdata)[d] = n + d;
-      port.sendOutputBuffer(buf, 4096, n);
-      ocpiDebug("Sent RDMA buffer: first DW 0x%" PRIx32 ", length %" PRIu32 ", op %u\n",
+      port.sendOutputBuffer(buf, 4096, (uint8_t)n);
+      ocpiDebug("Sent RDMA buffer: first DW 0x%" PRIx32 ", length %zu, op %u\n",
 		*(uint32_t *)vdata, length, n);
     }
   }
@@ -1505,7 +1510,7 @@ sendRDMA(const char **ap) {
 
 static void
 simulate(const char **ap) {
-  OH::Sim::Server server(*ap, platform, spinCount, sleepUsecs,
+  OH::Sim::Server server(*ap, platform, OCPI_UTRUNCATE(uint8_t,spinCount), sleepUsecs,
 			 simTicks, verbose, simDump, error);
   if (error.length())
     bad("Simulator server creation error");

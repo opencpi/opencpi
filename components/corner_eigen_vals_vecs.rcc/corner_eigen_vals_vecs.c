@@ -40,7 +40,7 @@ typedef struct {
   float *cov_tmp;
 } CEState;
 
-static uint32_t sizes[] = {sizeof(CEState), 0 };
+static size_t sizes[] = {sizeof(CEState), 0 };
 
 CORNER_EIGEN_VALS_VECS_METHOD_DECLARATIONS;
 RCCDispatch corner_eigen_vals_vecs = {

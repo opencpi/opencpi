@@ -182,7 +182,7 @@ int  main( int argc, char** argv)
   // Create an artifact
 #if 1
   // Someday make this a utility function in ocpios FIXME
-  const char *target = getenv("OCPI_RCC_TARGET");
+  const char *target = getenv("OCPI_TARGET_HOST");
   const char *suffix = getenv("OCPI_RCC_SUFFIX");
   if (!target)
     target = "linux-x86_64";
@@ -237,7 +237,7 @@ int  main( int argc, char** argv)
   doubleT.setDoubleValue( 167.82 );
   boolT.setBoolValue( 1 );
   longlongT.setLongLongValue( 1234567890 );
-  float fv[] = {1.1,2.2,3.3,4.4,5.5,6.6};
+  float fv[] = {1.1f, 2.2f ,3.3f, 4.4f, 5.5f, 6.6f};
   floatST.setFloatSequenceValue( fv, 6 );
 
   // Set consumer properties

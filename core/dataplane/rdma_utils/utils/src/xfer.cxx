@@ -37,22 +37,23 @@
 /* Facility Interface Includes */
 #include <stdio.h>
 #include <stdlib.h>
-#include <xfer_internal.h>
-#include <OcpiOsAssert.h>
+#include "OcpiOsAssert.h"
+#include "DtOsDataTypes.h"
+#include "xfer_internal.h"
 
 #define LocEQ(loc,place) strcmp(loc->getAddress(),place)==0
 
 long
 xfer_create(DataTransfer::SmemServices* src_ep,
             DataTransfer::SmemServices* dst_ep,
-            OCPI::OS::int32_t,
+            int32_t,
             XF_template *xf_templatep)
 {
   /* Define the local template */
   struct xf_template_ *tp;
 
   /* Generic return code */
-  OCPI::OS::int32_t rc=0;
+  int32_t rc=0;
 
   /* Calculate where the src and dst are */
   
@@ -80,16 +81,16 @@ xfer_create(DataTransfer::SmemServices* src_ep,
 
 long
 xfer_copy(XF_template xf_template,
-          OCPI::OS::uint32_t src_os,
-          OCPI::OS::uint32_t dst_os,
-          OCPI::OS::uint32_t nbytes,
-          OCPI::OS::int32_t flags,
+          DtOsDataTypes::Offset src_os,
+          DtOsDataTypes::Offset dst_os,
+          size_t nbytes,
+          int32_t flags,
           XF_transfer *xf_transferp)
 {
   struct xf_template_ *tp = (struct xf_template_ *)xf_template;
   struct xf_transfer_ *xf = new struct xf_transfer_;
 
-  OCPI::OS::int32_t rc=0;
+  int32_t rc=0;
 
   /* Initialize the transfer's template member */
   xf->xf_template = tp;
@@ -137,10 +138,10 @@ xfer_copy(XF_template xf_template,
 
 
 long
-xfer_release(XF_transfer xf_handle, OCPI::OS::int32_t)
+xfer_release(XF_transfer xf_handle, int32_t)
 {
   struct xf_transfer_ *xf_transfer = (struct xf_transfer_ *)xf_handle;
-  OCPI::OS::int32_t pio_rc=0;
+  int32_t pio_rc=0;
 
   /* Get the type of transfer */
   if (xf_transfer->first_pio_transfer) {
@@ -166,10 +167,10 @@ xfer_release(XF_transfer xf_handle, OCPI::OS::int32_t)
 }
 
 long
-xfer_destroy(XF_template xf_handle, OCPI::OS::int32_t)
+xfer_destroy(XF_template xf_handle, int32_t)
 {
   struct xf_template_ *xf_template = (struct xf_template_ *)xf_handle;
-  OCPI::OS::int32_t rc;
+  int32_t rc;
 
   /* Get the type of template */
   if (xf_template->type == PIO) {
@@ -188,7 +189,7 @@ xfer_destroy(XF_template xf_handle, OCPI::OS::int32_t)
 
 long
 xfer_group(XF_transfer *xf_members,
-           OCPI::OS::int32_t flags,
+           int32_t flags,
            XF_transfer *xf_transferp)
 {
   /* Local Variables */
@@ -199,7 +200,7 @@ xfer_group(XF_transfer *xf_members,
 
   struct xf_transfer_ *xf = new struct xf_transfer_;
 
-  OCPI::OS::int32_t i;
+  int32_t i;
 
   /* Initialize the transfers template */
   xf->xf_template = xf_template;
@@ -209,16 +210,16 @@ xfer_group(XF_transfer *xf_members,
   xf->first_pio_transfer = 0;
   xf->last_pio_transfer = 0;
 
-  OCPI::OS::int32_t rc=0;
-  OCPI::OS::int32_t nxf;
-  OCPI::OS::int32_t pio=0;
+  int32_t rc=0;
+  int32_t nxf;
+  int32_t pio=0;
 
   /* Count the number of members */
   for (nxf=0; xf_members[nxf]; nxf++)
     ;
 
   /* Calculate the maximum size of the list */
-  OCPI::OS::int32_t size = (sizeof(PIO_transfer) * (nxf + 1));
+  size_t size = (sizeof(PIO_transfer) * (nxf + 1));
 
   /* Allocate the memory for the list */
   if (!(pio_members = (PIO_transfer *)malloc(size))) {
@@ -323,11 +324,11 @@ xfer_group(XF_transfer *xf_members,
 #if 0
 
 long
-xfer_start(XF_transfer xf_handle, OCPI::OS::int32_t flags)
+xfer_start(XF_transfer xf_handle, int32_t flags)
 {
   struct xf_transfer_ *xf_transfer = (struct xf_transfer_ *)xf_handle;
   
-  OCPI::OS::int32_t pio_rc=0;
+  int32_t pio_rc=0;
 
 
   /* Process the first transfers */
@@ -354,7 +355,7 @@ xfer_start(XF_transfer xf_handle, OCPI::OS::int32_t flags)
 
 #endif
 long 
-xfer_modify( XF_transfer xf_handle, OCPI::OS::uint32_t* noff, OCPI::OS::uint32_t* ooff )
+xfer_modify( XF_transfer xf_handle, DtOsDataTypes::Offset* noff, DtOsDataTypes::Offset* ooff )
 {
   struct xf_transfer_ *xf_transfer = (struct xf_transfer_ *)xf_handle;
   if (xf_transfer->first_pio_transfer) {

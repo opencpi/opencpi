@@ -77,10 +77,10 @@ namespace DataTransfer {
 
     // The follwing methods are used by the container infrastructure to set a timeout value
     // for the event manager to block.  These values are used to allow workers that use
-    // a timeout in there run conditions to be scheduled when there is no other event
+    // a timeout in their run conditions to be scheduled when there is no other event
     // activity.
-    virtual void setMinTimeout( OCPI::OS::uint32_t id, OCPI::OS::uint32_t uSec )=0;
-    virtual void removeMinTimeout(  OCPI::OS::uint32_t id )=0;
+    virtual void setMinTimeout( uint32_t id, uint32_t uSec )=0;
+    virtual void removeMinTimeout(  uint32_t id )=0;
 
     virtual void consumeEvents()=0;
     virtual void sendEvent( EndPoint* ep, int id )=0;
@@ -124,8 +124,8 @@ namespace DataTransfer {
     // for the event manager to block.  These values are used to allow workers that use
     // a timeout in there run conditions to be scheduled when there is no other event
     // activity.
-    void setMinTimeout( OCPI::OS::uint32_t id, OCPI::OS::uint32_t uSec );
-    void removeMinTimeout(  OCPI::OS::uint32_t id );
+    void setMinTimeout( uint32_t id, uint32_t uSec );
+    void removeMinTimeout(  uint32_t id );
 
     // Get the next available event
     bool getNextEvent( int& id, uint64_t &value );

@@ -111,6 +111,7 @@ namespace OCPI { namespace RCC { class Port; } namespace DataTransport { class B
 #endif
 
 typedef uint16_t  RCCOrdinal;
+typedef uint8_t   RCCOpCode;
 typedef uint8_t   RCCBoolean;
 typedef void      *RCCBufferId;
 typedef float     RCCFloat;
@@ -152,7 +153,7 @@ typedef RCCResult RCCPortMethod(RCCWorker *_this,
 
 typedef struct {
   void *data;
-  uint32_t maxLength;
+  size_t maxLength;
 
   /* private member for container use */
 #ifdef WORKER_INTERNAL
@@ -166,17 +167,17 @@ struct RCCPort {
   RCCBuffer current;
 
   RCC_CONST struct {
-    uint32_t length;
+    size_t length;
     union {
-      RCCOrdinal operation;
-      RCCOrdinal exception;
+      RCCOpCode operation;
+      RCCOpCode exception;
     } u;
   } input;
   struct {
-    uint32_t length;
+    size_t length;
     union {
-      RCCOrdinal operation;
-      RCCOrdinal exception;
+      RCCOpCode operation;
+      RCCOpCode exception;
     } u;
   } output;
   RCCPortMethod *callBack;
@@ -191,10 +192,10 @@ struct RCCPort {
 
 typedef struct {
   void (*release)(RCCBuffer *);
-  void (*send)(RCCPort *, RCCBuffer*, RCCOrdinal op, uint32_t length);
-  RCCBoolean (*request)(RCCPort *port, uint32_t maxlength);
-  RCCBoolean (*advance)(RCCPort *port, uint32_t maxlength);
-  RCCBoolean (*wait)(RCCPort *, uint32_t max, uint32_t usecs);
+  void (*send)(RCCPort *, RCCBuffer*, RCCOpCode op, size_t length);
+  RCCBoolean (*request)(RCCPort *port, size_t maxlength);
+  RCCBoolean (*advance)(RCCPort *port, size_t maxlength);
+  RCCBoolean (*wait)(RCCPort *, unsigned max, unsigned usecs);
   void (*take)(RCCPort *,RCCBuffer *old_buffer, RCCBuffer *new_buffer);
   void (*setError)(const char *, ...);
 } RCCContainer;
@@ -212,16 +213,15 @@ struct RCCWorker {
 
 typedef struct {
   RCCOrdinal port;
-  uint32_t maxLength;
-  uint32_t minBuffers;
+  size_t maxLength;
+  unsigned minBuffers;
   // others...
 } RCCPortInfo;
 
 typedef struct {
   /* Information for consistency checking */
-  uint32_t version;
-  uint16_t numInputs, numOutputs;
-  uint32_t propertySize, *memSizes;
+  unsigned version, numInputs, numOutputs;
+  size_t propertySize, *memSizes;
   RCCBoolean threadProfile;
   /* Methods */
   RCCMethod *initialize, *start, *stop, *release, *test,

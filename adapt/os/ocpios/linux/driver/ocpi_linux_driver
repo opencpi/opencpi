@@ -18,7 +18,7 @@ fi
 if [ $# == 2 ] ; then # this is for the makefile
   DIR=.
 else
-  DIR=$OCPI_CDK_DIR/lib/linux-x86_64
+  DIR=$OCPI_CDK_DIR/lib/$OCPI_TOOL_HOST
 fi
 
 MODNAME=opencpi

@@ -135,7 +135,7 @@ namespace DataTransfer {
       virtual ~DatagramSocket();
       virtual void send(Frame &frame) = 0;
       // return bytes read and offset in buffer to use.  Returning zero is timeout
-      virtual unsigned receive(uint8_t *buf, unsigned &offset) = 0;
+      virtual size_t receive(uint8_t *buf, size_t &offset) = 0;
       virtual uint16_t maxPayloadSize()=0;  // Maximum message size, total bytes
       virtual void start() = 0;
       inline void stop() { m_run = false; }
@@ -187,7 +187,7 @@ namespace DataTransfer {
       };
       OCPI::OS::int32_t attach (EndPoint* loc){ ( void ) loc; return 0;};
       OCPI::OS::int32_t detach (){return 0;}
-      void* map (uint32_t offset, uint32_t/* size */)
+      void* map (DtOsDataTypes::Offset offset, size_t/* size */)
       {
 	return &m_mem[offset];
       }
@@ -243,8 +243,8 @@ namespace DataTransfer {
     Message():ack(false){}
     };
     bool                m_init;
-    uint32_t            m_nMessagesTx;
-    uint32_t            m_nMessagesRx;
+    unsigned            m_nMessagesTx;
+    unsigned            m_nMessagesRx;
     uint32_t            m_tid;
     std::vector<Message>   m_messages;
     inline bool init() {return m_init;}
@@ -255,9 +255,9 @@ namespace DataTransfer {
       ///FIXME: *********** free up the frames involved with this transaction      
     }
     // nMessages is the estimated number of messages EXCLUSIVE of the flag transfer
-    void init( uint32_t nMessages);
-    void add(uint8_t * src, uint64_t dst_offset, uint32_t length);
-    void fini(uint32_t flag, uint32_t dst);
+    void init( size_t nMessages);
+    void add(uint8_t * src, DtOsDataTypes::Offset dst_offset, size_t length);
+    void fini(uint32_t flag, DtOsDataTypes::Offset dst);
 
     inline bool complete() 
     {
@@ -294,20 +294,20 @@ namespace DataTransfer {
 	DataTransfer::XferRequest::CompletionStatus getStatus();
 	virtual ~DatagramXferRequest ();
 	XferRequest & group( XferRequest* lhs );
-	void modify( OCPI::OS::uint32_t new_offsets[], OCPI::OS::uint32_t old_offsets[] );
-	XferRequest* copy (OCPI::OS::uint32_t srcoff, 
-			   OCPI::OS::uint32_t dstoff, 
-			   OCPI::OS::uint32_t nbytes, 
+	void modify( DtOsDataTypes::Offset new_offsets[], DtOsDataTypes::Offset old_offsets[] );
+	XferRequest* copy (DtOsDataTypes::Offset srcoff, 
+			   DtOsDataTypes::Offset dstoff, 
+			   size_t nbytes, 
 			   XferRequest::Flags flags
 			   );
 
     private:
 	uint32_t     m_txTotal;   // Total number of datagrams that make up this transaction - flag transfer
     protected:
-	OCPI::OS::uint32_t                        m_srcoffset;        // The source memory offset
-	OCPI::OS::uint32_t                        m_dstoffset;        // The destination memory offset
-	OCPI::OS::uint32_t                        m_length;                // The length of the request in bytes
-	int                                       m_tested4Complete;
+	DtOsDataTypes::Offset         m_srcoffset;        // The source memory offset
+	DtOsDataTypes::Offset         m_dstoffset;        // The destination memory offset
+	size_t                        m_length;                // The length of the request in bytes
+	int                           m_tested4Complete;
     };
 
 
@@ -326,7 +326,7 @@ namespace DataTransfer {
       void addFrameAck( DatagramFrameHeader * hdr );
       void ack( unsigned count, unsigned start );
       Frame *  nextFreeFrame();
-      Frame &  getFrame(  unsigned & bytes_left  );
+      Frame &  getFrame(  size_t & bytes_left  );
       void  releaseFrame ( unsigned seq );
       void post( Frame & t );
 
@@ -359,8 +359,8 @@ namespace DataTransfer {
 
       TxTemplate               m_txTemplate;
       std::vector<Frame>       m_freeFrames;
-      std::deque<unsigned>     m_acks;
-      uint32_t                 m_frameSeq;
+      std::deque<uint16_t>     m_acks;
+      uint16_t                 m_frameSeq;
       std::vector<FrameRecord> m_frameSeqRecord;
       std::vector<MsgTransactionRecord> m_msgTransactionRecord;
       uint64_t m_last_ack_send;

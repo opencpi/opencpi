@@ -1,4 +1,5 @@
-
+#ifndef DTOSDATATYPES_H
+#define DTOSDATATYPES_H
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -46,18 +47,49 @@
  *
  */
 
-#include <OcpiOsDataTypes.h>
-
+#include "stdint.h"
+#include "OcpiOsSizeCheck.h"
+#include "OcpiRes.h"
 
 namespace DtOsDataTypes {
 
   // relative priority
-  typedef OCPI::OS::int16_t   Priority;
+  typedef int16_t   Priority;
 
   // port rank
-  typedef OCPI::OS::uint32_t  Rank;
+  typedef uint32_t  Rank;
 
-  // Address offset
-  typedef OCPI::OS::uint64_t Offset;
+  // Address offset within endpoint
+#ifndef OCPI_EP_SIZE_BITS
+#define OCPI_EP_SIZE_BITS 32
+#endif
+#if OCPI_EP_SIZE_BITS == 32
+  typedef uint32_t Offset;
+  #define DTOSDATATYPES_OFFSET_PRIu PRIu32
+  #define DTOSDATATYPES_OFFSET_PRIx PRIx32
+#else
+  typedef uint64_t Offset;
+  #define DTOSDATATYPES_OFFSET_PRIu PRIu64
+  #define DTOSDATATYPES_OFFSET_PRIx PRIx64
+#endif
 
+  // The (max) size of flag values for flow control purposes
+  // Some hardware might insist on forcing it larger.
+#ifndef OCPI_EP_FLAG_BITS
+#define OCPI_EP_FLAG_BITS 32
+#endif
+#if OCPI_EP_FLAG_BITS == 32
+  typedef uint32_t Flag;
+  #define DTOSDATATYPES_FLAG_PRIx PRIx32
+#else
+  typedef uint64_t Flag;
+  #define DTOSDATATYPES_FLAG_PRIx PRIx64
+#endif
+
+  typedef uint16_t MailBox;
+  // Maximum number of SMB's and mailboxes allowed in the system unless overriden by env
+  // FIXME:  make this part of config
+  const MailBox MAX_SYSTEM_SMBS = 20;
 }
+
+#endif

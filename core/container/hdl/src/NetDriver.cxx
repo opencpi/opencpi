@@ -61,7 +61,7 @@ namespace OCPI {
 	ecp->header.tag = 0;
 	OU::formatString(m_endpointSpecific, "%s:%s", data_proto, name.c_str());
 	m_endpointSize = ((uint64_t)1) << 32;
-	cAccess().setAccess(NULL, this, m_endpointSize - sizeof(OccpSpace));
+	cAccess().setAccess(NULL, this, OCPI_UTRUNCATE(RegisterOffset, m_endpointSize - sizeof(OccpSpace)));
 	dAccess().setAccess(NULL, this, 0);
       }
       Device::
@@ -71,8 +71,8 @@ namespace OCPI {
       }
       void Device::
       request(EtherControlMessageType type, RegisterOffset offset,
-	      unsigned bytes, OS::Ether::Packet &recvFrame, uint32_t *status,
-	      unsigned extra, unsigned delayms) {
+	      size_t bytes, OS::Ether::Packet &recvFrame, uint32_t *status,
+	      size_t extra, unsigned delayms) {
 	if (m_failed)
 	  throw OU::Error("HDL::Net::Device::request after previous failure");
 	EtherControlHeader &ech_out =  *(EtherControlHeader *)(m_request.payload);
@@ -94,20 +94,20 @@ namespace OCPI {
 	for (unsigned n = 0;
 	     n < RETRIES &&
 	       m_socket->send(m_request, ntohs(ech_out.length)+2, m_devAddr, 0, NULL, m_error); n++) {
-	  unsigned length;
+	  size_t length;
 	  OS::Ether::Address addr;
 	  uint64_t ns = delayms * (uint64_t)1000000;
-	  OS::Timer timer(ns / 1000000, ns % 1000000);
+	  OS::Timer timer((uint32_t)(ns / 1000000), (uint32_t)(ns % 1000000));
 	  // FIXME: use shared receive socket
-	  ocpiDebug("Request type %u tag %u offset %u delay %u",
+	  ocpiDebug("Sent request type %u tag %u offset %u delay %u",
 		    OCCP_ETHER_MESSAGE_TYPE(ech_out.typeEtc), ech_out.tag,
 		    ntohl(((EtherControlRead *)m_request.payload)->address), delayms);
 	  while (m_socket->receive(recvFrame, length, delayms, addr, m_error)) {
 	    EtherControlHeader &ech_in =  *(EtherControlHeader *)(recvFrame.payload);
 	    if (length < (unsigned)(ntohs(ech_in.length)) + 2)
-	      ocpiBad("Ethernet control packet too short: got %u, while expecting at least %u",
+	      ocpiBad("Ethernet control packet too short: got %zu, while expecting at least %u",
 		      length, ntohs(ech_in.length) + 2);
-	    ocpiDebug("response received from %s %x %x %x",
+	    ocpiDebug("response received from %s %x %x tag %u",
 		      addr.pretty(), ech_in.length, ech_in.typeEtc, ech_in.tag);
 	    if (OCCP_ETHER_MESSAGE_TYPE(ech_in.typeEtc) != OCCP_RESPONSE)
 	      ocpiBad("Ethernet control packet from %s not a response, ignored: typeEtc 0x%x",
@@ -155,18 +155,18 @@ namespace OCPI {
 
 	// Shared "get" that returns value, and *status if status != NULL
       uint32_t Device::
-      get(RegisterOffset offset, unsigned bytes, uint32_t *status) {
+      get(RegisterOffset offset, size_t bytes, uint32_t *status) {
 	EtherControlRead &ecr =  *(EtherControlRead *)(m_request.payload);
 	ecr.address = htonl((offset & 0xffffff) & ~3);
 	ecr.header.length = htons(sizeof(ecr)-2);
 	OS::Ether::Packet recvFrame;
 	request(OCCP_READ, offset, bytes, recvFrame, status);
 	uint32_t data = ntohl(((EtherControlReadResponse *)(recvFrame.payload))->data);
-	ocpiDebug("Accessor read received 0x%x from offset %x tag %u", data, offset, ecr.header.tag);
+	ocpiDebug("Accessor read received 0x%x from offset %zx tag %u", data, offset, ecr.header.tag);
 	return data;
       }
       void Device::
-      set(RegisterOffset offset, unsigned bytes, uint32_t data, uint32_t *status) {
+      set(RegisterOffset offset, size_t bytes, uint32_t data, uint32_t *status) {
 	  EtherControlWrite &ecw =  *(EtherControlWrite *)(m_request.payload);
 	  ecw.address = htonl((offset & 0xffffff) & ~3);
 	  ecw.data = htonl(data);
@@ -175,16 +175,16 @@ namespace OCPI {
 	  request(OCCP_WRITE, offset, bytes, recvFrame, status);
 	}
       void Device::
-      command(const char *cmd, unsigned bytes, char *response, unsigned rlen, unsigned delayms) {
+      command(const char *cmd, size_t bytes, char *response, size_t rlen, unsigned delayms) {
 	EtherControlHeader &eh_out =  *(EtherControlHeader *)(m_request.payload);
-	eh_out.length = htons(sizeof(eh_out)-2 + bytes);
+	eh_out.length = htons(OCPI_UTRUNCATE(uint16_t, sizeof(eh_out)-2 + bytes));
 	if (cmd && bytes)
 	  memcpy((void*)(&eh_out+1), cmd, bytes);
 	OS::Ether::Packet recvFrame;
 	request(OCCP_NOP, 0, 0, recvFrame, NULL, bytes, delayms);
 	EtherControlHeader &eh_in =  *(EtherControlHeader *)(recvFrame.payload);
 	if (response) {
-	  unsigned length = ntohs(eh_in.length) - (sizeof(eh_in) - 2);
+	  size_t length = ntohs(eh_in.length) - (sizeof(eh_in) - 2);
 	  memcpy(response, (void*)(&eh_in+1), length > rlen ? rlen : length);
 	}
       }
@@ -200,9 +200,9 @@ namespace OCPI {
 	return u.u64;
       }
       void Device::
-      getBytes(RegisterOffset offset, uint8_t *buf, unsigned length, uint32_t *status) {
+      getBytes(RegisterOffset offset, uint8_t *buf, size_t length, uint32_t *status) {
 	while (length) {
-	  unsigned bytes = sizeof(uint32_t) - (offset & 3); // bytes in word
+	  size_t bytes = sizeof(uint32_t) - (offset & 3); // bytes in word
 	  if (bytes > length)
 	    bytes = length;
 	  uint32_t val = get(offset, bytes, status);
@@ -221,9 +221,9 @@ namespace OCPI {
 	  set(offset + sizeof(uint32_t), sizeof(uint32_t), (uint32_t)(val >> 32), status);
       }
       void Device::
-      setBytes(RegisterOffset offset, const uint8_t *buf, unsigned length, uint32_t *status)  {
+      setBytes(RegisterOffset offset, const uint8_t *buf, size_t length, uint32_t *status)  {
 	while (length) {
-	  unsigned bytes = sizeof(uint32_t) - (offset & 3); // bytes in word
+	  size_t bytes = sizeof(uint32_t) - (offset & 3); // bytes in word
 	  if (bytes > length)
 	    bytes = length;
 	  uint32_t data;
@@ -293,7 +293,7 @@ namespace OCPI {
 	std::set<OE::Address,OE::Address::Compare> addrs;
 	OE::Packet sendFrame;
 	initNop(*(EtherControlNop *)(sendFrame.payload));
-	const unsigned recvLength = sizeof(EtherControlNopResponse);
+	const size_t recvLength = sizeof(EtherControlNopResponse);
 
 	unsigned count = 0;
 	// FIXME:  We need to be able to probe one while others are running?
@@ -302,7 +302,7 @@ namespace OCPI {
 	    break;
 	  OE::Packet recvFrame;
 	  OE::Address devAddr;
-	  unsigned length;
+	  size_t length;
 
 	  OS::Timer timer(0, DELAYMS * 1000000);
 	  while (s.receive(recvFrame, length, DELAYMS, devAddr, error)) {
@@ -313,7 +313,7 @@ namespace OCPI {
 		  continue;
 		}
 	    if (length > recvLength)
-	      ocpiDebug("receive truncation for interface '%s': %d > %u",
+	      ocpiDebug("receive truncation for interface '%s': %zu > %zu",
 			ifc.name.c_str(), length, recvLength);
 	    if (length < recvLength)
 	      OS::setError(error, "probe return was short:  length was %d when %d was expected",

@@ -77,6 +77,7 @@ namespace OCPI {
     namespace OE = OCPI::Util::EzXml;
     namespace OD = OCPI::DataTransport;
     namespace OT = OCPI::Time;
+    namespace DDT = DtOsDataTypes;
 
     static inline unsigned max(unsigned a,unsigned b) { return a > b ? a : b;}
     // This is the alignment constraint of DMA buffers in the processor's memory.
@@ -175,7 +176,7 @@ namespace OCPI {
     class WciControl : public Access, virtual public OC::Controllable {
       friend class Port;
       const char *implName, *instName;
-      mutable uint32_t m_window; // perfect use-case for mutable..
+      mutable size_t m_window; // perfect use-case for mutable..
       bool m_hasControl;
     protected:
       Access m_properties;
@@ -191,10 +192,10 @@ namespace OCPI {
           return;
         implName = ezxml_attr(implXml, "name");
         instName = ezxml_attr(instXml, "name");
-        myOccpIndex = OC::getAttrNum(instXml, "occpIndex", true, &m_hasControl);
+        myOccpIndex = (unsigned)OC::getAttrNum(instXml, "occpIndex", true, &m_hasControl);
 	if (m_hasControl) {
 	  setControlMask(getControlMask() | 1 << OM::Worker::OpStart);
-	  uint32_t timeout = OC::getAttrNum(implXml, "timeout", true);
+	  uint32_t timeout = (unsigned)OC::getAttrNum(implXml, "timeout", true);
 	  if (!timeout)
 	    timeout = 16;
 	  unsigned logTimeout = 31;
@@ -284,13 +285,13 @@ namespace OCPI {
 	}
       }
       inline uint32_t
-      checkWindow(uint32_t offset, unsigned nBytes) const {
+      checkWindow(size_t offset, size_t nBytes) const {
 	ocpiAssert(m_hasControl);
-	unsigned window = offset & ~(OCCP_WORKER_CONFIG_SIZE-1);
+	size_t window = offset & ~(OCCP_WORKER_CONFIG_SIZE-1);
         ocpiAssert(window == ((offset+nBytes)&~(OCCP_WORKER_CONFIG_SIZE-1)));
 	if (window != m_window) {
 	  set32Register(window, OccpWorkerRegisters,
-			window >> OCCP_WORKER_CONFIG_WINDOW_BITS);
+			(uint32_t)(window >> OCCP_WORKER_CONFIG_WINDOW_BITS));
 	  m_window = window;
 	}
 	return offset & (OCCP_WORKER_CONFIG_SIZE - 1);
@@ -342,8 +343,8 @@ namespace OCPI {
       PUT_GET_PROPERTY(32)
       PUT_GET_PROPERTY(64)
 #undef PUT_GET_PROPERTY
-      void setPropertyBytes(const OA::PropertyInfo &info, uint32_t offset,
-			    const uint8_t *data, unsigned nBytes) const {
+      void setPropertyBytes(const OA::PropertyInfo &info, size_t offset,
+			    const uint8_t *data, size_t nBytes) const {
         offset = checkWindow(offset, nBytes);
 	uint32_t status = 0;
 	if (m_properties.m_registers) {
@@ -361,7 +362,7 @@ namespace OCPI {
       }
 
       inline void
-      getPropertyBytes(const OA::PropertyInfo &info, uint32_t offset, uint8_t *buf, unsigned nBytes) const {
+      getPropertyBytes(const OA::PropertyInfo &info, size_t offset, uint8_t *buf, size_t nBytes) const {
         offset = checkWindow(offset, nBytes);
 	uint32_t status = 0;
 
@@ -380,7 +381,7 @@ namespace OCPI {
       }
       inline void setPropertySequence(const OA::Property &p,
 				      const uint8_t *val,
-				      uint32_t nItems, unsigned nBytes) const {
+				      size_t nItems, size_t nBytes) const {
 	uint32_t offset = checkWindow(p.m_info.m_offset, nBytes);
 	uint32_t status = 0;
 	if (m_properties.m_registers) {
@@ -390,7 +391,7 @@ namespace OCPI {
 		OCCP_STATUS_WRITE_ERRORS)) {
 	    m_properties.setBytesRegisterOffset(offset + p.m_info.m_align,
 						val, nBytes);
-	    m_properties.set32RegisterOffset(offset, nItems);
+	    m_properties.set32RegisterOffset(offset, (uint32_t)nItems);
 	  }
 	  if (p.m_info.m_writeError && !status)
 	    status =
@@ -400,13 +401,13 @@ namespace OCPI {
 	  m_properties.m_accessor->setBytes(m_properties.m_base + offset + p.m_info.m_align,
 					    val, nBytes, &status);
 	  if (!status)
-	    m_properties.m_accessor->set32(m_properties.m_base + offset, nItems, &status);
+	    m_properties.m_accessor->set32(m_properties.m_base + offset, (uint32_t)nItems, &status);
 	}
 	if (status)
 	  throwPropertyWriteError(status);
       }
       inline unsigned
-      getPropertySequence(const OA::Property &p, uint8_t *buf, unsigned n) const {
+      getPropertySequence(const OA::Property &p, uint8_t *buf, size_t n) const {
 	uint32_t offset = checkWindow(p.m_info.m_offset, n);
 	uint32_t status = 0, nItems;
 
@@ -455,7 +456,7 @@ namespace OCPI {
       }									    \
       void								    \
       set##pretty##SequenceProperty(const OA::Property &p, const run *vals, \
-				    unsigned length) const {		\
+				    size_t length) const {		\
 	setPropertySequence(p, (const uint8_t *)vals,			\
 			    length, length * (bits/8));			\
       }									\
@@ -465,7 +466,7 @@ namespace OCPI {
       }									\
       unsigned								\
       get##pretty##SequenceProperty(const OA::Property &p, run *vals,	\
-				    unsigned length) const {		\
+				    size_t length) const {		\
 	return								\
 	  getPropertySequence(p, (uint8_t *)vals, length * (bits/8));	\
       }
@@ -474,22 +475,22 @@ OCPI_DATA_TYPES
 #undef OCPI_DATA_TYPE
       void
       setStringProperty(const OA::Property &p, const char* val) const {
-	uint32_t n = strlen(val) + 1;
+	size_t n = strlen(val) + 1;
 	setPropertySequence(p, (const uint8_t *)val, n, n);
       }
       void
       setStringSequenceProperty(const OA::Property &, const char * const *,
-				unsigned ) const {
+				size_t ) const {
 	throw OU::Error("No support for properties that are sequences of strings");
       }
       void
-      getStringProperty(const OA::Property &p, char *val, unsigned length) const {
+      getStringProperty(const OA::Property &p, char *val, size_t length) const {
 	// ignore return value
 	getPropertySequence(p, (uint8_t*)val, length);
       }
       unsigned
       getStringSequenceProperty(const OA::Property &, char * *,
-				unsigned ,char*, unsigned) const {
+				size_t ,char*, size_t) const {
 	throw OU::Error("No support for properties that are sequences of strings");
 	return 0;
       }
@@ -560,9 +561,9 @@ OCPI_DATA_TYPES
       }
       // FIXME: These (and sequence/string stuff above) need to be sensitive to
       // addresing windows in OCCP.
-      void read(uint32_t, uint32_t, void*) {
+      void read(size_t, size_t, void*) {
       }
-      void write(uint32_t, uint32_t, const void*) {
+      void write(size_t, size_t, const void*) {
       }
 
       OC::Port & createPort(const OM::Port &metaport, const OA::PValue *props);
@@ -575,13 +576,13 @@ OCPI_DATA_TYPES
 
       OC::Port &
       createOutputPort(OM::PortOrdinal portId,
-                       OS::uint32_t bufferCount,
-                       OS::uint32_t bufferSize,
+                       size_t bufferCount,
+                       size_t bufferSize,
                        const OA::PValue* props) throw();
       OC::Port &
       createInputPort(OM::PortOrdinal portId,
-                      OS::uint32_t bufferCount,
-                      OS::uint32_t bufferSize,
+                      size_t bufferCount,
+                      size_t bufferSize,
                       const OA::PValue* props) throw();
 
 
@@ -595,7 +596,7 @@ OCPI_DATA_TYPES
       }									    \
       void								    \
       set##pretty##SequenceProperty(const OA::Property &p, const run *vals, \
-				    unsigned length) const {		    \
+				    size_t length) const {		    \
 	WciControl::set##pretty##SequenceProperty(p, vals, length);	    \
       }									    \
       run								    \
@@ -604,7 +605,7 @@ OCPI_DATA_TYPES
       }									    \
       unsigned								    \
       get##pretty##SequenceProperty(const OA::Property &p, run *vals,	    \
-				    unsigned length) const {		    \
+				    size_t length) const {		    \
 	return								    \
       get##pretty##SequenceProperty(p, vals, length);		            \
       }
@@ -616,16 +617,16 @@ OCPI_DATA_TYPES
       }
       void
       setStringSequenceProperty(const OA::Property &p, const char * const *val,
-				unsigned n) const {
+				size_t n) const {
 	WciControl::setStringSequenceProperty(p, val, n);
       }
       void
-      getStringProperty(const OA::Property &p, char *val, unsigned length) const {
+      getStringProperty(const OA::Property &p, char *val, size_t length) const {
 	WciControl::getStringProperty(p, val, length);
       }
       unsigned
       getStringSequenceProperty(const OA::Property &p, char * *cp,
-				unsigned n ,char*pp, unsigned nn) const {
+				size_t n ,char*pp, size_t nn) const {
 	return WciControl::getStringSequenceProperty(p, cp, n, pp, nn);
       }
 #define PUT_GET_PROPERTY(n)						         \
@@ -639,13 +640,13 @@ OCPI_DATA_TYPES
       PUT_GET_PROPERTY(16)
       PUT_GET_PROPERTY(32)
       PUT_GET_PROPERTY(64)
-      void setPropertyBytes(const OA::PropertyInfo &info, uint32_t offset,
-			    const uint8_t *data, unsigned nBytes) const {
+      void setPropertyBytes(const OA::PropertyInfo &info, size_t offset,
+			    const uint8_t *data, size_t nBytes) const {
 	WciControl::setPropertyBytes(info, offset, data, nBytes);
       }
       inline void
-      getPropertyBytes(const OA::PropertyInfo &info, uint32_t offset, uint8_t *buf,
-		       unsigned nBytes) const {
+      getPropertyBytes(const OA::PropertyInfo &info, size_t offset, uint8_t *buf,
+		       size_t nBytes) const {
 	WciControl::getPropertyBytes(info, offset, buf, nBytes);
       }
     };
@@ -667,14 +668,14 @@ OCPI_DATA_TYPES
       ezxml_t m_connection;
       // These are for external-to-FPGA ports
       // Which would be in a different class if we separate them
-      unsigned m_ocdpSize;
+      uint32_t m_ocdpSize;
       // For direct user access to ports
       volatile uint8_t *userDataBaseAddr;
       volatile OcdpMetadata *userMetadataBaseAddr;
       bool m_userConnected;
       WciControl *m_adapter; // if there is an adapter
       bool m_hasAdapterConfig;
-      uint32_t m_adapterConfig;
+      size_t m_adapterConfig;
       static int dumpFd;
       DataTransfer::EndPoint *m_endPoint; // the data plane endpoint if externally connected
 
@@ -722,11 +723,11 @@ OCPI_DATA_TYPES
 	// But it is possible to have both PCI and Ether ports and this requires it.
 	m_endPoint =
 	  &DataTransfer::getManager().allocateProxyEndPoint(device.endpointSpecific().c_str(),
-							    device.endpointSize());
+							    OCPI_UTRUNCATE(size_t, device.endpointSize()));
 	OD::Transport::fillDescriptorFromEndPoint(*m_endPoint, getData().data);
 	// This should be the region address from admin, using the 0x1c region register
 	// The region addresses are offsets in BAR1 at this point
-        uint32_t myOcdpOffset = OC::getAttrNum(icXml, "ocdpOffset"); // FIXME
+        uint32_t myOcdpOffset = (uint32_t)OC::getAttrNum(icXml, "ocdpOffset"); // FIXME
         // These will be determined at connection time
         myDesc.dataBufferPitch   = 0;
         myDesc.metaDataBaseAddr  = 0;
@@ -823,10 +824,11 @@ OCPI_DATA_TYPES
         if (myDesc.nBuffers *
             (OC::roundup(myDesc.dataBufferSize, OCDP_LOCAL_BUFFER_ALIGN) + OCDP_METADATA_SIZE) > m_ocdpSize)
           throw OC::ApiError("Requested buffer count and size won't fit in the OCDP's memory", 0);
-        myDesc.dataBufferPitch = OC::roundup(myDesc.dataBufferSize, OCDP_LOCAL_BUFFER_ALIGN);
+        myDesc.dataBufferPitch = (uint32_t)OC::roundup(myDesc.dataBufferSize, OCDP_LOCAL_BUFFER_ALIGN);
         myDesc.metaDataBaseAddr =
           myDesc.dataBufferBaseAddr +
           m_ocdpSize - myDesc.nBuffers * OCDP_METADATA_SIZE;
+	//          OCPI_UTRUNCATE(DDT::Offset, m_ocdpSize - myDesc.nBuffers * OCDP_METADATA_SIZE);
         userMetadataBaseAddr = (OcdpMetadata *)(userDataBaseAddr +
                                                 (myDesc.metaDataBaseAddr -
                                                  myDesc.dataBufferBaseAddr));
@@ -847,7 +849,8 @@ OCPI_DATA_TYPES
         OcdpRole myOcdpRole;
         OCPI::RDT::PortRole myRole = (OCPI::RDT::PortRole)getData().data.role;
 	
-        ocpiDebug("finishConnection: other = %" PRIx64 ", offset = %" PRIx64 ", RFB = %" PRIx64 "",
+        ocpiDebug("finishConnection: other = %" PRIx64 ", offset = %" DTOSDATATYPES_OFFSET_PRIx
+		  ", RFB = %" PRIx64 "",
 		  other.desc.oob.address,
 		  isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr,
 		  other.desc.oob.address +
@@ -861,8 +864,8 @@ OCPI_DATA_TYPES
 	  addr = other.desc.oob.address +
 	    (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr);
 	  pitch = isProvider() ? other.desc.emptyFlagPitch : other.desc.fullFlagPitch;
-          m_properties.set32Register(remoteFlagBase, OcdpProperties, addr);
-	  m_properties.set32Register(remoteFlagHi, OcdpProperties, addr > 32);
+          m_properties.set32Register(remoteFlagBase, OcdpProperties, (uint32_t)addr);
+	  m_properties.set32Register(remoteFlagHi, OcdpProperties, (uint32_t)(addr >> 32));
           m_properties.set32Register(remoteFlagPitch, OcdpProperties, pitch);
 	  ocpiDebug("HDL Port is %s, AFC, flag is 0x%" PRIx64 "pitch %u", 
 		    isProvider() ? "consumer" : "producer", addr, pitch);
@@ -870,11 +873,11 @@ OCPI_DATA_TYPES
         case OCPI::RDT::ActiveMessage:
           myOcdpRole = OCDP_ACTIVE_MESSAGE;
 	  addr = other.desc.oob.address + other.desc.dataBufferBaseAddr;
-          m_properties.set32Register(remoteBufferBase, OcdpProperties, addr);
-	  m_properties.set32Register(remoteBufferHi, OcdpProperties, addr >> 32);
+          m_properties.set32Register(remoteBufferBase, OcdpProperties, (uint32_t)addr);
+	  m_properties.set32Register(remoteBufferHi, OcdpProperties, (uint32_t)(addr >> 32));
 	  addr = other.desc.oob.address + other.desc.metaDataBaseAddr;
-	  m_properties.set32Register(remoteMetadataBase, OcdpProperties, addr);
-	  m_properties.set32Register(remoteMetadataHi, OcdpProperties, addr >> 32);
+	  m_properties.set32Register(remoteMetadataBase, OcdpProperties, (uint32_t)addr);
+	  m_properties.set32Register(remoteMetadataHi, OcdpProperties, (uint32_t)(addr >> 32));
           if ( isProvider()) {
             if (other.desc.dataBufferSize > myDesc.dataBufferSize)
               throw OC::ApiError("At consumer, remote buffer size is larger than mine", NULL);
@@ -889,8 +892,8 @@ OCPI_DATA_TYPES
           m_properties.set32Register(remoteMetadataSize, OcdpProperties, other.desc.metaDataPitch);
 #endif
           addr = other.desc.oob.address + (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr);
-          m_properties.set32Register(remoteFlagBase, OcdpProperties, addr);
-          m_properties.set32Register(remoteFlagHi, OcdpProperties, addr >> 32);
+          m_properties.set32Register(remoteFlagBase, OcdpProperties, (uint32_t)addr);
+          m_properties.set32Register(remoteFlagHi, OcdpProperties, (uint32_t)(addr >> 32));
           m_properties.set32Register(remoteFlagPitch, OcdpProperties, 
 				      isProvider() ?
 				      other.desc.emptyFlagPitch : other.desc.fullFlagPitch);
@@ -902,7 +905,7 @@ OCPI_DATA_TYPES
           myOcdpRole = OCDP_PASSIVE; // quiet compiler warning
           ocpiAssert(0);
         }
-        ocpiDebug("finishConnection: me = %" PRIx64 ", offset = %" PRIx64 ", RFB = %" PRIx64 "",
+        ocpiDebug("finishConnection: me = %" PRIx64 ", offset = %" DTOSDATATYPES_OFFSET_PRIx ", RFB = %" PRIx64 "",
 		  myDesc.oob.address,
 		  isProvider() ? myDesc.fullFlagBaseAddr : myDesc.emptyFlagBaseAddr,
 		  myDesc.oob.address +
@@ -916,7 +919,7 @@ OCPI_DATA_TYPES
 	if (m_adapter) {
 	  m_adapter->controlOperation(OM::Worker::OpInitialize);
 	  if (m_hasAdapterConfig)
-	    m_adapter->m_properties.set32RegisterOffset(0, m_adapterConfig);
+	    m_adapter->m_properties.set32RegisterOffset(0, (uint32_t)m_adapterConfig);
 	  m_adapter->controlOperation(OM::Worker::OpStart);
 	}
 	controlOperation(OM::Worker::OpStart);
@@ -1044,16 +1047,16 @@ OCPI_DATA_TYPES
     // Here because these depend on Port
     OC::Port &Worker::
     createOutputPort(OM::PortOrdinal portId,
-                     OS::uint32_t bufferCount,
-                     OS::uint32_t bufferSize,
+                     size_t bufferCount,
+                     size_t bufferSize,
                      const OA::PValue* props) throw() {
       (void)portId; (void)bufferCount; (void)bufferSize;(void)props;
       return *(Port *)0;//return *new Port(*this);
     }
     OC::Port &Worker::
     createInputPort(OM::PortOrdinal portId,
-                    OS::uint32_t bufferCount,
-                    OS::uint32_t bufferSize,
+                    size_t bufferCount,
+                    size_t bufferSize,
                     const OA::PValue* props) throw() {
       (void)portId; (void)bufferCount; (void)bufferSize;(void)props;
       return *(Port *)0;//      return *new Port(*this);

@@ -33,7 +33,7 @@ namespace OCPI {
       delete m_accessor;
       m_registers = registers;
       m_accessor = accessor;
-      m_base = base;
+      m_base = OCPI_UTRUNCATE(DtOsDataTypes::Offset, base);
       //      m_buffers = buffers;
     }
 
@@ -44,14 +44,14 @@ namespace OCPI {
     }
 
     void Access::
-    offsetRegisters(Access &offsettee, unsigned offset) {
+    offsetRegisters(Access &offsettee, size_t offset) {
       offsettee.setAccess(m_registers ? m_registers + offset : 0,
 			  m_accessor,
 			  m_base + offset);
     }
 
     void Access::
-    getBytes(RegisterOffset offset, uint8_t *to8, unsigned bytes) const {
+    getBytes(RegisterOffset offset, uint8_t *to8, size_t bytes) const {
       volatile uint8_t *from8 = m_registers + offset;
       if (bytes >= 8 && !(((intptr_t)to8 | offset) & 7)) {
 	uint64_t *to64 = (uint64_t *)to8;
@@ -76,7 +76,7 @@ namespace OCPI {
     }
     
     void Access::
-    setBytes(RegisterOffset offset, const uint8_t *from8, unsigned bytes) const {
+    setBytes(RegisterOffset offset, const uint8_t *from8, size_t bytes) const {
       volatile uint8_t *to8 = m_registers + offset;
       if (bytes >= 8 && !(((intptr_t)from8 | offset) & 7)) {
 	uint64_t *from64 = (uint64_t *)from8;

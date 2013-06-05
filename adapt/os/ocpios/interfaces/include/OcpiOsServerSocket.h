@@ -92,7 +92,7 @@ namespace OCPI {
        * \post The server socket is bound.
        */
 
-      ServerSocket (unsigned int portNo, bool reuse = false)
+      ServerSocket (uint16_t portNo, bool reuse = false)
         throw (std::string);
 
       /**
@@ -129,7 +129,7 @@ namespace OCPI {
        */
 
       OCPI::OS::Socket 
-      bind (unsigned int portNo = 0, bool reuse = false, bool udp = false)
+      bind (uint16_t portNo = 0, bool reuse = false, bool udp = false)
         throw (std::string);
 
       /**
@@ -143,7 +143,7 @@ namespace OCPI {
        * \pre The server socket is bound.
        */
 
-      unsigned int getPortNo ()
+      uint16_t getPortNo ()
         throw (std::string);
 
       /**

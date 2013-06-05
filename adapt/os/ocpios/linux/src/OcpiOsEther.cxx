@@ -55,16 +55,9 @@
 #ifdef OCPI_OS_linux
 #include <dirent.h>
 #include <arpa/inet.h>
-#if 0
-#include <linux/if.h>
-#include <linux/if_packet.h>
-#include <linux/if_arp.h>
-#else
-// At least "net/if.h" is mentioned in a man page..
 #include <net/if.h>
 #include <net/if_arp.h>
 #include <netpacket/packet.h>
-#endif
 #endif
 
 #include "OcpiOsAssert.h"
@@ -129,7 +122,7 @@ namespace OCPI {
 	  if (!inet_aton(addr, &x))
 	    return m_error = true;
 	  if (cp)
-	    m_udp.port = atoi(cp+1);
+	    m_udp.port = (uint16_t)atoi(cp+1);
 	  else
 	    m_udp.port = c_udpPort;
 	  m_udp.addr = x.s_addr;
@@ -148,7 +141,7 @@ namespace OCPI {
       }
 
       const char *Address::pretty() {
-	if (!m_pretty[0])
+	if (!m_pretty[0]) {
 	  if (m_isEther)
 	    snprintf(m_pretty, sizeof(m_pretty),
 		     "%02x:%02x:%02x:%02x:%02x:%02x",
@@ -157,6 +150,7 @@ namespace OCPI {
 	    struct in_addr x = {m_udp.addr};
 	    snprintf(m_pretty, sizeof(m_pretty), "%s:%u", inet_ntoa(x), m_udp.port);
 	  }
+	}
 	return m_pretty;
       }
 
@@ -220,8 +214,8 @@ namespace OCPI {
 	    struct sockaddr_ocpi sa;
 	    memset(&sa, 0, sizeof(sa));
 	    sa.ocpi_family = PF_OPENCPI;      // supposedly not used for bind
-	    sa.ocpi_role = role;
-	    sa.ocpi_ifindex = i.index;
+	    sa.ocpi_role = (uint8_t)role;
+	    sa.ocpi_ifindex = (uint8_t)i.index;
 	    if (remote)
 	      memcpy(sa.ocpi_remote, remote->addr(), sizeof(sa.ocpi_remote));
 	    if (role == ocpi_data)
@@ -309,7 +303,7 @@ namespace OCPI {
 	    sin.sin_len = sizeof(sin);
 #endif
 	    sin.sin_family = AF_INET;
-	    sin.sin_port = role == ocpi_slave ? htons(c_udpPort) : 0;
+	    sin.sin_port = role == ocpi_slave ? htons(c_udpPort) : (uint16_t)0;
 	    sin.sin_addr.s_addr = i.ipAddr.addrInAddr();
 	    if (::bind(m_fd, (struct sockaddr*)&sin, sizeof(sin))) {
 	      OS::setError(error, "binding udp socket for role %u", role);
@@ -354,15 +348,15 @@ namespace OCPI {
       }
 
       bool Socket::
-      receive(Packet &packet, unsigned &payLoadLength, unsigned timeoutms, Address &addr,
+      receive(Packet &packet, size_t &payLoadLength, unsigned timeoutms, Address &addr,
 	      std::string &error, unsigned *indexp) {
-	unsigned offset;
+	size_t offset;
 	bool b = receive((uint8_t *)&packet, offset, payLoadLength, timeoutms, addr, error, indexp);
 	ocpiAssert(offset == offsetof(Packet, payload));
 	return b;
       }
       bool Socket::
-      receive(uint8_t *buffer, unsigned &offset, unsigned &payLoadLength, unsigned timeoutms,
+      receive(uint8_t *buffer, size_t &offset, size_t &payLoadLength, unsigned timeoutms,
 	      Address &addr, std::string &error, unsigned *indexp) {
 	if (timeoutms != m_timeout) {
 	  struct timeval tv;
@@ -460,10 +454,10 @@ namespace OCPI {
 	  if (haveDriver()) {
 	    ocpiDebug("driver packet fam %u role %u index %d",
 		      sa.ocpi.ocpi_family, sa.ocpi.ocpi_role, sa.ocpi.ocpi_ifindex);
-	    payLoadLength = rlen;
+	    payLoadLength = (unsigned)rlen;
 	    ifindex = sa.ocpi.ocpi_ifindex;
 	  } else {
-	    payLoadLength = rlen - (sizeof(Header) - sizeof(uint16_t));
+	    payLoadLength = (unsigned)(rlen - (sizeof(Header) - sizeof(uint16_t)));
 #ifdef OCPI_OS_linux
 	    ocpiDebug("fam %u prot %u index %d hatype %u ptype %u len %u off %zu",
 		      sa.ll.sll_family, sa.ll.sll_protocol, sa.ll.sll_ifindex, sa.ll.sll_hatype,
@@ -477,7 +471,7 @@ namespace OCPI {
 #endif
 	  }
 	} else {
-	  payLoadLength = rlen;
+	  payLoadLength = (unsigned)rlen;
 	  ocpiDebug("udp: fam %u port %u addr %s",
 		    sa.in.sin_family, ntohs(sa.in.sin_port), inet_ntoa(sa.in.sin_addr));
 	  // iterate through all the control headers
@@ -500,7 +494,7 @@ namespace OCPI {
       }
 
       bool Socket::
-      send(Packet &packet, unsigned payLoadLength, Address &addr, unsigned timeoutms,
+      send(Packet &packet, size_t payLoadLength, Address &addr, unsigned timeoutms,
 	   Interface *ifc, std::string &error) {
 	if (payLoadLength > sizeof(Packet) - (sizeof(Header) - sizeof(uint16_t))) {
 	  setError(error, "sending packet that is too long: %u, p %u h %u",
@@ -539,7 +533,7 @@ namespace OCPI {
 	  if (haveDriver()) {
 	    sa.ocpi.ocpi_family = PF_OPENCPI;
 	    sa.ocpi.ocpi_role = m_role;
-	    sa.ocpi.ocpi_ifindex = m_ifIndex;
+	    sa.ocpi.ocpi_ifindex = (uint8_t)m_ifIndex;
 	    memcpy(sa.ocpi.ocpi_remote, addr.addr(), Address::s_size);
 	    msg.msg_namelen = sizeof(sa.ocpi);
 	  } else {
@@ -885,7 +879,7 @@ namespace OCPI {
 		    i.ipAddr.set(0, ((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr);
 		    if (ioctl(fd, SIOCGIFBRDADDR, &ifr) == 0) {
 		      i.brdAddr.set(0, ((struct sockaddr_in *)&ifr.ifr_broadaddr)->sin_addr.s_addr);
-		      i.index = index;
+		      i.index = (unsigned)index;
 		      i.name = entp->d_name;
 		      i.up = (nval & IFF_UP) != 0;
 		      i.connected = carrier != 0;

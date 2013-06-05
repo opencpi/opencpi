@@ -36,12 +36,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <xfer_if.h>
-#include <xfer_internal.h>
-#include <DtTransferInterface.h>
-#include <OcpiOsDataTypes.h>
-#include <OcpiOsMisc.h>
-#include <DtSharedMemoryInterface.h>
+#include "OcpiOsDataTypes.h"
+#include "OcpiOsMisc.h"
+#include "DtOsDataTypes.h"
+#include "DtSharedMemoryInterface.h"
+#include "DtTransferInterface.h"
+#include "xfer_if.h"
+#include "xfer_internal.h"
 
 using namespace DataTransfer;
 
@@ -52,9 +53,9 @@ xfer_pio_action_transfer(PIO_transfer transfer)
 {
 
   /* Get the alignments */
-  OCPI::OS::int64_t src_al = (OCPI::OS::uint64_t)transfer->src_va & 3;
-  OCPI::OS::int64_t dst_al = (OCPI::OS::uint64_t)transfer->dst_va & 3;
-  OCPI::OS::int32_t i;
+  uint32_t src_al = (uint32_t)((uintptr_t)transfer->src_va & 3);
+  uint32_t dst_al = (uint32_t)((uintptr_t)transfer->dst_va & 3);
+  uint32_t i;
 
   /* Check src and dst alignment */
   if (src_al != dst_al) {
@@ -64,15 +65,15 @@ xfer_pio_action_transfer(PIO_transfer transfer)
      */
     char *src = (char *)transfer->src_va;
     char *dst = (char *)transfer->dst_va;
-    OCPI::OS::int32_t nbytes = transfer->nbytes;
+    size_t nbytes = transfer->nbytes;
 
 
     if (src == 0) {
-      for (OCPI::OS::int32_t i=0; i < nbytes; i++)
+      for (uint32_t i=0; i < nbytes; i++)
         *dst++ = 0;
     }
     else {
-      for (OCPI::OS::int32_t i=0; i < nbytes; i++)
+      for (uint32_t i=0; i < nbytes; i++)
         *dst++ = *src++;
     }
   }
@@ -85,19 +86,19 @@ xfer_pio_action_transfer(PIO_transfer transfer)
     char *src_b = (char *)transfer->src_va;
     char *dst_b = (char *)transfer->dst_va;
 
-    OCPI::OS::int32_t *src_w;
-    OCPI::OS::int32_t *dst_w;
+    int32_t *src_w;
+    int32_t *dst_w;
 
     for (i=0; i < src_al; i++)
       *dst_b++ = *src_b++;
 
     /* Get the word pointers */
-    src_w = (OCPI::OS::int32_t *)src_b;
-    dst_w = (OCPI::OS::int32_t *)dst_b;
+    src_w = (int32_t *)src_b;
+    dst_w = (int32_t *)dst_b;
 
     /* Get the word count and remainder */
-    OCPI::OS::int32_t nwords = (transfer->nbytes - src_al) / 4;
-    OCPI::OS::int32_t rem_nwords = (transfer->nbytes - src_al) % 4;
+    size_t nwords = (transfer->nbytes - src_al) / 4;
+    size_t rem_nwords = (transfer->nbytes - src_al) % 4;
 
     if (src_w == 0) {
       for (i=0; i < nwords; i++)    
@@ -126,11 +127,11 @@ xfer_pio_action_transfer(PIO_transfer transfer)
   }
   else {
     /* Get the word pointers */
-    OCPI::OS::int32_t *src_w = (OCPI::OS::int32_t *)transfer->src_va;
-    OCPI::OS::int32_t *dst_w = (OCPI::OS::int32_t *)transfer->dst_va;
+    int32_t *src_w = (int32_t *)transfer->src_va;
+    int32_t *dst_w = (int32_t *)transfer->dst_va;
 
-    OCPI::OS::int32_t nwords = transfer->nbytes / 4;
-    OCPI::OS::int32_t rem_nwords = transfer->nbytes % 4;
+    size_t nwords = transfer->nbytes / 4;
+    size_t rem_nwords = transfer->nbytes % 4;
 
     if (src_w == 0) {
       for (i=0; i < nwords; i++)    
@@ -160,7 +161,7 @@ xfer_pio_action_transfer(PIO_transfer transfer)
 
   //#define TRACE_PIO_XFERS  
 #ifdef TRACE_PIO_XFERS
-  OCPI::OS::int32_t *src1 = (OCPI::OS::int32_t *)transfer->src_va;
+  int32_t *src1 = (int32_t *)transfer->src_va;
   printf("^^^^ copying %d bytes from %llx to %llx\n", transfer->nbytes,transfer->src_off,transfer->dst_off);
   printf("source wrd 1 = %d wrd2 = %d\n", src1[0], src1[1] );
 #endif
@@ -171,11 +172,11 @@ xfer_pio_action_transfer(PIO_transfer transfer)
 void
 xfer_pio_action_transfer(PIO_transfer transfer)
 {
-  OCPI::OS::int32_t nwords = ((transfer->nbytes + 5) / 8) ;
+  uint32_t nwords = ((transfer->nbytes + 5) / 8) ;
 
 #ifdef DEBUG
   {
-        int M=50;
+        unsigned int M=50;
         char* c=(char*)src;
         printf("\n\nSource Data(0x%x) Target(0x%x):\n", src, dst );
         for (int n=0; n<M; n++ ) {
@@ -188,8 +189,8 @@ xfer_pio_action_transfer(PIO_transfer transfer)
 
 #ifdef IP_DEBUG_SUPPORT
   if ( nwords == 1 ) {
-    OCPI::OS::int32_t *src1 = (OCPI::OS::int32_t *)transfer->src_va;
-    OCPI::OS::int32_t *dst1 = (OCPI::OS::int32_t *)transfer->dst_va;    
+    int32_t *src1 = (int32_t *)transfer->src_va;
+    int32_t *dst1 = (int32_t *)transfer->dst_va;    
     //    if ( ((src1[0] < 3) && (src1[1] < 3)) || ((src1[0] > 2048) && (src1[1] > 2048)) )  {
     if ( ((src1[0] < 3) && (src1[1] < 3)) || ((src1[0] > 2048) && (src1[1] > 2048)) )  {
 
@@ -211,9 +212,9 @@ xfer_pio_action_transfer(PIO_transfer transfer)
     }
   }
   else {
-    OCPI::OS::int32_t *src1 = (OCPI::OS::int32_t *)transfer->src_va;
-    OCPI::OS::int32_t *dst1 = (OCPI::OS::int32_t *)transfer->dst_va;    
-    for (OCPI::OS::int32_t i=0; i < nwords*2; i++) {
+    int32_t *src1 = (int32_t *)transfer->src_va;
+    int32_t *dst1 = (int32_t *)transfer->dst_va;    
+    for (int32_t i=0; i < nwords*2; i++) {
       dst1[i] = src1[i];
     }
   }
@@ -221,8 +222,8 @@ xfer_pio_action_transfer(PIO_transfer transfer)
 
 
 
-  OCPI::OS::int32_t *src1 = (OCPI::OS::int32_t *)transfer->src_va;
-  OCPI::OS::int32_t *dst1 = (OCPI::OS::int32_t *)transfer->dst_va;    
+  int32_t *src1 = (int32_t *)transfer->src_va;
+  int32_t *dst1 = (int32_t *)transfer->dst_va;    
 
   //#define TRACE_PIO_XFERS  
 #ifdef TRACE_PIO_XFERS
@@ -232,7 +233,7 @@ xfer_pio_action_transfer(PIO_transfer transfer)
 #endif
 
 
-  for (OCPI::OS::int32_t i=0; i < nwords*2; i++) {
+  for (uint32_t i=0; i < nwords*2; i++) {
     dst1[i] = src1[i];
   }
   
@@ -242,7 +243,7 @@ xfer_pio_action_transfer(PIO_transfer transfer)
 #endif
 
 
-OCPI::OS::int32_t
+int32_t
 xfer_pio_create(DataTransfer::SmemServices* src, DataTransfer::SmemServices* dst, PIO_template *pio_templatep)
 {
   void *src_va;
@@ -271,7 +272,7 @@ xfer_pio_create(DataTransfer::SmemServices* src, DataTransfer::SmemServices* dst
 #define OF_WINDOW 0x1000000
 
 void
-xfer_pio_modify( PIO_transfer transfer, int,  OCPI::OS::uint32_t *noff,  OCPI::OS::uint32_t *ooff )
+xfer_pio_modify( PIO_transfer transfer, int,  DtOsDataTypes::Offset *noff,  DtOsDataTypes::Offset *ooff )
 {
   ooff[0] = transfer->src_off;
   transfer->src_va = (char*)transfer->src_va - transfer->src_off;
@@ -281,9 +282,9 @@ xfer_pio_modify( PIO_transfer transfer, int,  OCPI::OS::uint32_t *noff,  OCPI::O
 
 
 
-OCPI::OS::int32_t
-xfer_pio_copy(PIO_template pio_template, OCPI::OS::uint32_t src_os, OCPI::OS::uint32_t dst_os,
-              OCPI::OS::int32_t nbytes, OCPI::OS::int32_t flags, PIO_transfer *pio_transferp)
+int32_t
+xfer_pio_copy(PIO_template pio_template, DtOsDataTypes::Offset src_os, DtOsDataTypes::Offset dst_os,
+              size_t nbytes, int32_t flags, PIO_transfer *pio_transferp)
 {
   /* Allocate transfer */
   PIO_transfer pio_transfer = new struct pio_transfer_;
@@ -345,15 +346,15 @@ xfer_pio_copy(PIO_template pio_template, OCPI::OS::uint32_t src_os, OCPI::OS::ui
 }
 
 
-OCPI::OS::int32_t
-xfer_pio_group(PIO_transfer *members, OCPI::OS::int32_t, PIO_transfer *pio_transferp)
+int32_t
+xfer_pio_group(PIO_transfer *members, int32_t, PIO_transfer *pio_transferp)
 {
   /* Check for null member array */
   if (!members)
     return 1;
 
   PIO_transfer transfer = new struct pio_transfer_;
-  OCPI::OS::int32_t index = 0;
+  uint32_t index = 0;
 
   /* Check the allocation worked */
   if (!transfer)
@@ -413,8 +414,8 @@ xfer_pio_group(PIO_transfer *members, OCPI::OS::int32_t, PIO_transfer *pio_trans
 }
 
 #if 0
-OCPI::OS::int32_t
-xfer_pio_start(PIO_transfer pio_transfer, OCPI::OS::int32_t)
+int32_t
+xfer_pio_start(PIO_transfer pio_transfer, int32_t)
 {
   PIO_transfer transfer = pio_transfer;
 
@@ -427,7 +428,7 @@ xfer_pio_start(PIO_transfer pio_transfer, OCPI::OS::int32_t)
   return 0;
 }
 #endif
-OCPI::OS::int32_t
+int32_t
 xfer_pio_release(PIO_transfer pio_transfer)
 {
   /* Local Variables */
@@ -449,7 +450,7 @@ xfer_pio_release(PIO_transfer pio_transfer)
   return 0;
 }
 
-OCPI::OS::int32_t
+int32_t
 xfer_pio_destroy(PIO_template pio_template)
 {
   /* Free the transfer template */

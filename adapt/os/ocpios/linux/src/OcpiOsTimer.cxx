@@ -52,11 +52,11 @@ inline Time Time::now() {
 #ifdef __APPLE__
   struct timeval tv;
   gettimeofday(&tv, NULL);
-  t.set(tv.tv_sec, tv.tv_usec * 1000);
+  t.set((uint32_t)tv.tv_sec, tv.tv_usec * 1000);
 #else
   struct timespec ts;
   ocpiCheck(clock_gettime (CLOCK_MONOTONIC, &ts) == 0);
-  t.set(ts.tv_sec, ts.tv_nsec);
+  t.set((uint32_t)ts.tv_sec, (uint32_t)ts.tv_nsec);
 #endif
   return t;
 }
@@ -137,7 +137,7 @@ CounterFreq::CounterFreq ()
   char * ptr;
 
   if ((ptr = std::strstr (tmp, "timebase period"))) {
-    unsigned int period;
+    unsigned long period;
     char * endPtr;
 
     // Position ptr at the beginning of the value
@@ -173,7 +173,7 @@ CounterFreq::CounterFreq ()
    */
 
   if ((ptr = std::strstr (tmp, "timebase"))) {
-    unsigned int freq;
+    unsigned long freq;
     char * endPtr;
 
     // Position ptr at the beginning of the value
@@ -215,7 +215,7 @@ CounterFreq::CounterFreq ()
       return;
   }
   if ((ptr = std::strstr (tmp, "cpu MHz"))) {
-    unsigned int mhz, khz = 0;
+    unsigned long mhz, khz = 0;
     char * endPtr;
 
     // Position ptr at the beginning of the value
@@ -326,8 +326,8 @@ namespace {
   };
 
   struct TimerTickInfo {
-    unsigned int lower, upper;
-    unsigned long long accumulatedCounter;
+    uint32_t lower, upper;
+    uint16_t accumulatedCounter;
   };
 
   struct TimerData {
@@ -481,8 +481,9 @@ getElapsed ()
       tti.upper = tb_upper;
       ocpiAssert (g_counterFreq != 0);
       // FIXME: perhaps better accuracy deling with ocpi ticks directly
-      tci.accumulatedTime.set(tti.accumulatedCounter / g_counterFreq,
-			      ((tti.accumulatedCounter % g_counterFreq) * 1000000000ull) / g_counterFreq);
+      tci.accumulatedTime.set((uint32_t)(tti.accumulatedCounter / g_counterFreq),
+			      (uint32_t)(((tti.accumulatedCounter % g_counterFreq) *
+					  1000000000ull) / g_counterFreq));
       
     }
     else {
@@ -507,8 +508,9 @@ getValue (ElapsedTime & timer)
   if (useHighResTimer()) {
     ocpiAssert (g_counterFreq != 0);
     // FIXME: perhaps better accuracy deling with ocpi ticks directly
-    timer.set(tti.accumulatedCounter / g_counterFreq,
-	      ((tti.accumulatedCounter % g_counterFreq) * 1000000000ull) / g_counterFreq);
+    timer.set((uint32_t)(tti.accumulatedCounter / g_counterFreq),
+	      (uint32_t)(((tti.accumulatedCounter % g_counterFreq) * 1000000000ull) /
+			 g_counterFreq));
   } else
     timer = tci.accumulatedTime;
 }
@@ -530,7 +532,7 @@ getPrecision (ElapsedTime & prec)
 #else
     struct timespec res;
     ocpiCheck(clock_getres (CLOCK_MONOTONIC, &res) == 0);
-    prec.set(res.tv_sec, res.tv_nsec);
+    prec.set((uint32_t)res.tv_sec, (uint32_t)res.tv_nsec);
 #endif
   }
 }

@@ -54,14 +54,12 @@
 #define OCPI_DataTransfer_SharedMemoryInterface_H_
 
 #include <string>
-#include <OcpiParentChild.h>
-#include <OcpiOsDataTypes.h>
+#include "OcpiParentChild.h"
+#include "OcpiOsDataTypes.h"
+#include "DtOsDataTypes.h"
 
 namespace DataTransfer {
 
-  // Maximum number of SMB's and mailboxes allowed in the system unless overriden by env
-  // FIXME:  make this part of config
-  const OCPI::OS::uint32_t MAX_SYSTEM_SMBS = 20;
 
   /*
    * This structure is used to manage the shared memory blocks.  It contains the 
@@ -71,10 +69,12 @@ namespace DataTransfer {
   class ResourceServices;
   struct ContainerComms;
   class SmemServices;
+  struct EndPoint;
   struct SMBResources {
     SmemServices       *sMemServices;
     ResourceServices   *sMemResourceMgr;
     ContainerComms     *m_comms;
+    void finalize(EndPoint &ep);
     SMBResources();
     ~SMBResources();
   };
@@ -88,14 +88,14 @@ namespace DataTransfer {
     std::string          protocol;     // protocol string
     uint16_t             mailbox;      // endpoint mailbox
     uint16_t             maxCount;     // Number of mailboxes in communication domain
-    uint32_t             size;         // Size of endpoint area in bytes
+    size_t               size;         // Size of endpoint area in bytes
     uint64_t             address;      // Address of endpoint in its address space (usually 0)
-    uint32_t             event_id;     
+    //    uint32_t             event_id;     
     bool                 local;        // local endpoint
     SMBResources         resources;    // SMB resources associated with this endpoint
     XferFactory*         factory;
     unsigned             refCount;
-    EndPoint( std::string& ep, OCPI::OS::uint32_t size=0, bool local=false);
+    EndPoint( std::string& ep, size_t size=0, bool local=false);
     virtual bool isCompatibleLocal(const char *) const { return true; }
     //    EndPoint& operator=(EndPoint&);
     //    EndPoint& operator=(EndPoint*);
@@ -114,17 +114,17 @@ namespace DataTransfer {
 
     // Get the address from the endpoint
     virtual const char* getAddress()=0;
-    virtual unsigned & getId(){static unsigned n=0; return n;};
+    virtual uint16_t & getId(){ static uint16_t n=0; return n;};
 
     // Parse the endpoint string
     static void getProtocolFromString( const char* ep, std::string & );
 
     static void getResourceValuesFromString( 
-                            const char*  ep,                // Endpoint value
-                            char*  cs,                        // User provided buffer (at least sizeof ep )
-                            uint16_t* mailBox,        // Mailbox value returned
-                            uint16_t* maxMb,        // Maximum mailbox value in circuit returned
-                            uint32_t* bufsize        // Buffer size returned
+                            const char*  ep,      // Endpoint value
+                            char*  cs,            // User provided buffer (at least sizeof ep )
+                            uint16_t* mailBox,    // Mailbox value returned
+                            uint16_t* maxMb,      // Maximum mailbox value in circuit returned
+                            size_t* bufsize       // Buffer size returned
                             );
 
     virtual SmemServices &createSmemServices() = 0;
@@ -148,7 +148,7 @@ namespace DataTransfer {
      *                Returns 0 if success, platform dependent error otherwise
      *
      */
-    virtual OCPI::OS::int32_t attach (EndPoint* loc) = 0;
+    virtual OCPI::OS::int32_t attach(EndPoint* loc) = 0;
 
     /*
      * Detach from shared memory object
@@ -157,7 +157,7 @@ namespace DataTransfer {
      *                Returns 0 if success, platform dependent error otherwise
      *
      */
-    virtual OCPI::OS::int32_t detach () = 0;
+    virtual OCPI::OS::int32_t detach() = 0;
 
     /*
      * Map a view of the shared memory area at some offset/size and return the virtual address.
@@ -169,7 +169,7 @@ namespace DataTransfer {
      *                Returns address if success, NULL on error and sets platform dependent exception
      *
      */
-    virtual void* map (uint32_t offset, uint32_t size ) = 0;
+    virtual void* map(DtOsDataTypes::Offset offset, size_t size ) = 0;
 
     /*
      * Unmap the current mapped view.
@@ -178,12 +178,12 @@ namespace DataTransfer {
      *                Returns 0 if success, platform dependent error otherwise
      *
      */
-    virtual int32_t unMap () = 0;
+    virtual int32_t unMap() = 0;
 
     /*
      *        GetEndPoint - Returns the endpoint of the shared memory area
      */
-    EndPoint * endpoint(){return &m_endpoint;}
+    inline EndPoint * endpoint() {return &m_endpoint;}
 
 
 

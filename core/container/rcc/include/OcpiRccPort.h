@@ -196,7 +196,7 @@ namespace OCPI {
 	return false;
       }
 
-      void send(OCPI::DataTransport::BufferUserFacet* buffer, uint32_t length,
+      void send(OCPI::DataTransport::BufferUserFacet* buffer, size_t length,
 		uint8_t opcode) {
 	Port *bufferPort = static_cast<Port*>(buffer->m_ud);
 	try {

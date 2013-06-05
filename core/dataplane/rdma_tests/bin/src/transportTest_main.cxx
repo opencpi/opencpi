@@ -56,10 +56,11 @@
 
 #include "OcpiOsAssert.h"
 #include "OcpiOsMisc.h"
+#include "OcpiUtilMisc.h"
 #include "DtTransferInternal.h"
 #include "OcpiUtilCommandLineConfiguration.h"
 
-
+namespace DDT = DtOsDataTypes;
 static int socket_fd;
 /****************************************************************************** 
  *
@@ -185,11 +186,11 @@ ex_data( HSDesc & ep1, HSDesc & ep2  )
 {
   char buf[512];
   write( socket_fd, &ep1.cookie, 8 );  
-  uint32_t us =  ep1.url.size()+1;
+  size_t us =  ep1.url.size()+1;
   write( socket_fd, &us, sizeof(uint32_t));
   write( socket_fd, ep1.url.c_str(), ep1.url.size()+1 );
-  int l = read( socket_fd, &ep2.cookie, 8); 
-  printf("Read %d bytes, expected %d\n", l , 8);
+  ssize_t l = read( socket_fd, &ep2.cookie, 8); 
+  printf("Read %zd bytes, expected %d\n", l , 8);
   l = read( socket_fd, &us, sizeof(uint32_t));    
   ocpiAssert( l == sizeof(uint32_t));
   l = read( socket_fd, buf, us);
@@ -345,16 +346,19 @@ public:
     // Here for completness we will create a transfer for each of our buffers to each of the other sides buffers
     for ( int n=0; n<BUFFER_COUNT; n++ ) {
       for ( int y=0; y<BUFFER_COUNT; y++ ) {
-	int s_ff_off = offsetof( struct MemLayout, buffers[0].full_flag ) + sizeof( TestMemLayout ) * n;
-	int s_data_off = offsetof( struct MemLayout, buffers[0].data ) + sizeof( TestMemLayout ) * n;
-	int s_nbytes_off = offsetof( struct MemLayout, buffers[0].nbytes ) + sizeof( TestMemLayout ) * n;
-	int t_ff_off = offsetof( struct MemLayout, buffers[0].full_flag ) + sizeof( TestMemLayout ) * y;
-	int t_data_off = offsetof( struct MemLayout, buffers[0].data ) + sizeof( TestMemLayout ) * y;
-	int t_nbytes_off = offsetof( struct MemLayout, buffers[0].nbytes ) + sizeof( TestMemLayout ) * y;
+	size_t s_ff_off = offsetof( struct MemLayout, buffers[0].full_flag ) + sizeof( TestMemLayout ) * n;
+	size_t s_data_off = offsetof( struct MemLayout, buffers[0].data ) + sizeof( TestMemLayout ) * n;
+	size_t s_nbytes_off = offsetof( struct MemLayout, buffers[0].nbytes ) + sizeof( TestMemLayout ) * n;
+	size_t t_ff_off = offsetof( struct MemLayout, buffers[0].full_flag ) + sizeof( TestMemLayout ) * y;
+	size_t t_data_off = offsetof( struct MemLayout, buffers[0].data ) + sizeof( TestMemLayout ) * y;
+	size_t t_nbytes_off = offsetof( struct MemLayout, buffers[0].nbytes ) + sizeof( TestMemLayout ) * y;
 	DataTransfer::XferRequest * req = m_xferServices->createXferRequest();
-	req->copy( s_data_off, t_data_off, BUFFER_SIZE, DataTransfer::XferRequest::DataTransfer );    
-	req->copy( s_ff_off, t_ff_off, sizeof(uint32_t) , DataTransfer::XferRequest::FlagTransfer );	
-	req->copy( s_nbytes_off, t_nbytes_off, sizeof(uint32_t), DataTransfer::XferRequest::None );    
+	req->copy(OCPI_UTRUNCATE(DDT::Offset, s_data_off), OCPI_UTRUNCATE(DDT::Offset, t_data_off),
+		  BUFFER_SIZE, DataTransfer::XferRequest::DataTransfer );    
+	req->copy(OCPI_UTRUNCATE(DDT::Offset, s_ff_off), OCPI_UTRUNCATE(DDT::Offset, t_ff_off),
+		  sizeof(uint32_t) , DataTransfer::XferRequest::FlagTransfer );	
+	req->copy(OCPI_UTRUNCATE(DDT::Offset, s_nbytes_off), OCPI_UTRUNCATE(DDT::Offset, t_nbytes_off),
+		  sizeof(uint32_t), DataTransfer::XferRequest::None );    
 	m_reqs[ n ][ y ] = req;
       }
     }
@@ -694,7 +698,7 @@ int main( int argc, char** argv )
 
 	  int z;
 	  for ( z=0; z<y; z++ ) {
-	    out_data[z] = (z + y)%256;
+	    out_data[z] = (uint8_t)((z + y)%256);
 	  }
 
 	  client.produce( 1,4,y );

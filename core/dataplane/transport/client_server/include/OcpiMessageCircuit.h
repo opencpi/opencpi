@@ -95,8 +95,8 @@ namespace OCPI {
        *  Send a message
        **********************************/
       OCPI::DataTransport::BufferUserFacet*
-	getNextEmptyOutputBuffer(void *&data, uint32_t &length, OCPI::OS::Timer *timer = NULL);
-      void sendOutputBuffer( OCPI::DataTransport::BufferUserFacet* msg, unsigned int length, uint8_t opcode);
+	getNextEmptyOutputBuffer(void *&data, size_t &length, OCPI::OS::Timer *timer = NULL);
+      void sendOutputBuffer( OCPI::DataTransport::BufferUserFacet* msg, size_t length, uint8_t opcode);
 
       // Indicates whether data is available for input - a "peek"
       
@@ -108,7 +108,7 @@ namespace OCPI {
        **********************************/
       // bool messageAvailable(); // optional
       OCPI::DataTransport::BufferUserFacet*
-	getNextFullInputBuffer(void *&data, uint32_t &length, uint8_t &opcode,
+	getNextFullInputBuffer(void *&data, size_t &length, uint8_t &opcode,
 			       OCPI::OS::Timer *timer = NULL);
       void releaseInputBuffer( OCPI::DataTransport::BufferUserFacet* msg );
       void dispatch(DataTransfer::EventManager* eh = NULL);

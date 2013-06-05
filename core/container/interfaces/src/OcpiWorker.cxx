@@ -112,24 +112,24 @@ namespace OCPI {
       if (info.m_isSequence || prop.m_info.m_arrayRank > 0) {
 	if (info.m_baseType == OA::OCPI_String) {
 	  const char **sp = v.m_pString;
-	  unsigned offset = info.m_offset + (info.m_isSequence ? info.m_align : 0);
+	  size_t offset = info.m_offset + (info.m_isSequence ? info.m_align : 0);
 	  for (unsigned n = 0; n < v.m_nTotal; n++) {
-	    unsigned l = strlen(sp[n]);
+	    size_t l = strlen(sp[n]);
 	    setPropertyBytes(info, offset, (uint8_t*)sp[n], l + 1);
 	    offset += roundup(info.m_stringLength + 1, 4);
 	  }	  
 	} else {
 	  uint8_t *data = v.m_pUChar;
-	  unsigned nBytes = v.m_nTotal * (info.m_nBits/8);
+	  size_t nBytes = v.m_nTotal * (info.m_nBits/8);
 	  if (nBytes)
 	    setPropertyBytes(info,
 			     info.m_offset + (info.m_isSequence ? info.m_align : 0),
 			     data, nBytes);
 	}
 	if (info.m_isSequence)
-	  setProperty32(info, v.m_nElements);
+	  setProperty32(info, (uint32_t)v.m_nElements);
       } else if (info.m_baseType == OA::OCPI_String) {
-	unsigned l = strlen(v.m_String) + 1; // amount to actually copy
+	size_t l = strlen(v.m_String) + 1; // amount to actually copy
 	if (l > 4)
 	  setPropertyBytes(info, info.m_offset + 4,
 			   (uint8_t *)(v.m_String + 4), l - 4);
@@ -189,17 +189,17 @@ namespace OCPI {
 	if (info.m_isSequence) {
 	  v.m_nElements = getProperty32(info);
 	  if (v.m_nElements > info.m_sequenceLength)
-	    throw OU::Error("Worker's %s property has invalid sequence length: %u",
+	    throw OU::Error("Worker's %s property has invalid sequence length: %zu",
 			    info.m_name.c_str(), v.m_nElements);
 	  v.m_nTotal *= v.m_nElements;
 	}
 	if (info.m_baseType == OA::OCPI_String) {
-	  unsigned length = roundup(info.m_stringLength + 1, 4);
+	  size_t length = roundup(info.m_stringLength + 1, 4);
 	  v.m_stringSpaceLength = v.m_nTotal * length;
 	  v.m_stringNext = v.m_stringSpace = new char[v.m_stringSpaceLength];
 	  char **sp = new char *[v.m_nTotal];
 	  v.m_pString = (const char **)sp;
-	  unsigned offset = info.m_offset + (info.m_isSequence ? info.m_align : 0);
+	  size_t offset = info.m_offset + (info.m_isSequence ? info.m_align : 0);
 	  for (unsigned n = 0; n < v.m_nTotal; n++) {
 	    sp[n] = v.m_stringNext;
 	    getPropertyBytes(info, offset, (uint8_t *)v.m_stringNext, length);
@@ -207,7 +207,7 @@ namespace OCPI {
 	    offset += length;
 	  }	  
 	} else {
-	  unsigned nBytes = v.m_nTotal * (info.m_nBits/8);
+	  size_t nBytes = v.m_nTotal * (info.m_nBits/8);
 	  uint8_t *data = new uint8_t[nBytes];
 	  v.m_pUChar = data;
 	  if (nBytes)
@@ -253,7 +253,7 @@ namespace OCPI {
             OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
             default:
-	      ocpiAssert(!"unknown data type");
+	      ocpiAssert("unknown data type"==0);
 	  }
 	}
     }

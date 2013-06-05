@@ -74,22 +74,22 @@ namespace OX = OCPI::Util::EzXml;
 namespace OU = OCPI::Util;
 namespace OS = OCPI::OS;
 namespace OD = OCPI::Driver;
-
+namespace DDT = DtOsDataTypes;
 namespace DataTransfer {
 
-uint16_t 
+DDT::MailBox 
 XferFactory::
 getNextMailBox()
 {
-  static uint16_t mailbox=1;
-  static bool mb_once=false;
+  static DDT::MailBox mailbox = 1;
+  static bool mb_once = false;
   if ( ! mb_once ) {
     const char* env = getenv("OCPI_TRANSFER_MAILBOX");
     if( !env || (env[0] == 0)) {
       ocpiInfo("Set ""OCPI_TRANSFER_MAILBOX"" environment varible to control mailbox");
     }
     else {
-      mailbox = atoi(env);
+      mailbox = (DDT::MailBox)atoi(env);
     }
     mb_once = true;
   }
@@ -99,19 +99,19 @@ getNextMailBox()
 
 
 
-uint16_t 
+DDT::MailBox 
 XferFactory::
 getMaxMailBox()
 {
-  static bool mmb_once=false;
-  static uint16_t max_mb=MAX_SYSTEM_SMBS;
+  static bool mmb_once = false;
+  static DDT::MailBox max_mb = DDT::MAX_SYSTEM_SMBS;
   if ( ! mmb_once ) {
     const char* env = getenv("OCPI_MAX_MAILBOX");
     if( !env || (env[0] == 0)) {
       ocpiInfo("Set ""OCPI_MAX_MAILBOX"" environment varible to control max mailbox");
     }
     else {
-      max_mb = atoi(env);
+      max_mb = (DDT::MailBox)atoi(env);
     }
     mmb_once = true;
   }
@@ -188,7 +188,7 @@ getNode( ezxml_t tn, const char* name )
 
 // These defaults are pre-configuration
 FactoryConfig::
-FactoryConfig(uint32_t smbSize, uint32_t retryCount)
+FactoryConfig(size_t smbSize, size_t retryCount)
   : m_SMBSize(3*1024*1024), m_retryCount(128)
 {
   if (smbSize)
@@ -262,7 +262,7 @@ supportsEndPoints(
   ocpiDebug("In  XferFactory::supportsEndPoints, (%s) (%s)",
          end_point1.c_str(), end_point2.c_str() );
 
-  unsigned int len = strlen( getProtocol() );
+  size_t len = strlen( getProtocol() );
   if ( end_point1.length() && end_point2.length() ) {
 
     if ( (strncmp( end_point1.c_str(), getProtocol(), strlen(getProtocol())) == 0 ) &&
@@ -370,12 +370,12 @@ void XferFactoryManager::shutdown()
 // We need to create an endpoint for some other (hardware) container.
 // The string should not include the last two fields.
   EndPoint& XferFactoryManager::
-  allocateProxyEndPoint(const char *loc, uint32_t size) {
+  allocateProxyEndPoint(const char *loc, size_t size) {
     XferFactory* tfactory = find(loc);
     if (!tfactory)
       throw OU::Error("No driver/factory for endpoint string: '%s'", loc);
     std::string complete;
-    OU::formatString(complete, "%s;%" PRIu32 ".%u.%u",
+    OU::formatString(complete, "%s;%zu.%u.%u",
 		     loc, size, tfactory->getNextMailBox(), tfactory->getMaxMailBox());
     return *tfactory->getEndPoint(complete.c_str(), false, true);
   }
@@ -434,9 +434,9 @@ removeEndPoint(EndPoint &ep) {
 EndPoint* XferFactory::
 getEndPoint(const char *end_point, bool local, bool cantExist)
 { 
-  OCPI::Util::SelfAutoMutex guard (this); 
+  OU::SelfAutoMutex guard (this); 
   for (EndPoints::iterator i = m_endPoints.begin(); i != m_endPoints.end(); i++)
-    if (*i && (*i)->end_point == end_point)
+    if (*i && (*i)->end_point == end_point) {
       if (cantExist)
 	throw OU::Error("Local explicit endpoint already exists: '%s'", end_point);
       else {
@@ -447,35 +447,36 @@ getEndPoint(const char *end_point, bool local, bool cantExist)
 #endif
 	return *i;
       }
+    }
   return addEndPoint(end_point, local);
 }
 
 // The default is that the remote one doesn't matter to this allocation
 std::string XferFactory::
-allocateCompatibleEndpoint(const OCPI::Util::PValue*params,
+allocateCompatibleEndpoint(const OU::PValue*params,
 			   const char *,
-			   uint16_t mailBox, uint16_t maxMailBoxes) {
+			   DDT::MailBox mailBox, DDT::MailBox maxMailBoxes) {
   return allocateEndpoint(params, mailBox, maxMailBoxes);
 }
 
 EndPoint* XferFactory::
-addCompatibleLocalEndPoint(const char *remote, uint16_t mailBox, uint16_t maxMb)
+addCompatibleLocalEndPoint(const char *remote, DDT::MailBox mailBox, DDT::MailBox maxMb)
 { 
-  OCPI::Util::SelfAutoMutex guard (this); 
+  OU::SelfAutoMutex guard (this); 
   // Find an unused slot that is different from the remote one
   // mailbox might be zero so this will find the first free slot in any case
-  unsigned myMax = getMaxMailBox();
+  DDT::MailBox myMax = getMaxMailBox();
   if (maxMb && maxMb != myMax)
     throw OU::Error("Remote end point has different number of mailbox slots (%u vs. our %u)",  maxMb, myMax);
-  unsigned n;
+  DDT::MailBox n;
   if (!mailBox)
     n = getNextMailBox();
   else {
     for (n = 1; n < m_locations.size(); n++)
       if (n != mailBox && m_locations[n])
 	break;
-    if (n == MAX_SYSTEM_SMBS || n > myMax)
-      throw OCPI::Util::Error("Mailboxes for endpoints for protocol %s are exhausted (all %u are used)",
+    if (n == DDT::MAX_SYSTEM_SMBS || n > myMax)
+      throw OU::Error("Mailboxes for endpoints for protocol %s are exhausted (all %u are used)",
 			      getProtocol(), myMax);
     if (n >= m_locations.size())
       n = getNextMailBox();
@@ -698,20 +699,6 @@ getSMBResources(
   OU::AutoMutex guard ( m_mutex, true );
   return &ep->getSMBResources();
 }
-#if 0
-  ocpiAssert( ep );
-  ep->finalize();
-  return &ep->resources;
-  if (!ep->resources) {
-    SMBResources* sr = new SMBResources;
-    sr->sMemServices = ep->getSmemServices();
-    sr->sMemResourceMgr = NULL;
-    sr->sMemServices->attach( loc );
-    ep->resources = sr;
-    m_resources.insert(sr);
-  }
-  return ep->resources;
-#endif
 
 // create a transfer compatible SMB
 SMBResources* 
@@ -731,66 +718,11 @@ getSMBResources(
   return getSMBResources(loc);
 }
 
-// This method makes a request to the
-bool XferMailBox::makeRequest( SMBResources* source, SMBResources* target )
-{
-
-  ocpiDebug("In makerequest from %s to %s\n",
-	    source->sMemServices->endpoint()->end_point.c_str(),
-	    target->sMemServices->endpoint()->end_point.c_str() );
-
-
-#ifdef MULTI_THREADED
-  // Lock the mailbox
-  if ( ! lockMailBox() ) {
-    return false;
-  }
-#endif
-
-  /* Attempt to get or make a transfer template */
-  XferServices* ptemplate =
-    XferFactoryManager::getFactoryManager().getService(
-						       source->sMemServices->endpoint(),
-						       target->sMemServices->endpoint() );
-  if ( ! ptemplate ) {
-    ocpiAssert(0);
-  }
-
-  OS::uint32_t offset = sizeof(ContainerComms::MailBox) * m_slot + sizeof(OS::uint32_t);
-
-  ocpiDebug("In make request with offset = %d\n", offset );
-
-  XferRequest * ptransfer = ptemplate->createXferRequest();
-
-  // create the copy in the template
-  ptransfer->copy (
-		   offset + sizeof(ContainerComms::BasicReq),
-		   offset + sizeof(ContainerComms::BasicReq),
-		   sizeof(ContainerComms::MailBox) - sizeof(ContainerComms::BasicReq),
-		   XferRequest::DataTransfer );
-
-  ptransfer->copy (
-		   offset,
-		   offset,
-		   sizeof(ContainerComms::BasicReq),
-		   XferRequest::FlagTransfer );
-
-  // Start the transfer
-  ptransfer->post();
-
-  while( ptransfer->getStatus() ) {
-    OS::sleep(0);
-  }
-
-  delete ptransfer;
-
-  return true;
-}
 
 // Statically available allocation routine
 std::string 
 XferFactoryManager::
-allocateEndpoint(std::string& protocol, const OCPI::Util::PValue * props )
+allocateEndpoint(std::string& protocol, const OU::PValue * props )
 {
   parent().configure();
   OU::AutoMutex guard ( m_mutex, true );
@@ -894,14 +826,14 @@ XferServices* XferFactoryManager::getService( std::string& source_sname, std::st
   }
 
 // Create a transfer request
-XferRequest* XferRequest::copy (OCPI::OS::uint32_t srcoffs, 
-				OCPI::OS::uint32_t dstoffs, 
-				OCPI::OS::uint32_t nbytes, 
+XferRequest* XferRequest::copy (DtOsDataTypes::Offset srcoffs, 
+				DtOsDataTypes::Offset dstoffs, 
+				size_t nbytes, 
 				XferRequest::Flags flags
 				)
 {
-  OCPI::OS::int32_t retVal = 0;
-  OCPI::OS::int32_t newflags = 0;
+  long retVal = 0;
+  int32_t newflags = 0;
   if (flags & XferRequest::DataTransfer) newflags |= XFER_FIRST;
   if (flags & XferRequest::FlagTransfer) newflags |= XFER_LAST;
   if ( m_thandle == NULL ) {
@@ -942,7 +874,7 @@ XferRequest & XferRequest::group (XferRequest* lhs )
   return *this;
 }
 
-void XferRequest::modify( OCPI::OS::uint32_t new_offsets[], OCPI::OS::uint32_t old_offsets[] )
+void XferRequest::modify( DtOsDataTypes::Offset new_offsets[], DtOsDataTypes::Offset old_offsets[] )
 {
   int n=0;
   while ( new_offsets[n] ) {

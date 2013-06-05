@@ -147,10 +147,10 @@ namespace OCPI {
        * \pre The socket shall be connected.
        */
 
-      unsigned long long recv (char * buffer, unsigned long long amount, unsigned timeoutms = 0)
+      size_t recv (char * buffer, size_t amount, unsigned timeoutms = 0)
         throw (std::string);
-      unsigned long long recvfrom(char  *buf, unsigned long long amount, int flags,
-				  char *  src_addr, unsigned long *addrlen, unsigned timeoutms = 0)
+      size_t recvfrom(char  *buf, size_t amount, int flags,
+		      char *  src_addr, size_t *addrlen, unsigned timeoutms = 0)
       throw (std::string);
 
       /**
@@ -170,12 +170,12 @@ namespace OCPI {
        * \pre The socket shall be connected.
        */
 
-      unsigned long long send (const char * data, unsigned long long amount)
+      size_t send (const char * data, size_t amount)
         throw (std::string);
-      unsigned long long sendmsg (const void * iovect, unsigned int flags )
+      size_t sendmsg (const void * iovect, unsigned int flags )
         throw (std::string);
-      unsigned long long sendto (const char * data, unsigned long long amount,
-				 int flags,  char * src_addr, unsigned long addrlen)			  
+      size_t sendto (const char * data, size_t amount,
+		     int flags,  char * src_addr, size_t addrlen)			  
 	throw (std::string);
 
       /**
@@ -188,7 +188,7 @@ namespace OCPI {
        * \pre The socket shall be connected.
        */
 
-      unsigned int getPortNo ()
+      uint16_t getPortNo ()
         throw (std::string);
 
       /**
@@ -203,7 +203,7 @@ namespace OCPI {
        */
 
       void getPeerName (std::string & peerHost,
-                        unsigned int & peerPort)
+                        uint16_t & peerPort)
         throw (std::string);
 
       /**

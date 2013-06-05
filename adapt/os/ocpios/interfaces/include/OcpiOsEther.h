@@ -147,15 +147,15 @@ namespace OCPI {
 	//	inline Address &ipAddr() { return m_ipAddr; }
 	// These return false if error or timeout
 	// Receive directly into packet buffer.
-	bool receive(Packet &, unsigned &payLoadLength, unsigned timeoutms,
+	bool receive(Packet &, size_t &payLoadLength, unsigned timeoutms,
 		     Address &addr, std::string &error, unsigned *indexp = NULL);
-	bool receive(uint8_t *buf, unsigned &offset, unsigned &length, unsigned timeoutms,
+	bool receive(uint8_t *buf, size_t &offset, size_t &length, unsigned timeoutms,
 		     Address &addr, std::string &error, unsigned *indexp = NULL);
 	// Send, and fill out the addressing first (hence packet not const).
 	// If no "addr", then use address in socket.
 	// If an ifc is supplied, send on that ifc.
 	// Return false if error or timeout
-	bool send(Packet &, unsigned payloadLength, Address &addr, unsigned timeoutms, Interface *,
+	bool send(Packet &, size_t payloadLength, Address &addr, unsigned timeoutms, Interface *,
 		  std::string &error);
 	bool send(IOVec *, unsigned vecLen, Address &addr, unsigned timeoutms, Interface *,
 		  std::string &error);

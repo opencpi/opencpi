@@ -23,7 +23,7 @@ typedef struct {
   double curAngle;
 } State;
 
-static uint32_t sizes[] = {sizeof(State), 0 };
+static size_t sizes[] = {sizeof(State), 0 };
 
 DDS_COMPLEX_METHOD_DECLARATIONS;
 RCCDispatch dds_complex = {

@@ -43,7 +43,7 @@ typedef struct {
   RCCBuffer buffers[HISTORY_SIZE]; // buffer history (ring)
 } ErodeState;
 
-static uint32_t sizes[] = {sizeof(ErodeState), 0};
+static size_t sizes[] = {sizeof(ErodeState), 0};
 
 ERODE_METHOD_DECLARATIONS;
 RCCDispatch erode = {

@@ -110,7 +110,7 @@ typedef enum {
 #define OCCP_ETHER_BYTE_ENABLES(t_and_be) ((t_and_be) & 0xf)
 #define OCCP_ETHER_RESPONSE(t_and_be) ((OCPI_HDL_ETHER EtherControlResponse)((t_and_be) & 0xf))
 #define OCCP_ETHER_TYPE_ETC(type, be, uncache, rsvd) \
-  (((type) << 4) | ((be) & 0xf) | ((uncache) << 6) | ((rsvd) << 7))
+  (uint8_t)(((type) << 4) | ((be) & 0xf) | ((uncache) << 6) | ((rsvd) << 7))
 #define OCCP_ETHER_RESERVED(t_and_be) ((t_and_be) & 0x80)
 
 #ifdef __cplusplus

@@ -35,6 +35,7 @@
 
 #include <signal.h>
 #include <unistd.h>
+#include <sys/time.h>
 #include <execinfo.h>
 #include <stdarg.h>
 #include <cstdlib>
@@ -105,7 +106,9 @@ namespace OCPI {
       if (n <= (unsigned)logLevel)  {
 	va_list ap;
 	va_start(ap, fmt);
-	fprintf(stderr, "OCPI(%2d): ", n);
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	fprintf(stderr, "OCPI(%2d:%u.%03u): ", n, (unsigned)(tv.tv_sec%10), (unsigned)((tv.tv_usec+500)/1000));
 	vfprintf(stderr, fmt, ap);
 	va_end(ap);
 	if (fmt[strlen(fmt)-1] != '\n')

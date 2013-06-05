@@ -112,12 +112,15 @@ namespace OCPI {
 	// Get rid of any state in the pipe
 	void
 	flush() {
-	  int r, n;
+	  ssize_t r;
+	  int n; // FIONREAD dictates int
 	  char buf[256];
+	  ocpiDebug("Starting to flush any state from previous simulation run");
 	  while (ioctl(m_rfd, FIONREAD, &n) >= 0 && n > 0 &&
 		 ((r = read(m_rfd, buf, sizeof(buf))) > 0 ||
 		  r < 0 && errno == EINTR))
 	    ;
+	  ocpiDebug("Ending flush of any state from previous simulation run");
 	}
       };
 
@@ -166,7 +169,7 @@ namespace OCPI {
 	OE::Packet m_response, m_serverResponse;
 	OE::Address m_lastClient;
 	bool m_haveTag;
-	unsigned m_respLeft;
+	size_t m_respLeft;
 	uint8_t *m_respPtr;
 	// This structure is what we remember about a request: which socket and from which address
 	struct Request {
@@ -180,7 +183,8 @@ namespace OCPI {
 	std::string m_platform;
 	std::string m_exec; // simulation executable local relative path name
 	bool m_verbose, m_dump, m_spinning, m_loading;
-	unsigned m_spinCount, m_sleepUsecs, m_simTicks;
+	unsigned m_sleepUsecs, m_simTicks;
+	uint8_t m_spinCount;
 	uint64_t m_cumTicks;
 	OS::Timer m_spinTimer;
 	std::string m_name;
@@ -196,7 +200,7 @@ namespace OCPI {
 	int m_xfd;                  // fd for writing local copy of executable
 	// End local state for executable file transfer
 	Sim(std::string &simDir, std::string &script, const std::string &platform,
-	    unsigned spinCount, unsigned sleepUsecs, unsigned simTicks, bool verbose, bool dump,
+	    uint8_t spinCount, unsigned sleepUsecs, unsigned simTicks, bool verbose, bool dump,
 	    std::string &error)
 	  : m_udp("udp", error),                       // the generic interface for udp broadcast receives
 	    m_disc(m_udp, ocpi_slave, NULL, 0, error), // the broadcast receiver
@@ -209,8 +213,8 @@ namespace OCPI {
 	    //      m_client(simDir + "/client", true, NULL, error),
 	    m_maxFd(-1), m_dcp(0), m_script(script), m_haveTag(false),
 	    m_respLeft(0), m_respPtr(NULL), m_platform(platform), m_verbose(verbose),
-	    m_dump(dump), m_spinning(false), m_spinCount(spinCount), m_sleepUsecs(sleepUsecs),
-	    m_simTicks(simTicks), m_cumTicks(0), m_xferSrvr(NULL), m_xferSckt(NULL),
+	    m_dump(dump), m_spinning(false), m_sleepUsecs(sleepUsecs), m_simTicks(simTicks),
+	    m_spinCount(spinCount), m_cumTicks(0), m_xferSrvr(NULL), m_xferSckt(NULL),
 	    m_xferSize(0), m_xferCount(0), m_xferDone(false), m_xfd(-1)
 	{
 	  if (error.length())
@@ -330,7 +334,7 @@ namespace OCPI {
 	bool
 	spin(std::string &error) {
 	  if (!m_spinning) {
-	    char msg[2];
+	    uint8_t msg[2];
 	    msg[0] = SPIN_CREDIT;
 	    msg[1] = m_spinCount;
 	    ssize_t w = write(m_ctl.m_wfd, msg, 2);
@@ -443,7 +447,7 @@ namespace OCPI {
 	  if (m_verbose)
 	    fprintf(stderr, "Simulator process (process id %u) started, with its output in %s/sim.out\n",
 		    s_pid, m_dir.c_str());
-	  char msg[2];
+	  uint8_t msg[2];
 	  msg[0] = m_dump ? DUMP_ON : DUMP_OFF;
 	  msg[1] = 0;
 	  assert(write(m_ctl.m_wfd, msg, 2) == 2);
@@ -549,7 +553,7 @@ namespace OCPI {
 	void
 	shutdown() {
 	  if (s_pid) {
-	    char msg[2];
+	    uint8_t msg[2];
 	    std::string error;
 	    msg[0] = TERMINATE;
 	    msg[1] = 0;
@@ -587,7 +591,7 @@ namespace OCPI {
 	  m_respLeft -= n;
 	  if (m_respPtr > m_response.payload + RESP_LEN) {
 	    // we are past the length so we can look at it
-	    unsigned len = m_response.payload[RESP_LEN];
+	    size_t len = m_response.payload[RESP_LEN];
 	    if ((m_respLeft = (m_response.payload + 2 + len) - m_respPtr) == 0) {
 	      if (m_respQueue.empty()) {
 		OU::format(error, "Response client queue empty");
@@ -595,7 +599,7 @@ namespace OCPI {
 	      }
 	      Request &request = m_respQueue.back();
 	      printTime("after response full read");
-	      ocpiDebug("writing response to client: len %u tag %d to %s via index %u", len,
+	      ocpiDebug("writing response to client: len %zu tag %d to %s via index %u", len,
 			m_response.payload[RESP_TAG], request.from.pretty(), request.index);
 	      bool bad = sendToIfc(request.sock, request.index, m_response, len + 2, request.from, error);
 	      m_respQueue.pop();
@@ -614,20 +618,20 @@ namespace OCPI {
 
 	// This is essentially a separate channel with its own tags
 	bool
-	doServer(OE::Socket &ext, OE::Packet &rFrame, unsigned &length, OE::Address &from,
+	doServer(OE::Socket &ext, OE::Packet &rFrame, size_t &length, OE::Address &from,
 		 bool local, unsigned maxPayLoad, std::string &error) {
 	  uint8_t *payload = rFrame.payload;
 	  HN::EtherControlHeader &hdr_in = *(HN::EtherControlHeader *)payload;
 	  HN::EtherControlMessageType action = OCCP_ETHER_MESSAGE_TYPE(hdr_in.typeEtc);
-	  unsigned clen = ntohs(hdr_in.length) - (sizeof(hdr_in) - 2);
+	  size_t clen = ntohs(hdr_in.length) - (sizeof(hdr_in) - 2);
 	  char *command = (char *)(payload + sizeof(hdr_in));
 	  if (action != HN::OCCP_NOP || length == 0 || length < (unsigned)ntohs(hdr_in.length)+2 ||
 	      strlen(command)+1 != clen) {
-	    OU::format(error, "bad client message: action is %u, length is %u", action, length);
+	    OU::format(error, "bad client message: action is %u, length is %zu", action, length);
 	    return true;
 	  }
 	  HN::EtherControlHeader &hdr_out =  *(HN::EtherControlHeader *)(m_serverResponse.payload);
-	  ocpiDebug("server command from %s: action %u length %u tag %u actual '%s'",
+	  ocpiDebug("server command from %s: action %u length %zu tag %u actual '%s'",
 		    from.pretty(), action, clen, hdr_in.tag, command);
 	  if (!m_haveTag || hdr_in.tag != hdr_out.tag || from != m_lastClient) {
 	    m_lastClient = from;
@@ -686,7 +690,7 @@ namespace OCPI {
 	    }
 	    strcpy(response+1, error.c_str());
 	    length = sizeof(hdr_out) + strlen(response)+1;
-	    hdr_out.length = htons(length - 2);
+	    hdr_out.length = htons(OCPI_UTRUNCATE(uint16_t, length - 2));
 	    hdr_out.typeEtc = OCCP_ETHER_TYPE_ETC(HN::OCCP_RESPONSE, HN::OK, 0, 1);
 	    ocpiDebug("command result is: '%s'", response);
 	  } else
@@ -700,11 +704,11 @@ namespace OCPI {
 	// Set the length arg to the length of the response to send back
 	// The response is created in the payload that was passed in
 	bool
-	doEmulate(uint8_t *payload, unsigned &length, std::string &error) {
+	doEmulate(uint8_t *payload, size_t &length, std::string &error) {
 	  HN::EtherControlPacket &pkt = *(HN::EtherControlPacket *)payload;
 	  //    ocpiDebug("Got header.  Need %u header %u", n, sizeof(HN::EtherControlHeader));
 	  if (length-2 != ntohs(pkt.header.length)) {
-	    OU::format(error, "bad client message length: %u vs %u", length, ntohs(pkt.header.length));
+	    OU::format(error, "bad client message length: %zu vs %u", length, ntohs(pkt.header.length));
 	    return true;
 	  }
 	  unsigned uncache = OCCP_ETHER_UNCACHED(pkt.header.typeEtc) ? 1 : 0;
@@ -741,19 +745,19 @@ namespace OCPI {
 	    pkt.nopResponse.mbz1 = 0;
 	    pkt.nopResponse.maxCoalesced = 1;
 	  }
-	  pkt.header.length = htons(len - 2);
+	  pkt.header.length = htons(OCPI_UTRUNCATE(uint16_t, len - 2));
 	  length = len;
 	  return false;
 	}
 
 	bool
-	sendToSim(OE::Socket &s, uint8_t *payload, unsigned length, OE::Address &from, unsigned index,
+	sendToSim(OE::Socket &s, uint8_t *payload, size_t length, OE::Address &from, unsigned index,
 		  std::string &error) {
 	  HN::EtherControlHeader &hdr_in = *(HN::EtherControlHeader *)payload;
 	  uint8_t *bp = payload + 2;
-	  unsigned nactual = length - 2;
+	  size_t nactual = length - 2;
 	  ssize_t nn;
-	  for (unsigned nw = 0; nw < nactual; nw += nn, bp += nn) {
+	  for (size_t nw = 0; nw < nactual; nw += nn, bp += nn) {
 	    if ((nn = write(m_req.m_wfd, bp, nactual - nw)) < 0) {
 	      if (errno != EINTR) {
 		error = "write error to request fifo";
@@ -763,9 +767,9 @@ namespace OCPI {
 	      error = "wrote zero bytes to request fifo";
 	      return true;
 	    } else {
-	      char msg[2];
+	      uint8_t msg[2];
 	      msg[0] = DCP_CREDIT;
-	      msg[1] = nn;
+	      msg[1] = OCPI_UTRUNCATE(uint8_t, nn);
 	      if (write(m_ctl.m_wfd, msg, 2) != 2) {
 		error = "write error to control fifo";
 		return true;
@@ -775,7 +779,7 @@ namespace OCPI {
 	        return true;
 	    }
 	  }
-	  ocpiDebug("written request to sim: len %u action %u tag %u proto len %u", length, 
+	  ocpiDebug("written request to sim: len %zu action %u tag %u proto len %u", length, 
 		    OCCP_ETHER_MESSAGE_TYPE(hdr_in.typeEtc), hdr_in.tag, ntohs(hdr_in.length));
 	  printTime("request written to sim");
 	  m_respQueue.push(Request(s, from, index));
@@ -791,7 +795,7 @@ namespace OCPI {
 	// Send to the client over the given interface
 	// If the interface is zero, use the socket
 	bool
-	sendToIfc(OE::Socket &sock, unsigned index, OE::Packet &rFrame, unsigned length,
+	sendToIfc(OE::Socket &sock, unsigned index, OE::Packet &rFrame, size_t length,
 		  OE::Address &to, std::string &error) {
 	  OE::Socket *s = &sock;
 	  if (index) {
@@ -812,12 +816,12 @@ namespace OCPI {
 	bool
 	receiveExt(OE::Socket &ext, bool discovery, std::string &error) {
 	  OE::Packet rFrame;
-	  unsigned length;
+	  size_t length;
 	  OE::Address from;
 	  unsigned index = 0;
 	  if (ext.receive(rFrame, length, 0, from, error, discovery ? &index : NULL)) {
 	    assert(from != m_udp.addr);
-	    ocpiDebug("Received request packet from %s, length %u\n", from.pretty(), length);
+	    ocpiDebug("Received request packet from %s, length %zu\n", from.pretty(), length);
 	    if (isServerCommand(rFrame.payload)) {
 	      assert(!discovery);
 	      if (doServer(ext, rFrame, length, from, false, sizeof(rFrame.payload), error))
@@ -837,7 +841,7 @@ namespace OCPI {
 	doXfer(std::string &/*err*/) {
 	  // Reader has stuff to read: FIXME: make this fd non-blocking for cleanliness
 	  assert(m_xfd >= 0);
-	  unsigned long long n = m_xferSckt->recv(m_xferBuf, sizeof(m_xferBuf), 0);
+	  size_t n = m_xferSckt->recv(m_xferBuf, sizeof(m_xferBuf), 0);
 	  switch(n) {
 	  default:
 	    if (write(m_xfd, m_xferBuf, n) == (ssize_t)n) {
@@ -855,7 +859,7 @@ namespace OCPI {
 	    m_xferDone = true;
 	    return false;
 	    break;
-	  case ULLONG_MAX:
+	  case ~(size_t)0:
 	    OU::format(m_xferError, "Unexpected timeout on reading transfer socket");
 	    break;
 	  }
@@ -877,23 +881,23 @@ namespace OCPI {
 #ifndef NDEBUG
 	  // Just interesting debug info
 	  {
-	    unsigned n = 0;
+	    int n = 0;
 	    if (ioctl(m_req.m_rfd, FIONREAD, &n) == -1) {
 	      error = "fionread syscall on req";
 	      return true;
 	    }
-	    unsigned n1 = 0;
+	    int n1 = 0;
 	    if (ioctl(m_ctl.m_rfd, FIONREAD, &n1) == -1) {
 	      error = "fionread syscall on ctl";
 	      return true;
 	    }
-	    unsigned n2 = 0;
+	    int n2 = 0;
 	    if (ioctl(m_ack.m_rfd, FIONREAD, &n2) == -1) {
 	      error = "fionread syscall on ctl";
 	      return true;
 	    }
 	    if (n || n1 || n2)
-	      ocpiDebug("Request FIFO has %u, control has %u, ack has %u, dcp %" PRIu64, n, n1, n2, m_dcp);
+	      ocpiDebug("Request FIFO has %d, control has %d, ack has %d, dcp %" PRIu64, n, n1, n2, m_dcp);
 	  }
 #endif
 	  if (s_pid && mywait(s_pid, false, error)) {
@@ -1017,7 +1021,7 @@ namespace OCPI {
       bool Sim::s_exited = false;
 
       Server::
-      Server(const char *name, const std::string &platform, unsigned spinCount,
+      Server(const char *name, const std::string &platform, uint8_t spinCount,
 	     unsigned sleepUsecs, unsigned simTicks, bool verbose, bool dump, std::string &error)
 	: m_sim(NULL) {
 	// FIXME - determine this via argv0
@@ -1104,7 +1108,7 @@ namespace OCPI {
 #define unconst64(a) (*(uint64_t *)&(a))
 	unconst64(admin.magic) = OCCP_MAGIC;
 	unconst32(admin.revision) = 0;
-	unconst32(admin.birthday) = time(0);
+	unconst32(admin.birthday) = OCPI_UTRUNCATE(uint32_t,time(0));
 	unconst32(admin.config) = 0xf0;
 	unconst32(admin.pciDevice) = 0;
 	unconst32(admin.attention) = 0;
@@ -1128,7 +1132,7 @@ namespace OCPI {
 	  ocpiDebug("Emulator UUID: %s", *uuidString);
 	}
 	OH::HdlUUID temp;
-	temp.birthday = time(0) + 1;
+	temp.birthday = OCPI_UTRUNCATE(uint32_t,time(0) + 1);
 	memcpy(temp.uuid, uuid, sizeof(admin.uuid.uuid));
 	strcpy(temp.platform, platform);
 	strcpy(temp.device, "devemu");

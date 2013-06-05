@@ -81,10 +81,12 @@ namespace OCPI {
     public:
       static const uint32_t nsPerSecond = 1000000000;
       static const uint64_t ticksPerSecond = 1ull << 32;
-      inline uint32_t seconds() const { return m_time >> 32; }
+      inline uint32_t seconds() const { return (uint32_t)(m_time >> 32); }
       // This is rounded to the nearest nanosecond
       inline uint32_t nanoseconds() const {
-	return ((m_time & 0xffffffffll) * nsPerSecond + ticksPerSecond/2) / ticksPerSecond;
+	return
+	  (uint32_t)
+	  (((m_time & 0xffffffffll) * nsPerSecond + ticksPerSecond/2) / ticksPerSecond);
       }
       inline Time(uint32_t seconds, uint32_t nanoseconds) {
 	m_time = (((uint64_t)nanoseconds << 32) + nsPerSecond / 2) / nsPerSecond +

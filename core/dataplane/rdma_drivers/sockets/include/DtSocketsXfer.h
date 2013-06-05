@@ -84,7 +84,7 @@ namespace DataTransfer {
 
 	SmemServices &createSmemServices();
         std::string ipAddress;
-        unsigned  portNum;
+        uint16_t  portNum;
   };
 
 
@@ -133,7 +133,7 @@ namespace DataTransfer {
      *  Set (unparse, snprintf) the endpoint string
      ***************************************/
     static void setEndpointString(std::string &str, const char *ipAddr, unsigned port,
-				  unsigned size, uint16_t mbox, uint16_t maxCount);
+				  size_t size, uint16_t mbox, uint16_t maxCount);
     /***************************************
      *  This method is used to dynamically allocate
      *  an endpoint for an application running on "this"

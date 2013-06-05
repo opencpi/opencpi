@@ -23,7 +23,7 @@ typedef struct {
   unsigned int curDdsIndex;
   unsigned int curIfIndex;
 } State;
-static uint32_t sizes[] = {sizeof(State), 0 };
+static size_t sizes[] = {sizeof(State), 0 };
 
 MIXER_COMPLEX_METHOD_DECLARATIONS;
 RCCDispatch mixer_complex = {

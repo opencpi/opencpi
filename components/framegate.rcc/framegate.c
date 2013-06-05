@@ -47,7 +47,7 @@
 
 #define GATE_N_BYTES_INDEX 0
 
-static uint32_t memories [ ] =
+static size_t memories [ ] =
 {
   sizeof ( size_t ), /* Trackes bytes between skips */
   0

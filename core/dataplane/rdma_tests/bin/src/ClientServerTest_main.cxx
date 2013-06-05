@@ -201,15 +201,15 @@ int gpp_cont(int argc, char** argv)
       for (unsigned msg_count = 0; msg_count <= 101; msg_count++) {
         OCPI::DataTransport::BufferUserFacet* buffer;        
 	void *data;
-	uint32_t bufferLength;
+	size_t bufferLength;
 	while (!(buffer = mc->getNextEmptyOutputBuffer(data, bufferLength)))
 	  mc->dispatch();
-	unsigned length = 0;
+	size_t length = 0;
 	if (msg_count != 100) {
 	  sprintf((char*)data, "message %d\n", msg_count);
 	  length = strlen((char*)data) + 1 ;
 	}
-	printf("Sending buffer: %s, length %u\n", (char*)data, length);
+	printf("Sending buffer: %s, length %zu\n", (char*)data, length);
 	mc->sendOutputBuffer( buffer, length, 0xe7);
       }
       printf("Server done, waiting 5 seconds\n");
@@ -230,7 +230,7 @@ int gpp_cont(int argc, char** argv)
       for (unsigned n = 0; n < 1000; n++) {
         OCPI::DataTransport::BufferUserFacet* buffer;        
 	void *data = 0;// for debug
-	uint32_t length;
+	size_t length;
 	uint8_t opcode;
 	while (!(buffer = c->getNextFullInputBuffer(data, length, opcode)))
 	  OCPI::OS::sleep(1);

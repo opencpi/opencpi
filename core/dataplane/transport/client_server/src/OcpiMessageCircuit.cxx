@@ -94,7 +94,7 @@ namespace OCPI {
     makeCircuit(DataTransfer::EndPoint &from, DataTransfer::EndPoint &to, bool send,
 		const char *protocol, OS::Timer *timer) {
       Circuit &c =
-	*m_transport.createCircuit( "", new ConnectionMetaData(&from, &to, 1, m_bufferSize),
+	*m_transport.createCircuit(0, new ConnectionMetaData(&from, &to, 1, m_bufferSize),
 				    NULL, NULL,
 				    NewConnectionFlag | (send ? SendCircuitFlag : RcvCircuitFlag),
 				    protocol, timer);
@@ -125,7 +125,7 @@ namespace OCPI {
     }
 
     BufferUserFacet* MessageCircuit::
-    getNextEmptyOutputBuffer(void *&data, uint32_t &length, OS::Timer *timer)
+    getNextEmptyOutputBuffer(void *&data, size_t &length, OS::Timer *timer)
     {
       m_transport.dispatch();
       if (timer) {
@@ -142,7 +142,7 @@ namespace OCPI {
     }
 
     void MessageCircuit::
-    sendOutputBuffer( BufferUserFacet* buffer, unsigned int length, uint8_t opcode )
+    sendOutputBuffer( BufferUserFacet* buffer, size_t length, uint8_t opcode )
     {
       return m_send_port->sendOutputBuffer(buffer, length, opcode);
     }
@@ -158,7 +158,7 @@ namespace OCPI {
     //    }
 
     BufferUserFacet* MessageCircuit::
-    getNextFullInputBuffer(void *&data, uint32_t &length, uint8_t &opcode, OS::Timer *timer)
+    getNextFullInputBuffer(void *&data, size_t &length, uint8_t &opcode, OS::Timer *timer)
     {
       BufferUserFacet *r_buf = NULL;
 
@@ -199,51 +199,5 @@ namespace OCPI {
       m_transport.dispatch( eh );
 #endif
     }
-
-#if 0
-    // Alternative constructor that directly connects as "client".
-    // Since the "connect" method below has a timeout, it can't be part of the
-    // constructor
-    MessageCircuit::MessageCircuit(const char *local_ep_or_protocol, uint32_t bufferSize)
-      :m_standalone(true),
-       m_transport(new Transport(new TransportGlobal(0, (char**)0), true)),
-       m_rcv_port(NULL), m_send_port(NULL), m_full_buffer(NULL), m_mutex(new OS::Mutex),
-       m_bufferSize(bufferSize), m_localEndpoint(local_ep_or_protocol ? local_ep_or_protocol : "")
-    {
-  
-    }
-#endif
-
-#if 0
-    bool MessageCircuit::
-    connect(const char *server_end_point, OS::Timer *timer) {
-      m_timer = timer;
-      DataTransfer::EndPoint *ep;
-      if (m_localEndpoint.empty()) {
-	// This will always reuse the local endpoint that is compatible with the other side,
-	// and never add one.  For each supported protocol a default one is always create, although
-	// not finalized (resources allocated).  This will finalize it
-	ep = &m_transport->getLocalCompatibleEndpoint(server_end_point);
-	m_localEndpoint = ep->end_point;
-      } else
-	ep = m_transport->addLocalEndpoint(m_localEndpoint.c_str())->sMemServices->endpoint();
-      //  m_end_point = res->sMemServices->endpoint();
-      m_transport->setListeningEndpoint(ep);
-      m_remoteEndpoint = server_end_point;
-
-      Circuit &send = makeCircuit(m_localEndpoint, m_remoteEndpoint, true);
-      try {
-	Circuit &rcv = makeCircuit(m_remoteEndpoint, m_localEndpoint, false);
-	m_rcv_port = rcv.getInputPortSet(0)->getPort(0);
-	m_send_port = send.getOutputPortSet()->getPort(0);
-      } catch (...) {
-	m_transport->deleteCircuit(&send);
-	return true;
-      }
-      return false;
-    }
-#endif
-
-
   }
 }

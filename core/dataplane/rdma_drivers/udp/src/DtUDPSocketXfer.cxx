@@ -49,6 +49,7 @@
 #include <xfer_internal.h>
 #include <OcpiList.h>
 #include <OcpiUtilHash.h>
+#include <OcpiUtilMisc.h>
 #include <OcpiOsMisc.h>
 #include <OcpiOsAssert.h>
 #include <DtExceptions.h>
@@ -61,7 +62,7 @@ namespace DataTransfer {
 
   using namespace OCPI::Util;
   using namespace OCPI::OS;
-
+  namespace DDT = DtOsDataTypes;
   class UDPSocketServerT;
 
   // Shared memory services.  
@@ -75,13 +76,13 @@ namespace DataTransfer {
       m_mem = new char[ep.size];
       memset( m_mem, 0, ep.size );
     };
-    OCPI::OS::int32_t attach (EndPoint* loc){ ( void ) loc; return 0;};
-    OCPI::OS::int32_t detach (){return 0;}
-    void* map (uint32_t offset, uint32_t/* size */)
+    int32_t attach(EndPoint* loc){ ( void ) loc; return 0;};
+    int32_t detach(){return 0;}
+    void* map(DtOsDataTypes::Offset offset, size_t/* size */)
     {
       return &m_mem[offset];
     }
-    OCPI::OS::int32_t unMap (){return 0;}
+    int32_t unMap (){return 0;}
     UDPEndPoint* getEndPoint (){return static_cast<UDPEndPoint*>(&m_endpoint);}
     virtual ~UDPSmemServices ();
 
@@ -159,8 +160,8 @@ namespace DataTransfer {
 	while ( m_run ) {
 	  char   buf[RX_BUFFER_SIZE];
 	  struct sockaddr sad;
-	  unsigned long size = sizeof( struct sockaddr);
-	  unsigned long long n = m_socket.recvfrom( buf,RX_BUFFER_SIZE, 0, (char*)&sad, &size);
+	  size_t size = sizeof( struct sockaddr);
+	  size_t n = m_socket.recvfrom( buf,RX_BUFFER_SIZE, 0, (char*)&sad, &size);
 	  if ( n == 0 ) {
 	    ocpiInfo("Got a socket EOF, terminating connection");
 	    break;
@@ -170,7 +171,7 @@ namespace DataTransfer {
 	  // All DEBUG
 	  int port = ntohs ( ((struct sockaddr_in *)&sad)->sin_port );
 	  char * a  = inet_ntoa ( ((struct sockaddr_in *)&sad)->sin_addr );
-	  printf(" Recved %d bytes of data on port %d from addr %s port %d\n", n , m_socket.getPortNo(), 
+	  printf(" Recved %zu bytes of data on port %d from addr %s port %d\n", n , m_socket.getPortNo(), 
 		 a, port );
 #endif
 
@@ -182,7 +183,7 @@ namespace DataTransfer {
 
 
 	  // MORE DEBUG
-	  ocpiDebug("Got %llu bytes data on server socket !! %u %d %" PRIu64 " %" PRIu32,
+	  ocpiDebug("Got %zu bytes data on server socket !! %u %d %" DTOSDATATYPES_OFFSET_PRIu " %" PRIu32,
 		    n, bytes_left, in_header, header->offset, header->length);
 
 	  switch ( header->type ) {
@@ -239,7 +240,7 @@ namespace DataTransfer {
 	  case DataTransfer::UDPSocketXferRequest::UDPSocketDataHeader::DMARead:
 	  case DataTransfer::UDPSocketXferRequest::UDPSocketDataHeader::MutiAck:
 	    break;	    
-	    ocpiAssert(! "Unhandled UDP message type");
+	    ocpiAssert("Unhandled UDP message type"==0);
 	  }
 
 	}
@@ -280,12 +281,12 @@ namespace DataTransfer {
       catch( std::string & err ) {
 	m_error=true;
 	ocpiBad("UDPSocket bind error. %s", err.c_str() );
-	ocpiAssert(!"Unable to bind to socket");
+	ocpiAssert("Unable to bind to socket"==0);
 	return;
       }
       catch( ... ) {
 	m_error=true;
-	ocpiAssert(!"Unable to bind to socket");
+	ocpiAssert("Unable to bind to socket"==0);
 	return;
       }
       if (sep->portNum == 0) {
@@ -382,11 +383,11 @@ namespace DataTransfer {
   // This is static
   void UDPSocketXferFactory::
   setEndpointString(std::string &ep, const char *ipAddr, unsigned port,
-		    unsigned size, uint16_t mbox, uint16_t maxCount)
+		    size_t size, uint16_t mbox, uint16_t maxCount)
   {
     char tep[128];
 
-    snprintf(tep, 128, "ocpi-udp-rdma:%s;%u:%u.%" PRIu16 ".%" PRIu16,
+    snprintf(tep, 128, "ocpi-udp-rdma:%s;%u:%zu.%" PRIu16 ".%" PRIu16,
 	     ipAddr, port, size, mbox, maxCount);
     ep = tep;
   }
@@ -423,7 +424,7 @@ namespace DataTransfer {
 
     const char* mb = getenv("OCPI_MAILBOX");    
     if ( mb ) {
-      mailBox = atoi(mb);
+      mailBox = (uint16_t)atoi(mb);
     }
 
     setEndpointString(ep, ip_addr, port, parent().getSMBSize(), mailBox, maxMailBoxes);
@@ -442,7 +443,7 @@ namespace DataTransfer {
   parse( std::string& ep )
   {
     char ipaddr[80];
-    int rv = sscanf(ep.c_str(), "ocpi-udp-rdma:%[^;];%u:", ipaddr, &portNum);
+    int rv = sscanf(ep.c_str(), "ocpi-udp-rdma:%[^;];%hu:", ipaddr, &portNum);
     if (rv != 2) {
       fprintf( stderr, "UDPEndPoint  ERROR: Bad socket endpoint format (%s)\n", ep.c_str() );
       throw DataTransfer::DataTransferEx( UNSUPPORTED_ENDPOINT, ep.c_str() );	  
@@ -457,10 +458,10 @@ namespace DataTransfer {
     // Empty
   }
 
-  void UDPSocketXferRequest::modify( OCPI::OS::uint32_t */*new_offsets[]*/,
-				     OCPI::OS::uint32_t */*old_offsets[]*/ )
+  void UDPSocketXferRequest::modify(DtOsDataTypes::Offset */*new_offsets[]*/,
+				    DtOsDataTypes::Offset */*old_offsets[]*/ )
   {
-    ocpiAssert(!"modify not inplemented");
+    ocpiAssert("modify not inplemented"==0);
   }
 
   // UDPSocketXferRequest destructor implementation
@@ -478,15 +479,15 @@ namespace DataTransfer {
   }
 
   // Create a transfer request
-  XferRequest* UDPSocketXferRequest::copy (OCPI::OS::uint32_t srcoffs, 
-					   OCPI::OS::uint32_t dstoffs, 
-					   OCPI::OS::uint32_t nbytes, 
+  XferRequest* UDPSocketXferRequest::copy (DtOsDataTypes::Offset srcoffs, 
+					   DtOsDataTypes::Offset dstoffs, 
+					   size_t nbytes, 
 					   XferRequest::Flags flags
 					   )
   {
 
 #ifdef DEBUG_TxRx_UDP
-    printf("\n\n *** COPY to %d, len = %d\n", dstoffs, nbytes );
+    printf("\n\n *** COPY to %"OCPI_UTIL_RESADDR_PRIx", len = %zu\n", dstoffs, nbytes );
 #endif
 
     TxPacket * txPkt;
@@ -507,22 +508,22 @@ namespace DataTransfer {
 #define MAX_UDP_PAYLOAD_SIZE 1500
 #define MAX_UDP_DATA_SIZE (MAX_UDP_PAYLOAD_SIZE - sizeof(UDPSocketDataHeader))
 
-    int nPackets = (nbytes / MAX_UDP_DATA_SIZE );
+    size_t nPackets = (uint16_t)(nbytes / MAX_UDP_DATA_SIZE );
     nPackets +=  (nbytes % MAX_UDP_DATA_SIZE) ? 1 : 0;
     if (flags & XferRequest::DataTransfer) {
       m_txTotal = nPackets + 1;
     }
-    int32_t  bytes_left = nbytes;
-    uint64_t  cur_dst_off = dstoffs;
+    size_t  bytes_left = nbytes;
+    DtOsDataTypes::Offset  cur_dst_off = dstoffs;
 
     uint8_t *  cur_src = static_cast<uint8_t *>( parent().m_txTemplate.ssmem->map(srcoffs,0) );
 
     txPkt->init( nPackets, &parent().m_txTemplate );
-    for ( int m=0; m<nPackets; m++ ) {
-      ocpiAssert(bytes_left >= 0 );
-      uint32_t length = bytes_left < (int32_t)MAX_UDP_DATA_SIZE ? bytes_left : MAX_UDP_DATA_SIZE;	
+    for (size_t m = 0; m < nPackets; m++) {
+      ocpiAssert(bytes_left > 0);
+      size_t length = bytes_left < (int32_t)MAX_UDP_DATA_SIZE ? bytes_left : MAX_UDP_DATA_SIZE;	
       txPkt->add( this, cur_src, cur_dst_off, length, m_txTotal );
-      cur_dst_off += length;
+      cur_dst_off += OCPI_UTRUNCATE(DDT::Offset, length);
       cur_src += length;
       bytes_left -= length;
     }
@@ -633,7 +634,7 @@ namespace DataTransfer {
 
   void 
   UDPSocketXferRequest::TxPacket::
-  init( uint32_t /*nPackets*/, TxTemplate * temp  ) {
+  init(size_t /*nPackets*/, TxTemplate * temp  ) {
     m_nAcksTx = 0;
     m_acks.reserve( 20 + 1 );
     m_socket = &temp->ssmem->m_socketServerT->socket();
@@ -646,7 +647,7 @@ namespace DataTransfer {
   
   void 
   UDPSocketXferRequest::TxPacket::
-  add(UDPSocketXferRequest * parent,  uint8_t * src, uint64_t dst_offset, uint32_t length, uint32_t tx_total )
+  add(UDPSocketXferRequest * parent,  uint8_t * src, DtOsDataTypes::Offset dst_offset, size_t length, size_t tx_total )
   {
     //  std::string s = m_txTemplate->dsmem->getEndPoint()->getAddress();
 
@@ -671,11 +672,11 @@ namespace DataTransfer {
     m_acks[m_nAcksTx].msg.msg_controllen = 0;
     m_acks[m_nAcksTx].msg.msg_flags = 0;    
     m_acks[m_nAcksTx].hdr.type = DataTransfer::UDPSocketXferRequest::UDPSocketDataHeader::DMAWrite;
-    m_acks[m_nAcksTx].hdr.length = length;
-    m_acks[m_nAcksTx].hdr.offset = dst_offset;
+    m_acks[m_nAcksTx].hdr.length = OCPI_UTRUNCATE(uint32_t,length);
+    m_acks[m_nAcksTx].hdr.offset = (uint32_t)dst_offset;
     m_acks[m_nAcksTx].hdr.transaction_sequence  = (m_id<<16) | m_nAcksTx;
     m_acks[m_nAcksTx].hdr.transaction_cookie  = (uint64_t)parent;
-    m_acks[m_nAcksTx].hdr.transaction_length  = tx_total;
+    m_acks[m_nAcksTx].hdr.transaction_length  = OCPI_UTRUNCATE(uint16_t, tx_total);
     m_acks[m_nAcksTx].iov[0].iov_base = (caddr_t) &m_acks[m_nAcksTx].hdr;
     m_acks[m_nAcksTx].iov[0].iov_len = sizeof(UDPSocketDataHeader);
     m_acks[m_nAcksTx].iov[1].iov_base = (caddr_t) &src[0];

@@ -66,7 +66,7 @@ namespace DataTransfer {
     //                0 for success; platform dependent error code otherwise.
     //        Throws:
     //                DataTransferEx for all other exception conditions
-    virtual int CreateMapping (const char*  strFilePath, const char* strMapName, AccessType eAccess, uint64_t iMaxSize) = 0;
+    virtual int CreateMapping (const char*  strFilePath, const char* strMapName, AccessType eAccess, size_t iMaxSize) = 0;
 
     // Open an existing mapping to a named file.
     //        Arguments:
@@ -94,7 +94,7 @@ namespace DataTransfer {
     //                virtual address or 0 if failure
     //        Throws:
     //                DataTransferEx for all other exception conditions
-    virtual void* MapView (OCPI::OS::uint64_t iOffset, OCPI::OS::uint64_t lLength, AccessType eAccess) = 0;
+    virtual void* MapView (uint32_t iOffset, size_t lLength, AccessType eAccess) = 0;
 
     // Unmap a segment of a file from the address space.
     //        Arguments:

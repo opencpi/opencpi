@@ -100,12 +100,12 @@ namespace OCPI {
 	// Tell me which socket to use (not to own)
 	//	inline void setSocket(OCPI::OS::Ether::Socket &socket) { m_socket = &socket; }
 	void request(EtherControlMessageType type, RegisterOffset offset,
-		     unsigned bytes, OCPI::OS::Ether::Packet &recvFrame, uint32_t *status,
-		     unsigned extra = 0, unsigned delayms = 0);
+		     size_t bytes, OCPI::OS::Ether::Packet &recvFrame, uint32_t *status,
+		     size_t extra = 0, unsigned delayms = 0);
 	// Shared "get" that returns value, and *status if status != NULL
-	uint32_t get(RegisterOffset offset, unsigned bytes, uint32_t *status);
-	void set(RegisterOffset offset, unsigned bytes, uint32_t data, uint32_t *status);
-	void command(const char *cmd, unsigned bytes, char *response, unsigned rlen, unsigned delay);
+	uint32_t get(RegisterOffset offset, size_t bytes, uint32_t *status);
+	void set(RegisterOffset offset, size_t bytes, uint32_t data, uint32_t *status);
+	void command(const char *cmd, size_t bytes, char *response, size_t rlen, unsigned delay);
       public:
 	uint64_t get64(RegisterOffset offset, uint32_t *status);
 	inline uint32_t get32(RegisterOffset offset, uint32_t *status) {
@@ -117,7 +117,7 @@ namespace OCPI {
 	inline uint8_t get8(RegisterOffset offset, uint32_t *status) {
 	  return (uint8_t)(get(offset, sizeof(uint8_t), status) >> ((offset&3)*8));
 	}
-	void getBytes(RegisterOffset offset, uint8_t *buf, unsigned length, uint32_t *status);
+	void getBytes(RegisterOffset offset, uint8_t *buf, size_t length, uint32_t *status);
 	void set64(RegisterOffset offset, uint64_t val, uint32_t *status);
 	inline void set32(RegisterOffset offset, uint32_t val, uint32_t *status) {
 	  set(offset, sizeof(uint32_t), val, status);
@@ -128,7 +128,7 @@ namespace OCPI {
 	inline void set8(RegisterOffset offset, uint8_t val, uint32_t *status) {
 	  set(offset, sizeof(uint8_t), val << ((offset & 3) * 8), status);
 	}
-	void setBytes(RegisterOffset offset, const uint8_t *buf, unsigned length, uint32_t *status);
+	void setBytes(RegisterOffset offset, const uint8_t *buf, size_t length, uint32_t *status);
       };
     }
   }

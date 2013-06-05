@@ -20,7 +20,7 @@ typedef struct {
   FileHeader header;
   int blcm;
 } MyState;
-static uint32_t mysizes[] = {sizeof(MyState), 0};
+static size_t mysizes[] = {sizeof(MyState), 0};
 
 FILE_READ_MSG_METHOD_DECLARATIONS;
 RCCDispatch file_read_msg = {

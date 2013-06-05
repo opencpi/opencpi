@@ -110,7 +110,7 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   ( void ) timedout;
   ( void ) newRunCondition;
   uint32_t ncount, *b;
-  uint32_t len,n;
+  size_t len,n;
   ConsumerWorkerStaticMemory *mem = this_->memories[0];
   ConsumerWorkerProperties *props = this_->properties;
   unsigned passed = 1;
@@ -173,7 +173,7 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   ncount = 0;
   for (n=4; n<len+4; n++) {
     if ( (in_buffer[n] != (char)(n+mem->b_count)%23) && (ncount++ < 100000) ) {
-      printf("Consumer(%u, %u, b-> %d): Data integrity error(%d) !!, expected %d, got %d\n", 
+      printf("Consumer(%u, %zu, b-> %d): Data integrity error(%zd) !!, expected %d, got %d\n", 
              props->startIndex, len, mem->b_count,n, (char)(n+mem->b_count)%23, in_buffer[n]);
       passed = 0;
     }
@@ -215,7 +215,7 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 #define NUM_INPUT_PORTS    1
 #define NUM_OUTPUT_PORTS   0
 #define PROPERTY_SIZE      sizeof( ConsumerWorkerProperties )
-static uint32_t memSizes[] = {sizeof(ConsumerWorkerStaticMemory), 1024*10, 0 };
+static size_t memSizes[] = {sizeof(ConsumerWorkerStaticMemory), 1024*10, 0 };
 //static int32_t portRunConditions[] = { (1<<ConsumerWorker_Data_In_Port)  , 0 }; 
 //static RCCRunCondition workerRunConditions[] = { portRunConditions, 0 , 0 };
 //static RCCPortInfo portInfo = { 0, 1024*12, 1 };

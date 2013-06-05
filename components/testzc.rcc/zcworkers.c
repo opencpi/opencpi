@@ -166,7 +166,7 @@ struct ConsumerStaticMemory_ {
 };
 typedef struct ConsumerStaticMemory_ ConsumerStaticMemory;
 
-static uint32_t memSizes[] = {sizeof(ConsumerStaticMemory), 0 };
+static size_t memSizes[] = {sizeof(ConsumerStaticMemory), 0 };
 static RCCPortInfo ConsumerPortInfo[] = { {0,0,MIN_CONSUMER_BUFFERS}, {RCC_NO_ORDINAL,0,0} };
 
 CONSUMER_METHOD_DECLARATIONS;
@@ -366,7 +366,7 @@ struct LoopbackStaticMemory_ {
   uint32_t ph;
 };
 typedef struct LoopbackStaticMemory_ LoopbackStaticMemory;
-static uint32_t LBmemSizes[] = {sizeof(LoopbackStaticMemory), 0 };
+static size_t LBmemSizes[] = {sizeof(LoopbackStaticMemory), 0 };
 // This doesn't do anything, but it is a good compilation test
 static uint32_t LBPortRunConditionMasks[] = { (1<<LOOPBACK_IN) | (1<<LOOPBACK_OUT), 0 };
 static RCCRunCondition LBWorkerRunCondition = { LBPortRunConditionMasks, 0 , 0 };

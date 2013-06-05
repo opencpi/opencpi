@@ -56,7 +56,7 @@
 #include <list>
 #include <OcpiOsMutex.h>
 #include <OcpiList.h>
-#include <DtHandshakeControl.h>
+//#include <DtHandshakeControl.h>
 #include <DtExceptions.h>
 #include <OcpiDriverManager.h>
 #include <DtTransferInterface.h>
@@ -68,36 +68,6 @@ namespace DataTransfer {
   // Forward references
   class SmemServices;
 
-  // This class is used to manage the endpoints mailbox
-  class XferMailBox {
-
-  public:
-
-    // Constructor 
-    XferMailBox(uint16_t slot )
-      :m_slot(slot){};
-
-      // This method sets the communications slot for this template
-      void setMailBox(uint16_t slot ){m_slot=slot;};
-
-      // Determine if the mail box is avialable
-      inline bool mailBoxAvailable( SMBResources* res ){ 
-        return (res->m_comms->mailBox[m_slot].request.reqBasic.type == ContainerComms::NoRequest) ? true : false;
-      }
-
-      // Returns the pointer to the mailbox
-      inline ContainerComms::MailBox* getMailBox(SMBResources* res){return &res->m_comms->mailBox[m_slot];}
-
-      // This method makes a mailbox request from our local dedicated mailbox slot to 
-      // our remote dedicated mailbox slot.
-      bool makeRequest(SMBResources* output, SMBResources* input );
-
-  protected:
-
-      // Our mail slot index
-      uint16_t m_slot;
-
-  };
 
   // This is the transfer factory manager
   // - the driver manager for transfer drivers
@@ -111,7 +81,7 @@ namespace DataTransfer {
     inline static XferFactoryManager& getFactoryManager() {
       return getSingleton();
     }
-    inline uint32_t getSMBSize() { return m_SMBSize; }
+    inline size_t getSMBSize() { return m_SMBSize; }
 
     // This method is used to retreive all of the available endpoints that have been
     // registered in the system.  Note: some of the endpoints may not be finalized. 
@@ -151,7 +121,7 @@ namespace DataTransfer {
     XferServices* getService(EndPoint *s_endpoint, EndPoint *t_endpoint);        
 
     // Create an endpoint for remote hardware
-    EndPoint& allocateProxyEndPoint(const char *epString, uint32_t size);
+    EndPoint& allocateProxyEndPoint(const char *epString, size_t size);
 
     static bool canSupport(EndPoint &local_ep, const char *remote_endpoint);
     // Constructors/Destructors

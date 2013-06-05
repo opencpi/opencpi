@@ -32,7 +32,7 @@ typedef struct {
   uchar **stack_top, **stack_bottom;
 } CPState;
 
-static uint32_t sizes[] = {sizeof(CPState), 0 };
+static size_t sizes[] = {sizeof(CPState), 0 };
 
 CANNY_PARTIAL_METHOD_DECLARATIONS;
 RCCDispatch canny_partial = {

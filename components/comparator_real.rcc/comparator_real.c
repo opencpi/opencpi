@@ -15,7 +15,7 @@
 typedef struct {
   double deviation;
 } MyState;
-static uint32_t mysizes[] = {sizeof(MyState), 0};
+static size_t mysizes[] = {sizeof(MyState), 0};
 
 COMPARATOR_REAL_METHOD_DECLARATIONS;
 RCCDispatch comparator_real = {
@@ -68,7 +68,7 @@ runRealTest( RCCWorker * self )
 
   if ( in_unit_test->input.length != in_expected->input.length ) {
     fprintf( stderr, "/n/n The data length coming from the unit under test and the expected results file differ\n");
-    fprintf( stderr, "UUT data length = %d, expected data length = %d\n", in_unit_test->input.length ,  in_expected->input.length );
+    fprintf( stderr, "UUT data length = %zu, expected data length = %zu\n", in_unit_test->input.length ,  in_expected->input.length );
     fprintf( stderr, "This will cause the test to fail. The output of the UUT and the expected results data should be identical\n");
     p->passed = 0;
   }

@@ -15,7 +15,7 @@
 typedef struct {
   double accum;
 } State;
-static uint32_t sizes[] = {sizeof(State), 0 };
+static size_t sizes[] = {sizeof(State), 0 };
 
 FSK_MOD_COMPLEX_METHOD_DECLARATIONS;
 RCCDispatch fsk_mod_complex = {
@@ -110,7 +110,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   case FSK_MOD_COMPLEX_IN_DATA:
     {
 #ifndef NDEBUG
-      printf("%s got %d bytes of data\n", __FILE__,  in->input.length);
+      printf("%s got %zu bytes of data\n", __FILE__,  in->input.length);
 #endif
       doFsk( myState, inData, outData, in->input.length );
       // output is complex, input is real

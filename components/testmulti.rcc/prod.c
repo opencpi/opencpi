@@ -58,7 +58,7 @@ struct ProducerWorkerStaticMemory_ {
 
 typedef struct ProducerWorkerStaticMemory_ ProducerWorkerStaticMemory;
 
-static uint32_t memSizes[] = {sizeof(ProducerWorkerStaticMemory), 1024*10, 0 };
+static size_t memSizes[] = {sizeof(ProducerWorkerStaticMemory), 1024*10, 0 };
 PRODUCERWORKER_METHOD_DECLARATIONS;
 RCCDispatch ProducerWorker = {
   /* insert any custom initializations here */
@@ -165,7 +165,7 @@ static RCCResult run(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *newRunCond
   char* out_buffer = out->current.data;
 
 #ifndef NDEBUG
-  printf("Out maxlen = %d\n", out->current.maxLength ); 
+  printf("Out maxlen = %zu\n", out->current.maxLength ); 
 #endif
 
   OCPI_TIME_EMIT_C( "Producer Start" );

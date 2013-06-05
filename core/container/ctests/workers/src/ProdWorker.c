@@ -132,7 +132,7 @@ static RCCResult beforeQuery(RCCWorker *this_)
 
 
 
-int g_prod_p_count=0;
+uint32_t g_prod_p_count=0;
 void PrintProdStatus()
 {
   printf("Produced buffer count = %d\n", g_prod_p_count );
@@ -144,8 +144,8 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   ( void ) timedout;
   ( void ) newRunCondition;
   uint32_t n;
-  uint32_t len;
-  int      *b;
+  size_t len;
+  uint32_t *b;
 
   //  sleep( 1 );
 
@@ -187,7 +187,7 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 
 #define GEN_PATTERN
 #ifdef GEN_PATTERN
-  b = (int*)out_buffer;
+  b = (uint32_t*)out_buffer;
   *b = mem->b_count;
   for ( n=4; n<len; n++ ) out_buffer[n] = (char)(n+mem->b_count)%23; 
 #endif
@@ -228,7 +228,7 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 #define NUM_INPUT_PORTS    0
 #define NUM_OUTPUT_PORTS   1
 #define PROPERTY_SIZE      sizeof( ProducerWorkerProperties )
-static uint32_t memSizes[] = {sizeof(ProducerWorkerStaticMemory), 1024*10, 0 };
+static size_t memSizes[] = {sizeof(ProducerWorkerStaticMemory), 1024*10, 0 };
 //static uint32_t portRunConditions[] = { (1<<ProducerWorker_Data_Out_Port), 0, 0 };
 //static RCCRunCondition RCCRunConditions[] = { {portRunConditions, 0, 0}, {0, 0, 0} , {0, 0, 0} };
 //static RCCPortInfo portInfo = { 0, 1024*12, 1 };

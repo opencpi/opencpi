@@ -19,7 +19,7 @@
 typedef struct {
   double   taps[NTAPS];
 } State;
-static uint32_t sizes[] = {sizeof(State), 0 };
+static size_t sizes[] = {sizeof(State), 0 };
 
 
 
@@ -100,7 +100,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   case SYM_FIR_REAL_IN_DATA:
     {
 #ifndef NDEBUG
-      printf("%s got %d bytes of data\n", __FILE__,  in->input.length);
+      printf("%s got %zu bytes of data\n", __FILE__,  in->input.length);
 #endif
 
       if ( p->bypass ) {

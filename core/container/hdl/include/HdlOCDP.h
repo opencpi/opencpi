@@ -84,7 +84,7 @@ typedef struct {
     tag,
     interval;
 } OcdpMetadata;
-#define OCDP_METADATA_SIZE sizeof(OcdpMetadata)
+#define OCDP_METADATA_SIZE ((uint32_t)sizeof(OcdpMetadata))
 enum OcdpRole {
   OCDP_PASSIVE = 0,
   OCDP_ACTIVE_MESSAGE = 1,

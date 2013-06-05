@@ -56,12 +56,13 @@ namespace DataTransfer {
 
   // This is the const value that is used to determine if a SMB transport
   // is up and running
-  const uint64_t UpAndRunningMarker = 0x51abac;
+  typedef uint64_t UpAndRunning;
+  const UpAndRunning UpAndRunningMarker = 0x51abac;
 
   // Token definition
   typedef int32_t ControlToken;
   typedef int32_t BooleanToken;
-
+  typedef int32_t PortId; // signed to allow a sentinel of -1
 
   /**********************************
    *  SMB communications structures
@@ -85,56 +86,41 @@ namespace DataTransfer {
       ReqUpdateCircuit = 5
     };
 
-    struct BasicReq {
+    struct RequestHeader {
       ReqTypeIds type;
       uint32_t   pad;
+      uint32_t   circuitId; // non-zero when needed
     };
-
     struct RequestUpdateCircuit {
-      ReqTypeIds type;
-      uint32_t   pad;
-      uint32_t   senderCircuitId;              // Id of circuit of interest
-      uint32_t   receiverCircuitId;      // Id of circuit of interest
-      uint64_t   receiverPortId;            // Our new input port id
-      uint32_t   tPortCount;                    // Number of input ports
-      uint64_t   senderPortId;             // Sender port ordinal
-      uint64_t   senderOutputPortId;       // Our output port ordinal
-      uint32_t   senderOutputControlOffset; // Control offset to output
+      uint32_t   senderCircuitId;           // Id of circuit of interest
+      PortId     receiverPortId;            // Our new input port id
+      uint32_t   tPortCount;                // Number of input ports
+      PortId     senderPortId;              // Sender port ordinal
+      PortId     senderOutputPortId;        // Our output port ordinal
+      uint64_t   senderOutputControlOffset; // Control offset to output
       uint32_t   pad1;
-      char       output_end_point[128];   // Output endpoint
+      char       output_end_point[128];     // Output endpoint
     };
 
     struct RequestShadowRstateOffset {
-      ReqTypeIds type;
-      uint32_t   pad;
-      uint32_t   circuitId;
       uint32_t   portId;
       uint32_t   pad1;
       char       url[128];
     };
 
     struct RequestInputOffsets {
-      ReqTypeIds type;
-      uint32_t   pad;
-      uint32_t   circuitId;
       uint32_t   portId;
       uint32_t   pad1;
       char       url[128];
     };
 
     struct RequestOutputControlOffset {
-      ReqTypeIds type;
-      uint32_t   pad;
-      uint32_t   circuitId;
       uint32_t   portId;
-      uint64_t   protocol_offset;             // server side is also telling us where to put the protocol info
-      char       shadow_end_point[128];       // Output endpoint
+      DtOsDataTypes::Offset protocol_offset; // server side telling us where to put the protocol info
+      char       shadow_end_point[128];      // Output endpoint
     };
 
     struct RequestNewConnection {
-      ReqTypeIds type;
-      uint32_t   pad;
-      uint32_t   circuitId;
       uint32_t   buffer_size;
       uint32_t   send;                   // Send or recieve buffer boolean
       uint32_t   protocol_size;          // the size of the client's protocol info
@@ -142,25 +128,58 @@ namespace DataTransfer {
       char       output_end_point[128];
     };
 
-    union RequestTypes {
-      BasicReq                                    reqBasic;
-      RequestInputOffsets        reqInputOffsets;
-      RequestShadowRstateOffset   reqShadowOffsets;
-      RequestOutputControlOffset  reqOutputContOffset;
-      RequestNewConnection        reqNewConnection;
-      RequestUpdateCircuit        reqUpdateCircuit;
+    struct Request {
+      RequestHeader header;
+      union {
+	RequestInputOffsets         reqInputOffsets;
+	RequestShadowRstateOffset   reqShadowOffsets;
+	RequestOutputControlOffset  reqOutputContOffset;
+	RequestNewConnection        reqNewConnection;
+	RequestUpdateCircuit        reqUpdateCircuit;
+      };
     };
 
     struct MailBox {
-      RequestTypes            request;
-      int32_t              error_code;
+      Request               request;
+      int32_t               error_code;
       uint32_t              returnMailboxId; // FIXME: make this the right type
-      int64_t              return_offset;
+      DtOsDataTypes::Offset return_offset;   // unused when size is zero
       uint32_t              return_size;
     };
 
-    uint64_t               upAndRunning;
-    MailBox                       mailBox[MAX_SYSTEM_SMBS];
+    UpAndRunning             upAndRunning;
+    MailBox                  mailBox[DtOsDataTypes::MAX_SYSTEM_SMBS];
+
+  };
+
+  // This class is used to manage the endpoints mailbox
+  class XferMailBox {
+
+  public:
+
+    // Constructor 
+    XferMailBox(uint16_t slot )
+      :m_slot(slot){};
+
+      // This method sets the communications slot for this template
+      void setMailBox(uint16_t slot ){m_slot=slot;};
+
+      // Determine if the mail box is avialable
+      inline bool mailBoxAvailable( SMBResources* res ){ 
+        return (res->m_comms->mailBox[m_slot].request.header.type == ContainerComms::NoRequest) ? true : false;
+      }
+
+      // Returns the pointer to the mailbox
+      inline ContainerComms::MailBox* getMailBox(SMBResources* res){return &res->m_comms->mailBox[m_slot];}
+
+      // This method makes a mailbox request from our local dedicated mailbox slot to 
+      // our remote dedicated mailbox slot.
+      bool makeRequest(SMBResources* output, SMBResources* input );
+
+  protected:
+
+      // Our mail slot index
+      uint16_t m_slot;
 
   };
 
@@ -227,9 +246,8 @@ namespace DataTransfer {
   const unsigned int ZeroCopyReady = 0x10000000;
 
   struct RplMetaData {
-    uint32_t
-    length,
-      opCode;
+    uint32_t length;
+    uint8_t opCode;
     uint64_t timestamp;
   };
 

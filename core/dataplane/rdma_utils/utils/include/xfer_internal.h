@@ -54,11 +54,11 @@ struct pio_transfer_ : public XFTransfer
   struct pio_transfer_ *next;  /* pointer to next transfer */
   void                 *src_va;                /* virtual address of src buffer */
   void                 *dst_va;                /* virtual address of dst buffer */
-  OCPI::OS::uint32_t     src_off;
-  OCPI::OS::uint32_t     dst_off;
-  OCPI::OS::uint32_t     src_stride;            /* number of bytes between each element */
-  OCPI::OS::uint32_t     dst_stride;            /* number of bytes between each element */
-  OCPI::OS::int32_t      nbytes;                 /* size of transfer */
+  DtOsDataTypes::Offset     src_off;
+  DtOsDataTypes::Offset     dst_off;
+  uint32_t     src_stride;            /* number of bytes between each element */
+  uint32_t     dst_stride;            /* number of bytes between each element */
+  size_t     nbytes;                 /* size of transfer */
 };
 
 struct xf_template_ : public XFTemplate
@@ -66,7 +66,7 @@ struct xf_template_ : public XFTemplate
   void *src_va;              /* virtual address of src buffer (for PIO) */
   void *dst_va;              /* virtual address of dst buffer (for PIO) */
   PIO_template pio_template; /* pio template */
-  OCPI::OS::int32_t type;                /* template type, PIO, PXB DMA, CE DMA */
+  int32_t type;                /* template type, PIO, PXB DMA, CE DMA */
 };
 
 struct xf_transfer_ : public XFTransfer
@@ -77,13 +77,13 @@ struct xf_transfer_ : public XFTransfer
   PIO_transfer last_pio_transfer;
 };
 
-extern OCPI::OS::int32_t xfer_pio_create(DataTransfer::SmemServices*, DataTransfer::SmemServices*, PIO_template *);
-extern OCPI::OS::int32_t xfer_pio_copy(PIO_template, OCPI::OS::uint32_t, OCPI::OS::uint32_t, OCPI::OS::int32_t, OCPI::OS::int32_t, 
-                          PIO_transfer *);
-extern OCPI::OS::int32_t xfer_pio_start(PIO_transfer, OCPI::OS::int32_t);
-extern OCPI::OS::int32_t xfer_pio_group(PIO_transfer *, OCPI::OS::int32_t, PIO_transfer *);
-extern OCPI::OS::int32_t xfer_pio_release(PIO_transfer);
-extern OCPI::OS::int32_t xfer_pio_destroy(PIO_template);
-extern void xfer_pio_modify( PIO_transfer, int,  OCPI::OS::uint32_t*,  OCPI::OS::uint32_t* );
+extern int32_t xfer_pio_create(DataTransfer::SmemServices*, DataTransfer::SmemServices*, PIO_template *);
+extern int32_t xfer_pio_copy(PIO_template, DtOsDataTypes::Offset, DtOsDataTypes::Offset, size_t, int32_t, 
+			     PIO_transfer *);
+extern int32_t xfer_pio_start(PIO_transfer, int32_t);
+extern int32_t xfer_pio_group(PIO_transfer *, int32_t, PIO_transfer *);
+extern int32_t xfer_pio_release(PIO_transfer);
+extern int32_t xfer_pio_destroy(PIO_template);
+extern void xfer_pio_modify( PIO_transfer, int,  DtOsDataTypes::Offset*,  DtOsDataTypes::Offset* );
 
 #endif /* !defined XFER_INTERNAL_H */

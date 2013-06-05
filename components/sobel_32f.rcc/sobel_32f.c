@@ -42,7 +42,7 @@ typedef struct {
   Pixel *img; 
 } SState;
 
-static uint32_t sizes[] = {sizeof(SState), 0 };
+static size_t sizes[] = {sizeof(SState), 0 };
 
 SOBEL_32F_METHOD_DECLARATIONS;
 RCCDispatch sobel_32f = {

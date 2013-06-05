@@ -48,6 +48,8 @@
 #ifndef OCPI_POSIX_FILEMAPPING_SERVICES_H_
 #define OCPI_POSIX_FILEMAPPING_SERVICES_H_
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <string>
 #include <cstdio>
 #include <errno.h>
@@ -63,6 +65,7 @@ namespace DataTransfer {
   // OcpiPosixFileMappingServices implements basic file mapping support on Posix compliant platforms.
   class OcpiPosixFileMappingServices : public OcpiFileMappingServices
   {
+    size_t m_size;
   public:
     // Create a mapping to a named file.
     //	strFilePath - Path to a file. If null, no backing store.
@@ -70,17 +73,18 @@ namespace DataTransfer {
     //	eAccess		- The type of access desired.
     //	iMaxSize	- Maximum size of mapping object.
     // Returns 0 for success or a platform specific error number.
-    int CreateMapping (const char*  strFilePath, const char* strMapName, AccessType eAccess, uint64_t iMaxSize)
+    int CreateMapping (const char*  strFilePath, const char* strMapName, AccessType eAccess, size_t iMaxSize)
     {
       // Common call to do shm_open
       int rc = InitMapping (strFilePath, strMapName, eAccess, O_CREAT);
       if (rc == 0)
 	{
+#ifdef REAL_SHM
 	  // Set the size of the shared area if not already large enough
 	  // Note Darwin/MacOS doesn't allow truncating it more than once, so it can't expand either
 	  struct stat statbuf;
 	  rc = fstat (m_fd, &statbuf);
-	  if (rc == 0 && (uint64_t)statbuf.st_size < iMaxSize)
+	  if (rc == 0 && statbuf.st_size < (off_t)iMaxSize)
 	    rc = ftruncate (m_fd, iMaxSize);
 	  m_errno = errno;
 	  if (rc != 0)
@@ -89,8 +93,10 @@ namespace DataTransfer {
 		     m_errno);
 	      TerminateMapping ();
 	    }
-	  ocpiDebug("shm fd %d truncate was %llu now %llu",
-		    m_fd, (unsigned long long)statbuf.st_size, (unsigned long long)iMaxSize);
+	  ocpiDebug("shm fd %d truncate was %llu now %zu",
+		    m_fd, (unsigned long long)statbuf.st_size, iMaxSize);
+#endif
+	  m_size = iMaxSize;
 
 	}
       return rc;
@@ -116,7 +122,7 @@ namespace DataTransfer {
     //	iOffset		- Byte offset into file for this view.
     //	lLength		- Number of bytes to map.
     // Returns that virtual address or 0 if failure.
-    void* MapView (OCPI::OS::uint64_t iOffset, OCPI::OS::uint64_t lLength, AccessType eAccess)
+    void* MapView (uint32_t iOffset, size_t lLength, AccessType eAccess)
     {
       // Map access to protection
       int iProtect = MapAccessToProtect (eAccess);
@@ -126,16 +132,28 @@ namespace DataTransfer {
       int fRet = 0;
       if (lLength == 0)
 	{
+#ifdef REAL_SHM
 	  // Use the file "size"
 	  struct stat statbuf;
 	  fRet = fstat (m_fd, &statbuf);
-	  lLength = statbuf.st_size;
+	  lLength = (size_t)statbuf.st_size;
+#else
+	  lLength = m_size;
+#endif
 	}
 
       // Do the mapping
       if (fRet == 0)
 	{
+#ifdef REAL_SHM
 	  iRet = mmap (NULL, lLength, iProtect, MAP_SHARED, m_fd, iOffset);
+#else
+          iRet = mmap (NULL, lLength, iProtect, MAP_PRIVATE|MAP_ANON, -1, iOffset);
+#endif
+	  ocpiDebug("mmap on %d at offset %u length %zu returns %p errno %d",
+		    m_fd, iOffset, lLength, iRet, errno);
+	  if (iRet != MAP_FAILED)
+	    ocpiDebug("mmap value at %p is %"PRIx32, iRet, *(uint32_t*)iRet);
 	}
       m_length = lLength;
       return iRet;
@@ -170,7 +188,7 @@ namespace DataTransfer {
     std::string m_name;
     int	m_fd;			// File descriptor
     int	m_errno;		// Last error.
-    uint64_t m_length;		// Length of last mapping
+    size_t m_length;		// Length of last mapping
     bool m_created;             // did we create it?
 
   private:
@@ -189,7 +207,14 @@ namespace DataTransfer {
       m_name = strMapName[0] == '/' ? strMapName : "/" + strMapName;
       
       // Open a shared memory object
+#if REAL_SHM
       m_fd = shm_open (m_name.c_str (), iOpenFlags | iFlags, 0666);
+#else
+      // Use anonymous mappings
+      static int fakefd = 1000;
+      m_fd = ++fakefd;
+      (void)iOpenFlags;
+#endif
       m_length = 0;
       if (m_fd == -1) {
 	  m_errno = errno;

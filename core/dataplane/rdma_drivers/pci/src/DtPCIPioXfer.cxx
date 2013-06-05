@@ -74,11 +74,11 @@ namespace DataTransfer {
       friend class SmemServices;
       int       m_dmaFd; // if this is >= 0, then we have been there before
       bool      m_usingKernelDriver;
-      uint64_t  m_dmaBase, m_dmaSize;
+      uint64_t  m_dmaBase;
       unsigned  m_maxMBox, m_perMBox;
     public:
       XferFactory()
-	: m_dmaFd(-1), m_usingKernelDriver(false), m_dmaBase(UINT64_MAX), m_dmaSize(0),
+	: m_dmaFd(-1), m_usingKernelDriver(false), m_dmaBase(UINT64_MAX),
 	  m_maxMBox(0)
       {}
 
@@ -100,24 +100,24 @@ namespace DataTransfer {
 	  const char *dma = getenv("OCPI_DMA_MEMORY");
 	  if (!dma)
 	    throw OU::Error("OCPI_DMA_MEMORY environment variable not set");
-	  unsigned sizeM;
-	  uint64_t top, pagesize = getpagesize();
+	  unsigned sizeM, pagesize = getpagesize();
+	  uint64_t top;
 	  if (sscanf(dma, "%uM$0x%" SCNx64, &sizeM, &m_dmaBase) != 2)
 	    throw OU::Error("Bad format for OCPI_DMA_MEMORY environment variable: '%s'",
 			    dma);
 	  ocpiDebug("DMA Memory:  %uM at 0x%" PRIx64, sizeM, m_dmaBase);
-	  m_dmaSize = sizeM * 1024llu * 1024llu;
-	  top = m_dmaBase + m_dmaSize;
+	  unsigned dmaSize = sizeM * 1024 * 1024;
+	  top = m_dmaBase + dmaSize;
 	  if (m_dmaBase & (pagesize-1)) {
 	    m_dmaBase += pagesize - 1;
 	    m_dmaBase &= ~(pagesize - 1);
 	    top &= ~(pagesize - 1);
-	    m_dmaSize = top - m_dmaBase;
-	    ocpiBad("DMA Memory is NOT page aligned.  Now %" PRIu64 " at 0x%" PRIx64 "\n",
-		    m_dmaSize, m_dmaBase);
+	    dmaSize = (uint32_t)(top - m_dmaBase);
+	    ocpiBad("DMA Memory is NOT page aligned.  Now %u at 0x%" PRIx64 "\n",
+		    dmaSize, m_dmaBase);
 	  }
 	  m_maxMBox = maxCount;
-	  m_perMBox = (m_dmaSize / maxCount) & ~(pagesize - 1);
+	  m_perMBox = (dmaSize / maxCount) & ~(pagesize - 1);
 	}
       }
     protected:
@@ -130,10 +130,10 @@ namespace DataTransfer {
 	  initDma(ep.maxCount);
 	ocpi_request_t request;
 	memset(&request, 0, sizeof(request));
-	request.needed = ep.size;
+	request.needed = (ocpi_size_t)ep.size;
 	if (m_usingKernelDriver) {
 	  if (ioctl(m_dmaFd, OCPI_CMD_REQUEST, &request))
-	    throw OU::Error("Can't allocate memory size %" PRIu32 " for DMA memory", ep.size);
+	    throw OU::Error("Can't allocate memory size %zu for DMA memory", ep.size);
 	} else {
 	  ocpiAssert(ep.maxCount == m_maxMBox);
 	  // chop it up into equal parts assuming everyone has the same maxCount
@@ -146,17 +146,17 @@ namespace DataTransfer {
       }
 
       uint8_t *
-      mapDmaRegion(EndPoint &ep, uint32_t offset, uint32_t size) {
+      mapDmaRegion(EndPoint &ep, uint32_t offset, size_t size) {
 	OU::SelfAutoMutex guard(this);
 	if (m_dmaFd < 0)
 	  initDma(ep.maxCount);
 
 	void *vaddr =  mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED,
-			    m_dmaFd, ep.address + offset);
+			    m_dmaFd, (off_t)(ep.address + offset));
 	if (vaddr == MAP_FAILED)
-	  throw OU::Error("mmap failed on DMA region %" PRIu32 " at 0x%" PRIx64,
+	  throw OU::Error("mmap failed on DMA region %zu at 0x%" PRIx64,
 			  size, ep.address + offset);
-	ocpiDebug("For ep %p, offset 0x%" PRIx32 " size %" PRIu32 " vaddr is %p to %p",
+	ocpiDebug("For ep %p, offset 0x%" PRIx32 " size %zu vaddr is %p to %p",
 		  &ep, offset, size, vaddr, (uint8_t *)vaddr + size);
 	return (uint8_t*)vaddr;
       }
@@ -177,7 +177,7 @@ namespace DataTransfer {
       allocateEndpoint(const OU::PValue*, uint16_t mailBox, uint16_t maxMailBoxes) {
 	std::string ep;
 	
-	OCPI::Util::formatString(ep, "ocpi-pci-pio:0.0.0.0;%u.%" PRIu16 ".%" PRIu16,
+	OCPI::Util::formatString(ep, "ocpi-pci-pio:0.0.0.0;%zu.%" PRIu16 ".%" PRIu16,
 				 m_SMBSize, mailBox, maxMailBoxes);
 	return ep;
       }
@@ -197,7 +197,7 @@ namespace DataTransfer {
 	  throw OU::Error("Invalid format for PCI endpoint: %s", ep.c_str());
   
 	ocpiDebug("PCI ep %p %s: bus_id = %d, address = 0x%" PRIx64
-		  " size = 0x%" PRIx32 " hole 0x%" PRIx32 " end 0x%" PRIx32,
+		  " size = 0x%zx hole 0x%" PRIx32 " end 0x%" PRIx32,
 		  this, ep.c_str(), m_busId, address, size, m_holeOffset, m_holeEnd);
       };
       virtual ~EndPoint() {}
@@ -233,7 +233,7 @@ namespace DataTransfer {
 	  // FIXME: somehow we shouldn't be reformatting the whole endpoint string?
 	  OU::formatString(ep.end_point,
 			   "ocpi-pci-pio:%u.0x%" PRIx64".0x%" PRIx32 ".0x%" PRIx32
-			   ";%" PRIu32 ".%" PRIu16 ".%" PRIu16,
+			   ";%zu.%" PRIu16 ".%" PRIu16,
 			   ep.m_busId, ep.address, ep.m_holeOffset, ep.m_holeEnd,
 			   ep.size, ep.mailbox, ep.maxCount);
 	  ocpiDebug("Finalized PCI ep %p: %s", &ep, ep.end_point.c_str());
@@ -243,10 +243,10 @@ namespace DataTransfer {
       virtual ~SmemServices () {
       }
       // FIXME these should have defaults...
-      int32_t attach (DT::EndPoint*) { return 0; }
-      int32_t detach () { return 0; }
-      int32_t unMap () { return 0; }
-      void* map (uint32_t offset, uint32_t size ) {
+      int32_t attach(DT::EndPoint*) { return 0; }
+      int32_t detach() { return 0; }
+      int32_t unMap() { return 0; }
+      void* map(DtOsDataTypes::Offset offset, size_t size ) {
 	EndPoint &ep = m_pciEndPoint;
 	OU::SelfAutoMutex guard (&m_driver);
 	uint8_t *vaddr = 0;
@@ -263,17 +263,19 @@ namespace DataTransfer {
 		      &ep, m_vaddr, m_vaddr + ep.size);
 	  }
 	}
-	uint32_t top = offset + size;
-	if (top <= ep.size)
+	size_t top = offset + size;
+	if (top <= ep.size) {
 	  if (ep.m_holeOffset == 0 || offset < ep.m_holeOffset && top <= ep.m_holeOffset)
 	    vaddr = m_vaddr + offset;
 	  else if (ep.m_holeOffset && offset >= ep.m_holeEnd)
 	    vaddr = m_vaddr1 + (offset - ep.m_holeEnd);
+	}
 	if (!vaddr)
-	  throw OU::Error("Mapping offset %" PRIx32 " size %" PRIx32 " out of range",
+	  throw OU::Error("Mapping offset %" DTOSDATATYPES_OFFSET_PRIx " size %zu out of range",
 			  offset, size);
 	ocpiDebug("PCI::SmemServices::map returning %s vaddr = %p base %p/%p offset 0x%"
-		  PRIx32 " size %u, end 0x%p", m_pciEndPoint.local ? "local" : "remote",
+		  DTOSDATATYPES_OFFSET_PRIx " size %zu, end 0x%p",
+		  m_pciEndPoint.local ? "local" : "remote",
  		  vaddr, m_vaddr, m_vaddr1, offset, size, vaddr + size);
 	return (void*)vaddr;
       }

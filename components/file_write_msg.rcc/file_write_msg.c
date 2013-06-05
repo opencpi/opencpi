@@ -18,7 +18,7 @@ typedef struct {
   int fd;
   int started;
 } MyState;
-static uint32_t mysizes[] = {sizeof(MyState), 0};
+static size_t mysizes[] = {sizeof(MyState), 0};
 
 FILE_WRITE_MSG_METHOD_DECLARATIONS;
 RCCDispatch file_write_msg = {
@@ -56,7 +56,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  MyState *s = self->memories[0];
  ssize_t n;
 
- printf("In file_write_msg got %d bytes of data\n", port->input.length);
+ printf("In file_write_msg got %zu bytes of data\n", port->input.length);
 
  FileHeader h;
  h.pad = 0;

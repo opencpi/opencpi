@@ -35,7 +35,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  }
 
 #ifndef NDEBUG
- printf("%s got %d bytes of data\n", __FILE__,  in->input.length);
+ printf("%s got %zu bytes of data\n", __FILE__,  in->input.length);
 #endif
 
  //#define ZCOPY__

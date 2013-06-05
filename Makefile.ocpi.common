@@ -617,7 +617,7 @@ IDL = TAO_ROOT="$(TAO_ROOT)" TAO_IDL_PREPROCESSOR="$(CC)" $(TAO_BIN)/tao_idl
 
 ALLIDLINC = $(TAO_INC) $(TAO_INC)/tao
 
-IDLOPTS = -ss _s.cxx -cs .cxx -hc .h -hs _s.h -ci .inl -si _s.inl -H binary_search
+IDLOPTS = -ss _s.cxx -cs _c.cxx -hc .h -hs _s.h -ci .inl -si _s.inl -H binary_search
 
 ifeq ($(OCPI_OS),linux)
 LD_LIBRARY_PATH := $(LD_LIBRARY_PATH):$(ACE_LIB)
@@ -677,7 +677,7 @@ endif # End: ifeq ($(OCPI_CORBA_ORB),OMNI)
 
 endif # End: ifeq ($(OCPI_HAVE_CORBA),1)
 
-%.cxx %.h %_s.cxx %_s.h : %.idl
+%_c.cxx %.h %_s.cxx %_s.h : %.idl
 	$(IDL) $(IDLOPTS) $(patsubst %,-I%,$(ALLIDLINC)) "$<"
 
 %.d : %.idl
@@ -685,7 +685,7 @@ endif # End: ifeq ($(OCPI_HAVE_CORBA),1)
 	$(MKDEPEND) \
 		--srcfile "$<" \
 		--target "$(patsubst %.idl,%.h,$<)" \
-		--target "$(patsubst %.idl,%.cxx,$<)" \
+		--target "$(patsubst %.idl,%_c.cxx,$<)" \
 		--target "$(patsubst %.idl,%_s.h,$<)" \
 		--target "$(patsubst %.idl,%_s.cxx,$<)" \
 		--target "$(patsubst %.idl,%.d,$<)" \

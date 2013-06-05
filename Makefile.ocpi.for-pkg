@@ -110,10 +110,10 @@ CSOURCES = $(filter-out $(addprefix %/,$(EXCLUDE_SOURCES)),\
                         $(wildcard src/*.c) $(wildcard $(patsubst %,%/src/*.c,$(FACILITIES))))
 CXXSOURCES = $(filter-out $(addprefix %/,$(EXCLUDE_SOURCES)),\
                         $(wildcard src/*.cxx) $(wildcard $(patsubst %,%/src/*.cxx,$(FACILITIES)))) \
-			$(patsubst %.idl,%.cxx,$(wildcard idl/*.idl) $(wildcard $(patsubst %,%/idl/*.idl,$(FACILITIES)))) 
+			$(patsubst %.idl,%_c.cxx,$(wildcard idl/*.idl) $(wildcard $(patsubst %,%/idl/*.idl,$(FACILITIES)))) 
 CPPSOURCES = $(filter-out $(addprefix %/,$(EXCLUDE_SOURCES)),\
                           $(wildcard src/*.cpp) $(wildcard $(patsubst %,%/src/*.cpp,$(FACILITIES)))) \
-			  $(patsubst %.idl,%.cpp,$(wildcard idl/*.idl) $(wildcard $(patsubst %,%/idl/*.idl,$(FACILITIES)))) 
+			  $(patsubst %.idl,%_c.cpp,$(wildcard idl/*.idl) $(wildcard $(patsubst %,%/idl/*.idl,$(FACILITIES)))) 
 
 ASMSOURCES = $(filter-out $(addprefix %/,$(EXCLUDE_SOURCES)),$(wildcard $(patsubst %,%/src/*.asm,$(FACILITIES))))
 
@@ -229,9 +229,9 @@ $(VXWORKSDKM): $(OBJECTS)
 endif
 
 objects: generated
-	$(AT)if test "x$(OCPI_OUT_DIR)" != "x" -a ! -d $(OCPI_OUT_DIR); then \
-	  echo Creating object directory $(OCPI_OUT_DIR); \
-	  mkdir -p $(OCPI_OUT_DIR) ; \
+	$(AT)if test "x$(OCPI_OUT_DIR)" != "x" -a ! -d $(OBJDIR); then \
+	  echo Creating object directory $(OBJDIR); \
+	  mkdir -p $(OBJDIR) ; \
 	fi
 	$(AT)set -e; \
 	if test -d src; then \

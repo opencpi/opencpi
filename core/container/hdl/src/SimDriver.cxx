@@ -85,7 +85,7 @@ namespace OCPI {
 	    break;
 	  case 'X': // The file needs to be transferred
 	    {
-	      unsigned port = atoi(err + 1);
+	      uint16_t port = OCPI_UTRUNCATE(uint16_t, atoi(err + 1));
 	      std::string addr = this->addr().pretty(); // this will have a colon and port...
 	      addr.resize(addr.find_first_of(':'));
 	      

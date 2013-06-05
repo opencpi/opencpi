@@ -55,7 +55,6 @@ namespace OCPI {
     namespace PCI {
       namespace OS = OCPI::OS;
       namespace OU = OCPI::Util;
-#define PCIDIR "/sys/bus/pci/devices"
 
       class Device
 	: public OCPI::HDL::Device {
@@ -66,32 +65,31 @@ namespace OCPI {
 	Device(std::string &name, int fd, ocpi_pci_t &pci, void *bar0, void *bar1)
 	  : OCPI::HDL::Device(name, "ocpi-pci-pio"), m_bar0(bar0), m_bar1(bar1),
 	    m_bar0size(pci.size0), m_bar1size(pci.size1), m_fd(fd) {
-	  uint64_t endpointPaddr, controlOffset, bufferOffset;
-	  uint32_t holeOffset, holeEnd;
+	  uint64_t endpointPaddr, controlOffset, bufferOffset, holeStartOffset, holeEndOffset;
 	  if (pci.bar0 < pci.bar1) {
 	    endpointPaddr = pci.bar0;
 	    m_endpointSize = pci.bar1 + pci.size1 - endpointPaddr;
 	    controlOffset = 0;
 	    bufferOffset = pci.bar1 - pci.bar0;
-	    holeOffset = pci.size0;
-	    holeEnd = pci.bar1 - pci.bar0;
+	    holeStartOffset = pci.size0;
+	    holeEndOffset = pci.bar1 - pci.bar0;
 	  } else {
 	    endpointPaddr = pci.bar1;
 	    m_endpointSize = pci.bar0 + pci.size0 - endpointPaddr;
 	    controlOffset = pci.bar0 - pci.bar1;
 	    bufferOffset = 0;
-	    holeOffset = pci.size1;
-	    holeEnd = pci.bar0 - pci.bar1;
+	    holeStartOffset = pci.size1;
+	    holeEndOffset = pci.bar0 - pci.bar1;
 	  }
 	  const char *cp = name.c_str();
 	  if (!strncasecmp("PCI:", cp, 4))
 	    cp += 4;
 	  unsigned bus = atoi(cp); // does anyone use non-zero PCI domains?
 	  OU::formatString(m_endpointSpecific,
-			   "ocpi-pci-pio:%u.0x%" PRIx64 ".0x%" PRIx32 ".0x%" PRIx32,
-			   bus, endpointPaddr, holeOffset, holeEnd);
-	  cAccess().setAccess((uint8_t*)bar0, NULL, controlOffset);
-	  dAccess().setAccess((uint8_t*)bar1, NULL, bufferOffset);
+			   "ocpi-pci-pio:%u.0x%" PRIx64 ".0x%" PRIx64 ".0x%" PRIx64,
+			   bus, endpointPaddr, holeStartOffset, holeEndOffset);
+	  cAccess().setAccess((uint8_t*)bar0, NULL, OCPI_UTRUNCATE(RegisterOffset, controlOffset));
+	  dAccess().setAccess((uint8_t*)bar1, NULL, OCPI_UTRUNCATE(RegisterOffset, bufferOffset));
 	}
 	~Device() {
 	  if (m_bar0)
@@ -114,7 +112,7 @@ namespace OCPI {
     static inline int64_t dticks2ns(int64_t ticks) {
       return (ticks * 1000000000ll + (1ll << 31))/ (1ll << 32);
     }
-    static inline uint64_t ns2ticks(uint32_t sec, uint32_t nsec) {
+    static inline uint64_t ns2ticks(unsigned long sec, unsigned long nsec) {
       return ((uint64_t)sec << 32ull) + ((nsec + 500000000ull) * (1ull<<32)) /1000000000ull;
     }
     static inline uint64_t now() {
@@ -243,9 +241,10 @@ namespace OCPI {
       static const char *
       getPciValue(const char *dev, const char *value, char *buf, unsigned len)
       {
-	int n, fd;
+	int fd;
+	ssize_t n;
 	// get bars
-	n = snprintf(buf, len, "%s/%s/%s", PCIDIR, dev, value);
+	n = snprintf(buf, len, "%s/%s/%s", OCPI_HDL_SYS_PCI_DIR, dev, value);
 	if (n <= 0 || (unsigned)n >= len)
 	  return "buffer violation";
 	fd = ::open(buf, O_RDONLY);
@@ -268,13 +267,13 @@ namespace OCPI {
 	unsigned long long ull = strtoull(buf, NULL, 0);
 	if (ull == ULLONG_MAX && errno == ERANGE)
 	  return "unexpected attribute value for PCI Device";
-	*np = ull;
+	*np = OCPI_UTRUNCATE(unsigned long, ull);
 	return 0;
       }
       // See if this looks like an appropriate PCI entry
-      static bool
-      probe(const char *name, unsigned theVendor, unsigned theDevice, unsigned theClass,
-	    unsigned theSubClass, Bar *bars, unsigned &nbars, std::string &error) {
+      bool
+      probePci(const char *name, unsigned theVendor, unsigned theDevice, unsigned theClass,
+	       unsigned theSubClass, bool verbose, Bar *bars, unsigned &nbars, std::string &error) {
 	unsigned long domain, bus, deviceN, function, vendor, device, classword;
 	const char *err = 0;
 	char buf[512], rbuf[512];
@@ -287,12 +286,13 @@ namespace OCPI {
 		 (err = getPciValue(name, "config", buf, sizeof(buf))))
 	  err = "PCI device attributes not accessible";
 	else {
-	  unsigned pciClass = classword >> 16, pciSubClass = (classword >> 8) & 0xff;
-#if 0
-	  printf("dom %ld bus %ld devN %ld func %ld vendor 0x%lx "
-		 "device 0x%lx class 0x%x subclass 0x%x\n",
-		 domain, bus, deviceN, function, vendor, device, pciClass, pciSubClass);
-#endif
+	  unsigned long pciClass = classword >> 16, pciSubClass = (classword >> 8) & 0xff;
+	  if (verbose) {
+	    printf("dom %lu bus %lu devN %lu func %lu vendor 0x%lx "
+		   "device 0x%lx class 0x%lx subclass 0x%lx\n",
+		   domain, bus, deviceN, function, vendor, device, pciClass, pciSubClass);
+	    //	    printf("resource = '%s'\n", rbuf);
+	  }
 	  if (vendor == theVendor && device == theDevice &&
 	      pciClass == theClass && pciSubClass == theSubClass) {
 	    // device words match, look at BARs in the "resource" file (rbuf)
@@ -324,19 +324,18 @@ namespace OCPI {
 		  else
 		    err = "Invalid address space indication";
 		}
-#if 0
-		printf("   BAR %d: 0x%llx to 0x%llx (%lu%s %db %s %s)\n",
-		       i, bottom, top,
-		       bar->size >= 1024 ? bar->size/1024 : bar->size,
-		       bar->size >= 1024 ? "K" : "",
-		       bar->addressSize, bar->io ? "io":"mem",
-		       bar->prefetch ? "pref" : "npf");
-#endif
+		if (verbose)
+		  printf("   BAR %d: 0x%llx to 0x%llx (%llu%s %db %s %s)\n",
+			 i, bottom, top, 
+			 (unsigned long long)
+			 (bar->size >= 1024 ? bar->size/1024 : bar->size),
+			 bar->size >= 1024 ? "K" : "",
+			 bar->addressSize, bar->io ? "io":"mem", bar->prefetch ? "pref" : "npf");
 		bar++;
 	      } // end of good bar
 	    } // end of bar loop
 	    if (!err) {
-	      nbars = bar - bars;
+	      nbars = OCPI_UTRUNCATE(unsigned, bar - bars);
 	      return true;
 	    }
 	  }
@@ -349,7 +348,7 @@ namespace OCPI {
       search(const OU::PValue */*params*/, const char **exclude, bool /*discoveryOnly*/,
 	     std::string &error) {
 	unsigned count = 0;
-	const char *dir = m_useDriver ? OCPI_DRIVER_PCI : PCIDIR;
+	const char *dir = m_useDriver ? OCPI_DRIVER_PCI : OCPI_HDL_SYS_PCI_DIR;
 	DIR *pcid = opendir(dir);
 	if (!pcid) {
 #ifdef OCPI_OS_macos
@@ -411,25 +410,25 @@ namespace OCPI {
 	    OU::formatString(error, "can't mmap %s for bar1", devName.c_str());
 	  // So fd, bar0, bar1, and pci are good here if error.empty()
 	} else {
-	  Bar bars[6];
-	  unsigned nbars = 6;
-	  if (probe(name.c_str()+4, OCPI_HDL_PCI_VENDOR_ID, OCPI_HDL_PCI_DEVICE_ID, OCPI_HDL_PCI_CLASS,
-		    OCPI_HDL_PCI_SUBCLASS, bars, nbars, error))
+	  Bar bars[MAXBARS];
+	  unsigned nbars = MAXBARS;
+	  if (probePci(name.c_str()+4, OCPI_HDL_PCI_VENDOR_ID, OCPI_HDL_PCI_DEVICE_ID, OCPI_HDL_PCI_CLASS,
+		       OCPI_HDL_PCI_SUBCLASS, false, bars, nbars, error))
 	    if (nbars != 2 || bars[0].io || bars[0].prefetch || bars[1].io || bars[1].prefetch ||
 		bars[0].addressSize != 32 || bars[0].size != sizeof(OccpSpace))
 	      error = "Found PCI device w/ good vendor/device/class, but bars are wrong; skipping it; use lspci";
 	    else {
 	      pci.bar0 = bars[0].address;
 	      pci.bar1 = bars[1].address;
-	      pci.size0 = bars[0].size;
-	      pci.size1 = bars[1].size;
+	      pci.size0 = OCPI_UTRUNCATE(ocpi_size_t,bars[0].size);
+	      pci.size1 = OCPI_UTRUNCATE(ocpi_size_t,bars[1].size);
 	      if (m_pciMemFd < 0 && (m_pciMemFd = ::open("/dev/mem", O_RDWR|O_SYNC)) < 0)
 		error = "Can't open /dev/mem, forgot sudo?";
 	      else if ((bar0 = mmap(NULL, sizeof(OccpSpace), PROT_READ|PROT_WRITE, MAP_SHARED,
-				    m_pciMemFd, bars[0].address)) == (void*)-1)
+				    m_pciMemFd, OCPI_STRUNCATE(off_t, bars[0].address))) == (void*)-1)
 		error = "can't mmap /dev/mem for bar0";
-	      else if ((bar1 = mmap(NULL, bars[1].size, PROT_READ|PROT_WRITE, MAP_SHARED,
-				    m_pciMemFd, bars[1].address)) == (void*)-1)
+	      else if ((bar1 = mmap(NULL, OCPI_UTRUNCATE(size_t, bars[1].size), PROT_READ|PROT_WRITE, MAP_SHARED,
+				    m_pciMemFd, OCPI_STRUNCATE(off_t, bars[1].address))) == (void*)-1)
 		error = "can't mmap /dev/mem for bar1";
 	    }
 	  else
@@ -467,7 +466,7 @@ namespace OCPI {
 	  }
 	} else {
 	  static uint64_t base = 0, top;
-	  static uint64_t pagesize = getpagesize();
+	  static unsigned pagesize = getpagesize();
 	  
 	  if (!base) {
 	    const char *dma = getenv("OCPI_DMA_MEMORY");
@@ -476,18 +475,18 @@ namespace OCPI {
 	      return NULL;
 	    }
 	    unsigned sizeM;
-	    if (sscanf(dma, "%uM$0x%llx", &sizeM, (unsigned long long *) &base) != 2) {
+	    if (sscanf(dma, "%uM$0x%" SCNx64, &sizeM, &base) != 2) {
 	      error = "Bad format for OCPI_DMA_MEMORY environment setup";
 	      return NULL;
 	    }
-	    ocpiDebug("DMA Memory:  %uM at 0x%llx\n", sizeM, (unsigned long long)base);
+	    ocpiDebug("DMA Memory:  %uM at 0x%"PRIx64"\n", sizeM, base);
 	    top = base + sizeM * 1024llu * 1024llu;
 	    if (base & (pagesize-1)) {
 	      base += pagesize - 1;
 	      base &= ~(pagesize - 1);
 	      top &= ~(pagesize - 1);
-	      ocpiDebug("DMA Memory is NOT page aligned.  Now %llu at 0x%llx\n",
-			(unsigned long long)(top - base), (unsigned long long)base);
+	      ocpiDebug("DMA Memory is NOT page aligned.  Now %"PRIu64"u at 0x%"PRIx64"\n",
+			top - base, base);
 	    }
 	  }
 	  request.actual = (size + pagesize - 1) & ~(pagesize - 1);
@@ -499,7 +498,7 @@ namespace OCPI {
 	  base += request.actual;
 	}
 	void *vaddr =  mmap(NULL, request.actual, PROT_READ|PROT_WRITE, MAP_SHARED,
-			    m_pciMemFd, request.address);
+			    m_pciMemFd, OCPI_STRUNCATE(off_t, request.address));
 	if (vaddr == (void *)-1) {
 	  error = "DMA mmap failure"; // FIXME: a leak of physical memory in this case
 	  return NULL;

@@ -8,13 +8,15 @@
 #include <string>
 #include "OcpiUuid.h"
 #include "OcpiUtilEzxml.h"
+#include "OcpiUtilMisc.h"
+#include "DtOsDataTypes.h"
 #include "HdlOCCP.h"
 namespace OCPI {
   namespace HDL {
     // FIXME:  when do we check for unexpected errors when the worker said they don't produce errors?
     // FIXME:  perhaps after setup is done?  Should a control op notice the error?
     // FIXME:  after a bunch of register settings?  afterconfig?
-    typedef uint32_t RegisterOffset;
+    typedef size_t RegisterOffset;
     class Accessor {
     public:
       virtual ~Accessor() {}
@@ -24,17 +26,17 @@ namespace OCPI {
       virtual uint16_t get16(RegisterOffset, uint32_t *status = NULL) = 0;
       virtual uint8_t  get8(RegisterOffset,  uint32_t *status = NULL) = 0;
       // the rest return status
-      virtual void getBytes(RegisterOffset, uint8_t *, unsigned, uint32_t *status = NULL) = 0;
+      virtual void getBytes(RegisterOffset, uint8_t *, size_t, uint32_t *status = NULL) = 0;
       virtual void set64(RegisterOffset, uint64_t, uint32_t *status = NULL) = 0;
       virtual void set32(RegisterOffset, uint32_t, uint32_t *status = NULL) = 0;
       virtual void set16(RegisterOffset, uint16_t, uint32_t *status = NULL) = 0;
       virtual void set8(RegisterOffset, uint8_t, uint32_t *status = NULL) = 0;
-      virtual void setBytes(RegisterOffset, const uint8_t *, unsigned, uint32_t *status = NULL) = 0;
+      virtual void setBytes(RegisterOffset, const uint8_t *, size_t, uint32_t *status = NULL) = 0;
     };
     class Access {
       friend class WciControl;
       volatile uint8_t *m_registers; // the memory mapped virtual address of the registers
-      uint64_t m_base;               // the base of the "registers" in their physical address space
+      DtOsDataTypes::Offset m_base;  // the base of the "registers" in their physical address space
       Accessor *m_accessor;          // when no virtual pointer access, the object that does the access
       //      volatile uint8_t *m_buffers;   // sort of a hack for the data plane until enet dp is available
 
@@ -53,63 +55,63 @@ namespace OCPI {
 
       // Given that I have registers already set up,
       // set up the (other, subsidiary) offsettee to have registers at an offset in my space
-      void offsetRegisters(Access &offsettee, unsigned offset);
+      void offsetRegisters(Access &offsettee, size_t offset);
 
       // Return the offset in the endpoint physical window of this offset in the accessor
-      inline uint64_t physOffset(unsigned offset) {
-	return m_base + offset;
+      inline DtOsDataTypes::Offset physOffset(size_t offset) {
+	return m_base + OCPI_UTRUNCATE(DtOsDataTypes::Offset, offset);
       }
       // The optimization here is to reduce the number of memory references, hence no unrolling
-      void getBytes(RegisterOffset offset, uint8_t *to8, unsigned bytes) const;
+      void getBytes(RegisterOffset offset, uint8_t *to8, size_t bytes) const;
 
-      void setBytes(RegisterOffset offset, const uint8_t *from8, unsigned bytes) const;
-      inline uint8_t get8RegisterOffset(unsigned offset) const {
+      void setBytes(RegisterOffset offset, const uint8_t *from8, size_t bytes) const;
+      inline uint8_t get8RegisterOffset(size_t offset) const {
 	return m_registers ? *(volatile uint8_t *)(m_registers + offset) :
 	  m_accessor->get8(m_base + offset);
       }
-      inline uint16_t get16RegisterOffset(unsigned offset) const {
+      inline uint16_t get16RegisterOffset(size_t offset) const {
 	return m_registers ? *(volatile uint16_t *)(m_registers + offset) :
 	  m_accessor->get16(m_base + offset);
       }
-      inline uint32_t get32RegisterOffset(unsigned offset) const {
+      inline uint32_t get32RegisterOffset(size_t offset) const {
 	return m_registers ? *(volatile uint32_t *)(m_registers + offset) :
 	  m_accessor->get32(m_base + offset);
       }
-      inline uint64_t get64RegisterOffset(unsigned offset) const {
+      inline uint64_t get64RegisterOffset(size_t offset) const {
 	return m_registers ? *(volatile uint64_t *)(m_registers + offset) :
 	  m_accessor->get64(m_base + offset);
       }
-      inline void set8RegisterOffset(unsigned offset, uint8_t val) const {
+      inline void set8RegisterOffset(size_t offset, uint8_t val) const {
 	if (m_registers)
 	  *(volatile uint8_t *)(m_registers + offset) = val;
 	else
 	  m_accessor->set8(m_base + offset, val);
       }
-      inline void set16RegisterOffset(unsigned offset, uint16_t val) const {
+      inline void set16RegisterOffset(size_t offset, uint16_t val) const {
 	if (m_registers)
 	  *(volatile uint16_t *)(m_registers + offset) = val;
 	else
 	  m_accessor->set16(m_base + offset, val);
       }
-      inline void set32RegisterOffset(unsigned offset, uint32_t val) const {
+      inline void set32RegisterOffset(size_t offset, uint32_t val) const {
 	if (m_registers)
 	  *(volatile uint32_t *)(m_registers + offset) = val;
 	else
 	  m_accessor->set32(m_base + offset, val);
       }
-      inline void set64RegisterOffset(unsigned offset, uint64_t val) const{
+      inline void set64RegisterOffset(size_t offset, uint64_t val) const{
 	if (m_registers)
 	  *(volatile uint64_t *)(m_registers + offset) = val;
 	else
 	  m_accessor->set64(m_base + offset, val);
       }
-      inline void getBytesRegisterOffset(unsigned offset, uint8_t *bytes,  unsigned size) const {
+      inline void getBytesRegisterOffset(size_t offset, uint8_t *bytes,  size_t size) const {
 	if (m_registers)
 	  getBytes(offset, bytes, size);
 	else
 	  m_accessor->getBytes(offset, bytes, size);
       }
-      inline void setBytesRegisterOffset(unsigned offset, const uint8_t *bytes, unsigned size) const {
+      inline void setBytesRegisterOffset(size_t offset, const uint8_t *bytes, size_t size) const {
 	if (m_registers)
 	  setBytes(offset, bytes, size);
 	else

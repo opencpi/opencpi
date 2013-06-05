@@ -97,7 +97,7 @@ namespace OCPI {
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                         \
       void set##pretty##Property(const OCPI::API::Property &p, const run val) const;   \
       void set##pretty##SequenceProperty(const OCPI::API::Property &p,const run *vals, \
-					 unsigned length) const;
+					 size_t length) const;
       // Set a string property value
       // ASSUMPTION:  strings always occupy at least 4 bytes, and
       // are aligned on 4 byte boundaries.  The offset calculations
@@ -105,7 +105,7 @@ namespace OCPI {
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                       \
       void set##pretty##Property(const OCPI::API::Property &p, const run val) const;   \
       void set##pretty##SequenceProperty(const OCPI::API::Property &p,const run *vals, \
-					 unsigned length) const;
+					 size_t length) const;
       OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE_S
 #undef OCPI_DATA_TYPE
@@ -114,29 +114,29 @@ namespace OCPI {
 	run get##pretty##Property(const OCPI::API::Property &p) const;       \
         unsigned get##pretty##SequenceProperty(const OCPI::API::Property &p, \
 					     run *vals,			     \
-					       unsigned length) const;
+					       size_t length) const;
       // ASSUMPTION:  strings always occupy at least 4 bytes, and
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this.
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)		\
 	void get##pretty##Property(const OCPI::API::Property &p, char *cp,      \
-				   unsigned length) const;                      \
+				   size_t length) const;                      \
       unsigned get##pretty##SequenceProperty                                    \
-	(const OCPI::API::Property &p, char **vals, unsigned length, char *buf, \
-	 unsigned space) const;
+	(const OCPI::API::Property &p, char **vals, size_t length, char *buf, \
+	 size_t space) const;
 
       OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE_S
 #undef OCPI_DATA_TYPE
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
-      void setPropertyBytes(const OCPI::API::PropertyInfo &info, uint32_t offset,
-			    const uint8_t *data, unsigned nBytes) const;
+      void setPropertyBytes(const OCPI::API::PropertyInfo &info, size_t offset,
+			    const uint8_t *data, size_t nBytes) const;
       void setProperty8(const OCPI::API::PropertyInfo &info, uint8_t data) const;
       void setProperty16(const OCPI::API::PropertyInfo &info, uint16_t data) const;
       void setProperty32(const OCPI::API::PropertyInfo &info, uint32_t data) const;
       void setProperty64(const OCPI::API::PropertyInfo &info, uint64_t data) const;
-      void getPropertyBytes(const OCPI::API::PropertyInfo &info, uint32_t offset,
-				    uint8_t *data, unsigned nBytes) const;
+      void getPropertyBytes(const OCPI::API::PropertyInfo &info, size_t offset,
+				    uint8_t *data, size_t nBytes) const;
       uint8_t getProperty8(const OCPI::API::PropertyInfo &info) const;
       uint16_t getProperty16(const OCPI::API::PropertyInfo &info) const;
       uint32_t getProperty32(const OCPI::API::PropertyInfo &info) const;
@@ -149,8 +149,8 @@ namespace OCPI {
 
       OCPI::Container::Port &  createInputPort(
 					       OCPI::Metadata::PortOrdinal   portId,      
-                                              OCPI::OS::uint32_t   bufferCount,
-                                              OCPI::OS::uint32_t   bufferSize, 
+                                              size_t   bufferCount,
+                                              size_t   bufferSize, 
                                               const OCPI::Util::PValue*  props=NULL
                                               )
         throw ( OCPI::Util::EmbeddedException );
@@ -158,17 +158,17 @@ namespace OCPI {
 
       OCPI::Container::Port &  createOutputPort( 
 						OCPI::Metadata::PortOrdinal   portId,     
-                                               OCPI::OS::uint32_t             bufferCount,
-                                               OCPI::OS::uint32_t             bufferSize, 
+                                               size_t             bufferCount,
+                                               size_t             bufferSize, 
                                                const OCPI::Util::PValue*               props=NULL
                                                )
         throw ( OCPI::Util::EmbeddedException );
 
-        void read ( uint32_t offset,
-                         uint32_t nBytes,
+        void read (size_t offset,
+                         size_t nBytes,
                          void* p_data );
-        void write ( uint32_t offset,
-                          uint32_t nBytes,
+        void write ( size_t offset,
+                          size_t nBytes,
                           const void* p_data );
      
       // Get our transport

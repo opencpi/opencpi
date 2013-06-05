@@ -49,31 +49,35 @@
 #include <sys/mman.h>
 #include "OcpiUuid.h"
 #include "HdlOCCP.h"
-#include "getPci.h" // this is actual code
+#include "PciDriver.h"
 
-static const char *found(const char *name,Bar *bars, unsigned nBars, bool verbose);
+namespace OP = OCPI::HDL::PCI;
+
+static const char *found(const char *name, OP::Bar *bars, unsigned nBars, bool verbose);
+
 // consider a specific PCI device return error if something
 // bad happened.
 const char *
 doDevice(const char *name,
 	 unsigned theVendor, unsigned theDevice, unsigned theClass, unsigned theSubClass,
 	 bool verbose) {
-  const char *err;
-  Bar bars[6];
-  unsigned nbars;
-  if ((err = getPci(name, theVendor,theDevice,theClass, theSubClass, verbose,bars, &nbars)))
-    return err;
+  OP::Bar bars[OP::MAXBARS];
+  unsigned nbars = OP::MAXBARS;
+  static std::string error;
+  if (!OP::probePci(name, theVendor, theDevice, theClass, theSubClass, verbose, bars, nbars, error))
+    return error.empty() ? NULL : error.c_str();
   return nbars ? found(name, bars, nbars, verbose) : NULL;
 }
+
 const char *
-search(const char **exclude,
+search(const char **/*exclude*/,
        unsigned theVendor, unsigned theDevice, unsigned theClass, unsigned theSubClass,
        bool verbose) {
   const char *err = NULL;
   struct dirent *ent;
-  DIR *pcid = opendir(PCIDIR);
+  DIR *pcid = opendir(OCPI_HDL_SYS_PCI_DIR);
   if (!pcid) 
-    return "Can't open the " PCIDIR " directory";
+    return "Can't open the " OCPI_HDL_SYS_PCI_DIR " directory";
   while (!err && (ent = readdir(pcid)) != NULL)
     if (ent->d_name[0] != '.')
       err = doDevice(ent->d_name, theVendor, theDevice, theClass, theSubClass, verbose);
@@ -86,7 +90,7 @@ unsigned nFound = 0;
 
 // found a correctly looking PCI device
 static const char*
-found(const char *name, Bar *bars, unsigned nbars, bool verbose) {
+found(const char *name, OP::Bar *bars, unsigned nbars, bool verbose) {
   const char *err = 0;
   void *bar0 = 0, *bar1 = 0;
   volatile OCPI::HDL::OccpSpace *occp;
@@ -166,7 +170,7 @@ found(const char *name, Bar *bars, unsigned nbars, bool verbose) {
 }
 
 int
-main(int argc, char **argv)
+main(int /*argc*/, char **argv)
 {
   bool verbose = false;
   if (argv[1] && !strcmp(argv[1], "-v")) {

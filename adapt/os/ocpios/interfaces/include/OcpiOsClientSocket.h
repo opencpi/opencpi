@@ -76,7 +76,7 @@ namespace OCPI {
        */
 
       OCPI::OS::Socket connect (const std::string & remoteHost,
-				unsigned int remotePort,
+				uint16_t remotePort,
 				bool udp = false)
         throw (std::string);
 

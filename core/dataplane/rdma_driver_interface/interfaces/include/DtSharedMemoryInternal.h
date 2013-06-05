@@ -64,7 +64,7 @@ namespace DataTransfer {
     //                Returns 0 if transfer has completed, non-zero otherwise
     //        Throws:
     //                DtException for all other exception conditions
-    virtual int createLocal (uint32_t size) = 0;
+    virtual int createLocal (size_t size) = 0;
 
     // Allocate from pool
     //        Arguments:
@@ -76,7 +76,7 @@ namespace DataTransfer {
     //        Throws:
     //                DtException for all other exception conditions
     virtual int alloc (
-		       uint32_t nbytes, 
+		       size_t nbytes, 
 		       unsigned alignment, 
 		       OCPI::Util::ResAddrType* addr_p) = 0;
 
@@ -89,8 +89,8 @@ namespace DataTransfer {
     //        Throws:
     //                DtException for all other exception conditions
     virtual int free (
-		      uint32_t addr, 
-		      uint32_t nbytes) = 0;
+		      OCPI::Util::ResAddrType addr, 
+		      size_t nbytes) = 0;
 
     // Destroy resource pool
     //        Arguments:

@@ -53,7 +53,7 @@
 
 OCPI::OS::Socket
 OCPI::OS::ClientSocket::connect (const std::string & remoteHost,
-				 unsigned int remotePort,
+				 uint16_t remotePort,
 				 bool udp
 				 )
   throw (std::string)

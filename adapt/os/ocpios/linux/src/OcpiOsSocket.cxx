@@ -114,8 +114,8 @@ OCPI::OS::Socket::~Socket ()
     close();
 }
 
-unsigned long long
-OCPI::OS::Socket::recv (char * buffer, unsigned long long amount, unsigned timeoutms)
+size_t
+OCPI::OS::Socket::recv (char * buffer, size_t amount, unsigned timeoutms)
   throw (std::string)
 {
   if (timeoutms != m_timeoutms) {
@@ -127,27 +127,24 @@ OCPI::OS::Socket::recv (char * buffer, unsigned long long amount, unsigned timeo
       throw OCPI::OS::Posix::getErrorMessage (errno);
     m_timeoutms = timeoutms;
   }
-  unsigned long count = static_cast<unsigned long> (amount);
-  ocpiAssert (static_cast<unsigned long long> (count) == amount);
-
   ssize_t ret;
-  while ((ret = ::recv (o2fd (m_osOpaque), buffer, count, 0)) == -1 && errno == EINTR)
+  while ((ret = ::recv (o2fd (m_osOpaque), buffer, amount, 0)) == -1 && errno == EINTR)
     ;
   if (ret == -1) {
     if (errno == EAGAIN || errno == EWOULDBLOCK) // timeout errors
-      return ULLONG_MAX;
+      return ~(size_t)0;
     throw OCPI::OS::Posix::getErrorMessage (errno);
   }
 
   //  printf("recv %p %p %d\n", this, buffer, o2fd(m_osOpaque));
-  return static_cast<unsigned long long> (ret);
+  return static_cast<size_t> (ret);
 }
 
 
-unsigned long long 
+size_t
 OCPI::OS::Socket::
-recvfrom(char  *buf, unsigned long long amount, int flags,
-	 char * src_addr, unsigned long * addrlen, unsigned timeoutms)
+recvfrom(char  *buf, size_t amount, int flags,
+	 char * src_addr, size_t * addrlen, unsigned timeoutms)
   throw (std::string)
 {
 
@@ -163,11 +160,9 @@ recvfrom(char  *buf, unsigned long long amount, int flags,
 
 
   struct sockaddr * si_other = reinterpret_cast< struct sockaddr *>(src_addr);
-  unsigned long count = static_cast<unsigned long> (amount);
-  ocpiAssert (static_cast<unsigned long long> (count) == amount);
 
   ssize_t ret;
-  ret= ::recvfrom (o2fd (m_osOpaque), buf, count, flags, si_other, (socklen_t*)addrlen);
+  ret= ::recvfrom (o2fd (m_osOpaque), buf, amount, flags, si_other, (socklen_t*)addrlen);
   if (ret == -1) {
     if (errno != EAGAIN && errno != EINTR)
       throw OCPI::OS::Posix::getErrorMessage(errno);
@@ -175,38 +170,33 @@ recvfrom(char  *buf, unsigned long long amount, int flags,
   }
 
   //  printf("recv %p %p %d\n", this, buffer, o2fd(m_osOpaque));
-  return static_cast<unsigned long long> (ret);
+  return static_cast<size_t> (ret);
 
 }
 
 
-unsigned long long
-OCPI::OS::Socket::sendto (const char * data, unsigned long long amount,
-			  int flags,  char * src_addr, unsigned long addrlen)			  
+size_t
+OCPI::OS::Socket::sendto (const char * data, size_t amount,
+			  int flags,  char * src_addr, size_t addrlen)			  
   throw (std::string)
 {
   struct sockaddr * si_other = reinterpret_cast< struct sockaddr *>(src_addr);
-  unsigned long count = static_cast<unsigned long> (amount);
-  ocpiAssert (static_cast<unsigned long long> (count) == amount);
 
-  size_t ret = ::sendto (o2fd (m_osOpaque), data, count, flags, si_other, (socklen_t)addrlen );
+  size_t ret = ::sendto (o2fd (m_osOpaque), data, amount, flags, si_other, (socklen_t)addrlen );
 
   if (ret == static_cast<size_t> (-1)) {
     throw OCPI::OS::Posix::getErrorMessage (errno);
   }
 
-  return static_cast<unsigned long long> (ret);
+  return static_cast<size_t> (ret);
 }
 
 
-unsigned long long
-OCPI::OS::Socket::send (const char * data, unsigned long long amount)
+size_t
+OCPI::OS::Socket::send (const char * data, size_t amount)
   throw (std::string)
 {
-  unsigned long count = static_cast<unsigned long> (amount);
-  ocpiAssert (static_cast<unsigned long long> (count) == amount);
-
-  size_t ret = ::send (o2fd (m_osOpaque), data, count, 
+  size_t ret = ::send (o2fd (m_osOpaque), data, amount, 
 #ifdef OCPI_OS_macos
 		       0 // darwin uses setsockopt for this
 #else
@@ -218,10 +208,10 @@ OCPI::OS::Socket::send (const char * data, unsigned long long amount)
     throw OCPI::OS::Posix::getErrorMessage (errno);
   }
 
-  return static_cast<unsigned long long> (ret);
+  return static_cast<size_t> (ret);
 }
 
-unsigned long long
+size_t
 OCPI::OS::Socket::sendmsg (const void * iovect, unsigned int flags  )
   throw (std::string)
 {
@@ -233,13 +223,13 @@ OCPI::OS::Socket::sendmsg (const void * iovect, unsigned int flags  )
     throw OCPI::OS::Posix::getErrorMessage (errno);
   }
 
-  return static_cast<unsigned long long> (ret);
+  return static_cast<size_t> (ret);
 }
 
 
 
 
-unsigned int
+uint16_t
 OCPI::OS::Socket::getPortNo ()
   throw (std::string)
 {
@@ -257,7 +247,7 @@ OCPI::OS::Socket::getPortNo ()
 
 void
 OCPI::OS::Socket::getPeerName (std::string & peerHost,
-                              unsigned int & peerPort)
+                              uint16_t & peerPort)
   throw (std::string)
 {
   struct sockaddr_in sin;

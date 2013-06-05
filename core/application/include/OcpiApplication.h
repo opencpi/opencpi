@@ -57,15 +57,15 @@ namespace OCPI {
       typedef OCPI::Container::Container::CMap CMap;
       OCPI::Library::Assembly &m_assembly;
 
-      unsigned m_nInstances;
+      size_t m_nInstances;
       struct Instance {
 	const OCPI::Library::Implementation *m_impl; // The chosen, best implementation
 	unsigned m_container;                        // LOCAL ordinal - among those we are using
-	unsigned m_nPropValues;                      // number of values to SET (not dump-only ones)
+	size_t m_nPropValues;                        // number of values to SET (not dump-only ones)
 	OCPI::Util::Value *m_propValues;             // the parsed property values to set
 	unsigned *m_propOrdinals;
 	CMap *m_feasibleContainers;                  // map per candidate, from findContainers
-	unsigned m_nCandidates;                      // convenience
+	size_t m_nCandidates;                        // convenience
 	//	unsigned m_candidate;                        // temp during algorithm
 	//	unsigned *m_containers;                      // counters of where we are in containers for candidate
 	Instance();
@@ -92,7 +92,7 @@ namespace OCPI {
 	unsigned m_property;    // ordinal of property in implememtation of instance
 	const char *m_dumpFile; // pointer to dump file if one was specified
       } *m_properties;
-      unsigned m_nProperties;
+      size_t m_nProperties;
       CMap m_curMap;              // A temporary that indicates possible containers for a candidate
       unsigned m_curContainers;   // A temporary that counts containers for a candidate
       CMap m_allMap;              // A map of all containers chosen/used
