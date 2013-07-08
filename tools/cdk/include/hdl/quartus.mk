@@ -150,7 +150,7 @@ QuartusMakeQsf=\
     echo set_global_assignment -name SEARCH_PATH '\"'$(strip \
      $(call FindRelative,$(TargetDir),$d))'\"';) \
   \
-  $(and $(HdlLibrariesInternal),echo '\#' Assignment for adding libraries to search path;) \
+  $(and $(HdlLibrariesInternal),echo '\#' Assignments for adding libraries to search path;) \
   $(foreach l,$(HdlLibrariesInternal),\
     $(foreach hlr,$(call HdlLibraryRefDir,$l,$(HdlTarget)),\
       $(if $(realpath $(hlr)),,$(error No altera library for $l at $(abspath $(hlr))))\
@@ -166,7 +166,7 @@ QuartusMakeQsf=\
     echo set_global_assignment -name $(if $(filter %.v,$s),VERILOG_FILE,VHDL_FILE -library $(LibName)) \
        '\"'$(notdir $s)'\"';) \
   \
-  $(and $(filter assembly,$(HdlMode)), \
+  $(and $(filter assembly container,$(HdlMode)), \
     echo '\#' Import qxp files for each worker used in the assembly; \
     $(eval $(HdlSetWorkers)) \
     $(foreach w,$(HdlWorkers),\

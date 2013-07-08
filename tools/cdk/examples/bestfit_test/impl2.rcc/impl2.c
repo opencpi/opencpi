@@ -16,7 +16,7 @@ typedef struct {
   double wave[S_SIZE];
 } MyState;
 
-static uint32_t sizes[] = {sizeof(MyState), 0};
+static size_t sizes[] = {sizeof(MyState), 0};
 #define PI 3.14159265
 
 IMPL2_METHOD_DECLARATIONS;
