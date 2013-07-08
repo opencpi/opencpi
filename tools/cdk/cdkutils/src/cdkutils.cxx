@@ -153,7 +153,7 @@ openOutput(const char *name, const char *outDir, const char *prefix, const char 
 	  prefix, name, suffix, ext);
   if ((f = fopen(file, "w")) == NULL)
     return OU::esprintf("Can't not open file %s for writing (%s)\n",
-		    file, strerror(errno));
+			file, strerror(errno));
   dumpDeps(file);
   if (other && strcmp(other, name)) {
     char *otherFile;

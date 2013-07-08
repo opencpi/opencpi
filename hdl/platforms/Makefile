@@ -1,15 +1,5 @@
 # #####
 #
-#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
-#
-#    Mercury Federal Systems, Incorporated
-#    1901 South Bell Street
-#    Suite 402
-#    Arlington, Virginia 22202
-#    United States of America
-#    Telephone 703-413-0781
-#    FAX 703-413-0784
-#
 #  This file is part of OpenCPI (www.opencpi.org).
 #     ____                   __________   ____
 #    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
@@ -35,10 +25,12 @@
 
 ifndef HdlPlatforms
 ifndef HdlPlatform
-HdlPlatforms=$(filter-out Makefile common,$(wildcard *))
+HdlPlatforms=$(filter-out Makefile common README README.txt lib,$(wildcard *))
 endif
 endif
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
+Package=ocpi
+include $(OCPI_CDK_DIR)/include/package.mk
 
 .PHONY: $(HdlPlatforms)
 
@@ -48,7 +40,7 @@ $(HdlPlatforms):
 	$(AT)echo Building platform $@
 	$(AT)$(MAKE) --no-print-directory -C $@
 
-clean:
+clean::
 	$(AT)for p in $(HdlPlatforms); do \
 	      echo Cleaning platform $$p; \
 	      $(MAKE) --no-print-directory -C $$p clean; \

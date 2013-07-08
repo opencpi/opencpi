@@ -46,7 +46,7 @@ OcpiSaveFile:=$(OcpiThisFile)
 include $(OCPI_CDK_DIR)/include/$(1)
 OcpiThisFile:=$(OcpiSaveFile)
 endef
-OcpiInclude=$(eval $(call OcpiDoInclude,$(1)))
+OcpiInclude=$(eval $(call OcpiDoInclude,$1))
 endif
 ifneq ($(OCPI_DEBUG_MAKE),)
 define OcpiDbg
@@ -82,7 +82,7 @@ Suffix_rcc=c
 Suffix_hdl=v
 Suffix_ocl=cl
 SUffix_xm=xm
-CapModels=$(foreach m,$(Models),$(call Capitalize,$(m)))
+CapModels=$(foreach m,$(Models),$(call Capitalize,$m))
 UCModel=$(call ToUpper,$(Model))
 CapModel=$(call Capitalize,$(Model))
 HostSystem=$(shell uname -s | tr A-Z a-z)
@@ -118,6 +118,15 @@ HostProcessor=x86_64
 endif
 HostTarget=$(HostSystem)-$(HostProcessor)
 OcpiHostTarget=$(HostTarget)
+# Physical and realpath are broken on some NFS mounts..
+OcpiAbsDir=$(foreach d,$(shell cd $1; pwd -L),$d)
+OcpiAbsPath=$(strip \
+  $(foreach p,$(strip \
+    $(if $(filter /%,$1),$1,\
+         $(if $(filter . ./,$1),$(call OcpiAbsDir,.),\
+              $(if $(filter ./%,$1),$(call OcpiAbsDir,.)$(patsubst .%,%,$1),\
+	           $(call OcpiAbsDir,.)/$1)))),$(abspath $p)))
+
 # helper function to FindRelative, recursive
 # arg 1 is from-list of path components, arg 2 is to-list
 #$(info frs 1 $(1) 2 $(2))
@@ -130,23 +139,21 @@ FindRelativeStep=\
 # arg1 is absolute-from arg2 is absolute-to arg3 is original from, arg4 is original to
 #$(info 1 $(1) 2 $(2) 3 $(3) 4 $(4))
 FindRelativeTop=\
-        $(if $(realpath $(1)),\
-            $(if $(realpath $(2)),\
-	        $(if $(filter $(firstword $(strip $(subst /, ,$(1)))),$(firstword $(strip $(subst /, ,$(2))))),\
-                    $(call FindRelativeStep, $(strip $(subst /, ,$(1))), $(strip $(subst /, ,$(2)))),\
-		    $(2)),\
-                $(error Invalid/non-existent path: to "$(4)" from "$(3)")),\
-             $(error Invalid/non-existent path: from "$(3)" to "$(4)"))
+        $(if $(strip $1),\
+            $(if $(strip $2),\
+	        $(if $(filter $(firstword $(strip $(subst /, ,$1))),$(firstword $(strip $(subst /, ,$2)))),\
+                    $(call FindRelativeStep,$(strip $(subst /, ,$1)), $(strip $(subst /, ,$2))),\
+		    $2),\
+                $(error Invalid/non-existent path: to "$4" from "$3")),\
+             $(error Invalid/non-existent path: from "$3" to "$4"))
 
 # Function: return the relative path to get from $(1) to $(2).  Useful for creating symlinks
 # Note return value must be nicely stripped
-#$(info findrel 1 $(1) 2 $(2))
-FindRelative=$(strip $(call FindRelativeTop,$(abspath $(1)),$(abspath $(2)),$(1),$(2)))
-#FindRelative=$(strip \
-#               $(info findrel 1 $(1) 2 $(2))\
-#               $(call FindRelativeTop,$(realpath $(1)),$(realpath $(2)),$(strip $(1)),$(strip $(2))))
-
-#               $(foreach i,$(call FindRelativeTop,$(realpath $(1)),$(realpath $(2)),$(strip $(1)),$(strip $(2))),$(info FR:$(i))$(i)))
+#$(info findrel 1 $(1).$(abspath $1) 2 $(2).$(abspath $2))
+#$(info pwd:$(shell pwd) abs:$(abspath .) real:$(realpath .))
+#FindRelative=$(strip $(call FindRelativeTop,$(call OcpiAbsPath,$1),$(call OcpiAbsPath,$2),$1,$2))
+FindRelative=$(strip \
+               $(foreach i,$(call FindRelativeTop,$(call OcpiAbsPath,$1),$(call OcpiAbsPath,$2),$(strip $1),$(strip $2)),$i))
 
 # Function: retrieve the contents of a symlink - is this ugly or what!
 # It would be easier using csh

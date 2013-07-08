@@ -61,19 +61,22 @@ begin
   -- FIXME WHEN OWN CLOCK
   MReset_n <= not wci_reset;
   MCmd <= ocpi.ocp.MCmd_WRITE when its(give) and ready_i and not its(early_som) else ocpi.ocp.MCmd_IDLE;
-  gen0: for i in 0 to n_bytes-1 generate
-    MData(i*8+7 downto i*8) <= data(i*byte_width+7 downto i*byte_width);
-    gen1: if data_info_width > 1 generate
+  -- If there are parts of bytes in data_info_width, split them properly for OCP
+  gen0: if data_info_width > 1 generate
+    gen1: for i in 0 to n_bytes-1 generate
+      MData(i*8+7 downto i*8) <= data(i*byte_width+7 downto i*byte_width);
       MDataInfo(i*(byte_width-8) + (byte_width-8)-1 downto i*(byte_width-8)) <=
         data(i*byte_width + byte_width-1 downto i*byte_width + byte_width - (byte_width - 8));
     end generate gen1;
   end generate gen0;
+  -- If there are no partial bytes in datainfo, the worker's data is just MData.
+  gen2: if data_info_width <= 1 generate
+    MData <= data;
+  end generate gen2;
   MDataLast <= give and eom;
   MReqLast <= give and eom;
   MDataValid <= give and (eom or valid or abort);
-gen2: if data_info_width > n_bytes*byte_width generate
   MDataInfo(MDataInfo'left) <= abort;
-end generate gen2;
   MByteEn <= byte_enable when its(valid) else (others => '0');
   MReqInfo <= opcode when last_eom or som else opcode_i;
   -- We need to manage the state at the start of the message

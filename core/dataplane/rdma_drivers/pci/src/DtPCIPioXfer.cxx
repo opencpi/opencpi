@@ -131,6 +131,7 @@ namespace DataTransfer {
 	ocpi_request_t request;
 	memset(&request, 0, sizeof(request));
 	request.needed = (ocpi_size_t)ep.size;
+	request.cached = ocpi_uncached;
 	if (m_usingKernelDriver) {
 	  if (ioctl(m_dmaFd, OCPI_CMD_REQUEST, &request))
 	    throw OU::Error("Can't allocate memory size %zu for DMA memory", ep.size);

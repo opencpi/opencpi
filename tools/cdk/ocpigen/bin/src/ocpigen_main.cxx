@@ -73,7 +73,7 @@ main(int argc, char **argv) {
   const char *library = "work", *outDir = NULL, *wksFile = NULL, *package = NULL;
   bool
     doDefs = false, doImpl = false, doSkel = false, doAssy = false, doWrap = false,
-    doBsv = false, doArt = false;
+    doBsv = false, doArt = false, doContainer = false;
   if (argc <= 1) {
     fprintf(stderr,
 	    "Usage is: ocpigen [options] <owd>.xml\n"
@@ -84,6 +84,7 @@ main(int argc, char **argv) {
 	    " -a            Generate the assembly (composition) file: xyz.[v|vhd]\n"
 	    " -b            Generate the BSV interface file\n"
 	    " -A            Generate the artifact descriptor xml file\n"
+	    " -C            Generate an HDL container\n"
 	    " -W <file>     Generate an assembly or container workers file: xyz.wks\n"
 	    " Options for artifact XML and UUID source generation (-A):\n"
 	    " -c <file>     The HDL container file to use for the artifact XML\n"
@@ -125,6 +126,9 @@ main(int argc, char **argv) {
 	break;
       case 'w':
 	doWrap = true;
+	break;
+      case 'C':
+	doContainer = true;
 	break;
       case 'W':
 	wksFile =*++ap;
@@ -185,22 +189,28 @@ main(int argc, char **argv) {
       }
 #endif
       Worker *w = new Worker();
-      if ((err = parseWorker(*ap, NULL, w)))
+      if ((err = w->parse(*ap, NULL)))
 	fprintf(stderr, "For file %s: %s\n", *ap, err);
-      else if (doDefs && (err = emitDefsHDL(w, root)))
+      else if (doDefs && (err = w->emitDefsHDL(root)))
 	fprintf(stderr, "%s: Error generating definition/declaration file: %s\n", *ap, err);
-      else if (doImpl && (err = (w->model == HdlModel ? emitImplHDL : (w->model == RccModel) ? emitImplRCC : emitImplOCL)(w, root, library)))
+      else if (doImpl && (err =
+			  w->model == HdlModel ? w->emitImplHDL(root, library) :
+			  (w->model == RccModel ? emitImplRCC : emitImplOCL)(w, root, library)))
 	fprintf(stderr, "%s: Error generating implementation declaration file: %s\n", *ap, err);
-      else if (doSkel && (err = (w->model == HdlModel ? emitSkelHDL : (w->model == RccModel) ? emitSkelRCC : emitSkelOCL)(w, root)))
+    else if (doSkel && (err =
+			w->model == HdlModel ? w->emitSkelHDL(root) :
+			(w->model == RccModel ? emitSkelRCC : emitSkelOCL)(w, root)))
 	fprintf(stderr, "%s: Error generating implementation skeleton file: %s\n", *ap, err);
-      else if (doWrap && (err = emitDefsHDL(w, root, true)))
+      else if (doWrap && (err = w->emitDefsHDL(root, true)))
 	fprintf(stderr, "%s: Error generating wrapper file: %s\n", *ap, err);
-      else if (doAssy && (err = emitAssyHDL(w, root)))
+      else if (doAssy && (err = w->emitAssyHDL(root)))
 	fprintf(stderr, "%s: Error generating assembly: %s\n", *ap, err);
-      else if (wksFile && !container && (err = emitWorkersHDL(w, root, wksFile)))
+      else if (wksFile && !container && (err = w->emitWorkersHDL(root, wksFile)))
 	fprintf(stderr, "%s: Error generating assembly makefile: %s\n", *ap, err);
-      else if (doBsv && (err = emitBsvHDL(w, root)))
+      else if (doBsv && (err = w->emitBsvHDL(root)))
 	fprintf(stderr, "%s: Error generating BSV import file: %s\n", *ap, err);
+      //      else if (doContainer && (err = emitContainerHDL(w, root)))
+      //	fprintf(stderr, "%s: Error generating HDL container file: %s\n", *ap, err);
       else if (doArt)
 	switch (w->model) {
 	case HdlModel:
@@ -209,7 +219,7 @@ main(int argc, char **argv) {
 		    "%s: Missing container/platform/device options for HDL artifact descriptor", *ap);
 	    return 1;
 	  }
-	  if ((err = emitArtHDL(w, root, wksFile)))
+	  if ((err = w->emitArtHDL(root, wksFile)))
 	    fprintf(stderr, "%s: Error generating bitstream artifact XML: %s\n",
 		    *ap, err);
 	  break;

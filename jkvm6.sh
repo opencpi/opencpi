@@ -2,8 +2,8 @@
 
 # #### Location of the Xilinx tools ####################################### #
 
-export OCPI_XILINX_TOOLS_DIR=/home/jek/mac/Xilinx/14.4/ISE_DS
-export OCPI_VIVADO_TOOLS_DIR=/home/jek/mac/Xilinx/Vivado/2012.4
+export OCPI_XILINX_TOOLS_DIR=/home/jek/mac/Xilinx/14.6/ISE_DS
+export OCPI_VIVADO_TOOLS_DIR=/home/jek/mac/Xilinx/Vivado/2013.2
 export OCPI_XILINX_LICENSE_FILE=/home/jek/mac/Xilinx/Xilinx-License-VM.lic
 
 # #### Location of the Altera tools ####################################### #

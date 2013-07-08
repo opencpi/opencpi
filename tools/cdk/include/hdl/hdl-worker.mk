@@ -93,11 +93,11 @@ ifndef HdlLanguage
     HdlLanguage:=$(shell grep -i 'language *=' $(HdlXmlFile) | sed "s/^.*[lL]anguage= *['\"]\\([^\"']*\\).*$$/\1/" | tr A-Z a-z)
     ifdef Language
       ifdef HdlLanguage
-        ifneq ($(Language),$(HdlLanguage))
+        ifneq ($(call ToLower,$(Language)),$(HdlLanguage))
           $(error The "Language" setting in the Makefile ($(Language)) is inconsistent with the setting in the XML/OWD file (file: $(HdlXmlFile), setting: $(HdlLanguage)))
         endif # error check
       else
-        HdlLanguage:= $(Language)
+        HdlLanguage:= $(call ToLower,$(Language))
       endif # found language attribute
     else
       ifndef HdlLanguage

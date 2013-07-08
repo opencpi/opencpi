@@ -342,6 +342,8 @@ module mkCTop4B(pciDevice,
 		RST_N_wci_m_2,
 		RST_N_wci_m_3,
 		RST_N_wci_m_4);
+  
+//		dna_value);
   input  [15 : 0] pciDevice;
   input  CLK_sys0_clk;
   input  RST_N_sys0_rst;
@@ -646,6 +648,8 @@ module mkCTop4B(pciDevice,
   output RST_N_wci_m_2;
   output RST_N_wci_m_3;
   output RST_N_wci_m_4;
+
+//  input [63:0] dna_value;
 
   // signals for module outputs
   wire [152 : 0] server_response_get;
@@ -1246,28 +1250,28 @@ module mkCTop4B(pciDevice,
   assign wsi_s_adc_SReset_n = 1'h0 ;
 
   // value method wsi_m_dac_mCmd
-  assign wsi_m_dac_MCmd = 3'h2 ;
+//  assign wsi_m_dac_MCmd = 3'h2 ;
 
   // value method wsi_m_dac_mReqLast
-  assign wsi_m_dac_MReqLast = 1'h0 ;
+//  assign wsi_m_dac_MReqLast = 1'h0 ;
 
   // value method wsi_m_dac_mBurstPrecise
-  assign wsi_m_dac_MBurstPrecise = 1'h0 ;
+//  assign wsi_m_dac_MBurstPrecise = 1'h0 ;
 
   // value method wsi_m_dac_mBurstLength
-  assign wsi_m_dac_MBurstLength = 12'hAAA ;
+//  assign wsi_m_dac_MBurstLength = 12'hAAA ;
 
   // value method wsi_m_dac_mData
-  assign wsi_m_dac_MData = 32'hAAAAAAAA ;
+//  assign wsi_m_dac_MData = 32'hAAAAAAAA ;
 
   // value method wsi_m_dac_mByteEn
-  assign wsi_m_dac_MByteEn = 4'hA ;
+//  assign wsi_m_dac_MByteEn = 4'hA ;
 
   // value method wsi_m_dac_mReqInfo
-  assign wsi_m_dac_MReqInfo = 8'hAA ;
+//  assign wsi_m_dac_MReqInfo = 8'hAA ;
 
   // value method wsi_m_dac_mReset_n
-  assign wsi_m_dac_MReset_n = 1'h0 ;
+//  assign wsi_m_dac_MReset_n = 1'h0 ;
 
   // value method wmemiM0_mCmd
   assign wmemiM0_MCmd = app$wmemiM0_MCmd ;
@@ -1466,14 +1470,14 @@ module mkCTop4B(pciDevice,
 					.wmemiM0_MReset_n(app$wmemiM0_MReset_n),
 					.wsi_s_adc_SThreadBusy(),
 					.wsi_s_adc_SReset_n(),
-					.wsi_m_dac_MCmd(),
-					.wsi_m_dac_MReqLast(),
-					.wsi_m_dac_MBurstPrecise(),
-					.wsi_m_dac_MBurstLength(),
-					.wsi_m_dac_MData(),
-					.wsi_m_dac_MByteEn(),
-					.wsi_m_dac_MReqInfo(),
-					.wsi_m_dac_MReset_n(),
+					.wsi_m_dac_MCmd(wsi_m_dac_MCmd),
+					.wsi_m_dac_MReqLast(wsi_m_dac_MReqLast),
+					.wsi_m_dac_MBurstPrecise(wsi_m_dac_MBurstPrecise),
+					.wsi_m_dac_MBurstLength(wsi_m_dac_MBurstLength),
+					.wsi_m_dac_MData(wsi_m_dac_MData),
+					.wsi_m_dac_MByteEn(wsi_m_dac_MByteEn),
+					.wsi_m_dac_MReqInfo(wsi_m_dac_MByteEn),
+					.wsi_m_dac_MReset_n(wsi_m_dac_MReset_n),
 					.uuid(app$uuid),
 					.rom_en(rom_en),
 					.rom_addr(rom_addr),
@@ -1503,6 +1507,7 @@ module mkCTop4B(pciDevice,
 		.rom_en(rom_en),
 		.rom_addr(rom_addr),
 		.rom_data(rom_data),
+//		.dna_value(dna_value),
 		.wci_m_0_SData(inf$wci_m_0_SData),
 		.wci_m_0_SFlag(inf$wci_m_0_SFlag),
 		.wci_m_0_SResp(inf$wci_m_0_SResp),
@@ -1831,8 +1836,8 @@ module mkCTop4B(pciDevice,
   assign app$wsi_s_adc_MReqLast = 1'b0 ;
   assign app$wsi_s_adc_MBurstPrecise = 1'b0 ;
   assign app$wsi_s_adc_MReset_n = 1'b0 ;
-  assign app$wsi_m_dac_SThreadBusy = 1'b0 ;
-  assign app$wsi_m_dac_SReset_n = 1'b0 ;
+  assign app$wsi_m_dac_SThreadBusy = wsi_m_dac_SThreadBusy;  //1'b0 ;
+  assign app$wsi_m_dac_SReset_n = wsi_m_dac_SReset_n; //1'b0 ;
 
   // submodule ctNow
   assign ctNow$sD_IN = inf$cpNow ;

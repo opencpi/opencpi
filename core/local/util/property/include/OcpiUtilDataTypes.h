@@ -71,7 +71,7 @@ namespace OCPI {
       Member *m_type;                 // if a recursive type, that type
       const char **m_enums;
       size_t m_nEnums;
-      size_t m_nItems;              // total number of fixed items
+      size_t m_nItems;                // total number of fixed items
       std::string m_typeDef;          // If we were created from a typedef
       // unions and enums
       ValueType(OCPI::API::BaseType bt = OCPI::API::OCPI_none);

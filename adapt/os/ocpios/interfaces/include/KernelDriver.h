@@ -40,7 +40,7 @@ typedef struct {
   ocpi_size_t	needed;		// How much memory you need in this request
   ocpi_size_t	actual;		// How much memory you will receive
   ocpi_address_t address;	// The physical address of this block
-  ocpi_cached_t cached;		// Should this block be cached?
+  ocpi_cached_t cached;		// How should this block be cached?
 } ocpi_request_t;
 
 typedef struct {

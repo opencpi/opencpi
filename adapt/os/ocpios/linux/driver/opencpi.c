@@ -221,7 +221,7 @@ make_block(ocpi_address_t phys_addr, ocpi_size_t size, ocpi_type_t type,
   block->end_phys = phys_addr + size;
   block->size = size;
   block->type = type;
-  block->cached = false;
+  block->cached = ocpi_uncached;
   atomic_set(&block->refcnt, 1);
   block->pid = current->pid;
   block->available = available;

@@ -458,6 +458,7 @@ namespace OCPI {
 	  }
 	}
 	ocpi_request_t request;
+	request.cached = ocpi_uncached;
 	request.needed = size;
 	if (m_useDriver) {
 	  if (ioctl(m_pciMemFd, OCPI_CMD_REQUEST, &request)) {

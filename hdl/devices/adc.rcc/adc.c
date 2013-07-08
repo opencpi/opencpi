@@ -50,7 +50,7 @@
 
 #define FILE_POINTER_INDEX 0
 
-static uint32_t memories [ ] =
+static size_t memories [ ] =
 {
   sizeof ( FILE* ), /* Input data file pointer */
   0

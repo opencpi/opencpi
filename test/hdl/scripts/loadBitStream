@@ -46,7 +46,7 @@ if ($status != 0) then
      echo There is no config snapshot in $golden to restore.
      exit 1
    endif
-   echo We will use the golden bitstream in $golden
+   echo We will use the golden PCI configuration in $golden
    set pciConfig = $golden
 else
    echo Existing loaded bitstream looks ok, proceeding to snapshot the PCI config space \(into $tbar\)

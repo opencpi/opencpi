@@ -113,9 +113,9 @@ Implementations = \
 	bias_vhdl.hdl \
 	ptest.rcc \
         file_read.hdl \
+	file_write.hdl \
 	$(Tests)
 
-#       file_write.hdl \
 #	fir_prog.hdl \
 
 #	wbr.hdl 

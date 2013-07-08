@@ -122,6 +122,20 @@ begin
           char_t(inword(31 downto 24)));
 end to_string;
 
+function to_string(instring : string; length : natural) return string_t is
+  variable s : string_t(0 to length-1);
+begin
+  for i in instring'left to instring'right loop
+    s(i - instring'left) := to_char(instring(i));
+  end loop;
+  if instring'length < length then
+    for i in instring'length to length - 1 loop
+      s(i) := to_char(0);
+    end loop;
+  end if;
+  return s;
+end to_string;
+
 function from_string(s : string_t; offset : unsigned) return word_t is
   variable off : natural;
   variable w : word_t;

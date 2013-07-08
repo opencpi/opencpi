@@ -134,6 +134,8 @@ constant ulonglong_max : ulonglong_t := x"ffff_ffff_ffff_ffff";
 type string_t is array (natural range <>) of char_t;
 type string_array_t is array (natural range <>,natural range <>) of char_t;
 subtype wordstring_t is string_t(0 to 3);
+-- Convert a VHDL string to our string type.
+function to_string(instring : string; length : natural) return string_t;
 function to_string(inword : word_t) return wordstring_t;
 function from_string(s : string_t; offset : unsigned) return word_t; --std_logic_vector;
 

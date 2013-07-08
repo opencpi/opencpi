@@ -48,26 +48,7 @@ include $(OCPI_CDK_DIR)/include/ocl/ocl-make.mk
 ifndef LibName
 LibName=$(CwdName)
 endif
-ifndef Package
-$(info The "Package" variable is not set. Assuming Package=local.)
-Package:=local
-endif
-PackageFile:=lib/package-name
-ifeq ($(wildcard lib),)
-$(shell mkdir -p lib)
-endif
-ifeq ($(wildcard $(PackageFile)),)
-  $(shell echo $(Package) > $(PackageFile))
-else
-  PackageName:=$(shell cat $(PackageFile))
-  ifneq ($(Package),$(PackageName))
-    ifneq ($(MAKECMDGOALS),clean)
-      $(error You must make clean after changing the package name.)
-    endif
-  endif
-endif
-clean::
-	$(AT)rm -f $(PackageFile)
+include $(OCPI_CDK_DIR)/include/package.mk
 ifndef Implementations
 Implementations=$(foreach m,$(Models),$(wildcard *.$m))
 endif
@@ -161,7 +142,7 @@ workers: $(build_targets)
 $(OutDir)lib:
 	$(AT)mkdir $@
 speclinks: | $(OutDir)lib
-	$(AT)$(foreach f,$(wildcard specs/*_spec.xml) $(wildcard specs/*_protocol*.xml),$(call MakeSymLink,$(f),$(OutDir)lib);)
+	$(AT)$(foreach f,$(wildcard specs/*.xml),$(call MakeSymLink,$(f),$(OutDir)lib);)
 
 $(Models:%=$(OutDir)lib/%): | $(OutDir)lib
 	$(AT)mkdir $@

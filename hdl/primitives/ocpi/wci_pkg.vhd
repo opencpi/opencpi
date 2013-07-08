@@ -14,8 +14,9 @@ TYPE control_op_t IS (INITIALIZE_e,
 subtype control_op_mask_t is std_logic_vector(control_op_t'pos(no_op_e) downto 0);
 
 type worker_t is record
-  decode_width : natural;
-  allowed_ops : control_op_mask_t;
+  decode_width      : natural;
+  raw_property_base : natural;
+  allowed_ops       : control_op_mask_t;
 end record worker_t;
 type property_t is record
   data_width : natural; -- data width of datum in bits, but 32 for strings
@@ -116,6 +117,9 @@ TYPE State_t IS (EXISTS_e,            -- 0
       nbytes_1               : out byte_offset_t;
       data_outputs           : out data_a_t(properties'range);
       control_op             : out control_op_t;
+      is_read                : out bool_t;
+      is_write               : out bool_t;
+      raw_offset             : out unsigned (worker.decode_width -1 downto 0);
       state                  : out state_t;
       is_operating           : out bool_t;  -- just a convenience for state = operating_e
       abort_control_op       : out bool_t;

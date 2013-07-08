@@ -589,8 +589,8 @@ void Worker::run(bool &anyone_run) {
       OS::ElapsedTime et;
       runTimer.stop();
       runTimer.getValue( et );
-      runTimer.start();
       if ( et > runTimeout ) {          
+	runTimer.restart();
 #ifndef NDEBUG
 	printf("WORKER TIMED OUT, timer time = %d,%d -- run timer = %d,%d\n", 
 	       et.seconds(), et.nanoseconds(), runTimeout.seconds(), runTimeout.nanoseconds() );
@@ -598,7 +598,8 @@ void Worker::run(bool &anyone_run) {
 	run_condition_met = true;
 	timeout = true;
 	break;
-      }
+      } else
+	runTimer.start();
     }
     // If no port masks, then we don't run
     if (!m_runCondition->portMasks[0])

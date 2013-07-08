@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
     fprintf(stderr, "Communication with the application established\n");
     app.start();
     fprintf(stderr, "Application started/running\n");
-    uint32_t length;
+    size_t length;
     bool end;
     do {
       OA::ExternalBuffer *b;

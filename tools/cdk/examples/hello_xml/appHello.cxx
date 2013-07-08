@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
     OA::ExternalBuffer *b;
     for (unsigned i = 0; i < 10; i++) {
       uint8_t *data;
-      uint32_t length;
+      size_t length;
       uint8_t opcode;
       bool end;
       if ((b = ep.getBuffer(data, length, opcode, end))) {

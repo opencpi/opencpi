@@ -276,7 +276,7 @@ XstMakeIni=\
 
 XstMakeLso=\
   (\
-   $(if $(PreBuiltCore)$(filter worker core,$(HdlMode)),,echo work;) $(if $(findstring work,$(LibName)),,echo $(LibName);) \
+   $(if $(PreBuiltCore)$(filter container assembly platform worker core,$(HdlMode)),,echo work;) $(if $(findstring work,$(LibName)),,echo $(LibName);) \
    $(foreach l,$(XstLibraries) $(CDKComponentLibraries) $(CDKDeviceLibraries) $(ComponentLibraries) $(DeviceLibraries),\
                       echo $(lastword $(subst -, ,$(notdir $(l))));)\
   $(foreach l,$(Cores),\

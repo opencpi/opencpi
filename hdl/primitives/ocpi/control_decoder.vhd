@@ -25,7 +25,6 @@ architecture rtl of control_decoder is
   signal control_op_in : control_op_t;
   signal my_control_op : control_op_t;
   signal my_state : state_t;
-  signal my_reset : Bool_t;
 begin
   -- combinatorial signals used in various places
   state <= my_state;
@@ -33,7 +32,6 @@ begin
   abort_control_op <= to_bool(ocp_in.MFlag(0) = '1');
   my_access <= decode_access(ocp_in);
   control_op_in <= ocpi.wci.to_control_op(ocp_in.MAddr(4 downto 2));
-  my_reset <= not ocp_in.MReset_n;
   control_op <= my_control_op;
   -- manage state during control ops and manage the WCI/OCP SResp.
   -- remember that since we have no SCmdAccept signal, any command is only

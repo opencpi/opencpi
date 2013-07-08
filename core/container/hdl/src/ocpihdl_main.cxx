@@ -150,8 +150,6 @@ usage(const char *name) {
           "    probe <hdl-dev>              # see if a specific HDL device is available\n"
           "    testdma                      # test for DMA memory setup\n"
           "    admin <hdl-dev>              # dump admin information (reading only) for <hdl-device>\n"
-          "    radmin <hdl-dev> <offset>    # read admin space\n"
-	  "                                 # write admin word <value> for <hdl-device> at <offset>\n"
           "    wadmin <hdl-dev> <offset> <value>\n"
 	  "                                 # write admin word <value> for <hdl-device> at <offset>\n"
           "    radmin <hdl-dev> <offset>    # read admin word for <hdl-device> at <offset>\n"

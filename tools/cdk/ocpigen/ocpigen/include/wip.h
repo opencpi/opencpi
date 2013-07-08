@@ -45,6 +45,7 @@
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilAssembly.h"
 #include "OcpiMetadataWorker.h"
+#include "OcpiUuid.h"
 #include "ezxml.h"
 #include "cdkutils.h"
 
@@ -144,11 +145,22 @@ struct OcpSignalDesc {
   bool request;
 };
 // A bit redundant from the above, but for adhoc signals
+struct Signal;
+typedef std::list<Signal *> Signals;
+typedef Signals::const_iterator SignalsIter;
 struct Signal {
-  const char *name;
-  enum Direction { IN, OUT, INOUT } direction;
-  size_t width;
+  const char *m_name;
+  enum Direction { IN, OUT, INOUT } m_direction;
+  size_t m_width;
+  bool m_differential;
+  const char *m_pos; // pattern for positive if not %sp
+  const char *m_neg; // pattern for negative if not %sn
+  Signal();
+  const char * parse(ezxml_t);
+  static const char *parseSignals(ezxml_t z, Signals &nsignals);
+  static void deleteSignals(Signals &signals);
 };
+
 #define OCP_SIGNAL_MT(n,w) OCP_SIGNAL_MV(n,w)
 #define OCP_SIGNAL_ST(n,w) OCP_SIGNAL_SV(n,w)
 #define OCP_SIGNAL_MS(n) OCP_SIGNAL(n)
@@ -311,6 +323,8 @@ class Control {
   Properties properties;
   size_t offset;// temporary while properties are being parsed.
   unsigned ordinal; // ditto
+  bool rawProperties; // for HDL - should properties be provided "raw" to the worker?
+  OU::Property *firstRaw;
 };
 
 enum Endian {
@@ -404,7 +418,6 @@ enum Model {
 };
 class Worker {
  public:
-  Worker();
   Model model;
   const char *modelString;
   bool isDevice;
@@ -430,9 +443,49 @@ class Worker {
   unsigned nInstances;
   Language language;
   Assembly assembly;
-  unsigned nSignals;
-  Signal *signals;
+  Signals signals;
+  Worker();
+  ~Worker();
+  const char
+    *parse(const char *file, const char *parent),
+    *parseRcc(ezxml_t x, const char *file),
+    *parseOcl(ezxml_t x, const char *file),
+    *parseHdl(ezxml_t x, const char *file),
+    *parseRccAssy(ezxml_t x, const char *file),
+    *parseOclAssy(ezxml_t x, const char *file),
+    *parseImplControl(ezxml_t impl, const char *file, ezxml_t &xctl),
+    *parseImplLocalMemory(ezxml_t impl),
+    *parseSpecControl(ezxml_t ps),
+    *parseSpec(ezxml_t xml, const char *file),
+    *parseHdlImpl(ezxml_t xml, const char *file),
+    *doProperties(ezxml_t top, const char *parent, bool impl, bool anyIsBad),
+    *parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWorkerOk),
+    *parseHdlAssy(ezxml_t xml),
+    *doPattern(Port *p, int n, unsigned wn, bool in, bool master, std::string &suff,
+	       bool port = false),
+    *checkClock(ezxml_t impl, Port *p),
+    *checkDataPort(ezxml_t impl, Port **dpp),
+    *addProperty(ezxml_t prop, bool includeImpl),
+    *doAssyClock(Instance *i, Port *p),
+    *openSkelHDL(const char *outDir, const char *suff, FILE *&f),
+    *emitOuterVhdlPortRecords(FILE *f),
+    *emitUuidHDL(const char *outDir, const OU::Uuid &uuid),
+    *emitImplHDL(const char *, const char *),
+    *emitSkelHDL(const char *),
+    *emitBsvHDL(const char *),
+    *emitArtHDL(const char *root, const char *wksFile),
+    *emitDefsHDL(const char *outDir, bool wrap = false),
+    *emitWorkersHDL(const char *, const char *file),
+    *emitAssyHDL(const char *);
+  void
+    emitShellVHDL(FILE *f),
+    emitParameters(FILE *f, Language lang),
+    emitPortDescription(Port *p, FILE *f, Language lang),
+    emitSignals(FILE *f, Language lang, bool onlyDevices = false),
+    emitDeviceSignals(FILE *f, Language lang, std::string &last);
 };
+
+static inline const char *hdlComment(Language lang) { return lang == VHDL ? "--" : "//"; }
 
 #if 0
 // Are master signals inputs at this port?
@@ -461,30 +514,29 @@ extern const char
 	      const char *suffix, const char *ext, const char *other, FILE *&f),
   *propertyTypes[],
   *controlOperations[],
+#if 0
   *parseHdlAssy(ezxml_t xml, Worker *aw),
   *parseRccAssy(ezxml_t xml, const char *file, Worker *aw),
   *parseOclAssy(ezxml_t xml, const char *file, Worker *aw),
-  *parseFile(const char *file, const char *parent, const char *element,
-	     ezxml_t *xp, const char **xfile, bool optional = false),
   *pattern(Worker *w, Port *p, int n0, unsigned n1, bool in, bool master,
 	   std::string &, bool port = false),
   *parseWorker(const char *file, const char *parent, Worker *),
+#endif
+  *parseFile(const char *file, const char *parent, const char *element,
+	     ezxml_t *xp, const char **xfile, bool optional = false),
+  *tryOneChildInclude(ezxml_t top, const char *parent, const char *element,
+		      ezxml_t *parsed, const char **childFile, bool optional),
   *deriveOCP(Worker *w),
-  *emitDefsHDL(Worker*, const char *, bool wrap = false),
-  *emitImplHDL(Worker*, const char *, const char *),
+  *emitContainerHDL(Worker*, const char *),
   *emitImplRCC(Worker*, const char *, const char *),
   *emitImplOCL(Worker*, const char *, const char *),
-  *emitSkelHDL(Worker*, const char *),
   *emitSkelRCC(Worker*, const char *),
   *emitSkelOCL(Worker*, const char *),
-  *emitBsvHDL(Worker*, const char *),
-  *emitArtHDL(Worker *, const char *root, const char *wksFile),
   *emitArtRCC(Worker *, const char *root),
-  *emitArtOCL(Worker *, const char *root),
-  *emitWorkersHDL(Worker*, const char *, const char *file),
-  *emitAssyHDL(Worker*, const char *);
+  *emitArtOCL(Worker *, const char *root);
 
 extern void
+  emitLastSignal(FILE *f, std::string &last, Language lang, bool end),
   addInclude(const char *),
   addDep(const char *dep, bool child),
   emitWorker(FILE *f, Worker *w),

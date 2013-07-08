@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
 #define YPOS(y) (y+IMAGE_Y_SIZE/2)
     for (unsigned i = 0; i < 10000; i++) {
       uint16_t *data;
-      uint32_t length;
+      size_t length;
       uint8_t opcode;
       bool end;
 

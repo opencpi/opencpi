@@ -59,7 +59,7 @@ entity slave is
     reset            : out Bool_t; -- this port is being reset from outside/peer
     ready            : out Bool_t; -- data can be taken
     som, eom, valid  : out Bool_t;
-    data             : out  std_logic_vector(byte_width*n_bytes-1 downto 0);
+    data             : out  std_logic_vector(data_width-1 downto 0);
     -- only used if abortable
     abort            : out Bool_t; -- message is aborted
     -- only used if bytes are required (zlm or byte size < data width)
@@ -90,7 +90,7 @@ architecture rtl of slave is
   constant enable_bits : natural := abort_bit - 1;
   constant burst_bits  : natural := enable_bits - n_bytes;
   constant opcode_bits : natural := burst_bits - burst_width;
-  function pack(data : std_logic_vector(n_bytes * byte_width - 1 downto 0);
+  function pack(data : std_logic_vector(data_width - 1 downto 0);
                 valid, som, eom : std_logic;
                 abort : std_logic;
                 enable : std_logic_vector(n_bytes - 1 downto 0);
@@ -112,7 +112,7 @@ architecture rtl of slave is
   signal fifo_in, fifo_out : std_logic_vector(fifo_width - 1 downto 0);
   signal fifo_enq : std_logic;
   signal fifo_ready : bool_t;
-  signal my_data : std_logic_vector(n_bytes * byte_width - 1 downto 0);
+  signal my_data : std_logic_vector(data_width - 1 downto 0);
   --signal fifo_full_r : bool_t;
 --  for fifo : FIFO2X use entity bsv.FIFO2X;
 begin
@@ -125,13 +125,19 @@ begin
   reset <= reset_i; -- in wci clock domain for now
   -- Pear sees reset if wci is doing it or we're not started
   SReset_n <= not wci_reset; -- FIXME WHEN OWN CLOCK
-  gen0: for i in 0 to n_bytes-1 generate
-    my_data(i*byte_width + 7 downto i*byte_width) <= MData(i*8+7 downto i*8);
-    gen1: if data_info_width > 1 generate
+  -- If there are parts of bytes in data_info_width, combine them nicely for the worker
+  -- This also covers the case of zero-width data
+  gen0: if data_info_width > 1 generate
+    gen1: for i in 0 to n_bytes-1 generate
+      my_data(i*byte_width + 7 downto i*byte_width) <= MData(i*8+7 downto i*8);
       my_data(i*byte_width + byte_width-1 downto i*byte_width + byte_width - (byte_width - 8)) <=
         MDataInfo(i*(byte_width-8) + (byte_width-8)-1 downto i*(byte_width-8));
     end generate gen1;
   end generate gen0;
+  -- If there are no partial bytes in datainfo, the worker's data is just MData.
+  gen2: if data_info_width <= 1 generate
+    my_data <= MData;
+  end generate gen2;
 
   -- pack fifo input
   fifo_in <= pack(my_data,

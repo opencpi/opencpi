@@ -31,12 +31,12 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define __STDC_LIMIT_MACROS // wierd standards goof up
+#include <stdint.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <limits.h>
-#define __STDC_LIMIT_MACROS // wierd standards goof up
-#include <stdint.h>
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
@@ -71,8 +71,8 @@ const char *container = 0, *platform = 0, *device = 0, *load = 0, *os = 0, *os_v
 // MyClock boolean simply says whether the clock is "homed" and "named" here.
 // The clock attribute says that the clock is defined elsewhere
 // The "elsewhere" is either a port that has its own clock or a global definition.
-static const char *
-checkClock(Worker *w, ezxml_t impl, Port *p) {
+const char *Worker::
+checkClock(ezxml_t impl, Port *p) {
   const char *err;
   const char *clock = 0;
   if (impl) {
@@ -84,22 +84,22 @@ checkClock(Worker *w, ezxml_t impl, Port *p) {
     if (p->myClock || p->type == WCIPort) {
       // If port has its own clock, or is a WCI, establish a clock named and homed here
       p->myClock = true;
-      p->clock = &w->clocks[w->nClocks++];
+      p->clock = &clocks[nClocks++];
       asprintf((char **)&p->clock->name, "%s_Clk", p->name); // fixme
       p->clock->port = p;
-    } else if (w->ports[0]->type == WCIPort) {
+    } else if (ports[0]->type == WCIPort) {
       // If no clock, and we have a WCI then assume the WCI's clock.
-      p->clockPort = w->ports[0];
-    } else if (w->noControl) {
+      p->clockPort = ports[0];
+    } else if (noControl) {
       // If there is no control port, then we synthesize the clock as wci_clk
-      Clock *c = w->clocks;
-      for (unsigned i = 0; i < w->nClocks; i++, c++)
+      Clock *c = clocks;
+      for (unsigned i = 0; i < nClocks; i++, c++)
 	if (!strcasecmp("wci_Clk", c->name)) {
 	  p->clock = c;
 	  break;
 	}
       if (!p->clock) {
-	p->clock = &w->clocks[w->nClocks++];
+	p->clock = &clocks[nClocks++];
 	p->clock->name = strdup("wci_Clk");
 	p->clock->signal = strdup("wci_Clk");
       }
@@ -108,8 +108,8 @@ checkClock(Worker *w, ezxml_t impl, Port *p) {
       return "Interface has no clock declared, and there is no control interface";
   } else {
     // Port refers to another clock by name
-    for (unsigned i = 0; i < w->ports.size(); i++) {
-      Port *op = w->ports[i];
+    for (unsigned i = 0; i < ports.size(); i++) {
+      Port *op = ports[i];
       if (p != op && !strcmp(clock, op->name)) {
         if (p->myClock)
           // Can't refer to another port and also own the clock
@@ -121,8 +121,8 @@ checkClock(Worker *w, ezxml_t impl, Port *p) {
       }
     }
     // We are not referring to another port.  It muts be a defined clock
-    Clock *c = w->clocks;
-    for (unsigned i = 0; i < w->nClocks; i++, c++)
+    Clock *c = clocks;
+    for (unsigned i = 0; i < nClocks; i++, c++)
       if (!strcmp(clock, c->name)) {
         p->clock = c;
         if (p->myClock)
@@ -140,25 +140,25 @@ checkClock(Worker *w, ezxml_t impl, Port *p) {
 
 // Check for implementation attributes common to data interfaces, several of which
 // are able to override protocol-determined values.
-static const char *
-checkDataPort(Worker *w, ezxml_t impl, Port **dpp) {
+const char *Worker::
+checkDataPort(ezxml_t impl, Port **dpp) {
   const char *err;
   const char *name = ezxml_cattr(impl, "Name");
   if (!name)
     return OU::esprintf("Missing \"Name\" attribute of %s element", impl->name);
   unsigned i;
   Port *dp = 0;
-  for (i = 0; i < w->ports.size(); i++) {
-    dp = w->ports[i];
+  for (i = 0; i < ports.size(); i++) {
+    dp = ports[i];
     if (dp && dp->name && !strcmp(dp->name, name))
       break;
   }
-  if (i >= w->ports.size() || dp && !dp->isData)
+  if (i >= ports.size() || dp && !dp->isData)
     return
       OU::esprintf("Name attribute of Stream/MessageInterface \"%s\" "
                "does not match a DataInterfaceSpec", name);
   bool dwFound;
-  if ((err = checkClock(w, impl, dp)) ||
+  if ((err = checkClock(impl, dp)) ||
       (err = OE::getNumber(impl, "DataWidth", &dp->dataWidth, &dwFound)) ||
       // Be careful not to clobber protocol-determined values (i.e. don't set default values)
       (err = OE::getNumber(impl, "NumberOfOpcodes", &dp->u.wdi.nOpcodes, NULL, 0, false)) ||
@@ -170,8 +170,8 @@ checkDataPort(Worker *w, ezxml_t impl, Port **dpp) {
       (err = OE::getBoolean(impl, "PreciseBurst", &dp->preciseBurst)))
     return err;
   if (!dwFound) {
-    if (w->defaultDataWidth >= 0)
-      dp->dataWidth = (unsigned)w->defaultDataWidth;
+    if (defaultDataWidth >= 0)
+      dp->dataWidth = (unsigned)defaultDataWidth;
     else
       dp->dataWidth = dp->protocol->m_dataValueWidth;  // or granularity?
   } else if (!dp->protocol->m_dataValueWidth && !dp->protocol->nOperations())
@@ -255,7 +255,7 @@ tryChildInclude(ezxml_t x, const char *parent, const char *element,
 }
 
 // Find the single instance of a child, which might be xi:included
-static const char *
+const char *
 tryOneChildInclude(ezxml_t top, const char *parent, const char *element,
 		   ezxml_t *parsed, const char **childFile, bool optional) {
   *parsed = 0;
@@ -297,22 +297,22 @@ tryOneChildInclude(ezxml_t top, const char *parent, const char *element,
 }
 
 
-static const char *
-addProperty(Worker *w, ezxml_t prop, bool includeImpl)
+const char *Worker::
+addProperty(ezxml_t prop, bool includeImpl)
 {
   OU::Property *p = new OU::Property;
-  w->ctl.properties.push_back(p);
+  ctl.properties.push_back(p);
   
   const char *err =
-    p->parse(prop, w->ctl.readables, w->ctl.writables, w->ctl.sub32Bits,
-	     includeImpl, (unsigned)(w->ctl.ordinal++));
+    p->parse(prop, ctl.readables, ctl.writables, ctl.sub32Bits,
+	     includeImpl, (unsigned)(ctl.ordinal++));
   if (!err) {
     if (p->m_isVolatile)
-      w->ctl.volatiles = true;
+      ctl.volatiles = true;
     if (p->m_isVolatile || p->m_isReadable && !p->m_isWritable)
-      w->ctl.readbacks = true;
+      ctl.readbacks = true;
     if (!p->m_isParameter || p->m_isReadable)
-      w->ctl.nRunProperties++;
+      ctl.nRunProperties++;
   }
   return err;
 }
@@ -380,7 +380,7 @@ doMaybeProp(ezxml_t maybe, void *vpinfo) {
     return "Property or SpecProperty has no \"Name\" attribute";
   OU::Property *p = NULL;
   for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++)
-    if ((*pi)->m_name == name) {
+    if (!strcasecmp((*pi)->m_name.c_str(), name)) {
       p = *pi;
       break;
     }
@@ -397,12 +397,12 @@ doMaybeProp(ezxml_t maybe, void *vpinfo) {
       return OU::esprintf("Property named \"%s\" conflicts with existing/previous property",
 			  name);
   // All the spec attributes plus the impl attributes
-  return addProperty(w, maybe, pinfo.isImpl);
+  return w->addProperty(maybe, pinfo.isImpl);
 }
 
-static const char *
-doProperties(ezxml_t top, Worker *w, const char *parent, bool impl, bool anyIsBad) {
-  PropInfo pi(w, impl, anyIsBad, parent);
+const char *Worker::
+doProperties(ezxml_t top, const char *parent, bool impl, bool anyIsBad) {
+  PropInfo pi(this, impl, anyIsBad, parent);
   return OE::ezxml_children(top, doMaybeProp, &pi);
 }
 
@@ -423,7 +423,7 @@ doImplProp(ezxml_t prop, void *arg) {
   // See if it matches
   OU::Property *p = NULL;
   for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++)
-    if ((*pi)->m_name == name) {
+    if (!strcasecmp((*pi)->m_name.c_str(), name)) {
       p = *pi;
       break;
     }
@@ -440,7 +440,7 @@ doImplProp(ezxml_t prop, void *arg) {
     if (isSpec)
       return OU::esprintf("Specification property named \"%s\" not found in spec", name);
     // All the spec attributes plus the impl attributes
-    if ((err = addProperty(w, prop, true)))
+    if ((err = w->addProperty(prop, true)))
       return err;
   }
   return 0;
@@ -456,7 +456,7 @@ doTopProp(ezxml_t prop, void *arg) {
   const char *err;
   if (!(err = OE::checkAttrs(prop, OCPI_UTIL_MEMBER_ATTRS, "Readable", "Writable", "IsTest",
 			     "Initial", "Volatile", "Default", NULL)))
-    err = addProperty(w, prop, false);
+    err = w->addProperty(prop, false);
   return err;
 }
 
@@ -519,22 +519,22 @@ static const char *parseControlOp(const char *op, void *arg) {
 // Parse the generic implementation control aspects (for rcc and hdl and other)
 #define GENERIC_IMPL_CONTROL_ATTRS \
   "SizeOfConfigSpace", "ControlOperations", "Sub32BitConfigProperties"
-static const char *
-parseImplControl(ezxml_t impl, const char *file, Worker *w, ezxml_t &xctl) {
+const char *Worker::
+parseImplControl(ezxml_t impl, const char *file, ezxml_t &xctl) {
   // Now we do the rest of the control interface
   xctl = ezxml_cchild(impl, "ControlInterface");
   const char *err;
   if (xctl) {
-    if (w->noControl)
+    if (noControl)
       return "Worker has a ControlInterface element, but also has NoControl=true";
     // Allow overriding byte enables
     bool sub32;
     if ((err = OE::getBoolean(xctl, "Sub32BitConfigProperties", &sub32)))
       return err;
     if (sub32)
-      w->ctl.sub32Bits = true;
+      ctl.sub32Bits = true;
 #if 1
-    if ((err = parseList(ezxml_cattr(xctl, "ControlOperations"), parseControlOp, w)))
+    if ((err = parseList(ezxml_cattr(xctl, "ControlOperations"), parseControlOp, this)))
       return err;
 #else
     const char *ops = ezxml_cattr(xctl, "ControlOperations");
@@ -546,7 +546,7 @@ parseImplControl(ezxml_t impl, const char *file, Worker *w, ezxml_t &xctl) {
         const char **p;
         for (p = controlOperations; *p; p++, op++)
           if (!strcasecmp(*p, o)) {
-            w->ctl.controlOps |= 1 << op;
+            ctl.controlOps |= 1 << op;
             break;
           }
         if (!*p)
@@ -555,12 +555,12 @@ parseImplControl(ezxml_t impl, const char *file, Worker *w, ezxml_t &xctl) {
     }
 #endif
   }
-  if ((err = doProperties(impl, w, file, true, false)))
+  if ((err = doProperties(impl, file, true, false)))
     return err;
   // Now that we have all information about properties and we can actually
   // do the offset calculations
-  for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++)
-    (*pi)->offset(w->ctl.offset, w->ctl.sizeOfConfigSpace);
+  for (PropertiesIter pi = ctl.properties.begin(); pi != ctl.properties.end(); pi++)
+    (*pi)->offset(ctl.offset, ctl.sizeOfConfigSpace);
   // Allow overriding sizeof config space
   if (xctl) {
     uint64_t sizeOfConfigSpace;
@@ -568,21 +568,21 @@ parseImplControl(ezxml_t impl, const char *file, Worker *w, ezxml_t &xctl) {
     if ((err = OE::getNumber64(xctl, "SizeOfConfigSpace", &sizeOfConfigSpace, &haveSize, 0)))
       return err;
     if (haveSize) {
-      if (sizeOfConfigSpace < w->ctl.sizeOfConfigSpace)
+      if (sizeOfConfigSpace < ctl.sizeOfConfigSpace)
         return "SizeOfConfigSpace attribute of ControlInterface smaller than properties indicate";
-      w->ctl.sizeOfConfigSpace = sizeOfConfigSpace;
+      ctl.sizeOfConfigSpace = sizeOfConfigSpace;
     }
   }
   return 0;
 }
 
 // Parse the generic implementation local memories (for rcc and ocl and other)
-const char*
-parseImplLocalMemory(ezxml_t impl, Worker *w) {
+  const char *Worker::
+parseImplLocalMemory(ezxml_t impl) {
   const char* err;
   for (ezxml_t x = ezxml_cchild(impl, "LocalMemory"); x; x = ezxml_next(x)) {
     LocalMemory* m = new LocalMemory();
-    w->localMemories.push_back(m);
+    localMemories.push_back(m);
     if ((err = OE::checkAttrs(x, "Name", "SizeofLocalMemory", (void*)0)) )
       return err;
     m->name = ezxml_cattr(x, "Name");
@@ -595,17 +595,17 @@ parseImplLocalMemory(ezxml_t impl, Worker *w) {
 }
 
 // Parse the control information about the component spec
-static const char *
-parseSpecControl(Worker *w, ezxml_t ps) {
+  const char *Worker::
+parseSpecControl(ezxml_t ps) {
   const char *err;
   if (ps &&
       ((err = OE::checkAttrs(ps, "SizeOfConfigSpace", "WritableConfigProperties",
 			     "ReadableConfigProperties", "Sub32BitConfigProperties",
 			     "Count", (void*)0)) ||
-       (err = OE::getNumber64(ps, "SizeOfConfigSpace", &w->ctl.sizeOfConfigSpace, 0, 0)) ||
-       (err = OE::getBoolean(ps, "WritableConfigProperties", &w->ctl.writables)) ||
-       (err = OE::getBoolean(ps, "ReadableConfigProperties", &w->ctl.readables)) ||
-       (err = OE::getBoolean(ps, "Sub32BitConfigProperties", &w->ctl.sub32Bits))))
+       (err = OE::getNumber64(ps, "SizeOfConfigSpace", &ctl.sizeOfConfigSpace, 0, 0)) ||
+       (err = OE::getBoolean(ps, "WritableConfigProperties", &ctl.writables)) ||
+       (err = OE::getBoolean(ps, "ReadableConfigProperties", &ctl.readables)) ||
+       (err = OE::getBoolean(ps, "Sub32BitConfigProperties", &ctl.sub32Bits))))
     return err;
   return 0;
 }
@@ -660,73 +660,87 @@ const char *Protocol::parseOperation(ezxml_t op) {
   return OU::Protocol::parseOperation(op);
 }
 
-static const char *
-parseSpec(ezxml_t xml, const char *file, Worker *w) {
+ const char *Worker::
+parseSpec(ezxml_t xml, const char *parent) {
   const char *err;
   // xi:includes at this level are component specs, nothing else can be included
   ezxml_t spec;
-  if ((err = tryOneChildInclude(xml, w->file, "ComponentSpec", &spec, &w->specFile, false)))
+  if ((err = tryOneChildInclude(xml, file, "ComponentSpec", &spec, &specFile, false)))
     return err;
-  std::string packageFileDir, packageName;
-  const char *cp = strrchr(w->specFile, '/');
-  if (cp)
-    packageFileDir.assign(w->specFile, cp + 1 - w->specFile);
-  // FIXME: Fix this using the include path maybe?
-  std::string packageFileName = packageFileDir + "package-name";
-  if ((err = OU::file2String(packageName, packageFileName.c_str()))) {
-    packageFileName = packageFileDir + "../package-name";
-    if ((err = OU::file2String(packageName, packageFileName.c_str()))) {
-      packageFileName = packageFileDir + "../lib/package-name";
-      if ((err = OU::file2String(packageName, packageFileName.c_str())))
-	return OU::esprintf("Missing package-name file: %s", err);
-    }
-  }
-  for (cp = packageName.c_str(); *cp && isspace(*cp); cp++)
-    ;
-  const char *ep;
-  for (ep = cp; *ep && !isspace(*ep); ep++)
-    ;
+  
   const char *specName = ezxml_cattr(spec, "Name");
   if (!specName)
     return "Missing Name attribute for ComponentSpec";
-  asprintf((char **)&w->specName, "%.*s.%s", (int)(ep - cp), cp, specName);
-  if ((err = OE::checkAttrs(spec, "Name", "NoControl", (void*)0)) ||
-      (err = OE::getBoolean(spec, "NoControl", &w->noControl)))
+  if (strchr(specName, '.')) {
+    specName = strdup(specName);
+  } else {
+    std::string packageName;
+    const char *package = ezxml_cattr(spec, "package");
+    if (package)
+      packageName = package;
+    else {
+      std::string packageFileDir;
+      const char *base = specFile ? specFile : parent;
+      const char *cp = strrchr(base, '/');
+      if (cp)
+	packageFileDir.assign(base, cp + 1 - base);
+      // FIXME: Fix this using the include path maybe?
+      std::string packageFileName = packageFileDir + "package-name";
+      if ((err = OU::file2String(packageName, packageFileName.c_str()))) {
+	packageFileName = packageFileDir + "../package-name";
+	if ((err = OU::file2String(packageName, packageFileName.c_str()))) {
+	  packageFileName = packageFileDir + "../lib/package-name";
+	  if ((err = OU::file2String(packageName, packageFileName.c_str())))
+	    return OU::esprintf("Missing package-name file: %s", err);
+	}
+      }
+      for (cp = packageName.c_str(); *cp && isspace(*cp); cp++)
+	;
+      const char *ep;
+      for (ep = cp; *ep && !isspace(*ep); ep++)
+	;
+      packageName.resize(ep - packageName.c_str());
+      package = cp;
+    }
+    asprintf((char **)&specName, "%s.%s", package, specName);
+  }
+  if ((err = OE::checkAttrs(spec, "Name", "NoControl", "package", (void*)0)) ||
+      (err = OE::getBoolean(spec, "NoControl", &noControl)))
     return err;
   // Parse control port info
   ezxml_t ps;
-  if ((err = tryOneChildInclude(spec, file, "PropertySummary", &ps, NULL, true)))
+  if ((err = tryOneChildInclude(spec, parent, "PropertySummary", &ps, NULL, true)))
     return err;
-  if ((err = doProperties(spec, w, file, false, ps != NULL)))
+  if ((err = doProperties(spec, parent, false, ps != NULL)))
     return err;
-  if (w->noControl) {
+  if (noControl) {
     if (ps)
       return "NoControl specified, PropertySummary cannot be specified";
-    if ((err = doProperties(spec, w, file, false, true)))
+    if ((err = doProperties(spec, parent, false, true)))
       return err;
-  } else if ((err = parseSpecControl(w, ps)))
+  } else if ((err = parseSpecControl(ps)))
     return err;
   // Now parse the data aspects, allocating (data) ports.
   for (ezxml_t x = ezxml_cchild(spec, "DataInterfaceSpec"); x; x = ezxml_next(x)) {
     Port *p = new Port();
-    w->ports.push_back(p);
+    ports.push_back(p);
     if ((err = OE::checkAttrs(x, "Name", "Producer", "Count", "Optional", (void*)0)) ||
         (err = OE::getBoolean(x, "Producer", &p->u.wdi.isProducer)) ||
         (err = OE::getBoolean(x, "Optional", &p->u.wdi.isOptional)))
       return err;
-    p->worker = w;
+    p->worker = this;
     p->isData = true;
     p->type = WDIPort;
     if (!(p->name = ezxml_cattr(x, "Name")))
       return "Missing \"Name\" attribute in DataInterfaceSpec";
-    for (unsigned i = 0; i < w->ports.size(); i++) {
-      Port *pp = w->ports[i];
+    for (unsigned i = 0; i < ports.size(); i++) {
+      Port *pp = ports[i];
       if (pp != p && !strcmp(pp->name, p->name))
         return "DataInterfaceSpec Name attribute duplicates another interface name";
     }
     ezxml_t pSum;
     const char *protFile = 0;
-    if ((err = tryOneChildInclude(x, file, "ProtocolSummary", &pSum, &protFile, true)))
+    if ((err = tryOneChildInclude(x, parent, "ProtocolSummary", &pSum, &protFile, true)))
       return err;
     Protocol *prot = p->protocol = new Protocol(*p);
     if (pSum) {
@@ -742,7 +756,7 @@ parseSpec(ezxml_t xml, const char *file, Worker *w) {
     } else {
       ezxml_t protx = NULL;
       // FIXME: default protocol name from file name
-      if ((err = tryOneChildInclude(x, file, "Protocol", &protx, &protFile, true)))
+      if ((err = tryOneChildInclude(x, parent, "Protocol", &protx, &protFile, true)))
         return err;
       if (protx) {
         if ((err = prot->parse(protFile, protx)))
@@ -762,8 +776,54 @@ parseSpec(ezxml_t xml, const char *file, Worker *w) {
   return 0;
 }
 
-static const char *
-parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
+Signal::
+Signal()
+  : m_name(NULL), m_direction(IN), m_width(0), m_differential(false), m_pos(NULL), m_neg(NULL) {
+}
+
+const char *Signal::
+parse(ezxml_t x) {
+  const char *err;
+  if ((err = OE::checkAttrs(x, "input", "inout", "output", "width", "differential", (void*)0)))
+    return err;
+  if ((m_name = ezxml_cattr(x, "Input")))
+    m_direction = IN;
+  else if ((m_name = ezxml_cattr(x, "Output")))
+    m_direction = OUT;
+  else if ((m_name = ezxml_cattr(x, "Inout")))
+    m_direction = INOUT;
+  else
+    return "Missing input, output, or inout attribute for signal element";
+  if ((err = OE::getNumber(x, "Width", &m_width, 0, 0)) ||
+      (err = OE::getBoolean(x, "differential", &m_differential)))
+    return err;
+  return NULL;
+}
+
+const char *Signal::
+parseSignals(ezxml_t xml, Signals &signals) {
+  const char *err;
+  // process ad hoc signals
+  for (ezxml_t xs = ezxml_cchild(xml, "Signal"); xs; xs = ezxml_next(xs)) {
+    Signal *s = new Signal;
+    if ((err = s->parse(xs))) {
+      delete s;
+      return err;
+    }
+    signals.push_back(s);
+  }
+  return NULL;
+}
+
+void Signal::
+deleteSignals(Signals &signals) {
+  while (signals.size()) {
+    delete signals.front();
+    signals.pop_front();
+  }
+}
+ const char *Worker::
+parseHdlImpl(ezxml_t xml, const char *file) {
   const char *err;
   ezxml_t xctl;
   size_t dw;
@@ -772,58 +832,74 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
   if (!lang)
     return "Missing Language attribute for HdlImplementation element";
   if (!strcasecmp(lang, "Verilog"))
-      w->language = Verilog;
+      language = Verilog;
     else if (!strcasecmp(lang, "VHDL"))
-      w->language = VHDL;
+      language = VHDL;
     else
       return OU::esprintf("Language attribute \"%s\" is not \"Verilog\" or \"VHDL\""
 			  " in HdlImplementation", lang);
-  if ((err = parseSpec(xml, file, w)) ||
-      (err = parseImplControl(xml, file, w, xctl)) ||
+  if ((err = parseSpec(xml, file)) ||
+      (err = parseImplControl(xml, file, xctl)) ||
       (err = OE::getNumber(xml, "datawidth", &dw, &dwFound)))
     return err;
   if (dwFound)
-    w->defaultDataWidth = (int)dw; // override the -1 default if set
+    defaultDataWidth = (int)dw; // override the -1 default if set
   // Parse the optional endian attribute.
   // If not specified, it will be defaulted later based on protocols
-  const char *endian = ezxml_cattr(xml, "endian");
-  if (endian) {
+  const char *myendian = ezxml_cattr(xml, "endian");
+  if (myendian) {
     static const char *endians[] = {ENDIANS, NULL};
     for (const char **ap = endians; *ap; ap++)
-      if (!strcasecmp(endian, *ap)) {
-	w->endian = (Endian)(ap - endians);
+      if (!strcasecmp(myendian, *ap)) {
+	endian = (Endian)(ap - endians);
 	break;
       }
   }
   Port *wci;
-  if (!w->noControl) {
+  if (!noControl) {
     // Insert the control port at the beginning of the port list since we want
     // To always process the control port first if we have one
     wci = new Port();
-    w->ports.insert(w->ports.begin(), wci);
+    ports.insert(ports.begin(), wci);
     // Finish HDL-specific control parsing
-    if (w->ctl.controlOps == 0)
-      w->ctl.controlOps = 1 << ControlOpStart;
+    if (ctl.controlOps == 0)
+      ctl.controlOps = 1 << ControlOpStart;
     if (xctl) {
       if ((err = OE::checkAttrs(xctl, GENERIC_IMPL_CONTROL_ATTRS, "ResetWhileSuspended",
-                            "Clock", "MyClock", "Timeout", "Count", "Name", "Pattern",
-                            (void *)0)) ||
+				"Clock", "MyClock", "Timeout", "Count", "Name", "Pattern",
+				(void *)0)) ||
           (err = OE::getNumber(xctl, "Timeout", &wci->u.wci.timeout, 0, 0)) ||
           (err = OE::getNumber(xctl, "Count", &wci->count, 0, 0)) ||
+          (err = OE::getBoolean(xctl, "RawProperties", &ctl.rawProperties)) ||
           (err = OE::getBoolean(xctl, "ResetWhileSuspended",
-                            &wci->u.wci.resetWhileSuspended)))
+				&wci->u.wci.resetWhileSuspended)))
         return err;
       wci->pattern = ezxml_cattr(xctl, "Pattern");
       wci->name = ezxml_cattr(xctl, "Name");
     }
+    const char *firstRaw = ezxml_cattr(xml, "FirstRawProperty");
+    if ((err = OE::getBoolean(xml, "RawProperties", &ctl.rawProperties)))
+      return err;
+    if (firstRaw) {
+      for (PropertiesIter pi = ctl.properties.begin(); pi != ctl.properties.end(); pi++)
+	if (!strcasecmp((*pi)->m_name.c_str(), firstRaw))
+	  ctl.firstRaw = *pi;
+      if (!ctl.firstRaw)
+	return OU::esprintf("FirstRawProperty: '%s' not found as a property", firstRaw);
+      ctl.rawProperties = true;
+    }
+
+
+
+
     if (!wci->count)
       wci->count = 1;
     // clock processing depends on the name so it must be defaulted here
     if (!wci->name)
       wci->name = "ctl";
     wci->type = WCIPort;
-    if (w->ctl.sub32Bits)
-      w->needsEndian = true;
+    if (ctl.sub32Bits)
+      needsEndian = true;
   } else
     wci = 0;
 #if 0
@@ -836,13 +912,13 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
   unsigned nextPort = w->ports.size();
   w->ports.resize(w->ports.size() + extraPorts);
 #endif
-  size_t oldSize = w->ports.size(); // remember the base of extra ports
+  size_t oldSize = ports.size(); // remember the base of extra ports
   unsigned nMem = 0, nTime = 0, memOrd = 0, timeOrd = 0;
   // Clocks depend on port names, so get those names in first pass(non-control ports)
   for (ezxml_t x = ezxml_cchild(xml, "MemoryInterface"); x;
        x = ezxml_next(x), memOrd++) {
     Port *p = new Port();
-    w->ports.push_back(p);
+    ports.push_back(p);
     if (!(p->name = ezxml_cattr(x, "Name")))
       if (nMem == 1)
         p->name = "mem";
@@ -852,7 +928,7 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
   for (ezxml_t x = ezxml_cchild(xml, "TimeInterface"); x;
        x = ezxml_next(x), timeOrd++) {
     Port *p = new Port();
-    w->ports.push_back(p);
+    ports.push_back(p);
     if (!(p->name = ezxml_cattr(x, "Name")))
       if (nTime == 1)
         p->name = "time";
@@ -861,10 +937,10 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
   }
   // Now we do clocks before interfaces since they may refer to clocks
   for (ezxml_t xc = ezxml_cchild(xml, "Clock"); xc; xc = ezxml_next(xc))
-    w->nClocks++;
+    nClocks++;
   // add one to allow for adding the WCI clock later
-  w->clocks = myCalloc(Clock, w->nClocks + 1 + w->ports.size());
-  Clock *c = w->clocks;
+  clocks = myCalloc(Clock, nClocks + 1 + ports.size());
+  Clock *c = clocks;
   for (ezxml_t xc = ezxml_cchild(xml, "Clock"); xc; xc = ezxml_next(xc), c++) {
     if ((err = OE::checkAttrs(xc, "Name", "Signal", "Home", (void*)0)))
       return err;
@@ -874,7 +950,7 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
     c->signal = ezxml_cattr(xc, "Signal");
   }
   // Now that we have clocks roughly set up, we process the wci clock
-  if (wci && (err = checkClock(w, xctl, wci)))
+  if (wci && (err = checkClock(xctl, wci)))
     return err;
   // End of control interface/wci processing (except OCP signal config)
 
@@ -888,7 +964,7 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
                               "NumberOfOpcodes", "MaxMessageValues",
 			      "datavaluewidth", "zerolengthmessages",
                               (void*)0)) ||
-        (err = checkDataPort(w, s, &dp)) ||
+        (err = checkDataPort(s, &dp)) ||
         (err = OE::getBoolean(s, "Abortable", &dp->u.wsi.abortable)) ||
         (err = OE::getBoolean(s, "RegRequest", &dp->u.wsi.regRequest)) ||
         (err = OE::getBoolean(s, "EarlyRequest", &dp->u.wsi.earlyRequest)))
@@ -903,7 +979,7 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
                               "NumberOfOpcodes", "MaxMessageValues",
 			      "datavaluewidth", "zerolengthmessages",
                               (void*)0)) ||
-        (err = checkDataPort(w, m, &dp)) ||
+        (err = checkDataPort(m, &dp)) ||
         (err = OE::getNumber(m, "ByteWidth", &dp->byteWidth, 0, dp->dataWidth)) ||
         (err = OE::getBoolean(m, "TalkBack", &dp->u.wmi.talkBack)) ||
         (err = OE::getBoolean(m, "Bidirectional", &dp->u.wdi.isBidirectional)) ||
@@ -912,17 +988,17 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
     dp->type = WMIPort;
   }
   // Final pass over all data ports for defaulting and checking
-  for (unsigned i = 0; i < w->ports.size(); i++) {
-    dp = w->ports[i];
+  for (unsigned i = 0; i < ports.size(); i++) {
+    dp = ports[i];
     switch (dp->type) {
     case WDIPort:
       // For data ports that have not been specified as stream or message,
       // default to imprecise stream clocked by the WSI, with data width implied from protocol.
       dp->type = WSIPort;
-      dp->dataWidth = w->defaultDataWidth >= 0 ? w->defaultDataWidth : dp->protocol->m_dataValueWidth;
+      dp->dataWidth = defaultDataWidth >= 0 ? defaultDataWidth : dp->protocol->m_dataValueWidth;
       dp->impreciseBurst = true;
-      if (w->ports[0]->type == WCIPort)
-	dp->clockPort = w->ports[0];
+      if (ports[0]->type == WCIPort)
+	dp->clockPort = ports[0];
       else
 	return "A data port that defaults to WSI must be in a worker with a WCI";
       // fall into
@@ -933,17 +1009,30 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
 	size_t granuleWidth =
 	  dp->protocol->m_dataValueWidth * dp->protocol->m_dataValueGranularity;
 	// If messages are always a multiple of datawidth and we don't have zlms, bytes are datawidth
+#if 0
 	if (granuleWidth >= dp->dataWidth && (granuleWidth % dp->dataWidth) == 0 && 
+#else
+	if (granuleWidth >= dp->dataWidth &&
+	    (dp->dataWidth == 0 || (granuleWidth % dp->dataWidth) == 0) && 
+#endif
 	    !dp->protocol->m_zeroLengthMessages)
 	  dp->byteWidth = dp->dataWidth;
 	else
 	  dp->byteWidth = dp->protocol->m_dataValueWidth;
+#if 0
 	if (dp->dataWidth % dp->byteWidth)
+#else
+	if (dp->byteWidth != 0 && dp->dataWidth % dp->byteWidth)
+#endif
 	  return "Specified ByteWidth does not divide evenly into specified DataWidth";
 	// Check if this port requires endianness
 	// Either the granule is smaller than or not a multiple of data path width
+#if 0
 	if (granuleWidth < dp->dataWidth || granuleWidth % dp->dataWidth)
-	  w->needsEndian = true;
+#else
+	if (granuleWidth < dp->dataWidth || dp->dataWidth && granuleWidth % dp->dataWidth)
+#endif
+	  needsEndian = true;
       }
       break;
     default:;
@@ -951,13 +1040,13 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
   }
   size_t nextPort = oldSize;
   for (ezxml_t m = ezxml_cchild(xml, "MemoryInterface"); m; m = ezxml_next(m), nextPort++) {
-    Port *mp = w->ports[nextPort];
+    Port *mp = ports[nextPort];
     mp->type = WMemIPort;
     bool memFound = false;
     if ((err = OE::checkAttrs(m, "Name", "Clock", "DataWidth", "PreciseBurst", "ImpreciseBurst",
                               "MemoryWords", "ByteWidth", "MaxBurstLength", "WriteDataFlowControl",
                               "ReadDataFlowControl", "Count", "Pattern", "Slave", (void*)0)) ||
-        (err = checkClock(w, m, mp)) ||
+        (err = checkClock(m, mp)) ||
         (err = OE::getNumber(m, "Count", &mp->count, 0, 0)) ||
         (err = OE::getNumber64(m, "MemoryWords", &mp->u.wmemi.memoryWords, &memFound, 0)) ||
         (err = OE::getNumber(m, "DataWidth", &mp->dataWidth, 0, 8)) ||
@@ -986,7 +1075,7 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
   }
   bool foundWTI = false;
   for (ezxml_t m = ezxml_cchild(xml, "TimeInterface"); m; m = ezxml_next(m), nextPort++) {
-    Port *mp = w->ports[nextPort];
+    Port *mp = ports[nextPort];
     if (foundWTI)
       return "More than one WTI specified, which is not permitted";
     mp->name = ezxml_cattr(m, "Name");
@@ -995,7 +1084,7 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
     mp->type = WTIPort;
     if ((err = OE::checkAttrs(m, "Name", "Clock", "SecondsWidth", "FractionWidth", "AllowUnavailable", "Pattern",
                           (void*)0)) ||
-        (err = checkClock(w, m, mp)) ||
+        (err = checkClock(m, mp)) ||
         (err = OE::getNumber(m, "SecondsWidth", &mp->u.wti.secondsWidth, 0, 32)) ||
         (err = OE::getNumber(m, "FractionWidth", &mp->u.wti.fractionWidth, 0, 0)) ||
         (err = OE::getBoolean(m, "AllowUnavailable", &mp->u.wti.allowUnavailable)))
@@ -1005,8 +1094,8 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
     mp->pattern = ezxml_cattr(m, "Pattern");
   }
   // Now check that all clocks have a home and all ports have a clock
-  c = w->clocks;
-  for (unsigned i = 0; i < w->nClocks; i++, c++)
+  c = clocks;
+  for (unsigned i = 0; i < nClocks; i++, c++)
     if (c->port) {
       if (c->signal)
         return OU::esprintf("Clock %s is owned by interface %s and has a signal name",
@@ -1016,37 +1105,19 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
       return OU::esprintf("Clock %s is owned by no port and has no signal name",
                       c->name);
   // now make sure clockPort references are sorted out
-  for (unsigned i = 0; i < w->ports.size(); i++) {
-    Port *p = w->ports[i];
+  for (unsigned i = 0; i < ports.size(); i++) {
+    Port *p = ports[i];
     if (p->clockPort)
       p->clock = p->clockPort->clock;
     if (p->count == 0)
       p->count = 1;
   }
   // process ad hoc signals
-  for (ezxml_t xs = ezxml_cchild(xml, "Signal"); xs; xs = ezxml_next(xs)) {
-    if ((err = OE::checkAttrs(xs, "Input", "Output", "Inout", "Width", (void*)0)))
-      return err;
-    w->nSignals++;
-  }
-  if (w->nSignals) {
-    Signal *s = w->signals = myCalloc(Signal, w->nSignals);
-    for (ezxml_t xs = ezxml_cchild(xml, "Signal"); xs; xs = ezxml_next(xs), s++) {
-      if ((s->name = ezxml_cattr(xs, "Input")))
-        s->direction = Signal::IN;
-      else if ((s->name = ezxml_cattr(xs, "Output")))
-        s->direction = Signal::OUT;
-      else if ((s->name = ezxml_cattr(xs, "Inout")))
-        s->direction = Signal::INOUT;
-      else
-        s->direction = Signal::IN;
-      if ((err = OE::getNumber(xs, "Width", &s->width, 0, 0)))
-        return err;
-    }
-  }
+  if ((err = Signal::parseSignals(xml, signals)))
+    return err;
   // Finalize endian default
-  if (w->endian == NoEndian)
-    w->endian = w->needsEndian ? Little : Neutral;
+  if (endian == NoEndian)
+    endian = needsEndian ? Little : Neutral;
   return 0;
 }
 
@@ -1120,8 +1191,8 @@ attachPort(Connection *c, InstancePort *ip, const char *name,
 // If it not its own clock, then it follows the clock it shares
 // Otherwise we have a "new" clock to deal with and we have to consider
 // whether it should be coalesced or be its own clock.
-const char *
-doAssyClock(Worker *aw, Instance *i, Port *p) {
+const char *Worker::
+doAssyClock(Instance *i, Port *p) {
   unsigned nc = p->clock - i->worker->clocks;
   Clock *aClock;
   if (i->clocks[nc])
@@ -1129,7 +1200,7 @@ doAssyClock(Worker *aw, Instance *i, Port *p) {
     aClock = i->clocks[nc];
   else if (p->clock->port->type == WCIPort) {
     // If the port uses its worker's wci clock, then use the assembly's wci
-    i->clocks[nc] = aw->ports[0]->clock;
+    i->clocks[nc] = ports[0]->clock;
     aClock = i->clocks[nc];
   } else {
     // Some principles:
@@ -1151,8 +1222,8 @@ doAssyClock(Worker *aw, Instance *i, Port *p) {
     // Error check incompatible clocks
 
 
-    if (isCompatible(p->clock, aw->clock))
-      aClock = aw->clock;
+    if (isCompatible(p->clock, clock))
+      aClock = clock;
     else {
 
     }
@@ -1173,13 +1244,13 @@ doAssyClock(Worker *aw, Instance *i, Port *p) {
 }
 #endif
 // This is a parsed for the assembly of what goes into a single worker binary
- const char *
-parseRccAssy(ezxml_t xml, const char *file, Worker *aw) {
+const char *Worker::
+parseRccAssy(ezxml_t xml, const char *file) {
   const char *err;
-  Assembly *a = &aw->assembly;
-  aw->model = RccModel;
-  aw->modelString = "rcc";
-  aw->isAssembly = true;
+  Assembly *a = &assembly;
+  model = RccModel;
+  modelString = "rcc";
+  isAssembly = true;
   if ((err = OE::checkAttrs(xml, "Name", (void*)0)))
     return err;
 #if 0
@@ -1193,20 +1264,20 @@ parseRccAssy(ezxml_t xml, const char *file, Worker *aw) {
       return "Missing \"File\" attribute is \"Worker\" element";
     Worker *w = new Worker;
     a->workers.push_back(w);
-    if ((err = parseWorker(wXmlName, file, w)))
+    if ((err = w->parse(wXmlName, file)))
       return err;
   }
   return 0;
 }
 
 // This is a parsed for the assembly of what does into a single worker binary
- const char *
-parseOclAssy(ezxml_t xml, const char *file, Worker *aw) {
+const char *Worker::
+parseOclAssy(ezxml_t xml, const char *file) {
   const char *err;
-  Assembly *a = &aw->assembly;
-  aw->model = OclModel;
-  aw->modelString = "ocl";
-  aw->isAssembly = true;
+  Assembly *a = &assembly;
+  model = OclModel;
+  modelString = "ocl";
+  isAssembly = true;
   if ((err = OE::checkAttrs(xml, "Name", (void*)0)))
     return err;
 #if 0
@@ -1220,7 +1291,7 @@ parseOclAssy(ezxml_t xml, const char *file, Worker *aw) {
       return "Missing \"File\" attribute is \"Worker\" element";
     Worker *w = new Worker;
     a->workers.push_back(w);
-    if ((err = parseWorker(wXmlName, file, w)))
+    if ((err = w->parse(wXmlName, file)))
       return err;
   }
   return 0;
@@ -1250,20 +1321,19 @@ doOutputs(const char *tok, void *arg) {
 
 // This parses the assembly using the generic assembly parser in OU::
 // It then does the binding to actual implementations.
- static const char *
-parseAssy(ezxml_t xml, Worker *aw,
-          const char **topAttrs, const char **instAttrs, bool noWorkerOk) {
+ const char *Worker::
+parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWorkerOk) {
    (void)noWorkerOk; // FIXME: when containers are generated.
-   Assembly *a = &aw->assembly;
+   Assembly *a = &assembly;
    try {
-     a->assembly = new OU::Assembly(xml, aw->implName, topAttrs, instAttrs);
+     a->assembly = new OU::Assembly(xml, implName, topAttrs, instAttrs);
    } catch (std::string &e) {
      return OU::esprintf("%s", e.c_str());
    }
    a->nInstances = a->assembly->m_instances.size();
    a->nConnections = a->assembly->m_connections.size();
    const char *err;
-   aw->isAssembly = true;
+   isAssembly = true;
  
    Instance *i = a->instances = myCalloc(Instance, a->assembly->m_instances.size());
    // Initialize our instances based on the generic assembly instances
@@ -1280,7 +1350,7 @@ parseAssy(ezxml_t xml, Worker *aw,
        if (!i->worker) {
 	 i->worker = new Worker;
 	 a->workers.push_back(i->worker);
-	 if ((err = parseWorker(i->wName, aw->file, i->worker)))
+	 if ((err = i->worker->parse(i->wName, file)))
 	   return OU::esprintf("for worker %s: %s", i->wName, err);
        }
        // Initialize the instance ports
@@ -1354,9 +1424,9 @@ parseAssy(ezxml_t xml, Worker *aw,
    } // for all connections
    // All parsing is done.
    // Now we fill in the top-level worker stuff.
-   aw->specName = aw->implName;
+   asprintf((char**)&specName, "local.%s", implName);
    // Properties:  we only set the canonical hasDebugLogic property, which is a parameter.
-   if ((err = doProperties(xml, aw, aw->file, true, false)))
+   if ((err = doProperties(xml, file, true, false)))
      return err;
    // Create the external data ports on the assembly worker
    unsigned n;
@@ -1369,7 +1439,7 @@ parseAssy(ezxml_t xml, Worker *aw,
 	   role = ip->external;
 	   assert(!extPort); // for now only one
 	   ip->port = new Port();
-	   aw->ports.push_back(ip->port);
+	   ports.push_back(ip->port);
 	   extPort = ip->port;
 	 } else {
 	   assert(!intPort); // for now only one
@@ -1383,7 +1453,7 @@ parseAssy(ezxml_t xml, Worker *aw,
        extPort->name = c->name;
        extPort->isExternal = true;
        extPort->count = 1;
-       extPort->worker = aw;
+       extPort->worker = this;
        assert(role->m_knownRole);
        // Resolve bidirectional role
        // See how we expose this externally
@@ -1426,10 +1496,10 @@ parseAssy(ezxml_t xml, Worker *aw,
  }
 
 #define TOP_ATTRS "Name", "Pattern", "PortPattern", "DataWidth",
-const char *
-parseHdlAssy(ezxml_t xml, Worker *aw) {
+ const char *Worker::
+parseHdlAssy(ezxml_t xml) {
   const char *err;
-  Assembly *a = &aw->assembly;
+  Assembly *a = &assembly;
   a->isContainer = !strcasecmp(xml->name, "HdlContainer");
   static const char
     *topAttrs[] = {TOP_ATTRS NULL},
@@ -1437,8 +1507,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
     *instAttrs[] =  { NULL },
     *contInstAttrs[] = { "Index", "Interconnect", "IO", "Adapter", "Configure", NULL};
   // Do the generic assembly parsing, then to more specific to HDL
-  if ((err = parseAssy(xml, aw, topAttrs,
-                       a->isContainer ? contInstAttrs : instAttrs, true)))
+  if ((err = parseAssy(xml, topAttrs, a->isContainer ? contInstAttrs : instAttrs, true)))
       return err;
   // Do the OCP derivation for all workers
   for (WorkersIter wi = a->workers.begin(); wi != a->workers.end(); wi++)
@@ -1492,35 +1561,10 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
   // Rejuggle the ports because the generic parser only deals with data ports
   // Make the first one wci, then data, then others
   Port *wci = new Port();
-  aw->ports.insert(aw->ports.begin(), wci);
-#if 0
-  unsigned morePorts = 0;
-  // add time and memory services (even though they might be coalesced)
-  for (n = 0, i = a->instances; n < a->nInstances; n++, i++)
-    if (i->worker) {
-      Port *p = i->worker->ports;
-      for (unsigned nn = 0; nn < i->worker->ports.size(); nn++) {
-        Port *p = &i->worker->ports[nn];
-        if (p->type == WTIPort || p->type == WMemIPort)
-          morePorts++;
-      }
-    }
-  Port *dataPorts = aw->ports;
-  unsigned nDataPorts = aw->ports.size();
-  aw->ports.size() += 1 + morePorts; // +1 for wci
-  aw->ports = new Port[aw->ports.size()];
-  memcpy(aw->ports + 1, dataPorts, nDataPorts * sizeof(Port));
-  // Ugliness because we have to change pointers into the ports
-  Connection *c;
-  InstancePort *ip;
-  for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
-    for (ip = c->ports; ip; ip = ip->nextConn)
-      if (ip->external)
-        ip->port = aw->ports + (ip->port - dataPorts + 1);
-#endif
+  ports.insert(ports.begin(), wci);
   // Clocks: coalesce all WCI clock and clocks with same reqts, into one wci, all for the assy
-  aw->nClocks = 1; // first clock for all instance WCIs.
-  Clock *clk = aw->clocks = myCalloc(Clock, aw->ports.size()); // overallocate
+  nClocks = 1; // first clock for all instance WCIs.
+  Clock *clk = clocks = myCalloc(Clock, ports.size()); // overallocate
   clk->signal = clk->name = "wci_Clk";
   clk->port = wci;
   wci->name = "wci";
@@ -1591,7 +1635,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
               clk->signal = strdup(ip->port->clock->signal);
             }
             clk->assembly = true;
-            aw->nClocks++;
+            nClocks++;
             c->clock = clk++;
             ip->instance->clocks[nc] = c->clock;
             // FIXME inherit ip->port->clock constraints
@@ -1622,7 +1666,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
             asprintf((char **)&clk->signal, "%s_%s", i->name,
                      ip->port->clock->signal);
           clk->assembly = true;
-          aw->nClocks++;
+          nClocks++;
           c->clock = clk++;
           i->clocks[nc] = c->clock;
         }
@@ -1646,21 +1690,21 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
 	  // FIXME: when we generate containers, these might be customized, but not now
           //if (iw->ctl.sizeOfConfigSpace > aw->ctl.sizeOfConfigSpace)
 	  //            aw->ctl.sizeOfConfigSpace = iw->ctl.sizeOfConfigSpace;
-	  aw->ctl.sizeOfConfigSpace = (1ll<<32) - 1;
+	  ctl.sizeOfConfigSpace = (1ll<<32) - 1;
           if (iw->ctl.writables)
-            aw->ctl.writables = true;
+            ctl.writables = true;
 #if 0
 	  // FIXME: until container automation we must force this
           if (iw->ctl.readables)
 #endif
-            aw->ctl.readables = true;
+            ctl.readables = true;
 #if 0
 	  // FIXME: Until we have container automation, we force the assembly level
 	  // WCIs to have byte enables.  FIXME
           if (iw->ctl.sub32Bits)
 #endif
-            aw->ctl.sub32Bits = true;
-          aw->ctl.controlOps |= iw->ctl.controlOps; // needed?  useful?
+            ctl.sub32Bits = true;
+          ctl.controlOps |= iw->ctl.controlOps; // needed?  useful?
           // Reset while suspended: This is really only interesting if all
           // external data ports are only connected to ports of workers were this
           // is true.  And the use-case is just that you can reset the
@@ -1678,7 +1722,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
           // and less accurate...
           {
             Port *wti = new Port();
-            aw->ports.push_back(wti);
+            ports.push_back(wti);
             *wti = *pp;
             asprintf((char **)&wti->name, "wti%u", nWti++);
             ip->externalPort = wti;
@@ -1688,7 +1732,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
         case WMemIPort:
           {
             Port *wmemi = new Port();
-            aw->ports.push_back(wmemi);
+            ports.push_back(wmemi);
             *wmemi = *pp;
             asprintf((char **)&wmemi->name, "wmemi%u", nWmemi++);
             ip->externalPort = wmemi;
@@ -1721,52 +1765,52 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
 }
 
 // This is an HDL file, and perhaps an assembly
-const char *
-parseHdl(ezxml_t xml, const char *file, Worker *w) {
+const char *Worker::
+parseHdl(ezxml_t xml, const char *file) {
    const char *err;
-  if (strcmp(w->implName, w->fileName))
+  if (strcmp(implName, fileName))
     return OU::esprintf("File name (%s) and implementation name in XML (%s) don't match",
-		    w->fileName, w->implName);
-  w->pattern = ezxml_cattr(xml, "Pattern");
-  w->portPattern = ezxml_cattr(xml, "PortPattern");
-  if (!w->pattern)
-    w->pattern = "%s_";
-  if (!w->portPattern)
-    w->portPattern = "%s_%n";
+		    fileName, implName);
+  pattern = ezxml_cattr(xml, "Pattern");
+  portPattern = ezxml_cattr(xml, "PortPattern");
+  if (!pattern)
+    pattern = "%s_";
+  if (!portPattern)
+    portPattern = "%s_%n";
   // Here is where there is a difference between a implementation and as assembly
   if (!strcasecmp(xml->name, "HdlImplementation")) {
-    if ((err = OE::checkAttrs(xml, TOP_ATTRS "Language", (void*)0)))
+    if ((err = OE::checkAttrs(xml, TOP_ATTRS "Language", "RawProperties", "FirstRawProperty", (void*)0)))
       return err;
-    if ((err = parseHdlImpl(xml, file, w)))
-      return OU::esprintf("in %s for %s: %s", xml->name, w->implName, err);
+    if ((err = parseHdlImpl(xml, file)))
+      return OU::esprintf("in %s for %s: %s", xml->name, implName, err);
   } else if (!strcasecmp(xml->name, "HdlAssembly")) {
     if ((err = OE::checkAttrs(xml, TOP_ATTRS (void*)0)))
       return err;
-    w->language = Verilog;
-    if ((err = parseHdlAssy(xml, w)))
-      return OU::esprintf("in %s for %s: %s", xml->name, w->implName, err);
+    language = Verilog;
+    if ((err = parseHdlAssy(xml)))
+      return OU::esprintf("in %s for %s: %s", xml->name, implName, err);
   } else
     return "file contains neither an HdlImplementation nor an HdlAssembly";
   // Whether a worker or an assembly, we derive the external OCP signals, etc.
-  if ((err = deriveOCP(w)))
-    return OU::esprintf("in %s for %s: %s", xml->name, w->implName, err);
+  if ((err = deriveOCP(this)))
+    return OU::esprintf("in %s for %s: %s", xml->name, implName, err);
   unsigned wipN[NWIPTypes][2] = {{0}};
-  for (unsigned i = 0; i < w->ports.size(); i++) {
-    Port *p = w->ports[i];
+  for (unsigned i = 0; i < ports.size(); i++) {
+    Port *p = ports[i];
     // Derive full names
     bool mIn = p->masterIn();
     // ordinal == -1 means insert "%d" into the name for using latter
-    if ((err = pattern(w, p, -1, wipN[p->type][mIn], true, !mIn, p->fullNameIn)) ||
-        (err = pattern(w, p, -1, wipN[p->type][mIn], false, !mIn, p->fullNameOut)) ||
-        (err = pattern(w, p, -1, wipN[p->type][mIn], true, !mIn, p->typeNameIn, true)) ||
-        (err = pattern(w, p, -1, wipN[p->type][mIn], false, !mIn, p->typeNameOut, true)))
+    if ((err = doPattern(p, -1, wipN[p->type][mIn], true, !mIn, p->fullNameIn)) ||
+        (err = doPattern(p, -1, wipN[p->type][mIn], false, !mIn, p->fullNameOut)) ||
+        (err = doPattern(p, -1, wipN[p->type][mIn], true, !mIn, p->typeNameIn, true)) ||
+        (err = doPattern(p, -1, wipN[p->type][mIn], false, !mIn, p->typeNameOut, true)))
       return err;
     //    const char *pat = p->pattern ? p->pattern : w->pattern;
     
     if (p->clock->port == p) {
       std::string sin;
       // ordinal == -2 means suppress ordinal
-      if ((err = pattern(w, p, -2, wipN[p->type][mIn], true, !mIn, sin)))
+      if ((err = doPattern(p, -2, wipN[p->type][mIn], true, !mIn, sin)))
         return err;
       asprintf((char **)&p->ocp.Clk.signal, "%s%s", sin.c_str(), "Clk");
       p->clock->signal = p->ocp.Clk.signal;
@@ -1781,10 +1825,10 @@ parseHdl(ezxml_t xml, const char *file, Worker *w) {
         asprintf((char **)&os->signal, "%s%s", p->fullNameOut.c_str(), osd->name);
     wipN[p->type][mIn]++;
   }
-  if (w->ports.size() > 32)
+  if (ports.size() > 32)
     return "worker has more than 32 ports";
-  w->model = HdlModel;
-  w->modelString = "hdl";
+  model = HdlModel;
+  modelString = "hdl";
   return 0;
 }
 
@@ -1794,23 +1838,23 @@ parseHdl(ezxml_t xml, const char *file, Worker *w) {
  * And if they are indeed available at runtime, do we really retreive them from the
  * container or just let the container use what it knows?
  */
-const char *
-parseRcc(ezxml_t xml, const char *file, Worker *w) {
+const char *Worker::
+parseRcc(ezxml_t xml, const char *file) {
   const char *err;
   if ((err = OE::checkAttrs(xml, "Name", "ExternMethods", "StaticMethods", "Threaded",
 			    "ControlOperations", "Language", (void*)0)))
     return err;
   // We use the pattern value as the method naming for RCC
   // and its presence indicates "extern" methods.
-  w->pattern = ezxml_cattr(xml, "ExternMethods");
-  w->staticPattern = ezxml_cattr(xml, "StaticMethods");
+  pattern = ezxml_cattr(xml, "ExternMethods");
+  staticPattern = ezxml_cattr(xml, "StaticMethods");
   ezxml_t xctl;
-  if ((err = parseSpec(xml, file, w)) ||
-      (err = parseImplControl(xml, file, w, xctl)) ||
+  if ((err = parseSpec(xml, file)) ||
+      (err = parseImplControl(xml, file, xctl)) ||
       (xctl && (err = OE::checkAttrs(xctl, GENERIC_IMPL_CONTROL_ATTRS, "Threaded", (void *)0))) ||
-      (err = OE::getBoolean(xml, "Threaded", &w->isThreaded)))
+      (err = OE::getBoolean(xml, "Threaded", &isThreaded)))
     return err;
-  if ((err = parseList(ezxml_cattr(xml, "ControlOperations"), parseControlOp, w)))
+  if ((err = parseList(ezxml_cattr(xml, "ControlOperations"), parseControlOp, this)))
     return err;
   // Parse data port implementation metadata: maxlength, minbuffers.
   for (ezxml_t x = ezxml_cchild(xml, "Port"); x; x = ezxml_next(x)) {
@@ -1821,12 +1865,12 @@ parseRcc(ezxml_t xml, const char *file, Worker *w) {
       return "Missing \"Name\" attribute on Port element if RccImplementation";
     Port *p = 0; // kill warning
     unsigned n;
-    for (n = 0; n < w->ports.size(); n++) {
-      p = w->ports[n];
+    for (n = 0; n < ports.size(); n++) {
+      p = ports[n];
       if (!strcasecmp(p->name, name))
         break;
     }
-    if (n >= w->ports.size())
+    if (n >= ports.size())
       return OU::esprintf("No DataInterface named \"%s\" from Port element", name);
     if ((err = OE::getNumber(x, "MinBuffers", &p->u.wdi.minBufferCount, 0, 0)) || // backward compat
         (err = OE::getNumber(x, "MinBufferCount", &p->u.wdi.minBufferCount, 0, p->u.wdi.minBufferCount)) ||
@@ -1834,8 +1878,8 @@ parseRcc(ezxml_t xml, const char *file, Worker *w) {
 			     p->protocol ? p->protocol->m_defaultBufferSize : 0)))
       return err;
   }
-  w->model = RccModel;
-  w->modelString = "rcc";
+  model = RccModel;
+  modelString = "rcc";
   return 0;
 }
 /*
@@ -1844,19 +1888,19 @@ parseRcc(ezxml_t xml, const char *file, Worker *w) {
  * And if they are indeed available at runtime, do we really retreive them from the
  * container or just let the container use what it knows?
  */
-const char *
-parseOcl(ezxml_t xml, const char *file, Worker *w) {
+  const char *Worker::
+parseOcl(ezxml_t xml, const char *file) {
   const char *err;
   if ((err = OE::checkAttrs(xml, "Name", "ExternMethods", "StaticMethods", (void*)0)))
     return err;
   // We use the pattern value as the method naming for OCL
   // and its presence indicates "extern" methods.
-  w->pattern = ezxml_cattr(xml, "ExternMethods");
-  w->staticPattern = ezxml_cattr(xml, "StaticMethods");
+  pattern = ezxml_cattr(xml, "ExternMethods");
+  staticPattern = ezxml_cattr(xml, "StaticMethods");
   ezxml_t xctl;
-  if ((err = parseSpec(xml, file, w)) ||
-      (err = parseImplControl(xml, file, w, xctl)) ||
-      (err = parseImplLocalMemory(xml, w )))
+  if ((err = parseSpec(xml, file)) ||
+      (err = parseImplControl(xml, file, xctl)) ||
+      (err = parseImplLocalMemory(xml)))
     return err;
   // Parse data port implementation metadata: maxlength, minbuffers.
   for (ezxml_t x = ezxml_cchild(xml, "Port"); x; x = ezxml_next(x)) {
@@ -1867,50 +1911,50 @@ parseOcl(ezxml_t xml, const char *file, Worker *w) {
       return "Missing \"Name\" attribute on Port element if OclImplementation";
     Port *p = 0; // kill warning
     unsigned n;
-    for (n = 0; n < w->ports.size(); n++) {
-      p = w->ports[n];
+    for (n = 0; n < ports.size(); n++) {
+      p = ports[n];
       if (!strcasecmp(p->name, name))
         break;
     }
-    if (n >= w->ports.size())
+    if (n >= ports.size())
       return OU::esprintf("No DataInterface named \"%s\" from Port element", name);
     if ((err = OE::getNumber(x, "MinBuffers", &p->u.wdi.minBufferCount, 0, 0)) || // backward compat
         (err = OE::getNumber(x, "MinBufferCount", &p->u.wdi.minBufferCount, 0, p->u.wdi.minBufferCount)))
       return err;
   }
-  w->model = OclModel;
-  w->modelString = "ocl";
+  model = OclModel;
+  modelString = "ocl";
   return 0;
 }
 // The most general case.  Could be any worker, or any assembly.
-const char *
-parseWorker(const char *file, const char *parent, Worker *w) {
+const char *Worker::
+parse(const char *file, const char *parent) {
   const char *err;
   ezxml_t xml;
-  if ((err = parseFile(file, parent, NULL, &xml, &w->file)))
+  if ((err = parseFile(file, parent, NULL, &xml, &file)))
     return err;
   const char *cp = strrchr(file, '/');
   char *fp = strdup(cp ? cp + 1 : file);
   char *lp = strrchr(fp, '.');
   if (lp)
     *lp = 0;
-  w->fileName = fp;
-  w->implName = ezxml_cattr(xml, "Name");
-  if (!w->implName)
-    w->implName = w->fileName;
+  fileName = fp;
+  implName = ezxml_cattr(xml, "Name");
+  if (!implName)
+    implName = fileName;
   const char *name = ezxml_name(xml);
   if (name) {
     if (!strcasecmp("RccImplementation", name))
-      return parseRcc(xml, file, w);
+      return parseRcc(xml, file);
     if (!strcasecmp("OclImplementation", name))
-      return parseOcl(xml, file, w);
+      return parseOcl(xml, file);
     if ((!strcasecmp("HdlImplementation", name) ||
          !strcasecmp("HdlAssembly", name)))
-      return parseHdl(xml, file, w);
+      return parseHdl(xml, file);
     if (!strcasecmp("RccAssembly", name))
-      return parseRccAssy(xml, file, w);
+      return parseRccAssy(xml, file);
     if (!strcasecmp("OclAssembly", name))
-      return parseOclAssy(xml, file, w);
+      return parseOclAssy(xml, file);
   }
   return OU::esprintf("\"%s\" is not a valid implemention type (RccImplementation, HdlImplementation, OclImplementation, HdlAssembly, OclAssembly, ComponentAssembly)", xml->name);
 }
@@ -1931,8 +1975,11 @@ Worker::Worker()
   : model(NoModel), modelString(NULL), isDevice(false), noControl(false), file(0), specFile(0),
     implName(0), specName(0), fileName(0), isThreaded(false), nClocks(0),
     clocks(0), endian(NoEndian), needsEndian(false), pattern(0), staticPattern(0), isAssembly(false),
-    defaultDataWidth(-1), nInstances(0), language(NoLanguage), nSignals(0), signals(0)
+    defaultDataWidth(-1), nInstances(0), language(NoLanguage)
 {
+}
+Worker::~Worker() {
+  free((void*)specName); // created by strdup or asprintf
 }
 
 Port::Port()
@@ -1943,5 +1990,5 @@ Port::Port()
 {
   memset(&ocp, 0, sizeof(ocp));
   memset(&u, 0, sizeof(u));
-  u.wdi.nOpcodes = 1;
 }
+

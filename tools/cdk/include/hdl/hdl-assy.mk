@@ -133,7 +133,7 @@ PlatformDir=$(OutDir)target-$1
 AppName=$(Worker)-$1
 BitZName=$(call PlatformDir,$1)/$(call AppName,$1).bit.gz
 ArtifactXmlName=$(call PlatformDir,$1)/$(Worker)_cont_art.xml
-ArtifactXmlDirs=$(XmlIncludeDirs) ../../devices/specs ../../devices/lib/hdl
+ArtifactXmlDirs=$(XmlIncludeDirs) ../../devices/lib ../../devices/lib/hdl
 ContainerXmlFile=$(Worker)_cont.xml
 ContainerWorkersFile=$(call PlatformDir,$1)/$(ContainerModule).wks
 
@@ -207,6 +207,7 @@ $(OutDir)target-$1/$(ContainerModule)$(HdlBin): override HdlSources=$(OutDir)tar
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): $(OutDir)target-$1/$(ContainerModule).v
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): $(OutDir)target-$1/$(Worker)_UUID.v
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): $(OutDir)target-$1/metadatarom.data
+$(OutDir)target-$1/$(ContainerModule)$(HdlBin): $(call ContainerWorkersFile,$1)
 ifdef HdlToolRealCore
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): $(OutDir)target-$3/$(Worker)$(HdlBin)
 else
@@ -217,6 +218,10 @@ endif
 ifdef HdlToolNeedBB
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): | $(OutDir)target-$3/$(Worker)_bb/$3
 endif
+
+# Make the UUID depend on the platform too
+$(call PlatformDir,$1)/$(Worker)_UUID.v: $(HdlPlatformsDir)/$1/target-$(call HdlGetPart,$1)/$1$(HdlBin)
+
 # Need the link to the core
 #$(OutDir)target-$1/$(ContainerModule)$(HdlBin):
 #	$(AT)echo Building container core \"$(ContainerModule)\" for target \"$$(HdlTarget)\"
@@ -252,7 +257,7 @@ define doPlatform
 # Different since it is in the targetdir
 $(call ArtifactXmlName,$1) $(call PlatformDir,$1)/$(Worker)_UUID.v $(call ContainerWorkersFile,$1): \
    $(ContainerXmlFile) $(ImplXmlFile)
-	@echo Generating artifact xml file \($(call ArtifactXmlName,$1)\) from $(ImplXmlFile) and $(ContainerXmlFile) files.
+	@echo Generating UUID and artifact xml file \($(call ArtifactXmlName,$1)\) from $(ImplXmlFile) and $(ContainerXmlFile) files.
 	$(AT)$(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(call PlatformDir,$1)/$(notdir $(call ArtifactXmlName,$1)).deps \
 	  -D $(call PlatformDir,$1) $(ArtifactXmlDirs:%=-I%) -A \
           -c $(ContainerXmlFile) -W $(ContainerModule) -P $1 -e $(call HdlGetPart,$1) $(ImplXmlFile)

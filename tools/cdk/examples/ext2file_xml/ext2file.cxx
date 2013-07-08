@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
     for(unsigned n = 0; n < 5; n++) {
       OA::ExternalBuffer *b;
       uint8_t *data;
-      uint32_t length;
+      size_t length;
       while (!(b = ep.getBuffer(data, length)))
 	sleep(1);
       snprintf((char*)data, length, "Hello, World %u\n", n);

@@ -126,11 +126,11 @@ int main ( int argc, char* argv [ ] )
 
       // Output info
       uint8_t *odata;
-      uint32_t olength;
+      size_t olength;
 
       // Input info
       uint8_t *idata;
-      uint32_t ilength;
+      size_t ilength;
       uint8_t opcode = 0;
       bool isEndOfData = false;
 

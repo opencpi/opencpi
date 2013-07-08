@@ -18,6 +18,9 @@ entity decoder is
       nbytes_1               : out byte_offset_t;
       data_outputs           : out data_a_t(properties'range);
       control_op             : out control_op_t;
+      is_read                : out bool_t;
+      is_write               : out bool_t;
+      raw_offset             : out unsigned (worker.decode_width -1 downto 0);
       state                  : out state_t;
       is_operating           : out bool_t;  -- just a convenience for state = operating_e
       abort_control_op       : out bool_t;
@@ -29,8 +32,8 @@ architecture rtl of decoder is
   -- State for decoded accesses
   signal my_access       : access_t;     -- combi or register as appropriate
   signal my_access_r     : access_t;     -- registered access in progress when not immediate
-  signal is_read         : bool_t;
-  signal is_write        : bool_t;
+  signal my_is_read      : bool_t;
+  signal my_is_write     : bool_t;
   -- State for control ops
   signal control_op_in   : control_op_t; -- combi input decode
   signal my_control_op   : control_op_t; -- combi or register as appropriate
@@ -142,10 +145,12 @@ begin
   my_data     <= ocp_in.MData                   when my_access_r = none_e else my_data_r;
   my_nbytes_1 <= num_bytes_1(ocp_in)            when my_access_r = none_e else my_nbytes_1_r;
   my_offset   <= offset_in                      when my_access_r = none_e else my_offset_r;
+  raw_offset  <= my_offset - worker.raw_property_base;
   my_hi32     <= to_bool(ocp_in.MAddr(2) = '1') when my_access_r = none_e else my_hi32_r;
-  is_read     <= to_bool(my_access = read_e);
-  is_write    <= to_bool(my_access = write_e);
-
+  my_is_read  <= to_bool(my_access = read_e);
+  is_read     <= to_bool(my_is_read and my_offset >= worker.raw_property_base);
+  my_is_write <= to_bool(my_access = write_e);
+  is_write     <= to_bool(my_is_write and my_offset >= worker.raw_property_base);
   -- our own error checking (not the worker's)
   state_pos <= get_state_pos(my_state_r);
   op_pos    <= get_op_pos(my_control_op);
@@ -216,10 +221,10 @@ begin
                -- inputs describing property access
                offset_in    => my_offset,
                nbytes_1     => my_nbytes_1,
-               is_write     => is_write,
-               is_read      => is_read,
+               is_write     => my_is_write,
+               is_read      => my_is_read,
                data_in      => my_data,
-               -- outputs from the decosing process
+               -- outputs from the decoding process
                write_enable => my_write_enables(i),
                read_enable  => my_read_enables(i),
                offset_out   => my_offsets(i),

@@ -30,6 +30,11 @@ function bad {
 #part=${1:-xc5vlx50t}
 #pos=${2:-1}
 #echo part "$part" pos "$pos" port "$port"
+# impact expects to overwrite/create this file.  In the off chance that it exists
+# and is not writable by us, we remove it first.
+# This will still fail if we don't have write permission in the directory,
+# but that is what impact will tell us in that case
+rm -f _impactbatch.log
 imp="$OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact -batch"
 if [[ $port == all ]]; then
   echo listusbcables | $imp 2> $tlog > $tmp
