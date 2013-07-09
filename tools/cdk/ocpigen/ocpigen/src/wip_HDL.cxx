@@ -92,7 +92,6 @@ doPattern(Port *p, int n, unsigned wn, bool in, bool master, std::string &suff, 
 	sprintf(s, "%d", wn + (pat[-1] - '0'));
 	while (*s) s++;
 	break;
-#if 1
       case 'i':
 	*s++ = in ? 'i' : 'o';
 	break;
@@ -109,7 +108,6 @@ doPattern(Port *p, int n, unsigned wn, bool in, bool master, std::string &suff, 
 	while (*s)
 	  s++;
 	break;
-#endif
       case 's': // interface name as is
       case 'S': // capitalized interface name
 	strcpy(s, p->name);
@@ -3089,7 +3087,7 @@ emitBsvHDL(const char *outDir) {
     fprintf(f, " WIP Attributes are:\n");
     switch (p->type) {
     case WCIPort:
-      fprintf(f, "// SizeOfConfigSpace: %zu (0x%zx)\fn",
+      fprintf(f, "// SizeOfConfigSpace: %" PRIu64 " (0x%" PRIx64 ")\fn",
 	      ctl.sizeOfConfigSpace,
 	      ctl.sizeOfConfigSpace);
       break;
@@ -3393,7 +3391,7 @@ emitBsvHDL(const char *outDir) {
 emitWorker(FILE *f, Worker *w)
 {
   fprintf(f, "<worker name=\"%s\" model=\"%s\"", w->implName, w->modelString);
-  if (w->specName && strcmp(w->specName, w->implName))
+  if (w->specName && strcasecmp(w->specName, w->implName))
     fprintf(f, " specname=\"%s\"", w->specName);
   if (w->ctl.sizeOfConfigSpace)
     fprintf(f, " sizeOfConfigSpace=\"%llu\"", (unsigned long long)w->ctl.sizeOfConfigSpace);

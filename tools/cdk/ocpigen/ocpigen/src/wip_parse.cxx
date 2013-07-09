@@ -485,9 +485,8 @@ doSpecProp(ezxml_t prop, void *arg) {
 #endif
 // parse an attribute value as a list separated by comma, space or tab
 // and call a function with the given arg for each token found
-static const char *parseList(const char *list,
-                             const char * (*doit)(const char *tok, void *arg),
-                             void *arg) {
+static const char *
+parseList(const char *list, const char * (*doit)(const char *tok, void *arg), void *arg) {
   const char *err = 0;
   if (list) {
     char
@@ -524,54 +523,38 @@ parseImplControl(ezxml_t impl, const char *file, ezxml_t &xctl) {
   // Now we do the rest of the control interface
   xctl = ezxml_cchild(impl, "ControlInterface");
   const char *err;
-  if (xctl) {
-    if (noControl)
-      return "Worker has a ControlInterface element, but also has NoControl=true";
-    // Allow overriding byte enables
-    bool sub32;
-    if ((err = OE::getBoolean(xctl, "Sub32BitConfigProperties", &sub32)))
-      return err;
-    if (sub32)
-      ctl.sub32Bits = true;
-#if 1
-    if ((err = parseList(ezxml_cattr(xctl, "ControlOperations"), parseControlOp, this)))
-      return err;
-#else
-    const char *ops = ezxml_cattr(xctl, "ControlOperations");
-    if (ops) {
-      char *last = 0, *o;
-      while ((o = strtok_r((char *)ops, ", \t", &last))) {
-        ops = 0;
-        unsigned op = 0;
-        const char **p;
-        for (p = controlOperations; *p; p++, op++)
-          if (!strcasecmp(*p, o)) {
-            ctl.controlOps |= 1 << op;
-            break;
-          }
-        if (!*p)
-          return "Invalid control operation name in ControlOperations attribute";
-      }
-    }
-#endif
-  }
+  if (xctl && noControl)
+    return "Worker has a ControlInterface element, but also has NoControl=true";
+  // Allow overriding byte enables
+  bool sub32;
+  // either can set to true
+  if ((err = OE::getBoolean(impl, "Sub32BitConfigProperties", &sub32)) ||
+      !sub32 && xctl && (err = OE::getBoolean(xctl, "Sub32BitConfigProperties", &sub32)))
+    return err;
+  if (sub32)
+    ctl.sub32Bits = true;
+  // We take ops from either place as true
+  if ((err = parseList(ezxml_cattr(impl, "ControlOperations"), parseControlOp, this)) ||
+      xctl && (err = parseList(ezxml_cattr(xctl, "ControlOperations"), parseControlOp, this)))
+    return err;
   if ((err = doProperties(impl, file, true, false)))
     return err;
   // Now that we have all information about properties and we can actually
   // do the offset calculations
   for (PropertiesIter pi = ctl.properties.begin(); pi != ctl.properties.end(); pi++)
     (*pi)->offset(ctl.offset, ctl.sizeOfConfigSpace);
-  // Allow overriding sizeof config space
-  if (xctl) {
-    uint64_t sizeOfConfigSpace;
-    bool haveSize;
-    if ((err = OE::getNumber64(xctl, "SizeOfConfigSpace", &sizeOfConfigSpace, &haveSize, 0)))
-      return err;
-    if (haveSize) {
-      if (sizeOfConfigSpace < ctl.sizeOfConfigSpace)
-        return "SizeOfConfigSpace attribute of ControlInterface smaller than properties indicate";
-      ctl.sizeOfConfigSpace = sizeOfConfigSpace;
-    }
+  // Allow overriding sizeof config space, giving priority to controlinterface
+  uint64_t sizeOfConfigSpace;
+  bool haveSize = false;
+  if (xctl && (err = OE::getNumber64(xctl, "SizeOfConfigSpace", &sizeOfConfigSpace, &haveSize, 0)))
+    return err;
+  if (!haveSize &&
+      (err = OE::getNumber64(impl, "SizeOfConfigSpace", &sizeOfConfigSpace, &haveSize, 0)))
+    return err;
+  if (haveSize) {
+    if (sizeOfConfigSpace < ctl.sizeOfConfigSpace)
+      return "SizeOfConfigSpace attribute of ControlInterface smaller than properties indicate";
+    ctl.sizeOfConfigSpace = sizeOfConfigSpace;
   }
   return 0;
 }
@@ -668,8 +651,7 @@ parseSpec(ezxml_t xml, const char *parent) {
   if ((err = tryOneChildInclude(xml, file, "ComponentSpec", &spec, &specFile, false)))
     return err;
   
-  const char *specName = ezxml_cattr(spec, "Name");
-  if (!specName)
+  if (!(specName = ezxml_cattr(spec, "Name")))
     return "Missing Name attribute for ComponentSpec";
   if (strchr(specName, '.')) {
     specName = strdup(specName);
@@ -1495,14 +1477,14 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
    return 0;
  }
 
-#define TOP_ATTRS "Name", "Pattern", "PortPattern", "DataWidth",
+#define TOP_ATTRS "Name", "Pattern", "PortPattern", "DataWidth"
  const char *Worker::
 parseHdlAssy(ezxml_t xml) {
   const char *err;
   Assembly *a = &assembly;
   a->isContainer = !strcasecmp(xml->name, "HdlContainer");
   static const char
-    *topAttrs[] = {TOP_ATTRS NULL},
+    *topAttrs[] = {TOP_ATTRS, NULL},
     // FIXME: reduce to those that are hdl specific
     *instAttrs[] =  { NULL },
     *contInstAttrs[] = { "Index", "Interconnect", "IO", "Adapter", "Configure", NULL};
@@ -1779,12 +1761,13 @@ parseHdl(ezxml_t xml, const char *file) {
     portPattern = "%s_%n";
   // Here is where there is a difference between a implementation and as assembly
   if (!strcasecmp(xml->name, "HdlImplementation")) {
-    if ((err = OE::checkAttrs(xml, TOP_ATTRS "Language", "RawProperties", "FirstRawProperty", (void*)0)))
+    if ((err = OE::checkAttrs(xml, TOP_ATTRS, GENERIC_IMPL_CONTROL_ATTRS,
+			      "Language", "RawProperties", "FirstRawProperty", (void*)0)))
       return err;
     if ((err = parseHdlImpl(xml, file)))
       return OU::esprintf("in %s for %s: %s", xml->name, implName, err);
   } else if (!strcasecmp(xml->name, "HdlAssembly")) {
-    if ((err = OE::checkAttrs(xml, TOP_ATTRS (void*)0)))
+    if ((err = OE::checkAttrs(xml, TOP_ATTRS, (void*)0)))
       return err;
     language = Verilog;
     if ((err = parseHdlAssy(xml)))
