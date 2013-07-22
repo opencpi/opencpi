@@ -59,7 +59,7 @@ $(call OcpiDbgVar,ImplXmlFiles)
 ImplHeaderFiles=$(foreach w,$(Workers),$(GeneratedDir)/$(w)$(ImplSuffix))
 $(ImplHeaderFiles): $(GeneratedDir)/%$(ImplSuffix) : $$(Worker_%_xml) | $(GeneratedDir)
 	$(AT)echo Generating the implementation header file: $@ from $< 
-	$(AT)$(OcpiGen) -i  $<
+	$(AT)$(OcpiGen) $(and $(Package),-p $(Package)) -i $<
 
 # FIXME - should not be referencing HdlMode
 ifneq ($(HdlMode),assembly)
@@ -70,7 +70,7 @@ all: skeleton
 
 $(SkelFiles): $(GeneratedDir)/%$(SkelSuffix) : $$(Worker_%_xml) | $(GeneratedDir)
 	$(AT)echo Generating the implementation skeleton file: $@
-	$(AT)$(OcpiGen) -s $<
+	$(AT)$(OcpiGen) $(and $(Package),-p $(Package)) -s $<
 endif
 IncludeDirs:=$(OCPI_CDK_DIR)/include/$(Model) $(GeneratedDir) $(IncludeDirs)
 ifeq ($(origin XmlIncludeDirsInternal),undefined)
@@ -97,13 +97,14 @@ ifneq ($(HdlMode),assembly)
 ifeq ($(origin WorkerSourceFiles),undefined)
 WorkerSourceFiles=$(foreach w,$(Workers),$(w)$(SourceSuffix))
 # We must preserve the order of CompiledSourceFiles
-CompiledSourceFiles:= $(CompiledSourceFiles) $(filterout $(CompiledSourceFiles) $(WorkerSourceFiles))
+#$(call OcpiDbgVar,CompiledSourceFiles)
+#AuthoredSourceFiles:=$(strip $(SourceFiles) $(filter-out $(SourceFiles),$(WorkerSourceFiles)))
 ifeq ($(origin ModelSpecificBuildHook),undefined)
 $(call OcpiDbgVar,SourceSuffix)
 $(call OcpiDbgVar,WorkerSourceFiles)
+$(call OcpiDbgVar,AuthoredSourceFiles)
 # This rule get's run a lot, since it is basically sees that the generated
 # skeleton is newer than the source file.
-skeleton: $(WorkerSourceFiles)
 $(WorkerSourceFiles): %$(SourceSuffix) : $(GeneratedDir)/%$(SkelSuffix)
 	$(AT)if test ! -e $@; then \
 		echo No source file exists. Copying skeleton \($<\) to $@. ; \
@@ -112,8 +113,9 @@ $(WorkerSourceFiles): %$(SourceSuffix) : $(GeneratedDir)/%$(SkelSuffix)
 endif
 endif
 endif
-# The files we need to compile
+skeleton: $(WorkerSourceFiles)
 AuthoredSourceFiles=$(call Unique,$(SourceFiles) $(WorkerSourceFiles))
+$(call OcpiDbgVar,AuthoredSourceFiles)
 
 ################################################################################
 # Compilation of source to binary into target directories
@@ -170,10 +172,8 @@ $(call WkrTargetDir,$(1)): | $(OutDir) $(GeneratedDir)
 # If object files are separate from the final binary,
 # Make them individually, and then link them together
 ifdef ToolSeparateObjects
-$$(call OcpiDbgVar,AuthoredSourceFiles)
-$$(call OcpiDbgVar,GeneratedSourceFiles)
-$(foreach s,$(AuthoredSourceFiles) $(GeneratedSourceFiles),\
-          $(call WkrMakeObject,$(s),$(1)))
+$$(call OcpiDbgVar,CompiledSourceFiles)
+$(foreach s,$(CompiledSourceFiles),$(call WkrMakeObject,$(s),$(1)))
 
 $(call WkrBinary,$(1)): $(CapModel)Target=$1
 $(call WkrBinary,$(1)): $$(ObjectFiles_$(1)) $$(call ArtifactXmlFile,$1) \

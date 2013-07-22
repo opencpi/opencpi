@@ -90,7 +90,7 @@ ifndef HdlLanguage
     HdlLanguage:=verilog
   else
     # Ugly grab of the language attribute from the XML file
-    HdlLanguage:=$(shell grep -i 'language *=' $(HdlXmlFile) | sed "s/^.*[lL]anguage= *['\"]\\([^\"']*\\).*$$/\1/" | tr A-Z a-z)
+    HdlLanguage:=$(and $(wildcard $(HdlXmlFile)),$(shell grep -i 'language *=' $(HdlXmlFile) | sed "s/^.*[lL]anguage= *['\"]\\([^\"']*\\).*$$/\1/" | tr A-Z a-z))
     ifdef Language
       ifdef HdlLanguage
         ifneq ($(call ToLower,$(Language)),$(HdlLanguage))
@@ -141,13 +141,15 @@ DefsFile=$(Workers:%=$(GeneratedDir)/%$(HdlDefsSuffix))
 
 $(sort $(RefDefsFile) $(DefsFile)): $(Worker_$(Worker)_xml) | $(GeneratedDir)
 	$(AT)echo Generating the definition file: $@
-	$(AT)$(OcpiGen) -w $<
-	$(AT)$(OcpiGen) -d $<
+	$(AT)$(OcpiGen) $(and $(Package),-p $(Package)) -w $<
+	$(AT)$(OcpiGen) $(and $(Package),-p $(Package)) -d $<
 
 $(ImplHeaderFiles): $(DefsFile)
 
 ifeq ($(HdlLanguage),vhdl)
-  CompiledSourceFiles:=$(DefsFile) $(ImplHeaderFiles) $(CompiledSourceFiles)
+  $(call OcpiDbgVar,GeneratedSourceFiles,before vhdl)
+  GeneratedSourceFiles+=$(DefsFile) $(ImplHeaderFiles)
+  $(call OcpiDbgVar,GeneratedSourceFiles,after vhdl)
   LibName=$(Worker)
 endif
 

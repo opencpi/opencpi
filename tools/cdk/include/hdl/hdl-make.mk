@@ -31,10 +31,11 @@ $(call OcpiDbgVar,HdlAllFamilies)
 # $(call HdlComponentLibrary,lib,target)
 # Return the actual name (pointing to the target dir) and check for errors
 HdlComponentLibrary=$(strip \
+  $(foreach x,\
   $(foreach l,$(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/$1),\
    $(foreach f,$(if $(filter ./,$(dir $2)),,$(dir $2))$(call HdlGetFamily,$(notdir $2)),\
      $(or $(wildcard $l/hdl/$f),$(wildcard $l/lib/hdl/$f),\
-      $(error Component library '$l' not found at either $l/hdl/$f or $l/lib/hdl/$f)))))
+      $(error Component library '$l' not found at either $l/hdl/$f or $l/lib/hdl/$f)))),$x))
 
 HdlComponentCore=$(strip \
   $(foreach l,$(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/$1),\

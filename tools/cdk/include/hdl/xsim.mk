@@ -137,11 +137,11 @@ HdlToolCompile=\
     echo verilog work $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v \
 	> $(Worker).prj; \
     $(if $(HdlSkipSimElaboration),, \
-      xelab $(XsimTop) work.glbl -v 2 -prj $(Worker).prj -L unisims_ver \
+      xelab $(XsimTop) work.glbl -timescale 1ns/1ps -v 2 -prj $(Worker).prj -L unisims_ver \
 	-s $(Worker).exe -lib $(Worker)=$(Worker) $(XsimLibs);)) \
   $(if $(findstring $(HdlMode),platform),\
     echo verilog work ../../../containers/mkOCApp_bb.v > $(Worker).prj ; \
-    xelab $(XsimTop) $(Worker).glbl -v 2 -prj $(Worker).prj -L unisims_ver \
+    xelab $(XsimTop) $(Worker).glbl -timescale 1ns/1ps -v 2 -prj $(Worker).prj -L unisims_ver \
 	-s $(Worker).exe -lib work=work -lib $(call ToLower,$(Worker))=$(Worker) $(XsimLibs) ;)
 
 # Since there is not a singular output, make's builtin deletion will not work

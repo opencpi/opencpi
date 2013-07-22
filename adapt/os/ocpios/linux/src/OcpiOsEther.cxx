@@ -33,6 +33,7 @@
 
 // Ethernet support implementation for unix
 
+#include <stddef.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>

@@ -153,8 +153,9 @@ struct Signal {
   enum Direction { IN, OUT, INOUT } m_direction;
   size_t m_width;
   bool m_differential;
-  const char *m_pos; // pattern for positive if not %sp
-  const char *m_neg; // pattern for negative if not %sn
+  std::string m_pos; // pattern for positive if not %sp
+  std::string m_neg; // pattern for negative if not %sn
+  const char *m_type;
   Signal();
   const char * parse(ezxml_t);
   static const char *parseSignals(ezxml_t z, Signals &nsignals);
@@ -313,12 +314,12 @@ class Control {
  public:
   Control();
   uint64_t sizeOfConfigSpace;
-  bool writables;
-  bool readables;
-  bool sub32Bits;
-  bool volatiles;
-  bool readbacks;
-  unsigned nRunProperties; // all but non-readable parameters.
+  bool writables, nonRawWritables, rawWritables;
+  bool readables, nonRawReadables, rawReadables;
+  bool sub32Bits, nonRawSub32Bits;
+  bool volatiles, nonRawVolatiles;
+  bool readbacks, nonRawReadbacks, rawReadbacks;
+  unsigned nRunProperties, nNonRawRunProperties; // all but non-readable parameters.
   uint32_t controlOps; // bit mask
   Properties properties;
   size_t offset;// temporary while properties are being parsed.
@@ -446,18 +447,19 @@ class Worker {
   Signals signals;
   Worker();
   ~Worker();
+  bool nonRaw(PropertiesIter pi);
   const char
-    *parse(const char *file, const char *parent),
+    *parse(const char *file, const char *parent, const char *package = NULL),
     *parseRcc(ezxml_t x, const char *file),
     *parseOcl(ezxml_t x, const char *file),
-    *parseHdl(ezxml_t x, const char *file),
+    *parseHdl(ezxml_t x, const char *file, const char *package),
     *parseRccAssy(ezxml_t x, const char *file),
     *parseOclAssy(ezxml_t x, const char *file),
     *parseImplControl(ezxml_t impl, const char *file, ezxml_t &xctl),
     *parseImplLocalMemory(ezxml_t impl),
     *parseSpecControl(ezxml_t ps),
-    *parseSpec(ezxml_t xml, const char *file),
-    *parseHdlImpl(ezxml_t xml, const char *file),
+    *parseSpec(ezxml_t xml, const char *file, const char *package = NULL),
+    *parseHdlImpl(ezxml_t xml, const char *file, const char* package = NULL),
     *doProperties(ezxml_t top, const char *parent, bool impl, bool anyIsBad),
     *parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWorkerOk),
     *parseHdlAssy(ezxml_t xml),
@@ -476,6 +478,7 @@ class Worker {
     *emitArtHDL(const char *root, const char *wksFile),
     *emitDefsHDL(const char *outDir, bool wrap = false),
     *emitWorkersHDL(const char *, const char *file),
+    *emitInnerVhdlRecords(FILE *f, unsigned maxPropName),
     *emitAssyHDL(const char *);
   void
     emitShellVHDL(FILE *f),

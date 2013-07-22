@@ -1,5 +1,5 @@
 # Default settings
-export OCPI_CFLAGS="-Wall -Wextra -Wfloat-equal -fno-strict-aliasing -Wconversion -c90"
+export OCPI_CFLAGS="-Wall -Wextra -Wfloat-equal -fno-strict-aliasing -Wconversion" # -std=c89
 export OCPI_CXXFLAGS="-Wall -Wextra -Wfloat-equal -fno-strict-aliasing -Wconversion"
 
 export OCPI_BASE_DIR=`pwd`

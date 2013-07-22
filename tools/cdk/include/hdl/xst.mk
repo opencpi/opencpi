@@ -328,13 +328,13 @@ XstOptions +=\
 
 XstNgcOptions=\
   $(foreach l,$(CDKComponentLibraries), -sd \
-    $(call FindRelative,$(TargetDir),$(l)/hdl/$(or $(HdlPart) $(HdlTarget))))\
+    $(call FindRelative,$(TargetDir),$(l)/hdl/$(or $(HdlPart),$(HdlTarget))))\
   $(foreach l,$(CDKDeviceLibraries), -sd \
-    $(call FindRelative,$(TargetDir),$(l)/hdl/$(or $(HdlPart) $(HdlTarget))))\
+    $(call FindRelative,$(TargetDir),$(l)/hdl/$(or $(HdlPart),$(HdlTarget))))\
   $(foreach l,$(ComponentLibraries), -sd \
-    $(call FindRelative,$(TargetDir),$(l)/hdl/$(or $(HdlPart) $(HdlTarget))))\
+    $(call FindRelative,$(TargetDir),$(l)/hdl/$(or $(HdlPart),$(HdlTarget))))\
   $(foreach l,$(DeviceLibraries), -sd \
-    $(call FindRelative,$(TargetDir),$(l)/lib/hdl/$(or $(HdlPart) $(HdlTarget))))\
+    $(call FindRelative,$(TargetDir),$(l)/lib/hdl/$(or $(HdlPart),$(HdlTarget))))\
   $(foreach c,$(Cores), -sd \
     $(call FindRelative,$(TargetDir),$(call HdlCoreRefDir,$(c),$(or $(HdlPart),$(HdlTarget))))) 
 
@@ -418,8 +418,8 @@ $(call NgdName,$1): $(call AppNgcName,$1) $(wildcard $(HdlPlatformsDir)/$1/*.ucf
 	        -aul -aut $(foreach u,$(wildcard $(HdlPlatformsDir)/$1/*.ucf),-uc $u) -p $(HdlPart_$1) \
                 $$(foreach d, ../target-$(call HdlGetFamily,$(call HdlGetPart,$1)) \
 		              $$(foreach l,$$(ComponentLibraries),$$(strip \
-			        $$(call FindRelative,$(call PlatformDir,$1), \
-			          $$(call HdlComponentLibrary,$$l,$(HdlPart_$1))))) \
+			        $$(call FindRelative,$(call PlatformDir,$1),$(strip \
+			          $$(call HdlComponentLibrary,$$l,$(HdlPart_$1)))))) \
 			      $$(call FindRelative,$(call PlatformDir,$1), \
 			         $$(HdlPlatformsDir)/$1),\
 			-sd $$d) \

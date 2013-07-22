@@ -98,8 +98,8 @@ endif
 # this is to ensure support for the -n flag
 ECHO=/bin/echo
 Empty=
-#default is to only compile things that are NOT generated
-CompiledSourceFiles=$(AuthoredSourceFiles)
+#default assumes all generated files go before all authored files
+CompiledSourceFiles=$(GeneratedSourceFiles) $(AuthoredSourceFiles)
 Space=$(Empty) $(Empty)
 # Just for history (thanks Andrew): this only works with tcsh, not traditional csh.  And csh isn't posix anywah
 #Capitalize=$(shell csh -f -c 'echo $${1:u}' $(1))

@@ -85,6 +85,7 @@ namespace OCPI {
       // Caller needs these to decide to do beforeQuery/afterConfigure
       bool
 	m_isParameter,     // For compile-time parameter
+	m_isSub32,
 	m_isTest;
       unsigned long m_dataOffset;
       // Sizes in bits of the various types

@@ -76,7 +76,8 @@ namespace OCPI {
     namespace OE = EzXml;
     namespace OA = OCPI::API;
     Property::Property()
-      : m_smallest(0), m_granularity(0), m_isParameter(false), m_isTest(false), m_dataOffset(0) {
+      : m_smallest(0), m_granularity(0), m_isParameter(false), m_isSub32(false), m_isTest(false),
+	m_dataOffset(0) {
     }
     Property::~Property() {
     }
@@ -140,8 +141,12 @@ namespace OCPI {
       bool diverseSizes = false;
       bool unBoundedDummy;   // we are precluding unbounded in any case
       size_t myOffset = 0;
-      return Member::offset(maxAlign, myOffset, minSize, diverseSizes, sub32Configs,
-			    unBoundedDummy);
+      if ((err = Member::offset(maxAlign, myOffset, minSize, diverseSizes, m_isSub32,
+				unBoundedDummy)))
+	return err;
+      if (m_isSub32)
+	sub32Configs = true;
+      return NULL;
     }
     // A higher up is creating offsets in a list of properties after we know it all
     void Property::

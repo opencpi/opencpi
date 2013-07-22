@@ -302,7 +302,8 @@ HdlToolSets=$(call Unique,$(foreach t,$(HdlFamilies),$(call HdlGetToolSet,$(t)))
 # We will already get an error if there are no toolsets.
 $(call OcpiDbgVar,HdlToolSets)
 
-# In all cases if SourceFiles is not specified in the Makefile,
+ifneq ($(HdlMode),worker)
+# In all non-worker cases, if SourceFiles is not specified in the Makefile,
 # we look for any relevant
 $(call OcpiDbgVar,SourceFiles,Before searching: )
 ifndef SourceFiles
@@ -312,6 +313,7 @@ else
 CompiledSourceFiles:= $(SourceFiles)
 endif
 $(call OcpiDbgVar,CompiledSourceFiles,After searching: )
+endif
 
 ifndef HdlInstallDir
 HdlInstallDir=lib

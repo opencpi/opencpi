@@ -26,4 +26,10 @@ component FIFO2
            EMPTY_N : out std_logic;
            CLR     : in  std_logic);
 end component FIFO2;
+component SyncResetA
+  generic(RSTDELAY : natural := 1);
+  port(   IN_RST   : in  std_logic;
+          CLK      : in  std_logic;
+          OUT_RST  : out std_logic);
+end component SyncResetA;     
 end package bsv;

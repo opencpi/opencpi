@@ -189,7 +189,7 @@ main(int argc, char **argv) {
       }
 #endif
       Worker *w = new Worker();
-      if ((err = w->parse(*ap, NULL)))
+      if ((err = w->parse(*ap, NULL, package)))
 	fprintf(stderr, "For file %s: %s\n", *ap, err);
       else if (doDefs && (err = w->emitDefsHDL(root)))
 	fprintf(stderr, "%s: Error generating definition/declaration file: %s\n", *ap, err);
