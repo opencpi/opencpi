@@ -128,6 +128,9 @@ constant longlong_max : longlong_t := x"7fff_ffff_ffff_ffff";
 subtype ulonglong_t is unsigned (63 downto 0);
 type ulonglong_array_t is array (natural range <>) of ulonglong_t;
 constant ulonglong_max : ulonglong_t := x"ffff_ffff_ffff_ffff";
+function To_ulonglong (c: natural) return ulonglong_t;
+function To_ulonglong (c: ulong_t) return ulonglong_t;
+function To_ulonglong (c: std_logic_vector(ulonglong_t'range)) return ulonglong_t;
 --
 -- string type - array of char
 --

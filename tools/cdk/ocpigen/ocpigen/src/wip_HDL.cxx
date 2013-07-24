@@ -1565,7 +1565,7 @@ emitShellVHDL(FILE *f) {
   }
   fprintf(f, ");\n");
   if (ctl.readables)
-    fprintf(f, "  ctl_SData <= %s;",
+    fprintf(f, "  ctl_SData <= %s;\n",
 	    ctl.rawReadables ?
 	    (ctl.nonRawReadables ? 
 	     "raw_SData when wci_is_read or wci_is_write else nonRaw_SData" :
@@ -3508,7 +3508,7 @@ emitArtHDL(const char *outDir, const char *wksFile) {
 	break;
       }
     }
-    if (!nn >= dw->assembly.nInstances)
+    if (nn >= dw->assembly.nInstances)
       return OU::esprintf("No instance in container assembly for assembly instance \"%s\"",
 		      i->name);
     emitInstance(i, f);

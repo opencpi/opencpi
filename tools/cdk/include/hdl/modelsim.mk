@@ -94,10 +94,10 @@ HdlToolCompile=\
    export LM_LICENSE_FILE=$(OCPI_MODELSIM_LICENSE_FILE); \
    rm -r -f $(LibName); \
    $(if $(filter work,$(LibName)),,$(OCPI_MODELSIM_DIR)/bin/vlib $(LibName) &&) \
-   $(and $(filter %.vhd,$(ModelsimFiles)),\
-    $(OCPI_MODELSIM_DIR)/bin/vcom -preserve -bindAtCompile -error 1253 $(ModelsimArgs) $(filter %.vhd,$(ModelsimFiles)) ;)\
    $(and $(filter %.v,$(ModelsimFiles)),\
-    $(OCPI_MODELSIM_DIR)/bin/vlog $(ModelSimVlogIncs) $(VlogLibs) $(ModelsimArgs) $(filter %.v, $(ModelsimFiles)))
+    $(OCPI_MODELSIM_DIR)/bin/vlog $(ModelSimVlogIncs) $(VlogLibs) $(ModelsimArgs) $(filter %.v, $(ModelsimFiles)) ;) \
+   $(and $(filter %.vhd,$(ModelsimFiles)),\
+    $(OCPI_MODELSIM_DIR)/bin/vcom -preserve -bindAtCompile -error 1253 $(ModelsimArgs) $(filter %.vhd,$(ModelsimFiles)))
 
 # Since there is not a singular output, make's builtin deletion will not work
 HdlToolPost=\

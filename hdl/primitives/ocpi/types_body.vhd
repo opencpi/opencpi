@@ -108,6 +108,18 @@ function To_ulong (c: natural) return ulong_t is
 begin
  return to_unsigned(c,ulong_t'length);
 end to_ulong;
+function To_ulonglong (c: natural) return ulonglong_t is
+begin
+ return to_unsigned(c, ulonglong_t'length);
+end to_ulonglong;
+function To_ulonglong (c: ulong_t) return ulonglong_t is
+begin
+  return resize(c, ulonglong_t'length);
+end to_ulonglong;
+function To_ulonglong (c: std_logic_vector(ulonglong_t'range)) return ulonglong_t is
+begin
+  return ulonglong_t(c);
+end to_ulonglong;
 
 --function To_char (c: std_logic_vector) return char_t is
 --begin
