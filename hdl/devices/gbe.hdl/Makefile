@@ -35,5 +35,5 @@
 ########################################################################### #
 
 OnlyTargets=xilinx
-override HdlLibraries=bsv util
+SourceFiles=mkGMAC.v
 include $(OCPI_CDK_DIR)/include/worker.mk

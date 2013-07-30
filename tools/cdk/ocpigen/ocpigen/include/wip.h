@@ -283,7 +283,7 @@ public:
     WMemI wmemi;
     WTI wti;
   } u;
-  Port();
+  Port(const char *name, Worker *, bool isData, WIPType);
   // Are master signals inputs at this port?
   inline bool masterIn() {
   return

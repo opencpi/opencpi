@@ -1018,8 +1018,8 @@ module mkSimDCP(CLK,
 	  dcpReqF_first__33_BITS_71_TO_64_38_EQ_IF_lastT_ETC___d395 &&
 	  lastTag[8] &&
 	  !dcpReqF$D_OUT[76])
-	$display("[%0d]: dcp_to_cp_request ***TAG MATCH IN DCP WRITE*** (Not Forwarding Write Request to OCCP)",
-		 v__h4547);
+	$display("[%0d]: dcp_to_cp_request ***TAG MATCH %d IN DCP WRITE*** (Not Forwarding Write Request to OCCP)",
+		 v__h4547, lastTag[7:0]);
     if (RST_N != `BSV_RESET_VALUE)
       if (WILL_FIRE_RL_dcp_to_cp_request &&
 	  NOT_dcpReqF_first__33_BITS_78_TO_77_34_EQ_0_35_ETC___d221)

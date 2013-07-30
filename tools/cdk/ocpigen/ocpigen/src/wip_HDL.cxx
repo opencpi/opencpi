@@ -2320,24 +2320,26 @@ emitImplHDL(const char *outDir, const char * /* library */) {
 	fprintf(f, "                  is_big_endian        => is_big_endian,\n");
       fprintf(f,
 	      "                  abort_control_op     => abort_control_op");
+      if (ctl.rawProperties)
+	fprintf(f,
+		",\n"
+		"                  raw_offset           => raw_offset,\n"
+		"                  is_read              => is_read,\n"
+		"                  is_write             => is_write");
       if (ctl.nNonRawRunProperties)
 	fprintf(f,
 		",\n"
 		"                  write_enables        => %s,\n"
 		"                  read_enables         => %s,\n"
-		"                  raw_offset           => raw_offset,\n"
-		"                  is_read              => is_read,\n"
-		"                  is_write             => is_write,\n"
 		"                  offsets              => offsets,\n"
 		"                  indices              => indices,\n"
 		"                  hi32                 => hi32,\n"
 		"                  nbytes_1             => nbytes_1,\n"
-		"                  data_outputs         => %s);\n",
+		"                  data_outputs         => %s",
 		ctl.nonRawWritables ? "write_enables" : "open",
 		ctl.nonRawReadbacks ? "read_enables" : "open",
 		ctl.nonRawWritables ? "data" : "open");
-      else
-	fprintf(f, ");\n");
+      fprintf(f, ");\n");
       if (ctl.nonRawReadables)
 	fprintf(f,
 		"  readback : component wci.readback\n"

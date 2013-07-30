@@ -140,23 +140,48 @@ checkClock(ezxml_t impl, Port *p) {
 
 // Check for implementation attributes common to data interfaces, several of which
 // are able to override protocol-determined values.
+// Take care of the case of implementation-specific ports (via implname);
 const char *Worker::
 checkDataPort(ezxml_t impl, Port **dpp) {
-  const char *err;
-  const char *name = ezxml_cattr(impl, "Name");
-  if (!name)
-    return OU::esprintf("Missing \"Name\" attribute of %s element", impl->name);
+  const char
+    *err,
+    *name = ezxml_cattr(impl, "Name"),
+    *implName = ezxml_cattr(impl, "implName");
   unsigned i;
   Port *dp = 0;
-  for (i = 0; i < ports.size(); i++) {
-    dp = ports[i];
-    if (dp && dp->name && !strcmp(dp->name, name))
-      break;
-  }
-  if (i >= ports.size() || dp && !dp->isData)
-    return
-      OU::esprintf("Name attribute of Stream/MessageInterface \"%s\" "
-               "does not match a DataInterfaceSpec", name);
+  if (name && implName)
+    return OU::esprintf("Both \"Name\" and \"ImplName\" attributes of %s element are present",
+			impl->name);
+  else if (name) {
+    for (i = 0; i < ports.size(); i++) {
+      dp = ports[i];
+      if (dp && dp->name && !strcmp(dp->name, name))
+	break;
+    }
+    if (i >= ports.size() || dp && !dp->isData)
+      return OU::esprintf("Name attribute of Stream/MessageInterface \"%s\" "
+			  "does not match a DataInterfaceSpec", name);
+    if (ezxml_cattr(impl, "producer"))
+      return OU::esprintf("The \"producer\" attribute is illegal for %s elements",
+			  impl->name);
+
+  } else if (implName) {
+    for (i = 0; i < ports.size(); i++) {
+      dp = ports[i];
+      if (dp && dp->name && !strcmp(dp->name, name))
+	break;
+    }
+    if (i < ports.size())
+      return OU::esprintf("ImplName attribute of Stream/MessageInterface \"%s\" "
+			  "matches an existing port", implName);
+    dp = new Port(implName, this, true, WDIPort);
+    if ((err = OE::getBoolean(impl, "Producer", &dp->u.wdi.isProducer)) ||
+        (err = OE::getBoolean(impl, "Optional", &dp->u.wdi.isOptional)))
+      return err;
+    ports.push_back(dp);
+  } else
+    return OU::esprintf("Missing \"Name\" or \"ImplName\" attribute of %s element",
+			impl->name);
   bool dwFound;
   if ((err = checkClock(impl, dp)) ||
       (err = OE::getNumber(impl, "DataWidth", &dp->dataWidth, &dwFound)) ||
@@ -707,17 +732,15 @@ parseSpec(ezxml_t xml, const char *parent, const char *package) {
     return err;
   // Now parse the data aspects, allocating (data) ports.
   for (ezxml_t x = ezxml_cchild(spec, "DataInterfaceSpec"); x; x = ezxml_next(x)) {
-    Port *p = new Port();
+    const char *name = ezxml_cattr(x, "Name");
+    if (!name)
+      return "Missing \"Name\" attribute in DataInterfaceSpec";
+    Port *p = new Port(name, this, true, WDIPort);
     ports.push_back(p);
     if ((err = OE::checkAttrs(x, "Name", "Producer", "Count", "Optional", (void*)0)) ||
         (err = OE::getBoolean(x, "Producer", &p->u.wdi.isProducer)) ||
         (err = OE::getBoolean(x, "Optional", &p->u.wdi.isOptional)))
       return err;
-    p->worker = this;
-    p->isData = true;
-    p->type = WDIPort;
-    if (!(p->name = ezxml_cattr(x, "Name")))
-      return "Missing \"Name\" attribute in DataInterfaceSpec";
     for (unsigned i = 0; i < ports.size(); i++) {
       Port *pp = ports[i];
       if (pp != p && !strcmp(pp->name, p->name))
@@ -846,7 +869,7 @@ parseHdlImpl(ezxml_t xml, const char *file, const char *package) {
   if (!noControl) {
     // Insert the control port at the beginning of the port list since we want
     // To always process the control port first if we have one
-    wci = new Port();
+    wci = new Port(ezxml_cattr(xctl, "Name"), this, false, WCIPort);
     ports.insert(ports.begin(), wci);
     // Finish HDL-specific control parsing
     if (ctl.controlOps == 0)
@@ -862,7 +885,6 @@ parseHdlImpl(ezxml_t xml, const char *file, const char *package) {
 				&wci->u.wci.resetWhileSuspended)))
         return err;
       wci->pattern = ezxml_cattr(xctl, "Pattern");
-      wci->name = ezxml_cattr(xctl, "Name");
     }
     const char *firstRaw = ezxml_cattr(xml, "FirstRawProperty");
     if ((err = OE::getBoolean(xml, "RawProperties", &ctl.rawProperties)))
@@ -909,7 +931,6 @@ parseHdlImpl(ezxml_t xml, const char *file, const char *package) {
     // clock processing depends on the name so it must be defaulted here
     if (!wci->name)
       wci->name = "ctl";
-    wci->type = WCIPort;
     if (ctl.sub32Bits)
       needsEndian = true;
     
@@ -930,9 +951,9 @@ parseHdlImpl(ezxml_t xml, const char *file, const char *package) {
   // Clocks depend on port names, so get those names in first pass(non-control ports)
   for (ezxml_t x = ezxml_cchild(xml, "MemoryInterface"); x;
        x = ezxml_next(x), memOrd++) {
-    Port *p = new Port();
+    Port *p = new Port(ezxml_cattr(x, "Name"), this, false, WMemIPort);
     ports.push_back(p);
-    if (!(p->name = ezxml_cattr(x, "Name")))
+    if (!p->name)
       if (nMem == 1)
         p->name = "mem";
       else
@@ -940,9 +961,9 @@ parseHdlImpl(ezxml_t xml, const char *file, const char *package) {
   }
   for (ezxml_t x = ezxml_cchild(xml, "TimeInterface"); x;
        x = ezxml_next(x), timeOrd++) {
-    Port *p = new Port();
+    Port *p = new Port(ezxml_cattr(x, "Name"), this, false, WTIPort);
     ports.push_back(p);
-    if (!(p->name = ezxml_cattr(x, "Name")))
+    if (!p->name)
       if (nTime == 1)
         p->name = "time";
       else
@@ -976,7 +997,7 @@ parseHdlImpl(ezxml_t xml, const char *file, const char *package) {
                               "EarlyRequest", "MyClock", "RegRequest", "Pattern",
                               "NumberOfOpcodes", "MaxMessageValues",
 			      "datavaluewidth", "zerolengthmessages",
-                              (void*)0)) ||
+			      "implname", "producer", "optional", (void*)0)) ||
         (err = checkDataPort(s, &dp)) ||
         (err = OE::getBoolean(s, "Abortable", &dp->u.wsi.abortable)) ||
         (err = OE::getBoolean(s, "RegRequest", &dp->u.wsi.regRequest)) ||
@@ -1042,7 +1063,6 @@ parseHdlImpl(ezxml_t xml, const char *file, const char *package) {
   size_t nextPort = oldSize;
   for (ezxml_t m = ezxml_cchild(xml, "MemoryInterface"); m; m = ezxml_next(m), nextPort++) {
     Port *mp = ports[nextPort];
-    mp->type = WMemIPort;
     bool memFound = false;
     if ((err = OE::checkAttrs(m, "Name", "Clock", "DataWidth", "PreciseBurst", "ImpreciseBurst",
                               "MemoryWords", "ByteWidth", "MaxBurstLength", "WriteDataFlowControl",
@@ -1082,7 +1102,6 @@ parseHdlImpl(ezxml_t xml, const char *file, const char *package) {
     mp->name = ezxml_cattr(m, "Name");
     if (!mp->name)
       mp->name = "time";
-    mp->type = WTIPort;
     if ((err = OE::checkAttrs(m, "Name", "Clock", "SecondsWidth", "FractionWidth", "AllowUnavailable", "Pattern",
 			      (void*)0)) ||
         (err = checkClock(m, mp)) ||
@@ -1439,7 +1458,7 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
 	 if (ip->external) {
 	   role = ip->external;
 	   assert(!extPort); // for now only one
-	   ip->port = new Port();
+	   ip->port = new Port("", this, true, WDIPort); // reinitialized below anyway
 	   ports.push_back(ip->port);
 	   extPort = ip->port;
 	 } else {
@@ -1561,15 +1580,13 @@ parseHdlAssy(ezxml_t xml) {
   }
   // Rejuggle the ports because the generic parser only deals with data ports
   // Make the first one wci, then data, then others
-  Port *wci = new Port();
+  Port *wci = new Port("wci", this, false, WCIPort);
   ports.insert(ports.begin(), wci);
   // Clocks: coalesce all WCI clock and clocks with same reqts, into one wci, all for the assy
   nClocks = 1; // first clock for all instance WCIs.
   Clock *clk = clocks = myCalloc(Clock, ports.size()); // overallocate
   clk->signal = clk->name = "wci_Clk";
   clk->port = wci;
-  wci->name = "wci";
-  wci->type = WCIPort;
   wci->myClock = true;
   wci->clock = clk++;
   wci->clock->port = wci;
@@ -1722,7 +1739,7 @@ parseHdlAssy(ezxml_t xml) {
           // We could have an option to use wires instead to make things smaller
           // and less accurate...
           {
-            Port *wti = new Port();
+            Port *wti = new Port(NULL, this, false, WTIPort); // reinitialized below
             ports.push_back(wti);
             *wti = *pp;
             asprintf((char **)&wti->name, "wti%u", nWti++);
@@ -1732,7 +1749,7 @@ parseHdlAssy(ezxml_t xml) {
           break;
         case WMemIPort:
           {
-            Port *wmemi = new Port();
+            Port *wmemi = new Port(NULL, this, false, WMemIPort); // reinitialized below
             ports.push_back(wmemi);
             *wmemi = *pp;
             asprintf((char **)&wmemi->name, "wmemi%u", nWmemi++);
@@ -1990,9 +2007,9 @@ Worker::~Worker() {
   free((void*)specName); // created by strdup or asprintf
 }
 
-Port::Port()
-  : name(0), worker(0), count(0),
-    isExternal(false), isData(false), pattern(0), type(NoPort),
+Port::Port(const char *name, Worker *w, bool isData, WIPType type)
+  : name(name), worker(w), count(0),
+    isExternal(false), isData(isData), pattern(0), type(type),
     dataWidth(0), byteWidth(0), impreciseBurst(false), preciseBurst(false),
     clock(0), clockPort(0), myClock(false),values(0), master(false), protocol(0)
 {
