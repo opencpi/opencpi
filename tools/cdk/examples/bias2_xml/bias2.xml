@@ -1,4 +1,4 @@
-<application done='file_write'>
+<application done='file_write' package='ocpi'>
   <instance component='file_read'>
     <property name='filename' value='test.input'/>
     <property name='granularity' value='4'/>
