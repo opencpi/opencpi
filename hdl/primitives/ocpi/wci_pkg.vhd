@@ -109,6 +109,13 @@ TYPE State_t IS (EXISTS_e,            -- 0
       done                   : in  bool_t := btrue;
       error                  : in  bool_t := btrue;
       resp                   : out ocp.SResp_t;
+      busy                   : out bool_t;
+      control_op             : out control_op_t;
+      state                  : out state_t;
+      is_operating           : out bool_t;  -- just a convenience for state = operating_e
+      abort_control_op       : out bool_t;
+      is_big_endian          : out bool_t;   -- for runtime dynamic endian
+      -- From here down, only for properties
       write_enables          : out bool_array_t(properties'range);
       read_enables           : out bool_array_t(properties'range);
       offsets                : out offset_a_t(properties'range);
@@ -116,14 +123,9 @@ TYPE State_t IS (EXISTS_e,            -- 0
       hi32                   : out bool_t;
       nbytes_1               : out byte_offset_t;
       data_outputs           : out data_a_t(properties'range);
-      control_op             : out control_op_t;
       is_read                : out bool_t;
       is_write               : out bool_t;
-      raw_offset             : out unsigned (worker.decode_width -1 downto 0);
-      state                  : out state_t;
-      is_operating           : out bool_t;  -- just a convenience for state = operating_e
-      abort_control_op       : out bool_t;
-      is_big_endian          : out bool_t   -- for runtime dynamic endian
+      raw_offset             : out unsigned (worker.decode_width -1 downto 0)
     );
   end component;
 
@@ -135,6 +137,7 @@ TYPE State_t IS (EXISTS_e,            -- 0
       done                   : in bool_t := btrue;
       error                  : in bool_t := bfalse;
       resp                   : out ocp.SResp_t;
+      busy                   : out bool_t;
       control_op             : out control_op_t;
       state                  : out state_t;
       is_operating           : out bool_t;  -- just a convenience for state = operating_e

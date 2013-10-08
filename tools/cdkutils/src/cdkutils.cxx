@@ -37,6 +37,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
+#include <list>
 #include "OcpiUtilMisc.h"
 #include "cdkutils.h"
 
@@ -53,6 +54,7 @@ addInclude(const char *inc) {
 const char *
 parseFile(const char *file, const char *parent, const char *element,
           ezxml_t *xp, const char **xfile, bool optional) {
+  const char *err = NULL;
   char *myFile;
   const char *slash = strrchr(file, '/');
   const char *dot = strrchr(file, '.');
@@ -64,41 +66,67 @@ parseFile(const char *file, const char *parent, const char *element,
   if (myFile[0] != '/' && cp)
     asprintf((char**)&cp, "%.*s%s", (int)(cp - parent + 1), parent, file);
   else
-    cp = myFile;
+    cp = strdup(myFile);
+  std::list<const char *> tries;
+  tries.push_back(cp);
   int fd = open(cp, O_RDONLY);
-  if (fd < 0) {
-    // file was not where parent file was, and not local.
-    // Try the include paths
-    if (myFile[0] != '/' && includes) {
-      for (const char **ap = includes; *ap; ap++) {
-        if (!(*ap)[0] || !strcmp(*ap, "."))
-          cp = myFile;
-        else
-          asprintf((char **)&cp, "%s/%s", *ap, myFile);
-        if ((fd = open(cp, O_RDONLY)) >= 0)
-          break;
+  do { // break on error
+    if (fd < 0) {
+      // file was not where parent file was, and not local.
+      // Try the include paths
+      if (myFile[0] != '/' && includes) {
+	for (const char **ap = includes; *ap; ap++) {
+	  if (!(*ap)[0] || !strcmp(*ap, "."))
+	    cp = strdup(myFile);
+	  else
+	    asprintf((char **)&cp, "%s/%s", *ap, myFile);
+	  tries.push_back(cp);
+	  if ((fd = open(cp, O_RDONLY)) >= 0)
+	    break;
+	}
+      }
+      if (fd < 0) {
+	std::string files;
+	bool first = true;
+	for (std::list<const char *>::const_iterator i = tries.begin(); i != tries.end(); i++) {
+	  OU::formatAdd(files, "%s %s", first ? "" : ",", *i);
+	  first = false;
+	}
+	err =
+	  OU::esprintf("File \"%s\" could not be opened for reading/parsing.  Files tried: %s",
+		       file, files.c_str());
+	break;
       }
     }
-    if (fd < 0)
-      return OU::esprintf("File \"%s\" could not be opened for reading/parsing", file);
+    ezxml_t x = ezxml_parse_fd(fd);
+    if (x && ezxml_error(x)[0]) {
+      err = OU::esprintf("XML Parsing error: %s", ezxml_error(x));
+      break;
+    }
+    if (!x || !x->name) {
+      err = OU::esprintf("File \"%s\" (when looking for \"%s\") could not be parsed as XML",
+			 cp, file);
+      break;
+    }
+    if (element && strcasecmp(x->name, element)) {
+      if (optional)
+	*xp = 0;
+      else {
+	err = OU::esprintf("File \"%s\" does not contain a %s element", cp, element);
+	break;
+      }
+    } else
+      *xp = x;
+    if (xfile)
+      *xfile = strdup(cp);
+    addDep(cp, parent != 0);
+  } while (0);
+  while (!tries.empty()) {
+    cp = tries.front();
+    tries.pop_front();
+    free((void*)cp);
   }
-  if (xfile)
-    *xfile = cp;
-  ezxml_t x = ezxml_parse_fd(fd);
-  const char *err;
-  if (x && (err = ezxml_error(x)) && err[0])
-    return OU::esprintf("XML Parsing error: %s", err);
-  if (!x || !x->name)
-    return OU::esprintf("File \"%s\" (when looking for \"%s\") could not be parsed as XML", cp, file);
-  if (element && strcasecmp(x->name, element)) {
-    if (optional)
-      *xp = 0;
-    else
-      return OU::esprintf("File \"%s\" does not contain a %s element", cp, element);
-  } else
-    *xp = x;
-  addDep(cp, parent != 0);
-  return 0;
+  return err;
 }
 
 static const char **deps;

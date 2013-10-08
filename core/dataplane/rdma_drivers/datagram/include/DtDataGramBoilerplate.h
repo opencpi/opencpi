@@ -7,7 +7,9 @@
     // +++ Begin boilerplate
     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-    class DatagramDevice : public OCPI::Driver::DeviceBase<DatagramXferFactory,DatagramDevice> {
+   class DatagramDevice : public DataTransfer ::DeviceBase<DatagramXferFactory,DatagramDevice> {
+     DatagramDevice(const char* name)
+       : DataTransfer::DeviceBase<DatagramXferFactory,DatagramDevice>(name, *this) {}
     };
     class DatagramXferRequest;
     class DatagramXferServices :

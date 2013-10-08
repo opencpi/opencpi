@@ -56,14 +56,24 @@ SkelSuffix=$($(CapModel)SkelSuffix)
 SourceSuffix=$($(CapModel)SourceSuffix)
 ImplXmlFiles=$(foreach w,$(Workers),$(or $(Worker_$w_xml),$(Worker).xml))
 $(call OcpiDbgVar,ImplXmlFiles)
-ImplHeaderFiles=$(foreach w,$(Workers),$(GeneratedDir)/$(w)$(ImplSuffix))
+
+# Only workers need the implementation "header" file and the skeleton
+
+# Allow this to be set to override this default
+ifeq ($(origin ImplHeaderFiles),undefined)
+ImplHeaderFiles=$(foreach w,$(Workers),$(call ImplHeaderFile,$w))
+ImplHeaderFile=$(GeneratedDir)/$1$(ImplSuffix)
+$(call OcpiDbgVar,ImplHeaderFiles)
+# FIXME: HdlPlatform is bogus here
 $(ImplHeaderFiles): $(GeneratedDir)/%$(ImplSuffix) : $$(Worker_%_xml) | $(GeneratedDir)
 	$(AT)echo Generating the implementation header file: $@ from $< 
-	$(AT)$(OcpiGen) $(and $(Package),-p $(Package)) -i $<
+	$(AT)$(OcpiGen) $(and $(Package),-p $(Package)) \
+	$(and $(HdlPlatform),-P $(HdlPlatform)) \
+	 $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) -i $< \
 
-# FIXME - should not be referencing HdlMode
-ifneq ($(HdlMode),assembly)
+ifeq ($(origin SkelFiles),undefined)
 SkelFiles=$(foreach w,$(Workers),$(GeneratedDir)/$(w)$(SkelSuffix))
+endif
 
 skeleton:  $(ImplHeaderFiles) $(SkelFiles)
 all: skeleton
@@ -157,7 +167,7 @@ define WkrWorkerDep
 $(call WkrObject,$1,$2): TargetDir=$(OutDir)target-$2
 $(call WkrObject,$1,$2): $(CapModel)Target=$2
 $(call WkrObject,$1,$2): \
-   $(GeneratedDir)/$1$(ImplSuffix) \
+   $(call ImplHeaderFile,$1) \
    $(foreach l,$(call $(CapModel)LibrariesInternal,$2),$$(call LibraryRefFile,$l,$2))
 
 endef
@@ -210,6 +220,7 @@ define DoLink
 LibLinks+=$(LibDir)/$(1)/$(notdir $(2))
 $(LibDir)/$(1)/$(notdir $(2)): $(OutDir)target-$(1)/$(2) | $(LibDir)/$(1)
 	$(AT)$$(call MakeSymLink,$$^,$(LibDir)/$(1))
+
 endef
 
 define DoLinks
@@ -217,8 +228,10 @@ define DoLinks
 LibDirs+=$(LibDir)/$(1)
 $(LibDir)/$(1): | $(LibDir)
 $(foreach n,$(WkrExportNames),$(call DoLink,$(1),$(n)))
+$$(call OcpiDbgVar,WkrExportNames,In Dolinks )
 endef
 
+$(call OcpiDbgVar,WkrExportNames)
 $(foreach t,$($(CapModel)Targets),$(eval $(call DoLinks,$(t))))
 
 

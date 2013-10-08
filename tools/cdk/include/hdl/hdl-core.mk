@@ -1,4 +1,3 @@
-
 # #####
 #
 #  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
@@ -56,11 +55,19 @@ HdlMode:=core
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 ifndef HdlSkip
 
-ifndef Core
-Core=$(CwdName)
+ifndef HdlCores
+ifdef Core
+HdlCores:=$(Core)	
+else
+HdlCores:=$(CwdName)
 endif
-ifndef Top
-Top:=$(Core)
+endif
+ifndef Tops
+ifdef Top
+Tops:=$(Top)
+else
+Tops:=$(HdlCores)
+endif
 endif
 
 #$(info ImportCore=$(ImportCore) PreBuiltCore=$(PreBuiltCore))
@@ -79,8 +86,9 @@ else
 CoreFile=$(Core)$(HdlBin)
 endif
 endif
-HdlCoreInstallDir=$(HdlInstallDir)/$(Core)
-$(HdlCoreInstallDir): | $(HdlInstallDir)
+HdlCoreInstallDir=$(HdlInstallDir)/$1
+HdlCoreInstallDirs=$(HdlCores:$(HdlInstallDir)/%)
+$(HdlCoreInstallDirs): | $(HdlInstallDir)
 	$(AT)mkdir $@
 
 ################################################################################
@@ -105,21 +113,22 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-core2.mk
 
 ifdef HdlToolRealCore
 # Install the core, however it was buit
-install_core: | $(HdlCoreInstallDir)
+install_cores: | $(HdlCoreInstallDirs)
 	$(AT)echo Installing core for targets: $(HdlActualTargets)
 	$(AT)for f in $(HdlActualTargets); do \
-	  $(call ReplaceIfDifferent,$(OutDir)target-$$f/$(Core)$(HdlBin),$(strip \
-		$(HdlCoreInstallDir)/$$f));\
+	  $(foreach c,$(HdlCores),$(strip \
+	    $(call ReplaceIfDifferent,$(OutDir)target-$$f/$c$(HdlBin),$(strip \
+	   	$(call HdlCoreInstallDir,$c)/$$f));))\
 	  done
-install: install_core
+install: install_cores
 
 # If the core name is not the same as its "top", make links
 ifneq ($(Core),$(Top))
-install_link: install_core
+install_link: install_cores
 	$(AT)$(foreach f,$(HdlActualTargets),\
 		 $(call MakeSymLink2,$(strip \
-                     $(HdlCoreInstallDir)/$(f)/$(Core)$(HdlBin)),$(strip \
-                     $(HdlCoreInstallDir)/$(f)),$(Top)$(HdlBin));)
+                     $(call HdlCoreInstallDir,$(word 1,$(HdlCores)))/$f/$(word 1,$(HdlCores))$(HdlBin)),$(strip \
+                     $(call HdlCoreInstallDir,$(word 1,$(HdlCores)))/$f),$(Top)$(HdlBin));)
 install: install_link
 endif # for links
 else

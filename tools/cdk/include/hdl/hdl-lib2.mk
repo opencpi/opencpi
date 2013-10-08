@@ -38,6 +38,7 @@
 # and can only build an implementation library for the core.
 
 # Refine the target list as appropriate for the tool
+$(call OcpiDbgVar,LibName)
 OutLibFile=$(OutDir)target-$(1)/$(call HdlToolLibraryFile,$(1),$(LibName))
 define DoLibTarget
 OutLibFiles+=$(call OutLibFile,$(1))
@@ -58,6 +59,7 @@ ifdef Imports
 $(OutLibFiles): $(ImportsDir)
 endif
 $(call OcpiDbgVar,OutLibFiles,Before all:)
+$(call OcpiDbgVar,LibName,Before all:)
 
 all: $(OutLibFiles)
 

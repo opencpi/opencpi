@@ -616,6 +616,19 @@ namespace OCPI {
 	  n++;
 	return n;
       }
+      const char *
+      ezxml_tag(ezxml_t xml) {
+	const char *name = ezxml_name(xml);
+	return name ? name : "";
+      }
+      const char *
+      checkTag(ezxml_t xml, const char *tag, const char *fmt, ...) {
+	va_list ap;
+	if (!strcasecmp(ezxml_tag(xml), tag))
+	  return NULL;
+	va_start(ap, fmt);
+	return evsprintf(fmt, ap);
+      }
     }
   }
 }

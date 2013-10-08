@@ -58,7 +58,7 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-import-cores.mk
 
 # These libraries may be order sensitive if they depend on each other
 # bsv is "leaf".
-Libs=bsv util util_virtex6 util_virtex5 util_stratix4 util_xilinx vendor_altera ocpi
+Libs=bsv util util_virtex6 util_virtex5 util_stratix4 util_xilinx vendor_altera ocpi platform unisim
 
 #LocalCores=xfft_v7_1 \
  temac_v6 \

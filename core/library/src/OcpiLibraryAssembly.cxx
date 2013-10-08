@@ -85,11 +85,11 @@ namespace OCPI {
 	if ((*pi)->m_name.empty()) {
 	  // Resolve empty port names to be unambiguous if possible
 	  for (unsigned n = 0; n < m_nPorts; n++, p++)
-	    if ((*pi)->m_provider && p->m_provider || !(*pi)->m_provider && !p->m_provider) {
+	    if ((*pi)->m_role.m_provider && p->m_provider || !(*pi)->m_role.m_provider && !p->m_provider) {
 	      if (found)
 		  throw OU::Error("The '%s' connection at instance '%s' is ambiguous: "
 				  " Port name must be specified.",
-				  (*pi)->m_provider ? "input" : "output",
+				  (*pi)->m_role.m_provider ? "input" : "output",
 				  m_instances[m_instance].m_name.c_str());
 	      // This is a mutable member of a const object.
 	      (*pi)->m_name = p->m_name;
@@ -98,7 +98,7 @@ namespace OCPI {
 	    }
 	  if (!found)
 	    throw OU::Error("There is no %s port for connection at instance '%s'.",
-			    (*pi)->m_provider ? "input" : "output",
+			    (*pi)->m_role.m_provider ? "input" : "output",
 			    m_instances[m_instance].m_name.c_str());
 	} else {
 	  for (unsigned n = 0; n < m_nPorts; n++, p++)
@@ -237,7 +237,7 @@ namespace OCPI {
       // Check for interface and connection compatibility.
       // We assume all implementations have the same protocol metadata
       //      unsigned nConns = m_connections.size();
-      for (OU::Assembly::ConnectionIter ci = m_connections.begin(); ci != m_connections.end(); ci++) {
+      for (OU::Assembly::ConnectionsIter ci = m_connections.begin(); ci != m_connections.end(); ci++) {
 	const OU::Assembly::Connection &c = *ci;
 	if (c.m_ports.size() == 2) {
 	  const OU::Implementation // implementations on both sides of the connection

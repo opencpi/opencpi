@@ -8,13 +8,16 @@ HostProcessor=`uname -m | tr A-Z a-z`
 if test -f /etc/redhat-release; then
   # redhat/centos is just based on the major release number,
   # with minor releases assumed to be binary compatible.
-  rhr=(`sed < /etc/redhat-release 's/^\(.\).*release \([0-9]\)\..*/\1 \2/' | tr A-Z a-z`)
-  echo info: 1"${rhr}"x 2"${rhr[*]}"x 3"${#rhr[*]}"x 1>&2
-  if test "${rhr}" = "" -o "${rhr[*]}" = "" -o "${#rhr[*]}" != 2; then
+  read v0 v1 <<EOF
+`sed < /etc/redhat-release 's/^\(.\).*release \([0-9]\)\..*/\1 \2/' | tr A-Z a-z`
+EOF
+#  rhr=(`sed < /etc/redhat-release 's/^\(.\).*release \([0-9]\)\..*/\1 \2/' | tr A-Z a-z`)
+# echo info: 1"${rhr}"x 2"${rhr[*]}"x 3"${#rhr[*]}"x 1>&2
+  if test "$v0" = "" -o "$v1" = ""; then
     echo Cannot parse redhat/centos release from /etc/redhat-release 1>&2
     exit 1
   fi
-  HostVersion=${rhr[0]}${rhr[1]}
+  HostVersion=$v0$v1
 elif test $HostSystem = darwin -a "`which sw_vers`" != ""; then
   HostSystem=macos
   HostVersion=`sw_vers -productVersion | sed 's/\.[0-9][0-9]*$//'`

@@ -659,7 +659,7 @@ namespace OCPI {
       }
       if (m_assembly.m_doneInstance != -1)
 	m_doneWorker = m_workers[m_assembly.m_doneInstance];
-      for (OU::Assembly::ConnectionIter ci = m_assembly.m_connections.begin();
+      for (OU::Assembly::ConnectionsIter ci = m_assembly.m_connections.begin();
 	   ci != m_assembly.m_connections.end(); ci++) {
 	const OU::Assembly::Connection &c = *ci;
 	OA::Port &apiPort =

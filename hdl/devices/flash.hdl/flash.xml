@@ -1,4 +1,4 @@
-<HdlImplementation Name="flash" Language="Verilog" Pattern="%w%M%0_">
+<HdlDevice Name="flash" Language="Verilog" Pattern="%w%M%0_">
   <ComponentSpec Name="flash">
     <Properties>
       <property name="dramStatus" readable="true"/>
@@ -48,6 +48,6 @@
   <Signal Output="flash_wp_n"/>
   <Signal Output="flash_rst_n"/>
   <Signal Output="flash_adv_n"/>
-</HdlImplementation>
+</HdlDevice>
 
 

@@ -34,10 +34,7 @@
 #
 ########################################################################### #
 
-# For which containers should the runtime xml be generated?
-# These (for now) just xml files containing HdlContainer elements.
-Containers=testddcCont
 # We know that this app does not fit on the ml555
 ExcludeTargets=icarus
 HdlOnlyPlatforms=schist
-include $(OCPI_CDK_DIR)/include/hdl/hdl-app.mk
+include $(OCPI_CDK_DIR)/include/hdl/hdl-assy.mk

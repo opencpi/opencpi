@@ -792,7 +792,9 @@ wire [ 0: 0] sma1_in_2_app_out_SThreadBusy;
 
   // Instantiate the wip-compliant app
   ocpi_app app(
-  .wci_Clk(CLK),
+  .wci0_Clk(CLK),
+  .wci1_Clk(CLK),
+  .wci2_Clk(CLK),
   .wci0_MReset_n(RST_N_rst_2),
   .wci0_MAddr(wci_s_2_MAddr),
   .wci0_MAddrSpace(wci_s_2_MAddrSpace),

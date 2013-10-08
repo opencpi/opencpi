@@ -303,6 +303,8 @@ XstMakeScr=(echo set -xsthdpdir . $(and $(XstNeedIni),-xsthdpini $(XstIniFile));
         $(if $(findstring $t,$(HdlAllFamilies)),\
            $(firstword $(HdlTargets_$(t))),$t))) \
 
+# -ifn $(XstPrjFile) -ofn $(Core).ngc -top $(Top)
+
 XstOptions +=\
  -ifn $(XstPrjFile) -ofn $(Core).ngc -top $(Top) \
  -p $(or $(HdlExactPart),$(HdlTarget))\
@@ -355,9 +357,10 @@ HdlToolCompile=\
   $(XstMakeLso)\
   $(and $(XstNeedIni),$(XstMakeIni)) \
   $(XstMakeScr)\
-  $(call XilinxInit); xst -ifn $(XstScrFile) && touch $(LibName) \
+  $(call XilinxInit); xst -ifn $(XstScrFile) \
   $(and $(PlatformCores), && mv $(Core).ngc temp.ngc && ngcbuild -sd .. temp.ngc $(Core).ngc)
 
+#  $(call XilinxInit); xst -ifn $(XstScrFile) && touch $(LibName) \
 # optional creation of these doesn't work...
 #    $(XstMakeLso) $(XstMakeIni))\
 
@@ -365,7 +368,7 @@ HdlToolCompile=\
 # Plus we create the edif all the time...
 HdlToolPost=\
   if grep -q 'Number of errors   :    0 ' $(HdlLog); then \
-    ($(call XilinxInit); ngc2edif -w $(Core).ngc) >> $(HdlLog) 2>&1 ; \
+    ($(call XilinxInit); ngc2edif -log ngc2edif-$(Top).log -w $(Top).ngc) >> $(HdlLog) 2>&1 ; \
     HdlExit=0; \
   else \
     HdlExit=1; \

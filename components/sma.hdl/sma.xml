@@ -19,7 +19,7 @@
   </ControlInterface>
   <StreamInterface Name="in" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"/>
   <StreamInterface Name="out"  ImpreciseBurst="True" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"/>
-  <MessageInterface Name="message"  ByteWidth="8" PreciseBurst="True" MFlagWidth="32" DataWidth="32" TalkBack="true" Bidirectional="true" MaxMessageValues="8193" />
+  <MessageInterface Name="message"  ByteWidth="8" PreciseBurst="True" MFlagWidth="32" DataWidth="32" TalkBack="true" Bidirectional="true" MaxMessageValues="8193" master='true'/>
 </HdlImplementation>
 
 

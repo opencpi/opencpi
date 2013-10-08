@@ -211,9 +211,9 @@ namespace
     va_list ap;
     va_start(ap, fmt);
     std::string s;
-    OU::formatStringAddV(s, fmt, ap);
+    OU::formatAddV(s, fmt, ap);
     va_end(ap);
-    OU::formatStringAdd(s, ": OpenCL error: %s [%d]", ocl_strerror(errnum), errnum);
+    OU::formatAdd(s, ": OpenCL error: %s [%d]", ocl_strerror(errnum), errnum);
     throw OU::Error("Ocl Error: %s", s.c_str());
   }
 

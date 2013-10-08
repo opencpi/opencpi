@@ -54,71 +54,89 @@ OBJ:=$(HdlBin)
 # We don't build independent standalone worker binaries (no artifact file here)
 ArtifactFile=
 
-HdlVerilogSuffix:=.v
-HdlVerilogIncSuffix:=.vh
-HdlVHDLSuffix:=.vhd
-HdlVHDLIncSuffix:=.vhd
+#HdlVerilogSuffix:=.v
+#HdlVerilogIncSuffix:=.vh
+#HdlVHDLSuffix:=.vhd
+#HdlVHDLIncSuffix:=.vhd
 HdlSkelSuffix=_skel$(HdlSourceSuffix)
 HdlDefsSuffix=_defs$(HdlIncSuffix)
+HdlOtherDefsSuffix=_defs$(HdlOtherIncSuffix)
 HdlImplSuffix=_impl$(HdlIncSuffix)
-ifneq ($(word 2,$(Workers)),)
-$(error Only one HDL worker can be built.  Workers is: $(Workers))
-endif
+#ifneq ($(word 2,$(Workers)),)
+#$(error Only one HDL worker can be built.  Workers is: $(Workers))
+#endif
 # This is REDUNDANT with what is in xxx-worker.mk, but we need it to figure out the language below.
-ifndef Worker
-Worker=$(CwdName)
-Workers=$(Worker)
-endif
+#ifndef Worker
+#Worker=$(CwdName)
+#Workers=$(Worker)
+#endif
 
 ############
 # We need to figure out the language and the file suffixes before calling xxx-worker
 # 
-ifeq ($(Worker_$(Worker)_xml),)
-Worker_$(Worker)_xml=$(Worker).xml
-HdlXmlFile=$(Worker).xml
-endif
-HdlXmlFile=$(Worker_$(Worker)_xml)
-$(call OcpiDbgVar,HdlXmlFile)
-$(call OcpiDbgVar,Worker)
-$(call OcpiDbgVar,Worker_$(Worker)_xml)
+#ifeq ($(Worker_$(Worker)_xml),)
+#Worker_$(Worker)_xml=$(Worker).xml
+#HdlXmlFile=$(Worker).xml
+#endif
+#HdlXmlFile=$(Worker_$(Worker)_xml)
+#$(call OcpiDbgVar,HdlXmlFile)
+#$(call OcpiDbgVar,Worker)
+#$(call OcpiDbgVar,Worker_$(Worker)_xml)
 
 #ifeq ($(realpath $(HdlXmlFile)),)
 #  $(error Missing XML implementation file: $(HdlXmlFile))
 #endif
-ifndef HdlLanguage
-  ifeq ($(HdlMode),assembly)
-    HdlLanguage:=verilog
-  else
-    # Ugly grab of the language attribute from the XML file
-    HdlLanguage:=$(and $(wildcard $(HdlXmlFile)),$(shell grep -i 'language *=' $(HdlXmlFile) | sed "s/^.*[lL]anguage= *['\"]\\([^\"']*\\).*$$/\1/" | tr A-Z a-z))
-    ifdef Language
-      ifdef HdlLanguage
-        ifneq ($(call ToLower,$(Language)),$(HdlLanguage))
-          $(error The "Language" setting in the Makefile ($(Language)) is inconsistent with the setting in the XML/OWD file (file: $(HdlXmlFile), setting: $(HdlLanguage)))
-        endif # error check
-      else
-        HdlLanguage:= $(call ToLower,$(Language))
-      endif # found language attribute
-    else
-      ifndef HdlLanguage
-        HdlLanguage:=vhdl
-      endif
-    endif
-  endif
-endif # HdlLanguage not initially defined (probably true)
+#ifndef HdlLanguage
+#  ifeq ($(HdlMode),assemblyxxxx)
+#    HdlLanguage:=verilog
+#  else
+#    # Ugly grab of the language attribute from the XML file
+#    HdlLanguage:=$(and $(wildcard $(HdlXmlFile)),$(shell grep -i 'language *=' $(HdlXmlFile) | sed "s/###########^.*[lL]anguage= *['\"]\\([^\"']*\\).*$$/\1/" | tr A-Z a-z))
+#    ifdef Language
+#      ifdef HdlLanguage
+#        ifneq ($(call ToLower,$(Language)),$(HdlLanguage))
+#          $(error The "Language" setting in the Makefile ($(Language)) is inconsistent with the settin#g in the XML/OWD file (file: $(HdlXmlFile), setting: $(HdlLanguage)))
+#        endif # error check
+#      else
+#        HdlLanguage:= $(call ToLower,$(Language))
+#      endif # found language attribute
+#    else
+#      ifndef HdlLanguage
+#        HdlLanguage:=vhdl
+#      endif
+#    endif
+#  endif
+#endif # HdlLanguage not initially defined (probably true)
+#
+#$(call OcpiDbgVar,HdlLanguage)
+#ifeq ($(HdlLanguage),verilog)
+#HdlSourceSuffix:=$(HdlVerilogSuffix)
+#HdlIncSuffix:=$(HdlVerilogIncSuffix)
+#else
+#HdlSourceSuffix:=$(HdlVHDLSuffix)
+#HdlIncSuffix:=$(HdlVHDLIncSuffix)
+#endif
+#$(call OcpiDbgVar,HdlSourceSuffix)
 
-ifeq ($(HdlLanguage),verilog)
-HdlSourceSuffix:=$(HdlVerilogSuffix)
-HdlIncSuffix:=$(HdlVerilogIncSuffix)
+ifndef Tops
+ifeq ($(HdlLanguage),vhdl)
+Tops=$(Worker) $(Worker)_rv
 else
-HdlSourceSuffix:=$(HdlVHDLSuffix)
-HdlIncSuffix:=$(HdlVHDLIncSuffix)
+Tops=$(Worker)
 endif
-
+HdlCores=$(Tops)
+endif
+ifdef HdlToolRealCore
+WkrExportNames=$(Tops:%=%$(BF))
+endif
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk
 $(call OcpiDbgVar,Worker)
-ifndef Core
+ifndef HdlCores
+ifdef Core
+HdlCores:=$(Core)
+else
 Core=$(Worker)
+endif
 endif
 
 # This is the utility program for hdl
@@ -138,20 +156,31 @@ ImplXmlFile=$(firstword $(ImplXmlFiles))
 #$(HdlDefsSuffix))
 RefDefsFile=$(Workers:%=$(GeneratedDir)/%_defs.vh)
 DefsFile=$(Workers:%=$(GeneratedDir)/%$(HdlDefsSuffix))
+WDefsFile=$(Workers:%=$(GeneratedDir)/%$(HdlOtherDefsSuffix))
+$(WDefsFile): $(Worker_$(Worker)_xml) | $(GeneratedDir)
+	$(AT)echo Generating the opposite language definition file: $@
+	$(AT)$(OcpiGen) $(and $(Package),-p $(Package))  \
+	  $(and $(HdlPlatform),-P $(HdlPlatform)) \
+	  $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) \
+	  -w $<
 
-$(sort $(RefDefsFile) $(DefsFile)): $(Worker_$(Worker)_xml) | $(GeneratedDir)
+$(DefsFile): $(Worker_$(Worker)_xml) | $(GeneratedDir)
 	$(AT)echo Generating the definition file: $@
-	$(AT)$(OcpiGen) $(and $(Package),-p $(Package)) -w $<
-	$(AT)$(OcpiGen) $(and $(Package),-p $(Package)) -d $<
+	$(AT)$(OcpiGen) $(and $(Package),-p $(Package)) \
+	   $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) \
+	   $(and $(HdlPlatform),-P $(HdlPlatform)) \
+	   -d $<
 
-$(ImplHeaderFiles): $(DefsFile)
+$(ImplHeaderFiles): $(DefsFile) $(WDefsFile) $(RefDefsFile)
 
 ifeq ($(HdlLanguage),vhdl)
   $(call OcpiDbgVar,GeneratedSourceFiles,before vhdl)
   GeneratedSourceFiles+=$(DefsFile) $(ImplHeaderFiles)
   $(call OcpiDbgVar,GeneratedSourceFiles,after vhdl)
-  LibName=$(Worker)
+WkrExportNames=$(Worker)$(BF) $(Worker)_rv$(BF)
+all: 
 endif
+LibName=$(Worker)
 
 ################################################################################
 # Include this to build the core or the library
@@ -179,12 +208,17 @@ $(GenDir):
 # Generate the stub files by providing a link from gen/worker.v to gen/worker_defs.v
 #$(HdlSourceSuffix))
 $(call OcpiDbgVar,DefsFiles)
-$(GenDir)/$(Worker)$(HdlVerilogSuffix): $(RefDefsFile) | $(GenDir)
-	$(AT)echo Creating link from $(GenDir) to $(RefDefsFile) to expose the stub for worker "$(Worker)" .
-	$(AT)$(call MakeSymLink2,$(RefDefsFile),$(GenDir),$(Worker)$(HdlVerilogSuffix))
+$(GenDir)/$(Worker)$(HdlSourceSuffix): $(DefsFile) | $(GenDir)
+	$(AT)echo Creating link from $@ to $(DefsFile) to expose the stub for worker "$(Worker)".
+	$(AT)$(call MakeSymLink2,$(DefsFile),$(GenDir),$(Worker)$(HdlSourceSuffix))
+
+$(GenDir)/$(Worker)$(HdlOtherSourceSuffix): $(WDefsFile) | $(GenDir)
+	$(AT)echo Creating link from $@ to $(WDefsFile) to expose the other-language stub for worker "$(Worker)".
+	$(AT)$(call MakeSymLink2,$(WDefsFile),$(GenDir),$(Worker)$(HdlOtherSourceSuffix))
 
 $(call OcpiDbg,Before all: "$(GenDir)/$(Worker)$(HdlSourceSuffix)")
-all: $(GenDir)/$(Worker)$(HdlVerilogSuffix)
+all: $(GenDir)/$(Worker)$(HdlSourceSuffix) $(GenDir)/$(Worker)$(HdlOtherSourceSuffix)
+
 endif
 endif # if not an assembly
 

@@ -773,7 +773,14 @@ module mkOCApp4B(RST_N_rst_0,
 
   // Instantiate the wip-compliant app
   ocpi_app app(
-  .wci_Clk(CLK),
+  .wci0_Clk(CLK),
+  .wci1_Clk(CLK),
+  .wci2_Clk(CLK),
+  .wci3_Clk(CLK),
+  .wci4_Clk(CLK),
+  .wci5_Clk(CLK),
+  .wci6_Clk(CLK),
+  .wci7_Clk(CLK),
   .wci0_MReset_n(RST_N_rst_0),
   .wci0_MAddr(wci_s_0_MAddr),
   .wci0_MAddrSpace(wci_s_0_MAddrSpace),

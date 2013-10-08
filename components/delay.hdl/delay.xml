@@ -33,7 +33,7 @@
   </ControlInterface>
   <StreamInterface Name="in" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
   <StreamInterface Name="out" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
-  <MemoryInterface DataWidth="128" ByteWidth="8" MemoryWords="4g" MaxBurstLength="4k-1" PreciseBurst="true" WriteDataFlowControl="true"/>
+  <MemoryInterface DataWidth="128" ByteWidth="8" MemoryWords="4g" MaxBurstLength="4k-1" PreciseBurst="true" WriteDataFlowControl="true" master='true'/>
 </HdlImplementation>
 
 

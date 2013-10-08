@@ -498,7 +498,7 @@ isXMLDocument (std::istream * istr)
 }
 
 void 
-formatStringAddV(std::string &out, const char *fmt, va_list ap) {
+formatAddV(std::string &out, const char *fmt, va_list ap) {
   char *cp;
   vasprintf(&cp, fmt, ap);
   assert(cp); // or better generic memory exception
@@ -511,7 +511,7 @@ formatString(std::string &out, const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   out.clear();
-  formatStringAddV(out, fmt, ap);
+  formatAddV(out, fmt, ap);
   va_end(ap);
 }
 void 
@@ -519,14 +519,14 @@ format(std::string &out, const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   out.clear();
-  formatStringAddV(out, fmt, ap);
+  formatAddV(out, fmt, ap);
   va_end(ap);
 }
 void 
-formatStringAdd(std::string &out, const char *fmt, ...) {
+formatAdd(std::string &out, const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
-  formatStringAddV(out, fmt, ap);
+  formatAddV(out, fmt, ap);
   va_end(ap);
 }
 
@@ -598,11 +598,17 @@ const char *
 esprintf(const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
+  const char *err = evsprintf(fmt, ap);
+  va_end(ap);
+  return err;
+}
+
+const char *
+evsprintf(const char *fmt, va_list ap) {
   char *buf;
   vasprintf(&buf, fmt, ap);
-  va_end(ap);
   return buf;
 }
 
-  }
+}
 }

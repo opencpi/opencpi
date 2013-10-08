@@ -388,7 +388,7 @@ namespace OCPI {
 	if (*cp)
 	  name += pciName;
 	else
-	  OU::formatStringAdd(name, "0000:%02d:00.0", atoi(pciName));
+	  OU::formatAdd(name, "0000:%02d:00.0", atoi(pciName));
 
 	void *bar0 = 0, *bar1 = 0;
 	ocpi_pci_t pci;

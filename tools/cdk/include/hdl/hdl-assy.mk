@@ -24,7 +24,7 @@
 # This makefile is for building assemblies and bitstreams.
 
 HdlMode:=assembly
-include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
+include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 # This is only checked with ifdef, and otherwise not used.
 # It is needed in generic code where hdlmode is not known
 Worker:=$(CwdName)
@@ -92,7 +92,9 @@ $(CoreBlackBoxFile): $$(DefsFile) | $(OutDir)gen
 	$(AT)$(call MakeSymLink2,$(DefsFile),$(GeneratedDir),$(notdir $(CoreBlackBoxFile)))
 
 # Generate the source code for this "assembly worker" implementation file.
+$(call OcpiDgbVar,$(HdlSourceSuffix))
 ImplFile:=$(GeneratedDir)/$(Worker)_assy$(HdlSourceSuffix)
+$(call OcpiDbgVar,ImplFile)
 AssyWorkersFile:=$(GeneratedDir)/$(CwdName).wks
 # This is overridden for the container and for the bitstream
 ImplWorkersFiles=$(AssyWorkersFile)
@@ -110,7 +112,7 @@ SourceFiles:=$(ImplFile)
 # When parsing the HdlAssembly file, we need access to the xml from the 
 # workers in the assembly, both at the implementation level and the spec level
 override XmlIncludeDirs += $(call HdlXmlComponentLibraries,$(ComponentLibraries))
-#$(info XID: $(XmlIncludeDirs))
+#$(info XID: $(XmlIncludeDirs):$(ComponentLibraries))
 include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
 
 ################################################################################

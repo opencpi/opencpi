@@ -50,10 +50,77 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 Model=hdl
 
 ################################################################################
+# Determine the Worker Name very early, and the name of its XML file
+ifneq ($(word 2,$(Workers)),)
+$(error Only one HDL worker can be built.  Workers is: $(Workers))
+endif
+# This is REDUNDANT with what is in xxx-worker.mk, but we need it to figure out the language below.
+ifndef Worker
+Worker=$(CwdName)
+Workers=$(Worker)
+endif
+ifeq ($(Worker_$(Worker)_xml),)
+Worker_$(Worker)_xml=$(Worker).xml
+HdlXmlFile=$(Worker).xml
+endif
+HdlXmlFile=$(Worker_$(Worker)_xml)
+$(call OcpiDbgVar,HdlXmlFile)
+$(call OcpiDbgVar,Worker)
+$(call OcpiDbgVar,Worker_$(Worker)_xml)
+
+################################################################################
+# Determine the language and suffix, which might mean looking in the xml file
+#
+HdlVerilogSuffix:=.v
+HdlVerilogIncSuffix:=.vh
+HdlVHDLSuffix:=.vhd
+HdlVHDLIncSuffix:=.vhd
+# 
+ifndef HdlLanguage
+    # Ugly grab of the language attribute from the XML file
+  HdlLanguage:=$(call ToLower,$(and $(wildcard $(HdlXmlFile)),$(shell grep -i 'language *=' $(HdlXmlFile) | sed "s/^.*[lL]anguage= *['\"]\\([^\"']*\\).*$$/\1/")))
+  ifdef Language
+    ifdef HdlLanguage
+      ifneq ($(call ToLower,$(Language)),$(HdlLanguage))
+        $(error The "Language" setting in the Makefile ($(Language)) is inconsistent with the setting in the XML/OWD file (file: $(HdlXmlFile), setting: $(HdlLanguage)))
+      endif # error check
+    else
+      HdlLanguage:= $(call ToLower,$(Language))
+    endif # found language attribute
+  else ifndef HdlLanguage
+    ifeq ($(HdlMode),assembly)
+      HdlLanguage:=verilog
+    else ifeq ($(findstring $(HdlMode),library core platform),)
+      $(error No language specified for this worker ($(Worker)));
+    endif
+  endif
+endif # HdlLanguage not initially defined (probably true)
+
+$(call OcpiDbgVar,HdlLanguage)
+ifeq ($(HdlLanguage),verilog)
+HdlSourceSuffix:=$(HdlVerilogSuffix)
+HdlIncSuffix:=$(HdlVerilogIncSuffix)
+HdlOtherSourceSuffix:=$(HdlVHDLSuffix)
+HdlOtherIncSuffix:=$(HdlVHDLIncSuffix)
+else
+HdlSourceSuffix:=$(HdlVHDLSuffix)
+HdlIncSuffix:=$(HdlVHDLIncSuffix)
+HdlOtherSourceSuffix:=$(HdlVerilogSuffix)
+HdlOtherIncSuffix:=$(HdlVerilogIncSuffix)
+endif
+$(call OcpiDbgVar,HdlSourceSuffix)
+
+################################################################################
 # Add the default libraries
 # FIXME: when tools don't really elaborate or search, capture the needed libraries for later
 # FIXME: but that still means a flat library space...
 # Note this is evaluted in a context when HdlTarget is set, but can also just supply it as $1
+ifdef Libraries
+override HdlLibraries += $(Libraries)
+# This is for the convenience of model-independent library handling
+endif
+override Libraries := $(HdlLibraries)
+
 HdlLibrariesInternal = \
   $(foreach l,$(call Unique,\
                 $(HdlLibraries)\
@@ -74,7 +141,8 @@ HdlLibrariesInternal = \
 
 ################################################################################
 # The generic hdl compile that depends on HdlToolCompile
-HdlName=$(if $(findstring library,$(HdlMode)),$(LibName),$(Core))
+HdlName=$(or $(Core),$(LibName))
+# if $(findstring $(HdlMode),library),$(LibName),$(Core))
 HdlLog=$(HdlName)-$(HdlToolSet).out
 HdlTime=$(HdlName)-$(HdlToolSet).time
 HdlCompile=\
@@ -306,13 +374,12 @@ ifneq ($(HdlMode),worker)
 # In all non-worker cases, if SourceFiles is not specified in the Makefile,
 # we look for any relevant
 $(call OcpiDbgVar,SourceFiles,Before searching: )
-ifndef SourceFiles
-CompiledSourceFiles:= $(wildcard *.[vV]) $(wildcard *.vhd) $(wildcard *.vhdl)
-$(call OcpiDbgVar,CompiledSourceFiles)
+ifdef SourceFiles
+AuthoredSourceFiles:= $(SourceFiles)
 else
-CompiledSourceFiles:= $(SourceFiles)
+AuthoredSourceFiles:= $(wildcard *.[vV]) $(wildcard *.vhd) $(wildcard *.vhdl)
 endif
-$(call OcpiDbgVar,CompiledSourceFiles,After searching: )
+$(call OcpiDbgVar,AuthoredSourceFiles,After searching: )
 endif
 
 ifndef HdlInstallDir

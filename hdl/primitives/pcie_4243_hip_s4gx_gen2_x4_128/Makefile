@@ -1,4 +1,3 @@
-Core=pcie_4243_hip_s4gx_gen2_x4_128
 Top=pcie_hip_s4gx_gen2_x4_128
 ExcludeTargets=
 OnlyTargets=stratix4

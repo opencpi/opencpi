@@ -13,7 +13,7 @@ if [[ $# < 4 ]]; then
     exit 1
 fi
 if [[ $5 == "" ]]; then
-    echo "No ESN found/specified in config file.  Can't load bitstream automatically." 1>&2
+    echo "No ESN found/specified in config file (system.xml).  Can't load bitstream automatically." 1>&2
     exit 1
 fi
 if test -x loadBitStream_$3; then

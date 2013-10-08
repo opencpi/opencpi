@@ -2,10 +2,13 @@
 export OCPI_OUT_DIR=target-$OCPI_TARGET_HOST
 # break out the target spec if not done
 if test "$OCPI_TARGET_OS" = ""; then
-  tgt=(`echo $OCPI_TARGET_HOST | sed 's/-/ /g'`)
-  export OCPI_TARGET_OS=${tgt[0]}
-  export OCPI_TARGET_OS_VERSION=${tgt[1]}
-  export OCPI_TARGET_ARCH=${tgt[2]}
+# tgt=(`echo $OCPI_TARGET_HOST | sed 's/-/ /g'`)
+  read o v p <<EOF
+`echo $OCPI_TARGET_HOST | sed 's/-/ /g'`
+EOF
+  export OCPI_TARGET_OS=$o
+  export OCPI_TARGET_OS_VERSION=$v
+  export OCPI_TARGET_ARCH=$p
 fi
 if test "$OCPI_OMNI_DIR" != ""; then
   export OCPI_OMNI_BIN_DIR=$OCPI_OMNI_DIR/$OCPI_TARGET_HOST/bin

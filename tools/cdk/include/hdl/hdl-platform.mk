@@ -39,20 +39,28 @@
 # optional elements of the platform).
 
 HdlMode:=platform
-include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
+# Force the target platform before hdl-pre.mk
+include $(OCPI_CDK_DIR)/include/util.mk
 override HdlPlatform:=$(CwdName)
-Worker:=$(CwdName)
-HdlExactPart:=$(HdlPart_$(CwdName))
-HdlPart:=$(call HdlGetPart,$(CwdName))
+include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
+HdlExactPart:=$(HdlPart_$(Worker))
+HdlPart:=$(call HdlGetPart,$(Worker))
 $(call OcpiDbgVar,HdlPart)
+$(call OcpiDbgVar,Worker)
+$(call OcpiDbgVar,LibName)
+$(call OcpiDbgVar,Core)
+$(call OcpiDbgVar,HdlCores)
+HdlCores=$(HdlPlatform)
 override HdlTargets:=$(HdlPart)
 override OnlyTargets:=$(HdlPart)
 $(call OcpiDbgVar,HdlTargets,After HdlGetPart )
-include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
-LibName=$(CwdName)
-Core=$(CwdName)
-HdlPlatform:=$(CwdName)
-HdlTarget:=$(HdlActualTarget)
+LibName=$(Worker)
+Core=$(Worker)
+HdlTargets:=$(HdlActualTarget)
+$(call OcpiDbgVar,HdlTarget)
+$(call OcpiDbgVar,HdlTargets)
+$(call OcpiDbgVar,HdlActualTarget)
+$(call OcpiDbgVar,LibName)
 ifndef Top
 Top=fpgaTop
 endif

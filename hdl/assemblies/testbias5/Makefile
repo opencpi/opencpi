@@ -34,10 +34,5 @@
 #
 ########################################################################### #
 
-# Which component libraries should be referenced to build this app?
-Libraries=bsv util
-# For which containers should the runtime xml be generated?
-# These (for now) just xml files containing HdlContainer elements.
 Container=mkOCApp-2sma-5w.v
-Containers=testbiasCont5
-include $(OCPI_CDK_DIR)/include/hdl/hdl-app.mk
+include $(OCPI_CDK_DIR)/include/hdl/hdl-assy.mk

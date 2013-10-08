@@ -329,12 +329,13 @@ namespace OCPI {
       void
 	formatString(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
 	format(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
-	formatStringAdd(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
-	formatStringAddV(std::string &out, const char *fmt, va_list ap);
+	formatAdd(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
+	formatAddV(std::string &out, const char *fmt, va_list ap);
       // Return an error string (caller can throw if desired)
       const char
 	*file2String(std::string &out, const char *file, char replaceNewline = 0),
 	*string2File(const std::string &in, const char *file),
+	*evsprintf(const char *fmt, va_list ap),
 	*esprintf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 
 

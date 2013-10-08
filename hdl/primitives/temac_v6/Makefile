@@ -1,4 +1,3 @@
-Core=temac_v6
 Top=v6_emac_v1_3_block
 ExcludeTargets=
 OnlyTargets=virtex6

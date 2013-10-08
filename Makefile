@@ -101,8 +101,8 @@ PACKAGES += core/sca/srpl
 endif
 
 PACKAGES += tools/local/binder tools/local/tester
-PACKAGES += tools/cdk/cdkutils
-PACKAGES += tools/cdk/ocpigen
+PACKAGES += tools/cdkutils
+PACKAGES += tools/ocpigen
 PACKAGES += tools/cdk/ocpidds
 # if we don't have opencl and we are building statically, don't bother with this
 ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
@@ -151,8 +151,8 @@ ALLPACKAGES = \
 	tests/framework/framework \
 	tools/local/binder \
 	tools/local/tester \
-	tools/cdk/cdkutils \
-	tools/cdk/ocpigen \
+	tools/cdkutils \
+	tools/ocpigen \
 	tools/cdk/ocpidds \
 	tools/cdk/ocpiocl \
 	tools/cdk/ocpixm \

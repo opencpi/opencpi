@@ -10,6 +10,13 @@ entity decoder is
       done                   : in bool_t := btrue;
       error                  : in bool_t := bfalse;
       resp                   : out ocp.SResp_t;
+      busy                   : out bool_t;
+      control_op             : out control_op_t;
+      state                  : out state_t;
+      is_operating           : out bool_t;  -- just a convenience for state = operating_e
+      abort_control_op       : out bool_t;
+      is_big_endian          : out bool_t;   -- for runtime dynamic endian
+      -- From here down, only for properties
       write_enables          : out bool_array_t(properties'range);
       read_enables           : out bool_array_t(properties'range);
       offsets                : out offset_a_t(properties'range);
@@ -17,45 +24,25 @@ entity decoder is
       hi32                   : out bool_t;
       nbytes_1               : out byte_offset_t;
       data_outputs           : out data_a_t(properties'range);
-      control_op             : out control_op_t;
       is_read                : out bool_t;
       is_write               : out bool_t;
-      raw_offset             : out unsigned (worker.decode_width -1 downto 0);
-      state                  : out state_t;
-      is_operating           : out bool_t;  -- just a convenience for state = operating_e
-      abort_control_op       : out bool_t;
-      is_big_endian          : out bool_t   -- for runtime dynamic endian
+      raw_offset             : out unsigned (worker.decode_width -1 downto 0)
       );
 end entity;
 
 architecture rtl of decoder is
+  signal my_reset        : Bool_t;      -- positive logic version
+  signal my_error        : Bool_t;      -- immediate error detected here (not from worker)
+  signal my_config_error : Bool_t;      -- immediate config error
   -- State for decoded accesses
+  signal access_in       : access_t;
   signal my_access       : access_t;     -- combi or register as appropriate
   signal my_access_r     : access_t;     -- registered access in progress when not immediate
-  signal my_is_read      : bool_t;
-  signal my_is_write     : bool_t;
   -- State for control ops
   signal control_op_in   : control_op_t; -- combi input decode
   signal my_control_op   : control_op_t; -- combi or register as appropriate
   signal my_control_op_r : control_op_t; -- registered op when not immediately finished
-  -- State for write data
-  signal my_data         : word_t;       -- combi or register as appropriate
-  signal my_data_r       : word_t;       -- registered data when delayed
-  -- state for access qualifiers for config read or write
-  signal my_nbytes_1     : byte_offset_t;
-  signal my_nbytes_1_r   : byte_offset_t;
-  signal offset_in       : unsigned (worker.decode_width -1 downto 0);
-  signal my_offset       : unsigned (worker.decode_width -1 downto 0);
-  signal my_offset_r     : unsigned (worker.decode_width -1 downto 0);
-  signal my_hi32         : bool_t;
-  signal my_hi32_r       : bool_t;
-
-  signal my_write_enables, my_read_enables : bool_array_t(properties'range);
-  type my_offset_a_t is array(properties'range) of unsigned (worker.decode_width -1 downto 0);
-  signal my_offsets      : my_offset_a_t;
   signal my_state_r      : state_t;
-  signal my_reset        : Bool_t;      -- positive logic version
-  signal my_error        : Bool_t;      -- immediate error detected here (not from worker)
   signal next_op         : std_logic;
   signal ok_op           : std_logic;
   signal state_pos       : natural;
@@ -87,6 +74,27 @@ architecture rtl of decoder is
       when no_op_e        => return 7;
     end case;
   end get_op_pos;
+
+  --------------------------------------------------------------------------------
+  -- From here down, only for properties
+  --------------------------------------------------------------------------------
+  -- State for write data
+  signal my_data         : word_t;       -- combi or register as appropriate
+  signal my_data_r       : word_t;       -- registered data when delayed
+  -- state for access qualifiers for config read or write
+  signal my_is_read      : bool_t;
+  signal my_is_write     : bool_t;
+  signal my_nbytes_1     : byte_offset_t;
+  signal my_nbytes_1_r   : byte_offset_t;
+  signal offset_in       : unsigned (worker.decode_width -1 downto 0);
+  signal my_offset       : unsigned (worker.decode_width -1 downto 0);
+  signal my_offset_r     : unsigned (worker.decode_width -1 downto 0);
+  signal my_hi32         : bool_t;
+  signal my_hi32_r       : bool_t;
+
+  signal my_write_enables, my_read_enables : bool_array_t(properties'range);
+  type my_offset_a_t is array(properties'range) of unsigned (worker.decode_width -1 downto 0);
+  signal my_offsets      : my_offset_a_t;
   -- convert byte enables to low order address bytes
   function be2offset(input: in_t) return byte_offset_t is
     variable byte_en : std_logic_vector(input.MByteEn'range) := input.MByteEn; -- avoid pedantic error
@@ -118,70 +126,72 @@ architecture rtl of decoder is
     return result;
   end any_true;
 begin
-  -- output ports, based on internally generated signals that are also used internally
-  write_enables    <= my_write_enables;
-  read_enables     <= my_read_enables;
-  control_op       <= my_control_op;
-  state            <= my_state_r;
-  is_operating     <= to_bool(my_state_r = operating_e);
-  nbytes_1         <= my_nbytes_1;
-  is_big_endian    <= to_bool(ocp_in.MFlag(1) = '1');
-  abort_control_op <= to_bool(ocp_in.MFlag(0) = '1');
-  hi32             <= my_hi32;
-  -- combi signals from inputs
-  offset_in        <= unsigned(ocp_in.MAddr(worker.decode_width-1 downto 2)) & be2offset(ocp_in);
-  control_op_in    <= ocpi.wci.to_control_op(ocp_in.MAddr(4 downto 2));
-
-  -- the control op to the worker is either combinatorial or registered depending
-  -- on whether it is delayed by the worker
-  my_control_op <= no_op_e when my_access /= control_e else
-                   control_op_in when my_control_op_r = no_op_e else
-                   my_control_op_r;
-
-  -- my_access and my_data is combinatorial or registered depending on whether it is delayed
-  -- by the worker
---  my_access   <= decode_access(ocp_in)          when my_access_r = none_e else my_access_r;
+  --------------------------------------------------------------------------------
+  -- Combi signals and outputs not specific to control ops or properties
+  --------------------------------------------------------------------------------
+  my_reset <= not ocp_in.MReset_n;
+  access_in <= decode_access(ocp_in);
+  -- ****** For now the OCCP cannot tolerate immediate responses, so we actually
+  -- ****** ALWAYS delay for at least one clock.  
+  --  my_access   <= access_in when my_access_r = none_e else my_access_r;
   my_access   <= my_access_r;
-  my_data     <= ocp_in.MData                   when my_access_r = none_e else my_data_r;
-  my_nbytes_1 <= num_bytes_1(ocp_in)            when my_access_r = none_e else my_nbytes_1_r;
-  my_offset   <= offset_in                      when my_access_r = none_e else my_offset_r;
-  raw_offset  <= my_offset - worker.raw_property_base;
-  my_hi32     <= to_bool(ocp_in.MAddr(2) = '1') when my_access_r = none_e else my_hi32_r;
-  my_is_read  <= to_bool(my_access = read_e);
-  is_read     <= to_bool(my_is_read and my_offset >= worker.raw_property_base);
-  my_is_write <= to_bool(my_access = write_e);
-  is_write     <= to_bool(my_is_write and my_offset >= worker.raw_property_base);
-  -- our own error checking (not the worker's)
-  state_pos <= get_state_pos(my_state_r);
-  op_pos    <= get_op_pos(my_control_op);
-  next_op   <= next_ops(state_pos)(op_pos);
-  ok_op     <= worker.allowed_ops(op_pos);
-  my_error  <= to_bool(my_access = error_e or
-                      (my_access = read_e and done and not any_true(my_read_enables)) or
-                      (my_access = write_e and done and not any_true(my_write_enables)) or
-                      (my_access = control_e and (ok_op = '0' or next_op = '0')));
-
   -- The response output is combinatorial if done or error is set.
   resp <= ocp.SResp_ERR when my_access /= none_e and (its(error) or my_error) else
           ocp.SResp_DVA when my_access /= none_e and done and not its(my_error) and not its(error) else
           ocp.SResp_NULL;
+  my_error  <= to_bool(my_access = error_e or
+                       (my_access = control_e and (ok_op = '0' or next_op = '0')) or
+                       my_config_error);
+  -- The busy output is combinatorial, and my_access might be only registered
+  busy <= to_bool(access_in /= none_e or my_access /= none_e);
+  is_big_endian    <= to_bool(ocp_in.MFlag(1) = '1');
+  --------------------------------------------------------------------------------
+  -- Combi signals and outputs for control operations
+  --------------------------------------------------------------------------------
+  control_op_in    <= ocpi.wci.to_control_op(ocp_in.MAddr(4 downto 2));
+  -- the control op to the worker is either combinatorial or registered depending
+  -- on whether it is delayed by the worker
+-- FIXME: OCCP can't tolerate immediate ops, so we don't do it here
+--  my_control_op    <= no_op_e when my_access /= control_e else
+--                      control_op_in when my_control_op_r = no_op_e else
+--                      my_control_op_r;
+  my_control_op    <= my_control_op_r;
+  control_op       <= my_control_op;
+  state            <= my_state_r;
+  is_operating     <= to_bool(my_state_r = operating_e);
+  abort_control_op <= to_bool(ocp_in.MFlag(0) = '1');
+  -- for our own error checking (not the worker's)
+  state_pos <= get_state_pos(my_state_r);
+  op_pos    <= get_op_pos(my_control_op);
+  next_op   <= next_ops(state_pos)(op_pos);
+  ok_op     <= worker.allowed_ops(op_pos);
+  --------------------------------------------------------------------------------
+  -- Combi signals and outputs for properties
+  --------------------------------------------------------------------------------
+  offset_in       <= unsigned(ocp_in.MAddr(worker.decode_width-1 downto 2)) & be2offset(ocp_in);
+  my_offset       <= offset_in when my_access_r = none_e else my_offset_r;
+  my_data         <= ocp_in.MData        when my_access_r = none_e else my_data_r;
+  my_nbytes_1     <= num_bytes_1(ocp_in) when my_access_r = none_e else my_nbytes_1_r;
+  my_hi32         <= to_bool(ocp_in.MAddr(2) = '1') when my_access_r = none_e else my_hi32_r;
+  my_is_read      <= to_bool(my_access = read_e);
+  my_is_write     <= to_bool(my_access = write_e);
+  my_config_error <= to_bool((my_access = read_e and done and not any_true(my_read_enables)) or
+                               (my_access = write_e and done and not any_true(my_write_enables)));
+  -- output ports, based on internally generated signals that are also used internally
+  raw_offset      <= my_offset - worker.raw_property_base;
+  write_enables   <= my_write_enables;
+  read_enables    <= my_read_enables;
+  nbytes_1        <= my_nbytes_1;
+  hi32            <= my_hi32;
+  is_read         <= to_bool(my_is_read and my_offset >= worker.raw_property_base);
+  is_write        <= to_bool(my_is_write and my_offset >= worker.raw_property_base);
 
-  my_reset <= not ocp_in.MReset_n;
-
-  -- clocked processing is for delayed completion and capturing write data/addr for same
+  -- clocked processing is for delayed completion and capturing requests
   reg: process(ocp_in.Clk) is
   begin
     -- Since we support combinatorial completion, the clocked processing
     -- deals only with longer lived commands
     if rising_edge(ocp_in.Clk) then
-      -- captured request info in case response is delayed by worker
-      my_data_r       <= ocp_in.MData;
-      my_nbytes_1_r   <= num_bytes_1(ocp_in);
-      my_offset_r     <= offset_in;
-      my_hi32_r       <= to_bool(ocp_in.MAddr(2) = '1');
-      my_control_op_r <= control_op_in;
-
-      -- default value of the SResp output, which is a register
       if its(my_reset) then
         my_access_r     <= None_e;
         if worker.allowed_ops(control_op_t'pos(initialize_e)) = '1' then
@@ -189,9 +199,17 @@ begin
         else
           my_state_r <= initialized_e;
         end if;
-      elsif my_access = none_e then
-        my_access_r <= decode_access(ocp_in);  -- delayed version until occp is fixed
+      elsif access_in /= none_e then
+        -- the first cycle of the request, capture it all per OCP
+        my_access_r     <= access_in;  -- delayed version until occp is fixed
+        my_control_op_r <= control_op_in;
+        -- From here down, only for properties
+        my_data_r       <= ocp_in.MData;
+        my_nbytes_1_r   <= num_bytes_1(ocp_in);
+        my_offset_r     <= offset_in;
+        my_hi32_r       <= to_bool(ocp_in.MAddr(2) = '1');
       elsif its(done) or error or my_error then
+        -- the last cycle of the request
         my_access_r <= none_e;
         if my_access = control_e and its(done) and not its(my_error) then
           -- successful control op - advance control state

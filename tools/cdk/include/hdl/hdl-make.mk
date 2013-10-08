@@ -1,3 +1,5 @@
+# This file contains various utilities for hdl makefiles.
+# It is distinguishd from hdl-pre.mk in that it doesn't really mess with any variables
 ifndef __HDL_MAKE_MK__
 __HDL_MAKE_MK__=x
 # This file is included by the various levels of hdl makefiles (not the leaf makefiles)
@@ -55,12 +57,17 @@ HdlFindWorkerCoreFile=$(strip \
             $(foreach d,$(call HdlComponentCore,$c,$1,$(HdlTarget)),$d)),\
          $(error Worker $1 not found in any component library.))))
 
+# Return the generic directory where the spec files are exported
+HdlXmlComponentLibrary=$(strip \
+    $(foreach l,$(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/$1),\
+      $(foreach d,$(or $(wildcard $l/lib),$(wildcard $l),\
+	            $(error Component library '$1' not found at $l)),\
+	$d)))
+
+# Return the two levels of xml include dirs: generic (for spec xml) and hdl (for worker xml)
 HdlXmlComponentLibraries=$(strip \
   $(foreach c,$1,\
-    $(foreach l,$(if $(findstring /,$c),$c,$(OCPI_CDK_DIR)/lib/$c),\
-      $(foreach d,$(or $(wildcard $l/lib),$(wildcard $l),\
-	            $(error Component library '$c' not found at $l)),\
-	$d $d/hdl))))
+   $(foreach d,$(call HdlXmlComponentLibrary,$c),$d $d/hdl)))
 
 # Read the workers file.  Arg1 is the file name(s) of the instance files
 define HdlSetWorkers
@@ -142,6 +149,7 @@ ifeq ($(origin HdlPlatforms),undefined)
 endif
 ifeq ($(origin HdlTargets),undefined)
 ifdef HdlPlatforms
+$(call OcpiDbgVar,HdlPlatforms)
 HdlTargets:=$(foreach p,$(HdlPlatforms),$(call HdlGetFamily,$(HdlPart_$p)))
 else
 HdlTargets:=virtex6

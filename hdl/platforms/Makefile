@@ -25,7 +25,7 @@
 
 ifndef HdlPlatforms
 ifndef HdlPlatform
-HdlPlatforms=$(filter-out Makefile common README README.txt lib,$(wildcard *))
+HdlPlatforms=$(filter-out test Makefile common README README.txt lib,$(wildcard *))
 endif
 endif
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk

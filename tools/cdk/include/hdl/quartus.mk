@@ -134,7 +134,7 @@ xxx=$(and $(ComponentLibraries),echo '\#' Search paths for component libraries;)
 # Note that the local source files use notdir names and search paths while the
 # remote libraries use pathnames so that you can have files with the same names.
 QuartusMakeQsf=\
- if test -f $(HdlName).qsf; then cp $(HdlName).qsf $(HdlName).qsf.bak; fi; \
+ if test -f $(Core).qsf; then cp $(Core).qsf $(Core).qsf.bak; fi; \
  $(and $(findstring $(HdlMode),library),\
    echo 'module onewire(input  W_IN, output W_OUT); assign W_OUT = W_IN; endmodule' > onewire.v;) \
  (echo '\#' Common assignments whether a library or a core; \
@@ -203,19 +203,19 @@ QuartusMakeQsf=\
   $(if $(findstring $(HdlMode),platform),\
     echo '\#' Include the platform-related assignments. ;\
     echo source ../$(Worker).qsf;) \
- ) > $(HdlName).qsf;
+ ) > $(Core).qsf;
 # Be safe for now - remove all previous stuff
 HdlToolCompile=\
-  echo '  'Creating $@ with top == $(Top)\; details in $(TargetDir)/quartus-$(HdlName).out.;\
-  rm -r -f db incremental_db *.qxp *.rpt *.summary *.qpf *.qdf $(notdir $@); \
-  $(QuartusMakeExport) $(QuartusMakeQsf) cat -n $(HdlName).qsf;\
+  echo '  'Creating $@ with top == $(Top)\; details in $(TargetDir)/quartus-$(Core).out.;\
+  rm -r -f db incremental_db $(Core).qxp $(Core).*.rpt $(Core).*.summary $(Core).qpf $(Core).qsf $(notdir $@); \
+  $(QuartusMakeExport) $(QuartusMakeQsf) cat -n $(Core).qsf;\
   set -e; $(call OcpiDbgVar,HdlMode,xc) \
   $(if $(findstring $(HdlMode),core worker platform assembly container),\
-    $(call DoAltera,quartus_map --write_settings_files=off $(HdlName)); \
-    $(call DoAltera,quartus_cdb --merge --write_settings_files=off $(HdlName)); \
-    $(call DoAltera,quartus_cdb --incremental_compilation_export --write_settings_files=off $(HdlName))) \
+    $(call DoAltera,quartus_map --write_settings_files=off $(Core)); \
+    $(call DoAltera,quartus_cdb --merge --write_settings_files=off $(Core)); \
+    $(call DoAltera,quartus_cdb --incremental_compilation_export --write_settings_files=off $(Core))) \
   $(if $(findstring $(HdlMode),library),\
-    $(call DoAltera,quartus_map --analysis_and_elaboration --write_settings_files=off $(HdlName))); \
+    $(call DoAltera,quartus_map --analysis_and_elaboration --write_settings_files=off $(Core))); \
 
 ifdef sdf
 # We can't trust xst's exit code so we conservatively check for zero errors

@@ -104,42 +104,50 @@ namespace OCPI {
 	const char *addProperty(const char *name, ezxml_t px);
 	const char *parseConnection(ezxml_t ix, Assembly &a);
       };
-      // The attachment of a connection to externalxo or port
-      struct External {
-	std::string m_name;   // the name of the "external port" to the assembly
-	std::string m_url;    // the URL that this external attachment has
+      struct Role {
 	bool m_provider;      // is this external attachment acting as a provider to the world?
 	bool m_bidirectional; // possible when inherited from a port
 	bool m_knownRole;     // role is known
-	PValueList m_parameters;
-	const char *parse(ezxml_t, unsigned&, const PValue *pvl);
-	const char *init(const char *name, const char *role);
       };
+      // The attachment of a connection to external or port
+      struct External {
+	std::string m_name;   // the name of the "external port" to the assembly
+	std::string m_url;    // the URL that this external attachment has
+	Role m_role;
+	size_t m_index;       // This is only used for top level "external"
+	size_t m_count;
+	PValueList m_parameters;
+	External();
+	const char *parse(ezxml_t, const char *, unsigned&, const PValue *pvl);
+	const char *init(const char *name, const char *role = NULL);
+      };
+      typedef std::list<External> Externals;
+      typedef Externals::iterator ExternalsIter;
       struct Connection;
       struct Port {
 	// This mutable is because this name might be resolved when an application
 	// uses this assembly (and has access to impl metadata).
 	// Then this assembly is reused, this resolution will still be valid.
 	mutable std::string m_name;
-	bool m_provider;       // if no name
-	bool m_bidirectional;  // possible when inherited from a port
-	bool m_knownRole;      // we know the role for sure
+	mutable Role m_role;
 	unsigned m_instance;
+	size_t m_index, m_count;
 	PValueList m_parameters;
 	Port *m_connectedPort; // the "other" port of the connection
 	const char *parse(ezxml_t x, Assembly &a, const PValue *pvl);
-	void init(Assembly &a, const char *name, unsigned instance, bool isInput, bool bidi, bool known);
+	void init(Assembly &a, const char *name, unsigned instance, bool isInput, bool bidi, bool known,
+		  size_t index = 0, size_t count = 1);
       };
       struct Connection {
 	std::string m_name;
-	std::list<External> m_externals;
-	typedef std::list<External>::iterator ExternalIter;
+	Externals m_externals;
 	std::list<Port> m_ports;
-	typedef std::list<Port>::iterator PortIter;
+	typedef std::list<Port>::iterator PortsIter;
 	PValueList m_parameters;
 	const char *parse(ezxml_t x, Assembly &a, unsigned &ord);
-	Port &addPort(Assembly &a, unsigned instance, const char *port, bool isInput, bool bidi, bool known);
-	void addExternal(const char *name);
+	Port &addPort(Assembly &a, unsigned instance, const char *port, bool isInput, bool bidi, bool known,
+		      size_t index = 0, size_t count = 1);
+	External &addExternal();
       };
       // Potentially specified in the assembly, what policy should be used
       // to spread workers to containers?
@@ -162,7 +170,7 @@ namespace OCPI {
       int m_doneInstance; // -1 for none
       std::vector<Instance> m_instances;
       std::list<Connection> m_connections;
-      typedef std::list<Connection>::iterator ConnectionIter;
+      typedef std::list<Connection>::iterator ConnectionsIter;
       CMapPolicy m_cMapPolicy;
       size_t   m_processors;
       MappedProperties m_mappedProperties; // top level mapped to instance properties.
@@ -177,10 +185,11 @@ namespace OCPI {
 			const char **instAttrs = NULL);
       ~Assembly();
       const char
+        *addConnection(const char *name, Connection *&c),
         *getInstance(const char *name, unsigned &),
-	*addConnection(const char *name, Connection *&c),
         *addPortConnection(unsigned from, const char *name, unsigned to, const char *toPort),
-        *addExternalConnection(unsigned instance, const char *port, const char *ext = NULL);
+        *addExternalConnection(unsigned instance, const char *port),
+        *addExternalConnection(ezxml_t x);
       inline ezxml_t xml() { return m_xml; }
       inline bool isImpl() { return m_isImpl; }
     };

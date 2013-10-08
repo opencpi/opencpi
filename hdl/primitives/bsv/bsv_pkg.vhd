@@ -26,10 +26,38 @@ component FIFO2
            EMPTY_N : out std_logic;
            CLR     : in  std_logic);
 end component FIFO2;
+component FIFO1
+  generic (width   : natural := 1; \guarded\ : natural := 1);
+  port(    CLK     : in  std_logic;
+           RST     : in  std_logic;
+           D_IN    : in  std_logic_vector(width - 1 downto 0);
+           ENQ     : in  std_logic;
+           FULL_N  : out std_logic;
+           D_OUT   : out std_logic_vector(width - 1 downto 0);
+           DEQ     : in  std_logic;
+           EMPTY_N : out std_logic;
+           CLR     : in  std_logic);
+end component FIFO1;
 component SyncResetA
   generic(RSTDELAY : natural := 1);
   port(   IN_RST   : in  std_logic;
           CLK      : in  std_logic;
           OUT_RST  : out std_logic);
 end component SyncResetA;     
+component SizedFIFO
+   generic(p1width      : natural := 1; -- data width
+           p2depth      : natural := 3;
+           p3cntr_width : natural := 1; -- log(p2depth-1)
+           -- The -1 is allowed since this model has a fast output register
+           \guarded\      : natural := 1);
+   port(   CLK          : in  std_logic;
+           RST          : in  std_logic;
+           D_IN         : in  std_logic_vector(p1width-1 downto 0);
+           ENQ          : in  std_logic;
+           FULL_N       : out std_logic;
+           D_OUT        : out std_logic_vector(p1width-1 downto 0);
+           DEQ          : in  std_logic;
+           EMPTY_N      : out std_logic;
+           CLR          : in  std_logic);
+end component SizedFIFO;
 end package bsv;

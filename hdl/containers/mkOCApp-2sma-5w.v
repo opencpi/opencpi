@@ -896,7 +896,11 @@ sma sma1 (
 
   // Instantiate the wip-compliant app
   ocpi_app app(
-  .wci_Clk(CLK),
+  .wci0_Clk(CLK),
+  .wci1_Clk(CLK),
+  .wci2_Clk(CLK),
+  .wci3_Clk(CLK),
+  .wci4_Clk(CLK),
   .wci0_MReset_n(RST_N_rst_3),
   .wci0_MAddr(wci_s_3_MAddr),
   .wci0_MAddrSpace(wci_s_3_MAddrSpace),

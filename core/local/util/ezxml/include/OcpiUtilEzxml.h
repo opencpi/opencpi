@@ -231,6 +231,9 @@ namespace OCPI {
 	findChildWithAttr(ezxml_t x, const char *cName, const char *aName,
 			  const char *value);
       extern const char
+	*ezxml_tag(ezxml_t xml),
+	*checkTag(ezxml_t xml, const char *tag, const char *fmt, ...)
+	__attribute__((format(printf, 3, 4))),
 	*getRequiredString(ezxml_t x, std::string &s, const char *attr, const char *element),
 	*ezxml_children(ezxml_t xml, const char* (*func)(ezxml_t child, void *arg), void *arg),
 	*ezxml_attrs(ezxml_t xml, const char* (*func)(const char *name, const char *value, void *arg), void *arg),

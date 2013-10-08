@@ -388,21 +388,24 @@ namespace OCPI {
 	  if (!p.m_info.m_writeError ||
 	      !(status =
 		get32Register(status, OccpWorkerRegisters) &
-		OCCP_STATUS_WRITE_ERRORS)) {
-	    m_properties.setBytesRegisterOffset(offset + p.m_info.m_align,
-						val, nBytes);
-	    m_properties.set32RegisterOffset(offset, (uint32_t)nItems);
-	  }
+		OCCP_STATUS_WRITE_ERRORS))
+	    if (p.m_info.m_isSequence) {				\
+	      m_properties.setBytesRegisterOffset(offset + p.m_info.m_align,
+						  val, nBytes);
+	      m_properties.set32RegisterOffset(offset, (uint32_t)nItems);
+	    } else
+	      m_properties.setBytesRegisterOffset(offset, val, nBytes);
 	  if (p.m_info.m_writeError && !status)
 	    status =
 	      get32Register(status, OccpWorkerRegisters) &
 	      OCCP_STATUS_WRITE_ERRORS;
-	} else {
+	} else if (p.m_info.m_isSequence) {					\
 	  m_properties.m_accessor->setBytes(m_properties.m_base + offset + p.m_info.m_align,
 					    val, nBytes, &status);
 	  if (!status)
 	    m_properties.m_accessor->set32(m_properties.m_base + offset, (uint32_t)nItems, &status);
-	}
+	} else
+	  m_properties.m_accessor->setBytes(m_properties.m_base + offset, val, nBytes, &status);
 	if (status)
 	  throwPropertyWriteError(status);
       }

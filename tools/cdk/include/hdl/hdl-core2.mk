@@ -37,20 +37,28 @@
 # Internal file shared between primitive cores and workers
 # This file basically imports a hard core or builds one from a library
 
-ifndef Top
-Top:=$(Core)
+ifndef Tops
+ifdef Top
+Tops:=$(Top)
+else
+Tops:=$(Core)
 endif
-LibName=$(Core)
+endif
+ifndef LibName
+LibName=$(word 1,$(HdlCores))
+endif
 
 ifdef HdlToolRealCore
 ################################################################################
-# Build the real core if the tools can do it
+# Build the real core if the tools can do it $(call DoCore,target,name)
 define DoCore
-CoreResults+=$(OutDir)target-$(1)/$(2)$(HdlBin)
-$(OutDir)target-$(1)/$(2)$(HdlBin): override HdlTarget:=$(1)
-$(OutDir)target-$(1)/$(2)$(HdlBin): LibName=$(HdlToolCoreLibName)
-$(OutDir)target-$(1)/$(2)$(HdlBin): TargetDir=$(OutDir)target-$(1)
-$(OutDir)target-$(1)/$(2)$(HdlBin): | $$$$(TargetDir)
+CoreResults+=$(OutDir)target-$1/$2$(HdlBin)
+$(OutDir)target-$1/$2$(HdlBin): override HdlTarget:=$1
+#$(OutDir)target-$1/$2$(HdlBin): LibName=$(HdlToolCoreLibName)
+$(OutDir)target-$1/$2$(HdlBin): TargetDir=$(OutDir)target-$1
+$(OutDir)target-$1/$2$(HdlBin): | $$$$(TargetDir)
+$(OutDir)target-$1/$2$(HdlBin): Core=$2
+$(OutDir)target-$1/$2$(HdlBin): Top=$3
 ifdef PreBuiltCore
 $(OutDir)target-$(1)/$(2)$(HdlBin): $(PreBuiltCore)
 	$(AT)if test ! -L $@; then \
@@ -71,11 +79,20 @@ $(OutDir)target-$(1)/$(2)$(HdlBin): \
 	$(AT)echo Building $(and $(filter-out core,$(HdlMode))) core \"$(2)\" for target \"$$(HdlTarget)\"
 	$(AT)$$(HdlCompile)
 endif
-endef
+
+all: $(OutDir)target-$1/$2$(HdlBin)
+
+endef # DoCore
 
 $(call OcpiDbgVar,CompiledSourceFiles,b2 )
 $(call OcpiDbgVar,HdlActualTargets)
-$(foreach t,$(HdlActualTargets),$(eval $(call DoCore,$(t),$(Core))))
+$(call OcpiDbgVar,HdlCores)
+#$(foreach t,$(HdlActualTargets),$(eval $(call DoCore,$(t),$(Core))))
+$(foreach t,$(HdlActualTargets),\
+  $(foreach both,$(join $(HdlCores),$(Tops:%=:%)),\
+    $(foreach core,$(word 1,$(subst :, ,$(both))),\
+     $(foreach top,$(word 2,$(subst :, ,$(both))),\
+       $(eval $(call DoCore,$t,$(core),$(top)))))))
 $(call OcpiDbgVar,CompiledSourceFiles,b3 )
 
 ifdef Imports
@@ -113,18 +130,18 @@ ifdef HdlToolNeedBB
 # But if we have a prebuilt core, don't bother for simulators
 $(call OcpiDbgVar,HdlToolNeedBB)
 # A function taking a target and producing the BB result file
-OutLibFile=$(OutDir)target-$(1)/$(call HdlToolLibraryFile,$(1),$(Core)_bb)
+OutLibFile=$(OutDir)target-$1/$(call HdlToolLibraryFile,$1,$(word 1,$(HdlCores))_bb)
 define DoBBLibraryTarget
-BBLibResults+=$(call OutLibFile,$(1))
-$(call OutLibFile,$(1)): LibName=$(Core)_bb
-$(call OutLibFile,$(1)): Core=$(Core)_bb
-# $(call OutLibFile,$(1)): Top=$(Core)
-$(call OutLibFile,$(1)): override HdlTarget=$(1)
-$(call OutLibFile,$(1)): TargetDir=$(OutDir)target-$(1)
-$(call OutLibFile,$(1)): HdlSources=$(CoreBlackBoxFile) 
+BBLibResults+=$(call OutLibFile,$1)
+$(call OutLibFile,$1): LibName=$(word 1,$(HdlCores))_bb
+$(call OutLibFile,$1): Core=onewire
+$(call OutLibFile,$1): Top=onewire
+$(call OutLibFile,$1): override HdlTarget=$1
+$(call OutLibFile,$1): TargetDir=$(OutDir)target-$1
+$(call OutLibFile,$1): HdlSources=$(CoreBlackBoxFile) $(OCPI_CDK_DIR)/include/hdl/onewire.v
 endef
 $(foreach f,$(call HdlToolLibraryTargets,$(HdlActualTargets)),\
-  $(eval $(call DoBBLibraryTarget,$(f))))
+  $(eval $(call DoBBLibraryTarget,$f)))
 $(sort $(BBLibResults)): $$(CoreBlackBoxFile) | $$(TargetDir)
 	$(AT)$(ECHO) -n Building stub/blackbox library \($@\) for target' '
 	$(AT)$(ECHO) $(HdlTarget) from $(CoreBlackBoxFile)
@@ -133,15 +150,16 @@ all: $(BBLibResults)
 $(call OcpiDbgVar,BBLibResults)
 $(call OcpiDbgVar,HdlActualTargets)
 
+HdlCoreBBInstallDir=$(call HdlCoreInstallDir,$(word 1,$(HdlCores)))_bb
 # Install the black box library
-$(HdlCoreInstallDir)_bb:
+$(HdlCoreBBInstallDir):
 	$(AT)mkdir $@
 
-install_bb: | $(HdlCoreInstallDir)_bb
+install_bb: | $(HdlCoreBBInstallDir)
 	$(AT)for f in $(HdlFamilies); do \
 	   $(call ReplaceContentsIfDifferent,$(strip \
                $(OutDir)target-$$f/$(HdlToolLibraryResult)_bb),$(strip \
-	       $(HdlCoreInstallDir)_bb/$$f)); \
+	       $(HdlCoreBBInstallDir)/$$f)); \
 	   done
 install: install_bb
 endif # of making and installing the black box library

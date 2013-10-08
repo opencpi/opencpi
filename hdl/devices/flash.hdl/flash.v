@@ -114,7 +114,7 @@ module mkFlashWorker(wciS0_Clk,
   output [31 : 0] wciS0_SData;
 
   // value method wciS0_sThreadBusy
-  output wciS0_SThreadBusy;
+  output [0 : 0] wciS0_SThreadBusy;
 
   // value method wciS0_sFlag
   output [1 : 0] wciS0_SFlag;
@@ -159,7 +159,8 @@ module mkFlashWorker(wciS0_Clk,
        flash_oe_n,
        flash_rst_n,
        flash_we_n,
-       flash_wp_n,
+       flash_wp_n;
+  wire [0 : 0]
        wciS0_SThreadBusy;
 
   // inlined wires
@@ -524,7 +525,7 @@ module mkFlashWorker(wciS0_Clk,
   assign wciS0_SData = wci_wslv_respF_q_0[31:0] ;
 
   // value method wciS0_sThreadBusy
-  assign wciS0_SThreadBusy =
+  assign wciS0_SThreadBusy[0] =
 	     wci_wslv_reqF_countReg > 2'd1 || wci_wslv_isReset_isInReset ;
 
   // value method wciS0_sFlag
