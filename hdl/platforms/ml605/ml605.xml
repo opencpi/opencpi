@@ -1,0 +1,22 @@
+<HdlPlatform Language="VHDL">
+  <xi:include href="platform_spec"/>
+  <property name="pciDevice" type='ushort' volatile='true'/>
+  <property name="unocDropCount" type='uchar' volatile='true'/>
+  <cpmaster master='true'/>
+  <metadata master='true'/>
+  <timeservice master='true'/>
+  <signal input="sys0_clk" differential='true'/>
+  <signal input='sys1_clk' differential='true'/>
+  <!-- PCIE signals:
+       pci0* is the external 250MHz clk
+  -->
+  <signal input='pci0_clk' differential='true'/>
+  <signal input='pci0_reset_n'/>
+  <signal input='pcie_rx' differential='true' width='4'/>
+  <signal output='pcie_tx' differential='true' width='4'/>
+  <signal output='led' width='13'/>
+  <signal input='ppsExtIn'/>
+  <signal output='ppsOut'/>
+  <device worker='flash'/>
+</HdlPlatform>
+

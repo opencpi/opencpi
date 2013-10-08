@@ -99,7 +99,7 @@ endif
 ECHO=/bin/echo
 Empty=
 #default assumes all generated files go before all authored files
-CompiledSourceFiles=$(GeneratedSourceFiles) $(AuthoredSourceFiles)
+CompiledSourceFiles=$(TargetSourceFiles) $(GeneratedSourceFiles) $(AuthoredSourceFiles)
 Space=$(Empty) $(Empty)
 # Just for history (thanks Andrew): this only works with tcsh, not traditional csh.  And csh isn't posix anywah
 #Capitalize=$(shell csh -f -c 'echo $${1:u}' $(1))
@@ -277,5 +277,34 @@ Unique2=$(if $1,$(call Unique2,$(wordlist 2,$(words $1),$1),$(strip\
                                $(foreach w,$(firstword $1),$(if $(filter $w,$2),$2,$2 $w)))),$2)
 
 LibraryRefFile=$(call $(CapModel)LibraryRefFile,$1,$2)
+
+################################################################################
+# Tools for metadata and generated files
+#ToolsTarget=$(OCPI_TOOL_HOST)
+ToolsDir=$(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_HOST)
+ifeq ($(HostSystem),darwin)
+DYN_PREFIX=DYLD_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/$(OCPI_TOOL_HOST)
+else
+DYN_PREFIX=LD_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/$(OCPI_TOOL_HOST)
+endif
+#$(info OCDK $(OCPI_CDK_DIR))
+DYN_PREFIX=
+OcpiGen=\
+  $(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(GeneratedDir)/$(@F).deps \
+    $(patsubst %,-I"%",$(call Unique,$(XmlIncludeDirs)))
+
+# Return stderr and the exit status as variables
+# Return non-empty on failure, empty on success, and set var
+# $(call DoShell,<command>,<status var>,<value var>)
+# 2 limitations:
+# - The "#" character is changed to "<pound>" in the output
+# - On success, the value will be a combination of stderr and stdout
+# Example:
+#  $(if $(call DoShell,ls -l,Value),$(error $(Value)),$(Value))
+DoShell=$(eval X:=$(shell X=`$1 2>&1`;echo $$?; echo "$$X" | sed "s/\#/<pound>/g"))$(strip \
+	     $(call OcpiDbg,DoShell($1,$2):X:$X) \
+             $(eval $2:=$(wordlist 2,$(words $X),$X))\
+	     $(call OcpiDbgVar,$2) \
+             $(filter-out 0,$(firstword $X)))
 
 endif

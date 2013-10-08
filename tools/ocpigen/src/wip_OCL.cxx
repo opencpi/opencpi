@@ -92,13 +92,13 @@ printMember(FILE *f, OU::Member *t, const char *prefix, size_t &offset, unsigned
 
 static const char *
 methodName(Worker *w, const char *method, const char *&mName) {
-  const char *pat = w->pattern ? w->pattern : w->staticPattern;
+  const char *pat = w->m_pattern ? w->m_pattern : w->m_staticPattern;
   if (!pat) {
     mName = method;
     return 0;
   }
   size_t length =
-    strlen(w->implName) + strlen(method) + strlen(pat) + 1;
+    strlen(w->m_implName) + strlen(method) + strlen(pat) + 1;
   char c, *s = (char *)malloc(length);
   mName = s;
   while ((c = *pat++)) {
@@ -122,18 +122,18 @@ methodName(Worker *w, const char *method, const char *&mName) {
 	  s++;
 	break;
       case 'w':
-	strcpy(s, w->implName);
+	strcpy(s, w->m_implName);
 	while (*s)
 	  s++;
 	break;
       case 'W':
-	*s++ = (char)toupper(w->implName[0]);
-	strcpy(s, w->implName + 1);
+	*s++ = (char)toupper(w->m_implName[0]);
+	strcpy(s, w->m_implName + 1);
 	while (*s)
 	  s++;
 	break;
       default:
-	return OU::esprintf("Invalid pattern rule: %s", w->pattern);
+	return OU::esprintf("Invalid pattern rule: %s", w->m_pattern);
       }
   }
   *s++ = 0;
@@ -156,16 +156,15 @@ emitStructOCL(FILE *f, size_t nMembers, OU::Member *members, const char *indent)
 }
 
 const char *
-emitImplOCL(Worker *w, const char *outDir, const char *library) {
-  (void)library;
+emitImplOCL(Worker *w, const char *outDir) {
   const char *err;
   FILE *f;
-  if ((err = openOutput(w->fileName, outDir, "", OCLIMPL, HEADER, w->implName, f)))
+  if ((err = openOutput(w->m_fileName.c_str(), outDir, "", OCLIMPL, HEADER, w->m_implName, f)))
     return err;
   fprintf(f, "/*\n");
-  printgen(f, " *", w->file);
+  printgen(f, " *", w->m_file.c_str());
   fprintf(f, " */\n");
-  const char *upper = upperdup(w->implName);
+  const char *upper = upperdup(w->m_implName);
   fprintf(f,
           "\n"
           "/* This file contains the implementation declarations for worker %s */\n\n"
@@ -175,18 +174,18 @@ emitImplOCL(Worker *w, const char *outDir, const char *library) {
           "#if defined (__cplusplus)\n"
           "extern \"C\" {\n"
           "#endif\n\n",
-          w->implName, upper, upper);
+          w->m_implName, upper, upper);
 
-  if (w->ctl.properties.size()) {
+  if (w->m_ctl.properties.size()) {
     fprintf(f,
             "/*\n"
             " * Property structure for worker %s\n"
             " */\n"
             "typedef struct {\n",
-            w->implName);
+            w->m_implName);
     size_t align = 0;
     unsigned pad = 0;
-    for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++) {
+    for (PropertiesIter pi = w->m_ctl.properties.begin(); pi != w->m_ctl.properties.end(); pi++) {
       OU::Property *p = *pi;
       if (p->m_isSequence) {
         fprintf(f, "  uint32_t %s_length;\n", p->m_name.c_str());
@@ -197,7 +196,7 @@ emitImplOCL(Worker *w, const char *outDir, const char *library) {
       }
       if (p->m_baseType == OA::OCPI_Struct) {
         fprintf(f, "  struct %c%s%c%s {\n",
-                toupper(w->implName[0]), w->implName+1,
+                toupper(w->m_implName[0]), w->m_implName+1,
                 toupper(p->m_name.c_str()[0]), p->m_name.c_str() + 1);
         emitStructOCL(f, p->m_nMembers, p->m_members, "  ");
         fprintf(f, "  } %s", p->m_name.c_str());
@@ -210,7 +209,7 @@ emitImplOCL(Worker *w, const char *outDir, const char *library) {
 
     fprintf(f,
             "\n} %c%sProperties;\n\n",
-            toupper(w->implName[0]), w->implName + 1);
+            toupper(w->m_implName[0]), w->m_implName + 1);
     }
 
   fprintf(f,
@@ -218,25 +217,25 @@ emitImplOCL(Worker *w, const char *outDir, const char *library) {
           " * Worker context structure for worker %s\n"
           " */\n"
           "typedef struct {\n",
-          w->implName);
+          w->m_implName);
 
-  if (w->ctl.properties.size()) {
+  if (w->m_ctl.properties.size()) {
     fprintf(f,"  __global %c%sProperties* properties;\n",
-            toupper(w->implName[0]), w->implName + 1);
+            toupper(w->m_implName[0]), w->m_implName + 1);
   }
 
   fprintf(f,"  OCLRunCondition runCondition;\n");
 
-  if (w->localMemories.size()) {
-    for (unsigned n = 0; n < w->localMemories.size(); n++) {
-      LocalMemory* mem = w->localMemories[n];
+  if (w->m_localMemories.size()) {
+    for (unsigned n = 0; n < w->m_localMemories.size(); n++) {
+      LocalMemory* mem = w->m_localMemories[n];
       fprintf(f, "  __global void* %s;\n", mem->name );
     }
   }
 
-  if (w->ports.size()) {
-    for (unsigned n = 0; n < w->ports.size(); n++) {
-      Port *port = w->ports[n];
+  if (w->m_ports.size()) {
+    for (unsigned n = 0; n < w->m_ports.size(); n++) {
+      Port *port = w->m_ports[n];
       fprintf(f, "  OCLPort %s;\n", port->name );
       /* FIXME how do we deal with two-way ports */
     }
@@ -244,7 +243,7 @@ emitImplOCL(Worker *w, const char *outDir, const char *library) {
 
   fprintf(f,
           "\n} OCLWorker%c%s;\n\n",
-          toupper(w->implName[0]), w->implName + 1);
+          toupper(w->m_implName[0]), w->m_implName + 1);
 
   fprintf(f,
           "\n"
@@ -262,10 +261,10 @@ const char*
 emitSkelOCL(Worker *w, const char *outDir) {
   const char *err;
   FILE *f;
-  if ((err = openOutput(w->fileName, outDir, "", "_skel", ".cl", NULL, f)))
+  if ((err = openOutput(w->m_fileName.c_str(), outDir, "", "_skel", ".cl", NULL, f)))
     return err;
   fprintf(f, "/*\n");
-  printgen(f, " *", w->file, true);
+  printgen(f, " *", w->m_file.c_str(), true);
   fprintf(f, " *\n");
   fprintf(f,
 	  " * This file contains the OCL implementation skeleton for worker: %s\n"
@@ -280,12 +279,12 @@ emitSkelOCL(Worker *w, const char *outDir) {
 	  "/*\n"
 	  " * Methods to implement for worker %s, based on metadata.\n"
 	  " */\n",
-	  w->implName, w->implName, w->implName, w->implName);
+	  w->m_implName, w->m_implName, w->m_implName, w->m_implName);
   unsigned op = 0;
   const char **cp;
   const char *mName;
   for (cp = controlOperations; *cp; cp++, op++)
-    if (w->ctl.controlOps & (1 << op)) {
+    if (w->m_ctl.controlOps & (1 << op)) {
       if ((err = methodName(w, *cp, mName)))
 	return err;
       fprintf(f,
@@ -294,13 +293,13 @@ emitSkelOCL(Worker *w, const char *outDir) {
 	      "\n  (void)self;\n"
 	      "  return OCL_OK;\n"
 	      "}\n",
-	      w->implName,
+	      w->m_implName,
 	      mName,
-        toupper(w->implName[0]),
-        w->implName + 1 );
+        toupper(w->m_implName[0]),
+        w->m_implName + 1 );
     }
 
-  const size_t pad_len = 14 + strlen ( w->implName ) + 3;
+  const size_t pad_len = 14 + strlen ( w->m_implName ) + 3;
   char pad [ pad_len + 1 ];
   memset ( pad, ' ', pad_len );
   pad [ pad_len ] = '\0';
@@ -315,9 +314,9 @@ emitSkelOCL(Worker *w, const char *outDir) {
 	  "  (void)self;(void)timedOut;(void)newRunCondition;\n"
 	  "  return OCL_ADVANCE;\n"
 	  "}\n",
-	  w->implName,
-    toupper(w->implName[0]),
-    w->implName + 1,
+	  w->m_implName,
+    toupper(w->m_implName[0]),
+    w->m_implName + 1,
     pad,
     pad );
 
@@ -333,14 +332,14 @@ const char *
 emitArtOCL(Worker *aw, const char *outDir) {
   const char *err;
   FILE *f;
-  if ((err = openOutput(aw->implName, outDir, "", "_art", ".xml", NULL, f)))
+  if ((err = openOutput(aw->m_implName, outDir, "", "_art", ".xml", NULL, f)))
     return err;
   fprintf(f, "<!--\n");
-  printgen(f, "", aw->file);
+  printgen(f, "", aw->m_file.c_str());
   fprintf(f,
 	  " This file contains the artifact descriptor XML for the application assembly\n"
 	  " named \"%s\". It must be attached (appended) to the shared object file\n",
-	  aw->implName);
+	  aw->m_implName);
   fprintf(f, "  -->\n");
   // This assumes native compilation of course
   fprintf(f,
@@ -351,10 +350,14 @@ emitArtOCL(Worker *aw, const char *outDir) {
 	  OCPI_CPP_STRINGIFY(OCPI_OS_VERSION),
 	  OCPI_CPP_STRINGIFY(OCPI_PLATFORM),
 	  "", "", "", "");
+#if 0
   // Define all workers
-  for (WorkersIter wi = aw->assembly.workers.begin();
-       wi != aw->assembly.workers.end(); wi++)
+  for (WorkersIter wi = aw->m_assembly.m_workers.begin();
+       wi != aw->m_assembly.m_workers.end(); wi++)
     emitWorker(f, *wi);
+#else
+  aw->emitWorkers(f);
+#endif
   fprintf(f, "</artifact>\n");
   if (fclose(f))
     return "Could close output file. No space?";
@@ -366,7 +369,7 @@ static const char* emitEntryPointOCL ( Worker* w,
 {
   const char* err;
   FILE* f;
-  if ((err = openOutput(w->fileName, outDir, "", OCLENTRYPOINT, SOURCE, w->implName, f)))
+  if ((err = openOutput(w->m_fileName.c_str(), outDir, "", OCLENTRYPOINT, SOURCE, w->m_implName, f)))
     return err;
   fprintf(f, "\n\n/* ---- Generated code that dispatches to the worker's functions --------- */\n\n");
 
@@ -388,7 +391,7 @@ static const char* emitEntryPointOCL ( Worker* w,
 
   fprintf ( f, "/* ----- Single function to dispatch both run() and control operations. -- */\n\n" );
 
-  const size_t pad_len = 20 + strlen ( w->implName );
+  const size_t pad_len = 20 + strlen ( w->m_implName );
   char pad [ pad_len + 1 ];
   memset ( pad, ' ', pad_len );
   pad [ pad_len ] = '\0';
@@ -400,15 +403,15 @@ static const char* emitEntryPointOCL ( Worker* w,
             "%s__global void* properties,\n"
             "%s__global OCLRunCondition* runCondition,\n"
             "%s__global OCLBoolean* newRunCondition,\n",
-            w->implName,
+            w->m_implName,
             pad,
             pad,
             pad,
             pad );
 
-  if ( w->localMemories.size() )
+  if ( w->m_localMemories.size() )
   {
-    for ( size_t n = 0; n < w->localMemories.size(); n++ )
+    for ( size_t n = 0; n < w->m_localMemories.size(); n++ )
     {
       fprintf ( f,
                 "%s__global void* local_mem_%zu_data,\n",
@@ -417,11 +420,11 @@ static const char* emitEntryPointOCL ( Worker* w,
     }
   }
 
-  if ( w->ports.size() )
+  if ( w->m_ports.size() )
   {
-    for ( size_t n = 0; n < w->ports.size(); n++ )
+    for ( size_t n = 0; n < w->m_ports.size(); n++ )
     {
-      Port* port = w->ports [ n ];
+      Port* port = w->m_ports [ n ];
       fprintf ( f,
                 "%s__global void* port_%s_data,\n"
                 "%sunsigned int port_%s_max_length,\n"
@@ -453,15 +456,15 @@ static const char* emitEntryPointOCL ( Worker* w,
   fprintf ( f, "  /* ---- Aggregate the flattened arguments ------------------------------ */\n\n" );
 
   fprintf ( f, "  __local OCLWorker%c%s self;\n\n",
-            toupper(w->implName[0]), w->implName + 1);
+            toupper(w->m_implName[0]), w->m_implName + 1);
 
   fprintf ( f, "  /* ---- Initialize the property pointer -------------------------------- */\n\n" );
 
-  if (w->ctl.properties.size())
+  if (w->m_ctl.properties.size())
   {
     fprintf ( f, "  self.properties = ( __global %c%sProperties* ) properties;\n\n",
-              toupper ( w->implName [ 0 ] ),
-              w->implName + 1 );
+              toupper ( w->m_implName [ 0 ] ),
+              w->m_implName + 1 );
   }
   else
   {
@@ -472,14 +475,14 @@ static const char* emitEntryPointOCL ( Worker* w,
 
   fprintf ( f, "  self.runCondition = *runCondition;\n\n" );
 
-  if ( w->localMemories.size() )
+  if ( w->m_localMemories.size() )
   {
     fprintf ( f, "  /* ---- Initialize the local memory structures ------------------------- */\n\n" );
-    for ( size_t n = 0; n < w->localMemories.size(); n++ )
+    for ( size_t n = 0; n < w->m_localMemories.size(); n++ )
     {
       fprintf ( f,
                 "  self.%s = local_mem_%zu_data;\n",
-                w->localMemories [ n ]->name,
+                w->m_localMemories [ n ]->name,
                 n );
     }
     fprintf ( f, "\n" );
@@ -487,11 +490,11 @@ static const char* emitEntryPointOCL ( Worker* w,
 
   fprintf ( f, "  /* ---- Initialize the port structures --------------------------------- */\n\n" );
 
-  if ( w->ports.size() )
+  if ( w->m_ports.size() )
   {
-    for ( size_t n = 0; n < w->ports.size(); n++ )
+    for ( size_t n = 0; n < w->m_ports.size(); n++ )
     {
-      Port* port = w->ports [ n ];
+      Port* port = w->m_ports [ n ];
       fprintf ( f,
                 "  self.%s.current.data = port_%s_data;\n"
                 "  self.%s.current.maxLength = port_%s_max_length;\n"
@@ -521,13 +524,13 @@ static const char* emitEntryPointOCL ( Worker* w,
   fprintf ( f, "  {\n" );
 
   fprintf ( f, "    case OCPI_OCL_RUN:\n" );
-  fprintf ( f, "      rc = %s_run ( &self, timedOut, newRunCondition );\n", w->implName );
+  fprintf ( f, "      rc = %s_run ( &self, timedOut, newRunCondition );\n", w->m_implName );
   fprintf ( f, "      break;\n" );
   unsigned op = 0;
   const char* mName;
   for ( const char** cp = controlOperations; *cp; cp++, op++ )
   {
-    if ( w->ctl.controlOps & (1 << op ) )
+    if ( w->m_ctl.controlOps & (1 << op ) )
     {
       if ( ( err = methodName ( w, *cp, mName  ) ) )
       {
@@ -536,7 +539,7 @@ static const char* emitEntryPointOCL ( Worker* w,
       const char* mUname = upperdup ( mName );
       fprintf ( f, "    case OCPI_OCL_%s:\n", mUname );
       fprintf ( f, "      rc = %s_%s ( &self );\n",
-                   w->implName,
+                   w->m_implName,
                    mName );
       fprintf ( f, "      break;\n" );
     }
@@ -552,11 +555,11 @@ static const char* emitEntryPointOCL ( Worker* w,
 
   fprintf ( f, "  /* ---- Update the output ports ---------------------------------------- */\n\n" );
 
-  if ( w->ports.size() )
+  if ( w->m_ports.size() )
   {
-    for ( size_t n = 0; n < w->ports.size(); n++ )
+    for ( size_t n = 0; n < w->m_ports.size(); n++ )
     {
-      Port* port = w->ports [ n ];
+      Port* port = w->m_ports [ n ];
 
       if ( port->u.wdi.isProducer ) {
         fprintf ( f,

@@ -195,7 +195,7 @@ namespace OCPI {
     // This is called to create an external connection either from the very short shortcut
     // as an attribute of an instance (saying this port should be externalized with its
     // own name), or with the other short cut: a top level "external" that just describes
-    // the instance, port and other options.  The xml will be supplied in the second case
+    // the instance, port and other options.
     const char *Assembly::
     addExternalConnection(unsigned instance, const char *port) {
       Connection *c;
@@ -233,7 +233,10 @@ namespace OCPI {
       if ((err = OE::getRequiredString(xml, iName, "instance", "external")) ||
 	  (err = getInstance(iName.c_str(), instance)))
 	return err;
-      c->addPort(*this, instance, port.c_str(), false, false, false, e.m_index, e.m_count);
+      c->addPort(*this, instance, port.c_str(), false, false, false, e.m_index); //, e.m_count);
+      // An external that is external-based can specify a count
+      if (e.m_count)
+	c->m_count = e.m_count;
       return NULL;
     }
     const char *Assembly::Property::
@@ -320,6 +323,21 @@ namespace OCPI {
       return NULL;
     }
 
+    static void
+    baseName(const char *path, std::string &out) {
+      const char
+	*dot = strrchr(path, '.'),
+	*slash = strrchr(path, '/');
+      if (slash)
+	slash++;
+      else
+	slash = path;
+      if (dot && dot > slash)
+	out.assign(slash, dot - slash);
+      else
+	out = slash;
+    }
+
     const char *Assembly::Instance::
     parse(ezxml_t ix, Assembly &a, unsigned ordinal, const char **extraInstAttrs) {
       m_ordinal = ordinal;
@@ -328,27 +346,28 @@ namespace OCPI {
 					 "external", "selection", NULL};
       if ((err = OE::checkAttrsVV(ix, instAttrs, extraInstAttrs, NULL)))
 	return err;
-      std::string component;
-      const char *dot = 0;
+      std::string component, myBase;
+      const char *compName = 0;
       if (a.isImpl()) {
 	if (ezxml_cattr(ix, "component"))
 	  err = "'component' attributes invalid in this implementaiton assembly";
 	else
-	  OE::getOptionalString(ix, m_implName, "worker"); // FIXME: optional due to container xml...
+	  err = OE::getRequiredString(ix, m_implName, "worker", "instance");
+	baseName(m_implName.c_str(), myBase);
       } else {
 	OE::getOptionalString(ix, m_implName, "worker");
 	if (!(err = OE::getRequiredString(ix, component, "component", "instance"))) {
-	  if ((dot = strrchr(component.c_str(), '.')))
-	    dot++;
+	  if ((compName = strrchr(component.c_str(), '.')))
+	    compName++;
 	  else {
 	    m_specName = a.m_package;
 	    m_specName += ".";
-	    dot = component.c_str();
+	    compName = component.c_str();
 	  }
 	  m_specName += component;
 	}
+	myBase = compName;
       }
-
       if (err ||
 	  (err = OE::checkElements(ix, "property", NULL)))
 	return err;
@@ -358,19 +377,24 @@ namespace OCPI {
       if (m_name.empty()) {
 	unsigned me = 0, n = 0;
 	for (ezxml_t x = ezxml_cchild(a.xml(), "instance"); x; x = ezxml_next(x)) {
+	  std::string base;
 	  const char
 	    *c = ezxml_cattr(x, "component"),
 	    *w = ezxml_cattr(x, "worker");
-	  if (component.size() && c && !strcasecmp(dot, c) ||
-	      m_implName.size() && w && !strcasecmp(m_implName.c_str(), w)) {
+	  if (a.isImpl() && w)
+	    baseName(w, base);
+	  else if (!a.isImpl() && c) {
+	    const char *dot = strrchr(c, '.');
+	    base = dot ? dot + 1 : c;
+	  }
+	  if (base.size() && !strcasecmp(base.c_str(), myBase.c_str())) {
 	    if (x == ix)
 	      me = n;
 	    n++;
 	  }
 	}
-	const char *myBase = component.size() ? dot : m_implName.c_str();
 	if (n > 1)
-	  formatString(m_name, "%s%u", myBase, me);
+	  formatString(m_name, "%s%u", myBase.c_str(), me);
 	else
 	  m_name = myBase;
       }
@@ -385,15 +409,19 @@ namespace OCPI {
 				"external", "from", "to", NULL);
     }
 
+    Assembly::Connection::
+    Connection() : m_count(0) {}
+
     const char *Assembly::Connection::
     parse(ezxml_t cx, Assembly &a, unsigned &n) {
       const char *err;
       if ((err = OE::checkElements(cx, "port", "external", NULL)) ||
-	  (err = OE::checkAttrs(cx, "name", "transport", "external", NULL)))
+	  (err = OE::checkAttrs(cx, "name", "transport", "external", "count", NULL)) ||
+	  (err = OE::getNumber(cx, "count", &m_count, NULL, 1)))
 	return err;
       
       OE::getNameWithDefault(cx, m_name, "conn%u", n);
-      if ((err = m_parameters.parse(cx, "name", "external", NULL)))
+      if ((err = m_parameters.parse(cx, "name", "external", "count", NULL)))
 	return err;
 
       // This creates an external port of a connection defaulting
@@ -433,17 +461,17 @@ namespace OCPI {
 
     Assembly::Port & Assembly::Connection::
     addPort(Assembly &a, unsigned instance, const char *port, bool isInput, bool bidi, bool known,
-	    size_t index, size_t count) {
+	    size_t index) { //, size_t count) {
       Port tmp;
       m_ports.push_back(tmp);
       Port &p = m_ports.back();
-      p.init(a, port, instance, isInput, bidi, known, index, count);
+      p.init(a, port, instance, isInput, bidi, known, index); //, count);
       return p;
     }
 
     void Assembly::Port::
     init(Assembly &a, const char *name, unsigned instance, bool isInput, bool bidir, bool isKnown,
-	 size_t index, size_t count) {
+	 size_t index) { // , size_t count) {
       if (name)
 	m_name = name;
       m_role.m_provider = isInput;
@@ -453,7 +481,7 @@ namespace OCPI {
       m_role.m_provider = isInput;
       m_connectedPort = NULL;
       m_index = index;
-      m_count = count;
+      //      m_count = count;
       a.m_instances[instance].m_ports.push_back(this);
     }
 
@@ -467,16 +495,16 @@ namespace OCPI {
       const char *err;
       std::string iName, name;
       unsigned instance;
-      size_t index, count;
+      size_t index; //, count;
       if ((err = OE::checkElements(x, NULL)) ||
 	  (err = OE::getRequiredString(x, name, "name", "port")) ||
 	  (err = OE::getRequiredString(x, iName, "instance", "port")) ||
 	  (err = OE::getNumber(x, "index", &index)) ||
-	  (err = OE::getNumber(x, "count", &count, NULL, 1)) ||
+	  //	  (err = OE::getNumber(x, "count", &count, NULL, 1)) ||
 	  (err = a.getInstance(iName.c_str(), instance)))
 	return err;
       // We don't know the role at all at this point
-      init(a, name.c_str(), instance, false, false, false, index, count);
+      init(a, name.c_str(), instance, false, false, false, index); //, count);
       return m_parameters.parse(pvl, x, "name", "instance", NULL);
     }
 

@@ -25,32 +25,32 @@ NET  "pci0_clkn"      LOC = V5;
 #NET "pci0_clkp"      LOC = AA3; # Direct PCI edge 100 MHz
 #NET "pci0_clkn"      LOC = AA4;
 
-INST "ftop/pciw_pci0_clk"  LOC = IBUFDS_GTXE1_X0Y4;  # 250 MHz Receiver from U9  ICS874001
+INST "ftop/*pciw_pci0_clk"  LOC = IBUFDS_GTXE1_X0Y4;  # 250 MHz Receiver from U9  ICS874001
 #INST "ftop/pci0_clk" LOC = IBUFDS_GTXE1_X0Y6;  # 100 MHz Receiver from U14 ICS854104
 #INST "ftop/pci0_clk" LOC = IBUFDS_GTXE1_X0Y7;  # Direct PCI edge 100 MHz
 
 NET  "pci0_reset_n"  LOC = AE13 | IOSTANDARD = LVCMOS25 | PULLUP | NODELAY;
 
-INST "ftop/pciw_pci0_pcie_ep/ep_pcie_2_0_i/pcie_block_i"                   LOC = PCIE_X0Y1;
-INST "ftop/pciw_pci0_pcie_ep/ep_pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[0].GTX" LOC = GTXE1_X0Y15;
-INST "ftop/pciw_pci0_pcie_ep/ep_pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[1].GTX" LOC = GTXE1_X0Y14;
-INST "ftop/pciw_pci0_pcie_ep/ep_pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[2].GTX" LOC = GTXE1_X0Y13;
-INST "ftop/pciw_pci0_pcie_ep/ep_pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[3].GTX" LOC = GTXE1_X0Y12;
+INST "ftop/*pciw_pci0_pcie_ep/ep*pcie_2_0_i/pcie_block_i" LOC = PCIE_X0Y1;
+INST "ftop/*pciw_pci0_pcie_ep/ep*pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[0].GTX" LOC = GTXE1_X0Y15;
+INST "ftop/*pciw_pci0_pcie_ep/ep*pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[1].GTX" LOC = GTXE1_X0Y14;
+INST "ftop/*pciw_pci0_pcie_ep/ep*pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[2].GTX" LOC = GTXE1_X0Y13;
+INST "ftop/*pciw_pci0_pcie_ep/ep*pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[3].GTX" LOC = GTXE1_X0Y12;
 
 # Timing Constraints...
 NET "sys0_clkp"      TNM_NET = "SYS0CLK";  # 200 MHz sys0 XO
 TIMESPEC "TS_SYS0CLK" = PERIOD "SYS0CLK"     200 MHz HIGH 50 % ;
 
 NET "pci0_clkp" TNM_NET = "PCICLK" ;
-NET "ftop/pciw_pci0_pcie_ep/ep_pcie_clocking_i/clk_125" TNM_NET = "CLK_125" ;
-NET "ftop/pciw_pci0_pcie_ep/ep_pcie_clocking_i/clk_250" TNM_NET = "CLK_250" ;
+NET "ftop*pciw_pci0_pcie_ep/ep*pcie_clocking_i/clk_125" TNM_NET = "CLK_125" ;
+NET "ftop*pciw_pci0_pcie_ep/ep*pcie_clocking_i/clk_250" TNM_NET = "CLK_250" ;
 TIMESPEC "TS_PCICLK"   = PERIOD "PCICLK"  250 MHz HIGH 50 % ;
 TIMESPEC "TS_CLK_125"  = PERIOD "CLK_125" TS_PCICLK/2 HIGH 50 % PRIORITY 100 ;
 TIMESPEC "TS_CLK_250"  = PERIOD "CLK_250" TS_PCICLK*1 HIGH 50 % PRIORITY 1;
-NET "ftop/pciw_pci0_pcie_ep/ep_pcie_clocking_i/sel_lnk_rate_d" TIG ;
-PIN "ftop/pciw_pci0_pcie_ep/ep_trn_reset_n_int_i.CLR"          TIG ;
-PIN "ftop/pciw_pci0_pcie_ep/ep_trn_reset_n_i.CLR"              TIG ;
-PIN "ftop/pciw_pci0_pcie_ep/ep_pcie_clocking_i/mmcm_adv_i.RST" TIG ;
+NET "ftop/*pciw_pci0_pcie_ep/ep*pcie_clocking_i/sel_lnk_rate_d" TIG ;
+PIN "ftop/*pciw_pci0_pcie_ep/ep*trn_reset_n_int_i.CLR"          TIG ;
+PIN "ftop/*pciw_pci0_pcie_ep/ep*trn_reset_n_i.CLR"              TIG ;
+PIN "ftop/*pciw_pci0_pcie_ep/ep*pcie_clocking_i/mmcm_adv_i.RST" TIG ;
 #TIMESPEC "TS_RESETN" = FROM FFS(*) TO FFS(trn_reset_n_i) 8 ns;
 
 # LEDs and Switches...
@@ -85,57 +85,57 @@ NET  "lcd_rw"    LOC = AC14 | IOSTANDARD = LVCMOS25 ;
 NET  "ppsOut"     LOC = V34 | IOSTANDARD = "LVCMOS25"; #ML605 Board J57 (user_sma_gpio_p)
 NET  "ppsExtIn"   LOC = W34 | IOSTANDARD = "LVCMOS25"; #ML605 Board J56 (user_sma_gpio_n)
 
-PIN "ftop/pciw_pci0_pcie_ep/ep_trn_reset_n_int_i.CLR" TIG ;
-PIN "ftop/pciw_pci0_pcie_ep/ep_trn_reset_n_i.CLR" TIG ;
-PIN "ftop/pciw_pci0_pcie_ep/ep_pcie_clocking_i/mmcm_adv_i.RST" TIG ;
+PIN "ftop/*pciw_pci0_pcie_ep/ep*trn_reset_n_int_i.CLR" TIG ;
+PIN "ftop/*pciw_pci0_pcie_ep/ep*trn_reset_n_i.CLR" TIG ;
+PIN "ftop/*pciw_pci0_pcie_ep/ep*pcie_clocking_i/mmcm_adv_i.RST" TIG ;
 
-INST "ftop/pciw_pci0_pcie_ep/ep_pcie_2_0_i/*" AREA_GROUP = "AG_pcie0" ;
+INST "ftop/*pciw_pci0_pcie_ep/ep*pcie_2_0_i/*" AREA_GROUP = "AG_pcie0" ;
 AREA_GROUP "AG_pcie0" RANGE = SLICE_X136Y147:SLICE_X155Y120 ;
 
 ## GbE GMII...
-NET "gmii_txd[0]"     LOC = "AM11" | IOSTANDARD=LVCMOS25; ## 18 on U80
-NET "gmii_txd[1]"     LOC = "AL11" | IOSTANDARD=LVCMOS25; ## 19 on U80
-NET "gmii_txd[2]"     LOC = "AG10" | IOSTANDARD=LVCMOS25; ## 20 on U80
-NET "gmii_txd[3]"     LOC = "AG11" | IOSTANDARD=LVCMOS25; ## 24 on U80
-NET "gmii_txd[4]"     LOC = "AL10" | IOSTANDARD=LVCMOS25; ## 25 on U80
-NET "gmii_txd[5]"     LOC = "AM10" | IOSTANDARD=LVCMOS25; ## 26 on U80
-NET "gmii_txd[6]"     LOC = "AE11" | IOSTANDARD=LVCMOS25; ## 28 on U80
-NET "gmii_txd[7]"     LOC = "AF11" | IOSTANDARD=LVCMOS25; ## 29 on U80
-NET "gmii_tx_en"      LOC = "AJ10" | IOSTANDARD=LVCMOS25; ## 16 on U80
-NET "gmii_tx_er"      LOC = "AH10" | IOSTANDARD=LVCMOS25; ## 13 on U80
+#NET "gmii_txd[0]"     LOC = "AM11" | IOSTANDARD=LVCMOS25; ## 18 on U80
+#NET "gmii_txd[1]"     LOC = "AL11" | IOSTANDARD=LVCMOS25; ## 19 on U80
+#NET "gmii_txd[2]"     LOC = "AG10" | IOSTANDARD=LVCMOS25; ## 20 on U80
+#NET "gmii_txd[3]"     LOC = "AG11" | IOSTANDARD=LVCMOS25; ## 24 on U80
+#NET "gmii_txd[4]"     LOC = "AL10" | IOSTANDARD=LVCMOS25; ## 25 on U80
+#NET "gmii_txd[5]"     LOC = "AM10" | IOSTANDARD=LVCMOS25; ## 26 on U80
+#NET "gmii_txd[6]"     LOC = "AE11" | IOSTANDARD=LVCMOS25; ## 28 on U80
+#NET "gmii_txd[7]"     LOC = "AF11" | IOSTANDARD=LVCMOS25; ## 29 on U80
+#NET "gmii_tx_en"      LOC = "AJ10" | IOSTANDARD=LVCMOS25; ## 16 on U80
+#NET "gmii_tx_er"      LOC = "AH10" | IOSTANDARD=LVCMOS25; ## 13 on U80
 #NET "gmii_tx_clk"     LOC = "AD12" | IOSTANDARD=LVCMOS25; ## 10 on U80
-NET "gmii_rxd[0]"     LOC = "AN13" | IOSTANDARD=LVCMOS25; ## 3 on U80
-NET "gmii_rxd[1]"     LOC = "AF14" | IOSTANDARD=LVCMOS25; ## 128 on U80
-NET "gmii_rxd[2]"     LOC = "AE14" | IOSTANDARD=LVCMOS25; ## 126 on U80
-NET "gmii_rxd[3]"     LOC = "AN12" | IOSTANDARD=LVCMOS25; ## 125 on U80
-NET "gmii_rxd[4]"     LOC = "AM12" | IOSTANDARD=LVCMOS25; ## 124 on U80
-NET "gmii_rxd[5]"     LOC = "AD11" | IOSTANDARD=LVCMOS25; ## 123 on U80
-NET "gmii_rxd[6]"     LOC = "AC12" | IOSTANDARD=LVCMOS25; ## 121 on U80
-NET "gmii_rxd[7]"     LOC = "AC13" | IOSTANDARD=LVCMOS25; ## 120 on U80
-NET "gmii_rx_dv"      LOC = "AM13" | IOSTANDARD=LVCMOS25; ## 4 on U80
-NET "gmii_rx_er"      LOC = "AG12" | IOSTANDARD=LVCMOS25; ## 9 on U80
-NET "gmii_rx_clk"     LOC = "AP11" | IOSTANDARD=LVCMOS25; ## 7 on U80
-NET "gmii_COL"        LOC = "AK13" | IOSTANDARD=LVCMOS25; ## 114 on U80
-NET "gmii_CRS"        LOC = "AL13" | IOSTANDARD=LVCMOS25; ## 115 on U80
-NET "gmii_INT"        LOC = "AH14" | IOSTANDARD=LVCMOS25; ## 32 on U80
-NET "mdio_mdc"        LOC = "AP14" | IOSTANDARD=LVCMOS25; ## 35 on U80
-NET "mdio_mdd"        LOC = "AN14" | IOSTANDARD=LVCMOS25; ## 33 on U80
-NET "gmii_rstn"       LOC = "AH13" | IOSTANDARD=LVCMOS25; ## 36 on U80
-NET "gmii_gtx_clk"    LOC = "AH12" | IOSTANDARD=LVCMOS25; ## 14 on U80
+#NET "gmii_rxd[0]"     LOC = "AN13" | IOSTANDARD=LVCMOS25; ## 3 on U80
+#NET "gmii_rxd[1]"     LOC = "AF14" | IOSTANDARD=LVCMOS25; ## 128 on U80
+#NET "gmii_rxd[2]"     LOC = "AE14" | IOSTANDARD=LVCMOS25; ## 126 on U80
+#NET "gmii_rxd[3]"     LOC = "AN12" | IOSTANDARD=LVCMOS25; ## 125 on U80
+#NET "gmii_rxd[4]"     LOC = "AM12" | IOSTANDARD=LVCMOS25; ## 124 on U80
+#NET "gmii_rxd[5]"     LOC = "AD11" | IOSTANDARD=LVCMOS25; ## 123 on U80
+#NET "gmii_rxd[6]"     LOC = "AC12" | IOSTANDARD=LVCMOS25; ## 121 on U80
+#NET "gmii_rxd[7]"     LOC = "AC13" | IOSTANDARD=LVCMOS25; ## 120 on U80
+#NET "gmii_rx_dv"      LOC = "AM13" | IOSTANDARD=LVCMOS25; ## 4 on U80
+#NET "gmii_rx_er"      LOC = "AG12" | IOSTANDARD=LVCMOS25; ## 9 on U80
+#NET "gmii_rx_clk"     LOC = "AP11" | IOSTANDARD=LVCMOS25; ## 7 on U80
+#NET "gmii_COL"        LOC = "AK13" | IOSTANDARD=LVCMOS25; ## 114 on U80
+#NET "gmii_CRS"        LOC = "AL13" | IOSTANDARD=LVCMOS25; ## 115 on U80
+#NET "gmii_INT"        LOC = "AH14" | IOSTANDARD=LVCMOS25; ## 32 on U80
+#NET "mdio_mdc"        LOC = "AP14" | IOSTANDARD=LVCMOS25; ## 35 on U80
+#NET "mdio_mdd"        LOC = "AN14" | IOSTANDARD=LVCMOS25; ## 33 on U80
+#NET "gmii_rstn"       LOC = "AH13" | IOSTANDARD=LVCMOS25; ## 36 on U80
+#NET "gmii_gtx_clk"    LOC = "AH12" | IOSTANDARD=LVCMOS25; ## 14 on U80
 
 # Expect 3 nS valid window from GMII PHY RX port...
-NET "gmii_rx_clk" TNM_NET = "GMII_RX_CLK";
+#NET "gmii_rx_clk" TNM_NET = "GMII_RX_CLK";
 TIMESPEC "TS_GMII_RX_CLK" = PERIOD "GMII_RX_CLK" 125.00 MHz HIGH 50%;
-NET "gmii_rxd[?]" OFFSET = IN 0.5 ns VALID 3 ns BEFORE "gmii_rx_clk";
-NET "gmii_rx_dv"  OFFSET = IN 0.5 ns VALID 3 ns BEFORE "gmii_rx_clk";
-NET "gmii_rx_er"  OFFSET = IN 0.5 ns VALID 3 ns BEFORE "gmii_rx_clk";
+#NET "gmii_rxd[?]" OFFSET = IN 0.5 ns VALID 3 ns BEFORE "gmii_rx_clk";
+#NET "gmii_rx_dv"  OFFSET = IN 0.5 ns VALID 3 ns BEFORE "gmii_rx_clk";
+#NET "gmii_rx_er"  OFFSET = IN 0.5 ns VALID 3 ns BEFORE "gmii_rx_clk";
 
 # Provide 2 nS to GMII PHY Chip TX port...
 NET "sys1_clkp" TNM_NET = "GMII_GTX_CLK";  # 125 MHz sys1 XO for GbEthernet
 TIMESPEC "TS_GMII_GTX_CLK" = PERIOD "GMII_GTX_CLK" 125.00 MHz HIGH 50%;
-NET "gmii_txd[?]" OFFSET = OUT 6 ns AFTER "gmii_gtx_clk";
-NET "gmii_tx_en"  OFFSET = OUT 6 ns AFTER "gmii_gtx_clk";
-NET "gmii_tx_er"  OFFSET = OUT 6 ns AFTER "gmii_gtx_clk";
+#NET "gmii_txd[?]" OFFSET = OUT 6 ns AFTER "gmii_gtx_clk";
+#NET "gmii_tx_en"  OFFSET = OUT 6 ns AFTER "gmii_gtx_clk";
+#NET "gmii_tx_er"  OFFSET = OUT 6 ns AFTER "gmii_gtx_clk";
 
 
 # ADC...
@@ -272,8 +272,8 @@ NET "flp_cdc_rstn"     LOC = "M31" | IOSTANDARD = "LVCMOS25";   # CDC RST_N
 NET "flp_cdc_pdn"      LOC = "L31" | IOSTANDARD = "LVCMOS25";   # CDC PD_N
 NET "flp_cdc_refen"    LOC=  "K32" | IOSTANDARD = "LVCMOS25";   # CDC 1=Enable 100 MHz On-Card Ref
 NET "flp_cdc_pllstat"  LOC=  "K31" | IOSTANDARD = "LVCMOS25";   # CDC PLL_STATUS (PLL_LOCK) 1=Lock
-NET "flp_cdc_clk_p"    LOC = "A10" | IOSTANDARD = "LVDS_25" | DIFF_TERM = "TRUE";  # CDC Clock U4 to FPGA
-NET "flp_cdc_clk_n"    LOC = "B10" | IOSTANDARD = "LVDS_25" | DIFF_TERM = "TRUE";
+#NET "flp_cdc_clk_p"    LOC = "A10" | IOSTANDARD = "LVDS_25" | DIFF_TERM = "TRUE";  # CDC Clock U4 to FPGA
+#NET "flp_cdc_clk_n"    LOC = "B10" | IOSTANDARD = "LVDS_25" | DIFF_TERM = "TRUE";
 
 ## MON TI AMC7823 and Misc...
 NET "flp_mon_rstn"   LOC = "R32" | IOSTANDARD = "LVCMOS25";   # MON RST_N

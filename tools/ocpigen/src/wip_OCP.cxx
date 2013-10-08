@@ -42,19 +42,19 @@
 namespace OU = OCPI::Util;
 
 #undef OCP_SIGNAL_MT
-#define OCP_SIGNAL_MT(n, w) {#n, true, true, w, true, false},
-#define OCP_SIGNAL_MTR(n, w) {#n, true, true, w, true, true},
+#define OCP_SIGNAL_MT(n, w) {#n, true, true, w, true, false, OCP_##n},
+#define OCP_SIGNAL_MTR(n, w) {#n, true, true, w, true, true, OCP_##n},
 #undef OCP_SIGNAL_ST
-#define OCP_SIGNAL_ST(n, w) {#n, true, false, w, true, false},
-#define OCP_SIGNAL_MS(n) {#n, false, true, 0, false, false},
-#define OCP_SIGNAL_MV(n, w) {#n, true, true, w, false, false},
-#define OCP_SIGNAL_MSR(n) {#n, false, true, 0, false, true},
-#define OCP_SIGNAL_MVR(n, w) {#n, true, true, w, false, true},
-#define OCP_SIGNAL_SS(n) {#n, false, false, 0, false, false},
-#define OCP_SIGNAL_SV(n, w) {#n, true, false, w, false, false},
+#define OCP_SIGNAL_ST(n, w) {#n, true, false, w, true, false, OCP_##n},
+#define OCP_SIGNAL_MS(n) {#n, false, true, 0, false, false, OCP_##n},
+#define OCP_SIGNAL_MV(n, w) {#n, true, true, w, false, false, OCP_##n},
+#define OCP_SIGNAL_MSR(n) {#n, false, true, 0, false, true, OCP_##n},
+#define OCP_SIGNAL_MVR(n, w) {#n, true, true, w, false, true, OCP_##n},
+#define OCP_SIGNAL_SS(n) {#n, false, false, 0, false, false, OCP_##n},
+#define OCP_SIGNAL_SV(n, w) {#n, true, false, w, false, false, OCP_##n},
 OcpSignalDesc ocpSignals [N_OCP_SIGNALS+1] = {
 OCP_SIGNALS
-{0,0,0,0,0,0}
+{0,0,0,0,0,0,N_OCP_SIGNALS}
 };
 
 #undef OCP_SIGNAL_MS
@@ -78,7 +78,8 @@ static size_t floorLog2(uint64_t n) {
 }
 #define max(a,b) ((a) > (b) ? (a) : (b))
 
-static void fixOCP(Port *p) {
+static void
+fixOCP(Port *p) {
   OcpSignal *o = p->ocp.signals;
   OcpSignalDesc *osd = ocpSignals;
   size_t nAlloc = 0;
@@ -102,39 +103,57 @@ static void fixOCP(Port *p) {
     }
 }
 
-const char *
-deriveOCP(Worker *w) {
+static void
+initOCP(Port *p) {
+  OcpSignal *o = p->ocp.signals;
+  OcpSignalDesc *osd = ocpSignals;
+  for (unsigned i = 0; i < N_OCP_SIGNALS; i++, o++, osd++)
+    o->master = osd->master;
+}
+
+const char *Worker::
+deriveOCP() {
   //  printf("4095 %d 4096 %d\n", floorLog2(4095), floorLog2(4096));
   static uint8_t s[1]; // a non-zero string pointer
-  for (unsigned i = 0; i < w->ports.size(); i++) {
-    Port *p = w->ports[i];
+  for (unsigned i = 0; i < m_ports.size(); i++) {
+    Port *p = m_ports[i];
+    initOCP(p);
     OcpSignals *ocp = &p->ocp;
     if (p->myClock)
       ocp->Clk.value = s;
-    ocp->MCmd.width = 3;
     switch (p->type) {
     case WCIPort:
       // Do the WCI port
-      p->master = false;
-      if (w->ctl.sizeOfConfigSpace <= 32)
-	ocp->MAddr.width = 5;
-      else
-	ocp->MAddr.width = ceilLog2(w->ctl.sizeOfConfigSpace);
-      if (w->ctl.sizeOfConfigSpace != 0)
-	ocp->MAddrSpace.value = s;
-      if (w->ctl.sub32Bits)
-	ocp->MByteEn.width = 4;
-      if (w->ctl.writables)
-	ocp->MData.width = 32;
+      ocp->MCmd.width = 3;
       ocp->MFlag.width = 2;
       ocp->MReset_n.value = s;
-      if (w->ctl.readables)
-	ocp->SData.width = 32;
       ocp->SFlag.width = 3;
       ocp->SResp.value = s;
       ocp->SThreadBusy.value = s;
+      // From here down things are dependent on properties
+      if (p->master) {
+	ocp->MAddr.width = 32;
+	ocp->MAddrSpace.value = s;
+	ocp->MByteEn.width = 4;
+	ocp->MData.width = 32;
+	ocp->SData.width = 32;
+      } else {
+	if (m_ctl.sizeOfConfigSpace <= 32)
+	  ocp->MAddr.width = 5;
+	else
+	  ocp->MAddr.width = ceilLog2(m_ctl.sizeOfConfigSpace);
+	if (m_ctl.sizeOfConfigSpace != 0)
+	  ocp->MAddrSpace.value = s;
+	if (m_ctl.sub32Bits)
+	  ocp->MByteEn.width = 4;
+	if (m_ctl.writables)
+	  ocp->MData.width = 32;
+	if (m_ctl.readables)
+	  ocp->SData.width = 32;
+      }
       break;
     case WSIPort:
+      ocp->MCmd.width = 3;
       p->master = p->u.wdi.isProducer ? true : false;
       if (p->preciseBurst) {
 	ocp->MBurstLength.width =
@@ -174,7 +193,8 @@ deriveOCP(Worker *w) {
       ocp->SThreadBusy.value = s;
       break;
     case WMIPort:
-      p->master = true;
+      ocp->MCmd.width = 3;
+      //      p->master = true;
       {
 	size_t n = (p->protocol->m_maxMessageValues * p->protocol->m_dataValueWidth +
 		      p->dataWidth - 1) / p->dataWidth;
@@ -229,7 +249,7 @@ deriveOCP(Worker *w) {
       }
       break;
     case WMemIPort:
-      p->master = !p->u.wmemi.isSlave;
+      ocp->MCmd.width = 3;
       ocp->MAddr.width =
 	ceilLog2(p->u.wmemi.memoryWords) + ceilLog2(p->dataWidth/p->byteWidth);
       ocp->MAddr.value = s;
@@ -271,10 +291,18 @@ deriveOCP(Worker *w) {
       ocp->SResp.value = s;
       break;
     case WTIPort:
+      // Default to the clock being in the slave interface
+      ocp->Clk.master = false; //  FIXME. this should be smart...
+      ocp->Clk.value = s;
+      ocp->MCmd.width = 3;
       ocp->MData.width = p->dataWidth;
-      p->master = false;
       ocp->SReset_n.value = s;
       ocp->SThreadBusy.value = s;
+      break;
+    case CPPort:
+    case NOCPort:
+    case TimePort:
+    case MetadataPort:
       break;
     default:
       return OU::esprintf("No WIP port type specified for interface \"%s\"", p->name);

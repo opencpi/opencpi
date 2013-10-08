@@ -69,7 +69,6 @@
 `endif
 
 `ifdef ORIGINAL
-`ifdef ORIGINAL
 module mkWsiSplitter2x24B(wciS0_Clk,
 			  wciS0_MReset_n,
 
@@ -337,11 +336,7 @@ module mkWsiSplitter2x24B(wciS0_Clk,
 
 `else
 `define NOT_EMPTY_splitter2x2
-`include "splitter2x2_defs.vh"
-`endif
-`else
-`define NOT_EMPTY_splitter2x2
-`include "splitter2x2_defs.vh"
+`include "splitter2x2-defs.vh"
 `endif
   // signals for module outputs
   wire [31 : 0] wciS0_SData, wsiM0_MData, wsiM1_MData;

@@ -32,6 +32,10 @@ module arSRLFIFOD (CLK,RST_N,ENQ,DEQ,FULL_N,EMPTY_N,D_IN,D_OUT,CLR);
   wire sdx;                      // SRL-DEQ and D-ENQ
 
   integer i;
+  // Standard stupidity since there is no builtin verilog way to do this
+  function [l2depth-1:0] trunc(input [31:0] val);
+    trunc = val[l2depth-1:0];
+  endfunction
 
   // Note that proper SRL inference in XST 13.4 seems to require that there be
   // a separate, not-conditional-upon-reset always block for the SRL data
@@ -59,8 +63,8 @@ module arSRLFIFOD (CLK,RST_N,ENQ,DEQ,FULL_N,EMPTY_N,D_IN,D_OUT,CLR);
       sfull  <= 1'b0;
       dempty <= 1'b1;
     end else begin
-      if (!ENQ &&  sdx) pos <= pos - 1;
-      if ( ENQ && !sdx) pos <= pos + 1;
+      if (!ENQ &&  sdx) pos <= trunc(pos - 1); // UGH suppress warning
+      if ( ENQ && !sdx) pos <= trunc(pos + 1); // UGH suppress warning
 
       sempty <= ((pos==0 && !ENQ)        || (pos==1 && (sdx&&!ENQ)));
       sfull <= ((pos==(depth-1) && !sdx) || (pos==(depth-2) && (ENQ&&!sdx)));

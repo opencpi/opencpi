@@ -1,7 +1,7 @@
 # Make the hdl assets
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 
-MyMake=echo ===================$(or $(3),Making) HDL $(1); $(MAKE) --no-print-directory HdlTargets="$(HdlTargets)" -C $(2)$(1)
+MyMake=echo ===================$(or $(3),Making) HDL $(1); $(MAKE) --no-print-directory $(and $(HdlTargets),HdlTargets="$(HdlTargets)") -C $(2)$(1)
 .PHONY: primitives devices platforms components adapters assemblies
 ifndef OCPI_CDK_DIR
 export OCPI_CDK_DIR=$(shell pwd)/../ocpi

@@ -304,7 +304,7 @@ module mkDelayWorker4B(wciS0_Clk,
 
 `else
 `define NOT_EMPTY_delay
-`include "delay_defs.vh"
+`include "delay-defs.vh"
 `endif
   // signals for module outputs
   wire [127 : 0] wmemiM0_MData;

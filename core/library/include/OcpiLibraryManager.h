@@ -8,6 +8,7 @@
  */
 #include <map>
 #include "ezxml.h"
+#include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilUUID.h"
 #include "OcpiDriverManager.h"
@@ -64,14 +65,10 @@ namespace OCPI {
       void setConnection(OCPI::Util::Port &myPort, Implementation *otherImpl = NULL,
 			 OCPI::Util::Port *otherPort = NULL);
     };
-    struct Comp {
-      inline bool operator() (const char *lhs, const char *rhs) const {
-      return strcmp(lhs, rhs) < 0;
-      }
-    };
+
     // Note due to xml persistence we don't need strings in the map
     // but this multimap stuff is pretty ugly
-    typedef std::multimap<const char *, Implementation *, Comp > WorkerMap;
+    typedef std::multimap<const char *, Implementation *, OCPI::Util::ConstCharComp > WorkerMap;
     typedef std::pair< const char*, Implementation *> WorkerMapPair;
     typedef WorkerMap::const_iterator WorkerIter;
     typedef std::pair<WorkerIter,WorkerIter> WorkerRange;

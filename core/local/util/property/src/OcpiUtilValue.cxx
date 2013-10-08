@@ -189,6 +189,7 @@ namespace OCPI {
       m_next = 0;
       m_length = 0;
       m_ULongLong = 0;
+      m_parsed = false;
     }
 
     const char *Value::
@@ -565,7 +566,7 @@ namespace OCPI {
     // This method is used both for parsing and for generating test values.
     // m_nElements has been established
     const char *
-    Value::allocate() {
+    Value::allocate(bool add) {
       if (m_vt->m_isSequence) {
 	if (m_nElements == 0)
 	  return NULL;
@@ -573,14 +574,20 @@ namespace OCPI {
 	  return esprintf("Too many elements (%zu) in bounded sequence (%zu)",
 			  m_nElements, m_vt->m_sequenceLength);
       }
+      size_t oldLength = m_length;
       switch (m_vt->m_baseType) {
 #define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)     \
       case OA::OCPI_##pretty:			       \
 	m_length = m_nTotal * sizeof(run);	       \
 	if (m_vt->m_isSequence || m_vt->m_arrayRank) { \
+	  run *old = m_p##pretty;                      \
 	  m_p##pretty = new run[m_nTotal];	       \
-          /* FIXME: type-specific default value */     \
+          /* FIXME: type-specific default value? */    \
           memset(m_p##pretty, 0, m_length);            \
+	  if (add) {                                   \
+	    memcpy(m_p##pretty, old, oldLength);       \
+	    delete old;                                \
+	  }                                            \
         }                                              \
 	break;
 	OCPI_PROPERTY_DATA_TYPES
@@ -588,78 +595,106 @@ namespace OCPI {
 	OCPI_DATA_TYPE(sca,corba,letter,bits,StructValue,Struct,store)
 	OCPI_DATA_TYPE(sca,corba,letter,bits,TypeValue,Type,store)
 #undef OCPI_DATA_TYPE
-	case OA::OCPI_none: case OA::OCPI_scalar_type_limit:;
-	}
+      case OA::OCPI_none: case OA::OCPI_scalar_type_limit:;
+      }
       if (m_vt->m_baseType == OA::OCPI_Struct) {
+	assert(!add);
 	size_t nElements = m_nTotal * m_vt->m_nMembers;
 	m_struct = m_structNext = new Value *[nElements];
 	for (size_t n = 0; n < nElements; n++)
 	  m_struct[n] = 0;
       } else if (m_vt->m_baseType == OA::OCPI_Type) {
+	assert(!add);
 	// This mutex/static ugliness is to supply an argument to the default constructor of Value
 	AutoMutex am(s_mutex);
 	Value::s_vt = m_vt->m_type;
 	Value::s_parent = this;
 	m_types = m_typeNext = new Value[m_nTotal];
       } else if (m_vt->m_baseType == OA::OCPI_String && !m_stringSpace) {
+	assert(!add);
 	m_stringSpaceLength = m_nTotal * (testMaxStringLength + 1);
 	m_stringNext = m_stringSpace = new char[m_stringSpaceLength];
       }
       return NULL;
     }
-    const char *
-    Value::parse(const char *unparsed, const char *stop) {
-      const char *err = 0;
+
+    // Overloaded with the base case (parsing a whole value),
+    // and adding an element to a sequence value
+    const char *Value::
+    parse(const char *unparsed, const char *stop, bool add) {
+      const char *err = NULL;
       if (!stop)
 	stop = unparsed + strlen(unparsed);
-      clear();
+      if (!add)
+	clear();
       if (m_vt->m_baseType == OA::OCPI_String) {
+	char *old = m_stringSpace;
+	size_t oldLength = m_stringSpaceLength;
 	// the space required will never be larger than the input...
-	m_stringSpaceLength = stop - unparsed + 1;
+	m_stringSpaceLength += stop - unparsed + 1; // note += for 'add' case
 	m_stringNext = m_stringSpace = new char[m_stringSpaceLength];
+	if (add) {
+	  assert(m_vt->m_isSequence);
+	  // Do the realloc of the string space, and adjust
+	  m_stringNext += oldLength;
+	  memcpy(m_stringSpace, old, oldLength);
+	  // Relocate string pointers
+	  for (unsigned n = 0; n < m_nElements; n++)
+	    m_pString[n] = m_stringSpace + (m_pString[n] - old);
+	}
       }
-      const char *start, *end, *tmp = unparsed;
-      m_nTotal = m_vt->m_nItems;
-      if (m_vt->m_isSequence) {
-	// Figure out how many elements in the sequence
-	m_nElements = 0;
-	size_t len;
-	do {
-	  if ((err = doElement(tmp, stop, start, end)))
-	    return err;
-	  len = end - start;
-	  while (end < tmp && isspace(*end))
-	    end++;
-	  m_nElements++;
-	} while (end < stop);
-	if (m_nElements == 1 && len == 0)
-	  //(len == 0 ||
-	  //len == 2 && !strncmp("{}", start, 2)))
+      if (add)
+	m_nElements++;
+      else {
+	// Count elements
+	if (m_vt->m_isSequence) {
+	  const char *start, *end, *tmp = unparsed;
+	  // Figure out how many elements in the sequence
 	  m_nElements = 0;
-	m_nTotal *= m_nElements;
+	  size_t len;
+	  do {
+	    if ((err = doElement(tmp, stop, start, end)))
+	      return err;
+	    len = end - start;
+	    while (end < tmp && isspace(*end))
+	      end++;
+	    m_nElements++;
+	  } while (end < stop);
+	  if (m_nElements == 1 && len == 0)
+	    //(len == 0 ||
+	    //len == 2 && !strncmp("{}", start, 2)))
+	    m_nElements = 0;
+	}
       }
-      if ((err = allocate()))
+      m_nTotal = m_vt->m_nItems * m_nElements;
+      if ((err = allocate(add)))
 	return err;
       if (m_vt->m_isSequence) {
-	// Now we have allocated the appropriate sequence array, so we can parse elements
-	for (unsigned n = 0; n < m_nElements; n++) {
-	  doElement(unparsed, stop, start, end);
-	  if (needsCommaElement()) {
-	    if (*start != '{' || end[-1] != '}')
-	      return "sequence elements not enclosed in braces";
-	    start++;
-	    end--;
-	  }
-	  if ((err = parseElement(start, end, n)))
+	const char *start, *end;
+	if (add) {
+	  if ((err = parseElement(unparsed, stop, m_nElements-1)))
 	    return err;
-	}
-	return NULL;
-      }
-      return parseElement(unparsed, stop, 0);
+	} else
+	  // Now we have allocated the appropriate sequence array, so we can parse elements
+	  for (unsigned n = 0; n < m_nElements; n++) {
+	    doElement(unparsed, stop, start, end);
+	    if (needsCommaElement()) {
+	      if (*start != '{' || end[-1] != '}')
+		return "sequence elements not enclosed in braces";
+	      start++;
+	      end--;
+	    }
+	    if ((err = parseElement(start, end, n)))
+	      return err;
+	  }
+      } else if ((err = parseElement(unparsed, stop, 0)))
+	return err;
+      m_parsed = true;
+      return NULL;
     }
     const char *Value::
     parseDimension(const char *unparsed, const char *stop,
-		   unsigned nseq, size_t dim, size_t offset, size_t nItems) {
+		   size_t nseq, size_t dim, size_t offset, size_t nItems) {
       size_t
 	nextDim = dim + 1,
 	dimension = m_vt->m_arrayDimensions[dim],
@@ -699,14 +734,14 @@ namespace OCPI {
     }
     // Parse a value that is a sequence element or a single standalone value.
     const char *Value::
-    parseElement(const char *start, const char *end, unsigned nSeq) {
+    parseElement(const char *start, const char *end, size_t nSeq) {
       return m_vt->m_arrayRank ?
 	parseDimension(start, end, nSeq, 0, 0, m_vt->m_nItems) :
 	parseValue(start, end, nSeq, 0);
     }
     // A single value
     const char *Value::
-    parseValue(const char *start, const char *end, unsigned nSeq, size_t nArray) {
+    parseValue(const char *start, const char *end, size_t nSeq, size_t nArray) {
       const char *err;
       switch (m_vt->m_baseType) {
 #define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)			        \
@@ -845,14 +880,13 @@ unparseElement(std::string &s, unsigned nSeq, char comma) const {
     unparseValue(s, nSeq, 0, comma);
 }
 
-static void doFormat(std::string &s, const char *fmt, ...) {
-  char *cp;
+// Format the result, possibly using a user-specified format string
+  void Value::
+doFormat(std::string &s, const char *fmt, ...) const {
   va_list ap;
   va_start(ap, fmt);
-  vasprintf(&cp, fmt, ap);
+  formatAddV(s, m_vt->m_format.empty() ? fmt : m_vt->m_format.c_str(), ap);
   va_end(ap);
-  s += cp;
-  free(cp);
 }
 
 void Value::unparse(std::string &s, bool append, char comma) const {
@@ -883,7 +917,7 @@ unparseValue(std::string &s, unsigned nSeq, size_t nArray, char comma) const {
     return unparse##pretty(s,						 \
 		           m_vt->m_isSequence || m_vt->m_arrayRank ?	 \
 		           m_p##pretty[nSeq * m_vt->m_nItems + nArray] : \
-		           m_##pretty); 				 \
+		           m_##pretty);	                                 \
       break;
     OCPI_PROPERTY_DATA_TYPES
     OCPI_DATA_TYPE(sca,corba,letter,bits,TypeValue,Type,store)

@@ -108,6 +108,7 @@ subtype ulong_t is unsigned (31 downto 0);
 type ulong_array_t is array (natural range <>) of ulong_t;
 constant ulong_max : ulong_t := x"ffff_ffff";
 function To_ulong (c: natural) return ulong_t;
+function To_ulong (c: std_logic_vector(31 downto 0)) return ulong_t;
 --
 -- ushort type - convertible to/from vhdl native natural
 --

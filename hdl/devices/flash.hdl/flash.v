@@ -148,12 +148,13 @@ module mkFlashWorker(wciS0_Clk,
 
 `else
 `define NOT_EMPTY_flash
-`include "flash_defs.vh"
+`include "flash-defs.vh"
 `endif
   // signals for module outputs
   wire [31 : 0] wciS0_SData;
   wire [23 : 0] flash_addr;
-  wire [1 : 0] wciS0_SFlag, wciS0_SResp;
+  wire [2 : 0]  wciS0_SFlag;
+  wire [1 : 0]  wciS0_SResp;
   wire flash_adv_n,
        flash_ce_n,
        flash_oe_n,
@@ -574,12 +575,24 @@ module mkFlashWorker(wciS0_Clk,
 							.FULL_N(flashC_respF$FULL_N),
 							.EMPTY_N(flashC_respF$EMPTY_N));
 
+`ifdef ORIGINAL_
   // submodule flashC_tsd
   TriState #(.width(32'd16)) flashC_tsd(.I(flashC_tsWD),
 					.OE(flashC_tsOE),
 					.O(flashC_tsd$O),
 					.IO(flash_io_dq));
-
+`else
+  genvar i;
+  for (i = 0; i < 16; i=i+1) begin: a
+    IOBUF #(.DRIVE(12),
+  	    .IOSTANDARD("DEFAULT"),
+	    .SLEW("SLOW"))
+    flash_io(.O(flashC_tsd$O[i]),
+	     .IO(flash_io_dq[i]),
+	     .I(flashC_tsWD[i]),
+	     .T(!flashC_tsOE));
+  end
+`endif
   // submodule wci_wslv_reqF
   SizedFIFO #(.p1width(32'd72),
 	      .p2depth(32'd3),

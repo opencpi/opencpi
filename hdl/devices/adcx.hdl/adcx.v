@@ -428,7 +428,7 @@ module mkADCWorker(CLK_sys0_clk,
 
 `else
 `define NOT_EMPTY_adcx
-`include "adcx_defs.vh"
+`include "adcx-defs.vh"
 `endif
   // inlined wires
   wire [95 : 0] wsiM_extStatusW$wget;

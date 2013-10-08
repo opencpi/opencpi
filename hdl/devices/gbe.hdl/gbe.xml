@@ -36,10 +36,14 @@
       <property name="reserved3" readable="true" ArrayLength="131040"/>
       <property name="data" readable="true" ArrayLength="131072"/>
     </Properties>
-    <DataInterfaceSpec Name="wsiS0" />
-    <DataInterfaceSpec Name="wsiM0" producer="true"/>
+    <DataInterfaceSpec Name="wsiS0">
+      <ProtocolSummary DataValueWidth="8" MaxMessageValues="16380" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
+    </DataInterfaceSpec>
+    <DataInterfaceSpec Name="wsiM0" producer="true">
+      <ProtocolSummary DataValueWidth="8" MaxMessageValues="16380" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
+    </DataInterfaceSpec>
   </ComponentSpec>
-  <property name="hasDebugLogic" parameter="true"/>
+  <property name="hasDebugLogic" parameter="true" default='true'/>
   <StreamInterface Name="wsiM0" NumberOfOpcodes="256" preciseBurst="true" impreciseburst="true"/>
   <StreamInterface Name="wsiS0" NumberOfOpcodes="256" preciseBurst="true" impreciseburst="true"/>
   <ControlInterface Name="wciS0" ControlOperations="initialize" Timeout="250000000" Sub32BitConfigProperties="true"/>

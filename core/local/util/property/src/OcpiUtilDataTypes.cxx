@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -34,8 +33,9 @@
 
 #define __STDC_LIMIT_MACROS // wierd standards goof up
 
+#include <string.h>
 #include <climits>
-#include <string>
+#include <set>
 
 #include "OcpiOsAssert.h"
 #include "OcpiUtilEzxml.h"
@@ -49,9 +49,9 @@ namespace OCPI {
     namespace OA = OCPI::API;
     namespace OE = OCPI::Util::EzXml;
 
-    ValueType::ValueType(OA::BaseType bt)
+    ValueType::ValueType(OA::BaseType bt, bool isSequence)
       : m_baseType(bt), m_arrayRank(0), m_nMembers(0), m_dataAlign(0), m_align(1), m_nBits(0),
-	m_isSequence(false), m_nBytes(0), m_arrayDimensions(NULL), m_stringLength(0),
+	m_isSequence(isSequence), m_nBytes(0), m_arrayDimensions(NULL), m_stringLength(0),
 	m_sequenceLength(0), m_members(NULL), m_type(NULL), m_enums(NULL), m_nEnums(0),
 	m_nItems(1)
     {}
@@ -109,12 +109,23 @@ namespace OCPI {
     void Writer::end(){}
 
     Member::Member()
-      :  m_offset(0), m_isIn(false), m_isOut(false), m_isKey(false), m_defaultValue(NULL)
+      :  m_offset(0), m_isIn(false), m_isOut(false), m_isKey(false), m_default(NULL)
     {
     }
+    // Constructor when you are not parsing, and doing static initialization
+    Member::Member(const char *name, const char *abbrev, const char *description, OA::BaseType type,
+		   bool isSequence, const char *defaultValue)
+		   : ValueType(type, isSequence), m_name(name), m_abbrev(abbrev ? abbrev : ""),
+		     m_description(description ? description : ""),
+		     m_offset(0), m_isIn(false), m_isOut(false), m_isKey(false), m_default(NULL) {
+      if (defaultValue) {
+	  m_default = new Value(*this);
+	  ocpiCheck(m_default->parse(defaultValue) == 0);
+      }
+    }
     Member::~Member() {
-      if (m_defaultValue)
-	delete m_defaultValue;
+      if (m_default)
+	delete m_default;
     }
     const char *
     Member::parse(ezxml_t xm, bool isFixed, bool hasName, const char *hasDefault, unsigned ordinal) {
@@ -126,6 +137,9 @@ namespace OCPI {
 	m_name = name;
       else if (hasName)
 	return "Missing Name attribute in Property/Argument/Member element";
+      OE::getOptionalString(xm, m_abbrev, "Abbrev");
+      OE::getOptionalString(xm, m_description, "Description");
+      OE::getOptionalString(xm, m_format, "Format");
       const char *typeName = ezxml_cattr(xm, "Type");
       if (!typeName)
 	typeName = "ULong";
@@ -239,11 +253,13 @@ namespace OCPI {
       if (hasDefault) {
 	const char *defValue = ezxml_cattr(xm, hasDefault);
 	if (defValue) {
-	  m_defaultValue = new Value(*this);
-	  if ((err = m_defaultValue->parse(defValue)))
+	  m_default = new Value(*this);
+	  if ((err = m_default->parse(defValue)))
 	    return esprintf("for member %s: %s", m_name.c_str(), err);
 	}
       }
+      if (m_format.size() && !strchr(m_format.c_str(), '%'))
+	return esprintf("invalid format string '%s' for '%s'", m_format.c_str(), m_name.c_str());
       return 0;
     }
 
@@ -274,9 +290,9 @@ namespace OCPI {
       }
       if (m_isKey)
 	fprintf(f, " key=\"true\"");
-      if (m_defaultValue) {
+      if (m_default) {
 	std::string val;
-	m_defaultValue->unparse(val);
+	m_default->unparse(val);
 	fprintf(f, " default=\"%s\"", val.c_str()); // FIXME: string value properties may have extra quotes
       }
     }
@@ -521,6 +537,7 @@ namespace OCPI {
       for (ezxml_t m = ezxml_cchild(mems, tag); m ; m = ezxml_next(m))
 	nMembers++;
       if (nMembers) {
+	std::set<const char *, ConstCharComp> names, abbrevs;
 	Member *m = new Member[nMembers];
 	members = m;
 	const char *err = NULL;
@@ -529,7 +546,12 @@ namespace OCPI {
 				    hasDefault ? hasDefault : NULL, NULL)) ||
 	      (err = m->parse(mx, isFixed, true, hasDefault, (unsigned)(m - members))))
 	    return err;
+	  if (!names.insert(m->m_name.c_str()).second)
+	    return esprintf("Duplicate member name: %s", m->m_name.c_str());
+	  if (m->m_abbrev.size() && !abbrevs.insert(m->m_abbrev.c_str()).second)
+	    return esprintf("Duplicate member abbreviation: %s", m->m_name.c_str());
 	}
+	
       }
       return NULL;
     }

@@ -446,7 +446,7 @@ namespace OCPI {
       // Loop over all the implementations
       m_nImplementations = OE::countChildren(m_xml, "worker");
       OU::Implementation *metaImpl = m_metaImplementations = new OU::Implementation[m_nImplementations];
-      typedef std::map<const char*, Implementation *, Comp> InstanceMap;
+      typedef std::map<const char*, Implementation *, OU::ConstCharComp> InstanceMap;
       typedef InstanceMap::iterator InstanceIter;
       InstanceMap instances; // record static instances for connection tracking
       unsigned n = 0;

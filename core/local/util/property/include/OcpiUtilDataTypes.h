@@ -73,8 +73,9 @@ namespace OCPI {
       size_t m_nEnums;
       size_t m_nItems;                // total number of fixed items
       std::string m_typeDef;          // If we were created from a typedef
+      std::string m_format;
       // unions and enums
-      ValueType(OCPI::API::BaseType bt = OCPI::API::OCPI_none);
+      ValueType(OCPI::API::BaseType bt = OCPI::API::OCPI_none, bool isSequence = false);
       ~ValueType();
       bool isSequence() const { return m_isSequence; }
       // Return whether this value is fixed in size
@@ -152,12 +153,15 @@ namespace OCPI {
     class Value;
     class Member : public ValueType {
     public:
+      std::string m_name, m_abbrev;
+      std::string m_description;
       size_t m_offset;              // in group
-      std::string m_name;
       bool m_isIn, m_isOut, m_isKey;  // for arguments (could use another class, but not worth it)
-      Value *m_defaultValue;          // A default value, if one is appropriate and there is one
+      Value *m_default;               // A default value, if one is appropriate and there is one
       unsigned m_ordinal;             // ordinal within group
       Member();
+      Member(const char *name, const char *abbrev, const char *description, OCPI::API::BaseType type,
+	     bool isSequence, const char *defaultValue);
       virtual ~Member();
       void printAttrs(FILE *f, const char *tag, unsigned indent = 0);
       void printChildren(FILE *f, const char *tag, unsigned indent = 0);

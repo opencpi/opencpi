@@ -42,7 +42,7 @@ Model=rcc
 # Default is that you are building in a subdirectory of all implementations
 # Target:=$(shell uname -s)=$(shell uname -r)=$(shell uname -p)=gcc=$(shell gcc -dumpversion)=$(shell gcc -dumpmachine)
 RccImplSuffix=_Worker.h
-RccSkelSuffix=_skel.c
+RccSkelSuffix=-skel.c
 RccSourceSuffix=.c
 OBJ:=.o
 IncludeDirs+=../include

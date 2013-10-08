@@ -181,7 +181,7 @@ module mkWSICaptureWorker4B(wciS0_Clk,
 
 `else
 `define NOT_EMPTY_capture
-`include "capture_defs.vh"
+`include "capture-defs.vh"
 `endif
   // signals for module outputs
   wire [31 : 0] wciS0_SData;
@@ -934,6 +934,9 @@ module mkWSICaptureWorker4B(wciS0_Clk,
        metaCount_34_ULT_1024___d1204,
        splaF_i_notEmpty__96_AND_IF_splaF_first__97_BI_ETC___d929;
 
+   // PATCH: we need to tell the time client what clock to sync to
+   assign wtiS0_Clk = wciS0_Clk;
+   
   // value method wciS0_sResp
   assign wciS0_SResp = wci_wslv_respF_q_0[33:32] ;
 

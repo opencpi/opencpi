@@ -297,7 +297,7 @@ module mkDramServer_v6(CLK_sys0_clk,
 
 `else
 `define NOT_EMPTY_dram_v6
-`include "dram_v6_defs.vh"
+`include "dram_v6-defs.vh"
 `endif
   // inlined wires
   wire [145 : 0] wmemi_wmemiDh$wget;

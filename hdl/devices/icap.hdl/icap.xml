@@ -39,7 +39,7 @@
   </ComponentSpec>
   <ControlInterface ControlOperations="initialize" Timeout="250000000" Sub32BitConfigProperties="true">
     <Property Name="hasDebugLogic" Parameter="true" Type="Bool" Default="true"/>
-    <property name="isV6ICAP" parameter="true" type="bool"/>
+    <property name="isV6ICAP" parameter="true" type="bool" default='true'/>
   </ControlInterface>
   <!--  Non-OCP Signals -->
 </HdlImplementation>

@@ -88,6 +88,7 @@ HdlToolCoreLibName=$(Core)
 # Variable required by toolset: HdlBin
 # What suffix to give to the binary file result of building a core
 HdlBin=.ngc
+HdlBin_xst=.ngc
 ################################################################################
 # Variable required by toolset: HdlToolRealCore
 # Set if the tool can build a real "core" file when building a core
@@ -122,12 +123,18 @@ Top=onewire
 endif
 CompiledSourceFiles:= $(OCPI_CDK_DIR)/include/hdl/onewire.v $(CompiledSourceFiles)
 WorkLibrarySources:=$(WorkLibrarySources) $(OCPI_CDK_DIR)/include/hdl/onewire.v
-else ifeq ($(HdlMode),platform)
-ifeq ($(origin XstExtraOptions),undefined)
-XstExtraOptions=-iobuf yes -bufg 32
 endif
 XstInternalOptions=$(and $(wildcard $(HdlPlatform).xcf),-uc ../$(HdlPlatform).xcf)
-endif
+XstDefaultExtraOptions=
+XstDefaultContainerExtraOptions=-iobuf yes -bufg 32 -iob auto
+XstMyExtraOptions=$(strip \
+  $(if $(filter $(HdlMode),container),\
+      $(if $(filter undefined,$(origin XstContainerExtraOptions)),\
+          $(XstDefaultContainerExtraOptions),\
+          $(XstContainerExtraOptions)),\
+      $(if $(filter undefined,$(origin XstExtraOptions)),\
+          $(XstDefaultExtraOptions),\
+          $(XstExtraOptions))))
 $(call OcpiDbgVar,Core)
 $(call OcpiDbgVar,HdlMode)
 
@@ -208,8 +215,8 @@ XstGoodOptions=-bufg -opt_mode -opt_level -read_cores -iobuf \
 XstDefaultOptions=\
     -ifmt mixed -bufg 0 -iobuf no -opt_mode speed -opt_level 2 -ofmt NGC \
     -keep_hierarchy soft -netlist_hierarchy rebuilt \
-    -read_cores $(if $(filter assembly,$(HdlMode)),yes,optimize) \
-    -hierarchy_separator /
+    -hierarchy_separator / \
+    -read_cores $(if $(filter container,$(HdlMode)),optimize,yes) \
 
 # Extra default ones:\
  -xor_collapse TRUE -verilog2001 TRUE -slice_packing TRUE \
@@ -233,13 +240,13 @@ XstCheckOptions=\
     $(call XstCheckOption,$(1))
 
 XstPruneOption=\
-    $(if $(filter $(word 1,$(1)),$(XstExtraOptions)),,$(wordlist 1,2,$(1))) \
+    $(if $(filter $(word 1,$(1)),$(XstMyExtraOptions)),,$(wordlist 1,2,$(1))) \
     $(if $(word 3,$(1)),\
         $(call XstPruneOption,$(wordlist 3,$(words $(1)),$(1))))
 
 XstOptions=\
-$(call XstCheckOptions,$(XstExtraOptions))\
-$(call XstPruneOption,$(XstDefaultOptions)) $(XstExtraOptions) $(XstInternalOptions)
+$(call XstCheckOptions,$(XstMyExtraOptions))\
+$(call XstPruneOption,$(XstDefaultOptions)) $(XstMyExtraOptions) $(XstInternalOptions)
 
 # Options and temp files if we have any libraries
 # Note that "Libraries" is for precompiled libraries, whereas "OcpiLibraries" are for cores (in the -sd path),
@@ -253,17 +260,19 @@ XstLibraries=$(HdlLibrariesInternal)
 
 XstNeedIni= $(strip $(XstLibraries)$(ComponentLibraries)$(CDKCompenentLibraries)$(CDKDeviceLibraries)$(Cores))
 #   $(and $(findstring worker,$(HdlMode)),echo $(call ToLower,$(Worker))=$(call ToLower,$(Worker));) 
+
+# Choices as to where a bb might be
+# 1. For pointing to a built target directory with the filename being the core name,
+#    where the core, and bblib is built.  Core is $1.$(HdlBin) Lib is $(dir $1)/bb/$(notdir $1)
+XstCoreLibraryChoices=$(strip \
+  $(and $(filter target-%,$(subst /, ,$1)),$(dir $1)/bb/$(notdir $1)) \
+  $(and $(filter target-%,$(subst /, ,$1)),$(dir $1)/bb/$(patsubst %_rv,%,$(notdir $1))) \
+  $(call HdlLibraryRefDir,$1_bb,$(if $(HdlTarget),$(call HdlGetFamily,$(HdlTarget)),NONE3)) \
+  $(call HdlLibraryRefDir,$1,$(or $(HdlTarget),$(info NONE4)),$(notdir $1)_bb) \
+)
+
 XstMakeIni=\
   (\
-   $(foreach l,$(XstLibraries),\
-      echo $(lastword $(subst -, ,$(notdir $(l))))=$(strip \
-        $(call FindRelative,$(TargetDir),$(strip \
-           $(call HdlLibraryRefDir,$(l),$(HdlTarget)))));) \
-   $(foreach l,$(Cores),\
-      echo $(lastword $(subst -, ,$(notdir $(l))))_bb=$(strip \
-        $(call FindRelative,$(TargetDir),$(strip \
-	 $(or $(call HdlExists,$(call HdlLibraryRefDir,$l_bb,$(or $(HdlTarget),$(info NONE2)))),\
-              $(call HdlExists,$(call HdlLibraryRefDir,$l,$(or $(HdlTarget),$(info NONE3)),$(notdir $l)_bb))))));)\
    $(foreach l,$(CDKComponentLibraries),echo $(notdir $(l))=$(strip \
      $(call FindRelative,$(TargetDir),$(l)/hdl/stubs/$(call HdlToolLibRef,,$(HdlTarget))));) \
    $(foreach l,$(CDKDeviceLibraries),echo $(notdir $(l))=$(strip \
@@ -272,15 +281,23 @@ XstMakeIni=\
      $(call FindRelative,$(TargetDir),$(l)/lib/hdl/stubs/$(call HdlToolLibRef,,$(HdlTarget))));) \
    $(foreach l,$(ComponentLibraries),echo $(notdir $(l))=$(strip \
      $(call FindRelative,$(TargetDir),$(call HdlComponentLibrary,$l,stubs/$(HdlTarget))));) \
+   $(foreach l,$(XstLibraries),\
+      echo $(lastword $(subst -, ,$(notdir $(l))))=$(strip \
+        $(call FindRelative,$(TargetDir),$(strip \
+           $(call HdlLibraryRefDir,$(l),$(HdlTarget)))));) \
+   $(foreach l,$(Cores),\
+      echo $(patsubst %_rv,%,$(notdir $l))=$(call FindRelative,$(TargetDir),$(strip \
+          $(firstword $(foreach c,$(call XstCoreLibraryChoices,$l),$(call HdlExists,$c)))));) \
   ) > $(XstIniFile);
 
 XstMakeLso=\
   (\
    $(if $(PreBuiltCore)$(filter container assembly platform worker core,$(HdlMode)),,echo work;) $(if $(findstring work,$(LibName)),,echo $(LibName);) \
-   $(foreach l,$(XstLibraries) $(CDKComponentLibraries) $(CDKDeviceLibraries) $(ComponentLibraries) $(DeviceLibraries),\
+   $(foreach l,$(ComponentLibraries) $(DeviceLibraries) $(XstLibraries) $(CDKComponentLibraries) $(CDKDeviceLibraries),\
                       echo $(lastword $(subst -, ,$(notdir $(l))));)\
-  $(foreach l,$(Cores),\
-            echo $(lastword $(subst -, ,$(notdir $(l))_bb));)) > $(XstLsoFile);
+  $(foreach l,$(Cores), echo $(patsubst %_rv,%,$(notdir $l));)) > $(XstLsoFile);
+
+#            echo $(lastword $(subst -, ,$(notdir $(l))_bb));)) > $(XstLsoFile);
 XstOptions += -lso $(XstLsoFile) 
 #endif
 XstPrjFile=$(Core).prj
@@ -306,7 +323,7 @@ XstMakeScr=(echo set -xsthdpdir . $(and $(XstNeedIni),-xsthdpini $(XstIniFile));
 # -ifn $(XstPrjFile) -ofn $(Core).ngc -top $(Top)
 
 XstOptions +=\
- -ifn $(XstPrjFile) -ofn $(Core).ngc -top $(Top) \
+ -ifn $(XstPrjFile) -ofn $(Core).ngc -work_lib $(LibName) -top $(Top) \
  -p $(or $(HdlExactPart),$(HdlTarget))\
  $(and $(VerilogIncludeDirs),$(strip\
    -vlgincdir { \
@@ -328,7 +345,7 @@ XstOptions +=\
      $(and $(findstring platform,$(HdlMode)),..) \
       })
 
-XstNgcOptions=\
+XstNgdOptions=\
   $(foreach l,$(CDKComponentLibraries), -sd \
     $(call FindRelative,$(TargetDir),$(l)/hdl/$(or $(HdlPart),$(HdlTarget))))\
   $(foreach l,$(CDKDeviceLibraries), -sd \
@@ -338,7 +355,7 @@ XstNgcOptions=\
   $(foreach l,$(DeviceLibraries), -sd \
     $(call FindRelative,$(TargetDir),$(l)/lib/hdl/$(or $(HdlPart),$(HdlTarget))))\
   $(foreach c,$(Cores), -sd \
-    $(call FindRelative,$(TargetDir),$(call HdlCoreRefDir,$(c),$(or $(HdlPart),$(HdlTarget))))) 
+    $(call FindRelative,$(TargetDir),$(dir $(call HdlCoreRef,$c,$(HdlTarget)))))
 
 #$(info lib=$(HdlLibrariesInternal)= cores=$(Cores)= Comps=$(ComponentLibraries)= td=$(TargetDir)= @=$(@))
 
@@ -347,10 +364,9 @@ HdlToolCompile=\
      $(if $(wildcard $(call HdlLibraryRefDir,$(l),$(HdlTarget))),,\
           $(error Error: Specified library: "$(l)", in the "HdlLibraries" variable, was not found for $(HdlTarget).))) \
   $(foreach l,$(Cores),\
-     $(if $(or $(call HdlExists,$(call HdlLibraryRefDir,$l_bb,$(or $(HdlTarget),$(info NONE2)))),$(strip\
-               $(call HdlExists,$(call HdlLibraryRefDir,$l,$(or $(HdlTarget),$(info NONE3)),$(notdir $l)_bb)))),,\
-	  $(info Error: Specified core library "$l", in the "Cores" variable, was not found.) \
-          $(error Error:   after looking for "$(call HdlLibraryRefDir,$l_bb,$(HdlTarget))"))) \
+    $(if $(foreach x,$(call XstCoreLibraryChoices,$1),$(call HdlExists,$x)),,\
+	$(info Error: Specified core library for "$l", in the "Cores" variable, was not found.) \
+        $(error Error:   after looking in $(call HdlExists,$(call XstCoreLibraryChoices,$1))))) \
   echo '  'Creating $@ with top == $(Top)\; details in $(TargetDir)/xst-$(Core).out.;\
   rm -f $(notdir $@);\
   $(XstMakePrj)\
@@ -385,88 +401,84 @@ HdlToolPost=\
 ################################################################################
 # Generate the per-platform files into platform-specific target dirs
 # obsolete InitXilinx=. $(OCPI_XILINX_TOOLS_DIR)/settings64.sh > /dev/null
-XilinxAfter=grep -i error $1.out|grep -v '^WARNING:'|grep -i -v '[_a-z]error'; \
+XilinxAfter=set +e; grep -i error $1.out|grep -v '^WARNING:'|grep -i -v '[_a-z]error'; \
 	     if grep -q $2 $1.out; then \
 	       echo Time: `cat $1.time`; \
 	       exit 0; \
 	     else \
 	       exit 1; \
 	     fi
+# $(call DoXilinx,<tool>,<target-dir>,<
 # Use default pattern to find error string in tool output
 DoXilinx=$(call DoXilinxPat,$1,$2,$3,'Number of error.*s: *0')
 DoXilinxPat=\
-	echo " "Details in $1.out; cd $(call PlatformDir,$2); $(call XilinxInit,$1.out); \
+	echo " "Details in $1.out; cd $2; $(call XilinxInit,$1.out); \
 	echo Command: $1 $3 >> $1.out; \
-	/usr/bin/time -f %E -o $1.time sh -c "$1 $3; RC=$$$$?; echo Exit status: $$$$RC; echo $$$$RC > $1.status" >> $1.out 2>&1;\
+	/usr/bin/time -f %E -o $1.time sh -c "$1 $3; RC=\$$$$?; $(ECHO) Exit status: \$$$$RC; $(ECHO) \$$$$RC > $1.status" >> $1.out 2>&1;\
 	(echo -n Time:; cat $1.time) >> $1.out; \
 	$(call XilinxAfter,$1,$4)
 #AppBaseName=$(PlatformDir)/$(Worker)-$(HdlPlatform)
-PromName=$(call PlatformDir,$1)/$(call AppName,$1).mcs
-BitName=$(call PlatformDir,$1)/$(call AppName,$1).bit
+PromName=$1/$2.mcs
+BitName=$1/$2.bit
+BitFile_xst=$1.bit
 # FIXME: allow for multiple container mappings, possible platform-specific, possibly not
-NgdName=$(call PlatformDir,$1)/$(call AppName,$1).ngd
-NgcName=$(call PlatformDir,$1)/$(call AppName,$1).ngc
-AppNgcName=$(call PlatformDir,$1)/$(ContainerModule).ngc
-MapName=$(call PlatformDir,$1)/$(call AppName,$1)_map.ncd
-ParName=$(call PlatformDir,$1)/$(call AppName,$1)_par.ncd
-ChipScopeName=$(call PlatformDir,$1)/$(call AppName,$1)_csi.ngc
-PcfName=$(call PlatformDir,$1)/$(call AppName,$1).pcf
-TopNgcName=$(HdlPlatformsDir)/$1/target-$(call HdlGetPart,$1)/$1.ngc
+NgdName=$1/$2.ngd
+NgcName=$1/$2.ngc
+#AppNgcName=$1/$(ContainerModule).ngc
+MapName=$1/$2_map.ncd
+ParName=$1/$2_par.ncd
+ChipScopeName=$1/$2_csi.ngc
+PcfName=$1/$2.pcf
+#TopNgcName=$(HdlPlatformsDir)/$1/target-$(call HdlGetPart,$1)/$1.ngc
 
-define HdlToolDoPlatform
+# $(call HdlToolDoPlatform,<target-dir>,<app-name>,<app-core-name>,<config>,<platform-name>)
+define HdlToolDoPlatform_xst
 
-$(call NgdName,$1): $(call AppNgcName,$1) $(wildcard $(HdlPlatformsDir)/$1/*.ucf) $(call TopNgcName,$1) | $(call PlatformDir,$1)
-	$(AT)echo -n For $(Worker) on $1: creating NGD '(Xilinx Native Generic Database)' file using '"ngdbuild"'.
+# Convert ngc to ngd (we don't do merging here)
+$(call NgdName,$1,$3): $(call NgcName,$1,$3) $(wildcard $(HdlPlatformsDir)/$5/*.ucf)
+	$(AT)echo -n For $2 on $5 using config $4: creating NGD '(Xilinx Native Generic Database)' file using '"ngdbuild"'.
 	$(AT)$(call DoXilinx,ngdbuild,$1,\
-	        -aul -aut $(foreach u,$(wildcard $(HdlPlatformsDir)/$1/*.ucf),-uc $u) -p $(HdlPart_$1) \
-                $$(foreach d, ../target-$(call HdlGetFamily,$(call HdlGetPart,$1)) \
-		              $$(foreach l,$$(ComponentLibraries),$$(strip \
-			        $$(call FindRelative,$(call PlatformDir,$1),$(strip \
-			          $$(call HdlComponentLibrary,$$l,$(HdlPart_$1)))))) \
-			      $$(call FindRelative,$(call PlatformDir,$1), \
-			         $$(HdlPlatformsDir)/$1),\
-			-sd $$d) \
-	        $$(call FindRelative,$(call PlatformDir,$1),$(call TopNgcName,$1)) $(notdir $(call NgdName,$1)))
+	        -aul -aut -verbose $(foreach u,$(wildcard $(HdlPlatformsDir)/$5/*.ucf),-uc $u) -p $(HdlPart_$5) \
+                -sd $(HdlPlatformsDir)/ml605/target-ml605 \
+                -sd $(OCPI_CDK_DIR)/lib/components/hdl/virtex6 \
+		-sd $(HdlPlatformsDir)/../devices/lib/hdl/virtex6 \
+		-sd $(OCPI_CDK_DIR)/lib/hdl/pcie_4243_trn_v6_gtx_x4_250/virtex6 \
+		$(XstNgdOptions) $3.ngc $3.ngd)
 
-
-# This is unnecessary
-#	$(AT)$(call DoXilinx,ngcbuild,$1,\
-	        -aul -aut -uc $(HdlPlatformsDir)/$1/$1.ucf -p $(HdlPart_$1) -sd ../target-$(call HdlGetFamily,$(call HdlGetPart,$1)) \
-	        $$(call FindRelative,$(call PlatformDir,$1),$(call TopNgcName,$1)) $(notdir $(call NgcName,$1)))
 # Map to physical elements
-$(call MapName,$1): $(call NgdName,$1)
-	$(AT)echo -n For $(Worker) on $1: creating mapped NCD '(Native Circuit Description)' file using '"map"'.
-	$(AT)$(call DoXilinx,map,$1,-p $(HdlPart_$1) -w -logic_opt on -xe c -mt on -t $(or $(OCPI_PAR_SEED),1) -register_duplication on \
-	                         -global_opt off -ir off -pr off -lc off -power off -o $(notdir $(call MapName,$1)) \
-	                         $(notdir $(call NgdName,$1)) $(notdir $(call PcfName,$1)))
+$(call MapName,$1,$3): $(call NgdName,$1,$3)
+	$(AT)echo -n For $2 on $5 using config $4: creating mapped NCD '(Native Circuit Description)' file using '"map"'.
+	$(AT)$(call DoXilinx,map,$1,-p $(HdlPart_$5) -w -logic_opt on -xe c -mt on -t $(or $(OCPI_PAR_SEED),1) -register_duplication on \
+	                         -global_opt off -ir off -pr off -lc off -power off -o $(notdir $(call MapName,$1,$3)) \
+	                         $(notdir $(call NgdName,$1,$3)) $(notdir $(call PcfName,$1,$3)))
 
 # Place-and-route, and generate timing report
-$(call ParName,$1): $(call MapName,$1) $(call PcfName,$1)
-	$(AT)echo -n For $(Worker) on $1: creating PAR\'d NCD file using '"par"'.
-	$(AT)$(call DoXilinx,par,$1,-w -xe c $(notdir $(call MapName,$1)) \
-		$(notdir $(call ParName,$1)) $(notdir $(call PcfName,$1)))
-	$(AT)echo -n Generating timing report '(TWR)' for $1 platform design.
+$(call ParName,$1,$3): $(call MapName,$1,$3) $(call PcfName,$1,$3)
+	$(AT)echo -n For $2 on $5 using config $4: creating PAR\'d NCD file using '"par"'.
+	$(AT)$(call DoXilinx,par,$1,-w -xe c $(notdir $(call MapName,$1,$3)) \
+		$(notdir $(call ParName,$1,$3)) $(notdir $(call PcfName,$1,$3)))
+	$(AT)echo -n Generating timing report '(TWR)' for $2 on $5 using $4 using '"trce"'.
 	$(AT)-$(call DoXilinx,trce,$1,-v 20 -fastpaths -xml fpgaTop.twx \
 		-o fpgaTop.twr \
-		$(notdir $(call ParName,$1)) $(notdir $(call PcfName,$1)))
+		$(notdir $(call ParName,$1,$3)) $(notdir $(call PcfName,$1,$3)))
 
 # Generate bitstream
 # using: '-intstyle ise" makes a nice option table, but also causes the return code to be "1",
 # rather than zero.
 
-$(call BitName,$1): $(call ParName,$1) $(call PcfName,$1)
-	$(AT)echo -n For $(Worker) on $1: Generating bitstream file $$@.
+$(call BitName,$1,$3): $(call ParName,$1,$3) $(call PcfName,$1,$3)
+	$(AT)echo -n For $2 on $5 using config $4: Generating Xilinx bitstream file $$@.
 	$(AT)$(call DoXilinxPat,bitgen,$1,\
-		-f $$(call FindRelative,$(call PlatformDir,$1),$(strip \
-		$(or $(wildcard $(HdlPlatformsDir)/$1/$1.ut),$(HdlPlatformsDir)/common/bitgen_bit.ut))) \
-                $(notdir $(call ParName,$1)) $(notdir $(call BitName,$1)) \
-		$(notdir $(call PcfName,$1)), 'DRC detected 0 errors')
+		-f $$(call FindRelative,$1,$(strip \
+		$(or $(wildcard $(HdlPlatformsDir)/$5/$5.ut),$(HdlPlatformsDir)/common/bitgen_bit.ut))) \
+                $(notdir $(call ParName,$1,$3)) $(notdir $(call BitName,$1,$3)) \
+		$(notdir $(call PcfName,$1,$3)), 'DRC detected 0 errors')
 
-ifdef HdlPromArgs_$1
-$(call PromName,$1): $(call BitName,$1)
-	$(AT)echo -n For $(Worker) on $1: Generating PROM file $$@.
-	$(AT)$(call DoXilinxPat,promgen,$1, -w -p mcs -c FF $$(HdlPromArgs_$1) $(notdir $(call BitName,$1)),'.*')
-#$$(info have prom for $1=$$(HdlPromArgs_$1)=)
-all: $(call PromName,$1)
+ifdef HdlPromArgs_$5
+$(call PromName,$1,$3): $(call BitName,$1,$3)
+	$(AT)echo -n For $2 on $5 using config $4: Generating PROM file $$@.
+	$(AT)$(call DoXilinxPat,promgen,$1, -w -p mcs -c FF $$(HdlPromArgs_$5) $(notdir $(call BitName,$1,$3)),'.*')
+
+all: $(call PromName,$1,$3)
 endif
 endef

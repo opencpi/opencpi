@@ -163,6 +163,9 @@ namespace OCPI {
 
     void setError(std::string &error, const char *fmt, ...)
       throw();
+
+    void getExecFile(std::string &name);
+
   }
 }
 

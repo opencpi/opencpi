@@ -38,7 +38,7 @@ public:
       } else
 	m_v = NULL;
       if (!m_v)
-	m_v = m.m_defaultValue;
+	m_v = m.m_default;
       if (m.m_ordinal == m_parent->m_vt->m_nMembers - 1)
 	m_parent->m_next++;
     } else if (m_parent->m_vt->m_baseType == OA::OCPI_Type) {
@@ -48,7 +48,7 @@ public:
 	 m_parent->m_pType[m_parent->m_next] : m_parent->m_Type) :
 	NULL;
       if (!m_v)
-	m_v = m.m_defaultValue;
+	m_v = m.m_default;
       m_parent->m_next++;
     } else
       assert("Recursive type not struct/type"==0);

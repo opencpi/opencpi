@@ -36,7 +36,9 @@
 
 OCPI_CDK_DIR=../../ocpi
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
-
+##nifndef HdlTargets
+#HdlTargets:=virtex6
+#endif
 # Process the imported cores, which will end up in the
 # list $(ImportCores).
 
@@ -74,7 +76,7 @@ Libs=bsv util util_virtex6 util_virtex5 util_stratix4 util_xilinx vendor_altera 
 Cores=$(LocalCores) $(ImportCores)
 
 HdlInstallDir:=lib
-MyMake=$(MAKE) HdlTargets="$(HdlTargets)" --no-print-directory -C $1 \
+MyMake=$(MAKE) $(and $(HdlTargets),HdlTargets="$(HdlTargets)") --no-print-directory -C $1 \
   OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) \
   HdlInstallDir=$(call AdjustRelative,$(HdlInstallDir)) \
 

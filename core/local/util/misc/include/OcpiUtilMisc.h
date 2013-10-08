@@ -47,8 +47,9 @@
  */
 
 #include <stdint.h>
-#include <string>
+#include <cstring>
 #include <cstdio>
+#include <string>
 #include <istream>
 #include <functional>
 
@@ -338,6 +339,12 @@ namespace OCPI {
 	*evsprintf(const char *fmt, va_list ap),
 	*esprintf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 
+      // This is a comparison object for use in STL classes
+      struct ConstCharComp {
+	inline bool operator() (const char *lhs, const char *rhs) const {
+	  return strcmp(lhs, rhs) < 0;
+	}
+      };
 
   }
 }

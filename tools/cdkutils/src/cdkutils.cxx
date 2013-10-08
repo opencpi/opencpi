@@ -64,7 +64,7 @@ parseFile(const char *file, const char *parent, const char *element,
     myFile = strdup(file);
   const char *cp = parent ? strrchr(parent, '/') : 0;
   if (myFile[0] != '/' && cp)
-    asprintf((char**)&cp, "%.*s%s", (int)(cp - parent + 1), parent, file);
+    asprintf((char**)&cp, "%.*s%s", (int)(cp - parent + 1), parent, myFile);
   else
     cp = strdup(myFile);
   std::list<const char *> tries;

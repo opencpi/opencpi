@@ -11,8 +11,8 @@
     <Property Name="wsiMtBusyCount" Readable="true"/>
     <Property Name="Op0MesgCnt" Readable="true"/>
     <Property Name="otherMesgCnt" Readable="true"/>
-    <Property Name="fgCtrlInit" Parameter="true"/>
-    <Property Name="hasDebugLogic" Parameter="true" Type="Bool"/>
+    <Property Name="fgCtrlInit" Parameter="true" default='0'/>
+    <Property Name="hasDebugLogic" Parameter="true" Type="Bool" default='false'/>
   </ControlInterface>
   <StreamInterface Name="in" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
   <StreamInterface Name="out" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>

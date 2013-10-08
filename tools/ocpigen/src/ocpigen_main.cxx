@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <memory>
 #include "wip.h"
 /*
  * Notes:  For verilog, for consistency, we generate a module definition that is "included"
@@ -66,14 +67,44 @@ isim
 merge code with runtime
 add to tree.
  */
+  //          name      abbrev  type    value description
+#define OCPI_OPTIONS_HELP \
+  "Usage syntax is: ocpigen [options] <xml-worker-descriptor-file>\n" \
+  "After options, the single argument is the name of the XML file to parse as input.\n" \
+  "This argument can exclude the .xml suffix, which will be assumed.\n" \
+  "XML file can be a worker, an assembly, a platform configuration, or a container.\n"
+#define OCPI_OPTIONS \
+  CMD_OPTION  (defs,      d,    Bool,   NULL, "Generate the definition file (used for instantiation)") \
+  CMD_OPTION  (impl,      i,    Bool,   NULL, "Generate the implementation header file (readonly)") \
+  CMD_OPTION  (skel,      s,    Bool,   NULL, "Generate the implementation skeleton file (modified part)") \
+  CMD_OPTION  (assy,      a,    Bool,   NULL, "Generate the assembly implementation file (readonly)") \
+  CMD_OPTION  (xml,       A,    Bool,   NULL, "Generate the artifact XML file for embedding") \
+  CMD_OPTION  (bsv,       b,    Bool,   NULL, "Generate the BlueSpec interface file (broken)") \
+  CMD_OPTION  (workers,   W,    Bool,   NULL, "Generate the makefile fragment for workers in the assembly") \
+  CMD_OPTION  (attribute, x,    String, NULL, "Emit to standard output the value of an XML attribute") \
+  CMD_OPTION  (alternate, w,    Bool,   NULL, "Use the alternate language (VHDL vs. Verilog) when generating defs and impl") \
+  CMD_OPTION  (dependency,M,    String, NULL, "Specify the name of the dependency file when processing XML") \
+  CMD_OPTION_S(library,   l,    String, NULL, "Add a library dependency for the worker") \
+  CMD_OPTION_S(include,   I,    String, NULL, "Add an XML include directory to search") \
+  CMD_OPTION  (directory, D,    String, NULL, "Specify the directory in which to put output generated files") \
+  CMD_OPTION  (assembly,  S,    String, NULL, "Specify the the default assembly for containers") \
+  CMD_OPTION_S(map,       L,    String, NULL, "Add a mapping from lib-name to its pathname <libname>:<path>") \
+  CMD_OPTION  (dev,       e,    String, NULL, "Specify the device target for the artifact XML") \
+  CMD_OPTION  (platform,  P,    String, NULL, "Specify the platform target for the artifact XML") \
+  CMD_OPTION  (os,        O,    String, NULL, "Specify the operating system target for the artifact XML") \
+  CMD_OPTION  (os_version,V,    String, NULL, "Specify the operating system version for the artifact XML") \
+  CMD_OPTION  (package,   p,    String, NULL, "Specify the HDL package for the worker") \
 
+#include "CmdOption.h"
 
 int
 main(int argc, char **argv) {
-  const char *library = "work", *outDir = NULL, *wksFile = NULL, *package = NULL;
+  if (options.setArgv(argv))
+    return 1;
+  const char *outDir = NULL, *wksFile = NULL, *package = NULL;
   bool
     doDefs = false, doImpl = false, doSkel = false, doAssy = false, doWrap = false,
-    doBsv = false, doArt = false, doContainer = false;
+    doBsv = false, doArt = false;
   if (argc <= 1) {
     fprintf(stderr,
 	    "Usage is: ocpigen [options] <owd>.xml\n"
@@ -83,8 +114,7 @@ main(int argc, char **argv) {
 	    " -s            Generate the skeleton file: xyz_skel.[c|v|vhd]\n"
 	    " -a            Generate the assembly (composition) file: xyz.[v|vhd]\n"
 	    " -b            Generate the BSV interface file\n"
-	    " -A            Generate the artifact descriptor xml file\n"
-	    " -C            Generate an HDL container\n"
+	    " -A            Generate the UUID and artifact descriptor xml file for a container\n"
 	    " -W <file>     Generate an assembly or container workers file: xyz.wks\n"
 	    " Options for artifact XML and UUID source generation (-A):\n"
 	    " -c <file>     The HDL container file to use for the artifact XML\n"
@@ -92,13 +122,15 @@ main(int argc, char **argv) {
 	    " -O <os>       The OS for the artifact (rcc)\n"
 	    " -V <version>  The OS version for the artifact (rcc)\n"
 	    " -e <device>   The device for the artifact\n"
-	    " -L <loadinfo> The load information for the device\n"
             " -p <package>  The package name for component specifications\n"
 	    " Other options:\n"
 	    " -l <lib>      The VHDL library name that <www>_defs.vhd will be placed in (-i)\n"
+	    " -L <complib>:<xml-dir>\n"
+	    "               Associate a component library name with an xml search dir\n"
 	    " -D <dir>      Specify the output directory for generated files\n"
 	    " -I <dir>      Specify an include search directory for XML processing\n"
 	    " -M <file>     Specify the file to write makefile dependencies to\n"
+	    " -S <assembly> Specify the name of the assembly for a container\n"
 	    );
     return 1;
   }
@@ -127,14 +159,17 @@ main(int argc, char **argv) {
       case 'w':
 	doWrap = true;
 	break;
-      case 'C':
-	doContainer = true;
-	break;
       case 'W':
 	wksFile =*++ap;
 	break;
       case 'M':
 	depFile = *++ap;
+	break;
+      case 'l':
+	if (ap[0][2])
+	  addLibrary(&ap[0][2]);
+	else
+	  addLibrary(*++ap);
 	break;
       case 'I':
 	if (ap[0][2])
@@ -142,17 +177,27 @@ main(int argc, char **argv) {
 	else
 	  addInclude(*++ap);
 	break;
-      case 'l':
-	library = *++ap;
-	break;
       case 'c':
 	container = *++ap;
 	break;
       case 'D':
 	outDir = *++ap;
 	break;
+      case 'S':
+	assembly = *++ap;
+	break;
       case 'L':
+#if 0
 	load = *++ap;
+#endif
+	if (ap[0][2])
+	  err = addLibMap(&ap[0][2]);
+	else
+	  err = addLibMap(*++ap);
+	if (err) {
+	  fprintf(stderr, "Error processing -L (library map) option: %s\n", err);
+	  return 1;
+	}
 	break;
       case 'e':
 	device = *++ap;
@@ -168,6 +213,9 @@ main(int argc, char **argv) {
 	break;
       case 'p':
 	package = *++ap;
+	break;
+      case 'x':
+	attribute = *++ap;
 	break;
       default:
 	fprintf(stderr, "Unknown flag: %s\n", *ap);
@@ -188,33 +236,33 @@ main(int argc, char **argv) {
 	asprintf(&root, "%s/%s", outDir, slash ? slash + 1 : root);
       }
 #endif
-      Worker *w = new Worker();
-      if ((err = w->parse(*ap, NULL, package)))
+      Worker *w = Worker::create(*ap, NULL, package, err);
+      //      Worker w(*ap, NULL, package, err);
+      //      Worker *w = new Worker();
+      if (err)
 	fprintf(stderr, "For file %s: %s\n", *ap, err);
-      else if (doDefs && (err = w->emitDefsHDL(root)))
+      else if (attribute && (err = w->emitAttribute(attribute)))
+	fprintf(stderr, "%s: Error retrieving attribute %s from file: %s\n", attribute, *ap, err);
+      else if (doDefs && (err = w->emitDefsHDL(root, doWrap)))
 	fprintf(stderr, "%s: Error generating definition/declaration file: %s\n", *ap, err);
       else if (doImpl && (err =
-			  w->model == HdlModel ? w->emitImplHDL(root, library) :
-			  (w->model == RccModel ? emitImplRCC : emitImplOCL)(w, root, library)))
+			  w->m_model == HdlModel ? w->emitImplHDL(root, doWrap) :
+			  (w->m_model == RccModel ? emitImplRCC : emitImplOCL)(w, root)))
 	fprintf(stderr, "%s: Error generating implementation declaration file: %s\n", *ap, err);
-    else if (doSkel && (err =
-			w->model == HdlModel ? w->emitSkelHDL(root) :
-			(w->model == RccModel ? emitSkelRCC : emitSkelOCL)(w, root)))
+      else if (doSkel && (err =
+			  w->m_model == HdlModel ? w->emitSkelHDL(root) :
+			  (w->m_model == RccModel ? emitSkelRCC : emitSkelOCL)(w, root)))
 	fprintf(stderr, "%s: Error generating implementation skeleton file: %s\n", *ap, err);
-      else if (doWrap && (err = w->emitDefsHDL(root, true)))
-	fprintf(stderr, "%s: Error generating wrapper file: %s\n", *ap, err);
       else if (doAssy && (err = w->emitAssyHDL(root)))
 	fprintf(stderr, "%s: Error generating assembly: %s\n", *ap, err);
       else if (wksFile && !container && (err = w->emitWorkersHDL(root, wksFile)))
 	fprintf(stderr, "%s: Error generating assembly makefile: %s\n", *ap, err);
       else if (doBsv && (err = w->emitBsvHDL(root)))
 	fprintf(stderr, "%s: Error generating BSV import file: %s\n", *ap, err);
-      //      else if (doContainer && (err = emitContainerHDL(w, root)))
-      //	fprintf(stderr, "%s: Error generating HDL container file: %s\n", *ap, err);
       else if (doArt)
-	switch (w->model) {
+	switch (w->m_model) {
 	case HdlModel:
-	  if (!container || !platform || !device) {
+	  if (!platform || !device) {
 	    fprintf(stderr,
 		    "%s: Missing container/platform/device options for HDL artifact descriptor", *ap);
 	    return 1;
@@ -241,7 +289,7 @@ main(int argc, char **argv) {
 	case NoModel:
 	  ;
 	}
-      cleanWIP(w);
+      delete w;
     }
   return err ? 1 : 0;
 }

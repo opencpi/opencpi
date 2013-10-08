@@ -1,0 +1,109 @@
+unoc node is a three-ported device:
+
+   UP
++------+
+|      |
+|      |Client
+|      |
++------+
+  DOWN
+
+Up is toward the external (PCIE)
+Client is toward a user
+Down is toward other (lower priority) clients.
+
+The node basically routes messages from UP to CLIENT when request
+arrive that are recognized to be for the client.
+Otherwise it routes messages through to DOWN (let it flow downstream).
+Thus this is a "split" of traffic from the fabric (to client or down).
+
+The node also simply combined traffic from the client, sending it UP,
+or from other downstream clients (DOWN), sending them UP.
+This is a "join" of both sources of messages for the fabric.
+
+Nodes are simply connected DOWN to UP in a chain, and to clients,
+the connections are just wires: VHDL records of the type "unoc_link_t".
+
+The difference between a unoc_node and the underlying BSV-based
+"split-join" module is simply that the connections are only wires, are
+symmetrical, and use VHDL record types.
+
+Other than signal renaming and bundling, the unoc_node adds the 
+"AND gate" required to connect BSV modules, on the data receiving side.
+
+Assuming a bidirectional link A -> B, the BSV SERVER signals are:
+
+Servers produce REQUESTS and consume RESPONSES
+
+request_put (A->B: data from A to B)
+EN_request_put (A->B: data is valid) - i.e. EN is "data valid" or "fifo-not-empty"
+RDY_request_put (B->A: B will take data when available) - i.e. dequeue when available
+
+So, in FIFO speak, A is dequeued and B is enqueued when EN AND READY.
+
+in the reverse direction:
+
+response_get(B->A: data from B to A)
+EN_response_get(A->B: A will take data from B when available)
+RDY_response_get(B->A: B is ready for A to take the data)
+
+Thus this is assymetrical: there is a "requester" and a "responder".
+
+Assuming a bidirectional link A -> B, the BSV CLIENT signals are:
+
+Clients consume REQUESTS and produce RESPONSES
+
+response_put (A->B: data from A to B)
+EN_response_put (A->B: data is valid) - i.e. EN is "data valid" or "fifo-not-empty"
+RDY_response_put (B->A: B will take data when available) - i.e. dequeue when available
+
+So, in FIFO speak, A is dequeued and B is enqueued when EN AND READY.
+
+
+
+
+Our unoc just makes this symmetrical with these three signals in each direction.
+1. data
+2. data is ready (valid)
+3. take the available data
+
+
+Server:                 Client:
+
+request_put     =>       request_put
+EN_request_put  =>       EN_request_put
+
+response_get    <=       response_get
+EN_response_get =>
+
+RDY is always an output
+EN is always an input
+
+Our protocol:
+
+valid follows the data
+take is the opposite of the data and means "dequeue"
+
+
+
+For the "server" interface:
+
+incoming request_puts have EN in as data valid, and RDY out as my-FIFO-not-full
+outgoing response_gets have RDY out as data valid, and EN in as other-FIFO-not-full
+
+For the "client" interface:
+
+incoming response_puts have EN in as data valid, and RDY out as my-FIFO-not-full
+outgoint request_gets have RDY out as data valid and EN in as other-FIFO-not-full
+
+
+So as a consumer of data we compute the "take" output, and send it rather than
+the "my-FIFO-not-full".
+
+As as a producer of data we accept the "take", which does not have the same semantic
+as the typical "EN" input since that is not pre qualified by the "output is valid/ready".
+
+locally we have not-full on our fifo
+we produce "RDY" from our not-full
+we locally drive our ENQ from (not-full && EN)
+

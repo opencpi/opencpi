@@ -60,4 +60,37 @@ component SizedFIFO
            EMPTY_N      : out std_logic;
            CLR          : in  std_logic);
 end component SizedFIFO;
+component BRAM1Load
+     generic(
+       FILENAME   : string := "";
+       PIPELINED  : natural := 0;
+       ADDR_WIDTH : natural := 1;
+       DATA_WIDTH : natural := 1;
+       MEMSIZE    : natural := 1;
+       BINARY     : natural := 0
+       );
+     port(
+       CLK  : in std_logic;
+       EN   : in std_logic;
+       WE   : in std_logic;
+       ADDR : in std_logic_vector(ADDR_WIDTH-1 downto 0);
+       DI   : in std_logic_vector(DATA_WIDTH-1 downto 0);
+       DO   : out std_logic_vector(DATA_WIDTH-1 downto 0)
+       );
+end component BRAM1Load;
+component SyncRegister
+  generic(
+    width : natural := 1;
+    init  : natural := 0 -- std_logic_vector(width-1 downto 0) := (others => '0')
+    );
+  port(
+    sCLK   : in  std_logic;
+    sRST   : in  std_logic;
+    dCLK   : in  std_logic;
+    sEN    : in  std_logic;
+    sRDY   : out std_logic;
+    sD_IN  : in  std_logic_vector(width-1 downto 0);
+    dD_OUT : out std_logic_vector(width-1 downto 0)
+    );
+  end component SyncRegister;
 end package bsv;

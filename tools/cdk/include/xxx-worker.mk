@@ -36,20 +36,6 @@
 
 
 ################################################################################
-# Tools for metadata and generated files
-#ToolsTarget=$(OCPI_TOOL_HOST)
-ToolsDir=$(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_HOST)
-ifeq ($(HostSystem),darwin)
-DYN_PREFIX=DYLD_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/$(OCPI_TOOL_HOST)
-else
-DYN_PREFIX=LD_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/$(OCPI_TOOL_HOST)
-endif
-#$(info OCDK $(OCPI_CDK_DIR))
-OcpiGen=\
-  $(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(GeneratedDir)/$(@F).deps \
-    -D $(GeneratedDir) $(patsubst %,-I"%",$(call Unique,$(XmlIncludeDirs)))
-
-################################################################################
 # metadata and generated files that are target-independent
 ImplSuffix=$($(CapModel)ImplSuffix)
 SkelSuffix=$($(CapModel)SkelSuffix)
@@ -67,7 +53,7 @@ $(call OcpiDbgVar,ImplHeaderFiles)
 # FIXME: HdlPlatform is bogus here
 $(ImplHeaderFiles): $(GeneratedDir)/%$(ImplSuffix) : $$(Worker_%_xml) | $(GeneratedDir)
 	$(AT)echo Generating the implementation header file: $@ from $< 
-	$(AT)$(OcpiGen) $(and $(Package),-p $(Package)) \
+	$(AT)$(OcpiGen) -D $(GeneratedDir) $(and $(Package),-p $(Package)) \
 	$(and $(HdlPlatform),-P $(HdlPlatform)) \
 	 $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) -i $< \
 
@@ -80,7 +66,7 @@ all: skeleton
 
 $(SkelFiles): $(GeneratedDir)/%$(SkelSuffix) : $$(Worker_%_xml) | $(GeneratedDir)
 	$(AT)echo Generating the implementation skeleton file: $@
-	$(AT)$(OcpiGen) $(and $(Package),-p $(Package)) -s $<
+	$(AT)$(OcpiGen) -D $(GeneratedDir) $(and $(Package),-p $(Package)) -s $<
 endif
 IncludeDirs:=$(OCPI_CDK_DIR)/include/$(Model) $(GeneratedDir) $(IncludeDirs)
 ifeq ($(origin XmlIncludeDirsInternal),undefined)
@@ -103,7 +89,7 @@ clean:: cleanfirst
 ################################################################################
 # source files that are target-independent
 # FIXME: this should not reference an Hdl variable
-ifneq ($(HdlMode),assembly)
+ifeq ($(findstring $(HdlMode),assembly container),)
 ifeq ($(origin WorkerSourceFiles),undefined)
 WorkerSourceFiles=$(foreach w,$(Workers),$(w)$(SourceSuffix))
 # We must preserve the order of CompiledSourceFiles

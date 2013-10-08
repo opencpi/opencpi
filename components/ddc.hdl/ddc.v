@@ -220,7 +220,7 @@ module mkDDCWorker(wciS0_Clk,
 
 `else
 `define NOT_EMPTY_ddc
-`include "ddc_defs.vh"
+`include "ddc-defs.vh"
 `endif
   // signals for module outputs
   wire [31 : 0] wciS0_SData, wsiM0_MData;

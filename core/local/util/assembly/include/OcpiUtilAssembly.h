@@ -94,7 +94,7 @@ namespace OCPI {
 	std::string
 	  m_name,                  // name of the instance within the assembly
 	  m_specName,              // name of component or worker being instantiated
-	  m_implName,              // name of implementation (if forced)
+	  m_implName,              // name of implementation (may be a path)
 	  m_selection;             // the selection expression
 	unsigned m_ordinal;
 	Properties m_properties;
@@ -131,12 +131,12 @@ namespace OCPI {
 	mutable std::string m_name;
 	mutable Role m_role;
 	unsigned m_instance;
-	size_t m_index, m_count;
+	size_t m_index;
 	PValueList m_parameters;
 	Port *m_connectedPort; // the "other" port of the connection
 	const char *parse(ezxml_t x, Assembly &a, const PValue *pvl);
 	void init(Assembly &a, const char *name, unsigned instance, bool isInput, bool bidi, bool known,
-		  size_t index = 0, size_t count = 1);
+		  size_t index = 0); //, size_t count = 1);
       };
       struct Connection {
 	std::string m_name;
@@ -144,9 +144,11 @@ namespace OCPI {
 	std::list<Port> m_ports;
 	typedef std::list<Port>::iterator PortsIter;
 	PValueList m_parameters;
+	size_t m_count; // all attachments have same count. zero if unknown
+	Connection();
 	const char *parse(ezxml_t x, Assembly &a, unsigned &ord);
 	Port &addPort(Assembly &a, unsigned instance, const char *port, bool isInput, bool bidi, bool known,
-		      size_t index = 0, size_t count = 1);
+		      size_t index = 0); //, size_t count = 1);
 	External &addExternal();
       };
       // Potentially specified in the assembly, what policy should be used

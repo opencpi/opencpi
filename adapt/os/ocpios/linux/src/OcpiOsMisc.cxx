@@ -41,6 +41,7 @@
  *                  that is the signal that kill(1) sends by default.
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -53,6 +54,11 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#ifdef OCPI_OS_macos
+#include <mach-o/dyld.h>
+#endif
+#ifdef OCPI_OS_linux
+#endif 
 #include "OcpiOsMisc.h"
 #include "OcpiOsPosixSocket.h"
 #include "OcpiOsPosixError.h"
@@ -169,3 +175,29 @@ void OCPI::OS::setError(std::string &error, const char *fmt, ...)
   free(err1);
 }
 
+void OCPI::OS::
+getExecFile(std::string &file) {
+  uint32_t bufsize = 1000;
+  char *buf = new char[bufsize];
+#ifdef OCPI_OS_macos
+  if (_NSGetExecutablePath(buf, &bufsize)) {
+    delete buf;
+    buf = new char[bufsize];
+    if (_NSGetExecutablePath(buf, &bufsize))
+      throw "Unexpected exec file failure on MacOS";
+  } 
+#endif
+#ifdef OCPI_OS_linux
+  ssize_t n;
+  while ((n = readlink("/proc/self/exe", buf, bufsize-1)) > 0 && n >= bufsize - 1) {
+    delete buf;
+    bufsize *= 2;
+    buf = new char[bufsize];
+  }
+  if (n <= 0)
+    throw "Unexpected exec file failure on Linux";
+  buf[n] = 0;
+#endif 
+  file = buf;
+  delete buf;
+}

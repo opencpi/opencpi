@@ -16,8 +16,8 @@
       <Property Name="M0_iMesgCount" Readable="true" Writable="false" Type="ULong"/>
       <Property Name="M1_pMesgCount" Readable="true" Writable="false" Type="ULong"/>
       <Property Name="M1_iMesgCount" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="ctrlInit" Parameter="true"/>
-    <Property Name="hasDebugLogic" Parameter="true" Type="Bool"/>
+    <Property Name="ctrlInit" Parameter="true" default='0'/>
+    <Property Name="hasDebugLogic" Parameter="true" Type="Bool" default='true'/>
   </ControlInterface>
   <StreamInterface Name="in0" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"/>
   <StreamInterface Name="in1" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"/>

@@ -646,7 +646,7 @@ namespace OCPI {
 	unsigned nProps = impl.m_metadataImpl.m_nProperties;
 	OU::Property *prop = impl.m_metadataImpl.m_properties;
 	for (unsigned n = 0; n < nProps; n++, prop++)
-	  if (prop->m_defaultValue) {
+	  if (prop->m_default) {
 	    bool found = false;
 	    for (unsigned m = 0; m < i->m_nPropValues; m++)
 	      if (i->m_propOrdinals[m] == prop->m_ordinal) {
@@ -654,7 +654,7 @@ namespace OCPI {
 		break;
 	      }
 	    if (!found)
-	      w.setProperty(prop->m_ordinal, *prop->m_defaultValue);
+	      w.setProperty(prop->m_ordinal, *prop->m_default);
 	  }
       }
       if (m_assembly.m_doneInstance != -1)

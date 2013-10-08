@@ -23,7 +23,7 @@ H
 /\/\/ signals for module outputs/i
 \`else
 \`define NOT_EMPTY_$1
-\`include "$1_defs.vh"
+\`include "$1-defs.vh"
 \`endif
 .
 .ka

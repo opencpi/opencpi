@@ -157,7 +157,7 @@ module mkWSIPatternWorker4B(wciS0_Clk,
 
 `else
 `define NOT_EMPTY_pattern
-`include "pattern_defs.vh"
+`include "pattern-defs.vh"
 `endif
   // signals for module outputs
   wire [31 : 0] wciS0_SData, wsiM0_MData;

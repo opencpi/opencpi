@@ -82,11 +82,10 @@ ifneq ($(OclImplementations),)
 build_targets += ocl
 endif
 
-ifneq ($(HdlTargets),)
 ifneq ($(HdlImplementations),)
 build_targets += hdl
 endif
-endif
+
 $(call OcpiDbgVar,build_targets)
 # function to build the targets for an implemention.
 #  First arg is model
@@ -95,13 +94,19 @@ ifdef OCPI_OUTPUT_DIR
 PassOutDir=OCPI_OUTPUT_DIR=$(call AdjustRelative,$(OutDir:%/=%))
 endif
 MyMake=$(MAKE) --no-print-directory
+#BuildImplementation=\
+#    set -e; \
+#    tn="$(call Capitalize,$(1))Targets"; \
+#    t="$(or $($(call Capitalize,$1)Target),$($(call Capitalize,$(1))Targets))"; \
+#    $(ECHO) =============Building $(call ToUpper,$(1)) implementation $(2) for targets: $$t; \
+#    $(MyMake) -C $(2) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) \
+#               $$tn="$$t" \
+
 BuildImplementation=\
     set -e; \
-    tn="$(call Capitalize,$(1))Targets"; \
     t="$(or $($(call Capitalize,$1)Target),$($(call Capitalize,$(1))Targets))"; \
     $(ECHO) =============Building $(call ToUpper,$(1)) implementation $(2) for targets: $$t; \
     $(MyMake) -C $(2) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) \
-               $$tn="$$t" \
 	       LibDir=$(call AdjustRelative,$(LibDir)/$(1)) \
 	       GenDir=$(call AdjustRelative,$(GenDir)/$(1)) \
 	       $(PassOutDir) \
@@ -165,7 +170,7 @@ ocl: checkocl speclinks $(OclImplementations)
 # so that higher level builds can reference cores using such a library.
 # (e.g. xilinx xst).
 # We have all the empty module definitions in the "gen/hdl" directory.
-MyHdlMake=$(MyMake) HdlTargets="$(HdlTargets)"
+MyHdlMake=$(MyMake) $(and $(HdlTargets),HdlTargets="$(HdlTargets)")
 hdlstubs: $(HdlImplementations)
 	$(AT)echo Building HDL stub libraries for this component library \($(LibName)\)
 	$(AT)echo include \

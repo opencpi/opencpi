@@ -362,7 +362,7 @@ module mkGbeWorker(CLK_gmii_rx_clk,
 
 `else
 `define NOT_EMPTY_gbe
-`include "gbe_defs.vh"
+`include "gbe-defs.vh"
 `endif
   // signals for module outputs
   wire [58 : 0] cpClient_request_get;
@@ -371,7 +371,9 @@ module mkGbeWorker(CLK_gmii_rx_clk,
   wire [7 : 0] gmii_tx_txd, wsiM0_MReqInfo;
   wire [3 : 0] wsiM0_MByteEn;
   wire [2 : 0] wsiM0_MCmd;
-  wire [1 : 0] wciS0_SFlag, wciS0_SResp;
+  wire [1 : 0] wciS0_SResp;
+  wire [2 : 0] wciS0_SFlag;
+  wire [0 : 0] wciS0_SThreadBusy, wsiS0_SThreadBusy;
   wire CLK_GATE_gmii_tx_tx_clk,
        CLK_GATE_rxclkBnd,
        CLK_gmii_tx_tx_clk,
@@ -382,13 +384,11 @@ module mkGbeWorker(CLK_gmii_rx_clk,
        gmii_led,
        gmii_tx_tx_en,
        gmii_tx_tx_er,
-       wciS0_SThreadBusy,
        wsiM0_MBurstPrecise,
        wsiM0_MReqLast,
        wsiM0_MReset_n,
        wsiS0_SReset_n,
-       wsiS0_SThreadBusy,
-       wtiS0_SReset_n,
+         wtiS0_SReset_n,
        wtiS0_SThreadBusy;
 
   // inlined wires

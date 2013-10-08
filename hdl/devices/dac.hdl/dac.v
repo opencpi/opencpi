@@ -327,7 +327,7 @@ module mkDACWorker(CLK_dac_clk,
 
 `else
 `define NOT_EMPTY_dac
-`include "dac_defs.vh"
+`include "dac-defs.vh"
 `endif
   // inlined wires
   wire [191 : 0] dacCore0_sampF_wDataIn$wget, dacCore0_sampF_wDataOut$wget;

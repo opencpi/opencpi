@@ -58,10 +58,11 @@ ArtifactFile=
 #HdlVerilogIncSuffix:=.vh
 #HdlVHDLSuffix:=.vhd
 #HdlVHDLIncSuffix:=.vhd
-HdlSkelSuffix=_skel$(HdlSourceSuffix)
-HdlDefsSuffix=_defs$(HdlIncSuffix)
-HdlOtherDefsSuffix=_defs$(HdlOtherIncSuffix)
-HdlImplSuffix=_impl$(HdlIncSuffix)
+HdlSkelSuffix=-skel$(HdlSourceSuffix)
+HdlDefsSuffix=-defs$(HdlIncSuffix)
+HdlOtherDefsSuffix=-defs$(HdlOtherIncSuffix)
+HdlImplSuffix=-impl$(HdlIncSuffix)
+HdlOtherImplSuffix=-impl$(HdlOtherIncSuffix)
 #ifneq ($(word 2,$(Workers)),)
 #$(error Only one HDL worker can be built.  Workers is: $(Workers))
 #endif
@@ -119,25 +120,29 @@ HdlImplSuffix=_impl$(HdlIncSuffix)
 #$(call OcpiDbgVar,HdlSourceSuffix)
 
 ifndef Tops
-ifeq ($(HdlLanguage),vhdl)
-Tops=$(Worker) $(Worker)_rv
-else
-Tops=$(Worker)
+  ifdef Top
+    Tops:=$(Top)
+  else ifeq ($(HdlLanguage),vhdl)
+    Tops=$(Worker) $(Worker)_rv
+  else
+    Tops=$(Worker) $(Worker)_rv
+  endif
 endif
 HdlCores=$(Tops)
+
+ifndef Core
+Core=$(Worker)
 endif
+
 ifdef HdlToolRealCore
 WkrExportNames=$(Tops:%=%$(BF))
 endif
+$(call OcpiDbgVar,Top)
+$(call OcpiDbgVar,Tops)
+$(call OcpiDbgVar,HdlCores)
+$(call OcpiDbgVar,Core)
+$(call OcpiDbgVar,WkrExportNames)
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk
-$(call OcpiDbgVar,Worker)
-ifndef HdlCores
-ifdef Core
-HdlCores:=$(Core)
-else
-Core=$(Worker)
-endif
-endif
 
 # This is the utility program for hdl
 ifeq ($(shell if test -x $(ToolsDir)/ocpihdl; then echo xx; fi),)
@@ -154,32 +159,56 @@ OcpiHdl=\
 override VerilogIncludeDirs += $(IncludeDirs)
 ImplXmlFile=$(firstword $(ImplXmlFiles))
 #$(HdlDefsSuffix))
-RefDefsFile=$(Workers:%=$(GeneratedDir)/%_defs.vh)
+#RefDefsFile=$(Workers:%=$(GeneratedDir)/%-defs.vh)
 DefsFile=$(Workers:%=$(GeneratedDir)/%$(HdlDefsSuffix))
 WDefsFile=$(Workers:%=$(GeneratedDir)/%$(HdlOtherDefsSuffix))
+HdlOtherImplSourceFile=$(GeneratedDir)/$(Worker)$(HdlOtherImplSuffix)
+# We set these, but they might not be used in some modes.
+CoreBlackBoxFiles=$(DefsFile) $(WDefsFile)
+
 $(WDefsFile): $(Worker_$(Worker)_xml) | $(GeneratedDir)
 	$(AT)echo Generating the opposite language definition file: $@
-	$(AT)$(OcpiGen) $(and $(Package),-p $(Package))  \
+	$(AT)$(OcpiGen) -D $(GeneratedDir) $(and $(Package),-p $(Package))  \
 	  $(and $(HdlPlatform),-P $(HdlPlatform)) \
 	  $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) \
-	  -w $<
+	  -w -d $<
 
 $(DefsFile): $(Worker_$(Worker)_xml) | $(GeneratedDir)
 	$(AT)echo Generating the definition file: $@
-	$(AT)$(OcpiGen) $(and $(Package),-p $(Package)) \
+	$(AT)$(OcpiGen) -D $(GeneratedDir) $(and $(Package),-p $(Package)) \
 	   $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) \
 	   $(and $(HdlPlatform),-P $(HdlPlatform)) \
 	   -d $<
 
-$(ImplHeaderFiles): $(DefsFile) $(WDefsFile) $(RefDefsFile)
+$(HdlOtherImplSourceFile): $(WDefsFile) $$(Worker_$(Worker)_xml) | $(GeneratedDir)
+	$(AT)echo Generating the $(HdlOtherLanguage) implementation file: $@ from $(Worker_$(Worker)_xml)
+	$(AT)$(OcpiGen) -D $(GeneratedDir) $(and $(Package),-p $(Package)) \
+	$(and $(HdlPlatform),-P $(HdlPlatform)) \
+	$(if $(Libraries),$(foreach l,$(Libraries),-l $l)) -w -i $(Worker_$(Worker)_xml) \
 
+$(ImplHeaderFiles): $(DefsFile)
+
+
+# VHDL doesn't have header files - they are just source files
+#ifeq ($(HdlLanguage),vhdl)
+$(call OcpiDbgVar,GeneratedSourceFiles,before vhdl)
+GeneratedSourceFiles+=$(WDefsFile) $(HdlOtherImplSourceFile)
 ifeq ($(HdlLanguage),vhdl)
-  $(call OcpiDbgVar,GeneratedSourceFiles,before vhdl)
-  GeneratedSourceFiles+=$(DefsFile) $(ImplHeaderFiles)
-  $(call OcpiDbgVar,GeneratedSourceFiles,after vhdl)
-WkrExportNames=$(Worker)$(BF) $(Worker)_rv$(BF)
-all: 
+GeneratedSourceFiles+=$(DefsFile) $(ImplHeaderFiles)
 endif
+$(call OcpiDbgVar,GeneratedSourceFiles,after vhdl)
+
+
+#WkrExportNames=$(Worker)$(BF) $(Worker)_rv$(BF)
+ifdef HdlToolRealCore
+$(WkrExportNames): $(GeneratedSourceFiles)
+endif
+$(call OcpiDbgVar,WkrExportNames)
+$(call OcpiDbgVar,GeneratedSourceFiles)
+#all: 
+#else
+#GeneratedSourceFiles+=$(WDefsFile)
+#endif
 LibName=$(Worker)
 
 ################################################################################
@@ -205,9 +234,9 @@ endif
 ifdef GenDir
 $(GenDir):
 	mkdir $(GenDir)
-# Generate the stub files by providing a link from gen/worker.v to gen/worker_defs.v
+# Generate the stub files by providing a link from gen/worker.v to gen/worker-defs.v
 #$(HdlSourceSuffix))
-$(call OcpiDbgVar,DefsFiles)
+$(call OcpiDbgVar,DefsFile)
 $(GenDir)/$(Worker)$(HdlSourceSuffix): $(DefsFile) | $(GenDir)
 	$(AT)echo Creating link from $@ to $(DefsFile) to expose the stub for worker "$(Worker)".
 	$(AT)$(call MakeSymLink2,$(DefsFile),$(GenDir),$(Worker)$(HdlSourceSuffix))

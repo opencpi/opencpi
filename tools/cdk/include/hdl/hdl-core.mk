@@ -98,13 +98,13 @@ $(HdlCoreInstallDirs): | $(HdlInstallDir)
 # It must be defined before we include the file below
 ifdef ImportBlackBox
 Imports += $(ImportBlackBox)
-CoreBlackBoxFile:= $(OutDir)imports/$(notdir $(ImportBlackBox))
-else
-ifndef CoreBlackBoxFile
-  CoreBlackBoxFile:=$(Top)_bb.v
 endif
-endif
-$(call OcpiDbgVar,CoreBlackBoxFile)
+
+CoreBlackBoxFiles= $(strip \
+  $(if $(ImportBlackBox), \
+        $(OutDir)imports/$(notdir $(ImportBlackBox)), \
+          $(Top)_bb.v) \
+  $(call HdlExists,$(Top)_pkg.vhd))
 
 ################################################################################
 # include the shared file (shared with workers) that 

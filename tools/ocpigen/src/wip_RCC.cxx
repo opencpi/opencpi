@@ -181,13 +181,13 @@ printMember(FILE *f, OU::Member *m, unsigned indent, size_t &offset, unsigned &p
 
 static const char *
 methodName(Worker *w, const char *method, const char *&mName) {
-  const char *pat = w->pattern ? w->pattern : w->staticPattern;
+  const char *pat = w->m_pattern ? w->m_pattern : w->m_staticPattern;
   if (!pat) {
     mName = method;
     return 0;
   }
   size_t length =
-    strlen(w->implName) + strlen(method) + strlen(pat) + 1;
+    strlen(w->m_implName) + strlen(method) + strlen(pat) + 1;
   char c, *s = (char *)malloc(length);
   mName = s;
   while ((c = *pat++)) {
@@ -211,18 +211,18 @@ methodName(Worker *w, const char *method, const char *&mName) {
 	s++;
       break;
     case 'w':
-      strcpy(s, w->implName);
+      strcpy(s, w->m_implName);
       while (*s)
 	s++;
       break;
     case 'W':
-      *s++ = (char)toupper(w->implName[0]);
-      strcpy(s, w->implName + 1);
+      *s++ = (char)toupper(w->m_implName[0]);
+      strcpy(s, w->m_implName + 1);
       while (*s)
 	s++;
       break;
     default:
-      return OU::esprintf("Invalid pattern rule: %s", w->pattern);
+      return OU::esprintf("Invalid pattern rule: %s", w->m_pattern);
     }
   }
   *s++ = 0;
@@ -239,16 +239,15 @@ emitStructRCC(FILE *f, size_t nMembers, OU::Member *members, unsigned indent,
 }
 
 const char *
-emitImplRCC(Worker *w, const char *outDir, const char *library) {
-  (void)library;
+emitImplRCC(Worker *w, const char *outDir) {
   const char *err;
   FILE *f;
-  if ((err = openOutput(w->fileName, outDir, "", RCCIMPL, HEADER, w->implName, f)))
+  if ((err = openOutput(w->m_fileName.c_str(), outDir, "", RCCIMPL, HEADER, w->m_implName, f)))
     return err;
   fprintf(f, "/*\n");
-  printgen(f, " *", w->file);
+  printgen(f, " *", w->m_file.c_str());
   fprintf(f, " */\n");
-  char *upper = upperdup(w->implName);
+  char *upper = upperdup(w->m_implName);
   fprintf(f,
 	  "\n"
 	  "/* This file contains the implementation declarations for worker %s */\n\n"
@@ -258,19 +257,19 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
 	  "#if defined (__cplusplus)\n"
 	  "extern \"C\" {\n"
 	  "#endif\n",
-	  w->implName, upper, upper);
+	  w->m_implName, upper, upper);
   const char *last;
   unsigned in = 0, out = 0;
-  if (w->ports.size()) {
+  if (w->m_ports.size()) {
     fprintf(f,
 	    "/*\n"
 	    " * Enumeration of port ordinals for worker %s\n"
 	    " */\n"
 	    "typedef enum {\n",
-	    w->implName);
+	    w->m_implName);
     last = "";
-    for (unsigned n = 0; n < w->ports.size(); n++) {
-      Port *port = w->ports[n];
+    for (unsigned n = 0; n < w->m_ports.size(); n++) {
+      Port *port = w->m_ports[n];
       fprintf(f, "%s %s_%s", last, upper, upperdup(port->name));
       // FIXME TWO WAY
       last = ",\n";
@@ -279,24 +278,24 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
       else
 	in++;
     }
-    fprintf(f, "\n} %c%sPort;\n", toupper(w->implName[0]), w->implName+1);
+    fprintf(f, "\n} %c%sPort;\n", toupper(w->m_implName[0]), w->m_implName+1);
   }
   fprintf(f, "#define %s_N_INPUT_PORTS %u\n"
 	  "#define %s_N_OUTPUT_PORTS %u\n",
 	  upper, in, upper, out);
-  if (w->ctl.properties.size()) {
+  if (w->m_ctl.properties.size()) {
     fprintf(f,
 	    "/*\n"
 	    " * Property structure for worker %s\n"
 	    " */\n"
 	    "typedef struct {\n",
-	    w->implName);
+	    w->m_implName);
     unsigned pad = 0;
     size_t offset = 0;
     bool isLastDummy = false;
-    for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++)
-      printMember(f, *pi, 2, offset, pad, w->implName, true, isLastDummy, false);
-    fprintf(f, "} %c%sProperties;\n\n", toupper(w->implName[0]), w->implName + 1);
+    for (PropertiesIter pi = w->m_ctl.properties.begin(); pi != w->m_ctl.properties.end(); pi++)
+      printMember(f, *pi, 2, offset, pad, w->m_implName, true, isLastDummy, false);
+    fprintf(f, "} %c%sProperties;\n\n", toupper(w->m_implName[0]), w->m_implName + 1);
   }
   const char *mName;
   if ((err = methodName(w, "run", mName)))
@@ -312,11 +311,11 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
 	  upper, upper);
   unsigned op = 0;
   const char **cp;
-  if (w->ctl.controlOps) {
+  if (w->m_ctl.controlOps) {
     last = "";
-    fprintf(f, " %s RCCMethod ", w->pattern ? "extern" : "static");
+    fprintf(f, " %s RCCMethod ", w->m_pattern ? "extern" : "static");
     for (cp = controlOperations; *cp; cp++, op++)
-      if (w->ctl.controlOps & (1 << op)) {
+      if (w->m_ctl.controlOps & (1 << op)) {
 	if ((err = methodName(w, *cp, mName)))
 	  return err;
 	fprintf(f, "%s%s", last, mName);
@@ -328,7 +327,7 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
     return err;
   fprintf(f,
 	  " %s RCCRunMethod %s\\\n",
-	  w->pattern ? "extern" : "static", mName);
+	  w->m_pattern ? "extern" : "static", mName);
   fprintf(f, "/**/\n");
   fprintf(f,
 	  "/*\n"
@@ -348,12 +347,12 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
 	  " .numInputs = %s_N_INPUT_PORTS,\\\n"
 	  " .numOutputs = %s_N_OUTPUT_PORTS,\\\n"
 	  " .threadProfile = %u,\\\n",
-	  w->implName, upper, upper, upper, upper, upper, w->isThreaded ? 1 : 0);
-  if (w->ctl.properties.size())
+	  w->m_implName, upper, upper, upper, upper, upper, w->m_isThreaded ? 1 : 0);
+  if (w->m_ctl.properties.size())
     fprintf(f, " .propertySize = sizeof(%c%sProperties),\\\n",
-	    toupper(w->implName[0]), w->implName + 1);
+	    toupper(w->m_implName[0]), w->m_implName + 1);
   for (op = 0, cp = controlOperations; *cp; cp++, op++)
-    if (w->ctl.controlOps & (1 << op)) {
+    if (w->m_ctl.controlOps & (1 << op)) {
       if ((err = methodName(w, *cp, mName)))
 	return err;
       fprintf(f, " .%s = %s,\\\n", *cp, mName);
@@ -362,22 +361,22 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
     return err;
   fprintf(f, " .run = %s,\\\n", mName);
   uint32_t optionals = 0;
-  for (unsigned n = 0; n < w->ports.size(); n++) {
-    Port *port = w->ports[n];
+  for (unsigned n = 0; n < w->m_ports.size(); n++) {
+    Port *port = w->m_ports[n];
     if (port->u.wdi.isOptional)
       optionals |= 1 << n;
   }
   if (optionals)
     fprintf(f, " .optionallyConnectedPorts = 0x%x,\\\n", optionals);
   fprintf(f, "/**/\n");
-  if (w->ports.size()) {
+  if (w->m_ports.size()) {
     // First generate the protocol enumerations
-    for (unsigned n = 0; n < w->ports.size(); n++) {
-      Port *port = w->ports[n];
+    for (unsigned n = 0; n < w->m_ports.size(); n++) {
+      Port *port = w->m_ports[n];
       if (port->protocol->operations()) {
 	unsigned nn;
 	for (nn = 0; nn < n; nn++) {
-	  Port *pp = w->ports[nn];
+	  Port *pp = w->m_ports[nn];
 	  if (pp->protocol->operations() &&
 	      !strcasecmp(pp->protocol->m_name.c_str(),
 			  port->protocol->m_name.c_str()))
@@ -405,15 +404,15 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
 	}
       }
     }
-    for (unsigned n = 0; n < w->ports.size(); n++) {
-      Port *port = w->ports[n];
+    for (unsigned n = 0; n < w->m_ports.size(); n++) {
+      Port *port = w->m_ports[n];
       if (port->protocol->operations()) {
 	fprintf(f,
 		"/*\n"
 		" * Enumeration of operations on port %s of worker %s\n"
 		" */\n"
 		"typedef enum {\n",
-		port->name, w->implName);
+		port->name, w->m_implName);
 	OU::Operation *o = port->protocol->operations();
 	char *puName = upperdup(port->name);
 	for (unsigned nn = 0; nn < port->protocol->nOperations(); nn++, o++) {
@@ -422,7 +421,7 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
 	  free(ouName);
 	}
 	fprintf(f, "} %c%s%c%sOperation;\n",
-		toupper(w->implName[0]), w->implName+1,
+		toupper(w->m_implName[0]), w->m_implName+1,
 		toupper(port->name[0]), port->name+1);
 	// Now emit structs for messages
 	o = port->protocol->operations();
@@ -435,7 +434,7 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
 		    "typedef struct __attribute__ ((__packed__)) {\n",
 		    o->name().c_str(), port->name);
 	    std::string s;
-	    camel(s, w->implName, port->name, o->name().c_str());
+	    camel(s, w->m_implName, port->name, o->name().c_str());
 	    bool isLast = false;
 	    emitStructRCC(f, o->nArgs(), o->args(), 2, s.c_str(), false, isLast, o->isTopFixedSequence());
 	    fprintf(f, "} %s;\n", s.c_str());
@@ -451,9 +450,9 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
 	  "#endif /* ifndef RCC_WORKER_%s_H__ */\n",
 	  upper);
   fclose(f);
-  if ((err = openOutput(w->fileName, outDir, "", RCCMAP, HEADER, NULL, f)))
+  if ((err = openOutput(w->m_fileName.c_str(), outDir, "", RCCMAP, HEADER, NULL, f)))
     return err;
-  fprintf(f, "#define RCC_FILE_WORKER_%s %s\n", w->fileName, w->implName);
+  fprintf(f, "#define RCC_FILE_WORKER_%s %s\n", w->m_fileName.c_str(), w->m_implName);
   fclose(f);
   return 0;
 }
@@ -462,12 +461,12 @@ const char*
 emitSkelRCC(Worker *w, const char *outDir) {
   const char *err;
   FILE *f;
-  if ((err = openOutput(w->fileName, outDir, "", "_skel", ".c", NULL, f)))
+  if ((err = openOutput(w->m_fileName.c_str(), outDir, "", "-skel", ".c", NULL, f)))
     return err;
   fprintf(f, "/*\n");
-  printgen(f, " *", w->file, true);
+  printgen(f, " *", w->m_file.c_str(), true);
   fprintf(f, " *\n");
-  const char *upper = upperdup(w->implName);
+  const char *upper = upperdup(w->m_implName);
   fprintf(f,
 " * This file contains the RCC implementation skeleton for worker: %s\n"
 	  " */\n"
@@ -481,12 +480,12 @@ emitSkelRCC(Worker *w, const char *outDir) {
 "/*\n"
 " * Methods to implement for worker %s, based on metadata.\n"
 	  " */\n",
-	  w->implName, w->implName, upper, w->implName, upper, w->implName);
+	  w->m_implName, w->m_implName, upper, w->m_implName, upper, w->m_implName);
   unsigned op = 0;
   const char **cp;
   const char *mName;
   for (cp = controlOperations; *cp; cp++, op++)
-    if (w->ctl.controlOps & (1 << op)) {
+    if (w->m_ctl.controlOps & (1 << op)) {
       if ((err = methodName(w, *cp, mName)))
 	return err;
       fprintf(f,
@@ -494,7 +493,7 @@ emitSkelRCC(Worker *w, const char *outDir) {
 "%s RCCResult\n%s(RCCWorker *self) {\n"
 " return RCC_OK;\n"
 	      "}\n",
-	      w->pattern ? "extern" : "static", mName);
+	      w->m_pattern ? "extern" : "static", mName);
     }
   if ((err = methodName(w, "run", mName)))
     return err;
@@ -504,7 +503,7 @@ emitSkelRCC(Worker *w, const char *outDir) {
 " (void)self;(void)timedOut;(void)newRunCondition;\n"
 " return RCC_ADVANCE;\n"
 	  "}\n",
-	  w->pattern ? "extern" : "static", mName);
+	  w->m_pattern ? "extern" : "static", mName);
   // FIXME PortMemberMacros?
   // FIXME Compilable - any initial functionality??? cool.
   fclose(f);
@@ -514,14 +513,14 @@ const char *
 emitArtRCC(Worker *aw, const char *outDir) {
   const char *err;
   FILE *f;
-  if ((err = openOutput(aw->fileName, outDir, "", "_art", ".xml", NULL, f)))
+  if ((err = openOutput(aw->m_fileName.c_str(), outDir, "", "_art", ".xml", NULL, f)))
     return err;
   fprintf(f, "<!--\n");
-  printgen(f, "", aw->file);
+  printgen(f, "", aw->m_file.c_str());
   fprintf(f,
 " This file contains the artifact descriptor XML for the application assembly\n"
 	  " named \"%s\". It must be attached (appended) to the shared object file\n",
-	  aw->implName);
+	  aw->m_implName);
   fprintf(f, " -->\n");
   // This assumes native compilation of course
   fprintf(f,
@@ -530,10 +529,14 @@ emitArtRCC(Worker *aw, const char *outDir) {
 	  "tool=\"%s\" toolVersion=\"%s\">\n",
 	  os, os_version, platform,
 	  "", "", "", "");
+#if 0
 // Define all workers
-for (WorkersIter wi = aw->assembly.workers.begin();
-     wi != aw->assembly.workers.end(); wi++)
+for (WorkersIter wi = aw->m_assembly.m_workers.begin();
+     wi != aw->m_assembly.m_workers.end(); wi++)
   emitWorker(f, *wi);
+#else
+ aw->emitWorkers(f);
+#endif
 fprintf(f, "</artifact>\n");
 if (fclose(f))
   return "Could close output file. No space?";

@@ -37,7 +37,7 @@
 // 2010-03-01 ssiegel Added Peer-Peer WSI Resets
 // 2010-06-26 jkulp   Made compliant with ocpi component workflow
 
-`include "bias_ver_impl.vh"
+`include "bias_ver-impl.vh"
 // All outputs are registered except those that are aliased (that have WIP semantics) 
 // Someday we might be more clever and allow combi outputs.
   reg [31:0] ctl_SData;

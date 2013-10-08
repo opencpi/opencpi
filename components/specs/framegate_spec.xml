@@ -6,9 +6,9 @@
     <Property Name="gateSize" Readable="true" Writable="true" Type="ULong"/>
   </Properties>
   <DataInterfaceSpec Name="in" Producer="false">
-    <ProtocolSummary DataValueWidth="16" MaxMessageValues="4096" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
+    <ProtocolSummary DataValueWidth="8" MaxMessageValues="16380" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
   </DataInterfaceSpec>
   <DataInterfaceSpec Name="out" Producer="true">
-    <ProtocolSummary DataValueWidth="16" MaxMessageValues="4096" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
+    <ProtocolSummary DataValueWidth="8" MaxMessageValues="16380" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
   </DataInterfaceSpec>
 </ComponentSpec>

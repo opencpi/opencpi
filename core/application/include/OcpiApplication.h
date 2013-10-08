@@ -45,6 +45,7 @@
 
 #include <string>
 #include <map>
+#include "OcpiUtilMisc.h"
 #include "OcpiLibraryAssembly.h"
 #include "OcpiContainerManager.h"
 #include "OcpiContainerApplication.h"
@@ -111,7 +112,7 @@ namespace OCPI {
 	inline External(Port &port, const PValue *params)
 	  : m_port(port), m_params(params), m_external(NULL) {}
       };
-      typedef std::map<const char*, External, OCPI::Library::Comp> Externals;
+      typedef std::map<const char*, External, OCPI::Util::ConstCharComp> Externals;
       typedef std::pair<const char*, External> ExternalPair;
       Externals m_externals;
       OCPI::Container::Worker **m_workers;

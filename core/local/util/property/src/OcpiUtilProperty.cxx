@@ -212,12 +212,12 @@ namespace OCPI {
       return parseImplAlso(x);
     }
     const char *Property::getValue(ExprValue &val) {
-      if (!m_defaultValue)
+      if (!m_default)
 	return esprintf("property \"%s\" has no value", m_name.c_str());
       if (m_arrayRank || m_isSequence || m_baseType == OA::OCPI_Struct ||
 	  m_baseType == OA::OCPI_Type)
 	return esprintf("property \"%s\" is an array/sequence/struct", m_name.c_str());
-      return m_defaultValue->getValue(val);
+      return m_default->getValue(val);
     }
   }
 }

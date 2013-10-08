@@ -73,6 +73,7 @@ namespace OCPI {
       Value *m_parent;       // for navigating upward
       unsigned m_next;       // for navigating horizontally
       size_t m_length;     // for debugging - length of value buffer
+      bool m_parsed;
       Value(const ValueType &vt, Value* parent = Value::s_parent);
       Value();
       ~Value();
@@ -99,8 +100,8 @@ namespace OCPI {
         OCPI_DATA_TYPE(sca,corba,letter,bits,TypeValue,Type,store)
         OCPI_DATA_TYPE(sca,corba,letter,bits,EnumValue,Enum,store)
 #undef OCPI_DATA_TYPE
-      const char *parse(const char *unparsed, const char *stop = NULL);
-      const char *allocate();
+      const char *parse(const char *unparsed, const char *stop = NULL, bool add = false);
+      const char *allocate(bool add = false);
       bool needsComma() const;
       bool needsCommaDimension() const;
       bool needsCommaElement() const;
@@ -118,6 +119,7 @@ namespace OCPI {
         OCPI_DATA_TYPE(sca,corba,letter,bits,EnumValue,Enum,store)
 #undef OCPI_DATA_TYPE
       void
+	doFormat(std::string &, const char *fmt, ...) const,
 	unparse(std::string &s, bool append = false, char comma = ',') const,
 	unparseElement(std::string &s, unsigned nSeq, char comma = ',') const;
       bool
@@ -135,10 +137,10 @@ namespace OCPI {
     private:
       const char
 	*parseValue(const char *unparsed, const char *stop,
-		   unsigned nSeq, size_t nArray),
-	*parseElement(const char *start, const char *end, unsigned nSeq),
+		   size_t nSeq, size_t nArray),
+	*parseElement(const char *start, const char *end, size_t nSeq),
 	*parseDimension(const char *unparsed, const char *stop,
-			unsigned nseq, size_t dim, size_t offset, size_t nItems);
+			size_t nseq, size_t dim, size_t offset, size_t nItems);
       void clear();
       void clearStruct();
     };

@@ -48,6 +48,8 @@ ifndef LibName
 LibName=$(word 1,$(HdlCores))
 endif
 
+$(call OcpiDbgVar,HdlToolRealCore)
+$(call OcpiDbgVar,LibName)
 ifdef HdlToolRealCore
 ################################################################################
 # Build the real core if the tools can do it $(call DoCore,target,name)
@@ -73,9 +75,9 @@ else
 $(call OcpiDbgVar,CompiledSourceFiles)
 $$(call OcpiDbgVar,CompiledSourceFiles)
 $(OutDir)target-$(1)/$(2)$(HdlBin): \
-   HdlSources=$$(filter-out $$(CoreBlackBoxFile),$$(CompiledSourceFiles))
+   HdlSources=$$(filter-out $$(filter-out %.vhd,$$(CoreBlackBoxFiles)),$$(CompiledSourceFiles))
 $(OutDir)target-$(1)/$(2)$(HdlBin): \
-      $$(filter-out $$(CoreBlackBoxFile),$$(CompiledSourceFiles)) 
+      $$(filter-out $$(filter-out %.vhd,$$(CoreBlackBoxFiles)) $$(TargetSourceFiles),$$(CompiledSourceFiles)) 
 	$(AT)echo Building $(and $(filter-out core,$(HdlMode))) core \"$(2)\" for target \"$$(HdlTarget)\"
 	$(AT)$$(HdlCompile)
 endif
@@ -99,8 +101,8 @@ ifdef Imports
 $(CoreResults): $(ImportsDir)
 endif
 
-all:$(LibResults) $(CoreResults)
-
+cores:$(LibResults) $(CoreResults)
+all: cores
 $(call OcpiDbgVar,PreBuiltCore)
 $(call OcpiDbgVar,CoreResults)
 $(call OcpiDbgVar,LibResults)
@@ -113,40 +115,50 @@ endif
 
 ################################################################################
 # Finally we create the black box/stub library for this core alone if needed
-# On two conditions: first that we actually need to do it (e.g. cores and apps),
+# On two conditions: first that we actually need to do it (e.g. platforms,cores,assemblies),
 # second that the tools need it
-ifneq ($(filter assembly core,$(HdlMode)),)
+ifneq ($(findstring $(HdlMode),assembly core platform),)
 ifdef HdlToolNeedBB
-
-#ifeq ($(realpath $(CoreBlackBoxFile)),)
-#  $(error CoreBlackBoxFile "$(CoreBlackBoxFile)" does not exist)
-#endif
 
 ################################################################################
 # Make the black box library
-# Black box libraries are built when it is necessary to
-# have a library containing the black box module in order for
-# higher level designs to find the core during synthesis.
-# But if we have a prebuilt core, don't bother for simulators
+# Black box libraries for cores are built when it is necessary to have a library containing
+# the black box module in order for higher level designs to find the core during synthesis.
+# Too enable instantiation from verilog this means a foo_bb.v file with an empty module.
+# Too enable instantiaiton from VHDL this just means the foo_pkg.vhd file with the module definition
+# The bb library is built using the same library name, but in the bb subdirectory
+# BUT: it is installed under the foo_bb name
+# FIXME: we don't yet build with the VHDL pkg file for instantiating cores from VHDL
 $(call OcpiDbgVar,HdlToolNeedBB)
-# A function taking a target and producing the BB result file
-OutLibFile=$(OutDir)target-$1/$(call HdlToolLibraryFile,$1,$(word 1,$(HdlCores))_bb)
+
+# A function taking a target-dir-name, a libname, and a build target
+BBLibFile=$(OutDir)target-$1/bb/$(call HdlToolLibraryFile,$3,$2)
+
+# $(call DoBBLibraryTarget,target-dir-name,libname,target,bbfile)
 define DoBBLibraryTarget
-BBLibResults+=$(call OutLibFile,$1)
-$(call OutLibFile,$1): LibName=$(word 1,$(HdlCores))_bb
-$(call OutLibFile,$1): Core=onewire
-$(call OutLibFile,$1): Top=onewire
-$(call OutLibFile,$1): override HdlTarget=$1
-$(call OutLibFile,$1): TargetDir=$(OutDir)target-$1
-$(call OutLibFile,$1): HdlSources=$(CoreBlackBoxFile) $(OCPI_CDK_DIR)/include/hdl/onewire.v
+BBLibResults+=$(call BBLibFile,$1,$2,$3)
+$(call BBLibFile,$1,$2,$3): | $(OutDir)target-$1/bb
+$(call BBLibFile,$1,$2,$3): LibName=$2
+$(call BBLibFile,$1,$2,$3): Core=onewire
+$(call BBLibFile,$1,$2,$3): Top=onewire
+$(call BBLibFile,$1,$2,$3): override HdlTarget=$3
+$(call BBLibFile,$1,$2,$3): TargetDir=$(OutDir)target-$1/bb
+$(call BBLibFile,$1,$2,$3): HdlSources=$4 $(OCPI_CDK_DIR)/include/hdl/onewire.v
+$(call BBLibFile,$1,$2,$3): $4 | $$$$(TargetDir)
+	$(AT)$(ECHO) -n Building stub/blackbox library \($$@\) for target' '
+	$(AT)$(ECHO) $$(HdlTarget) from $4
+	$(AT)$$(HdlCompile)
+
+$(OutDir)target-$1/bb:
+	$(AT)mkdir -p $$@
+
 endef
-$(foreach f,$(call HdlToolLibraryTargets,$(HdlActualTargets)),\
-  $(eval $(call DoBBLibraryTarget,$f)))
-$(sort $(BBLibResults)): $$(CoreBlackBoxFile) | $$(TargetDir)
-	$(AT)$(ECHO) -n Building stub/blackbox library \($@\) for target' '
-	$(AT)$(ECHO) $(HdlTarget) from $(CoreBlackBoxFile)
-	$(AT)$(HdlCompile)
-all: $(BBLibResults)
+
+$(foreach f,$(HdlActualTargets),\
+  $(eval $(call DoBBLibraryTarget,$f,$(word 1,$(HdlCores)),$f,$(CoreBlackBoxFiles))))
+
+cores: $(BBLibResults)
+
 $(call OcpiDbgVar,BBLibResults)
 $(call OcpiDbgVar,HdlActualTargets)
 
@@ -158,7 +170,7 @@ $(HdlCoreBBInstallDir):
 install_bb: | $(HdlCoreBBInstallDir)
 	$(AT)for f in $(HdlFamilies); do \
 	   $(call ReplaceContentsIfDifferent,$(strip \
-               $(OutDir)target-$$f/$(HdlToolLibraryResult)_bb),$(strip \
+               $(OutDir)target-$$f/bb/$(HdlToolLibraryResult)),$(strip \
 	       $(HdlCoreBBInstallDir)/$$f)); \
 	   done
 install: install_bb

@@ -43,6 +43,7 @@
 #  device workers
 #  platforms
 #  assemblies
+#  containers
 
 ifndef __HDL_PRE_MK__
 __HDL_PRE_MK__=x
@@ -77,7 +78,8 @@ HdlVHDLSuffix:=.vhd
 HdlVHDLIncSuffix:=.vhd
 # 
 ifndef HdlLanguage
-    # Ugly grab of the language attribute from the XML file
+  # Ugly grab of the language attribute from the XML file
+  # FIXME: make a single ocpigen command to provide this by parsing
   HdlLanguage:=$(call ToLower,$(and $(wildcard $(HdlXmlFile)),$(shell grep -i 'language *=' $(HdlXmlFile) | sed "s/^.*[lL]anguage= *['\"]\\([^\"']*\\).*$$/\1/")))
   ifdef Language
     ifdef HdlLanguage
@@ -102,11 +104,13 @@ HdlSourceSuffix:=$(HdlVerilogSuffix)
 HdlIncSuffix:=$(HdlVerilogIncSuffix)
 HdlOtherSourceSuffix:=$(HdlVHDLSuffix)
 HdlOtherIncSuffix:=$(HdlVHDLIncSuffix)
+HdlOtherLanguage:=VHDL
 else
 HdlSourceSuffix:=$(HdlVHDLSuffix)
 HdlIncSuffix:=$(HdlVHDLIncSuffix)
 HdlOtherSourceSuffix:=$(HdlVerilogSuffix)
 HdlOtherIncSuffix:=$(HdlVerilogIncSuffix)
+HdlOtherLanguage:=Verilog
 endif
 $(call OcpiDbgVar,HdlSourceSuffix)
 
@@ -135,59 +139,7 @@ HdlLibrariesInternal = \
 	                $(and $(wildcard $(call HdlLibraryRefDir,$p,$f)),$p)))))),$(strip \
     $l))
 
-#    $(info Hdl Library is $l)$l))
-
-
-
-################################################################################
-# The generic hdl compile that depends on HdlToolCompile
-HdlName=$(or $(Core),$(LibName))
-# if $(findstring $(HdlMode),library),$(LibName),$(Core))
-HdlLog=$(HdlName)-$(HdlToolSet).out
-HdlTime=$(HdlName)-$(HdlToolSet).time
-HdlCompile=\
-  cd $(TargetDir); \
-  export HdlCommand="set -e; $(HdlToolCompile)"; \
-  $(TIME) sh -c \
-   '(/bin/echo Commands to execute tool:@"$$HdlCommand" | sed "s/\([^\\]\); */\1;@/g" | tr "@" "\n"; /bin/echo Output from executing commands above:;eval "$$HdlCommand") > $(HdlLog) 2>&1' \
-    > $(HdlTime) 2>&1; \
-  HdlExit=$$?; \
-  cat $(HdlTime) >> $(HdlLog); \
-  grep -i error $(HdlLog)| grep -v Command: |\
-    grep -v '^WARNING:'|grep -v " 0 errors," | grep -i -v '[_a-z]error'; \
-  if grep -q '^ERROR:' $(HdlLog); then HdlExit=1; fi; \
-  $(HdlToolPost) \
-  if test "$$OCPI_HDL_VERBOSE_OUTPUT" != ''; then \
-    cat $(HdlLog); \
-  fi; \
-  if test $$HdlExit != 0; then \
-    $(ECHO) -n Error: $(HdlToolSet) failed\($$HdlExit\). See $(TargetDir)/$(HdlLog).'  '; \
-  else \
-    $(ECHO) -n ' Tool "$(HdlToolSet)" for target "$(HdlTarget)" succeeded.  '; \
-  fi; \
-  cat $(HdlTime); \
-  rm -f $(HdlTime); \
-  exit $$HdlExit
-################################################################################
-# The post processing by tools that do not produce any intermediate
-# build results
-HdlSimPost=\
-  rm -r -f links; \
-  if test $$HdlExit = 0; then \
-    if ! test -d $(LibName); then \
-      mkdir $(LibName); \
-    else \
-      rm -f $(LibName)/*; \
-    fi;\
-    for s in $(HdlToolLinkFiles); do \
-      if [[ $$s == /* ]]; then \
-        ln -s $$s $(LibName); \
-      else \
-        ln -s ../$$s $(LibName); \
-      fi; \
-    done; \
-  fi;
-
+# For use by some tools
 define HdlSimNoLibraries
 HdlToolPost=$$(HdlSimPost)
 HdlToolLinkFiles=$$(call Unique,\
@@ -196,130 +148,84 @@ HdlToolLinkFiles=$$(call Unique,\
      $$(call FindRelative,$$(TargetDir),$$(f))))
 endef
 
-
-
-# This works when wildcard doesn't.  FIXME: put into util.mk and use it more
-# Sad, as it slows things down.  Perhaps better to use realpath?
-HdlExists=$(strip $(shell if test -e $1; then echo $1; fi))
-
 ################################################################################
-# $(call HdlLibraryRefDir,location-dir)
-# $(call HdlCoreRefDir,location-dir,target)
-# These functions take a user-specified (friendly, target-independent) library
-# or core location and a target name.  They return the actual directory of that
-# library/core that the tool wants to see for that target.
-# These are not for component libraries, but a primitive libraries and cores
-# The third argument is just for callers to pass something private to HdlToolLibRef
-HdlLibraryRefDir=$(foreach i,$(call HdlLibraryRefFile,$1,$2,$3),$i)
+# Target processing.
+$(call OcpiDbgVar,HdlTarget)
+$(call OcpiDbgVar,HdlTargets)
+$(call OcpiDbgVar,HdlPlatform)
+$(call OcpiDbgVar,HdlPlatforms)
+ifeq ($(origin HdlPlatforms),undefined)
+  ifdef HdlPlatform
+    HdlPlatforms:=$(HdlPlatform)
+  else
+    HdlPlatforms:=$(if $(filter platform,$(HdlMode)),$(CwdName),ml605)
+  endif
+else ifeq ($(HdlPlatforms),all)
+  override HdlPlatforms:=$(HdlAllPlatforms)
+endif
 
-#strip \
-#  $(foreach r,$(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/hdl/$1),$(strip\
-#    $(if $(wildcard $r/target-$2),$r/target-$2/$(notdir $1),)/$(strip\
-#      $(call HdlToolLibRef,$(notdir $1),$2,$3)))))
-
-HdlCRF= $(strip\
-  $(foreach r,\
-    $(if $(call HdlExists,$1/target-$2),\
-       $1/target-$2/$3,\
-       $1/$2/$3),\
-     $r))
-
-#    $(info Result:$r)$r))
-
-
-HdlCoreRef=$(strip \
-  $(foreach d,$(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/hdl/$1),\
-   $(foreach c,$(notdir $1)$(HdlBin),\
-     $(or $(call HdlExists,$(call HdlCRF,$d,$2,$c)),\
-	  $(call HdlExists,$(call HdlCRF,$d,$(call HdlGetFamily,$2),$c)),\
-	$(error No core file ($c) for target "$2" found for "$1".)))))
-
-
-################################################################################
-# $(call HdlLibraryRefFile,location-dir,target)
-# This function takes a user-specified (friendly, target-independent) library
-# or core location and a target name.  They return the actual pathname of that
-# library/core file or directory for "make" dependencies.
-# We rely on the underlying tool for the actual filename, if it is not just
-# the directory
-#HdlLRF=$(info LRF:$(shell pwd):$1:$2:$1/target-$2:$(wildcard $1/target-$2/*))$(strip\
-#    $(if $(info D:$(shell pwd):$1:$2:$1/target-$2:$(call HdlWild,$1/target-$2))$(call HdlWild,$1/target-$2),\
+ifeq ($(origin HdlTargets),undefined)
+  ifdef HdlTarget
+    HdlTargets:=$(HdlTarget)
+  else
+    ifdef HdlPlatforms
+      HdlTargets:=$(foreach p,$(HdlPlatforms),$(if $(HdlPart_$p),,$(error Unknown platform: $p))$(call HdlGetFamily,$(HdlPart_$p)))
+    else
+      HdlTargets:=virtex6
+    endif
+  endif
+else ifeq ($(HdlTargets),all)
+  override HdlTargets:=$(HdlAllFamilies)
+endif
+$(call OcpiDbgVar,HdlTarget)
+$(call OcpiDbgVar,HdlTargets)
+$(call OcpiDbgVar,HdlPlatform)
+$(call OcpiDbgVar,HdlPlatforms)
 
 
-HdlLRF=$(strip \
-  $(foreach r,\
-    $(if $(call HdlExists,$1/target-$2),\
-       $1/target-$2/$(call HdlToolLibraryBuildFile,$(or $3,$(notdir $1))),\
-       $1/$2/$(call HdlToolInstallFile,$(or $3,$(notdir $1)),$t)),\
-     $r))
+ifneq ($(filter platform container,$(HdlMode)),)
+  HdlPlatform:=$(or $(HdlMyPlatform),$(CwdName))
+  ifdef HdlPlatforms
+    ifeq ($(filter $(HdlPlatform),$(HdlPlatforms)),)
+      $(info Skipping this platform ($(HdlPlatform)) since it is not in HdlPlatforms ($(HdlPlatforms)))
+      HdlSkip:=1
+    endif
+  endif
+  HdlPlatforms:=$(HdlPlatform)
+  HdlExactPart:=$(call HdlGetPart,$(HdlPlatform))
+  override HdlTarget:=$(HdlPlatform)
+  override HdlActualTargets:=$(HdlPlatform)
+  HdlPlatformDir:=$(HdlPlatformsDir)/$(HdlPlatform)
+else # now for builds that accept platforms and targets as inputs
 
-#   $(info Result:$r)$r))
-
-HdlLibraryRefFile=$(strip \
-  $(foreach r,$(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/hdl/$1),\
-    $(foreach f,$(call HdlGetFamily,$2),\
-       $(if $(filter $f,$2),\
-          $(call HdlLRF,$r,$2,$3),\
-	  $(or $(call HdlExists,$(call HdlLRF,$r,$2)),$(call HdlLRF,$r,$f,$3))))))
-
-# Default for all tools: libraries are directories whose name is the library name itself
-# Return the name of the thing in the build directory (whose name is target-<target>)
-# But if there is a single file there, that should be returned
-HdlToolLibraryBuildFile=$1
-# Default for all tools: installed libraries are just the directory whose name is the target
-# Return the name of the thing in the install directory (whose name is the target)
-# But if there is a single file there, that should be returned
-HdlToolLibraryInstallFile=
-
-################################################################################
-# $(call HdlGetToolSet,hdl-target)
-# Return the tool set for this target
-HdlGetToolSet=$(strip \
-  $(or $(and $(findstring $(1),$(HdlTopTargets)),$(strip \
-           $(or $(HdlToolSet_$(1)),$(strip \
-                $(if $(word 2,$(HdlTargets_$(1))),,\
-                   $(HdlToolSet_$(HdlTargets_$(1)))))))),$(strip \
-       $(HdlToolSet_$(call HdlGetFamily,$(1)))),$(strip \
-       $(call $(HdlError),Cannot infer tool set from '$(1)'))))
-
-################################################################################
-# $(call HdlGetTargetsForToolSet,toolset,targets)
-# Return all the targets that work with this tool
-HdlGetTargetsForToolSet=$(call Unique,\
-    $(foreach t,$(2),\
-       $(and $(findstring $(1),$(call HdlGetToolSet,$(t))),$(t))))
+  # Make sure all the platforms are present
+  $(foreach p,$(HdlPlatforms),\
+    $(if $(realpath $(HdlPlatformsDir)/$(p)),,\
+       $(error No $(p) platform found in $(HdlPlatformsDir))))
 
 # The general pattern is:
 # If Target is specified, build for that target.
 # If Targets is specified, build for all, BUT, if they need
 # different toolsets, we recurse into make for each set of targets that has a common
 # set of tools
-$(call OcpiDbgVar,HdlTarget)
-$(call OcpiDbgVar,HdlTargets)
-ifneq ($(HdlTarget),)
-override HdlTargets=$(HdlTarget)
-endif
-ifeq ($(HdlTargets),)
-override HdlTargets=all
-endif
 
-$(call OcpiDbgVar,HdlTargets)
-$(call OcpiDbgVar,HdlTarget)
 $(call OcpiDbgVar,OnlyTargets)
 # Map "all" and top level targets down into "families"
-HdlActualTargets:=$(call Unique,\
-              $(foreach t,$(HdlTargets),\
-                 $(if $(findstring $t,all)$(findstring $t,$(HdlTopTargets)),\
-                    $(call HdlGetFamily,$t,x),\
-                    $t)))
+HdlActualTargets:=$(strip \
+  $(call Unique,\
+    $(foreach t,$(HdlTargets),\
+              $(if $(findstring $t,all)$(findstring $t,$(HdlTopTargets)),\
+                   $(call HdlGetFamily,$t,x),\
+                   $t))))
 $(call OcpiDbgVar,HdlActualTargets)
 # Map "only" targets down to families too
-HdlOnlyTargets:=$(call Unique,\
-              $(foreach t,\
-                $(or $(OnlyTargets),all),\
-                  $(if $(findstring $(t),all)$(findstring $(t),$(HdlTopTargets)),\
+HdlOnlyTargets:=$(strip \
+  $(call Unique,\
+     $(foreach t,\
+               $(or $(OnlyTargets),all),\
+               $(if $(findstring $(t),all)$(findstring $(t),$(HdlTopTargets)),\
                     $(call HdlGetFamily,$(t),x),\
-                    $(t))))
+                    $(t)))))
 $(call OcpiDbgVar,HdlOnlyTargets)
 # Now prune to include only targets mentioned in OnlyTargets
 # Question is:  for each target, is it in onlytargets?
@@ -363,6 +269,9 @@ HdlActualTargets:=$(call Unique,\
 $(call OcpiDbgVar,HdlActualTargets,After exclusion: )
 override HdlTargets:=$(HdlActualTargets)
 
+endif # End of else of platform-specific modes
+
+ifndef HdlSkip
 HdlFamilies=$(call HdlGetFamilies,$(HdlActualTargets))
 $(call OcpiDbgVar,HdlFamilies)
 
@@ -418,14 +327,14 @@ endef
 $(foreach ts,$(HdlToolSets),$(eval $(call HdlDoToolSet,$(ts))))
 # this "skip" tells the file that included this file, that it shouldn't do anything
 # after including this file, and thus "skip" the rest of its makefile.
-HdlSkip=1
+HdlSkip:=1
 
 ################################################################################
 # Here is where we ended up with nothing to do due to filtering
 else ifeq ($(HdlToolSets),)
 $(call OcpiDbg,=============No tool sets at all, skipping)
-$(info Not building filtered (only/excluded) targets: $(HdlPreExcludeTargets))
-HdlSkip=1
+$(info Not building these filtered (only/excluded) targets: $(HdlPreExcludeTargets))
+HdlSkip:=1
 install:
 else
 ################################################################################
@@ -438,9 +347,9 @@ $(call OcpiDbgVar,HdlToolSet)
 
 ifneq ($(HdlToolSet),)
 include $(OCPI_CDK_DIR)/include/hdl/$(HdlToolSet).mk
-ifneq ($(findstring platform,$(HdlMode)),)
-HdlTolNeedBB:=
-endif
+#ifneq ($(findstring platform,$(HdlMode)),)
+#HdlToolNeedBB:=
+#endif
 ifneq ($(findstring $(HdlToolSet),$(HdlSimTools)),)
 HdlSimTool=yes
 endif
@@ -461,3 +370,4 @@ cleanimports::
 ImportsDir=imports
 
 endif # include this once
+endif # top level skip

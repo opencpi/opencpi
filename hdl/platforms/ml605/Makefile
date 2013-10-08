@@ -1,7 +1,8 @@
 # The ml605 platform.
-# Other aspects are in ml605.mk: those needed for final bitstream
 Cores=pcie_4243_trn_v6_gtx_x4_250
-HdlLibraries=bsv util_virtex6 util
-# Configurations=....
-SourceFiles=fpgaTop_ml605.v mkFTop_ml605.v 
-include $(OCPI_CDK_DIR)/include/hdl/hdl-platform.mk # We are a (compiled) core
+# We specify these to get the order we want
+SourceFiles=ml605_pkg.vhd ml605.vhd pci_ml605.v 
+ComponentLibraries=../../devices
+Configurations=ml605_base ml605_flash
+include $(OCPI_CDK_DIR)/include/hdl/hdl-config.mk
+

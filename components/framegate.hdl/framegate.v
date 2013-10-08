@@ -49,7 +49,6 @@
 `endif
 
 `ifdef ORIGINAL
-`ifdef ORIGINAL
 module mkFrameGate4B(wciS0_Clk,
 		     wciS0_MReset_n,
 
@@ -213,11 +212,7 @@ module mkFrameGate4B(wciS0_Clk,
 
 `else
 `define NOT_EMPTY_framegate
-`include "framegate_defs.vh"
-`endif
-`else
-`define NOT_EMPTY_framegate
-`include "framegate_defs.vh"
+`include "framegate-defs.vh"
 `endif
   // signals for module outputs
   wire [31 : 0] wciS0_SData, wsiM0_MData;

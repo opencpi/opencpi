@@ -1,0 +1,6 @@
+<HdlPlatform Language="VHDL">
+  <xi:include href="platform_spec"/>
+  <cpmaster master='true'/>
+  <metadata master='true'/>
+  <timeservice master='true'/>
+</HdlPlatform>

@@ -101,7 +101,7 @@ module mkICAPWorker(wciS0_Clk,
 
 `else
 `define NOT_EMPTY_icap
-`include "icap_defs.vh"
+`include "icap-defs.vh"
 `endif
   // inlined wires
   wire [71 : 0] wci_wslv_wciReq$wget;

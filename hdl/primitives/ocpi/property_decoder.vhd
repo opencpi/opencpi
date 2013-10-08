@@ -47,7 +47,7 @@ begin
   write_enable <= to_bool(is_write and property.writable and my_decode);
   read_enable  <= to_bool(is_read and property.readable and my_decode);
   offset_out   <= my_offset; --(others => '0') when property.nitems <= 1 else my_offset;
-  l32: if property.data_width = 32 generate
+  l32: if property.data_width >= 32 generate
    data_out <= data_in;
   end generate;
   l16: if property.data_width = 16 generate

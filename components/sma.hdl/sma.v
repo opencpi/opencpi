@@ -336,7 +336,7 @@ module mkSMAdapter4B(wciS0_Clk,
 
 `else
 `define NOT_EMPTY_sma
-`include "sma_defs.vh"
+`include "sma-defs.vh"
 `endif
   // signals for module outputs
   wire [31 : 0] wciS0_SData, wmiM0_MData, wmiM0_MFlag, wsiM0_MData;
