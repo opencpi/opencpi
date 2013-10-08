@@ -50,6 +50,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <string>
 #include <DtSharedMemoryInternal.h>
 #include <DtPioXfer.h>

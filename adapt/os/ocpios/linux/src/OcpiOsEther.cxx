@@ -42,6 +42,7 @@
 #include <sys/socket.h>
 #include <sys/sysctl.h>
 #include <stdio.h>
+#include <unistd.h>
 #ifdef OCPI_OS_macos
 #include <arpa/inet.h>
 #include <net/ethernet.h>
@@ -641,7 +642,7 @@ namespace OCPI {
 #ifdef OCPI_OS_macos
 	delete o->buffer;
 #else
-	if (o->dfd >= 0)
+	if (o->dfd)
 	  closedir(o->dfd);
 #endif
       }

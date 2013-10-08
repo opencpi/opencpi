@@ -44,6 +44,7 @@
  *
  */
 
+#include <unistd.h>
 #include <algorithm>
 #include "OcpiOsMutex.h"
 #include "OcpiOsMisc.h"

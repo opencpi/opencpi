@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <assert.h>
+#include <unistd.h>
 #include "OcpiUtilProtocol.h"
 #include "OcpiUtilValue.h"
 #include "ocpidds.h"

@@ -30,14 +30,14 @@
 export OCPI_RCC_TARGET=$OCPI_TOOL_HOST
 export OCPI_SMB_SIZE=3000000
 export OCPI_LIBRARY_PATH=../../../../components/lib/rcc
-if test "$OCPI_TOOL_OS" == macos; then
+if test "$OCPI_TOOL_OS" = macos; then
   export OCPI_RCC_SUFFIX=dylib
 #  setenv DYLD_LIBRARY_PATH ../../../../lib/target-$OCPI_TOOL_HOST
 else
   export OCPI_RCC_SUFFIX=so
   export LD_LIBRARY_PATH=../../../../lib/target-$OCPI_TOOL_HOST
 fi
-if test $# == 1 ; then
+if test $# = 1 ; then
   sh -c "./$1 2> /dev/null | grep Test:"
 else
 for i in `ls -d test* | grep -v '_main' | grep -v '\.'` ; do

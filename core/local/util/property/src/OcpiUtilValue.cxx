@@ -700,14 +700,12 @@ namespace OCPI {
 	dimension = m_vt->m_arrayDimensions[dim],
 	skip = nItems/dimension;
       const char *err;
-      const char *last = 0;
       for (unsigned n = 0; n < dimension; n++) {
 	const char *start, *end;
 	if ((err = doElement(unparsed, stop, start, end, true))) // nextDim != 1))) // = m_vt->m_arrayRank)))
 	  return err;
 	if (n && start == end)
 	  break; // return "insufficient array elements";
-	last = start;
 	if (nextDim < m_vt->m_arrayRank) {
 	  if (start == end || start[0] != '{' || end[-1] != '}')
 	    return esprintf("array elements not enclosed in {} for (%*s) (%zu)",

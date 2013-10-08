@@ -165,14 +165,11 @@ int main( int argc, char** argv )
   // Get the XML formatted data
   OCPI::TimeEmit::Formatter::XMLReader xml_data( config.infilename );  
 
-  EmitFormatter::DumpFormat format;
   if ( config.format == "VCD" ) {
-    format = EmitFormatter::VCDFormat;
     OCPI::TimeEmit::Formatter::VCDWriter vcd_formatter( xml_data ); 
     *out << vcd_formatter;
   }
   else {
-    format = EmitFormatter::CSVFormat;
     OCPI::TimeEmit::Formatter::CSVWriter csv_formatter( xml_data, config.smart );  
     *out << csv_formatter;    
   }

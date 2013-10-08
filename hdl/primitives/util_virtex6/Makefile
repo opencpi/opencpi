@@ -39,7 +39,7 @@
 SimLibraries=$(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/unisims
 SimFiles=$(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v
 OnlyTargets=virtex6 isim 
-Imports=$(foreach i,xilinx_v6_pcie_wrapper xilinx_s6_pcie_wrapper ClockInvToBool,$(OCPI_HDL_IMPORTS_DIR)/libsrc/hdl/ocpi/$(i).v)
+Imports=$(foreach i, xilinx_s6_pcie_wrapper,$(OCPI_HDL_IMPORTS_DIR)/libsrc/hdl/ocpi/$(i).v)
 include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk # we are a library of primitives
 
 

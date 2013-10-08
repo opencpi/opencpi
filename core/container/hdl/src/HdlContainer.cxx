@@ -50,6 +50,7 @@
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <errno.h>
+#include <unistd.h>
 #include "OcpiOsAssert.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiPValue.h"

@@ -47,6 +47,7 @@
 #define __STDC_LIMIT_MACROS
 #include <inttypes.h>
 #include <stdint.h>
+#include <unistd.h>
 #include <sys/mman.h>
 #include "OcpiOsAssert.h"
 #include "KernelDriver.h"

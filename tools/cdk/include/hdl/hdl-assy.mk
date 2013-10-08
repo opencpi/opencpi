@@ -107,7 +107,7 @@ $(ImplFile): $$(ImplXmlFile) | $$(GeneratedDir)
 $(AssyWorkersFile): $(ImplFile)
 
 # The source code for this "worker" is the generated assembly file.
-SourceFiles:=$(ImplFile)
+GeneratedSourceFiles:=$(ImplFile)
 
 # When parsing the HdlAssembly file, we need access to the xml from the 
 # workers in the assembly, both at the implementation level and the spec level
@@ -257,14 +257,14 @@ HdlPlatformWorkers=dp
 define doPlatform
 
 # Different since it is in the targetdir
-$(call ArtifactXmlName,$1) $(call PlatformDir,$1)/$(Worker)_UUID.v $(call ContainerWorkersFile,$1): \
+$(call ArtifactXmlName,$1) $(call ContainerWorkersFile,$1): \
    $(ContainerXmlFile) $(ImplXmlFile)
 	@echo Generating UUID and artifact xml file \($(call ArtifactXmlName,$1)\) from $(ImplXmlFile) and $(ContainerXmlFile) files.
 	$(AT)$(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(call PlatformDir,$1)/$(notdir $(call ArtifactXmlName,$1)).deps \
 	  -D $(call PlatformDir,$1) $(ArtifactXmlDirs:%=-I%) -A \
           -c $(ContainerXmlFile) -W $(ContainerModule) -P $1 -e $(call HdlGetPart,$1) $(ImplXmlFile)
 
-$$(call BitName,$1): override ImplWorkersFiles=$(AssyWorkersFile) $(call ContainerWorkersFile,$1)
+$(call BitName,$1): override ImplWorkersFiles=$(AssyWorkersFile) $(call ContainerWorkersFile,$1)
 $(call BitZName,$1): $$(call BitName,$1) $$(call ArtifactXmlName,$1)
 	$(AT)echo Making compressed bit file: $$@ from $$<
 	$(AT)gzip -c $$(call BitName,$1) > $$@

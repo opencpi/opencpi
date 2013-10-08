@@ -669,7 +669,7 @@ void Worker::run(bool &anyone_run) {
 	  free(m_errorString);
 	  m_errorString = NULL;
 	}
-	throw OU::Error(e.c_str());
+	throw OU::Error("%s", e.c_str());
       }
       if (newRunCondition) {
 	m_runCondition = m_context->runCondition ? m_context->runCondition : &m_defaultRunCondition;

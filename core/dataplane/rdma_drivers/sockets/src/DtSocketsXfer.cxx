@@ -50,6 +50,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <deque>
 #include <DtSharedMemoryInternal.h>
 #include <DtSocketsXfer.h>

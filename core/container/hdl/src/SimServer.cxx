@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <signal.h>     // for kill
+#include <unistd.h>
 #include <sys/types.h>  // for mkfifo, waitpid
 #include <sys/stat.h>   // for mkfifo
 #include <sys/wait.h>   // for waitpid

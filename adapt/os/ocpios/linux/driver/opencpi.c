@@ -22,7 +22,12 @@
  */
 #include <net/sock.h>
 
-#include <linux/autoconf.h>		// This kernel's autoconfig defines
+#include <linux/version.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
+#include <linux/autoconf.h>
+#else
+#include <generated/autoconf.h>
+#endif
 #include <linux/init.h>			// Kernel module initialization
 #include <linux/kernel.h>		// Kernel common functions
 #include <linux/module.h>		// Kernel module
@@ -53,6 +58,10 @@
 #include <linux/cdev.h>			// Character devices (load this last due to bugs)
 #include <linux/version.h>
 
+// Removed in kernel 3.7
+#ifndef VM_RESERVED
+#define VM_RESERVED (VM_DONTEXPAND | VM_DONTDUMP)
+#endif
 
 #include "HdlOCCP.h"
 #include "PciDriver.h"
@@ -448,10 +457,14 @@ opencpi_vma_close(struct vm_area_struct *vma) {
 }
 
 // Map an individual page - in our case only for kernel allocation (not mmio, not reserved)
+#if defined(RHEL_MAJOR)
 #if RHEL_MAJOR==6
 #define OCPI_RH6
 #else
 #define OCPI_RH5
+#endif
+#else
+#define OCPI_RH6
 #endif
 
 #ifdef OCPI_RH5
@@ -563,9 +576,16 @@ opencpi_io_release(struct inode *inode, struct file *file) {
 static int get_pci(unsigned minor, ocpi_pci_t *pci);
 // ioctl for getting memory status and requesting memory allocations
 // FIXME: do copy_to/from_user return the right error codes anyway?
-static int
+static
+#ifdef HAVE_UNLOCKED_IOCTL
+long
+opencpi_io_ioctl(struct file *file, unsigned int cmd, unsigned long arg) {
+  unsigned minor = iminor(file->f_dentry->d_inode);
+#else
+int
 opencpi_io_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg) {
   unsigned minor = iminor(inode);
+#endif
   int err;
   switch (cmd) {
   case OCPI_CMD_PCI:
@@ -717,7 +737,12 @@ static struct file_operations opencpi_file_operations = {
 	.release = opencpi_io_release,
 //	.read = opencpi_io_read,
 //	.write = opencpi_io_write,
-	.ioctl = opencpi_io_ioctl,
+#ifdef HAVE_UNLOCKED_IOCTL
+        .unlocked_ioctl
+#else
+	.ioctl
+#endif
+	 = opencpi_io_ioctl,
 	.mmap = opencpi_io_mmap,
 };
 // -----------------------------------------------------------------------------------------------

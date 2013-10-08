@@ -1,3 +1,4 @@
+#include <string.h>
 #include "OcpiContainerManager.h"
 #include "OcpiContainerErrorCodes.h"
 #include "OcpiRccContainer.h"
