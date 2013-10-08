@@ -220,5 +220,5 @@ int main( int argc, char** argv )
   delete tfin;
   efin->close();
   delete efin;
-
+  return ret;
 }

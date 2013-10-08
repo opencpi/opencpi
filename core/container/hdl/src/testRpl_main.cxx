@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
   unsigned long bufferSize = 2048, ioCount = 1, ioSize = 16, delay = 0; // memorySize = 0
 #define NTICKS 100
   //  uint64_t memoryBase = 0;
-  bool loop = false, doread = true, two = false, //same = true, probe = false,
+  bool /* loop = false, */ doread = true, two = false, //same = true, probe = false,
     acquire = false, emit = false, dummy = false, cosine = false, psd = false,
     test = false, doTicks = false, metadata = false;
   char *firstarg = 0, *secondarg = 0, *file = 0, *ofile = 0, *xfile = (char*)"file", *rccFile = 0,
@@ -221,10 +221,10 @@ int main(int argc, char *argv[])
       case 'i':
         ioCount = atoi(*++ap);
         break;
+#if 0
       case 'l':
         loop = true;
         break;
-#if 0
       case 'm':
         memoryBase = atoll(*++ap);
         memorySize = atoi(*++ap);

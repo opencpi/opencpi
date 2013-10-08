@@ -26,6 +26,7 @@
 #include <errno.h> 
 #include <signal.h>
 #include <dirent.h>
+#include <unistd.h>
 #include <arpa/inet.h>
 #include "OcpiOsFileSystem.h"
 #include "OcpiOsMisc.h"

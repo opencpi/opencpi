@@ -37,6 +37,7 @@
 #include <errno.h>
 #include <sys/mman.h>
 #include <signal.h> // for SIGPIPE
+#include <unistd.h>
 #include "zlib.h"
 #include "OcpiOsMisc.h"
 #include "OcpiUuid.h"

@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 #include <signal.h>
+#include <unistd.h>
 #include "OcpiOsDebug.h"
 #include "OcpiOsFileSystem.h"
 #include "OcpiContainerApi.h"

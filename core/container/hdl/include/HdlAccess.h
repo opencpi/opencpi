@@ -3,8 +3,9 @@
 
 #ifndef HDL_ACCESS_H
 #define HDL_ACCESS_H
-#include <cstdlib>
 #include <stdint.h>
+#include <stddef.h>
+#include <cstdlib>
 #include <string>
 #include "OcpiUuid.h"
 #include "OcpiUtilEzxml.h"

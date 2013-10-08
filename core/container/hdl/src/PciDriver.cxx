@@ -221,7 +221,7 @@ namespace OCPI {
 			       rc, fileName, name().c_str());
 	  }
 	  if (err)
-	    throw OU::Error(err);
+	    throw OU::Error("%s", err);
 	}
       };
 

@@ -5,14 +5,17 @@ export OCPI_CXXFLAGS="-Wall -Wextra -Wfloat-equal -fno-strict-aliasing -Wconvers
 export OCPI_BASE_DIR=`pwd`
 export OCPI_CDK_DIR=$OCPI_BASE_DIR/ocpi
 if test "$OCPI_TOOL_HOST" = ""; then
-  ovp=(`tools/cdk/scripts/showRuntimeHost`)
-  if test "$ovp" = "" -o "${#ovp[*]}" != 3; then
+read o v p <<EOF
+`tools/cdk/scripts/showRuntimeHost`
+EOF
+#  if test "$ovp" = "" -o "${#ovp[*]}" != 3; then
+  if test "$o" = "" -o "$v" == "" -o "$p" == ""; then
     echo Error determining run time host.  1>&2
     exit 1
   fi
-  export OCPI_TOOL_OS=${ovp[0]}
-  export OCPI_TOOL_OS_VERSION=${ovp[1]}
-  export OCPI_TOOL_ARCH=${ovp[2]}
+  export OCPI_TOOL_OS=$o
+  export OCPI_TOOL_OS_VERSION=$v
+  export OCPI_TOOL_ARCH=$p
   export OCPI_TOOL_HOST=$OCPI_TOOL_OS-$OCPI_TOOL_OS_VERSION-$OCPI_TOOL_ARCH
 fi
 #default the target host to the tool host

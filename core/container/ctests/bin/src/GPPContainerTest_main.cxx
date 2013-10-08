@@ -44,6 +44,7 @@
  */
 
 #include <stdio.h>
+#include <unistd.h>
 #include <OcpiOsMisc.h>
 #include <OcpiOsAssert.h>
 #include <DtIntEventHandler.h>

@@ -39,6 +39,8 @@
 
 ************************************************************************** */
 
+#include <unistd.h>
+#include <string.h>
 #include <climits>
 #include "OCL_Worker.h"
 #include "OcpiWorker.h"

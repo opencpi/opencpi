@@ -73,7 +73,7 @@ main(int argc, char **argv) {
   const char *library = "work", *outDir = NULL, *wksFile = NULL, *package = NULL;
   bool
     doDefs = false, doImpl = false, doSkel = false, doAssy = false, doWrap = false,
-    doBsv = false, doArt = false, doContainer = false;
+    doBsv = false, doArt = false;//, doContainer = false;
   if (argc <= 1) {
     fprintf(stderr,
 	    "Usage is: ocpigen [options] <owd>.xml\n"
@@ -127,9 +127,9 @@ main(int argc, char **argv) {
       case 'w':
 	doWrap = true;
 	break;
-      case 'C':
-	doContainer = true;
-	break;
+	//      case 'C':
+	//	doContainer = true;
+	//	break;
       case 'W':
 	wksFile =*++ap;
 	break;

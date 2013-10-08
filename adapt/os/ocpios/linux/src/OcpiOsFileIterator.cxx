@@ -45,6 +45,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <errno.h>
+#include <unistd.h>
 #include "OcpiOsPosixError.h"
 
 namespace {

@@ -55,6 +55,7 @@
 
 #include <signal.h>
 #include <errno.h>
+#include <unistd.h>
 #include <iostream>
 #include <string>
 #include <cstring>
