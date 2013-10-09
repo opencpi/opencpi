@@ -6,7 +6,7 @@ usage () {
   echo Usage is: `basename $0` \[ load \| unload \| reload \| status \]
   exit 1
 }
-if [ $# == 0 -o $# != 1 ] ; then
+if [ $# = 0 -o $# != 1 ] ; then
   usage
 fi
 if [ ! -r $DIR/ocpi_${OCPI_OS}_driver ] ; then
@@ -14,7 +14,7 @@ if [ ! -r $DIR/ocpi_${OCPI_OS}_driver ] ; then
   exit 1
 fi
 
-if [ $1 == load -o $1 == unload -o $1 == reload -o $1 == status ] ; then
+if [ $1 = load -o $1 = unload -o $1 = reload -o $1 = status ] ; then
   exec sh $DIR/ocpi_${OCPI_OS}_driver $1
 fi
 
