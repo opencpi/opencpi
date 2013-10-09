@@ -15,7 +15,7 @@ else
  exit 1
 fi
 
-if [ $# == 2 ] ; then # this is for the makefile
+if [ $# = 2 ] ; then # this is for the makefile
   DIR=.
 else
   DIR=$OCPI_CDK_DIR/lib/$OCPI_TOOL_HOST
@@ -27,14 +27,14 @@ RULESFILE=99-$MODNAME.rules
 MODPATH=$DIR/$MODFILE
 RULESPATH=$DIR/$RULESFILE
 
-function rudev () {
+rudev () {
   sudo rm -f /etc/udev/rules.d/$RULESFILE
   sudo $RELOAD
 }
 
-function rmd () {
+rmd () {
   sudo /sbin/rmmod $MODNAME
-  if [ $? == 1 ] ; then
+  if [ $? = 1 ] ; then
     echo Unexpected error unloading driver module.
     exit 1
   fi
@@ -64,12 +64,12 @@ if [ -d /sys/module/opencpi ] ; then
        exit 0
        ;;
   esac
-elif [ $1 == unload ] ; then
+elif [ $1 = unload ] ; then
     echo The driver module is not loaded.  No action was taken.
     exit 0
 fi
 MEMMAP=`tr ' ' '\n' < /proc/cmdline | grep -m 1 '^memmap='`
-if [ "$MEMMAP" == "" ] ; then
+if [ "$MEMMAP" = "" ] ; then
   echo No reserved DMA memory found on the linux boot command line.
   INSARG=
 else
@@ -81,16 +81,13 @@ if [ ! -r $MODPATH ] ; then
   if [ $1 != status ] ; then
      exit 1
   fi
-elif [ $1 == status ] ; then
-  date=(`ls -lL $MODPATH`)
-  unset date[0]
-  unset date[1]
-  unset date[2]
-  unset date[3]
-  unset date[4]
-  echo The driver file is dated: ${date[*]}
+elif [ $1 = status ] ; then
+  read d0 d1 d2 d3 d4 d5<<EOF
+`ls -lL $MODPATH`
+EOF
+  echo The driver file is dated: $d5
 fi
-if [ $1 == status ] ; then
+if [ $1 = status ] ; then
   echo The driver module is not currently loaded.
   exit 0
 fi
@@ -98,7 +95,7 @@ sudo cp $RULESPATH /etc/udev/rules.d &&
 sudo $RELOAD &&
 sudo /sbin/insmod $MODPATH $INSARG
 #sudo /sbin/modprobe -v 
-if [ $? == 0 ] ; then
+if [ $? = 0 ] ; then
   # check /dev?
   echo Driver loaded successfully.
 else
