@@ -36,7 +36,7 @@ namespace OCPI {
 	~Server();
 	bool run(const std::string &exec, std::string &error);
 	static void initAdmin(OCPI::HDL::OccpAdminRegisters &admin, const char *platform,
-			      OCPI::Util::UuidString *textUUID = NULL);
+			      HdlUUID &hdlUuid, OCPI::Util::UuidString *textUUID = NULL);
       };
     }
   }

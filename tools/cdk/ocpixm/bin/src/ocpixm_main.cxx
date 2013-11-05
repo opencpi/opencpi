@@ -124,6 +124,10 @@
 #include <errno.h>
 #include <stdint.h>
 
+#include "OcpiUtilMisc.h"
+
+namespace OU = OCPI::Util;
+
 namespace
 {
   enum PropertyType
@@ -792,11 +796,6 @@ namespace
     return 0;
   }
 
-  std::size_t roundup ( std::size_t n, std::size_t grain )
-  {
-    return ( n + grain - 1 ) & ~( grain - 1 );
-  }
-
   const char* get_member ( ezxml_t xp,
                            Simple* t,
                            size_t& max_align,
@@ -874,7 +873,7 @@ namespace
       throw std::string ( "Missing ArraySize attribute for sequence attribute" );
     }
 
-    t->n_bytes = roundup ( t->type == OCPI_String ? t->string_length + 1
+    t->n_bytes = OU::roundUp( t->type == OCPI_String ? t->string_length + 1
                                                 : tsize [ t->type ], 4 );
 
     if ( t->array_n_bytes )
@@ -887,7 +886,7 @@ namespace
       t->n_bytes += t->align > 4 ? t->align : 4;
     }
 
-    offset = roundup ( offset, t->align );
+    offset = OU::roundUp( offset, t->align );
 
     t->offset = offset;
 
@@ -1002,7 +1001,7 @@ namespace
     }
 
     p.n_bytes = my_offset;
-    impl->offset = roundup ( impl->offset, max_align );
+    impl->offset = OU::roundUp ( impl->offset, max_align );
     p.offset = impl->offset;
     impl->offset += my_offset;
 

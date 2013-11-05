@@ -34,7 +34,5 @@
 #
 ########################################################################### #
 
-# For which containers should the runtime xml be generated?
-# These (for now) just xml files containing HdlContainer elements.
-Container=mkOCApp-2sma.v
-include $(OCPI_CDK_DIR)/include/hdl/hdl-assy.mk
+DefaultContainers=ml605
+include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk

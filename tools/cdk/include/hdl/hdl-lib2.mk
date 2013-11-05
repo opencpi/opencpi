@@ -40,13 +40,14 @@
 # Refine the target list as appropriate for the tool
 $(call OcpiDbgVar,LibName)
 OutLibFile=$(OutDir)target-$(1)/$(call HdlToolLibraryFile,$(1),$(LibName))
+
 define DoLibTarget
 OutLibFiles+=$(call OutLibFile,$(1))
 $(call OutLibFile,$(1)): override TargetDir:=$(OutDir)target-$(1)
 $(call OutLibFile,$(1)): override HdlTarget:=$(1)
 $(call OutLibFile,$(1)): HdlSources=$$(filter-out $$(CoreBlackBoxFile),$$(CompiledSourceFiles))
 #$(call OutLibFile,$(1)): $$$$(filter-out $$$$(CoreBlackBoxFile),$$$$(CompiledSourceFiles)) | $$$$(TargetDir)
-$(call OutLibFile,$(1)): $$$$(HdlSources) | $$$$(TargetDir)
+$(call OutLibFile,$(1)): $$$$(HdlPreCore) $$$$(HdlSources) | $$$$(TargetDir)
 	$(AT)echo Building the $(LibName) $(HdlMode) for $$(HdlTarget) \($$@\) 
 	$(AT)$$(HdlCompile)
 

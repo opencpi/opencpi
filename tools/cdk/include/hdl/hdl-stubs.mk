@@ -50,7 +50,7 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-lib2.mk
 install: | $(HdlInstallDir)
 	$(AT)for f in $(HdlActualTargets); do \
 	  $(call ReplaceIfDifferent,$(strip \
-             $(OutDir)target-$$f/$(HdlToolLibraryResult)),$(strip \
+             $(OutDir)target-$$f/$(LibName)),$(strip \
              $(HdlInstallDir)/$(LibName)/$$f)); \
 	done
 

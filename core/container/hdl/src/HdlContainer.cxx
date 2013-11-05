@@ -63,22 +63,24 @@
 #include "HdlOCDP.h"
 #include "HdlDriver.h"
 #include "HdlContainer.h"
+#include "HdlWciControl.h"
 
 #define wmb()        asm volatile("sfence" ::: "memory"); usleep(0)
 #define clflush(p) asm volatile("clflush %0" : "+m" (*(char *)(p))) //(*(volatile char __force *)p))
 
+namespace OA = OCPI::API;
+namespace OC = OCPI::Container;
+namespace OS = OCPI::OS;
+namespace OM = OCPI::Metadata;
+namespace OU = OCPI::Util;
+namespace OE = OCPI::Util::EzXml;
+namespace OD = OCPI::DataTransport;
+namespace OT = OCPI::Time;
+namespace DDT = DtOsDataTypes;
+
 namespace OCPI {
   namespace Container {}
   namespace HDL {
-    namespace OA = OCPI::API;
-    namespace OC = OCPI::Container;
-    namespace OS = OCPI::OS;
-    namespace OM = OCPI::Metadata;
-    namespace OU = OCPI::Util;
-    namespace OE = OCPI::Util::EzXml;
-    namespace OD = OCPI::DataTransport;
-    namespace OT = OCPI::Time;
-    namespace DDT = DtOsDataTypes;
 
     static inline unsigned max(unsigned a,unsigned b) { return a > b ? a : b;}
     // This is the alignment constraint of DMA buffers in the processor's memory.
@@ -120,23 +122,6 @@ namespace OCPI {
     start() {}
     void Container::
     stop() {}
-    // friends
-    void Container::
-    getWorkerAccess(unsigned index,
-		    Access &worker,
-		    Access &properties) {
-      if (index >= OCCP_MAX_WORKERS)
-	throw OU::Error("Invalid occpIndex property");
-      // FIXME:  check runtime for connected worker
-      // This is ugly because offsetof is stupid
-      offsetRegisters(worker, (intptr_t)(&((OccpSpace*)0)->worker[index]));
-      offsetRegisters(properties,(intptr_t)(&((OccpSpace*)0)->config[index]));
-    }
-    void Container::
-    releaseWorkerAccess(unsigned /* index */,
-			Access & /* worker */,
-			Access & /* properties */) {
-    }
     bool Container::
     needThread() { return false; }
 
@@ -158,7 +143,12 @@ namespace OCPI {
 	  ocpiInfo("Loading bitstream %s on HDL container %s\n",
 		   name().c_str(), c.name().c_str());
 	  c.hdlDevice().load(name().c_str());
-	  c.hdlDevice().getUUID();
+	  // Now the bitstream is loaded, but that doesn't mean we have touched the device
+	  std::string err;
+	  if (c.hdlDevice().init(err) ||
+	      c.hdlDevice().configure(NULL, err))
+	    throw OU::Error("After loading %s on HDL device %s: %s",
+			    name().c_str(), c.name().c_str(), err.c_str());
 	  if (!c.hdlDevice().isLoadedUUID(lart.uuid()))
 	    throw OU::Error("After loading %s on HDL device %s, uuid is wrong.  Wanted: %s",
 			    name().c_str(), c.name().c_str(),
@@ -173,353 +163,6 @@ namespace OCPI {
     {
       return *new Artifact(*this, lart, artifactParams);
     }
-    // The class that knows about WCI interfaces and the OCCP.
-    class WciControl : public Access, virtual public OC::Controllable {
-      friend class Port;
-      const char *implName, *instName;
-      mutable size_t m_window; // perfect use-case for mutable..
-      bool m_hasControl;
-    protected:
-      Access m_properties;
-      Container &m_wciContainer;
-      // myRegisters is zero when this WCI does not really exist.
-      // (since we inherit this in some cases were it is not needed).
-      unsigned myOccpIndex;
-      WciControl(Container &container, ezxml_t implXml, ezxml_t instXml)
-        : implName(0), instName(0), m_window(0), m_hasControl(false), m_wciContainer(container)
-      {
-	setControlOperations(ezxml_cattr(implXml, "controlOperations"));
-        if (!implXml)
-          return;
-        implName = ezxml_attr(implXml, "name");
-        instName = ezxml_attr(instXml, "name");
-        myOccpIndex = (unsigned)OC::getAttrNum(instXml, "occpIndex", true, &m_hasControl);
-	if (m_hasControl) {
-	  setControlMask(getControlMask() | 1 << OM::Worker::OpStart);
-	  uint32_t timeout = (unsigned)OC::getAttrNum(implXml, "timeout", true);
-	  if (!timeout)
-	    timeout = 16;
-	  unsigned logTimeout = 31;
-	  for (uint32_t u = 1 << logTimeout; !(u & timeout);
-	       u >>= 1, logTimeout--)
-	    ;
-	  ocpiDebug("Timeout for $%s is %d\n", implName, logTimeout);
-	  // Get access to registers and properties
-	  container.getWorkerAccess(myOccpIndex, *this, m_properties);
-	  // Assert Reset
-	  // myRegisters->control =  logTimeout;
-	  set32Register(control,  OccpWorkerRegisters, logTimeout);
-#ifndef SHEP_FIXME_THE_RESET
-	  struct timespec spec;
-	  spec.tv_sec = 0;
-	  spec.tv_nsec = 10000;
-	  int bad = nanosleep(&spec, 0);
-	  ocpiCheck(bad == 0);
-#endif
-	  // Take out of reset
-	  // myRegisters->control = OCCP_CONTROL_ENABLE | logTimeout ;
-	  set32Register(control,  OccpWorkerRegisters, OCCP_WORKER_CONTROL_ENABLE | logTimeout);
-	  ocpiDebug("Deasserted reset on worker %s.%s", implName, instName);
-#if 0 // do this by changing the accessor
-	  if (getenv("OCPI_OCFRP_DUMMY")) {
-	    *(uint32_t *)&myRegisters->initialize = OCCP_SUCCESS_RESULT; //fakeout
-	    *(uint32_t *)&myRegisters->start = OCCP_SUCCESS_RESULT; //fakeout
-	  }
-#endif
-	} else {
-	  setControlMask(0);
-	  ocpiDebug("HDL container found impl %s inst %s with no control",
-		    implName ? implName : "<none>", 
-		    instName ? instName : "<none>");
-	}
-	m_window = 0;
-      }
-      virtual ~WciControl() {
-	m_wciContainer.releaseWorkerAccess(myOccpIndex, *this, m_properties);
-      }
-      // Add the hardware considerations to the property object that supports
-      // fast memory-mapped property access directly to users
-      // the key members are "readVaddr" and "writeVaddr"
-      virtual void prepareProperty(OU::Property &md, 
-				   volatile void *&writeVaddr,
-				   const volatile void *&readVaddr) {
-	ocpiAssert(m_hasControl);
-	(void)readVaddr;
-        if (m_properties.registers() &&
-	    md.m_baseType != OA::OCPI_Struct && !md.m_isSequence &&
-	    md.m_baseType != OA::OCPI_String &&
-	    OU::baseTypeSizes[md.m_baseType] <= 32 &&
-	    md.m_offset < OCCP_WORKER_CONFIG_SIZE &&
-	    !md.m_writeError &&
-	    !md.m_isIndirect)
-	  writeVaddr = m_properties.registers() + md.m_offset;
-      }
-      // Map the control op numbers to structure members
-      static const unsigned controlOffsets[];
-    protected:
-      void controlOperation(OCPI::Metadata::Worker::ControlOperation op) {
-	if (getControlMask() & (1 << op)) {
-	  uint32_t result =
-	    // *((volatile uint32_t *)myRegisters + controlOffsets[op]);
-	    get32RegisterOffset(controlOffsets[op]);
-	  if (result != OCCP_SUCCESS_RESULT
-	      && result != 0 && result != 0x01020304) { // TEMP HACK UNTIL SHEP FIXES WCI MASTER
-	    const char *oops;
-	    switch (result) {
-	    case OCCP_TIMEOUT_RESULT:
-	      oops = "timed out performing control operation (no OCP response on the WCI)";
-	      break;
-	    case OCCP_ERROR_RESULT:
-	      oops = "indicated an error from control operation";
-	      break;
-	    case OCCP_RESET_RESULT:
-	      oops = "was in a reset state when control operation was requested";
-	      break;
-	    case OCCP_FATAL_RESULT:
-	      oops = "indicated a fatal error from control operation";
-	      break;
-	    default:
-	      oops = "returned unknown result value from control operation";
-	    }
-	    throw OU::Error("worker %s:%s op %u %s (%0x" PRIx32 ")", implName, instName, op, oops, result);
-	  }
-	}
-      }
-      inline uint32_t
-      checkWindow(size_t offset, size_t nBytes) const {
-	ocpiAssert(m_hasControl);
-	size_t window = offset & ~(OCCP_WORKER_CONFIG_SIZE-1);
-        ocpiAssert(window == ((offset+nBytes)&~(OCCP_WORKER_CONFIG_SIZE-1)));
-	if (window != m_window) {
-	  set32Register(window, OccpWorkerRegisters,
-			(uint32_t)(window >> OCCP_WORKER_CONFIG_WINDOW_BITS));
-	  m_window = window;
-	}
-	return offset & (OCCP_WORKER_CONFIG_SIZE - 1);
-      }
-
-#define PUT_GET_PROPERTY(n)						          \
-      void setProperty##n(const OA::PropertyInfo &info, uint##n##_t val) const {  \
-        uint32_t offset = checkWindow(info.m_offset, n/8);			  \
-	uint32_t status = 0;						          \
-	if (m_properties.m_registers) {					          \
-	  if (!info.m_writeError ||					          \
-	      !(status =						          \
-		get32Register(status, OccpWorkerRegisters) &                      \
-		OCCP_STATUS_WRITE_ERRORS))                			  \
-	    m_properties.set##n##RegisterOffset(offset, val);                     \
-	  if (info.m_writeError && !status)				          \
-	    status =							          \
-	      get32Register(status, OccpWorkerRegisters) &		          \
-	      OCCP_STATUS_WRITE_ERRORS;					          \
-	} else								          \
-	  m_properties.m_accessor->set##n(m_properties.m_base + offset, val,      \
-					  &status);			          \
-	if (status)							          \
-	  throwPropertyWriteError(status);				          \
-      }									          \
-      inline uint##n##_t getProperty##n(const OA::PropertyInfo &info) const {     \
-        uint32_t offset = checkWindow(info.m_offset, n/8);			  \
-	uint32_t status = 0;						          \
-	uint##n##_t val;						          \
-	if (m_properties.m_registers) {					          \
-	  if (!info.m_readError ||					          \
-	      !(status =						          \
-		get32Register(status, OccpWorkerRegisters) &		          \
-		OCCP_STATUS_READ_ERRORS))				          \
-	    val = m_properties.get##n##RegisterOffset(offset);                    \
-	  if (info.m_readError && !status)				          \
-	    status =							          \
-	      get32Register(status, OccpWorkerRegisters) &		          \
-	      OCCP_STATUS_READ_ERRORS;					          \
-	} else								          \
-	  val = m_properties.m_accessor->get##n(m_properties.m_base + offset,     \
-						&status);                         \
-	if (status)							          \
-	  throwPropertyReadError(status);				          \
-	return val;							          \
-      }
-      PUT_GET_PROPERTY(8)
-      PUT_GET_PROPERTY(16)
-      PUT_GET_PROPERTY(32)
-      PUT_GET_PROPERTY(64)
-#undef PUT_GET_PROPERTY
-      void setPropertyBytes(const OA::PropertyInfo &info, size_t offset,
-			    const uint8_t *data, size_t nBytes) const {
-        offset = checkWindow(offset, nBytes);
-	uint32_t status = 0;
-	if (m_properties.m_registers) {
-	  if (!info.m_writeError ||
-	      !(status = (get32Register(status, OccpWorkerRegisters) &
-			  OCCP_STATUS_WRITE_ERRORS)))
-	    m_properties.setBytesRegisterOffset(offset,	data, nBytes);
-	  if (info.m_writeError && !status)
-	    status = (get32Register(status, OccpWorkerRegisters) &
-		      OCCP_STATUS_WRITE_ERRORS);
-	} else
-	  m_properties.m_accessor->setBytes(m_properties.m_base + offset, data, nBytes, &status);
-	if (status)
-	  throwPropertyWriteError(status);
-      }
-
-      inline void
-      getPropertyBytes(const OA::PropertyInfo &info, size_t offset, uint8_t *buf, size_t nBytes) const {
-        offset = checkWindow(offset, nBytes);
-	uint32_t status = 0;
-
-	if (m_properties.m_registers) {
-	  if (!info.m_readError ||
-	      !(status = (get32Register(status, OccpWorkerRegisters) &
-			  OCCP_STATUS_READ_ERRORS))) {
-	    m_properties.getBytesRegisterOffset(offset, buf, nBytes);
-	    if (info.m_readError)
-	      status = get32Register(status, OccpWorkerRegisters) & OCCP_STATUS_READ_ERRORS;
-	  }
-	} else
-	  m_properties.m_accessor->getBytes(m_properties.m_base + offset, buf, nBytes, &status);
-	if (status)
-	  throwPropertyReadError(status);
-      }
-      inline void setPropertySequence(const OA::Property &p,
-				      const uint8_t *val,
-				      size_t nItems, size_t nBytes) const {
-	uint32_t offset = checkWindow(p.m_info.m_offset, nBytes);
-	uint32_t status = 0;
-	if (m_properties.m_registers) {
-	  if (!p.m_info.m_writeError ||
-	      !(status =
-		get32Register(status, OccpWorkerRegisters) &
-		OCCP_STATUS_WRITE_ERRORS))
-	    if (p.m_info.m_isSequence) {				\
-	      m_properties.setBytesRegisterOffset(offset + p.m_info.m_align,
-						  val, nBytes);
-	      m_properties.set32RegisterOffset(offset, (uint32_t)nItems);
-	    } else
-	      m_properties.setBytesRegisterOffset(offset, val, nBytes);
-	  if (p.m_info.m_writeError && !status)
-	    status =
-	      get32Register(status, OccpWorkerRegisters) &
-	      OCCP_STATUS_WRITE_ERRORS;
-	} else if (p.m_info.m_isSequence) {					\
-	  m_properties.m_accessor->setBytes(m_properties.m_base + offset + p.m_info.m_align,
-					    val, nBytes, &status);
-	  if (!status)
-	    m_properties.m_accessor->set32(m_properties.m_base + offset, (uint32_t)nItems, &status);
-	} else
-	  m_properties.m_accessor->setBytes(m_properties.m_base + offset, val, nBytes, &status);
-	if (status)
-	  throwPropertyWriteError(status);
-      }
-      inline unsigned
-      getPropertySequence(const OA::Property &p, uint8_t *buf, size_t n) const {
-	uint32_t offset = checkWindow(p.m_info.m_offset, n);
-	uint32_t status = 0, nItems;
-
-	if (m_properties.m_registers) {
-	  if (!p.m_info.m_readError ||
-	      !(status =
-		get32Register(status, OccpWorkerRegisters) &
-		OCCP_STATUS_READ_ERRORS))
-	    nItems = m_properties.get32RegisterOffset(offset);
-	  if (!p.m_info.m_readError && 
-	      !(status =
-		get32Register(status, OccpWorkerRegisters) &
-		OCCP_STATUS_READ_ERRORS)) {
-	    if (nItems * (p.m_info.m_nBits/8) <= n)
-	      throwPropertySequenceError();
-	    m_properties.getBytesRegisterOffset(offset + p.m_info.m_align, 
-						buf, nItems * (p.m_info.m_nBits/8));
-	    if (p.m_info.m_readError && !status)
-	      status =
-		get32Register(status, OccpWorkerRegisters) &
-		OCCP_STATUS_READ_ERRORS;
-	  }
-	} else {
-	  nItems = m_properties.m_accessor->get32(m_properties.m_base + offset, &status);
-	  if (!status) {
-	    if (nItems * (p.m_info.m_nBits/8) <= n)
-	      throwPropertySequenceError();
-	    m_properties.m_accessor->getBytes(m_properties.m_base + offset + p.m_info.m_align, 
-					      buf, nItems * (p.m_info.m_nBits/8),
-					      &status);
-	  }
-	}
-	if (status)
-	  throwPropertyReadError(status);
-	return nItems;
-      }
-
-      
-#undef OCPI_DATA_TYPE_S
-      // Set a scalar property value
-
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)     	    \
-      void								    \
-      set##pretty##Property(const OA::Property &p, const run val) const {   \
-	setProperty##bits(p.m_info, *(uint##bits##_t *)&val);		    \
-      }									    \
-      void								    \
-      set##pretty##SequenceProperty(const OA::Property &p, const run *vals, \
-				    size_t length) const {		\
-	setPropertySequence(p, (const uint8_t *)vals,			\
-			    length, length * (bits/8));			\
-      }									\
-      run								\
-      get##pretty##Property(const OA::Property &p) const {		\
-	return (run)getProperty##bits(p.m_info);			\
-      }									\
-      unsigned								\
-      get##pretty##SequenceProperty(const OA::Property &p, run *vals,	\
-				    size_t length) const {		\
-	return								\
-	  getPropertySequence(p, (uint8_t *)vals, length * (bits/8));	\
-      }
-#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)
-OCPI_DATA_TYPES
-#undef OCPI_DATA_TYPE
-      void
-      setStringProperty(const OA::Property &p, const char* val) const {
-	size_t n = strlen(val) + 1;
-	setPropertySequence(p, (const uint8_t *)val, n, n);
-      }
-      void
-      setStringSequenceProperty(const OA::Property &, const char * const *,
-				size_t ) const {
-	throw OU::Error("No support for properties that are sequences of strings");
-      }
-      void
-      getStringProperty(const OA::Property &p, char *val, size_t length) const {
-	// ignore return value
-	getPropertySequence(p, (uint8_t*)val, length);
-      }
-      unsigned
-      getStringSequenceProperty(const OA::Property &, char * *,
-				size_t ,char*, size_t) const {
-	throw OU::Error("No support for properties that are sequences of strings");
-	return 0;
-      }
-      // These property access methods are called when the fast path
-      // is not enabled, either due to no MMIO or that the property can
-      // return errors.
-      static void throwPropertyReadError(uint32_t status) {
-	throw OU::Error("property reading error: %s",
-			status & OCCP_STATUS_READ_TIMEOUT ? "timeout" : "worker generated error response");
-      }
-      static void throwPropertyWriteError(uint32_t status) {
-	throw OU::Error("property writing error: %s",
-			status & OCCP_STATUS_WRITE_TIMEOUT ? "timeout" : "worker generated error response");
-      }
-      static void throwPropertySequenceError() {
-	throw OU::Error("property sequence length overflow on read/get");
-      }
-    };
-    // c++ doesn't allow static initializations in class definitions.
-    const unsigned WciControl::controlOffsets[] = {
-#define CONTROL_OP(x, c, t, s1, s2, s3) \
-	offsetof(OccpWorkerRegisters,x),
-	OCPI_CONTROL_OPS
-#undef CONTROL_OP
-	0};
 
     class Application : public OC::ApplicationBase<Container, Application, Worker> {
       friend class Container;
@@ -544,13 +187,12 @@ OCPI_DATA_TYPES
       friend class ExternalPort;
       Container &m_container;
       Worker(Application &app, OC::Artifact *art, const char *name,
-             ezxml_t implXml, ezxml_t instXml, const OA::PValue* execProps) :
+             ezxml_t implXml, ezxml_t instXml, const OA::PValue* execParams) :
         OC::WorkerBase<Application, Worker, Port>(app, *this, art, name, implXml,
-						  instXml, execProps),
-        WciControl(app.parent(), implXml, instXml),
+						  instXml, execParams),
+        WciControl(app.parent().hdlDevice(), implXml, instXml),
         m_container(app.parent())
       {
-	(void)execProps;
       }
     public:
       ~Worker()
@@ -698,14 +340,14 @@ OCPI_DATA_TYPES
 					       (1 << OCPI::RDT::ActiveMessage), params),
 	// The WCI will control the interconnect worker.
 	// If there is no such worker, usable will fail.
-        WciControl(w.m_container, icwXml, icXml),
+        WciControl(w.m_container.hdlDevice(), icwXml, icXml),
         m_connection(connXml), 
 	// Note this can be from the region descriptors
 	m_ocdpSize(m_properties.usable() ?
 		   m_properties.get32RegisterOffset(offsetof(OcdpProperties, memoryBytes)) :
 		   0),
         m_userConnected(false),
-	m_adapter(adwXml ? new WciControl(w.m_container, adwXml, adXml) : 0),
+	m_adapter(adwXml ? new WciControl(w.m_container.hdlDevice(), adwXml, adXml) : 0),
 	m_hasAdapterConfig(false),
 	m_adapterConfig(0),
 	m_endPoint(NULL)
@@ -796,6 +438,7 @@ OCPI_DATA_TYPES
           *(uint32_t*)&m_ocdpRegisters->foodFace = 0xf00dface;
 #endif
 	// Allow default connect params on port construction prior to connect
+	// FIXME: isnt this redundant with the generic code?
 	applyConnectParams(NULL, params);
       }
     public: // for parent/child...
@@ -826,9 +469,9 @@ OCPI_DATA_TYPES
         if (!m_canBeExternal)
           return;
         if (myDesc.nBuffers *
-            (OC::roundup(myDesc.dataBufferSize, OCDP_LOCAL_BUFFER_ALIGN) + OCDP_METADATA_SIZE) > m_ocdpSize)
+            (OU::roundUp(myDesc.dataBufferSize, OCDP_LOCAL_BUFFER_ALIGN) + OCDP_METADATA_SIZE) > m_ocdpSize)
           throw OC::ApiError("Requested buffer count and size won't fit in the OCDP's memory", 0);
-        myDesc.dataBufferPitch = (uint32_t)OC::roundup(myDesc.dataBufferSize, OCDP_LOCAL_BUFFER_ALIGN);
+        myDesc.dataBufferPitch = OCPI_UTRUNCATE(uint32_t, OU::roundUp(myDesc.dataBufferSize, OCDP_LOCAL_BUFFER_ALIGN));
         myDesc.metaDataBaseAddr =
           myDesc.dataBufferBaseAddr +
           m_ocdpSize - myDesc.nBuffers * OCDP_METADATA_SIZE;
@@ -931,7 +574,10 @@ OCPI_DATA_TYPES
       }
       // Connection between two ports inside this container
       // We know they must be in the same artifact, and have a metadata-defined connection
-      void connectInside(OC::Port &provider, const OA::PValue *) {
+      void connectInside(OC::Port &provider, const OA::PValue *, const OA::PValue *otherParams) {
+#if 1
+	provider.startConnect(NULL, otherParams);
+#endif
         // We're both in the same runtime artifact object, so we know the port class
         Port &pport = static_cast<Port&>(provider);
         if (m_connection != pport.m_connection)
@@ -963,58 +609,63 @@ OCPI_DATA_TYPES
     int Port::dumpFd = -1;
 
     // The port may be bidirectional.  If so we need to defer its direction.
+    // FIXME: share all this parsing with the OU::Implementation code etc.
     OC::Port &Worker::
     createPort(const OM::Port &metaPort, const OA::PValue *props) {
       const char *myName = metaPort.name;
       bool isProvider = metaPort.provider;
-#if 0
-      // Process direction overrides for the instance
-      if (myInstXml()) {
-	if (OU::EzXml::inList(name, ezxml_cattr(myInstXml(), "inputs")))
-	  isProvider = true;
-	if (OU::EzXml::inList(name, ezxml_cattr(myInstXml(), "outputs")))
-	  isProvider = false;
-      }
-#endif
       // Find connections attached to this port
       ezxml_t conn, ic = 0, icw = 0, ad = 0, adw = 0;
-      for (conn = ezxml_child(myXml()->parent, "connection"); conn; conn = ezxml_next(conn)) {
+      for (conn = ezxml_cchild(myXml()->parent, "connection"); conn; conn = ezxml_next(conn)) {
         const char
-          *from = ezxml_attr(conn,"from"), // instance with user port
-          *to = ezxml_attr(conn,"to"),     // instance with provider port
-          *out = ezxml_attr(conn, "out"),  // user port name
-          *in = ezxml_attr(conn, "in");    // provider port name
+          *from = ezxml_cattr(conn,"from"), // instance with user port
+          *to = ezxml_cattr(conn,"to"),     // instance with provider port
+          *out = ezxml_cattr(conn, "out"),  // user port name
+          *in = ezxml_cattr(conn, "in");    // provider port name
         if (from && to && out && in) {
 	  bool iAmTo;
-	  if (!strcmp(instTag().c_str(), to) && !strcmp(in, myName))
+	  if (!strcasecmp(instTag().c_str(), to) && !strcasecmp(in, myName))
 	    iAmTo = true;
-	  else if (!strcmp(instTag().c_str(), from) && !strcmp(out, myName))
+	  else if (!strcasecmp(instTag().c_str(), from) && !strcasecmp(out, myName))
 	    iAmTo = false;
 	  else
 	    continue;
           // We have a connection.  See if it is to a container adapter, which in turn would be
 	  // connected to an interconnect.  No other adapters are expected yet.
-          for (ad = ezxml_child(myXml()->parent, "adapter"); ad; ad = ezxml_next(ad)) {
-            const char *adName = ezxml_attr(ad, "name");
+          for (ad = ezxml_cchild(myXml()->parent, "adapter"); ad; ad = ezxml_next(ad)) {
+            const char *adName = ezxml_cattr(ad, "name");
             if (adName &&
-                (iAmTo && !strcmp(adName, from) ||
-                 !iAmTo && !strcmp(adName, to))) {
+                (iAmTo && !strcasecmp(adName, from) ||
+                 !iAmTo && !strcasecmp(adName, to))) {
               // We have a connection on this port to an adapter instance.  Find the worker
-	      const char *adwName = ezxml_attr(ad, "worker");
+	      const char *adwName = ezxml_cattr(ad, "worker");
 	      if (adwName)
-		for (adw = ezxml_child(myXml()->parent, "worker"); adw; adw = ezxml_next(adw)) {
-		  const char *nameAttr = ezxml_attr(adw, "name");
-		  if (nameAttr && !strcmp(nameAttr, adwName))
+		for (adw = ezxml_cchild(myXml()->parent, "worker"); adw; adw = ezxml_next(adw)) {
+		  const char *nameAttr = ezxml_cattr(adw, "name");
+		  if (nameAttr && !strcasecmp(nameAttr, adwName))
 		    break;
 		}
 	      if (!adw)
 		throw OU::Error("For port \"%s\": adapter worker missing for connection", myName);
 	      // Find the attached interconnect instance
-	      const char *attach = ezxml_attr(ad, "attachment");
-	      for (ic = ezxml_child(myXml()->parent, "interconnect"); ic; ic = ezxml_next(ic)) {
-		const char *icName = ezxml_attr(ic, "name");
-		if (icName && !strcmp(icName, attach))
-		  break; // We have the IC connected through an adapter.
+	      const char *attach = ezxml_cattr(ad, "attachment");
+	      for (ic = ezxml_cchild(myXml()->parent, "interconnect"); ic; ic = ezxml_next(ic)) {
+		const char *icName = ezxml_cattr(ic, "attachment");
+		if (icName && !strcasecmp(icName, attach)) {
+		  // See if this interconnect worker is connected to this adapter
+		  const char *iciName = ezxml_cattr(ic, "name");
+		  ezxml_t c;
+		  for (c = ezxml_cchild(myXml()->parent, "connection"); c; c = ezxml_next(c)) {
+		    const char
+		      *from = ezxml_cattr(c,"from"), // instance with user port
+		      *to = ezxml_cattr(c,"to");     // instance with provider port
+		    if (!strcasecmp(from, iciName) && !strcasecmp(to, adName) ||
+			!strcasecmp(to, iciName) && !strcasecmp(from, adName))
+		      break;
+		  }
+		  if (c)
+		    break;
+		}
 	      }
 	      if (!ic)
 		throw OU::Error("For port \"%s\": adapter instance has no interconnect \"%s\"",
@@ -1211,13 +862,13 @@ OCPI_DATA_TYPES
         // Allocate my local memory, making everything on a nice boundary.
         // (assume empty flag pitch same as full flag pitch)
         unsigned nAlloc =
-          OC::roundup(myDesc.dataBufferPitch * nLocal, LOCAL_DMA_ALIGN) +
-          OC::roundup(myDesc.metaDataPitch * nLocal, LOCAL_DMA_ALIGN) +
-          OC::roundup(sizeof(uint32_t) * nLocal, LOCAL_DMA_ALIGN) + // local flags
+          OU::roundUp(myDesc.dataBufferPitch * nLocal, LOCAL_DMA_ALIGN) +
+          OU::roundUp(myDesc.metaDataPitch * nLocal, LOCAL_DMA_ALIGN) +
+          OU::roundUp(sizeof(uint32_t) * nLocal, LOCAL_DMA_ALIGN) + // local flags
           // These might actually be remote
-          OC::roundup(sizeof(uint32_t) * nLocal, LOCAL_DMA_ALIGN) + // remote flags
+          OU::roundUp(sizeof(uint32_t) * nLocal, LOCAL_DMA_ALIGN) + // remote flags
           // These might not be needed if we are ActiveFlowControl
-          OC::roundup(sizeof(uint32_t) * nFar, LOCAL_DMA_ALIGN);
+          OU::roundUp(sizeof(uint32_t) * nFar, LOCAL_DMA_ALIGN);
         // Now we allocate all the (local) endpoint memory
         uint64_t phys;
         // If we are ActiveOnly we need no DMAable memory at all, so get it from the heap.
@@ -1241,14 +892,14 @@ OCPI_DATA_TYPES
         memset((void *)localData, 0, nAlloc);
         myDesc.dataBufferBaseAddr  = 0;
 	uint8_t *allocation = localData;
-        allocation += OC::roundup(myDesc.dataBufferPitch * nLocal, LOCAL_BUFFER_ALIGN);
+        allocation += OU::roundUp(myDesc.dataBufferPitch * nLocal, LOCAL_BUFFER_ALIGN);
         metadata = (OcdpMetadata *)allocation;
         myDesc.metaDataBaseAddr = allocation - localData;
-        allocation += OC::roundup(myDesc.metaDataPitch * nLocal, LOCAL_BUFFER_ALIGN);
+        allocation += OU::roundUp(myDesc.metaDataPitch * nLocal, LOCAL_BUFFER_ALIGN);
         uint32_t *localFlags = (uint32_t*)allocation;
-        allocation += OC::roundup(sizeof(uint32_t) * nLocal, LOCAL_BUFFER_ALIGN);
+        allocation += OU::roundUp(sizeof(uint32_t) * nLocal, LOCAL_BUFFER_ALIGN);
         uint32_t *remoteFlags = (uint32_t*)allocation;
-        allocation += OC::roundup(sizeof(uint32_t) * nLocal, LOCAL_BUFFER_ALIGN);
+        allocation += OU::roundUp(sizeof(uint32_t) * nLocal, LOCAL_BUFFER_ALIGN);
         uint32_t *farFlags = (uint32_t*)allocation;
         switch (getData().data.role) {
         case OCPI::RDT::ActiveMessage:

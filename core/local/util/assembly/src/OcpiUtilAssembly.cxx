@@ -343,7 +343,7 @@ namespace OCPI {
       m_ordinal = ordinal;
       const char *err;
       static const char *instAttrs[] = { "component", "Worker", "Name", "connect", "to", "from",
-					 "external", "selection", NULL};
+					 "external", "selection", "index", NULL};
       if ((err = OE::checkAttrsVV(ix, instAttrs, extraInstAttrs, NULL)))
 	return err;
       std::string component, myBase;
@@ -416,7 +416,7 @@ namespace OCPI {
     parse(ezxml_t cx, Assembly &a, unsigned &n) {
       const char *err;
       if ((err = OE::checkElements(cx, "port", "external", NULL)) ||
-	  (err = OE::checkAttrs(cx, "name", "transport", "external", "count", NULL)) ||
+	  //	  (err = OE::checkAttrs(cx, "name", "transport", "external", "count", NULL)) ||
 	  (err = OE::getNumber(cx, "count", &m_count, NULL, 1)))
 	return err;
       

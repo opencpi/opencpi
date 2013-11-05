@@ -69,6 +69,7 @@ const char *container = 0, *platform = 0, *device = 0, *load = 0, *os = 0, *os_v
 Clock *Worker::
 addClock() {
   Clock c;
+  c.ordinal = m_clocks.size();
   m_clocks.push_back(c);
   return &m_clocks.back();
 }
@@ -108,7 +109,7 @@ checkClock(Port *p) {
 	p->clock->name = strdup("wci_Clk");
 	p->clock->signal = strdup("wci_Clk");
       }
-    } else
+    } else if (p->isOCP())
       // If no clock, and no wci port, we're hosed.
       return OU::esprintf("Interface %s has no clock declared, and there is no control interface",
 			  p->name);
@@ -798,7 +799,8 @@ parseHdlImpl(const char *package) {
   bool dwFound;
   if ((err = parseSpec(package)) ||
       (err = parseImplControl(xctl)) ||
-      (err = OE::getNumber(m_xml, "datawidth", &dw, &dwFound)))
+      (err = OE::getNumber(m_xml, "datawidth", &dw, &dwFound)) ||
+      (err = OE::getBoolean(m_xml, "outer", &m_outer)))
     return err;
   if (dwFound)
     m_defaultDataWidth = (int)dw; // override the -1 default if set
@@ -909,7 +911,7 @@ parseHdlImpl(const char *package) {
       (err = initImplPorts(m_xml, "TimeInterface", "wti", WTIPort)) ||
       (err = initImplPorts(m_xml, "timeservice", "time", TimePort)) ||
       (err = initImplPorts(m_xml, "CPMaster", "cp", CPPort)) ||
-      (err = initImplPorts(m_xml, "NOCMaster", "noc", NOCPort)) ||
+      (err = initImplPorts(m_xml, "uNOC", "noc", NOCPort)) ||
       (err = initImplPorts(m_xml, "Metadata", "metadata", MetadataPort)) ||
       (err = initImplPorts(m_xml, "Control", "wci", WCIPort)))
     return err;
@@ -1064,133 +1066,6 @@ parseHdlImpl(const char *package) {
   return 0;
 }
 
-#if 0
-static const char *
-getWorker(Assembly *a, ezxml_t x, const char *aName, Worker **wp) {
-  const char *wName = ezxml_cattr(x, aName);
-  if (!wName)
-    return OU::esprintf("Missing \"%s\" attribute on connection", aName);
-  for (WorkersIter wi = a->m_workers.begin(); wi != a->m_workers.end(); wi++)
-    if (!strcmp(wName, (*wi)->m_implName)) {
-      *wp = (*wi);
-      return 0;
-    }
-  return OU::esprintf("Attribute \"%s\": Worker name \"%s\" not foundr",
-                  aName, wName);
-}
-
-static const char *
-getPort(Worker *w, ezxml_t x, const char *aName, Port **pp) {
-  const char *pName = ezxml_cattr(x, aName);
-  if (!pName)
-    return OU::esprintf("Missing \"%s\" attribute for worker \"%s\"",
-			aName, w->m_implName);
-  for (unsigned i = 0; i < w->m_ports.size(); i++) {
-    Port *p = w->m_ports[i];
-    if (!strcmp(pName, p->name)) {
-      *pp = p;
-      return 0;
-    }
-  }
-  return OU::esprintf("Port name \"%s\" matches no port on worker \"%s\"",
-		      pName, w->m_implName);
-}
-
-static const char *
-getConnPort(ezxml_t x, Assembly *a, const char *wAttr, const char *pAttr,
-            Port **pp) {
-  const char *err;
-  Worker *w;
-  if ((err = getWorker(a, x, wAttr, &w)))
-    return err;
-  return getPort(w, x, pAttr, pp);
-}
-#endif
-
-#if 0
-
-// We have a port clock on one of the underlying workers.
-// We need to decide whether to coalesce it or surface it on its own.
-// If the port's clock is WCI, its easy, otherwise,
-// If it not its own clock, then it follows the clock it shares
-// Otherwise we have a "new" clock to deal with and we have to consider
-// whether it should be coalesced or be its own clock.
-const char *Worker::
-doAssyClock(Instance *i, Port *p) {
-  unsigned nc = p->clock - i->worker->m_clocks;
-  Clock *aClock;
-  if (i->m_clocks[nc])
-    // If the instance's clock for this worker clock is already mapped, use it
-    aClock = i->m_clocks[nc];
-  else if (p->clock->port->type == WCIPort) {
-    // If the port uses its worker's wci clock, then use the assembly's wci
-    i->m_clocks[nc] = m_ports[0]->clock;
-    aClock = i->m_clocks[nc];
-  } else {
-    // Some principles:
-    // An assembly is already an implementation specific thing here
-    // How do we have assembly re-use while optimizing based on infrastructure
-    // AUTOMATION:  marry to CTOP, must describe ctop first.
-    // Negotiation between offered stuff from CTOP to needs of OCAPP.
-    // Does this mean we must postpone certain mappings/optimizations since we
-    // don't know?
-    // So what coalescing should we postpone?  Can we do any?
-    // So the only thing we can do is to expose clocks
-    // Use infrastructure's clocks when you can
-    //   WMemI, I/O, etc.
-    // Share clocks when you can
-    // Meet clock constraints expressed at the worker
-    // Meet clock constraints expressed at external connections.
-    ///////////////
-    // So we need to consolidate clocks that have data connections?
-    // Error check incompatible clocks
-
-
-    if (isCompatible(p->clock, clock))
-      aClock = clock;
-    else {
-
-    }
-
-    // A port with a clock that is not mapped and doesn't use a wci clock
-    switch (p->type) {
-    case WCIPort:
-      return "Internal error: WCI port doesn't use WCI clock";
-    case WTIPort:
-      //
-    case WMemIPort:
-    case WSIPort:
-    case WMIPort:
-    default:
-      return "Internal error: port has no known type";
-    }
-  }
-}
-#endif
-#if 0
-static const char *
-doInOut(const char *tok, Instance *i, bool isProducer) {
-  Worker *w = i->worker;
-  Port *p = w->m_ports;
-  for (unsigned n = 0; n < w->m_ports.size(); n++, p++)
-    if (!strcmp(tok, p->name))
-      if (p->u.wdi.isBidirectional)
-        i->m_ports[n].isProducer = isProducer;
-      else
-        return OU::esprintf("Port \"%s\" is neither WMI nor bidirectional", p->name);
-  return OU::esprintf("Unknown port \"%s\" in \"inputs\" attribute of instance", tok);
-}
-static const char *
-doInputs(const char *tok, void *arg) {
-  return doInOut(tok, (Instance *)arg, false);
-}
-static const char *
-doOutputs(const char *tok, void *arg) {
-  return doInOut(tok, (Instance *)arg, true);
-}
-#endif
-
-
 // This is an HDL file, and perhaps an assembly or a platform
 const char *Worker::
 parseHdl(const char *package) {
@@ -1207,7 +1082,7 @@ parseHdl(const char *package) {
   // Here is where there is a difference between a implementation and an assembly
   if (!strcasecmp(m_xml->name, "HdlImplementation") || !strcasecmp(m_xml->name, "HdlWorker") ||
       !strcasecmp(m_xml->name, "HdlPlatform") || !strcasecmp(m_xml->name, "HdlDevice") ||
-      !strcasecmp(m_xml->name, "HdlConfig") || !strcasecmp(m_xml->name, "HdlContTemp")) {
+      !strcasecmp(m_xml->name, "HdlConfig") || !strcasecmp(m_xml->name, "HdlContainer")) {
     if ((err = parseHdlImpl(package)))
       return OU::esprintf("in %s for %s: %s", m_xml->name, m_implName, err);
   } else if (!strcasecmp(m_xml->name, "HdlAssembly") ||
@@ -1403,14 +1278,15 @@ create(const char *file, const char *parent, const char *package, const char *&e
     return NULL;
   const char *name = ezxml_name(xml);
   if (name) {
+    size_t index = 0;
     if (!strcasecmp("HdlPlatform", name))
       return HdlPlatform::create(xml, xfile, err);
     if (!strcasecmp("HdlConfig", name))
-      return HdlConfig::create(xml, xfile, err);
-    if (!strcasecmp("HdlContTemp", name))
+      return HdlConfig::create(xml, xfile, index, err);
+    if (!strcasecmp("HdlContainer", name))
       return HdlContainer::create(xml, xfile, err);
     if (!strcasecmp("HdlAssembly", name))
-      return HdlAssembly::create(xml, xfile, err);
+      return HdlAssembly::create(xml, xfile, index, err);
     Worker *w = new Worker(xml, xfile, NULL, err);
     if (!err) {
       if (!strcasecmp("RccImplementation", name) || !strcasecmp("RccWorker", name))
@@ -1513,7 +1389,7 @@ Worker::Worker(ezxml_t xml, const char *xfile, const char *parent, const char *&
     m_noControl(false), m_specFile(0), m_implName(m_name.c_str()), m_specName(0),
     m_isThreaded(false), m_maxPortTypeName(0), m_endian(NoEndian),
     m_needsEndian(false), m_pattern(0), m_staticPattern(0), m_defaultDataWidth(-1),
-    m_language(NoLanguage), m_assembly(NULL), m_library(NULL)
+    m_language(NoLanguage), m_assembly(NULL), m_library(NULL), m_outer(false)
 {
   const char *name = ezxml_name(xml);
   // FIXME: make HdlWorker and RccWorker classes  etc.
@@ -1521,9 +1397,9 @@ Worker::Worker(ezxml_t xml, const char *xfile, const char *parent, const char *&
     // Parse things that the base class should parse.
     const char *lang = ezxml_cattr(m_xml, "Language");
     if (!lang)
-      if (!strcasecmp("hdlconttemp", name))
+      if (!strcasecmp("HdlContainer", name))
 	m_language = VHDL;
-      else if (!strcasecmp("hdlAssembly", name) || !strcasecmp("hdlContainer", name))
+      else if (!strcasecmp("HdlAssembly", name))
 	m_language = Verilog;
       else
 	err = "Missing Language attribute for HDL worker element";

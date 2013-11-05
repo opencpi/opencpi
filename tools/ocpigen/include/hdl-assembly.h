@@ -26,7 +26,9 @@ typedef Connections::const_iterator ConnectionsIter;
 struct InstanceProperty {
   OU::Property *property;
   OU::Value value;
+  InstanceProperty();
 };
+typedef std::vector<InstanceProperty> InstanceProperties;
 struct Instance {
   OCPI::Util::Assembly::Instance *instance; // instance in the underlying generic assembly
   const char *name;
@@ -39,8 +41,7 @@ struct Instance {
     Application, Interconnect, IO, Adapter
   } iType;
   const char *attach;  // external node port this worker is attached to for io or interconnect
-  unsigned nValues;    // number of property values
-  InstanceProperty *properties;
+  InstanceProperties properties;
   bool hasConfig;      // hack for adapter configuration FIXME make normal properties
   size_t config;
 };
@@ -107,6 +108,9 @@ class Assembly {
     *findPort(OU::Assembly::Port &ap, InstancePort *&found),
     *parseConnection(OCPI::Util::Assembly::Connection &aConn);
   inline const char *myComment() { return m_assyWorker.myComment(); }
+  // Find the instance port connected to an external with this name
+  InstancePort *
+  findInstancePort(const char *name);
   void
   emitAssyInstance(FILE *f, Instance *i, unsigned nControlInstances);
 };

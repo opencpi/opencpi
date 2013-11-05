@@ -38,38 +38,18 @@
 include $(OCPI_CDK_DIR)/include/hdl/xilinx.mk
 
 ################################################################################
-# $(call HdlToolLibraryRefFile,libname,target)
-# Function required by toolset: return the file for dependencies on the library
-# This is attached to a directory, with a slash
-# Thus it is empty if the library is a diretory full of stuff that doesn't
-# have a file name we can predict.
-
-# XST: libraries are named differently depending on the source language
-# so we can't know them unfortunately (for referencing).
-HdlToolLibraryRefFile=
-
-################################################################################
 # $(call HdlToolLibraryFile,target,libname)
 # Function required by toolset: return the file to use as the file that gets
 # built when the library is built.
 # In isim the result is a library directory that is always built all at once, and is
 # always removed entirely each time it is built.  It is so fast that there is no
 # point in fussing over "incremental" mode.
-# So there not a specific file name we can look for
+# So there is not a specific file name we can look for
 HdlToolLibraryFile=$2
 ################################################################################
 # Function required by toolset: given a list of targets for this tool set
 # Reduce it to the set of library targets.
 HdlToolLibraryTargets=isim
-################################################################################
-# Variable required by toolset: what is the name of the file or directory that
-# is the thing created when a library is created. The thing that will be installed
-HdlToolLibraryResult=$(LibName)
-################################################################################
-# Variable required by toolset: HdlToolCoreLibName
-# What library name should we give to the library when a core is built from
-# sources
-HdlToolCoreLibName=$(Core)
 ################################################################################
 # Variable required by toolset: HdlBin
 # What suffix to give to the binary file result of building a core
@@ -86,75 +66,54 @@ HdlToolRealCore=
 # Variable required by toolset: HdlToolNeedBB=yes
 # Set if the tool set requires a black-box library to access a core
 HdlToolNeedBB=
-################################################################################
-# Function required by toolset: $(call HdlToolLibRef,libname)
-# This is the name after library name in a path
-# It might adjust (genericize?) the target
-HdlToolLibRef=$(if $(strip $(foreach d,$(subst /, ,$3),$(filter target,$(subst -, ,$d)))),,isim)
 
-# filter %.v %.V,$^),\
+################################################################################
+# Function required by toolset: $(call HdlToolCoreRef,coreref)
+# Modify a stated core reference to be appropriate for the tool set
+HdlToolCoreRef=$(call HdlRmRv,$1)
 
 IsimFiles=\
   $(foreach f,$(HdlSources),\
      $(call FindRelative,$(TargetDir),$(dir $(f)))/$(notdir $(f)))
 $(call OcpiDbgVar,IsimFiles)
 
-#        -lib $(notdir $(l))_$(notdir $(w))=$(strip\
+IsimCoreLibraryChoices=$(strip \
+  $(foreach c,$(call HdlRmRv,$1),$(call HdlCoreRef,$c,isim)))
 
-# Note third arg to HdlLibraryRefDir to allow is to avoid the target
-# FIXME: make this "target-" hack generic
 IsimLibs=\
-  $(and $(filter assembly container,$(HdlMode)),\
-    $(eval $(HdlSetWorkers))\
-    $(foreach w,$(HdlWorkers),\
-      $(foreach f,$(firstword \
-                    $(or $(foreach c,$(ComponentLibraries), \
-                           $(foreach d,$(call HdlComponentLibrary,$c,isim),\
-	                     $(wildcard $d/$w))),\
-                         $(error Worker $w not found in any component library.))),\
-        -lib $w=$(call FindRelative,$(TargetDir),$f)))) \
     $(foreach l,\
       $(HdlLibrariesInternal),\
       -lib $(notdir $(l))=$(strip \
             $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$l,isim)))) \
-    $(foreach c, $(Cores),\
-      -lib $(notdir $(c))=$(strip \
-            $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$c,isim))))
+    $(foreach c,$(call HdlCollectCores,isim),\
+      -lib $(call HdlRmRv,$(notdir $(c)))=$(xxxxinfo fc:$c)$(call FindRelative,$(TargetDir),$(strip \
+          $(firstword $(foreach l,$(call IsimCoreLibraryChoices,$c),$(call HdlExists,$l))))))
 
 MyIncs=\
   $(foreach d,$(VerilogDefines),-d $d) \
   $(foreach d,$(VerilogIncludeDirs),-i $(call FindRelative,$(TargetDir),$(d))) \
   $(foreach l,$(call HdlXmlComponentLibraries,$(ComponentLibraries)),-i $(call FindRelative,$(TargetDir),$l))
 
-ifndef IsimTop
-IsimTop=$(Worker).$(Worker)
-endif
-
 IsimArgs=-v 2 -work $(call ToLower,$(LibName))=$(LibName) $(IsimLibs)
+
 HdlToolCompile=\
-  $(XilinxInit);\
+  $(call XilinxInit,);\
   $(call OcpiDbgVar,IsimFiles,htc) $(call OcpiDbgVar,SourceFiles,htc) $(call OcpiDbgVar,CompiledSourceFiles,htc) $(call OcpiDbgVar,CoreBlackBoxFile,htc)\
   $(and $(filter %.vhd,$(IsimFiles)),\
     vhpcomp $(IsimArgs) $(filter %.vhd,$(IsimFiles)) ;)\
   $(and $(filter %.v,$(IsimFiles))$(findstring $(HdlMode),platform),\
     vlogcomp $(MyIncs) $(IsimArgs) $(filter %.v,$(IsimFiles)) \
        $(and $(findstring $(HdlMode),platform), $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v) ;) \
-  $(if $(findstring $(HdlMode),worker), \
-    echo verilog work $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v \
-	> $(Worker).prj \
-    $(if $(HdlSkipSimElaboration),,&& ls &&  \
-      fuse $(IsimTop) work.glbl -v 2 -prj $(Worker).prj -L unisims_ver \
-	-o $(Worker).exe -lib $(call ToLower,$(Worker))=$(Worker) $(IsimLibs))) \
-  $(if $(findstring $(HdlMode),platform), \
-    echo verilog work ../../../containers/mkOCApp_bb.v > $(Worker).prj && \
-    fuse $(IsimTop) $(Worker).glbl -v 2 -prj $(Worker).prj -L unisims_ver \
-	-o $(Worker).exe -lib work=work -lib $(call ToLower,$(Worker))=$(Worker) $(IsimLibs))
+  $(if $(filter worker platform config assembly,$(HdlMode)),\
+    $(if $(HdlNoSimElaboration),, \
+      echo verilog work $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v \
+	> $(Worker).prj; \
+      fuse $(Worker).$(Worker) work.glbl -v 2 -prj $(Worker).prj -L unisims_ver \
+	-o $(Worker).exe -lib $(call ToLower,$(Worker))=$(Worker) $(IsimLibs)))
 
-# the "touch" above is because isim creates a bunch of files for the precompiled library
-# and no specific file.  So we touch the dir so dependencies on the library work even when
+# the "touch" below is because isim creates a bunch of files for the precompiled library
+# and no specific file.  So we touch	 the dir so dependencies on the library work even when
 # individual files get updated.
-
-
 # Since there is not a singular output, make's builtin deletion will not work
 HdlToolPost=\
   if test $$HdlExit != 0; then \
@@ -163,34 +122,26 @@ HdlToolPost=\
     touch $(LibName);\
   fi;
 
-IsimPlatform:=isim_pf
-IsimAppName=$(call AppName,$(IsimPlatform))
-ExeFile=$(IsimAppName).exe
-BitFile=$(IsimAppName).bit
-BitName=$(call PlatformDir,$(IsimPlatform))/$(BitFile)
-IsimPlatformDir=$(HdlPlatformsDir)/$(IsimPlatform)
-IsimTargetDir=$(call PlatformDir,$(IsimPlatform))
-IsimFuseCmd=\
-  $(XilinxInit); fuse  isim_pf.main isim_pf.glbl -v 2 \
-		-lib isim_pf=$(IsimPlatformDir)/target-isim/isim_pf \
-		-lib mkOCApp4B=mkOCApp4B \
-	        -lib $(Worker)=../target-isim/$(Worker) \
-	$$(IsimLibs) -L unisims_ver -o $(ExeFile) && \
-	tar cf $(BitFile) $(ExeFile) metadatarom.data isim
+BitFile_isim=$1.tar
 
-#		-lib work=$(IsimPlatformDir)/target-isim/isim/work \
-#" > $$(call AppName,$(IsimPlatform))-fuse.out 2>&1
+define HdlToolDoPlatform_isim
 
-
-define HdlToolDoPlatform
 # Generate bitstream
-$$(BitName): TargetDir=$(call PlatformDir,$(IsimPlatform))
-$$(BitName): HdlToolCompile=$(IsimFuseCmd)
-$$(BitName): HdlToolSet=fuse
-$$(BitName): override HdlTarget=isim
-$$(BitName): $(IsimPlatformDir)/target-isim/$(IsimPlatform) $(IsimTargetDir)/mkOCApp4B | $(IsimTargetDir)
-	$(AT)echo Building isim simulation executable: $$(BitName).  Details in $$(IsimAppName)-fuse.out
-	$(AT)$$(HdlCompile)
+$1/$3.tar:
+	$(AT)echo Building isim simulation executable: "$$@" with details in $1/$3-fuse.out
+	$(AT)echo verilog work $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v > $1/$3.prj
+	$(AT)(set -e; cd $1; $(call XilinxInit,); \
+	      fuse $4.$4 work.glbl -v 2  -prj $3.prj \
+              -lib $4=$4 $$(IsimLibs) -L unisims_ver \
+	      -o $3.exe ; \
+	      tar cf $3.tar $3.exe metadatarom.dat isim) > $1/$3-fuse.out 2>&1
+
 endef
 
+ifneq (,)
 
+Notes:
+Workers in an assembly need individual library treatment since we need to point to the actual
+per-worker libraries.  ComponentLibraries need specific treatment to point to the worker cores.
+
+endif

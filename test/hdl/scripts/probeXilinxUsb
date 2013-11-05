@@ -10,8 +10,12 @@ if [[ $# == 0 ]]; then
 elif [[ "$OCPI_XILINX_TOOLS_DIR" == "" ]] ; then
   echo Error: environment variable OCPI_XILINX_TOOLS_DIR not set.
   exit 1
-elif test ! -x $OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact; then
-  echo Error: \$OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact not found
+elif test -x $OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact; then
+  imp="$OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact -batch"
+elif test -x $OCPI_XILINX_TOOLS_DIR/LabTools/bin/lin64/impact; then
+  imp="$OCPI_XILINX_TOOLS_DIR/LabTools/bin/lin64/impact -batch"
+else
+  echo Error: neither $OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact nor $OCPI_XILINX_TOOLS_DIR/LabTools/bin/lin64/impact was found
   exit 1
 fi
 temp=/tmp/ocpibitstream$$
@@ -35,7 +39,7 @@ function bad {
 # This will still fail if we don't have write permission in the directory,
 # but that is what impact will tell us in that case
 rm -f _impactbatch.log
-imp="$OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact -batch"
+# imp="$OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact -batch"
 if [[ $port == all ]]; then
   echo listusbcables | $imp 2> $tlog > $tmp
   ports=`grep '^port=' $tmp | sed 's/port=\(.*\), .*$/\1/'`

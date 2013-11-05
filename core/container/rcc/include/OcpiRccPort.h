@@ -118,7 +118,9 @@ namespace OCPI {
       const OCPI::RDT::Descriptors *
       finishConnect(const OCPI::RDT::Descriptors &/*other*/, OCPI::RDT::Descriptors &/*feedback*/);
       OCPI::DataTransport::Port &dtPort(){ ocpiAssert(m_dtPort); return *m_dtPort;}
-      void connectInside(OCPI::Container::Port & other, const OCPI::Util::PValue * my_props);
+      void connectInside(OCPI::Container::Port & other,
+			 const OCPI::Util::PValue * myParams,
+			 const OCPI::Util::PValue * otherParams);
     public:
       // These next methods are called (in one place) from the worker from C, hence public and inline
       inline void release( OCPI::DataTransport::BufferUserFacet* buffer) {

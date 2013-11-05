@@ -44,7 +44,7 @@ namespace OU = OCPI::Util;
  * sthreadbusyu alias?
  */
 static const char *wipNames[] = {"Unknown", "WCI", "WSI", "WMI", "WDI", "WMemI", "WTI", "CPMaster",
-				 "NOCMaster", "Metadata", "TimeService", 0};
+				 "uNOC", "Metadata", "TimeService", 0};
 
 const char *Worker::
 doPattern(Port *p, int n, unsigned wn, bool in, bool master, std::string &suff, bool port) {
@@ -294,7 +294,7 @@ emitRecordSignal(FILE *f, std::string &last, size_t maxPortTypeName, Port *p, co
 	       p->master ? out.c_str() : in.c_str());
   else if (p->type == WCIPort && (p->master || m_assembly)) {
     std::string index;
-    if (p->count)
+    if (p->count > 1)
       OU::format(index, "(0 to %zu)", p->count-1);
     OU::format(last,
 	       "  %-*s : in  platform.platform_pkg.wci_%s%s_t%s;\n"
@@ -321,7 +321,7 @@ emitLastSignal(FILE *f, std::string &last, Language lang, bool end) {
   }
 }
 
-static const char *vhdlValue(std::string &s, OU::Value &v) {
+const char *vhdlValue(std::string &s, OU::Value &v) {
   switch (v.m_vt->m_baseType) {
   case OA::OCPI_Bool:
     s = "b";
@@ -350,6 +350,16 @@ emitParameters(FILE *f, Language lang) {
 	first = false;
       }
       OU::Property *pr = *pi;
+      int64_t i64 = 0;
+      if (pr->m_default)
+	switch (pr->m_baseType) {
+#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)			\
+	  case OA::OCPI_##pretty:					\
+	    i64 = (int64_t)pr->m_default->m_##pretty; break;
+	  OCPI_PROPERTY_DATA_TYPES
+#undef OCPI_DATA_TYPE
+	default:;
+	}
       if (lang == VHDL) {
 	if (first)
 	  printf("  generic (\n");
@@ -357,41 +367,54 @@ emitParameters(FILE *f, Language lang) {
 	// Note we could be very obsessive with types becase VHDL can be,
 	// but not now...
 	// FIXME: define actual ocpi types corresponding to our IDL-inspired types
-	const char *type;
-	switch (pr->m_baseType) {
-	case OA::OCPI_Bool: type = "bool_t"; break;
-	case OA::OCPI_Char: type = "char_t"; break;
-	case OA::OCPI_Double: type = "double_t"; break;
-	case OA::OCPI_Float: type = "real_t"; break;
-	case OA::OCPI_Short: type = "short_t"; break;
-	case OA::OCPI_Long: type = "long_t"; break;
-	case OA::OCPI_UChar: type = "uchar_t"; break;
-	case OA::OCPI_ULong: type = "ulong_t"; break;
-	case OA::OCPI_UShort: type = "ushort_t"; break;
-	case OA::OCPI_LongLong: type = "longlong_t"; break;
-	case OA::OCPI_ULongLong: type = "ulonglong_t"; break;
-	case OA::OCPI_String: type = "string_t"; break;
-	default:;
-	}
-	std::string value;
-	emitSignal(pr->m_name.c_str(), f, lang, Signal::IN, last, -1, 0, "  ",
-		   type, pr->m_default ? vhdlValue(value, *pr->m_default) : NULL);
-      } else {
-	int64_t i64 = 0;
-	if (pr->m_default)
+	// Actually, when we are specifing the interface in VHDL for an underlying
+	// worker in verilog, the generics can't be typed..
+	std::string value, type;
+	if (m_language == VHDL) {
 	  switch (pr->m_baseType) {
-#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)			\
-	    case OA::OCPI_##pretty:					\
-	      i64 = (int64_t)pr->m_default->m_##pretty; break;
-	    OCPI_PROPERTY_DATA_TYPES
-#undef OCPI_DATA_TYPE
+	  case OA::OCPI_Bool: type = "bool_t"; break;
+	  case OA::OCPI_Char: type = "char_t"; break;
+	  case OA::OCPI_Double: type = "double_t"; break;
+	  case OA::OCPI_Float: type = "real_t"; break;
+	  case OA::OCPI_Short: type = "short_t"; break;
+	  case OA::OCPI_Long: type = "long_t"; break;
+	  case OA::OCPI_UChar: type = "uchar_t"; break;
+	  case OA::OCPI_ULong: type = "ulong_t"; break;
+	  case OA::OCPI_UShort: type = "ushort_t"; break;
+	  case OA::OCPI_LongLong: type = "longlong_t"; break;
+	  case OA::OCPI_ULongLong: type = "ulonglong_t"; break;
+	  case OA::OCPI_String: type = "string_t"; break;
 	  default:;
 	  }
-	size_t bits =
-	  pr->m_baseType == OA::OCPI_Bool ?
-	  1 : pr->m_nBits;
-	fprintf(f, "  parameter [%zu:0] %s = %zu'h%llx;\n",
-		bits - 1, pr->m_name.c_str(), bits, (long long)i64);
+	  if (pr->m_default)
+	    vhdlValue(value, *pr->m_default);
+	} else {
+	  // VHDL for underlyinbg verilog
+#if 0
+	  if (pr->m_baseType == OA::OCPI_Bool) {
+	    type = "std_logic";
+	    OU::format(value, "'%llu'", i64);
+	  } else {
+	    OU::format(type, "std_logic_vector(%zu downto 0)", pr->m_nBits - 1);
+	    OU::format(value, "x\"");
+	    for (unsigned n = 0; n < pr->m_nBits; n += 4)
+	      OU::formatAdd(value, "%c", "0123456789abcdef"[(i64 >> (pr->m_nBits - n - 4)) & 0xf]);
+	    OU::formatAdd(value, "\"");
+	  }
+#else
+	  type = "integer";
+	  OU::format(value, "%"PRId64, i64);
+#endif
+	}
+	emitSignal(pr->m_name.c_str(), f, lang, Signal::IN, last, -1, 0, "  ",
+		   type.c_str(), pr->m_default ? value.c_str() : NULL);
+      } else {
+	if (pr->m_baseType == OA::OCPI_Bool)
+	  fprintf(f, "  parameter %s = 1'b%llu;\n",
+		  pr->m_name.c_str(), (long long)i64);
+	else
+	  fprintf(f, "  parameter [%zu:0] %s = %zu'h%llx;\n",
+		  pr->m_nBits - 1, pr->m_name.c_str(), pr->m_nBits, (long long)i64);
       }
     }
   if (!first && lang == VHDL) {
@@ -422,9 +445,8 @@ emitDeviceSignals(FILE *f, Language lang, std::string &last) {
 void Worker::
 emitSignals(FILE *f, Language lang, bool onlyDevices, bool useRecords, bool inPackage) {
   const char *comment = hdlComment(lang);
-  if (lang == VHDL)
-    fprintf(f, "  port (\n");
-  std::string last;
+  std::string init = lang == VHDL ? "  port (\n" : "";
+  std::string last = init;
   if (!onlyDevices) {
     for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
       Clock *c = &*ci;
@@ -512,8 +534,11 @@ emitSignals(FILE *f, Language lang, bool onlyDevices, bool useRecords, bool inPa
     fprintf(f, "  \n%s Extra signals not part of any WIP interface:\n", comment);
     emitDeviceSignals(f, lang, last);
   }
-  emitLastSignal(f, last, lang, true);
-  fprintf(f, "  );\n");
+  if (last != init) {
+    emitLastSignal(f, last, lang, true);
+    fprintf(f, "  );\n");
+  } else if (lang == Verilog)
+    fprintf(f, "  );\n");
 }
 
 static void
@@ -564,7 +589,7 @@ emitVhdlValue(FILE *f, size_t width, uint64_t value, bool singleLine = true) {
   }
   fprintf(f, "\"");
   if (singleLine)
-    fprintf(f, "; -- 0x%0*" PRIx64 "\n", (int)roundup(width, 4)/4, value);
+    fprintf(f, "; -- 0x%0*" PRIx64 "\n", (int)OU::roundUp(width, 4)/4, value);
 }
 
 static void
@@ -691,17 +716,26 @@ nonRaw(PropertiesIter pi) {
 
 void
 emitVhdlLibraries(FILE *f) {
-  if (libraries && libraries[0] || mappedLibraries && mappedLibraries[0]) {
+  if (libraries && libraries[0]
+#if 1
+ || mappedLibraries && mappedLibraries[0]
+#endif
+) {
     bool first = true;
     const char **mp;
+#if 1
     for (mp = mappedLibraries; mp && *mp; mp++, first = false)
       fprintf(f, "%s %s", first ? "library" : ",", *mp);
+#endif
     for (const char **lp = libraries; lp && *lp; lp++) {
       const char *l = strrchr(*lp, '/');
+#if 1
       for (mp = mappedLibraries; mp && *mp; mp++)
 	if (!strcasecmp(*mp, l ? l + 1 : *lp))
 	  break;
-      if (!mp || !*mp) {
+      if (!mp || !*mp)
+#endif
+	{
 	fprintf(f, "%s %s", first ? "library" : ",", l ? l + 1 : *lp);
 	first = false;
       }
@@ -830,7 +864,8 @@ emitVhdlWorkerPackage(FILE *f, unsigned maxPropName) {
     // Generate any types for the port
     switch (p->type) {
     case WSIPort:
-      if (p->ocp.MReqInfo.value) {
+    case WMIPort:
+      if (p->u.wdi.nOpcodes > 1) {
 	Protocol *prot = p->protocol;
 	if (prot && prot->operations()) {
 	  // See if this protocol has already been defined
@@ -895,7 +930,27 @@ emitVhdlWorkerPackage(FILE *f, unsigned maxPropName) {
 	      "  end record worker_%s_t;\n",
 	      in.c_str(), out.c_str(), out.c_str());
       break;
+#if 0
+    case WTIPort:
+      fprintf(f,
+	      "  type worker_%s_t is record\n", in.c_str());
+      if (p->u.wti.secondsWidth)
+	fprintf(f, "    seconds          : Ulong_t(%zu downto 0);\n", p->u.wti.secondsWidth-1);
+      if (p->u.wti.fractionWidth)
+	fprintf(f, "    fraction         : Ulong_t(%zu downto 0);\n", p->u.wti.fractionWidth-1);
+      if (p->u.wti.allowUnavailable)
+	fprintf(f, "    ready            : Bool_t;\n");
+      fprintf(f,
+	      "  end record worker_%s_t;\n", in.c_str());
+      fprintf(f,
+	      "  type worker_%s_t is record\n"
+	      "    ready            : Bool_t; -- worker wants time\n"
+	      "    reset            : Bool_t;\n"
+	      "  end record worker_%s_t;\n", out.c_str(), out.c_str());
+      break;
+#endif
     case WSIPort:
+    case WMIPort: // not really correct but will build for now.
       fprintf(f,
 	      "  type worker_%s_t is record\n", 
 	      in.c_str());
@@ -918,7 +973,7 @@ emitVhdlWorkerPackage(FILE *f, unsigned maxPropName) {
 		    "    byte_enable      : std_logic_vector(%zu downto 0);\n",
 		    p->dataWidth/p->byteWidth-1);
 	}
-	if (p->ocp.MReqInfo.value)
+	if (p->u.wdi.nOpcodes > 1)
 	  fprintf(f,
 		  "    opcode           : %s_OpCode_t;\n",
 		  p->protocol && p->protocol->operations() ?
@@ -951,7 +1006,7 @@ emitVhdlWorkerPackage(FILE *f, unsigned maxPropName) {
 		    "    byte_enable      : std_logic_vector(%zu downto 0);\n",
 		    p->dataWidth/p->byteWidth-1);
 	}
-	if (p->ocp.MReqInfo.value)
+	if (p->u.wdi.nOpcodes > 1)
 	  fprintf(f,
 		  "    opcode           : %s_OpCode_t;\n",
 		  p->protocol && p->protocol->operations() ?
@@ -1075,9 +1130,21 @@ emitVhdlWorkerEntity(FILE *f, unsigned maxPropName) {
     switch (m_ports[i]->type) {
     case WCIPort:
       continue;
+    case WTIPort:
+      ocpiAssert(!p->master);
+      fprintf(f, "%s    -- Signals for %s %s port named \"%s\".  See record type(s) above.\n",
+	      last.c_str(), wipNames[p->type], p->masterIn() ? "slave" : "master", p->name);
+
+      fprintf(f,
+	      "    %-*s : in  worker_%s_t",
+	      maxPropName, p->typeNameIn.c_str(), p->typeNameIn.c_str());
+      if (p->u.wti.allowUnavailable)
+	fprintf(f,
+	      ";\n    %-*s : out worker_%s_t",
+	      maxPropName, p->typeNameOut.c_str(), p->typeNameOut.c_str());
+      break;
     case WSIPort:
     case WMIPort:
-    case WTIPort:
     case WMemIPort:
       fprintf(f, "%s    -- Signals for %s %s port named \"%s\".  See record types above.\n",
 	      last.c_str(), wipNames[p->type], p->masterIn() ? "input" : "output", p->name);
@@ -1222,13 +1289,11 @@ emitVhdlRecordInterface(FILE *f) {
       fprintf(f,
 	      "\n"
 	      "  -- Record for the %s input signals for port \"%s\" of worker \"%s\"\n"
-	      "  alias %s_t is platform.platform_pkg.unoc_master_in_t;\n"
+	      "  alias %s_t is platform.platform_pkg.unoc_master_%s_t;\n"
 	      "  -- Record for the %s output signals for port \"%s\" of worker \"%s\"\n"
-	      "  alias_%s_t is platform.platform_pkg.unoc_master_out_t;\n",
-	      wipNames[p->type], p->name, m_implName,
-	      in.c_str(),
-	      wipNames[p->type], p->name, m_implName,
-	      out.c_str());
+	      "  alias %s_t is platform.platform_pkg.unoc_master_%s_t;\n",
+	      wipNames[p->type], p->name, m_implName, in.c_str(), p->master ? "in" : "out",
+	      wipNames[p->type], p->name, m_implName, out.c_str(), p->master ? "out" : "in");
       break;
     case TimePort:
       fprintf(f,
@@ -1270,9 +1335,14 @@ emitVhdlRecordInterface(FILE *f) {
   emitSignals(f, VHDL, false, true, true);
   fprintf(f,
 	  "end component %s_rv;\n\n"
+#if 0
 	  "attribute box_type: string;\n"
 	  "attribute box_type of %s_rv : component is \"user_black_box\";\n",
-	  m_implName, m_implName);
+	  m_implName,
+#else
+          ,
+#endif
+	  m_implName);
   return err;
 }
 
@@ -1655,24 +1725,24 @@ emitVhdlShell(FILE *f) {
 	    "  -- With no user logic at all, this implements writable properties.\n"
 	    "  wci : entity work.%s_wci\n"
 	    "    port map(-- These first signals are just for use by the wci module, not the worker\n"
-	    "             inputs        => %s,\n"
-	    "             outputs       => %s,\n",
+	    "             inputs            => %s,\n"
+	    "             outputs           => %s,\n",
 	    m_implName, wci->typeNameIn.c_str(), wci->typeNameOut.c_str());
 
     fprintf(f,
 	    "             -- These are outputs used by the worker logic\n"
-	    "             reset         => wci_reset, -- OCP guarantees 16 clocks of reset\n"
-	    "             control_op    => wci_control_op,\n"
+	    "             reset             => wci_reset, -- OCP guarantees 16 clocks of reset\n"
+	    "             control_op        => wci_control_op,\n"
 	    //	    "             raw_offset    => %s,\n"
-	    "             state         => wci_state,\n"
-	    "             is_operating  => wci_is_operating,\n"
-	    "             done          => wci_done,\n"
-	    "             error         => wci_error,\n"
-	    "             finished      => wci_finished,\n"
-	    "             attention     => wci_attention,\n"
+	    "             state             => wci_state,\n"
+	    "             is_operating      => wci_is_operating,\n"
+	    "             done              => wci_done,\n"
+	    "             error             => wci_error,\n"
+	    "             finished          => wci_finished,\n"
+	    "             attention         => wci_attention,\n"
 #if 0
-	    "             is_read       => %s,\n"
-	    "             is_write      => %s,\n",
+	    "             is_read           => %s,\n"
+	    "             is_write          => %s,\n",
 	    m_ctl.rawProperties ? "props_to_worker.raw_address" : "open",
 	    m_ctl.rawReadables ? "my_is_read" : "open",
 	    m_ctl.rawWritables ? "props_to_worker.raw_is_write" : "open"
@@ -1680,15 +1750,15 @@ emitVhdlShell(FILE *f) {
 );
     
     if (m_endian == Dynamic)
-      fprintf(f, "             is_big_endian => wci_is_big_endian,\n");
+      fprintf(f, "             is_big_endian     => wci_is_big_endian,\n");
     fprintf(f,
 	    "             abort_control_op  => wci_abort_control_op");
 #if 1
-    if (m_ctl.nonRawReadbacks)
+    if (m_ctl.nonRawReadbacks || m_ctl.rawReadables)
       fprintf(f,
 	      ",\n"
 	      "             props_from_worker => props_from_worker");
-    if (m_ctl.nonRawWritables || m_ctl.nonRawReadables)
+    if (m_ctl.nonRawWritables || m_ctl.nonRawReadables || m_ctl.rawProperties)
       fprintf(f,
 	      ",\n"
 	      "             props_to_worker   => props_to_worker");
@@ -1927,6 +1997,7 @@ emitVhdlShell(FILE *f) {
       last = ",\n";
       break;
     case WSIPort:
+    case WMIPort:
       if (p->masterIn()) {
 	fprintf(f,
 		"%s    %s_in.reset => %s_reset,\n"
@@ -1938,7 +2009,7 @@ emitVhdlShell(FILE *f) {
 		  p->name, p->name);
 	if (p->ocp.MByteEn.value)
 	  fprintf(f, "    %s_in.byte_enable => %s_byte_enable,\n", p->name, p->name);
-	if (p->ocp.MReqInfo.value)
+	if (p->u.wdi.nOpcodes > 1)
 	  fprintf(f, "    %s_in.opcode => %s_opcode,\n", p->name, p->name);
 	fprintf(f,
 		"    %s_in.som => %s_som,\n"
@@ -1996,9 +2067,9 @@ emitVhdlShell(FILE *f) {
     }
   }
 #if 1
-  if (m_ctl.nonRawWritables || m_ctl.nonRawReadables)
+  if (m_ctl.nonRawWritables || m_ctl.nonRawReadables || m_ctl.rawProperties)
     fprintf(f, ",\n    props_in => props_to_worker");
-  if (m_ctl.nonRawReadbacks)
+  if (m_ctl.nonRawReadbacks || m_ctl.rawReadables)
     fprintf(f, ",\n    props_out => props_from_worker");
 #else
   for (PropertiesIter pi = m_ctl.properties.begin(); nonRaw(pi); pi++) {
@@ -2085,10 +2156,10 @@ emitVhdlSignalWrapper(FILE *f, const char *topinst) {
     emitVhdlLibraries(f);
     fprintf(f,
 	    "architecture rtl of %s is begin\n"
-	    "  %s : entity work.%s_rv\n"
-	    "    port map(\n",
+	    "  %s : entity work.%s_rv\n",
 	    m_implName, topinst, m_implName);
-    std::string last;
+    std::string init = "    port map(\n";
+    std::string last = init;
     for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
       Clock *c = &*ci;
       if (!c->port) {
@@ -2111,7 +2182,15 @@ emitVhdlSignalWrapper(FILE *f, const char *topinst) {
 	{
 	  OcpSignalDesc *osd = ocpSignals;
 	  for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
-	    if (os->value) {
+	    if (os->value && os->master) {
+	      fprintf(f, "%s      %s.%s => %s", last.c_str(),
+		      os->master == mIn ? p->typeNameIn.c_str() : p->typeNameOut.c_str(),
+		      osd->name, os->signal);
+	      last = ",\n";
+	    }
+	  osd = ocpSignals;
+	  for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
+	    if (os->value && !os->master) {
 	      fprintf(f, "%s      %s.%s => %s", last.c_str(),
 		      os->master == mIn ? p->typeNameIn.c_str() : p->typeNameOut.c_str(),
 		      osd->name, os->signal);
@@ -2150,8 +2229,10 @@ emitVhdlSignalWrapper(FILE *f, const char *topinst) {
 	fprintf(f, "%s      %s => %s", last.c_str(), s->m_name.c_str(), s->m_name.c_str());
       last = ",\n";
     }
+    if (last != init)
+      fprintf(f, ")");
     fprintf(f,
-	    ");\n"
+	    ";\n"
 	    "end rtl;\n");
 }
 
@@ -2177,9 +2258,9 @@ emitVhdlRecordWrapper(FILE *f) {
     emitVhdlLibraries(f);
     fprintf(f,
 	    "architecture rtl of %s_rv is begin\n"
-	    "  assy : entity work.%s\n"
+	    "  assy : work.%s_defs.%s\n"
 	    "    port map(\n",
-	    m_implName, m_implName);
+	    m_implName, m_implName, m_implName);
     std::string last;
     for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
       Clock *c = &*ci;
@@ -2447,7 +2528,7 @@ emitImplHDL(const char *outDir, bool wrap) {
 	      } else
 		fprintf(f, "  localparam [%zu:0] %sAddr = %zu'h%0*zx;\n",
 			p->ocp.MAddr.width - 1, pr->m_name.c_str(), p->ocp.MAddr.width,
-			(int)roundup(p->ocp.MAddr.width, 4)/4,
+			(int)OU::roundUp(p->ocp.MAddr.width, 4)/4,
 			pr->m_isIndirect ? pr->m_indirectAddr : pr->m_offset);
 	    }
 	}
@@ -2521,12 +2602,14 @@ emitImplHDL(const char *outDir, bool wrap) {
       case WMIPort:
 	fprintf(f,
 		"  %s Aliases for interface \"%s\"\n", comment, p->name);
-	if (m_language == VHDL)
+	if (m_language == VHDL) {
+#if 0
 	  fprintf(f,
-		  "  alias %sNodata  : std_logic is %s.MAddrSpace(0);\n"
-		  "  alias %sDone    : std_logic is %s.MReqInfo(0);\n",
-		  pout, pout, pout, pout);
-	else if (p->master) // if we are app
+		    "  alias %sNodata  : std_logic is %s.MAddrSpace(0);\n"
+		    "  alias %sDone    : std_logic is %s.MReqInfo(0);\n",
+		    pout, pout, pout, pout);
+#endif
+	} else if (p->master) // if we are app
 	  fprintf(f,
 		  "  wire %sNodata; assign %sMAddrSpace[0] = %sNodata;\n"
 		  "  wire %sDone;   assign %sMReqInfo[0] = %sDone;\n",
@@ -2565,6 +2648,7 @@ emitImplHDL(const char *outDir, bool wrap) {
 	}
 	if (p->protocol->m_variableMessageLength) {
 	  if (m_language == VHDL) {
+#if 0
 	    if (n == 0)
 	      fprintf(f,
 		      "  subtype %s%sLength_t is std_logic_vector(%zu downto 8);\n",
@@ -2577,6 +2661,7 @@ emitImplHDL(const char *outDir, bool wrap) {
 		    p->u.wdi.isProducer ? pout : pin,
 		    p->u.wdi.isProducer ? 'M' : 'S',
 		    (p->u.wdi.isProducer ? p->ocp.MFlag.width : p->ocp.MFlag.width) - 9);
+#endif
 	  } else {
 	    if (p->u.wdi.isProducer) { // length is an output
 	      size_t width =
@@ -2607,9 +2692,9 @@ emitImplHDL(const char *outDir, bool wrap) {
 
 #if 1
     // Record for property-related inputs to the worker - writable values and strobes, readable strobes
-    if (m_ctl.nonRawWritables || m_ctl.nonRawReadables)
+    if (m_ctl.nonRawWritables || m_ctl.nonRawReadables || m_ctl.rawProperties)
       fprintf(f, "  signal props_to_worker   : worker_props_in_t;\n");
-    if (m_ctl.nonRawReadbacks)
+    if (m_ctl.nonRawReadbacks || m_ctl.rawReadables)
       fprintf(f, "  signal props_from_worker : worker_props_out_t;\n");
 #else
     bool first = true;
@@ -2670,6 +2755,7 @@ emitImplHDL(const char *outDir, bool wrap) {
 		"  signal wci_is_write         : Bool_t;\n", m_implName);
 	break;
       case WSIPort:
+      case WMIPort:
 #if 0
 	if (n++ == 0)
 	  fprintf(f, "  -- signal bundling functions for WSI ports\n");
@@ -2709,7 +2795,7 @@ emitImplHDL(const char *outDir, bool wrap) {
 	  if (p->preciseBurst)
 	    fprintf(f, "  signal %s_burst_length: std_logic_vector(%zu downto 0);\n",
 		    p->name, p->ocp.MBurstLength.width - 1);
-	  if (p->ocp.MReqInfo.value) {
+	  if (p->u.wdi.nOpcodes > 1) {
 	    fprintf(f,
 		    "  -- The strongly typed enumeration signal for the port\n"
 		    "  signal %s_opcode: %s_OpCode_t;\n"
@@ -2790,16 +2876,16 @@ emitImplHDL(const char *outDir, bool wrap) {
 #endif
       fprintf(f,
 	      "    %-*s : out bool_t%s            -- forcible abort a control-op when\n"
-	      "                                                  -- worker uses 'done' to delay it\n",
+	      "                                                -- worker uses 'done' to delay it\n",
 	      maxPropName, "abort_control_op",
-	      m_ctl.nNonRawRunProperties == 0 ? "" : ";");
+	      m_ctl.nRunProperties == 0 ? " " : ";");
 #if 1
       // Record for property-related inputs to the worker - writable values and strobes, readable strobes
       if (m_ctl.nonRawReadbacks || m_ctl.rawReadables)
-	fprintf(f, "    props_from_worker      : in  worker_props_out_t");
+	fprintf(f, "    props_from_worker  : in  worker_props_out_t");
       if (m_ctl.nonRawWritables || m_ctl.nonRawReadables || m_ctl.rawProperties)
-	fprintf(f, "%s    props_to_worker        : out worker_props_in_t",
-		m_ctl.nonRawReadbacks ? ";\n" : "");
+	fprintf(f, "%s    props_to_worker    : out worker_props_in_t",
+		m_ctl.nonRawReadbacks || m_ctl.rawReadables ? ";\n" : "");
 #else
       bool first = true;
       std::string last = "";
@@ -3081,7 +3167,8 @@ emitImplHDL(const char *outDir, bool wrap) {
       fprintf(f,
 	      "end architecture rtl;\n");
     }
-    emitVhdlShell(f);
+    if (!m_outer)
+      emitVhdlShell(f);
     emitVhdlSignalWrapper(f);
   }
   fclose(f);
@@ -3103,15 +3190,30 @@ emitSkelHDL(const char *outDir) {
   if (err)
     return err;
   if (m_language == VHDL) {
-    fprintf(f,
-	    "-- This file initially contains the architecture skeleton for worker: %s\n\n", m_implName);
-    fprintf(f,
-	    "library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;\n"
-	    "library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions\n"
-	    "architecture rtl of %s_worker is\n"
-	    "begin\n"
-	    "end rtl;\n",
-	    m_implName);
+    if (m_outer) {
+      fprintf(f,
+	      "-- This file initially contains the architecture skeleton for worker: %s\n"
+	      "-- Note THIS IS THE OUTER skeleton, since the 'outer' attribute was set.\n\n",
+	      m_implName);
+      fprintf(f,
+	      "library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;\n"
+	      "library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions\n"
+	      "architecture rtl of %s_rv is\n"
+	      "begin\n"
+	      "end rtl;\n",
+	      m_implName);
+    } else {
+      fprintf(f,
+	      "-- This file initially contains the architecture skeleton for worker: %s\n\n",
+	      m_implName);
+      fprintf(f,
+	      "library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;\n"
+	      "library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions\n"
+	      "architecture rtl of %s_worker is\n"
+	      "begin\n"
+	      "end rtl;\n",
+	      m_implName);
+    }
   } else {
     fprintf(f,
 	    "// This file contains the implementation skeleton for worker: %s\n\n"

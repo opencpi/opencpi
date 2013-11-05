@@ -38,37 +38,19 @@
 include $(OCPI_CDK_DIR)/include/hdl/altera.mk
 
 ################################################################################
-# $(call HdlToolLibraryRefFile,libname,target)
-# Function required by toolset: return the file for dependencies on the library
-# This is attached to a directory, with a slash
-# Thus it is empty if the library is a diretory full of stuff that doesn't
-# have a file name we can predict.
-
-HdlToolLibraryRefFile=
-
-################################################################################
 # $(call HdlToolLibraryFile,target,libname)
 # Function required by toolset: return the file to use as the file that gets
 # built when the library is built or touched when the library is changed or rebuilt.
 #
 # For quartus, no precompilation is available, so it is just a directory
 # full of links whose name is the name of the library
-HdlToolLibraryFile=$(LibName)
+HdlToolLibraryFile=$2
 ################################################################################
 # Function required by toolset: given a list of targets for this tool set
 # Reduce it to the set of library targets.
 #
 # For quartus, it is generic since there is no processing
 HdlToolLibraryTargets=altera
-################################################################################
-# Variable required by toolset: what is the name of the file or directory that
-# is the thing created when a library is created. The thing that will be installed
-HdlToolLibraryResult=$(LibName)
-################################################################################
-# Variable required by toolset: HdlToolCoreLibName
-# What library name should we give to the library when a core is built from
-# sources
-HdlToolCoreLibName=$(Core)
 ################################################################################
 # Variable required by toolset: HdlBin
 # What suffix to give to the binary file result of building a core
@@ -85,6 +67,10 @@ HdlToolRealCore=yes
 # Set if the tool set requires a black-box library to access a core
 HdlToolNeedBB=
 ################################################################################
+# Function required by toolset: $(call HdlToolCoreRef,coreref)
+# Modify a stated core reference to be appropriate for the tool set
+HdlToolCoreRef=$1
+################################################################################
 # Function required by toolset: $(call HdlToolLibRef,libname)
 # This is the name after library name in a path
 # It might adjust (genericize?) the target
@@ -100,7 +86,7 @@ QuartusSources=$(filter-out $(Worker).vhd $(ImplHeaderFiles),$(HdlSources)) $(Qu
 $(QuartusCombine): $(ImplHeaderFiles) $(Worker).vhd
 	cat $(ImplHeaderFiles) $(Worker).vhd > $@
 else
-QuartusSources=$(HdlSources)
+QuartusSources=$(filter-out %.vh,$(HdlSources))
 endif
 # ?? What is the difference between SEARCH_PATH and USER_LIBRARIES???: answer is SEARCH_PATH is one at a time
 # Libraries can be built for specific targets, which just is for syntax checking
@@ -296,6 +282,7 @@ QuartusMakeTopQsf=\
   echo set_global_assignment -name PARTITION_HIERARCHY db/plat -to '"fpgaTop"' -section_id "plat" ; \
 
 BitName=$(call PlatformDir,$1)/$(call AppName,$1).sof
+BitName_quartus=$1.sof
 QuartusCmd=\
 	set -e; \
 	rm -r -f db incremental_db ; \

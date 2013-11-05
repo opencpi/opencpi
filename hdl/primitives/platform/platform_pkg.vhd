@@ -74,8 +74,10 @@ end record time_service_t;
 
 component time_server is
   port (
-    CLK, RST_N          : in  std_logic;
-    timeCLK, timeRST_N  : in  std_logic;
+    CLK                 : in  std_logic;
+    RST_N               : in  std_logic;
+    timeCLK             : in  std_logic;
+    timeRST_N           : in  std_logic;
     ppsIn               : in  std_logic;  -- ASYNC
     -- Property interface
     timeControl         : in  ulong_t;
@@ -101,58 +103,37 @@ end component time_server;
 constant unoc_width : natural := 153;
 
 -- The link in either direction among nodes and clients
-type unoc_link_t is record
+type unoc_master_in_t is record
   data  : std_logic_vector(unoc_width-1 downto 0);
   valid : std_logic; -- this data is valid, can be dequeued
   take  : std_logic; -- take data in other direction's record: perform dequeue
-end record unoc_link_t;
+end record unoc_master_in_t;
 
 -- The master/source interface of the uNoc
 -- This is the interface to the device worker or platform worker
 -- that sprouts the uNoc, including its clocking
-alias unoc_master_in_t is unoc_link_t;
 type unoc_master_out_t is record
   clk     : std_logic;
   reset_n : std_logic;
-  link    : unoc_link_t;
+  id      : std_logic_vector(15 downto 0);
+  data  : std_logic_vector(unoc_width-1 downto 0);
+  valid : std_logic; -- this data is valid, can be dequeued
+  take  : std_logic; -- take data in other direction's record: perform dequeue
 end record unoc_master_out_t;
 
--- a node in the unoc
-component unoc_node is
-  generic(
-    -- Be a little proactive - this is more control than we have now
-    control          : boolean := false;
-    func             : natural := 0;      -- PCI function
-    offset           : natural := 0;      -- Offset in bar: now 0 or 32k
-    size             : natural := 0;      -- Window size in bar: now 32k
-    up_producer_hack : boolean := false   -- hack described below for compatibility
-    );
-  port (
-    CLK, RST_N : in  std_logic;
-    up_in      : in  unoc_link_t;
-    up_out     : out unoc_link_t;
-    client_in  : in  unoc_link_t;
-    client_out : out unoc_link_t;
-    down_in    : in  unoc_link_t;
-    down_out   : out unoc_link_t
-    );
-end component unoc_node;
 
 component unoc_terminator is
   port(
-    CLK, RST_N : in  std_logic;
-    up_in      : in  unoc_link_t;
-    up_out     : out unoc_link_t;
+    up_in      : in  unoc_master_out_t;
+    up_out     : out unoc_master_in_t;
     drop_count : out unsigned(7 downto 0)
     );
 end component unoc_terminator;
 
 component unoc_cp_adapter is
   port(
-    CLK, RST_N : in  std_logic;
-    pciDevice  : in  std_logic_vector(15 downto 0);
-    client_in  : in  unoc_link_t;
-    client_out : out unoc_link_t;
+    client_in  : in  unoc_master_out_t;
+    client_out : out unoc_master_in_t;
     occp_in    : in  occp_out_t;
     occp_out   : out occp_in_t
     );
@@ -251,8 +232,29 @@ use work.platform_pkg.all;
 package metadata_defs is
 component metadata_rv is
   port(
-    metadata_in : in  metadata_out_t;
-    metadata_out : in  metadata_in_t
+    metadata_in  : in  metadata_out_t;
+    metadata_out : out  metadata_in_t
     );
 end component metadata_rv;
 end package metadata_defs;
+library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;
+library ocpi; use ocpi.all, ocpi.types.all;
+use work.platform_pkg.all;
+package unoc_node_defs is
+
+-- a node in the unoc
+component unoc_node_rv is
+  generic(
+    control          : bool_t;
+    position         : ulong_t := to_ulong(0)
+    );
+  port (
+    up_in      : in  unoc_master_out_t;
+    up_out     : out unoc_master_in_t;
+    client_in  : in  unoc_master_in_t;
+    client_out : out unoc_master_out_t;
+    down_in    : in  unoc_master_in_t;
+    down_out   : out unoc_master_out_t
+    );
+end component unoc_node_rv;
+end package unoc_node_defs;

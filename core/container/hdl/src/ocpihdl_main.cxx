@@ -80,7 +80,7 @@ typedef void Function(const char **ap);
 static Function
   search, emulate, ethers, probe, testdma, admin, bram, unbram, uuid, reset, 
   radmin, wadmin, rmeta, settime, deltatime, wdump, wreset, wunreset, wop, wwctl, wclear, wwpage,
-  wread, wwrite, sendData, receiveData, receiveRDMA, sendRDMA, simulate;
+  wread, wwrite, sendData, receiveData, receiveRDMA, sendRDMA, simulate, getxml, load;
 static bool verbose = false, parseable = false;
 static int log = -1;
 std::string platform, simExec;
@@ -113,6 +113,8 @@ struct Command {
   { "dump", 0, 0 },
   { "emulate", emulate, SUDO | INTERFACE },
   { "ethers", ethers, INTERFACE},
+  { "getxml", getxml, DEVICE},
+  { "load", load, DEVICE},
   { "probe", probe, SUDO | DEVICE | DISCOVERY},
   { "radmin", radmin, DEVICE },
   { "receiveData", receiveData, INTERFACE},
@@ -177,6 +179,8 @@ usage(const char *name) {
 	  "    wwrite <hdl-dev> <worker> <offset>[/size] <value>"
 	  "                                 # perform config space write of size bytes (default 4) at offset\n"
 	  "                                 # generate UUID verilog file\n"
+	  "    load  <hdl-dev> <file>       # load bitstream from file\n"
+          "    getxml <hdl-dev> <file>      # Extract the xml metadata from the device into the file\n"
           "    simulate                     # run simulator inside created sim: device\n"
           "  Options: (values are either directly after the letter or in the next argument)\n"
 	  "    -l <level>                   # set log levels\n"
@@ -288,7 +292,7 @@ int
 main(int argc, const char **argv)
 {
   signal(SIGPIPE, SIG_IGN);
-  OC::Manager::getSingleton().suppressDiscovery();
+  OCPI::Driver::ManagerManager::suppressDiscovery();
   const char *argv0 = strrchr(argv[0], '/');
   if (argv0)
     argv0++;
@@ -313,9 +317,9 @@ main(int argc, const char **argv)
 	found = c;
   if (!exact)
     if (!found)
-      bad("unknown command: %s", argv[1]);
+      bad("unknown command: %s", argv[0]);
     else if (ambiguous)
-      bad("ambiguous command: %s", argv[1]);
+      bad("ambiguous command: %s", argv[0]);
     else
       exact = found;
   argv++;
@@ -346,7 +350,7 @@ main(int argc, const char **argv)
       char *ep;
       do {
 	worker = strtoul(cp, &ep, 10);
-	if (worker < 1 || worker > OCCP_MAX_WORKERS)
+	if (worker > OCCP_MAX_WORKERS)
 	  bad("Worker number `%s' invalid", cp);
 	if (*ep)
 	  ep++;
@@ -404,7 +408,8 @@ static void emulate(const char **) {
       OE::Packet rFrame, sFrame;
       static char cadmin[sizeof(OH::OccpSpace)];
       memset(cadmin, 0, sizeof(cadmin));
-      OH::Sim::Server::initAdmin(*(OH::OccpAdminRegisters *)cadmin, "emulator");
+      OH::Sim::Server::initAdmin(*(OH::OccpAdminRegisters *)cadmin, "emulator",
+				 *(OH::HdlUUID *)(cadmin + offsetof(OH::OccpSpace, config)));
       HE::EtherControlHeader &ech_out =  *(HE::EtherControlHeader *)(sFrame.payload);
       bool haveTag = false;
       OE::Address to;
@@ -441,7 +446,7 @@ static void emulate(const char **) {
 		HE::EtherControlReadResponse &ecrr =  *(HE::EtherControlReadResponse *)(echp);
 		ecrr.data = htonl(*(uint32_t *)&cadmin[offset]);
 		if (offset > sizeof(cadmin)) {
-		  ocpiDebug("Read offset out of range: 0x%" PRIx32 ", returning 0\n", offset);
+		  ocpiBad("Read offset out of range: 0x%" PRIx32 ", returning 0\n", offset);
 		  ecrr.data = 0;
 		} else if (offset >= offsetof(OH::OccpSpace, config)) {
 		  size_t
@@ -724,9 +729,29 @@ bram(const char **ap) {
 	deflate(&zs, Z_FINISH) == Z_STREAM_END &&
 	deflateEnd(&zs) == Z_OK) {
       size_t oWords = (zs.total_out + 3)/4;
+      uint32_t *u32p = (uint32_t *)out;
+#if 0
       fprintf(ofp, "%08lx\n%08lx\n%08lx\n%08lx\n", 1ul, zs.total_out, (unsigned long)length, zs.adler);
-      for (uint32_t *u32p = (uint32_t *)out; oWords; oWords--)
+      for (; oWords; oWords--)
 	fprintf(ofp, "%08x\n", *u32p++);
+#else
+      // VHDL "read" format
+
+      for (unsigned n = 0; n < 1024; n++) {
+	uint32_t i;
+	switch(n) {
+	case 0: i = 1; break;
+	case 1: i = OCPI_UTRUNCATE(uint32_t, zs.total_out); break;
+	case 2: i = OCPI_UTRUNCATE(uint32_t, length); break;
+	case 3: i = OCPI_UTRUNCATE(uint32_t, zs.adler); break;
+	default:
+	  i = n < oWords+4 ? *u32p++ : 0;
+	}
+	for (unsigned b = 0; b < 32; b++)
+	  fputc(i & 1 << (31 - b) ? '1' : '0', ofp);
+	fputc('\n', ofp);
+      }
+#endif
       if (fclose(ofp)) {
 	unlink(ap[1]);
 	bad("Error writing output file '%s'", ap[1]);
@@ -736,6 +761,7 @@ bram(const char **ap) {
     }
   }
 }
+
 static void
 unbram(const char **ap) {
   if (!*ap)
@@ -748,6 +774,7 @@ unbram(const char **ap) {
   FILE *ofp = fopen(ap[1], "wb");
   if (!ofp)
     bad("Cannot open output file: \"%s\"", ap[1]);
+#if 0
   size_t version, bytes, length, adler;
   if (fscanf(ifp, "%zx\n%zx\n%zx\n%zx\n", &version, &bytes, &length, &adler) != 4)
     bad("Input file has bad format");
@@ -766,31 +793,76 @@ unbram(const char **ap) {
       bad("Error reading input file");
     *u32p++ = n;
   }
+#else
+  size_t
+    adler,
+    olength = 32*1024, // worst case output size
+    inWords = 1024,
+    inBytes = inWords * sizeof(uint32_t);
+  uint32_t *in, *u32p;
+  unsigned char *out;
+  for (unsigned n = 0; n < inWords; n++) {
+    char line[34];
+    line[32] = 0;
+    fgets(line, 34, ifp);
+    if (line[32] != '\n')
+      bad("Bad format in bram file");
+    uint32_t i = 0;
+    for (unsigned b = 0; b < 32; b++)
+      if (line[b] == '1')
+	i |= 1 << (31 - b);
+    switch(n) {
+    case 0:
+      if (i != 1)
+	bad("format magic");
+      break;
+    case 1:
+      inBytes = i;
+      if (!(u32p = in = (uint32_t *)malloc(inBytes)))
+	bad("Error allocating %zu bytes for input file", inBytes);
+      break;
+    case 2:
+      olength = i;
+      if (olength > 100*1024 ||
+	  !(out = (unsigned char *)malloc(olength)))
+	bad("Error allocating %zu bytes for output file", olength);
+      break;
+    case 3:
+      adler = i;
+      break;
+    default:
+      *u32p++ = i;
+    }
+  }
+#endif
+  printf("Expanding from %zu bytes in bram to %zu bytes in text\n",
+	 inBytes, olength);
   z_stream zs;  
   zs.zalloc = zalloc;
   zs.zfree = zfree;
   zs.data_type = Z_TEXT;
-  zs.next_in = in;
-  zs.avail_in = (uInt)nBytes;
+  zs.next_in = (unsigned char *)in;
+  zs.avail_in = (uInt)inBytes;
   zs.next_out = out;
-  zs.avail_out = (uInt)length;
+  zs.avail_out = (uInt)olength;
   if (inflateInit(&zs) == Z_OK &&
       inflate(&zs, Z_FINISH) == Z_STREAM_END &&
       inflateEnd(&zs) == Z_OK) {
-    if (zs.adler != adler || zs.total_out != length)
+    if (zs.adler != adler || zs.total_out != olength)
       bad("bad checksum on decompressed data: is %lx, should be %zx", zs.adler, adler);
-    if (fwrite(out, 1, length, ofp) != length || fclose(ofp)) {
+    if (fwrite(out, 1, zs.total_out, ofp) != zs.total_out || fclose(ofp)) {
       unlink(ap[1]);
       bad("Error writing output file '%s'", ap[1]);
     }
     printf("Wrote unbram file '%s' (%zu bytes) from file '%s' (%zu bytes)\n",
-	   ap[1], length, ap[0], bytes);
-  }
+	   ap[1], zs.total_out, ap[0], inBytes);
+  } else
+    bad("Unsuccessful decompression from file %s", ap[0]);
 }
 
 static void
 uuid(const char **ap) {
-  OCPI::HDL::HdlUUID uuidRegs;
+  OH::HdlUUID uuidRegs;
   if (platform.empty() || !part)
     bad("both platform and part/chip must be specified for the uuid command");
   if (!*ap)
@@ -836,6 +908,8 @@ atoi_any(const char *arg, unsigned *sizep)
 {
   uint64_t value ;
 
+  if (!arg)
+    bad("Missing numeric argument");
   int n = sscanf(arg, strncmp(arg,"0x",2) != 0 ? "%" SCNu64 : "0x%" SCNx64, &value);
   if (n != 1)
     bad("Bad numeric value: '%s'", arg);
@@ -1516,3 +1590,25 @@ simulate(const char **ap) {
   if (server.run(simExec, error))
     bad("Simulator server execution error");
 }
+static void
+getxml(const char **ap) {
+  if (!ap[0])
+    bad("No output filename specified for getxml");
+  FILE *ofp = fopen(ap[0], "w");
+  if (!ofp)
+    bad("Cannot open output file: \"%s\"", ap[0]);
+  std::vector<char> xml;
+  std::string err;
+  if (dev->getMetadata(xml, err))
+    bad(err.c_str());
+  if (fwrite(&xml[0], xml.size(), 1, ofp) != 1 ||
+      fclose(ofp))
+    bad("error writing xml file '%s' size %zu", ap[0], xml.size());
+}
+static void
+load(const char **ap) {
+  if (!ap[0])
+    bad("No input filename specified for getxml");
+  dev->load(ap[0]);
+}
+

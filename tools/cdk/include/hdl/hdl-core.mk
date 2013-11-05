@@ -136,7 +136,7 @@ else
 install: | $(HdlInstallDir)
 	$(AT)for f in $(HdlActualTargets); do \
 	  $(call ReplaceIfDifferent,$(strip \
-             $(OutDir)target-$$f/$(HdlToolLibraryResult)),$(strip \
+             $(OutDir)target-$$f/$(LibName)),$(strip \
              $(HdlInstallDir)/$(LibName)/$$f)); \
 	done
 endif # for building a real core

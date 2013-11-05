@@ -193,8 +193,8 @@ ifneq ($(filter platform container,$(HdlMode)),)
   endif
   HdlPlatforms:=$(HdlPlatform)
   HdlExactPart:=$(call HdlGetPart,$(HdlPlatform))
-  override HdlTarget:=$(HdlPlatform)
-  override HdlActualTargets:=$(HdlPlatform)
+  override HdlTarget:=$(call HdlGetFamily,$(HdlPlatform))
+  override HdlActualTargets:=$(HdlTarget)
   HdlPlatformDir:=$(HdlPlatformsDir)/$(HdlPlatform)
 else # now for builds that accept platforms and targets as inputs
 

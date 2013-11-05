@@ -606,7 +606,7 @@ namespace OCPI {
       // Array?
       if (m_arrayRank) {
 	size_t *p = m_arrayDimensions;
-	nBytes = roundup((uint32_t)nBytes, m_align);
+	nBytes = roundUp((uint32_t)nBytes, m_align);
 	for (unsigned n = 0; n < m_arrayRank; n++, p++) {
 	  nBytes *= *p;
 	  if (nBytes > UINT32_MAX)
@@ -616,7 +616,7 @@ namespace OCPI {
       m_dataAlign = m_align; // capture this before adjusting it in the sequence case.
       if (m_isSequence) {
 	// Pad the size to be what is required for an array of same.
-	nBytes = roundup((uint32_t)nBytes, m_align);
+	nBytes = roundUp((uint32_t)nBytes, m_align);
 	if (m_sequenceLength != 0)
 	  nBytes *= m_sequenceLength;
 	else
@@ -635,7 +635,7 @@ namespace OCPI {
       if (m_align < 4)
 	sub32 = true;
       m_nBytes = (uint32_t)nBytes;
-      argOffset = roundup(argOffset, m_align);
+      argOffset = roundUp(argOffset, m_align);
       m_offset = argOffset;
       argOffset += m_nBytes;
       return 0;

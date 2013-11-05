@@ -30,7 +30,9 @@ if ( ! ( -f $bitfile && -r $bitfile ) ) then
   echo Bitstream file \"$bitfile\" does not exist or is inaccessible.
   exit 1
 endif
-`dirname $0`/findJtagPart $usbport $part > $tmp
+set dir=$0:h
+#echo dir2 IS $dir
+$dir/findJtagPart $usbport $part > $tmp
 if ($status != 0) then
   echo Error: Could not find jtag position for part $part on USB port $usbport.
   exit 1
@@ -39,7 +41,8 @@ else
   echo The JTAG position of part $part on port $usbport is $pos
 endif
 echo Checking existing loaded bitstream..
-sudo_ocpi ocfrp_check $device
+set ocf="$dir/sudo_ocpi $OCPI_CDK_DIR/bin/$OCPI_TOOL_HOST/ocfrp_check"
+$ocf $device
 if ($status != 0) then
    echo Existing loaded bitstream does not appear to be functional.
    if (! -f $golden) then
@@ -50,7 +53,7 @@ if ($status != 0) then
    set pciConfig = $golden
 else
    echo Existing loaded bitstream looks ok, proceeding to snapshot the PCI config space \(into $tbar\)
-   sudo cp /sys/bus/pci/devices/$device/config $tbar	
+   sudo cp /sys/bus/pci/devices/$device/config $tbar
    sudo chmod a+rw $tbar
    if ($status != 0) then
       echo Error: we could not snapshot the PCI configuration before loading
@@ -106,7 +109,7 @@ else
        echo Error: May need to reset with post-reset PCI config snapshot
     else
        echo PCI Configuration restored, checking that new bitstream is ok.
-       sudo_ocpi ocfrp_check $device
+       $ocf $device
        if ($status == 0) then
           echo New bitstream is ok.
        else

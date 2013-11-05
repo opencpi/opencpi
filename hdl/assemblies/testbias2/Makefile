@@ -34,6 +34,5 @@
 #
 ########################################################################### #
 
-# For which containers should the runtime xml be generated?
-Container=mkOCApp-2sma-2w.v
-include $(OCPI_CDK_DIR)/include/hdl/hdl-assy.mk
+ExcludePlatforms=modelsim_pf isim_pf
+include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk

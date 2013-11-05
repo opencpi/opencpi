@@ -301,7 +301,7 @@ OcpiGen=\
 # - On success, the value will be a combination of stderr and stdout
 # Example:
 #  $(if $(call DoShell,ls -l,Value),$(error $(Value)),$(Value))
-DoShell=$(eval X:=$(shell X=`$1 2>&1`;echo $$?; echo "$$X" | sed "s/\#/<pound>/g"))$(strip \
+DoShell=$(eval X:=$(shell X=`sh -c '$1; exit $$?' 2>&1`;echo $$?; echo "$$X" | sed "s/\#/<pound>/g"))$(strip \
 	     $(call OcpiDbg,DoShell($1,$2):X:$X) \
              $(eval $2:=$(wordlist 2,$(words $X),$X))\
 	     $(call OcpiDbgVar,$2) \

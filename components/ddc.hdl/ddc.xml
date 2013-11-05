@@ -141,8 +141,8 @@
     <property name="b_gain_15" readable="true" writable="true"/>
     <property name="b_gain_16" readable="true" writable="true"/>
     <property name="b_gain_17" readable="true" writable="true"/>
-    <Property Name="ddcCtrlInit" Parameter="true"/>
-    <Property Name="hasDebugLogic" Parameter="true" Type="Bool"/>
+    <Property Name="ddcCtrlInit" Parameter="true" default='0'/>
+    <Property Name="hasDebugLogic" Parameter="true" Type="Bool" default='false'/>
   </ControlInterface>
   <StreamInterface Name="in" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"/>
   <StreamInterface Name="out" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"/>

@@ -432,7 +432,7 @@ module mkRcvrWorker(dif_Clk,
   assign wci_s_SThreadBusy = wci_reqF_countReg > 2'd1 ;
 
   // value method wci_s_sFlag
-  assign wci_s_SFlag = { 1'd1, wci_sFlagReg } ;
+  assign wci_s_SFlag = { 1'd0, 1'd1, wci_sFlagReg } ;
 
   // action method wci_s_mFlag
   assign CAN_FIRE_wci_s_mFlag = 1'd1 ;

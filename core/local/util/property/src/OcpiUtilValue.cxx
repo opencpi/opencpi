@@ -586,7 +586,7 @@ namespace OCPI {
           memset(m_p##pretty, 0, m_length);            \
 	  if (add) {                                   \
 	    memcpy(m_p##pretty, old, oldLength);       \
-	    delete old;                                \
+	    delete [] old;                             \
 	  }                                            \
         }                                              \
 	break;
@@ -666,7 +666,7 @@ namespace OCPI {
 	    m_nElements = 0;
 	}
       }
-      m_nTotal = m_vt->m_nItems * m_nElements;
+      m_nTotal = m_vt->m_nItems * (m_vt->m_isSequence ? m_nElements : 1);
       if ((err = allocate(add)))
 	return err;
       if (m_vt->m_isSequence) {

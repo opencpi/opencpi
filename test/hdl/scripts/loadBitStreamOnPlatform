@@ -21,15 +21,11 @@ if test -x loadBitStream_$3; then
 fi
 
 tmp=/tmp/ocpibitstream$$
-port=\
-`echo listusbcables | \
- $OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact -batch 2> $tmp | \
- grep '^port=' | \
- sed 's/port=\(.*\), *\(.*\)/\1 \2/' | \
- sed 's/Legacy Cable.*/esn=0123456789ABCD/' | \
- grep $5 | \
- sed 's/^\([^ ]*\).*$/\1/'\
-`
+dir=`dirname $0`
+# echo dir1 IS $dir
+port=`$dir/findJtagPort $5 $tmp`
+
+# echo PORT is $port
 echo "USB port is '$port' for loading bitstream" >> $tmp
 device=`echo $2 | sed 's/^PCI://'`
-exec `dirname $0`/loadBitStream $1 $device $port $4
+exec $dir/loadBitStream $1 $device $port $4

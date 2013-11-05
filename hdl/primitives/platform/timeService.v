@@ -293,7 +293,7 @@ module timeService(
 //  assign WILL_FIRE_RL_cpDispatch_T_F_F_F_F_T_T = doSetControl && timeIn[31];
   assign WILL_FIRE_RL_cpDispatch_T_F_F_F_F_T_T = doClear;
   assign WILL_FIRE_RL_cpDispatch_T_F_F_F_F_F_F_F_F_T = doDeltaTime;
-  assign gps_ppsSyncIn_x = ppsSyncIn;
+//  assign gps_ppsSyncIn_x = ppsSyncIn;
   assign deltaTime$D_IN = timeServ_nowInCC$dD_OUT - timeIn;
   
   // Assign outputs:
@@ -486,7 +486,7 @@ module timeService(
   assign timeServ_ppsExtSyncD$EN = !timeServ_ppsDisablePPS$dD_OUT ;
 
   // register timeServ_ppsExtSync_d1
-  assign timeServ_ppsExtSync_d1$D_IN = gps_ppsSyncIn_x ;
+  assign timeServ_ppsExtSync_d1$D_IN = ppsSyncIn; //gps_ppsSyncIn_x ;
   assign timeServ_ppsExtSync_d1$EN = 1'd1 ;
 
   // register timeServ_ppsExtSync_d2

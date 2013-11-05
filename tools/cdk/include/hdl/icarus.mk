@@ -58,15 +58,6 @@ HdlToolLibraryFile=$(LibName)
 # Reduce it to the set of library targets.
 HdlToolLibraryTargets=icarus
 ################################################################################
-# Variable required by toolset: what is the name of the file or directory that
-# is the thing created when a library is created. The thing that will be installed
-HdlToolLibraryResult=$(LibName)
-################################################################################
-# Variable required by toolset: HdlToolCoreLibName
-# What library name should we give to the library when a core is built from
-# sources
-HdlToolCoreLibName=$(Core)
-################################################################################
 # Variable required by toolset: HdlBin
 # What suffix to give to the binary file result of building a core
 # Note we can't build cores for further building, only simulatable "tops"

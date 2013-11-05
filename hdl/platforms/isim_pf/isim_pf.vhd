@@ -34,10 +34,9 @@ begin
   clock : process
   begin
     ctl_clk <= '0';
-    while true loop
-      ctl_clk <= not(ctl_clk);
-      wait for clk_half_period;
-    end loop;
+    wait for clk_half_period;
+    ctl_clk <= '1';
+    wait for clk_half_period;
   end process;
 
   -- generate a reset for some number of clocks

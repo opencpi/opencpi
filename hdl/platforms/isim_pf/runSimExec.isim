@@ -11,8 +11,8 @@ appname=$1
 shift
 for i in $*; do echo for $i; plusargs="$plusargs -testplusarg $i"; done
 echo plusargs are: $plusargs
-echo doing ./$appname-isim_pf.exe $plusargs
-exec ./$appname-isim_pf.exe $plusargs <<EOF
+echo doing ./$appname.exe $plusargs
+exec ./$appname.exe $plusargs <<EOF
 scope
 show child -r
 wave log -r /

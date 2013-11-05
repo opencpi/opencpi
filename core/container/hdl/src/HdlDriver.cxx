@@ -19,21 +19,9 @@ namespace OCPI {
 
     const char *hdl = "hdl";
 
-    // Internal method common to "open" and "found"
-    // Return true on error
-    bool Driver::
-    setup(Device &dev, ezxml_t &config, std::string &err) {
-      // Get any specific configuration information for this device
-      const char *name = dev.name().c_str();
-      config = getDeviceConfig(name);
-      if (!config && !strncmp("PCI:", name, 4)) // compatibility
-	config = getDeviceConfig(name+4);
-      // Configure the device
-      return dev.configure(config, err);
-    }
-
     OCPI::HDL::Device *Driver::
     open(const char *which, bool discovery, std::string &err) {
+      parent().parent().configureOnce();
       lock();
       // FIXME: obviously this should be registered and dispatched nicely..
       bool pci = false, ether = false, sim = false;
@@ -124,6 +112,18 @@ namespace OCPI {
 	ocpiBad("While probing %s: %s", which, error.c_str());
       return NULL;
     }      
+    // Internal method common to "open" and "found"
+    // Return true on error
+    bool Driver::
+    setup(Device &dev, ezxml_t &config, std::string &err) {
+      // Get any specific configuration information for this device
+      const char *name = dev.name().c_str();
+      config = getDeviceConfig(name);
+      if (!config && !strncmp("PCI:", name, 4)) // compatibility
+	config = getDeviceConfig(name+4);
+      // Configure the device
+      return dev.configure(config, err);
+    }
 
     OC::RegisterContainerDriver<Driver> driver;
   }

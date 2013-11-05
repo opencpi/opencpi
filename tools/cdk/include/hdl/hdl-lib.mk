@@ -66,7 +66,7 @@ $(HdlInstallLibDir):
 install: $(OutLibFiles) | $(HdlInstallLibDir)
 	$(AT)for f in $(HdlActualTargets); do \
 	  $(call ReplaceIfDifferent,$(strip \
-             $(OutDir)target-$$f/$(HdlToolLibraryResult)),$(strip \
+             $(OutDir)target-$$f/$(LibName)),$(strip \
              $(HdlInstallLibDir)/$$f)); \
 	done
 

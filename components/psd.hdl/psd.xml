@@ -12,8 +12,8 @@
     <Property Name="wsiMiMesgCount" Readable="true"/>
     <Property Name="wsiMtBusyCount" Readable="true"/>
     <Property Name="fftFrameCounts" Readable="true"/>
-    <Property Name="psdCtrlInit" Parameter="true"/>
-    <Property Name="hasDebugLogic" Parameter="true" Type="Bool"/>
+    <Property Name="psdCtrlInit" Parameter="true" default='0'/>
+    <Property Name="hasDebugLogic" Parameter="true" Type="Bool" default='false'/>
   </ControlInterface>
   <StreamInterface Name="in" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"/>
   <StreamInterface Name="out" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"/>

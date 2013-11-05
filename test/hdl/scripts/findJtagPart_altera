@@ -1,0 +1,20 @@
+#!/bin/bash
+# FIXME: why bash?
+# bitgen option.userid...biggen_bin.ut "userid on line 21 - feed5200".
+
+if [[ $# != 2 ]]; then
+  echo Usage is: `basename $0` usb_port part 1>&2
+  echo This is an internal script that takes a usb port and a part, and finds the 1>&2
+  echo JTAG position corresponding to that part. 1>&2
+  exit 1
+fi
+# $OCPI_ALTERA_TOOLS_DIR/quartus/bin/jtagconfig | sed -n '/^$1)/,+1p'
+t=`$OCPI_ALTERA_TOOLS_DIR/quartus/bin/jtagconfig | sed -n '/^'$1')/,+1p' | grep -v '^'$1')' | sed 's/.* \(EP.*\)(.*/\1/' | tr A-Z a-z`
+last=$?
+if test $last == 0; then
+    if test "$t" == $2; then
+      echo 0
+      exit 0
+    fi
+fi
+exit 1

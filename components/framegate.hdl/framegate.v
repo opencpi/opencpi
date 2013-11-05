@@ -593,7 +593,7 @@ module mkFrameGate4B(wciS0_Clk,
 	     wci_reqF_countReg > 2'd1 || wci_isReset_isInReset ;
 
   // value method wciS0_sFlag
-  assign wciS0_SFlag = { 1'd1, wci_sFlagReg, 1'd0 } ;
+  assign wciS0_SFlag = { 1'd0, 1'd1, wci_sFlagReg } ;
 
   // value method wsiS0_sThreadBusy
   assign wsiS0_SThreadBusy[0] =

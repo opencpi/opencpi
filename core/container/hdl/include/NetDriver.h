@@ -30,7 +30,7 @@
 #include <map>
 #include "OcpiOsEther.h"
 #include "OcpiPValue.h"
-#include "HdlAccess.h"
+#include "HdlDevice.h"
 #include "NetDefs.h"
 namespace OCPI {
   namespace HDL {

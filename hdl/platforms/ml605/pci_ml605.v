@@ -29,13 +29,21 @@ module pci_ml605(// PCI signals from hardware
 		 output 	p125rst,
 		 output [ 15:0] pci_device,
 		 // Requests coming in from PCIE
-		 output [152:0] server_request_put,
-		 output 	EN_server_request_put,
-		 input 		RDY_server_request_put,
+		 output [152:0] unoc_out_data,
+		 output 	unoc_out_valid,
+		 output		unoc_out_take,
 		 // Responses going to PCIE
-		 input [152:0] 	server_response_get,
-                 output 	EN_server_response_get,
-		 input 		RDY_server_response_get
+		 input [152:0] 	unoc_in_data,
+                 input     	unoc_in_valid,
+		 input 		unoc_in_take
+		 // // Requests coming in from PCIE
+		 // output [152:0] server_request_put,
+		 // output 	EN_server_request_put,
+		 // input 		RDY_server_request_put,
+		 // // Responses going to PCIE
+		 // input [152:0] 	server_response_get,
+                 // output 	EN_server_response_get,
+		 // input 		RDY_server_response_get
 );
 
   // signals for module outputs
@@ -164,21 +172,6 @@ module pci_ml605(// PCI signals from hardware
   // register pciw_pcie_irq_rMSIEnabled
   reg pciw_pcie_irq_rMSIEnabled;
   wire pciw_pcie_irq_rMSIEnabled$D_IN, pciw_pcie_irq_rMSIEnabled$EN;
-
-  // ports of submodule ctop
-  wire [152 : 0] ctop$server_request_put, ctop$server_response_get;
-  wire [58 : 0] ctop$cpServer_request_put;
-  wire [39 : 0] ctop$cpServer_response_get;
-  wire [2 : 0] 	ctop$switch_x;
-  wire ctop$EN_cpServer_request_put,
-       ctop$EN_cpServer_response_get,
-       ctop$EN_server_request_put,
-       ctop$EN_server_response_get,
-       ctop$RDY_cpServer_request_put,
-       ctop$RDY_cpServer_response_get,
-       ctop$RDY_server_request_put,
-       ctop$RDY_server_response_get;
-  
 
   // ports of submodule pciw_fI2P
   wire [80 : 0] pciw_fI2P$D_IN, pciw_fI2P$D_OUT;
@@ -698,16 +691,24 @@ module pci_ml605(// PCI signals from hardware
 	     pciw_fP2I$D_OUT[79] ||
 	     WILL_FIRE_RL_pciw_Prelude_inst_changeSpecialWires_1_upconv_connect2 ;
   assign pciw_p2iAF_deq_pw$whas =
+`ifdef not
 	     pciw_p2iAF_head_wrapped != pciw_p2iAF_tail_wrapped &&
 	     !pciw_p2iAF_dInReset_isInReset &&
 	     RDY_server_request_put ;
+`else
+             unoc_in_take;
+`endif
   assign pciw_p2iAF_sClear_pw$whas = 1'b0 ;
   assign pciw_p2iAF_dClear_pw$whas = 1'b0 ;
   assign pciw_p2iAF_deq_happened$whas = 1'b0 ;
   assign pciw_i2pAF_enq_pw$whas =
 	     pciw_i2pAF_head_wrapped == pciw_i2pAF_tail_wrapped &&
 	     !pciw_i2pAF_sInReset_isInReset &&
+`ifdef not
 	     RDY_server_response_get ;
+`else
+             unoc_in_valid;
+`endif
   assign pciw_i2pAF_deq_pw$whas =
 	     WILL_FIRE_RL_pciw_Prelude_inst_changeSpecialWires_2_downconv_connect1 ;
   assign pciw_i2pAF_sClear_pw$whas = 1'b0 ;
@@ -772,7 +773,11 @@ module pci_ml605(// PCI signals from hardware
 	     pciw_i2pAF_sInReset_isInReset ;
 
   // register pciw_i2pS
+`ifdef not
   assign pciw_i2pS$D_IN = server_response_get ;
+`else
+  assign pciw_i2pS$D_IN = unoc_in_data;
+`endif
   assign pciw_i2pS$EN = pciw_i2pAF_enq_pw$whas ;
 
   // register pciw_p2iAF_dInReset_isInReset
@@ -835,6 +840,8 @@ module pci_ml605(// PCI signals from hardware
 	     pciw_pci0_pcie_ep$cfg_interrupt_msienable ;
   assign pciw_pcie_irq_rMSIEnabled$EN = 1'd1 ;
 
+`ifdef not
+  // assign server_request_put = pciw_p2iS ;
   assign server_request_put = pciw_p2iS ;
   assign EN_server_request_put =
 	     pciw_p2iAF_head_wrapped != pciw_p2iAF_tail_wrapped &&
@@ -844,7 +851,15 @@ module pci_ml605(// PCI signals from hardware
 	     pciw_i2pAF_head_wrapped == pciw_i2pAF_tail_wrapped &&
 	     !pciw_i2pAF_sInReset_isInReset &&
 	     RDY_server_response_get ;
-
+`else // !`ifdef not
+  // assign server_request_put = pciw_p2iS ;
+  assign unoc_out_data = pciw_p2iS ;
+  assign unoc_out_valid = pciw_p2iAF_head_wrapped != pciw_p2iAF_tail_wrapped &&
+			  !pciw_p2iAF_dInReset_isInReset;
+  assign unoc_out_take = pciw_i2pAF_head_wrapped == pciw_i2pAF_tail_wrapped &&
+			 !pciw_i2pAF_sInReset_isInReset &&
+			 unoc_in_valid;
+`endif
   // submodule pciw_fI2P
   assign pciw_fI2P$D_IN =
 	     WILL_FIRE_RL_pciw_Prelude_inst_changeSpecialWires_2_downconv_connect1 ?

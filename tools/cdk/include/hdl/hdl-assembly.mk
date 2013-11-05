@@ -33,35 +33,96 @@ override HdlLibraries+=platform
 ## Extract the platforms and targets from the containers
 ## Then we can filter the platforms and targets based on that
 ifneq ($(MAKECMDGOALS),clean)
+ifdef Container
+ifndef Containers
+Containers:=$(Container)
+endif
+endif
+ifndef HdlPlatforms
+  ifdef HdlPlatform
+    HdlPlatforms:=$(HdlPlatform)
+  else
+    ifeq ($(Containers)$(DefaultContainers),)
+	HdlPlatforms:=ml605
+    endif
+  endif
+endif
+
+# Create the default container files in the gen diretories
+# $(call doDefaultContainer,<platform>,<config>)
+HdlDefContXml=<HdlContainer platform='$1/$2' default='true'/>
+define doDefaultContainer
+  $(call OcpiDbg,In doDefaultContainer for $1/$2 and HdlPlatforms: $(HdlPlatforms))
+  ifneq (,$(if $(HdlPlatforms),$(filter $1,$(HdlPlatforms)),yes))
+    $(CwdName)_$2_xml:=$(GeneratedDir)/$(CwdName)_$2.xml
+    $$(shell \
+	  mkdir -p $(GeneratedDir); \
+          if test ! -f $$($(CwdName)_$2_xml) || test "`cat $$($(CwdName)_$2_xml)`" != "$(call HdlDefContXml,$1,$2)"; then \
+            echo "$(call HdlDefContXml,$1,$2)"> $$($(CwdName)_$2_xml); \
+          fi)
+    Containers:=$(Containers) $(CwdName)_$2
+  endif
+endef  
+ifeq ($(origin DefaultContainers),undefined)
+  $(call OcpiDbg,No Default Containers: HdlPlatforms: $(HdlPlatforms))
+  # If undefined, we determine the default containers based on HdlPlatform
+  $(foreach p,$(HdlPlatforms),$(eval $(call doDefaultContainer,$p,$p_base)))
+else
+  $(foreach d,$(DefaultContainers),\
+     $(if $(findstring /,$d),\
+	 $(eval $(call doDefaultContainer $(word 1,$(subst /,$d)),$(word 2,$(subst /,$d)))),\
+         $(if $(filter $d,$(HdlAllPlatforms)),\
+              $(eval $(call doDefaultContainer,$d,$d_base)),\
+              $(error In DefaultContainers, $d is not a defined HDL platform.))))
+endif
+HdlContXml=$(or $($1_xml),$1.xml)
 ifdef Containers
   define doGetPlatform
-    $(and $(call DoShell,$(OcpiGen) -S $(CwdName) -x platform $1,HdlContPlatform),\
+    $(and $(call DoShell,$(OcpiGen) -S $(CwdName) -x platform $(call HdlContXml,$1),HdlContPlatform),\
           $(error Processing container XML $1: $(HdlContPlatform)))
-    $(and $(call DoShell,$(OcpiGen) -S $(CwdName) -x configuration $1,HdlContConfig),\
+    $(and $(call DoShell,$(OcpiGen) -S $(CwdName) -x configuration $(call HdlContXml,$1),HdlContConfig),\
           $(error Processing container XML $1: $(HdlContConfig)))
-    $(call OcpiDbgVar,HdlContPlatform)
-    $(call OcpiDbgVar,HdlContConfig)
+    $$(call OcpiDbgVar,HdlContPlatform)
+    $$(call OcpiDbgVar,HdlContConfig)
     $(if $(HdlContPlatform),,$(error Could not get HdlPlatform for container $1))
     $(if $(HdlContConfig),,$(error Could not get HdlConfiguration for container $1))
     HdlMyPlatforms+=$(HdlContPlatform)
-    HdlMyTargets+=$(call HdlGetFamily,$(HdlPart_$(HdlContPlatform)))
+    HdlMyTargets+=$(call OcpiDbg,HdlPart_$(HdlContPlatform) is $(HdlPart_$(HdlContPlatform)))$(call HdlGetFamily,$(HdlPart_$(HdlContPlatform)))
     HdlPlatform_$1:=$(HdlContPlatform)
     HdlTarget_$1:=$(call HdlGetFamily,$(HdlPart_$(HdlContPlatform)))
     HdlConfig_$1:=$(HdlContConfig)
-    $(call OcpiDbgVar,HdlPlatform_$1)
+    $$(call OcpiDbgVar,HdlPlatform_$1)
+    $$(call OcpiDbgVar,HdlMyPlatforms)
+    $$(call OcpiDbgVar,HdlMyTargets)
   endef
   $(foreach c,$(Containers),$(eval $(call doGetPlatform,$c)))
 #  $(info HdlMyPlatforms:$(HdlMyPlatforms) HdlMyTargets:=$(HdlMyTargets))
+  $(call OcpiDbgVar,HdlPlatforms)
+  $(call OcpiDbgVar,HdlTargets)
+  $(call OcpiDbgVar,HdlMyPlatforms)
+  $(call OcpiDbgVar,HdlMyTargets)
   ifdef HdlPlatforms
-    HdlPlatforms:=$(call Unique,$(filter $(HdlMyPlatforms),$(HdlPlatforms)))
+    override HdlPlatforms:=$(call Unique,$(filter $(HdlMyPlatforms),$(HdlPlatforms)))
   else
-    HdlPlatforms:=$(HdlMyPlatforms)
+    override HdlPlatforms:=$(call Unique,$(HdlMyPlatforms))
   endif
-  ifndef HdlTargets
-    HdlTargets:=$(HdlMyTargets)    
+  $(call OcpiDbgVar,ExcludePlatforms)
+  $(call OcpiDbgVar,HdlPlatforms)
+  $(call OcpiDbg,foo: $(filter-out $(ExcludePlatforms),$(HdlPlatforms)))
+  override HdlPlatforms:=$(filter-out $(ExcludePlatforms),$(HdlPlatforms))
+  $(call OcpiDbgVar,ExcludePlatforms)
+  $(call OcpiDbgVar,HdlPlatforms)
+  ifdef HdlTargets
+    HdlTargets:=$(call Unique,$(filter $(HdlMyTargets),$(HdlTargets)))
+  else
+    HdlTargets:=$(call Unique,$(foreach p,$(HdlPlatforms),$(call HdlGetFamily,$(HdlPart_$p))))
   endif
+  $(call OcpiDbgVar,ExcludePlatforms)
+  $(call OcpiDbgVar,HdlPlatforms)
+  $(call OcpiDbgVar,HdlTargets)
+
 endif
-else
+else # for "clean" goal
 HdlTargets:=all
 endif
 # Due to our filtering, we might have no targets to build
@@ -78,11 +139,12 @@ ifndef HdlSkip
 
 # Generate the source code for this "assembly worker" implementation file.
 $(call OcpiDgbVar,$(HdlSourceSuffix))
+# This variable is also used when processing the ImplWorkersFile to determine the language
 ImplFile:=$(GeneratedDir)/$(Worker)-assy$(HdlSourceSuffix)
 $(call OcpiDbgVar,ImplFile)
 AssyWorkersFile:=$(GeneratedDir)/$(CwdName).wks
-# This is overridden for the container and for the bitstream
-ImplWorkersFiles=$(AssyWorkersFile)
+# This is overridden for the container
+ImplWorkersFile=$(AssyWorkersFile)
 
 $(ImplFile): $$(ImplXmlFile) | $$(GeneratedDir)
 	$(AT)echo Generating the assembly source file: $@ from $<
@@ -90,6 +152,9 @@ $(ImplFile): $$(ImplXmlFile) | $$(GeneratedDir)
 
 # The workers file is actually created at the same time as the -assy.v file
 $(AssyWorkersFile): $(ImplFile)
+
+# A dependency on the core
+HdlPreCore=$(AssyWorkersFile)
 
 # The source code for this "worker" is the generated assembly file.
 GeneratedSourceFiles:=$(ImplFile)
@@ -111,76 +176,95 @@ HdlContDir=$(OutDir)target-$1
 HdlContainer=$(call HdlContDir,$1)/$1$(call HdlGetBinSuffix,$(HdlPlatform_$1))
 HdlContSource=$(GeneratedDir)/$1-$2.vhd
 HdlContSources=$(foreach s,defs impl assy,$(call HdlContSource,$1,$s))
-BitZName=$(HdlContDir)/$(Worker)-$1.bit.gz
+HdlBitName=$(call BitFile_$(HdlToolSet_$(HdlTarget_$1)),$(Worker)-$1)
+#HdlBitZName=$(HdlContDir)/$(call HdlBitName,$1).gz
+ArtifactXmlName=$(call HdlContDir,$1)/$1-art.xml
+UUIDFileName=$(call HdlContDir,$1)/$1_UUID.v
+MetadataRom=$(call HdlContDir,$1)/metadatarom.dat
 # This happens in the target dir immediately before compilation
 HdlContPreCompile=\
-  echo Generating UUID and artifact xml file for container $1. && \
-  (cd .. && $(OcpiGen) -D target-$1 -A -S $(Worker) -P $(HdlPlatform_$1) -e $(HdlTarget_$1) $1)
-HdlContBitName=$(call HdlContDir,$1)/$(call BitFile_$(HdlToolSet_$(HdlTarget_$1)),$1)
-HdlContBitZName=$(call HdlContDir,$1)/$(Worker)-$1.bit.gz
-ContainerWorkersFile=$(HdlContDir)/$1.wks
-ContainerXmlFile=$1.xml
-ArtifactXmlName=$(call HdlContDir,$1)/$1-art.xml
+  echo Generating UUID, artifact xml file and metadata ROM file for container $1. && \
+  (cd .. && \
+   $(OcpiGen) -D target-$1 -A -S $(Worker) -P $(HdlPlatform_$1) -e $(call HdlGetPart,$(HdlPlatform_$1)) $(call HdlContXml,$1) && \
+   $(OcpiHdl) bram $(call ArtifactXmlName,$1) $(call MetadataRom,$1) \
+   )
+HdlContBitName=$(call HdlContDir,$1)/$(call HdlBitName,$1)
+HdlContBitZName=$(call HdlContBitName,$1).gz
+ContainerWorkersFile=$(call HdlContDir,$1)/$1.wks
+ContainerXmlFile=$(call HdlContXml,$1)
 HdlContOcpiGen=\
   $(OcpiGen) -D $(GeneratedDir) \
-             -W $(Worker) $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) \
-	     $(if $(ComponentLibraries),\
+             $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) \
+	     $(and $(HdlPlatform),-P $(HdlPlatform)) \
+             -S $(Worker) \
+	     $(if $(and $(ComponentLibraries),$(HdlToolNeedBB_$(HdlToolSet_$(HdlTarget_$1)))),\
                 $(foreach l,$(ComponentLibraries),\
                   -L $(notdir $l):$(call HdlXmlComponentLibrary,$l)/hdl)) \
-	     $(and $(HdlPlatform),-P $(HdlPlatform)) \
-             -S $(Worker)
+
 ################################################################################
 # The function to evaluate for each container
+$(call OcpiDbg,before doContainer)
 define doContainer
-
+$$(call OcpiDbg,doContainer($1,$2,$3) platform $(HdlPlatform_$1) config $(HdlConfig_$1))
 ##### Generate source files for the container
 
 # FIXME: we could share this with workers better
 
-$(call HdlContSource,$1,defs): $1.xml | $(GeneratedDir)
+$(call HdlContSource,$1,defs): $(call HdlContXml,$1) | $(GeneratedDir)
 	$(AT)echo Generating the container assembly source file: $$@ from $$<
 	$(AT)$(HdlContOcpiGen) -d $$<
 
-$(call HdlContSource,$1,impl): $1.xml | $(GeneratedDir)
+$(call HdlContSource,$1,impl): $(call HdlContXml,$1) | $(GeneratedDir)
 	$(AT)echo Generating the container assembly source file: $$@ from $$<
 	$(AT)$(HdlContOcpiGen) -i $$<
 
-$(call HdlContSource,$1,assy): $1.xml | $(GeneratedDir)
+$(call HdlContSource,$1,assy): $(call HdlContXml,$1) | $(GeneratedDir)
 	$(AT)echo Generating the container assembly source file: $$@ from $$<
-	$(AT)$(HdlContOcpiGen) -a $$<
+	$(AT)$(HdlContOcpiGen) -W $1 -a $$<
 
 ###### Define the bitstream.
 ###### Some tools may in fact make a container core, but some will not when
 ###### it is a top-level/bit-stream build
 
+$(call HdlContDir,$1):
+		$(AT)mkdir $$@
+
 # This is for building the top level container core
 $(call HdlContainer,$1): | $(call HdlContDir,$1)
 $(call HdlContainer,$1): HdlPreCompile=$(call HdlContPreCompile,$1)
+# This is not a dependency since this file is generated each time it is built
+$(call HdlContainer,$1): TargetSourceFiles=$(call UUIDFileName,$1)
+$(call HdlContainer,$1): GeneratedSourceFiles=$(call HdlContSources,$1)
 $(call HdlContainer,$1): $(call HdlContSources,$1)
 $(call HdlContainer,$1): Core:=$1
 $(call HdlContainer,$1): Top:=$1
 $(call HdlContainer,$1): HdlMode:=container
-$(call HdlContainer,$1): HdlLibraries+=../$(Worker)
+$(call HdlContainer,$1): HdlLibraries+=platform
 $(call HdlContainer,$1): LibName:=$1
 $(call HdlContainer,$1): XmlIncludeDirs+=$(HdlPlatformsDir)/$(HdlPlatform_$1)
-$(call HdlContainer,$1): HdlTarget:=$(call HdlGetPart,$(HdlPlatform_$1))
-$(call HdlContainer,$1): HdlSources:=$(call HdlContSources,$1)
-$(call HdlContainer,$1): TargetDir=$(call HdlContDir,$1)
-$(call HdlContainer,$1): \
-	Cores=$(HdlPlatformsDir)/$(HdlPlatform_$1)/target-$(HdlConfig_$1)/$(HdlConfig_$1)_rv \
-              $(HdlPlatformsDir)/$(HdlPlatform_$1)/target-$(HdlPlatform_$1)/$(HdlPlatform_$1) \
-	      pcie_4243_trn_v6_gtx_x4_250 \
-	      target-$(call HdlGetFamily,$(HdlPlatform_$1))/$(Worker)
+$(call HdlContainer,$1): HdlSources:=$$(CompiledSourceFiles)
+$(call HdlContainer,$1) $(call HdlContBitName,$1): \
+                         override HdlTarget:=$(foreach p,$(call HdlGetPart,$(HdlPlatform_$1)),$p)
+$(call HdlContainer,$1) $(call HdlContBitName,$1): \
+                         TargetDir=$(call HdlContDir,$1)
+$(call HdlContainer,$1) $(call HdlContBitName,$1): \
+                         override ImplWorkersFile=$$(call HdlExists,$(call HdlContDir,$1)/$1.wks)
+$(call HdlContainer,$1) $(call HdlContBitName,$1): \
+                         override ImplFile=$$(call HdlContSource,$1,assy)
+$(call HdlContainer,$1) $(call HdlContBitName,$1): \
+                         AllCores=$$(call HdlCollectCores,$$(HdlTarget))
+# The two basic pieces of the container are cores, not workers
+$(call HdlContainer,$1) $(call HdlContBitName,$1): \
+			override Cores=$(HdlPlatformsDir)/$(HdlPlatform_$1)/target-$(call HdlConfig_$1)/$(call HdlConfig_$1)_rv target-$(HdlTarget_$1)/$(Worker)
 
-$(call HdlContainer,$1):
-	$(AT)echo Building container core \"$1\" for target \"$(HdlPlatform_$1)\"
+$(call HdlContainer,$1): $(call WkrBinary,$(HdlTarget_$1))
+	$(AT)echo Building $$(HdlMode) core \"$1\" for assembly "$(Worker)" for target \"$(HdlPlatform_$1)\"
 	$(AT)$$(HdlCompile)
 
-$(call HdlContDir,$1):
-		$(AT)mkdir $$@
-
-$(call HdlContBitName,$1): override ImplWorkersFiles=$(AssyWorkersFile) $(call ContainerWorkersFile,$1)
 $(call HdlContBitName,$1): $(call HdlContainer,$1)
+
+# Finally we create our artifact, compressing and attaching the metadata
+
 $(call HdlContBitZName,$1): $(call HdlContBitName,$1)
 	$(AT)echo Making compressed bit file: $$@ from $(call HdlContBitName,$1) and $(call ArtifactXmlName,$1)
 	$(AT)gzip -c $(call HdlContBitName,$1) > $$@
@@ -191,21 +275,24 @@ all: $(call HdlContBitZName,$1)
 -include $(HdlPlatformsDir)/$(HdlPlatform_$1)/$(HdlPlatform_$1).mk
 
 # Now invoke the tool-specific build with: <target-dir>,<assy-name>,<core-file-name>,<config>,<platform>
-$(call HdlToolDoPlatform_$(HdlToolSet_$(HdlTarget_$1)),$(call HdlContDir,$1),$(Worker),$1,$1,$(HdlPlatform_$1))
+$(call HdlToolDoPlatform_$(HdlToolSet_$(HdlTarget_$1)),$(call HdlContDir,$1),$(Worker),$(Worker)-$1,$1,$(HdlPlatform_$1))
 
 HdlContainerCores+=$(call HdlContainer,$1)
 HdlContainerBitZNames+=$(call HdlContBitZName,$1)
+$$(call OcpiDbg,doContainer end)
 endef
 
 $(foreach c,$(Containers),\
-  $(info For container:$c:$(call doContainer,$c))$(eval $(call doContainer,$c)))
-#  $(eval $(call doContainer,$c)))
+  $(and $(filter $(HdlPlatform_$c),$(HdlPlatforms)),$(eval $(call doContainer,$c))))
 
-all: $(HdlBitZNames)
+$(call OcpiDbg,afterdoContainers)
+
+all: $(HdlContainerBitZNames)
 
 # Force all workers to be built first for all targets
-containers: cores $(HdlContainers)
-all: containers
+#containers: cores $(HdlContainers)
+#all: containers
+
 endif # of skip
 endif # of containers
 endif # of skip

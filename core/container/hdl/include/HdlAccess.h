@@ -67,56 +67,67 @@ namespace OCPI {
 
       void setBytes(RegisterOffset offset, const uint8_t *from8, size_t bytes) const;
       inline uint8_t get8RegisterOffset(size_t offset) const {
+	ocpiDebug("get8RegisterOffset %p %zx", m_registers ,offset);
 	return m_registers ? *(volatile uint8_t *)(m_registers + offset) :
 	  m_accessor->get8(m_base + offset);
       }
       inline uint16_t get16RegisterOffset(size_t offset) const {
+	ocpiDebug("get16RegisterOffset %p %zx", m_registers ,offset);
 	return m_registers ? *(volatile uint16_t *)(m_registers + offset) :
 	  m_accessor->get16(m_base + offset);
       }
       inline uint32_t get32RegisterOffset(size_t offset) const {
+	ocpiDebug("get32RegisterOffset %p %zx", m_registers ,offset);
 	return m_registers ? *(volatile uint32_t *)(m_registers + offset) :
 	  m_accessor->get32(m_base + offset);
       }
       inline uint64_t get64RegisterOffset(size_t offset) const {
+	ocpiDebug("get64RegisterOffset %p %zx", m_registers ,offset);
 	return m_registers ? *(volatile uint64_t *)(m_registers + offset) :
 	  m_accessor->get64(m_base + offset);
       }
       inline void set8RegisterOffset(size_t offset, uint8_t val) const {
+	ocpiDebug("get64RegisterOffset %p %zx", m_registers ,offset);
+	ocpiDebug("set8RegisterOffset %zx", offset);
 	if (m_registers)
 	  *(volatile uint8_t *)(m_registers + offset) = val;
 	else
 	  m_accessor->set8(m_base + offset, val);
       }
       inline void set16RegisterOffset(size_t offset, uint16_t val) const {
+	ocpiDebug("set16RegisterOffset %p %zx", m_registers ,offset);
 	if (m_registers)
 	  *(volatile uint16_t *)(m_registers + offset) = val;
 	else
 	  m_accessor->set16(m_base + offset, val);
       }
       inline void set32RegisterOffset(size_t offset, uint32_t val) const {
+	ocpiDebug("set32RegisterOffset %p %zx", m_registers ,offset);
 	if (m_registers)
 	  *(volatile uint32_t *)(m_registers + offset) = val;
 	else
 	  m_accessor->set32(m_base + offset, val);
       }
       inline void set64RegisterOffset(size_t offset, uint64_t val) const{
+	ocpiDebug("set64RegisterOffset %p %zx", m_registers ,offset);
 	if (m_registers)
 	  *(volatile uint64_t *)(m_registers + offset) = val;
 	else
 	  m_accessor->set64(m_base + offset, val);
       }
       inline void getBytesRegisterOffset(size_t offset, uint8_t *bytes,  size_t size) const {
+	ocpiDebug("getBytesRegisterOffset %p %zx sz %zx", m_registers ,offset, size);
 	if (m_registers)
 	  getBytes(offset, bytes, size);
 	else
-	  m_accessor->getBytes(offset, bytes, size);
+	  m_accessor->getBytes(m_base + offset, bytes, size);
       }
       inline void setBytesRegisterOffset(size_t offset, const uint8_t *bytes, size_t size) const {
+	ocpiDebug("setBytesRegisterOffset %p %zx sz %zx", m_registers ,offset, size);
 	if (m_registers)
 	  setBytes(offset, bytes, size);
 	else
-	  m_accessor->setBytes(offset, bytes, size);
+	  m_accessor->setBytes(m_base + offset, bytes, size);
       }
 #define get32Register(m, type) get32RegisterOffset(offsetof(type, m))
 #define get64Register(m, type) get64RegisterOffset(offsetof(type, m))
@@ -129,48 +140,6 @@ namespace OCPI {
 #define offsetRegister(m, type) physOffset(offsetof(type, m))
 
     };
-    // This class represents a raw HDL device before it is a container, or when there is no
-    // need to create a container (utilities, discovery etc.).
-    // It is specialized by the access paths and driver issues (for pci, ethernet etc.)
-    class Device {
-      HdlUUID m_UUID;
-      OCPI::Util::Uuid m_loadedUUID;
-    protected:
-      std::string m_name, m_platform, m_part, m_esn, m_position, m_loadParams, m_protocol;
-      // This is the protocol-specific part of the endpoint.
-      std::string m_endpointSpecific;
-      Access m_cAccess;
-      Access m_dAccess;
-      uint64_t m_endpointSize;
-      bool m_isAlive;
-      Device(std::string &name, const char *protocol = "");
-    public:
-      uint32_t m_timeCorrection;
-      virtual ~Device();
-      inline const char *protocol() const { return m_protocol.c_str(); }
-      inline const std::string &name() const { return m_name; }
-      inline const std::string &platform() const { return m_platform; }
-      inline const std::string &esn() const { return m_esn; }
-      inline const std::string &part() const { return m_part; }
-      inline Access &cAccess() { return m_cAccess; };
-      inline Access &dAccess() { return m_dAccess; };
-      inline std::string &endpointSpecific() { return m_endpointSpecific; }
-      inline uint64_t endpointSize() { return m_endpointSize; }
-      inline bool isAlive() { return m_isAlive; }
-      bool isLoadedUUID(const std::string &uuid);
-      void getUUID();
-      virtual void load(const char *name) = 0;
-      // This methd has a required base class implementation.
-      // If it is overridden, the base class method must be called from there.
-      // (probably early, as it retrieves a variety of generic information from either the
-      //  device itself or the config info)
-      // It is called shortly after construction returns and allows the device
-      // to do any finalization
-      // Return true on error
-      virtual bool configure(ezxml_t config, std::string &err);
-      void print();
-    };
-    
   }
 }
 #endif

@@ -61,7 +61,7 @@ namespace OCPI {
       return &Singleton<ManagerManager>::getSingleton();
     }
     ManagerManager::ManagerManager()
-      : m_configured(false)
+      : m_configured(false), m_doNotDiscover(false)
     {}
     // This is the static API method
     void ManagerManager::configure(const char *file) {
@@ -110,11 +110,12 @@ namespace OCPI {
 	// The discovery happens in a second pass to make sure everything is configured before
 	// anything is discovered so that one driver's discovery can depend on another type of
 	// driver's configuration.
-	for (Manager *m = firstChild(); m; m = m->nextChild())
-	  if (m->shouldDiscover()) {
-	    ocpiDebug("Performing discovery for the %s manager", m->name().c_str());
-	    m->discover();
-	  }
+	if (!m_doNotDiscover)
+	  for (Manager *m = firstChild(); m; m = m->nextChild())
+	    if (m->shouldDiscover()) {
+	      ocpiDebug("Performing discovery for the %s manager", m->name().c_str());
+	      m->discover();
+	    }
       }
     }
     // Cleanup all managers

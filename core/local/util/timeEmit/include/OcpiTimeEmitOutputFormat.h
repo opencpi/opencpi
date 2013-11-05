@@ -741,7 +741,7 @@ namespace OCPI {
 		      uint32_t* ui = reinterpret_cast<uint32_t*>(&(*it).v.uvalue);
 		      ui++;
 		      for (int n=0; n<2; n++ ) {
-			for ( uint32_t i= (1<<31); i>=(uint32_t)1; ) {
+			for ( uint32_t i= (1u<<31); i>=(uint32_t)1; ) {
 			  tld.values += ((i & *ui)==i) ? "1" : "0";
 			  i = i>>1;
 			}

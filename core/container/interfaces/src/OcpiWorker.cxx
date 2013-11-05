@@ -116,7 +116,7 @@ namespace OCPI {
 	  for (unsigned n = 0; n < v.m_nTotal; n++) {
 	    size_t l = strlen(sp[n]);
 	    setPropertyBytes(info, offset, (uint8_t*)sp[n], l + 1);
-	    offset += roundup(info.m_stringLength + 1, 4);
+	    offset += OU::roundUp(info.m_stringLength + 1, 4);
 	  }	  
 	} else {
 	  uint8_t *data = v.m_pUChar;
@@ -194,7 +194,7 @@ namespace OCPI {
 	  v.m_nTotal *= v.m_nElements;
 	}
 	if (info.m_baseType == OA::OCPI_String) {
-	  size_t length = roundup(info.m_stringLength + 1, 4);
+	  size_t length = OU::roundUp(info.m_stringLength + 1, 4);
 	  v.m_stringSpaceLength = v.m_nTotal * length;
 	  v.m_stringNext = v.m_stringSpace = new char[v.m_stringSpaceLength];
 	  char **sp = new char *[v.m_nTotal];

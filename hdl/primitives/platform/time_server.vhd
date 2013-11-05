@@ -5,8 +5,10 @@ library ocpi; use ocpi.all, ocpi.types.all;
 library work; use work.platform_pkg.all;
 entity time_server is
   port (
-    CLK, RST_N          : in  std_logic;
-    timeCLK, timeRST_N  : in  std_logic;
+    CLK                 : in  std_logic;
+    RST_N               : in  std_logic;
+    timeCLK             : in  std_logic;
+    timeRST_N           : in  std_logic;
     ppsIn               : in  std_logic;  -- ASYNC
     -- Property interface
     timeControl         : in  ulong_t;
@@ -31,8 +33,10 @@ architecture rtl of time_server is
 -- this is for the verilog wrapped version
   component timeService is
     port(
-      CLK, RST_N                   : in std_logic;
-      CLK_time_clk, RST_N_time_rst : in std_logic;
+      CLK                          : in std_logic;
+      RST_N                        : in std_logic;
+      CLK_time_clk                 : in std_logic;
+      RST_N_time_rst               : in std_logic;
       -- Interface to set the time, with permission
       timeIn                       : in std_logic_vector(63 downto 0);
       doSetTime                    : in std_logic;

@@ -169,7 +169,7 @@ begin
   -- Combi signals and outputs for properties
   --------------------------------------------------------------------------------
   offset_in       <= unsigned(ocp_in.MAddr(worker.decode_width-1 downto 2)) & be2offset(ocp_in);
-  my_offset       <= offset_in when my_access_r = none_e else my_offset_r;
+  my_offset       <= offset_in when my_reset or my_access_r = none_e else my_offset_r;
   my_data         <= ocp_in.MData        when my_access_r = none_e else my_data_r;
   my_nbytes_1     <= num_bytes_1(ocp_in) when my_access_r = none_e else my_nbytes_1_r;
   my_hi32         <= to_bool(ocp_in.MAddr(2) = '1') when my_access_r = none_e else my_hi32_r;

@@ -56,14 +56,17 @@
 #include <cstdlib>
 #include <string>
 #include <ctype.h>
-#include <ezxml.h>
-#include <OcpiOsAssert.h>
-#include <OcpiUtilMisc.h>
-#include <OcpiUtilUri.h>
-#include <OcpiUtilVfs.h>
-#include <OcpiUtilEzxml.h>
-#include <sca_props.h>
+#include "ezxml.h"
+#include "OcpiOsAssert.h"
+#include "OcpiUtilMisc.h"
+#include "OcpiUtilUri.h"
+#include "OcpiUtilVfs.h"
+#include "OcpiUtilEzxml.h"
+#include "sca_props.h"
+#include "OcpiUtilMisc.h"
 #include "OcpiScaPropertyParser.h"
+
+namespace OU = OCPI::Util;
 
 OCPI::SCA::PropertyParser::
 PropertyParser ()
@@ -845,7 +848,7 @@ processPRF (ezxml_t prfRoot, bool impl)
         propData->types = new OCPI::SCA::SimpleType [1];
         propData->types[0].data_type = OCPI::SCA::SCA_ulong;
         propData->types[0].size = 0;
-        propData->offset = roundUp (offset, 4);
+        propData->offset = OU::roundUp (offset, 4);
         offset = propData->offset + 4;
         m_nameToIdxMap["testId"] = propIdx++;
         propData++;
@@ -1081,8 +1084,8 @@ processStructProperty (ezxml_t structPropertyNode,
   for (ezxml_t child = ezxml_child(structPropertyNode, "simple"); child;
        child = ezxml_next(child))
     doSimple(child, 0, max_align, size);
-  propData->offset = roundUp(offset, max_align);
-  propData->data_offset = roundUp(propData->offset + (isSequence  ? 4 : 0), max_align);
+  propData->offset = OU::roundUp(offset, max_align);
+  propData->data_offset = OU::roundUp(propData->offset + (isSequence  ? 4 : 0), max_align);
   offset = propData->data_offset;
   OCPI::SCA::SimpleType *pt = propData->types;
   for (ezxml_t child = ezxml_child(structPropertyNode, "simple"); child;
@@ -1090,7 +1093,7 @@ processStructProperty (ezxml_t structPropertyNode,
     pt->name = strdup(ezxml_attr(child, "name"));
     size_t align = 0;
     doSimple(child, pt, align, size);
-    offset = roundUp(offset, align);
+    offset = OU::roundUp(offset, align);
     offset += size;
   }
 }
@@ -1145,11 +1148,11 @@ processSimpleProperty (ezxml_t simplePropertyNode,
     else {
       propData->sequence_size = 256; /* Hardcoded default. */
     }
-    propData->offset = roundUp (offset, align);
-    propData->data_offset = roundUp (propData->offset + 4, align);
+    propData->offset = OU::roundUp (offset, align);
+    propData->data_offset = OU::roundUp (propData->offset + 4, align);
     offset = propData->data_offset + size * propData->sequence_size;
   } else {
-    propData->offset = propData->data_offset = roundUp(offset, align);
+    propData->offset = propData->data_offset = OU::roundUp(offset, align);
     offset = propData->offset + size;
   }
   propData->types->name = propData->name;
@@ -1314,14 +1317,6 @@ propertyAlign (OCPI::SCA::DataType type)
   }
 
   return align;
-}
-
-size_t
-OCPI::SCA::PropertyParser::
-roundUp (size_t value, size_t align)
-  throw ()
-{
-  return ((value + (align - 1)) / align) * align;
 }
 
 char *

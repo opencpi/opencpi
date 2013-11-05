@@ -32,20 +32,11 @@
 # always removed entirely each time it is built.  It is so fast that there is no
 # point in fussing over "incremental" mode.
 # So there not a specific file name we can look for
-HdlToolLibraryFile=$(LibName)
+HdlToolLibraryFile=$2
 ################################################################################
 # Function required by toolset: given a list of targets for this tool set
 # Reduce it to the set of library targets.
 HdlToolLibraryTargets=modelsim
-################################################################################
-# Variable required by toolset: what is the name of the file or directory that
-# is the thing created when a library is created. The thing that will be installed
-HdlToolLibraryResult=$(LibName)
-################################################################################
-# Variable required by toolset: HdlToolCoreLibName
-# What library name should we give to the library when a core is built from
-# sources
-HdlToolCoreLibName=$(Core)
 ################################################################################
 # Variable required by toolset: HdlBin
 # What suffix to give to the binary file result of building a core
@@ -62,11 +53,11 @@ HdlToolRealCore=
 # Variable required by toolset: HdlToolNeedBB=yes
 # Set if the tool set requires a black-box library to access a core
 HdlToolNeedBB=
+
 ################################################################################
-# Function required by toolset: $(call HdlToolLibRef,libname)
-# This is the name after library name in a path
-# It might adjust (genericize?) the target
-HdlToolLibRef=modelsim
+# Function required by toolset: $(call HdlToolCoreRef,coreref)
+# Modify a stated core reference to be appropriate for the tool set
+HdlToolCoreRef=$(call HdlRmRv,$1)
 
 ModelsimFiles=\
   $(foreach f,$(HdlSources),\
@@ -89,6 +80,9 @@ HdlToolCompile=\
       echo $(lastword $(subst -, ,$(notdir $l)))=$(strip \
         $(call FindRelative,$(TargetDir),$(strip \
            $(call HdlLibraryRefDir,$l,$(HdlTarget)))));) \
+   $(foreach c,$(call HdlCollectCores,modelsim),\
+      echo $(call HdlRmRv,$(notdir $(c)))=$(call FindRelative,$(TargetDir),$(strip \
+          $(call HdlCoreRef,$(call HdlRmRv,$c),modelsim)));) \
    echo others=$(OCPI_MODELSIM_DIR)/modelsim.ini \
    ) > modelsim.ini ; \
    export LM_LICENSE_FILE=$(OCPI_MODELSIM_LICENSE_FILE); \
@@ -97,7 +91,7 @@ HdlToolCompile=\
    $(and $(filter %.v,$(ModelsimFiles)),\
     $(OCPI_MODELSIM_DIR)/bin/vlog $(ModelSimVlogIncs) $(VlogLibs) $(ModelsimArgs) $(filter %.v, $(ModelsimFiles)) ;) \
    $(and $(filter %.vhd,$(ModelsimFiles)),\
-    $(OCPI_MODELSIM_DIR)/bin/vcom -preserve -bindAtCompile -error 1253 $(ModelsimArgs) $(filter %.vhd,$(ModelsimFiles)))
+    $(OCPI_MODELSIM_DIR)/bin/vcom -preserve $(if $(HdlNoElaboration),,-bindAtCompile) -error 1253 $(ModelsimArgs) $(filter %.vhd,$(ModelsimFiles)))
 
 # Since there is not a singular output, make's builtin deletion will not work
 HdlToolPost=\
@@ -107,59 +101,25 @@ HdlToolPost=\
     touch $(LibName);\
   fi;
 
-ModelsimPlatform:=modelsim_pf
-ModelsimAppName=$(call AppName,$(ModelsimPlatform))
-ExeFile=$(ModelsimAppName).exe
-BitFile=$(ModelsimAppName).bit
-BitName=$(call PlatformDir,$(ModelsimPlatform))/$(BitFile)
-ModelsimPlatformDir=$(HdlPlatformsDir)/$(ModelsimPlatform)
-ModelsimTargetDir=$(call PlatformDir,$(ModelsimPlatform))
+BitFile_modelsim=$1.tar
 
+define HdlToolDoPlatform_modelsim
 
-ModelsimBuildCmd=\
-  $(eval $(HdlSetWorkers)) \
-  $(eval MyLibMap:=$(strip \
-    $(foreach l,$(HdlLibrariesInternal),\
-       $(lastword $(subst -, ,$(notdir $l)))=$(strip \
-         $(call FindRelative,$(TargetDir),$(strip \
-           $(call HdlLibraryRefDir,$l,$(HdlTarget)))))) \
-    $(foreach w,$(HdlWorkers),\
-      $(foreach f,$(firstword \
-                    $(or $(foreach c,$(ComponentLibraries), \
-                           $(foreach d,$(call HdlComponentLibrary,$c,modelsim),\
-	                     $(wildcard $d/$w))),\
-                       $(error Worker $w not found in any component library.))),\
-        $w=$(call FindRelative,$(TargetDir),$f))) \
-    $(ModelsimPlatform)=$(ModelsimPlatformDir)/target-modelsim/modelsim_pf \
-    mkOCApp4B=mkOCApp4B \
-    $(Worker)=../target-modelsim/$(Worker))) \
-  $(eval MyLibs:=$(foreach m,$(MyLibMap),$(firstword $(subst =, ,$m)))) \
-  (echo '; This file is generated for building this '$(LibName)' library.';\
-   echo '[library]' ; \
-   $(foreach l,$(MyLibMap),echo $l;) \
-   echo others=$(OCPI_MODELSIM_DIR)/modelsim.ini; \
-   ) > $(ModelsimAppName).ini ; \
-   echo $(foreach l,$(MyLibs),-L $l) > vsim.args; \
-   export LM_LICENSE_FILE=$(OCPI_MODELSIM_LICENSE_FILE); \
-   echo 'log -r /*; archive write vsim.dbar -wlf vsim.wlf -include_src ; quit' | \
-   $(OCPI_MODELSIM_DIR)/bin/vsim -c modelsim_pf.main -modelsimini $(ModelsimAppName).ini \
-	-f vsim.args && \
-    echo vsim exited successfully, now creating archive: $(BitName) && \
-    pax -wf $(BitFile) -L vsim.dbar vsim.args metadatarom.data \
-      -s =../target-modelsim/$(Worker)/modelsim== \
-      $(foreach l,$(MyLibMap),-s =$(word 2,$(subst =, ,$l))=$(firstword $(subst =, ,$l))=)  \
-      $(foreach l,$(MyLibMap),$(word 2,$(subst =, ,$l))) \
-
-define HdlToolDoPlatform
 # Generate bitstream
-$$(BitName): TargetDir=$(call PlatformDir,$(ModelsimPlatform))
-$$(BitName): HdlToolCompile=$$(ModelsimBuildCmd)
-$$(BitName): HdlToolSet=vsim
-$$(BitName): HdlToolPost=
-$$(BitName): override HdlTarget=modelsim
-$$(BitName): HdlName=$(ModelsimAppName)
-$$(BitName): $(ModelsimPlatformDir)/target-modelsim/$(ModeisimPlatform) $(ModelsimTargetDir)/mkOCApp4B | $(ModelsimTargetDir)
-	$(AT)echo Building modelsim simulation executable: $$(BitName).  Details in $$(ModelsimAppName)-vsim.out
-	$(AT)$$(HdlCompile)
+$1/$3.tar:
+	$(AT)echo Building modelsim simulation executable: "$$@" with details in $1/$3-fuse.out
+	$(AT)(set -e ; cd $1 && \
+	     echo -L $4 $$$$(grep = modelsim.ini | grep -v others= | sed 's/=.*//' | sed 's/^/-L /') > vsim.args && \
+	     export LM_LICENSE_FILE=$(OCPI_MODELSIM_LICENSE_FILE) && \
+	     echo 'log -r /*; archive write vsim.dbar -wlf vsim.wlf -include_src ; quit' | \
+	     $(OCPI_MODELSIM_DIR)/bin/vsim -c $4.$4 -modelsimini modelsim.ini \
+	       -f vsim.args && \
+             echo vsim exited successfully, now creating archive: $$@ && \
+             pax -wf $$(notdir $$@) -L vsim.dbar vsim.args metadatarom.dat \
+	       $$(foreach i,$$(shell grep = $1/modelsim.ini | grep -v others=),\
+                 $$(foreach l,$$(firstword $$(subst =, ,$$i)),\
+                   $$(foreach p,$$(word 2,$$(subst =, ,$$i)),\
+		     -s =$$p=$$l= $$p ))) $4 ) > $1/$3.out 2>&1
+
 endef
 

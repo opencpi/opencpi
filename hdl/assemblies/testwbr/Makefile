@@ -34,7 +34,5 @@
 #
 ########################################################################### #
 
-# For which containers should the runtime xml be generated?
-Target=xc5vlx50t-ff1136-1
-#Target=xc5vsx95t-2-ff1136
-include $(OCPI_CDK_DIR)/include/hdl/hdl-assy.mk
+HdlOnlyPlatform=schist
+include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk

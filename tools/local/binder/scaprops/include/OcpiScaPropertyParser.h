@@ -285,9 +285,6 @@ namespace OCPI {
       static size_t propertyAlign (OCPI::SCA::DataType type)
         throw ();
 
-      static size_t roundUp (size_t, size_t)
-        throw ();
-
       static char * strdup (const char *)
         throw ();
 

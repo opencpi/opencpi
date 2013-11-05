@@ -255,7 +255,7 @@ main(int argc, char **argv) {
 	fprintf(stderr, "%s: Error generating implementation skeleton file: %s\n", *ap, err);
       else if (doAssy && (err = w->emitAssyHDL(root)))
 	fprintf(stderr, "%s: Error generating assembly: %s\n", *ap, err);
-      else if (wksFile && !container && (err = w->emitWorkersHDL(root, wksFile)))
+      else if (wksFile && (err = w->emitWorkersHDL(root, wksFile)))
 	fprintf(stderr, "%s: Error generating assembly makefile: %s\n", *ap, err);
       else if (doBsv && (err = w->emitBsvHDL(root)))
 	fprintf(stderr, "%s: Error generating BSV import file: %s\n", *ap, err);

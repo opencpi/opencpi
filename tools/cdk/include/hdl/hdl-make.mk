@@ -32,14 +32,24 @@ $(call OcpiDbgVar,HdlAllFamilies)
 
 
 ################################################################################
-# $(call HdlComponentLibrary,lib,target)
-# Return the actual name (pointing to the target dir) and check for errors
-HdlComponentLibrary=$(strip \
-  $(foreach x,\
-  $(foreach l,$(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/$1),\
-   $(foreach f,$(if $(filter ./,$(dir $2)),,$(dir $2))$(call HdlGetFamily,$(notdir $2)),\
-     $(or $(wildcard $l/hdl/$f),$(wildcard $l/lib/hdl/$f),\
-      $(error Component library '$l' not found at either $l/hdl/$f or $l/lib/hdl/$f)))),$x))
+# $(call HdlComponentLibraryDir,lib,target,stubs?)
+# Return the actual dir name (pointing to the target-specific dir) and check for existence
+# The "lib" argument is what the "user" typed
+#   If it contains "target-", then it is already target specific and is a fake name
+#   of the form ../target-foo/core
+# The "target" argument specifies the target for finding the target-specific dir
+# The "stubs" argument specifies that we're looking for the "bb" library
+HdlComponentLibraryDir=$(strip \
+  $(foreach x,$(strip \
+    $(if $(filter target-%,$(subst /, ,$1)),\
+       $(foreach l,$(dir $1)$(and $3,bb/$(notdir $1)),$(xxxinfo LLL:$l)\
+         $(or $(call HdlExists,$l),\
+           $(error Component library $1 not found/built at $(1$(and $3,bb/$3))))),\
+       $(foreach l,$(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/$1),\
+         $(foreach s,$(if $3,stubs/$(call HdlGetFamily,$2),$(call HdlGetFamily,$2)),\
+           $(or $(wildcard $l/hdl/$s),$(wildcard $l/lib/hdl/$s),\
+                $(error Component library '$1' for target '$2' not found/built at either $l/hdl/$s or $l/lib/hdl/$s)))))),\
+    $(xxxinfo HdlComponentLibraryDir($1,$2,$3)->$x)$x))
 
 HdlComponentCore=$(strip \
   $(foreach l,$(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/$1),\
@@ -71,13 +81,28 @@ HdlXmlComponentLibraries=$(strip \
   $(foreach c,$1,\
    $(foreach d,$(call HdlXmlComponentLibrary,$c),$d $d/hdl)))
 
-# Read the workers file.  Arg1 is the file name(s) of the instance files
+# Read the workers file and set things accordingly
+# 1. Set the instance list, which is a list of <worker-name>:<instance-name>
+# 2. The workers list, which is a list of worker names
+# 3. Add the core file associated with each worker to the cores list,
+#    doing the search through $(ComponentLibraries)
+#    The core for the worker will be _rv if the assembly file is VHDL
+# Note we are silent about workers that don't have cores.
+# FIXME: put in the error check here, but avoid building platform modules like "occp" etc.
 define HdlSetWorkers
-  HdlInstances:=$$(strip $$(foreach i,$$(shell grep -h -v '\\\#' $(ImplWorkersFiles)),\
+  HdlInstances:=$$(strip $$(foreach i,$$(shell grep -h -v '\\\#' $$(ImplWorkersFile)),\
 	               $$(if $$(filter $$(firstword $$(subst :, ,$$i)),$$(HdlPlatformWorkers)),,$$i)))
   HdlWorkers:=$$(call Unique,$$(foreach i,$$(HdlInstances),$$(firstword $$(subst :, ,$$i))))
-#  $$(info Instances are: $$(HdlInstances))
-#  $$(info Workers are: $$(HdlWorkers))
+  override Cores:=$$(call Unique,\
+    $$(Cores) \
+    $$(foreach w,$$(HdlWorkers),\
+      $$(foreach f,$$(strip\
+        $$(firstword \
+          $$(foreach c,$$(ComponentLibraries),\
+            $$(foreach d,$$(call HdlComponentLibraryDir,$$c,$$(HdlTarget)),\
+              $$(call HdlExists,$$d/$$w$$(and $$(HdlToolRealCore),$$(filter %.vhd,$$(ImplFile)),_rv)$$(HdlBin)))))),\
+        $$(call FindRelative,.,$$f))))
+
 endef
 
 
@@ -101,8 +126,8 @@ HdlGetTop=$(strip $(foreach v,$(HdlTopTargets),$(or $(filter $1,$v),$(and $(filt
 # If it is a top level target with one family, return that family
 # Otherwise return the family of the supplied part
 # If the second argument is present,it is ok to return multiple families
-#HdlGetFamily=$(call OcpiDbg,Entering HdlGetFamily($1,$2))$(strip 
-HdlGetFamily=$(strip \
+#HdlGetFamily=$(strip 
+HdlGetFamily=$(call OcpiDbg,Entering HdlGetFamily($1,$2))$(strip \
   $(foreach gf,\
      $(or $(findstring $(1),$(HdlAllFamilies)),$(strip \
           $(if $(findstring $(1),all), \
@@ -150,6 +175,11 @@ HdlName=$(or $(Core),$(LibName))
 HdlLog=$(HdlName)-$(HdlToolSet).out
 HdlTime=$(HdlName)-$(HdlToolSet).time
 HdlCompile=\
+  $(xxxinfo Compile0:$(Cores):$(ImplWorkersFile):$(ImplFile):to-$@) \
+  $(and $(ImplWorkersFile),$(eval $(HdlSetWorkers))) \
+  $(xxxinfo Compile:$(HdlWorkers):$(Cores):$(ImplWorkersFile)) \
+  $(and $(Cores),$(call HdlRecordCores,$(basename $@))$(xxxinfo DONERECORD)) \
+  $(xxxinfo ALLCORES:$(AllCores)) \
   cd $(TargetDir) && \
   $(and $(HdlPreCompile), $(HdlPreCompile) &&)\
   export HdlCommand="set -e; $(HdlToolCompile)"; \
@@ -207,36 +237,42 @@ HdlExists=$(strip $(shell if test -e $1; then echo $1; fi))
 # or core location and a target name.  They return the actual directory of that
 # library/core that the tool wants to see for that target.
 # These are not for component libraries, but a primitive libraries and cores
-# The third argument is just for callers to pass something private to HdlToolLibRef
-HdlLibraryRefDir=$(foreach i,$(call HdlLibraryRefFile,$1,$2,$3),$i)
+HdlLibraryRefDir=$(foreach i,$(call HdlLibraryRefFile,$1,$2),$i)
 
-#strip \
-#  $(foreach r,$(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/hdl/$1),$(strip\
-#    $(if $(wildcard $r/target-$2),$r/target-$2/$(notdir $1),)/$(strip\
-#      $(call HdlToolLibRef,$(notdir $1),$2,$3)))))
-#$(info HCRF:$1,$2,$3)
-
-HdlCRF= $(strip \
+# The first attempt is:
+# If there is a suffix or there is a "target" path component or a component matches the target,
+# Then try the path itself with the suffix
+HdlCRF=$(strip \
   $(foreach r,\
-    $(if $(call HdlExists,$1$(HdlBin)),$1$(HdlBin),\
-      $(if $(call HdlExists,$1/target-$2/$3),$1/target-$2/$3,\
-         $(if $(call HdlExists,$1/$3),$1/$3,\
-            $1/$2/$3))),\
-     $r))
+    $(or $(and $(HdlBin),$(filter $(HdlBin),$(suffix $1)),$(call HdlExists,$1)),$(strip \
+         $(xxxinfo ff:$(filter $2 target-%,$(subst /, ,$1)):$1$(HdlBin))\
+         $(and $(or $(HdlBin),$(filter $2 target-%,$(subst /, ,$1))),$(call HdlExists,$1$(HdlBin)))),$(strip \
+         $(xxxinfo ff1:$(filter $2 target-%,$(subst /, ,$1)):$1$(HdlBin))\
+         $(call HdlExists,$1/target-$2/$3)),$(strip \
+         $(call HdlExists,$1/$3)),$(strip \
+         $(call HdlExists,$1/$2/$3)),\
+	 $1/$2),\
+     $(xxxinfo HCRF:$1,$2,$3->$r,bin:$(HdlBin),t:$(HdlTarget))$r))
+#     $r))
 
-#$(info Result:$1,$2,$3,$r)$r))
 
-
-
-
-
-HdlCoreRef=$(strip \
-  $(foreach d,$(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/hdl/$1),\
+# Check for given target or family target
+HdlCoreRef1=$(strip \
    $(foreach c,$(notdir $1)$(HdlBin),\
-     $(or $(call HdlExists,$(call HdlCRF,$d,$2,$c)),\
-	  $(call HdlExists,$(call HdlCRF,$d,$(call HdlGetFamily,$2),$c)),\
-	$(error No core file ($c) for target "$2" found for "$1".)))))
+     $(or $(call HdlExists,$(call HdlCRF,$1,$2,$c)),\
+	  $(and $2,$(call HdlExists,$(call HdlCRF,$1,$(call HdlGetFamily,$2),$c))))))
 
+# Look everywhere (incluing component libraries), and return an error if not found
+HdlCoreRef=$(strip \
+  $(or $(strip \
+     $(if $(findstring /,$1),\
+         $(call HdlCoreRef1,$1,$2),\
+         $(or $(firstword \
+                 $(foreach l,$(ComponentLibraries),\
+                   $(call HdlCoreRef1,$(call HdlComponentLibraryDir,$l,$2)/$1,))), \
+              $(call HdlCoreRef1,$(OCPI_CDK_DIR)/lib/hdl/$1,$2)))),\
+     $(error No core found for "$1" on target "$2".))\
+)
 
 ################################################################################
 # $(call HdlLibraryRefFile,location-dir,target)
@@ -252,8 +288,8 @@ HdlCoreRef=$(strip \
 HdlLRF=$(strip \
   $(foreach r,\
     $(if $(call HdlExists,$1/target-$2),\
-       $1/target-$2/$(call HdlToolLibraryBuildFile,$(or $3,$(notdir $1))),\
-       $1/$2/$(call HdlToolInstallFile,$(or $3,$(notdir $1)),$t)),\
+       $1/target-$2/$(call HdlToolLibraryBuildFile,$(notdir $1)),\
+       $1/$2/$(call HdlToolInstallFile,$(notdir $1),$t)),\
        $r))
 
 
@@ -265,8 +301,8 @@ HdlLibraryRefFile=$(strip \
   $(foreach r,$(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/hdl/$1),\
     $(foreach f,$(call HdlGetFamily,$2),\
        $(if $(filter $f,$2),\
-          $(call HdlLRF,$r,$2,$3),\
-	  $(or $(call HdlExists,$(call HdlLRF,$r,$2)),$(call HdlLRF,$r,$f,$3))))))
+          $(call HdlLRF,$r,$2),\
+	  $(or $(call HdlExists,$(call HdlLRF,$r,$2)),$(call HdlLRF,$r,$f))))))
 
 # Default for all tools: libraries are directories whose name is the library name itself
 # Return the name of the thing in the build directory (whose name is target-<target>)
@@ -309,6 +345,33 @@ $(call OcpiDbgVar,HdlTargets)
 define HdlSearchComponentLibraries
 override XmlIncludeDirs += $(call HdlXmlComponentLibraries,$(ComponentLibraries))
 endef
+HdlRmRv=$(if $(filter %_rv,$1),$(patsubst %_rv,%,$1),$1)
+
+# Stash all the cores we needed in a file so that tools that do not implement
+# proper hierarchies can include indirectly required cored later
+# Called from HdlCompile which is already tool-specific
+HdlRecordCores=\
+  $(xxxinfo Record:$1:$(Cores))\
+  $(and $(call HdlExists,$(dir $1)),\
+  (\
+   echo '\#' This generated file records cores necessary to build this $(LibName) $(HdlMode); \
+   echo $(foreach c,$(Cores),$(strip\
+           $(call OcpiAbsPath,$(call HdlCoreRef,$(call HdlToolCoreRef,$c),$(HdlTarget))))) \
+  ) > $(call HdlRmRv,$1).cores;)
+
+#	             $(foreach r,$(call HdlRmRv,$(basename $(call HdlCoreRef,$c,$1))),\
+
+HdlCollectCores=$(xxxinfo CCC:$(Cores))$(call Unique,\
+		  $(foreach a,\
+                   $(foreach c,$(Cores),$(xxxinfo ZC:$c)$c \
+	             $(foreach r,$(basename $(call HdlCoreRef,$(call HdlToolCoreRef,$c),$1)),$(xxxinfo ZR:$r)\
+                       $(foreach f,$(call HdlExists,$(call HdlRmRv,$r).cores),$(xxxinfo ZF:$f)\
+                          $(foreach z,$(shell grep -v '\#' $f),$(xxxinfo found:$z)$z)))),$a))
+
+HdlPassTargets=$(and $(HdlTargets),HdlTargets="$(HdlTargets)") \
+               $(and $(HdlTarget),HdlTargets="$(HdlTarget)") \
+               $(and $(HdlPlatforms),HdlPlatforms="$(HdlPlatforms)") \
+               $(and $(HdlPlatform),HdlPlatforms="$(HdlPlatform)")
 
 # Establish where the platforms are
 ifndef HdlPlatformsDir

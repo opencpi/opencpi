@@ -76,6 +76,7 @@ namespace OCPI {
 	  throw OU::Error("bufferSize is below worker's minimum");
         else
 	  getData().data.desc.dataBufferSize = ul;
+      
       const char *s;
       if (OU::findString(params, "xferRole", s)) {
 	PortRole role;
@@ -195,8 +196,12 @@ namespace OCPI {
 	// FIXME: Take any connection-related parameters and make sure both parameter lists have them.
         // Containers know how to do internal connections
         if (&m_container == &otherContainer) {
+#if 0
 	  other.applyConnectParams(NULL, otherParams);
-          connectInside(other, myParams);
+#else
+	  other.setConnectParams(otherParams);
+#endif
+          connectInside(other, myParams, otherParams);
           // Container MAY know how to do intercontainer connections between like containers.
 	  //        } else if (&container().driver() == &otherContainer.driver() &&
 	  //		   connectLike( other, myParams, otherParams))
@@ -217,12 +222,20 @@ namespace OCPI {
 	  if (!m_canBeExternal)
 	    throw OU::Error("Port \"%s\" cannot be connected external to container",
 			    m_metaPort.name);
+#if 1
+	  other.setConnectParams(otherParams);
+	  setConnectParams(myParams);
+	  determineRoles(other.getData().data);
+	  other.startConnect(NULL, otherParams);
+	  startConnect(&other.getData().data, myParams);
+#else
 	  // Start input side (see getInitialProviderInfo below)
 	  other.applyConnectParams(NULL, otherParams);
 	  // Start output side (see setInitialProviderInfo below)
 	  applyConnectParams(&other.getData().data, myParams);
 	  // Enough info established to determine roles
 	  determineRoles(other.getData().data);
+#endif
 	  const Descriptors *outDesc;
 	  Descriptors feedback;
 	  // try to finish output side, possibly producing flow control feedback
@@ -349,17 +362,23 @@ namespace OCPI {
       Descriptors
         &pDesc = isProvider() ? getData().data : other,
         &uDesc = isProvider() ? other : getData().data;
-      ocpiDebug("Port %s, a %s, has options 0x%x, initial role %s, buffers %u size %u",
-		m_metaPort.name, isProvider() ? "provider/consumer" : "user/producer",
+      ocpiInfo("Port %s of %s, a %s, has options 0x%x, initial role %s, buffers %u size %u",
+		m_metaPort.name, worker().name().c_str(), isProvider() ? "provider/consumer" : "user/producer",
 		getData().data.options, roleName[getData().data.role],
 		getData().data.desc.nBuffers, getData().data.desc.dataBufferSize);
-      ocpiDebug("  other has options 0x%x, initial role %s, buffers %u size %u",
+      ocpiInfo("  other has options 0x%x, initial role %s, buffers %u size %u",
 		other.options, roleName[other.role], other.desc.nBuffers, other.desc.dataBufferSize);
       chooseRoles(uDesc.role, uDesc.options, pDesc.role, pDesc.options);
-      ocpiDebug("  after negotiation, port %s, a %s, has role %s,"
+      ocpiInfo("  after negotiation, port %s, a %s, has role %s,"
 		"  other has role %s",
 		m_metaPort.name, isProvider() ? "provider/consumer" : "user/producer",
 		roleName[getData().data.role], roleName[other.role]);
+      size_t maxSize =  pDesc.desc.dataBufferSize;
+      if (uDesc.desc.dataBufferSize > pDesc.desc.dataBufferSize)
+	maxSize = uDesc.desc.dataBufferSize;
+      maxSize = OU::roundUp(maxSize, BUFFER_ALIGNMENT);
+      pDesc.desc.dataBufferSize = uDesc.desc.dataBufferSize = maxSize;
+      ocpiInfo("  after negotiation, buffer size is %zu", maxSize);
       // We must make sure other side doesn't mess with roles anymore.
       uDesc.options |= 1 << MandatedRole;
       pDesc.options |= 1 << MandatedRole;

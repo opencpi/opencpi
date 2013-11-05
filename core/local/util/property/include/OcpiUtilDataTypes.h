@@ -186,10 +186,6 @@ namespace OCPI {
     extern const char *baseTypeNames[];
     extern const char *idlTypeNames[];
     extern unsigned baseTypeSizes[];
-    // FIXME: put this somewhere more sensible.
-    inline unsigned long roundup(unsigned long n, unsigned long grain) {
-      return (n + grain - 1) & ~(grain - 1);
-    }
   }
 }
 #endif

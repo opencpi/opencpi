@@ -5,8 +5,13 @@ package body wci is
 -- convert byte enables to byte offsets
 
 function decode_access(input : in_t) return access_t is
-  variable cmd : ocp.MCmd_t := input.MCmd; -- avoid pedantic aggregate in case expression
+  variable cmd : ocp.MCmd_t;
 begin
+  if input.MReset_n = '0' then
+    cmd := ocp.MCmd_IDLE;
+  else         
+    cmd := input.MCmd;
+  end if;
   case cmd is
     when ocp.MCmd_WRITE => if input.MAddrSpace(0) = '1' then return write_e; else return Error_e; end if;
     when ocp.MCmd_READ  => if input.MAddrSpace(0) = '1' then return Read_e; else return Control_e; end if;

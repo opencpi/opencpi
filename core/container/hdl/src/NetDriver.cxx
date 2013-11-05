@@ -21,6 +21,8 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <arpa/inet.h>
 #include <set>
 #include "OcpiOsMisc.h"
@@ -63,6 +65,7 @@ namespace OCPI {
 	m_endpointSize = ((uint64_t)1) << 32;
 	cAccess().setAccess(NULL, this, OCPI_UTRUNCATE(RegisterOffset, m_endpointSize - sizeof(OccpSpace)));
 	dAccess().setAccess(NULL, this, 0);
+	init(error);
       }
       Device::
       ~Device() {
@@ -156,6 +159,7 @@ namespace OCPI {
 	// Shared "get" that returns value, and *status if status != NULL
       uint32_t Device::
       get(RegisterOffset offset, size_t bytes, uint32_t *status) {
+	ocpiDebug("Accessor read for offset 0x%zx of %zu bytes", offset, bytes);
 	EtherControlRead &ecr =  *(EtherControlRead *)(m_request.payload);
 	ecr.address = htonl((offset & 0xffffff) & ~3);
 	ecr.header.length = htons(sizeof(ecr)-2);

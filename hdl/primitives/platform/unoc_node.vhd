@@ -2,31 +2,27 @@ library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;
 library ocpi; use ocpi.all, ocpi.types.all;
 library work; use work.platform_pkg.all;
 
-entity unoc_node is
+entity unoc_node_rv is
   generic(
-    -- Be a little proactive - this is more control than we have now
-    control          : boolean := false;
-    func             : natural := 0;      -- PCI function
-    offset           : natural := 0;      -- Offset in bar: now 0 or 32k
-    size             : natural := 0;      -- Window size in bar: now 32k
-    up_producer_hack : boolean := false   -- hack described below for compatibility
+    control          : bool_t;
+    position         : ulong_t := to_ulong(0)
     );
   port(
-    CLK, RST_N : in std_logic;
-    up_in      : in  unoc_link_t;
-    up_out     : out unoc_link_t;
-    client_in  : in  unoc_link_t;
-    client_out : out unoc_link_t;
-    down_in    : in  unoc_link_t;
-    down_out   : out unoc_link_t
+    up_in      : in  unoc_master_out_t;
+    up_out     : out unoc_master_in_t;
+    client_in  : in  unoc_master_in_t;
+    client_out : out unoc_master_out_t;
+    down_in    : in  unoc_master_in_t;
+    down_out   : out unoc_master_out_t
     );
-end entity unoc_node;
-architecture rtl of unoc_node is
+end entity unoc_node_rv;
+architecture rtl of unoc_node_rv is
   -- component for verilog
   component mkTLPSM is
     port(
       pfk                 : in std_logic_vector(13 downto 0);
-      CLK, RST_N          : in std_logic;
+      CLK                 : in std_logic;
+      RST_N               : in std_logic;
       -- action method s_request_put
       s_request_put       : in std_logic_vector(152 downto 0);
       EN_s_request_put    : in std_logic ;
@@ -59,45 +55,55 @@ architecture rtl of unoc_node is
       );
   end component mkTLPSM;
   signal pfk : std_logic_vector(15 downto 0);
+  -- local signals for server/uplink request consumer (aka request put)
   signal RDY_s_request_put : std_logic;
-  signal RDY_c0_response_put : std_logic;
-  signal RDY_c1_response_put : std_logic;
   signal EN_s_request_put : std_logic;
+  -- local signals for client response consumer (aka response put)
+  signal RDY_c0_response_put : std_logic;
+  signal EN_c0_response_put : std_logic;
+  -- local signals for downlink response comsumer
+  signal RDY_c1_response_put : std_logic;
+  signal EN_c1_response_put : std_logic;
 begin
-  -- We have an option/hack for the up interface in case it has
-  -- already computed the ENQ signal directly (i.e. is not
-  -- following the "consumer has the and gate" rule)
-  g0: if up_producer_hack generate
-    -- The HACK:
-    -- The outgoing take signal is really "our fifo is not full"
-    -- The incoming valid signal is really "enqueue"
-    up_out.take <= RDY_s_request_put;
-    EN_s_request_put <= up_in.valid;
-  end generate g0;
-  g1: if not up_producer_hack generate
-    -- The NORMAL symmetrical scheme:
-    -- The outoing take signal is a DEQ to the other side computed by us
-    -- The incoming valid signal is an indication of EMPTY_N from the other side
-    EN_s_request_put <= up_in.valid     and RDY_s_request_put;
-    up_out.take <= EN_s_request_put;
-  end generate g1;
-  client_out.take <= client_in.valid and RDY_c0_response_put;
-  down_out.take   <= down_in.valid   and RDY_c1_response_put;
+  -- The outoing take signal is a DEQ to the producer side computed by us
+  -- The incoming valid signal is an indication of not empty from the producer side
+  EN_s_request_put   <= up_in.valid and RDY_s_request_put;
+  up_out.take        <= EN_s_request_put;
+  EN_c0_response_put <= client_in.valid and RDY_c0_response_put;
+  client_out.take    <= EN_c0_response_put;
+  EN_c1_response_put <= down_in.valid and RDY_c1_response_put;
+  down_out.take      <= EN_c1_response_put;
 
-  pfk               <= X"0550" when control else
-                       X"2510" when func = 0 else
-                       X"2519" when func = 1 else
-                       X"251a" when func = 2 else (others => '0');
+  client_out.id      <= up_in.id or std_logic_vector(position(2 downto 0));
+  client_out.clk     <= up_in.clk;
+  client_out.reset_n <= up_in.reset_n;
+
+  down_out.id        <= up_in.id;
+  down_out.clk       <= up_in.clk;
+  down_out.reset_n   <= up_in.reset_n;
+
+
+  -- Fork key - basically a union
+  -- Bits 13:12 is discriminator:
+  --   0 Simple Bar (3 bit Bar in (2:0))
+  --   1 Bus-based (8 bit Bus)
+  --   2 Bar64: (3 bit bar (6:4), 1 bit "high address bit"(3), 3 bit function(2:0))
+  --   3 RouteSub: (4 bit addr(11:8), 8 bit bus number(7:0))
+
+  pfk <= X"0550" when its(control) else       -- match on bar0
+         X"2510" or std_logic_vector(position(2 downto 0));
+        -- match on bar1 and DWAaddr [15:13] == position
+        -- or completion and func == position
          
 sm : mkTLPSM
   port map(
-    pfk => pfk(13 downto 0),
-    CLK => CLK,
-    RST_N => RST_N,
+    pfk   => pfk(13 downto 0),
+    CLK   => up_in.clk,
+    RST_N => up_in.reset_n,
 
     -- action method s_request_put - consumer
     s_request_put => up_in.data,
-    EN_s_request_put => up_in.valid,
+    EN_s_request_put => EN_s_request_put,
     RDY_s_request_put => RDY_s_request_put,
 
     -- actionvalue method s_response_get - producer
@@ -112,7 +118,7 @@ sm : mkTLPSM
 
     -- action method c0_response_put = consumer
     c0_response_put => client_in.data,
-    EN_c0_response_put => client_in.valid,
+    EN_c0_response_put => EN_c0_response_put,
     RDY_c0_response_put => RDY_c0_response_put,
 
     -- actionvalue method c1_request_get - producer
@@ -122,7 +128,7 @@ sm : mkTLPSM
 
     -- action method c1_response_put - consumer
     c1_response_put => down_in.data,
-    EN_c1_response_put => down_in.valid,
+    EN_c1_response_put => EN_c1_response_put,
     RDY_c1_response_put => RDY_c1_response_put
     );
 end architecture rtl;

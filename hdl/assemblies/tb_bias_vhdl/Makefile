@@ -1,4 +1,3 @@
-
 # #####
 #
 #  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
@@ -34,5 +33,4 @@
 #
 ########################################################################### #
 
-Container=mkOCApp-3w.v
-include $(OCPI_CDK_DIR)/include/hdl/hdl-assy.mk
+include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk

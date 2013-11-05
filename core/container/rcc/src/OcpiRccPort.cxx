@@ -190,10 +190,11 @@ namespace OCPI {
 
     // The input/other is already started via startConnect
     void Port::
-    connectInside(OC::Port & input, const OU::PValue *params)
+    connectInside(OC::Port & input, const OU::PValue *myParams, const OU::PValue *otherParams)
     {
       Port &myInput = *static_cast<Port *>(&input);
       ocpiAssert(!m_dtPort);
+#if 0
       // start up the output side with no input information - just for params
       applyConnectParams(NULL, params);
       // We forcibly ignore mandatory transfer roles here:
@@ -202,6 +203,18 @@ namespace OCPI {
       getData().data.role = OCPI::RDT::ActiveMessage;
       // Perform the final negotiation between the input side with all its
       determineRoles(input.getData().data);
+#else
+      // start up the output side with no input information - just for params
+      setConnectParams(myParams);
+      // We forcibly ignore mandatory transfer roles here:
+      input.getData().data.options &= ~OCPI::RDT::MandatedRole;
+      getData().data.options |= OCPI::RDT::MandatedRole;
+      getData().data.role = OCPI::RDT::ActiveMessage;
+      // Perform the final negotiation between the input side with all its
+      determineRoles(input.getData().data);
+      input.startConnect(NULL, otherParams);
+      startConnect(NULL, myParams);
+#endif
       // Setup the output port, providing the collocated input port info, but NOT finalizing
       localConnect(input.dtPort());
       OCPI::RDT::Descriptors feedback;

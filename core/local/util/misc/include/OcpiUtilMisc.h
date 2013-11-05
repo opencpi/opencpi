@@ -345,7 +345,9 @@ namespace OCPI {
 	  return strcmp(lhs, rhs) < 0;
 	}
       };
-
+      inline size_t roundUp (size_t value, size_t align) {
+	return ((value + (align - 1)) / align) * align;
+      }
   }
 }
 

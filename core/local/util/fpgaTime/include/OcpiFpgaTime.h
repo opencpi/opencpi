@@ -87,7 +87,7 @@ namespace  OCPI {
       inline bool ppsLost(){return getStatusReg()&(1<<26) ? true : false;}
       OCPI::OS::uint8_t rollingPPSIn(){return getStatusReg()&0xff;}
 
-      inline void clearStickyBits(){setControlReg(1<<31);}
+      inline void clearStickyBits(){setControlReg(1u<<31);}
       void disableServo(bool d){setControlReg( d?1:0 );}
       void disableGPS(bool d){setControlReg( d?1:0 );}
       void disablePPSIn(bool d){setControlReg( d?1:0 );}

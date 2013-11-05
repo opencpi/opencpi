@@ -22,20 +22,9 @@
 #
 ########################################################################### #
 
-# This file has the HDL tool details for vivado simm
+# This file has the HDL tool details for vivado sim
 
 include $(OCPI_CDK_DIR)/include/hdl/xilinx.mk
-
-################################################################################
-# $(call HdlToolLibraryRefFile,libname,target)
-# Function required by toolset: return the file for dependencies on the library
-# This is attached to a directory, with a slash
-# Thus it is empty if the library is a diretory full of stuff that doesn't
-# have a file name we can predict.
-
-# XST: libraries are named differently depending on the source language
-# so we can't know them unfortunately (for referencing).
-HdlToolLibraryRefFile=
 
 ################################################################################
 # $(call HdlToolLibraryFile,target,libname)
@@ -45,21 +34,12 @@ HdlToolLibraryRefFile=
 # always removed entirely each time it is built.  It is so fast that there is no
 # point in fussing over "incremental" mode.
 # So there not a specific file name we can look for
-HdlToolLibraryFile=$(LibName)
+HdlToolLibraryFile=$2
 
 ################################################################################
 # Function required by toolset: given a list of targets for this tool set
 # Reduce it to the set of library targets.
 HdlToolLibraryTargets=xsim
-################################################################################
-# Variable required by toolset: what is the name of the file or directory that
-# is the thing created when a library is created. The thing that will be installed
-HdlToolLibraryResult=$(LibName)
-################################################################################
-# Variable required by toolset: HdlToolCoreLibName
-# What library name should we give to the library when a core is built from
-# sources
-HdlToolCoreLibName=$(Core)
 ################################################################################
 # Variable required by toolset: HdlBin
 # What suffix to give to the binary file result of building a core

@@ -80,7 +80,7 @@ $(OBJDIR)/%.exe: $(OBJDIR)/%_main.exe
 else
 ifneq ($(filter linux macos,$(OCPI_OS)),)
 $(OBJDIR)/%: $(OBJDIR)/%_main.exe
-	cp -p $< $@; touch $@
+	rm -f $@; cp -p $< $@; touch $@
 else
 ifeq ($(OCPI_OS),vxworksdkm)
 $(OBJDIR)/%.out: $(OBJDIR)/%_main.exe

@@ -63,10 +63,6 @@ inline void *myCrealloc_(void *p, size_t s, size_t o, size_t add) {
 #define myCrealloc(t, p, o, additional) \
   ((t *)myCrealloc_(p, sizeof(t), (o), (additional)))
 
-inline unsigned long roundup(unsigned long n, unsigned long grain) {
-  return (n + grain - 1) & ~(grain - 1);
-}
-
 enum ControlOp {
 #define CONTROL_OP(x, c, t, s1, s2, s3)  ControlOp##c,
   OCPI_CONTROL_OPS
@@ -247,6 +243,7 @@ struct Clock {
   const char *signal;
   Port *port;
   bool assembly; // This clock is at the assembly level
+  size_t ordinal; // within the worker
   Clock();
 };
 class Worker;
@@ -416,6 +413,7 @@ class Worker : public Parsed {
   Assembly *m_assembly;
   Signals m_signals;
   const char *m_library;            // the component library name where the xml was found
+  bool m_outer;                     // only generate the outer skeleton, not the inner one
   Worker(ezxml_t xml, const char *xfile, const char *parent, const char *&err);
   virtual ~Worker();
   static Worker *
@@ -453,13 +451,13 @@ class Worker : public Parsed {
     *emitSkelHDL(const char *),
     *emitBsvHDL(const char *),
     *emitDefsHDL(const char *outDir, bool wrap = false),
-    *emitWorkersHDL(const char *, const char *file),
     *emitVhdlWorkerPackage(FILE *f, unsigned maxPropName),
     *emitVhdlWorkerEntity(FILE *f, unsigned maxPropName),
     *emitVhdlPackageConstants(FILE *f),
     *deriveOCP(),
     *emitAssyHDL(const char *);
   virtual const char
+    *emitWorkersHDL(const char *, const char *file),
     *emitAttribute(const char *attr),
     *emitArtHDL(const char *root, const char *wksFile);
   inline const char *myComment() const { return hdlComment(m_language); }
@@ -468,6 +466,8 @@ class Worker : public Parsed {
     emitRecordSignal(FILE *f, std::string &last, size_t maxPortTypeName, Port *p,
 		     const char *prefix = ""),
     emitWorkers(FILE *f),
+    emitInstances(FILE *f, const char *prefix),
+    emitInternalConnections(FILE *f, const char *prefix),
     emitVhdlShell(FILE *f),
     emitVhdlSignalWrapper(FILE *f, const char *topinst = "rv"),
     emitVhdlRecordWrapper(FILE *f),
@@ -502,12 +502,13 @@ static inline bool masterIn(Port *p) {
 #define BOOL(b) ((b) ? "true" : "false")
 
 #define IMPL_ATTRS "name"
-#define IMPL_ELEMS "componentspec", "properties", "property", "specproperty", "propertysummary", "xi:include", "controlinterface",  "timeservice"
+#define IMPL_ELEMS "componentspec", "properties", "property", "specproperty", "propertysummary", "xi:include", "controlinterface",  "timeservice", "unoc"
 #define GENERIC_IMPL_CONTROL_ATTRS \
   "SizeOfConfigSpace", "ControlOperations", "Sub32BitConfigProperties"
 #define ASSY_ELEMS "instance", "connection"
 extern const char
   *container, *platform, *device, *load, *os, *os_version, **libraries, **mappedLibraries, *assembly, *attribute,
+  *vhdlValue(std::string &value, OU::Value &v),
   *addLibMap(const char *),
   *findLibMap(const char *file), // returns mapped lib name from dir name of file or NULL
   *openOutput(const char *name, const char *outDir, const char *prefix,

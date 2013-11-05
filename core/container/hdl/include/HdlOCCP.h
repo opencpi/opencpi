@@ -81,7 +81,7 @@ namespace OCPI {
         pad1[9],            // 585c6064686c707478
         numRegions,         // 7c
         regions[OCCP_MAX_REGIONS];// 8084888c9094989ca0a4a8acb0b4b8bc
-      HdlUUID uuid;         // 9094989ca0a4a8acb0b4b8bcc0c4c8cc
+      HdlUUID uuid;         // c0...
     } OccpAdminRegisters;
     typedef struct {
       const uint32_t

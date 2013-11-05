@@ -5,7 +5,7 @@
 // These are for all implementaitons whether assembly or written
 #define HDL_TOP_ATTRS "Pattern", "PortPattern", "DataWidth", "Language", "library"
 // These are for implementaitons that you write (e.g. not generated assemblies)
-#define HDL_IMPL_ATTRS GENERIC_IMPL_CONTROL_ATTRS, "RawProperties", "FirstRawProperty"
+#define HDL_IMPL_ATTRS GENERIC_IMPL_CONTROL_ATTRS, "RawProperties", "FirstRawProperty", "outer"
 #define HDL_IMPL_ELEMS "timeinterface", "memoryinterface", "streaminterface", "messageinterface", "signal", "cpmaster", "time_service", "control", "metadata"
 
 // A device type is the common information about a set of devices that can use
@@ -14,7 +14,7 @@
 struct DeviceType;
 typedef std::list<DeviceType *>     DeviceTypes;
 typedef DeviceTypes::const_iterator DeviceTypesIter;
-struct DeviceType : Worker {
+struct DeviceType : public Worker {
   bool         m_interconnect;  // Can this type of device be used for an interconnect?
   bool         m_canControl;    // Can this interconnect worker provide control?
   unsigned     m_count;         // How many of this type of device have we seen?
@@ -39,6 +39,7 @@ struct Device {
 	 const char *&err);
   static const char*
   parseDevices(ezxml_t xml, const char *parent, DeviceTypes &deviceTypes, Devices &devices);
+  DeviceType &deviceType() { ocpiAssert(m_deviceType); return *m_deviceType; }
 };
 
 #define HDL_PLATFORM_ATTRS "dummy", "control"
@@ -64,11 +65,11 @@ class HdlConfig : public Worker {
   HdlPlatform *m_platform;
   //  DeviceTypes m_deviceTypes;  // usually from files, but possibly immediate
   
-  Devices     m_devices;      // basic physical devices
+  Devices     m_devices; // basic physical devices
 public:  
   static HdlConfig *
-  create(ezxml_t xml, const char *xfile, const char *&err);
-  HdlConfig(ezxml_t xml, const char *xfile, const char *&err);
+  create(ezxml_t xml, const char *xfile, size_t &index, const char *&err);
+  HdlConfig(ezxml_t xml, const char *xfile, size_t &index, const char *&err);
   virtual ~HdlConfig();
   HdlPlatform &platform() { assert(m_platform); return *m_platform; }
   Devices &devices() { return m_devices; }
@@ -83,14 +84,21 @@ public:
 // basically connecting external ports to device ports
 // <connection external="foo" device="dev" [port="bar"]/>
 // <device foo>
-#define HDL_CONTAINER_ATTRS "platform", "config", "configuration", "assembly"
+#define HDL_CONTAINER_ATTRS "platform", "config", "configuration", "assembly", "default"
 #define HDL_CONTAINER_ELEMS "connection"
+class HdlAssembly;
 class HdlContainer : public Worker {
-  Worker *m_appAssembly; // FIXME should be HdlAssemnbly type
+  HdlAssembly *m_appAssembly;
   HdlConfig *m_config;
   //  DeviceTypes m_deviceTypes;  // usually from files, but possibly immediate
   
   Devices     m_devices;      // basic physical devices
+  const char *
+  parseConnection(ezxml_t cx, Port *&external, Device *&device,
+		  bool &devInConfig, Port *&port, Port *&interconnect);
+  const char *
+  emitConnection(std::string &assy, Port *external, Port *interconnect,
+		 unsigned &unoc, size_t &index, size_t baseIndex);
 public:  
   static HdlContainer *
   create(ezxml_t xml, const char *xfile, const char *&err);
@@ -107,8 +115,8 @@ public:
 class HdlAssembly : public Worker {
 public:  
   static HdlAssembly *
-  create(ezxml_t xml, const char *xfile, const char *&err);
-  HdlAssembly(ezxml_t xml, const char *xfile, const char *&err);
+  create(ezxml_t xml, const char *xfile, size_t &index, const char *&err);
+  HdlAssembly(ezxml_t xml, const char *xfile, size_t &index, const char *&err);
   virtual ~HdlAssembly();
 };
 

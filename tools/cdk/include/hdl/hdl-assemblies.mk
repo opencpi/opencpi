@@ -41,8 +41,8 @@ all: $(Assemblies)
 .PHONY: $(Assemblies) $(Platforms) $(Targets) clean
 
 $(Assemblies):
-	$(AT)echo =============Building assembly $@ for all targets/platforms
-	$(AT)$(MAKE) -L -C $@ HdlPlatforms="$(HdlPlatforms)" \
+	$(AT)echo =============Building assembly $@
+	$(AT)$(MAKE) -L -C $@ $(HdlPassTargets) $(if $(HdlPlatforms)$(HdlPlatform),,HdlPlatforms=ml605) \
 	       LibDir=$(call AdjustRelative,$(LibDir)) \
 	       GenDir=$(call AdjustRelative,$(GenDir)) \
 	       ComponentLibraries="$(call HdlAdjustLibraries,$(ComponentLibraries))" \

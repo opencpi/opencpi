@@ -53,6 +53,7 @@ namespace OCPI {
 	  // Send the "flush all state - I am a new master" command.
 	  if (error.empty())
 	    command("F", 2, NULL, 0, 5000);
+	  init(error);
 	}
       public:
 	~Device() {

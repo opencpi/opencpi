@@ -1132,7 +1132,7 @@ wire [0:0] wsiS0_SThreadBusy;
 	     wci_wslv_reqF_countReg > 2'd1 || wci_wslv_isReset_isInReset ;
 
   // value method wciS0_sFlag
-  assign wciS0_SFlag = { 1'd1, wci_wslv_sFlagReg, 1'd0 } ;
+  assign wciS0_SFlag = { 1'd0, 1'd1, wci_wslv_sFlagReg } ;
 
   // value method wsiS0_sThreadBusy
   assign wsiS0_SThreadBusy[0] =

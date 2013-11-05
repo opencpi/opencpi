@@ -22,6 +22,7 @@
  */
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <errno.h>
 #include <assert.h>
@@ -43,6 +44,8 @@
 #include "OcpiOsTimer.h"
 #include "OcpiUuid.h"
 #include "OcpiUtilMisc.h"
+#include "OcpiUtilEzxml.h"
+#include "OcpiLibraryManager.h"
 #include "SimServer.h"
 #include "SimDriver.h"
 
@@ -52,7 +55,9 @@ namespace OCPI {
       namespace HN = OCPI::HDL::Net;
       namespace OH = OCPI::HDL;
       namespace OS = OCPI::OS;
+      namespace OL = OCPI::Library;
       namespace OU = OCPI::Util;
+      namespace OX = OCPI::Util::EzXml;
       namespace OE = OCPI::OS::Ether;
 
 
@@ -162,7 +167,8 @@ namespace OCPI {
 	static bool s_exited;
 	uint64_t m_dcp;
 	char m_admin[sizeof(OH::OccpAdminRegisters)];
-	std::string m_script, m_dir, m_app;
+	HdlUUID m_uuid;
+	std::string m_script, m_dir, m_app, m_file;
 	static const unsigned RESP_MIN = 10;
 	static const unsigned RESP_MAX = 14;
 	static const unsigned RESP_LEN = 3; // index in layload buffer where length hides
@@ -199,6 +205,8 @@ namespace OCPI {
 	bool m_xferDone;
 	std::string m_xferError;    // eror occurred during background file transfer
 	int m_xfd;                  // fd for writing local copy of executable
+	char *m_metadata;
+	ezxml_t m_xml;
 	// End local state for executable file transfer
 	Sim(std::string &simDir, std::string &script, const std::string &platform,
 	    uint8_t spinCount, unsigned sleepUsecs, unsigned simTicks, bool verbose, bool dump,
@@ -216,7 +224,7 @@ namespace OCPI {
 	    m_respLeft(0), m_respPtr(NULL), m_platform(platform), m_verbose(verbose),
 	    m_dump(dump), m_spinning(false), m_sleepUsecs(sleepUsecs), m_simTicks(simTicks),
 	    m_spinCount(spinCount), m_cumTicks(0), m_xferSrvr(NULL), m_xferSckt(NULL),
-	    m_xferSize(0), m_xferCount(0), m_xferDone(false), m_xfd(-1)
+	    m_xferSize(0), m_xferCount(0), m_xferDone(false), m_xfd(-1), m_metadata(NULL), m_xml(NULL)
 	{
 	  if (error.length())
 	    return;
@@ -249,7 +257,7 @@ namespace OCPI {
 	  ocpiDebug("resp %d ack %d nfds %d", m_resp.m_rfd, m_ack.m_rfd, m_maxFd);
 	  std::string plat(m_platform);
 	  plat += "_pf";
-	  Server::initAdmin(*(OH::OccpAdminRegisters*)m_admin, plat.c_str(), &m_textUUID);
+	  Server::initAdmin(*(OH::OccpAdminRegisters*)m_admin, plat.c_str(), m_uuid, &m_textUUID);
 	  m_name = "sim:";
 	  m_name += m_clients.front()->ifAddr().pretty();
 	  if (verbose) {
@@ -268,6 +276,10 @@ namespace OCPI {
 	    m_clients.pop_front();
 	    delete s;
 	  }
+	  if (m_metadata)
+	    delete [] m_metadata;
+	  if (m_xml)
+	    ezxml_free(m_xml);
 	}
 	const char *uuid() const { return m_textUUID; }
 	void addFd(int fd, bool always) {
@@ -366,16 +378,60 @@ namespace OCPI {
 	//  from loadRun when we are not transfering the file
 	//  from doServer when we are done transferring the file (the 'R' command)
 	bool
-	finishLoadRun(const char *file, char *response, std::string &err) {
+	finishLoadRun(char *response, std::string &err) {
 	  *response = 'E';
 	  assert(!m_xferSrvr);
+	  try {
+	    if (!(m_metadata = OL::Artifact::getMetadata(m_exec.c_str()))) {
+	      OU::format(err, "simulation executable file '%s' is not valid: cannot find metadata",
+			 m_exec.c_str());
+	      return true;
+	    }
+	  } catch (std::string &s) {
+	    OU::format(err, "When processing simulation executable file '%s': %s",
+		       m_exec.c_str(), s.c_str());
+	    return true;
+	  }
+	  if (!(m_xml = ezxml_parse_str(m_metadata, strlen(m_metadata)))) {
+	    OU::format(err, "invalid metadata in binary/artifact file \"%s\": bad xml",
+		       m_exec.c_str());
+	    return true;
+	  }
+	  char *xname = ezxml_name(m_xml);
+	  if (!xname || strcasecmp("artifact", xname)) {
+	    OU::format(err, "invalid metadata in binary/artifact file \"%s\": no <artifact/>",
+		       m_exec.c_str());
+	    return true;
+	  }
+	  std::string platform;
+	  const char *e = OX::getRequiredString(m_xml, platform, "platform", "artifact");
+	  if (e) {
+	    OU::format(err, "invalid metadata in binary/artifact file \"%s\": %s",
+		       m_exec.c_str(), e);
+	    return true;
+	  }
+	  if (!strcmp("_pf", platform.c_str() + platform.length() - 3))
+	    platform.resize(platform.length() - 3);
+	  if (platform != m_platform) {
+	    OU::format(err, "simulator platform mismatch:  executable (%s) has '%s', we are '%s'",
+		       m_exec.c_str(), platform.c_str(), m_platform.c_str());
+	    return true;
+	  }
+	  std::string uuid;
+	  e = OX::getRequiredString(m_xml, uuid, "uuid", "artifact");
+	  if (e) {
+	    OU::format(err, "invalid metadata in binary/artifact file \"%s\": %s",
+		       m_exec.c_str(), e);
+	    return true;
+	  }
+	  ocpiInfo("Bitstream %s has uuid %s", m_exec.c_str(), uuid.c_str());
 	  std::string untar;
 	  OU::format(untar,
 		     "set -e; file=%s; "
 		     "xlength=`tail -1 $file | sed 's/^.*X//'` && "
 		     "trimlength=$(($xlength + ${#xlength} + 2)) && "
 		     "head -c -$trimlength < $file | tar -xzf - -C %s",
-		     file, m_dir.c_str());
+		     m_exec.c_str(), m_dir.c_str());
 	  ocpiDebug("Executing command to load bit stream for sim: %s", untar.c_str());
 	  int rc = system(untar.c_str());
 	  switch (rc) {
@@ -393,7 +449,7 @@ namespace OCPI {
 	    if (m_verbose)
 	      fprintf(stderr, "Executable/bitstream is installed and ready, in directory %s.\n",
 		      m_dir.c_str());
-	    ocpiInfo("Successfully loaded bitstream file: \"%s\" for simulation", file);
+	    ocpiInfo("Successfully loaded bitstream file: \"%s\" for simulation", m_exec.c_str());
 	    break;
 	  }
 	  std::string cmd;
@@ -403,7 +459,7 @@ namespace OCPI {
 	    err = " The OCPI_CDK_DIR environment variable is not set";
 	    return true;
 	  }
-	  OU::format(cmd, "exec %s %s req=%s resp=%s ctl=%s ack=%s", m_script.c_str(), m_app.c_str(),
+	  OU::format(cmd, "exec %s %s req=%s resp=%s ctl=%s ack=%s", m_script.c_str(), m_file.c_str(),
 		     m_req.m_name.c_str(), m_resp.m_name.c_str(), m_ctl.m_name.c_str(),
 		     m_ack.m_name.c_str());
 
@@ -412,7 +468,7 @@ namespace OCPI {
       
 	  if (m_verbose)
 	    fprintf(stderr, "Starting execution of simulator for HDL assembly: %s "
-		    "(executable \"%s\").\n", m_app.c_str(), file);
+		    "(executable \"%s\").\n", m_app.c_str(), m_exec.c_str());
 	  switch ((s_pid = fork())) {
 	  case 0:
 	    if (chdir(m_dir.c_str()) != 0) {
@@ -440,7 +496,7 @@ namespace OCPI {
 	    }
 	    break; // not used.
 	  case -1:
-	    OU::format(err, "Could not create simulator sub-process for: %s", file);
+	    OU::format(err, "Could not create simulator sub-process for: %s", m_exec.c_str());
 	    return true;
 	  default:
 	    ocpiInfo("Simluator subprocess has pid: %u.", s_pid);
@@ -472,9 +528,9 @@ namespace OCPI {
 	loadRun(const char *file, uint64_t size, char *response, std::string &err) {
 	  *response = 'E';
 	  if (m_verbose)
-	    fprintf(stderr, "Initializing simulator from %s executable/bitstream: %s\n",
+	    fprintf(stderr, "Initializing %s simulator from executable/bitstream: %s\n",
 		    m_platform.c_str(), file);
-	  ocpiDebug("Starting the simulator load of %s bitstream: %s", m_platform.c_str(), file);
+	  ocpiDebug("Starting the %s simulator loading bitstream file: %s", m_platform.c_str(), file);
 	  // First establish a directory for the simulation based on the name of the file
 	  const char 
 	    *slash = strrchr(file, '/'),
@@ -489,18 +545,10 @@ namespace OCPI {
 	    return true;
 	  }
 	  slash = slash ? slash + 1 : file;
-	  std::string plat(suff + 1, (dot - suff) - 1);
+	  m_file.assign(slash, dot - slash);
 	  m_app.assign(slash, suff - slash),
 	  m_dir = m_app;
     
-	  if (!strcmp("_pf", plat.c_str() + plat.length() - 3))
-	    plat.resize(plat.length() - 3);
-	  if (plat != m_platform) {
-	    OU::format(err, "simulator platform mismatch:  executable is %s for platform %s",
-		       file, m_platform.c_str());
-	    return true;
-	  }
-
 	  char date[100];
 	  time_t now = time(NULL);
 	  struct tm nowtm;
@@ -510,19 +558,21 @@ namespace OCPI {
 	  m_dir += m_platform;
 	  m_dir += date;
 	  ocpiDebug("Sim executable is %s, app is %s, platform is %s dir is %s",
-		    file, m_app.c_str(), plat.c_str(), m_dir.c_str());
+		    file, m_app.c_str(), m_platform.c_str(), m_dir.c_str());
 	  if (mkdir(m_dir.c_str(), 0777) != 0 && errno != EEXIST) {
 	    OU::format(err, "Can't create directory %s to run simulation", m_dir.c_str());
 	    return true;
+	  }
+	  // At this point we are ready to actually receive the file.
+	  // If the client is local, we try and ready it directly (from "file"), otherwise
+	  if (size == 0) {
+	    m_exec = file;
+	    return finishLoadRun(response, err);
 	  }
 	  // This name is the local name for when a copy is made
 	  m_exec = m_dir;
 	  m_exec += '/';
 	  m_exec += slash; // remember file name, whether local or not
-	  // At this point we are ready to actually receive the file.
-	  // If the client is local, we try and ready it directly (from "file"), otherwise
-	  if (size == 0)
-	    return finishLoadRun(file, response, err);
 	  m_xferSize = size;
 	  m_xferCount = 0;
 	  // The file is remote.
@@ -676,7 +726,7 @@ namespace OCPI {
 			   m_xferCount, m_xferSize);
 	      } else
 		// So everything is ok.  Let's try running the sim
-		finishLoadRun(m_exec.c_str(), response, error);
+		finishLoadRun(response, error);
 	      delete m_xferSckt;
 	      m_xferSckt = NULL;
 	      break;
@@ -716,7 +766,7 @@ namespace OCPI {
 	  HN::EtherControlMessageType action = OCCP_ETHER_MESSAGE_TYPE(pkt.header.typeEtc);
 	  pkt.header.typeEtc = OCCP_ETHER_TYPE_ETC(HN::OCCP_RESPONSE, HN::OK, uncache, 0);
 	  //ocpiDebug("Got message");
-	  uint32_t offset;
+	  size_t offset;
 	  ssize_t len;
 	  switch (action) {
 	  default:
@@ -726,15 +776,64 @@ namespace OCPI {
 	  case HN::OCCP_WRITE:
 	    offset = ntohl(pkt.write.address); // for read or write
 	    len = sizeof(HN::EtherControlWriteResponse);
-	    if (offset > sizeof(m_admin))
-	      ocpiDebug("Write offset out of range: 0x%" PRIx32 "\n", offset);
-	    else
+	    if (offset <= sizeof(m_admin))
 	      *(uint32_t *)(&((char *)&m_admin) [offset]) = ntohl(pkt.write.data);
+	    else if (offset >= offsetof(OccpSpace,config))
+	      if ((offset - offsetof(OccpSpace,config)) >= sizeof(m_uuid))
+		ocpiBad("Write offset out of range: 0x%zx", offset);
+	      else {
+		offset -= offsetof(OccpSpace,config);
+		*(uint32_t *)(&((char *)&m_uuid) [offset]) = ntohl(pkt.write.data);
+	      }
+	    else if (offset >= offsetof(OccpSpace, worker)) {
+	      if ((offset - offsetof(OccpSpace, worker)) >= sizeof(OccpWorker))
+		ocpiBad("Write offset out of range: 0x%zx", offset);
+	      else {
+		switch (offset - offsetof(OccpSpace, worker)) {
+		case offsetof(OccpWorkerRegisters, control):
+		case offsetof(OccpWorkerRegisters, clearError):
+		case offsetof(OccpWorkerRegisters, window):
+		  break;
+		default:
+		  ocpiBad("Write offset out of range: 0x%zx", offset);
+		}
+	      }
+	    } else
+	      ocpiBad("Write offset out of range: 0x%zx", offset);
 	    break;
 	  case HN::OCCP_READ:
 	    offset = ntohl(pkt.read.address); // for read or write
 	    len = sizeof(HN::EtherControlReadResponse);
-	    pkt.readResponse.data = htonl(*(uint32_t *)(&((char *)&m_admin) [offset]));
+	    ocpiDebug("Read command, offset 0x%zx", offset);
+	    if (offset <= sizeof(m_admin))
+	      pkt.readResponse.data = htonl(*(uint32_t *)(&((char *)&m_admin)[offset]));
+	    else if (offset >= offsetof(OccpSpace,config))
+	      if ((offset - offsetof(OccpSpace,config)) >= sizeof(m_uuid)+sizeof(uint64_t))
+		ocpiBad("Read offset out of range1: 0x%zx", offset);
+	      else {
+		offset -= offsetof(OccpSpace,config);
+		pkt.readResponse.data = htonl(*(uint32_t *)(&((char *)&m_uuid)[offset]));
+	      }
+	    else if (offset >= offsetof(OccpSpace, worker)) {
+	      if ((offset - offsetof(OccpSpace, worker)) >= sizeof(OccpWorker))
+		ocpiBad("Read offset out of range2: 0x%zx", offset);
+	      else {
+		offset -= offsetof(OccpSpace, worker);
+		switch (offset) {
+		case offsetof(OccpWorkerRegisters, initialize):
+		case offsetof(OccpWorkerRegisters, start):
+		  pkt.readResponse.data = htonl(OCCP_SUCCESS_RESULT);
+		  break;
+		case offsetof(OccpWorkerRegisters, status):
+		default:
+		  pkt.readResponse.data = 0; // no errors
+		}
+	      }
+	    } else  {
+	      ocpiBad("Read offset out of range3: 0x%zx", offset);
+	      pkt.readResponse.data = 0xa5a5a5a5;
+	    }
+	    ocpiDebug("Read command response: 0x%"PRIx32, ntohl(pkt.readResponse.data));
 	    break;
 	  case HN::OCCP_NOP:
 	    len = sizeof(HN::EtherControlNopResponse);
@@ -1103,7 +1202,8 @@ namespace OCPI {
       }
 
       void Server::
-      initAdmin(OH::OccpAdminRegisters &admin, const char *platform, OU::UuidString *uuidString) {
+      initAdmin(OH::OccpAdminRegisters &admin, const char *platform, HdlUUID &hdlUuid,
+		OU::UuidString *uuidString) {
 	memset(&admin, 0, sizeof(admin));
 #define unconst32(a) (*(uint32_t *)&(a))
 #define unconst64(a) (*(uint64_t *)&(a))
@@ -1134,13 +1234,13 @@ namespace OCPI {
 	}
 	OH::HdlUUID temp;
 	temp.birthday = OCPI_UTRUNCATE(uint32_t,time(0) + 1);
-	memcpy(temp.uuid, uuid, sizeof(admin.uuid.uuid));
+	memcpy(temp.uuid, uuid, sizeof(uuid));
 	strcpy(temp.platform, platform);
 	strcpy(temp.device, "devemu");
 	strcpy(temp.load, "ld");
 	strcpy(temp.dna, "\001\002\003\004\005\006\007");
 	for (unsigned n = 0; n < sizeof(OH::HdlUUID); n++)
-	  ((uint8_t*)&admin.uuid)[n] = ((uint8_t *)&temp)[(n & ~3) + (3 - (n&3))];
+	  ((uint8_t*)&hdlUuid)[n] = ((uint8_t *)&temp)[(n & ~3) + (3 - (n&3))];
       }
     }
   }

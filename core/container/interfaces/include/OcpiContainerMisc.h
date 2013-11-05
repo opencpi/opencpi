@@ -45,9 +45,6 @@ namespace OCPI {
   namespace Container {
     typedef OCPI::Util::ApiError ApiError;
 
-    inline unsigned long roundup(unsigned long n, unsigned long grain) {
-      return (n + grain - 1) & ~(grain - 1);
-    }
     unsigned long getNum(const char *s);
     // Used for application and infrastructure WCI things.
     unsigned long getAttrNum(ezxml_t x, const char *attr, bool missingOK = false, bool *found = 0);

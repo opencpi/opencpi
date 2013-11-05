@@ -1111,13 +1111,13 @@ namespace OCPI
           myDesc.emptyFlagBaseAddr = 0;
 
           size_t nAlloc =
-              OC::roundup ( myDesc.dataBufferPitch * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN) +
-              OC::roundup ( myDesc.metaDataPitch * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN) +
-              OC::roundup ( sizeof(uint32_t) * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN) + // local flags
+              OU::roundUp( myDesc.dataBufferPitch * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN) +
+              OU::roundUp( myDesc.metaDataPitch * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN) +
+              OU::roundUp( sizeof(uint32_t) * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN) + // local flags
               // These might actually be remote
-              OC::roundup ( sizeof(uint32_t) * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN) + // remote flags
+              OU::roundUp( sizeof(uint32_t) * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN) + // remote flags
               // These might not be needed if we are ActiveFlowControl
-              OC::roundup ( sizeof(uint32_t) * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN);
+              OU::roundUp( sizeof(uint32_t) * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN);
 
           // FIXME how do we set these?
           uint16_t mailbox = 6;
@@ -1144,7 +1144,7 @@ namespace OCPI
 
           myDesc.dataBufferBaseAddr = OCPI_UTRUNCATE(DtOsDataTypes::Offset, allocation);
           uint8_t* buffer = allocation;
-          allocation += OC::roundup(myDesc.dataBufferPitch * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN);
+          allocation += OU::roundUp(myDesc.dataBufferPitch * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN);
 
           for ( size_t n = 0; n < myDesc.nBuffers; n++ )
           {
@@ -1153,15 +1153,15 @@ namespace OCPI
           }
 
           myDesc.metaDataBaseAddr = OCPI_UTRUNCATE(DtOsDataTypes::Offset, allocation);
-          allocation += OC::roundup(myDesc.metaDataPitch * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN);
+          allocation += OU::roundUp(myDesc.metaDataPitch * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN);
 
           localFlags = (uint32_t*)allocation;
           local = localFlags;
-          allocation += OC::roundup(sizeof(uint32_t) * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN);
+          allocation += OU::roundUp(sizeof(uint32_t) * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN);
 
           remoteFlags = (uint32_t*)allocation;
           remote = remoteFlags;
-          allocation += OC::roundup(sizeof(uint32_t) * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN);
+          allocation += OU::roundUp(sizeof(uint32_t) * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN);
 
           farFlags = (uint32_t*)allocation;
           shadow = farFlags;
@@ -1266,7 +1266,8 @@ namespace OCPI
         // Connection between two ports inside this container
         // We know they must be in the same artifact, and have a metadata-defined connection
         void connectInside ( OC::Port& provider,
-                             const OA::PValue* /*myProps*/)
+                             const OA::PValue* /*myProps*/,
+                             const OA::PValue* /*otherProps*/)
         {
           // We're both in the same runtime artifact object, so we know the port class
           Port& pport = static_cast<Port&>(provider);
@@ -1594,13 +1595,13 @@ namespace OCPI
           // Allocate my local memory, making everything on a nice boundary.
           // (assume empty flag pitch same as full flag pitch)
           size_t nAlloc =
-              OC::roundup ( myDesc.dataBufferPitch * nLocal, OCLDP_LOCAL_BUFFER_ALIGN) +
-              OC::roundup ( myDesc.metaDataPitch * nLocal, OCLDP_LOCAL_BUFFER_ALIGN) +
-              OC::roundup ( sizeof(uint32_t) * nLocal, OCLDP_LOCAL_BUFFER_ALIGN) + // local flags
+              OU::roundUp( myDesc.dataBufferPitch * nLocal, OCLDP_LOCAL_BUFFER_ALIGN) +
+              OU::roundUp( myDesc.metaDataPitch * nLocal, OCLDP_LOCAL_BUFFER_ALIGN) +
+              OU::roundUp( sizeof(uint32_t) * nLocal, OCLDP_LOCAL_BUFFER_ALIGN) + // local flags
               // These might actually be remote
-              OC::roundup ( sizeof(uint32_t) * nLocal, OCLDP_LOCAL_BUFFER_ALIGN) + // remote flags
+              OU::roundUp( sizeof(uint32_t) * nLocal, OCLDP_LOCAL_BUFFER_ALIGN) + // remote flags
               // These might not be needed if we are ActiveFlowControl
-              OC::roundup ( sizeof(uint32_t) * nFar, OCLDP_LOCAL_BUFFER_ALIGN);
+              OU::roundUp( sizeof(uint32_t) * nFar, OCLDP_LOCAL_BUFFER_ALIGN);
 
           // FIXME where do we get the mailbox information?
           uint16_t mailbox = 7;
@@ -1624,20 +1625,20 @@ namespace OCPI
 
           // Resuing the far data buffers
           localData = reinterpret_cast<uint8_t*>(myDesc.dataBufferBaseAddr);
-          allocation += OC::roundup(myDesc.dataBufferPitch * nLocal, OCLDP_LOCAL_BUFFER_ALIGN);
+          allocation += OU::roundUp(myDesc.dataBufferPitch * nLocal, OCLDP_LOCAL_BUFFER_ALIGN);
 
           // Resuing the far metadata buffers
           metadata = reinterpret_cast<OclDpMetadata*>(myDesc.metaDataBaseAddr);
-          allocation += OC::roundup(myDesc.metaDataPitch * nLocal, OCLDP_LOCAL_BUFFER_ALIGN);
+          allocation += OU::roundUp(myDesc.metaDataPitch * nLocal, OCLDP_LOCAL_BUFFER_ALIGN);
 
           uint32_t* localFlags = (uint32_t*)allocation;
           local = localFlags;
-          allocation += OC::roundup(sizeof(uint32_t) * nLocal, OCLDP_LOCAL_BUFFER_ALIGN);
+          allocation += OU::roundUp(sizeof(uint32_t) * nLocal, OCLDP_LOCAL_BUFFER_ALIGN);
 
           uint32_t* remoteFlags = (uint32_t*)allocation;
           remote = remoteFlags;
 
-          allocation += OC::roundup(sizeof(uint32_t) * nLocal, OCLDP_LOCAL_BUFFER_ALIGN);
+          allocation += OU::roundUp(sizeof(uint32_t) * nLocal, OCLDP_LOCAL_BUFFER_ALIGN);
           uint32_t* farFlags = (uint32_t*)allocation;
           shadow = farFlags;
 

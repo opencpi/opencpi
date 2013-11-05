@@ -25,7 +25,7 @@ function bad {
 #pos=${2:-1}
 #echo part "$part" pos "$pos" port "$port"
 #echo PORT IS $port
-imp="$OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact -batch"
+imp="$OCPI_XILINX_TOOLS_DIR/*/bin/lin64/impact -batch"
 for pp in 1 2 3 4 5 6 7 8 9; do
   echo setMode -bs/setCable -p $port/identify/readidcode -p $pp | tr / \\n | $imp  2> $tlog 1>&2
   last=$?

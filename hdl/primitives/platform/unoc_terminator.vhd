@@ -4,9 +4,8 @@ library work; use work.platform_pkg.all;
 
 entity unoc_terminator is
   port(
-    CLK, RST_N : in std_logic;
-    up_in      : in  unoc_link_t;
-    up_out     : out unoc_link_t;
+    up_in      : in  unoc_master_out_t;
+    up_out     : out unoc_master_in_t;
     drop_count : out unsigned(7 downto 0)
     );
 end entity unoc_terminator;
@@ -17,10 +16,10 @@ begin
   up_out.valid <= '0';
   up_out.take  <= up_in.valid;
   drop_count   <= count;
-  process (clk) is
+  process (up_in.clk) is
   begin
-    if rising_edge(clk) then
-      if rst_n = '0' then
+    if rising_edge(up_in.clk) then
+      if up_in.reset_n = '0' then
         count <= (others => '0');
       elsif up_in.valid = '1' and count /= 255 then
         count <= count + 1;

@@ -56,7 +56,6 @@ ifdef HdlToolRealCore
 define DoCore
 CoreResults+=$(OutDir)target-$1/$2$(HdlBin)
 $(OutDir)target-$1/$2$(HdlBin): override HdlTarget:=$1
-#$(OutDir)target-$1/$2$(HdlBin): LibName=$(HdlToolCoreLibName)
 $(OutDir)target-$1/$2$(HdlBin): TargetDir=$(OutDir)target-$1
 $(OutDir)target-$1/$2$(HdlBin): | $$$$(TargetDir)
 $(OutDir)target-$1/$2$(HdlBin): Core=$2
@@ -74,11 +73,13 @@ $(OutDir)target-$(1)/$(2)$(HdlBin): $(PreBuiltCore)
 else
 $(call OcpiDbgVar,CompiledSourceFiles)
 $$(call OcpiDbgVar,CompiledSourceFiles)
-$(OutDir)target-$(1)/$(2)$(HdlBin): \
+$(OutDir)target-$1/$2$(HdlBin): \
    HdlSources=$$(filter-out $$(filter-out %.vhd,$$(CoreBlackBoxFiles)),$$(CompiledSourceFiles))
-$(OutDir)target-$(1)/$(2)$(HdlBin): \
+$(OutDir)target-$1/$2$(HdlBin): AllCores=$(call HdlCollectCores,$1)
+$(OutDir)target-$1/$2$(HdlBin): $$$$(HdlPreCore) \
       $$(filter-out $$(filter-out %.vhd,$$(CoreBlackBoxFiles)) $$(TargetSourceFiles),$$(CompiledSourceFiles)) 
 	$(AT)echo Building $(and $(filter-out core,$(HdlMode))) core \"$(2)\" for target \"$$(HdlTarget)\"
+	$(AT)$$(call HdlRecordCores,$(basename $(OutDir)target-$1/$2))
 	$(AT)$$(HdlCompile)
 endif
 
@@ -90,11 +91,13 @@ $(call OcpiDbgVar,CompiledSourceFiles,b2 )
 $(call OcpiDbgVar,HdlActualTargets)
 $(call OcpiDbgVar,HdlCores)
 #$(foreach t,$(HdlActualTargets),$(eval $(call DoCore,$(t),$(Core))))
+ifneq ($(MAKECMDGOALS),clean)
 $(foreach t,$(HdlActualTargets),\
   $(foreach both,$(join $(HdlCores),$(Tops:%=:%)),\
     $(foreach core,$(word 1,$(subst :, ,$(both))),\
      $(foreach top,$(word 2,$(subst :, ,$(both))),\
        $(eval $(call DoCore,$t,$(core),$(top)))))))
+endif
 $(call OcpiDbgVar,CompiledSourceFiles,b3 )
 
 ifdef Imports
@@ -170,7 +173,7 @@ $(HdlCoreBBInstallDir):
 install_bb: | $(HdlCoreBBInstallDir)
 	$(AT)for f in $(HdlFamilies); do \
 	   $(call ReplaceContentsIfDifferent,$(strip \
-               $(OutDir)target-$$f/bb/$(HdlToolLibraryResult)),$(strip \
+               $(OutDir)target-$$f/bb/$(LibName)),$(strip \
 	       $(HdlCoreBBInstallDir)/$$f)); \
 	   done
 install: install_bb

@@ -985,7 +985,7 @@ module mkWSIPatternWorker4B(wciS0_Clk,
 	     wci_wslv_reqF_countReg > 2'd1 || wci_wslv_isReset_isInReset ;
 
   // value method wciS0_sFlag
-  assign wciS0_SFlag = { 1'd1, wci_wslv_sFlagReg, 1'd0 } ;
+  assign wciS0_SFlag = { 1'd0, 1'd1, wci_wslv_sFlagReg } ;
 
   // value method wsiM0_mCmd
   assign wsiM0_MCmd = wsiM_sThreadBusy_d ? 3'd0 : wsiM_reqFifo_q_0[60:58] ;
@@ -1594,7 +1594,11 @@ module mkWSIPatternWorker4B(wciS0_Clk,
       WILL_FIRE_RL_wci_cfwr:
 	  MUX_wci_wslv_respF_q_0$write_1__VAL_2 = 34'h1C0DE4201;
       default: MUX_wci_wslv_respF_q_0$write_1__VAL_2 =
+`ifdef not
 		   34'h2AAAAAAAA /* unspecified value */ ;
+`else
+		   34'h0AAAAAAAA /* unspecified value */ ;
+`endif
     endcase
   end
   assign MUX_wci_wslv_respF_q_1$write_1__VAL_1 =
@@ -2392,7 +2396,11 @@ module mkWSIPatternWorker4B(wciS0_Clk,
       WILL_FIRE_RL_wci_wslv_respF_decCtr:
 	  wci_wslv_respF_q_1$D_IN = 34'h0AAAAAAAA;
       default: wci_wslv_respF_q_1$D_IN =
+`ifdef not
 		   34'h2AAAAAAAA /* unspecified value */ ;
+`else
+		   34'h0AAAAAAAA /* unspecified value */ ;
+`endif
     endcase
   end
   assign wci_wslv_respF_q_1$EN =
@@ -3446,8 +3454,13 @@ module mkWSIPatternWorker4B(wciS0_Clk,
     wci_wslv_nState = 3'h2;
     wci_wslv_reqF_countReg = 2'h2;
     wci_wslv_respF_c_r = 2'h2;
+`ifdef not
     wci_wslv_respF_q_0 = 34'h2AAAAAAAA;
     wci_wslv_respF_q_1 = 34'h2AAAAAAAA;
+`else
+    wci_wslv_respF_q_0 = 34'h0AAAAAAAA;
+    wci_wslv_respF_q_1 = 34'h0AAAAAAAA;
+`endif
     wci_wslv_sFlagReg = 1'h0;
     wci_wslv_sThreadBusy_d = 1'h0;
     wsiM_burstKind = 2'h2;

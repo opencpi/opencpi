@@ -1,5 +1,0 @@
-<HdlContainer>
-  <Instance name="pattern" Index="2"/>
-  <Instance Name="bias_vhdl" Index="3"/>
-  <Instance name="capture" Index="4"/>
-</HdlContainer>

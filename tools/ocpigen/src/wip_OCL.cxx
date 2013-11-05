@@ -73,7 +73,7 @@ printMember(FILE *f, OU::Member *t, const char *prefix, size_t &offset, unsigned
   if (rem)
     fprintf(f, "%s  char         pad%u_[%zu];\n",
 	    prefix, pad++, t->m_align - rem);
-  offset = roundup(offset, t->m_align);
+  offset = OU::roundUp(offset, t->m_align);
   if (t->m_isSequence) {
     fprintf(f, "%s  uint32_t     %s_length;\n", prefix, t->m_name.c_str());
     if (t->m_align > sizeof(uint32_t))
@@ -83,7 +83,7 @@ printMember(FILE *f, OU::Member *t, const char *prefix, size_t &offset, unsigned
   }
   fprintf(f, "%s  %-12s %s", prefix, oclTypes[t->m_baseType], t->m_name.c_str());
   if (t->m_baseType == OA::OCPI_String)
-    fprintf(f, "[%lu]", roundup(t->m_stringLength + 1, 4));
+    fprintf(f, "[%lu]", OU::roundUp(t->m_stringLength + 1, 4));
   if (t->m_isSequence || t->m_arrayRank)
     fprintf(f, "[%zu]", t->m_sequenceLength);
   fprintf(f, "; // offset %zu, 0x%zx\n", offset, offset);

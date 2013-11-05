@@ -10528,7 +10528,16 @@ module mkOCCP(
   assign MUX_wci_respF_1$enq_1__VAL_1 =
 	     (wci_wciResponse_1$wget[33:32] == 2'd0) ?
 	       34'h1C0DE4203 : 
+`ifdef not
 	       wci_wciResponse_1$wget ;
+`else
+	      // If an OCP error response or OCP fail response, with something pending,
+	      // Return the error code, whatever the op (config wrt, read, control op)
+	      ((wci_wciResponse_1$wget[33:32] == 2'd3 || wci_wciResponse_1$wget[33:32] == 2'd2) &&
+	       wci_reqPend_1 != 2'd0 ? 34'h1C0DE4202 :
+	       // This is success.  Return success code for ctlop or cfgwrt, but data for cfg read
+	       (wci_reqPend_1 == 2'd1 || wci_reqPend_1 == 2'd3 ? 34'h1C0DE4201 : wci_wciResponse_1$wget));
+`endif	       
   assign MUX_wci_respF_1$enq_1__VAL_2 = { 2'd1, wci_wStatus_1 } ;
   assign MUX_wci_respF_1$enq_1__VAL_3 = { 2'd1, x_data__h104810 } ;
   assign MUX_wci_respF_1$enq_1__VAL_4 = { 2'd1, x_data__h104816 } ;
@@ -10536,7 +10545,16 @@ module mkOCCP(
   assign MUX_wci_respF_10$enq_1__VAL_1 =
 	     (wci_wciResponse_10$wget[33:32] == 2'd0) ?
 	       34'h1C0DE4203 :
+`ifdef not
 	       wci_wciResponse_10$wget ;
+`else
+	      // If an OCP error response or OCP fail response, with something pending,
+	      // Return the error code, whatever the op (config wrt, read, control op)
+	      ((wci_wciResponse_10$wget[33:32] == 2'd3 || wci_wciResponse_10$wget[33:32] == 2'd2) &&
+	       wci_reqPend_10 != 2'd0 ? 34'h1C0DE4202 :
+	       // This is success.  Return success code for ctlop or cfgwrt, but data for cfg read
+	       (wci_reqPend_10 == 2'd1 || wci_reqPend_10 == 2'd3 ? 34'h1C0DE4201 : wci_wciResponse_10$wget));
+`endif	       
   assign MUX_wci_respF_10$enq_1__VAL_2 = { 2'd1, wci_wStatus_10 } ;
   assign MUX_wci_respF_10$enq_1__VAL_3 = { 2'd1, x_data__h105287 } ;
   assign MUX_wci_respF_10$enq_1__VAL_4 = { 2'd1, x_data__h105293 } ;
@@ -10544,7 +10562,16 @@ module mkOCCP(
   assign MUX_wci_respF_11$enq_1__VAL_1 =
 	     (wci_wciResponse_11$wget[33:32] == 2'd0) ?
 	       34'h1C0DE4203 :
+`ifdef not
 	       wci_wciResponse_11$wget ;
+`else
+	      // If an OCP error response or OCP fail response, with something pending,
+	      // Return the error code, whatever the op (config wrt, read, control op)
+	      ((wci_wciResponse_11$wget[33:32] == 2'd3 || wci_wciResponse_11$wget[33:32] == 2'd2) &&
+	       wci_reqPend_11 != 2'd0 ? 34'h1C0DE4202 :
+	       // This is success.  Return success code for ctlop or cfgwrt, but data for cfg read
+	       (wci_reqPend_11 == 2'd1 || wci_reqPend_11 == 2'd3 ? 34'h1C0DE4201 : wci_wciResponse_11$wget));
+`endif	       
   assign MUX_wci_respF_11$enq_1__VAL_2 = { 2'd1, wci_wStatus_11 } ;
   assign MUX_wci_respF_11$enq_1__VAL_3 = { 2'd1, x_data__h105340 } ;
   assign MUX_wci_respF_11$enq_1__VAL_4 = { 2'd1, x_data__h105346 } ;
@@ -10552,7 +10579,16 @@ module mkOCCP(
   assign MUX_wci_respF_12$enq_1__VAL_1 =
 	     (wci_wciResponse_12$wget[33:32] == 2'd0) ?
 	       34'h1C0DE4203 :
+`ifdef not
 	       wci_wciResponse_12$wget ;
+`else
+	      // If an OCP error response or OCP fail response, with something pending,
+	      // Return the error code, whatever the op (config wrt, read, control op)
+	      ((wci_wciResponse_12$wget[33:32] == 2'd3 || wci_wciResponse_12$wget[33:32] == 2'd2) &&
+	       wci_reqPend_12 != 2'd0 ? 34'h1C0DE4202 :
+	       // This is success.  Return success code for ctlop or cfgwrt, but data for cfg read
+	       (wci_reqPend_12 == 2'd1 || wci_reqPend_12 == 2'd3 ? 34'h1C0DE4201 : wci_wciResponse_12$wget));
+`endif	       
   assign MUX_wci_respF_12$enq_1__VAL_2 = { 2'd1, wci_wStatus_12 } ;
   assign MUX_wci_respF_12$enq_1__VAL_3 = { 2'd1, x_data__h105393 } ;
   assign MUX_wci_respF_12$enq_1__VAL_4 = { 2'd1, x_data__h105399 } ;
@@ -10560,7 +10596,16 @@ module mkOCCP(
   assign MUX_wci_respF_13$enq_1__VAL_1 =
 	     (wci_wciResponse_13$wget[33:32] == 2'd0) ?
 	       34'h1C0DE4203 :
+`ifdef not
 	       wci_wciResponse_13$wget ;
+`else
+	      // If an OCP error response or OCP fail response, with something pending,
+	      // Return the error code, whatever the op (config wrt, read, control op)
+	      ((wci_wciResponse_13$wget[33:32] == 2'd3 || wci_wciResponse_13$wget[33:32] == 2'd2) &&
+	       wci_reqPend_13 != 2'd0 ? 34'h1C0DE4202 :
+	       // This is success.  Return success code for ctlop or cfgwrt, but data for cfg read
+	       (wci_reqPend_13 == 2'd1 || wci_reqPend_13 == 2'd3 ? 34'h1C0DE4201 : wci_wciResponse_13$wget));
+`endif	       
   assign MUX_wci_respF_13$enq_1__VAL_2 = { 2'd1, wci_wStatus_13 } ;
   assign MUX_wci_respF_13$enq_1__VAL_3 = { 2'd1, x_data__h105446 } ;
   assign MUX_wci_respF_13$enq_1__VAL_4 = { 2'd1, x_data__h105452 } ;
@@ -10568,7 +10613,16 @@ module mkOCCP(
   assign MUX_wci_respF_14$enq_1__VAL_1 =
 	     (wci_wciResponse_14$wget[33:32] == 2'd0) ?
 	       34'h1C0DE4203 :
+`ifdef not
 	       wci_wciResponse_14$wget ;
+`else
+	      // If an OCP error response or OCP fail response, with something pending,
+	      // Return the error code, whatever the op (config wrt, read, control op)
+	      ((wci_wciResponse_14$wget[33:32] == 2'd3 || wci_wciResponse_14$wget[33:32] == 2'd2) &&
+	       wci_reqPend_14 != 2'd0 ? 34'h1C0DE4202 :
+	       // This is success.  Return success code for ctlop or cfgwrt, but data for cfg read
+	       (wci_reqPend_14 == 2'd1 || wci_reqPend_14 == 2'd3 ? 34'h1C0DE4201 : wci_wciResponse_14$wget));
+`endif	       
   assign MUX_wci_respF_14$enq_1__VAL_2 = { 2'd1, wci_wStatus_14 } ;
   assign MUX_wci_respF_14$enq_1__VAL_3 = { 2'd1, x_data__h105499 } ;
   assign MUX_wci_respF_14$enq_1__VAL_4 = { 2'd1, x_data__h105505 } ;
@@ -10576,7 +10630,16 @@ module mkOCCP(
   assign MUX_wci_respF_2$enq_1__VAL_1 =
 	     (wci_wciResponse_2$wget[33:32] == 2'd0) ?
 	       34'h1C0DE4203 :
+`ifdef not
 	       wci_wciResponse_2$wget ;
+`else
+	      // If an OCP error response or OCP fail response, with something pending,
+	      // Return the error code, whatever the op (config wrt, read, control op)
+	      ((wci_wciResponse_2$wget[33:32] == 2'd3 || wci_wciResponse_2$wget[33:32] == 2'd2) &&
+	       wci_reqPend_2 != 2'd0 ? 34'h1C0DE4202 :
+	       // This is success.  Return success code for ctlop or cfgwrt, but data for cfg read
+	       (wci_reqPend_2 == 2'd1 || wci_reqPend_2 == 2'd3 ? 34'h1C0DE4201 : wci_wciResponse_2$wget));
+`endif	       
   assign MUX_wci_respF_2$enq_1__VAL_2 = { 2'd1, wci_wStatus_2 } ;
   assign MUX_wci_respF_2$enq_1__VAL_3 = { 2'd1, x_data__h104863 } ;
   assign MUX_wci_respF_2$enq_1__VAL_4 = { 2'd1, x_data__h104869 } ;
@@ -10584,7 +10647,16 @@ module mkOCCP(
   assign MUX_wci_respF_3$enq_1__VAL_1 =
 	     (wci_wciResponse_3$wget[33:32] == 2'd0) ?
 	       34'h1C0DE4203 :
+`ifdef not
 	       wci_wciResponse_3$wget ;
+`else
+	      // If an OCP error response or OCP fail response, with something pending,
+	      // Return the error code, whatever the op (config wrt, read, control op)
+	      ((wci_wciResponse_3$wget[33:32] == 2'd3 || wci_wciResponse_3$wget[33:32] == 2'd2) &&
+	       wci_reqPend_3 != 2'd0 ? 34'h1C0DE4202 :
+	       // This is success.  Return success code for ctlop or cfgwrt, but data for cfg read
+	       (wci_reqPend_3 == 2'd1 || wci_reqPend_3 == 2'd3 ? 34'h1C0DE4201 : wci_wciResponse_3$wget));
+`endif	       
   assign MUX_wci_respF_3$enq_1__VAL_2 = { 2'd1, wci_wStatus_3 } ;
   assign MUX_wci_respF_3$enq_1__VAL_3 = { 2'd1, x_data__h104916 } ;
   assign MUX_wci_respF_3$enq_1__VAL_4 = { 2'd1, x_data__h104922 } ;
@@ -10592,7 +10664,16 @@ module mkOCCP(
   assign MUX_wci_respF_4$enq_1__VAL_1 =
 	     (wci_wciResponse_4$wget[33:32] == 2'd0) ?
 	       34'h1C0DE4203 :
+`ifdef not
 	       wci_wciResponse_4$wget ;
+`else
+	      // If an OCP error response or OCP fail response, with something pending,
+	      // Return the error code, whatever the op (config wrt, read, control op)
+	      ((wci_wciResponse_4$wget[33:32] == 2'd3 || wci_wciResponse_4$wget[33:32] == 2'd2) &&
+	       wci_reqPend_4 != 2'd0 ? 34'h1C0DE4202 :
+	       // This is success.  Return success code for ctlop or cfgwrt, but data for cfg read
+	       (wci_reqPend_4 == 2'd1 || wci_reqPend_4 == 2'd3 ? 34'h1C0DE4201 : wci_wciResponse_4$wget));
+`endif	       
   assign MUX_wci_respF_4$enq_1__VAL_2 = { 2'd1, wci_wStatus_4 } ;
   assign MUX_wci_respF_4$enq_1__VAL_3 = { 2'd1, x_data__h104969 } ;
   assign MUX_wci_respF_4$enq_1__VAL_4 = { 2'd1, x_data__h104975 } ;
@@ -10600,7 +10681,16 @@ module mkOCCP(
   assign MUX_wci_respF_5$enq_1__VAL_1 =
 	     (wci_wciResponse_5$wget[33:32] == 2'd0) ?
 	       34'h1C0DE4203 :
+`ifdef not
 	       wci_wciResponse_5$wget ;
+`else
+	      // If an OCP error response or OCP fail response, with something pending,
+	      // Return the error code, whatever the op (config wrt, read, control op)
+	      ((wci_wciResponse_5$wget[33:32] == 2'd3 || wci_wciResponse_5$wget[33:32] == 2'd2) &&
+	       wci_reqPend_5 != 2'd0 ? 34'h1C0DE4202 :
+	       // This is success.  Return success code for ctlop or cfgwrt, but data for cfg read
+	       (wci_reqPend_5 == 2'd1 || wci_reqPend_5 == 2'd3 ? 34'h1C0DE4201 : wci_wciResponse_5$wget));
+`endif	       
   assign MUX_wci_respF_5$enq_1__VAL_2 = { 2'd1, wci_wStatus_5 } ;
   assign MUX_wci_respF_5$enq_1__VAL_3 = { 2'd1, x_data__h105022 } ;
   assign MUX_wci_respF_5$enq_1__VAL_4 = { 2'd1, x_data__h105028 } ;
@@ -10608,7 +10698,16 @@ module mkOCCP(
   assign MUX_wci_respF_6$enq_1__VAL_1 =
 	     (wci_wciResponse_6$wget[33:32] == 2'd0) ?
 	       34'h1C0DE4203 :
+`ifdef not
 	       wci_wciResponse_6$wget ;
+`else
+	      // If an OCP error response or OCP fail response, with something pending,
+	      // Return the error code, whatever the op (config wrt, read, control op)
+	      ((wci_wciResponse_6$wget[33:32] == 2'd3 || wci_wciResponse_6$wget[33:32] == 2'd2) &&
+	       wci_reqPend_6 != 2'd0 ? 34'h1C0DE4202 :
+	       // This is success.  Return success code for ctlop or cfgwrt, but data for cfg read
+	       (wci_reqPend_6 == 2'd1 || wci_reqPend_6 == 2'd3 ? 34'h1C0DE4201 : wci_wciResponse_6$wget));
+`endif	       
   assign MUX_wci_respF_6$enq_1__VAL_2 = { 2'd1, wci_wStatus_6 } ;
   assign MUX_wci_respF_6$enq_1__VAL_3 = { 2'd1, x_data__h105075 } ;
   assign MUX_wci_respF_6$enq_1__VAL_4 = { 2'd1, x_data__h105081 } ;
@@ -10616,7 +10715,16 @@ module mkOCCP(
   assign MUX_wci_respF_7$enq_1__VAL_1 =
 	     (wci_wciResponse_7$wget[33:32] == 2'd0) ?
 	       34'h1C0DE4203 :
+`ifdef not
 	       wci_wciResponse_7$wget ;
+`else
+	      // If an OCP error response or OCP fail response, with something pending,
+	      // Return the error code, whatever the op (config wrt, read, control op)
+	      ((wci_wciResponse_7$wget[33:32] == 2'd3 || wci_wciResponse_7$wget[33:32] == 2'd2) &&
+	       wci_reqPend_7 != 2'd0 ? 34'h1C0DE4202 :
+	       // This is success.  Return success code for ctlop or cfgwrt, but data for cfg read
+	       (wci_reqPend_7 == 2'd1 || wci_reqPend_7 == 2'd3 ? 34'h1C0DE4201 : wci_wciResponse_7$wget));
+`endif	       
   assign MUX_wci_respF_7$enq_1__VAL_2 = { 2'd1, wci_wStatus_7 } ;
   assign MUX_wci_respF_7$enq_1__VAL_3 = { 2'd1, x_data__h105128 } ;
   assign MUX_wci_respF_7$enq_1__VAL_4 = { 2'd1, x_data__h105134 } ;
@@ -10624,7 +10732,16 @@ module mkOCCP(
   assign MUX_wci_respF_8$enq_1__VAL_1 =
 	     (wci_wciResponse_8$wget[33:32] == 2'd0) ?
 	       34'h1C0DE4203 :
+`ifdef not
 	       wci_wciResponse_8$wget ;
+`else
+	      // If an OCP error response or OCP fail response, with something pending,
+	      // Return the error code, whatever the op (config wrt, read, control op)
+	      ((wci_wciResponse_8$wget[33:32] == 2'd3 || wci_wciResponse_8$wget[33:32] == 2'd2) &&
+	       wci_reqPend_8 != 2'd0 ? 34'h1C0DE4202 :
+	       // This is success.  Return success code for ctlop or cfgwrt, but data for cfg read
+	       (wci_reqPend_8 == 2'd1 || wci_reqPend_8 == 2'd3 ? 34'h1C0DE4201 : wci_wciResponse_8$wget));
+`endif	       
   assign MUX_wci_respF_8$enq_1__VAL_2 = { 2'd1, wci_wStatus_8 } ;
   assign MUX_wci_respF_8$enq_1__VAL_3 = { 2'd1, x_data__h105181 } ;
   assign MUX_wci_respF_8$enq_1__VAL_4 = { 2'd1, x_data__h105187 } ;
@@ -10632,7 +10749,16 @@ module mkOCCP(
   assign MUX_wci_respF_9$enq_1__VAL_1 =
 	     (wci_wciResponse_9$wget[33:32] == 2'd0) ?
 	       34'h1C0DE4203 :
+`ifdef not
 	       wci_wciResponse_9$wget ;
+`else
+	      // If an OCP error response or OCP fail response, with something pending,
+	      // Return the error code, whatever the op (config wrt, read, control op)
+	      ((wci_wciResponse_9$wget[33:32] == 2'd3 || wci_wciResponse_9$wget[33:32] == 2'd2) &&
+	       wci_reqPend_9 != 2'd0 ? 34'h1C0DE4202 :
+	       // This is success.  Return success code for ctlop or cfgwrt, but data for cfg read
+	       (wci_reqPend_9 == 2'd1 || wci_reqPend_9 == 2'd3 ? 34'h1C0DE4201 : wci_wciResponse_9$wget));
+`endif	       
   assign MUX_wci_respF_9$enq_1__VAL_2 = { 2'd1, wci_wStatus_9 } ;
   assign MUX_wci_respF_9$enq_1__VAL_3 = { 2'd1, x_data__h105234 } ;
   assign MUX_wci_respF_9$enq_1__VAL_4 = { 2'd1, x_data__h105240 } ;
@@ -17614,7 +17740,9 @@ module mkOCCP(
   assign x__h25247 = wci_respTimr_3 + 32'd1 ;
   assign x__h29687 = wci_respTimr_4 + 32'd1 ;
   assign x__h34127 = wci_respTimr_5 + 32'd1 ;
+`ifdef not
   assign x__h3700 = { 2'b0, x_f__h4848 } ;
+`endif
   assign x__h38567 = wci_respTimr_6 + 32'd1 ;
   assign x__h43007 = wci_respTimr_7 + 32'd1 ;
 `ifdef not

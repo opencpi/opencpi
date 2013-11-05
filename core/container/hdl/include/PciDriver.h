@@ -40,7 +40,7 @@
 #ifdef __cplusplus
 #include <string>
 #include "OcpiPValue.h"
-#include "HdlAccess.h"
+#include "HdlDevice.h"
 
 
 namespace OCPI {

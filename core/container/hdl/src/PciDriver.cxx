@@ -62,7 +62,7 @@ namespace OCPI {
 	uint32_t m_bar0size, m_bar1size;
 	int m_fd;
 	friend class Driver;
-	Device(std::string &name, int fd, ocpi_pci_t &pci, void *bar0, void *bar1)
+	Device(std::string &name, int fd, ocpi_pci_t &pci, void *bar0, void *bar1, std::string &err)
 	  : OCPI::HDL::Device(name, "ocpi-pci-pio"), m_bar0(bar0), m_bar1(bar1),
 	    m_bar0size(pci.size0), m_bar1size(pci.size1), m_fd(fd) {
 	  uint64_t endpointPaddr, controlOffset, bufferOffset, holeStartOffset, holeEndOffset;
@@ -90,6 +90,7 @@ namespace OCPI {
 			   bus, endpointPaddr, holeStartOffset, holeEndOffset);
 	  cAccess().setAccess((uint8_t*)bar0, NULL, OCPI_UTRUNCATE(RegisterOffset, controlOffset));
 	  dAccess().setAccess((uint8_t*)bar1, NULL, OCPI_UTRUNCATE(RegisterOffset, bufferOffset));
+	  init(err);
 	}
 	~Device() {
 	  if (m_bar0)
@@ -435,7 +436,7 @@ namespace OCPI {
 	    return NULL; // not really an error
 	}
 	if (error.empty())
-	  return new Device(name, fd, pci, bar0, bar1);
+	  return new Device(name, fd, pci, bar0, bar1, error);
 	if (bar0)
 	  munmap(bar0, pci.size0);
 	if (bar1)

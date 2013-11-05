@@ -1065,7 +1065,7 @@ module mkSMAdapter4B(wciS0_Clk,
 	     wci_wslv_reqF_countReg > 2'd1 || wci_wslv_isReset_isInReset ;
 
   // value method wciS0_sFlag
-  assign wciS0_SFlag = { 1'd1, wci_wslv_sFlagReg, 1'd0 } ;
+  assign wciS0_SFlag = { 1'd0, 1'd1, wci_wslv_sFlagReg } ;
 
   // value method wmiM0_mCmd
   assign wmiM0_MCmd = wmi_sThreadBusy_d ? 3'd0 : wmi_reqF_q_0[31:29] ;

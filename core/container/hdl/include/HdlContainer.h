@@ -17,6 +17,7 @@ namespace OCPI {
       OCPI::Time::Emit m_hwEvents;
       uint64_t m_lastTick;
       friend class WciControl;
+      friend class Worker;
       friend class Driver;
       friend class Port;
       friend class Artifact;
@@ -27,16 +28,10 @@ namespace OCPI {
       inline uint64_t getMyTicks() {
 	return
 	  m_device.isAlive() ? 
-	  m_lastTick = swap32(get64Register(admin.time, OccpSpace)) + hdlDevice().m_timeCorrection :
+	  (m_lastTick = swap32(m_device.properties().get64RegisterOffset(sizeof(HdlUUID))) + hdlDevice().m_timeCorrection) :
 	  m_lastTick;
       }
     protected:
-      void getWorkerAccess(unsigned index,
-			   Access &worker,
-			   Access &properties);
-      void releaseWorkerAccess(unsigned index,
-			       Access & worker,
-			       Access & properties);
       inline HDL::Device &hdlDevice() { return m_device; }
     public:
       void start();

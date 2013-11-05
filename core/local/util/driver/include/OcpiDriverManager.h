@@ -94,6 +94,7 @@ namespace OCPI {
       OCPI::OS::Mutex m_mutex;  // for thread-safe configuration
       std::string m_configFile; // system configuration file
       bool m_configured;        // to do lazy (and avoid redundant) configuration
+      bool m_doNotDiscover;
       static bool s_exiting;
     public:
       ManagerManager();
@@ -107,6 +108,8 @@ namespace OCPI {
       static void configure(const char *file = NULL);
       // Report configuration errors
       static void configError(ezxml_t x, const char *fmt,...);
+      // Global suppression of discovery
+      static inline void suppressDiscovery() { getManagerManager()->m_doNotDiscover = true; }
     };
     // The base class for all (singleton) driver managers which are children of
     // ManagerManager. This is NOT directly inherited by derived managers. They

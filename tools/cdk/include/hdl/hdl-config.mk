@@ -31,6 +31,7 @@ HdlMode:=platform
 HdlLibraries+=platform
 # We're not really a component library, so we force this
 XmlIncludeDirs+=../specs
+override ComponentLibraries+=../../devices
 include $(OCPI_CDK_DIR)/include/util.mk
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 ifndef HdlSkip
@@ -58,10 +59,9 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
 ifdef Configurations
 
 HdlConfigDir=$(OutDir)target-$1
-HdlConfig=$(call HdlConfigDir,$1)/$1_rv$(HdlBin)
+HdlConfig=$(call HdlConfigDir,$1)/$1$(and $(HdlToolReadCore),_rv$(HdlBin))
 HdlConfigSource=$(GeneratedDir)/$1-$2.vhd
 HdlConfigSources=$(foreach s,defs impl assy,$(call HdlConfigSource,$1,$s))
-
 ################################################################################
 # The function to evaluate for each configuration
 define doConfiguration
@@ -87,7 +87,7 @@ $(call HdlConfigSource,$1,assy): $1.xml | $(GeneratedDir)
 	$(AT)$$(OcpiGen) -W $(Worker) $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) \
 	 $(if $(ComponentLibraries),$(foreach l,$(ComponentLibraries),\
           -L $(notdir $l):$(call HdlXmlComponentLibrary,$l)/hdl)) \
-	 -D $(GeneratedDir) -a  $(and $(HdlPlatform),-P $(HdlPlatform)) $$<
+	 -D $(GeneratedDir) -W $1 -a  $(and $(HdlPlatform),-P $(HdlPlatform)) $$<
 
 HdlConfigs+= $(call HdlConfig,$1)
 
@@ -100,7 +100,13 @@ $(call HdlConfig,$1): LibName:=$1
 $(call HdlConfig,$1): HdlTarget:=$(HdlExactPart)
 $(call HdlConfig,$1): HdlSources:=$(call HdlConfigSources,$1)
 $(call HdlConfig,$1): TargetDir=$(call HdlConfigDir,$1)
-$(call HdlConfig,$1): Cores+=./target-$(Worker)/$(Worker)
+# This allows the platform worker to be found
+$(call HdlConfig,$1): target-$(call HdlGetFamily,$(HdlExactPart))/$(Worker)
+$(call HdlConfig,$1): override ComponentLibraries+=target-$(call HdlGetFamily,$(HdlExactPart))/$(Worker)
+# This causes the workers file to be read to add to the cores list
+$(call HdlConfig,$1): override ImplWorkersFile=$(GeneratedDir)/$1.wks
+# This indicates where the assy impl file is, for the $1.wks file
+$(call HdlConfig,$1): override ImplFile=$$(call HdlConfigSource,$1,assy)
 #ifdef HdlToolNeedBB
 #AssyBlackBoxFile_$1:=$(GeneratedDir)/$1_bb$(HdlSourceSuffix)
 #$$(AssyBlackBoxFile_$1): $(call HdlConfigSource,$1,defs) | $$(OutDir)gen
@@ -117,7 +123,7 @@ $(foreach c,$(Configurations),\
   $(eval $(call DoBBLibraryTarget,$c,$c,$(HdlExactPart),$(call HdlConfigSource,$c,defs))))
 endif
 
-$(HdlConfigs):
+$(HdlConfigs): $$(HdlPreCore)
 	$(AT)echo Building platform configuration core \"$@\" for target \"$(HdlTarget)\"
 	$(AT)$(HdlCompile)
 

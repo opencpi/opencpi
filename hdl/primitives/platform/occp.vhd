@@ -195,9 +195,15 @@ architecture rtl of occp_rv is
       RST_N_wci_Vm_14         : out std_logic
       );
   end component mkOCCP;
+  -- Our locally computed enqueue signal for input data
+  signal EN_server_request_put : std_logic;
+  -- Our locally used input-FIFO-not-full signal for input data
   signal RDY_server_request_put : std_logic;
 begin
-  cp_out.take           <= RDY_server_request_put and cp_in.valid;
+  -- We tell mkOCCP to enqueue when it is ready (not full) and there is input data
+  EN_server_request_put <= RDY_server_request_put and cp_in.valid;
+  -- We tell the producer side to dequeue when we are enqueueing
+  cp_out.take           <= EN_server_request_put;
   gen0: for i in 0 to 14 generate
     wci_out(i).CLK <= cp_in.clk;
   end generate gen0;
@@ -209,7 +215,7 @@ sm : mkOCCP
     -- server request interface
     RDY_server_request_put  => RDY_server_request_put,
     server_request_put      => cp_in.data,
-    EN_server_request_put   => cp_in.valid,
+    EN_server_request_put   => EN_server_request_put,
     -- server response interface
     RDY_server_response_get => cp_out.valid,
     server_response_get     => cp_out.data,

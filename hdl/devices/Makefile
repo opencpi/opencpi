@@ -44,7 +44,9 @@
 # one -- until we have a good naming convension.
 Package=ocpi.devices
 XmlIncludeDirs=../../components/specs
+HdlLibraries=platform
 Implementations = \
+	ocdp.hdl \
 	dac.hdl \
 	adcx.hdl \
 	adc.rcc \

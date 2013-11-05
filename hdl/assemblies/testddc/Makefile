@@ -35,6 +35,5 @@
 ########################################################################### #
 
 # We know that this app does not fit on the ml555
-ExcludeTargets=icarus
-HdlOnlyPlatforms=schist
-include $(OCPI_CDK_DIR)/include/hdl/hdl-assy.mk
+DefaultContainers=
+include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk

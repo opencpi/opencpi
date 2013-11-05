@@ -33,18 +33,6 @@
 #
 ########################################################################### #
 
-
-#$(info $(shell pwd))
-#empty:=
-#space:=$(empty) $(empty)
-#$(info $(notdir a/b$$(space)v/h))
-
-ifndef HdlPlatforms
-ifndef HdlPlatform
-export HdlPlatform=ml605
-endif
-endif
-
 ifneq ($(OCPI_OS),)
 SYSTEMOPTION="OCPI_OS=$(OCPI_OS)"
 endif

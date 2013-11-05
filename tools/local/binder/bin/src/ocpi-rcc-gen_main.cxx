@@ -77,6 +77,7 @@
 #include <OcpiScaPropertyParser.h>
 #include <sca_props.h>
 
+namespace OU = OCPI::Util;
 /*
  * ----------------------------------------------------------------------
  * Command-line configuration
@@ -339,7 +340,7 @@ generateHeader (OCPI::Util::Vfs::Vfs & fs,
 
         if (p.is_sequence) {
           *out << "  uint32_t " << p.name << "_length;" << std::endl;
-          offset = roundUp (offset, 4) + 4;
+          offset = OU::roundUp (offset, 4) + 4;
         }
         else if (pt.data_type == OCPI::SCA::SCA_string) {
           /*
@@ -348,16 +349,16 @@ generateHeader (OCPI::Util::Vfs::Vfs & fs,
            * any alignment.
            */
 
-          if (offset != roundUp (offset, 4)) {
-            size_t pad = roundUp (offset, 4) - offset;
+          if (offset != OU::roundUp (offset, 4)) {
+            size_t pad = OU::roundUp (offset, 4) - offset;
             *out << "  char pad_" << p.name << "[" << pad << "];" << std::endl;
             offset += pad;
           }
         }
         else {
-          ocpiAssert (roundUp (offset, propertyAlign (pt.data_type)) ==
-                     roundUp (offset, structAlign (pt.data_type)));
-          offset = roundUp (offset, propertyAlign (pt.data_type));
+          ocpiAssert (OU::roundUp (offset, propertyAlign (pt.data_type)) ==
+                     OU::roundUp (offset, structAlign (pt.data_type)));
+          offset = OU::roundUp (offset, propertyAlign (pt.data_type));
         }
 
         switch (pt.data_type) {

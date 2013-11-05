@@ -66,6 +66,7 @@ namespace OCPI {
      *********************************/  
     const unsigned DEFAULT_NBUFFERS = 2;
     const unsigned DEFAULT_BUFFER_SIZE = 2*1024;
+    const unsigned BUFFER_ALIGNMENT = 16;
     class PortData
     {
       OCPI::Metadata::PortOrdinal m_ordinal;
@@ -102,8 +103,10 @@ namespace OCPI {
       BasicPort(const OCPI::Metadata::Port &mPort, bool isProvider, unsigned xferOptions,
 		OCPI::OS::Mutex &mutex,	const OCPI::Util::PValue *params, PortConnectionDesc *desc = NULL);
       virtual ~BasicPort();
+    public:
       // called after connection parameters have changed.
       virtual void startConnect(const OCPI::RDT::Descriptors *other, const OCPI::Util::PValue *params);
+    protected:
       void setConnectParams(const OCPI::Util::PValue *params);
       static void chooseRoles(int32_t &uRole, uint32_t uOptions,
                               int32_t &pRole, uint32_t pOptions);
@@ -132,7 +135,9 @@ namespace OCPI {
       // The implementation tells us whether the port is in the process and uses dt ports
       virtual bool isLocal() const  = 0;//{ return false; }
       // connect inside the container (colocated ports)
-      virtual void connectInside(Port &other, const OCPI::Util::PValue *myProps=NULL) = 0;
+      virtual void connectInside(Port &other,
+				 const OCPI::Util::PValue *myParams,
+				 const OCPI::Util::PValue *otherParams) = 0;
 
       // other port is the same container type.  Return true if you do it.
       virtual bool connectLike(Port &other, const OCPI::Util::PValue *myProps=NULL,

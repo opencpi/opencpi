@@ -25,7 +25,13 @@
 
 ifndef HdlPlatforms
 ifndef HdlPlatform
+ifeq ($(MAKECMDGOALS),clean)
 HdlPlatforms=$(filter-out test Makefile common README README.txt lib,$(wildcard *))
+else
+HdlPlatforms:=ml605
+endif
+else
+HdlPlatforms:=$(HdlPlatform)
 endif
 endif
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk

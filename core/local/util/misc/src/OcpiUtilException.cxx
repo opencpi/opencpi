@@ -62,6 +62,9 @@ namespace OCPI {
       setFormatV(err, ap);
       ocpiBad("Error Exception: %s", this->c_str());
     }
+    Error::Error(std::string &s) {
+      append(s.c_str());
+    }
     Error::Error(const char *err, ...) {
       va_list ap;
       va_start(ap, err);
