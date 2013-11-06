@@ -34,5 +34,5 @@
 #
 ########################################################################### #
 # We know this app will not fit on the ml555
-ExcludePlatforms=modelsim_pf isim_pf
+ExcludePlatforms=modelsim_pf isim_pf ml605
 include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk

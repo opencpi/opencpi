@@ -505,7 +505,7 @@ static inline bool masterIn(Port *p) {
 #define IMPL_ELEMS "componentspec", "properties", "property", "specproperty", "propertysummary", "xi:include", "controlinterface",  "timeservice", "unoc"
 #define GENERIC_IMPL_CONTROL_ATTRS \
   "SizeOfConfigSpace", "ControlOperations", "Sub32BitConfigProperties"
-#define ASSY_ELEMS "instance", "connection"
+#define ASSY_ELEMS "instance", "connection", "external"
 extern const char
   *container, *platform, *device, *load, *os, *os_version, **libraries, **mappedLibraries, *assembly, *attribute,
   *vhdlValue(std::string &value, OU::Value &v),
