@@ -62,8 +62,9 @@ HdlConfigDir=$(OutDir)target-$1
 HdlConfig=$(call HdlConfigDir,$1)/$1$(and $(HdlToolReadCore),_rv$(HdlBin))
 HdlConfigSource=$(GeneratedDir)/$1-$2.vhd
 HdlConfigSources=$(foreach s,defs impl assy,$(call HdlConfigSource,$1,$s))
-HdlOcipgenLibs= $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) \
-		$(if $(and $(ComponentLibraries),$(HdlToolNeedBB_$(HdlToolSet_$(HdlTarget_$1)))),\
+HdlOcpigenLibs=$(xxxinfo ccc:$(ComponentLibraries):$(HdlToolSet_$(HdlTarget)):$(HdlTarget))\
+                $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) \
+		$(if $(and $(ComponentLibraries),$(HdlToolNeedBB_$(HdlToolSet_$(HdlTarget)))),\
                    $(foreach l,$(ComponentLibraries),\
 	             -L $(notdir $l):$(call HdlXmlComponentLibrary,$l)/hdl))
 ################################################################################
@@ -74,17 +75,17 @@ define doConfiguration
 
 $(call HdlConfigSource,$1,defs): $1.xml | $(GeneratedDir)
 	$(AT)echo Generating the platform configuration assembly source file: $$@ from $$<
-	$(AT)$$(OcpiGen) -W $(Worker) $(call HdlOcpigenLibs,$1) \
+	$(AT)$$(OcpiGen) -W $(Worker) $(HdlOcpigenLibs) \
 	 -D $(GeneratedDir) -d  $(and $(HdlPlatform),-P $(HdlPlatform)) $$<
 
 $(call HdlConfigSource,$1,impl): $1.xml | $(GeneratedDir)
 	$(AT)echo Generating the platform configuration assembly source file: $$@ from $$<
-	$(AT)$$(OcpiGen) -W $(Worker) $(call HdlOcpigenLibs,$1) \
+	$(AT)$$(OcpiGen) -W $(Worker) $(HdlOcpigenLibs) \
 	 -D $(GeneratedDir) -i  $(and $(HdlPlatform),-P $(HdlPlatform)) $$<
 
 $(call HdlConfigSource,$1,assy): $1.xml | $(GeneratedDir)
 	$(AT)echo Generating the platform configuration assembly source file: $$@ from $$<
-	$(AT)$$(OcpiGen) -W $(Worker) $(call HdlOcpigenLibs,$1) \
+	$(AT)$$(OcpiGen) -W $(Worker) $(HdlOcpigenLibs) \
 	 -D $(GeneratedDir) -W $1 -a  $(and $(HdlPlatform),-P $(HdlPlatform)) $$<
 
 HdlConfigs+= $(call HdlConfig,$1)
