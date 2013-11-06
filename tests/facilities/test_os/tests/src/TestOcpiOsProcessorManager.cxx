@@ -113,6 +113,7 @@ namespace
     return result;
   }
 
+#if 0 //unused
   unsigned int stringToUnsigned ( const std::string& str,
                                   unsigned int base = 10)
   {
@@ -136,6 +137,7 @@ namespace
 
     return res;
   }
+#endif
 
   const char* test5CommandLine1 [ ] = { "simple", 0 };
   const char* test5CommandLine2 [ ] = { "par1", "par2", "par3", "par4", 0 };
@@ -155,7 +157,7 @@ namespace
     test5CommandLine6,
     test5CommandLine7,
   };
-
+#if 0 // unused
   int testProcessManagerInt ( int argc, char* argv [ ] )
   {
     if ( argc >= 2 )
@@ -257,6 +259,7 @@ namespace
 
     return 0;
   }
+#endif
 
   void TestOcpiOsProcessManager::SetUp ( )
   {

@@ -32,7 +32,7 @@ OcpiAsNeeded=
 else
 OcpiLibraryPathEnv=LD_LIBRARY_PATH
 OCPI_OCL_LIBS=  -Xlinker --undefined=_ZN4OCPI3OCL6driverE -locl -lOpenCL
-OCPI_EXTRA_LIBS=rt dl uuid
+OCPI_EXTRA_LIBS=rt dl pthread
 # for static builds
 ifneq ($(wildcard $(OCPI_LIB_DIR)/*.a),)
 OCPI_DRIVER_OBJS=\

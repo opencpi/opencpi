@@ -99,7 +99,7 @@ doFrame( CState *myState,
   }
 
   int i, j;
-  int mapstep, maxsize;
+  int mapstep;//, maxsize;
 
 #define ind(i,j) ((i)*W+(j))
 
@@ -137,7 +137,7 @@ doFrame( CState *myState,
   // allocate stack directly
   uchar **stack_top = 0, **stack_bottom = 0;
 
-  maxsize = H * W;
+  // maxsize = H * W;
   stack_top = stack_bottom = &myState->stack[0];
 
   memset( mag_buf[0], 0, (W+2)*sizeof(int) );

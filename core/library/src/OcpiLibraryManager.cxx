@@ -1,5 +1,6 @@
 #include <string.h>
 #include <dirent.h>
+#include <unistd.h>
 #include <climits>
 #include "OcpiOsFileIterator.h"
 #include "OcpiUtilException.h"

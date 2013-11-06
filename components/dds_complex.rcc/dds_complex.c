@@ -64,10 +64,10 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   Dds_complexOutIq 
     *outData = (Dds_complexOutIq*)out->current.data;
 
-  uint16_t *inData;
+  //  uint16_t *inData;
 
   if ( in->current.data ) { 
-    inData = in->current.data;
+    //    inData = in->current.data;
 
     switch( in->input.u.operation ) {
 

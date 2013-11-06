@@ -377,7 +377,7 @@ namespace OCPI {
       if (uDesc.desc.dataBufferSize > pDesc.desc.dataBufferSize)
 	maxSize = uDesc.desc.dataBufferSize;
       maxSize = OU::roundUp(maxSize, BUFFER_ALIGNMENT);
-      pDesc.desc.dataBufferSize = uDesc.desc.dataBufferSize = maxSize;
+      pDesc.desc.dataBufferSize = uDesc.desc.dataBufferSize = OCPI_UTRUNCATE(uint32_t, maxSize);
       ocpiInfo("  after negotiation, buffer size is %zu", maxSize);
       // We must make sure other side doesn't mess with roles anymore.
       uDesc.options |= 1 << MandatedRole;

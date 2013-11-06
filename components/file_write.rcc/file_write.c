@@ -17,7 +17,7 @@ typedef struct {
   int fd;
   int started;
 } MyState;
-static uint32_t mysizes[] = {sizeof(MyState), 0};
+static size_t mysizes[] = {sizeof(MyState), 0};
 
 FILE_WRITE_METHOD_DECLARATIONS;
 RCCDispatch file_write = {

@@ -20,7 +20,7 @@ export OCPI_SHARED_LIBRARIES_FLAGS="-m64 -m elf_x86_64"
 # Set to 0 to build static libraries
 export OCPI_BUILD_SHARED_LIBRARIES=1
 
-export OCPI_HAVE_OPENSPLICE=1
-export OCPI_OPENSPLICE_HOME=/opt/opencpi/prerequisites/opensplice/linux-x86_64
+# export OCPI_HAVE_OPENSPLICE=1
+# export OCPI_OPENSPLICE_HOME=/opt/opencpi/prerequisites/opensplice/linux-x86_64
 
 . ./generic_env_post.sh

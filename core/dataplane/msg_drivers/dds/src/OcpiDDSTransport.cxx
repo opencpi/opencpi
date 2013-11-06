@@ -315,7 +315,7 @@ namespace OCPI {
 	{
 	  char buf[BUF_SIZE];
 	  if ( m.m_sequenceLength != 0 ) {
-	    if ( snprintf( buf, BUF_SIZE, "<Sequence size=\"%d\">", m.m_sequenceLength ) < 0 ) {
+	    if ( snprintf( buf, BUF_SIZE, "<Sequence size=\"%zu\">", m.m_sequenceLength ) < 0 ) {
 	      throw formatErrorMsg;
 	    }
 	    format += buf;
@@ -358,7 +358,7 @@ namespace OCPI {
 	  }
 	  else if ( m.m_arrayRank > 0 ) {
 	    for ( unsigned int y=0; y<m.m_arrayRank; y++ ) {
-	      if ( snprintf( buf, BUF_SIZE, "<Array size=\"%d\">", m.m_arrayDimensions[y] ) < 0 ) {
+	      if ( snprintf( buf, BUF_SIZE, "<Array size=\"%zu\">", m.m_arrayDimensions[y] ) < 0 ) {
 		throw formatErrorMsg;
 	      }
 	      format += buf;
@@ -439,7 +439,7 @@ namespace OCPI {
 	    }
 
 	    for ( unsigned int y=0; y<m.m_arrayRank; y++ ) {
-	      if ( snprintf( buf, BUF_SIZE, "<Array size=\"%d\">", m.m_arrayDimensions[y] ) < 0 ) {
+	      if ( snprintf( buf, BUF_SIZE, "<Array size=\"%zu\">", m.m_arrayDimensions[y] ) < 0 ) {
 		throw formatErrorMsg;
 	      }
 	      format += buf;
