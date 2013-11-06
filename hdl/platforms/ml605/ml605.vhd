@@ -29,9 +29,9 @@ architecture rtl of ml605_worker is
   signal pci2unoc, unoc2cp : unoc_master_out_t;
   signal unoc2pci, cp2unoc : unoc_master_in_t;
   -- chipscope
-  signal control0               : std_logic_vector(35 downto 0);
-  signal ila_data               : std_logic_vector(31 downto 0);
-  signal ila_trigger            : std_logic_vector(7 downto 0);
+  --signal control0               : std_logic_vector(35 downto 0);
+  --signal ila_data               : std_logic_vector(31 downto 0);
+  --signal ila_trigger            : std_logic_vector(7 downto 0);
 begin
   -- Provide the highest available quality clock and reset used for the time server,
   -- without regard for it being in any particular time domain.
@@ -171,38 +171,38 @@ begin
 ------------------------------------------------------------------------------------------
 -- Chipscope
 ------------------------------------------------------------------------------------------
-  icon_i : ml605.chipscope_pkg.chipscope_icon
-    port map(control0 => control0);
-  ila_i  : ml605.chipscope_pkg.chipscope_ila
-    port map(control => control0,
-             clk     => ctl_clk,
-             data    => ila_data,
-             trig0   => ila_trigger);
+--  icon_i : ml605.chipscope_pkg.chipscope_icon
+--    port map(control0 => control0);
+--  ila_i  : ml605.chipscope_pkg.chipscope_ila
+--    port map(control => control0,
+--             clk     => ctl_clk,
+--             data    => ila_data,
+--             trig0   => ila_trigger);
 
-  ila_trigger(0) <= pci2unoc.valid;
-  ila_trigger(1) <= pci2unoc.take;
-  ila_trigger(2) <= unoc2pci.valid;
-  ila_trigger(3) <= unoc2pci.take;
+--  ila_trigger(0) <= pci2unoc.valid;
+--  ila_trigger(1) <= pci2unoc.take;
+--  ila_trigger(2) <= unoc2pci.valid;
+--  ila_trigger(3) <= unoc2pci.take;
 
-  ila_trigger(4) <= unoc2cp.valid;
-  ila_trigger(5) <= unoc2cp.take;
-  ila_trigger(6) <= cp2unoc.valid;
-  ila_trigger(7) <= cp2unoc.take;
+--  ila_trigger(4) <= unoc2cp.valid;
+--  ila_trigger(5) <= unoc2cp.take;
+--  ila_trigger(6) <= cp2unoc.valid;
+--  ila_trigger(7) <= cp2unoc.take;
 
-  ila_data(0) <= pci2unoc.valid;
-  ila_data(1) <= pci2unoc.take;
-  ila_data(2) <= unoc2pci.valid;
-  ila_data(3) <= unoc2pci.take;
+--  ila_data(0) <= pci2unoc.valid;
+--  ila_data(1) <= pci2unoc.take;
+--  ila_data(2) <= unoc2pci.valid;
+--  ila_data(3) <= unoc2pci.take;
 
-  ila_data(4) <= unoc2cp.valid;
-  ila_data(5) <= unoc2cp.take;
-  ila_data(6) <= cp2unoc.valid;
-  ila_data(7) <= cp2unoc.take;
+--  ila_data(4) <= unoc2cp.valid;
+--  ila_data(5) <= unoc2cp.take;
+--  ila_data(6) <= cp2unoc.valid;
+--  ila_data(7) <= cp2unoc.take;
 
-  ila_data(8) <= pcie_slave_in.valid;
-  ila_data(9) <= pcie_slave_in.take;
---  ila_data(10) <= pcie_slave_out.valid;
---  ila_data(11) <= pcie_slave_out.take;
+--  ila_data(8) <= pcie_slave_in.valid;
+--  ila_data(9) <= pcie_slave_in.take;
+----  ila_data(10) <= pcie_slave_out.valid;
+----  ila_data(11) <= pcie_slave_out.take;
 
-  ila_data(31 downto 12) <= pci2unoc.data(19 downto 0);     
+--  ila_data(31 downto 12) <= pci2unoc.data(19 downto 0);     
 end rtl;
