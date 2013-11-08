@@ -170,7 +170,7 @@ namespace OCPI {
 				   const char *preInstName = NULL,
 				   const PValue *wProps = NULL,
 				   const PValue *wParams = NULL,
-				   const PValue *selectCriteria = NULL) = 0;
+				   const char *selectCriteria = NULL) = 0;
       // Simpler method to create a worker by its spec name (name provided in the spec file),
       // with the artifact found from looking at libraries in the library path, finding
       // what implementation will run on the container of this container-app.
@@ -181,7 +181,7 @@ namespace OCPI {
       virtual Worker &createWorker(const char *instName, const char *specName,
 				   const PValue *wProps = NULL,
 				   const PValue *wParams = NULL,
-				   const PValue *selectCriteria = NULL,
+				   const char *selectCriteria = NULL,
 				   const Connection *connections = NULL) = 0;
       virtual void start() = 0;
     };

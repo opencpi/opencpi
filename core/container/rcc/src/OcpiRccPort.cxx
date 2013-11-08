@@ -64,7 +64,7 @@ namespace OCPI {
 	 (w, *this, pmd, pmd.provider,
 	  (1 << OCPI::RDT::ActiveFlowControl) | (1 << OCPI::RDT::ActiveMessage),
 	  params),
-	 m_dtPort(NULL), m_localOther(NULL), m_params(params),
+	 m_dtPort(NULL), m_localOther(NULL), //m_params(params),
 	 m_mode(OC::Port::CON_TYPE_NONE), m_rccPort(rp), m_buffer(NULL), m_wantsBuffer(true)
     {
       // FIXME: deep copy params?

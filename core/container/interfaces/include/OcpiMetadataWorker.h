@@ -76,6 +76,7 @@ namespace OCPI {
   namespace Metadata {
 
     typedef OCPI::Util::Property Property;
+#if 0
     class Test {
       friend class Worker;
       unsigned int testId;
@@ -83,16 +84,16 @@ namespace OCPI {
       unsigned int * inputValues;  // reference to property[n]
       unsigned int * resultValues;
     };
-
+#endif
     // Dealing with worker meta as a bundle
     class Worker {
       Property *myProps;
       Port *myPorts;
-      Test *myTests;
+      //      Test *myTests;
       LocalMemory* myLocalMemories;
-      unsigned nProps, nPorts, nTests, nLocalMemories, size;
+      unsigned nProps, nPorts, nLocalMemories; //, nTests, size;
       uint32_t totalPropertySize;
-      Test &findTest(unsigned int testId);
+      //      Test &findTest(unsigned int testId);
     public:
       inline Property *getProperties(unsigned &np) const {
         np = nProps;

@@ -893,7 +893,7 @@ void Transport::checkMailBoxes()
           ocpiAssert(port);
 
 	  size_t protocolSize = 0;
-	  OU::ResAddr protocolOffset;
+	  OU::ResAddr protocolOffset = 0; // suppress warning
 	  if (request.reqOutputContOffset.protocol_offset) {
 	    // The server side is telling us where to put the protocol info, based on our telling
 	    // it, in the reqnewconnection, how big it is.

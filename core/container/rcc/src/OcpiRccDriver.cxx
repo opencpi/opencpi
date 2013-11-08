@@ -16,9 +16,8 @@ namespace OCPI {
     const char *rcc = "rcc";
     Driver::
     Driver() throw() 
-      :
-      //      m_tpg_events(NULL), m_tpg_no_events(NULL), 
-      m_count(0) {
+      //:      m_tpg_events(NULL), m_tpg_no_events(NULL), m_count(0)
+    {
       ocpiCheck(pthread_key_create(&s_threadKey, NULL) == 0);
       ocpiDebug("Registering the RCC Container driver");
     }

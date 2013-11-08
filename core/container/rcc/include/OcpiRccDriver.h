@@ -8,7 +8,7 @@ namespace OCPI {
     class Container;
     class Driver : public OCPI::Container::DriverBase<Driver, Container, rcc> {
       //      OCPI::DataTransport::TransportGlobal *m_tpg_events, *m_tpg_no_events;
-      unsigned m_count;
+      //      unsigned m_count;
     public:
       static pthread_key_t s_threadKey;
       Driver() throw();

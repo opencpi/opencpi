@@ -33,6 +33,7 @@
  */
 
 
+#include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -114,7 +115,7 @@ static RCCResult afterConfigure(RCCWorker *this_)
   printf("P1 = %d\n", props->p1 );
   printf("P2 = %d\n", props->p2 );
   printf("P3 = %d\n", props->p3 );
-  printf("P4 = %hd\n", props->p4 );
+  printf("P4 = %"PRId8"\n", props->p4 );
   for ( n=0; n<5; n++ ) {
     printf("p5[%d] = %d\n", n, props->p5[n] );
   }

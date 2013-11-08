@@ -3,7 +3,7 @@
 # 1. the cross tools are in the path
 # 2. OCPI_TARGET_HOST is set properly (our target scheme, not the gnu target scheme)
 # 3. OCPI_CROSS_TARGET is the gnu cross target
-set -evx
+set -e
 OCPI_OMNIORB_VERSION=4.1.7
 . ./setup_install.sh
 mkdir -p omniorb

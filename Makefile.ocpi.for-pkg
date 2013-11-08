@@ -172,7 +172,7 @@ $(EXPORTLIB): $(UNIXLIB)
 $(UNIXSHLIB): $(OBJECTS)
 	$(CXX) $(OCPI_SHARED_LIBRARIES_FLAGS) $(SHARED) -o "$@" $(call FILTEROBJS,$(OBJECTS),$(EXCLUDE_OBJECTS)) $(EXTRALIBOBJS) \
 	       	$(patsubst %,-L%$(OBJDIR),$(dir $(ALLLIBS))) \
-		$(sort $(addprefix -L,$(dir $(SYSLIBS)))) \
+		$(sort $(addprefix -L,$(call OcpiDir,$(SYSLIBS)))) \
 		$(addprefix -l,$(notdir $(ALLLIBS) $(SYSLIBS))) \
 		$(BASICLIBS)
 endif
@@ -188,7 +188,7 @@ $(WINDLL): $(OBJECTS)
 		-Wl,--enable-runtime-pseudo-reloc \
 		$(OBJECTS) \
 		$(patsubst %,-L%$(OBJDIR),$(dir $(ALLLIBS))) \
-		$(addprefix -L,$(dir $(SYSLIBS))) \
+		$(addprefix -L,$(call OcpiDir,$(SYSLIBS))) \
 		$(addprefix -l,$(notdir $(ALLLIBS) $(SYSLIBS))) \
 		$(BASICLIBS)
 else

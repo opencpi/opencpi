@@ -60,7 +60,7 @@ namespace OCPI {
       unsigned m_ordinal;                   // ordinal of worker within artifact
       Implementation(Artifact &art, OCPI::Util::Implementation &i, ezxml_t instance, unsigned ordinal);
       // Does this implementation satify the selection criteria?  and if so, what is the score?
-      bool satisfiesSelection(const char *selection, unsigned &score);
+      //      bool satisfiesSelection(const char *selection, unsigned &score);
       bool getValue(const std::string &symbol, OCPI::Util::ExprValue &val);
       void setConnection(OCPI::Util::Port &myPort, Implementation *otherImpl = NULL,
 			 OCPI::Util::Port *otherPort = NULL);
@@ -88,12 +88,12 @@ namespace OCPI {
       Implementation *addImplementation(OCPI::Util::Implementation &metaImpl, ezxml_t staticInstance);
     public:
       void configure(ezxml_t x = NULL);
-      bool evaluateWorkerSuitability( const OCPI::API::PValue *p, unsigned & score );
+      //      bool evaluateWorkerSuitability( const OCPI::API::PValue *p, unsigned & score );
       // Can this artifact run on something with these capabilities?
       virtual bool meetsRequirements (const Capabilities &caps,
 				      const char *impl,
 				      const OCPI::API::PValue *props,
-				      const OCPI::API::PValue *selectCriteria,
+				      const char *selectCriteria,
 				      const OCPI::API::Connection *conns,
 				      const char *&inst,
 				      unsigned & score
@@ -126,7 +126,7 @@ namespace OCPI {
       Artifact &findArtifactX(const Capabilities &caps,
 			      const char *impl,
 			      const OCPI::API::PValue *props,
-			      const OCPI::API::PValue *selectCriteria,
+			      const char *selectCriteria,
 			      const OCPI::API::Connection *conns,
 			      const char *&inst);
       void setPath(const char *);
@@ -150,7 +150,7 @@ namespace OCPI {
       static Artifact &findArtifact(const Capabilities &caps,
 				    const char *specName,
 				    const OCPI::API::PValue *props,
-				    const OCPI::API::PValue *selectCriteria, 
+				    const char *selectCriteria, 
 				    const OCPI::API::Connection *conns,
 				    const char *&inst);
       // Inform the manager about an implementation
@@ -183,7 +183,7 @@ namespace OCPI {
       Artifact *findArtifact(const Capabilities &caps,
 			     const char *impl,
 			     const OCPI::API::PValue *props,
-			     const OCPI::API::PValue *selectCriteria,
+			     const char *selectCriteria,
 			     const OCPI::API::Connection *conns,
 			     const char *&inst);
     };
@@ -217,12 +217,12 @@ namespace OCPI {
       virtual ~Library();
     public:
       void findImplementations(ImplementationCallback &icb, const char *specName,
-			       const OCPI::API::PValue *selectCriteria);
+			       const char *selectCriteria);
       Artifact *
       findArtifact(const Capabilities &caps,
 		   const char *specName,
 		   const OCPI::API::PValue *props,
-		   const OCPI::API::PValue *selectCriteria,
+		   const char *selectCriteria,
 		   const OCPI::API::Connection *conns,
 		   const char *&inst);
       virtual Artifact *firstArtifact() = 0;

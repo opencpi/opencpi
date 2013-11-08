@@ -43,7 +43,7 @@ namespace OCPI {
       class Driver {
 	friend class Device;
 	// discovery socket. pointer since we only open it on demand
-	OCPI::OS::Ether::Socket *m_socket;
+	// OCPI::OS::Ether::Socket *m_socket;
 	//	const char **m_exclude;            // during discovery
 	// A mapping from interface name to sockets per interface, during discovery
 	typedef std::map<const std::string, OCPI::OS::Ether::Socket *> Sockets;

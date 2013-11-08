@@ -42,6 +42,14 @@
 # The name of an implementation subdirectory includes its authoring model as the
 # file extension.
 # We also list the targets per model.
+ifdef Workers
+  ifdef Implementations
+    $(error You cannot set both Workers and Implementations variables.)
+  else
+    Implementations := $(Workers)
+  endif
+endif
+
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
 include $(OCPI_CDK_DIR)/include/ocl/ocl-make.mk
@@ -239,9 +247,13 @@ ifeq ($(origin Worker),command line)
   Name:=$(word 1,$(Words))
   UCModel=$(call ToUpper,$(Model))
   ifdef SpecFile
-    OcpiSpecFile:=$(SpecFile)
+    ifeq ($(SpecFile),none)
+	OcpiSpecFile:=
+    else
+	OcpiSpecFile:=$(SpecFile)
+    endif
   else
-    OcpiSpecFile:=specs/$(Name)_spec.xml
+    OcpiSpecFile:=$(or $(wildcard specs/$(Name)_spec.xml),specs/$(Name)-spec.xml)
   endif
   ifeq ($(wildcard $(OcpiSpecFile)),)
     $(error Can't create worker $(Worker) when spec file: "$(OcpiSpecFile)" doesn't exist. Use SpecFile= ?)
@@ -265,7 +277,10 @@ new:
 	$(AT)($(if $(Language),echo Language:=$(Language);)echo include $$\(OCPI_CDK_DIR\)/include/worker.mk) > $(Worker)/Makefile
 	$(AT)$(if $(SpecFile),$(AT)(\
 	  echo '<$(UCModel)Implementation $(LangAttr)>';\
-	  echo '  <xi:include href="$(notdir $(SpecFile))"/>';\
+	  $(if $(OcpiSpecFile),\
+              echo '  <xi:include href="$(notdir $(OcpiSpecFile))"/>';,\
+	      echo "  <ComponentSpec name='$(Worker)'>";\
+	      echo "  </ComponentSpec>";)\
 	  echo '</$(UCModel)Implementation>') > $(Worker)/$(Name).xml,\
           echo "No OWD implementation xml file created.  Using defaults.")
 	$(AT)echo Running \"make skeleton\" to make initial skeleton in $(Worker)/$(Name).$(Suffix_$(Model))

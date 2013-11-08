@@ -86,7 +86,7 @@ void OCPI::DataTransport::Port::reset()
     m_initialized = false;
   }
   m_sequence = 0;
-  m_lastBufferOrd=-1;
+  m_lastBufferOrd=MAXBUFORD;
   getCircuit()->release();
 }
 
@@ -100,7 +100,7 @@ void OCPI::DataTransport::Port::initialize()
   }
 
   m_sequence = 0;
-  m_lastBufferOrd=-1;
+  m_lastBufferOrd=MAXBUFORD;
 
   m_realSMemResources = XferFactoryManager::getFactoryManager().getSMBResources( m_data->real_location_string );
   if ( !  m_realSMemResources ) {
@@ -1075,6 +1075,7 @@ getOffsets( DDT::Offset to_base_offset, OU::VList& offsets )
       addOffset(offsets, from_offset, to_offset, 
 		myoffsetof(PortMetaData::BufferOffsets, inputOffsets.localStateOffset), "local state");
       adjust = myoffsetof(PortMetaData::BufferOffsets, inputOffsets.metaDataOffset);
+      type = "input";
     }
     addOffset(offsets, from_offset, to_offset, adjust, type);
   }

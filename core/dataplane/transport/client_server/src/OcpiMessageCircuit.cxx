@@ -45,10 +45,10 @@ namespace OCPI {
     // Server side creation from underlying circuits
     MessageCircuit::
     MessageCircuit(Transport &transport,
-		   OS::Mutex &mutex,
+		   //		   OS::Mutex &mutex,
 		   Circuit &send,
 		   Circuit &rcv)
-      : m_transport(transport),	m_bufferSize(0), m_mutex(mutex), 
+      : m_transport(transport),	m_bufferSize(0),// m_mutex(mutex), 
 	m_rcv_port(rcv.getInputPortSet(0)->getPort(0)),
 	m_send_port(send.getOutputPortSet()->getPort(0))
     {
@@ -58,13 +58,13 @@ namespace OCPI {
     // Client side creation - providing optional protocol string info
     MessageCircuit::
     MessageCircuit(Transport &transport,
-		   OS::Mutex &mutex,
+		   //		   OS::Mutex &mutex,
 		   const char *localEndpoint,
 		   const char *remoteEndpoint,
 		   uint32_t bufferSize,
 		   const char *protocol,
 		   OS::Timer *timer)
-      : m_transport(transport),	m_bufferSize(bufferSize ? bufferSize : defaultBufferSize), m_mutex(mutex), 
+      : m_transport(transport),	m_bufferSize(bufferSize ? bufferSize : defaultBufferSize), // m_mutex(mutex), 
 	m_rcv_port(NULL), m_send_port(NULL)
     {
       DataTransfer::EndPoint

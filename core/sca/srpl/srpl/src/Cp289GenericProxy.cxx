@@ -354,7 +354,7 @@ namespace OCPI {
       if (!haveSync &&
           ((haveSync = p.readSync())))
         m_worker.beforeQuery();
-      const char * oops;
+      const char * oops = NULL;
       switch (p.m_info.m_baseType) {
         OCPI_PROPERTY_DATA_TYPES
       case OA::OCPI_String: {

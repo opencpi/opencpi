@@ -538,6 +538,7 @@ static void emulate(const char **) {
 	    sent = s.send(rFrame, ntohs(ech_in.length)+2, from, 0, NULL, error);
 	    break;
 	  default:
+	    sent = false; // warning
 	    bad("Invalid control packet type: typeEtc = 0x%x", ech_in.typeEtc);
 	  }
 	  if (sent)
@@ -576,7 +577,7 @@ testdma(const char **) {
   size_t dmaMeg;
   uint64_t dmaBase, dmaSize;
   int fd;
-  volatile uint8_t *cpuBase;
+  volatile uint8_t *cpuBase = 0; // warning
 
   if (!(dmaEnv = getenv("OCPI_DMA_MEMORY")))
     bad("Warning: You must set the OCPI_DMA_MEMORY environment variable before using any OpenCPI FPGA device.\n"
@@ -599,7 +600,7 @@ testdma(const char **) {
 	     MAP_FAILED)
     bad("Can't map to local DMA memory defined in OCPI_DMA_MEMORY using /dev/mem (%s/%d). Forgot sudo -E?",
 	strerror(errno), errno);
-  uint8_t save = *cpuBase;
+  uint8_t save = *cpuBase; // warning
 
   if ((*cpuBase = 1, *cpuBase != 1) || (*cpuBase = 2, *cpuBase != 2)) {
     *cpuBase = save; // do this before any sys calls etc.

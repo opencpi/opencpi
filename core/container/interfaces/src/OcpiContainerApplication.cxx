@@ -60,7 +60,7 @@ namespace OCPI {
     createWorker(const char *url, const OA::PValue *aParams, const char *instName,
 		 const char *implName, const char *preInstName,
 		 const OA::PValue *wProps, const OA::PValue *wParams,
-		 const OA::PValue * /* selectCriteria */ ) {
+		 const char * /* selectCriteria */ ) {
       if (url)
 	return container().loadArtifact(url, aParams).createWorker(*this, instName,
 								   implName, preInstName,
@@ -76,7 +76,7 @@ namespace OCPI {
     createWorker(const char *instName, const char *specName,
 		 const OA::PValue *wProps,
 		 const OA::PValue *wParams,
-		 const OA::PValue *selectCriteria, 
+		 const char *selectCriteria, 
 		 const OA::Connection *connections) {
       // Find an artifact (and instance within the artifact), for this worker
       std::string spec;

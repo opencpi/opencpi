@@ -140,7 +140,7 @@ static RCCResult UTGProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
 #endif
 
   this_->ports[UTGProducerWorker_Data_Out_Port0].output.length = len;
-  this_->ports[UTGProducerWorker_Data_Out_Port0].output.u.operation = props->buffersProcessed%256;
+  this_->ports[UTGProducerWorker_Data_Out_Port0].output.u.operation = (RCCOpCode)(props->buffersProcessed%256);
   this_->container.send( &this_->ports[UTGProducerWorker_Data_Out_Port0], 
                           &this_->ports[UTGProducerWorker_Data_Out_Port0].current, 0x54, len );
 

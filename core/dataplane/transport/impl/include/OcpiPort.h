@@ -51,6 +51,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits>
 #include <OcpiList.h>
 #include <OcpiRDTInterface.h>
 #include <OcpiTransportConstants.h>
@@ -73,6 +74,7 @@ namespace OCPI {
   namespace DataTransport {
 
     typedef size_t BufferOrdinal;
+    const size_t MAXBUFORD = std::numeric_limits<std::size_t>::max();
     class PullDataDriver;
     class PortSet;
     class Buffer;

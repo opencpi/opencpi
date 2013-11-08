@@ -125,7 +125,7 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 #endif
 
   this_->ports[ProducerWorker_Data_Out_Port].output.length = len;
-  this_->ports[ProducerWorker_Data_Out_Port].output.u.operation = (props->buffersProcessed-1)%256;
+  this_->ports[ProducerWorker_Data_Out_Port].output.u.operation = (RCCOpCode)((props->buffersProcessed-1)%256);
 
   if ( props->transferMode == ProducerSend ) {
     this_->container.send( &this_->ports[ProducerWorker_Data_Out_Port], 

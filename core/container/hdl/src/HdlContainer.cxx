@@ -318,7 +318,7 @@ OCPI_DATA_TYPES
       // For direct user access to ports
       volatile uint8_t *userDataBaseAddr;
       volatile OcdpMetadata *userMetadataBaseAddr;
-      bool m_userConnected;
+      //      bool m_userConnected;
       WciControl *m_adapter; // if there is an adapter
       bool m_hasAdapterConfig;
       size_t m_adapterConfig;
@@ -346,7 +346,7 @@ OCPI_DATA_TYPES
 	m_ocdpSize(m_properties.usable() ?
 		   m_properties.get32RegisterOffset(offsetof(OcdpProperties, memoryBytes)) :
 		   0),
-        m_userConnected(false),
+      //        m_userConnected(false),
 	m_adapter(adwXml ? new WciControl(w.m_container.hdlDevice(), adwXml, adXml) : 0),
 	m_hasAdapterConfig(false),
 	m_adapterConfig(0),

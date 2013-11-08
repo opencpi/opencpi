@@ -71,14 +71,14 @@ namespace OCPI {
       // This constructor is used on the server side when circuits are created
       // in response to mailbox messages from the client side.
       MessageCircuit(OCPI::DataTransport::Transport &transport,
-		     OCPI::OS::Mutex &mutex,
+		     //		     OCPI::OS::Mutex &mutex,
                      OCPI::DataTransport::Circuit &send,
                      OCPI::DataTransport::Circuit &rcv);
 
       // This constructori is used on the client side to connect with the remote
       // endpoint.
       MessageCircuit(OCPI::DataTransport::Transport &transport,
-		     OCPI::OS::Mutex &mutex,
+		     //		     OCPI::OS::Mutex &mutex,
 		     const char *localEndpoint,
 		     const char *remoteEndpoint,
 		     uint32_t bufferSize = defaultBufferSize,
@@ -134,7 +134,7 @@ namespace OCPI {
       // Member data at initialization
       OCPI::DataTransport::Transport& m_transport;
       uint32_t m_bufferSize;
-      OCPI::OS::Mutex &m_mutex;
+      //      OCPI::OS::Mutex &m_mutex;
 
       // Member data set at/during construction
       OCPI::DataTransport::Port* m_rcv_port;

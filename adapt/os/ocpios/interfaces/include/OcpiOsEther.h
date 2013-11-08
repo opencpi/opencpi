@@ -138,7 +138,7 @@ namespace OCPI {
 	int m_fd;
 	unsigned m_timeout;
 	ocpi_role_t m_role;
-	uint16_t m_endpoint;
+	//	uint16_t m_endpoint;
       public:
 	Socket(Interface &, ocpi_role_t role, Address *remote, uint16_t endpoint, std::string &error);
 	~Socket();

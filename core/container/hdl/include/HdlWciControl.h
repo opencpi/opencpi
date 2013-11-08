@@ -66,6 +66,8 @@ namespace OCPI {
 		get32Register(status, OccpWorkerRegisters) &		          \
 		OCCP_STATUS_READ_ERRORS))				          \
 	    val = m_properties.get##n##RegisterOffset(offset);                    \
+	  else							                  \
+            val = 0;                                                              \
 	  if (info.m_readError && !status)				          \
 	    status =							          \
 	      get32Register(status, OccpWorkerRegisters) &		          \

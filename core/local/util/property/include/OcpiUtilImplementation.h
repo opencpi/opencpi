@@ -99,6 +99,7 @@ namespace OCPI {
       void validate();
     };
 
+#if 0
     class Test {
       friend class Implementation;
       unsigned int m_testId;
@@ -106,6 +107,7 @@ namespace OCPI {
       unsigned int *m_inputValues;  // reference to property[n]
       unsigned int *m_resultValues;
     };
+#endif
 
     // This class represents what we know, generically, about a component implementation
     // Currently there is no separate "spec" metadata - it is redundant in each implementation
@@ -114,10 +116,10 @@ namespace OCPI {
       Attributes *m_attributes; // not a reference due to these being in arrays
       Port *m_ports;
       Memory *m_memories;
-      Test *m_tests;
-      unsigned m_nPorts, m_nTests, m_nMemories;//, size;
+      //      Test *m_tests;
+      unsigned m_nPorts, m_nMemories; //, size , m_nTests
       size_t m_totalPropertySize;
-      Test &findTest(unsigned int testId) const;
+      //      Test &findTest(unsigned int testId) const;
     public:
       unsigned m_nProperties;
       Property *m_properties;

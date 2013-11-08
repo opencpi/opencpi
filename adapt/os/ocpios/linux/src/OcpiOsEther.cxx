@@ -204,7 +204,7 @@ namespace OCPI {
 	: m_ifIndex(i.index), m_ifAddr(i.addr), m_brdAddr(i.brdAddr),
 	  //	  m_ipAddr(i.ipAddr),
 	  m_type(role == ocpi_data ? OCDP_ETHER_TYPE : OCCP_ETHER_MTYPE),
-	  m_fd(-1), m_timeout(0), m_role(role), m_endpoint(endpoint)
+	  m_fd(-1), m_timeout(0), m_role(role)
       {
 	//	ocpiDebug("setting ethertype socket option on type 0x%x", m_type);
 	if (i.addr.isEther() && (!remote || remote->isEther())) {

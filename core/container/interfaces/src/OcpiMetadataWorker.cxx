@@ -79,8 +79,8 @@ namespace OCPI {
 	  delete [] myPorts;
 	if (myProps)
 	  delete [] myProps;
-	if (myTests)
-	  delete [] myTests;
+	//	if (myTests)
+	//delete [] myTests;
       }
     unsigned Worker::whichProperty(const char *id) {
       Property *p = myProps;
@@ -100,15 +100,16 @@ namespace OCPI {
       }
       return 0;
     }
+#if 0
     Test &Worker::findTest(unsigned int testId) {
        (void)testId;
       assert(0); static Test *t; return *t;
     }
-
+#endif
     // Decode based on XML, determining offsets
     Worker::Worker(ezxml_t xml)
-      : myProps(0), myPorts(0), myTests(0), myLocalMemories(0), nProps(0),
-        nPorts(0), nTests(0), nLocalMemories(0), size(0),
+      : myProps(0), myPorts(0), myLocalMemories(0), nProps(0),
+        nPorts(0), nLocalMemories(0), //  myTests(0), nTests(0), size(0),
         totalPropertySize(0)
     {
       ezxml_t x;

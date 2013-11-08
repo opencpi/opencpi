@@ -7,7 +7,7 @@
 #include "OcpiContainerErrorCodes.h"
 #include "OcpiLibraryManager.h"
 #include <OcpiOsAssert.h>
-#include <OcpiExpParser.h>
+//#include <OcpiExpParser.h>
 
 // This file contains code common to all library drivers
 
@@ -37,7 +37,7 @@ namespace OCPI {
     Artifact &Manager::
     findArtifact(const Capabilities &caps, const char *specName,
 		 const OCPI::API::PValue *params,
-		 const OCPI::API::PValue *selectCriteria,
+		 const char *selectCriteria,
 		 const OCPI::API::Connection *conns,
 		 const char *&artInst) {
       return getSingleton().findArtifactX(caps, specName, params, selectCriteria, conns, artInst);
@@ -45,7 +45,7 @@ namespace OCPI {
     Artifact &Manager::
     findArtifactX(const Capabilities &caps, const char *specName,
 		  const OCPI::API::PValue *params,
-		  const OCPI::API::PValue *selectCriteria,
+		  const char *selectCriteria,
 		  const OCPI::API::Connection *conns,
 		  const char *&artInst) {
       parent().configureOnce();
@@ -87,6 +87,19 @@ namespace OCPI {
     void Manager::addImplementation(Implementation &impl) {
       m_implementations.insert(WorkerMapPair(impl.m_metadataImpl.specName().c_str(), &impl));
     }
+    static bool
+    satisfiesSelection(const char *selection, unsigned *score, OU::Implementation &impl) {
+      OU::ExprValue val;
+      const char *err = OU::evalExpression(selection, val, &impl);
+      if (err)
+	throw OU::Error("Error parsing selection expression: %s", err);
+      if (!val.isNumber)
+	throw OU::Error("selection expression has string value");
+      if (score)
+	// FIXME test if overflow
+	*score = (unsigned)(val.number < 0 ? 0: val.number); // force non-negative
+      return val.number > 0;
+    }
 
     // Find (and callback with) implementations for specName and selectCriteria
     // Return true if any were found
@@ -98,7 +111,7 @@ namespace OCPI {
       for (WorkerIter wi = range.first; wi != range.second; wi++) {
 	unsigned score = 1; // default when no selection criteria
 	Implementation &impl = *wi->second;
-	if ((!selectCriteria || impl.satisfiesSelection(selectCriteria, score)) &&
+	if ((!selectCriteria || satisfiesSelection(selectCriteria, NULL, impl.m_metadataImpl)) &&
 	    icb.foundImplementation(impl, score, found))
 	  return true;
       }
@@ -139,18 +152,6 @@ namespace OCPI {
 	: m_artifact(art), m_metadataImpl(i), m_staticInstance(instance),
 	  m_externals(0), m_internals(0), m_connections(NULL), m_ordinal(ordinal)
     {}
-    bool Implementation::
-    satisfiesSelection(const char *selection, unsigned &score) {
-      OU::ExprValue val;
-      const char *err = OU::evalExpression(selection, val, &m_metadataImpl);
-      if (err)
-	throw OU::Error("Error parsing selection expression: %s", err);
-      if (!val.isNumber)
-	throw OU::Error("selection expression has string value");
-      // FIXME test if overflow
-      score = (unsigned)(val.number < 0 ? 0: val.number); // force non-negative
-      return val.number > 0;
-    }
 
     void Implementation::
     setConnection(OCPI::Util::Port &myPort, Implementation *otherImpl,
@@ -173,7 +174,7 @@ namespace OCPI {
     findArtifact(const Capabilities &caps,
 		 const char *specName,
 		 const OCPI::API::PValue *params,
-		 const OCPI::API::PValue *selectCriteria,
+		 const char *selectCriteria,
 		 const OCPI::API::Connection *conns,
 		 const char *&artInst) {
       for (Library *l = firstLibrary(); l; l = l->nextLibrary())
@@ -186,7 +187,7 @@ namespace OCPI {
     findArtifact(const Capabilities &caps,
 		 const char *specName,
 		 const OCPI::API::PValue *params,
-		 const OCPI::API::PValue *selectCriteria,
+		 const char *selectCriteria,
 		 const OCPI::API::Connection *conns,
 		 const char *&artInst) {
 
@@ -261,6 +262,7 @@ namespace OCPI {
 	  return data;
 	}
 
+#if 0
     class MyVarDefiner : public OCPI::DefineExpVarInterface {
     public:
 
@@ -396,7 +398,6 @@ namespace OCPI {
     };
 
 
-
     bool 
     Artifact::
     evaluateWorkerSuitability( const OCPI::API::PValue *p, unsigned & score )
@@ -442,12 +443,13 @@ namespace OCPI {
       }
       return true;
     }
+#endif
 
     bool Artifact::
     meetsRequirements (const Capabilities &caps,
 		       const char *specName,
 		       const OCPI::API::PValue * /*props*/,
-		       const OCPI::API::PValue *selectCriteria,
+		       const char *selectCriteria,
 		       const OCPI::API::Connection * /*conns*/,
 		       const char *& /* artInst */,
 		       unsigned & score ) {
@@ -461,14 +463,7 @@ namespace OCPI {
 	  if (caps.m_model != wi->second->m_metadataImpl.model())
 	    continue;
 	  // Now we will test the selection criteria 
-	  if ( selectCriteria ) {
-	    const OCPI::API::PValue *p = selectCriteria;
-	    bool eval = evaluateWorkerSuitability( p, score );
-	    return eval;
-	  }
-	  else {
-	    return true;
-	  }
+	  return !selectCriteria || satisfiesSelection(selectCriteria, &score, wi->second->m_metadataImpl);
 	}
       }
       return false;

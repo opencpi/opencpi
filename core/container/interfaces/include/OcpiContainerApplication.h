@@ -79,12 +79,12 @@ namespace OCPI {
 				       const char *preInstName,
 				       const OCPI::Util::PValue *wprops,
 				       const OCPI::API::PValue *wparams,
-				       const OCPI::Util::PValue *selectCriteria = NULL);
+				       const char *selectCriteria = NULL);
       // This is the API method to create a worker from libraries
       OCPI::API::Worker &createWorker(const char *appInstName, const char *specName,
 				      const OCPI::API::PValue *wParams = NULL,
 				      const OCPI::Util::PValue *wprops = NULL,
-				      const OCPI::Util::PValue *selectCriteria = NULL,
+				      const char *selectCriteria = NULL,
 				      const OCPI::API::Connection *connections = NULL);
       Worker &createWorker(OCPI::Library::Artifact &art, const char *appInstName, 
 			   const ezxml_t impl, const ezxml_t inst,

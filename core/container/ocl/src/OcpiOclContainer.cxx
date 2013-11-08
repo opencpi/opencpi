@@ -1040,12 +1040,12 @@ namespace OCPI
       friend class InternalBuffer;
 
       private:
-        uint32_t remoteIndex;
+      //        uint32_t remoteIndex;
         ezxml_t m_connection;
-        ExternalPort* myExternalPort;
+      //        ExternalPort* myExternalPort;
         OCPI::Metadata::PortOrdinal myPortOrdinal;
 
-        uint32_t* flags;
+      //        uint32_t* flags;
         InternalBuffer* currentBuffer;
         InternalBuffer* localBuffers;
         InternalBuffer* nextLocal;
@@ -1083,7 +1083,7 @@ namespace OCPI
 						     ( 1 << OCPI::RDT::ActiveFlowControl ) |
 						     ( 1 << OCPI::RDT::ActiveMessage ),
 						     params ),
-            remoteIndex ( 0 ),
+	    //            remoteIndex ( 0 ),
             m_connection ( 0 ),
             myPortOrdinal ( mPort.ordinal )
         {
@@ -1543,7 +1543,7 @@ namespace OCPI
       friend class ExternalBuffer;
 
       private:
-        uint32_t* flags;
+      //        uint32_t* flags;
         ExternalBuffer* localBuffers;
         ExternalBuffer* nextLocal;
         ExternalBuffer* nextRemote;

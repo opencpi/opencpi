@@ -264,6 +264,8 @@ namespace OCPI {
 	      get32Register(status, OccpWorkerRegisters) &
 	      OCCP_STATUS_READ_ERRORS))
 	  nItems = m_properties.get32RegisterOffset(offset);
+	else
+	  nItems = 0; // warning
 	if (!p.m_info.m_readError && 
 	    !(status =
 	      get32Register(status, OccpWorkerRegisters) &

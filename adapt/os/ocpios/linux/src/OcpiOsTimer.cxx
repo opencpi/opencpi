@@ -370,7 +370,7 @@ void Timer::init(bool start) {
   tci.accumulatedTime.set(0);
   if ((running = start)) {
     if (useHighResTimer()) {
-      register unsigned int tb_lower, tb_upper, tb_upper_tmp;
+      register unsigned int tb_lower, tb_upper = 0, tb_upper_tmp;
 
       do {
         TBU( tb_upper );
@@ -402,7 +402,7 @@ start ()
   running = true;
 
   if (useHighResTimer()) {
-    register unsigned int tb_lower, tb_upper, tb_upper_tmp;
+    register unsigned int tb_lower, tb_upper = 0, tb_upper_tmp;
 
     do {
       TBU( tb_upper );
@@ -464,7 +464,7 @@ getElapsed ()
 {
   if (running) {
     if (useHighResTimer()) {
-      register unsigned int tb_lower, tb_upper, tb_upper_tmp;
+      register unsigned int tb_lower, tb_upper = 0, tb_upper_tmp;
       
       do {
 	TBU( tb_upper );

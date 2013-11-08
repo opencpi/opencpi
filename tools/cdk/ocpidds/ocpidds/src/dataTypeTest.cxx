@@ -130,7 +130,7 @@ class Writer : public OU::Writer {
   OU::Value **m_values;
   OU::Value *m_v;
   OU::Value *m_parent; // parent of current node
-  bool m_first;
+  //  bool m_first;
   size_t m_nElements;
   size_t m_n, m_nArgs;        // index in top level vector (m_values);
 
@@ -161,7 +161,8 @@ class Writer : public OU::Writer {
   }
 public:
   Writer(OU::Value **v, size_t nArgs)
-    : m_values(v), m_v(NULL), m_parent(NULL), m_first(true), m_nElements(0), m_n(0), m_nArgs(nArgs) {
+    : m_values(v), m_v(NULL), m_parent(NULL), m_nElements(0), m_n(0), m_nArgs(nArgs) // m_first(true),
+  {
   }
   void beginSequence(OU::Member &m, size_t nElements) {
     m_nElements = nElements;

@@ -227,10 +227,10 @@ namespace OCPI {
 
 	if (!Manager::findImplementations(*this, inst.m_specName.c_str(), selection))
 	  throw OU::Error(!selection ?
-			  "No implementations found in any libraries for \"%s\"" :
+			  "No implementations found in any libraries for \"%s\"%s" :
 			  "No acceptable implementations found in any libraries "
 			  "for \"%s\" (for selection: '%s')",
-			  inst.m_specName.c_str(), selection);
+			  inst.m_specName.c_str(), selection ? selection : "");
 	if (m_tempCandidates->size() > m_maxCandidates)
 	  m_maxCandidates = (unsigned)m_tempCandidates->size();
       }

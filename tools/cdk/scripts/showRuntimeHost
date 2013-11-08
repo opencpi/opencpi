@@ -23,7 +23,8 @@ elif test -f /etc/lsb-release; then
   HostVersion=`echo $DISTRIB_ID|sed 's/^\(.\).*/\1/' | tr A-Z a-z``echo $DISTRIB_RELEASE|sed 's/^\([^.]*\).*/\1/'`
 elif test $HostSystem = darwin -a "`which sw_vers`" != ""; then
   HostSystem=macos
-  HostVersion=`sw_vers -productVersion | sed 's/\.[0-9][0-9]*$//'`
+  HostVersion=`sw_vers -productVersion`
+#  HostVersion=`sw_vers -productVersion | sed 's/\.[0-9][0-9]*$//'`
 elif test "$HostSystem" = linux -a -f /etc/rootfs_version; then
   HostVersion=iv
   HostProcessor=arm

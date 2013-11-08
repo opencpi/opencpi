@@ -33,6 +33,9 @@
 #
 ########################################################################### #
 
+# Someday include our "util.mk"
+OcpiDir=$(foreach d,$1,$(patsubst %/,%,$(dir $1)))
+
 MAIN_LDFLAGS=$(LDFLAGS)
 # Here we define the preprocessor definitions that tell the
 # source code about the compilation environment
@@ -174,7 +177,7 @@ $(OBJDIR)/%.exe : $(OBJDIR)/%.obj $$(DYNOBJS)
 		$(filter %.obj,$^) \
 		$(DYNOBJS) \
 		$(patsubst %,-L%$(OCPI_OUT_DIR),$(dir $(ALLLIBS))) \
-		$(addprefix -L,$(dir $(SYSLIBS))) \
+		$(addprefix -L,$(call OcpiDir,$(SYSLIBS))) \
 		$(addprefix -l,$(notdir $(ALLLIBS) $(SYSLIBS))) \
 		$(BASICLIBS)
 
@@ -273,7 +276,7 @@ $(OBJDIR)/%.exe : $(OBJDIR)/%.obj $$(DYNOBJS)
 		$(filter %.obj,$^) \
 		$(DYNOBJS) \
 		$(patsubst %,/libpath:%$(OCPI_OUT_DIR),$(dir $(ALLLIBS))) \
-		$(addprefix /libpath:,$(dir $(SYSLIBS))) \
+		$(addprefix /libpath:,$(call OcpiDir,$(SYSLIBS))) \
 		$(addsuffix .lib,$(notdir $(ALLLIBS) $(SYSLIBS))) \
 		$(BASICLIBS)
 
@@ -297,14 +300,15 @@ ifeq ($(OCPI_OS),macos)
 SO=dylib
 LD_ALLOW_UNDEFINED=-undefined dynamic_lookup
 SHARED_ALLOW_UNDEFINED=-dynamiclib $(LD_ALLOW_UNDEFINED) -install_name @rpath/$(notdir $@)
-SHARED=-dynamiclib -install_name @rpath/$(notdir $@)
+SHARED= -stdlib=libstdc++ -dynamiclib -install_name @rpath/$(notdir $@)
 UNDEFINED_FLAG=-Xlinker -u -Xlinker _$1
 BASICLIBS=
-CXXFLAGS += -Wall -Wsequence-point  -Wparentheses -Wempty-body -Wformat-security -Wformat -Wunused-variable -Wunused-parameter -Wsign-compare -Wno-dangling-else -Wno-logical-op-parentheses
+CXXFLAGS += -stdlib=libstdc++ -Wall -Wsequence-point  -Wparentheses -Wempty-body -Wformat-security -Wformat -Wunused-variable -Wunused-parameter -Wsign-compare -Wno-dangling-else -Wno-logical-op-parentheses
 # -Wuninitialized only usable with -O
 # not available on -Wunused-but-set-variable -Wignored-qualifiers -Wconversion-null -Wint-to-pointer-cast
 #CXXFLAGS += -Wall
 # CXXFLAGS += -mdynamic-no-pic ideally do this for main programs...
+EXTRA_LDFLAGS=-stdlib=libstdc++
 else
 UNDEFINED_FLAG=-Xlinker -u -Xlinker $1
 ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
@@ -432,7 +436,7 @@ $(OBJDIR)/%.exe : $(OBJDIR)/%.obj $(DYNOBJS)
 	$(LD) $(MAIN_LDFLAGS) -o "$@" \
 		$(filter %.obj,$^) \
 		$(patsubst %,-L%$(OCPI_OUT_DIR),$(dir $(ALLLIBS))) \
-		$(addprefix -L,$(dir $(SYSLIBS)) $(SYSLIBDIRS)) \
+		$(addprefix -L,$(call OcpiDir,$(SYSLIBS)) $(SYSLIBDIRS)) \
 		$(addprefix -l,$(notdir $(ALLLIBS) $(SYSLIBS))) \
 		$(BASICLIBS)
 
@@ -596,7 +600,7 @@ $(OBJDIR)/%.exe : $(OBJDIR)/%.obj
 		$(OBJDIR)/$(basename $(notdir $@))-vxdkm-ctdc.o \
 		$(filter %.obj,$^) \
 		$(patsubst %,-L%$(OCPI_OUT_DIR),$(dir $(ALLLIBS))) \
-		$(addprefix -L,$(dir $(SYSLIBS))) \
+		$(addprefix -L,$(call OcpiDir,$(SYSLIBS))) \
 		$(addprefix -l,$(notdir $(ALLLIBS) $(SYSLIBS))) \
 		$(BASICLIBS)
 endif

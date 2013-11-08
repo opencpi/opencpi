@@ -121,7 +121,7 @@ namespace OCPI {
     // the internal, non-static method, with same args as the static one, hence "To".
     MessageCircuit &MessageEndpoint::
     connectTo(const char *server_endpoint, unsigned bufferSize, const char *protocol, OCPI::OS::Timer *timer) {
-      return *new MessageCircuit(*m_transport, *this, m_endpoint->end_point.c_str(),
+      return *new MessageCircuit(*m_transport, /* *this, */ m_endpoint->end_point.c_str(),
 				 server_endpoint, bufferSize, protocol, timer);
     }
 
@@ -154,7 +154,7 @@ namespace OCPI {
 	      // (*i)->initializeDataTransfers();
 	      Port *jOutput = (*j)->getOutputPortSet()->getPortFromIndex(0);
 	      if (!jOutput->isShadow() && jOutput->getMetaData()->m_shadow_location == remote) {
-		MessageCircuit *mc = new MessageCircuit(*m_transport, *this, **j, **i);
+		MessageCircuit *mc = new MessageCircuit(*m_transport, /* *this/, */ **j, **i);
 		m_halfCircuits.erase(i);
 		m_halfCircuits.erase(j);
 		return mc;

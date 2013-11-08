@@ -307,4 +307,8 @@ DoShell=$(eval X:=$(shell X=`sh -c '$1; exit $$?' 2>&1`;echo $$?; echo "$$X" | s
 	     $(call OcpiDbgVar,$2) \
              $(filter-out 0,$(firstword $X)))
 
+
+# Like the builtin "dir", but without the trailing slash
+OcpiDir=$(foreach d,$1,$(patsubst %/,%,$(dir $1)))
+
 endif

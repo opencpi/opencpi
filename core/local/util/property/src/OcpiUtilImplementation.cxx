@@ -43,15 +43,15 @@ namespace OCPI {
 
     namespace OE = OCPI::Util::EzXml;
     Implementation::Implementation()
-      : m_ports(0), m_memories(0), m_tests(0),
-	m_nPorts(0), m_nTests(0), m_nMemories(0),// size(0),
+      : m_ports(0), m_memories(0), // m_tests(0), m_nTests(0), 
+	m_nPorts(0), m_nMemories(0),// size(0),
         m_totalPropertySize(0), m_nProperties(0), m_properties(0), m_xml(NULL)
     {}
 
     Implementation::~Implementation() {
       delete [] m_ports;
       delete [] m_properties;
-      delete [] m_tests;
+      //      delete [] m_tests;
       delete [] m_memories;
     }
     unsigned Implementation::whichProperty(const char *id) const {
@@ -71,11 +71,12 @@ namespace OCPI {
           return p;
       return NULL;
     }
+#if 0
     Test &Implementation::findTest(unsigned int testId) const {
        (void)testId;
        ocpiAssert(0); return *m_tests;
     }
-
+#endif
     const char *Implementation::parse(ezxml_t xml, Attributes &attr) {
       m_attributes = &attr;
       const char *err = OE::getRequiredString(xml, m_name, "name", "worker");

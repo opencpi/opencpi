@@ -217,7 +217,7 @@ namespace DataTransfer {
       }
     private:
       DatagramSocket * m_socket;
-      FrameMonitor   * m_frameMonitor;
+      //      FrameMonitor   * m_frameMonitor;
       //      EndPoint* m_ep;
       char* m_mem;
       std::vector< DatagramXferServices * > m_xferServices;
@@ -301,8 +301,8 @@ namespace DataTransfer {
 			   XferRequest::Flags flags
 			   );
 
-    private:
-	uint32_t     m_txTotal;   // Total number of datagrams that make up this transaction - flag transfer
+	//    private:
+	//	uint32_t     m_txTotal;   // Total number of datagrams that make up this transaction - flag transfer
     protected:
 	DtOsDataTypes::Offset         m_srcoffset;        // The source memory offset
 	DtOsDataTypes::Offset         m_dstoffset;        // The destination memory offset
