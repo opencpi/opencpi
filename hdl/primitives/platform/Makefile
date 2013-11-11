@@ -4,9 +4,9 @@ HdlNoElaboration=yes
 # FIXME FIXME: The low level primitives (FIFO etc.) are COPIED here due to an XST bug
 # that doesn't seem to find verilog modules in libraries when the elaboration is vhdl->verilog->verilog...
 SourceFiles=\
-platform_pkg.vhd mkOCCP.v occp.vhd timeService.v time_server.vhd time_client.vhd \
-mkTLPSerializer.v unoc_cp_adapter.vhd metadata.vhd \
-mkPktFork.v mkPktMerge.v mkTLPSM.v unoc_node.vhd unoc_terminator.vhd \
+platform_pkg.vhd mkOCCP.v occp_rv.vhd timeService.v time_server.vhd time_client_rv.vhd \
+mkTLPSerializer.v unoc_cp_adapter.vhd metadata_rv.vhd \
+mkPktFork.v mkPktMerge.v mkTLPSM.v unoc_node_rv.vhd unoc_terminator.vhd \
 mkTimeClient.v \
 mkSimIO.v mkSimDCP.v \
 FIFO1.v FIFO2.v MakeResetA.v SyncResetA.v SyncRegister.v SyncHandshake.v

@@ -255,7 +255,7 @@ $(call HdlContainer,$1) $(call HdlContBitName,$1): \
                          AllCores=$$(call HdlCollectCores,$$(HdlTarget))
 # The two basic pieces of the container are cores, not workers
 $(call HdlContainer,$1) $(call HdlContBitName,$1): \
-			override Cores=$(HdlPlatformsDir)/$(HdlPlatform_$1)/target-$(call HdlConfig_$1)/$(call HdlConfig_$1)_rv target-$(HdlTarget_$1)/$(Worker)
+			override Cores=$(HdlPlatformsDir)/$(HdlPlatform_$1)/target-$(call HdlConfig_$1)/$(call HdlConfig_$1)_rv target-$(HdlTarget_$1)/$(Worker)_rv
 
 $(call HdlContainer,$1): $(call WkrBinary,$(HdlTarget_$1))
 	$(AT)echo Building $$(HdlMode) core \"$1\" for assembly "$(Worker)" for target \"$(HdlPlatform_$1)\"

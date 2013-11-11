@@ -15,7 +15,7 @@ component pci_ml605 is
     pci_link_up             : out std_logic;
     -- PCI signals facing into the rest of the platform
     p125clk                 : out std_logic;
-    p125rst                 : out std_logic;
+    p125rstn                : out std_logic;
     pci_device              : out std_logic_vector (15 downto 0);
     -- unoc_link from PCI
     unoc_out_data           : out std_logic_vector (152 downto 0);

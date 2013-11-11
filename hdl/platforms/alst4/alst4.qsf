@@ -1,11 +1,5 @@
-# alst4.qsf - top level Quartus2 Settings File (qsf) for the Altera S4GX board
-# Copyright (c) 2011 Atomic Rules LLC - ALL RIGHTS RESERVED
-# This file is INCLUDED in the actual settings file and has no source file references
-# This is used to synthesize the "platform core"
-
-set_global_assignment -name FAMILY "STRATIXIV"
-set_global_assignment -name DEVICE EP4SGX230KF40C2
-set_global_assignment -name TOP_LEVEL_ENTITY fpgaTop
+# Top level settings for the final processing after the container core is made
+# This file is "sourced" (included) from that generated qsf file
 
 #set_global_assignment -name PHYSICAL_SYNTHESIS_COMBO_LOGIC ON
 #set_global_assignment -name PHYSICAL_SYNTHESIS_REGISTER_DUPLICATION ON
@@ -18,7 +12,6 @@ set_global_assignment -name OPTIMIZE_MULTI_CORNER_TIMING ON
 #set_global_assignment -name ENABLE_CLOCK_LATENCY ON
 #set_global_assignment -name ENABLE_RECOVERY_REMOVAL_ANALYSIS ON
 
-set_global_assignment -name SDC_FILE ../alst4.sdc
 set_global_assignment -name RESERVE_ALL_UNUSED_PINS "AS INPUT TRI-STATED WITH WEAK PULL-UP"
 
 set_location_assignment PIN_A21 -to sys0_clk

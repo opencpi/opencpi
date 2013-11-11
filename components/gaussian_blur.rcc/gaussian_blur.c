@@ -59,7 +59,7 @@ RCCDispatch gaussian_blur = {
 // Gaussian kernel
 static double gaussian[3][3];
 
-inline void
+static inline void
 initKernel(double sigmaX, double sigmaY) {
   // default values 0.8
   if(sigmaX < 1e-9)
@@ -88,7 +88,7 @@ initKernel(double sigmaX, double sigmaY) {
 }
 
 // Compute one line of output
-inline void
+static inline void
 doLine(Pixel *l0, Pixel *l1, Pixel *l2, Pixel *out, unsigned width) {
   unsigned i; // don't depend on c99 yet
   for (i = 1; i < width - 1; i++) {

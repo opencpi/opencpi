@@ -2372,7 +2372,7 @@ module mkWSIPatternWorker4B(wciS0_Clk,
       WILL_FIRE_RL_wci_wslv_respF_decCtr:
 	  wci_wslv_respF_q_0$D_IN = wci_wslv_respF_q_1;
       default: wci_wslv_respF_q_0$D_IN =
-		   34'h2AAAAAAAA /* unspecified value */ ;
+		   34'h0AAAAAAAA /* unspecified value */ ;
     endcase
   end
   assign wci_wslv_respF_q_0$EN =

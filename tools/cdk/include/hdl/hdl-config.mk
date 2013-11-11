@@ -59,7 +59,7 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
 ifdef Configurations
 
 HdlConfigDir=$(OutDir)target-$1
-HdlConfig=$(call HdlConfigDir,$1)/$1$(and $(HdlToolReadCore),_rv$(HdlBin))
+HdlConfig=$(call HdlConfigDir,$1)/$1$(and $(HdlToolRealCore),_rv$(HdlBin))
 HdlConfigSource=$(GeneratedDir)/$1-$2.vhd
 HdlConfigSources=$(foreach s,defs impl assy,$(call HdlConfigSource,$1,$s))
 HdlOcpigenLibs=$(xxxinfo ccc:$(ComponentLibraries):$(HdlToolSet_$(HdlTarget)):$(HdlTarget))\
@@ -75,17 +75,17 @@ define doConfiguration
 
 $(call HdlConfigSource,$1,defs): $1.xml | $(GeneratedDir)
 	$(AT)echo Generating the platform configuration assembly source file: $$@ from $$<
-	$(AT)$$(OcpiGen) -W $(Worker) $(HdlOcpigenLibs) \
+	$(AT)$$(OcpiGen) $(HdlOcpigenLibs) \
 	 -D $(GeneratedDir) -d  $(and $(HdlPlatform),-P $(HdlPlatform)) $$<
 
 $(call HdlConfigSource,$1,impl): $1.xml | $(GeneratedDir)
 	$(AT)echo Generating the platform configuration assembly source file: $$@ from $$<
-	$(AT)$$(OcpiGen) -W $(Worker) $(HdlOcpigenLibs) \
+	$(AT)$$(OcpiGen) $(HdlOcpigenLibs) \
 	 -D $(GeneratedDir) -i  $(and $(HdlPlatform),-P $(HdlPlatform)) $$<
 
 $(call HdlConfigSource,$1,assy): $1.xml | $(GeneratedDir)
 	$(AT)echo Generating the platform configuration assembly source file: $$@ from $$<
-	$(AT)$$(OcpiGen) -W $(Worker) $(HdlOcpigenLibs) \
+	$(AT)$$(OcpiGen) $(HdlOcpigenLibs) \
 	 -D $(GeneratedDir) -W $1 -a  $(and $(HdlPlatform),-P $(HdlPlatform)) $$<
 
 HdlConfigs+= $(call HdlConfig,$1)
@@ -100,7 +100,7 @@ $(call HdlConfig,$1): HdlTarget:=$(HdlExactPart)
 $(call HdlConfig,$1): HdlSources:=$(call HdlConfigSources,$1)
 $(call HdlConfig,$1): TargetDir=$(call HdlConfigDir,$1)
 # This allows the platform worker to be found
-$(call HdlConfig,$1): target-$(call HdlGetFamily,$(HdlExactPart))/$(Worker)
+$(call HdlConfig,$1): target-$(call HdlGetFamily,$(HdlExactPart))/$(Worker)$(and $(HdlToolRealCore),_rv$(HdlBin))
 $(call HdlConfig,$1): override ComponentLibraries+=target-$(call HdlGetFamily,$(HdlExactPart))/$(Worker)
 # This causes the workers file to be read to add to the cores list
 $(call HdlConfig,$1): override ImplWorkersFile=$(GeneratedDir)/$1.wks

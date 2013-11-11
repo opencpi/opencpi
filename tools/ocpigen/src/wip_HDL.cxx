@@ -2257,10 +2257,70 @@ emitVhdlRecordWrapper(FILE *f) {
 	    "library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions\n");
     emitVhdlLibraries(f);
     fprintf(f,
-	    "architecture rtl of %s_rv is begin\n"
+	    "architecture rtl of %s_rv is\n", m_implName);
+    // Define individual signals to work around isim bug that it can't use indexed records in actuals
+    // What a waste of time for a vendor bug
+    for (unsigned i = 0; i < m_ports.size(); i++) {
+      Port *p = m_ports[i];
+      if (p->isOCP())
+	for (unsigned n = 0; n < p->count; n++) {
+	  std::string num;
+	  OU::format(num, "%u", n);
+	  std::string in, out;
+	  OU::format(in, p->typeNameIn.c_str(), "");
+	  OU::format(out, p->typeNameOut.c_str(), "");
+	  OcpSignalDesc *osd = ocpSignals;
+	  for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
+	    if (os->value) {
+	      std::string name;
+	      OU::format(name, os->signal, num.c_str());
+	      if (os->value) {
+		fprintf(f, "      signal %s : std_logic", name.c_str());
+		if (osd->vector)
+		  fprintf(f, "_vector(%zu downto 0)", os->width - 1);
+		fprintf(f, ";\n");
+	      }
+	    }
+	}
+    }
+    fprintf(f,
+	    "begin\n");
+    // Assign individual signals to work around isim bug that it can't use indexed records in actuals
+    // What a waste of time for a vendor bug
+    for (unsigned i = 0; i < m_ports.size(); i++) {
+      Port *p = m_ports[i];
+      bool mIn = p->masterIn();
+      if (p->isOCP())
+	for (unsigned n = 0; n < p->count; n++) {
+	  std::string num;
+	  OU::format(num, "%u", n);
+	  std::string in, out;
+	  OU::format(in, p->typeNameIn.c_str(), "");
+	  OU::format(out, p->typeNameOut.c_str(), "");
+	  OcpSignalDesc *osd = ocpSignals;
+	  for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
+	    if (os->value) {
+	      std::string name;
+	      OU::format(name, os->signal, num.c_str());
+	      if (os->value) {
+		std::string rec;
+		if (p->count > 1)
+		  OU::format(rec, "%s(%u).%s", os->master == mIn ? in.c_str() : out.c_str(),
+			     n, osd->name);
+		else
+		  OU::format(rec, "%s.%s", os->master == mIn ? in.c_str() : out.c_str(),
+			     osd->name);
+		fprintf(f, "  %s <= %s;\n",
+			os->master == mIn ? name.c_str() : rec.c_str(),
+			os->master == mIn ? rec.c_str() : name.c_str());
+	      }
+	    }
+	}
+    }
+    fprintf(f,
 	    "  assy : work.%s_defs.%s\n"
 	    "    port map(\n",
-	    m_implName, m_implName, m_implName);
+	    m_implName, m_implName);
     std::string last;
     for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
       Clock *c = &*ci;
@@ -2274,7 +2334,6 @@ emitVhdlRecordWrapper(FILE *f) {
     }
     for (unsigned i = 0; i < m_ports.size(); i++) {
       Port *p = m_ports[i];
-      bool mIn = p->masterIn();
       switch (p->type) {
       case WCIPort:
       case WSIPort:
@@ -2294,15 +2353,8 @@ emitVhdlRecordWrapper(FILE *f) {
 		std::string name;
 		OU::format(name, os->signal, num.c_str());
 		if (os->value) {
-		  if (p->count > 1)
-		    fprintf(f, "%s      %s => %s(%u).%s", last.c_str(),
-			    name.c_str(), os->master == mIn ? in.c_str() : out.c_str(),
-			    n, osd->name);
-		  else
-		    fprintf(f, "%s      %s => %s.%s", last.c_str(),
-			    name.c_str(), os->master == mIn ? in.c_str() : out.c_str(),
-			    osd->name);
-
+		  fprintf(f, "%s      %s => %s", last.c_str(),
+			  name.c_str(), name.c_str());
 		  last = ",\n";
 		}
 	      }

@@ -74,7 +74,7 @@ begin
   EN_c1_response_put <= down_in.valid and RDY_c1_response_put;
   down_out.take      <= EN_c1_response_put;
 
-  client_out.id      <= up_in.id or std_logic_vector(position(2 downto 0));
+  client_out.id      <= up_in.id or ("0000000000000" & std_logic_vector(position(2 downto 0)));
   client_out.clk     <= up_in.clk;
   client_out.reset_n <= up_in.reset_n;
 
@@ -91,7 +91,7 @@ begin
   --   3 RouteSub: (4 bit addr(11:8), 8 bit bus number(7:0))
 
   pfk <= X"0550" when its(control) else       -- match on bar0
-         X"2510" or std_logic_vector(position(2 downto 0));
+         X"2510" or ("0000000000000" & std_logic_vector(position(2 downto 0)));
         -- match on bar1 and DWAaddr [15:13] == position
         -- or completion and func == position
          

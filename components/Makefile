@@ -114,6 +114,7 @@ Implementations = \
 	ptest.rcc \
         file_read.hdl \
 	file_write.hdl \
+        replicate.rcc \
 	$(Tests)
 
 #	fir_prog.hdl \

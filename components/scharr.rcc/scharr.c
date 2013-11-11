@@ -83,7 +83,7 @@ doLineY(Pixel *l0, Pixel *l1, Pixel *l2, Pixel *out, unsigned width) {
 }
 
 // Compute one line of output
-inline void
+static inline void
 doLine(Pixel *l0, Pixel *l1, Pixel *l2, Pixel *out, unsigned width, unsigned xderiv) {
   if(xderiv)
     doLineX(l0, l1, l2, out, width);

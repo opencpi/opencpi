@@ -229,24 +229,23 @@ all: $(LibDir)/$(ImplXmlFile)
 $(LibDir)/$(ImplXmlFile): | $(LibDir)
 	$(AT)echo Creating a link from $(LibDir) to $(ImplXmlFile) to expose the $(CwdName) implementation xml.
 	$(AT)$(call MakeSymLink,$(ImplXmlFile),$(LibDir))
-endif
 
-ifdef GenDir
-$(GenDir):
-	mkdir $(GenDir)
 # Generate the stub files by providing a link from gen/worker.v to gen/worker-defs.v
-#$(HdlSourceSuffix))
+# This enables 2 different things:
+# 1. Creating of precompiled black-box-stub libraries for, e.g. XST (build in gen/hdl)
+# 2. Allow tools with no precompiled libraries to access component decls (e.g. quartus)
+# Note that this is not used or needed when real cores do not get built (sim)
 $(call OcpiDbgVar,DefsFile)
-$(GenDir)/$(Worker)$(HdlSourceSuffix): $(DefsFile) | $(GenDir)
+$(LibDir)/$(Worker)$(HdlSourceSuffix): $(DefsFile) | $(LibDir)
 	$(AT)echo Creating link from $@ to $(DefsFile) to expose the stub for worker "$(Worker)".
-	$(AT)$(call MakeSymLink2,$(DefsFile),$(GenDir),$(Worker)$(HdlSourceSuffix))
+	$(AT)$(call MakeSymLink2,$(DefsFile),$(LibDir),$(Worker)$(HdlSourceSuffix))
 
-$(GenDir)/$(Worker)$(HdlOtherSourceSuffix): $(WDefsFile) | $(GenDir)
+$(LibDir)/$(Worker)$(HdlOtherSourceSuffix): $(WDefsFile) | $(LibDir)
 	$(AT)echo Creating link from $@ to $(WDefsFile) to expose the other-language stub for worker "$(Worker)".
-	$(AT)$(call MakeSymLink2,$(WDefsFile),$(GenDir),$(Worker)$(HdlOtherSourceSuffix))
+	$(AT)$(call MakeSymLink2,$(WDefsFile),$(LibDir),$(Worker)$(HdlOtherSourceSuffix))
 
-$(call OcpiDbg,Before all: "$(GenDir)/$(Worker)$(HdlSourceSuffix)")
-all: $(GenDir)/$(Worker)$(HdlSourceSuffix) $(GenDir)/$(Worker)$(HdlOtherSourceSuffix)
+$(call OcpiDbg,Before all: "$(LibDir)/$(Worker)$(HdlSourceSuffix)")
+all: $(LibDir)/$(Worker)$(HdlSourceSuffix) $(LibDir)/$(Worker)$(HdlOtherSourceSuffix)
 
 endif
 endif # if not an assembly

@@ -180,10 +180,10 @@ ocl: checkocl speclinks $(OclImplementations)
 # We have all the empty module definitions in the "gen/hdl" directory.
 MyHdlMake=$(MyMake) $(and $(HdlTargets),HdlTargets="$(HdlTargets)")
 hdlstubs: $(HdlImplementations)
-	$(AT)echo Building HDL stub libraries for this component library \($(LibName)\)
-	$(AT)echo include \
-	  $(call AdjustRelative2,$(OCPI_CDK_DIR))/include/hdl/hdl-lib.mk > \
-	  $(GenDir)/hdl/Makefile
+	$(AT)echo =============Building HDL stub libraries for this component library \($(LibName)\)
+	$(AT)(echo SourceFiles=$(foreach v,$(wildcard lib/hdl/*.v*),../../$v); \
+              echo include $(call AdjustRelative2,$(OCPI_CDK_DIR))/include/hdl/hdl-lib.mk \
+	     ) > $(GenDir)/hdl/Makefile
 	$(AT)$(MyHdlMake) -C $(GenDir)/hdl -L LibName=$(LibName) \
 		HdlLibraries="$(foreach l,$(HdlLibraries),$(if $(findstring /,$l),$(call AdjustRelative2,$l),$l)) ocpi" \
 		OCPI_CDK_DIR=$(call AdjustRelative2,$(OCPI_CDK_DIR)) \

@@ -34,6 +34,4 @@
 #
 ########################################################################### #
 
-# Current code does xilinx stuff for tristate buffers
-OnlyTargets=xilinx
 include $(OCPI_CDK_DIR)/include/worker.mk

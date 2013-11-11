@@ -172,7 +172,7 @@ module mkOCDP4B(pciDevice,
   output wci_s_SThreadBusy;
 
   // value method wci_s_sFlag
-  output [1 : 0] wci_s_SFlag;
+  output [2 : 0] wci_s_SFlag;
 
   // action method wci_s_mFlag
   input  [1 : 0] wci_s_MFlag;
@@ -2044,7 +2044,7 @@ module mkOCDP4B(pciDevice,
 	     wci_reqF_countReg > 2'd1 || wci_isReset_isInReset ;
 
   // value method wci_s_sFlag
-  assign wci_s_SFlag = { 1'd1, wci_sFlagReg } ;
+  assign wci_s_SFlag = { 1'd0, 1'd1, wci_sFlagReg } ;
 
   // value method wti_s_sThreadBusy
   assign wti_s_SThreadBusy = wti_isReset_isInReset ;

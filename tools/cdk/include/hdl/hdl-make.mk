@@ -175,11 +175,11 @@ HdlName=$(or $(Core),$(LibName))
 HdlLog=$(HdlName)-$(HdlToolSet).out
 HdlTime=$(HdlName)-$(HdlToolSet).time
 HdlCompile=\
-  $(xxxinfo Compile0:$(Cores):$(ImplWorkersFile):$(ImplFile):to-$@) \
+  $(infoxx Compile0:$(Cores):$(ImplWorkersFile):$(ImplFile):to-$@) \
   $(and $(ImplWorkersFile),$(eval $(HdlSetWorkers))) \
-  $(xxxinfo Compile:$(HdlWorkers):$(Cores):$(ImplWorkersFile)) \
-  $(and $(Cores),$(call HdlRecordCores,$(basename $@))$(xxxinfo DONERECORD)) \
-  $(xxxinfo ALLCORES:$(AllCores)) \
+  $(infoxx Compile:$(HdlWorkers):$(Cores):$(ImplWorkersFile)) \
+  $(and $(Cores),$(call HdlRecordCores,$(basename $@))$(infoxx DONERECORD)) \
+  $(infoxx ALLCORES:$(AllCores)) \
   cd $(TargetDir) && \
   $(and $(HdlPreCompile), $(HdlPreCompile) &&)\
   export HdlCommand="set -e; $(HdlToolCompile)"; \
@@ -351,7 +351,7 @@ HdlRmRv=$(if $(filter %_rv,$1),$(patsubst %_rv,%,$1),$1)
 # proper hierarchies can include indirectly required cored later
 # Called from HdlCompile which is already tool-specific
 HdlRecordCores=\
-  $(xxxinfo Record:$1:$(Cores))\
+  $(infoxx Record:$1:$(Cores))\
   $(and $(call HdlExists,$(dir $1)),\
   (\
    echo '\#' This generated file records cores necessary to build this $(LibName) $(HdlMode); \
@@ -361,12 +361,12 @@ HdlRecordCores=\
 
 #	             $(foreach r,$(call HdlRmRv,$(basename $(call HdlCoreRef,$c,$1))),\
 
-HdlCollectCores=$(xxxinfo CCC:$(Cores))$(call Unique,\
+HdlCollectCores=$(infoxx CCC:$(Cores))$(call Unique,\
 		  $(foreach a,\
-                   $(foreach c,$(Cores),$(xxxinfo ZC:$c)$c \
-	             $(foreach r,$(basename $(call HdlCoreRef,$(call HdlToolCoreRef,$c),$1)),$(xxxinfo ZR:$r)\
-                       $(foreach f,$(call HdlExists,$(call HdlRmRv,$r).cores),$(xxxinfo ZF:$f)\
-                          $(foreach z,$(shell grep -v '\#' $f),$(xxxinfo found:$z)$z)))),$a))
+                   $(foreach c,$(Cores),$(infoxx ZC:$c)$c \
+	             $(foreach r,$(basename $(call HdlCoreRef,$(call HdlToolCoreRef,$c),$1)),$(infoxx ZR:$r)\
+                       $(foreach f,$(call HdlExists,$(call HdlRmRv,$r).cores),$(infoxx ZF:$f)\
+                          $(foreach z,$(shell grep -v '\#' $f),$(infoxx found:$z)$z)))),$a))
 
 HdlPassTargets=$(and $(HdlTargets),HdlTargets="$(HdlTargets)") \
                $(and $(HdlTarget),HdlTargets="$(HdlTarget)") \

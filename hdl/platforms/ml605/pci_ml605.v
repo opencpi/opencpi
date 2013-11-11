@@ -26,7 +26,7 @@ module pci_ml605(// PCI signals from hardware
 		 output 	pci_blink,
 		 output 	pci_link_up,
 		 output 	p125clk,
-		 output 	p125rst,
+		 output 	p125rstn,
 		 output [ 15:0] pci_device,
 		 // Requests coming in from PCIE
 		 output [152:0] unoc_out_data,
@@ -344,7 +344,7 @@ module pci_ml605(// PCI signals from hardware
   assign p125clk = pciw_pci0_pcie_ep$trn2_clk ;
 
   // output resets
-  assign p125rst = pciw_p125rst$OUT_RST ;
+  assign p125rstn = pciw_p125rst$OUT_RST ;
 
   // value method pcie_txp
   assign pcie_txp = pciw_pci0_pcie_ep$pci_exp_txp ;
@@ -841,7 +841,6 @@ module pci_ml605(// PCI signals from hardware
   assign pciw_pcie_irq_rMSIEnabled$EN = 1'd1 ;
 
 `ifdef not
-  // assign server_request_put = pciw_p2iS ;
   assign server_request_put = pciw_p2iS ;
   assign EN_server_request_put =
 	     pciw_p2iAF_head_wrapped != pciw_p2iAF_tail_wrapped &&

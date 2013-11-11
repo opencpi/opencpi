@@ -27,21 +27,41 @@ architecture rtl of time_client_rv is
       wti_m_SReset_n    : in std_logic
     );
   end component mkTimeClient;
+  signal CLK_sys0_clk : std_logic;
+  signal RST_N_sys0_rst : std_logic;
+  signal CLK_wti_clk : std_logic;
+  signal RST_N_wti_rst : std_logic;
+  signal CLK : std_logic;        
+  signal RST_N : std_logic;
+  signal gpsTime_arg : std_logic_vector(63 downto 0);
+  signal EN_gpsTime : std_logic;
+  signal RDY_gpsTime : std_logic;
+  signal wti_m_req : std_logic_vector(66 downto 0);
+  signal wti_m_SThreadBusy : std_logic;
+  signal wti_m_SReset_n : std_logic;
 begin
+  CLK_sys0_clk            <= time_in.clk;
+  RST_N_sys0_rst          <= time_in.reset_n;
+  CLK_wti_clk             <= wti_in.Clk;
+  RST_N_wti_rst           <= wti_in.SReset_n;
+  gpsTime_arg             <= std_logic_vector(time_in.now);
+  wti_m_SThreadBusy       <= wti_in.SThreadBusy(0);
+  wti_m_SReset_n          <= wti_in.SReset_n;
+  wti_out.MCmd            <= wti_m_req(66 downto 64);
+  wti_out.MData           <= wti_m_req(63 downto 0);
   tc : mkTimeClient
     port map(
-      CLK_sys0_clk            => time_in.clk,
-      RST_N_sys0_rst          => time_in.reset_n,
-      CLK_wti_clk             => wti_in.Clk,
-      RST_N_wti_rst           => wti_in.SReset_n,
+      CLK_sys0_clk            => CLK_sys0_clk,
+      RST_N_sys0_rst          => RST_N_sys0_rst,
+      CLK_wti_clk             => CLK_wti_clk,
+      RST_N_wti_rst           => RST_N_wti_rst,
       CLK                     => '0',
       RST_N                   => '0',
-      gpsTime_arg             => std_logic_vector(time_in.now),
+      gpsTime_arg             => gpsTime_arg,
       EN_gpsTime              => '1',
       RDY_gpsTime             => open,  -- no flow control
-      wti_m_req(66 downto 64) => wti_out.MCmd,
-      wti_m_req(63 downto 0)  => wti_out.MData,
-      wti_m_SThreadBusy       => wti_in.SThreadBusy(0),
-      wti_m_SReset_n          => wti_in.SReset_n
+      wti_m_req               => wti_m_req,
+      wti_m_SThreadBusy       => wti_m_SThreadBusy,
+      wti_m_SReset_n          => wti_m_SReset_n
       );
 end architecture rtl;

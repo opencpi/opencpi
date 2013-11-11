@@ -64,7 +64,7 @@ namespace OCPI {
 	  m_device.getWorkerAccess(m_occpIndex, *this, m_properties);
 	// Assert Reset
 	// myRegisters->control =  logTimeout;
-	logTimeout = 0xf; // per shep
+	logTimeout = 0x5; // per shep
 	set32Register(control, OccpWorkerRegisters, logTimeout);
 	//#ifndef SHEP_FIXME_THE_RESET
 	struct timespec spec;
