@@ -66,12 +66,12 @@ endef
 ifeq ($(origin DefaultContainers),undefined)
   $(call OcpiDbg,No Default Containers: HdlPlatforms: $(HdlPlatforms))
   # If undefined, we determine the default containers based on HdlPlatform
-  $(foreach p,$(HdlPlatforms),$(eval $(call doDefaultContainer,$p,$p_base)))
+  $(foreach p,$(filter-out $(ExcludePlatforms),$(HdlPlatforms)),$(eval $(call doDefaultContainer,$p,$p_base)))
 else
   $(foreach d,$(DefaultContainers),\
      $(if $(findstring /,$d),\
 	 $(eval $(call doDefaultContainer $(word 1,$(subst /,$d)),$(word 2,$(subst /,$d)))),\
-         $(if $(filter $d,$(HdlAllPlatforms)),\
+         $(if $(filter $d,$(filter-out $(ExcludePlatforms),$(HdlAllPlatforms))),\
               $(eval $(call doDefaultContainer,$d,$d_base)),\
               $(error In DefaultContainers, $d is not a defined HDL platform.))))
 endif

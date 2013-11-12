@@ -43,9 +43,6 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 ifeq ($(MAKECMDGOALS),skeleton)
   HdlSkip:=
 endif
-ifdef HdlSkip
-$(call OcpiDbg, Skipping)
-else
 Compile=$(HdlCompile)
 $(call OcpiDbgVar,HdlBin)
 BF:=$(HdlBin)
@@ -54,70 +51,11 @@ OBJ:=$(HdlBin)
 # We don't build independent standalone worker binaries (no artifact file here)
 ArtifactFile=
 
-#HdlVerilogSuffix:=.v
-#HdlVerilogIncSuffix:=.vh
-#HdlVHDLSuffix:=.vhd
-#HdlVHDLIncSuffix:=.vhd
 HdlSkelSuffix=-skel$(HdlSourceSuffix)
 HdlDefsSuffix=-defs$(HdlIncSuffix)
 HdlOtherDefsSuffix=-defs$(HdlOtherIncSuffix)
 HdlImplSuffix=-impl$(HdlIncSuffix)
 HdlOtherImplSuffix=-impl$(HdlOtherIncSuffix)
-#ifneq ($(word 2,$(Workers)),)
-#$(error Only one HDL worker can be built.  Workers is: $(Workers))
-#endif
-# This is REDUNDANT with what is in xxx-worker.mk, but we need it to figure out the language below.
-#ifndef Worker
-#Worker=$(CwdName)
-#Workers=$(Worker)
-#endif
-
-############
-# We need to figure out the language and the file suffixes before calling xxx-worker
-# 
-#ifeq ($(Worker_$(Worker)_xml),)
-#Worker_$(Worker)_xml=$(Worker).xml
-#HdlXmlFile=$(Worker).xml
-#endif
-#HdlXmlFile=$(Worker_$(Worker)_xml)
-#$(call OcpiDbgVar,HdlXmlFile)
-#$(call OcpiDbgVar,Worker)
-#$(call OcpiDbgVar,Worker_$(Worker)_xml)
-
-#ifeq ($(realpath $(HdlXmlFile)),)
-#  $(error Missing XML implementation file: $(HdlXmlFile))
-#endif
-#ifndef HdlLanguage
-#  ifeq ($(HdlMode),assemblyxxxx)
-#    HdlLanguage:=verilog
-#  else
-#    # Ugly grab of the language attribute from the XML file
-#    HdlLanguage:=$(and $(wildcard $(HdlXmlFile)),$(shell grep -i 'language *=' $(HdlXmlFile) | sed "s/###########^.*[lL]anguage= *['\"]\\([^\"']*\\).*$$/\1/" | tr A-Z a-z))
-#    ifdef Language
-#      ifdef HdlLanguage
-#        ifneq ($(call ToLower,$(Language)),$(HdlLanguage))
-#          $(error The "Language" setting in the Makefile ($(Language)) is inconsistent with the settin#g in the XML/OWD file (file: $(HdlXmlFile), setting: $(HdlLanguage)))
-#        endif # error check
-#      else
-#        HdlLanguage:= $(call ToLower,$(Language))
-#      endif # found language attribute
-#    else
-#      ifndef HdlLanguage
-#        HdlLanguage:=vhdl
-#      endif
-#    endif
-#  endif
-#endif # HdlLanguage not initially defined (probably true)
-#
-#$(call OcpiDbgVar,HdlLanguage)
-#ifeq ($(HdlLanguage),verilog)
-#HdlSourceSuffix:=$(HdlVerilogSuffix)
-#HdlIncSuffix:=$(HdlVerilogIncSuffix)
-#else
-#HdlSourceSuffix:=$(HdlVHDLSuffix)
-#HdlIncSuffix:=$(HdlVHDLIncSuffix)
-#endif
-#$(call OcpiDbgVar,HdlSourceSuffix)
 
 ifndef Tops
   ifdef Top
@@ -143,7 +81,12 @@ $(call OcpiDbgVar,HdlCores)
 $(call OcpiDbgVar,Core)
 $(call OcpiDbgVar,WkrExportNames)
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk
-
+override VerilogIncludeDirs += $(IncludeDirs)
+ImplXmlFile=$(firstword $(ImplXmlFiles))
+# The above definitions are needed before skipping so we can export xml files
+ifdef HdlSkip
+$(call OcpiDbg, Skipping)
+else
 # This is the utility program for hdl
 ifeq ($(shell if test -x $(ToolsDir)/ocpihdl; then echo xx; fi),)
 ifneq ($(MAKECMDGOALS),clean)
@@ -156,8 +99,6 @@ OcpiHdl=\
 ################################################################################
 # Generated files: impl depends on defs, worker depends on impl
 # map the generic "IncludeDirs" into the verilog
-override VerilogIncludeDirs += $(IncludeDirs)
-ImplXmlFile=$(firstword $(ImplXmlFiles))
 #$(HdlDefsSuffix))
 #RefDefsFile=$(Workers:%=$(GeneratedDir)/%-defs.vh)
 DefsFile=$(Workers:%=$(GeneratedDir)/%$(HdlDefsSuffix))
@@ -215,7 +156,8 @@ LibName=$(Worker)
 # Include this to build the core or the library
 include $(OCPI_CDK_DIR)/include/hdl/hdl-core2.mk
 
-
+endif # HdlSkip
+$(call OcpiDbg,After skipping)
 ################################################################################
 # If not an assembly or container, we have to contribute to the exports for the
 # component library we are a part of.
@@ -245,9 +187,8 @@ $(LibDir)/$(Worker)$(HdlOtherSourceSuffix): $(WDefsFile) | $(LibDir)
 	$(AT)$(call MakeSymLink2,$(WDefsFile),$(LibDir),$(Worker)$(HdlOtherSourceSuffix))
 
 $(call OcpiDbg,Before all: "$(LibDir)/$(Worker)$(HdlSourceSuffix)")
-all: $(LibDir)/$(Worker)$(HdlSourceSuffix) $(LibDir)/$(Worker)$(HdlOtherSourceSuffix)
+all: $(LibDir)/$(Worker)$(HdlSourceSuffix) $(LibDir)/$(Worker)$(HdlOtherSourceSuffix) 
 
 endif
 endif # if not an assembly
 
-endif # HdlSkip
