@@ -1,0 +1,12 @@
+<ComponentSpec name="wsi_16_to_32">
+  <DataInterfaceSpec Name="in" Producer="false">
+    <xi:include href="stream_protocol.xml"/>
+    <protocolsummary maxMessageValues='2048'/>
+
+  </DataInterfaceSpec>
+  <DataInterfaceSpec Name="out" Producer="true">
+    <xi:include href="stream_protocol.xml"/>
+    <protocolsummary maxMessageValues='2048'/>
+
+  </DataInterfaceSpec>
+</ComponentSpec>

@@ -449,7 +449,7 @@ emitSignals(FILE *f, Language lang, bool onlyDevices, bool useRecords, bool inPa
   std::string last = init;
   if (!onlyDevices) {
     for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
-      Clock *c = &*ci;
+      Clock *c = *ci;
       if (!c->port) {
 	if (last.empty())
 	  fprintf(f,
@@ -1092,7 +1092,7 @@ emitVhdlWorkerEntity(FILE *f, unsigned maxPropName) {
     
   std::string last;
   for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
-    Clock *c = &*ci;
+    Clock *c = *ci;
     if (!c->port) {
       if (last.empty())
 	fprintf(f,
@@ -1402,7 +1402,7 @@ emitDefsHDL(const char *outDir, bool wrap) {
     emitParameters(f, lang);
     // Now we emit the declarations (input, output, width) for each module port
     for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
-      Clock *c = &*ci;
+      Clock *c = *ci;
       if (!c->port)
 	fprintf(f, "  input      %s;\n", c->signal);
     }
@@ -1964,7 +1964,7 @@ emitVhdlShell(FILE *f) {
 	  "  port map(\n", m_implName);
   std::string last;
   for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
-    Clock *c = &*ci;
+    Clock *c = *ci;
     if (!c->port) {
       fprintf(f, "%s    %s => %s", last.c_str(), c->signal, c->signal);
       last = ",\n";
@@ -2161,7 +2161,7 @@ emitVhdlSignalWrapper(FILE *f, const char *topinst) {
     std::string init = "    port map(\n";
     std::string last = init;
     for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
-      Clock *c = &*ci;
+      Clock *c = *ci;
       if (!c->port) {
 	if (last.empty())
 	  fprintf(f,
@@ -2323,7 +2323,7 @@ emitVhdlRecordWrapper(FILE *f) {
 	    m_implName, m_implName);
     std::string last;
     for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
-      Clock *c = &*ci;
+      Clock *c = *ci;
       if (!c->port) {
 	if (last.empty())
 	  fprintf(f,

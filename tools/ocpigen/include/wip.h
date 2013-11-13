@@ -383,7 +383,7 @@ static inline const char *hdlComment(Language lang) { return lang == VHDL ? "--"
 
 typedef std::vector<Port*> Ports;
 typedef Ports::const_iterator PortsIter;
-typedef std::vector<Clock> Clocks;
+typedef std::vector<Clock*> Clocks;
 typedef Clocks::iterator ClocksIter;
 class Assembly;
 class Worker : public Parsed {

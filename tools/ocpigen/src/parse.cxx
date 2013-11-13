@@ -68,10 +68,10 @@ const char *container = 0, *platform = 0, *device = 0, *load = 0, *os = 0, *os_v
 
 Clock *Worker::
 addClock() {
-  Clock c;
-  c.ordinal = m_clocks.size();
+  Clock *c = new Clock;
+  c->ordinal = m_clocks.size();
   m_clocks.push_back(c);
-  return &m_clocks.back();
+  return c;
 }
 
 // MyClock boolean simply says whether the clock is "homed" and "named" here.
@@ -100,8 +100,8 @@ checkClock(Port *p) {
 	       p->isOCP() && !(p->type == WCIPort && p->master)) {
       // If there is no control port, then we synthesize the clock as wci_clk
       for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++)
-	if (!strcasecmp("wci_Clk", (*ci).name)) {
-	  p->clock = &*ci;
+	if (!strcasecmp("wci_Clk", (*ci)->name)) {
+	  p->clock = *ci;
 	  break;
 	}
       if (!p->clock) {
@@ -129,7 +129,7 @@ checkClock(Port *p) {
     }
     // We are not referring to another port.  It muts be a defined clock
     for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
-      Clock *c = &*ci;
+      Clock *c = *ci;
       if (!strcasecmp(clock, c->name)) {
         p->clock = c;
         if (p->myClock)
@@ -1037,7 +1037,7 @@ parseHdlImpl(const char *package) {
   }
   // Now check that all clocks have a home and all ports have a clock
   for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
-    Clock *c = &*ci;
+    Clock *c = *ci;
     if (c->port) {
 #if 0
       if (c->signal)
@@ -1459,5 +1459,5 @@ Parsed(ezxml_t xml,        // The xml for this entity
 
 Clock::
 Clock() 
-  : name(NULL), signal(NULL), port(NULL), assembly(false) {
+  : name(NULL), signal(NULL), port(NULL), assembly(false), ordinal(0) {
 }

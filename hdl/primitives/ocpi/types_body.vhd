@@ -5,6 +5,13 @@ library ieee;
 use IEEE.std_logic_1164.all;
 use ieee.numeric_std.all;
 package body types is
+function bit2vec(b : std_logic; n : natural) return std_logic_vector is
+  variable r : std_logic_vector(n-1 downto 0);
+begin
+  r := (others => '0');
+  r(0) := b;
+  return r;
+end bit2vec;                                                                          
 -- THESE ARE DEFINITIONS WHEN Bool_t is std_logic
 function its(b : bool_t) return boolean is begin return b = '1'; end;
 function To_bool(b : std_logic) return Bool_t is begin return b; end to_bool;

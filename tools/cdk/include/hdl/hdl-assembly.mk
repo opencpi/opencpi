@@ -26,7 +26,7 @@
 HdlMode:=assembly
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 
-override ComponentLibraries+= components devices
+override ComponentLibraries+= components devices adapters
 $(eval $(HdlSearchComponentLibraries))
 override XmlIncludeDirs+=. $(HdlPlatformsDir) $(HdlPlatformsDir)/specs
 override HdlLibraries+=platform
@@ -205,7 +205,7 @@ HdlContOcpiGen=\
 # The function to evaluate for each container
 $(call OcpiDbg,before doContainer)
 define doContainer
-$$(call OcpiDbg,doContainer($1,$2,$3) platform $(HdlPlatform_$1) config $(HdlConfig_$1))
+$(call OcpiDbg,doContainer($1) platform $(HdlPlatform_$1) config $(HdlConfig_$1))
 ##### Generate source files for the container
 
 # FIXME: we could share this with workers better
@@ -238,7 +238,7 @@ $(call HdlContainer,$1): GeneratedSourceFiles=$(call HdlContSources,$1)
 $(call HdlContainer,$1): $(call HdlContSources,$1)
 $(call HdlContainer,$1): Core:=$1
 $(call HdlContainer,$1): Top:=$1
-$(call HdlContainer,$1): HdlMode:=container
+$(call HdlContainer,$1) $(call HdlContBitName,$1): HdlMode:=container
 $(call HdlContainer,$1): HdlLibraries+=platform
 $(call HdlContainer,$1): LibName:=$1
 $(call HdlContainer,$1): XmlIncludeDirs+=$(HdlPlatformsDir)/$(HdlPlatform_$1)
@@ -247,6 +247,8 @@ $(call HdlContainer,$1) $(call HdlContBitName,$1): \
                          override HdlTarget:=$(foreach p,$(call HdlGetPart,$(HdlPlatform_$1)),$p)
 $(call HdlContainer,$1) $(call HdlContBitName,$1): \
                          TargetDir=$(call HdlContDir,$1)
+$(call HdlContainer,$1) $(call HdlContBitName,$1): \
+                         HdlPlatform=$(HdlPlatform_$1)
 $(call HdlContainer,$1) $(call HdlContBitName,$1): \
                          override ImplWorkersFile=$$(call HdlExists,$(call HdlContDir,$1)/$1.wks)
 $(call HdlContainer,$1) $(call HdlContBitName,$1): \
@@ -275,7 +277,8 @@ all: $(call HdlContBitZName,$1)
 -include $(HdlPlatformsDir)/$(HdlPlatform_$1)/$(HdlPlatform_$1).mk
 
 # Now invoke the tool-specific build with: <target-dir>,<assy-name>,<core-file-name>,<config>,<platform>
-$(call HdlToolDoPlatform_$(HdlToolSet_$(HdlTarget_$1)),$(call HdlContDir,$1),$(Worker),$(Worker)-$1,$1,$(HdlPlatform_$1))
+#$(info HTDP:$1:$(HdlPlatform_$1):$(HdlTarget_$1))
+$(call HdlToolDoPlatform_$(HdlToolSet_$(HdlTarget_$1)),$(call HdlContDir,$1),$(Worker),$(Worker)-$1,$1,$(HdlPlatform_$1),$(HdlTarget_$1))
 
 HdlContainerCores+=$(call HdlContainer,$1)
 HdlContainerBitZNames+=$(call HdlContBitZName,$1)

@@ -83,19 +83,6 @@ $(call OcpiDbgVar,WkrExportNames)
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk
 override VerilogIncludeDirs += $(IncludeDirs)
 ImplXmlFile=$(firstword $(ImplXmlFiles))
-# The above definitions are needed before skipping so we can export xml files
-ifdef HdlSkip
-$(call OcpiDbg, Skipping)
-else
-# This is the utility program for hdl
-ifeq ($(shell if test -x $(ToolsDir)/ocpihdl; then echo xx; fi),)
-ifneq ($(MAKECMDGOALS),clean)
-$(error Missing ocpihdl utility program)
-endif
-endif
-OcpiHdl=\
-  $(DYN_PREFIX) $(ToolsDir)/ocpihdl 
-
 ################################################################################
 # Generated files: impl depends on defs, worker depends on impl
 # map the generic "IncludeDirs" into the verilog
@@ -106,6 +93,9 @@ WDefsFile=$(Workers:%=$(GeneratedDir)/%$(HdlOtherDefsSuffix))
 HdlOtherImplSourceFile=$(GeneratedDir)/$(Worker)$(HdlOtherImplSuffix)
 # We set these, but they might not be used in some modes.
 CoreBlackBoxFiles=$(DefsFile) $(WDefsFile)
+OcpiHdl=\
+  $(DYN_PREFIX) $(ToolsDir)/ocpihdl 
+
 
 $(WDefsFile): $(Worker_$(Worker)_xml) | $(GeneratedDir)
 	$(AT)echo Generating the opposite language definition file: $@
@@ -128,6 +118,17 @@ $(HdlOtherImplSourceFile): $(WDefsFile) $$(Worker_$(Worker)_xml) | $(GeneratedDi
 	$(if $(Libraries),$(foreach l,$(Libraries),-l $l)) -w -i $(Worker_$(Worker)_xml) \
 
 $(ImplHeaderFiles): $(DefsFile)
+
+# The above definitions are needed before skipping so we can export xml files
+ifdef HdlSkip
+$(call OcpiDbg, Skipping)
+else
+# This is the utility program for hdl
+ifeq ($(shell if test -x $(ToolsDir)/ocpihdl; then echo xx; fi),)
+ifneq ($(MAKECMDGOALS),clean)
+$(error Missing ocpihdl utility program)
+endif
+endif
 
 
 # VHDL doesn't have header files - they are just source files

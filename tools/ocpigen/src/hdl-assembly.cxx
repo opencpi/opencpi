@@ -348,6 +348,7 @@ parseHdlAssy() {
       return err;
   ezxml_t x = ezxml_cchild(m_xml, "Instance");
   Instance *i;
+  size_t nControls = 0;
   for (i = a->m_instances; x; i++, x = ezxml_next(x)) {
     if (i->worker->m_assembly)
       continue;
@@ -382,6 +383,8 @@ parseHdlAssy() {
     // Allocate the instance-clock-to-assembly-clock map
     if (i->worker->m_clocks.size())
       i->m_clocks = myCalloc(Clock*, i->worker->m_clocks.size());
+    if (!i->worker->m_noControl)
+      nControls++;
   }
   Port *wci = NULL;
   unsigned n;
@@ -400,17 +403,9 @@ parseHdlAssy() {
 	    break;
 	  }
       }
-#if 0
-  } else if (a->m_isContainer) {
-    // Hack until containers are revamped
-    m_nClocks = 1; // first clock for all instance WCIs.
-    clk = m_clocks = myCalloc(Clock, m_ports.size()); // overallocate
-    clk->signal = clk->name = "wci_Clk";
-    wciClk = clk++;
-#endif
   } else {
     // Create the assy's wci slave port, at the beginning of the list
-    Port *wci = new Port("wci", this, false, WCIPort, NULL, a->m_nInstances);
+    Port *wci = new Port("wci", this, false, WCIPort, NULL, nControls);
     m_ports.insert(m_ports.begin(), wci);
     // Clocks: coalesce all WCI clock and clocks with same reqts, into one wci, all for the assy
     clk = addClock();
@@ -456,6 +451,8 @@ parseHdlAssy() {
 	InstancePort &ip = a.m_instPort;
 	if (!ip.m_external && 
 	    (ip.m_port->type == WCIPort ||
+	     // FIXME: how can we really know this is not an independent clock??
+	     (ip.m_port->worker->m_noControl && ip.m_port->clock && ip.m_port->clock->port == 0) ||
 	     ip.m_instance->worker->m_ports[0]->type == WCIPort &&
 	     !ip.m_instance->worker->m_ports[0]->master &&
 	     // If this (data) port on the worker uses the worker's wci clock
@@ -686,7 +683,7 @@ Connection(OU::Assembly::Connection *connection, const char *name)
 // This is where OCP compatibility is checked, and if it can be
 // adjusted via tie-offs or other trivial adaptations, those are done here too
 static const char *
-adjustConnection(Connection &c, InstancePort &consumer, InstancePort &producer) {
+adjustConnection(Connection &c, InstancePort &consumer, InstancePort &producer, Language lang) {
   // Check WDI compatibility
   Port *prod = producer.m_port, *cons = consumer.m_port;
   // If both sides have protocol, check them for compatibility
@@ -732,15 +729,17 @@ adjustConnection(Connection &c, InstancePort &consumer, InstancePort &producer) 
 	  // producer may produce a precise burst
 	  // Convert any precise bursts to imprecise
 	  oa = &consumer.m_ocp[OCP_MBurstLength];
-	  oa->expr= "%s ? 2'b01 : 2'b10";
+	  oa->expr =
+	    lang == Verilog ? "%s ? 2'b01 : 2'b10" :
+	    "std_logic_vector(to_unsigned(2,2) - unsigned(ocpi.types.bit2vec(%s,2)))";
 	  oa->other = OCP_MReqLast;
 	  oa->comment = "Convert precise to imprecise";
 	  oa = &producer.m_ocp[OCP_MBurstLength];
-	  oa->expr = "";
+	  oa->expr = lang == Verilog ? "" : "open";
 	  oa->comment = "MBurstLength ignored for imprecise consumer";
 	  if (prod->impreciseBurst) {
 	    oa = &producer.m_ocp[OCP_MBurstPrecise];
-	    oa->expr = "";
+	    oa->expr = lang == Verilog ? "" : "open";
 	    oa->comment = "MBurstPrecise ignored for imprecise-only consumer";
 	  }
 	}
@@ -748,15 +747,17 @@ adjustConnection(Connection &c, InstancePort &consumer, InstancePort &producer) 
 	// Consumer accept both, has MPreciseBurst Signal
 	oa = &consumer.m_ocp[OCP_MBurstPrecise];
 	if (!prod->impreciseBurst) {
-	  oa->expr = "1'b1";
+	  oa->expr = lang == Verilog ? "1'b1" : "to_unsigned(1,1)";
 	  oa->comment = "Tell consumer all bursts are precise";
 	} else if (!prod->preciseBurst) {
 	  oa = &consumer.m_ocp[OCP_MBurstPrecise];
-	  oa->expr = "1'b0";
+	  oa->expr = lang == Verilog ? "1'b0" : "'0'";
 	  oa->comment = "Tell consumer all bursts are imprecise";
 	  oa = &consumer.m_ocp[OCP_MBurstLength];
 	  oa->other = OCP_MBurstLength;
-	  asprintf((char **)&oa->expr, "{%zu'b0,%%s}", cons->ocp.MBurstLength.width - 2);
+	  asprintf((char **)&oa->expr,
+		   lang == Verilog ? "{%zu'b0,%%s}" : "std_logic_vector(to_unsigned(0,%zu)) & %%s",
+		   cons->ocp.MBurstLength.width - 2);
 	  oa->comment = "Consumer only needs imprecise burstlength (2 bits)";
 	}
       }
@@ -764,7 +765,8 @@ adjustConnection(Connection &c, InstancePort &consumer, InstancePort &producer) 
     if (prod->preciseBurst && cons->preciseBurst &&
 	prod->ocp.MBurstLength.width < cons->ocp.MBurstLength.width) {
       oa = &consumer.m_ocp[OCP_MBurstLength];
-      asprintf((char **)&oa->expr, "{%zu'b0,%%s}",
+      asprintf((char **)&oa->expr,
+	       lang == Verilog ? "{%zu'b0,%%s}" : "to_unsigned(0,%zu) & %%s",
 	       cons->ocp.MBurstLength.width - prod->ocp.MBurstLength.width);
       oa->comment = "Consumer takes bigger bursts than producer creates";
       oa->other = OCP_MBurstLength;
@@ -807,12 +809,14 @@ adjustConnection(Connection &c, InstancePort &consumer, InstancePort &producer) 
 	} else {
 	  // producer has none, consumer has some
 	  oa = &consumer.m_ocp[OCP_MReqInfo];
-	  asprintf((char **)&oa->expr, "%zu'b0", cons->ocp.MReqInfo.width);
+	  asprintf((char **)&oa->expr,
+		   lang == Verilog ? "%zu'b0" : "std_logic_vector(to_unsigned(0,%zu))",
+		   cons->ocp.MReqInfo.width);
 	}
       } else {
 	// consumer has none
 	oa = &producer.m_ocp[OCP_MReqInfo];
-	oa->expr = "";
+	oa->expr = lang == Verilog ? "" : "open";
 	oa->comment = "Consumer doesn't have opcodes (or has exactly one)";
       }
     // Byte enable compatibility
@@ -987,7 +991,7 @@ createConnectionSignals(FILE *f, Language lang) {
 	if (&other != this)
 	  return
 	    m_port->u.wdi.isProducer ?
-	    adjustConnection(c, other, *this) : adjustConnection(c, *this, other);
+	    adjustConnection(c, other, *this, lang) : adjustConnection(c, *this, other, lang);
       }
     }
   return NULL;
@@ -1174,14 +1178,14 @@ emitAssyInstance(FILE *f, Instance *i, unsigned nControlInstances) {
     // For the instance, define the clock signals that are defined separate from
     // any interface/port.
     for (ClocksIter ci = i->worker->m_clocks.begin(); ci != i->worker->m_clocks.end(); ci++) {
-      Clock *c = &*ci;
+      Clock *c = *ci;
       if (!c->port) {
 	if (lang == Verilog)
 	  fprintf(f, "  .%s(%s),\n", c->signal,
-		  i->m_clocks[c - &i->worker->m_clocks[0]]->signal);
+		  i->m_clocks[c->ordinal]->signal);
 	else
 	  fprintf(f, "%s%s%s => %s", any ? ",\n" : "", any ? indent : "",
-		  c->signal, i->m_clocks[c - &i->worker->m_clocks[0]]->signal);
+		  c->signal, i->m_clocks[c->ordinal]->signal);
 	any = true;
       }
     }
@@ -1337,7 +1341,8 @@ emitAssyHDL(const char *outDir) {
 	    m_implName, m_implName, m_implName, DEFS, VERH, m_implName, DEFS, VERH);
   } else {
     fprintf(f,
-	    "library ieee; use ieee.std_logic_1164.all; use ieee.numeric_std;\n");
+	    "library ieee; use ieee.std_logic_1164.all; use ieee.numeric_std.all;\n"
+	    "library ocpi;\n");
     emitVhdlLibraries(f);
     fprintf(f,
 	    "architecture rtl of %s_rv is\n",

@@ -6,6 +6,7 @@ package types is
 subtype word_t is std_logic_vector(31 downto 0);
 subtype byte_offset_t is unsigned(1 downto 0);
 subtype bit_offset_t is natural range 0 to 31; -- bit within word
+function bit2vec(b : std_logic; n : natural) return std_logic_vector;
 
 -- These types are the mapping of the OpenCPI scalar types to VHDL.
 -- We use std_logic vector types and avoid native types.

@@ -117,12 +117,18 @@ xxx=$(and $(ComponentLibraries),echo '\#' Search paths for component libraries;)
     $(eval HdlWorkers:=$$(strip $$(foreach i,$$(shell grep -v '\\\#' $$(ImplWorkersFile)),\
                          $$(if $$(filter $$(firstword $$(subst :, ,$$i)),$$(HdlPlatformWorkers)),,$$i))))
 
+QuartusMakeFamily=$(QuartusFamily_$(call HdlGetFamily,$1))
+QuartusMakeDevice=$(strip $(if $(findstring $(HdlMode),platform config container),\
+                     $(foreach x,$(call ToUpper,$(call QuartusMakePart,$(HdlPart_$1))),$(xxinfo GOT:$x)$x),\
+		     $(xxinfo GOTZ:AUTO:$(HdlMode))AUTO))
+
+# arg 1 is hdltarget arg2 is platform
 QuartusMakeDevices=\
-  echo set_global_assignment -name FAMILY '\"'$(QuartusFamily_$(call HdlGetFamily,$(HdlTarget)))'\"'; \
-  echo set_global_assignment -name DEVICE $(call ToUpper,$(if $(findstring $(HdlTarget),$(HdlAllFamilies)),AUTO,\
-                                            $(if $(findstring $(HdlMode),platform assembly config container),\
-                                             $(call QuartusMakePart,$(HdlPart_$(HdlPlatform))),\
-                                             $(HdlTarget)))); \
+  echo set_global_assignment -name FAMILY '\"'$(QuartusFamily_$(call HdlGetFamily,$1))'\"'; \
+  echo set_global_assignment -name DEVICE \
+      $(strip $(if $(findstring $(HdlMode),platform config container),\
+                  $(foreach x,$(call ToUpper,$(call QuartusMakePart,$(HdlPart_$2))),$(xxinfo GOT:$x)$x),\
+		  $(zxinfo GOTZ:AUTO:$(HdlMode))AUTO));
 
 # Make the settings file
 # Note that the local source files use notdir names and search paths while the
@@ -135,7 +141,7 @@ QuartusMakeQsf=\
  $(X From here we generate qsf file contents, e.g. "settings") \
  (\
   echo '\#' Common assignments whether a library or a core; \
-  $(QuartusMakeDevices) \
+  $(call QuartusMakeDevices,$(HdlTarget),$(HdlPlatform)) \
   echo set_global_assignment -name TOP_LEVEL_ENTITY $(or $(Top),$(Core)); \
   \
   $(and $(Cores),echo '\#' Import QXP file for each core;) \
@@ -275,13 +281,13 @@ QuartusCmd=\
 
 # Now invoke the tool-specific build with: <target-dir>,<assy-name>,<core-file-name>,<config>,<platform>
 define HdlToolDoPlatform_quartus
-
 $1/$3.sof: 
 	$(AT)echo Building Quartus Bit file: $$@.  Assembly $2 on platform $5.
 	$(AT)cd $1 && \
 	rm -r -f db incremental_db && \
-	(echo '\#' Common assignments whether a library or a core; \
-	 $$(QuartusMakeDevices) \
+	(echo \# Common assignments whether a library or a core; \
+	 echo set_global_assignment -name FAMILY '"'$$(call QuartusMakeFamily,$(HdlPart_$5))'"'; \
+	 echo set_global_assignment -name DEVICE $$(call QuartusMakeDevice,$5); \
 	 echo set_global_assignment -name TOP_LEVEL_ENTITY $4; \
 	 echo set_global_assignment -name QXP_FILE '"'$4.qxp'"'; \
 	 echo set_global_assignment -name SDC_FILE '"'$(HdlPlatformsDir)/$5/$5.sdc'"'; \

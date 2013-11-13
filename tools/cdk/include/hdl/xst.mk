@@ -446,7 +446,7 @@ $(call MapName,$1,$3): $(call NgdName,$1,$3)
 # Place-and-route, and generate timing report
 $(call ParName,$1,$3): $(call MapName,$1,$3) $(call PcfName,$1,$3)
 	$(AT)echo -n For $2 on $5 using config $4: creating PAR\'d NCD file using '"par"'.
-	$(AT)$(call DoXilinx,par,$1,-w -xe n $(notdir $(call MapName,$1,$3)) \
+	$(AT)$(call DoXilinx,par,$1,-mt 4 -w -xe n $(notdir $(call MapName,$1,$3)) \
 		$(notdir $(call ParName,$1,$3)) $(notdir $(call PcfName,$1,$3)))
 
 $(call TrceName,$1,$3): $(call ParName,$1,$3)
