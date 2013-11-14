@@ -420,16 +420,18 @@ parseHdlAssy() {
     ext->m_role.m_bidirectional = false;
     ext->m_role.m_knownRole = true;
     InstancePort &ip = *new InstancePort(NULL, wci, ext);
+    unsigned nControl = 0;
     for (n = 0, i = a->m_instances; n < a->m_nInstances; n++, i++)
       if (i->worker && i->worker->m_ports[0]->type == WCIPort && !i->worker->m_noControl) {
 	std::string name;
-	OU::format(name, "wci%u", n);
+	OU::format(name, "wci%u", nControl);
 	Connection &c = *new Connection(NULL, name.c_str());
 	c.m_count = 1;
 	a->m_connections.push_back(&c);
 	if ((err = c.attachPort(*i->m_ports, 0)) ||
-	    (err = c.attachPort(ip, n)))
+	    (err = c.attachPort(ip, nControl)))
 	  return err;
+	nControl++;
       }
     wciClk = wci->clock;
   }
@@ -854,11 +856,13 @@ adjustConnection(Connection &c, InstancePort &consumer, InstancePort &producer, 
     } else if (cons->ocp.MByteEn.value) {
       // only consumer has byte enables - make them all 1
       oa = &consumer.m_ocp[OCP_MByteEn];
-      asprintf((char **)&oa->expr, "{%zu{1'b1}}", cons->ocp.MByteEn.width);
+      asprintf((char **)&oa->expr,
+	       lang == Verilog ? "{%zu{1'b1}}" : "(others => '1')",
+	       cons->ocp.MByteEn.width);
     } else if (prod->ocp.MByteEn.value) {
       // only producer has byte enables
       oa = &producer.m_ocp[OCP_MByteEn];
-      oa->expr = "";
+      oa->expr = lang == Verilog ? "" : "open";
       oa->comment = "consumer does not have byte enables";
     }
     break;
