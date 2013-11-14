@@ -97,7 +97,9 @@ namespace DataTransfer {
   //  class SocketServerT;
   class ClientSocketT;
   class SocketXferFactory;
-  class SocketDevice : public OCPI::Driver::DeviceBase<SocketXferFactory,SocketDevice> {
+  class SocketDevice : public DataTransfer::DeviceBase<SocketXferFactory,SocketDevice> {
+      SocketDevice(const char *name)
+	: DataTransfer::DeviceBase<SocketXferFactory,SocketDevice>(name, *this) {}
   };
   class SocketXferServices;
   extern const char *socket;

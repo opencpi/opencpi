@@ -43,6 +43,10 @@
 #include <dirent.h>
 #include <sys/mman.h>
 #include <string>
+#ifdef OCPI_OS_macos
+#define mmap64 mmap
+#endif
+
 #include "fasttime.h"
 #include "OcpiUtilMisc.h"
 #include "KernelDriver.h"
@@ -403,10 +407,10 @@ namespace OCPI {
 	    OU::formatString(error, "Can't open device %s", devName.c_str());
 	  else if (ioctl(fd, OCPI_CMD_PCI, &pci))
 	    OU::formatString(error, "Can't get pci info for device %s", devName.c_str());
-	  else if ((bar0 = mmap(NULL, pci.size0, PROT_READ|PROT_WRITE, MAP_SHARED,
+	  else if ((bar0 = mmap64(NULL, pci.size0, PROT_READ|PROT_WRITE, MAP_SHARED,
 				fd, 0)) == (void*)-1)
 	    OU::formatString(error, "Can't mmap %s for bar0", devName.c_str());
-	  else if ((bar1 = mmap(NULL, pci.size1, PROT_READ|PROT_WRITE, MAP_SHARED,
+	  else if ((bar1 = mmap64(NULL, pci.size1, PROT_READ|PROT_WRITE, MAP_SHARED,
 				fd, pci.size0)) == (void*)-1)
 	    OU::formatString(error, "can't mmap %s for bar1", devName.c_str());
 	  // So fd, bar0, bar1, and pci are good here if error.empty()
@@ -425,10 +429,10 @@ namespace OCPI {
 	      pci.size1 = OCPI_UTRUNCATE(ocpi_size_t,bars[1].size);
 	      if (m_pciMemFd < 0 && (m_pciMemFd = ::open("/dev/mem", O_RDWR|O_SYNC)) < 0)
 		error = "Can't open /dev/mem, forgot sudo?";
-	      else if ((bar0 = mmap(NULL, sizeof(OccpSpace), PROT_READ|PROT_WRITE, MAP_SHARED,
+	      else if ((bar0 = mmap64(NULL, sizeof(OccpSpace), PROT_READ|PROT_WRITE, MAP_SHARED,
 				    m_pciMemFd, OCPI_STRUNCATE(off_t, bars[0].address))) == (void*)-1)
 		error = "can't mmap /dev/mem for bar0";
-	      else if ((bar1 = mmap(NULL, OCPI_UTRUNCATE(size_t, bars[1].size), PROT_READ|PROT_WRITE, MAP_SHARED,
+	      else if ((bar1 = mmap64(NULL, OCPI_UTRUNCATE(size_t, bars[1].size), PROT_READ|PROT_WRITE, MAP_SHARED,
 				    m_pciMemFd, OCPI_STRUNCATE(off_t, bars[1].address))) == (void*)-1)
 		error = "can't mmap /dev/mem for bar1";
 	    }
@@ -499,7 +503,7 @@ namespace OCPI {
 	  request.address = base;
 	  base += request.actual;
 	}
-	void *vaddr =  mmap(NULL, request.actual, PROT_READ|PROT_WRITE, MAP_SHARED,
+	void *vaddr =  mmap64(NULL, request.actual, PROT_READ|PROT_WRITE, MAP_SHARED,
 			    m_pciMemFd, OCPI_STRUNCATE(off_t, request.address));
 	if (vaddr == (void *)-1) {
 	  error = "DMA mmap failure"; // FIXME: a leak of physical memory in this case

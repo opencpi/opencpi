@@ -151,7 +151,9 @@ main(int /*argc*/, const char **argv) {
     
     if (file.empty())
       return 0;
-    OA::Application app(file.c_str(), params.size() ? params.data() : NULL);
+    //OA::Application app(file.c_str(), params.size() ? params.data() : NULL);
+    // Some STL vector implementations don't have the "data" memberfunction...
+    OA::Application app(file.c_str(), params.size() ? &params[0] : NULL);
     if (verbose)
       fprintf(stderr, "Application XML parsed and deployments (containers and implementations) chosen\n");
     app.initialize();

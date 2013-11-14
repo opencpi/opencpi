@@ -93,7 +93,9 @@ namespace DataTransfer {
    * based transfer driver.
    *********************************/
   class PIOXferFactory;
-  class PIODevice : public OCPI::Driver::DeviceBase<PIOXferFactory,PIODevice> {
+  class PIODevice : public DataTransfer::DeviceBase<PIOXferFactory,PIODevice> {
+      PIODevice(const char *name)
+	: DataTransfer::DeviceBase<PIOXferFactory,PIODevice>(name, *this) {}
   };
   class PIOXferServices;
   extern const char *pio;

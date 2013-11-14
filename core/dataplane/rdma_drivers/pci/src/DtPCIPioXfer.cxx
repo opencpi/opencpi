@@ -64,7 +64,9 @@ namespace DataTransfer {
   namespace PCI {
 
     class XferFactory;
-    class Device : public OD::DeviceBase<XferFactory,Device> {
+    class Device : public DataTransfer::DeviceBase<XferFactory,Device> {
+      Device(const char *name)
+	: DataTransfer::DeviceBase<XferFactory,Device>(name, *this) {}
     };
     class XferServices;
     class SmemServices;

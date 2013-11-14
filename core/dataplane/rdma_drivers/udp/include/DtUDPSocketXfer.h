@@ -109,7 +109,9 @@ namespace DataTransfer {
    *********************************/
   //  class ClientUDPSocketT;
   class UDPSocketXferFactory;
-  class UDPSocketDevice : public OCPI::Driver::DeviceBase<UDPSocketXferFactory,UDPSocketDevice> {
+  class UDPSocketDevice : public DataTransfer::DeviceBase<UDPSocketXferFactory,UDPSocketDevice> {
+      UDPSocketDevice(const char *name)
+	: DataTransfer::DeviceBase<UDPSocketXferFactory,UDPSocketDevice>(name, *this) {}
   };
   class UDPSocketXferServices;
   extern const char *udpsocket;
