@@ -75,7 +75,7 @@ $(call OcpiDbgVar,CompiledSourceFiles)
 $$(call OcpiDbgVar,CompiledSourceFiles)
 $(OutDir)target-$1/$2$(HdlBin): \
    HdlSources=$$(filter-out $$(filter-out %.vhd,$$(CoreBlackBoxFiles)),$$(CompiledSourceFiles))
-$(OutDir)target-$1/$2$(HdlBin): AllCores=$(call HdlCollectCores,$1)
+#$(OutDir)target-$1/$2$(HdlBin): AllCores=$(call HdlCollectCores,$1)
 $(OutDir)target-$1/$2$(HdlBin): $$$$(HdlPreCore) \
       $$(filter-out $$(filter-out %.vhd,$$(CoreBlackBoxFiles)) $$(TargetSourceFiles),$$(CompiledSourceFiles)) 
 	$(AT)echo Building $(and $(filter-out core,$(HdlMode))) core \"$(2)\" for target \"$$(HdlTarget)\"

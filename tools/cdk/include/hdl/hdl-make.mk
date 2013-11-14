@@ -93,7 +93,7 @@ define HdlSetWorkers
   HdlInstances:=$$(strip $$(foreach i,$$(shell grep -h -v '\\\#' $$(ImplWorkersFile)),\
 	               $$(if $$(filter $$(firstword $$(subst :, ,$$i)),$$(HdlPlatformWorkers)),,$$i)))
   HdlWorkers:=$$(call Unique,$$(foreach i,$$(HdlInstances),$$(firstword $$(subst :, ,$$i))))
-  override Cores:=$$(call Unique,\
+  SubCores:=$$(call Unique,\
     $$(Cores) \
     $$(foreach w,$$(HdlWorkers),\
       $$(foreach f,$$(strip\
@@ -102,6 +102,7 @@ define HdlSetWorkers
             $$(foreach d,$$(call HdlComponentLibraryDir,$$c,$$(HdlTarget)),\
               $$(call HdlExists,$$d/$$w$$(and $$(HdlToolRealCore),$$(filter %.vhd,$$(ImplFile)),_rv)$$(HdlBin)))))),\
         $$(call FindRelative,.,$$f))))
+   $$(infoxx Cores is $$(origin SubCores) $$(flavor SubCores):$$(SubCores))
 
 endef
 
@@ -175,11 +176,11 @@ HdlName=$(or $(Core),$(LibName))
 HdlLog=$(HdlName)-$(HdlToolSet).out
 HdlTime=$(HdlName)-$(HdlToolSet).time
 HdlCompile=\
-  $(infoxx Compile0:$(Cores):$(ImplWorkersFile):$(ImplFile):to-$@) \
+  $(infoxx Compile0:$(HdlWorkers):$(Cores):$(ImplWorkersFile):$(ImplFile):to-$@) \
   $(and $(ImplWorkersFile),$(eval $(HdlSetWorkers))) \
   $(infoxx Compile:$(HdlWorkers):$(Cores):$(ImplWorkersFile)) \
-  $(and $(Cores),$(call HdlRecordCores,$(basename $@))$(infoxx DONERECORD)) \
-  $(infoxx ALLCORES:$(AllCores)) \
+  $(and $(SubCores),$(call HdlRecordCores,$(basename $@))$(infoxx DONERECORD)) \
+  $(infoxx SUBCORES:$(SubCores)) \
   cd $(TargetDir) && \
   $(and $(HdlPreCompile), $(HdlPreCompile) &&)\
   export HdlCommand="set -e; $(HdlToolCompile)"; \
@@ -351,19 +352,19 @@ HdlRmRv=$(if $(filter %_rv,$1),$(patsubst %_rv,%,$1),$1)
 # proper hierarchies can include indirectly required cored later
 # Called from HdlCompile which is already tool-specific
 HdlRecordCores=\
-  $(infoxx Record:$1:$(Cores))\
+  $(infoxx Record:$1:$(SubCores))\
   $(and $(call HdlExists,$(dir $1)),\
   (\
    echo '\#' This generated file records cores necessary to build this $(LibName) $(HdlMode); \
-   echo $(foreach c,$(Cores),$(strip\
+   echo $(foreach c,$(SubCores),$(strip\
            $(call OcpiAbsPath,$(call HdlCoreRef,$(call HdlToolCoreRef,$c),$(HdlTarget))))) \
   ) > $(call HdlRmRv,$1).cores;)
 
 #	             $(foreach r,$(call HdlRmRv,$(basename $(call HdlCoreRef,$c,$1))),\
 
-HdlCollectCores=$(infoxx CCC:$(Cores))$(call Unique,\
+HdlCollectCores=$(infoxx CCC:$(SubCores))$(call Unique,\
 		  $(foreach a,\
-                   $(foreach c,$(Cores),$(infoxx ZC:$c)$c \
+                   $(foreach c,$(SubCores),$(infoxx ZC:$c)$c \
 	             $(foreach r,$(basename $(call HdlCoreRef,$(call HdlToolCoreRef,$c),$1)),$(infoxx ZR:$r)\
                        $(foreach f,$(call HdlExists,$(call HdlRmRv,$r).cores),$(infoxx ZF:$f)\
                           $(foreach z,$(shell grep -v '\#' $f),$(infoxx found:$z)$z)))),$a))

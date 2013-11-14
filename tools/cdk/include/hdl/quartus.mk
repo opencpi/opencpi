@@ -144,8 +144,8 @@ QuartusMakeQsf=\
   $(call QuartusMakeDevices,$(HdlTarget),$(HdlPlatform)) \
   echo set_global_assignment -name TOP_LEVEL_ENTITY $(or $(Top),$(Core)); \
   \
-  $(and $(Cores),echo '\#' Import QXP file for each core;) \
-  $(foreach c,$(Cores),\
+  $(and $(SubCores),echo '\#' Import QXP file for each core;) \
+  $(foreach c,$(SubCores),\
     echo set_global_assignment -name QXP_FILE \
       '\"'$(call FindRelative,$(TargetDir),$(call HdlCoreRef,$c,$(HdlTarget)))'\"';\
     $(foreach w,$(call HdlRmRv,$(basename $(notdir $c))),\
@@ -184,7 +184,7 @@ QuartusMakeQsf=\
     echo set_global_assignment -name SYNTHESIS_EFFORT fast;) \
   $(if $(findstring $(HdlMode),container),\
     echo '\#' Include the platform-related assignments. ;\
-    echo source $(HdlPlatformsDir)/$1/$1.qsf;) \
+    echo source $(HdlPlatformsDir)/$(HdlPlatform)/$(HdlPlatform).qsf;) \
  ) > $(Core).qsf;
 
   # $(and $(findstring $(HdlMode),platform),\

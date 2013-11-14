@@ -856,9 +856,10 @@ adjustConnection(Connection &c, InstancePort &consumer, InstancePort &producer, 
     } else if (cons->ocp.MByteEn.value) {
       // only consumer has byte enables - make them all 1
       oa = &consumer.m_ocp[OCP_MByteEn];
-      asprintf((char **)&oa->expr,
-	       lang == Verilog ? "{%zu{1'b1}}" : "(others => '1')",
-	       cons->ocp.MByteEn.width);
+      if (lang == VHDL)
+	oa->expr = strdup("(others => '1')");
+      else
+	asprintf((char **)&oa->expr, "{%zu{1'b1}}", cons->ocp.MByteEn.width);
     } else if (prod->ocp.MByteEn.value) {
       // only producer has byte enables
       oa = &producer.m_ocp[OCP_MByteEn];
@@ -1210,20 +1211,20 @@ emitAssyInstance(FILE *f, Instance *i, unsigned nControlInstances) {
     } else {
       doPrev(f, last, comment, myComment());
       // Find the widest connection, since that is the one the signal is based on
-      Attachment &at = *ip->m_attachments.front();
-      Connection &c = at.m_connection;
+      Attachment *at = ip->m_attachments.front();
+      Connection *c = at ? &at->m_connection : NULL;
       if (p.type == TimePort) {
 	// Only one direction - master outputs to slave
 	fprintf(f, "%s%s => ",
 		any ? indent : "",
 		p.master ? out.c_str() : in.c_str());
 	//	fputs(p.master ? c.m_masterName.c_str() : c.m_slaveName.c_str(), f);
-	fputs(c.m_masterName.c_str(), f);
+	fputs(at ? c->m_masterName.c_str() : "open", f);
       } else {
 	// We need to know the indexing of the other attachment
 	Attachment *otherAt = NULL;
-	for (AttachmentsIter ai = c.m_attachments.begin(); ai != c.m_attachments.end(); ai++)
-	  if (*ai != &at) {
+	for (AttachmentsIter ai = c->m_attachments.begin(); ai != c->m_attachments.end(); ai++)
+	  if (*ai != at) {
 	    otherAt = *ai;
 	    break;
 	  }
@@ -1231,16 +1232,16 @@ emitAssyInstance(FILE *f, Instance *i, unsigned nControlInstances) {
 	std::string index;
 	// Indexing is necessary when only when we are smaller than the other
 	if (p.count < otherAt->m_instPort.m_port->count)
-	  if (c.m_count > 1)
-	    OU::format(index, "(%zu to %zu)", otherAt->m_index, otherAt->m_index + c.m_count - 1);
+	  if (c->m_count > 1)
+	    OU::format(index, "(%zu to %zu)", otherAt->m_index, otherAt->m_index + c->m_count - 1);
 	  else
 	    OU::format(index, "(%zu)", otherAt->m_index);
 	// input, then output
 	fprintf(f, "%s%s => %s%s,\n%s%s => %s%s",
 		any ? indent : "",
-		in.c_str(), p.master ? c.m_slaveName.c_str() : c.m_masterName.c_str(), index.c_str(),
+		in.c_str(), p.master ? c->m_slaveName.c_str() : c->m_masterName.c_str(), index.c_str(),
 		indent,
-		out.c_str(), p.master ? c.m_masterName.c_str() : c.m_slaveName.c_str(), index.c_str());
+		out.c_str(), p.master ? c->m_masterName.c_str() : c->m_slaveName.c_str(), index.c_str());
       }
     }
     any = true;

@@ -235,13 +235,13 @@ $(call XstPruneOption,$(XstDefaultOptions)) $(XstMyExtraOptions) $(XstInternalOp
 # Note that "Libraries" is for precompiled libraries, whereas "OcpiLibraries" are for cores (in the -sd path),
 # BUT! the empty module declarations must be in the lso list to get cores we need the bb in a library too.
 
-
+XstCores=$(call HdlCollectCores,$(HdlTarget))
 XstLsoFile=$(Core).lso
 XstIniFile=$(Core).ini
 
 XstLibraries=$(HdlLibrariesInternal)
 
-XstNeedIni= $(strip $(XstLibraries)$(ComponentLibraries)$(CDKCompenentLibraries)$(CDKDeviceLibraries)$(Cores))
+XstNeedIni= $(strip $(XstLibraries)$(ComponentLibraries)$(CDKCompenentLibraries)$(CDKDeviceLibraries)$(SubCores))
 #   $(and $(findstring worker,$(HdlMode)),echo $(call ToLower,$(Worker))=$(call ToLower,$(Worker));) 
 
 # Choices as to where a bb might be
@@ -270,7 +270,7 @@ XstMakeIni=\
       echo $(lastword $(subst -, ,$(notdir $(l))))=$(strip \
         $(call FindRelative,$(TargetDir),$(strip \
            $(call HdlLibraryRefDir,$(l),$(HdlTarget)))));) \
-   $(foreach l,$(Cores),\
+   $(foreach l,$(SubCores),\
       echo $(patsubst %_rv,%,$(basename $(notdir $l)))=$(call FindRelative,$(TargetDir),$(strip \
           $(firstword $(foreach c,$(call XstCoreLibraryChoices,$(basename $l)),$(call HdlExists,$c)))));) \
   ) > $(XstIniFile);
@@ -280,7 +280,7 @@ XstMakeLso=\
    $(if $(PreBuiltCore)$(filter container assembly platform worker core,$(HdlMode)),,echo work;) $(if $(findstring work,$(LibName)),,echo $(LibName);) \
    $(foreach l,$(ComponentLibraries) $(DeviceLibraries) $(XstLibraries) $(CDKComponentLibraries) $(CDKDeviceLibraries),\
                       echo $(lastword $(subst -, ,$(notdir $(l))));)\
-  $(foreach l,$(Cores), echo $(patsubst %_rv,%,$(notdir $l));)) > $(XstLsoFile);
+  $(foreach l,$(SubCores), echo $(patsubst %_rv,%,$(notdir $l));)) > $(XstLsoFile);
 
 #            echo $(lastword $(subst -, ,$(notdir $(l))_bb));)) > $(XstLsoFile);
 XstOptions += -lso $(XstLsoFile) 
@@ -314,7 +314,7 @@ XstOptions +=\
    -vlgincdir { \
      $(foreach d,$(VerilogIncludeDirs),$(call FindRelative,$(TargetDir),$(d))) \
     })) \
-  $(and $(CDKComponentLibraries)$(CDKDeviceLibraries)$(ComponentLibraries)$(DeviceLibraries)$(AllCores)$(PlatformCores),-sd { \
+  $(and $(CDKComponentLibraries)$(CDKDeviceLibraries)$(ComponentLibraries)$(DeviceLibraries)$(XstCores)$(PlatformCores),-sd { \
      $(foreach l,$(CDKComponentLibraries),$(strip \
        $(call FindRelative,$(TargetDir),\
          $(l)/hdl/$(call XstLibRef,$(LibName),$(HdlTarget)))))\
@@ -326,12 +326,12 @@ XstOptions +=\
      $(foreach l,$(DeviceLibraries),$(strip \
        $(call FindRelative,$(TargetDir),\
          $(l)/lib/hdl/$(call XstLibRef,$(LibName),$(HdlTarget)))))\
-     $(foreach c,$(AllCores),$(call FindRelative,$(TargetDir),$(dir $(call HdlCoreRef,$c,$(HdlTarget)))))\
+     $(foreach c,$(XstCores),$(call FindRelative,$(TargetDir),$(dir $(call HdlCoreRef,$c,$(HdlTarget)))))\
      $(and $(findstring platform,$(HdlMode)),..) \
       })
 
 XstNgdOptions=$(xxxinfo XNO)\
-     $(foreach c,$(AllCores),$(xxxinfo XNO:$c)-sd $(call FindRelative,$(TargetDir),$(dir $(call HdlCoreRef,$c,$(HdlTarget)))))
+     $(foreach c,$(XstCores),$(xxxinfo XNO:$c)-sd $(call FindRelative,$(TargetDir),$(dir $(call HdlCoreRef,$c,$(HdlTarget)))))
 
 ifneq (,)
   $(foreach l,$(CDKComponentLibraries), -sd \
@@ -342,16 +342,16 @@ ifneq (,)
     $(call FindRelative,$(TargetDir),$(l)/hdl/$(or $(HdlPart),$(HdlTarget))))\
   $(foreach l,$(DeviceLibraries), -sd \
     $(call FindRelative,$(TargetDir),$(l)/lib/hdl/$(or $(HdlPart),$(HdlTarget))))\
-  $(foreach c,$(AllCores), -sd \
+  $(foreach c,$(XstCores), -sd \
     $(call FindRelative,$(TargetDir),$(dir $(call HdlCoreRef,$c,$(HdlTarget)))))
 endif
-#$(info lib=$(HdlLibrariesInternal)= cores=$(AllCores)= Comps=$(ComponentLibraries)= td=$(TargetDir)= @=$(@))
+#$(info lib=$(HdlLibrariesInternal)= cores=$(XstCores)= Comps=$(ComponentLibraries)= td=$(TargetDir)= @=$(@))
 
 HdlToolCompile=\
   $(foreach l,$(XstLibraries),\
      $(if $(wildcard $(call HdlLibraryRefDir,$(l),$(HdlTarget))),,\
           $(error Error: Specified library: "$l", in the "HdlLibraries" variable, was not found for $(call HdlGetFamily,$(HdlTarget)).))) \
-  $(foreach l,$(AllCores),$(xxxinfo AC:$l)\
+  $(foreach l,$(XstCores),$(xxxinfo AC:$l)\
     $(if $(foreach x,$(call XstCoreLibraryChoices,$1),$(call HdlExists,$x)),,\
 	$(info Error: Specified core library for "$l", in the "Cores" variable, was not found.) \
         $(error Error:   after looking in $(call HdlExists,$(call XstCoreLibraryChoices,$1))))) \
@@ -439,7 +439,7 @@ $(call NgdName,$1,$3): $(call NgcName,$1,$4) $(wildcard $(HdlPlatformsDir)/$5/*.
 # Map to physical elements
 $(call MapName,$1,$3): $(call NgdName,$1,$3)
 	$(AT)echo -n For $2 on $5 using config $4: creating mapped NCD '(Native Circuit Description)' file using '"map"'.
-	$(AT)$(call DoXilinx,map,$1,-p $(HdlPart_$5) -w -logic_opt on -xe c -mt on -t $(or $(OCPI_PAR_SEED),1) -register_duplication on \
+	$(AT)$(call DoXilinx,map,$1,-p $(HdlPart_$5) -detail -w -logic_opt on -xe c -mt 4 -t $(or $(OCPI_PAR_SEED),1) -register_duplication on \
 	                         -global_opt off -ir off -pr off -lc off -power off -o $(notdir $(call MapName,$1,$3)) \
 	                         $(notdir $(call NgdName,$1,$3)) $(notdir $(call PcfName,$1,$3)))
 

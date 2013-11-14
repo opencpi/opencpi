@@ -250,14 +250,14 @@ $(call HdlContainer,$1) $(call HdlContBitName,$1): \
 $(call HdlContainer,$1) $(call HdlContBitName,$1): \
                          HdlPlatform=$(HdlPlatform_$1)
 $(call HdlContainer,$1) $(call HdlContBitName,$1): \
-                         override ImplWorkersFile=$$(call HdlExists,$(call HdlContDir,$1)/$1.wks)
+                         override ImplWorkersFile=$$(call HdlExists,$(GeneratedDir)/$1.wks)
 $(call HdlContainer,$1) $(call HdlContBitName,$1): \
                          override ImplFile=$$(call HdlContSource,$1,assy)
-$(call HdlContainer,$1) $(call HdlContBitName,$1): \
-                         AllCores=$$(call HdlCollectCores,$$(HdlTarget))
+#$(call HdlContainer,$1) $(call HdlContBitName,$1): \
+#                         AllCores=$$(call HdlCollectCores,$$(HdlTarget))
 # The two basic pieces of the container are cores, not workers
 $(call HdlContainer,$1) $(call HdlContBitName,$1): \
-			override Cores=$(HdlPlatformsDir)/$(HdlPlatform_$1)/target-$(call HdlConfig_$1)/$(call HdlConfig_$1)_rv target-$(HdlTarget_$1)/$(Worker)_rv
+			Cores=$(HdlPlatformsDir)/$(HdlPlatform_$1)/target-$(call HdlConfig_$1)/$(call HdlConfig_$1)_rv target-$(HdlTarget_$1)/$(Worker)_rv
 
 $(call HdlContainer,$1): $(call WkrBinary,$(HdlTarget_$1))
 	$(AT)echo Building $$(HdlMode) core \"$1\" for assembly "$(Worker)" for target \"$(HdlPlatform_$1)\"
@@ -277,7 +277,6 @@ all: $(call HdlContBitZName,$1)
 -include $(HdlPlatformsDir)/$(HdlPlatform_$1)/$(HdlPlatform_$1).mk
 
 # Now invoke the tool-specific build with: <target-dir>,<assy-name>,<core-file-name>,<config>,<platform>
-#$(info HTDP:$1:$(HdlPlatform_$1):$(HdlTarget_$1))
 $(call HdlToolDoPlatform_$(HdlToolSet_$(HdlTarget_$1)),$(call HdlContDir,$1),$(Worker),$(Worker)-$1,$1,$(HdlPlatform_$1),$(HdlTarget_$1))
 
 HdlContainerCores+=$(call HdlContainer,$1)
