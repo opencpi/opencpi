@@ -90,8 +90,8 @@ HdlXmlComponentLibraries=$(strip \
 # Note we are silent about workers that don't have cores.
 # FIXME: put in the error check here, but avoid building platform modules like "occp" etc.
 define HdlSetWorkers
-  HdlInstances:=$$(strip $$(foreach i,$$(shell grep -h -v '\\\#' $$(ImplWorkersFile)),\
-	               $$(if $$(filter $$(firstword $$(subst :, ,$$i)),$$(HdlPlatformWorkers)),,$$i)))
+  HdlInstances:=$$(and $$(ImplWorkersFile),$$(strip $$(foreach i,$$(shell grep -h -v '\\\#' $$(ImplWorkersFile)),\
+	               $$(if $$(filter $$(firstword $$(subst :, ,$$i)),$$(HdlPlatformWorkers)),,$$i))))
   HdlWorkers:=$$(call Unique,$$(foreach i,$$(HdlInstances),$$(firstword $$(subst :, ,$$i))))
   SubCores:=$$(call Unique,\
     $$(Cores) \
@@ -177,7 +177,7 @@ HdlLog=$(HdlName)-$(HdlToolSet).out
 HdlTime=$(HdlName)-$(HdlToolSet).time
 HdlCompile=\
   $(infoxx Compile0:$(HdlWorkers):$(Cores):$(ImplWorkersFile):$(ImplFile):to-$@) \
-  $(and $(ImplWorkersFile),$(eval $(HdlSetWorkers))) \
+  $(eval $(HdlSetWorkers)) \
   $(infoxx Compile:$(HdlWorkers):$(Cores):$(ImplWorkersFile)) \
   $(and $(SubCores),$(call HdlRecordCores,$(basename $@))$(infoxx DONERECORD)) \
   $(infoxx SUBCORES:$(SubCores)) \

@@ -79,9 +79,10 @@ $(OutDir)target-$1/$2$(HdlBin): \
 $(OutDir)target-$1/$2$(HdlBin): $$$$(HdlPreCore) \
       $$(filter-out $$(filter-out %.vhd,$$(CoreBlackBoxFiles)) $$(TargetSourceFiles),$$(CompiledSourceFiles)) 
 	$(AT)echo Building $(and $(filter-out core,$(HdlMode))) core \"$(2)\" for target \"$$(HdlTarget)\"
-	$(AT)$$(call HdlRecordCores,$(basename $(OutDir)target-$1/$2))
 	$(AT)$$(HdlCompile)
 endif
+
+#	$(AT)$$(call HdlRecordCores,$(basename $(OutDir)target-$1/$2))
 
 all: $(OutDir)target-$1/$2$(HdlBin)
 
