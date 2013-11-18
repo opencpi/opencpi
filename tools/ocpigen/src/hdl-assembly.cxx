@@ -409,7 +409,8 @@ parseHdlAssy() {
     m_ports.insert(m_ports.begin(), wci);
     // Clocks: coalesce all WCI clock and clocks with same reqts, into one wci, all for the assy
     clk = addClock();
-    clk->signal = clk->name = "wci_Clk";
+    // FIXME:  this should access the 0th clock more specifically for VHDL
+    clk->signal = clk->name = nControls > 1 ? "wci0_Clk" : "wci_Clk";
     clk->port = wci;
     wci->myClock = true;
     wci->clock = clk;

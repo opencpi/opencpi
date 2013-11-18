@@ -1115,7 +1115,7 @@ parseHdl(const char *package) {
     if (p->clock && p->clock->port == p) {
       std::string sin;
       // ordinal == -2 means suppress ordinal
-      if ((err = doPattern(p, -2, wipN[p->type][mIn], true, !mIn, sin)))
+      if ((err = doPattern(p, p->count > 1 ? 0 : -2, wipN[p->type][mIn], true, !mIn, sin)))
         return err;
       asprintf((char **)&p->ocp.Clk.signal, "%s%s", sin.c_str(), "Clk");
       p->clock->signal = p->ocp.Clk.signal;

@@ -1,29 +1,7 @@
 <HdlAssembly>
-  <Instance Worker="bias" Name="bias0"/>
-  <Instance Worker="bias" Name="bias1"/>
-  <Instance Worker="bias" Name="bias2"/>
-  <Instance Worker="bias" Name="bias3"/>
-  <Instance Worker="bias" Name="bias4"/>
-  <Connection Name="in" External="consumer">
-    <Port Instance="bias0" Name="in"/>
-  </Connection>
-  <Connection>
-    <Port Instance="bias0" Name="out"/>
-    <Port Instance="bias1" Name="in"/>
-  </Connection>
-  <Connection>
-    <Port Instance="bias1" Name="out"/>
-    <Port Instance="bias2" Name="in"/>
-  </Connection>
-  <Connection>
-    <Port Instance="bias2" Name="out"/>
-    <Port Instance="bias3" Name="in"/>
-  </Connection>
-  <Connection>
-    <Port Instance="bias3" Name="out"/>
-    <Port Instance="bias4" Name="in"/>
-  </Connection>
-  <Connection Name="out" External="producer">
-    <Port Instance="bias4" Name="out"/>
-  </Connection>
+  <Instance Worker="bias" external='in' connect='bias1'/>
+  <Instance Worker="bias" connect='bias2'/>
+  <Instance Worker="bias" connect='bias3'/>
+  <Instance Worker="bias" connect='bias4'/>
+  <Instance Worker="bias" external='out'/>
 </HdlAssembly>

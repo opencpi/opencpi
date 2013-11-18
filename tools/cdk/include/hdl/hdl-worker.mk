@@ -60,10 +60,15 @@ HdlOtherImplSuffix=-impl$(HdlOtherIncSuffix)
 ifndef Tops
   ifdef Top
     Tops:=$(Top)
-  else ifeq ($(HdlLanguage),vhdl)
-    Tops=$(Worker) $(Worker)_rv
+#  else 
+#   ifeq ($(HdlLanguage),vhdl)
+#    Tops=$(Worker) $(Worker)_rv
+  else ifeq ($(HdlMode),worker)
+    Tops:=$(Worker) $(Worker)_rv
+  else ifeq ($(HdlMode),container)
+    Tops:=$(Worker)
   else
-    Tops=$(Worker) $(Worker)_rv
+    Tops:=$(Worker)_rv
   endif
 endif
 HdlCores=$(Tops)

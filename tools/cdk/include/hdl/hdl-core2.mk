@@ -159,7 +159,7 @@ $(OutDir)target-$1/bb:
 endef
 
 $(foreach f,$(HdlActualTargets),\
-  $(eval $(call DoBBLibraryTarget,$f,$(word 1,$(HdlCores)),$f,$(CoreBlackBoxFiles))))
+  $(eval $(call DoBBLibraryTarget,$f,$(call HdlRmRv,$(word 1,$(HdlCores))),$f,$(CoreBlackBoxFiles))))
 
 cores: $(BBLibResults)
 

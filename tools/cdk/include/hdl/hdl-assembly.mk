@@ -39,12 +39,12 @@ Containers:=$(Container)
 endif
 endif
 ifndef HdlPlatforms
-  ifdef HdlPlatform
-    HdlPlatforms:=$(HdlPlatform)
-  else
-    ifeq ($(Containers)$(DefaultContainers),)
-	HdlPlatforms:=ml605
-    endif
+  ifeq ($(Containers)$(DefaultContainers),)
+    HdlPlatforms:=ml605
+  endif
+else
+  ifndef HdlTargets
+    HdlTargets:=$(foreach p,$(filter-out $(ExcludePlatforms),$(HdlPlatforms)),$(call HdlGetFamily,$(HdlPart_$p)))
   endif
 endif
 
@@ -126,7 +126,9 @@ else # for "clean" goal
 HdlTargets:=all
 endif
 # Due to our filtering, we might have no targets to build
-ifeq ($(HdlTargets)$(HdlPlatforms),)
+#$(info T:$(HdlTargets)|P:$(filter-out $(ExcludePlatforms),$(HdlPlatforms)))
+
+ifeq ($(HdlTargets)$(filter-out $(ExcludePlatforms),$(HdlPlatforms)),)
   $(info No targets or platforms to build for this assembly)
 else
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
@@ -259,6 +261,8 @@ $(call HdlContainer,$1) $(call HdlContBitName,$1): \
 $(call HdlContainer,$1) $(call HdlContBitName,$1): \
 			Cores=$(HdlPlatformsDir)/$(HdlPlatform_$1)/target-$(call HdlConfig_$1)/$(call HdlConfig_$1)_rv target-$(HdlTarget_$1)/$(Worker)_rv
 
+assembly: $(call WkrBinary,$(HdlTarget_$1))
+
 $(call HdlContainer,$1): $(call WkrBinary,$(HdlTarget_$1))
 	$(AT)echo Building $$(HdlMode) core \"$1\" for assembly "$(Worker)" for target \"$(HdlPlatform_$1)\"
 	$(AT)$$(HdlCompile)
@@ -266,6 +270,8 @@ $(call HdlContainer,$1): $(call WkrBinary,$(HdlTarget_$1))
 $(call HdlContBitName,$1): $(call HdlContainer,$1)
 
 # Finally we create our artifact, compressing and attaching the metadata
+
+container: $(call HdlContBitName,$1)
 
 $(call HdlContBitZName,$1): $(call HdlContBitName,$1)
 	$(AT)echo Making compressed bit file: $$@ from $(call HdlContBitName,$1) and $(call ArtifactXmlName,$1)

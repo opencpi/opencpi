@@ -1,15 +1,5 @@
 # #####
 #
-#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
-#
-#    Mercury Federal Systems, Incorporated
-#    1901 South Bell Street
-#    Suite 402
-#    Arlington, Virginia 22202
-#    United States of America
-#    Telephone 703-413-0781
-#    FAX 703-413-0784
-#
 #  This file is part of OpenCPI (www.opencpi.org).
 #     ____                   __________   ____
 #    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
@@ -89,7 +79,7 @@ $(QuartusCombine): $(ImplHeaderFiles) $(Worker).vhd
 else
 QuartusSources=$(filter-out %.vh,$(HdlSources))
 endif
-# ?? What is the difference between SEARCH_PATH and USER_LIBRARIES???: answer is SEARCH_PATH is one at a time
+
 # Libraries can be built for specific targets, which just is for syntax checking
 # Note that a library can be designed for a specific target
 QuartusFamily_stratix4:=Stratix IV
@@ -104,18 +94,6 @@ QuartusMakeExport= \
      $(if $(findstring $(HdlMode),library),library: $(LibName),core: $(Core))); \
     $(foreach s,$(QuartusSources),echo $(notdir $s);) \
    ) > $(LibName)-sources.mk;)
-
-xxx=$(and $(ComponentLibraries),echo '\#' Search paths for component libraries;) \
-    $(foreach l,$(ComponentLibraries),\
-      echo set_global_assignment -name SEARCH_PATH '\"'$(strip \
-      $(foreach found,\
-        $(foreach t,$(sort $(HdlTarget) $(call HdlGetFamily,$(HdlTarget))),\
-	  $(realpath $l/lib/hdl/$t)), \
-        $(if $(found),\
-          $(call FindRelative,$(TargetDir),$(found))'\"';,\
-	  $(error No component library at $(abspath $t)))))) \
-    $(eval HdlWorkers:=$$(strip $$(foreach i,$$(shell grep -v '\\\#' $$(ImplWorkersFile)),\
-                         $$(if $$(filter $$(firstword $$(subst :, ,$$i)),$$(HdlPlatformWorkers)),,$$i))))
 
 QuartusMakeFamily=$(QuartusFamily_$(call HdlGetFamily,$1))
 QuartusMakeDevice=$(strip $(if $(findstring $(HdlMode),platform config container),\
@@ -187,15 +165,6 @@ QuartusMakeQsf=\
     echo source $(HdlPlatformsDir)/$(HdlPlatform)/$(HdlPlatform).qsf;) \
  ) > $(Core).qsf;
 
-  # $(and $(findstring $(HdlMode),platform),\
-  #   echo '\#' Make sure the container is defined as an empty partition. ;\
-  #   echo set_instance_assignment -name PARTITION_HIERARCHY container -to '\"mkFTop_alst4:ftop|mkCTop4B:ctop|mkOCApp4B:app\"' \
-  #     -section_id '\"'container'\"'; \
-  #   echo set_global_assignment -name PARTITION_NETLIST_TYPE -section_id '\"'container'\"' EMPTY; \
-  #   echo set_instance_assignment -name PARTITION_HIERARCHY root_partition -to '|' \
-  #     -section_id Top; \
-  #   echo set_global_assignment -name PARTITION_NETLIST_TYPE -section_id '\"'Top'\"' POST_SYNTH; ) \
-  #
 # Be safe for now - remove all previous stuff
 HdlToolCompile=\
   echo '  'Creating $@ with top == $(Top)\; details in $(TargetDir)/quartus-$(Core).out.;\
@@ -244,6 +213,57 @@ HdlToolPost=\
   fi;
 endif
 
+BitFile_quartus=$1.sof
+
+# Invoke the tool-specific build with: <target-dir>,<assy-name>,<core-file-name>,<config>,<platform>
+define HdlToolDoPlatform_quartus
+$1/$3.sof: 
+	$(AT)echo Building Quartus Bit file: $$@.  Assembly $2 on platform $5.
+	$(AT)cd $1 && \
+	rm -r -f db incremental_db *-top.* && \
+	(echo \# Common assignments whether a library or a core; \
+	 echo set_global_assignment -name FAMILY '"'$$(call QuartusMakeFamily,$(HdlPart_$5))'"'; \
+	 echo set_global_assignment -name DEVICE $$(call QuartusMakeDevice,$5); \
+	 echo set_global_assignment -name TOP_LEVEL_ENTITY $4; \
+	 echo set_global_assignment -name QXP_FILE '"'$4.qxp'"'; \
+	 echo set_global_assignment -name SDC_FILE '"'$(HdlPlatformsDir)/$5/$5.sdc'"'; \
+	 echo source $(HdlPlatformsDir)/$5/$5.qsf \
+	 ) > $4-top.qsf && \
+	cp $4-top.qsf $4-top.qsf.pre-fit && \
+	$(call DoAltera,quartus_map,$4-top,$4-top) && \
+	$(call DoAltera,quartus_fit,$4-top,$4-top) && \
+	cp $4-top.qsf $3-top.qsf.post-fit && \
+	$(call DoAltera,quartus_asm,$4-top,$4-top) && \
+	cp $4-top.sof $3.sof
+
+endef
+
+ifneq (,)
+-----junk from here-----
+#	QuartusStatus=$$$$? ; echo QuartusStatus after fit is $$$$QuartusStatus; \
+# From when we had a dangling container?
+#	$(call DoAltera,quartus_cdb,--merge=on --override_partition_netlist_type=container=import --write_settings_files=off $4-top,$4) && \
+
+xxx=$(and $(ComponentLibraries),echo '\#' Search paths for component libraries;) \
+    $(foreach l,$(ComponentLibraries),\
+      echo set_global_assignment -name SEARCH_PATH '\"'$(strip \
+      $(foreach found,\
+        $(foreach t,$(sort $(HdlTarget) $(call HdlGetFamily,$(HdlTarget))),\
+	  $(realpath $l/lib/hdl/$t)), \
+        $(if $(found),\
+          $(call FindRelative,$(TargetDir),$(found))'\"';,\
+	  $(error No component library at $(abspath $t)))))) \
+    $(eval HdlWorkers:=$$(strip $$(foreach i,$$(shell grep -v '\\\#' $$(ImplWorkersFile)),\
+                         $$(if $$(filter $$(firstword $$(subst :, ,$$i)),$$(HdlPlatformWorkers)),,$$i))))
+  # $(and $(findstring $(HdlMode),platform),\
+  #   echo '\#' Make sure the container is defined as an empty partition. ;\
+  #   echo set_instance_assignment -name PARTITION_HIERARCHY container -to '\"mkFTop_alst4:ftop|mkCTop4B:ctop|mkOCApp4B:app\"' \
+  #     -section_id '\"'container'\"'; \
+  #   echo set_global_assignment -name PARTITION_NETLIST_TYPE -section_id '\"'container'\"' EMPTY; \
+  #   echo set_instance_assignment -name PARTITION_HIERARCHY root_partition -to '|' \
+  #     -section_id Top; \
+  #   echo set_global_assignment -name PARTITION_NETLIST_TYPE -section_id '\"'Top'\"' POST_SYNTH; ) \
+  #
 ################################################################################
 # Final bitstream building support, given that the "container" core is built
 QuartusMakeTopQsf=\
@@ -265,8 +285,6 @@ QuartusMakeTopQsf=\
   echo set_global_assignment -name PARTITION_HIERARCHY dp/app -to '"mkFTop_alst4:ftop|mkCTop4B:ctop|mkOCApp4B:app"' -section_id "app"; \
   echo set_global_assignment -name PARTITION_IMPORT_FILE '"'$(HdlPlatformsDir)/$1/target-$(call HdlGetPart,$1)/$1$(HdlBin)'"' -section_id "plat"; \
   echo set_global_assignment -name PARTITION_HIERARCHY db/plat -to '"fpgaTop"' -section_id "plat" ; \
-
-BitFile_quartus=$1.sof
 QuartusCmd=\
 	set -e; \
 	rm -r -f db incremental_db ; \
@@ -279,30 +297,4 @@ QuartusCmd=\
 	cp $(call AppName,$1).qsf $(call AppName,$1).qsf.post-fit; \
 	$(call DoAltera,quartus_asm $(call AppName,$1))
 
-# Now invoke the tool-specific build with: <target-dir>,<assy-name>,<core-file-name>,<config>,<platform>
-define HdlToolDoPlatform_quartus
-$1/$3.sof: 
-	$(AT)echo Building Quartus Bit file: $$@.  Assembly $2 on platform $5.
-	$(AT)cd $1 && \
-	rm -r -f db incremental_db && \
-	(echo \# Common assignments whether a library or a core; \
-	 echo set_global_assignment -name FAMILY '"'$$(call QuartusMakeFamily,$(HdlPart_$5))'"'; \
-	 echo set_global_assignment -name DEVICE $$(call QuartusMakeDevice,$5); \
-	 echo set_global_assignment -name TOP_LEVEL_ENTITY $4; \
-	 echo set_global_assignment -name QXP_FILE '"'$4.qxp'"'; \
-	 echo set_global_assignment -name SDC_FILE '"'$(HdlPlatformsDir)/$5/$5.sdc'"'; \
-	 echo source $(HdlPlatformsDir)/$5/$5.qsf \
-	 ) > $4-top.qsf && \
-	cp $4-top.qsf $4-top.qsf.pre-fit && \
-	$(call DoAltera,quartus_map,$4-top,$4) && \
-	$(call DoAltera,quartus_fit,$4-top,$4) && \
-	cp $4-top.qsf $3-top.qsf.post-fit && \
-	$(call DoAltera,quartus_asm,$4-top,$4) && \
-	cp $4-top.sof $3.sof
-
-endef
-
-#	QuartusStatus=$$$$? ; echo QuartusStatus after fit is $$$$QuartusStatus; \
-# From when we had a dangling container?
-#	$(call DoAltera,quartus_cdb,--merge=on --override_partition_netlist_type=container=import --write_settings_files=off $4-top,$4) && \
-
+endif
