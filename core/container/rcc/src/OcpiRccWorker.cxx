@@ -731,8 +731,13 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
     {
     // If a worker gets started before all of its required ports are created: error
       RCCPortMask mandatory = ~(-1 << m_nPorts) & ~m_dispatch->optionallyConnectedPorts;
-      if ((mandatory & m_context->connectedPorts) != mandatory)
-	throw OU::EmbeddedException( OU::PORT_NOT_CONNECTED, NULL, OU::ApplicationRecoverable);	
+      // FIXME - this should be in generic code.
+      if ((mandatory & m_context->connectedPorts) != mandatory) {
+	const char *inst = instTag().c_str();
+	throw OU::Error("A port of%s%s%s worker '%s' is not connected",
+			inst[0] ? " instance '" : "", inst, inst[0] ? "'" : "",
+			implTag().c_str());
+      }
     }
 #if 0
     // If some how
