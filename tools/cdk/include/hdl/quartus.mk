@@ -172,11 +172,11 @@ HdlToolCompile=\
   $(QuartusMakeExport) $(QuartusMakeQsf) cat -n $(Core).qsf;\
   set -e; $(call OcpiDbgVar,HdlMode,xc) \
   $(if $(findstring $(HdlMode),core worker platform assembly config container),\
-    $(call DoAltera,quartus_map,--write_settings_files=off $(Core),$(Core)); \
-    $(call DoAltera,quartus_cdb,--merge --write_settings_files=off $(Core),$(Core)); \
-    $(call DoAltera,quartus_cdb,--incremental_compilation_export --write_settings_files=off $(Core),$(Core))) \
+    $(call DoAltera,quartus_map,--write_settings_files=off $(Core),$(Core),map); \
+    $(call DoAltera,quartus_cdb,--merge --write_settings_files=off $(Core),$(Core),merge); \
+    $(call DoAltera,quartus_cdb,--incremental_compilation_export --write_settings_files=off $(Core),$(Core),export)) \
   $(if $(findstring $(HdlMode),library),\
-    $(call DoAltera,quartus_map,--analysis_and_elaboration --write_settings_files=off $(Core),$(Core))); \
+    $(call DoAltera,quartus_map,--analysis_and_elaboration --write_settings_files=off $(Core),$(Core),map)); \
 
 # When making a library, quartus still wants a "top" since we can't precompile 
 # separately from synthesis (e.g. it can't do what vlogcomp can with isim)
@@ -230,10 +230,10 @@ $1/$3.sof:
 	 echo source $(HdlPlatformsDir)/$5/$5.qsf \
 	 ) > $4-top.qsf && \
 	cp $4-top.qsf $4-top.qsf.pre-fit && \
-	$(call DoAltera,quartus_map,$4-top,$4-top) && \
-	$(call DoAltera,quartus_fit,$4-top,$4-top) && \
-	cp $4-top.qsf $3-top.qsf.post-fit && \
-	$(call DoAltera,quartus_asm,$4-top,$4-top) && \
+	$(call DoAltera,quartus_map,$4-top,$4-top,map) && \
+	$(call DoAltera,quartus_fit,$4-top,$4-top,fit) && \
+	cp $4-top.qsf $4-top.qsf.post-fit && \
+	$(call DoAltera,quartus_asm,$4-top,$4-top,asm) && \
 	cp $4-top.sof $3.sof
 
 endef

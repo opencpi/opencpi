@@ -7,7 +7,10 @@ export OCPI_VIVADO_TOOLS_DIR=/home/jek1/mac/Xilinx/Vivado/2012.1
 
 # #### Location of the Altera tools ####################################### #
 
-export OCPI_ALTERA_TOOLS_DIR=/home/jim/altera/11.0
+export OCPI_ALTERA_TOOLS_DIR=/home/jim/altera/13.1
+export OCPI_ALTERA_KITS_DIR=/home/jim/altera/11.1
+# License not needed - this is runtime only
+#export OCPI_ALTERA_LICENSE_FILE=/home/jim/mac/altera/1-9095JT_License.dat
 
 #export OCPI_CFLAGS=-m64
 #export OCPI_CXXFLAGS=-m64

@@ -4,7 +4,9 @@ $(error The variable OCPI_ALTERA_TOOLS_DIR must be defined.)
 endif
 # The trick here is to filter the output and capture the exit code.
 # Note THIS REQUIRES BASH not just POSIX SH due to pipefail option
-DoAltera=(set -o pipefail && export LM_LICENSE_FILE=$(OCPI_ALTERA_LICENSE_FILE); $(TIME) $(OCPI_ALTERA_TOOLS_DIR)/quartus/bin/$1 $2 2>&1 | sed 's/^.\[0m.\[0;32m//') > $3-$1.out && $(ECHO) -n $1: && tail -1 $3-$1.out
+DoAltera=(set -o pipefail && export LM_LICENSE_FILE=$(OCPI_ALTERA_LICENSE_FILE); $(TIME) $(OCPI_ALTERA_TOOLS_DIR)/quartus/bin/$1 --64bit $2 2>&1 | sed 's/^.\[0m.\[0;32m//') > $3-$4.out &&\
+  $(ECHO) -n $1:' ' && tail -1 $3-$4.out | tr -d '\n' && $(ECHO) -n ' at ' && date +%T
+
 #; echo HELLO X=\$$?Y)
 ifneq (,)
 ? to establish partitions that you will import into, can you just use qxp as source or do you need a bb module?

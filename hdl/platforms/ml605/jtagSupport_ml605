@@ -1,0 +1,127 @@
+#/bin/sh --noprofile
+
+################################################################################
+# jtag support functions for ml605: 
+# Be sure to write error messages to stderr since some funtions return
+# data on stdout
+################################################################################
+func=$1
+temp=$2
+dir=`dirname $0`
+#echo bitfile=$1 device=$2 part=$3 esn=$4 position=$5 temp=$6
+# Now we must find the USB port that has the right ESN.
+# If there is only one port, then "any" as serial number is ok.
+if test "$OCPI_XILINX_TOOLS_DIR" = ""; then
+  echo Error: environment variable OCPI_XILINX_TOOLS_DIR not set. 2>&1
+  exit 1
+fi
+source $OCPI_XILINX_TOOLS_DIR/settings64.sh 1>&2
+if test $? != 0; then
+  echo Xilinx tools setup failed. 1>&2
+  exit 1
+fi
+if test -x $OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact; then
+  imp="$OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact -batch"
+elif test -x $OCPI_XILINX_TOOLS_DIR/LabTools/bin/lin64/impact; then
+  imp="$OCPI_XILINX_TOOLS_DIR/LabTools/bin/lin64/impact -batch"
+else
+  echo Error: Xilinx impact tool not found in either $OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64 nor $OCPI_XILINX_TOOLS_DIR/LabTools/bin/lin64 1>&2
+  exit 1
+fi
+# impact expects to overwrite/create this file.  In the off chance that it exists
+# and is not writable by us, we remove it first.
+# This will still fail if we don't have write permission in the directory,
+# but that is what impact will tell us in that case
+rm -f _impactbatch.log
+if test $? != 0; then
+  echo Cannot remove previous impact log file.  No write permission in current directory. 1>&2
+  exit 1
+fi
+
+function good {
+  rm -f $temps $temp.log
+  exit 0
+}
+function bad {
+  rm -f $temps
+  if test -f $temp.log; then
+     echo Look at $temp.log for details. 1>&2
+  fi
+  exit 1
+}
+
+################################################################################
+# Now we do inividual functions
+################################################################################
+case $func in
+  (cables)
+    $imp  > $temp.log <<EOF
+listusbcables
+EOF
+    # impact doesn't have reliable exit codes
+    CABLES=`grep '^port=' < $temp.log | \
+        sed 's/port= *\([^ ]*\) *, *esn= *\([^ ]*\) *$/\1=\2/'`
+    if test $? != 0 -o "$CABLES" = ""; then
+      echo No Xilinx USB JTAG cables found using the Xilinx \"impact\" tool. 1>&2
+      bad
+    fi
+    echo $CABLES
+    good
+   ;;
+  (part)
+    port=$3
+    part=$4
+    temps=$temp.part
+    for pp in 1 2 3 4 5 6 7 8 9; do
+      $imp <<EOF 2> $temp.log 1>&2
+setMode -bs
+setCable -p $port
+identify
+readidcode -p $pp 
+EOF
+      if test $? = 0; then
+         ed $temp.log <<EOF > /dev/null 2>&1
+           $
+           ?IDCODE?+
+           s/^.*Xilinx \([^,]*\),.*\$/\1/p
+           1,-d
+           2,\$d
+           w $temp.part
+EOF
+         if test $? = 0 -a "`cat $temp.part`" == $part; then
+           echo $pp
+           good
+         fi
+       else
+         break
+       fi
+    done
+    echo Error: did not find part $part in the jtag chain for cable $port. 1>&2
+    bad
+    ;;
+  (load)
+    port=$3
+    pos=$4
+    bitfile=$5
+    $imp <<EOF 2> $temp.log 1>&2
+setMode -bs
+setCable -port $port
+Identify
+assignFile -p $pos -file $bitfile
+Program -p $pos
+exit
+EOF
+    if test $? != 0; then
+      echo -n Error: Xilinx \"impact\" tool failed\; error log says: `grep -i error $temp.log`\; 1>&2
+      bad
+    fi
+    grep -q 'Programmed successfully' < $temp.log
+    if test $? != 0; then
+      echo -n Error: Xilinx \"impact\" tool failed\; log says: `grep -i error $temp.log`\; 1>&2
+      bad
+    fi
+    good
+    ;;
+esac
+echo Unknown jtag function $func 1>&2
+exit 1

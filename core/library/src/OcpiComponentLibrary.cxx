@@ -59,7 +59,7 @@ namespace OCPI {
 	  ocpiDebug("Processing library path: %s", libName.c_str());
 	  bool isDir;
 	  if (!OS::FileSystem::exists(libName, &isDir))
-	    ocpiBad("Component library path name in OCPI_LIBRARY_PATH, \"%s\", "
+	    ocpiInfo("Component library path name in OCPI_LIBRARY_PATH, \"%s\", "
 		    "is nonexistent.  It will be ignored", libName.c_str());
 	  else if (isDir) {
 	    OS::FileIterator dir(libName, "*");

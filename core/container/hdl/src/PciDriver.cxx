@@ -202,7 +202,7 @@ namespace OCPI {
 	  if (!base)
 	    throw "OCPI_CDK_DIR environment variable not set";
 	  asprintf(&command,
-		   "%s/scripts/loadBitStreamOnPlatform \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
+		   "%s/scripts/loadBitStream \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
 		   base, fileName, name().c_str(), m_platform.c_str(), m_part.c_str(),
 		   m_esn.c_str(), m_position.c_str());
 	  ocpiInfo("Executing command to load bit stream for device %s: \"%s\"\n",
@@ -428,7 +428,7 @@ namespace OCPI {
 	      pci.size0 = OCPI_UTRUNCATE(ocpi_size_t,bars[0].size);
 	      pci.size1 = OCPI_UTRUNCATE(ocpi_size_t,bars[1].size);
 	      if (m_pciMemFd < 0 && (m_pciMemFd = ::open("/dev/mem", O_RDWR|O_SYNC)) < 0)
-		error = "Can't open /dev/mem, forgot sudo?";
+		error = "Can't open /dev/mem, forgot to load the driver? sudo?";
 	      else if ((bar0 = mmap64(NULL, sizeof(OccpSpace), PROT_READ|PROT_WRITE, MAP_SHARED,
 				    m_pciMemFd, OCPI_STRUNCATE(off_t, bars[0].address))) == (void*)-1)
 		error = "can't mmap /dev/mem for bar0";

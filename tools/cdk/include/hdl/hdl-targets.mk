@@ -19,7 +19,9 @@ HdlTargets_spartan6:=xc6slx45
 HdlTargets_spartan3adsp:=xc3sd3400a
 
 HdlTargets_altera:=stratix4 stratix5 # altera-sim
-HdlTargets_stratix4:=ep4sgx230k ep4sgx360
+# The "k", when present indicates the transceiver count (k = 36)
+# But in many places it is left off..
+HdlTargets_stratix4:=ep4sgx230k ep4sgx530k ep4sgx360
 #Testing: HdlTargets_test1=test2
 
 HdlSimTools=isim icarus verilator ghdl xsim modelsim
@@ -39,12 +41,13 @@ HdlToolSet_stratix4:=quartus
 HdlToolSet_stratix5:=quartus
 
 # Platforms
-HdlAllPlatforms:=ml555 schist ml605 ocpiIsim alst4 isim_pf xsim_pf n210 modelsim_pf iva1lpe
+HdlAllPlatforms:=ml555 schist ml605 ocpiIsim alst4 alst4x isim_pf xsim_pf n210 modelsim_pf iva1lpe
 # Parts as chip-speed-package
 HdlPart_ml555:=xc5vlx50t-1-ff1136
 HdlPart_schist:=xc5vsx95t-2-ff1136
 HdlPart_ml605:=xc6vlx240t-1-ff1156
 HdlPart_alst4:=ep4sgx230k-c2-f40
+HdlPart_alst4x:=ep4sgx530k-c2-h40
 HdlPart_n210:=xc3sd3400a-5-fg676
 HdlPart_iva1lpe:=xc6slx45-2-csg324
 HdlPart_isim_pf:=isim

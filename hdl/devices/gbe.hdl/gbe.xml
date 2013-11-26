@@ -44,6 +44,7 @@
     </DataInterfaceSpec>
   </ComponentSpec>
   <property name="hasDebugLogic" parameter="true" default='true'/>
+  <TimeInterface/>
   <StreamInterface Name="wsiM0" NumberOfOpcodes="256" preciseBurst="true" impreciseburst="true"/>
   <StreamInterface Name="wsiS0" NumberOfOpcodes="256" preciseBurst="true" impreciseburst="true"/>
   <ControlInterface Name="wciS0" ControlOperations="initialize" Timeout="250000000" Sub32BitConfigProperties="true"/>
@@ -51,7 +52,6 @@
   <Signal Input="CLK_gmii_rx_clk"/>
   <Signal Input="CLK_sys1_clk"/>
   <Signal Input="RST_N_sys1_rst"/>
-  <Signal Input="wtiS0_req" Width="67"/>
   <Signal Input="gmii_rx_rxd_i" Width="8"/>
   <Signal Input="gmii_rx_rx_dv_i"/>
   <Signal Input="gmii_rx_rx_er_i"/>
@@ -66,8 +66,6 @@
   <Signal Output="cpClient_request_get" width="59"/>
   <Signal Output="RDY_cpClient_request_get"/>
   <Signal Output="RDY_cpClient_response_put"/>
-  <Signal Output="wtiS0_SThreadBusy"/>
-  <Signal Output="wtiS0_SReset_n"/>
   <Signal Output="gmii_tx_txd" Width="8"/>
   <Signal Output="gmii_tx_tx_en"/>
   <Signal Output="gmii_tx_tx_er"/>

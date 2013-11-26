@@ -169,7 +169,7 @@ ifeq ($(origin HdlTargets),undefined)
     HdlTargets:=$(HdlTarget)
   else
     ifdef HdlPlatforms
-      HdlTargets:=$(foreach p,$(HdlPlatforms),$(if $(HdlPart_$p),,$(error Unknown platform: $p))$(call HdlGetFamily,$(HdlPart_$p)))
+      HdlTargets:=$(call Unique,$(foreach p,$(HdlPlatforms),$(if $(HdlPart_$p),,$(error Unknown platform: $p))$(call HdlGetFamily,$(HdlPart_$p))))
     else
       HdlTargets:=virtex6
     endif

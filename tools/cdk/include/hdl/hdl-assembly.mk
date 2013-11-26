@@ -39,7 +39,9 @@ Containers:=$(Container)
 endif
 endif
 ifndef HdlPlatforms
-  ifeq ($(Containers)$(DefaultContainers),)
+  ifdef HdlPlatform
+    HdlPlatforms:=$(HdlPlatform)
+  else ifeq ($(Containers)$(DefaultContainers),)
     HdlPlatforms:=ml605
   endif
 else
@@ -261,9 +263,9 @@ $(call HdlContainer,$1) $(call HdlContBitName,$1): \
 $(call HdlContainer,$1) $(call HdlContBitName,$1): \
 			Cores=$(HdlPlatformsDir)/$(HdlPlatform_$1)/target-$(call HdlConfig_$1)/$(call HdlConfig_$1)_rv target-$(HdlTarget_$1)/$(Worker)_rv
 
-assembly: $(call WkrBinary,$(HdlTarget_$1))
+assembly: target-$(HdlTarget_$1)/$(Worker)_rv$(HdlBin)
 
-$(call HdlContainer,$1): $(call WkrBinary,$(HdlTarget_$1))
+$(call HdlContainer,$1):
 	$(AT)echo Building $$(HdlMode) core \"$1\" for assembly "$(Worker)" for target \"$(HdlPlatform_$1)\"
 	$(AT)$$(HdlCompile)
 

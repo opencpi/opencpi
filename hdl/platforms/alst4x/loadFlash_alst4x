@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# A script specific to the alst4 platform, with the sgx230 part
+# Args are:
+# 1. The bitstream file to load to flash
+# 2. The serial number of the jtag pod to use
+
+dir=`dirname $0`
+if test ! -x $dir/loadFlash_altera; then
+  echo Missing script: $dir/loadFlash_altera \(or not executable\).
+  exit 1
+fi
+exec $dir/loadFlash_altera stratixIVGX_4sgx530 s4gx530 $2 0x02000000 $1
+

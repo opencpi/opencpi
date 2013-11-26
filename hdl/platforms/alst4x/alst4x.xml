@@ -1,0 +1,23 @@
+<HdlPlatform Language="VHDL">
+  <xi:include href="platform_spec"/>
+  <!-- The two ports every platform worker must have - should be in spec but not supported yet -->
+  <metadata master='true'/>
+  <timeservice master='true'/>
+  <property name="pciId" type='ushort' volatile='true'/>
+  <property name="unocDropCount" type='uchar' volatile='true'/>
+  <!-- This platform worker provides a control plane -->
+  <cpmaster master='true'/>
+  <!-- This platform worker provides a data plane called "pcie" -->
+  <unoc name="pcie" master='true'/>
+  <unoc name="pcie_slave"/>
+  <signal input="sys0_clk"/>
+  <signal input='sys0_rstn'/>
+  <signal input='pcie_clk'/>
+  <signal input='pcie_rstn'/>
+  <signal input='pcie_rx' width='4'/>
+  <signal output='pcie_tx' width='4'/>
+  <signal output='led' width='16'/>
+  <signal input='ppsExtIn'/>
+  <signal output='ppsOut'/>
+</HdlPlatform>
+

@@ -52,6 +52,7 @@
 #include "PciDriver.h"
 
 namespace OP = OCPI::HDL::PCI;
+namespace OH = OCPI::HDL;
 
 static const char *found(const char *name, OP::Bar *bars, unsigned nBars, bool verbose);
 
@@ -93,16 +94,16 @@ static const char*
 found(const char *name, OP::Bar *bars, unsigned nbars, bool verbose) {
   const char *err = 0;
   void *bar0 = 0, *bar1 = 0;
-  volatile OCPI::HDL::OccpSpace *occp;
+  volatile OH::OccpSpace *occp;
 
   if (nbars != 2 || bars[0].io || bars[0].prefetch || bars[1].io || bars[1].prefetch ||
-      bars[0].addressSize != 32 || bars[0].size < sizeof(OCPI::HDL::OccpSpace))
+      bars[0].addressSize != 32 || bars[0].size < sizeof(OH::OccpSpace))
     return "OCFRP found but bars are misconfigured\n";
   // PCI config info looks good.  Now check the OCCP signature.
   if (pciMemFd < 0 && (pciMemFd = open("/dev/mem", O_RDWR)) < 0)
     return "Can't open /dev/mem, probably need to run as root/sudo";
   do { // break on error to recover mappings
-    if ((bar0 = mmap(NULL, sizeof(OCPI::HDL::OccpSpace), PROT_READ|PROT_WRITE, MAP_SHARED,
+    if ((bar0 = mmap(NULL, sizeof(OH::OccpSpace), PROT_READ|PROT_WRITE, MAP_SHARED,
 		     pciMemFd, bars[0].address)) == (void*)-1) {
       err = "can't mmap /dev/mem for bar0";
       break;
@@ -112,7 +113,7 @@ found(const char *name, OP::Bar *bars, unsigned nbars, bool verbose) {
       err = "can't mmap /dev/mem for bar1";
       break;
     }
-    occp = (OCPI::HDL::OccpSpace *)bar0;
+    occp = (OH::OccpSpace *)bar0;
     if (occp->admin.magic != OCCP_MAGIC) {
       if (verbose)
 	printf("PCI Device matches OCFRP vendor/device, but not OCCP signature: "
@@ -122,16 +123,27 @@ found(const char *name, OP::Bar *bars, unsigned nbars, bool verbose) {
       break;
     }
     {
+      volatile OH::OccpWorkerRegisters *w = &occp->worker[0].control;
+      uint32_t bits = occp->admin.config;
+      volatile uint8_t *uuid;
+      // new platform worker: worker zero connected
+      if (bits != (uint32_t)-1 && (bits & 1)) {
+	uint32_t control = w->control;
+	if (!(control & OCCP_WORKER_CONTROL_ENABLE))
+	  w->control = control | OCCP_WORKER_CONTROL_ENABLE;
+	uuid = occp->config[0];
+      } else
+	uuid = (uint8_t *)&occp->admin.uuid;
       char tbuf[30], tbuf1[30];
-      OCPI::HDL::HdlUUID myUUID;
+      OH::HdlUUID myUUID;
       char platform[sizeof(myUUID.platform)+1];
       char device[sizeof(myUUID.device)+1];
       char load[sizeof(myUUID.load)+1];
       OCPI::Util::UuidString textUUID;
       time_t bsvbd, bsbd;
       // Capture the UUID info that tells us about the platform
-      for (unsigned n = 0; n < sizeof(OCPI::HDL::HdlUUID); n++)
-	((uint8_t*)&myUUID)[n] = ((volatile uint8_t *)&occp->admin.uuid)[(n & ~3) + (3 - (n&3))];
+      for (unsigned n = 0; n < sizeof(OH::HdlUUID); n++)
+	((uint8_t*)&myUUID)[n] = uuid[(n & ~3) + (3 - (n&3))];
       strncpy(platform, myUUID.platform, sizeof(myUUID.platform));
       platform[sizeof(myUUID.platform)] = '\0';
       strncpy(device, myUUID.device, sizeof(myUUID.device));
@@ -146,11 +158,11 @@ found(const char *name, OP::Bar *bars, unsigned nbars, bool verbose) {
       ctime_r(&bsbd, tbuf1);
       tbuf1[strlen(tbuf1)-1] = 0;
 #if 1
-      printf("OpenCPI FPGA at PCI %s: BSV date %s, bitstream date %s, "
+      printf("OpenCPI FPGA at PCI %s: bitstream date %s, "
 	     //	     "platform \"%s\", device \"%s\", UUID %s, loadParam \"%s\"\n",
 	     // name, tbuf, tbuf1, platform, device, textUUID, load);
 	     "platform \"%s\", device \"%s\", UUID %s\n",
-	     name, tbuf, tbuf1, platform, device, textUUID);
+	     name, tbuf1, platform, device, textUUID);
 #else
       printf("OpenCPI FPGA at PCI %s\n", name);
       for (unsigned n = 0; n < sizeof(myUUID); n++) {
@@ -163,7 +175,7 @@ found(const char *name, OP::Bar *bars, unsigned nbars, bool verbose) {
     nFound++;
   } while (0);
   if (bar0)
-    munmap(bar0, sizeof(OCPI::HDL::OccpSpace));
+    munmap(bar0, sizeof(OH::OccpSpace));
   if (bar1)
     munmap(bar1, bars[1].size);
   return err;
