@@ -401,9 +401,9 @@ XilinxAfter=set +e;grep -i error $1.out|grep -v '^WARNING:'|grep -i -v '[_a-z]er
 # Use default pattern to find error string in tool output
 DoXilinx=$(call DoXilinxPat,$1,$2,$3,'Number of error.*s: *0')
 DoXilinxPat=\
-	echo " "Details in $1.out; cd $2; $(call XilinxInit,$1.out); \
+	echo " "Details in $1.out; cd $2; $(call XilinxInit,$1.out);\
 	echo Command: $1 $3 >> $1.out; \
-	/usr/bin/time -f %E -o $1.time sh -c "$1 $3; RC=\$$$$?; $(ECHO) Exit status: \$$$$RC; $(ECHO) \$$$$RC > $1.status" >> $1.out 2>&1;\
+	/usr/bin/time -f %E -o $1.time bash -c "$1 $3; RC=\$$$$?; $(ECHO) Exit status: \$$$$RC; $(ECHO) \$$$$RC > $1.status" >> $1.out 2>&1;\
 	(echo -n Time:; cat $1.time) >> $1.out; \
 	$(call XilinxAfter,$1,$4)
 #AppBaseName=$(PlatformDir)/$(Worker)-$(HdlPlatform)

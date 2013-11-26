@@ -13,7 +13,8 @@ mkdir build-$OCPI_TARGET_HOST
 cd build-$OCPI_TARGET_HOST
 if test "$OCPI_CROSS_HOST" = ""; then
 CC=gcc
-CXX="c++ -stdlib=libstdc++"
+#macos only CXX="c++ -stdlib=libstdc++"
+CXX=c++
 LD=c++
 AR=ar
 else

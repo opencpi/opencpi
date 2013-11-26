@@ -177,7 +177,7 @@ $(call WkrBinary,$(1)): $$(ObjectFiles_$(1)) $$(call ArtifactXmlFile,$1) \
 	$(LinkBinary) $$(ObjectFiles_$(1)) $(OtherLibraries)
 	$(AT)if test -f "$(ArtifactXmlFile)"; then \
 		(cat $(ArtifactXmlFile); \
-                 sh -c 'echo X$$$$4' `ls -l $(ArtifactXmlFile)`) >> $$@; \
+                 bash -c 'echo X$$$$4' `ls -l $(ArtifactXmlFile)`) >> $$@; \
 	fi
 endif
 # Make sure we actuall make the final binary for this target

@@ -184,7 +184,7 @@ HdlCompile=\
   cd $(TargetDir) && \
   $(and $(HdlPreCompile), $(HdlPreCompile) &&)\
   export HdlCommand="set -e; $(HdlToolCompile)"; \
-  $(TIME) sh -c \
+  $(TIME) bash -c \
    '(/bin/echo Commands to execute tool:@"$$HdlCommand" | sed "s/\([^\\]\); */\1;@/g" | tr "@" "\n"; /bin/echo Output from executing commands above:;eval "$$HdlCommand") > $(HdlLog) 2>&1' \
     > $(HdlTime) 2>&1; \
   HdlExit=$$?; \

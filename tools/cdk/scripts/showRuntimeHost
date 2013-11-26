@@ -21,6 +21,10 @@ EOF
 elif test -f /etc/lsb-release; then
   . /etc/lsb-release
   HostVersion=`echo $DISTRIB_ID|sed 's/^\(.\).*/\1/' | tr A-Z a-z``echo $DISTRIB_RELEASE|sed 's/^\([^.]*\).*/\1/'`
+elif test -f /etc/os-release; then
+  # We'll assume debian
+  . /etc/os-release
+  HostVersion=d$VERSION_ID
 elif test $HostSystem = darwin -a "`which sw_vers`" != ""; then
   HostSystem=macos
   HostVersion=`sw_vers -productVersion`
