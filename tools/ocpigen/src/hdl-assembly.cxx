@@ -626,9 +626,9 @@ parseHdlAssy() {
         }
       }
       for (SignalsIter si = i->worker->m_signals.begin(); si != i->worker->m_signals.end(); si++) {
-	Signal *s = new Signal(**si);
+	Signal *s = new Signal(*si->second);
 	// OU::format(s->m_name, "%s_%s", i->name, s->m_name.c_str());
-	m_signals.push_back(s);
+	m_signals[s->m_name.c_str()] = s;
       }
     }
   if (!cantDataResetWhileSuspended && wci)
@@ -1249,7 +1249,7 @@ emitAssyInstance(FILE *f, Instance *i, unsigned nControlInstances) {
   } // end of port loop
   // Signals are always mapped as external ports
   for (SignalsIter si = i->worker->m_signals.begin(); si != i->worker->m_signals.end(); si++) {
-    Signal *s = *si;
+    Signal *s = si->second;
     doPrev(f, last, comment, myComment());
     any = true;
     if (s->m_differential) {

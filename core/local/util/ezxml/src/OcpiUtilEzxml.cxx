@@ -557,7 +557,10 @@ namespace OCPI {
 	else
 	  formatString(s, fmt, ord++);
       }
-      const char *getRequiredString(ezxml_t x, std::string &s, const char *attr, const char *element) {
+      const char *getRequiredString(ezxml_t x, std::string &s, const char *attr,
+				    const char *element) {
+	if (!element)
+	  element = ezxml_tag(x);
 	const char *cp = ezxml_cattr(x, attr);
 	if (!cp)
 	  return esprintf("Missing %s attribute for %s element", attr, element);

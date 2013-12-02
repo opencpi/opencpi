@@ -56,7 +56,7 @@ define OcpiDbg
 $(warning Debug: $(1))
 endef
 define OcpiDbgVar
-$(call OcpiDbg,$(2)$(1) is <$($(1))> origin $(origin $(1)))
+$(call OcpiDbg,$(2)$(1) is <$(call $(1))> origin $(origin $(1)))
 endef
 endif
 # Options we alway use and will assume everywhere

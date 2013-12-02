@@ -47,6 +47,11 @@ $(call OutLibFile,$(1)): override TargetDir:=$(OutDir)target-$(1)
 $(call OutLibFile,$(1)): override HdlTarget:=$(1)
 $(call OutLibFile,$(1)): HdlSources=$$(filter-out $$(CoreBlackBoxFile),$$(CompiledSourceFiles))
 #$(call OutLibFile,$(1)): $$$$(filter-out $$$$(CoreBlackBoxFile),$$$$(CompiledSourceFiles)) | $$$$(TargetDir)
+
+$(call OutLibFile,$(1)): \
+$$$$(foreach l,$$$$(HdlLibrariesInternal),$$$$(call HdlLibraryRefDir,$$$$l,$$$$(HdlTarget)))
+
+
 $(call OutLibFile,$(1)): $$$$(HdlPreCore) $$$$(HdlSources) | $$$$(TargetDir)
 	$(AT)echo Building the $(LibName) $(HdlMode) for $$(HdlTarget) \($$@\) 
 	$(AT)$$(HdlCompile)

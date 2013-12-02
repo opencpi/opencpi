@@ -215,6 +215,14 @@ endif
 
 BitFile_quartus=$1.sof
 
+QuartusMakeBits=\
+	cp $1-top.qsf $1-top.qsf.pre-fit && \
+	$(call DoAltera,quartus_map,$1-top,$1-top,map) && \
+	$(call DoAltera,quartus_fit,$1-top,$1-top,fit) && \
+	cp $1-top.qsf $1-top.qsf.post-fit && \
+	$(call DoAltera,quartus_asm,$1-top,$1-top,asm) && \
+	cp $1-top.sof $2.sof
+
 # Invoke the tool-specific build with: <target-dir>,<assy-name>,<core-file-name>,<config>,<platform>
 define HdlToolDoPlatform_quartus
 $1/$3.sof: 
@@ -230,10 +238,10 @@ $1/$3.sof:
 	 echo source $(HdlPlatformsDir)/$5/$5.qsf \
 	 ) > $4-top.qsf && \
 	cp $4-top.qsf $4-top.qsf.pre-fit && \
-	$(call DoAltera,quartus_map,$4-top,$4-top,map) && \
-	$(call DoAltera,quartus_fit,$4-top,$4-top,fit) && \
+	$(call DoAltera1,quartus_map,$4-top,$4-top,map) && \
+	$(call DoAltera1,quartus_fit,$4-top,$4-top,fit) && \
 	cp $4-top.qsf $4-top.qsf.post-fit && \
-	$(call DoAltera,quartus_asm,$4-top,$4-top,asm) && \
+	$(call DoAltera1,quartus_asm,$4-top,$4-top,asm) && \
 	cp $4-top.sof $3.sof
 
 endef

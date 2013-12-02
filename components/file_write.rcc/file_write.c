@@ -78,7 +78,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
    }
  }
  if (port->input.length) {
-   if ((n = write(s->fd, port->current.data, port->input.length)) < 0) {
+   if ((n = write(s->fd, port->current.data, port->input.length)) < 0 || n != port->input.length) {
      asprintf(&self->errorString, "error writing data to file: %s", strerror(errno));
      return RCC_ERROR;
    }

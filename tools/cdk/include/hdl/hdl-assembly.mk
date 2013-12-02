@@ -77,7 +77,8 @@ else
               $(eval $(call doDefaultContainer,$d,$d_base)),\
               $(error In DefaultContainers, $d is not a defined HDL platform.))))
 endif
-HdlContXml=$(or $($1_xml),$1.xml)
+HdlContXml=$(or $($1_xml),$(if $(filter .xml,$(suffix $1)),$1,$1.xml))
+HdlStripXml=$(if $(filter .xml, $(suffix $1)),$(basename $1),$1)
 ifdef Containers
   define doGetPlatform
     $(and $(call DoShell,$(OcpiGen) -S $(CwdName) -x platform $(call HdlContXml,$1),HdlContPlatform),\
@@ -97,7 +98,7 @@ ifdef Containers
     $$(call OcpiDbgVar,HdlMyPlatforms)
     $$(call OcpiDbgVar,HdlMyTargets)
   endef
-  $(foreach c,$(Containers),$(eval $(call doGetPlatform,$c)))
+  $(foreach c,$(Containers),$(eval $(call doGetPlatform,$(call HdlStripXml,$c))))
 #  $(info HdlMyPlatforms:$(HdlMyPlatforms) HdlMyTargets:=$(HdlMyTargets))
   $(call OcpiDbgVar,HdlPlatforms)
   $(call OcpiDbgVar,HdlTargets)
@@ -293,7 +294,8 @@ $$(call OcpiDbg,doContainer end)
 endef
 
 $(foreach c,$(Containers),\
-  $(and $(filter $(HdlPlatform_$c),$(HdlPlatforms)),$(eval $(call doContainer,$c))))
+  $(foreach x,$(call HdlStripXml,$c),\
+    $(and $(filter $(HdlPlatform_$x),$(HdlPlatforms)),$(eval $(call doContainer,$x)))))
 
 $(call OcpiDbg,afterdoContainers)
 

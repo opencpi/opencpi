@@ -188,7 +188,7 @@ HdlCompile=\
    '(/bin/echo Commands to execute tool:@"$$HdlCommand" | sed "s/\([^\\]\); */\1;@/g" | tr "@" "\n"; /bin/echo Output from executing commands above:;eval "$$HdlCommand") > $(HdlLog) 2>&1' \
     > $(HdlTime) 2>&1; \
   HdlExit=$$?; \
-  (cat $(HdlTime); $(ECHO) -n " at "; date +%T) >> $(HdlLog); \
+  (cat $(HdlTime) | tr -d "\n"; $(ECHO) -n " at "; date +%T) >> $(HdlLog); \
   grep -i error $(HdlLog)| grep -v Command: |\
     grep -v '^WARNING:'|grep -v " 0 errors," | grep -i -v '[_a-z]error'; \
   if grep -q '^ERROR:' $(HdlLog); then HdlExit=1; fi; \

@@ -2428,7 +2428,8 @@ module mkDACWorker(CLK_dac_clk,
   assign wti_isReset_isInReset$EN = wti_isReset_isInReset ;
 
   // register wti_nowReq
-  assign wti_nowReq$D_IN = wtiS0_req ;
+//  assign wti_nowReq$D_IN = wtiS0_req ;
+  assign wti_nowReq$D_IN = { wtiS0_MCmd, wtiS0_MData} ;
   assign wti_nowReq$EN = 1'd1 ;
 
   // register wti_operateD

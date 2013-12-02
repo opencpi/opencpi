@@ -345,6 +345,35 @@ namespace OCPI {
 	  return strcmp(lhs, rhs) < 0;
 	}
       };
+      struct ConstCharCaseComp {
+	inline bool operator() (const char *lhs, const char *rhs) const {
+	  return strcasecmp(lhs, rhs) < 0;
+	}
+      };
+      struct ConstCharEqual {
+	inline bool operator() (const char *lhs, const char *rhs) const {
+	  return strcmp(lhs, rhs) == 0;
+	}
+      };
+      struct ConstCharCaseEqual {
+	inline bool operator() (const char *lhs, const char *rhs) const {
+	  return strcasecmp(lhs, rhs) == 0;
+	}
+      };
+      struct ConstCharHash {
+	inline size_t operator() (const char *s) const {
+	  size_t h = 0;
+	  while (*s) h += *s++;
+	  return h;
+	}
+      };
+      struct ConstCharCaseHash {
+	inline size_t operator() (const char *s) const {
+	  size_t h = 0;
+	  while (*s) h += tolower(*s++);
+	  return h;
+	}
+      };
       inline size_t roundUp (size_t value, size_t align) {
 	return ((value + (align - 1)) / align) * align;
       }

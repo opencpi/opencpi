@@ -743,25 +743,23 @@ parse(ezxml_t x) {
 
 const char *Signal::
 parseSignals(ezxml_t xml, Signals &signals) {
-  const char *err;
+  const char *err = NULL;
   // process ad hoc signals
-  for (ezxml_t xs = ezxml_cchild(xml, "Signal"); xs; xs = ezxml_next(xs)) {
+  for (ezxml_t xs = ezxml_cchild(xml, "Signal"); !err && xs; xs = ezxml_next(xs)) {
     Signal *s = new Signal;
-    if ((err = s->parse(xs))) {
-      delete s;
-      return err;
-    }
-    signals.push_back(s);
+    if (!(err = s->parse(xs)))
+      if (signals.find(s->m_name.c_str()) == signals.end())
+	signals[s->m_name.c_str()] = s;
+      else
+	err = OU::esprintf("Duplicate signal: '%s'", s->m_name.c_str());
   }
-  return NULL;
+  return err;
 }
 
 void Signal::
 deleteSignals(Signals &signals) {
-  while (signals.size()) {
-    delete signals.front();
-    signals.pop_front();
-  }
+  for (SignalsIter si = signals.begin(); si != signals.end(); si++)
+    delete si->second;
 }
 const char *Worker::
 initImplPorts(ezxml_t xml, const char *element, const char *prefix, WIPType type) {

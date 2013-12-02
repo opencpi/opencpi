@@ -37,11 +37,13 @@
 #include <cstring>
 #include <vector>
 #include <list>
+#include <map>
 #include "OcpiPValue.h"
 #include "OcpiUtilProperty.h"
 #include "OcpiUtilProtocol.h"
 #include "OcpiUtilValue.h"
 #include "OcpiUtilEzxml.h"
+#include "OcpiUtilMisc.h"
 #include "OcpiMetadataWorker.h"
 #include "OcpiUuid.h"
 #include "ezxml.h"
@@ -157,8 +159,8 @@ struct OcpSignalDesc {
 };
 // A bit redundant from the above, but for adhoc signals
 struct Signal;
-typedef std::list<Signal *> Signals;
-typedef Signals::const_iterator SignalsIter;
+typedef std::map<const char *, Signal *, OU::ConstCharComp> Signals;
+typedef Signals::iterator SignalsIter;
 struct Signal {
   std::string m_name;
   enum Direction { IN, OUT, INOUT } m_direction;
@@ -169,7 +171,7 @@ struct Signal {
   const char *m_type;
   Signal();
   const char * parse(ezxml_t);
-  static const char *parseSignals(ezxml_t x, Signals &nsignals);
+  static const char *parseSignals(ezxml_t x, Signals &signals);
   static void deleteSignals(Signals &signals);
 };
 

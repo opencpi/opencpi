@@ -92,5 +92,20 @@ component SyncRegister
     sD_IN  : in  std_logic_vector(width-1 downto 0);
     dD_OUT : out std_logic_vector(width-1 downto 0)
     );
-  end component SyncRegister;
+end component SyncRegister;
+component SyncFIFO
+  generic (dataWidth : natural := 1;
+           depth     : natural := 2;
+           indxWidth : natural   := 1);
+  port(    sCLK      : in  std_logic;
+           sRST      : in  std_logic;
+           dCLK      : in  std_logic;
+           sENQ      : in  std_logic;
+           sD_IN     : in  std_logic_vector(dataWidth - 1 downto 0);
+           sFULL_N   : out std_logic;
+           dDEQ      : in  std_logic;
+           dD_OUT    : out std_logic_vector(dataWidth - 1 downto 0);
+           dEMPTY_N  : out std_logic);
+end component SyncFIFO;
+
 end package bsv;
