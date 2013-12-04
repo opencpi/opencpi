@@ -61,6 +61,7 @@ HdlToolNeedBB=
 # Function required by toolset: $(call HdlToolCoreRef,coreref)
 # Modify a stated core reference to be appropriate for the tool set
 HdlToolCoreRef=$1
+HdlToolCoreRef_quartus=$1
 ################################################################################
 # Function required by toolset: $(call HdlToolLibRef,libname)
 # This is the name after library name in a path

@@ -84,6 +84,7 @@ HdlToolNeedBB_xst=yes
 # Function required by toolset: $(call HdlToolCoreRef,coreref)
 # Modify a stated core reference to be appropriate for the tool set
 HdlToolCoreRef=$1
+HdlToolCoreRef_xst=$1
 
 ################################################################################
 # This is the name after library name in a path

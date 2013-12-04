@@ -58,6 +58,7 @@ HdlToolNeedBB=
 # Function required by toolset: $(call HdlToolCoreRef,coreref)
 # Modify a stated core reference to be appropriate for the tool set
 HdlToolCoreRef=$(call HdlRmRv,$1)
+HdlToolCoreRef_modelsim=$(call HdlRmRv,$1)
 
 ModelsimFiles=\
   $(foreach f,$(HdlSources),\

@@ -178,6 +178,8 @@ $(info No bitstreams will be built since no containers are specified.)
 else
 #can we get this without parsing multiple times? someday binary form...
 HdlContDir=$(OutDir)target-$1
+HdlConfig=$(HdlPlatformsDir)/$(HdlPlatform_$1)/target-$(call HdlConfig_$1)/$(call HdlConfig_$1)_rv
+HdlAssembly=target-$(HdlTarget_$1)/$(Worker)_rv
 HdlContainer=$(call HdlContDir,$1)/$1$(call HdlGetBinSuffix,$(HdlPlatform_$1))
 HdlContSource=$(GeneratedDir)/$1-$2.vhd
 HdlContSources=$(foreach s,defs impl assy,$(call HdlContSource,$1,$s))
@@ -261,10 +263,10 @@ $(call HdlContainer,$1) $(call HdlContBitName,$1): \
 #$(call HdlContainer,$1) $(call HdlContBitName,$1): \
 #                         AllCores=$$(call HdlCollectCores,$$(HdlTarget))
 # The two basic pieces of the container are cores, not workers
-$(call HdlContainer,$1) $(call HdlContBitName,$1): \
-			Cores=$(HdlPlatformsDir)/$(HdlPlatform_$1)/target-$(call HdlConfig_$1)/$(call HdlConfig_$1)_rv$(HdlBin) target-$(HdlTarget_$1)/$(Worker)_rv$(HdlBin)
-
-$(call HdlContainer,$1): $$$$(Cores)
+$(call HdlContainer,$1) $(call HdlContBitName,$1): Cores=$(call HdlAssembly,$1) $(call HdlConfig,$1)
+$(call HdlContainer,$1): \
+      $(call HdlToolCoreRef_$(HdlToolSet_$(HdlTarget_$1)),$(call HdlAssembly,$1))$(HdlBin) \
+      $(call HdlToolCoreRef_$(HdlToolSet_$(HdlTarget_$1)),$(call HdlConfig,$1))$(HdlBin)
 
 assembly: target-$(HdlTarget_$1)/$(Worker)_rv$(HdlBin)
 

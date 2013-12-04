@@ -71,6 +71,7 @@ HdlToolNeedBB=
 # Function required by toolset: $(call HdlToolCoreRef,coreref)
 # Modify a stated core reference to be appropriate for the tool set
 HdlToolCoreRef=$(call HdlRmRv,$1)
+HdlToolCoreRef_isim=$(call HdlRmRv,$1)
 
 IsimFiles=\
   $(foreach f,$(HdlSources),\
