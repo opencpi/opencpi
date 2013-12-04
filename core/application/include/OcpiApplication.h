@@ -131,6 +131,7 @@ namespace OCPI {
       unsigned m_bestScore;
 
       void init(const OCPI::API::PValue *params);
+      void initExternals(const OCPI::API::PValue *params);
       // return our used-container ordinal
       unsigned addContainer(unsigned container);
       bool connectionsOk(OCPI::Library::Candidate &c, unsigned instNum);
@@ -144,13 +145,14 @@ namespace OCPI {
       void doInstance(unsigned instNum, unsigned score);
       void checkInstanceParams(const char *pName, const OCPI::Util::PValue *params,
 			       bool checkMapped = false);
+      void checkExternalParams(const char *pName, const OCPI::Util::PValue *params);
       void prepareInstanceProperties(unsigned nInstance, const OCPI::Library::Implementation &impl,
 				     unsigned *&pn, OCPI::Util::Value *&pv,
 				     const PValue *params);
     public:
-      explicit ApplicationI(const char *file, const OCPI::API::PValue * policy=NULL);
-      explicit ApplicationI(const std::string &string, const OCPI::API::PValue * policy=NULL);
-      explicit ApplicationI( OCPI::Library::Assembly &, const OCPI::API::PValue * policy=NULL);
+      explicit ApplicationI(const char *file, const OCPI::API::PValue *params = NULL);
+      explicit ApplicationI(const std::string &string, const OCPI::API::PValue *params = NULL);
+      explicit ApplicationI( OCPI::Library::Assembly &, const OCPI::API::PValue *params = NULL);
       ~ApplicationI();
       OCPI::Library::Assembly & assembly(){return m_assembly;}
       bool foundContainer(OCPI::Container::Container &i);

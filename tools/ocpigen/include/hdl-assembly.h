@@ -9,7 +9,7 @@ typedef Attachments::const_iterator AttachmentsIter;
 
 struct InstancePort;
 struct Connection {
-  OCPI::Util::Assembly::Connection *m_connection; // connection in the underlying generic assembly if there is one
+  //  OCPI::Util::Assembly::Connection *m_connection; // connection in the underlying generic assembly if there is one
   std::string m_name;
   Attachments m_attachments;
   unsigned m_nExternals;
@@ -72,6 +72,7 @@ struct InstancePort {
   OU::Assembly::External *m_external;  // corresponding external of assy, for externals
   std::vector<bool> m_connected;       // to ensure indices are connected once
   Port *m_port;                        // The actual port of the instance's or assembly's worker
+  OU::Assembly::Role m_role;           // Our role, combining info from the worker port and the assy
   OcpAdapt m_ocp[N_OCP_SIGNALS];       // Information for making the connection, perhaps tieoff etc.
   std::string m_signalIn, m_signalOut; // Internal signal bundle for connecting here, when appropriate
   InstancePort();

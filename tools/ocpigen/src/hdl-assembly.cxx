@@ -118,6 +118,8 @@ parseConnection(OU::Assembly::Connection &aConn) {
 	  (ap.m_role.m_bidirectional || p.u.wdi.isProducer == ap.m_role.m_provider))
 	return OU::esprintf("Role of port %s of worker %s in connection incompatible with port",
 			    p.name, m_instances[ap.m_instance].worker->m_implName);
+      if (!found->m_role.m_knownRole || found->m_role.m_bidirectional)
+	found->m_role = ap.m_role;
     } else {
       // Update the (mutable) aspects of the original port from our worker info
       if (p.isData) {
@@ -626,9 +628,12 @@ parseHdlAssy() {
         }
       }
       for (SignalsIter si = i->worker->m_signals.begin(); si != i->worker->m_signals.end(); si++) {
-	Signal *s = new Signal(*si->second);
+	Signal *s = new Signal(**si);
+	// The assembly level signal name needs to be prefixed with the instance name
+	if (i->worker->m_isDevice)
+	  s->m_name = i->name + ("_" + s->m_name);
 	// OU::format(s->m_name, "%s_%s", i->name, s->m_name.c_str());
-	m_signals[s->m_name.c_str()] = s;
+	m_signals.push_back(s);
       }
     }
   if (!cantDataResetWhileSuspended && wci)
@@ -670,6 +675,18 @@ init(Instance *i, Port *p, OU::Assembly::External *ext) {
   m_external = ext;
   m_connected.assign(p ? p->count : 1, false);
   memset(m_ocp, sizeof(OcpAdapt)*N_OCP_SIGNALS, 0);
+  // Figure our role
+  m_role.m_knownRole = false;
+  if (p && p->isData) {
+    m_role.m_knownRole = true;
+    if (p->u.wdi.isBidirectional)
+      m_role.m_bidirectional = true;
+    else
+      m_role.m_provider = !p->u.wdi.isProducer;
+  }
+  // If the external port tells us the direction and we're bidirectional, capture it.
+  if (ext && ext->m_role.m_knownRole && !ext->m_role.m_bidirectional)
+    m_role = ext->m_role;
 }
 
 Attachment::
@@ -679,7 +696,7 @@ Attachment(InstancePort &ip, Connection &c, size_t index)
 }
 Connection::
 Connection(OU::Assembly::Connection *connection, const char *name)
-  : m_connection(connection), m_name(name ? name : (connection ? connection->m_name.c_str() : "")),
+  : /*m_connection(connection), */m_name(name ? name : (connection ? connection->m_name.c_str() : "")),
     m_nExternals(0), m_clock(NULL), m_external(NULL), m_count(0) {
 }
 
@@ -1249,28 +1266,27 @@ emitAssyInstance(FILE *f, Instance *i, unsigned nControlInstances) {
   } // end of port loop
   // Signals are always mapped as external ports
   for (SignalsIter si = i->worker->m_signals.begin(); si != i->worker->m_signals.end(); si++) {
-    Signal *s = si->second;
+    Signal *s = *si;
     doPrev(f, last, comment, myComment());
     any = true;
+    std::string prefix;
+    if (i->worker->m_isDevice) {
+      prefix = i->name;
+      prefix += + "_";
+    }
     if (s->m_differential) {
       std::string name;
       OU::format(name, s->m_pos.c_str(), s->m_name.c_str());
       if (lang == VHDL)
-	//	fprintf(f, "%s%s => %s_%s,\n", any ? indent : "",
-	//		name.c_str(), i->name, name.c_str());
-	fprintf(f, "%s%s => %s,\n", any ? indent : "",
-		name.c_str(), name.c_str());
+	fprintf(f, "%s%s => %s%s,\n", any ? indent : "",
+		name.c_str(), prefix.c_str(), name.c_str());
       OU::format(name, s->m_neg.c_str(), s->m_name.c_str());
       if (lang == VHDL)
-	//	fprintf(f, "%s%s => %s_%s", any ? indent : "",
-	//		name.c_str(), i->name, name.c_str());
-	fprintf(f, "%s%s => %s", any ? indent : "",
-		name.c_str(), name.c_str());
+	fprintf(f, "%s%s => %s%s", any ? indent : "",
+		name.c_str(), prefix.c_str(), name.c_str());
     } else if (lang == VHDL)
-      //      fprintf(f, "%s%s => %s_%s", any ? indent : "",
-      //	      s->m_name.c_str(), i->name, s->m_name.c_str());
-      fprintf(f, "%s%s => %s", any ? indent : "",
-	      s->m_name.c_str(), s->m_name.c_str());
+      fprintf(f, "%s%s => %s%s", any ? indent : "",
+	      s->m_name.c_str(), prefix.c_str(), s->m_name.c_str());
   }
 
   fprintf(f, ");%s%s\n", comment[0] ? " // " : "", comment);
@@ -1551,15 +1567,28 @@ emitInstance(Instance *i, FILE *f, const char *prefix)
     Connection &c = **ci;
     if (!c.m_external && c.m_attachments.front()->m_instPort.m_port->isData) {
       InstancePort *from = 0, *to = 0, *bidi = 0;
-      for (AttachmentsIter ai = c.m_attachments.begin(); ai != c.m_attachments.end(); ai++)
-	if ((*ai)->m_instPort.m_port->u.wdi.isProducer)
-	  from = &(*ai)->m_instPort;
-        else if (to)
-	  bidi = &(*ai)->m_instPort;
-        else
-	  to = &(*ai)->m_instPort;
-      if (!from)
-	from = bidi;
+      for (AttachmentsIter ai = c.m_attachments.begin(); ai != c.m_attachments.end(); ai++) {
+	InstancePort *ip = &(*ai)->m_instPort;
+	Port &p = *ip->m_port;
+	if (p.u.wdi.isProducer)
+	  from = ip;
+	else if (p.u.wdi.isBidirectional)
+	  if (ip->m_role.m_knownRole && !ip->m_role.m_bidirectional)
+	    if (ip->m_role.m_provider)
+	      to = ip;
+	    else
+	      from = ip;
+	  else
+	    bidi = ip;
+	else
+	  to = ip;
+      }
+      if (bidi) {
+	if (!from)
+	  from = bidi;
+	else if (!to)
+	  to = bidi;
+      }
       assert(from && to);
       if (!from->m_port->worker->m_assembly && !to->m_port->worker->m_assembly)
 	fprintf(f, "<connection from=\"%s/%s\" out=\"%s\" to=\"%s/%s\" in=\"%s\"/>\n",

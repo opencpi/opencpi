@@ -426,7 +426,7 @@ emitParameters(FILE *f, Language lang) {
 void Worker::
 emitDeviceSignals(FILE *f, Language lang, std::string &last) {
   for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
-    Signal *s = si->second;
+    Signal *s = *si;
     if (s->m_differential) {
       std::string name;
       OU::format(name, s->m_pos.c_str(), s->m_name.c_str());
@@ -531,7 +531,7 @@ emitSignals(FILE *f, Language lang, bool onlyDevices, bool useRecords, bool inPa
   }
   if (m_signals.size()) {
     emitLastSignal(f, last, lang, false);
-    fprintf(f, "  \n%s Extra signals not part of any WIP interface:\n", comment);
+    fprintf(f, "  \n  %s Extra signals not part of any WIP interface:\n", comment);
     emitDeviceSignals(f, lang, last);
   }
   if (last != init) {
@@ -1455,7 +1455,7 @@ emitDefsHDL(const char *outDir, bool wrap) {
     if (m_signals.size()) {
       fprintf(f, "  // Extra signals not part of any WIP interface:\n");
       for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
-	Signal *s = si->second;
+	Signal *s = *si;
 	const char *dir =
 	  s->m_direction == Signal::IN ? "input" :
 	  (s->m_direction == Signal::OUT ? "output    " : "inout");
@@ -2119,7 +2119,7 @@ emitVhdlShell(FILE *f) {
 #endif
   if (m_signals.size()) {
     for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
-      Signal *s = si->second;
+      Signal *s = *si;
       if (s->m_differential) {
 	std::string name;
 	OU::format(name, s->m_pos.c_str(), s->m_name.c_str());
@@ -2218,7 +2218,7 @@ emitVhdlSignalWrapper(FILE *f, const char *topinst) {
       }
     }
     for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
-      Signal *s = si->second;
+      Signal *s = *si;
       if (s->m_differential) {
 	std::string name;
 	OU::format(name, s->m_pos.c_str(), s->m_name.c_str());
@@ -2370,7 +2370,7 @@ emitVhdlRecordWrapper(FILE *f) {
       }
     }
     for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
-      Signal *s = si->second;
+      Signal *s = *si;
       if (s->m_differential) {
 	std::string name;
 	OU::format(name, s->m_pos.c_str(), s->m_name.c_str());

@@ -300,15 +300,16 @@ ifeq ($(OCPI_OS),macos)
 SO=dylib
 LD_ALLOW_UNDEFINED=-undefined dynamic_lookup
 SHARED_ALLOW_UNDEFINED=-dynamiclib $(LD_ALLOW_UNDEFINED) -install_name @rpath/$(notdir $@)
-SHARED= -stdlib=libstdc++ -dynamiclib -install_name @rpath/$(notdir $@)
+#MACSTDLIB=-stdlib=libstdc++
+SHARED= $(MACSTDLIB) -dynamiclib -install_name @rpath/$(notdir $@)
 UNDEFINED_FLAG=-Xlinker -u -Xlinker _$1
 BASICLIBS=
-CXXFLAGS += -stdlib=libstdc++ -Wall -Wsequence-point  -Wparentheses -Wempty-body -Wformat-security -Wformat -Wunused-variable -Wunused-parameter -Wsign-compare -Wno-dangling-else -Wno-logical-op-parentheses
+CXXFLAGS += $(MACSTDLIB) -Wall -Wsequence-point  -Wparentheses -Wempty-body -Wformat-security -Wformat -Wunused-variable -Wunused-parameter -Wsign-compare -Wno-dangling-else -Wno-logical-op-parentheses
 # -Wuninitialized only usable with -O
 # not available on -Wunused-but-set-variable -Wignored-qualifiers -Wconversion-null -Wint-to-pointer-cast
 #CXXFLAGS += -Wall
 # CXXFLAGS += -mdynamic-no-pic ideally do this for main programs...
-EXTRA_LDFLAGS=-stdlib=libstdc++
+EXTRA_LDFLAGS=$(MACSTDLIB)
 else
 UNDEFINED_FLAG=-Xlinker -u -Xlinker $1
 ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)

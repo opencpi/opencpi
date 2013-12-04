@@ -247,8 +247,33 @@ namespace OCPI {
       pv++, pn++;
     }
     void ApplicationI::
+    checkExternalParams(const char *pName, const OU::PValue *params) {
+      // Error check instance assignment parameters for externals
+      const char *assign;
+      for (unsigned n = 0; OU::findAssignNext(params, pName, NULL, assign, n); ) {
+	const char *eq = strchr(assign, '=');
+	if (!eq)
+	  throw OU::Error("Parameter assignment '%s' is invalid. "
+			  "Format is: <external>=<parameter-value>", assign);
+	size_t len = eq - assign;
+	for (OU::Assembly::ConnectionsIter ci = m_assembly.m_connections.begin();
+	     ci != m_assembly.m_connections.end(); ci++) {
+	  const OU::Assembly::Connection &c = *ci;
+	  if (c.m_externals.size()) {
+	    const OU::Assembly::External &e = c.m_externals.front();
+	    if (!strncasecmp(assign, e.m_name.c_str(), len)) {
+	      assign = NULL;
+	      break;
+	    }
+	  }
+	}
+	if (assign)
+	  throw OU::Error("No external port for %s assignment '%s'", pName, assign);
+      }
+    }
+    void ApplicationI::
     checkInstanceParams(const char *pName, const OU::PValue *params, bool checkMapped) {
-      // Error check instance assignment parameters
+      // Error check instance assignment parameters for instances
       const char *assign;
       for (unsigned n = 0; OU::findAssignNext(params, pName, NULL, assign, n); ) {
 	const char *eq = strchr(assign, '=');
@@ -464,12 +489,8 @@ namespace OCPI {
     void ApplicationI::
     init( const PValue * params ) {
 
-      // In order from class definition
-      m_nInstances = m_assembly.m_instances.size();
-      m_instances = new Instance[m_nInstances];
+      // In order from class definition except for instance-related
       m_bookings = new Booking[OC::Container::s_nContainers];
-      m_deployments = new Deployment[m_nInstances];
-      m_bestDeployments = new Deployment[m_nInstances];
       m_properties = NULL;
       m_nProperties = 0;
       m_curMap = 0;
@@ -493,7 +514,14 @@ namespace OCPI {
 
       bool verbose = false;
       OU::findBool(params, "verbose", verbose);
-      
+      // Initializations for externals may add instances to the assembly
+      initExternals(params);
+      // Now that we have added any extra instances for external connections, do
+      // instance-related initializations
+      m_nInstances = m_assembly.m_instances.size();
+      m_instances = new Instance[m_nInstances];
+      m_deployments = new Deployment[m_nInstances];
+      m_bestDeployments = new Deployment[m_nInstances];
       // Check that params that reference instances are valid.
       checkInstanceParams("property", params, true);
       checkInstanceParams("selection", params);
@@ -528,7 +556,8 @@ namespace OCPI {
 	}
 	if (!sum) {
 	  if (verbose) {
-	    fprintf(stderr, "No containers were found for deploying instance '%s' (spec '%s').  The implementations found were:\n",
+	    fprintf(stderr, "No containers were found for deploying instance '%s' (spec '%s').\n"
+		    "The implementations found were:\n",
 		    ai.m_name.c_str(), ai.m_specName.c_str());
 	    for (unsigned m = 0; m < i->m_nCandidates; m++) {
 	      const OL::Implementation &lImpl = *cs[m].impl;
@@ -610,6 +639,15 @@ namespace OCPI {
       // Assuming that we send the server an XML assembly, it means we need to express remote
       // connections in that xml.
     }
+    void ApplicationI::
+    initExternals( const PValue * params ) {
+      // Check that params that reference externals are valid.
+      checkExternalParams("file", params);
+      checkExternalParams("device", params);
+      checkExternalParams("url", params);
+      // Now we need to somehow add workers without modifying the underlying
+      // assembly...
+    }
     bool
     ApplicationI::foundContainer(OCPI::Container::Container &c) {
       m_curMap |= 1 << c.ordinal();
@@ -662,21 +700,26 @@ namespace OCPI {
       for (OU::Assembly::ConnectionsIter ci = m_assembly.m_connections.begin();
 	   ci != m_assembly.m_connections.end(); ci++) {
 	const OU::Assembly::Connection &c = *ci;
-	OA::Port &apiPort =
-	  m_workers[c.m_ports.front().m_instance]->getPort(c.m_ports.front().m_name.c_str());
 	const OU::Assembly::Port &assPort = c.m_ports.front();
+	OA::Port &apiPort =
+	  m_workers[assPort.m_instance]->getPort(assPort.m_name.c_str());
 	if (c.m_externals.size() == 0)
 	  apiPort.connect(m_workers[c.m_ports.back().m_instance]->getPort(c.m_ports.back().m_name.c_str()),
 			  assPort.m_parameters, c.m_ports.back().m_parameters);
 	else {
 	  const OU::Assembly::External &e = c.m_externals.front();
+	  //	  const char *ext;
 	  if (e.m_url.size())
 	    apiPort.connectURL(e.m_url.c_str(), assPort.m_parameters, e.m_parameters);
-	  else {
-	    //ExternalPort &ep = apiPort.connectExternal(e.m_name.c_str(), assPort.m_parameters, e.m_parameters);
-	    
+#if 0
+	  else if (OU::findAssign(params, "file", e.m_name.c_str(), ext)) {
+	    // We want to add a worker here.  Is it too late?
+	  } else if (OU::findAssign(params, "device", e.m_name.c_str(), ext)) {
+	  } else if (OU::findAssign(params, "url", e.m_name.c_str(), ext))
+	    apiPort.connectURL(ext, assPort.m_parameters, e.m_parameters);
+#endif
+	  else
 	    m_externals.insert(ExternalPair(e.m_name.c_str(), External(apiPort, e.m_parameters)));
-	  }
 	}
       }
     }
@@ -817,14 +860,14 @@ namespace OCPI {
     OCPI_EMIT_REGISTER_FULL_VAR( "Get Property", OCPI::Time::Emit::u, 1, OCPI::Time::Emit::State, pegp ); 
     OCPI_EMIT_REGISTER_FULL_VAR( "Set Property", OCPI::Time::Emit::u, 1, OCPI::Time::Emit::State, pesp ); 
 
-    Application::Application(const char *file, const PValue * policy)
-      : m_application(*new ApplicationI(file,policy)) {
+    Application::Application(const char *file, const PValue *params)
+      : m_application(*new ApplicationI(file, params)) {
     }
-    Application::Application(const std::string &string, const PValue * policy)
-      : m_application(*new ApplicationI(string,policy)) {
+    Application::Application(const std::string &string, const PValue *params)
+      : m_application(*new ApplicationI(string, params)) {
     }
-    Application::Application(Application & app,  const PValue * policy)
-      : m_application(*new ApplicationI(app.m_application.assembly(),policy)) {
+    Application::Application(Application & app,  const PValue *params)
+      : m_application(*new ApplicationI(app.m_application.assembly(), params)) {
     }
     Application::~Application() { delete &m_application; }
     void Application::initialize() { m_application.initialize(); }

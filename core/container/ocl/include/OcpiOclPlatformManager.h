@@ -38,8 +38,13 @@
 #include "OcpiPValueApi.h"
 
 #include <vector>
+#ifdef _LIBCPP_VERSION
+#include <memory>
+#define STDTR1 std
+#else
 #include <tr1/memory>
-
+#define STDTR1 std::tr1
+#endif
 namespace OCPI
 {
   namespace OCL
@@ -138,7 +143,7 @@ namespace OCPI
 
       private:
         class Impl;
-        std::tr1::shared_ptr<Impl> d_impl;
+        STDTR1::shared_ptr<Impl> d_impl;
 
         DeviceContext ( const DeviceContext& );
         DeviceContext& operator=( const DeviceContext& );
@@ -184,7 +189,7 @@ namespace OCPI
 
       private:
         class Impl;
-        std::tr1::shared_ptr<Impl> d_impl;
+        STDTR1::shared_ptr<Impl> d_impl;
     };
 
   } // End: namespace OCL

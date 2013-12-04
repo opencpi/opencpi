@@ -635,6 +635,7 @@ emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, size_t baseIn
 		"    <property name='position' value='%u'/>\n"
 		"  </instance>\n",
 		c.interconnect->name, unoc, unoc);
+  // instantiate dp, and connect its wci
   OU::formatAdd(assy,
 		"  <instance name='%s_ocdp%u' worker='ocdp' index='%zu' interconnect='%s' configure='%u'/>\n"
 		"  <connection>\n"
@@ -645,6 +646,7 @@ emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, size_t baseIn
 		c.interconnect->name, unoc,
 		m_config->m_implName, index - baseIndex);
   index++;
+  // instantiate sma, and connect its wci
   OU::formatAdd(assy,
 		"  <instance name='%s_sma%u' worker='sma' index='%zu' adapter='%s' configure='%u'/>\n"
 		"  <connection>\n"
@@ -679,17 +681,21 @@ emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, size_t baseIn
 		c.interconnect->name, unoc, c.interconnect->name, unoc);
   OU::formatAdd(assy,
 		"  <connection>\n"
-		"    <port instance='%s_ocdp%u' name='data'/>\n"
-		"    <port instance='%s_sma%u' name='message'/>\n"
+		"    <port instance='%s_ocdp%u' %s='data'/>\n"
+		"    <port instance='%s_sma%u' %s='message'/>\n"
 		"  </connection>\n",
-		c.interconnect->name, unoc, c.interconnect->name, unoc);
+		c.interconnect->name, unoc, port->u.wdi.isProducer ? "to" : "from",
+		c.interconnect->name, unoc, port->u.wdi.isProducer ? "from" : "to");
   OU::formatAdd(assy,
 		"  <connection>\n"
-		"    <port instance='%s_sma%u' name='%s'/>\n"
-		"    <port instance='%s' name='%s'/>\n"
+		"    <port instance='%s_sma%u' %s='%s'/>\n"
+		"    <port instance='%s' %s='%s'/>\n"
 		"  </connection>\n",
-		c.interconnect->name, unoc, port->u.wdi.isProducer ? "in" : "out",
+		c.interconnect->name, unoc,
+		port->u.wdi.isProducer ? "to" : "from",
+		port->u.wdi.isProducer ? "in" : "out",
 		c.external ? m_appAssembly->m_implName : c.devInstance->device.name().c_str(),
+		port->u.wdi.isProducer ? "from" : "to",
 		port->name);
   OU::format(prevInstance, "%s_ocdp%u", c.interconnect->name, unoc);
   emitTimeClient(assy, m_config->m_implName, prevInstance.c_str(), "wti");
@@ -1148,14 +1154,14 @@ Slot(ezxml_t xml, const char */*parent*/, const char *name, SlotType &type, cons
     if ((err = OE::getRequiredString(xs, slot, "slot")) ||
 	(err = OE::getRequiredString(xs, platform, "platform")))
       break;
-    SignalsIter si = m_type.m_signals.find(slot.c_str());
-    if (si == m_type.m_signals.end())
+    Signal *s = Signal::find(m_type.m_signals, slot.c_str());
+    if (!s)
       err = OU::esprintf("Slot signal '%s' does not exist for slot type '%s'",
 			 slot.c_str(), m_type.m_name.c_str());
-    else if (m_signals.find(si->second) != m_signals.end())
+    else if (m_signals.find(s) != m_signals.end())
       err = OU::esprintf("Duplicate slot signal: %s", slot.c_str());
     else
-      m_signals[si->second] = platform;
+      m_signals[s] = platform;
   }
   if (err)
     err = OU::esprintf("Error for slot '%s': %s", m_name.c_str(), err);
@@ -1207,14 +1213,14 @@ Card(ezxml_t xml, const char *name, SlotType &type, const char *&err)
     if ((err = OE::getRequiredString(xs, slot, "slot")) ||
 	(err = OE::getRequiredString(xs, card, "card")))
       break;
-    SignalsIter si = m_type.m_signals.find(slot.c_str());
-    if (si == m_type.m_signals.end())
+    Signal *s = Signal::find(m_type.m_signals, slot.c_str());
+    if (!s)
       err = OU::esprintf("Slot signal '%s' does not exist for slot type '%s'",
 			 slot.c_str(), m_type.m_name.c_str());
-    else if (m_signals.find(si->second) != m_signals.end())
+    else if (m_signals.find(s) != m_signals.end())
       err = OU::esprintf("Duplicate slot signal: %s", slot.c_str());
     else
-      m_signals[si->second] = card;
+      m_signals[s] = card;
   }
   // These devices are declaring that they are part of the card.
   for (ezxml_t xs = ezxml_cchild(xml, "Device"); xs; xs = ezxml_next(xs)) {

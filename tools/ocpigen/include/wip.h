@@ -37,7 +37,7 @@
 #include <cstring>
 #include <vector>
 #include <list>
-#include <map>
+#include <unordered_map>
 #include "OcpiPValue.h"
 #include "OcpiUtilProperty.h"
 #include "OcpiUtilProtocol.h"
@@ -159,7 +159,7 @@ struct OcpSignalDesc {
 };
 // A bit redundant from the above, but for adhoc signals
 struct Signal;
-typedef std::map<const char *, Signal *, OU::ConstCharComp> Signals;
+typedef std::list<Signal *> Signals;
 typedef Signals::iterator SignalsIter;
 struct Signal {
   std::string m_name;
@@ -173,6 +173,7 @@ struct Signal {
   const char * parse(ezxml_t);
   static const char *parseSignals(ezxml_t x, Signals &signals);
   static void deleteSignals(Signals &signals);
+  static Signal *find(Signals &signals, const char *name); // poor man's map
 };
 
 extern OcpSignalDesc ocpSignals[N_OCP_SIGNALS+1];
@@ -393,7 +394,6 @@ class Worker : public Parsed {
   Model m_model;
   const char *m_modelString;
   bool m_isDevice;
-  //  bool m_hasPlatformPorts; // poor man's notion of which primitive libraries are required...
   bool m_noControl; // no control port on this one.
   const char *m_specFile;
   const char *m_implName;

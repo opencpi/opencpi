@@ -262,7 +262,9 @@ $(call HdlContainer,$1) $(call HdlContBitName,$1): \
 #                         AllCores=$$(call HdlCollectCores,$$(HdlTarget))
 # The two basic pieces of the container are cores, not workers
 $(call HdlContainer,$1) $(call HdlContBitName,$1): \
-			Cores=$(HdlPlatformsDir)/$(HdlPlatform_$1)/target-$(call HdlConfig_$1)/$(call HdlConfig_$1)_rv target-$(HdlTarget_$1)/$(Worker)_rv
+			Cores=$(HdlPlatformsDir)/$(HdlPlatform_$1)/target-$(call HdlConfig_$1)/$(call HdlConfig_$1)_rv$(HdlBin) target-$(HdlTarget_$1)/$(Worker)_rv$(HdlBin)
+
+$(call HdlContainer,$1): $$$$(Cores)
 
 assembly: target-$(HdlTarget_$1)/$(Worker)_rv$(HdlBin)
 

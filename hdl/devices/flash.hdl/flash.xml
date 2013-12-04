@@ -39,15 +39,15 @@
   </ComponentSpec>
   <ControlInterface ControlOperations="initialize" Timeout="250000000" Sub32BitConfigProperties="true"/>
   <!--  Non-OCP Signals -->
-  <Signal Input="flash_fwait_i"/>
-  <Signal Inout="flash_io_dq" Width="16"/>
-  <Signal Output="flash_addr" Width="24"/>
-  <Signal Output="flash_ce_n"/>
-  <Signal Output="flash_oe_n"/>
-  <Signal Output="flash_we_n"/>
-  <Signal Output="flash_wp_n"/>
-  <Signal Output="flash_rst_n"/>
-  <Signal Output="flash_adv_n"/>
+  <Signal Input="fwait_i"/>
+  <Signal Inout="io_dq" Width="16"/>
+  <Signal Output="addr" Width="24"/>
+  <Signal Output="ce_n"/>
+  <Signal Output="oe_n"/>
+  <Signal Output="we_n"/>
+  <Signal Output="wp_n"/>
+  <Signal Output="rst_n"/>
+  <Signal Output="adv_n"/>
 </HdlDevice>
 
 

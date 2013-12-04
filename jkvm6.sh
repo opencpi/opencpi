@@ -21,7 +21,7 @@ export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../james.non-server.lic.txt
 # #### Compiler linker flags ############################################## #
 
 #export OCPI_CFLAGS+=" -m64"
-export OCPI_CXXFLAGS="$OCPI_CXXFLAGS -Wno-dangling-else"
+export OCPI_CXXFLAGS="$OCPI_CXXFLAGS -Wno-dangling-else -std=c++0x"
 #export OCPI_LDFLAGS=-m64
 
 # #### Shared library build settings ###################################### #

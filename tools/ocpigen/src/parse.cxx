@@ -748,18 +748,28 @@ parseSignals(ezxml_t xml, Signals &signals) {
   for (ezxml_t xs = ezxml_cchild(xml, "Signal"); !err && xs; xs = ezxml_next(xs)) {
     Signal *s = new Signal;
     if (!(err = s->parse(xs)))
-      if (signals.find(s->m_name.c_str()) == signals.end())
-	signals[s->m_name.c_str()] = s;
-      else
+      if (!Signal::find(signals, s->m_name.c_str()))
+	signals.push_back(s);
+      else {
 	err = OU::esprintf("Duplicate signal: '%s'", s->m_name.c_str());
+	delete s;
+      }
   }
   return err;
+}
+
+Signal *Signal::
+find(Signals &signals, const char *name) {
+  for (SignalsIter si = signals.begin(); si != signals.end(); si++)
+    if ((*si)->m_name == name)
+      return *si;
+  return NULL;
 }
 
 void Signal::
 deleteSignals(Signals &signals) {
   for (SignalsIter si = signals.begin(); si != signals.end(); si++)
-    delete si->second;
+    delete *si;
 }
 const char *Worker::
 initImplPorts(ezxml_t xml, const char *element, const char *prefix, WIPType type) {
@@ -795,6 +805,8 @@ parseHdlImpl(const char *package) {
   ezxml_t xctl;
   size_t dw;
   bool dwFound;
+  if (!strcasecmp(OE::ezxml_tag(m_xml),"hdldevice"))
+    m_isDevice = true;
   if ((err = parseSpec(package)) ||
       (err = parseImplControl(xctl)) ||
       (err = OE::getNumber(m_xml, "datawidth", &dw, &dwFound)) ||

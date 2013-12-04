@@ -44,6 +44,12 @@ usage(const char *name) {
 	  "                 # assign instance to a specific container (name or number from -C)\n"
 	  "    -P [<instance-name>]=<platform-name>\n"
 	  "                 # assign instance to any container of this platform type (see output from -C)\n"
+	  "    -f [<external-name>]=<file-name>\n"
+	  "                 # connect external port to a specific file\n"
+	  "    -D [<external-name>]=[//container/][slot/]<device-name>]\n"
+	  "                 # connect external port to a specific device\n"
+	  "    -u [<external-name>]=<URL>]\n"
+	  "                 # connect external port to a URL\n"
 	  "    -l <log-level>\n"
 	  "                 # set log level during execution\n"
 	  "    -t <seconds>\n"
@@ -99,6 +105,15 @@ main(int /*argc*/, const char **argv) {
 	break;
       case 'P':
 	addParam("platform", ap);
+	break;
+      case 'f':
+	addParam("file", ap);
+	break;
+      case 'D':
+	addParam("device", ap);
+	break;
+      case 'u':
+	addParam("url", ap);
 	break;
       case 'n':
 	nProcs = atoi(ap[0][2] ? &ap[0][2] : *++ap);

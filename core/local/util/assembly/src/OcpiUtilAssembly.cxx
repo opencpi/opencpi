@@ -493,19 +493,36 @@ namespace OCPI {
     const char *Assembly::Port::
     parse(ezxml_t x, Assembly &a, const PValue *pvl) {
       const char *err;
-      std::string iName, name;
+      std::string iName;
       unsigned instance;
-      size_t index; //, count;
+      size_t index;
       if ((err = OE::checkElements(x, NULL)) ||
-	  (err = OE::getRequiredString(x, name, "name", "port")) ||
-	  (err = OE::getRequiredString(x, iName, "instance", "port")) ||
+	  (err = OE::getRequiredString(x, iName, "instance")) ||
 	  (err = OE::getNumber(x, "index", &index)) ||
-	  //	  (err = OE::getNumber(x, "count", &count, NULL, 1)) ||
 	  (err = a.getInstance(iName.c_str(), instance)))
 	return err;
+      std::string name, from, to;
+      OE::getOptionalString(x, name, "name");
+      OE::getOptionalString(x, from, "from");
+      OE::getOptionalString(x, to, "to");
+      bool isInput = false, isKnown = false;
+      const char *onlyOne = "Only one of 'name', 'from' and 'to' attributes allowed in 'port' element";
+      if (name.size()) {
+	if (from.size() || to.size())
+	  return onlyOne;
+      } else if (from.size()) {
+	if (to.size())
+	  return onlyOne;
+	isKnown = true;
+	name = from;
+      } else if (to.size()) {
+	isInput = isKnown = true;
+	name = to;
+      } else
+	return "One of 'name', 'from', or 'to' attribute must be present in 'port' element";
       // We don't know the role at all at this point
-      init(a, name.c_str(), instance, false, false, false, index); //, count);
-      return m_parameters.parse(pvl, x, "name", "instance", NULL);
+      init(a, name.c_str(), instance, isInput, false, isKnown, index); //, count);
+      return m_parameters.parse(pvl, x, "name", "instance", "from", "to", NULL);
     }
 
     Assembly::External::

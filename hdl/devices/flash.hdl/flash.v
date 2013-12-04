@@ -152,15 +152,15 @@ module mkFlashWorker(wciS0_Clk,
 `endif
   // signals for module outputs
   wire [31 : 0] wciS0_SData;
-  wire [23 : 0] flash_addr;
+  wire [23 : 0] addr;
   wire [2 : 0]  wciS0_SFlag;
   wire [1 : 0]  wciS0_SResp;
-  wire flash_adv_n,
-       flash_ce_n,
-       flash_oe_n,
-       flash_rst_n,
-       flash_we_n,
-       flash_wp_n;
+  wire adv_n,
+       ce_n,
+       oe_n,
+       rst_n,
+       we_n,
+       wp_n;
   wire [0 : 0]
        wciS0_SThreadBusy;
 
@@ -533,25 +533,25 @@ module mkFlashWorker(wciS0_Clk,
   assign wciS0_SFlag = { 1'd1, wci_wslv_sFlagReg } ;
 
   // value method flash_addr
-  assign flash_addr = flashC_aReg ;
+  assign addr = flashC_aReg ;
 
   // value method flash_ce_n
-  assign flash_ce_n = !flashC_ceReg ;
+  assign ce_n = !flashC_ceReg ;
 
   // value method flash_oe_n
-  assign flash_oe_n = !flashC_oeReg ;
+  assign oe_n = !flashC_oeReg ;
 
   // value method flash_we_n
-  assign flash_we_n = !flashC_weReg ;
+  assign we_n = !flashC_weReg ;
 
   // value method flash_wp_n
-  assign flash_wp_n = 1'd1 ;
+  assign wp_n = 1'd1 ;
 
   // value method flash_rst_n
-  assign flash_rst_n = 1'd1 ;
+  assign rst_n = 1'd1 ;
 
   // value method flash_adv_n
-  assign flash_adv_n = 1'd0 ;
+  assign adv_n = 1'd0 ;
 
   // submodule flashC_reqF
   FIFO2 #(.width(32'd41), .guarded(32'd1)) flashC_reqF(.RST(wciS0_MReset_n),
@@ -580,7 +580,7 @@ module mkFlashWorker(wciS0_Clk,
   TriState #(.width(32'd16)) flashC_tsd(.I(flashC_tsWD),
 					.OE(flashC_tsOE),
 					.O(flashC_tsd$O),
-					.IO(flash_io_dq));
+					.IO(io_dq));
 `else
   genvar i;
   for (i = 0; i < 16; i=i+1) begin: a
@@ -588,7 +588,7 @@ module mkFlashWorker(wciS0_Clk,
   	    .IOSTANDARD("DEFAULT"),
 	    .SLEW("SLOW"))
     flash_io(.O(flashC_tsd$O[i]),
-	     .IO(flash_io_dq[i]),
+	     .IO(io_dq[i]),
 	     .I(flashC_tsWD[i]),
 	     .T(!flashC_tsOE));
   end
@@ -1193,7 +1193,7 @@ module mkFlashWorker(wciS0_Clk,
 	     WILL_FIRE_RL_flashC_wseqFsm_action_l70c12 ;
 
   // register flashC_waitReg
-  assign flashC_waitReg$D_IN = flash_fwait_i ;
+  assign flashC_waitReg$D_IN = fwait_i ;
   assign flashC_waitReg$EN = 1'd1 ;
 
   // register flashC_wdReg

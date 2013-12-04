@@ -105,7 +105,7 @@ namespace OCPI {
 	const char *parseConnection(ezxml_t ix, Assembly &a);
       };
       struct Role {
-	bool m_provider;      // is this external attachment acting as a provider to the world?
+	bool m_provider;      // is this attachment acting as a provider to the world?
 	bool m_bidirectional; // possible when inherited from a port
 	bool m_knownRole;     // role is known
       };
@@ -114,7 +114,7 @@ namespace OCPI {
 	std::string m_name;   // the name of the "external port" to the assembly
 	std::string m_url;    // the URL that this external attachment has
 	Role m_role;
-	size_t m_index;       // This is only used for top level "external"
+	size_t m_index;       // This is only used for top level "external" element
 	size_t m_count;
 	PValueList m_parameters;
 	External();
