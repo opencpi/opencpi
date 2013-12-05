@@ -37,7 +37,6 @@
 #include <cstring>
 #include <vector>
 #include <list>
-#include <unordered_map>
 #include "OcpiPValue.h"
 #include "OcpiUtilProperty.h"
 #include "OcpiUtilProtocol.h"
