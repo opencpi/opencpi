@@ -1,0 +1,38 @@
+#!/bin/sh
+
+# A script for setting up jtag cables for Altera.  Stdout is a list of <port>=<serial>.
+
+if test "$OCPI_ALTERA_TOOLS_DIR" = "" -o "$OCPI_ALTERA_KITS_DIR" = ""; then
+  echo "Altera environment variables (OCPI_ALTERA_TOOLS_DIR and OCPI_ALTERA_KITS_DIR) are not set." 1>&2
+  exit 1
+fi
+if test ! -d "$OCPI_ALTERA_TOOLS_DIR" -o ! -d "$OCPI_ALTERA_KITS_DIR" ; then
+  echo "Altera directories (set by OCPI_ALTERA_TOOLS_DIR and OCPI_ALTERA_KITS_DIR) do not exist." 1>&2
+  exit 1
+fi
+
+QBIN="$OCPI_ALTERA_TOOLS_DIR/quartus/bin"
+if test ! -x "$QBIN"/jtagconfig -o ! -x "$QBIN/quartus_pgm"; then
+  echo "The required Altera executables (jtagconfig, quartus_pgm) are not present." 1>&2
+  exit 1
+fi
+
+IFS=!
+CABLES=`"$QBIN"/jtagconfig | grep '^ *[0-9]*)' | sed 's/^ *[0-9]*) *\(.*\) *$/\1/'|sed 's/ /\\ /g'`
+if test $? != 0 -o "$CABLES" = ""; then
+  echo Unable to find any Altera USB JTAG cables. 1>&2
+  exit 1
+fi
+
+for c in $CABLES; do
+  echo -n Found cable \"$c\" 1>&2
+  SERIAL=`"$QBIN"/jtagconfig --getparam '$c' SerialNumber`
+  if test $? != 0 -o "$SERIAL" = ""; then
+    echo " with no serial number" 1>&2
+    exit 1
+  else
+    echo ' 'with serial number $SERIAL 1>&2
+    echo "$c=$SERIAL"
+  fi
+done
+exit 0
