@@ -30,6 +30,8 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "OcpiOsFileSystem.h"
+#include "OcpiUtilEzxml.h"
 #include "OcpiUtilAutoMutex.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiDriverManager.h"
@@ -38,6 +40,7 @@
 namespace OCPI {
   namespace Driver {
     namespace OU = OCPI::Util;
+    namespace OE = OCPI::Util::EzXml;
     void debug_hook() {} // easier static constructor debug
     Manager::~Manager(){}
     // If a manager has no configuration method, this is the default implementation.
@@ -85,9 +88,13 @@ namespace OCPI {
 	  file = "/opt/opencpi/system.xml";
 	  optional = true;
 	}
-	ezxml_t x = ezxml_parse_file(file);
-	if (!x && !optional)
-	  throw OU::Error("OpenCPI system configuration file: \"%s\" couldn't be opened", file);
+	ezxml_t x = NULL;
+	if (OS::FileSystem::exists(file)) {
+	  const char *err = OE::ezxml_parse_file(file, x);
+	  if (err)
+	    throw OU::Error("OpenCPI system configuration file error: %s", err);
+	} else if (!optional)
+	  throw OU::Error("OpenCPI system configuration file '%s' does not exist", file);
 	// First perform any top-level loads.
 	if (x) {
 	  for (ezxml_t l = ezxml_cchild(x, "load"); l; l = ezxml_next(l))

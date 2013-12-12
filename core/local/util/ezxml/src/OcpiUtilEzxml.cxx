@@ -46,6 +46,7 @@ namespace OCPI {
   namespace Util {
     namespace EzXml {
 
+      namespace OU = OCPI::Util;
       Doc::
       Doc ()
 	throw ()
@@ -112,7 +113,7 @@ namespace OCPI {
 	m_doc = new char [len];
 	memcpy (m_doc, data.data(), len);
 
-	m_rootNode = ezxml_parse_str (m_doc, len);
+	m_rootNode = ::ezxml_parse_str (m_doc, len);
 
 	if (!m_rootNode) {
 	  delete [] m_doc;
@@ -139,7 +140,7 @@ namespace OCPI {
 	ocpiAssert (!m_rootNode);
 
 	m_doc = data;
-	m_rootNode = ezxml_parse_str (m_doc, strlen(m_doc));
+	m_rootNode = ::ezxml_parse_str (m_doc, strlen(m_doc));
 
 	if (!m_rootNode) {
 	  delete [] m_doc;
@@ -192,7 +193,7 @@ namespace OCPI {
 	  throw std::string ("error reading file");
 	}
 
-	m_rootNode = ezxml_parse_str (m_doc, length);
+	m_rootNode = ::ezxml_parse_str (m_doc, length);
 
 	if (!m_rootNode) {
 	  delete [] m_doc;
@@ -284,7 +285,7 @@ namespace OCPI {
 	 * Should we check whether count != fileSize?
 	 */
 
-	m_rootNode = ezxml_parse_str (m_doc, count);
+	m_rootNode = ::ezxml_parse_str (m_doc, count);
 
 	if (!m_rootNode) {
 	  delete [] m_doc;
@@ -631,6 +632,22 @@ namespace OCPI {
 	  return NULL;
 	va_start(ap, fmt);
 	return evsprintf(fmt, ap);
+      }
+      const char *
+      ezxml_parse_file(const char *file, ezxml_t &xml) {
+	if (!(xml = ::ezxml_parse_file(file)))
+	  return OU::esprintf("Could not parse xml file: '%s'", file);
+	else if (ezxml_error(xml)[0])
+	  return OU::esprintf("Error parsing xml file '%s': %s", file, ezxml_error(xml));
+	return NULL;
+      }
+      const char *
+      ezxml_parse_str(char *string, size_t len, ezxml_t &xml) {
+	if (!(xml = ::ezxml_parse_str(string, len)))
+	  return "Could not parse xml string";
+	else if (ezxml_error(xml)[0])
+	  return OU::esprintf("Error parsing xml string': %s", ezxml_error(xml));
+	return NULL;
       }
     }
   }

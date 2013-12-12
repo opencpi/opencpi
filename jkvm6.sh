@@ -8,13 +8,15 @@ export OCPI_XILINX_LICENSE_FILE=/home/jek/mac/Xilinx/Xilinx-License-VM.lic
 
 # #### Location of the Altera tools ####################################### #
 
-export OCPI_ALTERA_TOOLS_DIR=/home/jek/mac/altera/12.1
-export OCPI_ALTERA_LICENSE_FILE=/home/jek/mac/altera/1-9095JT_License.dat
+export OCPI_ALTERA_TOOLS_DIR=/home/jek/mac/Altera/12.1
+#export OCPI_ALTERA_LICENSE_FILE=/home/jek/mac/altera/1-9095JT_License.dat
+export OCPI_ALTERA_LICENSE_FILE=/home/jek/mac/Altera/1-99VGI3_License.dat
 
 # #### Location of the Modelsim tools ####################################### #
 
 export OCPI_MODELSIM_DIR=/home/jek/mac/Mentor/modelsim_dlx
-export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../james.non-server.lic.txt
+export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../3113964_001C42EFC0F4.txt
+#export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../james.non-server.lic.txt
 #export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../3113964_multipleServers.txt
 #export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../Site_3113964.txt
 

@@ -31,7 +31,7 @@ HdlMode:=platform
 HdlLibraries+=platform
 # We're not really a component library, so we force this
 XmlIncludeDirs+=../specs
-override ComponentLibraries+=../../devices
+override ComponentLibraries+=devices cards
 include $(OCPI_CDK_DIR)/include/util.mk
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 ifndef HdlSkip

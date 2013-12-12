@@ -1,0 +1,98 @@
+<!--
+  The slot type declaration for FMC (VITA 57) Low Pin Count connector
+  Signals ordered per connector diagram in ml605 guide until we get the proper spec
+  "Input" is from the view of the carrier.
+-->
+<SlotType name='fmc_lpc'>
+  <signal input='VREF_A_M2C_L'/>        <!-- Pin H2 -->
+  <signal output='PRSNT_M2C_L'/>        <!-- Pin H2 -->
+  <signal input='CLK0_M2C_P'/>          <!-- Pin H4 -->
+  <signal input='CLK0_M2C_N'/>          <!-- Pin H5 -->
+  <signal bidirectional='LA02_P'/>      <!-- Pin H7 -->
+  <signal bidirectional='LA02_N'/>      <!-- Pin H8 -->
+  <signal bidirectional='LA04_P'/>      <!-- Pin H10 -->
+  <signal bidirectional='LA04_N'/>      <!-- Pin H11 -->
+  <signal bidirectional='LA07_P'/>      <!-- Pin H13 -->
+  <signal bidirectional='LA07_N'/>      <!-- Pin H14 -->
+  <signal bidirectional='LA11_P'/>      <!-- Pin H16 -->
+  <signal bidirectional='LA11_N'/>      <!-- Pin H17 -->
+  <signal bidirectional='LA15_P'/>      <!-- Pin H19 -->
+  <signal bidirectional='LA15_N'/>      <!-- Pin H20 -->
+  <signal bidirectional='LA19_P'/>      <!-- Pin H22 -->
+  <signal bidirectional='LA19_N'/>      <!-- Pin H23 -->
+  <signal bidirectional='LA21_P'/>      <!-- Pin H25 -->
+  <signal bidirectional='LA21_N'/>      <!-- Pin H26 -->
+  <signal bidirectional='LA24_P'/>      <!-- Pin H28 -->
+  <signal bidirectional='LA24_N'/>      <!-- Pin H29 -->
+  <signal bidirectional='LA28_P'/>      <!-- Pin H31 -->
+  <signal bidirectional='LA28_N'/>      <!-- Pin H32 -->
+  <signal bidirectional='LA30_P'/>      <!-- Pin H34 -->
+  <signal bidirectional='LA30_N'/>      <!-- Pin H35 -->
+  <signal bidirectional='LA32_P'/>      <!-- Pin H37 -->
+  <signal bidirectional='LA32_N'/>      <!-- Pin H38 -->
+
+  <signal input='CLK1_M2C_P'/>          <!-- Pin G2 -->
+  <signal input='CLK1_M2C_N'/>          <!-- Pin G3 -->
+  <signal bidirectional='LA00_CC_P'/>   <!-- Pin G6 -->
+  <signal bidirectional='LA00_CC_N'/>   <!-- Pin G7 -->
+  <signal bidirectional='LA03_P'/>      <!-- Pin G9 -->
+  <signal bidirectional='LA03_N'/>      <!-- Pin G10 -->
+  <signal bidirectional='LA08_P'/>      <!-- Pin G12 -->
+  <signal bidirectional='LA08_N'/>      <!-- Pin G13 -->
+  <signal bidirectional='LA12_P'/>      <!-- Pin G15 -->
+  <signal bidirectional='LA12_N'/>      <!-- Pin G16 -->
+  <signal bidirectional='LA16_P'/>      <!-- Pin G18 -->
+  <signal bidirectional='LA16_N'/>      <!-- Pin G19 -->
+  <signal bidirectional='LA20_P'/>      <!-- Pin G21 -->
+  <signal bidirectional='LA20_N'/>      <!-- Pin G22 -->
+  <signal bidirectional='LA22_P'/>      <!-- Pin G24 -->
+  <signal bidirectional='LA22_N'/>      <!-- Pin G25 -->
+  <signal bidirectional='LA25_P'/>      <!-- Pin G27 -->
+  <signal bidirectional='LA25_N'/>      <!-- Pin G28 -->
+  <signal bidirectional='LA29_P'/>      <!-- Pin G30 -->
+  <signal bidirectional='LA29_N'/>      <!-- Pin G31 -->
+  <signal bidirectional='LA31_P'/>      <!-- Pin G33 -->
+  <signal bidirectional='LA31_N'/>      <!-- Pin G34 -->
+  <signal bidirectional='LA33_P'/>      <!-- Pin G36 -->
+  <signal bidirectional='LA33_N'/>      <!-- Pin G37 -->
+
+
+  <signal output='PG_C2M'/>             <!-- Pin D1 -->
+  <signal input='GBTCLK0_M2C_P'/>       <!-- Pin D4 -->
+  <signal input='GBTCLK0_M2C_N'/>       <!-- Pin D5 -->
+  <signal bidirectional='LA01_CC_P'/>   <!-- Pin D8 -->
+  <signal bidirectional='LA01_CC_N'/>   <!-- Pin D9 -->
+  <signal bidirectional='LA05_P'/>      <!-- Pin D11 -->
+  <signal bidirectional='LA05_N'/>      <!-- Pin D12 -->
+  <signal bidirectional='LA09_P'/>      <!-- Pin D14 -->
+  <signal bidirectional='LA09_N'/>      <!-- Pin D15 -->
+  <signal bidirectional='LA13_P'/>      <!-- Pin D17 -->
+  <signal bidirectional='LA13_N'/>      <!-- Pin D18 -->
+  <signal bidirectional='LA17_CC_P'/>   <!-- Pin D20 -->
+  <signal bidirectional='LA17_CC_N'/>   <!-- Pin D21 -->
+  <signal bidirectional='LA23_P'/>      <!-- Pin D23 -->
+  <signal bidirectional='LA23_N'/>      <!-- Pin D24 -->
+  <signal bidirectional='LA26_P'/>      <!-- Pin D26 -->
+  <signal bidirectional='LA26_N'/>      <!-- Pin D27 -->
+
+  <signal output='DP0_C2M_P'/>          <!-- Pin C2 -->
+  <signal output='DP0_C2M_N'/>          <!-- Pin C3 -->
+  <signal input='DP0_M2C_P'/>           <!-- Pin C6 -->
+  <signal input='DP0_M2C_N'/>           <!-- Pin C7 -->
+  <signal input='IIC_SCL_LS'/>          <!-- Pin C30 -->
+  <signal input='IIC_SDA_LS'/>          <!-- Pin C31 -->
+  <signal bidirectional='LA06_P'/>      <!-- Pin C10 -->
+  <signal bidirectional='LA06_N'/>      <!-- Pin C11 -->
+  <signal bidirectional='LA10_P'/>      <!-- Pin C14 -->
+  <signal bidirectional='LA10_N'/>      <!-- Pin C15 -->
+  <signal bidirectional='LA14_P'/>      <!-- Pin C18 -->
+  <signal bidirectional='LA14_N'/>      <!-- Pin C19 -->
+  <signal bidirectional='LA18_CC_P'/>   <!-- Pin C22 -->
+  <signal bidirectional='LA18_CC_N'/>   <!-- Pin C23 -->
+  <signal bidirectional='LA27_P'/>      <!-- Pin C26 -->
+  <signal bidirectional='LA27_N'/>      <!-- Pin C27 -->
+</SlotType>
+
+
+
+

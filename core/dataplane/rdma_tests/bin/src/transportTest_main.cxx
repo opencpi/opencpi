@@ -57,6 +57,7 @@
 #include "OcpiOsAssert.h"
 #include "OcpiOsMisc.h"
 #include "OcpiUtilMisc.h"
+#include "OcpiUtilEzxml.h"
 #include "DtTransferInternal.h"
 #include "OcpiUtilCommandLineConfiguration.h"
 
@@ -552,15 +553,14 @@ int main( int argc, char** argv )
   }
 
   ezxml_t xml_data = NULL;
-
-  xml_data = ezxml_parse_file( config.xml_config.c_str() );
-  if ( xml_data ) {
-    const char *name = ezxml_name(xml_data);
-    printf("Top level XML node name = %s\n", name );
-  }
-  else {
+  const char *err;
+  if (config.xml_config.empty())
     printf("No Driver configuration XML file specified\n");
-  }
+  else if ((err = OCPI::Util::EzXml::ezxml_parse_file(config.xml_config.c_str(), xml_data))) {
+    printf("Error parsing file: %s\n", err);
+    exit(1);
+  } else
+    printf("Top level XML node name = %s\n", ezxml_name(xml_data));
   fm.configure ( xml_data );
 
   // Print out the available protocols

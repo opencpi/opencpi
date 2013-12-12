@@ -31,8 +31,7 @@ for c in $CABLES; do
     echo " with no serial number" 1>&2
     exit 1
   else
-    echo ' 'with serial number $SERIAL 1>&2
-    echo "$c=$SERIAL"
+    echo ' 'with serial number \"$SERIAL\" 1>&2
   fi
 done
 exit 0

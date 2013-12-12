@@ -254,8 +254,10 @@ $@@signal i : natural;\
 $begin\
 $@@i <= to_integer(index);\
 $@@data_out <=\
-$@@@@std_logic_vector(value(i)) & x"0000" when (to_integer(index) + property.offset/2) rem 2 = 1 else\
-$@@@@x"0000" & std_logic_vector(value(i)) when nbytes_1 = 1 else\
+$@@@@std_logic_vector(value(i)) & x"0000"\
+$@@@@@@@@when (to_integer(index) + property.offset/2) rem 2 = 1 else\
+$@@@@x"0000" & std_logic_vector(value(i))\
+$@@@@@@@@when nbytes_1 = 1 or i = property.nitems-1 else\
 $@@@@std_logic_vector(value(i+1)) & std_logic_vector(value(i));\
 $end rtl;
 

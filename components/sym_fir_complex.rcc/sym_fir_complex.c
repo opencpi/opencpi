@@ -72,7 +72,7 @@ apply_filter( double taps[], struct Sym_fir_complexInIqData * input, double * i,
   *i = acum0 + acum1 + acum2 + acum3;
 
   acum0 = acum1 = acum2 = acum3 = 0;
-  for (n = 0; n < n; n += UnRoll){
+  for (n = 0; n < NTAPS-4; n += UnRoll){
     acum0 += taps[n + 0] * Uscale( input[n + 0].Q );
     acum1 += taps[n + 1] * Uscale( input[n + 1].Q );
     acum2 += taps[n + 2] * Uscale( input[n + 2].Q );

@@ -1,0 +1,6 @@
+<ComponentSpec Name="limeTx">
+  <DataInterfaceSpec Name="in" Producer="false">
+    <protocolsummary datavaluewidth='16' datavaluegranularity='2' maxmessagevalues='8190'/>
+      <!-- <xi:include href="stream32_protocol.xml"/> -->
+  </DataInterfaceSpec>
+</ComponentSpec>

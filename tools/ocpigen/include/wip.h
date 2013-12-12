@@ -162,7 +162,7 @@ typedef std::list<Signal *> Signals;
 typedef Signals::iterator SignalsIter;
 struct Signal {
   std::string m_name;
-  enum Direction { IN, OUT, INOUT } m_direction;
+  enum Direction { IN, OUT, INOUT, BIDIRECTIONAL } m_direction;
   size_t m_width;
   bool m_differential;
   std::string m_pos; // pattern for positive if not %sp
@@ -243,6 +243,7 @@ enum WIPType{
 struct Clock {
   const char *name;
   const char *signal;
+  std::string reset;
   Port *port;
   bool assembly; // This clock is at the assembly level
   size_t ordinal; // within the worker
@@ -421,6 +422,7 @@ class Worker : public Parsed {
     create(const char *file, const char *parent, const char *package, const char *&err);
   bool nonRaw(PropertiesIter pi);
   Clock *addClock();
+  Clock *addWciClockReset();
   const char
     *parse(const char *file, const char *parent, const char *package = NULL),
     *parseRcc(),

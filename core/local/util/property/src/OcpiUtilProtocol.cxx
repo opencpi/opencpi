@@ -37,6 +37,7 @@
 #include "OcpiUtilException.h"
 #include "OcpiUtilProtocol.h"
 #include "OcpiUtilValue.h"
+#include "OcpiUtilMisc.h"
 
 namespace OCPI {
   namespace OA = OCPI::API;
@@ -349,11 +350,11 @@ namespace OCPI {
       m_operations[opcode].testPrintParse(f, v);
     }
     const char *Protocol::parse(char *proto) {
-      ezxml_t x = ezxml_parse_str(proto, strlen(proto));
-      if (!x)
-	return "Error parsing xml protocol description";
-      const char *err = parse(x);
-      ezxml_free(x);
+      ezxml_t x;
+      const char *err = OE::ezxml_parse_str(proto, strlen(proto), x);
+      if (err ||
+	  (err = parse(x)))
+	err = esprintf("Error parsing xml protocol description: %s", err);
       return err;
     }
 
@@ -429,7 +430,7 @@ namespace OCPI {
 		" dataValueWidth=\"%zu\""
 		" dataValueGranularity=\"%zu\""
 		" diverseDataSizes=\"%u\""
-		" minMessaveValues=\"%zu\""
+		" minMessageValues=\"%zu\""
 		" maxMessageValues=\"%zu\"",
 		m_dataValueWidth, m_dataValueGranularity, m_diverseDataSizes,
 		m_minMessageValues, m_maxMessageValues);

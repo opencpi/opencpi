@@ -455,6 +455,8 @@ emitSignals(FILE *f, Language lang, bool onlyDevices, bool useRecords, bool inPa
 	  fprintf(f,
 		  "    %s Clock(s) not associated with one specific port:\n", comment);
 	emitSignal(c->signal, f, lang, Signal::IN, last, -1, 0);
+	if (c->reset.size())
+	  emitSignal(c->reset.c_str(), f, lang, Signal::IN, last, -1, 0);
       }
     }
     for (unsigned i = 0; i < m_ports.size(); i++) {
@@ -531,7 +533,7 @@ emitSignals(FILE *f, Language lang, bool onlyDevices, bool useRecords, bool inPa
   }
   if (m_signals.size()) {
     emitLastSignal(f, last, lang, false);
-    fprintf(f, "  \n  %s Extra signals not part of any WIP interface:\n", comment);
+    fprintf(f, "  \n  %s   Extra signals not part of any WIP interface:\n", comment);
     emitDeviceSignals(f, lang, last);
   }
   if (last != init) {
@@ -1098,6 +1100,8 @@ emitVhdlWorkerEntity(FILE *f, unsigned maxPropName) {
 	fprintf(f,
 		"    -- Clock(s) not associated with one specific port:\n");
       emitSignal(c->signal, f, m_language, Signal::IN, last, -1, 0);
+      if (c->reset.size())
+	emitSignal(c->reset.c_str(), f, m_language, Signal::IN, last, -1, 0);
     }	
   }
   emitLastSignal(f, last, m_language, false);
@@ -1403,8 +1407,11 @@ emitDefsHDL(const char *outDir, bool wrap) {
     // Now we emit the declarations (input, output, width) for each module port
     for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
       Clock *c = *ci;
-      if (!c->port)
+      if (!c->port) {
 	fprintf(f, "  input      %s;\n", c->signal);
+	if (c->reset.size())
+	  fprintf(f, "  input      %s;\n", c->reset.c_str());
+      }
     }
     for (unsigned i = 0; i < m_ports.size(); i++) {
       Port *p = m_ports[i];
@@ -1693,13 +1700,13 @@ emitVhdlShell(FILE *f) {
     // when we have no control interface we have to directly generate wci_reset and wci_is_operating
     fprintf(f,
 	    "begin\n"
-	    "  wci_reset <= ");
+	    "  wci_reset <= not wci_Reset_n");
     // For each data interface we aggregate a peer reset.
     bool first = true;
     for (unsigned i = 0; i < m_ports.size(); i++) {
       Port *p = m_ports[i];
       if (p->isData) {
-	fprintf(f, "%snot %s.%s", first ? "" : " or ",
+	fprintf(f, " or not %s.%s",
 		p->typeNameIn.c_str(),
 		ocpSignals[p->master ? OCP_SReset_n : OCP_MReset_n].name);
 	first = false;
@@ -1968,6 +1975,8 @@ emitVhdlShell(FILE *f) {
     if (!c->port) {
       fprintf(f, "%s    %s => %s", last.c_str(), c->signal, c->signal);
       last = ",\n";
+      if (c->reset.size())
+	fprintf(f, "%s    %s => %s", last.c_str(), c->reset.c_str(), c->reset.c_str());
     }
   }
   for (unsigned i = 0; i < m_ports.size(); i++) {
@@ -2168,6 +2177,8 @@ emitVhdlSignalWrapper(FILE *f, const char *topinst) {
 		  "  -- Clock(s) not associated with one specific port:\n");
 	fprintf(f, "%s      %s => %s", last.c_str(), c->signal, c->signal);
 	last = ",\n";
+	if (c->reset.size())
+	  fprintf(f, "%s      %s => %s", last.c_str(), c->reset.c_str(), c->reset.c_str());
       }
     }
     for (unsigned i = 0; i < m_ports.size(); i++) {
@@ -2872,8 +2883,7 @@ emitImplHDL(const char *outDir, bool wrap) {
     fprintf(f,
 	    "end entity %s_rv;\n"
 	    "\n", m_implName);
-    Port *p = m_ports[0];
-    Port *wci = m_noControl ? NULL : p;
+    Port *wci = m_noControl ? NULL : m_ports[0];
     if (wci) {
       size_t decodeWidth = m_ports[0]->ocp.MAddr.width;
       fprintf(f,
@@ -3091,7 +3101,7 @@ emitImplHDL(const char *outDir, bool wrap) {
 		"                  nbytes_1             => nbytes_1,\n"
 		"                  data_outputs         => %s",
 		m_ctl.nonRawWritables ? "write_enables" : "open",
-		m_ctl.nonRawReadbacks ? "read_enables" : "open",
+		m_ctl.nonRawReadables ? "read_enables" : "open",
 		m_ctl.nonRawWritables ? "data" : "open");
       fprintf(f, ");\n");
       if (m_ctl.nonRawReadables)

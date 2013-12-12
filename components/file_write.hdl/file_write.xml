@@ -1,3 +1,4 @@
 <HdlImplementation Language="vhdl" datawidth='32'>
   <xi:include href="file_write_spec.xml"/>
+  <specproperty name='fileName' readable='true'/>
 </HdlImplementation>

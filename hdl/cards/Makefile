@@ -1,16 +1,6 @@
 
 # #####
 #
-#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
-#
-#    Mercury Federal Systems, Incorporated
-#    1901 South Bell Street
-#    Suite 402
-#    Arlington, Virginia 22202
-#    United States of America
-#    Telephone 703-413-0781
-#    FAX 703-413-0784
-#
 #  This file is part of OpenCPI (www.opencpi.org).
 #     ____                   __________   ____
 #    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
@@ -34,5 +24,16 @@
 #
 ########################################################################### #
 
-Assemblies=tb_bias_vhdl tb_bias testbias testpsd testddc testbias2 testbias5 testbias_ver
-include $(OCPI_CDK_DIR)/include/hdl/hdl-assemblies.mk
+# This directory contains a library of cards and associated device workers
+# Thus when support for a new card is done, it is done here.
+# Slot type specs are in the "specs" directory.
+# This directory should only depend on the "primitives" library
+
+Package=ocpi.devices
+XmlIncludeDirs=../../components/specs
+Workers = \
+	limeSPI.hdl \
+
+#        limeTx.hdl
+
+include $(OCPI_CDK_DIR)/include/lib.mk

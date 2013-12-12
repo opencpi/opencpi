@@ -11,6 +11,7 @@ if test ! -d "$OCPI_ALTERA_TOOLS_DIR" -o ! -d "$OCPI_ALTERA_KITS_DIR" ; then
   exit 1
 fi
 if test $# != 5; then
+  echo "This is an internal script meant to be called from a platform-specific script"
   echo "There must be four arguments, which are:"
   echo "1. The name of the board/kit as defined by Altera, e.g. stratixIVGX_4sgx530"
   echo "2. The name of the part as defined in the Altera kit, e.g. s4gx530".

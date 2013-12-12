@@ -392,9 +392,10 @@ namespace OCPI {
 		       m_exec.c_str(), s.c_str());
 	    return true;
 	  }
-	  if (!(m_xml = ezxml_parse_str(m_metadata, strlen(m_metadata)))) {
-	    OU::format(err, "invalid metadata in binary/artifact file \"%s\": bad xml",
-		       m_exec.c_str());
+	  const char *e = OCPI::Util::EzXml::ezxml_parse_str(m_metadata, strlen(m_metadata), m_xml);
+	  if (e) {
+	    OU::format(err, "invalid metadata in binary/artifact file \"%s\": %s",
+		       m_exec.c_str(), e);
 	    return true;
 	  }
 	  char *xname = ezxml_name(m_xml);
@@ -404,8 +405,7 @@ namespace OCPI {
 	    return true;
 	  }
 	  std::string platform;
-	  const char *e = OX::getRequiredString(m_xml, platform, "platform", "artifact");
-	  if (e) {
+	  if ((e = OX::getRequiredString(m_xml, platform, "platform", "artifact"))) {
 	    OU::format(err, "invalid metadata in binary/artifact file \"%s\": %s",
 		       m_exec.c_str(), e);
 	    return true;

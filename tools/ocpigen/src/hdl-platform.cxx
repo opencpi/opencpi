@@ -470,13 +470,13 @@ HdlConfig(ezxml_t xml, const char *xfile, size_t &index, const char *&err)
 	     assy.c_str());
   // Now we hack the (inherited) worker to have the xml for the assembly we just generated.
   char *copy = strdup(assy.c_str());
-  ezxml_t x = ezxml_parse_str(copy, strlen(copy));
-  if (x && ezxml_error(x)[0]) {
-      err = OU::esprintf("XML Parsing error on generated platform configuration: %s", ezxml_error(x));
-      return;
+  ezxml_t x;
+  if ((err = OE::ezxml_parse_str(copy, strlen(copy), x)))
+    err = OU::esprintf("XML Parsing error on generated platform configuration: %s", err);
+  else {
+    m_xml = x;
+    err = parseHdl(NULL);
   }
-  m_xml = x;
-  err = parseHdl(NULL);
 }  
 
 HdlConfig::
@@ -942,14 +942,14 @@ HdlContainer(ezxml_t xml, const char *xfile, const char *&err)
 	     assy.c_str());
   // Now we hack the (inherited) worker to have the xml for the assembly we just generated.
   char *copy = strdup(assy.c_str());
-  ezxml_t x = ezxml_parse_str(copy, strlen(copy));
-  if (x && ezxml_error(x)[0]) {
-      err = OU::esprintf("XML Parsing error on generated container assembly: %s", ezxml_error(x));
-      return;
+  ezxml_t x;
+  if ((err = OE::ezxml_parse_str(copy, strlen(copy), x)))
+    err = OU::esprintf("XML Parsing error on generated container assembly: %s", err);
+  else {
+    m_xml = x;
+    err = parseHdl(NULL);
+    m_assembly->m_isContainer = true;
   }
-  m_xml = x;
-  err = parseHdl(NULL);
-  m_assembly->m_isContainer = true;
 }
 
 HdlContainer::
@@ -1108,9 +1108,19 @@ SlotType(const char *file, const char *parent, const char *&err) {
       (err = Signal::parseSignals(xml, m_signals)))
     return;
   OE::getOptionalString(xml, m_name, "name");
+  // FIXME: change parseFile to make xfile a string reference...UGH
+  char *cp = strdup(xfile);
+  char *slash = strrchr(cp, '/');
+  if (slash)
+    slash++;
+  else
+    slash = cp;
+  char *dot = strchr(slash, '.');
+  if (dot)
+    *dot = '\0';
   if (m_name.empty())
-    m_name = xfile;
-  else if (m_name != xfile)
+    m_name = slash;
+  else if (m_name != slash)
     err = OU::esprintf("File name (%s) does not match name attribute in XML (%s)",
 		       xfile, m_name.c_str());
 }

@@ -26,7 +26,7 @@
 HdlMode:=assembly
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 
-override ComponentLibraries+= components devices adapters
+override ComponentLibraries+= components devices adapters cards
 $(eval $(HdlSearchComponentLibraries))
 override XmlIncludeDirs+=. $(HdlPlatformsDir) $(HdlPlatformsDir)/specs
 override HdlLibraries+=platform

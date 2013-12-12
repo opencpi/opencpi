@@ -1,0 +1,6 @@
+#!/bin/sh
+
+echo ==== Probing for Altera JTAG ports:
+probeJtag_altera
+echo ==== Probing for Xilinx JTAG ports:
+probeJtag_xilinx all

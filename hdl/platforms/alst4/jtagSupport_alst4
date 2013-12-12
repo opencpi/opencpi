@@ -1,7 +1,7 @@
 #/bin/sh --noprofile
 
 ################################################################################
-# jtag support functions for ml605: 
+# jtag support functions for alst4: 
 # Be sure to write error messages to stderr since some funtions return
 # data on stdout
 ################################################################################

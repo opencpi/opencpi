@@ -1,0 +1,37 @@
+<!-- A shared SPI between TX and RX devices
+     that handles raw properties and reset from one or both.
+     The property data path is 32 bits since that is what is present
+     in both TX and RX device workers, and although we are selecting
+     from two 32 bit paths, we are only byte-selecting in one place,
+     which removes logic from both TX and RX -->
+<HdlDevice language='vhdl'>
+  <ComponentSpec name="limeSPI" nocontrol='true'/>
+  <!-- Signals connected to the rx device when present -->
+  <signal input='rx_present'/>
+  <signal input='rx_reset'/>
+  <signal input='rx_read'/>
+  <signal input='rx_write'/>
+  <signal input='rx_addr' width='7'/>
+  <signal input='rx_wdata' width='32'/>
+  <signal output='rx_done'/>
+  
+  <!-- Signals connected to the tx device when present -->
+  <signal input='tx_present'/>
+  <signal input='tx_reset'/>
+  <signal input='tx_read'/>
+  <signal input='tx_write'/>
+  <signal input='tx_addr' width='7'/>
+  <signal input='tx_wdata' width='32'/>
+  <signal output='tx_done'/>
+
+  <!-- Signals connected to both the rx and tx devices -->
+  <signal output='rdata' width='8'/>
+
+  <!-- Signals connected to the device -->
+  <signal output='SCLK'/>
+  <signal output='SEN'/>
+  <signal output='SDIO'/>
+  <signal input='SDO'/>
+  <signal output='RESET'/>
+
+</HdlDevice>

@@ -245,6 +245,9 @@ clean distclean: cleancomponents cleanexamples
 	-rm -r -f lib
 
 cleaneverything: clean
+	-find . -name 'target-*' -exec rm -r '{}' ';'
+	-find . -name 'gen' -exec rm -r '{}' ';'
+	-find . -name "lib" -a ! -path "*export*" -a -type d -a -exec rm -r "{}" ";"
 	make -C hdl clean
 	make -C components clean
 

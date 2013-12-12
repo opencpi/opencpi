@@ -74,6 +74,18 @@ addClock() {
   return c;
 }
 
+Clock *Worker::
+addWciClockReset() {
+  // If there is no control port, then we synthesize the clock as wci_clk
+  for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++)
+    if (!strcasecmp("wci_Clk", (*ci)->name))
+      return *ci;
+  Clock *clock = addClock();
+  clock->name = strdup("wci_Clk");
+  clock->signal = strdup("wci_Clk");
+  clock->reset = "wci_Reset_n";
+  return clock;
+}
 // MyClock boolean simply says whether the clock is "homed" and "named" here.
 // The clock attribute says that the clock is defined elsewhere
 // The "elsewhere" is either a port that has its own clock or a global definition.
@@ -97,19 +109,9 @@ checkClock(Port *p) {
       // If no clock, and we have a WCI slave then assume the WCI's clock.
       p->clockPort = m_ports[0];
     } else if (m_noControl && !m_assembly &&
-	       p->isOCP() && !(p->type == WCIPort && p->master)) {
-      // If there is no control port, then we synthesize the clock as wci_clk
-      for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++)
-	if (!strcasecmp("wci_Clk", (*ci)->name)) {
-	  p->clock = *ci;
-	  break;
-	}
-      if (!p->clock) {
-	p->clock = addClock();
-	p->clock->name = strdup("wci_Clk");
-	p->clock->signal = strdup("wci_Clk");
-      }
-    } else if (p->isOCP())
+	       p->isOCP() && !(p->type == WCIPort && p->master))
+      p->clock = addWciClockReset();
+    else if (p->isOCP())
       // If no clock, and no wci port, we're hosed.
       return OU::esprintf("Interface %s has no clock declared, and there is no control interface",
 			  p->name);
@@ -710,6 +712,9 @@ parseSpec(const char *package) {
       }
     }
   }
+  // FIXME: this should only be for HDL, but of source we don't know that yet.
+  // FIXME: but parseing a spec is usually in the context of a model
+  // FIXME: so there is perhaps the notion of a spec being restricted to a model?
   return Signal::parseSignals(spec, m_signals);
 }
 
@@ -722,7 +727,8 @@ Signal()
 const char *Signal::
 parse(ezxml_t x) {
   const char *err;
-  if ((err = OE::checkAttrs(x, "input", "inout", "output", "width", "differential", "type", (void*)0)))
+  if ((err = OE::checkAttrs(x, "input", "inout", "bidirectional", "output",
+			    "width", "differential", "type", (void*)0)))
     return err;
   const char *name;
   if ((name = ezxml_cattr(x, "Input")))
@@ -730,6 +736,8 @@ parse(ezxml_t x) {
   else if ((name = ezxml_cattr(x, "Output")))
     m_direction = OUT;
   else if ((name = ezxml_cattr(x, "Inout")))
+    m_direction = INOUT;
+  else if ((name = ezxml_cattr(x, "bidirectional")))
     m_direction = INOUT;
   else
     return "Missing input, output, or inout attribute for signal element";
@@ -826,7 +834,9 @@ parseHdlImpl(const char *package) {
       }
   }
   Port *wci;
-  if (!m_noControl) {
+  if (m_noControl) {
+    wci = NULL;
+  } else {
     // Insert the control port at the beginning of the port list since we want
     // To always process the control port first if we have one
     wci = new Port(ezxml_cattr(xctl, "Name"), this, false, WCIPort, xctl);
@@ -894,8 +904,7 @@ parseHdlImpl(const char *package) {
     if (m_ctl.sub32Bits)
       m_needsEndian = true;
     
-  } else
-    wci = 0;
+  }
   // Now we do clocks before interfaces since they may refer to clocks
 #if 0
   m_nClocks = OE::countChildren(m_xml, "Clock");
@@ -997,6 +1006,10 @@ parseHdlImpl(const char *package) {
     default:;
     }
   }
+  // This is pretty lame, but there is no other heuristic now.
+  // Presumably we could enumerate ports that imply we have some clock.
+  if (m_ports.size() == 0)
+    addWciClockReset();
   size_t nextPort = oldSize;
   for (ezxml_t m = ezxml_cchild(m_xml, "MemoryInterface"); m; m = ezxml_next(m), nextPort++) {
     Port *mp = m_ports[nextPort];

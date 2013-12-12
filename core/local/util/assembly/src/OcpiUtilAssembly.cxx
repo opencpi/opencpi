@@ -42,22 +42,18 @@ namespace OCPI {
     namespace OE = OCPI::Util::EzXml;
 
     Assembly::Assembly(const char *file, const char **extraTopAttrs, const char **extraInstAttrs)
-      : m_xml(ezxml_parse_file(file)), m_copy(NULL), m_xmlOnly(false), m_isImpl(false) {
-      if (!m_xml)
-	throw Error("Can't open or xml-parse assembly xml file: \"%s\"", file);
-      const char *err = parse(NULL, extraTopAttrs, extraInstAttrs);
-      if (err)
-	throw Error("Error parsing assembly xml file (\"%s\") due to: %s", file, err);
+      : m_copy(NULL), m_xmlOnly(false), m_isImpl(false) {
+      const char *err = OE::ezxml_parse_file(file, m_xml);
+      if (err || (err = parse(NULL, extraTopAttrs, extraInstAttrs)))
+	throw Error("%s", err);
     }
     Assembly::Assembly(const std::string &string, const char **extraTopAttrs, const char **extraInstAttrs)
       : m_xmlOnly(false), m_isImpl(false) {
       m_copy = new char[string.size() + 1];
       strcpy(m_copy, string.c_str());
-      if (!(m_xml = ezxml_parse_str(m_copy, string.size())))
-	throw Error("Can't xml-parse assembly xml string");
-      const char *err = parse(NULL, extraTopAttrs, extraInstAttrs);
-      if (err)
-	throw Error("Error parsing assembly xml string due to: %s", err);
+      const char *err = OE::ezxml_parse_str(m_copy, string.size(), m_xml);
+      if (err || (err = parse(NULL, extraTopAttrs, extraInstAttrs)))
+	throw Error("%s", err);
     }
     // FIXME:  we infer that this is an impl assy from this constructor.  Make it explicit?
     Assembly::Assembly(const ezxml_t top, const char *defaultName,

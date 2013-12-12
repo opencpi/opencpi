@@ -336,7 +336,7 @@ OCPI_DATA_TYPES
 	   bool argIsProvider) :
         OC::PortBase<Worker,Port,ExternalPort>(w, *this, mPort, argIsProvider,
 					       // (1 << OCPI::RDT::Passive) |
-					       (1 << OCPI::RDT::ActiveFlowControl) |
+					       //     (1 << OCPI::RDT::ActiveFlowControl) |
 					       (1 << OCPI::RDT::ActiveMessage), params),
 	// The WCI will control the interconnect worker.
 	// If there is no such worker, usable will fail.

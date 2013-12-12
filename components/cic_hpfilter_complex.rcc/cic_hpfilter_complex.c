@@ -112,7 +112,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
 
        // I
        s->slow_acc[II][0] = inData->data[samp].I;
-       s->fast_acc[II][0] = s->fast_acc[II][0] + s->slow_acc[II][STAGES+1];
+       s->fast_acc[II][0] = s->fast_acc[II][0] + s->slow_acc[II][STAGES];
        for ( i=0; i<STAGES; i++ ) {
 	 s->slow_acc[II][i+1] = s->slow_acc[II][i] - s->slow_del[II][i];
 	 s->slow_del[II][i] = s->slow_acc[II][i];
@@ -123,7 +123,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
 
        // Q
        s->slow_acc[QQ][0] = inData->data[samp].Q;
-       s->fast_acc[QQ][0] = s->fast_acc[QQ][0] + s->slow_acc[QQ][STAGES+1];
+       s->fast_acc[QQ][0] = s->fast_acc[QQ][0] + s->slow_acc[QQ][STAGES];
        for ( i=0; i<STAGES; i++ ) {
 	 s->slow_acc[QQ][i+1] = s->slow_acc[QQ][i] - s->slow_del[QQ][i];
 	 s->slow_del[QQ][i] = s->slow_acc[QQ][i];

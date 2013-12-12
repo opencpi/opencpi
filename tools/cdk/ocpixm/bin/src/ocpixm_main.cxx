@@ -103,11 +103,12 @@
 
 ************************************************************************** */
 
-#include <OcpiOsAssert.h>
-#include <OcpiUtilVfs.h>
-#include <OcpiUtilFileFs.h>
-#include <OcpiUtilEzxml.h>
-#include <OcpiUtilCommandLineConfiguration.h>
+#include "OcpiOsAssert.h"
+#include "OcpiUtilException.h"
+#include "OcpiUtilVfs.h"
+#include "OcpiUtilFileFs.h"
+#include "OcpiUtilEzxml.h"
+#include "OcpiUtilCommandLineConfiguration.h"
 
 #include <string>
 #include <vector>
@@ -127,6 +128,7 @@
 #include "OcpiUtilMisc.h"
 
 namespace OU = OCPI::Util;
+namespace OE = OCPI::Util::EzXml;
 
 namespace
 {
@@ -911,7 +913,9 @@ namespace
 
       if ( ifile )
       {
-        prop = ezxml_parse_file(ifile);
+	const char *err = OE::ezxml_parse_file(ifile, prop);
+	if (err)
+	  throw OU::Error( "File referenced by xi:include href attribute doesn't parse as XML: %s", err );
       }
 
       if ( !prop )
@@ -1047,11 +1051,11 @@ namespace
         throw std::string ( "A Properties element with \"href\" attribute cannot contain Property elements" );
       }
 
-      props = ezxml_parse_file ( filename );
+      const char *err = OE::ezxml_parse_file (filename, props);
 
-      if ( !props )
+      if ( err )
       {
-        throw std::string ( "File referenced by xi:include href attribute doesn't parse as XML" );
+        throw OU::Error("File referenced by xi:include href attribute doesn't parse as XML: %s", err );
       }
 
       return parse_tag_properties ( props, impl );
