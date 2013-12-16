@@ -413,6 +413,7 @@ parseHdlAssy() {
     clk = addClock();
     // FIXME:  this should access the 0th clock more specifically for VHDL
     clk->signal = clk->name = nControls > 1 ? "wci0_Clk" : "wci_Clk";
+    clk->reset = nControls > 1 ? "wci0_MReset_n" : "wci_MReset_n";
     clk->port = wci;
     wci->myClock = true;
     wci->clock = clk;
@@ -1203,12 +1204,19 @@ emitAssyInstance(FILE *f, Instance *i, unsigned nControlInstances) {
     for (ClocksIter ci = i->worker->m_clocks.begin(); ci != i->worker->m_clocks.end(); ci++) {
       Clock *c = *ci;
       if (!c->port) {
-	if (lang == Verilog)
+	if (lang == Verilog) {
 	  fprintf(f, "  .%s(%s),\n", c->signal,
 		  i->m_clocks[c->ordinal]->signal);
-	else
+	  if (c->reset.size())
+	    fprintf(f, "  .%s(%s),\n", c->reset.c_str(),
+		    i->m_clocks[c->ordinal]->reset.c_str());
+	} else {
 	  fprintf(f, "%s%s%s => %s", any ? ",\n" : "", any ? indent : "",
 		  c->signal, i->m_clocks[c->ordinal]->signal);
+	  if (c->reset.size())
+	    fprintf(f, "%s%s => %s", indent, c->reset.c_str(),
+		    i->m_clocks[c->ordinal]->reset.c_str());
+	}
 	any = true;
       }
     }

@@ -602,13 +602,83 @@ parseOperation(ezxml_t op) {
 }
 
 const char *Worker::
+parsePort(ezxml_t x) {
+  const char *err;
+  std::string name;
+  if ((err = OE::getRequiredString(x, name, "name")))
+    return err;
+  Port *p = new Port(strdup(name.c_str()), this, true, WDIPort, x);
+  m_ports.push_back(p);
+  if ((err = OE::checkAttrs(x, "Name", "Producer", "Count", "Optional", "Protocol", (void*)0)) ||
+      (err = OE::getBoolean(x, "Producer", &p->u.wdi.isProducer)) ||
+      (err = OE::getBoolean(x, "Optional", &p->u.wdi.isOptional)))
+    return err;
+  const char *protocol = ezxml_cattr(x, "protocol");
+  for (unsigned i = 0; i < m_ports.size(); i++) {
+    Port *pp = m_ports[i];
+    if (pp != p && !strcasecmp(pp->name, p->name))
+      return OU::esprintf("%s element Name attribute duplicates another interface name",
+			  OE::ezxml_tag(x));
+  }
+  ezxml_t pSum;
+  const char *protFile = 0;
+  if ((err = tryOneChildInclude(x, m_file.c_str(), "ProtocolSummary", &pSum, &protFile, true)))
+    return err;
+  Protocol *prot = p->protocol = new Protocol(*p);
+  if (pSum) {
+    if (protocol || ezxml_cchild(x, "Protocol"))
+      return "cannot have both Protocol and ProtocolSummary";
+    if ((err = OE::checkAttrs(pSum, "DataValueWidth", "DataValueGranularity",
+			      "DiverDataSizes", "MaxMessageValues", "NumberOfOpcodes",
+			      "VariableMessageLength", "ZeroLengthMessages",
+			      "MinMessageValues",  (void*)0)) ||
+	(err = OE::getNumber(pSum, "NumberOfOpcodes", &p->u.wdi.nOpcodes, 0, 1)) ||
+	(err = prot->parseSummary(pSum)))
+      return err;
+  } else {
+    ezxml_t protx = NULL;
+    // FIXME: default protocol name from file name
+    if ((err = tryOneChildInclude(x, m_file.c_str(), "Protocol", &protx, &protFile, true)))
+      return err;
+    if (protocol) {
+      if (protx)
+	return "can't have both 'protocol' element (maybe xi:included) and 'protocol' attribute";
+      if ((err = parseFile(protocol, m_file.c_str(), "protocol", &protx, &protFile, false)))
+	return err;
+    }
+    if (protx) {
+      if ((err = prot->parse(protFile, protx)))
+	return err;
+      // So if there is a protocol, nOpcodes is initialized from it.
+      p->u.wdi.nOpcodes = p->protocol->nOperations();
+    } else {
+      // When there is no protocol at all, we force it to variable, bounded at 64k, diverse, zlm
+      prot->m_diverseDataSizes = true;
+      prot->m_variableMessageLength = true;
+      prot->m_maxMessageValues = 64*1024;
+      prot->m_zeroLengthMessages = false; // keep it simplest in this case
+      p->u.wdi.nOpcodes = 1;
+    }
+  }
+  return NULL;
+}
+
+const char *Worker::
 parseSpec(const char *package) {
   const char *err;
   // xi:includes at this level are component specs, nothing else can be included
-  ezxml_t spec;
-  if ((err = tryOneChildInclude(m_xml, m_file.c_str(), "ComponentSpec", &spec, &m_specFile, false)))
+  ezxml_t spec = NULL;
+  if ((err = tryOneChildInclude(m_xml, m_file.c_str(), "ComponentSpec", &spec,
+				&m_specFile, true)))
     return err;
-  
+  const char *specAttr = ezxml_cattr(m_xml, "spec");
+  if (specAttr) {
+    if (spec)
+      return "Can't have both ComponentSpec element (maybe xi:included) and a 'spec' attribute";
+    if ((err = parseFile(specAttr, m_file.c_str(), "ComponentSpec", &spec, &m_specFile, true)))
+      return err;
+  } else if (!spec)
+    return "missing componentspec element or spec attribute";
   if (!(m_specName = ezxml_cattr(spec, "Name")))
     return "Missing Name attribute for ComponentSpec";
   if (strchr(m_specName, '.')) {
@@ -662,56 +732,12 @@ parseSpec(const char *package) {
   } else if ((err = parseSpecControl(ps)))
     return err;
   // Now parse the data aspects, allocating (data) ports.
-  for (ezxml_t x = ezxml_cchild(spec, "DataInterfaceSpec"); x; x = ezxml_next(x)) {
-    const char *name = ezxml_cattr(x, "Name");
-    if (!name)
-      return "Missing \"Name\" attribute in DataInterfaceSpec";
-    Port *p = new Port(name, this, true, WDIPort, x);
-    m_ports.push_back(p);
-    if ((err = OE::checkAttrs(x, "Name", "Producer", "Count", "Optional", (void*)0)) ||
-        (err = OE::getBoolean(x, "Producer", &p->u.wdi.isProducer)) ||
-        (err = OE::getBoolean(x, "Optional", &p->u.wdi.isOptional)))
+  for (ezxml_t x = ezxml_cchild(spec, "DataInterfaceSpec"); x; x = ezxml_next(x))
+    if ((err = parsePort(x)))
       return err;
-    for (unsigned i = 0; i < m_ports.size(); i++) {
-      Port *pp = m_ports[i];
-      if (pp != p && !strcmp(pp->name, p->name))
-        return "DataInterfaceSpec Name attribute duplicates another interface name";
-    }
-    ezxml_t pSum;
-    const char *protFile = 0;
-    if ((err = tryOneChildInclude(x, m_file.c_str(), "ProtocolSummary", &pSum, &protFile, true)))
+  for (ezxml_t x = ezxml_cchild(spec, "Port"); x; x = ezxml_next(x))
+    if ((err = parsePort(x)))
       return err;
-    Protocol *prot = p->protocol = new Protocol(*p);
-    if (pSum) {
-      if (ezxml_cchild(spec, "Protocol"))
-        return "cannot have both Protocol and ProtocolSummary";
-      if ((err = OE::checkAttrs(pSum, "DataValueWidth", "DataValueGranularity",
-				"DiverDataSizes", "MaxMessageValues", "NumberOfOpcodes",
-				"VariableMessageLength", "ZeroLengthMessages",
-				"MinMessageValues",  (void*)0)) ||
-	  (err = OE::getNumber(pSum, "NumberOfOpcodes", &p->u.wdi.nOpcodes, 0, 1)) ||
-	  (err = prot->parseSummary(pSum)))
-	return err;
-    } else {
-      ezxml_t protx = NULL;
-      // FIXME: default protocol name from file name
-      if ((err = tryOneChildInclude(x, m_file.c_str(), "Protocol", &protx, &protFile, true)))
-        return err;
-      if (protx) {
-        if ((err = prot->parse(protFile, protx)))
-          return err;
-        // So if there is a protocol, nOpcodes is initialized from it.
-        p->u.wdi.nOpcodes = p->protocol->nOperations();
-      } else {
-	// When there is no protocol at all, we force it to variable, bounded at 64k, diverse, zlm
-	prot->m_diverseDataSizes = true;
-	prot->m_variableMessageLength = true;
-	prot->m_maxMessageValues = 64*1024;
-	prot->m_zeroLengthMessages = false; // keep it simplest in this case
-        p->u.wdi.nOpcodes = 1;
-      }
-    }
-  }
   // FIXME: this should only be for HDL, but of source we don't know that yet.
   // FIXME: but parseing a spec is usually in the context of a model
   // FIXME: so there is perhaps the notion of a spec being restricted to a model?

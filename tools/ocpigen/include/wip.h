@@ -434,6 +434,7 @@ class Worker : public Parsed {
     *parseImplLocalMemory(),
     *parseSpecControl(ezxml_t ps),
     *parseSpec(const char *package = NULL),
+    *parsePort(ezxml_t x),
     *parseHdlImpl(const char* package = NULL),
     *doProperties(ezxml_t top, const char *parent, bool impl, bool anyIsBad),
     *parseHdlAssy(),
@@ -504,7 +505,7 @@ static inline bool masterIn(Port *p) {
 #define VERH ".vh"
 #define BOOL(b) ((b) ? "true" : "false")
 
-#define IMPL_ATTRS "name"
+#define IMPL_ATTRS "name", "spec"
 #define IMPL_ELEMS "componentspec", "properties", "property", "specproperty", "propertysummary", "xi:include", "controlinterface",  "timeservice", "unoc"
 #define GENERIC_IMPL_CONTROL_ATTRS \
   "SizeOfConfigSpace", "ControlOperations", "Sub32BitConfigProperties"

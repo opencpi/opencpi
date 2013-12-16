@@ -36,8 +36,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
    self->errorString = "input message size not a multiple of data type";
    return RCC_ERROR;
  }
- unsigned n;
- for (n = in->input.length / sizeof(uint32_t); n; n--)
+ for (unsigned n = in->input.length / sizeof(uint32_t); n; n--)
    *outData++ = *inData++ + props->biasValue;
  out->output.length = in->input.length;
  out->output.u.operation = in->input.u.operation;

@@ -1,5 +1,3 @@
-<RccImplementation>
-  <xi:include href="bias_spec.xml"/>
-</RccImplementation>
+<RccImplementation spec='bias_spec'/>
 
 
