@@ -1,5 +1,5 @@
 # The default definitions for native RCC compilation
-GCC_$(OCPI_TOOL_HOST)=gcc
+GCC_$(OCPI_TOOL_HOST)=gcc -std=c99
 GCCLINK_$(OCPI_TOOL_HOST)=gcc
 # ifeq ($(RccTarget),Linux-MCS_864x)
 # GCC=/opt/timesys/toolchains/ppc86xx-linux/bin/ppc86xx-linux-gcc
