@@ -58,9 +58,10 @@ $(ImplHeaderFiles): $(GeneratedDir)/%$(ImplSuffix) : $$(Worker_%_xml) | $(Genera
 	 $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) -i $< \
 
 ifeq ($(origin SkelFiles),undefined)
-SkelFiles=$(foreach w,$(Workers),$(GeneratedDir)/$(w)$(SkelSuffix))
+SkelFiles=$(foreach w,$(Workers),$(GeneratedDir)/$w$(SkelSuffix))
 endif
 
+# Making the skeleton may also make a default OWD
 skeleton:  $(ImplHeaderFiles) $(SkelFiles)
 all: skeleton
 
@@ -78,7 +79,6 @@ endif
 endif
 override XmlIncludeDirs+=. $(XmlIncludeDirsInternal) $(OCPI_CDK_DIR)/lib/components
 -include $(GeneratedDir)/*.deps
--include $(TargetDir)/*.deps
 
 clean:: cleanfirst
 	$(AT)rm -r -f $(GeneratedDir) \
@@ -161,8 +161,9 @@ endef
 ################################################################################
 # Function to do stuff per target: $(eval $(call WkrDoTarget,target))
 define WkrDoTarget
+-include $(call WkrTargetDir,$1)/*.deps
 # The target directory
-$(call WkrTargetDir,$(1)): | $(OutDir) $(GeneratedDir)
+$(call WkrTargetDir,$1): | $(OutDir) $(GeneratedDir)
 	$(AT)mkdir $$@
 
 # If object files are separate from the final binary,
