@@ -213,7 +213,7 @@ int main ( int argc, char* argv [ ] )
     return 0;
   }
   bool test = argc == 2 && !strcmp(argv[1],"test");
-  const char *env = getenv("OCPI_OCL_OBJS");
+  const char *env = getenv("OCPI_OPENCL_OBJS");
   bool success = false;
   try
   {

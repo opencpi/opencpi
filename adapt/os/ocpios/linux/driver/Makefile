@@ -45,6 +45,9 @@ ifeq ($(KERNELRELEASE),)
 # Assume the source tree is where the running kernel was built
 # You should set KERNELDIR in the environment if it's elsewhere
 KERNELDIR ?= /lib/modules/$(shell uname -r)/build
+ifeq ($(wildcard $(KERNELDIR)),)
+  KERNELDIR=
+endif
 # The current directory is passed to sub-makes as argument
 PWD := $(shell pwd)
 
@@ -55,7 +58,6 @@ MyDir:=$(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 MyIncs= \
          -I$(realpath $(MyDir)/../../../../../core/container/hdl/include) \
          -I$(realpath $(MyDir)/../../interfaces/include)
-#$(info MyIncs: $(MyIncs))
 MyLib:=$(realpath $(MyDir)/../../../../../lib/target-$(OCPI_TARGET_HOST))
 ifeq ($(strip $(MyLib)),)
 ifneq ($(MAKECMDGOALS),topclean)
@@ -73,7 +75,7 @@ INSTALLED=$(MyLib)/$(MODFILE) $(MyLib)/$(RULESFILE)
 all:	$(INSTALLED)
 
 $(MODFILE): opencpi.c
-	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
+	$(and $(KERNELDIR),$(MAKE) -C $(KERNELDIR) M=$(PWD) modules)
 	@rm -rf	$(JUNK)
 
 modules: $(MODFILE)
@@ -94,8 +96,8 @@ unload:
 	@./ocpi_linux_driver unload x
 
 clean:	
-	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
-	rm -rf	$(JUNK)
+	$(and $(KERNELDIR),$(MAKE) -C $(KERNELDIR) M=$(PWD) clean)
+	rm -rf	$(JUNK) $(MODFILE) $(MODFILE).unsigned modules.order
 
 topclean: clean
 	rm -f $(MyLib)/$(MODFILE) $(MyLib)/$(RULESFILE)

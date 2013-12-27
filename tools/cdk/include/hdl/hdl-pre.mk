@@ -48,26 +48,21 @@
 ifndef __HDL_PRE_MK__
 __HDL_PRE_MK__=x
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
-Model=hdl
 
 ################################################################################
-# Determine the Worker Name very early, and the name of its XML file
-ifneq ($(word 2,$(Workers)),)
-$(error Only one HDL worker can be built.  Workers is: $(Workers))
+# Determine the Worker Name very early, and the name of its XML file, and its 
+# language, in all the modes that are worker
+ifneq ($(filter platform assembly worker,$(HdlMode)),)
+  ifdef Workers
+    ifneq ($(words $(Workers)),1)
+      $(error Only one HDL worker can be built here.  Workers is: $(Workers).  Use "Worker=")
+    endif
+  endif
+#  HdlXmlFile:=$(Worker_$(Worker)_xml)
 endif
-# This is REDUNDANT with what is in xxx-worker.mk, but we need it to figure out the language below.
-ifndef Worker
-Worker=$(CwdName)
-Workers=$(Worker)
-endif
-ifeq ($(Worker_$(Worker)_xml),)
-Worker_$(Worker)_xml=$(Worker).xml
-HdlXmlFile=$(Worker).xml
-endif
-HdlXmlFile=$(Worker_$(Worker)_xml)
-$(call OcpiDbgVar,HdlXmlFile)
+#$(call OcpiDbgVar,HdlXmlFile)
 $(call OcpiDbgVar,Worker)
-$(call OcpiDbgVar,Worker_$(Worker)_xml)
+#$(call OcpiDbgVar,Worker_$(Worker)_xml)
 
 ################################################################################
 # Determine the language and suffix, which might mean looking in the xml file
@@ -76,28 +71,12 @@ HdlVerilogSuffix:=.v
 HdlVerilogIncSuffix:=.vh
 HdlVHDLSuffix:=.vhd
 HdlVHDLIncSuffix:=.vhd
-# 
-ifndef HdlLanguage
-  # Ugly grab of the language attribute from the XML file
-  # FIXME: make a single ocpigen command to provide this by parsing
-  HdlLanguage:=$(call ToLower,$(and $(wildcard $(HdlXmlFile)),$(shell grep -i 'language *=' $(HdlXmlFile) | sed "s/^.*[lL]anguage= *['\"]\\([^\"']*\\).*$$/\1/")))
-  ifdef Language
-    ifdef HdlLanguage
-      ifneq ($(call ToLower,$(Language)),$(HdlLanguage))
-        $(error The "Language" setting in the Makefile ($(Language)) is inconsistent with the setting in the XML/OWD file (file: $(HdlXmlFile), setting: $(HdlLanguage)))
-      endif # error check
-    else
-      HdlLanguage:= $(call ToLower,$(Language))
-    endif # found language attribute
-  else ifndef HdlLanguage
-    ifeq ($(HdlMode),assembly)
-      HdlLanguage:=verilog
-    else ifeq ($(findstring $(HdlMode),library core platform),)
-      $(error No language specified for this worker ($(Worker)));
-    endif
-  endif
-endif # HdlLanguage not initially defined (probably true)
 
+#ifndef OcpiLanguage
+#  $(error NO LANGUAGE)
+#endif # HdlLanguage not initially defined (probably true)
+
+HdlLanguage:=$(OcpiLanguage)
 $(call OcpiDbgVar,HdlLanguage)
 ifeq ($(HdlLanguage),verilog)
 HdlSourceSuffix:=$(HdlVerilogSuffix)

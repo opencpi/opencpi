@@ -70,6 +70,7 @@ parseFile(const char *file, const char *parent, const char *element,
   std::list<const char *> tries;
   tries.push_back(cp);
   int fd = open(cp, O_RDONLY);
+  ocpiDebug("Trying to open '%s', and %s", cp, fd < 0 ? "failed" : "succeeded");
   do { // break on error
     if (fd < 0) {
       // file was not where parent file was, and not local.
@@ -81,7 +82,9 @@ parseFile(const char *file, const char *parent, const char *element,
 	  else
 	    asprintf((char **)&cp, "%s/%s", *ap, myFile);
 	  tries.push_back(cp);
-	  if ((fd = open(cp, O_RDONLY)) >= 0)
+	  fd = open(cp, O_RDONLY);
+	  ocpiDebug("Trying to open '%s', and %s", cp, fd < 0 ? "failed" : "succeeded");
+          if (fd >= 0)
 	    break;
 	}
       }

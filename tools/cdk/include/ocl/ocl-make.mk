@@ -44,7 +44,7 @@ OclTarget:=$(OclTargets)
 endif
 
 ifndef OclTarget
-OclTarget:=$(HostTarget)
+OclTarget:=$(OCPI_TARGET_HOST)
 endif
 
 $(call OcpiDbgVar,OclTarget)

@@ -1,6 +1,8 @@
 # Common definition for altera tools
 ifndef OCPI_ALTERA_TOOLS_DIR
-$(error The variable OCPI_ALTERA_TOOLS_DIR must be defined.)
+  ifneq (clean,$(MAKECMDGOALS))
+    $(error The variable OCPI_ALTERA_TOOLS_DIR must be defined.)
+  endif
 endif
 # The trick here is to filter the output and capture the exit code.
 # Note THIS REQUIRES BASH not just POSIX SH due to pipefail option

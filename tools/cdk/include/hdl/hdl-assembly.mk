@@ -26,6 +26,17 @@
 HdlMode:=assembly
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 
+# Theses next lines are similar to what worker.mk does
+ifneq ($(MAKECMDGOALS),clean)
+$(if $(wildcard $(CwdName).xml),,\
+  $(error The XML for the assembly, $(CwdName).xml, is missing))
+endif
+override Workers:=$(CwdName)
+override Worker:=$(Workers)
+Worker_$(Worker)_xml:=$(Worker).xml
+OcpiLanguage:=verilog
+#$(eval $(call OcpiSetLanguage,$(CwdName).xml))
+
 override ComponentLibraries+= components devices adapters cards
 $(eval $(HdlSearchComponentLibraries))
 override XmlIncludeDirs+=. $(HdlPlatformsDir) $(HdlPlatformsDir)/specs
@@ -153,7 +164,7 @@ ImplWorkersFile=$(AssyWorkersFile)
 
 $(ImplFile): $$(ImplXmlFile) | $$(GeneratedDir)
 	$(AT)echo Generating the assembly source file: $@ from $<
-	$(AT)$(OcpiGen) -D $(GeneratedDir) -W $(Worker) -a  $<
+	$(AT)$(call OcpiGen) -D $(GeneratedDir) -W $(Worker) -a  $<
 
 # The workers file is actually created at the same time as the -assy.v file
 $(AssyWorkersFile): $(ImplFile)

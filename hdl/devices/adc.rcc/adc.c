@@ -40,11 +40,18 @@
  * self file contains the RCC implementation skeleton for worker: adc
  */
 
-#include "adc_Worker.h"
-
+#define _USE_MATH_DEFINES
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+
+#include "adc_Worker.h"
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846264338327
+#endif
+
 
 /* ---- Worker Memories Table -------------------------------------------- */
 
@@ -109,8 +116,6 @@ static RCCResult release ( RCCWorker* self )
 
 
 #if 1
-
-#include <math.h>
 
 static void cosine_generator ( double* data,
                                double frequency,

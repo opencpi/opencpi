@@ -99,7 +99,7 @@ define DoRccArtifactFile
 # Different since it is in the targetdir
 $(call ArtifactXmlFile,$1): $(RccAssemblyFile)
 	@echo Generating artifact/runtime xml file $$@ for all workers in one binary
-	$(AT)$(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(call WkrTargetDir,$1)/$(@F).deps \
+	$(AT)$(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(call WkrTargetDir,$1)/$$(@F).deps \
 	     -O $(call RccOs,$1) \
              -V $(call RccOsVersion,$1) \
              -P $(call RccArch,$1) \

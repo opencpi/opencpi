@@ -64,6 +64,7 @@ ifndef Tops
 #   ifeq ($(HdlLanguage),vhdl)
 #    Tops=$(Worker) $(Worker)_rv
   else ifeq ($(HdlMode),worker)
+# FIXME: when we create assemblies in VHDL, we can finally nuke this
     Tops:=$(Worker) $(Worker)_rv
   else ifeq ($(HdlMode),container)
     Tops:=$(Worker)

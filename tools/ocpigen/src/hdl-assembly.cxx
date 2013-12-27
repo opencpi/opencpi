@@ -1675,10 +1675,8 @@ parseOclAssy() {
     if (!wXmlName)
       return "Missing \"File\" attribute is \"Worker\" element";
     Worker *w = create(wXmlName, m_file.c_str(), NULL, err);
-    if (w) {
+    if (w)
       a->m_workers.push_back(w);
-      err = w->parseRcc();
-    }
   }
   return err;
 }

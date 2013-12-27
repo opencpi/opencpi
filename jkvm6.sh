@@ -22,7 +22,7 @@ export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../3113964_001C42EFC0F4.txt
 
 # #### Compiler linker flags ############################################## #
 
-#export OCPI_CFLAGS+=" -m64"
+#export OCPI_CFLAGS+=" -std=c99"
 export OCPI_CXXFLAGS="$OCPI_CXXFLAGS -Wno-dangling-else -std=c++0x"
 #export OCPI_LDFLAGS=-m64
 

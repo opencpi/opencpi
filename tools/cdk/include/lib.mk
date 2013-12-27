@@ -42,6 +42,8 @@
 # The name of an implementation subdirectory includes its authoring model as the
 # file extension.
 # We also list the targets per model.
+$(if $(wildcard $(OCPI_CDK_DIR)),,$(error OCPI_CDK_DIR environment variable not set properly.))
+
 ifdef Workers
   ifdef Implementations
     $(error You cannot set both Workers and Implementations variables.)
@@ -49,6 +51,7 @@ ifdef Workers
     Implementations := $(Workers)
   endif
 endif
+unexport Workers
 
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
@@ -170,7 +173,7 @@ rcc: speclinks $(RccImplementations)
 test: speclinks $(TestImplementations)
 
 checkocl:
-	$(AT)if ! $(OCPI_CDK_DIR)/bin/$(HostTarget)/ocpiocl test; then echo Error: OpenCL is not available; exit 1; fi
+	$(AT)if ! $(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_HOST)/ocpiocl test; then echo Error: OpenCL is not available; exit 1; fi
 
 ocl: checkocl speclinks $(OclImplementations)
 
@@ -237,7 +240,7 @@ ifeq ($(origin Worker),command line)
   $(if $(or $(word 3,$(Words)),$(strip \
             $(if $(word 2,$(Words)),,ok))), \
      $(error The Worker must be of the form "Worker=name.model"))
-  Model:=$(word 2,$(Words))
+  Model:=$(call ToLower,$(word 2,$(Words)))
   ifeq ($(findstring $(Model),$(Models)),)
     $(error The suffix of "$(Worker)", which is "$(Model)" doesn't match any known model.)
   endif
@@ -246,45 +249,70 @@ ifeq ($(origin Worker),command line)
   endif
   Name:=$(word 1,$(Words))
   UCModel=$(call ToUpper,$(Model))
-  ifdef SpecFile
+  ifeq ($(origin SpecFile),command line)
     ifeq ($(SpecFile),none)
 	OcpiSpecFile:=
     else
-	OcpiSpecFile:=$(SpecFile)
+      ifeq ($(wildcard $(SpecFile)),)
+        $(error The indicated spec file for the new worker: "$(SpecFile)" does not exist.)
+      endif
+      ifneq ($(filter-out specs/$(Name)-spec.xml specs/$(Name)_spec.xml,$(SpecFile)),)
+        OcpiSpecFile:=$(SpecFile)
+      endif
     endif
   else
-    OcpiSpecFile:=$(or $(wildcard specs/$(Name)_spec.xml),specs/$(Name)-spec.xml)
+    # the default will be using an underscore or hypen, whichever exists
+    MySpecFile:=$(or $(wildcard specs/$(Name)_spec.xml),specs/$(Name)-spec.xml)
+    ifeq ($(wildcard $(MySpecFile)),)
+      $(error There is no spec file: $(MySpecFile) for the new worker. Use SpecFile=?)
+    endif
+    OcpiSpecFile:=
   endif
-  ifeq ($(wildcard $(OcpiSpecFile)),)
-    $(error Can't create worker $(Worker) when spec file: "$(OcpiSpecFile)" doesn't exist. Use SpecFile= ?)
-  endif
-  ifeq ($(Model),hdl)
-    ifndef Language
-      Language=vhdl
+  OcpiLanguage:=
+  ifdef Language
+    OcpiLanguage:=$(call ToLower,$(Language))
+    ifndef Suffix_$(Model)_$(OcpiLanguage)
+      $(error Language $(Langauge) not supported for the $(Model) model.)
+    endif
+    ifeq ($(OcpiLanguage),$(Language_$(Model)))
+	OcpiLanguage:=
     endif
   endif
-  ifdef Language
-    LangAttr:=language="$(Language)"
+  ifdef OcpiLanguage
+    LangAttr:=language="$(OcpiLanguage)"
   endif
 else ifdef Worker
-  $(error Worker definition is invalid.  It can onlybe specified on the command line with "new")
+  $(error Worker definition is invalid: it can only be on the command line with "new")
 endif
+
+# On creating a worker, the OWD is automatically generated here
+# if it has non-default content: a non-default spec file or
+# a non-default language.  Otherwise it is NOT created,
+# which means it acts like the skeleton does:
+# - A default version is created in the gen directory under "make skeleton"
+# - This version is copied up to the top level (like the code skeleton)
+# - This version is nuked upon make clean.
+
 new:
 	$(AT)$(if $(Worker),,\
-	   $(error The "Worker=" variable must be specified when "new" is specified))\
-	  echo Creating worker subdirectory named $(Worker).
-	$(AT)mkdir $(Worker)
-	$(AT)($(if $(Language),echo Language:=$(Language);)echo include $$\(OCPI_CDK_DIR\)/include/worker.mk) > $(Worker)/Makefile
-	$(AT)$(if $(SpecFile),$(AT)(\
-	  echo '<$(UCModel)Implementation $(LangAttr)>';\
-	  $(if $(OcpiSpecFile),\
-              echo '  <xi:include href="$(notdir $(OcpiSpecFile))"/>';,\
-	      echo "  <ComponentSpec name='$(Worker)'>";\
-	      echo "  </ComponentSpec>";)\
-	  echo '</$(UCModel)Implementation>') > $(Worker)/$(Name).xml,\
-          echo "No OWD implementation xml file created.  Using defaults.")
-	$(AT)echo Running \"make skeleton\" to make initial skeleton in $(Worker)/$(Name).$(Suffix_$(Model))
+	       $(error The "Worker=" variable must be specified when "new" is specified.)) \
+	     echo Creating worker subdirectory named $(Worker).
+	$(AT)mkdir -p $(Worker) && \
+	     (\
+              echo \# Put Makefile customizations for worker $(Worker) here:; \
+              echo;\
+	      echo include '$$(OCPI_CDK_DIR)/include/worker.mk' \
+	     ) > $(Worker)/Makefile
+	$(AT)$(and $(or $(OcpiSpecFile),$(OcpiLanguage)), \
+	     (\
+	      echo '<$(UCModel)Worker $(LangAttr) $(and $(OcpiSpecFile),spec="$(OcpiSpecFile)")>';\
+	      echo '</$(UCModel)Worker>'\
+	     ) > $(Worker)/$(Name).xml)
+	$(AT)echo Running \"make skeleton\" to make initial skeleton in $(Worker)/$(Name).$(Suffix_$(Model)_$(or $(OcpiLanguage),$(Language_$(Model))))
 	$(AT)$(MAKE) -C $(Worker) \
 		OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) \
-		XmlIncludeDirs=../specs \
-		Worker=$(Name) skeleton Language=$(Language)
+		XmlIncludeDirs=../specs Worker= Workers= \
+		skeleton; \
+	     if test $$? != 0; then echo rm -r -f $(Worker); fi
+
+

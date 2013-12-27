@@ -1,5 +1,0 @@
-<RccImplementation controloperations="start">
-  <xi:include href="noise_gen_complex_spec.xml"/>
-</RccImplementation>
-
-

@@ -298,8 +298,12 @@ $end entity;
 ENTITY_ARRAY(pretty,which,def,rng) \
 $architecture rtl of pretty##_array_property is\
 $@@signal base : natural;\
+$@@signal byte : unsigned(3 downto 0);\
+$@@signal lowbit : natural;\
 $begin\
 $@@base <= to_integer(index);\
+$@@byte <= index(1 downto 0) + property.offset(1 downto 0);\
+$@@lowbit <= to_integer(byte(1 downto 0)) * 8;\
 $@@reg: process(Clk) is\
 $@@begin\
 $@@@@if rising_edge(clk) then\
@@ -308,14 +312,12 @@ $@@@@@@@@value <= (others => default);\
 $@@@@@@@@written <= bfalse;\
 $@@@@@@@@any_written <= bfalse;\
 $@@@@@@elsif its(write_enable) then\
-$@@@@@@@@value(base) <= rhs(data(7 downto 0));\
+$@@@@@@@@value(base) <= rhs(data(lowbit+7 downto lowbit));\
 $@@@@@@@@if nbytes_1 > 0 and property.nitems > 1 then\
-$@@@@@@@@@@value(base+1) <= rhs(data(15 downto 8));\
+$@@@@@@@@@@value(base+1) <= rhs(data(lowbit+15 downto lowbit+8));\
 $@@@@@@@@@@if nbytes_1 > 1 and property.nitems > 2 then\
 $@@@@@@@@@@@@value(base+2) <= rhs(data(23 downto 16));\
-$@@@@@@@@@@@@if nbytes_1 > 2 and property.nitems > 3 then\
-$@@@@@@@@@@@@@@value(base+3) <= rhs(data(31 downto 24));\
-$@@@@@@@@@@@@end if;\
+$@@@@@@@@@@@@value(base+3) <= rhs(data(31 downto 24));\
 $@@@@@@@@@@end if;\
 $@@@@@@@@end if;\
 $@@@@@@@@any_written <= btrue;\
@@ -342,7 +344,11 @@ $@@@@@@@@value <= (others => default);\
 $@@@@@@@@written <= bfalse;\
 $@@@@@@@@any_written <= bfalse;\
 $@@@@@@elsif its(write_enable) then\
-$@@@@@@@@value(base) <= rhs(data(15 downto 0));\
+$@@@@@@@@if index(0) = property.offset(1) then\
+$@@@@@@@@@@value(base) <= rhs(data(15 downto 0));\
+$@@@@@@@@else\
+$@@@@@@@@@@value(base) <= rhs(data(31 downto 16));\
+$@@@@@@@@end if;\
 $@@@@@@@@if nbytes_1 > 1 and property.nitems > 1 then\
 $@@@@@@@@@@value(base+1) <= rhs(data(31 downto 16));\
 $@@@@@@@@end if;\

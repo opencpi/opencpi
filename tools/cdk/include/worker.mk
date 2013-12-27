@@ -36,40 +36,45 @@
 
 # Generic top level worker makefile
 include $(OCPI_CDK_DIR)/include/util.mk
-ifeq ($(Model),)
-$(error This directory named $(CwdName) does not end in any of: $(Models))
+ifndef Model
+  $(error This directory named $(CwdName) does not end in any of: $(Models))
 endif
-ifneq ($(Worker),)
-  ifneq ($(Workers),)
+ifdef Worker
+  ifdef Workers
     $(error Cannot set both Worker and Workers variables in Makefile)
   else
-    Workers=$(Worker)
+    override Workers:=$(Worker)
   endif
-else
-  ifeq ($(Workers),)
-    Worker=$(CwdName)
-    Workers=$(Worker)
-  endif
+else ifndef Workers
+  override Worker:=$(CwdName)
+  override Workers:=$(Worker)
 endif
-#ImplXmlFiles=$(Workers:%=%.xml)
-define OcpiGeneratedWorkerXml
-$(Worker_$1_xml): | gen
-	$(AT)echo Generating default OWD xml file for $(Model) worker. ; \
-	(echo '<$(CapModel)Implementation $(if $(Language),Language="$(Language)",)>' ; \
-	echo '  <xi:include href="$1_spec.xml"/>' ; \
-	echo '</$(CapModel)Implementation>' ) > $$@
+$(call OcpiDbgVar,Worker)
+$(call OcpiDbgVar,Workers)
+# Now we must figure out the language since so many other things depend on it.
+# But we want to keep the language in the XML and not in the Makefile
+ImplXmlFiles:=$(Workers:%=%.xml)
+$(foreach w,$(Workers),$(eval Worker_$w_xml:=$w.xml))
 
-endef
+ifeq ($(MAKECMDGOALS),clean)
+# Clean default OWD files when they are the default
 $(foreach w,$(Workers),\
-   $(if $(wildcard $w.xml),\
-      $(eval Worker_$w_xml:=$w.xml),\
-      $(if $(wildcard *.xml),\
-         $(error Worker description file "$w.xml" appears to be missing.),\
-         $(eval Worker_$w_xml:=gen/$w.xml)\
-         $(eval $(call OcpiGeneratedWorkerXml,$w)))))
+  $(if $(wildcard $(Worker_$w_xml)),\
+    $(and $(shell if echo "$(call OcpiDefaultOWD,$w,$(Model))" | cmp -s - $(Worker_$w_xml); \
+                  then echo hi; fi),\
+	$(info Removing $(Worker_$w_xml) since it has default contents.) \
+        $(shell rm $(Worker_$w_xml)))))
+else
+# Create default OWD files when they don't exist
+$(foreach w,$(Workers),\
+     $(if $(wildcard $(Worker_$w_xml)),,\
+	 $(and \
+            $(shell echo Creating default OWD in $(Worker_$w_xml) since it "doesn't" exist.;\
+	            echo "$(call OcpiDefaultOWD,$w,$(Model))" > $(Worker_$w_xml)),\
+          )))
+endif
 
-#$(foreach w,$(Workers),$(info OWD file for worker $w is $(Worker_$w_xml)))
+$(eval $(call OcpiSetLanguage,$(ImplXmlFiles)))
 $(call OcpiDbgVar,Workers)
 $(call OcpiDbgVar,Worker)
-#$(info Model is $(Model))
 include $(OCPI_CDK_DIR)/include/$(Model)/$(Model)-worker.mk

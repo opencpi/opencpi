@@ -215,8 +215,10 @@ driver:
 	$(MAKE) -C adapt/os/ocpios/$(OCPI_OS)/driver
 
 cleandriver:
-	$(MAKE) -C adapt/os/ocpios/$(OCPI_OS)/driver topclean
+	$(AT)$(and $(wildcard adapt/os/ocpios/$(OCPI_OS)/driver),$(MAKE) -C adapt/os/ocpios/$(OCPI_OS)/driver topclean)
 
+cleandrivers:
+	for d in adapt/os/ocpios/*/driver; do $(MAKE) -C $$d topclean; done
 
 .PHONY: packages tar diff diff.q test $(PACKAGES)
 
@@ -244,7 +246,7 @@ clean distclean: cleancomponents cleanexamples
 	-rm -f *.exe *.obj *.o *.ilk *.sbr *.suo *.sln *.pdb *.bsc *~
 	-rm -r -f lib
 
-cleaneverything: clean
+cleaneverything: clean cleandrivers
 	-find . -name 'target-*' -exec rm -r '{}' ';'
 	-find . -name 'gen' -exec rm -r '{}' ';'
 	-find . -name "lib" -a ! -path "*export*" -a -type d -a -exec rm -r "{}" ";"

@@ -4,6 +4,7 @@
 # is in hdl-pre.mk
 ifndef __HDL_MAKE_MK__
 __HDL_MAKE_MK__=x
+Model:=hdl
 # This file is included by the various levels of hdl makefiles (not the leaf makefiles)
 # i.e. a Makefile file that does other makefiles.
 # Note that targets are generally families except when a primitive core is actually part-specific.

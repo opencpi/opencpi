@@ -78,13 +78,21 @@ CwdDirName:=$(subst $(Invalid),$(Space),$(notdir $(subst $(Space),$(Invalid),$(C
 CwdName:=$(basename $(CwdDirName))
 $(call OcpiDbgVar,CwdName)
 
+ifndef Model
 Model:=$(strip $(subst ., ,$(suffix $(CwdDirName))))
+endif
 $(call OcpiDbgVar,Model)
-Models=xm rcc hdl ocl
-Suffix_rcc=c
-Suffix_hdl=v
-Suffix_ocl=cl
-SUffix_xm=xm
+Models:=xm rcc hdl ocl
+Language_rcc:=c
+Suffix_rcc_c:=c
+
+Suffix_hdl_verilog:=v
+Suffix_hdl_vhdl:=vhd
+Language_hdl:=vhdl
+
+Language_ocl:=cl
+Suffix_ocl_cl:=cl
+Suffix_xm:=xm
 CapModels=$(foreach m,$(Models),$(call Capitalize,$m))
 UCModel=$(call ToUpper,$(Model))
 CapModel=$(call Capitalize,$(Model))
@@ -292,10 +300,10 @@ DYN_PREFIX=LD_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/$(OCPI_TOOL_HOST)
 endif
 #$(info OCDK $(OCPI_CDK_DIR))
 DYN_PREFIX=
-OcpiGen=\
-  $(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(GeneratedDir)/$(@F).deps \
+OcpiGenArg=\
+  $(DYN_PREFIX) $(ToolsDir)/ocpigen $1 -M $(GeneratedDir)/$(@F).deps \
     $(patsubst %,-I"%",$(call Unique,$(XmlIncludeDirs)))
-
+OcpiGen=$(call OcpiGenArg,)
 # Return stderr and the exit status as variables
 # Return non-empty on failure, empty on success, and set var
 # $(call DoShell,<command>,<status var>,<value var>)
@@ -314,4 +322,35 @@ DoShell=$(eval X:=$(shell X=`bash -c '$1; exit $$?' 2>&1`;echo $$?; echo "$$X" |
 # Like the builtin "dir", but without the trailing slash
 OcpiDir=$(foreach d,$1,$(patsubst %/,%,$(dir $1)))
 
-endif
+# Grab the language attribute out of an XML file the hard way
+OcpiGetLangScript:="s/^.*[lL]anguage= *['\"]\([^'\"]*\).*/\1/"
+OcpiGetLanguage=$(strip \
+    $(call ToLower,\
+       $(shell grep -i 'language *= *' $1 | sed $(OcpiGetLangScript))))
+
+# Set the language attribute from the list of xml files in $1
+define OcpiSetLanguage
+  OcpiLanguage:=$$(sort $$(foreach f,$1,\
+		    $$(and $$(realpath $$f),$$(call OcpiGetLanguage,$$f))))
+  $$(and $$(word 2,$$(OcpiLanguage)),\
+     $$(error Multiple languages found in the worker xml files: $$(OcpiLanguage)))
+  $$(call OcpiDbgVar,OcpiLanguage)
+  ifndef OcpiLanguage
+    OcpiLanguage:=$(Language_$(Model))
+  endif
+  ifndef Suffix_$(Model)_$$(OcpiLanguage)
+    $$(error The language "$$(OcpiLanguage)" is not supported for the "$(Model)" model.)
+  endif
+endef
+
+# Generate the default XML contents for $1 a worker and $2 a model
+# Executed with CWD being the worker directory
+OcpiDefaultOWD=$(strip \
+  <$(call Capitalize,$2)Worker name='$1' \
+    language='$(Language_$(Model))' \
+    spec='$(notdir $(strip \
+      $(or $(wildcard ../specs/$1_spec.xml),\
+           $(wildcard ../specs/$1-spec.xml))))'/>)
+
+endif # ifndef __UTIL_MK__
+
