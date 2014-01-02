@@ -19,6 +19,7 @@
   ======
 */
 
+#include <unistd.h>
 #include <iostream>
 #include "cv.h"
 #include "highgui.h"

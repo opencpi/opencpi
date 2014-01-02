@@ -54,9 +54,11 @@ int main(int argc, char **argv) {
       OA::PVString("__ocpi__exp-scored 10", "memoryusage <= Appmemusage"),
       OA::PVEnd
     };
+    char *s;
+    asprintf(&s, "throughput > %s", argv[1]);
 
-    OA::Worker &w = a.createWorker("sinegen_instance", "bestfit", 0,0,selection);
-
+    OA::Worker &w = a.createWorker("sinegen_instance", "bestfit", 0,0,s);
+    free(s);
     // Get a handle (reference) on the "out" port of the worker
     OA::Port &p = w.getPort("out");
 
