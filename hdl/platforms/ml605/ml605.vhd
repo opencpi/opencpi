@@ -117,8 +117,8 @@ begin
   cp_adapt : unoc_cp_adapter
     port    map(client_in  => unoc2cp,
                 client_out => cp2unoc,
-                occp_in    => cp_in,
-                occp_out   => cp_out);
+                cp_in    => cp_in,
+                cp_out   => cp_out);
 
   -- This piece of generic infrastructure in is instantiated here because
   -- it localizes all these signals here in the platform worker, and thus

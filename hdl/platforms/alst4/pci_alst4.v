@@ -45,6 +45,9 @@ module pci_alst4(input          sys0_clk,
 	       pciw_pci0_rxDws_delta_enq$wget,
 	       pciw_pci0_txDws_delta_deq$wget,
 	       pciw_pci0_txDws_delta_enq$wget;
+`ifndef orig
+  wire [3:0]   rx_word_enable; // derived from the avalon byte enables
+`endif
   wire [1 : 0] infLed$wget;
   wire pciw_pci0_avaTxEmpty$wget,
        pciw_pci0_avaTxEmpty$whas,
@@ -517,6 +520,9 @@ module pci_alst4(input          sys0_clk,
        z__h56325,
        z__h56332;
 
+`ifndef orig
+  wire rx_destage_eof; // the (fixed) eof variable in the rx_destage rule
+`endif
   // oscillator and gates for output clock p125clk
   assign p125clk = pciw_pci0_pcie_ep$ava_core_clk_out ;
 //  assign CLK_GATE_p125clk = 1'b1 ;
@@ -757,7 +763,17 @@ module pci_alst4(input          sys0_clk,
 	     pciw_pci0_txInF$EMPTY_N &&
 	     (!pciw_pci0_txInF$D_OUT[152] || pciw_pci0_txHeadF$FULL_N) &&
 	     (!pciw_pci0_txInF$D_OUT[151] || pciw_pci0_txEofF$FULL_N) &&
+`ifdef orig
 	     pciw_pci0_txDws_num_empty >= 4'd4 ;
+`else // change on 11-12-2013
+      // This ensures we will not put in an SOF unless the DWS is EMPTY
+      // This will prevent the DWS from ever having multiple messages in it.
+      // This is not the best fix, but it is what we can do for now (BSV)
+      // The right fix is to insert the word count into the EOF fifo that is parallel to the DWS
+	     pciw_pci0_txDws_num_empty >= 4'd4 && // txDws.space_available >= 4
+            (!pciw_pci0_txInF$D_OUT[152] || // !sof
+	     pciw_pci0_txDws_num_full == 4'd0);
+`endif
 
   // rule RL_pciw_pci0_rxInF_reset
   assign WILL_FIRE_RL_pciw_pci0_rxInF_reset =
@@ -784,6 +800,7 @@ module pci_alst4(input          sys0_clk,
   assign pciw_pci0_avaTxEop$whas = WILL_FIRE_RL_pciw_pci0_tx_exstage ;
   assign pciw_pci0_avaTxEmpty$wget = pciw_pci0_txOutF$D_OUT[154] ;
   assign pciw_pci0_avaTxEmpty$whas = WILL_FIRE_RL_pciw_pci0_tx_exstage ;
+`ifdef orig
   assign pciw_pci0_rxDws_delta_enq$wget =
 	     (pciw_pci0_rxInF$D_OUT[153] && !pciw_pci0_rxInF$D_OUT[30] &&
 	      !pciw_pci0_rxInF$D_OUT[29]) ?
@@ -813,6 +830,50 @@ module pci_alst4(input          sys0_clk,
 				pciw_pci0_rxInF$D_OUT[143:136] == 8'h0F) ?
 				 3'd1 :
 				 3'd0)))))) ;
+`else // !`ifdef orig
+  // derive word enables from byte enables
+  // this fixes the bug when writing sub-32-bit entities
+  assign rx_word_enable = {
+			pciw_pci0_rxInF$D_OUT[143:140] == 4'h0 ? 1'b0 : 1'b1,
+			pciw_pci0_rxInF$D_OUT[139:136] == 4'h0 ? 1'b0 : 1'b1,
+			pciw_pci0_rxInF$D_OUT[135:132] == 4'h0 ? 1'b0 : 1'b1,
+			pciw_pci0_rxInF$D_OUT[131:128] == 4'h0 ? 1'b0 : 1'b1
+			};
+  
+  assign pciw_pci0_rxDws_delta_enq$wget =
+	     (pciw_pci0_rxInF$D_OUT[153] && !pciw_pci0_rxInF$D_OUT[30] &&
+	      !pciw_pci0_rxInF$D_OUT[29]) ?
+	       3'd3 :
+	       ((pciw_pci0_rxInF$D_OUT[153] &&
+		 (pciw_pci0_rxInF$D_OUT[29] ||
+		  pciw_pci0_rxInF$D_OUT[30] && pciw_pci0_rxInF$D_OUT[66])) ?
+		  3'd4 :
+		  ((pciw_pci0_rxInF$D_OUT[153] && pciw_pci0_rxInF$D_OUT[30] &&
+		    !pciw_pci0_rxInF$D_OUT[29] &&
+		    !pciw_pci0_rxInF$D_OUT[66]) ?
+		     3'd3 :
+		     ((!pciw_pci0_rxInF$D_OUT[153] &&
+		       !pciw_pci0_rxInF$D_OUT[154] &&
+		       rx_word_enable == 4'b1111) ?
+//		       pciw_pci0_rxInF$D_OUT[143:128] == 16'hFFFF) ?
+			3'd4 :
+			((!pciw_pci0_rxInF$D_OUT[153] &&
+			  !pciw_pci0_rxInF$D_OUT[154] &&
+		          rx_word_enable == 4'b0111) ?
+//			  pciw_pci0_rxInF$D_OUT[143:128] == 16'h0FFF) ?
+			   3'd3 :
+			   ((!pciw_pci0_rxInF$D_OUT[153] &&
+			     pciw_pci0_rxInF$D_OUT[154] &&
+		             rx_word_enable[1:0] == 2'b11) ?
+//			     pciw_pci0_rxInF$D_OUT[143:136] == 8'hFF) ?
+			      3'd2 :
+			      ((!pciw_pci0_rxInF$D_OUT[153] &&
+				pciw_pci0_rxInF$D_OUT[154] &&
+		                rx_word_enable[1:0] == 2'b01) ?
+//				pciw_pci0_rxInF$D_OUT[143:136] == 8'h0F) ?
+				 3'd1 :
+				 3'd0)))))) ;
+`endif
   assign pciw_pci0_rxDws_delta_enq$whas = WILL_FIRE_RL_pciw_pci0_rx_enstage ;
   assign pciw_pci0_rxDws_delta_deq$wget =
 	     IF_IF_pciw_pci0_rxInFlight_76_THEN_pciw_pci0_r_ETC__q2[2:0] ;
@@ -943,8 +1004,14 @@ module pci_alst4(input          sys0_clk,
   // register pciw_pci0_rxDbgDeEof
   assign pciw_pci0_rxDbgDeEof$D_IN = pciw_pci0_rxDbgDeEof + 16'd1 ;
   assign pciw_pci0_rxDbgDeEof$EN =
+`ifdef orig
 	     WILL_FIRE_RL_pciw_pci0_rx_destage && pciw_pci0_rxEofF$EMPTY_N &&
 	     pciw_pci0_rxDws_num_full_7_ULE_4___d836 ;
+`else
+				  WILL_FIRE_RL_pciw_pci0_rx_destage && 
+				  rx_destage_eof
+				  ;
+`endif
 
   // register pciw_pci0_rxDbgDeSof
   assign pciw_pci0_rxDbgDeSof$D_IN = pciw_pci0_rxDbgDeSof + 16'd1 ;
@@ -1071,8 +1138,12 @@ module pci_alst4(input          sys0_clk,
 
   // register pciw_pci0_rxInFlight
   assign pciw_pci0_rxInFlight$D_IN =
+`ifdef orig
 	     !pciw_pci0_rxEofF$EMPTY_N ||
 	     !pciw_pci0_rxDws_num_full_7_ULE_4___d836 ;
+`else
+             !rx_destage_eof;
+`endif
   assign pciw_pci0_rxInFlight$EN = WILL_FIRE_RL_pciw_pci0_rx_destage ;
 
   // register pciw_pci0_txDbgDeDeq
@@ -1275,8 +1346,13 @@ module pci_alst4(input          sys0_clk,
   assign pciw_pci0_rxEofF$ENQ =
 	     WILL_FIRE_RL_pciw_pci0_rx_enstage && pciw_pci0_rxInF$D_OUT[152] ;
   assign pciw_pci0_rxEofF$DEQ =
+`ifdef orig
 	     WILL_FIRE_RL_pciw_pci0_rx_destage && pciw_pci0_rxEofF$EMPTY_N &&
 	     pciw_pci0_rxDws_num_full_7_ULE_4___d836 ;
+`else
+	     WILL_FIRE_RL_pciw_pci0_rx_destage && 
+	     rx_destage_eof;
+`endif
   assign pciw_pci0_rxEofF$CLR = 1'b0 ;
 
   // submodule pciw_pci0_rxHeadF
@@ -1293,8 +1369,13 @@ module pci_alst4(input          sys0_clk,
   assign pciw_pci0_rxHeadF$ENQ =
 	     WILL_FIRE_RL_pciw_pci0_rx_enstage && pciw_pci0_rxInF$D_OUT[153] ;
   assign pciw_pci0_rxHeadF$DEQ =
+`ifdef orig
 	     WILL_FIRE_RL_pciw_pci0_rx_destage && pciw_pci0_rxEofF$EMPTY_N &&
 	     pciw_pci0_rxDws_num_full_7_ULE_4___d836 ;
+`else
+	     WILL_FIRE_RL_pciw_pci0_rx_destage &&
+	     rx_destage_eof;
+`endif
   assign pciw_pci0_rxHeadF$CLR = 1'b0 ;
 
   // submodule pciw_pci0_rxInF
@@ -1313,8 +1394,12 @@ module pci_alst4(input          sys0_clk,
   // submodule pciw_pci0_rxOutF
   assign pciw_pci0_rxOutF$D_IN =
 	     { !pciw_pci0_rxInFlight,
+`ifdef orig
 	       pciw_pci0_rxEofF$EMPTY_N &&
 	       pciw_pci0_rxDws_num_full_7_ULE_4___d836,
+`else
+	       rx_destage_eof,
+`endif
 	       pciw_pci0_rxHeadF$D_OUT[29:23],
 	       x_be__h27614,
 	       x_data__h27615 } ;
@@ -1402,9 +1487,31 @@ module pci_alst4(input          sys0_clk,
 	     WILL_FIRE_RL_pciw_pci0_rx_enstage ?
 	       pciw_pci0_rxDws_delta_enq$wget :
 	       3'd0 ;
+`ifndef orig
+      // The eof should be:
+      // eof = rxEofF.notEmpty && deq_amount == amount_left
+      // deq_amount = min(4, sof ? rxh.length : previous_amount_left) (as in the BSV)
+      // amount_left = sof ? rxh.length : previous_amount_left;
+      // We are comparing the amount to dequeue in this cycle to the amount
+      // left to dequeue in this message.
+  assign rx_destage_eof
+    = pciw_pci0_rxEofF$EMPTY_N && // There is an EOF token in the EOF FIFO
+      { 8'd0, IF_IF_pciw_pci0_rxInFlight_76_THEN_pciw_pci0_r_ETC__q2[2:0] } == // deqAmount this cycle
+      (pciw_pci0_rxInFlight ?
+       pciw_pci0_rxDwrDeq :            // not SOF, left over amount
+       pciw_pci0_rxHeadF$D_OUT[10:0]); // SOF: rxh.length
+`endif
   assign IF_pciw_pci0_rxEofF_notEmpty__62_AND_pciw_pci0_ETC___d288 =
+`ifdef orig
+// This is the BSV:
+//      rxDwrDeq <= sof ? (eof ? 0 : rxh.length-extend(deqAmount)) : rxDwrDeq-extend(deqAmount);
+// this is inlining eof as rxEofF.notEmpty && (rxDws.dwords_available <= 4);
+// But this is the wrong definition of eof
 	     (pciw_pci0_rxEofF$EMPTY_N &&
 	      pciw_pci0_rxDws_num_full_7_ULE_4___d836) ?
+`else
+             rx_destage_eof ?
+`endif
 	       11'd0 :
 	       pciw_pci0_rxHeadF$D_OUT[10:0] -
 	       { 8'd0,

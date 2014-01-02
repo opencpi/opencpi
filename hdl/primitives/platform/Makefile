@@ -5,7 +5,7 @@ HdlNoElaboration=yes
 # that doesn't seem to find verilog modules in libraries when the elaboration is vhdl->verilog->verilog...
 SourceFiles=\
 platform_pkg.vhd mkOCCP.v occp_rv.vhd timeService.v time_server.vhd time_client_rv.vhd \
-mkTLPSerializer.v unoc_cp_adapter.vhd metadata_rv.vhd \
+mkTLPSerializer.v unoc_cp_adapter.vhd metadata_rv.vhd sim_dcp.vhd sim_clk.vhd \
 mkPktFork.v mkPktMerge.v mkTLPSM.v unoc_node_rv.vhd unoc_terminator.vhd \
 mkTimeClient.v \
 mkSimIO.v mkSimDCP.v \

@@ -8,8 +8,8 @@ entity unoc_cp_adapter is
     client_in  : in  unoc_master_out_t;
     client_out : out unoc_master_in_t;
     -- I'm connecting to occp
-    occp_in    : in  occp_out_t;
-    occp_out   : out occp_in_t
+    cp_in      : in  occp_out_t;
+    cp_out     : out occp_in_t
     );
 end entity unoc_cp_adapter;
 
@@ -32,11 +32,11 @@ architecture rtl of unoc_cp_adapter is
 
       -- actionvalue method client_request_get
       EN_client_request_get   : in  std_logic ;
-      client_request_get      : out std_logic_vector(occp_request_width-1 downto 0);
+      client_request_get      : out std_logic_vector(58 downto 0);
       RDY_client_request_get  : out std_logic;
 
       -- action method client_response_put
-      client_response_put     : in  std_logic_vector(occp_response_width-1 downto 0);
+      client_response_put     : in  std_logic_vector(39 downto 0);
       EN_client_response_put  : in  std_logic;
       RDY_client_response_put : out std_logic
       );
@@ -45,18 +45,35 @@ architecture rtl of unoc_cp_adapter is
   signal EN_server_request_put   : std_logic;
   signal RDY_client_response_put : std_logic;
   signal EN_client_response_put  : std_logic;
+  -- Our request and response bundles
+  signal request : std_logic_vector(58 downto 0);
+  signal response : std_logic_vector(39 downto 0);
 begin
   -- The outoing take signal is a DEQ to the producer side computed by us
   -- The incoming valid signal is an indication of not empty from the producer side
   EN_server_request_put <= client_in.valid and RDY_server_request_put;
   client_out.take       <= EN_server_request_put;
 
-  EN_client_response_put <= occp_in.valid and RDY_client_response_put;
-  occp_out.take         <= EN_client_response_put;
+  EN_client_response_put <= cp_in.valid and RDY_client_response_put;
 
   -- Using this adapter means using the unoc clk and reset as the control clk and reset
-  occp_out.clk          <= client_in.clk;
-  occp_out.reset_n      <= client_in.reset_n;
+  cp_out.clk          <= client_in.clk;
+  cp_out.reset        <= not client_in.reset_n;
+  -- request fields to occp
+  cp_out.is_read      <= request(58);
+  cp_out.address      <= request(25 downto 4)
+                         when request(58) = '1' else
+                         request(57 downto 36);
+  cp_out.byte_en      <= request(3 downto 0)
+                         when request(58) = '1' else
+                         request(35 downto 32);
+  cp_out.data         <= x"000000" & request(33 downto 26)
+                         when request(58) = '1' else
+                         request(31 downto 0);
+  cp_out.take         <= EN_client_response_put;
+
+  response            <= cp_in.tag & cp_in.data;
+
 
   tlps : mkTLPSerializer
     port map(
@@ -74,12 +91,12 @@ begin
       RDY_server_response_get => client_out.valid,
 
       -- actionvalue method client_request_get - we are the producer of these requests
-      EN_client_request_get   => occp_in.take,
-      client_request_get      => occp_out.data,
-      RDY_client_request_get  => occp_out.valid,
+      EN_client_request_get   => cp_in.take,
+      client_request_get      => request,
+      RDY_client_request_get  => cp_out.valid,
 
       -- action method client_response_put - we are the consumer of these responses
-      client_response_put     => occp_in.data,
+      client_response_put     => response,
       EN_client_response_put  => EN_client_response_put,
       RDY_client_response_put => RDY_client_response_put
       

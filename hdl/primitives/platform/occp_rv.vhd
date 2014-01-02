@@ -199,7 +199,12 @@ architecture rtl of occp_rv is
   signal EN_server_request_put : std_logic;
   -- Our locally used input-FIFO-not-full signal for input data
   signal RDY_server_request_put : std_logic;
-
+  -- Our locally computed negative reset
+  signal reset_n : std_logic;
+  -- Our request and response bundles
+  signal request : std_logic_vector(58 downto 0);
+  signal response : std_logic_vector(39 downto 0);
+  -- Our reply bundle
   -- signals for wci_0 - only necessary due to isim bug
   signal wci_Vm_0_MCmd        : std_logic_vector(2 downto 0);
   signal wci_Vm_0_MAddrSpace  : std_logic;
@@ -599,6 +604,16 @@ begin
   EN_server_request_put <= RDY_server_request_put and cp_in.valid;
   -- We tell the producer side to dequeue when we are enqueueing
   cp_out.take           <= EN_server_request_put;
+  -- Flip the reset for legacy compatibility
+  reset_n               <= not cp_in.reset;
+  -- Create the request bundle
+  request <= "0" & cp_in.address & cp_in.byte_en & cp_in.data
+             when cp_in.is_read = '0' else
+             "1" & x"000000" & cp_in.data(7 downto 0) & cp_in.address & cp_in.byte_en;
+  -- Decode response
+  cp_out.tag <= response(39 downto 32);
+  cp_out.data <= response(31 downto 0);
+
   gen0: for i in 0 to 14 generate
     wci_out(i).CLK <= cp_in.clk;
   end generate gen0;
@@ -606,14 +621,14 @@ begin
 sm : mkOCCP
   port map(
     CLK                     => cp_in.clk,
-    RST_N                   => cp_in.reset_n,
+    RST_N                   => reset_n,
     -- server request interface
-    server_request_put      => cp_in.data,
+    server_request_put      => request,
     EN_server_request_put   => EN_server_request_put,
     RDY_server_request_put  => RDY_server_request_put,
     -- server response interface
     EN_server_response_get  => cp_in.take,
-    server_response_get     => cp_out.data,
+    server_response_get     => response,
     RDY_server_response_get => cp_out.valid,
     -- WCI signals for each one
     wci_Vm_0_MCmd        => wci_Vm_0_MCmd,

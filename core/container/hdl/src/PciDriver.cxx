@@ -364,7 +364,8 @@ namespace OCPI {
 	  OU::formatString(error, "can't open the %s directory for PCI search", dir);
 #endif
 	} else {
-	  for (struct dirent *ent; error.empty() && (ent = readdir(pcid)) != NULL;)
+	  std::string firstError;
+	  for (struct dirent *ent; (ent = readdir(pcid)) != NULL;)
 	    if (ent->d_name[0] != '.') {
 	      // Opening implies canonicalizing the name, which is needed for excludes
 	      OCPI::HDL::Device *dev;
@@ -376,10 +377,17 @@ namespace OCPI {
 		if (!found(*dev, error))
 		  count++;
 	      }
+	      if (error.size()) {
+		if (firstError.empty())
+		  firstError = error;
+		error.clear();
+	      }
 	    skipit:
 	      ;
 	    }
 	  closedir(pcid); // FIXME: try/catch?
+	  if (!count)
+	    error = firstError; // report the first error if we found nothing
 	}
 	return count;
       }
@@ -439,8 +447,12 @@ namespace OCPI {
 	  else
 	    return NULL; // not really an error
 	}
-	if (error.empty())
-	  return new Device(name, fd, pci, bar0, bar1, error);
+	if (error.empty()) {
+	  Device *dev = new Device(name, fd, pci, bar0, bar1, error);
+	  if (error.empty())
+	    return dev;
+	  delete dev;
+	}
 	if (bar0)
 	  munmap(bar0, pci.size0);
 	if (bar1)

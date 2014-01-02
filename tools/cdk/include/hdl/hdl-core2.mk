@@ -75,7 +75,8 @@ $(call OcpiDbgVar,CompiledSourceFiles)
 $$(call OcpiDbgVar,CompiledSourceFiles)
 $(OutDir)target-$1/$2$(HdlBin): \
    HdlSources=$$(filter-out $$(filter-out %.vhd,$$(CoreBlackBoxFiles)),$$(CompiledSourceFiles))
-#$(OutDir)target-$1/$2$(HdlBin): AllCores=$(call HdlCollectCores,$1)
+$(OutDir)target-$1/$2$(HdlBin): \
+   $$$$(foreach l,$$$$(HdlLibrariesInternal),$$$$(call HdlLibraryRefDir,$$$$l,$$$$(HdlTarget)))
 $(OutDir)target-$1/$2$(HdlBin): $$$$(HdlPreCore) \
       $$(filter-out $$(filter-out %.vhd,$$(CoreBlackBoxFiles)) $$(TargetSourceFiles),$$(CompiledSourceFiles)) 
 	$(AT)echo Building $(and $(filter-out core,$(HdlMode))) core \"$(2)\" for target \"$$(HdlTarget)\"
@@ -148,6 +149,8 @@ $(call BBLibFile,$1,$2,$3): Top=onewire
 $(call BBLibFile,$1,$2,$3): override HdlTarget=$3
 $(call BBLibFile,$1,$2,$3): TargetDir=$(OutDir)target-$1/bb
 $(call BBLibFile,$1,$2,$3): HdlSources=$4 $(OCPI_CDK_DIR)/include/hdl/onewire.v
+$(call BBLibFile,$1,$2,$3): \
+  $$$$(foreach l,$$$$(HdlLibrariesInternal),$$$$(call HdlLibraryRefDir,$$$$l,$$$$(HdlTarget)))
 $(call BBLibFile,$1,$2,$3): $4 | $$$$(TargetDir)
 	$(AT)$(ECHO) -n Building stub/blackbox library \($$@\) for target' '
 	$(AT)$(ECHO) $$(HdlTarget) from $4

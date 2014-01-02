@@ -982,12 +982,22 @@ wadmin(const char **ap) {
   unsigned size;
   unsigned off = (unsigned)atoi_any(*ap++, &size);
   uint64_t val = atoi_any(*ap, 0);
-  if (size == 4)
+  switch (size) {
+  case 1:
+    cAccess->set8RegisterOffset(off, (uint8_t)val);
+    break;
+  case 2:
+    cAccess->set16RegisterOffset(off, (uint16_t)val);
+    break;
+  case 4:
     cAccess->set32RegisterOffset(off, (uint32_t)val);
-  else if (size == 8)
+    break;
+  case 8:
     cAccess->set64RegisterOffset(off, val);
-  else
+    break;
+  default:
     bad("bad size for wadmin");
+  }
 }
 static void
 settime(const char **) {

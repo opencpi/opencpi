@@ -8,19 +8,29 @@ package platform_pkg is
 -- Control Plane definitions
 --------------------------------------------------------------------------------
 
-constant occp_request_width : natural := 59;
-constant occp_response_width : natural := 40;
+-- The simple control interface.
+-- The client (interconnect) can treat this as asynchronous, with a returned tag,
+-- but the implementation -- is fully synchronous - one-at-a-time...
+-- A synchronous client can not bother generating the tag.
+subtype occp_address_t is std_logic_vector(21 downto 0);
+subtype occp_data_t    is std_logic_vector(31 downto 0);
+subtype occp_tag_t     is std_logic_vector(7  downto 0);
+subtype occp_byte_en_t is std_logic_vector(3  downto 0);
 type occp_in_t is record
-  clk     : std_logic;
-  reset_n : std_logic;
-  data    : std_logic_vector(occp_request_width-1 downto 0);
-  valid   : std_logic;
-  take    : std_logic;
+  clk     : std_logic;      -- clock for control
+  reset   : std_logic;      -- reset for control
+  valid   : std_logic;      -- is the request valid/present?
+  is_read : std_logic;      -- is this a read request
+  address : occp_address_t; -- address of read or write
+  byte_en : occp_byte_en_t; -- byte enable of read or write
+  data    : occp_data_t;    -- write data or read tag
+  take    : std_logic;      -- take response from occp
 end record occp_in_t;
 type occp_out_t is record
-  data  : std_logic_vector(occp_response_width-1 downto 0);
-  valid : std_logic;
-  take  : std_logic;
+  valid   : std_logic;      -- is the response valid/present?
+  tag     : occp_tag_t;     -- read tag in response
+  data    : occp_data_t;    -- read data in response
+  take    : std_logic;      -- take request presented to occp
 end record occp_out_t;
 
 -- These records are generic - i.e. a superset of what any given worker might have
@@ -134,47 +144,26 @@ component unoc_cp_adapter is
   port(
     client_in  : in  unoc_master_out_t;
     client_out : out unoc_master_in_t;
-    occp_in    : in  occp_out_t;
-    occp_out   : out occp_in_t
+    cp_in      : in  occp_out_t;
+    cp_out     : out occp_in_t
     );
 end component unoc_cp_adapter;
 
---------------------------------------------------------------------------------
--- Simulation module definitions
---------------------------------------------------------------------------------
-
-component mkSimIO is
+-- Component to drive the OCCP in a simulator
+component sim_clk is
   port(
-    CLK                   : in  std_logic;
-    RST_N                 : in  std_logic;
-    EN_host_request_get   : in  std_logic;
-    host_request_get      : out std_logic_vector(7 downto 0);
-    RDY_host_request_get  : out std_logic;
-    host_response_put     : in  std_logic_vector(7 downto 0);
-    EN_host_response_put  : in  std_logic;
-    RDY_host_response_put : out std_logic);
-end component mkSimIO;
-component mkSimDCP is
+    clk   : out std_logic;
+    reset : out std_logic
+    );
+end component sim_clk;
+
+component sim_dcp is
   port(
-    CLK                     : in  std_logic;
-    RST_N                   : in  std_logic;
-
-    host_request_put        : in  std_logic_vector(7 downto 0);
-    EN_host_request_put     : in  std_logic;
-    RDY_host_request_put    : out std_logic;
-
-    EN_host_response_get    : in  std_logic;
-    host_response_get       : out std_logic_vector(7 downto 0);
-    RDY_host_response_get   : out std_logic;
-
-    EN_client_request_get   : in  std_logic;
-    client_request_get      : out std_logic_vector(58 downto 0);
-    RDY_client_request_get  : out std_logic;
-    
-    client_response_put     : in  std_logic_vector(39 downto 0);
-    EN_client_response_put  : in  std_logic;
-    RDY_client_response_put : out std_logic);
-end component mkSimDCP;
+    clk    : in  std_logic;
+    reset  : in  std_logic;
+    cp_in  : in  occp_out_t;
+    cp_out : out occp_in_t);
+end component sim_dcp;
 
 end package platform_pkg;
 

@@ -3,6 +3,11 @@
 
 #ifndef HDL_ACCESS_H
 #define HDL_ACCESS_H
+
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
+#endif
+#include <inttypes.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <cstdlib>
@@ -67,63 +72,70 @@ namespace OCPI {
 
       void setBytes(RegisterOffset offset, const uint8_t *from8, size_t bytes) const;
       inline uint8_t get8RegisterOffset(size_t offset) const {
-	ocpiDebug("get8RegisterOffset %p %zx", m_registers ,offset);
-	return m_registers ? *(volatile uint8_t *)(m_registers + offset) :
+	ocpiDebug("get8RegisterOffset %p %zx", m_registers, offset);
+	uint8_t val = m_registers ? *(volatile uint8_t *)(m_registers + offset) :
 	  m_accessor->get8(m_base + offset);
+	ocpiDebug("get8RegisterOffset %p %zx -> %x", m_registers, offset, val);
+	return val;
       }
       inline uint16_t get16RegisterOffset(size_t offset) const {
-	ocpiDebug("get16RegisterOffset %p %zx", m_registers ,offset);
-	return m_registers ? *(volatile uint16_t *)(m_registers + offset) :
+	ocpiDebug("get16RegisterOffset %p %zx", m_registers, offset);
+	uint16_t val = m_registers ? *(volatile uint16_t *)(m_registers + offset) :
 	  m_accessor->get16(m_base + offset);
+	ocpiDebug("get16RegisterOffset %p %zx -> %x", m_registers, offset, val);
+	return val;
       }
       inline uint32_t get32RegisterOffset(size_t offset) const {
-	ocpiDebug("get32RegisterOffset %p %zx", m_registers ,offset);
-	return m_registers ? *(volatile uint32_t *)(m_registers + offset) :
+	ocpiDebug("get32RegisterOffset %p %zx", m_registers, offset);
+	uint32_t val = m_registers ? *(volatile uint32_t *)(m_registers + offset) :
 	  m_accessor->get32(m_base + offset);
+	ocpiDebug("get32RegisterOffset %p %zx -> %x", m_registers, offset, val);
+	return val;
       }
       inline uint64_t get64RegisterOffset(size_t offset) const {
-	ocpiDebug("get64RegisterOffset %p %zx", m_registers ,offset);
-	return m_registers ? *(volatile uint64_t *)(m_registers + offset) :
+	ocpiDebug("get64RegisterOffset %p %zx", m_registers, offset);
+	uint64_t val = m_registers ? *(volatile uint64_t *)(m_registers + offset) :
 	  m_accessor->get64(m_base + offset);
+	ocpiDebug("get64RegisterOffset %p %zx -> %"PRIx64, m_registers, offset, val);
+	return val;
       }
       inline void set8RegisterOffset(size_t offset, uint8_t val) const {
-	ocpiDebug("get64RegisterOffset %p %zx", m_registers ,offset);
-	ocpiDebug("set8RegisterOffset %zx", offset);
+	ocpiDebug("set8RegisterOffset %p %zx %x", m_registers, offset, val);
 	if (m_registers)
 	  *(volatile uint8_t *)(m_registers + offset) = val;
 	else
 	  m_accessor->set8(m_base + offset, val);
       }
       inline void set16RegisterOffset(size_t offset, uint16_t val) const {
-	ocpiDebug("set16RegisterOffset %p %zx", m_registers ,offset);
+	ocpiDebug("set16RegisterOffset %p %zx %x", m_registers, offset, val);
 	if (m_registers)
 	  *(volatile uint16_t *)(m_registers + offset) = val;
 	else
 	  m_accessor->set16(m_base + offset, val);
       }
       inline void set32RegisterOffset(size_t offset, uint32_t val) const {
-	ocpiDebug("set32RegisterOffset %p %zx", m_registers ,offset);
+	ocpiDebug("set32RegisterOffset %p %zx %x", m_registers, offset, val);
 	if (m_registers)
 	  *(volatile uint32_t *)(m_registers + offset) = val;
 	else
 	  m_accessor->set32(m_base + offset, val);
       }
       inline void set64RegisterOffset(size_t offset, uint64_t val) const{
-	ocpiDebug("set64RegisterOffset %p %zx", m_registers ,offset);
+	ocpiDebug("set64RegisterOffset %p %zx %"PRIx64, m_registers, offset, val);
 	if (m_registers)
 	  *(volatile uint64_t *)(m_registers + offset) = val;
 	else
 	  m_accessor->set64(m_base + offset, val);
       }
       inline void getBytesRegisterOffset(size_t offset, uint8_t *bytes,  size_t size) const {
-	ocpiDebug("getBytesRegisterOffset %p %zx sz %zx", m_registers ,offset, size);
+	ocpiDebug("getBytesRegisterOffset %p %zx sz %zx", m_registers, offset, size);
 	if (m_registers)
 	  getBytes(offset, bytes, size);
 	else
 	  m_accessor->getBytes(m_base + offset, bytes, size);
       }
       inline void setBytesRegisterOffset(size_t offset, const uint8_t *bytes, size_t size) const {
-	ocpiDebug("setBytesRegisterOffset %p %zx sz %zx", m_registers ,offset, size);
+	ocpiDebug("setBytesRegisterOffset %p %zx sz %zx", m_registers, offset, size);
 	if (m_registers)
 	  setBytes(offset, bytes, size);
 	else

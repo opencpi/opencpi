@@ -298,7 +298,7 @@ $end entity;
 ENTITY_ARRAY(pretty,which,def,rng) \
 $architecture rtl of pretty##_array_property is\
 $@@signal base : natural;\
-$@@signal byte : unsigned(3 downto 0);\
+$@@signal byte : unsigned(1 downto 0);\
 $@@signal lowbit : natural;\
 $begin\
 $@@base <= to_integer(index);\
