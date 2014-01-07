@@ -34,5 +34,5 @@
 #
 ########################################################################### #
 
-ExcludePlatforms=isim_pf modelsim_pf
+ExcludePlatforms=isim_pf modelsim_pf zed
 include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk
