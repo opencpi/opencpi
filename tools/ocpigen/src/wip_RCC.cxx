@@ -314,7 +314,7 @@ emitImplRCC(Worker *w, const char *outDir) {
   if (w->m_ctl.controlOps) {
     last = "";
     fprintf(f, " %s RCCMethod ", w->m_pattern ? "extern" : "static");
-    for (cp = controlOperations; *cp; cp++, op++)
+    for (cp = OU::controlOpNames; *cp; cp++, op++)
       if (w->m_ctl.controlOps & (1 << op)) {
 	if ((err = methodName(w, *cp, mName)))
 	  return err;
@@ -351,7 +351,7 @@ emitImplRCC(Worker *w, const char *outDir) {
   if (w->m_ctl.properties.size())
     fprintf(f, " .propertySize = sizeof(%c%sProperties),\\\n",
 	    toupper(w->m_implName[0]), w->m_implName + 1);
-  for (op = 0, cp = controlOperations; *cp; cp++, op++)
+  for (op = 0, cp = OU::controlOpNames; *cp; cp++, op++)
     if (w->m_ctl.controlOps & (1 << op)) {
       if ((err = methodName(w, *cp, mName)))
 	return err;
@@ -484,7 +484,7 @@ emitSkelRCC(Worker *w, const char *outDir) {
   unsigned op = 0;
   const char **cp;
   const char *mName;
-  for (cp = controlOperations; *cp; cp++, op++)
+  for (cp = OU::controlOpNames; *cp; cp++, op++)
     if (w->m_ctl.controlOps & (1 << op)) {
       if ((err = methodName(w, *cp, mName)))
 	return err;

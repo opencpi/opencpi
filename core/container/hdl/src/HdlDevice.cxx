@@ -10,7 +10,6 @@
 
 namespace OCPI {
   namespace HDL {
-    namespace OM = OCPI::Metadata;
     namespace OE = OCPI::Util::EzXml;
     namespace OU = OCPI::Util;
 
@@ -48,8 +47,8 @@ namespace OCPI {
       } else
 	m_pfWorker = new WciControl(*this, "platform", "pf_i", 0, true);
       // Need to conditionalize this
-      if ((m_pfWorker->controlOperation(OM::Worker::OpInitialize, err)) ||
-	  (m_pfWorker->controlOperation(OM::Worker::OpStart, err))) {
+      if ((m_pfWorker->controlOperation(OU::OpInitialize, err)) ||
+	  (m_pfWorker->controlOperation(OU::OpStart, err))) {
 	// Compatibility hack
 	m_old = true;
 	err.clear();

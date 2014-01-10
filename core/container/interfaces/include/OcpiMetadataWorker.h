@@ -60,18 +60,19 @@
 #include "OcpiMetadataPort.h"
 #include "OcpiMetadataLocalMemory.h"
 
+#if 0
 //!!!!!!! There is also this list in the OcpiContainerApi.h
 #define CONTROL_OP_I CONTROL_OP
 #define OCPI_CONTROL_OPS                                                        \
   CONTROL_OP_I(initialize,   Initialize,     INITIALIZED, EXISTS,      NONE,        NONE) \
   CONTROL_OP(start,          Start,          OPERATING,   SUSPENDED,   INITIALIZED, NONE) \
-  CONTROL_OP(stop,           Stop,           SUSPENDED,   OPERATING,   NONE,        NONE) \
+  CONTROL_OP(stop,           Stop,           SUSPENDED,   OPERATING,   FINISHED,    NONE) \
   CONTROL_OP(release,        Release,        EXISTS,      INITIALIZED, OPERATING,   SUSPENDED) \
   CONTROL_OP(beforeQuery,    BeforeQuery,    NONE,        INITIALIZED, OPERATING,   SUSPENDED) \
   CONTROL_OP(afterConfigure, AfterConfigure, NONE,        INITIALIZED, OPERATING,   SUSPENDED) \
   CONTROL_OP(test,           Test,           NONE,        INITIALIZED, NONE,        NONE) \
   /**/
-
+#endif
 namespace OCPI {
   namespace Metadata {
 
@@ -130,12 +131,14 @@ namespace OCPI {
       {
         return totalPropertySize;
       }
+#if 0
       enum ControlOperation {
 #define CONTROL_OP(x, c, t, s1, s2, s3)  Op##c,
       OCPI_CONTROL_OPS
 #undef CONTROL_OP
       OpsLimit
       };
+#endif
       Property &findProperty(const char *id);
       unsigned whichProperty(const char *id);
       Worker(ezxml_t xml);

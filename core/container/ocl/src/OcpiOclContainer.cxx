@@ -129,23 +129,23 @@ namespace OCPI
 
       } OcpiOclOpcodes_t;
 
-      OcpiOclOpcodes_t controlOp2Opcode ( OM::Worker::ControlOperation op )
+      OcpiOclOpcodes_t controlOp2Opcode ( OU::ControlOperation op )
       {
         switch ( op )
         {
-          case OM::Worker::OpInitialize:
+          case OU::OpInitialize:
             return OCPI_OCL_INITIALIZE;
-          case OM::Worker::OpStart:
+          case OU::OpStart:
             return OCPI_OCL_START;
-          case OM::Worker::OpStop:
+          case OU::OpStop:
             return OCPI_OCL_STOP;
-          case OM::Worker::OpRelease:
+          case OU::OpRelease:
             return OCPI_OCL_RELEASE;
-          case OM::Worker::OpTest:
+          case OU::OpTest:
             return OCPI_OCL_TEST;
-          case OM::Worker::OpBeforeQuery:
+          case OU::OpBeforeQuery:
             return OCPI_OCL_BEFORE_QUERY;
-          case OM::Worker::OpAfterConfigure:
+          case OU::OpAfterConfigure:
             return OCPI_OCL_AFTER_CONFIGURE;
           default:
             return OCPI_OCL_RUN;
@@ -436,7 +436,7 @@ namespace OCPI
 
           setControlOperations ( ezxml_cattr ( implXml, "controlOperations" ) );
 
-          setControlMask ( getControlMask() | ( 1 << OM::Worker::OpStart ) );
+          setControlMask ( getControlMask() | ( 1 << OU::OpStart ) );
         }
 
         void updatePortsPreRun ( );
@@ -642,8 +642,8 @@ namespace OCPI
           {
             if ( isEnabled )
             {
-              controlOperation ( OM::Worker::OpStop );
-              controlOperation ( OM::Worker::OpRelease );
+              controlOperation ( OU::OpStop );
+              controlOperation ( OU::OpRelease );
               isEnabled = false;
             }
 
@@ -656,14 +656,14 @@ namespace OCPI
           }
         }
 
-        void controlOperation ( OCPI::Metadata::Worker::ControlOperation op )
+        void controlOperation ( OCPI::Util::ControlOperation op )
         {
           if ( !( getControlMask () & ( 1 << op ) ) )
           {
             return;
           }
 
-          if ( op == OM::Worker::OpStart )
+          if ( op == OU::OpStart )
           {
             if ( nConnectedPorts != metadataImpl.getNumPorts ( ) )
             {
@@ -685,13 +685,13 @@ namespace OCPI
 
           switch ( op )
           {
-            case OM::Worker::OpStart:
+            case OU::OpStart:
               isEnabled = true;
               runTimer.reset();
               runTimer.start();
               break;
-            case  OM::Worker::OpStop:
-            case OM::Worker::OpRelease:
+            case  OU::OpStop:
+            case OU::OpRelease:
               if ( isEnabled )
               {
                 runTimer.stop();

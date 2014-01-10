@@ -160,10 +160,13 @@ begin
 end to_string;
 
 function from_string(s : string_t; offset : unsigned) return word_t is
-  variable off : natural;
+begin 
+  return from_string(s, to_integer(offset));
+end from_string;
+
+function from_string(s : string_t; off : natural := 0) return word_t is
   variable w : word_t;
 begin 
-  off := to_integer(offset);
   w := (others => '0');
   w(7 downto  0) := std_logic_vector(s(off));
   if off+1 <= s'right then
@@ -177,5 +180,4 @@ begin
   end if;
   return w;
 end from_string;
-
 end types;

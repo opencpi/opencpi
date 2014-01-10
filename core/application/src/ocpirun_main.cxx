@@ -191,7 +191,8 @@ main(int /*argc*/, const char **argv) {
 	fprintf(stderr, "Waiting %u seconds for application to complete\n", seconds);
       sleep(seconds);
       if (verbose)
-	fprintf(stderr, "After %u seconds...\n", seconds);
+	fprintf(stderr, "After %u seconds, stopping application...\n", seconds);
+      app.stop();
     } else {
       if (verbose)
 	fprintf(stderr, "Waiting for application to be finished (no timeout)\n");

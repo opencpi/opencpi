@@ -25,6 +25,9 @@ Properties:
   <!-- Granularity of last message if non-zero and less than message size -->
   <property name='granularity' type='ulong' readable='true' initial='true' default='1'/>
 
+  <!-- Read the file repeatedly -->
+  <property name='repeat' type='bool' writable='true'/>
+
   <!-- Readback status properties -->
   <property name='bytesRead' type='uLongLong' volatile='true'/>
   <property name='messagesWritten' type='uLongLong' volatile='true'/>

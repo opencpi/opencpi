@@ -29,15 +29,12 @@ RCCDispatch file_read = {
 /*
  * Methods to implement for worker file_read, based on metadata.
  */
-
 static RCCResult
 start(RCCWorker *self) {
   MyState *s = self->memories[0];
   File_readProperties *p = self->properties;
-  if (s->started) {
-    self->errorString = "file_read cannot be restarted";
-    return RCC_ERROR;
-  }
+  if (s->started)
+    return RCC_OK;
   s->started = 1;
   if ((s->fd = open(p->fileName, O_RDONLY)) < 0) {
     asprintf(&self->errorString, "error opening file \"%s\": %s", p->fileName, strerror(errno));
@@ -46,6 +43,14 @@ start(RCCWorker *self) {
   self->ports[FILE_READ_OUT].output.u.operation = p->opcode;
   return RCC_OK;
 } 
+
+static RCCResult
+release(RCCWorker *self) {
+ MyState *s = self->memories[0];
+  if (s->started)
+    close(s->fd);
+  return RCC_OK;
+}
 
 static RCCResult
 run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
@@ -74,6 +79,13 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  if (n) {
    props->messagesWritten++;
    return RCC_ADVANCE;
+ }
+ if (props->repeat) {
+   if (lseek(s->fd, 0, SEEK_SET) < 0) {
+     asprintf(&self->errorString, "error rewinding file: %s", strerror(errno));
+     return RCC_ERROR;
+   }
+   return RCC_OK;
  }
  close(s->fd);
  return RCC_ADVANCE_DONE;

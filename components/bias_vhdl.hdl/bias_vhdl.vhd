@@ -6,16 +6,17 @@
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
 architecture rtl of bias_vhdl_worker is
+  signal doit : bool_t;
 begin
 -- Pure combinatorial implementation
-
+  doit                <= ctl_in.is_operating and in_in.ready and out_in.ready;
 -- WSI input interface outputs
-  in_out.take <= in_in.ready and out_in.ready;
+  in_out.take         <= doit;
 -- WSI output interface outputs
-  out_out.give <= in_in.ready and out_in.ready;
-  out_out.data <= std_logic_vector(unsigned(in_in.data) + props_in.biasValue);
-  out_out.som <= in_in.som;
-  out_out.eom <= in_in.eom;
-  out_out.valid <= in_in.valid;
+  out_out.give        <= doit;
+  out_out.data        <= std_logic_vector(unsigned(in_in.data) + props_in.biasValue);
+  out_out.som         <= in_in.som;
+  out_out.eom         <= in_in.eom;
+  out_out.valid       <= in_in.valid;
   out_out.byte_enable <= in_in.byte_enable; -- only necessary due to BSV protocol sharing
 end rtl;

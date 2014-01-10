@@ -53,9 +53,9 @@ namespace OCPI {
     }
     void Controllable::setControlOperations(const char *ops) {
       if (ops) {
-#define CONTROL_OP(x, c, t, s1, s2, s3) \
+#define CONTROL_OP(x, c, t, s1, s2, s3, s4)		\
 	if (strstr(ops, #x))				\
-	  m_controlMask |= 1 << OM::Worker::Op##c;
+	  m_controlMask |= 1 << OU::Op##c;
 	OCPI_CONTROL_OPS
 #undef CONTROL_OP
       }
@@ -266,39 +266,50 @@ namespace OCPI {
     // Note that the m_controlMask does not apply at this level
     // since the container might want to know anyway, even if the
     // worker doesn't have an implementation
-#define CONTROL_OP(x, c, t, s1, s2, s3)	\
-    void Worker::x() { controlOp(Op##c); }
+#define CONTROL_OP(x, c, t, s1, s2, s3, s4)	\
+    void Worker::x() { controlOp(OU::Op##c); }
     OCPI_CONTROL_OPS
 #undef CONTROL_OP
 
     struct ControlTransition {
-      ControlState valid[3];
+      ControlState valid[4];
       ControlState next;
     } controlTransitions[] = {
-#define CONTROL_OP(x, c, t, s1, s2, s3)  \
-      {{s1, s2, s3}, t},
+#define CONTROL_OP(x, c, t, s1, s2, s3, s4)	\
+      {{s1, s2, s3, s4}, t},
 	OCPI_CONTROL_OPS
 #undef CONTROL_OP
     };
-    void Worker::controlOp(OM::Worker::ControlOperation op) {
+    const char *controlStateNames[] = {
+#define CONTROL_STATE(s) #s,
+      OCPI_CONTROL_STATES
+#undef CONTROL_STATE
+      NULL
+    };      
+
+    void Worker::controlOp(OU::ControlOperation op) {
       OU::AutoMutex guard (m_workerMutex, true);
       ControlState cs = getControlState();
       ControlTransition ct = controlTransitions[op];
+      // Special case starting and stopping after finished
+      if (cs == FINISHED && (op == OU::OpStop || op == OU::OpStart))
+	return;
       // If we are already in the desired state, just ignore it so that
       // Neither workers not containers need to deal with this
       if (ct.next == NONE || cs != ct.next) {
 	if (cs == ct.valid[0] ||
 	    (ct.valid[1] != NONE && cs == ct.valid[1]) ||
-	    (ct.valid[2] != NONE && cs == ct.valid[2])) {
+	    (ct.valid[2] != NONE && cs == ct.valid[2]) ||
+	    (ct.valid[3] != NONE && cs == ct.valid[3])) {
 	  controlOperation(op);
 	  if (ct.next != NONE)
 	    setControlState(ct.next);
 	} else
-	  throw OU::EmbeddedException(cs == UNUSABLE ?
-				      OU::WORKER_UNUSABLE :
-				      OU::INVALID_CONTROL_SEQUENCE,
-				      "Illegal control state for operation",
-				      OU::ApplicationRecoverable);
+	  throw
+	    OU::Error("Control operation '%s' failed on worker '%s%s%s' in state: '%s'",
+		      OU::controlOpNames[op], implTag().c_str(),
+		      instTag().empty() ? "" : "/", instTag().c_str(),
+			  controlStateNames[cs]);
       }
       Application &a = application();
       Container &c = a.container();

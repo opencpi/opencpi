@@ -198,7 +198,7 @@ namespace OCPI {
       ~Worker()
       {
       }
-      inline void controlOperation(OM::Worker::ControlOperation op) {
+      inline void controlOperation(OU::ControlOperation op) {
 	WciControl::controlOperation(op);
       }
 
@@ -562,14 +562,14 @@ OCPI_DATA_TYPES
 				    OCDP_CONTROL(isProvider() ? OCDP_CONTROL_CONSUMER :
 						 OCDP_CONTROL_PRODUCER, myOcdpRole));
 	// We aren't a worker so someone needs to start us.
-	controlOperation(OM::Worker::OpInitialize);
+	controlOperation(OU::OpInitialize);
 	if (m_adapter) {
-	  m_adapter->controlOperation(OM::Worker::OpInitialize);
+	  m_adapter->controlOperation(OU::OpInitialize);
 	  if (m_hasAdapterConfig)
 	    m_adapter->m_properties.set32RegisterOffset(0, (uint32_t)m_adapterConfig);
-	  m_adapter->controlOperation(OM::Worker::OpStart);
+	  m_adapter->controlOperation(OU::OpStart);
 	}
-	controlOperation(OM::Worker::OpStart);
+	controlOperation(OU::OpStart);
 	return isProvider() ? NULL : &getData().data;
       }
       // Connection between two ports inside this container

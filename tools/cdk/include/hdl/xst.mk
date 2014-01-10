@@ -56,8 +56,11 @@ else
    endif
 endif
 
-HdlToolLibraryFile=$(strip \
-  $2/$(if $(filter virtex6 spartan6 zynq,$(call HdlGetFamily,$1)),$2.$(HdlLibSuffix),hdllib.ref))
+HdlToolLibraryFile=$2/$2.$(HdlLibSuffix)
+
+# This was correct BEFORE we forced using the new parser in xst
+#$(strip \
+#  $2/$(if $(filter virtex6 spartan6 zynq,$(call HdlGetFamily,$1)),$2.$(HdlLibSuffix),hdllib.ref))
 
 ################################################################################
 # Function required by toolset: given a list of targets for this tool set
@@ -201,6 +204,7 @@ XstDefaultOptions=\
     -keep_hierarchy soft -netlist_hierarchy rebuilt \
     -hierarchy_separator / \
     -read_cores $(if $(filter container,$(HdlMode)),optimize,yes) \
+    -use_new_parser yes \
 
 # Extra default ones:\
  -xor_collapse TRUE -verilog2001 TRUE -slice_packing TRUE \
@@ -424,6 +428,9 @@ PcfName=$1/$2.pcf
 # $(call HdlToolDoPlatform,<target-dir>,<app-name>,<app-core-name>,<config>,<platform-name>)
 define HdlToolDoPlatform_xst
 
+# This dependency is required, since without it, ngdbuild can fail
+# I.e. the input container ngc depends on it in some obscure way.
+$(call NgcName,$1,$4): $(wildcard $(HdlPlatformsDir)/$5/*.ucf)
 # Convert ngc to ngd (we don't do merging here)
 $(call NgdName,$1,$3): $(call NgcName,$1,$4) $(wildcard $(HdlPlatformsDir)/$5/*.ucf)
 	$(AT)echo -n For $2 on $5 using config $4: creating merged NGC file using '"ngcbuild"'.
@@ -433,6 +440,7 @@ $(call NgdName,$1,$3): $(call NgcName,$1,$4) $(wildcard $(HdlPlatformsDir)/$5/*.
 	$(AT)echo -n "    " Creating EDF textual netlist file using ngc2edif." "
 	$(AT)$(call DoXilinxPat,ngc2edif,$1,-w $3.ngc,'ngc2edif: Total memory usage is')
 	$(AT)echo -n For $2 on $5 using config $4: creating NGD '(Xilinx Native Generic Database)' file using '"ngdbuild"'.
+	$(AT)rm -f $$@
 	$(AT)$(call DoXilinx,ngdbuild,$1,\
 	        -aul -aut -verbose $(foreach u,$(wildcard $(HdlPlatformsDir)/$5/*.ucf),-uc $u) -p $(HdlPart_$5) \
 		$$(XstNgdOptions) $3.ngc $3.ngd)

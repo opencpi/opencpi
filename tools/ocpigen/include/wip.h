@@ -43,12 +43,11 @@
 #include "OcpiUtilValue.h"
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilMisc.h"
-#include "OcpiMetadataWorker.h"
+#include "OcpiUtilImplementation.h"
 #include "OcpiUuid.h"
 #include "ezxml.h"
 #include "cdkutils.h"
 
-namespace OM=OCPI::Metadata;
 namespace OE=OCPI::Util::EzXml;
 namespace OU=OCPI::Util;
 namespace OA=OCPI::API;
@@ -64,13 +63,14 @@ inline void *myCrealloc_(void *p, size_t s, size_t o, size_t add) {
 #define myCrealloc(t, p, o, additional) \
   ((t *)myCrealloc_(p, sizeof(t), (o), (additional)))
 
+#if 0
 enum ControlOp {
-#define CONTROL_OP(x, c, t, s1, s2, s3)  ControlOp##c,
+#define CONTROL_OP(x, c, t, s1, s2, s3, s4)  ControlOp##c,
   OCPI_CONTROL_OPS
 #undef CONTROL_OP
   NoOp
 };
-
+#endif
 class Port;
 
 // We derive a class to implement xi:include parsing, file names, etc.
@@ -518,7 +518,6 @@ extern const char
   *openOutput(const char *name, const char *outDir, const char *prefix,
 	      const char *suffix, const char *ext, const char *other, FILE *&f),
   *propertyTypes[],
-  *controlOperations[],
   *getNames(ezxml_t xml, const char *file, const char *tag, std::string &name, std::string &fileName),
   *parseFile(const char *file, const char *parent, const char *element,
 	     ezxml_t *xp, const char **xfile, bool optional = false),

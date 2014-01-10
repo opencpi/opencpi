@@ -191,10 +191,10 @@ emitPortDescription(Port *p, FILE *f, Language lang) {
 	    comment);
     {
       bool first = true;
-      for (unsigned op = 0; op < NoOp; op++, first = false)
-	if (op != ControlOpStart &&
+      for (unsigned op = 0; op < OU::OpsLimit; op++, first = false)
+	if (op != OU::OpStart && op != OU::OpStop &&
 	    m_ctl.controlOps & (1 << op))
-	  fprintf(f, "%s%s", first ? "" : ",", controlOperations[op]);
+	  fprintf(f, "%s%s", first ? "" : ",", OU::controlOpNames[op]);
     }
     fprintf(f, "\n");
     fprintf(f, "  %s   ResetWhileSuspended: %s\n",
@@ -749,14 +749,15 @@ emitVhdlLibraries(FILE *f) {
 const char *Worker::
 emitVhdlPackageConstants(FILE *f) {
   size_t decodeWidth = 0, rawBase = 0;
-  char ops[NoOp + 1 + 1];
-  for (unsigned op = 0; op <= NoOp; op++)
-    ops[NoOp - op] = '0';
-  ops[NoOp+1] = 0;
+  char ops[OU::OpsLimit + 1 + 1];
+  for (unsigned op = 0; op <= OU::OpsLimit; op++)
+    ops[OU::OpsLimit - op] = '0';
+  ops[OU::OpsLimit+1] = 0;
   if (!m_noControl) {
     decodeWidth = m_ports[0]->ocp.MAddr.width;
-    for (unsigned op = 0; op <= NoOp; op++)
-      ops[NoOp - op] = op == ControlOpStart || m_ctl.controlOps & (1 << op) ? '1' : '0';
+    for (unsigned op = 0; op <= OU::OpsLimit; op++)
+      ops[OU::OpsLimit - op] =
+	op == OU::OpStart || op == OU::OpStop || m_ctl.controlOps & (1 << op) ? '1' : '0';
     if (m_ctl.firstRaw)
       rawBase = m_ctl.firstRaw->m_offset;
   }
@@ -3072,6 +3073,7 @@ emitImplHDL(const char *outDir, bool wrap) {
       fprintf(f,
 	      "                  done                 => done,\n"
 	      "                  error                => error,\n"
+	      "                  finished             => finished,\n"
 	      "                  resp                 => outputs.SResp,\n"
 	      "                  busy                 => outputs.SThreadBusy(0),\n"
 	      "                  control_op           => control_op,\n"

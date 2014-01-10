@@ -11,6 +11,7 @@ entity control_decoder is
       ocp_in                 : in in_t;       
       done                   : in bool_t := btrue;
       error                  : in bool_t := bfalse;
+      finished               : in bool_t;
       resp                   : out ocp.SResp_t;
       busy                   : out bool_t;
       control_op             : out control_op_t;
@@ -47,7 +48,8 @@ architecture rtl of control_decoder is
       when initialized_e => return 1;
       when operating_e => return 2;
       when suspended_e => return 3;
-      when unusable_e => return 4;
+      when finished_e => return 4;
+      when unusable_e => return 5;
     end case;
   end get_state_pos;
   -- convert control op enum value to a number
@@ -131,14 +133,20 @@ begin
             when INITIALIZE_e =>
               my_state_r <= initialized_e;
             when START_e =>
-              my_state_r <= operating_e;
+              if my_state_r /= finished_e then
+                my_state_r <= operating_e;
+              end if;
             when STOP_e =>
-              my_state_r <= suspended_e;
+              if my_state_r /= finished_e then
+                my_state_r <= suspended_e;
+              end if;
             when RELEASE_e =>
               my_state_r <= unusable_e;
             when others => null;                            
           end case;
         end if;
+      elsif my_state_r /= unusable_e and finished then
+        my_state_r <= finished_e;
       end if;
     end if; -- rising clock
   end process;

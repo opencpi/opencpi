@@ -11,7 +11,6 @@ namespace OCPI {
     namespace OA = OCPI::API;
     namespace OC = OCPI::Container;
     namespace OS = OCPI::OS;
-    namespace OM = OCPI::Metadata;
     namespace OU = OCPI::Util;
     namespace OE = OCPI::Util::EzXml;
 
@@ -53,7 +52,7 @@ namespace OCPI {
     init(bool redo) {
       m_window = 0;
       if (m_hasControl) {
-	setControlMask(getControlMask() | 1 << OM::Worker::OpStart);
+	setControlMask(getControlMask() | 1 << OU::OpStart | 1 << OU::OpStop);
 	unsigned logTimeout = 31;
 	for (size_t u = 1 << logTimeout; !(u & m_timeout);
 	     u >>= 1, logTimeout--)
@@ -113,14 +112,27 @@ namespace OCPI {
 	writeVaddr = m_properties.registers() + md.m_offset;
     }
     void WciControl::
-    controlOperation(OCPI::Metadata::Worker::ControlOperation op) {
+    checkControlState() {
+      // This polling call is to detect the current control state when
+      // it might be changed by the worker or container autonomously,
+      // in a way that does not update the state here.
+      // FIXME: when the new control plane is fixed to provide
+      // "finished" and "fatal" status, there is where we check it, and do
+      // setControlState(OC::FINISHED);
+      // setControlState(OC::UNUSABLE);
+      uint32_t status = get32Register(status, OccpWorkerRegisters);
+      if (status & OCCP_STATUS_ALL_ERRORS)
+	ocpiDebug("Worker %s has errors: %" PRIx32, m_instName, status);
+    }
+    void WciControl::
+    controlOperation(OCPI::Util::ControlOperation op) {
       std::string err;
       if (controlOperation(op, err))
 	throw OU::Error(err);
     }
 
     bool WciControl::
-    controlOperation(OCPI::Metadata::Worker::ControlOperation op, std::string &err) {
+    controlOperation(OCPI::Util::ControlOperation op, std::string &err) {
       if (getControlMask() & (1 << op)) {
 	uint32_t result =
 	  // *((volatile uint32_t *)myRegisters + controlOffsets[op]);
@@ -335,7 +347,7 @@ namespace OCPI {
     // c++ doesn't allow static initializations in class definitions.
     const unsigned WciControl::
     controlOffsets[] = {
-#define CONTROL_OP(x, c, t, s1, s2, s3) \
+#define CONTROL_OP(x, c, t, s1, s2, s3, s4)	\
 	offsetof(OccpWorkerRegisters,x),
 	OCPI_CONTROL_OPS
 #undef CONTROL_OP

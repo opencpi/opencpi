@@ -3,7 +3,11 @@ package types is
 --
 -- Miscellaneous type declarations not related to OpenCPI data types
 --
-subtype word_t is std_logic_vector(31 downto 0);
+subtype word_t   is std_logic_vector(31 downto 0);
+subtype word8_t  is std_logic_vector(7 downto 0);
+subtype word16_t is std_logic_vector(15 downto 0);
+subtype word32_t is std_logic_vector(31 downto 0);
+subtype word64_t is std_logic_vector(63 downto 0);
 subtype byte_offset_t is unsigned(1 downto 0);
 subtype bit_offset_t is natural range 0 to 31; -- bit within word
 function bit2vec(b : std_logic; n : natural) return std_logic_vector;
@@ -143,6 +147,7 @@ subtype wordstring_t is string_t(0 to 3);
 function to_string(instring : string; length : natural) return string_t;
 function to_string(inword : word_t) return wordstring_t;
 function from_string(s : string_t; offset : unsigned) return word_t; --std_logic_vector;
+function from_string(s : string_t; off : natural := 0) return word_t; --std_logic_vector;
 
 
 function from_bool_array(ba : bool_array_t; index, nbytes_1, byte_offset : unsigned) return word_t;

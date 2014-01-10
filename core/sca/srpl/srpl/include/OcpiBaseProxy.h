@@ -63,6 +63,7 @@
 #include <OcpiOsMutex.h>
 #include <OcpiLoggerLogger.h>
 #include "OcpiMetadataWorker.h"
+#include "OcpiUtilImplementation.h"
 
 namespace OCPI {
   namespace SCA {
@@ -85,8 +86,8 @@ namespace OCPI {
       friend class BaseProxyPort;
 
 #undef CONTROL_OP_I
-#define CONTROL_OP_I(x,c,t,s1,s2,s3)
-#define CONTROL_OP(x,c,t,s1,s2,s3) virtual void x##Worker() = 0;
+#define CONTROL_OP_I(x,c,t,s1,s2,s3,s4)
+#define CONTROL_OP(x,c,t,s1,s2,s3,s4) virtual void x##Worker() = 0;
 OCPI_CONTROL_OPS
 #undef CONTROL_OP      
 #undef CONTROL_OP_I

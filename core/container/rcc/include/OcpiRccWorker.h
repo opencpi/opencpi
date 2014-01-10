@@ -60,8 +60,6 @@
 namespace OCPI {
   namespace RCC {
 
-    namespace CM = OCPI::Metadata;
-
     class Controller;
     class Application;
     class Port;
@@ -88,7 +86,7 @@ namespace OCPI {
       Worker( Application & app, Artifact *art, const char *name,
 	      ezxml_t impl, ezxml_t inst, const OCPI::Util::PValue *wParams);
       OCPI::Container::Port& createPort(const OCPI::Metadata::Port&, const OCPI::Util::PValue *props);
-      void controlOperation(OCPI::Metadata::Worker::ControlOperation);
+      void controlOperation(OCPI::Util::ControlOperation);
 
       // These property access methods are called when the fast path
       // is not enabled, either due to no MMIO or that the property can

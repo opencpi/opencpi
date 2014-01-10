@@ -166,9 +166,9 @@ Worker::
   // FIXME - this sort of thing should be generic and be reused in portError
   if (enabled) {
     enabled = false;
-    controlOperation(OM::Worker::OpStop);
-    controlOperation(OM::Worker::OpRelease);
+    controlOperation(OU::OpStop);
   }
+  controlOperation(OU::OpRelease);
 #ifdef EM_PORT_COMPLETE
     RCCDispatch* wd = m_dispatch;
     // If we have an event handler, we need to inform it about the timeout
@@ -527,8 +527,8 @@ void
 Worker::
 portError(std::string &error) {
   enabled = false;
-  controlOperation(OM::Worker::OpStop);
-  controlOperation(OM::Worker::OpRelease);
+  controlOperation(OU::OpStop);
+  controlOperation(OU::OpRelease);
   setControlState(OC::UNUSABLE);
   ocpiBad("Worker %s received port error: %s", name().c_str(), error.c_str());
 }
@@ -719,15 +719,15 @@ void Worker::run(bool &anyone_run) {
      }
 
 // Note we are already under a mutex here
-void Worker::controlOperation(OM::Worker::ControlOperation op) {
+void Worker::controlOperation(OU::ControlOperation op) {
   RCCResult rc = RCC_OK;
   OU::AutoMutex guard (mutex(), true);
   switch (op) {
-  case OM::Worker::OpInitialize:
+  case OU::OpInitialize:
     if (m_dispatch->initialize)
       rc = m_dispatch->initialize(m_context);
     break;
-  case OM::Worker::OpStart:
+  case OU::OpStart:
     {
     // If a worker gets started before all of its required ports are created: error
       RCCPortMask mandatory = ~(-1 << m_nPorts) & ~m_dispatch->optionallyConnectedPorts;
@@ -761,7 +761,7 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
       runTimer.start();// FIXME: this this right for re-start too?
     }
     break;
-  case OM::Worker::OpStop:
+  case OU::OpStop:
     // If the worker says that stop failed, we're not stopped.
     if (m_dispatch->stop &&
 	(rc = m_dispatch->stop(m_context)) != RCC_OK)
@@ -774,7 +774,7 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
     setControlState(OC::SUSPENDED);
     break;
     // like stop, except don't call stop
-  case OM::Worker::OpRelease:
+  case OU::OpRelease:
     if (enabled) {
       enabled = false;
       runTimer.stop();
@@ -784,7 +784,7 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
       rc = m_dispatch->release(m_context);
     setControlState(OC::UNUSABLE);
     break;
-  case OM::Worker::OpTest:
+  case OU::OpTest:
     if (m_dispatch->test)
       rc = m_dispatch->test(m_context);
     else
@@ -792,14 +792,14 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
 				   "Worker has no test implementation",
 				   OU::ApplicationRecoverable);
     break;
-  case OM::Worker::OpBeforeQuery:
+  case OU::OpBeforeQuery:
     if (m_dispatch->beforeQuery)
       rc = m_dispatch->beforeQuery(m_context);
     break;
-  case OM::Worker::OpAfterConfigure:
+  case OU::OpAfterConfigure:
     if (m_dispatch->afterConfigure)
       rc = m_dispatch->afterConfigure(m_context);
-  case OM::Worker::OpsLimit:
+  case OU::OpsLimit:
     break;
   }
   char *err = m_context->errorString ? m_context->errorString : m_errorString;

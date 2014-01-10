@@ -41,6 +41,7 @@
 #include "OcpiOsMutex.h"
 #include "OcpiOsTimer.h"
 #include "OcpiUtilProperty.h"
+#include "OcpiUtilImplementation.h"
 #include "OcpiContainerDataTypes.h"
 #include "OcpiMetadataWorker.h"
 #include "OcpiContainerApi.h"
@@ -51,15 +52,21 @@ namespace OCPI {
     class EmbeddedException;
   }
   namespace Container {
+#define OCPI_CONTROL_STATES \
+    CONTROL_STATE(EXISTS) \
+    CONTROL_STATE(INITIALIZED) \
+    CONTROL_STATE(OPERATING) \
+    CONTROL_STATE(SUSPENDED) \
+    CONTROL_STATE(FINISHED) \
+    CONTROL_STATE(UNUSABLE) \
+    CONTROL_STATE(NONE)
+
       enum ControlState {
-        EXISTS,
-        INITIALIZED,
-        OPERATING,
-        SUSPENDED,
-	FINISHED,
-        UNUSABLE,
-        NONE
+#define CONTROL_STATE(s) s,
+        OCPI_CONTROL_STATES
+#undef CONTROL_STATE
       };
+      extern const char *controlStateNames[];
     // This class is a small module of behavior used by workers, but available for other uses
     // Unfortunately, it is virtually inheritable (see HDL container's use of it).
     class Controllable {
@@ -105,7 +112,7 @@ namespace OCPI {
       std::string m_implTag, m_instTag;
       // Our thread safe mutex for the worker itself
       OCPI::OS::Mutex m_workerMutex;
-      void controlOp(OCPI::Metadata::Worker::ControlOperation);
+      void controlOp(OCPI::Util::ControlOperation);
       bool beforeStart();
     protected:
       inline OCPI::OS::Mutex &mutex() { return m_workerMutex; }
@@ -171,11 +178,11 @@ namespace OCPI {
         throw ( OCPI::Util::EmbeddedException ) = 0;
       virtual void read(size_t offset, size_t size, void *data) = 0;
       virtual void write(size_t offset, size_t size, const void *data) = 0;
-#define CONTROL_OP(x, c, t, s1, s2, s3) \
+#define CONTROL_OP(x, c, t, s1, s2, s3, s4)	\
       void x();
     OCPI_CONTROL_OPS
 #undef CONTROL_OP
-      virtual void controlOperation(OCPI::Metadata::Worker::ControlOperation) = 0;
+      virtual void controlOperation(OCPI::Util::ControlOperation) = 0;
       virtual bool wait(OCPI::OS::Timer *t = NULL);
       bool isDone();
     };

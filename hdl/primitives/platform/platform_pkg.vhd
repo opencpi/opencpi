@@ -33,6 +33,50 @@ type occp_out_t is record
   take    : std_logic;      -- take request presented to occp
 end record occp_out_t;
 
+constant worker_control_bits : natural := 8;
+constant worker_config_bits  : natural := 16;
+constant worker_control_size : natural := 2**worker_control_bits;
+constant worker_config_size  : natural := 2**worker_config_bits;
+constant worker_id_bits      : natural := 8;
+subtype worker_timeout_t is unsigned(4 downto 0);
+type worker_operation_t is (none_e,
+                            control_op_e,
+                            control_read_e,
+                            control_write_e,
+                            config_read_e,
+                            config_write_e,
+                            timeout_e);
+
+type worker_response_t is (none_e,     -- no response yet
+                           ok_e,       -- success for something with no data
+                           data_e,     -- success for something with data
+                           error_e,    -- error
+                           timedout_e, -- worker timed out
+                           reset_e);   -- worker was reset
+
+-- Internal interface to WCI master modules, driven to all workers in parallel
+type worker_in_t is record
+  clk       : std_logic;
+  reset     : std_logic;
+  cmd       : ocp.MCmd_t;                    -- cmd per WCI
+  address   : std_logic_vector(worker_config_bits-1 downto 0); -- ready for WCI MAddr
+  id        : unsigned(worker_id_bits-1 downto 0);
+  is_config : bool_t;                        -- same as WCI MAddrSpace;
+  byte_en   : std_logic_vector(3 downto 0);  -- byte enable for read or write
+  data      : std_logic_vector(31 downto 0); -- write data
+  operation : worker_operation_t;            -- what op is in progress or starting
+  timedout  : bool_t;                        -- operation has timed out
+end record worker_in_t;
+
+-- Internal interface from WCI master modules, each drives its own version
+type worker_out_t is record
+  data      : std_logic_vector(31 downto 0); -- worker's timeout value or data
+  response  : worker_response_t;             -- worker responds
+  attention : std_logic;                     -- to allow them to be consolidated
+  present   : std_logic;
+end record worker_out_t;
+
+
 -- These records are generic - i.e. a superset of what any given worker might have
 
 type wci_m2s_t is record
@@ -192,6 +236,22 @@ component occp_rv is
     );
 end component occp_rv;
 end package occp_defs;
+
+library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;
+library ocpi; use ocpi.all, ocpi.types.all;
+use work.platform_pkg.all;
+package cp_master_defs is
+component cp_master_rv is
+  generic(
+    debug      : boolean;
+    nWCIs      : natural);
+  port(
+    wci_in     : in  wci_s2m_array_t(nWCIs downto 0);
+    wci_out    : out wci_m2s_array_t(nWCIs downto 0);
+    master_in  : in  occp_in_t;
+    master_out : out occp_out_t);
+end component cp_master_rv;
+end package cp_master_defs;
 
 library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;
 library ocpi; use ocpi.all, ocpi.types.all;

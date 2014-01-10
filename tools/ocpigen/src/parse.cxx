@@ -58,12 +58,13 @@ OCPI_PROPERTY_DATA_TYPES
 0};
 #undef OCPI_DATA_TYPE
 
+#if 0
 const char *controlOperations[] = {
 #define CONTROL_OP(x, c, t, s1, s2, s3)  #x,
 OCPI_CONTROL_OPS
 #undef CONTROL_OP
 0};
-
+#endif
 const char *container = 0, *platform = 0, *device = 0, *load = 0, *os = 0, *os_version = 0, *assembly = 0, *attribute;
 
 Clock *Worker::
@@ -464,7 +465,7 @@ static const char *parseControlOp(const char *op, void *arg) {
   Worker *w = (Worker *)arg;
   unsigned n = 0;
   const char **p;
-  for (p = controlOperations; *p; p++, n++)
+  for (p = OU::controlOpNames; *p; p++, n++)
     if (!strcasecmp(*p, op)) {
       w->m_ctl.controlOps |= 1 << n;
       break;
@@ -868,8 +869,7 @@ parseHdlImpl(const char *package) {
     wci = new Port(ezxml_cattr(xctl, "Name"), this, false, WCIPort, xctl);
     m_ports.insert(m_ports.begin(), wci);
     // Finish HDL-specific control parsing
-    if (m_ctl.controlOps == 0)
-      m_ctl.controlOps = 1 << ControlOpStart;
+    m_ctl.controlOps = (1 << OU::OpStart) | (1 << OU::OpStop);
     if (xctl) {
       if ((err = OE::checkAttrs(xctl, GENERIC_IMPL_CONTROL_ATTRS, "ResetWhileSuspended",
 				"Clock", "MyClock", "Timeout", "Count", "Name", "Pattern",

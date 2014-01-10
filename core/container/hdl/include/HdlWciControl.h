@@ -35,8 +35,9 @@ namespace OCPI {
 				   const volatile void *&readVaddr);
       // Map the control op numbers to structure members
       static const unsigned controlOffsets[];
-      void controlOperation(OCPI::Metadata::Worker::ControlOperation op);
-      bool controlOperation(OCPI::Metadata::Worker::ControlOperation op, std::string &err);
+      void checkControlState();
+      void controlOperation(OCPI::Util::ControlOperation op);
+      bool controlOperation(OCPI::Util::ControlOperation op, std::string &err);
       inline uint32_t checkWindow(size_t offset, size_t nBytes) const {
 	ocpiAssert(m_hasControl);
 	size_t window = offset & ~(OCCP_WORKER_CONFIG_SIZE-1);

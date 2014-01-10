@@ -406,8 +406,8 @@ namespace OCPI {
     }
 
 #undef CONTROL_OP_I
-#define CONTROL_OP_I(x,c,t,s1,s2,s3)
-#define CONTROL_OP(x,c,t,s1,s2,s3) void OCPI::SCA::Cp289GenericProxy::x##Worker() {m_worker.x();}
+#define CONTROL_OP_I(x,c,t,s1,s2,s3,s4)
+#define CONTROL_OP(x,c,t,s1,s2,s3,s4) void OCPI::SCA::Cp289GenericProxy::x##Worker() {m_worker.x();}
     OCPI_CONTROL_OPS
 #undef CONTROL_OP      
 #undef CONTROL_OP_I

@@ -35,12 +35,13 @@ end record property_t;
   -- Worker State
   -- These are not normative to the WCI interface, but are useful for bookkeepping
   -- Note we track the state where we have accepted a control operation but
-  -- have not yet responded to it.
+  -- have not yet responded to it.  See OcpiWorker.h
 TYPE State_t IS (EXISTS_e,            -- 0
                  INITIALIZED_e,       -- 1
                  OPERATING_e,         -- 2
                  SUSPENDED_e,         -- 3
-                 UNUSABLE_e);         -- 4
+                 FINISHED_e,          -- 4
+                 UNUSABLE_e);         -- 5
 
   type control_op_masks_t is array (natural range 0 to state_t'pos(unusable_e)) of control_op_mask_t;
 
@@ -50,6 +51,7 @@ TYPE State_t IS (EXISTS_e,            -- 0
      "01001010",       -- INITIALIZED_e
      "00111100",       -- OPERATING_e
      "00111010",       -- SUSPENDED_e
+     "00111110",       -- FINISHED_e
      "00000000"        -- UNUSABLE_e: nothing to do but reset
      );
 
@@ -108,6 +110,7 @@ TYPE State_t IS (EXISTS_e,            -- 0
       ocp_in                 : in  in_t;       
       done                   : in  bool_t := btrue;
       error                  : in  bool_t := btrue;
+      finished               : in  bool_t := bfalse;
       resp                   : out ocp.SResp_t;
       busy                   : out bool_t;
       control_op             : out control_op_t;
@@ -133,9 +136,10 @@ TYPE State_t IS (EXISTS_e,            -- 0
     generic (
       worker                 : worker_t);
     port (
-      ocp_in                 : in in_t;       
-      done                   : in bool_t := btrue;
-      error                  : in bool_t := bfalse;
+      ocp_in                 : in  in_t;       
+      done                   : in  bool_t := btrue;
+      error                  : in  bool_t := bfalse;
+      finished               : in  bool_t := bfalse;
       resp                   : out ocp.SResp_t;
       busy                   : out bool_t;
       control_op             : out control_op_t;

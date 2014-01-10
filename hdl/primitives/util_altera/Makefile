@@ -1,4 +1,3 @@
-# #####
 #
 #  This file is part of OpenCPI (www.opencpi.org).
 #     ____                   __________   ____
@@ -23,31 +22,9 @@
 #
 ########################################################################### #
 
-ifndef HdlPlatforms
-ifndef HdlPlatform
-ifeq ($(MAKECMDGOALS),clean)
-HdlPlatforms=$(filter-out test Makefile common README README.txt lib specs old,$(wildcard *))
-else
-HdlPlatforms:=ml605
-endif
-else
-HdlPlatforms:=$(HdlPlatform)
-endif
-endif
-include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
-Package=ocpi
-include $(OCPI_CDK_DIR)/include/package.mk
+# This library is for altera-specific primitives, that may shadow things in other libraries
+OnlyTargets=altera
+include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk # we are a library of primitives
 
-.PHONY: $(HdlPlatforms)
 
-all: $(HdlPlatforms)
 
-$(HdlPlatforms):
-	$(AT)echo Building platform $@
-	$(AT)$(MAKE) --no-print-directory -C $@
-
-clean::
-	$(AT)for p in $(HdlPlatforms); do \
-	      echo Cleaning platform $$p; \
-	      $(MAKE) --no-print-directory -C $$p clean; \
-	     done

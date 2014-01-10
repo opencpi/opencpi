@@ -872,7 +872,7 @@ namespace OCPI {
     Application::~Application() { delete &m_application; }
     void Application::initialize() { m_application.initialize(); }
     void Application::start() { m_application.start(); }
-    void Application::stop() { m_application.start(); }
+    void Application::stop() { m_application.stop(); }
     bool Application::wait( unsigned timeout_us ) {
       OS::Timer *timer = NULL;
       if (timeout_us) 
