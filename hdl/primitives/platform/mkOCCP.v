@@ -16943,7 +16943,7 @@ module mkOCCP(
 	       wci_lastControlOp_10[3],
 	       wci_lastConfigBE_10[4],
 	       wci_lastConfigAddr_10[32],
-	       6'b0,
+	       5'b0, wci_Vm_10_SFlag[2], // was 6'b0, added bit 2 for FINISHED
 	       wci_sfCap_10,
 	       wci_reqTO_10,
 	       wci_reqFAIL_10,
@@ -16955,7 +16955,7 @@ module mkOCCP(
 	       wci_lastControlOp_11[3],
 	       wci_lastConfigBE_11[4],
 	       wci_lastConfigAddr_11[32],
-	       6'b0,
+	       5'b0, wci_Vm_11_SFlag[2], // was 6'b0, added bit 2 for FINISHED
 	       wci_sfCap_11,
 	       wci_reqTO_11,
 	       wci_reqFAIL_11,
@@ -16967,7 +16967,7 @@ module mkOCCP(
 	       wci_lastControlOp_12[3],
 	       wci_lastConfigBE_12[4],
 	       wci_lastConfigAddr_12[32],
-	       6'b0,
+	       5'b0, wci_Vm_12_SFlag[2], // was 6'b0, added bit 2 for FINISHED
 	       wci_sfCap_12,
 	       wci_reqTO_12,
 	       wci_reqFAIL_12,
@@ -16979,7 +16979,7 @@ module mkOCCP(
 	       wci_lastControlOp_13[3],
 	       wci_lastConfigBE_13[4],
 	       wci_lastConfigAddr_13[32],
-	       6'b0,
+	       5'b0, wci_Vm_13_SFlag[2], // was 6'b0, added bit 2 for FINISHED
 	       wci_sfCap_13,
 	       wci_reqTO_13,
 	       wci_reqFAIL_13,
@@ -16991,7 +16991,7 @@ module mkOCCP(
 	       wci_lastControlOp[3],
 	       wci_lastConfigBE[4],
 	       wci_lastConfigAddr[32],
-	       6'b0,
+	       5'b0, wci_Vm_0_SFlag[2], // was 6'b0, added bit 2 for FINISHED
 	       wci_sfCap,
 	       wci_reqTO,
 	       wci_reqFAIL,
@@ -17003,7 +17003,7 @@ module mkOCCP(
 	       wci_lastControlOp_14[3],
 	       wci_lastConfigBE_14[4],
 	       wci_lastConfigAddr_14[32],
-	       6'b0,
+	       5'b0, wci_Vm_14_SFlag[2], // was 6'b0, added bit 2 for FINISHED
 	       wci_sfCap_14,
 	       wci_reqTO_14,
 	       wci_reqFAIL_14,
@@ -17015,7 +17015,7 @@ module mkOCCP(
 	       wci_lastControlOp_1[3],
 	       wci_lastConfigBE_1[4],
 	       wci_lastConfigAddr_1[32],
-	       6'b0,
+	       5'b0, wci_Vm_1_SFlag[2], // was 6'b0, added bit 2 for FINISHED
 	       wci_sfCap_1,
 	       wci_reqTO_1,
 	       wci_reqFAIL_1,
@@ -17027,7 +17027,7 @@ module mkOCCP(
 	       wci_lastControlOp_2[3],
 	       wci_lastConfigBE_2[4],
 	       wci_lastConfigAddr_2[32],
-	       6'b0,
+	       5'b0, wci_Vm_2_SFlag[2], // was 6'b0, added bit 2 for FINISHED
 	       wci_sfCap_2,
 	       wci_reqTO_2,
 	       wci_reqFAIL_2,
@@ -17039,7 +17039,7 @@ module mkOCCP(
 	       wci_lastControlOp_3[3],
 	       wci_lastConfigBE_3[4],
 	       wci_lastConfigAddr_3[32],
-	       6'b0,
+	       5'b0, wci_Vm_3_SFlag[2], // was 6'b0, added bit 2 for FINISHED
 	       wci_sfCap_3,
 	       wci_reqTO_3,
 	       wci_reqFAIL_3,
@@ -17051,7 +17051,7 @@ module mkOCCP(
 	       wci_lastControlOp_4[3],
 	       wci_lastConfigBE_4[4],
 	       wci_lastConfigAddr_4[32],
-	       6'b0,
+	       5'b0, wci_Vm_4_SFlag[2], // was 6'b0, added bit 2 for FINISHED
 	       wci_sfCap_4,
 	       wci_reqTO_4,
 	       wci_reqFAIL_4,
@@ -17063,7 +17063,7 @@ module mkOCCP(
 	       wci_lastControlOp_5[3],
 	       wci_lastConfigBE_5[4],
 	       wci_lastConfigAddr_5[32],
-	       6'b0,
+	       5'b0, wci_Vm_5_SFlag[2], // was 6'b0, added bit 2 for FINISHED
 	       wci_sfCap_5,
 	       wci_reqTO_5,
 	       wci_reqFAIL_5,
@@ -17075,7 +17075,7 @@ module mkOCCP(
 	       wci_lastControlOp_6[3],
 	       wci_lastConfigBE_6[4],
 	       wci_lastConfigAddr_6[32],
-	       6'b0,
+	       5'b0, wci_Vm_6_SFlag[2], // was 6'b0, added bit 2 for FINISHED
 	       wci_sfCap_6,
 	       wci_reqTO_6,
 	       wci_reqFAIL_6,
@@ -17087,7 +17087,7 @@ module mkOCCP(
 	       wci_lastControlOp_7[3],
 	       wci_lastConfigBE_7[4],
 	       wci_lastConfigAddr_7[32],
-	       6'b0,
+	       5'b0, wci_Vm_7_SFlag[2], // was 6'b0, added bit 2 for FINISHED
 	       wci_sfCap_7,
 	       wci_reqTO_7,
 	       wci_reqFAIL_7,
@@ -17099,7 +17099,7 @@ module mkOCCP(
 	       wci_lastControlOp_8[3],
 	       wci_lastConfigBE_8[4],
 	       wci_lastConfigAddr_8[32],
-	       6'b0,
+	       5'b0, wci_Vm_8_SFlag[2], // was 6'b0, added bit 2 for FINISHED
 	       wci_sfCap_8,
 	       wci_reqTO_8,
 	       wci_reqFAIL_8,
@@ -17111,7 +17111,7 @@ module mkOCCP(
 	       wci_lastControlOp_9[3],
 	       wci_lastConfigBE_9[4],
 	       wci_lastConfigAddr_9[32],
-	       6'b0,
+	       5'b0, wci_Vm_9_SFlag[2], // was 6'b0, added bit 2 for FINISHED
 	       wci_sfCap_9,
 	       wci_reqTO_9,
 	       wci_reqFAIL_9,

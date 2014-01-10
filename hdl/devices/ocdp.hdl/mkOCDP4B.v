@@ -258,7 +258,8 @@ module mkOCDP4B(pciDevice,
   // signals for module outputs
   wire [152 : 0] server_response_get;
   wire [31 : 0] wci_s_SData, wmiS0_SData, wmiS0_SFlag;
-  wire [1 : 0] wci_s_SFlag, wci_s_SResp, wmiS0_SResp;
+  wire [1 : 0] wci_s_SResp, wmiS0_SResp;
+  wire [2 : 0] wci_s_SFlag;
   wire RDY_server_request_put,
        RDY_server_response_get,
        wci_s_SThreadBusy,

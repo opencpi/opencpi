@@ -53,7 +53,7 @@
 
   //Pass the SThreadBusy upstream without pipelining...
   assign in_SThreadBusy = (out_SThreadBusy || (ctl_ctlSt!=2'h2));
-  
+  assign ctl_SFlag[2]   = 0; // We are never finished
   always@(posedge ctl_Clk)
   begin
                                            // Registered Operations that don't care about reset...

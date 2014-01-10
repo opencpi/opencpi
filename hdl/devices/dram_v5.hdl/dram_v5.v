@@ -194,7 +194,7 @@ module mkDramServer_v5(CLK_sys0_clk,
   output wciS0_SThreadBusy;
 
   // value method wciS0_sFlag
-  output [1 : 0] wciS0_SFlag;
+  output [2 : 0] wciS0_SFlag;
 
   // action method wciS0_mFlag
   input  [1 : 0] wciS0_MFlag;
@@ -285,9 +285,9 @@ module mkDramServer_v5(CLK_sys0_clk,
 	       dram_cke,
 	       dram_cs_n,
 	       dram_odt,
-	       wciS0_SFlag,
 	       wciS0_SResp,
 	       wmemiS0_SResp;
+  wire [2 : 0] wciS0_SFlag;
   wire dram_cas_n,
        dram_ras_n,
        dram_we_n,
@@ -858,7 +858,7 @@ module mkDramServer_v5(CLK_sys0_clk,
 	     wci_wslv_reqF_countReg > 2'd1 || wci_wslv_isReset_isInReset ;
 
   // value method wciS0_sFlag
-  assign wciS0_SFlag = { 1'd1, wci_wslv_sFlagReg } ;
+  assign wciS0_SFlag = { 1'd0, 1'd1, wci_wslv_sFlagReg } ;
 
   // value method wmemiS0_sResp
   assign wmemiS0_SResp = wmemi_respF_q_0[130:129] ;

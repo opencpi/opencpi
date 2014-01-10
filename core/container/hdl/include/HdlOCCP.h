@@ -131,8 +131,9 @@ namespace OCPI {
 #define OCCP_STATUS_CONFIG_OP_VALID (1 << 18)
 #define OCCP_STATUS_CONFIG_WRITE_VALID (1 << 19)
 #define OCCP_STATUS_CONFIG_ADDR_VALID (1 << 16)
-#define OCCP_STATUS_ACCESS_ERROR    (1 << 10) // this is simulated on the CPU, not in OCCP
-#define OCCP_STATUS_SFLAG           (1 << 9)
+#define OCCP_STATUS_ACCESS_ERROR      (1 << 11) // this is simulated on the CPU, not in OCCP
+#define OCCP_STATUS_FINISHED        (1 << 10)
+#define OCCP_STATUS_ATTENTION       (1 << 9)
 #define OCCP_STATUS_WRITE_TIMEOUT   (1 << 8)
 #define OCCP_STATUS_READ_TIMEOUT    (1 << 7)
 #define OCCP_STATUS_CONTROL_TIMEOUT (1 << 6)
@@ -154,7 +155,7 @@ namespace OCPI {
     (OCCP_STATUS_CONTROL_TIMEOUT |	 \
      OCCP_STATUS_CONTROL_FAIL |		 \
      OCCP_STATUS_CONTROL_ERROR)
-#define OCCP_STATUS_ALL_ERRORS 0x1ff
+#define OCCP_STATUS_ALL_ERRORS 0x9ff
     typedef uint8_t *OccpConfigArea;
     typedef struct {
       OccpWorkerRegisters control;

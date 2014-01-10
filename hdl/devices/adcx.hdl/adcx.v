@@ -246,7 +246,7 @@ module mkADCWorker(CLK_sys0_clk,
   output wciS0_SThreadBusy;
 
   // value method wciS0_sFlag
-  output [1 : 0] wciS0_SFlag;
+  output [2 : 0] wciS0_SFlag;
 
   // action method wciS0_mFlag
   input  [1 : 0] wciS0_MFlag;
@@ -389,7 +389,8 @@ module mkADCWorker(CLK_sys0_clk,
   wire [7 : 0] wsiM0_MReqInfo;
   wire [3 : 0] wsiM0_MByteEn;
   wire [2 : 0] wsiM0_MCmd;
-  wire [1 : 0] wciS0_SFlag, wciS0_SResp;
+  wire [2 : 0] wciS0_SFlag;
+  wire [1 : 0] wciS0_SResp;
   wire CLK_GATE_adc0_sclk,
        CLK_GATE_adc0_sclkn,
        CLK_GATE_adc1_sclk,
@@ -2239,7 +2240,7 @@ module mkADCWorker(CLK_sys0_clk,
 	     wci_wslv_reqF_countReg > 2'd1 || wci_wslv_isReset_isInReset ;
 
   // value method wciS0_sFlag
-  assign wciS0_SFlag = { 1'd1, wci_wslv_sFlagReg } ;
+  assign wciS0_SFlag = { 1'd0, 1'd1, wci_wslv_sFlagReg } ;
 
   // value method wtiS0_sThreadBusy
   assign wtiS0_SThreadBusy = wti_isReset_isInReset ;

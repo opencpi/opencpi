@@ -26,7 +26,7 @@ architecture rtl of ocdp_rv is
       wci_s_SResp             : out std_logic_vector(1 downto 0);
       wci_s_SData             : out std_logic_vector(31 downto 0);
       wci_s_SThreadBusy       : out std_logic;
-      wci_s_SFlag             : out std_logic_vector(1 downto 0);
+      wci_s_SFlag             : out std_logic_vector(2 downto 0);
       wci_s_MFlag             : in  std_logic_vector(1 downto 0);
       wti_s_req               : in  std_logic_vector(66 downto 0);
       wti_s_SThreadBusy       : out std_logic;
@@ -74,7 +74,6 @@ begin
   client_out.take       <= EN_server_request_put;
   wti_s_req             <= wti_in.MCmd & wti_in.MData;
   wci_s_MAddr           <= X"000000" & ctl_in.MAddr;
-  ctl_out.SFlag(2)      <= '0';
   wti_out.clk           <= ctl_in.clk;
   -- we are reset if either specific WCI reset or the global (uNoC) reset asserted (low)
   my_reset_n            <= ctl_in.MReset_n and client_in.reset_n;
@@ -91,7 +90,7 @@ dp : mkOCDP4B
     wci_s_SResp             => ctl_out.SResp,
     wci_s_SData             => ctl_out.SData,
     wci_s_SThreadBusy       => ctl_out.SThreadBusy(0),
-    wci_s_SFlag             => ctl_out.SFlag(1 downto 0),
+    wci_s_SFlag             => ctl_out.SFlag,
     wci_s_MFlag             => ctl_in.MFlag,
     wti_s_req               => wti_s_req,
     wti_s_SThreadBusy       => wti_out.SThreadBusy(0),

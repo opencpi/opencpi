@@ -1071,8 +1071,12 @@ wdump(const char **) {
     printf(" ctlTimeout");
   if (i & OCCP_STATUS_READ_TIMEOUT)
     printf(" rdTimeout");
-  if (i & OCCP_STATUS_SFLAG)
-    printf(" sflag");
+  if (i & OCCP_STATUS_ACCESS_ERROR)
+    printf(" accError");
+  if (i & OCCP_STATUS_ATTENTION)
+    printf(" attention");
+  if (i & OCCP_STATUS_FINISHED)
+    printf(" finished");
   if (i & OCCP_STATUS_CONFIG_ADDR_VALID)
     printf(" addrValid");
   if (i & OCCP_STATUS_CONFIG_BE_VALID)
@@ -1156,7 +1160,7 @@ static void
 wclear(const char **) {
   uint32_t i = wAccess.get32Register(control, OH::OccpWorkerRegisters);
   wAccess.set32Register(control, OH::OccpWorkerRegisters,
-			i | OCCP_STATUS_SFLAG | OCCP_STATUS_WRITE_TIMEOUT);
+			i | OCCP_STATUS_ATTENTION | OCCP_STATUS_WRITE_TIMEOUT);
   printf("Worker %zu on device %s: clearing errors from status register\n",
 	 worker, device);
 }
