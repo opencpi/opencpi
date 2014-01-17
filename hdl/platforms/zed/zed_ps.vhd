@@ -8,9 +8,9 @@ library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisio
 library zed; use zed.all;
 entity zed_ps is
   port(
-    ps_in      : in    zynq_pkg.ps_in_t;
+--    ps_in      : in    zynq_pkg.ps_in_t;
 --    ps_out     : out   zynq_pkg.ps_out_t;
-    ps_inout   : inout zynq_pkg.ps_inout_t;
+--    ps_inout   : inout zynq_pkg.ps_inout_t;
 
     pl_out     : out   zynq_pkg.ps2pl_t;
     axi_gp_in  : in    zynq_pkg.axi_gp_in_t;
@@ -57,7 +57,12 @@ architecture rtl of zed_ps is
       C_PS7_SI_REV                    : string  := "PRODUCTION";
       C_EN_EMIO_ENET0                 : integer := 0;
       C_EN_EMIO_ENET1                 : integer := 0;
-      C_EN_EMIO_TRACE                 : integer := 0
+      C_EN_EMIO_TRACE                 : integer := 0;
+      C_DQ_WIDTH                      : integer := 32;
+      C_DQS_WIDTH                     : integer := 4;
+      C_DM_WIDTH                      : integer := 4;
+      C_MIO_PRIMITIVE                 : integer := 54;
+      C_PACKAGE_NAME                  : string  := "clg484"
       );
     port (
       CAN0_PHY_TX : out std_logic;
@@ -471,9 +476,9 @@ architecture rtl of zed_ps is
       S_AXI_HP0_AWCACHE : in std_logic_vector(3 downto 0);
       S_AXI_HP0_AWLEN : in std_logic_vector(3 downto 0);
       S_AXI_HP0_AWQOS : in std_logic_vector(3 downto 0);
-      S_AXI_HP0_ARID : in std_logic_vector(0 to 0);
-      S_AXI_HP0_AWID : in std_logic_vector(0 to 0);
-      S_AXI_HP0_WID : in std_logic_vector(0 to 0);
+      S_AXI_HP0_ARID : in std_logic_vector(5 downto 0);
+      S_AXI_HP0_AWID : in std_logic_vector(5 downto 0);
+      S_AXI_HP0_WID : in std_logic_vector(5 downto 0);
       S_AXI_HP0_WDATA : in std_logic_vector(63 downto 0);
       S_AXI_HP0_WSTRB : in std_logic_vector(7 downto 0);
       S_AXI_HP1_ARESETN : out std_logic;
@@ -750,6 +755,11 @@ begin
       C_USE_DEFAULT_ACP_USER_VAL => 0,
       C_S_AXI_ACP_ARUSER_VAL => 31,
       C_S_AXI_ACP_AWUSER_VAL => 31,
+      C_DQ_WIDTH => 32,
+      C_DQS_WIDTH => 4,
+      C_DM_WIDTH => 4,
+      C_MIO_PRIMITIVE => 54,
+      C_PACKAGE_NAME => "clg484",
       C_PS7_SI_REV => "PRODUCTION",
       C_M_AXI_GP0_ID_WIDTH => 12,
       C_M_AXI_GP0_ENABLE_STATIC_REMAP => 0,
@@ -758,7 +768,7 @@ begin
       C_S_AXI_GP0_ID_WIDTH => 6,
       C_S_AXI_GP1_ID_WIDTH => 6,
       C_S_AXI_ACP_ID_WIDTH => 3,
-      C_S_AXI_HP0_ID_WIDTH => 1,
+      C_S_AXI_HP0_ID_WIDTH => 6,
       C_S_AXI_HP0_DATA_WIDTH => 64,
       C_S_AXI_HP1_ID_WIDTH => 6,
       C_S_AXI_HP1_DATA_WIDTH => 64,
@@ -768,7 +778,7 @@ begin
       C_S_AXI_HP3_DATA_WIDTH => 64,
       C_M_AXI_GP0_THREAD_ID_WIDTH => 12,
       C_M_AXI_GP1_THREAD_ID_WIDTH => 12,
-      C_NUM_F2P_INTR_INPUTS => 2,
+      C_NUM_F2P_INTR_INPUTS => 1,
       C_FCLK_CLK0_BUF => "TRUE",
       C_FCLK_CLK1_BUF => "FALSE",
       C_FCLK_CLK2_BUF => "FALSE",
@@ -1398,27 +1408,28 @@ begin
       EVENT_STANDBYWFE => open,
       EVENT_STANDBYWFI => open,
       EVENT_EVENTI => '0',
-      MIO                => ps_inout.MIO,
-      DDR_Clk            => ps_inout.DDR_Clk,
-      DDR_Clk_n          => ps_inout.DDR_Clk_n,
-      DDR_CKE            => ps_inout.DDR_CKE,
-      DDR_CS_n           => ps_inout.DDR_CS_n,
-      DDR_RAS_n          => ps_inout.DDR_RAS_n,
-      DDR_CAS_n          => ps_inout.DDR_CAS_n,
-      DDR_WEB            => ps_inout.DDR_WEB,
-      DDR_BankAddr       => ps_inout.DDR_BankAddr,
-      DDR_Addr           => ps_inout.DDR_Addr,
-      DDR_ODT            => ps_inout.DDR_ODT,
-      DDR_DRSTB          => ps_inout.DDR_DRSTB,
-      DDR_DQ             => ps_inout.DDR_DQ,
-      DDR_DM             => ps_inout.DDR_DM,
-      DDR_DQS            => ps_inout.DDR_DQS,
-      DDR_DQS_n          => ps_inout.DDR_DQS_n,
-      DDR_VRN            => ps_inout.DDR_VRN,
-      DDR_VRP            => ps_inout.DDR_VRP,
-      PS_SRSTB           => ps_in.PS_SRSTB,
-      PS_CLK             => ps_in.PS_CLK,
-      PS_PORB            => ps_in.PS_PORB,
+      -- these have no use - we'll see if we can get away with this.
+      MIO                => open, -- ps_inout.MIO,
+      DDR_Clk            => open, -- ps_inout.DDR_Clk,
+      DDR_Clk_n          => open, -- ps_inout.DDR_Clk_n,
+      DDR_CKE            => open, -- ps_inout.DDR_CKE,
+      DDR_CS_n           => open, -- ps_inout.DDR_CS_n,
+      DDR_RAS_n          => open, -- ps_inout.DDR_RAS_n,
+      DDR_CAS_n          => open, -- ps_inout.DDR_CAS_n,
+      DDR_WEB            => open, -- ps_inout.DDR_WEB,
+      DDR_BankAddr       => open, -- ps_inout.DDR_BankAddr,
+      DDR_Addr           => open, -- ps_inout.DDR_Addr,
+      DDR_ODT            => open, -- ps_inout.DDR_ODT,
+      DDR_DRSTB          => open, -- ps_inout.DDR_DRSTB,
+      DDR_DQ             => open, -- ps_inout.DDR_DQ,
+      DDR_DM             => open, -- ps_inout.DDR_DM,
+      DDR_DQS            => open, -- ps_inout.DDR_DQS,
+      DDR_DQS_n          => open, -- ps_inout.DDR_DQS_n,
+      DDR_VRN            => open, -- ps_inout.DDR_VRN,
+      DDR_VRP            => open, -- ps_inout.DDR_VRP,
+      PS_SRSTB           => '0', -- ps_in.PS_SRSTB,
+      PS_CLK             => '0', -- ps_in.PS_CLK,
+      PS_PORB            => '0', -- ps_in.PS_PORB,
       IRQ_P2F_DMAC_ABORT => open,
       IRQ_P2F_DMAC0 => open,
       IRQ_P2F_DMAC1 => open,

@@ -250,6 +250,7 @@ $(call HdlContDir,$1):
 # This is for building the top level container core
 $(call HdlContainer,$1): | $(call HdlContDir,$1)
 $(call HdlContainer,$1): HdlPreCompile=$(call HdlContPreCompile,$1)
+$(call HdlContainer,$1): HdlExactPart=$(HdlPart_$(HdlPlatform_$1))
 # This is not a dependency since this file is generated each time it is built
 $(call HdlContainer,$1): TargetSourceFiles=$(call UUIDFileName,$1)
 $(call HdlContainer,$1): GeneratedSourceFiles=$(call HdlContSources,$1)

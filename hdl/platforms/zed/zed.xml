@@ -6,26 +6,27 @@
   <!-- This platform worker provides a control plane -->
   <cpmaster master='true'/>
   <!-- These top level signals are simply wired to the PS and have no PL function -->
-  <signal  input='PS_SRSTB'/>
-  <signal  input='PS_CLK'/>
-  <signal  input='PS_PORB'/>
-  <signal  inout='MIO'          width='54'/>
-  <signal  inout='DDR_Clk'/>
-  <signal  inout='DDR_Clk_n'/>
-  <signal  inout='DDR_CKE'/>
-  <signal  inout='DDR_CS_n'/>
-  <signal  inout='DDR_RAS_n'/>
-  <signal  inout='DDR_WEB'/>
-  <signal  inout='DDR_CAS_n'/>
-  <signal  inout='DDR_BankAddr' width='3'/>
-  <signal  inout='DDR_Addr'     width='15'/>
-  <signal  inout='DDR_ODT'/>
-  <signal  inout='DDR_DRSTB'/>
-  <signal  inout='DDR_DQ'       width='32'/>
-  <signal  inout='DDR_DM'       width='4'/>
-  <signal  inout='DDR_DQS'      width='4'/>
-  <signal  inout='DDR_DQS_n'    width='4'/>
-  <signal  inout='DDR_VRN'/>
-  <signal  inout='DDR_VRP'/>
+  <!-- <signal  input='PS_SRSTB'/> -->
+  <!-- <signal  input='PS_CLK'/> -->
+  <!-- <signal  input='PS_PORB'/> -->
+  <!-- <signal  inout='MIO'          width='54'/> -->
+  <!-- <signal  inout='DDR_Clk'/> -->
+  <!-- <signal  inout='DDR_Clk_n'/> -->
+  <!-- <signal  inout='DDR_CKE'/> -->
+  <!-- <signal  inout='DDR_CS_n'/> -->
+  <!-- <signal  inout='DDR_RAS_n'/> -->
+  <!-- <signal  inout='DDR_WEB'/> -->
+  <!-- <signal  inout='DDR_CAS_n'/> -->
+  <!-- <signal  inout='DDR_BankAddr' width='3'/> -->
+  <!-- <signal  inout='DDR_Addr'     width='15'/> -->
+  <!-- <signal  inout='DDR_ODT'/> -->
+  <!-- <signal  inout='DDR_DRSTB'/> -->
+  <!-- <signal  inout='DDR_DQ'       width='32'/> -->
+  <!-- <signal  inout='DDR_DM'       width='4'/> -->
+  <!-- <signal  inout='DDR_DQS'      width='4'/> -->
+  <!-- <signal  inout='DDR_DQS_n'    width='4'/> -->
+  <!-- <signal  inout='DDR_VRN'/> -->
+  <!-- <signal  inout='DDR_VRP'/> -->
+  <signal  output='led'/>
 </HdlPlatform>
 

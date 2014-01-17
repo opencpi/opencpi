@@ -25,32 +25,31 @@ begin
              CLK     => clk,
              OUT_RST => rst_n);
   reset <= not rst_n;
-
   -- Instantiate the processor system (i.e. the interface to it).
   ps : entity zed_ps
     port map(
       -- Connect PS-only pins to the PS  These are external signals
-      ps_in.PS_SRSTB        => PS_SRSTB,
-      ps_in.PS_CLK          => PS_CLK,
-      ps_in.PS_PORB         => PS_PORB,
-      ps_inout.DDR_WEB      => DDR_WEB,
-      ps_inout.MIO          => MIO,
-      ps_inout.DDR_Clk      => DDR_Clk,
-      ps_inout.DDR_Clk_n    => DDR_Clk_n,
-      ps_inout.DDR_CKE      => DDR_CKE,
-      ps_inout.DDR_CS_n     => DDR_CS_n,
-      ps_inout.DDR_RAS_n    => DDR_RAS_n,
-      ps_inout.DDR_CAS_n    => DDR_CAS_n,
-      ps_inout.DDR_BankAddr => DDR_BankAddr,
-      ps_inout.DDR_Addr     => DDR_Addr,
-      ps_inout.DDR_ODT      => DDR_ODT,
-      ps_inout.DDR_DRSTB    => DDR_DRSTB,
-      ps_inout.DDR_DQ       => DDR_DQ,
-      ps_inout.DDR_DM       => DDR_DM,
-      ps_inout.DDR_DQS      => DDR_DQS,
-      ps_inout.DDR_DQS_n    => DDR_DQS_n,
-      ps_inout.DDR_VRN      => DDR_VRN,
-      ps_inout.DDR_VRP      => DDR_VRP,
+      --ps_in.PS_SRSTB        => PS_SRSTB,
+      --ps_in.PS_CLK          => PS_CLK,
+      --ps_in.PS_PORB         => PS_PORB,
+      --ps_inout.DDR_WEB      => DDR_WEB,
+      --ps_inout.MIO          => MIO,
+      --ps_inout.DDR_Clk      => DDR_Clk,
+      --ps_inout.DDR_Clk_n    => DDR_Clk_n,
+      --ps_inout.DDR_CKE      => DDR_CKE,
+      --ps_inout.DDR_CS_n     => DDR_CS_n,
+      --ps_inout.DDR_RAS_n    => DDR_RAS_n,
+      --ps_inout.DDR_CAS_n    => DDR_CAS_n,
+      --ps_inout.DDR_BankAddr => DDR_BankAddr,
+      --ps_inout.DDR_Addr     => DDR_Addr,
+      --ps_inout.DDR_ODT      => DDR_ODT,
+      --ps_inout.DDR_DRSTB    => DDR_DRSTB,
+      --ps_inout.DDR_DQ       => DDR_DQ,
+      --ps_inout.DDR_DM       => DDR_DM,
+      --ps_inout.DDR_DQS      => DDR_DQS,
+      --ps_inout.DDR_DQS_n    => DDR_DQS_n,
+      --ps_inout.DDR_VRN      => DDR_VRN,
+      --ps_inout.DDR_VRP      => DDR_VRP,
       -- Signals from the PS used in the PL
       pl_out.FCLK           => clk,
       pl_out.FCLKRESET_N    => raw_rst_n,
@@ -98,7 +97,7 @@ begin
       time_service        => time_out
       );
   -- Output/readable properties
-  props_out.platform        <= to_string("ml605", props_out.platform'length);
+  props_out.platform        <= to_string("zed", props_out.platform'length);
   props_out.dna             <= (others => '0');
   props_out.nSwitches       <= (others => '0');
   props_out.switches        <= (others => '0');
@@ -112,6 +111,7 @@ begin
   -- led(6 downto 1)           <= std_logic_vector(props_in.leds(6 downto 1));
   -- led(led'left downto 8)    <= (others => '0');
   -- Drive metadata interface
+  led <= '1';
   metadata_out.clk          <= clk;
   metadata_out.romAddr      <= props_in.romAddr;
   metadata_out.romEn        <= props_in.romData_read;

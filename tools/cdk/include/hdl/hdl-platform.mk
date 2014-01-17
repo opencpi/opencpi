@@ -41,10 +41,13 @@ endif
 override Workers:=$(CwdName)
 override Worker:=$(Workers)
 Worker_$(Worker)_xml:=$(Worker).xml
-
 $(eval $(call OcpiSetLanguage,$(CwdName).xml))
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 ifndef HdlSkip
+$(call OcpiDbgVar,HdlExactPart)
+$(call OcpiDbgVar,HdlPlatform)
+HdlExactPart:=$(HdlPart_$(HdlPlatform))
+$(call OcpiDbgVar,HdlExactPart)
 # add xml search in component libraries
 ifneq ($(MAKECMDGOALS),clean)
 $(eval $(HdlSearchComponentLibraries))
@@ -109,8 +112,8 @@ $(call HdlConfig,$1): LibName:=$1
 $(call HdlConfig,$1): HdlTarget:=$(HdlExactPart)
 $(call HdlConfig,$1): HdlSources:=$(call HdlConfigSources,$1)
 $(call HdlConfig,$1): TargetDir=$(call HdlConfigDir,$1)
-# This allows the platform worker to be found
 $(call HdlConfig,$1): target-$(call HdlGetFamily,$(HdlExactPart))/$(Worker)$(and $(HdlToolRealCore),_rv$(HdlBin))
+# This allows the platform worker to be found (both bb lib and core)
 $(call HdlConfig,$1): override ComponentLibraries+=target-$(call HdlGetFamily,$(HdlExactPart))/$(Worker)
 # This causes the workers file to be read to add to the cores list
 $(call HdlConfig,$1): override ImplWorkersFile=$(GeneratedDir)/$1.wks

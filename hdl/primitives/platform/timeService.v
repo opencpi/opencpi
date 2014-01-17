@@ -76,10 +76,10 @@ module timeService(
   output 			 ppsSyncOut;
 
   // From here, extracted from mkOCCP
-  wire [49 : 0] 		timeServ_jamFracVal_1$wget;
+//  wire [49 : 0] 		timeServ_jamFracVal_1$wget;
   wire
-      timeServ_jamFracVal_1$whas,
-      timeServ_jamFrac_1$wget,
+//      timeServ_jamFracVal_1$whas,
+//      timeServ_jamFrac_1$wget,
       timeServ_jamFrac_1$whas;
 
   // register deltaTime
@@ -258,14 +258,15 @@ module timeService(
   wire [63 : 0] timeServ_setRefF$dD_OUT, timeServ_setRefF$sD_IN;
   wire timeServ_setRefF$dDEQ,
        timeServ_setRefF$dEMPTY_N,
-       timeServ_setRefF$sENQ,
-       timeServ_setRefF$sFULL_N;
+       timeServ_setRefF$sENQ;
+//       timeServ_setRefF$sFULL_N;
 
   // internal state
   wire [49 : 0] _281474976710656_MINUS_timeServ_delSecond__q1,
 		x__h3700,
 		x__h4421,
 		x__h4649;
+  wire [47 : 0] x_f__h4848;
   wire [31:0]	x__h4715;
   wire [21 : 0] _281474976710656_MINUS_timeServ_delSecond_BITS__ETC__q2;
   wire
@@ -411,16 +412,16 @@ module timeService(
 						 .sENQ(timeServ_setRefF$sENQ),
 						 .dDEQ(timeServ_setRefF$dDEQ),
 						 .dD_OUT(timeServ_setRefF$dD_OUT),
-						 .sFULL_N(timeServ_setRefF$sFULL_N),
+						 .sFULL_N(),//timeServ_setRefF$sFULL_N),
 						 .dEMPTY_N(timeServ_setRefF$dEMPTY_N));
 
   
   // inlined wires
-  assign timeServ_jamFrac_1$wget = 1'd1 ;
+//  assign timeServ_jamFrac_1$wget = 1'd1 ;
   assign timeServ_jamFrac_1$whas =
 	     timeServ_setRefF$dEMPTY_N && !timeServ_ppsOK ;
-  assign timeServ_jamFracVal_1$wget = x__h3700 ;
-  assign timeServ_jamFracVal_1$whas = timeServ_jamFrac_1$whas ;
+//  assign timeServ_jamFracVal_1$wget = x__h3700 ;
+//  assign timeServ_jamFracVal_1$whas = timeServ_jamFrac_1$whas ;
     // register timeServ_delSec
   assign timeServ_delSec$D_IN = timeServ_fracSeconds[49:48] ;
   assign timeServ_delSec$EN = 1'd1 ;
@@ -652,7 +653,8 @@ module timeService(
 	       _281474976710656_MINUS_timeServ_delSecond_BITS__ETC__q2 } ;
   assign x__h4649 = timeServ_fracSeconds + timeServ_fracInc ;
   assign x__h4715 = timeServ_refSecCount + 32'd1 ;
-//  assign x_f__h4848 = { timeServ_setRefF$dD_OUT[31:0], 16'h0 } ;
+  assign x_f__h4848 = { timeServ_setRefF$dD_OUT[31:0], 16'h0 } ;
+  assign x__h3700 = { 2'b0, x_f__h4848 } ;
 
   // handling of inlined registers
 

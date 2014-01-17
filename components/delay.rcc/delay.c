@@ -161,7 +161,7 @@ static RCCResult start ( RCCWorker* self )
       return RCC_ERROR;
     }
 
-    bzero ( p_map_info->p_mem, delay_n_bytes );
+    memset(p_map_info->p_mem, 0, delay_n_bytes);
     p_map_info->rd_off = 0;
     p_map_info->wr_off = 0;
     p_map_info->n_bytes = delay_n_bytes;

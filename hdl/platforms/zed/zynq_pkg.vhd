@@ -6,37 +6,37 @@ package zynq_pkg is
 
 -- MAKE REFERENCE TO PROCESSING_SYSTEM7 DATA SHEET
 -- Signals into the Zynq PS core (not involved with the PL, but from pins)
-type ps_in_t is record
-  PS_SRSTB : std_logic;
-  PS_CLK   : std_logic;
-  PS_PORB  : std_logic;
-end record ps_in_t;
+--type ps_in_t is record
+--  PS_SRSTB : std_logic;
+--  PS_CLK   : std_logic;
+--  PS_PORB  : std_logic;
+--end record ps_in_t;
 
 -- Signals out of the Zynq PS (not involved with the PL)
 --type ps_out_t is record
 --end record ps_out_t;
 
 -- Signals inout of the Zynq PS (not involved with the PL)
-type ps_inout_t is record
-  MIO          : std_logic_vector(53 downto 0);
-  DDR_Clk      : std_logic;
-  DDR_Clk_n    : std_logic;
-  DDR_CKE      : std_logic;
-  DDR_CS_n     : std_logic;
-  DDR_RAS_n    : std_logic;
-  DDR_WEB      : std_logic;
-  DDR_CAS_n    : std_logic;
-  DDR_BankAddr : std_logic_vector(2 downto 0);
-  DDR_Addr     : std_logic_vector(14 downto 0);
-  DDR_ODT      : std_logic;
-  DDR_DRSTB    : std_logic;
-  DDR_DQ       : std_logic_vector(31 downto 0);
-  DDR_DM       : std_logic_vector(3 downto 0);
-  DDR_DQS      : std_logic_vector(3 downto 0);
-  DDR_DQS_n    : std_logic_vector(3 downto 0);
-  DDR_VRN      : std_logic;
-  DDR_VRP      : std_logic;
-end record ps_inout_t;
+--type ps_inout_t is record
+--  MIO          : std_logic_vector(53 downto 0);
+--  DDR_Clk      : std_logic;
+--  DDR_Clk_n    : std_logic;
+--  DDR_CKE      : std_logic;
+--  DDR_CS_n     : std_logic;
+--  DDR_RAS_n    : std_logic;
+--  DDR_WEB      : std_logic;
+--  DDR_CAS_n    : std_logic;
+--  DDR_BankAddr : std_logic_vector(2 downto 0);
+--  DDR_Addr     : std_logic_vector(14 downto 0);
+--  DDR_ODT      : std_logic;
+--  DDR_DRSTB    : std_logic;
+--  DDR_DQ       : std_logic_vector(31 downto 0);
+--  DDR_DM       : std_logic_vector(3 downto 0);
+--  DDR_DQS      : std_logic_vector(3 downto 0);
+--  DDR_DQS_n    : std_logic_vector(3 downto 0);
+--  DDR_VRN      : std_logic;
+--  DDR_VRP      : std_logic;
+--end record ps_inout_t;
 
 -- Signals from the PS for use by the PL
 type ps2pl_t is record
