@@ -20,11 +20,15 @@ case $0 in
  (*)  echo This script must be sourced by the top level shell, and it\'s not.; exit 1;;
 esac
 
-(export OCPIDHCPSCRIPT=yes; udhcpc -n -q -s /mnt/sd/setup.sh)
-
-mkdir -p /mnt/nfs
-mount -t nfs -o udp,nolock $1:$2 /mnt/nfs
-zed=/mnt/nfs/$3/platforms/zed
-cp $zed/libstdc++.so.6 /lib
-mknod /dev/xdevcfg c 259 0
-source /mnt/nfs/$3/ocpi/ocpisetup.sh /mnt/nfs/$3/ocpi/ocpisetup.sh
+if test "$1" = "" -o "$2" = "" -o "$3" = ""; then
+  echo This script takes 3 arguments: server-address server-share opencpi-dir-on-share.
+  echo An example is:  source setup.sh 10.0.1.114 /Users/jek/work ocpi/opencpi
+else
+  (export OCPIDHCPSCRIPT=yes; udhcpc -n -q -s /mnt/sd/setup.sh)
+  mkdir -p /mnt/nfs
+  mount -t nfs -o udp,nolock $1:$2 /mnt/nfs
+  zed=/mnt/nfs/$3/platforms/zed
+  cp $zed/libstdc++.so.6 /lib
+  mknod /dev/xdevcfg c 259 0
+  source /mnt/nfs/$3/ocpi/ocpisetup.sh /mnt/nfs/$3/ocpi/ocpisetup.sh
+fi
