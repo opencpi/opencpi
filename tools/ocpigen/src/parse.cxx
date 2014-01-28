@@ -869,7 +869,9 @@ parseHdlImpl(const char *package) {
     wci = new Port(ezxml_cattr(xctl, "Name"), this, false, WCIPort, xctl);
     m_ports.insert(m_ports.begin(), wci);
     // Finish HDL-specific control parsing
-    m_ctl.controlOps = (1 << OU::OpStart) | (1 << OU::OpStop);
+    m_ctl.controlOps |= 1 << OU::OpStart;
+    if (m_language == VHDL)
+      m_ctl.controlOps |= 1 << OU::OpStop;
     if (xctl) {
       if ((err = OE::checkAttrs(xctl, GENERIC_IMPL_CONTROL_ATTRS, "ResetWhileSuspended",
 				"Clock", "MyClock", "Timeout", "Count", "Name", "Pattern",

@@ -114,7 +114,7 @@ struct Command {
   { "emulate", emulate, SUDO | INTERFACE },
   { "ethers", ethers, INTERFACE},
   { "getxml", getxml, DEVICE},
-  { "load", load, DEVICE},
+  { "load", load, 0},
   { "probe", probe, SUDO | DEVICE | DISCOVERY},
   { "radmin", radmin, DEVICE },
   { "receiveData", receiveData, INTERFACE},
@@ -222,7 +222,7 @@ static void setupDevice(bool discovery) {
   
   driver = &OCPI::HDL::Driver::getSingleton();
   std::string error;
-  if (!(dev = driver->open(device, discovery, error)))
+  if (!(dev = driver->open(device, discovery, false, error)))
     bad("error opening device %s", device);
   cAccess = &dev->cAccess();
   dAccess = &dev->dAccess();
@@ -855,7 +855,7 @@ unbram(const char **ap) {
       unlink(ap[1]);
       bad("Error writing output file '%s'", ap[1]);
     }
-    printf("Wrote unbram file '%s' (%zu bytes) from file '%s' (%zu bytes)\n",
+    printf("Wrote unbram file '%s' (%lu bytes) from file '%s' (%zu bytes)\n",
 	   ap[1], zs.total_out, ap[0], inBytes);
   } else
     bad("Unsuccessful decompression from file %s", ap[0]);
@@ -1622,8 +1622,17 @@ getxml(const char **ap) {
 }
 static void
 load(const char **ap) {
+  // Some devices can be loaded even when they don't probe, so we open the device
+  // specially/softly here...
+  if (!device)
+    bad("a device option is required with this command");
   if (!ap[0])
     bad("No input filename specified for getxml");
+  
+  driver = &OCPI::HDL::Driver::getSingleton();
+  std::string error;
+  if (!(dev = driver->open(device, false, true, error)))
+    bad("error opening device %s", device);
   dev->load(ap[0]);
 }
 

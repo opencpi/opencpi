@@ -192,7 +192,7 @@ emitPortDescription(Port *p, FILE *f, Language lang) {
     {
       bool first = true;
       for (unsigned op = 0; op < OU::OpsLimit; op++, first = false)
-	if (op != OU::OpStart && op != OU::OpStop &&
+	if (op != OU::OpStart &&
 	    m_ctl.controlOps & (1 << op))
 	  fprintf(f, "%s%s", first ? "" : ",", OU::controlOpNames[op]);
     }
@@ -756,8 +756,7 @@ emitVhdlPackageConstants(FILE *f) {
   if (!m_noControl) {
     decodeWidth = m_ports[0]->ocp.MAddr.width;
     for (unsigned op = 0; op <= OU::OpsLimit; op++)
-      ops[OU::OpsLimit - op] =
-	op == OU::OpStart || op == OU::OpStop || m_ctl.controlOps & (1 << op) ? '1' : '0';
+      ops[OU::OpsLimit - op] = m_ctl.controlOps & (1 << op) ? '1' : '0';
     if (m_ctl.firstRaw)
       rawBase = m_ctl.firstRaw->m_offset;
   }
@@ -1703,14 +1702,12 @@ emitVhdlShell(FILE *f) {
 	    "begin\n"
 	    "  wci_reset <= not wci_Reset_n");
     // For each data interface we aggregate a peer reset.
-    bool first = true;
     for (unsigned i = 0; i < m_ports.size(); i++) {
       Port *p = m_ports[i];
       if (p->isData) {
 	fprintf(f, " or not %s.%s",
 		p->typeNameIn.c_str(),
 		ocpSignals[p->master ? OCP_SReset_n : OCP_MReset_n].name);
-	first = false;
       }
     }
     fprintf(f,

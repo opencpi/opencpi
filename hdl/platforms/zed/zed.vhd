@@ -11,11 +11,15 @@ library bsv;
 architecture rtl of zed_worker is
   signal ps_axi_gp_in  : zynq_pkg.axi_gp_in_t;
   signal ps_axi_gp_out : zynq_pkg.axi_gp_out_t;
+  signal my_cp_out     : occp_in_t;
   signal clk           : std_logic;
   signal raw_rst_n     : std_logic; -- FCLKRESET_Ns need synchronization
   signal rst_n         : std_logic; -- the synchronized negative reset
   signal reset         : std_logic; -- our positive reset
+  signal count         : unsigned(25 downto 0);
+  signal seen_burst    : std_logic;
 begin
+  cp_out <= my_cp_out;
   -- The FCLKRESET signals from the PS are documented as asynchronous with the
   -- associated FCLK for whatever reason.  Here we make a synchronized reset from it.
   sr : bsv.bsv.SyncResetA
@@ -65,7 +69,7 @@ begin
       axi_in  => ps_axi_gp_out,
       axi_out => ps_axi_gp_in,
       cp_in   => cp_in,
-      cp_out  => cp_out
+      cp_out  => my_cp_out
     );
   -- This piece of generic infrastructure in is instantiated here because
   -- it localizes all these signals here in the platform worker, and thus
@@ -111,8 +115,30 @@ begin
   -- led(6 downto 1)           <= std_logic_vector(props_in.leds(6 downto 1));
   -- led(led'left downto 8)    <= (others => '0');
   -- Drive metadata interface
-  led <= '1';
   metadata_out.clk          <= clk;
   metadata_out.romAddr      <= props_in.romAddr;
   metadata_out.romEn        <= props_in.romData_read;
+  led(0) <= count(count'left);
+  led(1) <= ps_axi_gp_out.ARVALID;
+  led(2) <= seen_burst; -- my_cp_out.is_read;
+  led(3) <= cp_in.take;
+
+  led(4) <= cp_in.valid;
+  led(5) <= ps_axi_gp_in.ARREADY;
+  led(6) <= ps_axi_gp_in.RVALID;
+  led(7) <= ps_axi_gp_out.RREADY;
+  work : process(clk)
+  begin
+    if rising_edge(clk) then
+      if reset = '1' then
+        count <= (others => '0');
+        seen_burst <= '0';
+      else
+        count <= count + 1;
+        if ps_axi_gp_out.ARVALID = '1' and ps_axi_gp_out.ARLEN = "0001" then
+          seen_burst <= '1';
+        end if;
+      end if;
+    end if;
+  end process;
 end rtl;

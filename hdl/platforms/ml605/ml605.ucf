@@ -684,14 +684,14 @@ disable = reg_sr_r;
 ######################################################################################
 
 # CLK_RSYNC[0]: Site M12
-INST "*/u_phy_rdclk_gen/gen_loop_col0.u_oserdes_rsync"  LOC = "OLOGIC_X2Y139";
-INST "*/u_phy_rdclk_gen/gen_loop_col0.u_odelay_rsync"   LOC = "IODELAY_X2Y139";
-INST "*/u_phy_rdclk_gen/gen_loop_col0.u_bufr_rsync"     LOC = "BUFR_X2Y6";
+# INST "*/u_phy_rdclk_gen/gen_loop_col0.u_oserdes_rsync"  LOC = "OLOGIC_X2Y139";
+# INST "*/u_phy_rdclk_gen/gen_loop_col0.u_odelay_rsync"   LOC = "IODELAY_X2Y139";
+# INST "*/u_phy_rdclk_gen/gen_loop_col0.u_bufr_rsync"     LOC = "BUFR_X2Y6";
 
 # CLK_RSYNC[1]: Site C29
-INST "*/u_phy_rdclk_gen/gen_loop_col1.u_oserdes_rsync"  LOC = "OLOGIC_X1Y139";
-INST "*/u_phy_rdclk_gen/gen_loop_col1.u_odelay_rsync"   LOC = "IODELAY_X1Y139";
-INST "*/u_phy_rdclk_gen/gen_loop_col1.u_bufr_rsync"     LOC = "BUFR_X1Y6";
+# INST "*/u_phy_rdclk_gen/gen_loop_col1.u_oserdes_rsync"  LOC = "OLOGIC_X1Y139";
+# INST "*/u_phy_rdclk_gen/gen_loop_col1.u_odelay_rsync"   LOC = "IODELAY_X1Y139";
+# INST "*/u_phy_rdclk_gen/gen_loop_col1.u_bufr_rsync"     LOC = "BUFR_X1Y6";
 
 ##################################################################################################
 ##The logic of this pin is used internally to drive a BUFIO for the byte group. Any clock       ##
@@ -706,37 +706,37 @@ INST "*/u_phy_rdclk_gen/gen_loop_col1.u_bufr_rsync"     LOC = "BUFR_X1Y6";
 ##Place CPT OSERDES and IODELAY:                                                    ##
 ######################################################################################
 
-# DQS[0]: Site C13
-INST "*/u_phy_rdclk_gen/gen_ck_cpt[0].u_oserdes_cpt"  LOC = "OLOGIC_X2Y137";
-INST "*/u_phy_rdclk_gen/gen_ck_cpt[0].u_odelay_cpt"   LOC = "IODELAY_X2Y137";
+# # DQS[0]: Site C13
+# INST "*/u_phy_rdclk_gen/gen_ck_cpt[0].u_oserdes_cpt"  LOC = "OLOGIC_X2Y137";
+# INST "*/u_phy_rdclk_gen/gen_ck_cpt[0].u_odelay_cpt"   LOC = "IODELAY_X2Y137";
 
-# DQS[1]: Site L13
-INST "*/u_phy_rdclk_gen/gen_ck_cpt[1].u_oserdes_cpt"  LOC = "OLOGIC_X2Y141";
-INST "*/u_phy_rdclk_gen/gen_ck_cpt[1].u_odelay_cpt"   LOC = "IODELAY_X2Y141";
+# # DQS[1]: Site L13
+# INST "*/u_phy_rdclk_gen/gen_ck_cpt[1].u_oserdes_cpt"  LOC = "OLOGIC_X2Y141";
+# INST "*/u_phy_rdclk_gen/gen_ck_cpt[1].u_odelay_cpt"   LOC = "IODELAY_X2Y141";
 
-# DQS[2]: Site K14
-INST "*/u_phy_rdclk_gen/gen_ck_cpt[2].u_oserdes_cpt"  LOC = "OLOGIC_X2Y143";
-INST "*/u_phy_rdclk_gen/gen_ck_cpt[2].u_odelay_cpt"   LOC = "IODELAY_X2Y143";
+# # DQS[2]: Site K14
+# INST "*/u_phy_rdclk_gen/gen_ck_cpt[2].u_oserdes_cpt"  LOC = "OLOGIC_X2Y143";
+# INST "*/u_phy_rdclk_gen/gen_ck_cpt[2].u_odelay_cpt"   LOC = "IODELAY_X2Y143";
 
-# DQS[3]: Site F21
-INST "*/u_phy_rdclk_gen/gen_ck_cpt[3].u_oserdes_cpt"  LOC = "OLOGIC_X1Y179";
-INST "*/u_phy_rdclk_gen/gen_ck_cpt[3].u_odelay_cpt"   LOC = "IODELAY_X1Y179";
+# # DQS[3]: Site F21
+# INST "*/u_phy_rdclk_gen/gen_ck_cpt[3].u_oserdes_cpt"  LOC = "OLOGIC_X1Y179";
+# INST "*/u_phy_rdclk_gen/gen_ck_cpt[3].u_odelay_cpt"   LOC = "IODELAY_X1Y179";
 
-# DQS[4]: Site B20
-INST "*/u_phy_rdclk_gen/gen_ck_cpt[4].u_oserdes_cpt"  LOC = "OLOGIC_X1Y181";
-INST "*/u_phy_rdclk_gen/gen_ck_cpt[4].u_odelay_cpt"   LOC = "IODELAY_X1Y181";
+# # DQS[4]: Site B20
+# INST "*/u_phy_rdclk_gen/gen_ck_cpt[4].u_oserdes_cpt"  LOC = "OLOGIC_X1Y181";
+# INST "*/u_phy_rdclk_gen/gen_ck_cpt[4].u_odelay_cpt"   LOC = "IODELAY_X1Y181";
 
-# DQS[5]: Site F25  
-INST "*/u_phy_rdclk_gen/gen_ck_cpt[5].u_oserdes_cpt"  LOC = "OLOGIC_X1Y137";
-INST "*/u_phy_rdclk_gen/gen_ck_cpt[5].u_odelay_cpt"   LOC = "IODELAY_X1Y137";
+# # DQS[5]: Site F25  
+# INST "*/u_phy_rdclk_gen/gen_ck_cpt[5].u_oserdes_cpt"  LOC = "OLOGIC_X1Y137";
+# INST "*/u_phy_rdclk_gen/gen_ck_cpt[5].u_odelay_cpt"   LOC = "IODELAY_X1Y137";
 
-# DQS[6]: Site C28
-INST "*/u_phy_rdclk_gen/gen_ck_cpt[6].u_oserdes_cpt"  LOC = "OLOGIC_X1Y141";
-INST "*/u_phy_rdclk_gen/gen_ck_cpt[6].u_odelay_cpt"   LOC = "IODELAY_X1Y141";
+# # DQS[6]: Site C28
+# INST "*/u_phy_rdclk_gen/gen_ck_cpt[6].u_oserdes_cpt"  LOC = "OLOGIC_X1Y141";
+# INST "*/u_phy_rdclk_gen/gen_ck_cpt[6].u_odelay_cpt"   LOC = "IODELAY_X1Y141";
 
-# DQS[7]: Site D24
-INST "*/u_phy_rdclk_gen/gen_ck_cpt[7].u_oserdes_cpt"  LOC = "OLOGIC_X1Y143";
-INST "*/u_phy_rdclk_gen/gen_ck_cpt[7].u_odelay_cpt"   LOC = "IODELAY_X1Y143";
+# # DQS[7]: Site D24
+# INST "*/u_phy_rdclk_gen/gen_ck_cpt[7].u_oserdes_cpt"  LOC = "OLOGIC_X1Y143";
+# INST "*/u_phy_rdclk_gen/gen_ck_cpt[7].u_odelay_cpt"   LOC = "IODELAY_X1Y143";
 
 #########################################################################################
 ## The output clock phase monitor must be on a pin that is within +/- 1 bank vertically##
@@ -751,64 +751,64 @@ INST "*/u_phy_rdclk_gen/gen_ck_cpt[7].u_odelay_cpt"   LOC = "IODELAY_X1Y143";
 ## Site:J16 -- Bank: 36                                                                ##
 #########################################################################################
 
-INST "*/gen_enable_ocb_mon.u_phy_ocb_mon_top/u_oserdes_ocb_mon" LOC = "OLOGIC_X2Y130";
+# INST "*/gen_enable_ocb_mon.u_phy_ocb_mon_top/u_oserdes_ocb_mon" LOC = "OLOGIC_X2Y130";
 
 ######################################################################################
 ## MMCM_ADV CONSTRAINTS                                                             ##
 ######################################################################################
 
 # prepended ftop/dram0/memc/
-INST "ftop/dram0/memc/u_infrastructure/u_mmcm_adv"      LOC = "MMCM_ADV_X0Y9"; #Banks 16, 26, 36
-INST "ftop/dram0/memc/u_memc_ui_top/u_mem_intfc/phy_top0/u_phy_read/u_phy_rdclk_gen/u_mmcm_clk_base" LOC = "MMCM_ADV_X0Y8"; #Banks 16, 26, 36
+# INST "ftop/dram0/memc/u_infrastructure/u_mmcm_adv"      LOC = "MMCM_ADV_X0Y9"; #Banks 16, 26, 36
+# INST "ftop/dram0/memc/u_memc_ui_top/u_mem_intfc/phy_top0/u_phy_read/u_phy_rdclk_gen/u_mmcm_clk_base" LOC = "MMCM_ADV_X0Y8"; #Banks 16, 26, 36
 
 
 ## Flash for ML605
 
 
 # Flash...
-NET "flash_addr[0]"          LOC = "AL8";    ## 29 on U4, A1 on U27
-NET "flash_addr[1]"          LOC = "AK8";    ## 25 on U4, B1 on U27
-NET "flash_addr[2]"          LOC = "AC9";    ## 24 on U4, C1 on U27
-NET "flash_addr[3]"          LOC = "AD10";   ## 23 on U4, D1 on U27
-NET "flash_addr[4]"          LOC = "C8";     ## 22 on U4, D2 on U27
-NET "flash_addr[5]"          LOC = "B8";     ## 21 on U4, A2 on U27
-NET "flash_addr[6]"          LOC = "E9";     ## 20 on U4, C2 on U27
-NET "flash_addr[7]"          LOC = "E8";     ## 19 on U4, A3 on U27
-NET "flash_addr[8]"          LOC = "A8";     ## 8  on U4, B3 on U27
-NET "flash_addr[9]"          LOC = "A9";     ## 7  on U4, C3 on U27
-NET "flash_addr[10]"         LOC = "D9";     ## 6  on U4, D3 on U27
-NET "flash_addr[11]"         LOC = "C9";     ## 5  on U4, C4 on U27
-NET "flash_addr[12]"         LOC = "D10";    ## 4  on U4, A5 on U27
-NET "flash_addr[13]"         LOC = "C10";    ## 3  on U4, B5 on U27
-NET "flash_addr[14]"         LOC = "F10";    ## 2  on U4, C5 on U27
-NET "flash_addr[15]"         LOC = "F9";     ## 1  on U4, D7 on U27
-NET "flash_addr[16]"         LOC = "AH8";    ## 55 on U4, D8 on U27
-NET "flash_addr[17]"         LOC = "AG8";    ## 18 on U4, A7 on U27
-NET "flash_addr[18]"         LOC = "AP9";    ## 17 on U4, B7 on U27
-NET "flash_addr[19]"         LOC = "AN9";    ## 16 on U4, C7 on U27
-NET "flash_addr[20]"         LOC = "AF10";   ## 11 on U4, C8 on U27
-NET "flash_addr[21]"         LOC = "AF9";    ## 10 on U4, A8 on U27
-NET "flash_addr[22]"         LOC = "AL9";    ## 9  on U4, G1 on U27
-NET "flash_addr[23]"         LOC = "AA23";   ## 26 on U4
-NET "flash_io_dq[0]"         LOC = "AF24";   ## 34 on U4, F2 on U27
-NET "flash_io_dq[1]"         LOC = "AF25";   ## 36 on U4, E2 on U27
-NET "flash_io_dq[2]"         LOC = "W24";    ## 39 on U4, G3 on U27
-NET "flash_io_dq[3]"         LOC = "V24";    ## 41 on U4, E4 on U27
-NET "flash_io_dq[4]"         LOC = "H24";    ## 47 on U4, E5 on U27
-NET "flash_io_dq[5]"         LOC = "H25";    ## 49 on U4, G5 on U27
-NET "flash_io_dq[6]"         LOC = "P24";    ## 51 on U4, G6 on U27
-NET "flash_io_dq[7]"         LOC = "R24";    ## 53 on U4, H7 on U27
-NET "flash_io_dq[8]"         LOC = "G23";    ## 35 on U4, E1 on U27
-NET "flash_io_dq[9]"         LOC = "H23";    ## 37 on U4, E3 on U27
-NET "flash_io_dq[10]"        LOC = "N24";    ## 40 on U4, F3 on U27
-NET "flash_io_dq[11]"        LOC = "N23";    ## 42 on U4, F4 on U27
-NET "flash_io_dq[12]"        LOC = "F23";    ## 48 on U4, F5 on U27
-NET "flash_io_dq[13]"        LOC = "F24";    ## 50 on U4, H5 on U27
-NET "flash_io_dq[14]"        LOC = "L24";    ## 52 on U4, G7 on U27
-NET "flash_io_dq[15]"        LOC = "M23";    ## 54 on U4, E7 on U27
-NET "flash_wait"             LOC = "J26";    ## 56 on U4
-NET "flash_we_n"             LOC = "AF23";   ## 14 on U4, G8 on U27
-NET "flash_oe_n"             LOC = "AA24";   ## 32 on U4, F8 on U27
-NET "flash_ce_n"             LOC = "Y24";    ## 30 on U4, B4 on U27 (U10 and switch S2.2 setting select either U4 or U27)
+# NET "flash_addr[0]"          LOC = "AL8";    ## 29 on U4, A1 on U27
+# NET "flash_addr[1]"          LOC = "AK8";    ## 25 on U4, B1 on U27
+# NET "flash_addr[2]"          LOC = "AC9";    ## 24 on U4, C1 on U27
+# NET "flash_addr[3]"          LOC = "AD10";   ## 23 on U4, D1 on U27
+# NET "flash_addr[4]"          LOC = "C8";     ## 22 on U4, D2 on U27
+# NET "flash_addr[5]"          LOC = "B8";     ## 21 on U4, A2 on U27
+# NET "flash_addr[6]"          LOC = "E9";     ## 20 on U4, C2 on U27
+# NET "flash_addr[7]"          LOC = "E8";     ## 19 on U4, A3 on U27
+# NET "flash_addr[8]"          LOC = "A8";     ## 8  on U4, B3 on U27
+# NET "flash_addr[9]"          LOC = "A9";     ## 7  on U4, C3 on U27
+# NET "flash_addr[10]"         LOC = "D9";     ## 6  on U4, D3 on U27
+# NET "flash_addr[11]"         LOC = "C9";     ## 5  on U4, C4 on U27
+# NET "flash_addr[12]"         LOC = "D10";    ## 4  on U4, A5 on U27
+# NET "flash_addr[13]"         LOC = "C10";    ## 3  on U4, B5 on U27
+# NET "flash_addr[14]"         LOC = "F10";    ## 2  on U4, C5 on U27
+# NET "flash_addr[15]"         LOC = "F9";     ## 1  on U4, D7 on U27
+# NET "flash_addr[16]"         LOC = "AH8";    ## 55 on U4, D8 on U27
+# NET "flash_addr[17]"         LOC = "AG8";    ## 18 on U4, A7 on U27
+# NET "flash_addr[18]"         LOC = "AP9";    ## 17 on U4, B7 on U27
+# NET "flash_addr[19]"         LOC = "AN9";    ## 16 on U4, C7 on U27
+# NET "flash_addr[20]"         LOC = "AF10";   ## 11 on U4, C8 on U27
+# NET "flash_addr[21]"         LOC = "AF9";    ## 10 on U4, A8 on U27
+# NET "flash_addr[22]"         LOC = "AL9";    ## 9  on U4, G1 on U27
+# NET "flash_addr[23]"         LOC = "AA23";   ## 26 on U4
+# NET "flash_io_dq[0]"         LOC = "AF24";   ## 34 on U4, F2 on U27
+# NET "flash_io_dq[1]"         LOC = "AF25";   ## 36 on U4, E2 on U27
+# NET "flash_io_dq[2]"         LOC = "W24";    ## 39 on U4, G3 on U27
+# NET "flash_io_dq[3]"         LOC = "V24";    ## 41 on U4, E4 on U27
+# NET "flash_io_dq[4]"         LOC = "H24";    ## 47 on U4, E5 on U27
+# NET "flash_io_dq[5]"         LOC = "H25";    ## 49 on U4, G5 on U27
+# NET "flash_io_dq[6]"         LOC = "P24";    ## 51 on U4, G6 on U27
+# NET "flash_io_dq[7]"         LOC = "R24";    ## 53 on U4, H7 on U27
+# NET "flash_io_dq[8]"         LOC = "G23";    ## 35 on U4, E1 on U27
+# NET "flash_io_dq[9]"         LOC = "H23";    ## 37 on U4, E3 on U27
+# NET "flash_io_dq[10]"        LOC = "N24";    ## 40 on U4, F3 on U27
+# NET "flash_io_dq[11]"        LOC = "N23";    ## 42 on U4, F4 on U27
+# NET "flash_io_dq[12]"        LOC = "F23";    ## 48 on U4, F5 on U27
+# NET "flash_io_dq[13]"        LOC = "F24";    ## 50 on U4, H5 on U27
+# NET "flash_io_dq[14]"        LOC = "L24";    ## 52 on U4, G7 on U27
+# NET "flash_io_dq[15]"        LOC = "M23";    ## 54 on U4, E7 on U27
+# NET "flash_wait"             LOC = "J26";    ## 56 on U4
+# NET "flash_we_n"             LOC = "AF23";   ## 14 on U4, G8 on U27
+# NET "flash_oe_n"             LOC = "AA24";   ## 32 on U4, F8 on U27
+# NET "flash_ce_n"             LOC = "Y24";    ## 30 on U4, B4 on U27 (U10 and switch S2.2 setting select either U4 or U27)
 #NET "FPGA_CCLK"                     LOC = "K8";     ##           F1 on U27
 #NET "PLATFLASH_L_B"                 LOC = "AC23";   ##           H1 on U27

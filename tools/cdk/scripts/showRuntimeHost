@@ -33,6 +33,9 @@ elif test "$HostSystem" = linux -a -f /etc/rootfs_version; then
   HostVersion=iv
   HostProcessor=arm
 #  HostVersion=`grep Version /etc/rootfs_version|sed 's/.*Version *\([.0-9]*\).*$/\1/'`
+elif test "$HostSystem" = linux -a "$HostProcessor" = armv7l; then
+  HostVersion=zynq
+  HostProcessor=arm
 else
   echo Cannot determine runtime host'!!' 1>&2
   exit 1

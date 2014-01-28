@@ -27,6 +27,6 @@
   <!-- <signal  inout='DDR_DQS_n'    width='4'/> -->
   <!-- <signal  inout='DDR_VRN'/> -->
   <!-- <signal  inout='DDR_VRP'/> -->
-  <signal  output='led'/>
+  <signal  output='led' width='8'/>
 </HdlPlatform>
 

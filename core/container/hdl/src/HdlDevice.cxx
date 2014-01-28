@@ -1,6 +1,8 @@
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <stdlib.h>
+#include <signal.h>
+#include <setjmp.h>
 #include <zlib.h>
 #include "OcpiUuid.h"
 #include "OcpiOsAssert.h"
@@ -29,11 +31,31 @@ namespace OCPI {
 	free((void*)m_metadata);
     }
 
+    static sigjmp_buf jmpbuf;
+    static void catchBusError(int) { siglongjmp(jmpbuf, 1); }
     // Called from derived constructor after accessors have been set up.
     // Also called after bitstream loading.
+    // The forLoad arg is saying that this is done prior to loading so
+    // the device doesn't really have to be happy
     bool Device::
     init(std::string &err) {
-      uint64_t magic = m_cAccess.get64Register(magic, OccpAdminRegisters);
+      uint64_t magic;
+      sig_t old; // FIXME: we could make this thread safe
+      try {
+	if (sigsetjmp(jmpbuf, 1) == 0) {
+	  old = signal(SIGBUS, catchBusError);
+	  magic = m_cAccess.get64Register(magic, OccpAdminRegisters);
+	} else {
+	  ocpiBad("HDL Device '%s' gets a bus error on probe: ", m_name.c_str());
+	  err = "bus error on probe";
+	}
+      } catch (...) {
+	ocpiBad("HDL Device '%s' gets access exception on probe: ", m_name.c_str());
+	err = "access exception on probe";
+      }
+      signal(SIGBUS, old);
+      if (err.size())
+	return true;
       // Shuffle endianness here
       if (magic != OCCP_MAGIC) {
 	ocpiBad("HDL Device '%s' responds, but the OCCP signature: "

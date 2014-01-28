@@ -104,12 +104,12 @@ found(const char *name, OP::Bar *bars, unsigned nbars, bool verbose) {
     return "Can't open /dev/mem, probably need to run as root/sudo";
   do { // break on error to recover mappings
     if ((bar0 = mmap(NULL, sizeof(OH::OccpSpace), PROT_READ|PROT_WRITE, MAP_SHARED,
-		     pciMemFd, bars[0].address)) == (void*)-1) {
+		     pciMemFd, OCPI_UTRUNCATE(off_t, bars[0].address))) == (void*)-1) {
       err = "can't mmap /dev/mem for bar0";
       break;
     }
-    if ((bar1 = mmap(NULL, bars[1].size, PROT_READ|PROT_WRITE, MAP_SHARED,
-		     pciMemFd, bars[1].address)) == (void*)-1) {
+    if ((bar1 = mmap(NULL,OCPI_UTRUNCATE(size_t, bars[1].size), PROT_READ|PROT_WRITE, MAP_SHARED,
+		     pciMemFd, OCPI_UTRUNCATE(off_t, bars[1].address))) == (void*)-1) {
       err = "can't mmap /dev/mem for bar1";
       break;
     }
@@ -177,7 +177,7 @@ found(const char *name, OP::Bar *bars, unsigned nbars, bool verbose) {
   if (bar0)
     munmap(bar0, sizeof(OH::OccpSpace));
   if (bar1)
-    munmap(bar1, bars[1].size);
+    munmap(bar1, OCPI_UTRUNCATE(size_t, bars[1].size));
   return err;
 }
 
@@ -226,9 +226,9 @@ main(int /*argc*/, char **argv)
       fprintf(stderr, "Error: The OCPI_DMA_MEMORY environment variable is not formatted correctly\n");
       rv = 1;
     } else if ((fd = open("/dev/mem", O_RDWR|O_SYNC)) < 0 ||
-	       (cpuBase = (uint8_t*)mmap(NULL, (unsigned long long)dmaMeg * 1024 * 1024,
-					 PROT_READ|PROT_WRITE, MAP_SHARED, fd, dmaBase)) ==
-	       MAP_FAILED) {
+	       (cpuBase = (uint8_t*)mmap(NULL, OCPI_UTRUNCATE(size_t, (uint64_t)dmaMeg * 1024 * 1024),
+					 PROT_READ|PROT_WRITE, MAP_SHARED, fd,
+					 OCPI_UTRUNCATE(off_t, dmaBase))) == MAP_FAILED) {
       fprintf(stderr, "Error: Can't map to local DMA memory defined in OCPI_DMA_MEMORY using /dev/mem (%s/%d)\n",
 	      strerror(errno), errno);
       rv = 1;

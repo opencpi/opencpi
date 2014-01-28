@@ -113,7 +113,8 @@ WorkLibrarySources+= $(OCPI_CDK_DIR)/include/hdl/onewire.v
 endif
 XstInternalOptions=$(and $(wildcard $(TargetDir)/$(HdlPlatform).xcf),-uc ../$(HdlPlatform).xcf)
 XstDefaultExtraOptions=
-XstDefaultContainerExtraOptions=-iobuf yes -bufg 32 -iob auto
+#XstDefaultContainerExtraOptions=-iobuf yes -bufg 32 -iob auto
+XstDefaultContainerExtraOptions=-bufg 32 -iob auto
 XstMyExtraOptions=$(strip \
   $(if $(filter $(HdlMode),container),\
       $(if $(filter undefined,$(origin XstContainerExtraOptions)),\
@@ -200,10 +201,10 @@ XstGoodOptions=-bufg -opt_mode -opt_level -read_cores -iobuf \
 # Our default options, some of which may be overridden
 # This is the set for building cores, not chips.
 XstDefaultOptions=\
-    -ifmt mixed -bufg 0 -iobuf no -opt_mode speed -opt_level 2 -ofmt NGC \
+    -ifmt mixed -bufg 0 $(and $(filter-out container,$(HdlMode)),-iobuf no) -opt_mode speed -opt_level 2 -ofmt NGC \
     -keep_hierarchy soft -netlist_hierarchy rebuilt \
     -hierarchy_separator / \
-    -read_cores $(if $(filter container,$(HdlMode)),optimize,yes) \
+    -read_cores $(if $(filter container,$(HdlMode)),yes,yes) \
     -use_new_parser yes \
 
 # Extra default ones:\
@@ -246,7 +247,7 @@ XstIniFile=$(Core).ini
 
 XstLibraries=$(HdlLibrariesInternal)
 
-XstNeedIni= $(strip $(XstLibraries)$(ComponentLibraries)$(CDKCompenentLibraries)$(CDKDeviceLibraries)$(SubCores))
+XstNeedIni= $(strip $(XstLibraries)$(ComponentLibraries)$(CDKCompenentLibraries)$(CDKDeviceLibraries)$(Cores))
 #   $(and $(findstring worker,$(HdlMode)),echo $(call ToLower,$(Worker))=$(call ToLower,$(Worker));) 
 
 # Choices as to where a bb might be
@@ -259,36 +260,46 @@ XstCoreLibraryChoices=$(strip \
   $(call HdlLibraryRefDir,$1,$(or $(HdlTarget),$(info NONE4))) \
 )
 
+#   $(if $(PreBuiltCore)$(filter container assembly platform worker core,$(HdlMode)),,echo work;) $(if $(findstring work,$(LibName)),,echo $(LibName);) \
+#####################################################
+# The list of libraries is ordered:
+# 1. Component libraries
+# 2. Primitive libraries
+# 3. Black box core libraries
+# This must be consistent with the XstMakeIni
+# The trick is to filter out component library BB libs from the cores.
+XstCompLibs=$(ComponentLibraries) $(DeviceLibraries) $(CDKComponentLibraries) $(CDKDeviceLibraries)
+XstMakeLso=\
+  (\
+   $(foreach l,$(XstCompLibs),\
+      $(xxxinfo CL:$l) \
+      echo $(lastword $(subst -, ,$(notdir $l)));)\
+   $(foreach l,$(HdlLibrariesInternal),\
+      $(xxxinfo HL:$l) \
+      echo $(lastword $(subst -, ,$(notdir $l)));)\
+   $(foreach l,$(Cores), \
+      $(xxxinfo CC:$l) \
+      echo $(patsubst %_rv,%,$(basename $(notdir $l)));)\
+  ) > $(XstLsoFile);
+
+#            echo $(lastword $(subst -, ,$(notdir $(l))_bb));)) > $(XstLsoFile);
+
 #  $(call HdlLibraryRefDir,$1,$(or $(HdlTarget),$(info NONE4)),$(notdir $1)_bb) \
 
 XstMakeIni=\
   (\
-   $(foreach l,$(CDKComponentLibraries),echo $(notdir $(l))=$(strip \
-     $(call FindRelative,$(TargetDir),$(l)/hdl/stubs/$(call XstLibRef,,$(HdlTarget))));) \
-   $(foreach l,$(CDKDeviceLibraries),echo $(notdir $(l))=$(strip \
-     $(call FindRelative,$(TargetDir),$(l)/hdl/stubs/$(call XstLibRef,,$(HdlTarget))));) \
-   $(foreach l,$(DeviceLibraries),echo $(notdir $(l))=$(strip \
-     $(call FindRelative,$(TargetDir),$(l)/lib/hdl/stubs/$(call XstLibRef,,$(HdlTarget))));) \
-   $(foreach l,$(ComponentLibraries),echo $(notdir $(l))=$(strip \
+   $(foreach l,$(XstCompLibs),echo $(notdir $(l))=$(strip \
      $(call FindRelative,$(TargetDir),$(call HdlComponentLibraryDir,$l,$(HdlTarget),bb)));) \
-   $(foreach l,$(XstLibraries),\
+   $(foreach l,$(HdlLibrariesInternal),\
       echo $(lastword $(subst -, ,$(notdir $(l))))=$(strip \
         $(call FindRelative,$(TargetDir),$(strip \
            $(call HdlLibraryRefDir,$(l),$(HdlTarget)))));) \
-   $(foreach l,$(SubCores),\
+   $(foreach l,$(Cores),\
       echo $(patsubst %_rv,%,$(basename $(notdir $l)))=$(call FindRelative,$(TargetDir),$(strip \
           $(firstword $(foreach c,$(call XstCoreLibraryChoices,$(basename $l)),$(call HdlExists,$c)))));) \
   ) > $(XstIniFile);
 
-XstMakeLso=\
-  (\
-   $(if $(PreBuiltCore)$(filter container assembly platform worker core,$(HdlMode)),,echo work;) $(if $(findstring work,$(LibName)),,echo $(LibName);) \
-   $(foreach l,$(ComponentLibraries) $(DeviceLibraries) $(XstLibraries) $(CDKComponentLibraries) $(CDKDeviceLibraries),\
-                      echo $(lastword $(subst -, ,$(notdir $(l))));)\
-  $(foreach l,$(SubCores), echo $(patsubst %_rv,%,$(notdir $l));)) > $(XstLsoFile);
-
-#            echo $(lastword $(subst -, ,$(notdir $(l))_bb));)) > $(XstLsoFile);
-XstOptions += -lso $(XstLsoFile) 
+XstOptions += $(and $(XstNeedIni),-lso $(XstLsoFile))
 #endif
 XstPrjFile=$(Core).prj
 # old XstMakePrj=($(foreach f,$(HdlSources),echo verilog $(if $(filter $(WorkLibrarySources),$(f)),work,$(LibName)) '"$(call FindRelative,$(TargetDir),$(dir $(f)))/$(notdir $(f))"';)) > $(XstPrjFile);
@@ -314,7 +325,7 @@ XstMakeScr=(echo set -xsthdpdir . $(and $(XstNeedIni),-xsthdpini $(XstIniFile));
 
 XstOptions +=\
  -ifn $(XstPrjFile) -ofn $(Core).ngc -work_lib $(LibName) -top $(Top) \
- -p $(or $(HdlExactPart),$(HdlTarget))\
+ -p $(or $(and $(HdlExactPart),$(foreach p,$(HdlExactPart),$(word 1,$(subst -, ,$p))$(word 3,$(subst -, ,$p))-$(word 2,$(subst -, ,$p)))),$(HdlTarget))\
  $(and $(VerilogIncludeDirs),$(strip\
    -vlgincdir { \
      $(foreach d,$(VerilogIncludeDirs),$(call FindRelative,$(TargetDir),$(d))) \
@@ -331,7 +342,7 @@ XstOptions +=\
      $(foreach l,$(DeviceLibraries),$(strip \
        $(call FindRelative,$(TargetDir),\
          $(l)/lib/hdl/$(call XstLibRef,$(LibName),$(HdlTarget)))))\
-     $(foreach c,$(XstCores),$(call FindRelative,$(TargetDir),$(dir $(call HdlCoreRef,$c,$(HdlTarget)))))\
+     $(foreach c,$(XstCores),$(xxinfo XST:$c)$(call FindRelative,$(TargetDir),$(dir $(call HdlCoreRef,$c,$(HdlTarget)))))\
      $(and $(findstring platform,$(HdlMode)),..) \
       })
 
@@ -364,8 +375,8 @@ HdlToolCompile=\
   echo '  'Creating $@ with top == $(Top)\; details in $(TargetDir)/xst-$(Core).out.;\
   rm -f $(notdir $@);\
   $(XstMakePrj)\
-  $(XstMakeLso)\
-  $(and $(XstNeedIni),$(XstMakeIni)) \
+  $(and $(XstNeedIni),$(XstMakeLso))\
+  $(and $(XstNeedIni),$(XstMakeIni))\
   $(XstMakeScr)\
   $(call XilinxInit); xst -ifn $(XstScrFile) \
   $(and $(PlatformCores), && mv $(Core).ngc temp.ngc && ngcbuild -sd .. temp.ngc $(Core).ngc)
@@ -435,14 +446,14 @@ $(call NgcName,$1,$4): $(wildcard $(HdlPlatformsDir)/$5/*.ucf)
 $(call NgdName,$1,$3): $(call NgcName,$1,$4) $(wildcard $(HdlPlatformsDir)/$5/*.ucf)
 	$(AT)echo -n For $2 on $5 using config $4: creating merged NGC file using '"ngcbuild"'.
 	$(AT)$(call DoXilinx,ngcbuild,$1,\
-	        -aul -aut -verbose \
+	        -verbose \
 		$$(XstNgdOptions) $4.ngc $3.ngc)
 	$(AT)echo -n "    " Creating EDF textual netlist file using ngc2edif." "
 	$(AT)$(call DoXilinxPat,ngc2edif,$1,-w $3.ngc,'ngc2edif: Total memory usage is')
 	$(AT)echo -n For $2 on $5 using config $4: creating NGD '(Xilinx Native Generic Database)' file using '"ngdbuild"'.
 	$(AT)rm -f $$@
 	$(AT)$(call DoXilinx,ngdbuild,$1,\
-	        -aul -aut -verbose $(foreach u,$(wildcard $(HdlPlatformsDir)/$5/*.ucf),-uc $u) -p $(HdlPart_$5) \
+	        -verbose $(foreach u,$(wildcard $(HdlPlatformsDir)/$5/*.ucf),-uc $u) -p $(HdlPart_$5) \
 		$$(XstNgdOptions) $3.ngc $3.ngd)
 
 # Map to physical elements

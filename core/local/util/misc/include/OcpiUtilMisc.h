@@ -377,6 +377,11 @@ namespace OCPI {
       inline size_t roundUp (size_t value, size_t align) {
 	return ((value + (align - 1)) / align) * align;
       }
+      inline uint32_t swap32(uint32_t value) {
+	return
+	  (((value) & 0xff) << 24) | (((value) & 0xff00) << 8) |
+	  (((value) & 0xff0000) >> 8) | (((value) >> 24));
+      }
   }
 }
 

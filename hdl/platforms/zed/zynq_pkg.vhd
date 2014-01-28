@@ -44,7 +44,7 @@ type ps2pl_t is record
   FCLKRESET_N  : std_logic;
 end record ps2pl_t;
 
--- Inputs to the m_axi_gp
+-- Inputs to the m_axi_gp port of the PS
 type axi_gp_in_t is record
   ACLK    : std_logic;
   ARREADY : std_logic;
@@ -60,6 +60,7 @@ type axi_gp_in_t is record
   RDATA   : std_logic_vector(31 downto 0);
 end record axi_gp_in_t;
 
+-- Outputs from the m_axk_gp port of the PS into the PL
 type axi_gp_out_t is record
   ARESETN : std_logic;
   ARVALID : std_logic;

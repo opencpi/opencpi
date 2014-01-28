@@ -20,13 +20,16 @@ namespace OCPI {
     const char *hdl = "hdl";
 
     OCPI::HDL::Device *Driver::
-    open(const char *which, bool discovery, std::string &err) {
+    open(const char *which, bool discovery, bool forLoad, std::string &err) {
       parent().parent().configureOnce();
       lock();
       // FIXME: obviously this should be registered and dispatched nicely..
-      bool pci = false, ether = false, sim = false;
+      bool pci = false, ether = false, sim = false, bus = false;
       if (!strncasecmp("PCI:", which, 4)) {
 	pci = true;
+	which += 4;
+      } else if (!strncasecmp("bus:", which, 4)) {
+	bus = true;
 	which += 4;
       } else if (!strncasecmp("sim:", which, 4)) {
 	sim = true;
@@ -45,9 +48,12 @@ namespace OCPI {
       }
       Device *dev =
 	pci ? PCI::Driver::open(which, err) : 
+	bus ? Bus::Driver::open(which, forLoad, err) : 
 	ether ? Ether::Driver::open(which, discovery, err) :
 	sim ? Sim::Driver::open(which, discovery, err) : NULL;
       ezxml_t config;
+      if (forLoad)
+	return dev;
       if (dev && !setup(*dev, config, err))
 	return dev;
       delete dev;
@@ -81,6 +87,11 @@ namespace OCPI {
       unsigned count = 0;
       m_params = params;
       std::string error;
+      count += Bus::Driver::search(params, exclude, discoveryOnly, error);
+      if (error.size()) {
+	ocpiBad("In HDL Container driver, got bus search error: %s", error.c_str());
+	error.clear();
+      }
       count += Ether::Driver::search(params, exclude, discoveryOnly, false, error);
       if (error.size()) {
 	ocpiBad("In HDL Container driver, got ethernet search error: %s", error.c_str());
@@ -103,7 +114,7 @@ namespace OCPI {
     probeContainer(const char *which, std::string &error, const OA::PValue *params) {
       Device *dev;
       ezxml_t config;
-      if ((dev = open(which, false, error)))
+      if ((dev = open(which, false, false, error)))
 	if (setup(*dev, config, error))
 	  delete dev;
 	else

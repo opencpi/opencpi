@@ -92,7 +92,7 @@ namespace OCPI {
       ocpiDebug("setBytes %p off %"PRIx64" from %p to %p bytes %zx",
 		this, (uint64_t)offset, from8, to8, bytes);
       if (bytes >= 8 && !(((intptr_t)from8 | offset) & 7)) {
-	ocpiDebug("setBytes 64 bits: %lx", bytes);
+	ocpiDebug("setBytes 64 bits: %zx", bytes);
 	uint64_t *from64 = (uint64_t *)from8;
 	volatile uint64_t *to64 = (uint64_t *)to8;
 	do {
@@ -102,7 +102,7 @@ namespace OCPI {
 	from8 = (uint8_t *)from64;
       }
       if (bytes >= 4 && !(((intptr_t)from8 | offset) & 3)) {
-	ocpiDebug("setBytes 32 bits: %lx", bytes);
+	ocpiDebug("setBytes 32 bits: %zx", bytes);
 	uint32_t *from32 = (uint32_t *)from8;
 	volatile uint32_t *to32 = (uint32_t *)to8;
 	do
@@ -112,7 +112,7 @@ namespace OCPI {
 	from8 = (uint8_t *)from32;
       }
       if (bytes >= 2 && !(((intptr_t)from8 | offset) & 1)) {
-	ocpiDebug("setBytes 16 bits: %lx", bytes);
+	ocpiDebug("setBytes 16 bits: %zx", bytes);
 	uint16_t *from16 = (uint16_t *)from8;
 	volatile uint16_t *to16 = (uint16_t *)to8;
 	do {
@@ -125,7 +125,7 @@ namespace OCPI {
 	from8 = (uint8_t *)from16;
       }
       if (bytes)
-	ocpiDebug("setBytes 8 bits: %lx", bytes);
+	ocpiDebug("setBytes 8 bits: %zx", bytes);
       while (bytes)
 	*to8++ = *from8++, bytes--;
     }

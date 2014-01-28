@@ -458,7 +458,7 @@ namespace OCPI {
 	if (bar1)
 	  munmap(bar1, pci.size1);
 	if (fd >= 0) {
-	  close(fd);
+	  ::close(fd);
 	  fd = -1;
 	}
 	ocpiBad("When searching for PCI device '%s': %s", pciName, error.c_str());

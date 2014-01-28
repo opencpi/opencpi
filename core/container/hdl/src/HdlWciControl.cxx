@@ -52,7 +52,7 @@ namespace OCPI {
     init(bool redo) {
       m_window = 0;
       if (m_hasControl) {
-	setControlMask(getControlMask() | 1 << OU::OpStart | 1 << OU::OpStop);
+	setControlMask(getControlMask() | 1 << OU::OpStart);
 	unsigned logTimeout = 31;
 	for (size_t u = 1 << logTimeout; !(u & m_timeout);
 	     u >>= 1, logTimeout--)
