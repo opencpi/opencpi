@@ -1,0 +1,5 @@
+# #### Location of the Xilinx tools ####################################### #
+
+export OCPI_XILINX_TOOLS_DIR=$OCPI_XILINX_DIR/$OCPI_XILINX_VERSION/ISE_DS
+export OCPI_XILINX_EDK_DIR=$OCPI_XILINX_DIR/$OCPI_XILINX_VERSION/ISE_DS/EDK
+export OCPI_VIVADO_TOOLS_DIR=$OCPI_XILINX_DIR/Vivado/$OCPI_VIVADO_VERSION

@@ -1,0 +1,48 @@
+This note describes the principles behind the use and choice of
+integer types.  While the broad goal would be to use proper typedefs
+for all sorts of types for maximum type safety, the practice used
+falls somewhere in the middle.
+
+In general, we use unsigned types when there is no need for negative
+values.  A few exceptions are using signed types for "bit flags",
+which is probably wrong.  Occasionally we use signed types simply to
+have a sentinel (-1) along with an unsigned value.
+
+We use size_t as a convenient unsigned type a lot since it is
+consistent with many standard library calls (from strlen to STL size
+and length).  On some systems it is "long" and on others it is not.
+All the printf/scanf functions have convenient size codes for it
+(using "z").  Without using it many common patterns can force an
+implicit truncation, which we want to avoid.  This allows us to turn
+on the -Wconversion warnings and not get buried with conversions from
+"size_t", to "unsigned int".  size_t is used in OpenCPI user APIs also
+to be consistent standard library and system APIs.  So size_t is
+"sticky" if we use an API that returns it, we let the type size_t
+propagate through code.  (e.g. strlen or size/length methods in STL)
+
+In using STL we sometimes use std::streamsize, but size_t is the same.
+
+Whenever we truly need to know the size of integers we use stdint.h
+and its sized types, as well as intptr_t as needed.  But when there is
+a possibility that we might change our minds about the sizes or need
+to compile globally with different sizes we use a typedef.
+
+When we knowingly are truncating an integer type use
+OCPI_UTRUNCATE(to-type,val) or OCPI_STRUNCATE for signed types.
+This allows, in debug, a runtime check for these truncations.
+
+Two particularly important types are:
+
+OCPI::Util::ResAddr (or in older code OCPI::Util::ResAddrType) is used
+for the offset within a managed resource pool.
+
+DtOsDataTypes::Offset is used for the offset within a endpoint address
+region.
+
+sizeof(DtOsDataTypes::Offset) must be larger than sizeof(OCPI::Util::ResAddr).
+
+Since we use C-style printf/sprinftf/scanf patterns a lot, we
+generally define macros for printing these types, based on the
+inttypes.h macros like PRIu32.  These macros are upper case with _ for
+:: in namespaces, and the suffix like "_PRIu".
+

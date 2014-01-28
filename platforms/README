@@ -1,0 +1,6 @@
+This directory is for OpenCPI runtime platforms - systems that are not
+generic linux development systems, but just (typically embedded)
+runtime systems on which to execute various opencpi software
+applications (such as ocpirun and ocpihdl).  The software (and FPGA
+bitstreams) for such systems are usually built using cross-tools on a
+generic linux development system with the appropriate tools installed.

@@ -1,0 +1,55 @@
+Headers should be included in the order of basic dependency layers,
+with the botton layers first.
+
+Headers outside opencpi should use <>, while headers inside opencpi
+shoud use "".
+
+"distant" headers are included first since we don't want to collide
+with anything in headers we don't control.
+
+A typical ordering is:
+
+1. C langauge headers if there are any. (from the C standard library) e.g. stdint.h
+2. POSIX C headers (from the POSIX standard)
+3. OS headers (linux-specific etc.) when we use them.
+4. C++ language headers if there are any.
+5. External library dependency headers (if any)
+
+The above headers should be in angle brackets since they are not in opencpi.
+
+One wierd case is the formatting macros like PRIu64, found in <inttypes.h>.
+The ISO C99 spec says the are only included from inttypes.h if __STDC_FORMAT_MACROS
+is defined.  So if you use these, you must put this as *the first header*:
+#define __STD_FORMAT_MACROS
+#include <inttypes.h>
+
+After the above headers are those from OpenCPI, also in the order of
+"lower" or "more distant" first, enclosed in double quotes, not angle brackets,
+typically ordered:
+
+6. OcpiOS headers (OS abstraction)
+7. OcpiUtil headers (general utilities)
+8. Other layers below the current code
+9. Headers for the current code classes etc.
+
+Our headers start with typical
+#ifdef UPPERCASEDFILENAME_H
+#define UPPERCASEDFILENAME_H
+
+<copywrite/license in comments>
+
+<header files included ordered per above>
+
+<namespace scoping open>
+
+<real content here>
+
+<namespace scoping closing>
+#endif
+
+
+It is a good idea to periodically prune include files by commenting
+them all out, and then including those that are needed.  If a file
+gets a significant update, do this.  But generally, headers should be
+included for all specifically referenced items and no more.
+

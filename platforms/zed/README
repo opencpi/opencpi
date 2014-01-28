@@ -1,0 +1,228 @@
+This directory contains information and scripts for using opencpi on the
+embedded linux on a Zed board with a Zynq chip on it.  It is focused on the
+Linux from Digilent that comes on the SD card that comes with the board.
+There are literally 10s of "getting started on the zed board" documents for
+various projects and purposes, but this one focuses simply on getting the
+zed up and running as an opencpi embedded host, using the Linux kernel as
+provided by Digilent, the manufacturer of the board.  Of course the
+Digilent Linux kernel uses lots of code provided by Xilinx for Zynq and
+Zed.
+
+When Linux boots on the Zed board from the SD card, it creates a
+memory-based root file system, initialized from decompressing a .gz file on
+the SD card.  It does NOT mount the SD card itself as a file system,
+although that can be done after booting.  This means that anything you
+write to the root file system is NOT persistent.  To create any persistent
+file you must first mount the SD card file system and write files to that
+file system.
+
+Since OpenCPI typically use NFS clients to access the development tree from
+these types of systems (in a development environment anyway), and since the
+default Linux configuration built by Digilent does NOT have NFS client
+support, we download (git clone) the Digilent Linux source tree and rebuild
+the Linux kernel with NFS client support, and then replace the boot kernel
+on the SD card with the new one with NFS client support.  This file on the
+SD card is called zImage.  By rebuilding the kernel with NFS client
+support, and replacing this file on the SD card, we can then boot from the
+SD card normally, and then mount the OpenCPI development tree via NFS, and
+run software and bitstreams build for zed/zynq.  Instructions for this are
+below.
+
+Modifying this file on the SD card of course requires that you can mount
+and modify the SD card in some way from the development environment on
+which you build the modified kernel.  On a system or laptop with an SD card
+slot this is of course trivial: just plug it in, and copy the zImage file
+to it.  Since the original Digilent default boot kernel on the SD card can
+indeed mount and write the SD card locally on the zed board, the SD card
+can be written locally, putting the new boot kernel on the SD card from the
+zed board itself.  But this requires that the updated zImage file be
+obtained from the network somehow and the original/default Linux system
+(kernel and root file system) does not have this capability (as far as we
+know).  These instructions simply assume that the SD card can be written
+from the (Centos6) development environment somehow.
+
+Note that the contents of the SD card can be found on the Digilent web site
+under the "out of box" project at http://www.zedboard.org/node/241.  But
+you don't need this if you are just following these directions.
+
+To first start using the Zed board you need to do these things:
+
+*****************************************************************************************
+********* Basic board physical configuration and power up test ***********
+
+Step 0: Always be careful of static electricity when touching the board.
+Touch some metal shell first each time. Start with the power cable disconnected.
+
+Step 1: Set the jumpers on the board correctly, according to the Digilent README
+file on the SD card:
+
+    MIO 6: set to GND
+    MIO 5: set to 3V3
+    MIO 4: set to 3V3
+    MIO 3: set to GND
+    MIO 2: set to GND
+
+    VADJ Select: Set to 1V8
+
+    JP6: shorted
+    JP2: shorted
+
+    All other jumpers should be left unshorted.
+
+    Make sure the power switch is OFF
+
+Step 2: Insert the SD card into the socket on the bottom of the board.
+
+Step 3: Connect the supplied micro-USB-to-normal-USB-cable to a system
+with a terminal emulator to provide access to the Zed system console,
+set to 115200 board, 8 data bits, 1 stop bit, no parity.  There
+are two different connectors on the board: be sure to use the one
+labelled: UART, and NOT the one labelled USB OTG.
+
+Step 4: Attach the power cable
+
+Step 5: Turn the power switch on.  The green POWER LED should come on, and
+a few seconds later, the blue DONE LED should come on.  This means the
+board is powered up and has successfully loaded the default bitstream.
+
+******** The above steps confirm power, SD card, jumpers, and board is all happy **********
+
+*****************************************************************************************
+********** Next Steps are to get access to the serial system console of the Zed *********
+
+Step 6: Establish Serial Console Communications on the Linux Development Host
+
+Since the OpenCPI development environment is running on a Linux system
+(usually Centos6), you can just plug this USB cable into that Linux system,
+and it will automatically create a "/dev/tty*" file for this connection
+when you plug it in and the Zed board is powered up.  You need to determine
+this pathname - and watch it come and go when you disconnect and reconnect
+the USB cable.
+
+Without any other configuration of the Linux development host, you
+typically have to add read/write permission to this "/dev/tty*" file
+manually EACH TIME THE CABLE IS CONNECTED AND/OR THE ZED BOARD IS POWERED
+ON, using:
+
+% sudo chmod a+rw /dev/ttyACM0
+
+(assuming the /dev/tty* file created for that cable is /dev/ttyACM0, which is
+the default for the first such hotplugged USB/serial cable on Centos6).
+Again, this must be done each time the board is power cycled or disconnected.
+
+This can be automated with udev configuration if you want to go there.
+(TBD: explain how to automate this).
+
+Step 7: Run a serial console terminal emulator program on the development
+system that is attached to the USB cable from the UART connector.
+
+There are many alternative terminal emulation applications to provide for
+this USB remote serial console for the Zed board (or any similar board).
+One that is available in the standard Centos 6 repository is "screen",
+obtainable by simply using:
+
+% sudo yum install screen.
+
+Then in any terminal window, you can do:
+
+% screen /dev/ttyACM0 115200
+
+To exit this program, you use the sequence: Control-a followed by backslash.
+
+For Emacs users, you can use the serial terminal emulator built in to
+Emacs, by simply doing: M-x serial-term in a window, and providing the
+/dev/ttyACM0 name and 115200 baud rate when prompted.  There are two modes
+in this window, "char" and "line".  The default is "char" mode, where every
+character typed is immediately sent without any interpretation at all.
+This means no emacs commands work and you have to use the mouse to switch
+to another window.  "line" mode is more line buffered, like "shell" mode,
+and all line editing and other emacs commands work fine.  BUT the display
+can get confused in line mode so you have sometimes switch back and forth.
+control-c control-j switches to line mode, control-c control-k switches to
+char mode.  Control-c control-c sends a control C in char mode.
+
+(TBD: fix the glitch in emacs serial-term line mode so this works better).
+(TBD: fix so control-c twice in line mode does the right thing)
+
+Step 8: hit return a few times in the serial console window to see the "zynq>" prompt
+
+Sometimes if the screen or terminal emulator is confused, or if, after hitting
+"return", the prompt stays on the same line, try typing the command "clear",
+to clear the state of the terminal emulator.
+
+
+
+
+************* The above confirms you have serial console access to the Zed board********
+
+*****************************************************************************************
+************* Next is to modify the SD card contents to run OpenCPI *************
+
+Step 9: Change the Linux boot kernel on the SD card to the one with NFS client support
+
+Later in this document we will describe how to actually create this kernel file,
+but there is a copy of it in the platforms/zed directory of the OpenCPI repo.
+
+With the SD card mounted and accessible to your Linux system, let's say
+on /mnt/sd0, and your OpenCPI repo at /home/xxx/ocpi/opencpi, you first 
+make a copy of the original Linux kernel for safekeeping:
+
+% cp /mnt/sd0/zImage my-saved-original-zImage
+
+Note there is a copy of an original kernel in opencpi/platforms/zed/zImage-original
+in any case, but that might not be identical to what you have on your particular
+SD card...
+
+So then copy the kernel image in the OpenCPI to the SD card:
+
+% cp /home/xxx/ocpi/opencpi/platforms/zed/zImage-with-nfs-client /mnt/sd0/zImage
+
+Step 10: Add a convenience/startup script to the SD card
+
+% cp /home/xxx/ocpi/opencpi/platforms/zed/setup.sh /mnt/sd0/setup.sh
+
+This script performs various tasks when you start up the zed board:
+1. obtains an IP address using DHCP
+2. mounts the development hosts OpenCPI development area on /mnt/nfs
+3. adds the binary directory for opencpi applications to the path.
+
+Step 11: Connect the ethernet connector on the Zed board to a LAN with DHCP.
+
+Step 12: Switch the SD card back to the Zed board: UNMOUNTING FIRST!!
+
+Umount the SD card from the development system (e.g. sudo umount /mnt/sd0).
+Remove the SD card from the development system.
+Power down the Zed board with the power switch
+Insert the SD card into the Zed board
+
+Step 13: Repower the zed board, and reestablish a serial console window.
+
+Step 14: Mount the SD card onto the Zed using:
+
+zynq> mkdir /mnt/sd; mount /dev/mmcblk0p1 /mnt/sd
+
+Step 15: Source the startup script on the SD card:
+
+zynq> source /mnt/sd/setup.sh <dev-host-IP-addr> <dev-host-share-name> <ocpi-dir>
+
+The arguments to this sourced script are:
+<dev-host-IP-addr>: the IP address of the OpenCPI development host
+<dev-host-share-name>: the mount point on the development host (e.g. /home/xxx/proj2)
+<ocpidir>: the path relative to the mount point that is the root of an opencpi tree
+This command should establish network connections, mount the development system,
+to the /mnt/nfs point, and enable openCPI applications. To test that opencpi
+applications are available, type:
+
+zynq> ocpirun
+
+If this works ok, then, as a convenience, you might do:
+zynq> echo source /mnt/sd/setup.sh <dev-host-IP-addr> <dev-host-share-name> <ocpi-dir> > /mnt/sd/mysetup.sh
+
+Then, at boot time, you can just type:
+
+zynq> mkdir /mnt/sd; mount /dev/mmcblk0p1 /mnt/sd; source /mnt/sd/mysetup.sh
+
+*****************************************************************************************
+********* The steps above connect the zed board to the opencpi development system ********
+
+
