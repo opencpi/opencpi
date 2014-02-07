@@ -151,7 +151,7 @@ namespace OCPI {
 	      cleanup();
 	    }
 	    int gzread(uint8_t *&argBuf) {
-	      if ((n = ::gzread(gz, buf + len, sizeof(buf) - len)) < 0)
+	      if ((n = ::gzread(gz, buf + len, (unsigned)(sizeof(buf) - len))) < 0)
 		throw OU::Error("Error reading compressed bitstream: %s(%u/%d)",
 				gzerror(gz, &zerror), errno, n);
 	      n += len;
@@ -239,6 +239,7 @@ namespace OCPI {
 	std::string name("BUS:");
 	name += busName;
 
+#ifdef OCPI_PLATFORM_arm
 	if (m_memFd < 0 && (m_memFd = ::open("/dev/mem", O_RDWR|O_SYNC)) < 0)
 	  error = "Can't open /dev/mem, forgot to load the driver? sudo?";
 	else {
@@ -248,6 +249,9 @@ namespace OCPI {
 	  delete dev;
 	}
 	ocpiBad("When searching for BUS device '%s': %s", busName, error.c_str());
+#else
+	(void)forLoad; (void)error;
+#endif
 	return NULL;
       }
 
