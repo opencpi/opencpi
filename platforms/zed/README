@@ -57,7 +57,18 @@ of the OpenCPI tree, set up your environment for building for Zynq
 Linux, and then build OpenCPI, the software components, and the test
 bit streams.
 
-To set up the build environment, look at the script "jkzed.sh",
+To set up the build environment, first build OpenCPI for the native
+development system.  Look at the script "jkvm6.sh", modify it for your Xilinx ISE
+tools installation, and build for the native Centos6 system:
+
+% source ./jkvm6.sh
+
+Then if all is well:
+
+% make; make rcc
+
+This builds the OpenCPI software and tools for your development system.
+Next, IN A NEW SHELL/WINDOW, look at the script "jkzed.sh",
 modify it for your Xilinx ISE tools installation, and then source it:
 
 % source ./jkzed.sh

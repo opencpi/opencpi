@@ -167,8 +167,10 @@ static u64 opencpi_kernel_alloc_id     = 0;     // running/counting id per kerne
 static ocpi_device_t **opencpi_devices = NULL;  // array of pointers to our (minor) devices
 static dev_t opencpi_device_number     = 0;     // our allocated major num, with minor == 0
 static struct class *opencpi_class     = NULL;  // our dynamically created class
-static bool opencpi_pci_registered     = false; // bool to remember if we registered the driver
 static unsigned opencpi_ndevices       = 0;     // how many have we created (via probe)?
+#ifdef CONFIG_PCI
+static bool opencpi_pci_registered     = false; // bool to remember if we registered the driver
+#endif
 #ifdef OCPI_NET
 static bool opencpi_proto_registered        = false; // we have registered our protocol
 static bool opencpi_family_registered       = false; // we have registered our family
@@ -187,6 +189,7 @@ log_err_code(long err, const char *str) {
   log_err("Got code %ld when %s\n", err, str);
 }
 
+#if 0
 unsigned char
 ocpi_get_revision(struct pci_dev *dev) {
   u8 revision;
@@ -194,7 +197,7 @@ ocpi_get_revision(struct pci_dev *dev) {
   pci_read_config_byte(dev, PCI_REVISION_ID, &revision);
   return revision;
 }
-
+#endif
 // -----------------------------------------------------------------------------------------------
 // Block management - blocks of physical addresses that we care about
 // -----------------------------------------------------------------------------------------------
@@ -450,7 +453,7 @@ opencpi_vma_close(struct vm_area_struct *vma) {
   ocpi_address_t address = vma->vm_pgoff << PAGE_SHIFT;
   ocpi_block_t *block = vma->vm_private_data;
 
-  log_debug("vma close %p block %p count %d: %lx @ %016llx\n",
+  log_debug("vma close %p block %p count %d: %zx @ %016llx\n",
 	    vma, block, atomic_read(&block->refcnt), size, address);
 
   release_block(block);
@@ -573,7 +576,9 @@ opencpi_io_release(struct inode *inode, struct file *file) {
   return 0;
 }
 
+#ifdef CONFIG_PCI
 static int get_pci(unsigned minor, ocpi_pci_t *pci);
+#endif
 // ioctl for getting memory status and requesting memory allocations
 // FIXME: do copy_to/from_user return the right error codes anyway?
 static
@@ -589,16 +594,20 @@ opencpi_io_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsig
   int err;
   switch (cmd) {
   case OCPI_CMD_PCI:
-    {
-      ocpi_pci_t pci;
       if (minor == 0 || minor > opencpi_ndevices)
 	return -EINVAL;
-      if ((err = get_pci(minor, &pci)))
-	return err;
-      if (copy_to_user((void __user *)arg, &pci, sizeof(pci)))
-	return -EFAULT;
-      return 0;
-    }
+#ifdef CONFIG_PCI
+      {
+	ocpi_pci_t pci;
+	if ((err = get_pci(minor, &pci)))
+	  return err;
+	if (copy_to_user((void __user *)arg, &pci, sizeof(pci)))
+	  return -EFAULT;
+	return 0;
+      }
+#else
+      return -ENODEV;
+#endif
   case OCPI_CMD_STATUS:
     {
       ocpi_status_t status;
@@ -781,12 +790,13 @@ add_cdev(ocpi_device_t *mydev) {
   return 0;
 }
 
-
+#ifdef CONFIG_PCI
 static void check(struct pci_dev *d, const char *msg) {
   u16 cmd;
   pci_read_config_word(d, PCI_COMMAND, &cmd);
   log_debug("at %s cmd is %x\n", msg, cmd);
 }
+#endif
 // Free the device and associated resources
 static void
 free_device(ocpi_device_t *mydev) {
@@ -803,6 +813,7 @@ free_device(ocpi_device_t *mydev) {
     cdev_del(&mydev->cdev);
     mydev->cdev_added = 0;
   }
+#ifdef CONFIG_PCI
   if (mydev->occp != NULL) {
     check(mydev->pcidev, "before iounmap");
     pci_iounmap(mydev->pcidev, mydev->occp);
@@ -827,16 +838,19 @@ free_device(ocpi_device_t *mydev) {
     }
     mydev->pcidev = NULL;
   }
+#endif
   if (opencpi_devices)
     opencpi_devices[mydev->minor] = 0;
   kfree(mydev);
 }
+#ifdef CONFIG_PCI
 static void log_pci_err(struct pci_dev *pcidev, long err, const char *str) {
   log_err("PCI-related error on %04x:%02x:%02x.%x:\n",
 	  pci_domain_nr(pcidev->bus), pcidev->bus->number,
 	  PCI_SLOT(pcidev->devfn), PCI_FUNC(pcidev->devfn));
   log_err_code(err, str);
 }
+
 // -----------------------------------------------------------------------------------------------
 // PCI management functions for us as a PCI driver
 // -----------------------------------------------------------------------------------------------
@@ -1011,6 +1025,7 @@ static struct pci_driver opencpi_pci_driver = {
   .probe = probe_pci,
   .remove = remove_pci,
 };
+#endif
 #ifdef OCPI_NET
 // -----------------------------------------------------------------------------------------------
 // Ethernet packet support
@@ -1153,7 +1168,7 @@ static int
 net_receive_cp(struct sk_buff *skb, struct net_device *dev, struct packet_type *pt,
 	    struct net_device *orig_dev) {
 
-  log_debug("Got cp packet: %d %d %d %p %p %d %ld %p %ld\n",
+  log_debug("Got cp packet: %d %d %d %p %p %d %zd %p %ld\n",
 	    skb_headlen(skb), skb->len, dev->ifindex, skb->data, skb_mac_header(skb), skb->pkt_type,
 	    sizeof(struct ethhdr), skb->data - sizeof(struct ethhdr),
 	    ((ulong)skb_mac_header(skb)) & 3);
@@ -1379,11 +1394,13 @@ free_driver(void) {
     opencpi_proto_registered = false;
   }
 #endif
+#ifdef CONFIG_PCI
   if (opencpi_pci_registered) {
     // This will/might remove all the pci devices
     pci_unregister_driver(&opencpi_pci_driver);
     opencpi_pci_registered = false;
   }
+#endif
   if (opencpi_devices) {
     unsigned n;
     for (n = 0; n <= opencpi_ndevices; n++)
@@ -1473,12 +1490,14 @@ opencpi_init(void) {
       mydev->fsdev = fsdev;
     }
 
+#ifdef CONFIG_PCI
     // Register as a PCI driver, which might cause probe callbacks: sets opencpi_pci_registered
     if (pci_register_driver(&opencpi_pci_driver) != 0) {
       log_err("Can't register pci device\n");
       break;
     }
     opencpi_pci_registered = 1;
+#endif
     // Allocate initial memory space: sets virtual/physical/opencpi_size: set opencpi_allocation
     // TODO: Automatically detect 'memmap' on the Kernel commandline
 

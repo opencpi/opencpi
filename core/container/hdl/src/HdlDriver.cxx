@@ -52,7 +52,7 @@ namespace OCPI {
 	ether ? Ether::Driver::open(which, discovery, err) :
 	sim ? Sim::Driver::open(which, discovery, err) : NULL;
       ezxml_t config;
-      if (forLoad)
+      if (forLoad && bus)
 	return dev;
       if (dev && !setup(*dev, config, err))
 	return dev;

@@ -864,12 +864,12 @@ module pci_alst4(input          sys0_clk,
 			   3'd3 :
 			   ((!pciw_pci0_rxInF$D_OUT[153] &&
 			     pciw_pci0_rxInF$D_OUT[154] &&
-		             rx_word_enable[1:0] == 2'b11) ?
+		             rx_word_enable[3:2] == 2'b11) ?
 //			     pciw_pci0_rxInF$D_OUT[143:136] == 8'hFF) ?
 			      3'd2 :
 			      ((!pciw_pci0_rxInF$D_OUT[153] &&
 				pciw_pci0_rxInF$D_OUT[154] &&
-		                rx_word_enable[1:0] == 2'b01) ?
+		                rx_word_enable[3:2] == 2'b01) ?
 //				pciw_pci0_rxInF$D_OUT[143:136] == 8'h0F) ?
 				 3'd1 :
 				 3'd0)))))) ;

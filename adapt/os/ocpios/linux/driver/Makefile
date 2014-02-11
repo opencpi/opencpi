@@ -36,17 +36,29 @@
 # To build modules outside of the kernel tree, we run "make"
 # in the kernel source tree; the Makefile there then includes this
 # Makefile once again.  This is the expected mode of operation.
-#
+
 # This conditional selects whether we are being included from the
 # kernel Makefile or not. (this in-kernel building is not regularly tested)
-
-ifeq ($(KERNELRELEASE),)
-
-# Assume the source tree is where the running kernel was built
-# You should set KERNELDIR in the environment if it's elsewhere
-KERNELDIR ?= /lib/modules/$(shell uname -r)/build
-ifeq ($(wildcard $(KERNELDIR)),)
-  KERNELDIR=
+ifdef KERNELRELEASE
+  # called from kernel build system: just declare what our modules are
+  obj-m := opencpi.o
+else
+ifdef OCPI_KERNEL_DIR
+  KERNELDIR := $(OCPI_KERNEL_DIR)
+  ifeq ($(wildcard $(KERNELDIR)),)
+    $(error OCPI_KERNEL_DIR indicates '$(OCPI_KERNEL_DIR)', which does not exist)
+  endif
+  ifdef OCPI_CROSS_BUILD_BIN_DIR
+    export CROSS_COMPILE:=$(OCPI_CROSS_BUILD_BIN_DIR)/$(OCPI_CROSS_HOST)-
+    export ARCH=$(OCPI_ARCH)
+  endif
+else
+  # Assume the source tree is where the running kernel was built
+  # You should set KERNELDIR in the environment if it's elsewhere
+  KERNELDIR ?= /lib/modules/$(shell uname -r)/build
+  ifeq ($(wildcard $(KERNELDIR)),)
+    $(error Cannot figure out where the KERNELDIR should be.)
+  endif
 endif
 # The current directory is passed to sub-makes as argument
 PWD := $(shell pwd)
@@ -60,9 +72,9 @@ MyIncs= \
          -I$(realpath $(MyDir)/../../interfaces/include)
 MyLib:=$(realpath $(MyDir)/../../../../../lib/target-$(OCPI_TARGET_HOST))
 ifeq ($(strip $(MyLib)),)
-ifneq ($(MAKECMDGOALS),topclean)
-$(error OpenCpi libraries must be built before the driver is built)
-endif
+  ifneq ($(MAKECMDGOALS),topclean)
+    $(error OpenCpi libraries must be built before the driver is built)
+  endif
 endif
 # This is what works with RHEL5
 export EXTRA_CFLAGS := $(MyIncs) -Wformat=2
@@ -104,7 +116,4 @@ topclean: clean
 
 .PHONY: all clean topclean
 
-else
-    # called from kernel build system: just declare what our modules are
-    obj-m := opencpi.o
 endif
