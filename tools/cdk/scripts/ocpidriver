@@ -9,13 +9,13 @@ usage () {
 if [ $# = 0 -o $# != 1 ] ; then
   usage
 fi
-if [ ! -r $DIR/ocpi_${OCPI_OS}_driver ] ; then
+if [ ! -r $DIR/ocpi_${OCPI_TOOL_OS}_driver ] ; then
   echo There is no driver loading/unloading support for this system \(${OCPI_OS}\).
   exit 1
 fi
 
 if [ $1 = load -o $1 = unload -o $1 = reload -o $1 = status ] ; then
-  exec sh $DIR/ocpi_${OCPI_OS}_driver $1
+  exec sh $DIR/ocpi_${OCPI_TOOL_OS}_driver $1
 fi
 
 usage

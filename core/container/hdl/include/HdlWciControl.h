@@ -9,13 +9,16 @@ namespace OCPI {
 
     // The class that knows about WCI interfaces and the OCCP.
     class Device;
-    class WciControl : public Access, virtual public OCPI::Container::Controllable {
+    class WciControl : public Access, virtual public OCPI::Container::Controllable,
+      virtual public OCPI::API::PropertyAccess, virtual OCPI::Container::WorkerControl {
+      
       friend class Port;
       friend class Device;
       const char *m_implName, *m_instName;
       mutable size_t m_window; // perfect use-case for mutable..
       bool m_hasControl;
       size_t m_timeout;
+      //      std::string m_wName;
     protected:
       Access m_properties;
       Device &m_device;
@@ -23,10 +26,13 @@ namespace OCPI {
       // (since we inherit this in some cases were it is not needed).
       size_t m_occpIndex;
       WciControl(Device &device, const char *impl, const char *inst, unsigned index, bool hasControl);
-      WciControl(Device &device, ezxml_t implXml, ezxml_t instXml);
+      WciControl(Device &device, ezxml_t implXml, ezxml_t instXml, bool doInit = true);
       virtual ~WciControl();
-
-      void init(bool redo);
+      // This is shadowed by real application workers, but is used when this is 
+      // standalone.
+      //      const std::string &name() const { return m_wName; }
+      void init(bool redo, bool doInit);
+      inline size_t index() const { return m_occpIndex; }
       // Add the hardware considerations to the property object that supports
       // fast memory-mapped property access directly to users
       // the key members are "readVaddr" and "writeVaddr"

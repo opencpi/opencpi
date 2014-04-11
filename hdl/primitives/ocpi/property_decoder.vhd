@@ -1,6 +1,6 @@
 -- per-property decoder - purely combinatorial
 -- result is write_enable, offset-in-array, and aligned data output
--- output data has full 31 bits when sub32 arrays are being written
+-- output data has full 32 bits when sub32 arrays are being written
 library ieee; use ieee.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.all; use ocpi.types.all; use ocpi.wci.all;
 

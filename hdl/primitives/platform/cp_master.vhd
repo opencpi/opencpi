@@ -1,5 +1,10 @@
 -- This module is the per-worker infrastructure module for controlling a worker
 -- via its WCI.  Thus this module is the WCI master.
+-- FIXME: capture in the status register the last successful control op
+-- andor whether there was a timeout or other error so we can accurately
+-- know what state the worker is actually in!!!
+-- FIXME: Reset should in fact reset more of the status bits...
+-- FIXME: no way at all to reset "last op valid" etc.?
 
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.types.all, ocpi.util.all;
@@ -21,13 +26,13 @@ architecture rtl of cp_master is
   constant max_id              : natural := word64_t'length - 1;
   constant id_width            : natural := width_for_max(nWCIs);
   constant worker_max_id       : unsigned(id_width-1 downto 0) := (others => '1');
-  constant OCCP_ERROR_RESULT   : word_t := X"c0de4202";
-  constant OCCP_TIMEOUT_RESULT : word_t := X"c0de4203";
-  constant OCCP_RESET_RESULT   : word_t := X"c0de4204";
-  constant OCCP_SUCCESS_RESULT : word_t := X"c0de4201";
-  constant OCCP_FATAL_RESULT   : word_t := X"c0de4205";
-  constant OCCP_MAGIC_0        : word_t := from_string(to_string("Open",4));
-  constant OCCP_MAGIC_1        : word_t := from_string(to_string("CPI",4));
+  constant OCCP_ERROR_RESULT   : dword_t := X"c0de4202";
+  constant OCCP_TIMEOUT_RESULT : dword_t := X"c0de4203";
+  constant OCCP_RESET_RESULT   : dword_t := X"c0de4204";
+  constant OCCP_SUCCESS_RESULT : dword_t := X"c0de4201";
+  constant OCCP_FATAL_RESULT   : dword_t := X"c0de4205";
+  constant OCCP_MAGIC_0        : dword_t := from_string(to_string("Open",4));
+  constant OCCP_MAGIC_1        : dword_t := from_string(to_string("CPI",4));
   -- Combi values
   signal   is_admin            : boolean;
   signal   is_control          : boolean;
@@ -36,11 +41,11 @@ architecture rtl of cp_master is
   signal   workers_out         : worker_in_t;
   signal   workers_in          : worker_out_array_t;
   signal   worker_in           : worker_out_t;
-  signal   admin_data          : std_logic_vector(word_t'range);
-  signal   worker_data         : word_t;
+  signal   admin_data          : std_logic_vector(dword_t'range);
+  signal   worker_data         : dword_t;
   signal   present             : word64_t;
   signal   attention           : word64_t;
-  signal   control             : word_t;
+  signal   control             : dword_t;
   -- Our state
   signal   active_r            : bool_t; -- pipelined "master_in.valid"
   signal   timeout_r           : unsigned(2**worker_timeout_t'length - 1 downto 0);

@@ -5,6 +5,7 @@ function width_for_max (n : natural) return natural;
 function slv(b : std_logic) return std_logic_vector;
 function slv0(n : natural) return std_logic_vector;
 function slvn(n, width : natural) return std_logic_vector;
+function bit2unsigned(b : std_logic; len : natural := 1) return unsigned;
 
 component message_bounds
   generic(width     : natural);

@@ -261,7 +261,7 @@ namespace OCPI {
 	    response.mbz1 == 0 &&
 	    response.maxCoalesced == 1)
 	  return true;
-	ocpiBad("Bad ethernet discovery response:");
+	ocpiBad("Bad network discovery response:");
 	for (unsigned i = 0; i < sizeof(response); i++)
 	  ocpiBad("Response byte %u: 0x%x", i, ((uint8_t*)&response)[i+2]);
 	error = "Bad ethernet discovery response";
@@ -340,6 +340,7 @@ namespace OCPI {
 		else
 		  count++;
 	      } else {
+		assert(dev); // should be set if not broadcasting
 		*dev = &d;
 		return 1;
 	      }
@@ -355,7 +356,7 @@ namespace OCPI {
 	  ocpiInfo("no network probe response on '%s' from '%s' after %u attempts %ums apart",
 		   ifc.name.c_str(), addr.pretty(), RETRIES, DELAYMS);
 	return count;
-      }      
+      }
 
       // Try to reach the target on the given interface.
       // If devAddr == NULL, use broadcast on both ethernet and udp

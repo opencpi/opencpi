@@ -46,7 +46,6 @@
 #define XFER_MASK  6
 
 /* Types */
-typedef unsigned long ulong;
 
 struct  XFTemplate {
   DataTransfer::SmemServices* s_smem;

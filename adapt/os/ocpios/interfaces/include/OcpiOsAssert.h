@@ -112,7 +112,7 @@ namespace OCPI {
 
 inline
 bool
-OCPI::OS::testAssertion (bool cond)
+::OCPI::OS::testAssertion (bool cond)
   throw ()
 {
   return !!cond;
@@ -154,11 +154,11 @@ OCPI::OS::testAssertion (bool cond)
 #define OCPI_DEBUG 1
 #define ocpiAssert(cond) ((::OCPI::OS::testAssertion ((cond) ? true : false)) || ::OCPI::OS::assertionFailed (#cond, __FILE__, __LINE__))
 #define ocpiCheck(cond) ocpiAssert(cond)
-#define ocpiDebug(...) OCPI::OS::logPrint(OCPI_LOG_DEBUG_MIN, __VA_ARGS__)
-#define ocpiDebug1(fmt, ...) OCPI::OS::logPrint(OCPI_LOG_DEBUG_MIN+1, (fmt), __VA_ARGS__)
-#define ocpiDebug2(fmt, ...) OCPI::OS::logPrint(OCPI_LOG_DEBUG_MIN+2, (fmt), __VA_ARGS__)
-#define ocpiDebug3(fmt, ...) OCPI::OS::logPrint(OCPI_LOG_DEBUG_MIN+3, (fmt), __VA_ARGS__)
-#define ocpiLog(n, ...) OCPI::OS::logPrint(n, __VA_ARGS__)
+#define ocpiDebug(...) ::OCPI::OS::logPrint(OCPI_LOG_DEBUG_MIN, __VA_ARGS__)
+#define ocpiDebug1(fmt, ...) ::OCPI::OS::logPrint(OCPI_LOG_DEBUG_MIN+1, (fmt), __VA_ARGS__)
+#define ocpiDebug2(fmt, ...) ::OCPI::OS::logPrint(OCPI_LOG_DEBUG_MIN+2, (fmt), __VA_ARGS__)
+#define ocpiDebug3(fmt, ...) ::OCPI::OS::logPrint(OCPI_LOG_DEBUG_MIN+3, (fmt), __VA_ARGS__)
+#define ocpiLog(n, ...) ::OCPI::OS::logPrint(n, __VA_ARGS__)
 #endif
 
 #endif

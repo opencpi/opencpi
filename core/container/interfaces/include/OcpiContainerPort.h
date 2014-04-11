@@ -125,7 +125,7 @@ namespace OCPI {
       std::string m_initialPortInfo;
       bool m_canBeExternal;
       // This is here so we own this storage while we pass back references.
-      Port(Worker &worker, const OCPI::Metadata::Port &mport, bool isProvider,
+      Port(Container &container, const OCPI::Metadata::Port &mport, bool isProvider,
 	   unsigned options, const OCPI::Util::PValue *params = NULL, PortConnectionDesc *desc = NULL);
       virtual ~Port(){}
       // Convenience navigation
@@ -281,14 +281,14 @@ namespace OCPI {
     template<class Wrk, class Prt, class Ext>
     class PortBase
       : public OCPI::Util::Child<Wrk, Prt, port>,
-      public OCPI::Util::Parent<Ext>,
+	public OCPI::Util::Parent<Ext>,
         public Port {
     protected:
-      PortBase<Wrk,Prt,Ext>(Wrk &worker, Prt &prt, const OCPI::Metadata::Port &mport, bool isProvider,
-			    unsigned xferOptions, const OCPI::Util::PValue *params,
-			    PortConnectionDesc *desc = NULL)
-      : OCPI::Util::Child<Wrk,Prt,port>(worker, prt, mport.name), Port(worker, mport,
-						      isProvider, xferOptions, params, desc) {}
+      PortBase<Wrk,Prt,Ext>(Wrk &worker, Prt &prt, const OCPI::Metadata::Port &mport,
+			    bool isProvider, unsigned xferOptions,
+			    const OCPI::Util::PValue *params, PortConnectionDesc *desc = NULL)
+      : OCPI::Util::Child<Wrk,Prt,port>(worker, prt, mport.name),
+	Port(worker.parent().container(), mport, isProvider, xferOptions, params, desc) {}
       inline Worker &worker() const { return OCPI::Util::Child<Wrk,Prt,port>::parent(); }
     public:
       const std::string &name() const { return OCPI::Util::Child<Wrk,Prt,port>::name(); }

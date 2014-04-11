@@ -87,8 +87,6 @@ namespace DataTransfer {
 	  m_addr.setString(ep);
 	  if (!cp || m_addr.hasError())
 	    error = OCPI_ETHER_RDMA ": invalid ethernet address in endpoint string";
-	  else
-	    ep = cp + 1;
 	} else
 	  error = OCPI_ETHER_RDMA ": invalid protocol name in endpoint string";
 	if (error)

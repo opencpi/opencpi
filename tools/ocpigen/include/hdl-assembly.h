@@ -100,7 +100,7 @@ class Assembly {
   Workers m_workers;
   size_t m_nInstances;
   Instance *m_instances;
-  size_t m_nConnections;
+  //  size_t m_nConnections;
   Connections m_connections;
   OU::Assembly *m_utilAssembly;
   const char

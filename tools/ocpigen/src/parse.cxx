@@ -332,6 +332,15 @@ tryOneChildInclude(ezxml_t top, const char *parent, const char *element,
   return err;
 }
 
+void Worker::
+addAccess(OU::Property &p) {
+  if (p.m_isVolatile)
+    m_ctl.volatiles = true;
+  if (p.m_isVolatile || p.m_isReadable && !p.m_isWritable)
+    m_ctl.readbacks = true;
+  if (!p.m_isParameter || p.m_isReadable)
+    m_ctl.nRunProperties++;
+}
 
 const char *Worker::
 addProperty(ezxml_t prop, bool includeImpl)
@@ -342,14 +351,8 @@ addProperty(ezxml_t prop, bool includeImpl)
   const char *err =
     p->parse(prop, m_ctl.readables, m_ctl.writables, m_ctl.sub32Bits,
 	     includeImpl, (unsigned)(m_ctl.ordinal++));
-  if (!err) {
-    if (p->m_isVolatile)
-      m_ctl.volatiles = true;
-    if (p->m_isVolatile || p->m_isReadable && !p->m_isWritable)
-      m_ctl.readbacks = true;
-    if (!p->m_isParameter || p->m_isReadable)
-      m_ctl.nRunProperties++;
-  }
+  if (!err)
+    addAccess(*p);
   return err;
 }
 
@@ -428,7 +431,9 @@ doMaybeProp(ezxml_t maybe, void *vpinfo) {
       return OU::esprintf("Implementation property named \"%s\" cannot override "
 			  "previous default value", name);
     // So simply add impl info to the existing property
-    return p->parseImpl(maybe, w->m_ctl.readables, w->m_ctl.writables);
+    if (!(err = p->parseImpl(maybe, w->m_ctl.readables, w->m_ctl.writables)))
+      w->addAccess(*p);
+    return err;
   } else if (p)
       return OU::esprintf("Property named \"%s\" conflicts with existing/previous property",
 			  name);
@@ -450,7 +455,7 @@ parseList(const char *list, const char * (*doit)(const char *tok, void *arg), vo
   if (list) {
     char
       *mylist = strdup(list),
-      *base = mylist,
+      *base,
       *last = 0,
       *tok;
     for (base = mylist; (tok = strtok_r(base, ", \t", &last)); base = NULL)
@@ -1358,6 +1363,8 @@ create(const char *file, const char *parent, const char *package, const char *&e
 	err = w->parseRccAssy();
       else if (!strcasecmp("OclAssembly", name))
 	err = w->parseOclAssy();
+      else
+	err = OU::esprintf("Unrecognized top level tag: \"%s\" in file \"%s\"", name, xfile);
     }
     if (err) {
       delete w;
@@ -1481,6 +1488,12 @@ const char *Worker::
 emitAttribute(const char *attr) {
   if (!strcasecmp(attr, "language")) {
     printf(m_language == VHDL ? "VHDL" : "Verilog");
+    return NULL;
+  }
+  if (!strcasecmp(attr, "workers")) {
+    if (!m_assembly)
+      return "Can't emit workers attribute if not an assembly";
+    emitWorkersAttribute();
     return NULL;
   }
   return OU::esprintf("Unknown worker attribute: %s", attr);

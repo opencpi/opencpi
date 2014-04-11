@@ -1607,6 +1607,7 @@ sendZcopyInputBuffer( Buffer* src_buf, size_t len, uint8_t op)
 {
   src_buf->getMetaData()->ocpiMetaDataWord.length = (uint32_t)len;
   src_buf->getMetaData()->ocpiMetaDataWord.opCode = op;
+  src_buf->getMetaData()->ocpiMetaDataWord.timestamp = 0x0123456789abcdefull;
   getCircuit()->sendZcopyInputBuffer( this, src_buf, len );
 }
 
@@ -1626,7 +1627,8 @@ sendOutputBuffer( BufferUserFacet* buf, size_t length, uint8_t opcode )
   Buffer *b = static_cast<Buffer *>(buf);
   // Put the actual opcode and data length in the meta-data
   b->getMetaData()->ocpiMetaDataWord.opCode = opcode;
-  b->getMetaData()->ocpiMetaDataWord.length = (uint32_t)length; // FIXME check truncation?
+  b->getMetaData()->ocpiMetaDataWord.length = OCPI_UTRUNCATE(uint32_t,length);
+  b->getMetaData()->ocpiMetaDataWord.timestamp = 0x0123456789abcdefull;
 
   
 

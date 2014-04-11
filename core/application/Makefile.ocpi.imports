@@ -57,9 +57,8 @@ ALLLIBS += \
 MAIN_DRIVERS+= \
   _ZN4OCPI3RCC3rccE\
   _ZN4OCPI7Library7CompLib9componentE\
-  _ZN12DataTransfer3pioE\
   _ZN4OCPI3HDL3hdlE\
-  _ZN12DataTransfer3PCI3pciE\
+  _ZN4OCPI3DMA3dmaE\
 
 
 

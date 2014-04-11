@@ -21,13 +21,13 @@ architecture rtl of unoc_cp_adapter is
       CLK                     : in  std_logic;
       RST_N                   : in  std_logic;
       -- action method server_request_put
-      server_request_put      : in  std_logic_vector(unoc_width-1 downto 0);
+      server_request_put      : in  std_logic_vector(unoc_data_width-1 downto 0);
       EN_server_request_put   : in  std_logic ;
       RDY_server_request_put  : out std_logic;
 
       -- actionvalue method server_response_get
       EN_server_response_get  : in  std_logic ;
-      server_response_get     : out std_logic_vector(unoc_width-1 downto 0);
+      server_response_get     : out std_logic_vector(unoc_data_width-1 downto 0);
       RDY_server_response_get : out std_logic;
 
       -- actionvalue method client_request_get
@@ -45,6 +45,7 @@ architecture rtl of unoc_cp_adapter is
   signal EN_server_request_put   : std_logic;
   signal RDY_client_response_put : std_logic;
   signal EN_client_response_put  : std_logic;
+  signal server_response_get     : std_logic_vector(unoc_data_width-1 downto 0);
   -- Our request and response bundles
   signal request : std_logic_vector(58 downto 0);
   signal response : std_logic_vector(39 downto 0);
@@ -53,7 +54,7 @@ begin
   -- The incoming valid signal is an indication of not empty from the producer side
   EN_server_request_put <= client_in.valid and RDY_server_request_put;
   client_out.take       <= EN_server_request_put;
-
+  client_out.data       <= to_unoc(server_response_get);
   EN_client_response_put <= cp_in.valid and RDY_client_response_put;
 
   -- Using this adapter means using the unoc clk and reset as the control clk and reset
@@ -81,13 +82,13 @@ begin
       RST_N                  => client_in.reset_n,
       pciDevice              => client_in.id,
       -- action method server_request_put - we are the consumer of these requests
-      server_request_put     => client_in.data,
+      server_request_put     => to_slv(client_in.data),
       EN_server_request_put  => EN_server_request_put,
       RDY_server_request_put => RDY_server_request_put,
 
       -- actionvalue method server_response_get - we are the producer of these responses
       EN_server_response_get  => client_in.take,
-      server_response_get     => client_out.data,
+      server_response_get     => server_response_get,
       RDY_server_response_get => client_out.valid,
 
       -- actionvalue method client_request_get - we are the producer of these requests

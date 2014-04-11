@@ -1,8 +1,10 @@
+# This file is for udev support when the driver is loaded/unloaded
 # Cope with two kobj/sysfs limitations: no slashes, and 19 character limit	
 # 1. Chance e to ether, p to pci.
 # 2. Expand ethernet from 0123456789ab to 01:23:45:67:89:ab
 # 3. Change = to /
 # 4. Enable read/write by all
+# ************ THIS FILE MUST BE CONSISTENT WITH mdev.rules for udev***********
 KERNEL=="ocpi=*", PROGRAM=="/bin/sh -c 'echo %k | \
                             sed -e s+=p=+=pci=+ \
 			    	-e s+=e=\(..\)\(..\)\(..\)\(..\)\(..\)\(..\)+=e=\1:\2:\3:\4:\5:\6+ \

@@ -1,3 +1,25 @@
+/*
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include "OcpiUtilException.h"
@@ -21,11 +43,11 @@ namespace OCPI {
       : m_implName(impl), m_instName(inst), m_hasControl(hasControl), m_timeout(DEFAULT_TIMEOUT),
 	m_device(device), m_occpIndex(index)
     {
-      init(false);
+      init(false, true);
     }
 
     WciControl::
-    WciControl(Device &device, ezxml_t implXml, ezxml_t instXml)
+    WciControl(Device &device, ezxml_t implXml, ezxml_t instXml, bool doInit)
       : m_implName("<none>"), m_instName("<none>"), m_hasControl(false), m_timeout(DEFAULT_TIMEOUT),
 	m_device(device), m_occpIndex(0)
     {
@@ -43,14 +65,15 @@ namespace OCPI {
 	if ((err = OE::getNumber(instXml, "timeout", &m_timeout, NULL, 0, false)))
 	  throw OU::Error("XML error for worker %s:%s: %s", m_implName, m_instName, err);
       }
-      init(false);
+      init(false, doInit);
     }
 
     // Common to both constructors: assumes has_control, occpIndex and timeout are set up
     // ALSO is used after loading a new bitstream
     void WciControl::
-    init(bool redo) {
+    init(bool redo, bool doInit) {
       m_window = 0;
+      //      m_wName = m_instName ? m_instName : "<unknown>";
       if (m_hasControl) {
 	setControlMask(getControlMask() | 1 << OU::OpStart);
 	unsigned logTimeout = 31;
@@ -64,18 +87,20 @@ namespace OCPI {
 	// Assert Reset
 	// myRegisters->control =  logTimeout;
 	logTimeout = 0x5; // per shep
-	set32Register(control, OccpWorkerRegisters, logTimeout);
-	//#ifndef SHEP_FIXME_THE_RESET
-	struct timespec spec;
-	spec.tv_sec = 0;
-	spec.tv_nsec = 10000;
-	int bad = nanosleep(&spec, 0);
-	ocpiCheck(bad == 0);
-	//#endif
-	// Take out of reset
-	// myRegisters->control = OCCP_CONTROL_ENABLE | logTimeout ;
-	set32Register(control,  OccpWorkerRegisters, OCCP_WORKER_CONTROL_ENABLE | logTimeout);
-	ocpiInfo("Deasserted reset on worker %s.%s", m_implName, m_instName);
+	if (doInit) {
+	  set32Register(control, OccpWorkerRegisters, logTimeout);
+	  //#ifndef SHEP_FIXME_THE_RESET
+	  struct timespec spec;
+	  spec.tv_sec = 0;
+	  spec.tv_nsec = 10000;
+	  int bad = nanosleep(&spec, 0);
+	  ocpiCheck(bad == 0);
+	  //#endif
+	  // Take out of reset
+	  // myRegisters->control = OCCP_CONTROL_ENABLE | logTimeout ;
+	  set32Register(control,  OccpWorkerRegisters, OCCP_WORKER_CONTROL_ENABLE | logTimeout);
+	  ocpiInfo("Deasserted reset on worker %s.%s", m_implName, m_instName);
+	}
 #if 0 // do this by changing the accessor
 	if (getenv("OCPI_OCFRP_DUMMY")) {
 	  *(uint32_t *)&myRegisters->initialize = OCCP_SUCCESS_RESULT; //fakeout

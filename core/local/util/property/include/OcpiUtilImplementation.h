@@ -70,9 +70,10 @@
   CONTROL_OP(start,          Start,          OPERATING,   SUSPENDED,   INITIALIZED, NONE,      NONE) \
   CONTROL_OP(stop,           Stop,           SUSPENDED,   OPERATING,   FINISHED,    NONE,      NONE) \
   CONTROL_OP(release,        Release,        EXISTS,      INITIALIZED, OPERATING,   SUSPENDED, FINISHED) \
+  CONTROL_OP(test,           Test,           NONE,        INITIALIZED, NONE,        NONE,      NONE) \
   CONTROL_OP(beforeQuery,    BeforeQuery,    NONE,        INITIALIZED, OPERATING,   SUSPENDED, FINISHED) \
   CONTROL_OP(afterConfigure, AfterConfigure, NONE,        INITIALIZED, OPERATING,   SUSPENDED, NONE) \
-  CONTROL_OP(test,           Test,           NONE,        INITIALIZED, NONE,        NONE,      NONE) \
+
   /**/
 
 namespace OCPI {

@@ -10,3 +10,6 @@ export OCPI_ARCH=arm
 # export OCPI_CXXFLAGS=
 export OCPI_LDFLAGS=
 export OCPI_SHARED_LIBRARIES_FLAGS=
+# When we build the driver the kernel should be cloned, checked out
+# with the label consistent with the ISE version, and build there
+export OCPI_KERNEL_DIR=$OCPI_XILINX_DIR/$OCPI_XILINX_VERSION/git/linux-xlnx

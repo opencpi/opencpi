@@ -582,7 +582,6 @@ ss    post( frame );
   {
     OCPI::Util::SelfAutoMutex guard ( this );
     DatagramMsgHeader *   msg;
-    uint8_t *             data;	
 
     // It is possible for the sender to duplicate frames by being too agressive with re-retries
     // Dont process dups. 
@@ -636,10 +635,6 @@ ss    post( frame );
       fr.numMsgsInTransaction = msg->numMsgsInTransaction;	      
 
       if (msg->numMsgsInTransaction != 0) {
-	if ( msg->dataLen ) {
-	  data = reinterpret_cast<uint8_t*>(&msg[1]);
-	}
-
 	ocpiDebug("Msg info -->  addr=%d len=%d tid=%d",
 		  msg->dataAddr, msg->dataLen, msg->transactionId );
       
@@ -659,6 +654,7 @@ ss    post( frame );
 #endif
 	    }
 	    else {
+	      uint8_t *data = reinterpret_cast<uint8_t*>(&msg[1]);
 	      memcpy(dptr, data, msg->dataLen);
 	    }
 

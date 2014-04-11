@@ -1113,7 +1113,6 @@ createOutputTransfers(Port* s_port,
         // Get the buffer for the current port
         // input buffer
         InputBuffer* t_buf = t_port->getInputBuffer(t_buffers);
-        t_buf = t_port->getInputBuffer(t_buffers);
         int t_tid = t_buf->getTid();
 
         // Create a template

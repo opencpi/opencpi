@@ -1,3 +1,25 @@
+/*
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <stdlib.h>
@@ -40,10 +62,9 @@ namespace OCPI {
     bool Device::
     init(std::string &err) {
       uint64_t magic;
-      sig_t old; // FIXME: we could make this thread safe
+      sig_t old = signal(SIGBUS, catchBusError); // FIXME: we could make this thread safe
       try {
 	if (sigsetjmp(jmpbuf, 1) == 0) {
-	  old = signal(SIGBUS, catchBusError);
 	  magic = m_cAccess.get64Register(magic, OccpAdminRegisters);
 	} else {
 	  ocpiBad("HDL Device '%s' gets a bus error on probe: ", m_name.c_str());
@@ -65,7 +86,7 @@ namespace OCPI {
       }
       if (m_pfWorker) {
 	m_old = false;
-	m_pfWorker->init(true);
+	m_pfWorker->init(true, true);
       } else
 	m_pfWorker = new WciControl(*this, "platform", "pf_i", 0, true);
       // Need to conditionalize this

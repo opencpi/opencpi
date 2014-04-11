@@ -20,56 +20,60 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-#define __STDC_FORMAT_MACROS
-#include <inttypes.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <limits.h>
+/*
+ * This file contains support for the HDL device in the PL on the Xilinx Zynq platform.
+ * On Zynq, the control plane is implemented using the AXI_GP0 port, which
+ * is located at physical address 0x4000000.
+ * The data plane is implemented with the AXI_HP0-3 and other ports, acting
+ * as bus masters only.
+ */
 #include <errno.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <dirent.h>
 #include <sys/mman.h>
-#include <string>
 #include "zlib.h"
-#ifdef OCPI_OS_macos
-#define mmap64 mmap
-#endif
-
 #include "OcpiUtilMisc.h"
 #include "BusDriver.h"
 #include "HdlOCCP.h"
+
 namespace OCPI {
   namespace HDL {
     namespace Bus {
-      namespace OS = OCPI::OS;
       namespace OU = OCPI::Util;
 
+      const uint32_t GP0_PADDR = 0x40000000;
       class Device
 	: public OCPI::HDL::Device {
-	uint32_t m_paddr;
 	uint8_t  *m_vaddr;
 	friend class Driver;
-	Device(std::string &name, int fd, uint32_t paddr, bool forLoad, std::string &err)
-	  : OCPI::HDL::Device(name, "ocpi-pci-pio"), m_paddr(paddr), m_vaddr(NULL) {
-	  const char *cp = name.c_str();
-	  if (!strncasecmp("BUS:", cp, 4))
-	    cp += 4;
-	  OU::formatString(m_endpointSpecific,
-			   "ocpi-pci-pio:%u.0x%" PRIx32 ".0x%" PRIx32 ".0x%" PRIx32,
-			   0, paddr, 0, 0);
-	  if ((m_vaddr = (uint8_t*)mmap(NULL, sizeof(OccpSpace), PROT_READ|PROT_WRITE, MAP_SHARED,
-			      fd, OCPI_STRUNCATE(off_t, m_paddr))) == (uint8_t*)-1) {
-	    m_vaddr = NULL;
+	Device(std::string &name, int fd, bool forLoad, std::string &err)
+	  : OCPI::HDL::Device(name, "ocpi-dma-pio"), m_vaddr(NULL) {
+	  m_endpointSize = sizeof(OccpSpace);
+	  OU::format(m_endpointSpecific,
+		     "ocpi-dma-pio:0x%" PRIx32 ".0x%" PRIx32 ".0x%" PRIx32,
+		     GP0_PADDR, 0, 0);
+	  void *vaddr = mmap(NULL, sizeof(OccpSpace), PROT_READ|PROT_WRITE, MAP_SHARED,
+			     fd, OCPI_STRUNCATE(off_t, GP0_PADDR));
+	  if (vaddr == MAP_FAILED) {
 	    err = "can't mmap /dev/mem for control space";
 	    return;
-	  }	  
-	  cAccess().setAccess(m_vaddr, NULL, OCPI_UTRUNCATE(RegisterOffset, 0));
-	  init(err);
-	  if (forLoad)
-	    err.clear();
+	  }
+	  m_vaddr = (uint8_t*)vaddr;
+	  std::string val;
+	  const char *e =
+	    OU::file2String(val,
+			    "/sys/devices/amba.0/f8007000.ps7-dev-cfg/prog_done", 0);
+	  if (e)
+	    err = e;
+	  if (err.empty()) {
+	    cAccess().setAccess(m_vaddr, NULL, OCPI_UTRUNCATE(RegisterOffset, 0));
+	    dAccess().setAccess(NULL, NULL, 0); // the data space will never be accessed by CPU
+	    if (val.c_str()[0] != '1')
+	      err = "There is no bitstream loaded on this HDL device: " + name;
+	    else
+	      init(err);
+	    if (forLoad)
+	      err.clear();
+	  }
 	}
 	~Device() {
 	  if (m_vaddr)
@@ -154,7 +158,7 @@ namespace OCPI {
 	      if ((n = ::gzread(gz, buf + len, (unsigned)(sizeof(buf) - len))) < 0)
 		throw OU::Error("Error reading compressed bitstream: %s(%u/%d)",
 				gzerror(gz, &zerror), errno, n);
-	      n += len;
+	      n += OCPI_UTRUNCATE(int, len);
 	      len = 0;
 	      argBuf = buf; 
 	      return n;
@@ -236,22 +240,21 @@ namespace OCPI {
       
       OCPI::HDL::Device *Driver::
       open(const char *busName, bool forLoad, std::string &error) {
-	std::string name("BUS:");
+	std::string name("PL:");
 	name += busName;
 
-#ifdef OCPI_PLATFORM_arm
+#ifndef OCPI_PLATFORM_arm
+	return NULL;
+#endif
 	if (m_memFd < 0 && (m_memFd = ::open("/dev/mem", O_RDWR|O_SYNC)) < 0)
 	  error = "Can't open /dev/mem, forgot to load the driver? sudo?";
 	else {
-	  Device *dev = new Device(name, m_memFd, 0x40000000, forLoad, error);
+	  Device *dev = new Device(name, m_memFd, forLoad, error);
 	  if (error.empty())
 	    return dev;
 	  delete dev;
 	}
-	ocpiBad("When searching for BUS device '%s': %s", busName, error.c_str());
-#else
-	(void)forLoad; (void)error;
-#endif
+	ocpiBad("When searching for PL device '%s': %s", busName, error.c_str());
 	return NULL;
       }
 
@@ -262,7 +265,8 @@ namespace OCPI {
 	if (m_memFd == -1) {
 	  m_memFd = ::open("/dev/mem", O_RDWR | O_SYNC);
 	  if (m_memFd < 0) {
-	    OU::formatString(error, "Can't open memory /dev/mem for DMA memory.  Forgot sudo or missing driver");
+	    OU::format(error,
+		       "Can't open /dev/mem for DMA memory.  Forgot sudo or missing driver?");
 	    return NULL;
 	  }
 	}

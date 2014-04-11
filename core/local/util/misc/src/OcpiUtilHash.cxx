@@ -45,8 +45,6 @@
 #include "OcpiUtilHash.h"
 #include <cstring>
 
-static const int num_bits=16;
-
 unsigned int
 OCPI::Util::Misc::hashCode( const char* string )
 {

@@ -21,12 +21,17 @@
  * Other OpenCPI user code is covered by an LGPL license.
  */
 #include <net/sock.h>
-
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
 #include <linux/autoconf.h>
 #else
 #include <generated/autoconf.h>
+#endif
+// TODO: which version actually made this change?
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 9, 0)
+#define ocpi_sk_for_each sk_for_each
+#else
+#define ocpi_sk_for_each(a,b,c) sk_for_each(a,c)
 #endif
 #include <linux/init.h>			// Kernel module initialization
 #include <linux/kernel.h>		// Kernel common functions
@@ -119,7 +124,7 @@ typedef struct {
   ocpi_size_t		size;		// block size
   ocpi_type_t           type;           // what does this block of addresses point to?
   atomic_t              refcnt;         // how many users of this block: mappings + minor devices
-  bool                  cached;         // should mappings be cached?
+  bool                  isCached;       // should mappings be cached?
   bool                  available;      // is the block (of memory) available to allocate?
   struct file          *file;           // for allocations, which file allocated it
   pid_t                 pid;            // for debug: allocating pid
@@ -204,9 +209,9 @@ ocpi_get_revision(struct pci_dev *dev) {
 
 static void
 log_debug_block(ocpi_block_t *block, char *msg) {
-  log_debug("%s: block %p: %10lx @ %016llx type(%u) pid(%d) prev(%p) next(%p) refcnt(%u)\n",
-	    msg, block, (unsigned long)block->size, block->start_phys, block->type, block->pid,
-	    block->list.prev, block->list.next, (unsigned)atomic_read(&block->refcnt));
+  log_debug("%s: block %p: %10lx @ %016llx type(%u) c(%u) pid(%d) prev(%p) next(%p) refcnt(%u)\n",
+	    msg, block, (unsigned long)block->size, block->start_phys, block->type, block->isCached,
+	    block->pid, block->list.prev, block->list.next, (unsigned)atomic_read(&block->refcnt));
 }
 
 #if 0
@@ -233,7 +238,7 @@ make_block(ocpi_address_t phys_addr, ocpi_size_t size, ocpi_type_t type,
   block->end_phys = phys_addr + size;
   block->size = size;
   block->type = type;
-  block->cached = ocpi_uncached;
+  block->isCached = false;
   atomic_set(&block->refcnt, 1);
   block->pid = current->pid;
   block->available = available;
@@ -266,6 +271,9 @@ merge_free_memory(void) {
   list_for_each_entry_safe(block, next, &block_list, list)
     if (block->available) {
       // Merge all the next contiguous blocks into me
+      log_debug("Merge: considering %p/%p/%p a %u %llx=%llx %llx=%llx\n", block, next, &block_list,
+		next->available,  block->start_phys + block->size, next->start_phys,
+		block->kernel_alloc_id, next->kernel_alloc_id);
       while (&next->list != &block_list && next->available &&
 	     block->start_phys + block->size == next->start_phys &&
 	     block->kernel_alloc_id == next->kernel_alloc_id) {
@@ -360,11 +368,12 @@ get_memory(ocpi_request_t *request, struct file *file, ocpi_block_t **sparep) {
 	*split = *block;
 	split->start_phys += request->actual;
 	split->size -= request->actual;
+	block->size = request->actual;
 	list_add(&split->list, &block->list);
       }
       atomic_set(&block->refcnt, 1);
       block->file = file;
-      block->cached = request->cached;
+      block->isCached = request->how_cached == ocpi_cached;
       if (file)
 	block->available = false;
       err = 0;
@@ -718,8 +727,8 @@ opencpi_io_mmap(struct file * file, struct vm_area_struct * vma) {
     vma->vm_ops = &opencpi_vm_ops;
     vma->vm_private_data = block;
     // Check for uncached blocks
-    if (block->cached == ocpi_uncached)
-      vma->vm_page_prot = pgprot_noncached( vma->vm_page_prot);
+    if (!block->isCached)
+      vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
     vma->vm_flags |= VM_RESERVED;
     if (block->type == ocpi_mmio) {
       vma->vm_flags |= VM_IO;
@@ -1199,7 +1208,7 @@ net_receive_cp(struct sk_buff *skb, struct net_device *dev, struct packet_type *
 	  role = ocpi_master;
       else
 	role = ocpi_slave;
-      sk_for_each(sk, node, &opencpi_sklist[role]) {
+      ocpi_sk_for_each(sk, node, &opencpi_sklist[role]) {
 	ocpi_sock_t *osk = get_ocpi_sk(sk);
 	if (osk->any)
 	  found = osk;
@@ -1233,10 +1242,10 @@ net_receive_dp(struct sk_buff *skb, struct net_device *dev, struct packet_type *
       (skb = skb_share_check(skb, GFP_ATOMIC))) {          // get our own copy to pass to user
     unsigned char *source = eth_hdr(skb)->h_source;
     struct sock *sk;
-    struct hlist_node *node;
+    struct hlist_node *node; // unused in later kernels
 
     __skb_push(skb, sizeof(uint16_t));                     // make our "payload" start with ethertype
-    sk_for_each(sk, node, &opencpi_sklist[ocpi_data]) {
+    ocpi_sk_for_each(sk, node, &opencpi_sklist[ocpi_data]) {
       ocpi_sock_t *osk = get_ocpi_sk(sk);
 
       if (((uint16_t *)skb->data)[1] == osk->sockaddr.ocpi_endpoint) {
@@ -1488,6 +1497,8 @@ opencpi_init(void) {
 	break;
       }
       mydev->fsdev = fsdev;
+      log_debug("creating device in sysfs: %p name '%s' kname '%s'\n",
+		fsdev, fsdev->init_name, fsdev->kobj.name);
     }
 
 #ifdef CONFIG_PCI
@@ -1497,6 +1508,12 @@ opencpi_init(void) {
       break;
     }
     opencpi_pci_registered = 1;
+#endif
+#ifdef CONFIG_ARCH_ZYNQ
+    // Register the memory range of the control plane on the PL
+    if (make_block(0x40000000, sizeof(OccpSpace), ocpi_mmio, false, 0) == NULL)
+      break;
+    log_debug("Control Plane physical address space for Zynq/PL/AXI GP0 slave reserved");
 #endif
     // Allocate initial memory space: sets virtual/physical/opencpi_size: set opencpi_allocation
     // TODO: Automatically detect 'memmap' on the Kernel commandline
@@ -1525,7 +1542,7 @@ opencpi_init(void) {
       if (opencpi_size == -1)
 	opencpi_size = OPENCPI_INITIAL_MEMORY_ALLOCATION;
       request.needed = opencpi_size;
-      request.cached = ocpi_uncached;
+      request.how_cached = ocpi_uncached;
       // Allocate as much kernel memory as possible
       for (request.needed = opencpi_size;
 	   request.needed >= OPENCPI_MINIMUM_MEMORY_ALLOCATION;

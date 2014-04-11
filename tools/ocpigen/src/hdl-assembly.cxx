@@ -37,7 +37,7 @@ namespace OA = OCPI::API;
 Assembly::
 Assembly(Worker &w)
   : m_assyWorker(w), m_isContainer(false), m_isPlatform(false), m_outside(NULL), m_nInstances(0),
-    m_instances(NULL), m_nConnections(0), m_utilAssembly(NULL) {
+    m_instances(NULL), /* m_nConnections(0), */ m_utilAssembly(NULL) {
 }
 Assembly::
 ~Assembly() {
@@ -53,6 +53,7 @@ deleteAssy() {
   delete m_assembly;
 }
 
+// Find the OU::Assembly::Instance's port in the instance's worker
 const char *Assembly::
 findPort(OU::Assembly::Port &ap, InstancePort *&found) {
   Instance &i = m_instances[ap.m_instance];
@@ -208,7 +209,7 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
      return OU::esprintf("%s", e.c_str());
    }
    m_nInstances = m_utilAssembly->m_instances.size();
-   m_nConnections = m_utilAssembly->m_connections.size();
+   //   m_nConnections = m_utilAssembly->m_connections.size();
    const char *err;
  
    Instance *i = m_instances = myCalloc(Instance, m_utilAssembly->m_instances.size());
@@ -231,10 +232,25 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
        }
        i->worker = w;
        // Initialize the instance ports
-
        InstancePort *ip = i->m_ports = new InstancePort[i->worker->m_ports.size()];
-       for (unsigned n = 0; n < i->worker->m_ports.size(); n++, ip++)
+       for (unsigned n = 0; n < i->worker->m_ports.size(); n++, ip++) {
+	 // If the instance in the OU::Assembly has "m_externals=true",
+	 // and this instance port has no connections in the OU::Assembly
+	 // then we add an external connection for the instance port. Prior to this,
+	 // we didn't have access to the worker metadata to know what all the ports are.
 	 ip->init(i, i->worker->m_ports[n], NULL);
+	 if (ai->m_externals && ip->m_port->isData) {
+	   Port *p = NULL;
+	   for (OU::Assembly::Instance::PortsIter pi = ai->m_ports.begin();
+		pi != ai->m_ports.end(); pi++)
+	     if (!strcasecmp((*pi)->m_name.c_str(), ip->m_port->name)) {
+	       p = ip->m_port;
+	       break;
+	     }
+	   if (!p)
+	     m_utilAssembly->addExternalConnection(i->instance->m_ordinal, ip->m_port->name);
+	 }
+       }
      } else
        return OU::esprintf("instance %s has no worker", i->name);
      // Parse property values now that we know the actual workers.
@@ -673,7 +689,6 @@ void InstancePort::
 init(Instance *i, Port *p, OU::Assembly::External *ext) {
   m_instance = i;
   m_port = p;
-  m_external = ext;
   m_connected.assign(p ? p->count : 1, false);
   memset(m_ocp, sizeof(OcpAdapt)*N_OCP_SIGNALS, 0);
   // Figure our role
@@ -686,6 +701,7 @@ init(Instance *i, Port *p, OU::Assembly::External *ext) {
       m_role.m_provider = !p->u.wdi.isProducer;
   }
   // If the external port tells us the direction and we're bidirectional, capture it.
+  m_external = ext;
   if (ext && ext->m_role.m_knownRole && !ext->m_role.m_bidirectional)
     m_role = ext->m_role;
 }
@@ -849,7 +865,7 @@ adjustConnection(Connection &c, InstancePort &consumer, InstancePort &producer, 
 	size_t nper = prod->ocp.MByteEn.width / cons->ocp.MByteEn.width;
 	std::string expr = "{";
 	size_t pw = prod->ocp.MByteEn.width;
-	oa = &consumer.m_ocp[OCP_MByteEn];
+	//oa = &consumer.m_ocp[OCP_MByteEn];
 	for (size_t n = 0; n < cons->ocp.MByteEn.width; n++) {
 	  if (n)
 	    expr += ",";
@@ -865,7 +881,7 @@ adjustConnection(Connection &c, InstancePort &consumer, InstancePort &producer, 
 	size_t nper = cons->ocp.MByteEn.width / prod->ocp.MByteEn.width;
 	std::string expr = "{";
 	size_t pw = cons->ocp.MByteEn.width;
-	oa = &consumer.m_ocp[OCP_MByteEn];
+	//oa = &consumer.m_ocp[OCP_MByteEn];
 	for (size_t n = 0; n < prod->ocp.MByteEn.width; n++)
 	  for (size_t nn = 0; nn < nper; nn++)
 	    OU::formatAdd(expr, "%s%sMByteEn[%zu]", n || nn ? "," : "",
@@ -1435,6 +1451,16 @@ emitAssyHDL(const char *outDir) {
   return 0;
 }
 
+void Worker::
+emitWorkersAttribute()
+{
+  bool first = true;
+  for (WorkersIter wi = m_assembly->m_workers.begin();
+       wi != m_assembly->m_workers.end(); wi++, first = false)
+    printf("%s%s", first ? "" : " ", (*wi)->m_implName);
+  printf("\n");
+}
+
  const char *Worker::
 emitWorkersHDL(const char *outDir, const char *outFile)
 {
@@ -1554,7 +1580,7 @@ emitInstance(Instance *i, FILE *f, const char *prefix)
     fprintf(f, " attachment=\"%s\"", i->attach);
   if (i->iType == Instance::Interconnect) {
     if (i->hasConfig)
-      fprintf(f, " ocdpOffset='0x%lx'", i->config * 32 * 1024);
+      fprintf(f, " ocdpOffset='0x%zx'", i->config * 32 * 1024);
   } else if (i->hasConfig)
     fprintf(f, " configure=\"%#lx\"", (unsigned long)i->config);
   fprintf(f, "/>\n");

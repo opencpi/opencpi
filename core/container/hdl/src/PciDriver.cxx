@@ -66,8 +66,9 @@ namespace OCPI {
 	uint32_t m_bar0size, m_bar1size;
 	int m_fd;
 	friend class Driver;
-	Device(std::string &name, int fd, ocpi_pci_t &pci, void *bar0, void *bar1, std::string &err)
-	  : OCPI::HDL::Device(name, "ocpi-pci-pio"), m_bar0(bar0), m_bar1(bar1),
+	Device(std::string &name, int fd, ocpi_pci_t &pci, void *bar0, void *bar1,
+	       std::string &err)
+	  : OCPI::HDL::Device(name, "ocpi-dma-pio"), m_bar0(bar0), m_bar1(bar1),
 	    m_bar0size(pci.size0), m_bar1size(pci.size1), m_fd(fd) {
 	  uint64_t endpointPaddr, controlOffset, bufferOffset, holeStartOffset, holeEndOffset;
 	  if (pci.bar0 < pci.bar1) {
@@ -85,13 +86,9 @@ namespace OCPI {
 	    holeStartOffset = pci.size1;
 	    holeEndOffset = pci.bar0 - pci.bar1;
 	  }
-	  const char *cp = name.c_str();
-	  if (!strncasecmp("PCI:", cp, 4))
-	    cp += 4;
-	  unsigned bus = atoi(cp); // does anyone use non-zero PCI domains?
 	  OU::formatString(m_endpointSpecific,
-			   "ocpi-pci-pio:%u.0x%" PRIx64 ".0x%" PRIx64 ".0x%" PRIx64,
-			   bus, endpointPaddr, holeStartOffset, holeEndOffset);
+			   "ocpi-dma-pio:0x%" PRIx64 ".0x%" PRIx64 ".0x%" PRIx64,
+			   endpointPaddr, holeStartOffset, holeEndOffset);
 	  cAccess().setAccess((uint8_t*)bar0, NULL, OCPI_UTRUNCATE(RegisterOffset, controlOffset));
 	  dAccess().setAccess((uint8_t*)bar1, NULL, OCPI_UTRUNCATE(RegisterOffset, bufferOffset));
 	  init(err);
@@ -450,17 +447,15 @@ namespace OCPI {
 	if (error.empty()) {
 	  Device *dev = new Device(name, fd, pci, bar0, bar1, error);
 	  if (error.empty())
-	    return dev;
+	    return dev; // we have passed the fd into the device.
 	  delete dev;
 	}
 	if (bar0)
 	  munmap(bar0, pci.size0);
 	if (bar1)
 	  munmap(bar1, pci.size1);
-	if (fd >= 0) {
+	if (fd >= 0)
 	  ::close(fd);
-	  fd = -1;
-	}
 	ocpiBad("When searching for PCI device '%s': %s", pciName, error.c_str());
 	return NULL;
       }

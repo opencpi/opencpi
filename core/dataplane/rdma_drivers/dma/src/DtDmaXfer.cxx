@@ -1,14 +1,4 @@
 /*
- *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
- *
- *    Mercury Federal Systems, Incorporated
- *    1901 South Bell Street
- *    Suite 402
- *    Arlington, Virginia 22202
- *    United States of America
- *    Telephone 703-413-0781
- *    FAX 703-413-0784
- *
  *  This file is part of OpenCPI (www.opencpi.org).
  *     ____                   __________   ____
  *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
@@ -31,49 +21,73 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 /*
- * PCI transfer driver, which is built on the PIO XferServices.
+ * DMA transfer driver, which is built on the PIO XferServices.
+ * The "hole" in the address space is a cheap way of having a
+ * segmented address space with 2 regions...
+ * FIXME: support endpoints with regions
  *
  * Endpoint format is:
- * ocpi-pci-pio:<busId>.<address>.<holeOffset>.<holeEnd>
+ * <EPNAME>:<address>.<holeOffset>.<holeEnd>
  *
- * All values after busid are hex.
+ * All values are hex.
  * If holeOffset is zero there is no hole
  */
-
 
 #define __STDC_FORMAT_MACROS
 #define __STDC_LIMIT_MACROS
 #include <inttypes.h>
-#include <stdint.h>
 #include <unistd.h>
 #include <sys/mman.h>
-#include "OcpiOsAssert.h"
 #include "KernelDriver.h"
-#include <OcpiPValue.h>
-#include <OcpiUtilMisc.h>
-#include <DtSharedMemoryInternal.h>
-#include <DtPioXfer.h>
+#include "OcpiOsDebug.h"
+#include "OcpiUtilMisc.h"
+// We build this transfer driver using the PIO::XferServices
+#include "DtPioXfer.h"
 
 namespace OU = OCPI::Util;
-namespace OS = OCPI::OS;
 namespace DT = DataTransfer;
-namespace OD = OCPI::Driver;
-namespace DataTransfer {
-  namespace PCI {
+namespace OCPI {
+  namespace DMA {
+
+#define EPNAME "ocpi-dma-pio"
 
     class XferFactory;
-    class Device : public DataTransfer::DeviceBase<XferFactory,Device> {
+    class Device : public DT::DeviceBase<XferFactory,Device> {
       Device(const char *name)
 	: DataTransfer::DeviceBase<XferFactory,Device>(name, *this) {}
     };
-    class XferServices;
-    class SmemServices;
 
-    const char *pci = "pci"; // name passed to inherited template class
+    class SmemServices;
+    class EndPoint : public DT::EndPoint {
+      friend class SmemServices;
+    protected:
+      uint32_t m_holeOffset, m_holeEnd;
+    public:
+      EndPoint( std::string& ep, bool local)
+        : DT::EndPoint(ep, 0, local) {
+	if (sscanf(ep.c_str(), EPNAME ":%" SCNx64 ".%" SCNx32 ".%" SCNx32 ";",
+		   &address, &m_holeOffset, &m_holeEnd) != 3)
+	  throw OU::Error("Invalid format for DMA endpoint: %s", ep.c_str());
+  
+	ocpiDebug("DMA ep %p %s: address = 0x%" PRIx64
+		  " size = 0x%zx hole 0x%" PRIx32 " end 0x%" PRIx32,
+		  this, ep.c_str(), address, size, m_holeOffset, m_holeEnd);
+      };
+      virtual ~EndPoint() {}
+
+      DT::SmemServices & createSmemServices();
+
+      // Get the address from the endpoint
+      // FIXME: make this get address thing NOT generic...
+      virtual const char* getAddress() {
+	return 0;
+      }
+    };
+
+    const char *dma = "dma"; // name passed to inherited template class
     class XferFactory :
-      public DriverBase<XferFactory, Device, PIOXferServices, pci> {
+      public DT::DriverBase<XferFactory, Device, OCPI::PIO::XferServices, dma> {
       friend class SmemServices;
       int       m_dmaFd; // if this is >= 0, then we have been there before
       bool      m_usingKernelDriver;
@@ -96,8 +110,8 @@ namespace DataTransfer {
       initDma(uint16_t maxCount) {
 	if ((m_dmaFd = ::open(OCPI_DRIVER_MEM, O_RDWR | O_SYNC)) >= 0)
 	  m_usingKernelDriver = true;
-	else if ((m_dmaFd = open("/dev/mem", O_RDWR|O_SYNC )) < 0)
-	  throw OU::Error("cant open /dev/mem for PCI (Use sudo or load the driver)");
+	else if ((m_dmaFd = ::open("/dev/mem", O_RDWR|O_SYNC )) < 0)
+	  throw OU::Error("cant open /dev/mem for DMA (Use sudo or load the driver)");
 	else {
 	  m_usingKernelDriver = false;
 	  const char *dma = getenv("OCPI_DMA_MEMORY");
@@ -134,7 +148,7 @@ namespace DataTransfer {
 	ocpi_request_t request;
 	memset(&request, 0, sizeof(request));
 	request.needed = (ocpi_size_t)ep.size;
-	request.cached = ocpi_uncached;
+	request.how_cached = ocpi_uncached;
 	if (m_usingKernelDriver) {
 	  if (ioctl(m_dmaFd, OCPI_CMD_REQUEST, &request))
 	    throw OU::Error("Can't allocate memory size %zu for DMA memory", ep.size);
@@ -166,11 +180,11 @@ namespace DataTransfer {
       }
     public:
       const char *
-      getProtocol() { return "ocpi-pci-pio"; }
+      getProtocol() { return EPNAME; }
 
       DT::XferServices *
       getXferServices(DT::SmemServices* source, DT::SmemServices* target) {
-	return new PIOXferServices(source, target);
+	return new OCPI::PIO::XferServices(source, target);
       }
       
       DT::EndPoint *
@@ -181,39 +195,12 @@ namespace DataTransfer {
       allocateEndpoint(const OU::PValue*, uint16_t mailBox, uint16_t maxMailBoxes) {
 	std::string ep;
 	
-	OCPI::Util::formatString(ep, "ocpi-pci-pio:0.0.0.0;%zu.%" PRIu16 ".%" PRIu16,
+	OCPI::Util::formatString(ep, EPNAME ":0.0.0;%zu.%" PRIu16 ".%" PRIu16,
 				 m_SMBSize, mailBox, maxMailBoxes);
 	return ep;
       }
     };
-    RegisterTransferDriver<XferFactory> driver;
 
-    class  EndPoint : public DT::EndPoint {
-      friend class SmemServices;
-    protected:
-      uint32_t m_holeOffset, m_holeEnd;
-      unsigned m_busId;
-    public:
-      EndPoint( std::string& ep, bool local)
-        : DT::EndPoint(ep, 0, local) {
-	if (sscanf(ep.c_str(), "ocpi-pci-pio:%x.%" SCNx64 ".%" SCNx32 ".%" SCNx32 ";",
-		   &m_busId, &address, &m_holeOffset, &m_holeEnd) != 4)
-	  throw OU::Error("Invalid format for PCI endpoint: %s", ep.c_str());
-  
-	ocpiDebug("PCI ep %p %s: bus_id = %d, address = 0x%" PRIx64
-		  " size = 0x%zx hole 0x%" PRIx32 " end 0x%" PRIx32,
-		  this, ep.c_str(), m_busId, address, size, m_holeOffset, m_holeEnd);
-      };
-      virtual ~EndPoint() {}
-
-      DT::SmemServices & createSmemServices();
-
-      // Get the address from the endpoint
-      // FIXME: make this get address thing NOT generic...
-      virtual const char* getAddress() {
-	return 0;
-      }
-    };
 
     DT::EndPoint* XferFactory::
     createEndPoint(std::string& endpoint, bool local) {
@@ -221,13 +208,13 @@ namespace DataTransfer {
     }
 
     class SmemServices : public DT::SmemServices {
-      EndPoint &m_pciEndPoint;
+      EndPoint &m_dmaEndPoint;
       uint8_t *m_vaddr, *m_vaddr1;
       XferFactory &m_driver;
       friend class EndPoint;
     protected:
       SmemServices(EndPoint& ep) 
-	: DT::SmemServices(ep), m_pciEndPoint(ep), m_vaddr(NULL), m_vaddr1(NULL),
+	: DT::SmemServices(ep), m_dmaEndPoint(ep), m_vaddr(NULL), m_vaddr1(NULL),
 	  m_driver(XferFactory::getSingleton())
       {
 	// For remote mappings all is deferred until mapping
@@ -236,11 +223,11 @@ namespace DataTransfer {
 	  m_vaddr = m_driver.mapDmaRegion(ep, 0, ep.size);
 	  // FIXME: somehow we shouldn't be reformatting the whole endpoint string?
 	  OU::formatString(ep.end_point,
-			   "ocpi-pci-pio:%u.0x%" PRIx64".0x%" PRIx32 ".0x%" PRIx32
+			   EPNAME ":0x%" PRIx64".0x%" PRIx32 ".0x%" PRIx32
 			   ";%zu.%" PRIu16 ".%" PRIu16,
-			   ep.m_busId, ep.address, ep.m_holeOffset, ep.m_holeEnd,
-			   ep.size, ep.mailbox, ep.maxCount);
-	  ocpiDebug("Finalized PCI ep %p: %s", &ep, ep.end_point.c_str());
+			   ep.address, ep.m_holeOffset, ep.m_holeEnd, ep.size,
+			   ep.mailbox, ep.maxCount);
+	  ocpiDebug("Finalized DMA ep %p: %s", &ep, ep.end_point.c_str());
 	}
       }
     public:
@@ -251,19 +238,19 @@ namespace DataTransfer {
       int32_t detach() { return 0; }
       int32_t unMap() { return 0; }
       void* map(DtOsDataTypes::Offset offset, size_t size ) {
-	EndPoint &ep = m_pciEndPoint;
+	EndPoint &ep = m_dmaEndPoint;
 	OU::SelfAutoMutex guard (&m_driver);
 	uint8_t *vaddr = 0;
 	if (m_vaddr == NULL) {
 	  if (ep.m_holeOffset) {
 	    m_vaddr = m_driver.mapDmaRegion(ep, 0, ep.m_holeOffset);
 	    m_vaddr1 = m_driver.mapDmaRegion(ep, ep.m_holeEnd, ep.size - ep.m_holeEnd);
-	    ocpiDebug("pci ep %p has vaddr %p to %p, vaddr1 %p to %p",
+	    ocpiDebug("dma ep %p has vaddr %p to %p, vaddr1 %p to %p",
 		      &ep, m_vaddr, m_vaddr + ep.m_holeOffset, m_vaddr1,
 		      m_vaddr1 + (ep.size - ep.m_holeEnd));
 	  } else {
 	    m_vaddr = m_driver.mapDmaRegion(ep, 0, ep.size);
-	    ocpiDebug("pci ep %p has vaddr %p to %p, no vaddr1",
+	    ocpiDebug("dma ep %p has vaddr %p to %p, no vaddr1",
 		      &ep, m_vaddr, m_vaddr + ep.size);
 	  }
 	}
@@ -277,9 +264,9 @@ namespace DataTransfer {
 	if (!vaddr)
 	  throw OU::Error("Mapping offset %" DTOSDATATYPES_OFFSET_PRIx " size %zu out of range",
 			  offset, size);
-	ocpiDebug("PCI::SmemServices::map returning %s vaddr = %p base %p/%p offset 0x%"
+	ocpiDebug("DMA::SmemServices::map returning %s vaddr = %p base %p/%p offset 0x%"
 		  DTOSDATATYPES_OFFSET_PRIx " size %zu, end 0x%p",
-		  m_pciEndPoint.local ? "local" : "remote",
+		  m_dmaEndPoint.local ? "local" : "remote",
  		  vaddr, m_vaddr, m_vaddr1, offset, size, vaddr + size);
 	return (void*)vaddr;
       }
@@ -289,5 +276,7 @@ namespace DataTransfer {
     createSmemServices() {
       return *new SmemServices(*this);
     }
+
+    DT::RegisterTransferDriver<XferFactory> driver;
   }
 }

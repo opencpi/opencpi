@@ -106,6 +106,17 @@ define HdlSetWorkers
    $$(infoxx Cores is $$(origin SubCores) $$(flavor SubCores):$$(SubCores))
 
 endef
+# Get the list of cores we depend on, returning the real files that make can depend on
+# With the deferred evaluation of target-specific items
+HdlGetCores=$(call Unique,\
+    $(foreach c,$(Cores),$(call HdlCoreRef1,$c,$(HdlTarget))) \
+    $(foreach w,$(HdlWorkers),\
+      $(foreach f,$(strip\
+        $(firstword \
+          $(foreach c,$(ComponentLibraries),\
+            $(foreach d,$(call HdlComponentLibraryDir,$c,$(HdlTarget)),\
+              $(call HdlExists,$d/$w$(and $(HdlToolRealCore),$(filter %.vhd,$(ImplFile)),_rv)$(HdlBin)))))),\
+        $(call FindRelative,.,$f))))
 
 
 
@@ -264,7 +275,7 @@ HdlCoreRef1=$(strip \
      $(or $(call HdlExists,$(call HdlCRF,$1,$2,$c)),\
 	  $(and $2,$(call HdlExists,$(call HdlCRF,$1,$(call HdlGetFamily,$2),$c))))))
 
-# Look everywhere (incluing component libraries), and return an error if not found
+# Look everywhere (including component libraries), and return an error if not found
 HdlCoreRef=$(strip \
   $(or $(strip \
      $(if $(findstring /,$1),\
@@ -345,6 +356,11 @@ $(call OcpiDbgVar,HdlPlatforms)
 $(call OcpiDbgVar,HdlTargets)
 
 define HdlSearchComponentLibraries
+$(foreach c,$(ComponentLibraries),\
+  $(foreach o,$(ComponentLibraries),\
+     $(if $(findstring $o,$c),,\
+        $(and $(filter $(notdir $o),$(notdir $c)),
+          $(error The component libraries "$(c)" and "$(o)" have the same base name, which is not allowed)))))
 override XmlIncludeDirs += $(call HdlXmlComponentLibraries,$(ComponentLibraries))
 endef
 HdlRmRv=$(if $(filter %_rv,$1),$(patsubst %_rv,%,$1),$1)

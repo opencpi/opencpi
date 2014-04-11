@@ -6,6 +6,7 @@
 -- Note THIS IS THE OUTER skeleton, since the 'outer' attribute was set.
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
+library platform; use platform.platform_pkg.all;
 architecture rtl of ocdp_rv is
   -- This is the verilog being wrapped
   component mkOCDP4B is
@@ -67,6 +68,7 @@ architecture rtl of ocdp_rv is
   signal wci_s_MAddr            : std_logic_vector(31 downto 0);
   signal wmiS0_MAddr            : std_logic_vector(31 downto 0);
   signal my_reset_n             : std_logic;
+  signal server_response_get    : std_logic_vector(152 downto 0);
 begin
   -- We tell mkOCCP to enqueue when it is ready (not full) and there is input data
   EN_server_request_put <= RDY_server_request_put and client_in.valid;
@@ -77,6 +79,7 @@ begin
   wti_out.clk           <= ctl_in.clk;
   -- we are reset if either specific WCI reset or the global (uNoC) reset asserted (low)
   my_reset_n            <= ctl_in.MReset_n and client_in.reset_n;
+  client_out.data       <= to_unoc(server_response_get);
 dp : mkOCDP4B
   port map(
     pciDevice               => client_in.id,
@@ -114,11 +117,11 @@ dp : mkOCDP4B
     wmiS0_arg_mFlag         => data_in.MFlag,
     wmiS0_SReset_n          => data_out.SReset_n,
     wmiS0_MReset_n          => data_in.MReset_n,
-    server_request_put      => client_in.data,
+    server_request_put      => to_slv(client_in.data),
     EN_server_request_put   => EN_server_request_put,
     RDY_server_request_put  => RDY_server_request_put,
     EN_server_response_get  => client_in.take,
-    server_response_get     => client_out.data,
+    server_response_get     => server_response_get,
     RDY_server_response_get => client_out.valid
   );
 end rtl;

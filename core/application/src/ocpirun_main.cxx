@@ -32,6 +32,7 @@ usage(const char *name) {
 	  "  Options: (values are either directly after the letter or in the next argument)\n"
 	  "    -d           # dump properties after execution\n"
 	  "    -v           # be verbose in describing what is happening\n"
+	  "    -x           # print numeric property values in hex, not decimal\n"
 	  "    -s <instance-name>=<expression>\n"
 	  "                 # provide selection expression for worker instance\n"
 	  "    -m [<instance-name>]=<model>\n"
@@ -67,7 +68,7 @@ static void addParam(const char *name, const char **&ap) {
 
 int
 main(int /*argc*/, const char **argv) {
-  bool verbose = false, dump = false, containers = false;
+  bool verbose = false, dump = false, containers = false, hex = false;
   unsigned seconds = 0, nProcs = 0;
   const char *argv0 = strrchr(argv[0], '/');
   if (argv0)
@@ -84,6 +85,10 @@ main(int /*argc*/, const char **argv) {
       case 'v':
 	verbose = true;
 	params.push_back(OA::PVBool("verbose", true));
+	break;
+      case 'x':
+	hex = true;
+	params.push_back(OA::PVBool("hex", true));
 	break;
       case 't':
 	seconds = atoi(ap[0][2] ? &ap[0][2] : *++ap);
@@ -150,7 +155,7 @@ main(int /*argc*/, const char **argv) {
 	OA::ContainerManager::find("rcc", name.c_str());
       }
     if (containers) {
-      c = OA::ContainerManager::get(0); // force config
+      (void)OA::ContainerManager::get(0); // force config
       printf("Available containers:\n"
 	     " #  Model  Platform     OS         Name\n");
       for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)
@@ -180,7 +185,7 @@ main(int /*argc*/, const char **argv) {
       std::string name, value;
       if (verbose)
 	fprintf(stderr, "Dump of all initial property values:\n");
-      for (unsigned n = 0; app.getProperty(n, name, value); n++)
+      for (unsigned n = 0; app.getProperty(n, name, value, hex); n++)
 	fprintf(stderr, "Property %2u: %s = \"%s\"\n", n, name.c_str(), value.c_str());
     }
     app.start();
@@ -206,7 +211,7 @@ main(int /*argc*/, const char **argv) {
       std::string name, value;
       if (verbose)
 	fprintf(stderr, "Dump of all final property values:\n");
-      for (unsigned n = 0; app.getProperty(n, name, value); n++)
+      for (unsigned n = 0; app.getProperty(n, name, value, hex); n++)
 	fprintf(stderr, "Property %2u: %s = \"%s\"\n", n, name.c_str(), value.c_str());
     }
     return 0;

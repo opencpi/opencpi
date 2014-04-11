@@ -129,6 +129,7 @@ namespace OCPI {
       unsigned   m_processors;
       unsigned m_currConn;
       unsigned m_bestScore;
+      bool m_hex;
 
       void init(const OCPI::API::PValue *params);
       void initExternals(const OCPI::API::PValue *params);
@@ -164,8 +165,8 @@ namespace OCPI {
       ExternalPort &getPort(const char *);
       friend struct Property;
       Worker &getPropertyWorker(const char *name);
-      bool getProperty(unsigned ordinal, std::string &name, std::string &value);
-      void getProperty(const char * wname, const char * pname, std::string &value);
+      bool getProperty(unsigned ordinal, std::string &name, std::string &value, bool hex);
+      void getProperty(const char * wname, const char * pname, std::string &value, bool hex);
       void setProperty(const char* worker_name, const char* prop_name, const char *value);
       // This will be used for the port connection protocol
       OCPI::Container::Port &getRemote(const char *);

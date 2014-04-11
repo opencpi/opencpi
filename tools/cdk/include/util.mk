@@ -89,6 +89,7 @@ Suffix_rcc_c:=c
 Suffix_hdl_verilog:=v
 Suffix_hdl_vhdl:=vhd
 Language_hdl:=vhdl
+Languages_hdl:=vhdl verilog
 
 Language_ocl:=cl
 Suffix_ocl_cl:=cl

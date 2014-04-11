@@ -82,11 +82,11 @@ namespace OCPI {
   namespace Container {}
   namespace HDL {
 
-    static inline unsigned max(unsigned a,unsigned b) { return a > b ? a : b;}
+    //    static inline unsigned max(unsigned a,unsigned b) { return a > b ? a : b;}
     // This is the alignment constraint of DMA buffers in the processor's memory.
     // It could be a cache line or a malloc granule...
     // It should come from somewhere else.  FIXME
-    static const unsigned LOCAL_BUFFER_ALIGN = 32;
+    //    static const unsigned LOCAL_BUFFER_ALIGN = 32;
     
 
     static OT::Emit::Time getTicksFunc(OT::Emit::TimeSource *ts) {
@@ -308,7 +308,7 @@ OCPI_DATA_TYPES
     // minor as to not be worth (re)factoring (currently).
     // The inheritance of WciControl is for the external case
     class ExternalPort;
-    class Port : public OC::PortBase<Worker,Port,ExternalPort>, WciControl {
+    class Port : public OC::PortBase<OCPI::HDL::Worker,Port,ExternalPort>, WciControl {
       friend class Worker;
       friend class ExternalPort;
       ezxml_t m_connection;
@@ -325,7 +325,7 @@ OCPI_DATA_TYPES
       static int dumpFd;
       DataTransfer::EndPoint *m_endPoint; // the data plane endpoint if externally connected
 
-      Port(Worker &w,
+      Port(OCPI::HDL::Worker &w,
 	   const OA::PValue *params,
            const OM::Port &mPort, // the parsed port metadata
            ezxml_t connXml, // the xml connection for this port
@@ -334,7 +334,7 @@ OCPI_DATA_TYPES
            ezxml_t adwXml,  // the xml adapter/infrastructure worker attached to this port if any
            ezxml_t adXml,   // the xml adapter instance attached to this port if any
 	   bool argIsProvider) :
-        OC::PortBase<Worker,Port,ExternalPort>(w, *this, mPort, argIsProvider,
+        OC::PortBase<OCPI::HDL::Worker,Port,ExternalPort>(w, *this, mPort, argIsProvider,
 					       // (1 << OCPI::RDT::Passive) |
 					       //     (1 << OCPI::RDT::ActiveFlowControl) |
 					       (1 << OCPI::RDT::ActiveMessage), params),
@@ -880,11 +880,12 @@ OCPI_DATA_TYPES
 	  if (!(localData = (uint8_t *)Driver::getSingleton().map(nAlloc, phys, error)))
 	    throw error;
 	}
+	// FIXME: this has got to be broken...
         snprintf(myDesc.oob.oep, sizeof(myDesc.oob.oep),
-                 "ocpi-pci-pio:%s.%lld:%lld.3.10", "0", (unsigned long long)phys,
+                 "ocpi-dma-pio:%lld:%lld.3.10", (unsigned long long)phys,
                  (unsigned long long)nAlloc);
 #if 0
-	myEndpoint = OCPI::RDT::GetEndpoint("ocpi-pci//bus-id");
+	myEndpoint = OCPI::RDT::GetEndpoint("ocpi-dma//bus-id");
 	if (!myEndpoint)
 	  OC::ApiError("No local (CPU) endpoint support for pci bus %s", NULL);
 	localData = myEndpoint->alloc(nAlloc);

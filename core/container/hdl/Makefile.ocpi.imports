@@ -69,7 +69,7 @@ else
 #../../../cp289_container/$(OCPI_OUT_DIR)/OcpiContainerDriver.obj 
 #../../../../core/container/hdl/$(OCPI_OUT_DIR)/HdlContainer.obj
 DYNOBJS += \
-	../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPCIPioXfer.obj \
+	../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDmaXfer.obj \
 	../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPioXfer.obj \
         ../../../../core/library/$(OCPI_OUT_DIR)/OcpiComponentLibrary.obj \
 ../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramXfer.obj \

@@ -6,20 +6,60 @@
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
 library platform; use platform.platform_pkg.all;
-library zed; use zed.all;
+library zynq; use zynq.zynq_pkg.all;
+library unisim; use unisim.vcomponents.all;
 library bsv;
 architecture rtl of zed_worker is
-  signal ps_axi_gp_in  : zynq_pkg.axi_gp_in_t;
-  signal ps_axi_gp_out : zynq_pkg.axi_gp_out_t;
+  signal ps_axi_gp_in  : m_axi_gp_in_t;        -- s2m
+  signal ps_axi_gp_out : m_axi_gp_out_t;       -- m2s
+  signal ps_axi_hp_in  : s_axi_hp_in_array_t(0 to C_S_AXI_HP_COUNT-1);  -- m2s
+  signal ps_axi_hp_out : s_axi_hp_out_array_t(0 to C_S_AXI_HP_COUNT-1); -- s2m
   signal my_cp_out     : occp_in_t;
+  signal fclk          : std_logic_vector(3 downto 0);
   signal clk           : std_logic;
   signal raw_rst_n     : std_logic; -- FCLKRESET_Ns need synchronization
   signal rst_n         : std_logic; -- the synchronized negative reset
   signal reset         : std_logic; -- our positive reset
   signal count         : unsigned(25 downto 0);
   signal seen_burst    : std_logic;
+  signal unoc_count_in    : unsigned(3 downto 0);
+  signal unoc_header_in   : ulonglong_array_t(0 to 7);
+  signal unoc_header_in1  : ulonglong_array_t(0 to 7);
+  signal unoc_count_out    : unsigned(3 downto 0);
+  signal unoc_header_out   : ulonglong_array_t(0 to 7);
+  signal unoc_header_out1  : ulonglong_array_t(0 to 7);
+  signal axi_wdcount    : unsigned(3 downto 0);
+  signal axi_rdcount    : unsigned(3 downto 0);
+  signal axi_wacount    : unsigned(3 downto 0);
+  signal axi_racount    : unsigned(3 downto 0);
+  signal axi_rdata     : ulonglong_array_t(0 to 15);
+  signal axi_raddr     : ulonglong_array_t(0 to 15);
+  signal axi_wdata     : ulonglong_array_t(0 to 15);
+  signal axi_waddr     : ulonglong_array_t(0 to 15);
+  signal unoc_valid_r  : bool_t;
+  signal axi_wvalid_r  : bool_t;
+  signal axi_rvalid_r  : bool_t;
+  signal my_zynq_out   : platform.platform_pkg.unoc_master_out_t;
+  signal dbg_state     : ulonglong_t;
+  signal dbg_state1    : ulonglong_t;
 begin
+  props_out.axi_waddr <= axi_waddr;
+  props_out.axi_raddr <= axi_raddr;
+  props_out.axi_wdata <= axi_wdata;
+  props_out.axi_rdata <= axi_rdata;
+  props_out.axi_racount <= resize(axi_racount,32);
+  props_out.axi_wacount <= resize(axi_wacount,32);
+  props_out.axi_rdcount <= resize(axi_rdcount,32);
+  props_out.axi_wdcount <= resize(axi_wdcount,32);
+  props_out.unoc_count_in <= resize(unoc_count_in,32);
+  props_out.unoc_headers_in <= unoc_header_in;
+  props_out.unoc_headers_in1 <= unoc_header_in1;
+  props_out.unoc_count_out <= resize(unoc_count_out,32);
+  props_out.unoc_headers_out <= unoc_header_out;
+  props_out.unoc_headers_out1 <= unoc_header_out1;
   cp_out <= my_cp_out;
+  clkbuf   : BUFG   port map(I => fclk(0),
+                             O => clk);
   -- The FCLKRESET signals from the PS are documented as asynchronous with the
   -- associated FCLK for whatever reason.  Here we make a synchronized reset from it.
   sr : bsv.bsv.SyncResetA
@@ -30,39 +70,18 @@ begin
              OUT_RST => rst_n);
   reset <= not rst_n;
   -- Instantiate the processor system (i.e. the interface to it).
-  ps : entity zed_ps
+  ps : zynq_ps
     port map(
-      -- Connect PS-only pins to the PS  These are external signals
-      --ps_in.PS_SRSTB        => PS_SRSTB,
-      --ps_in.PS_CLK          => PS_CLK,
-      --ps_in.PS_PORB         => PS_PORB,
-      --ps_inout.DDR_WEB      => DDR_WEB,
-      --ps_inout.MIO          => MIO,
-      --ps_inout.DDR_Clk      => DDR_Clk,
-      --ps_inout.DDR_Clk_n    => DDR_Clk_n,
-      --ps_inout.DDR_CKE      => DDR_CKE,
-      --ps_inout.DDR_CS_n     => DDR_CS_n,
-      --ps_inout.DDR_RAS_n    => DDR_RAS_n,
-      --ps_inout.DDR_CAS_n    => DDR_CAS_n,
-      --ps_inout.DDR_BankAddr => DDR_BankAddr,
-      --ps_inout.DDR_Addr     => DDR_Addr,
-      --ps_inout.DDR_ODT      => DDR_ODT,
-      --ps_inout.DDR_DRSTB    => DDR_DRSTB,
-      --ps_inout.DDR_DQ       => DDR_DQ,
-      --ps_inout.DDR_DM       => DDR_DM,
-      --ps_inout.DDR_DQS      => DDR_DQS,
-      --ps_inout.DDR_DQS_n    => DDR_DQS_n,
-      --ps_inout.DDR_VRN      => DDR_VRN,
-      --ps_inout.DDR_VRP      => DDR_VRP,
       -- Signals from the PS used in the PL
-      pl_out.FCLK           => clk,
-      pl_out.FCLKRESET_N    => raw_rst_n,
-      -- The axi_gp port of the PS made available here.
-      axi_gp_in             => ps_axi_gp_in,
-      axi_gp_out            => ps_axi_gp_out
+      ps_out.FCLK           => fclk,
+      ps_out.FCLKRESET_N    => raw_rst_n,
+      m_axi_gp_in           => ps_axi_gp_in,
+      m_axi_gp_out          => ps_axi_gp_out,
+      s_axi_hp_in           => ps_axi_hp_in,
+      s_axi_hp_out          => ps_axi_hp_out
       );
   -- Adapt the axi master from the PS to be a CP Master
-  cp : entity axi2cp
+  cp : axi2cp
     port map(
       clk     => clk,
       reset   => reset,
@@ -71,6 +90,48 @@ begin
       cp_in   => cp_in,
       cp_out  => my_cp_out
     );
+  zynq_out <= my_zynq_out;
+  props_out.debug_state <= dbg_state;
+  props_out.debug_state1 <= dbg_state1;
+  dp0 : unoc2axi
+    port map(
+      clk       => clk,
+      reset     => reset,
+      unoc_in   => zynq_in,
+      unoc_out  => my_zynq_out,
+      axi_in    => ps_axi_hp_out(0),
+      axi_out   => ps_axi_hp_in(0),
+      axi_error => props_out.axi_error,
+      dbg_state => dbg_state,
+      dbg_state1 => dbg_state1
+    );
+  dp1 : axinull
+    port map(
+      clk       => clk,
+      reset     => reset,
+      axi_in    => ps_axi_hp_out(1),
+      axi_out   => ps_axi_hp_in(1)
+    );
+  dp2 : axinull
+    port map(
+      clk       => clk,
+      reset     => reset,
+      axi_in    => ps_axi_hp_out(2),
+      axi_out   => ps_axi_hp_in(2)
+    );
+  dp3 : axinull
+    port map(
+      clk       => clk,
+      reset     => reset,
+      axi_in    => ps_axi_hp_out(3),
+      axi_out   => ps_axi_hp_in(3)
+    );
+
+  term_unoc : unoc_terminator
+    port    map(up_in      => zynq_slave_in,
+                up_out     => zynq_slave_out,
+                drop_count => props_out.unocDropCount);
+    
   -- This piece of generic infrastructure in is instantiated here because
   -- it localizes all these signals here in the platform worker, and thus
   -- the platform worker simply produces clock, reset, and time, all in the
@@ -132,8 +193,71 @@ begin
     if rising_edge(clk) then
       if reset = '1' then
         count <= (others => '0');
+        unoc_count_in <= (others => '0');
+        unoc_count_out <= (others => '0');
+        axi_raddr  <= (others => (others => '0'));
+        axi_waddr  <= (others => (others => '0'));
+        axi_rdata  <= (others => (others => '0'));
+        axi_wdata  <= (others => (others => '0'));
+        axi_wdcount <= (others => '0');
+        axi_rdcount <= (others => '0');
+        axi_wacount <= (others => '0');
+        axi_racount <= (others => '0');
         seen_burst <= '0';
+        axi_wvalid_r <= '0';
+        axi_rvalid_r <= '0';
+        unoc_valid_r <= '0';
       else
+        unoc_valid_r <= my_zynq_out.valid;
+        axi_wvalid_r <= ps_axi_hp_out(0).RVALID;
+        axi_rvalid_r <= ps_axi_hp_in(0).ARVALID;
+        if its(my_zynq_out.valid) and zynq_in.take and
+-- zynq_in.data.sof and not its(unoc_valid_r) and
+          unoc_count_out /= 7 then
+          unoc_header_out(to_integer(unoc_count_out)) <=
+            to_ulonglong(my_zynq_out.data.payload(0) & my_zynq_out.data.payload(1));
+          unoc_header_out1(to_integer(unoc_count_out)) <=
+            to_ulonglong(my_zynq_out.data.payload(2) & my_zynq_out.data.payload(3)(31 downto 4) &
+                          "0" & std_logic_vector(dbg_state1(2 downto 0)));
+          unoc_count_out <= unoc_count_out + 1;
+        end if;
+        if its(zynq_in.valid) and my_zynq_out.take and
+-- zynq_in.data.sof and not its(unoc_valid_r) and
+          unoc_count_in /= 7 then
+          unoc_header_in(to_integer(unoc_count_in)) <=
+            to_ulonglong(zynq_in.data.payload(0) & zynq_in.data.payload(1));
+          unoc_header_in1(to_integer(unoc_count_in)) <=
+            to_ulonglong(zynq_in.data.payload(2) & zynq_in.data.payload(3));
+          unoc_count_in <= unoc_count_in + 1;
+        end if;
+        if its(ps_axi_hp_out(0).RVALID) and ps_axi_hp_in(0).RREADY and axi_rdcount /= 15 then
+          axi_rdata(to_integer(axi_rdcount)) <=
+            to_ulonglong(ps_axi_hp_out(0).RDATA(63 downto 1) & "1"); -- &
+--                         "00010010001101000101011001110000");
+          axi_rdcount <= axi_rdcount + 1;
+        end if;
+        if its(ps_axi_hp_in(0).ARVALID and ps_axi_hp_out(0).ARREADY) and axi_racount /= 15 then
+          axi_raddr(to_integer(axi_racount)) <=
+            to_ulonglong(std_logic_vector(dbg_state1(60 downto 56)) & -- 5
+                         std_logic_vector(dbg_state(26 downto 4)) & -- 23
+                                          ps_axi_hp_in(0).ARLEN & -- 4
+                                          ps_axi_hp_in(0).ARADDR); -- 32
+          axi_racount <= axi_racount + 1;
+        end if;
+        if its(ps_axi_hp_in(0).WVALID) and ps_axi_hp_out(0).WREADY and axi_wdcount /= 15 then
+          axi_wdata(to_integer(axi_wdcount)) <=
+            to_ulonglong(ps_axi_hp_in(0).WDATA(63 downto 1) & "1"); -- &
+--                         "00010010001101000101011001110000");
+          axi_wdcount <= axi_wdcount + 1;
+        end if;
+        if its(ps_axi_hp_in(0).AWVALID and ps_axi_hp_out(0).AWREADY) and axi_wacount /= 15 then
+          axi_waddr(to_integer(axi_wacount)) <=
+            to_ulonglong(std_logic_vector(dbg_state1(60 downto 56)) & -- 5
+                         std_logic_vector(dbg_state(26 downto 4)) & -- 23
+                                          ps_axi_hp_in(0).AWLEN & -- 4
+                                          ps_axi_hp_in(0).AWADDR); -- 32
+          axi_wacount <= axi_wacount + 1;
+        end if;
         count <= count + 1;
         if ps_axi_gp_out.ARVALID = '1' and ps_axi_gp_out.ARLEN = "0001" then
           seen_burst <= '1';

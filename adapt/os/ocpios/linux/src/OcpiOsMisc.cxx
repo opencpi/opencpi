@@ -181,7 +181,7 @@ getExecFile(std::string &file) {
   char *buf = new char[bufsize];
 #ifdef OCPI_OS_macos
   if (_NSGetExecutablePath(buf, &bufsize)) {
-    delete buf;
+    delete [] buf;
     buf = new char[bufsize];
     if (_NSGetExecutablePath(buf, &bufsize))
       throw "Unexpected exec file failure on MacOS";
@@ -199,5 +199,5 @@ getExecFile(std::string &file) {
   buf[n] = 0;
 #endif 
   file = buf;
-  delete buf;
+  delete [] buf;
 }

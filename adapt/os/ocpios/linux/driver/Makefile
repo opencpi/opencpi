@@ -49,9 +49,12 @@ ifdef OCPI_KERNEL_DIR
     $(error OCPI_KERNEL_DIR indicates '$(OCPI_KERNEL_DIR)', which does not exist)
   endif
   ifdef OCPI_CROSS_BUILD_BIN_DIR
-    export CROSS_COMPILE:=$(OCPI_CROSS_BUILD_BIN_DIR)/$(OCPI_CROSS_HOST)-
-    export ARCH=$(OCPI_ARCH)
+    override CROSS_COMPILE:=$(OCPI_CROSS_BUILD_BIN_DIR)/$(OCPI_CROSS_HOST)-
+    override ARCH:=$(OCPI_ARCH)
+    export CROSS_COMPILE
+    export ARCH
   endif
+  $(info OCPI_KERNEL_DIR specified, using: $(KERNELDIR) with ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE))
 else
   # Assume the source tree is where the running kernel was built
   # You should set KERNELDIR in the environment if it's elsewhere
@@ -59,6 +62,7 @@ else
   ifeq ($(wildcard $(KERNELDIR)),)
     $(error Cannot figure out where the KERNELDIR should be.)
   endif
+  $(info No OCPI_KERNEL_DIR specified, so using: $(KERNELDIR))
 endif
 # The current directory is passed to sub-makes as argument
 PWD := $(shell pwd)
@@ -81,9 +85,10 @@ export EXTRA_CFLAGS := $(MyIncs) -Wformat=2
 # This is what works with Centos6
 export KCPPFLAGS := $(MyIncs) -Wformat=2
 MODFILE=$(MODNAME).ko
-RULESFILE=99-$(MODNAME).rules
+URULESFILE=99-$(MODNAME).rules
+MRULESFILE=mdev-$(MODNAME).rules
 JUNK=Module.markers Module.symvers .opencpi* opencpi.mod.* opencpi.o .tmp*
-INSTALLED=$(MyLib)/$(MODFILE) $(MyLib)/$(RULESFILE)
+INSTALLED=$(MyLib)/$(MODFILE) $(MyLib)/$(URULESFILE) $(MyLib)/$(MRULESFILE)
 all:	$(INSTALLED)
 
 $(MODFILE): opencpi.c
@@ -92,8 +97,9 @@ $(MODFILE): opencpi.c
 
 modules: $(MODFILE)
 
-$(INSTALLED): $(MODFILE) $(RULESFILE)
-	@cp $(RULESFILE) $(MyLib)
+$(INSTALLED): $(MODFILE) $(URULESFILE) $(MRULESFILE)
+	@cp $(URULESFILE) $(MyLib)
+	@cp $(MRULESFILE) $(MyLib)
 	@cp $(MODFILE) $(MyLib)
 	@echo Linux driver built, and a copy placed in $(MyLib)
 
@@ -112,7 +118,7 @@ clean:
 	rm -rf	$(JUNK) $(MODFILE) $(MODFILE).unsigned modules.order
 
 topclean: clean
-	rm -f $(MyLib)/$(MODFILE) $(MyLib)/$(RULESFILE)
+	rm -f $(MyLib)/$(MODFILE) $(MyLib)/$(URULESFILE) $(MyLib)/$(MRULESFILE)
 
 .PHONY: all clean topclean
 

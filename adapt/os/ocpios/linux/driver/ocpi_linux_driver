@@ -6,12 +6,19 @@
 # Retrieve the reserved DMA memory value from the kernel command line
 # Note there might be multiple reservations, and we currently only support one (the first).
 
+MODNAME=opencpi
+SUDO=sudo
+RULESFILE=99-$MODNAME.rules
 if [ -x /sbin/udevcontrol ] ; then
 RELOAD="/sbin/udevcontrol reload_rules"
 elif [ -x /sbin/udevadm ] ; then
 RELOAD="/sbin/udevadm control --reload-rules"
+elif [ -x /sbin/mdev ] ; then
+RELOAD=
+SUDO=
+RULESFILE=mdev-$MODNAME.rules
 else
- echo Error: Neither /sbin/udevcontrol nor /sbin/udevadm were found and executable.
+ echo Error: None of /sbin/udevcontrol, /sbin/udevadm, or /sbin/mdev were found and executable.
  exit 1
 fi
 
@@ -21,19 +28,23 @@ else
   DIR=$OCPI_CDK_DIR/lib/$OCPI_TOOL_HOST
 fi
 
+RULESPATH=$DIR/$RULESFILE
 MODNAME=opencpi
 MODFILE=$MODNAME.ko
-RULESFILE=99-$MODNAME.rules
 MODPATH=$DIR/$MODFILE
-RULESPATH=$DIR/$RULESFILE
 
 rudev () {
-  sudo rm -f /etc/udev/rules.d/$RULESFILE
-  sudo $RELOAD
+  if [ "$RELOAD" = '' ] ; then
+    sed '/ocpi=/d' < /etc/mdev.conf > /tmp/dmdev.conf
+    mv /tmp/dmdev.conf /etc/mdev.conf
+  else
+    sudo rm -f /etc/udev/rules.d/$RULESFILE
+    sudo $RELOAD
+  fi
 }
 
 rmd () {
-  sudo /sbin/rmmod $MODNAME
+  $SUDO /sbin/rmmod $MODNAME
   if [ $? = 1 ] ; then
     echo Unexpected error unloading driver module.
     exit 1
@@ -91,9 +102,21 @@ if [ $1 = status ] ; then
   echo The driver module is not currently loaded.
   exit 0
 fi
-sudo cp $RULESPATH /etc/udev/rules.d &&
-sudo $RELOAD &&
-sudo /sbin/insmod $MODPATH $INSARG
+if [ "$RELOAD" = '' ] ; then
+  if grep -s ocpi= /etc/mdev.conf; then
+    echo The mdev config already has OpenCPI rules.
+  else
+    echo The mdev config has no OpenCPI rules.  We will add them to /etc/mdev.conf
+    cat $RULESPATH >> /etc/mdev.conf
+  fi
+else
+  sudo cp $RULESPATH /etc/udev/rules.d &&
+  sudo $RELOAD
+  if test $? != 0; then
+    exit 1
+  fi
+fi
+$SUDO /sbin/insmod $MODPATH $INSARG
 #sudo /sbin/modprobe -v 
 if [ $? = 0 ] ; then
   # check /dev?

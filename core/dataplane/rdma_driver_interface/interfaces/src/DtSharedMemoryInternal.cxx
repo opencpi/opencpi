@@ -282,9 +282,7 @@ makeRequest( SMBResources* source, SMBResources* target )
     XferFactoryManager::getFactoryManager().getService(
 						       source->sMemServices->endpoint(),
 						       target->sMemServices->endpoint() );
-  if ( ! ptemplate ) {
-    ocpiAssert(0);
-  }
+  ocpiAssert(ptemplate);
 
   DDT::Offset offset =
     OCPI_SIZEOF(DDT::Offset, ContainerComms::MailBox) * m_slot + OCPI_SIZEOF(DDT::Offset, UpAndRunning);

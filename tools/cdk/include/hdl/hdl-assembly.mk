@@ -169,8 +169,11 @@ $(ImplFile): $$(ImplXmlFile) | $$(GeneratedDir)
 # The workers file is actually created at the same time as the -assy.v file
 $(AssyWorkersFile): $(ImplFile)
 
-# A dependency on the core
-HdlPreCore=$(AssyWorkersFile)
+# We need to get the list of workers early to establish dependencies
+$(and $(call DoShell,$(OcpiGen) -x workers $(CwdName).xml,HdlWorkers),\
+      $(error Processing assembly XML $(ImplXmlFile): $(HdlWorkers)))
+# Make the assembly core depend on all the explicitly requested cores and the workers
+HdlPreCore=$(HdlGetCores)
 
 # The source code for this "worker" is the generated assembly file.
 GeneratedSourceFiles:=$(ImplFile)
@@ -182,6 +185,7 @@ override XmlIncludeDirs += $(call HdlXmlComponentLibraries,$(ComponentLibraries)
 include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
 ifndef HdlSkip
 
+################################################################################
 ################################################################################
 # From here down its about building the final bitstreams
 ifndef Containers

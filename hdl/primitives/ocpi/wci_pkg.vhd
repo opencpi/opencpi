@@ -94,7 +94,7 @@ TYPE State_t IS (EXISTS_e,            -- 0
   subtype hword_t is std_logic_vector(15 downto 0);
   subtype byte_t is std_logic_vector(7 downto 0);
   type properties_t is array (natural range <>) of property_t;
-  type data_a_t is array (natural range <>) of word_t;
+  type data_a_t is array (natural range <>) of dword_t;
   type offset_a_t is array (natural range <>) of unsigned(31 downto 0);
   type boolean_array_t is array (natural range <>) of boolean;
   function data_top (property : property_t;

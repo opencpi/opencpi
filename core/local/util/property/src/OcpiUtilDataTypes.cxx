@@ -189,7 +189,7 @@ namespace OCPI {
 	    *ep = new char[strlen(v.m_pString[n]) + 1];
 	    strcpy((char *)*ep, v.m_pString[n]);
 	  }
-	  // FIXME:  check for duplicate enum values
+	  // FIXME:  check for duplicate enum values, check for enum string chars being sane
 	  // enums have a baseTypeSize of 32 per IDL
 	}
 	if (m_baseType == OA::OCPI_String) {
@@ -251,6 +251,7 @@ namespace OCPI {
 	return "Sequence must have a bounded size";
       // Process default values
       if (hasDefault) {
+	// FIXME: should this be illegal if the property is not initiall or writable?
 	const char *defValue = ezxml_cattr(xm, hasDefault);
 	if (defValue) {
 	  m_default = new Value(*this);

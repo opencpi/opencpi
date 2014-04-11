@@ -6,11 +6,18 @@ Requirements:
 * Source for your Linux Kernel
 * sudo
 
+OCPI_KERNEL_DIR can be set for where the linux kernel is to build the driver against.
+It is required for cross-compiling the driver
+Note that for cross-compiling the driver you need to set:
+OCPI_CROSS_BUILD_BIN_DIR and OCPI_CROSS_HOST and OCPI_ARCH
+
 To build the driver:
 
 $ make
 
 $ make load
+
+********THE FOLLOWING MEMMAP FEATURE IS FOR X86 ARCHITECTURES ONLY******
 
 If you want to use more then 128KB of RAM, then you will need to reserve a 
 block of memory during the Linux kernel boot, using the memmap parameter.  The

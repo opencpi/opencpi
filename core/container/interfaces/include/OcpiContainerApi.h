@@ -89,32 +89,7 @@ namespace OCPI {
     };
     class Property;
     class PropertyInfo;
-    class Worker {
-      friend class Property;
-      virtual PropertyInfo &setupProperty(const char *name,
-					  volatile void *&m_writeVaddr,
-					  const volatile void *&m_readVaddr) = 0;
-      virtual PropertyInfo &setupProperty(unsigned n,
-					  volatile void *&m_writeVaddr,
-					  const volatile void *&m_readVaddr) = 0;
-      virtual bool beforeStart() = 0;
-    protected:
-      virtual ~Worker();
-    public:
-      virtual Port &getPort(const char *name, const PValue *props = NULL) = 0;
-      virtual void start() = 0;
-      virtual void stop() = 0;
-      virtual void release() = 0;
-      virtual void beforeQuery() = 0;
-      virtual void afterConfigure() = 0;
-      virtual void test() = 0;
-      // Untyped property setting - slowest but convenient
-      virtual void setProperty(const char *name, const char *value) = 0;
-      // Untyped property list setting - slow but convenient
-      virtual void setProperties(const char *props[][2]) =  0;
-      // Typed property list setting - slightly safer, still slow
-      virtual void setProperties(const PValue *props) =  0;
-      virtual bool getProperty(unsigned ordinal, std::string &name, std::string &value) = 0;
+    class PropertyAccess {
     protected:
       // These methods are used by the Property methods below when the
       // fast path using memory-mapped access cannot be used.
@@ -144,6 +119,34 @@ namespace OCPI {
 #undef OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
+    };
+    class Worker : virtual public PropertyAccess {
+      friend class Property;
+      virtual PropertyInfo &setupProperty(const char *name,
+					  volatile void *&m_writeVaddr,
+					  const volatile void *&m_readVaddr) = 0;
+      virtual PropertyInfo &setupProperty(unsigned n,
+					  volatile void *&m_writeVaddr,
+					  const volatile void *&m_readVaddr) = 0;
+      virtual bool beforeStart() = 0;
+    protected:
+      virtual ~Worker();
+    public:
+      virtual Port &getPort(const char *name, const PValue *props = NULL) = 0;
+      virtual void start() = 0;
+      virtual void stop() = 0;
+      virtual void release() = 0;
+      virtual void beforeQuery() = 0;
+      virtual void afterConfigure() = 0;
+      virtual void test() = 0;
+      // Untyped property setting - slowest but convenient
+      virtual void setProperty(const char *name, const char *value) = 0;
+      // Untyped property list setting - slow but convenient
+      virtual void setProperties(const char *props[][2]) =  0;
+      // Typed property list setting - slightly safer, still slow
+      virtual void setProperties(const PValue *props) =  0;
+      virtual bool getProperty(unsigned ordinal, std::string &name, std::string &value,
+			       bool *unreadablep = NULL, bool hex = false) = 0;
     };
 
     // This class is used when the application is being constructed using

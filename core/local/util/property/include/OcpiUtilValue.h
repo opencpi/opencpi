@@ -120,24 +120,23 @@ namespace OCPI {
 #undef OCPI_DATA_TYPE
       void
 	doFormat(std::string &, const char *fmt, ...) const,
-	unparse(std::string &s, bool append = false, char comma = ',') const,
-	unparseElement(std::string &s, unsigned nSeq, char comma = ',') const;
+	  unparse(std::string &s, bool append = false, bool hex = false, char comma = ',') const,
+	  unparseElement(std::string &s, unsigned nSeq, bool hex, char comma) const;
       bool
 	unparseDimension(std::string &s, unsigned nseq, size_t dim, size_t offset,
-			 size_t nItems, char comma = ',') const;
+			 size_t nItems, bool hex, char comma) const;
       // return TRUE if value is an empty value
-      bool unparseValue(std::string &s, unsigned nSeq, size_t nArray, char comma = ',') const;
+      bool unparseValue(std::string &s, unsigned nSeq, size_t nArray, bool hex, char comma) const;
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
-      bool unparse##pretty(std::string &s, run) const;
+      bool unparse##pretty(std::string &s, run, bool hex) const;
 	OCPI_PROPERTY_DATA_TYPES
         OCPI_DATA_TYPE(sca,corba,letter,bits,TypeValue,Type,store)
         OCPI_DATA_TYPE(sca,corba,letter,bits,EnumValue,Enum,store)
 #undef OCPI_DATA_TYPE
-      bool unparseStruct(std::string &fs, StructValue val, char comma = ',') const;
+      bool unparseStruct(std::string &fs, StructValue val, bool hex, char comma) const;
     private:
       const char
-	*parseValue(const char *unparsed, const char *stop,
-		   size_t nSeq, size_t nArray),
+	*parseValue(const char *unparsed, const char *stop, size_t nSeq, size_t nArray),
 	*parseElement(const char *start, const char *end, size_t nSeq),
 	*parseDimension(const char *unparsed, const char *stop,
 			size_t nseq, size_t dim, size_t offset, size_t nItems);

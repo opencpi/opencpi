@@ -61,8 +61,8 @@ function "not"  ( l : bool_t             ) return boolean is begin return not it
 function btrue return bool_t is begin return to_bool(true); end;
 function bfalse return bool_t is begin return to_bool(false); end;
 function To_boolean(b : bool_t) return boolean is begin return its(b); end to_boolean;
-function from_bool_array(ba : bool_array_t; index, nbytes_1, byte_offset : unsigned) return word_t is
-  variable result: word_t := (others => '0');
+function from_bool_array(ba : bool_array_t; index, nbytes_1, byte_offset : unsigned) return dword_t is
+  variable result: dword_t := (others => '0');
   variable i : natural := to_integer(index);
   variable o : natural := to_integer(byte_offset) * 8;
 begin
@@ -137,7 +137,7 @@ end to_ulonglong;
 --return char_t(c(7 downto 0));
 --end to_char;
 
-function to_string(inword : word_t) return wordstring_t is
+function to_string(inword : dword_t) return wordstring_t is
 begin
   return (char_t(inword( 7 downto  0)),
           char_t(inword(15 downto  8)),
@@ -159,13 +159,13 @@ begin
   return s;
 end to_string;
 
-function from_string(s : string_t; offset : unsigned) return word_t is
+function from_string(s : string_t; offset : unsigned) return dword_t is
 begin 
   return from_string(s, to_integer(offset));
 end from_string;
 
-function from_string(s : string_t; off : natural := 0) return word_t is
-  variable w : word_t;
+function from_string(s : string_t; off : natural := 0) return dword_t is
+  variable w : dword_t;
 begin 
   w := (others => '0');
   w(7 downto  0) := std_logic_vector(s(off));

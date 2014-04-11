@@ -830,7 +830,7 @@ namespace OCPI {
 
 bool Value::
 unparseDimension(std::string &s, unsigned nseq, size_t dim, size_t offset, size_t nItems,
-		 char comma) const {
+		 bool hex, char comma) const {
   size_t
     nextDim = dim + 1,
     dimension = m_vt->m_arrayDimensions[dim],
@@ -844,7 +844,7 @@ unparseDimension(std::string &s, unsigned nseq, size_t dim, size_t offset, size_
       if (n != 0)
 	v += comma;
       v += '{';
-      thisNull = unparseDimension(v, nseq, nextDim, offset, skip);
+      thisNull = unparseDimension(v, nseq, nextDim, offset, skip, hex, comma);
       v += '}';
       offset += skip;
     } else {
@@ -852,10 +852,10 @@ unparseDimension(std::string &s, unsigned nseq, size_t dim, size_t offset, size_
 	v += comma;
       if (needsCommaDimension()) {
 	v += '{';
-	thisNull = unparseValue(v, nseq, offset++, comma);
+	thisNull = unparseValue(v, nseq, offset++, hex, comma);
 	v += '}';
       } else
-	thisNull = unparseValue(v, nseq, offset++, comma);
+	thisNull = unparseValue(v, nseq, offset++, hex, comma);
     }
     if (thisNull) {
       if (!prevNull)
@@ -871,11 +871,11 @@ unparseDimension(std::string &s, unsigned nseq, size_t dim, size_t offset, size_
 }
 
 void Value::
-unparseElement(std::string &s, unsigned nSeq, char comma) const {
+unparseElement(std::string &s, unsigned nSeq, bool hex, char comma) const {
   if (m_vt->m_arrayRank)
-    unparseDimension(s, nSeq, 0, 0, m_vt->m_nItems, comma);
+    unparseDimension(s, nSeq, 0, 0, m_vt->m_nItems, hex, comma);
   else
-    unparseValue(s, nSeq, 0, comma);
+    unparseValue(s, nSeq, 0, hex, comma);
 }
 
 // Format the result, possibly using a user-specified format string
@@ -887,7 +887,7 @@ doFormat(std::string &s, const char *fmt, ...) const {
   va_end(ap);
 }
 
-void Value::unparse(std::string &s, bool append, char comma) const {
+void Value::unparse(std::string &s, bool append, bool hex, char comma) const {
   if (!append)
     s.clear();
   if (m_vt->m_isSequence) {
@@ -898,24 +898,24 @@ void Value::unparse(std::string &s, bool append, char comma) const {
 	s += comma;
       if (needsCommaElement()) {
 	s += '{';
-	unparseElement(s, n, comma);
+	unparseElement(s, n, hex, comma);
 	s += '}';
       } else
-	unparseElement(s, n, comma);
+	unparseElement(s, n, hex, comma);
     }
   } else
-    unparseElement(s, 0, comma);
+    unparseElement(s, 0, hex, comma);
 }
 
 bool Value::
-unparseValue(std::string &s, unsigned nSeq, size_t nArray, char comma) const {
+unparseValue(std::string &s, unsigned nSeq, size_t nArray, bool hex, char comma) const {
   switch (m_vt->m_baseType) {
 #define OCPI_DATA_TYPE(sca,c,u,b,run,pretty,storage)     		 \
   case OA::OCPI_##pretty:		        			 \
     return unparse##pretty(s,						 \
 		           m_vt->m_isSequence || m_vt->m_arrayRank ?	 \
 		           m_p##pretty[nSeq * m_vt->m_nItems + nArray] : \
-		           m_##pretty);	                                 \
+		           m_##pretty, hex);				\
       break;
     OCPI_PROPERTY_DATA_TYPES
     OCPI_DATA_TYPE(sca,corba,letter,bits,TypeValue,Type,store)
@@ -925,18 +925,18 @@ unparseValue(std::string &s, unsigned nSeq, size_t nArray, char comma) const {
     return unparseStruct(s,
 			 m_vt->m_isSequence || m_vt->m_arrayRank ?
 			 m_pStruct[nSeq * m_vt->m_nItems + nArray] :
-		         m_Struct, comma);
+		         m_Struct, hex, comma);
   case OA::OCPI_none: case OA::OCPI_scalar_type_limit:;
   }
   return false;
 }
 bool Value::
-unparseBool(std::string &s, bool val) const {
+unparseBool(std::string &s, bool val, bool) const {
   s += val ? "true" : "false";
   return !val;
 }
 bool Value::
-unparseChar(std::string &s, char argVal) const {
+unparseChar(std::string &s, char argVal, bool hex) const {
   uint8_t val = (uint8_t)(argVal & 0xff);
   if (isprint(val)) {
     switch (val) {
@@ -964,16 +964,22 @@ unparseChar(std::string &s, char argVal) const {
     case '\f': c = 'f'; break;
     case '\a': c = 'a'; break;
     default:
-      s += (char)('0' + ((val >> 6) & 7));
-      s += (char)('0' + ((val >> 3) & 7));
-      c = (char)('0' + (val & 7));
+      if (hex) {
+	s+= 'x';
+	s+= "0123456789abcdef"[(val >> 4) & 0xf];
+	c = "0123456789abcdef"[val & 0xf];
+      } else {
+	s += (char)('0' + ((val >> 6) & 7));
+	s += (char)('0' + ((val >> 3) & 7));
+	c = (char)('0' + (val & 7));
+      }
     }
     s += c;
   }
   return argVal == 0;
 }
 bool Value::
-unparseDouble(std::string &s, double val) const {
+unparseDouble(std::string &s, double val, bool) const {
   char *cp;
   asprintf(&cp, "%g", val);
   for (char *p = cp; *p; p++)
@@ -990,54 +996,54 @@ unparseDouble(std::string &s, double val) const {
   return *(uint64_t *)&val == 0;
 }
 bool Value::
-unparseFloat(std::string &s, float val) const {
-  unparseDouble(s, (double)val);
+unparseFloat(std::string &s, float val, bool hex) const {
+  unparseDouble(s, (double)val, hex);
   return *(uint32_t*)&val == 0;
   //  doFormat(s, "%g", (double)val);
 }
 bool Value::
-unparseShort(std::string &s, int16_t val) const {
-  doFormat(s, "%ld", (long)val);
+unparseShort(std::string &s, int16_t val, bool hex) const {
+  doFormat(s, hex ? "0x%lx" : "%ld", (long)val);
   return val == 0;
 }
 bool Value::
-unparseLong(std::string &s, int32_t val) const {
-  doFormat(s, "%ld", (long)val);
+unparseLong(std::string &s, int32_t val, bool hex) const {
+  doFormat(s, hex ? "0x%lx" : "%ld", (long)val);
   return val == 0;
 }
 bool Value::
-unparseUChar(std::string &s, uint8_t val) const {
-  doFormat(s, "%u", val);
+unparseUChar(std::string &s, uint8_t val, bool hex) const {
+  doFormat(s, hex ? "0x%x" : "%u", val);
   return val == 0;
 }
 bool Value::
-unparseULong(std::string &s, uint32_t val) const {
-  doFormat(s, "%lu", (unsigned long)val);
+unparseULong(std::string &s, uint32_t val, bool hex) const {
+  doFormat(s, hex ? "0x%lx" : "%lu", (unsigned long)val);
   return val == 0;
 }
 bool Value::
-unparseUShort(std::string &s, uint16_t val) const {
-  doFormat(s, "%lu", (unsigned long)val);
+unparseUShort(std::string &s, uint16_t val, bool hex) const {
+  doFormat(s, hex ? "0x%lx" : "%lu", (unsigned long)val);
   return val == 0;
 }
 bool Value::
-unparseLongLong(std::string &s, int64_t val) const {
-  doFormat(s, "%lld", (long long)val);
+unparseLongLong(std::string &s, int64_t val, bool hex) const {
+  doFormat(s, hex ? "0x%llx" : "%lld", (long long)val);
   return val == 0;
 }
 bool Value::
-unparseULongLong(std::string &s, uint64_t val) const {
-  doFormat(s, "%llu", (unsigned long long)val);
+unparseULongLong(std::string &s, uint64_t val, bool hex) const {
+  doFormat(s, hex ? "0x%llx" : "%llu", (unsigned long long)val);
   return val == 0;
 }
 bool Value::
-unparseString(std::string &s, const char *val) const {
+unparseString(std::string &s, const char *val, bool hex) const {
   if (!val || !*val) {
     s += "\"\"";
     return true;
   } else
     while (*val)
-      unparseChar(s, *val++);
+      unparseChar(s, *val++, hex);
   return false;
 }
 bool Value::needsComma() const {
@@ -1050,7 +1056,7 @@ bool Value::needsCommaElement() const {
   return m_vt->m_arrayRank != 0 || m_vt->m_baseType == OA::OCPI_Struct;
 }
 bool Value::
-unparseStruct(std::string &s, StructValue val, char comma) const {
+unparseStruct(std::string &s, StructValue val, bool hex, char comma) const {
   bool seenOne = false;
   
   for (unsigned n = 0; val && n < m_vt->m_nMembers; n++) {
@@ -1062,27 +1068,27 @@ unparseStruct(std::string &s, StructValue val, char comma) const {
       s += ' ';
       if (v->needsComma()) {
 	s += '{';
-	v->unparse(s, true);
+	v->unparse(s, true, hex);
 	s += '}';
       } else
-	v->unparse(s, true);
+	v->unparse(s, true, hex);
       seenOne = true;
     }
   }
   return !seenOne;
 }
 bool Value::
-unparseType(std::string &s, TypeValue val) const {
+unparseType(std::string &s, TypeValue val, bool hex) const {
   if (val->needsComma()) {
     s += '{';
-    val->unparse(s, true);
+    val->unparse(s, true, hex);
     s += '}';
   } else
-    val->unparse(s, true);
+    val->unparse(s, true, hex);
   return false;
 }
 bool Value::
-unparseEnum(std::string &s, EnumValue val) const {
+unparseEnum(std::string &s, EnumValue val, bool) const {
   s += m_vt->m_enums[val];
   return val == 0;
 }

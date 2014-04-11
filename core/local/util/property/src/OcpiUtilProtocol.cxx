@@ -443,8 +443,9 @@ namespace OCPI {
       }
       fprintf(f, ">\n");
       Operation *o = m_operations;
-      for (unsigned n = 0; n < m_nOperations; n++, o++)
-	o->printXML(f, indent + 1);
+      if (o) // clang-analyzer
+	for (unsigned n = 0; n < m_nOperations; n++, o++)
+	  o->printXML(f, indent + 1);
       fprintf(f, "%*s</protocol>\n", indent * 2, "");
     }
     // Send the data in the buffer to the writer

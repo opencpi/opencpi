@@ -77,7 +77,8 @@ XmlIncludeDirsInternal=../specs
 endif
 endif
 endif
-override XmlIncludeDirs+=. $(XmlIncludeDirsInternal) $(OCPI_CDK_DIR)/lib/components
+override XmlIncludeDirs+=. $(XmlIncludeDirsInternal) \
+   $(OCPI_CDK_DIR)/lib/components $(OCPI_CDK_DIR)/lib/components/specs
 -include $(GeneratedDir)/*.deps
 
 clean:: cleanfirst

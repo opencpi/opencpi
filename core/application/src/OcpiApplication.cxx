@@ -514,6 +514,7 @@ namespace OCPI {
 
       bool verbose = false;
       OU::findBool(params, "verbose", verbose);
+      OU::findBool(params, "hex", m_hex);
       // Initializations for externals may add instances to the assembly
       initExternals(params);
       // Now that we have added any extra instances for external connections, do
@@ -755,7 +756,7 @@ namespace OCPI {
       for (unsigned n = 0; n < m_nProperties; n++, p++)
 	if (p->m_dumpFile) {
 	  std::string name, value;
-	  m_workers[p->m_instance]->getProperty(p->m_property, name, value);
+	  m_workers[p->m_instance]->getProperty(p->m_property, name, value, NULL, m_hex);
 	  const char *err = OU::string2File(value, p->m_dumpFile);
 	  if (err)
 	    throw OU::Error("Error writing '%s' property to file: %s", name.c_str(), err);
@@ -795,7 +796,8 @@ namespace OCPI {
       m_writeSync = m_info.m_writeSync;
     }
 
-    bool ApplicationI::getProperty(unsigned ordinal, std::string &name, std::string &value) {
+    bool ApplicationI::getProperty(unsigned ordinal, std::string &name, std::string &value,
+				   bool hex) {
       if (ordinal >= m_nProperties)
 	return false;
       Property &p = m_properties[ordinal];
@@ -804,7 +806,7 @@ namespace OCPI {
       OU::Property &wp = w.property(p.m_property);
       if (wp.m_isReadable) {
 	std::string dummy;
-	m_workers[p.m_instance]->getProperty(p.m_property, dummy, value);
+	m_workers[p.m_instance]->getProperty(p.m_property, dummy, value, NULL, hex);
       } else
 	value = "<unreadable>";
       return true;
@@ -831,10 +833,11 @@ namespace OCPI {
     }
 
     void ApplicationI::
-    getProperty(const char * worker_inst_name, const char * prop_name, std::string &value) {
+    getProperty(const char * worker_inst_name, const char * prop_name, std::string &value,
+		bool hex) {
       Property &p = findProperty(worker_inst_name, prop_name);
       std::string dummy;
-      m_workers[p.m_instance]->getProperty(p.m_property, dummy, value);	 
+      m_workers[p.m_instance]->getProperty(p.m_property, dummy, value, NULL, hex);	 
     }
 
     void ApplicationI::
@@ -885,18 +888,19 @@ namespace OCPI {
       m_application.finish();
     }
     ExternalPort &Application::getPort(const char *name) { return m_application.getPort(name); }
-    bool Application::getProperty(unsigned ordinal, std::string &name, std::string &value) {
-      return m_application.getProperty(ordinal, name, value);
+    bool Application::getProperty(unsigned ordinal, std::string &name, std::string &value,
+				  bool hex) {
+      return m_application.getProperty(ordinal, name, value, hex);
     }
-    void Application::getProperty(const char* w, const char* p, std::string &value) {
+    void Application::getProperty(const char* w, const char* p, std::string &value, bool hex) {
       OCPI_EMIT_STATE_NR( pegp, 1 );
-      m_application.getProperty(w, p, value);
+      m_application.getProperty(w, p, value, hex);
       OCPI_EMIT_STATE_NR( pegp, 0 );
 
     }
-    void Application::getProperty(const char* w, std::string &value) {
+    void Application::getProperty(const char* w, std::string &value, bool hex) {
       OCPI_EMIT_STATE_NR( pegp, 1 );
-      m_application.getProperty(NULL, w, value);
+      m_application.getProperty(NULL, w, value, hex);
       OCPI_EMIT_STATE_NR( pegp, 0 );
 
     }

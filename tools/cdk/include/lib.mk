@@ -1,4 +1,3 @@
-
 # #####
 #
 #  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
@@ -126,16 +125,16 @@ BuildImplementation=\
                XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirs))";\
 
 BuildModel=\
-	$(AT)set -e;if test "$($(call Capitalize,$(1))Implementations)"; then \
-	  for i in $($(call Capitalize,$(1))Implementations); do \
-		if test ! -d $$i; then \
-			echo Implementation \"$$i\" has no directory here.; \
-			exit 1; \
-		else \
-			$(call BuildImplementation,$(1),$$i) \
-		fi;\
-	  done; \
-        fi
+$(AT)set -e;if test "$($(call Capitalize,$(1))Implementations)"; then \
+  for i in $($(call Capitalize,$(1))Implementations); do \
+    if test ! -d $$i; then \
+      echo Implementation \"$$i\" has no directory here.; \
+      exit 1; \
+    else \
+      $(call BuildImplementation,$(1),$$i) \
+    fi;\
+  done; \
+fi
 
 CleanModel=\
   $(AT)if test "$($(call Capitalize,$(1))Implementations)"; then \
@@ -235,7 +234,7 @@ $(XmImplementations): | $(OutDir)lib/xm
 # Worker should only be specified when the target is "new".
 ifeq ($(origin Worker),command line)
   ifneq ($(MAKECMDGOALS),new)
-    $(error You can't set the "Worker" variable unless the make goal/target is "new")
+    $(error You cannot set the "Worker" variable unless the make goal/target is "new")
   endif
   Words:=$(subst ., ,$(Worker))
   $(if $(or $(word 3,$(Words)),$(strip \
@@ -243,7 +242,7 @@ ifeq ($(origin Worker),command line)
      $(error The Worker must be of the form "Worker=name.model"))
   Model:=$(call ToLower,$(word 2,$(Words)))
   ifeq ($(findstring $(Model),$(Models)),)
-    $(error The suffix of "$(Worker)", which is "$(Model)" doesn't match any known model.)
+    $(error The suffix of "$(Worker)", which is "$(Model)" does not match any known model.)
   endif
   ifneq ($(wildcard $(Worker)),)
     $(error The worker "$(Worker)" already exists)
@@ -252,20 +251,31 @@ ifeq ($(origin Worker),command line)
   UCModel=$(call ToUpper,$(Model))
   ifeq ($(origin SpecFile),command line)
     ifeq ($(SpecFile),none)
-	OcpiSpecFile:=
+      OcpiSpecFile:=
     else
       ifeq ($(wildcard $(SpecFile)),)
-        $(error The indicated spec file for the new worker: "$(SpecFile)" does not exist.)
+        ifneq ($(if $(filter /%,$(SpecFile)),,$(wildcard specs/$(SpecFile))),)
+          override SpecFile:=specs/$(SpecFile)
+        else
+          $(error The indicated spec file for the new worker: "$(SpecFile)" does not exist.)
+        endif
       endif
       ifneq ($(filter-out specs/$(Name)-spec.xml specs/$(Name)_spec.xml,$(SpecFile)),)
-        OcpiSpecFile:=$(SpecFile)
+        ifeq ($(dir $(SpecFile)),specs/)
+          OcpiSpecFile:=$(notdir $(SpecFile))
+        else
+          ifeq ($(wildcard $(dir $(SpecFile))../lib/package-name),)
+            $(error The given spec file, "$(SpecFile)" must be in a built component library)
+          endif
+          OcpiSpecFile:=$(call AdjustRelative,$(SpecFile))
+        endif
       endif
     endif
   else
     # the default will be using an underscore or hypen, whichever exists
     MySpecFile:=$(or $(wildcard specs/$(Name)_spec.xml),specs/$(Name)-spec.xml)
     ifeq ($(wildcard $(MySpecFile)),)
-      $(error There is no spec file: $(MySpecFile) for the new worker. Use SpecFile=?)
+      $(error The spec file: specs/$(Name)-spec.xml does not exist. Create it or use SpecFile=<file>)
     endif
     OcpiSpecFile:=
   endif
@@ -273,10 +283,18 @@ ifeq ($(origin Worker),command line)
   ifdef Language
     OcpiLanguage:=$(call ToLower,$(Language))
     ifndef Suffix_$(Model)_$(OcpiLanguage)
-      $(error Language $(Langauge) not supported for the $(Model) model.)
+      $(error Language "$(Language)" not supported for the $(Model) model.)
     endif
     ifeq ($(OcpiLanguage),$(Language_$(Model)))
-	OcpiLanguage:=
+      ifeq ($(Languages_$(Model)),)
+        OcpiLanguage:=
+      endif
+    endif
+  else
+    ifeq ($(Languages_$(Model)),)
+      OcpiLanguage:=$(Language_$(Model))
+    else
+      $(error Must specify Language=<lang> for worker using the $(Model) model.  Choices are: $(Languages_$(Model)))
     endif
   endif
   ifdef OcpiLanguage
@@ -306,11 +324,12 @@ new:
 	     ) > $(Worker)/Makefile
 	$(AT)$(and $(or $(OcpiSpecFile),$(OcpiLanguage)), \
 	     (\
-	      echo '<$(UCModel)Worker $(LangAttr) $(and $(OcpiSpecFile),spec="$(OcpiSpecFile)")>';\
-	      echo '</$(UCModel)Worker>'\
+	      echo '<$(CapModel)Worker$(and $(LangAttr),'' $(LangAttr))$(and $(OcpiSpecFile),'' spec="$(OcpiSpecFile)")>'; \
+              echo '  <!-- Insert any other implementation-specific information here -->'; \
+              echo '</$(CapModel)Worker>' \
 	     ) > $(Worker)/$(Name).xml)
 	$(AT)echo Running \"make skeleton\" to make initial skeleton in $(Worker)/$(Name).$(Suffix_$(Model)_$(or $(OcpiLanguage),$(Language_$(Model))))
-	$(AT)$(MAKE) -C $(Worker) \
+	$(AT)$(MAKE) --no-print-directory -C $(Worker) \
 		OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) \
 		XmlIncludeDirs=../specs Worker= Workers= \
 		skeleton; \

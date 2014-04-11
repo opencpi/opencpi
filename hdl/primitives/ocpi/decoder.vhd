@@ -81,8 +81,8 @@ architecture rtl of decoder is
   -- From here down, only for properties
   --------------------------------------------------------------------------------
   -- State for write data
-  signal my_data         : word_t;       -- combi or register as appropriate
-  signal my_data_r       : word_t;       -- registered data when delayed
+  signal my_data         : dword_t;       -- combi or register as appropriate
+  signal my_data_r       : dword_t;       -- registered data when delayed
   -- state for access qualifiers for config read or write
   signal my_is_read      : bool_t;
   signal my_is_write     : bool_t;
@@ -180,7 +180,11 @@ begin
   my_config_error <= to_bool((my_access = read_e and done and not any_true(my_read_enables)) or
                                (my_access = write_e and done and not any_true(my_write_enables)));
   -- output ports, based on internally generated signals that are also used internally
-  raw_offset      <= my_offset - worker.raw_property_base;
+  -- force it to always be valid so that workers (even in sim) can assume a valid value.
+  raw_offset      <= my_offset - worker.raw_property_base
+                     when my_offset >= worker.raw_property_base and
+                          its(my_is_read or my_is_write) else
+                     (others => '0');
   write_enables   <= my_write_enables;
   read_enables    <= my_read_enables;
   nbytes_1        <= my_nbytes_1;

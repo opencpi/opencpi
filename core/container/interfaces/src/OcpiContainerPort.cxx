@@ -127,10 +127,10 @@ namespace OCPI {
 
     // This base class constructor for generic initialization
     // FIXME: parse buffer count here at least? (check that others don't do it).
-    Port::Port(Worker &worker, const OCPI::Metadata::Port &mPort, bool isProvider,
+    Port::Port(Container &container, const OCPI::Metadata::Port &mPort, bool isProvider,
 	       unsigned xferOptions, const OCPI::Util::PValue *params, PortConnectionDesc *desc) :
-      BasicPort( mPort, isProvider, xferOptions, worker.application().container(), params, desc),
-      m_container(worker.application().container()), m_canBeExternal(true)
+      BasicPort( mPort, isProvider, xferOptions, container, params, desc),
+      m_container(container), m_canBeExternal(true)
     {
     }
 

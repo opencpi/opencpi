@@ -452,10 +452,9 @@ public:
   {
 
     // Here we just take full buffers from our input and send them back
-    bool done = false;
     int count=0;
 
-    while ( ! done ) {
+    for (;;) {
 
       int c = waitForMsg( 0 );
 
@@ -468,8 +467,6 @@ public:
 
 
       if (  c == 0 ) {
-	done = true;
-
 	printf("Received %d buffers\n", count );
 
 	// Allow any pending writes to complete

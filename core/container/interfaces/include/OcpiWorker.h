@@ -81,7 +81,7 @@ namespace OCPI {
       virtual void checkControlState() {}
 
       inline ControlState getControlState() {
-	checkControlState(); // 
+	checkControlState();
 	return m_state;
       }	
     protected:
@@ -99,51 +99,13 @@ namespace OCPI {
     // This is the base class for all workers
     // It supports the API, and is a child of the Worker template class inherited by 
     // concrete workers
-    class Worker
-      : public OCPI::API::Worker,
-	public OCPI::Metadata::Worker,  virtual public Controllable {
-
-      friend class OCPI::API::Property;
-      friend class Port;
-      friend class Artifact;
-      friend class Application;
-      Artifact *m_artifact;
-      ezxml_t m_xml, m_instXml;
-      std::string m_implTag, m_instTag;
-      // Our thread safe mutex for the worker itself
-      OCPI::OS::Mutex m_workerMutex;
-      void controlOp(OCPI::Util::ControlOperation);
-      bool beforeStart();
-    protected:
-      inline OCPI::OS::Mutex &mutex() { return m_workerMutex; }
-      virtual Port *findPort(const char *name) = 0;
-      inline const std::string &instTag() const { return m_instTag; }
-      inline const std::string &implTag() const { return m_implTag; }
-      virtual const std::string &name() const = 0;
-      inline ezxml_t myXml() const { return m_xml; }
-      inline ezxml_t myInstXml() const { return m_instXml; }
-      Worker(Artifact *art, ezxml_t impl, ezxml_t inst, const OCPI::Util::PValue *props);
-      OCPI::API::PropertyInfo &setupProperty(const char *name,
-					     volatile void *&m_writeVaddr,
-					     const volatile void *&m_readVaddr);
-      OCPI::API::PropertyInfo &setupProperty(unsigned n,
-					     volatile void *&m_writeVaddr,
-					     const volatile void *&m_readVaddr);
+    // These interfaces must be supplied for control purposes
+    class WorkerControl {
+    public:
+      //      virtual const std::string &name() const = 0;
       virtual void prepareProperty(OCPI::Util::Property &p,
 				   volatile void *&m_writeVaddr,
 				   const volatile void *&m_readVaddr) = 0;
-      virtual Port &createPort(const OCPI::Metadata::Port &metaport,
-			       const OCPI::Util::PValue *props) = 0;
-      virtual Worker *nextWorker() = 0;
-      void setPropertyValue(const OCPI::API::Property &p, const OCPI::Util::Value &v);
-
-
-    public:
-      virtual Application &application() = 0;
-      void setProperty(const char *name, const char *value);
-      void setProperty(unsigned ordinal, OCPI::Util::Value &value);
-      void setProperties(const char *props[][2]);
-      void setProperties(const OCPI::API::PValue *props);
       virtual void setPropertyBytes(const OCPI::API::PropertyInfo &info, size_t offset,
 				    const uint8_t *data, size_t nBytes) const = 0;
       virtual void setProperty8(const OCPI::API::PropertyInfo &info, uint8_t data) const = 0;
@@ -156,7 +118,76 @@ namespace OCPI {
       virtual uint16_t getProperty16(const OCPI::API::PropertyInfo &info) const = 0;
       virtual uint32_t getProperty32(const OCPI::API::PropertyInfo &info) const = 0;
       virtual uint64_t getProperty64(const OCPI::API::PropertyInfo &info) const = 0;
-      bool getProperty(unsigned ordinal, std::string &name, std::string &value);
+      virtual void controlOperation(OCPI::Util::ControlOperation) = 0;
+    };
+    class Worker
+      : public OCPI::Metadata::Worker, public OCPI::API::Worker, virtual public Controllable,
+	virtual public WorkerControl
+    {
+
+      friend class OCPI::API::Property;
+      friend class Port;
+      friend class Artifact;
+      friend class Application;
+      Artifact *m_artifact;
+      ezxml_t m_xml, m_instXml;
+      std::string m_implTag, m_instTag;
+      // Our thread safe mutex for the worker itself
+      OCPI::OS::Mutex m_workerMutex;
+      bool beforeStart();
+    protected:
+      // Return true when ignored due to "ignored due to existing state"
+      bool controlOp(OCPI::Util::ControlOperation);
+      inline OCPI::OS::Mutex &mutex() { return m_workerMutex; }
+      virtual Port *findPort(const char *name) = 0;
+      inline const std::string &instTag() const { return m_instTag; }
+      inline const std::string &implTag() const { return m_implTag; }
+      virtual const std::string &name() const = 0;
+      inline ezxml_t myXml() const { return m_xml; }
+      inline ezxml_t myInstXml() const { return m_instXml; }
+      Worker(Artifact *art, ezxml_t impl, ezxml_t inst, const OCPI::Util::PValue *props = NULL);
+      OCPI::API::PropertyInfo &setupProperty(const char *name,
+					     volatile void *&m_writeVaddr,
+					     const volatile void *&m_readVaddr);
+      OCPI::API::PropertyInfo &setupProperty(unsigned n,
+					     volatile void *&m_writeVaddr,
+					     const volatile void *&m_readVaddr);
+#if 0
+      virtual void prepareProperty(OCPI::Util::Property &p,
+				   volatile void *&m_writeVaddr,
+				   const volatile void *&m_readVaddr) = 0;
+#endif
+      virtual Port &createPort(const OCPI::Metadata::Port &metaport,
+			       const OCPI::Util::PValue *props) = 0;
+      virtual Worker *nextWorker() = 0;
+      void setPropertyValue(const OCPI::API::Property &p, const OCPI::Util::Value &v);
+
+
+    public:
+      // This class is actually used in some contexts (e.g. ocpihdl),
+      // Where it is not a child of an application, hence this method
+      // is allowed to return NULL in this case, hence it returns a pointer.
+      virtual Application *application() = 0;
+      void setProperty(const char *name, const char *value);
+      void setProperty(unsigned ordinal, OCPI::Util::Value &value);
+      void setProperties(const char *props[][2]);
+      void setProperties(const OCPI::API::PValue *props);
+#if 0
+      virtual void setPropertyBytes(const OCPI::API::PropertyInfo &info, size_t offset,
+				    const uint8_t *data, size_t nBytes) const = 0;
+      virtual void setProperty8(const OCPI::API::PropertyInfo &info, uint8_t data) const = 0;
+      virtual void setProperty16(const OCPI::API::PropertyInfo &info, uint16_t data) const = 0;
+      virtual void setProperty32(const OCPI::API::PropertyInfo &info, uint32_t data) const = 0;
+      virtual void setProperty64(const OCPI::API::PropertyInfo &info, uint64_t data) const = 0;
+      virtual void getPropertyBytes(const OCPI::API::PropertyInfo &info, size_t offset,
+				    uint8_t *data, size_t nBytes) const = 0;
+      virtual uint8_t getProperty8(const OCPI::API::PropertyInfo &info) const = 0;
+      virtual uint16_t getProperty16(const OCPI::API::PropertyInfo &info) const = 0;
+      virtual uint32_t getProperty32(const OCPI::API::PropertyInfo &info) const = 0;
+      virtual uint64_t getProperty64(const OCPI::API::PropertyInfo &info) const = 0;
+#endif
+      bool getProperty(unsigned ordinal, std::string &name, std::string &value,
+		       bool *unreadablep = NULL, bool hex = false);
       bool hasImplTag(const char *tag);
       bool hasInstTag(const char *tag);
       typedef unsigned Ordinal;
@@ -182,7 +213,7 @@ namespace OCPI {
       void x();
     OCPI_CONTROL_OPS
 #undef CONTROL_OP
-      virtual void controlOperation(OCPI::Util::ControlOperation) = 0;
+    //      virtual void controlOperation(OCPI::Util::ControlOperation) = 0;
       virtual bool wait(OCPI::OS::Timer *t = NULL);
       bool isDone();
     };

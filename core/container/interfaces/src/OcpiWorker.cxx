@@ -61,7 +61,6 @@ namespace OCPI {
       }
     }
 
-    // Due to class hierarchy issues..
     Worker::Worker(Artifact *art, ezxml_t impl, ezxml_t inst, const OA::PValue *) 
       : OM::Worker::Worker(impl),
 	m_artifact(art), m_xml(impl), m_instXml(inst), m_workerMutex(true)
@@ -173,12 +172,20 @@ namespace OCPI {
         throw ApiError("Error parsing property value:\"", value, "\"", NULL);
       setPropertyValue(prop, v);
     }
-    bool Worker::getProperty(unsigned ordinal, std::string &name, std::string &value) {
+    bool Worker::getProperty(unsigned ordinal, std::string &name, std::string &value,
+			     bool *unreadablep, bool hex) {
       unsigned nProps;
       OU::Property *props = getProperties(nProps);
       if (ordinal >= nProps)
 	return false;
       OU::Property &p = props[ordinal];
+      if (p.m_isReadable) {
+	if (unreadablep)
+	  *unreadablep = false;
+      } else if (unreadablep)
+	*unreadablep = true;
+      else
+	throw OU::Error("Property number %u '%s' is unreadable", ordinal, p.m_name.c_str());
       if (p.m_baseType == OA::OCPI_Struct || p.m_baseType == OA::OCPI_Type)
 	throw OU::Error("Struct and Typedef properties are unsupported");
       OU::Value v(p);
@@ -230,7 +237,7 @@ namespace OCPI {
 	default:;
 	}
       
-      v.unparse(value);
+      v.unparse(value, false, hex);
       name = p.m_name;
       return true;
     }
@@ -287,33 +294,34 @@ namespace OCPI {
       NULL
     };      
 
-    void Worker::controlOp(OU::ControlOperation op) {
+    bool Worker::controlOp(OU::ControlOperation op) {
       OU::AutoMutex guard (m_workerMutex, true);
       ControlState cs = getControlState();
       ControlTransition ct = controlTransitions[op];
       // Special case starting and stopping after finished
       if (cs == FINISHED && (op == OU::OpStop || op == OU::OpStart))
-	return;
+	return true;
       // If we are already in the desired state, just ignore it so that
       // Neither workers not containers need to deal with this
-      if (ct.next == NONE || cs != ct.next) {
-	if (cs == ct.valid[0] ||
-	    (ct.valid[1] != NONE && cs == ct.valid[1]) ||
-	    (ct.valid[2] != NONE && cs == ct.valid[2]) ||
-	    (ct.valid[3] != NONE && cs == ct.valid[3])) {
-	  controlOperation(op);
-	  if (ct.next != NONE)
-	    setControlState(ct.next);
-	} else
-	  throw
-	    OU::Error("Control operation '%s' failed on worker '%s%s%s' in state: '%s'",
-		      OU::controlOpNames[op], implTag().c_str(),
-		      instTag().empty() ? "" : "/", instTag().c_str(),
-			  controlStateNames[cs]);
-      }
-      Application &a = application();
-      Container &c = a.container();
-      c.start();
+      if (ct.next != NONE && cs == ct.next)
+	return true;
+      if (cs == ct.valid[0] ||
+	  (ct.valid[1] != NONE && cs == ct.valid[1]) ||
+	  (ct.valid[2] != NONE && cs == ct.valid[2]) ||
+	  (ct.valid[3] != NONE && cs == ct.valid[3])) {
+	controlOperation(op);
+	if (ct.next != NONE)
+	  setControlState(ct.next);
+      } else
+	throw
+	  OU::Error("Control operation '%s' failed on worker '%s%s%s' in state: '%s'",
+		    OU::controlOpNames[op], implTag().c_str(),
+		    instTag().empty() ? "" : "/", instTag().c_str(),
+		    controlStateNames[cs]);
+      Application *a = application();
+      if (a)
+	a->container().start();
+      return false;
     }
     bool Worker::beforeStart() {
       return getControlState() == INITIALIZED;
@@ -330,8 +338,6 @@ namespace OCPI {
       }
       return false;
     }
-
-    //      application().container().start(); 
   }
   namespace API {
     Worker::~Worker(){}

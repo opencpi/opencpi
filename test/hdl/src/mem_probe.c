@@ -66,7 +66,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 
-//#define MAPIT
+#define MAPIT
 uint64_t
 atoi_any(char *arg)
 {

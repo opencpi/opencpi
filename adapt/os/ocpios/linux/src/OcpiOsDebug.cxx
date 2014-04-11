@@ -88,7 +88,9 @@ namespace OCPI {
       kill (getpid(), SIGINT);
     }
 
-    static Mutex mine;
+    // We can't use the C++ mutex since its destruction is unpredictable and
+    // we want logging to work in destructors
+    pthread_mutex_t mine = PTHREAD_MUTEX_INITIALIZER;
     static unsigned logLevel = UINT_MAX;
     void
     logSetLevel(unsigned level) {
@@ -98,7 +100,7 @@ namespace OCPI {
     logPrint(unsigned n, const char *fmt, ...) throw() {
       if (logLevel != UINT_MAX && n > logLevel)
 	return;
-      mine.lock();
+      pthread_mutex_lock (&mine);
       if (logLevel == UINT_MAX) {
 	const char *e = getenv("OCPI_LOG_LEVEL");
 	logLevel = e ? atoi(e) : OCPI_LOG_WIERD;
@@ -115,7 +117,7 @@ namespace OCPI {
 	  fprintf(stderr, "\n");
 	fflush(stderr);
       }
-      mine.unlock();
+      pthread_mutex_unlock (&mine);
     }
   }
 }

@@ -3029,11 +3029,14 @@ emitImplHDL(const char *outDir, bool wrap) {
 	      "  wciAddr(inputs.MAddr'range)            <= inputs.MAddr;\n");
       if (m_ctl.rawProperties)
 	fprintf(f,
-		"  props_to_worker.raw_byte_enable <= %s;\n",
+		"  props_to_worker.raw_byte_enable        <= %s;\n",
 		m_ctl.sub32Bits ? "inputs.MByteEn" : "(others => '1')");
       if (m_ctl.rawReadables)
 	fprintf(f,
-		"  props_to_worker.raw_is_read <= my_is_read;\n");
+		"  props_to_worker.raw_is_read            <= my_is_read;\n");
+      if (m_ctl.rawWritables)
+	fprintf(f,
+		"  props_to_worker.raw_data               <= inputs.MData;\n");
       if (decodeWidth < 32)
 	fprintf(f,
               "  wciAddr(31 downto inputs.MAddr'length) <= (others => '0');\n");

@@ -428,7 +428,8 @@ int main(int argc, char *argv[])
       // RCC worker
       rccFile ? &rcca.createWorker(rccFile, 0, "wNcRcc", rccName, 0) : 0                //   #13
     };
-
+    if (rccName)
+      free(rccName);
 #ifdef SMA
     OA::Port &w1in = w[1]->getPort("message");
 
@@ -464,7 +465,7 @@ int main(int argc, char *argv[])
       // The issue here is that input ports get their protocol bound at
       // construction time rather than connection time.
     if (rccFile)
-      putenv((char *)"OCPI_DEFAULT_PROTOCOL=ocpi-pci-pio");
+      putenv((char *)"OCPI_DEFAULT_PROTOCOL=ocpi-dma-pio");
 #endif
     OA::Port &w13in = rccFile ? w[13]->getPort("in") : *(OA::Port*)0;
     OA::Port &w13out = rccFile ? w[13]->getPort("out") : *(OA::Port*)0;

@@ -104,7 +104,10 @@ namespace OCPI {
         reserved[3];
     } OccpWorkerRegisters;
 #define OCCP_WORKER_CONTROL_ENABLE 0x80000000
+#define OCCP_WORKER_CONTROL_TIMEOUT(i) ((i) & 0x1f)
 #define OCCP_WORKER_CONTROL_SIZE 0x10000
+#define OCCP_CONTROL_CLEAR_ATTENTION  (1 << 9)
+#define OCCP_CONTROL_CLEAR_ERRORS     (1 << 8)
 #define OCCP_ADMIN_SIZE OCCP_WORKER_CONTROL_SIZE
 #define OCCP_ADMIN_CONFIG_OFFSET 4096
 #define OCCP_ADMIN_CONFIG_SIZE 4096
@@ -124,6 +127,7 @@ namespace OCPI {
 #define OCCP_FATAL_RESULT   0xc0de4205
 #define OCCP_STATUS_CONFIG_WRITE (1 << 27)
 #define OCCP_STATUS_CONFIG_OP (0x7 << 24)
+#define OCCP_STATUS_LAST_OP(i) (((i) & (0x7 << 24)) >> 24)
 #define OCCP_STATUS_CONFIG_BE (0xf << 20)
 
 #define OCCP_STATUS_CONFIG_ADDR_VALID (1 << 16)

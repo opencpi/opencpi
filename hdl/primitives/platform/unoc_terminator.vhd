@@ -12,7 +12,7 @@ end entity unoc_terminator;
 architecture rtl of unoc_terminator is
   signal count : unsigned(drop_count'range);
 begin
-  up_out.data  <= (others => '0');
+  up_out.data  <= to_unoc(util.slv0(unoc_data_width));
   up_out.valid <= '0';
   up_out.take  <= up_in.valid;
   drop_count   <= count;

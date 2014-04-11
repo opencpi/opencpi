@@ -342,7 +342,7 @@ module mkSimIO(CLK,
 	s_hdl <= `BSV_ASSIGNMENT_DELAY 33'h0AAAAAAAA;
 	spinCredit_value <= `BSV_ASSIGNMENT_DELAY 16'd0;
 	w_hdl <= `BSV_ASSIGNMENT_DELAY 33'h0AAAAAAAA;
-        $dumpfile("dump.vcd");
+//        $dumpfile("dump.vcd");
       end
     else
       begin

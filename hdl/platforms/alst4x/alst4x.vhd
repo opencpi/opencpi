@@ -21,6 +21,7 @@ architecture rtl of alst4x_worker is
   -- unoc internal connections
   signal pci2unoc, unoc2cp : unoc_master_out_t;
   signal unoc2pci, cp2unoc : unoc_master_in_t;
+  signal unoc_out_data     : std_logic_vector (152 downto 0);
   component pci_alst4 is
   port(
     sys0_clk                : in  std_logic;
@@ -64,10 +65,10 @@ begin
              p125rstn       => ctl_rst_n,
              pci_device     => pci_id,
              -- unoc links
-             unoc_out_data  => pci2unoc.data,
+             unoc_out_data  => unoc_out_data,
              unoc_out_valid => pci2unoc.valid,
              unoc_out_take  => pci2unoc.take,
-             unoc_in_data   => unoc2pci.data,
+             unoc_in_data   => to_slv(unoc2pci.data),
              unoc_in_valid  => unoc2pci.valid,
              unoc_in_take   => unoc2pci.take);
   
@@ -75,6 +76,7 @@ begin
   pci2unoc.clk     <= ctl_clk;
   pci2unoc.reset_n <= ctl_rst_n;
   pci2unoc.id      <= pci_id;
+  pci2unoc.data    <= to_unoc(unoc_out_data);
 
   cp_unoc : platform.unoc_node_defs.unoc_node_rv
     generic map(control    => btrue)

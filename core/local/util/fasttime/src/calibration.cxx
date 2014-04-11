@@ -414,7 +414,7 @@ void slew_clock(fasttime_t *storage,
     }
 
     storage->log_ticks_per_segment--;
-    ticks_per_segment = tmp_pwr / 2;
+    // clang-anayzer unused: ticks_per_segment = tmp_pwr / 2;
     
     /* Intersect old and new gradients at sync point */
     intercept_new = (int64_t) 

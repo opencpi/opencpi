@@ -262,6 +262,7 @@ reaperThread (void *)
            */
 
           sigset_t clearSigSet;
+	  sigemptyset(&clearSigSet);
           sigaddset (&clearSigSet, SIGCHLD);
           sigaddset (&clearSigSet, SIGUSR1);
           sigaddset (&clearSigSet, SIGINT);
@@ -543,9 +544,7 @@ OCPI::OS::ProcessManager::pid ()
 {
   ProcessData *& pdp = o2pd (m_osOpaque);
 
-#if !defined (NDEBUG)
   ocpiAssert (pdp);
-#endif
 
   return pdp->pid;
 }

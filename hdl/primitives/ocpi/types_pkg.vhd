@@ -3,7 +3,8 @@ package types is
 --
 -- Miscellaneous type declarations not related to OpenCPI data types
 --
-subtype word_t   is std_logic_vector(31 downto 0);
+subtype dword_t   is std_logic_vector(31 downto 0);
+type    dword_array_t is array (natural range <>) of dword_t;
 subtype word8_t  is std_logic_vector(7 downto 0);
 subtype word16_t is std_logic_vector(15 downto 0);
 subtype word32_t is std_logic_vector(31 downto 0);
@@ -145,11 +146,11 @@ type string_array_t is array (natural range <>,natural range <>) of char_t;
 subtype wordstring_t is string_t(0 to 3);
 -- Convert a VHDL string to our string type.
 function to_string(instring : string; length : natural) return string_t;
-function to_string(inword : word_t) return wordstring_t;
-function from_string(s : string_t; offset : unsigned) return word_t; --std_logic_vector;
-function from_string(s : string_t; off : natural := 0) return word_t; --std_logic_vector;
+function to_string(inword : dword_t) return wordstring_t;
+function from_string(s : string_t; offset : unsigned) return dword_t; --std_logic_vector;
+function from_string(s : string_t; off : natural := 0) return dword_t; --std_logic_vector;
 
 
-function from_bool_array(ba : bool_array_t; index, nbytes_1, byte_offset : unsigned) return word_t;
+function from_bool_array(ba : bool_array_t; index, nbytes_1, byte_offset : unsigned) return dword_t;
 
 end package types;

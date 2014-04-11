@@ -42,12 +42,15 @@
 #include "OcpiOsMisc.h"
 #include "OcpiUuid.h"
 #include "OcpiUtilMisc.h"
+#include "OcpiUtilEzxml.h"
+#include "OcpiUtilImplementation.h"
 #include "DtTransferInternal.h"
 #include "SimServer.h"
 #include "HdlDriver.h"
 #include "HdlContainer.h"
 #include "HdlOCDP.h"
 
+namespace OX = OCPI::Util::EzXml;
 namespace OE = OCPI::OS::Ether;
 namespace HE = OCPI::HDL::Net;
 namespace OH = OCPI::HDL;
@@ -56,7 +59,7 @@ namespace OA = OCPI::API;
 namespace OD = OCPI::DataTransport;
 namespace OC = OCPI::Container;
 namespace OS = OCPI::OS;
-namespace OX = DataTransfer;
+namespace DT = DataTransfer;
 /*
   usage message
   verbose
@@ -78,10 +81,10 @@ namespace OX = DataTransfer;
  */
 typedef void Function(const char **ap);
 static Function
-  search, emulate, ethers, probe, testdma, admin, bram, unbram, uuid, reset, 
+search, emulate, ethers, probe, testdma, admin, bram, unbram, uuid, reset, set, get, control,
   radmin, wadmin, rmeta, settime, deltatime, wdump, wreset, wunreset, wop, wwctl, wclear, wwpage,
-  wread, wwrite, sendData, receiveData, receiveRDMA, sendRDMA, simulate, getxml, load;
-static bool verbose = false, parseable = false;
+  wread, wwrite, sendData, receiveData, receiveRDMA, sendRDMA, simulate, getxml, load, status;
+static bool verbose = false, parseable = false, hex = false;
 static int log = -1;
 std::string platform, simExec;
 static const char
@@ -109,10 +112,11 @@ struct Command {
 } commands [] = {
   { "admin", admin, DEVICE },
   { "bram", bram, 0 },
+  { "control", control, DEVICE},
   { "deltatime", deltatime, DEVICE},
-  { "dump", 0, 0 },
   { "emulate", emulate, SUDO | INTERFACE },
   { "ethers", ethers, INTERFACE},
+  { "get", get, DEVICE},
   { "getxml", getxml, DEVICE},
   { "load", load, 0},
   { "probe", probe, SUDO | DEVICE | DISCOVERY},
@@ -124,8 +128,10 @@ struct Command {
   { "search", search, SUDO | INTERFACE | DISCOVERY},
   { "sendData", sendData, INTERFACE},
   { "sendRDMA", sendRDMA, 0},  // might want device depending on args
+  { "set", set, DEVICE},
   { "settime", settime, DEVICE},
   { "simulate", simulate, 0},
+  { "status", status, DEVICE},
   { "testdma", testdma, 0},
   { "unbram", unbram, 0},
   { "uuid", uuid, 0},
@@ -151,6 +157,12 @@ usage(const char *name) {
 	  "    emulate [-i <interface>]     # emulate an HDL device on ethernet, on first or specified interface\n"
           "    ethers                       # list available ethernet interfaces\n"
           "    probe <hdl-dev>              # see if a specific HDL device is available\n"
+          "    get [<instance> [<property]] # get info from bitstream\n"
+          "    set <instance> <property> <value>\n"
+	  "                                 # set property value for worker instance\n"
+          "    control <instance> <operation>\n"
+	  "                                 # perform reset, unreset, or control operation\n"
+          "    status <instance>            # show status of worker/instance\n"
           "    testdma                      # test for DMA memory setup\n"
           "    admin <hdl-dev>              # dump admin information (reading only) for <hdl-device>\n"
           "    wadmin <hdl-dev> <offset> <value>\n"
@@ -194,6 +206,7 @@ usage(const char *name) {
 	  "    -D                           # turn off simulation dumping\n"
 	  "    -e <sim-executable>          # simulator executable \"bitstream\" file\n"
 	  "    -v                           # be verbose\n"
+	  "    -x                           # print numeric values in hex rather than decimal\n"
 	  "  <worker> can be multiple workers such as 1,2,3,4,5.  No ranges.\n"
 	  "  <hdl-dev> examples: 3                            # PCI device 3 (i.e. 0000:03:00.0)\n"
 	  "                      0000:04:00.0                 # PCI device 0000:04:00.0\n"
@@ -205,23 +218,27 @@ usage(const char *name) {
   return 1;
 }
 
+static void exitbad(const char *e) {
+  fprintf(stderr, "%s\n", e);
+  exit(1);
+}
+
 static void
 bad(const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
-  fprintf(stderr, "Exiting for problem: ");
-  vfprintf(stderr, fmt, ap);
-  fprintf(stderr, "%s%s\n", error.size() ? ": " : "", error.c_str());
+  std::string e = "Exiting for problem: ";
+  OU::formatAddV(e, fmt, ap);
+  if (error.size())
+    OU::formatAdd(e, ": %s", error.c_str());
   va_end(ap);
-  exit(1);
+  throw e;
 }
 
 static void setupDevice(bool discovery) {
   if (!device)
     bad("a device option is required with this command");
-  
   driver = &OCPI::HDL::Driver::getSingleton();
-  std::string error;
   if (!(dev = driver->open(device, discovery, false, error)))
     bad("error opening device %s", device);
   cAccess = &dev->cAccess();
@@ -280,6 +297,9 @@ doFlags(const char **&ap) {
     case 'v':
       verbose = true;
       break;
+    case 'x':
+      hex = true;
+      break;
     case 'P':
       parseable = true;
       break;
@@ -292,54 +312,56 @@ int
 main(int argc, const char **argv)
 {
   signal(SIGPIPE, SIG_IGN);
-  OCPI::Driver::ManagerManager::suppressDiscovery();
-  const char *argv0 = strrchr(argv[0], '/');
-  if (argv0)
-    argv0++;
-  else
-    argv0 = argv[0];
-  if (argc == 1)
-    return usage(argv0);
-  argv++;
-  doFlags(argv);
-  Command *found = NULL, *exact = NULL;
-  bool ambiguous = false;
-  if (!argv[0])
-    bad("Missing command name");
-  for (Command *c = commands; c->name; c++)
-    if (!strncmp(argv[0], c->name, strlen(argv[0])))
-      if (!strcmp(argv[0], c->name)) {
-	exact = c;
-	break;
-      } else if (found)
-	ambiguous = true;
-      else
-	found = c;
-  if (!exact)
-    if (!found)
-      bad("unknown command: %s", argv[0]);
-    else if (ambiguous)
-      bad("ambiguous command: %s", argv[0]);
-    else
-      exact = found;
-  argv++;
-  doFlags(argv);
-  if (log != -1)
-    OCPI::OS::logSetLevel(log);
-#if 0
-  if ((exact->options & SUDO) && geteuid()) {
-    int dfd = ::open(OCPI_DRIVER_MEM, O_RDONLY);
-    if (dfd >= 0)
-      close(dfd);
-    else
-      bad("This command requires running with \"sudo -E ./%s ...\"", argv0);
-  }
-#endif
-  if (!exact->func)
-    bad("command %s not implemented", exact->name);
   try {
+    OCPI::Driver::ManagerManager::suppressDiscovery();
+    const char *argv0 = strrchr(argv[0], '/');
+    if (argv0)
+      argv0++;
+    else
+      argv0 = argv[0];
+    if (argc == 1)
+      return usage(argv0);
+    argv++;
+    doFlags(argv);
+    Command *found = NULL, *exact = NULL;
+    bool ambiguous = false;
+    if (!argv[0])
+      bad("Missing command name");
+    for (Command *c = commands; c->name; c++)
+      if (!strncmp(argv[0], c->name, strlen(argv[0])))
+	if (!strcmp(argv[0], c->name)) {
+	  exact = c;
+	  break;
+	} else if (found)
+	  ambiguous = true;
+	else
+	  found = c;
+    if (!exact)
+      if (!found)
+	bad("unknown command: %s", argv[0]);
+      else if (ambiguous)
+	bad("ambiguous command: %s", argv[0]);
+      else
+	exact = found;
+    argv++;
+    doFlags(argv);
+    if (log != -1)
+      OCPI::OS::logSetLevel(log);
+#if 0
+    if ((exact->options & SUDO) && geteuid()) {
+      int dfd = ::open(OCPI_DRIVER_MEM, O_RDONLY);
+      if (dfd >= 0)
+	close(dfd);
+      else
+	bad("This command requires running with \"sudo -E ./%s ...\"", argv0);
+    }
+#endif
+    if (!exact->func)
+      bad("command %s not implemented", exact->name);
     if (exact->options & DEVICE) {
-      if (!device)
+      if (!device &&
+	  !(device = getenv("OCPI_DEFAULT_HDL_DEVICE")) &&
+	  *argv)
 	device = *argv++;
       setupDevice((exact->options & DISCOVERY) != 0);
     }
@@ -361,11 +383,11 @@ main(int argc, const char **argv)
     } else
       exact->func(argv);
   } catch (std::string &e) {
-    bad(e.c_str());
+    exitbad(e.c_str());
   } catch (const char *e) {
-    bad(e);
+    exitbad(e);
   } catch (...) {
-    bad("Unexpected exception");
+    exitbad("Unexpected exception");
   }
   return 0;
 }
@@ -704,7 +726,7 @@ bram(const char **ap) {
     bad("No input filename specified for bram");
   if (!ap[1])
     bad("No output filename specified for bram");
-  unsigned char *in = 0, *out;
+  unsigned char *in = NULL, *out = NULL;
   int fd = open(*ap, O_RDONLY);
   if (fd < 0)
     bad("Cannot open file: \"%s\"", *ap);
@@ -761,6 +783,8 @@ bram(const char **ap) {
 	     ap[1], zs.total_out, *ap, (unsigned long)length);
     }
   }
+  if (in) free(in);
+  if (out) free(out);
 }
 
 static void
@@ -911,7 +935,7 @@ atoi_any(const char *arg, unsigned *sizep)
 
   if (!arg)
     bad("Missing numeric argument");
-  int n = sscanf(arg, strncmp(arg,"0x",2) != 0 ? "%" SCNu64 : "0x%" SCNx64, &value);
+  int n = sscanf(arg, strncmp(arg, "0x", 2) != 0 ? "%" SCNu64 : "0x%" SCNx64, &value);
   if (n != 1)
     bad("Bad numeric value: '%s'", arg);
   if (sizep) {
@@ -1087,9 +1111,13 @@ wdump(const char **) {
   if (i & OCCP_STATUS_CONFIG_WRITE_VALID)
     printf(" wrtValid:%d", (i & OCCP_STATUS_CONFIG_WRITE) ? 1 : 0);
   printf("\n");
-  printf(" Control:    0x%08x\n", wAccess.get32Register(control, OH::OccpWorkerRegisters));
+  i = wAccess.get32Register(control, OH::OccpWorkerRegisters);
+  printf(" Control:    0x%08x %s;  timeout value is %u\n", i,
+	 i & OCCP_WORKER_CONTROL_ENABLE ?
+	 "enabled (reset not asserted)" : "not enabled (reset asserted)",
+	 1 << OCCP_WORKER_CONTROL_TIMEOUT(i)); 
   printf(" ConfigAddr: 0x%08x\n", wAccess.get32Register(lastConfig, OH::OccpWorkerRegisters));
-  printf(" pageWindow: 0x%08x\n", wAccess.get32Register(window, OH::OccpWorkerRegisters));
+  printf(" PageWindow: 0x%08x\n", wAccess.get32Register(window, OH::OccpWorkerRegisters));
 }
 
 static int
@@ -1160,7 +1188,7 @@ static void
 wclear(const char **) {
   uint32_t i = wAccess.get32Register(control, OH::OccpWorkerRegisters);
   wAccess.set32Register(control, OH::OccpWorkerRegisters,
-			i | OCCP_STATUS_ATTENTION | OCCP_STATUS_WRITE_TIMEOUT);
+			i | OCCP_CONTROL_CLEAR_ATTENTION | OCCP_CONTROL_CLEAR_ERRORS);
   printf("Worker %zu on device %s: clearing errors from status register\n",
 	 worker, device);
 }
@@ -1181,7 +1209,7 @@ wread(const char **ap) {
 	   worker, device, off, size, n);
 
   for (unsigned n = *ap ? (unsigned)atoi_any(*ap, 0) : 1; n--; off += size) {
-    uint64_t i;
+    uint64_t i = 0;
     switch (size) {
     case 1:
       i = confAccess.get8RegisterOffset(off); break;
@@ -1381,8 +1409,8 @@ receiveRDMA(const char **ap) {
     theOutputDesc.desc.oob.port_id = 0;
     theOutputDesc.desc.oob.cookie = 0;
     uint32_t outputEndPointSize = edpConfAccess.get32Register(memoryBytes, OH::OcdpProperties);
-    OX::EndPoint &outputEndPoint =
-      OX::getManager().allocateProxyEndPoint(endpoint.c_str(), outputEndPointSize);
+    DT::EndPoint &outputEndPoint =
+      DT::getManager().allocateProxyEndPoint(endpoint.c_str(), outputEndPointSize);
     OD::Transport::fillDescriptorFromEndPoint(outputEndPoint, theOutputDesc);
   }
   // Finalizing the input port takes: role, type flow, emptyflagbase, size, pitch, value
@@ -1605,6 +1633,7 @@ simulate(const char **ap) {
   if (server.run(simExec, error))
     bad("Simulator server execution error");
 }
+
 static void
 getxml(const char **ap) {
   if (!ap[0])
@@ -1620,14 +1649,314 @@ getxml(const char **ap) {
       fclose(ofp))
     bad("error writing xml file '%s' size %zu", ap[0], xml.size());
 }
+
+// We create a worker class that does not have to be part of anything else.
+class Worker : public OC::Worker, public OH::WciControl {
+  std::string m_name, m_wName;
+public:
+  Worker(ezxml_t impl, ezxml_t inst, const char *idx) 
+    : OC::Worker(NULL, impl, inst),
+      OH::WciControl(*dev, impl, inst, false),
+      m_name(ezxml_cattr(inst, "name")),
+      m_wName(ezxml_cattr(impl, "name"))
+  {
+    // We need to initialize the status of the worker since the OC::Worker class
+    // object is being created without knowledge of previous state.
+    // The worker's status register tells us the last control operation
+    // that was performed.  It also has a sticky indication of
+    // errors from the worker itself, but it doesn't remember whether the
+    // previous control operation failed for other reasons (FIXME: the OCCP should
+    // capture this information).  We do our best here by first bypassing the software.
+    worker = atoi(idx);
+    cAccess->offsetRegisters(wAccess, (intptr_t)(&((OH::OccpSpace*)0)->worker[worker]));
+    uint32_t
+      control = wAccess.get32Register(control, OH::OccpWorkerRegisters),
+      status =  wAccess.get32Register(status, OH::OccpWorkerRegisters);
+    OC::ControlState cs;
+    OU::ControlOperation lastOp = (OU::ControlOperation)OCCP_STATUS_LAST_OP(status);
+    if (!(control & OCCP_WORKER_CONTROL_ENABLE))
+      cs = OC::EXISTS; // there is no specific reset state since it isn't hetero
+    else if (!(status & OCCP_STATUS_CONFIG_OP_VALID) || lastOp == 4)
+      cs = OC::EXISTS; // no control op since reset
+    else if (status & OCCP_STATUS_CONTROL_ERRORS)
+      cs = OC::UNUSABLE;
+    else if (lastOp == OU::OpRelease)
+      cs = OC::UNUSABLE;
+    else if (status & OCCP_STATUS_FINISHED)
+      cs = OC::FINISHED;
+    else
+      switch(lastOp) {
+      case OU::OpInitialize: cs = OC::INITIALIZED; break;
+      case OU::OpStart: cs = OC::OPERATING; break;
+      case OU::OpStop: cs = OC::SUSPENDED; break;
+      default:
+	cs = OC::OPERATING;
+	// FIXME:  the beforeQuery, and AfterConfig and test ops screw us up here.
+      }
+    setControlState(cs);
+  }
+  void control(const char *op) {
+    bool ignored = false;
+    uint32_t c =  wAccess.get32Register(control, OH::OccpWorkerRegisters);
+    if (!strcasecmp(op, "reset")) {
+      if (OCCP_WORKER_CONTROL_ENABLE & c) {
+	// Force the last control op to be bad
+	c &= ~OCCP_WORKER_CONTROL_ENABLE;
+	wAccess.set32Register(control, OH::OccpWorkerRegisters,
+			      c | OCCP_CONTROL_CLEAR_ATTENTION | OCCP_CONTROL_CLEAR_ERRORS);
+      } else
+	ignored = true;
+    } else if (!strcasecmp(op, "unreset")) {
+      if (OCCP_WORKER_CONTROL_ENABLE & c)
+	ignored = true;
+      else {
+	wAccess.set32Register(control, OH::OccpWorkerRegisters, c |= OCCP_WORKER_CONTROL_ENABLE);
+	wAccess.get32Register(test, OH::OccpWorkerRegisters);
+	wAccess.set32Register(control, OH::OccpWorkerRegisters,
+			      c | OCCP_CONTROL_CLEAR_ATTENTION | OCCP_CONTROL_CLEAR_ERRORS);
+      }
+    } else {
+      unsigned i;
+      for (i = 0; ops[i]; i++) 
+	if (!strcasecmp(ops[i], op)) {
+	  ignored = controlOp((OU::ControlOperation)i);
+	  break;
+	}
+      if (!ops[i])
+	bad("Unknown control operation: %s", op);
+    }
+    if (ignored)
+      printf("The '%s' operation was IGNORED on instance '%s' of worker '%s'.\n",
+	     op, name().c_str(), implTag().c_str());
+    else
+      printf("The '%s' operation was performed on instance '%s' of worker '%s'.\n",
+	     op, name().c_str(), implTag().c_str());
+  }
+  void status() {
+    printf("Status of instance '%s' of worker '%s' is '%s'\n",
+	   name().c_str(), implTag().c_str(),
+	   wAccess.get32Register(control, OH::OccpWorkerRegisters) & OCCP_WORKER_CONTROL_ENABLE ?
+	   OC::controlStateNames[getState()] : "RESET");
+    wdump(NULL);
+  }
+  OC::Port *findPort(const char *) { return NULL; }
+  const std::string &name() const { return m_name; }
+  void prepareProperty(OCPI::Util::Property &, volatile void *&, const volatile void *&) {}
+  OC::Port &createPort(const OCPI::Metadata::Port &, const OU::PValue *) {
+    return *(OC::Port*)NULL;
+  }
+  OC::Port &createOutputPort(OCPI::Metadata::PortOrdinal, size_t, size_t, 
+			     const OU::PValue*)
+    throw (OU::EmbeddedException)
+  {
+    return *(OC::Port*)NULL;
+  }
+  OC::Port & createInputPort(OCPI::Metadata::PortOrdinal, size_t, size_t, const OU::PValue*)
+    throw (OU::EmbeddedException)
+  {
+    return *(OC::Port*)NULL;
+  }
+  OC::Application *application() { return NULL;}
+  OC::Worker *nextWorker() { return NULL; }
+  void read(size_t, size_t, void *) {}
+  void write(size_t, size_t, const void *) {}
+};
+
+static ezxml_t
+getmeta() {
+  static std::vector<char> xml;
+  std::string err;
+  if (dev->getMetadata(xml, err))
+    bad(err.c_str());
+  ezxml_t x = ezxml_parse_str(&xml[0], xml.size());
+  if (x && ezxml_error(x)[0])
+    bad("XML Parsing error: %s", ezxml_error(x));
+  if (!x || !x->name)
+    bad("XML configuration in bitstream could not be parsed as XML");
+  return x;
+}
+
+struct Arg {
+  ezxml_t top;
+  size_t index;
+  char   letter;
+  const char  *name, *prop, *value;
+  bool control, status;
+  const char **args;
+  unsigned count;
+  Arg(const char **args)
+    : index(999), letter(0), name(NULL), control(false), status(false), args(args), count(0) {
+    top = getmeta();
+    prop = args[0] ? args[1] : NULL;
+    value = args[0] && args[1] ? args[2] : NULL;
+  }
+  void
+  setup() {
+    if (isdigit(**args))
+      index = atoi(*args);
+    else
+      name = *args;
+  }
+
+  void
+  doWorker(ezxml_t inst) {
+    count++;
+    const char
+      *name = ezxml_attr(inst, "name"),
+      *idx = ezxml_attr(inst, "occpIndex"),
+      *wkr = ezxml_attr(inst, "worker");
+    ezxml_t impl = OX::findChildWithAttr(top, "worker", "name", wkr);
+    if (!impl)
+      bad("Can't find worker '%s' for instance '%s'", name, wkr);
+    Worker w(impl, inst, idx);
+    if (control)
+      w.control(prop);
+    else if (status)
+      w.status();
+    else if (value) {
+      // Setting a property
+      w.setProperty(prop, value);
+      printf("Setting the %s property to '%s' on instance '%s'\n",
+	     prop, value, name);
+      fflush(stdout);
+    } else {
+      printf("  Instance %s of %s worker %s (spec %s)",
+	     w.name().c_str(), strcasecmp(inst->name, "instance") ? inst->name :
+	     idx && !strcmp(idx, "0") ? "platform" : "normal",
+	     wkr, wkr ? ezxml_cattr(impl, "specname") : "<none>");
+      if (idx)
+	printf(" with index %s", idx);
+      printf("\n");
+      fflush(stdout);
+      std::string pname, value;
+      bool unreadable;
+      if (prop) {
+	unsigned i = w.whichProperty(prop);
+	w.getProperty(i, pname, value, &unreadable, hex);
+	printf("%3u %20s: %s\n", i, pname.c_str(),
+	       unreadable ? "<unreadble>" : value.c_str());
+      } else if (verbose) {
+	for (unsigned i = 0; w.getProperty(i, pname, value, &unreadable, hex); i++)
+	  printf("%3u %20s: %s\n", i, pname.c_str(),
+		 unreadable ? "<unreadble>" : value.c_str());
+      }
+    }
+    fflush(stdout);
+  }
+
+  const char *
+  tryWorker(ezxml_t x) {
+    const char *err;
+    if ((!strcasecmp(x->name, "instance") ||
+	 !strcasecmp(x->name, "adapter") ||
+	 !strcasecmp(x->name, "interconnect"))) {
+      size_t iindex;
+      bool ifound;
+      if ((err = OX::getNumber(x, "occpIndex", &iindex, &ifound)))
+	return err;
+      if (ifound) {
+	const char *iname = ezxml_cattr(x, "name");
+	if (letter && iname && iname[0] == letter ||
+	    name && iname && !strcasecmp(name, iname) ||
+	    !letter && !name && index == iindex)
+	  doWorker(x);
+	else if (name && iname && !strcasecmp(name, ezxml_cattr(x, "worker"))) {
+	  // Check for a duplicate, among all children
+	  for (ezxml_t c = top->child; c; c = c->ordered)
+	    if (x != c) {
+	      const char *w = ezxml_cattr(c, "worker");
+	      const char *n = ezxml_cattr(c, "name");
+	      if (w && !strcasecmp(w, name))
+		bad("More than one instance (%s and %s) matches worker '%s'",
+		    iname, n, name);
+	    }
+	  doWorker(x);
+	}
+      }
+    }
+    return NULL;
+  }
+  static const char *
+  doWorkerArg(ezxml_t x, void *arg) {
+    return ((Arg *)arg)->tryWorker(x);
+  }
+  const char *
+  doWorkers() {
+    count = 0;
+    const char *err = OX::ezxml_children(top, doWorkerArg, (void*)this);
+    if (err && err[0])
+      bad("Error: %s", err);
+    if (!count && !letter)
+      bad("No workers found matching worker/instance argument: %s", args[0]);
+    return NULL;
+  }
+};
+
+static void
+get(const char **ap) {
+  Arg arg(ap);
+  if (*ap) {
+    if (ap[1] && ap[2])
+      bad("The 'get' command takes 0, 1 or 2 args: [instance-or-worker [property-name]]");
+    arg.setup();
+    arg.doWorkers();
+  } else {
+    printf("HDL Device: '%s' is platform '%s' part '%s' and UUID '%s'\n",
+	   dev->name().c_str(), ezxml_cattr(arg.top, "platform"), ezxml_cattr(arg.top, "device"),
+	   ezxml_cattr(arg.top, "uuid"));
+    printf("Platform configuration workers are:\n");
+    arg.letter = 'p';
+    arg.doWorkers();
+    printf("Container workers are:\n");
+    arg.letter = 'c';
+    arg.doWorkers();
+    printf("Application workers are:\n");
+    arg.letter = 'a';
+    arg.doWorkers();
+  }
+}
+
+// Set a property value
+static void
+set(const char **ap) {
+  Arg arg(ap);
+  if (!ap[0] || !ap[1] || !ap[2])
+    bad("The 'set' command takes three arguments: instance-or-worker property-name property-value");
+  arg.setup();
+  arg.doWorkers();
+}
+
+// Perform a control operation
+static void
+control(const char **ap) {
+  Arg arg(ap);
+  if (!ap[0] || !ap[1] || ap[2])
+    bad("The 'control' command takes two arguments: instance-or-worker [reset|unreset|start|stop]");
+  arg.setup();
+  arg.control = true;
+  arg.doWorkers();
+}
+
+// Display a worker's status
+static void
+status(const char **ap) {
+  Arg arg(ap);
+  if (!ap[0] || ap[1])
+    bad("The 'status' command takes one argument: instance-or-worker");
+  arg.setup();
+  arg.status = true;
+  arg.doWorkers();
+}
+
 static void
 load(const char **ap) {
   // Some devices can be loaded even when they don't probe, so we open the device
   // specially/softly here...
-  if (!device)
+  if (!device &&
+      !(device = getenv("OCPI_DEFAULT_HDL_DEVICE")))
     bad("a device option is required with this command");
   if (!ap[0])
-    bad("No input filename specified for getxml");
+    bad("No input filename specified for loading");
   
   driver = &OCPI::HDL::Driver::getSingleton();
   std::string error;
@@ -1635,4 +1964,3 @@ load(const char **ap) {
     bad("error opening device %s", device);
   dev->load(ap[0]);
 }
-

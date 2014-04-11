@@ -134,7 +134,7 @@ namespace OCPI {
 			  ezxml_t impl, ezxml_t inst, const OCPI::Util::PValue *params)
       : Child<App,Wrk,worker>(app, wrk, name), Worker(art, impl, inst, params) {
       }
-      Application &application() { return Child<App,Wrk,worker>::parent(); }
+      Application *application() { return &Child<App,Wrk,worker>::parent(); }
       Port *findPort(const char *name) { return Parent<Prt>::findChildByName(name); }
       Worker *nextWorker() { return Child<App,Wrk,worker>::nextChild(); }
       const std::string &name() const { return Child<App,Wrk,worker>::name(); }

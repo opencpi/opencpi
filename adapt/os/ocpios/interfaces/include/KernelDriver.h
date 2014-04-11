@@ -3,7 +3,7 @@
  */
 
 #ifndef KERNELDRIVER_H_
-#define KERNRLDRIVER_H_
+#define KERNELDRIVER_H_
 
 #ifdef __KERNEL__
 #include <asm/ioctl.h>
@@ -37,10 +37,10 @@ typedef struct {
 } ocpi_status_t;
 
 typedef struct {
-  ocpi_size_t	needed;		// How much memory you need in this request
-  ocpi_size_t	actual;		// How much memory you will receive
-  ocpi_address_t address;	// The physical address of this block
-  ocpi_cached_t cached;		// How should this block be cached?
+  ocpi_size_t	 needed;		// How much memory you need in this request
+  ocpi_size_t	 actual;		// How much memory you will receive
+  ocpi_address_t address;	        // The physical address of this block
+  ocpi_cached_t  how_cached;		// How should this block be cached?
 } ocpi_request_t;
 
 typedef struct {

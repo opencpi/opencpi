@@ -69,12 +69,14 @@ namespace OCPI {
       // Suspension, that can be resumed with "start".
       void stop();
       ExternalPort &getPort(const char *);
-      bool getProperty(unsigned ordinal, std::string &name, std::string &value);
+      bool getProperty(unsigned ordinal, std::string &name, std::string &value,
+		       bool hex = false);
       // Use top level names or instance:property
-      void getProperty(const char* prop_name, std::string &value);
+      void getProperty(const char* prop_name, std::string &value, bool hex = false);
       void setProperty(const char* prop_name, const char *value);
       // Access properties by instance name and property name
-      void getProperty(const char* instance_name, const char* prop_name, std::string &value);
+      void getProperty(const char* instance_name, const char* prop_name, std::string &value,
+		       bool hex);
       void setProperty(const char* instance_name, const char* prop_name, const char *value);
     private:
       friend class Property;

@@ -289,19 +289,17 @@ namespace OCPI {
     // external=port, connect=instance, then to or from?
     const char *Assembly::Instance::
     parseConnection(ezxml_t ix, Assembly &a) {
-      const char
-	*err = NULL,
-	*c = ezxml_cattr(ix, "connect"),
-	*e = ezxml_cattr(ix, "external"); // short cut for indicating one port is external
-      if (c) {
-	unsigned n;
-	if ((err = a.getInstance(c, n)))
-	  return err;
-	err = a.addPortConnection(m_ordinal, ezxml_cattr(ix, "from"), n, ezxml_cattr(ix, "to"));
-      }
-      if (e)
-	err = a.addExternalConnection(m_ordinal, e);
-      return err;
+      const char *err, *c, *e;
+      unsigned n;
+      if ((c = ezxml_cattr(ix, "connect")) &&
+	  ((err = a.getInstance(c, n)) ||
+	   (err = a.addPortConnection(m_ordinal, ezxml_cattr(ix, "from"), n,
+				      ezxml_cattr(ix, "to")))))
+	return err;
+      if ((e = ezxml_cattr(ix, "external")) &&
+	  (err = a.addExternalConnection(m_ordinal, e)))
+	return err;
+      return NULL;
     }
 
     const char *Assembly::Instance::
@@ -339,14 +337,15 @@ namespace OCPI {
       m_ordinal = ordinal;
       const char *err;
       static const char *instAttrs[] = { "component", "Worker", "Name", "connect", "to", "from",
-					 "external", "selection", "index", NULL};
-      if ((err = OE::checkAttrsVV(ix, instAttrs, extraInstAttrs, NULL)))
+					 "external", "selection", "index", "externals", NULL};
+      if ((err = OE::checkAttrsVV(ix, instAttrs, extraInstAttrs, NULL)) ||
+	  (err = OE::getBoolean(ix, "externals", &m_externals)))
 	return err;
       std::string component, myBase;
       const char *compName = 0;
       if (a.isImpl()) {
 	if (ezxml_cattr(ix, "component"))
-	  err = "'component' attributes invalid in this implementaiton assembly";
+	  err = "'component' attributes invalid in this implementation assembly";
 	else
 	  err = OE::getRequiredString(ix, m_implName, "worker", "instance");
 	baseName(m_implName.c_str(), myBase);
@@ -402,7 +401,7 @@ namespace OCPI {
 	if ((err = p->parse(px)))
 	  return err;
       return m_parameters.parse(ix, "name", "component", "worker", "selection", "connect",
-				"external", "from", "to", NULL);
+				"external", "from", "to", "externals", NULL);
     }
 
     Assembly::Connection::

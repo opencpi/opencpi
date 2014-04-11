@@ -165,7 +165,7 @@ atoi_any(char *arg, uint8_t *sizep)
    volatile OccpSpace *p;
    OCCP_Command *c;
    volatile uint8_t *d;
-   char **ap = argv + 1;
+   char **ap;
    Bar bars[MAXBARS];
    unsigned nbars;
    const char *err;

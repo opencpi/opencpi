@@ -56,6 +56,8 @@
 #include <OcpiPort.h>
 #include <OcpiBuffer.h>
 #include <OcpiContainerPort.h>
+#include <OcpiRccContainer.h>
+#include <OcpiRccApplication.h>
 #include <RCC_Worker.h>
 
 

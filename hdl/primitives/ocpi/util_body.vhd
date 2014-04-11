@@ -18,5 +18,14 @@ function slvn(n, width : natural) return std_logic_vector is
 begin
   return std_logic_vector(v);
 end slvn;
+function bit2unsigned(b : std_logic; len : natural := 1)
+  return unsigned is
+begin
+  if b = '0' then
+    return to_unsigned(0, len);
+  else
+    return to_unsigned(1, len);
+  end if;
+end bit2unsigned;
 end util;
 

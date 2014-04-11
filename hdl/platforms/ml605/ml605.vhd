@@ -26,9 +26,10 @@ architecture rtl of ml605_worker is
   signal sys1_rst_n             : std_logic;        -- reset for GBE clock
   signal pci_id                 : std_logic_vector(15 downto 0);
   -- unoc internal connections
-  signal pci2unoc, unoc2cp : unoc_master_out_t;
-  signal unoc2pci, cp2unoc : unoc_master_in_t;
-  -- chipscope
+  signal pci2unoc, unoc2cp      : unoc_master_out_t;
+  signal unoc2pci, cp2unoc      : unoc_master_in_t;
+  signal unoc_out_data          : std_logic_vector(unoc_data_width-1 downto 0);
+-- chipscope
   --signal control0               : std_logic_vector(35 downto 0);
   --signal ila_data               : std_logic_vector(31 downto 0);
   --signal ila_trigger            : std_logic_vector(7 downto 0);
@@ -85,14 +86,15 @@ begin
              p125rstn       => ctl_rst_n,
              pci_device     => pci_id,
              -- unoc links
-             unoc_out_data  => pci2unoc.data,
+             unoc_out_data  => unoc_out_data,
              unoc_out_valid => pci2unoc.valid,
              unoc_out_take  => pci2unoc.take,
-             unoc_in_data   => unoc2pci.data,
+             unoc_in_data   => to_slv(unoc2pci.data),
              unoc_in_valid  => unoc2pci.valid,
              unoc_in_take   => unoc2pci.take);
   
   -- Complete the master unoc record
+  pci2unoc.data    <= to_unoc(unoc_out_data);
   pci2unoc.clk     <= ctl_clk;
   pci2unoc.reset_n <= ctl_rst_n;
   pci2unoc.id      <= pci_id;

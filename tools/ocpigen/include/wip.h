@@ -466,6 +466,8 @@ class Worker : public Parsed {
     *emitArtHDL(const char *root, const char *wksFile);
   inline const char *myComment() const { return hdlComment(m_language); }
   void
+    addAccess(OU::Property &p),
+    emitWorkersAttribute(),
     deleteAssy(), // just to keep the assembly details out of most files
     emitRecordSignal(FILE *f, std::string &last, size_t maxPortTypeName, Port *p,
 		     const char *prefix = ""),

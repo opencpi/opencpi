@@ -578,7 +578,7 @@ namespace OCPI {
 	if (list) {
 	  char
 	    *mylist = strdup(list),
-	    *base = mylist, 
+	    *base,
 	    *last = 0,
 	    *tok;
 	  for (base = mylist; (tok = strtok_r(base, ", \t", &last)); base = NULL)

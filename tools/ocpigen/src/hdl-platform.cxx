@@ -1123,6 +1123,7 @@ SlotType(const char *file, const char *parent, const char *&err) {
   else if (m_name != slash)
     err = OU::esprintf("File name (%s) does not match name attribute in XML (%s)",
 		       xfile, m_name.c_str());
+  free(cp);
 }
 SlotType::
 ~SlotType() {

@@ -1,4 +1,3 @@
-
 /*
  *  This file is part of OpenCPI (www.opencpi.org).
  *     ____                   __________   ____

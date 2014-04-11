@@ -530,7 +530,7 @@ formatAdd(std::string &out, const char *fmt, ...) {
   va_end(ap);
 }
 
-// Use vanilla C file I/O
+// FIXME: Use vanilla C file I/O
 const char *
 file2String(std::string &out, const char *file, char replaceNewLine) {
   FILE *f = fopen(file, "r");
@@ -543,11 +543,14 @@ file2String(std::string &out, const char *file, char replaceNewLine) {
       fseek(f, 0, SEEK_SET) == 0) {
     out.reserve(size);
     // To avoid requiring double storage, we chunk the input.
-    char buf[4*1024];
+    char buf[4*1024+1];
     bool initial = true;  // for trimming initial which space
     bool newLine = false; // for trimming trailing newline when replacing newlines
     size_t n;
-    while ((n = fread(buf, 1, sizeof(buf), f))) {
+    while ((n = fread(buf, 1, sizeof(buf)-1, f))) {
+      buf[n] = '\0';
+      if (strlen(buf) < n)
+	n = strlen(buf);
       char *cp = buf;
       if (initial) {
 	// Trim initial white space
@@ -576,7 +579,7 @@ file2String(std::string &out, const char *file, char replaceNewLine) {
       err = "error reading file";
   } else
     err = "file could not be open for reading";
-  if (f)
+   if (f)
     fclose(f);
   if (err) {
     out.clear();

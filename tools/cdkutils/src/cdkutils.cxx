@@ -124,6 +124,7 @@ parseFile(const char *file, const char *parent, const char *element,
       *xfile = strdup(cp);
     addDep(cp, parent != 0);
   } while (0);
+  free(myFile);
   while (!tries.empty()) {
     cp = tries.front();
     tries.pop_front();
@@ -198,7 +199,9 @@ openOutput(const char *name, const char *outDir, const char *prefix, const char 
       if (readlink(otherFile, buf, length) != length)
 	return "Unexpected system error reading symlink";
       buf[length] = '\0';
-      if (!strcmp(otherFile, buf))
+      bool same = strcmp(otherFile, buf) == 0;
+      free(buf);
+      if (same)
 	return 0;
       if (unlink(otherFile))
 	return "Cannot remove symlink to replace it";

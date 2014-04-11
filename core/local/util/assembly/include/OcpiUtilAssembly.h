@@ -97,9 +97,11 @@ namespace OCPI {
 	  m_implName,              // name of implementation (may be a path)
 	  m_selection;             // the selection expression
 	unsigned m_ordinal;
+	bool     m_externals;      // whether all ports should be considered external
 	Properties m_properties;
 	PValueList m_parameters;
 	std::list<Port*> m_ports; // attachments to connections
+	typedef std::list<Port*>::iterator PortsIter;
 	const char *parse(ezxml_t ix, Assembly &a, unsigned ordinal, const char **extraInstAttrs);
 	const char *addProperty(const char *name, ezxml_t px);
 	const char *parseConnection(ezxml_t ix, Assembly &a);

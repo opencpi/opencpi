@@ -420,6 +420,7 @@ emitImplRCC(Worker *w, const char *outDir) {
 	  fprintf(f, " %s_%s_%s,\n", upper, puName, ouName);
 	  free(ouName);
 	}
+	free(puName);
 	fprintf(f, "} %c%s%c%sOperation;\n",
 		toupper(w->m_implName[0]), w->m_implName+1,
 		toupper(port->name[0]), port->name+1);

@@ -107,5 +107,14 @@ component SyncFIFO
            dD_OUT    : out std_logic_vector(dataWidth - 1 downto 0);
            dEMPTY_N  : out std_logic);
 end component SyncFIFO;
+component SyncBit
+  generic (init      : natural := 0);
+  port(    sCLK      : in  std_logic;
+           sRST      : in  std_logic;
+           dCLK      : in  std_logic;
+           sEN       : in  std_logic;
+           sD_IN     : in  std_logic;
+           dD_OUT    : out std_logic);
+end component SyncBIT;
 
 end package bsv;

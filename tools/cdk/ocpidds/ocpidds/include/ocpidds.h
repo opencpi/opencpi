@@ -33,7 +33,7 @@
  */
 
 #ifndef OCPIDDS_H
-#define ODPIDDS_H
+#define OCPIDDS_H
 #include "cdkutils.h"
 extern const char
   *emitProtocol(const char *outDir, const char *file, const char *structName),

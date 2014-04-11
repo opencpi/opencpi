@@ -233,7 +233,7 @@ $end rtl;
 ENTITY_RPROP_ARRAY(pretty,readback scalar 8 bit property)\
 $architecture rtl of pretty##_read_array_property is\
 $@@signal i : natural;\
-$@@signal word : word_t;\
+$@@signal word : dword_t;\
 $begin\
 $@@i <= to_integer(index);\
 $@@word <=\
@@ -243,7 +243,7 @@ $@@@@x"00" & std_logic_vector(value(i+2)) &\
 $@@@@std_logic_vector(value(i+1)) & std_logic_vector(value(i)) when nbytes_1 = 2 else\
 $@@@@std_logic_vector(value(i+3)) & std_logic_vector(value(i+2)) &\
 $@@@@std_logic_vector(value(i+1)) & std_logic_vector(value(i));\
-$@@data_out <= word_t(shift_left(unsigned(word),\
+$@@data_out <= dword_t(shift_left(unsigned(word),\
 $@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@to_integer((property.offset+to_integer(index)) rem 4) *8));\
 $end rtl;
 

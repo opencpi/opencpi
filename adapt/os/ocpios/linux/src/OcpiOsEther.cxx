@@ -640,7 +640,7 @@ namespace OCPI {
       ~IfScanner() {
 	Opaque *o = (Opaque *)m_opaque;
 #ifdef OCPI_OS_macos
-	delete o->buffer;
+	delete [] o->buffer;
 #else
 	if (o->dfd)
 	  closedir(o->dfd);

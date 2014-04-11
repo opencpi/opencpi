@@ -3,20 +3,18 @@
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 library platform; use platform.all;
 library ocpi; use ocpi.types.all;
-library bsv;
-library zed; use zed.all;
+library zynq; use zynq.zynq_pkg.all;
 entity axi2cp is
   port(
     clk     : in std_logic;
-    reset   : in std_logic;
-    axi_in  : in  zynq_pkg.axi_gp_out_t;
-    axi_out : out zynq_pkg.axi_gp_in_t;
+    reset   : in bool_t;
+    axi_in  : in  m_axi_gp_out_t;
+    axi_out : out m_axi_gp_in_t;
     cp_in   : in  platform_pkg.occp_out_t;
     cp_out  : out platform_pkg.occp_in_t
     );
 end entity axi2cp;
 architecture rtl of axi2cp is
-  signal axi_reset_sync_n : std_logic; -- the PS's AXI reset, sync'd to our clock
   signal read_done        : std_logic; -- true in the last cycle of the read
   signal write_done       : std_logic; -- true in the last cycle of the write
   signal address          : std_logic_vector(cp_out.address'range);
@@ -24,8 +22,9 @@ architecture rtl of axi2cp is
   function read_byte_en(low2addr   : std_logic_vector(1 downto 0);
                         log2nbytes : std_logic_vector(2 downto 0))
     return std_logic_vector is
+    variable mask : std_logic_vector(4 downto 0) := log2nbytes & low2addr;
   begin
-   case log2nbytes & low2addr is
+   case mask is -- log2nbytes & low2addr is
      when "00000" => return "0001";
      when "00001" => return "0010";
      when "00010" => return "0100";
@@ -50,17 +49,6 @@ architecture rtl of axi2cp is
   signal addr2_r       : std_logic;
   signal RVALID        : std_logic;
 begin
-  -- Our reset logic:
-  -- We have the reset associated with our clock, and we also
-  -- have the reset from the PS for our AXI GP port.
-  -- Thus the reset given to the control plane is the OR of then.
-  -- But the PS's reset is async to us, so we furst synchronize it.
-  sr : bsv.bsv.SyncResetA
-    generic map(RSTDELAY => 17)
-    port map   (IN_RST  => axi_in.ARESETN,
-                CLK     => clk,
-                OUT_RST => axi_reset_sync_n);
-
   -- Our state machines, separate for address and read-data
   work : process(clk)
   begin
@@ -154,14 +142,14 @@ begin
   end process;
   ------------------------------------------------------------------------------
   -- Combinatorial convenience signals used for various outputs
-  read_done <= to_bool((read_state = r_last_wanted_e and cp_in.valid = '1') or
+  read_done  <= to_bool((read_state = r_last_wanted_e and cp_in.valid = '1') or
                        read_state = r_last_valid_e);
   write_done <= to_bool(read_state = r_idle_e and
                         (address_state = a_taken_e or
                          (address_state = a_last_e and cp_in.take = '1')));
-  RVALID  <= to_bool((read_state = r_first_wanted_e and cp_in.valid = '1') or
-                     read_state = r_first_valid_e or
-                     read_done = '1');
+  RVALID     <= to_bool((read_state = r_first_wanted_e and cp_in.valid = '1') or
+                        read_state = r_first_valid_e or
+                        read_done = '1');
   ------------------------------------------------------------------------------
   -- Now we drive external signals based on our state and the combi signals
   -- AXI GP signals we drive from the PL into the PS, ordered per AXI Chapter 2
@@ -177,20 +165,20 @@ begin
 
   -- Write Response Channel: we offer the write response
   axi_out.BID     <= axi_in.AWID; -- we only do one at a time so we loop back the ID
-  axi_out.BRESP   <= zynq_pkg.Resp_OKAY;
+  axi_out.BRESP   <= Resp_OKAY;
   axi_out.BVALID  <= write_done;
   -- Read Address Channel
   axi_out.ARREADY <= read_done;
   -- Read Data Channel
   axi_out.RID     <= axi_in.ARID;
   axi_out.RDATA   <= cp_in.data;
-  axi_out.RRESP   <= zynq_pkg.Resp_OKAY;
+  axi_out.RRESP   <= Resp_OKAY;
   axi_out.RLAST   <= read_done;
   axi_out.RVALID  <= RVALID;
   ----------------------------------------------------------------------------
   -- CP Master output signals we drive
   cp_out.clk        <= clk;
-  cp_out.reset      <= reset or not axi_reset_sync_n;
+  cp_out.reset      <= reset;
   -- Note we need to wait for valid write (WVALID) to arrive when writing and a_last_e
   -- since we enter that state without regard to WVALID and it might not be there then
   cp_out.valid      <= to_bool(address_state = a_first_e or
