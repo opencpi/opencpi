@@ -91,6 +91,7 @@ namespace OCPI {
     class PropertyInfo;
     class PropertyAccess {
     protected:
+      virtual ~PropertyAccess();
       // These methods are used by the Property methods below when the
       // fast path using memory-mapped access cannot be used.
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		  \

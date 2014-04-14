@@ -101,6 +101,8 @@ namespace OCPI {
     // concrete workers
     // These interfaces must be supplied for control purposes
     class WorkerControl {
+    protected:
+      virtual ~WorkerControl();
     public:
       //      virtual const std::string &name() const = 0;
       virtual void prepareProperty(OCPI::Util::Property &p,

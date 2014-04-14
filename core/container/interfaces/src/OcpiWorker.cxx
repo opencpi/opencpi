@@ -338,6 +338,7 @@ namespace OCPI {
       }
       return false;
     }
+    WorkerControl::~WorkerControl(){}
   }
   namespace API {
     Worker::~Worker(){}
