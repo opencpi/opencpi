@@ -338,8 +338,6 @@ addAccess(OU::Property &p) {
     m_ctl.volatiles = true;
   if (p.m_isVolatile || p.m_isReadable && !p.m_isWritable)
     m_ctl.readbacks = true;
-  if (!p.m_isParameter || p.m_isReadable)
-    m_ctl.nRunProperties++;
 }
 
 const char *Worker::
@@ -351,6 +349,8 @@ addProperty(ezxml_t prop, bool includeImpl)
   const char *err =
     p->parse(prop, m_ctl.readables, m_ctl.writables, m_ctl.sub32Bits,
 	     includeImpl, (unsigned)(m_ctl.ordinal++));
+  if (!p->m_isParameter || p->m_isReadable)
+    m_ctl.nRunProperties++;
   if (!err)
     addAccess(*p);
   return err;
