@@ -1174,7 +1174,7 @@ emitVhdlWorkerEntity(FILE *f, unsigned maxPropName) {
     case CPPort:
     case NOCPort:
     case MetadataPort:
-      fprintf(f, "%s    -- Signals for %s port named \"%s\".  Record types are in the _defs.vhd file.\n",
+      fprintf(f, "%s    -- Signals for %s port named \"%s\".  Record types are in the -defs.vhd file.\n",
 	      last.c_str(), wipNames[p->type], p->name);
       fprintf(f,
 	      "    %-*s : in  work.%s_defs.%s_t;\n"

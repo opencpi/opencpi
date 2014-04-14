@@ -37,7 +37,7 @@ architecture rtl of zed_worker is
   signal axi_wdata     : ulonglong_array_t(0 to 15);
   signal axi_waddr     : ulonglong_array_t(0 to 15);
   signal unoc_valid_r  : bool_t;
-  signal axi_wvalid_r  : bool_t;
+--  signal axi_wvalid_r  : bool_t;
   signal axi_rvalid_r  : bool_t;
   signal my_zynq_out   : platform.platform_pkg.unoc_master_out_t;
   signal dbg_state     : ulonglong_t;
@@ -204,12 +204,12 @@ begin
         axi_wacount <= (others => '0');
         axi_racount <= (others => '0');
         seen_burst <= '0';
-        axi_wvalid_r <= '0';
+--        axi_wvalid_r <= '0';
         axi_rvalid_r <= '0';
         unoc_valid_r <= '0';
       else
         unoc_valid_r <= my_zynq_out.valid;
-        axi_wvalid_r <= ps_axi_hp_out(0).RVALID;
+--        axi_wvalid_r <= ps_axi_hp_out(0).RVALID;
         axi_rvalid_r <= ps_axi_hp_in(0).ARVALID;
         if its(my_zynq_out.valid) and zynq_in.take and
 -- zynq_in.data.sof and not its(unoc_valid_r) and
@@ -218,7 +218,7 @@ begin
             to_ulonglong(my_zynq_out.data.payload(0) & my_zynq_out.data.payload(1));
           unoc_header_out1(to_integer(unoc_count_out)) <=
             to_ulonglong(my_zynq_out.data.payload(2) & my_zynq_out.data.payload(3)(31 downto 4) &
-                          "0" & std_logic_vector(dbg_state1(2 downto 0)));
+                          std_logic_vector(dbg_state1(3 downto 0)));
           unoc_count_out <= unoc_count_out + 1;
         end if;
         if its(zynq_in.valid) and my_zynq_out.take and
@@ -246,14 +246,19 @@ begin
         end if;
         if its(ps_axi_hp_in(0).WVALID) and ps_axi_hp_out(0).WREADY and axi_wdcount /= 15 then
           axi_wdata(to_integer(axi_wdcount)) <=
-            to_ulonglong(ps_axi_hp_in(0).WDATA(63 downto 1) & "1"); -- &
+            to_ulonglong(
+                         std_logic_vector(dbg_state1(55 downto 52)) &
+                         "000" & ps_axi_hp_in(0).WLAST & -- 1
+                         ps_axi_hp_in(0).WSTRB & -- 8
+                         ps_axi_hp_in(0).WDATA(47 downto 0)); -- 32
 --                         "00010010001101000101011001110000");
           axi_wdcount <= axi_wdcount + 1;
         end if;
         if its(ps_axi_hp_in(0).AWVALID and ps_axi_hp_out(0).AWREADY) and axi_wacount /= 15 then
           axi_waddr(to_integer(axi_wacount)) <=
             to_ulonglong(std_logic_vector(dbg_state1(60 downto 56)) & -- 5
-                         std_logic_vector(dbg_state(26 downto 4)) & -- 23
+                         std_logic_vector(dbg_state(26 downto 8)) & -- 23
+                                          "0" & ps_axi_hp_in(0).AWSIZE & -- 4
                                           ps_axi_hp_in(0).AWLEN & -- 4
                                           ps_axi_hp_in(0).AWADDR); -- 32
           axi_wacount <= axi_wacount + 1;

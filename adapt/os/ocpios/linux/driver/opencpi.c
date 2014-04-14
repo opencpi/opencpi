@@ -1497,8 +1497,8 @@ opencpi_init(void) {
 	break;
       }
       mydev->fsdev = fsdev;
-      log_debug("creating device in sysfs: %p name '%s' kname '%s'\n",
-		fsdev, fsdev->init_name, fsdev->kobj.name);
+      log_debug("creating device in sysfs: %p kname '%s'\n",
+		fsdev, fsdev->kobj.name);
     }
 
 #ifdef CONFIG_PCI
