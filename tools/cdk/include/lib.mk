@@ -260,7 +260,9 @@ ifeq ($(origin Worker),command line)
           $(error The indicated spec file for the new worker: "$(SpecFile)" does not exist.)
         endif
       endif
-      ifneq ($(filter-out specs/$(Name)-spec.xml specs/$(Name)_spec.xml,$(SpecFile)),)
+      ifneq ($(filter specs/$(Name)-spec.xml specs/$(Name)_spec.xml $(Name)-spec.xml $(Name)_spec.xml,$(SpecFile)),)
+        OcpiSpecFile:=$(notdir $(SpecFile))
+      else
         ifeq ($(dir $(SpecFile)),specs/)
           OcpiSpecFile:=$(notdir $(SpecFile))
         else
@@ -277,7 +279,7 @@ ifeq ($(origin Worker),command line)
     ifeq ($(wildcard $(MySpecFile)),)
       $(error The spec file: specs/$(Name)-spec.xml does not exist. Create it or use SpecFile=<file>)
     endif
-    OcpiSpecFile:=
+    OcpiSpecFile:=$(notdir $(MySpecFile))
   endif
   OcpiLanguage:=
   ifdef Language
