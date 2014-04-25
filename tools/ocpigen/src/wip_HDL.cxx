@@ -897,8 +897,8 @@ emitVhdlWorkerPackage(FILE *f, unsigned maxPropName) {
 	    fprintf(f, ");\n");
 	  }
 	} else {
-	  fprintf(f, "  subtype %s_OpCode_t is std_logic_vector(%zu downto 0);\n",
-		  p->name, p->ocp.MReqInfo.width - 1);
+	  fprintf(f, "  subtype %s_OpCode_t is std_logic_vector(%zu downto 0); -- for %zu opcodes\n",
+		  p->name, ceilLog2(p->u.wdi.nOpcodes) - 1, p->u.wdi.nOpcodes);
 	}
       }
     default:;
@@ -2682,16 +2682,15 @@ emitImplHDL(const char *outDir, bool wrap) {
 		  pin, pin, pin, pin);
 	if (p->u.wdi.nOpcodes > 1) {
 	  if (m_language == VHDL) {
-	    if (n == 0)
-	      fprintf(f,
-		      "  subtype %s%sOpCode_t is std_logic_vector(7 downto 0);\n",
-		      p->name, p->u.wdi.isProducer ? pout : pin);
+#if 0
 	    fprintf(f,
-		    "  alias %sOpcode: %s%sOpCode_t is %s.%cFlag(7 downto 0);\n",
+		    "  alias %sOpcode: %sOpCode_t is %s%s.%cFlag(7 downto 0); -- convenience\n",
 		    p->u.wdi.isProducer ? pout : pin,
-		    p->name, p->u.wdi.isProducer ? pout : pin,
 		    p->u.wdi.isProducer ? pout : pin,
+		    p->u.wdi.isProducer ? pout : pin,
+		    p->u.wdi.isProducer ? "in" : "out",
 		    p->u.wdi.isProducer ? 'M' : 'S');
+#endif
 	  } else {
 	    if (p->u.wdi.isProducer) // opcode is an output
 	      fprintf(f,
