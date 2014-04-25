@@ -170,8 +170,11 @@ $(ImplFile): $$(ImplXmlFile) | $$(GeneratedDir)
 $(AssyWorkersFile): $(ImplFile)
 
 # We need to get the list of workers early to establish dependencies
+ifneq ($(MAKECMDGOALS),clean)
 $(and $(call DoShell,$(OcpiGen) -x workers $(CwdName).xml,HdlWorkers),\
       $(error Processing assembly XML $(ImplXmlFile): $(HdlWorkers)))
+endif
+
 # Make the assembly core depend on all the explicitly requested cores and the workers
 HdlPreCore=$(HdlGetCores)
 
