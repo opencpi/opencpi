@@ -1489,11 +1489,11 @@ emitWorker(FILE *f, Worker *w)
     fprintf(f, " sizeOfConfigSpace=\"%llu\"", (unsigned long long)w->m_ctl.sizeOfConfigSpace);
   if (w->m_ctl.controlOps) {
     bool first = true;
-    for (unsigned op = 0; op < OU::OpsLimit; op++)
-      if (op != OU::OpStart &&
+    for (unsigned op = 0; op < OU::Worker::OpsLimit; op++)
+      if (op != OU::Worker::OpStart &&
 	  w->m_ctl.controlOps & (1 << op)) {
 	fprintf(f, "%s%s", first ? " controlOperations=\"" : ",",
-		OU::controlOpNames[op]);
+		OU::Worker::s_controlOpNames[op]);
 	first = false;
       }
     if (!first)

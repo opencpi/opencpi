@@ -4,3 +4,7 @@ runtime systems on which to execute various opencpi software
 applications (such as ocpirun and ocpihdl).  The software (and FPGA
 bitstreams) for such systems are usually built using cross-tools on a
 generic linux development system with the appropriate tools installed.
+
+Each platform should have a README about how to set it up, and any other
+scripts or files to enable the platform.
+

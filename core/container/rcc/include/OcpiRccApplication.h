@@ -128,7 +128,6 @@ It wasnt actually used anyway.
        *********************************/ 
       inline void addCircuit( OCPI::DataTransport::Circuit* c ){m_circuits.push_back(c);}
 #endif      
-      void start(); // override default because we have funny workers for external ports.
       private:
 
       // RCC container

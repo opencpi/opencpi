@@ -35,4 +35,5 @@
 ########################################################################### #
 
 ExcludePlatforms=isim_pf modelsim_pf
+Containers=out_2_lime.xml out_2_limex
 include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk

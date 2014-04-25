@@ -38,9 +38,9 @@ ifneq ($(wildcard $(OCPI_LIB_DIR)/*.a),)
 OCPI_DRIVER_OBJS=\
   -Xlinker --undefined=_ZN4OCPI3RCC6driverE\
   -Xlinker --undefined=_ZN4OCPI7Library7CompLib6driverE\
-  -Xlinker --undefined=_ZN12DataTransfer9pioDriverE\
+  -Xlinker --undefined=_ZN12DataTransfer3PIO6driverE\
   -Xlinker --undefined=_ZN4OCPI3HDL6driverE\
-  -Xlinker --undefined=_ZN12DataTransfer3PCI6driverE\
+  -Xlinker --undefined=_ZN12DataTransfer3DMA6driverE\
 
 endif
 OcpiAsNeeded=-Xlinker --no-as-needed
@@ -65,6 +65,18 @@ ifeq ($(origin OCPI_SUDO),undefined)
 OCPI_SUDO=sudo -E
 endif
 OCPI_TARGET_DIR=target-$(OCPI_TARGET_HOST)
+
+ifeq ($(OCPI_CROSS_HOST),)
+CC = gcc
+CXX = c++
+LD = c++
+else
+CC = $(OCPI_CROSS_BUILD_BIN_DIR)/$(OCPI_CROSS_HOST)-gcc
+CXX = $(OCPI_CROSS_BUILD_BIN_DIR)/$(OCPI_CROSS_HOST)-c++
+LD = $(OCPI_CROSS_BUILD_BIN_DIR)/$(OCPI_CROSS_HOST)-c++
+AR = $(OCPI_CROSS_BUILD_BIN_DIR)/$(OCPI_CROSS_HOST)-ar
+endif
+
 all:
 $(OCPI_TARGET_DIR):
 	mkdir $@

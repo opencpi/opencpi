@@ -65,6 +65,9 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <sys/mman.h>
+#ifdef XIL_CACHE
+#include "xil_cache.h"
+#endif
 
 #define MAPIT
 uint64_t
@@ -116,7 +119,7 @@ main(int argc, char *argv[])
     printf("offset=%08llx nbytes=%d mmoffset=%08x mmbase=%08x\n",
 	   (long long)offset, nbytes, mmoffset, mmbase) ;
 
-    if((fd = open("/dev/mem", O_RDWR))==-1)
+    if((fd = open("/dev/mem", O_RDWR|O_SYNC))==-1)
       {
         perror("/dev/mem") ;
         return 1 ;
@@ -131,6 +134,9 @@ main(int argc, char *argv[])
         return 1 ;
       }
 
+#ifdef XIL_CACHE
+    Xil_DCacheInvalidate();
+#endif
     ptr += mmoffset ;
 
     if(update)

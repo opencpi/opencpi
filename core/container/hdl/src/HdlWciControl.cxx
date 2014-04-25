@@ -75,7 +75,7 @@ namespace OCPI {
       m_window = 0;
       //      m_wName = m_instName ? m_instName : "<unknown>";
       if (m_hasControl) {
-	setControlMask(getControlMask() | 1 << OU::OpStart);
+	setControlMask(getControlMask() | 1 << OU::Worker::OpStart);
 	unsigned logTimeout = 31;
 	for (size_t u = 1 << logTimeout; !(u & m_timeout);
 	     u >>= 1, logTimeout--)
@@ -150,14 +150,14 @@ namespace OCPI {
 	ocpiDebug("Worker %s has errors: %" PRIx32, m_instName, status);
     }
     void WciControl::
-    controlOperation(OCPI::Util::ControlOperation op) {
+    controlOperation(OU::Worker::ControlOperation op) {
       std::string err;
       if (controlOperation(op, err))
 	throw OU::Error(err);
     }
 
     bool WciControl::
-    controlOperation(OCPI::Util::ControlOperation op, std::string &err) {
+    controlOperation(OU::Worker::ControlOperation op, std::string &err) {
       if (getControlMask() & (1 << op)) {
 	uint32_t result =
 	  // *((volatile uint32_t *)myRegisters + controlOffsets[op]);
@@ -182,16 +182,18 @@ namespace OCPI {
 	    oops = "returned unknown result value from control operation";
 	  }
 	  ocpiInfo("HDL Control Op Failed: worker %s:%s(%zu) op %s(%u) %s (%0x" PRIx32 ")",
-		     m_implName, m_instName, m_occpIndex, OU::controlOpNames[op], op, oops, result);
+		   m_implName, m_instName, m_occpIndex, OU::Worker::s_controlOpNames[op],
+		   op, oops, result);
 	  OU::format(err, "HDL Control Op Failed: worker %s:%s(%zu) op %s(%u) %s (%0x" PRIx32 ")",
-		     m_implName, m_instName, m_occpIndex, OU::controlOpNames[op], op, oops, result);
+		     m_implName, m_instName, m_occpIndex, OU::Worker::s_controlOpNames[op],
+		     op, oops, result);
 	  return true;
 	}
 	ocpiInfo("HDL Control Op Succeeded: worker %s:%s(%zu) op %s(%u)",
-		  m_implName, m_instName, m_occpIndex, OU::controlOpNames[op], op);
+		 m_implName, m_instName, m_occpIndex, OU::Worker::s_controlOpNames[op], op);
       } else
 	ocpiInfo("HDL Control Op Avoided worker %s:%s(%zu) op %s(%u)",
-		  m_implName, m_instName, m_occpIndex, OU::controlOpNames[op], op);
+		 m_implName, m_instName, m_occpIndex, OU::Worker::s_controlOpNames[op], op);
       return false;
     }
 

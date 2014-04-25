@@ -38,9 +38,9 @@ end entity axinull;
 architecture rtl of axinull is
 begin
   axi_out.ACLK    <= clk;
-  axi_out.AWVALID <= '0';
-  axi_out.WVALID  <= '0';
-  axi_out.BREADY  <= '0';              -- we are always ready for responses
-  axi_out.ARVALID <= '0';
-  axi_out.RREADY  <= '0';
+  axi_out.AW.VALID <= '0';
+  axi_out.W.VALID  <= '0';
+  axi_out.B.READY  <= '0';              -- we are always ready for responses
+  axi_out.AR.VALID <= '0';
+  axi_out.R.READY  <= '0';
 end rtl;

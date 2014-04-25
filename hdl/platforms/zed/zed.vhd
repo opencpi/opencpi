@@ -36,9 +36,6 @@ architecture rtl of zed_worker is
   signal axi_raddr     : ulonglong_array_t(0 to 15);
   signal axi_wdata     : ulonglong_array_t(0 to 15);
   signal axi_waddr     : ulonglong_array_t(0 to 15);
-  signal unoc_valid_r  : bool_t;
---  signal axi_wvalid_r  : bool_t;
-  signal axi_rvalid_r  : bool_t;
   signal my_zynq_out   : platform.platform_pkg.unoc_master_out_t;
   signal dbg_state     : ulonglong_t;
   signal dbg_state1    : ulonglong_t;
@@ -58,7 +55,7 @@ begin
   props_out.unoc_headers_out <= unoc_header_out;
   props_out.unoc_headers_out1 <= unoc_header_out1;
   cp_out <= my_cp_out;
-  clkbuf   : BUFG   port map(I => fclk(0),
+  clkbuf   : BUFG   port map(I => fclk(3),
                              O => clk);
   -- The FCLKRESET signals from the PS are documented as asynchronous with the
   -- associated FCLK for whatever reason.  Here we make a synchronized reset from it.
@@ -94,6 +91,9 @@ begin
   props_out.debug_state <= dbg_state;
   props_out.debug_state1 <= dbg_state1;
   dp0 : unoc2axi
+    generic map(
+      ocpi_debug => true
+    )
     port map(
       clk       => clk,
       reset     => reset,
@@ -204,15 +204,8 @@ begin
         axi_wacount <= (others => '0');
         axi_racount <= (others => '0');
         seen_burst <= '0';
---        axi_wvalid_r <= '0';
-        axi_rvalid_r <= '0';
-        unoc_valid_r <= '0';
       else
-        unoc_valid_r <= my_zynq_out.valid;
---        axi_wvalid_r <= ps_axi_hp_out(0).RVALID;
-        axi_rvalid_r <= ps_axi_hp_in(0).ARVALID;
         if its(my_zynq_out.valid) and zynq_in.take and
--- zynq_in.data.sof and not its(unoc_valid_r) and
           unoc_count_out /= 7 then
           unoc_header_out(to_integer(unoc_count_out)) <=
             to_ulonglong(my_zynq_out.data.payload(0) & my_zynq_out.data.payload(1));
@@ -222,7 +215,6 @@ begin
           unoc_count_out <= unoc_count_out + 1;
         end if;
         if its(zynq_in.valid) and my_zynq_out.take and
--- zynq_in.data.sof and not its(unoc_valid_r) and
           unoc_count_in /= 7 then
           unoc_header_in(to_integer(unoc_count_in)) <=
             to_ulonglong(zynq_in.data.payload(0) & zynq_in.data.payload(1));
@@ -230,37 +222,39 @@ begin
             to_ulonglong(zynq_in.data.payload(2) & zynq_in.data.payload(3));
           unoc_count_in <= unoc_count_in + 1;
         end if;
-        if its(ps_axi_hp_out(0).RVALID) and ps_axi_hp_in(0).RREADY and axi_rdcount /= 15 then
+        if its(ps_axi_hp_out(0).R.VALID) and ps_axi_hp_in(0).R.READY and axi_rdcount /= 15 then
           axi_rdata(to_integer(axi_rdcount)) <=
-            to_ulonglong(ps_axi_hp_out(0).RDATA(63 downto 1) & "1"); -- &
+            to_ulonglong(ps_axi_hp_out(0).R.DATA(63 downto 0)); -- &
 --                         "00010010001101000101011001110000");
           axi_rdcount <= axi_rdcount + 1;
         end if;
-        if its(ps_axi_hp_in(0).ARVALID and ps_axi_hp_out(0).ARREADY) and axi_racount /= 15 then
+        if its(ps_axi_hp_in(0).AR.VALID and ps_axi_hp_out(0).AR.READY) and axi_racount /= 15 then
           axi_raddr(to_integer(axi_racount)) <=
             to_ulonglong(std_logic_vector(dbg_state1(60 downto 56)) & -- 5
                          std_logic_vector(dbg_state(26 downto 4)) & -- 23
-                                          ps_axi_hp_in(0).ARLEN & -- 4
-                                          ps_axi_hp_in(0).ARADDR); -- 32
+                                          ps_axi_hp_in(0).AR.LEN & -- 4
+                                          ps_axi_hp_in(0).AR.ADDR); -- 32
           axi_racount <= axi_racount + 1;
         end if;
-        if its(ps_axi_hp_in(0).WVALID) and ps_axi_hp_out(0).WREADY and axi_wdcount /= 15 then
+        if its(ps_axi_hp_in(0).W.VALID) and ps_axi_hp_out(0).W.READY and axi_wdcount /= 15 then
           axi_wdata(to_integer(axi_wdcount)) <=
             to_ulonglong(
-                         std_logic_vector(dbg_state1(55 downto 52)) &
-                         "000" & ps_axi_hp_in(0).WLAST & -- 1
-                         ps_axi_hp_in(0).WSTRB & -- 8
-                         ps_axi_hp_in(0).WDATA(47 downto 0)); -- 32
+"000000" & std_logic_vector(count) &
+--                         std_logic_vector(dbg_state1(51 downto 32)) &
+--                         "000" & ps_axi_hp_in(0).WLAST & -- 1
+--                         ps_axi_hp_in(0).WSTRB & -- 8
+                         ps_axi_hp_in(0).W.DATA(31 downto 0)); -- 32
 --                         "00010010001101000101011001110000");
           axi_wdcount <= axi_wdcount + 1;
         end if;
-        if its(ps_axi_hp_in(0).AWVALID and ps_axi_hp_out(0).AWREADY) and axi_wacount /= 15 then
+        if its(ps_axi_hp_in(0).AW.VALID and ps_axi_hp_out(0).AW.READY) and axi_wacount /= 15 then
           axi_waddr(to_integer(axi_wacount)) <=
-            to_ulonglong(std_logic_vector(dbg_state1(60 downto 56)) & -- 5
-                         std_logic_vector(dbg_state(26 downto 8)) & -- 23
-                                          "0" & ps_axi_hp_in(0).AWSIZE & -- 4
-                                          ps_axi_hp_in(0).AWLEN & -- 4
-                                          ps_axi_hp_in(0).AWADDR); -- 32
+            to_ulonglong(
+--              std_logic_vector(dbg_state(27 downto 4)) & -- 24
+--                                          "0" & ps_axi_hp_in(0).AWSIZE & -- 4
+--                                          ps_axi_hp_in(0).AWLEN & -- 4
+"000000" & std_logic_vector(count) &
+                                          ps_axi_hp_in(0).AW.ADDR); -- 32
           axi_wacount <= axi_wacount + 1;
         end if;
         count <= count + 1;

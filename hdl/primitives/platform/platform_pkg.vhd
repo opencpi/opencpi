@@ -230,6 +230,8 @@ type unoc_header_t is record -- DWORD 0, 32 bits
   mbz3       : std_logic_vector(1 downto 0);  -- 00
   dw_length  : std_logic_vector(unoc_dw_length_bits_c-1 downto 0);  -- but zero means 1024 DWs
 end record unoc_header_t;
+-- For values that don't use the funky zero-means-1024 convention
+subtype unoc_ndw_t is unsigned(unoc_dw_length_bits_c downto 0);
 function to_slv(d : unoc_header_t) return std_logic_vector;
 function to_unoc_header(v : std_logic_vector) return unoc_header_t;
 function from_unoc_header(h : unoc_header_t) return std_logic_vector;
@@ -238,6 +240,7 @@ function unoc_make_header(is_write      : bool_t;
                           is_4dw        : bool_t;
                           dw_length     : unsigned(unoc_dw_length_bits_c downto 0))
   return unoc_header_t;
+function unoc_get_ndw(h : unoc_header_t) return unoc_ndw_t;
 function unoc_make_response(dw_length   : unsigned(unoc_dw_length_bits_c downto 0))
   return unoc_header_t;
 

@@ -470,7 +470,7 @@ static const char *parseControlOp(const char *op, void *arg) {
   Worker *w = (Worker *)arg;
   unsigned n = 0;
   const char **p;
-  for (p = OU::controlOpNames; *p; p++, n++)
+  for (p = OU::Worker::s_controlOpNames; *p; p++, n++)
     if (!strcasecmp(*p, op)) {
       w->m_ctl.controlOps |= 1 << n;
       break;
@@ -658,12 +658,15 @@ parsePort(ezxml_t x) {
       // So if there is a protocol, nOpcodes is initialized from it.
       p->u.wdi.nOpcodes = p->protocol->nOperations();
     } else {
-      // When there is no protocol at all, we force it to variable, bounded at 64k, diverse, zlm
+      // When there is no protocol at all, we force it to variable, unbounded at 64k, diverse, zlm
+      // I.e. assume it can do anything up to 64KB
+      // But with no operations, we can scale back when connecting to something more specific
       prot->m_diverseDataSizes = true;
       prot->m_variableMessageLength = true;
       prot->m_maxMessageValues = 64*1024;
-      prot->m_zeroLengthMessages = false; // keep it simplest in this case
-      p->u.wdi.nOpcodes = 1;
+      prot->m_zeroLengthMessages = true;
+      prot->m_isUnbounded = true;
+      p->u.wdi.nOpcodes = 256;
     }
   }
   return NULL;
@@ -874,9 +877,9 @@ parseHdlImpl(const char *package) {
     wci = new Port(ezxml_cattr(xctl, "Name"), this, false, WCIPort, xctl);
     m_ports.insert(m_ports.begin(), wci);
     // Finish HDL-specific control parsing
-    m_ctl.controlOps |= 1 << OU::OpStart;
+    m_ctl.controlOps |= 1 << OU::Worker::OpStart;
     if (m_language == VHDL)
-      m_ctl.controlOps |= 1 << OU::OpStop;
+      m_ctl.controlOps |= 1 << OU::Worker::OpStop;
     if (xctl) {
       if ((err = OE::checkAttrs(xctl, GENERIC_IMPL_CONTROL_ATTRS, "ResetWhileSuspended",
 				"Clock", "MyClock", "Timeout", "Count", "Name", "Pattern",

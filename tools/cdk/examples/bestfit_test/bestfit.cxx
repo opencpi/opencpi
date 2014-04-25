@@ -45,15 +45,15 @@ int main(int argc, char **argv) {
     // (it returns a pointer since the caller is allowed to delete it)
     OA::ContainerApplication &a = *c->createApplication("bestfit-app");
 
-    OA::PValue selection[] = {
-      OA::PVDouble("Appthroughput",atoi(argv[1])),
-      OA::PVDouble("Appdistortion",atof(argv[2])),
-      OA::PVDouble("Appmemusage", atoi(argv[3])),
-      OA::PVString("__ocpi__exp-required", "throughput > Appthroughput"),
-      OA::PVString("__ocpi__exp-scored 40", "distortion <= Appdistortion"),
-      OA::PVString("__ocpi__exp-scored 10", "memoryusage <= Appmemusage"),
-      OA::PVEnd
-    };
+    // OA::PValue selection[] = {
+    //   OA::PVDouble("Appthroughput",atoi(argv[1])),
+    //   OA::PVDouble("Appdistortion",atof(argv[2])),
+    //   OA::PVDouble("Appmemusage", atoi(argv[3])),
+    //   OA::PVString("__ocpi__exp-required", "throughput > Appthroughput"),
+    //   OA::PVString("__ocpi__exp-scored 40", "distortion <= Appdistortion"),
+    //   OA::PVString("__ocpi__exp-scored 10", "memoryusage <= Appmemusage"),
+    //   OA::PVEnd
+    // };
     char *s;
     asprintf(&s, "throughput > %s", argv[1]);
 

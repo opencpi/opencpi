@@ -25,7 +25,7 @@ PROG=$(OCPI_TARGET_DIR)/$(APP)
 all: $(PROG)
 
 $(PROG): $(APP).cxx | $(OCPI_TARGET_DIR)
-	g++ -g -Wall -o $@ $(INCS) $^ $(LDFLAGS)
+	$(CXX) -g -Wall -o $@ $(INCS) $^ $(LDFLAGS)
 
 OPENCV_ENV= export $(OcpiLibraryPathEnv)=$(OPENCV_LIB_DIR)/lib;
 clean::

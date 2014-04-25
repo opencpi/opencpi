@@ -27,5 +27,9 @@ begin
     return to_unsigned(1, len);
   end if;
 end bit2unsigned;
+function swap(d : dword_t) return dword_t is
+begin
+  return dword_t'(d(7 downto 0) & d(15 downto 8) & d(23 downto 16) & d(31 downto 24));
+end swap;
 end util;
 

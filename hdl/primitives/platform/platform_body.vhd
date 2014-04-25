@@ -122,6 +122,15 @@ begin
   return d;
 end unoc_make_header;
 
+function unoc_get_ndw(h : unoc_header_t) return unoc_ndw_t is
+begin
+  if h.dw_length = slv0(h.dw_length'length) then
+    return to_unsigned(1024, unoc_ndw_t'length);
+  else
+    return resize(unsigned(h.dw_length), unoc_ndw_t'length);
+  end if;
+end unoc_get_ndw;
+
 function to_unoc_request(v : std_logic_vector) return unoc_request_t is
   variable d   : unoc_request_t;
   variable n   : natural := 31;

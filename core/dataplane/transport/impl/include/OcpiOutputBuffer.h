@@ -159,8 +159,10 @@ namespace OCPI {
 	ocpiAssert(!getPort()->isShadow());
 	OCPI_EMIT_CAT_("Mark Buffer Full",OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_CAT_WORKER_DEV_BUFFER_FLOW);
 	// This is a local operation
+	ocpiDebug("Mark output buffer full: %p before %x", &m_state[0][m_pid].bufferIsEmpty, m_state[0][m_pid].bufferIsEmpty);
         m_state[0][m_pid].bufferIsEmpty = EF_FULL_VALUE;
         setInUse(false);
+	ocpiDebug("Mark output buffer full: after %x", m_state[0][m_pid].bufferIsEmpty);
       }
 
     /**********************************
@@ -170,7 +172,10 @@ namespace OCPI {
       {
 	OCPI_EMIT_CAT_("Mark Buffer Empty",OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_CAT_WORKER_DEV_BUFFER_FLOW);
 	// this really only happens in cleanup or shadow-pull
-        m_state[0][m_pid].bufferIsEmpty = EF_EMPTY_VALUE;
+	ocpiDebug("Mark output buffer empty: %p before %x", &m_state[0][m_pid].bufferIsEmpty, m_state[0][m_pid].bufferIsEmpty);
+	if ((m_state[0][m_pid].bufferIsEmpty & EF_MASK) != EF_EMPTY_VALUE)
+	  m_state[0][m_pid].bufferIsEmpty = EF_EMPTY_VALUE;
+	ocpiDebug("Mark output buffer empty: after %x", m_state[0][m_pid].bufferIsEmpty);
       }
 
 

@@ -283,7 +283,7 @@ emitSkelOCL(Worker *w, const char *outDir) {
   unsigned op = 0;
   const char **cp;
   const char *mName;
-  for (cp = OU::controlOpNames; *cp; cp++, op++)
+  for (cp = OU::Worker::s_controlOpNames; *cp; cp++, op++)
     if (w->m_ctl.controlOps & (1 << op)) {
       if ((err = methodName(w, *cp, mName)))
 	return err;
@@ -528,7 +528,7 @@ static const char* emitEntryPointOCL ( Worker* w,
   fprintf ( f, "      break;\n" );
   unsigned op = 0;
   const char* mName;
-  for ( const char** cp = OU::controlOpNames; *cp; cp++, op++ )
+  for ( const char** cp = OU::Worker::s_controlOpNames; *cp; cp++, op++ )
   {
     if ( w->m_ctl.controlOps & (1 << op ) )
     {

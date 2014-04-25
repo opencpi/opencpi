@@ -21,6 +21,7 @@ export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../3113964_001C42EFC0F4.txt
 #export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../Site_3113964.txt
 
 export OCPI_BUILD_SHARED_LIBRARIES=0
-export OCPI_OPENCV_HOME=/opt/opencpi/prerequisites/opencv/linux-c6-x86_64
+#export OCPI_OPENCV_HOME=/opt/opencpi/prerequisites/opencv/linux-c6-x86_64
+export OCPI_OPENCV_HOME=
 
 . ./env/finish.sh

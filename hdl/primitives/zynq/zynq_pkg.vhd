@@ -68,61 +68,144 @@ end record m_axi_gp_out_t;
 constant C_S_AXI_HP_ID_WIDTH   : natural := 6;
 constant C_S_AXI_HP_DATA_WIDTH : natural := 64;
 constant C_S_AXI_HP_COUNT      : natural := 4;
-type s_axi_hp_out_t is record
-  ARESETn : std_logic; -- in the zynq AXI_HP, the PS as slave drives reset, async
-  AWREADY : std_logic;
-  WREADY  : std_logic;
-  BID     : std_logic_vector(C_S_AXI_HP_ID_WIDTH-1 downto 0);
-  BRESP   : std_logic_vector(1 downto 0);
-  BVALID  : std_logic;
-  ARREADY : std_logic;
-  RID     : std_logic_vector(C_S_AXI_HP_ID_WIDTH-1 downto 0);
-  RDATA   : std_logic_vector(C_S_AXI_HP_DATA_WIDTH-1 downto 0);
-  RRESP   : std_logic_vector(1 downto 0);
-  RLAST   : std_logic;
-  RVALID  : std_logic;
-  -- THese are not AMBA/AXI, but FIFO counts
-  RCOUNT  : std_logic_vector(7 downto 0);
-  WCOUNT  : std_logic_vector(7 downto 0);
-  RACOUNT : std_logic_vector(2 downto 0);
-  WACOUNT : std_logic_vector(5 downto 0);
-end record s_axi_hp_out_t;
-type s_axi_hp_out_array_t is array (natural range <>) of s_axi_hp_out_t;
+--type s_axi_hp_out_t is record
+--  ARESETn : std_logic; -- in the zynq AXI_HP, the PS as slave drives reset, async
+--  AWREADY : std_logic;
+--  WREADY  : std_logic;
+--  BID     : std_logic_vector(C_S_AXI_HP_ID_WIDTH-1 downto 0);
+--  BRESP   : std_logic_vector(1 downto 0);
+--  BVALID  : std_logic;
+--  ARREADY : std_logic;
+--  RID     : std_logic_vector(C_S_AXI_HP_ID_WIDTH-1 downto 0);
+--  RDATA   : std_logic_vector(C_S_AXI_HP_DATA_WIDTH-1 downto 0);
+--  RRESP   : std_logic_vector(1 downto 0);
+--  RLAST   : std_logic;
+--  RVALID  : std_logic;
+--  -- THese are not AMBA/AXI, but FIFO counts
+--  RCOUNT  : std_logic_vector(7 downto 0);
+--  WCOUNT  : std_logic_vector(7 downto 0);
+--  RACOUNT : std_logic_vector(2 downto 0);
+--  WACOUNT : std_logic_vector(5 downto 0);
+--end record s_axi_hp_out_t;
 -- Inputs to the PS's s_axi_hp ports
+--type s_axi_hp_in_t is record
+--  ACLK    : std_logic; -- In the zynq AXI_HP, the PL as master supplies the clock
+--  AWID    : std_logic_vector(C_S_AXI_HP_ID_WIDTH-1 downto 0);
+--  AWADDR  : std_logic_vector(C_AXI_ADDR_WIDTH-1 downto 0);
+--  AWLEN   : std_logic_vector(3 downto 0);
+--  AWSIZE  : std_logic_vector(2 downto 0); -- bit 2 unused, but in PS7 interface
+--  AWBURST : std_logic_vector(1 downto 0);
+--  AWLOCK  : std_logic_vector(1 downto 0);
+--  AWCACHE : std_logic_vector(3 downto 0);
+--  AWPROT  : std_logic_vector(2 downto 0);
+--  AWVALID : std_logic;
+--  WID     : std_logic_vector(C_S_AXI_HP_ID_WIDTH-1 downto 0);
+--  WDATA   : std_logic_vector(C_S_AXI_HP_DATA_WIDTH-1 downto 0);
+--  WSTRB   : std_logic_vector((C_S_AXI_HP_DATA_WIDTH/8)-1 downto 0);
+--  WLAST   : std_logic;
+--  WVALID  : std_logic;
+--  BREADY  : std_logic;
+--  ARID    : std_logic_vector(C_S_AXI_HP_ID_WIDTH-1 downto 0);
+--  ARADDR  : std_logic_vector(C_AXI_ADDR_WIDTH-1 downto 0);
+--  ARLEN   : std_logic_vector(3 downto 0);
+--  ARSIZE  : std_logic_vector(2 downto 0); -- bit 2 unused, but in PS7 interface
+--  ARBURST : std_logic_vector(1 downto 0);
+--  ARLOCK  : std_logic_vector(1 downto 0);
+--  ARCACHE : std_logic_vector(3 downto 0);
+--  ARPROT  : std_logic_vector(2 downto 0);
+--  ARVALID : std_logic;
+--  RREADY  : std_logic;
+--  -- These are not AMBA/AXI
+--  ARQOS   : std_logic_vector(3 downto 0);
+--  AWQOS   : std_logic_vector(3 downto 0);
+--  RDISSUECAP1_EN : std_logic; -- when true, look at the PS register to throttle
+--  WRISSUECAP1_EN : std_logic; -- ditto
+--end record s_axi_hp_in_t;
+
+type s_axi_hp_in_aw_t is record
+  ID           : std_logic_vector(C_S_AXI_HP_ID_WIDTH-1 downto 0);
+  ADDR         : std_logic_vector(C_AXI_ADDR_WIDTH-1 downto 0);
+  LEN          : std_logic_vector(3 downto 0);
+  SIZE         : std_logic_vector(2 downto 0); -- bit 2 unused, but in PS7 interface
+  BURST        : std_logic_vector(1 downto 0);
+  LOCK         : std_logic_vector(1 downto 0);
+  CACHE        : std_logic_vector(3 downto 0);
+  PROT         : std_logic_vector(2 downto 0);
+  VALID        : std_logic;
+  QOS          : std_logic_vector(3 downto 0);
+  ISSUECAP1_EN : std_logic;
+end record s_axi_hp_in_aw_t;
+type s_axi_hp_out_aw_t is record
+  READY : std_logic;
+  COUNT : std_logic_vector(5 downto 0);
+end record s_axi_hp_out_aw_t;
+type s_axi_hp_in_w_t is record
+  ID     : std_logic_vector(C_S_AXI_HP_ID_WIDTH-1 downto 0);
+  DATA   : std_logic_vector(C_S_AXI_HP_DATA_WIDTH-1 downto 0);
+  STRB   : std_logic_vector((C_S_AXI_HP_DATA_WIDTH/8)-1 downto 0);
+  LAST   : std_logic;
+  VALID  : std_logic;
+end record s_axi_hp_in_w_t;
+type s_axi_hp_out_w_t is record
+  READY  : std_logic;
+  COUNT  : std_logic_vector(7 downto 0);
+end record s_axi_hp_out_w_t;
+type s_axi_hp_in_ar_t is record
+  ID           : std_logic_vector(C_S_AXI_HP_ID_WIDTH-1 downto 0);
+  ADDR         : std_logic_vector(C_AXI_ADDR_WIDTH-1 downto 0);
+  LEN          : std_logic_vector(3 downto 0);
+  SIZE         : std_logic_vector(2 downto 0); -- bit 2 unused, but in PS7 interface
+  BURST        : std_logic_vector(1 downto 0);
+  LOCK         : std_logic_vector(1 downto 0);
+  CACHE        : std_logic_vector(3 downto 0);
+  PROT         : std_logic_vector(2 downto 0);
+  VALID        : std_logic;
+  QOS          : std_logic_vector(3 downto 0);
+  ISSUECAP1_EN : std_logic; -- when true, look at the PS register to throttle
+end record s_axi_hp_in_ar_t;
+type s_axi_hp_out_ar_t is record
+  READY : std_logic;
+  COUNT : std_logic_vector(2 downto 0);
+end record s_axi_hp_out_ar_t;
+type s_axi_hp_in_r_t is record
+  READY  : std_logic;
+end record s_axi_hp_in_r_t;
+type s_axi_hp_out_r_t is record
+  ID     : std_logic_vector(C_S_AXI_HP_ID_WIDTH-1 downto 0);
+  DATA   : std_logic_vector(C_S_AXI_HP_DATA_WIDTH-1 downto 0);
+  RESP   : std_logic_vector(1 downto 0);
+  LAST   : std_logic;
+  VALID  : std_logic;
+  COUNT  : std_logic_vector(7 downto 0);
+end record s_axi_hp_out_r_t;
+type s_axi_hp_in_b_t is record
+  READY  : std_logic;
+end record s_axi_hp_in_b_t;
+type s_axi_hp_out_b_t is record
+  ID     : std_logic_vector(C_S_AXI_HP_ID_WIDTH-1 downto 0);
+  RESP   : std_logic_vector(1 downto 0);
+  VALID  : std_logic;
+end record s_axi_hp_out_b_t;
 type s_axi_hp_in_t is record
   ACLK    : std_logic; -- In the zynq AXI_HP, the PL as master supplies the clock
-  AWID    : std_logic_vector(C_S_AXI_HP_ID_WIDTH-1 downto 0);
-  AWADDR  : std_logic_vector(C_AXI_ADDR_WIDTH-1 downto 0);
-  AWLEN   : std_logic_vector(3 downto 0);
-  AWSIZE  : std_logic_vector(2 downto 0); -- bit 2 unused, but in PS7 interface
-  AWBURST : std_logic_vector(1 downto 0);
-  AWLOCK  : std_logic_vector(1 downto 0);
-  AWCACHE : std_logic_vector(3 downto 0);
-  AWPROT  : std_logic_vector(2 downto 0);
-  AWVALID : std_logic;
-  WID     : std_logic_vector(C_S_AXI_HP_ID_WIDTH-1 downto 0);
-  WDATA   : std_logic_vector(C_S_AXI_HP_DATA_WIDTH-1 downto 0);
-  WSTRB   : std_logic_vector((C_S_AXI_HP_DATA_WIDTH/8)-1 downto 0);
-  WLAST   : std_logic;
-  WVALID  : std_logic;
-  BREADY  : std_logic;
-  ARID    : std_logic_vector(C_S_AXI_HP_ID_WIDTH-1 downto 0);
-  ARADDR  : std_logic_vector(C_AXI_ADDR_WIDTH-1 downto 0);
-  ARLEN   : std_logic_vector(3 downto 0);
-  ARSIZE  : std_logic_vector(2 downto 0); -- bit 2 unused, but in PS7 interface
-  ARBURST : std_logic_vector(1 downto 0);
-  ARLOCK  : std_logic_vector(1 downto 0);
-  ARCACHE : std_logic_vector(3 downto 0);
-  ARPROT  : std_logic_vector(2 downto 0);
-  ARVALID : std_logic;
-  RREADY  : std_logic;
-  -- These are not AMBA/AXI
-  ARQOS   : std_logic_vector(3 downto 0);
-  AWQOS   : std_logic_vector(3 downto 0);
-  RDISSUECAP1_EN : std_logic; -- when true, look at the PS register to throttle
-  WRISSUECAP1_EN : std_logic; -- ditto
+  aw : s_axi_hp_in_aw_t;
+  ar : s_axi_hp_in_ar_t;
+  w  : s_axi_hp_in_w_t;
+  r  : s_axi_hp_in_r_t;
+  b  : s_axi_hp_in_b_t;
 end record s_axi_hp_in_t;
 type s_axi_hp_in_array_t is array (natural range <>) of s_axi_hp_in_t;
+
+type s_axi_hp_out_t is record
+  ARESETN : std_logic; -- In the zynq AXI_HP, the *PS* as slave supplies the reset
+  aw : s_axi_hp_out_aw_t;
+  ar : s_axi_hp_out_ar_t;
+  w  : s_axi_hp_out_w_t;
+  r  : s_axi_hp_out_r_t;
+  b  : s_axi_hp_out_b_t;
+end record s_axi_hp_out_t;
+type s_axi_hp_out_array_t is array (natural range <>) of s_axi_hp_out_t;
+
 
 subtype  Resp_t IS std_logic_vector(1 downto 0);
 constant Resp_OKAY   : Resp_t := "00";
@@ -917,6 +1000,9 @@ component axi2cp is
 end component axi2cp;
 
 component unoc2axi is
+  generic(
+    ocpi_debug : boolean
+    );
   port(
     clk       : in  std_logic;
     reset     : in  bool_t;
@@ -926,7 +1012,8 @@ component unoc2axi is
     axi_out   : out s_axi_hp_in_t;
     axi_error : out bool_t;
     dbg_state : out ulonglong_t;
-    dbg_state1 : out ulonglong_t
+    dbg_state1 : out ulonglong_t;
+    dbg_state2 : out ulonglong_t
     );
 end component unoc2axi;
 
