@@ -281,7 +281,7 @@ runTest (CORBA::ULong testId, CF::Properties & testValues)
      */
 
     unsigned int numProperties;
-    const OCPI::Metadata::Property * props = getProperties (numProperties);
+    const OCPI::Util::Property * props = getProperties (numProperties);
 
     /*
      * Set input values.
@@ -538,7 +538,7 @@ query (CF::Properties & props)
 
 
 
-    const OCPI::Metadata::Property * cprops = getProperties (numProperties);
+    const OCPI::Util::Property * cprops = getProperties (numProperties);
 
     numProps = numProperties;
     props.length (numProps);

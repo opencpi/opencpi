@@ -1672,25 +1672,26 @@ public:
     uint32_t
       control = wAccess.get32Register(control, OH::OccpWorkerRegisters),
       status =  wAccess.get32Register(status, OH::OccpWorkerRegisters);
-    OC::ControlState cs;
-    OU::ControlOperation lastOp = (OU::ControlOperation)OCCP_STATUS_LAST_OP(status);
+    OU::Worker::ControlState cs;
+    OU::Worker::ControlOperation lastOp =
+      (OU::Worker::ControlOperation)OCCP_STATUS_LAST_OP(status);
     if (!(control & OCCP_WORKER_CONTROL_ENABLE))
-      cs = OC::EXISTS; // there is no specific reset state since it isn't hetero
+      cs = OU::Worker::EXISTS; // there is no specific reset state since it isn't hetero
     else if (!(status & OCCP_STATUS_CONFIG_OP_VALID) || lastOp == 4)
-      cs = OC::EXISTS; // no control op since reset
+      cs = OU::Worker::EXISTS; // no control op since reset
     else if (status & OCCP_STATUS_CONTROL_ERRORS)
-      cs = OC::UNUSABLE;
-    else if (lastOp == OU::OpRelease)
-      cs = OC::UNUSABLE;
+      cs = OU::Worker::UNUSABLE;
+    else if (lastOp == OU::Worker::OpRelease)
+      cs = OU::Worker::UNUSABLE;
     else if (status & OCCP_STATUS_FINISHED)
-      cs = OC::FINISHED;
+      cs = OU::Worker::FINISHED;
     else
       switch(lastOp) {
-      case OU::OpInitialize: cs = OC::INITIALIZED; break;
-      case OU::OpStart: cs = OC::OPERATING; break;
-      case OU::OpStop: cs = OC::SUSPENDED; break;
+      case OU::Worker::OpInitialize: cs = OU::Worker::INITIALIZED; break;
+      case OU::Worker::OpStart: cs = OU::Worker::OPERATING; break;
+      case OU::Worker::OpStop: cs = OU::Worker::SUSPENDED; break;
       default:
-	cs = OC::OPERATING;
+	cs = OU::Worker::OPERATING;
 	// FIXME:  the beforeQuery, and AfterConfig and test ops screw us up here.
       }
     setControlState(cs);
@@ -1719,7 +1720,7 @@ public:
       unsigned i;
       for (i = 0; ops[i]; i++) 
 	if (!strcasecmp(ops[i], op)) {
-	  ignored = controlOp((OU::ControlOperation)i);
+	  ignored = controlOp((OU::Worker::ControlOperation)i);
 	  break;
 	}
       if (!ops[i])
@@ -1736,22 +1737,22 @@ public:
     printf("Status of instance '%s' of worker '%s' is '%s'\n",
 	   name().c_str(), implTag().c_str(),
 	   wAccess.get32Register(control, OH::OccpWorkerRegisters) & OCCP_WORKER_CONTROL_ENABLE ?
-	   OC::controlStateNames[getState()] : "RESET");
+	   OU::Worker::s_controlStateNames[getState()] : "RESET");
     wdump(NULL);
   }
   OC::Port *findPort(const char *) { return NULL; }
   const std::string &name() const { return m_name; }
-  void prepareProperty(OCPI::Util::Property &, volatile void *&, const volatile void *&) {}
-  OC::Port &createPort(const OCPI::Metadata::Port &, const OU::PValue *) {
+  void prepareProperty(OU::Property &, volatile void *&, const volatile void *&) {}
+  OC::Port &createPort(const OU::Port &, const OU::PValue *) {
     return *(OC::Port*)NULL;
   }
-  OC::Port &createOutputPort(OCPI::Metadata::PortOrdinal, size_t, size_t, 
+  OC::Port &createOutputPort(OU::PortOrdinal, size_t, size_t, 
 			     const OU::PValue*)
     throw (OU::EmbeddedException)
   {
     return *(OC::Port*)NULL;
   }
-  OC::Port & createInputPort(OCPI::Metadata::PortOrdinal, size_t, size_t, const OU::PValue*)
+  OC::Port & createInputPort(OU::PortOrdinal, size_t, size_t, const OU::PValue*)
     throw (OU::EmbeddedException)
   {
     return *(OC::Port*)NULL;

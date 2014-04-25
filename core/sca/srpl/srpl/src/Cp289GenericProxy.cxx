@@ -71,7 +71,6 @@
 namespace OCPI {
   namespace SCA {
     namespace OC = OCPI::Container;
-    namespace OM = OCPI::Metadata;
     namespace OU = OCPI::Util;
     namespace OA = OCPI::API;
 
@@ -397,12 +396,12 @@ namespace OCPI {
         throw std::string (oops);
     }
 
-    const OCPI::Metadata::Property *
+    const OU::Property *
     OCPI::SCA::Cp289GenericProxy::
     getProperties (unsigned int & numProperties)
       throw ()
     {
-      return static_cast<OCPI::Container::Worker *>(&m_worker)->getProperties (numProperties);
+      return static_cast<OC::Worker *>(&m_worker)->properties (numProperties);
     }
 
 #undef CONTROL_OP_I

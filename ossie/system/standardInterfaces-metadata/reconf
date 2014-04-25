@@ -1,7 +1,0 @@
-#!/bin/sh
-
-libtoolize
-rm -f config.cache
-aclocal
-autoconf
-automake --foreign --add-missing

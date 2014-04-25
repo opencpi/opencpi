@@ -88,7 +88,7 @@ namespace OCPI {
       m_implementations.insert(WorkerMapPair(impl.m_metadataImpl.specName().c_str(), &impl));
     }
     static bool
-    satisfiesSelection(const char *selection, unsigned *score, OU::Implementation &impl) {
+    satisfiesSelection(const char *selection, unsigned *score, OU::Worker &impl) {
       OU::ExprValue val;
       const char *err = OU::evalExpression(selection, val, &impl);
       if (err)
@@ -148,14 +148,14 @@ namespace OCPI {
     }
 #endif
     Implementation::
-    Implementation(Artifact &art, OCPI::Util::Implementation &i, ezxml_t instance, unsigned ordinal)
+    Implementation(Artifact &art, OU::Worker &i, ezxml_t instance, unsigned ordinal)
 	: m_artifact(art), m_metadataImpl(i), m_staticInstance(instance),
 	  m_externals(0), m_internals(0), m_connections(NULL), m_ordinal(ordinal)
     {}
 
     void Implementation::
-    setConnection(OCPI::Util::Port &myPort, Implementation *otherImpl,
-		  OCPI::Util::Port *otherPort) {
+    setConnection(OU::Port &myPort, Implementation *otherImpl,
+		  OU::Port *otherPort) {
       if (otherImpl) {
 	m_internals |= 1 << myPort.m_ordinal;
 	if (!m_connections)
@@ -468,7 +468,7 @@ namespace OCPI {
       }
       return false;
     }
-    Implementation *Artifact::addImplementation(OU::Implementation &metaImpl, ezxml_t staticInstance) {
+    Implementation *Artifact::addImplementation(OU::Worker &metaImpl, ezxml_t staticInstance) {
       Implementation *impl = new Implementation(*this, metaImpl, staticInstance, m_nWorkers++);
       // Record in the artifact's mapping
       m_workers.insert(WorkerMapPair(metaImpl.specName().c_str(), impl));
@@ -487,14 +487,14 @@ namespace OCPI {
       Attributes::parse(m_xml);
       // Loop over all the implementations
       m_nImplementations = OE::countChildren(m_xml, "worker");
-      OU::Implementation *metaImpl = m_metaImplementations = new OU::Implementation[m_nImplementations];
+      OU::Worker *metaImpl = m_metaImplementations = new OU::Worker[m_nImplementations];
       typedef std::map<const char*, Implementation *, OU::ConstCharComp> InstanceMap;
       typedef InstanceMap::iterator InstanceIter;
       InstanceMap instances; // record static instances for connection tracking
       unsigned n = 0;
       for (ezxml_t w = ezxml_cchild(m_xml, "worker"); w; w = ezxml_next(w), metaImpl++, n++) {
 	metaImpl->m_ordinal = n;
-	const char *err = metaImpl->parse(w, *this);
+	const char *err = metaImpl->parse(w, this);
 	if (err)
 	  throw OU::Error("Error processing implementation metadata for %s: %s",
 			  name().c_str(), err);
@@ -524,8 +524,8 @@ namespace OCPI {
 	Implementation
 	  *fromImpl = fromI == instances.end() ? NULL : fromI->second,
 	  *toImpl = toI == instances.end() ? NULL : toI->second;
-	if (fromImpl && !(fromP = fromImpl->m_metadataImpl.findPort(out)) ||
-	    toImpl && !(toP = toImpl->m_metadataImpl.findPort(in)))
+	if (fromImpl && !(fromP = fromImpl->m_metadataImpl.findMetaPort(out)) ||
+	    toImpl && !(toP = toImpl->m_metadataImpl.findMetaPort(in)))
 	  throw OU::Error("Invalid artifact XML: \"to\" or \"from\" port not found for connection");
 	if (fromImpl) {
 	  fromImpl->setConnection(*fromP, toImpl, toP);

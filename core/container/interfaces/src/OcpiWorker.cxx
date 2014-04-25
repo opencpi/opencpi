@@ -45,26 +45,28 @@
 
 namespace OA = OCPI::API;
 namespace OU = OCPI::Util;
-namespace OM = OCPI::Metadata;
 namespace OCPI {
   namespace Container {
     Controllable::Controllable()
-      : m_state(EXISTS), m_controlMask(0) {
+      : m_state(OU::Worker::EXISTS), m_controlMask(0) {
     }
     void Controllable::setControlOperations(const char *ops) {
       if (ops) {
 #define CONTROL_OP(x, c, t, s1, s2, s3, s4)		\
 	if (strstr(ops, #x))				\
-	  m_controlMask |= 1 << OU::Op##c;
+	  m_controlMask |= 1 << OU::Worker::Op##c;
 	OCPI_CONTROL_OPS
 #undef CONTROL_OP
       }
     }
 
     Worker::Worker(Artifact *art, ezxml_t impl, ezxml_t inst, const OA::PValue *) 
-      : OM::Worker::Worker(impl),
+      : OU::Worker::Worker(),
 	m_artifact(art), m_xml(impl), m_instXml(inst), m_workerMutex(true)
     {
+      const char *err = parse(impl);
+      if (err)
+	throw OU::Error("Error parsing worker metadata: %s", err);
       setControlOperations(ezxml_cattr(impl, "controlOperations"));
       if (impl)
 	m_implTag = ezxml_cattr(impl, "name");
@@ -83,9 +85,9 @@ namespace OCPI {
       Port *p = findPort(name);
       if (p)
         return *p;
-      OM::Port *metaPort = findMetaPort(name);
+      OU::Port *metaPort = findMetaPort(name);
       if (!metaPort)
-        throw ApiError("no port found with name \"", name, "\"", NULL);
+        throw OU::Error("no port found with name \"%s\"", name);
       return createPort(*metaPort, props);
     }
     OA::PropertyInfo & Worker::setupProperty(const char *name, 
@@ -175,7 +177,7 @@ namespace OCPI {
     bool Worker::getProperty(unsigned ordinal, std::string &name, std::string &value,
 			     bool *unreadablep, bool hex) {
       unsigned nProps;
-      OU::Property *props = getProperties(nProps);
+      OU::Property *props = properties(nProps);
       if (ordinal >= nProps)
 	return false;
       OU::Property &p = props[ordinal];
@@ -274,36 +276,30 @@ namespace OCPI {
     // since the container might want to know anyway, even if the
     // worker doesn't have an implementation
 #define CONTROL_OP(x, c, t, s1, s2, s3, s4)	\
-    void Worker::x() { controlOp(OU::Op##c); }
+    void Worker::x() { controlOp(OU::Worker::Op##c); }
     OCPI_CONTROL_OPS
 #undef CONTROL_OP
 
     struct ControlTransition {
-      ControlState valid[4];
-      ControlState next;
+      OU::Worker::ControlState valid[4];
+      OU::Worker::ControlState next;
     } controlTransitions[] = {
 #define CONTROL_OP(x, c, t, s1, s2, s3, s4)	\
-      {{s1, s2, s3, s4}, t},
+      {{OU::Worker::s1, OU::Worker::s2, OU::Worker::s3, OU::Worker::s4}, OU::Worker::t},
 	OCPI_CONTROL_OPS
 #undef CONTROL_OP
     };
-    const char *controlStateNames[] = {
-#define CONTROL_STATE(s) #s,
-      OCPI_CONTROL_STATES
-#undef CONTROL_STATE
-      NULL
-    };      
 
-    bool Worker::controlOp(OU::ControlOperation op) {
+    bool Worker::controlOp(OU::Worker::ControlOperation op) {
       OU::AutoMutex guard (m_workerMutex, true);
       ControlState cs = getControlState();
       ControlTransition ct = controlTransitions[op];
       // Special case starting and stopping after finished
-      if (cs == FINISHED && (op == OU::OpStop || op == OU::OpStart))
+      if (cs == OU::Worker::FINISHED && (op == OU::Worker::OpStop || op == OU::Worker::OpStart))
 	return true;
       // If we are already in the desired state, just ignore it so that
       // Neither workers not containers need to deal with this
-      if (ct.next != NONE && cs == ct.next)
+      if (ct.next != OU::Worker::NONE && cs == ct.next)
 	return true;
       if (cs == ct.valid[0] ||
 	  (ct.valid[1] != NONE && cs == ct.valid[1]) ||
@@ -315,9 +311,9 @@ namespace OCPI {
       } else
 	throw
 	  OU::Error("Control operation '%s' failed on worker '%s%s%s' in state: '%s'",
-		    OU::controlOpNames[op], implTag().c_str(),
+		    OU::Worker::s_controlOpNames[op], implTag().c_str(),
 		    instTag().empty() ? "" : "/", instTag().c_str(),
-		    controlStateNames[cs]);
+		    OU::Worker::s_controlStateNames[cs]);
       Application *a = application();
       if (a)
 	a->container().start();

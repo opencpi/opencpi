@@ -124,7 +124,7 @@ namespace OCPI {
       const std::string &os() const { return m_os; }
 
       virtual Container *nextContainer() = 0;
-      bool supportsImplementation(OCPI::Util::Implementation &);
+      bool supportsImplementation(OCPI::Util::Worker &);
       /**
          @brief
          createApplication

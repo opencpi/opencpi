@@ -104,7 +104,7 @@ namespace OCPI {
 #endif
     }
 
-    bool Container::supportsImplementation(OU::Implementation &i) {
+    bool Container::supportsImplementation(OU::Worker &i) {
       ocpiDebug("supports: %u %s/%s %s/%s %s/%s", m_ordinal,
 		m_model.c_str(), i.model().c_str(),
 		m_os.c_str(), i.attributes().m_os.c_str(),

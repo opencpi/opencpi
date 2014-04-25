@@ -98,7 +98,7 @@ namespace OCPI {
     void Manager::shutdown() {
       deleteChildren();
     }
-    bool Manager::findContainersX(Callback &cb, OU::Implementation &i, const char *name) {
+    bool Manager::findContainersX(Callback &cb, OU::Worker &i, const char *name) {
       parent().configureOnce();
       for (Driver *d = firstChild(); d; d = d->nextChild())
 	for (Container *c = d->firstContainer(); c; c = c->nextContainer())

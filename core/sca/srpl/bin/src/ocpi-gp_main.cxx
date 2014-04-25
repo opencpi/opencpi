@@ -54,7 +54,6 @@
 #include <OcpiStringifyCorbaException.h>
 #include <OcpiCORBAUtilNameServiceBind.h>
 #include <OcpiUtilCommandLineConfiguration.h>
-#include "OcpiMetadataWorker.h"
 #include "Cp289GenericProxy.h"
 /*
  * ----------------------------------------------------------------------

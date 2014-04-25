@@ -90,8 +90,8 @@ namespace OCPI {
       } else
 	m_pfWorker = new WciControl(*this, "platform", "pf_i", 0, true);
       // Need to conditionalize this
-      if ((m_pfWorker->controlOperation(OU::OpInitialize, err)) ||
-	  (m_pfWorker->controlOperation(OU::OpStart, err))) {
+      if ((m_pfWorker->controlOperation(OU::Worker::OpInitialize, err)) ||
+	  (m_pfWorker->controlOperation(OU::Worker::OpStart, err))) {
 	// Compatibility hack
 	m_old = true;
 	err.clear();

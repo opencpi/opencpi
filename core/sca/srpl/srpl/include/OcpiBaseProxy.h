@@ -62,7 +62,6 @@
 #include <CF_s.h>
 #include <OcpiOsMutex.h>
 #include <OcpiLoggerLogger.h>
-#include "OcpiMetadataWorker.h"
 #include "OcpiUtilImplementation.h"
 
 namespace OCPI {
@@ -199,7 +198,7 @@ OCPI_CONTROL_OPS
         throw (std::string) = 0;
 #endif
 
-      virtual const OCPI::Metadata::Property * getProperties (unsigned int & numProperties)
+      virtual const OCPI::Util::Property * getProperties (unsigned int & numProperties)
         throw () = 0;
 #ifdef TEST
 

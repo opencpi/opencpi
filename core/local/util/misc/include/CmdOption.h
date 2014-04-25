@@ -29,6 +29,7 @@
 
 #include <assert.h>
 #include "OcpiUtilDataTypes.h"
+#include "OcpiUtilValue.h"
 
 namespace OCPI {
   namespace Util {
@@ -36,10 +37,12 @@ namespace OCPI {
       char **m_beforeArgv, **m_argv; // what is left after options
     protected:
       Member *m_options;
-      Value *m_values;
+      bool *m_seen;
+      const char **m_defaults;
+      //      Value *m_values;
       unsigned m_nOptions;
       const char *m_error, *m_help;
-      BaseCommandOptions(Member *members, unsigned nMembers, const char *help);
+      BaseCommandOptions(Member *members, unsigned nMembers, const char *help, const char **defaults);
       const char *setError(const char *);
       const char *doValue(Member &m, const char *value, char **&argv);
     public:
@@ -71,11 +74,12 @@ namespace {
      CMD_OPTION_LIMIT_
     };
     static OCPI::Util::Member s_options[CMD_OPTION_LIMIT_];
+    static const char *s_defaults[CMD_OPTION_LIMIT_];
 #undef  CMD_OPTION_S
     //    static OCPI::Util::Value s_values[CMD_OPTION_LIMIT_];
   public:
 #define CMD_OPTION(n,b,t,v,d)						\
-    OCPI::API::t n() const { return m_values[Option_##n].m_##t; }
+    OCPI::API::t n() const { return m_options[Option_##n].m_default->m_##t; }
 #define CMD_OPTION_S(n,b,t,v,d)		   \
     OCPI::API::t *n(size_t &num) const {                         \
       OCPI::Util::Value *val_ = m_options[Option_##n].m_default; \
@@ -89,15 +93,20 @@ namespace {
 #undef CMD_OPTION
 #undef CMD_OPTION_S
     OCPI_OPTIONS_CLASS_NAME()
-      : BaseCommandOptions(s_options, CMD_OPTION_LIMIT_, OCPI_OPTIONS_HELP) {
-    }
-  } OCPI_OPTIONS_NAME;
+      : BaseCommandOptions(s_options, CMD_OPTION_LIMIT_, OCPI_OPTIONS_HELP, s_defaults) {
+    };
+  };
 #define CMD_OPTION(n,b,t,v,d) OCPI::Util::Member(#n,#b,d,OCPI::API::OCPI_##t,false,v),
 #define CMD_OPTION_S(n,b,t,v,d) OCPI::Util::Member(#n,#b,d,OCPI::API::OCPI_##t,true,v),
   OCPI::Util::Member OCPI_OPTIONS_CLASS_NAME::s_options[CMD_OPTION_LIMIT_] = { OCPI_OPTIONS };
 #undef CMD_OPTION
 #undef CMD_OPTION_S
-  //  OCPI::Util::Value OCPI_OPTIONS_CLASS_NAME::s_values[CMD_OPTION_LIMIT_];
+#define CMD_OPTION(n,b,t,v,d) v,
+#define CMD_OPTION_S(n,b,t,v,d) v,
+  const char *OCPI_OPTIONS_CLASS_NAME::s_defaults[CMD_OPTION_LIMIT_] = { OCPI_OPTIONS };
+#undef CMD_OPTION
+#undef CMD_OPTION_S
+  OCPI_OPTIONS_CLASS_NAME OCPI_OPTIONS_NAME;
 }
 #endif
 #endif

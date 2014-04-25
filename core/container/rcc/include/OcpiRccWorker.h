@@ -81,12 +81,12 @@ namespace OCPI {
       void advanceAll();
       void portError(std::string&error);
     public:
-      void setError(const char *fmt, va_list ap);
+      RCCResult setError(const char *fmt, va_list ap);
 
       Worker( Application & app, Artifact *art, const char *name,
 	      ezxml_t impl, ezxml_t inst, const OCPI::Util::PValue *wParams);
-      OCPI::Container::Port& createPort(const OCPI::Metadata::Port&, const OCPI::Util::PValue *props);
-      void controlOperation(OCPI::Util::ControlOperation);
+      OCPI::Container::Port& createPort(const OCPI::Util::Port&, const OCPI::Util::PValue *props);
+      void controlOperation(OCPI::Util::Worker::ControlOperation);
 
       // These property access methods are called when the fast path
       // is not enabled, either due to no MMIO or that the property can
@@ -141,12 +141,12 @@ namespace OCPI {
       uint64_t getProperty64(const OCPI::API::PropertyInfo &info) const;
 
 
-        virtual void prepareProperty(OCPI::Metadata::Property&,
+        virtual void prepareProperty(OCPI::Util::Property&,
 				     volatile void *&writeVaddr,
 				     const volatile void *&readVaddr);
 
       OCPI::Container::Port &  createInputPort(
-					       OCPI::Metadata::PortOrdinal   portId,      
+					       OCPI::Util::PortOrdinal   portId,      
                                               size_t   bufferCount,
                                               size_t   bufferSize, 
                                               const OCPI::Util::PValue*  props=NULL
@@ -155,7 +155,7 @@ namespace OCPI {
 
 
       OCPI::Container::Port &  createOutputPort( 
-						OCPI::Metadata::PortOrdinal   portId,     
+						OCPI::Util::PortOrdinal   portId,     
                                                size_t             bufferCount,
                                                size_t             bufferSize, 
                                                const OCPI::Util::PValue*               props=NULL
@@ -175,7 +175,7 @@ namespace OCPI {
       virtual ~Worker();
 
 
-      std::list<OCPI::Metadata::Port*> m_testPmds;
+      std::list<OCPI::Util::Port*> m_testPmds;
     private:
       void initializeContext();
 
@@ -215,7 +215,7 @@ namespace OCPI {
       OCPI::DataTransport::Transport &m_transport;
 
       // Override the port data based on hardcoded requirements from the worker
-      void overRidePortInfo( OCPI::Metadata::Port & portData );
+      void overRidePortInfo( OCPI::Util::Port & portData );
 
       // Update a ports information (as a result of a connection)
       void portIsConnected( unsigned ordinal );

@@ -66,10 +66,8 @@
 #include <OcpiPValue.h>
 #include <OcpiUtilMisc.h>
 #include <OcpiParentChild.h>
-#include <OcpiMetadataWorker.h>
 #include <OcpiTimeEmitCategories.h>
 
-namespace OM = OCPI::Metadata;
 namespace OC = OCPI::Container;
 namespace OS = OCPI::OS;
 namespace OU = OCPI::Util;
@@ -151,13 +149,14 @@ write(size_t offset,
   memcpy( (char*)m_context->properties+offset, p_data, nBytes );
 }
 
-void Worker::
+RCCResult Worker::
 setError(const char *fmt, va_list ap) {
   if (m_errorString) {
     free(m_errorString);
     m_errorString = NULL;
   }
   vasprintf(&m_errorString, fmt, ap);
+  return RCC_ERROR;
 }
 
 Worker::
@@ -166,11 +165,10 @@ Worker::
   // FIXME - this sort of thing should be generic and be reused in portError
   if (enabled) {
     enabled = false;
-    controlOperation(OU::OpStop);
+    controlOperation(OU::Worker::OpStop);
   }
-  controlOperation(OU::OpRelease);
+  controlOperation(OU::Worker::OpRelease);
 #ifdef EM_PORT_COMPLETE
-    RCCDispatch* wd = m_dispatch;
     // If we have an event handler, we need to inform it about the timeout
     if ( m_runCondition && m_runCondition->timeout ) {
       if ( parent().m_transport->m_transportGlobal->getEventManager() ) {
@@ -191,14 +189,15 @@ Worker::
   if (m_errorString)
     free(m_errorString);
   while (!m_testPmds.empty()) {
-    OM::Port *pmd = m_testPmds.front();
+    OU::Port *pmd = m_testPmds.front();
     m_testPmds.pop_front();
     delete pmd;
   }
 }
 
+static RCCResult
+  rccSetError(const char *fmt, ...);
 static void
-  rccSetError(const char *fmt, ...),
   rccRelease(RCCBuffer *),
   rccSend(RCCPort *, RCCBuffer*, RCCOpCode op, size_t length),
   rccTake(RCCPort *,RCCBuffer *old_buffer, RCCBuffer *new_buffer);
@@ -207,12 +206,14 @@ static RCCBoolean
   rccAdvance(RCCPort *port, size_t maxlength),
   rccWait(RCCPort *, unsigned max, unsigned usecs);
 
-static void rccSetError(const char *fmt, ...)
+static RCCResult
+rccSetError(const char *fmt, ...)
 {
   va_list ap;
   va_start(ap, fmt);
-  ((Worker *)pthread_getspecific(OCPI::RCC::Driver::s_threadKey))->setError(fmt, ap);
+  RCCResult rc = ((Worker *)pthread_getspecific(OCPI::RCC::Driver::s_threadKey))->setError(fmt, ap);
   va_end(ap);
+  return rc;
 }
 
 static void rccRelease( RCCBuffer* buffer )
@@ -293,14 +294,14 @@ initializeContext()
   int mcount = idx;
 
   // check masks for bad bits
-  OM::Port *ports = getPorts(m_nPorts);
+  OU::Port *ports = this->ports(m_nPorts);
   if (m_nPorts) {
     if (m_nPorts != wd->numInputs + wd->numOutputs)
       throw OU::Error("metadata port count (%u) and dispatch port count (in: %u + out: %u) differ",
 		      m_nPorts, wd->numInputs, wd->numOutputs);
     RCCPortMask optional = 0;
     for (unsigned n = 0; n < m_nPorts; n++)
-      if (ports[n].optional)
+      if (ports[n].m_optional)
 	optional |= 1 << n;
     if (wd->optionallyConnectedPorts != optional)
       throw OU::Error("metadata optional ports (%x) and dispatch optional ports (%x) differ",
@@ -394,31 +395,31 @@ initializeContext()
 // Also called from createInputPort and createOutputPort locally
 OC::Port & 
 Worker::
-createPort(const OCPI::Metadata::Port& mp, const OCPI::Util::PValue *params)
+createPort(const OU::Port& mp, const OCPI::Util::PValue *params)
 {
   TRACE(" OCPI::RCC::Worker::createPort()");
-  if ( mp.minBufferCount == 0)
+  if ( mp.m_minBufferCount == 0)
     throw OU::EmbeddedException( OU::BAD_PORT_CONFIGURATION, "0 buffer count",
 				 OU::ApplicationRecoverable);
   OU::AutoMutex guard (m_mutex);
-  if (mp.ordinal >= m_dispatch->numInputs + m_dispatch->numOutputs)
+  if (mp.m_ordinal >= m_dispatch->numInputs + m_dispatch->numOutputs)
     throw OU::EmbeddedException(OU::PORT_NOT_FOUND,
 				"Port id exceeds port count", OU::ApplicationFatal);
-  if (mp.ordinal > 32)
+  if (mp.m_ordinal > 32)
     throw OU::EmbeddedException(OU::PORT_NOT_FOUND,
 				"Port id exceeds max port count of 32", OU::ApplicationFatal);
   // If the worker binary has port info, check it against the metadata for consistency
   if (m_dispatch->portInfo)
     for (RCCPortInfo* pi = m_dispatch->portInfo; pi->port != RCC_NO_ORDINAL; pi++)
-      if (pi->port == mp.ordinal) {
+      if (pi->port == mp.m_ordinal) {
         ocpiDebug("Worker PortInfo for port %d, bc,s: %d,%zu, metadata is %zu,%zu",
-	       mp.ordinal, pi->minBuffers, pi->maxLength, mp.minBufferCount, mp.m_minBufferSize);
-	if (pi->minBuffers > mp.minBufferCount) // bad: worker needs more than metadata   
+	       mp.m_ordinal, pi->minBuffers, pi->maxLength, mp.m_minBufferCount, mp.m_minBufferSize);
+	if (pi->minBuffers > mp.m_minBufferCount) // bad: worker needs more than metadata   
 	  throw OU::EmbeddedException(OU::PORT_NOT_FOUND,
 				      "Worker metadata inconsistent with RCC PortInfo",
 				      OU::ContainerFatal);
       }
-  if (mp.provider) { // input
+  if (mp.m_provider) { // input
     if (++targetPortCount > m_dispatch->numInputs)
       throw OU::EmbeddedException(OU::PORT_NOT_FOUND,
 				  "Target Port count exceeds configuration", OU::ApplicationFatal);
@@ -427,7 +428,7 @@ createPort(const OCPI::Metadata::Port& mp, const OCPI::Util::PValue *params)
 				"Source Port count exceeds configuration", OU::ApplicationFatal);
   Port *port;
   try {
-    port = new Port(*this, mp, params, m_context->ports[mp.ordinal]);
+    port = new Port(*this, mp, params, m_context->ports[mp.m_ordinal]);
   }
   catch(std::bad_alloc) {
     throw OU::EmbeddedException( OU::NO_MORE_MEMORY, "new", OU::ContainerFatal);
@@ -435,15 +436,15 @@ createPort(const OCPI::Metadata::Port& mp, const OCPI::Util::PValue *params)
   // We know the metadata is more contrained than port info
   // FIXME: RccPort Object should know about its C RCCPort and do this itself
   // FIXME: this can change on connections
-  m_context->ports[mp.ordinal].current.maxLength = port->getData().data.desc.dataBufferSize;
-  m_context->ports[mp.ordinal].containerPort = port;
+  m_context->ports[mp.m_ordinal].current.maxLength = port->getData().data.desc.dataBufferSize;
+  m_context->ports[mp.m_ordinal].containerPort = port;
 
 #if 0
-  if (mp.provider) { // input
-    targetPorts.insertToPosition(port, mp.ordinal);    
+  if (mp.m_provider) { // input
+    targetPorts.insertToPosition(port, mp.m_ordinal);    
   } else            // output
     // Defer the real work until the port is connected.
-    sourcePorts.insertToPosition(port, mp.ordinal);
+    sourcePorts.insertToPosition(port, mp.m_ordinal);
 #endif
 
   return *port;
@@ -454,7 +455,7 @@ createPort(const OCPI::Metadata::Port& mp, const OCPI::Util::PValue *params)
 // We add the explicitly specified buffer count and size to the
 // list of properties.
 static  OC::Port &
-createTestPort( Worker *w, OM::PortOrdinal portId,
+createTestPort( Worker *w, OU::PortOrdinal portId,
                 size_t bufferCount,
                 size_t bufferSize, 
 		bool isProvider,
@@ -473,19 +474,19 @@ createTestPort( Worker *w, OM::PortOrdinal portId,
     myProps[i++] = OA::PVULong("bufferSize", bufferSize);
   myProps[i] = OA::PVEnd;
 #endif
-  OM::Port *pmd = new OM::Port;;
-  pmd->name = isProvider ? "unnamed input" : "unnamed output";
-  pmd->ordinal = portId;
-  pmd->provider = isProvider;
-  pmd->bufferSize = bufferSize;
-  pmd->minBufferCount = bufferCount;
+  OU::Port *pmd = new OU::Port;;
+  pmd->m_name = isProvider ? "unnamed input" : "unnamed output";
+  pmd->m_ordinal = portId;
+  pmd->m_provider = isProvider;
+  pmd->m_bufferSize = bufferSize;
+  pmd->m_minBufferCount = bufferCount;
   w->m_testPmds.push_back(pmd);
   return w->createPort(*pmd, props);
 }
  OC::Port &
 Worker::
 createOutputPort( 
-                 OM::PortOrdinal     portId,
+                 OU::PortOrdinal     portId,
                  size_t    bufferCount,
                  size_t    bufferSize, 
                  const OU::PValue*              props            
@@ -503,7 +504,7 @@ createOutputPort(
 OC::Port &
 Worker::
 createInputPort( 
-		OM::PortOrdinal    portId,   
+		OU::PortOrdinal    portId,   
                  size_t   bufferCount,
                  size_t   bufferSize, 
                  const OU::PValue*             props            
@@ -527,15 +528,15 @@ void
 Worker::
 portError(std::string &error) {
   enabled = false;
-  controlOperation(OU::OpStop);
-  controlOperation(OU::OpRelease);
-  setControlState(OC::UNUSABLE);
+  controlOperation(OU::Worker::OpStop);
+  controlOperation(OU::Worker::OpRelease);
+  setControlState(OU::Worker::UNUSABLE);
   ocpiBad("Worker %s received port error: %s", name().c_str(), error.c_str());
 }
 
 void 
 Worker::
-prepareProperty(OM::Property& md , 
+prepareProperty(OU::Property& md , 
 		volatile void *&writeVaddr,
 		const volatile void *&readVaddr)
 {
@@ -631,7 +632,7 @@ void Worker::run(bool &anyone_run) {
 
     // If the worker has defined a port method, we will call it instead of the run method
     // for each port that has one [FIXME should these just run if the port is ready in any case?]
-    OM::PortOrdinal pord = 0;
+    OU::PortOrdinal pord = 0;
     bool execute_run = true;
     for (uint32_t mtest = 1; mtest < readyMask; mtest <<= 1, pord++) {
       if (mtest & readyMask &&
@@ -642,7 +643,7 @@ void Worker::run(bool &anyone_run) {
 					     RCC_OK) != RCC_OK) {
 	  enabled = false;
 	  // FIXME: do anything with timers?  release?
-	  setControlState(OC::UNUSABLE);
+	  setControlState(OU::Worker::UNUSABLE);
 	}
       }
     }
@@ -679,7 +680,7 @@ void Worker::run(bool &anyone_run) {
 	    runConditionSS |= m_runCondition->portMasks[n];
       }
       // The state might have changed behind our back: e.g. in port exceptions
-      if (getState() != OC::UNUSABLE)
+      if (getState() != OU::Worker::UNUSABLE)
       switch ( rc ) {
       case RCC_ADVANCE:
 	advanceAll();
@@ -689,7 +690,7 @@ void Worker::run(bool &anyone_run) {
       case RCC_DONE:
 	// FIXME:  release all current buffers
 	enabled = false;
-	setControlState(OC::FINISHED);
+	setControlState(OU::Worker::FINISHED);
 	break;
       case RCC_OK:
 	runTimer.stop();
@@ -698,7 +699,7 @@ void Worker::run(bool &anyone_run) {
 	break;
       default:
 	enabled = false;
-	setControlState(OC::UNUSABLE);
+	setControlState(OU::Worker::UNUSABLE);
 	runTimer.stop();
       }
       checkDeadLock();
@@ -719,15 +720,16 @@ void Worker::run(bool &anyone_run) {
      }
 
 // Note we are already under a mutex here
-void Worker::controlOperation(OU::ControlOperation op) {
+  void Worker::controlOperation(OU::Worker::ControlOperation op) {
   RCCResult rc = RCC_OK;
   OU::AutoMutex guard (mutex(), true);
+  pthread_setspecific(OCPI::RCC::Driver::s_threadKey, this);
   switch (op) {
-  case OU::OpInitialize:
+  case OU::Worker::OpInitialize:
     if (m_dispatch->initialize)
       rc = m_dispatch->initialize(m_context);
     break;
-  case OU::OpStart:
+  case OU::Worker::OpStart:
     {
     // If a worker gets started before all of its required ports are created: error
       RCCPortMask mandatory = ~(-1 << m_nPorts) & ~m_dispatch->optionallyConnectedPorts;
@@ -761,7 +763,7 @@ void Worker::controlOperation(OU::ControlOperation op) {
       runTimer.start();// FIXME: this this right for re-start too?
     }
     break;
-  case OU::OpStop:
+  case OU::Worker::OpStop:
     // If the worker says that stop failed, we're not stopped.
     if (m_dispatch->stop &&
 	(rc = m_dispatch->stop(m_context)) != RCC_OK)
@@ -771,10 +773,10 @@ void Worker::controlOperation(OU::ControlOperation op) {
       runTimer.stop();
       runTimer.reset();
     }
-    setControlState(OC::SUSPENDED);
+    setControlState(OU::Worker::SUSPENDED);
     break;
     // like stop, except don't call stop
-  case OU::OpRelease:
+  case OU::Worker::OpRelease:
     if (enabled) {
       enabled = false;
       runTimer.stop();
@@ -782,9 +784,9 @@ void Worker::controlOperation(OU::ControlOperation op) {
     }
     if (m_dispatch->release)
       rc = m_dispatch->release(m_context);
-    setControlState(OC::UNUSABLE);
+    setControlState(OU::Worker::UNUSABLE);
     break;
-  case OU::OpTest:
+  case OU::Worker::OpTest:
     if (m_dispatch->test)
       rc = m_dispatch->test(m_context);
     else
@@ -792,25 +794,27 @@ void Worker::controlOperation(OU::ControlOperation op) {
 				   "Worker has no test implementation",
 				   OU::ApplicationRecoverable);
     break;
-  case OU::OpBeforeQuery:
+  case OU::Worker::OpBeforeQuery:
     if (m_dispatch->beforeQuery)
       rc = m_dispatch->beforeQuery(m_context);
     break;
-  case OU::OpAfterConfigure:
+  case OU::Worker::OpAfterConfigure:
     if (m_dispatch->afterConfigure)
       rc = m_dispatch->afterConfigure(m_context);
-  case OU::OpsLimit:
+  case OU::Worker::OpsLimit:
     break;
   }
-  char *err = m_context->errorString ? m_context->errorString : m_errorString;
+  const char *err = m_context->errorString ? m_context->errorString : m_errorString;
+  std::string serr;
   if (err) {
-    ocpiInfo("Worker %s produced error during %s control operation: %s",
-	     name().c_str(), OU::controlOpNames[op], err);
+    OU::format(serr, "Worker '%s' produced error during the '%s' control operation: %s",
+	       name().c_str(), OU::Worker::s_controlOpNames[op], err);
     m_context->errorString = NULL;
     if (m_errorString) {
       free(m_errorString);
       m_errorString = NULL;
     }
+    err = serr.c_str();
   }
   switch (rc) {
   case RCC_OK:
@@ -821,7 +825,7 @@ void Worker::controlOperation(OU::ControlOperation op) {
     break;
   case RCC_FATAL:
     enabled = false;
-    setControlState(OC::UNUSABLE);
+    setControlState(OU::Worker::UNUSABLE);
     throw OU::EmbeddedException( OU::WORKER_FATAL, err,
 				 OU::ApplicationFatal);
     break;

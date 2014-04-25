@@ -14,14 +14,16 @@ namespace OCPI {
   namespace Util {
     namespace OA = OCPI::API;
     BaseCommandOptions::
-    BaseCommandOptions(Member *members, unsigned nMembers, const char *help)
-      : m_options(members), m_values(new Value[nMembers]), m_nOptions(nMembers), m_error(NULL),
-	m_help(help)
+    BaseCommandOptions(Member *members, unsigned nMembers, const char *help, const char **defaults)
+      : m_options(members), m_seen(new bool[nMembers]), m_defaults(defaults),
+        m_nOptions(nMembers), m_error(NULL), m_help(help)
     {
-      Value *v = m_values;
       Member *m = members;
-      for (unsigned n = 0; n < m_nOptions; n++, v++, m++)
-	v->setType(*m);
+      for (unsigned n = 0; n < m_nOptions; n++, m++) {
+	if (!m->m_default)
+	  m->m_default = new Value(*m);
+	m_seen[n] = false;
+      }
     }
     const char *BaseCommandOptions::
     setError(const char *err) {
@@ -31,14 +33,15 @@ namespace OCPI {
     }
     const char *BaseCommandOptions::
     doValue(Member &m, const char *argValue, char **&argv) {
-      Value &v = m_values[&m - m_options];
-      if (!m.m_isSequence && v.m_parsed)
+      Value &v = *m.m_default;
+      bool seen = m_seen[&m - m_options];
+      if (!m.m_isSequence && seen)
 	return setError(esprintf("Multiple '%s' options are present, which is not allowed", m.m_name.c_str()));
+      m_seen[&m - m_options] = true;
       if (!m.m_isSequence && m.m_baseType == OA::OCPI_Bool) {
 	if (argValue)
 	  return setError(esprintf("Extraneous value found in option: '%s'", *argv));
 	v.m_Bool = m.m_default ? m.m_default->m_Bool : true;
-	v.m_parsed = true;
       } else {
 	if (!argValue) {
 	  if (!argv[1])
@@ -47,7 +50,7 @@ namespace OCPI {
 	  argv++;
 	}
 	const char *err;
-	if ((err = v.parse(argValue, NULL, v.m_parsed)))
+	if ((err = v.parse(argValue, NULL, seen)))
 	  return setError(esprintf("When parsing option '%s', value '%s' invalid: %s",
 				   *argv, argValue, err));
       }
@@ -100,9 +103,9 @@ namespace OCPI {
       if (debug) {
 	Member *m = m_options;
 	for (unsigned n = 0; n < m_nOptions; n++, m++)
-	  if (m_values[n].m_parsed) {
+	  if (m->m_default->m_parsed) {
 	    std::string val;
-	    m_values[n].unparse(val);
+	    m->m_default->unparse(val);
 	    fprintf(stderr, "%s: %s\n", m->m_name.c_str(), val.c_str());
 	  }
       }
@@ -131,11 +134,15 @@ namespace OCPI {
 	  width = m->m_name.size();
       m = m_options;
       fprintf(stderr, "  %-*s Letter  Datatype  Multiple? Description\n", (int)width, "Long name");
-      for (unsigned n = 0; n < m_nOptions; n++, m++)
-	fprintf(stderr, "  %-*s   %s      %-8s   %s     %s\n", (int)width, m->m_name.c_str(),
+      for (unsigned n = 0; n < m_nOptions; n++, m++) {
+	fprintf(stderr, "  %-*s   %s      %-8s   %s     %s.", (int)width, m->m_name.c_str(),
 		m->m_abbrev.size() ? m->m_abbrev.c_str() : "<none>",
 		baseTypeNames[m->m_baseType],
 		m->m_isSequence ? "Yes" : "No ", m->m_description.c_str());
+	if (m_defaults[n])
+	  fprintf(stderr, "  Default: %s", m_defaults[n]);
+	fprintf(stderr, "\n");
+      }
       fprintf(stderr,
 	      "Long options are of the form:   --<long-name>[=<value>]\n"
 	      "Short options are of the form:  -<letter>[<value>] or -<letter>  <value>\n"

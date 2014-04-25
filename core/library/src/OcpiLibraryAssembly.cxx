@@ -240,12 +240,12 @@ namespace OCPI {
       for (OU::Assembly::ConnectionsIter ci = m_connections.begin(); ci != m_connections.end(); ci++) {
 	const OU::Assembly::Connection &c = *ci;
 	if (c.m_ports.size() == 2) {
-	  const OU::Implementation // implementations on both sides of the connection
+	  const OU::Worker // implementations on both sides of the connection
 	    &i0 = m_candidates[c.m_ports.front().m_instance][0].impl->m_metadataImpl,
 	    &i1 = m_candidates[c.m_ports.back().m_instance][0].impl->m_metadataImpl;
 	  OU::Port // ports on both sides of the connection
-	    *ap0 = i0.findPort(c.m_ports.front().m_name),
-	    *ap1 = i1.findPort(c.m_ports.back().m_name);
+	    *ap0 = i0.findMetaPort(c.m_ports.front().m_name),
+	    *ap1 = i1.findMetaPort(c.m_ports.back().m_name);
 	  if (!ap0 || !ap1)
 	    throw OU::Error("Port name (\"%s\") in connection does not match any port in implementation",
 			    (ap0 ? c.m_ports.back() : c.m_ports.front()).m_name.c_str());
@@ -275,7 +275,7 @@ namespace OCPI {
 		  const OU::Assembly::Port &ap, unsigned port) {
       const OU::Port
 	&p = impl.m_metadataImpl.port(port),
-	&other = *otherImpl.m_metadataImpl.findPort(ap.m_connectedPort->m_name);
+	&other = *otherImpl.m_metadataImpl.findMetaPort(ap.m_connectedPort->m_name);
       if (impl.m_internals & (1 << port)) {
 	// This port is preconnected and the other port is not preconnected to us: we're incompatible
 	if (!(otherImpl.m_internals & (1 << other.m_ordinal)) ||

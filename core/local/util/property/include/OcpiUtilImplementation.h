@@ -50,8 +50,8 @@
  
 */
 
-//  This file implements workerk metadata
-
+//  This file implements worker metadata
+// FIXME: rename this worker, not implementation
 #ifndef OCPI_UTIL_WORKER_H
 #define OCPI_UTIL_WORKER_H
 
@@ -73,8 +73,16 @@
   CONTROL_OP(test,           Test,           NONE,        INITIALIZED, NONE,        NONE,      NONE) \
   CONTROL_OP(beforeQuery,    BeforeQuery,    NONE,        INITIALIZED, OPERATING,   SUSPENDED, FINISHED) \
   CONTROL_OP(afterConfigure, AfterConfigure, NONE,        INITIALIZED, OPERATING,   SUSPENDED, NONE) \
-
   /**/
+#define OCPI_CONTROL_STATES \
+    CONTROL_STATE(EXISTS) \
+    CONTROL_STATE(INITIALIZED) \
+    CONTROL_STATE(OPERATING) \
+    CONTROL_STATE(SUSPENDED) \
+    CONTROL_STATE(FINISHED) \
+    CONTROL_STATE(UNUSABLE) \
+    CONTROL_STATE(NONE) \
+    /**/
 
 namespace OCPI {
   namespace Util {
@@ -111,7 +119,7 @@ namespace OCPI {
 
     // This class represents what we know, generically, about a component implementation
     // Currently there is no separate "spec" metadata - it is redundant in each implementation
-    class Implementation  : public IdentResolver {
+    class Worker : public IdentResolver {
       std::string m_specName, m_name, m_model;
       Attributes *m_attributes; // not a reference due to these being in arrays
       Port *m_ports;
@@ -125,13 +133,13 @@ namespace OCPI {
       Property *m_properties;
       ezxml_t m_xml;
       unsigned m_ordinal; // ordinal within artifact
-      Implementation();
-      ~Implementation();
+      Worker();
+      ~Worker();
       inline const std::string &model() const { return m_model; }
       inline const std::string &specName() const { return m_specName; }
       inline const std::string &name() const { return m_name; }
       inline const Attributes &attributes() const { return *m_attributes; }
-      const char *parse(ezxml_t xml, Attributes &attr);
+      const char *parse(ezxml_t xml, Attributes *attr = NULL);
       Property &findProperty(const char *id) const;
       unsigned whichProperty(const char *id) const;
       const char *getValue(const std::string &sym, ExprValue &val);
@@ -144,8 +152,8 @@ namespace OCPI {
         ocpiAssert(which < m_nProperties);
         return m_properties[which];
       }
-      inline Port *findPort(const std::string &id) const { return findPort(id.c_str()); }
-      Port *findPort(const char *) const;
+      inline Port *findMetaPort(const std::string &id) const { return findMetaPort(id.c_str()); }
+      Port *findMetaPort(const char *) const;
       inline Port &port(unsigned long which) const
       {
         ocpiAssert(which < m_nPorts);
@@ -169,22 +177,20 @@ namespace OCPI {
       {
         return m_totalPropertySize;
       }
-      enum ControlState {
-        EXISTS,
-        INITIALIZED,
-        OPERATING,
-        SUSPENDED,
-        UNUSABLE,
-        NONE
-      };
-    };
-    enum ControlOperation {
+      enum ControlOperation {
 #define CONTROL_OP(x, c, t, s1, s2, s3, s4)  Op##c,
-      OCPI_CONTROL_OPS
+	OCPI_CONTROL_OPS
 #undef CONTROL_OP
-      OpsLimit
+	OpsLimit
+      };
+      enum ControlState {
+#define CONTROL_STATE(s) s,
+	OCPI_CONTROL_STATES
+#undef CONTROL_STATE
+      };
+      static const char *s_controlStateNames[];
+      static const char *s_controlOpNames[];
     };
-    extern const char *controlOpNames[];
   }
 }
 #endif

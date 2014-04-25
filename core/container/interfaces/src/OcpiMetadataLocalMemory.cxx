@@ -42,7 +42,6 @@
 #include "OcpiOsAssert.h"
 #include "OcpiUtilEzxml.h"
 #include "OcpiContainerMisc.h"
-#include "OcpiMetadataWorker.h"
 
 #include <iostream>
 

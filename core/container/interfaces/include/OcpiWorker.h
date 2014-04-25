@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -43,7 +42,6 @@
 #include "OcpiUtilProperty.h"
 #include "OcpiUtilImplementation.h"
 #include "OcpiContainerDataTypes.h"
-#include "OcpiMetadataWorker.h"
 #include "OcpiContainerApi.h"
 
 namespace OCPI {
@@ -52,35 +50,20 @@ namespace OCPI {
     class EmbeddedException;
   }
   namespace Container {
-#define OCPI_CONTROL_STATES \
-    CONTROL_STATE(EXISTS) \
-    CONTROL_STATE(INITIALIZED) \
-    CONTROL_STATE(OPERATING) \
-    CONTROL_STATE(SUSPENDED) \
-    CONTROL_STATE(FINISHED) \
-    CONTROL_STATE(UNUSABLE) \
-    CONTROL_STATE(NONE)
-
-      enum ControlState {
-#define CONTROL_STATE(s) s,
-        OCPI_CONTROL_STATES
-#undef CONTROL_STATE
-      };
-      extern const char *controlStateNames[];
     // This class is a small module of behavior used by workers, but available for other uses
     // Unfortunately, it is virtually inheritable (see HDL container's use of it).
     class Controllable {
     public:
-      inline ControlState getState() { return m_state; }
+      inline OCPI::Util::Worker::ControlState getState() { return m_state; }
       inline uint32_t getControlMask() { return m_controlMask; }
       inline void setControlMask(uint32_t mask) { m_controlMask = mask; }
-      inline void setControlState(ControlState state) {
+      inline void setControlState(OCPI::Util::Worker::ControlState state) {
 	m_state = state;
       }	
       // Default is that no polling is done
       virtual void checkControlState() {}
 
-      inline ControlState getControlState() {
+      inline OCPI::Util::Worker::ControlState getControlState() {
 	checkControlState();
 	return m_state;
       }	
@@ -89,7 +72,7 @@ namespace OCPI {
       void setControlOperations(const char *controlOperations);
       virtual ~Controllable(){}
     private:
-      ControlState m_state;
+      OCPI::Util::Worker::ControlState m_state;
       uint32_t m_controlMask;
     };
 
@@ -120,10 +103,10 @@ namespace OCPI {
       virtual uint16_t getProperty16(const OCPI::API::PropertyInfo &info) const = 0;
       virtual uint32_t getProperty32(const OCPI::API::PropertyInfo &info) const = 0;
       virtual uint64_t getProperty64(const OCPI::API::PropertyInfo &info) const = 0;
-      virtual void controlOperation(OCPI::Util::ControlOperation) = 0;
+      virtual void controlOperation(OCPI::Util::Worker::ControlOperation) = 0;
     };
     class Worker
-      : public OCPI::Metadata::Worker, public OCPI::API::Worker, virtual public Controllable,
+      : public OCPI::Util::Worker, public OCPI::API::Worker, virtual public Controllable,
 	virtual public WorkerControl
     {
 
@@ -139,7 +122,7 @@ namespace OCPI {
       bool beforeStart();
     protected:
       // Return true when ignored due to "ignored due to existing state"
-      bool controlOp(OCPI::Util::ControlOperation);
+      bool controlOp(OCPI::Util::Worker::ControlOperation);
       inline OCPI::OS::Mutex &mutex() { return m_workerMutex; }
       virtual Port *findPort(const char *name) = 0;
       inline const std::string &instTag() const { return m_instTag; }
@@ -159,7 +142,7 @@ namespace OCPI {
 				   volatile void *&m_writeVaddr,
 				   const volatile void *&m_readVaddr) = 0;
 #endif
-      virtual Port &createPort(const OCPI::Metadata::Port &metaport,
+      virtual Port &createPort(const OCPI::Util::Port &metaport,
 			       const OCPI::Util::PValue *props) = 0;
       virtual Worker *nextWorker() = 0;
       void setPropertyValue(const OCPI::API::Property &p, const OCPI::Util::Value &v);
@@ -198,13 +181,13 @@ namespace OCPI {
       virtual ~Worker();
       OCPI::API::Port &getPort(const char *name, const OCPI::API::PValue *props = NULL);
 
-      virtual Port & createOutputPort(OCPI::Metadata::PortOrdinal portId,
+      virtual Port & createOutputPort(OCPI::Util::PortOrdinal portId,
 				      size_t bufferCount,
 				      size_t bufferSize, 
                                       const OCPI::Util::PValue* props) 
         throw ( OCPI::Util::EmbeddedException ) = 0;
 
-      virtual Port & createInputPort(OCPI::Metadata::PortOrdinal portId,
+      virtual Port & createInputPort(OCPI::Util::PortOrdinal portId,
                                      size_t bufferCount,
                                      size_t bufferSize, 
                                      const OCPI::Util::PValue* props) 
@@ -215,7 +198,6 @@ namespace OCPI {
       void x();
     OCPI_CONTROL_OPS
 #undef CONTROL_OP
-    //      virtual void controlOperation(OCPI::Util::ControlOperation) = 0;
       virtual bool wait(OCPI::OS::Timer *t = NULL);
       bool isDone();
     };

@@ -1,6 +1,0 @@
-#!/bin/sh
-
-rm -f config.cache
-aclocal -I aclocal.d
-autoconf
-automake --foreign --add-missing

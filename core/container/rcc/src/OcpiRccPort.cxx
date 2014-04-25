@@ -59,9 +59,9 @@ namespace OCPI {
   namespace RCC {
 
     Port::
-    Port( Worker& w, const OCPI::Metadata::Port & pmd, const OCPI::Util::PValue *params, RCCPort &rp)
+    Port( Worker& w, const OU::Port & pmd, const OU::PValue *params, RCCPort &rp)
       :  OC::PortBase< Worker, Port, ExternalPort>
-	 (w, *this, pmd, pmd.provider,
+	 (w, *this, pmd, pmd.m_provider,
 	  (1 << OCPI::RDT::ActiveFlowControl) | (1 << OCPI::RDT::ActiveMessage),
 	  params),
 	 m_dtPort(NULL), m_localOther(NULL), //m_params(params),
@@ -81,8 +81,8 @@ namespace OCPI {
     }
 
     void Port::
-    connectURL(const char* url, const OCPI::Util::PValue *myProps,
-	       const OCPI::Util::PValue *otherProps)
+    connectURL(const char* url, const OU::PValue *myProps,
+	       const OU::PValue *otherProps)
     {
       setMode(OCPI::Container::Port::CON_TYPE_MESSAGE);
       
@@ -161,7 +161,7 @@ namespace OCPI {
       if (m_dtPort) {
 	std::string n = parent().implTag() + "_";
 	n += parent().instTag() + "_";
-	n +=  m_metaPort.name;
+	n +=  m_metaPort.m_name;
 	m_dtPort->setInstanceName( n.c_str() ); // FIXME: put this in the dt port constructor
 	parent().portIsConnected(ordinal());
       }
@@ -172,7 +172,7 @@ namespace OCPI {
       m_dtPort = parent().getTransport().createOutputPort(getData().data, input);
       std::string n = parent().implTag() + "_";
       n += parent().instTag() + "_";
-      n +=  m_metaPort.name;
+      n +=  m_metaPort.m_name;
       m_dtPort->setInstanceName( n.c_str() ); // FIXME: put this in the dt port constructor
       parent().portIsConnected(ordinal());
     }

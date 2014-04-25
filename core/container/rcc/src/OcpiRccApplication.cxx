@@ -207,13 +207,5 @@ run(DataTransfer::EventManager* event_manager, bool &more_to_do) {
   }
 }
 
-// We assume initialize is done properly on real workers...
-void Application::
-start() {
-  for (Worker *w = firstChild(); w; w = w->nextChild())
-    if (w->getState() != OC::EXISTS)
-      w->start();
-}
-
   }
 }

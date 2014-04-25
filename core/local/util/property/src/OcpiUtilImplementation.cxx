@@ -32,6 +32,8 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define __STDC_LIMIT_MACROS
+#include <stdint.h>
 #include <string.h>
 #include "OcpiOsAssert.h"
 #include "OcpiUtilMisc.h"
@@ -42,29 +44,29 @@ namespace OCPI {
   namespace Util {
 
     namespace OE = OCPI::Util::EzXml;
-    Implementation::Implementation()
+    Worker::Worker()
       : m_ports(0), m_memories(0), // m_tests(0), m_nTests(0), 
 	m_nPorts(0), m_nMemories(0),// size(0),
         m_totalPropertySize(0), m_nProperties(0), m_properties(0), m_xml(NULL)
     {}
 
-    Implementation::~Implementation() {
+    Worker::~Worker() {
       delete [] m_ports;
       delete [] m_properties;
       //      delete [] m_tests;
       delete [] m_memories;
     }
-    unsigned Implementation::whichProperty(const char *id) const {
+    unsigned Worker::whichProperty(const char *id) const {
       Property *p = m_properties;
       for (unsigned n=0; n < m_nProperties; n++, p++)
         if (!strcasecmp(p->m_name.c_str(), id))
           return n;
       throw Error("Unknown property: \"%s\" for worker \"%s\"", id, m_specName.c_str());
     }
-    Property &Implementation::findProperty(const char *id) const {
+    Property &Worker::findProperty(const char *id) const {
       return *(m_properties + whichProperty(id));
     }
-    Port *Implementation::findPort(const char *id) const {
+    Port *Worker::findMetaPort(const char *id) const {
       Port *p = m_ports;
       for (unsigned int n = m_nPorts; n; n--, p++)
         if (!strcasecmp(p->m_name.c_str(), id))
@@ -72,13 +74,13 @@ namespace OCPI {
       return NULL;
     }
 #if 0
-    Test &Implementation::findTest(unsigned int testId) const {
+    Test &Worker::findTest(unsigned int testId) const {
        (void)testId;
        ocpiAssert(0); return *m_tests;
     }
 #endif
-    const char *Implementation::parse(ezxml_t xml, Attributes &attr) {
-      m_attributes = &attr;
+    const char *Worker::parse(ezxml_t xml, Attributes *attr) {
+      m_attributes = attr;
       const char *err = OE::getRequiredString(xml, m_name, "name", "worker");
       if (err ||
 	  (err = OE::getRequiredString(xml, m_model, "model", "worker")))
@@ -97,12 +99,17 @@ namespace OCPI {
       Property *prop = m_properties;
       ezxml_t x;
       bool readableConfigs, writableConfigs, sub32Configs; // all unused
-      for (x = ezxml_cchild(xml, "property"); x; x = ezxml_next(x), prop++) {
+      for (x = ezxml_cchild(xml, "property"); x; x = ezxml_next(x), prop++)
         if ((err = prop->parse(x, readableConfigs, writableConfigs,
 			       sub32Configs, true, (unsigned)(prop - m_properties))))
           return esprintf("Invalid xml property description: %s", err);
-        m_totalPropertySize += prop->m_nBytes;
-      }
+      prop = m_properties;
+      size_t offset = 0;
+      uint64_t totalSize = 0;
+      for (unsigned n = 0; n < m_nProperties; n++, prop++)
+	prop->offset(offset, totalSize);
+      ocpiAssert(totalSize < UINT32_MAX);
+      m_totalPropertySize = OCPI_UTRUNCATE(size_t, totalSize);
       // Ports at this level are unidirectional? Or do we support the pairing at this point?
       unsigned n = 0;
       Port *p = m_ports;
@@ -120,17 +127,17 @@ namespace OCPI {
       return NULL;
     }
     // Get a property value from the metadata
-    const char *Implementation::getValue(const std::string &sym, ExprValue &val) {
+    const char *Worker::getValue(const std::string &sym, ExprValue &val) {
       // Our builtin symbols take precendence, but can be overridden with $
       if (sym == "model") {
 	val.isNumber = false;
 	val.string = m_model;
 	return NULL;
-      } else if (sym == "platform") {
+      } else if (sym == "platform" && m_attributes) {
 	val.isNumber = false;
 	val.string = m_attributes->m_platform;
 	return NULL;
-      } else if (sym == "os") {
+      } else if (sym == "os" && m_attributes) {
 	val.isNumber = false;
 	val.string = m_attributes->m_os;
 	return NULL;
@@ -191,12 +198,18 @@ namespace OCPI {
       validate();
     }
     void Attributes::validate() { }
-    const char *controlOpNames[] = {
+    const char *Worker::s_controlOpNames[] = {
 #define CONTROL_OP(x, c, t, s1, s2, s3, s4)  #x,
           OCPI_CONTROL_OPS
 #undef CONTROL_OP
 	  NULL
     };
+    const char *Worker::s_controlStateNames[] = {
+#define CONTROL_STATE(s) #s,
+      OCPI_CONTROL_STATES
+#undef CONTROL_STATE
+      NULL
+    };      
   }
 }
 

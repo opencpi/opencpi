@@ -53,12 +53,12 @@ namespace OCPI {
     public:
       Artifact &m_artifact;                 // FIXME this can be parent/child
       // This is the metadata description of the implementation, whether static instance or not
-      OCPI::Util::Implementation &m_metadataImpl;
+      OCPI::Util::Worker &m_metadataImpl;
       ezxml_t m_staticInstance;             // static instances of this implementation
       OCPI::Util::Port::Mask m_externals, m_internals;
       Connection *m_connections;
       unsigned m_ordinal;                   // ordinal of worker within artifact
-      Implementation(Artifact &art, OCPI::Util::Implementation &i, ezxml_t instance, unsigned ordinal);
+      Implementation(Artifact &art, OCPI::Util::Worker &i, ezxml_t instance, unsigned ordinal);
       // Does this implementation satify the selection criteria?  and if so, what is the score?
       //      bool satisfiesSelection(const char *selection, unsigned &score);
       bool getValue(const std::string &symbol, OCPI::Util::ExprValue &val);
@@ -77,7 +77,7 @@ namespace OCPI {
       ezxml_t m_xml;
       // A count and array of implementations found in the artifact, *not* static instances.
       unsigned m_nImplementations;
-      OCPI::Util::Implementation *m_metaImplementations; // this array 
+      OCPI::Util::Worker *m_metaImplementations; // this array 
       // A map for implementations (*including* static instances) in this artifact
       // Used for artifact-by-artifact searches (FIXME: obsolete?)
       WorkerMap m_workers;      // Map from spec name to implementations
@@ -85,7 +85,7 @@ namespace OCPI {
       unsigned m_nWorkers;
       Artifact();
       virtual ~Artifact();
-      Implementation *addImplementation(OCPI::Util::Implementation &metaImpl, ezxml_t staticInstance);
+      Implementation *addImplementation(OCPI::Util::Worker &metaImpl, ezxml_t staticInstance);
     public:
       void configure(ezxml_t x = NULL);
       //      bool evaluateWorkerSuitability( const OCPI::API::PValue *p, unsigned & score );

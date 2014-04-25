@@ -40,12 +40,15 @@ namespace OCPI {
   namespace Util {
   namespace OE = OCPI::Util::EzXml;
 
-    Port::Port(bool prov)
+    Port::
+    Port(bool prov)
       : m_ordinal(0), m_provider(prov), m_optional(false),
-	m_bidirectional(false), m_minBufferCount(1), m_bufferSize(0), m_xml(NULL) {
+	m_bidirectional(false), m_minBufferCount(1), m_bufferSize(0), m_xml(NULL),
+	m_worker(NULL) {
     }
 
-    const char *Port::parse(ezxml_t x, PortOrdinal ordinal) {
+    const char *Port::
+    parse(ezxml_t x, PortOrdinal ordinal) {
       const char *err = OE::getRequiredString(x, m_name, "name", "port");
       if (err)
 	return err;

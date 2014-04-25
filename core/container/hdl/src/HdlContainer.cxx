@@ -71,7 +71,6 @@
 namespace OA = OCPI::API;
 namespace OC = OCPI::Container;
 namespace OS = OCPI::OS;
-namespace OM = OCPI::Metadata;
 namespace OU = OCPI::Util;
 namespace OE = OCPI::Util::EzXml;
 namespace OD = OCPI::DataTransport;
@@ -198,7 +197,7 @@ namespace OCPI {
       ~Worker()
       {
       }
-      inline void controlOperation(OU::ControlOperation op) {
+      inline void controlOperation(OU::Worker::ControlOperation op) {
 	WciControl::controlOperation(op);
       }
 
@@ -212,7 +211,7 @@ namespace OCPI {
       void write(size_t, size_t, const void*) {
       }
 
-      OC::Port & createPort(const OM::Port &metaport, const OA::PValue *props);
+      OC::Port & createPort(const OU::Port &metaport, const OA::PValue *props);
 
       virtual void prepareProperty(OU::Property &mp,
 				   volatile void *&writeVaddr,
@@ -221,12 +220,12 @@ namespace OCPI {
       }
 
       OC::Port &
-      createOutputPort(OM::PortOrdinal portId,
+      createOutputPort(OU::PortOrdinal portId,
                        size_t bufferCount,
                        size_t bufferSize,
                        const OA::PValue* props) throw();
       OC::Port &
-      createInputPort(OM::PortOrdinal portId,
+      createInputPort(OU::PortOrdinal portId,
                       size_t bufferCount,
                       size_t bufferSize,
                       const OA::PValue* props) throw();
@@ -327,7 +326,7 @@ OCPI_DATA_TYPES
 
       Port(OCPI::HDL::Worker &w,
 	   const OA::PValue *params,
-           const OM::Port &mPort, // the parsed port metadata
+           const OU::Port &mPort, // the parsed port metadata
            ezxml_t connXml, // the xml connection for this port
            ezxml_t icwXml,  // the xml interconnect/infrastructure worker attached to this port if any
            ezxml_t icXml,   // the xml interconnect instance attached to this port if any
@@ -470,7 +469,9 @@ OCPI_DATA_TYPES
           return;
         if (myDesc.nBuffers *
             (OU::roundUp(myDesc.dataBufferSize, OCDP_LOCAL_BUFFER_ALIGN) + OCDP_METADATA_SIZE) > m_ocdpSize)
-          throw OC::ApiError("Requested buffer count and size won't fit in the OCDP's memory", 0);
+          throw OU::Error("Requested buffer count/size (%u/%u) on port '%s' of worker '%s' won't fit in the OCDP's memory (%u)",
+			  myDesc.nBuffers, myDesc.dataBufferSize, name().c_str(),
+			  parent().name().c_str(), m_ocdpSize);
         myDesc.dataBufferPitch = OCPI_UTRUNCATE(uint32_t, OU::roundUp(myDesc.dataBufferSize, OCDP_LOCAL_BUFFER_ALIGN));
         myDesc.metaDataBaseAddr =
           myDesc.dataBufferBaseAddr +
@@ -562,14 +563,14 @@ OCPI_DATA_TYPES
 				    OCDP_CONTROL(isProvider() ? OCDP_CONTROL_CONSUMER :
 						 OCDP_CONTROL_PRODUCER, myOcdpRole));
 	// We aren't a worker so someone needs to start us.
-	controlOperation(OU::OpInitialize);
+	controlOperation(OU::Worker::OpInitialize);
 	if (m_adapter) {
-	  m_adapter->controlOperation(OU::OpInitialize);
+	  m_adapter->controlOperation(OU::Worker::OpInitialize);
 	  if (m_hasAdapterConfig)
 	    m_adapter->m_properties.set32RegisterOffset(0, (uint32_t)m_adapterConfig);
-	  m_adapter->controlOperation(OU::OpStart);
+	  m_adapter->controlOperation(OU::Worker::OpStart);
 	}
-	controlOperation(OU::OpStart);
+	controlOperation(OU::Worker::OpStart);
 	return isProvider() ? NULL : &getData().data;
       }
       // Connection between two ports inside this container
@@ -611,9 +612,9 @@ OCPI_DATA_TYPES
     // The port may be bidirectional.  If so we need to defer its direction.
     // FIXME: share all this parsing with the OU::Implementation code etc.
     OC::Port &Worker::
-    createPort(const OM::Port &metaPort, const OA::PValue *props) {
-      const char *myName = metaPort.name;
-      bool isProvider = metaPort.provider;
+    createPort(const OU::Port &metaPort, const OA::PValue *props) {
+      const char *myName = metaPort.m_name.c_str();
+      bool isProvider = metaPort.m_provider;
       // Find connections attached to this port
       ezxml_t conn, ic = 0, icw = 0, ad = 0, adw = 0;
       for (conn = ezxml_cchild(myXml()->parent, "connection"); conn; conn = ezxml_next(conn)) {
@@ -701,7 +702,7 @@ OCPI_DATA_TYPES
     }
     // Here because these depend on Port
     OC::Port &Worker::
-    createOutputPort(OM::PortOrdinal portId,
+    createOutputPort(OU::PortOrdinal portId,
                      size_t bufferCount,
                      size_t bufferSize,
                      const OA::PValue* props) throw() {
@@ -709,7 +710,7 @@ OCPI_DATA_TYPES
       return *(Port *)0;//return *new Port(*this);
     }
     OC::Port &Worker::
-    createInputPort(OM::PortOrdinal portId,
+    createInputPort(OU::PortOrdinal portId,
                     size_t bufferCount,
                     size_t bufferSize,
                     const OA::PValue* props) throw() {

@@ -562,7 +562,7 @@ namespace OCPI {
 		    ai.m_name.c_str(), ai.m_specName.c_str());
 	    for (unsigned m = 0; m < i->m_nCandidates; m++) {
 	      const OL::Implementation &lImpl = *cs[m].impl;
-	      OU::Implementation &mImpl = lImpl.m_metadataImpl;
+	      OU::Worker &mImpl = lImpl.m_metadataImpl;
 	      fprintf(stderr, "  Name: %s, Model: %s, Platform: %s%s%s, File: %s\n",
 		      mImpl.name().c_str(),
 		      mImpl.model().c_str(),

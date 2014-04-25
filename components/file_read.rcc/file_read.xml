@@ -9,4 +9,5 @@ Properties:
 <RccImplementation controloperations="start,release">
   <xi:include href="file_read_spec.xml"/>
   <specproperty name="fileName" readable='true'/>
+  <specproperty name="suppressEOF" readable='true'/>
 </RccImplementation>

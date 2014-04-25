@@ -40,7 +40,7 @@
 #include "OcpiUtilSelfMutex.h"
 #include "OcpiPValue.h"
 #include "OcpiRDTInterface.h"
-#include "OcpiMetadataPort.h"
+#include "OcpiUtilPort.h"
 #include "OcpiContainerApi.h"
 
 namespace OCPI {
@@ -69,7 +69,7 @@ namespace OCPI {
     const unsigned BUFFER_ALIGNMENT = 16;
     class PortData
     {
-      OCPI::Metadata::PortOrdinal m_ordinal;
+      OCPI::Util::PortOrdinal m_ordinal;
       bool m_isProvider; // perhaps overriding bidirectional
       PortConnectionDesc *m_connectionData;
       PortConnectionDesc  connectionData;      // Port Connection Dependency data
@@ -81,26 +81,26 @@ namespace OCPI {
       inline bool isProvider() { return m_isProvider; }
       inline bool isOutput() {return !isProvider(); }
       inline bool isInput() {return isProvider(); }
-      inline OCPI::Metadata::PortOrdinal ordinal() { return m_ordinal; }
+      inline OCPI::Util::PortOrdinal ordinal() { return m_ordinal; }
       virtual inline PortConnectionDesc &  getData() {
 	return m_connectionData ? *m_connectionData : connectionData;
       }
-      PortData(const OCPI::Metadata::Port &mPort, bool isProvider, unsigned xferOptions,
+      PortData(const OCPI::Util::Port &mPort, bool isProvider, unsigned xferOptions,
 	       const OCPI::Util::PValue *params = NULL, PortConnectionDesc *desc = NULL);
-      void setPortParams(const OCPI::Metadata::Port &mPort, const OCPI::Util::PValue *params);
+      void setPortParams(const OCPI::Util::Port &mPort, const OCPI::Util::PValue *params);
     };
 
 
     // The class used by both ExternalPorts (not associated with a worker) and Ports (owned by worker)
     class BasicPort : public PortData, protected OCPI::Util::SelfRefMutex {
     public:
-      inline const OCPI::Metadata::Port &metaPort() const { return m_metaPort; }
+      inline const OCPI::Util::Port &metaPort() const { return m_metaPort; }
     protected:
 
       OCPI::RDT::Desc_t &myDesc; // convenience
-      const OCPI::Metadata::Port &m_metaPort;
+      const OCPI::Util::Port &m_metaPort;
 
-      BasicPort(const OCPI::Metadata::Port &mPort, bool isProvider, unsigned xferOptions,
+      BasicPort(const OCPI::Util::Port &mPort, bool isProvider, unsigned xferOptions,
 		OCPI::OS::Mutex &mutex,	const OCPI::Util::PValue *params, PortConnectionDesc *desc = NULL);
       virtual ~BasicPort();
     public:
@@ -125,7 +125,7 @@ namespace OCPI {
       std::string m_initialPortInfo;
       bool m_canBeExternal;
       // This is here so we own this storage while we pass back references.
-      Port(Container &container, const OCPI::Metadata::Port &mport, bool isProvider,
+      Port(Container &container, const OCPI::Util::Port &mport, bool isProvider,
 	   unsigned options, const OCPI::Util::PValue *params = NULL, PortConnectionDesc *desc = NULL);
       virtual ~Port(){}
       // Convenience navigation
@@ -284,10 +284,10 @@ namespace OCPI {
 	public OCPI::Util::Parent<Ext>,
         public Port {
     protected:
-      PortBase<Wrk,Prt,Ext>(Wrk &worker, Prt &prt, const OCPI::Metadata::Port &mport,
+      PortBase<Wrk,Prt,Ext>(Wrk &worker, Prt &prt, const OCPI::Util::Port &mport,
 			    bool isProvider, unsigned xferOptions,
 			    const OCPI::Util::PValue *params, PortConnectionDesc *desc = NULL)
-      : OCPI::Util::Child<Wrk,Prt,port>(worker, prt, mport.name),
+      : OCPI::Util::Child<Wrk,Prt,port>(worker, prt, mport.m_name.c_str()),
 	Port(worker.parent().container(), mport, isProvider, xferOptions, params, desc) {}
       inline Worker &worker() const { return OCPI::Util::Child<Wrk,Prt,port>::parent(); }
     public:

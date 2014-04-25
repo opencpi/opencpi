@@ -31,4 +31,5 @@ Properties:
   <!-- Readback status properties -->
   <property name='bytesRead' type='uLongLong' volatile='true'/>
   <property name='messagesWritten' type='uLongLong' volatile='true'/>
+  <property name='suppressEOF' type='bool' initial='true'/>
 </ComponentSpec>

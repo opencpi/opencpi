@@ -42,14 +42,13 @@
 namespace OCPI {
   namespace Container {
     namespace OA = OCPI::API;
-    namespace OM = OCPI::Metadata;
     namespace OU = OCPI::Util;
     namespace OD = OCPI::DataTransport;
     using namespace OCPI::RDT;
 
-    PortData::PortData(const OM::Port &mPort, bool isProvider, unsigned xferOptions,
+    PortData::PortData(const OU::Port &mPort, bool isProvider, unsigned xferOptions,
 		       const OU::PValue *params, PortConnectionDesc *desc)
-      : m_ordinal(mPort.ordinal), m_isProvider(isProvider), m_connectionData(desc)
+      : m_ordinal(mPort.m_ordinal), m_isProvider(isProvider), m_connectionData(desc)
     {
       Descriptors &d = getData().data;
       d.type = isProvider ? ConsumerDescT : ProducerDescT;
@@ -57,23 +56,25 @@ namespace OCPI {
       d.options = xferOptions;
       bzero((void *)&d.desc, sizeof(d.desc));
       d.desc.nBuffers =
-	(uint32_t)(DEFAULT_NBUFFERS > mPort.minBufferCount ? DEFAULT_NBUFFERS : mPort.minBufferCount);
-      if (!(d.desc.dataBufferSize = (uint32_t)mPort.bufferSize))
+	(uint32_t)(DEFAULT_NBUFFERS > mPort.m_minBufferCount ?
+		   DEFAULT_NBUFFERS : mPort.m_minBufferCount);
+      if (!(d.desc.dataBufferSize = (uint32_t)mPort.m_bufferSize))
 	d.desc.dataBufferSize = DEFAULT_BUFFER_SIZE;
       setPortParams(mPort, params);
     }
     // Set parameters for a port, whether at creation/construction time or later at connect time
-    void PortData::setPortParams(const OM::Port &mPort, const OU::PValue *params) {
+    void PortData::setPortParams(const OU::Port &mPort, const OU::PValue *params) {
       OA::ULong ul;
 
       if (OU::findULong(params, "bufferCount", ul))
-	if (ul < mPort.minBufferCount)
+	if (ul < mPort.m_minBufferCount)
 	  throw OU::Error("bufferCount is below worker's minimum");
         else
 	  getData().data.desc.nBuffers = ul;
       if (OU::findULong(params, "bufferSize", ul))
 	if (ul < mPort.m_minBufferSize)
-	  throw OU::Error("bufferSize is below worker's minimum");
+	  throw OU::Error("bufferSize %u is below worker's minimum: %zu",
+			  ul, mPort.m_minBufferSize);
         else
 	  getData().data.desc.dataBufferSize = ul;
       
@@ -93,13 +94,14 @@ namespace OCPI {
 	else
 	  throw OU::Error("xferRole property must be passive|active|flowcontrol|activeonly");
 	if (!(getData().data.options & (1 << role)))
-	  throw OU::Error("xferRole of \"%s\" not supported by port \"%s\"", s, mPort.name);
+	  throw OU::Error("xferRole of \"%s\" not supported by port \"%s\"",
+			  s, mPort.m_name.c_str());
 	getData().data.role = role;
 	getData().data.options |= (1 << OCPI::RDT::MandatedRole);
       }
     }
 
-    BasicPort::BasicPort(const OCPI::Metadata::Port & metaData, bool isProvider, unsigned options,
+    BasicPort::BasicPort(const OU::Port & metaData, bool isProvider, unsigned options,
 			 OS::Mutex &mutex, const OU::PValue *params, PortConnectionDesc *desc)
       : PortData(metaData, isProvider, options, params, desc), OU::SelfRefMutex(mutex),
 	myDesc(getData().data.desc), m_metaPort(metaData)
@@ -107,10 +109,10 @@ namespace OCPI {
     }
 
     BasicPort::~BasicPort(){}
-    void BasicPort::startConnect(const Descriptors */*other*/, const OCPI::Util::PValue *){} // default
+    void BasicPort::startConnect(const Descriptors */*other*/, const OU::PValue *){} // default
 
     // Convert PValues into descriptor values, with metadata constraint checking
-    void BasicPort::setConnectParams(const OCPI::Util::PValue *params) {
+    void BasicPort::setConnectParams(const OU::PValue *params) {
       setPortParams(m_metaPort, params);
       // There are no connection parameters (yet) other than those that can be provided
       // to ports before connection.
@@ -120,15 +122,15 @@ namespace OCPI {
     // This is still prior to receiving info from the other side, thus this is not necessarily
     // the final info.
     // FIXME: we should error check against bitstream-fixed parameters
-    void BasicPort::applyConnectParams(const Descriptors *other, const OCPI::Util::PValue *params) {
+    void BasicPort::applyConnectParams(const Descriptors *other, const OU::PValue *params) {
       setConnectParams(params);
       startConnect(other, params);
     }
 
     // This base class constructor for generic initialization
     // FIXME: parse buffer count here at least? (check that others don't do it).
-    Port::Port(Container &container, const OCPI::Metadata::Port &mPort, bool isProvider,
-	       unsigned xferOptions, const OCPI::Util::PValue *params, PortConnectionDesc *desc) :
+    Port::Port(Container &container, const OU::Port &mPort, bool isProvider,
+	       unsigned xferOptions, const OU::PValue *params, PortConnectionDesc *desc) :
       BasicPort( mPort, isProvider, xferOptions, container, params, desc),
       m_container(container), m_canBeExternal(true)
     {
@@ -139,13 +141,13 @@ namespace OCPI {
     void Port::loopback(OA::Port &) {}
 
     bool Port::hasName(const char *name) {
-      return (name == m_metaPort.name );
+      return (name == m_metaPort.m_name );
     }
 
     // The default behavior is that there is nothing special to do between
     // ports of like containers.
-    bool Port::connectLike(Port &other, const OCPI::Util::PValue *myProps,
-			   const OCPI::Util::PValue *otherProps) {
+    bool Port::connectLike(Port &other, const OU::PValue *myProps,
+			   const OU::PValue *otherProps) {
       (void)other;(void)myProps;(void)otherProps;
       return false;
     }
@@ -178,8 +180,8 @@ namespace OCPI {
     }
 
     // The general case of connecting ports that are managed in the same process.
-    void Port::connect(OCPI::API::Port &apiOther, const OCPI::Util::PValue *myParams,
-		       const OCPI::Util::PValue *otherParams) {
+    void Port::connect(OA::Port &apiOther, const OU::PValue *myParams,
+		       const OU::PValue *otherParams) {
       OU::SelfAutoMutex guard (this);
       Port &other = *static_cast<Port*>(&apiOther);
       //      setMode( CON_TYPE_RDMA );
@@ -218,10 +220,10 @@ namespace OCPI {
 #if 1
 	  if (!other.m_canBeExternal)
 	    throw OU::Error("Port \"%s\" cannot be connected external to container",
-			    other.m_metaPort.name);
+			    other.m_metaPort.m_name.c_str());
 	  if (!m_canBeExternal)
 	    throw OU::Error("Port \"%s\" cannot be connected external to container",
-			    m_metaPort.name);
+			    m_metaPort.m_name.c_str());
 #if 1
 	  other.setConnectParams(otherParams);
 	  setConnectParams(myParams);
@@ -271,32 +273,32 @@ namespace OCPI {
       }
     }
 
-    void Port::connectURL(const char*, const OCPI::Util::PValue *,
-			  const OCPI::Util::PValue *) {
+    void Port::connectURL(const char*, const OU::PValue *,
+			  const OU::PValue *) {
       ocpiDebug("connectURL not allowed on this container !!");
       ocpiAssert( 0 );
     }
 
     // Start the remote/intercontainer connection process
-    void Port::getInitialProviderInfo(const OCPI::Util::PValue *params, std::string &out) {
+    void Port::getInitialProviderInfo(const OU::PValue *params, std::string &out) {
       OU::SelfAutoMutex guard (this);
       ocpiAssert(isProvider());
       if (!m_canBeExternal)
 	throw OU::Error("Port \"%s\" cannot be connected external to container",
-			m_metaPort.name);
+			m_metaPort.m_name.c_str());
       applyConnectParams(NULL, params);
       packPortDesc(getData().data, out);
     }
 
     // User/output side initial method, that carries provider info and returns user info
-    void Port::setInitialProviderInfo(const OCPI::Util::PValue *params,
+    void Port::setInitialProviderInfo(const OU::PValue *params,
 				       const std::string &ipi, std::string &out) {
       OU::SelfAutoMutex guard (this);
       // User side, producer side.
       ocpiAssert(!isProvider());
       if (!m_canBeExternal)
 	throw OU::Error("Port \"%s\" cannot be connected external to container",
-			m_metaPort.name);
+			m_metaPort.m_name.c_str());
       Descriptors otherPortData;
       unpackPortDesc(ipi, otherPortData);
       // Adjust any parameters from connection metadata
@@ -363,15 +365,16 @@ namespace OCPI {
         &pDesc = isProvider() ? getData().data : other,
         &uDesc = isProvider() ? other : getData().data;
       ocpiInfo("Port %s of %s, a %s, has options 0x%x, initial role %s, buffers %u size %u",
-		m_metaPort.name, worker().name().c_str(), isProvider() ? "provider/consumer" : "user/producer",
+	       m_metaPort.m_name.c_str(), worker().name().c_str(),
+	       isProvider() ? "provider/consumer" : "user/producer",
 		getData().data.options, roleName[getData().data.role],
 		getData().data.desc.nBuffers, getData().data.desc.dataBufferSize);
       ocpiInfo("  other has options 0x%x, initial role %s, buffers %u size %u",
 		other.options, roleName[other.role], other.desc.nBuffers, other.desc.dataBufferSize);
       chooseRoles(uDesc.role, uDesc.options, pDesc.role, pDesc.options);
       ocpiInfo("  after negotiation, port %s, a %s, has role %s,"
-		"  other has role %s",
-		m_metaPort.name, isProvider() ? "provider/consumer" : "user/producer",
+	       "  other has role %s",
+	       m_metaPort.m_name.c_str(), isProvider() ? "provider/consumer" : "user/producer",
 		roleName[getData().data.role], roleName[other.role]);
       size_t maxSize =  pDesc.desc.dataBufferSize;
       if (uDesc.desc.dataBufferSize > pDesc.desc.dataBufferSize)
@@ -465,8 +468,8 @@ namespace OCPI {
     void Port::packPortDesc(const Descriptors & desc, std::string &out)
       throw()
     {
-      OCPI::Util::CDR::Encoder packer;
-      packer.putBoolean (OCPI::Util::CDR::nativeByteorder());
+      OU::CDR::Encoder packer;
+      packer.putBoolean (OU::CDR::nativeByteorder());
       packer.putULong     (desc.type);
       packer.putULong     (desc.role);
       packer.putULong     (desc.options);
@@ -494,7 +497,7 @@ namespace OCPI {
     bool Port::unpackPortDesc(const std::string &data, Descriptors &desc)
       throw ()
     {
-      OCPI::Util::CDR::Decoder unpacker (data);
+      OU::CDR::Decoder unpacker (data);
 
       try { 
 	bool bo;
@@ -526,7 +529,7 @@ namespace OCPI {
 	unpacker.getULongLong (d.oob.cookie);
         std::strcpy (d.oob.oep, oep.c_str());
       }
-      catch (const OCPI::Util::CDR::Decoder::InvalidData &) {
+      catch (const OU::CDR::Decoder::InvalidData &) {
 	return false;
       }
       return true;
@@ -683,8 +686,8 @@ namespace OCPI {
     }
     // Producer or consumer
     ExternalPort::
-    ExternalPort(Port &port, bool isProvider, const OCPI::Util::PValue *extParams, 
-		 const OCPI::Util::PValue *portParams)
+    ExternalPort(Port &port, bool isProvider, const OU::PValue *extParams, 
+		 const OU::PValue *portParams)
       // FIXME: push the xfer options down to the lower layers
       : BasicPort(port.metaPort(), isProvider,
 		  (1 << OCPI::RDT::ActiveFlowControl) |

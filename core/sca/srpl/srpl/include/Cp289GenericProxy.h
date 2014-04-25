@@ -202,7 +202,7 @@ OCPI_CONTROL_OPS
         throw (std::string);
 #endif
 
-      const OCPI::Metadata::Property * getProperties (unsigned int & numProperties)
+      const OCPI::Util::Property * getProperties (unsigned int & numProperties)
         throw ();
 
 #ifdef TEST

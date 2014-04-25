@@ -89,8 +89,8 @@ namespace OCPI {
       ~Manager();
       OCPI::API::Container *find(const char *model, const char *which,
 				 const OCPI::API::PValue *props);
-      bool findContainersX(Callback &cb, OCPI::Util::Implementation &i, const char *name); 
-      inline static bool findContainers(Callback &cb, OCPI::Util::Implementation &i, const char *name) {
+      bool findContainersX(Callback &cb, OCPI::Util::Worker &i, const char *name); 
+      inline static bool findContainers(Callback &cb, OCPI::Util::Worker &i, const char *name) {
 	return getSingleton().findContainersX(cb, i, name);
       }
       void shutdown();

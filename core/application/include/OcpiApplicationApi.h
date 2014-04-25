@@ -76,7 +76,7 @@ namespace OCPI {
       void setProperty(const char* prop_name, const char *value);
       // Access properties by instance name and property name
       void getProperty(const char* instance_name, const char* prop_name, std::string &value,
-		       bool hex);
+		       bool hex = false);
       void setProperty(const char* instance_name, const char* prop_name, const char *value);
     private:
       friend class Property;

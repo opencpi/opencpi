@@ -259,7 +259,7 @@ namespace OCPI {
       xfer_destroy (m_xftemplate, 0);
     }
 
-    DT::RegisterTransferDriver<XferFactory> pioDriver;
+    DT::RegisterTransferDriver<XferFactory> driver;
 
   }
 }

@@ -127,7 +127,7 @@ void OutputBuffer::update(bool critical)
   // map our states
   if ( !m_bsVaddr && output_offsets->localStateOffset ) {
 
-    ocpiDebug("OutputBuffer:update: mapping states");
+    ocpiDebug("OutputBuffer:%p update: mapping states", this);
 
     m_bsVaddr = getPort()->getLocalShemServices()->map
       (output_offsets->localStateOffset, 

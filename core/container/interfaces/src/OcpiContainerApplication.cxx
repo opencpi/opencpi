@@ -105,7 +105,8 @@ namespace OCPI {
     void Application::
     start() {
       for (Worker *w = firstWorker(); w; w = w->nextWorker())
-	w->start();
+	if (w->getState() != OU::Worker::EXISTS)
+	  w->start();
     }
     void Application::
     stop() {

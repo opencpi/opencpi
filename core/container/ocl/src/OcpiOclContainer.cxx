@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
  *
@@ -57,7 +56,6 @@ namespace OCPI
     namespace OS = OCPI::OS;
     namespace OA = OCPI::API;
     namespace OU = OCPI::Util;
-    namespace OM = OCPI::Metadata;
     namespace OC = OCPI::Container;
 
     const size_t OCLDP_LOCAL_BUFFER_ALIGN ( 16 );
@@ -129,23 +127,23 @@ namespace OCPI
 
       } OcpiOclOpcodes_t;
 
-      OcpiOclOpcodes_t controlOp2Opcode ( OU::ControlOperation op )
+      OcpiOclOpcodes_t controlOp2Opcode ( OU::Worker::ControlOperation op )
       {
         switch ( op )
         {
-          case OU::OpInitialize:
+	case OU::Worker::OpInitialize:
             return OCPI_OCL_INITIALIZE;
-          case OU::OpStart:
+	case OU::Worker::OpStart:
             return OCPI_OCL_START;
-          case OU::OpStop:
+	case OU::Worker::OpStop:
             return OCPI_OCL_STOP;
-          case OU::OpRelease:
+	case OU::Worker::OpRelease:
             return OCPI_OCL_RELEASE;
-          case OU::OpTest:
+	case OU::Worker::OpTest:
             return OCPI_OCL_TEST;
-          case OU::OpBeforeQuery:
+	case OU::Worker::OpBeforeQuery:
             return OCPI_OCL_BEFORE_QUERY;
-          case OU::OpAfterConfigure:
+	case OU::Worker::OpAfterConfigure:
             return OCPI_OCL_AFTER_CONFIGURE;
           default:
             return OCPI_OCL_RUN;
@@ -388,9 +386,9 @@ namespace OCPI
         bool isEnabled;
         Container& myContainer;
         const char* implName;
-        OCPI::Metadata::Worker metadataImpl;
+        OU::Worker metadataImpl;
         const char* instName;
-        OCPI::Metadata::Worker metadataInst;
+        OU::Worker metadataInst;
         std::string myEntryPoint;
         uint8_t* myProperties;
         uint32_t nConnectedPorts;
@@ -415,9 +413,7 @@ namespace OCPI
           isEnabled ( false ),
           myContainer ( app.parent() ),
           implName ( ezxml_attr ( implXml, "name" ) ),
-          metadataImpl ( implXml ),
           instName ( ezxml_attr ( instXml, "name" ) ),
-          metadataInst ( instXml ),
           myEntryPoint ( std::string ( implName ) + std::string ( "_entry_point" ) ),
           myProperties ( 0 ),
           nConnectedPorts ( 0 ),
@@ -432,11 +428,15 @@ namespace OCPI
           myLocalMemories ( )
 
         {
+          const char *err = metadataImpl.parse(implXml);
+	  if (err || (err = metadataInst.parse(instXml)))
+	    throw OU::Error("Error processing worker metadata %s", err);
+	  
           initializeContext ( );
 
           setControlOperations ( ezxml_cattr ( implXml, "controlOperations" ) );
 
-          setControlMask ( getControlMask() | ( 1 << OU::OpStart ) );
+          setControlMask ( getControlMask() | ( 1 << OU::Worker::OpStart ) );
         }
 
         void updatePortsPreRun ( );
@@ -470,7 +470,7 @@ namespace OCPI
             // No need to call syncPtr. Host does not touch "local memory"
           }
 
-          size_t n_ports = metadataImpl.getNumPorts ( );
+          size_t n_ports = metadataImpl.nPorts ( );
 
           for ( size_t n = 0; n < n_ports; n++ )
           {
@@ -513,7 +513,7 @@ namespace OCPI
           device_worker.syncPtr ( myNewRunCondition,
                                   OCPI::OCL::DeviceWorker::DEVICE_TO_HOST );
 
-          for ( size_t n = 0; n < metadataImpl.getNumPorts ( ); n++ )
+          for ( size_t n = 0; n < metadataImpl.nPorts ( ); n++ )
           {
             if ( myPorts [ n ].attr->connected && myPorts [ n ].current.data )
             {
@@ -527,7 +527,7 @@ namespace OCPI
 
         void initializeContext ( )
         {
-          uint32_t n_ports = metadataImpl.getNumPorts ( );
+          uint32_t n_ports = metadataImpl.nPorts ( );
 
           myRunCondition = ( OCLRunCondition* ) calloc ( 1,  sizeof ( OCLRunCondition ) );
 
@@ -550,7 +550,7 @@ namespace OCPI
 
           if ( !dummyBuffer )
           {
-            throw OC::ApiError( "OCL failed to allocate worker dummy buffer." );
+            throw OU::Error( "OCL failed to allocate worker dummy buffer." );
           }
 
           device_worker.registerPtr ( (void*)dummyBuffer, sizeof ( uint32_t ) );
@@ -559,7 +559,7 @@ namespace OCPI
 
           if ( !myPorts )
           {
-            throw OC::ApiError( "OCL failed to allocate worker ports." );
+            throw OU::Error( "OCL failed to allocate worker ports." );
           }
 
           for ( size_t n = 0; n < n_ports; n++ )
@@ -567,50 +567,50 @@ namespace OCPI
             myPorts [ n ].attr = ( OCLPortAttr*) calloc ( 1, sizeof ( OCLPortAttr ) );
             if ( !myPorts [ n ].attr )
             {
-              throw OC::ApiError( "OCL failed to allocate worker port attributes." );
+              throw OU::Error( "OCL failed to allocate worker port attributes." );
             }
             device_worker.registerPtr ( (void*)myPorts [ n ].attr,
                                         sizeof ( OCLPortAttr ) );
           }
 
-          myProperties = ( uint8_t* ) calloc ( metadataImpl.getPropertySize( ) + 4,
+          myProperties = ( uint8_t* ) calloc ( metadataImpl.totalPropertySize( ) + 4,
                                                sizeof ( uint8_t ) );
           if ( !myProperties )
           {
-            throw OC::ApiError( "OCL failed to allocate worker properties." );
+            throw OU::Error( "OCL failed to allocate worker properties." );
           }
           device_worker.registerPtr ( (void*)myProperties,
-                                      metadataImpl.getPropertySize( ) + 4 );
+                                      metadataImpl.totalPropertySize( ) + 4 );
 
           myResult = ( OCLResult* ) calloc ( 1, sizeof ( OCLResult ) );
 
           if ( !myResult )
           {
-            throw OC::ApiError( "OCL failed to allocate worker result." );
+            throw OU::Error("OCL failed to allocate worker result.");
           }
           device_worker.registerPtr ( (void*)myResult, sizeof ( OCLResult ) );
 
           unsigned int nLocalMemories;
-          OM::LocalMemory* local_memories =
-                         metadataImpl.getLocalMemories ( nLocalMemories );
+          OU::Memory* local_memories =
+                         metadataImpl.memories ( nLocalMemories );
           if ( nLocalMemories )
           {
             for ( size_t n = 0; n < nLocalMemories; n++ )
             {
-              void* p = calloc ( local_memories [ n ].n_bytes, sizeof ( uint8_t ) );
+              void* p = calloc ( local_memories [ n ].m_nBytes, sizeof ( uint8_t ) );
               if ( !p )
               {
-                throw OC::ApiError( "OCL failed to allocate local memory." );
+                throw OU::Error("OCL failed to allocate local memory.");
               }
               myLocalMemories.push_back ( p );
-              device_worker.registerPtr ( p, local_memories [ n ].n_bytes );
+              device_worker.registerPtr ( p, local_memories [ n ].m_nBytes );
             }
           }
         }
 
         void finalizeContext ( )
         {
-          for ( size_t n = 0; n < metadataImpl.getNumPorts ( ); n++ )
+          for ( size_t n = 0; n < metadataImpl.nPorts ( ); n++ )
           {
             device_worker.unregisterPtr ( myPorts [ n ].attr );
             free ( myPorts [ n ].attr );
@@ -642,8 +642,8 @@ namespace OCPI
           {
             if ( isEnabled )
             {
-              controlOperation ( OU::OpStop );
-              controlOperation ( OU::OpRelease );
+              controlOperation ( OU::Worker::OpStop );
+              controlOperation ( OU::Worker::OpRelease );
               isEnabled = false;
             }
 
@@ -656,18 +656,18 @@ namespace OCPI
           }
         }
 
-        void controlOperation ( OCPI::Util::ControlOperation op )
+      void controlOperation (OU::Worker::ControlOperation op )
         {
           if ( !( getControlMask () & ( 1 << op ) ) )
           {
             return;
           }
 
-          if ( op == OU::OpStart )
+          if ( op == OU::Worker::OpStart )
           {
-            if ( nConnectedPorts != metadataImpl.getNumPorts ( ) )
+            if ( nConnectedPorts != metadataImpl.nPorts ( ) )
             {
-               throw OC::ApiError( "OCL worker cannot be started until all ports are connected." );
+               throw OU::Error( "OCL worker cannot be started until all ports are connected." );
             }
           }
 
@@ -685,13 +685,13 @@ namespace OCPI
 
           switch ( op )
           {
-            case OU::OpStart:
+	  case OU::Worker::OpStart:
               isEnabled = true;
               runTimer.reset();
               runTimer.start();
               break;
-            case  OU::OpStop:
-            case OU::OpRelease:
+	  case  OU::Worker::OpStop:
+	  case OU::Worker::OpRelease:
               if ( isEnabled )
               {
                 runTimer.stop();
@@ -775,7 +775,7 @@ namespace OCPI
                 runTimer.stop();
               }
               isEnabled = false;
-              setControlState ( OC::UNUSABLE );
+              setControlState ( OU::Worker::UNUSABLE );
           }
           updatePortsPostRun();
         }
@@ -790,7 +790,7 @@ namespace OCPI
           ocpiAssert ( 0 );
         }
 
-        OC::Port& createPort ( const OM::Port& metaport,
+        OC::Port& createPort ( const OU::Port& metaport,
                                const OA::PValue* props );
 
         bool enabled ( ) const
@@ -809,9 +809,9 @@ namespace OCPI
               !md.m_writeError )
           {
             if ( ( md.m_offset + md.m_nBytes ) >
-                 metadataImpl.getPropertySize( ) )
+                 metadataImpl.totalPropertySize( ) )
             {
-               throw OC::ApiError( "OCL property is out of bounds." );
+               throw OU::Error( "OCL property is out of bounds." );
             }
             readVaddr = (uint8_t*) myProperties + md.m_offset;
             writeVaddr = (uint8_t*) myProperties + md.m_offset;
@@ -819,12 +819,12 @@ namespace OCPI
         }
 
 
-        OC::Port& createOutputPort ( OM::PortOrdinal portId,
+        OC::Port& createOutputPort ( OU::PortOrdinal portId,
                                      size_t bufferCount,
                                      size_t bufferSize,
                                      const OA::PValue* props ) throw();
 
-        OC::Port&createInputPort ( OM::PortOrdinal portId,
+        OC::Port&createInputPort ( OU::PortOrdinal portId,
                                    size_t bufferCount,
                                    size_t bufferSize,
                                    const OA::PValue* props ) throw();
@@ -1043,7 +1043,7 @@ namespace OCPI
       //        uint32_t remoteIndex;
         ezxml_t m_connection;
       //        ExternalPort* myExternalPort;
-        OCPI::Metadata::PortOrdinal myPortOrdinal;
+        OU::PortOrdinal myPortOrdinal;
 
       //        uint32_t* flags;
         InternalBuffer* currentBuffer;
@@ -1063,7 +1063,7 @@ namespace OCPI
         void disconnect ()
         throw ( OCPI::Util::EmbeddedException )
         {
-          throw OC::ApiError( "OCL disconnect not yet implemented." );
+          throw OU::Error( "OCL disconnect not yet implemented." );
         }
 
       bool isLocal() const { return false; }
@@ -1077,7 +1077,7 @@ namespace OCPI
 
         Port ( Worker& w,
                const OA::PValue* params,
-               const OM::Port& mPort, // the parsed port metadata
+               const OU::Port& mPort, // the parsed port metadata
                bool argIsProvider )
           : OC::PortBase<Worker,Port,ExternalPort> ( w, *this, mPort, argIsProvider,
 						     ( 1 << OCPI::RDT::ActiveFlowControl ) |
@@ -1085,13 +1085,13 @@ namespace OCPI
 						     params ),
 	    //            remoteIndex ( 0 ),
             m_connection ( 0 ),
-            myPortOrdinal ( mPort.ordinal )
+            myPortOrdinal ( mPort.m_ordinal )
         {
           m_canBeExternal = true;
 
           parent().myPorts [ myPortOrdinal ].attr->connected = false;
           parent().myPorts [ myPortOrdinal ].dataValueWidthInBytes = (mPort.m_dataValueWidth + 7) / 8;
-          parent().myPorts [ myPortOrdinal ].attr->optional = mPort.optional;
+          parent().myPorts [ myPortOrdinal ].attr->optional = mPort.m_optional;
 
           myDesc.dataBufferPitch = myDesc.dataBufferSize;
 
@@ -1139,7 +1139,7 @@ namespace OCPI
                                                       sizeof ( uint8_t ) );
           if ( !allocation )
           {
-            throw OC::ApiError( "OCL failed to allocate external port buffers." );
+            throw OU::Error( "OCL failed to allocate external port buffers." );
           }
 
           myDesc.dataBufferBaseAddr = OCPI_UTRUNCATE(DtOsDataTypes::Offset, allocation);
@@ -1194,8 +1194,8 @@ namespace OCPI
                         &mailbox,
                         &max_mailbox ) != 4 )
           {
-            throw OC::ApiError("OCL other port's endpoint description wrong: \"",
-                               other.desc.oob.oep, "\"", NULL);
+            throw OU::Error("OCL other port's endpoint description wrong: \"%s\"",
+			    other.desc.oob.oep);
           }
 
           switch ( myRole )
@@ -1209,11 +1209,11 @@ namespace OCPI
               {
                 if ( other.desc.dataBufferSize > myDesc.dataBufferSize )
                 {
-                  throw OC::ApiError("At consumer, remote buffer size is larger than mine", NULL);
+                  throw OU::Error("At consumer, remote buffer size is larger than mine");
                 }
                 else if (other.desc.dataBufferSize < myDesc.dataBufferSize )
                 {
-                  throw OC::ApiError("At producer, remote buffer size smaller than mine", NULL);
+                  throw OU::Error("At producer, remote buffer size smaller than mine");
                 }
               }
               break;
@@ -1274,7 +1274,7 @@ namespace OCPI
 
           if ( m_connection != pport.m_connection )
           {
-            throw OC::ApiError ( "Ports are both local in artifact, but are not connected", 0 );
+            throw OU::Error ( "Ports are both local in artifact, but are not connected");
           }
 #if 0
 	  pport.applyConnectParams(&getData().data, otherProps);
@@ -1373,7 +1373,7 @@ namespace OCPI
 					 const OU::PValue *extParams,
 					 const OU::PValue *connParams);
       public:
-        OCPI::Metadata::PortOrdinal portOrdinal ( )
+        OU::PortOrdinal portOrdinal ( )
         {
           return myPortOrdinal;
         }
@@ -1474,13 +1474,13 @@ namespace OCPI
       }
     }
 
-    OC::Port& Worker::createPort ( const OM::Port& metaPort,
+    OC::Port& Worker::createPort ( const OU::Port& metaPort,
                                    const OA::PValue* props )
     {
-      return *new Port ( *this, props, metaPort, metaPort.provider );
+      return *new Port ( *this, props, metaPort, metaPort.m_provider );
     }
 
-    OC::Port& Worker::createOutputPort ( OM::PortOrdinal portId,
+    OC::Port& Worker::createOutputPort ( OU::PortOrdinal portId,
                                          size_t bufferCount,
                                          size_t bufferSize,
                                          const OA::PValue* props )
@@ -1493,7 +1493,7 @@ namespace OCPI
       return *(Port *)0;
     }
 
-    OC::Port& Worker::createInputPort ( OM::PortOrdinal portId,
+    OC::Port& Worker::createInputPort ( OU::PortOrdinal portId,
                                         size_t bufferCount,
                                         size_t bufferSize,
                                         const OA::PValue* props )
@@ -1607,7 +1607,7 @@ namespace OCPI
           uint16_t mailbox = 7;
           uint16_t max_mailbox = 10;
           int pid = getpid ( );
-          myDesc.oob.port_id = port.metaPort().ordinal;
+          myDesc.oob.port_id = port.metaPort().m_ordinal;
           snprintf ( myDesc.oob.oep,
                      sizeof ( myDesc.oob.oep ),
                      "ocpi-smb-pio:pioXfer%d:%zu.%hu.%hu",
@@ -1620,7 +1620,7 @@ namespace OCPI
 
           if ( !allocation )
           {
-            throw OC::ApiError( "OCL failed to allocate external port buffers." );
+            throw OU::Error( "OCL failed to allocate external port buffers." );
           }
 
           // Resuing the far data buffers
@@ -1772,7 +1772,7 @@ namespace OCPI
     {
       if ( !m_canBeExternal )
       {
-        throw OC::ApiError ( "OCL For external port \"", extName, "\", port \"",
+        throw OU::Error ( "OCL For external port \"", extName, "\", port \"",
                              name().c_str(), "\" of worker \"",
                              parent().implTag().c_str(), "/", parent().instTag().c_str(), "/",
                              parent().name().c_str(),
