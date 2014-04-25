@@ -48,7 +48,7 @@ end entity unoc2axi_rd;
 architecture rtl of unoc2axi_rd is
   subtype naxf_in_uxf_t is unsigned(width_for_max(axf_per_uxf)-1 downto 0);
   subtype ndw_in_uxf_t is unsigned(width_for_max(unoc_ndw_c)-1 downto 0);
-  subtype ndw_t is unsigned(unoc_header_t.dw_length'left + 1 downto 0);
+  subtype ndw_t is unsigned(unoc_dw_length_bits_c downto 0);
   -- UNOC request decoding and internal outputs
   signal unoc_req               : unoc_request_t;
   signal unoc_addr              : dword_t;
