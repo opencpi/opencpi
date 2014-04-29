@@ -324,11 +324,11 @@ emitLastSignal(FILE *f, std::string &last, Language lang, bool end) {
 const char *vhdlValue(std::string &s, OU::Value &v) {
   switch (v.m_vt->m_baseType) {
   case OA::OCPI_Bool:
-    s = "b";
+    s = "ocpi.types.b";
     v.unparse(s, true);
     break;
   case OA::OCPI_ULong:
-    s = "to_ulong(";
+    s = "ocpi.types.to_ulong(";
     v.unparse(s, true);
     s += ")";
     break;

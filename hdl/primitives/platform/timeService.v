@@ -2,6 +2,18 @@
 // not "mk" since I'm not sure that the interface would be
 // This may end up being instanced in the platform worker, so the controls
 // would already be registered
+`ifdef BSV_ASSIGNMENT_DELAY
+`else
+  `define BSV_ASSIGNMENT_DELAY
+`endif
+
+`ifdef BSV_POSITIVE_RESET
+  `define BSV_RESET_VALUE 1'b1
+  `define BSV_RESET_EDGE posedge
+`else
+  `define BSV_RESET_VALUE 1'b0
+  `define BSV_RESET_EDGE negedge
+`endif
 module timeService(
 `ifdef not
 		   input 	 CLK,

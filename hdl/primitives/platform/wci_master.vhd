@@ -6,8 +6,8 @@ library ocpi; use ocpi.types.all; use ocpi.util.all;
 use work.platform_pkg.all;
 entity wci_master is
   generic(
-    debug      : boolean;
-    id_width, id: natural);
+    ocpi_debug   : bool_t;
+    id_width, id : natural);
   port(
     -- worker-facing side - a WCI
     wci_in     : in  wci_s2m_t;
@@ -21,7 +21,7 @@ architecture rtl of wci_master is
   signal status               : std_logic_vector(31 downto 0); -- status register value
   signal starting             : bool_t; -- We have decoded a request for us
   signal is_master            : bool_t; -- shorthand for operation = control_read|write_e
-  signal response           : worker_response_t;               -- our response when active
+  signal response             : worker_response_t;               -- our response when active
   -- Our state - minimized for scalability
   signal reset_n_r            : std_logic;                     -- are we reset? (_n)
   signal window_r             : std_logic_vector(12 downto 0); -- high address bits
@@ -41,24 +41,20 @@ architecture rtl of wci_master is
   signal last_addr_valid_r    : std_logic;
   signal sticky_r             : std_logic_vector(8 downto 0);
 begin
-
   -- worker is only asserted with a valid worker value when there is
   -- a valid operation
-  starting           <= '1' when
-                        worker_in.id(id_width-1 downto 0) = to_unsigned(id, id_width) and
-                        not its(active_r) and ready_r
-                        else '0';
-  is_master          <= '1' when
-                        worker_in.operation = control_read_e or
-                        worker_in.operation = control_write_e
-                        else '0';
+  is_master          <= to_bool(worker_in.operation = control_read_e or
+                                worker_in.operation = control_write_e);
+  starting           <= to_bool(worker_in.id(id_width-1 downto 0) = to_unsigned(id, id_width) and
+                                (not its(active_r) and
+                                 (its(ready_r) or is_master)));
   wci_out.Clk        <= worker_in.clk;
   wci_out.MReset_n   <= reset_n_r;
-  wci_out.MCmd       <= worker_in.cmd when active_r and its(ready_r)
+  wci_out.MCmd       <= worker_in.cmd when active_r and its(ready_r) and not its(is_master)
                         else ocpi.ocp.MCmd_IDLE;
   wci_out.MAddr      <= slv0(wci_out.MAddr'length - worker_in.address'length) &
                         worker_in.address;
-  wci_out.MAddrSpace <= (0 => worker_in.is_config);
+  wci_out.MAddrSpace(0) <= worker_in.is_config;
   wci_out.MByteEn    <= worker_in.byte_en;
   wci_out.MData      <= worker_in.data;
   wci_out.MFlag(0)   <= abort_r;
@@ -101,7 +97,7 @@ begin
                                wci_in.SResp = ocpi.ocp.SResp_FAIL else
                timedout_e when worker_in.timedout = '1' else
                none_e;
-  worker_out.response   <= response;
+  worker_out.response   <= response when its(active_r) else none_e;
   worker_out.attention  <= wci_in.SFlag(0);
   worker_out.present    <= '1';
   work : process(worker_in.clk)

@@ -483,7 +483,8 @@ int  main( int argc, char** argv)
     test_rc &= config_and_run_optports_test( test_name, ca, workers, cmap, bcmap[3]);
   }
   catch( OCPI::Util::EmbeddedException& ex ) {
-    if (ex.getErrorCode() == OU::PORT_NOT_CONNECTED) {
+    //    if (ex.getErrorCode() == OU::PORT_NOT_CONNECTED) {
+    if (strcasestr(ex.getAuxInfo(), "not connected")) {
       printf("got the PORT_NOT_CONNECTED error (EXPECTED)");
       test_rc = 0;
     } else
@@ -491,7 +492,11 @@ int  main( int argc, char** argv)
 	     ex.getErrorCode(), ex.getAuxInfo() );
   }
   catch ( std::string& str ) {
-    printf("got exception ""%s"", (NOT EXPECTED)", str.c_str() );
+    if (strcasestr(str.c_str(), "not connected")) {
+      printf("got the PORT_NOT_CONNECTED error (EXPECTED)");
+      test_rc = 0;
+    } else
+      printf("got exception ""%s"", (NOT EXPECTED)", str.c_str() );
   }
   catch ( ... ) {
     printf("failed with an unknown exception (NOT EXPECTED)\n");
@@ -579,7 +584,8 @@ int  main( int argc, char** argv)
     test_rc &= config_and_run_optports_test( test_name, ca, workers, cmap, bcmap[3]);
   }
   catch( OCPI::Util::EmbeddedException& ex ) {
-    if (ex.getErrorCode() == OU::PORT_NOT_CONNECTED) {
+    if (strcasestr(ex.getAuxInfo(), "not connected")) {
+      //    if (ex.getErrorCode() == OU::PORT_NOT_CONNECTED) {
       printf("got the PORT_NOT_CONNECTED error (EXPECTED)");
       test_rc = 0;
     } else
@@ -587,7 +593,12 @@ int  main( int argc, char** argv)
 	     ex.getErrorCode(), ex.getAuxInfo() );
   }
   catch ( std::string& str ) {
-    printf("got exception ""%s"", (NOT EXPECTED)", str.c_str() );
+    if (strcasestr(str.c_str(), "not connected")) {
+      //    if (ex.getErrorCode() == OU::PORT_NOT_CONNECTED) {
+      printf("got the PORT_NOT_CONNECTED error (EXPECTED)");
+      test_rc = 0;
+    } else
+      printf("got exception ""%s"", (NOT EXPECTED)", str.c_str() );
   }
   catch ( ... ) {
     printf("failed with an unknown exception (NOT EXPECTED)\n");

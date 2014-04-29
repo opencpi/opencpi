@@ -1,0 +1,6 @@
+<HdlWorker language='vhdl' library='platform'>
+  <ComponentSpec name='ocscp' nocontrol='true'/>
+  <property name='nWorkers' parameter='true'/>
+  <cpmaster name='cp' myclock='true'/>
+  <control master='true' count='nWorkers' clock='cp'/>
+</HdlWorker>

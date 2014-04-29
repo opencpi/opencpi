@@ -191,6 +191,9 @@ CWorker(int tports, int sports):sPortCount(sports), tPortCount(tports){};
       code;						 \
     }  catch (OCPI::Util::EmbeddedException &ee_) {	 \
       var = ee_.getErrorCode(); str = ee_.m_auxInfo;	 \
+    } catch (std::string& err) { \
+      var = OU::LAST_ERROR_ID;	 \
+      str = err; \
     }  catch (...) {					 \
       var = OU::LAST_ERROR_ID;				 \
     }							 \

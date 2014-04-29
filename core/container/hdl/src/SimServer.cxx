@@ -608,7 +608,7 @@ namespace OCPI {
 	    std::string error;
 	    msg[0] = TERMINATE;
 	    msg[1] = 0;
-	    ocpiInfo("Telling the simulator process to exit");
+	    ocpiInfo("Telling the simulator process (%u) to exit", s_pid);
 	    assert(write(m_ctl.m_wfd, msg, 2) == 2);
 	    ocpiInfo("Waiting for simulator process to exit");
 	    mywait(s_pid, true, error);
@@ -702,6 +702,7 @@ namespace OCPI {
 		else {
 		  while (*end && isspace(*end))
 		    end++;
+		  ocpiInfo("Shutting down previous simulation before (re)loading");
 		  shutdown();
 		  loadRun(end, local ? 0 : size, response, error);
 		}
@@ -921,7 +922,7 @@ namespace OCPI {
 	  unsigned index = 0;
 	  if (ext.receive(rFrame, length, 0, from, error, discovery ? &index : NULL)) {
 	    assert(from != m_udp.addr);
-	    ocpiDebug("Received request packet from %s, length %zu\n", from.pretty(), length);
+	    ocpiDebug("Received request packet from %s, length %zu", from.pretty(), length);
 	    if (isServerCommand(rFrame.payload)) {
 	      assert(!discovery);
 	      if (doServer(ext, rFrame, length, from, false, sizeof(rFrame.payload), error))
@@ -1111,7 +1112,8 @@ namespace OCPI {
 		      m_cumTicks, m_simTicks);
 	    ocpiInfo("Simulator credits at %" PRIu64 " exceeded %u, stopping simulation",
 		     m_cumTicks, m_simTicks);
-	  }
+	  } else
+	    ocpiInfo("Simulator shutting down. Error: %s", error.empty() ? "none" : error.c_str());
 	  shutdown();
 	  return !error.empty();
 	}
@@ -1193,7 +1195,10 @@ namespace OCPI {
 	delete m_sim;
 	if (m_simDir.length()) {
 	  ocpiDebug("Removing sim directory: %s", m_simDir.c_str());
-	  assert(rmdir(m_simDir.c_str()) == 0);
+	  std::string cmd;
+	  OU::format(cmd, "rm -r -f %s", m_simDir.c_str());
+	  if (system(cmd.c_str()) != 0)
+	    ocpiBad("Cannot remove the simulation directory: %s", m_simDir.c_str());
 	}
       }
       bool Server::

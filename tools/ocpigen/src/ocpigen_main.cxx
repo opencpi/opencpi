@@ -236,7 +236,7 @@ main(int argc, char **argv) {
 	asprintf(&root, "%s/%s", outDir, slash ? slash + 1 : root);
       }
 #endif
-      Worker *w = Worker::create(*ap, NULL, package, err);
+      Worker *w = Worker::create(*ap, NULL, package, NULL, err);
       //      Worker w(*ap, NULL, package, err);
       //      Worker *w = new Worker();
       if (err)

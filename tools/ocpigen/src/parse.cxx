@@ -45,7 +45,7 @@
 #include "OcpiUtilAssembly.h"
 #include "wip.h"
 #include "hdl-platform.h"
-
+#include "hdl-container.h"
 /*
  * Todo:
  *  property values in assembly instances?
@@ -832,13 +832,43 @@ initImplPorts(ezxml_t xml, const char *element, const char *prefix, WIPType type
         p->name = prefix;
       else
         asprintf((char **)&p->name, "%s%u", prefix, ordinal);
-    if ((err = OE::getNumber(x, "count", &p->count)))
+    if ((err = getNumber(x, "count", &p->count)))
       return err;
 #if 0
     if (type == CPPort || type == NOCPort)
       m_hasPlatformPorts = true;
 #endif
   }
+  return NULL;
+}
+
+// Parse a nuumberic value that might be overridden by assembly property values.
+const char *Worker::
+getNumber(ezxml_t x, const char *attr, size_t *np, bool *found,
+	  size_t defaultValue, bool setDefault) {
+  const char *a = ezxml_cattr(x, attr);
+  if (a && !isdigit(*a) && m_instancePVs) {
+    // FIXME: obviously a map would be good here..
+    OU::Assembly::Property *ap = &(*m_instancePVs)[0];
+    for (size_t n = m_instancePVs->size(); n; n--, ap++)
+      if (ap->m_hasValue && !strcasecmp(a, ap->m_name.c_str())) {
+	// The value of the numeric attribute matches the name of a provided property
+	// So we use that property value in place of this attribute's value
+	if (OE::getUNum(ap->m_value.c_str(), np))
+	  return OU::esprintf("Bad '%s' property value: '%s' for attribute '%s' in element '%s'",
+			      ap->m_name.c_str(), ap->m_value.c_str(), attr, x->name);
+	if (found)
+	  *found = true;
+	return NULL;
+      }    
+  }
+  return OE::getNumber(x, attr, np, found, defaultValue, setDefault);
+}
+
+const char *Worker::
+getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly) {
+  if (!m_instancePVs)
+    return OE::getBoolean(x, name, b, trueOnly);
   return NULL;
 }
 
@@ -885,7 +915,7 @@ parseHdlImpl(const char *package) {
 				"Clock", "MyClock", "Timeout", "Count", "Name", "Pattern",
 				(void *)0)) ||
           (err = OE::getNumber(xctl, "Timeout", &wci->u.wci.timeout, 0, 0)) ||
-          (err = OE::getNumber(xctl, "Count", &wci->count, 0, 0)) ||
+          (err = getNumber(xctl, "Count", &wci->count, 0, 0)) ||
           (err = OE::getBoolean(xctl, "RawProperties", &m_ctl.rawProperties)) ||
           (err = OE::getBoolean(xctl, "ResetWhileSuspended",
 				&wci->u.wci.resetWhileSuspended)))
@@ -1054,7 +1084,7 @@ parseHdlImpl(const char *package) {
                               "MemoryWords", "ByteWidth", "MaxBurstLength", "WriteDataFlowControl",
                               "ReadDataFlowControl", "Count", "Pattern", "master", "myclock", (void*)0)) ||
         (err = OE::getBoolean(m, "master", &mp->master)) ||
-        (err = OE::getNumber(m, "Count", &mp->count, 0, 0)) ||
+        (err = getNumber(m, "Count", &mp->count, 0, 0)) ||
         (err = OE::getNumber64(m, "MemoryWords", &mp->u.wmemi.memoryWords, &memFound, 0)) ||
         (err = OE::getNumber(m, "DataWidth", &mp->dataWidth, 0, 8)) ||
         (err = OE::getNumber(m, "ByteWidth", &mp->byteWidth, 0, 8)) ||
@@ -1329,7 +1359,8 @@ getNames(ezxml_t xml, const char *file, const char *tag, std::string &name, std:
 // The factory, which decides which class to instantiate
 // This will evolve as more things are based on derived classes
 Worker *Worker::
-create(const char *file, const char *parent, const char *package, const char *&err) {
+create(const char *file, const char *parent, const char *package,
+       OU::Assembly::Properties *instancePVs, const char *&err) {
   err = NULL;
   ezxml_t xml;
   const char *xfile;
@@ -1337,16 +1368,15 @@ create(const char *file, const char *parent, const char *package, const char *&e
     return NULL;
   const char *name = ezxml_name(xml);
   if (name) {
-    size_t index = 0;
     if (!strcasecmp("HdlPlatform", name))
       return HdlPlatform::create(xml, xfile, err);
     if (!strcasecmp("HdlConfig", name))
-      return HdlConfig::create(xml, xfile, index, err);
+      return HdlConfig::create(xml, xfile, err);
     if (!strcasecmp("HdlContainer", name))
       return HdlContainer::create(xml, xfile, err);
     if (!strcasecmp("HdlAssembly", name))
-      return HdlAssembly::create(xml, xfile, index, err);
-    Worker *w = new Worker(xml, xfile, NULL, err);
+      return HdlAssembly::create(xml, xfile, err);
+    Worker *w = new Worker(xml, xfile, NULL, instancePVs, err);
     if (!err) {
       if (!strcasecmp("RccImplementation", name) || !strcasecmp("RccWorker", name))
 	err = w->parseRcc();
@@ -1444,13 +1474,15 @@ Control::Control()
     controlOps(0), offset(0), ordinal(0), rawProperties(false), firstRaw(NULL)
 {
 }
-Worker::Worker(ezxml_t xml, const char *xfile, const char *parent, const char *&err)
+Worker::Worker(ezxml_t xml, const char *xfile, const char *parent,
+	       OU::Assembly::Properties *ipvs, const char *&err)
   : Parsed(xml, xfile, parent, NULL, err),
     m_model(NoModel), m_modelString(NULL), m_isDevice(false), //m_hasPlatformPorts(false),
     m_noControl(false), m_specFile(0), m_implName(m_name.c_str()), m_specName(0),
     m_isThreaded(false), m_maxPortTypeName(0), m_endian(NoEndian),
     m_needsEndian(false), m_pattern(0), m_staticPattern(0), m_defaultDataWidth(-1),
-    m_language(NoLanguage), m_assembly(NULL), m_library(NULL), m_outer(false)
+    m_language(NoLanguage), m_assembly(NULL), m_library(NULL), m_outer(false),
+    m_instancePVs(ipvs)
 {
   const char *name = ezxml_name(xml);
   // FIXME: make HdlWorker and RccWorker classes  etc.

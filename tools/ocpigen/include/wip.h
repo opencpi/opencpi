@@ -44,6 +44,7 @@
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilImplementation.h"
+#include "OcpiUtilAssembly.h"
 #include "OcpiUuid.h"
 #include "ezxml.h"
 #include "cdkutils.h"
@@ -416,18 +417,24 @@ class Worker : public Parsed {
   Signals m_signals;
   const char *m_library;            // the component library name where the xml was found
   bool m_outer;                     // only generate the outer skeleton, not the inner one
-  Worker(ezxml_t xml, const char *xfile, const char *parent, const char *&err);
+  OU::Assembly::Properties *m_instancePVs;
+  Worker(ezxml_t xml, const char *xfile, const char *parent,
+	 OU::Assembly::Properties *ipvs, const char *&err);
   virtual ~Worker();
   static Worker *
-    create(const char *file, const char *parent, const char *package, const char *&err);
+    create(const char *file, const char *parent, const char *package,
+	   OU::Assembly::Properties *instancePropertyValues, const char *&err);
   bool nonRaw(PropertiesIter pi);
   Clock *addClock();
   Clock *addWciClockReset();
   const char
+    *getNumber(ezxml_t x, const char *attr, size_t *np, bool *found = NULL,
+	       size_t defaultValue = 0, bool setDefault = true),
+    *getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly),
     *parse(const char *file, const char *parent, const char *package = NULL),
     *parseRcc(),
     *parseOcl(),
-    *parseHdl(const char *package),
+    *parseHdl(const char *package = NULL),
     *parseRccAssy(),
     *parseOclAssy(),
     *parseImplControl(ezxml_t &xctl),
@@ -472,7 +479,7 @@ class Worker : public Parsed {
     emitRecordSignal(FILE *f, std::string &last, size_t maxPortTypeName, Port *p,
 		     const char *prefix = ""),
     emitWorkers(FILE *f),
-    emitInstances(FILE *f, const char *prefix),
+    emitInstances(FILE *f, const char *prefix, size_t &index),
     emitInternalConnections(FILE *f, const char *prefix),
     emitVhdlShell(FILE *f),
     emitVhdlSignalWrapper(FILE *f, const char *topinst = "rv"),

@@ -510,10 +510,10 @@ module mkSimIO(CLK,
       if (WILL_FIRE_RL_do_s_char && b__h2122 != 32'hFFFFFFFF && !isOpcode &&
 	  ioOpcode == 8'd253)
 	$display("[%0d]: dumpoff called", v__h2642);
-    if (RST_N != `BSV_RESET_VALUE)
-      if (WILL_FIRE_RL_do_s_char && b__h2122 != 32'hFFFFFFFF && !isOpcode &&
-	  ioOpcode == 8'd254)
-	$dumpon;
+//    if (RST_N != `BSV_RESET_VALUE)
+//      if (WILL_FIRE_RL_do_s_char && b__h2122 != 32'hFFFFFFFF && !isOpcode &&
+//	  ioOpcode == 8'd254)
+//	$dumpon;
     if (RST_N != `BSV_RESET_VALUE)
       if (WILL_FIRE_RL_do_s_char && b__h2122 != 32'hFFFFFFFF && !isOpcode &&
 	  ioOpcode == 8'd254)

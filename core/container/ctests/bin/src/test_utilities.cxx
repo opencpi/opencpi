@@ -353,8 +353,10 @@ void OCPI::CONTAINER_TEST::destroyContainers( std::vector<CApp>& ca, std::vector
   std::vector<CApp>::iterator cait;
   for ( cait=ca.begin(); cait!= ca.end(); cait++ ) {
     if ( cait->container ) {
-      if (cait->app)
+      if (cait->app) {
 	delete cait->app;
+	cait->app = NULL;
+      }
       delete cait->container;
     }
   }

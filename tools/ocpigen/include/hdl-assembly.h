@@ -1,15 +1,15 @@
 #ifndef HDL_ASSEMBLY_H
 #define HDL_ASSEMBLY_H
 
-#include "wip.h"
 #include "OcpiUtilAssembly.h"
+#include "wip.h"
+
 struct Attachment;
 typedef std::list<Attachment*> Attachments;
 typedef Attachments::const_iterator AttachmentsIter;
 
 struct InstancePort;
 struct Connection {
-  //  OCPI::Util::Assembly::Connection *m_connection; // connection in the underlying generic assembly if there is one
   std::string m_name;
   Attachments m_attachments;
   unsigned m_nExternals;
@@ -36,7 +36,7 @@ struct Instance {
   Worker *worker;
   Clock **m_clocks;      // mapping of instance's clocks to assembly clocks
   InstancePort *m_ports;
-  size_t index;      // index within container
+  //  size_t index;      // index within container
   enum {
     Application, Interconnect, IO, Adapter
   } iType;
@@ -93,15 +93,16 @@ class Assembly {
  public:
   Assembly(Worker &w);
   virtual ~Assembly();
-  Worker &m_assyWorker;
-  bool m_isContainer;
-  bool m_isPlatform;
-  Worker *m_outside;
-  Workers m_workers;
-  size_t m_nInstances;
-  Instance *m_instances;
+  Worker       &m_assyWorker;
+  bool          m_isContainer;
+  bool          m_isPlatform;
+  //  Worker *m_outside;
+  Workers       m_workers;
+  size_t        m_nInstances;
+  size_t        m_nWCIs;
+  Instance     *m_instances;
   //  size_t m_nConnections;
-  Connections m_connections;
+  Connections   m_connections;
   OU::Assembly *m_utilAssembly;
   const char
     *parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWorkerOk),

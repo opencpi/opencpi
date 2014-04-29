@@ -309,7 +309,7 @@ static int config_and_run_misc_cont_tests(const char *test_name, std::vector<CAp
   }
 
   TRY_AND_SET(err_code, err_str, "", PRODUCER.worker->start());
-  if ( err_code != OU::PORT_NOT_CONNECTED ) {
+  if ( !strstr(err_str.c_str(), "not connected")) { // code != OU::PORT_NOT_CONNECTED ) {
     TUPRINTF("Bad error code returned\n");
     testPassed = false;
     goto done;
@@ -414,7 +414,7 @@ static int config_and_run_BA_method(const char *test_name, std::vector<CApp>& ca
   TRY_AND_SET(err_code, err_str, ERROR_TEST_STRING,
 	      CONSUMER.worker->write(  offset, nBytes, &tprop[0]);
 	      CONSUMER.worker->afterConfigure(););
-  if ( err_str != ERROR_TEST_STRING ) {
+  if (!strstr( err_str.c_str(), ERROR_TEST_STRING)) {
     testPassed = false;
   }
   if ( err_code == OU::NO_ERROR_ ) {  // Test failed, there should have been an error reported
@@ -424,7 +424,7 @@ static int config_and_run_BA_method(const char *test_name, std::vector<CApp>& ca
   }
 
   TRY_AND_SET(err_code, err_str, "", CONSUMER.worker->beforeQuery());
-  if ( err_str != ERROR_TEST_STRING ) {
+  if (!strstr( err_str.c_str(), ERROR_TEST_STRING)) {
     testPassed = false;
   }
   if ( err_code == OU::NO_ERROR_ ) {  // Test failed, there should have been an error reported
@@ -599,7 +599,7 @@ static int config_and_run_test_method(const char *test_name, std::vector<CApp>& 
     testPassed = false;
     goto done;
   }
-  if ( err_str != ERROR_TEST_STRING ) {
+  if (!strstr(err_str.c_str(), ERROR_TEST_STRING)) {
     testPassed = false;
     goto done;
   }
@@ -814,7 +814,7 @@ static int config_and_run_state_error_test2(const char *test_name, std::vector<C
     TUPRINTF("Expected error return code, not success\n");
     testPassed = false;
   }
-  if ( err_str != ERROR_TEST_STRING ) {
+  if (!strstr(err_str.c_str(), ERROR_TEST_STRING)) {
     testPassed = false;
   }
 
@@ -830,7 +830,7 @@ static int config_and_run_state_error_test2(const char *test_name, std::vector<C
     TUPRINTF("Expected worker to return no error\n");
     testPassed = false;
   } 
-  if ( err_str != ERROR_TEST_STRING ) {
+  if (!strstr(err_str.c_str(), ERROR_TEST_STRING)) {
     testPassed = false;
   }
 #if 0
@@ -1109,6 +1109,7 @@ int  main( int argc, char** argv)
     test_rc = 0;
   }
   catch ( ... ) {
+    printf(" failed with unknown exception\n");
     test_rc = 0;
   }
   printf(" Test:  %s: %s\n",   test_name, test_rc ? "PASSED" : "FAILED" );

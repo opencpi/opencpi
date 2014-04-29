@@ -390,7 +390,7 @@ namespace OCPI {
 	char *endptr;
 	errno = 0;
 	unsigned long val = strtoul(s, &endptr, 0);
-	if (errno == 0) {
+	if (errno == 0 && endptr != s) {
 	  if (*endptr == 'K' || *endptr == 'k') {
 	    endptr++;
 	    val *= 1024;
@@ -431,7 +431,7 @@ namespace OCPI {
 	  return 0;
 	}
 	if (getUNum(a, np))
-	  return esprintf("Bad numeric value: \"%s\" for attribute %s in element %s",
+	  return esprintf("Bad numeric value: '%s' for attribute '%s' in element '%s'",
 			  a, attr, x->name);
 	if (found)
 	  *found = true;

@@ -36,8 +36,8 @@ namespace OA = OCPI::API;
 
 Assembly::
 Assembly(Worker &w)
-  : m_assyWorker(w), m_isContainer(false), m_isPlatform(false), m_outside(NULL), m_nInstances(0),
-    m_instances(NULL), /* m_nConnections(0), */ m_utilAssembly(NULL) {
+  : m_assyWorker(w), m_isContainer(false), m_isPlatform(false), /* m_outside(NULL), */
+    m_nInstances(0), m_nWCIs(0), m_instances(NULL), /* m_nConnections(0), */ m_utilAssembly(NULL) {
 }
 Assembly::
 ~Assembly() {
@@ -96,11 +96,12 @@ parseConnection(OU::Assembly::Connection &aConn) {
 			  c.m_name.c_str(), ap.m_name.empty() ? "<unknown>" : ap.m_name.c_str(),
 			  m_instances[ap.m_instance].worker->m_name.c_str());
     if (ap.m_index + (c.m_count ? c.m_count : 1) > found->m_port->count)
-      return OU::esprintf("invalid index/count (%zu/%zu) for connection %s, port %s of instance %s"
-			  "not found",
+      return OU::esprintf("invalid index/count (%zu/%zu) for connection %s, port %s of "
+			  "instance %s has count %zu",
 			  ap.m_index, c.m_count ? c.m_count: 1,
 			  c.m_name.c_str(), ap.m_name.empty() ? "<unknown>" : ap.m_name.c_str(),
-			  m_instances[ap.m_instance].worker->m_name.c_str());
+			  m_instances[ap.m_instance].worker->m_name.c_str(),
+			  found->m_port->count);
     size_t count = found->m_port->count - ap.m_index;
     if (count < minCount)
       minCount = count;
@@ -221,38 +222,47 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
      i->wName = i->instance->m_implName.size() ? i->instance->m_implName.c_str() : 0;
      // Find the real worker/impl for each instance, sharing the Worker among instances
      Worker *w = NULL;
-     if (i->wName) {
-       for (Instance *ii = m_instances; ii < i; ii++)
-	 if (ii->wName && !strcmp(i->wName, ii->wName))
-	   w = ii->worker;
-       if (!w) {
-	 if (!(w = Worker::create(i->wName, m_assyWorker.m_file.c_str(), NULL, err)))
-	   return OU::esprintf("for worker %s: %s", i->wName, err);
-	 m_workers.push_back(w);
-       }
-       i->worker = w;
-       // Initialize the instance ports
-       InstancePort *ip = i->m_ports = new InstancePort[i->worker->m_ports.size()];
-       for (unsigned n = 0; n < i->worker->m_ports.size(); n++, ip++) {
-	 // If the instance in the OU::Assembly has "m_externals=true",
-	 // and this instance port has no connections in the OU::Assembly
-	 // then we add an external connection for the instance port. Prior to this,
-	 // we didn't have access to the worker metadata to know what all the ports are.
-	 ip->init(i, i->worker->m_ports[n], NULL);
-	 if (ai->m_externals && ip->m_port->isData) {
-	   Port *p = NULL;
-	   for (OU::Assembly::Instance::PortsIter pi = ai->m_ports.begin();
-		pi != ai->m_ports.end(); pi++)
-	     if (!strcasecmp((*pi)->m_name.c_str(), ip->m_port->name)) {
-	       p = ip->m_port;
-	       break;
-	     }
-	   if (!p)
-	     m_utilAssembly->addExternalConnection(i->instance->m_ordinal, ip->m_port->name);
-	 }
-       }
-     } else
+     if (!i->wName)
        return OU::esprintf("instance %s has no worker", i->name);
+     for (Instance *ii = m_instances; ii < i; ii++)
+       if (ii->wName && !strcmp(i->wName, ii->wName))
+	 w = ii->worker;
+     // We consider the property values in two places.
+     // Here we are saying that a worker is unique if it has properties.
+     // So we create a new worker and hand it the properties, so that it can
+     // actually use these values DURING PARSING since some aspects of parsing
+     // need them.  But later below, we really parse the properties after we
+     // know the actual properties and their types from the worker.
+     if (!w || ai->m_properties.size()) {
+       if (!(w = Worker::create(i->wName, m_assyWorker.m_file.c_str(), NULL,
+				&ai->m_properties, err)))
+	 return OU::esprintf("for worker %s: %s", i->wName, err);
+       m_workers.push_back(w);
+     }
+     i->worker = w;
+     // Initialize the instance ports
+     InstancePort *ip = i->m_ports = new InstancePort[i->worker->m_ports.size()];
+     for (unsigned n = 0; n < i->worker->m_ports.size(); n++, ip++) {
+       // If the instance in the OU::Assembly has "m_externals=true",
+       // and this instance port has no connections in the OU::Assembly
+       // then we add an external connection for the instance port. Prior to this,
+       // we didn't have access to the worker metadata to know what all the ports are.
+       ip->init(i, i->worker->m_ports[n], NULL);
+       if (ai->m_externals && ip->m_port->isData) {
+	 Port *p = NULL;
+	 for (OU::Assembly::Instance::PortsIter pi = ai->m_ports.begin();
+	      pi != ai->m_ports.end(); pi++)
+	   if (!strcasecmp((*pi)->m_name.c_str(), ip->m_port->name)) {
+	     p = ip->m_port;
+	     break;
+	   }
+	 if (!p)
+	   m_utilAssembly->addExternalConnection(i->instance->m_ordinal, ip->m_port->name);
+       }
+     }
+     // Count nWCIs - this should work for workers and subassemblies
+     if (!i->worker->m_noControl)
+       m_nWCIs += i->worker->m_ports[0]->count;
      // Parse property values now that we know the actual workers.
      OU::Assembly::Property *ap = &ai->m_properties[0];
      i->properties.resize(ai->m_properties.size());
@@ -300,7 +310,7 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
 
 // Make this port an external port
 // Not called for WCIs that are aggreated...
-const char *Assembly::
+  const char *Assembly::
 externalizePort(InstancePort &ip, const char *name, size_t &ordinal) {
   Port &p = *ip.m_port;
   Port &extPort = *new Port(p);
@@ -357,7 +367,8 @@ parseHdlAssy() {
     *platInstAttrs[] = { "Index", "interconnect", "io", "adapter", "configure", NULL};
   // Do the generic assembly parsing, then to more specific to HDL
   if ((err = a->parseAssy(m_xml, topAttrs,
-			  a->m_isContainer ? contInstAttrs : (a->m_isPlatform ? platInstAttrs : instAttrs),
+			  a->m_isContainer ? contInstAttrs :
+			  (a->m_isPlatform ? platInstAttrs : instAttrs),
 			  true)))
     return err;
   // Do the OCP derivation for all workers
@@ -371,12 +382,14 @@ parseHdlAssy() {
     if (i->worker->m_assembly)
       continue;
     if (a->m_isContainer || a->m_isPlatform) {
+#if 0
       bool idxFound;
       // FIXME: perhaps an instance with no control?
       if ((err = OE::getNumber(x, "Index", &i->index, &idxFound, 0)))
         return err;
       if (!idxFound && !i->worker->m_noControl && !i->worker->m_assembly)
         return "Missing \"Index\" attribute in instance in configuration or container assembly";
+#endif
       const char
         *ic = ezxml_cattr(x, "interconnect"), // which interconnect
 	*ad = ezxml_cattr(x, "adapter"),      // adapter to which interconnect or io
@@ -408,7 +421,7 @@ parseHdlAssy() {
   unsigned n;
   Clock *clk, *wciClk = NULL;
   // Establish the wciClk for all wci slaves
-  if (a->m_isPlatform || a->m_isContainer) {
+  if (/*a->m_isPlatform || */ a->m_isContainer) {
     // The default WCI clock comes from the (single) wci master
     for (n = 0, i = a->m_instances; !wciClk && n < a->m_nInstances; n++, i++)
       if (i->worker) {
@@ -1565,8 +1578,8 @@ emitWorkers(FILE *f) {
     emitWorker(f, *wi);
 }
 
- static void
-emitInstance(Instance *i, FILE *f, const char *prefix)
+static void
+emitInstance(Instance *i, FILE *f, const char *prefix, size_t &index)
 {
   
   fprintf(f, "<%s name=\"%s%s%s\" worker=\"%s\"",
@@ -1575,7 +1588,7 @@ emitInstance(Instance *i, FILE *f, const char *prefix)
 	  i->iType == Instance::IO ? "io" : "adapter",
 	  prefix ? prefix : "", prefix ? "/" : "", i->name, i->worker->m_implName);
   if (!i->worker->m_noControl)
-    fprintf(f, " occpIndex=\"%zu\"", i->index);
+    fprintf(f, " occpIndex=\"%zu\"", index++);
   if (i->attach)
     fprintf(f, " attachment=\"%s\"", i->attach);
   if (i->iType == Instance::Interconnect) {
@@ -1586,16 +1599,16 @@ emitInstance(Instance *i, FILE *f, const char *prefix)
   fprintf(f, "/>\n");
 }
 
-  void Worker::
-  emitInstances(FILE *f, const char *prefix) {
+void Worker::
+emitInstances(FILE *f, const char *prefix, size_t &index) {
   Instance *i = m_assembly->m_instances;
   for (unsigned n = 0; n < m_assembly->m_nInstances; n++, i++)
     if (!i->worker->m_assembly)
-      emitInstance(i, f, prefix);
+      emitInstance(i, f, prefix, index);
 }
 
-  void Worker::
-  emitInternalConnections(FILE *f, const char *prefix) {
+void Worker::
+emitInternalConnections(FILE *f, const char *prefix) {
   for (ConnectionsIter ci = m_assembly->m_connections.begin();
        ci != m_assembly->m_connections.end(); ci++) {
     Connection &c = **ci;
@@ -1632,7 +1645,6 @@ emitInstance(Instance *i, FILE *f, const char *prefix)
   }
 }
 
-
 const char *Worker::
 emitUuidHDL(const char *outDir, const OU::Uuid &uuid) {
   const char *err;
@@ -1658,12 +1670,12 @@ emitUuidHDL(const char *outDir, const OU::Uuid &uuid) {
     return "Could not close output file. No space?";
   return NULL;
 }
+
 // Emit the artifact XML for an HDLcontainer
 const char *Worker::
 emitArtHDL(const char */*outDir*/, const char */* wksfile*/) {
   return "Artifact XML files can only be generated for containers";
 }
-
 
 // This is a parsed for the assembly of what goes into a single worker binary
 const char *Worker::
@@ -1679,7 +1691,7 @@ parseRccAssy() {
     const char *wXmlName = ezxml_cattr(x, "File");
     if (!wXmlName)
       return "Missing \"File\" attribute is \"Worker\" element";
-    Worker *w = create(wXmlName, m_file.c_str(), NULL, err);
+    Worker *w = create(wXmlName, m_file.c_str(), NULL, NULL, err);
     if (w)
       a->m_workers.push_back(w);
   }
@@ -1700,7 +1712,7 @@ parseOclAssy() {
     const char *wXmlName = ezxml_cattr(x, "File");
     if (!wXmlName)
       return "Missing \"File\" attribute is \"Worker\" element";
-    Worker *w = create(wXmlName, m_file.c_str(), NULL, err);
+    Worker *w = create(wXmlName, m_file.c_str(), NULL, NULL, err);
     if (w)
       a->m_workers.push_back(w);
   }

@@ -64,12 +64,13 @@ namespace OCPI {
       : OU::Worker::Worker(),
 	m_artifact(art), m_xml(impl), m_instXml(inst), m_workerMutex(true)
     {
-      const char *err = parse(impl);
-      if (err)
-	throw OU::Error("Error parsing worker metadata: %s", err);
-      setControlOperations(ezxml_cattr(impl, "controlOperations"));
-      if (impl)
+      if (impl) {
+	const char *err = parse(impl);
+	if (err)
+	  throw OU::Error("Error parsing worker metadata: %s", err);
+	setControlOperations(ezxml_cattr(impl, "controlOperations"));
 	m_implTag = ezxml_cattr(impl, "name");
+      }
       if (inst)
 	m_instTag = ezxml_cattr(inst, "name");
     }

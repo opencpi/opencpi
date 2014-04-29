@@ -163,11 +163,14 @@ Worker::
 ~Worker()
 {
   // FIXME - this sort of thing should be generic and be reused in portError
-  if (enabled) {
-    enabled = false;
-    controlOperation(OU::Worker::OpStop);
+  try {
+    if (enabled) {
+      enabled = false;
+      controlOperation(OU::Worker::OpStop);
+    }
+    controlOperation(OU::Worker::OpRelease);
+  } catch(...) {
   }
-  controlOperation(OU::Worker::OpRelease);
 #ifdef EM_PORT_COMPLETE
     // If we have an event handler, we need to inform it about the timeout
     if ( m_runCondition && m_runCondition->timeout ) {
