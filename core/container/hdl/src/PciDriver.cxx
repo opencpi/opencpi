@@ -459,6 +459,7 @@ namespace OCPI {
 	ocpiBad("When searching for PCI device '%s': %s", pciName, error.c_str());
 	return NULL;
       }
+#if 0
       void *Driver::
       map(uint32_t size, uint64_t &phys, std::string &error) {
 	// FIXME: mutex
@@ -519,6 +520,7 @@ namespace OCPI {
 	phys = request.address;
 	return vaddr;
       }
+#endif
     } // namespace PCI
   } // namespace HDL
 } // namespace OCPI

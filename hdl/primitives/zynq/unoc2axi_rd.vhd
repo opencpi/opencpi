@@ -82,7 +82,8 @@ begin
   -- Offer a uxf to the unoc when there are enough dw available for the uxf
   -- Note the case when this condition is satified by a leftover (hi) DW
   -- and no current AXI read data
-  rd_unoc_valid    <= to_bool(rd_naxf_left_uxf_r = 1 and axi_in.VALID);
+  rd_unoc_valid    <= to_bool((rd_naxf_left_uxf_r = 0 and rd_ndw_for_uxf_r = 1) or
+                              (rd_naxf_left_uxf_r = 1 and axi_in.VALID));
   rd_eof           <= to_bool(rd_ndw_next_uxf = 0);
   rd_axi_ready     <= to_bool(rd_naxf_left_uxf_r > 1 or
                               (rd_naxf_left_uxf_r = 1 and unoc_in.take));
@@ -169,14 +170,16 @@ begin
         elsif rd_axi_ready and axi_in.VALID then
           -- We're taking an axi xfr from the read channel for parts of a uxf
           -- when its not the last axi xfer for this uxf
-          rd_naxf_left_uxf_r <= rd_naxf_left_uxf_r - 1;
           if its(pkt_aligned_r) then
-            rd_data_r(0)    <= rd_axi_hi; -- leftover
+            if rd_naxf_left_uxf_r = 1 then
+              rd_data_r(0)    <= rd_axi_hi; -- leftover
+            end if;
             rd_data_r(1)    <= rd_axi_lo;
           else
             rd_data_r(0)    <= rd_axi_lo;
             rd_data_r(1)    <= rd_axi_hi;
           end if;
+          rd_naxf_left_uxf_r <= rd_naxf_left_uxf_r - 1;
           rd_data_r(2)    <= rd_axi_hi;
         end if;
       end if;   -- not reset
@@ -199,5 +202,21 @@ begin
   unoc_out.data.be      <= (others => '0');
   unoc_out.valid        <= rd_unoc_valid;
   unoc_out.take         <= unoc_take;
-  debug                 <= (others => '0');
+  debug                 <= to_ulonglong(
+    std_logic_vector(unoc_addr) &
+    "0" &
+    std_logic_vector(rd_ndw_left_r) &
+    "00" &
+    slv(pkt_starting) &
+    slv(pkt_aligned_r) &
+    std_logic_vector(rd_ndw_next_uxf) &
+    std_logic_vector(rd_ndw_for_uxf_r) &
+    std_logic_vector(rd_naxf_next_uxf) &
+    std_logic_vector(rd_naxf_left_uxf_r) &
+    slv(rd_sof_r) &
+    slv(rd_eof) &
+    slv(rd_unoc_valid) &
+    slv(rd_axi_ready) & "00"
+    );
+
 end rtl;

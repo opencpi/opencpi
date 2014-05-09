@@ -182,7 +182,12 @@ begin
             -- We need to advance the data routing to the axi low and high dwords
             case to_integer(wr_axi_lo_idx_r) is
               when 0      => wr_axi_lo_idx_r <= O"2";
-              when 1      => wr_axi_lo_idx_r <= O"4";
+              when 1      =>
+                if wr_naxf_left_for_pkt_r = 0 then
+                    wr_axi_lo_idx_r <= O"3";
+                else
+                    wr_axi_lo_idx_r <= O"4";
+                end if;
               when 2      => wr_axi_lo_idx_r <= O"0";
               when others => wr_axi_lo_idx_r <= O"1";
             end case;

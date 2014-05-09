@@ -264,7 +264,7 @@ type unoc_completion1_t is record -- DWORD 1 for completions
   byte_count   : std_logic_vector(11 downto 0);
 end record unoc_completion1_t;
 function from_unoc_completion1(h : unoc_completion1_t) return std_logic_vector;
-function unoc_make_completion1(dw_length : unsigned(10 downto 0))
+function unoc_make_completion1(dw_length : unsigned(unoc_dw_length_bits_c downto 0))
   return unoc_completion1_t;
 
 -- This is the third dword of a unoc sof completion

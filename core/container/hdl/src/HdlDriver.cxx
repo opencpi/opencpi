@@ -70,7 +70,7 @@ namespace OCPI {
       }
       Device *dev =
 	pci ? PCI::Driver::open(which, err) : 
-	bus ? Bus::Driver::open(which, forLoad, err) : 
+	bus ? Zynq::Driver::open(which, forLoad, err) : 
 	ether ? Ether::Driver::open(which, discovery, err) :
 	sim ? Sim::Driver::open(which, discovery, err) : NULL;
       ezxml_t config;
@@ -109,7 +109,7 @@ namespace OCPI {
       unsigned count = 0;
       m_params = params;
       std::string error;
-      count += Bus::Driver::search(params, exclude, discoveryOnly, error);
+      count += Zynq::Driver::search(params, exclude, discoveryOnly, error);
       if (error.size()) {
 	ocpiBad("In HDL Container driver, got PL search error: %s", error.c_str());
 	error.clear();

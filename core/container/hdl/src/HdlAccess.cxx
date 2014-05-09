@@ -53,8 +53,10 @@ namespace OCPI {
 
     void Access::
     setAccess(volatile uint8_t *registers,  Accessor *accessor,
-	      RegisterOffset base) { //, volatile uint8_t *buffers) {
-      delete m_accessor;
+	      RegisterOffset base, bool child) {
+      if (!m_child)
+	delete m_accessor;
+      m_child = child;
       m_registers = registers;
       m_accessor = accessor;
       m_base = OCPI_UTRUNCATE(DtOsDataTypes::Offset, base);
@@ -71,7 +73,7 @@ namespace OCPI {
     offsetRegisters(Access &offsettee, size_t offset) {
       offsettee.setAccess(m_registers ? m_registers + offset : 0,
 			  m_accessor,
-			  m_base + offset);
+			  m_base + offset, true);
     }
 
     void Access::

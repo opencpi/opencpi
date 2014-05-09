@@ -187,6 +187,8 @@ emitImplOCL(Worker *w, const char *outDir) {
     unsigned pad = 0;
     for (PropertiesIter pi = w->m_ctl.properties.begin(); pi != w->m_ctl.properties.end(); pi++) {
       OU::Property *p = *pi;
+      if (p->m_isParameter)
+	continue;
       if (p->m_isSequence) {
         fprintf(f, "  uint32_t %s_length;\n", p->m_name.c_str());
         if (p->m_align > sizeof(uint32_t))

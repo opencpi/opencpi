@@ -21,7 +21,7 @@ namespace OCPI {
 	OCPI::HDL::PCI::Driver,
 	OCPI::HDL::Ether::Driver,
 	OCPI::HDL::Sim::Driver,
-	OCPI::HDL::Bus::Driver,
+	OCPI::HDL::Zynq::Driver,
 	Access, // for temporary probing
 	virtual protected OCPI::Util::SelfMutex
     {

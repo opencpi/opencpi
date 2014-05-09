@@ -50,5 +50,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
     p->nextData = (p->nextData + length) % sizeof(p->data);
   if (p->nextMeta >= p->metadataCount)
     p->nextMeta = 0;
+  p->messagesSent++;
+  p->dataSent += length;
   return --p->messagesToSend ? RCC_ADVANCE : RCC_ADVANCE_DONE;
 }

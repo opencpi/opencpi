@@ -78,6 +78,7 @@ add to tree.
   CMD_OPTION  (impl,      i,    Bool,   NULL, "Generate the implementation header file (readonly)") \
   CMD_OPTION  (skel,      s,    Bool,   NULL, "Generate the implementation skeleton file (modified part)") \
   CMD_OPTION  (assy,      a,    Bool,   NULL, "Generate the assembly implementation file (readonly)") \
+  CMD_OPTION  (parameters,r,    String, NULL, "Process a parameter file") \
   CMD_OPTION  (xml,       A,    Bool,   NULL, "Generate the artifact XML file for embedding") \
   CMD_OPTION  (bsv,       b,    Bool,   NULL, "Generate the BlueSpec interface file (broken)") \
   CMD_OPTION  (workers,   W,    Bool,   NULL, "Generate the makefile fragment for workers in the assembly") \
@@ -217,6 +218,9 @@ main(int argc, char **argv) {
       case 'x':
 	attribute = *++ap;
 	break;
+      case 'r':
+	ap++;
+	break;
       default:
 	fprintf(stderr, "Unknown flag: %s\n", *ap);
 	return 1;
@@ -259,6 +263,8 @@ main(int argc, char **argv) {
 	fprintf(stderr, "%s: Error generating assembly makefile: %s\n", *ap, err);
       else if (doBsv && (err = w->emitBsvHDL(root)))
 	fprintf(stderr, "%s: Error generating BSV import file: %s\n", *ap, err);
+      else if (options.parameters() && (err = w->emitToolParameters(options.parameters(), root)))
+	fprintf(stderr, "%s: Error generating parameter file for tools: %s\n", *ap, err);
       else if (doArt)
 	switch (w->m_model) {
 	case HdlModel:

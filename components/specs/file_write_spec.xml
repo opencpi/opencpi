@@ -8,4 +8,5 @@
     <property name='messagesInFile' type='bool' readable='true' initial='true' default='false'/>
     <property name='bytesWritten' type='uLongLong' volatile='true'/>
     <property name='messagesWritten' type='uLongLong' volatile='true'/>
+    <property name='stopOnEOF' type='bool' initial='true' default='true'/>
   </ComponentSpec>

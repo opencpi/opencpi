@@ -24,7 +24,7 @@ architecture rtl of wci_master is
   signal response             : worker_response_t;               -- our response when active
   -- Our state - minimized for scalability
   signal reset_n_r            : std_logic;                     -- are we reset? (_n)
-  signal window_r             : std_logic_vector(12 downto 0); -- high address bits
+  signal window_r             : std_logic_vector(11 downto 0); -- high address bits
   signal attention_r          : std_logic;                     -- sticky version of SFlag(0)
   signal timeout_r            : worker_timeout_t;              -- our log2 of timeout ticks
   signal ready_r              : bool_t;                        -- WCI slave !busy (pipelined)
@@ -40,6 +40,8 @@ architecture rtl of wci_master is
   signal last_byte_en_valid_r : std_logic;
   signal last_addr_valid_r    : std_logic;
   signal sticky_r             : std_logic_vector(8 downto 0);
+  signal assert_command       : bool_t;
+  signal cmd_asserted_r       : bool_t;
 begin
   -- worker is only asserted with a valid worker value when there is
   -- a valid operation
@@ -47,13 +49,14 @@ begin
                                 worker_in.operation = control_write_e);
   starting           <= to_bool(worker_in.id(id_width-1 downto 0) = to_unsigned(id, id_width) and
                                 (not its(active_r) and
-                                 (its(ready_r) or is_master)));
+                                 (its(ready_r) or reset_n_r = '0' or is_master)));
+  -- the gate for the single cycle command
+  assert_command     <= to_bool(active_r and its(ready_r) and
+                                not its(is_master) and not its(cmd_asserted_r));
   wci_out.Clk        <= worker_in.clk;
   wci_out.MReset_n   <= reset_n_r;
-  wci_out.MCmd       <= worker_in.cmd when active_r and its(ready_r) and not its(is_master)
-                        else ocpi.ocp.MCmd_IDLE;
-  wci_out.MAddr      <= slv0(wci_out.MAddr'length - worker_in.address'length) &
-                        worker_in.address;
+  wci_out.MCmd       <= worker_in.cmd when its(assert_command) else ocpi.ocp.MCmd_IDLE;
+  wci_out.MAddr      <= window_r & worker_in.address;
   wci_out.MAddrSpace(0) <= worker_in.is_config;
   wci_out.MByteEn    <= worker_in.byte_en;
   wci_out.MData      <= worker_in.data;
@@ -110,8 +113,9 @@ begin
         attention_r          <= '0';
         timeout_r            <= (others => '0');
         ready_r              <= '0';
-        active_r             <= '0';
+        active_r             <= bfalse;
         abort_r              <= '0';
+        cmd_asserted_r       <= bfalse;
         -- Debug state
         last_addr_r          <= (others => '0');
         last_write_r         <= '0';
@@ -143,7 +147,10 @@ begin
           end case;
         elsif its(active_r) then
           if response /= none_e then
-            active_r <= '0';
+            active_r <= bfalse;
+            cmd_asserted_r <= bfalse;
+          elsif its(assert_command) then
+            cmd_asserted_r <= btrue;
           end if;
           if worker_in.operation = control_write_e then
             -- Write to one of 2 control registers

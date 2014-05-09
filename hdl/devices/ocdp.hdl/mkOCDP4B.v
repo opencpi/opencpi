@@ -5189,9 +5189,10 @@ module mkOCDP4B(pciDevice,
 	     WILL_FIRE_RL_wci_ctl_op_start ;
 
   // register wci_illegalEdge
-  assign wci_illegalEdge$D_IN =
-	     !MUX_wci_illegalEdge$write_1__SEL_1 &&
-	     MUX_wci_illegalEdge$write_1__VAL_2 ;
+  assign wci_illegalEdge$D_IN = 0;
+  
+//	     !MUX_wci_illegalEdge$write_1__SEL_1 &&
+//	     MUX_wci_illegalEdge$write_1__VAL_2 ;
   assign wci_illegalEdge$EN =
 	     WILL_FIRE_RL_wci_ctl_op_complete && wci_illegalEdge ||
 	     MUX_wci_illegalEdge$write_1__SEL_2 ;

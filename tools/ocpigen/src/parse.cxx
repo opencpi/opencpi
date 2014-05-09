@@ -39,6 +39,7 @@
 #include <limits.h>
 #include <string.h>
 #include <assert.h>
+#include <strings.h>
 #include <ctype.h>
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
@@ -226,6 +227,11 @@ checkDataPort(ezxml_t impl, Port **dpp, WIPType type) {
     return "Both ImpreciseBurst and PreciseBurst cannot be specified for WSI or WMI";
 #endif
   dp->pattern = ezxml_cattr(impl, "Pattern");
+  // After all this, if there is no default buffer size specified, but there is
+  // a maxMessageValues, set the default buffer size from it.
+  if (!dp->protocol->m_defaultBufferSize && dp->protocol->m_maxMessageValues)
+    dp->protocol->m_defaultBufferSize =
+      (dp->protocol->m_maxMessageValues * dp->protocol->m_dataValueWidth + 7) / 8;
   *dpp = dp;
   return 0;
 }
@@ -336,7 +342,7 @@ void Worker::
 addAccess(OU::Property &p) {
   if (p.m_isVolatile)
     m_ctl.volatiles = true;
-  if (p.m_isVolatile || p.m_isReadable && !p.m_isWritable)
+  if (p.m_isVolatile || p.m_isReadable && !p.m_isWritable && !p.m_isParameter)
     m_ctl.readbacks = true;
 }
 
@@ -344,15 +350,28 @@ const char *Worker::
 addProperty(ezxml_t prop, bool includeImpl)
 {
   OU::Property *p = new OU::Property;
-  m_ctl.properties.push_back(p);
   
   const char *err =
     p->parse(prop, m_ctl.readables, m_ctl.writables, m_ctl.sub32Bits,
 	     includeImpl, (unsigned)(m_ctl.ordinal++));
-  if (!p->m_isParameter || p->m_isReadable)
-    m_ctl.nRunProperties++;
-  if (!err)
+  // Now that have parsed the property "in a vacuum", do two context-sensitive things:
+  // Override the default value of parameter properties
+  // Skip debug properties if the debug parameter is not present.
+  if (!err
+      //      && 
+      //      (!p->m_isDebug ||
+      //       (m_debugProp && m_debugProp->m_default && m_debugProp->m_default->m_Bool))
+      ) {
+    // Now allow overrides of values.
+    if (!strcasecmp(p->m_name.c_str(), "ocpi_debug"))
+      m_debugProp = p;
+    m_ctl.properties.push_back(p);
+    if (!p->m_isParameter)
+      m_ctl.nRunProperties++;
     addAccess(*p);
+    return NULL;
+  }
+  delete p;
   return err;
 }
 
@@ -499,7 +518,14 @@ parseImplControl(ezxml_t &xctl) {
   if ((err = parseList(ezxml_cattr(m_xml, "ControlOperations"), parseControlOp, this)) ||
       xctl && (err = parseList(ezxml_cattr(xctl, "ControlOperations"), parseControlOp, this)))
     return err;
-  if ((err = doProperties(m_xml, m_file.c_str(), true, false)))
+  // Add the built-in properties
+  char *dprop =
+    strdup("<property name='ocpi_debug' type='bool' parameter='true' default='false' readable='true'/>");
+  ezxml_t dpx = ezxml_parse_str(dprop, strlen(dprop));
+  err = addProperty(dpx, true);
+  ezxml_free(dpx);
+  if (err ||
+      (err = doProperties(m_xml, m_file.c_str(), true, false)))
     return err;
   // Now that we have all information about properties and we can actually
   // do the offset calculations
@@ -937,7 +963,7 @@ parseHdlImpl(const char *package) {
     for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
       OU::Property &p = **pi;
       // Determine when the raw properties start
-      if (m_ctl.rawProperties &&
+      if (!p.m_isParameter && m_ctl.rawProperties &&
 	  (!m_ctl.firstRaw ||
 	   !strcasecmp(m_ctl.firstRaw->m_name.c_str(), p.m_name.c_str())))
 	raw = true;
@@ -946,7 +972,7 @@ parseHdlImpl(const char *package) {
 	  m_ctl.rawWritables = true;
 	if (p.m_isReadable)
 	  m_ctl.rawReadables = true;
-      } else {
+      } else if (!p.m_isParameter) {
 	// These control attributes are only set for non-raw properties.
 	if (p.m_isReadable)
 	  m_ctl.nonRawReadables = true;
@@ -1482,7 +1508,7 @@ Worker::Worker(ezxml_t xml, const char *xfile, const char *parent,
     m_isThreaded(false), m_maxPortTypeName(0), m_endian(NoEndian),
     m_needsEndian(false), m_pattern(0), m_staticPattern(0), m_defaultDataWidth(-1),
     m_language(NoLanguage), m_assembly(NULL), m_library(NULL), m_outer(false),
-    m_instancePVs(ipvs)
+    m_debugProp(NULL), m_instancePVs(ipvs)
 {
   const char *name = ezxml_name(xml);
   // FIXME: make HdlWorker and RccWorker classes  etc.
@@ -1533,6 +1559,65 @@ emitAttribute(const char *attr) {
   }
   return OU::esprintf("Unknown worker attribute: %s", attr);
 }
+
+// Take as input the list of parameters that are set in the Makefile or the
+// environment (i.e. something a human wrote and might have errors).
+// Check against the actual properties of the worker, checking the value
+// using the type-aware parser.  Return in an output file a set of valid parameter
+// settings that are ready/convenient/appropriate for tools to supply to the
+// language processors. The output file format is easy for Makefile files
+// and tools to deal with (i.e. not XML), and can be efficiently read by make.
+const char *Worker::
+emitToolParameters(const char *rawParamFile, const char *outDir) {
+  const char *rawFile = 0;
+  ezxml_t x = NULL;
+  const char *err;
+  FILE *f = NULL;
+  if ((err = parseFile(rawParamFile, NULL, "parameters", &x, &rawFile, false)) ||
+      (err = openOutput(m_fileName.c_str(), outDir, "", "-params", ".mk", NULL, f)))
+    return err;
+  for (ezxml_t px = ezxml_cchild(x, "parameter"); px; px = ezxml_next(px)) {
+    std::string name, value;
+    if ((err = OE::getRequiredString(px, name, "name")) ||
+	(err = OE::getRequiredString(px, value, "value")))
+      return err;
+    OU::Property *p = NULL;
+    for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
+      if (!strcasecmp((*pi)->m_name.c_str(), name.c_str())) {
+	p = *pi;
+	if (p->m_isParameter) {
+	  OU::Value v;
+	  if ((err = p->parseValue(value.c_str(), v)) ||
+	      !f && (err = openOutput(m_implName, outDir, "", "-params", ".xml", NULL, f)))
+	    return err;
+	  std::string paramValue;
+	  switch(m_model) {
+	  case RccModel:
+	    rccValue(v, paramValue);
+	    break;
+	  case HdlModel:
+	    hdlValue(v, paramValue);
+	    break;
+	  default:;
+	  }
+	    
+	  fprintf(f, "WorkerParamNames+=%s\nWorkerParam_%s:=%s\n",
+		  name.c_str(), name.c_str(), paramValue.c_str());
+	} else
+	  fprintf(stderr,
+		  "Warning: parameter '%s' ignored: the '%s' property exists, but is not a parameter\n",
+		  name.c_str(), p->m_name.c_str());
+	break;
+      }
+    if (!p)
+      fprintf(stderr, "Warning: parameter '%s' ignored; it is not a property of worker '%s'\n",
+	      name.c_str(), m_implName);
+  }
+  if (f && fclose(f))
+    return OU::esprintf("File close of parameter file failed.  Disk full?");
+  return NULL;
+}
+
 
 Port::Port(const char *name, Worker *w, bool isData, WIPType type, ezxml_t xml, size_t count, bool master)
   : name(name), worker(w), count(count),

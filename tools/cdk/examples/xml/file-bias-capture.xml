@@ -1,6 +1,6 @@
 <application package='ocpi' done='file_read'>
   <instance component="file_read" connect="bias"> 
-    <property name='filename' value='/mnt/net/ocpi/opencpi/tools/cdk/examples/xml/sig' />
+    <property name='filename' value='test.input' />
     <!-- <property name='filename' value='sig' /> -->
     <property name='messagesInFile' value='false' />
     <property name='opcode' value='4' />

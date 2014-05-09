@@ -345,8 +345,9 @@ namespace OCPI {
       }
       Socket::
       ~Socket() {
+	ocpiDebug("Closing OsEther Socket fd %d", m_fd);
 	if (m_fd >= 0)
-	  close(m_fd);
+	  ::close(m_fd);
       }
 
       bool Socket::
@@ -610,8 +611,8 @@ namespace OCPI {
         msg.msg_iov = (iovec*)iov;
 	msg.msg_iovlen = iovlen;
 	ssize_t rlen = sendmsg(m_fd, &msg, 0);
-	ocpiDebug("Send packet length %zd, to %s, port %u returned %zd", len,
-		  inet_ntoa(sa.in.sin_addr), ntohs(sa.in.sin_port), rlen);
+	ocpiDebug("Send packet length %zd, to %s, port %u returned %zd errno %u fd %u", len,
+		  inet_ntoa(sa.in.sin_addr), ntohs(sa.in.sin_port), rlen, errno, m_fd);
 	if (rlen != (ssize_t)len) {
 	  setError(error, "sendto of %u bytes failed, returning %d", len, rlen);
 	  return false;

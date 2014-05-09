@@ -1,83 +1,117 @@
-/*
- *  This file is part of OpenCPI (www.opencpi.org).
- *     ____                   __________   ____
- *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
- *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
- *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
- *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
- *      /_/                                             /____/
- *
- *  OpenCPI is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU Lesser General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  OpenCPI is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU Lesser General Public License for more details.
- *
- *  You should have received a copy of the GNU Lesser General Public License
- *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
- */
-/*
- * This file contains support for the HDL device in the PL on the Xilinx Zynq platform.
- * On Zynq, the control plane is implemented using the AXI_GP0 port, which
- * is located at physical address 0x4000000.
- * The data plane is implemented with the AXI_HP0-3 and other ports, acting
- * as bus masters only.
- */
+ /*
+  *  This file is part of OpenCPI (www.opencpi.org).
+  *     ____                   __________   ____
+  *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+  *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+  *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+  *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+  *      /_/                                             /____/
+  *
+  *  OpenCPI is free software: you can redistribute it and/or modify
+  *  it under the terms of the GNU Lesser General Public License as published
+  *  by the Free Software Foundation, either version 3 of the License, or
+  *  (at your option) any later version.
+  *
+  *  OpenCPI is distributed in the hope that it will be useful,
+  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  *  GNU Lesser General Public License for more details.
+  *
+  *  You should have received a copy of the GNU Lesser General Public License
+  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+  */
+ /*
+  * This file contains support for the HDL device in the PL on the Xilinx Zynq platform.
+  * On Zynq, the control plane is implemented using the AXI_GP0 port, which
+  * is located at physical address 0x4000000.
+  * The data plane is implemented with the AXI_HP0-3 and other ports, acting
+  * as bus masters only.
+  */
 #include <errno.h>
 #include <unistd.h>
 #include <sys/mman.h>
 #include "zlib.h"
 #include "OcpiUtilMisc.h"
-#include "BusDriver.h"
 #include "HdlOCCP.h"
+#include "BusDriver.h"
+#include "Zynq.h"
 
-namespace OCPI {
-  namespace HDL {
-    namespace Bus {
-      namespace OU = OCPI::Util;
+ namespace OCPI {
+   namespace HDL {
+     namespace Zynq {
+       namespace OU = OCPI::Util;
 
-      const uint32_t GP0_PADDR = 0x40000000;
-      class Device
-	: public OCPI::HDL::Device {
-	uint8_t  *m_vaddr;
-	friend class Driver;
-	Device(std::string &name, int fd, bool forLoad, std::string &err)
-	  : OCPI::HDL::Device(name, "ocpi-dma-pio"), m_vaddr(NULL) {
-	  m_endpointSize = sizeof(OccpSpace);
-	  OU::format(m_endpointSpecific,
-		     "ocpi-dma-pio:0x%" PRIx32 ".0x%" PRIx32 ".0x%" PRIx32,
-		     GP0_PADDR, 0, 0);
-	  void *vaddr = mmap(NULL, sizeof(OccpSpace), PROT_READ|PROT_WRITE, MAP_SHARED,
-			     fd, OCPI_STRUNCATE(off_t, GP0_PADDR));
-	  if (vaddr == MAP_FAILED) {
-	    err = "can't mmap /dev/mem for control space";
-	    return;
+       class Device
+	 : public OCPI::HDL::Device {
+	 Driver    &m_driver;
+	 uint8_t  *m_vaddr;
+	 friend class Driver;
+	 Device(Driver &driver, std::string &name, bool forLoad, std::string &err)
+	   : OCPI::HDL::Device(name, "ocpi-dma-pio"),
+	     m_driver(driver), m_vaddr(NULL) {
+	   m_isAlive = false;
+	   m_endpointSize = sizeof(OccpSpace);
+	   OU::format(m_endpointSpecific,
+		      "ocpi-dma-pio:0x%" PRIx32 ".0x%" PRIx32 ".0x%" PRIx32,
+		      GP0_PADDR, 0, 0);
+	   if (isProgrammed(err)) {
+	     if (setup(err)) {
+	       if (forLoad)
+		 err.clear();
+	     }
+	   } else if (err.empty())
+	       ocpiInfo("There is no bitstream loaded on this HDL device: %s", name.c_str());
+	 }
+	 ~Device() {
+	   if (m_vaddr)
+	     munmap((void*)m_vaddr, sizeof(OccpSpace));
+	 }
+
+	 bool
+	 configure(ezxml_t config, std::string &err) {
+	   if (!m_isAlive) {
+	     volatile SLCR *slcr =
+	       (volatile SLCR *)m_driver.map(sizeof(SLCR), SLCR_ADDR, err);
+	     if (!slcr)
+	       return true;
+	     // We're not loaded, but fake as much stuff as possible.
+	     m_platform = "zed"; // FIXME: we don't know the part yet
+	     switch ((slcr->pss_idcode >> 12) & 0x1f) {
+	     case 0x02: m_part = "xc7z010"; break;
+	     case 0x07: m_part = "xc7z020"; break;
+	     case 0x0c: m_part = "xc7z030"; break;
+	     case 0x11: m_part = "xc7z045"; break;
+	     default:
+	       m_part = "xc7zXXX";
+	     }
+	     ocpiDebug("Zynq SLCR PSS_IDCODE: 0x%x", slcr->pss_idcode);
+	     return false;
+	   }
+	  return OCPI::HDL::Device::configure(config, err);
+	}
+	bool
+	setup(std::string &err) {
+	  if ((m_vaddr = m_driver.map(sizeof(OccpSpace), OCPI_STRUNCATE(off_t, GP0_PADDR),
+				      err))) {
+	    cAccess().setAccess(m_vaddr, NULL, OCPI_UTRUNCATE(RegisterOffset, 0));
+	    dAccess().setAccess(NULL, NULL, 0); // the data space will never be accessed by CPU
+	    init(err);
+	    if (err.empty())
+	      m_isAlive = true;
 	  }
-	  m_vaddr = (uint8_t*)vaddr;
+	  return !err.empty();
+	}
+	bool
+	isProgrammed(std::string &err) {
 	  std::string val;
 	  const char *e =
 	    OU::file2String(val,
 			    "/sys/devices/amba.0/f8007000.ps7-dev-cfg/prog_done", 0);
-	  if (e)
+	  if (e) {
 	    err = e;
-	  if (err.empty()) {
-	    cAccess().setAccess(m_vaddr, NULL, OCPI_UTRUNCATE(RegisterOffset, 0));
-	    dAccess().setAccess(NULL, NULL, 0); // the data space will never be accessed by CPU
-	    if (val.c_str()[0] != '1')
-	      err = "There is no bitstream loaded on this HDL device: " + name;
-	    else
-	      init(err);
-	    if (forLoad)
-	      err.clear();
+	    return false;
 	  }
-	}
-	~Device() {
-	  if (m_vaddr)
-	    munmap(m_vaddr, sizeof(OccpSpace));
+	  return val.c_str()[0] == '1';
 	}
 	// Scan the buffer and identify the start of the sync pattern
 	static uint8_t *findsync(uint8_t *buf, size_t len) {
@@ -108,7 +142,8 @@ namespace OCPI {
 	}
 
 	// Load a bitstream
-	void load(const char *fileName) {
+	void
+	load(const char *fileName) {
 	  struct Xld { // struct allocated on the stack for easy cleanup
 	    int xfd, bfd;
 	    gzFile gz;
@@ -185,8 +220,14 @@ namespace OCPI {
 	      throw OU::Error("Error writing to /dev/xdevcfg for bitstream loading: %s(%u/%d)",
 			      strerror(errno), errno, n);
 	  } while(1);
-	  ::close(xld.xfd);
+	  if (::close(xld.xfd))
+	    throw OU::Error("Error closing /dev/xdevcfg: %s(%u)", strerror(errno), errno);
 	  xld.xfd = -1;
+	  std::string err;
+	  if (isProgrammed(err))
+	    setup(err);
+	  if (!err.empty())
+	    throw OU::Error("Error after loading bitstream: %s", err.c_str());
 #if 0
 	  // We have written all the data from the file to the device.
 	  // Now we can retrieve status registers
@@ -224,7 +265,7 @@ namespace OCPI {
       search(const OU::PValue */*params*/, const char **exclude, bool /*discoveryOnly*/,
 	     std::string &error) {
 	// Opening implies canonicalizing the name, which is needed for excludes
-	OCPI::HDL::Device *dev = open("0", false, error);
+	OCPI::HDL::Device *dev = open("0", true, error);
 	if (dev) {
 	  if (exclude)
 	    for (const char **ap = exclude; *ap; ap++)
@@ -246,18 +287,26 @@ namespace OCPI {
 #ifndef OCPI_PLATFORM_arm
 	return NULL;
 #endif
-	if (m_memFd < 0 && (m_memFd = ::open("/dev/mem", O_RDWR|O_SYNC)) < 0)
-	  error = "Can't open /dev/mem, forgot to load the driver? sudo?";
-	else {
-	  Device *dev = new Device(name, m_memFd, forLoad, error);
-	  if (error.empty())
-	    return dev;
-	  delete dev;
-	}
+	Device *dev = new Device(*this, name, forLoad, error);
+	if (error.empty())
+	  return dev;
+	delete dev;
 	ocpiBad("When searching for PL device '%s': %s", busName, error.c_str());
 	return NULL;
       }
-
+      uint8_t *Driver::
+      map(size_t size, off_t offset, std::string &error) {
+	void *vaddr;
+	if (m_memFd < 0 && (m_memFd = ::open("/dev/mem", O_RDWR|O_SYNC)) < 0)
+	  error = "Can't open /dev/mem, forgot to load the driver? sudo?";
+	else if ((vaddr = mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED, m_memFd,
+			       offset)) == MAP_FAILED)
+	  error = "can't mmap /dev/mem for control space";
+	else
+	  return (uint8_t*)vaddr;
+	return NULL;
+      }
+#if 0
       void *Driver::
       map(uint32_t size, uint64_t &phys, std::string &error) {
 	// FIXME: mutex
@@ -272,6 +321,7 @@ namespace OCPI {
 	}
 	return NULL;
       }
+#endif
     } // namespace BUS
   } // namespace HDL
 } // namespace OCPI

@@ -1981,9 +1981,10 @@ module mkSMAdapter4B(wciS0_Clk,
 	     WILL_FIRE_RL_wci_wslv_ctl_op_start ;
 
   // register wci_wslv_illegalEdge
-  assign wci_wslv_illegalEdge$D_IN =
-	     MUX_wci_wslv_illegalEdge$write_1__SEL_1 &&
-	     MUX_wci_wslv_illegalEdge$write_1__VAL_1 ;
+  assign wci_wslv_illegalEdge$D_IN = 0;
+  
+//	     MUX_wci_wslv_illegalEdge$write_1__SEL_1 &&
+//	     MUX_wci_wslv_illegalEdge$write_1__VAL_1 ;
   assign wci_wslv_illegalEdge$EN =
 	     MUX_wci_wslv_illegalEdge$write_1__SEL_1 ||
 	     WILL_FIRE_RL_wci_wslv_ctl_op_complete && wci_wslv_illegalEdge ;

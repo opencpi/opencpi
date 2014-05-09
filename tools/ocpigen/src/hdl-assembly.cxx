@@ -1196,7 +1196,7 @@ emitAssyInstance(FILE *f, Instance *i, unsigned nControlInstances) {
 	if (lang == VHDL) {
 	  std::string value;
 	  fprintf(f, any ? ",\n              "  : "  generic map(");
-	  fprintf(f, "%s => %s", pr->m_name.c_str(), vhdlValue(value, pv->value));
+	  fprintf(f, "%s => %s", pr->m_name.c_str(), vhdlValue(pv->value, value));
 	} else {
 	  fprintf(f, "%s", any ? ", " : " #(");
 	  int64_t i64 = 0;
@@ -1518,29 +1518,29 @@ emitWorker(FILE *f, Worker *w)
   unsigned nn;
   for (PropertiesIter pi = w->m_ctl.properties.begin(); pi != w->m_ctl.properties.end(); pi++) {
     OU::Property *prop = *pi;
-    if (prop->m_isParameter) // FIXME: readable parameters...
-      continue;
     prop->printAttrs(f, "property", 1);
     if (prop->m_isVolatile)
-      fprintf(f, " volatile=\"true\"");
+      fprintf(f, " volatile='1'");
     else if (prop->m_isReadable)
-      fprintf(f, " readable=\"true\"");
+      fprintf(f, " readable='1'");
     if (prop->m_isInitial)
-      fprintf(f, " initial=\"true\"");
+      fprintf(f, " initial='1'");
     else if (prop->m_isWritable)
-      fprintf(f, " writable=\"true\"");
+      fprintf(f, " writable='1'");
     if (prop->m_readSync)
-      fprintf(f, " readSync=\"true\"");
+      fprintf(f, " readSync='1'");
     if (prop->m_writeSync)
-      fprintf(f, " writeSync=\"true\"");
+      fprintf(f, " writeSync='1'");
     if (prop->m_readError)
-      fprintf(f, " readError=\"true\"");
+      fprintf(f, " readError='1'");
     if (prop->m_writeError)
-      fprintf(f, " writeError=\"true\"");
-    if (!prop->m_isReadable && !prop->m_isWritable)
-      fprintf(f, " padding='true'");
+      fprintf(f, " writeError='1'");
+    if (!prop->m_isReadable && !prop->m_isWritable && !prop->m_isParameter)
+      fprintf(f, " padding='1'");
     if (prop->m_isIndirect)
       fprintf(f, " indirect=\"%zu\"", prop->m_indirectAddr);
+    if (prop->m_isParameter)
+      fprintf(f, " parameter='1'");
     prop->printChildren(f, "property");
   }
   for (nn = 0; nn < w->m_ports.size(); nn++) {
@@ -1548,9 +1548,9 @@ emitWorker(FILE *f, Worker *w)
     if (p->isData) {
       fprintf(f, "  <port name=\"%s\" numberOfOpcodes=\"%zu\"", p->name, p->u.wdi.nOpcodes);
       if (p->u.wdi.isBidirectional)
-	fprintf(f, " bidirectional=\"true\"");
+	fprintf(f, " bidirectional='1'");
       else if (!p->u.wdi.isProducer)
-	fprintf(f, " provider=\"true\"");
+	fprintf(f, " provider='1'");
       if (p->u.wdi.minBufferCount)
 	fprintf(f, " minBufferCount=\"%zu\"", p->u.wdi.minBufferCount);
       if (p->u.wdi.bufferSize)

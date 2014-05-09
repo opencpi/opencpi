@@ -44,6 +44,7 @@ namespace OCPI {
       volatile uint8_t *m_registers; // the memory mapped virtual address of the registers
       DtOsDataTypes::Offset m_base;  // the base of the "registers" in their physical address space
       Accessor *m_accessor;          // when no virtual pointer access, the object that does the access
+      bool      m_child;             // If I am derived from another access
       //      volatile uint8_t *m_buffers;   // sort of a hack for the data plane until enet dp is available
 
     public:
@@ -55,7 +56,7 @@ namespace OCPI {
       inline bool usable() const { return m_registers || m_accessor; }
       void
       setAccess(volatile uint8_t *registers,  Accessor *accessor = NULL,
-		RegisterOffset base = 0); //, volatile uint8_t *buffers = NULL);
+		RegisterOffset base = 0, bool child = false);
       void
       closeAccess();
 

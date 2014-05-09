@@ -684,16 +684,20 @@ namespace OCPI {
 	  w.setProperty(i->m_propOrdinals[p], i->m_propValues[p]);
 	unsigned nProps = impl.m_metadataImpl.m_nProperties;
 	OU::Property *prop = impl.m_metadataImpl.m_properties;
-	for (unsigned n = 0; n < nProps; n++, prop++)
-	  if (prop->m_default) {
+	for (unsigned nn = 0; nn < nProps; nn++, prop++)
+	  if (prop->m_default && !prop->m_isParameter) {
 	    bool found = false;
 	    for (unsigned m = 0; m < i->m_nPropValues; m++)
 	      if (i->m_propOrdinals[m] == prop->m_ordinal) {
 		found = true;
 		break;
 	      }
-	    if (!found)
+	    if (!found) {
+	      ocpiDebug("Setting the default value of property '%s' of instance '%s'",
+			prop->m_name.c_str(),
+			m_assembly.m_instances[n].m_name.c_str());
 	      w.setProperty(prop->m_ordinal, *prop->m_default);
+	    }
 	  }
       }
       if (m_assembly.m_doneInstance != -1)

@@ -74,8 +74,8 @@ namespace OCPI {
 	virtual ~Driver();
       public:
 	// Grab some DMA memory, return a virtual mapping to it, and set base to the physical place
-	void *
-	map(uint32_t size, uint64_t &base, std::string &error);
+	//	void *
+	//	map(uint32_t size, uint64_t &base, std::string &error);
 	unsigned
 	  search(const OCPI::Util::PValue *props, const char **exclude, bool discoveryOnly,
 		 std::string &error);

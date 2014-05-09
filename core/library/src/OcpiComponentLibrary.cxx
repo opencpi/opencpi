@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <set>
 #include "OcpiOsAssert.h"
 #include "OcpiOsFileIterator.h"
 #include "OcpiOsFileSystem.h"
@@ -46,11 +47,12 @@ namespace OCPI {
 	  // delete [] m_metadata;
 	}
       };
-
+	  
       class Driver;
 
       // Our concrete library class
       class Library : public OL::LibraryBase<Driver, Library, Artifact> {
+	std::set<OS::FileSystem::FileId> m_file_ids; // unordered set cxx11 is better
 	friend class Driver;
 	Library(const char *name)
 	  : OL::LibraryBase<Driver,Library,Artifact>(*this, name) {}
@@ -58,39 +60,42 @@ namespace OCPI {
 	void doPath(const std::string &libName) {
 	  ocpiDebug("Processing library path: %s", libName.c_str());
 	  bool isDir;
-	  if (!OS::FileSystem::exists(libName, &isDir))
+	  OS::FileSystem::FileId file_id; 
+	  if (!OS::FileSystem::exists(libName, &isDir, NULL, NULL, &file_id))
 	    ocpiInfo("Component library path name in OCPI_LIBRARY_PATH, \"%s\", "
-		    "is nonexistent.  It will be ignored", libName.c_str());
-	  else if (isDir) {
-	    OS::FileIterator dir(libName, "*");
-	    for (; !dir.end(); dir.next())
-	      doPath(OS::FileSystem::joinNames(libName, dir.relativeName()));
-	  } else {
-	    const char *name = libName.c_str();
-	    size_t len = strlen(name), xlen = strlen(".xml");
+		     "is nonexistent.  It will be ignored", libName.c_str());
+	  else if (m_file_ids.insert(file_id).second)
+	    // New id was inserted, and thus was not already there
+	    if (isDir) {
+	      OS::FileIterator dir(libName, "*");
+	      for (; !dir.end(); dir.next())
+		doPath(OS::FileSystem::joinNames(libName, dir.relativeName()));
+	    } else {
+	      const char *name = libName.c_str();
+	      size_t len = strlen(name), xlen = strlen(".xml");
 	  
-	    if (len < xlen || strcasecmp(name + len - xlen, ".xml")) {
-	    // FIXME: supply library level xml for the artifact
-	    // The log will show which files are not any good.
-	      try {
-		(new Artifact(*this, name, NULL))->configure();
-	      } catch (...) {}
+	      if (len < xlen || strcasecmp(name + len - xlen, ".xml")) {
+		// FIXME: supply library level xml for the artifact
+		// The log will show which files are not any good.
+		try {
+		  (new Artifact(*this, name, NULL))->configure();
+		} catch (...) {}
+	      }
 	    }
+	}
+	public:
+	  // Do a recursive dirctory search for all files.
+	  void configure(ezxml_t) {
+	    doPath(name());
 	  }
-	}
-      public:
-	// Do a recursive dirctory search for all files.
-	void configure(ezxml_t) {
-	  doPath(name());
-	}
-	OCPI::Library::Artifact *
-	addArtifact(const char *url, const OCPI::API::PValue *props) {
-	  // return NULL if this doesn't look like an artifact we can support
-	  Artifact *a = new Artifact(*this, url, props);
-	  a->configure(); // FIXME: there could be config info in the platform.xml
-	  return a;
-	}
-      };
+	  OCPI::Library::Artifact *
+	    addArtifact(const char *url, const OCPI::API::PValue *props) {
+	    // return NULL if this doesn't look like an artifact we can support
+	    Artifact *a = new Artifact(*this, url, props);
+	    a->configure(); // FIXME: there could be config info in the platform.xml
+	    return a;
+	  }
+	};
 
       // Our concrete driver class
       const char *component = "component";

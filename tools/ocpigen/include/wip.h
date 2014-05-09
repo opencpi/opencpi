@@ -335,11 +335,11 @@ class Control {
   Control();
   uint64_t sizeOfConfigSpace;
   bool writables, nonRawWritables, rawWritables;
-  bool readables, nonRawReadables, rawReadables;
+  bool readables, nonRawReadables, rawReadables; // readables might be parameters
   bool sub32Bits, nonRawSub32Bits;
   bool volatiles, nonRawVolatiles;
   bool readbacks, nonRawReadbacks, rawReadbacks;
-  unsigned nRunProperties, nNonRawRunProperties; // all but non-readable parameters.
+  unsigned nRunProperties, nNonRawRunProperties;
   uint32_t controlOps; // bit mask
   Properties properties;
   size_t offset;// temporary while properties are being parsed.
@@ -417,6 +417,7 @@ class Worker : public Parsed {
   Signals m_signals;
   const char *m_library;            // the component library name where the xml was found
   bool m_outer;                     // only generate the outer skeleton, not the inner one
+  OU::Property *m_debugProp;
   OU::Assembly::Properties *m_instancePVs;
   Worker(ezxml_t xml, const char *xfile, const char *parent,
 	 OU::Assembly::Properties *ipvs, const char *&err);
@@ -465,7 +466,9 @@ class Worker : public Parsed {
     *emitVhdlWorkerPackage(FILE *f, unsigned maxPropName),
     *emitVhdlWorkerEntity(FILE *f, unsigned maxPropName),
     *emitVhdlPackageConstants(FILE *f),
+    *emitToolParameters(const char *rawParamFile, const char *outDir),
     *deriveOCP(),
+    *hdlValue(const OU::Value &v, std::string &value),
     *emitAssyHDL(const char *);
   virtual const char
     *emitWorkersHDL(const char *, const char *file),
@@ -520,8 +523,9 @@ static inline bool masterIn(Port *p) {
   "SizeOfConfigSpace", "ControlOperations", "Sub32BitConfigProperties"
 #define ASSY_ELEMS "instance", "connection", "external"
 extern const char
+  *vhdlValue(const OU::Value &v, std::string &value),
+  *rccValue(OU::Value &v, std::string &value),
   *container, *platform, *device, *load, *os, *os_version, **libraries, **mappedLibraries, *assembly, *attribute,
-  *vhdlValue(std::string &value, OU::Value &v),
   *addLibMap(const char *),
   *findLibMap(const char *file), // returns mapped lib name from dir name of file or NULL
   *openOutput(const char *name, const char *outDir, const char *prefix,

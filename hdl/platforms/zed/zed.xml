@@ -9,22 +9,23 @@
   <unoc name="zynq_slave"/>
   <property name="axi_error" type="bool" volatile='true'/>
   <property name="unocDropCount" type='uchar' volatile='true'/>
-  <property name="unoc_headers_in" type="Ulonglong" arraylength='8' volatile='true'/>
-  <property name="unoc_headers_in1" type="Ulonglong" arraylength='8' volatile='true'/>
-  <property name="unoc_headers_out" type="Ulonglong" arraylength='8' volatile='true'/>
-  <property name="unoc_headers_out1" type="Ulonglong" arraylength='8' volatile='true'/>
-  <property name="unoc_count_in" volatile='true'/>
-  <property name="unoc_count_out" volatile='true'/>
-  <property name="axi_racount" volatile='true'/>
-  <property name="axi_raddr" type="Ulonglong" arraylength='16' volatile='true'/>
-  <property name="axi_rdcount" volatile='true'/>
-  <property name="axi_rdata" type="Ulonglong" arraylength='16' volatile='true'/>
-  <property name="axi_wacount" volatile='true'/>
-  <property name="axi_waddr" type="Ulonglong" arraylength='16' volatile='true'/>
-  <property name="axi_wdcount" volatile='true'/>
-  <property name="axi_wdata" type="Ulonglong" arraylength='16' volatile='true'/>
-  <property name="debug_state" type="Ulonglong" volatile='true'/>
-  <property name="debug_state1" type="Ulonglong" volatile='true'/>
+  <property name="unoc_headers_in" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
+  <property name="unoc_headers_in1" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
+  <property name="unoc_headers_out" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
+  <property name="unoc_headers_out1" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
+  <property name="unoc_out_status" arraylength='16' volatile='true' debug='true'/>
+  <property name="unoc_count_in" volatile='true' debug='true'/>
+  <property name="unoc_count_out" volatile='true' debug='true'/>
+  <property name="axi_racount" volatile='true' debug='true'/>
+  <property name="axi_raddr" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
+  <property name="axi_rdcount" volatile='true' debug='true'/>
+  <property name="axi_rdata" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
+  <property name="axi_wacount" volatile='true' debug='true'/>
+  <property name="axi_waddr" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
+  <property name="axi_wdcount" volatile='true' debug='true'/>
+  <property name="axi_wdata" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
+  <property name="debug_state" type="Ulonglong" volatile='true' debug='true'/>
+  <property name="debug_state1" type="Ulonglong" volatile='true' debug='true'/>
   <signal  output='led' width='8'/>
 </HdlPlatform>
 

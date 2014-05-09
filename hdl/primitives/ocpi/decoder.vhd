@@ -4,7 +4,8 @@ library ocpi; use ocpi.all; use ocpi.types.all; use ocpi.wci.all;
 entity decoder is
   generic (
       worker                 : worker_t;
-      properties             : properties_t);
+      properties             : properties_t;
+      ocpi_debug             : bool_t);
   port (
       ocp_in                 : in in_t;       
       done                   : in bool_t := btrue;
@@ -150,7 +151,8 @@ begin
   --------------------------------------------------------------------------------
   -- Combi signals and outputs for control operations
   --------------------------------------------------------------------------------
-  control_op_in    <= ocpi.wci.to_control_op(ocp_in.MAddr(4 downto 2));
+--  control_op_in    <= ocpi.wci.to_control_op(ocp_in.MAddr(4 downto 2));
+  control_op_in    <= ocpi.wci.to_control_op(ocp_in.MAddr(4 downto 2)) when access_in = control_e else no_op_e;
   -- the control op to the worker is either combinatorial or registered depending
   -- on whether it is delayed by the worker
 -- FIXME: OCCP can't tolerate immediate ops, so we don't do it here
@@ -243,26 +245,28 @@ begin
 
   -- generate property instances for each property
   -- they are all combinatorial by design
-  z: if properties'length > 0 generate
-  gen: for i in 0 to properties'right generate -- properties'left to 0 generate
-    prop: component ocpi.wci.property_decoder
-      generic map (properties(i), worker.decode_width)
-      port map(reset        => my_reset,
-               -- inputs describing property access
-               offset_in    => my_offset,
-               nbytes_1     => my_nbytes_1,
-               is_write     => my_is_write,
-               is_read      => my_is_read,
-               data_in      => my_data,
-               -- outputs from the decoding process
-               write_enable => my_write_enables(i),
-               read_enable  => my_read_enables(i),
-               offset_out   => my_offsets(i),
-               index_out    => indices(i)(worker.decode_width-1 downto 0),
-               data_out     => data_outputs(i));
-    indices(i)(indices(i)'left downto worker.decode_width) <= (others => '0');
-    offsets(i) <= resize(my_offsets(i),offsets(i)'length); -- resize to 32 bits for VHDL language reasons
-  end generate gen;
-  end generate z;
+  g0: if properties'length > 0 generate
+    g1: for i in 0 to properties'right generate -- properties'left to 0 generate
+      g2: if its(ocpi_debug) or not properties(i).debug generate
+      prop: component ocpi.wci.property_decoder
+              generic map (properties(i), worker.decode_width)
+              port map(reset        => my_reset,
+                       -- inputs describing property access
+                       offset_in    => my_offset,
+                       nbytes_1     => my_nbytes_1,
+                       is_write     => my_is_write,
+                       is_read      => my_is_read,
+                       data_in      => my_data,
+                       -- outputs from the decoding process
+                       write_enable => my_write_enables(i),
+                       read_enable  => my_read_enables(i),
+                       offset_out   => my_offsets(i),
+                       index_out    => indices(i)(worker.decode_width-1 downto 0),
+                       data_out     => data_outputs(i));
+            indices(i)(indices(i)'left downto worker.decode_width) <= (others => '0');
+            offsets(i) <= resize(my_offsets(i),offsets(i)'length);
+      end generate g2;
+    end generate g1;
+  end generate g0;
 end rtl;
 

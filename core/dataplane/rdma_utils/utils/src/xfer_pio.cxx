@@ -162,7 +162,9 @@ xfer_pio_action_transfer(PIO_transfer transfer)
   //#define TRACE_PIO_XFERS  
 #ifdef TRACE_PIO_XFERS
   int32_t *src1 = (int32_t *)transfer->src_va;
-  printf("^^^^ copying %d bytes from %llx to %llx\n", transfer->nbytes,transfer->src_off,transfer->dst_off);
+  printf("^^^^ copying %zd bytes from %zx to %zx\n",
+	 (size_t)(transfer->nbytes),(size_t)(transfer->src_off),
+	 (size_t)(transfer->dst_off));
   printf("source wrd 1 = %d wrd2 = %d\n", src1[0], src1[1] );
 #endif
 

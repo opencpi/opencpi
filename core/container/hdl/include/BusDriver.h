@@ -34,17 +34,20 @@
 
 namespace OCPI {
   namespace HDL {
-    namespace Bus {
+    namespace Zynq {
 #endif
 #ifdef __cplusplus
+      class Device;
       class Driver {
 	int m_memFd;
+	friend class Device;
       protected:
 	Driver();
 	virtual ~Driver();
+	//	void *
+	//	map(uint32_t size, uint64_t &base, std::string &error);
+	uint8_t *map(size_t size, off_t offset, std::string &error);
       public:
-	void *
-	map(uint32_t size, uint64_t &base, std::string &error);
 	unsigned
 	search(const OCPI::Util::PValue *props, const char **exclude, bool discoveryOnly,
 	       std::string &error);

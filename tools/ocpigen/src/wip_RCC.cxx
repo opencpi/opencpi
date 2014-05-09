@@ -239,6 +239,82 @@ emitStructRCC(FILE *f, size_t nMembers, OU::Member *members, unsigned indent,
 }
 
 const char *
+rccValue(OU::Value &v, std::string &value) {
+  value = "(";
+  // Convert value to something nice for C
+  // In particular, large integer constants do not want to be truncated.
+  // From ISO: "The type of an integer constant is the first of the corresponding list
+  //            in which its value can be represented."
+  // This theoretically means a problem for a decimal version of ULL_MAX
+  // This implies that unsigned decimal numbers for the largest type must have
+  // the suffix applied.
+  switch(v.m_vt->m_baseType) {
+    case OA::OCPI_Bool:
+      // Bool is special because we allow C++/true/false syntax which is illegal in C
+      value += v.m_Bool ? '1' : '0';
+      break;
+    case OA::OCPI_Char: 
+    case OA::OCPI_Double:
+    case OA::OCPI_Float:
+    case OA::OCPI_Short: 
+    case OA::OCPI_Long:
+    case OA::OCPI_UChar:
+    case OA::OCPI_ULong:
+    case OA::OCPI_UShort: 
+    case OA::OCPI_LongLong:
+      // These are ok since there is no risk of truncation and we use C syntax
+      v.unparse(value, true);
+      break;
+    case OA::OCPI_ULongLong:
+      // This can be bad unless we force it to ull since decimal is assumed signed
+      // FIXME: perhaps make this an option in the unparser?
+      v.unparse(value, true);
+      value += "ull";
+      break;
+    case OA::OCPI_String:
+      value += '\"';
+      if (v.m_String && v.m_String[0])
+	v.unparse(value, true);
+      value += '\"';
+      break;
+    case OA::OCPI_Enum:
+      // Should we define an enum here?
+    default:
+      ;
+    }
+  value += ")";
+  return value.c_str();
+}
+static const char *
+rccPropValue(OU::Property &p, std::string &value) {
+  if (p.m_default)
+    return rccValue(*p.m_default, value);
+  OU::format(value, "("); // , rccTypes[p.m_baseType]);
+  // Generate a default value
+  switch(p.m_baseType) {
+  case OA::OCPI_Bool: 
+  case OA::OCPI_Char: 
+  case OA::OCPI_Double: 
+  case OA::OCPI_Float:
+  case OA::OCPI_Short:
+  case OA::OCPI_Long: 
+  case OA::OCPI_UChar:
+  case OA::OCPI_Enum:
+  case OA::OCPI_ULong:
+  case OA::OCPI_UShort:
+  case OA::OCPI_LongLong:
+  case OA::OCPI_ULongLong:
+    value += "0";
+    break;
+  case OA::OCPI_String:
+    value += "\"\""; // this is not NULL
+  default:;
+  }
+  value += ")";
+  return value.c_str();
+}
+
+const char *
 emitImplRCC(Worker *w, const char *outDir) {
   const char *err;
   FILE *f;
@@ -283,7 +359,25 @@ emitImplRCC(Worker *w, const char *outDir) {
   fprintf(f, "#define %s_N_INPUT_PORTS %u\n"
 	  "#define %s_N_OUTPUT_PORTS %u\n",
 	  upper, in, upper, out);
-  if (w->m_ctl.properties.size()) {
+  if (w->m_ctl.nRunProperties < w->m_ctl.properties.size()) {
+    fprintf(f,
+	    "/*\n"
+	    " * Definitions for default values of parameter properties.\n"
+	    " * Parameters are defined as macros with no arguments to catch spelling errors.\n" 
+	    " */\n");
+    for (PropertiesIter pi = w->m_ctl.properties.begin(); pi != w->m_ctl.properties.end(); pi++) {
+      OU::Property &p = **pi;
+      if (p.m_isParameter) {
+	std::string value;
+	fprintf(f,
+		"#ifndef PARAM_%s\n"
+		"#define PARAM_%s() %s\n"
+		"#endif\n",
+		p.m_name.c_str(), p.m_name.c_str(), rccPropValue(p, value));
+      }
+    }
+  }
+  if (w->m_ctl.nRunProperties) {
     fprintf(f,
 	    "/*\n"
 	    " * Property structure for worker %s\n"
@@ -294,7 +388,8 @@ emitImplRCC(Worker *w, const char *outDir) {
     size_t offset = 0;
     bool isLastDummy = false;
     for (PropertiesIter pi = w->m_ctl.properties.begin(); pi != w->m_ctl.properties.end(); pi++)
-      printMember(f, *pi, 2, offset, pad, w->m_implName, true, isLastDummy, false);
+      if (!(*pi)->m_isParameter)
+	printMember(f, *pi, 2, offset, pad, w->m_implName, true, isLastDummy, false);
     fprintf(f, "} %c%sProperties;\n\n", toupper(w->m_implName[0]), w->m_implName + 1);
   }
   const char *mName;
@@ -348,7 +443,7 @@ emitImplRCC(Worker *w, const char *outDir) {
 	  " .numOutputs = %s_N_OUTPUT_PORTS,\\\n"
 	  " .threadProfile = %u,\\\n",
 	  w->m_implName, upper, upper, upper, upper, upper, w->m_isThreaded ? 1 : 0);
-  if (w->m_ctl.properties.size())
+  if (w->m_ctl.nRunProperties)
     fprintf(f, " .propertySize = sizeof(%c%sProperties),\\\n",
 	    toupper(w->m_implName[0]), w->m_implName + 1);
   for (op = 0, cp = OU::Worker::s_controlOpNames; *cp; cp++, op++)
@@ -530,17 +625,10 @@ emitArtRCC(Worker *aw, const char *outDir) {
 	  "tool=\"%s\" toolVersion=\"%s\">\n",
 	  os, os_version, platform,
 	  "", "", "", "");
-#if 0
-// Define all workers
-for (WorkersIter wi = aw->m_assembly.m_workers.begin();
-     wi != aw->m_assembly.m_workers.end(); wi++)
-  emitWorker(f, *wi);
-#else
  aw->emitWorkers(f);
-#endif
-fprintf(f, "</artifact>\n");
-if (fclose(f))
-  return "Could close output file. No space?";
-return 0;
+ fprintf(f, "</artifact>\n");
+ if (fclose(f))
+   return "Could not close output file. No space?";
+ return 0;
 }
 

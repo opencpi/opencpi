@@ -84,6 +84,7 @@ namespace OCPI {
 	m_granularity; // Granularity of smallest unit
       // Caller needs these to decide to do beforeQuery/afterConfigure
       bool
+	m_isDebug,         // Should only be included when debug parameter is true
 	m_isParameter,     // For compile-time parameter
 	m_isSub32,
 	m_isTest;

@@ -34,4 +34,6 @@
   <unoc name="client"/>
   <MessageInterface Name="data" ByteWidth="8" Bidirectional="true" PreciseBurst="true" DataWidth="32"  datavaluewidth="8" maxmessagevalues="16380" MFlagWidth="32"/>
   <timeinterface secondswidth='32' fractionwidth='32'/>
+  <property name='includePull' type='bool' default='1' parameter='1'/>
+  <property name='includePush' type='bool' default='1' parameter='1'/>
 </HdlWorker>

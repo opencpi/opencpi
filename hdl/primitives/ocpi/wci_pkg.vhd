@@ -25,7 +25,7 @@ type property_t is record
   string_length,        -- bytes (excluding null) for string values
   nitems                -- nitems array
     : natural;          -- with of a single item
-  writable, readable, volatile, parameter : boolean;
+  writable, readable, volatile, debug : boolean;
 end record property_t;
 
   -- Address Space Selection
@@ -105,7 +105,8 @@ TYPE State_t IS (EXISTS_e,            -- 0
   component decoder
     generic(
       worker                 : worker_t;
-      properties             : properties_t);
+      properties             : properties_t;
+      ocpi_debug             : bool_t);
     port(
       ocp_in                 : in  in_t;       
       done                   : in  bool_t := btrue;
@@ -151,7 +152,7 @@ TYPE State_t IS (EXISTS_e,            -- 0
   end component;
          
   component readback
-    generic(properties : properties_t);
+    generic(properties : properties_t; ocpi_debug : bool_t);
     port(
       read_enables : in bool_array_t(properties'range);
       data_inputs  : in data_a_t(properties'range);

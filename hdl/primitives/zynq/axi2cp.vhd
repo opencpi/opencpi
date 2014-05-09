@@ -37,6 +37,8 @@ architecture rtl of axi2cp is
   end read_byte_en;
   type address_state_t is (a_idle_e,   -- nothing is happening
                            a_first_e,  -- first address (or two) is being offered to cp
+                           a_first_1_e,  -- delay1 - testing
+                           a_first_2_e,  -- delay2
                            a_last_e,   -- last address is offered to cp
                            a_taken_e); -- we're done, waiting for AXI to accept the response
   type read_state_t    is (r_idle_e,         -- nothing is happening
@@ -81,9 +83,15 @@ begin
           when a_first_e =>
             -- First of two.  The CP is taking the address and perhaps the write data
             if its(cp_in.take) then
-              address_state <= a_last_e;
+              address_state <= a_first_1_e;
               addr2_r <= '1';
             end if;
+          when a_first_1_e =>
+            -- Delay slot 1
+            address_state <= a_first_2_e;
+          when a_first_2_e =>
+            -- Delay slot 2
+            address_state <= a_last_e;
           when a_last_e =>
             -- last address is offered. When it is taken we must change state.
             if its(cp_in.take) then

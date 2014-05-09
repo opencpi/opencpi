@@ -82,27 +82,32 @@ namespace OCPI {
     }
 
     OA::Port &Worker::
-    getPort(const char *name, const OA::PValue *props ) {
+    getPort(const char *name, const OA::PValue *params ) {
       Port *p = findPort(name);
       if (p)
         return *p;
       OU::Port *metaPort = findMetaPort(name);
       if (!metaPort)
         throw OU::Error("no port found with name \"%s\"", name);
-      return createPort(*metaPort, props);
+      return createPort(*metaPort, params);
     }
-    OA::PropertyInfo & Worker::setupProperty(const char *name, 
+    OA::PropertyInfo & Worker::setupProperty(const char *pname, 
 					     volatile void *&m_writeVaddr,
 					     const volatile void *&m_readVaddr) {
-      OU::Property &prop = findProperty(name);
-      prepareProperty(prop, m_writeVaddr, m_readVaddr);
+      OU::Property &prop = findProperty(pname);
+      if (!prop.m_isReadable && !prop.m_isWritable)
+	throw OU::Error("Property '%s' of worker '%s' is neither readable nor writable",
+			pname, name().c_str());
+      if (!prop.m_isParameter)
+	prepareProperty(prop, m_writeVaddr, m_readVaddr);
       return prop;
     }
     OA::PropertyInfo & Worker::setupProperty(unsigned n, 
 					     volatile void *&m_writeVaddr,
 					     const volatile void *&m_readVaddr) {
       OU::Property &prop = property(n);
-      prepareProperty(prop, m_writeVaddr, m_readVaddr);
+      if (!prop.m_isParameter)
+	prepareProperty(prop, m_writeVaddr, m_readVaddr);
       return prop;
     }
     // Internal used by others.
@@ -164,8 +169,11 @@ namespace OCPI {
       }
 #endif
     }
-    void Worker::setProperty(const char *name, const char *value) {
-      OA::Property prop(*this, name);
+    void Worker::setProperty(const char *pname, const char *value) {
+      OA::Property prop(*this, pname);
+      if (!prop.m_info.m_isWritable)
+	throw OU::Error("The '%s' property of worker '%s' is not writable",
+			pname, name().c_str());
       OU::ValueType &vt = prop.m_info;
       OU::Value v(vt); // FIXME storage when not scalar
       if (vt.m_baseType == OA::OCPI_Struct)
@@ -182,15 +190,21 @@ namespace OCPI {
       if (ordinal >= nProps)
 	return false;
       OU::Property &p = props[ordinal];
+      name = p.m_name;
       if (p.m_isReadable) {
 	if (unreadablep)
 	  *unreadablep = false;
-      } else if (unreadablep)
+      } else if (unreadablep) {
 	*unreadablep = true;
-      else
+	return true;
+      } else
 	throw OU::Error("Property number %u '%s' is unreadable", ordinal, p.m_name.c_str());
       if (p.m_baseType == OA::OCPI_Struct || p.m_baseType == OA::OCPI_Type)
 	throw OU::Error("Struct and Typedef properties are unsupported");
+      if (p.m_isParameter) {
+	p.m_default->unparse(value, false, hex);
+	return true;
+      }
       OU::Value v(p);
       OA::Property a(*this, p.m_name.c_str()); // FIXME clumsy because get methods take API props
       OA::PropertyInfo &info = a.m_info;
@@ -241,11 +255,13 @@ namespace OCPI {
 	}
       
       v.unparse(value, false, hex);
-      name = p.m_name;
       return true;
     }
     void Worker::setProperty(unsigned ordinal, OCPI::Util::Value &value) {
       OA::Property prop(*this, ordinal);
+      if (!prop.m_info.m_isWritable)
+	throw OU::Error("The '%s' property of worker '%s' is not writable",
+			prop.m_info.m_name.c_str(), name().c_str());
       setPropertyValue(prop, value);
     }
 

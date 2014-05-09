@@ -43,6 +43,7 @@ namespace OCPI {
     Device(std::string &name, const char *protocol)
       : m_metadata(NULL), m_implXml(NULL), m_old(false), m_name(name), m_protocol(protocol), m_isAlive(true),
 	m_pfWorker(NULL) {
+      memset((void*)&m_UUID, sizeof(m_UUID), 0);
     }
     Device::
     ~Device() {
@@ -57,8 +58,6 @@ namespace OCPI {
     static void catchBusError(int) { siglongjmp(jmpbuf, 1); }
     // Called from derived constructor after accessors have been set up.
     // Also called after bitstream loading.
-    // The forLoad arg is saying that this is done prior to loading so
-    // the device doesn't really have to be happy
     bool Device::
     init(std::string &err) {
       uint64_t magic;
@@ -120,7 +119,7 @@ namespace OCPI {
 							  sizeof(uint32_t));
     }
     static const unsigned NROMWORDS = 1024;
-    static const unsigned MAXXMLBYTES = NROMWORDS * 10;
+    static const unsigned MAXXMLBYTES = NROMWORDS * sizeof(uint32_t) * 10;
     static voidpf zalloc(voidpf , uInt items, uInt size) {
       return malloc(items * size);
     }
@@ -133,7 +132,8 @@ namespace OCPI {
       if ((rom[0] = getRomWord(0)) != 1 ||
 	  (rom[1] = getRomWord(1)) >= NROMWORDS*sizeof(uint32_t) ||
 	  (rom[2] = getRomWord(2)) >= MAXXMLBYTES) {
-	err = "Metadata ROM appears corrupted";
+	OU::format(err, "Metadata ROM appears corrupted: 0x%x 0x%x 0x%x",
+		   rom[0], rom[1], rom[2]);
 	return true;
       }
       xml.resize(rom[2]);
@@ -181,7 +181,9 @@ namespace OCPI {
       // Some generic initialization.
       time_t bd = m_UUID.birthday;
       char tbuf[30];
-      ocpiInfo("HDL Device: %s, with bitstream birthday: %s", m_name.c_str(), ctime_r(&bd, tbuf));
+      ctime_r(&bd, tbuf);
+      tbuf[strlen(tbuf)-1] = '\0'; // nuke \n
+      ocpiInfo("HDL Device: %s, with bitstream birthday: %s", m_name.c_str(), tbuf);
       // Capture the UUID info that tells us about the platform
       unsigned n;
       for (n = 0; m_UUID.platform[n] && n < sizeof(m_UUID.platform); n++)
@@ -235,9 +237,11 @@ namespace OCPI {
       ctime_r(&bsbd, tbuf);
       tbuf[strlen(tbuf)-1] = 0;
 
-      printf("OpenCPI HDL device found: '%s': bitstream date %s, "
+      printf("OpenCPI HDL device found: '%s': %s%s, "
 	     "platform \"%s\", part \"%s\", UUID %s\n",
-	     m_name.c_str(), tbuf, m_platform.c_str(), m_part.c_str(), textUUID);
+	     m_name.c_str(), bsbd ? "bitstream date " : "",
+	     bsbd ? tbuf : "No loaded bitstream",
+	     m_platform.c_str(), m_part.c_str(), textUUID);
     }
     bool Device::
     isLoadedUUID(const std::string &uuid) {

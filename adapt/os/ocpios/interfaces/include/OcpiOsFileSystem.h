@@ -50,9 +50,10 @@
  *
  */
 
-#include <OcpiOsFileIterator.h>
+#include <string.h>
 #include <string>
 #include <ctime>
+#include "OcpiOsFileIterator.h"
 
 namespace OCPI {
   namespace OS {
@@ -89,6 +90,19 @@ namespace OCPI {
 
     namespace FileSystem {
 
+      struct FileId {
+	uint64_t m_opaque[2];
+	inline bool operator==(const FileId &rhs) const {
+	  return memcmp(this, &rhs, sizeof(FileId)) == 0;
+	}
+	inline bool operator!=(const FileId &rhs) const {
+	  return memcmp(this, &rhs, sizeof(FileId)) != 0;
+	}
+	// Used by STL set containers, etc.
+	inline bool operator<(const FileId &rhs) const {
+	  return memcmp(this, &rhs, sizeof(FileId)) < 0;
+	}
+      };
       /**
        * \name File Name Mapping
        *
@@ -340,7 +354,7 @@ namespace OCPI {
        */
 
       bool exists (const std::string & name, bool * isDir = 0,
-                   uint64_t *size = 0, std::time_t *mtime = 0)
+                   uint64_t *size = 0, std::time_t *mtime = 0, FileId *id = NULL)
         throw ();
 
       /**

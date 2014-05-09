@@ -82,10 +82,15 @@ CompilerOptions=$(CompilerDebugFlags)
 else
 CompilerOptions=$(CompilerOptimizeFlags)
 endif
+# Prepare the parameters for compile-command-line injection into the worker compilation
+RccParams=\
+  $(LoadWorkerParams) \
+  $(foreach n,$(WorkerParamNames),\
+	     "-DPARAM_$n()=$(WorkerParam_$n)")
 Compile_c=\
   $$(GCC_$$(RccTarget)) -MMD -MP -MF $$(TargetDir)/$$(@F).deps -c \
   $(CompilerWarnings) $(CompilerOptions) \
-  $(SharedLibCompileOptions) $(ExtraCompilerOptions) $(IncludeDirs:%=-I%) -o $$@ $$<
+  $(SharedLibCompileOptions) $(ExtraCompilerOptions) $(IncludeDirs:%=-I%) -o $$@ $$(RccParams) $$<
 
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk
 

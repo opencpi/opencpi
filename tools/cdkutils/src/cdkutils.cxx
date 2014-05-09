@@ -191,7 +191,7 @@ openOutput(const char *name, const char *outDir, const char *prefix, const char 
     char *otherFile;
     asprintf(&otherFile, "%s%s%s%s%s%s", outDir ? outDir : "", outDir ? "/" : "",
 	    prefix, other, suffix, ext);
-    // Put all this junk in OcpiOs
+    // FIXME: Put all this junk in OcpiOs
     char dummy;
     ssize_t length = readlink(otherFile, &dummy, 1);
     if (length != -1) {

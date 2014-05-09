@@ -23,11 +23,12 @@ architecture rtl of zed_worker is
   signal count         : unsigned(25 downto 0);
   signal seen_burst    : std_logic;
   signal unoc_count_in    : unsigned(3 downto 0);
-  signal unoc_header_in   : ulonglong_array_t(0 to 7);
-  signal unoc_header_in1  : ulonglong_array_t(0 to 7);
+  signal unoc_header_in   : ulonglong_array_t(0 to 15);
+  signal unoc_header_in1  : ulonglong_array_t(0 to 15);
   signal unoc_count_out    : unsigned(3 downto 0);
-  signal unoc_header_out   : ulonglong_array_t(0 to 7);
-  signal unoc_header_out1  : ulonglong_array_t(0 to 7);
+  signal unoc_header_out   : ulonglong_array_t(0 to 15);
+  signal unoc_header_out1  : ulonglong_array_t(0 to 15);
+  signal unoc_out_status   : ulong_array_t(0 to 15);
   signal axi_wdcount    : unsigned(3 downto 0);
   signal axi_rdcount    : unsigned(3 downto 0);
   signal axi_wacount    : unsigned(3 downto 0);
@@ -39,21 +40,25 @@ architecture rtl of zed_worker is
   signal my_zynq_out   : platform.platform_pkg.unoc_master_out_t;
   signal dbg_state     : ulonglong_t;
   signal dbg_state1    : ulonglong_t;
+  signal dbg_state2    : ulonglong_t;
 begin
-  props_out.axi_waddr <= axi_waddr;
-  props_out.axi_raddr <= axi_raddr;
-  props_out.axi_wdata <= axi_wdata;
-  props_out.axi_rdata <= axi_rdata;
-  props_out.axi_racount <= resize(axi_racount,32);
-  props_out.axi_wacount <= resize(axi_wacount,32);
-  props_out.axi_rdcount <= resize(axi_rdcount,32);
-  props_out.axi_wdcount <= resize(axi_wdcount,32);
-  props_out.unoc_count_in <= resize(unoc_count_in,32);
-  props_out.unoc_headers_in <= unoc_header_in;
-  props_out.unoc_headers_in1 <= unoc_header_in1;
-  props_out.unoc_count_out <= resize(unoc_count_out,32);
-  props_out.unoc_headers_out <= unoc_header_out;
-  props_out.unoc_headers_out1 <= unoc_header_out1;
+  g0: if its(ocpi_debug) generate
+    -- If we don't assign the outputs, the "debug overhead" will disappear
+    props_out.axi_waddr <= axi_waddr;
+    props_out.axi_raddr <= axi_raddr;
+    props_out.axi_wdata <= axi_wdata;
+    props_out.axi_rdata <= axi_rdata;
+    props_out.axi_racount <= resize(axi_racount,32);
+    props_out.axi_wacount <= resize(axi_wacount,32);
+    props_out.axi_rdcount <= resize(axi_rdcount,32);
+    props_out.axi_wdcount <= resize(axi_wdcount,32);
+    props_out.unoc_count_in <= resize(unoc_count_in,32);
+    props_out.unoc_headers_in <= unoc_header_in;
+    props_out.unoc_headers_in1 <= unoc_header_in1;
+    props_out.unoc_count_out <= resize(unoc_count_out,32);
+    props_out.unoc_headers_out <= unoc_header_out;
+    props_out.unoc_headers_out1 <= unoc_header_out1;
+  end generate g0;
   cp_out <= my_cp_out;
   clkbuf   : BUFG   port map(I => fclk(3),
                              O => clk);
@@ -86,14 +91,14 @@ begin
       axi_out => ps_axi_gp_in,
       cp_in   => cp_in,
       cp_out  => my_cp_out
-    );
+      );
   zynq_out <= my_zynq_out;
   props_out.debug_state <= dbg_state;
   props_out.debug_state1 <= dbg_state1;
   dp0 : unoc2axi
     generic map(
       ocpi_debug => true
-    )
+      )
     port map(
       clk       => clk,
       reset     => reset,
@@ -103,35 +108,36 @@ begin
       axi_out   => ps_axi_hp_in(0),
       axi_error => props_out.axi_error,
       dbg_state => dbg_state,
-      dbg_state1 => dbg_state1
-    );
+      dbg_state1 => dbg_state1,
+      dbg_state2 => dbg_state2
+      );
   dp1 : axinull
     port map(
       clk       => clk,
       reset     => reset,
       axi_in    => ps_axi_hp_out(1),
       axi_out   => ps_axi_hp_in(1)
-    );
+      );
   dp2 : axinull
     port map(
       clk       => clk,
       reset     => reset,
       axi_in    => ps_axi_hp_out(2),
       axi_out   => ps_axi_hp_in(2)
-    );
+      );
   dp3 : axinull
     port map(
       clk       => clk,
       reset     => reset,
       axi_in    => ps_axi_hp_out(3),
       axi_out   => ps_axi_hp_in(3)
-    );
+      );
 
   term_unoc : unoc_terminator
     port    map(up_in      => zynq_slave_in,
                 up_out     => zynq_slave_out,
                 drop_count => props_out.unocDropCount);
-    
+  
   -- This piece of generic infrastructure in is instantiated here because
   -- it localizes all these signals here in the platform worker, and thus
   -- the platform worker simply produces clock, reset, and time, all in the
@@ -206,16 +212,17 @@ begin
         seen_burst <= '0';
       else
         if its(my_zynq_out.valid) and zynq_in.take and
-          unoc_count_out /= 7 then
+          unoc_count_out /= 15 then
           unoc_header_out(to_integer(unoc_count_out)) <=
             to_ulonglong(my_zynq_out.data.payload(0) & my_zynq_out.data.payload(1));
           unoc_header_out1(to_integer(unoc_count_out)) <=
-            to_ulonglong(my_zynq_out.data.payload(2) & my_zynq_out.data.payload(3)(31 downto 4) &
-                          std_logic_vector(dbg_state1(3 downto 0)));
+            to_ulonglong(my_zynq_out.data.payload(2) & my_zynq_out.data.payload(3));
+          unoc_out_status(to_integer(unoc_count_out)) <=
+            dbg_state2(31 downto 0);
           unoc_count_out <= unoc_count_out + 1;
         end if;
         if its(zynq_in.valid) and my_zynq_out.take and
-          unoc_count_in /= 7 then
+          unoc_count_in /= 15 then
           unoc_header_in(to_integer(unoc_count_in)) <=
             to_ulonglong(zynq_in.data.payload(0) & zynq_in.data.payload(1));
           unoc_header_in1(to_integer(unoc_count_in)) <=
@@ -232,18 +239,18 @@ begin
           axi_raddr(to_integer(axi_racount)) <=
             to_ulonglong(std_logic_vector(dbg_state1(60 downto 56)) & -- 5
                          std_logic_vector(dbg_state(26 downto 4)) & -- 23
-                                          ps_axi_hp_in(0).AR.LEN & -- 4
-                                          ps_axi_hp_in(0).AR.ADDR); -- 32
+                         ps_axi_hp_in(0).AR.LEN & -- 4
+                         ps_axi_hp_in(0).AR.ADDR); -- 32
           axi_racount <= axi_racount + 1;
         end if;
         if its(ps_axi_hp_in(0).W.VALID) and ps_axi_hp_out(0).W.READY and axi_wdcount /= 15 then
           axi_wdata(to_integer(axi_wdcount)) <=
             to_ulonglong(
-"000000" & std_logic_vector(count) &
+              "000000" & std_logic_vector(count) &
 --                         std_logic_vector(dbg_state1(51 downto 32)) &
 --                         "000" & ps_axi_hp_in(0).WLAST & -- 1
 --                         ps_axi_hp_in(0).WSTRB & -- 8
-                         ps_axi_hp_in(0).W.DATA(31 downto 0)); -- 32
+              ps_axi_hp_in(0).W.DATA(31 downto 0)); -- 32
 --                         "00010010001101000101011001110000");
           axi_wdcount <= axi_wdcount + 1;
         end if;
@@ -253,8 +260,8 @@ begin
 --              std_logic_vector(dbg_state(27 downto 4)) & -- 24
 --                                          "0" & ps_axi_hp_in(0).AWSIZE & -- 4
 --                                          ps_axi_hp_in(0).AWLEN & -- 4
-"000000" & std_logic_vector(count) &
-                                          ps_axi_hp_in(0).AW.ADDR); -- 32
+              "000000" & std_logic_vector(count) &
+              ps_axi_hp_in(0).AW.ADDR); -- 32
           axi_wacount <= axi_wacount + 1;
         end if;
         count <= count + 1;

@@ -60,7 +60,8 @@
   "ReadError",  /* impl says reading this can return an error */\
   "WriteError", /* impl says writing this can return an error */\
   "Parameter",  /* impl is supplying a parameter property */	\
-  "Indirect"    /* impl is supplying an indirect address */       
+  "Indirect",   /* impl is supplying an indirect address */	\
+  "Debug"       /* property is for debug only */     \
 
 
 namespace OCPI {
@@ -85,6 +86,8 @@ namespace OCPI {
     // instance property values in an assembly.
     const char *
     Property::parseValue(const char *unparsed, Value &value) {
+      if (!value.m_vt)
+	value.setType(*this);
       return value.parse(unparsed);
     }
 
@@ -109,12 +112,12 @@ namespace OCPI {
 	m_isWritable = true;
       if (m_isVolatile)
 	m_isReadable = true;
-      if (m_isReadable)
+      if (m_isReadable) // note this might include parameters
 	readableConfigs = true;
       if (m_isWritable)
 	writableConfigs = true;
       if (!m_isWritable && !m_isReadable && !m_isParameter && !padding)
-	return "property is not readable or writable or a parameter";
+	return "property is not readable or writable or padding or a parameter";
       return NULL;
     }
     // This is parsing a newly create property that might be only defined in
@@ -129,7 +132,7 @@ namespace OCPI {
 	   OE::checkAttrs(prop, "Name", PROPERTY_ATTRIBUTES, NULL)) ||
 	  includeImpl && (err = parseImplAlso(prop)) ||
 	  (err = parseAccess(prop, readableConfigs, writableConfigs, false)) ||
-	  (err = Member::parse(prop, true, true, "default", ordinal)))
+	  (err = Member::parse(prop, !m_isParameter, true, "default", ordinal)))
 	return err;
       if (m_isParameter && (m_isWritable || m_isIndirect))
 	return esprintf("Property \"%s\" is a parameter and can't be writable or indirect",
@@ -157,7 +160,7 @@ namespace OCPI {
 	if (top > sizeofConfigSpace)
 	  sizeofConfigSpace = top;
 	m_offset = m_indirectAddr;
-      } else if (!m_isParameter || m_isReadable) {
+      } else if (!m_isParameter) {
 	cumOffset = roundUp(cumOffset, m_align);
 	m_offset = cumOffset;
 	cumOffset += m_nBytes;
@@ -195,6 +198,7 @@ namespace OCPI {
 	  (err = OE::getBoolean(prop, "WriteError", &m_writeError)) ||
 	  (err = OE::getBoolean(prop, "IsTest", &m_isTest)) ||
 	  (err = OE::getBoolean(prop, "Parameter", &m_isParameter)) ||
+	  (err = OE::getBoolean(prop, "Debug", &m_isDebug)) ||
 	  // FIXME: consider allowing this only for HDL somehow.
 	  (err = OE::getNumber(prop, "Indirect", &m_indirectAddr, &m_isIndirect, 0, true)))
 	return err;

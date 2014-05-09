@@ -19,4 +19,5 @@ begin
   out_out.eom         <= in_in.eom;
   out_out.valid       <= in_in.valid;
   out_out.byte_enable <= in_in.byte_enable; -- only necessary due to BSV protocol sharing
+  out_out.opcode      <= in_in.opcode;
 end rtl;

@@ -83,7 +83,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
      return RCC_ERROR;
    }
    props->bytesWritten += n;
- } else if (!props->messagesInFile)
+ } else if (props->stopOnEOF)
    return RCC_DONE;
  props->messagesWritten++;
  return RCC_ADVANCE;

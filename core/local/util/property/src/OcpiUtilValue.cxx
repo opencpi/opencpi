@@ -196,7 +196,7 @@ namespace OCPI {
     parseBool(const char *a, const char *end, bool &b)
     {
       (void)end;
-      return OCPI::Util::EzXml::parseBool(a, end, &b) ? "bad Bool value" : NULL;
+      return OCPI::Util::EzXml::parseBool(a, end, &b) ? "bad boolean value" : NULL;
     }
 
     // cp points after slash at the 'x'
@@ -748,7 +748,7 @@ namespace OCPI {
 				   m_vt->m_isSequence || m_vt->m_arrayRank ?      \
 				   m_p##pretty[nSeq * m_vt->m_nItems + nArray] : \
 				   m_##pretty)))			        \
-	    return esprintf("%s for \"%*s\" (%zu)", err, (int)(end-start), start, end-start); \
+	    return esprintf("in value \"%*s\" (%zu): %s", (int)(end-start), start, end-start, err); \
 	  break;
 	OCPI_PROPERTY_DATA_TYPES
 	OCPI_DATA_TYPE(sca,corba,letter,bits,StructValue,Struct,store)

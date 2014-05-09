@@ -43,8 +43,41 @@ SourceSuffix=$($(CapModel)SourceSuffix)
 ImplXmlFiles=$(foreach w,$(Workers),$(or $(Worker_$w_xml),$(Worker).xml))
 $(call OcpiDbgVar,ImplXmlFiles)
 
-# Only workers need the implementation "header" file and the skeleton
+# During the makefile reading process we will possibly update the
+# build parameter file.
+# We look at all variables of the form Param_<name>.
+RawParamVariables:=$(filter Param_%,$(.VARIABLES))
+RawParamFile:=$(GeneratedDir)/rawparams.xml
+RawParamName=$(1:Param_%=%)
+RawParamNames:=$(foreach v,$(RawParamVariables),$(call RawParamName,$v))
+ParamValue=$(Param_$1)
+MakeRawParams:=$(strip \
+  (echo "<parameters>"; \
+   $(foreach i,$(RawParamVariables),\
+     echo "<parameter name='$(call RawParamName,$i)' value=\"$(subst ",\",$($i))\"/>";) \
+   echo "</parameters>"))
+ifeq ($(filter clean,$(MAKECMDGOALS)),)
+MakeRawParamsFile:=$(strip\
+  $(if $(wildcard $(RawParamFile)), \
+     $(shell $(MakeRawParams) | cmp -s $(RawParamFile) 2>&1 || \
+             ($(MakeRawParams) > $(RawParamFile)) 2>&1),\
+     $(shell (mkdir -p $(GeneratedDir) ; $(MakeRawParams) > $(RawParamFile)) 2>&1)))
+$(and $(MakeRawParamsFile),$(error when processing parameters: $(MakeRawParamsFile)))
+#$(info MakeRawParams:$(MakeRawParams), \
+   MakeParamsFile:$(MakeRawParamsFile), RawParamValues=$(RawParamValues))
+#$(info X:$(foreach v,$(RawParamVariables),name is:$(call RawParamName,$v), value is "$($v)"))
+endif
+ParamFile=$(GeneratedDir)/$1-params.mk
+ParamFiles:=$(foreach w,$(Workers),$(call ParamFile,$w))
+#$(info PARAMFILES:$(ParamFiles))
+LoadWorkerParams:=\
+  $(eval WorkerParamNames:=) \
+  $(eval -include $(call ParamFile,$(Worker)))
+$(ParamFiles): $(GeneratedDir)/%-params.mk: $$(Worker_%_xml) $(RawParamFile) | $(GeneratedDir)
+	$(AT)$(OcpiGen) -D $(GeneratedDir) $(and $(Package),-p $(Package)) \
+	 $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) -r $(RawParamFile) $<
 
+# Only workers need the implementation "header" file and the skeleton
 # Allow this to be set to override this default
 ifeq ($(origin ImplHeaderFiles),undefined)
 ImplHeaderFiles=$(foreach w,$(Workers),$(call ImplHeaderFile,$w))
@@ -141,9 +174,12 @@ WkrObject=$(call WkrTargetDir,$(2))/$(basename $(notdir $(1)))$(OBJ)
 # Function to make an object from source: $(call WkrMakeObject,src,target)
 define WkrMakeObject
 # A line is needed here for the "define" to work (no extra eval)
-ObjectFiles_$(2) += $(call WkrTargetDir,$(2))/$(basename $(notdir $(1)))$(OBJ)
-$(call WkrObject,$(1),$(2)): $(1) $(ImplHeaderFiles) | $(call WkrTargetDir,$(2))
-	$(Compile_$(subst .,,$(suffix $(1))))
+ObjectFiles_$2 += $(call WkrTargetDir,$2)/$(basename $(notdir $1))$(OBJ)
+$(call WkrObject,$1,$2): \
+   $1 $(ImplHeaderFiles) \
+   $(if $(filter $1,$(WorkerSourceFiles)),,$(call ParamFile,$(word 1,$(Workers)))) \
+    | $(call WkrTargetDir,$2)
+	$(Compile_$(subst .,,$(suffix $1)))
 
 endef
 
@@ -153,7 +189,9 @@ define WkrWorkerDep
 
 $(call WkrObject,$1,$2): TargetDir=$(OutDir)target-$2
 $(call WkrObject,$1,$2): $(CapModel)Target=$2
+$(call WkrObject,$1,$2): Worker=$1
 $(call WkrObject,$1,$2): \
+   $(call ParamFile,$1) \
    $(call ImplHeaderFile,$1) \
    $(foreach l,$(call $(CapModel)LibrariesInternal,$2),$$(call LibraryRefFile,$l,$2))
 
@@ -171,20 +209,20 @@ $(call WkrTargetDir,$1): | $(OutDir) $(GeneratedDir)
 # Make them individually, and then link them together
 ifdef ToolSeparateObjects
 $$(call OcpiDbgVar,CompiledSourceFiles)
-$(foreach s,$(CompiledSourceFiles),$(call WkrMakeObject,$(s),$(1)))
+$(foreach s,$(CompiledSourceFiles),$(call WkrMakeObject,$(s),$1))
 
 $(call WkrBinary,$(1)): $(CapModel)Target=$1
-$(call WkrBinary,$(1)): $$(ObjectFiles_$(1)) $$(call ArtifactXmlFile,$1) \
-			| $(call WkrTargetDir,$(1))
-	$(LinkBinary) $$(ObjectFiles_$(1)) $(OtherLibraries)
+$(call WkrBinary,$(1)): $$(ObjectFiles_$1) $$(call ArtifactXmlFile,$1) \
+			| $(call WkrTargetDir,$1)
+	$(LinkBinary) $$(ObjectFiles_$1) $(OtherLibraries)
 	$(AT)if test -f "$(ArtifactXmlFile)"; then \
 		(cat $(ArtifactXmlFile); \
                  bash -c 'echo X$$$$4' `ls -l $(ArtifactXmlFile)`) >> $$@; \
 	fi
 endif
 # Make sure we actuall make the final binary for this target
-$(call OcpiDbg,Before all: WkrBinary is "$(call WkrBinary,$(1))")
-all: $(call WkrBinary,$(1))
+$(call OcpiDbg,Before all: WkrBinary is "$(call WkrBinary,$1)")
+all: $(call WkrBinary,$1)
 
 # If not an application, make the worker object files depend on the impl headers
 $(foreach w,$(Workers),$(eval $(call WkrWorkerDep,$w,$1)))

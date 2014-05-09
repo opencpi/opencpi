@@ -61,7 +61,7 @@ namespace OCPI {
       void releaseWorkerAccess(size_t index,
 			       Access & worker,
 			       Access & properties);
-      // This methd has a required base class implementation.
+      // This method has a required base class implementation.
       // If it is overridden, the base class method must be called from there.
       // (probably early, as it retrieves a variety of generic information from either the
       //  device itself or the config info)

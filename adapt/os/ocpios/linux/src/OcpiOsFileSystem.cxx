@@ -33,19 +33,20 @@
  */
 
 
-#include <OcpiOsAssert.h>
-#include <OcpiOsFileSystem.h>
-#include <OcpiOsFileIterator.h>
-#include <OcpiOsSizeCheck.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <dirent.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <string>
 #include <cctype>
 #include <ctime>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <dirent.h>
 #include <cstdio>
-#include <unistd.h>
-#include <errno.h>
+#include "OcpiOsAssert.h"
+#include "OcpiOsFileSystem.h"
+#include "OcpiOsFileIterator.h"
+#include "OcpiOsSizeCheck.h"
 #include "OcpiOsPosixError.h"
 
 /*
@@ -427,33 +428,38 @@ list (const std::string & dir,
  */
 
 bool
-exists (const std::string & name, bool * isDir, uint64_t *size, std::time_t *mtime)
+exists(const std::string & name, bool * isDir, uint64_t *size, std::time_t *mtime,
+       FileId *id)
   throw ()
 {
   std::string nativeName = toNativeName (name);
 
   struct stat info;
-  if (stat (nativeName.c_str(), &info)) {
+  if (stat (nativeName.c_str(), &info))
     return false;
-  }
-
   if ((info.st_mode & S_IFDIR) == S_IFDIR) {
-    if (isDir) {
+    if (isDir)
       *isDir = true;
-    }
-  }
-  else if ((info.st_mode & S_IFREG) == S_IFREG) {
-    if (isDir) {
+  } else if ((info.st_mode & S_IFREG) == S_IFREG) {
+    if (isDir)
       *isDir = false;
-    }
     if (size)
       *size = info.st_size;
-  }
-  else {
+  } else
     return false;
-  }
   if (mtime)
     *mtime = info.st_mtime;
+  if (id) {
+    struct PosixId{
+      dev_t device;
+      ino_t inode;  
+    } *posix_id;
+    ocpiAssert ((compileTimeSizeCheck<sizeof (id->m_opaque), sizeof(*posix_id)> ()));
+    posix_id = (PosixId*)id->m_opaque;
+    memset(id, 0, sizeof(FileId));
+    posix_id->device = info.st_dev;
+    posix_id->inode = info.st_ino;
+  }
   return true;
 }
 

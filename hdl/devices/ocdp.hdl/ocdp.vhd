@@ -5,7 +5,7 @@
 
 -- Note THIS IS THE OUTER skeleton, since the 'outer' attribute was set.
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
-library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
+library ocpi; use ocpi.types.all, ocpi.util.all;
 library platform; use platform.platform_pkg.all;
 architecture rtl of ocdp_rv is
   -- This is the verilog being wrapped
@@ -81,6 +81,11 @@ begin
   my_reset_n            <= ctl_in.MReset_n and client_in.reset_n;
   client_out.data       <= to_unoc(server_response_get);
 dp : mkOCDP4B
+  generic map(
+      hasPush       => slv(includePush),
+      hasPull       => slv(includePull),
+      hasDebugLogic => slv(ocpi_debug)
+      )
   port map(
     pciDevice               => client_in.id,
     CLK                     => ctl_in.CLK,      -- ctl_in.clk and client_in.clk are the same clk

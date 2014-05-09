@@ -1446,6 +1446,21 @@ free_driver(void) {
   log_debug( "Cleanup done\n");
 }
 
+#ifdef CONFIG_ARCH_ZYNQ
+static void enable_counters(void*info) {
+  /* enable user-mode access to the performance counter*/
+  asm volatile("MCR p15, 0, %0, C9, C14, 0\n\t" :: "r"(1));
+  /* disable counter overflow interrupts (just in case)*/
+  asm volatile("MCR p15, 0, %0, C9, C14, 2\n\t" :: "r"(0x8000000f));   
+  // program the performance-counter control-register:
+  asm volatile ("MCR p15, 0, %0, c9, c12, 0\t\n" :: "r"(0x11));  
+  /* enable all counters */
+  asm volatile("mcr p15, 0, %0, c9, c12, 1\t\n" :: "r"(0x8000000f));
+  // clear overflows:
+  asm volatile ("MCR p15, 0, %0, c9, c12, 3\t\n" :: "r"(0x8000000f));
+}
+#endif
+
 // Initialize the driver - at load time
 static int __init
 opencpi_init(void) {
@@ -1514,6 +1529,17 @@ opencpi_init(void) {
     if (make_block(0x40000000, sizeof(OccpSpace), ocpi_mmio, false, 0) == NULL)
       break;
     log_debug("Control Plane physical address space for Zynq/PL/AXI GP0 slave reserved");
+   {
+#if 0
+     int
+       online = num_online_cpus(),
+       possible = num_possible_cpus(),
+       present = num_present_cpus();
+     printk(KERN_INFO "Online Cpus=%d\nPossible Cpus=%d\nPresent Cpus=%d\n",
+	    online, possible, present);
+     on_each_cpu(enable_counters , NULL, 1);
+#endif
+    }
 #endif
     // Allocate initial memory space: sets virtual/physical/opencpi_size: set opencpi_allocation
     // TODO: Automatically detect 'memmap' on the Kernel commandline
