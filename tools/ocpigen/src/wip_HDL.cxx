@@ -3062,7 +3062,7 @@ emitImplHDL(const char *outDir, bool wrap) {
 		"                data_inputs  => readback_data,\n"
 		"                data_output  => nonRaw_SData);\n",
 		m_implName);
-      if (m_ctl.readables)
+      if (m_ctl.nonRawReadables || m_ctl.rawReadables)
 	fprintf(f, "  outputs.SData <= %s;\n",
 		m_ctl.nonRawReadables ? 
 		(m_ctl.rawReadables ? 
