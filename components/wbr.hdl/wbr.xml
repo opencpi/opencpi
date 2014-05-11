@@ -1,8 +1,6 @@
 <HdlImplementation Name="wbr"  Language="Verilog">
 	<xi:include href="wbr_spec.xml"/>
-	<ControlInterface ControlOperations="initialize, start" Sub32BitConfigProperties="true">
-	  <Property Name="hasDebugLogic" Parameter="true" Type="Bool"/>
-	</ControlInterface>
+	<ControlInterface ControlOperations="initialize, start" Sub32BitConfigProperties="true"/>
 <!-- this is really CONTINUOUS???? -->
 	<StreamInterface Name="dif" MyClock="true" NumberOfOpcodes="256"
 			 DataWidth="32" ImpreciseBurst="true" PreciseBurst="true"/>

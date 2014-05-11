@@ -146,7 +146,7 @@ begin
   gen0: for i in 0 to nWkrs - 1 generate
     present(i)   <= workers_in(i).present;
     attention(i) <= workers_in(i).attention;
-    wm : entity work.wci_master
+    wm : component wci_master
       generic map(ocpi_debug => ocpi_debug,
                   id_width   => id_width,
                   id         => i)

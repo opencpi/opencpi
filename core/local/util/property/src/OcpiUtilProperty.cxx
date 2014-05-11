@@ -112,7 +112,7 @@ namespace OCPI {
 	m_isWritable = true;
       if (m_isVolatile)
 	m_isReadable = true;
-      if (m_isReadable) // note this might include parameters
+      if (m_isReadable && !m_isParameter)
 	readableConfigs = true;
       if (m_isWritable)
 	writableConfigs = true;

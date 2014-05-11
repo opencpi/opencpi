@@ -15,16 +15,16 @@ else
   $zed/ntpclient -h $4 -s
   # Copy the (missing) C++ runtime environment library into the current RAM rootFS
   cp $zed/libstdc++.so.6 /lib
-  export OCPI_ROOT_DIR=/mnt/net/$3
   # Run the generic script to setup the OpenCPI environment
   # Note the ocpidriver load command is innocuous if run redundantly
+  export OCPI_BASE_DIR=/mnt/net/$3
   cat <<EOF > $HOME/.profile
-    export OCPI_ROOT_DIR=$OCPI_ROOT_DIR
-    source $OCPI_ROOT_DIR/ocpi/ocpisetup.sh $OCPI_ROOT_DIR/ocpi/ocpisetup.sh
+    export OCPI_BASE_DIR=$OCPI_BASE_DIR
+    source $OCPI_BASE_DIR/ocpi/ocpisetup.sh $OCPI_BASE_DIR/ocpi/ocpisetup.sh
     ocpidriver load
     export TZ=$5
-    if test -r $OCPI_ROOT_DIR/platforms/zed/mysetup.sh; then
-       source $OCPI_ROOT_DIR/platforms/zed/mysetup.sh
+    if test -r $OCPI_BASE_DIR/platforms/zed/mysetup.sh; then
+       source $OCPI_BASE_DIR/platforms/zed/mysetup.sh
     fi
 EOF
   source $HOME/.profile

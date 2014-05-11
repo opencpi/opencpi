@@ -352,8 +352,10 @@ hdlValue(const OU::Value &v, std::string &value) {
     vhdlValue(v, value) : verilogValue(v, value);
 }
 
+// Record bool says we are emitting a record interface so
+// it is not wrapping verilog - UGH
 void Worker::
-emitParameters(FILE *f, Language lang) {
+emitParameters(FILE *f, Language lang, bool convert) {
   bool first = true;
   std::string last;
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
@@ -375,9 +377,6 @@ emitParameters(FILE *f, Language lang) {
 	default:;
 	}
       if (lang == VHDL) {
-	if (first)
-	  printf("  generic (\n");
-	first = false;
 	// Note we could be very obsessive with types becase VHDL can be,
 	// but not now...
 	// FIXME: define actual ocpi types corresponding to our IDL-inspired types
@@ -385,7 +384,7 @@ emitParameters(FILE *f, Language lang) {
 	// worker in verilog, the generics can't be typed..
 	std::string value, type;
 	switch (pr->m_baseType) {
-	case OA::OCPI_Bool: type = "bool_t"; break;
+	case OA::OCPI_Bool: type = convert ? "std_logic_vector(0 to 0)" : "bool_t"; break;
 	case OA::OCPI_Char: type = "char_t"; break;
 	case OA::OCPI_Double: type = "double_t"; break;
 	case OA::OCPI_Float: type = "real_t"; break;
@@ -399,8 +398,14 @@ emitParameters(FILE *f, Language lang) {
 	case OA::OCPI_String: type = "string_t"; break;
 	default:;
 	}
-	if (pr->m_default)
-	  vhdlValue(*pr->m_default, value);
+	if (pr->m_default) {
+	  std::string vhv;
+	  vhdlValue(*pr->m_default, vhv);
+	  if (pr->m_baseType == OA::OCPI_Bool && convert)
+	    OU::format(value, "ocpi.util.slv(%s)", vhv.c_str());
+	  else
+	    value = vhv;
+	}
 	emitSignal(pr->m_name.c_str(), f, lang, Signal::IN, last, -1, 0, "  ",
 		   type.c_str(), pr->m_default ? value.c_str() : NULL);
       } else {
@@ -417,8 +422,8 @@ emitParameters(FILE *f, Language lang) {
 	  }
 #endif
 	if (pr->m_baseType == OA::OCPI_Bool)
-	  fprintf(f, "  parameter %s = 1'b%llu;\n",
-		  pr->m_name.c_str(), (long long)i64);
+	  fprintf(f, "  parameter [0:0] %s = 1'b%u;\n",
+		  pr->m_name.c_str(), (i64 != 0) & 1);
 	else
 	  fprintf(f, "  parameter [%zu:0] %s = %zu'h%llx;\n",
 		  pr->m_nBits - 1, pr->m_name.c_str(), pr->m_nBits, (long long)i64);
@@ -1396,7 +1401,7 @@ emitDefsHDL(const char *outDir, bool wrap) {
       return err;
     fprintf(f,
 	    "\ncomponent %s is\n", m_implName);
-    emitParameters(f, lang);
+    emitParameters(f, lang, true);
   } else
     fprintf(f,
 	    "\n"
@@ -1728,13 +1733,6 @@ emitVhdlShell(FILE *f) {
     if (!wci->ocp.SData.value || !m_ctl.nonRawReadables)
       fprintf(f,
 	      "  signal unused : std_logic_vector(31 downto 0);\n");
-#if 0
-    if (m_ctl.rawReadables)
-      fprintf(f,
-	      "  -- This signal conveys the worker's raw data output into our generated _wci\n"
-	      "  -- since it muxes it with the nonRaw SData\n"
-	      "  signal raw_SData : std_logic_vector(31 downto 0);\n");
-#endif
     fprintf(f,
 	    "begin\n"
 	    "  -- This instantiates the WCI/Control module/entity generated in the *_impl.vhd file\n"
@@ -2322,9 +2320,27 @@ emitVhdlRecordWrapper(FILE *f) {
 	}
     }
     fprintf(f,
-	    "  assy : work.%s_defs.%s\n"
-	    "    port map(\n",
+	    "  assy : work.%s_defs.%s\n",
 	    m_implName, m_implName);
+    bool first = true;
+    for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
+      if ((*pi)->m_isParameter) {
+	OU::Property &p = **pi;
+	if (first) {
+	  fprintf(f,
+		  "    generic map(\n");
+	}
+	fprintf(f,  "%s      %s => %s%s%s",
+		first ? "" : ",\n", p.m_name.c_str(),
+		p.m_baseType == OA::OCPI_Bool ? "ocpi.util.slv(" : "",
+		p.m_name.c_str(),
+		p.m_baseType == OA::OCPI_Bool ? ")" : "");
+	first = false;
+      }
+    if (!first)
+      fprintf(f, ")\n");
+
+    fprintf(f, "    port map(\n");
     std::string last;
     for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
       Clock *c = *ci;
@@ -2877,22 +2893,11 @@ emitImplHDL(const char *outDir, bool wrap) {
 	      maxPropName, "reset",
 	      maxPropName, "control_op",
 	      maxPropName, "state",
-#if 0
-	      maxPropName, "raw_offset", m_implName,
-	      maxPropName, "is_read",
-	      maxPropName, "is_write",
-#endif
 	      maxPropName, "is_operating");
       if (m_endian == Dynamic)
 	fprintf(f, 
 		"    %-*s : out bool_t;           -- for endian-switchable workers\n",
 		maxPropName, "is_big_endian");
-#if 0
-      if (m_ctl.rawReadables)
-	fprintf(f,
-		"    %-*s : in std_logic_vector(31 downto 0);\n",
-		maxPropName, "raw_SData");
-#endif
       fprintf(f,
 	      "    %-*s : out bool_t%s            -- forcible abort a control-op when\n"
 	      "                                                -- worker uses 'done' to delay it\n",
@@ -3062,13 +3067,13 @@ emitImplHDL(const char *outDir, bool wrap) {
 		"                data_inputs  => readback_data,\n"
 		"                data_output  => nonRaw_SData);\n",
 		m_implName);
-      if (m_ctl.nonRawReadables || m_ctl.rawReadables)
+      if (m_ctl.readables)
 	fprintf(f, "  outputs.SData <= %s;\n",
 		m_ctl.nonRawReadables ? 
 		(m_ctl.rawReadables ? 
 		 "props_from_worker.raw_data when its(my_is_read) else nonRaw_SData" :
 		 "nonRaw_SData") :
-		"props_from_worker.raw_data");
+		(m_ctl.rawReadables ? "props_from_worker.raw_data" : "(others => '0')"));
       n = 0;
       for (PropertiesIter pi = m_ctl.properties.begin(); nonRaw(pi); pi++) {
 	OU::Property &pr = **pi;

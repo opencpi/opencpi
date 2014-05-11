@@ -335,7 +335,7 @@ class Control {
   Control();
   uint64_t sizeOfConfigSpace;
   bool writables, nonRawWritables, rawWritables;
-  bool readables, nonRawReadables, rawReadables; // readables might be parameters
+  bool readables, nonRawReadables, rawReadables; // readables does NOT include parameters
   bool sub32Bits, nonRawSub32Bits;
   bool volatiles, nonRawVolatiles;
   bool readbacks, nonRawReadbacks, rawReadbacks;
@@ -487,7 +487,7 @@ class Worker : public Parsed {
     emitVhdlShell(FILE *f),
     emitVhdlSignalWrapper(FILE *f, const char *topinst = "rv"),
     emitVhdlRecordWrapper(FILE *f),
-    emitParameters(FILE *f, Language lang),
+    emitParameters(FILE *f, Language lang, bool convert = false),
     emitPortDescription(Port *p, FILE *f, Language lang),
     emitSignals(FILE *f, Language lang, bool onlyDevices = false, bool records = false,
 		bool inPackage = false),

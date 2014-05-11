@@ -183,6 +183,7 @@ module mkWSICaptureWorker4B(wciS0_Clk,
 `define NOT_EMPTY_capture
 `include "capture-defs.vh"
 `endif
+  wire 	 hasDebugLogic = ocpi_debug;
   // signals for module outputs
   wire [31 : 0] wciS0_SData;
   wire [2 : 0] 	wciS0_SFlag;

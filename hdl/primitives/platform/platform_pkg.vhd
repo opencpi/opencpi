@@ -354,6 +354,18 @@ component sim_dcp is
     cp_out : out occp_in_t);
 end component sim_dcp;
 
+component wci_master is
+  generic(
+    ocpi_debug   : bool_t;
+    id_width, id : natural);
+  port(
+    -- worker-facing side - a WCI
+    wci_in     : in  wci_s2m_t;
+    wci_out    : out wci_m2s_t;
+    worker_in  : in  worker_in_t;
+    worker_out : out worker_out_t);
+end component wci_master;
+
 end package platform_pkg;
 
 -- modules instantiated as workers must have the component definition in their

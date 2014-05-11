@@ -1,0 +1,15 @@
+This directory contains information and scripts for installing and
+using OpenCPI on the embedded linux on a Zed board with a Zynq chip on
+it.  Information on installing, and building the software prior to
+touching the hardware is in README.build.
+
+Information on installing and setting up the hardware is in
+README.install.  A prerequisite for all of this is having a
+network-based, typically Centos6 Linux, development system that
+already has a working installation of OpenCPI that is the basis for
+the software install.
+
+So the overall sequence is:
+1. Install/build/run OpenCPI on Centos6
+2. Do what it says in README.build
+3. Do what it says in README.install

@@ -1,0 +1,237 @@
+This file describes how to build OpenCPI for the zed board and enable building
+applications and components for it.  It is what you do on a development system
+(not on the Zed board) before doing anything on the Zed hardware.  The basic
+steps are summarized at the end of this file.
+
+There are two aspects of building: user mode code and kernel driver code.  Both
+rely on the cross-compiler supplied in the Xilinx tools release (the EDK).  So
+the first prerequisite is to install Xilinx ISE and EDK tools.  We will refer to
+the Xilinx release number as $XRN, and the pathname where Xilinx releases are
+installed as $XROOT.  In a typical installation, XRN might be 14.6, and XROOT
+might be /opt/Xilinx, so the current release would be installed in the
+
+  /opt/Xilinx/14.6
+
+directory.  Be sure to include the EDK in the installation (when
+running the Xilinx installer) since that is where the cross compiler and
+some other required files come from.  At the current time OpenCPI does not
+use the Xilinx Vivado tools, only ISE and EDK.  The XRN and XROOT variables
+are notional for this document.  You do not need to actually set those
+variables.
+
+We assume an Xilinx ISE+EDK installation on Centos6 Linux.
+
+We also assume that you have created a clone of the OpenCPI git repository,
+placed it in $OCPI_BASE_DIR (e.g. /home/myself/opencpi), and built and run
+OpenCPI on that development host system.  Instructions for this are in the
+README files for the development system platform (e.g. Centos6).
+
+In summary, the prerequisites are:
+1. A Xilinx ISE+EDK installation at $XROOT/$XRN, something like /opt/Xilinx/14.6
+2. A built/working OpenCPI installation on Centos6 at $OCPI_BASE_DIR
+
+================================================================================
+Step 1. Customize and establish your build environment.
+================================================================================
+
+First, to build OpenCPI for user mode zynq/arm code, you need to establish the
+build environment for zynq cross-compilation.  User mode code is built using the
+Xilinx-EDK-supplied ARM/Zynq cross-build tools.  There is nothing specific to the
+Zed board about about these tools.  The ocpized.sh file in the $OCPI_BASE_DIR is an
+example you should copy and customize for your own environment.  It refers to
+the subsidiary file $OCPI_BASE_DIR/env/zynq.sh which you should not need to
+modify.  Assuming you have already built OpenCPI for Centos6, you need to source
+this customized environment script in a new shell/window, in $OCPI_BASE_DIR
+e.g.:
+
+  % source myzed.sh
+
+This established a cross-build environment.
+
+================================================================================
+Step 2. Build user mode software using the Xilinx-supplied cross-compiler tools
+================================================================================
+
+After the above setup, the normal OpenCPI build scripts should function and succeed:
+
+  % make && make rcc
+
+This should succeed and produce no particularly unusual warnings.
+
+================================================================================
+Step 3. Build FPGA libraries, components, platform and bitstreams
+================================================================================
+
+In order to build the HDL/FPGA code, including test bitstreams, you do:
+
+  % make hdl HdlPlatforms="isim_pf zed"
+
+This will build all the primitive libraries, components, bitstreams for zed and
+for isim.  The OpenCPI HdlTarget for Zed is "zync" and the HdlPlatform is "zed".
+
+================================================================================
+Step 4. Obtaining and configuring the Xilinx Linux source tree for Zynq
+================================================================================
+
+The final aspect of building for zed is to build the OpenCPI linux kernel device
+driver.  This requires that you download/clone the Xilinx Linux distribution source tree.
+Since this code is version-specific and is in sync with the ISE/EDK releases, we
+choose to place this linux source tree at the top level of the Xilinx release
+directory (XROOT/XRN).  To clone and prepare this distribution to enable building
+the OpenCPI kernel driver you run the following script in a shell/window where
+you have already set up the Zynq cross-build environment by sourcing your
+(customized) environment setup script based on ocpized.sh mentioned above.
+                                                                                
+ % make makeXilinxLinux.sh
+
+This will clone, checkout, and configure the Xilinx Linux source tree, at
+$XROOT/$XRN/git/linux-xlnx, so that the OpenCPI kernel driver can be built
+against it.  In this script, the checkout label is the latest one for the ISE
+version you have installed.  You can look at the labels like this:
+
+% (cd $XROOT/$XRN/git/linux-xlnx; git tag | grep 14.6)
+xilinx-v14.6
+xilinx-v14.6.01
+xilinx-v14.6.02
+
+The makeXilinxLinux.sh script chooses the last one which should be the latest
+and greatest.  This is to ensure that we are using any patches Xilinx has posetd
+for this ISE release.  Remember that we are only building the OpenCPI driver
+against this Xilinx Linux source tree, and NOT actually BUILDING the kernel.
+For those that need to actually build and reconfigure the linux kernel, and
+replace the prebuilt one (as well as the device tree), there are other steps to
+take.  These instructions focuses on the default linux kernel as supplied by
+Xilinx.
+
+At this point you have a checked out and configured linux kernel directory that
+corresponds to the kernel we are running on the zed board, and we can build the
+OpenCPI linux kernel driver against this tree.  The environment variable you
+needed to set in your myzed.sh environent setup script is OCPI_KERNEL_DIR.  The
+line in the standard zynq setup file is this:
+  
+export OCPI_KERNEL_DIR=$OCPI_XILINX_DIR/$OCPI_XILINX_VERSION/git/linux-xlnx
+
+================================================================================
+Step 5. Building the OpenCPI Linux Kernel driver
+================================================================================
+
+So now that we have the Xilinx Linux kernel source tree available and configured
+for zynq, with the zynq/zed environment established via myzed.sh, you just do:
+
+  % make driver
+
+This is the end of building all the OpenCPI assets for development and execution
+on Zed.
+
+================================================================================
+Step 6. Creating and populating a directory to be copied to an SD card
+================================================================================
+
+A final software step to perform on the development system is to create and
+populate a directory to be copied to an SD card and then to be plugged into the
+Zed board.  We use the Xilinx Linux binary releases at:
+
+http://www.wiki.xilinx.com/Zynq+Releases
+
+We simply use the prebuilt Xilinx Linux release corresponding to the Xilinx ISE
+tools release. (Vivado will come later...).  We prepare an SD card by copying
+the files from the Xilinx release onto the card.  If the SD card is not
+formatted correctly, you just need a single WIN95/FAT32 partition, and make
+a file system on it (using cfdisk and mkfs.vfat).  If it already formatted
+(like the SD card that comes with the Zed board), you simply copy files onto the
+SD card (when it is mounted on your development system).
+                                                           
+This setup is the minimal required SD card contents.  You can add anything else
+to it of course.  Our standard development setup mounts the development system
+using NFS, so usually very few files really need to be on the SD card itself.
+
+These instructions assume that the SD card is plugged in and mounted on a
+Centos6 system (in a slot or a USB SD card adapter).
+
+Xilinx provides releases at www.wiki.xilinx.com, that are versioned the same
+as the Xilinx tools releases.  In this file we assume the version of Xilinx
+tools installed is 14.6.  If not, replace 14.6 with the version you have installed.
+Releases before this may well not work.
+
+These instructions prepare a directory tree for an SD card locally (in this
+directory), to be copied to a real SD card, that can then be unmounted, plugged
+into the Zed board, and used to boot the Zed board.
+
+There is one file that must be customized for your environment.  You should make
+a copy of the "defaultsetup.sh" file into "mysetup.sh" and customize it, in particular,
+specifying at least:
+1. The NFS "share name" of your development system.
+2. The directory name relative to that mountable file system where OpenCPI lives.
+3. The system to be used as an NTP server.
+4. Your timezone name.
+
+The network address of your development system will be specified later.
+
+To create a directory that can be copied to an SD card, you use the makeSD.sh
+script, which takes as an argument the current Xilinx tool ISE/EDK release
+
+ % ./makeSD.sh 14.6
+
+This script downloads the kernel release from Xilinx, unpacks it, creates a SD-$XRN
+diretory locally (removing it first if it is there), populates it, including the
+mysetup.sh that you have just customized.
+
+================================================================================
+Step 7. Copy the prepared SD file tree to the actual SD card.
+================================================================================
+
+Assuming you have your formatted SD card mounted at /media/xyz, and that you
+have a spare copy of everything that was on it, you would do:
+
+ <mount the SD card on /media/xyz>
+ % rm -r -f /media/xyz/*
+ % cp -R -p SD-14.6/* /media/xyz
+<unmount the SD card to ensure it was completely written>
+
+This creates a bootable card for the Zed board with the released Xilinx kernel
+and boot loader, and a generic "setup" script for getting OpenCPI going.  The
+mysetup.sh that is customized for your development situation was also added to
+the SD card.  It calls the "ocpizedsetup.sh" script with the appropriate
+arguments for your environment and does whatever other setup tasks you want.  If
+you later update your mysetup.sh file, you can always copy it to the SD card
+later from the zed system itself by doing:
+
+% cp /mnt/net/xxxxxx/opencpi/platforms/zed/mysetup.sh /mnt/card
+
+Where XXXXX is the relative location of OCPI_BASE_DIR from your NFS mount.
+
+Note that the original contents of the SD card can be found on the Digilent web
+site under the "out of box" project at http://www.zedboard.org/node/241.  But
+you don't need this if you are just following these directions.
+
+================================================================================
+Summary of pre-hardware steps to prepare to run OpenCPI on Zed
+================================================================================
+
+From the top level directory of an OpenCPI installation a.k.a. OCPI_BASE_DIR,
+that is already functional for the Centos6 system, in a fresh/new shell/window,
+do these steps:
+
+ % cp ocpized.sh myzed.sh
+ { customize myzed.sh for your build environment }
+ % source myzed.sh
+ % make
+ % make rcc
+ % make hdl HdlPlatform=zed
+ % cd platforms/zed
+ % platforms/zed/getXilinxLinux.sh
+ % make driver
+ % cd platforms/zed
+ % cp defaultsetup.sh mysetup.sh
+ { customize mysetup.sh for your network environment }
+ % platforms/zed/makeSD.sh
+ { mount your SD card onto something like /media/xyz, and perhaps remove all files }
+ % rm -r -f /media/xyz/*
+ % platforms/zed/fillSD.sh /media/xyz
+ % sudo umount /media/xyz
+
+Now everything is built and ready for Zed, and you have a bootable SD card for
+using OpenCPI on Zed.  The README.install file describes how to install the
+hardware and set it up to execute based on the OpenCPI system you just built and
+the SD card you created.
+

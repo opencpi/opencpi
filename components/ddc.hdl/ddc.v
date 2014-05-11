@@ -222,6 +222,7 @@ module mkDDCWorker(wciS0_Clk,
 `define NOT_EMPTY_ddc
 `include "ddc-defs.vh"
 `endif
+  wire 	 hasDebugLogic = ocpi_debug;
   // signals for module outputs
   wire [31 : 0] wciS0_SData, wsiM0_MData;
   wire [11 : 0] wsiM0_MBurstLength;

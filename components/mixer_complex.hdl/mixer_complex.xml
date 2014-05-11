@@ -1,8 +1,6 @@
 <HdlImplementation Name="mixer_complex" Language="Verilog" Pattern="%w%M%0_">
   <xi:include href="mixer_complex_spec.xml"/>
-  <ControlInterface SizeOfConfigSpace="4g" Sub32BitConfigProperties="true" ControlOperations="initialize" Timeout="444">
-    <Property Name="hasDebugLogic" Parameter="true" Type="Bool" Default="true"/>
-  </ControlInterface>
+  <ControlInterface SizeOfConfigSpace="4g" Sub32BitConfigProperties="true" ControlOperations="initialize" Timeout="444"/>
   <StreamInterface Name="in" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"/>
   <StreamInterface Name="out" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"/>
 </ComponentImplementation>

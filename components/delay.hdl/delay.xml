@@ -29,7 +29,6 @@
     <Property Name="bytesThisMessage" Readable="true" Writable="false" Type="ULong"/>
     <Property Name="mesgLengthSoFar" Readable="true" Writable="false" Type="ULong"/>
     <Property Name="dlyCtrlInit" Parameter="true" default='0'/>
-    <Property Name="hasDebugLogic" Parameter="true" Type="Bool" default='0'/>
   </ControlInterface>
   <StreamInterface Name="in" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
   <StreamInterface Name="out" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>

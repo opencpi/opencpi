@@ -1099,17 +1099,18 @@ connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, OcpAdapt &oa,
   }
   std::string temp;
   if (count) {
-    std::string num;
+    std::string num, temp1;
+    if (lang == Verilog)
+      OU::format(num, "%zu", index);
+    OU::format(temp1, cName.c_str(), num.c_str());
     if (count > 1) {
       assert(lang == VHDL);
-      OU::format(temp, "%s(%zu to %zu)", cName.c_str(), index, top);
+      OU::format(temp, "%s(%zu to %zu)", temp1.c_str(), index, top);
     } else {
       if (lang == VHDL)
-	OU::format(temp, "%s(%zu)", cName.c_str(), index);
-      else {
-	OU::format(num, "%zu", index);
-	OU::format(temp, cName.c_str(), num.c_str());
-      }
+	OU::format(temp, "%s(%zu)", temp1.c_str(), index);
+      else
+	temp = temp1;
     }
   } else
     OU::format(temp, cName.c_str(), "");

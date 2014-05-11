@@ -338,6 +338,7 @@ module mkSMAdapter4B(wciS0_Clk,
 `define NOT_EMPTY_sma
 `include "sma-defs.vh"
 `endif
+  wire 	 hasDebugLogic = ocpi_debug;
   // signals for module outputs
   wire [31 : 0] wciS0_SData, wmiM0_MData, wmiM0_MFlag, wsiM0_MData;
   wire [13 : 0] wmiM0_MAddr;

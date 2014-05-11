@@ -398,8 +398,8 @@ emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContCon
 		"    <port instance='ocscp' name='wci' index='%zu'/>\n"
 		"  </connection>\n",
 		c.interconnect->name, unoc, c.interconnect->name, unoc,
-		port->u.wdi.isProducer ? 0 : 1,
-		port->u.wdi.isProducer ? 1 : 0,
+		1, // port->u.wdi.isProducer ? 0 : 1,
+		1, // port->u.wdi.isProducer ? 1 : 0,
 		c.interconnect->name, unoc,
 		index);
   index++;

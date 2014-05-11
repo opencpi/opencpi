@@ -306,6 +306,7 @@ module mkDelayWorker4B(wciS0_Clk,
 `define NOT_EMPTY_delay
 `include "delay-defs.vh"
 `endif
+  wire 	 hasDebugLogic = ocpi_debug;
   // signals for module outputs
   wire [127 : 0] wmemiM0_MData;
   wire [35 : 0] wmemiM0_MAddr;

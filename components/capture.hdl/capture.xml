@@ -9,7 +9,6 @@
   <!-- Force these spec properties to a specific indirect non-contiguous address -->
   <specProperty name='metadata' indirect='0x40000000'/>
   <specProperty name='data' indirect='0x80000000'/>
-  <Property Name="hasDebugLogic" Parameter="true" Type="Bool" Default="true"/>
   <StreamInterface Name="in"
                    PreciseBurst="true" impreciseburst='true'
                    DataWidth="32" NumberOfOpcodes="256" datavaluewidth='8'

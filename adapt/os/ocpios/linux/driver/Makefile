@@ -58,11 +58,13 @@ ifdef OCPI_KERNEL_DIR
 else
   # Assume the source tree is where the running kernel was built
   # You should set KERNELDIR in the environment if it's elsewhere
-  KERNELDIR ?= /lib/modules/$(shell uname -r)/build
-  ifeq ($(wildcard $(KERNELDIR)),)
-    $(error Cannot figure out where the KERNELDIR should be.)
+  ifeq ($(filter clean topclean,$(MAKECMDGOALS)),)
+    KERNELDIR ?= /lib/modules/$(shell uname -r)/build
+    ifeq ($(wildcard $(KERNELDIR)),)
+      $(error Cannot figure out where the KERNELDIR should be.)
+    endif
+    $(info No OCPI_KERNEL_DIR specified, so using: $(KERNELDIR))
   endif
-  $(info No OCPI_KERNEL_DIR specified, so using: $(KERNELDIR))
 endif
 # The current directory is passed to sub-makes as argument
 PWD := $(shell pwd)

@@ -146,6 +146,7 @@ module wbr (
 `define NOT_EMPTY_wbr
 `include "wbr-defs.vh"
 `endif
+  wire 	 hasDebugLogic = ocpi_debug;
   mkRcvrWorker _mkRcvrWorker ( 
    .dif_Clk( dif_Clk ),
    .dif_m2s_MReset_n( dif_MReset_n ),

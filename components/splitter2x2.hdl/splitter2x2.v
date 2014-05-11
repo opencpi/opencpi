@@ -338,6 +338,7 @@ module mkWsiSplitter2x24B(wciS0_Clk,
 `define NOT_EMPTY_splitter2x2
 `include "splitter2x2-defs.vh"
 `endif
+  wire 	 hasDebugLogic = ocpi_debug;
   // signals for module outputs
   wire [31 : 0] wciS0_SData, wsiM0_MData, wsiM1_MData;
   wire [11 : 0] wsiM0_MBurstLength, wsiM1_MBurstLength;

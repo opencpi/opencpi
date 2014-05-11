@@ -15,7 +15,6 @@
     <Property Name="wsiMiMesgCount" Readable="true"/>
     <Property Name="wsiMtBusyCount" Readable="true"/>
     <Property Name="smaCtrlInit" Parameter="true" default='0'/>
-    <Property Name="hasDebugLogic" Parameter="true" Type="Bool" Default="true"/>
   </ControlInterface>
   <StreamInterface Name="in" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256" MaxMessageValues="8191"/>
   <StreamInterface Name="out"  ImpreciseBurst="True" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"  MaxMessageValues="8191"/>

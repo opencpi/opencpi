@@ -3,6 +3,10 @@ package body util is
 function width_for_max(n : natural) return natural is begin
   return natural(ceil(log2(real(n+1))));
 end width_for_max;
+function slv(v : std_logic_vector) return std_logic_vector is
+begin
+  return v;
+end slv;
 function slv(b : std_logic) return std_logic_vector is
   variable v : std_logic_vector(0 downto 0) := (others => b);
 begin

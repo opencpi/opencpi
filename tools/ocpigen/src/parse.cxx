@@ -1493,7 +1493,8 @@ findLibMap(const char *file) {
 Control::Control()
   : sizeOfConfigSpace(0),
     writables(false), nonRawWritables(false), rawWritables(false),
-    readables(false), nonRawReadables(false), rawReadables(false),
+    readables(false), // this does NOT include parameters
+    nonRawReadables(false), rawReadables(false),
     sub32Bits(false), nonRawSub32Bits(false), volatiles(false), nonRawVolatiles(false),
     readbacks(false), nonRawReadbacks(false), rawReadbacks(false),
     nRunProperties(0), nNonRawRunProperties(0),
