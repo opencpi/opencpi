@@ -1,3 +1,4 @@
+#!/bin/sh
 # This script fills an SD card from the directory created using makeSD.sh
 if test "$OCPI_XILINX_VERSION" = ""; then
   echo Error: the environment is not set up properly - OCPI_XILINX_VERSION not set.

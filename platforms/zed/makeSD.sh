@@ -1,3 +1,4 @@
+#!/bin/sh
 # This script prepares OpenCPI to use a Zed board by creating and filling a directory
 # to be written to an SD card for booting the zed board.
 # It assumes you:
@@ -12,7 +13,7 @@
 # It assumes you are running it where it lives in the OpenCPI tree, in platforms/zed
 set -e
 if test "$1" = ""; then
-  echo This script takes a single argument (anything) to run.
+  echo 'This script takes a single argument (anything) to run.'
   echo "Don't forget to copy defaultsetup.sh to mysetup.sh and customize mysetup.sh before doing this."
   exit 1
 fi
