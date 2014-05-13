@@ -1,0 +1,265 @@
+This file describes how, after installing Xilinx tools, installing and building
+OpenCPI (software and FPGA aspects) for Zynq/Zed, and preparing an SD card, you
+actually set up your Zed board itself.  All the prerequisites are described in
+README.build.  Here is the info before you can run OpenCPI applications and
+components on the Zed itself.
+
+Note that these steps do not enable any particular devices that might be 
+attached to the FPGA/PL part of Zynq.
+
+================================================================================
+Set up the hardware jumpers and switches
+================================================================================
+
+Step 0: Always be careful of static electricity when touching the board.  Touch
+some metal shell first each time. Start with the power cable disconnected.  The
+metal shell of the network connector is a good thing to touch first.
+
+Step 1: Set the jumpers on the board correctly, according to the Digilent README
+file on the original SD card:
+
+    MIO 6: set to GND
+    MIO 5: set to 3V3
+    MIO 4: set to 3V3
+    MIO 3: set to GND
+    MIO 2: set to GND
+
+    VADJ Select: Set to 1V8
+
+    JP6: shorted (JEK: note I didn't have enough jumpers and this wasn't needed...)
+    JP2: shorted
+
+    All other jumpers should be left unshorted.
+
+    Make sure the power switch is OFF
+
+Step 2: Insert the SD card into the socket on the bottom of the board.
+
+Notice that the SD card is plugged in with its label down since that
+connector socket is on the back of the board.
+
+Step 3: Connect the supplied micro-USB-to-normal-USB-cable to a system
+with a terminal emulator to provide access to the Zed system console,
+set to 115200 board, 8 data bits, 1 stop bit, no parity.  There
+are two different connectors on the board: be sure to use the one
+labelled: UART, and NOT the one labelled USB OTG.
+
+Step 4: Attach the power cable
+
+Step 5: Turn the power switch on.  The green POWER LED should come on.
+The system has actually booted itself, but without a console attached
+you can't really see anything.
+
+If something smokes, you and the board are toast...
+
+================================================================================
+Get access to the serial system console of the Zed, and reboot it from there
+================================================================================
+
+Step 6: Establish Serial Console Communications on the Linux Development Host
+
+Since the OpenCPI development environment is running on a Linux system (usually
+Centos6), you can just plug this USB cable (step 3) into that Linux system, and
+it will automatically create a "/dev/tty*" file for this connection when you
+plug it in and the Zed board is powered up.  You need to determine this pathname
+- and watch it come and go when you disconnect and reconnect the USB cable (or
+when the Zed board is powered down and up).
+
+Without any other configuration of the Linux development host, you typically
+have to add read/write permission to this "/dev/tty*" file manually EACH TIME
+THE CABLE IS CONNECTED AND/OR THE ZED BOARD IS POWERED ON, using:
+
+% sudo chmod a+rw /dev/ttyACM0
+
+(assuming the /dev/tty* file created for that cable is /dev/ttyACM0, which is
+the default for the first such hotplugged USB/serial cable on Centos6).  Again,
+this must be done each time the board is power cycled or disconnected.
+
+(This can be automated with udev configuration if you want to go there)
+(TBD: explain how to automate this).
+
+Step 7: Run a serial console terminal emulator program on the development
+system that is attached to the USB cable from the UART connector.
+
+There are many alternative terminal emulation applications to provide for
+this USB remote serial console for the Zed board (or any similar board).
+One that is available in the standard Centos 6 repository is "screen",
+obtainable by simply using:
+
+% sudo yum install screen
+
+Then in any terminal window, you can do:
+
+% screen /dev/ttyACM0 115200
+
+To exit this program, you use the sequence: Control-a followed by backslash.
+
+For Emacs users, you can use the serial terminal emulator built in to Emacs, by
+simply doing: M-x serial-term in a window, and providing the /dev/ttyACM0 name
+and 115200 baud rate when prompted.  There are two modes in this window, "char"
+and "line".  The default is "char" mode, where every character typed is
+immediately sent without any interpretation at all.  This means no emacs
+commands work in that emacs window and you have to use the mouse to switch to
+another window.  The "line" mode is more line buffered, like "shell" mode, and
+all line editing and other emacs commands work fine.  BUT the display can get
+confused in line mode so you have sometimes switch back and forth.  control-c
+control-j switches to line mode, control-c control-k switches to char mode.
+Control-c control-c sends a control C in char mode.
+
+(TBD: fix the glitch in emacs serial-term line mode so this works better).
+(TBD: fix so that control-c twice in line mode does the right thing)
+
+Step 8: hit return a few times in the serial console window to see the "zynq
+login:" prompt, or, if the system was previously logged in and running, you
+might see the "root@zynq:~#" prompt.  You must login as "root" with the password
+"root".
+
+Sometimes if the screen or terminal emulator is confused, or if, after hitting
+"return", the prompt stays on the same line, try typing the command "clear", to
+clear the state of the terminal emulator.
+
+In normal usage it is generally best to log into the board using SSH and leave
+the console window alone.  After the board boots, you can log in with SSH
+without using the console at all if you know the DHCP network address - or see
+it on the console output.
+
+Anyway, you can now log in (root, root), and see that rebooting works fine by
+both trying the "reboot" command, as well as pressing the reset button on the
+board (labeled: PS_RST).
+
+Now you know linux can boot, and that you have console access.
+
+================================================================================
+Get the network working in order to talk to the development system
+================================================================================
+
+Step 9: Connect the ethernet connector on the Zed board to a LAN with DHCP.
+
+The green light that is part of the network connector socket should come on to
+indicate that you have a network connection.
+
+Step 10: Reboot the Zed board to have it come up properly on the network.
+
+You can reboot either by typing the "reboot" command, pressing the "PS-RST"
+button, or turning the power switch off and on.  Power cycling might cause you
+to need to do another "sudo chmod a+rw /dev/ttyACM0".  After reboot, and
+re-login, you can use the ifconfig command to confirm that the "eth0" interface
+has an internet address, courtesy of DHCP.  E.g. this shows we have the internet
+address 10.0.1.108.
+
+  root@zynq:~# ifconfig
+  eth0      Link encap:Ethernet  HWaddr 00:0A:35:00:01:22  
+            inet addr:10.0.1.108  Bcast:0.0.0.0  Mask:255.255.255.0
+            inet6 addr: fe80::20a:35ff:fe00:122/64 Scope:Link
+            UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+            RX packets:42 errors:0 dropped:1 overruns:0 frame:0
+            TX packets:14 errors:0 dropped:0 overruns:0 carrier:0
+            collisions:0 txqueuelen:1000 
+            RX bytes:6793 (6.6 KiB)  TX bytes:1737 (1.6 KiB)
+            Interrupt:54 Base address:0xb000 
+
+The network address is also printed out on the console during booting.
+
+Step 11: Check connectivity by using ping in both directions
+
+Ping your development host from the Zed console and ping your zed board
+from your development host.  If both pings work you have network connectivity.
+
+================================================================================
+Enable NFS on your development host for the "share" name that includes OpenCPI
+================================================================================
+
+There are many "cookbook" files for setting up NFS on linux systems.  You need
+to export a mountable directory above the directory where OpenCPI is installed.
+
+(TBD: refer to a good cookbook here that works for the Zed).
+
+Step 11: verify you have NFS connectivity
+
+Once the NFS is configured and enabled, try to manually mount it on the Zed
+by typing, on the zed console:
+
+ % mount -t nfs -o udp,nolock,soft,intr <ipaddr>:<dir> /mnt/net
+
+Where <ipaddr> is the address of the development host, and <dir> is the
+directory being exported/shared by the server.  The OpenCPI directory will be
+underneath that directory.
+
+If that succeeds, you have a good NFS connection.  unmount it using the "umount"
+command since the automated scripts will mount it next.
+
+================================================================================
+Run the setup scripts after booting to use/access the development system
+================================================================================
+
+When Linux boots on the Zed board from the SD card created as above, it creates
+a memory-based root file system, initialized from decompressing the
+uramdisk.image.gz file on the SD card.  It does NOT mount the SD card itself as
+a file system, although that can be done after booting.  This means that
+anything you write to the root file system is NOT persistent.  To create any
+persistent file you must first mount the SD card file system and write files to
+that file system, usually mounted as /mnt/card.  You can obviously do lots
+of customization to the boot process and have it do what you want, but we don't
+get into that here.
+
+Our standard setup uses the built-in NFS client to access the development tree from
+these types of systems (in a development environment anyway), and the default
+Linux configuration built by Xilinx happily includes NFS client support.
+
+Note your "mysetup.sh" script you copied to the SD card should have the
+development system's IP address, along with some NTP server name.
+
+Step 12: Mount the SD card as a file system
+
+After logging in as root (console or ssh), the first command should be:
+
+   root@zynq:~# mount /dev/mmcblk0p1 /mnt/card
+
+Which allows you to use the contents of the SD card for something other than booting.
+
+Step 13: Source the startup script on the SD card, supplying the development host's IP
+as an argument:
+
+   root@zynq:~# source /mnt/card/mysetup.sh 10.0.1.108
+
+If this works ok, then it proves you can run OpenCPI utilities (and applications).
+
+You only have to run this script (the above 2 commands) once on reboot.
+After that, any new login will automatically run the appropriate setup actions for that shell.
+
+================================================================================
+Confirm OpenCPI operation, including running an FPGA-based app
+================================================================================
+
+Step 14: Run a software-component-based application.
+
+Note that the mysetup.sh script above already sets the path to find OpenCPI
+executables and software components.   Below "xxxxxx" is the path to
+get to the OpenCPI development tree.  The default setup script (that you modified),
+in fact changes to this directory in any case.
+
+zynq> cd /mnt/net/xxxxxx/opencpi/tools/cdk/examples/xml
+zynq> ocpirun -v -d -t 5 -mbias=rcc tb_bias
+
+This should run the tb_bias application (using pattern->bias->capture) components,
+forcing it to run in software, and not the FPGA.
+
+Step 17: Run a FPGA-based application
+
+There is no bitstream loaded on power up, but one will be loaded automatically
+as needed.  So, assuming your OCPI_LIBRARY_PATH points to the builtin bitstream
+(which the default setup file does), you can run:
+
+zynq> ocpirun -v -d -t 5 -mbias=hdl tb_bias
+
+which runs the same application with the bias component on the FPGA, with the appropriate
+bitstream being automatically loaded.
+
+TODO:  A list of things that will make this all a bit more convenient:
+
+1. Cause the /mnt/card mounting to happen automatically at boot time.
+   -- avoiding the need to mount it to access the startup script
+2. Perhaps cause the "setup" script to be run automatically at boot time.
+   -- avoiding the command to run the startup script
+3. On the development system, provide udev rules to avoid the "sudo chmod" command
+   -- avoid needing to do sudo chmod command each time the board power cycles
