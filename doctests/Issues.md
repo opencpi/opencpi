@@ -9,5 +9,5 @@ We use the github issues system for issue tracking for OpenCPI.  We use a specif
 
 ![ppp.pdf](ppp.pdf)
 
-![ppp.svg](ppp.svg)
+![ppp.svg](http://opencpi.github.io/ppp.svg)
 
