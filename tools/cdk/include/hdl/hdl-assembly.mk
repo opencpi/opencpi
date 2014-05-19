@@ -57,7 +57,7 @@ ifndef HdlPlatforms
   endif
 else
   ifndef HdlTargets
-    HdlTargets:=$(foreach p,$(filter-out $(ExcludePlatforms),$(HdlPlatforms)),$(call HdlGetFamily,$(HdlPart_$p)))
+    HdlTargets:=$(foreach p,$(filter $(or $(OnlyPlatforms),$(HdlAllPlatforms)),$(filter-out $(ExcludePlatforms),$(HdlPlatforms))),$(call HdlGetFamily,$(HdlPart_$p)))
   endif
 endif
 
@@ -79,12 +79,12 @@ endef
 ifeq ($(origin DefaultContainers),undefined)
   $(call OcpiDbg,No Default Containers: HdlPlatforms: $(HdlPlatforms))
   # If undefined, we determine the default containers based on HdlPlatform
-  $(foreach p,$(filter-out $(ExcludePlatforms),$(HdlPlatforms)),$(eval $(call doDefaultContainer,$p,$p_base)))
+  $(foreach p,$(filter $(or $(OnlyPlatforms),$(HdlAllPlatforms)),$(filter-out $(ExcludePlatforms),$(HdlPlatforms))),$(eval $(call doDefaultContainer,$p,$p_base)))
 else
   $(foreach d,$(DefaultContainers),\
      $(if $(findstring /,$d),\
 	 $(eval $(call doDefaultContainer $(word 1,$(subst /,$d)),$(word 2,$(subst /,$d)))),\
-         $(if $(filter $d,$(filter-out $(ExcludePlatforms),$(HdlAllPlatforms))),\
+         $(if $(filter $d,$(filter $(or $(OnlyPlatforms),$(HdlAllPlatforms)),$(filter-out $(ExcludePlatforms),$(HdlAllPlatforms)))),\
               $(eval $(call doDefaultContainer,$d,$d_base)),\
               $(error In DefaultContainers, $d is not a defined HDL platform.))))
 endif
@@ -123,7 +123,7 @@ ifdef Containers
   $(call OcpiDbgVar,ExcludePlatforms)
   $(call OcpiDbgVar,HdlPlatforms)
   $(call OcpiDbg,foo: $(filter-out $(ExcludePlatforms),$(HdlPlatforms)))
-  override HdlPlatforms:=$(filter-out $(ExcludePlatforms),$(HdlPlatforms))
+  override HdlPlatforms:=$(filter $(or $(OnlyPlatforms),$(HdlAllPlatforms)),$(filter-out $(ExcludePlatforms),$(HdlPlatforms)))
   $(call OcpiDbgVar,ExcludePlatforms)
   $(call OcpiDbgVar,HdlPlatforms)
   ifdef HdlTargets
@@ -142,7 +142,7 @@ endif
 # Due to our filtering, we might have no targets to build
 #$(info T:$(HdlTargets)|P:$(filter-out $(ExcludePlatforms),$(HdlPlatforms)))
 
-ifeq ($(HdlTargets)$(filter-out $(ExcludePlatforms),$(HdlPlatforms)),)
+ifeq ($(HdlTargets)$(filter $(or $(OnlyPlatforms),$(HdlAllPlatforms)),$(filter-out $(ExcludePlatforms),$(HdlPlatforms))),)
   $(info No targets or platforms to build for this assembly)
 else
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
@@ -267,6 +267,7 @@ $(call HdlContainer,$1): Top:=$1
 $(call HdlContainer,$1) $(call HdlContBitName,$1): HdlMode:=container
 $(call HdlContainer,$1): HdlLibraries+=platform
 $(call HdlContainer,$1): LibName:=$1
+$(call HdlContainer,$1): WorkLib:=$1
 $(call HdlContainer,$1): XmlIncludeDirs+=$(HdlPlatformsDir)/$(HdlPlatform_$1)
 $(call HdlContainer,$1): HdlSources:=$$(CompiledSourceFiles)
 $(call HdlContainer,$1) $(call HdlContBitName,$1): \

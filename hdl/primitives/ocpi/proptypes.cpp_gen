@@ -287,10 +287,11 @@ $end rtl;
 #define RPROP_ARRAY_STRING(pretty,which,def,rng,lhs,rhs) \
 ENTITY_HEADER(pretty##_read_array,readback scalar string property)\
 $@@generic (worker : worker_t; property : property_t);\
-$@@port@@@ (value@@@ : in@ pretty##_array_t(0 to property.nitems-1,\
-$@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@0 to (property.string_length+4)/4*4-1);\
-$@@@@@@@@@@@data_out : out std_logic_vector(31 downto 0);\
-$@@@@@@@@@@@offset@@ : in@ unsigned(worker.decode_width-1 downto 0));\
+$@@port@@@ (value@@@@@@ : in@ pretty##_array_t(0 to property.nitems-1,\
+$@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@0 to (property.string_length+4)/4*4-1);\
+$@@@@@@@@@@@data_out@@@ : out std_logic_vector(31 downto 0);\
+$@@@@@@@@@@@offset@@@@@ : in@ unsigned(worker.decode_width-1 downto 0);\
+$@@@@@@@@@@@read_enable : in@ bool_t);\
 $end entity;
 
 
@@ -502,5 +503,5 @@ begin
       end generate gen2;
     end generate gen1;
  end generate gen;
- data_out <= string_words(to_integer(offset)/4);
+ data_out <= string_words(to_integer(offset)/4) when its(read_enable) else (others => '0');
 end rtl;

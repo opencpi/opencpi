@@ -62,7 +62,7 @@ namespace OCPI {
 	  if ((err = OE::getNumber(instXml, "occpIndex", &m_occpIndex, &m_hasControl, 0, false)))
 	    throw OU::Error("XML error for worker %s:%s: %s", m_implName, m_instName, err);
 	}
-	if ((err = OE::getNumber(instXml, "timeout", &m_timeout, NULL, 0, false)))
+	if ((err = OE::getNumber(implXml, "timeout", &m_timeout, NULL, 0, false)))
 	  throw OU::Error("XML error for worker %s:%s: %s", m_implName, m_instName, err);
       }
       init(false, doInit);
@@ -84,10 +84,8 @@ namespace OCPI {
 	// Get access to registers and properties.  The "this" is for our Access
 	if (!redo)
 	  m_device.getWorkerAccess(m_occpIndex, *this, m_properties);
-	// Assert Reset
-	// myRegisters->control =  logTimeout;
-	logTimeout = 0x5; // per shep
 	if (doInit) {
+	  // Assert Reset
 	  set32Register(control, OccpWorkerRegisters, logTimeout);
 	  //#ifndef SHEP_FIXME_THE_RESET
 	  struct timespec spec;

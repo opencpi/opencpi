@@ -119,7 +119,7 @@ namespace OCPI {
 							  sizeof(uint32_t));
     }
     static const unsigned NROMWORDS = 1024;
-    static const unsigned MAXXMLBYTES = NROMWORDS * sizeof(uint32_t) * 10;
+    static const unsigned MAXXMLBYTES = NROMWORDS * sizeof(uint32_t) * 16;
     static voidpf zalloc(voidpf , uInt items, uInt size) {
       return malloc(items * size);
     }

@@ -43,6 +43,8 @@ architecture rtl of ocscp_rv is
   signal   workers_out         : worker_in_t;
   signal   workers_in          : worker_out_array_t;
   signal   worker_in           : worker_out_t;
+  signal   worker_in_timeout   : worker_timeout_t;
+  signal   worker_timeout      : worker_timeout_t;
   signal   admin_data          : std_logic_vector(dword_t'range);
   signal   worker_data         : dword_t;
   signal   present             : word64_t;
@@ -58,6 +60,7 @@ architecture rtl of ocscp_rv is
   signal   address             : unsigned(cp_in.address'range);
   signal   byte_en             : std_logic_vector(cp_in.byte_en'range);
   signal   admin_address       : std_logic_vector(7 downto 0);
+  constant default_timeout_c   : natural := 4; -- log2 value
 begin
   -- Ancient VHDL simplifications
   address       <= unsigned(cp_in.address);
@@ -95,6 +98,10 @@ begin
   admin_control         <= (0 => reset_r, others => '0');
   worker_in             <= workers_in(0) when id_r = worker_max_id
                            else workers_in(to_integer(id_r));
+  worker_in_timeout     <= worker_timeout_t(worker_in.data(worker_timeout_t'left downto 0));
+  worker_timeout        <= worker_in_timeout
+                           when worker_in_timeout /= 0 else
+                           to_unsigned(default_timeout_c, worker_timeout'length);
   workers_out.clk       <= cp_in.clk;
   workers_out.reset     <= cp_in.reset or reset_r;
   workers_out.id        <= resize(id_r, workers_out.id'length);
@@ -107,7 +114,8 @@ begin
   workers_out.is_config <= to_bool(is_config);
   workers_out.byte_en   <= cp_in.byte_en;
   workers_out.data      <= cp_in.data;
-  workers_out.timedout  <= to_bool(timeout_r = to_unsigned(0, timeout_r'length));
+  -- We don't allow the log timeout value to be 0, so 1 is always the timedout value
+  workers_out.timedout  <= to_bool(timeout_r = 1); --to_unsigned(1, timeout_r'length));
   cp_out.data           <= admin_data when is_admin else worker_data;
   with admin_address select admin_data <=
     OCCP_MAGIC_0                             when x"00",
@@ -173,19 +181,21 @@ begin
         reset_r   <= '0'; -- master reset for all workers defaults OFF
         -- Debug state
       elsif not its(active_r) and cp_in.valid = '1' then
-        -- capture WCI master's timeout: value is: 1 << timeout_value
-        timeout_r <= to_unsigned(1, timeout_r'length) sll
-                     to_integer(unsigned(worker_in.data(worker_timeout_t'left downto 0)));
         id_r      <= id;
         active_r  <= '1';
         reading_r <= cp_in.is_read;
       elsif its(active_r) then
-        if timeout_r /= to_unsigned(0, timeout_r'length) then
+        if timeout_r = 0 then
+          timeout_r <= to_unsigned(1, timeout_r'length) sll
+                       to_integer(worker_timeout);
+        elsif timeout_r /= 1 then
           timeout_r <= timeout_r - 1;
         end if;
-        if (is_admin or worker_in.response /= none_e) and (not its(reading_r) or cp_in.take) then
+        if (is_admin or worker_in.response /= none_e) and
+           (not its(reading_r) or cp_in.take) then
           active_r  <= '0';
           reading_r <= '0';
+          timeout_r <= (others => '0');
           id_r      <= worker_max_id;
         end if;
       end if;

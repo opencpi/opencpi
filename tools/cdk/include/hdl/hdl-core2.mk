@@ -45,9 +45,11 @@ Tops:=$(Core)
 endif
 endif
 ifndef LibName
-LibName=$(word 1,$(HdlCores))
+LibName:=$(word 1,$(HdlCores))
 endif
-
+ifndef WorkLib
+WorkLib:=$(LibName)
+endif
 $(call OcpiDbgVar,HdlToolRealCore)
 $(call OcpiDbgVar,LibName)
 ifdef HdlToolRealCore
@@ -73,8 +75,10 @@ $(OutDir)target-$(1)/$(2)$(HdlBin): $(PreBuiltCore)
 else
 $(call OcpiDbgVar,CompiledSourceFiles)
 $$(call OcpiDbgVar,CompiledSourceFiles)
-$(OutDir)target-$1/$2$(HdlBin): \
-   HdlSources=$$(filter-out $$(filter-out %.vhd,$$(CoreBlackBoxFiles)),$$(CompiledSourceFiles))
+$(OutDir)target-$1/$2$(HdlBin): HdlSources=$$(HdlShadowFiles)
+
+#   HdlSources=$$(filter-out $$(filter-out %.vhd,$$(CoreBlackBoxFiles)),$$(CompiledSourceFiles))
+
 $(OutDir)target-$1/$2$(HdlBin): \
    $$$$(foreach l,$$$$(HdlLibrariesInternal),$$$$(call HdlLibraryRefDir,$$$$l,$$$$(HdlTarget)))
 $(OutDir)target-$1/$2$(HdlBin): $$$$(HdlPreCore) \
@@ -144,6 +148,7 @@ define DoBBLibraryTarget
 BBLibResults+=$(call BBLibFile,$1,$2,$3)
 $(call BBLibFile,$1,$2,$3): | $(OutDir)target-$1/bb
 $(call BBLibFile,$1,$2,$3): LibName=$2
+$(call BBLibFile,$1,$2,$3): WorkLib=$2
 $(call BBLibFile,$1,$2,$3): Core=onewire
 $(call BBLibFile,$1,$2,$3): Top=onewire
 $(call BBLibFile,$1,$2,$3): override HdlTarget=$3

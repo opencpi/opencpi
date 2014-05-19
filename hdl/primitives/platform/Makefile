@@ -1,4 +1,4 @@
-HdlLibraries=ocpi bsv
+HdlLibraries=ocpi bsv util
 # We can't successfully elaborate this since it references the metadata stuff
 HdlNoElaboration=yes
 # FIXME FIXME: The low level primitives (FIFO etc.) are COPIED here due to an XST bug

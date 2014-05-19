@@ -16,10 +16,10 @@ export OCPI_BUILD_SHARED_LIBRARIES=0
 # #### Location of the Modelsim tools ####################################### #
 
 export OCPI_MODELSIM_DIR=/home/jek/mac/Mentor/modelsim_dlx
-export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../3113964_001C42EFC0F4.txt
+#export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../3113964_001C42EFC0F4.txt
 #export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../james.non-server.lic.txt
 #export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../3113964_mumanltipleServers.txt
-#export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../Site_3113964.txt
+export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../Site_3113964.txt
 
 export OCPI_OPENCV_HOME=/opt/opencpi/prerequisites/opencv/linux-c6-x86_64
 

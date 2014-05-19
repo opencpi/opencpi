@@ -109,6 +109,7 @@ $(call HdlConfig,$1): Core:=$1_rv
 $(call HdlConfig,$1): Top:=$1_rv
 $(call HdlConfig,$1): HdlMode:=config
 $(call HdlConfig,$1): LibName:=$1
+$(call HdlConfig,$1): WorkLib:=$1
 $(call HdlConfig,$1): HdlTarget:=$(HdlExactPart)
 $(call HdlConfig,$1): HdlSources:=$(call HdlConfigSources,$1)
 $(call HdlConfig,$1): TargetDir=$(call HdlConfigDir,$1)

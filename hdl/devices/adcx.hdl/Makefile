@@ -34,6 +34,7 @@
 #
 ########################################################################### #
 
+Libraries=xilinx
 SimLibraries=\
  $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/unisims
 SimFiles=\

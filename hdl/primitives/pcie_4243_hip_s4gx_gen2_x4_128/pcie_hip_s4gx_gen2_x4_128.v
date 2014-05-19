@@ -1,10 +1,10 @@
-// megafunction wizard: %PCI Express Compiler v10.1%
+// megafunction wizard: %IP Compiler for PCI Express v12.1%
 // GENERATION: XML
 // ============================================================
 // Megafunction Name(s):
 // ============================================================
 
-//Legal Notice: (C)2011 Altera Corporation. All rights reserved.  Your
+//Legal Notice: (C)2014 Altera Corporation. All rights reserved.  Your
 //use of Altera Corporation's design tools, logic functions and other
 //software and tools, and its AMPP partner logic functions, and any
 //output files any of the foregoing (including device programming or
@@ -326,6 +326,7 @@ module pcie_hip_s4gx_gen2_x4_128 (
   wire             derr_cor_ext_rcv0;
   wire             derr_cor_ext_rpl;
   wire             derr_rpl;
+  wire             detect_mask_rxdrst;
   wire             dlup_exit;
   wire    [ 23: 0] eidle_infer_sel;
   wire             fifo_err;
@@ -621,7 +622,7 @@ module pcie_hip_s4gx_gen2_x4_128 (
   assign gxb_powerdown_int = (pipe_mode_int == 1'b1) ? 1'b1 : gxb_powerdown;
   assign pll_powerdown_int = (pipe_mode_int == 1'b1) ? 1'b1 : pll_powerdown;
   assign rx_cruclk = {4{refclk}};
-  assign rc_areset = pipe_mode_int | ~npor;
+  assign rc_areset = pipe_mode_int | ~npor | busy_altgxb_reconfig;
   assign pclk_central = (pipe_mode_int == 1'b1) ? pclk_in : pclk_central_serdes;
   assign pclk_ch0 = (pipe_mode_int == 1'b1) ? pclk_in : pclk_ch0_serdes;
   assign rateswitch = {4{rate_int}};
@@ -636,6 +637,7 @@ module pcie_hip_s4gx_gen2_x4_128 (
   assign rx_pll_locked_byte[7 : 4] = 4'hF;
   assign rx_signaldetect_byte[3 : 0] = rx_signaldetect[3 : 0];
   assign rx_signaldetect_byte[7 : 4] = 4'h0;
+  assign detect_mask_rxdrst = 1'b0;
   assign core_clk_in = 1'b0;
   assign gnd_AvlClk_i = 1'b0;
   assign gnd_Rstn_i = 1'b0;
@@ -702,6 +704,7 @@ module pcie_hip_s4gx_gen2_x4_128 (
   altpcie_rs_serdes rs_serdes
     (
       .busy_altgxb_reconfig (busy_altgxb_reconfig),
+      .detect_mask_rxdrst (detect_mask_rxdrst),
       .fifo_err (fifo_err),
       .ltssm (ltssm),
       .npor (npor),
@@ -935,14 +938,14 @@ endmodule
 
 
 // =========================================================
-// PCI Express Compiler Wizard Data
+// IP Compiler for PCI Express Wizard Data
 // ===============================
 // DO NOT EDIT FOLLOWING DATA
 // @Altera, IP Toolbench@
-// Warning: If you modify this section, PCI Express Compiler Wizard may not be able to reproduce your chosen configuration.
+// Warning: If you modify this section, IP Compiler for PCI Express Wizard may not be able to reproduce your chosen configuration.
 // 
 // Retrieval info: <?xml version="1.0"?>
-// Retrieval info: <MEGACORE title="PCI Express Compiler"  version="10.1"  build="197"  iptb_version="1.3.0 Build 197"  format_version="120" >
+// Retrieval info: <MEGACORE title="IP Compiler for PCI Express"  version="12.1"  build="177"  iptb_version="1.3.0 Build 177"  format_version="120" >
 // Retrieval info:  <NETLIST_SECTION class="altera.ipbu.flowbase.netlist.model.MVCModel"  active_core="altpcie_hip_pipen1b" >
 // Retrieval info:   <STATIC_SECTION>
 // Retrieval info:    <PRIVATES>
@@ -983,7 +986,7 @@ endmodule
 // Retrieval info:      <PRIVATE name = "actualBAR4Size" value="0"  type="STRING"  enable="1" />
 // Retrieval info:      <PRIVATE name = "actualBAR5AvalonAddress" value="0"  type="STRING"  enable="1" />
 // Retrieval info:      <PRIVATE name = "actualBAR5Size" value="0"  type="STRING"  enable="1" />
-// Retrieval info:      <PRIVATE name = "allowedDeviceFamilies" value="[Stratix III, Stratix II, HardCopy II, Stratix II GX, Stratix, Stratix GX, Cyclone III LS, Cyclone IV E, Cyclone IV GX, Cyclone III, Cyclone II, Cyclone, MAX II, MAX V, FLEX 10KE, Arria GX, Stratix IV, Stratix V, Arria II GX, HardCopy III, HardCopy IV, Arria II GZ, Unknown, None]"  type="STRING"  enable="1" />
+// Retrieval info:      <PRIVATE name = "allowedDeviceFamilies" value="[Stratix II, Arria II GZ, Arria V, Arria V GZ, Stratix GX, Cyclone III, Cyclone II, Cyclone IV E, Cyclone V, HardCopy II, HardCopy III, HardCopy IV, MAX V, Arria II GX, Cyclone IV GX, Stratix II GX, Arria GX, Stratix V, Cyclone III LS, Stratix IV, Stratix III, Cyclone, MAX II, Stratix]"  type="STRING"  enable="1" />
 // Retrieval info:      <PRIVATE name = "altgx_generated" value="0"  type="STRING"  enable="1" />
 // Retrieval info:      <PRIVATE name = "clockSource" value="N/A"  type="STRING"  enable="1" />
 // Retrieval info:      <PRIVATE name = "contextState" value="NativeContext"  type="STRING"  enable="1" />
@@ -1302,6 +1305,7 @@ endmodule
 // Retrieval info:      <PRIVATE name = "uiPaneSize" value="20"  type="STRING"  enable="1" />
 // Retrieval info:      <PRIVATE name = "ui_pcie_msix_pba_bir" value="0"  type="STRING"  enable="1" />
 // Retrieval info:      <PRIVATE name = "ui_pcie_msix_table_bir" value="0"  type="STRING"  enable="1" />
+// Retrieval info:      <PRIVATE name = "p_tx_cdc_full_value" value="12"  type="INTEGER"  enable="1" />
 // Retrieval info:     </NAMESPACE>
 // Retrieval info:     <NAMESPACE name = "simgen_enable">
 // Retrieval info:      <PRIVATE name = "language" value="VERILOG"  type="STRING"  enable="1" />
@@ -1318,8 +1322,8 @@ endmodule
 // Retrieval info:      <PRIVATE name = "filename" value="pcie_hip_s4gx_gen2_x4_128_core.v"  type="STRING"  enable="1" />
 // Retrieval info:     </NAMESPACE>
 // Retrieval info:     <NAMESPACE name = "quartus_settings">
-// Retrieval info:      <PRIVATE name = "WEB_BROWSER" value="/usr/bin/firefox"  type="STRING"  enable="1" />
-// Retrieval info:      <PRIVATE name = "LICENSE_FILE" value="/home/shep/altera/ATOMIC05-10-10.dat"  type="STRING"  enable="1" />
+// Retrieval info:      <PRIVATE name = "WEB_BROWSER" value="/usr/bin/google-chrome"  type="STRING"  enable="1" />
+// Retrieval info:      <PRIVATE name = "LICENSE_FILE" value="/opt/altera/1-99VGI3_License.dat"  type="STRING"  enable="1" />
 // Retrieval info:     </NAMESPACE>
 // Retrieval info:     <NAMESPACE name = "serializer"/>
 // Retrieval info:    </PRIVATES>

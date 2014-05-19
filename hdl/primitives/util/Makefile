@@ -33,11 +33,5 @@
 #  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
 #
 ########################################################################### #
-
-# Pick only what we need for now since the libsrc/hdl/ocpi is a kitchen sink
-#ExcludeTargets=verilator
-Imports=\
-$(foreach x,\
-bsv/BRAM2.v ocpi/arSRLFIFOD ocpi/arSRLFIFO,\
-$(OCPI_HDL_IMPORTS_DIR)/libsrc/hdl/$x.v)
+Libraries=ocpi
 include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk # we are a library of primitives

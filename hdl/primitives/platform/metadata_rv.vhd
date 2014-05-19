@@ -3,6 +3,7 @@ library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all, std.textio.all;
 library ocpi; use ocpi.all, ocpi.types.all;
 library platform; use platform.platform_pkg.all, platform.metadata_defs.all;
 library bsv;
+library util;
 entity metadata_rv is
   port(
     metadata_in  : in  metadata_out_t;
@@ -31,20 +32,27 @@ architecture rtl of metadata_rv is
   end function;
 
   constant metamem : meta_t := initmeta;
+  signal dout : std_logic_vector(31 downto 0);
+  signal addr : std_logic_vector(9 downto 0);
 begin
+  -- Type conversions
+  metadata_out.romData <= to_ulong(dout);
+  addr <= std_logic_vector(metadata_in.romAddr(9 downto 0));
+
+  -- Instance the (generated) UUID module.
   uu : mkUUID
-  port map(
-    uuid => myUUID
-    );
+  port map(uuid => myUUID);
   gen0: for i in 0 to metadata_out.UUID'right generate
     metadata_out.UUID(i) <= to_ulong(myUUID(511 - i*32 downto 511 - i*32 - 31));
   end generate gen0;
 
-  process (metadata_in.clk)
-  begin
-    if rising_edge(metadata_in.clk) then
-      metadata_out.romData <= to_ulong(metamem(to_integer(metadata_in.romAddr(9 downto 0))));
-    end if;
-  end process;
+  -- Instance the ROM filled from generated metadata file
+  rom : component util.util.ROM
+    generic map(WIDTH    => 32,
+                SIZE     => 1024,
+                INITFILE => "metadatarom.dat")
+       port map(CLK      => metadata_in.clk,
+                ADDR     => addr,
+                DO       => dout);
   
 end architecture rtl;

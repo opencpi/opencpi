@@ -758,8 +758,6 @@ bram(const char **ap) {
       for (; oWords; oWords--)
 	fprintf(ofp, "%08x\n", *u32p++);
 #else
-      // VHDL "read" format
-
       for (unsigned n = 0; n < 1024; n++) {
 	uint32_t i;
 	switch(n) {
@@ -770,8 +768,13 @@ bram(const char **ap) {
 	default:
 	  i = n < oWords+4 ? *u32p++ : 0;
 	}
+#if 0
+      // VHDL "read" format
 	for (unsigned b = 0; b < 32; b++)
 	  fputc(i & 1 << (31 - b) ? '1' : '0', ofp);
+#else
+	fprintf(ofp, "%08x", i);
+#endif
 	fputc('\n', ofp);
       }
 #endif

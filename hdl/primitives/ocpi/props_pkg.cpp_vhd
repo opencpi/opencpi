@@ -174,7 +174,8 @@ $@@generic (worker : worker_t; property : property_t);\
 $@@port@@@ (value@@@ : in@ pretty##_array_t(0 to property.nitems-1,\
 $@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@0 to (property.string_length+4)/4*4-1);\
 $@@@@@@@@@@@data_out : out std_logic_vector(31 downto 0);\
-$@@@@@@@@@@@offset@@ : in@ unsigned(worker.decode_width-1 downto 0));\
+$@@@@@@@@@@@offset@@ : in@ unsigned(worker.decode_width-1 downto 0);\
+$@@@@@@@@@@@read_enable@@ : in@ bool_t);\
 $end component;
 
 #define TYPE(type,def,rng,suff,asuff) \

@@ -72,7 +72,7 @@ ModelSimVlogIncs=\
   $(foreach d,$(VerilogDefines),+define+$d) \
   $(foreach d,$(VerilogIncludeDirs),+incdir+$(call FindRelative,$(TargetDir),$d))
 
-ModelsimArgs=-pedanticerrors -work $(LibName) -modelsimini modelsim.ini
+ModelsimArgs=-pedanticerrors -work $(WorkLib) -modelsimini modelsim.ini
 
 HdlToolCompile=\
   (echo '; This file is generated for building this '$(LibName)' library.';\
@@ -87,8 +87,8 @@ HdlToolCompile=\
    echo others=$(OCPI_MODELSIM_DIR)/modelsim.ini \
    ) > modelsim.ini ; \
    export LM_LICENSE_FILE=$(OCPI_MODELSIM_LICENSE_FILE); \
-   rm -r -f $(LibName); \
-   $(if $(filter work,$(LibName)),,$(OCPI_MODELSIM_DIR)/bin/vlib $(LibName) &&) \
+   rm -r -f $(WorkLib); \
+   $(if $(filter work,$(LibName)),,$(OCPI_MODELSIM_DIR)/bin/vlib $(WorkLib) &&) \
    $(and $(filter %.v,$(ModelsimFiles)),\
     $(OCPI_MODELSIM_DIR)/bin/vlog $(ModelSimVlogIncs) $(VlogLibs) $(ModelsimArgs) $(filter %.v, $(ModelsimFiles)) ;) \
    $(and $(filter %.vhd,$(ModelsimFiles)),\
@@ -97,9 +97,9 @@ HdlToolCompile=\
 # Since there is not a singular output, make's builtin deletion will not work
 HdlToolPost=\
   if test $$HdlExit != 0; then \
-    rm -r -f $(LibName); \
+    rm -r -f $(WorkLib); \
   else \
-    touch $(LibName);\
+    touch $(WorkLib);\
   fi;
 
 BitFile_modelsim=$1.tar

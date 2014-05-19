@@ -82,7 +82,7 @@ the OpenCPI kernel driver you run the following script in a shell/window where
 you have already set up the Zynq cross-build environment by sourcing your
 (customized) environment setup script based on ocpized.sh mentioned above.
                                                                                 
- % make makeXilinxLinux.sh
+ % ./getXilinxLinux.sh
 
 This will clone, checkout, and configure the Xilinx Linux source tree, at
 $XROOT/$XRN/git/linux-xlnx, so that the OpenCPI kernel driver can be built
@@ -94,7 +94,7 @@ xilinx-v14.6
 xilinx-v14.6.01
 xilinx-v14.6.02
 
-The makeXilinxLinux.sh script chooses the last one which should be the latest
+The getXilinxLinux.sh script chooses the last one which should be the latest
 and greatest.  This is to ensure that we are using any patches Xilinx has posetd
 for this ISE release.  Remember that we are only building the OpenCPI driver
 against this Xilinx Linux source tree, and NOT actually BUILDING the kernel.

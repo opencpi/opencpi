@@ -690,8 +690,7 @@ emitVhdlPropMemberData(FILE *f, OU::Property &pr, unsigned maxPropName) {
   if (pr.m_isSequence) {
     type = pr.m_name;
     type += "_length";
-    fprintf(f, "    %-*s : %s_t;\n", maxPropName, type.c_str(),
-	    OU::baseTypeNames[pr.m_baseType]);
+    fprintf(f, "    %-*s : ULong_t;\n", maxPropName, type.c_str());
   }
   prType(pr, type);
   fprintf(f, "    %-*s : %s;\n", maxPropName, pr.m_name.c_str(), type.c_str());

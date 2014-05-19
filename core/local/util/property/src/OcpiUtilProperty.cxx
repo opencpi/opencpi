@@ -85,10 +85,10 @@ namespace OCPI {
     // parse a value for this property, which may be a struct
     // instance property values in an assembly.
     const char *
-    Property::parseValue(const char *unparsed, Value &value) {
+    Property::parseValue(const char *unparsed, Value &value, const char *end) {
       if (!value.m_vt)
 	value.setType(*this);
-      return value.parse(unparsed);
+      return value.parse(unparsed, end);
     }
 
     const char *

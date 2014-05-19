@@ -391,6 +391,14 @@ HdlPassTargets=$(and $(HdlTargets),HdlTargets="$(HdlTargets)") \
                $(and $(HdlPlatforms),HdlPlatforms="$(HdlPlatforms)") \
                $(and $(HdlPlatform),HdlPlatforms="$(HdlPlatform)")
 
+# Do target-specific file shadowing
+HdlShadowFiles=\
+  $(foreach f,$(filter-out $(filter-out %.vhd,$(CoreBlackBoxFiles)),\
+                  $(CompiledSourceFiles)),\
+     $(or $(wildcard $(HdlTarget)/$f),\
+	  $(wildcard $(call HdlGetTop,$(HdlTarget))/$f),\
+          $f))
+
 # Establish where the platforms are
 ifndef HdlPlatformsDir
   HdlPlatformsDir:=$(OCPI_CDK_DIR)/lib/hdl/platforms

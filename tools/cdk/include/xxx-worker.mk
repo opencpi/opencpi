@@ -46,16 +46,44 @@ $(call OcpiDbgVar,ImplXmlFiles)
 # During the makefile reading process we will possibly update the
 # build parameter file.
 # We look at all variables of the form Param_<name>.
-RawParamVariables:=$(filter Param_%,$(.VARIABLES))
+RawParamVariables:=$(filter Param_%,$(.VARIABLES)) $(filter ParamValues_%,$(.VARIABLES))
 RawParamFile:=$(GeneratedDir)/rawparams.xml
-RawParamName=$(1:Param_%=%)
+RawParamName=$(if $(filter Param_%,$1),$(1:Param_%=%),$(1:ParamValues_%=%))
 RawParamNames:=$(foreach v,$(RawParamVariables),$(call RawParamName,$v))
+ifneq ($(words $(RawParamNames)),$(words $(sort $(RawParamNames))))
+  $(error Both Param_ and ParamValues_ used for same parameter.)
+endif
 ParamValue=$(Param_$1)
-MakeRawParams:=$(strip \
+# FIXME: what are the quoting conventions at work here?
+# 1. The core syntax is from our textual encoding of data types.
+# 2. Make pretty much allows anything but # and newline in an assignment - both can
+#    be escaped using backslash, so in fact there are three special characters
+#    #, \, and <newline>, but newlines will never be included.
+# 3. So when we output the file for XML, we need to deal with XML quoting conventions.
+#    But XML textual data has only two things to protect: < and &.
+#    But our format also has backslash encoding too.
+# 4. The Values string has commas. Is there anything better?
+#    Perhaps if we choose something else?:
+#     -- transparent to Make
+#     -- transparent to XML
+#     -- not a comma
+#     -- uncommon to avoid too much quoting, not in any numeric format
+#     -- looks reasonable: | is used in BNF
+# 5. We need a shell command to put the value into a file.
+#    Metacharacters for the shell are: | & ; ( ) < > space tab
+#    Backslash protects everything
+#    Single quotes can't protect single quotes
+#    Double quotes don't protect $ ` \ !
+# Since XML already has a mechanism to encode single quotes (&apos;),
+# using single quotes is best.
+MakeRawParams:= \
   (echo "<parameters>"; \
    $(foreach i,$(RawParamVariables),\
-     echo "<parameter name='$(call RawParamName,$i)' value=\"$(subst ",\",$($i))\"/>";) \
-   echo "</parameters>"))
+     echo "<parameter name='$(call RawParamName,$i)'$(strip \
+                      )$(if $(filter ParamValues_%,$i), values='true')>";\
+     echo '$(subst <,&lt;,$(subst ',&apos;,$(subst &,&amp;,$($i))))';\
+     echo "</parameter>";) \
+   echo "</parameters>")
 ifeq ($(filter clean,$(MAKECMDGOALS)),)
 MakeRawParamsFile:=$(strip\
   $(if $(wildcard $(RawParamFile)), \
@@ -66,6 +94,8 @@ $(and $(MakeRawParamsFile),$(error when processing parameters: $(MakeRawParamsFi
 #$(info MakeRawParams:$(MakeRawParams), \
    MakeParamsFile:$(MakeRawParamsFile), RawParamValues=$(RawParamValues))
 #$(info X:$(foreach v,$(RawParamVariables),name is:$(call RawParamName,$v), value is "$($v)"))
+#$(info RawParamNames:$(RawParamNames))
+#$(info RawParamVariables:$(RawParamVariables))
 endif
 ParamFile=$(GeneratedDir)/$1-params.mk
 ParamFiles:=$(foreach w,$(Workers),$(call ParamFile,$w))

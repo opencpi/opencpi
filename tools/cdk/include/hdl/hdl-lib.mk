@@ -44,7 +44,10 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 .PHONY: stublibrary
 ifndef HdlSkip
 ifndef LibName
-LibName=$(CwdName)
+LibName:=$(CwdName)
+endif
+ifndef WorkLib
+WorkLib:=$(LibName)
 endif
 ifdef HdlToolNeedBB
 stublibrary: install
@@ -66,7 +69,7 @@ $(HdlInstallLibDir):
 install: $(OutLibFiles) | $(HdlInstallLibDir)
 	$(AT)for f in $(HdlActualTargets); do \
 	  $(call ReplaceIfDifferent,$(strip \
-             $(OutDir)target-$$f/$(LibName)),$(strip \
+             $(OutDir)target-$$f/$(WorkLib)),$(strip \
              $(HdlInstallLibDir)/$$f)); \
 	done
 

@@ -302,13 +302,13 @@ XstMakeIni=\
 XstOptions += $(and $(XstNeedIni),-lso $(XstLsoFile))
 #endif
 XstPrjFile=$(Core).prj
-# old XstMakePrj=($(foreach f,$(HdlSources),echo verilog $(if $(filter $(WorkLibrarySources),$(f)),work,$(LibName)) '"$(call FindRelative,$(TargetDir),$(dir $(f)))/$(notdir $(f))"';)) > $(XstPrjFile);
+# old XstMakePrj=($(foreach f,$(HdlSources),echo verilog $(if $(filter $(WorkLibrarySources),$(f)),work,$(WorkLib)) '"$(call FindRelative,$(TargetDir),$(dir $(f)))/$(notdir $(f))"';)) > $(XstPrjFile);
 
 VhdlSources    = ${strip ${filter %vhd, $(HdlSources)}}
 VerilogSources = ${strip ${filter-out %vhd, $(HdlSources)}}
 XstMakePrj=rm -f $(XstPrjFile); \
-           $(if $(VerilogSources), ($(foreach f,$(VerilogSources), echo verilog $(if $(filter $(WorkLibrarySources),$(f)),work,$(LibName)) '"$(call FindRelative,$(TargetDir),$(dir $(f)))/$(notdir $(f))"';)) >  $(XstPrjFile);, ) \
-           $(if $(VhdlSources),    ($(foreach f,$(VhdlSources),    echo vhdl    $(if $(filter $(WorkLibrarySources),$(f)),work,$(LibName)) '"$(call FindRelative,$(TargetDir),$(dir $(f)))/$(notdir $(f))"';)) >> $(XstPrjFile);, )
+           $(if $(VerilogSources), ($(foreach f,$(VerilogSources), echo verilog $(if $(filter $(WorkLibrarySources),$(f)),work,$(WorkLib)) '"$(call FindRelative,$(TargetDir),$(dir $(f)))/$(notdir $(f))"';)) >  $(XstPrjFile);, ) \
+           $(if $(VhdlSources),    ($(foreach f,$(VhdlSources),    echo vhdl    $(if $(filter $(WorkLibrarySources),$(f)),work,$(WorkLib)) '"$(call FindRelative,$(TargetDir),$(dir $(f)))/$(notdir $(f))"';)) >> $(XstPrjFile);, )
 XstScrFile=$(Core).scr
 
 XstMakeScr=(echo set -xsthdpdir . $(and $(XstNeedIni),-xsthdpini $(XstIniFile));echo run $(strip $(XstOptions))) > $(XstScrFile);
@@ -324,7 +324,7 @@ XstMakeScr=(echo set -xsthdpdir . $(and $(XstNeedIni),-xsthdpini $(XstIniFile));
 # -ifn $(XstPrjFile) -ofn $(Core).ngc -top $(Top)
 
 XstOptions +=\
- -ifn $(XstPrjFile) -ofn $(Core).ngc -work_lib $(LibName) -top $(Top) \
+ -ifn $(XstPrjFile) -ofn $(Core).ngc -work_lib $(WorkLib) -top $(Top) \
  -p $(or $(and $(HdlExactPart),$(foreach p,$(HdlExactPart),$(word 1,$(subst -, ,$p))$(word 3,$(subst -, ,$p))-$(word 2,$(subst -, ,$p)))),$(HdlTarget))\
  $(and $(VerilogIncludeDirs),$(strip\
    -vlgincdir { \

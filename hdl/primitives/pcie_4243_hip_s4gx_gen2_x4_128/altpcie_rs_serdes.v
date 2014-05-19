@@ -30,6 +30,7 @@ module altpcie_rs_serdes (
    input use_c4gx_serdes,
    input fifo_err,
    input rc_inclk_eq_125mhz,
+   input detect_mask_rxdrst,
 
    output txdigitalreset,
    output rxanalogreset,
@@ -42,8 +43,8 @@ module altpcie_rs_serdes (
    localparam [19:0] WS_1MS_15625 = 20'h2625a;
    localparam [19:0] WS_1MS_25000 = 20'h3d090;
 
-   localparam [1:0] IDLE_ST_CNT                = 2'b00;
-   localparam [1:0] STROBE_TXPLL_LOCKED_SD_CNT = 2'b01;
+   localparam [1:0] STROBE_TXPLL_LOCKED_SD_CNT = 2'b00;
+   localparam [1:0] IDLE_ST_CNT                = 2'b01;
    localparam [1:0] STABLE_TX_PLL_ST_CNT       = 2'b10;
    localparam [1:0] WAIT_STATE_ST_CNT          = 2'b11;
 
@@ -83,6 +84,7 @@ module altpcie_rs_serdes (
    reg [2:0] pll_locked_r;
    reg [6:0] pll_locked_cnt;
    reg       pll_locked_stable;
+   reg  [4:0]    ltssm_r;
 
    wire rx_pll_freq_locked_sync;
    reg [2:0] rx_pll_freq_locked_r;
@@ -97,6 +99,8 @@ module altpcie_rs_serdes (
    reg  [7:0] rx_signaldetect_rr;
    reg  [7:0] rx_signaldetect_rrr;
 
+   reg ltssm_detect; // when 1 , the LTSSM is in detect state
+
    reg [7:0] rx_sd_strb0;
    reg [7:0] rx_sd_strb1;
    wire stable_sd;
@@ -110,7 +114,7 @@ module altpcie_rs_serdes (
    // SERDES reset outputs
    assign txdigitalreset = txdigitalreset_r ;
    assign rxanalogreset  = (use_c4gx_serdes==1'b1)?arst:rxanalogreset_r  ;
-   assign rxdigitalreset = rxdigitalreset_r | rst_rxpcs_sd;
+   assign rxdigitalreset = (detect_mask_rxdrst==1'b0)?rxdigitalreset_r|rst_rxpcs_sd:(ltssm_detect==1'b1)?1'b0:rxdigitalreset_r | rst_rxpcs_sd;
 
    //npor Reset Synchronizer on pld_clk
    always @(posedge pld_clk or negedge npor) begin
@@ -130,10 +134,12 @@ module altpcie_rs_serdes (
       if (arst == 1'b1) begin
          pll_locked_r[2:0]          <= 3'b000;
          rx_pll_freq_locked_r[2:0]  <= 3'b000;
+         ltssm_r                    <= 5'h0;
       end
       else begin
          pll_locked_r[2:0]          <= {pll_locked_r[1],pll_locked_r[0],pll_locked};
          rx_pll_freq_locked_r[2:0]  <= {rx_pll_freq_locked_r[1],rx_pll_freq_locked_r[0],rx_pll_freq_locked};
+         ltssm_r                    <= ltssm;
       end
    end
    assign pll_locked_sync           = pll_locked_r[2];
@@ -185,8 +191,15 @@ module altpcie_rs_serdes (
          busy_altgxb_reconfig_r[1:0]   <= 2'b11;
          pll_locked_cnt                <= 7'h0;
          pll_locked_stable             <= 1'b0;
+         ltssm_detect                  <= 1'b1;
       end
       else begin
+         if ((ltssm_r==5'h0)||(ltssm_r==5'h1)) begin
+            ltssm_detect    <= 1'b1;
+         end
+         else begin
+            ltssm_detect    <= 1'b0;
+         end
          if ( rx_pll_locked_sync[7:0]==8'hFF ) begin
             rx_pll_locked_sync_r   <= 8'hFF;
          end
@@ -241,20 +254,6 @@ module altpcie_rs_serdes (
          end
 
          case (serdes_rst_state)
-            IDLE_ST_CNT : begin
-               if (rx_pll_freq_locked_sync_r == 1'b1) begin
-                  if (fifo_err == 1'b1) begin
-                     serdes_rst_state <= STABLE_TX_PLL_ST_CNT ;
-                  end
-                  else begin
-                     serdes_rst_state <= IDLE_ST_CNT ;
-                  end
-               end
-               else begin
-                  serdes_rst_state <= STROBE_TXPLL_LOCKED_SD_CNT ;
-                  ld_ws_tmr   <= 1'b1 ;
-               end
-            end
             STROBE_TXPLL_LOCKED_SD_CNT : begin
                ld_ws_tmr <= 1'b0 ;
                if ((pll_locked_sync == 1'b1) && (ws_tmr_eq_0 == 1'b1) && (pll_locked_stable==1'b1)) begin
@@ -270,6 +269,20 @@ module altpcie_rs_serdes (
                   rxdigitalreset_r <= 1'b1 ;
                end
             end
+            IDLE_ST_CNT : begin
+               if (rx_pll_freq_locked_sync_r == 1'b1) begin
+                  if (fifo_err == 1'b1) begin
+                     serdes_rst_state <= STABLE_TX_PLL_ST_CNT ;
+                  end
+                  else begin
+                     serdes_rst_state <= IDLE_ST_CNT ;
+                  end
+               end
+               else begin
+                  serdes_rst_state <= STROBE_TXPLL_LOCKED_SD_CNT ;
+                  ld_ws_tmr   <= 1'b1 ;
+               end
+            end
             STABLE_TX_PLL_ST_CNT : begin
                if (rx_pll_freq_locked_sync_r == 1'b1) begin
                   serdes_rst_state      <= WAIT_STATE_ST_CNT ;
@@ -279,7 +292,7 @@ module altpcie_rs_serdes (
                   ld_ws_tmr_short  <= 1'b1 ;
                end
                else begin
-                  serdes_rst_state      <= STABLE_TX_PLL_ST_CNT ;
+                  serdes_rst_state <= STABLE_TX_PLL_ST_CNT ;
                   txdigitalreset_r <= 1'b0 ;
                   rxanalogreset_r  <= 1'b0 ;
                   rxdigitalreset_r <= 1'b1 ;
@@ -289,28 +302,28 @@ module altpcie_rs_serdes (
                if (rx_pll_freq_locked_sync_r == 1'b1) begin
                   ld_ws_tmr_short <= 1'b0 ;
                   if (ld_ws_tmr_short == 1'b0 & ws_tmr_eq_0 == 1'b1) begin
-                     serdes_rst_state      <= IDLE_ST_CNT ;
+                     serdes_rst_state <= IDLE_ST_CNT ;
                      txdigitalreset_r <= 1'b0 ;
                      rxanalogreset_r  <= 1'b0 ;
                      rxdigitalreset_r <= 1'b0 ;
                   end
                   else begin
-                     serdes_rst_state      <= WAIT_STATE_ST_CNT ;
+                     serdes_rst_state <= WAIT_STATE_ST_CNT ;
                      txdigitalreset_r <= 1'b0 ;
                      rxanalogreset_r  <= 1'b0 ;
                      rxdigitalreset_r <= 1'b1 ;
                   end
                end
                else begin
-                  serdes_rst_state      <= STABLE_TX_PLL_ST_CNT ;
+                  serdes_rst_state <= STABLE_TX_PLL_ST_CNT ;
                   txdigitalreset_r <= 1'b0 ;
                   rxanalogreset_r  <= 1'b0 ;
                   rxdigitalreset_r <= 1'b1 ;
                end
             end
             default : begin
-               serdes_rst_state     <= IDLE_ST_CNT ;
-               waitstate_timer <= 20'hFFFFF ;
+               serdes_rst_state  <= STROBE_TXPLL_LOCKED_SD_CNT ;
+               waitstate_timer   <= 20'hFFFFF ;
             end
          endcase
       end
@@ -346,7 +359,7 @@ module altpcie_rs_serdes (
 
             IDLE_ST_SD: begin
                //reset RXPCS on polling.active
-               if (ltssm == LTSSM_POL) begin
+               if (ltssm_r == LTSSM_POL) begin
                    rx_sd_idl_cnt <= (rx_sd_idl_cnt > 20'd10) ? rx_sd_idl_cnt - 20'd10 : 20'h0;
                    sd_state   <= RSET_ST_SD;
                end
@@ -364,7 +377,7 @@ module altpcie_rs_serdes (
                //Incoming data unstable, back to IDLE_ST_SD iff in detect
                if (stable_sd == 1'b0) begin
                    rx_sd_idl_cnt <= 20'h0;
-                   sd_state   <= (ltssm == LTSSM_DET) ? IDLE_ST_SD : RSET_ST_SD;
+                   sd_state   <= (ltssm_r == LTSSM_DET) ? IDLE_ST_SD : RSET_ST_SD;
                end
                else begin
                   if ((test_sim == 1'b1) & (rx_sd_idl_cnt >= 20'd32)) begin
@@ -387,7 +400,7 @@ module altpcie_rs_serdes (
                //Incoming data unstable, back to IDLE_ST_SD iff in detect
                if (stable_sd == 1'b0) begin
                    rx_sd_idl_cnt <= 20'h0;
-                   sd_state   <= (ltssm == LTSSM_DET) ? IDLE_ST_SD : DONE_ST_SD;
+                   sd_state   <= (ltssm_r == LTSSM_DET) ? IDLE_ST_SD : DONE_ST_SD;
                end
             end
 

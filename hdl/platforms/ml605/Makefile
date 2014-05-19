@@ -1,4 +1,5 @@
 # The ml605 platform.
+Libraries=virtex6 xilinx
 Cores=pcie_4243_trn_v6_gtx_x4_250
 #Cores=pcie_4243_trn_v6_gtx_x4_250 ./chipscope_icon ./chipscope_ila
 # We specify these to get the order we want

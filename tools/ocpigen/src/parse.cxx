@@ -1561,61 +1561,170 @@ emitAttribute(const char *attr) {
   return OU::esprintf("Unknown worker attribute: %s", attr);
 }
 
+struct Param {
+  OU::Value *value;
+  Values values;
+  OU::Property *param;
+};
+struct ParamInfo {
+  std::vector<Param> params;
+  FILE *xf, *mf;
+  size_t id;
+  ParamInfo() : xf(NULL), mf(NULL), id(0) {}
+};
+
+void Worker::
+doParam(ParamInfo &info, PropertiesIter pi, unsigned nParam) {
+  while (pi != m_ctl.properties.end() && !(*pi)->m_isParameter)
+    pi++;
+  if (pi == m_ctl.properties.end()) {
+    fprintf(info.xf, "  <configuration id='%zu>\n", info.id);
+    for (unsigned n = 0; n < nParam; n++) {
+      Param &p = info.params[n];
+      // Put out the xml value line
+      fprintf(info.xf, "    <parameter name='%s' value='",
+	      p.param->m_name.c_str());
+      std::string s;
+      p.value->unparse(s);
+      for (const char *cp = s.c_str(); *cp; cp++)
+	if (*cp == '\'')
+	  fputs("&apos;", info.xf);
+	else
+	  fputc(*cp, info.xf);
+      fputs("'/>\n", info.xf);
+      // Put out the Makefile value line
+      fprintf(info.mf, "Param_%zu_%s:=", info.id, p.param->m_name.c_str());
+      for (const char *cp = s.c_str(); *cp; cp++) {
+	if (*cp == '#' || *cp == '\\' && !cp[1])
+	  fputc('\\', info.mf);
+	fputc(*cp, info.mf);
+      }
+      fputs("\n", info.mf);
+    }
+    fputs("  </configuration>\n", info.xf);
+    info.id++;
+  } else {
+    Param &p = info.params[nParam];
+    pi++;
+    for (unsigned n = 0; n < p.values.size(); n++) {
+      p.value = p.values[n];
+      doParam(info, pi, nParam + 1);
+    }
+  }
+}
+
+ static const char *
+addValue(OU::Property &p, const char *start, const char *end, Values &values) {
+   OU::Value *v = new OU::Value();
+   const char *err = p.parseValue(start, *v, end);
+   if (err)
+     delete v;
+   else
+     values.push_back(v);
+   return err;
+ }
+
+static const char *
+addValues(OU::Property &p, Values &values, bool hasValues, const char *content) {
+  // The text content is now undone with XML-quoting, but if there are
+  // multiple values, we have to look for vertical bars unprotected by
+  // backslash.
+  const char *err = NULL;
+  while (*content == '\n')
+    content++;
+  const char *end = content + strlen(content);
+  while (end > content && end[-1] == '\n')
+    end--;
+  if (hasValues) {
+    const char *ep;
+    for (const char *cp = content; cp != end; cp = ep) {
+      for (ep = cp; *ep != '\n' && *ep && *ep != '/'; ep++)
+	if (*ep == '\\')
+	  if (++ep == end)
+	    break;
+      if ((err = addValue(p, cp, ep, values)))
+	break;
+      if (*ep && *ep != '\n')
+	ep++;
+    }
+  } else
+    err = addValue(p, content, end, values);
+  return err;
+}
+
 // Take as input the list of parameters that are set in the Makefile or the
 // environment (i.e. something a human wrote and might have errors).
-// Check against the actual properties of the worker, checking the value
-// using the type-aware parser.  Return in an output file a set of valid parameter
+// Check against the actual properties of the worker, checking the values
+// using the type-aware parser.  Return in two output files sets of valid parameter
 // settings that are ready/convenient/appropriate for tools to supply to the
-// language processors. The output file format is easy for Makefile files
-// and tools to deal with (i.e. not XML), and can be efficiently read by make.
+// language processors.
+// One output file is XML, which is updated in place to maintain the
+// existing mappings between configuration IDs and parameter values,
+// adding any new configurations under new IDs.
+// The other is something that the Makefile can include
 const char *Worker::
 emitToolParameters(const char *rawParamFile, const char *outDir) {
   const char *rawFile = 0;
   ezxml_t x = NULL;
   const char *err;
-  FILE *f = NULL;
+  ParamInfo info;
   if ((err = parseFile(rawParamFile, NULL, "parameters", &x, &rawFile, false)) ||
-      (err = openOutput(m_fileName.c_str(), outDir, "", "-params", ".mk", NULL, f)))
+      (err = openOutput(m_fileName.c_str(), outDir, "", "-params", ".xml", NULL, info.xf)) ||
+      (err = openOutput(m_fileName.c_str(), outDir, "", "-params", ".mk", NULL, info.mf)))
     return err;
+  unsigned nParams = 0;
+  for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
+    if ((*pi)->m_isParameter)
+      nParams++;
+  info.params.resize(nParams);
+  unsigned nParam;
   for (ezxml_t px = ezxml_cchild(x, "parameter"); px; px = ezxml_next(px)) {
-    std::string name, value;
+    std::string name;
+    bool hasValues;
+
     if ((err = OE::getRequiredString(px, name, "name")) ||
-	(err = OE::getRequiredString(px, value, "value")))
+	(err = OE::getBoolean(px, "values", &hasValues)))
       return err;
+    nParam = 0;
     OU::Property *p = NULL;
     for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
       if (!strcasecmp((*pi)->m_name.c_str(), name.c_str())) {
-	p = *pi;
-	if (p->m_isParameter) {
-	  OU::Value v;
-	  if ((err = p->parseValue(value.c_str(), v)) ||
-	      !f && (err = openOutput(m_implName, outDir, "", "-params", ".xml", NULL, f)))
-	    return err;
-	  std::string paramValue;
-	  switch(m_model) {
-	  case RccModel:
-	    rccValue(v, paramValue);
-	    break;
-	  case HdlModel:
-	    hdlValue(v, paramValue);
-	    break;
-	  default:;
-	  }
-	    
-	  fprintf(f, "WorkerParamNames+=%s\nWorkerParam_%s:=%s\n",
-		  name.c_str(), name.c_str(), paramValue.c_str());
-	} else
-	  fprintf(stderr,
-		  "Warning: parameter '%s' ignored: the '%s' property exists, but is not a parameter\n",
-		  name.c_str(), p->m_name.c_str());
-	break;
-      }
+	  p = *pi;
+	  break;
+      } else if ((*pi)->m_isParameter)
+	nParam++;
     if (!p)
-      fprintf(stderr, "Warning: parameter '%s' ignored; it is not a property of worker '%s'\n",
+      fprintf(stderr,
+	      "Warning: parameter '%s' ignored since its not a property of worker '%s'\n",
 	      name.c_str(), m_implName);
+    else if (!p->m_isParameter)
+      fprintf(stderr,
+	      "Warning: parameter '%s' ignored: the '%s' property exists, but is not a parameter\n",
+	      name.c_str(), p->m_name.c_str());
+    else if ((err = addValues(*p, info.params[nParam].values, hasValues, ezxml_txt(px))))
+      return err;
   }
-  if (f && fclose(f))
-    return OU::esprintf("File close of parameter file failed.  Disk full?");
+  // Fill in default values
+  nParam = 0;
+  for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
+    if ((*pi)->m_isParameter) {
+      info.params[nParam].param = *pi;
+      if (info.params[nParam].values.size() == 0) {
+	assert((*pi)->m_default);
+	info.params[nParam].values.push_back((*pi)->m_default);
+      }
+      nParam++;
+    }
+  // Let's write out the differences
+  fprintf(info.xf, "<build>\n");
+  doParam(info, m_ctl.properties.begin(), 0);
+  fprintf(info.xf, "</build>\n");
+  fprintf(info.mf, "ParamConfigurations:=");
+  for (size_t i = 0; i < info.id; i++)
+    fprintf(info.mf, "%s%zu", i ? " " : "", i);
+  fprintf(info.mf, "\n");
+  if (info.xf && fclose(info.xf) || info.mf && fclose(info.mf))
+    return OU::esprintf("File close of parameter files failed.  Disk full?");
   return NULL;
 }
 

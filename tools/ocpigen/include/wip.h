@@ -389,7 +389,9 @@ typedef std::vector<Port*> Ports;
 typedef Ports::const_iterator PortsIter;
 typedef std::vector<Clock*> Clocks;
 typedef Clocks::iterator ClocksIter;
+typedef std::vector<OU::Value *> Values;
 class Assembly;
+struct ParamInfo;
 class Worker : public Parsed {
  public:
   Model m_model;
@@ -491,7 +493,8 @@ class Worker : public Parsed {
     emitPortDescription(Port *p, FILE *f, Language lang),
     emitSignals(FILE *f, Language lang, bool onlyDevices = false, bool records = false,
 		bool inPackage = false),
-    emitDeviceSignals(FILE *f, Language lang, std::string &last);
+    emitDeviceSignals(FILE *f, Language lang, std::string &last),
+    doParam(ParamInfo &info, PropertiesIter pi, unsigned nParam);
 };
 
 

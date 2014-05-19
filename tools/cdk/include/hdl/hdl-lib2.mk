@@ -45,7 +45,9 @@ define DoLibTarget
 OutLibFiles+=$(call OutLibFile,$(1))
 $(call OutLibFile,$(1)): override TargetDir:=$(OutDir)target-$(1)
 $(call OutLibFile,$(1)): override HdlTarget:=$(1)
-$(call OutLibFile,$(1)): HdlSources=$$(filter-out $$(CoreBlackBoxFile),$$(CompiledSourceFiles))
+$(call OutLibFile,$(1)): HdlSources=$$(HdlShadowFiles)
+
+# HdlSources=$$(filter-out $$(CoreBlackBoxFile),$$(CompiledSourceFiles))
 #$(call OutLibFile,$(1)): $$$$(filter-out $$$$(CoreBlackBoxFile),$$$$(CompiledSourceFiles)) | $$$$(TargetDir)
 
 $(call OutLibFile,$(1)): \

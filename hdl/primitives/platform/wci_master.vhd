@@ -1,6 +1,7 @@
 -- This module is the per-worker infrastructure module for controlling a worker
 -- via its WCI.  Thus this module is the WCI master.
 
+-- FIXME: ensure that the reset has been asserted for 16 clocks
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.types.all; use ocpi.util.all;
 use work.platform_pkg.all;
