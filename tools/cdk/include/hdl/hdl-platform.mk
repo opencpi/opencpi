@@ -47,7 +47,11 @@ ifndef HdlSkip
 $(call OcpiDbgVar,HdlExactPart)
 $(call OcpiDbgVar,HdlPlatform)
 HdlExactPart:=$(HdlPart_$(HdlPlatform))
+# Force targets to just be the family of the platform.
+override HdlTargets:=$(call HdlGetFamily,$(HdlPlatform))
+override HdlTarget:=$(HdlTargets)
 $(call OcpiDbgVar,HdlExactPart)
+$(call OcpiDbgVar,HdlTargets)
 # add xml search in component libraries
 ifneq ($(MAKECMDGOALS),clean)
 $(eval $(HdlSearchComponentLibraries))

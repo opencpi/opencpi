@@ -17,8 +17,6 @@
 target-*/
 *.deps
 gen/
-virtex5/
-virtex6/
 # temporary, until we rename targets
 xc5*/
 xc6*/
