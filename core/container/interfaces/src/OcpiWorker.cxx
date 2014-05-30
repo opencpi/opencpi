@@ -191,7 +191,7 @@ namespace OCPI {
 	return false;
       OU::Property &p = props[ordinal];
       name = p.m_name;
-      if (p.m_isReadable) {
+      if (p.m_isReadable || p.m_isParameter) {
 	if (unreadablep)
 	  *unreadablep = false;
       } else if (unreadablep) {

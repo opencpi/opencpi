@@ -1,9 +1,10 @@
-#ifndef HDL_ASSEMBLY_H
-#define HDL_ASSEMBLY_H
+#ifndef ASSEMBLY_H
+#define ASSEMBLY_H
 
 #include "OcpiUtilAssembly.h"
 #include "wip.h"
 
+#define INST_ATTRS "paramconfig"
 struct Attachment;
 typedef std::list<Attachment*> Attachments;
 typedef Attachments::const_iterator AttachmentsIter;
@@ -43,13 +44,14 @@ struct Instance {
   const char *attach;  // external node port this worker is attached to for io or interconnect
   InstanceProperties properties;
   bool hasConfig;      // hack for adapter configuration FIXME make normal properties
-  size_t config;
+  size_t config;       // hack ditto
 };
 struct OcpAdapt {
   const char *expr;
   const char *comment;
   const char *signal;
   OcpSignalEnum other;
+  OcpAdapt() : expr(NULL), comment(NULL), signal(NULL), other(N_OCP_SIGNALS) {}
 };
 // To represent an attachment of a connection to an instance port.
 // This is currently only used for indexed ports
@@ -82,7 +84,7 @@ struct InstancePort {
   void
     init(Instance *i, Port *p, OU::Assembly::External *ext),
     emitPortSignals(FILE *f, bool out, Language lang, const char *indent,
-		    bool &any, const char *&comment, std::string &last),
+		    bool &any, std::string &comment, std::string &last),
     emitConnectionSignal(FILE *f, bool output, Language lang),
     connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, OcpAdapt &oa,
 		     std::string &signal, std::string &thisComment, Language lang);
@@ -105,7 +107,8 @@ class Assembly {
   Connections   m_connections;
   OU::Assembly *m_utilAssembly;
   const char
-    *parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWorkerOk),
+    *parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWorkerOk,
+	       const char *outDir),
     *externalizePort(InstancePort &ip, const char *name, size_t &ordinal),
     *findPort(OU::Assembly::Port &ap, InstancePort *&found),
     *parseConnection(OCPI::Util::Assembly::Connection &aConn);

@@ -59,8 +59,7 @@ upperdup(const char *s) {
   return upper;
 }
 
-static const char* emitEntryPointOCL ( Worker* w,
-                                       const char* outDir );
+static const char* emitEntryPointOCL(Worker* w);
 
 static const char *oclTypes[] = {"none",
   "OCLBoolean", "OCLChar", "OCLDouble", "OCLFloat", "int16_t", "int32_t", "uint8_t",
@@ -156,10 +155,10 @@ emitStructOCL(FILE *f, size_t nMembers, OU::Member *members, const char *indent)
 }
 
 const char *
-emitImplOCL(Worker *w, const char *outDir) {
+emitImplOCL(Worker *w) {
   const char *err;
   FILE *f;
-  if ((err = openOutput(w->m_fileName.c_str(), outDir, "", OCLIMPL, HEADER, w->m_implName, f)))
+  if ((err = openOutput(w->m_fileName.c_str(), w->m_outDir, "", OCLIMPL, HEADER, w->m_implName, f)))
     return err;
   fprintf(f, "/*\n");
   printgen(f, " *", w->m_file.c_str());
@@ -260,10 +259,10 @@ emitImplOCL(Worker *w, const char *outDir) {
 }
 
 const char*
-emitSkelOCL(Worker *w, const char *outDir) {
+emitSkelOCL(Worker *w) {
   const char *err;
   FILE *f;
-  if ((err = openOutput(w->m_fileName.c_str(), outDir, "", "_skel", ".cl", NULL, f)))
+  if ((err = openOutput(w->m_fileName.c_str(), w->m_outDir, "", "_skel", ".cl", NULL, f)))
     return err;
   fprintf(f, "/*\n");
   printgen(f, " *", w->m_file.c_str(), true);
@@ -324,17 +323,17 @@ emitSkelOCL(Worker *w, const char *outDir) {
 
   fclose(f);
 
-  return emitEntryPointOCL ( w, outDir );
+  return emitEntryPointOCL(w);
 }
 /*
   FIXME
   1. Add local memory to metadata.
 */
 const char *
-emitArtOCL(Worker *aw, const char *outDir) {
+emitArtOCL(Worker *aw) {
   const char *err;
   FILE *f;
-  if ((err = openOutput(aw->m_implName, outDir, "", "_art", ".xml", NULL, f)))
+  if ((err = openOutput(aw->m_implName, aw->m_outDir, "", "_art", ".xml", NULL, f)))
     return err;
   fprintf(f, "<!--\n");
   printgen(f, "", aw->m_file.c_str());
@@ -366,12 +365,11 @@ emitArtOCL(Worker *aw, const char *outDir) {
   return 0;
 }
 
-static const char* emitEntryPointOCL ( Worker* w,
-                                       const char* outDir )
+static const char* emitEntryPointOCL( Worker* w)
 {
   const char* err;
   FILE* f;
-  if ((err = openOutput(w->m_fileName.c_str(), outDir, "", OCLENTRYPOINT, SOURCE, w->m_implName, f)))
+  if ((err = openOutput(w->m_fileName.c_str(), w->m_outDir, "", OCLENTRYPOINT, SOURCE, w->m_implName, f)))
     return err;
   fprintf(f, "\n\n/* ---- Generated code that dispatches to the worker's functions --------- */\n\n");
 

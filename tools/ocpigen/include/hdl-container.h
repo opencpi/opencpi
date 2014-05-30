@@ -48,7 +48,7 @@ public:
   virtual ~HdlContainer();
   const char
     *emitAttribute(const char *attr),
-    *emitArtHDL(const char *outDir, const char *wksFile),
+    *emitArtXML(const char *wksFile),
     *emitContainer(FILE *f);
 };
 

@@ -2,8 +2,9 @@
 #include <stdint.h>
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
+#include "assembly.h"
+#include "hdl.h"
 #include "hdl-container.h"
-#include "hdl-assembly.h"
 
 static void
 emitTimeClient(std::string &assy, const char *instance, const char *port) {
@@ -505,14 +506,14 @@ emitAttribute(const char *attr) {
 
 // Emit the artifact XML for an HDLcontainer
 const char *HdlContainer::
-emitArtHDL(const char *outDir, const char *wksFile) {
+emitArtXML(const char *wksFile) {
   const char *err;
   OU::Uuid uuid;
   OU::generateUuid(uuid);
-  if ((err = emitUuidHDL(outDir, uuid)))
+  if ((err = emitUuidHDL(uuid)))
     return err;
   FILE *f;
-  if ((err = openOutput(m_implName, outDir, "", "-art", ".xml", NULL, f)))
+  if ((err = openOutput(m_implName, m_outDir, "", "-art", ".xml", NULL, f)))
     return err;
   fprintf(f, "<!--\n");
   printgen(f, "", m_file.c_str());
@@ -579,6 +580,6 @@ emitArtHDL(const char *outDir, const char *wksFile) {
   if (fclose(f))
     return "Could not close output file. No space?";
   if (wksFile)
-    return emitWorkersHDL(outDir, wksFile);
+    return emitWorkersHDL(wksFile);
   return 0;
 }

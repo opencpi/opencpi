@@ -51,9 +51,12 @@ addInclude(const char *inc) {
   includes[nIncludes] = 0;
 }
 
+// The "optional" argument says the file may not exist at all, or it
+// may have the wrong top level element.  If the filename is "-",
+// stdin is assumed.
 const char *
 parseFile(const char *file, const char *parent, const char *element,
-          ezxml_t *xp, const char **xfile, bool optional) {
+          ezxml_t *xp, const char **xfile, bool optional, bool search) {
   const char *err = NULL;
   char *myFile;
   const char *slash = strrchr(file, '/');
@@ -75,7 +78,7 @@ parseFile(const char *file, const char *parent, const char *element,
     if (fd < 0) {
       // file was not where parent file was, and not local.
       // Try the include paths
-      if (myFile[0] != '/' && includes) {
+      if (myFile[0] != '/' && includes && search) {
 	for (const char **ap = includes; *ap; ap++) {
 	  if (!(*ap)[0] || !strcmp(*ap, "."))
 	    cp = strdup(myFile);
@@ -91,13 +94,19 @@ parseFile(const char *file, const char *parent, const char *element,
       if (fd < 0) {
 	std::string files;
 	bool first = true;
-	for (std::list<const char *>::const_iterator i = tries.begin(); i != tries.end(); i++) {
+	for (std::list<const char *>::const_iterator i = tries.begin();
+	     i != tries.end(); i++) {
 	  OU::formatAdd(files, "%s %s", first ? "" : ",", *i);
 	  first = false;
 	}
-	err =
-	  OU::esprintf("File \"%s\" could not be opened for reading/parsing.  Files tried: %s",
-		       file, files.c_str());
+	if (optional) {
+	  *xp = 0;
+	  ocpiInfo("Optional file \"%s\" could not be opened for reading/parsing."
+		   "  Files tried: %s", file, files.c_str());
+	} else
+	  err =
+	    OU::esprintf("File \"%s\" could not be opened for reading/parsing."
+			 "  Files tried: %s", file, files.c_str());
 	break;
       }
     }
@@ -166,10 +175,11 @@ dumpDeps(const char *top) {
   }
   fprintf(out, "%s:", top);
   for (unsigned n = 0; n < nDeps; n++)
-    fprintf(out, " %s", deps[n]);
+    if (strcmp(top, deps[n]))
+      fprintf(out, " %s", deps[n]);
   fprintf(out, "\n");
   for (unsigned n = 0; n < nDeps; n++)
-    if (depChild[n])
+    if (strcmp(top, deps[n]) && depChild[n])
       fprintf(out, "\n%s:\n", deps[n]);
   fflush(out);
   //  fclose(out);

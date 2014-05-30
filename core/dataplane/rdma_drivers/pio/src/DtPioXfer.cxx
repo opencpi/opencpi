@@ -66,7 +66,7 @@ namespace OCPI {
     XferFactory::XferFactory()
       throw ()
     {
-      ocpiDebug("In PIO::XferFactory::PIO::XferFactory()");
+      ocpiDebug("In PIO::XferFactory::PIO::XferFactory(): %zu", m_SMBSize);
     }
 
     // Destructor
@@ -77,6 +77,7 @@ namespace OCPI {
 
     DT::EndPoint* XferFactory::
     createEndPoint(std::string& endpoint, bool local) {
+      ocpiDebug("In PIO::XferFactory::createEndPoint(): %zu", m_SMBSize);
       return new EndPoint(endpoint, local);
     }
 

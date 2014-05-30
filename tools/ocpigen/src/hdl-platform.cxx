@@ -3,8 +3,8 @@
 #include <map>
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
+#include "assembly.h"
 #include "hdl-platform.h"
-#include "hdl-assembly.h"
 
 namespace OU = OCPI::Util;
 namespace OE = OCPI::Util::EzXml;
@@ -528,35 +528,6 @@ emitContainerImplHDL(FILE *f) {
 }
 
 
-HdlAssembly *HdlAssembly::
-create(ezxml_t xml, const char *xfile, const char *&err) {
-  HdlAssembly *ha = new HdlAssembly(xml, xfile, err);
-  if (err) {
-    delete ha;
-    ha = NULL;
-  }
-  return ha;
-}
-
-HdlAssembly::
-HdlAssembly(ezxml_t xml, const char *xfile, const char *&err)
-  : Worker(xml, xfile, NULL, NULL, err) {
-  if (!(err = OE::checkAttrs(xml, IMPL_ATTRS, HDL_TOP_ATTRS, (void*)0)) &&
-      !(err = OE::checkElements(xml, IMPL_ELEMS, HDL_IMPL_ELEMS, ASSY_ELEMS, (void*)0)))
-    err = parseHdl();
-#if 0
-  if (err)
-    return;
-  assert(m_assembly);
-  Instance *i = m_assembly->m_instances;
-  for (unsigned n = 0; n < m_assembly->m_nInstances; n++, i++)
-    if (!i->worker->m_assembly && !i->worker->m_noControl)
-      i->index = index++;
-#endif
-}
-HdlAssembly::
-~HdlAssembly() {
-}
 
 SlotType::
 SlotType(const char *file, const char *parent, const char *&err) {

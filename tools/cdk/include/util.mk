@@ -301,9 +301,8 @@ DYN_PREFIX=LD_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/$(OCPI_TOOL_HOST)
 endif
 #$(info OCDK $(OCPI_CDK_DIR))
 DYN_PREFIX=
-OcpiGenArg=\
-  $(DYN_PREFIX) $(ToolsDir)/ocpigen $1 -M $(GeneratedDir)/$(@F).deps \
-    $(patsubst %,-I"%",$(call Unique,$(XmlIncludeDirs)))
+OcpiGenTool=$(ToolsDir)/ocpigen $(patsubst %,-I"%",$(call Unique,$(XmlIncludeDirs)))
+OcpiGenArg=$(DYN_PREFIX) $(OcpiGenTool) $1 -M $(GeneratedDir)/$(@F).deps
 OcpiGen=$(call OcpiGenArg,)
 # Return stderr and the exit status as variables
 # Return non-empty on failure, empty on success, and set var

@@ -88,6 +88,7 @@ namespace OCPI {
 	m_isParameter,     // For compile-time parameter
 	m_isSub32,
 	m_isTest;
+      size_t m_paramOrdinal; // Among parameters, which position?
       unsigned long m_dataOffset;
       // Sizes in bits of the various types
       const char *parse(ezxml_t x,
@@ -98,7 +99,7 @@ namespace OCPI {
 			unsigned ordinal);
       const char *parseImpl(ezxml_t x, bool &readableConfigs, bool &writableConfigs);
       const char *parse(ezxml_t x, unsigned ordinal);
-      const char *parseValue(const char *unparsed, Value &value, const char *end = NULL);
+      const char *parseValue(const char *unparsed, Value &value, const char *end = NULL) const;
       void offset(size_t &cumOffset, uint64_t &sizeofConfigSpace);
       // Check when accessing with scalar type and sequence length
       const char *checkType(OCPI::API::BaseType ctype, unsigned n, bool write);

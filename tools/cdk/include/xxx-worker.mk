@@ -37,14 +37,14 @@
 
 ################################################################################
 # metadata and generated files that are target-independent
-ImplSuffix=$($(CapModel)ImplSuffix)
-SkelSuffix=$($(CapModel)SkelSuffix)
-SourceSuffix=$($(CapModel)SourceSuffix)
-ImplXmlFiles=$(foreach w,$(Workers),$(or $(Worker_$w_xml),$(Worker).xml))
+ImplSuffix:=$($(CapModel)ImplSuffix)
+SkelSuffix:=$($(CapModel)SkelSuffix)
+SourceSuffix:=$($(CapModel)SourceSuffix)
+ImplXmlFiles:=$(foreach w,$(Workers),$(or $(Worker_$w_xml),$(Worker).xml))
 $(call OcpiDbgVar,ImplXmlFiles)
 
-# During the makefile reading process we will possibly update the
-# build parameter file.
+# During the makefile reading process we possibly update the
+# build parameter file, and always update and include the xxx-params.mk file.
 # We look at all variables of the form Param_<name>.
 RawParamVariables:=$(filter Param_%,$(.VARIABLES)) $(filter ParamValues_%,$(.VARIABLES))
 RawParamFile:=$(GeneratedDir)/rawparams.xml
@@ -84,28 +84,40 @@ MakeRawParams:= \
      echo '$(subst <,&lt;,$(subst ',&apos;,$(subst &,&amp;,$($i))))';\
      echo "</parameter>";) \
    echo "</parameters>")
-ifeq ($(filter clean,$(MAKECMDGOALS)),)
-MakeRawParamsFile:=$(strip\
-  $(if $(wildcard $(RawParamFile)), \
-     $(shell $(MakeRawParams) | cmp -s $(RawParamFile) 2>&1 || \
-             ($(MakeRawParams) > $(RawParamFile)) 2>&1),\
-     $(shell (mkdir -p $(GeneratedDir) ; $(MakeRawParams) > $(RawParamFile)) 2>&1)))
-$(and $(MakeRawParamsFile),$(error when processing parameters: $(MakeRawParamsFile)))
-#$(info MakeRawParams:$(MakeRawParams), \
-   MakeParamsFile:$(MakeRawParamsFile), RawParamValues=$(RawParamValues))
-#$(info X:$(foreach v,$(RawParamVariables),name is:$(call RawParamName,$v), value is "$($v)"))
-#$(info RawParamNames:$(RawParamNames))
-#$(info RawParamVariables:$(RawParamVariables))
+
+IncludeDirs:=$(OCPI_CDK_DIR)/include/$(Model) $(GeneratedDir) $(IncludeDirs)
+ifeq ($(origin XmlIncludeDirsInternal),undefined)
+  ifeq ($(origin XmlIncludeDirs),undefined)
+    ifneq ($(wildcard ../specs),)
+      XmlIncludeDirsInternal:=../specs
+    endif
+  endif
 endif
-ParamFile=$(GeneratedDir)/$1-params.mk
-ParamFiles:=$(foreach w,$(Workers),$(call ParamFile,$w))
-#$(info PARAMFILES:$(ParamFiles))
-LoadWorkerParams:=\
-  $(eval WorkerParamNames:=) \
-  $(eval -include $(call ParamFile,$(Worker)))
-$(ParamFiles): $(GeneratedDir)/%-params.mk: $$(Worker_%_xml) $(RawParamFile) | $(GeneratedDir)
-	$(AT)$(OcpiGen) -D $(GeneratedDir) $(and $(Package),-p $(Package)) \
-	 $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) -r $(RawParamFile) $<
+override XmlIncludeDirs:=$(XmlIncludeDirs) . $(XmlIncludeDirsInternal) \
+   $(OCPI_CDK_DIR)/lib/components $(OCPI_CDK_DIR)/lib/components/specs
+-include $(GeneratedDir)/*.deps
+
+ParamShell:=(\
+  mkdir -p $(GeneratedDir) &&\
+  ($(MakeRawParams) |\
+  $(OcpiGenTool) -D $(GeneratedDir) $(and $(Package),-p $(Package))\
+    $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) \
+  -r $(Worker).xml) || echo 1\
+  )
+
+ifeq ($(filter clean,$(MAKECMDGOALS)),)
+  # This is the parameter configuration startup that must be run as the
+  # makefile is being read, since it results in a file that the makefile must include.
+  $(call OcpiDbgVar,ParamShell)
+  X:=$(shell $(ParamShell))
+  $(and $X,$(error Failed to process initial parameters for this worker: $X))
+  -include $(GeneratedDir)/$(Worker)-params.mk
+  WorkerParamNames:=\
+    $(foreach p, \
+      $(filter Param_$(firstword $(ParamConfigurations))_%,$(.VARIABLES)),\
+      $(p:Param_$(firstword $(ParamConfigurations))_%=%))
+  $(call OcpiDbgVar,WorkerParamNames)
+endif
 
 # Only workers need the implementation "header" file and the skeleton
 # Allow this to be set to override this default
@@ -121,7 +133,7 @@ $(ImplHeaderFiles): $(GeneratedDir)/%$(ImplSuffix) : $$(Worker_%_xml) | $(Genera
 	 $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) -i $< \
 
 ifeq ($(origin SkelFiles),undefined)
-SkelFiles=$(foreach w,$(Workers),$(GeneratedDir)/$w$(SkelSuffix))
+  SkelFiles=$(foreach w,$(Workers),$(GeneratedDir)/$w$(SkelSuffix))
 endif
 
 # Making the skeleton may also make a default OWD
@@ -132,23 +144,12 @@ $(SkelFiles): $(GeneratedDir)/%$(SkelSuffix) : $$(Worker_%_xml) | $(GeneratedDir
 	$(AT)echo Generating the implementation skeleton file: $@
 	$(AT)$(OcpiGen) -D $(GeneratedDir) $(and $(Package),-p $(Package)) -s $<
 endif
-IncludeDirs:=$(OCPI_CDK_DIR)/include/$(Model) $(GeneratedDir) $(IncludeDirs)
-ifeq ($(origin XmlIncludeDirsInternal),undefined)
-ifeq ($(origin XmlIncludeDirs),undefined)
-ifneq ($(wildcard ../specs),)
-XmlIncludeDirsInternal=../specs
-endif
-endif
-endif
-override XmlIncludeDirs+=. $(XmlIncludeDirsInternal) \
-   $(OCPI_CDK_DIR)/lib/components $(OCPI_CDK_DIR)/lib/components/specs
--include $(GeneratedDir)/*.deps
 
 clean:: cleanfirst
 	$(AT)rm -r -f $(GeneratedDir) \
              $(if $(filter all,$($(CapModel)Targets)),\
-                  $(wildcard $(call WkrTargetDir,*)),\
-                  $(foreach t,$($(CapModel)Targets),$(call WkrTargetDir,$t)))
+                  $(call WkrTargetDirWild,*),\
+                  $(foreach t,$($(CapModel)Targets),$(call WkrTargetDirWild,$t)))
 
 ################################################################################
 # source files that are target-independent
@@ -192,71 +193,79 @@ $(call OcpiDbgVar,Workers)
 $(call OcpiDbgVar,ModelSpecificBuildHook,Before all: )
 all: $(ModelSpecificBuildHook) 
 
-# Function to generate target dir from target: $(call WkrTargetDir,target)
-WkrTargetDir=$(OutDir)target-$(1)
+# Function to generate target dir from target: $(call WkrTargetDir,target,config)
+WkrTargetDir=$(OutDir)target$(if $(filter 0,$2),,-$2)-$1
+WkrTargetDirWild=$(OutDir)target-*$1
 
-# Function to generate final binary from target: $(call WkrBinary,target)
-WkrBinary=$(call WkrTargetDir,$(1))/$(WkrBinaryName)$(BF)
+# Function to generate final binary from target: $(call WkrBinary,target,config)
+WkrBinary=$(call WkrTargetDir,$1,$2)/$(WkrBinaryName)$(BF)
 
-# Function to generate object file name from source: $(call WkrObject,src,target)
-WkrObject=$(call WkrTargetDir,$(2))/$(basename $(notdir $(1)))$(OBJ)
+# Function to generate object file name from source: $(call WkrObject,src,target,config)
+WkrObject=$(call WkrTargetDir,$2,$3)/$(basename $(notdir $1))$(OBJ)
 
-# Function to make an object from source: $(call WkrMakeObject,src,target)
+# Function to make an object from source: $(call WkrMakeObject,src,target,config)
 define WkrMakeObject
-# A line is needed here for the "define" to work (no extra eval)
-ObjectFiles_$2 += $(call WkrTargetDir,$2)/$(basename $(notdir $1))$(OBJ)
-$(call WkrObject,$1,$2): \
-   $1 $(ImplHeaderFiles) \
-   $(if $(filter $1,$(WorkerSourceFiles)),,$(call ParamFile,$(word 1,$(Workers)))) \
-    | $(call WkrTargetDir,$2)
+  # A line is needed here for the "define" to work (no extra eval)
+  ObjectFiles_$2_$3 += $(call WkrTargetDir,$2,$3)/$(basename $(notdir $1))$(OBJ)
+  $(call WkrObject,$1,$2,$3): ParamConfig=$3
+  $(call WkrObject,$1,$2,$3): \
+     $1 $(ImplHeaderFiles) \
+     | $(call WkrTargetDir,$2,$3)
 	$(Compile_$(subst .,,$(suffix $1)))
 
 endef
 
+################################################################################
 # Function to make worker objects depend on impl headers and primitive libraries: 
-# $(call WkrWorkerDep,worker,target)
+# $(call WkrWorkerDep,worker,target,config)
 define WkrWorkerDep
 
-$(call WkrObject,$1,$2): TargetDir=$(OutDir)target-$2
-$(call WkrObject,$1,$2): $(CapModel)Target=$2
-$(call WkrObject,$1,$2): Worker=$1
-$(call WkrObject,$1,$2): \
-   $(call ParamFile,$1) \
-   $(call ImplHeaderFile,$1) \
-   $(foreach l,$(call $(CapModel)LibrariesInternal,$2),$$(call LibraryRefFile,$l,$2))
+  $(call WkrObject,$1,$2,$3): TargetDir=$(call WkrTargetDir,$2,$3)
+  $(call WkrObject,$1,$2,$3): $(CapModel)Target=$2
+  $(call WkrObject,$1,$2,$3): Worker=$1
+  $(call WkrObject,$1,$2,$3): \
+     $(call ImplHeaderFile,$1) \
+     $(foreach l,$(call $(CapModel)LibrariesInternal,$2),$$(call LibraryRefFile,$l,$2))
+
+endef
+
+################################################################################
+# Function to do stuff per target per param config:
+#   $(call WkrDoTargetConfig,target,config))
+define WkrDoTargetConfig
+  -include $(call WkrTargetDir,$1,$2)/*.deps
+  # The target directory
+  $(call WkrTargetDir,$1,$2): | $(OutDir) $(GeneratedDir)
+	$(AT)mkdir $$@
+  # If object files are separate from the final binary,
+  # Make them individually, and then link them together
+  ifdef ToolSeparateObjects
+    $$(call OcpiDbgVar,CompiledSourceFiles)
+    $(foreach s,$(CompiledSourceFiles),$(call WkrMakeObject,$s,$1,$2))
+    $(call WkrBinary,$1,$2): $(CapModel)Target=$1
+    # Note the use of ls -o -g -l below is to not be affected by
+    # user and group names with spaces.
+    $(call WkrBinary,$1,$2): $$(ObjectFiles_$1_$2) $$(call ArtifactXmlFile,$1,$2) \
+                            | $(call WkrTargetDir,$1,$2)
+	$(LinkBinary) $$(ObjectFiles_$1_$2) $(OtherLibraries)
+	$(AT)if test -f "$(call ArtifactXmlFile,$1,$2)"; then \
+		(cat $(call ArtifactXmlFile,$1,$2); \
+	         bash -c 'echo X$$$$2' `ls -o -g -l $(call ArtifactXmlFile,$1,$2)`) >> $$@; \
+	fi
+  endif
+  # Make sure we actuall make the final binary for this target
+  $(call OcpiDbg,Before all: WkrBinary is "$(call WkrBinary,$1,$2)")
+  all: $(call WkrBinary,$1,$2)
+
+  # If not an application, make the worker object files depend on the impl headers
+  $(foreach w,$(Workers),$(call WkrWorkerDep,$w,$1,$2))
 
 endef
 
 ################################################################################
 # Function to do stuff per target: $(eval $(call WkrDoTarget,target))
 define WkrDoTarget
--include $(call WkrTargetDir,$1)/*.deps
-# The target directory
-$(call WkrTargetDir,$1): | $(OutDir) $(GeneratedDir)
-	$(AT)mkdir $$@
-
-# If object files are separate from the final binary,
-# Make them individually, and then link them together
-ifdef ToolSeparateObjects
-$$(call OcpiDbgVar,CompiledSourceFiles)
-$(foreach s,$(CompiledSourceFiles),$(call WkrMakeObject,$(s),$1))
-
-$(call WkrBinary,$(1)): $(CapModel)Target=$1
-$(call WkrBinary,$(1)): $$(ObjectFiles_$1) $$(call ArtifactXmlFile,$1) \
-			| $(call WkrTargetDir,$1)
-	$(LinkBinary) $$(ObjectFiles_$1) $(OtherLibraries)
-	$(AT)if test -f "$(ArtifactXmlFile)"; then \
-		(cat $(ArtifactXmlFile); \
-                 bash -c 'echo X$$$$4' `ls -l $(ArtifactXmlFile)`) >> $$@; \
-	fi
-endif
-# Make sure we actuall make the final binary for this target
-$(call OcpiDbg,Before all: WkrBinary is "$(call WkrBinary,$1)")
-all: $(call WkrBinary,$1)
-
-# If not an application, make the worker object files depend on the impl headers
-$(foreach w,$(Workers),$(eval $(call WkrWorkerDep,$w,$1)))
-
+  $(foreach c,$(ParamConfigurations),$(call WkrDoTargetConfig,$1,$c))
 endef
 
 # Do all the targets
@@ -273,22 +282,27 @@ WkrExportNames=$(WkrBinaryName)$(BF)
 endif
 
 define DoLink
-LibLinks+=$(LibDir)/$(1)/$(notdir $(2))
-$(LibDir)/$(1)/$(notdir $(2)): $(OutDir)target-$(1)/$(2) | $(LibDir)/$(1)
-	$(AT)$$(call MakeSymLink,$$^,$(LibDir)/$(1))
+  LibLinks+=$(LibDir)/$1/$(notdir $2)
+  $(LibDir)/$1/$(notdir $2): $(OutDir)target-$1/$2 | $(LibDir)/$1
+	$(AT)$$(call MakeSymLink,$$^,$(LibDir)/$1)
 
 endef
 
+# Do the links for the various binaries of the worker, for a given param configuration
+# $(call DoLinks,<target>,<config>)
 define DoLinks
 
-LibDirs+=$(LibDir)/$(1)
-$(LibDir)/$(1): | $(LibDir)
-$(foreach n,$(WkrExportNames),$(call DoLink,$(1),$(n)))
-$$(call OcpiDbgVar,WkrExportNames,In Dolinks )
+  LibDirs+=$(LibDir)/$1
+  $(LibDir)/$1: | $(LibDir)
+  LibLinks+=$(LibDir)/$(Worker)-params.xml
+  $(LibDir)/$(Worker)-params.xml: $(GeneratedDir)/$(Worker)-params.xml | $(LibDir)
+	$(AT)$$(call MakeSymLink,$$^,$(LibDir))
+  $(foreach n,$(WkrExportNames),$(call DoLink,$1,$n))
+  $$(call OcpiDbgVar,WkrExportNames,In Dolinks )
 endef
 
 $(call OcpiDbgVar,WkrExportNames)
-$(foreach t,$($(CapModel)Targets),$(eval $(call DoLinks,$(t))))
+$(foreach t,$($(CapModel)Targets),$(eval $(call DoLinks,$t)))
 
 
 $(call OcpiDbgVar,LibLinks,Before all:)

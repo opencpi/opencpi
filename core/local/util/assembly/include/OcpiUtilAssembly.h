@@ -102,9 +102,11 @@ namespace OCPI {
 	PValueList m_parameters;
 	std::list<Port*> m_ports; // attachments to connections
 	typedef std::list<Port*>::iterator PortsIter;
+	ezxml_t m_xml;
 	const char *parse(ezxml_t ix, Assembly &a, unsigned ordinal, const char **extraInstAttrs);
 	const char *addProperty(const char *name, ezxml_t px);
 	const char *parseConnection(ezxml_t ix, Assembly &a);
+	ezxml_t xml() const { return m_xml; }
       };
       struct Role {
 	bool m_provider;      // is this attachment acting as a provider to the world?

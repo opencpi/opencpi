@@ -670,12 +670,28 @@ ezxml_t ezxml_parse_fd(int fd)
     }
     else { // mmap failed, read file into memory
 #endif // EZXML_NOMMAP
-        l = read(fd, m = malloc(st.st_size), st.st_size);
-	/* Fix bug when you read a directory  - Jim K.*/
-	if ((long)l == -1) {
-	  free(m);
-	  return NULL;
+#if 1
+      // Jim K.: allow reading from pipe, and check for bad reads, like on dirs.
+      size_t
+	len = (st.st_mode & S_IFMT) == S_IFREG ? st.st_size+1 : 4096,
+	room = len;
+      ssize_t nr;
+      l = 0;
+      for (char *p = m = malloc(len); (nr = read(fd, p, room)) > 0; p += nr) {
+	l += nr;
+	if ((room -= nr) == 0) {
+	  room = len;
+	  m = realloc(m, len *= 2);
+	  p = m + room - nr;
 	}
+      }
+      if (nr < 0) {
+	free(m);
+	return NULL;
+      }
+#else
+        l = read(fd, m = malloc(st.st_size), st.st_size);
+#endif
         root = (ezxml_root_t)ezxml_parse_str(m, l);
         root->len = -1; // so we know to free s in ezxml_free()
 #ifndef EZXML_NOMMAP

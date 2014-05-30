@@ -41,7 +41,7 @@ namespace OCPI {
       if (!m.m_isSequence && m.m_baseType == OA::OCPI_Bool) {
 	if (argValue)
 	  return setError(esprintf("Extraneous value found in option: '%s'", *argv));
-	v.m_Bool = m.m_default ? m.m_default->m_Bool : true;
+	v.m_Bool = m.m_default ? !m.m_default->m_Bool : true;
       } else {
 	if (!argValue) {
 	  if (!argv[1])

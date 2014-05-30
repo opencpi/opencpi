@@ -75,6 +75,7 @@ namespace OCPI {
       PVString("adapter"),
       PVString("configure"),
       PVString("io"),
+      PVString("paramconfig"),
       PVEnd
     };
 

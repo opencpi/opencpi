@@ -1,5 +1,4 @@
-
-. ./generic_env.sh
+. ./env/start.sh
 
 export OCPI_EXCLUDE_TARGETS=xilinx
 export OCPI_VERILATOR_DIR=/opt/opencpi/prerequisites/verilator/$OCPI_BUILD_HOST
@@ -15,4 +14,4 @@ export OCPI_OPENCV_HOME=/opt/opencpi/prerequisites/opencv/macos-10.8-x86_64
 #export OCPI_HAVE_OPENSPLICE=1
 #export OCPI_OPENSPLICE_HOME=/opt/opencpi/prerequisites/opensplice/linux-x86_64
 
-. ./generic_env_post.sh
+. ./env/finish.sh

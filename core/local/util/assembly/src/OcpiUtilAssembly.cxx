@@ -83,8 +83,7 @@ namespace OCPI {
       bool maxProcs = false, minProcs = false, roundRobin = false;
       // FIXME: move app-specific parsing up into library assy
       if ((err = OE::checkAttrsVV(ax, baseAttrs, extraTopAttrs, NULL)) ||
-	  (err = OE::checkElements(ax, "instance", "connection", "policy", "property", "external",
-				   NULL)) ||
+	  (err = OE::checkElements(ax, "instance", "connection", "policy", "property", "external", NULL)) ||
 	  (err = OE::getNumber(ax, "maxprocessors", &m_processors, &maxProcs)) ||
 	  (err = OE::getNumber(ax, "minprocessors", &m_processors, &minProcs)) ||
 	  (err = OE::getBoolean(ax, "roundrobin", &roundRobin)))
@@ -341,6 +340,7 @@ namespace OCPI {
       if ((err = OE::checkAttrsVV(ix, instAttrs, extraInstAttrs, NULL)) ||
 	  (err = OE::getBoolean(ix, "externals", &m_externals)))
 	return err;
+      m_xml = ix;
       std::string component, myBase;
       const char *compName = 0;
       if (a.isImpl()) {

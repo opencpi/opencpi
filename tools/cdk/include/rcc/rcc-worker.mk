@@ -68,7 +68,7 @@ DispatchSourceFile = $(GeneratedDir)/$(word 1,$(Workers))_dispatch.c
 GeneratedSourceFiles += $(DispatchSourceFile)
 ArtifactFile=$(BinaryFile)
 # Artifacts are target-specific since they contain things about the binary
-ArtifactXmlFile=$(call WkrTargetDir,$1)/$(word 1,$(Workers))_assy_art.xml
+ArtifactXmlFile=$(call WkrTargetDir,$1,$2)/$(word 1,$(Workers))_assy_art.xml
 ToolSeparateObjects:=yes
 OcpiLibDir=$(OCPI_CDK_DIR)/lib/$(RccTarget)
 LinkBinary=$$(GCCLINK_$$(RccTarget)) $(SharedLibLinkOptions) -o $$@ \
@@ -86,7 +86,7 @@ endif
 RccParams=\
   $(LoadWorkerParams) \
   $(foreach n,$(WorkerParamNames),\
-	     "-DPARAM_$n()=$(WorkerParam_$n)")
+	     "-DPARAM_$n()=$(Param_$(ParamConfig)_$n)")
 Compile_c=\
   $$(GCC_$$(RccTarget)) -MMD -MP -MF $$(TargetDir)/$$(@F).deps -c \
   $(CompilerWarnings) $(CompilerOptions) \
@@ -94,25 +94,27 @@ Compile_c=\
 
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk
 
-RccAssemblyFile=$(GeneratedDir)/$(word 1,$(Workers))_assy.xml
-$(RccAssemblyFile): | $(GeneratedDir)
-	$(AT)(echo "<RccAssembly>"; \
-	  for w in $(Workers); do echo "<Worker File=\"$$w.xml\"/>"; done; \
-	  echo "</RccAssembly>") > $@
+RccAssemblyFile=$(call WkrTargetDir,$1,$2)/$(word 1,$(Workers))_assy.xml
 
 define DoRccArtifactFile
+
+$(call RccAssemblyFile,$1,$2): | $(call WkrTargetDir,$1,$2)
+	$(AT)(echo "<RccAssembly>"; \
+	  for w in $$(Workers); do echo "<Instance worker=\"$$$$w.xml\" paramconfig=\"$2\"/>"; done; \
+	  echo "</RccAssembly>") > $$@
+
 # Different since it is in the targetdir
-$(call ArtifactXmlFile,$1): $(RccAssemblyFile)
+$(call ArtifactXmlFile,$1,$2): $(call RccAssemblyFile,$1,$2)
 	@echo Generating artifact/runtime xml file $$@ for all workers in one binary
-	$(AT)$(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(call WkrTargetDir,$1)/$$(@F).deps \
+	$(AT)$(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(call WkrTargetDir,$1,$2)/$$(@F).deps \
 	     -O $(call RccOs,$1) \
              -V $(call RccOsVersion,$1) \
              -P $(call RccArch,$1) \
-	     -D $(call WkrTargetDir,$1) $(XmlIncludeDirs:%=-I%) -A $(RccAssemblyFile)
+	     -D $(call WkrTargetDir,$1,$2) $(XmlIncludeDirs:%=-I%) -A $(RccAssemblyFile)
 
 endef
 
-$(foreach t,$(RccTargets),$(eval $(call DoRccArtifactFile,$t)))
+$(foreach t,$(RccTargets),$(foreach c,$(ParamConfigurations),$(eval $(call DoRccArtifactFile,$t,$c))))
 
 #$(OcpiGen) -A $(RccAssemblyFile)
 

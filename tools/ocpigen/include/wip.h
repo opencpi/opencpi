@@ -48,6 +48,7 @@
 #include "OcpiUuid.h"
 #include "ezxml.h"
 #include "cdkutils.h"
+#include "parameters.h"
 
 namespace OE=OCPI::Util::EzXml;
 namespace OU=OCPI::Util;
@@ -339,7 +340,7 @@ class Control {
   bool sub32Bits, nonRawSub32Bits;
   bool volatiles, nonRawVolatiles;
   bool readbacks, nonRawReadbacks, rawReadbacks;
-  unsigned nRunProperties, nNonRawRunProperties;
+  unsigned nRunProperties, nNonRawRunProperties, nParameters;
   uint32_t controlOps; // bit mask
   Properties properties;
   size_t offset;// temporary while properties are being parsed.
@@ -389,15 +390,14 @@ typedef std::vector<Port*> Ports;
 typedef Ports::const_iterator PortsIter;
 typedef std::vector<Clock*> Clocks;
 typedef Clocks::iterator ClocksIter;
-typedef std::vector<OU::Value *> Values;
 class Assembly;
-struct ParamInfo;
 class Worker : public Parsed {
  public:
   Model m_model;
   const char *m_modelString;
   bool m_isDevice;
   bool m_noControl; // no control port on this one.
+  bool m_reusable;
   const char *m_specFile;
   const char *m_implName;
   const char *m_specName;
@@ -421,12 +421,16 @@ class Worker : public Parsed {
   bool m_outer;                     // only generate the outer skeleton, not the inner one
   OU::Property *m_debugProp;
   OU::Assembly::Properties *m_instancePVs;
+  FILE *m_mkFile, *m_xmlFile;       // state during parameter processing
+  const char *m_outDir;             // state during parameter processing
+  ParamConfigs m_paramConfigs;      // the parsed file of all configs
+  ParamConfig  *m_paramConfig;      // the config for this Worker.
   Worker(ezxml_t xml, const char *xfile, const char *parent,
 	 OU::Assembly::Properties *ipvs, const char *&err);
   virtual ~Worker();
   static Worker *
-    create(const char *file, const char *parent, const char *package,
-	   OU::Assembly::Properties *instancePropertyValues, const char *&err);
+    create(const char *file, const char *parent, const char *package, const char *outDir,
+	   OU::Assembly::Properties *instancePropertyValues, size_t paramConfig, const char *&err);
   bool nonRaw(PropertiesIter pi);
   Clock *addClock();
   Clock *addWciClockReset();
@@ -435,7 +439,8 @@ class Worker : public Parsed {
 	       size_t defaultValue = 0, bool setDefault = true),
     *getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly),
     *parse(const char *file, const char *parent, const char *package = NULL),
-    *parseRcc(),
+    *parseRcc(const char *package = NULL),
+    *parseRccImpl(const char *package),
     *parseOcl(),
     *parseHdl(const char *package = NULL),
     *parseRccAssy(),
@@ -446,6 +451,7 @@ class Worker : public Parsed {
     *parseSpec(const char *package = NULL),
     *parsePort(ezxml_t x),
     *parseHdlImpl(const char* package = NULL),
+    *parseConfigFile(const char *dir),
     *doProperties(ezxml_t top, const char *parent, bool impl, bool anyIsBad),
     *parseHdlAssy(),
     *initImplPorts(ezxml_t xml, const char *element, const char *prefix, WIPType type),
@@ -455,27 +461,32 @@ class Worker : public Parsed {
     *checkDataPort(ezxml_t impl, Port **dpp, WIPType type),
     *addProperty(ezxml_t prop, bool includeImpl),
     //    *doAssyClock(Instance *i, Port *p),
-    *openSkelHDL(const char *outDir, const char *suff, FILE *&f),
+    *openSkelHDL(const char *suff, FILE *&f),
     *emitVhdlRecordInterface(FILE *f),
-    *emitUuidHDL(const char *outDir, const OU::Uuid &uuid),
-    *emitImplHDL(const char *, bool wrap = false),
+    *emitUuidHDL(const OU::Uuid &uuid),
+    *emitImplHDL( bool wrap = false),
     *emitAssyImplHDL(FILE *f, bool wrap),
     *emitConfigImplHDL(FILE *f),
     *emitContainerImplHDL(FILE *f),
-    *emitSkelHDL(const char *),
-    *emitBsvHDL(const char *),
-    *emitDefsHDL(const char *outDir, bool wrap = false),
+    *emitSkelHDL(),
+    *emitBsvHDL(),
+    *emitDefsHDL(bool wrap = false),
     *emitVhdlWorkerPackage(FILE *f, unsigned maxPropName),
     *emitVhdlWorkerEntity(FILE *f, unsigned maxPropName),
     *emitVhdlPackageConstants(FILE *f),
-    *emitToolParameters(const char *rawParamFile, const char *outDir),
+    *emitToolParameters(),
+    *setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig),
     *deriveOCP(),
     *hdlValue(const OU::Value &v, std::string &value),
-    *emitAssyHDL(const char *);
+    *findParamProperty(const char *name, OU::Property *&prop, size_t &nParam),
+    *addConfig(ParamConfig &info),
+    *doParam(ParamConfig &info, PropertiesIter pi, unsigned nParam),
+    //    *getParamConfig(const char *id, const ParamConfig *&config),
+    *emitAssyHDL();
   virtual const char
-    *emitWorkersHDL(const char *, const char *file),
-    *emitAttribute(const char *attr),
-    *emitArtHDL(const char *root, const char *wksFile);
+    *emitArtXML(const char *wksFile),
+    *emitWorkersHDL(const char *file),
+    *emitAttribute(const char *attr);
   inline const char *myComment() const { return hdlComment(m_language); }
   void
     addAccess(OU::Property &p),
@@ -484,6 +495,7 @@ class Worker : public Parsed {
     emitRecordSignal(FILE *f, std::string &last, size_t maxPortTypeName, Port *p,
 		     const char *prefix = ""),
     emitWorkers(FILE *f),
+    emitWorker(FILE *f),
     emitInstances(FILE *f, const char *prefix, size_t &index),
     emitInternalConnections(FILE *f, const char *prefix),
     emitVhdlShell(FILE *f),
@@ -493,8 +505,7 @@ class Worker : public Parsed {
     emitPortDescription(Port *p, FILE *f, Language lang),
     emitSignals(FILE *f, Language lang, bool onlyDevices = false, bool records = false,
 		bool inPackage = false),
-    emitDeviceSignals(FILE *f, Language lang, std::string &last),
-    doParam(ParamInfo &info, PropertiesIter pi, unsigned nParam);
+    emitDeviceSignals(FILE *f, Language lang, std::string &last);
 };
 
 
@@ -520,40 +531,34 @@ static inline bool masterIn(Port *p) {
 #define VERH ".vh"
 #define BOOL(b) ((b) ? "true" : "false")
 
-#define IMPL_ATTRS "name", "spec"
+#define IMPL_ATTRS "name", "spec", "paramconfig", "reentrant"
 #define IMPL_ELEMS "componentspec", "properties", "property", "specproperty", "propertysummary", "xi:include", "controlinterface",  "timeservice", "unoc"
 #define GENERIC_IMPL_CONTROL_ATTRS \
   "SizeOfConfigSpace", "ControlOperations", "Sub32BitConfigProperties"
 #define ASSY_ELEMS "instance", "connection", "external"
 extern const char
+  *parseList(const char *list, const char * (*doit)(const char *tok, void *arg), void *arg),
+  *parseControlOp(const char *op, void *arg),
   *vhdlValue(const OU::Value &v, std::string &value),
   *rccValue(OU::Value &v, std::string &value),
   *container, *platform, *device, *load, *os, *os_version, **libraries, **mappedLibraries, *assembly, *attribute,
   *addLibMap(const char *),
   *findLibMap(const char *file), // returns mapped lib name from dir name of file or NULL
-  *openOutput(const char *name, const char *outDir, const char *prefix,
-	      const char *suffix, const char *ext, const char *other, FILE *&f),
   *propertyTypes[],
   *getNames(ezxml_t xml, const char *file, const char *tag, std::string &name, std::string &fileName),
-  *parseFile(const char *file, const char *parent, const char *element,
-	     ezxml_t *xp, const char **xfile, bool optional = false),
   *tryOneChildInclude(ezxml_t top, const char *parent, const char *element,
 		      ezxml_t *parsed, const char **childFile, bool optional),
   *emitContainerHDL(Worker*, const char *),
-  *emitImplRCC(Worker*, const char *),
-  *emitImplOCL(Worker*, const char *),
-  *emitSkelRCC(Worker*, const char *),
-  *emitSkelOCL(Worker*, const char *),
-  *emitArtRCC(Worker *, const char *root),
-  *emitArtOCL(Worker *, const char *root);
+  *emitImplRCC(Worker*),
+  *emitImplOCL(Worker*),
+  *emitSkelRCC(Worker*),
+  *emitSkelOCL(Worker*),
+  *emitArtOCL(Worker *);
 
 extern void
   emitVhdlLibraries(FILE *f),
   addLibrary(const char *lib),
-  emitLastSignal(FILE *f, std::string &last, Language lang, bool end),
-  addInclude(const char *),
-  addDep(const char *dep, bool child),
-  emitWorker(FILE *f, Worker *w);
+  emitLastSignal(FILE *f, std::string &last, Language lang, bool end);
 
 extern size_t ceilLog2(uint64_t n);
 

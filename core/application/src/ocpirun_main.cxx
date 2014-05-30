@@ -183,10 +183,12 @@ main(int /*argc*/, const char **argv) {
 	      "Communication with the application established\n");
     if (dump) {
       std::string name, value;
+      bool isParameter;
       if (verbose)
 	fprintf(stderr, "Dump of all initial property values:\n");
-      for (unsigned n = 0; app.getProperty(n, name, value, hex); n++)
-	fprintf(stderr, "Property %2u: %s = \"%s\"\n", n, name.c_str(), value.c_str());
+      for (unsigned n = 0; app.getProperty(n, name, value, hex, &isParameter); n++)
+	fprintf(stderr, "Property %2u: %s = \"%s\"%s\n", n, name.c_str(), value.c_str(),
+		isParameter ? " (parameter)" : "");
     }
     app.start();
     if (verbose)
@@ -209,10 +211,12 @@ main(int /*argc*/, const char **argv) {
     app.finish();
     if (dump) {
       std::string name, value;
+      bool isParameter;
       if (verbose)
 	fprintf(stderr, "Dump of all final property values:\n");
-      for (unsigned n = 0; app.getProperty(n, name, value, hex); n++)
-	fprintf(stderr, "Property %2u: %s = \"%s\"\n", n, name.c_str(), value.c_str());
+      for (unsigned n = 0; app.getProperty(n, name, value, hex, &isParameter); n++)
+	if (!isParameter)
+	  fprintf(stderr, "Property %2u: %s = \"%s\"\n", n, name.c_str(), value.c_str());
     }
     return 0;
   } catch (std::string &e) {

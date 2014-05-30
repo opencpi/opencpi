@@ -98,10 +98,8 @@ namespace OCPI {
       // Second pass - decode all information
       Property *prop = m_properties;
       ezxml_t x;
-      bool readableConfigs, writableConfigs, sub32Configs; // all unused
       for (x = ezxml_cchild(xml, "property"); x; x = ezxml_next(x), prop++)
-        if ((err = prop->parse(x, readableConfigs, writableConfigs,
-			       sub32Configs, true, (unsigned)(prop - m_properties))))
+        if ((err = prop->parse(x, (unsigned)(prop - m_properties))))
           return esprintf("Invalid xml property description: %s", err);
       prop = m_properties;
       size_t offset = 0;

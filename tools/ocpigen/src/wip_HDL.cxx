@@ -1367,11 +1367,11 @@ emitVhdlRecordInterface(FILE *f) {
 
 // Emit the file that can be used to instantiate the worker
 const char *Worker::
-emitDefsHDL(const char *outDir, bool wrap) {
+emitDefsHDL(bool wrap) {
   const char *err;
   FILE *f;
   Language lang = wrap ? (m_language == VHDL ? Verilog : VHDL) : m_language;
-  if ((err = openOutput(m_implName, outDir, "", DEFS, lang == VHDL ? VHD : ".vh", NULL, f)))
+  if ((err = openOutput(m_implName, m_outDir, "", DEFS, lang == VHDL ? VHD : ".vh", NULL, f)))
     return err;
   const char *comment = hdlComment(lang);
   printgen(f, comment, m_file.c_str());
@@ -2410,11 +2410,11 @@ emitVhdlRecordWrapper(FILE *f) {
 // The idea is to minimize code in the actual worker implementation (nee skeleton) file,
 // without constructing significant "state" or "newly defined internal interfaces".
 const char *Worker::
-emitImplHDL(const char *outDir, bool wrap) {
+emitImplHDL(bool wrap) {
   const char *err;
   FILE *f;
   Language lang = wrap ? (m_language == VHDL ? Verilog : VHDL) : m_language;
-  if ((err = openOutput(m_implName, outDir, "", IMPL, lang == VHDL ? VHD : ".vh", NULL, f)))
+  if ((err = openOutput(m_implName, m_outDir, "", IMPL, lang == VHDL ? VHD : ".vh", NULL, f)))
     return err;
   const char *comment = hdlComment(lang);
   printgen(f, comment, m_file.c_str());
@@ -3195,17 +3195,17 @@ emitImplHDL(const char *outDir, bool wrap) {
 }
 
 const char *Worker::
-openSkelHDL(const char *outDir, const char *suff, FILE *&f) {
+openSkelHDL(const char *suff, FILE *&f) {
   const char *err;
-  if ((err = openOutput(m_fileName.c_str(), outDir, "", suff, m_language == VHDL ? VHD : VER, NULL, f)))
+  if ((err = openOutput(m_fileName.c_str(), m_outDir, "", suff, m_language == VHDL ? VHD : VER, NULL, f)))
     return err;
   printgen(f, hdlComment(m_language), m_file.c_str(), true);
   return 0;
 }
 const char *Worker::
-emitSkelHDL(const char *outDir) {
+emitSkelHDL() {
   FILE *f;
-  const char *err = openSkelHDL(outDir, SKEL, f);
+  const char *err = openSkelHDL(SKEL, f);
   if (err)
     return err;
   if (m_language == VHDL) {
@@ -3258,10 +3258,10 @@ emitSkelHDL(const char *outDir) {
 
 #define BSV ".bsv"
 const char *Worker::
-emitBsvHDL(const char *outDir) {
+emitBsvHDL() {
   const char *err;
   FILE *f;
-  if ((err = openOutput(m_implName, outDir, "I_", "", BSV, NULL, f)))
+  if ((err = openOutput(m_implName, m_outDir, "I_", "", BSV, NULL, f)))
     return err;
   const char *comment = "//";
   printgen(f, comment, m_file.c_str());

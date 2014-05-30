@@ -249,7 +249,7 @@ namespace OCPI {
         *checkElements(ezxml_t x, ...),
         *getNumber(ezxml_t x, const char *attr, size_t *np,
 		   bool *found = NULL, size_t defaultValue = 0,
-		   bool setDefault = true),
+		   bool setDefault = true, bool required = false),
         *getNumber8(ezxml_t x, const char *attr, uint8_t *np,
 		    bool *found = NULL, uint32_t defaultValue = 0,
 		    bool setDefault = true),

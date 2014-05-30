@@ -46,7 +46,7 @@ extern void
 extern const char
   **includes, *depFile,
   *parseFile(const char *file, const char *parent, const char *element,
-	     ezxml_t *xp, const char **xfile, bool optional),
+	     ezxml_t *xp, const char **xfile, bool optional = false, bool search = true),
   *openOutput(const char *name, const char *outDir, const char *prefix, const char *suffix,
 	      const char *ext, const char *other, FILE *&f);
 #endif

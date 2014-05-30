@@ -801,7 +801,7 @@ namespace OCPI {
     }
 
     bool ApplicationI::getProperty(unsigned ordinal, std::string &name, std::string &value,
-				   bool hex) {
+				   bool hex, bool *parp) {
       if (ordinal >= m_nProperties)
 	return false;
       Property &p = m_properties[ordinal];
@@ -813,6 +813,8 @@ namespace OCPI {
 	m_workers[p.m_instance]->getProperty(p.m_property, dummy, value, NULL, hex);
       } else
 	value = "<unreadable>";
+      if (parp)
+	*parp = wp.m_isParameter;
       return true;
     }
 
@@ -893,8 +895,8 @@ namespace OCPI {
     }
     ExternalPort &Application::getPort(const char *name) { return m_application.getPort(name); }
     bool Application::getProperty(unsigned ordinal, std::string &name, std::string &value,
-				  bool hex) {
-      return m_application.getProperty(ordinal, name, value, hex);
+				  bool hex, bool *parp) {
+      return m_application.getProperty(ordinal, name, value, hex, parp);
     }
     void Application::getProperty(const char* w, const char* p, std::string &value, bool hex) {
       OCPI_EMIT_STATE_NR( pegp, 1 );

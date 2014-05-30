@@ -265,7 +265,7 @@ namespace OCPI {
     }
 
     void Member::
-    printAttrs(FILE *f, const char *tag, unsigned indent) {
+    printAttrs(FILE *f, const char *tag, unsigned indent, bool suppressDefault) {
       fprintf(f, "%*s<%s", indent * 2, "", tag);
       if (!m_name.empty())
 	fprintf(f, " name=\"%s\"", m_name.c_str());
@@ -291,7 +291,7 @@ namespace OCPI {
       }
       if (m_isKey)
 	fprintf(f, " key=\"true\"");
-      if (m_default) {
+      if (m_default && !suppressDefault) {
 	std::string val;
 	m_default->unparse(val);
 	fprintf(f, " default=\"%s\"", val.c_str()); // FIXME: string value properties may have extra quotes

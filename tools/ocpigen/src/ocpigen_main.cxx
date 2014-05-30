@@ -78,7 +78,7 @@ add to tree.
   CMD_OPTION  (impl,      i,    Bool,   NULL, "Generate the implementation header file (readonly)") \
   CMD_OPTION  (skel,      s,    Bool,   NULL, "Generate the implementation skeleton file (modified part)") \
   CMD_OPTION  (assy,      a,    Bool,   NULL, "Generate the assembly implementation file (readonly)") \
-  CMD_OPTION  (parameters,r,    String, NULL, "Process a parameter file") \
+  CMD_OPTION  (parameters,r,    Bool,   NULL, "Process raw parameters on stdin") \
   CMD_OPTION  (xml,       A,    Bool,   NULL, "Generate the artifact XML file for embedding") \
   CMD_OPTION  (bsv,       b,    Bool,   NULL, "Generate the BlueSpec interface file (broken)") \
   CMD_OPTION  (workers,   W,    Bool,   NULL, "Generate the makefile fragment for workers in the assembly") \
@@ -95,6 +95,7 @@ add to tree.
   CMD_OPTION  (os,        O,    String, NULL, "Specify the operating system target for the artifact XML") \
   CMD_OPTION  (os_version,V,    String, NULL, "Specify the operating system version for the artifact XML") \
   CMD_OPTION  (package,   p,    String, NULL, "Specify the HDL package for the worker") \
+  CMD_OPTION  (config,    c,    String, NULL, "Specify the configuration for the artifact XML") \
 
 #include "CmdOption.h"
 
@@ -219,51 +220,34 @@ main(int argc, char **argv) {
 	attribute = *++ap;
 	break;
       case 'r':
-	ap++;
 	break;
       default:
 	fprintf(stderr, "Unknown flag: %s\n", *ap);
 	return 1;
       }
     else {
-      const char *root = outDir;
-#if 0
-      char *root = strdup(*ap);
-      char *dot = strrchr(root, '.');
-      if (!dot) {
-	fprintf(stderr, "%s: No period to define filename extension\n", *ap);
-	return 1;
-      }
-      *dot = 0;
-      if (outDir) {
-	char *slash = strrchr(root, '/');
-	asprintf(&root, "%s/%s", outDir, slash ? slash + 1 : root);
-      }
-#endif
-      Worker *w = Worker::create(*ap, NULL, package, NULL, err);
-      //      Worker w(*ap, NULL, package, err);
-      //      Worker *w = new Worker();
+      Worker *w = Worker::create(*ap, NULL, package, outDir, NULL, 0, err);
       if (err)
 	fprintf(stderr, "For file %s: %s\n", *ap, err);
       else if (attribute && (err = w->emitAttribute(attribute)))
 	fprintf(stderr, "%s: Error retrieving attribute %s from file: %s\n", attribute, *ap, err);
-      else if (doDefs && (err = w->emitDefsHDL(root, doWrap)))
+      else if (doDefs && (err = w->emitDefsHDL(doWrap)))
 	fprintf(stderr, "%s: Error generating definition/declaration file: %s\n", *ap, err);
       else if (doImpl && (err =
-			  w->m_model == HdlModel ? w->emitImplHDL(root, doWrap) :
-			  (w->m_model == RccModel ? emitImplRCC : emitImplOCL)(w, root)))
+			  w->m_model == HdlModel ? w->emitImplHDL(doWrap) :
+			  (w->m_model == RccModel ? emitImplRCC : emitImplOCL)(w)))
 	fprintf(stderr, "%s: Error generating implementation declaration file: %s\n", *ap, err);
       else if (doSkel && (err =
-			  w->m_model == HdlModel ? w->emitSkelHDL(root) :
-			  (w->m_model == RccModel ? emitSkelRCC : emitSkelOCL)(w, root)))
+			  w->m_model == HdlModel ? w->emitSkelHDL() :
+			  (w->m_model == RccModel ? emitSkelRCC : emitSkelOCL)(w)))
 	fprintf(stderr, "%s: Error generating implementation skeleton file: %s\n", *ap, err);
-      else if (doAssy && (err = w->emitAssyHDL(root)))
+      else if (doAssy && (err = w->emitAssyHDL()))
 	fprintf(stderr, "%s: Error generating assembly: %s\n", *ap, err);
-      else if (wksFile && (err = w->emitWorkersHDL(root, wksFile)))
+      else if (wksFile && (err = w->emitWorkersHDL(wksFile)))
 	fprintf(stderr, "%s: Error generating assembly makefile: %s\n", *ap, err);
-      else if (doBsv && (err = w->emitBsvHDL(root)))
+      else if (doBsv && (err = w->emitBsvHDL()))
 	fprintf(stderr, "%s: Error generating BSV import file: %s\n", *ap, err);
-      else if (options.parameters() && (err = w->emitToolParameters(options.parameters(), root)))
+      else if (options.parameters() && (err = w->emitToolParameters()))
 	fprintf(stderr, "%s: Error generating parameter file for tools: %s\n", *ap, err);
       else if (doArt)
 	switch (w->m_model) {
@@ -273,7 +257,7 @@ main(int argc, char **argv) {
 		    "%s: Missing container/platform/device options for HDL artifact descriptor", *ap);
 	    return 1;
 	  }
-	  if ((err = w->emitArtHDL(root, wksFile)))
+	  if ((err = w->emitArtXML(wksFile)))
 	    fprintf(stderr, "%s: Error generating bitstream artifact XML: %s\n",
 		    *ap, err);
 	  break;
@@ -283,15 +267,15 @@ main(int argc, char **argv) {
 		    "%s: Missing os/os_version/platform options for RCC artifact descriptor", *ap);
 	    return 1;
 	  }
-	  if ((err = emitArtRCC(w, root)))
+	  if ((err = w->emitArtXML(wksFile)))
 	    fprintf(stderr, "%s: Error generating shared library artifact XML: %s\n",
 		    *ap, err);
-    break;
+	  break;
 	case OclModel:
-	  if ((err = emitArtOCL(w, root)))
+	  if ((err = emitArtOCL(w)))
 	    fprintf(stderr, "%s: Error generating shared library artifact XML: %s\n",
 		    *ap, err);
-    break;
+	  break;
 	case NoModel:
 	  ;
 	}

@@ -45,7 +45,9 @@ ifdef Worker
   else
     override Workers:=$(Worker)
   endif
-else ifndef Workers
+else ifdef Workers
+  override Worker:=$(firstword $(Workers))
+else
   override Worker:=$(CwdName)
   override Workers:=$(Worker)
 endif

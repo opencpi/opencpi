@@ -78,14 +78,14 @@ namespace OCPI {
     namespace OA = OCPI::API;
     Property::Property()
       : m_smallest(0), m_granularity(0), m_isParameter(false), m_isSub32(false), m_isTest(false),
-	m_dataOffset(0) {
+	m_dataOffset(0), m_paramOrdinal(0) {
     }
     Property::~Property() {
     }
     // parse a value for this property, which may be a struct
     // instance property values in an assembly.
     const char *
-    Property::parseValue(const char *unparsed, Value &value, const char *end) {
+    Property::parseValue(const char *unparsed, Value &value, const char *end) const {
       if (!value.m_vt)
 	value.setType(*this);
       return value.parse(unparsed, end);

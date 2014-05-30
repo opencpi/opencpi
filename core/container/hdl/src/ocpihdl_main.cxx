@@ -1838,11 +1838,11 @@ struct Arg {
 	unsigned i = w.whichProperty(prop);
 	w.getProperty(i, pname, value, &unreadable, hex);
 	printf("%3u %20s: %s\n", i, pname.c_str(),
-	       unreadable ? "<unreadble>" : value.c_str());
+	       unreadable ? "<unreadable>" : value.c_str());
       } else if (verbose) {
 	for (unsigned i = 0; w.getProperty(i, pname, value, &unreadable, hex); i++)
 	  printf("%3u %20s: %s\n", i, pname.c_str(),
-		 unreadable ? "<unreadble>" : value.c_str());
+		 unreadable ? "<unreadable>" : value.c_str());
       }
     }
     fflush(stdout);
