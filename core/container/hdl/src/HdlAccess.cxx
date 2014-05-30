@@ -37,7 +37,7 @@ namespace OCPI {
     Access::
     Access(volatile uint8_t *registers,  Accessor *accessor, RegisterOffset base)
     //,  volatile uint8_t *buffers)
-      : m_accessor(NULL) {
+      : m_accessor(NULL), m_child(false) {
       setAccess(registers, accessor, base); //, buffers);
     }
     // Take the content and ownership away from the other access structure

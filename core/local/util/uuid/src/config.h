@@ -59,6 +59,8 @@
 #else
 #define HAVE_LIBNSL 1
 #endif
+#define _BSD_SOURCE 1          /* necessary since we now use -std=c99 */
+// #define _POSIX_C_SOURCE 199309L /* necessary since we now use -std=c99 */
 
 /* Define to 1 if you have the `socket' library (-lsocket). */
 /* #undef HAVE_LIBSOCKET */

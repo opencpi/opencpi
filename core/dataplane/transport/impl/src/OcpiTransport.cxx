@@ -437,10 +437,10 @@ createCircuit(CircuitId   cid,
   else if ((circuit = getCircuit(cid)))
     deleteCircuit(circuit);
   if ( supportsMailboxes() )
-    circuit = new Circuit( this, cid, connection, src_ports, dest_ports );
+    circuit = new Circuit( this, cid, connection, src_ports, dest_ports, m_mutex );
   else
     // NOTE:: This needs to be specialized for optimization. It is redundant now
-    circuit = new Circuit( this, cid, connection, src_ports, dest_ports );
+    circuit = new Circuit( this, cid, connection, src_ports, dest_ports, m_mutex );
 
   m_circuits.push_back( circuit );
   ocpiDebug("New circuit created and registered: id %x flags %x", cid, flags);

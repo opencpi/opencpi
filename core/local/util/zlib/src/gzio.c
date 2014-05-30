@@ -8,6 +8,7 @@
 
 /* @(#) $Id$ */
 
+#define _POSIX_SOURCE 1 /* for fdopen */
 #include <stdio.h>
 
 #include "zutil.h"

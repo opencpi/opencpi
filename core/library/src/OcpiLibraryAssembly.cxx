@@ -31,6 +31,7 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "OcpiLibraryAssembly.h"
+#include "OcpiUtilValue.h"
 
 namespace OCPI {
   namespace Library {
@@ -78,6 +79,23 @@ namespace OCPI {
 	ap[n] = NULL;
       // build the map from implementation port ordinals to util::assembly::ports
       OU::Assembly::Instance &inst = m_instances[m_instance];
+#if 1
+      if (inst.m_externals) {
+	// If the OU::Assembly instance specified that unconnected ports
+	// should be externalized, we do that now.
+	OU::Port *p = ports;
+	for (unsigned n = 0; n < m_nPorts; n++, p++) {
+	  for (OU::Assembly::Instance::PortsIter pi = inst.m_ports.begin();
+	       pi != inst.m_ports.end(); pi++)
+	    if (!strcasecmp((*pi)->m_name.c_str(), p->m_name.c_str())) {
+	      p = NULL;
+	      break;
+	    }
+	  if (p) // Not mentioned in the assembly. Add an external.
+	    addExternalConnection(m_instance, p->m_name.c_str());
+	}	  
+      }
+#endif
       for (std::list<OU::Assembly::Port*>::const_iterator pi = inst.m_ports.begin(); 
 	   pi != inst.m_ports.end(); pi++) {
 	OU::Port *p = ports;
@@ -129,6 +147,31 @@ namespace OCPI {
 		i.m_staticInstance ? "/" : "",
 		i.m_staticInstance ? ezxml_cattr(i.m_staticInstance, "name") : "",
 		i.m_artifact.name().c_str());
+      // Check for property and parameter matches
+      // Mentioned Property values have to be initial, and if parameters, they must match
+      // values.
+      const OU::Assembly::Properties &aProps = m_instances[m_instance].m_properties;
+      for (unsigned p = 0; p < aProps.size(); p++) {
+	const char *pName = aProps[p].m_name.c_str();
+	OU::Property &uProp = i.m_metadataImpl.findProperty(pName);
+	if (uProp.m_isParameter) {
+	  std::string aStr, pStr;
+	  OU::Value aValue;
+	  assert(uProp.m_default);
+	  uProp.m_default->unparse(pStr); // canonical value could be cached...
+	  uProp.parseValue(aProps[p].m_value.c_str(), aValue);
+	  aValue.unparse(aStr);
+	} else {
+
+	}
+#if 0	
+	if (!uProp.m_isReadable)
+	  throw OU::Error("Cannot dump property '%s' for instance '%s'. It is not readable.",
+			  pName, name);
+	if (!aProps[p].m_hasValue)
+	  continue;
+#endif
+      }
       // The util::assembly only knows port names, not worker port ordinals
       // (because it has not been correlated with any implementations).
       // Here is where we process the matchup between the port names in the util::assembly

@@ -7,6 +7,7 @@ mac: -DHAVE_CONFIG_H -fno-common -DPIC
 
 Changed from the original:
 Moved uuid.h to from src/ to include/
+Renamed uuic_cli.c to uuid_cli.c.hold to avoid a main program we don't need
 In config.h:
 
 #ifdef __APPLE__
@@ -15,6 +16,8 @@ In config.h:
 #else
 #define HAVE_LIBNSL 1
 #endif
+#define _BSD_SOURCE 1 /* necessary since we now use -std=c99 */
+#define _POSIX_C_SOURCE 199309L /* necessary since we now use -std=c99 */
 
 
 

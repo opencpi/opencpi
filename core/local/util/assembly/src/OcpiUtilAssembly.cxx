@@ -43,7 +43,17 @@ namespace OCPI {
 
     Assembly::Assembly(const char *file, const char **extraTopAttrs, const char **extraInstAttrs)
       : m_copy(NULL), m_xmlOnly(false), m_isImpl(false) {
-      const char *err = OE::ezxml_parse_file(file, m_xml);
+      const char *cp = file;
+      while (isspace(*cp))
+	cp++;
+      const char *err;
+      if (*cp == '<') {
+	size_t len = strlen(cp);
+	m_copy = new char[len + 1];
+	strcpy(m_copy, cp);
+	err = OE::ezxml_parse_str(m_copy, len, m_xml);
+      } else
+	err = OE::ezxml_parse_file(file, m_xml);
       if (err || (err = parse(NULL, extraTopAttrs, extraInstAttrs)))
 	throw Error("%s", err);
     }

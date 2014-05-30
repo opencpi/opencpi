@@ -1,0 +1,4 @@
+<ComponentSpec Name="copy">
+  <DataInterfaceSpec Name="in" protocol='buf-proto'/>
+  <DataInterfaceSpec Name="out" protocol='buf-proto' Producer="true"/>
+</ComponentSpec>

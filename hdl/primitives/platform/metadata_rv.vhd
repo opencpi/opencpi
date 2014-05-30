@@ -16,22 +16,22 @@ architecture rtl of metadata_rv is
   end component mkUUID;
   signal myUUID : std_logic_vector(511 downto 0);
 
-  type meta_t is array (0 to 1023) of std_logic_vector(31 downto 0);
-  impure function initmeta return meta_t is
-    file metafile : text open read_mode is "metadatarom.dat";
-    variable metamem : meta_t;
-    variable metaline : line;
-    variable metabits : bit_vector(31 downto 0);
-  begin
-    for i in meta_t'range loop
-      readline(metafile, metaline);
-      read(metaline, metabits);
-      metamem(i) := to_stdlogicvector(metabits);
-    end loop;
-    return metamem;
-  end function;
+  --type meta_t is array (0 to 1023) of std_logic_vector(31 downto 0);
+  --impure function initmeta return meta_t is
+  --  file metafile : text open read_mode is "metadatarom.dat";
+  --  variable metamem : meta_t;
+  --  variable metaline : line;
+  --  variable metabits : bit_vector(31 downto 0);
+  --begin
+  --  for i in meta_t'range loop
+  --    readline(metafile, metaline);
+  --    read(metaline, metabits);
+  --    metamem(i) := to_stdlogicvector(metabits);
+  --  end loop;
+  --  return metamem;
+  --end function;
 
-  constant metamem : meta_t := initmeta;
+  --constant metamem : meta_t := initmeta;
   signal dout : std_logic_vector(31 downto 0);
   signal addr : std_logic_vector(9 downto 0);
 begin

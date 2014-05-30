@@ -362,7 +362,9 @@ enum Endian {
 enum Language {
   NoLanguage,
   Verilog,
-  VHDL
+  VHDL,
+  C,
+  CC
 };
 
 
@@ -482,6 +484,9 @@ class Worker : public Parsed {
     *addConfig(ParamConfig &info),
     *doParam(ParamConfig &info, PropertiesIter pi, unsigned nParam),
     //    *getParamConfig(const char *id, const ParamConfig *&config),
+    *emitImplRCC(),
+    *rccValue(OU::Value &v, std::string &value),
+    *rccPropValue(OU::Property &p, std::string &value),
     *emitAssyHDL();
   virtual const char
     *emitArtXML(const char *wksFile),
@@ -549,7 +554,6 @@ extern const char
   *tryOneChildInclude(ezxml_t top, const char *parent, const char *element,
 		      ezxml_t *parsed, const char **childFile, bool optional),
   *emitContainerHDL(Worker*, const char *),
-  *emitImplRCC(Worker*),
   *emitImplOCL(Worker*),
   *emitSkelRCC(Worker*),
   *emitSkelOCL(Worker*),

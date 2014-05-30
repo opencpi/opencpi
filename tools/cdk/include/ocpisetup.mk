@@ -38,9 +38,9 @@ ifneq ($(wildcard $(OCPI_LIB_DIR)/*.a),)
 OCPI_DRIVER_OBJS=\
   -Xlinker --undefined=_ZN4OCPI3RCC6driverE\
   -Xlinker --undefined=_ZN4OCPI7Library7CompLib6driverE\
-  -Xlinker --undefined=_ZN12DataTransfer3PIO6driverE\
+  -Xlinker --undefined=_ZN4OCPI3PIO6driverE\
   -Xlinker --undefined=_ZN4OCPI3HDL6driverE\
-  -Xlinker --undefined=_ZN12DataTransfer3DMA6driverE\
+  -Xlinker --undefined=_ZN4OCPI3DMA6driverE\
 
 endif
 OcpiAsNeeded=-Xlinker --no-as-needed

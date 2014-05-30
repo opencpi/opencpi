@@ -23,15 +23,14 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#define _GNU_SOURCE 1 /* For strdup() */
 #if defined __vxworks
   #include <ioLib.h>
 #endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE 1 /* For strdup() */
-#endif
+#include <strings.h> /* for strcasecmp */
 #include <string.h>
 #include <ctype.h>
 #if defined (WIN32)

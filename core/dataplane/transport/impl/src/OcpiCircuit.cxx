@@ -97,8 +97,10 @@ Circuit(
         CircuitId id,
         ConnectionMetaData* connection, 
         PortOrdinal src_ps[],
-        PortOrdinal dest_pss[])
+        PortOrdinal dest_pss[],
+	OS::Mutex &mutex)
   :  CU::Child<OCPI::DataTransport::Transport,Circuit>(*t, *this),
+     OU::SelfRefMutex(mutex),
      OCPI::Time::Emit(t, "Circuit"),
      m_transport(t), m_status(Unknown),
      m_ready(false),m_updated(false),

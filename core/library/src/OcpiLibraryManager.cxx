@@ -177,9 +177,10 @@ namespace OCPI {
 		 const char *selectCriteria,
 		 const OCPI::API::Connection *conns,
 		 const char *&artInst) {
-      for (Library *l = firstLibrary(); l; l = l->nextLibrary())
-	return l->findArtifact(caps, specName, params, selectCriteria, conns, artInst);
-      return NULL;
+      Artifact *a = NULL;
+      for (Library *l = firstLibrary(); !a && l; l = l->nextLibrary())
+	a = l->findArtifact(caps, specName, params, selectCriteria, conns, artInst);
+      return a;
     }
 
     Library::~Library(){}

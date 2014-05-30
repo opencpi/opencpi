@@ -88,8 +88,8 @@ namespace OCPI {
 	m_isParameter,     // For compile-time parameter
 	m_isSub32,
 	m_isTest;
-      size_t m_paramOrdinal; // Among parameters, which position?
       unsigned long m_dataOffset;
+      size_t m_paramOrdinal; // Among parameters, which position?
       // Sizes in bits of the various types
       const char *parse(ezxml_t x,
 			bool &readableConfigs,

@@ -224,9 +224,9 @@ $(if $(filter -%,$(word 1,$(1))),\
 # Function to check whether options are bad, good, or unknown
 XstCheckOptions=\
     $(foreach option,$(XstBadOptions),\
-        $(if $(findstring $(option),$(1)),\
+        $(if $(findstring $(option),$1),\
             $(error XST option "$(option)" not allowed here)))\
-    $(call XstCheckOption,$(1))
+    $(call XstCheckOption,$1)
 
 XstPruneOption=\
     $(if $(filter $(word 1,$(1)),$(XstMyExtraOptions)),,$(wordlist 1,2,$(1))) \
@@ -311,7 +311,8 @@ XstMakePrj=rm -f $(XstPrjFile); \
            $(if $(VhdlSources),    ($(foreach f,$(VhdlSources),    echo vhdl    $(if $(filter $(WorkLibrarySources),$(f)),work,$(WorkLib)) '"$(call FindRelative,$(TargetDir),$(dir $(f)))/$(notdir $(f))"';)) >> $(XstPrjFile);, )
 XstScrFile=$(Core).scr
 
-XstMakeScr=(echo set -xsthdpdir . $(and $(XstNeedIni),-xsthdpini $(XstIniFile));echo run $(strip $(XstOptions))) > $(XstScrFile);
+XstMakeScr=(echo set -xsthdpdir . $(and $(XstNeedIni),-xsthdpini $(XstIniFile));\
+            echo run $(strip $(XstOptions))) > $(XstScrFile);
 # The options we directly specify
 #$(info TARGETDIR: $(TargetDir))
 # $(and $(findstring worker,$(HdlMode)),-work_lib work) 

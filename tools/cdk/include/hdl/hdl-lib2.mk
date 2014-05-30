@@ -57,10 +57,11 @@ $$$$(foreach l,$$$$(HdlLibrariesInternal),$$$$(call HdlLibraryRefDir,$$$$l,$$$$(
 $(call OutLibFile,$(1)): $$$$(HdlPreCore) $$$$(HdlSources) | $$$$(TargetDir)
 	$(AT)echo Building the $(LibName) $(HdlMode) for $$(HdlTarget) \($$@\) 
 	$(AT)$$(HdlCompile)
-	$(AT)$$(and $$(filter worker,$$(HdlMode)),\
-	         rm -f $$(TargetDir)/$$(Worker)/$$(Worker)-params.mk && \
-                 ln -s ../../$$(call ParamFile,$$(Worker)) \
-                        $$(TargetDir)/$$(Worker)/$$(Worker)-params.mk)
+
+#	$(AT)$$(and $$(filter worker,$$(HdlMode)),\
+#	         rm -f $$(TargetDir)/$$(Worker)/$$(Worker)-params.mk && \
+#                 ln -s ../../$$(call ParamFile,$$(Worker)) \
+#                        $$(TargetDir)/$$(Worker)/$$(Worker)-params.mk)
 
 
 #	$(AT)echo Building the $(LibName) library for $$(HdlTarget) \($$@\) cb $(CoreBlackBoxFile) hdls $$(HdlSources) deps $$^

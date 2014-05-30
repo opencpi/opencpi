@@ -49,6 +49,7 @@
 #define OCPI_DataTransport_Circuit_H_
 
 #include <OcpiList.h>
+#include "OcpiUtilSelfMutex.h"
 #include <OcpiTimeEmit.h>
 #include <OcpiCircuit.h>
 #include <OcpiConnectionMetaData.h>
@@ -74,7 +75,10 @@ namespace OCPI {
 
     class Transport;
 
-    class Circuit : public OCPI::Util::Child<Transport,Circuit>, public OCPI::Util::Parent<PortSet>,
+    class Circuit :
+      public OCPI::Util::Child<Transport,Circuit>,
+      public OCPI::Util::Parent<PortSet>,
+      protected OCPI::Util::SelfRefMutex,
       public OCPI::Time::Emit
     {
 
@@ -87,7 +91,8 @@ namespace OCPI {
       Circuit( Transport* tpg,
                CircuitId  iid, ConnectionMetaData* connection, 
                PortOrdinal sps[], 
-               PortOrdinal dpss[]);
+               PortOrdinal dpss[],
+	       OS::Mutex &mutex);
 
 
       /**********************************

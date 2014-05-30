@@ -294,15 +294,15 @@ define DoLinks
 
   LibDirs+=$(LibDir)/$1
   $(LibDir)/$1: | $(LibDir)
-  LibLinks+=$(LibDir)/$(Worker)-params.xml
-  $(LibDir)/$(Worker)-params.xml: $(GeneratedDir)/$(Worker)-params.xml | $(LibDir)
-	$(AT)$$(call MakeSymLink,$$^,$(LibDir))
   $(foreach n,$(WkrExportNames),$(call DoLink,$1,$n))
   $$(call OcpiDbgVar,WkrExportNames,In Dolinks )
 endef
 
 $(call OcpiDbgVar,WkrExportNames)
 $(foreach t,$($(CapModel)Targets),$(eval $(call DoLinks,$t)))
+LibLinks+=$(LibDir)/$(Worker)-params.xml
+$(LibDir)/$(Worker)-params.xml: $(GeneratedDir)/$(Worker)-params.xml | $(LibDir)
+	$(AT)$(call MakeSymLink,$(GeneratedDir)/$(Worker)-params.xml,$(LibDir))
 
 
 $(call OcpiDbgVar,LibLinks,Before all:)

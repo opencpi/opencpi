@@ -235,7 +235,7 @@ main(int argc, char **argv) {
 	fprintf(stderr, "%s: Error generating definition/declaration file: %s\n", *ap, err);
       else if (doImpl && (err =
 			  w->m_model == HdlModel ? w->emitImplHDL(doWrap) :
-			  (w->m_model == RccModel ? emitImplRCC : emitImplOCL)(w)))
+			  (w->m_model == RccModel ? w->emitImplRCC() : emitImplOCL(w))))
 	fprintf(stderr, "%s: Error generating implementation declaration file: %s\n", *ap, err);
       else if (doSkel && (err =
 			  w->m_model == HdlModel ? w->emitSkelHDL() :

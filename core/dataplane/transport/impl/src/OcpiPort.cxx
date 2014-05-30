@@ -479,6 +479,8 @@ void OCPI::DataTransport::Port::advance( OCPI::OS::uint64_t value )
     }
   }
   else {
+    Circuit *c = getCircuit();
+    OU::SelfAutoMutex guard(c); // FIXME: refactor to make this a circuit method
     if ( isShadow() ) {
         
       ocpiDebug("Advancing the shadow buffer");
@@ -1488,16 +1490,21 @@ OCPI::DataTransport::Buffer*
 OCPI::DataTransport::Port::
 getNextFullInputBuffer()
 {
+  Circuit *c = getCircuit();
+  OU::SelfAutoMutex guard(c); // FIXME: refactor to make this a circuit method
+
   if (!hasFullInputBuffer())
     return NULL;
   TransferController* txc = getPortSet()->getTxController();
   InputBuffer* buf = 
     static_cast<InputBuffer*>(txc->getNextFullInputBuffer(this));
+  ocpiDebug("Getting buffer %p on port %p on circuit %p on transport %p",
+	    buf, this, c, &c->parent());
   if ( buf && buf->isEOS() ) {
     setEOS();
   }
   if ( buf && buf->getMetaData()->endOfCircuit ) {
-    getCircuit()->m_status = Circuit::Disconnecting;
+    c->m_status = Circuit::Disconnecting;
   }
   return buf;
 }
@@ -1512,6 +1519,8 @@ OCPI::OS::int32_t
 OCPI::DataTransport::Port::
 inputAvailable( Buffer* input_buf )
 {
+  Circuit *c = getCircuit();
+  OU::SelfAutoMutex guard(c); // FIXME: refactor to make this a circuit method
   int rtn=1;
 
   Buffer* tbuf = getPortSet()->getTxController()->consume( input_buf );
@@ -1548,7 +1557,9 @@ OCPI::DataTransport::Buffer*
 OCPI::DataTransport::Port::
 getNextEmptyOutputBuffer()
 {
-  if ( getCircuit()->isCircuitOpen() ) {
+  Circuit *c = getCircuit();
+  OU::SelfAutoMutex guard(c); // FIXME: refactor to make this a circuit method
+  if (c->isCircuitOpen() ) {
     return NULL;
   }
   if ( !getPortSet() || !getPortSet()->getTxController() ) {
@@ -1608,7 +1619,9 @@ sendZcopyInputBuffer( Buffer* src_buf, size_t len, uint8_t op)
   src_buf->getMetaData()->ocpiMetaDataWord.length = (uint32_t)len;
   src_buf->getMetaData()->ocpiMetaDataWord.opCode = op;
   src_buf->getMetaData()->ocpiMetaDataWord.timestamp = 0x0123456789abcdefull;
-  getCircuit()->sendZcopyInputBuffer( this, src_buf, len );
+  Circuit *c = getCircuit();
+  OU::SelfAutoMutex guard(c); // FIXME: refactor to make this a circuit method
+  c->sendZcopyInputBuffer( this, src_buf, len );
 }
 
 size_t Port::
@@ -1635,6 +1648,8 @@ sendOutputBuffer( BufferUserFacet* buf, size_t length, uint8_t opcode )
   // If there were no available output buffers when the worker was last run on this port, then the
   // buffer can be NULL.  The user should not be advancing all in this case, but we need to protect against it.
   Circuit * c = getCircuit();
+  OU::SelfAutoMutex guard(c); // FIXME: refactor to make this a circuit method
+  ocpiDebug("Sending buffer %p on port %p on circuit %p", b, this, c);
   if ( c->canTransferBuffer( b ) ) {
     c->startBufferTransfer( b );
   }
