@@ -1,0 +1,11 @@
+This is a copy of this library to make it easier to build and cross-build
+without depending on the system.  At some point we may conditionalize
+the build to use it if needed and not use it if it is conveniently
+and reliably present.
+
+Changes:
+
+In gzio.c:
+
+#define _POSIX_SOURCE 1 /* for fdopen */
+

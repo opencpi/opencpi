@@ -311,6 +311,7 @@ CXXFLAGS += $(MACSTDLIB) -Wall -Wsequence-point  -Wparentheses -Wempty-body -Wfo
 # CXXFLAGS += -mdynamic-no-pic ideally do this for main programs...
 EXTRA_LDFLAGS=$(MACSTDLIB)
 else
+MAIN_LDFLAGS+= -rdynamic
 UNDEFINED_FLAG=-Xlinker -u -Xlinker $1
 ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
 LD_ALLOW_UNDEFINED=-Xlinker --allow-shlib-undefined

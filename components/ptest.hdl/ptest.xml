@@ -1,0 +1,6 @@
+<HdlWorker language="vhdl">
+  <ComponentSpec name='ptest'/>
+  <!-- Insert any other implementation-specific information here -->
+  <property name='romAddr' writable='true'/>
+  <property name='romData' volatile='true'/>
+</HdlWorker>

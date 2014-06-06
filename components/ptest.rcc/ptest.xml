@@ -1,0 +1,3 @@
+<RccWorker name='ptest' language='c' spec='ptest_spec.xml'>
+<property name="str" parameter='true' type='string' default='fred'/>
+</RccWorker>
