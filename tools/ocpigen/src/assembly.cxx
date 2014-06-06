@@ -66,10 +66,12 @@ parseConnection(OU::Assembly::Connection &aConn) {
     OU::Assembly::Port &ap = *api;
     if ((err = findPort(ap, found)))
       return err;
+#if 0
     if (!found)
       return OU::esprintf("for connection %s, port %s of instance %s not found",
 			  c.m_name.c_str(), ap.m_name.empty() ? "<unknown>" : ap.m_name.c_str(),
 			  m_instances[ap.m_instance].worker->m_name.c_str());
+#endif
     if (ap.m_index + (c.m_count ? c.m_count : 1) > found->m_port->count)
       return OU::esprintf("invalid index/count (%zu/%zu) for connection %s, port %s of "
 			  "instance %s has count %zu",
@@ -213,7 +215,8 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
      // FIXME: better modularity would be a core worker, a parameterized worker, etc.
      size_t paramConfig; // zero is with default parameter values
      ezxml_t ix = ai->xml();
-     if ((err = OE::getNumber(ix, "paramConfig", &paramConfig, NULL, 0)))
+     bool hasConfig;
+     if ((err = OE::getNumber(ix, "paramConfig", &paramConfig, &hasConfig, 0)))
        return err;
      // We consider the property values in two places.
      // Here we are saying that a worker is unique if it has (non-default) properties,
@@ -222,9 +225,10 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
      // actually use these values DURING PARSING since some aspects of parsing
      // need them.  But later below, we really parse the properties after we
      // know the actual properties and their types from the worker.
+     // FIXME: we are assuming that properties here must be parameters?
      if (!w || ai->m_properties.size() || paramConfig) {
        if (!(w = Worker::create(i->wName, m_assyWorker.m_file.c_str(), NULL, outDir,
-				&ai->m_properties, paramConfig, err)))
+				hasConfig ? NULL : &ai->m_properties, paramConfig, err)))
 	 return OU::esprintf("for worker %s: %s", i->wName, err);
        m_workers.push_back(w);
      }
@@ -232,19 +236,26 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
      // Initialize the instance ports
      InstancePort *ip = i->m_ports = new InstancePort[i->worker->m_ports.size()];
      for (unsigned n = 0; n < i->worker->m_ports.size(); n++, ip++) {
+       ip->init(i, i->worker->m_ports[n], NULL);
        // If the instance in the OU::Assembly has "m_externals=true",
        // and this instance port has no connections in the OU::Assembly
        // then we add an external connection for the instance port. Prior to this,
        // we didn't have access to the worker metadata to know what all the ports are.
-       ip->init(i, i->worker->m_ports[n], NULL);
        if (ai->m_externals && ip->m_port->isData) {
 	 Port *p = NULL;
 	 for (OU::Assembly::Instance::PortsIter pi = ai->m_ports.begin();
 	      pi != ai->m_ports.end(); pi++)
-	   if (!strcasecmp((*pi)->m_name.c_str(), ip->m_port->name)) {
+	   if ((*pi)->m_name.empty()) {
+	     // Port name empty means we don't know it yet.
+	     InstancePort *found;
+	     // Ignore errors here
+	     if (!findPort(**pi, found))
+	       if (ip == found)
+		 p = ip->m_port;
+	   } else if (!strcasecmp((*pi)->m_name.c_str(), ip->m_port->name)) {
 	     p = ip->m_port;
 	     break;
-	   }
+	   } 
 	 if (!p)
 	   m_utilAssembly->addExternalConnection(i->instance->m_ordinal, ip->m_port->name);
        }
@@ -361,7 +372,10 @@ parseOclAssy() {
 
 void Worker::
 emitWorker(FILE *f) {
-  fprintf(f, "<worker name=\"%s\" model=\"%s\"", m_implName, m_modelString);
+  fprintf(f, "<worker name=\"%s", m_implName);
+  if (m_paramConfig && m_paramConfig->nConfig)
+    fprintf(f, "-%zu", m_paramConfig->nConfig);
+  fprintf(f, "\" model=\"%s\"", m_modelString);
   if (m_specName && strcasecmp(m_specName, m_implName))
     fprintf(f, " specname=\"%s\"", m_specName);
   if (m_ctl.sizeOfConfigSpace)
@@ -429,8 +443,10 @@ emitWorker(FILE *f) {
 	fprintf(f, " provider='1'");
       if (p->u.wdi.minBufferCount)
 	fprintf(f, " minBufferCount=\"%zu\"", p->u.wdi.minBufferCount);
-      if (p->u.wdi.bufferSize)
-	fprintf(f, " bufferSize=\"%zu\"", p->u.wdi.bufferSize);
+      if (p->u.wdi.bufferSizePort)
+	fprintf(f, " buffersize='%s'", p->u.wdi.bufferSizePort->name);
+      else if (p->u.wdi.bufferSize)
+	fprintf(f, " bufferSize='%zu'", p->u.wdi.bufferSize);
       if (p->u.wdi.isOptional)
 	fprintf(f, " optional=\"%u\"", p->u.wdi.isOptional);
       fprintf(f, ">\n");

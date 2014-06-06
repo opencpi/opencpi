@@ -239,7 +239,7 @@ main(int argc, char **argv) {
 	fprintf(stderr, "%s: Error generating implementation declaration file: %s\n", *ap, err);
       else if (doSkel && (err =
 			  w->m_model == HdlModel ? w->emitSkelHDL() :
-			  (w->m_model == RccModel ? emitSkelRCC : emitSkelOCL)(w)))
+			  w->m_model == RccModel ? w->emitSkelRCC() : emitSkelOCL(w)))
 	fprintf(stderr, "%s: Error generating implementation skeleton file: %s\n", *ap, err);
       else if (doAssy && (err = w->emitAssyHDL()))
 	fprintf(stderr, "%s: Error generating assembly: %s\n", *ap, err);

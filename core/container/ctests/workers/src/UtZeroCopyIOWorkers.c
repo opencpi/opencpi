@@ -153,7 +153,7 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 RCCDispatch UTZCopyProducerWorkerDispatchTable = { RCC_VERSION, 0, 1, 
                                                    PROD_PROPERTY_SIZE, 0 , 0,
                                                    ProducerInitialize, NULL, NULL, release, NULL, NULL, NULL, ProducerWorker_run,
-                                                   /*workerRunConditions*/ NULL, NULL, 0 };
+                                                   /*workerRunConditions*/ NULL, NULL, 0, 0};
 
 
 
@@ -360,7 +360,7 @@ RCCDispatch UTZCopyConsumerWorkerDispatchTable = { RCC_VERSION, 1, 0,
                                                    ConsumerInitialize, NULL, NULL, release, NULL, 
                                                    ConsumerAfterConfigure, ConsumerBeforeQuery, 
                                                    ConsumerWorker_run,
-                                                   /*workerRunConditions*/ NULL, ConsumerPortInfo, 0 };
+                                                   /*workerRunConditions*/ NULL, ConsumerPortInfo, 0, 0};
                                                             
                                                                 
                                                             
@@ -517,38 +517,12 @@ RCCDispatch UTZCopyLoopbackWorkerDispatchTable = { RCC_VERSION, 1, 1,
                                                    LB_PROPERTY_SIZE, LBmemSizes, 0,
                                                    LBInitialize, NULL, NULL, release, NULL, LBAfterConfigure, LBBeforeQuery, 
                                                    LoopbackWorker_run,
-                                                   LBWorkerRunConditions, NULL, 0};
+                                                   LBWorkerRunConditions, NULL, 0, 0};
 
 
 RCCEntryTable WorkerDispatchTables[] = {
-  {"Consumer", &UTZCopyConsumerWorkerDispatchTable},
-  {"Loopback", &UTZCopyLoopbackWorkerDispatchTable},
-  {"Producer", &UTZCopyProducerWorkerDispatchTable},
-  {NULL,NULL}
+  {"Consumer", &UTZCopyConsumerWorkerDispatchTable, NULL},
+  {"Loopback", &UTZCopyLoopbackWorkerDispatchTable, NULL},
+  {"Producer", &UTZCopyProducerWorkerDispatchTable, NULL},
+  {NULL, NULL, NULL}
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -86,7 +86,7 @@ getNextMailBox()
   if ( ! mb_once ) {
     const char* env = getenv("OCPI_TRANSFER_MAILBOX");
     if( !env || (env[0] == 0)) {
-      ocpiInfo("Set ""OCPI_TRANSFER_MAILBOX"" environment varible to control mailbox");
+      ocpiDebug("Set ""OCPI_TRANSFER_MAILBOX"" environment variable to control mailbox");
     }
     else {
       mailbox = (DDT::MailBox)atoi(env);
@@ -108,7 +108,7 @@ getMaxMailBox()
   if ( ! mmb_once ) {
     const char* env = getenv("OCPI_MAX_MAILBOX");
     if( !env || (env[0] == 0)) {
-      ocpiInfo("Set ""OCPI_MAX_MAILBOX"" environment varible to control max mailbox");
+      ocpiDebug("Set ""OCPI_MAX_MAILBOX"" environment variable to control max mailbox");
     }
     else {
       max_mb = (DDT::MailBox)atoi(env);

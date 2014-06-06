@@ -112,9 +112,11 @@ Implementations = \
 	capture.hdl capture.rcc \
 	bias_vhdl.hdl \
 	ptest.rcc \
+	ptest.hdl \
         file_read.hdl \
 	file_write.hdl \
         replicate.rcc \
+	bias_cc.rcc \
 	$(Tests)
 
 #	fir_prog.hdl \

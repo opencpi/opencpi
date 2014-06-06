@@ -58,8 +58,11 @@ namespace OCPI {
       size_t      m_bufferSize;      // metadata protocol override, if non-zero
       ezxml_t     m_xml;
       Worker     *m_worker;
+      Port       *m_bufferSizePort;  // The port we should copy our buffer size from
       Port(bool provider = true);
-      const char *parse(ezxml_t x, PortOrdinal ord);
+      const char *preParse(Worker &w, ezxml_t x, PortOrdinal ord);
+      const char *parse(ezxml_t x);
+      const char *postParse();
     };
 
   }

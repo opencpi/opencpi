@@ -76,6 +76,8 @@ namespace OCPI {
       PVString("configure"),
       PVString("io"),
       PVString("paramconfig"),
+      PVString("model"),
+      PVString("platform"),
       PVEnd
     };
 
@@ -125,6 +127,15 @@ namespace OCPI {
     //#define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
 
     bool 
+    findAssign(const PValue *p, const char *name, const char *var, std::string &sval) {
+      const char *val;
+      if (findAssign(p, name, var, val)) {
+	sval = val;
+	return true;
+      }
+      return false;
+    }
+    bool 
     findAssign(const PValue *p, const char *name, const char *var, const char *&val) {
       if (p)
 	for (; p->name; p++)
@@ -169,6 +180,26 @@ namespace OCPI {
     }
 
     PValueList::PValueList() : m_list(NULL) {}
+    PValueList::PValueList(const PValue *params, const PValue *override) : m_list(NULL) {
+      size_t n = 0;
+      for (const PValue *p = params; p && p->name; p++, n++)
+	;
+      for (const PValue *p = override; p && p->name; p++, n++)
+	;
+      if (!n)
+	return;
+      PValue *p = m_list = new PValue[n + 1];
+      for (const PValue *op = override; op && op->name; op++)
+	*p++ = *op;
+      for (const PValue *pp = params; pp && pp->name; pp++) {
+	for (const PValue *xp = m_list; xp < p; xp++)
+	  if (!strcasecmp(pp->name, xp->name))
+	    goto skipit;
+	*p++ = *pp;
+      skipit:;
+      }
+    }
+
     PValueList::~PValueList() { delete [] m_list; }
     const char *PValueList::parse(ezxml_t x, ...) {
       va_list ap;

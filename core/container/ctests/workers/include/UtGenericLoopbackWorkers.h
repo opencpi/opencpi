@@ -48,6 +48,9 @@
 
 #include <RCC_Worker.h>
 
+#ifdef __cplusplus
+using namespace OCPI::RCC;
+#endif
 
 #define ERROR_TEST_STRING "Forced Error string for test"
 

@@ -71,9 +71,11 @@ namespace OCPI {
 #endif
       OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
-    bool findAssign(const PValue *p, const char *name, const char *var, const char *&value);
-    bool findAssignNext(const PValue *p, const char *name, const char *var,
-			const char *&val, unsigned &next);
+    bool
+      findAssign(const PValue *p, const char *name, const char *var, const char *&value),
+      findAssign(const PValue *p, const char *name, const char *var, std::string &value),
+      findAssignNext(const PValue *p, const char *name, const char *var, const char *&val,
+		     unsigned &next);
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
     typedef OCPI::API::PV##pretty PV##pretty;
   OCPI_PROPERTY_DATA_TYPES
@@ -85,7 +87,7 @@ namespace OCPI {
       PValue *m_list;
       const char *vParse(const PValue *p, ezxml_t x, std::va_list ap);
     public:
-      PValueList(PValue *);
+      PValueList(const PValue *params, const PValue *override = NULL);
       PValueList();
       ~PValueList();
       inline operator const PValue*() const { return m_list; }

@@ -144,12 +144,11 @@ namespace OCPI {
       Property &findProperty(const char * worker_inst_name, const char * prop_name);
       void dumpDeployment(unsigned score, Deployment *dep);
       void doInstance(unsigned instNum, unsigned score);
-      void checkInstanceParams(const char *pName, const OCPI::Util::PValue *params,
-			       bool checkMapped = false);
+      //      void checkInstanceParams(const char *pName, const OCPI::Util::PValue *params,
+      //			       bool checkMapped = false);
       void checkExternalParams(const char *pName, const OCPI::Util::PValue *params);
       void prepareInstanceProperties(unsigned nInstance, const OCPI::Library::Implementation &impl,
-				     unsigned *&pn, OCPI::Util::Value *&pv,
-				     const PValue *params);
+				     unsigned *&pn, OCPI::Util::Value *&pv);
     public:
       explicit ApplicationI(const char *file, const OCPI::API::PValue *params = NULL);
       explicit ApplicationI(const std::string &string, const OCPI::API::PValue *params = NULL);
@@ -162,7 +161,7 @@ namespace OCPI {
       void stop();
       bool wait(OCPI::OS::Timer *);
       void finish();
-      ExternalPort &getPort(const char *);
+      ExternalPort &getPort(const char *, const OCPI::API::PValue *);
       friend struct Property;
       Worker &getPropertyWorker(const char *name);
       bool getProperty(unsigned ordinal, std::string &name, std::string &value, bool hex, bool *parp);

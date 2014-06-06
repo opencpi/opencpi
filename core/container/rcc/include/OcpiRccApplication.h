@@ -81,11 +81,11 @@ namespace OCPI {
 	OCPI::Container::Worker &
 	  createWorkerX(OCPI::Container::Application &a, const char *name, ezxml_t impl,
 			ezxml_t inst, const OCPI::API::PValue *execProps);
-	RCCDispatch *getDispatch(const char *name);
+	RCCEntryTable *getDispatch(const char *name);
       private:
 	
         OCPI::OS::LoadableModule m_loader;
-	::RCCEntryTable         *m_entryTable;
+	RCCEntryTable           *m_entryTable;
 	bool                     m_open;
         int                      m_workerCount;
 

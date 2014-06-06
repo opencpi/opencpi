@@ -69,7 +69,7 @@ Artifact(Container &c, OCPI::Library::Artifact &lart, const OA::PValue *props)
     m_open = true;
     const char* entryPoint = "ocpi_EntryTable";
     OU::findString(props, "DLLEntryPoint", entryPoint);
-    m_entryTable = (::RCCEntryTable *)m_loader.getSymbol( entryPoint);
+    m_entryTable = (RCCEntryTable *)m_loader.getSymbol( entryPoint);
     if (!m_entryTable) {
       std::string error("Worker DLL entry point not found ");
       error += entryPoint;
@@ -85,56 +85,15 @@ Artifact(Container &c, OCPI::Library::Artifact &lart, const OA::PValue *props)
   }
 }
 
-RCCDispatch *Artifact::
+RCCEntryTable *Artifact::
 getDispatch(const char *implName) {
-#if 1
-  for (::RCCEntryTable * et = m_entryTable; et->name; et++)
+  for (RCCEntryTable * et = m_entryTable; et->name; et++)
     if (!strcmp(et->name, implName))
-      return et->dispatch;
- std::string error("Worker not found in DLL -> ");
- error += implName;
- throw OU::EmbeddedException( error.c_str() );
-#else
-
- ::RCCEntryTable * et;
-
-  for (et = m_entryTable; et->name; et++)
-    std::cout << et->name << std::endl;
-
-  et = m_entryTable;
- return et->dispatch;
-
-#endif
-}      
-
-#if 0
-OC::Worker &
-Artifact::
-createWorkerX( OC::Application &app, const char *name, ezxml_t impl, ezxml_t inst, const OA::PValue *props)
-{
-  const char* entryPoint = "ocpi_EntryTable";
-  OU::findString(props, "DLLEntryPoint", entryPoint);
-  ::RCCEntryTable * et =
-      (::RCCEntryTable *)m_loader.getSymbol( entryPoint);
-  if ( ! et ) {
-    std::string error("Worker DLL entry point not found ");
-    error += entryPoint;
-    throw OU::EmbeddedException( error.c_str() );
-  }
-
-  const char * implName = ezxml_attr(impl, "name");
-  ocpiAssert(implName);
-
-  for (; et->name; et++)
-    if (!strcmp(et->name, implName))
-      return *new Worker( app, *this, name, et->dispatch, props, impl, inst );
+      return et;
   std::string error("Worker not found in DLL -> ");
   error += implName;
   throw OU::EmbeddedException( error.c_str() );
-}
-#endif
-
-
+}      
 
 Artifact::
 ~Artifact()

@@ -113,7 +113,7 @@ namespace OCPI {
     public:
       // Return true if we found THE ONE.
       // Set accepted = true, if we actually accepted one
-      virtual bool foundImplementation(const Implementation &i, unsigned score, bool &accepted) = 0;
+      virtual bool foundImplementation(const Implementation &i, bool &accepted) = 0;
     };
 
     // The manager/owner of all library drivers
@@ -158,12 +158,10 @@ namespace OCPI {
     private:
       // Find (and callback with) implementations for specName and selectCriteria
       // Return true if any were found
-      bool findImplementationsX(ImplementationCallback &icb, const char *specName,
-				const char *selectCriteria);
+      bool findImplementationsX(ImplementationCallback &icb, const char *specName);
     public:
-      inline static bool findImplementations(ImplementationCallback &icb, const char *specName,
-					     const char *selectCriteria) {
-	return getSingleton().findImplementationsX(icb, specName, selectCriteria);
+      inline static bool findImplementations(ImplementationCallback &icb, const char *specName) {
+	return getSingleton().findImplementationsX(icb, specName);
       }
       // Find one good implementation, return true one is found that satisfies the criteria
       bool findImplementation(const char *specName, const char *selectCriteria, const Implementation *&impl);
@@ -269,4 +267,5 @@ namespace OCPI {
     class RegisterLibraryDriver : public OCPI::Driver::Registration<Dri>{};
   }
 }
+
 #endif

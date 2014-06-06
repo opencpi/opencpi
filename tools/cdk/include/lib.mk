@@ -253,6 +253,9 @@ ifeq ($(origin Worker),command line)
     ifeq ($(SpecFile),none)
       OcpiSpecFile:=
     else
+      ifeq ($(filter %.xml,$(SpecFile)),)
+        override SpecFile:=$(SpecFile).xml
+      endif
       ifeq ($(wildcard $(SpecFile)),)
         ifneq ($(if $(filter /%,$(SpecFile)),,$(wildcard specs/$(SpecFile))),)
           override SpecFile:=specs/$(SpecFile)

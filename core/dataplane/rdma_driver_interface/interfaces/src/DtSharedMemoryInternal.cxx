@@ -103,7 +103,7 @@ EndPoint::
 void EndPoint::
 release() {
   ocpiAssert(refCount);
-  ocpiInfo("Releasing ep %p refCount %u", this, refCount);
+  ocpiDebug("Releasing ep %p refCount %u", this, refCount);
   if (--refCount == 0)
     delete this;
 }

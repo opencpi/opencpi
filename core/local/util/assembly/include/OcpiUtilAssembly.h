@@ -103,9 +103,11 @@ namespace OCPI {
 	std::list<Port*> m_ports; // attachments to connections
 	typedef std::list<Port*>::iterator PortsIter;
 	ezxml_t m_xml;
-	const char *parse(ezxml_t ix, Assembly &a, unsigned ordinal, const char **extraInstAttrs);
-	const char *addProperty(const char *name, ezxml_t px);
-	const char *parseConnection(ezxml_t ix, Assembly &a);
+	const char
+	  *parse(ezxml_t ix, Assembly &a, unsigned ordinal, const char **extraInstAttrs, const PValue *params),
+	  *addProperty(const char *name, ezxml_t px),
+	  *parseConnection(ezxml_t ix, Assembly &a),
+	  *setProperty(const char *propAssign);
 	ezxml_t xml() const { return m_xml; }
       };
       struct Role {
@@ -168,7 +170,7 @@ namespace OCPI {
       bool m_xmlOnly;
       bool m_isImpl; // Is this assembly of worker (implementation) instances or component instances?
       const char *parse(const char *defaultName = NULL, const char **extraTopAttrs = NULL,
-			const char **extraInstAttrs = NULL);
+			const char **extraInstAttrs = NULL, const OCPI::Util::PValue *params = NULL);
     public:
       static unsigned s_count;
       std::string m_name;
@@ -182,15 +184,16 @@ namespace OCPI {
       MappedProperties m_mappedProperties; // top level mapped to instance properties.
       // Provide a file name.
       explicit Assembly(const char *file, const char **extraTopAttrs = NULL,
-			const char **extraInstAttrs = NULL);
+			const char **extraInstAttrs = NULL, const OCPI::Util::PValue *params = NULL);
       // Provide a string containing the xml
       explicit Assembly(const std::string &string, const char **extraTopAttrs = NULL,
-			const char **extraInstAttrs = NULL);
+			const char **extraInstAttrs = NULL, const OCPI::Util::PValue *params = NULL);
       // Provide a string containing the xml
       explicit Assembly(const ezxml_t top, const char *defaultName, const char **topAttrs = NULL,
-			const char **instAttrs = NULL);
+			const char **instAttrs = NULL, const OCPI::Util::PValue *params = NULL);
       ~Assembly();
       const char
+	*checkInstanceParams(const char *pName, const PValue *params, bool checkMapped = false),
         *addConnection(const char *name, Connection *&c),
         *getInstance(const char *name, unsigned &),
         *addPortConnection(unsigned from, const char *name, unsigned to, const char *toPort),

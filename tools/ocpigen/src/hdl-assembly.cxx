@@ -407,7 +407,8 @@ adjustConnection(Connection &c, InstancePort &consumer, InstancePort &producer, 
   if (prod->type != cons->type)
     return "profile incompatibility";
   if (prod->dataWidth != cons->dataWidth)
-    return "dataWidth incompatibility";
+    return OU::esprintf("dataWidth incompatibility. producer %zu consumer %zu",
+			prod->dataWidth, cons->dataWidth);
   if (cons->u.wdi.continuous && !prod->u.wdi.continuous)
     return "producer is not continuous, but consumer requires it";
   // Profile-specific error checks and adaptations
@@ -642,6 +643,7 @@ emitConnectionSignal(FILE *f, bool output, Language lang) {
 // This function defines the internal signals, but doesn't bind to any yet.
 const char *InstancePort::
 createConnectionSignals(FILE *f, Language lang) {
+  const char *err;
   // Find out the widest of all ports related to this instance port
   size_t maxCount = 0;
   for (AttachmentsIter ai = m_attachments.begin(); ai != m_attachments.end(); ai++) {
@@ -686,10 +688,14 @@ createConnectionSignals(FILE *f, Language lang) {
       Connection &c = (*ai)->m_connection;
       for (AttachmentsIter cai = c.m_attachments.begin(); cai != c.m_attachments.end(); cai++) {
 	InstancePort &other = (*cai)->m_instPort;
-	if (&other != this)
-	  return
-	    m_port->u.wdi.isProducer ?
+	if (&other != this) {
+	  err = m_port->u.wdi.isProducer ?
 	    adjustConnection(c, other, *this, lang) : adjustConnection(c, *this, other, lang);
+	  if (err)
+	    return OU::esprintf("For connection between %s/%s and %s/%s: %s",
+				m_port->worker->m_implName, m_port->name,
+				other.m_port->worker->m_implName, other.m_port->name, err);
+	}
       }
     }
   return NULL;

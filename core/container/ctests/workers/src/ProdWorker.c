@@ -247,6 +247,7 @@ RCCDispatch ProducerWorkerDispatchTable = { RCC_VERSION, NUM_INPUT_PORTS, NUM_OU
                                             ProducerWorker_run,
                                             /*workerRunConditions*/ NULL, 
                                             NULL, 
+					    0,
                                             0};
 
 

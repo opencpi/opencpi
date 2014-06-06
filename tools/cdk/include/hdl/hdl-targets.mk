@@ -44,7 +44,7 @@ HdlToolSet_stratix4:=quartus
 HdlToolSet_stratix5:=quartus
 
 # Platforms
-HdlAllPlatforms:=ml555 schist ml605 ocpiIsim alst4 alst4x wilda5 isim_pf xsim_pf n210 modelsim_pf iva1lpe zed wilda5
+HdlAllPlatforms:=ml555 schist ml605 ocpiIsim alst4 alst4x wilda5 isim_pf xsim_pf n210 modelsim_pf iva1lpe zed wilda5 zzed
 # Parts as chip-speed-package
 HdlPart_ml555:=xc5vlx50t-1-ff1136
 HdlPart_schist:=xc5vsx95t-2-ff1136
@@ -58,4 +58,5 @@ HdlPart_xsim_pf:=xsim
 HdlPart_modelsim_pf:=modelsim
 HdlPart_wilda5:=ep5sgsmd8k2-c3-f40
 HdlPart_zed:=xc7z020-1-clg484
+HdlPart_zzed:=xc7z020-1-clg484
 endif

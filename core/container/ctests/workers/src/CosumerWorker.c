@@ -232,7 +232,8 @@ RCCDispatch ConsumerWorkerDispatchTable = { RCC_VERSION, NUM_INPUT_PORTS, NUM_OU
                                                /* workerRunConditions */ 
                                             NULL,
                                             0, 
-                                            0 };
+                                            0,
+					    0};
 
 
 

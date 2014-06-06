@@ -140,8 +140,11 @@ namespace OCPI {
       inline const std::string &name() const { return m_name; }
       inline const Attributes &attributes() const { return *m_attributes; }
       const char *parse(ezxml_t xml, Attributes *attr = NULL);
+      // These two use exceptions
       Property &findProperty(const char *id) const;
       unsigned whichProperty(const char *id) const;
+      // This one returns NULL
+      Property *getProperty(const char *id) const;
       const char *getValue(const std::string &sym, ExprValue &val);
       inline Property *properties(unsigned &np) const {
         np = m_nProperties;

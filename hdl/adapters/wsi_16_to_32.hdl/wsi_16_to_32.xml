@@ -2,7 +2,7 @@
 
   <ComponentSpec name="wsi_16_to_32" nocontrol='true'>
     <DataInterfaceSpec Name="in" Producer="false"/>
-    <DataInterfaceSpec Name="out" Producer="true"/>
+    <DataInterfaceSpec Name="out" Producer="true" buffersize='in'/>
   </ComponentSpec>
 
   <streaminterface name='in' datawidth='16'/>

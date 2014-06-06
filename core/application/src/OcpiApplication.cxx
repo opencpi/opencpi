@@ -39,6 +39,7 @@
 
 namespace OC = OCPI::Container;
 namespace OU = OCPI::Util;
+namespace OE = OCPI::Util::EzXml;
 namespace OL = OCPI::Library;
 namespace OA = OCPI::API;
 namespace OCPI {
@@ -232,8 +233,9 @@ namespace OCPI {
     static void
     checkPropertyValue(const char *name, const OL::Implementation &impl, const char *pName,
 		       const char *value, unsigned *&pn, OU::Value *&pv) {
-      // findProperty throws on error if bad name
       OU::Property &uProp = impl.m_metadataImpl.findProperty(pName);
+      if (uProp.m_isParameter)
+	return;
       if (!uProp.m_isInitial && !uProp.m_isWritable)
 	throw OU::Error("Cannot set property '%s' for instance '%s'. It is not writable.",
 			pName, name);
@@ -271,6 +273,7 @@ namespace OCPI {
 	  throw OU::Error("No external port for %s assignment '%s'", pName, assign);
       }
     }
+#if 0
     void ApplicationI::
     checkInstanceParams(const char *pName, const OU::PValue *params, bool checkMapped) {
       // Error check instance assignment parameters for instances
@@ -296,14 +299,13 @@ namespace OCPI {
 	  throw OU::Error("No instance for %s assignment '%s'", pName, assign);
       }
     }
-    
+#endif
     // Prepare all the property values for an instance
     void ApplicationI::
     prepareInstanceProperties(unsigned nInstance, const OL::Implementation &impl,
-			      unsigned *&pn, OU::Value *&pv, const PValue *params) {
+			      unsigned *&pn, OU::Value *&pv) {
       const char *name = m_assembly.m_instances[nInstance].m_name.c_str();
       const OU::Assembly::Properties &aProps = m_assembly.m_instances[nInstance].m_properties;
-      const char *propAssign;
       // Prepare all the property values in the assembly, avoiding those in parameters.
       for (unsigned p = 0; p < aProps.size(); p++) {
 	const char *pName = aProps[p].m_name.c_str();
@@ -316,27 +318,22 @@ namespace OCPI {
 	  if (!aProps[p].m_hasValue)
 	    continue;
 	}
-	size_t pLength = strlen(pName);
-	// Check for override value - if we find one skip this xml prop value
-	for (unsigned n = 0; OU::findAssignNext(params, "property", name, propAssign, n); )
-	  if (!strncasecmp(propAssign, pName, pLength) && propAssign[pLength] == '=') {
+#if 0 // the mapped property overrided are done in OU::Assembly
+      const char *propAssign;
+	OU::Assembly::MappedProperty *mp = &m_assembly.m_mappedProperties[0];
+	for (size_t n = m_assembly.m_mappedProperties.size(); n; n--, mp++) {
+	  unsigned nn = 0;
+	  if (mp->m_instance == nInstance && !strcasecmp(mp->m_instPropName.c_str(), pName) &&
+	      OU::findAssignNext(params, "property", mp->m_name.c_str(), propAssign, nn)) {
 	    pName = NULL;
 	    break;
 	  }
-	if (pName) {
-	  OU::Assembly::MappedProperty *mp = &m_assembly.m_mappedProperties[0];
-	  for (size_t n = m_assembly.m_mappedProperties.size(); n; n--, mp++) {
-	    unsigned nn = 0;
-	    if (mp->m_instance == nInstance && !strcasecmp(mp->m_instPropName.c_str(), pName) &&
-		OU::findAssignNext(params, "property", mp->m_name.c_str(), propAssign, nn)) {
-	      pName = NULL;
-	      break;
-	    }
-	  }
 	}
 	if (pName)
+#endif
 	  checkPropertyValue(name, impl, pName, aProps[p].m_value.c_str(), pn, pv);
       }
+#if 0
       // Done with property values in the assembly.  
       // Now deal with instance-based property parameters
       for (unsigned n = 0; OU::findAssignNext(params, "property", name, propAssign, n); ) {
@@ -356,6 +353,7 @@ namespace OCPI {
 	    OU::findAssignNext(params, "property", mp->m_name.c_str(), propAssign, nn))
 	  checkPropertyValue(name, impl, mp->m_instPropName.c_str(), propAssign, pn, pv);
       }
+#endif
     }
 
     void ApplicationI::
@@ -383,7 +381,7 @@ namespace OCPI {
 	  // array by prepareInstanceProperties
 	  OU::Value *pv = i->m_propValues = new OU::Value[nPropValues];
 	  unsigned *pn = i->m_propOrdinals = new unsigned[nPropValues];
-	  prepareInstanceProperties(n, *i->m_impl, pn, pv, params);
+	  prepareInstanceProperties(n, *i->m_impl, pn, pv);
 	  i->m_nPropValues = pn - i->m_propOrdinals;
 	}
       }
@@ -524,11 +522,13 @@ namespace OCPI {
       m_deployments = new Deployment[m_nInstances];
       m_bestDeployments = new Deployment[m_nInstances];
       // Check that params that reference instances are valid.
-      checkInstanceParams("property", params, true);
-      checkInstanceParams("selection", params);
-      checkInstanceParams("model", params);
-      checkInstanceParams("container", params);
-      checkInstanceParams("platform", params);
+      const char *err;
+      //      checkInstanceParams("property", params, true); done in OU::Assembly
+      //      checkInstanceParams("selection", params); done in OU::Assembly
+      // checkInstanceParams("model", params); done in OL::Assembly
+      // checkInstanceParams("platform", params); done in OL::Assembly
+      if ((err = m_assembly.checkInstanceParams("container", params, false)))
+	throw OU::Error("%s", err);
       // First pass - make sure there are some containers to support some candidate
       // and remember which containers can support which candidates
       Instance *i = m_instances;
@@ -537,21 +537,15 @@ namespace OCPI {
 	OU::Assembly::Instance &ai = m_assembly.m_instances[n];
 	i->m_nCandidates = cs.size();
 	i->m_feasibleContainers = new CMap[cs.size()];
-	//	i->m_containers = new unsigned[i->m_nCandidates];
-	//	memset(i->m_containers, 0, sizeof(unsigned) * i->m_nCandidates);
-	const char *container = NULL;
-	OU::findAssign(params, "container", ai.m_name.c_str(), container);
-	const char *model = NULL;
-	OU::findAssign(params, "model", ai.m_name.c_str(), model);
-	const char *platform = NULL;
-	OU::findAssign(params, "platform", ai.m_name.c_str(), platform);
+	std::string container;
+	if (!OU::findAssign(params, "container", ai.m_name.c_str(), container))
+	  OE::getOptionalString(ai.xml(), container, "container");
 	CMap sum = 0;
 	for (unsigned m = 0; m < i->m_nCandidates; m++) {
 	  m_curMap = 0;        // to accumulate containers suitable for this candidate
 	  m_curContainers = 0; // to count suitable containers for this candidate
-	  if ((!model || cs[m].impl->m_metadataImpl.model() == model) &&
-	      (!platform || cs[m].impl->m_artifact.platform() == platform))
-	    (void)OC::Manager::findContainers(*this, cs[m].impl->m_metadataImpl, container);
+	  (void)OC::Manager::findContainers(*this, cs[m].impl->m_metadataImpl,
+					    container.empty() ? NULL : container.c_str());
 	  i->m_feasibleContainers[m] = m_curMap;
 	  sum |= m_curMap;
 	}
@@ -767,13 +761,18 @@ namespace OCPI {
 	}
     }
 
-    ExternalPort &ApplicationI::getPort(const char *name) {
+    ExternalPort &ApplicationI::getPort(const char *name, const OA::PValue *params) {
       Externals::iterator ei = m_externals.find(name);
       if (ei == m_externals.end())
 	throw OU::Error("Unknown external port name for application: \"%s\"", name);
       External &ext = ei->second;
-      if (!ext.m_external)
-	ext.m_external = &ext.m_port.connectExternal(name, ext.m_params);
+      if (ext.m_external) {
+	if (params)
+	  ocpiInfo("Parameters ignored when getPort called for same port more than once");
+      } else {
+	OU::PValueList pvs(ext.m_params, params);
+	ext.m_external = &ext.m_port.connectExternal(name, pvs);
+      }
       return *ext.m_external;
     }
 
@@ -893,7 +892,9 @@ namespace OCPI {
     void Application::finish() {
       m_application.finish();
     }
-    ExternalPort &Application::getPort(const char *name) { return m_application.getPort(name); }
+    ExternalPort &Application::getPort(const char *name, const OA::PValue *params) {
+      return m_application.getPort(name, params);
+    }
     bool Application::getProperty(unsigned ordinal, std::string &name, std::string &value,
 				  bool hex, bool *parp) {
       return m_application.getProperty(ordinal, name, value, hex, parp);

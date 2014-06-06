@@ -73,7 +73,7 @@ typedef struct LoopbackWorkerStaticMemory_ LoopbackWorkerStaticMemory;
 
 #ifdef __cplusplus
 extern "C" {
-extern RCCDispatch LoopbackWorkerDispatchTable;
+  extern OCPI::RCC::RCCDispatch LoopbackWorkerDispatchTable;
 };
 #else
 extern RCCDispatch LoopbackWorkerDispatchTable;

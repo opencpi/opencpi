@@ -41,9 +41,9 @@ include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
 Model=rcc
 # Default is that you are building in a subdirectory of all implementations
 # Target:=$(shell uname -s)=$(shell uname -r)=$(shell uname -p)=gcc=$(shell gcc -dumpversion)=$(shell gcc -dumpmachine)
-RccImplSuffix=_Worker.h
-RccSkelSuffix=-skel.c
-RccSourceSuffix=.c
+RccSourceSuffix:=.$(Suffix_rcc_$(OcpiLanguage))
+RccImplSuffix=$(if $(filter c++,$(OcpiLanguage)),-worker.hh,_Worker.h)
+RccSkelSuffix=-skel$(RccSourceSuffix)
 OBJ:=.o
 IncludeDirs+=../include
 ifneq ($(OCPI_DEBUG),0)
@@ -68,12 +68,14 @@ DispatchSourceFile = $(GeneratedDir)/$(word 1,$(Workers))_dispatch.c
 GeneratedSourceFiles += $(DispatchSourceFile)
 ArtifactFile=$(BinaryFile)
 # Artifacts are target-specific since they contain things about the binary
-ArtifactXmlFile=$(call WkrTargetDir,$1,$2)/$(word 1,$(Workers))_assy_art.xml
+ArtifactXmlFile=$(call WkrTargetDir,$1,$2)/$(word 1,$(Workers))_assy-art.xml
 ToolSeparateObjects:=yes
-OcpiLibDir=$(OCPI_CDK_DIR)/lib/$(RccTarget)
-LinkBinary=$$(GCCLINK_$$(RccTarget)) $(SharedLibLinkOptions) -o $$@ \
+OcpiLibDir=$(OCPI_CDK_DIR)/lib/$$(RccTarget)
+RccLibraries=rcc
+LinkBinary=$$(G$(OcpiLanguage)_LINK_$$(RccTarget)) $(SharedLibLinkOptions) -o $$@ \
 $(AEPLibraries) \
-$(foreach ol,$(Libraries),$(or $(wildcard $(OcpiLibDir)/lib$(ol)$(SOEXT)),$(OcpiLibDir)/lib$(ol)$(AREXT)))
+$(foreach ol,$(RccLibraries) $(Libraries),\
+  $$(or $$(wildcard $(OcpiLibDir)/lib$(ol)$(SOEXT)),$(OcpiLibDir)/lib$(ol)$(AREXT)))
 CompilerWarnings= -Wall -Wextra
 CompilerDebugFlags=-g
 CompilerOptimizeFlags=-O
@@ -88,7 +90,11 @@ RccParams=\
   $(foreach n,$(WorkerParamNames),\
 	     "-DPARAM_$n()=$(Param_$(ParamConfig)_$n)")
 Compile_c=\
-  $$(GCC_$$(RccTarget)) -MMD -MP -MF $$(TargetDir)/$$(@F).deps -c \
+  $$(Gc_$$(RccTarget)) -MMD -MP -MF $$(TargetDir)/$$(@F).deps -c \
+  $(CompilerWarnings) $(CompilerOptions) \
+  $(SharedLibCompileOptions) $(ExtraCompilerOptions) $(IncludeDirs:%=-I%) -o $$@ $$(RccParams) $$<
+Compile_cc=\
+  $$(Gc++_$$(RccTarget)) -MMD -MP -MF $$(TargetDir)/$$(@F).deps -c \
   $(CompilerWarnings) $(CompilerOptions) \
   $(SharedLibCompileOptions) $(ExtraCompilerOptions) $(IncludeDirs:%=-I%) -o $$@ $$(RccParams) $$<
 
@@ -120,6 +126,7 @@ $(foreach t,$(RccTargets),$(foreach c,$(ParamConfigurations),$(eval $(call DoRcc
 
 #disable builtin suffix rules
 %.o : %.c
+%.o : %.cc
 
 $(DispatchSourceFile):
 	$(AT)echo Generating dispatch file: $@
@@ -134,7 +141,11 @@ $(DispatchSourceFile):
 	  done; \
 	  echo "RCCEntryTable ocpi_EntryTable[] = {";\
 	  for w in $(Workers); do \
-	      echo "  {.name=STR(RCC_FILE_WORKER_$$w), .dispatch=&RCC_FILE_WORKER_$$w},";\
+	      echo "  {";\
+	      echo "    .name=STR(RCC_FILE_WORKER_$$w),";\
+	      echo "    .dispatch=&RCC_FILE_WORKER_$$w,";\
+	      echo "    .type=STR($(OcpiLanguage))";\
+	      echo "  },";\
 	  done; \
 	  echo "  {.name=0}};";\
 	 ) > $@

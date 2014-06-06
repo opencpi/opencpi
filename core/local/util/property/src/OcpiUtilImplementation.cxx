@@ -56,11 +56,19 @@ namespace OCPI {
       //      delete [] m_tests;
       delete [] m_memories;
     }
-    unsigned Worker::whichProperty(const char *id) const {
+    Property *Worker::
+    getProperty(const char *id) const {
       Property *p = m_properties;
       for (unsigned n=0; n < m_nProperties; n++, p++)
         if (!strcasecmp(p->m_name.c_str(), id))
-          return n;
+          return p;
+      return NULL;
+    }
+    unsigned Worker::
+    whichProperty(const char *id) const {
+      Property *p = getProperty(id);
+      if (p)
+	return p->m_ordinal;
       throw Error("Unknown property: \"%s\" for worker \"%s\"", id, m_specName.c_str());
     }
     Property &Worker::findProperty(const char *id) const {
@@ -109,10 +117,18 @@ namespace OCPI {
       ocpiAssert(totalSize < UINT32_MAX);
       m_totalPropertySize = OCPI_UTRUNCATE(size_t, totalSize);
       // Ports at this level are unidirectional? Or do we support the pairing at this point?
-      unsigned n = 0;
       Port *p = m_ports;
+      unsigned n = 0;
       for (x = ezxml_cchild(xml, "port"); x; x = ezxml_next(x), p++, n++)
-        if ((err = p->parse(x, n)))
+        if ((err = p->preParse(*this, x, n)))
+          return esprintf("Invalid xml port description: %s", err);
+      p = m_ports;
+      for (x = ezxml_cchild(xml, "port"); x; x = ezxml_next(x), p++)
+        if ((err = p->parse(x)))
+          return esprintf("Invalid xml port description: %s", err);
+      p = m_ports;
+      for (unsigned n = 0; n < m_nPorts; n++, p++)
+	if ((err = p->postParse()))
           return esprintf("Invalid xml port description: %s", err);
       Memory* m = m_memories;
       for (x = ezxml_cchild(xml, "memory"); x; x = ezxml_next(x), m++ )

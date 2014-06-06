@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -109,10 +108,17 @@ namespace OCPI { namespace RCC { class Port; } namespace DataTransport { class B
 #else
 #define RCC_CONST const
 #endif
+#ifdef __cplusplus
+namespace OCPI { namespace RCC {
+#endif
 
 typedef uint16_t  RCCOrdinal;
 typedef uint8_t   RCCOpCode;
+#ifdef __cplusplus
+typedef bool RCCBoolean;
+#else
 typedef uint8_t   RCCBoolean;
+#endif
 typedef void      *RCCBufferId;
 typedef float     RCCFloat;
 typedef double    RCCDouble;
@@ -150,12 +156,13 @@ typedef RCCResult RCCRunMethod(RCCWorker *_this,
 typedef RCCResult RCCPortMethod(RCCWorker *_this,
 				RCCPort *port,
 				RCCResult reason);
-
 typedef struct {
   void *data;
   size_t maxLength;
 
   /* private member for container use */
+  size_t length_;
+  RCCOpCode opCode_;
 #ifdef WORKER_INTERNAL
   OCPI::DataTransport::BufferUserFacet *containerBuffer;
 #else
@@ -183,6 +190,10 @@ struct RCCPort {
   RCCPortMethod *callBack;
 
   /* Used by the container */
+  RCCBoolean useDefaultLength_; // for C++, use the length field as default
+  size_t defaultLength_;
+  RCCBoolean useDefaultOpCode_; // for C++, use the length field as default
+  RCCOpCode defaultOpCode_;
 #ifdef WORKER_INTERNAL
   OCPI::RCC::Port *containerPort;
 #else
@@ -195,7 +206,7 @@ typedef struct {
   void (*send)(RCCPort *, RCCBuffer*, RCCOpCode op, size_t length);
   RCCBoolean (*request)(RCCPort *port, size_t maxlength);
   RCCBoolean (*advance)(RCCPort *port, size_t maxlength);
-  RCCBoolean (*wait)(RCCPort *, unsigned max, unsigned usecs);
+  RCCBoolean (*wait)(RCCPort *, size_t max, unsigned usecs);
   void (*take)(RCCPort *,RCCBuffer *old_buffer, RCCBuffer *new_buffer);
   RCCResult (*setError)(const char *, ...);
 } RCCContainer;
@@ -203,6 +214,7 @@ typedef struct {
 struct RCCWorker {
   void * RCC_CONST         properties;
   void * RCC_CONST       * RCC_CONST memories;
+  void * RCC_CONST         memory;
   RCC_CONST RCCContainer   container;
   RCCRunCondition        * runCondition;
   RCCPortMask              connectedPorts;
@@ -233,12 +245,87 @@ typedef struct {
 
   /* Mask indicating which ports may be left unconnected */
   RCCPortMask optionallyConnectedPorts;
-
+  size_t memSize;
 } RCCDispatch;
+
+// Info common to C and C++
+typedef struct {
+  size_t size, memSize, *memSizes, propertySize;
+  RCCPortInfo *portInfo;
+  RCCPortMask optionallyConnectedPorts; // usually initialized from metadata
+} RCCWorkerInfo;
 
 typedef struct {
   const char *name;
   RCCDispatch *dispatch;
+  const char *type;
 } RCCEntryTable;
 
+#ifdef __cplusplus
+// This is a preliminary implementation that avoids reorganizing the classes for
+// maximum commonality between C and C++ workers. FIXME
+ class RCCUserWorker;
+ typedef RCCUserWorker *RCCConstruct(void *place, RCCWorkerInfo &info);
+ class RCCUserPort;
+ class RCCUserBuffer {
+   RCCBuffer *m_rccBuffer;
+   RCCBuffer  m_taken;
+   friend class RCCUserPort;
+ protected:
+   RCCUserBuffer();
+   void setRccBuffer(RCCBuffer *b);
+   inline RCCBuffer *getRccBuffer() const { return m_rccBuffer; }
+ public:
+   inline void *data() const { return m_rccBuffer->data; }
+   inline size_t maxLength() const { return m_rccBuffer->maxLength; }
+   // For input buffers
+   inline size_t length() const { return m_rccBuffer->length_; }
+   RCCOpCode opCode() const { return m_rccBuffer->opCode_; }
+   // For output buffers
+   void setLength(size_t length) { m_rccBuffer->length_ = length; }
+   void setOpCode(RCCOpCode op) {m_rccBuffer->opCode_ = op; }
+   void setInfo(RCCOpCode op, size_t len) {
+     setOpCode(op);
+     setLength(len);
+   }
+   void release();
+ };
+ // Port inherits the buffer class in order to act as current buffer
+ class RCCUserPort : public RCCUserBuffer {
+   RCCPort &m_rccPort;
+   friend class RCCUserWorker;
+ protected:
+   RCCUserPort();
+ public:
+   size_t
+     topLength(size_t elementLength);
+   void
+     checkLength(size_t length),
+     setDefaultLength(size_t length),
+     setDefaultOpCode(RCCOpCode op),
+     send(RCCUserBuffer*);
+   RCCUserBuffer *take(RCCUserBuffer *oldBuffer);
+   bool
+    request(size_t maxlength),
+    advance(size_t maxlength),
+    wait(size_t max, unsigned usecs);
+ };
+ class Worker;
+ class RCCUserWorker {
+   friend class Worker;
+   Worker &m_worker;
+   RCCUserPort *m_ports; // array of C++ port objects
+ protected:
+   RCCUserPort &getPort(unsigned n) const { return m_ports[n]; }
+   RCCWorker &m_rcc; // pointer not reference due to initialization issues
+   RCCUserWorker();
+   ~RCCUserWorker();
+   virtual uint8_t *rawProperties(size_t &size) const;
+   virtual RCCResult
+     initialize(), start(), stop(), release(), test(), beforeQuery(), afterConfigure();
+   virtual RCCResult run(bool timeout) = 0;
+   RCCResult setError(const char *fmt, ...);
+ };
+}} // end of namespace OCPI::RCC
+#endif
 #endif

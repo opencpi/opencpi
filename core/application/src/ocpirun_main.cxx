@@ -39,12 +39,14 @@ usage(const char *name) {
 	  "                 # set model (rcc, hdl, ocl, etc.) for worker instance\n"
 	  "    -p <instance-name>=<property>=<value>\n"
 	  "                 # set a property value of a worker instance\n"
-	  "    -n <processor-count>]\n"
-	  "                 # set processor allocation policy for application\n"
 	  "    -c [<instance-name>]=<container-name>]\n"
 	  "                 # assign instance to a specific container (name or number from -C)\n"
 	  "    -P [<instance-name>]=<platform-name>\n"
 	  "                 # assign instance to any container of this platform type (see output from -C)\n"
+	  "    -w <instance-name>=<implementation-name>\n"
+	  "                 # choose a particular worker name.\n"
+	  "    -n <processor-count>]\n"
+	  "                 # set processor allocation policy for application\n"
 	  "    -f [<external-name>]=<file-name>\n"
 	  "                 # connect external port to a specific file\n"
 	  "    -D [<external-name>]=[//container/][slot/]<device-name>]\n"
@@ -82,6 +84,9 @@ main(int /*argc*/, const char **argv) {
   try {
     for (ap = &argv[1]; *ap && ap[0][0] == '-'; ap++)
       switch (ap[0][1]) {
+      case 'i':
+	addParam("worker", ap);
+	break;
       case 'v':
 	verbose = true;
 	params.push_back(OA::PVBool("verbose", true));

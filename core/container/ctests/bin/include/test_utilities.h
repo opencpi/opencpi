@@ -226,8 +226,9 @@ namespace OCPI {
     };
     OCPI::Util::Thread* runTestDispatch( DThreadData& tdata );
 
-    OCPI::Container::Worker *createWorker(CApp &capp, ::RCCDispatch *rccd);
-    OCPI::Container::Worker *createWorker(OCPI::API::ContainerApplication *app, ::RCCDispatch *rccd);
+    OCPI::Container::Worker *createWorker(CApp &capp, OCPI::RCC::RCCDispatch *rccd);
+    OCPI::Container::Worker *createWorker(OCPI::API::ContainerApplication *app,
+					  OCPI::RCC::RCCDispatch *rccd);
   }
 
 }

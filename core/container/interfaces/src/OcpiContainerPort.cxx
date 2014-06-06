@@ -58,8 +58,14 @@ namespace OCPI {
       d.desc.nBuffers =
 	(uint32_t)(DEFAULT_NBUFFERS > mPort.m_minBufferCount ?
 		   DEFAULT_NBUFFERS : mPort.m_minBufferCount);
-      if (!(d.desc.dataBufferSize = (uint32_t)mPort.m_bufferSize))
+      if ((d.desc.dataBufferSize = (uint32_t)mPort.m_bufferSize))
+	ocpiDebug("PortData %s(%p): setting buffer size from metadata: %zu",
+		  mPort.m_name.c_str(), this, mPort.m_bufferSize);
+      else {
 	d.desc.dataBufferSize = DEFAULT_BUFFER_SIZE;
+	ocpiDebug("PortData %s(%p): setting buffer size from default: %zu",
+		  mPort.m_name.c_str(), this, DEFAULT_BUFFER_SIZE);
+      }
       setPortParams(mPort, params);
     }
     // Set parameters for a port, whether at creation/construction time or later at connect time
@@ -75,8 +81,11 @@ namespace OCPI {
 	if (ul < mPort.m_minBufferSize)
 	  throw OU::Error("bufferSize %u is below worker's minimum: %zu",
 			  ul, mPort.m_minBufferSize);
-        else
+        else {
 	  getData().data.desc.dataBufferSize = ul;
+	  ocpiDebug("Portdata %s(%p): setting buffer size from parameter: %zu",
+		    mPort.m_name.c_str(), this, (size_t)ul);
+	}
       
       const char *s;
       if (OU::findString(params, "xferRole", s)) {
@@ -118,7 +127,7 @@ namespace OCPI {
       // to ports before connection.
     }
 
-    // Do the work on this port when connection properties are specified.
+    // Do the work on this port when connection parameters are specified.
     // This is still prior to receiving info from the other side, thus this is not necessarily
     // the final info.
     // FIXME: we should error check against bitstream-fixed parameters
@@ -381,6 +390,10 @@ namespace OCPI {
 	maxSize = uDesc.desc.dataBufferSize;
       maxSize = OU::roundUp(maxSize, BUFFER_ALIGNMENT);
       pDesc.desc.dataBufferSize = uDesc.desc.dataBufferSize = OCPI_UTRUNCATE(uint32_t, maxSize);
+      // FIXME: update bufferSizePort relationships to ports that are changing their size
+      // But this depends on the order of the connections..
+      // but this should only happen with runtime-parameter buffer sizes
+      // perhaps make it an error
       ocpiInfo("  after negotiation, buffer size is %zu", maxSize);
       // We must make sure other side doesn't mess with roles anymore.
       uDesc.options |= 1 << MandatedRole;

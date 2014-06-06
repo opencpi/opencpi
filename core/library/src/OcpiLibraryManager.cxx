@@ -103,17 +103,14 @@ namespace OCPI {
 
     // Find (and callback with) implementations for specName and selectCriteria
     // Return true if any were found
-    bool Manager::findImplementationsX(ImplementationCallback &icb, const char *specName,
-				       const char *selectCriteria) {
+    bool Manager::findImplementationsX(ImplementationCallback &icb, const char *specName) {
       parent().configureOnce();
       bool found = false;
       WorkerRange range = m_implementations.equal_range(specName);
       for (WorkerIter wi = range.first; wi != range.second; wi++) {
-	unsigned score = 1; // default when no selection criteria
 	Implementation &impl = *wi->second;
-	if ((!selectCriteria || satisfiesSelection(selectCriteria, NULL, impl.m_metadataImpl)) &&
-	    icb.foundImplementation(impl, score, found))
-	  return true;
+	if (icb.foundImplementation(impl, found))
+	  break;
       }
       return found;
     }
@@ -122,14 +119,18 @@ namespace OCPI {
 				     const Implementation *&impl) {
       struct mine : public ImplementationCallback {
 	const Implementation *&m_impl;
-	mine(const Implementation *&impl) : m_impl(impl) {}
-	bool foundImplementation(const Implementation &i, unsigned, bool &accepted) {
+	const char *m_selection;
+	mine(const Implementation *&impl, const char *selection)
+	  : m_impl(impl), m_selection(selection) {}
+	bool foundImplementation(const Implementation &i, bool &accepted) {
+	  if (m_selection && !satisfiesSelection(m_selection, NULL, i.m_metadataImpl))
+	    return false;
 	  m_impl = &i;
 	  accepted = true;
 	  return true;
 	}
-      } cb(impl);
-      return findImplementationsX(cb, specName, selectCriteria);
+      } cb(impl, selectCriteria);
+      return findImplementationsX(cb, specName);
     }
 
     // Libraries can be specified in the environment

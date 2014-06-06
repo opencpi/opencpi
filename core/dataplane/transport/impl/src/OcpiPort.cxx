@@ -45,6 +45,8 @@
  *
  */
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <ctype.h>
 #include <DtTransferInternal.h>
 #include <DtHandshakeControl.h>
@@ -57,8 +59,6 @@
 #include <OcpiCircuit.h>
 #include <OcpiRDTInterface.h>
 #include <OcpiTransferController.h>
-#define __STDC_FORMAT_MACROS
-#include <inttypes.h>
 
 using namespace OCPI::DataTransport;
 using namespace DataTransfer;
@@ -331,101 +331,90 @@ setFlowControlDescriptorInternal( const OCPI::RDT::Descriptors & desc )
  * Get port dependency data.  This is the data that is needed by an
  * external circuit to connect to this port.
  *********************************/
-void OCPI::DataTransport::Port::getPortDescriptor( OCPI::RDT::Descriptors& desc,
-						   const OCPI::RDT::Descriptors * other  )
-{
+void OCPI::DataTransport::Port::
+getPortDescriptor(OCPI::RDT::Descriptors& desc, const OCPI::RDT::Descriptors *other) {
 
   // If we are not a shadow port, we fill in all of the real descriptor dependency information
   // that is needed by a producer port to output our data.  If we are a shadow port (we only learn about
   // this after we as a output port are connected to an external consumer port) then we only have "remote 
   // buffer state" information.  This is descriptor information that is used on the consumer side to tell us
   // we a remote input buffer becomes available.
-  if ( ! this->isShadow() ) {
+  ocpiAssert(! this->isShadow());
 
-    if ( other ) {
-      // Get the connection cookie
-      EndPoint &otherEp = getCircuit()->m_transport->addRemoteEndPoint(other->desc.oob.oep);
-      XferServices * xfers = 
-	XferFactoryManager::getFactoryManager().getService( getEndpoint(), &otherEp);
-      ocpiAssert( xfers );
-      desc.desc.oob.cookie = 
-	xfers->getConnectionCookie();
-    }
+  if (other) {
+    // Get the connection cookie
+    EndPoint &otherEp = getCircuit()->m_transport->addRemoteEndPoint(other->desc.oob.oep);
+    XferServices * xfers =
+      XferFactoryManager::getFactoryManager().getService( getEndpoint(), &otherEp);
+    ocpiAssert(xfers);
+    desc.desc.oob.cookie = xfers->getConnectionCookie();
+  }
 
-    if ( ! isOutput() ) { 
 
-      ocpiAssert(desc.type == OCPI::RDT::ConsumerDescT);
-      if (desc.role == OCPI::RDT::NoRole)
-	desc.role = OCPI::RDT::ActiveFlowControl;
-      // desc.options |= 1 << OCPI::RDT::MandatedRole;
-      desc.desc.dataBufferBaseAddr = m_portDependencyData.offsets[0].inputOffsets.bufferOffset;
-      desc.desc.dataBufferPitch = desc.desc.dataBufferSize = this->getPortSet()->getBufferLength();
-      desc.desc.metaDataBaseAddr = m_portDependencyData.offsets[0].inputOffsets.metaDataOffset;
-      desc.desc.metaDataPitch = sizeof(BufferMetaData) * MAX_PCONTRIBS;
-      ocpiAssert(desc.desc.nBuffers == getPortSet()->getBufferCount());
-      desc.desc.fullFlagBaseAddr = m_portDependencyData.offsets[0].inputOffsets.localStateOffset;
-      desc.desc.fullFlagSize = sizeof(BufferState);
-      desc.desc.fullFlagPitch = sizeof(BufferState) * MAX_PCONTRIBS * 2;
+  desc.desc.metaDataPitch = sizeof(BufferMetaData) * MAX_PCONTRIBS;
+  desc.desc.dataBufferSize = desc.desc.dataBufferPitch = this->getPortSet()->getBufferLength();
+  ocpiDebug("getPortDescriptor %p: setting %s buffer size to %zu",
+	    this, isOutput() ? "output" : "input", (size_t)desc.desc.dataBufferSize);
+  desc.desc.fullFlagSize = sizeof(BufferState);
+  desc.desc.fullFlagPitch = sizeof(BufferState) * MAX_PCONTRIBS * 2;
+  desc.desc.emptyFlagSize = sizeof(BufferState);
+  desc.desc.emptyFlagPitch = sizeof(BufferState) * MAX_PCONTRIBS * 2;
 
-    }
-    else {  // We are an output port
+  desc.desc.oob.port_id = getPortId();
+  strcpy(desc.desc.oob.oep, m_realSMemResources->sMemServices->endpoint()->end_point.c_str());
 
-        ocpiAssert(desc.type == OCPI::RDT::ProducerDescT);
-	if (desc.role == OCPI::RDT::NoRole)
-	  desc.role = OCPI::RDT::ActiveMessage;
-	//desc.options |= 1 << OCPI::RDT::MandatedRole;
-        desc.desc.dataBufferBaseAddr = 	m_data->m_bufferData[0].outputOffsets.bufferOffset;
-        desc.desc.dataBufferPitch = desc.desc.dataBufferSize = this->getPortSet()->getBufferLength();
-        desc.desc.metaDataBaseAddr = m_data->m_bufferData[0].outputOffsets.metaDataOffset;
-        desc.desc.metaDataPitch = sizeof(BufferMetaData) * MAX_PCONTRIBS;
-        if (desc.desc.nBuffers != getPortSet()->getBufferCount())
-	  ocpiDebug("Buffer count mismatch.  Should be %u but will be forced to %u",
-		    desc.desc.nBuffers, getPortSet()->getBufferCount());
-        desc.desc.nBuffers = getPortSet()->getBufferCount();
-	desc.desc.fullFlagBaseAddr = m_data->m_bufferData[0].outputOffsets.localStateOffset;
-        desc.desc.fullFlagSize = sizeof(BufferState);
-        desc.desc.fullFlagPitch = sizeof(BufferState) * MAX_PCONTRIBS * 2;
-	desc.desc.emptyFlagBaseAddr = m_data->m_bufferData[0].outputOffsets.localStateOffset;
-        desc.desc.emptyFlagSize = sizeof(BufferState);
-        desc.desc.emptyFlagPitch = sizeof(BufferState) * MAX_PCONTRIBS * 2;
+  if ( ! isOutput() ) { 
+    ocpiAssert(desc.type == OCPI::RDT::ConsumerDescT);
+    if (desc.role == OCPI::RDT::NoRole)
+      desc.role = OCPI::RDT::ActiveFlowControl;
+    ocpiAssert(desc.desc.nBuffers == getPortSet()->getBufferCount());
 
-    }
-#if 0
-    if ( getCircuit()->m_transport->m_transportGlobal->useEvents() ) {
+    desc.desc.dataBufferBaseAddr = m_portDependencyData.offsets[0].inputOffsets.bufferOffset;
+    desc.desc.metaDataBaseAddr = m_portDependencyData.offsets[0].inputOffsets.metaDataOffset;
+    desc.desc.fullFlagBaseAddr = m_portDependencyData.offsets[0].inputOffsets.localStateOffset;
 
-      ocpiDebug("We are using EVENTS\n");
-                
-      int lr,hr;
-      getCircuit()->m_transport->m_transportGlobal->getEventManager()->getEventRange(lr,hr);
-      desc.desc.fullFlagValue = 1 | 
-        ((OCPI::OS::uint64_t)(lr+1)<<32) | (OCPI::OS::uint64_t)1<<63;
-      ocpiDebug("OcpiPort: low range = %d, high range = %d, flag = 0x%llx\n", lr, hr, (long long)desc.desc.fullFlagValue);
+  } else {  // We are an output port
+    ocpiAssert(desc.type == OCPI::RDT::ProducerDescT);
+    if (desc.role == OCPI::RDT::NoRole)
+      desc.role = OCPI::RDT::ActiveMessage;
+    if (desc.desc.nBuffers != getPortSet()->getBufferCount())
+      ocpiDebug("Buffer count mismatch.  Should be %u but will be forced to %u",
+		desc.desc.nBuffers, getPortSet()->getBufferCount());
 
-    }
-    else {
-      ocpiDebug("We are NOT using events");
+    desc.desc.dataBufferBaseAddr = m_data->m_bufferData[0].outputOffsets.bufferOffset;
+    desc.desc.metaDataBaseAddr = m_data->m_bufferData[0].outputOffsets.metaDataOffset;
+    desc.desc.fullFlagBaseAddr = m_data->m_bufferData[0].outputOffsets.localStateOffset;
+    desc.desc.emptyFlagBaseAddr = m_data->m_bufferData[0].outputOffsets.localStateOffset;
+  }
 
-      desc.desc.fullFlagValue = 1 | 
-        ((OCPI::OS::uint64_t)(0xfff)<<32) | (OCPI::OS::uint64_t)1<<63;
-    }
+#if 1
+  desc.desc.fullFlagValue = 1;
 #else
-    desc.desc.fullFlagValue = 1;
+  if ( getCircuit()->m_transport->m_transportGlobal->useEvents() ) {
+
+    ocpiDebug("We are using EVENTS\n");
+                
+    int lr,hr;
+    getCircuit()->m_transport->m_transportGlobal->getEventManager()->getEventRange(lr,hr);
+    desc.desc.fullFlagValue = 1 | 
+      ((OCPI::OS::uint64_t)(lr+1)<<32) | (OCPI::OS::uint64_t)1<<63;
+    ocpiDebug("OcpiPort: low range = %d, high range = %d, flag = 0x%llx\n", lr, hr, (long long)desc.desc.fullFlagValue);
+
+  }
+  else {
+    ocpiDebug("We are NOT using events");
+
+    desc.desc.fullFlagValue = 1 | 
+      ((OCPI::OS::uint64_t)(0xfff)<<32) | (OCPI::OS::uint64_t)1<<63;
+  }
 #endif
-    ocpiDebug("Full flag value = 0x%" DTOSDATATYPES_FLAG_PRIx"\n", desc.desc.fullFlagValue);
+  ocpiDebug("Full flag value = 0x%" DTOSDATATYPES_FLAG_PRIx"\n", desc.desc.fullFlagValue);
 
-    desc.desc.oob.port_id = getPortId(); //reinterpret_cast<uint64_t>(this);
-    strcpy(desc.desc.oob.oep, m_realSMemResources->sMemServices->endpoint()->end_point.c_str());
-    desc.desc.nBuffers = getPortSet()->getBufferCount();
-    desc.desc.dataBufferSize = this->getPortSet()->getBufferLength();
 
-    // We are being externally connected, so we need to wait for an update before
-    // attempting to get our shadow information
-    m_externalState = WaitingForUpdate;
+  // We are being externally connected, so we need to wait for an update before
+  // attempting to get our shadow information
+  m_externalState = WaitingForUpdate;
 
-  }
-  else {  // We are a shadow port 
-    ocpiAssert(0);
-  }
   getMetaData()->m_descriptor = desc;
 }
 

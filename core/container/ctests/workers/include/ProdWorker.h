@@ -64,7 +64,7 @@ typedef struct ProducerWorkerStaticMemory_ ProducerWorkerStaticMemory;
 
 #ifdef __cplusplus
 extern "C" {
-extern RCCDispatch ProducerWorkerDispatchTable;
+  extern OCPI::RCC::RCCDispatch ProducerWorkerDispatchTable;
 };
 #else
 extern RCCDispatch ProducerWorkerDispatchTable;

@@ -382,12 +382,14 @@ void OCPI::CONTAINER_TEST::disableWorkers( std::vector<CApp>& ca, std::vector<CW
     (*it)->worker->stop();
   }
 }
-OCPI::Container::Worker *OCPI::CONTAINER_TEST::createWorker(OCPI::API::ContainerApplication *app, RCCDispatch *rccd) {
+OCPI::Container::Worker *OCPI::CONTAINER_TEST::
+createWorker(OCPI::API::ContainerApplication *app, OCPI::RCC::RCCDispatch *rccd) {
   OCPI::API::Worker &w = app->createWorker(NULL, NULL, (const char *)rccd, NULL, NULL, NULL);
   return static_cast<OCPI::Container::Worker *>(&w);
 }
 
-OCPI::Container::Worker *OCPI::CONTAINER_TEST::createWorker(CApp &ca, RCCDispatch *rccd) {
+OCPI::Container::Worker *OCPI::CONTAINER_TEST::
+createWorker(CApp &ca, OCPI::RCC::RCCDispatch *rccd) {
   if (!ca.app)
       ca.app = ca.container->createApplication();
   return createWorker(ca.app, rccd);

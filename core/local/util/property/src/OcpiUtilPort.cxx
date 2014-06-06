@@ -33,8 +33,11 @@
  */
 
 #include <string>
+#include <ctype.h>
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilPort.h"
+#include "OcpiUtilImplementation.h"
+#include "OcpiUtilMisc.h"
 
 namespace OCPI {
   namespace Util {
@@ -44,14 +47,22 @@ namespace OCPI {
     Port(bool prov)
       : m_ordinal(0), m_provider(prov), m_optional(false),
 	m_bidirectional(false), m_minBufferCount(1), m_bufferSize(0), m_xml(NULL),
-	m_worker(NULL) {
+	m_worker(NULL), m_bufferSizePort(NULL) {
     }
 
+    // First pass captures name
     const char *Port::
-    parse(ezxml_t x, PortOrdinal ordinal) {
-      const char *err = OE::getRequiredString(x, m_name, "name", "port");
-      if (err)
-	return err;
+    preParse(Worker &w, ezxml_t x, PortOrdinal ordinal) {
+      m_worker = &w;
+      m_ordinal = ordinal;
+      m_xml = x;
+      return OE::getRequiredString(x, m_name, "name", "port");
+    }
+
+    // second pass can use names of other ports.
+    const char *Port::
+    parse(ezxml_t x) {
+      const char *err;
       // Initialize everything from the protocol, then other attributes can override the protocol
       ezxml_t protocol = ezxml_cchild(x, "protocol");
       if (protocol &&
@@ -61,15 +72,25 @@ namespace OCPI {
 	  (err = OE::getBoolean(x, "bidirectional", &m_bidirectional)) ||
 	  (err = OE::getBoolean(x, "provider", &m_provider)) ||
 	  (err = OE::getBoolean(x, "optional", &m_optional)) ||
-	  (err = OE::getNumber(x, "minBufferCount", &m_minBufferCount, 0, 1)) ||
-	  (err = OE::getNumber(x, "bufferSize", &m_bufferSize, 0, 0)))
+	  (err = OE::getNumber(x, "minBufferCount", &m_minBufferCount, 0, 1)))
+	return err;
+      const char *bs = ezxml_cattr(x, "bufferSize");
+      if (bs && !isdigit(bs[0])) {
+	if (!(m_bufferSizePort = m_worker->findMetaPort(bs)))
+	  return esprintf("Buffersize set to '%s', which is not a port name or a number",
+			      bs);
+      } else if ((err = OE::getNumber(x, "bufferSize", &m_bufferSize, 0, 0)))
 	return err;
       if (m_bufferSize == 0)
 	m_bufferSize = m_defaultBufferSize; // from protocol
 	  
       // FIXME: do we need the separately overridable nOpcodes here?
-      m_ordinal = ordinal;
-      m_xml = x;
+      return NULL;
+    }
+    const char *Port::
+    postParse() {
+      if (m_bufferSizePort)
+	m_bufferSize = m_bufferSizePort->m_bufferSize;
       return NULL;
     }
   }

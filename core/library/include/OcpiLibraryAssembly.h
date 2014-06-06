@@ -63,6 +63,9 @@ namespace OCPI {
     class Assembly : public OCPI::Util::Assembly,  public ImplementationCallback {
       unsigned m_instance;			  // ordinal of current instance being processed
       unsigned m_nPorts;                          // nPorts of impls of instance being processed
+      std::string m_model;                        // used during implementation processing
+      std::string m_platform;
+      const PValue *m_params;                     // params of assembly during parsing (not copied)
       unsigned m_maxCandidates;                   // maximum number of candidates for any instance
       Candidates *m_tempCandidates;               // candidates currently being processed (for one instance)
       OCPI::Util::Assembly::Port ***m_assyPorts;  // a map by spec port ordinal to util::assembly ports
@@ -79,9 +82,9 @@ namespace OCPI {
       void operator --( int );
       
     private:
-      void resolvePorts(const Implementation &i);
+      bool resolvePorts(const Implementation &i);
       void findImplementations(const OCPI::Util::PValue *params);
-      bool foundImplementation(const Implementation &i, unsigned score, bool &accepted);
+      bool foundImplementation(const Implementation &i, bool &accepted);
       int m_refCount;
     };
   }

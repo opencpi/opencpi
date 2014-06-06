@@ -371,8 +371,8 @@ namespace OCPI {
 	  if ((s = findSocket(ifc, discovery, error)))
 	    return trySocket(ifc, *s, devAddr, discovery, exclude, dev, error); 
 	  // not "bad" due to needing sudo for bare sockets without a driver
-	  ocpiInfo("Could not open socket on interface '%s' to reach device at '%s: %s",
-		   ifc.name.c_str(), devAddr.pretty(), error.c_str());
+	  ocpiDebug("Could not open socket on interface '%s' to reach device at '%s: %s",
+		    ifc.name.c_str(), devAddr.pretty(), error.c_str());
 	} else {
 	  OE::Interface i("udp", error);
 	  if (error.length())
@@ -441,12 +441,12 @@ namespace OCPI {
 	    OE::Address bcast(udp);
 	    count += tryIface(eif, bcast, exclude, NULL, discoveryOnly, error);
 	    if (error.size()) {
-	      ocpiInfo("Error during network discovery on '%s': %s",
+	      ocpiDebug("Error during network discovery on '%s': %s",
 		       eif.name.c_str(), error.c_str());
 	      error.clear();
 	    }
 	  } else
-	    ocpiInfo("Interface '%s' is %s and %s",
+	    ocpiDebug("Interface '%s' is %s and %s",
 		     eif.name.c_str(), eif.up ? "up" : "down",
 		     eif.connected ? "connected" : "not connected");
 	  if (ifName)

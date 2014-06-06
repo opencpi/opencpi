@@ -49,7 +49,9 @@
 
 #include <RCC_Worker.h>
 
-
+#ifdef __cplusplus
+using namespace OCPI::RCC;
+#endif
 #define ProducerSend    0
 #define ProducerAdvance 1
 

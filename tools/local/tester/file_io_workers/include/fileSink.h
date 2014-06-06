@@ -45,6 +45,7 @@
 #include <RCC_Worker.h>
 
 #if defined (__cplusplus)
+using namespace OCPI::RCC;
 extern "C" {
 #endif
 

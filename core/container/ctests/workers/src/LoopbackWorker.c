@@ -230,7 +230,8 @@ RCCDispatch LoopbackWorkerDispatchTable = { RCC_VERSION, NUM_INPUT_PORTS, NUM_OU
                                             LoopbackWorker_run,
                                             workerRunConditions, 
                                             NULL, 
-                                            0};
+                                            0,
+					    0};
 
 
 

@@ -139,7 +139,7 @@ namespace OCPI {
 	}
       }
       inline void take( RCCBuffer *oldBuffer, RCCBuffer *newBuffer) {
-	*newBuffer = m_rccPort.current;
+	*newBuffer = m_rccPort.current; // copy the structure
 	m_rccPort.current.data = NULL;
 	m_buffer = NULL;
 	if ( oldBuffer ) {
@@ -163,14 +163,22 @@ namespace OCPI {
 	try {
 	  if (isOutput()) {
 	    if ((m_buffer = m_dtPort->getNextEmptyOutputBuffer(m_rccPort.current.data,
-							       m_rccPort.current.maxLength)))
-	      m_rccPort.output.length = m_rccPort.current.maxLength;
+							       m_rccPort.current.maxLength))) {
+	      m_rccPort.output.length = 
+		m_rccPort.useDefaultLength_ ? m_rccPort.defaultLength_ : 
+		m_rccPort.current.maxLength;
+	      m_rccPort.current.opCode_ =
+		m_rccPort.useDefaultOpCode_ ? m_rccPort.defaultOpCode_ :
+		m_rccPort.output.u.operation;
+	      m_rccPort.current.length_ = m_rccPort.output.length;
+	    }
 	  } else {
-	    uint8_t opcode;
 	    if ((m_buffer = m_dtPort->getNextFullInputBuffer(m_rccPort.current.data,
-							     m_rccPort.input.length,
-							     opcode)))
-	      m_rccPort.input.u.operation = opcode;
+							     m_rccPort.current.length_,
+							     m_rccPort.current.opCode_))) {
+	      m_rccPort.input.u.operation = m_rccPort.current.opCode_;
+	      m_rccPort.input.length = m_rccPort.current.length_;
+	    }
 	  }
 	} catch (std::string &e) {
 	  error(e);
@@ -187,8 +195,9 @@ namespace OCPI {
       inline bool advance() {
 	try {
 	  if (m_buffer) {
-	    isOutput() ?
-	      m_dtPort->sendOutputBuffer(m_buffer, m_rccPort.output.length, m_rccPort.output.u.operation) :
+	    if (isOutput())
+	      m_dtPort->sendOutputBuffer(m_buffer, m_rccPort.current.length_, m_rccPort.current.opCode_);
+	    else
 	      m_dtPort->releaseInputBuffer(m_buffer);
 	    m_rccPort.current.data = NULL;
 	    m_buffer = NULL;

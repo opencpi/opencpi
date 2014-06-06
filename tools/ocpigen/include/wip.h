@@ -98,6 +98,7 @@ struct WDI {
   size_t minBufferCount;
   size_t nOpcodes;
   size_t bufferSize;
+  Port *bufferSizePort;
 };
 // OCP_SIGNAL_I(name,
 // OCP_SIGNAL_IV(name,
@@ -451,7 +452,8 @@ class Worker : public Parsed {
     *parseImplLocalMemory(),
     *parseSpecControl(ezxml_t ps),
     *parseSpec(const char *package = NULL),
-    *parsePort(ezxml_t x),
+    *preParseSpecPort(ezxml_t x),
+    *parseSpecPort(Port *p),
     *parseHdlImpl(const char* package = NULL),
     *parseConfigFile(const char *dir),
     *doProperties(ezxml_t top, const char *parent, bool impl, bool anyIsBad),
@@ -487,6 +489,7 @@ class Worker : public Parsed {
     *emitImplRCC(),
     *rccValue(OU::Value &v, std::string &value),
     *rccPropValue(OU::Property &p, std::string &value),
+    *emitSkelRCC(),
     *emitAssyHDL();
   virtual const char
     *emitArtXML(const char *wksFile),
@@ -555,7 +558,6 @@ extern const char
 		      ezxml_t *parsed, const char **childFile, bool optional),
   *emitContainerHDL(Worker*, const char *),
   *emitImplOCL(Worker*),
-  *emitSkelRCC(Worker*),
   *emitSkelOCL(Worker*),
   *emitArtOCL(Worker *);
 

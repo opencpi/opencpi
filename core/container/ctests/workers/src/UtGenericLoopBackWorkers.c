@@ -161,7 +161,7 @@ static RCCRunCondition UTGProducerWorkerRunConditions[] = { {UTGProducerPortRunC
 RCCDispatch UTGProducerWorkerDispatchTable = { RCC_VERSION, 0, NUM_OUTPUTS, 
                                                PROD_PROPERTY_SIZE, 0 , 0,
                                                UTGProducerInitialize, NULL, NULL, release, NULL, NULL, NULL, UTGProducerWorker_run,
-                                               UTGProducerWorkerRunConditions, NULL, OPTIONAL_CONNECTIONS_MASK };
+                                               UTGProducerWorkerRunConditions, NULL, OPTIONAL_CONNECTIONS_MASK, 0};
 
 
 
@@ -416,7 +416,7 @@ RCCDispatch UTGConsumerWorkerDispatchTable = { RCC_VERSION, 4, 0,
                                                UTGConsumerInitialize, UTGConsumerStart, UTGConsumerStop, UTGConsumerRelease, UTGConsumerTest, 
                                                UTGConsumerAfterConfigure, UTGConsumerBeforeQuery, 
                                                UTGConsumerWorker_run,
-                                               /*CWorkerRunConditions*/NULL, NULL, COPTIONAL_CONNECTIONS_MASK };
+                                               /*CWorkerRunConditions*/NULL, NULL, COPTIONAL_CONNECTIONS_MASK, 0};
 
 
 
@@ -553,34 +553,13 @@ RCCDispatch UTGLoopbackWorkerDispatchTable = { RCC_VERSION, 2, 3,
                                                LBWorkerRunConditions, NULL, 
                                                (1<<UTGLoopbackWorker_Data_In_Port1)  |
                                                (1<<UTGLoopbackWorker_Data_Out_Port1) |
-                                               (1<<UTGLoopbackWorker_Data_Out_Port2) };
+                                               (1<<UTGLoopbackWorker_Data_Out_Port2),
+					       0};
 
 
 RCCEntryTable  GenericLoopbackWorkerDispatchTables[] = {
-  {"Consumer", &UTGConsumerWorkerDispatchTable},
-  {"Loopback", &UTGLoopbackWorkerDispatchTable},
-  {"Producer", &UTGProducerWorkerDispatchTable},
-  {NULL,NULL}
+  {"Consumer", &UTGConsumerWorkerDispatchTable, NULL},
+  {"Loopback", &UTGLoopbackWorkerDispatchTable, NULL},
+  {"Producer", &UTGProducerWorkerDispatchTable, NULL},
+  {NULL,NULL, NULL}
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

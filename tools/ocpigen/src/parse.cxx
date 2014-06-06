@@ -341,6 +341,7 @@ addProperty(ezxml_t prop, bool includeImpl)
       p->m_paramOrdinal = m_ctl.nParameters++;
     else
       m_ctl.nRunProperties++;
+    p->m_isImpl = includeImpl;
     addAccess(*p);
     return NULL;
   }
@@ -608,25 +609,33 @@ parseOperation(ezxml_t op) {
   return OU::Protocol::parseOperation(op);
 }
 
+// First pass to capture name and xml at least
 const char *Worker::
-parsePort(ezxml_t x) {
+preParseSpecPort(ezxml_t x) {
   const char *err;
   std::string name;
   if ((err = OE::getRequiredString(x, name, "name")))
     return err;
+  for (unsigned i = 0; i < m_ports.size(); i++) {
+    Port *pp = m_ports[i];
+    if (!strcasecmp(pp->name, name.c_str()))
+      return OU::esprintf("%s element Name attribute duplicates another interface name",
+			  OE::ezxml_tag(x));
+  }
   Port *p = new Port(strdup(name.c_str()), this, true, WDIPort, x);
   m_ports.push_back(p);
-  if ((err = OE::checkAttrs(x, "Name", "Producer", "Count", "Optional", "Protocol", (void*)0)) ||
+  return NULL;
+}
+const char *Worker::
+parseSpecPort(Port *p) {
+  const char *err;
+  ezxml_t x = p->implXml;
+  if ((err = OE::checkAttrs(x, "Name", "Producer", "Count", "Optional", "Protocol", "buffersize",
+			    (void*)0)) ||
       (err = OE::getBoolean(x, "Producer", &p->u.wdi.isProducer)) ||
       (err = OE::getBoolean(x, "Optional", &p->u.wdi.isOptional)))
     return err;
   const char *protocol = ezxml_cattr(x, "protocol");
-  for (unsigned i = 0; i < m_ports.size(); i++) {
-    Port *pp = m_ports[i];
-    if (pp != p && !strcasecmp(pp->name, p->name))
-      return OU::esprintf("%s element Name attribute duplicates another interface name",
-			  OE::ezxml_tag(x));
-  }
   ezxml_t pSum;
   const char *protFile = 0;
   if ((err = tryOneChildInclude(x, m_file.c_str(), "ProtocolSummary", &pSum, &protFile, true)))
@@ -670,6 +679,20 @@ parsePort(ezxml_t x) {
       p->u.wdi.nOpcodes = 256;
     }
   }
+  const char *bs = ezxml_cattr(x, "bufferSize");
+  if (bs && !isdigit(bs[0])) {
+    for (unsigned i = 0; i < m_ports.size(); i++) {
+      Port *pp = m_ports[i];
+      if (pp != p && !strcasecmp(pp->name, bs)) {
+	p->u.wdi.bufferSizePort = pp;
+	break;
+      }
+    }
+  } else if ((err = OE::getNumber(x, "bufferSize", &p->u.wdi.bufferSize, 0, 0)))
+    return err;
+  // FIXME: outlaw buffer size port when you have protocol?
+  if (p->u.wdi.bufferSize == 0)
+    p->u.wdi.bufferSize = prot->m_defaultBufferSize; // from protocol
   return NULL;
 }
 
@@ -742,15 +765,19 @@ parseSpec(const char *package) {
   } else if ((err = parseSpecControl(ps)))
     return err;
   // Now parse the data aspects, allocating (data) ports.
+  if (ezxml_cchild(spec, "DataInterfaceSpec") && ezxml_cchild(spec, "Port"))
+    return "Cannot use both 'datainterfacespec' and 'port' elements in the same spec";
   for (ezxml_t x = ezxml_cchild(spec, "DataInterfaceSpec"); x; x = ezxml_next(x))
-    if ((err = parsePort(x)))
+    if ((err = preParseSpecPort(x)))
       return err;
   for (ezxml_t x = ezxml_cchild(spec, "Port"); x; x = ezxml_next(x))
-    if ((err = parsePort(x)))
+    if ((err = preParseSpecPort(x)))
       return err;
-  // FIXME: this should only be for HDL, but of source we don't know that yet.
-  // FIXME: but parseing a spec is usually in the context of a model
-  // FIXME: so there is perhaps the notion of a spec being restricted to a model?
+  for (unsigned i = 0; i < m_ports.size(); i++) {
+    Port *p = m_ports[i];
+    if ((err = parseSpecPort(p)))
+      return err;
+  }
   return Signal::parseSignals(spec, m_signals);
 }
 

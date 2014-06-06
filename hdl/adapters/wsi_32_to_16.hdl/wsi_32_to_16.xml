@@ -2,7 +2,7 @@
   <!-- for now the spec is specific to the adapter -->
   <ComponentSpec name="wsi_32_to_16" nocontrol='true'>
     <DataInterfaceSpec Name="in" Producer="false"/>
-    <DataInterfaceSpec Name="out" Producer="true"/>
+    <DataInterfaceSpec Name="out" Producer="true" buffersize='in'/>
   </ComponentSpec>
 
   <!-- 32768 = 2 (# of buffers) * [round(buffersize,16) + 16 (metadata) + 16 (4 flags round up to 16)] -->

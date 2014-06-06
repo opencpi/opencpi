@@ -63,7 +63,6 @@ namespace OCPI {
     class Controller;
     class Application;
     class Port;
-    //    class RDMAPort;
     class Artifact;
 
     // Worker instance information structure
@@ -74,14 +73,16 @@ namespace OCPI {
       friend class Application;
       friend class Controller;
       friend class Port;
-      //      friend class MessagePort;
-      ::RCCPortMask getReadyPorts();
+      friend class RCCUserPort;
+      RCCPortMask getReadyPorts();
       void run(bool &anyRun);
       void checkDeadLock();
       void advanceAll();
       void portError(std::string&error);
     public:
       RCCResult setError(const char *fmt, va_list ap);
+      inline RCCWorker &context() const { return *m_context; }
+      inline unsigned nPorts() const { return m_nPorts; }
 
       Worker( Application & app, Artifact *art, const char *name,
 	      ezxml_t impl, ezxml_t inst, const OCPI::Util::PValue *wParams);
@@ -180,15 +181,20 @@ namespace OCPI {
       void initializeContext();
 
       // Our dispatch table
-      RCCDispatch* m_dispatch;
+      RCCEntryTable   *m_entry;    // our entry in the entry table of the artifact
+      RCCUserWorker   *m_user;     // for C++, the user's worker object
+      RCCDispatch     *m_dispatch; // For C-language, the dispatch
+      RCCWorkerInfo    m_info;     // set from c dispatch or c++ entry point
+      unsigned         m_portInit; // This counts up as C++ user ports are constructed
       // Our context
-      RCCWorker* m_context;
+      RCCWorker       *m_context;
       OCPI::OS::Mutex &m_mutex;
-      RCCRunCondition m_defaultRunCondition; // run condition we create
-      RCCPortMask m_defaultMasks[2];         // masks for our default run condition
-      RCCRunCondition *m_runCondition;       // current active run condition we use is dispatching
-      char *m_errorString;                   // error string set via "setError"
+      RCCRunCondition  m_defaultRunCondition; // run condition we create
+      RCCPortMask      m_defaultMasks[2];     // masks for our default run condition
+      RCCRunCondition *m_runCondition;        // current active run condition we use is dispatching
+      char            *m_errorString;         // error string set via "setError"
     protected:
+      RCCPort &portInit() { return m_context->ports[m_portInit++]; }
       inline uint8_t * getPropertyVaddr() const { return  (uint8_t*)m_context->properties; }
 
       bool enabled;                // Worker enabled flag
@@ -197,9 +203,6 @@ namespace OCPI {
       OCPI::OS::uint32_t sourcePortCount;
       OCPI::OS::uint32_t targetPortCount;
       unsigned m_nPorts;
-      // Sparse list, indexable by port ordinal
-      //      OCPI::Util::VList  sourcePorts;   
-      //      OCPI::Util::VList  targetPorts;        
 
       // Worker run condition super-set
       OCPI::OS::uint32_t runConditionSS;

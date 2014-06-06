@@ -82,7 +82,7 @@ typedef struct ConsumerWorkerStaticMemory_ ConsumerWorkerStaticMemory;
 
 #ifdef __cplusplus
 extern "C" {
-extern RCCDispatch ConsumerWorkerDispatchTable;
+  extern OCPI::RCC::RCCDispatch ConsumerWorkerDispatchTable;
 };
 #else
 extern RCCDispatch ConsumerWorkerDispatchTable;

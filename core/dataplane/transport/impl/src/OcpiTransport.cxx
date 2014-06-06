@@ -116,7 +116,7 @@ init() {
   //  XferFactoryManager::getFactoryManager().allocateSupportedEndpoints(m_localEndpoints);
 #ifndef NDEBUG
   for (DT::EndPointsIter i = m_localEndpoints.begin(); i != m_localEndpoints.end(); i++)
-      ocpiInfo("Transport %p initially got endpoint %s", this, (*i)->end_point.c_str());
+      ocpiDebug("Transport %p initially got endpoint %s", this, (*i)->end_point.c_str());
 #endif
 }
 
@@ -264,13 +264,13 @@ Transport::~Transport()
 
   while (!m_localEndpoints.empty()) {
     DT::EndPointsIter i = m_localEndpoints.begin();
-    ocpiInfo("Transport %p removing local ep %p %s", this, *i, (*i)->end_point.c_str());
+    ocpiDebug("Transport %p removing local ep %p %s", this, *i, (*i)->end_point.c_str());
     (*i)->release();
     m_localEndpoints.erase(i);
   }
   while (!m_remoteEndpoints.empty()) {
     DT::EndPointsIter i = m_remoteEndpoints.begin();
-    ocpiInfo("Transport %p removing remote ep %p %s", this, *i, (*i)->end_point.c_str());
+    ocpiDebug("Transport %p removing remote ep %p %s", this, *i, (*i)->end_point.c_str());
     (*i)->release();
     m_remoteEndpoints.erase(i);
   }
@@ -484,9 +484,11 @@ createOutputPort(OCPI::RDT::Descriptors& outputDesc,
   fillDescriptorFromEndPoint(oep, outputDesc);
   // Ensure that the input port endpoint is registered
   DT::EndPoint &iep = addRemoteEndPoint(inputDesc.desc.oob.oep);
-  if (outputDesc.desc.dataBufferSize > inputDesc.desc.dataBufferSize)
+  if (outputDesc.desc.dataBufferSize > inputDesc.desc.dataBufferSize) {
+    ocpiDebug("createOutputPort: setting buffer size on output from %zu to %zu",
+	      (size_t)outputDesc.desc.dataBufferSize, (size_t)inputDesc.desc.dataBufferSize);
     outputDesc.desc.dataBufferSize = inputDesc.desc.dataBufferSize;
-
+  }
   Circuit *c = createCircuit(0, new ConnectionMetaData( oep, outputDesc ));
   c->addInputPort(iep, inputDesc, oep);
 
@@ -504,9 +506,9 @@ createOutputPort(OCPI::RDT::Descriptors& outputDesc,
   DT::EndPoint &iep = *inputPort.getEndpoint();
   fillDescriptorFromEndPoint(iep, outputDesc);
   if (outputDesc.desc.dataBufferSize > inputPort.getMetaData()->m_descriptor.desc.dataBufferSize) {
-    ocpiDebug("Forcing output buffer size to %u from input size %u on local connection",
-	   inputPort.getMetaData()->m_descriptor.desc.dataBufferSize,
-	   outputDesc.desc.dataBufferSize);	   
+    ocpiDebug("Forcing output buffer size to %zu from input size %zu on local connection",
+	      (size_t)inputPort.getMetaData()->m_descriptor.desc.dataBufferSize,
+	      (size_t)outputDesc.desc.dataBufferSize);	   
     outputDesc.desc.dataBufferSize = inputPort.getMetaData()->m_descriptor.desc.dataBufferSize;
   }
 

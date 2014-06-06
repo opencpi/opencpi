@@ -301,8 +301,9 @@ getParamConfig(const char *id, const ParamConfig *&config) {
 }
 #endif
 // Given assembly properties or a parameter configuration,
-// establish the paramer values for this worker.
+// establish the parameter values for this worker.
 // Note this worker will then be parameter-value-specific.
+// If instancePVs is NULL, use paramconfig
 const char *Worker::
 setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig) {
   if (instancePVs && instancePVs->size() && paramConfig)
@@ -318,14 +319,41 @@ setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig) {
     dir = "gen"; // FIXME: this needs to be in a search path or something?
   if ((err = parseConfigFile(dir.c_str())))
     return err;
-  if (paramConfig) {
-    if (paramConfig >= m_paramConfigs.size())
-      return OU::esprintf("Parameter configuration %zu exceeds available configurations (%zu)",
-			  paramConfig, m_paramConfigs.size());
-    m_paramConfig = &m_paramConfigs[paramConfig];
+  // FIXME: I suppose paramconfigs should have nice names, although they are not UI things.
+  if (instancePVs && m_paramConfigs.size()) {
+    // Scan the configs until one matches. FIXME: use scoring via selection expression...
+    ParamConfig *pc = &m_paramConfigs[0];
+    for (unsigned n = 0; n < m_paramConfigs.size(); n++, pc++) {
+      OU::Assembly::Property *ap = &(*instancePVs)[0];
+      for (unsigned nn = 0; nn < instancePVs->size(); nn++, ap++)
+	if (ap->m_hasValue) {
+	  Param *p = &pc->params[0];
+	  for (unsigned nn = 0; nn < pc->params.size(); nn++, p++)
+	    if (!strcasecmp(ap->m_name.c_str(), p->param->m_name.c_str())) {
+	      OU::Value apValue;
+	      if ((err = p->param->parseValue(ap->m_value.c_str(), apValue)))
+		return err;
+	      std::string apString;
+	      apValue.unparse(apString); // to get canonicalized value of APV
+	      if (apString != p->uValue)
+		goto nextConfig; // a mismatch - this paramconfig can't used
+	      break;
+	    }
+	}
+      m_paramConfig = pc;
+      break;
+    nextConfig:;
+    }
+    if (!m_paramConfig)
+      return
+	OU::esprintf("No parameter configuration for worker matches requested parameter values");
   } else {
-    // We need to find a parameter configuration matching the specified parameter values.
-    // The search is first-that-fits.
+    if (paramConfig >= m_paramConfigs.size()) {
+      if (paramConfig > 0)
+	return OU::esprintf("Parameter configuration %zu exceeds available configurations (%zu)",
+			    paramConfig, m_paramConfigs.size());
+    } else
+      m_paramConfig = &m_paramConfigs[paramConfig];
   }
   return NULL;
 }

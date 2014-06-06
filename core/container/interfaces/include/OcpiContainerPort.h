@@ -65,7 +65,7 @@ namespace OCPI {
      * Port data structure
      *********************************/  
     const unsigned DEFAULT_NBUFFERS = 2;
-    const unsigned DEFAULT_BUFFER_SIZE = 2*1024;
+    const size_t DEFAULT_BUFFER_SIZE = 2*1024;
     const unsigned BUFFER_ALIGNMENT = 16;
     class PortData
     {

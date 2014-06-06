@@ -87,6 +87,7 @@ namespace OCPI {
 	m_isDebug,         // Should only be included when debug parameter is true
 	m_isParameter,     // For compile-time parameter
 	m_isSub32,
+	m_isImpl,          // is an impl property, not a spec property
 	m_isTest;
       unsigned long m_dataOffset;
       size_t m_paramOrdinal; // Among parameters, which position?
