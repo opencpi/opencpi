@@ -1,4 +1,3 @@
-set -e
 # Default settings
 export OCPI_CFLAGS="-Wall -Wfloat-equal -Wextra  -fno-strict-aliasing -Wconversion -std=c99"
 export OCPI_CXXFLAGS="-Wextra -Wall -Wfloat-equal -fno-strict-aliasing -Wconversion"
@@ -27,7 +26,7 @@ export OCPI_DEBUG=1
 export OCPI_ASSERT=1
 export OCPI_SHARED_LIBRARIES_FLAGS=
 export OCPI_BUILD_SHARED_LIBRARIES=1
-export OCPI_HAVE_CORBA=1
+#export OCPI_HAVE_CORBA=1
 
 # OpenCPI uses OmniORB exclusivly
 export OCPI_CORBA_ORB=OMNI
@@ -54,4 +53,3 @@ export OCPI_SMB_SIZE=100000000
 #export OCPI_HAVE_OPENSPLICE=1
 #export OCPI_OPENSPLICE_HOME=/opt/opencpi/prerequisites/opensplice/linux-x86_64
 # temporarily remove this
-

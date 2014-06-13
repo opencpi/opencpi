@@ -1,3 +1,4 @@
+trap "trap - ERR; break" ERR; for i in 1; do
 . ./env/start.sh
 
 export OCPI_XILINX_DIR=/home/jek/mac/Xilinx
@@ -24,3 +25,4 @@ export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../Site_3113964.txt
 export OCPI_OPENCV_HOME=/opt/opencpi/prerequisites/opencv/linux-c6-x86_64
 
 . ./env/finish.sh
+done; trap - ERR

@@ -1,3 +1,4 @@
+trap "trap - ERR; break" ERR; for i in 1; do
 . ./env/start.sh
 
 export OCPI_HAVE_CORBA=1
@@ -33,3 +34,4 @@ export OCPI_BUILD_SHARED_LIBRARIES=1
 # export OCPI_OPENSPLICE_HOME=/opt/opencpi/prerequisites/opensplice/linux-x86_64
 
 . ./env/finish.sh
+done; trap - ERR

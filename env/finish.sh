@@ -28,4 +28,3 @@ export OCPI_ARCH=$OCPI_TARGET_ARCH
 . ocpi/ocpisetup.sh ocpi/ocpisetup.sh
 echo ""; echo " *** OpenCPI Environment settings"; echo ""
 env | grep OCPI_ | sort
-set +e
