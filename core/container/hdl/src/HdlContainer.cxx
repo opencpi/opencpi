@@ -576,36 +576,14 @@ OCPI_DATA_TYPES
       // Connection between two ports inside this container
       // We know they must be in the same artifact, and have a metadata-defined connection
       void connectInside(OC::Port &provider, const OA::PValue *, const OA::PValue *otherParams) {
-#if 1
 	provider.startConnect(NULL, otherParams);
-#endif
         // We're both in the same runtime artifact object, so we know the port class
         Port &pport = static_cast<Port&>(provider);
         if (m_connection != pport.m_connection)
           throw OC::ApiError("Ports are both local in bitstream/artifact, but are not connected", 0);
       }
-#if 0
-      // Connect to a port in a like container (same driver)
-      bool connectLike(const OA::PValue *uProps, OC::Port &provider, const OA::PValue *pProps) {
-        // We're both in the same runtime artifact object, so we know the port class
-        Port &pport = static_cast<Port&>(provider);
-        ocpiAssert(m_canBeExternal && pport.m_canBeExternal);
-        pport.applyConnectParams(pProps);
-        applyConnectParams(uProps);
-        determineRoles(provider.getData().data);
-        finishConnect(provider.getData().data);
-        pport.finishConnection(getData().data);
-        return true;
-      }
-#endif
       OC::ExternalPort &createExternal(const char *extName, bool isProvider,
 				       const OU::PValue *extParams, const OU::PValue *connParams);
-#if 0
-      // Directly connect to this port
-      // which creates a dummy user port
-      OC::ExternalPort &connectExternal(const char *name, const OA::PValue *userProps,
-					const OA::PValue *props);
-#endif
     };
     int Port::dumpFd = -1;
 
@@ -718,7 +696,7 @@ OCPI_DATA_TYPES
       return *(Port *)0;//      return *new Port(*this);
     }
 
-#if 1 // SHARED_EXTERNAL
+    // only here for proper parent/child
     class ExternalPort : public OC::ExternalPortBase<Port,ExternalPort> {
       friend class Port;
     protected:
@@ -729,7 +707,11 @@ OCPI_DATA_TYPES
     public:
       virtual ~ExternalPort() {}
     };
-#endif
+    OC::ExternalPort &Port::createExternal(const char *extName, bool isProvider,
+					       const OU::PValue *extParams, const OU::PValue *connParams) {
+      return *new ExternalPort(*this, extName, isProvider, extParams, connParams);
+    }
+#if 0
 #ifdef GENERIC_EXTERNAL
     class ExternalBuffer : OC::ExternalBuffer {
       friend class ExternalPort;
@@ -1134,26 +1116,6 @@ void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
       myExternalPort->advanceLocal();
     }
 #endif
-#if 0
-    OC::ExternalPort &Port::connectExternal(const char *extName, const OA::PValue *userProps,
-					    const OA::PValue *props) {
-      if (!m_canBeExternal)
-        throw OC::ApiError ("For external port \"", extName, "\", port \"",
-			    name().c_str(), "\" of worker \"",
-			    parent().implTag().c_str(), "/", parent().instTag().c_str(), "/",
-			    parent().name().c_str(),
-			    "\" is locally connected in the HDL bitstream. ", NULL);
-      applyConnectParams(props);
-      // UserPort constructor must know the roles.
-      ExternalPort *myExternalPort = new ExternalPort(*this, extName, !isProvider(), userProps);
-      finishConnect(myExternalPort->getData().data);
-      return *myExternalPort;
-    }
-#else
-    OC::ExternalPort &Port::createExternal(const char *extName, bool isProvider,
-					       const OU::PValue *extParams, const OU::PValue *connParams) {
-      return *new ExternalPort(*this, extName, isProvider, extParams, connParams);
-    }
 #endif
   }
 }

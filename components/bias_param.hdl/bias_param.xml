@@ -1,0 +1,6 @@
+<HdlWorker language="vhdl" spec="bias_spec.xml">
+  <!-- Insert any other implementation-specific information here -->
+  <StreamInterface Name="in" ImpreciseBurst="true" DataWidth="32" numberofopcodes='256'/>
+  <StreamInterface Name="out" ImpreciseBurst="true" DataWidth="32" numberofopcodes='256'/>
+  <specproperty name='biasvalue' parameter='1' default='0'/>
+</HdlWorker>

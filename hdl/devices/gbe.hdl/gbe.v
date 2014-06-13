@@ -364,6 +364,7 @@ module mkGbeWorker(CLK_gmii_rx_clk,
 `define NOT_EMPTY_gbe
 `include "gbe-defs.vh"
 `endif
+  wire 	 hasDebugLogic = ocpi_debug;
   wire  [66 : 0] wtiS0_req;
   // signals for module outputs
   wire [58 : 0] cpClient_request_get;

@@ -24,11 +24,11 @@ class Worker;
 struct ParamConfig {
   std::vector<Param> params;
   std::string id;
-  size_t nConfig; // incremented during generation
+  size_t nConfig; // ordinal
   bool used;  // Is this config in the current set?
   ParamConfig();
   const char * parse(Worker &w, ezxml_t cx);
-  void write(FILE *xf, FILE *mf, size_t nConfig);
+  void write(Worker &w, FILE *xf, FILE *mf);
   // Is the given configuration the same as this one?
   bool equal(ParamConfig &other);
 };

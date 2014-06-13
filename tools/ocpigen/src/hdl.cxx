@@ -145,30 +145,32 @@ parseHdlImpl(const char *package) {
     bool raw = false;
     for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
       OU::Property &p = **pi;
-      // Determine when the raw properties start
-      if (!p.m_isParameter && m_ctl.rawProperties &&
-	  (!m_ctl.firstRaw ||
-	   !strcasecmp(m_ctl.firstRaw->m_name.c_str(), p.m_name.c_str())))
-	raw = true;
-      if (raw) {
-	if (p.m_isWritable)
-	  m_ctl.rawWritables = true;
-	if (p.m_isReadable)
-	  m_ctl.rawReadables = true;
-      } else if (!p.m_isParameter) {
-	// These control attributes are only set for non-raw properties.
-	if (p.m_isReadable)
-	  m_ctl.nonRawReadables = true;
-	if (p.m_isWritable)
-	  m_ctl.nonRawWritables = true;
-	if (p.m_isVolatile)
-	  m_ctl.nonRawVolatiles = true;
-	if (p.m_isVolatile || p.m_isReadable && !p.m_isWritable)
-	  m_ctl.nonRawReadbacks = true;
-	if (!p.m_isParameter || p.m_isReadable)
-	  m_ctl.nNonRawRunProperties++;
-	if (p.m_isSub32)
-	  m_ctl.nonRawSub32Bits = true;
+      if (!p.m_isParameter) {
+	// Determine when the raw properties start
+	if (m_ctl.rawProperties &&
+	    (!m_ctl.firstRaw ||
+	     !strcasecmp(m_ctl.firstRaw->m_name.c_str(), p.m_name.c_str())))
+	  raw = true;
+	if (raw) {
+	  if (p.m_isWritable)
+	    m_ctl.rawWritables = true;
+	  if (p.m_isReadable)
+	    m_ctl.rawReadables = true;
+	} else {
+	  // These control attributes are only set for non-raw properties.
+	  if (p.m_isReadable)
+	    m_ctl.nonRawReadables = true;
+	  if (p.m_isWritable)
+	    m_ctl.nonRawWritables = true;
+	  if (p.m_isVolatile)
+	    m_ctl.nonRawVolatiles = true;
+	  if (p.m_isVolatile || p.m_isReadable && !p.m_isWritable)
+	    m_ctl.nonRawReadbacks = true;
+	  if (!p.m_isParameter || p.m_isReadable)
+	    m_ctl.nNonRawRunProperties++;
+	  if (p.m_isSub32)
+	    m_ctl.nonRawSub32Bits = true;
+	}
       }
     }
     if (!wci->count)

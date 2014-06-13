@@ -112,6 +112,7 @@ namespace OCPI {
       return
 	m_model == i.model() &&
 	m_os == i.attributes().m_os &&
+	m_osVersion == i.attributes().m_osVersion &&
 	m_platform == i.attributes().m_platform;
     }
 

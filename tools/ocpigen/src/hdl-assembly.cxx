@@ -833,9 +833,12 @@ void Assembly::
 emitAssyInstance(FILE *f, Instance *i, unsigned nControlInstances) {
   // emit before parameters
   Language lang = m_assyWorker.m_language;
-  if (lang == Verilog)
-    fprintf(f, "%s", i->worker->m_implName);
-  else
+  if (lang == Verilog) {
+    std::string suff;
+    if (i->worker->m_paramConfig && i->worker->m_paramConfig->nConfig)
+      OU::format(suff, "_c%zu", i->worker->m_paramConfig->nConfig);
+    fprintf(f, "%s%s", i->worker->m_implName, suff.c_str());
+  } else
     fprintf(f, "  %s_i : component %s.%s_defs.%s_rv\n",
 	    i->name, i->worker->m_library, i->worker->m_implName, i->worker->m_implName);
   bool any = false;
@@ -1137,9 +1140,13 @@ emitWorkersHDL(const char *outFile)
   Instance *i = m_assembly->m_instances;
   fprintf(f, "# Workers in this %s: <implementation>:<instance>\n",
 	  m_assembly->m_isContainer ? "container" : "assembly");
-  for (unsigned n = 0; n < m_assembly->m_nInstances; n++, i++)
+  for (unsigned n = 0; n < m_assembly->m_nInstances; n++, i++) {
     //    if (!m_assembly->m_isContainer || i->iType != Instance::Application)
-      fprintf(f, "%s:%s\n", i->worker->m_implName, i->name);
+    std::string suff;
+    if (i->worker->m_paramConfig && i->worker->m_paramConfig->nConfig)
+      OU::format(suff, "_c%zu", i->worker->m_paramConfig->nConfig);
+    fprintf(f, "%s%s:%s\n", i->worker->m_implName, suff.c_str(), i->name);
+  }
   fprintf(f, "# end of instances\n");
   return NULL;
 }

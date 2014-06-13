@@ -100,10 +100,10 @@ ifdef ImportBlackBox
 Imports += $(ImportBlackBox)
 endif
 
-CoreBlackBoxFiles= $(strip \
-  $(if $(ImportBlackBox), \
-        $(OutDir)imports/$(notdir $(ImportBlackBox)), \
-          $(Top)_bb.v) \
+CoreBlackBoxFiles=$(strip\
+  $(if $(ImportBlackBox),\
+        $(OutDir)imports/$(notdir $(ImportBlackBox)),\
+          $(Top)_bb.v)\
   $(call HdlExists,$(Top)_pkg.vhd))
 
 ################################################################################

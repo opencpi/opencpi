@@ -112,7 +112,7 @@ parseFile(const char *file, const char *parent, const char *element,
     }
     ezxml_t x = ezxml_parse_fd(fd);
     if (x && ezxml_error(x)[0]) {
-      err = OU::esprintf("XML Parsing error: %s", ezxml_error(x));
+      err = OU::esprintf("XML Parsing error in file \"%s\": %s", cp, ezxml_error(x));
       break;
     }
     if (!x || !x->name) {

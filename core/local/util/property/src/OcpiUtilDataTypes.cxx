@@ -128,6 +128,17 @@ namespace OCPI {
 	delete m_default;
     }
     const char *
+    Member::parseDefault(ezxml_t xm, const char *hasDefault) {
+      const char *defValue = ezxml_cattr(xm, hasDefault);
+      if (defValue) {
+	m_default = new Value(*this);
+	const char *err = m_default->parse(defValue);
+	if (err)
+	  return esprintf("for member %s: %s", m_name.c_str(), err);
+      }
+      return NULL;
+    }
+    const char *
     Member::parse(ezxml_t xm, bool isFixed, bool hasName, const char *hasDefault, unsigned ordinal) {
       bool found;
       const char *err;
@@ -250,15 +261,8 @@ namespace OCPI {
       if (m_isSequence && isFixed && m_sequenceLength == 0)
 	return "Sequence must have a bounded size";
       // Process default values
-      if (hasDefault) {
-	// FIXME: should this be illegal if the property is not initiall or writable?
-	const char *defValue = ezxml_cattr(xm, hasDefault);
-	if (defValue) {
-	  m_default = new Value(*this);
-	  if ((err = m_default->parse(defValue)))
-	    return esprintf("for member %s: %s", m_name.c_str(), err);
-	}
-      }
+      if (hasDefault && (err = parseDefault(xm, hasDefault)))
+	return err;
       if (m_format.size() && !strchr(m_format.c_str(), '%'))
 	return esprintf("invalid format string '%s' for '%s'", m_format.c_str(), m_name.c_str());
       return 0;

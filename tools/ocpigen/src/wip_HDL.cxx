@@ -322,19 +322,28 @@ emitLastSignal(FILE *f, std::string &last, Language lang, bool end) {
 }
 
 // Provide a string suitable for initializing a generic
-// THis will be in our own code, not the user's code, so we can count
+// This will be in our own code, not the user's code, so we can count
 // on the visibility of our packages and libraries.
+// If param==true, the value is used in a top level generic setting in tools
 const char *
-vhdlValue(const OU::Value &v, std::string &s) {
+vhdlValue(const OU::Value &v, std::string &s, bool param) {
   switch (v.m_vt->m_baseType) {
   case OA::OCPI_Bool:
-    s = "b";
-    v.unparse(s, true);
+    if (param)
+      OU::format(s, "bool_t := b%s", v.m_Bool ? "true" : "false");
+    else {
+      s = "b";
+      v.unparse(s, true);
+    }
     break;
   case OA::OCPI_ULong:
-    s = "to_ulong(";
-    v.unparse(s, true);
-    s += ")";
+    if (param)
+      OU::format(s, "ulong_t := to_ulong(%u)", v.m_ULong);
+    else {
+      s = "to_ulong(";
+      v.unparse(s, true);
+      s += ")";
+    }
     break;
   default:
     s = "<unsupported type for VHDL parameter/generic>";
@@ -343,19 +352,25 @@ vhdlValue(const OU::Value &v, std::string &s) {
 }
 
 static const char*
-verilogValue(const OU::Value &, std::string &) {
-  return NULL;
+verilogValue(const OU::Value &v, std::string &s, bool) {
+  if (v.m_vt->m_baseType == OA::OCPI_Bool)
+    OU::format(s, "1'b%u", v.m_Bool ? 1 : 0);
+  else
+    OU::format(s, "%zu'h%" PRIx32, v.m_vt->m_nBits/4, v.m_ULong);
+  return s.c_str();
 }
 const char *Worker::
-hdlValue(const OU::Value &v, std::string &value) {
-  return m_language == VHDL ?
-    vhdlValue(v, value) : verilogValue(v, value);
+hdlValue(const OU::Value &v, std::string &value, bool param, Language lang) {
+  if (lang == NoLanguage)
+    lang = m_language;
+  return lang == VHDL ?
+    vhdlValue(v, value, param) : verilogValue(v, value, param);
 }
 
 // Record bool says we are emitting a record interface so
 // it is not wrapping verilog - UGH
 void Worker::
-emitParameters(FILE *f, Language lang, bool convert) {
+emitParameters(FILE *f, Language lang, bool useDefaults, bool convert) {
   bool first = true;
   std::string last;
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
@@ -366,16 +381,6 @@ emitParameters(FILE *f, Language lang, bool convert) {
 	first = false;
       }
       OU::Property *pr = *pi;
-      int64_t i64 = 0;
-      if (pr->m_default)
-	switch (pr->m_baseType) {
-#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)			\
-	  case OA::OCPI_##pretty:					\
-	    i64 = (int64_t)pr->m_default->m_##pretty; break;
-	  OCPI_PROPERTY_DATA_TYPES
-#undef OCPI_DATA_TYPE
-	default:;
-	}
       if (lang == VHDL) {
 	// Note we could be very obsessive with types becase VHDL can be,
 	// but not now...
@@ -398,16 +403,19 @@ emitParameters(FILE *f, Language lang, bool convert) {
 	case OA::OCPI_String: type = "string_t"; break;
 	default:;
 	}
-	if (pr->m_default) {
-	  std::string vhv;
-	  vhdlValue(*pr->m_default, vhv);
-	  if (pr->m_baseType == OA::OCPI_Bool && convert)
-	    OU::format(value, "ocpi.util.slv(%s)", vhv.c_str());
-	  else
-	    value = vhv;
-	}
+	if (useDefaults) {
+	  if (pr->m_default) {
+	    std::string vhv;
+	    vhdlValue(*pr->m_default, vhv);
+	    if (pr->m_baseType == OA::OCPI_Bool && convert)
+	      OU::format(value, "ocpi.util.slv(%s)", vhv.c_str());
+	    else
+	      value = vhv;
+	  }
+	} else
+	  OU::format(value, "work.generics.%s", pr->m_name.c_str());
 	emitSignal(pr->m_name.c_str(), f, lang, Signal::IN, last, -1, 0, "  ",
-		   type.c_str(), pr->m_default ? value.c_str() : NULL);
+		   type.c_str(), value.c_str()); //pr->m_default ? value.c_str() : NULL);
       } else {
 #if 0
 	  if (pr->m_baseType == OA::OCPI_Bool) {
@@ -421,6 +429,16 @@ emitParameters(FILE *f, Language lang, bool convert) {
 	    OU::formatAdd(value, "\"");
 	  }
 #endif
+	  int64_t i64 = 0;
+	  if (pr->m_default)
+	    switch (pr->m_baseType) {
+#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)			\
+	    case OA::OCPI_##pretty:					\
+	      i64 = (int64_t)pr->m_default->m_##pretty; break;
+	    OCPI_PROPERTY_DATA_TYPES
+#undef OCPI_DATA_TYPE
+	    default:;
+	    }
 	if (pr->m_baseType == OA::OCPI_Bool)
 	  fprintf(f, "  parameter [0:0] %s = 1'b%u;\n",
 		  pr->m_name.c_str(), (i64 != 0) & 1);
@@ -1099,8 +1117,7 @@ emitVhdlWorkerEntity(FILE *f, unsigned maxPropName) {
 	  "library ocpi; use ocpi.types.all;\n");
   emitVhdlLibraries(f);
   fprintf(f,
-	  "use work.%s_worker_defs.all;\n"
-	  "use work.%s_defs.all;\n"
+	  "use work.%s_worker_defs.all, work.%s_defs.all;\n"
 	  "entity %s_worker is\n",
 	  m_implName, m_implName, m_implName);
   emitParameters(f, VHDL);
@@ -1400,7 +1417,7 @@ emitDefsHDL(bool wrap) {
       return err;
     fprintf(f,
 	    "\ncomponent %s is\n", m_implName);
-    emitParameters(f, lang, true);
+    emitParameters(f, lang, true, true);
   } else
     fprintf(f,
 	    "\n"
@@ -1408,7 +1425,7 @@ emitDefsHDL(bool wrap) {
 	    "`ifndef NOT_EMPTY_%s\n"
 	    "(* box_type=\"user_black_box\" *)\n"
 	    "`endif\n"
-	    "module %s (\n", m_implName, m_implName);
+	    "module %s//__\n(\n", m_implName, m_implName);
   emitSignals(f, lang, false, false, true);
   if (lang == VHDL) {
     fprintf(f,
@@ -1991,8 +2008,22 @@ emitVhdlShell(FILE *f) {
   }
 #endif
   fprintf(f,
-	  "worker : entity work.%s_worker\n"
-	  "  port map(\n", m_implName);
+	  "worker : entity work.%s_worker\n", m_implName);
+  bool first = true;
+  for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
+    if ((*pi)->m_isParameter) {
+      if (first) {
+	fprintf(f,
+		"  generic map(\n");
+      }
+      fprintf(f,  "%s    %s => %s",
+	      first ? "" : ",\n", (*pi)->m_name.c_str(), (*pi)->m_name.c_str());
+      first = false;
+    }
+  if (!first)
+    fprintf(f, ")\n");
+  fprintf(f,
+	  "  port map(\n");
   std::string last;
   for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
     Clock *c = *ci;
@@ -2132,16 +2163,16 @@ emitVhdlSignalWrapper(FILE *f, const char *topinst) {
 	    m_implName);
     emitVhdlLibraries(f);
     fprintf(f,
-	    "entity %s is\n", m_implName);
-    emitParameters(f, m_language);
+	    "entity %s--__\n is\n", m_implName);
+    emitParameters(f, m_language, false);
     emitSignals(f, m_language, false, false);
-    fprintf(f, "end entity %s;\n", m_implName);
+    fprintf(f, "end entity %s--__\n;\n", m_implName);
     fprintf(f,
 	    "library IEEE; use IEEE.std_logic_1164.all, ieee.numeric_std.all;\n"
 	    "library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions\n");
     emitVhdlLibraries(f);
     fprintf(f,
-	    "architecture rtl of %s is begin\n"
+	    "architecture rtl of %s--__\nis begin\n"
 	    "  %s: entity work.%s_rv\n",
 	    m_implName, topinst, m_implName);
     bool first = true;
@@ -2250,7 +2281,7 @@ emitVhdlRecordWrapper(FILE *f) {
     emitVhdlLibraries(f);
     fprintf(f,
 	    "entity %s_rv is\n", m_implName);
-    emitParameters(f, VHDL);
+    emitParameters(f, VHDL, false);
     emitSignals(f, VHDL, false, true);
     fprintf(f, "end entity %s_rv;\n", m_implName);
     fprintf(f,
@@ -2501,18 +2532,16 @@ emitImplHDL(bool wrap) {
     //    emitVhdlPackageBody(f);
     fprintf(f, 
 	    "\n"
-	    "-- This is the entity declaration that the worker developer will implement\n"
+	    "-- This is the entity declaration for the top level record-based VHDL\n"
 	    "-- The achitecture for this entity will be in the implementation file\n"
 	    "library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;\n"
 	    "library ocpi; use ocpi.all, ocpi.types.all;\n"
-	    //	      "library work; use work.all, work.%s_defs.all;\n"
-	    "use work.%s_worker_defs.all;\n"
-	    "library %s; use %s.all, %s.%s_defs.all;\n",
-	    m_implName, m_implName, m_implName, m_implName, m_implName);
+	    "use work.%s_worker_defs.all, work.%s_defs.all;\n",
+	    m_implName, m_implName);
     emitVhdlLibraries(f);
     fprintf(f,
 	    "entity %s_rv is\n", m_implName);
-    emitParameters(f, m_language);
+    emitParameters(f, m_language, false);
     emitSignals(f, m_language, false, true);
   } else
     // Verilog just needs the module declaration and any other associate declarations
@@ -2776,7 +2805,7 @@ emitImplHDL(bool wrap) {
 	  fprintf(f, "  signal wci_is_big_endian    : Bool_t;\n");
 	fprintf(f,
 		"  signal wci_control_op       : wci.control_op_t;\n"
-		"  signal raw_offset           : unsigned(%s_worker_defs.worker.decode_width-1 downto 0);\n"
+		"  signal raw_offset           : unsigned(work.%s_worker_defs.worker.decode_width-1 downto 0);\n"
 		"  signal wci_state            : wci.state_t;\n"
 		"  -- wci information from worker\n"
 		"  signal wci_attention        : Bool_t;\n"
@@ -2862,8 +2891,7 @@ emitImplHDL(bool wrap) {
 	      "-- which can be used by the worker implementer to avoid all the OCP/WCI issues\n"
 	      "library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;\n"
 	      "library ocpi; use ocpi.all, ocpi.types.all;\n"
-	      "library %s; use %s.all, %s.%s_defs.all;\n"
-	      "use work.%s_worker_defs.all;\n"
+	      "use work.%s_worker_defs.all, work.%s_defs.all;\n"
 	      "entity %s_wci is\n"
 	      "  generic(ocpi_debug : bool_t);\n"
 	      "  port(\n"
@@ -2882,7 +2910,7 @@ emitImplHDL(bool wrap) {
 	      "    %-*s : out bool_t;            -- is a config write in progress?\n"
 #endif
 	      "    %-*s : out bool_t;            -- shorthand for state==operating_e\n",
-	      m_implName, m_implName, m_implName, m_implName, m_implName, m_implName,
+	      m_implName, m_implName, m_implName,
 	      maxPropName, "inputs", wci->typeNameIn.c_str(),
 	      maxPropName, "done",
 	      maxPropName, "error",
@@ -2942,7 +2970,7 @@ emitImplHDL(bool wrap) {
 	  fprintf(f,
 		  "  -- signals between the decoder and the readback mux\n"
 		  "  signal read_enables  : bool_array_t(0 to %u);\n"
-		  "  signal readback_data : wci.data_a_t(%s_worker_defs.properties'range);\n",
+		  "  signal readback_data : wci.data_a_t(work.%s_worker_defs.properties'range);\n",
 		  nProps_1, m_implName);
 	  fprintf(f,
 		  "  -- The output to SData from nonRaw properties\n"
@@ -3001,14 +3029,14 @@ emitImplHDL(bool wrap) {
       if (m_ctl.nRunProperties)
 	fprintf(f,
 		"  wci_decode : component wci.decoder\n"
-		"      generic map(worker               => %s_worker_defs.worker,\n"
-		"                  properties           => %s_worker_defs.properties,\n"
+		"      generic map(worker               => work.%s_worker_defs.worker,\n"
+		"                  properties           => work.%s_worker_defs.properties,\n"
 		"                  ocpi_debug           => ocpi_debug)\n",
 		m_implName, m_implName);
       else
 	fprintf(f,
 		"  wci_decode : component wci.control_decoder\n"
-		"      generic map(worker               => %s_worker_defs.worker)\n",
+		"      generic map(worker               => work.%s_worker_defs.worker)\n",
 		m_implName);
       fprintf(f,
 	      "      port map(   ocp_in.Clk           => inputs.Clk,\n"
@@ -3061,7 +3089,7 @@ emitImplHDL(bool wrap) {
       if (m_ctl.nonRawReadables)
 	fprintf(f,
 		"  readback : component wci.readback\n"
-		"    generic map(%s_worker_defs.properties, ocpi_debug)\n"
+		"    generic map(work.%s_worker_defs.properties, ocpi_debug)\n"
 		"    port map(   read_enables => read_enables,\n"
 		"                data_inputs  => readback_data,\n"
 		"                data_output  => nonRaw_SData);\n",
@@ -3082,8 +3110,8 @@ emitImplHDL(bool wrap) {
 	if (pr.m_isWritable) {
 	  fprintf(f, 
 		  "  %s_property : component ocpi.props.%s%s_property\n"
-		  "    generic map(worker       => %s_worker_defs.worker,\n"
-		  "                property     => %s_worker_defs.properties(%u)",
+		  "    generic map(worker       => work.%s_worker_defs.worker,\n"
+		  "                property     => work.%s_worker_defs.properties(%u)",
 		  name, OU::baseTypeNames[pr.m_baseType],
 		  pr.m_arrayRank || pr.m_isSequence ? "_array" : "",
 		  m_implName, m_implName, n);
@@ -3142,8 +3170,8 @@ emitImplHDL(bool wrap) {
 	if (pr.m_isReadable) {
 	  fprintf(f, 
 		  "  %s_readback : component ocpi.props.%s_read%s_property\n"
-		  "    generic map(worker       => %s_worker_defs.worker,\n"
-		  "                property     => %s_worker_defs.properties(%u))\n"
+		  "    generic map(worker       => work.%s_worker_defs.worker,\n"
+		  "                property     => work.%s_worker_defs.properties(%u))\n"
 		  "    port map(",
 		  pr.m_name.c_str(), OU::baseTypeNames[pr.m_baseType],
 		  pr.m_arrayRank || pr.m_isSequence ? "_array" : "",

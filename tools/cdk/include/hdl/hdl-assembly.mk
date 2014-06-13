@@ -148,11 +148,6 @@ else
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 ifndef HdlSkip
 
-# Generate the assemnbly's bb file by simply linking to the defs
-#CoreBlackBoxFile:=$(GeneratedDir)/$(Worker)_bb$(HdlSourceSuffix)
-#$(CoreBlackBoxFile): $$(DefsFile) | $$(OutDir)gen
-#	$(AT)$(call MakeSymLink2,$(DefsFile),$(GeneratedDir),$(notdir $@))
-
 # Generate the source code for this "assembly worker" implementation file.
 $(call OcpiDgbVar,$(HdlSourceSuffix))
 # This variable is also used when processing the ImplWorkersFile to determine the language
@@ -222,9 +217,10 @@ HdlContOcpiGen=\
              $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) \
 	     $(and $(HdlPlatform),-P $(HdlPlatform)) \
              -S $(Worker) \
-	     $(if $(and $(ComponentLibraries),$(HdlToolNeedBB_$(HdlToolSet_$(HdlTarget_$1)))),\
-                $(foreach l,$(ComponentLibraries),\
-                  -L $(notdir $l):$(call HdlXmlComponentLibrary,$l)/hdl)) \
+
+#	     $(if $(and $(ComponentLibraries),$(HdlToolNeedBB_$(HdlToolSet_$(HdlTarget_$1)))),\
+#                $(foreach l,$(ComponentLibraries),\
+#                  -L $(notdir $l):$(call HdlXmlComponentLibrary,$l)/hdl)) \
 
 ################################################################################
 # The function to evaluate for each container
@@ -283,7 +279,17 @@ $(call HdlContainer,$1) $(call HdlContBitName,$1): \
 #$(call HdlContainer,$1) $(call HdlContBitName,$1): \
 #                         AllCores=$$(call HdlCollectCores,$$(HdlTarget))
 # The two basic pieces of the container are cores, not workers
-$(call HdlContainer,$1) $(call HdlContBitName,$1): Cores=$(call HdlAssembly,$1) $(call HdlConfig,$1)
+#$(call HdlContainer,$1) $(call HdlContBitName,$1): Cores=$(call HdlAssembly,$1) $(call HdlConfig,$1)
+# NOTE that the second phoney "component library" must have a slash in it.
+$(call HdlContainer,$1): \
+ComponentLibraries+=\
+  $(HdlPlatformsDir)/$(HdlPlatform_$1)/target-$(call HdlConfig_$1)/$(call HdlConfig_$1) \
+  ./target-$(HdlTarget_$1)/$(Worker)    
+#$(call HdlContainer,$1) $(call HdlContBitName,$1): override SubCores+=\
+#  $(HdlPlatformsDir)/$(HdlPlatform_$1)/target-$(call HdlConfig_$1)/$(call HdlConfig_$1) \
+#  ./target-$(HdlTarget_$1)/$(Worker)
+
+
 $(call HdlContainer,$1): \
       $(call HdlToolCoreRef_$(HdlToolSet_$(HdlTarget_$1)),$(call HdlAssembly,$1))$(HdlBin) \
       $(call HdlToolCoreRef_$(HdlToolSet_$(HdlTarget_$1)),$(call HdlConfig,$1))$(HdlBin)

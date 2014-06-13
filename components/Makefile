@@ -56,6 +56,8 @@ Implementations = \
 	adc_unpack.rcc \
 	bias.hdl \
 	bias_ver.hdl \
+	bias_param.hdl \
+	bias_vhdl.hdl \
 	blur.rcc \
 	canny.rcc \
 	canny_partial.rcc \
@@ -110,13 +112,13 @@ Implementations = \
 	bias.rcc \
 	pattern.hdl pattern.rcc \
 	capture.hdl capture.rcc \
-	bias_vhdl.hdl \
 	ptest.rcc \
 	ptest.hdl \
         file_read.hdl \
 	file_write.hdl \
         replicate.rcc \
 	bias_cc.rcc \
+        bias_param.rcc \
 	$(Tests)
 
 #	fir_prog.hdl \

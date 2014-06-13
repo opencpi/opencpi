@@ -73,8 +73,9 @@ namespace OCPI {
   namespace Util {
     class Property : public OCPI::API::PropertyInfo {
       const char
+	*parseCheck(),
 	*parseImplAlso(ezxml_t x),
-	*parseAccess(ezxml_t prop, bool &readableConfigs, bool &writableConfigs, bool addAccess);
+	*parseAccess(ezxml_t prop, bool addAccess);
     public:
       Property();
       ~Property();
@@ -88,24 +89,19 @@ namespace OCPI {
 	m_isParameter,     // For compile-time parameter
 	m_isSub32,
 	m_isImpl,          // is an impl property, not a spec property
+	m_isPadding,
 	m_isTest;
       unsigned long m_dataOffset;
       size_t m_paramOrdinal; // Among parameters, which position?
       // Sizes in bits of the various types
-      const char *parse(ezxml_t x,
-			bool &readableConfigs,
-			bool &writableConfigs,
-			bool &sub32Configs,
-			bool includeImpl,
-			unsigned ordinal);
-      const char *parseImpl(ezxml_t x, bool &readableConfigs, bool &writableConfigs);
-      const char *parse(ezxml_t x, unsigned ordinal);
-      const char *parseValue(const char *unparsed, Value &value, const char *end = NULL) const;
+      const char
+	*parse(ezxml_t x, bool includeImpl, unsigned ordinal),
+	*parseImpl(ezxml_t x),
+	*parse(ezxml_t x, unsigned ordinal),
+	*parseValue(const char *unparsed, Value &value, const char *end = NULL) const,
+        *checkType(OCPI::API::BaseType ctype, unsigned n, bool write),
+	*getValue(ExprValue &val);
       void offset(size_t &cumOffset, uint64_t &sizeofConfigSpace);
-      // Check when accessing with scalar type and sequence length
-      const char *checkType(OCPI::API::BaseType ctype, unsigned n, bool write);
-      const char *getValue(ExprValue &val);
-    private:
     };
   }
 }

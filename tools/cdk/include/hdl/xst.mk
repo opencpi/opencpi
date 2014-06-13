@@ -77,12 +77,13 @@ HdlBin_xst=.ngc
 # I.e. it builds a singular binary file that can be used in upper builds.
 # If not set, it implies that only a library containing the implementation is
 # possible
-HdlToolRealCore=yes
+HdlToolRealCore:=yes
+HdlToolRealCore_xst:=yes
 ################################################################################
 # Variable required by toolset: HdlToolNeedBB=yes
 # Set if the tool set requires a black-box library to access a core
-HdlToolNeedBB=yes
-HdlToolNeedBB_xst=yes
+HdlToolNeedBB:=yes
+HdlToolNeedBB_xst:=yes
 ################################################################################
 # Function required by toolset: $(call HdlToolCoreRef,coreref)
 # Modify a stated core reference to be appropriate for the tool set
@@ -246,6 +247,17 @@ XstLsoFile=$(Core).lso
 XstIniFile=$(Core).ini
 
 XstLibraries=$(HdlLibrariesInternal)
+ifneq (,)
+XstMakeGenerics=$(and $(WorkerParamNames),\
+   ( \
+     echo -- This file sets values for top level generics ;\
+     echo library ocpi\; use ocpi.all, ocpi.types.all\; ;\
+     echo package generics is ;\
+     $(foreach n,$(WorkerParamNames),\
+	echo constant $n : \"$(Param_$(ParamConfig)_$n)\"\; ;) \
+     echo end package generics\; \
+   ) > generics.vhd;)
+endif
 
 XstNeedIni= $(strip $(XstLibraries)$(ComponentLibraries)$(CDKCompenentLibraries)$(CDKDeviceLibraries)$(Cores))
 #   $(and $(findstring worker,$(HdlMode)),echo $(call ToLower,$(Worker))=$(call ToLower,$(Worker));) 
@@ -253,7 +265,7 @@ XstNeedIni= $(strip $(XstLibraries)$(ComponentLibraries)$(CDKCompenentLibraries)
 # Choices as to where a bb might be
 # 1. For pointing to a built target directory with the filename being the core name,
 #    where the core, and bblib is built.  Core is $1.$(HdlBin) Lib is $(dir $1)/bb/$(notdir $1)
-XstCoreLibraryChoices=$(strip \
+XstCoreLibraryChoices=$(xinfo XCLT:$1)$(strip \
   $(and $(filter target-%,$(subst /, ,$1)),$(dir $1)/bb/$(notdir $1)) \
   $(and $(filter target-%,$(subst /, ,$1)),$(dir $1)/bb/$(patsubst %_rv,%,$(notdir $1))) \
   $(call HdlLibraryRefDir,$1_bb,$(if $(HdlTarget),$(call HdlGetFamily,$(HdlTarget)),NONE3)) \
@@ -286,17 +298,18 @@ XstMakeLso=\
 
 #  $(call HdlLibraryRefDir,$1,$(or $(HdlTarget),$(info NONE4)),$(notdir $1)_bb) \
 
+#   $(foreach l,$(XstCompLibs),echo $(notdir $(l))=$(strip \
+#     $(call FindRelative,$(TargetDir),$(call HdlComponentLibraryDir,$l,$(HdlTarget),bb)));) \
+
 XstMakeIni=\
   (\
-   $(foreach l,$(XstCompLibs),echo $(notdir $(l))=$(strip \
-     $(call FindRelative,$(TargetDir),$(call HdlComponentLibraryDir,$l,$(HdlTarget),bb)));) \
    $(foreach l,$(HdlLibrariesInternal),\
       echo $(lastword $(subst -, ,$(notdir $(l))))=$(strip \
         $(call FindRelative,$(TargetDir),$(strip \
            $(call HdlLibraryRefDir,$(l),$(HdlTarget)))));) \
-   $(foreach l,$(Cores),\
+   $(foreach l,$(xinfo SubCores:$(SubCores))$(SubCores),\
       echo $(patsubst %_rv,%,$(basename $(notdir $l)))=$(call FindRelative,$(TargetDir),$(strip \
-          $(firstword $(foreach c,$(call XstCoreLibraryChoices,$(basename $l)),$(call HdlExists,$c)))));) \
+          $(firstword $(foreach c,$(call XstCoreLibraryChoices,$(call HdlRmRv,$(basename $l))),$(call HdlExists,$c)))));) \
   ) > $(XstIniFile);
 
 XstOptions += $(and $(XstNeedIni),-lso $(XstLsoFile))
@@ -307,12 +320,12 @@ XstPrjFile=$(Core).prj
 VhdlSources    = ${strip ${filter %vhd, $(HdlSources)}}
 VerilogSources = ${strip ${filter-out %vhd, $(HdlSources)}}
 XstMakePrj=rm -f $(XstPrjFile); \
-           $(if $(VerilogSources), ($(foreach f,$(VerilogSources), echo verilog $(if $(filter $(WorkLibrarySources),$(f)),work,$(WorkLib)) '"$(call FindRelative,$(TargetDir),$(dir $(f)))/$(notdir $(f))"';)) >  $(XstPrjFile);, ) \
+           $(if $(VerilogSources), ($(foreach f,$(VerilogSources), echo verilog $(if $(filter $(WorkLibrarySources),$(f)),work,$(WorkLib)) '"$(call FindRelative,$(TargetDir),$(dir $(f)))/$(notdir $(f))"';)) >>  $(XstPrjFile);, ) \
            $(if $(VhdlSources),    ($(foreach f,$(VhdlSources),    echo vhdl    $(if $(filter $(WorkLibrarySources),$(f)),work,$(WorkLib)) '"$(call FindRelative,$(TargetDir),$(dir $(f)))/$(notdir $(f))"';)) >> $(XstPrjFile);, )
 XstScrFile=$(Core).scr
 
 XstMakeScr=(echo set -xsthdpdir . $(and $(XstNeedIni),-xsthdpini $(XstIniFile));\
-            echo run $(strip $(XstOptions))) > $(XstScrFile);
+            echo run $(XstParams) $(strip $(XstOptions))) > $(XstScrFile);
 # The options we directly specify
 #$(info TARGETDIR: $(TargetDir))
 # $(and $(findstring worker,$(HdlMode)),-work_lib work) 
@@ -375,6 +388,7 @@ HdlToolCompile=\
   $(xxxinfo ALLCORE1) \
   echo '  'Creating $@ with top == $(Top)\; details in $(TargetDir)/xst-$(Core).out.;\
   rm -f $(notdir $@);\
+  $(XstMakeGenerics)\
   $(XstMakePrj)\
   $(and $(XstNeedIni),$(XstMakeLso))\
   $(and $(XstNeedIni),$(XstMakeIni))\

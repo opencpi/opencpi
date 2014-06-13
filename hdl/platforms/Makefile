@@ -43,7 +43,7 @@ include $(OCPI_CDK_DIR)/include/package.mk
 all: $(HdlPlatforms)
 
 $(HdlPlatforms):
-	$(AT)echo Building platform $@
+	$(AT)echo =============Building platform $@
 	$(AT)$(MAKE) --no-print-directory -C $@
 
 clean::

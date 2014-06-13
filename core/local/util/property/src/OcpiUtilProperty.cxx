@@ -91,52 +91,50 @@ namespace OCPI {
       return value.parse(unparsed, end);
     }
 
+    // FIXME find the caller and nuke this one
     const char *
     Property::parse(ezxml_t prop, unsigned ordinal) {
-      bool readableConfigs = false, writableConfigs = false, sub32Configs = false;
-      return parse(prop, readableConfigs, writableConfigs, sub32Configs, true, ordinal);
+      return parse(prop, true, ordinal);
     }
 
     const char *
-    Property::parseAccess(ezxml_t prop, bool &readableConfigs, bool &writableConfigs,
-			  bool addAccess) {
+    Property::parseAccess(ezxml_t prop, bool addAccess) {
       const char *err;
-      bool padding;
       if ((err = OE::getBoolean(prop, "Readable", &m_isReadable, addAccess)) ||
 	  (err = OE::getBoolean(prop, "Writable", &m_isWritable, addAccess)) ||
 	  (err = OE::getBoolean(prop, "Initial", &m_isInitial, addAccess)) ||
 	  (err = OE::getBoolean(prop, "Volatile", &m_isVolatile, addAccess)) ||
-	  (err = OE::getBoolean(prop, "Padding", &padding, false)))
+	  (err = OE::getBoolean(prop, "Padding", &m_isPadding, false)))
 	return err;
       if (m_isInitial)
 	m_isWritable = true;
       if (m_isVolatile)
 	m_isReadable = true;
-      if (m_isReadable && !m_isParameter)
-	readableConfigs = true;
-      if (m_isWritable)
-	writableConfigs = true;
-      if (!m_isWritable && !m_isReadable && !m_isParameter && !padding)
+      return NULL;
+    }
+    // Common checking for initial parsing and add-impl-stuff parsing
+    const char *
+    Property::parseCheck() {
+      if (m_isParameter && ((m_isWritable && !m_isInitial) || m_isIndirect))
+	return esprintf("Property \"%s\" is a parameter and can't be writable or indirect",
+			m_name.c_str());
+      if (!m_isWritable && !m_isReadable && !m_isParameter && !m_isPadding)
 	return "property is not readable or writable or padding or a parameter";
       return NULL;
     }
     // This is parsing a newly create property that might be only defined in
     // an implementation (includeImpl == true)
     const char *
-    Property::parse(ezxml_t prop, bool &readableConfigs, bool &writableConfigs,
-		    bool &sub32Configs,  bool includeImpl, unsigned ordinal) {
+    Property::parse(ezxml_t prop, bool includeImpl, unsigned ordinal) {
       const char *err;
 
       if ((err = includeImpl ?
 	   OE::checkAttrs(prop, "Name", PROPERTY_ATTRIBUTES, IMPL_ATTRIBUTES, NULL) :
 	   OE::checkAttrs(prop, "Name", PROPERTY_ATTRIBUTES, NULL)) ||
 	  includeImpl && (err = parseImplAlso(prop)) ||
-	  (err = parseAccess(prop, readableConfigs, writableConfigs, false)) ||
+	  (err = parseAccess(prop, false)) ||
 	  (err = Member::parse(prop, !m_isParameter, true, "default", ordinal)))
 	return err;
-      if (m_isParameter && (m_isWritable || m_isIndirect))
-	return esprintf("Property \"%s\" is a parameter and can't be writable or indirect",
-			m_name.c_str());
       // This call is solely used for sub32 determination.  The rest are ignored here.
       // FIXME: move this determination into the parse to avoid all this...
       size_t maxAlign = 1; // dummy and not really used since property sheet is zero based anyway
@@ -147,9 +145,11 @@ namespace OCPI {
       if ((err = Member::offset(maxAlign, myOffset, minSize, diverseSizes, m_isSub32,
 				unBoundedDummy)))
 	return err;
+#if 0 // moved to parse.cxx of ocpigen
       if (m_isSub32)
 	sub32Configs = true;
-      return NULL;
+#endif
+      return parseCheck();
     }
     // A higher up is creating offsets in a list of properties after we know it all
     void Property::
@@ -208,12 +208,15 @@ namespace OCPI {
 
     // This parses something that is adding impl attributes to an existing property
     const char *Property::
-    parseImpl(ezxml_t x, bool &readableConfigs, bool &writableConfigs) {
+    parseImpl(ezxml_t x) {
       const char *err;
-      if ((err = OE::checkAttrs(x, "Name", IMPL_ATTRIBUTES, NULL)) ||
-	  (err = parseAccess(x, readableConfigs, writableConfigs, true)))
+      if ((err = OE::checkAttrs(x, "Name", IMPL_ATTRIBUTES, "default", NULL)) ||
+	  (err = parseAccess(x, true)) ||
+	  // FIXME: should this be illegal if the property is not initiall or writable?
+	  (err = parseDefault(x, "default")) ||
+	  (err = parseImplAlso(x)))
 	return err;
-      return parseImplAlso(x);
+      return parseCheck();
     }
     const char *Property::getValue(ExprValue &val) {
       if (!m_default)

@@ -313,22 +313,13 @@ tryOneChildInclude(ezxml_t top, const char *parent, const char *element,
   return err;
 }
 
-void Worker::
-addAccess(OU::Property &p) {
-  if (p.m_isVolatile)
-    m_ctl.volatiles = true;
-  if (p.m_isVolatile || p.m_isReadable && !p.m_isWritable && !p.m_isParameter)
-    m_ctl.readbacks = true;
-}
-
 const char *Worker::
 addProperty(ezxml_t prop, bool includeImpl)
 {
   OU::Property *p = new OU::Property;
   
   const char *err =
-    p->parse(prop, m_ctl.readables, m_ctl.writables, m_ctl.sub32Bits,
-	     includeImpl, (unsigned)(m_ctl.ordinal++));
+    p->parse(prop, includeImpl, (unsigned)(m_ctl.ordinal++));
   // Now that have parsed the property "in a vacuum", do two context-sensitive things:
   // Override the default value of parameter properties
   // Skip debug properties if the debug parameter is not present.
@@ -337,12 +328,8 @@ addProperty(ezxml_t prop, bool includeImpl)
     if (!strcasecmp(p->m_name.c_str(), "ocpi_debug"))
       m_debugProp = p;
     m_ctl.properties.push_back(p);
-    if (p->m_isParameter)
-      p->m_paramOrdinal = m_ctl.nParameters++;
-    else
-      m_ctl.nRunProperties++;
     p->m_isImpl = includeImpl;
-    addAccess(*p);
+    //    addAccess(*p);
     return NULL;
   }
   delete p;
@@ -420,13 +407,12 @@ doMaybeProp(ezxml_t maybe, void *vpinfo) {
     // FIXME mark a property as "impled" so we reject doing it more than once
     if (!p)
       return OU::esprintf("Existing property named \"%s\" not found", name);
-    if (p->m_default && ezxml_cattr(maybe, "Default"))
+    const char *def = ezxml_cattr(maybe, "Default");
+    if (p->m_default && def)
       return OU::esprintf("Implementation property named \"%s\" cannot override "
 			  "previous default value", name);
     // So simply add impl info to the existing property
-    if (!(err = p->parseImpl(maybe, w->m_ctl.readables, w->m_ctl.writables)))
-      w->addAccess(*p);
-    return err;
+    return p->parseImpl(maybe);
   } else if (p)
       return OU::esprintf("Property named \"%s\" conflicts with existing/previous property",
 			  name);
@@ -504,9 +490,11 @@ parseImplControl(ezxml_t &xctl) {
       (err = doProperties(m_xml, m_file.c_str(), true, false)))
     return err;
   // Now that we have all information about properties and we can actually
-  // do the offset calculations
-  for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
+  // do the offset calculations and summarize the access type counts and flags
+  for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
     (**pi).offset(m_ctl.offset, m_ctl.sizeOfConfigSpace);
+    m_ctl.summarizeAccess(**pi);
+  }
   // Allow overriding sizeof config space, giving priority to controlinterface
   uint64_t sizeOfConfigSpace;
   bool haveSize = false;
@@ -957,6 +945,12 @@ create(const char *file, const char *parent, const char *package, const char *ou
     w = NULL;
   } else
     w->m_outDir = outDir;
+  if (w->m_library) {
+    std::string lib(w->m_library);
+    if (w->m_paramConfig && w->m_paramConfig->nConfig)
+      OU::formatAdd(lib, "_c%zu", w->m_paramConfig->nConfig);
+    addLibMap(lib.c_str());
+  }
   return w;
 }
 
@@ -980,6 +974,7 @@ static unsigned nMaps;
 // If just a library is added, it will be added to this list, but not have a file mapping
 const char *
 addLibMap(const char *map) {
+  ocpiDebug("addLibMap: %s", map);
   const char *cp = strchr(map, ':');
   const char *newLib = cp ? strndup(map, cp - map) : strdup(map);
   if (cp)
@@ -999,8 +994,9 @@ addLibMap(const char *map) {
   mappedLibraries = (const char **)realloc(mappedLibraries, (nMaps + 2) * sizeof(char *));
   mappedDirs = (const char **)realloc(mappedDirs, (nMaps + 2) * sizeof(char *));
   mappedLibraries[nMaps] = newLib;
-  mappedDirs[nMaps++] = cp ? cp : "";
-  mappedLibraries[nMaps] = 0;
+  mappedDirs[nMaps] = cp ? cp : "";
+  ocpiDebug("addLibMap: lib is %s dir is %s", newLib, mappedDirs[nMaps]);
+  mappedLibraries[++nMaps] = 0;
   mappedDirs[nMaps] = 0;
   return NULL;
 }
@@ -1015,17 +1011,41 @@ findLibMap(const char *file) {
   return NULL;
 }
 
-Control::Control()
-  : sizeOfConfigSpace(0),
-    writables(false), nonRawWritables(false), rawWritables(false),
-    readables(false), // this does NOT include parameters
-    nonRawReadables(false), rawReadables(false),
-    sub32Bits(false), nonRawSub32Bits(false), volatiles(false), nonRawVolatiles(false),
-    readbacks(false), nonRawReadbacks(false), rawReadbacks(false),
-    nRunProperties(0), nNonRawRunProperties(0), nParameters(0),
-    controlOps(0), offset(0), ordinal(0), rawProperties(false), firstRaw(NULL)
+Control::
+Control()
+  : sizeOfConfigSpace(0), controlOps(0), offset(0), ordinal(0), firstRaw(NULL)
 {
+  initAccess();
 }
+// For when we (re)scan/(re)count accesses
+void Control::
+initAccess() {
+  writables = nonRawWritables = rawWritables = false;
+  readables = nonRawReadables = rawReadables = false;
+  sub32Bits = nonRawSub32Bits = volatiles = nonRawVolatiles = false;
+  readbacks = nonRawReadbacks = rawReadbacks = rawProperties = false;
+  nRunProperties = nNonRawRunProperties = nParameters = 0;
+}
+void Control::
+summarizeAccess(OU::Property &p) {
+  // All the raw stuff is done in the HDL parser.
+  if (p.m_isParameter)
+    p.m_paramOrdinal = nParameters++;
+  else {
+    if (p.m_isReadable)
+      readables = true;
+    if (p.m_isWritable)
+      writables = true;
+    if (p.m_isSub32)
+      sub32Bits = true;
+    if (p.m_isVolatile)
+      volatiles = true;
+    if (p.m_isVolatile || p.m_isReadable && !p.m_isWritable)
+      readbacks = true;
+    nRunProperties++;
+  }
+}
+
 Worker::
 Worker(ezxml_t xml, const char *xfile, const char *parent,
        OU::Assembly::Properties *ipvs, const char *&err)
@@ -1059,14 +1079,19 @@ Worker(ezxml_t xml, const char *xfile, const char *parent,
 			 " in HdlWorker xml file: '%s'", lang, xfile ? xfile : "");
     m_model = HdlModel;
     m_modelString = "hdl";
-    m_library = ezxml_cattr(xml, "library");
-    if (!m_library && xfile)
-      m_library = findLibMap(xfile);
-    if (!m_library && hdlAssy)
-      m_library = m_implName;
+    if ((m_library = ezxml_cattr(xml, "library")))
+      ocpiDebug("m_library set from xml attr: %s", m_library);
+    else if (xfile && (m_library = findLibMap(xfile)))
+      ocpiDebug("m_library set from map from file %s: %s", xfile, m_library);
+    else if (hdlAssy && (m_library = m_implName))
+      ocpiDebug("m_library set from worker name: %s", m_implName);
+    else
+      ocpiDebug("m_library not set");
     // Add the library to the global list
+#if 0 // donein create
     if (m_library)
       addLibMap(m_library);
+#endif
   }
 }
 Worker::~Worker() {
@@ -1120,4 +1145,3 @@ const char *Worker::
 emitArtXML(const char */* wksfile*/) {
   return "Artifact XML files can only be generated for containers or RCC assemblies";
 }
-

@@ -39,34 +39,29 @@
 
 # Refine the target list as appropriate for the tool
 $(call OcpiDbgVar,LibName)
-OutLibFile=$(OutDir)target-$(1)/$(call HdlToolLibraryFile,$(1),$(LibName))
+OutLibFile=\
+  $(call WkrTargetDir,$1,$2)/$(call HdlToolLibraryFile,$1,$(LibName)$(if $(filter 0,$2),,_c$2))
 
 define DoLibTarget
-OutLibFiles+=$(call OutLibFile,$(1))
-$(call OutLibFile,$(1)): override TargetDir:=$(OutDir)target-$(1)
-$(call OutLibFile,$(1)): override HdlTarget:=$(1)
-$(call OutLibFile,$(1)): HdlSources=$$(HdlShadowFiles)
+OutLibFiles+=$(call OutLibFile,$1,$2)
+$(call OutLibFile,$1,$2): override TargetDir:=$(call WkrTargetDir,$1,$2)
+$(call OutLibFile,$1,$2): override HdlTarget:=$1
+$(call OutLibFile,$1,$2): override ParamConfig:=$2
+$(call OutLibFile,$1,$2): override WorkLib:=$(WorkLib)$(and $(filter-out 0,$2),_c$2)
+$(call OutLibFile,$1,$2): $(call HdlTargetSrcFiles,$1,$2)
+$(call OutLibFile,$1,$2): \
+  HdlSources= $(call HdlTargetSrcFiles,$1,$2) $$(HdlShadowFiles)
 
-# HdlSources=$$(filter-out $$(CoreBlackBoxFile),$$(CompiledSourceFiles))
-#$(call OutLibFile,$(1)): $$$$(filter-out $$$$(CoreBlackBoxFile),$$$$(CompiledSourceFiles)) | $$$$(TargetDir)
-
-$(call OutLibFile,$(1)): \
+$(call OutLibFile,$1,$2): \
 $$$$(foreach l,$$$$(HdlLibrariesInternal),$$$$(call HdlLibraryRefDir,$$$$l,$$$$(HdlTarget)))
 
-
-$(call OutLibFile,$(1)): $$$$(HdlPreCore) $$$$(HdlSources) | $$$$(TargetDir)
-	$(AT)echo Building the $(LibName) $(HdlMode) for $$(HdlTarget) \($$@\) 
+$(call OutLibFile,$1,$2): $$$$(HdlPreCore) $$$$(HdlSources) | $$$$(TargetDir)
+	$(AT)echo Building the $(LibName) $(HdlMode) for $$(HdlTarget) \($$@\) $$(ParamMsg)
 	$(AT)$$(HdlCompile)
 
-#	$(AT)$$(and $$(filter worker,$$(HdlMode)),\
-#	         rm -f $$(TargetDir)/$$(Worker)/$$(Worker)-params.mk && \
-#                 ln -s ../../$$(call ParamFile,$$(Worker)) \
-#                        $$(TargetDir)/$$(Worker)/$$(Worker)-params.mk)
-
-
-#	$(AT)echo Building the $(LibName) library for $$(HdlTarget) \($$@\) cb $(CoreBlackBoxFile) hdls $$(HdlSources) deps $$^
 endef
-$(foreach f,$(HdlActualTargets),$(eval $(call DoLibTarget,$(f))))
+$(foreach f,$(HdlActualTargets),\
+  $(eval $(foreach c,$(ParamConfigurations),$(call DoLibTarget,$f,$c)$(call DoImplConfig,$f,$c))))
 
 # If anything changes in the imports directory, we better rebuild
 ifdef Imports

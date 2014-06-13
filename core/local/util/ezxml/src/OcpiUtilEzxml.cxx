@@ -32,6 +32,8 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define __STDC_LIMIT_MACROS 1
+#include <stdint.h>
 #include <iostream>
 #include <errno.h>
 #include <strings.h>
@@ -453,40 +455,76 @@ namespace OCPI {
 	return err;
       }
 
+      // Return true on error. "end" can be NULL
       bool
-      getUNum64(const char *s, uint64_t *valp) {
+      getUNum64(const char *s, const char *end, uint64_t &val) {
 	char *endptr;
 	errno = 0;
-	uint64_t val =  strtoull(s, &endptr, 0);
-	if (errno == 0) {
-	  if (*endptr == 'K' || *endptr == 'k') {
+	val = strtoull(s, &endptr, 0);
+	// We do not handle "end" pointing to a valid digit
+	do {
+	  if (errno != 0 || (end && endptr > end))
+	    break;
+	  while ((!end || endptr < end) && isspace(*endptr))
 	    endptr++;
-	    val *= 1024;
-	  } else if (*endptr == 'M' || *endptr == 'm') {
-	    endptr++;
-	    val *= 1024*1024;
-	  } else if (*endptr == 'G' || *endptr == 'g') {
-	    endptr++;
-	    val *= 1024ull*1024ull*1024ull;
-	  }
-	  while (isspace(*endptr))
-	    endptr++;
-	  if (*endptr++ == '-') {
-	    while (isspace(*endptr))
+	  if (!end || endptr < end) {
+	    if (*endptr == 'K' || *endptr == 'k') {
 	      endptr++;
-	    if (*endptr++ == '1') {
-	      while (isspace(*endptr))
+	      val *= 1024;
+	    } else if (*endptr == 'M' || *endptr == 'm') {
+	      endptr++;
+	      val *= 1024*1024;
+	    } else if (*endptr == 'G' || *endptr == 'g') {
+	      endptr++;
+	      val *= 1024ull*1024ull*1024ull;
+	    } else if (*endptr == '-') {
+	      endptr++;
+	      while ((!end || endptr < end) && isspace(*endptr))
 		endptr++;
-	      if (!*endptr)
-		val--;
+	      if ((end && endptr >= end) || *endptr != '1')
+		break;
+	      val--;
 	    }
+	    while ((!end || endptr < end) && isspace(*endptr))
+	      endptr++;
+	    if ((end && endptr < end) || (!end && *endptr))
+	      break;
 	  }
-	  *valp = val;
 	  return false;
-	}
+	} while(0);
 	return true;
       }
 
+    // return true on error
+    bool
+    getNum64(const char *s, const char *end, int64_t &val) {
+      while ((!end || s < end) && isspace(*s))
+	s++;
+      do {
+	if (end && s >= end)
+	  break;
+	bool minus = false;
+	if (*s == '-') {
+	  minus = true;
+	  s++;
+	  while ((!end || s < end) && isspace(*s))
+	    s++;
+	  if (end && s >= end)
+	    break;
+	}
+	uint64_t uval;
+	if (getUNum64(s, end, uval))
+	  break;
+	if (minus) {
+	  if (uval > ((uint64_t)1) << 63)
+	    break;
+	} else if (uval > (uint64_t)INT64_MIN)
+	  break;
+	val = (int64_t)uval;
+	return false;
+      } while (0);
+      return true;
+    }
       const char *
       getNumber64(ezxml_t x, const char *attr, uint64_t *np, bool *found,
 		  uint64_t defaultValue, bool setDefault) {
@@ -498,7 +536,7 @@ namespace OCPI {
 	    *np = defaultValue;
 	  return 0;
 	}
-	if (getUNum64(a, np))
+	if (getUNum64(a, NULL, *np))
 	  return esprintf("Bad numeric value: \"%s\" for attribute %s in element %s",
 			  a, attr, x->name);
 	if (found)

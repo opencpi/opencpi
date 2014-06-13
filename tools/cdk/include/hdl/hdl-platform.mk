@@ -63,12 +63,6 @@ endif
 # FIXME: we can't do this yet because the BB library name depends on there being both cores...
 #Tops:=$(Worker)_rv
 
-# Generate the worker's bb file by simply linking to the defs
-
-#hdlCoreBlackBoxFile:=$(GeneratedDir)/$(Worker)_bb$(HdlSourceSuffix)
-#$(CoreBlackBoxFile): $$(DefsFile) | $$(OutDir)gen
-#	$(AT)$(call MakeSymLink2,$(DefsFile),$(GeneratedDir),$(notdir $@))
-
 include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
 
 ################################################################################
@@ -77,33 +71,40 @@ ifdef Configurations
 
 HdlConfigDir=$(OutDir)target-$1
 HdlConfig=$(call HdlConfigDir,$1)/$1$(and $(HdlToolRealCore),_rv$(HdlBin))
-HdlConfigSource=$(GeneratedDir)/$1-$2.vhd
-HdlConfigSources=$(foreach s,defs impl assy,$(call HdlConfigSource,$1,$s))
+HdlConfigSource=$(GeneratedDir)/$1-$2.$3
+HdlConfigSources=$(foreach s,defs impl assy,$(call HdlConfigSource,$1,$s,vhd)) \
+                 $(call HdlConfigSource,$1,defs,vh)
 HdlOcpigenLibs=$(xxxinfo ccc:$(ComponentLibraries):$(HdlToolSet_$(HdlTarget)):$(HdlTarget))\
                 $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) \
-		$(if $(and $(ComponentLibraries),$(HdlToolNeedBB_$(HdlToolSet_$(HdlTarget)))),\
-                   $(foreach l,$(ComponentLibraries),\
-	             -L $(notdir $l):$(call HdlXmlComponentLibrary,$l)/hdl))
+
+#		$(if $(and $(ComponentLibraries),$(HdlToolNeedBB_$(HdlToolSet_$(HdlTarget)))),\
+#                   $(foreach l,$(ComponentLibraries),\
+#	             -L $(notdir $l):$(call HdlXmlComponentLibrary,$l)/hdl))
 ################################################################################
 # The function to evaluate for each configuration
 define doConfiguration
 
 # FIXME: we could share this with workers better
 
-$(call HdlConfigSource,$1,defs): $1.xml | $(GeneratedDir)
+$(call HdlConfigSource,$1,defs,vhd): $1.xml | $(GeneratedDir)
 	$(AT)echo Generating the platform configuration assembly source file: $$@ from $$<
 	$(AT)$$(OcpiGen) $(HdlOcpigenLibs) \
 	 -D $(GeneratedDir) -d  $(and $(HdlPlatform),-P $(HdlPlatform)) $$<
 
-$(call HdlConfigSource,$1,impl): $1.xml | $(GeneratedDir)
+$(call HdlConfigSource,$1,impl,vhd): $1.xml | $(GeneratedDir)
 	$(AT)echo Generating the platform configuration assembly source file: $$@ from $$<
 	$(AT)$$(OcpiGen) $(HdlOcpigenLibs) \
 	 -D $(GeneratedDir) -i  $(and $(HdlPlatform),-P $(HdlPlatform)) $$<
 
-$(call HdlConfigSource,$1,assy): $1.xml | $(GeneratedDir)
+$(call HdlConfigSource,$1,assy,vhd): $1.xml | $(GeneratedDir)
 	$(AT)echo Generating the platform configuration assembly source file: $$@ from $$<
 	$(AT)$$(OcpiGen) $(HdlOcpigenLibs) \
 	 -D $(GeneratedDir) -W $1 -a  $(and $(HdlPlatform),-P $(HdlPlatform)) $$<
+
+$(call HdlConfigSource,$1,defs,vh): $1.xml | $(GeneratedDir)
+	$(AT)echo Generating the opposite language definition file: $$@ from $$<
+	$(AT)$(OcpiGen) $(HdlOcpigenLibs) \
+	 -D $(GeneratedDir) -w -d $(and $(HdlPlatform),-P $(HdlPlatform)) $$<
 
 HdlConfigs+= $(call HdlConfig,$1)
 
@@ -114,30 +115,28 @@ $(call HdlConfig,$1): Top:=$1_rv
 $(call HdlConfig,$1): HdlMode:=config
 $(call HdlConfig,$1): LibName:=$1
 $(call HdlConfig,$1): WorkLib:=$1
+$(call HdlConfig,$1): Worker:=$1
 $(call HdlConfig,$1): HdlTarget:=$(HdlExactPart)
 $(call HdlConfig,$1): HdlSources:=$(call HdlConfigSources,$1)
 $(call HdlConfig,$1): TargetDir=$(call HdlConfigDir,$1)
 $(call HdlConfig,$1): target-$(call HdlGetFamily,$(HdlExactPart))/$(Worker)$(and $(HdlToolRealCore),_rv$(HdlBin))
 # This allows the platform worker to be found (both bb lib and core)
-$(call HdlConfig,$1): override ComponentLibraries+=target-$(call HdlGetFamily,$(HdlExactPart))/$(Worker)
+$(call HdlConfig,$1): override ComponentLibraries+=./target-$(call HdlGetFamily,$(HdlExactPart))/$(Worker)
 # This causes the workers file to be read to add to the cores list
 $(call HdlConfig,$1): override ImplWorkersFile=$(GeneratedDir)/$1.wks
 # This indicates where the assy impl file is, for the $1.wks file
-$(call HdlConfig,$1): override ImplFile=$$(call HdlConfigSource,$1,assy)
-#ifdef HdlToolNeedBB
-#AssyBlackBoxFile_$1:=$(GeneratedDir)/$1_bb$(HdlSourceSuffix)
-#$$(AssyBlackBoxFile_$1): $(call HdlConfigSource,$1,defs) | $$(OutDir)gen
-#	$(AT)$$(call MakeSymLink2,$(call HdlConfigSource,$1,defs),$$(GeneratedDir),$$(notdir $$@))
-#CoreBlackBoxFiles+=$(call HdlConfigSource,$1,defs)
-#endif
+$(call HdlConfig,$1): override ImplFile=$$(call HdlConfigSource,$1,assy,vhd)
 $(call HdlConfigDir,$1):
 		$(AT)mkdir $$@
+
 endef
 
 ifneq ($(MAKECMDGOALS),clean)
 $(foreach c,$(Configurations),\
   $(eval $(call doConfiguration,$c)) \
-  $(eval $(call DoBBLibraryTarget,$c,$c,$(HdlExactPart),$(call HdlConfigSource,$c,defs))))
+  $(eval $(call DoBBLibraryTarget,$c,$c,0,$(call HdlGetFamily,$(HdlExactPart)),\
+                $(call HdlConfigSource,$c,defs,vhd))))
+
 endif
 
 $(HdlConfigs): $$(HdlPreCore)

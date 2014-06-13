@@ -47,10 +47,12 @@
 #include "OcpiUtilDataTypes.h"
 
 namespace OA = OCPI::API;
+namespace OE = OCPI::Util::EzXml;
 namespace OCPI {
   namespace Util {
 
     static inline long myRandom() { return random() * (random() & 1 ? -1 : 1); }
+#if 0
     // Return true on error
     bool
     getUNum64(const char *s, uint64_t *valp) {
@@ -70,7 +72,8 @@ namespace OCPI {
 	}
 	while (isspace(*endptr))
 	  endptr++;
-	if (*endptr++ == '-') {
+	if (*endptr == '-') {
+	  endptr++;
 	  while (isspace(*endptr))
 	    endptr++;
 	  if (*endptr++ == '1') {
@@ -80,14 +83,43 @@ namespace OCPI {
 	      val--;
 	  }
 	}
+	if (*endptr)
+	  return true;
 	*valp = val;
 	return false;
       }
       return true;
     }
+#endif
+#if 0
     // return true on error
     static bool
-    getNum64(const char *s, int64_t *valp) {
+    getNum64(const char *s, const char *end, int64_t &valp) {
+      while ((!end || s < end) && isspace(*s))
+	s++;
+      do {
+	if (end && s >= end)
+	  break;
+	bool minus = false;
+	if (*s == '-') {
+	  minus = true;
+	  s++;
+	  while ((!end || s < end) && isspace(*s))
+	    s++;
+	  if (end && s >= end)
+	    break;
+	}
+	uint64_t uval;
+	if (OE::getUNum64(s, end, uval))
+	  break;
+	if (minus) {
+	  if (uval > ((uint64_t)1) << 63)
+	    break;
+	} else if (uval > INT64_MIN)
+	  break;
+	val = (int64_t)uval;
+	return false;
+      } while (0);
       char *endptr;
       errno = 0;
       int64_t val =  strtoll(s, &endptr, 0);
@@ -107,6 +139,7 @@ namespace OCPI {
       }
       return true;
     }
+#endif
 
     // Find an element, which might be empty, trimming whitespace
     // Return true if there is more
@@ -335,45 +368,40 @@ namespace OCPI {
     }
     const char *Value::
     parseDouble(const char*cp, const char *end, double &vp) {
-      (void)end;
       char *endptr;
       errno = 0;
       vp = strtod(cp, &endptr);
-      if (endptr == cp || errno)
+      if (endptr == cp || errno || end && endptr > end)
 	return "bad Double value";
       return NULL;
     }
     const char *Value::
     parseFloat(const char*cp, const char *end, float &vp) {
-      (void)end;
       char *endptr;
       errno = 0;
       vp = strtof(cp, &endptr);
-      if (endptr == cp || errno)
+      if (endptr == cp || errno || end && endptr > end)
 	return "bad Float value";
       return NULL;
     }
     const char *Value::
     parseShort(const char*cp, const char *end, int16_t &vp) {
-      (void)end;
       int64_t n;
-      if (getNum64(cp, &n) || n > INT16_MAX || n < INT16_MIN)
+      if (OE::getNum64(cp, end, n) || n > INT16_MAX || n < INT16_MIN)
 	return "bad Short value";
       vp = (int16_t)n;
       return NULL;
     }
     const char *Value::
     parseLong(const char*cp, const char *end, int32_t &vp) {
-      (void)end;
       int64_t n;
-      if (getNum64(cp, &n) || n > INT32_MAX || n < INT32_MIN)
+      if (OE::getNum64(cp, end, n) || n > INT32_MAX || n < INT32_MIN)
 	return "bad Long value";
       vp = (int32_t)n;
       return NULL;
     }
     const char *Value::
     parseUChar(const char*cp, const char *end, uint8_t &vp) {
-      (void)end;
       while (isspace(*cp))
 	cp++;
       if (*cp == '\'') {
@@ -382,44 +410,40 @@ namespace OCPI {
 	vp = *cp;
       } else {
 	uint64_t n;
-	if (getUNum64(cp, &n) || n > UINT8_MAX)
+	if (OE::getUNum64(cp, end, n) || n > UINT8_MAX)
 	  return "bad UChar value";
 	vp = (uint8_t)n;
       }
       return NULL;
     }
     const char *Value::
-    parseULong(const char*cp, const char *end, uint32_t &vp) {
-      (void)end;
+    parseULong(const char *cp, const char *end, uint32_t &vp) {
       uint64_t n;
-      if (getUNum64(cp, &n) || n > UINT32_MAX)
+      if (OE::getUNum64(cp, end, n) || n > UINT32_MAX)
 	return "bad ULong value";
       vp = (uint32_t)n;
       return NULL;
     }
     const char *Value::
     parseUShort(const char*cp, const char *end, uint16_t &vp) {
-      (void)end;
       uint64_t n;
-      if (getUNum64(cp, &n) || n > UINT16_MAX)
+      if (OE::getUNum64(cp, end, n) || n > UINT16_MAX)
 	return "bad UShort value";
       vp = (uint16_t)n;
       return NULL;
     }
     const char *Value::
     parseLongLong(const char*cp, const char *end, int64_t &vp) {
-      (void)end;
       int64_t n;
-      if (getNum64(cp, &n) || n > INT64_MAX || n < INT64_MIN)
+      if (OE::getNum64(cp, end, n) || n > INT64_MAX || n < INT64_MIN)
 	return "bad LongLong value";
       vp = n;
       return NULL;
     }
     const char *Value::
     parseULongLong(const char*cp, const char *end, uint64_t &vp) {
-      (void)end;
       uint64_t n;
-      if (getUNum64(cp, &n))
+      if (OE::getUNum64(cp, end, n))
 	return "bad ULongLong value";
       vp = n;
       return NULL;
@@ -748,7 +772,7 @@ namespace OCPI {
 				   m_vt->m_isSequence || m_vt->m_arrayRank ?      \
 				   m_p##pretty[nSeq * m_vt->m_nItems + nArray] : \
 				   m_##pretty)))			        \
-	    return esprintf("in value \"%*s\" (%zu): %s", (int)(end-start), start, end-start, err); \
+	    return esprintf("in value \"%.*s\" (%zu): %s", (int)(end-start), start, end-start, err); \
 	  break;
 	OCPI_PROPERTY_DATA_TYPES
 	OCPI_DATA_TYPE(sca,corba,letter,bits,StructValue,Struct,store)

@@ -53,6 +53,7 @@ HdlBin_quartus=.qxp
 # If not set, it implies that only a library containing the implementation is
 # possible
 HdlToolRealCore=yes
+HdlToolRealCore_quartus=yes
 ################################################################################
 # Variable required by toolset: HdlToolNeedBB=yes
 # Set if the tool set requires a black-box library to access a core

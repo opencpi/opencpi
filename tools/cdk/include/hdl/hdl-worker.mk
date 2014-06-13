@@ -45,15 +45,16 @@ ifeq ($(MAKECMDGOALS),skeleton)
 endif
 Compile=$(HdlCompile)
 $(call OcpiDbgVar,HdlBin)
-BF:=$(HdlBin)
+BF=$(call OBJ,$1)
 # This could change someday if any hdl tools have separate object files.
-OBJ:=$(HdlBin)
+OBJ=$(and $1,$(if $(filter 0,$1),,_c$1))$(HdlBin)
 # We don't build independent standalone worker binaries (no artifact file here)
 ArtifactFile=
 
+HdlDefs=-defs
 HdlSkelSuffix=-skel$(HdlSourceSuffix)
-HdlDefsSuffix=-defs$(HdlIncSuffix)
-HdlOtherDefsSuffix=-defs$(HdlOtherIncSuffix)
+HdlDefsSuffix=$(HdlDefs)$(HdlIncSuffix)
+HdlOtherDefsSuffix=$(HdlDefs)$(HdlOtherIncSuffix)
 HdlImplSuffix=-impl$(HdlIncSuffix)
 HdlOtherImplSuffix=-impl$(HdlOtherIncSuffix)
 
@@ -79,7 +80,7 @@ Core=$(Worker)
 endif
 
 ifdef HdlToolRealCore
-WkrExportNames=$(Tops:%=%$(BF))
+WkrExportNames=$(Tops:%=%$(call BF,0))
 endif
 $(call OcpiDbgVar,Top)
 $(call OcpiDbgVar,Tops)
@@ -94,14 +95,24 @@ ImplXmlFile=$(firstword $(ImplXmlFiles))
 # map the generic "IncludeDirs" into the verilog
 #$(HdlDefsSuffix))
 #RefDefsFile=$(Workers:%=$(GeneratedDir)/%-defs.vh)
-DefsFile=$(Workers:%=$(GeneratedDir)/%$(HdlDefsSuffix))
-WDefsFile=$(Workers:%=$(GeneratedDir)/%$(HdlOtherDefsSuffix))
+DefsFile=$(Worker:%=$(GeneratedDir)/%$(HdlDefsSuffix))
+WDefsFile=$(Worker:%=$(GeneratedDir)/%$(HdlOtherDefsSuffix))
 HdlOtherImplSourceFile=$(GeneratedDir)/$(Worker)$(HdlOtherImplSuffix)
-# We set these, but they might not be used in some modes.
-CoreBlackBoxFiles=$(DefsFile) $(WDefsFile)
-OcpiHdl=\
-  $(DYN_PREFIX) $(ToolsDir)/ocpihdl 
 
+# What source files should be put into the BB library?
+# There are four cases:
+# VHDL and ParamConfig 0: defs
+# VHDL and ParamConfig > 0:
+# Verilog and ParamConfig 0:
+# Verilog and ParamConfig > 0:
+# $(call CoreBlackBoxFiles,target,param-config)
+HdlVerilogTargetDefs=$(call WkrTargetDir,$1,$2)/$(Worker)$(HdlDefs)$(HdlVerilogIncSuffix)
+HdlVHDLTargetDefs=$(call WkrTargetDir,$1,$2)/$(Worker)$(HdlDefs)$(HdlVHDLSuffix)
+
+CoreBlackBoxFiles=$(foreach d,$(DefsFile) $(WDefsFile),$(infoxx CBBF:$d)\
+                     $(if $(filter 0,$2),$d,$(call WkrTargetDir,$1,$2)/$(notdir $d)))
+
+OcpiHdl=$(DYN_PREFIX) $(ToolsDir)/ocpihdl 
 
 $(WDefsFile): $(Worker_$(Worker)_xml) | $(GeneratedDir)
 	$(AT)echo Generating the opposite language definition file: $@
@@ -141,11 +152,10 @@ endif
 #ifeq ($(HdlLanguage),vhdl)
 $(call OcpiDbgVar,GeneratedSourceFiles,before vhdl)
 GeneratedSourceFiles+=$(WDefsFile) $(HdlOtherImplSourceFile)
-ifeq ($(HdlLanguage),vhdl)
-GeneratedSourceFiles+=$(DefsFile) $(ImplHeaderFiles)
-endif
+#ifeq ($(HdlLanguage),vhdl)
+#GeneratedSourceFiles+=$(DefsFile)
+#endif
 $(call OcpiDbgVar,GeneratedSourceFiles,after vhdl)
-
 
 #WkrExportNames=$(Worker)$(BF) $(Worker)_rv$(BF)
 ifdef HdlToolRealCore
@@ -176,7 +186,7 @@ $(call OcpiDbg,Before all: "$(LibDir)/$(ImplXmlFile)")
 all: $(LibDir)/$(ImplXmlFile)
 
 $(LibDir)/$(ImplXmlFile): | $(LibDir)
-	$(AT)echo Creating a link from $(LibDir) to $(ImplXmlFile) to expose the $(CwdName) implementation xml.
+	$(AT)echo Creating link from $(LibDir) -\> $(ImplXmlFile) to expose the $(CwdName) implementation xml.
 	$(AT)$(call MakeSymLink,$(ImplXmlFile),$(LibDir))
 
 # Generate the stub files by providing a link from gen/worker.v to gen/worker-defs.v
@@ -186,11 +196,11 @@ $(LibDir)/$(ImplXmlFile): | $(LibDir)
 # Note that this is not used or needed when real cores do not get built (sim)
 $(call OcpiDbgVar,DefsFile)
 $(LibDir)/$(Worker)$(HdlSourceSuffix): $(DefsFile) | $(LibDir)
-	$(AT)echo Creating link from $@ to $(DefsFile) to expose the stub for worker "$(Worker)".
+	$(AT)echo Creating link from $@ -\> $(DefsFile) to expose the stub for worker "$(Worker)".
 	$(AT)$(call MakeSymLink2,$(DefsFile),$(LibDir),$(Worker)$(HdlSourceSuffix))
 
 $(LibDir)/$(Worker)$(HdlOtherSourceSuffix): $(WDefsFile) | $(LibDir)
-	$(AT)echo Creating link from $@ to $(WDefsFile) to expose the other-language stub for worker "$(Worker)".
+	$(AT)echo Creating link from $@ -\> $(WDefsFile) to expose the other-language stub for worker "$(Worker)".
 	$(AT)$(call MakeSymLink2,$(WDefsFile),$(LibDir),$(Worker)$(HdlOtherSourceSuffix))
 
 $(call OcpiDbg,Before all: "$(LibDir)/$(Worker)$(HdlSourceSuffix)")

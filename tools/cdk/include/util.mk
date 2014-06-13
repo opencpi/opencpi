@@ -178,9 +178,9 @@ SymLinkContents= `X=(\`ls -l $(1)\`);echo $${X[$${\#X[*]}-1]}`
 #  First arg is local file to point to, second arg is dir to put link in.
 #  e.g. $(call MakeSymLink,foo,linkdir) makes a link: dir/$(notdir foo) link to foo
 # Funky because it might be executed in a loop
-MakeSymLink2=	SL=$(2)/$(3); SLC=$(call FindRelative,$(2),$(1)); \
+MakeSymLink2=	$(infox MSL2:$1:$2:$3)SL=$(2)/$(3); SLC=$(call FindRelative,$2,$1); \
 		if test -L $$SL; then \
-		  OSLC="$(call SymLinkContents,$(2)/$(3))"; \
+		  OSLC="$(call SymLinkContents,$2/$3)"; \
 		else \
 		  OSLC=; \
 		fi;\
@@ -355,6 +355,14 @@ OcpiDefaultOWD=$(strip \
     spec='$(notdir $(strip \
       $(or $(wildcard ../specs/$1_spec.xml),\
            $(wildcard ../specs/$1-spec.xml))))'/>)
+
+# Function to generate target dir from target: $(call WkrTargetDir,target,config)
+# FIXME: shouldn't really be named "Wkr"
+WkrTargetDir=$(OutDir)target$(if $(filter 0,$2),,-$2)-$1
+
+Comma:=, 
+ParamMsg=$(and $(ParamConfigurations), $(strip \
+  '($(foreach n,$(WorkerParamNames),$n=$(ParamMsg_$(ParamConfig)_$n)$(eval o:=1)))'))
 
 endif # ifndef __UTIL_MK__
 

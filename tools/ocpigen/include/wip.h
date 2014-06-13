@@ -335,19 +335,22 @@ typedef Properties::const_iterator PropertiesIter;
 class Control {
  public:
   Control();
+  void initAccess();
+  void summarizeAccess(OU::Property &p);
   uint64_t sizeOfConfigSpace;
+  uint32_t controlOps; // bit mask
+  Properties properties;
+  size_t offset;// temporary while properties are being parsed.
+  unsigned ordinal; // ditto
+  OU::Property *firstRaw;
+  // Below here, initialization is in initAccess
   bool writables, nonRawWritables, rawWritables;
   bool readables, nonRawReadables, rawReadables; // readables does NOT include parameters
   bool sub32Bits, nonRawSub32Bits;
   bool volatiles, nonRawVolatiles;
   bool readbacks, nonRawReadbacks, rawReadbacks;
+  bool rawProperties;
   unsigned nRunProperties, nNonRawRunProperties, nParameters;
-  uint32_t controlOps; // bit mask
-  Properties properties;
-  size_t offset;// temporary while properties are being parsed.
-  unsigned ordinal; // ditto
-  bool rawProperties; // for HDL - should properties be provided "raw" to the worker?
-  OU::Property *firstRaw;
 };
 
 enum Endian {
@@ -481,13 +484,14 @@ class Worker : public Parsed {
     *emitToolParameters(),
     *setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig),
     *deriveOCP(),
-    *hdlValue(const OU::Value &v, std::string &value),
+    *hdlValue(const OU::Value &v, std::string &value, bool param = false, Language = NoLanguage),
     *findParamProperty(const char *name, OU::Property *&prop, size_t &nParam),
-    *addConfig(ParamConfig &info),
-    *doParam(ParamConfig &info, PropertiesIter pi, unsigned nParam),
+    *addConfig(ParamConfig &info, size_t &nConfig),
+    *doParam(ParamConfig &info, PropertiesIter pi, unsigned nParam, size_t &nConfig),
     //    *getParamConfig(const char *id, const ParamConfig *&config),
     *emitImplRCC(),
-    *rccValue(OU::Value &v, std::string &value),
+    *paramValue(OU::Value &v, std::string &value),
+    *rccValue(OU::Value &v, std::string &value, bool param = false),
     *rccPropValue(OU::Property &p, std::string &value),
     *emitSkelRCC(),
     *emitAssyHDL();
@@ -497,7 +501,6 @@ class Worker : public Parsed {
     *emitAttribute(const char *attr);
   inline const char *myComment() const { return hdlComment(m_language); }
   void
-    addAccess(OU::Property &p),
     emitWorkersAttribute(),
     deleteAssy(), // just to keep the assembly details out of most files
     emitRecordSignal(FILE *f, std::string &last, size_t maxPortTypeName, Port *p,
@@ -509,7 +512,7 @@ class Worker : public Parsed {
     emitVhdlShell(FILE *f),
     emitVhdlSignalWrapper(FILE *f, const char *topinst = "rv"),
     emitVhdlRecordWrapper(FILE *f),
-    emitParameters(FILE *f, Language lang, bool convert = false),
+    emitParameters(FILE *f, Language lang, bool useDefaults = true, bool convert = false),
     emitPortDescription(Port *p, FILE *f, Language lang),
     emitSignals(FILE *f, Language lang, bool onlyDevices = false, bool records = false,
 		bool inPackage = false),
@@ -547,7 +550,7 @@ static inline bool masterIn(Port *p) {
 extern const char
   *parseList(const char *list, const char * (*doit)(const char *tok, void *arg), void *arg),
   *parseControlOp(const char *op, void *arg),
-  *vhdlValue(const OU::Value &v, std::string &value),
+  *vhdlValue(const OU::Value &v, std::string &value, bool param = false),
   *rccValue(OU::Value &v, std::string &value),
   *container, *platform, *device, *load, *os, *os_version, **libraries, **mappedLibraries, *assembly, *attribute,
   *addLibMap(const char *),

@@ -1,4 +1,3 @@
-
 # #####
 #
 #  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
@@ -86,15 +85,14 @@ CompilerOptions=$(CompilerOptimizeFlags)
 endif
 # Prepare the parameters for compile-command-line injection into the worker compilation
 RccParams=\
-  $(LoadWorkerParams) \
   $(foreach n,$(WorkerParamNames),\
 	     "-DPARAM_$n()=$(Param_$(ParamConfig)_$n)")
 Compile_c=\
-  $$(Gc_$$(RccTarget)) -MMD -MP -MF $$(TargetDir)/$$(@F).deps -c \
+  $$(Gc_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
   $(CompilerWarnings) $(CompilerOptions) \
   $(SharedLibCompileOptions) $(ExtraCompilerOptions) $(IncludeDirs:%=-I%) -o $$@ $$(RccParams) $$<
 Compile_cc=\
-  $$(Gc++_$$(RccTarget)) -MMD -MP -MF $$(TargetDir)/$$(@F).deps -c \
+  $$(Gc++_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
   $(CompilerWarnings) $(CompilerOptions) \
   $(SharedLibCompileOptions) $(ExtraCompilerOptions) $(IncludeDirs:%=-I%) -o $$@ $$(RccParams) $$<
 

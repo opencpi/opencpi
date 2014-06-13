@@ -111,11 +111,11 @@ ifeq ($(filter clean,$(MAKECMDGOALS)),)
   $(call OcpiDbgVar,ParamShell)
   X:=$(shell $(ParamShell))
   $(and $X,$(error Failed to process initial parameters for this worker: $X))
-  -include $(GeneratedDir)/$(Worker)-params.mk
+  include $(GeneratedDir)/$(Worker)-params.mk
   WorkerParamNames:=\
     $(foreach p, \
-      $(filter Param_$(firstword $(ParamConfigurations))_%,$(.VARIABLES)),\
-      $(p:Param_$(firstword $(ParamConfigurations))_%=%))
+      $(filter ParamMsg_$(firstword $(ParamConfigurations))_%,$(.VARIABLES)),\
+      $(p:ParamMsg_$(firstword $(ParamConfigurations))_%=%))
   $(call OcpiDbgVar,WorkerParamNames)
 endif
 
@@ -193,23 +193,21 @@ $(call OcpiDbgVar,Workers)
 $(call OcpiDbgVar,ModelSpecificBuildHook,Before all: )
 all: $(ModelSpecificBuildHook) 
 
-# Function to generate target dir from target: $(call WkrTargetDir,target,config)
-WkrTargetDir=$(OutDir)target$(if $(filter 0,$2),,-$2)-$1
 WkrTargetDirWild=$(OutDir)target-*$1
 
 # Function to generate final binary from target: $(call WkrBinary,target,config)
-WkrBinary=$(call WkrTargetDir,$1,$2)/$(WkrBinaryName)$(BF)
+WkrBinary=$(call WkrTargetDir,$1,$2)/$(WkrBinaryName)$(call BF,$2)
 
 # Function to generate object file name from source: $(call WkrObject,src,target,config)
-WkrObject=$(call WkrTargetDir,$2,$3)/$(basename $(notdir $1))$(OBJ)
+WkrObject=$(call WkrTargetDir,$2,$3)/$(basename $(notdir $1))$(call OBJ,$3)
 
 # Function to make an object from source: $(call WkrMakeObject,src,target,config)
 define WkrMakeObject
   # A line is needed here for the "define" to work (no extra eval)
-  ObjectFiles_$2_$3 += $(call WkrTargetDir,$2,$3)/$(basename $(notdir $1))$(OBJ)
+  ObjectFiles_$2_$3 += $(call WkrTargetDir,$2,$3)/$(basename $(notdir $1))$(call OBJ,$3)
   $(call WkrObject,$1,$2,$3): ParamConfig=$3
   $(call WkrObject,$1,$2,$3): \
-     $1 $(ImplHeaderFiles) \
+     $1 $(ImplHeaderFiles)\
      | $(call WkrTargetDir,$2,$3)
 	$(Compile_$(subst .,,$(suffix $1)))
 
@@ -274,32 +272,60 @@ $(foreach t,$($(CapModel)Targets),$(eval $(call WkrDoTarget,$t)))
 ################################################################################
 # Export support - what we put into the (export) library above us
 
+ifndef WkrExportNames
+WkrExportNames+=$(WkrBinaryName)$(call BF,0)
+endif
 ifdef LibDir
 # The default for things in the target dir to export into the component library's
 # export directory for this target
-ifndef WkrExportNames
-WkrExportNames=$(WkrBinaryName)$(BF)
-endif
+
+# $(call DoLink,<target>,<binary>,<linkname>,<confname>)
+MyBBLibFile=$(call BBLibFile,$1,$(basename $2)$(if $(filter 0,$3),,_c$3),$3,$1)
 
 define DoLink
-  LibLinks+=$(LibDir)/$1/$(notdir $2)
-  $(LibDir)/$1/$(notdir $2): $(OutDir)target-$1/$2 | $(LibDir)/$1
-	$(AT)$$(call MakeSymLink,$$^,$(LibDir)/$1)
+
+  $(infox DoLink:$1:$2:$3:$4)
+  LibLinks+=$(LibDir)/$1/$3
+  $(LibDir)/$1/$3: $(call WkrTargetDir,$1,$4)/$2 | $(LibDir)/$1
+	$(AT)echo Creating link from $$@ -\> $$< to export the worker binary.
+	$(AT)$$(call MakeSymLink2,$(call WkrTargetDir,$1,$4)/$2,$(LibDir)/$1,$3)
+
+  ifdef HdlToolNeedBB_$(HdlToolSet_$1)
+    ifeq (,$(filter %_rv,$(basename $2)))
+      $$(infox DLHTNB:$1:$2:$3:$4==$$(call MyBBLibFile,$1,$2,$4))
+      LibLinks+=$(LibDir)/$1/$(basename $3)
+      $(LibDir)/$1/$(basename $3): $$$$(call MyBBLibFile,$1,$2,$4) | $(LibDir)/$1
+	$(AT)echo Creating link from $$@ -\> $(call WkrTargetDir,$1,$4)/bb/$(basename $3) to export the stub library.
+	$(AT)$$(call MakeSymLink2,$(call WkrTargetDir,$1,$4)/bb/$(basename $3),$(strip\
+                                  $(LibDir)/$1),$(basename $3))
+    endif
+  endif
 
 endef
 
 # Do the links for the various binaries of the worker, for a given param configuration
-# $(call DoLinks,<target>,<config>)
+# $(call DoLinks,<target>)
 define DoLinks
-
   LibDirs+=$(LibDir)/$1
   $(LibDir)/$1: | $(LibDir)
-  $(foreach n,$(WkrExportNames),$(call DoLink,$1,$n))
+  $(foreach c,$(ParamConfigurations),\
+    $(foreach n,$(WkrExportNames),\
+      $(foreach l,$(basename $(notdir $n))$(if $(filter 0,$c),,_c$c),\
+        $(call DoLink,$1,$(strip\
+                           $(if $(or $(filter rcc,$(Model)),\
+                                     $(HdlToolRealCore_$(HdlToolSet_$1))),\
+                             $(notdir $n),$l)\
+                   ),$l$(suffix $n),$c))))
+
   $$(call OcpiDbgVar,WkrExportNames,In Dolinks )
+
 endef
 
-$(call OcpiDbgVar,WkrExportNames)
-$(foreach t,$($(CapModel)Targets),$(eval $(call DoLinks,$t)))
+# These links are to binaries
+ifndef HdlSkip
+  $(call OcpiDbgVar,WkrExportNames)
+  $(foreach t,$($(CapModel)Targets),$(infox $(call DoLinks,$t))$(eval $(call DoLinks,$t)))
+endif
 LibLinks+=$(LibDir)/$(Worker)-params.xml
 $(LibDir)/$(Worker)-params.xml: $(GeneratedDir)/$(Worker)-params.xml | $(LibDir)
 	$(AT)$(call MakeSymLink,$(GeneratedDir)/$(Worker)-params.xml,$(LibDir))

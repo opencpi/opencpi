@@ -1,4 +1,3 @@
-
 # #####
 #
 #  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
@@ -34,5 +33,4 @@
 #
 ########################################################################### #
 
-Assemblies=tb_bias_param patternbias biascapture testbias tb_bias_vhdl tb_bias testpsd testddc testbias2 testbias5 testbias_ver
-include $(OCPI_CDK_DIR)/include/hdl/hdl-assemblies.mk
+include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk

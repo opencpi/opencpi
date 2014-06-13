@@ -49,6 +49,9 @@ ifndef __HDL_PRE_MK__
 __HDL_PRE_MK__=x
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 
+# Default for everything
+ParamConfigurations=0
+
 ################################################################################
 # Determine the Worker Name very early, and the name of its XML file, and its 
 # language, in all the modes that are worker
@@ -104,7 +107,7 @@ override HdlLibraries += $(Libraries)
 endif
 override Libraries := $(HdlLibraries)
 
-HdlLibrariesInternal=\
+HdlLibrariesInternal=$(infoxx HLI:$1)\
 $(foreach l,$(call Unique,\
                 $(HdlLibraries)\
                 $(if $(HdlNoLibraries),,\

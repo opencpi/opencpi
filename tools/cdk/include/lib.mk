@@ -193,7 +193,8 @@ hdlstubs: $(HdlImplementations)
 		HdlInstallLibDir=$(call AdjustRelative2,$(LibDir)/hdl/stubs) \
 		stublibrary
 
-hdl: speclinks $(HdlImplementations) hdlstubs
+# hdlstubs - no longer
+hdl: speclinks $(HdlImplementations)
 
 cleanxm:
 	$(call CleanModel,xm)

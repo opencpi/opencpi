@@ -592,22 +592,6 @@ createInputPort(OCPI::RDT::Descriptors& desc, const OU::PValue *params )
   return port;
 }
 
-#if 0
-Port * 
-Transport::
-createInputPort(OCPI::RDT::Descriptors& desc, const OU::PValue *params )
-{
-  Circuit *circuit = 0;
-  Port *port = createInputPort(circuit, desc, params );
-  circuit->attach(); // FIXME: why wouldn't port creation do the attach?
-  // Merge port descriptor info between what was passed in and what is determined here.
-  port->getPortDescriptor(desc, NULL);
- // Make sure the dtport's descriptor is consistent
-  //port->getMetaData()->m_descriptor = desc;
-  return port;
-}
-#endif
-
 Circuit* 
 Transport::
 getCircuit(  CircuitId circuit_id )

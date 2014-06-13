@@ -263,7 +263,8 @@ namespace OCPI {
 	inList(const char *item, const char *list),
 	hasAttrEq(ezxml_t x, const char *attrName, const char *val),
         getUNum(const char *s, size_t *valp),
-        getUNum64(const char *s, uint64_t *valp),
+        getUNum64(const char *s, const char *end, uint64_t &valp),
+        getNum64(const char *s, const char *end, int64_t &valp),
         parseBool(const char *a, const char *end, bool *b);
       extern void
 	getNameWithDefault(ezxml_t x, std::string &s, const char *fmt, unsigned &ord),

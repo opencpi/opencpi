@@ -19,7 +19,7 @@ findParamProperty(const char *name, OU::Property *&prop, size_t &nParam) {
   return OU::esprintf("Parameter property not found: '%s'", name);
 }
 
-Param::Param() : value(NULL), newValue(NULL) {}
+Param::Param() : value(NULL), newValue(NULL), param(NULL) {}
 
 const char *Param::
 parse(ezxml_t px, const OU::Property *argParam) {
@@ -41,8 +41,9 @@ ParamConfig() : nConfig(0), used(false) {}
 const char *ParamConfig::
 parse(Worker &w, ezxml_t cx) {
   const char *err;
-  if ((err = OE::getRequiredString(cx, id, "id")))
+  if ((err = OE::getNumber(cx, "id", &nConfig, NULL, 0, false, true)))
     return err;
+  OU::format(id, "%zu", nConfig);
   params.resize(w.m_ctl.nParameters);
   for (ezxml_t px = ezxml_cchild(cx, "parameter"); px; px = ezxml_next(px)) {
     std::string name;
@@ -56,15 +57,54 @@ parse(Worker &w, ezxml_t cx) {
   return NULL;
 }
 
+const char *Worker::
+paramValue(OU::Value &v, std::string &value) {
+  switch (m_model) {
+  case HdlModel:
+    return hdlValue(v, value, true);
+  case RccModel:
+    return rccValue(v, value, true);
+  case OclModel:
+    return rccValue(v, value, true);
+  default:
+    assert("bad model" == 0);
+  }
+  return NULL;
+}
 void ParamConfig::
-write(FILE *xf, FILE *mf, size_t nConfig) {
+write(Worker &w, FILE *xf, FILE *mf) {
   if (xf)
     fprintf(xf, "  <configuration id='%s'>\n", id.c_str());
   for (unsigned n = 0; n < params.size(); n++) {
     Param &p = params[n];
     if (used) {
-      // Put out the Makefile value line
-      fprintf(mf, "Param_%zu_%s:=", nConfig, p.param->m_name.c_str());
+      // Put out the Makefile value lines
+      std::string val;
+      if (w.m_model == HdlModel) {
+	fprintf(mf, "ParamVHDL_%zu_%s:=", nConfig, p.param->m_name.c_str());
+	for (const char *cp = w.hdlValue(*p.value, val, true, VHDL); *cp; cp++) {
+	  if (*cp == '#' || *cp == '\\' && !cp[1])
+	    fputc('\\', mf);
+	  fputc(*cp, mf);
+	}
+	fputs("\n", mf);
+	fprintf(mf, "ParamVerilog_%zu_%s:=", nConfig, p.param->m_name.c_str());
+	for (const char *cp = w.hdlValue(*p.value, val, true, Verilog); *cp; cp++) {
+	  if (*cp == '#' || *cp == '\\' && !cp[1])
+	    fputc('\\', mf);
+	  fputc(*cp, mf);
+	}
+	fputs("\n", mf);
+      } else {
+	fprintf(mf, "Param_%zu_%s:=", nConfig, p.param->m_name.c_str());
+	for (const char *cp = w.paramValue(*p.value, val); *cp; cp++) {
+	  if (*cp == '#' || *cp == '\\' && !cp[1])
+	    fputc('\\', mf);
+	  fputc(*cp, mf);
+	}
+	fputs("\n", mf);
+      }
+      fprintf(mf, "ParamMsg_%zu_%s:=", nConfig, p.param->m_name.c_str());
       for (const char *cp = p.uValue.c_str(); *cp; cp++) {
 	if (*cp == '#' || *cp == '\\' && !cp[1])
 	  fputc('\\', mf);
@@ -118,7 +158,7 @@ parseConfigFile(const char *dir) {
 // We have created a configuration based on current conditions.
 // Add it if it is new
 const char *Worker::
-addConfig(ParamConfig &info) {
+addConfig(ParamConfig &info, size_t &nConfig) {
   ParamConfigs &pcs = m_paramConfigs;
   // Check that the configuration we have is not already in the existing file
   if (!pcs.empty()) {
@@ -130,7 +170,8 @@ addConfig(ParamConfig &info) {
 	return NULL;
       }
   }
-  OU::format(info.id, "%zu", info.nConfig++);
+  info.nConfig = nConfig++;
+  OU::format(info.id, "%zu", info.nConfig);
   // We have a new one, so we know we will be writing out the XML file
   // The XML will contain old and unused, old and used, and new and used.
   // The Makefile will contain old-that-were-used and new
@@ -149,11 +190,11 @@ addConfig(ParamConfig &info) {
 }
 
 const char *Worker::
-doParam(ParamConfig &info, PropertiesIter pi, unsigned nParam) {
+doParam(ParamConfig &info, PropertiesIter pi, unsigned nParam, size_t &nConfig) {
   while (pi != m_ctl.properties.end() && !(*pi)->m_isParameter)
     pi++;
   if (pi == m_ctl.properties.end())
-    addConfig(info);
+    addConfig(info, nConfig);
   else {
     Param &p = info.params[nParam];
     pi++;
@@ -161,7 +202,7 @@ doParam(ParamConfig &info, PropertiesIter pi, unsigned nParam) {
       p.value = p.values[n];
       p.value->unparse(p.uValue);
       const char *err;
-      if ((err = doParam(info, pi, nParam + 1)))
+      if ((err = doParam(info, pi, nParam + 1, nConfig)))
 	return err;
     }
   }
@@ -174,8 +215,11 @@ addValue(OU::Property &p, const char *start, const char *end, Values &values) {
    const char *err = p.parseValue(start, *v, end);
    if (err)
      delete v;
-   else
+   else {
      values.push_back(v);
+     ocpiDebug("Adding a value for the %s parameter: \"%.*s\"",
+	       p.m_name.c_str(), (unsigned)(end - start), start);
+   }
    return err;
  }
 
@@ -236,7 +280,8 @@ emitToolParameters() {
       (err = openOutput(m_fileName.c_str(), m_outDir, "", "-params", ".mk", NULL, m_mkFile)))
     return err;
   ParamConfig info;                      // Current config for generating them
-  info.nConfig = m_paramConfigs.size();  // start counting after existing ones
+  //  info.nConfig = m_paramConfigs.size();  // start counting after existing ones
+  size_t nConfig = m_paramConfigs.size();
   info.params.resize(m_ctl.nParameters);
   for (ezxml_t px = ezxml_cchild(x, "parameter"); px; px = ezxml_next(px)) {
     std::string name;
@@ -266,7 +311,7 @@ emitToolParameters() {
     }
   // Generate all configurations, merging with existing, keeping existing ones
   // in the same position.
-  doParam(info, m_ctl.properties.begin(), 0);
+  doParam(info, m_ctl.properties.begin(), 0, nConfig);
   // Write the makefile as well as the xml file if anything was added
   fprintf(m_mkFile, "ParamConfigurations:=");
   for (size_t n = 0; n < m_paramConfigs.size(); n++)
@@ -274,7 +319,7 @@ emitToolParameters() {
       fprintf(m_mkFile, "%s%zu", n ? " " : "", n);
   fprintf(m_mkFile, "\n");
   for (size_t n = 0; n < m_paramConfigs.size(); n++)
-    m_paramConfigs[n].write(m_xmlFile, m_mkFile, n);
+    m_paramConfigs[n].write(*this, m_xmlFile, m_mkFile);
   if (m_xmlFile)
     fprintf(m_xmlFile, "</build>\n");
   ocpiDebug("m_xmlFile closing %p m_mkFile closing %p", m_xmlFile, m_mkFile);

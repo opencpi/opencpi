@@ -209,7 +209,7 @@ emitStructRCC(FILE *f, size_t nMembers, OU::Member *members, unsigned indent,
 }
 
 const char *Worker::
-rccValue(OU::Value &v, std::string &value) {
+rccValue(OU::Value &v, std::string &value, bool /* param */) {
   // Convert value to something nice for C
   // In particular, large integer constants do not want to be truncated.
   // From ISO: "The type of an integer constant is the first of the corresponding list

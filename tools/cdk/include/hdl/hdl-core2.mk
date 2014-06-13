@@ -52,18 +52,28 @@ WorkLib:=$(LibName)
 endif
 $(call OcpiDbgVar,HdlToolRealCore)
 $(call OcpiDbgVar,LibName)
+define DoImplConfig
+
+ifneq ($2,0)
+$(call HdlVHDLImplFiles,$1,$2): $(call WkrTargetDir,$1,$2)/%: $(GeneratedDir)/%
+	$(AT)sed s/--__/_c$2/ $$< > $$@
+endif
+
+endef
+
 ifdef HdlToolRealCore
 ################################################################################
 # Build the real core if the tools can do it $(call DoCore,target,name)
 define DoCore
-CoreResults+=$(OutDir)target-$1/$2$(HdlBin)
-$(OutDir)target-$1/$2$(HdlBin): override HdlTarget:=$1
-$(OutDir)target-$1/$2$(HdlBin): TargetDir=$(OutDir)target-$1
-$(OutDir)target-$1/$2$(HdlBin): | $$$$(TargetDir)
-$(OutDir)target-$1/$2$(HdlBin): Core=$2
-$(OutDir)target-$1/$2$(HdlBin): Top=$3
+CoreResults+=$(call WkrTargetDir,$1,$4)/$2$(HdlBin)
+$(call WkrTargetDir,$1,$4)/$2$(HdlBin): override HdlTarget:=$1
+$(call WkrTargetDir,$1,$4)/$2$(HdlBin): TargetDir=$(call WkrTargetDir,$1,$4)
+$(call WkrTargetDir,$1,$4)/$2$(HdlBin): | $$$$(TargetDir)
+$(call WkrTargetDir,$1,$4)/$2$(HdlBin): Core=$2
+$(call WkrTargetDir,$1,$4)/$2$(HdlBin): Top=$(or $(filter %_rv,$3),$3$(and $(WorkerParamNames),$(filter-out 0,$4),_c$4))
+$(call WkrTargetDir,$1,$4)/$2$(HdlBin): ParamConfig=$4
 ifdef PreBuiltCore
-$(OutDir)target-$(1)/$(2)$(HdlBin): $(PreBuiltCore)
+$(call WkrTargetDir,$1,$4)/$2$(HdlBin): $(PreBuiltCore)
 	$(AT)if test ! -L $@; then \
 		$(ECHO) -n Establishing pre-built core file $(2)$(HdlBin) for; \
 	        $(ECHO) ' 'target \"$(HdlTarget)\"; \
@@ -75,34 +85,42 @@ $(OutDir)target-$(1)/$(2)$(HdlBin): $(PreBuiltCore)
 else
 $(call OcpiDbgVar,CompiledSourceFiles)
 $$(call OcpiDbgVar,CompiledSourceFiles)
-$(OutDir)target-$1/$2$(HdlBin): HdlSources=$$(HdlShadowFiles)
+
+$(call WkrTargetDir,$1,$4)/$2$(HdlBin): $$(call HdlTargetSrcFiles,$1,$4)
+$(call WkrTargetDir,$1,$4)/$2$(HdlBin): \
+  HdlSources=$$(filter-out %.vh,$$(call HdlTargetSrcFiles,$1,$4)) $$(HdlShadowFiles)
 
 #   HdlSources=$$(filter-out $$(filter-out %.vhd,$$(CoreBlackBoxFiles)),$$(CompiledSourceFiles))
 
-$(OutDir)target-$1/$2$(HdlBin): \
+$(call WkrTargetDir,$1,$4)/$2$(HdlBin): \
    $$$$(foreach l,$$$$(HdlLibrariesInternal),$$$$(call HdlLibraryRefDir,$$$$l,$$$$(HdlTarget)))
-$(OutDir)target-$1/$2$(HdlBin): $$$$(HdlPreCore) \
+$(call WkrTargetDir,$1,$4)/$2$(HdlBin): $$$$(HdlPreCore) \
       $$(filter-out $$(filter-out %.vhd,$$(CoreBlackBoxFiles)) $$(TargetSourceFiles),$$(CompiledSourceFiles)) 
-	$(AT)echo Building $(and $(filter-out core,$(HdlMode))) core \"$(2)\" for target \"$$(HdlTarget)\"
+	$(AT)echo Building $(and $(filter-out core,$(HdlMode))) core \"$(2)\" for target \"$$(HdlTarget)\" $$(ParamMsg)
 	$(AT)$$(HdlCompile)
 endif
 
 #	$(AT)$$(call HdlRecordCores,$(basename $(OutDir)target-$1/$2))
 
-all: $(OutDir)target-$1/$2$(HdlBin)
+all: $(call WkrTargetDir,$1,$4)/$2$(HdlBin)
 
 endef # DoCore
 
+#define DoCores
+#  $(foreach c,$(ParamConfigurations),$(call DoCore,$1,$2,$3,$c)$(call DoImplConfig,$1,$c))
+#endef
 $(call OcpiDbgVar,CompiledSourceFiles,b2 )
 $(call OcpiDbgVar,HdlActualTargets)
 $(call OcpiDbgVar,HdlCores)
 #$(foreach t,$(HdlActualTargets),$(eval $(call DoCore,$(t),$(Core))))
 ifneq ($(MAKECMDGOALS),clean)
-$(foreach t,$(HdlActualTargets),\
-  $(foreach both,$(join $(HdlCores),$(Tops:%=:%)),\
-    $(foreach core,$(word 1,$(subst :, ,$(both))),\
-     $(foreach top,$(word 2,$(subst :, ,$(both))),\
-       $(eval $(call DoCore,$t,$(core),$(top)))))))
+$(foreach c,$(ParamConfigurations),\
+  $(foreach t,$(HdlActualTargets),\
+    $(eval $(call DoImplConfig,$t,$c)) \
+    $(foreach both,$(join $(HdlCores),$(Tops:%=:%)),\
+      $(foreach core,$(word 1,$(subst :, ,$(both))),\
+       $(foreach top,$(word 2,$(subst :, ,$(both))),\
+         $(eval $(call DoCore,$t,$(core),$(top),$c)))))))
 endif
 $(call OcpiDbgVar,CompiledSourceFiles,b3 )
 
@@ -126,48 +144,62 @@ endif
 # Finally we create the black box/stub library for this core alone if needed
 # On two conditions: first that we actually need to do it (e.g. platforms,cores,assemblies),
 # second that the tools need it
-ifneq ($(findstring $(HdlMode),assembly core platform),)
+ifneq ($(findstring $(HdlMode),assembly core platform config worker),)
 ifdef HdlToolNeedBB
 
 ################################################################################
 # Make the black box library
 # Black box libraries for cores are built when it is necessary to have a library containing
 # the black box module in order for higher level designs to find the core during synthesis.
-# Too enable instantiation from verilog this means a foo_bb.v file with an empty module.
-# Too enable instantiaiton from VHDL this just means the foo_pkg.vhd file with the module definition
+# To enable instantiation from verilog this means a foo_bb.v file with an empty module.
+# To enable instantiaiton from VHDL this just means the foo_pkg.vhd file with the module definition
 # The bb library is built using the same library name, but in the bb subdirectory
 # BUT: it is installed under the foo_bb name
 # FIXME: we don't yet build with the VHDL pkg file for instantiating cores from VHDL
 $(call OcpiDbgVar,HdlToolNeedBB)
 
 # A function taking a target-dir-name, a libname, and a build target
-BBLibFile=$(OutDir)target-$1/bb/$(call HdlToolLibraryFile,$3,$2)
+BBLibFile=$(infox BBF:$1,$2,$3,$4)$(strip\
+            $(foreach f,$(call WkrTargetDir,$1,$3)/bb/$(call HdlToolLibraryFile,$4,$(basename $2)),$(infox BBFile:$f)$f))
 
-# $(call DoBBLibraryTarget,target-dir-name,libname,target,bbfile)
+# $(call DoBBLibraryTarget,target-dir-name,libname,config,target,bbfiles)
 define DoBBLibraryTarget
-BBLibResults+=$(call BBLibFile,$1,$2,$3)
-$(call BBLibFile,$1,$2,$3): | $(OutDir)target-$1/bb
-$(call BBLibFile,$1,$2,$3): LibName=$2
-$(call BBLibFile,$1,$2,$3): WorkLib=$2
-$(call BBLibFile,$1,$2,$3): Core=onewire
-$(call BBLibFile,$1,$2,$3): Top=onewire
-$(call BBLibFile,$1,$2,$3): override HdlTarget=$3
-$(call BBLibFile,$1,$2,$3): TargetDir=$(OutDir)target-$1/bb
-$(call BBLibFile,$1,$2,$3): HdlSources=$4 $(OCPI_CDK_DIR)/include/hdl/onewire.v
-$(call BBLibFile,$1,$2,$3): \
-  $$$$(foreach l,$$$$(HdlLibrariesInternal),$$$$(call HdlLibraryRefDir,$$$$l,$$$$(HdlTarget)))
-$(call BBLibFile,$1,$2,$3): $4 | $$$$(TargetDir)
+BBLibResults+=$(call BBLibFile,$1,$2,$3,$4)
+$(call BBLibFile,$1,$2,$3,$4): | $(call WkrTargetDir,$1,$3)
+$(call BBLibFile,$1,$2,$3,$4): LibName=$2
+$(call BBLibFile,$1,$2,$3,$4): WorkLib=$2
+$(call BBLibFile,$1,$2,$3,$4): ParamConfig=$3
+$(call BBLibFile,$1,$2,$3,$4): Core=onewire
+$(call BBLibFile,$1,$2,$3,$4): Top=onewire
+$(call BBLibFile,$1,$2,$3,$4): override HdlTarget=$4
+$(call BBLibFile,$1,$2,$3,$4): TargetDir=$(call WkrTargetDir,$1,$3)/bb
+$(call BBLibFile,$1,$2,$3,$4): HdlSources=$5 $(OCPI_CDK_DIR)/include/hdl/onewire.v
+$(call BBLibFile,$1,$2,$3,$4): $5
+$(call BBLibFile,$1,$2,$3,$4): \
+  $$$$(foreach l,$$$$(HdlLibrariesInternal),$$$$(call HdlLibraryRefDir,$$$$l,$4))
+
+$(call BBLibFile,$1,$2,$3,$4): $$$$(HdlSources) | $$$$(TargetDir)
 	$(AT)$(ECHO) -n Building stub/blackbox library \($$@\) for target' '
-	$(AT)$(ECHO) $$(HdlTarget) from $4
+	$(AT)$(ECHO) $$(HdlTarget) from: $5
 	$(AT)$$(HdlCompile)
 
-$(OutDir)target-$1/bb:
+$(call WkrTargetDir,$1,$3)/bb:
 	$(AT)mkdir -p $$@
+
+$(call HdlVerilogTargetDefs,$1,$3): $(GeneratedDir)/$$$$(notdir $$$$@)
+	$(AT)sed s-//__-_c$3- $$< > $$@
+
+$(call HdlVHDLTargetDefs,$1,$3): $(GeneratedDir)/$$$$(notdir $$$$@)
+	$(AT)sed s/--__/_c$3/ $$< > $$@
 
 endef
 
-$(foreach f,$(HdlActualTargets),\
-  $(eval $(call DoBBLibraryTarget,$f,$(call HdlRmRv,$(word 1,$(HdlCores))),$f,$(CoreBlackBoxFiles))))
+$(foreach c,$(ParamConfigurations),\
+  $(foreach f,$(HdlActualTargets),\
+    $(eval \
+      $(call DoBBLibraryTarget,$f,$(strip\
+        $(call HdlRmRv,$(word 1,$(HdlCores)))$(if $(filter 0,$c),,_c$c)),$c,$f,\
+        $(call CoreBlackBoxFiles,$f,$c)))))
 
 cores: $(BBLibResults)
 

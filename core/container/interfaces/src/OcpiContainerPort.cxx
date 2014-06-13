@@ -207,11 +207,7 @@ namespace OCPI {
 	// FIXME: Take any connection-related parameters and make sure both parameter lists have them.
         // Containers know how to do internal connections
         if (&m_container == &otherContainer) {
-#if 0
-	  other.applyConnectParams(NULL, otherParams);
-#else
 	  other.setConnectParams(otherParams);
-#endif
           connectInside(other, myParams, otherParams);
           // Container MAY know how to do intercontainer connections between like containers.
 	  //        } else if (&container().driver() == &otherContainer.driver() &&
@@ -233,20 +229,11 @@ namespace OCPI {
 	  if (!m_canBeExternal)
 	    throw OU::Error("Port \"%s\" cannot be connected external to container",
 			    m_metaPort.m_name.c_str());
-#if 1
 	  other.setConnectParams(otherParams);
 	  setConnectParams(myParams);
 	  determineRoles(other.getData().data);
 	  other.startConnect(NULL, otherParams);
 	  startConnect(&other.getData().data, myParams);
-#else
-	  // Start input side (see getInitialProviderInfo below)
-	  other.applyConnectParams(NULL, otherParams);
-	  // Start output side (see setInitialProviderInfo below)
-	  applyConnectParams(&other.getData().data, myParams);
-	  // Enough info established to determine roles
-	  determineRoles(other.getData().data);
-#endif
 	  const Descriptors *outDesc;
 	  Descriptors feedback;
 	  // try to finish output side, possibly producing flow control feedback
@@ -389,7 +376,14 @@ namespace OCPI {
       if (uDesc.desc.dataBufferSize > pDesc.desc.dataBufferSize)
 	maxSize = uDesc.desc.dataBufferSize;
       maxSize = OU::roundUp(maxSize, BUFFER_ALIGNMENT);
-      pDesc.desc.dataBufferSize = uDesc.desc.dataBufferSize = OCPI_UTRUNCATE(uint32_t, maxSize);
+      if (maxSize > pDesc.desc.dataBufferSize) {
+	// Expanding the input size buffers
+	pDesc.desc.dataBufferSize = OCPI_UTRUNCATE(uint32_t, maxSize);
+      }
+      if (maxSize > uDesc.desc.dataBufferSize) {
+	// Expanding the output size buffer
+	uDesc.desc.dataBufferSize = OCPI_UTRUNCATE(uint32_t, maxSize);
+      }
       // FIXME: update bufferSizePort relationships to ports that are changing their size
       // But this depends on the order of the connections..
       // but this should only happen with runtime-parameter buffer sizes
