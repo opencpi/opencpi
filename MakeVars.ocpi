@@ -140,9 +140,10 @@ ifeq "$(OCPI_ASSERT)" ""
   OCPI_ASSERT = 1
 endif
 
-ifeq "$(OCPI_HAVE_CORBA)" ""
-  OCPI_HAVE_CORBA = 1
-endif
+#Default is CORBA disabled.
+#ifeq "$(OCPI_HAVE_CORBA)" ""
+#  OCPI_HAVE_CORBA = 1
+#endif
 
 ifeq "$(OCPI_BUILD_SHARED_LIBRARIES)" ""
   OCPI_BUILD_SHARED_LIBRARIES = 1

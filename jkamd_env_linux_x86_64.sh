@@ -1,5 +1,7 @@
 . ./env/start.sh
 
+export OCPI_HAVE_CORBA=1
+
 # #### Location of the Xilinx tools ####################################### #
 
 export OCPI_XILINX_TOOLS_DIR=/opt/Xilinx/14.6/LabTools
