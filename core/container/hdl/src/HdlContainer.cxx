@@ -104,6 +104,7 @@ namespace OCPI {
       m_hwEvents.emitT(te, getMyTicks());
       m_model = "hdl";
       m_os = "";
+      m_osVersion = "";
       m_platform = m_device.platform();
       ocpiDebug("HDL Container for device %s constructed.  ESN: '%s' Platform/part is %s/%s.",
 		name().c_str(), m_device.esn().c_str(), m_device.platform().c_str(),

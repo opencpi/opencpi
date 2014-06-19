@@ -609,10 +609,11 @@ namespace OCPI {
 	s = cp;
 	return NULL;
       }
-      void getOptionalString(ezxml_t x, std::string &s, const char *attr) {
+      // Note that this sets the output string to empty if it is not found
+      void
+      getOptionalString(ezxml_t x, std::string &s, const char *attr) {
 	const char *cp = ezxml_cattr(x, attr);
-	if (cp)
-	  s = cp;
+	s = cp ? cp : "";
       }
       bool
       inList(const char *item, const char *list) {
