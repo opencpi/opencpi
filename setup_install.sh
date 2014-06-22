@@ -10,7 +10,7 @@ fi
 mkdir -p $OCPI_PREREQUISITES_INSTALL_DIR
 if test "$OCPI_TARGET_HOST" = ""; then
   read v0 v1 v2 <<EOF
-  `showRunTimeHost`
+  `showRuntimeHost`
 EOF
 #  ovp=(`showRuntimeHost`)
 #  if test "$ovp" = "" -o "${#ovp[*]}" != 3; then

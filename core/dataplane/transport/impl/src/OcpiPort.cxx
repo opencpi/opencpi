@@ -1460,8 +1460,18 @@ OCPI::DataTransport::BufferUserFacet*
 OCPI::DataTransport::Port::
 getNextFullInputBuffer(void *&data, size_t &length, uint8_t &opcode)
 {
-  OCPI::DataTransport::Buffer* buf = getNextFullInputBuffer();
+  Circuit *c = getCircuit();
+  OU::SelfAutoMutex guard(c); // FIXME: refactor to make this a circuit method
+  if (!hasFullInputBuffer())
+    return NULL;
+  TransferController* txc = getPortSet()->getTxController();
+  InputBuffer* buf = 
+    static_cast<InputBuffer*>(txc->getNextFullInputBuffer(this));
   if (buf) {
+    if (buf->isEOS())
+      setEOS();
+    if (buf && buf->getMetaData()->endOfCircuit)
+      c->m_status = Circuit::Disconnecting;
 
     data = (void*)buf->getBuffer(); // cast off the volatile
     opcode = (uint8_t)buf->getMetaData()->ocpiMetaDataWord.opCode;
@@ -1470,11 +1480,14 @@ getNextFullInputBuffer(void *&data, size_t &length, uint8_t &opcode)
 
     OCPI_EMIT_REGISTER_FULL_VAR( "Data Buffer Opcode and length", OCPI::Time::Emit::u, 64, OCPI::Time::Emit::Value, dbre ); 
     OCPI_EMIT_VALUE_CAT_NR__(dbre, (uint64_t)(opcode | (uint64_t)length<<16) , OCPI_EMIT_CAT_WORKER_DEV,OCPI_EMIT_CAT_WORKER_DEV_BUFFER_VALUES, buf);
+    ocpiDebug("Getting buffer %p on port %p on circuit %p on transport %p data %p op %u len %zu",
+	      buf, this, c, &c->parent(), data, opcode, length);
 
   }
   return buf;
 }
 
+#if 0
 OCPI::DataTransport::Buffer* 
 OCPI::DataTransport::Port::
 getNextFullInputBuffer()
@@ -1497,8 +1510,7 @@ getNextFullInputBuffer()
   }
   return buf;
 }
-
-
+#endif
 
 /**********************************
  * This method causes the specified input buffer to be marked

@@ -1,4 +1,4 @@
-<application package='ocpi'>
+<application package='ocpi' done='file_write'>
   <instance component="pattern">
 
     <property name="metadataCount" value='2'/>

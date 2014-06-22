@@ -319,7 +319,7 @@ typedef struct {
    RCCUserPort &getPort(unsigned n) const { return m_ports[n]; }
    RCCWorker &m_rcc; // pointer not reference due to initialization issues
    RCCUserWorker();
-   ~RCCUserWorker();
+   virtual ~RCCUserWorker();
    virtual uint8_t *rawProperties(size_t &size) const;
    virtual RCCResult
      initialize(), start(), stop(), release(), test(), beforeQuery(), afterConfigure();

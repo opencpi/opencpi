@@ -4,13 +4,13 @@
 # 2. OCPI_TARGET_HOST is set properly (our target scheme, not the gnu target scheme)
 # 3. OCPI_CROSS_TARGET is the gnu cross target
 set -e
-OCPI_OMNIORB_VERSION=4.1.7
+OCPI_OMNIORB_VERSION=4.2.0
 . ./setup_install.sh
 mkdir -p omniorb
 cd omniorb
 echo Building omniorb in `pwd` for $OCPI_TARGET_HOST
 sudo rm -r -f omniorb* $OCPI_TARGET_HOST omniORB* include lib share etc
-curl -O http://softlayer-dal.dl.sourceforge.net/project/omniorb/omniORB/omniORB-$OCPI_OMNIORB_VERSION/omniORB-$OCPI_OMNIORB_VERSION.tar.bz2
+curl -O -L http://downloads.sourceforge.net/project/omniorb/omniORB/omniORB-$OCPI_OMNIORB_VERSION/omniORB-$OCPI_OMNIORB_VERSION.tar.bz2
 #cp ../omniORB-$OCPI_OMNIORB_VERSION.tar.bz2 .
 tar xf omniORB-$OCPI_OMNIORB_VERSION.tar.bz2
 cd omniORB-$OCPI_OMNIORB_VERSION

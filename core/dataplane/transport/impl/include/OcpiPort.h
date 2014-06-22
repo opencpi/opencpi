@@ -135,7 +135,7 @@ namespace OCPI {
        * Reteives the next available input buffer.
        *********************************/
       BufferUserFacet* getNextFullInputBuffer(void *&data, size_t &length, uint8_t &opcode);
-      Buffer* getNextFullInputBuffer();
+      //      Buffer* getNextFullInputBuffer();
 
       /**********************************
        * This method retreives the next available buffer from the local (our)

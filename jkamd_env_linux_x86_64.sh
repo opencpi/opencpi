@@ -5,7 +5,8 @@ export OCPI_HAVE_CORBA=1
 
 # #### Location of the Xilinx tools ####################################### #
 
-export OCPI_XILINX_TOOLS_DIR=/opt/Xilinx/14.6/LabTools
+export OCPI_XILINX_DIR=/opt/Xilinx
+export OCPI_XILINX_VERSION=14.6
 export OCPI_VIVADO_TOOLS_DIR=/home/jek1/mac/Xilinx/Vivado/2012.1
 . ./env/xilinx.sh
 

@@ -105,10 +105,10 @@ namespace OCPI {
     }
 
     bool Container::supportsImplementation(OU::Worker &i) {
-      ocpiDebug("supports: %u %s/%s %s/%s %s/%s", m_ordinal,
-		m_model.c_str(), i.model().c_str(),
-		m_os.c_str(), i.attributes().m_os.c_str(),
-		m_platform.c_str(), i.attributes().m_platform.c_str());
+      ocpiDebug("supports: container: %u m %s o %s v %s p %s vs impl: %s m %s o %s v %s p %s",
+		m_ordinal, m_model.c_str(), m_os.c_str(), m_osVersion.c_str(),m_platform.c_str(),
+		i.name().c_str(), i.model().c_str(), i.attributes().m_os.c_str(),
+		i.attributes().m_osVersion.c_str(), i.attributes().m_platform.c_str());
       return
 	m_model == i.model() &&
 	m_os == i.attributes().m_os &&

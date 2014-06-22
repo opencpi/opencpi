@@ -211,16 +211,20 @@ namespace OCPI {
 	    err = "Couldn't execute bitstream loading command.  Bad OCPI_CDK_DIR environment variable?";
 	    break;
 	  case -1:
-	    err = OU::esprintf("Unknown system error (errno %d) while executing bitstream loading command",
-			       errno);
+	    err = OU::esprintf("Unknown system error (errno %d) while executing bitstream loading command: %s",
+			       errno, command);
 	    break;
 	  case 0:
 	    ocpiInfo("Successfully loaded bitstream file: \"%s\" on HDL device \"%s\"\n",
 		     fileName, name().c_str());
 	    break;
 	  default:
-	    err = OU::esprintf("Bitstream loading error (%d) loading \"%s\" on HDL device \"%s\"",
-			       rc, fileName, name().c_str());
+	    err = OU::esprintf("Bitstream loading error (%s%s: %d) loading \"%s\" on HDL device"
+			       " \"%s\" with command: %s",
+			       WIFEXITED(rc) ? "exit code" : "signal ",
+			       WIFEXITED(rc) ? "" : strsignal(WTERMSIG(rc)),
+			       WIFEXITED(rc) ? WEXITSTATUS(rc) : WTERMSIG(rc),
+			       fileName, name().c_str(), command);
 	  }
 	  if (err)
 	    throw OU::Error("%s", err);

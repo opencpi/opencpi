@@ -92,6 +92,7 @@ PACKAGES += tools/local/binder tools/local/tester
 PACKAGES += tools/cdkutils
 PACKAGES += tools/ocpigen
 PACKAGES += tools/cdk/ocpidds
+PACKAGES += tools/astyle
 # if we don't have opencl and we are building statically, don't bother with this
 ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
 PACKAGES += tools/cdk/ocpiocl
