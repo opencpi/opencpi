@@ -7,8 +7,8 @@ echo '*'Note, this script will create the /opt/opencpi directory.
 echo ' 'That is NOT where the OpenCPI code tree will go, but where
 echo ' 'various prerequisite packages will be installed, and where
 echo ' 'the development kit will be installed.
-echo 4. You should be in the directory where an "opencpi" directory containing
-echo '   'the source repository will be created, populated, and built by this script.
+echo 4. You should be in the top level directory of the OpenCPI code base repository,
+echo '   usually called "opencpi"'
 /bin/echo -n Is this is all OK and do you want to proceed with the installation'\? (y or n): '
 read ans
 if [ $ans != y ]; then
