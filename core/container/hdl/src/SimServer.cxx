@@ -70,7 +70,7 @@ namespace OCPI {
 	  ssize_t nread = read(fd, buf, nRequested);
 	  if (nread == 0)
 	    // shouldn't happen because we have it open for writing too
-	    error = "eof on FIFO"; 
+	    error = "eof on FIFO";
 	  else if (nread > 0) {
 	    nRequested -= nread;
 	    buf += nread;
@@ -108,7 +108,7 @@ namespace OCPI {
 	      OU::format(error, "can't symlink from %s to %s (%s %d)", old, name, strerror(errno), errno);
 	  }
 	  ocpiDebug("Fifo %s created and opened for %s", name, iRead ? "reading" : "writing");
-	}    
+	}
 	~Fifo() {
 	  ocpiDebug("Destroying fifo %s", m_name.c_str());
 	  if (m_rfd >= 0) close(m_rfd);
@@ -144,10 +144,10 @@ namespace OCPI {
 	OE::Socket m_disc;
 	// This endpoint is what we use for everything but receiving discovery messages
 	// We forward responses from the sim back to the requester
-	typedef std::list<OE::Socket*> Clients;
+	typedef std::list<OE::Socket *> Clients;
 	typedef Clients::iterator ClientsIter;
 	Clients m_clients;
-	
+
 	// This fifo is read by the sim and we write it.
 	// It carries CP traffic from us to the sim
 	Fifo m_req;
@@ -189,6 +189,7 @@ namespace OCPI {
 	std::queue<Request> m_respQueue;
 	std::string m_platform;
 	std::string m_exec; // simulation executable local relative path name
+	std::string m_cwd;  // current working dir (where ocpirun is being launched)
 	bool m_verbose, m_dump, m_spinning, m_loading;
 	unsigned m_sleepUsecs, m_simTicks;
 	uint8_t m_spinCount;
@@ -199,7 +200,7 @@ namespace OCPI {
 	// Start local state for executable file transfer
 	OS::ServerSocket *m_xferSrvr; // not NULL after establishment and before acceptace
 	OS::Socket *m_xferSckt;       // not NULL after acceptance, before EOF
-	char m_xferBuf[64*1024];
+	char m_xferBuf[64 * 1024];
 	uint64_t m_xferSize;        // how many bytes need to be transferred?
 	uint64_t m_xferCount;       // how many bytes transferred so far?
 	bool m_xferDone;
@@ -213,7 +214,7 @@ namespace OCPI {
 	    std::string &error)
 	  : m_udp("udp", error),                       // the generic interface for udp broadcast receives
 	    m_disc(m_udp, ocpi_slave, NULL, 0, error), // the broadcast receiver
-	    //	    m_ext(m_udp, ocpi_device, NULL, 0, error),
+	    //      m_ext(m_udp, ocpi_device, NULL, 0, error),
 	    m_req(simDir + "/request", false, "/tmp/OpenCPI0_Req", error),
 	    m_resp(simDir + "/response", true, "/tmp/OpenCPI0_Resp", error),
 	    m_ctl(simDir + "/control", false, "/tmp/OpenCPI0_IOCtl", error),
@@ -224,8 +225,8 @@ namespace OCPI {
 	    m_respLeft(0), m_respPtr(NULL), m_platform(platform), m_verbose(verbose),
 	    m_dump(dump), m_spinning(false), m_sleepUsecs(sleepUsecs), m_simTicks(simTicks),
 	    m_spinCount(spinCount), m_cumTicks(0), m_xferSrvr(NULL), m_xferSckt(NULL),
-	    m_xferSize(0), m_xferCount(0), m_xferDone(false), m_xfd(-1), m_metadata(NULL), m_xml(NULL)
-	{
+	    m_xferSize(0), m_xferCount(0), m_xferDone(false), m_xfd(-1), m_metadata(NULL),
+	    m_xml(NULL) {
 	  if (error.length())
 	    return;
 	  FD_ZERO(&m_alwaysSet);
@@ -257,7 +258,7 @@ namespace OCPI {
 	  ocpiDebug("resp %d ack %d nfds %d", m_resp.m_rfd, m_ack.m_rfd, m_maxFd);
 	  std::string plat(m_platform);
 	  plat += "_pf";
-	  Server::initAdmin(*(OH::OccpAdminRegisters*)m_admin, plat.c_str(), m_uuid, &m_textUUID);
+	  Server::initAdmin(*(OH::OccpAdminRegisters *)m_admin, plat.c_str(), m_uuid, &m_textUUID);
 	  m_name = "sim:";
 	  m_name += m_clients.front()->ifAddr().pretty();
 	  if (verbose) {
@@ -281,14 +282,18 @@ namespace OCPI {
 	  if (m_xml)
 	    ezxml_free(m_xml);
 	}
-	const char *uuid() const { return m_textUUID; }
+	const char *uuid() const {
+	  return m_textUUID;
+	}
 	void addFd(int fd, bool always) {
 	  if (fd > m_maxFd)
 	    m_maxFd = fd;
 	  if (always)
 	    FD_SET(fd, &m_alwaysSet);
 	}
-	const std::string &name() { return m_name; }
+	const std::string &name() {
+	  return m_name;
+	}
 	// Our added-value wait-for-process call.
 	// If "hang", we wait for the process to end, and if it stops, we term+kill it.
 	// Return true on bad unexpected things
@@ -459,13 +464,13 @@ namespace OCPI {
 	    err = " The OCPI_CDK_DIR environment variable is not set";
 	    return true;
 	  }
-	  OU::format(cmd, "exec %s %s req=%s resp=%s ctl=%s ack=%s", m_script.c_str(), m_file.c_str(),
+	  OU::format(cmd, "exec %s %s req=%s resp=%s ctl=%s ack=%s cwd=%s", m_script.c_str(), m_file.c_str(),
 		     m_req.m_name.c_str(), m_resp.m_name.c_str(), m_ctl.m_name.c_str(),
-		     m_ack.m_name.c_str());
+		     m_ack.m_name.c_str(), m_cwd.c_str());
 
 	  if (m_dump)
 	    cmd += " bscvcd";
-      
+
 	  if (m_verbose)
 	    fprintf(stderr, "Starting execution of simulator for HDL assembly: %s "
 		    "(executable \"%s\").\n", m_app.c_str(), m_exec.c_str());
@@ -525,14 +530,14 @@ namespace OCPI {
 	// Put the string for the response in "err"
 	// Return true if not ok
 	bool
-	loadRun(const char *file, uint64_t size, char *response, std::string &err) {
+	loadRun(const char *file, uint64_t size, const char *cwd, char *response, std::string &err) {
 	  *response = 'E';
 	  if (m_verbose)
 	    fprintf(stderr, "Initializing %s simulator from executable/bitstream: %s\n",
 		    m_platform.c_str(), file);
 	  ocpiDebug("Starting the %s simulator loading bitstream file: %s", m_platform.c_str(), file);
 	  // First establish a directory for the simulation based on the name of the file
-	  const char 
+	  const char
 	    *slash = strrchr(file, '/'),
 	    *suff = strrchr(file, '-');
 	  if (!suff) {
@@ -546,9 +551,9 @@ namespace OCPI {
 	  }
 	  slash = slash ? slash + 1 : file;
 	  m_file.assign(slash, dot - slash);
-	  m_app.assign(slash, suff - slash),
+	  m_app.assign(slash, suff - slash);
 	  m_dir = m_app;
-    
+
 	  char date[100];
 	  time_t now = time(NULL);
 	  struct tm nowtm;
@@ -567,6 +572,7 @@ namespace OCPI {
 	  // If the client is local, we try and ready it directly (from "file"), otherwise
 	  if (size == 0) {
 	    m_exec = file;
+	    m_cwd = cwd ? cwd : "";
 	    return finishLoadRun(response, err);
 	  }
 	  // This name is the local name for when a copy is made
@@ -676,8 +682,8 @@ namespace OCPI {
 	  HN::EtherControlMessageType action = OCCP_ETHER_MESSAGE_TYPE(hdr_in.typeEtc);
 	  size_t clen = ntohs(hdr_in.length) - (sizeof(hdr_in) - 2);
 	  char *command = (char *)(payload + sizeof(hdr_in));
-	  if (action != HN::OCCP_NOP || length == 0 || length < (unsigned)ntohs(hdr_in.length)+2 ||
-	      strlen(command)+1 != clen) {
+	  if (action != HN::OCCP_NOP || length == 0 || length < (unsigned)ntohs(hdr_in.length) + 2 ||
+	      strlen(command) + 1 != clen) {
 	    OU::format(error, "bad client message: action is %u, length is %zu", action, length);
 	    return true;
 	  }
@@ -693,18 +699,27 @@ namespace OCPI {
 	    switch (*command) {
 	    case 'L': // load and execute the simulation executable
 	      {
-		char *end;
+		char *bitfile;
+		char *cwd;
 		m_xferError.clear();
 		errno = 0;
-		unsigned long long size = strtoull(command + 1, &end, 0);
+		unsigned long long size = strtoull(command + 1, &bitfile, 0);
 		if (errno || size == ULLONG_MAX)
 		  error = "EInvalid file size";
 		else {
-		  while (*end && isspace(*end))
-		    end++;
+		  // remove any whitespace b4 the bitfile name
+		  while (*bitfile && isspace(*bitfile))
+		    bitfile++;
+		  cwd = bitfile;
+		  // insert a null character and grab the cwd
+		  while (*cwd && !isspace(*cwd))
+		    cwd++;
+		  *cwd++ = '\0';
+		  while (*cwd && isspace(*cwd))
+		    cwd++;
 		  ocpiInfo("Shutting down previous simulation before (re)loading");
 		  shutdown();
-		  loadRun(end, local ? 0 : size, response, error);
+		  loadRun(bitfile, local ? 0 : size, cwd, response, error);
 		}
 	      }
 	      break;
@@ -737,11 +752,11 @@ namespace OCPI {
 	    }
 	    if (error.length() >= maxPayLoad - 1) {
 	      OU::format(error, "command response to '%s' too long (%zu) for %u",
-			       command, error.length(), maxPayLoad);
+			 command, error.length(), maxPayLoad);
 	      return true;
 	    }
-	    strcpy(response+1, error.c_str());
-	    length = sizeof(hdr_out) + strlen(response)+1;
+	    strcpy(response + 1, error.c_str());
+	    length = sizeof(hdr_out) + strlen(response) + 1;
 	    hdr_out.length = htons(OCPI_UTRUNCATE(uint16_t, length - 2));
 	    hdr_out.typeEtc = OCCP_ETHER_TYPE_ETC(HN::OCCP_RESPONSE, HN::OK, 0, 1);
 	    ocpiDebug("command result is: '%s'", response);
@@ -759,7 +774,7 @@ namespace OCPI {
 	doEmulate(uint8_t *payload, size_t &length, std::string &error) {
 	  HN::EtherControlPacket &pkt = *(HN::EtherControlPacket *)payload;
 	  //    ocpiDebug("Got header.  Need %u header %u", n, sizeof(HN::EtherControlHeader));
-	  if (length-2 != ntohs(pkt.header.length)) {
+	  if (length - 2 != ntohs(pkt.header.length)) {
 	    OU::format(error, "bad client message length: %zu vs %u", length, ntohs(pkt.header.length));
 	    return true;
 	  }
@@ -772,18 +787,18 @@ namespace OCPI {
 	  switch (action) {
 	  default:
 	    OU::format(error, "Invalid control message received when no sim executable %x",
-			     pkt.header.typeEtc);
+		       pkt.header.typeEtc);
 	    return true;
 	  case HN::OCCP_WRITE:
 	    offset = ntohl(pkt.write.address); // for read or write
 	    len = sizeof(HN::EtherControlWriteResponse);
 	    if (offset <= sizeof(m_admin))
 	      *(uint32_t *)(&((char *)&m_admin) [offset]) = ntohl(pkt.write.data);
-	    else if (offset >= offsetof(OccpSpace,config))
-	      if ((offset - offsetof(OccpSpace,config)) >= sizeof(m_uuid))
+	    else if (offset >= offsetof(OccpSpace, config))
+	      if ((offset - offsetof(OccpSpace, config)) >= sizeof(m_uuid))
 		ocpiBad("Write offset out of range: 0x%zx", offset);
 	      else {
-		offset -= offsetof(OccpSpace,config);
+		offset -= offsetof(OccpSpace, config);
 		*(uint32_t *)(&((char *)&m_uuid) [offset]) = ntohl(pkt.write.data);
 	      }
 	    else if (offset >= offsetof(OccpSpace, worker)) {
@@ -808,11 +823,11 @@ namespace OCPI {
 	    ocpiDebug("Read command, offset 0x%zx", offset);
 	    if (offset <= sizeof(m_admin))
 	      pkt.readResponse.data = htonl(*(uint32_t *)(&((char *)&m_admin)[offset]));
-	    else if (offset >= offsetof(OccpSpace,config))
-	      if ((offset - offsetof(OccpSpace,config)) >= sizeof(m_uuid)+sizeof(uint64_t))
+	    else if (offset >= offsetof(OccpSpace, config))
+	      if ((offset - offsetof(OccpSpace, config)) >= sizeof(m_uuid) + sizeof(uint64_t))
 		ocpiBad("Read offset out of range1: 0x%zx", offset);
 	      else {
-		offset -= offsetof(OccpSpace,config);
+		offset -= offsetof(OccpSpace, config);
 		pkt.readResponse.data = htonl(*(uint32_t *)(&((char *)&m_uuid)[offset]));
 	      }
 	    else if (offset >= offsetof(OccpSpace, worker)) {
@@ -838,7 +853,7 @@ namespace OCPI {
 	    break;
 	  case HN::OCCP_NOP:
 	    len = sizeof(HN::EtherControlNopResponse);
-	    ocpiAssert(ntohs(pkt.header.length) == sizeof(HN::EtherControlNopResponse)-2);
+	    ocpiAssert(ntohs(pkt.header.length) == sizeof(HN::EtherControlNopResponse) - 2);
 	    // Tag is the same
 	    pkt.header.typeEtc = OCCP_ETHER_TYPE_ETC(HN::OCCP_RESPONSE, HN::OK, uncache, 0);
 	    pkt.nopResponse.mbx40 = 0x40;
@@ -877,16 +892,16 @@ namespace OCPI {
 	      }
 	      m_dcp += nn;
 	      if (spin(error))
-	        return true;
+		return true;
 	    }
 	  }
-	  ocpiDebug("written request to sim: len %zu action %u tag %u proto len %u", length, 
+	  ocpiDebug("written request to sim: len %zu action %u tag %u proto len %u", length,
 		    OCCP_ETHER_MESSAGE_TYPE(hdr_in.typeEtc), hdr_in.tag, ntohs(hdr_in.length));
 	  printTime("request written to sim");
 	  m_respQueue.push(Request(s, from, index));
 	  return false;
 	}
-  
+
 	void
 	printTime(const char *msg) {
 	  OS::ElapsedTime et = m_spinTimer.getElapsed();
@@ -943,7 +958,7 @@ namespace OCPI {
 	  // Reader has stuff to read: FIXME: make this fd non-blocking for cleanliness
 	  assert(m_xfd >= 0);
 	  size_t n = m_xferSckt->recv(m_xferBuf, sizeof(m_xferBuf), 0);
-	  switch(n) {
+	  switch (n) {
 	  default:
 	    if (write(m_xfd, m_xferBuf, n) == (ssize_t)n) {
 	      m_xferCount += n;
@@ -1017,10 +1032,10 @@ namespace OCPI {
 	  if (m_xferSckt && !m_xferDone)
 	    FD_SET(m_xferSckt->fd(), fds);
 	  struct timeval timeout[1];
-	  timeout[0].tv_sec = m_sleepUsecs/1000000;
-	  timeout[0].tv_usec = m_sleepUsecs%1000000;
+	  timeout[0].tv_sec = m_sleepUsecs / 1000000;
+	  timeout[0].tv_usec = m_sleepUsecs % 1000000;
 	  errno = 0;
-	  switch (select(m_maxFd+1, fds, NULL, NULL, timeout)) {
+	  switch (select(m_maxFd + 1, fds, NULL, NULL, timeout)) {
 	  case 0: // timeout.   Someday accumulate this time and assume sim is hung/crashes
 	    printTime("select timeout");
 	    return false;
@@ -1087,7 +1102,7 @@ namespace OCPI {
 	  assert(signal(SIGINT, sigint) != SIG_ERR);
 	  // If we were given an executable, start sim with it.
 	  char response[1];
-	  if (exec.length() && loadRun(exec.c_str(), 0, response, error))
+	  if (exec.length() && loadRun(exec.c_str(), 0, NULL, response, error))
 	    return true;
 	  uint64_t last = 0;
 	  while (!s_exited && !s_stopped && error.empty() && m_cumTicks < m_simTicks) {
@@ -1174,7 +1189,7 @@ namespace OCPI {
 	else
 	  OU::format(simName, "%s.%u", actualPlatform.c_str(), pid);
 	OU::format(m_simDir, "%s/%s/%s.%s", OH::Sim::TMPDIR, OH::Sim::SIMDIR, OH::Sim::SIMPREF,
-			 simName.c_str());
+		   simName.c_str());
 	if (mkdir(m_simDir.c_str(), 0777) != 0) {
 	  if (errno == EEXIST)
 	    OU::format(error, "Directory for this simulator, \"%s\", already exists (/tmp not cleared?)",
@@ -1214,7 +1229,7 @@ namespace OCPI {
 #define unconst64(a) (*(uint64_t *)&(a))
 	unconst64(admin.magic) = OCCP_MAGIC;
 	unconst32(admin.revision) = 0;
-	unconst32(admin.birthday) = OCPI_UTRUNCATE(uint32_t,time(0));
+	unconst32(admin.birthday) = OCPI_UTRUNCATE(uint32_t, time(0));
 	unconst32(admin.config) = 0xf0;
 	unconst32(admin.pciDevice) = 0;
 	unconst32(admin.attention) = 0;
@@ -1238,15 +1253,16 @@ namespace OCPI {
 	  ocpiDebug("Emulator UUID: %s", *uuidString);
 	}
 	OH::HdlUUID temp;
-	temp.birthday = OCPI_UTRUNCATE(uint32_t,time(0) + 1);
+	temp.birthday = OCPI_UTRUNCATE(uint32_t, time(0) + 1);
 	memcpy(temp.uuid, uuid, sizeof(uuid));
 	strcpy(temp.platform, platform);
 	strcpy(temp.device, "devemu");
 	strcpy(temp.load, "ld");
 	strcpy(temp.dna, "\001\002\003\004\005\006\007");
 	for (unsigned n = 0; n < sizeof(OH::HdlUUID); n++)
-	  ((uint8_t*)&hdlUuid)[n] = ((uint8_t *)&temp)[(n & ~3) + (3 - (n&3))];
+	  ((uint8_t *)&hdlUuid)[n] = ((uint8_t *)&temp)[(n & ~3) + (3 - (n & 3))];
       }
     }
   }
 }
+

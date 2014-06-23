@@ -76,7 +76,8 @@ namespace OCPI {
 	  uint64_t length;
 	  if (!OS::FileSystem::exists(cmd, &isDir, &length) || isDir)
 	    throwit("New sim executable file '%s' is non-existent or a directory", name);
-	  OU::format(cmd, "L%" PRIu64 " %s", length, name);
+	  std::string cwd_str = OS::FileSystem::cwd();
+	  OU::format(cmd, "L%" PRIu64 " %s %s", length, name, cwd_str.c_str());
 	  command(cmd.c_str(), cmd.length()+1, err, sizeof(err), 5000);
 	  err[sizeof(err)-1] = 0;
 	  switch (*err) {

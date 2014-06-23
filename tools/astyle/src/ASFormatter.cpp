@@ -4665,6 +4665,10 @@ bool ASFormatter::isCurrentBracketBroken() const
 		return false;
 	}
 	else if (shouldAttachInline
+#if 1  // JEK don't attach cases ANYWHERE
+		 && (preBracketHeaderStack->size() <= 0 ||
+		     preBracketHeaderStack->back() != &AS_CASE)
+#endif // JEK
 	         && isCStyle()			// for C++ only
 	         && bracketFormatMode != RUN_IN_MODE
 	         && isBracketType((*bracketTypeStack)[stackEnd], COMMAND_TYPE))
