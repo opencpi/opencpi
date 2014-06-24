@@ -84,7 +84,13 @@ namespace OCPI {
 		    public OCPI::Driver::ManagerBase<Manager, Driver, container> {
       unsigned cleanupPosition();
       OCPI::DataTransport::TransportGlobal &getTransportGlobalInternal(const OCPI::Util::PValue *params);
+      friend class Container;
+      friend class OCPI::API::ContainerManager;
+    protected:
+      static Container **s_containers;
+      static unsigned s_maxContainer;
     public:
+      static unsigned s_nContainers;
       Manager();
       ~Manager();
       OCPI::API::Container *find(const char *model, const char *which,

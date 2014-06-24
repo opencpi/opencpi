@@ -943,13 +943,14 @@ create(const char *file, const char *parent, const char *package, const char *ou
   if (err) {
     delete w;
     w = NULL;
-  } else
+  } else {
     w->m_outDir = outDir;
-  if (w->m_library) {
-    std::string lib(w->m_library);
-    if (w->m_paramConfig && w->m_paramConfig->nConfig)
-      OU::formatAdd(lib, "_c%zu", w->m_paramConfig->nConfig);
-    addLibMap(lib.c_str());
+    if (w->m_library) {
+      std::string lib(w->m_library);
+      if (w->m_paramConfig && w->m_paramConfig->nConfig)
+	OU::formatAdd(lib, "_c%zu", w->m_paramConfig->nConfig);
+      addLibMap(lib.c_str());
+    }
   }
   return w;
 }

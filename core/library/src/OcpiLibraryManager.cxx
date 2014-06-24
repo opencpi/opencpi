@@ -272,7 +272,8 @@ namespace OCPI {
 		       const OCPI::API::Connection * /*conns*/,
 		       const char *& /* artInst */,
 		       unsigned & score ) {
-      if (m_os == caps.m_os && m_platform == caps.m_platform) {
+      if (m_os == caps.m_os && m_osVersion == caps.m_osVersion &&
+	  m_platform == caps.m_platform) {
 	WorkerRange range = m_workers.equal_range(specName);
 
 	for (WorkerIter wi = range.first; wi != range.second; wi++) {

@@ -2,6 +2,7 @@
   <instance component='ptest'>
     <property name='p1' value='\376'/>
     <property name='p3' value='123.456'/>
+    <property name='p4' value='-123'/>
     <property name='p11' value='hello, world'/>
     <property name='sp0' value='true'/>
     <property name='sp11' value='"first", "second", "third"'/>

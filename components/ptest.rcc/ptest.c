@@ -20,6 +20,8 @@ RCCDispatch ptest = {
 static RCCResult
 run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  (void)timedOut;(void)newRunCondition;
- self->container.setError("This is a test error: %d", 1234);
+ PtestProperties *p = self->properties;
+ if (p->error)
+   self->container.setError("This is a test error: %d", 1234);
  return RCC_DONE;
 }

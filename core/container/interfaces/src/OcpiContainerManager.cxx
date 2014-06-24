@@ -40,6 +40,9 @@ namespace OCPI {
     namespace OT = OCPI::DataTransport;
     const char *container = "container";
 
+    unsigned Manager::s_nContainers = 0;
+    Container **Manager::s_containers;
+    unsigned Manager::s_maxContainer;
     Manager::Manager() : m_tpg_events(NULL), m_tpg_no_events(NULL) {
     }
 
@@ -48,6 +51,7 @@ namespace OCPI {
       deleteChildren();
       if ( m_tpg_no_events ) delete m_tpg_no_events;
       if ( m_tpg_events ) delete m_tpg_events;
+      delete [] s_containers;
     }
 
     // Note this is not dependent on configuration.
@@ -132,7 +136,7 @@ namespace OCPI {
     get(unsigned n) {
       OCPI::Container::Manager::getSingleton().parent().configureOnce();
       return
-	n >= OCPI::Container::Container::s_nContainers ? NULL : 
+	n >= OCPI::Container::Manager::s_nContainers ? NULL : 
 	&OCPI::Container::Container::nthContainer(n);
     }
   }

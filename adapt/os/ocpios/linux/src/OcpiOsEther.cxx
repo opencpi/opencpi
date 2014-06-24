@@ -243,11 +243,13 @@ namespace OCPI {
 	      return;
 	    }
 	    struct ndrv_demux_desc ndd;
+	    memset(&ndd, 0, sizeof(ndd));
 	    ndd.type = NDRV_DEMUXTYPE_ETHERTYPE;
 	    ndd.length = sizeof(ndd.data.ether_type);
 	    ndd.data.ether_type = htons(m_type);
 
 	    struct ndrv_protocol_desc npd;
+	    memset(&npd, 0, sizeof(npd));
 	    npd.version = NDRV_PROTOCOL_DESC_VERS;
 	    npd.protocol_family = m_type; // some random number???
 	    npd.demux_count = 1;

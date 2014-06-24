@@ -518,9 +518,11 @@ namespace OCPI {
 	if (minus) {
 	  if (uval > ((uint64_t)1) << 63)
 	    break;
+	  val = -(int64_t)uval;
 	} else if (uval > (uint64_t)INT64_MIN)
 	  break;
-	val = (int64_t)uval;
+	else
+	  val = (int64_t)uval;
 	return false;
       } while (0);
       return true;

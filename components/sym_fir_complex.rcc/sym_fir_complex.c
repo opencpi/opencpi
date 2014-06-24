@@ -43,7 +43,7 @@ static RCCResult start(RCCWorker *self )
   for ( i=0; i<(int)NTAPS/2; i++ ) {
     myState->taps[i] = (double)p->taps[i];
   }
-  for ( j=i; i>=0; j++,i-- ) {
+  for ( j=i; i>0; j++,i-- ) {
     myState->taps[j] = (double)p->taps[i];
   }  
   return RCC_OK;

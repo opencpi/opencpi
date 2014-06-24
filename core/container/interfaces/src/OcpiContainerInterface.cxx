@@ -68,7 +68,6 @@ namespace OCPI {
     }
 #endif
 
-    unsigned Container::s_nContainers = 0;
     Container::Container(const char *name, const ezxml_t config, const OCPI::Util::PValue *params)
       throw ( OU::EmbeddedException )
       : //m_ourUID(mkUID()),
@@ -77,17 +76,17 @@ namespace OCPI {
       m_transport(*new OCPI::DataTransport::Transport(&Manager::getTransportGlobal(params), false, this))
     {
       OU::SelfAutoMutex guard (this);
-      m_ordinal = s_nContainers++;
-      if (m_ordinal >= s_maxContainer) {
-	Container **old = s_containers;
-	s_containers = new Container *[s_maxContainer + 10];
+      m_ordinal = Manager::s_nContainers++;
+      if (m_ordinal >= Manager::s_maxContainer) {
+	Container **old = Manager::s_containers;
+	Manager::s_containers = new Container *[Manager::s_maxContainer + 10];
 	if (old) {
-	  memcpy(s_containers, old, s_maxContainer * sizeof(Container *));
+	  memcpy(Manager::s_containers, old, Manager::s_maxContainer * sizeof(Container *));
 	  delete [] old;
 	}
-	s_maxContainer += 10;
+	Manager::s_maxContainer += 10;
       }
-      s_containers[m_ordinal] = this;
+      Manager::s_containers[m_ordinal] = this;
       (void)config; // nothing to parse (yet)
       // FIXME:  this should really be in a baseclass inherited by software containers
       // It works because stuff can be overriden and no threads are created until
@@ -160,7 +159,7 @@ namespace OCPI {
     Container::~Container() {
       if (m_thread)
 	delete m_thread;
-      s_containers[m_ordinal] = 0;
+      Manager::s_containers[m_ordinal] = 0;
       delete &m_transport;
     }
 
@@ -271,14 +270,12 @@ namespace OCPI {
 	start(getEventManager());
       }
     }
-    Container **Container::s_containers;
-    unsigned Container::s_maxContainer;
     Container &Container::nthContainer(unsigned n) {
-      if (!s_containers[n])
+      if (!Manager::s_containers[n])
 	throw OU::Error("Missing container %u", n);
-      if (n >= s_maxContainer)
+      if (n >= Manager::s_maxContainer)
 	throw OU::Error("Invalid container %u", n);
-      return *s_containers[n];
+      return *Manager::s_containers[n];
     }
   }
   namespace API {

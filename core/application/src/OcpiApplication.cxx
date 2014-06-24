@@ -120,7 +120,7 @@ namespace OCPI {
       case RoundRobin:
 	// Prefer adding a new container to an existing one, but if we can't
 	// use a new one, rotate around the existing ones.
-	for (unsigned n = 0; n < OC::Container::s_nContainers; n++)
+	for (unsigned n = 0; n < OC::Manager::s_nContainers; n++)
 	  if ((bestMap & (1 << n)) && !(m_allMap & (1 << n))) {
 	    m_currConn = m_nContainers;
 	    i->m_container = addContainer(n);
@@ -150,7 +150,7 @@ namespace OCPI {
 	  }
 	// Add one
 	unsigned n;
-	for (n = 0; n < OC::Container::s_nContainers; n++)
+	for (n = 0; n < OC::Manager::s_nContainers; n++)
 	  if (bestMap & (1 << n))
 	    break;
 	i->m_container = addContainer(n);
@@ -452,7 +452,7 @@ namespace OCPI {
 	ocpiDebug("doInstance %u %u %u", instNum, score, m);
 	if (connectionsOk(c, instNum)) {
 	  ocpiDebug("doInstance connections ok");
-	  for (unsigned cont = 0; cont < OC::Container::s_nContainers; cont++) {
+	  for (unsigned cont = 0; cont < OC::Manager::s_nContainers; cont++) {
 	    Booking &b = m_bookings[cont];
 	    ocpiDebug("doInstance container: cont %u feasible 0x%x", cont, i->m_feasibleContainers[m]);
 	    if (i->m_feasibleContainers[m] & (1 << cont) && bookingOk(b, c, instNum)) {
@@ -488,15 +488,15 @@ namespace OCPI {
     init( const PValue * params ) {
 
       // In order from class definition except for instance-related
-      m_bookings = new Booking[OC::Container::s_nContainers];
+      m_bookings = new Booking[OC::Manager::s_nContainers];
       m_properties = NULL;
       m_nProperties = 0;
       m_curMap = 0;
       m_curContainers = 0;
       m_allMap = 0;
-      m_global2used = new unsigned[OC::Container::s_nContainers];
+      m_global2used = new unsigned[OC::Manager::s_nContainers];
       m_nContainers = 0;
-      m_usedContainers = new unsigned[OC::Container::s_nContainers];
+      m_usedContainers = new unsigned[OC::Manager::s_nContainers];
       m_containers = NULL;    // allocated when we know how many we are using
       m_containerApps = NULL; // ditto
       m_workers = NULL;
@@ -505,7 +505,7 @@ namespace OCPI {
       //      m_externalNames = NULL;
       m_cMapPolicy = RoundRobin;
       m_processors = 0;
-      m_currConn = OC::Container::s_nContainers - 1;
+      m_currConn = OC::Manager::s_nContainers - 1;
 
       // Set the instance map policy
       setPolicy(params);

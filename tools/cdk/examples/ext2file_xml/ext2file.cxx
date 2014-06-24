@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
       while (!(b = ep.getBuffer(data, length)))
 	sleep(1);
       snprintf((char*)data, length, "Hello, World %u\n", n);
-      printf("length: %zu\n", length);
+      //      printf("length: %zu\n", length);
       data[length-1] = 0;
       b->put(strlen((char*)data));
     }

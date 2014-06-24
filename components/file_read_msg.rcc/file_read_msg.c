@@ -45,6 +45,8 @@ RCCResult genTestFile( RCCWorker * self )
   FileHeader h;
   int fd;
   unsigned bc=0;
+  memset(&h, 0, sizeof(h));
+
   printf("Generating simple data file\n");
   if ((fd = creat(p->fileName, 0666)) < 0) {
     self->container.setError( "error opening file \"%s\": %s", p->fileName, strerror(errno));

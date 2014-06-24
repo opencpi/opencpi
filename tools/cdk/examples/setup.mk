@@ -11,7 +11,7 @@ OUT= > /dev/null
 all: $(PROG)
 
 $(PROG): $(APP).cxx | $(OCPI_TARGET_DIR)
-	$(CXX) -g -Wall -o $@ -I$(OCPI_INC_DIR) $^ $(OCPI_LD_FLAGS)
+	@echo Building $@...; $(CXX) -g -Wall -o $@ -I$(OCPI_INC_DIR) $^ $(OCPI_LD_FLAGS)
 
 clean::
 	rm -r -f lib target-* *.*~ timeData.raw output_image.jpg

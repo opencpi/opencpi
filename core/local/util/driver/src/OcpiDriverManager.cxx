@@ -64,8 +64,11 @@ namespace OCPI {
       return &Singleton<ManagerManager>::getSingleton();
     }
     ManagerManager::ManagerManager()
-      : m_configured(false), m_doNotDiscover(false)
+      : m_configured(false), m_doNotDiscover(false), m_xml(NULL)
     {}
+    ManagerManager::~ManagerManager() {
+      ezxml_free(m_xml);
+    }
     // This is the static API method
     void ManagerManager::configure(const char *file) {
       getManagerManager()->configureOnce(file);
@@ -88,20 +91,19 @@ namespace OCPI {
 	  file = "/opt/opencpi/system.xml";
 	  optional = true;
 	}
-	ezxml_t x = NULL;
 	if (OS::FileSystem::exists(file)) {
-	  const char *err = OE::ezxml_parse_file(file, x);
+	  const char *err = OE::ezxml_parse_file(file, m_xml);
 	  if (err)
 	    throw OU::Error("OpenCPI system configuration file error: %s", err);
 	} else if (!optional)
 	  throw OU::Error("OpenCPI system configuration file '%s' does not exist", file);
 	// First perform any top-level loads.
-	if (x) {
-	  for (ezxml_t l = ezxml_cchild(x, "load"); l; l = ezxml_next(l))
+	if (m_xml) {
+	  for (ezxml_t l = ezxml_cchild(m_xml, "load"); l; l = ezxml_next(l))
 	    loadit(l);
 	  // Now find any loads under any of the managers
 	  for (Manager *m = firstChild(); m; m = m->nextChild()) {
-	    ezxml_t c = ezxml_cchild(x, m->name().c_str());
+	    ezxml_t c = ezxml_cchild(m_xml, m->name().c_str());
 	    if (c)
 	      for (ezxml_t l = ezxml_cchild(c, "load"); l; l = ezxml_next(l))
 		loadit(l);
@@ -112,7 +114,7 @@ namespace OCPI {
 	ocpiDebug("Configuring the driver managers");
 	for (Manager *m = firstChild(); m; m = m->nextChild()) {
 	  ocpiDebug("Configuring the %s manager", m->name().c_str());
-	  m->configure(x ? ezxml_cchild(x, m->name().c_str()) : NULL);
+	  m->configure(m_xml ? ezxml_cchild(m_xml, m->name().c_str()) : NULL);
 	}
 	// The discovery happens in a second pass to make sure everything is configured before
 	// anything is discovered so that one driver's discovery can depend on another type of

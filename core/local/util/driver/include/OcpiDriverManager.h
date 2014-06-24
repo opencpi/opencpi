@@ -95,9 +95,11 @@ namespace OCPI {
       std::string m_configFile; // system configuration file
       bool m_configured;        // to do lazy (and avoid redundant) configuration
       bool m_doNotDiscover;
+      ezxml_t m_xml;
       static bool s_exiting;
     public:
       ManagerManager();
+      ~ManagerManager();
       static bool exiting() { return s_exiting; }
       void configureOnce(const char *cf = NULL);
       // This is public only for debugging, etc.
