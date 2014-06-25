@@ -104,9 +104,10 @@ endif
 PACKAGES += tools/cdk/ocpixm
 PACKAGES += test
 
-PACKAGES += tests/facilities/test_os
-PACKAGES += tests/facilities/test_logger
-PACKAGES += tests/framework/framework
+PACKAGES += tests
+
+#PACKAGES += tests/test_logger
+#PACKAGES += tests/bin
 
 #
 # ----------------------------------------------------------------------
@@ -204,6 +205,9 @@ cleanexamples:
 
 runexamples:
 	make -C tools/cdk/examples run
+
+runtests:
+	make -C tests run
 
 cleancomponents:
 	make -C components clean

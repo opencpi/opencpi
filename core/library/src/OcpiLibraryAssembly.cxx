@@ -226,6 +226,8 @@ namespace OCPI {
 	  ocpiInfo("Rejected: initial property \"%s\" not found", apName);
 	  return false;
 	}
+	if (!aProps[ap].m_hasValue)
+	  continue; // used by dumpfile
 	OU::Property &uProp = *up;
 	if (!uProp.m_isWritable && !uProp.m_isParameter) {
 	  ocpiInfo("Rejected: initial property \"%s\" was neither writable nor a parameter", apName);

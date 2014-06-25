@@ -315,9 +315,9 @@ namespace OCPI {
 	  if (!uProp.m_isReadable)
 	    throw OU::Error("Cannot dump property '%s' for instance '%s'. It is not readable.",
 			    pName, name);
-	  if (!aProps[p].m_hasValue)
-	    continue;
 	}
+	if (!aProps[p].m_hasValue)
+	  continue;
 #if 0 // the mapped property overrided are done in OU::Assembly
       const char *propAssign;
 	OU::Assembly::MappedProperty *mp = &m_assembly.m_mappedProperties[0];
@@ -755,6 +755,7 @@ namespace OCPI {
 	if (p->m_dumpFile) {
 	  std::string name, value;
 	  m_workers[p->m_instance]->getProperty(p->m_property, name, value, NULL, m_hex);
+	  value += '\n';
 	  const char *err = OU::string2File(value, p->m_dumpFile);
 	  if (err)
 	    throw OU::Error("Error writing '%s' property to file: %s", name.c_str(), err);

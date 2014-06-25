@@ -1,16 +1,8 @@
-all:
-	make -C	facilities/test_os -f Makefile.ocpi
-	make -C	facilities/test_logger -f Makefile.ocpi
-	make -C framework/framework -f Makefile.ocpi
-
-clean:
-	make -C	facilities/test_os -f Makefile.ocpi clean
-	make -C	facilities/test_logger -f Makefile.ocpi clean
-	make -C framework/framework -f Makefile.ocpi clean
+include $(OCPI_BASE_DIR)/Makefile.ocpi.for-pkg
 
 run:
-	framework/framework/$(OCPI_OUT_DIR)/ocpi_unit_test
+	@$(OCPI_OUT_DIR)/ocpitests
 
 runv:
-	valgrind framework/framework/$(OCPI_OUT_DIR)/ocpi_unit_test
+	@valgrind $(OCPI_OUT_DIR)/ocpitests
 

@@ -46,13 +46,18 @@ endif
 include $(OCPI_BASE_DIR)/Makefile.ocpi.common
 
 ifneq ($(wildcard Makefile.ocpi.imports),)
-include Makefile.ocpi.imports
-else ifneq ($(wildcard ../Makefile.ocpi.imports),)
-include ../Makefile.ocpi.imports
-else ifneq ($(wildcard ../../Makefile.ocpi.imports),)
-include ../../Makefile.ocpi.imports
+  include Makefile.ocpi.imports
+else
+  ifeq ($(ALLLIBS)$(ALLINC),)
+    ifneq ($(wildcard ../Makefile.ocpi.imports),)
+      include ../Makefile.ocpi.imports
+    else ifneq ($(wildcard ../../Makefile.ocpi.imports),)
+      include ../../Makefile.ocpi.imports
+    endif
+  endif
 endif
-
+export ALLINC
+export ALLLIBS
 CFLAGS += $(EXTRA_CFLAGS)
 CXXFLAGS += $(EXTRA_CXXFLAGS)
 ALLDEFS += $(EXTRA_DEFS)

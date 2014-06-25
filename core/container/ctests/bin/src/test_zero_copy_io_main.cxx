@@ -306,7 +306,7 @@ int config_and_run_zcopy_container_tests(std::vector<CApp>& ca, std::vector<CWor
                                          int cmap[], int bcmap[] )
 {
   char tnamebuf[256];
-  sprintf(tnamebuf, "ZCopy Test: container map %d,%d,%d buffer map %d,%d,%d,%d",
+  sprintf(tnamebuf, " ZCopy Test: container map %d,%d,%d buffer map %d,%d,%d,%d",
           cmap[0], cmap[1], cmap[2], bcmap[0], bcmap[1], bcmap[2], bcmap[3] );
 
   PRODUCER = cmap[0];
@@ -414,7 +414,7 @@ int  main( int argc, char** argv)
 #endif
   destroyContainers( ca, workers );
 
-  return test_rc;
+  return !test_rc;
 }
 
 

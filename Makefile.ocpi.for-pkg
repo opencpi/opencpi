@@ -56,6 +56,8 @@ ifneq ($(wildcard ../Makefile.ocpi.imports),)
 include ../Makefile.ocpi.imports
 endif
 endif
+export ALLINC
+export ALLLIBS
 
 PACKAGE = $(shell pwd|sed 's-.*/\([^/]*$$\)-\1-')
 #$(info PACKAGE $(PACKAGE))

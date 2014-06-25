@@ -268,7 +268,7 @@ int  main( int argc, char** argv)
   do {
     uint32_t bp = buffersProcessed.getULongValue();
     if ( bp == 250 ) {
-      printf("Test: PASSED\n");
+      printf(" Test: PASSED\n");
       break;
     }
     OCPI::OS::sleep( 1000 );
@@ -287,10 +287,8 @@ int  main( int argc, char** argv)
 #endif
 
   } catch (std::string & oops) {
-    std::cerr << "Error: " << oops << std::endl;
-    return false;
+    std::cout << "Error: " << oops << std::endl;
+    return 1;
   }
   return !test_rc;
 }
-
-

@@ -1,15 +1,4 @@
-
 /*
- *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
- *
- *    Mercury Federal Systems, Incorporated
- *    1901 South Bell Street
- *    Suite 402
- *    Arlington, Virginia 22202
- *    United States of America
- *    Telephone 703-413-0781
- *    FAX 703-413-0784
- *
  *  This file is part of OpenCPI (www.opencpi.org).
  *     ____                   __________   ____
  *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
@@ -32,16 +21,19 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <iostream>
+
+#include "gtest/gtest.h"
 
 #include "OcpiOsTimer.h"
 #include "OcpiOsMisc.h"
 #include "OcpiOsDebug.h"
 
-#include "gtest/gtest.h"
+#include "test-os.h"
 
-#include <iostream>
+namespace OS = OCPI::OS;
 
-std::ostream& operator<< ( std::ostream& s, OCPI::OS::ElapsedTime e )
+std::ostream& operator<< ( std::ostream& s, OS::ElapsedTime e )
 {
   s << e.seconds() << " seconds " << e.nanoseconds() << " nanoseconds " << '\n';
 
@@ -59,10 +51,11 @@ namespace
   // Test 1: Check that the timer functionally works.
   TEST( TestOcpiOsTimer, test_1 )
   {
-    OCPI::OS::Timer t;
+    OS::Timer t;
     t.start ( );
+    OS::sleep(1);
     t.stop( );
-    OCPI::OS::ElapsedTime e = t.getElapsed();
+    OS::ElapsedTime e = t.getElapsed();
     EXPECT_NE ( e, 0 );
   }
 
@@ -70,10 +63,10 @@ namespace
   // Test 2: Sleep for a while and see that the timer isn't too far off.
   TEST( TestOcpiOsTimer, test_2 )
   {
-    OCPI::OS::Timer t ( true );
-    OCPI::OS::sleep ( 3000 );
+    OS::Timer t ( true );
+    OS::sleep ( 3000 );
     t.stop ( );
-    OCPI::OS::ElapsedTime e = t.getElapsed();
+    OS::ElapsedTime e = t.getElapsed();
     unsigned int msecs = e.seconds() * 1000 + e.nanoseconds() / 1000000;
     // Allow for a 15% skew
     EXPECT_GE( msecs, 2550u );
@@ -84,17 +77,17 @@ namespace
   // Test 3: Test that the timer can be re-started.
   TEST( TestOcpiOsTimer, test_3 )
   {
-    OCPI::OS::Timer t;
+    OS::Timer t;
 
     for ( unsigned int i = 0; i < 10; i++ )
     {
       t.start ( );
-      OCPI::OS::sleep ( 300 );
+      OS::sleep ( 300 );
       t.stop ( );
-      OCPI::OS::sleep ( 300 );
+      OS::sleep ( 300 );
     }
 
-    OCPI::OS::ElapsedTime e = t.getElapsed();
+    OS::ElapsedTime e = t.getElapsed();
     unsigned int msecs = e.seconds() * 1000 + e.nanoseconds() / 1000000;
     // Allow for a 1% skew
     EXPECT_GE( msecs, 2970u );
@@ -105,12 +98,12 @@ namespace
   // Test 4: Timer reset
   TEST( TestOcpiOsTimer, test_4 )
   {
-    OCPI::OS::Timer t;
+    OS::Timer t;
 
     for ( unsigned int i = 0; i < 10; i++ )
     {
       t.start ( );
-      OCPI::OS::sleep ( 300 );
+      OS::sleep ( 300 );
       t.stop ( );
     }
 
@@ -119,11 +112,11 @@ namespace
     for ( unsigned int i = 0; i < 10; i++ )
     {
       t.start ( );
-      OCPI::OS::sleep ( 300 );
+      OS::sleep ( 300 );
       t.stop ( );
     }
 
-    OCPI::OS::ElapsedTime e = t.getElapsed();
+    OS::ElapsedTime e = t.getElapsed();
     unsigned int msecs = e.seconds() * 1000 + e.nanoseconds() / 1000000;
     // Allow for a 1% skew
     EXPECT_GE( msecs, 2970u );
@@ -134,8 +127,8 @@ namespace
   // Test 5: Timer precision: Expect better than 100ms
   TEST( TestOcpiOsTimer, test_5 )
   {
-    OCPI::OS::ElapsedTime e;
-    OCPI::OS::Timer::getPrecision ( e );
+    OS::ElapsedTime e;
+    OS::Timer::getPrecision ( e );
     EXPECT_EQ( e.seconds(), 0u );
     EXPECT_NE( e.nanoseconds(), 0u );
     EXPECT_LE( e.nanoseconds(), 100000000u );
@@ -145,7 +138,7 @@ namespace
   //  Test 6: Elapsed time comparators
   TEST( TestOcpiOsTimer, test_6 )
   {
-    OCPI::OS::ElapsedTime e1, e2;
+    OS::ElapsedTime e1, e2;
 
     e1.set( 100, 100);
     e2.set( 100, 100);
@@ -181,7 +174,7 @@ namespace
   // Test 7: Elapsed time arithmetic
   TEST( TestOcpiOsTimer, test_7 )
   {
-    OCPI::OS::ElapsedTime e1, e2, e3;
+    OS::ElapsedTime e1, e2, e3;
 
     e1.set( 100, 300);
     e2.set( 200, 400);

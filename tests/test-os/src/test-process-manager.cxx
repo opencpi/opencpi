@@ -1,15 +1,4 @@
-
 /*
- *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
- *
- *    Mercury Federal Systems, Incorporated
- *    1901 South Bell Street
- *    Suite 402
- *    Arlington, Virginia 22202
- *    United States of America
- *    Telephone 703-413-0781
- *    FAX 703-413-0784
- *
  *  This file is part of OpenCPI (www.opencpi.org).
  *     ____                   __________   ____
  *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
@@ -32,13 +21,6 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "OcpiOsProcessManager.h"
-#include "OcpiOsMisc.h"
-#include "OcpiOsDebug.h"
-#include "OcpiOsFileSystem.h"
-
-#include "gtest/gtest.h"
-
 #include <ctime>
 #include <csignal>
 #include <cstdlib>
@@ -47,6 +29,15 @@
 
 #include <string>
 #include <iostream>
+
+#include "gtest/gtest.h"
+
+#include "OcpiOsProcessManager.h"
+#include "OcpiOsMisc.h"
+#include "OcpiOsDebug.h"
+#include "OcpiOsFileSystem.h"
+
+#include "test-os.h"
 
 namespace
 {

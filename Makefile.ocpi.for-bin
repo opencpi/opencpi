@@ -37,7 +37,7 @@
 
 all: executables
 
-include ../../../../../MakeVars.ocpi
+include $(OCPI_BASE_DIR)/MakeVars.ocpi
 ifneq ($(OCPI_OUT_DIR),)
 OBJDIR = ../../$(OCPI_OUT_DIR)
 LIBDIR = $(OBJDIR)
@@ -46,7 +46,7 @@ OCPI_OUT_DIR = .
 OBJDIR = .
 LIBDIR = ../..
 endif
-include ../../../../../Makefile.ocpi.common
+include $(OCPI_BASE_DIR)/Makefile.ocpi.common
 
 ifneq ($(wildcard ../../Makefile.ocpi.imports),)
 include ../../Makefile.ocpi.imports

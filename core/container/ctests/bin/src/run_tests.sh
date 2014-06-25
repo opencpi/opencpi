@@ -37,12 +37,37 @@ else
   export OCPI_RCC_SUFFIX=so
   export LD_LIBRARY_PATH=../../../../lib/target-$OCPI_TOOL_HOST
 fi
+tmp=/tmp/ocpictest$$
+failed=
+set -o pipefail
+function doit {
+  ./$1 2> /dev/null | tee $tmp | (egrep 'FAILED|PASSED|Error:';exit 0)
+  rc=$?
+  if egrep -q 'FAILED|Error:' $tmp; then
+     echo $1 test failed explicitly, with FAILED or Error message.
+     failed=$1
+  elif test $rc != 0; then
+     echo $1 test failed implicitly, no FAILED message, but non-zero exit.
+     failed=$1
+  elif ! grep -q PASSED $tmp; then
+     echo $1 test failed implicitly, no PASSED message, but zero exit.
+     failed=$1
+  fi
+}
 if test $# = 1 ; then
-  sh -c "./$1 2> /dev/null | grep Test:"
+  doit $1
 else
 for i in `ls -d test* | grep -v '_main' | grep -v '\.'` ; do
   echo Running $i...
-  sh -c "./$i 2> /dev/null | grep Test:"
+  doit $i
 done
 fi
+if test "$failed" = ""; then
+  echo All tests passed.
+  exit 0
+else
+  echo Some tests failed.  The first to fail was: $failed.
+  exit 1
+fi
+
 

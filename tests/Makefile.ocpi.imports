@@ -1,15 +1,4 @@
-
 # #####
-#
-#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
-#
-#    Mercury Federal Systems, Incorporated
-#    1901 South Bell Street
-#    Suite 402
-#    Arlington, Virginia 22202
-#    United States of America
-#    Telephone 703-413-0781
-#    FAX 703-413-0784
 #
 #  This file is part of OpenCPI (www.opencpi.org).
 #     ____                   __________   ____
@@ -34,4 +23,14 @@
 #
 ########################################################################### #
 
-include ../../../Makefile.ocpi.for-pkg
+ALLINC += $(LOGGER_EXPORTS) $(OCPIOS_EXPORTS) $(OCPI_GTEST_DIR)/include
+
+#TESTS:=$(shell pwd > /dev/tty; cd ..; for i in *; do if test -d $$i -a $$i != bin; then echo $$i; fi; done)
+#$(info TESTS:$(TESTS))
+#TESTLIBS:=$(foreach t,$(TESTS),$(OCPI_BASE_DIR)/tests/$t/$t)
+#$(info TESTLIBS:$(TESTLIBS))
+export ALLLIBS += $(LOGGER_LIBS) $(UTIL_LIBS) $(OCPIOS_LIBS)
+
+export SYSLIBS += $(OCPI_GTEST_DIR)/$(OCPI_TARGET_HOST)/lib/gtest 
+
+
