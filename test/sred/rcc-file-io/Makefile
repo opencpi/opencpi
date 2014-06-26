@@ -163,6 +163,6 @@ all:
 endif
 
 clean:
-	if test "x$(OCPI_OUT_DIR)" != "x." ; then rm -rf $(OCPI_OUT_DIR) ; fi
+	rm -r -f target-$(or $(CleanTarget),*)
 	rm -rf FileSink.h FileSource.h FileTee.h
-	rm -rf *.zip *.out *.so *.o *~
+	rm -rf *.zip *.out *~

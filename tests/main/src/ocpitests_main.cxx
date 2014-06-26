@@ -41,13 +41,8 @@
 
 */
 
-namespace OCPI { namespace TEST {
-    extern int os, logger;
-    static int *tests[] = { &os, &logger };
-}}
 int main ( int argc, char* argv [ ] )
 {
-  (void)OCPI::TEST::tests;
   ::testing::InitGoogleTest ( &argc, argv );
 
   return RUN_ALL_TESTS();

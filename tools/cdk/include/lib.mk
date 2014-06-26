@@ -141,7 +141,7 @@ CleanModel=\
     for i in $($(call Capitalize,$(1))Implementations); do \
       if test -d $$i; then \
 	tn=$(call Capitalize,$(1))Targets; \
-        t="$($(call Capitalize,$(1))Targets)"; \
+        t="$(or $(CleanTarget),$($(call Capitalize,$(1))Targets))"; \
         $(ECHO) Cleaning $(call ToUpper,$(1)) implementation $$i for targets: $$t; \
 	$(MyMake) -C $$i $(PassOutDir) \
            OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) $$tn="$$t" clean; \
@@ -211,8 +211,9 @@ cleanocl:
 cleanhdl:
 	$(call CleanModel,hdl)
 
-clean:: cleanxm cleanrcc cleanocl cleanhdl cleantest
+clean:: cleanxm cleanrcc cleanocl cleantest
 	$(AT)echo Cleaning library directory for all targets.
+	$(AT)echo '********** REMEMBER THAT THIS DOES NOT CLEAN HDL TARGETS: use cleanhdl **********'
 	$(AT)rm -fr $(OutDir)lib $(OutDir)gen $(OutDir)
 
 $(HdlImplementations): | $(OutDir)lib/hdl $(OutDir)gen/hdl

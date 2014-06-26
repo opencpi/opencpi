@@ -45,7 +45,6 @@ ALLINC += $(OCPIOS_EXPORTS) \
  $(DATA_TRANSFER_EXPORTS) $(DATA_TRANSPORT_EXPORTS) \
  $(CONTAINER_EXPORTS) /opt/mercury/include/
 
-
 DYNOBJS += \
 	../../../../../core/library/$(OCPI_OUT_DIR)/OcpiComponentLibrary.obj \
 	../../../../../core/container/rcc/$(OCPI_OUT_DIR)/OcpiRccDriver.obj \
@@ -55,8 +54,6 @@ DYNOBJS += \
 	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDmaXfer.obj \
 	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtSocketsXfer.obj \
 	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramEtherDriver.obj \
-
-
 
 ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
 	SYSLIBS += dl 

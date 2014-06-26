@@ -581,7 +581,13 @@ OCPI_DATA_TYPES
         // We're both in the same runtime artifact object, so we know the port class
         Port &pport = static_cast<Port&>(provider);
         if (m_connection != pport.m_connection)
-          throw OC::ApiError("Ports are both local in bitstream/artifact, but are not connected", 0);
+          throw OU::Error("Ports %s (instance %s) and %s (instance %s) are both local in "
+			  "bitstream/artifact %s, but are not connected (%p %p)",
+			  name().c_str(), parent().name().c_str(),
+			  pport.name().c_str(), pport.parent().name().c_str(),
+			  pport.parent().artifact() ?
+			  pport.parent().artifact()->name().c_str() : "<none>",
+			  m_connection, pport.m_connection);
       }
       OC::ExternalPort &createExternal(const char *extName, bool isProvider,
 				       const OU::PValue *extParams, const OU::PValue *connParams);

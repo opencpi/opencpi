@@ -197,7 +197,7 @@ namespace OCPI {
 	  // FIXME: there should be a utility to run a script in this way
 	  char *command, *base = getenv("OCPI_CDK_DIR");
 	  if (!base)
-	    throw "OCPI_CDK_DIR environment variable not set";
+	    throw OU::Error("OCPI_CDK_DIR environment variable not set");
 	  asprintf(&command,
 		   "%s/scripts/loadBitStream \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
 		   base, fileName, name().c_str(), m_platform.c_str(), m_part.c_str(),

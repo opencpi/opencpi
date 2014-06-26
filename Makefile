@@ -135,10 +135,14 @@ ALLPACKAGES = \
 	core/container/ocl \
 	core/container/rcc \
 	core/container/ctests \
-	test \
-	tests/facilities/test_os \
-	tests/facilities/test_logger \
-	tests/framework/framework \
+	core/container/ctests \
+	core/dataplane/rdma_tests \
+        core/application \
+	core/sca/cf \
+	core/sca/cf_util \
+	core/sca/gpped \
+	core/sca/sgac \
+	core/sca/srpl \
 	tools/local/binder \
 	tools/local/tester \
 	tools/cdkutils \
@@ -146,18 +150,9 @@ ALLPACKAGES = \
 	tools/cdk/ocpidds \
 	tools/cdk/ocpiocl \
 	tools/cdk/ocpixm \
-	core/container/ctests \
-	core/dataplane/rdma_tests \
-        core/application
-
-ifeq ($(OCPI_HAVE_CORBA),1)
-ALLPACKAGES += \
-	core/sca/cf \
-	core/sca/cf_util \
-	core/sca/gpped \
-	core/sca/sgac \
-	core/sca/srpl
-endif
+	tools/astyle \
+	tests \
+	test \
 
 #
 # ----------------------------------------------------------------------
@@ -241,11 +236,13 @@ $(PACKAGES):
 clean distclean: cleancomponents cleanexamples
 	$(AT)$(foreach p,$(ALLPACKAGES),\
 		if test -f $p/Makefile.ocpi ; then \
-			$(MAKE) $(call DescendMake,$p) -f Makefile.ocpi $@ ; \
+			$(MAKE) --no-print-directory $(call DescendMake,$p) -f Makefile.ocpi $@ ; \
 		else \
-			$(MAKE) $(call DescendMake,$p) -f $(call AdjustRelative,$p,)/Makefile.ocpi.for-pkg $@ ; \
+			$(MAKE) --no-print-directory $(call DescendMake,$p) -f $(call AdjustRelative,$p,)/Makefile.ocpi.for-pkg $@ ; \
 		fi ; \
 	)
+
+distclean: clean
 	find . -name '*~' -exec rm {} \;
 	-rm -f diff diff.q
 	-rm -f *.exe *.obj *.o *.ilk *.sbr *.suo *.sln *.pdb *.bsc *~

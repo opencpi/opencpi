@@ -48,12 +48,14 @@ LIBDIR = ../..
 endif
 include $(OCPI_BASE_DIR)/Makefile.ocpi.common
 
-ifneq ($(wildcard ../../Makefile.ocpi.imports),)
-include ../../Makefile.ocpi.imports
-endif
-
-ifneq ($(wildcard ../../bin/Makefile.ocpi.imports),)
-include ../../bin/Makefile.ocpi.imports
+ifndef IMPORTS_INCLUDED
+  ifneq ($(wildcard ../../Makefile.ocpi.imports),)
+    include ../../Makefile.ocpi.imports
+    IMPORTS_INCLUDED:=1
+  else ifneq ($(wildcard ../../bin/Makefile.ocpi.imports),)
+    include ../../bin/Makefile.ocpi.imports
+    IMPORTS_INCLUDED:=1
+  endif
 endif
 
 ALLINC += . $(wildcard ../../*/include) $(wildcard ../../*/idl) $(EXTRA_INCLUDES)
@@ -62,28 +64,29 @@ ALLINC += . $(wildcard ../../*/include) $(wildcard ../../*/idl) $(EXTRA_INCLUDES
 # Add this package's library to $(ALLLIBS).
 #
 
-ifeq ($(OCPI_OS),winnt)
-ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
-ALLLIBS := $(patsubst $(LIBDIR)/%.dll,../../%,$(wildcard $(LIBDIR)/*.dll)) $(ALLLIBS)
-else
-ALLLIBS := $(patsubst $(LIBDIR)/%.lib,../../%,$(wildcard $(LIBDIR)/*.lib)) $(ALLLIBS)
+ifeq ($(MAINOBJS),)
+  ifeq ($(OCPI_OS),winnt)
+    ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
+      ALLLIBS := $(patsubst $(LIBDIR)/%.dll,../../%,$(wildcard $(LIBDIR)/*.dll)) $(ALLLIBS)
+    else
+      ALLLIBS := $(patsubst $(LIBDIR)/%.lib,../../%,$(wildcard $(LIBDIR)/*.lib)) $(ALLLIBS)
+    endif
+  else
+    ifneq ($(filter linux macos,$(OCPI_OS)),)
+      ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
+        ALLLIBS := $(patsubst $(LIBDIR)/lib%.$(SO),../../%,$(wildcard $(LIBDIR)/lib*.$(SO))) $(ALLLIBS)
+      else
+        ALLLIBS := $(patsubst $(LIBDIR)/lib%.a,../../%,$(wildcard $(LIBDIR)/lib*.a)) $(ALLLIBS)
+      endif
+    else
+      ifeq ($(OCPI_OS),vxworksdkm)
+        ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),0)
+          ALLLIBS := $(patsubst $(LIBDIR)/lib%.a,../../%,$(wildcard $(LIBDIR)/lib*.a)) $(ALLLIBS)
+        endif
+      endif
+    endif
+  endif
 endif
-else
-ifneq ($(filter linux macos,$(OCPI_OS)),)
-ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
-ALLLIBS := $(patsubst $(LIBDIR)/lib%.$(SO),../../%,$(wildcard $(LIBDIR)/lib*.$(SO))) $(ALLLIBS)
-else
-ALLLIBS := $(patsubst $(LIBDIR)/lib%.a,../../%,$(wildcard $(LIBDIR)/lib*.a)) $(ALLLIBS)
-endif
-else
-ifeq ($(OCPI_OS),vxworksdkm)
-ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),0)
-ALLLIBS := $(patsubst $(LIBDIR)/lib%.a,../../%,$(wildcard $(LIBDIR)/lib*.a)) $(ALLLIBS)
-endif
-endif
-endif
-endif
-
 ifeq ($(OCPI_OS),vxworksdkm)
 EXCLUDE_SOURCES += %-vxdkm-ctdc.c
 endif

@@ -33,6 +33,8 @@
 #
 ########################################################################### #
 
+ifndef MAKEFILE_OCPI_COMMON
+MAKEFILE_OCPI_COMMON:=1
 # Someday include our "util.mk"
 OcpiDir=$(foreach d,$1,$(patsubst %/,%,$(dir $1)))
 
@@ -435,8 +437,9 @@ ifneq (,)
 endif
 #$(info WE ARE HERE: $(OBJDIR) $(LDFLAGS))
 $(OBJDIR)/%.exe : $(OBJDIR)/%.obj $(DYNOBJS)
-	$(LD) $(MAIN_LDFLAGS) -o "$@" \
+	$(LD) $(MAIN_LDFLAGS) -o "$@"\
 		$(filter %.obj,$^) \
+		$(MAINOBJS) \
 		$(patsubst %,-L%$(OCPI_OUT_DIR),$(dir $(ALLLIBS))) \
 		$(addprefix -L,$(call OcpiDir,$(SYSLIBS)) $(SYSLIBDIRS)) \
 		$(addprefix -l,$(notdir $(ALLLIBS) $(SYSLIBS))) \
@@ -888,3 +891,4 @@ TEST_LIBS = \
 	$(TEST_LOGGER_LIBS) 
 
 #$(info OD:$(OCPI_OUT_DIR) CC:$(CC))
+endif

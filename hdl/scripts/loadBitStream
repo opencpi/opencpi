@@ -25,6 +25,14 @@ tbar=$temp.1
 tunzip=$temp.2
 golden=/opt/opencpi/pci-config-snapshots/$device
 pciDevice=`echo $device|sed s/PCI://`
+if test "$OCPI_CDK_DIR" = ""; then
+  echo Error: environment variable OCPI_CDK_DIR is not set.
+  exit 1
+fi
+if test "$OCPI_TOOL_HOST" = ""; then
+  echo Error: environment variable OCPI_TOOL_HOST is not set.
+  exit 1
+fi
 if test ! -x /sys/bus/pci/devices/$pciDevice; then
   echo Trying to load PCI device \"$device\" which does not exist.
   exit 1

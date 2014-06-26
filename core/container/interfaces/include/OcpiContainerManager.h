@@ -120,6 +120,7 @@ namespace OCPI {
       : Child<Con, Art, artifact>(con, art, lart.name().c_str()), Artifact(lart, props) {}
     public:
       inline Con &container() { return Child<Con,Art,artifact>::parent(); }
+      inline const std::string &name() const { return Child<Con, Art, artifact>::name(); }
     };
 
     extern const char *worker;

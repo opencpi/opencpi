@@ -110,5 +110,5 @@ $(OCPI_OUT_DIR)/%.o : %.c
 endif
 
 clean:
-	if test "x$(OCPI_OUT_DIR)" != "x." ; then rm -rf $(OCPI_OUT_DIR) ; fi
-	rm -rf rot.h *.zip *.out *.dylib *.so *.o *~
+	rm -r -f target-$(or $(CleanTarget),*)
+	rm -rf rot.h *.zip *.out *~

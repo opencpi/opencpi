@@ -32,8 +32,6 @@
 #include "OcpiOsFileSystem.h"
 #include "OcpiOsDebug.h"
 
-#include "test-os.h"
-
 namespace
 {
   class TestOcpiOsFileSystem : public ::testing::Test

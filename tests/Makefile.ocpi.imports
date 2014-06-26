@@ -24,13 +24,6 @@
 ########################################################################### #
 
 ALLINC += $(LOGGER_EXPORTS) $(OCPIOS_EXPORTS) $(OCPI_GTEST_DIR)/include
-
-#TESTS:=$(shell pwd > /dev/tty; cd ..; for i in *; do if test -d $$i -a $$i != bin; then echo $$i; fi; done)
-#$(info TESTS:$(TESTS))
-#TESTLIBS:=$(foreach t,$(TESTS),$(OCPI_BASE_DIR)/tests/$t/$t)
-#$(info TESTLIBS:$(TESTLIBS))
-export ALLLIBS += $(LOGGER_LIBS) $(UTIL_LIBS) $(OCPIOS_LIBS)
-
-export SYSLIBS += $(OCPI_GTEST_DIR)/$(OCPI_TARGET_HOST)/lib/gtest 
-
-
+MAINOBJS=$(PKGOBJECTS:%=../../%)
+ALLLIBS += $(LOGGER_LIBS) $(UTIL_LIBS) $(OCPIOS_LIBS)
+SYSLIBS += $(OCPI_GTEST_DIR)/$(OCPI_TARGET_HOST)/lib/gtest 

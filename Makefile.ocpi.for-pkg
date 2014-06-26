@@ -49,15 +49,15 @@ OBJDIR = .
 endif
 include $(OCPI_BASE_DIR)/Makefile.ocpi.common
 
-ifneq ($(wildcard Makefile.ocpi.imports),)
-include Makefile.ocpi.imports
-else
-ifneq ($(wildcard ../Makefile.ocpi.imports),)
-include ../Makefile.ocpi.imports
+ifndef IMPORTS_INCLUDED
+  ifneq ($(wildcard Makefile.ocpi.imports),)
+    include Makefile.ocpi.imports
+    IMPORTS_INCLUDED:=1
+  else ifneq ($(wildcard ../Makefile.ocpi.imports),)
+    include ../Makefile.ocpi.imports
+    IMPORTS_INCLUDED:=1
+  endif
 endif
-endif
-export ALLINC
-export ALLLIBS
 
 PACKAGE = $(shell pwd|sed 's-.*/\([^/]*$$\)-\1-')
 #$(info PACKAGE $(PACKAGE))
@@ -130,7 +130,8 @@ OBJECTS = $(sort $(patsubst %.c,%.obj,$(CSOURCES)) \
 	$(patsubst %.cpp,%.obj,$(CPPSOURCES)) \
 	$(patsubst %.asm,%.obj,$(ASMSOURCES)))
 endif
-
+FILTEROBJS=$(foreach o,$(filter-out %_main.obj,$1),$(if $(foreach x,$(foreach f,$2,$(findstring $f,$(notdir $o))),$x),,$o))
+PKGOBJECTS=$(call FILTEROBJS,$(OBJECTS),$(EXCLUDE_OBJECTS))
 .SUFFIXES:
 .PHONY: bin lib objects depends generated clean distclean cleanup distcleanup
 
@@ -154,7 +155,6 @@ lib: objects
 		$(MAKE) -f $(OCPI_BASE_DIR)/Makefile.ocpi.for-pkg $(SYSTEMOPTION) $(PACKAGELIB) ; \
 	fi
 
-FILTEROBJS=$(foreach o,$(filter-out %_main.obj,$1),$(if $(foreach x,$(foreach f,$2,$(findstring $f,$(notdir $o))),$x),,$o))
 ifneq ($(filter linux macos,$(OCPI_OS)),)
 $(UNIXLIB): $(OBJECTS)
 	-rm -f $@
@@ -283,34 +283,16 @@ generated:
 	  done ;\
 	fi
 
-clean distclean:
-	$(AT)for facility in $(FACILITIES) $(EXCLUDE_FACILITIES) ; do \
-		if test -d $$facility/idl ; then \
-			if test -f $$facility/idl/Makefile.ocpi ; then \
-				$(MAKE) $(call DescendMake2,$$facility/idl) -f Makefile.ocpi $@ ; \
-			else \
-				$(MAKE) $(call DescendMake2,$$facility/idl) -f $(DescendFile2)/Makefile.ocpi.for-idl $@ ; \
-			fi ; \
-		fi && \
-		if test -d $$facility/src ; then \
-			if test -f $$facility/src/Makefile.ocpi ; then \
-				$(MAKE) $(call DescendMake2,$$facility/src) -f Makefile.ocpi $@ ; \
-			else \
-				$(MAKE) $(call DescendMake2,$$facility/src) -f $(DescendFile2)/Makefile.ocpi.for-src $@ ; \
-			fi ; \
-		fi || exit 1 ; \
-	done && \
-	if test -d bin/src ; then \
-		if test -f bin/src/Makefile.ocpi ; then \
-			$(MAKE) $(call DescendMake2,bin/src) -f Makefile.ocpi $@ ; \
-		else \
-			$(MAKE) $(call DescendMake2,bin/src) -f $(DescendFile2)/Makefile.ocpi.for-bin $@ ; \
-		fi ; \
-	fi
-	-rm -f *vxdkm-ctdc* *.vxe *.exe *.obj *.out *.map *.o *.so *.dylib *.ilk *.sbr *.suo *.sln *.pdb *.bsc core* *.d *~
-	-rm -f $(OBJDIR)/*vxdkm-ctdc* $(OBJDIR)/*.vxe $(OBJDIR)/*.exe $(OBJDIR)/*.obj $(OBJDIR)/*.out $(OBJDIR)/*.map $(OBJDIR)/*.o $(OBJDIR)/*.so $(OBJDIR)/*.ilk $(OBJDIR)/*.dylib \
-		$(OBJDIR)/*.sbr $(OBJDIR)/*.suo $(OBJDIR)/*.sln $(OBJDIR)/*.pdb $(OBJDIR)/*.bsc $(OBJDIR)/core* $(OBJDIR)/*.d $(OBJDIR)/*~
-	-rm -f $(WINLIB) $(WINDLL) $(UNIXLIB) $(UNIXSHLIB) $(VXWORKSDKM)
-	-if test "x$(OCPI_OUT_DIR)" != "x" ; then rm -rf $(OCPI_OUT_DIR) ; fi
-	find . -name '*~' -exec rm {} \;
+clean:
+	$(AT)if test "$(CleanTarget)" = ""; then \
+	       echo Cleaning: `pwd` for all targets '(and generated)'; \
+	       find . -name "target-*" -exec rm -r -f "{}" ";" ; \
+	       find . -name "gen" -exec rm -r -f "{}" ";" ; \
+	     else \
+	       echo Cleaning: `pwd` for target $(CleanTarget); \
+	       find . -name "target-$(CleanTarget)" -exec rm -r -f "{}" ";"; \
+	     fi
 
+distclean: clean
+	$(AT)echo Cleaning for distribution: `pwd`
+	$(AT)find . -name '*~' -exec rm {} \;

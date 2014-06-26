@@ -33,8 +33,10 @@
  */
 
 
-#include <OcpiLoggerLogger.h>
 #include <string>
+
+#include "OcpiLoggerLogger.h"
+
 #include "MessageKeeper.h"
 
 MessageKeeperOutput::MessageKeeperOutputBuf::

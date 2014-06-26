@@ -45,10 +45,12 @@ OBJDIR = .
 endif
 include ../../../../../Makefile.ocpi.common
 
-ifneq ($(wildcard ../../Makefile.ocpi.imports),)
-include ../../Makefile.ocpi.imports
+ifndef IMPORTS_INCLUDED
+  ifneq ($(wildcard ../../Makefile.ocpi.imports),)
+    include ../../Makefile.ocpi.imports
+    IMPORTS_INCLUDED:=1
+  endif
 endif
-
 ALLINC += $(wildcard ../../*/idl) $(EXTRA_INCLUDES)
 ALLIDLINC += $(wildcard ../../*/idl)
 

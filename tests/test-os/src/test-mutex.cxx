@@ -28,8 +28,6 @@
 #include "OcpiOsDebug.h"
 #include "OcpiOsThreadManager.h"
 
-#include "test-os.h"
-
 namespace
 {
   class TestOcpiOsMutex : public ::testing::Test

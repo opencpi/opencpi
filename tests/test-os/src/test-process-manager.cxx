@@ -37,8 +37,6 @@
 #include "OcpiOsDebug.h"
 #include "OcpiOsFileSystem.h"
 
-#include "test-os.h"
-
 namespace
 {
   class TestOcpiOsProcessManager : public ::testing::Test

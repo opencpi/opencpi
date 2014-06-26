@@ -1155,11 +1155,15 @@ static void
 emitInstance(Instance *i, FILE *f, const char *prefix, size_t &index)
 {
   
-  fprintf(f, "<%s name=\"%s%s%s\" worker=\"%s\"",
+  fprintf(f, "<%s name=\"%s%s%s\" worker=\"%s",
 	  i->iType == Instance::Application ? "instance" :
 	  i->iType == Instance::Interconnect ? "interconnect" :
 	  i->iType == Instance::IO ? "io" : "adapter",
 	  prefix ? prefix : "", prefix ? "/" : "", i->name, i->worker->m_implName);
+  // FIXME - share this param-named implname with emitWorker
+  if (i->worker->m_paramConfig && i->worker->m_paramConfig->nConfig)
+    fprintf(f, "-%zu", i->worker->m_paramConfig->nConfig);
+  fprintf(f, "\"");
   if (!i->worker->m_noControl)
     fprintf(f, " occpIndex=\"%zu\"", index++);
   if (i->attach)

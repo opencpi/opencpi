@@ -373,6 +373,7 @@ parseOclAssy() {
 void Worker::
 emitWorker(FILE *f) {
   fprintf(f, "<worker name=\"%s", m_implName);
+  // FIXME - share this param-named implname with emitInstance
   if (m_paramConfig && m_paramConfig->nConfig)
     fprintf(f, "-%zu", m_paramConfig->nConfig);
   fprintf(f, "\" model=\"%s\"", m_modelString);

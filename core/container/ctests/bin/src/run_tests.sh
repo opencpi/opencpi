@@ -63,10 +63,10 @@ for i in `ls -d test* | grep -v '_main' | grep -v '\.'` ; do
 done
 fi
 if test "$failed" = ""; then
-  echo All tests passed.
+  echo All container tests passed.
   exit 0
 else
-  echo Some tests failed.  The first to fail was: $failed.
+  echo Some container tests failed.  The first to fail was: $failed.
   exit 1
 fi
 

@@ -25,8 +25,6 @@
 
 #include "OcpiOsThreadManager.h"
 
-#include "test-os.h"
-
 namespace
 {
   class TestOcpiOsThreadManager : public ::testing::Test

@@ -29,8 +29,6 @@
 #include "OcpiOsMisc.h"
 #include "OcpiOsDebug.h"
 
-#include "test-os.h"
-
 namespace OS = OCPI::OS;
 
 std::ostream& operator<< ( std::ostream& s, OS::ElapsedTime e )

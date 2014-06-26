@@ -32,16 +32,17 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <sstream>
+#include <cstdio>
+#include <string>
+
+#include "gtest/gtest.h"
+
 #include "OcpiOsDebug.h"
 #include "OcpiLoggerOStreamOutput.h"
 #include "OcpiOsThreadManager.h"
 #include "OcpiOsMisc.h"
 
-#include "gtest/gtest.h"
-
-#include <sstream>
-#include <cstdio>
-#include <string>
 
 namespace
 {

@@ -88,7 +88,7 @@ $(ALLBINCXX): $(OCPI_OUT_DIR)/%: src/%.cxx | $(OCPI_OUT_DIR)
 	$(DOSTATIC) -Wall -g $^ $(LIBS) $(BASICLIBS)
 
 clean:
-	rm -r -f target-*
+	rm -r -f target-$(or $(CleanTarget),*)
 
 
 

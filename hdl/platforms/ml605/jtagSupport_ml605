@@ -12,7 +12,7 @@ dir=`dirname $0`
 # Now we must find the USB port that has the right ESN.
 # If there is only one port, then "any" as serial number is ok.
 if test "$OCPI_XILINX_TOOLS_DIR" = ""; then
-  echo Error: environment variable OCPI_XILINX_TOOLS_DIR not set. 2>&1
+  echo Error: environment variable OCPI_XILINX_TOOLS_DIR not set. 1>&2
   exit 1
 fi
 source $OCPI_XILINX_TOOLS_DIR/settings64.sh 1>&2

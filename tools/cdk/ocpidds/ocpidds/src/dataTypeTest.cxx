@@ -280,4 +280,5 @@ void dataTypeTest(const char *arg) {
     delete []buf;
     delete []buf1;
   }
+  fprintf(stderr, "Data type test succeeded with %u randomly generated types and values.\n", count);
 }

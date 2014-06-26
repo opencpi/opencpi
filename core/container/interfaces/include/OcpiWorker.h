@@ -127,6 +127,7 @@ namespace OCPI {
       virtual Port *findPort(const char *name) = 0;
       inline const std::string &instTag() const { return m_instTag; }
       inline const std::string &implTag() const { return m_implTag; }
+      inline const Artifact *artifact() const { return m_artifact; }
       virtual const std::string &name() const = 0;
       inline ezxml_t myXml() const { return m_xml; }
       inline ezxml_t myInstXml() const { return m_instXml; }

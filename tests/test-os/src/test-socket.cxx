@@ -33,8 +33,6 @@
 #include "OcpiOsServerSocket.h"
 #include "OcpiOsThreadManager.h"
 
-#include "test-os.h"
-
 namespace
 {
   class TestOcpiOsSocket : public ::testing::Test

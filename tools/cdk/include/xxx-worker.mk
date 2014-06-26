@@ -149,7 +149,7 @@ clean:: cleanfirst
 	$(AT)rm -r -f $(GeneratedDir) \
              $(if $(filter all,$($(CapModel)Targets)),\
                   $(call WkrTargetDirWild,*),\
-                  $(foreach t,$($(CapModel)Targets),$(call WkrTargetDirWild,$t)))
+                  $(foreach t,$(CleanTargets) $($(CapModel)Targets),$(call WkrTargetDirWild,$t)))
 
 ################################################################################
 # source files that are target-independent

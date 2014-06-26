@@ -32,7 +32,8 @@
 #  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
 #
 ########################################################################### #
-
+ifndef MAKEVARS_OCPI
+MAKEVARS_OCPI:=1
 
 
 #
@@ -356,3 +357,4 @@ DescendMake1=-C $(1) $(if $(filter /%,$(OCPI_BASE_DIR)),,OCPI_BASE_DIR=../$(OCPI
 DescendFile2=$(OCPI_BASE_DIR)/$(if $(filter /%,$(OCPI_BASE_DIR)),,../..)
 DescendFile1=$(OCPI_BASE_DIR)/$(if $(filter /%,$(OCPI_BASE_DIR)),,..)
 export AT=@
+endif

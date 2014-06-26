@@ -32,10 +32,10 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "gtest/gtest.h"
+
 #include "OcpiOsDebug.h"
 #include "OcpiLoggerNullOutput.h"
-
-#include "gtest/gtest.h"
 
 namespace
 {
