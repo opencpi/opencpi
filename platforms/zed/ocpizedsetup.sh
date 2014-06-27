@@ -29,6 +29,8 @@ else
     source $OCPI_BASE_DIR/ocpi/ocpisetup.sh $OCPI_BASE_DIR/ocpi/ocpisetup.sh
     ocpidriver load
     export TZ=$5
+    export LD_LIBRARY_PATH+=$OCPI_BASE_DIR/ocpi/lib/linux-zynq-arm
+    echo OpenCPI ready for zed.
     if test -r $OCPI_BASE_DIR/platforms/zed/mysetup.sh; then
        source $OCPI_BASE_DIR/platforms/zed/mysetup.sh
     fi

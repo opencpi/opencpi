@@ -49,6 +49,18 @@ export CLIENT_IDL_ONLY
 export OCPI_BASE_DIR
 include MakeVars.ocpi
 
+ifndef OCPI_TOOL_HOST
+$(error This makefile expects the OCPI_TOOL_HOST environment variable to be set.)
+endif
+ifndef OCPI_TARGET_HOST
+$(error This makefile expects the OCPI_TARGET_HOST environment variable to be set.)
+endif
+ifneq ($(OCPI_TOOL_HOST),$(OCPI_TARGET_HOST))
+  ifneq ($(shell test -x ocpi/bin/$(OCPI_TOOL_HOST)/ocpigen; echo $$?),0)
+    $(info To build for $(OCPI_TARGET_HOST), you must first build for $(OCPI_TOOL_HOST))
+    $(error Cannot build for $(OCPI_TARGET_HOST), cannot find "ocpigen" for $(OCPI_TOOL_HOST))
+  endif
+endif
 #
 # ----------------------------------------------------------------------
 # Build up a list of $(PACKAGES) to build.  This list is carefully

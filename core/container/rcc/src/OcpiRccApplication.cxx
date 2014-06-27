@@ -64,24 +64,23 @@ Artifact(Container &c, OCPI::Library::Artifact &lart, const OA::PValue *props)
     m_entryTable(NULL), m_open(false), m_workerCount(0)
 {
   const char *url = lart.name().c_str();
+  std::string err;
+  const char* entryPoint = "ocpi_EntryTable";
   try {
     m_loader.open(url);
     m_open = true;
-    const char* entryPoint = "ocpi_EntryTable";
     OU::findString(props, "DLLEntryPoint", entryPoint);
     m_entryTable = (RCCEntryTable *)m_loader.getSymbol( entryPoint);
-    if (!m_entryTable) {
-      std::string error("Worker DLL entry point not found ");
-      error += entryPoint;
-      throw OU::EmbeddedException( error.c_str() );
-    }
+  } catch (std::string &error) {
+    OU::format(err, "Could not open RCC worker file %s: %s", url, error.c_str());
+    throw err;
+  } catch (...) {
+    OU::format(err, "Unknown exception opening RCC worker file %s", url);
+    throw err;
   }
-  catch( std::string & error ) {
-    std::string my_err("Could not open RCC worker DLL ");
-    my_err += url;
-    OCPI::Util::EmbeddedException ex(my_err.c_str());
-    ex.setAuxInfo( error.c_str() );
-    throw ex;
+  if (!m_entryTable) {
+    OU::format(err, "Worker DLL entry point not found: %s", entryPoint);
+    throw err;
   }
 }
 

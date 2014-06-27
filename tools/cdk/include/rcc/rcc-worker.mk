@@ -73,8 +73,10 @@ OcpiLibDir=$(OCPI_CDK_DIR)/lib/$$(RccTarget)
 RccLibraries=rcc
 LinkBinary=$$(G$(OcpiLanguage)_LINK_$$(RccTarget)) $(SharedLibLinkOptions) -o $$@ \
 $(AEPLibraries) \
-$(foreach ol,$(RccLibraries) $(Libraries),\
-  $$(or $$(wildcard $(OcpiLibDir)/lib$(ol)$(SOEXT)),$(OcpiLibDir)/lib$(ol)$(AREXT)))
+$(foreach l,$(RccLibraries) $(Libraries),-l $l -L $(OcpiLibDir))
+
+#  $$(or $$(wildcard $(OcpiLibDir)/lib$(ol)$(SOEXT)),$(OcpiLibDir)/lib$(ol)$(AREXT)))
+
 CompilerWarnings= -Wall -Wextra
 CompilerDebugFlags=-g
 CompilerOptimizeFlags=-O
