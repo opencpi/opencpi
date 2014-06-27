@@ -1,5 +1,7 @@
 ifndef Package
+ifneq ($(MAKECMDGOALS),clean)
 $(info The "Package" variable is not set. Assuming Package=local.)
+endif
 Package:=local
 endif
 PackageFile:=lib/package-name

@@ -9,7 +9,7 @@ all:
 	rm -f unitTest; ln -s ../unit.test/unitTest .
 	rm -f utTime.sh; ln -s ../unit.test/utTime.sh .
 	rm -f genExpected; ln -s ../genExpected.test/genExpected .
-	
+
 
 
 # OCPI_LIBRARY_PATH is like LD_LIBRARY_PATH, but for OpenCPI components.
@@ -18,9 +18,5 @@ run: all
 
 clean::
 	rm -f -r *.*~ *~ *.raw deltaDataOut.dat testDataOut.dat genExpected unitTest utTime.sh *.csv
-
-# These make the worker library for this application
-Implementations =
-include $(OCPI_INC_DIR)/lib.mk
 
 

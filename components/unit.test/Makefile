@@ -15,8 +15,3 @@ unitTest: unitTest.cxx
 clean::
 	rm -f -r unitTest unitTest.dSYM *.*~
 
-# These make the worker library for this application
-Implementations =
-include $(OCPI_INC_DIR)/lib.mk
-
-

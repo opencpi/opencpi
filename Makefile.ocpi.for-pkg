@@ -131,7 +131,7 @@ OBJECTS = $(sort $(patsubst %.c,%.obj,$(CSOURCES)) \
 	$(patsubst %.asm,%.obj,$(ASMSOURCES)))
 endif
 FILTEROBJS=$(foreach o,$(filter-out %_main.obj,$1),$(if $(foreach x,$(foreach f,$2,$(findstring $f,$(notdir $o))),$x),,$o))
-PKGOBJECTS=$(call FILTEROBJS,$(OBJECTS),$(EXCLUDE_OBJECTS))
+export PKGOBJECTS=$(call FILTEROBJS,$(OBJECTS),$(EXCLUDE_OBJECTS))
 .SUFFIXES:
 .PHONY: bin lib objects depends generated clean distclean cleanup distcleanup
 
@@ -286,11 +286,11 @@ generated:
 clean:
 	$(AT)if test "$(CleanTarget)" = ""; then \
 	       echo Cleaning: `pwd` for all targets '(and generated)'; \
-	       find . -name "target-*" -exec rm -r -f "{}" ";" ; \
-	       find . -name "gen" -exec rm -r -f "{}" ";" ; \
+	       find . -depth -name "target-*" -exec rm -r -f "{}" ";" ; \
+	       find . -depth -name "gen" -exec rm -r -f "{}" ";" ; \
 	     else \
 	       echo Cleaning: `pwd` for target $(CleanTarget); \
-	       find . -name "target-$(CleanTarget)" -exec rm -r -f "{}" ";"; \
+	       find . -depth -name "target-$(CleanTarget)" -exec rm -r -f "{}" ";"; \
 	     fi
 
 distclean: clean

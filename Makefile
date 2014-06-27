@@ -233,7 +233,7 @@ $(PACKAGES):
 		$(MAKE) $(call DescendMake,$@) $(SYSTEMOPTION) -f $(call AdjustRelative,$@,)/Makefile.ocpi.for-pkg ; \
 	fi
 
-clean distclean: cleancomponents cleanexamples
+clean: cleancomponents cleanexamples
 	$(AT)$(foreach p,$(ALLPACKAGES),\
 		if test -f $p/Makefile.ocpi ; then \
 			$(MAKE) --no-print-directory $(call DescendMake,$p) -f Makefile.ocpi $@ ; \
@@ -244,16 +244,16 @@ clean distclean: cleancomponents cleanexamples
 
 distclean: clean
 	find . -name '*~' -exec rm {} \;
+	find . -depth -name '*.dSym' -exec rm -r {} \;
 	-rm -f diff diff.q
 	-rm -f *.exe *.obj *.o *.ilk *.sbr *.suo *.sln *.pdb *.bsc *~
 	-rm -r -f lib
 
-cleaneverything: clean cleandrivers
-	-find . -name 'target-*' -exec rm -r '{}' ';'
-	-find . -name 'gen' -exec rm -r '{}' ';'
-	-find . -name "lib" -a ! -path "*export*" -a -type d -a -exec rm -r "{}" ";"
-	make -C hdl clean
-	make -C components clean
+cleaneverything: distclean cleandrivers
+	make -C components cleanhdl
+	-find . -depth -name 'target-*' -exec rm -r '{}' ';'
+	-find . -depth -name 'gen' -exec rm -r '{}' ';'
+	-find . -depth -name "lib" -a ! -path "*export*" -a -type d -a -exec rm -r "{}" ";"
 
 tar:
 	tar cvf ocpi.tar MakeVars.ocpi Makefile.ocpi Makefile.ocpi.for-* $(ALLPACKAGES)

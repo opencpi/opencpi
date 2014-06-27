@@ -213,7 +213,6 @@ cleanhdl:
 
 clean:: cleanxm cleanrcc cleanocl cleantest
 	$(AT)echo Cleaning library directory for all targets.
-	$(AT)echo '********** REMEMBER THAT THIS DOES NOT CLEAN HDL TARGETS: use cleanhdl **********'
 	$(AT)rm -fr $(OutDir)lib $(OutDir)gen $(OutDir)
 
 $(HdlImplementations): | $(OutDir)lib/hdl $(OutDir)gen/hdl

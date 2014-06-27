@@ -20,8 +20,4 @@ run: mixerTest
 clean::
 	rm -f -r mixerTest mixerTest.dSYM *.*~ deltaDataOut.dat testDataOut.dat *.csv utTime.sh
 
-# These make the worker library for this application
-Implementations =
-include $(OCPI_INC_DIR)/lib.mk
-
 

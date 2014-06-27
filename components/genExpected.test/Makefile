@@ -15,8 +15,4 @@ genExpected: genExpected.cxx
 clean::
 	rm -f -r genExpected genExpected.dSYM *.*~
 
-# These make the worker library for this application
-Implementations =
-include $(OCPI_INC_DIR)/lib.mk
-
 

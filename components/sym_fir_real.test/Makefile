@@ -18,8 +18,4 @@ run: all
 clean::
 	rm -f -r *.*~ *~ *.raw deltaDataOut.dat testDataOut.dat genExpected unitTest utTime.sh *.csv
 
-# These make the worker library for this application
-Implementations =
-include $(OCPI_INC_DIR)/lib.mk
-
 
