@@ -18,5 +18,3 @@ run: all
 
 clean::
 	rm -f -r *.*~ *~ *.raw deltaDataOut.dat testDataOut.dat genExpected unitTest utTime.sh *.csv
-
-

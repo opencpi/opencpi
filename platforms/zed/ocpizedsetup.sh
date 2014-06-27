@@ -6,6 +6,7 @@
 if test $# != 5; then
   echo You must supply 5 arguments to this script.
   echo Usage is: setup.sh '<nfs-ip-address> <nfs-share-name> <opencpi-dir> <ntp-server> <timezone>'
+  echo A good example timezone is: EST5EDT,M3.2.0,M11.1.0
 else
   # Mount the opencpi development system as an NFS server, onto /mnt/net
   mount -t nfs -o udp,nolock,soft,intr $1:$2 /mnt/net
@@ -15,6 +16,11 @@ else
   $zed/ntpclient -h $4 -s
   # Copy the (missing) C++ runtime environment library into the current RAM rootFS
   cp $zed/libstdc++.so.6 /lib
+  # Make sure the hostname is in the host table
+  myipaddr=`ifconfig eth0 | sed -n '/inet addr:/s/^.*inet addr: *\([^ ]*\).*$/\1/p'`
+  myhostname=`hostname`
+  echo My IP address for eth0 is: $myipaddr, and my hostname is: $myhostname
+  if ! grep -q $myhostname /etc/hosts; then echo $myipaddr $myhostname >> /etc/hosts; fi
   # Run the generic script to setup the OpenCPI environment
   # Note the ocpidriver load command is innocuous if run redundantly
   export OCPI_BASE_DIR=/mnt/net/$3

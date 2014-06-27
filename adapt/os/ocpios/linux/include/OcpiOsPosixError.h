@@ -49,7 +49,7 @@ namespace OCPI {
   namespace OS {
     namespace Posix {
 
-      std::string getErrorMessage (int errorCode)
+      std::string getErrorMessage (int errorCode, const char *where = NULL)
         throw ();
 
     }

@@ -89,7 +89,7 @@ namespace DtOsDataTypes {
   typedef uint16_t MailBox;
   // Maximum number of SMB's and mailboxes allowed in the system unless overriden by env
   // FIXME:  make this part of config
-  const MailBox MAX_SYSTEM_SMBS = 20;
+  const MailBox MAX_SYSTEM_SMBS = 10;
 }
 
 #endif

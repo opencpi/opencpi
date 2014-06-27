@@ -14,6 +14,7 @@ export OCPI_VIVADO_TOOLS_DIR=/home/jek1/mac/Xilinx/Vivado/2012.1
 
 export OCPI_ALTERA_DIR=/home/jim/Altera
 export OCPI_ALTERA_VERSION=13.1
+export OCPI_ALTERA_KITS_DIR=$OCPI_ALTERA_DIR/11.1/kits
 . ./env/altera.sh
 # License not needed - this is runtime only
 #export OCPI_ALTERA_LICENSE_FILE=/home/jim/mac/altera/1-9095JT_License.dat

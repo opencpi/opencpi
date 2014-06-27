@@ -46,26 +46,29 @@ namespace {
 };
 
 std::string
-OCPI::OS::Posix::getErrorMessage (int errorCode)
+OCPI::OS::Posix::getErrorMessage (int errorCode, const char *where)
   throw ()
 {
+  std::string res;
+
+  if (where) {
+    res = "in ";
+    res += where;
+    res += ": ";
+  }
+  res += "posix error ";
+  char tmp[32];
+  std::sprintf (tmp, "(%d)", errorCode);
+  res += tmp;
   /*
    * std::strerror is not reentrant
    */
-
   pthread_mutex_lock (&gemMutex);
   const char * message = std::strerror (errorCode);
-  std::string res;
-
-  if (!message) {
-    char tmp[32];
-    std::sprintf (tmp, "error %d", errorCode);
-    res = tmp;
+  if (message) {
+    res += ": ";
+    res += message;
   }
-  else {
-    res = message;
-  }
-
   pthread_mutex_unlock (&gemMutex);
   return res;
 }

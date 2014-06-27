@@ -83,7 +83,7 @@ namespace OCPI {
       bool isFixed(bool top = true) const;
     };
     const unsigned testMaxStringLength = 10;
-    const unsigned maxDataTypeAlignment = 16;
+    const unsigned maxDataTypeAlignment = sizeof(double); // max of all types we support
     union WriteDataPtr {
       const uint8_t *data;
 #undef OCPI_DATA_TYPE_S

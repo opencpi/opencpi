@@ -1,5 +1,5 @@
 #!/bin/sh
 set -e
-./install_prerequisites.sh
-./build_opencpi.sh
+./install-prerequisites.sh
+./build-opencpi.sh
 #./test_opencpi.sh

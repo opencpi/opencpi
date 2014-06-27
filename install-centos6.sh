@@ -40,7 +40,7 @@ set -e
 mkdir -p /opt/opencpi/prerequisites
 echo ================================================================================
 echo Installing Google test '(gtest)' under /opt/opencpi/prerequisites
-./install_gtest.sh
+./install-gtest.sh
 echo ================================================================================
 echo Now we will '"make"' the core OpenCPI libraries and utilities.
 make

@@ -50,6 +50,9 @@ else
 RccTargets:=$(OCPI_TARGET_HOST)
 endif
 endif
+ifndef RccTarget
+RccTarget:=$(firstword $(RccTargets))
+endif
 
 $(call OcpiDbgVar,RccTargets)
 

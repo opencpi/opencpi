@@ -42,6 +42,8 @@ EOF
   export OCPI_TOOL_ARCH=$p
   export OCPI_TOOL_HOST=$OCPI_TOOL_OS-$OCPI_TOOL_OS_VERSION-$OCPI_TOOL_ARCH
 fi
+#default the target host to the tool host
+export OCPI_TARGET_HOST=$OCPI_TOOL_HOST
 export PATH=$OCPI_CDK_DIR/bin/$OCPI_TOOL_HOST:$OCPI_CDK_DIR/scripts:$PATH
 export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/lib/components
 echo OCPI_CDK_DIR is $OCPI_CDK_DIR and OCPI_TOOL_HOST is $OCPI_TOOL_HOST

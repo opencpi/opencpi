@@ -35,6 +35,6 @@ mkdir -p /opt/opencpi/prerequisites
 . ./centos6_env.sh
 echo ================================================================================
 echo Installing Google test '(gtest)' under /opt/opencpi/prerequisites
-./install_gtest.sh
+./install-gtest.sh
 echo ================================================================================
 echo All OpenCPI prerequisites have been installed.

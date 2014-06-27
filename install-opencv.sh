@@ -4,7 +4,7 @@ CMAKE=$OCPI_PREREQUISITES_INSTALL_DIR/cmake/$OCPI_TOOL_HOST/bin/cmake
 if test ! -x $CMAKE ; then
   echo No cmake found at: $CMAKE
   echo Installing opencv requires cmake, and it is not installed as an opencpi prerequisite.
-  echo Either use the install_cmake.mk script to do that, of modify this script to
+  echo Either use the install-cmake.mk script to do that, of modify this script to
   echo point to an existing cmake.  We don\'t use a system-installed cmake unless you ask for it.
   exit 1
 fi

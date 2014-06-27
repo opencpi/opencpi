@@ -104,6 +104,7 @@ namespace OCPI {
 	OCPI::OS::dumpStack();
       }
       append(s);
+      free(s);
     }
     Error::~Error(){}
 

@@ -9,7 +9,7 @@ all: ddsTest
 	rm -f utTime.sh; ln -s ../unit.test/utTime.sh .
 
 ddsTest: ddsTest.cxx
-	g++ -Wall -g -o $@ -I$(OCPI_INC_DIR) -I$(OCPI_BASE_DIR)/core/local/util/misc/include $^ $(OCPI_LD_FLAGS) 
+	$(Gc++_$(RccTarget)) -Wall -g -o $@ -I$(OCPI_INC_DIR) -I$(OCPI_BASE_DIR)/core/local/util/misc/include $^ $(OCPI_LD_FLAGS) 
 
 # OCPI_LIBRARY_PATH is like LD_LIBRARY_PATH, but for OpenCPI components.
 
@@ -21,4 +21,4 @@ run: ddsTest
 clean::
 	rm -f -r ddsTest ddsTest.dSYM *.*~ deltaDataOut.dat testDataOut.dat *.csv utTime.sh
 
-
+include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk

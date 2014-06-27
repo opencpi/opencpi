@@ -40,18 +40,20 @@ fi
 tmp=/tmp/ocpictest$$
 failed=
 set -o pipefail
+out="2> /dev/null"
+if test "$OUT" != ""; then out="$OUT"; fi
 function doit {
-  ./$1 2> /dev/null | tee $tmp | (egrep 'FAILED|PASSED|Error:';exit 0)
+  $VG ./$1 $out | tee $tmp | (egrep 'FAILED|PASSED|Error:';exit 0)
   rc=$?
   if egrep -q 'FAILED|Error:' $tmp; then
      echo $1 test failed explicitly, with FAILED or Error message.
-     failed=$1
+     if test "$failed" = ""; then failed=$1; fi
   elif test $rc != 0; then
      echo $1 test failed implicitly, no FAILED message, but non-zero exit.
-     failed=$1
+     if test "$failed" = ""; then failed=$1; fi
   elif ! grep -q PASSED $tmp; then
      echo $1 test failed implicitly, no PASSED message, but zero exit.
-     failed=$1
+     if test "$failed" = ""; then failed=$1; fi
   fi
 }
 if test $# = 1 ; then

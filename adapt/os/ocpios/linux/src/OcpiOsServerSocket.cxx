@@ -33,22 +33,26 @@
  */
 
 
-#include <OcpiOsAssert.h>
-#include <OcpiOsSocket.h>
-#include <OcpiOsServerSocket.h>
-#include <OcpiOsSizeCheck.h>
-#include <OcpiOsDataTypes.h>
-#include <cstdlib>
-#include <string>
-#include <cstring>
+#include <errno.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <netdb.h>
+
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <errno.h>
+
+#include <cstdlib>
+#include <string>
+#include <cstring>
+
+#include "OcpiOsAssert.h"
+#include "OcpiOsSocket.h"
+#include "OcpiOsServerSocket.h"
+#include "OcpiOsSizeCheck.h"
+#include "OcpiOsDataTypes.h"
 #include "OcpiOsPosixError.h"
 
 inline
@@ -118,7 +122,7 @@ OCPI::OS::ServerSocket::bind (uint16_t portNo, bool reuse, bool udp )
   }
   
   if (fileno < 0) {
-    throw OCPI::OS::Posix::getErrorMessage (errno);
+    throw OCPI::OS::Posix::getErrorMessage (errno, "bind/socket");
   }
 
   int reuseopt = reuse ? 1 : 0;
@@ -127,20 +131,20 @@ OCPI::OS::ServerSocket::bind (uint16_t portNo, bool reuse, bool udp )
                     (char *) &reuseopt, sizeof (int)) != 0) {
     int err = errno;
     ::close (fileno);
-    throw OCPI::OS::Posix::getErrorMessage (err);
+    throw OCPI::OS::Posix::getErrorMessage (err, "bind/setsockopt");
   }
   
   if (::bind (fileno, (struct sockaddr *) &sin, sizeof (sin)) != 0) {
     int err = errno;
     ::close (fileno);
-    throw OCPI::OS::Posix::getErrorMessage (err);
+    throw OCPI::OS::Posix::getErrorMessage (err, "bind/bind");
   }
 
   if ( ! udp ) {
     if (::listen (fileno, DEFAULT_LISTEN_BACKLOG) != 0) {
       int err = errno;
       ::close (fileno);
-      throw OCPI::OS::Posix::getErrorMessage (err);
+      throw OCPI::OS::Posix::getErrorMessage (err, "bind/listen");
     }
   }
 
@@ -174,11 +178,11 @@ OCPI::OS::ServerSocket::accept ()
 {
   ocpiAssert (o2fd (m_osOpaque) != -1);
 
-  
-  int newfd = ::accept (o2fd (m_osOpaque), 0, 0);
+  int newfd = ::accept(o2fd(m_osOpaque), 0, 0);
   if (newfd == -1) {
-    throw OCPI::OS::Posix::getErrorMessage (errno);
+    throw OCPI::OS::Posix::getErrorMessage (errno, "server/accept");
   }
+
   OCPI::OS::uint64_t * fd2o = reinterpret_cast<OCPI::OS::uint64_t *> (&newfd);
   return OCPI::OS::Socket (fd2o);
 }

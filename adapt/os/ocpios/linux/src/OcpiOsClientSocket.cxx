@@ -78,22 +78,24 @@ OCPI::OS::ClientSocket::connect (const std::string & remoteHost,
     else {
       int err = h_errno;
       OCPI::OS::Posix::netDbUnlock ();
-
+      std::string s = "connect to \"";
+      s += remoteHost;
+      s += "\": ";
+      const char *e;
       switch (err) {
       case HOST_NOT_FOUND:
-        throw std::string ("unknown host");
+        e = "unknown host";
         break;
 
       case NO_ADDRESS:
-        throw std::string ("host has no address");
+        e = "host has no address";
         break;
 
       default:
-        throw std::string ("gethostbyname() failed");
+        e = "gethostbyname() failed";
       }
-
-      // should not be here
-      ocpiAssert (0);
+      s += e;
+      throw s;
     }
 
     OCPI::OS::Posix::netDbUnlock ();
