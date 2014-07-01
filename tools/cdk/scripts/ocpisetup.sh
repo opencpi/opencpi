@@ -1,3 +1,4 @@
+# This script is for example/application development.
 # This script should be sourced to set the OpenCPI CDK environment variables
 # Since the iVeia bash does not have extdebug/BASH_ARGV support, there is no
 # way for this script to know where it lives.
@@ -29,21 +30,23 @@ fi
 export OCPI_CDK_DIR=`dirname $_MYPATH`
 export OCPI_CDK_DIR=`cd $OCPI_CDK_DIR; pwd`
 if test "$OCPI_TOOL_HOST" = ""; then
-  # We don't have a tool host so we are being called standalone
-  read o v p <<EOF
-`$OCPI_CDK_DIR/scripts/showRuntimeHost`
-EOF
-  if test "$o" = "" -o "$v" == "" -o "$p" == ""; then
-    echo Error: error determining run time host.  1>&2
+  vars=($(platforms/getPlatform.sh))
+  if test $? != 0; then
+    echo Failed to determine runtime platform.
     return 1
   fi
-  export OCPI_TOOL_OS=$o
-  export OCPI_TOOL_OS_VERSION=$v
-  export OCPI_TOOL_ARCH=$p
-  export OCPI_TOOL_HOST=$OCPI_TOOL_OS-$OCPI_TOOL_OS_VERSION-$OCPI_TOOL_ARCH
+  export OCPI_TOOL_OS=${vars[0]}
+  export OCPI_TOOL_OS_VERSION=${vars[1]}
+  export OCPI_TOOL_ARCH=${vars[2]}
+  export OCPI_TOOL_HOST=${vars[3]}
+fi
+if test "$OCPI_TARGET_HOST" = ""; then
+  export OCPI_TARGET_OS=$OCPI_TOOL_OS
+  export OCPI_TARGET_OS_VERSION=$OCPI_TOOL_OS_VERSION
+  export OCPI_TARGET_ARCH=$OCPI_TOOL_ARCH
+  export OCPI_TARGET_HOST=$OCPI_TOOL_HOST
 fi
 #default the target host to the tool host
-export OCPI_TARGET_HOST=$OCPI_TOOL_HOST
 export PATH=$OCPI_CDK_DIR/bin/$OCPI_TOOL_HOST:$OCPI_CDK_DIR/scripts:$PATH
 export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/lib/components
 echo OCPI_CDK_DIR is $OCPI_CDK_DIR and OCPI_TOOL_HOST is $OCPI_TOOL_HOST

@@ -5,21 +5,23 @@ export OCPI_CXXFLAGS="-Wextra -Wall -Wfloat-equal -fno-strict-aliasing -Wconvers
 export OCPI_BASE_DIR=`pwd`
 export OCPI_CDK_DIR=$OCPI_BASE_DIR/ocpi
 if test "$OCPI_TOOL_HOST" = ""; then
-read o v p <<EOF
-`tools/cdk/scripts/showRuntimeHost`
-EOF
-#  if test "$ovp" = "" -o "${#ovp[*]}" != 3; then
-  if test "$o" = "" -o "$v" == "" -o "$p" == ""; then
-    echo Error determining run time host.  1>&2
-    exit 1
+  vars=($(platforms/getPlatform.sh))
+  if test $? != 0; then
+    echo Failed to determine runtime platform.
+    return 1
   fi
-  export OCPI_TOOL_OS=$o
-  export OCPI_TOOL_OS_VERSION=$v
-  export OCPI_TOOL_ARCH=$p
-  export OCPI_TOOL_HOST=$OCPI_TOOL_OS-$OCPI_TOOL_OS_VERSION-$OCPI_TOOL_ARCH
+  export OCPI_TOOL_OS=${vars[0]}
+  export OCPI_TOOL_OS_VERSION=${vars[1]}
+  export OCPI_TOOL_ARCH=${vars[2]}
+  export OCPI_TOOL_HOST=${vars[3]}
+  export OCPI_TOOL_PLATFORM=${vars[4]}
 fi
 #default the target host to the tool host
+export OCPI_TARGET_OS=$OCPI_TOOL_OS
+export OCPI_TARGET_OS_VERSION=$OCPI_TOOL_OS_VERSION
+export OCPI_TARGET_ARCH=$OCPI_TOOL_ARCH
 export OCPI_TARGET_HOST=$OCPI_TOOL_HOST
+export OCPI_TARGET_PLATFORM=$OCPI_TOOL_PLATFORM
 
 export OCPI_GTEST_DIR=/opt/opencpi/prerequisites/gtest
 export OCPI_DEBUG=1

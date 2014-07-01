@@ -1,0 +1,3 @@
+These scripts are those that are run at the top level of the tree
+(at OCPI_BASE_DIR), that are not part of the CDK.  They are generally
+used for installing software.

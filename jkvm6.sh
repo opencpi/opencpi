@@ -12,7 +12,7 @@ export OCPI_ALTERA_LICENSE_FILE=$OCPI_ALTERA_DIR/1-99VGI3_License.dat
 . ./env/altera.sh
 
 export OCPI_BUILD_SHARED_LIBRARIES=0
-. ./env/centos6.sh
+. ./platforms/centos6/centos6-env.sh
 
 # #### Location of the Modelsim tools ####################################### #
 

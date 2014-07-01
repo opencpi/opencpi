@@ -53,14 +53,14 @@ namespace OCPI {
       va_start(ap, err);
       setConcatenateV(err, ap);
       m_auxInfo = *this; // backward compatibility...
-      ocpiBad("ApiError Exception: %s", this->c_str());
+      ocpiInfo("ApiError Exception: %s", this->c_str());
     }
     ApiError::~ApiError(){}
     Error::Error(){}
 
     Error::Error(va_list ap, const char *err) {
       setFormatV(err, ap);
-      ocpiBad("Error Exception: %s", this->c_str());
+      ocpiInfo("Error Exception: %s", this->c_str());
     }
     Error::Error(std::string &s) {
       append(s.c_str());
@@ -70,7 +70,7 @@ namespace OCPI {
       va_start(ap, err);
       setFormatV(err, ap);
       va_end(ap);
-      ocpiBad("Error Exception: %s", this->c_str());
+      ocpiInfo("Error Exception: %s", this->c_str());
     }      
     Error::Error(unsigned level, const char *err, ...) {
       va_list ap;

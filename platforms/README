@@ -1,10 +1,22 @@
-This directory is for OpenCPI runtime platforms - systems that are not
-generic linux development systems, but just (typically embedded)
-runtime systems on which to execute various opencpi software
-applications (such as ocpirun and ocpihdl).  The software (and FPGA
-bitstreams) for such systems are usually built using cross-tools on a
-generic linux development system with the appropriate tools installed.
+This directory is for OpenCPI runtime platforms, whether development-capable
+platforms or embedded platforms.  The name of each subdirectory is a unique name
+for the platform.  The contents of each directory is a set of platform specific
+files and scripts, and is thus a home for platform specific "stuff".
 
-Each platform should have a README about how to set it up, and any other
-scripts or files to enable the platform.
+There are a few standard files that are expected to be in each platform subdirectory:
+
+README: describes the platform
+target: contains the compilation target for the platform.  E.g. for centos6: linux-c6-x86_64.
+<platform>-env.sh: contains the default OpenCPI environment settings for the platform.
+
+The other contents of this platforms directory are:
+
+getPlatform.sh: a script to determine what platform we are running on, which should
+                be enhanced when new platforms are added.
+
+Thus adding a platform requires at least:
+1. Adding a directory here with the files mentioned above.
+2. Enhancing the getPlatform.sh script to recognize when running on the new platform
+3. Ensuring that there is compilation (or cross-compilation) support for the target.
+
 

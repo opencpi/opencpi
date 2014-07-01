@@ -19,6 +19,10 @@ if test "$1" = ""; then
 fi
 echo "Don't forget to copy defaultsetup.sh to mysetup.sh and customize mysetup.sh before doing this."
 echo "If not, do it and run this script again."
+if test $1 != $OCPI_XILINX_VERSION; then
+  echo The supplied argument does not match the OCPI_XILINX_VERSION variable, which is: $OCPI_XILINX_VERSION
+  exit 1
+fi
 rel=$OCPI_XILINX_VERSION-release
 rf=$rel.tar.xz
 rurl=http://www.wiki.xilinx.com/file/view/$rf

@@ -1,4 +1,4 @@
-o# This script obtains and builds the Xilinx Linux kernel for a given version
+# This script obtains and builds the Xilinx Linux kernel for a given version
 # of ISE.  It takes two arguments - the location where the Xilinx tools are installed,
 # and the release number of that installation.  It does NOT require you to set up
 # or source any Xilinx tools scripts.

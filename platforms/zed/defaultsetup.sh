@@ -12,7 +12,7 @@ if test "$OCPI_BASE_DIR" = ""; then
      break
   fi
   # CUSTOMIZE THIS LINE FOR YOUR ENVIRONENT
-  source /mnt/card/ocpizedsetup.sh $1 /Users/jek/Business ocpi/opencpi time.apple.com EDT
+  source /mnt/card/ocpizedsetup.sh $1 /Users/jek/Business ocpi/opencpi time.apple.com EST5EDT,M3.2.0,M11.1.0
   break # this script will be rerun recursively by setup.sh
 fi
 # Tell the ocpihdl utility to always assume the FPGA device is the zynq PL.

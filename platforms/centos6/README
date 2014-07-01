@@ -1,0 +1,9 @@
+This directory contains information and scripts for installing and building
+OpenCPI for centos 6. Look at the readme files for:
+
+1. Install - things you must do *before* building OpenCPI infrastructure, components and apps.
+2. Build - how to actually build all of OpenCPI.
+3. Setup - things to do after building in order to use the platform to run apps.
+
+[This information is incomplete at this time]
+

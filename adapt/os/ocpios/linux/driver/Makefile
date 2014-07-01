@@ -36,6 +36,8 @@
 # To build modules outside of the kernel tree, we run "make"
 # in the kernel source tree; the Makefile there then includes this
 # Makefile once again.  This is the expected mode of operation.
+# FIXME: add dependencies on the actual kernel stuff so when we update
+# a kernel the rebuild is automatic?  Perhaps via "deps"?
 
 # This conditional selects whether we are being included from the
 # kernel Makefile or not. (this in-kernel building is not regularly tested)
@@ -54,8 +56,11 @@ ifdef OCPI_KERNEL_DIR
     export CROSS_COMPILE
     export ARCH
   endif
-  $(info OCPI_KERNEL_DIR specified, using: $(KERNELDIR) with ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE))
+  $(info OCPI_KERNEL_DIR was specified, we are now using: KERNELDIR=$(KERNELDIR) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE))
 else
+  ifdef OCPI_CROSS_BUILD_BIN_DIR
+   $(error OCPI_CROSS_BUILD_BIN_DIR is set, but OCPI_KERNEL_DIR is not set, which is not supported.)
+  endif
   # Assume the source tree is where the running kernel was built
   # You should set KERNELDIR in the environment if it's elsewhere
   ifeq ($(filter clean topclean,$(MAKECMDGOALS)),)
@@ -63,7 +68,7 @@ else
     ifeq ($(wildcard $(KERNELDIR)),)
       $(error Cannot figure out where the KERNELDIR should be.)
     endif
-    $(info No OCPI_KERNEL_DIR specified, so using: $(KERNELDIR))
+    $(info No OCPI_KERNEL_DIR specified, so using: KERNELDIR=$(KERNELDIR))
   endif
 endif
 # The current directory is passed to sub-makes as argument
