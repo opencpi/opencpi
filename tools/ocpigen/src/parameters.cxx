@@ -38,6 +38,11 @@ parse(ezxml_t px, const OU::Property *argParam) {
 ParamConfig::
 ParamConfig() : nConfig(0), used(false) {}
 
+ParamConfig::
+ParamConfig(const ParamConfig &other)
+  : params(other.params), id(other.id), nConfig(other.nConfig), used(other.used) {
+}
+
 const char *ParamConfig::
 parse(Worker &w, ezxml_t cx) {
   const char *err;
@@ -81,7 +86,17 @@ write(Worker &w, FILE *xf, FILE *mf) {
       // Put out the Makefile value lines
       std::string val;
       if (w.m_model == HdlModel) {
+	std::string typeDecl, type;
+	vhdlType(*p.value->m_vt, typeDecl, type);
+	if (typeDecl.length())
+	  fprintf(mf, "ParamVHDLtype_%zu_%s:=type %s_t is %s;\n",
+		  nConfig, p.param->m_name.c_str(), p.param->m_name.c_str(), typeDecl.c_str());
 	fprintf(mf, "ParamVHDL_%zu_%s:=", nConfig, p.param->m_name.c_str());
+	if (typeDecl.length())
+	  fprintf(mf, "%s_t", p.param->m_name.c_str());
+	else
+	  fprintf(mf, "%s", type.c_str());
+	fprintf(mf, " := ");
 	for (const char *cp = w.hdlValue(*p.value, val, true, VHDL); *cp; cp++) {
 	  if (*cp == '#' || *cp == '\\' && !cp[1])
 	    fputc('\\', mf);
@@ -279,7 +294,7 @@ emitToolParameters() {
       (err = parseRawParams(x)) ||
       (err = openOutput(m_fileName.c_str(), m_outDir, "", "-params", ".mk", NULL, m_mkFile)))
     return err;
-  ParamConfig info;                      // Current config for generating them
+  ParamConfig info;                          // Current config for generating them
   //  info.nConfig = m_paramConfigs.size();  // start counting after existing ones
   size_t nConfig = m_paramConfigs.size();
   info.params.resize(m_ctl.nParameters);
@@ -304,7 +319,10 @@ emitToolParameters() {
     if ((*pi)->m_isParameter) {
       par->param = *pi;
       if (par->values.empty()) {
-	assert((*pi)->m_default);
+	if (!(*pi)->m_default)
+	  return OU::esprintf("The parameter property '%s' has no value and no default value",
+			      (*pi)->m_name.c_str());
+	//	assert((*pi)->m_default);
 	par->values.push_back((*pi)->m_default);
       }
       par++;

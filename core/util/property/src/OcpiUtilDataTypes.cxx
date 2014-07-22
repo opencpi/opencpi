@@ -138,8 +138,35 @@ namespace OCPI {
       }
       return NULL;
     }
+    static const char *
+    parseExprNumber(const char *a, size_t &np, std::string *expr,
+		    const IdentResolver *resolver) {
+      ExprValue v;
+      const char *err = evalExpression(a, v, resolver);
+      if (!err) {
+	np = v.number;
+	if (expr)
+	  *expr = a; // provide the expression to the caller in
+      }
+      return err;
+    }
+    // Parse an integer (size_t) attribute that might be an expression
+    // Only consider if we have an identifier resolver
+    // The string value of the expression is returned in expr.
+    static const char *
+    getExprNumber(ezxml_t x, const char *attr, size_t &np, bool &found, std::string &expr,
+		  const IdentResolver *resolver) {
+      const char *a = ezxml_cattr(x, attr);
+      if (a && resolver) {
+	found = true;
+        return parseExprNumber(a, np, &expr, resolver);
+      }
+      return OE::getNumber(x, attr, &np, &found, 0, false, false);
+    }
+
     const char *
-    Member::parse(ezxml_t xm, bool isFixed, bool hasName, const char *hasDefault, unsigned ordinal) {
+    Member::parse(ezxml_t xm, bool isFixed, bool hasName, const char *hasDefault,
+		  unsigned ordinal, const IdentResolver *resolver) {
       bool found;
       const char *err;
       const char *name = ezxml_cattr(xm, "Name");
@@ -204,9 +231,11 @@ namespace OCPI {
 	  // enums have a baseTypeSize of 32 per IDL
 	}
 	if (m_baseType == OA::OCPI_String) {
-	  if ((err = OE::getNumber(xm, "StringLength", &m_stringLength, &found, 0, false)) ||
+	  if ((err = getExprNumber(xm, "StringLength", m_stringLength, found,
+				   m_stringLengthExpr, resolver)) ||
 	      (!found &&
-	       (err = OE::getNumber(xm, "size", &m_stringLength, &found, 0, false))))
+	       (err = getExprNumber(xm, "size", m_stringLength, found, m_stringLengthExpr,
+				    resolver))))
 	    return err;
 	  if (isFixed) {
 	    if (!found)
@@ -223,8 +252,9 @@ namespace OCPI {
 
       bool isArray = false;
       size_t arrayLength;
+      std::string expr;
       const char *arrayDimensions;
-      if ((err = OE::getNumber(xm, "ArrayLength", &arrayLength, &isArray, 0, false)))
+      if ((err = getExprNumber(xm, "ArrayLength", arrayLength, isArray, expr, resolver)))
 	return err;
       if (isArray) {
 	if (arrayLength == 0)
@@ -232,11 +262,13 @@ namespace OCPI {
 	// Single dimension array
 	m_arrayRank = 1;
 	m_arrayDimensions = new size_t[1];
-	*m_arrayDimensions = arrayLength;
+	m_arrayDimensionsExprs.resize(1);
+	m_arrayDimensions[0] = arrayLength;
+	m_arrayDimensionsExprs[0] = expr;
 	m_nItems = arrayLength;
       } else if ((arrayDimensions = ezxml_cattr(xm, "ArrayDimensions"))) {
 	ValueType vt;
-	vt.m_baseType = OA::OCPI_ULong;
+	vt.m_baseType = OA::OCPI_String;
 	vt.m_isSequence = true;
 	vt.m_sequenceLength = 10;
 	Value v(vt);
@@ -244,19 +276,24 @@ namespace OCPI {
 	  return esprintf("Error parsing array dimensions: %s", err);
 	m_arrayRank = v.m_nElements;
 	m_arrayDimensions = new size_t[v.m_nElements];
-	uint32_t *p = v.m_pULong;
+	m_arrayDimensionsExprs.resize(v.m_nElements);
+	const char **p = v.m_pString;
 	for (unsigned n = 0; n < v.m_nElements; n++, p++) {
-	  if (*p == 0)
+	  if ((err = parseExprNumber(*p, m_arrayDimensions[n], &m_arrayDimensionsExprs[n],
+				     resolver)))
+	    return err;
+	  if (m_arrayDimensions[n] == 0)
 	    return "ArrayDimensions cannot have zero values";
-	  m_nItems *= *p;
-	  m_arrayDimensions[n] = *p;
+	  m_nItems *= m_arrayDimensions[n];
 	}
       }
 
       // Deal with sequences after arrays (because arrays belong to declarators)
-      if ((err = OE::getNumber(xm, "SequenceLength", &m_sequenceLength, &m_isSequence, 0, false)) ||
+      if ((err = getExprNumber(xm, "SequenceLength", m_sequenceLength, m_isSequence,
+			       m_sequenceLengthExpr, resolver)) ||
 	  (!m_isSequence &&
-	    ((err = OE::getNumber(xm, "SequenceSize", &m_sequenceLength, &m_isSequence, 0, false)))))
+	   ((err = getExprNumber(xm, "SequenceSize", m_sequenceLength, m_isSequence,
+				 m_sequenceLengthExpr, resolver)))))
 	return err;
       if (m_isSequence && isFixed && m_sequenceLength == 0)
 	return "Sequence must have a bounded size";
@@ -266,6 +303,40 @@ namespace OCPI {
       if (m_format.size() && !strchr(m_format.c_str(), '%'))
 	return esprintf("invalid format string '%s' for '%s'", m_format.c_str(), m_name.c_str());
       return 0;
+    }
+
+    // Finalize the data types by recomputing all the attributes that might be
+    // based on parameters whose values were set later.
+    const char *Member::
+    finalize(const IdentResolver &resolver, bool isFixed) {
+      const char *err;
+      if (m_arrayRank) {
+	m_nItems = 1;
+	for (unsigned i = 0; i < m_arrayRank; i++) {
+	  if ((err = parseExprNumber(m_arrayDimensionsExprs[i].c_str(), m_arrayDimensions[i],
+				     NULL,  &resolver)))
+	    return err;
+	  // FIXME: this is redundant with the code in parse() - share it
+	  if (m_arrayDimensions[i] == 0)
+	    return "ArrayDimensions cannot have zero values";
+	  m_nItems *= m_arrayDimensions[i];
+	}
+      }
+      if (m_isSequence) {
+	if ((err = parseExprNumber(m_sequenceLengthExpr.c_str(), m_sequenceLength, NULL,
+				   &resolver)))
+	  return err;
+	if (isFixed && m_sequenceLength == 0)
+	  return "Sequence must have a bounded size";
+      }
+      if (m_baseType == OA::OCPI_String) {
+	if ((err = parseExprNumber(m_stringLengthExpr.c_str(), m_stringLength, NULL,
+				   &resolver)))
+	  return err;
+	if (isFixed && m_stringLength == 0)
+	  return "StringLength cannot be zero";
+      }
+      return NULL;
     }
 
     void Member::

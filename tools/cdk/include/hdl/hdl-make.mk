@@ -405,24 +405,30 @@ HdlVHDLImplFiles=\
 
 # This is the list of files that will be generated in the TARGET
 # directory.
+# The VHDL defs file must preceed the generics file
 # Return nothing if no parameters
+# FIXME: this has worker stuff in it - should it be elsewhere?
 # $(call HdlTargetSrcFiles,target-dir,paramconfig)
 HdlTargetSrcFiles=\
+  $(VHDLDefsFile) \
   $(and $(WorkerParamNames),$(strip \
      $(call WkrTargetDir,$1,$2)/generics$(HdlVHDLIncSuffix)\
      $(and $(filter .v,$(HdlSourceSuffix)),\
        $(call WkrTargetDir,$1,$2)/generics$(HdlVerilogIncSuffix))))\
-  $(and $(filter vhdl,$(HdlLanguage)),$(DefsFile))\
   $(if $(and $2,$(filter-out 0,$2)),$(call HdlVHDLImplFiles,$1,$2),$(ImplHeaderFiles))
+
+#		$(and $(ParamVHDLtype_$(ParamConfig)_$n), \
+#		   echo '$(ParamVHDLtype_$(ParamConfig)_$n)' ;) \
+#
 
 $(OutDir)target-%/generics.vhd: | $(OutDir)target-%
 	$(AT)(\
 	     echo -- This file sets values for top level generics ;\
 	     echo library ocpi\; use ocpi.all, ocpi.types.all\; ;\
-	     echo package generics is ;\
+	     echo package body $(Worker)_defs is ;\
 	     $(foreach n,$(WorkerParamNames),\
 		echo constant $n : '$(ParamVHDL_$(ParamConfig)_$n)'\; ;) \
-	     echo end package generics\; \
+	     echo end $(Worker)_defs\; \
 	) > $@
 
 $(OutDir)target-%/generics.vh: | $(OutDir)target-%

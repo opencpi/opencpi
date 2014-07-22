@@ -95,13 +95,15 @@ namespace OCPI {
       size_t m_paramOrdinal; // Among parameters, which position?
       // Sizes in bits of the various types
       const char
-	*parse(ezxml_t x, bool includeImpl, unsigned ordinal),
+	*parse(ezxml_t x, bool includeImpl, unsigned ordinal,
+	       const IdentResolver *resolv = NULL),
 	*parseImpl(ezxml_t x),
 	*parse(ezxml_t x, unsigned ordinal),
 	*parseValue(const char *unparsed, Value &value, const char *end = NULL) const,
         *checkType(OCPI::API::BaseType ctype, unsigned n, bool write),
-	*getValue(ExprValue &val);
-      void offset(size_t &cumOffset, uint64_t &sizeofConfigSpace);
+	*getValue(ExprValue &val),
+	*offset(size_t &cumOffset, uint64_t &sizeofConfigSpace,
+		const IdentResolver *resolv = NULL);
     };
   }
 }

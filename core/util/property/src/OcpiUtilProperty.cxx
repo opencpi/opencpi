@@ -125,7 +125,8 @@ namespace OCPI {
     // This is parsing a newly create property that might be only defined in
     // an implementation (includeImpl == true)
     const char *
-    Property::parse(ezxml_t prop, bool includeImpl, unsigned ordinal) {
+    Property::parse(ezxml_t prop, bool includeImpl, unsigned ordinal,
+		    const IdentResolver *resolv) {
       const char *err;
 
       if ((err = includeImpl ?
@@ -133,7 +134,7 @@ namespace OCPI {
 	   OE::checkAttrs(prop, "Name", PROPERTY_ATTRIBUTES, NULL)) ||
 	  includeImpl && (err = parseImplAlso(prop)) ||
 	  (err = parseAccess(prop, false)) ||
-	  (err = Member::parse(prop, !m_isParameter, true, "default", ordinal)))
+	  (err = Member::parse(prop, !m_isParameter, true, "default", ordinal, resolv)))
 	return err;
       // This call is solely used for sub32 determination.  The rest are ignored here.
       // FIXME: move this determination into the parse to avoid all this...
@@ -152,8 +153,13 @@ namespace OCPI {
       return parseCheck();
     }
     // A higher up is creating offsets in a list of properties after we know it all
-    void Property::
-    offset(size_t &cumOffset, uint64_t &sizeofConfigSpace) {
+    // Here is where is need to ensure that all aspects of the underlying data type
+    // are fully resolved.
+    const char *Property::
+    offset(size_t &cumOffset, uint64_t &sizeofConfigSpace, const IdentResolver *resolver) {
+      const char *err = NULL;
+      if (resolver && (err = finalize(*resolver, true)))
+	return err;
       if (m_isIndirect) {
 	uint64_t top = m_indirectAddr;
 	top += m_nBytes;
@@ -167,6 +173,7 @@ namespace OCPI {
 	if (cumOffset > sizeofConfigSpace)
 	  sizeofConfigSpace = cumOffset;
       }
+      return err;
     }
 
 #if 0

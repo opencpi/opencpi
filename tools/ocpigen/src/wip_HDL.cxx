@@ -321,33 +321,121 @@ emitLastSignal(FILE *f, std::string &last, Language lang, bool end) {
   }
 }
 
-// Provide a string suitable for initializing a generic
-// This will be in our own code, not the user's code, so we can count
-// on the visibility of our packages and libraries.
-// If param==true, the value is used in a top level generic setting in tools
-const char *
-vhdlValue(const OU::Value &v, std::string &s, bool param) {
+static void
+vhdlBaseType(const OU::ValueType &dt, std::string &s, bool convert) {
+  if (dt.m_baseType == OA::OCPI_Bool && convert)
+    s = "std_logic_vector(0 to 0)";
+  else {
+    for (const char *cp = OU::baseTypeNames[dt.m_baseType]; *cp; cp++)
+      s += (char)tolower(*cp);
+    s += "_t";
+  }
+}
+static void
+vhdlArrayType(const OU::ValueType &dt, size_t rank, const size_t *dims, std::string &s,
+	      bool convert) {
+  s += "array";
+  for (unsigned i = 0; i < rank; i++)
+    OU::formatAdd(s, "%s0 to %zu", i == 0 ? "(" : ", ", dims[i] - 1);
+  s += ") of ";
+  vhdlBaseType(dt, s, convert);
+}
+// Only put out types that have parameters, otherwise the
+// built-in types are used.
+void
+vhdlType(const OU::ValueType &dt, std::string &decl, std::string &type, bool convert) {
+  if (dt.m_baseType == OA::OCPI_String && dt.m_stringLength)
+    OU::format(decl, "array(0 to %zu) of char_t", dt.m_stringLength);
+  else if (dt.m_arrayDimensions)
+    vhdlArrayType(dt, dt.m_arrayRank, dt.m_arrayDimensions, decl, convert);
+  else if (dt.m_isSequence) {
+    decl = "type seqarray_t is ";
+    vhdlArrayType(dt, 1, &dt.m_sequenceLength, decl, convert);
+    decl += "; type seq is record length : ulong_t; data : array : seqarray_t; end record";
+  } else
+    vhdlBaseType(dt, type, convert);
+ }
+static struct VhdlUnparser : public OU::Unparser {
+  void
+  elementUnparse(const OU::Value &v, std::string &s, unsigned nSeq, bool hex, char comma,
+		 bool wrap, const Unparser &up) const {
+    if (wrap) s+= '(';
+    Unparser::elementUnparse(v, s, nSeq, hex, comma, false, up);
+    if (wrap) s+= ')';
+    
+  }
+  // We wrap the basic value in a conversion function, and also suppress
+  // the suppression of zeroes...
+  bool
+  valueUnparse(const OU::Value &v, std::string &s, unsigned nSeq, size_t nArray, bool hex,
+	       char comma, bool /*wrap*/, const Unparser &up) const {
+    s += "to_";
+    for (const char *cp = OU::baseTypeNames[v.m_vt->m_baseType]; *cp; cp++)
+      s += (char)tolower(*cp);
+    s += '(';
+    Unparser::valueUnparse(v, s, nSeq, nArray, hex, comma, false, up);
+    s += ')';
+    return false;
+  }
+  bool 
+  unparseBool(std::string &s, bool val, bool) const {
+    s += val ? "btrue" : "bfalse";
+    return !val;
+  }
+} vhdlUnparser;
+#if 0
+static void
+vhdlScalar(const OU::Value &v, std::string &s, bool param) {
   switch (v.m_vt->m_baseType) {
   case OA::OCPI_Bool:
     if (param)
-      OU::format(s, "bool_t := b%s", v.m_Bool ? "true" : "false");
+      OU::format(s, "b%s", v.m_Bool ? "true" : "false");
     else {
       s = "b";
-      v.unparse(s, true);
+      v.unparse(s, &vhdlUnparser, true);
     }
     break;
+  case OA::OCPI_Char:
+  case OA::OCPI_UChar:
   case OA::OCPI_ULong:
-    if (param)
-      OU::format(s, "ulong_t := to_ulong(%u)", v.m_ULong);
-    else {
-      s = "to_ulong(";
-      v.unparse(s, true);
+  case OA::OCPI_Long:
+  case OA::OCPI_UShort:
+  case OA::OCPI_Short:
+  case OA::OCPI_LongLong:
+  case OA::OCPI_ULongLong:
+  case OA::OCPI_Float:
+  case OA::OCPI_Double:
+    {
+      s = "to_";
+      for (const char *cp = OU::baseTypeNames[v.m_vt->m_baseType]; *cp; cp++)
+	s += (char)tolower(*cp);
+      s += "(";
+      if (v.m_vt->m_baseType == OA::OCPI_UChar)
+	OU::formatAdd(s, "%u", (uint8_t)v.m_UChar);
+      else if (v.m_vt->m_baseType == OA::OCPI_Char) 
+	OU::formatAdd(s, "%d", (int8_t)v.m_Char);
+      else
+	v.unparse(s, &vhdlUnparser, true);
       s += ")";
     }
     break;
   default:
     s = "<unsupported type for VHDL parameter/generic>";
   }
+
+}
+#endif
+// Provide a string suitable for initializing a generic
+// This will be in our own code, not the user's code, so we can count
+// on the visibility of our packages and libraries.
+// If param==true, the value is used in a top level generic setting in tools
+const char *
+vhdlValue(const OU::Value &v, std::string &s, bool) {
+  if (v.needsComma())
+    s += "(";
+  v.unparse(s, &vhdlUnparser, true);
+  if (v.needsComma())
+    s += ")";
   return s.c_str();
 }
 
@@ -367,55 +455,37 @@ hdlValue(const OU::Value &v, std::string &value, bool param, Language lang) {
     vhdlValue(v, value, param) : verilogValue(v, value, param);
 }
 
-// Record bool says we are emitting a record interface so
-// it is not wrapping verilog - UGH
 void Worker::
 emitParameters(FILE *f, Language lang, bool useDefaults, bool convert) {
   bool first = true;
   std::string last;
-  for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
-    if ((*pi)->m_isParameter) {
+  for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
+    OU::Property &pr = **pi;
+    if (pr.m_isParameter) {
       if (first) {
 	if (lang == VHDL)
 	  fprintf(f, "  generic (\n");
 	first = false;
       }
-      OU::Property *pr = *pi;
       if (lang == VHDL) {
-	// Note we could be very obsessive with types becase VHDL can be,
-	// but not now...
-	// FIXME: define actual ocpi types corresponding to our IDL-inspired types
-	// Actually, when we are specifing the interface in VHDL for an underlying
-	// worker in verilog, the generics can't be typed..
-	std::string value, type;
-	switch (pr->m_baseType) {
-	case OA::OCPI_Bool: type = convert ? "std_logic_vector(0 to 0)" : "bool_t"; break;
-	case OA::OCPI_Char: type = "char_t"; break;
-	case OA::OCPI_Double: type = "double_t"; break;
-	case OA::OCPI_Float: type = "real_t"; break;
-	case OA::OCPI_Short: type = "short_t"; break;
-	case OA::OCPI_Long: type = "long_t"; break;
-	case OA::OCPI_UChar: type = "uchar_t"; break;
-	case OA::OCPI_ULong: type = "ulong_t"; break;
-	case OA::OCPI_UShort: type = "ushort_t"; break;
-	case OA::OCPI_LongLong: type = "longlong_t"; break;
-	case OA::OCPI_ULongLong: type = "ulonglong_t"; break;
-	case OA::OCPI_String: type = "string_t"; break;
-	default:;
-	}
+	std::string value, decl, type;
+	vhdlType(pr, decl, type, convert);
+	if (decl.length())
+	  //	  OU::format(type, "work.%s_defs.%s_t", m_implName, pr.m_name.c_str());
+	  OU::format(type, "%s_t", pr.m_name.c_str());
 	if (useDefaults) {
-	  if (pr->m_default) {
+	  if (pr.m_default) {
 	    std::string vhv;
-	    vhdlValue(*pr->m_default, vhv);
-	    if (pr->m_baseType == OA::OCPI_Bool && convert)
+	    vhdlValue(*pr.m_default, vhv);
+	    if (pr.m_baseType == OA::OCPI_Bool && convert)
 	      OU::format(value, "ocpi.util.slv(%s)", vhv.c_str());
 	    else
 	      value = vhv;
 	  }
 	} else
-	  OU::format(value, "work.generics.%s", pr->m_name.c_str());
-	emitSignal(pr->m_name.c_str(), f, lang, Signal::IN, last, -1, 0, "  ",
-		   type.c_str(), value.c_str()); //pr->m_default ? value.c_str() : NULL);
+	  OU::format(value, "work.%s_defs.%s", m_implName, pr.m_name.c_str());
+	emitSignal(pr.m_name.c_str(), f, lang, Signal::IN, last, -1, 0, "  ",
+		   type.c_str(), value.empty() ? NULL : value.c_str());
       } else {
 #if 0
 	  if (pr->m_baseType == OA::OCPI_Bool) {
@@ -430,23 +500,24 @@ emitParameters(FILE *f, Language lang, bool useDefaults, bool convert) {
 	  }
 #endif
 	  int64_t i64 = 0;
-	  if (pr->m_default)
-	    switch (pr->m_baseType) {
+	  if (pr.m_default)
+	    switch (pr.m_baseType) {
 #define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)			\
 	    case OA::OCPI_##pretty:					\
-	      i64 = (int64_t)pr->m_default->m_##pretty; break;
+	      i64 = (int64_t)pr.m_default->m_##pretty; break;
 	    OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
 	    default:;
 	    }
-	if (pr->m_baseType == OA::OCPI_Bool)
+	if (pr.m_baseType == OA::OCPI_Bool)
 	  fprintf(f, "  parameter [0:0] %s = 1'b%u;\n",
-		  pr->m_name.c_str(), (i64 != 0) & 1);
+		  pr.m_name.c_str(), (i64 != 0) & 1);
 	else
 	  fprintf(f, "  parameter [%zu:0] %s = %zu'h%llx;\n",
-		  pr->m_nBits - 1, pr->m_name.c_str(), pr->m_nBits, (long long)i64);
+		  pr.m_nBits - 1, pr.m_name.c_str(), pr.m_nBits, (long long)i64);
       }
     }
+  }
   if (!first && lang == VHDL) {
     emitLastSignal(f, last, lang, true);
     fprintf(f, "  );\n");
@@ -608,6 +679,7 @@ tempName(char *&temp, unsigned len, const char *fmt, ...) {
   return temp;
 }
 
+#if 0
 static void
 emitVhdlValue(FILE *f, size_t width, uint64_t value, bool singleLine = true) {
   if (width & 3) {
@@ -657,7 +729,6 @@ emitVhdlDefault(FILE *f, OU::Property &pr, const char *eq)
     emitVhdlScalar(f, pr);
 }
 
-#if 0
 static void
 emitVhdlProp(FILE *f, OU::Property &pr, std::string &last, bool writable,
 	     unsigned maxPropName, bool &first, bool worker = false)
@@ -1407,6 +1478,28 @@ emitDefsHDL(bool wrap) {
     fprintf(f,
 	    "\n"
 	    "package %s_defs is\n", m_implName);
+    bool first = true;
+    for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
+      OU::Property &p = **pi;
+      if (p.m_isParameter) {
+	if (first) {
+	  fprintf(f,
+		  " -- Declarations of parameter properties.\n"
+		  " -- The actual values used are in the package body,\n"
+		  " -- which is generated for each configuration.\n");
+	  first = false;
+	}
+	std::string decl, type;
+	vhdlType(p, decl, type, false);
+	if (decl.length())
+	  fprintf(f,
+		  "  type %s_t is %s;\n"
+		  "  constant %s : %s_t;\n",
+		  p.m_name.c_str(), decl.c_str(), p.m_name.c_str(), p.m_name.c_str());
+	else
+	  fprintf(f, "  constant %s : %s;\n", p.m_name.c_str(), type.c_str());
+      }
+    }
     //    if (!m_noControl)
     //      fprintf(f,
     //	      "constant worker : ocpi.wci.worker_t;\n");
@@ -1554,6 +1647,7 @@ emitOpcodes(Port *p, FILE *f, const char *pName, Language lang) {
   }
 }
 
+#if 0
 static void
 printVhdlScalarValue(FILE *f, OU::Value &v) {
   (void)f;(void)v;
@@ -1564,11 +1658,10 @@ printVhdlValue(FILE *f, OU::Value &v) {
   (void)f;(void)v;
   const OU::ValueType &vt = *v.m_vt;
   std::string value;
-  v.unparse(value);
+  v.unparse(value, &vhdlUnparser);
   fprintf(f, "to_%s(%s)", OU::baseTypeNames[vt.m_baseType], value.c_str());
 }
 
-#if 0
 static void
 emitVhdlWSI(FILE *f, Worker *w, Port *p) {
   // emit the custom wsi interface
@@ -3116,10 +3209,12 @@ emitImplHDL(bool wrap) {
 		  pr.m_arrayRank || pr.m_isSequence ? "_array" : "",
 		  m_implName, m_implName, n);
 	  if (pr.m_default) {
+	    std::string vv;
+	    vhdlValue(*pr.m_default, vv);
 	    fprintf(f,
 		    ",\n"
-		    "                default     => ");
-	    printVhdlValue(f, *pr.m_default);
+		    "                default     => %s",
+		    vv.c_str());
 	  }
 		
 	  fprintf(f,

@@ -202,7 +202,7 @@ namespace OCPI {
       if (p.m_baseType == OA::OCPI_Struct || p.m_baseType == OA::OCPI_Type)
 	throw OU::Error("Struct and Typedef properties are unsupported");
       if (p.m_isParameter) {
-	p.m_default->unparse(value, false, hex);
+	p.m_default->unparse(value, NULL, false, hex);
 	return true;
       }
       OU::Value v(p);
@@ -254,7 +254,7 @@ namespace OCPI {
 	default:;
 	}
       
-      v.unparse(value, false, hex);
+      v.unparse(value, NULL, false, hex);
       return true;
     }
     void Worker::setProperty(unsigned ordinal, OCPI::Util::Value &value) {

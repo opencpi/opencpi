@@ -86,14 +86,18 @@ namespace OCPI {
       bool isNumber;
     };
 
-    // The class provideed by the caller that can provide the value of identifiers in the expression
+    // The class provideed by the caller that can provide the value of identifiers
+    // in the expression
     struct IdentResolver {
-      virtual const char *getValue(const std::string &sym, ExprValue &val) = 0;
+      virtual const char *getValue(const char *sym, ExprValue &val) const = 0;
+      // Look up the variable reference, but we're not looking for values
+      // virtual const char *isVariable(const char *) = 0;
       virtual ~IdentResolver(){};
     };
     
     // The core function that evaluates expressions
-    const char *evalExpression(const char *string, ExprValue &val, IdentResolver *resolve = NULL);
+    const char *evalExpression(const char *string, ExprValue &val, const
+			       IdentResolver *resolve = NULL);
   }
 }
 

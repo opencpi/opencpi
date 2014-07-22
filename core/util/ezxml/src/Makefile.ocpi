@@ -35,4 +35,4 @@
 ########################################################################### #
 
 CFLAGS += -DEZXML_NOMMAP
-include ../../../../../Makefile.ocpi.for-src
+include $(OCPI_BASE_DIR)/Makefile.ocpi.for-src

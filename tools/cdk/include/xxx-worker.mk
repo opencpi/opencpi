@@ -247,8 +247,7 @@ define WkrDoTargetConfig
                             | $(call WkrTargetDir,$1,$2)
 	$(LinkBinary) $$(ObjectFiles_$1_$2) $(OtherLibraries)
 	$(AT)if test -f "$(call ArtifactXmlFile,$1,$2)"; then \
-		(cat $(call ArtifactXmlFile,$1,$2); \
-	         bash -c 'echo X$$$$2' `ls -o -g -l $(call ArtifactXmlFile,$1,$2)`) >> $$@; \
+	  $(ToolsDir)/../../scripts/addmeta "$(call ArtifactXmlFile,$1,$2)" $$@; \
 	fi
   endif
   # Make sure we actuall make the final binary for this target
@@ -288,6 +287,7 @@ define DoLink
   LibLinks+=$(LibDir)/$1/$3
   $(LibDir)/$1/$3: $(call WkrTargetDir,$1,$4)/$2 | $(LibDir)/$1
 	$(AT)echo Creating link from $$@ -\> $$< to export the worker binary.
+	$(AT)$$(call MakeSymLink2,$(call WkrTargetDir,$1,$4)/generics.vhd,$(LibDir)/$1,$(basename $3)-generics.vhd)
 	$(AT)$$(call MakeSymLink2,$(call WkrTargetDir,$1,$4)/$2,$(LibDir)/$1,$3)
 
   ifdef HdlToolNeedBB_$(HdlToolSet_$1)

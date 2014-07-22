@@ -97,8 +97,8 @@ ImplXmlFile=$(firstword $(ImplXmlFiles))
 #RefDefsFile=$(Workers:%=$(GeneratedDir)/%-defs.vh)
 DefsFile=$(Worker:%=$(GeneratedDir)/%$(HdlDefsSuffix))
 WDefsFile=$(Worker:%=$(GeneratedDir)/%$(HdlOtherDefsSuffix))
+VHDLDefsFile=$(Worker:%=$(GeneratedDir)/%$(HdlDefs)$(HdlVHDLSuffix))
 HdlOtherImplSourceFile=$(GeneratedDir)/$(Worker)$(HdlOtherImplSuffix)
-
 # What source files should be put into the BB library?
 # There are four cases:
 # VHDL and ParamConfig 0: defs
@@ -110,7 +110,8 @@ HdlVerilogTargetDefs=$(call WkrTargetDir,$1,$2)/$(Worker)$(HdlDefs)$(HdlVerilogI
 HdlVHDLTargetDefs=$(call WkrTargetDir,$1,$2)/$(Worker)$(HdlDefs)$(HdlVHDLSuffix)
 
 CoreBlackBoxFiles=$(foreach d,$(DefsFile) $(WDefsFile),$(infoxx CBBF:$d)\
-                     $(if $(filter 0,$2),$d,$(call WkrTargetDir,$1,$2)/$(notdir $d)))
+                     $(if $(filter 0,$2),$d,$(call WkrTargetDir,$1,$2)/$(notdir $d)))\
+                  $(call WkrTargetDir,$1,$2)/generics.vhd
 
 OcpiHdl=$(DYN_PREFIX) $(ToolsDir)/ocpihdl 
 

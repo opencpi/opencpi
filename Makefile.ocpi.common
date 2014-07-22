@@ -734,8 +734,8 @@ distcleanup:	cleanup
 #
 
 OCPI_EXTERNAL_EXPORTS = \
-	$(OCPI_BASE_DIR)/core/local/util/misc/include \
-	$(OCPI_BASE_DIR)/core/local/util/driver/include \
+	$(OCPI_BASE_DIR)/core/util/misc/include \
+	$(OCPI_BASE_DIR)/core/util/driver/include \
 	$(OCPI_BASE_DIR)/core/dataplane/rdma_drivers/pio/include \
 	$(OCPI_BASE_DIR)/core/dataplane/rdma_driver_interface/interfaces/include 
 
@@ -816,31 +816,31 @@ LOGGER_EXPORTS = $(OCPI_BASE_DIR)/core/local/logger/logger/include
 LOGGER_LIBS = $(OCPI_BASE_DIR)/core/local/logger/logger
 
 UTIL_EXPORTS = \
-	$(OCPI_BASE_DIR)/core/local/util/driver/include \
-	$(OCPI_BASE_DIR)/core/local/util/expressionP/include \
-	$(OCPI_BASE_DIR)/core/local/util/ezxml/include \
-	$(OCPI_BASE_DIR)/core/local/util/filefs/include \
-	$(OCPI_BASE_DIR)/core/local/util/http/include \
-	$(OCPI_BASE_DIR)/core/local/util/ior/include \
-	$(OCPI_BASE_DIR)/core/local/util/memfs/include \
-	$(OCPI_BASE_DIR)/core/local/util/misc/include \
-	$(OCPI_BASE_DIR)/core/local/util/parentChild/include \
-	$(OCPI_BASE_DIR)/core/local/util/property/include \
-	$(OCPI_BASE_DIR)/core/local/util/streamfs/include \
-	$(OCPI_BASE_DIR)/core/local/util/tcp/include \
-	$(OCPI_BASE_DIR)/core/local/util/timeEmit/include \
-	$(OCPI_BASE_DIR)/core/local/util/uuid/include \
-	$(OCPI_BASE_DIR)/core/local/util/vfs/include \
-	$(OCPI_BASE_DIR)/core/local/util/zipfs/include \
-	$(OCPI_BASE_DIR)/core/local/util/res/include \
-	$(OCPI_BASE_DIR)/core/local/util/list/include \
-	$(OCPI_BASE_DIR)/core/local/util/thread/include \
-	$(OCPI_BASE_DIR)/core/local/util/fasttime/include \
-	$(OCPI_BASE_DIR)/core/local/util/sockets/include \
-	$(OCPI_BASE_DIR)/core/local/util/assembly/include \
-	$(OCPI_BASE_DIR)/core/local/util/zlib/include \
+	$(OCPI_BASE_DIR)/core/util/driver/include \
+	$(OCPI_BASE_DIR)/core/util/expressionP/include \
+	$(OCPI_BASE_DIR)/core/util/ezxml/include \
+	$(OCPI_BASE_DIR)/core/util/filefs/include \
+	$(OCPI_BASE_DIR)/core/util/http/include \
+	$(OCPI_BASE_DIR)/core/util/ior/include \
+	$(OCPI_BASE_DIR)/core/util/memfs/include \
+	$(OCPI_BASE_DIR)/core/util/misc/include \
+	$(OCPI_BASE_DIR)/core/util/parentChild/include \
+	$(OCPI_BASE_DIR)/core/util/property/include \
+	$(OCPI_BASE_DIR)/core/util/streamfs/include \
+	$(OCPI_BASE_DIR)/core/util/tcp/include \
+	$(OCPI_BASE_DIR)/core/util/timeEmit/include \
+	$(OCPI_BASE_DIR)/core/util/uuid/include \
+	$(OCPI_BASE_DIR)/core/util/vfs/include \
+	$(OCPI_BASE_DIR)/core/util/zipfs/include \
+	$(OCPI_BASE_DIR)/core/util/res/include \
+	$(OCPI_BASE_DIR)/core/util/list/include \
+	$(OCPI_BASE_DIR)/core/util/thread/include \
+	$(OCPI_BASE_DIR)/core/util/fasttime/include \
+	$(OCPI_BASE_DIR)/core/util/sockets/include \
+	$(OCPI_BASE_DIR)/core/util/assembly/include \
+	$(OCPI_BASE_DIR)/core/util/zlib/include \
 	$(OCPI_BASE_DIR)/core/include 
-UTIL_LIBS = $(OCPI_BASE_DIR)/core/local/util/util
+UTIL_LIBS = $(OCPI_BASE_DIR)/core/util/util
 
 CDKUTILS_EXPORTS = $(OCPI_BASE_DIR)/tools/cdkutils/include
 CDKUTILS_LIBS = $(OCPI_BASE_DIR)/tools/cdkutils/cdkutils

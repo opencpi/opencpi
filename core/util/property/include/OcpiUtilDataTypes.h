@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -41,6 +40,8 @@
 #include "ezxml.h"
 #include <stdarg.h>
 #include <string>
+#include <vector>
+#include "OcpiExprEvaluator.h"
 #include "OcpiUtilDataTypesApi.h"
 
 namespace OCPI {
@@ -74,6 +75,10 @@ namespace OCPI {
       size_t m_nItems;                // total number of fixed items
       std::string m_typeDef;          // If we were created from a typedef
       std::string m_format;
+      // string references for array dimensions and lengths
+      std::vector<std::string> m_arrayDimensionsExprs;
+      std::string m_stringLengthExpr;
+      std::string m_sequenceLengthExpr;
       // unions and enums
       ValueType(OCPI::API::BaseType bt = OCPI::API::OCPI_none, bool isSequence = false);
       ~ValueType();
@@ -170,8 +175,10 @@ namespace OCPI {
       void read(Reader &reader, uint8_t *&data, size_t &length);
       void generate(const char *name, unsigned ordinal = 0, unsigned depth = 0);
       const char
+        *finalize(const IdentResolver &resolv, bool isFixed),
 	*parseDefault(ezxml_t x, const char *hasDefault),
-	*parse(ezxml_t x, bool isFixed, bool hasName, const char *hasDefault, unsigned ordinal),
+	*parse(ezxml_t x, bool isFixed, bool hasName, const char *hasDefault,
+	       unsigned ordinal, const IdentResolver *resolv = NULL),
 	*offset(size_t &maxAlign, size_t &argOffset, size_t &minSize, bool &diverseSizes,
 		bool &sub32, bool &unBounded, bool isTop = false);
       static const char *

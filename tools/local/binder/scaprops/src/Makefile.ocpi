@@ -43,4 +43,4 @@ EXTRA_INCLUDES=\
   $(ACE_ROOT)/TAO/orbsvcs/IFR_Service \
   $(ACE_ROOT)/TAO/orbsvcs
 
-include ../../../../../Makefile.ocpi.for-src
+include $(OCPI_BASE_DIR)/Makefile.ocpi.for-src

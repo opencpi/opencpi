@@ -397,7 +397,7 @@ typedef Ports::const_iterator PortsIter;
 typedef std::vector<Clock*> Clocks;
 typedef Clocks::iterator ClocksIter;
 class Assembly;
-class Worker : public Parsed {
+class Worker : public Parsed, public OU::IdentResolver {
  public:
   Model m_model;
   const char *m_modelString;
@@ -441,6 +441,7 @@ class Worker : public Parsed {
   Clock *addClock();
   Clock *addWciClockReset();
   const char
+    *getValue(const char *sym, OU::ExprValue &val) const,
     *getNumber(ezxml_t x, const char *attr, size_t *np, bool *found = NULL,
 	       size_t defaultValue = 0, bool setDefault = true),
     *getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly),
@@ -565,6 +566,8 @@ extern const char
   *emitArtOCL(Worker *);
 
 extern void
+  vhdlType(const OU::ValueType &dt, std::string &typeDecl, std::string &type,
+	   bool convert = false),
   emitVhdlLibraries(FILE *f),
   addLibrary(const char *lib),
   emitLastSignal(FILE *f, std::string &last, Language lang, bool end);

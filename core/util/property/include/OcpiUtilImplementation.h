@@ -145,7 +145,7 @@ namespace OCPI {
       unsigned whichProperty(const char *id) const;
       // This one returns NULL
       Property *getProperty(const char *id) const;
-      const char *getValue(const std::string &sym, ExprValue &val);
+      const char *getValue(const char *sym, ExprValue &val) const;
       inline Property *properties(unsigned &np) const {
         np = m_nProperties;
         return m_properties;

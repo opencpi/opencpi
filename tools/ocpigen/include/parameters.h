@@ -27,6 +27,7 @@ struct ParamConfig {
   size_t nConfig; // ordinal
   bool used;  // Is this config in the current set?
   ParamConfig();
+  ParamConfig(const ParamConfig &);
   const char * parse(Worker &w, ezxml_t cx);
   void write(Worker &w, FILE *xf, FILE *mf);
   // Is the given configuration the same as this one?

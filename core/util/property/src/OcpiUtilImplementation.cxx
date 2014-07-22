@@ -35,6 +35,7 @@
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
 #include <string.h>
+#include <strings.h>
 #include "OcpiOsAssert.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
@@ -141,31 +142,35 @@ namespace OCPI {
       return NULL;
     }
     // Get a property value from the metadata
-    const char *Worker::getValue(const std::string &sym, ExprValue &val) {
+    const char *Worker::getValue(const char *sym, ExprValue &val) const {
       // Our builtin symbols take precendence, but can be overridden with $
-      if (sym == "model") {
+      if (!strcasecmp(sym, "model")) {
 	val.isNumber = false;
 	val.string = m_model;
 	return NULL;
-      } else if (sym == "platform" && m_attributes) {
+      } else if (!strcasecmp(sym, "platform") && m_attributes) {
 	val.isNumber = false;
 	val.string = m_attributes->m_platform;
 	return NULL;
-      } else if (sym == "os" && m_attributes) {
+      } else if (!strcasecmp(sym, "os") && m_attributes) {
 	val.isNumber = false;
 	val.string = m_attributes->m_os;
 	return NULL;
       }
       Property *p = m_properties;
-      const char *cSym = sym.c_str();
-      if (cSym[0] == '@')
-	cSym++;
+      if (sym[0] == '@')
+	sym++;
       for (unsigned n = 0; n < m_nProperties; n++, p++)
-	if (p->m_name == cSym)
+	if (!strcasecmp(p->m_name.c_str(), sym))
 	  return p->getValue(val);
-      return esprintf("no property found for identifier \"%s\"", cSym);
+      return esprintf("no property found for identifier \"%s\"", sym);
     }
-
+#if 0
+    const char *Worker::isVariable(const char *sym) {
+      ExprValue dummy;
+      return getValue(sym, dummy);
+    }
+#endif
     void parse3(char *s, std::string &s1, std::string &s2,
 		std::string &s3) {
       char *temp = strdup(s);

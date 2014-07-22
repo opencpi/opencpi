@@ -61,7 +61,7 @@ namespace OCPI {
       Implementation(Artifact &art, OCPI::Util::Worker &i, ezxml_t instance, unsigned ordinal);
       // Does this implementation satify the selection criteria?  and if so, what is the score?
       //      bool satisfiesSelection(const char *selection, unsigned &score);
-      bool getValue(const std::string &symbol, OCPI::Util::ExprValue &val);
+      bool getValue(const char *symbol, OCPI::Util::ExprValue &val) const;
       void setConnection(OCPI::Util::Port &myPort, Implementation *otherImpl = NULL,
 			 OCPI::Util::Port *otherPort = NULL);
     };

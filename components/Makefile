@@ -119,6 +119,7 @@ Implementations = \
         replicate.rcc \
 	bias_cc.rcc \
         bias_param.rcc \
+	hello_world.rcc \
 	$(Tests)
 
 #	fir_prog.hdl \

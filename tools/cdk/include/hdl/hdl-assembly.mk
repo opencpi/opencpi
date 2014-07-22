@@ -210,6 +210,7 @@ HdlContPreCompile=\
    )
 HdlContBitName=$(call HdlContDir,$1)/$(call HdlBitName,$1)
 HdlContBitZName=$(call HdlContBitName,$1).gz
+HdlContBitZ=$(basename $(call HdlContBitName,$1)).bitz
 ContainerWorkersFile=$(call HdlContDir,$1)/$1.wks
 ContainerXmlFile=$(call HdlContXml,$1)
 HdlContOcpiGen=\
@@ -311,7 +312,11 @@ $(call HdlContBitZName,$1): $(call HdlContBitName,$1)
 	$(AT)gzip -c $(call HdlContBitName,$1) > $$@
 	$(AT)$(ToolsDir)/../../scripts/addmeta $(call ArtifactXmlName,$1) $$@
 
-all: $(call HdlContBitZName,$1)
+$(call HdlContBitZ,$1): | $(call HdlContBitZName,$1)
+	$(AT)ln -s $(notdir $(call HdlContBitZName,$1)) $$@
+
+
+all: $(call HdlContBitZName,$1) $(call HdlContBitZ,$1)
 # Maybe the platform and not the tool defines how things build...
 -include $(HdlPlatformsDir)/$(HdlPlatform_$1)/$(HdlPlatform_$1).mk
 

@@ -113,6 +113,7 @@ QuartusMakeDevices=\
 # Make the settings file
 # Note that the local source files use notdir names and search paths while the
 # remote libraries use pathnames so that you can have files with the same names.
+# FIXME: use of "sed" below is gross and slow - perhaps use .cN rather than _cN? ugh.
 QuartusMakeQsf=\
  if test -f $(Core).qsf; then cp $(Core).qsf $(Core).qsf.bak; fi; \
  $(and $(findstring $(HdlMode),library),\
@@ -131,7 +132,10 @@ QuartusMakeQsf=\
     $(foreach w,$(call HdlRmRv,$(basename $(notdir $c))),\
       $(foreach d,$(dir $c),\
         $(foreach f,$(or $(call HdlExists,$d../gen/$w-defs.vhd),\
-                         $(call HdlExists,$d../$w.vhd)),\
+                         $(call HdlExists,$d../$(shell echo $w | sed 's/_c[0-9][0-9]*$$//').vhd)),\
+          echo set_global_assignment -name VHDL_FILE -library $w '\"'$(call FindRelative,$(TargetDir),$f)'\"';)\
+        $(foreach f,$(or $(call HdlExists,$d/generics.vhd),\
+                         $(call HdlExists,$d/$(basename $(notdir $c))-generics.vhd)),\
           echo set_global_assignment -name VHDL_FILE -library $w '\"'$(call FindRelative,$(TargetDir),$f)'\"';))))\
   echo '\# Search path(s) for local files'; \
   $(foreach d,$(call Unique,$(patsubst %/,%,$(dir $(QuartusSources)) $(VerilogIncludeDirs))), \

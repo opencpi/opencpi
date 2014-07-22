@@ -13,7 +13,7 @@ else
   test $? = 0 || exit 1; 
 fi
 echo ======================= Loading the OpenCPI Linux Kernel driver. &&
-ocpidriver load &&
+(test "$OCPI_TOOL_OS" = macos || ocpidriver load) &&
 echo ======================= Running Unit Tests &&
 tests/target-$OCPI_TARGET_HOST/ocpitests &&
 echo ======================= Running Container Tests &&

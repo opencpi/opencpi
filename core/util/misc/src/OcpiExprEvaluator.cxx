@@ -59,7 +59,8 @@ namespace {
   typedef enum { ALLOPS OpEnd, OpString, OpIdent, OpNumber, OpLimit } OpCode;
 
 
-  static const char *lex(const char *&cp, const char *&start, const char *&end, OpCode &op) {
+  static const char *
+  lex(const char *&cp, const char *&start, const char *&end, OpCode &op) {
 
     op = OpLimit;
     while (isspace(*cp))
@@ -136,7 +137,8 @@ namespace {
   // Parens means eliminate start and end
   // Otherwise "end" needs to be preserved.
   // "end" is set to point to the preserved token at the end
-  const char *reduce(ExprToken *start, ExprToken *&end, bool parens = false) {
+  static const char *
+  reduce(ExprToken *start, ExprToken *&end, bool parens = false) {
     if (end != start + 1) {
       ExprToken *t;
       for (t = end; --t > start;) {
@@ -216,7 +218,9 @@ namespace {
     return NULL;
   }
 
-  const char *parse(const char *buf, OU::ExprValue &val, ExprToken *&tokens, OU::IdentResolver *resolver) {
+  static const char *
+  parse(const char *buf, OU::ExprValue &val, ExprToken *&tokens,
+	const OU::IdentResolver *resolver) {
     OpCode op;
     unsigned nTokens = 0, nParens = 0;
     const char *cp, *dummy, *end;
@@ -246,7 +250,7 @@ namespace {
 	  OU::ExprValue v;
 	  if (!resolver)
 	    return "no symbols are available for this expression";
-	  if ((err = resolver->getValue(sym, v)))
+	  if ((err = resolver->getValue(sym.c_str(), v)))
 	    return err;
 	  if (v.isNumber) {
 	    t->op = OpNumber;
@@ -314,7 +318,8 @@ namespace {
 }
 namespace OCPI {
   namespace Util {
-    const char *evalExpression(const char *string, ExprValue &val, IdentResolver *resolver) {
+    const char *evalExpression(const char *string, ExprValue &val,
+			       const IdentResolver *resolver) {
       ExprToken *tokens = 0;
       const char *err = parse(string, val, tokens, resolver);
       delete [] tokens;
@@ -349,8 +354,8 @@ int main(int argc, char **argv) {
     return 1;
   }
   class mine : public OU::IdentResolver {
-    const char *getValue(std::string &symbol, OU::ExprValue &val) {
-      if (symbol == "fred") {
+    const char *getValue(const char *symbol, OU::ExprValue &val) {
+      if (!strcasecmp(symbol, "fred")) {
 	val.string = "barar";
 	val.isNumber = false;
 	return NULL;

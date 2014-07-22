@@ -854,7 +854,7 @@ namespace OCPI {
 
 bool Value::
 unparseDimension(std::string &s, unsigned nseq, size_t dim, size_t offset, size_t nItems,
-		 bool hex, char comma) const {
+		 bool hex, char comma, const Unparser &up) const {
   size_t
     nextDim = dim + 1,
     dimension = m_vt->m_arrayDimensions[dim],
@@ -864,22 +864,26 @@ unparseDimension(std::string &s, unsigned nseq, size_t dim, size_t offset, size_
   std::string v;
   for (unsigned n = 0; n < m_vt->m_arrayDimensions[dim]; n++) {
     bool thisNull;
-    if (nextDim < m_vt->m_arrayRank) {
+    if (nextDim < m_vt->m_arrayRank) { // if not outer dimension
       if (n != 0)
 	v += comma;
       v += '{';
-      thisNull = unparseDimension(v, nseq, nextDim, offset, skip, hex, comma);
+      thisNull = unparseDimension(v, nseq, nextDim, offset, skip, hex, comma, up);
       v += '}';
       offset += skip;
-    } else {
+    } else { // outer dimension
       if (n != 0)
 	v += comma;
+#if 0
       if (needsCommaDimension()) {
 	v += '{';
-	thisNull = unparseValue(v, nseq, offset++, hex, comma);
+	thisNull = unparseValue(v, nseq, offset++, hex, comma, up);
 	v += '}';
       } else
-	thisNull = unparseValue(v, nseq, offset++, hex, comma);
+	thisNull = unparseValue(v, nseq, offset++, hex, comma, up);
+#else
+      thisNull = up.valueUnparse(*this, v, nseq, offset++, hex, comma, needsCommaDimension(), up);
+#endif
     }
     if (thisNull) {
       if (!prevNull)
@@ -894,72 +898,101 @@ unparseDimension(std::string &s, unsigned nseq, size_t dim, size_t offset, size_
   return allNull;
 }
 
+void Unparser::
+elementUnparse(const Value &v, std::string &s, unsigned nSeq, bool hex, char comma,
+	       bool wrap, const Unparser &up) const {
+  if (wrap) s += '{';
+  v.unparseElement(s, nSeq, hex, comma, up);
+  if (wrap) s += '}';
+}
+
 void Value::
-unparseElement(std::string &s, unsigned nSeq, bool hex, char comma) const {
+unparseElement(std::string &s, unsigned nSeq, bool hex, char comma, const Unparser &up) const {
   if (m_vt->m_arrayRank)
-    unparseDimension(s, nSeq, 0, 0, m_vt->m_nItems, hex, comma);
+    unparseDimension(s, nSeq, 0, 0, m_vt->m_nItems, hex, comma, up);
   else
-    unparseValue(s, nSeq, 0, hex, comma);
+    up.valueUnparse(*this, s, nSeq, 0, hex, comma, false, up);
 }
 
 // Format the result, possibly using a user-specified format string
-  void Value::
+void Unparser::
 doFormat(std::string &s, const char *fmt, ...) const {
   va_list ap;
   va_start(ap, fmt);
-  formatAddV(s, m_vt->m_format.empty() ? fmt : m_vt->m_format.c_str(), ap);
+  //  formatAddV(s, m_vt->m_format.empty() ? fmt : m_vt->m_format.c_str(), ap);
+  formatAddV(s, fmt, ap);
   va_end(ap);
 }
 
-void Value::unparse(std::string &s, bool append, bool hex, char comma) const {
+void Value::
+unparse(std::string &s, const Unparser *up, bool append, bool hex, char comma) const {
+  if (!up)
+    up = this;
   if (!append)
     s.clear();
   if (m_vt->m_isSequence) {
     // Now we have allocated the appropriate sequence array, so we can parse elements
-    //    doFormat(s, "\\<%lu\\>", m_nElements);
     for (unsigned n = 0; n < m_nElements; n++) {
       if (n)
 	s += comma;
+#if 0
       if (needsCommaElement()) {
 	s += '{';
-	unparseElement(s, n, hex, comma);
+	unparseElement(s, n, hex, comma, *up);
 	s += '}';
       } else
-	unparseElement(s, n, hex, comma);
+	unparseElement(s, n, hex, comma, *up);
+#else
+      up->elementUnparse(*this, s, n, hex, comma, needsCommaElement(), *up);
+#endif
     }
   } else
-    unparseElement(s, 0, hex, comma);
+    up->elementUnparse(*this, s, 0, hex, comma, false, *up);
+}
+
+bool Unparser::
+valueUnparse(const Value &v, std::string &s, unsigned nSeq, size_t nArray, bool hex, char comma,
+	     bool wrap, const Unparser &up) const {
+  if (wrap) s += '{';
+  bool r = v.unparseValue(s, nSeq, nArray, hex, comma, up);
+  if (wrap) s += '}';
+  return r;
 }
 
 bool Value::
-unparseValue(std::string &s, unsigned nSeq, size_t nArray, bool hex, char comma) const {
+unparseValue(std::string &s, unsigned nSeq, size_t nArray, bool hex, char comma,
+	     const Unparser &up) const {
   switch (m_vt->m_baseType) {
-#define OCPI_DATA_TYPE(sca,c,u,b,run,pretty,storage)     		 \
-  case OA::OCPI_##pretty:		        			 \
-    return unparse##pretty(s,						 \
-		           m_vt->m_isSequence || m_vt->m_arrayRank ?	 \
-		           m_p##pretty[nSeq * m_vt->m_nItems + nArray] : \
-		           m_##pretty, hex);				\
+#define OCPI_DATA_TYPE(sca,c,u,b,run,pretty,storage)     		    \
+  case OA::OCPI_##pretty:		        			    \
+    return up.unparse##pretty(s,					    \
+			      m_vt->m_isSequence || m_vt->m_arrayRank ?	    \
+			      m_p##pretty[nSeq * m_vt->m_nItems + nArray] : \
+			      m_##pretty, hex);				    \
       break;
     OCPI_PROPERTY_DATA_TYPES
     OCPI_DATA_TYPE(sca,corba,letter,bits,TypeValue,Type,store)
-    OCPI_DATA_TYPE(sca,corba,letter,bits,EnumValue,Enum,store)
 #undef OCPI_DATA_TYPE
+  case OA::OCPI_Enum:
+      return up.unparseEnum(s, 
+			    m_vt->m_isSequence || m_vt->m_arrayRank ?
+			    m_pEnum[nSeq * m_vt->m_nItems + nArray] :
+			    m_Enum, m_vt->m_enums, hex);
   case OA::OCPI_Struct:
-    return unparseStruct(s,
-			 m_vt->m_isSequence || m_vt->m_arrayRank ?
-			 m_pStruct[nSeq * m_vt->m_nItems + nArray] :
-		         m_Struct, hex, comma);
+    return up.unparseStruct(s,
+			    m_vt->m_isSequence || m_vt->m_arrayRank ?
+			    m_pStruct[nSeq * m_vt->m_nItems + nArray] :
+			    m_Struct, m_vt->m_members, m_vt->m_nMembers, hex, comma);
   case OA::OCPI_none: case OA::OCPI_scalar_type_limit:;
   }
   return false;
 }
-bool Value::
+bool Unparser::
 unparseBool(std::string &s, bool val, bool) const {
   s += val ? "true" : "false";
   return !val;
 }
-bool Value::
+bool Unparser::
 unparseChar(std::string &s, char argVal, bool hex) const {
   uint8_t val = (uint8_t)(argVal & 0xff);
   if (isprint(val)) {
@@ -1002,7 +1035,7 @@ unparseChar(std::string &s, char argVal, bool hex) const {
   }
   return argVal == 0;
 }
-bool Value::
+bool Unparser::
 unparseDouble(std::string &s, double val, bool) const {
   char *cp;
   asprintf(&cp, "%g", val);
@@ -1016,51 +1049,49 @@ unparseDouble(std::string &s, double val, bool) const {
     }
   s += cp;
   free(cp);
-  //  doFormat(s, "%g", val);
   return *(uint64_t *)&val == 0;
 }
-bool Value::
+bool Unparser::
 unparseFloat(std::string &s, float val, bool hex) const {
   unparseDouble(s, (double)val, hex);
   return *(uint32_t*)&val == 0;
-  //  doFormat(s, "%g", (double)val);
 }
-bool Value::
+bool Unparser::
 unparseShort(std::string &s, int16_t val, bool hex) const {
   doFormat(s, hex ? "0x%lx" : "%ld", (long)val);
   return val == 0;
 }
-bool Value::
+bool Unparser::
 unparseLong(std::string &s, int32_t val, bool hex) const {
   doFormat(s, hex ? "0x%lx" : "%ld", (long)val);
   return val == 0;
 }
-bool Value::
+bool Unparser::
 unparseUChar(std::string &s, uint8_t val, bool hex) const {
   doFormat(s, hex ? "0x%x" : "%u", val);
   return val == 0;
 }
-bool Value::
+bool Unparser::
 unparseULong(std::string &s, uint32_t val, bool hex) const {
   doFormat(s, hex ? "0x%lx" : "%lu", (unsigned long)val);
   return val == 0;
 }
-bool Value::
+bool Unparser::
 unparseUShort(std::string &s, uint16_t val, bool hex) const {
   doFormat(s, hex ? "0x%lx" : "%lu", (unsigned long)val);
   return val == 0;
 }
-bool Value::
+bool Unparser::
 unparseLongLong(std::string &s, int64_t val, bool hex) const {
   doFormat(s, hex ? "0x%llx" : "%lld", (long long)val);
   return val == 0;
 }
-bool Value::
+bool Unparser::
 unparseULongLong(std::string &s, uint64_t val, bool hex) const {
   doFormat(s, hex ? "0x%llx" : "%llu", (unsigned long long)val);
   return val == 0;
 }
-bool Value::
+bool Unparser::
 unparseString(std::string &s, const char *val, bool hex) const {
   if (!val || !*val) {
     s += "\"\"";
@@ -1076,44 +1107,46 @@ bool Value::needsComma() const {
 bool Value::needsCommaDimension() const {
   return /* m_vt->m_arrayRank == 1 || */ m_vt->m_baseType == OA::OCPI_Struct;
 }
+// This value is an element of a sequence.  Does it need to be wrapped in braces?
 bool Value::needsCommaElement() const {
   return m_vt->m_arrayRank != 0 || m_vt->m_baseType == OA::OCPI_Struct;
 }
-bool Value::
-unparseStruct(std::string &s, StructValue val, bool hex, char comma) const {
+bool Unparser::
+unparseStruct(std::string &s, StructValue val, Member *members, size_t nMembers, bool hex,
+	      char comma) const {
   bool seenOne = false;
   
-  for (unsigned n = 0; val && n < m_vt->m_nMembers; n++) {
+  for (unsigned n = 0; val && n < nMembers; n++) {
     Value *v = *val++;
     if (v) {
       if (seenOne)
 	s += comma;
-      s += m_vt->m_members[n].m_name;
+      s += members[n].m_name;
       s += ' ';
       if (v->needsComma()) {
 	s += '{';
-	v->unparse(s, true, hex);
+	v->unparse(s, NULL, true, hex);
 	s += '}';
       } else
-	v->unparse(s, true, hex);
+	v->unparse(s, NULL, true, hex);
       seenOne = true;
     }
   }
   return !seenOne;
 }
-bool Value::
+bool Unparser::
 unparseType(std::string &s, TypeValue val, bool hex) const {
   if (val->needsComma()) {
     s += '{';
-    val->unparse(s, true, hex);
+    val->unparse(s, NULL, true, hex);
     s += '}';
   } else
-    val->unparse(s, true, hex);
+    val->unparse(s, NULL, true, hex);
   return false;
 }
-bool Value::
-unparseEnum(std::string &s, EnumValue val, bool) const {
-  s += m_vt->m_enums[val];
+bool Unparser::
+unparseEnum(std::string &s, EnumValue val, const char **enums, bool) const {
+  s += enums[val];
   return val == 0;
 }
 void Value::

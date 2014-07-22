@@ -232,18 +232,18 @@ rccValue(OU::Value &v, std::string &value, bool /* param */) {
     case OA::OCPI_UShort: 
     case OA::OCPI_LongLong:
       // These are ok since there is no risk of truncation and we use C syntax
-      v.unparse(value, true);
+      v.unparse(value, NULL, true);
       break;
     case OA::OCPI_ULongLong:
       // This can be bad unless we force it to ull since decimal is assumed signed
       // FIXME: perhaps make this an option in the unparser? C++?
-      v.unparse(value, true);
+      v.unparse(value, NULL, true);
       value += "ull";
       break;
     case OA::OCPI_String:
       value += '\"';
       if (v.m_String && v.m_String[0])
-	v.unparse(value, true);
+	v.unparse(value, NULL, true);
       value += '\"';
       break;
     case OA::OCPI_Enum:

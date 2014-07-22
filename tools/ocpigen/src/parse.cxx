@@ -319,7 +319,7 @@ addProperty(ezxml_t prop, bool includeImpl)
   OU::Property *p = new OU::Property;
   
   const char *err =
-    p->parse(prop, includeImpl, (unsigned)(m_ctl.ordinal++));
+    p->parse(prop, includeImpl, (unsigned)(m_ctl.ordinal++), this);
   // Now that have parsed the property "in a vacuum", do two context-sensitive things:
   // Override the default value of parameter properties
   // Skip debug properties if the debug parameter is not present.
@@ -492,7 +492,8 @@ parseImplControl(ezxml_t &xctl) {
   // Now that we have all information about properties and we can actually
   // do the offset calculations and summarize the access type counts and flags
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
-    (**pi).offset(m_ctl.offset, m_ctl.sizeOfConfigSpace);
+    if ((err = (**pi).offset(m_ctl.offset, m_ctl.sizeOfConfigSpace)))
+      return err;
     m_ctl.summarizeAccess(**pi);
   }
   // Allow overriding sizeof config space, giving priority to controlinterface
@@ -797,7 +798,7 @@ initImplPorts(ezxml_t xml, const char *element, const char *prefix, WIPType type
   return NULL;
 }
 
-// Parse a nuumberic value that might be overridden by assembly property values.
+// Parse a numeric value that might be overridden by assembly property values.
 const char *Worker::
 getNumber(ezxml_t x, const char *attr, size_t *np, bool *found,
 	  size_t defaultValue, bool setDefault) {
@@ -825,6 +826,28 @@ getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly) {
   if (!m_instancePVs)
     return OE::getBoolean(x, name, b, trueOnly);
   return NULL;
+}
+
+// This is a callback from the property parser used when some of the
+// property attributes (like array dimensions, sequence or string length),
+// are actually expressions in terms of other properties.
+const char *Worker::
+getValue(const char *sym, OU::ExprValue &val) const {
+  for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
+    if (!strcasecmp((*pi)->m_name.c_str(), sym)) {
+      OU::Property &p = **pi;
+      if (!p.m_isParameter)
+	return OU::esprintf("the '%s' property is invalid here since it is not a parameter",
+			    sym);
+      if (!p.m_default)
+	return OU::esprintf("the '%s' parameter property has no value", sym);
+      if (p.m_baseType != OA::OCPI_ULong)
+	return OU::esprintf("the '%s' parameter property is not ULong, so is invalid here", sym);
+      val.isNumber = true;
+      val.number = p.m_default->m_ULong;
+      return NULL;
+    }
+  return OU::esprintf("here is no property named '%s'", sym);
 }
 
 /*

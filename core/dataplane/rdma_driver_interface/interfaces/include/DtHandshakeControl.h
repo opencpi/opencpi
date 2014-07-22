@@ -148,7 +148,7 @@ namespace DataTransfer {
     };
 
     UpAndRunning             upAndRunning;
-    MailBox                  mailBox[DtOsDataTypes::MAX_SYSTEM_SMBS];
+    MailBox                  mailBox[DtOsDataTypes::MAX_SYSTEM_SMBS+1];// +1 is required, prevents crashes, but no root cause yet.
 
   };
 
