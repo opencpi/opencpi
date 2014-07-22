@@ -5,4 +5,4 @@ sudo yum -y groupinstall "development tools"
 echo Installing packages required: tcl pax python-devel
 sudo yum -y install tcl pax python-devel
 echo Installing 32 bit libraries '(really only required for modelsim)'
-sudo yum -y install glibc.i686 libXft.i686 libXext.i686 ncurses-lib.i686
+sudo yum -y install glibc.i686 libXft.i686 libXext.i686 ncurses-libs.i686
