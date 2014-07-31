@@ -230,6 +230,8 @@ typedef struct {
   // others...
 } RCCPortInfo;
 
+
+#ifndef __cplusplus
 typedef struct {
   /* Information for consistency checking */
   unsigned version, numInputs, numOutputs;
@@ -260,8 +262,47 @@ typedef struct {
   RCCDispatch *dispatch;
   const char *type;
 } RCCEntryTable;
+#endif
+
+
 
 #ifdef __cplusplus
+
+struct RCCDispatch {
+  /* Information for consistency checking */
+  unsigned version, numInputs, numOutputs;
+  size_t propertySize, *memSizes;
+  RCCBoolean threadProfile;
+  /* Methods */
+  RCCMethod *initialize, *start, *stop, *release, *test,
+    *afterConfigure, *beforeQuery;
+  RCCRunMethod *run;
+  /* Implementation information for container behavior */
+  RCCRunCondition *runCondition;
+  RCCPortInfo *portInfo;
+
+  /* Mask indicating which ports may be left unconnected */
+  RCCPortMask optionallyConnectedPorts;
+  size_t memSize;
+};
+
+// Info common to C and C++
+struct RCCWorkerInfo {
+  size_t size, memSize, *memSizes, propertySize;
+  RCCPortInfo *portInfo;
+  RCCPortMask optionallyConnectedPorts; // usually initialized from metadata
+};
+
+struct RCCEntryTable {
+  const char *name;
+  RCCDispatch *dispatch;
+  const char *type;
+};
+
+
+
+
+
 // This is a preliminary implementation that avoids reorganizing the classes for
 // maximum commonality between C and C++ workers. FIXME
  class RCCUserWorker;
@@ -323,8 +364,9 @@ typedef struct {
    virtual uint8_t *rawProperties(size_t &size) const;
    virtual RCCResult
      initialize(), start(), stop(), release(), test(), beforeQuery(), afterConfigure();
-   virtual RCCResult run(bool timeout) = 0;
    RCCResult setError(const char *fmt, ...);
+ public:
+   virtual RCCResult run(bool timeout) = 0;
  };
 }} // end of namespace OCPI::RCC
 #endif

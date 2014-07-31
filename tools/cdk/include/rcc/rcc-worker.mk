@@ -46,7 +46,8 @@ RccSkelSuffix=-skel$(RccSourceSuffix)
 OBJ:=.o
 IncludeDirs+=../include
 ifneq ($(OCPI_DEBUG),0)
-SharedLibLinkOptions+=-g
+#SharedLibLinkOptions+=-g -Xlinker --no-undefined -Xlinker --whole-archive 
+SharedLibLinkOptions+=-g 
 endif
 ifeq ($(shell uname),Linux)
 BF=.so
@@ -97,6 +98,11 @@ Compile_cc=\
   $$(Gc++_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
   $(CompilerWarnings) $(CompilerOptions) \
   $(SharedLibCompileOptions) $(ExtraCompilerOptions) $(IncludeDirs:%=-I%) -o $$@ $$(RccParams) $$<
+Compile_cilk=\
+  $$(Gcilk_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
+  $(CompilerWarnings) $(CompilerOptions) \
+  $(SharedLibCompileOptions) $(ExtraCompilerOptions) $(IncludeDirs:%=-I%) -o $$@ $$(RccParams) $$<
+
 
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk
 
@@ -127,6 +133,11 @@ $(foreach t,$(RccTargets),$(foreach c,$(ParamConfigurations),$(eval $(call DoRcc
 #disable builtin suffix rules
 %.o : %.c
 %.o : %.cc
+
+.SUFFIXES: .cilk
+
+ .cilk.o:
+	cilk++ -c $(CFLAGS) $(CPPFLAGS) -o $@ $<
 
 $(DispatchSourceFile):
 	$(AT)echo Generating dispatch file: $@

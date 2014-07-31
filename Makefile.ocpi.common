@@ -112,7 +112,7 @@ endif
 
 BASICLIBS = -lws2_32
 
-.SUFFIXES : .asm .cpp .cxx .c .obj .exe .lib .idl .d
+.SUFFIXES : .asm .cpp .cxx .c .obj .exe .lib .idl .d .cilk
 
 $(OBJDIR)/%.obj : %.asm
 	$(CC) -c -o "$@" $(ASMFLAGS) \
@@ -128,6 +128,12 @@ $(OBJDIR)/%.obj : %.c
 
 $(OBJDIR)/%.obj : %.cxx
 	$(CXX) -c -o "$@" $(CXXFLAGS) \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<"
+
+$(OBJDIR)/%.obj : %.cilk
+	cilk++ -c -o "$@" $(CXXFLAGS) \
 		$(patsubst %,-D%=1,$(ALLDEFS)) \
 		$(addprefix -I,$(ALLINC)) \
 		"$<"
@@ -158,6 +164,18 @@ $(OBJDIR)/%.obj : %.cpp
 	$(MKDEPEND) \
 		--srcfile "$<" \
 		--target "$(patsubst %.cxx,\$$(OBJDIR)/%.obj,$<)" \
+		--target "$@" \
+		$(MKDEPENDFLAGS) \
+		-o "$@"
+
+%.d : %.cilk
+	cilk++ -E $(CXXFLAGS) \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<" | \
+	$(MKDEPEND) \
+		--srcfile "$<" \
+		--target "$(patsubst %.cilk,\$$(OBJDIR)/%.obj,$<)" \
 		--target "$@" \
 		$(MKDEPENDFLAGS) \
 		-o "$@"
@@ -211,7 +229,7 @@ BASICLIBS += msvcrt.lib
 endif
 
 .SUFFIXES:
-.SUFFIXES: .asm .cpp .cxx .c .obj .exe .lib .idl .d
+.SUFFIXES: .asm .cpp .cxx .c .obj .exe .lib .idl .d .cilk
 
 $(OBJDIR)/%.obj : %.asm
 	$(CC) /c /Fo"$@" /Fd"$(OBJDIR)/vc70.pdb" $(ASMFLAGS) \
@@ -227,6 +245,12 @@ $(OBJDIR)/%.obj : %.c
 
 $(OBJDIR)/%.obj : %.cxx
 	$(CXX) /c /Fo"$@" /Fd"$(OBJDIR)/vc70.pdb" $(CXXFLAGS) \
+		$(patsubst %,/D%=1,$(ALLDEFS)) \
+		$(addprefix /I,$(ALLINC)) \
+		"$<"
+
+$(OBJDIR)/%.obj : %.cilk
+	cilk++ /c /Fo"$@" /Fd"$(OBJDIR)/vc70.pdb" $(CXXFLAGS) \
 		$(patsubst %,/D%=1,$(ALLDEFS)) \
 		$(addprefix /I,$(ALLINC)) \
 		"$<"
@@ -257,6 +281,18 @@ $(OBJDIR)/%.obj : %.cpp
 	$(MKDEPEND) \
 		--srcfile "$<" \
 		--target "$(patsubst %.cxx,\$$(OBJDIR)/%.obj,$<)" \
+		--target "$@" \
+		$(MKDEPENDFLAGS) \
+		-o "$@"
+
+%.d : %.cilk
+	cilk++ /E $(CXXFLAGS) \
+		$(patsubst %,/D%=1,$(ALLDEFS)) \
+		$(addprefix /I,$(ALLINC)) \
+		"$<" | \
+	$(MKDEPEND) \
+		--srcfile "$<" \
+		--target "$(patsubst %.cilk,\$$(OBJDIR)/%.obj,$<)" \
 		--target "$@" \
 		$(MKDEPENDFLAGS) \
 		-o "$@"
@@ -371,7 +407,7 @@ else ifneq ($(OCPI_OS),macos)
 BASICLIBS = -lpthread -lsocket -lnsl -lrt
 endif
 
-.SUFFIXES : .asm .cpp .cxx .c .obj .exe .lib .idl .d
+.SUFFIXES : .asm .cpp .cxx .c .obj .exe .lib .idl .d .cilk
 
 $(OBJDIR)/%.obj : %.asm
 	$(CC) -c -o "$@" $(ASMFLAGS) \
@@ -387,6 +423,12 @@ $(OBJDIR)/%.obj : %.c
 
 $(OBJDIR)/%.obj : %.cxx
 	$(CXX) -c -o "$@" $(CXXFLAGS) -MMD -MP -MF "$@.deps" \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<"
+
+$(OBJDIR)/%.obj : %.cilk
+	cilk++ -c -o "$@" $(CXXFLAGS) -MMD -MP -MF "$@.deps" \
 		$(patsubst %,-D%=1,$(ALLDEFS)) \
 		$(addprefix -I,$(ALLINC)) \
 		"$<"
@@ -419,6 +461,19 @@ ifneq (,)
 	$(MKDEPEND) \
 		--srcfile "$<" \
 		--target "$(patsubst %.cxx,\$$(OBJDIR)/%.obj,$<)" \
+		--target "$@" \
+		$(MKDEPENDFLAGS) \
+		-o "$@"
+
+
+%.d : %.cilk
+	cilk++ -E $(CXXFLAGS) \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<" | \
+	$(MKDEPEND) \
+		--srcfile "$<" \
+		--target "$(patsubst %.cilk,\$$(OBJDIR)/%.obj,$<)" \
 		--target "$@" \
 		$(MKDEPENDFLAGS) \
 		-o "$@"
@@ -505,7 +560,7 @@ endif
 BASICLIBS = # -lstdc++ # Built into the kernel
 
 .SUFFIXES :
-.SUFFIXES : .asm .cpp .cxx .c .obj .exe .lib .idl .out .d
+.SUFFIXES : .asm .cpp .cxx .c .obj .exe .lib .idl .out .d .silk
 
 $(OBJDIR)/%.obj : %.asm
 	$(CC) -c -o "$@" $(ASMFLAGS) \
@@ -521,6 +576,12 @@ $(OBJDIR)/%.obj : %.c
 
 $(OBJDIR)/%.obj : %.cxx
 	$(CXX) -c -o "$@" $(CXXFLAGS) \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<"
+
+$(OBJDIR)/%.obj : %.cilk
+	cilk++ -c -o "$@" $(CXXFLAGS) \
 		$(patsubst %,-D%=1,$(ALLDEFS)) \
 		$(addprefix -I,$(ALLINC)) \
 		"$<"
@@ -551,6 +612,19 @@ $(OBJDIR)/%.obj : %.cpp
 	$(MKDEPEND) \
 		--srcfile "$<" \
 		--target "$(patsubst %.cxx,\$$(OBJDIR)/%.obj,$<)" \
+		--target "$@" \
+		$(MKDEPENDFLAGS) \
+		-o "$@"
+
+
+%.d : %.cilk
+	cilk++ -E $(CXXFLAGS) \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<" | \
+	$(MKDEPEND) \
+		--srcfile "$<" \
+		--target "$(patsubst %.cilk,\$$(OBJDIR)/%.obj,$<)" \
 		--target "$@" \
 		$(MKDEPENDFLAGS) \
 		-o "$@"

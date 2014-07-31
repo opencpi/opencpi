@@ -1,0 +1,21 @@
+<application done='file_write'>
+  <instance component='file_read'>
+    <property name='filename' value='test.input'/>
+    <property name='granularity' value='4'/>
+    <property name='messageSize' value='16'/>
+  </instance>
+  <instance component='jm_cc'>
+    <property name='biasValue' value='0x01020304'/>
+  </instance>
+  <instance component='file_write'>
+    <property name='filename' value='test.outputwrong'/>
+  </instance>
+  <connection>
+    <port instance='file_read' name='out' xferrole='flowcontrol'/>
+    <port instance='jm_cc' name='in'/>
+  </connection>
+  <connection>
+    <port instance='jm_cc' name='out'/>
+    <port instance='file_write' name='in'/>
+  </connection>
+</application>

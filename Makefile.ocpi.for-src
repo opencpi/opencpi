@@ -75,16 +75,19 @@ endif
 
 CSOURCES = $(filter-out $(EXCLUDE_SOURCES),$(wildcard *.c))
 CXXSOURCES = $(filter-out $(EXCLUDE_SOURCES),$(wildcard *.cxx))
+CILKSOURCES = $(filter-out $(EXCLUDE_SOURCES),$(wildcard *.cilk))
 CPPSOURCES = $(filter-out $(EXCLUDE_SOURCES),$(wildcard *.cpp))
 ASMSOURCES = $(filter-out $(EXCLUDE_SOURCES),$(wildcard *.asm))
 COBJECTS = $(patsubst %.c,$(OBJDIR)/%.obj,$(CSOURCES))
 CXXOBJECTS = $(patsubst %.cxx,$(OBJDIR)/%.obj,$(CXXSOURCES))
+CILKOBJECTS = $(patsubst %.cilk,$(OBJDIR)/%.obj,$(CILKSOURCES))
 CPPOBJECTS = $(patsubst %.cpp,$(OBJDIR)/%.obj,$(CPPSOURCES))
 ASMOBJECTS = $(patsubst %.asm,$(OBJDIR)/%.obj,$(ASMSOURCES))
-OBJECTS = $(COBJECTS) $(CXXOBJECTS) $(CPPOBJECTS) $(ASMOBJECTS) 
+OBJECTS = $(COBJECTS) $(CXXOBJECTS) $(CPPOBJECTS) $(ASMOBJECTS) $(CILKOBJECTS)
 CDEPENDS = $(patsubst %.c,%.d,$(CSOURCES))
 CXXDEPENDS = $(patsubst %.cxx,%.d,$(CXXSOURCES))
 CPPDEPENDS = $(patsubst %.cpp,%.d,$(CPPSOURCES))
+CILKDEPENDS = $(patsubst %.cilk,%.d,$(CILKSOURCES))
 
 # For mains in normal (non-bin) src dir
 ifneq ($(wildcard *_main.c*),)
@@ -100,7 +103,7 @@ endif
 objdir:
 	$(AT)if test "x$(OCPI_OUT_DIR)" != "x" -a ! -d $(OBJDIR) ; then echo Creating object directory $(OBJDIR); mkdir -p $(OBJDIR) ; fi
 
-depends: $(CDEPENDS) $(CXXDEPENDS) $(CPPDEPENDS)
+depends: $(CDEPENDS) $(CXXDEPENDS) $(CILKDEPENDS) $(CPPDEPENDS)
 #generated: depends
 objects: generated objdir $(OBJECTS)
 clean:: cleanup
@@ -114,10 +117,12 @@ distclean:: distcleanup
 
 $(COBJECTS): $(OBJDIR)/%.obj: %.c
 $(CXXOBJECTS): $(OBJDIR)/%.obj: %.cxx
+$(CILKOBJECTS): $(OBJDIR)/%.obj: %.cilk
 $(CPPOBJECTS): $(OBJDIR)/%.obj: %.cpp
 $(ASMOBJECTS): $(OBJDIR)/%.obj: %.asm
 $(CDEPENDS): %.d: %.c
 $(CXXDEPENDS): %.d: %.cxx 
+$(CILKDEPENDS): %.d: %.cilk
 $(CPPDEPENDS): %.d: %.cpp
 -include $(OBJDIR)/*.deps
 #

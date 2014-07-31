@@ -97,13 +97,15 @@ endif
 
 CSOURCES = $(filter-out $(EXCLUDE_SOURCES),$(wildcard *.c))
 CXXSOURCES = $(filter-out $(EXCLUDE_SOURCES),$(wildcard *.cxx))
+CILKSOURCES = $(filter-out $(EXCLUDE_SOURCES),$(wildcard *.cilk))
 ASMSOURCES = $(filter-out $(EXCLUDE_SOURCES),$(wildcard *.asm))
 COBJECTS = $(patsubst %.c,$(OBJDIR)/%.obj,$(CSOURCES))
-CXXOBJECTS = $(patsubst %.cxx,$(OBJDIR)/%.obj,$(CXXSOURCES))
+CILKOBJECTS = $(patsubst %.cilk,$(OBJDIR)/%.obj,$(CILKSOURCES))
 ASMOBJECTS = $(patsubst %.asm,$(OBJDIR)/%.obj,$(ASMSOURCES))
-OBJECTS = $(COBJECTS) $(CXXOBJECTS) $(ASMOBJECTS)
+OBJECTS = $(COBJECTS) $(CXXOBJECTS)  $(CILKOBJECTS) $(ASMOBJECTS)
 CDEPENDS = $(patsubst %.c,%.d,$(CSOURCES))
 CXXDEPENDS = $(patsubst %.cxx,%.d,$(CXXSOURCES))
+CILKDEPENDS = $(patsubst %.cilk,%.d,$(CILKSOURCES))
 
 CMAINS = $(filter-out $(EXCLUDE_SOURCES),$(wildcard *_main.c))
 CXXMAINS = $(filter-out $(EXCLUDE_SOURCES),$(wildcard *_main.cxx))
@@ -144,7 +146,7 @@ objdir:
 		mkdir -p $(OBJDIR) ; \
 	fi
 
-depends: $(CDEPENDS) $(CXXDEPENDS)
+depends: $(CDEPENDS) $(CXXDEPENDS) $(CILKDEPENDS)
 generated: $(ALLGENERATED)
 executables: generated objdir $(EXECUTABLES)
 clean: cleanup
@@ -217,9 +219,11 @@ endif
 
 $(COBJECTS): $(OBJDIR)/%.obj: %.c
 $(CXXOBJECTS): $(OBJDIR)/%.obj: %.cxx
+$(CILKOBJECTS): $(OBJDIR)/%.obj: %.cilk
 $(ASMOBJECTS): $(OBJDIR)/%.obj: %.asm
 $(CDEPENDS): %.d: %.c
 $(CXXDEPENDS): %.d: %.cxx
+$(CILKDEPENDS): %.d: %.cilk
 -include $(OBJDIR)/*.deps
 
 #

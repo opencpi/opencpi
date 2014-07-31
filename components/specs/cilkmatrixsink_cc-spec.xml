@@ -1,0 +1,5 @@
+<ComponentSpec Name="cilkmatrixsink_cc">
+  <DataInterfaceSpec Name="in">
+    <xi:include href="stream32_protocol.xml"/>
+  </DataInterfaceSpec>
+</ComponentSpec>

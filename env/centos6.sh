@@ -2,7 +2,7 @@
 
 # #### Compiler linker flags ############################################## #
 
-export OCPI_CXXFLAGS="$OCPI_CXXFLAGS -Wno-dangling-else -std=c++0x"
+#export OCPI_CXXFLAGS="$OCPI_CXXFLAGS -Wno-dangling-else -std=c++0x"
 
 # #### Shared library build settings ###################################### #
 

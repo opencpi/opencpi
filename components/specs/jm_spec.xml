@@ -1,0 +1,9 @@
+<ComponentSpec Name="jm_cc">
+  <Property Name="biasValue" Initial="true" readable='true'/>
+  <DataInterfaceSpec Name="in">
+    <xi:include href="stream32_protocol.xml"/>
+  </DataInterfaceSpec>
+  <DataInterfaceSpec Name="out" Producer="true">
+    <xi:include href="stream32_protocol.xml"/>
+  </DataInterfaceSpec>
+</ComponentSpec>

@@ -1,0 +1,65 @@
+
+#include "jmc.h"
+
+#define CILK_FOR_GRAINSIZE 128
+
+#pragma cilk grainsize = 128
+
+using namespace OCPI::RCC; // for easy access to RCC data types and constants
+
+class JmWorker : public JmWorkerBase {
+
+  struct CilkArgs {
+    uint32_t timeout;
+    JmWorker * worker;
+    RCCResult * result;
+  };
+
+  static int __cilk cilkEntrypointWrapper (void *pargs )
+  {
+    printf("In wrapper \n");
+    // Unbundle the parameters and do the work
+    CilkArgs * args = (CilkArgs*)pargs;
+    printf("In cilk context\n");
+    *args->result = args->worker->run_cilk( args->timeout );
+    return 0;
+  }
+
+  RCCResult run(bool timeout ) {
+      cilk::context cilkCtx;
+      printf("Running Cilk worker \n");
+      RCCResult rc;
+      CilkArgs args = { timeout, this, &rc  };
+//      cilkCtx.set_worker_count( 2 );  // Number of cores to use      
+      printf("calling wrapper 1\n");
+      cilkCtx.run( (cilk::pcilkfn)cilkEntrypointWrapper, (void *)&args);      
+      return rc;
+    }
+  
+
+  RCCResult __cilk run_cilk(bool /*timedout*/) {
+
+    const uint32_t *inData  = in.data().data;   // data arg of data message at "in" port
+          uint32_t *outData = out.data().data;  // same at "out" port
+
+    out.checkLength( in.length());               // make sure input will fit in output buffer
+
+    cilk_for ( uint32_t n = 0; n < in.data_length(); n++) // n is length in sequence elements of input
+      {
+	printf(" In loop, id = %d\n", cilk::current_worker_id() );
+	outData[n] = inData[n] + properties().biasValue;
+      }
+
+    out.setInfo( in.opCode(), in.length());      // Set the metadata for the output message
+
+    return in.length() ? OCPI::RCC::RCC_ADVANCE : OCPI::RCC::RCC_ADVANCE_DONE;
+  }
+
+};
+
+JM_START_INFO
+// Insert any static info assignments here (memSize, memSizes, portInfo)
+// e.g.: info.memSize = sizeof(MyMemoryStruct);
+JM_END_INFO
+
+

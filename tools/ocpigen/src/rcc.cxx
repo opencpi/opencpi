@@ -417,6 +417,7 @@ emitImplRCC() {
       Port *port = m_ports[n];
       // Define the union of structures for messages for operations
       fprintf(f,
+	      "protected:\n"
 	      "  class %c%sPort : public OCPI::RCC::RCCUserPort {\n",
 	      toupper(port->name[0]), port->name+1);
       // Now emit structs for messages

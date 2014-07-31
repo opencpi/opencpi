@@ -1,3 +1,4 @@
+
  /*
   *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
   *
@@ -68,6 +69,15 @@
  #include <OcpiParentChild.h>
  #include <OcpiTimeEmitCategories.h>
 
+#ifdef CILK
+#ifndef __cilkplusplus
+#define __cilkplusplus
+#endif
+#include "cilk.h"
+#endif
+
+
+
  namespace OC = OCPI::Container;
  namespace OS = OCPI::OS;
  namespace OU = OCPI::Util;
@@ -75,6 +85,19 @@
 
  namespace OCPI {
    namespace RCC {
+
+
+#ifdef CILK
+     struct CilkArgs {
+       uint32_t timeout;
+       RCCUserWorker * worker;
+       RCCResult * result;
+     };
+
+     extern int __cilk cilkEntrypointWrapper (void *pargs );
+#endif
+
+
  #if 0
  #define SET_LAST_ERROR_TO_WORKER_ERROR_STRING(x)                        \
    if ( x->m_rcc_worker->m_context->errorString ) {                                \
@@ -712,8 +735,23 @@
        pthread_setspecific(Driver::s_threadKey, this);
        OCPI_EMIT_REGISTER_FULL_VAR( "Worker Run", OCPI::Time::Emit::u, 1, OCPI::Time::Emit::State, wre ); \
        OCPI_EMIT_STATE_CAT_NR_(wre, 1, OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_CAT_WORKER_DEV_RUN_TIME);
-       RCCResult rc = m_dispatch ?
-	 m_dispatch->run(m_context, timeout, &newRunCondition) : m_user->run(timeout);
+       RCCResult rc;
+
+
+       printf("About to run a worker\n");
+
+       if ( m_dispatch ) {
+	 printf("Running C worker \n");
+	 rc = m_dispatch->run(m_context, timeout, &newRunCondition);
+       }
+       else {
+	 printf("Running C++ worker \n");
+	 rc = m_user->run(timeout);
+       }
+
+
+       //jwh
+
        OCPI_EMIT_STATE_CAT_NR_(wre, 0, OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_CAT_WORKER_DEV_RUN_TIME);
        char *err = m_context->errorString ? m_context->errorString : m_errorString;
        if (err) {

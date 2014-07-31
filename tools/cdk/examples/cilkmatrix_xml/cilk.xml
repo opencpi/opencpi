@@ -1,0 +1,19 @@
+<application done='cilkmatrix_cc'>
+  <instance component='cilkmatrixsrc_cc'>
+    <property name='size' value='500'/>
+  </instance>
+  <instance component='cilkmatrix_cc'>
+    <property name='biasValue' value='0x01020304'/>
+  </instance>
+  <instance component='cilkmatrixsink_cc'>
+    <property name='filename' value='test.outputwrong'/>
+  </instance>
+  <connection>
+    <port instance='cilkmatrixsrc_cc' name='out' xferrole='flowcontrol'/>
+    <port instance='cilkmatrix_cc' name='in'/>
+  </connection>
+  <connection>
+    <port instance='cilkmatrix_cc' name='out'/>
+    <port instance='cilkmatrixsink_cc' name='in'/>
+  </connection>
+</application>

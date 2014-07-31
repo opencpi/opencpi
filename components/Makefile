@@ -117,10 +117,14 @@ Implementations = \
         file_read.hdl \
 	file_write.hdl \
         replicate.rcc \
-	bias_cc.rcc \
         bias_param.rcc \
+	jm.rcc \
+	cilkmatrix_cc.rcc \
+	cilkmatrixsrc_cc.rcc \
+	cilkmatrixsink_cc.rcc \
 	$(Tests)
 
+#	bias_cc.rcc \
 #	fir_prog.hdl \
 
 #	wbr.hdl 

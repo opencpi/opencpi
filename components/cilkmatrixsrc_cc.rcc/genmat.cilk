@@ -1,0 +1,89 @@
+
+extern "C++" {
+#include "cilkmatrixsrc_cc-worker.hh"
+#include <stdio.h>
+#include <iostream>
+}
+
+#ifndef __cilkplusplus
+#define __cilkplusplus
+#endif
+#include "cilk.h"
+
+
+using namespace OCPI::RCC; // for easy access to RCC data types and constants
+
+#define DEFAULT_MATRIX_SIZE 1000
+// cilk_for granularity.
+#define CILK_FOR_GRAINSIZE 128
+
+static int count = 0;
+
+class Cilkmatrixsrc_ccWorker : public Cilkmatrixsrc_ccWorkerBase {
+
+  
+  struct CilkArgs {
+    uint32_t timeout;
+    Cilkmatrixsrc_ccWorker * worker;
+    RCCResult * result;
+  };
+
+  static int __cilk cilkEntrypointWrapper (void *pargs )
+  {
+    printf("In wrapper Cilkmatrixsrc_ccWorker \n");
+    // Unbundle the parameters and do the work
+    CilkArgs * args = (CilkArgs*)pargs;
+    *args->result = args->worker->run_cilk( args->timeout );
+    return 0;
+  }
+
+  RCCResult run(bool timeout ) {
+      cilk::context cilkCtx;
+      printf("Running Cilk worker \n");
+      RCCResult rc;
+      
+         CilkArgs args = { timeout, this, &rc  };
+//      cilkCtx.set_worker_count( 2 );  // Number of cores to use      
+      printf("calling wrapper 1\n");
+
+      cilkCtx.run( (cilk::pcilkfn)cilkEntrypointWrapper, (void *)&args);      
+      return rc;
+    }
+  
+
+  RCCResult __cilk run_cilk(bool /*timedout*/) {
+
+    std::cout << "In CILK RUN !!" << std::endl;
+
+    float *outData = (float*)out.data().data; 
+
+    int nn = out.length() / sizeof(float);
+
+    cilk_for(int i = 0; i < nn; ++i) {
+      outData[i] = (float) ((i * i) % 1024 - 512) / 512;
+    }
+
+
+
+    if ( count++ < 10 ) {
+      out.setInfo( 1, out.length());      // Set the metadata for the output message
+      return OCPI::RCC::RCC_ADVANCE;
+    }
+    else {
+      out.setInfo( 0, 0);      // Set the metadata for the output message
+      return OCPI::RCC::RCC_ADVANCE_DONE;
+    }
+    //    return in.length() ? OCPI::RCC::RCC_ADVANCE : OCPI::RCC::RCC_ADVANCE_DONE;
+
+  }
+
+};
+
+
+
+CILKMATRIXSRC_CC_START_INFO
+// Insert any static info assignments here (memSize, memSizes, portInfo)
+// e.g.: info.memSize = sizeof(MyMemoryStruct);
+CILKMATRIXSRC_CC_END_INFO
+
+

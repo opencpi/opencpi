@@ -1,0 +1,6 @@
+<ComponentSpec Name="cilkmatrixsrc_cc">
+  <Property Name="size" readable='true' Type="ULong" />
+  <DataInterfaceSpec Name="out" Producer="true">
+    <xi:include href="stream32_protocol.xml"/>
+  </DataInterfaceSpec>
+</ComponentSpec>

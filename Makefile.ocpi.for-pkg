@@ -113,6 +113,9 @@ CSOURCES = $(filter-out $(addprefix %/,$(EXCLUDE_SOURCES)),\
 CXXSOURCES = $(filter-out $(addprefix %/,$(EXCLUDE_SOURCES)),\
                         $(wildcard src/*.cxx) $(wildcard $(patsubst %,%/src/*.cxx,$(FACILITIES)))) \
 			$(patsubst %.idl,%_c.cxx,$(wildcard idl/*.idl) $(wildcard $(patsubst %,%/idl/*.idl,$(FACILITIES)))) 
+CILKSOURCES = $(filter-out $(addprefix %/,$(EXCLUDE_SOURCES)),\
+                        $(wildcard src/*.cilk) $(wildcard $(patsubst %,%/src/*.cilk,$(FACILITIES)))) \
+			$(patsubst %.idl,%_c.cilk,$(wildcard idl/*.idl) $(wildcard $(patsubst %,%/idl/*.idl,$(FACILITIES)))) 
 CPPSOURCES = $(filter-out $(addprefix %/,$(EXCLUDE_SOURCES)),\
                           $(wildcard src/*.cpp) $(wildcard $(patsubst %,%/src/*.cpp,$(FACILITIES)))) \
 			  $(patsubst %.idl,%_c.cpp,$(wildcard idl/*.idl) $(wildcard $(patsubst %,%/idl/*.idl,$(FACILITIES)))) 
@@ -122,11 +125,13 @@ ASMSOURCES = $(filter-out $(addprefix %/,$(EXCLUDE_SOURCES)),$(wildcard $(patsub
 ifneq ($(OBJDIR),.)
 OBJECTS = $(sort $(patsubst %.c,$(OBJDIR)/%.obj,$(notdir $(CSOURCES))) \
 	$(patsubst %.cxx,$(OBJDIR)/%.obj,$(notdir $(CXXSOURCES))) \
+	$(patsubst %.cilk,$(OBJDIR)/%.obj,$(notdir $(CILKSOURCES))) \
 	$(patsubst %.cpp,$(OBJDIR)/%.obj,$(notdir $(CPPSOURCES))) \
 	$(patsubst %.asm,$(OBJDIR)/%.obj,$(notdir $(ASMSOURCES))))
 else
 OBJECTS = $(sort $(patsubst %.c,%.obj,$(CSOURCES)) \
 	$(patsubst %.cxx,%.obj,$(CXXSOURCES)) \
+	$(patsubst %.cilk,%.obj,$(CILKSOURCES)) \
 	$(patsubst %.cpp,%.obj,$(CPPSOURCES)) \
 	$(patsubst %.asm,%.obj,$(ASMSOURCES)))
 endif
