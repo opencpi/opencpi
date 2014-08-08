@@ -101,6 +101,10 @@ add to tree.
 
 int
 main(int argc, char **argv) {
+
+  //  printf("******** IN ocpiGen *********\n");
+
+
   if (options.setArgv(argv))
     return 1;
   const char *outDir = NULL, *wksFile = NULL, *package = NULL;
@@ -226,7 +230,14 @@ main(int argc, char **argv) {
 	return 1;
       }
     else {
+
+      //      printf("***** About to create worker ******\n");
+      
       Worker *w = Worker::create(*ap, NULL, package, outDir, NULL, 0, err);
+
+
+
+
       if (err)
 	fprintf(stderr, "For file %s: %s\n", *ap, err);
       else if (attribute && (err = w->emitAttribute(attribute)))
@@ -281,5 +292,9 @@ main(int argc, char **argv) {
 	}
       delete w;
     }
+
+
+//  printf("***** Returning from ocpigen, error = %d\n", err?1:0 );
+
   return err ? 1 : 0;
 }

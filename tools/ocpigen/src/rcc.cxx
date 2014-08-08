@@ -314,6 +314,9 @@ emitImplRCC() {
 	  "#define RCC_WORKER_%s_H__\n"
 	  "#include <RCC_Worker.h>\n",
 	  m_implName, m_language == C ? "C" : "C++", upper, upper);
+  if ( m_language == CILK ) {
+    fprintf(f,"#include \"cilk.h\"\n");
+  }
   const char *last;
   unsigned in = 0, out = 0;
   if (m_ports.size() && m_language == C) {
@@ -391,7 +394,7 @@ emitImplRCC() {
       fprintf(f, "};\n");
   }
   const char *mName;
-  if (m_language == CC) {
+  if (m_language == CC || m_language == CILK )  {
     std::string s;
     camel(s, m_implName, "WorkerBase", NULL);
     fprintf(f,
@@ -402,6 +405,13 @@ emitImplRCC() {
 	    " */\n"
 	    "class %s : public OCPI::RCC::RCCUserWorker {\n",
 	    s.c_str());
+    if ( m_language == CILK )  {
+      fprintf(f,
+	      "\n This section contains the cilk data members\n"
+	      "protected:\n"
+	      "  cilk::context cilkCtx;\n"
+	      );
+    }
     if (m_ctl.nRunProperties)
       fprintf(f,
 	      "protected:\n"
@@ -657,8 +667,20 @@ const char *Worker::
 emitSkelRCC() {
   const char *err;
   FILE *f;
+  char * ext;
+  switch ( m_language ) {
+  case C:
+    ext = ".c";
+    break;
+  case CC:
+    ext = ".cc";
+    break;
+  case CILK:
+    ext = ".cilk";
+    break;    
+  }
   if ((err = openOutput(m_fileName.c_str(), m_outDir, "", "-skel",
-			m_language == C ? ".c" : ".cc", NULL, f)))
+		       ext, NULL, f)))
     return err;
   fprintf(f, "/*\n");
   printgen(f, " *", m_file.c_str(), true);
@@ -671,7 +693,7 @@ emitSkelRCC() {
 	  m_language == C ? RCC_C_IMPL : RCC_CC_IMPL,
 	  m_language == C ? RCC_C_HEADER : RCC_CC_HEADER);
   const char *upper = upperdup(m_implName);
-  if (m_language == CC) {
+  if (m_language == CC || m_language == CILK ) {
     if (m_ctl.controlOps) {
       fprintf(f,"  RCCResult ");
       const char *last = "";
@@ -739,7 +761,7 @@ emitSkelRCC() {
 	    "  RCCResult run(bool /*timedout*/) {\n"
 	    "    return RCC_ADVANCE;\n"
 	    "  }\n");
-  if (m_language == CC)
+  if (m_language == CC || m_language == CILK ) 
     fprintf(f,
 	    "};\n\n"
 	    "%s_START_INFO\n"
@@ -829,6 +851,9 @@ parseRcc(const char *package) {
     m_language = C;
   else if (!strcasecmp(lang, "C++"))
     m_language = CC;
+  else if (!strcasecmp(lang, "Cilk")) {
+    m_language = CILK;
+  }
   else
     return OU::esprintf("Language attribute \"%s\" is not \"C\" or \"C++\""
 			" in RccWorker xml file: '%s'", lang, m_file.c_str());

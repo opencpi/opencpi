@@ -6,9 +6,10 @@ extern "C++" {
 #include <math.h>
 };
 
-#include <cilk.h>
-#include <cilkview.h>
-
+#ifndef __cilkplusplus
+#define __cilkplusplus
+#include "cilk.h"
+#endif
 
 using namespace OCPI::RCC; // for easy access to RCC data types and constants
 
@@ -18,25 +19,27 @@ using namespace OCPI::RCC; // for easy access to RCC data types and constants
 
 
 // Transpose a double precsion square n x n matrix, A, in place
-void matrix_transpose(float* A, int l2dim )
+void __cilk matrix_transpose(float* A, int l2dim )
 {
   int n = (int)sqrt(l2dim);
-    //  #pragma cilk_grainsize allows expressions, such as n/4
-    //#pragma cilk_grainsize=CILK_FOR_GRAINSIZE
-    cilk_for(int i = 1; i < n; ++i) {
 
-	printf(" In loop, id = %d\n", cilk::current_worker_id() );
+  //  #pragma cilk_grainsize allows expressions, such as n/4
+  //#pragma cilk_grainsize=CILK_FOR_GRAINSIZE
+  cilk_for (int i = 1; i < n; ++i) {
 
-        // This is the only Cilk++ keyword used in this program
-        for (int j = 0; j < i; ++j) {
-            // Swap A[i][j] and A[j][i]. The matrix is treated as one-dimensional.
-	  float temp = A[j* n + i];
-	  A[j * n + i] = A[i * n + j];
-	  A[i * n + j] = temp;
-        }
+    printf(" In loop, id = %d\n", cilk::current_worker_id() );
+    
+    // This is the only Cilk++ keyword used in this program
+    for (int j = 0; j < i; ++j) {
+      // Swap A[i][j] and A[j][i]. The matrix is treated as one-dimensional.
+      float temp = A[j* n + i];
+      A[j * n + i] = A[i * n + j];
+      A[i * n + j] = temp;
     }
-    return;
+  }
+  return;
 }
+
 
 
 class Cilkmatrix_ccWorker : public Cilkmatrix_ccWorkerBase {
@@ -47,31 +50,30 @@ class Cilkmatrix_ccWorker : public Cilkmatrix_ccWorkerBase {
     RCCResult * result;
   };
 
-  static int __cilk cilkEntrypointWrapper (void *pargs )
+  static int  cilkEntrypointWrapper (void *pargs )
   {
     printf("In wrapper \n");
     // Unbundle the parameters and do the work
     CilkArgs * args = (CilkArgs*)pargs;
     printf("In cilk context\n");
-    *args->result = args->worker->run_cilk( args->timeout );
+    *args->result = args->worker->run( args->timeout );
     return 0;
   }
 
-  RCCResult run(bool timeout ) {
+  RCCResult run(bool  timeout  ) {
       cilk::context cilkCtx;
       printf("Running Cilk worker \n");
       RCCResult rc;
-      
-         CilkArgs args = { timeout, this, &rc  };
-//      cilkCtx.set_worker_count( 2 );  // Number of cores to use      
+      CilkArgs args = { timeout, this, &rc  };
+      //      cilkCtx.set_worker_count( 2 );  // Number of cores to use      
       printf("calling wrapper 1\n");
-
       cilkCtx.run( (cilk::pcilkfn)cilkEntrypointWrapper, (void *)&args);      
       return rc;
-    }
+  }
   
 
-  RCCResult __cilk run_cilk(bool /*timedout*/) {
+  RCCResult  run_cilk(bool timeout) {
+    timeout = false; // for compiler
 
     std::cout << "In CILK RUN !!" << std::endl;
 
@@ -88,6 +90,8 @@ class Cilkmatrix_ccWorker : public Cilkmatrix_ccWorkerBase {
     out.setInfo( in.opCode(), in.length());      // Set the metadata for the output message
 
     return in.length() ? OCPI::RCC::RCC_ADVANCE : OCPI::RCC::RCC_ADVANCE_DONE;
+
+
   }
 
 };

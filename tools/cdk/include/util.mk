@@ -84,9 +84,11 @@ endif
 $(call OcpiDbgVar,Model)
 Models:=xm rcc hdl ocl
 Language_rcc:=c
-Languages_rcc:=c c++
+Languages_rcc:=c c++ cilk
 Suffix_rcc_c:=c
 Suffix_rcc_c++:=cc
+Suffix_rcc_cilk:=cilk
+
 
 Suffix_hdl_verilog:=v
 Suffix_hdl_vhdl:=vhd

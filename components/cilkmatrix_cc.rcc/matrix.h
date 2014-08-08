@@ -4,9 +4,6 @@ extern "C++" {
 #include <stdio.h>
 }
 
-#ifndef __cilkplusplus
-#define __cilkplusplus
-#endif
 #include "cilk.h"
 
 

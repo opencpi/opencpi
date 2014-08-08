@@ -368,7 +368,8 @@ enum Language {
   Verilog,
   VHDL,
   C,
-  CC
+  CC,
+  CILK
 };
 
 
