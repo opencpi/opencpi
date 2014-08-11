@@ -407,6 +407,7 @@ class Worker : public Parsed, public OU::IdentResolver {
   const char *m_specFile;
   const char *m_implName;
   const char *m_specName;
+  std::string m_package;
   bool m_isThreaded;
   size_t m_maxPortTypeName;
   Control m_ctl;
@@ -422,6 +423,7 @@ class Worker : public Parsed, public OU::IdentResolver {
   int m_defaultDataWidth;           // initialized to -1 to allow zero
   Language m_language;
   Assembly *m_assembly;
+  Worker *m_slave;
   Signals m_signals;
   const char *m_library;            // the component library name where the xml was found
   bool m_outer;                     // only generate the outer skeleton, not the inner one
@@ -454,6 +456,7 @@ class Worker : public Parsed, public OU::IdentResolver {
     *parseOclAssy(),
     *parseImplControl(ezxml_t &xctl),
     *parseImplLocalMemory(),
+    *findPackage(ezxml_t spec, const char *package),
     *parseSpecControl(ezxml_t ps),
     *parseSpec(const char *package = NULL),
     *preParseSpecPort(ezxml_t x),

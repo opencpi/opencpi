@@ -336,7 +336,7 @@ namespace OCPI {
     // external=port, connect=instance, then to or from?
     const char *Assembly::Instance::
     parseConnection(ezxml_t ix, Assembly &a) {
-      const char *err, *c, *e;
+      const char *err, *c, *e, *s;
       unsigned n;
       if ((c = ezxml_cattr(ix, "connect")) &&
 	  ((err = a.getInstance(c, n)) ||
@@ -346,6 +346,20 @@ namespace OCPI {
       if ((e = ezxml_cattr(ix, "external")) &&
 	  (err = a.addExternalConnection(m_ordinal, e)))
 	return err;
+      if ((s = ezxml_cattr(ix, "slave")))
+	if ((err = a.getInstance(s, m_slave)))
+	  return err;
+	else {
+	  Instance &slave = a.m_instances[m_slave];
+	  if (slave.m_hasMaster)
+	    return esprintf("Instance %s is slave to multiple proxies",
+			    slave.m_name.c_str());
+	  else {
+	    m_hasSlave = true;
+	    slave.m_hasMaster = true;
+	    slave.m_master = m_ordinal;
+	  }
+	}
       return NULL;
     }
 
@@ -404,13 +418,17 @@ namespace OCPI {
       }
       return NULL;
     }
+    // There is no non-default constructor so initialize here...
     const char *Assembly::Instance::
     parse(ezxml_t ix, Assembly &a, unsigned ordinal, const char **extraInstAttrs,
 	  const PValue *params) {
       m_ordinal = ordinal;
+      m_hasSlave = false;
+      m_hasMaster = false;
       const char *err;
       static const char *instAttrs[] = { "component", "Worker", "Name", "connect", "to", "from",
-					 "external", "selection", "index", "externals", NULL};
+					 "external", "selection", "index", "externals", "slave",
+					 NULL};
       if ((err = OE::checkAttrsVV(ix, instAttrs, extraInstAttrs, NULL)) ||
 	  (err = OE::getBoolean(ix, "externals", &m_externals)))
 	return err;
@@ -439,9 +457,8 @@ namespace OCPI {
       if ((err = OE::checkElements(ix, "property", NULL)))
 	return err;
       // Figure out the name of this instance.
-      OE::getOptionalString(ix, m_name, "name");
+      if (!OE::getOptionalString(ix, m_name, "name")) {
       // default is component%u unless there is only one, in which case it is "component".
-      if (m_name.empty()) {
 	unsigned me = 0, n = 0;
 	for (ezxml_t x = ezxml_cchild(a.xml(), "instance"); x; x = ezxml_next(x)) {
 	  std::string base;
@@ -491,7 +508,7 @@ namespace OCPI {
 	  return err;
       // Now check for additional or override values from parameters
       return m_parameters.parse(ix, "name", "component", "worker", "selection", "connect",
-				"external", "from", "to", "externals", NULL);
+				"external", "from", "to", "externals", "slave", NULL);
     }
 
     Assembly::Connection::

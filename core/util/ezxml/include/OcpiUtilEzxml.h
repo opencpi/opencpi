@@ -265,10 +265,10 @@ namespace OCPI {
         getUNum(const char *s, size_t *valp),
         getUNum64(const char *s, const char *end, uint64_t &valp),
         getNum64(const char *s, const char *end, int64_t &valp),
-        parseBool(const char *a, const char *end, bool *b);
-      extern void
-	getNameWithDefault(ezxml_t x, std::string &s, const char *fmt, unsigned &ord),
+        parseBool(const char *a, const char *end, bool *b),
 	getOptionalString(ezxml_t x, std::string &s, const char *attr);
+      extern void
+	getNameWithDefault(ezxml_t x, std::string &s, const char *fmt, unsigned &ord);
     }
 #define EZXML_FOR_ALL_ATTRIBUTES(x, n, v) \
     for (char **_ap = x ? x->attr : 0; _ap && *_ap ? (n = _ap[0], v = _ap[1], 1) : 0; _ap += 2)

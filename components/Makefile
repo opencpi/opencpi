@@ -120,6 +120,7 @@ Implementations = \
 	bias_cc.rcc \
         bias_param.rcc \
 	hello_world.rcc \
+	proxy.rcc \
 	$(Tests)
 
 #	fir_prog.hdl \

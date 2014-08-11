@@ -20,13 +20,12 @@ namespace OCPI {
       size_t m_timeout;
       //      std::string m_wName;
     protected:
-      Access m_properties;
+      Access m_properties;              // The accessor to the remote property space
       Device &m_device;
-      // myRegisters is zero when this WCI does not really exist.
-      // (since we inherit this in some cases were it is not needed).
       size_t m_occpIndex;
+      OCPI::Util::Property *m_propInfo; // the array of property descriptors
       WciControl(Device &device, const char *impl, const char *inst, unsigned index, bool hasControl);
-      WciControl(Device &device, ezxml_t implXml, ezxml_t instXml, bool doInit = true);
+      WciControl(Device &device, ezxml_t implXml, ezxml_t instXml, OCPI::Util::Property *props, bool doInit = true);
       virtual ~WciControl();
       // This is shadowed by real application workers, but is used when this is 
       // standalone.
@@ -63,7 +62,7 @@ namespace OCPI {
       void                                                                        \
       setProperty##n(const OCPI::API::PropertyInfo &info, uint##n##_t val) const; \
       inline uint##n##_t						          \
-	getProperty##n(const OCPI::API::PropertyInfo &info) const {	          \
+      getProperty##n(const OCPI::API::PropertyInfo &info) const {	          \
         uint32_t offset = checkWindow(info.m_offset, n/8);			  \
 	uint32_t status = 0;						          \
 	uint##n##_t val;						          \
@@ -96,43 +95,43 @@ namespace OCPI {
 
       void getPropertyBytes(const OCPI::API::PropertyInfo &info, size_t offset, uint8_t *buf,
 			    size_t nBytes) const;
-      void setPropertySequence(const OCPI::API::Property &p,
+      void setPropertySequence(const OCPI::API::PropertyInfo &p,
 			       const uint8_t *val,
 			       size_t nItems, size_t nBytes) const;
-      unsigned getPropertySequence(const OCPI::API::Property &p, uint8_t *buf, size_t n) const;
+      unsigned getPropertySequence(const OCPI::API::PropertyInfo &p, uint8_t *buf, size_t n) const;
       
 #undef OCPI_DATA_TYPE_S
       // Set a scalar property value
 
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)     	         \
-      inline void							         \
-      set##pretty##Property(const OCPI::API::Property &p, const run val) const { \
-	setProperty##bits(p.m_info, *(uint##bits##_t *)&val);		         \
-      }									         \
+      inline void							 \
+      set##pretty##Property(unsigned ordinal, const run val) const {     \
+	setProperty##bits(m_propInfo[ordinal], *(uint##bits##_t *)&val); \
+      }									 \
       inline void        						\
       set##pretty##SequenceProperty(const OCPI::API::Property &p,       \
 				    const run *vals,			\
 				    size_t length) const {		\
-	setPropertySequence(p, (const uint8_t *)vals,			\
+	setPropertySequence(p.m_info, (const uint8_t *)vals,			\
 			    length, length * (bits/8));			\
       }									\
       inline run							\
-      get##pretty##Property(const OCPI::API::Property &p) const {	\
-	return (run)getProperty##bits(p.m_info);			\
+      get##pretty##Property(unsigned ordinal) const {	\
+	return (run)getProperty##bits(m_propInfo[ordinal]);			\
       }									\
       inline unsigned							\
       get##pretty##SequenceProperty(const OCPI::API::Property &p, run *vals, \
 				    size_t length) const {		     \
 	return								     \
-	  getPropertySequence(p, (uint8_t *)vals, length * (bits/8));	     \
+	  getPropertySequence(p.m_info, (uint8_t *)vals, length * (bits/8));	     \
       }
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)
 OCPI_DATA_TYPES
 #undef OCPI_DATA_TYPE
-      void setStringProperty(const OCPI::API::Property &p, const char* val) const;
+      void setStringProperty(unsigned ordinal, const char* val) const;
       void setStringSequenceProperty(const OCPI::API::Property &, const char * const *,
 				     size_t ) const;
-      void getStringProperty(const OCPI::API::Property &p, char *val, size_t length) const;
+      void getStringProperty(unsigned, char *val, size_t length) const;
       unsigned getStringSequenceProperty(const OCPI::API::Property &, char * *,
 					 size_t ,char*, size_t) const;
     };

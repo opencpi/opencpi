@@ -288,11 +288,20 @@ static const char *cctypes[] = {
   "Struct", "Enum", "Type",
   0
 };
+static const char *ccpretty[] = {
+  "None",
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) #pretty,
+  OCPI_PROPERTY_DATA_TYPES
+#undef OCPI_DATA_TYPE
+  "Struct", "Enum", "Type",
+  0
+};
 
 static void
-cc_type(OU::Property &p, std::string &typeDef, std::string &type) {
+cc_type(OU::Property &p, std::string &typeDef, std::string &type, std::string &pretty) {
   (void)p;(void)typeDef;(void)type;
   type = cctypes[p.m_baseType];
+  pretty = ccpretty[p.m_baseType];
 }
 
 const char *Worker::
@@ -314,6 +323,8 @@ emitImplRCC() {
 	  "#define RCC_WORKER_%s_H__\n"
 	  "#include <RCC_Worker.h>\n",
 	  m_implName, m_language == C ? "C" : "C++", upper, upper);
+  if (m_language == CC && m_slave)
+    fprintf(f, "#include <../OcpiApi.h>\n");
   const char *last;
   unsigned in = 0, out = 0;
   if (m_ports.size() && m_language == C) {
@@ -360,8 +371,8 @@ emitImplRCC() {
 		  "#endif\n",
 		  p.m_name.c_str(), p.m_name.c_str(), rccPropValue(p, value));
 	else {
-	  std::string typeDef, type;
-	  cc_type(p, typeDef, type);
+	  std::string typeDef, type, pretty;
+	  cc_type(p, typeDef, type, pretty);
 	  fprintf(f,
 		  "static const %s PARAM_%s = %s;\n",
 		   type.c_str(), p.m_name.c_str(), rccPropValue(p, value));
@@ -400,11 +411,35 @@ emitImplRCC() {
 	    " * derived class implemented by the worker author.  That class\n"
 	    " * which inherits this one is declared in the skeleton/implementation file.\n"
 	    " */\n"
-	    "class %s : public OCPI::RCC::RCCUserWorker {\n",
+	    "class %s : public OCPI::RCC::RCCUserWorker {\n"
+	    "protected:\n",
 	    s.c_str());
+    if (m_slave) {
+      // This worker is a proxy.  Give it access to its slave
+      fprintf(f,
+	      "  /*\n"
+	      "   * This class defines the properties of the slave for convenient access.\n"
+	      "   */\n"
+	      "  class Slave : OCPI::RCC::RCCUserSlave {\n"
+	      "  public:\n");
+      if (m_slave->m_ctl.nRunProperties)
+	for (PropertiesIter pi = m_slave->m_ctl.properties.begin();
+	     pi != m_slave->m_ctl.properties.end(); pi++) {
+	  OU::Property &p = **pi;
+	  std::string typeDef, type, pretty;
+	  cc_type(p, typeDef, type, pretty);
+	  if (p.m_isReadable)
+	    fprintf(f, "    inline %s get_%s() { return m_worker.get%sProperty(%u); }\n",
+		    type.c_str(), p.m_name.c_str(), pretty.c_str(), p.m_ordinal);
+	  if (p.m_isWritable)
+	    fprintf(f, "    inline void set_%s(%s val) { return m_worker.set%sProperty(%u, val); }\n",
+		    p.m_name.c_str(), type.c_str(), pretty.c_str(), p.m_ordinal);
+	}
+      fprintf(f,
+	      "  } slave;\n");
+    }
     if (m_ctl.nRunProperties)
       fprintf(f,
-	      "protected:\n"
 	      "  %c%sProperties m_properties;\n"
 	      "  uint8_t *rawProperties(size_t &size) const {\n"
 	      "    size = sizeof(m_properties);\n"
@@ -670,6 +705,7 @@ emitSkelRCC() {
 	  m_language == C ? RCC_C_IMPL : RCC_CC_IMPL,
 	  m_language == C ? RCC_C_HEADER : RCC_CC_HEADER);
   const char *upper = upperdup(m_implName);
+#if 0
   if (m_language == CC) {
     if (m_ctl.controlOps) {
       fprintf(f,"  RCCResult ");
@@ -683,6 +719,7 @@ emitSkelRCC() {
       fprintf(f, ";\n");
     }
   }
+#endif
   if (m_language == C) {
     fprintf(f,
 	    "%s_METHOD_DECLARATIONS;\n"
@@ -762,7 +799,7 @@ const char *Worker::
 parseRccImpl(const char *package) {
   const char *err;
   if ((err = OE::checkAttrs(m_xml, IMPL_ATTRS, "ExternMethods", "StaticMethods", "Threaded",
-			    "ControlOperations", "Language", (void*)0)) ||
+			    "ControlOperations", "Language", "Slave", (void*)0)) ||
       (err = OE::checkElements(m_xml, IMPL_ELEMS, "port", (void*)0)))
     return err;
   // We use the pattern value as the method naming for RCC
@@ -798,6 +835,18 @@ parseRccImpl(const char *package) {
         (err = OE::getNumber(x, "Buffersize", &p->u.wdi.bufferSize, 0,
 			     p->protocol ? p->protocol->m_defaultBufferSize : 0)))
       return err;
+  }
+  std::string slave;
+  if (OE::getOptionalString(m_xml, slave, "slave")) {
+    // The slave attribute is the name of an implementation including the model.
+    // Thus the search is in the same library
+    std::string sw;
+    const char *dot = strrchr(slave.c_str(), '.');
+    if (!dot)
+      return OU::esprintf("slave attribute: '%s' has no authoring model suffix", slave.c_str());
+    OU::format(sw, "../%s/%.*s.xml", slave.c_str(), (int)(dot - slave.c_str()), slave.c_str());
+    if (!(m_slave = Worker::create(sw.c_str(), m_file.c_str(), NULL, m_outDir, NULL, 0, err)))
+      return OU::esprintf("for slave worker %s: %s", slave.c_str(), err);
   }
   m_model = RccModel;
   m_modelString = "rcc";

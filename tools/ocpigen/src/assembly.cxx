@@ -187,14 +187,14 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
    } catch (std::string &e) {
      return OU::esprintf("%s", e.c_str());
    }
-   m_nInstances = m_utilAssembly->m_instances.size();
+   m_nInstances = m_utilAssembly->nUtilInstances();
    //   m_nConnections = m_utilAssembly->m_connections.size();
    const char *err;
  
-   Instance *i = m_instances = myCalloc(Instance, m_utilAssembly->m_instances.size());
+   Instance *i = m_instances = myCalloc(Instance, m_utilAssembly->nUtilInstances());
    // Initialize our instances based on the generic assembly instances
-   OU::Assembly::Instance *ai = &m_utilAssembly->m_instances[0];
-   for (unsigned n = 0; n < m_utilAssembly->m_instances.size(); n++, i++, ai++) {
+   for (unsigned n = 0; n < m_utilAssembly->nUtilInstances(); n++, i++) {
+     OU::Assembly::Instance *ai = &m_utilAssembly->utilInstance(n);
      i->iType = Instance::Application; // set the default
      i->instance = ai;
      i->name = i->instance->m_name.c_str();
@@ -377,6 +377,7 @@ emitWorker(FILE *f) {
   if (m_paramConfig && m_paramConfig->nConfig)
     fprintf(f, "-%zu", m_paramConfig->nConfig);
   fprintf(f, "\" model=\"%s\"", m_modelString);
+  fprintf(f, " package=\"%s\"", m_package.c_str());
   if (m_specName && strcasecmp(m_specName, m_implName))
     fprintf(f, " specname=\"%s\"", m_specName);
   if (m_ctl.sizeOfConfigSpace)
@@ -395,6 +396,8 @@ emitWorker(FILE *f) {
   }
   if (m_ports.size() && m_ports[0]->type == WCIPort && m_ports[0]->u.wci.timeout)
     fprintf(f, " Timeout=\"%zu\"", m_ports[0]->u.wci.timeout);
+  if (m_slave)
+    fprintf(f, "  Slave='%s.%s'", m_slave->m_implName, m_slave->m_modelString);
   fprintf(f, ">\n");
   unsigned nn;
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {

@@ -488,7 +488,7 @@ int  main( int argc, char** argv)
     test_rc = 0;
   }
   test_rc = !test_rc;
-  if ( (buffers < 4) || (buffers > 6) ) {
+  if ( (buffers < 5) || (buffers > 7) ) {
     test_rc = 0;
   }
   printf(" Test: %s: %s\n", test_name,  test_rc ? "PASSED" : "FAILED" );

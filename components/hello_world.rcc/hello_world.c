@@ -5,6 +5,8 @@
  *
  * This file contains the RCC implementation skeleton for worker: hello_world
  */
+#include <stdio.h>
+#include <unistd.h>
 #include "hello_world_Worker.h"
 
 HELLO_WORLD_METHOD_DECLARATIONS;

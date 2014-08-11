@@ -156,6 +156,8 @@ namespace OCPI {
       ~ApplicationI();
       OCPI::Library::Assembly & assembly(){return m_assembly;}
       bool foundContainer(OCPI::Container::Container &i);
+      OCPI::Container::Worker &createWorker(Instance &i, unsigned n,
+					    OCPI::Container::Worker *slave);
       void initialize();
       void start();
       void stop();

@@ -44,14 +44,73 @@
 
 namespace OCPI {
   namespace API {
-#if 0 
-    // This class is the runtime metadata for a property other than the data type info
-    class PropertyInfo {
-    public:
-      PropertyInfo();
-      bool m_readSync, m_writeSync, m_isWritable, m_isReadable, m_readError, m_writeError;
-    };
-#endif
+  struct ReadableSequenceProperty {
+    size_t length() const;
+    size_t maxLength() const;
+  };
+  struct ReadableArrayProperty {
+    size_t length() const;
+  };
+  struct WritableSequenceProperty {
+    size_t maxLength() const;
+  };
+  struct WritableArrayProperty {
+    size_t length() const;
+  };
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		        \
+  struct Readable##pretty##Property {                                           \
+    run get() const;		                                                \
+  };                                                                            \
+  struct Readable##pretty##SequenceProperty : public ReadableSequenceProperty {	\
+    size_t get(run *, size_t length) const;                                     \
+  };                                                                            \
+  struct Readable##pretty##ArrayProperty : public ReadableArrayProperty {	\
+    unsigned get(run *, size_t length) const;                                   \
+  };
+#undef OCPI_DATA_TYPE_S
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)	        \
+  struct Readable##pretty##Property {                                           \
+    char *get(char *, size_t length) const;	                                \
+  };                                                                            \
+  struct Readable##pretty##SequenceProperty : public ReadableSequenceProperty { \
+    unsigned get(char **, size_t length, char *buf, size_t space) const;        \
+    size_t stringLength() const;                                                \
+    size_t space() const;                                                       \
+  };                                                                            \
+  struct Readable##pretty##ArrayProperty : public ReadableArrayProperty {       \
+    unsigned get(char **, size_t length, char *buf, size_t space) const;        \
+    size_t stringLength() const;                                                \
+    size_t space() const { return length() * (stringLength() + 1); };	        \
+  };
+
+OCPI_PROPERTY_DATA_TYPES
+
+#undef OCPI_DATA_TYPE
+#undef OCPI_DATA_TYPE_S
+#define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		                   \
+  struct Writable##pretty##Property {                                                      \
+    void set(const run);                                                                   \
+  };                                                                                       \
+  struct Writable##pretty##SequenceProperty : public WritableSequenceProperty {            \
+    void set(const run *, size_t nElements);                                               \
+  };                                                                                       \
+  struct Writable##pretty##ArrayProperty : public WritableArrayProperty {                  \
+    void set(const run *, size_t nElements);                                               \
+  };                                                                                       \
+  struct ReadWrite##pretty##Property                                                       \
+  : public Readable##pretty##Property, public Writable##pretty##Property {                 \
+  };                                                                                       \
+  struct ReadWrite##pretty##SequenceProperty                                               \
+  : public Readable##pretty##SequenceProperty, public Writable##pretty##SequenceProperty { \
+  };                                                                                       \
+  struct ReadWrite##pretty##ArrayProperty                                                  \
+  : public Readable##pretty##ArrayProperty, public Writable##pretty##ArrayProperty {       \
+  };
+
+OCPI_PROPERTY_DATA_TYPES
+
+#undef OCPI_DATA_TYPE
   }
 }
 #endif

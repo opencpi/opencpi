@@ -68,7 +68,8 @@ namespace OCPI {
     // just the items needed for fastest access
     Property::Property(Worker &w, const char *aname) :
       m_worker(w), m_readSync(false), m_writeSync(false), m_writeVaddr(0), m_readVaddr(0),
-      m_info(w.setupProperty(aname, m_writeVaddr, m_readVaddr))
+      m_info(w.setupProperty(aname, m_writeVaddr, m_readVaddr)),
+      m_ordinal(m_info.m_ordinal)
     {
       m_readSync = m_info.m_readSync;
       m_writeSync = m_info.m_writeSync;

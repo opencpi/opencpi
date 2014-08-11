@@ -98,6 +98,10 @@ namespace OCPI {
 	  m_selection;             // the selection expression
 	unsigned m_ordinal;
 	bool     m_externals;      // whether all ports should be considered external
+	unsigned m_slave;
+	bool     m_hasSlave;
+	unsigned m_master;
+	bool     m_hasMaster;
 	Properties m_properties;
 	PValueList m_parameters;
 	std::list<Port*> m_ports; // attachments to connections
@@ -171,12 +175,14 @@ namespace OCPI {
       bool m_isImpl; // Is this assembly of worker (implementation) instances or component instances?
       const char *parse(const char *defaultName = NULL, const char **extraTopAttrs = NULL,
 			const char **extraInstAttrs = NULL, const OCPI::Util::PValue *params = NULL);
+      std::vector<Instance> m_instances;
     public:
+      Instance &utilInstance(size_t n) { return m_instances[n]; }
+      size_t nUtilInstances() { return m_instances.size(); }
       static unsigned s_count;
       std::string m_name;
       std::string m_package;
       int m_doneInstance; // -1 for none
-      std::vector<Instance> m_instances;
       std::list<Connection> m_connections;
       typedef std::list<Connection>::iterator ConnectionsIter;
       CMapPolicy m_cMapPolicy;

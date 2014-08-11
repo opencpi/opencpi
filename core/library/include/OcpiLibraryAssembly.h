@@ -59,30 +59,54 @@ namespace OCPI {
     typedef std::vector<Candidate> Candidates;   // a set of candidates for an instance
 
     // A library::assembly adds value to the underlying/inherited util::assembly
-    // By finding candidate implementations in the available artifact libraries.
+    // By finding candidate implementations in the available artifact libraries,
+    // and perhaps adding proxy slave instances
     class Assembly : public OCPI::Util::Assembly,  public ImplementationCallback {
-      unsigned m_instance;			  // ordinal of current instance being processed
-      unsigned m_nPorts;                          // nPorts of impls of instance being processed
+      // This class is the library layer's instance.
+      // It usually just references the OU::Assembly instance, but in the case of
+      // proxies, the library layer may add instances for slaves.
+      struct Instance {
+	OCPI::Util::Assembly::Instance &m_utilInstance; // lower level assy instance structure
+	OCPI::Util::Assembly::Port **m_assyPorts;       // map impl port ordinal to OU assy port
+                                                	// we do the map based on the first impl
+	Candidates m_candidates;                        // The candidate impls for this instance
+	unsigned m_nPorts;
+	Instance *m_master;                             // The master if this is a slave
+	Instance(OCPI::Util::Assembly::Instance &utilInstance, Instance *master = NULL);
+	~Instance();
+	
+	bool resolveUtilPorts(const Implementation &i, OCPI::Util::Assembly &a);
+	bool foundImplementation(const Implementation &i,
+				 std::string &model, std::string &platform,
+				 Assembly &assy);
+	const std::string &name() { return m_utilInstance.m_name; }
+	const std::string &specName() { return m_utilInstance.m_specName; }
+	const OCPI::Util::Assembly::Properties &properties() {
+	  return m_utilInstance.m_properties;
+	}
+      };
+      typedef std::vector<Instance *> Instances;
+      typedef Instances::iterator InstancesIter;
       std::string m_model;                        // used during implementation processing
-      std::string m_platform;
+      std::string m_platform;                     // ditto
       const PValue *m_params;                     // params of assembly during parsing (not copied)
       unsigned m_maxCandidates;                   // maximum number of candidates for any instance
-      Candidates *m_tempCandidates;               // candidates currently being processed (for one instance)
-      OCPI::Util::Assembly::Port ***m_assyPorts;  // a map by spec port ordinal to util::assembly ports
+      Instance *m_tempInstance;                   // our instance currently being processed
+      Instances m_instances;                      // This layer's instances
     public:
-      Candidates *m_candidates;                   // array of candidate sets, indexed by instance ordinal
       explicit Assembly(const char *file, const OCPI::Util::PValue *params);
       explicit Assembly(const std::string &string, const OCPI::Util::PValue *params);
       ~Assembly();
+      Instance &instance(size_t n) { return *m_instances[n]; }
+      size_t nInstances() { return m_instances.size(); }
       bool badConnection(const Implementation &impl, const Implementation &otherImpl,
 			 const OCPI::Util::Assembly::Port &ap, unsigned port);
-      inline Port *assyPort(unsigned inst, unsigned port) { return m_assyPorts[inst][port];}
+      Port *assyPort(unsigned inst, unsigned port) { return m_instances[inst]->m_assyPorts[port];}
       // Reference counting
       void operator ++( int );
       void operator --( int );
       
     private:
-      bool resolvePorts(const Implementation &i);
       void findImplementations(const OCPI::Util::PValue *params);
       bool foundImplementation(const Implementation &i, bool &accepted);
       int m_refCount;

@@ -94,9 +94,9 @@ namespace OCPI {
       if (err ||
 	  (err = OE::getRequiredString(xml, m_model, "model", "worker")))
 	return err;
-      OE::getOptionalString(xml, m_specName, "specName");
-      if (m_specName.empty())
+      if (!OE::getOptionalString(xml, m_specName, "specName"))
 	m_specName = m_name;
+      OE::getOptionalString(xml, m_slave, "slave");
       if ((m_nProperties = OE::countChildren(xml, "property")))
 	m_properties = new Property[m_nProperties];
       if ((m_nPorts = OE::countChildren(xml, "port")))

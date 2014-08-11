@@ -74,18 +74,18 @@ namespace OCPI {
       friend class Controller;
       friend class Port;
       friend class RCCUserPort;
-      RCCPortMask getReadyPorts();
+      friend class RCCUserSlave;
+      friend class RCCUserWorker;
       void run(bool &anyRun);
-      void checkDeadLock();
       void advanceAll();
       void portError(std::string&error);
     public:
       RCCResult setError(const char *fmt, va_list ap);
       inline RCCWorker &context() const { return *m_context; }
-      inline unsigned nPorts() const { return m_nPorts; }
 
-      Worker( Application & app, Artifact *art, const char *name,
-	      ezxml_t impl, ezxml_t inst, const OCPI::Util::PValue *wParams);
+      Worker(Application & app, Artifact *art, const char *name,
+	     ezxml_t impl, ezxml_t inst, OCPI::Container::Worker *slave,
+	     const OCPI::Util::PValue *wParams);
       OCPI::Container::Port& createPort(const OCPI::Util::Port&, const OCPI::Util::PValue *props);
       void controlOperation(OCPI::Util::Worker::ControlOperation);
 
@@ -94,7 +94,7 @@ namespace OCPI {
       // return errors. 
 #undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                         \
-      void set##pretty##Property(const OCPI::API::Property &p, const run val) const;   \
+      void set##pretty##Property(unsigned ordinal, const run val) const;   \
       void set##pretty##SequenceProperty(const OCPI::API::Property &p,const run *vals, \
 					 size_t length) const;
       // Set a string property value
@@ -102,7 +102,7 @@ namespace OCPI {
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this.
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                       \
-      void set##pretty##Property(const OCPI::API::Property &p, const run val) const;   \
+      void set##pretty##Property(unsigned ordinal, const run val) const;   \
       void set##pretty##SequenceProperty(const OCPI::API::Property &p,const run *vals, \
 					 size_t length) const;
       OCPI_PROPERTY_DATA_TYPES
@@ -110,7 +110,7 @@ namespace OCPI {
 #undef OCPI_DATA_TYPE
       // Get Scalar Property
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)	             \
-	run get##pretty##Property(const OCPI::API::Property &p) const;       \
+	run get##pretty##Property(unsigned ordinal) const;       \
         unsigned get##pretty##SequenceProperty(const OCPI::API::Property &p, \
 					     run *vals,			     \
 					       size_t length) const;
@@ -118,7 +118,7 @@ namespace OCPI {
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this.
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)		\
-	void get##pretty##Property(const OCPI::API::Property &p, char *cp,      \
+	void get##pretty##Property(unsigned ordinal, char *cp,      \
 				   size_t length) const;                      \
       unsigned get##pretty##SequenceProperty                                    \
 	(const OCPI::API::Property &p, char **vals, size_t length, char *buf, \
@@ -179,6 +179,11 @@ namespace OCPI {
       std::list<OCPI::Util::Port*> m_testPmds;
     private:
       void initializeContext();
+      inline void setRunCondition(RunCondition &rc) {
+	m_runCondition = &rc;
+	if (rc.m_timeout)
+	  m_runTimer.reset(rc.m_usecs / 1000000, (rc.m_usecs % 1000000) * 1000);
+      }
 
       // Our dispatch table
       RCCEntryTable   *m_entry;    // our entry in the entry table of the artifact
@@ -189,30 +194,30 @@ namespace OCPI {
       // Our context
       RCCWorker       *m_context;
       OCPI::OS::Mutex &m_mutex;
-      RCCRunCondition  m_defaultRunCondition; // run condition we create
-      RCCPortMask      m_defaultMasks[2];     // masks for our default run condition
-      RCCRunCondition *m_runCondition;        // current active run condition we use is dispatching
+      RunCondition     m_defaultRunCondition; // run condition we create
+      RunCondition     m_cRunCondition;       // run condition we use when C-language RC changes
+      RunCondition    *m_runCondition;        // current active run condition used in dispatching
+      
       char            *m_errorString;         // error string set via "setError"
+      OCPI::Container::Worker      *m_slave;
     protected:
+      OCPI::Container::Worker &getSlave();
       RCCPort &portInit() { return m_context->ports[m_portInit++]; }
       inline uint8_t * getPropertyVaddr() const { return  (uint8_t*)m_context->properties; }
 
       bool enabled;                // Worker enabled flag
+      bool hasRun;                 // Has the worker ever run so far?
 
-      // List of worker ports
-      OCPI::OS::uint32_t sourcePortCount;
-      OCPI::OS::uint32_t targetPortCount;
+      uint32_t sourcePortCount;
+      uint32_t targetPortCount;
       unsigned m_nPorts;
 
-      // Worker run condition super-set
-      OCPI::OS::uint32_t runConditionSS;
-
       // Last time that the worker was run
-      OCPI::OS::Timer        runTimer;
-      OCPI::OS::ElapsedTime  runTimeout;
+      OCPI::OS::Timer m_runTimer;
+      OCPI::OS::Time  m_lastRun;
                         
       // Debug/stats
-      OCPI::OS::uint32_t worker_run_count;
+      uint64_t worker_run_count;
 
       // Pointer into actual RCC worker binary for its dispatch struct
       OCPI::DataTransport::Transport &m_transport;

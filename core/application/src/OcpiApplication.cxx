@@ -179,32 +179,64 @@ namespace OCPI {
     bool ApplicationI::
     connectionsOk(OL::Candidate &c, unsigned instNum) {
       unsigned nPorts = c.impl->m_metadataImpl.nPorts();
+      const OU::Assembly::Instance &ui = m_assembly.instance(instNum).m_utilInstance;
+      std::string reject;
+      OU::format(reject,
+		 "For instance \"%s\" for spec \"%s\" rejecting implementation \"%s%s%s\" with score %u "
+		 "from artifact \"%s\"",
+		 ui.m_name.c_str(),
+		 ui.m_specName.c_str(),
+		 c.impl->m_metadataImpl.name().c_str(),
+		 c.impl->m_staticInstance ? "/" : "",
+		 c.impl->m_staticInstance ? ezxml_cattr(c.impl->m_staticInstance, "name") : "",
+		 c.score, c.impl->m_artifact.name().c_str());
       for (unsigned nn = 0; nn < nPorts; nn++) {
 	OU::Assembly::Port
 	  *ap = m_assembly.assyPort(instNum, nn),
 	  *other = ap ? ap->m_connectedPort : NULL;
 	if (ap &&                          // if the port is even mentioned in the assembly?
 	    other &&                       // if the port is connected in the assembly
-	    other->m_instance < instNum &&  // if the other instance has been processed
+	    other->m_instance < instNum && // if the other instance has been processed
 	    m_assembly.                    // then check for prewired compatibility
 	    badConnection(*c.impl, *m_instances[other->m_instance].m_impl, *ap, nn)) {
-	  ocpiDebug("For instance \"%s\" for spec \"%s\" rejecting implementation \"%s%s%s\" with score %u "
-		    "from artifact \"%s\" due to connectivity conflict",
-		    m_assembly.m_instances[instNum].m_name.c_str(),
-		    m_assembly.m_instances[instNum].m_specName.c_str(),
-		    c.impl->m_metadataImpl.name().c_str(),
-		    c.impl->m_staticInstance ? "/" : "",
-		    c.impl->m_staticInstance ? ezxml_cattr(c.impl->m_staticInstance, "name") : "",
-		    c.score, c.impl->m_artifact.name().c_str());
-	  ocpiDebug("Other is instance \"%s\" for spec \"%s\" implementation \"%s%s%s\" "
+	  ocpiInfo("%s due to connectivity conflict", reject.c_str());
+	  ocpiInfo("Other is instance \"%s\" for spec \"%s\" implementation \"%s%s%s\" "
 		    "from artifact \"%s\".",
-		    m_assembly.m_instances[other->m_instance].m_name.c_str(),
-		    m_assembly.m_instances[other->m_instance].m_specName.c_str(),
+		    m_assembly.instance(other->m_instance).name().c_str(),
+		    m_assembly.instance(other->m_instance).specName().c_str(),
 		    m_instances[other->m_instance].m_impl->m_metadataImpl.name().c_str(),
 		    m_instances[other->m_instance].m_impl->m_staticInstance ? "/" : "",
 		    m_instances[other->m_instance].m_impl->m_staticInstance ?
 		    ezxml_cattr(m_instances[other->m_instance].m_impl->m_staticInstance, "name") : "",
 		    m_instances[other->m_instance].m_impl->m_artifact.name().c_str());
+	  return false;
+	}
+      }
+      // Check for master/slave correctness
+      // Note that we know that the impl for a master indicates a slave since this
+      // can be checked by the library layer.
+      OU::Worker *mImpl = NULL, *sImpl = NULL;
+      bool isMaster;
+      if (ui.m_hasSlave && ui.m_slave < instNum) {
+	mImpl = &c.impl->m_metadataImpl;
+	sImpl = &m_instances[ui.m_slave].m_impl->m_metadataImpl;
+	isMaster = true;
+      } else if (ui.m_hasMaster && ui.m_master < instNum) {
+	sImpl = &c.impl->m_metadataImpl;
+	mImpl = &m_instances[ui.m_master].m_impl->m_metadataImpl;
+	isMaster = false;
+      }
+      if (sImpl) { // the relationship exists, either way.  We are on the latter instance.
+	std::string slaveWkrName = sImpl->name() + "." + sImpl->model();
+	if (strcasecmp(mImpl->slave().c_str(), slaveWkrName.c_str())) {
+	  // FIXME: make impl namespace part of this. implnames should really be qualified.
+	  if (isMaster)
+	    ocpiInfo("%s since its indicated slave worker \"%s\" doesn't match slave instance's worker \"%s\"",
+		     reject.c_str(), mImpl->slave().c_str(), slaveWkrName.c_str());
+	  else
+	    ocpiInfo("%s since it doesn't match the worker \"%s\" indicated by the master instance",
+		     reject.c_str(), mImpl->slave().c_str());
+	  
 	  return false;
 	}
       }
@@ -219,8 +251,8 @@ namespace OCPI {
 	   b.m_usedImpls & (1 << c.impl->m_ordinal))) {
 	ocpiDebug("For instance \"%s\" for spec \"%s\" rejecting implementation \"%s%s%s\" with score %u "
 		  "from artifact \"%s\" due to insufficient available containers",
-		  m_assembly.m_instances[n].m_name.c_str(),
-		  m_assembly.m_instances[n].m_specName.c_str(),
+		  m_assembly.instance(n).name().c_str(),
+		  m_assembly.instance(n).specName().c_str(),
 		  c.impl->m_metadataImpl.name().c_str(),
 		  c.impl->m_staticInstance ? "/" : "",
 		  c.impl->m_staticInstance ? ezxml_cattr(c.impl->m_staticInstance, "name") : "",
@@ -285,7 +317,7 @@ namespace OCPI {
 			  "Format is: <instance>=<parameter-value>", assign);
 	size_t len = eq - assign;
 	for (unsigned nn = 0; assign && nn < m_nInstances; nn++)
-	  if (!strncasecmp(assign, m_assembly.m_instances[nn].m_name.c_str(), len) &&
+	  if (!strncasecmp(assign, m_assembly.instance(nn).m_name.c_str(), len) &&
 	      assign[len] == '=')
 	    assign = NULL;
 	if (assign && checkMapped) {
@@ -304,8 +336,8 @@ namespace OCPI {
     void ApplicationI::
     prepareInstanceProperties(unsigned nInstance, const OL::Implementation &impl,
 			      unsigned *&pn, OU::Value *&pv) {
-      const char *name = m_assembly.m_instances[nInstance].m_name.c_str();
-      const OU::Assembly::Properties &aProps = m_assembly.m_instances[nInstance].m_properties;
+      const char *name = m_assembly.instance(nInstance).name().c_str();
+      const OU::Assembly::Properties &aProps = m_assembly.instance(nInstance).properties();
       // Prepare all the property values in the assembly, avoiding those in parameters.
       for (unsigned p = 0; p < aProps.size(); p++) {
 	const char *pName = aProps[p].m_name.c_str();
@@ -362,8 +394,8 @@ namespace OCPI {
       // Collect and check the property values for each instance.
       for (unsigned n = 0; n < m_nInstances; n++, i++) {
 	// The chosen, best, feasible implementation for the instance
-	const char *name = m_assembly.m_instances[n].m_name.c_str();
-	const OU::Assembly::Properties &aProps = m_assembly.m_instances[n].m_properties;
+	const char *name = m_assembly.instance(n).name().c_str();
+	const OU::Assembly::Properties &aProps = m_assembly.instance(n).properties();
 	size_t nPropValues = aProps.size();
 	const char *sDummy;
 	// Count any properties that were provided in parameters specific to instance
@@ -400,7 +432,7 @@ namespace OCPI {
 	p->m_name = mp->m_name;
 	p->m_instance = mp->m_instance;
 	ocpiDebug("Instance %s (%u) property %s (%u) named %s in assembly", 
-		  m_assembly.m_instances[p->m_instance].m_name.c_str(), p->m_instance,
+		  m_assembly.instance(p->m_instance).name().c_str(), p->m_instance,
 		  mp->m_instPropName.c_str(), p->m_property, p->m_name.c_str());		    
       }
       i = m_instances;
@@ -408,14 +440,14 @@ namespace OCPI {
 	unsigned nProps;
 	OU::Property *meta = i->m_impl->m_metadataImpl.properties(nProps);
 	for (unsigned nn = 0; nn < nProps; nn++, meta++, p++) {
-	  p->m_name = m_assembly.m_instances[n].m_name + "." + meta->m_name;
+	  p->m_name = m_assembly.instance(n).name() + "." + meta->m_name;
 	  p->m_instance = n;
 	  p->m_property = nn;
 	  ocpiDebug("Instance %s (%u) property %s (%u) named %s", 
-		    m_assembly.m_instances[n].m_name.c_str(), n,
+		    m_assembly.instance(n).name().c_str(), n,
 		    meta->m_name.c_str(), nn, p->m_name.c_str());		    
 	  // Record dump file for this property if there is one.
-	  const OU::Assembly::Properties &aProps = m_assembly.m_instances[n].m_properties;
+	  const OU::Assembly::Properties &aProps = m_assembly.instance(n).properties();
 	  p->m_dumpFile = NULL;
 	  for (unsigned nn = 0; nn < aProps.size(); nn++)
 	    if (aProps[nn].m_dumpFile.size() &&
@@ -447,7 +479,8 @@ namespace OCPI {
       Deployment *d = m_deployments + instNum;
       Instance *i = m_instances + instNum;
       for (unsigned m = 0; m < i->m_nCandidates; m++) {
-	OL::Candidate &c = m_assembly.m_candidates[instNum][m];	  
+	OL::Candidate &c = m_assembly.instance(instNum).m_candidates[m];	  
+	assert(c.impl);
 	i->m_impl = c.impl; // temporary, but needed by (at least) connectionsOk
 	ocpiDebug("doInstance %u %u %u", instNum, score, m);
 	if (connectionsOk(c, instNum)) {
@@ -485,8 +518,7 @@ namespace OCPI {
     }
 
     void ApplicationI::
-    init( const PValue * params ) {
-
+    init(const PValue * params) {
       // In order from class definition except for instance-related
       m_bookings = new Booking[OC::Manager::s_nContainers];
       m_properties = NULL;
@@ -517,7 +549,7 @@ namespace OCPI {
       initExternals(params);
       // Now that we have added any extra instances for external connections, do
       // instance-related initializations
-      m_nInstances = m_assembly.m_instances.size();
+      m_nInstances = m_assembly.nInstances();
       m_instances = new Instance[m_nInstances];
       m_deployments = new Deployment[m_nInstances];
       m_bestDeployments = new Deployment[m_nInstances];
@@ -533,8 +565,8 @@ namespace OCPI {
       // and remember which containers can support which candidates
       Instance *i = m_instances;
       for (size_t n = 0; n < m_nInstances; n++, i++) {
-	OL::Candidates &cs = m_assembly.m_candidates[n];
-	OU::Assembly::Instance &ai = m_assembly.m_instances[n];
+	OL::Candidates &cs = m_assembly.instance(n).m_candidates;
+	const OU::Assembly::Instance &ai = m_assembly.utilInstance(n);
 	i->m_nCandidates = cs.size();
 	i->m_feasibleContainers = new CMap[cs.size()];
 	std::string container;
@@ -588,7 +620,7 @@ namespace OCPI {
       i = m_instances;
       Deployment *d = m_bestDeployments;
       for (unsigned n = 0; n < m_nInstances; n++, i++, d++)
-	i->m_impl = m_assembly.m_candidates[n][d->candidate].impl;
+	i->m_impl = m_assembly.instance(n).m_candidates[d->candidate].impl;
       
       // All the implementation selection is done, so now do the final check of properties
       // since properties can be implementation specific
@@ -617,13 +649,13 @@ namespace OCPI {
 	OC::Container &c = OC::Container::nthContainer(m_usedContainers[i->m_container]);
 	if (verbose)
 	  fprintf(stderr, " Instance %2u %s (spec %s) on %s container %s, using %s%s%s in %s\n", 
-		 n, m_assembly.m_instances[n].m_name.c_str(),
-		 m_assembly.m_instances[n].m_specName.c_str(),
-		 c.m_model.c_str(), c.name().c_str(),
-		 impl.m_metadataImpl.name().c_str(),
-		 impl.m_staticInstance ? "/" : "",
-		 impl.m_staticInstance ? ezxml_cattr(impl.m_staticInstance, "name") : "",
-		 impl.m_artifact.name().c_str());
+		  n, m_assembly.instance(n).name().c_str(),
+		  m_assembly.instance(n).specName().c_str(),
+		  c.m_model.c_str(), c.name().c_str(),
+		  impl.m_metadataImpl.name().c_str(),
+		  impl.m_staticInstance ? "/" : "",
+		  impl.m_staticInstance ? ezxml_cattr(impl.m_staticInstance, "name") : "",
+		  impl.m_artifact.name().c_str());
       }
       // To prepare for remote containers, we need to organize the containers we are
       // using by their server.  Then we essentially synthesize an "app" for each server.
@@ -650,8 +682,42 @@ namespace OCPI {
       return false;
     }
 
-    void ApplicationI::initialize() {
-      m_nInstances = m_assembly.m_instances.size();
+    OC::Worker &ApplicationI::
+    createWorker(Instance &i, unsigned n, OC::Worker *slave) {
+      const OL::Implementation &impl = *i.m_impl;
+      OC::Worker &w =
+	m_containerApps[i.m_container]->
+	createWorker(impl.m_artifact,                       // The artifact of the library impl
+		     m_assembly.instance(n).name().c_str(), // The instance name in the assembly
+		     impl.m_metadataImpl.m_xml,             // xml of impl (from artifact)
+		     impl.m_staticInstance,                 // xml of fixed instance (from artifact)
+		     slave,
+		     NULL);                                 // wparams
+      // Now we need to set the initial properties - either from assembly or from defaults
+      for (unsigned p = 0; p < i.m_nPropValues; p++)
+	w.setProperty(i.m_propOrdinals[p], i.m_propValues[p]);
+      unsigned nProps = impl.m_metadataImpl.m_nProperties;
+      OU::Property *prop = impl.m_metadataImpl.m_properties;
+      for (unsigned nn = 0; nn < nProps; nn++, prop++)
+	if (prop->m_default && !prop->m_isParameter) {
+	  bool found = false;
+	  for (unsigned m = 0; m < i.m_nPropValues; m++)
+	    if (i.m_propOrdinals[m] == prop->m_ordinal) {
+	      found = true;
+	      break;
+	    }
+	  if (!found) {
+	    ocpiDebug("Setting the default value of property '%s' of instance '%s'",
+		      prop->m_name.c_str(),
+		      m_assembly.instance(n).name().c_str());
+	    w.setProperty(prop->m_ordinal, *prop->m_default);
+	  }
+	}
+      return w;
+    }
+    void ApplicationI::
+    initialize() {
+      m_nInstances = m_assembly.nInstances();
       ocpiDebug("Mapped %zu instances to %d containers", m_nInstances, m_nContainers);
 
       m_containers = new OC::Container *[m_nContainers];
@@ -663,37 +729,17 @@ namespace OCPI {
 	m_containerApps[n] = static_cast<OC::Application*>(m_containers[n]->createApplication());
       }
       Instance *i = m_instances;
-      for (unsigned n = 0; n < m_nInstances; n++, i++) {
-	const OL::Implementation &impl = *i->m_impl;
-	OC::Worker &w =
-	  m_containerApps[i->m_container]->
-	  createWorker(impl.m_artifact,                          // The artifact of the library impl
-		       m_assembly.m_instances[n].m_name.c_str(), // The instance name in the assembly
-		       impl.m_metadataImpl.m_xml,                // xml of impl (from artifact)
-		       impl.m_staticInstance,                    // xml of fixed instance (from artifact)
-		       NULL);                                    // wparams
-	m_workers[n] = &w;
-	// Now we need to set the initial properties - either from assembly or from defaults
-	for (unsigned p = 0; p < i->m_nPropValues; p++)
-	  w.setProperty(i->m_propOrdinals[p], i->m_propValues[p]);
-	unsigned nProps = impl.m_metadataImpl.m_nProperties;
-	OU::Property *prop = impl.m_metadataImpl.m_properties;
-	for (unsigned nn = 0; nn < nProps; nn++, prop++)
-	  if (prop->m_default && !prop->m_isParameter) {
-	    bool found = false;
-	    for (unsigned m = 0; m < i->m_nPropValues; m++)
-	      if (i->m_propOrdinals[m] == prop->m_ordinal) {
-		found = true;
-		break;
-	      }
-	    if (!found) {
-	      ocpiDebug("Setting the default value of property '%s' of instance '%s'",
-			prop->m_name.c_str(),
-			m_assembly.m_instances[n].m_name.c_str());
-	      w.setProperty(prop->m_ordinal, *prop->m_default);
-	    }
-	  }
-      }
+      for (unsigned n = 0; n < m_nInstances; n++, i++)
+	if (m_assembly.instance(n).m_utilInstance.m_hasMaster)
+	  m_workers[n] = &createWorker(*i, n, NULL);
+      i = m_instances;
+      for (unsigned n = 0; n < m_nInstances; n++, i++)
+	if (!m_assembly.instance(n).m_utilInstance.m_hasMaster) {
+	  m_workers[n] =
+	    &createWorker(*i, n,
+			  m_assembly.instance(n).m_utilInstance.m_hasSlave ?
+			  m_workers[m_assembly.instance(n).m_utilInstance.m_slave] : NULL);
+	}
       if (m_assembly.m_doneInstance != -1)
 	m_doneWorker = m_workers[m_assembly.m_doneInstance];
       for (OU::Assembly::ConnectionsIter ci = m_assembly.m_connections.begin();

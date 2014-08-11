@@ -67,7 +67,7 @@ namespace OCPI {
 								   wProps, wParams);
       // This is the special hack for passing in a dispatch table for RCC workers.
       else {
-	Worker &w = createWorker(NULL, instName, (ezxml_t)NULL, (ezxml_t)NULL, aParams);
+	Worker &w = createWorker(NULL, instName, (ezxml_t)NULL, (ezxml_t)NULL, NULL, aParams);
 	w.initialize();
 	return w;
       }
@@ -96,11 +96,11 @@ namespace OCPI {
     }
     Worker &Application::
     createWorker(OCPI::Library::Artifact &art, const char *appInstName, 
-			 ezxml_t impl, ezxml_t inst,
-			 const OCPI::Util::PValue *wParams) {
+		 ezxml_t impl, ezxml_t inst, Worker *slave,
+		 const OCPI::Util::PValue *wParams) {
       // Load the artifact and create the worker
       return
-	container().loadArtifact(art).createWorker(*this, appInstName, impl, inst, wParams);
+	container().loadArtifact(art).createWorker(*this, appInstName, impl, inst, slave, wParams);
     }
     void Application::
     start() {

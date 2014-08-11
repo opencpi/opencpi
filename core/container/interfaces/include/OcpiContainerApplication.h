@@ -67,7 +67,7 @@ namespace OCPI {
     public:
       virtual Container &container() = 0;
       virtual Worker & createWorker(Artifact *, const char *appInstName,
-				    ezxml_t impl, ezxml_t inst,
+				    ezxml_t impl, ezxml_t inst, Worker *slave,
 				    const OCPI::Util::PValue *wparams) = 0;
       virtual ~Application();
 
@@ -87,7 +87,7 @@ namespace OCPI {
 				      const char *selectCriteria = NULL,
 				      const OCPI::API::Connection *connections = NULL);
       Worker &createWorker(OCPI::Library::Artifact &art, const char *appInstName, 
-			   const ezxml_t impl, const ezxml_t inst,
+			   const ezxml_t impl, const ezxml_t inst, Worker *slave,
 			   const OCPI::Util::PValue *wparams = NULL);
 
 

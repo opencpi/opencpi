@@ -120,7 +120,11 @@ namespace OCPI {
     // This class represents what we know, generically, about a component implementation
     // Currently there is no separate "spec" metadata - it is redundant in each implementation
     class Worker : public IdentResolver {
-      std::string m_specName, m_name, m_model;
+      std::string
+	m_specName,
+	m_name,
+	m_model,
+	m_slave; // the model.impl name of a slave
       Attributes *m_attributes; // not a reference due to these being in arrays
       Port *m_ports;
       Memory *m_memories;
@@ -138,6 +142,7 @@ namespace OCPI {
       inline const std::string &model() const { return m_model; }
       inline const std::string &specName() const { return m_specName; }
       inline const std::string &name() const { return m_name; }
+      inline const std::string &slave() const { return m_slave; }
       inline const Attributes &attributes() const { return *m_attributes; }
       const char *parse(ezxml_t xml, Attributes *attr = NULL);
       // These two use exceptions
@@ -146,6 +151,7 @@ namespace OCPI {
       // This one returns NULL
       Property *getProperty(const char *id) const;
       const char *getValue(const char *sym, ExprValue &val) const;
+      inline Property *properties() const { return m_properties; }
       inline Property *properties(unsigned &np) const {
         np = m_nProperties;
         return m_properties;
@@ -167,7 +173,11 @@ namespace OCPI {
         n_ports = m_nPorts;
         return m_ports;
       }
-      inline unsigned int nPorts( ) const
+      inline Port* getPorts() const
+      {
+        return m_ports;
+      }
+      inline unsigned int nPorts() const
       {
         return m_nPorts;
       }

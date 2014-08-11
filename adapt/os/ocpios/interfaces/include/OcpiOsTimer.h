@@ -190,9 +190,28 @@ namespace OCPI {
 
       void reset ()
         throw ();
+      inline void reset (uint32_t seconds, uint32_t nanoseconds)
+        throw () {
+	reset(Time(seconds, nanoseconds));
+      }
+      inline void reset (Time time)
+        throw () {
+	reset();
+	expiration = time;
+      }
       // reset and start
       void restart ()
         throw ();
+      inline void restart (uint32_t seconds, uint32_t nanoseconds)
+        throw () {
+	reset(seconds, nanoseconds);
+	start();
+      }
+      inline void restart (Time time)
+        throw () {
+	reset(time);
+	start();
+      }
 
       /**
        * Query the accumulated elapsed time.

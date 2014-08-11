@@ -172,6 +172,7 @@ namespace OCPI {
       OC::Worker & createWorker(OC::Artifact *art,
 				const char *appInstName,
 				ezxml_t impl, ezxml_t inst,
+				OC::Worker *slave,
 				const OU::PValue *wParams);
     };
 
@@ -190,7 +191,7 @@ namespace OCPI {
              ezxml_t implXml, ezxml_t instXml, const OA::PValue* execParams) :
         OC::WorkerBase<Application, Worker, Port>(app, *this, art, name, implXml,
 						  instXml, execParams),
-        WciControl(app.parent().hdlDevice(), implXml, instXml),
+        WciControl(app.parent().hdlDevice(), implXml, instXml, properties()),
         m_container(app.parent())
       {
       }
@@ -237,8 +238,8 @@ namespace OCPI {
 
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)     	    \
       void								    \
-      set##pretty##Property(const OA::Property &p, const run val) const {   \
-        WciControl::set##pretty##Property(p, val);			    \
+      set##pretty##Property(unsigned ordinal, const run val) const {        \
+        WciControl::set##pretty##Property(ordinal, val);        	    \
       }									    \
       void								    \
       set##pretty##SequenceProperty(const OA::Property &p, const run *vals, \
@@ -246,8 +247,8 @@ namespace OCPI {
 	WciControl::set##pretty##SequenceProperty(p, vals, length);	    \
       }									    \
       run								    \
-      get##pretty##Property(const OA::Property &p) const {		    \
-	return WciControl::get##pretty##Property(p);			    \
+      get##pretty##Property(unsigned ordinal) const {		            \
+	return WciControl::get##pretty##Property(ordinal);		    \
       }									    \
       unsigned								    \
       get##pretty##SequenceProperty(const OA::Property &p, run *vals,	    \
@@ -258,8 +259,8 @@ namespace OCPI {
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)
 OCPI_DATA_TYPES
       void
-      setStringProperty(const OA::Property &p, const char* val) const {
-        WciControl::setStringProperty(p, val);
+      setStringProperty(unsigned ordinal, const char* val) const {
+        WciControl::setStringProperty(ordinal, val);
       }
       void
       setStringSequenceProperty(const OA::Property &p, const char * const *val,
@@ -267,8 +268,8 @@ OCPI_DATA_TYPES
 	WciControl::setStringSequenceProperty(p, val, n);
       }
       void
-      getStringProperty(const OA::Property &p, char *val, size_t length) const {
-	WciControl::getStringProperty(p, val, length);
+      getStringProperty(unsigned ordinal, char *val, size_t length) const {
+	WciControl::getStringProperty(ordinal, val, length);
       }
       unsigned
       getStringSequenceProperty(const OA::Property &p, char * *cp,
@@ -297,10 +298,11 @@ OCPI_DATA_TYPES
       }
     };
     OC::Worker & Application::createWorker(OC::Artifact *art, const char *appInstName,
-					   ezxml_t impl, ezxml_t inst,
+					   ezxml_t impl, ezxml_t inst, OC::Worker *slave,
 					   const OCPI::Util::PValue *wParams) {
-	return *new Worker(*this, art, appInstName, impl, inst, wParams);
-      }
+      assert(!slave);
+      return *new Worker(*this, art, appInstName, impl, inst, wParams);
+    }
     // This port class really has two cases: externally connected ports and
     // internally connected ports.
     // Also ports are either user or provider.
@@ -340,14 +342,14 @@ OCPI_DATA_TYPES
 					       (1 << OCPI::RDT::ActiveMessage), params),
 	// The WCI will control the interconnect worker.
 	// If there is no such worker, usable will fail.
-        WciControl(w.m_container.hdlDevice(), icwXml, icXml),
+        WciControl(w.m_container.hdlDevice(), icwXml, icXml, NULL),
         m_connection(connXml), 
 	// Note this can be from the region descriptors
 	m_ocdpSize(m_properties.usable() ?
 		   m_properties.get32RegisterOffset(offsetof(OcdpProperties, memoryBytes)) :
 		   0),
       //        m_userConnected(false),
-	m_adapter(adwXml ? new WciControl(w.m_container.hdlDevice(), adwXml, adXml) : 0),
+	m_adapter(adwXml ? new WciControl(w.m_container.hdlDevice(), adwXml, adXml, NULL) : 0),
 	m_hasAdapterConfig(false),
 	m_adapterConfig(0),
 	m_endPoint(NULL)

@@ -46,8 +46,12 @@
 #ifndef OCPI_RCC_WORKER__INTERFACE_H
 #define OCPI_RCC_WORKER__INTERFACE_H
 
+#include <stdio.h>
 #include <stddef.h>
-
+#ifdef __cplusplus
+// For proxy slaves
+#include "OcpiContainerApi.h"
+#endif
 #if defined (WIN32)
     /**
      * 8 bit signed integer data type.
@@ -144,11 +148,54 @@ typedef struct RCCWorker RCCWorker;
 typedef struct RCCPort RCCPort;
 
 typedef struct {
-    RCCPortMask *portMasks;
-    RCCBoolean  timeout;
-    uint32_t    usecs;
+  RCCPortMask *portMasks;
+  RCCBoolean  timeout;
+  uint32_t    usecs;
 } RCCRunCondition;
 
+#ifdef __cplusplus
+struct RunCondition {
+  RCCPortMask *m_portMasks;  // the masks used for checking
+  RCCPortMask  m_myMasks[3]; // non-allocated masks used almost all the time
+  RCCBoolean   m_timeout;    // is timeout enabled?
+  uint32_t     m_usecs;      // usecs of timeout, zero is valid
+  RCCPortMask *m_allocated;  // NULL or allocated
+  RCCPortMask  m_allMasks;   // summary of all masks in the list
+  // Constructors
+  // Default constructor: no timeout, all ports must be ready
+  RunCondition();
+  // This allows a zero-terminated list of masks to be provided in the argument list.
+  // No timeout is enabled.  A very common case.  If given one arg == 0, then never runs
+  RunCondition(RCCPortMask first, ...);
+  // This allows the specification of a mask array (which can be nullptr) and a timeout.
+  RunCondition(RCCPortMask*, uint32_t usecs = 0, bool timeout = false);
+  ~RunCondition();
+  // initialize the default run condition, given how many ports there are
+  // assume default contructor has already been run
+  inline void initDefault(unsigned m_nPorts) {
+    m_myMasks[0] = ~(-1 << m_nPorts);
+    m_myMasks[1] = 0;
+    m_portMasks = m_myMasks;
+    m_allMasks = m_myMasks[0];
+  }
+  // Compatibility hack to support older C-langage run conditions
+  inline void setRunCondition(RCCRunCondition &crc) {
+    m_portMasks = crc.portMasks;
+    m_timeout = crc.timeout;
+    m_usecs = crc.usecs;
+    m_allMasks = 0;
+    for (RCCPortMask *pm = m_portMasks; *pm; pm++)
+      m_allMasks |= *pm;
+  }
+  // Disable the timeout, without changing its value
+  inline void disableTimeout() { m_timeout = false; }
+  // Enable the timeout, setting its value
+  inline void enableTimeout(uint32_t usecs) { m_timeout = true; m_usecs = usecs; }
+  // Enable the tinmeout, without changing its value
+  inline void enableTimeout() { m_timeout = true; }
+  inline void setTimeout(uint32_t usecs) { m_usecs = usecs; }
+};
+#endif
 typedef RCCResult RCCMethod(RCCWorker *_this);
 typedef RCCResult RCCRunMethod(RCCWorker *_this,
 			       RCCBoolean timedout,
@@ -316,15 +363,56 @@ typedef struct {
    Worker &m_worker;
    RCCUserPort *m_ports; // array of C++ port objects
  protected:
-   RCCUserPort &getPort(unsigned n) const { return m_ports[n]; }
-   RCCWorker &m_rcc; // pointer not reference due to initialization issues
+   RCCWorker &m_rcc;
    RCCUserWorker();
    virtual ~RCCUserWorker();
+
+   // These are called by the worker.
+
+   RCCUserPort &getPort(unsigned n) const { return m_ports[n]; }
+   // access the current run condition
+   RunCondition &runCondition() const;
+   // Change the current run condition - if NULL, revert to the default run condition
+   void setRunCondition(RunCondition *rc);
    virtual uint8_t *rawProperties(size_t &size) const;
+   RCCResult setError(const char *fmt, ...);
+
+   // These below are called by the container, and NOT by the worker.
+
+   // The worker author implements any of these that have non-default behavior.
+   // There is a default implementation for all of them.
    virtual RCCResult
      initialize(), start(), stop(), release(), test(), beforeQuery(), afterConfigure();
+   // The worker author must implement this one.
    virtual RCCResult run(bool timeout) = 0;
-   RCCResult setError(const char *fmt, ...);
+   
+ };
+ // This class emulates the API worker, and is customized for the specific implementation
+ // It forwards all the API methods
+ class RCCUserSlave {
+ protected:
+   OCPI::API::Worker &m_worker;
+   RCCUserSlave();
+   //   virtual ~RCCUserSlave();
+ public:
+   inline void start() { m_worker.start(); }
+   inline void stop() { m_worker.stop(); }
+   inline void beforeQuery() { m_worker.beforeQuery(); }
+   inline void afterConfigure() { m_worker.afterConfigure(); }
+   // Untyped property setting - slowest but convenient
+   inline void setProperty(const char *name, const char *value) {
+     m_worker.setProperty(name, value);
+   }
+   // Untyped property list setting - slow but convenient
+   inline void setProperties(const char *props[][2]) {
+     m_worker.setProperties(props);
+   }
+   // Typed property list setting - slightly safer, still slow
+   inline void setProperties(const OCPI::API::PValue *props) { m_worker.setProperties(props); }
+   inline bool getProperty(unsigned ordinal, std::string &name, std::string &value,
+			   bool *unreadablep = NULL, bool hex = false) {
+     return m_worker.getProperty(ordinal, name, value, unreadablep, hex);
+   }
  };
 }} // end of namespace OCPI::RCC
 #endif

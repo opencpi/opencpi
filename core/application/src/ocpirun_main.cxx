@@ -85,6 +85,7 @@ main(int /*argc*/, const char **argv) {
     for (ap = &argv[1]; *ap && ap[0][0] == '-'; ap++)
       switch (ap[0][1]) {
       case 'i':
+      case 'w':
 	addParam("worker", ap);
 	break;
       case 'v':

@@ -1659,7 +1659,7 @@ class Worker : public OC::Worker, public OH::WciControl {
 public:
   Worker(ezxml_t impl, ezxml_t inst, const char *idx) 
     : OC::Worker(NULL, impl, inst),
-      OH::WciControl(*dev, impl, inst, false),
+      OH::WciControl(*dev, impl, inst, properties(), false),
       m_name(ezxml_cattr(inst, "name")),
       m_wName(ezxml_cattr(impl, "name"))
   {

@@ -331,6 +331,7 @@ new:
 	$(AT)$(and $(or $(OcpiSpecFile),$(OcpiLanguage)), \
 	     (\
 	      echo '<$(CapModel)Worker$(and $(LangAttr),'' $(LangAttr))$(and $(OcpiSpecFile),'' spec="$(OcpiSpecFile)")>'; \
+	      $(if $(OcpiSpecFile),,echo '  <componentspec name="$(Name)"/>';) \
               echo '  <!-- Insert any other implementation-specific information here -->'; \
               echo '</$(CapModel)Worker>' \
 	     ) > $(Worker)/$(Name).xml)
@@ -339,6 +340,6 @@ new:
 		OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) \
 		XmlIncludeDirs=../specs Worker= Workers= \
 		skeleton; \
-	     if test $$? != 0; then echo rm -r -f $(Worker); fi
+	     if test $$? != 0; then echo You should probably do: rm -r -f $(Worker); fi
 
 

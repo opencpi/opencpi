@@ -685,6 +685,44 @@ parseSpecPort(Port *p) {
   return NULL;
 }
 
+// The package serves two purposes: the spec and the impl.
+// If the spec already has a package prefix, then it will only
+// be used as the package of the impl.
+const char *Worker::
+findPackage(ezxml_t spec, const char *package) {
+  if (!package)
+    package = ezxml_cattr(spec, "package");
+  if (package)
+    m_package = package;
+  else {
+    std::string packageFileDir;
+    // If the spec name already has a package, we don't use the package file name
+    // to determine the package.
+    const char *base = !strchr(m_specName, '.') && m_specFile ? m_specFile : m_file.c_str();
+    const char *cp = strrchr(base, '/');
+    const char *err;
+    if (cp)
+      packageFileDir.assign(base, cp + 1 - base);
+    // FIXME: Fix this using the include path maybe?
+    std::string packageFileName = packageFileDir + "package-name";
+    if ((err = OU::file2String(m_package, packageFileName.c_str()))) {
+      packageFileName = packageFileDir + "../package-name";
+      if ((err = OU::file2String(m_package, packageFileName.c_str()))) {
+	packageFileName = packageFileDir + "../lib/package-name";
+	if ((err = OU::file2String(m_package, packageFileName.c_str())))
+	  return OU::esprintf("Missing package-name file: %s", err);
+      }
+    }
+    for (cp = m_package.c_str(); *cp && isspace(*cp); cp++)
+      ;
+    m_package.erase(0, cp - m_package.c_str());
+    for (cp = m_package.c_str(); *cp && !isspace(*cp); cp++)
+      ;
+    m_package.resize(cp - m_package.c_str());
+  }
+  return NULL;
+}
+
 const char *Worker::
 parseSpec(const char *package) {
   const char *err;
@@ -703,40 +741,13 @@ parseSpec(const char *package) {
     return "missing componentspec element or spec attribute";
   if (!(m_specName = ezxml_cattr(spec, "Name")))
     return "Missing Name attribute for ComponentSpec";
-  if (strchr(m_specName, '.')) {
+  // Find the package even though the spec package might be specified already
+  if ((err = findPackage(spec, package)))
+    return err;
+  if (strchr(m_specName, '.'))
     m_specName = strdup(m_specName);
-  } else {
-    std::string packageName;
-    if (!package)
-      package = ezxml_cattr(spec, "package");
-    if (package)
-      packageName = package;
-    else {
-      std::string packageFileDir;
-      const char *base = m_specFile ? m_specFile : m_file.c_str();
-      const char *cp = strrchr(base, '/');
-      if (cp)
-	packageFileDir.assign(base, cp + 1 - base);
-      // FIXME: Fix this using the include path maybe?
-      std::string packageFileName = packageFileDir + "package-name";
-      if ((err = OU::file2String(packageName, packageFileName.c_str()))) {
-	packageFileName = packageFileDir + "../package-name";
-	if ((err = OU::file2String(packageName, packageFileName.c_str()))) {
-	  packageFileName = packageFileDir + "../lib/package-name";
-	  if ((err = OU::file2String(packageName, packageFileName.c_str())))
-	    return OU::esprintf("Missing package-name file: %s", err);
-	}
-      }
-      for (cp = packageName.c_str(); *cp && isspace(*cp); cp++)
-	;
-      const char *ep;
-      for (ep = cp; *ep && !isspace(*ep); ep++)
-	;
-      packageName.resize(ep - packageName.c_str());
-      package = cp;
-    }
-    asprintf((char **)&m_specName, "%s.%s", package, m_specName);
-  }
+  else
+    asprintf((char **)&m_specName, "%s.%s", m_package.c_str(), m_specName);
   if ((err = OE::checkAttrs(spec, "Name", "NoControl", "package", (void*)0)) ||
       (err = OE::getBoolean(spec, "NoControl", &m_noControl)))
     return err;
@@ -1078,7 +1089,7 @@ Worker(ezxml_t xml, const char *xfile, const char *parent,
     m_noControl(false), m_reusable(false), m_specFile(0), m_implName(m_name.c_str()), m_specName(0),
     m_isThreaded(false), m_maxPortTypeName(0), m_endian(NoEndian),
     m_needsEndian(false), m_pattern(0), m_staticPattern(0), m_defaultDataWidth(-1),
-    m_language(NoLanguage), m_assembly(NULL), m_library(NULL), m_outer(false),
+    m_language(NoLanguage), m_assembly(NULL), m_slave(NULL), m_library(NULL), m_outer(false),
     m_debugProp(NULL), m_instancePVs(ipvs), m_mkFile(NULL), m_xmlFile(NULL), m_outDir(NULL),
     m_paramConfig(NULL)
 {
