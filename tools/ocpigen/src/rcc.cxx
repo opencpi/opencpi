@@ -313,9 +313,10 @@ emitImplRCC() {
 	  "#ifndef RCC_WORKER_%s_H__\n"
 	  "#define RCC_WORKER_%s_H__\n"
 	  "#include <RCC_Worker.h>\n",
-	  m_implName, m_language == C ? "C" : "C++", upper, upper);
+	  m_implName, m_language == C ? "C" : m_language == CC ? "C++" : "Cilk", upper, upper);
   if ( m_language == CILK ) {
-    fprintf(f,"#include \"cilk.h\"\n");
+    fprintf(f,"#include <cilk/cilk.h>\n");
+    fprintf(f,"#include <cilk/cilk_api.h>\n");
   }
   const char *last;
   unsigned in = 0, out = 0;
@@ -407,9 +408,12 @@ emitImplRCC() {
 	    s.c_str());
     if ( m_language == CILK )  {
       fprintf(f,
-	      "\n This section contains the cilk data members\n"
+	      "\n// This section contains the cilk data members \n"
 	      "protected:\n"
-	      "  cilk::context cilkCtx;\n"
+	      "\n// Gets the total number of available cilk workers\n"
+	      "inline int getCilkNWorkers() { return __cilkrts_get_nworkers(); }\n"
+	      "\n// Gets the worker number for this thread\n"
+	      "inline int getCilkWorkerNumber() { return __cilkrts_get_worker_number(); }\n\n"
 	      );
     }
     if (m_ctl.nRunProperties)
@@ -676,7 +680,7 @@ emitSkelRCC() {
     ext = ".cc";
     break;
   case CILK:
-    ext = ".cilk";
+    ext = ".cc";
     break;    
   }
   if ((err = openOutput(m_fileName.c_str(), m_outDir, "", "-skel",
@@ -689,7 +693,7 @@ emitSkelRCC() {
 	  " * This file contains the implementation skeleton for the %s worker in %s\n"
 	  " */\n\n"
 	  "#include \"%s%s%s\"\n\n",
-	  m_implName, m_language == C ? "C" : "C++", m_implName,
+	  m_implName, m_language == C ? "C" : m_language == CC ? "C++" : "Cilk", m_implName,
 	  m_language == C ? RCC_C_IMPL : RCC_CC_IMPL,
 	  m_language == C ? RCC_C_HEADER : RCC_CC_HEADER);
   const char *upper = upperdup(m_implName);

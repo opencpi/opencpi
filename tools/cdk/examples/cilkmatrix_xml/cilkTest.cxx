@@ -8,6 +8,10 @@
 namespace OA = OCPI::API;
 
 int main(int argc, char **argv) {
+
+
+
+
   const char *size = "100", *selection = "", *nbuffers="2";
   if (argv[1]) {
     selection = argv[1];
@@ -25,7 +29,6 @@ int main(int argc, char **argv) {
   hello += selection;
   hello +=
     "'>"
-    "    <property name='biasValue' value='0x01020304'/>"
     "  </instance>"
     "  <instance component='cilkmatrixsink_cc'>"
     "  </instance>"

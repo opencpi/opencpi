@@ -122,6 +122,7 @@ Implementations = \
 	cilkmatrix_cc.rcc \
 	cilkmatrixsrc_cc.rcc \
 	cilkmatrixsink_cc.rcc \
+	hellocilk_cc.rcc \
 	$(Tests)
 
 #	bias_cc.rcc \

@@ -3,7 +3,6 @@
     <property name='size' value='500'/>
   </instance>
   <instance component='cilkmatrix_cc'>
-    <property name='biasValue' value='0x01020304'/>
   </instance>
   <instance component='cilkmatrixsink_cc'>
     <property name='filename' value='test.outputwrong'/>

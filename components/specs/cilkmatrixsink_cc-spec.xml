@@ -1,5 +1,5 @@
 <ComponentSpec Name="cilkmatrixsink_cc">
-  <DataInterfaceSpec Name="in">
+  <DataInterfaceSpec Name="in" Producer="false">
     <xi:include href="stream32_protocol.xml"/>
   </DataInterfaceSpec>
 </ComponentSpec>

@@ -318,14 +318,18 @@ endif
 # - This version is copied up to the top level (like the code skeleton)
 # - This version is nuked upon make clean.
 
+
+
 new:
 	$(AT)$(if $(Worker),,\
 	       $(error The "Worker=" variable must be specified when "new" is specified.)) \
 	     echo Creating worker subdirectory named $(Worker).
 	$(AT)mkdir -p $(Worker) && \
 	     (\
-              echo \# Put Makefile customizations for worker $(Worker) here:; \
+              echo \# Put Makefile customizations for worker $(Worker) -$(OcpiLanguage)- here:; \
               echo;\
+	      echo \# Uncomment the following line to enable cilk; \
+	      echo \# Libraries = cilkrts; \
 	      echo include '$$(OCPI_CDK_DIR)/include/worker.mk' \
 	     ) > $(Worker)/Makefile
 	$(AT)$(and $(or $(OcpiSpecFile),$(OcpiLanguage)), \

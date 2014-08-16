@@ -47,7 +47,7 @@ OBJ:=.o
 IncludeDirs+=../include
 ifneq ($(OCPI_DEBUG),0)
 #SharedLibLinkOptions+=-g -Xlinker --no-undefined -Xlinker --whole-archive 
-SharedLibLinkOptions+=-g 
+SharedLibLinkOptions+=-g
 endif
 ifeq ($(shell uname),Linux)
 BF=.so
@@ -136,7 +136,7 @@ $(foreach t,$(RccTargets),$(foreach c,$(ParamConfigurations),$(eval $(call DoRcc
 
 .SUFFIXES: .cilk
 
- .cilk.o:
+.cilk.o:
 	cilk++ -c $(CFLAGS) $(CPPFLAGS) -o $@ $<
 
 $(DispatchSourceFile):

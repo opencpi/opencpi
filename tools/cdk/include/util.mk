@@ -87,7 +87,7 @@ Language_rcc:=c
 Languages_rcc:=c c++ cilk
 Suffix_rcc_c:=c
 Suffix_rcc_c++:=cc
-Suffix_rcc_cilk:=cilk
+Suffix_rcc_cilk:=cc
 
 
 Suffix_hdl_verilog:=v
