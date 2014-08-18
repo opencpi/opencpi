@@ -152,23 +152,34 @@ elif test "$position" != "$pos"; then
   exit 1
 fi
 
+suffix=
 case $bitfile in 
   (*.gz)
+    # this might be an empty suffix
     suffix=`basename $bitfile .gz | sed 's/^.*\.//'`
-    echo The bitstream file \"$bitfile\" is compressed.  Expanding to temp file \"$temp.$suffix\".
-    gunzip -q -c < $bitfile > $temp.$suffix 2> $tunzip
-    # Note that gunzip issues warnings and returns status == 2 when there is
-    # junk at the end of the file - which we use for artifact metadata of course.
-    if test $? != 0 -a $? != 2; then
-      echo Decompression failed: $(< $tunzip).
-      rm -f $tbar $temp.$suffix $tunzip
+    if test "$suffix" = ""; then
+      echo Bit file ending in .gz must have a file extension before the .gz suffix.
+      rm $tbar
       exit 1
     fi
-    rm $tunzip
-#    echo Bitstream file decompressed into $temp.bit
-    bitfile=$temp.$suffix
+    ;;       
+  (*.bitz)
+    suffix=bit
     ;;
 esac
+if test "$suffix" != ""; then
+  echo The bitstream file \"$bitfile\" is compressed.  Expanding to temp file \"$temp.$suffix\".
+  gunzip -q -c < $bitfile > $temp.$suffix 2> $tunzip
+  # Note that gunzip issues warnings and returns status == 2 when there is
+  # junk at the end of the file - which we use for artifact metadata of course.
+  if test $? != 0 -a $? != 2; then
+    echo Decompression failed: $(< $tunzip).
+    rm -f $tbar $temp.$suffix $tunzip
+    exit 1
+  fi
+  rm $tunzip
+  bitfile=$temp.$suffix
+fi
 ################################################################################
 # Now we do platform-specific loading.  The "device" arg is unlikely to be used.
 ################################################################################

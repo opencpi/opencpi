@@ -103,6 +103,15 @@ EOF
     port=$3
     pos=$4
     bitfile=$5
+    case $bitfile in
+     (*.bit) ;;
+     (*)
+       tempfile=$temp.bit
+       temps+=$tempfile
+       ln -s $tempfile $bitfile
+       bitfile=$tempfile
+       ;;
+    esac
     $imp <<EOF 2> $temp.log 1>&2
 setMode -bs
 setCable -port $port

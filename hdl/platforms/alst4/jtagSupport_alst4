@@ -82,6 +82,15 @@ case $func in
     port="$3"
     pos="$4"
     bitfile="$5"
+    case $bitfile in
+     (*.sof) ;;
+     (*)
+       tempfile=$temp.sof
+       temps+=$tempfile
+       ln -s $tempfile $bitfile
+       bitfile=$tempfile
+       ;;
+    esac
     echo doing "$QBIN"/quartus_pgm -m jtag -c "$port" -o "p;$bitfile@$pos" > $temp.log 2>&1
     "$QBIN"/quartus_pgm -m jtag -c "$port" -o "p;$bitfile@$pos" >> $temp.log 2>&1
     if test $? != 0; then
