@@ -54,6 +54,8 @@ ALLLIBS += \
   $(UTIL_LIBS) \
   $(OCPIOS_LIBS)
 
+SYSLIBS += $(OCPI_LZMA_DIR)/$(OCPI_TARGET_HOST)/lib/lzma
+
 MAIN_DRIVERS+= \
   _ZN4OCPI3RCC3rccE\
   _ZN4OCPI7Library7CompLib9componentE\

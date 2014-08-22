@@ -26,12 +26,14 @@
 #include <signal.h>
 #include <setjmp.h>
 #include <zlib.h>
+#include <lzma.h>
 #include "OcpiUuid.h"
 #include "OcpiOsAssert.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilException.h"
 #include "HdlDevice.h"
 
+#define USE_LZMA 1
 namespace OCPI {
   namespace HDL {
     namespace OE = OCPI::Util::EzXml;
@@ -120,12 +122,14 @@ namespace OCPI {
     }
     static const unsigned NROMWORDS = 1024;
     static const unsigned MAXXMLBYTES = NROMWORDS * sizeof(uint32_t) * 16;
+#ifndef USE_LZMA
     static voidpf zalloc(voidpf , uInt items, uInt size) {
       return malloc(items * size);
     }
     static void zfree(voidpf , voidpf data) {
       free(data);
     }
+#endif
     bool Device::
     getMetadata(std::vector<char> &xml, std::string &err) {
       uint32_t rom[NROMWORDS];
@@ -141,6 +145,31 @@ namespace OCPI {
       uint16_t nWords = OCPI_UTRUNCATE(uint16_t, (rom[1] + sizeof(uint32_t) - 1)/sizeof(uint32_t));
       for (uint16_t n = 4; n < 4 + nWords; n++)
 	rom[n] = getRomWord(n);
+#if USE_LZMA
+      lzma_ret lr;
+      uint64_t memlimit = UINT64_MAX;
+      size_t in_pos = 0, out_pos = 0;
+      if ((lr = lzma_stream_buffer_decode(&memlimit, // ptr to max memory to use during decode
+					  0,         // flags
+					  NULL,      // allocator if not malloc/free
+					  (uint8_t *)&rom[4],        // input buffer
+					  &in_pos,   // updated input index
+					  rom[1],   // size of input
+					  (uint8_t *)&xml[0],       // output buffer
+					  &out_pos,  // updated output index
+					  rom[2])) == LZMA_OK) {
+	if (out_pos != rom[2]) {
+	  OU::format(err, "length on decompressed data: is %lx, "
+		     "should be %"PRIx32, out_pos, rom[2]);
+	  return true;
+	}
+	return false;
+      }
+      OU::format(err, "Unsuccessful lzma decompression from config ROM: %u", lr);
+      for (unsigned i = 0; i < 10; i++)
+	ocpiInfo("bad ROM[%u]: 0x%08x", i, rom[i]);
+      return true;
+#else
       z_stream zs;  
       zs.zalloc = zalloc;
       zs.zfree = zfree;
@@ -158,11 +187,11 @@ namespace OCPI {
 		     zs.adler, zs.total_out, rom[3], rom[2]);
 	  return true;
 	}
-      } else {
-	err = "Unsuccessful decompression from rom contents";
-	return true;
+	return false;
       }
-      return false;
+      err = "Unsuccessful decompression from rom contents";
+      return true;
+#endif
     }
 
     // Called initially or after reloading

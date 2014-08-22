@@ -262,10 +262,10 @@ namespace OCPI {
 	  m_name = "sim:";
 	  m_name += m_clients.front()->ifAddr().pretty();
 	  if (verbose) {
-	    fprintf(stderr, "Simulation server for %s (UUID %s), reachable at: ",
+	    fprintf(stderr, "Simulation server for %s (UUID %s), reachable using HDL device(s): ",
 		    m_platform.c_str(), uuid());
 	    for (ClientsIter ci = m_clients.begin(); ci != m_clients.end(); ci++)
-	      fprintf(stderr, "%s%s", ci == m_clients.begin() ? "" : ", ", (*ci)->ifAddr().pretty());
+	      fprintf(stderr, "%ssim:%s", ci == m_clients.begin() ? "" : ", ", (*ci)->ifAddr().pretty());
 	    fprintf(stderr, "\n");
 	    fflush(stderr);
 	  }
@@ -473,7 +473,8 @@ namespace OCPI {
 
 	  if (m_verbose)
 	    fprintf(stderr, "Starting execution of simulator for HDL assembly: %s "
-		    "(executable \"%s\").\n", m_app.c_str(), m_exec.c_str());
+		    "(executable \"%s\", dir \"%s\").\n", m_app.c_str(), m_exec.c_str(),
+		    m_dir.c_str());
 	  switch ((s_pid = fork())) {
 	  case 0:
 	    if (chdir(m_dir.c_str()) != 0) {
@@ -562,10 +563,11 @@ namespace OCPI {
 	  m_dir += ".";
 	  m_dir += m_platform;
 	  m_dir += date;
-	  ocpiDebug("Sim executable is %s, app is %s, platform is %s dir is %s",
-		    file, m_app.c_str(), m_platform.c_str(), m_dir.c_str());
+	  ocpiDebug("Sim executable is %s(%s), assy is %s, platform is %s dir is %s",
+		    file, m_file.c_str(), m_app.c_str(), m_platform.c_str(), m_dir.c_str());
 	  if (mkdir(m_dir.c_str(), 0777) != 0 && errno != EEXIST) {
-	    OU::format(err, "Can't create directory %s to run simulation", m_dir.c_str());
+	    OU::format(err, "Can't create directory %s to run simulation (%s)",
+		       m_dir.c_str(), strerror(errno));
 	    return true;
 	  }
 	  // At this point we are ready to actually receive the file.

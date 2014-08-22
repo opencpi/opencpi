@@ -38,6 +38,8 @@
 #include <sys/mman.h>
 #include <signal.h> // for SIGPIPE
 #include <unistd.h>
+#include <stdlib.h>
+#include "lzma.h"
 #include "zlib.h"
 #include "OcpiOsMisc.h"
 #include "OcpiUuid.h"
@@ -50,6 +52,7 @@
 #include "HdlContainer.h"
 #include "HdlOCDP.h"
 
+#define USE_LZMA 1
 namespace OX = OCPI::Util::EzXml;
 namespace OE = OCPI::OS::Ether;
 namespace HE = OCPI::HDL::Net;
@@ -714,12 +717,14 @@ admin(const char **) {
     printf(" UUID[%2d:%2d]:  0x%08x 0x%08x 0x%08x 0x%08x\n",
 	   k+3, k, uuid[k+3], uuid[k+2], uuid[k+1], uuid[k]);
 }
+#ifndef USE_LZMA
 static voidpf zalloc(voidpf , uInt items, uInt size) {
   return malloc(items * size);
 }
 static void zfree(voidpf , voidpf data) {
   free(data);
 }
+#endif
 static void
 bram(const char **ap) {
   if (!ap[0])
@@ -733,59 +738,67 @@ bram(const char **ap) {
   FILE *ofp = fopen(ap[1], "w");
   if (!ofp)
     bad("Cannot open output file '%s'", ap[1]);
-  off_t length;
-  if (fd >= 0 &&
-      (length = lseek(fd, 0, SEEK_END)) != -1 &&
-      lseek(fd, 0, SEEK_SET) == 0 &&
-      (in = (unsigned char*)malloc(length)) &&
-      read(fd, in, length) == length &&
-      (out = (unsigned char*)malloc(length))) {
-    z_stream zs;
-    zs.zalloc = zalloc;
-    zs.zfree = zfree;
-    zs.next_in = in;
-    zs.avail_in = (uInt)length;
-    zs.next_out = out;
-    zs.avail_out = (uInt)length;
-    zs.data_type = Z_TEXT;
-    if (deflateInit(&zs, 9) == Z_OK &&
-	deflate(&zs, Z_FINISH) == Z_STREAM_END &&
-	deflateEnd(&zs) == Z_OK) {
-      size_t oWords = (zs.total_out + 3)/4;
-      uint32_t *u32p = (uint32_t *)out;
-#if 0
-      fprintf(ofp, "%08lx\n%08lx\n%08lx\n%08lx\n", 1ul, zs.total_out, (unsigned long)length, zs.adler);
-      for (; oWords; oWords--)
-	fprintf(ofp, "%08x\n", *u32p++);
+  off_t length = 0; // for warning
+  if (fd < 0 ||
+      (length = lseek(fd, 0, SEEK_END)) == -1 ||
+      lseek(fd, 0, SEEK_SET) != 0 ||
+      (in = (unsigned char*)malloc(length)) == NULL ||
+      read(fd, in, length) != length ||
+      (out = (unsigned char*)malloc(length)) == NULL)
+    bad("Could not open or read the input file");
+  size_t total, check;
+#if USE_LZMA
+  lzma_stream strm = LZMA_STREAM_INIT;
+  lzma_ret lr;
+  if ((lr = lzma_easy_encoder(&strm, 6, LZMA_CHECK_CRC64)) != LZMA_OK)
+    bad("lzma_easy_encoder failed: %u", lr);
+  strm.avail_in = strm.avail_out = length;
+  strm.next_in = in;
+  strm.next_out = out;
+  if ((lr = lzma_code(&strm, LZMA_FINISH)) != LZMA_STREAM_END)
+    bad("lzma didn't finish: %u", lr);
+  total = strm.total_out;
+  check = 0;
 #else
-      for (unsigned n = 0; n < 1024; n++) {
-	uint32_t i;
-	switch(n) {
-	case 0: i = 1; break;
-	case 1: i = OCPI_UTRUNCATE(uint32_t, zs.total_out); break;
-	case 2: i = OCPI_UTRUNCATE(uint32_t, length); break;
-	case 3: i = OCPI_UTRUNCATE(uint32_t, zs.adler); break;
-	default:
-	  i = n < oWords+4 ? *u32p++ : 0;
-	}
-#if 0
-      // VHDL "read" format
-	for (unsigned b = 0; b < 32; b++)
-	  fputc(i & 1 << (31 - b) ? '1' : '0', ofp);
-#else
-	fprintf(ofp, "%08x", i);
+  z_stream zs;
+  int zr;
+  zs.zalloc = zalloc;
+  zs.zfree = zfree;
+  zs.next_in = in;
+  zs.avail_in = (uInt)length;
+  zs.next_out = out;
+  zs.avail_out = (uInt)length;
+  zs.data_type = Z_TEXT;
+  if ((zr = deflateInit(&zs, 9)) != Z_OK ||
+      (zr = deflate(&zs, Z_FINISH)) != Z_STREAM_END ||
+      (zr = deflateEnd(&zs)) != Z_OK)
+    bad("zip failed: %u", zr);
+  total = zs.total_out;
+  check = zs.adler;
 #endif
-	fputc('\n', ofp);
-      }
-#endif
-      if (fclose(ofp)) {
-	unlink(ap[1]);
-	bad("Error writing output file '%s'", ap[1]);
-      }
-      printf("Wrote bram file '%s' (%lu bytes) from file '%s' (%lu bytes)\n",
-	     ap[1], zs.total_out, *ap, (unsigned long)length);
+  size_t oWords = (total + 3)/4;
+  if (oWords + 4 > 1024)
+    bad("Compressfile is too large for BRAM. Input is %zu, output is %zu",
+	length, total + 16);
+  uint32_t *u32p = (uint32_t *)out;
+  for (unsigned n = 0; n < 1024; n++) {
+    uint32_t i;
+    switch(n) {
+    case 0: i = 1; break;
+    case 1: i = OCPI_UTRUNCATE(uint32_t, total); break;
+    case 2: i = OCPI_UTRUNCATE(uint32_t, length); break;
+    case 3: i = OCPI_UTRUNCATE(uint32_t, check); break;
+    default:
+      i = n < oWords+4 ? *u32p++ : 0;
     }
+    fprintf(ofp, "%08x\n", i);
   }
+  if (fclose(ofp)) {
+    unlink(ap[1]);
+    bad("Error writing output file '%s'", ap[1]);
+  }
+  printf("Wrote bram file '%s' (%lu bytes) from file '%s' (%lu bytes)\n",
+	 ap[1], total + 16, *ap, (unsigned long)length);
   if (in) free(in);
   if (out) free(out);
 }
@@ -802,29 +815,9 @@ unbram(const char **ap) {
   FILE *ofp = fopen(ap[1], "wb");
   if (!ofp)
     bad("Cannot open output file: \"%s\"", ap[1]);
-#if 0
-  size_t version, bytes, length, adler;
-  if (fscanf(ifp, "%zx\n%zx\n%zx\n%zx\n", &version, &bytes, &length, &adler) != 4)
-    bad("Input file has bad format");
-  size_t
-    nWords = (bytes + 3)/4,
-    nBytes = nWords * sizeof(uint32_t);
-  unsigned char *in = (unsigned char *)malloc(nBytes);
-  if (!in)
-    bad("Error allocating %zu bytes for input file", nBytes);
-  unsigned char *out = (unsigned char *)malloc(length);
-  if (!out)
-    bad("Error allocating %zu bytes for input file", length);
-  for (uint32_t *u32p = (uint32_t *)in; nWords; nWords--) {
-    uint32_t n;
-    if (fscanf(ifp, "%" SCNx32 "\n", &n) != 1)
-      bad("Error reading input file");
-    *u32p++ = n;
-  }
-#else
   size_t
     adler,
-    olength = 32*1024, // worst case output size
+    olength = 64*1024, // worst case output size
     inWords = 1024,
     inBytes = inWords * sizeof(uint32_t);
   uint32_t *in, *u32p;
@@ -832,13 +825,18 @@ unbram(const char **ap) {
   for (unsigned n = 0; n < inWords; n++) {
     char line[34];
     line[32] = 0;
-    fgets(line, 34, ifp);
-    if (line[32] != '\n')
-      bad("Bad format in bram file");
-    uint32_t i = 0;
-    for (unsigned b = 0; b < 32; b++)
-      if (line[b] == '1')
-	i |= 1 << (31 - b);
+    if (!fgets(line, 34, ifp))
+      bad("error reading input");
+    size_t len = strlen(line);
+    if (line[len - 1] != '\n')
+      bad("error in data in input file lines");
+    line[len-1] = '\0';
+    errno = 0;
+    char *end;
+    unsigned long l = strtoul(line, &end, 16);
+    if (errno != 0 || *end != 0)
+      bad("error in data in input file data");
+    uint32_t i = OCPI_UTRUNCATE(uint32_t, l);
     switch(n) {
     case 0:
       if (i != 1)
@@ -862,9 +860,27 @@ unbram(const char **ap) {
       *u32p++ = i;
     }
   }
-#endif
   printf("Expanding from %zu bytes in bram to %zu bytes in text\n",
 	 inBytes, olength);
+  size_t total, check;
+#ifdef USE_LZMA
+  lzma_ret lr;
+  uint64_t memlimit = UINT64_MAX;
+  size_t in_pos = 0, out_pos = 0;
+  if ((lr = lzma_stream_buffer_decode(&memlimit, // ptr to max memory to use during decode
+				      0,         // flags
+				      NULL,      // allocator if not malloc/free
+				      (uint8_t *)in,        // input buffer
+				      &in_pos,   // updated input index
+				      inBytes,   // size of input
+				      out,       // output buffer
+				      &out_pos,  // updated output index
+				      olength)) != LZMA_OK)
+    bad("Decompression failure: %u", lr);
+  total = out_pos;
+  check = 0;
+#else
+  int zr;
   z_stream zs;  
   zs.zalloc = zalloc;
   zs.zfree = zfree;
@@ -873,19 +889,21 @@ unbram(const char **ap) {
   zs.avail_in = (uInt)inBytes;
   zs.next_out = out;
   zs.avail_out = (uInt)olength;
-  if (inflateInit(&zs) == Z_OK &&
-      inflate(&zs, Z_FINISH) == Z_STREAM_END &&
-      inflateEnd(&zs) == Z_OK) {
-    if (zs.adler != adler || zs.total_out != olength)
-      bad("bad checksum on decompressed data: is %lx, should be %zx", zs.adler, adler);
-    if (fwrite(out, 1, zs.total_out, ofp) != zs.total_out || fclose(ofp)) {
-      unlink(ap[1]);
-      bad("Error writing output file '%s'", ap[1]);
-    }
-    printf("Wrote unbram file '%s' (%lu bytes) from file '%s' (%zu bytes)\n",
-	   ap[1], zs.total_out, ap[0], inBytes);
-  } else
-    bad("Unsuccessful decompression from file %s", ap[0]);
+  if ((zr = inflateInit(&zs)) != Z_OK ||
+      (zr = inflate(&zs, Z_FINISH)) != Z_STREAM_END ||
+      (zr = inflateEnd(&zs)) != Z_OK)
+    bad("zlib decompression failed: %u", zr);
+  total = zs.total_out;
+  check = zs.adler;
+#endif
+  if (check != adler || total != olength)
+    bad("bad checksum on decompressed data: is %lx, should be %zx", check, adler);
+  if (fwrite(out, 1, total, ofp) != total || fclose(ofp)) {
+    unlink(ap[1]);
+    bad("Error writing output file '%s'", ap[1]);
+  }
+  printf("Wrote unbram file '%s' (%lu bytes) from file '%s' (%zu bytes)\n",
+	 ap[1], total, ap[0], inBytes);
 }
 
 static void
@@ -1053,10 +1071,11 @@ static inline int64_t ticks2ns(uint64_t ticks) {
 static inline int64_t dticks2ns(int64_t ticks) {
   return ((ticks) * 1000000000ll + (1ll << 31))/ (1ll << 32);
 }
+#if 0
 static inline ull ns2ticks(uint32_t sec, uint32_t nsec) {
   return (((uint64_t)(sec)) << 32ull) + ((nsec) + 500000000ull) * (1ull<<32) /1000000000;
 }
-
+#endif
 static int compu32(const void *a, const void *b) { return *(int32_t*)a - *(int32_t*)b; }
 static inline uint64_t swap32(uint64_t x) {return (x <<32) | (x >> 32); }
 static void

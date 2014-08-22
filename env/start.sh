@@ -24,6 +24,7 @@ export OCPI_TARGET_HOST=$OCPI_TOOL_HOST
 export OCPI_TARGET_PLATFORM=$OCPI_TOOL_PLATFORM
 
 export OCPI_GTEST_DIR=/opt/opencpi/prerequisites/gtest
+export OCPI_LZMA_DIR=/opt/opencpi/prerequisites/lzma
 export OCPI_DEBUG=1
 export OCPI_ASSERT=1
 export OCPI_SHARED_LIBRARIES_FLAGS=

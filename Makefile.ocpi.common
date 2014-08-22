@@ -297,6 +297,7 @@ ifneq ($(filter linux macos,$(OCPI_OS)),)
 
 MAIN_LDFLAGS+=\
   -Xlinker -rpath -Xlinker "$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR)" \
+  $(and $(OCPI_LZMA_DIR),-Xlinker -rpath -Xlinker $(OCPI_LZMA_DIR)/$(OCPI_TARGET_HOST)/lib) \
   $(foreach o,$(MAIN_DRIVERS), $(call UNDEFINED_FLAG,$o))
 ifeq ($(OCPI_OS),macos)
 SO=dylib
@@ -321,6 +322,9 @@ SHARED_ALLOW_UNDEFINED=-shared
 SHARED=-shared -Xlinker --no-undefined
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC -Wall
+else
+# This forces everything to be static, and some libraries aren't available (-ldl).
+# MAIN_LDFLAGS+=-static
 endif
 SO=so
 endif
