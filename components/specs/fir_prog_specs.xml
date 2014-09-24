@@ -1,0 +1,26 @@
+<!-- Component spec for a Symmetric Real FIR bandpass multitap filter  
+    
+When this component receives a "Sync" message it is responsible for performing whatever is 
+required to handle a discontinuity in the input data stream.  All of the control protocol
+being handled at the input must be passed to the output.
+
+-->
+
+<ComponentSpec name="sym_fir_real" >
+
+  <Properties>
+    <!-- tap values  Format: short[128]   -->
+    <Property Name="taps" type="Short" ArrayLength="128" Readable="true" Writable="true"/>
+  </Properties>
+
+  <!-- Input data and control stream -->
+  <DataInterfaceSpec Name="in" Producer="false">
+      <xi:include href="rstream_data_protocol.xml"/>
+  </DataInterfaceSpec>
+
+  <!-- Output data and control stream -->
+  <DataInterfaceSpec Name="out" Producer="true">
+      <xi:include href="rstream_data_protocol.xml"/>
+  </DataInterfaceSpec>
+
+</ComponentSpec>

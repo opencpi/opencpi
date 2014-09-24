@@ -1,0 +1,5 @@
+<HDLImplementation name="sym_fir_real" language="vhdl">
+  <xi:include href="sym_fir_real_spec.xml"/>
+  <StreamInterface Name="in"/>
+  <StreamInterface Name="out"/>
+</HDLImplementation>

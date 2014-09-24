@@ -78,10 +78,11 @@ MODNAME = opencpi
 
 .DELETE_ON_ERROR:
 MyDir:=$(dir $(realpath $(lastword $(MAKEFILE_LIST))))
+MyTargetDir:=target-$(OCPI_TARGET_HOST)
 MyIncs= \
          -I$(realpath $(MyDir)/../../../../../core/container/hdl/include) \
          -I$(realpath $(MyDir)/../../interfaces/include)
-MyLib:=$(realpath $(MyDir)/../../../../../lib/target-$(OCPI_TARGET_HOST))
+MyLib:=$(realpath $(MyDir)/../../../../../lib/$(MyTargetDir))
 ifeq ($(strip $(MyLib)),)
   ifneq ($(MAKECMDGOALS),topclean)
     $(error OpenCpi libraries must be built before the driver is built)
@@ -91,7 +92,7 @@ endif
 export EXTRA_CFLAGS := $(MyIncs) -Wformat=2
 # This is what works with Centos6
 export KCPPFLAGS := $(MyIncs) -Wformat=2
-MODFILE=$(MODNAME).ko
+MODFILE=$(MyTargetDir)/$(MODNAME).ko
 URULESFILE=99-$(MODNAME).rules
 MRULESFILE=mdev-$(MODNAME).rules
 JUNK=Module.markers Module.symvers .opencpi* opencpi.mod.* opencpi.o .tmp*
@@ -99,34 +100,43 @@ INSTALLED=$(MyLib)/$(MODFILE) $(MyLib)/$(URULESFILE) $(MyLib)/$(MRULESFILE)
 all:	$(INSTALLED)
 
 $(MODFILE): opencpi.c
+	$(AT)echo Building kernel module $(MODFILE)
 	$(and $(KERNELDIR),$(MAKE) -C $(KERNELDIR) M=$(PWD) modules)
-	@rm -rf	$(JUNK)
+	$(AT)mkdir -p $(MyTargetDir)
+	$(AT)mv $(MODNAME).ko $(MODFILE)
+	$(AT)rm -rf	$(JUNK)
 
 modules: $(MODFILE)
 
 $(INSTALLED): $(MODFILE) $(URULESFILE) $(MRULESFILE)
-	@cp $(URULESFILE) $(MyLib)
-	@cp $(MRULESFILE) $(MyLib)
-	@cp $(MODFILE) $(MyLib)
-	@echo Linux driver built, and a copy placed in $(MyLib)
+	$(AT)cp $(URULESFILE) $(MyLib)
+	$(AT)cp $(MRULESFILE) $(MyLib)
+	$(AT)cp $(MODFILE) $(MyLib)
+	$(AT)echo Linux driver built, and a copy placed in $(MyLib)
 
 
 modules_install:
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules_install
 
 load:
-	@./ocpi_linux_driver reload x
+	$(AT)./ocpi_linux_driver reload x
 
 unload:
-	@./ocpi_linux_driver unload x
+	$(AT)./ocpi_linux_driver unload x
 
+# This clean is target specific
 clean:	
 	$(and $(KERNELDIR),$(MAKE) -C $(KERNELDIR) M=$(PWD) clean)
-	rm -rf	$(JUNK) $(MODFILE) $(MODFILE).unsigned modules.order
+	rm -rf	$(MyTargetDir) $(JUNK) $(MODFILE) $(MODFILE).unsigned modules.order
 
+# This clean is target specific
 topclean: clean
 	rm -f $(MyLib)/$(MODFILE) $(MyLib)/$(URULESFILE) $(MyLib)/$(MRULESFILE)
 
-.PHONY: all clean topclean
+# This clean will clean locally for all targets
+distclean: clean
+	rm -r -f target-*
+
+.PHONY: all clean topclean distclean
 
 endif

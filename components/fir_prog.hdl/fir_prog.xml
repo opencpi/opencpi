@@ -1,0 +1,5 @@
+<HdlImplementation Language="vhdl">
+  <xi:include href="fir_prog_spec.xml"/>
+  <streaminterface name="in" datawidth="16"/>
+  <streaminterface name="out" datawidth="16"/>
+</HdlImplementation>

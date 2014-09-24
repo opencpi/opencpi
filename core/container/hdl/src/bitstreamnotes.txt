@@ -1,0 +1,170 @@
+How to we reliably know what bitstream to load?
+
+- We know from the file and metadata what the UUID is.
+(so we need to generate it at the time of the marriage somehow)
+- So the software/container must answer the question:
+--- Is this the bitstream that is loaded already (and be able to force it).
+
+We have the UUID in admin space so if it is a good one (ocfrp_check), then we can compare.
+And why not for RCC too?????
+Can we load multiple .so files with the same name and/or symbols.
+
+What role does the ESN play?
+
+How do we really identify containers?
+
+A tool that you use to identify containers:
+
+You mess with the hardware.
+You force a flash load:
+- the SW in ocfrp_check should check a version value too.
+
+So our ocfrp_check reports:
+1. Looks like it
+2. Version
+3. ESN
+4. Bitstream stuff.
+
+Our "platform" must support a way to provide an ESN of some sort.
+Just to be unique within a system, stable in the face of plugging in new hardare.
+
+So then the platform config file can associate a name with the ESN that is reported.
+A fallback can indeed be to use PCI device - ugh.
+
+The loadBitStream script must identify the target somehow.
+Our technique requires knowledge of both usb port for jtag, as well a jtag chip position.
+The platform config can root it in the ESN, but it might not be there.
+All the jtag can do is associate a USB port with a chain.
+We can verify that the usb port has the right chip on it.
+
+A script to do the discovery that is redone at boot time.
+
+Once the flash and ocfrp_check is done, you have the ESN?
+
+Could you put the ESN in the bitstream itself? Ugh.
+
+There are platform-specific program options.
+
+How are containers grouped for aboard?
+On a multi-chip board they might not have PCIe addresses either.
+
+What is a board?
+
+Ultimately you need system topology with hierarchy, with boards having
+interconnects and nodes and externals - an assembly.
+
+If a flattened system configuration is ok, then we can generate it later.
+
+So:  a node needs:
+
+- stuff per hardware type (what is an ml605)
+- stuff that is assigned when it is installed
+- stuff that is unique to the actual piece of hardware
+- stuff that is configured on the actual piece of hardware.
+
+So:
+
+An ML605 has chips with IDs and types, and interconnect types and ports.
+So what is named is: nodes, interconnects, and externals - an assembly.
+
+This container is chip X on an ML605, which is an v6lx240t, connected to PCIe named FOO, which has an external offboard port.
+
+It is on usb20, position 5 for loading purposes.
+
+It is on PCI 0000:04:00.0
+
+So boot time discovery is good, but how to associate it?
+
+If we have a config file, how to we merge discovered info with it?
+How about a simple merge of discovered file and a base file.
+
+fred is an ml605 with esn 1234
+fred has usb21 and pcie4
+
+What can promgen insert after the fact?
+Can we flash a board with a serial number?
+The basic fact is that we might not know an identity and it will only be identifiable by a dynamically assigned identity.
+Which means we fake an ESN.
+
+So there is:
+- user specified identity within a platform
+- hardware-specified unique ESN
+- dynamically system-assigned identities
+
+When a user specifies a name, it can be:
+- ordinal of model, or wildcard of model
+- esn
+- user name
+- assigned address
+
+What do we do with the 512 bits of UUID?
+
+UTC time - 32 bits so we know when it was built
+Bitstream UUID - the thing to check for reloading etc. 128 bits
+Hardware type string - key for lookup = ml605 - artifact metadata
+Chip type string - loadparams help (e.g. part and position)
+
+so generate the damn stuff in the artifact AND in the mkUUID.
+
+UTC: date +%s in unsigned decimal
+UUID:  uuidgen
+HW type: $HdlPlatform
+ChipType: part, and we need to know the jtag position as a parameter of the platform
+
+Make ocpigen generate this as an ancillary output similar to the container generator.
+Needs a platform string and loadparams strings as inputs.
+platform string will do into the XML too.
+
+The UUID-based part and position is a double check when there is already one there.
+
+So a separate utility that is riskier to reflash - how about one to revert to a flashed one from a dynamically loaded one?
+
+If the device/admin tells you a UUID, can you find out more about it from the UUID, or do you embed junk in there based on the environment?
+Perhaps an environment variable (user, hostname).
+
+1. ocpigen for into in artifact XML and UUID
+2. hdl-app.mk to use the mkuuid
+3. make sure that find artifact works properly based on platform
+4. do the load check at least.
+5. actually perform the load.
+
+How about Altera?
+
+Remember that HdlPlatforms should be documented, and added somewhere.
+(Maybe environment).
+Especially for ml605 ref platform
+Doc currently says "known good OpenCPI bit stream".  We should be clearer about this.
+
+ref doc should walk through probeXilinxUsb at least.
+http://rmdir.de/~michael/xilinx/ for open source jtag usb stuff.
+Ok, that did the trick.  Without -x it was trying to open $OCPI_HOME/components/rep/adc_unpack_spec.xml which doesn't exist (no /rep directory at all).  Suppose that's some sort of default.
+
+RCC: code gen should generate portinfo from metadata...
+
+impact command line flash:
+
+check that make scripts do the promgen the same as Mike's doc
+"boundary scan"
+"initialize chain"
+"add SPI/BPI flash"
+(asks for mcs, but needs .prm, and .cfi)
+"BPI Prom"
+"program"
+
+Our use of promgen:
+
+-w // overwrite output file?
+-p mcs // prom format: mcs is the default
+-c ff // checksum???  what about the FF???
+ml605:
+-x xcf128x -data_width 16 -u 00000000 // -u is load address, must be last, like ver
+ml555:
+-x xcf32p -ver 0 // -ver expects a hex address and then file names
+
+Need script:
+loadBitstream
+loadBaselineFlash
+loadUserFlash
+
+
+

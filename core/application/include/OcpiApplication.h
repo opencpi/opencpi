@@ -130,6 +130,7 @@ namespace OCPI {
       unsigned m_currConn;
       unsigned m_bestScore;
       bool m_hex;
+      Application &m_apiApplication;
 
       void init(const OCPI::API::PValue *params);
       void initExternals(const OCPI::API::PValue *params);
@@ -150,11 +151,11 @@ namespace OCPI {
       void prepareInstanceProperties(unsigned nInstance, const OCPI::Library::Implementation &impl,
 				     unsigned *&pn, OCPI::Util::Value *&pv);
     public:
-      explicit ApplicationI(const char *file, const OCPI::API::PValue *params = NULL);
-      explicit ApplicationI(const std::string &string, const OCPI::API::PValue *params = NULL);
-      explicit ApplicationI( OCPI::Library::Assembly &, const OCPI::API::PValue *params = NULL);
+      explicit ApplicationI(OCPI::API::Application &app, const char *file, const OCPI::API::PValue *params = NULL);
+      explicit ApplicationI(OCPI::API::Application &app, const std::string &string, const OCPI::API::PValue *params = NULL);
+      explicit ApplicationI(OCPI::API::Application &app, OCPI::Library::Assembly &, const OCPI::API::PValue *params = NULL);
       ~ApplicationI();
-      OCPI::Library::Assembly & assembly(){return m_assembly;}
+      OCPI::Library::Assembly & assembly() { return m_assembly; }
       bool foundContainer(OCPI::Container::Container &i);
       OCPI::Container::Worker &createWorker(Instance &i, unsigned n,
 					    OCPI::Container::Worker *slave);

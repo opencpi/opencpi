@@ -1,0 +1,57 @@
+So we need to get the generated artifact xml and the "file file" in sync and also testRpl in sync.
+
+
+We accomplished:
+- generating the artifact xml for hdl
+- adding the artifact xml to the bit.gz file
+- loading the bit.gz file that has the xml at the back.
+
+We will sync up what testRpl wants with the generated file.
+
+We will have a different tool to dump all the properties from the bitstream file.
+
+We need a board identification scheme which will correlate with PCIe device.
+
+If we assume boards have HW UUIDs (ESN) then we can just have a database of
+name (sticker) and HWUUID...
+
+REUSABLE ATTRIBUTES IMPLEMENTED CORRECTLY.
+NONREENTRANT
+
+application "start" to avoid worker starts.
+output opcode initialized to zero automatically.
+output length being fixed to avoid setting it.
+Both being sticky?  Possible to set in initialize?
+
+App code allow properties on create.
+Now to mix system properties with worker properties.
+QUalified property names for global uniqueness?
+Batch connections?
+PValue lists as immediates? (C++ remember).
+
+AEP should expunge non-reentrant functions:
+http://developers.sun.com/solaris/articles/multithreaded_nonreentrant.c
+
+examples should be build under the CDK environment, NOT the OCPI environment.
+
+DPs are device workers!!!  Then just connect to interconnect junk rather than pins.
+
+Test environment:
+
+Only set OCPI_CDK_DIR.
+Have script that sets up path, ld_library_path, from it.
+
+Finally:  the artifact XML file does NOT HAVE THE DP WORKER IN IT!
+Do the dp info must be present...WHich means devices too..
+
+Ugh.  WMI:  MDataLast and MDataValid should be qualified by producer...
+
+Bidirectional:
+
+You want to re-use a bit stream by setting up things in the direction you want.
+So the bitstream xml should not force the issue.
+The problem is external connections, which we now define as one way or the other.
+
+And the connect and getexternal verbs currently use implicit direction.
+So they must be bidi too.
+

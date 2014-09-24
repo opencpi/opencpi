@@ -48,7 +48,7 @@
 namespace OCPI {
   namespace OS {
 
-inline Time Time::now() {
+Time Time::now() {
   Time t;
 #ifdef __APPLE__
   struct timeval tv;

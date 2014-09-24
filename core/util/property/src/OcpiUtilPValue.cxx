@@ -78,6 +78,7 @@ namespace OCPI {
       PVString("paramconfig"),
       PVString("model"),
       PVString("platform"),
+      PVBool("signal"),
       PVEnd
     };
 

@@ -44,7 +44,8 @@ namespace OU = OCPI::Util;
 
 namespace OCPI {
   namespace Container {
-    Application::Application(const OA::PValue *params) {
+    Application::Application(const OA::PValue *params)
+      : m_apiApplication(NULL) {
       const char *package;
       if (OU::findString(params, "package", package))
 	m_package = package;

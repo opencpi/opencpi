@@ -179,7 +179,7 @@ namespace OCPI {
       std::list<OCPI::Util::Port*> m_testPmds;
     private:
       void initializeContext();
-      inline void setRunCondition(RunCondition &rc) {
+      inline void setRunCondition(const RunCondition &rc) {
 	m_runCondition = &rc;
 	if (rc.m_timeout)
 	  m_runTimer.reset(rc.m_usecs / 1000000, (rc.m_usecs % 1000000) * 1000);
@@ -196,7 +196,7 @@ namespace OCPI {
       OCPI::OS::Mutex &m_mutex;
       RunCondition     m_defaultRunCondition; // run condition we create
       RunCondition     m_cRunCondition;       // run condition we use when C-language RC changes
-      RunCondition    *m_runCondition;        // current active run condition used in dispatching
+      const RunCondition *m_runCondition;        // current active run condition used in dispatching
       
       char            *m_errorString;         // error string set via "setError"
       OCPI::Container::Worker      *m_slave;

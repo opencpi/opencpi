@@ -1,0 +1,5 @@
+<RccWorker language="c++" slave="limexcvrzipperspi_dw.hdl" controloperations='start'>
+  <componentspec name="lime_proxy"/>
+  <property name='tx_enable' type="Bool" Writable="true" Volatile="true"/>
+  <!-- Insert any other implementation-specific information here -->
+</RccWorker>

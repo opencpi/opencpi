@@ -1,0 +1,9 @@
+v 3
+file "/Users/jek/Business/ocpi/opencpi/components/sym_fir_real_vhd.hdl/" "../../tools/cdk/include/hdl/ocpi_impl.vhd" "20120903133018.000" "20120903093019.308":
+  entity bool_property_2 at 1( 0) + 0 on 37;
+  architecture rtl of bool_property_2 at 17( 469) + 0 on 38;
+  entity bool_property_1 at 38( 1135) + 0 on 39;
+  architecture rtl of bool_property_1 at 48( 1454) + 0 on 40;
+file "/Users/jek/Business/ocpi/opencpi/components/sym_fir_real_vhd.hdl/" "../../tools/cdk/include/hdl/ocpi.vhd" "20120903130142.000" "20120903093019.307":
+  package ocp at 25( 920) + 0 on 35;
+  package wci at 52( 1787) + 0 on 36;

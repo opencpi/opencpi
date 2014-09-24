@@ -676,6 +676,9 @@ namespace OCPI {
 	return err;
       return m_parameters.parse(pvl, x, "name", "url", "provider", "port", "instance", "index", "count", NULL);
     }
+    Assembly::Role::Role()
+      : m_knownRole(false), m_bidirectional(false), m_provider(false) {
+    }
   }
 }
 

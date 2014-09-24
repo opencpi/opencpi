@@ -1,0 +1,8 @@
+vhdl ocpi ../../../hdl/primitives/ocpi/gen/ocpi_types.vhd
+vhdl ocpi ../../../hdl/primitives/ocpi/ocpi.vhd
+vhdl ocpi ../../../hdl/primitives/ocpi/ocpi_impl.vhd
+vhdl ocpi ../../../hdl/primitives/ocpi/ocpi_types_body.vhd
+vhdl ocpi ../../../hdl/primitives/ocpi/gen/ocpi_types_impl.vhd
+vhdl work ../gen/bias_vhdl1_defs.vhd
+vhdl work ../gen/bias_vhdl1_impl.vhd
+vhdl work ../bias_vhdl1.vhd

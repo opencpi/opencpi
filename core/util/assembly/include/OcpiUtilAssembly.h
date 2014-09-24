@@ -115,9 +115,10 @@ namespace OCPI {
 	ezxml_t xml() const { return m_xml; }
       };
       struct Role {
-	bool m_provider;      // is this attachment acting as a provider to the world?
-	bool m_bidirectional; // possible when inherited from a port
 	bool m_knownRole;     // role is known
+	bool m_bidirectional; // possible when inherited from a port
+	bool m_provider;      // is this attachment acting as a provider to the world?
+	Role();
       };
       // The attachment of a connection to external or port
       struct External {

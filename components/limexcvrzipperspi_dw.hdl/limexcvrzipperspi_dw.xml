@@ -1,0 +1,11 @@
+<HdlDevice language="vhdl" FirstRawProperty="dc_regval">
+  <xi:include href="limeXcvrSPI_spec.xml"/>
+  <ControlInterface Timeout="1024"/>
+  <!-- Insert any other implementation-specific information here -->
+  <Signal Output="lime_reset"/>
+  <!-- SPI signals -->
+  <Signal Input="sdo"/>
+  <Signal Output="sclk"/>
+  <Signal Output="sen"/>
+  <Signal Output="sdio"/>
+</HdlDevice>

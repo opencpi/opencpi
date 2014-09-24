@@ -44,16 +44,16 @@ namespace OL = OCPI::Library;
 namespace OA = OCPI::API;
 namespace OCPI {
   namespace API {
-    ApplicationI::ApplicationI(const char *file, const PValue *params)
-      : m_assembly(*new OL::Assembly(file, params))  {
+    ApplicationI::ApplicationI(Application &app, const char *file, const PValue *params)
+      : m_assembly(*new OL::Assembly(file, params)), m_apiApplication(app) {
       init(params);
     }
-    ApplicationI::ApplicationI(const std::string &string, const PValue *params)
-      : m_assembly(*new OL::Assembly(string, params))  {
+    ApplicationI::ApplicationI(Application &app, const std::string &string, const PValue *params)
+      : m_assembly(*new OL::Assembly(string, params)), m_apiApplication(app)  {
       init(params);
     }
-    ApplicationI::ApplicationI(OL::Assembly &assy, const PValue *params)
-      : m_assembly(assy) {
+    ApplicationI::ApplicationI(Application &app, OL::Assembly &assy, const PValue *params)
+      : m_assembly(assy), m_apiApplication(app) {
       m_assembly++;
       init(params);
     }
@@ -727,6 +727,7 @@ namespace OCPI {
 	// FIXME: get rid of this cast...
 	m_containers[n] = &OC::Container::nthContainer(m_usedContainers[n]);
 	m_containerApps[n] = static_cast<OC::Application*>(m_containers[n]->createApplication());
+	m_containerApps[n]->setApplication(&m_apiApplication);
       }
       Instance *i = m_instances;
       for (unsigned n = 0; n < m_nInstances; n++, i++)
@@ -809,6 +810,8 @@ namespace OCPI {
     }
 
     ExternalPort &ApplicationI::getPort(const char *name, const OA::PValue *params) {
+      if (!m_workers)
+	throw OU::Error("GetPort cannot be called until the application is initialized.");
       Externals::iterator ei = m_externals.find(name);
       if (ei == m_externals.end())
 	throw OU::Error("Unknown external port name for application: \"%s\"", name);
@@ -916,13 +919,13 @@ namespace OCPI {
     OCPI_EMIT_REGISTER_FULL_VAR( "Set Property", OCPI::Time::Emit::u, 1, OCPI::Time::Emit::State, pesp ); 
 
     Application::Application(const char *file, const PValue *params)
-      : m_application(*new ApplicationI(file, params)) {
+      : m_application(*new ApplicationI(*this, file, params)) {
     }
     Application::Application(const std::string &string, const PValue *params)
-      : m_application(*new ApplicationI(string, params)) {
+      : m_application(*new ApplicationI(*this, string, params)) {
     }
     Application::Application(Application & app,  const PValue *params)
-      : m_application(*new ApplicationI(app.m_application.assembly(), params)) {
+      : m_application(*new ApplicationI(*this, app.m_application.assembly(), params)) {
     }
     Application::~Application() { delete &m_application; }
     void Application::initialize() { m_application.initialize(); }

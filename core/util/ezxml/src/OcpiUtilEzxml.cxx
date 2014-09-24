@@ -415,7 +415,8 @@ namespace OCPI {
 		val--;
 	    }
 	  }
-	  *valp = (size_t)val;
+	  if (valp)
+	    *valp = (size_t)val;
 	  return false;
 	}
 	return true;
@@ -431,7 +432,7 @@ namespace OCPI {
 			     attr, ezxml_tag(x));
 	  if (found)
 	    *found = false;
-	  if (setDefault)
+	  if (setDefault && np)
 	    *np = defaultValue;
 	  return 0;
 	}
@@ -607,7 +608,7 @@ namespace OCPI {
 	  element = ezxml_tag(x);
 	const char *cp = ezxml_cattr(x, attr);
 	if (!cp)
-	  return esprintf("Missing %s attribute for %s element", attr, element);
+	  return esprintf("Missing \"%s\" attribute for \"%s\" element", attr, element);
 	s = cp;
 	return NULL;
       }

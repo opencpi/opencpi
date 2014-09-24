@@ -1,0 +1,5 @@
+<parameters>
+<parameter name='biasValue' values='true'>
+1,2,3
+</parameter>
+</parameters>

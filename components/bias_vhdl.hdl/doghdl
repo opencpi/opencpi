@@ -1,0 +1,12 @@
+#!/bin/sh
+o=../../hdl/primitives/ocpi
+rm -r -f tmp
+mkdir -p tmp
+ghdl -a --work=ocpi --workdir=tmp \
+$o/ocpi_ocp.vhd $o/ocpi_types.vhd \
+$o/ocpi_util.vhd $o/ocpi_util_body.vhd $o/ocpi_util_impl.vhd \
+$o/ocpi_wci.vhd $o/ocpi_worker.vhd \
+$o/ocpi_types_body.vhd $o/ocpi_wci_body.vhd \
+$o/ocpi_wci_impl.vhd $o/gen/ocpi_props.vhd $o/gen/ocpi_props_impl.vhd \
+$o/ocpi_wsi.vhd $o/ocpi_wsi_impl.vhd
+ghdl -a -Ptmp --work=bias_vhdl --workdir=tmp gen/bias_vhdl_defs.vhd gen/bias_vhdl_impl.vhd bias_vhdl.vhd

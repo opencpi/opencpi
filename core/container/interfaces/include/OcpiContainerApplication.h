@@ -52,19 +52,26 @@
 #include "OcpiWorker.h"
 #include "OcpiPValue.h"
 
+
 namespace OCPI {
+  namespace API {
+    class Application;
+  }
   namespace Container {
 
     // A (local) application running in this container
     class Artifact;
     class Application :
-      public OCPI::API::ContainerApplication
-    {      friend class Container;
+      public OCPI::API::ContainerApplication {
+      friend class Container;
       friend class Artifact;
       std::string m_package;
+      OCPI::API::Application *m_apiApplication; // top level app if there is one
     protected:
-      Application(const OCPI::Util::PValue *props = 0);
+      Application(const OCPI::Util::PValue *props = NULL);
     public:
+      void setApplication(OCPI::API::Application *app) { m_apiApplication = app; }
+      OCPI::API::Application *getApplication() { return m_apiApplication; }
       virtual Container &container() = 0;
       virtual Worker & createWorker(Artifact *, const char *appInstName,
 				    ezxml_t impl, ezxml_t inst, Worker *slave,

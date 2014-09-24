@@ -253,7 +253,7 @@
  {
    Port* port = rccPort->containerPort;
    ocpiAssert(port);
-   if ( !port->isOutput() )
+   if (!port->isOutput() )
      throw OU::Error("The 'send' container function cannot be called on an input port");
    OCPI::DataTransport::BufferUserFacet *buffer = rccBuffer->containerBuffer;
    Port *bufferPort = static_cast<Port*>(buffer->m_ud);
@@ -1006,9 +1006,21 @@ controlOperation(OU::Worker::ControlOperation op) {
    RCCUserWorker::~RCCUserWorker() {
      delete [] m_ports;
    }
-   RunCondition &RCCUserWorker::runCondition() const { return *m_worker.m_runCondition; }
-   void RCCUserWorker::setRunCondition(RunCondition *rc) {
+   const RunCondition *RCCUserWorker::getRunCondition() const {
+     return
+       m_worker.m_runCondition == &m_worker.m_defaultRunCondition ?
+       NULL : m_worker.m_runCondition;
+   }
+   void RCCUserWorker::setRunCondition(const RunCondition *rc) {
      m_worker.setRunCondition(rc ? *rc : m_worker.m_defaultRunCondition);
+   }
+   OCPI::API::Application &RCCUserWorker::getApplication() {
+     OCPI::API::Application *app = m_worker.parent().getApplication();
+     if (!app)
+       throw
+	 OU::Error("Worker \"%s\" is accessing the top level application when it doesn't exist",
+		   m_worker.name().c_str());
+     return *app;
    }
 
    // Default worker methods
@@ -1027,21 +1039,24 @@ controlOperation(OU::Worker::ControlOperation op) {
      va_end(ap);
      return rc;
    }
+   RCCTime RCCUserWorker::getTime() {
+     return OS::Time::now().bits();
+   }
    RCCUserPort::
    RCCUserPort()
      : m_rccPort((*(Worker *)pthread_getspecific(Driver::s_threadKey)).portInit()) {
      setRccBuffer(&m_rccPort.current);
    };
    void RCCUserPort::
-   send(RCCUserBuffer*buf) {
-     rccSend(&m_rccPort, buf->getRccBuffer());
+   send(RCCUserBuffer&buf) {
+     rccSend(&m_rccPort, buf.getRccBuffer());
    }
-   RCCUserBuffer *RCCUserPort::
+   RCCUserBuffer &RCCUserPort::
    take(RCCUserBuffer *oldBuffer) {
      RCCUserBuffer *nb = new RCCUserBuffer;
      rccTake(&m_rccPort, oldBuffer ? &oldBuffer->m_taken : NULL, &nb->m_taken);
      delete oldBuffer; // FIXME: when C and C++ are more integrated, this will go away
-     return nb;
+     return *nb;
    }
    bool RCCUserPort::
    request(size_t maxlength) {
@@ -1051,18 +1066,31 @@ controlOperation(OU::Worker::ControlOperation op) {
    advance(size_t maxlength) {
      return rccAdvance(&m_rccPort, maxlength);
    }
+   // FIXME: the connectivity indication should be cached somewhere better...
+   bool RCCUserPort::
+   isConnected() {
+     return m_rccPort.containerPort->parent().m_context->connectedPorts &
+       (1 << m_rccPort.containerPort->ordinal());
+   }
+   RCCOrdinal RCCUserPort::
+   ordinal() const { return (RCCOrdinal)m_rccPort.containerPort->ordinal(); }
+
    bool RCCUserPort::
    wait(size_t max, unsigned usecs) {
      return rccWait(&m_rccPort, max, usecs);
    }
    void RCCUserPort::
    checkLength(size_t length) {
+     if (!hasBuffer())
+       throw OU::Error("Port has no buffer.  The checkLength method is invalid.");
      if (length > maxLength())
        throw OU::Error("Checked length %zu exceeds maximum buffer size: %zu",
 		       length, maxLength());
    }
    size_t RCCUserPort::
    topLength(size_t eLength) {
+     if (!hasBuffer())
+       throw OU::Error("Port has no buffer.  The topLength method is invalid.");
      if (length() % eLength)
        throw OU::Error("Message length (%zu) is not a multiple of the top level sequence element size (%zu)",
 		       length(), eLength);

@@ -1,0 +1,3 @@
+<HDLImplementation language="verilog">
+  <xi:include href="fft1d_spec.xml"/>
+</HDLImplementation>

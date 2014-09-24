@@ -750,18 +750,29 @@ namespace OCPI {
     }
     OA::ExternalBuffer *ExternalPort::
     getBuffer(uint8_t *&data, size_t &length, uint8_t &opCode, bool &end) {
-	end = false;
-	ocpiAssert(m_lastBuffer.m_dtBuffer == NULL);
-	void *vdata;
-	if ((m_lastBuffer.m_dtBuffer = m_dtPort->getNextFullInputBuffer(vdata, length, opCode))) {
-	  data = (uint8_t*)vdata; // fix all the buffer data types to match the API: uint8_t*
-	  return &m_lastBuffer;
-	}
-	return NULL;
+      if (!isProvider())
+	throw OU::Error("getBuffer on input port called on external output port %s",
+			name().c_str());
+      if (m_lastBuffer.m_dtBuffer != NULL)
+	throw OU::Error("getBuffer called on input port %s without releasing previous buffer",
+			name().c_str());
+			
+      end = false;
+      void *vdata;
+      if ((m_lastBuffer.m_dtBuffer = m_dtPort->getNextFullInputBuffer(vdata, length, opCode))) {
+	data = (uint8_t*)vdata; // fix all the buffer data types to match the API: uint8_t*
+	return &m_lastBuffer;
       }
+      return NULL;
+    }
     OA::ExternalBuffer *ExternalPort::
     getBuffer(uint8_t *&data, size_t &length) {
-      ocpiAssert(m_lastBuffer.m_dtBuffer == NULL);
+      if (isProvider())
+	throw OU::Error("getBuffer for output port called on input port %s",
+			name().c_str());
+      if (m_lastBuffer.m_dtBuffer != NULL)
+	throw OU::Error("getBuffer called on output port %s without sending previous buffer",
+			name().c_str());
       void *vdata;
       if ((m_lastBuffer.m_dtBuffer = m_dtPort->getNextEmptyOutputBuffer(vdata, length))) {
 	data = (uint8_t*)vdata; // fix all the buffer data types to match the API: uint8_t*

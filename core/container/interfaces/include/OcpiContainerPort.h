@@ -302,7 +302,6 @@ namespace OCPI {
       void release();
       void put( size_t length, uint8_t opCode, bool /*endOfData*/);
     };
-
     // The direct interface for non-components to talk directly to the port,
     // in a non-blocking fashion.  This class is the base for all implementations
     class ExternalPort : public BasicPort, public OCPI::API::ExternalPort {
@@ -317,6 +316,7 @@ namespace OCPI {
 	*getBuffer(uint8_t *&data, size_t &length);
       void endOfData();
       bool tryFlush();
+      virtual const std::string &name() const = 0;
     };
 
     extern const char *externalPort;
@@ -331,6 +331,8 @@ namespace OCPI {
 				bool isProvider)
       : OCPI::Util::Child<Prt,Ext,externalPort>(port, ext, name),
 	ExternalPort(port, isProvider, extParams, connParams) {}
+    public:
+      const std::string &name() const { return OCPI::Util::Child<Prt,Ext,externalPort>::name(); }
     };
   }
 }

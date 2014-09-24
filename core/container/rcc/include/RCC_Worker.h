@@ -113,7 +113,11 @@ namespace OCPI { namespace RCC { class Port; } namespace DataTransport { class B
 #define RCC_CONST const
 #endif
 #ifdef __cplusplus
-namespace OCPI { namespace RCC {
+namespace OCPI {
+  namespace API {
+    class Application;
+  }
+  namespace RCC {
 #endif
 
 typedef uint16_t  RCCOrdinal;
@@ -127,6 +131,7 @@ typedef void      *RCCBufferId;
 typedef float     RCCFloat;
 typedef double    RCCDouble;
 typedef char      RCCChar;
+typedef uint64_t  RCCTime;
 
 // do compile time checks for float, double, and char
 #define RCC_VERSION 1
@@ -149,8 +154,8 @@ typedef struct RCCPort RCCPort;
 
 typedef struct {
   RCCPortMask *portMasks;
-  RCCBoolean  timeout;
-  uint32_t    usecs;
+  RCCBoolean   timeout;
+  uint32_t     usecs;
 } RCCRunCondition;
 
 #ifdef __cplusplus
@@ -179,7 +184,7 @@ struct RunCondition {
     m_allMasks = m_myMasks[0];
   }
   // Compatibility hack to support older C-langage run conditions
-  inline void setRunCondition(RCCRunCondition &crc) {
+  inline void setRunCondition(const RCCRunCondition &crc) {
     m_portMasks = crc.portMasks;
     m_timeout = crc.timeout;
     m_usecs = crc.usecs;
@@ -344,18 +349,21 @@ typedef struct {
  protected:
    RCCUserPort();
  public:
+   inline bool hasBuffer() const { return m_rccBuffer != NULL; }
    size_t
      topLength(size_t elementLength);
    void
      checkLength(size_t length),
      setDefaultLength(size_t length),
      setDefaultOpCode(RCCOpCode op),
-     send(RCCUserBuffer*);
-   RCCUserBuffer *take(RCCUserBuffer *oldBuffer);
+     send(RCCUserBuffer&);
+   RCCUserBuffer &take(RCCUserBuffer *oldBuffer = NULL);
    bool
-    request(size_t maxlength),
-    advance(size_t maxlength),
+    request(size_t maxlength = 0),
+    advance(size_t maxlength = 0),
+    isConnected(),
     wait(size_t max, unsigned usecs);
+   RCCOrdinal ordinal() const;
  };
  class Worker;
  class RCCUserWorker {
@@ -371,12 +379,12 @@ typedef struct {
 
    RCCUserPort &getPort(unsigned n) const { return m_ports[n]; }
    // access the current run condition
-   RunCondition &runCondition() const;
+   const RunCondition *getRunCondition() const;
    // Change the current run condition - if NULL, revert to the default run condition
-   void setRunCondition(RunCondition *rc);
+   void setRunCondition(const RunCondition *rc);
    virtual uint8_t *rawProperties(size_t &size) const;
    RCCResult setError(const char *fmt, ...);
-
+   OCPI::API::Application &getApplication();
    // These below are called by the container, and NOT by the worker.
 
    // The worker author implements any of these that have non-default behavior.
@@ -384,7 +392,8 @@ typedef struct {
    virtual RCCResult
      initialize(), start(), stop(), release(), test(), beforeQuery(), afterConfigure();
    // The worker author must implement this one.
-   virtual RCCResult run(bool timeout) = 0;
+   virtual RCCResult run(bool timedOut) = 0;
+   virtual RCCTime getTime();
    
  };
  // This class emulates the API worker, and is customized for the specific implementation

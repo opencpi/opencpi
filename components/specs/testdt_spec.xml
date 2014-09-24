@@ -1,0 +1,34 @@
+<ComponentSpec Name="copy">
+  <Properties>
+  <Property name="p1" type="float" sequenceLength="3"/>
+     <Property name="a1" sequenceLength="5" type="struct">
+       <member name="m1" sequenceLength="4" type="type">
+	 <type sequencelength="7" type="string" stringLength="20"/>
+       </member>
+     </Property>
+  </Properties>
+  <DataInterfaceSpec Name="in">
+   <Protocol>
+   <operation name="foo">
+     <argument name="a0" sequencelength="0" type="type">
+       <type sequencelength="0" type="string"/>
+     </argument>
+   </operation>
+   <operation name="bar">
+     <argument name="ff" arrayDimensions="34,3"/>
+     <argument name="a1" arrayLength="5" type="type">
+       <type sequencelength="0" type="string"/>
+     </argument>
+   </operation>
+   <operation name="baz">
+     <argument name="ff" arrayDimensions="34,3"/>
+     <argument name="a1" arrayLength="5" type="struct">
+       <member name="m1" sequenceLength="0" type="type">
+	 <type sequencelength="0" type="string"/>
+       </member>
+     </argument>
+   </operation>
+   </Protocol>
+  </DataInterfaceSpec>
+  <DataInterfaceSpec Name="out" Producer="true"/>
+</ComponentSpec>
