@@ -1,0 +1,19 @@
+<application>
+  <instance component='ocpi.file_read' connect='wsi_32_to_16'>
+    <property name='filename' value='/home/jek/mac/Ventura/fsk_opencpi-old/app/tx_in'/>
+    <property name='granularity' value='4'/>
+    <property name='messageSize' value='16'/>
+  </instance>
+  <instance component='ocpi.wsi_32_to_16' connect='wsi_16_to_32'/>
+  <instance component='sym_fir_real' name='tx_pre_fir' connect='file_write'>
+    <property name='taps' valueFile='/home/jek/mac/Ventura/fsk-opencpi-old/app/firtaps.dat'/>
+    <property name='shift' value='0xb'/>
+  </instance>
+  <instance component='ocpi.wsi_16_to_32'                   connect='file_write/>
+  <instance component='ocpi.file_write'>
+    <property name='filename' value='outfile'/>
+    <property name='granularity' value='4'/>
+    <property name='messageSize' value='16'/>
+  </instance>
+</application>
+

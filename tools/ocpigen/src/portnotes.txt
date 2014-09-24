@@ -1,0 +1,18 @@
+Port class hierarchy:
+
+port
+  ocpport
+    dataport
+      wsi
+      wmi
+    wci
+    wmemi
+    wti
+  NocPort
+  MetaDataPort
+  TimeServicePort
+  RawPropPort
+  CustomPort
+
+Spec ports can be any of the above,
+but data ports can morph to a more specific type

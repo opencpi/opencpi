@@ -237,7 +237,7 @@ emitImplOCL(Worker *w) {
   if (w->m_ports.size()) {
     for (unsigned n = 0; n < w->m_ports.size(); n++) {
       Port *port = w->m_ports[n];
-      fprintf(f, "  OCLPort %s;\n", port->name );
+      fprintf(f, "  OCLPort %s;\n", port->name() );
       /* FIXME how do we deal with two-way ports */
     }
   }
@@ -351,14 +351,7 @@ emitArtOCL(Worker *aw) {
 	  OCPI_CPP_STRINGIFY(OCPI_OS_VERSION),
 	  OCPI_CPP_STRINGIFY(OCPI_PLATFORM),
 	  "", "", "", "");
-#if 0
-  // Define all workers
-  for (WorkersIter wi = aw->m_assembly.m_workers.begin();
-       wi != aw->m_assembly.m_workers.end(); wi++)
-    emitWorker(f, *wi);
-#else
-  aw->emitWorkers(f);
-#endif
+  aw->emitXmlWorkers(f);
   fprintf(f, "</artifact>\n");
   if (fclose(f))
     return "Could close output file. No space?";
@@ -430,11 +423,11 @@ static const char* emitEntryPointOCL( Worker* w)
                 "%sunsigned int port_%s_max_length,\n"
                 "%s__global OCLPortAttr* port_%s_attrs,\n",
                 pad,
-                port->name,
+                port->name(),
                 pad,
-                port->name,
+                port->name(),
                 pad,
-                port->name );
+                port->name() );
     }
   }
 
@@ -501,16 +494,16 @@ static const char* emitEntryPointOCL( Worker* w)
                 "  self.%s.attr.length = port_%s_attrs->length;\n"
                 "  self.%s.attr.connected = port_%s_attrs->connected;\n"
                 "  self.%s.attr.u.operation = port_%s_attrs->u.operation;\n\n",
-                port->name,
-                port->name,
-                port->name,
-                port->name,
-                port->name,
-                port->name,
-                port->name,
-                port->name,
-                port->name,
-                port->name );
+                port->name(),
+                port->name(),
+                port->name(),
+                port->name(),
+                port->name(),
+                port->name(),
+                port->name(),
+                port->name(),
+                port->name(),
+                port->name() );
     }
   }
 
@@ -555,22 +548,16 @@ static const char* emitEntryPointOCL( Worker* w)
 
   fprintf ( f, "  /* ---- Update the output ports ---------------------------------------- */\n\n" );
 
-  if ( w->m_ports.size() )
-  {
-    for ( size_t n = 0; n < w->m_ports.size(); n++ )
-    {
+  for (size_t n = 0; n < w->m_ports.size(); n++) {
       Port* port = w->m_ports [ n ];
-
-      if ( port->u.wdi.isProducer ) {
+      if (port->isData() && port->isDataProducer())
         fprintf ( f,
                   "  port_%s_attrs->length = self.%s.attr.length;\n"
                   "  port_%s_attrs->u.operation = self.%s.attr.u.operation;\n\n",
-                  port->name,
-                  port->name,
-                  port->name,
-                  port->name );
-      }
-    }
+                  port->name(),
+                  port->name(),
+                  port->name(),
+                  port->name() );
   }
 
   fprintf ( f, "  /* ---- Return worker function result (ok, done, advance) -------------- */\n\n" );

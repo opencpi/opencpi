@@ -87,8 +87,11 @@ parseHdlAssy() {
     }
     // Now we are doing HDL processing per instance
     // Allocate the instance-clock-to-assembly-clock map
-    if (i->worker->m_clocks.size())
-      i->m_clocks = myCalloc(Clock*, i->worker->m_clocks.size());
+    if (i->worker->m_clocks.size()) {
+      i->m_clocks = new Clock*[i->worker->m_clocks.size()];
+      for (unsigned n = 0; n < i->worker->m_clocks.size(); n++)
+	i->m_clocks[n] = NULL;
+    }
     if (!i->worker->m_noControl)
       nControls++;
   }
@@ -110,9 +113,17 @@ parseHdlAssy() {
 	  }
       }
   } else {
+    //    assert(m_ports.size() == 0);
+    char *cp;
+    asprintf(&cp, "<control name='wci' count='%zu'>", nControls);
+    ezxml_t x = ezxml_parse_str(cp, strlen(cp));
     // Create the assy's wci slave port, at the beginning of the list
-    Port *wci = new Port("wci", this, false, WCIPort, NULL, nControls);
+    Port *wci = createPort<WciPort>(*this, x, NULL, -1, err);
+    assert(wci);
+#if 0
+    Port *wci = new Port("wci", this, WCIPort, NULL, nControls);
     m_ports.insert(m_ports.begin(), wci);
+#endif
     // Clocks: coalesce all WCI clock and clocks with same reqts, into one wci, all for the assy
     clk = addClock();
     // FIXME:  this should access the 0th clock more specifically for VHDL
@@ -162,7 +173,7 @@ parseHdlAssy() {
 	if (!ip.m_external && 
 	    (ip.m_port->type == WCIPort ||
 	     // FIXME: how can we really know this is not an independent clock??
-	     (ip.m_port->worker->m_noControl && ip.m_port->clock && ip.m_port->clock->port == 0) ||
+	     (ip.m_port->m_worker->m_noControl && ip.m_port->clock && ip.m_port->clock->port == 0) ||
 	     ip.m_instance->worker->m_ports[0]->type == WCIPort &&
 	     !ip.m_instance->worker->m_ports[0]->master &&
 	     // If this (data) port on the worker uses the worker's wci clock
@@ -197,7 +208,7 @@ parseHdlAssy() {
     for (AttachmentsIter ai = c.m_attachments.begin(); ai != c.m_attachments.end(); ai++) {
       Attachment &at = **ai;
       InstancePort &ip = at.m_instPort;
-      if (!ip.m_external && ip.m_port->isData && ip.m_instance->m_clocks) {
+      if (!ip.m_external && ip.m_port->isData() && ip.m_instance->m_clocks) {
         size_t nc = ip.m_port->clock->ordinal;
         if (!c.m_clock) {
           // This connection doesn't have a clock yet,
@@ -231,7 +242,7 @@ parseHdlAssy() {
           // This port already has a mapped clock
           if (ip.m_instance->m_clocks[nc] != c.m_clock)
             return OU::esprintf("Connection %s at interface %s of instance %s has clock conflict",
-				c.m_name.c_str(), ip.m_port->name, ip.m_instance->name);
+				c.m_name.c_str(), ip.m_port->name(), ip.m_instance->name);
         } else {
           // FIXME CHECK COMPATIBILITY OF c->clock with ip->port->clock
           ip.m_instance->m_clocks[nc] = c.m_clock;
@@ -244,12 +255,12 @@ parseHdlAssy() {
     if (i->worker && !i->worker->m_assembly) {
       unsigned nn = 0;
       for (InstancePort *ip = i->m_ports; nn < i->worker->m_ports.size(); nn++, ip++) 
-	if (ip->m_port->isData) {
+	if (ip->m_port->isData()) {
 	  size_t nc = ip->m_port->clock->ordinal;
 	  if (!i->m_clocks[nc]) {
 	    if (ip->m_port->type == WSIPort || ip->m_port->type == WMIPort)
 	      return OU::esprintf("Unconnected data interface %s of instance %s has its own clock",
-				  ip->m_port->name, i->name);
+				  ip->m_port->name(), i->name);
 	    clk = addClock();
 	    i->m_clocks[nc] = clk;
 	    asprintf((char **)&clk->name, "%s_%s", i->name, ip->m_port->clock->name);
@@ -274,6 +285,7 @@ parseHdlAssy() {
         switch (pp->type) {
         case WCIPort:
 	  // slave ports that are connected are ok as is.
+	  assert(pp->master || pp == pp->m_worker->m_wci);
 	  if (!pp->master && !m_noControl) {
 
 	    // Make assembly WCI the union of all inside, with a replication count
@@ -297,12 +309,12 @@ parseHdlAssy() {
 	      m_ctl.sub32Bits = true;
 	    m_ctl.controlOps |= iw->m_ctl.controlOps; // needed?  useful?
 	    // Reset while suspended: This is really only interesting if all
-	    // external data ports are only connected to ports of workers were this
+	    // external data ports are only connected to ports of workers where this
 	    // is true.  And the use-case is just that you can reset the
 	    // infrastructure while maintaining worker state.  BUT resetting the
 	    // CP could clearly reset anything anyway, so this is only relevant to
 	    // just reset the dataplane infrastructure.
-	    if (!pp->u.wci.resetWhileSuspended)
+	    if (!pp->m_worker->m_wci->resetWhileSuspended())
 	      cantDataResetWhileSuspended = true;
 	  }
           break;
@@ -342,7 +354,7 @@ parseHdlAssy() {
       }
     }
   if (!cantDataResetWhileSuspended && wci)
-    wci->u.wci.resetWhileSuspended = true;
+    m_wci->setResetWhileSuspended(true);
   // Process the external data ports on the assembly worker
   for (ConnectionsIter ci = m_assembly->m_connections.begin(); ci != m_assembly->m_connections.end(); ci++) {
     Connection &c = **ci;
@@ -355,8 +367,6 @@ parseHdlAssy() {
           //p->clock = c.m_clock;
           if (p->clock && p->clock->port && p->clock->port != p)
             p->clockPort = p->clock->port;
-          if (p->type == WSIPort)
-            p->u.wsi.regRequest = false;
         }
       }
   }
@@ -375,6 +385,7 @@ Connection(OU::Assembly::Connection *connection, const char *name)
     m_nExternals(0), m_clock(NULL), m_external(NULL), m_count(0) {
 }
 
+#if 0
 // This is where OCP compatibility is checked, and if it can be
 // adjusted via tie-offs or other trivial adaptations, those are done here too
 static const char *
@@ -382,26 +393,26 @@ adjustConnection(Connection &c, InstancePort &consumer, InstancePort &producer, 
   // Check WDI compatibility
   Port *prod = producer.m_port, *cons = consumer.m_port;
   // If both sides have protocol, check them for compatibility
-  if (prod->protocol->nOperations() && cons->protocol->nOperations()) {
-    if (prod->protocol->m_dataValueWidth != cons->protocol->m_dataValueWidth)
+  if (prod->m_protocol->nOperations() && cons->m_protocol->nOperations()) {
+    if (prod->m_protocol->m_dataValueWidth != cons->m_protocol->m_dataValueWidth)
       return "dataValueWidth incompatibility for connection";
-    if (prod->protocol->m_dataValueGranularity < cons->protocol->m_dataValueGranularity ||
-	prod->protocol->m_dataValueGranularity % cons->protocol->m_dataValueGranularity)
+    if (prod->m_protocol->m_dataValueGranularity < cons->m_protocol->m_dataValueGranularity ||
+	prod->m_protocol->m_dataValueGranularity % cons->m_protocol->m_dataValueGranularity)
       return "dataValueGranularity incompatibility for connection";
-    if (prod->protocol->m_maxMessageValues > cons->protocol->m_maxMessageValues)
+    if (prod->m_protocol->m_maxMessageValues > cons->m_protocol->m_maxMessageValues)
       return "maxMessageValues incompatibility for connection";
-    if (prod->protocol->name().size() && cons->protocol->name().size() &&
-	prod->protocol->name() != cons->protocol->name())
+    if (prod->m_protocol->name().size() && cons->m_protocol->name().size() &&
+	prod->m_protocol->name() != cons->m_protocol->name())
       return OU::esprintf("protocol incompatibility: producer: %s vs. consumer: %s",
-			  prod->protocol->name().c_str(), cons->protocol->name().c_str());
-    if (prod->protocol->nOperations() && cons->protocol->nOperations() && 
-	prod->protocol->nOperations() != cons->protocol->nOperations())
+			  prod->m_protocol->name().c_str(), cons->m_protocol->name().c_str());
+    if (prod->m_protocol->nOperations() && cons->m_protocol->nOperations() && 
+	prod->m_protocol->nOperations() != cons->m_protocol->nOperations())
       return "numberOfOpcodes incompatibility for connection";
     //  if (prod->u.wdi.nOpcodes > cons->u.wdi.nOpcodes)
     //    return "numberOfOpcodes incompatibility for connection";
-    if (prod->protocol->m_variableMessageLength && !cons->protocol->m_variableMessageLength)
+    if (prod->m_protocol->m_variableMessageLength && !cons->m_protocol->m_variableMessageLength)
       return "variable length producer vs. fixed length consumer incompatibility";
-    if (prod->protocol->m_zeroLengthMessages && !cons->protocol->m_zeroLengthMessages)
+    if (prod->m_protocol->m_zeroLengthMessages && !cons->m_protocol->m_zeroLengthMessages)
       return "zero length message incompatibility";
   }
   if (prod->type != cons->type)
@@ -412,162 +423,10 @@ adjustConnection(Connection &c, InstancePort &consumer, InstancePort &producer, 
   if (cons->u.wdi.continuous && !prod->u.wdi.continuous)
     return "producer is not continuous, but consumer requires it";
   // Profile-specific error checks and adaptations
-  OcpAdapt *oa;
-  switch (prod->type) {
-  case WSIPort:
-    // Bursting compatibility and adaptation
-    if (prod->impreciseBurst && !cons->impreciseBurst)
-      return "consumer needs precise, and producer may produce imprecise";
-    if (cons->impreciseBurst) {
-      if (!cons->preciseBurst) {
-	// Consumer accepts only imprecise bursts
-	if (prod->preciseBurst) {
-	  // producer may produce a precise burst
-	  // Convert any precise bursts to imprecise
-	  oa = &consumer.m_ocp[OCP_MBurstLength];
-	  oa->expr =
-	    lang == Verilog ? "%s ? 2'b01 : 2'b10" :
-	    "std_logic_vector(to_unsigned(2,2) - unsigned(ocpi.types.bit2vec(%s,2)))";
-	  oa->other = OCP_MReqLast;
-	  oa->comment = "Convert precise to imprecise";
-	  oa = &producer.m_ocp[OCP_MBurstLength];
-	  oa->expr = lang == Verilog ? "" : "open";
-	  oa->comment = "MBurstLength ignored for imprecise consumer";
-	  if (prod->impreciseBurst) {
-	    oa = &producer.m_ocp[OCP_MBurstPrecise];
-	    oa->expr = lang == Verilog ? "" : "open";
-	    oa->comment = "MBurstPrecise ignored for imprecise-only consumer";
-	  }
-	}
-      } else { // consumer does both
-	// Consumer accept both, has MPreciseBurst Signal
-	oa = &consumer.m_ocp[OCP_MBurstPrecise];
-	if (!prod->impreciseBurst) {
-	  oa->expr = lang == Verilog ? "1'b1" : "to_unsigned(1,1)";
-	  oa->comment = "Tell consumer all bursts are precise";
-	} else if (!prod->preciseBurst) {
-	  oa = &consumer.m_ocp[OCP_MBurstPrecise];
-	  oa->expr = lang == Verilog ? "1'b0" : "'0'";
-	  oa->comment = "Tell consumer all bursts are imprecise";
-	  oa = &consumer.m_ocp[OCP_MBurstLength];
-	  oa->other = OCP_MBurstLength;
-	  asprintf((char **)&oa->expr,
-		   lang == Verilog ? "{%zu'b0,%%s}" : "std_logic_vector(to_unsigned(0,%zu)) & %%s",
-		   cons->ocp.MBurstLength.width - 2);
-	  oa->comment = "Consumer only needs imprecise burstlength (2 bits)";
-	}
-      }
-    }
-    if (prod->preciseBurst && cons->preciseBurst &&
-	prod->ocp.MBurstLength.width < cons->ocp.MBurstLength.width) {
-      oa = &consumer.m_ocp[OCP_MBurstLength];
-      asprintf((char **)&oa->expr,
-	       lang == Verilog ? "{%zu'b0,%%s}" : "to_unsigned(0,%zu) & %%s",
-	       cons->ocp.MBurstLength.width - prod->ocp.MBurstLength.width);
-      oa->comment = "Consumer takes bigger bursts than producer creates";
-      oa->other = OCP_MBurstLength;
-    }
-    // Abortable compatibility and adaptation
-    if (cons->u.wsi.abortable) {
-      if (!prod->u.wsi.abortable) {
-	oa = &consumer.m_ocp[OCP_MFlag];
-	oa->expr = "1'b0";
-	oa->comment = "Tell consumer no frames are ever aborted";
-      }
-    } else if (prod->u.wsi.abortable)
-      return "consumer cannot handle aborts from producer";
-    // EarlyRequest compatibility and adaptation
-    if (cons->u.wsi.earlyRequest) {
-      if (!prod->u.wsi.earlyRequest) {
-	oa = &consumer.m_ocp[OCP_MDataLast];
-	oa->other = OCP_MReqLast;
-	oa->expr = "%s";
-	oa->comment = "Tell consumer last data is same as last request";
-	oa = &consumer.m_ocp[OCP_MDataValid];
-	oa->other = OCP_MCmd;
-	oa->expr = "%s == OCPI_OCP_MCMD_WRITE ? 1b'1 : 1b'0";
-	oa->comment = "Tell consumer data is valid when its(request) is MCMD_WRITE";
-      }
-    } else if (prod->u.wsi.earlyRequest)
-      return "producer emits early requests, but consumer doesn't support them";
-    // Opcode compatibility
-    if (cons->u.wdi.nOpcodes != prod->u.wdi.nOpcodes)
-      if (cons->ocp.MReqInfo.value) {
-	if (prod->ocp.MReqInfo.value) {
-	  if (cons->ocp.MReqInfo.width > prod->ocp.MReqInfo.width) {
-	    oa = &consumer.m_ocp[OCP_MReqInfo];
-	    asprintf((char **)&oa->expr, "{%zu'b0,%%s}",
-		     cons->ocp.MReqInfo.width - prod->ocp.MReqInfo.width);
-	    oa->other = OCP_MReqInfo;
-	  } else {
-	    // producer has more, we just connect the LSBs
-	  }
-	} else {
-	  // producer has none, consumer has some
-	  oa = &consumer.m_ocp[OCP_MReqInfo];
-	  asprintf((char **)&oa->expr,
-		   lang == Verilog ? "%zu'b0" : "std_logic_vector(to_unsigned(0,%zu))",
-		   cons->ocp.MReqInfo.width);
-	}
-      } else {
-	// consumer has none
-	oa = &producer.m_ocp[OCP_MReqInfo];
-	oa->expr = lang == Verilog ? "" : "open";
-	oa->comment = "Consumer doesn't have opcodes (or has exactly one)";
-      }
-    // Byte enable compatibility
-    if (cons->ocp.MByteEn.value && prod->ocp.MByteEn.value) {
-      if (cons->ocp.MByteEn.width < prod->ocp.MByteEn.width) {
-	// consumer has less - "inclusive-or" the various bits
-	if (prod->ocp.MByteEn.width % cons->ocp.MByteEn.width)
-	  return "byte enable producer width not a multiple of consumer width";
-	size_t nper = prod->ocp.MByteEn.width / cons->ocp.MByteEn.width;
-	std::string expr = "{";
-	size_t pw = prod->ocp.MByteEn.width;
-	//oa = &consumer.m_ocp[OCP_MByteEn];
-	for (size_t n = 0; n < cons->ocp.MByteEn.width; n++) {
-	  if (n)
-	    expr += ",";
-	  for (size_t nn = 0; nn < nper; nn++)
-	    OU::formatAdd(expr, "%s%sMByteEn[%zu]", nn ? "|" : "",
-				c.m_masterName.c_str(), --pw);
-	}
-	expr += "}";
-      } else if (cons->ocp.MByteEn.width > prod->ocp.MByteEn.width) {
-	// consumer has more - requiring replicating
-	if (cons->ocp.MByteEn.width % prod->ocp.MByteEn.width)
-	  return "byte enable consumer width not a multiple of producer width";
-	size_t nper = cons->ocp.MByteEn.width / prod->ocp.MByteEn.width;
-	std::string expr = "{";
-	size_t pw = cons->ocp.MByteEn.width;
-	//oa = &consumer.m_ocp[OCP_MByteEn];
-	for (size_t n = 0; n < prod->ocp.MByteEn.width; n++)
-	  for (size_t nn = 0; nn < nper; nn++)
-	    OU::formatAdd(expr, "%s%sMByteEn[%zu]", n || nn ? "," : "",
-				c.m_masterName.c_str(), --pw);
-	expr += "}";
-      }
-    } else if (cons->ocp.MByteEn.value) {
-      // only consumer has byte enables - make them all 1
-      oa = &consumer.m_ocp[OCP_MByteEn];
-      if (lang == VHDL)
-	oa->expr = strdup("(others => '1')");
-      else
-	asprintf((char **)&oa->expr, "{%zu{1'b1}}", cons->ocp.MByteEn.width);
-    } else if (prod->ocp.MByteEn.value) {
-      // only producer has byte enables
-      oa = &producer.m_ocp[OCP_MByteEn];
-      oa->expr = lang == Verilog ? "" : "open";
-      oa->comment = "consumer does not have byte enables";
-    }
-    break;
-  case WMIPort:
-    break;
-  default:
-    return "unknown data port type";
-  }
-  return 0;
+  return prod->adjustConnection(*cons, c.m_masterName.c_str(), lang,
+				producer.m_ocp, consumer.m_ocp);
 }
+#endif
 
 void InstancePort::
 emitConnectionSignal(FILE *f, bool output, Language lang) {
@@ -578,6 +437,9 @@ emitConnectionSignal(FILE *f, bool output, Language lang) {
 		(lang == VHDL ? m_port->typeNameOut.c_str() : m_port->fullNameOut.c_str()) :
 		(lang == VHDL ? m_port->typeNameIn.c_str() : m_port->fullNameIn.c_str()), "");
   (output ? m_signalOut : m_signalIn) = signal;
+#if 1
+  m_port->emitConnectionSignal(f, output, lang, signal);
+#else
    switch (m_port->type) {
    case WCIPort:
    case WSIPort:
@@ -604,7 +466,7 @@ emitConnectionSignal(FILE *f, bool output, Language lang) {
        std::string type;
        Worker *w = m_instance->worker;
        // WCI ports on assemblies are always generic generic
-       if (m_port->type == WCIPort && (m_port->master || m_port->worker->m_assembly))
+       if (m_port->type == WCIPort && (m_port->master || m_port->m_worker->m_assembly))
 	 OU::format(type, "platform.platform_pkg.wci_%s_%st", output ? "m2s" : "s2m",
 		    m_port->count > 1 ? "array_" : "");
        else
@@ -633,6 +495,7 @@ emitConnectionSignal(FILE *f, bool output, Language lang) {
      fprintf(f, "  signal %s : platform.platform_pkg.time_service_t;\n", signal.c_str());
    default:;
    }
+#endif
 }
 
 // An instance port that is internal needs to be bound to ONE input and ONE output signal bundle,
@@ -683,24 +546,28 @@ createConnectionSignals(FILE *f, Language lang) {
 	}
     }
   }
-  if (m_port->isData)
+  if (m_port->isData())
     for (AttachmentsIter ai = m_attachments.begin(); ai != m_attachments.end(); ai++) {
       Connection &c = (*ai)->m_connection;
       for (AttachmentsIter cai = c.m_attachments.begin(); cai != c.m_attachments.end(); cai++) {
 	InstancePort &other = (*cai)->m_instPort;
 	if (&other != this) {
-	  err = m_port->u.wdi.isProducer ?
-	    adjustConnection(c, other, *this, lang) : adjustConnection(c, *this, other, lang);
+	  err = m_port->isDataProducer() ?
+	    DataPort::adjustConnection(c.m_masterName.c_str(), *m_port, m_ocp,
+				       *other.m_port, other.m_ocp, lang) :
+	    DataPort::adjustConnection(c.m_masterName.c_str(), *other.m_port, other.m_ocp,
+				       *m_port, m_ocp, lang);
 	  if (err)
 	    return OU::esprintf("For connection between %s/%s and %s/%s: %s",
-				m_port->worker->m_implName, m_port->name,
-				other.m_port->worker->m_implName, other.m_port->name, err);
+				m_port->m_worker->m_implName, m_port->name(),
+				other.m_port->m_worker->m_implName, other.m_port->name(), err);
 	}
       }
     }
   return NULL;
 }
 
+#if 0
 // Create the binding for this OCP signal, including any adjustments/adaptations
 // This is a port of an instance in the assembly, never an external one
 void InstancePort::
@@ -780,8 +647,9 @@ connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, OcpAdapt &oa,
     }
   }
 }
+#endif
 
-static void
+void
 doPrev(FILE *f, std::string &last, std::string &comment, const char *myComment) {
   if (last.size()) {
     fputs(last.c_str(), f);
@@ -793,6 +661,7 @@ doPrev(FILE *f, std::string &last, std::string &comment, const char *myComment) 
   comment = "";
 }
 
+#if 0
 // Emit for one direction
 void InstancePort::
 emitPortSignals(FILE *f, bool output, Language lang, const char *indent,
@@ -828,9 +697,10 @@ emitPortSignals(FILE *f, bool output, Language lang, const char *indent,
       }
     }
 }
+#endif
 
 void Assembly::
-emitAssyInstance(FILE *f, Instance *i, unsigned nControlInstances) {
+emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
   // emit before parameters
   Language lang = m_assyWorker.m_language;
   if (lang == Verilog) {
@@ -867,7 +737,7 @@ emitAssyInstance(FILE *f, Instance *i, unsigned nControlInstances) {
 	  size_t bits =
 	    pr->m_baseType == OA::OCPI_Bool ?
 	    1 : pr->m_nBits;
-	  fprintf(f, ".%s(%zu'b%lld)",
+	  fprintf(f, ".%s(%zu'd%lld)",
 		  pr->m_name.c_str(), bits, (long long)i64);
 	}
 	any = true;
@@ -910,6 +780,12 @@ emitAssyInstance(FILE *f, Instance *i, unsigned nControlInstances) {
   for (unsigned n = 0; n < i->worker->m_ports.size(); n++, ip++) {
     //    if (ip->m_attachments.empty())
     //      continue;
+#if 1
+    ip->m_port->emitPortSignals(f, ip->m_attachments, lang, indent, any, comment, last,
+				myComment(), ip->m_ocp); 
+#else
+    Attachment *at = ip->m_attachments.front();
+    Connection *c = at ? &at->m_connection : NULL;
     Port &p = *ip->m_port;
     std::string in, out;
     OU::format(in, p.typeNameIn.c_str(), "");
@@ -921,8 +797,6 @@ emitAssyInstance(FILE *f, Instance *i, unsigned nControlInstances) {
     } else {
       doPrev(f, last, comment, myComment());
       // Find the widest connection, since that is the one the signal is based on
-      Attachment *at = ip->m_attachments.front();
-      Connection *c = at ? &at->m_connection : NULL;
       if (p.type == TimePort) {
 	// Only one direction - master outputs to slave
 	fprintf(f, "%s%s => ",
@@ -954,6 +828,7 @@ emitAssyInstance(FILE *f, Instance *i, unsigned nControlInstances) {
 		out.c_str(), p.master ? c->m_masterName.c_str() : c->m_slaveName.c_str(), index.c_str());
       }
     }
+#endif
     any = true;
   } // end of port loop
   // Signals are always mapped as external ports
@@ -984,6 +859,30 @@ emitAssyInstance(FILE *f, Instance *i, unsigned nControlInstances) {
   fprintf(f, ");%s%s\n", comment.size() ? " // " : "", comment.c_str());
   // Now we must tie off any outputs that are generically expected, but are not
   // part of the worker's interface
+#if 1
+  if (i->worker->m_wci) {
+    if (!i->worker->m_wci->ocp.SData.value) {
+      ip = &i->m_ports[i->worker->m_wci->m_ordinal];
+      assert(ip->m_attachments.size() == 1);
+      Connection &c = ip->m_attachments.front()->m_connection;
+      assert(c.m_attachments.size() == 2);
+      InstancePort *otherIp = NULL;
+      Attachment *at;
+      for (AttachmentsIter ai = c.m_attachments.begin(); ai != c.m_attachments.end(); ai++)
+	if (&(*ai)->m_instPort != ip) {
+	  at = *ai;
+	  otherIp = &at->m_instPort;
+	  break;
+	}
+      assert(otherIp);
+      std::string externalName, num;
+      OU::format(num, "%zu", at->m_index);
+      OU::format(externalName, ip->m_attachments.front()->m_connection.m_slaveName.c_str(), num.c_str());
+      fprintf(f, "assign %sSData = 32'b0;\n", externalName.c_str());
+    }
+    //    nControlInstances++;
+  }
+#else
   ip = i->m_ports;
   for (unsigned n = 0; n < i->worker->m_ports.size(); n++, ip++) {
     switch (ip->m_port->type) {
@@ -1011,6 +910,7 @@ emitAssyInstance(FILE *f, Instance *i, unsigned nControlInstances) {
     default:;
     }
   }
+#endif
 }
 
  static void
@@ -1108,10 +1008,10 @@ emitAssyHDL() {
     }
   }
   // Create the instances
-  unsigned nControlInstances = 0;
+  //  unsigned nControlInstances = 0;
   i = m_assembly->m_instances;
   for (unsigned n = 0; n < m_assembly->m_nInstances; n++, i++)
-    m_assembly->emitAssyInstance(f, i, nControlInstances);
+    m_assembly->emitAssyInstance(f, i); //, nControlInstances);
   if (m_language == Verilog)
     fprintf(f, "\n\nendmodule //%s\n",  m_implName);
   else
@@ -1189,14 +1089,14 @@ emitInternalConnections(FILE *f, const char *prefix) {
   for (ConnectionsIter ci = m_assembly->m_connections.begin();
        ci != m_assembly->m_connections.end(); ci++) {
     Connection &c = **ci;
-    if (!c.m_external && c.m_attachments.front()->m_instPort.m_port->isData) {
+    if (!c.m_external && c.m_attachments.front()->m_instPort.m_port->isData()) {
       InstancePort *from = 0, *to = 0, *bidi = 0;
       for (AttachmentsIter ai = c.m_attachments.begin(); ai != c.m_attachments.end(); ai++) {
 	InstancePort *ip = &(*ai)->m_instPort;
 	Port &p = *ip->m_port;
-	if (p.u.wdi.isProducer)
+	if (p.isDataProducer())
 	  from = ip;
-	else if (p.u.wdi.isBidirectional)
+	else if (p.isDataBidirectional())
 	  if (ip->m_role.m_knownRole && !ip->m_role.m_bidirectional)
 	    if (ip->m_role.m_provider)
 	      to = ip;
@@ -1214,10 +1114,10 @@ emitInternalConnections(FILE *f, const char *prefix) {
 	  to = bidi;
       }
       assert(from && to);
-      if (!from->m_port->worker->m_assembly && !to->m_port->worker->m_assembly)
+      if (!from->m_port->m_worker->m_assembly && !to->m_port->m_worker->m_assembly)
 	fprintf(f, "<connection from=\"%s/%s\" out=\"%s\" to=\"%s/%s\" in=\"%s\"/>\n",
-		prefix, from->m_instance->name, from->m_port->name,
-		prefix, to->m_instance->name, to->m_port->name);
+		prefix, from->m_instance->name, from->m_port->name(),
+		prefix, to->m_instance->name, to->m_port->name());
     }
   }
 }
@@ -1259,7 +1159,7 @@ attach(Attachment *a, size_t index) {
     if (m_connected[n])
       if (!(m_port->type == TimePort && m_port->master))
 	return OU::esprintf("Multiple connections not allowed for port '%s' on worker '%s'",
-			    m_port->name, m_port->worker->m_name.c_str());
+			    m_port->name(), m_port->m_worker->m_name.c_str());
     m_connected[n] = true;
   }
   m_attachments.push_back(a);

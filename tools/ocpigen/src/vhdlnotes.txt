@@ -1,0 +1,171 @@
+libraries, packages, components, etc.
+
+We want the arch file to reference things that are name scoped for the worker.
+If we define a package for each worker, then we can put it all there.
+But the actual ENTITY and ARCHITECTURE can not be in a package, and can only be in a library.
+THe component declaration can be in a package.
+So it is the linkage (configuration) that has to somehow point to the entity.
+This suggests that for us we need a library per worker???
+Workers are found in librarys using a search list.
+So presumably the libraries work the same way in VHDL.
+So when elaborating a design, to find the right entity, you must first:
+- search the worker's own library where the generated stuff it
+- then any other utility library used inside the implementation.
+So if we force the generated entities into the worker's library, then they are
+only found by adding that, so there is no need for the package in the impl.
+So the impl file is built into the worker's library, and the worker itself can be in the work
+
+So the arch file needs to access things that are name-scoped.  That is easy to accomplish with packages.
+But during elaboration, we also need to find the name-scoped implementations.
+Since implementations cannot be in packages (why oh why), then must be in libraries.
+If we put the worker into its own library, and put the impl in the same library all is well.
+We aren't really sharing outside except for instantation.
+
+So at assembly time we reference component libraries containing individual VHDL libraries.
+So to instance a FOO, we must make available a library foo for the implementation.
+But we are interested in verilog assembly...
+
+Of the 10 property types we have these implementation issues:
+1 and 2: no readback path, simple registers. #2 has dynamic output signal.
+The issue is that you can't parameterize signals.
+
+Default value is initialized.
+
+entity <propname>_Property is
+ port (
+  ctl_in : in ctl_inputs_t;
+  ctl_out : out ctl_outputs_t;
+  <propname> : out <proptype>;
+  written : out boolean;
+) end entity <propname>_Property;
+architecture rtl of <propname>_Property is
+begin
+<propname>_i : <proptype>_property_<kind>
+	       generic (property_offset)
+	        port map (ctl_in, ctl_out, <type>_value, written)
+end rtl;
+
+Signals for property kinds: (all have bus in/out)
+# 1:wi--- value out
+# 2:w---- value out and "written" out
+# 3:wir-- #1 with readback - same signature as #1
+# 4:w-r-- #2 with readback - same as #2
+# 5:wirv- Volatile: value in, value out, written, no registers - or regs anyway for initial value? naaah
+# 6:w_rv_ same, with "written" allowed to happen during operation
+# 7:__r__ value in = can be constant wires
+# 8:__rv_ value in, changeable.
+# 9:____p generic no IP
+#10:__r_p generated constant readback
+
+Last notes on WSI:
+
+Need to beef up and compile the wsi entities I have generated.
+
+Then generate architectures.
+
+Input side is just a tiny fifo - use FIFO2 from BSV?
+
+
+
+SThreadBusy = full
+ENQ = MCmd=write
+width for metadata
+abort clears fifo and passes through
+need state in message
+som is when not in message (from previous init or last)
+eom is MReqLast
+present is MDataValie
+ADD OPCODES
+RESHUFFLE BYTES
+abort is MDataInfo high order bit.
+
+So only state is NOT_IN_MESSAGE
+
+So on a new clock
+if cmd=write
+   som = !imsg
+   eom = reqlast
+   imnsg = !reqlast
+   data = byteen != 0
+
+
+Multiconnections:
+
+When emiting an instance, with its port map, we have a number of cases, when there
+are more than one attachments at this port:
+
+1. The connections are disjoint ranges of an indexed (count > 1) port.
+- if this end of the connection is the full range, just do the whole bus here
+- if this end is partial for this connection, then we just index the connection.
+x3
+--------
+
+Try a different way:
+
+-- at parse time we know when we are adding a second attachment.
+
+-- if we are overlapping the range, then it must be an output (like time_service).
+-- if we are not overlapping the range, it is simply ok.
+
+-- at code gen time (in the port map of an instance), both are then ok to use the "whole" signal.
+-- but that means we need a single whole signal.  So how about:  <master>2<_multiple_>.
+
+
+--------
+
+Clocks and record interfaces
+
+WCI and all others have clear clocks that should be embedded.
+
+Data interfaces that declare/imply using WCI clocks will not have one.
+Data interfaces that are own clock should have it as an input in the bundle.
+
+--------
+
+The vhdl build of a platform config needs to read the defs file of all workers.
+Or at least the platform defs to know the types of the ports of the instances/
+
+For the platform package that's each, sort of.
+Perhaps wci masters are from there too.
+
+So for platform workers and device workers we need to read the defs files.
+The package defs should be in the library?
+
+Yikes: this means that when you are building against a component library, in vhdl,
+the workers have cores, and the verilog have the "stubs" library,
+which is a verilog black box.
+
+So a vhdl assembly that is instantiating a verilog worker (which it knows from parsing
+its XML), must have the component declaration.
+
+The vhdl defs file for the verilog worker IS generated, but it needs to be placed
+in a library (like the stubs library, or perhaps THE stubs library.
+
+(should we back up and make assemblies only in verilog?)
+
+------------
+
+So, in the assembly, when we define the internal signal (bundles),
+the types for OCP bundles should be the output types,
+i.e. the types defined by the workers that output the signals.
+These types are in the component library, and in a package called "<worker>_defs".
+This means code generation requires you to know what library each worker is found in.
+The platform worker will be found in its own library.
+A device worker will be found in some library.
+The platform components will be found in the platform library.
+We have that "workers" file...
+We DO know based on search paths which library to find the types in.
+
+BUT, when we actually connect, the worker's port will be in its OWN library.
+So do we need to compile the stubs in the worker's own library?
+(That's where all the code is compiled now).
+I.e. when we are connecting to a worker core, will that type be in the
+worker's library or the component stub library?
+
+We define the record type for the worker.
+The assembly needs to use these types, but when we connect
+workers together (data plane), the input side ALWAYS needs to have signals
+selected from the output's record structure, since even if they are the same,
+the record types will not be the same, so VHDL will presumably barf on it.
+So the port map on the input side will splay out those records (or adapt).
+Ok.

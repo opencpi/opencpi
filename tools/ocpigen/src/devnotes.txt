@@ -1,0 +1,111 @@
+lime dev support:
+
+First, its not native to the device.
+So, we need virtual devices or add-on devices or optional devices or...
+Or what about just having a device in a platform configuration that is not in the base device?
+basically a device that is not mentioned in the core device definition.
+So, a "device" in a platform configuration needs to be labeled as optional..
+Which to do first? platform config or container?
+
+Container sounds better..
+
+Then there is "slots".
+A platform has slots for add-on devices.
+An add-on device references a device worker (e.g. lime), and a map of some type to map pins/signals of the device worker to pins/signals of the slot.
+
+Device:
+  Worker=
+  Slot-type=hsmc - just for error checking
+  Slot-maop=worker signals to/from slot pins/signals (need slot signals?)
+
+Platform:
+  Slot: name
+    Slot type, FMC_LPC FMC_HPC ALT_XXX (spec file)
+    Slot-map= platform pins and signals to/from slot pins [and signals??]
+
+
+A platform developer just wants to declare a slot and give it a name and type.
+But the extra info is how it pins out the slot.
+There will typically already be a constraints file available, of course specific to the platform.
+We want the platform developer to treat this as much as any other device.
+Thus there will be a constraint file for it.
+If we want to use the contraint file unaltered, then we need signal mappings from the
+canonical slot signal names to the platform's names. The default should just be <slot_name>_<canonical_signal>, with the declaration of the slot overriding the mappings.
+
+So we start with slot declarations that are simply (for now), names and signal declarations.
+These can be in the specs file where?  they should be somewhere portable, presumbly near portable device workers, so in the "specs" dir of the devices library.
+
+When the platform uses the default naming, all we need is:
+<slot name='foo' type='fmc_lpc'/>
+
+When the platform has its own signal names for the slot signals:
+This overrides the default names of the signals
+<slot name='foo' type='fmc_lpc'>
+  <signal name='foo' slotsignal='bar'/>
+</slot>
+
+
+When we add an option (e.g. FMC150), we occupy a slot, but
+there is a distinction between cards and devices.
+A card is sort of like a platform in that there may or may not be certain device workers available.
+Top down you are asking to connect an app assy port to some device, but that device might be on a card.
+
+FIRST: ASSUME INDEPENDENT DEVICE WORKERS ON A CARD:
+
+So here we are asking for a device that is on a card in a slot:
+<device foo slot=lpc card=fm150>
+
+This is telling me that:
+ - which slot for mapping to platform signals
+ - I need a foo device worker
+ - I need to map the signals of the device worker to the slot signals using the card definition
+
+So a card maps device worker signals to slot signals, end of story
+
+SECOND: WHAT ABOUT Complicated assemblies on cards?
+
+**This is not different from devices sharing code
+
+So:
+
+Slot type: a collection of signals (and pins)
+Card: a mapping of device workersignals to slot signals
+      and perhaps subsidiary cores (device cores) have signals too.
+      AHA: so some of the device workers on the card are actually subsidiary cores...
+
+Slot: a mapping of slot signals to platform signals.
+  used when instantiating workers and mapping their signals
+  lookup standard signal, get platform signal
+
+
+Can we define a card as a worker?
+
+Top down is asking for a device, so we instance it like any other.
+
+But it is the wiring that is different.
+If it is a card device, it means we need to instance a mapping, and connect signals.
+
+OOORRRR, we directly use the card object to remap the signals.
+
+===================
+
+A device in a config or container is really an instance.
+A device is on a card so a card can have multiple devices.
+So cards have devices just like platforms.
+But then we need to map the card-device signals to the card signals and then to the slot signals.
+For now lets assume that the card signals are simply prefixed by the device-on-card names.
+
+Actually, a CARD has devices like a PLATFORM has devices.
+The device lists of configs and containers are instances.
+The device lists of platforms and cards are potentially usable things.
+
+=========
+
+So when a devinstance is on a card, what do we do differently?
+Basically we need to change what we do with the signals of the device worker.
+foreach device signal:
+  -- construct the card signal name by using device_sig.
+  -- look up the slot signal in the card's signal map
+  -- look up the platform signal in the slot's signal map
+  -- declare the platform signal
+  -- use the platform signal to bind the port

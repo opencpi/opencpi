@@ -9,4 +9,6 @@ all:
 
 run:
 
+test:
+
 clean::

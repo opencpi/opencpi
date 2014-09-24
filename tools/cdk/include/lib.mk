@@ -43,8 +43,8 @@
 # We also list the targets per model.
 $(if $(wildcard $(OCPI_CDK_DIR)),,$(error OCPI_CDK_DIR environment variable not set properly.))
 
-ifdef Workers
-  ifdef Implementations
+ifneq ($(origin Workers),undefined)
+  ifneq ($(origin Implementations),undefined)
     $(error You cannot set both Workers and Implementations variables.)
   else
     Implementations := $(Workers)
@@ -59,7 +59,7 @@ ifndef LibName
 LibName=$(CwdName)
 endif
 include $(OCPI_CDK_DIR)/include/package.mk
-ifndef Implementations
+ifeq ($(origin Implementations),undefined)
 Implementations=$(foreach m,$(Models),$(wildcard *.$m))
 endif
 # we need to factor the model-specifics our of here...
@@ -172,7 +172,7 @@ rcc: speclinks $(RccImplementations)
 test: speclinks $(TestImplementations)
 
 checkocl:
-	$(AT)if ! $(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_HOST)/ocpiocl test; then echo Error: OpenCL is not available; exit 1; fi
+	$(AT)if ! test -x $(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_HOST)/ocpiocl || ! $(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_HOST)/ocpiocl test; then echo Error: OpenCL is not available; exit 1; fi
 
 ocl: checkocl speclinks $(OclImplementations)
 

@@ -9,14 +9,10 @@ namespace OA = OCPI::API;
 int main(int argc, char **argv) {
   std::string hello("<application package='ocpi'>"
 		    // instance name defaults to file_read since there is only one
-		    "  <instance component='file_read'>"
+		    "  <instance component='file_read' externals='true'>"
 		    "    <property name='filename' value='hello.file'/>"
 		    "    <property name='messageSize' value='4'/>"
 		    "  </instance>"
-		    "  <connection>"
-		    "    <external name='out'/>"
-		    "    <port instance='file_read' name='out'/>"
-		    "  </connection>"
 		    "</application>");
   try {
     OA::Application app(hello);

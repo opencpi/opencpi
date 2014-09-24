@@ -3,11 +3,11 @@
 
 #include "OcpiUtilAssembly.h"
 #include "wip.h"
-
+#include "ocp.h"
 #define INST_ATTRS "paramconfig"
-struct Attachment;
-typedef std::list<Attachment*> Attachments;
-typedef Attachments::const_iterator AttachmentsIter;
+//struct Attachment;
+//typedef std::list<Attachment*> Attachments;
+//typedef Attachments::const_iterator AttachmentsIter;
 
 struct InstancePort;
 struct Connection {
@@ -45,13 +45,7 @@ struct Instance {
   InstanceProperties properties;
   bool hasConfig;      // hack for adapter configuration FIXME make normal properties
   size_t config;       // hack ditto
-};
-struct OcpAdapt {
-  const char *expr;
-  const char *comment;
-  const char *signal;
-  OcpSignalEnum other;
-  OcpAdapt() : expr(NULL), comment(NULL), signal(NULL), other(N_OCP_SIGNALS) {}
+  Instance();
 };
 // To represent an attachment of a connection to an instance port.
 // This is currently only used for indexed ports
@@ -89,8 +83,6 @@ struct InstancePort {
     connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, OcpAdapt &oa,
 		     std::string &signal, std::string &thisComment, Language lang);
 };
-typedef std::list<Worker *> Workers;
-typedef Workers::const_iterator WorkersIter;
 class Assembly {
  public:
   Assembly(Worker &w);
@@ -117,7 +109,7 @@ class Assembly {
   InstancePort *
   findInstancePort(const char *name);
   void
-  emitAssyInstance(FILE *f, Instance *i, unsigned nControlInstances);
+    emitAssyInstance(FILE *f, Instance *i); //, unsigned nControlInstances);
 };
 
 #endif

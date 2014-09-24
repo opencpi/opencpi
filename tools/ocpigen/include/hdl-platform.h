@@ -8,7 +8,7 @@
 #define HDL_TOP_ATTRS "Pattern", "PortPattern", "DataWidth", "Language", "library"
 // These are for implementaitons that you write (e.g. not generated assemblies)
 #define HDL_IMPL_ATTRS GENERIC_IMPL_CONTROL_ATTRS, "RawProperties", "FirstRawProperty", "outer"
-#define HDL_IMPL_ELEMS "timeinterface", "memoryinterface", "streaminterface", "messageinterface", "signal", "cpmaster", "time_service", "control", "metadata"
+#define HDL_IMPL_ELEMS "timeinterface", "memoryinterface", "streaminterface", "messageinterface", "signal", "cpmaster", "time_service", "control", "metadata", "rawprop", "requires"
 
 
 // A slot has a type, a name and a set of platform-specific names for its
@@ -57,12 +57,14 @@ public:
   parseDevInstances(ezxml_t xml, HdlPlatform &platform, DevInstances *baseInstances,
 		    DevInstances &devInstances, Cards &cards, bool container);
   static const DevInstance *
-  findDeviceInstance(const char *device, std::string &card, std::string &slot,
+  findDevInstance(const char *device, std::string &card, std::string &slot,
 		     DevInstances &devInstances);
   static const char *
   addDevInstance(const char *name, const char *parent, std::string &card, std::string &slot,
 		 bool control, HdlPlatform &platform, Cards &cards,
 		 DevInstances &devInstances, const DevInstance *&devInstance);
+  static const char *
+    addDevices(ezxml_t xml, Devices &devices, DeviceTypes &deviceTypes);
 };
 
 #define HDL_CONFIG_ATTRS "platform"

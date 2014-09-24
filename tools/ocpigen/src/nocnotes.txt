@@ -1,0 +1,122 @@
+Either a platform worker or an interconnect worker can have a NOCMASTER port.
+
+For now, we'll just assume the platform worker case so we can let the cp-adapter stuff
+still be manual.
+
+For a platform configuration this means:
+
+- Externalize it.
+
+For the container:
+
+- XML inputs for connections:
+
+All we have is data connections:
+
+1. App assy port to device port
+2. App assy port to unoc, which must be labeled as an interconnect.
+
+Initial pass:
+
+Assume one interconnect, which is the name of the unoc port.
+
+So connection is:
+
+<assume assembly> to <device-name> [optional port]
+
+<connect external=foo device=bar>
+<connection>
+<external name=bar>
+<port instance=foo name=bar/>
+</connection>
+
+<external name=foo device=bar/>
+
+-- avoid confusion with "connections"
+<attach name=foo other=bar>
+to=<dev> or <interconnect> or <instance>
+
+device=
+file=
+
+Use the second attribute name as an indicator and good doc:
+- device
+- interconnect
+- instance
+and leave "port" unused so we can use it..
+
+Or have a real assembly with predefined instances:
+
+app
+<devices>
+
+The advantage of this is things like sources/sinks.
+
+But this is also an issue with ocpirun:
+
+So we should basically share a mechanism/syntax between ocpirun and here:
+
+Hierarchy would be nice: add <worker> that is an assemnbly.
+Yet another reason to have assemblies in component libraries.
+Or in app assy's, can we find assemblies in component libraries that are just
+simply component assemblies?  Why not.
+
+Or a new deployment syntax:
+
+THe "URL" external is similar:
+
+Existing top level external:
+
+name (defaults to internal port name)
+port (required)
+instance (required)
+url (optional)
+role (optional)
+index
+count
+
+Won't necessarily share the parser, but should be similar.
+
+<attach name=appport device=foo port=bar> == a device
+<attach name=sdf interconnect=bar> == from device or platform
+<attach name=sdf instance=sdf> == what I added
+
+How to have bypass apps that attach devices to each other.
+Make sure assemblies can have internal connections, but then
+how do you know anything about the ports?
+Better to have it in containers.
+So we need to express a connection between things.
+
+What is name scoping:
+
+App ports cannot conflict with devices?  Ugh/bogus.
+
+<connection
+  <assembly port=foo>
+  <device name=foo port=doo>
+  <interconnect name=bar>
+  <instance name=foo>
+  <port device=foo name=bar>
+  <port name=fred> // defaults to assy
+  <port interconnect=bar>
+
+<connect app=fred device=har port=foo>
+<connect port=foo device=bar [deviceport=baz]/>
+<connect port=foo interconnect=baz/>
+<connect device=bar interconnect=bax/>
+<connect device=bar otherdevice=bax [otherport=foo] />
+
+<connection external=foo
+   interconnect=bar
+   device=baz
+   instance=bza
+   port=foo (for devices)
+   otherdevice=foo
+   otherport=baz>
+
+// Rationale - small delta and superset of same element in assemblies..
+
+typical:
+
+<connection external=in device=adc>
+<connection external=in interconnect=pcie>

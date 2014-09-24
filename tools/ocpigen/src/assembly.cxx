@@ -35,13 +35,13 @@ findPort(OU::Assembly::Port &ap, InstancePort *&found) {
     Port &p = **pi;
     if (ap.m_name.empty()) {
 	// Unknown ports can be found for data ports that have matching known roles
-      if (ap.m_role.m_knownRole && p.isData && p.u.wdi.isProducer != ap.m_role.m_provider)
+      if (ap.m_role.m_knownRole && p.matchesDataProducer(!ap.m_role.m_provider))
 	if (found)
 	  return OU::esprintf("Ambiguous connection to unnamed %s port on %s:%s",
 			      ap.m_role.m_provider ? "input" : "output", i.wName, i.name);
 	else
 	  found = &i.m_ports[nn];
-    } else if (!strcasecmp(p.name, ap.m_name.c_str()))
+    } else if (!strcasecmp(p.name(), ap.m_name.c_str()))
       found = &i.m_ports[nn];;
   }
   if (!found)
@@ -57,26 +57,21 @@ parseConnection(OU::Assembly::Connection &aConn) {
    const char *err;
   Connection &c = *new Connection(&aConn);
   m_connections.push_back(&c);
+  //  findBool(aConn.m_parameters, "signal", c.m_isSignal);
   // In case the connection has no count, we default it to the 
   // width of the narrowest attached port
-  size_t minCount = 1000;
   InstancePort *found;
+  size_t minCount = 1000;
   for (OU::Assembly::Connection::PortsIter api = aConn.m_ports.begin();
        api != aConn.m_ports.end(); api++) {
     OU::Assembly::Port &ap = *api;
     if ((err = findPort(ap, found)))
       return err;
-#if 0
-    if (!found)
-      return OU::esprintf("for connection %s, port %s of instance %s not found",
-			  c.m_name.c_str(), ap.m_name.empty() ? "<unknown>" : ap.m_name.c_str(),
-			  m_instances[ap.m_instance].worker->m_name.c_str());
-#endif
     if (ap.m_index + (c.m_count ? c.m_count : 1) > found->m_port->count)
       return OU::esprintf("invalid index/count (%zu/%zu) for connection %s, port %s of "
 			  "instance %s has count %zu",
-			  ap.m_index, c.m_count ? c.m_count: 1,
-			  c.m_name.c_str(), ap.m_name.empty() ? "<unknown>" : ap.m_name.c_str(),
+			  ap.m_index, c.m_count ? c.m_count: 1, c.m_name.c_str(),
+			  ap.m_name.empty() ? "<unknown>" : ap.m_name.c_str(),
 			  m_instances[ap.m_instance].worker->m_name.c_str(),
 			  found->m_port->count);
     size_t count = found->m_port->count - ap.m_index;
@@ -88,33 +83,16 @@ parseConnection(OU::Assembly::Connection &aConn) {
   for (OU::Assembly::Connection::PortsIter api = aConn.m_ports.begin();
        api != aConn.m_ports.end(); api++) {
     OU::Assembly::Port &ap = *api;
-    if ((err = findPort(ap, found)))
+    if ((err = findPort(ap, found)) ||
+	(err = found->m_port->fixDataConnectionRole(ap.m_role)))
       return err;
-    assert(found);
-    Port &p = *found->m_port;
-    if (ap.m_role.m_knownRole) {
-      if ((!p.isData || !p.u.wdi.isBidirectional) &&
-	  (ap.m_role.m_bidirectional || p.u.wdi.isProducer == ap.m_role.m_provider))
-	return OU::esprintf("Role of port %s of worker %s in connection incompatible with port",
-			    p.name, m_instances[ap.m_instance].worker->m_implName);
-      if (!found->m_role.m_knownRole || found->m_role.m_bidirectional)
-	found->m_role = ap.m_role;
-    } else {
-      // Update the (mutable) aspects of the original port from our worker info
-      if (p.isData) {
-	ap.m_role.m_provider = !p.u.wdi.isProducer;
-	ap.m_role.m_bidirectional = p.u.wdi.isBidirectional;
-      } else {
-	ap.m_role.m_provider = !p.master;
-	ap.m_role.m_bidirectional = false;
-      }
-      ap.m_role.m_knownRole = true;
-    }
+    if (!found->m_role.m_knownRole || found->m_role.m_bidirectional)
+      found->m_role = ap.m_role;
     // Note that the count may not be known here yet
     if ((err = c.attachPort(*found, ap.m_index))) //, aConn.m_count)))
       return err;
+    assert(c.m_count != 0);
   }
-  assert(c.m_count != 0);
   if (aConn.m_externals.size() > 1)
     return "multiple external attachments on a connection unsupported";
   // Create instance ports (and underlying ports of this assembly worker).
@@ -130,50 +108,64 @@ parseConnection(OU::Assembly::Connection &aConn) {
     InstancePort &intPort = c.m_attachments.front()->m_instPort; // intPort corresponds to ap
     assert(intPort.m_port);
     if (ext.m_index + ext.m_count > intPort.m_port->count)
-      return OU::esprintf("External port '%s' can't have index/count %zu/%zu when internal port has count: %zu",
+      return OU::esprintf("External port '%s' can't have index/count %zu/%zu "
+			  "when internal port has count: %zu",
 			  ext.m_name.c_str(), ext.m_index, ext.m_count, intPort.m_port->count);
     // Create the external port of this assembly
     // Start with a copy of the port, then patch it
-    Port &p = *new Port(*intPort.m_port);
-    m_assyWorker.m_ports.push_back(&p);
-    p.name = ext.m_name.c_str();
-    p.worker = &m_assyWorker;
+    Port &p = intPort.m_port->clone(m_assyWorker, ext.m_name,
+				    ext.m_count ? ext.m_count : c.m_count,
+				    &ext.m_role, err);
+    if (err)
+      return OU::esprintf("External connection %s for port %s of instance %s error: %s",
+			  c.m_name.c_str(), intPort.m_port->name(), intPort.m_instance->name,
+			  err);
+#if 0
+    //    m_assyWorker.m_ports.push_back(&p);
+    //    p.m_name = ext.m_name;
+    //    p.m_worker = &m_assyWorker;
     // The width of the external port comes from the minimum that it is connected to,
     // unless it is specified
-    p.count = ext.m_count ? ext.m_count : c.m_count;
+    //    p.count = ext.m_count ? ext.m_count : c.m_count;
     p.clock = NULL;
     p.clockPort = NULL;
     p.pattern = NULL;
-    //    p.isExternal = true;
     // Resolve bidirectional role
     // See how we expose this externally
-    if (p.isData) {
+    if (p.isData()) {
       if (!ext.m_role.m_provider) {
 	if (!p.u.wdi.isProducer && !p.u.wdi.isBidirectional)
 	  return OU::esprintf("Connection %s has external producer role incompatible "
 			      "with port %s of worker %s",
-			      c.m_name.c_str(), p.name, p.worker->m_implName);
+			      c.m_name.c_str(), p.name(), p.m_worker->m_implName);
 	p.u.wdi.isProducer = true;
 	p.u.wdi.isBidirectional = false;
       } else if (ext.m_role.m_bidirectional) {
 	if (!p.u.wdi.isBidirectional)
 	  return OU::esprintf("Connection %s has external bidirectional role incompatible "
 			      "with port %s of worker %s",
-			      c.m_name.c_str(), p.name, p.worker->m_implName);
+			      c.m_name.c_str(), p.name(), p.m_worker->m_implName);
       } else if (ext.m_role.m_provider) {
 	if (p.u.wdi.isProducer)
 	  return OU::esprintf("Connection %s has external consumer role incompatible "
 			      "with port %s of worker %s",
-			      c.m_name.c_str(), p.name, p.worker->m_implName);
+			      c.m_name.c_str(), p.name(), p.m_worker->m_implName);
 	p.u.wdi.isBidirectional = false;
       }
     }
+#endif
     InstancePort *ip = new InstancePort;
     ip->init(NULL, &p, &ext);
     if ((err = c.attachPort(*ip, 0)))
       return err;
   }
   return NULL;
+}
+
+Instance::
+Instance()
+  : instance(NULL), name(NULL), wName(NULL), worker(NULL), m_clocks(NULL), m_ports(NULL),
+    iType(Application), attach(NULL), hasConfig(false), config(0) {
 }
 
 // This parses the assembly using the generic assembly parser in OU::
@@ -191,7 +183,7 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
    //   m_nConnections = m_utilAssembly->m_connections.size();
    const char *err;
  
-   Instance *i = m_instances = myCalloc(Instance, m_utilAssembly->nUtilInstances());
+   Instance *i = m_instances = new Instance[m_utilAssembly->nUtilInstances()];
    // Initialize our instances based on the generic assembly instances
    for (unsigned n = 0; n < m_utilAssembly->nUtilInstances(); n++, i++) {
      OU::Assembly::Instance *ai = &m_utilAssembly->utilInstance(n);
@@ -241,7 +233,7 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
        // and this instance port has no connections in the OU::Assembly
        // then we add an external connection for the instance port. Prior to this,
        // we didn't have access to the worker metadata to know what all the ports are.
-       if (ai->m_externals && ip->m_port->isData) {
+       if (ai->m_externals && ip->m_port->isData()) {
 	 Port *p = NULL;
 	 for (OU::Assembly::Instance::PortsIter pi = ai->m_ports.begin();
 	      pi != ai->m_ports.end(); pi++)
@@ -252,12 +244,12 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
 	     if (!findPort(**pi, found))
 	       if (ip == found)
 		 p = ip->m_port;
-	   } else if (!strcasecmp((*pi)->m_name.c_str(), ip->m_port->name)) {
+	   } else if (!strcasecmp((*pi)->m_name.c_str(), ip->m_port->name())) {
 	     p = ip->m_port;
 	     break;
 	   } 
 	 if (!p)
-	   m_utilAssembly->addExternalConnection(i->instance->m_ordinal, ip->m_port->name);
+	   m_utilAssembly->addExternalConnection(i->instance->m_ordinal, ip->m_port->name());
        }
      }
      // Parse property values now that we know the actual workers.
@@ -296,10 +288,10 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
        InstancePort *ip = i->m_ports;
        for (unsigned nn = 0; nn < i->worker->m_ports.size(); nn++, ip++) {
 	 Port *pp = ip->m_port;
-	 if (pp->isData && !pp->u.wdi.isOptional && ip->m_attachments.empty())
+	 if (ip->m_attachments.empty() && pp->isData() && !pp->isOptional())
 	   return OU::esprintf("Port %s of instance %s of worker %s"
 			       " is not connected and not optional",
-			       pp->name, i->name, i->worker->m_implName);
+			       pp->name(), i->name, i->worker->m_implName);
        }
      }
    return 0;
@@ -307,28 +299,29 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
 
 // Make this port an external port
 // Not called for WCIs that are aggreated...
-  const char *Assembly::
+// Note that this is called for ports that are IMPLICITLY made external,
+// rather than those that are explicitly connected as eternal
+const char *Assembly::
 externalizePort(InstancePort &ip, const char *name, size_t &ordinal) {
   Port &p = *ip.m_port;
-  Port &extPort = *new Port(p);
-  // Copy contents, then patch it up
-  extPort.worker = &m_assyWorker;
-  asprintf((char **)&extPort.name, "%s%zu", name, ordinal++);
-  extPort.clock = ip.m_instance->m_clocks[ip.m_port->clock->ordinal];
+  assert(!p.isData());
+  std::string extName;
+  OU::format(extName, "%s%zu", name, ordinal++);
+  Connection &c = *new Connection(NULL, extName.c_str());
+  c.m_count = p.count;
+  m_connections.push_back(&c);
+  const char *err;
+  Port &extPort = p.clone(m_assyWorker, extName, p.count, NULL, err);
+  if (err)
+    return err;
+  c.m_clock = extPort.clock = ip.m_instance->m_clocks[ip.m_port->clock->ordinal];
   assert(extPort.clock);
-  m_assyWorker.m_ports.push_back(&extPort);
-
   OU::Assembly::External *ext = new OU::Assembly::External;
-  ext->m_name = extPort.name;
+  ext->m_name = extPort.m_name;
   ext->m_role.m_provider = !p.master; // provisional
   ext->m_role.m_bidirectional = false;
   ext->m_role.m_knownRole = true;
   InstancePort &extIp = *new InstancePort(NULL, &extPort, ext);
-  Connection &c = *new Connection(NULL, extPort.name);
-  c.m_clock = extPort.clock;
-  c.m_count = p.count;
-  m_connections.push_back(&c);
-  const char *err;
   if ((err = c.attachPort(ip, 0)) ||
       (err = c.attachPort(extIp, 0)))
     return err;
@@ -340,7 +333,7 @@ findInstancePort(const char *name) {
   // First, find the external
   for (ConnectionsIter cci = m_connections.begin(); cci != m_connections.end(); cci++) {
     Connection &cc = **cci;
-    if (cc.m_external && !strcasecmp(cc.m_external->m_instPort.m_port->name, name))
+    if (cc.m_external && !strcasecmp(cc.m_external->m_instPort.m_port->name(), name))
       // We found the external port, now find the internal connected port
       for (AttachmentsIter ai = cc.m_attachments.begin(); ai != cc.m_attachments.end(); ai++)
 	if (cc.m_external != *ai)
@@ -371,7 +364,7 @@ parseOclAssy() {
 }
 
 void Worker::
-emitWorker(FILE *f) {
+emitXmlWorker(FILE *f) {
   fprintf(f, "<worker name=\"%s", m_implName);
   // FIXME - share this param-named implname with emitInstance
   if (m_paramConfig && m_paramConfig->nConfig)
@@ -394,8 +387,9 @@ emitWorker(FILE *f) {
     if (!first)
       fprintf(f, "\"");
   }
-  if (m_ports.size() && m_ports[0]->type == WCIPort && m_ports[0]->u.wci.timeout)
-    fprintf(f, " Timeout=\"%zu\"", m_ports[0]->u.wci.timeout);
+  if (m_wci && m_wci->timeout())
+    //  if (m_ports.size() && m_ports[0]->type == WCIPort && m_ports[0]->u.wci.timeout)
+    fprintf(f, " Timeout=\"%zu\"", m_wci->timeout());
   if (m_slave)
     fprintf(f, "  Slave='%s.%s'", m_slave->m_implName, m_slave->m_modelString);
   fprintf(f, ">\n");
@@ -437,27 +431,8 @@ emitWorker(FILE *f) {
     }
     prop->printChildren(f, "property");
   }
-  for (nn = 0; nn < m_ports.size(); nn++) {
-    Port *p = m_ports[nn];
-    if (p->isData) {
-      fprintf(f, "  <port name=\"%s\" numberOfOpcodes=\"%zu\"", p->name, p->u.wdi.nOpcodes);
-      if (p->u.wdi.isBidirectional)
-	fprintf(f, " bidirectional='1'");
-      else if (!p->u.wdi.isProducer)
-	fprintf(f, " provider='1'");
-      if (p->u.wdi.minBufferCount)
-	fprintf(f, " minBufferCount=\"%zu\"", p->u.wdi.minBufferCount);
-      if (p->u.wdi.bufferSizePort)
-	fprintf(f, " buffersize='%s'", p->u.wdi.bufferSizePort->name);
-      else if (p->u.wdi.bufferSize)
-	fprintf(f, " bufferSize='%zu'", p->u.wdi.bufferSize);
-      if (p->u.wdi.isOptional)
-	fprintf(f, " optional=\"%u\"", p->u.wdi.isOptional);
-      fprintf(f, ">\n");
-      p->protocol->printXML(f, 2);
-      fprintf(f, "  </port>\n");
-    }
-  }
+  for (nn = 0; nn < m_ports.size(); nn++)
+    m_ports[nn]->emitXML(f);
   for (nn = 0; nn < m_localMemories.size(); nn++) {
     LocalMemory* m = m_localMemories[nn];
     fprintf(f, "  <localMemory name=\"%s\" size=\"%zu\"/>\n", m->name, m->sizeOfLocalMemory);
@@ -466,12 +441,12 @@ emitWorker(FILE *f) {
 }
 
 void Worker::
-emitWorkers(FILE *f) {
+emitXmlWorkers(FILE *f) {
   assert(m_assembly);
   // Define all workers
   for (WorkersIter wi = m_assembly->m_workers.begin();
        wi != m_assembly->m_workers.end(); wi++)
-    (*wi)->emitWorker(f);
+    (*wi)->emitXmlWorker(f);
 }
 
 InstancePort::
@@ -489,17 +464,8 @@ init(Instance *i, Port *p, OU::Assembly::External *ext) {
   m_instance = i;
   m_port = p;
   m_connected.assign(p ? p->count : 1, false);
-  // Figure our role
-  m_role.m_knownRole = false;
-  m_role.m_bidirectional = false; // for valgrind
-  m_role.m_provider = false;      // for valgrind
-  if (p && p->isData) {
-    m_role.m_knownRole = true;
-    if (p->u.wdi.isBidirectional)
-      m_role.m_bidirectional = true;
-    else
-      m_role.m_provider = !p->u.wdi.isProducer;
-  }
+  if (p)
+    p->initRole(m_role);
   // If the external port tells us the direction and we're bidirectional, capture it.
   m_external = ext;
   if (ext && ext->m_role.m_knownRole && !ext->m_role.m_bidirectional)

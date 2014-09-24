@@ -12,7 +12,6 @@ typedef DeviceTypes::const_iterator DeviceTypesIter;
 struct DeviceType : public Worker {
   bool         m_interconnect;  // Can this type of device be used for an interconnect?
   bool         m_canControl;    // Can this interconnect worker provide control?
-  unsigned     m_count;         // How many of this type of device have we seen?
   DeviceType(ezxml_t xml, const char *file, const char *parent, const char *&err);
   static DeviceType *
   create(const char *name, const char *parent, DeviceTypes &types, const char *&err);
@@ -27,12 +26,13 @@ class HdlPlatform;
 struct Device {
   DeviceType *m_deviceType;     // not a reference due to construction issues
   std::string m_name;           // a platform-scoped device name - usually type<ordinal>
+  unsigned m_ordinal;           // Ordinal of this device on this platform/card
   // Constructor for defining new devices
   Device(ezxml_t xml, const char *parent, DeviceTypes &deviceTypes, bool single,
-	 const char *&err);
+	 unsigned ordinal, const char *&err);
   static Device *
   create(ezxml_t xml, const char *parent, DeviceTypes &deviceTypes, bool single,
-	 const char *&err);
+	 unsigned ordinal, const char *&err);
   static const char*
   parseDevices(ezxml_t xml, const char *parent, DeviceTypes &deviceTypes, Devices &devices);
   DeviceType &deviceType() { ocpiAssert(m_deviceType); return *m_deviceType; }

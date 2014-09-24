@@ -70,165 +70,29 @@ addClock() {
   m_clocks.push_back(c);
   return c;
 }
-
-Clock *Worker::
-addWciClockReset() {
-  // If there is no control port, then we synthesize the clock as wci_clk
-  for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++)
-    if (!strcasecmp("wci_Clk", (*ci)->name))
-      return *ci;
-  Clock *clock = addClock();
-  clock->name = strdup("wci_Clk");
-  clock->signal = strdup("wci_Clk");
-  clock->reset = "wci_Reset_n";
-  return clock;
-}
-// MyClock boolean simply says whether the clock is "homed" and "named" here.
-// The clock attribute says that the clock is defined elsewhere
-// The "elsewhere" is either a port that has its own clock or a global definition.
-const char *Worker::
-checkClock(Port *p) {
-  const char *err;
-  const char *clock = 0;
-  if (p->implXml) {
-    clock = ezxml_cattr(p->implXml, "Clock");
-    if ((err = OE::getBoolean(p->implXml, "MyClock", &p->myClock)))
-      return err;
-  }
-  if (!clock) {
-    if (p->myClock || (p->type == WCIPort && !p->master)) {
-      // If port has its own clock, or it is a WCI slave, establish a clock named and homed here
-      p->myClock = true;
-      p->clock = addClock();
-      asprintf((char **)&p->clock->name, "%s_Clk", p->name); // fixme
-      p->clock->port = p;
-    } else if (m_ports[0]->type == WCIPort && !m_ports[0]->master) {
-      // If no clock, and we have a WCI slave then assume the WCI's clock.
-      p->clockPort = m_ports[0];
-    } else if (m_noControl && !m_assembly &&
-	       p->isOCP() && !(p->type == WCIPort && p->master))
-      p->clock = addWciClockReset();
-    else if (p->isOCP())
-      // If no clock, and no wci port, we're hosed.
-      return OU::esprintf("Interface %s has no clock declared, and there is no control interface",
-			  p->name);
-  } else {
-    // Port refers to another clock by name
-    for (unsigned i = 0; i < m_ports.size(); i++) {
-      Port *op = m_ports[i];
-      if (p != op && !strcasecmp(clock, op->name)) {
-        if (p->myClock)
-          // Can't refer to another port and also own the clock
-          return OU::esprintf("Clock for interface \"%s\" refers to interface \"%s\","
-			      " and also has MyClock=true?",
-			      p->name, clock);
-        p->clockPort = op;
-        return 0;
-      }
-    }
-    // We are not referring to another port.  It muts be a defined clock
-    for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
-      Clock *c = *ci;
-      if (!strcasecmp(clock, c->name)) {
-        p->clock = c;
-        if (p->myClock)
-          if (c->port)
-            return OU::esprintf("Clock for interface \"%s\", \"%s\" is already owned by interface \"%s\"",
-				p->name, clock, c->port->name);
-          else
-            c->port = p;
-        return 0;
-      }
-    }
-    return OU::esprintf("Clock attribute of \"%s\" matches no interface or clock", p->name);
-  }
-  return 0;
-}
-
 // Check for implementation attributes common to data interfaces, several of which
 // are able to override protocol-determined values.
 // Take care of the case of implementation-specific ports (via implname);
 const char *Worker::
-checkDataPort(ezxml_t impl, Port **dpp, WIPType type) {
+checkDataPort(ezxml_t impl, Port *&sp) {
   const char
     *err,
     *name = ezxml_cattr(impl, "Name"),
     *portImplName = ezxml_cattr(impl, "implName");
-  unsigned i;
-  Port *dp = 0;
-  if (name && portImplName)
-    return OU::esprintf("Both \"Name\" and \"ImplName\" attributes of %s element are present",
-			impl->name);
-  else if (name) {
-    for (i = 0; i < m_ports.size(); i++) {
-      dp = m_ports[i];
-      if (dp && dp->name && !strcasecmp(dp->name, name))
-	break;
-    }
-    if (i >= m_ports.size() || dp && !dp->isData)
-      return OU::esprintf("Name attribute of Stream/MessageInterface \"%s\" "
-			  "does not match a DataInterfaceSpec", name);
-    if (ezxml_cattr(impl, "producer"))
-      return OU::esprintf("The \"producer\" attribute is illegal for %s elements",
-			  impl->name);
-
-  } else if (portImplName) {
-    for (i = 0; i < m_ports.size(); i++) {
-      dp = m_ports[i];
-      if (dp && dp->name && !strcmp(dp->name, portImplName))
-	break;
-    }
-    if (i < m_ports.size())
-      return OU::esprintf("ImplName attribute of Stream/MessageInterface \"%s\" "
-			  "matches an existing port", portImplName);
-    dp = new Port(portImplName, this, true, WDIPort, impl);
-    if ((err = OE::getBoolean(impl, "Producer", &dp->u.wdi.isProducer)) ||
-        (err = OE::getBoolean(impl, "Optional", &dp->u.wdi.isOptional)))
+  sp = NULL;
+  if (name) {
+    if ((err = getPort(name, sp)))
       return err;
-    m_ports.push_back(dp);
-  } else
+    if (!sp->isData())
+      return OU::esprintf("Name attribute of Stream/MessageInterface \"%s\" "
+			  "matches a non-data spec port", name);
+    if (sp->type != WDIPort)
+      return OU::esprintf("Name attribute of Stream/MessageInterface \"%s\" "
+			  "matches an implementation port, not a spec data port", name);
+  } else if (!portImplName)
     return OU::esprintf("Missing \"Name\" or \"ImplName\" attribute of %s element",
 			impl->name);
-  dp->type = type;
-  bool dwFound;
-  if ((err = OE::getNumber(impl, "DataWidth", &dp->dataWidth, &dwFound)) ||
-      // Be careful not to clobber protocol-determined values (i.e. don't set default values)
-      (err = OE::getNumber(impl, "NumberOfOpcodes", &dp->u.wdi.nOpcodes, NULL, 0, false)) ||
-      (err = OE::getNumber(impl, "MaxMessageValues", &dp->protocol->m_maxMessageValues, NULL, 0, false)) ||
-      (err = OE::getNumber(impl, "DataValueWidth", &dp->protocol->m_dataValueWidth, NULL, 0, false)) ||
-      (err = OE::getBoolean(impl, "ZeroLengthMessages", &dp->protocol->m_zeroLengthMessages, true)) ||
-      (err = OE::getBoolean(impl, "Continuous", &dp->u.wdi.continuous)) ||
-      (err = OE::getBoolean(impl, "ImpreciseBurst", &dp->impreciseBurst)) ||
-      (err = OE::getBoolean(impl, "PreciseBurst", &dp->preciseBurst)))
-    return err;
-  if (!dwFound) {
-    if (m_defaultDataWidth >= 0)
-      dp->dataWidth = (unsigned)m_defaultDataWidth;
-    else
-      dp->dataWidth = dp->protocol->m_dataValueWidth;  // or granularity?
-  } else if (!dp->protocol->m_dataValueWidth && !dp->protocol->nOperations())
-    dp->protocol->m_dataValueWidth = dp->dataWidth;
-  if (dp->dataWidth >= dp->protocol->m_dataValueWidth) {
-    if (dp->dataWidth % dp->protocol->m_dataValueWidth)
-      return OU::esprintf("DataWidth (%zu) on port '%s' not a multiple of DataValueWidth (%zu)",
-			  dp->dataWidth, dp->name, dp->protocol->m_dataValueWidth);
-  } else if (dp->protocol->m_dataValueWidth % dp->dataWidth)
-      return OU::esprintf("DataValueWidth (%zu) on port '%s' not a multiple of DataWidth (%zu)",
-			  dp->protocol->m_dataValueWidth, dp->name, dp->dataWidth);
-  if (!dp->impreciseBurst && !dp->preciseBurst)
-    dp->impreciseBurst = true;
-#if 0 // FIXME
-  if (dp->impreciseBurst && dp->preciseBurst)
-    return "Both ImpreciseBurst and PreciseBurst cannot be specified for WSI or WMI";
-#endif
-  dp->pattern = ezxml_cattr(impl, "Pattern");
-  // After all this, if there is no default buffer size specified, but there is
-  // a maxMessageValues, set the default buffer size from it.
-  if (!dp->protocol->m_defaultBufferSize && dp->protocol->m_maxMessageValues)
-    dp->protocol->m_defaultBufferSize =
-      (dp->protocol->m_maxMessageValues * dp->protocol->m_dataValueWidth + 7) / 8;
-  *dpp = dp;
-  return 0;
+  return NULL;
 }
 
 // If the given element is xi:include, then parse it and return the parsed element.
@@ -273,7 +137,7 @@ tryChildInclude(ezxml_t x, const char *parent, const char *element,
 
 // Find the single instance of a child, which might be xi:included
 const char *
-tryOneChildInclude(ezxml_t top, const char *parent, const char *element,
+tryOneChildInclude(ezxml_t top, std::string &parent, const char *element,
 		   ezxml_t *parsed, const char **childFile, bool optional) {
   *parsed = 0;
   const char *err = 0;
@@ -286,19 +150,19 @@ tryOneChildInclude(ezxml_t top, const char *parent, const char *element,
 			      element);
 	else {
 	  if (childFile)
-	    *childFile = parent;
+	    *childFile = parent.c_str();
 	  *parsed = x;
 	}
       else {
 	const char *file;
 	ezxml_t found;
-	if ((err = tryInclude(x, parent, element, &found, &file, optional)))
+	if ((err = tryInclude(x, parent.c_str(), element, &found, &file, optional)))
 	  return err;
 	else if (found) {
 	  if (*parsed)
 	    return OU::esprintf("found duplicate %s element in file %s, "
 				"included from file %s, where only one was expected",
-				element, parent, file);
+				element, parent.c_str(), file);
 	  else {
 	    *parsed = found;
 	    if (childFile)
@@ -572,10 +436,10 @@ parse(const char *file, ezxml_t prot)
     last = checkSuffix(start, "_protocol", last);
     last = checkSuffix(start, "_prot", last);
     m_name.assign(start, last - start);
-    std::string ofile = m_port.worker->m_file;
-    m_port.worker->m_file = file;
+    std::string ofile = m_port.m_worker->m_file;
+    m_port.m_worker->m_file = file;
     const char *err = OU::Protocol::parse(prot);
-    m_port.worker->m_file = ofile;
+    m_port.m_worker->m_file = ofile;
     return err;
   }
   return prot ? OU::Protocol::parse(prot) : NULL;
@@ -585,104 +449,17 @@ const char *Protocol::
 parseOperation(ezxml_t op) {
   const char *err, *ifile;
   ezxml_t iprot = 0;
-  if ((err = tryInclude(op, m_port.worker->m_file.c_str(), "Protocol", &iprot, &ifile, false)))
+  if ((err = tryInclude(op, m_port.m_worker->m_file.c_str(), "Protocol", &iprot, &ifile, false)))
     return err;
   // If it is an "include", basically recurse
   if (iprot) {
-    std::string ofile = m_port.worker->m_file;
-    m_port.worker->m_file = ifile;
+    std::string ofile = m_port.m_worker->m_file;
+    m_port.m_worker->m_file = ifile;
     err = OU::Protocol::parse(iprot, false);
-    m_port.worker->m_file = ofile;
+    m_port.m_worker->m_file = ofile;
     return err;
   }
   return OU::Protocol::parseOperation(op);
-}
-
-// First pass to capture name and xml at least
-const char *Worker::
-preParseSpecPort(ezxml_t x) {
-  const char *err;
-  std::string name;
-  if ((err = OE::getRequiredString(x, name, "name")))
-    return err;
-  for (unsigned i = 0; i < m_ports.size(); i++) {
-    Port *pp = m_ports[i];
-    if (!strcasecmp(pp->name, name.c_str()))
-      return OU::esprintf("%s element Name attribute duplicates another interface name",
-			  OE::ezxml_tag(x));
-  }
-  Port *p = new Port(strdup(name.c_str()), this, true, WDIPort, x);
-  m_ports.push_back(p);
-  return NULL;
-}
-const char *Worker::
-parseSpecPort(Port *p) {
-  const char *err;
-  ezxml_t x = p->implXml;
-  if ((err = OE::checkAttrs(x, "Name", "Producer", "Count", "Optional", "Protocol", "buffersize",
-			    (void*)0)) ||
-      (err = OE::getBoolean(x, "Producer", &p->u.wdi.isProducer)) ||
-      (err = OE::getBoolean(x, "Optional", &p->u.wdi.isOptional)))
-    return err;
-  const char *protocol = ezxml_cattr(x, "protocol");
-  ezxml_t pSum;
-  const char *protFile = 0;
-  if ((err = tryOneChildInclude(x, m_file.c_str(), "ProtocolSummary", &pSum, &protFile, true)))
-    return err;
-  Protocol *prot = p->protocol = new Protocol(*p);
-  if (pSum) {
-    if (protocol || ezxml_cchild(x, "Protocol"))
-      return "cannot have both Protocol and ProtocolSummary";
-    if ((err = OE::checkAttrs(pSum, "DataValueWidth", "DataValueGranularity",
-			      "DiverDataSizes", "MaxMessageValues", "NumberOfOpcodes",
-			      "VariableMessageLength", "ZeroLengthMessages",
-			      "MinMessageValues",  (void*)0)) ||
-	(err = OE::getNumber(pSum, "NumberOfOpcodes", &p->u.wdi.nOpcodes, 0, 1)) ||
-	(err = prot->parseSummary(pSum)))
-      return err;
-  } else {
-    ezxml_t protx = NULL;
-    // FIXME: default protocol name from file name
-    if ((err = tryOneChildInclude(x, m_file.c_str(), "Protocol", &protx, &protFile, true)))
-      return err;
-    if (protocol) {
-      if (protx)
-	return "can't have both 'protocol' element (maybe xi:included) and 'protocol' attribute";
-      if ((err = parseFile(protocol, m_file.c_str(), "protocol", &protx, &protFile, false)))
-	return err;
-    }
-    if (protx) {
-      if ((err = prot->parse(protFile, protx)))
-	return err;
-      // So if there is a protocol, nOpcodes is initialized from it.
-      p->u.wdi.nOpcodes = p->protocol->nOperations();
-    } else {
-      // When there is no protocol at all, we force it to variable, unbounded at 64k, diverse, zlm
-      // I.e. assume it can do anything up to 64KB
-      // But with no operations, we can scale back when connecting to something more specific
-      prot->m_diverseDataSizes = true;
-      prot->m_variableMessageLength = true;
-      prot->m_maxMessageValues = 64*1024;
-      prot->m_zeroLengthMessages = true;
-      prot->m_isUnbounded = true;
-      p->u.wdi.nOpcodes = 256;
-    }
-  }
-  const char *bs = ezxml_cattr(x, "bufferSize");
-  if (bs && !isdigit(bs[0])) {
-    for (unsigned i = 0; i < m_ports.size(); i++) {
-      Port *pp = m_ports[i];
-      if (pp != p && !strcasecmp(pp->name, bs)) {
-	p->u.wdi.bufferSizePort = pp;
-	break;
-      }
-    }
-  } else if ((err = OE::getNumber(x, "bufferSize", &p->u.wdi.bufferSize, 0, 0)))
-    return err;
-  // FIXME: outlaw buffer size port when you have protocol?
-  if (p->u.wdi.bufferSize == 0)
-    p->u.wdi.bufferSize = prot->m_defaultBufferSize; // from protocol
-  return NULL;
 }
 
 // The package serves two purposes: the spec and the impl.
@@ -728,7 +505,7 @@ parseSpec(const char *package) {
   const char *err;
   // xi:includes at this level are component specs, nothing else can be included
   ezxml_t spec = NULL;
-  if ((err = tryOneChildInclude(m_xml, m_file.c_str(), "ComponentSpec", &spec,
+  if ((err = tryOneChildInclude(m_xml, m_file, "ComponentSpec", &spec,
 				&m_specFile, true)))
     return err;
   const char *specAttr = ezxml_cattr(m_xml, "spec");
@@ -753,7 +530,7 @@ parseSpec(const char *package) {
     return err;
   // Parse control port info
   ezxml_t ps;
-  if ((err = tryOneChildInclude(spec, m_file.c_str(), "PropertySummary", &ps, NULL, true)))
+  if ((err = tryOneChildInclude(spec, m_file, "PropertySummary", &ps, NULL, true)))
     return err;
   if ((err = doProperties(spec, m_file.c_str(), false, ps != NULL)))
     return err;
@@ -767,44 +544,46 @@ parseSpec(const char *package) {
   // Now parse the data aspects, allocating (data) ports.
   if (ezxml_cchild(spec, "DataInterfaceSpec") && ezxml_cchild(spec, "Port"))
     return "Cannot use both 'datainterfacespec' and 'port' elements in the same spec";
-  for (ezxml_t x = ezxml_cchild(spec, "DataInterfaceSpec"); x; x = ezxml_next(x))
-    if ((err = preParseSpecPort(x)))
+  // First pass to establish ports with names
+  for (ezxml_t x = ezxml_cchild(spec, "DataInterfaceSpec"); x; x = ezxml_next(x)) {
+    new DataPort(*this, x, -1, err);
+    if (err)
       return err;
-  for (ezxml_t x = ezxml_cchild(spec, "Port"); x; x = ezxml_next(x))
-    if ((err = preParseSpecPort(x)))
+  }
+  for (ezxml_t x = ezxml_cchild(spec, "Port"); x; x = ezxml_next(x)) {
+    new DataPort(*this, x, -1, err);
+    if (err)
       return err;
-  for (unsigned i = 0; i < m_ports.size(); i++) {
-    Port *p = m_ports[i];
-    if ((err = parseSpecPort(p)))
+  }
+  // Second pass, really parse them, when they can refer to each other.
+  for (PortsIter pi = m_ports.begin(); pi != m_ports.end(); pi++) {
+    Port &p = **pi;
+    if (p.isData() && (err = (**pi).parse()))
       return err;
   }
   return Signal::parseSignals(spec, m_signals);
 }
 
+// Called for each non-data impl port type
 const char *Worker::
-initImplPorts(ezxml_t xml, const char *element, const char *prefix, WIPType type) {
+initImplPorts(ezxml_t xml, const char *element, PortCreate &create) {
   const char *err;
   unsigned
     nTotal = OE::countChildren(xml, element),
     ordinal = 0;
   // Clocks depend on port names, so get those names in first pass(non-control ports)
   for (ezxml_t x = ezxml_cchild(xml, element); x; x = ezxml_next(x), ordinal++) {
-    bool master = false;
-    if ((err = OE::getBoolean(x, "master", &master)))
-      return err;
-    Port *p = new Port(ezxml_cattr(x, "Name"), this, false, type, x, 1, master);
-    m_ports.push_back(p);
-    if (!p->name)
-      if (nTotal == 1)
-        p->name = prefix;
-      else
-        asprintf((char **)&p->name, "%s%u", prefix, ordinal);
-    if ((err = getNumber(x, "count", &p->count)))
-      return err;
 #if 0
-    if (type == CPPort || type == NOCPort)
-      m_hasPlatformPorts = true;
+    
+    if (!ezxml_cattr(x, "name")) {
+      std::string name = prefix;
+      if (nTotal != 1)
+	OU::format(name, "%s%u", prefix, ordinal);
+      ezxml_set_attr_d(xml, "name", name.c_str());
+    }
 #endif
+    if (!create(*this, x, NULL, nTotal == 1 ? -1 : ordinal, err))
+      return err;
   }
   return NULL;
 }
@@ -893,18 +672,15 @@ parseOcl() {
     unsigned n;
     for (n = 0; n < m_ports.size(); n++) {
       p = m_ports[n];
-      if (!strcasecmp(p->name, name))
+      if (!strcasecmp(p->name(), name))
         break;
     }
     if (n >= m_ports.size())
       return OU::esprintf("No DataInterface named \"%s\" from Port element", name);
-    if ((err = OE::getNumber(x, "MinBuffers", &p->u.wdi.minBufferCount, 0, 0)) || // backward compat
-        (err = OE::getNumber(x, "MinBufferCount", &p->u.wdi.minBufferCount, 0, p->u.wdi.minBufferCount)))
-      return err;
   }
   m_model = OclModel;
   m_modelString = "ocl";
-  return 0;
+  return NULL;
 }
 
 // Get the filename and the name as required.
@@ -1085,13 +861,13 @@ Worker::
 Worker(ezxml_t xml, const char *xfile, const char *parent,
        OU::Assembly::Properties *ipvs, const char *&err)
   : Parsed(xml, xfile, parent, NULL, err),
-    m_model(NoModel), m_modelString(NULL), m_isDevice(false), //m_hasPlatformPorts(false),
-    m_noControl(false), m_reusable(false), m_specFile(0), m_implName(m_name.c_str()), m_specName(0),
-    m_isThreaded(false), m_maxPortTypeName(0), m_endian(NoEndian),
-    m_needsEndian(false), m_pattern(0), m_staticPattern(0), m_defaultDataWidth(-1),
-    m_language(NoLanguage), m_assembly(NULL), m_slave(NULL), m_library(NULL), m_outer(false),
-    m_debugProp(NULL), m_instancePVs(ipvs), m_mkFile(NULL), m_xmlFile(NULL), m_outDir(NULL),
-    m_paramConfig(NULL)
+    m_model(NoModel), m_modelString(NULL), m_isDevice(false), m_wci(NULL),
+    m_noControl(false), m_reusable(false), m_specFile(0), m_implName(m_name.c_str()),
+    m_specName(0), m_isThreaded(false), m_maxPortTypeName(0), m_wciClock(NULL),
+    m_endian(NoEndian), m_needsEndian(false), m_pattern(NULL), m_portPattern(NULL),
+    m_staticPattern(NULL), m_defaultDataWidth(-1), m_language(NoLanguage), m_assembly(NULL),
+    m_slave(NULL), m_library(NULL), m_outer(false), m_debugProp(NULL), m_instancePVs(ipvs),
+    m_mkFile(NULL), m_xmlFile(NULL), m_outDir(NULL), m_paramConfig(NULL)
 {
   const char *name = ezxml_name(xml);
   // FIXME: make HdlWorker and RccWorker classes  etc.
@@ -1129,6 +905,24 @@ Worker(ezxml_t xml, const char *xfile, const char *parent,
 #endif
   }
 }
+
+// FIXME: look for all the places this can be used..
+Port *Worker::
+findPort(const char *name, Port *except) const {
+  for (unsigned i = 0; i < m_ports.size(); i++) {
+    Port *dp = m_ports[i];
+    if (dp && dp->m_name.length() && !strcasecmp(dp->name(), name) && (!except || dp != except))
+      return dp;
+  }
+  return NULL;
+}
+const char *Worker::
+getPort(const char *name, Port *&p, Port *except) const {
+  p = findPort(name, except);
+  return p ? NULL :
+    OU::esprintf("No port named \"%s\" was found in worker \"%s\"", name, m_implName);
+}
+
 Worker::~Worker() {
   deleteAssy();
 }
@@ -1148,16 +942,6 @@ emitAttribute(const char *attr) {
   return OU::esprintf("Unknown worker attribute: %s", attr);
 }
 
-Port::Port(const char *name, Worker *w, bool isData, WIPType type, ezxml_t xml, size_t count, bool master)
-  : name(name), worker(w), count(count),
-    //    isExternal(false),
-    isData(isData), pattern(0), type(type),
-    dataWidth(0), byteWidth(0), impreciseBurst(false), preciseBurst(false),
-    clock(0), clockPort(0), myClock(false),values(0), master(master), protocol(0), implXml(xml)
-{
-  memset(&ocp, 0, sizeof(ocp));
-  memset(&u, 0, sizeof(u));
-}
 
 Parsed::
 Parsed(ezxml_t xml,        // The xml for this entity
@@ -1179,4 +963,17 @@ Clock()
 const char *Worker::
 emitArtXML(const char */* wksfile*/) {
   return "Artifact XML files can only be generated for containers or RCC assemblies";
+}
+
+const char *Worker::
+deriveOCP() {
+  //  printf("4095 %d 4096 %d\n", floorLog2(4095), floorLog2(4096));
+  const char *err;
+  for (unsigned i = 0; i < m_ports.size(); i++) {
+    Port *p = m_ports[i];
+    if (p->isOCP() &&
+	(err = p->deriveOCP()))
+      return err;
+  }
+  return NULL;
 }

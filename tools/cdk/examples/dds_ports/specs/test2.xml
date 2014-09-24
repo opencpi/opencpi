@@ -1,0 +1,42 @@
+<!-- THIS FILE WAS GENERATED ON Thu Oct 13 20:45:48 2011 EDT -->
+<!-- BASED ON THE FILE: test.idl -->
+<!-- YOU PROBABLY SHOULD NOT EDIT IT -->
+<protocol name="Msg1" qualifiedName="JTest::Msg1">
+<operation name="Msg1" qualifiedName="JTest::Msg1">
+
+ <argument name="userId" type="Long"/>
+ <argument name="u1" key="true"/>
+ <argument name="v_longlong1" type="LongLong"/>
+ <argument name="v_short" type="Short"/>
+ <argument name="v_l_array" type="Long" arrayLength="3"/>
+ <argument name="v_l_array1" type="Long" arrayDimensions="3,4"/>
+ <argument name="v_bool" type="Bool"/>
+ <argument name="v_double" type="Double"/>
+ <argument name="v_oct_array" type="UChar" arrayLength="48"/>
+ <argument name="v_embmsg" type="Struct">
+   <member name="value" type="Long"/>
+   <member name="sdbl" type="Double" sequenceLength="0"/>
+ </argument>
+ <argument name="v_message" type="String" stringLength="0"/>
+ <argument name="long_seq" type="Long" sequenceLength="0"/>
+ <argument name="double_seq" type="Double" sequenceLength="0"/>
+ <argument name="short_seq" type="Short" sequenceLength="0"/>
+ <argument name="char_seq" type="Char" sequenceLength="0"/>
+ <argument name="uchar_seq" type="UChar" sequenceLength="0"/>
+ <argument name="v_sseq" type="String" stringLength="0" sequenceLength="0"/>
+ <argument name="v_embmsgar" type="Struct" arrayDimensions="3">
+   <member name="value" type="Long"/>
+   <member name="sdbl" type="Double" sequenceLength="0"/>
+ </argument>
+
+ <argument name="lseqar" type="type" arrayLength="3">
+   <type type="long" sequenceLength="0"/>
+ </argument>
+ <argument name="userId1" type="Long"/>
+ <argument name="u11" key="true"/>
+ <argument name="v_longlong11" type="LongLong"/>
+ <argument name="v_short1" type="Short"/>
+
+
+</operation>
+</protocol>

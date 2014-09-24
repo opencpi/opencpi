@@ -83,18 +83,18 @@ HdlContainer(ezxml_t xml, const char *xfile, const char *&err)
     Port &p = **pi;
     Port *slave = NULL;
     if (p.master && p.type == NOCPort) {
-      size_t len = strlen(p.name);
+      size_t len = p.m_name.length();
       // Find the slave port for this master just for error checking
       for (PortsIter si = m_config->m_ports.begin(); si != m_config->m_ports.end(); si++) {
 	Port &sp = **si;
-	if (!sp.master && sp.type == NOCPort && !strncasecmp(p.name, sp.name, len) &&
-	    !strcasecmp(sp.name + len, "_slave")) {
+	if (!sp.master && sp.type == NOCPort && !strncasecmp(p.name(), sp.name(), len) &&
+	    !strcasecmp(sp.name() + len, "_slave")) {
 	  slave = &sp;
 	  break;
 	}
       }
       ocpiAssert(slave);
-      uNocs[p.name] = 0;
+      uNocs[p.name()] = 0;
     }
   }
   // Establish connections, WHICH MAY ALSO IMPLICITLY CREATE DEVICE INSTANCES
@@ -118,7 +118,7 @@ HdlContainer(ezxml_t xml, const char *xfile, const char *&err)
 		  "    <port instance='ocscp' name='wci'/>\n"
 		  "    <port instance='pfconfig' name='%s'/>\n"
 		  "  </connection>\n",
-		  p.count, p.name);
+		  p.count, p.name());
     nWCIs += p.count;
   }
   // Instance the assembly and connect its wci
@@ -132,7 +132,7 @@ HdlContainer(ezxml_t xml, const char *xfile, const char *&err)
 		  "    <port instance='%s' name='%s'/>\n"
 		  "  </connection>\n",
 		  p.count, nWCIs,
-		  m_appAssembly->m_implName, p.name);
+		  m_appAssembly->m_implName, p.name());
     nWCIs += p.count;
   }
   if (doDefault) {
@@ -145,11 +145,11 @@ HdlContainer(ezxml_t xml, const char *xfile, const char *&err)
       return;
     }
     for (PortsIter pi = m_appAssembly->m_ports.begin(); pi != m_appAssembly->m_ports.end(); pi++)
-      if ((*pi)->isData) {
+      if ((*pi)->isData()) {
 	if (uNocs.empty() || uNocs.size() > 1) {
 	  if (!attribute)
 	    err = OU::esprintf("No single interconnect in platform configuration for assembly port %s",
-			       (*pi)->name);
+			       (*pi)->name());
 	  return;
 	}
 	for (PortsIter ii = m_config->m_ports.begin(); ii != m_config->m_ports.end(); ii++) {
@@ -176,7 +176,7 @@ HdlContainer(ezxml_t xml, const char *xfile, const char *&err)
 		    "    <port instance='%s' name='%s'/>\n"
 		    "  </connection>\n",
 		    nWCIs, (*di).device.name().c_str(),
-		    (*di).device.deviceType().m_ports[0]->name);
+		    (*di).device.deviceType().m_ports[0]->name());
 
       nWCIs++;
     }
@@ -198,7 +198,7 @@ HdlContainer(ezxml_t xml, const char *xfile, const char *&err)
 		    "    <port instance='pfconfig' name='%s'/>\n"
 		    "    <port instance='ocscp' name='cp'/>\n"
 		    "  </connection>\n",
-		    i.name);
+		    i.name());
       break;
     }
   }
@@ -254,7 +254,7 @@ HdlContainer(ezxml_t xml, const char *xfile, const char *&err)
   // Instance time clients for the assembly
   for (PortsIter pi = m_appAssembly->m_ports.begin(); pi != m_appAssembly->m_ports.end(); pi++)
     if ((*pi)->type == WTIPort)
-      emitTimeClient(assy, m_appAssembly->m_implName, (*pi)->name);
+      emitTimeClient(assy, m_appAssembly->m_implName, (*pi)->name());
   OU::formatAdd(assy,
 		"  <instance worker='metadata'/>\n"
 		"    <connection>\n"
@@ -297,7 +297,7 @@ parseConnection(ezxml_t cx, ContConnect &c) {
   if ((attr = ezxml_cattr(cx, "external"))) {
     // Instance time clients for the assembly
     for (PortsIter pi = m_appAssembly->m_ports.begin(); pi != m_appAssembly->m_ports.end(); pi++)
-      if (!strcasecmp((*pi)->name, attr)) {
+      if (!strcasecmp((*pi)->name(), attr)) {
 	c.external = *pi;
 	break;
       }
@@ -315,11 +315,11 @@ parseConnection(ezxml_t cx, ContConnect &c) {
     std::string card, slot;
     OE::getOptionalString(cx, card, "card");
     OE::getOptionalString(cx, slot, "slot");
-    c.devInstance = HdlPlatform::findDeviceInstance(attr, card, slot, m_config->devInstances());
+    c.devInstance = HdlPlatform::findDevInstance(attr, card, slot, m_config->devInstances());
     if (c.devInstance)
       c.devInConfig = true;
     else if (!(c.devInstance =
-	       HdlPlatform::findDeviceInstance(attr, card, slot, m_devInstances)) &&
+	       HdlPlatform::findDevInstance(attr, card, slot, m_devInstances)) &&
 	     (err =
 	      HdlPlatform::addDevInstance(attr, OE::ezxml_tag(cx), card, slot, false,
 					  m_config->platform(), m_cards, m_devInstances,
@@ -332,19 +332,19 @@ parseConnection(ezxml_t cx, ContConnect &c) {
       return OU::esprintf("Port '%s' specified without specifying a device", attr);
     Device &d = c.devInstance->device;
     for (PortsIter pi = d.deviceType().m_ports.begin(); pi != d.deviceType().m_ports.end(); pi++)
-      if (!strcasecmp((*pi)->name, attr)) {
+      if (!strcasecmp((*pi)->name(), attr)) {
 	c.port = *pi;
 	break;
       }
     if (!c.port)
       return OU::esprintf("Port '%s' not found for device '%s'", attr, d.name().c_str());
-    if (!c.port->isData)
+    if (!c.port->isData())
       return OU::esprintf("Port '%s' for device '%s' is not a data port", attr, d.name().c_str());
   } else if (c.devInstance) {
     Device &d = c.devInstance->device;
     // Find the one data port
     for (PortsIter pi = d.deviceType().m_ports.begin(); pi != d.deviceType().m_ports.end(); pi++)
-      if ((*pi)->isData) {
+      if ((*pi)->isData()) {
 	if (c.port)
 	  return OU::esprintf("There are multiple data ports for device '%s'; you must specify one",
 			      d.name().c_str());
@@ -356,7 +356,7 @@ parseConnection(ezxml_t cx, ContConnect &c) {
   if ((attr = ezxml_cattr(cx, "interconnect"))) {
     // An interconnect can be on any device worker, but for now it is on the config.
     for (PortsIter pi = m_config->m_ports.begin(); pi != m_config->m_ports.end(); pi++)
-      if (!strcasecmp((*pi)->name, attr)) {
+      if (!strcasecmp((*pi)->name(), attr)) {
 	c.interconnect = *pi;
 	break;
       }
@@ -372,12 +372,15 @@ parseConnection(ezxml_t cx, ContConnect &c) {
 const char *HdlContainer::
 emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContConnect &c) {
     // Find uNoc
-   unsigned &unoc = uNocs.at(c.interconnect->name);
-   Port *port = c.external ? c.external : c.port;
-   if (port->type != WSIPort || c.interconnect->type != NOCPort || !c.interconnect->master)
-     return OU::esprintf("unsupported container connection between port %s of %s%s and interconnect %s",
-			 port->name, c.interconnect->name, c.external ? "assembly" : "device",
-			 c.external ? "" : c.devInstance->device.name().c_str());
+  const char *iname = c.interconnect->name();
+  unsigned &unoc = uNocs.at(iname);
+  Port *port = c.external ? c.external : c.port;
+  if (port->type != WSIPort || c.interconnect->type != NOCPort || !c.interconnect->master)
+    return OU::esprintf("unsupported container connection between "
+			"port %s of %s%s and interconnect %s",
+			port->name(), iname,
+			c.external ? "assembly" : "device",
+			c.external ? "" : c.devInstance->device.name().c_str());
   // Create the three instances:
   // 1. A unoc node to use the interconnect unoc
   // 2. A DP/DMA module to stream to/from another place on the interconnect
@@ -387,7 +390,7 @@ emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContCon
 		"    <property name='control' value='false'/>\n"
 		"    <property name='position' value='%u'/>\n"
 		"  </instance>\n",
-		c.interconnect->name, unoc, unoc);
+		iname, unoc, unoc);
   // instantiate dp, and connect its wci
   OU::formatAdd(assy,
 		"  <instance name='%s_ocdp%u' worker='ocdp' interconnect='%s' configure='%u'>\n"
@@ -398,10 +401,10 @@ emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContCon
 		"    <port instance='%s_ocdp%u' name='ctl'/>\n"
 		"    <port instance='ocscp' name='wci' index='%zu'/>\n"
 		"  </connection>\n",
-		c.interconnect->name, unoc, c.interconnect->name, unoc,
+		iname, unoc, iname, unoc,
 		1, // port->u.wdi.isProducer ? 0 : 1,
 		1, // port->u.wdi.isProducer ? 1 : 0,
-		c.interconnect->name, unoc,
+		iname, unoc,
 		index);
   index++;
   // instantiate sma, and connect its wci
@@ -411,18 +414,18 @@ emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContCon
 		"    <port instance='%s_sma%u' name='ctl'/>\n"
 		"    <port instance='ocscp' name='wci' index='%zu'/>\n"
 		"  </connection>\n",
-		c.interconnect->name, unoc, c.interconnect->name, 
-		port->u.wdi.isProducer ? 2 : 1,
-		c.interconnect->name, unoc,
+		iname, unoc, iname, 
+		port->isDataProducer() ? 2 : 1,
+		iname, unoc,
 		index);
   index++;
   // Connect the new unoc node to the unoc
   std::string prevInstance, prevPort;
   if (unoc == 0) {
     prevInstance = "pfconfig";
-    prevPort = c.interconnect->name;
+    prevPort = iname;
   } else {
-    OU::format(prevInstance, "%s_unoc%u", c.interconnect->name, unoc - 1);
+    OU::format(prevInstance, "%s_unoc%u", iname, unoc - 1);
     prevPort = "down";
   }
   OU::formatAdd(assy,
@@ -430,32 +433,32 @@ emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContCon
 		"    <port instance='%s' name='%s'/>\n"
 		"    <port instance='%s_unoc%u' name='up'/>\n"
 		"  </connection>\n",
-		prevInstance.c_str(), prevPort.c_str(), c.interconnect->name, unoc);
+		prevInstance.c_str(), prevPort.c_str(), iname, unoc);
   OU::formatAdd(assy,
 		"  <connection>\n"
 		"    <port instance='%s_unoc%u' name='client'/>\n"
 		"    <port instance='%s_ocdp%u' name='client'/>\n"
 		"  </connection>\n",
-		c.interconnect->name, unoc, c.interconnect->name, unoc);
+		iname, unoc, iname, unoc);
   OU::formatAdd(assy,
 		"  <connection>\n"
 		"    <port instance='%s_ocdp%u' %s='data'/>\n"
 		"    <port instance='%s_sma%u' %s='message'/>\n"
 		"  </connection>\n",
-		c.interconnect->name, unoc, port->u.wdi.isProducer ? "to" : "from",
-		c.interconnect->name, unoc, port->u.wdi.isProducer ? "from" : "to");
+		iname, unoc, port->isDataProducer() ? "to" : "from",
+		iname, unoc, port->isDataProducer() ? "from" : "to");
   OU::formatAdd(assy,
 		"  <connection>\n"
 		"    <port instance='%s_sma%u' %s='%s'/>\n"
 		"    <port instance='%s' %s='%s'/>\n"
 		"  </connection>\n",
-		c.interconnect->name, unoc,
-		port->u.wdi.isProducer ? "to" : "from",
-		port->u.wdi.isProducer ? "in" : "out",
+		iname, unoc,
+		port->isDataProducer() ? "to" : "from",
+		port->isDataProducer() ? "in" : "out",
 		c.external ? m_appAssembly->m_implName : c.devInstance->device.name().c_str(),
-		port->u.wdi.isProducer ? "from" : "to",
-		port->name);
-  OU::format(prevInstance, "%s_ocdp%u", c.interconnect->name, unoc);
+		port->isDataProducer() ? "from" : "to",
+		port->name());
+  OU::format(prevInstance, "%s_ocdp%u", iname, unoc);
   emitTimeClient(assy, prevInstance.c_str(), "wti");
   unoc++;
   return NULL;
@@ -479,13 +482,13 @@ emitConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContConnect
   } else if (c.external && c.devInstance) {
     // We need to connect an external port to a port of a device instance.
     OU::formatAdd(assy,
-		"  <connection>\n"
-		"    <port instance='%s' name='%s'/>\n"
-		"    <port instance='%s' name='%s'/>\n"
-		"  </connection>\n",
-	       m_appAssembly->m_implName, c.external->name,
-	       c.devInstance->device.name().c_str(),
-	       c.port->name);
+		  "  <connection>\n"
+		  "    <port instance='%s' name='%s'/>\n"
+		  "    <port instance='%s' name='%s'/>\n"
+		  "  </connection>\n",
+		  m_appAssembly->m_implName, c.external->name(),
+		  c.devInstance->device.name().c_str(),
+		  c.port->name());
   } else
     return "unsupported container connection";
   return NULL;
@@ -531,9 +534,9 @@ emitArtXML(const char *wksFile) {
   // 2. The assembly (application workers)
   // 3. The container
   size_t index = 0;
-  m_config->emitWorkers(f);
-  m_appAssembly->emitWorkers(f);
-  emitWorkers(f);
+  m_config->emitXmlWorkers(f);
+  m_appAssembly->emitXmlWorkers(f);
+  emitXmlWorkers(f);
   m_config->emitInstances(f, "p", index);
   m_appAssembly->emitInstances(f, "a", index);
   emitInstances(f, "c", index);
@@ -549,12 +552,12 @@ emitArtXML(const char *wksFile) {
   for (ConnectionsIter cci = m_assembly->m_connections.begin();
        cci != m_assembly->m_connections.end(); cci++) {
     Connection &cc = **cci;
-    if (cc.m_attachments.front()->m_instPort.m_port->isData) {
+    if (cc.m_attachments.front()->m_instPort.m_port->isData()) {
       InstancePort *ap = NULL, *pp = NULL, *ip = NULL; // instance ports for the app, for pf, for internal
       for (AttachmentsIter ai = cc.m_attachments.begin(); ai != cc.m_attachments.end(); ai++) {
 	Attachment &a = **ai;
-	(!strcasecmp(a.m_instPort.m_port->worker->m_implName, m_appAssembly->m_implName) ? ap :
-	 !strcasecmp(a.m_instPort.m_port->worker->m_implName, m_config->m_implName) ? pp : ip)
+	(!strcasecmp(a.m_instPort.m_port->m_worker->m_implName, m_appAssembly->m_implName) ? ap :
+	 !strcasecmp(a.m_instPort.m_port->m_worker->m_implName, m_config->m_implName) ? pp : ip)
 	  = &a.m_instPort;
       }
       assert(ap || pp || ip);
@@ -562,18 +565,18 @@ emitArtXML(const char *wksFile) {
 	continue; // internal connection already dealt with
       // find the corresponding instport inside each side.
       InstancePort
-	*aap = ap ? m_appAssembly->m_assembly->findInstancePort(ap->m_port->name) : NULL,
-        *ppp = pp ? m_config->m_assembly->findInstancePort(pp->m_port->name) : NULL,
-	*producer = (aap && aap->m_port->u.wdi.isProducer ? aap :
-		     ppp && ppp->m_port->u.wdi.isProducer ? ppp : ip),
-	*consumer = (aap && !aap->m_port->u.wdi.isProducer ? aap :
-		     ppp && !ppp->m_port->u.wdi.isProducer ? ppp : ip);
+	*aap = ap ? m_appAssembly->m_assembly->findInstancePort(ap->m_port->name()) : NULL,
+        *ppp = pp ? m_config->m_assembly->findInstancePort(pp->m_port->name()) : NULL,
+	*producer = (aap && aap->m_port->isDataProducer() ? aap :
+		     ppp && ppp->m_port->isDataProducer() ? ppp : ip),
+	*consumer = (aap && !aap->m_port->isDataProducer() ? aap :
+		     ppp && !ppp->m_port->isDataProducer() ? ppp : ip);
       // Application is producing to an external consumer
       fprintf(f, "<connection from=\"%s/%s\" out=\"%s\" to=\"%s/%s\" in=\"%s\"/>\n",
 	      producer == ip ? "c" : producer == aap ? "a" : "p",
-	      producer->m_instance->name, producer->m_port->name,
+	      producer->m_instance->name, producer->m_port->name(),
 	      consumer == ip ? "c" : consumer == aap ? "a" : "p",
-	      consumer->m_instance->name, consumer->m_port->name);
+	      consumer->m_instance->name, consumer->m_port->name());
     }
   }
   fprintf(f, "</artifact>\n");

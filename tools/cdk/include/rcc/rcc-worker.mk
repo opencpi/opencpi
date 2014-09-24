@@ -70,7 +70,7 @@ ArtifactFile=$(BinaryFile)
 ArtifactXmlFile=$(call WkrTargetDir,$1,$2)/$(word 1,$(Workers))_assy-art.xml
 ToolSeparateObjects:=yes
 OcpiLibDir=$(OCPI_CDK_DIR)/lib/$$(RccTarget)
-RccLibraries=rcc
+RccLibraries=rcc application
 LinkBinary=$$(G$(OcpiLanguage)_LINK_$$(RccTarget)) $(SharedLibLinkOptions) -o $$@ \
 $(AEPLibraries) \
 $(foreach l,$(RccLibraries) $(Libraries),-l $l -L $(OcpiLibDir))

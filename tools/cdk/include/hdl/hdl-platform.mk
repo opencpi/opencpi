@@ -32,7 +32,7 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 HdlLibraries+=platform
 # We're not really a component library, so we force this
 XmlIncludeDirs+=../specs
-override ComponentLibraries+=devices cards
+override ComponentLibraries+=devices # cards
 # Theses next lines are similar to what worker.mk does
 ifneq ($(MAKECMDGOALS),clean)
 $(if $(wildcard $(CwdName).xml),,\

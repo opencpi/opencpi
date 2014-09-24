@@ -225,61 +225,68 @@ main(int argc, char **argv) {
 	fprintf(stderr, "Unknown flag: %s\n", *ap);
 	return 1;
       }
-    else {
-      Worker *w = Worker::create(*ap, NULL, package, outDir, NULL, 0, err);
-      if (err)
-	fprintf(stderr, "For file %s: %s\n", *ap, err);
-      else if (attribute && (err = w->emitAttribute(attribute)))
-	fprintf(stderr, "%s: Error retrieving attribute %s from file: %s\n", attribute, *ap, err);
-      else if (doDefs && (err = w->emitDefsHDL(doWrap)))
-	fprintf(stderr, "%s: Error generating definition/declaration file: %s\n", *ap, err);
-      else if (doImpl && (err =
-			  w->m_model == HdlModel ? w->emitImplHDL(doWrap) :
-			  (w->m_model == RccModel ? w->emitImplRCC() : emitImplOCL(w))))
-	fprintf(stderr, "%s: Error generating implementation declaration file: %s\n", *ap, err);
-      else if (doSkel && (err =
-			  w->m_model == HdlModel ? w->emitSkelHDL() :
-			  w->m_model == RccModel ? w->emitSkelRCC() : emitSkelOCL(w)))
-	fprintf(stderr, "%s: Error generating implementation skeleton file: %s\n", *ap, err);
-      else if (doAssy && (err = w->emitAssyHDL()))
-	fprintf(stderr, "%s: Error generating assembly: %s\n", *ap, err);
-      else if (wksFile && (err = w->emitWorkersHDL(wksFile)))
-	fprintf(stderr, "%s: Error generating assembly makefile: %s\n", *ap, err);
-      else if (doBsv && (err = w->emitBsvHDL()))
-	fprintf(stderr, "%s: Error generating BSV import file: %s\n", *ap, err);
-      else if (options.parameters() && (err = w->emitToolParameters()))
-	fprintf(stderr, "%s: Error generating parameter file for tools: %s\n", *ap, err);
-      else if (doArt)
-	switch (w->m_model) {
-	case HdlModel:
-	  if (!platform || !device) {
-	    fprintf(stderr,
-		    "%s: Missing container/platform/device options for HDL artifact descriptor", *ap);
-	    return 1;
+    else
+      try {
+	Worker *w = Worker::create(*ap, NULL, package, outDir, NULL, 0, err);
+	if (err)
+	  fprintf(stderr, "For file %s: %s\n", *ap, err);
+	else if (attribute && (err = w->emitAttribute(attribute)))
+	  fprintf(stderr, "%s: Error retrieving attribute %s from file: %s\n", attribute, *ap, err);
+	else if (doDefs && (err = w->emitDefsHDL(doWrap)))
+	  fprintf(stderr, "%s: Error generating definition/declaration file: %s\n", *ap, err);
+	else if (doImpl && (err =
+			    w->m_model == HdlModel ? w->emitImplHDL(doWrap) :
+			    (w->m_model == RccModel ? w->emitImplRCC() : emitImplOCL(w))))
+	  fprintf(stderr, "%s: Error generating implementation declaration file: %s\n", *ap, err);
+	else if (doSkel && (err =
+			    w->m_model == HdlModel ? w->emitSkelHDL() :
+			    w->m_model == RccModel ? w->emitSkelRCC() : emitSkelOCL(w)))
+	  fprintf(stderr, "%s: Error generating implementation skeleton file: %s\n", *ap, err);
+	else if (doAssy && (err = w->emitAssyHDL()))
+	  fprintf(stderr, "%s: Error generating assembly: %s\n", *ap, err);
+	else if (wksFile && (err = w->emitWorkersHDL(wksFile)))
+	  fprintf(stderr, "%s: Error generating assembly makefile: %s\n", *ap, err);
+	else if (doBsv && (err = w->emitBsvHDL()))
+	  fprintf(stderr, "%s: Error generating BSV import file: %s\n", *ap, err);
+	else if (options.parameters() && (err = w->emitToolParameters()))
+	  fprintf(stderr, "%s: Error generating parameter file for tools: %s\n", *ap, err);
+	else if (doArt)
+	  switch (w->m_model) {
+	  case HdlModel:
+	    if (!platform || !device) {
+	      fprintf(stderr,
+		      "%s: Missing container/platform/device options for HDL artifact descriptor", *ap);
+	      return 1;
+	    }
+	    if ((err = w->emitArtXML(wksFile)))
+	      fprintf(stderr, "%s: Error generating bitstream artifact XML: %s\n",
+		      *ap, err);
+	    break;
+	  case RccModel:
+	    if (!os || !os_version || !platform) {
+	      fprintf(stderr,
+		      "%s: Missing os/os_version/platform options for RCC artifact descriptor", *ap);
+	      return 1;
+	    }
+	    if ((err = w->emitArtXML(wksFile)))
+	      fprintf(stderr, "%s: Error generating shared library artifact XML: %s\n",
+		      *ap, err);
+	    break;
+	  case OclModel:
+	    if ((err = emitArtOCL(w)))
+	      fprintf(stderr, "%s: Error generating shared library artifact XML: %s\n",
+		      *ap, err);
+	    break;
+	  case NoModel:
+	    ;
 	  }
-	  if ((err = w->emitArtXML(wksFile)))
-	    fprintf(stderr, "%s: Error generating bitstream artifact XML: %s\n",
-		    *ap, err);
-	  break;
-	case RccModel:
-	  if (!os || !os_version || !platform) {
-	    fprintf(stderr,
-		    "%s: Missing os/os_version/platform options for RCC artifact descriptor", *ap);
-	    return 1;
-	  }
-	  if ((err = w->emitArtXML(wksFile)))
-	    fprintf(stderr, "%s: Error generating shared library artifact XML: %s\n",
-		    *ap, err);
-	  break;
-	case OclModel:
-	  if ((err = emitArtOCL(w)))
-	    fprintf(stderr, "%s: Error generating shared library artifact XML: %s\n",
-		    *ap, err);
-	  break;
-	case NoModel:
-	  ;
-	}
-      delete w;
-    }
+	delete w;
+      } catch (std::string &e) {
+	fprintf(stderr, "Exception thrown: %s\n", e.c_str());
+	return 1;
+      } catch (...) {
+	fprintf(stderr, "Unexpected/unknown exception thrown\n");
+	return 1;
+      }
   return err ? 1 : 0;
 }
