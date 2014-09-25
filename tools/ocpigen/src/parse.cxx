@@ -824,8 +824,8 @@ findLibMap(const char *file) {
 
 Control::
 Control()
-  : sizeOfConfigSpace(0), controlOps(0), offset(0), ordinal(0), firstRaw(NULL)
-{
+  : sizeOfConfigSpace(0), controlOps(0), offset(0), ordinal(0), firstRaw(NULL),
+    startBarrier(false) {
   initAccess();
 }
 // For when we (re)scan/(re)count accesses
@@ -857,6 +857,23 @@ summarizeAccess(OU::Property &p) {
   }
 }
 
+Scaling::Scaling()
+  : m_min(1), m_max(1), m_modulo(1), m_default(1) {
+}
+Overlap::Overlap()
+  : m_left(0), m_right(0), m_padding(None) {
+}
+Partitioning::Partitioning()
+  : m_sourceDimension(0) {
+}
+
+DataPort::OpScaling::OpScaling(size_t nArgs)
+  : m_distribution(All), m_hashField(NULL), m_allSeeOne(false), m_allSeeEnd(false) {
+  m_partitioning.resize(nArgs);
+  for (size_t n = 0; n < nArgs; n++)
+    m_partitioning[n] = NULL;
+}
+
 Worker::
 Worker(ezxml_t xml, const char *xfile, const char *parent,
        OU::Assembly::Properties *ipvs, const char *&err)
@@ -867,7 +884,7 @@ Worker(ezxml_t xml, const char *xfile, const char *parent,
     m_endian(NoEndian), m_needsEndian(false), m_pattern(NULL), m_portPattern(NULL),
     m_staticPattern(NULL), m_defaultDataWidth(-1), m_language(NoLanguage), m_assembly(NULL),
     m_slave(NULL), m_library(NULL), m_outer(false), m_debugProp(NULL), m_instancePVs(ipvs),
-    m_mkFile(NULL), m_xmlFile(NULL), m_outDir(NULL), m_paramConfig(NULL)
+  m_mkFile(NULL), m_xmlFile(NULL), m_outDir(NULL), m_paramConfig(NULL), m_scalable(false)
 {
   const char *name = ezxml_name(xml);
   // FIXME: make HdlWorker and RccWorker classes  etc.

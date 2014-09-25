@@ -65,20 +65,14 @@ namespace OCPI {
     public:
       PropertyInfo();
       bool m_readSync, m_writeSync, m_isWritable, m_isReadable, m_readError, m_writeError,
-	   m_isVolatile, m_isInitial, m_isIndirect;
+	m_isVolatile, m_isInitial, m_isIndirect;
       size_t m_indirectAddr; // when isIndirect. zero means impl sets address
     };
   }
 
   namespace Util {
     class Property : public OCPI::API::PropertyInfo {
-      const char
-	*parseCheck(),
-	*parseImplAlso(ezxml_t x),
-	*parseAccess(ezxml_t prop, bool addAccess);
     public:
-      Property();
-      ~Property();
       // Describe structure member that might be the whole property
       unsigned 
 	m_smallest,    // Smallest unit of storage
@@ -93,7 +87,18 @@ namespace OCPI {
 	m_isTest;
       unsigned long m_dataOffset;
       size_t m_paramOrdinal; // Among parameters, which position?
-      // Sizes in bits of the various types
+      // Scalability:
+      bool m_readBarrier, m_writeBarrier;
+      enum Reduction {None, Min, Max, Sum, Product, And, Or, Xor, Average} m_reduction;
+    public:
+      Property();
+      ~Property();
+    private:
+      const char
+	*parseCheck(),
+	*parseImplAlso(ezxml_t x),
+	*parseAccess(ezxml_t prop, bool addAccess);
+    public:
       const char
 	*parse(ezxml_t x, bool includeImpl, unsigned ordinal,
 	       const IdentResolver *resolv = NULL),

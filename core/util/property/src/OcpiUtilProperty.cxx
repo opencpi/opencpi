@@ -77,8 +77,9 @@ namespace OCPI {
     namespace OE = EzXml;
     namespace OA = OCPI::API;
     Property::Property()
-      : m_smallest(0), m_granularity(0), m_isParameter(false), m_isSub32(false), m_isTest(false),
-	m_dataOffset(0), m_paramOrdinal(0) {
+      : m_smallest(0), m_granularity(0), m_isParameter(false), m_isSub32(false),
+	m_isTest(false), m_dataOffset(0), m_paramOrdinal(0),
+	m_readBarrier(false), m_writeBarrier(false), m_reduction(None) {
     }
     Property::~Property() {
     }

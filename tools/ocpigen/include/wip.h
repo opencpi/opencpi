@@ -69,6 +69,22 @@ public:
 
 class Worker;
 
+struct Scaling {
+  size_t m_min, m_max, m_modulo, m_default;
+  Scaling();
+};
+struct Overlap {
+  size_t m_left, m_right;
+  enum Padding { None, Replicate, Zero, Wrap } m_padding;
+  Overlap();
+};
+struct Partitioning {
+  Scaling  m_scaling;
+  Overlap  m_overlap;
+  unsigned m_sourceDimension;
+  Partitioning();
+};
+
 #define SPEC_DATA_PORT_ATTRS "Name", "Producer", "Count", "Optional", "Protocol", "buffersize"
 class DataPort : public OcpPort {
  protected:
@@ -80,6 +96,22 @@ class DataPort : public OcpPort {
   size_t m_minBufferCount;
   size_t m_bufferSize;
   Port *m_bufferSizePort;
+  // Scalability
+  bool m_isScalable;
+  enum Distribution {
+    All, Cyclic, First, Balanced, Directed, Random, Hashed
+  } m_defaultDistribution;
+  Partitioning m_defaultPartitioning;
+  struct OpScaling {
+    Distribution                m_distribution;
+    OU::Member                 *m_hashField;
+    Partitioning                m_defaultPartitioning;
+    bool                        m_allSeeOne;
+    bool                        m_allSeeEnd;
+    std::vector<Partitioning *> m_partitioning;
+    OpScaling(size_t nArgs);
+  };
+  std::vector<OpScaling*> m_opScaling;
   
   // This constructor is used when data port is inherited
   DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *&err);
@@ -324,15 +356,14 @@ typedef std::list<OU::Property *> Properties;
 typedef Properties::const_iterator PropertiesIter;
 class Control {
  public:
-  Control();
-  void initAccess();
-  void summarizeAccess(OU::Property &p);
   uint64_t sizeOfConfigSpace;
   uint32_t controlOps; // bit mask
   Properties properties;
   size_t offset;// temporary while properties are being parsed.
   unsigned ordinal; // ditto
   OU::Property *firstRaw;
+  // Scalability
+  bool startBarrier;      // Must there be a start barrier among members?
   // Below here, initialization is in initAccess
   bool writables, nonRawWritables, rawWritables;
   bool readables, nonRawReadables, rawReadables; // readables does NOT include parameters
@@ -341,6 +372,9 @@ class Control {
   bool readbacks, nonRawReadbacks, rawReadbacks;
   bool rawProperties;
   unsigned nRunProperties, nNonRawRunProperties, nParameters;
+  Control();
+  void initAccess();
+  void summarizeAccess(OU::Property &p);
 };
 
 enum Endian {
@@ -440,6 +474,10 @@ class Worker : public Parsed, public OU::IdentResolver {
   const char *m_outDir;             // state during parameter processing
   ParamConfigs m_paramConfigs;      // the parsed file of all configs
   ParamConfig  *m_paramConfig;      // the config for this Worker.
+  // Scalability
+  bool m_scalable;      // Is this worker scalable at all?
+  Scaling m_scaling;
+
   Worker(ezxml_t xml, const char *xfile, const char *parent,
 	 OU::Assembly::Properties *ipvs, const char *&err);
   virtual ~Worker();

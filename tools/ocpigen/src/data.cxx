@@ -3,8 +3,8 @@
 #include <assert.h>
 #include "wip.h"
 
-// Constructor when creating a derived impl port
-// Perhaps based on an existing spec port (sp).
+// Constructor when creating a derived impl port from a spec port
+// Based on an existing spec port (sp).
 DataPort::
 DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *&err)
   : OcpPort(w, x, sp, ordinal, type, NULL, err) {
@@ -20,6 +20,8 @@ DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *
   m_minBufferCount  = dp->m_minBufferCount; 
   m_bufferSize      = dp->m_bufferSize;
   m_bufferSizePort  = dp->m_bufferSizePort;
+  // Scalability all defaults since it is not a spec issue.  Initialize from protocol
+  m_opScaling.resize(m_protocol->m_nOperations, NULL);
   // Now we do implementation-specific initialization that will precede the
   // initializations for specific port types (WSI, etc.)
   bool dwFound;
@@ -75,7 +77,8 @@ DataPort::
 DataPort(Worker &w, ezxml_t x, int ordinal, const char *&err)
   : OcpPort(w, x, NULL, ordinal, WDIPort, NULL, err),
     m_protocol(NULL), m_isProducer(false), m_isOptional(false), m_isBidirectional(false),
-    m_nOpcodes(0), m_minBufferCount(0), m_bufferSize(0), m_bufferSizePort(NULL) {
+    m_nOpcodes(0), m_minBufferCount(0), m_bufferSize(0), m_bufferSizePort(NULL),
+    m_isScalable(false), m_defaultDistribution(All) {
   if (err)
     return;
   // Spec initialization
@@ -151,6 +154,9 @@ DataPort(const DataPort &other, Worker &w , std::string &name, size_t count,
   m_minBufferCount = other.m_minBufferCount;
   m_bufferSize = other.m_bufferSize;
   m_bufferSizePort = other.m_bufferSizePort;
+  m_isScalable = other.m_isScalable;
+  m_defaultDistribution = other.m_defaultDistribution;
+  m_opScaling = other.m_opScaling;
   if (role) {
     if (!role->m_provider) {
       if (!other.m_isProducer && !other.m_isBidirectional) {
