@@ -57,11 +57,14 @@
   ACCESS_ATTRIBUTES, \
   "ReadSync",   /* impl says you need before query */\
   "WriteSync",  /* impl says you need afterconfig */\
+  "ReadBarrier",   /* impl says you need before query */\
+  "WriteBarrier",  /* impl says you need afterconfig */\
   "ReadError",  /* impl says reading this can return an error */\
   "WriteError", /* impl says writing this can return an error */\
   "Parameter",  /* impl is supplying a parameter property */	\
   "Indirect",   /* impl is supplying an indirect address */	\
-  "Debug"       /* property is for debug only */     \
+    "Debug",       /* property is for debug only */		\
+  "ReadScalable"       /* property is for debug only */     \
 
 
 namespace OCPI {
@@ -202,6 +205,8 @@ namespace OCPI {
       const char *err;
       if ((err = OE::getBoolean(prop, "ReadSync", &m_readSync)) ||
 	  (err = OE::getBoolean(prop, "WriteSync", &m_writeSync)) ||
+	  (err = OE::getBoolean(prop, "ReadBarrier", &m_readBarrier)) ||
+	  (err = OE::getBoolean(prop, "WriteBarrier", &m_writeBarrier)) ||
 	  (err = OE::getBoolean(prop, "ReadError", &m_readError)) ||
 	  (err = OE::getBoolean(prop, "WriteError", &m_writeError)) ||
 	  (err = OE::getBoolean(prop, "IsTest", &m_isTest)) ||
@@ -210,6 +215,17 @@ namespace OCPI {
 	  // FIXME: consider allowing this only for HDL somehow.
 	  (err = OE::getNumber(prop, "Indirect", &m_indirectAddr, &m_isIndirect, 0, true)))
 	return err;
+      static const char *reduceNames[] = {
+#define OCPI_REDUCE(c) #c,	  
+	OCPI_REDUCTIONS
+#undef OCPI_REDUCE
+	NULL
+      };
+      size_t n;
+      if ((err = OE::getEnum(prop, "readScalable", reduceNames, "reduction operation", n,
+			     m_reduction)))
+	return err;
+      m_reduction = (Reduction)n;
       // FIXME: add overrides: writable clears initial
       return 0;
     }

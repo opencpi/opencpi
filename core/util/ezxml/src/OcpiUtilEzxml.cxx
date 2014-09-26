@@ -667,6 +667,23 @@ namespace OCPI {
 	return n;
       }
       const char *
+      getEnum(ezxml_t x, const char *attr, const char **enums, const char *type, size_t &n,
+	      size_t def, bool required) {
+	const char *a = ezxml_cattr(x, attr);
+	if (!a) {
+	  if (required)
+	    return OU::esprintf("Missing %s attribute", type);
+	  n = def;
+	  return NULL;
+	}
+	for (const char **ap = enums; *ap; ap++)
+	  if (**ap && !strcasecmp(a, *ap)) { // allow ignoring of empty enum strings
+	    n = ap - enums;
+	    return NULL;
+	  }
+	return esprintf("Unknown %s in %s attribute: \"%s\".", type, attr, a);
+      }
+      const char *
       ezxml_tag(ezxml_t xml) {
 	const char *name = ezxml_name(xml);
 	return name ? name : "";

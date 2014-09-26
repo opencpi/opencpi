@@ -89,7 +89,20 @@ namespace OCPI {
       size_t m_paramOrdinal; // Among parameters, which position?
       // Scalability:
       bool m_readBarrier, m_writeBarrier;
-      enum Reduction {None, Min, Max, Sum, Product, And, Or, Xor, Average} m_reduction;
+#define OCPI_REDUCTIONS \
+  OCPI_REDUCE(None) \
+  OCPI_REDUCE(Min) \
+  OCPI_REDUCE(Max) \
+  OCPI_REDUCE(Sum) \
+  OCPI_REDUCE(Product) \
+  OCPI_REDUCE(And) \
+  OCPI_REDUCE(Or) \
+  OCPI_REDUCE(Xor) \
+  OCPI_REDUCE(Average)
+#define OCPI_REDUCE(x) x,
+      enum Reduction { OCPI_REDUCTIONS ReductionLimit } m_reduction;
+
+#undef OCPI_REDUCE
     public:
       Property();
       ~Property();

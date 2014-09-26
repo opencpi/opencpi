@@ -323,6 +323,26 @@ const char *parseControlOp(const char *op, void *arg) {
     *p ? NULL : "Invalid control operation name in ControlOperations attribute";
 }
 
+static const char *
+doScaling(ezxml_t x, void *worker) {
+  return !strcasecmp(OE::ezxml_tag(x), "scaling") ? ((Worker*)worker)->doScaling(x) : NULL;
+}
+const char *Worker::
+doScaling(ezxml_t x) {
+  std::string name;
+  const char *err = OE::getRequiredString(x, name, "name");
+  if (err)
+    return err;
+  if (findProperty(name.c_str()))
+    return OU::esprintf("Scaling parameter \"%s\" conflicts with property name", name.c_str());
+  Scaling s;
+  if ((err = s.parse(*this, x)))
+    return err;
+  if (m_scalingParameters.find(name) != m_scalingParameters.end())
+    return OU::esprintf("Duplicate scaling parameter name: \"%s\"", name.c_str());
+  m_scalingParameters[name] = s;
+  return NULL;
+}
 // Parse the generic implementation control aspects (for rcc and hdl and other)
 const char *Worker::
 parseImplControl(ezxml_t &xctl) {
@@ -373,6 +393,14 @@ parseImplControl(ezxml_t &xctl) {
       return "SizeOfConfigSpace attribute of ControlInterface smaller than properties indicate";
     m_ctl.sizeOfConfigSpace = sizeOfConfigSpace;
   }
+  // Scalability
+  if ((err = OE::getBoolean(m_xml, "scalable", &m_scalable)) ||
+      (err = OE::getBoolean(m_xml, "startBarrier", &m_ctl.startBarrier)))
+    return err;
+  // FIXME: have an expression validator
+  OE::getOptionalString(m_xml, m_validScaling, "validScaling");
+  if ((err = OE::ezxml_children(m_xml, ::doScaling, this)))
+    return err;
   return 0;
 }
 
@@ -860,18 +888,16 @@ summarizeAccess(OU::Property &p) {
 Scaling::Scaling()
   : m_min(1), m_max(1), m_modulo(1), m_default(1) {
 }
-Overlap::Overlap()
-  : m_left(0), m_right(0), m_padding(None) {
-}
-Partitioning::Partitioning()
-  : m_sourceDimension(0) {
-}
 
-DataPort::OpScaling::OpScaling(size_t nArgs)
-  : m_distribution(All), m_hashField(NULL), m_allSeeOne(false), m_allSeeEnd(false) {
-  m_partitioning.resize(nArgs);
-  for (size_t n = 0; n < nArgs; n++)
-    m_partitioning[n] = NULL;
+const char *Scaling::
+parse(Worker &w, ezxml_t x) {
+  const char *err;
+  if ((err = w.getNumber(x, "min", &m_min, NULL, 0, false)) ||
+      (err = w.getNumber(x, "max", &m_max, NULL, 0, false)) ||
+      (err = w.getNumber(x, "modulo", &m_modulo, NULL, 0, false)) ||
+      (err = w.getNumber(x, "default", &m_default, NULL, 0, false)))
+    return err;
+  return NULL;
 }
 
 Worker::
@@ -994,3 +1020,12 @@ deriveOCP() {
   }
   return NULL;
 }
+
+OU::Property *Worker::
+findProperty(const char *name) {
+  for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
+    if (!strcasecmp((*pi)->m_name.c_str(), name))
+      return *pi;
+  return NULL;
+}
+

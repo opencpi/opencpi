@@ -110,6 +110,21 @@ namespace OCPI {
       }
       return err;
     }
+    Member *Operation::findArg(const char *name) {
+      Member *a = m_args;
+      for (unsigned n = 0; n < m_nArgs; n++, a++)
+	if (!strcasecmp(name, a->m_name.c_str()))
+	  return a;
+      return NULL;
+    }
+
+    Operation *Protocol::findOperation(const char *name) {
+      Operation *o = m_operations;
+      for (unsigned n = 0; n < m_nOperations; n++, o++)
+	if (!strcasecmp(name, o->m_name.c_str()))
+	  return o;
+      return NULL;
+    }
 
     void Operation::printXML(FILE *f, unsigned indent) const {
       fprintf(f, "%*s<operation", indent * 2, "");

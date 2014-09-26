@@ -3,6 +3,36 @@
 #include <assert.h>
 #include "wip.h"
 
+const char *DataPort::
+parseDistribution(ezxml_t x, Distribution &d, std::string &hash) {
+  const char *err;
+  static const char *dNames[] = {
+#define OCPI_DISTRIBUTION(d) #d,	  
+    OCPI_DISTRIBUTIONS
+#undef OCPI_DISTRIBUTION
+    NULL
+  };
+  size_t n;
+  if ((err = OE::getEnum(x, "distribution", dNames, "distribution type", n, d)))
+    return err;
+  d = (Distribution)n;
+  if (OE::getOptionalString(m_xml, hash, "hashField")) {
+    if (d != Hashed)
+      return OU::esprintf("The \"hashfield\" attribute is only allowed with hashed distribution");
+    if (!m_protocol)
+      return OU::esprintf("The \"hashfield\" attribute cannot be used with there is no protocol");
+    OU::Operation *o = m_protocol->m_operations;
+    bool found = false;
+    for (unsigned n = 0; n < m_protocol->m_nOperations; n++)
+      if (o->findArg(hash.c_str()))
+	found = true;
+    if (!found)
+      return OU::esprintf("The \"hashfield\" attribute \"%s\" doesn't match any field "
+			  "in the any operation", hash.c_str());
+  }
+  return err;
+}
+
 // Constructor when creating a derived impl port from a spec port
 // Based on an existing spec port (sp).
 DataPort::
@@ -69,6 +99,37 @@ DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *
   if (!m_protocol->m_defaultBufferSize && m_protocol->m_maxMessageValues)
     m_protocol->m_defaultBufferSize =
       (m_protocol->m_maxMessageValues * m_protocol->m_dataValueWidth + 7) / 8;
+  // Scalability
+  if (OE::getOptionalString(m_xml, m_scaleExpr, "scale")) {
+    // only for assembly scaling
+  }
+  // Here we parse defaults for operations and arguments.
+  if ((err = parseDistribution(m_xml, m_defaultDistribution, m_defaultHashField)) ||
+      (err = m_defaultPartitioning.parse(w, m_xml)))
+    return;
+  // Now we parse the child elements for operations.
+  for (ezxml_t ox = ezxml_cchild(x, "operation"); ox; ox = ezxml_next(ox)) {
+    std::string oName;
+    if ((err = OE::checkAttrs(ox, "name", DISTRIBUTION_ATTRS, PARTITION_ATTRS, (void*)0)) ||
+	(err = OE::checkElements(ox, "argument", (void*)0)) ||
+	(err = OE::getRequiredString(ox, oName, "name")))
+      return;
+    OU::Operation *op = m_protocol ? m_protocol->findOperation(oName.c_str()) : NULL;
+    if (!op) {
+      err = OU::esprintf("Here is no operation named \"%s\" in the protocol", oName.c_str());
+      return;
+    }
+    size_t ord = op - m_protocol->m_operations;
+    if (m_opScaling[ord]) {
+      err = OU::esprintf("Duplicate operation element with name \"%s\" for port \"%s\"",
+			 oName.c_str(), sp->m_name.c_str());
+      return;
+    }
+    OpScaling *os = new OpScaling(op->m_nArgs);
+    if ((err = os->parse(*this, *op, ox)))
+      return;
+    m_opScaling[ord] = os;
+  }
 }
 
 // Constructor when this is the concrete derived class, when parsing spec ports
@@ -515,4 +576,99 @@ initRole(OCPI::Util::Assembly::Role &role) {
     role.m_bidirectional = true;
   else
     role.m_provider = !m_isProducer;
+}
+
+Overlap::
+Overlap()
+  : m_left(0), m_right(0), m_padding(None) {
+}
+
+const char *Overlap::
+parse(ezxml_t x) {
+  static const char *pNames[] = {
+#define OCPI_PADDING(x) #x,
+OCPI_PADDINGS
+#undef OCPI_PADDING
+    NULL
+  };
+  const char *err;
+  size_t n;
+  if ((err = OE::getNumber(x, "left", &m_left)) ||
+      (err = OE::getNumber(x, "right", &m_right)) ||
+      (err = OE::getEnum(x, "padding", pNames, "overlap padding", n)))
+    return err;
+  m_padding = (Padding)n;
+  return NULL;
+}
+
+Partitioning::Partitioning()
+  : m_sourceDimension(0) {
+}
+
+const char *Partitioning::
+parse(Worker &w, ezxml_t x) {
+  const char *err = m_scaling.parse(w, x);
+  if (!err && !(err = OE::getNumber(x, "source", &m_sourceDimension)))
+    err = m_overlap.parse(x);
+  return err;
+}
+
+DataPort::OpScaling::
+OpScaling(size_t nArgs)
+  : m_distribution(All), m_hashField(NULL), m_multiple(false), m_allSeeOne(false), m_allSeeEnd(false) {
+  m_partitioning.resize(nArgs);
+  for (size_t n = 0; n < nArgs; n++)
+    m_partitioning[n] = NULL;
+}
+const char *DataPort::OpScaling::
+parse(DataPort &dp, OU::Operation &op, ezxml_t x) {
+  Worker &w = *dp.m_worker;
+  const char *err;
+  m_defaultPartitioning = dp.m_defaultPartitioning;
+  m_distribution = dp.m_defaultDistribution;
+  std::string hash;
+  if ((err = dp.parseDistribution(x, m_distribution, hash)) ||
+      (err = m_defaultPartitioning.parse(w, x)) ||
+      (err = OE::getBoolean(x, "multiple", &m_multiple)) ||
+      (err = OE::getBoolean(x, "allSeeOne", &m_allSeeOne)) ||
+      (err = OE::getBoolean(x, "allSeeEnd", &m_allSeeEnd)))
+    return err;
+  if (hash.empty() && m_distribution == Hashed)
+    hash = dp.m_defaultHashField;
+  if (hash.length() && !(m_hashField = op.findArg(hash.c_str())))
+    return OU::esprintf("hashfield attribute value \"%s\" not an argument to \"%s\"",
+			hash.c_str(), op.m_name.c_str());
+  m_partitioning.resize(op.m_nArgs, 0);
+  for (ezxml_t ax = ezxml_cchild(x, "argument"); ax; ax = ezxml_next(ax)) {
+    std::string aName;
+    if ((err = OE::checkAttrs(ax, "name", PARTITION_ATTRS, (void*)0)) ||
+	(err = OE::checkElements(ax, "dimension", (void*)0)) ||
+	(err = OE::getRequiredString(ax, aName, "name")))
+      return err;
+    OU::Member *a = op.findArg(aName.c_str());
+    if (!a)
+      return OU::esprintf("name attribute of argument element is not an argument to \"%s\"",
+			  op.m_name.c_str());
+    size_t nDims = a->m_isSequence ? 1 : a->m_arrayRank;
+    Partitioning *p = new Partitioning[nDims];
+    m_partitioning[a - op.m_args] = p;
+    // We have an array of partitionings for all the dimensions (sequences are 1D).
+    // We start with a default based on what is in the argument element.
+    Partitioning def = m_defaultPartitioning;
+    if ((err = def.parse(w, ax)))
+      return err;
+    unsigned n;
+    for (n = 0; n < nDims; n++)
+      p[n] = def;
+    n = 0;
+    for (ezxml_t dx = ezxml_cchild(ax, "dimension"); dx; dx = ezxml_next(dx), n++, p++) {
+      if (n >= nDims)
+	return OU::esprintf("Too many dimensions for argument \"%s\" in operation \"%s\"",
+			    a->m_name.c_str(), op.m_name.c_str());
+      if ((err = OE::checkAttrs(dx, PARTITION_ATTRS, (void*)0)) ||
+	  (err = p->parse(w, dx)))
+	return err;
+    }
+  }
+  return NULL;
 }

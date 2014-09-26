@@ -37,6 +37,7 @@
 #include <cstring>
 #include <vector>
 #include <list>
+#include <map>
 #include "OcpiPValue.h"
 #include "OcpiUtilProperty.h"
 #include "OcpiUtilProtocol.h"
@@ -72,18 +73,50 @@ class Worker;
 struct Scaling {
   size_t m_min, m_max, m_modulo, m_default;
   Scaling();
+  const char *parse(Worker &w, ezxml_t x);
 };
+#define SCALING_ATTRS "min", "max", "modulo", "default"
+#define OCPI_PADDINGS \
+  OCPI_PADDING(None) \
+  OCPI_PADDING(Replicate) \
+  OCPI_PADDING(Zero) \
+  OCPI_PADDING(Wrap)
+
+#define OCPI_PADDING(x) x,
+  enum Padding { OCPI_PADDINGS };
+#undef OCPI_PADDING
+
 struct Overlap {
   size_t m_left, m_right;
-  enum Padding { None, Replicate, Zero, Wrap } m_padding;
+  Padding m_padding;
   Overlap();
+  const char *parse(ezxml_t x);
 };
+#define OVERLAP_ATTRS "left", "right", "padding"
+// This structure is per-dimension
 struct Partitioning {
   Scaling  m_scaling;
   Overlap  m_overlap;
-  unsigned m_sourceDimension;
+  size_t   m_sourceDimension;
   Partitioning();
+  const char *parse(Worker &w, ezxml_t x);
 };
+#define PARTITION_ATTRS SCALING_ATTRS, OVERLAP_ATTRS, "source"
+#define OCPI_DISTRIBUTIONS \
+  OCPI_DISTRIBUTION(All) \
+  OCPI_DISTRIBUTION(Cyclic) \
+  OCPI_DISTRIBUTION(First) \
+  OCPI_DISTRIBUTION(Balanced) \
+  OCPI_DISTRIBUTION(Directed) \
+  OCPI_DISTRIBUTION(Random) \
+  OCPI_DISTRIBUTION(Hashed) \
+
+#define OCPI_DISTRIBUTION(x) x,
+  enum Distribution { OCPI_DISTRIBUTIONS DistributionLimit };
+
+#undef OCPI_DISTRIBUTION
+
+#define DISTRIBUTION_ATTRS "distribution", "hashfield"
 
 #define SPEC_DATA_PORT_ATTRS "Name", "Producer", "Count", "Optional", "Protocol", "buffersize"
 class DataPort : public OcpPort {
@@ -98,18 +131,20 @@ class DataPort : public OcpPort {
   Port *m_bufferSizePort;
   // Scalability
   bool m_isScalable;
-  enum Distribution {
-    All, Cyclic, First, Balanced, Directed, Random, Hashed
-  } m_defaultDistribution;
+  std::string m_scaleExpr;
+  Distribution m_defaultDistribution;
   Partitioning m_defaultPartitioning;
+  std::string m_defaultHashField;
   struct OpScaling {
     Distribution                m_distribution;
     OU::Member                 *m_hashField;
-    Partitioning                m_defaultPartitioning;
+    Partitioning                m_defaultPartitioning; // default for all args
+    bool                        m_multiple;
     bool                        m_allSeeOne;
     bool                        m_allSeeEnd;
-    std::vector<Partitioning *> m_partitioning;
+    std::vector<Partitioning *> m_partitioning; // tricky: these pointers are arrays for dims
     OpScaling(size_t nArgs);
+    const char *parse(DataPort &dp, OU::Operation &op, ezxml_t x);
   };
   std::vector<OpScaling*> m_opScaling;
   
@@ -133,6 +168,7 @@ class DataPort : public OcpPort {
   bool isDataBidirectional() const { return m_isBidirectional; } // call isData first
   bool isOptional() const { return m_isOptional; }
   const char *parse();
+  const char *parseDistribution(ezxml_t x, Distribution &d, std::string &hash);
   const char *finalize();
   const char *fixDataConnectionRole(OU::Assembly::Role &role);
   void initRole(OCPI::Util::Assembly::Role &role);
@@ -475,9 +511,10 @@ class Worker : public Parsed, public OU::IdentResolver {
   ParamConfigs m_paramConfigs;      // the parsed file of all configs
   ParamConfig  *m_paramConfig;      // the config for this Worker.
   // Scalability
-  bool m_scalable;      // Is this worker scalable at all?
+  bool m_scalable;            // Is this worker scalable at all?
+  std::string m_validScaling; // Expression for error checking overall scaling
   Scaling m_scaling;
-
+  std::map<std::string, Scaling> m_scalingParameters;
   Worker(ezxml_t xml, const char *xfile, const char *parent,
 	 OU::Assembly::Properties *ipvs, const char *&err);
   virtual ~Worker();
@@ -487,6 +524,7 @@ class Worker : public Parsed, public OU::IdentResolver {
   bool nonRaw(PropertiesIter pi);
   Clock *addClock();
   Clock *addWciClockReset();
+  OU::Property *findProperty(const char *name);
   const char
     *getPort(const char *name, Port *&p, Port *except = NULL) const,
     *getValue(const char *sym, OU::ExprValue &val) const,
@@ -510,6 +548,7 @@ class Worker : public Parsed, public OU::IdentResolver {
     *parseHdlImpl(const char* package = NULL),
     *parseConfigFile(const char *dir),
     *doProperties(ezxml_t top, const char *parent, bool impl, bool anyIsBad),
+    *doScaling(ezxml_t x),
     *parseHdlAssy(),
     *initImplPorts(ezxml_t xml, const char *element, PortCreate &pc),
     *checkDataPort(ezxml_t impl, Port *&sp),
@@ -582,7 +621,7 @@ class Worker : public Parsed, public OU::IdentResolver {
 #define VERH ".vh"
 #define BOOL(b) ((b) ? "true" : "false")
 
-#define IMPL_ATTRS "name", "spec", "paramconfig", "reentrant"
+#define IMPL_ATTRS "name", "spec", "paramconfig", "reentrant", "scaling", "scalable"
 #define IMPL_ELEMS "componentspec", "properties", "property", "specproperty", "propertysummary", "xi:include", "controlinterface",  "timeservice", "unoc"
 #define GENERIC_IMPL_CONTROL_ATTRS \
   "SizeOfConfigSpace", "ControlOperations", "Sub32BitConfigProperties"

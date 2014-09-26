@@ -53,12 +53,13 @@ namespace OCPI  {
       Operation *m_exceptions;  // if twoway
       size_t m_myOffset;      // for determining message sizes
       bool m_topFixedSequence;  // is this operation a single top level sequence of fixed size elements?
-      const char *parse(ezxml_t op, Protocol &);
       Operation();
       Operation(const Operation & p );
       ~Operation();
       Operation & operator=(const Operation * p );
       Operation & operator=(const Operation & p );
+      const char *parse(ezxml_t op, Protocol &);
+      Member *findArg(const char *name);
       inline bool isTwoWay() const { return m_isTwoWay; }
       inline Member *args() const { return m_args; }
       inline size_t nArgs() const { return m_nArgs; }
@@ -105,6 +106,7 @@ namespace OCPI  {
       Protocol & operator=( const Protocol & p );
       Protocol & operator=( const Protocol * p );
       virtual const char *parseOperation(ezxml_t op);
+      Operation *findOperation(const char *name);
       void finishOperation(const Operation &op);
       inline bool isTwoWay() { return m_isTwoWay; }
       inline size_t &nOperations() { return m_nOperations; }

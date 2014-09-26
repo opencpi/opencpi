@@ -1129,4 +1129,10 @@ finalizeRccDataPort() {
 RccPort::
 RccPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
   : DataPort(w, x, sp, ordinal, RCCPort, err) {
+  if (x && !err &&
+      !(err = OE::checkAttrs(x, "Name", "implname",
+			     "minbuffers", "minbuffercount", "buffersize",
+			     DISTRIBUTION_ATTRS, PARTITION_ATTRS, (void*)0)))
+    err = OE::checkElements(x, "operation" ,(void*)0);
+  
 }
