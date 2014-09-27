@@ -969,9 +969,19 @@ emitRccCppImpl(FILE *f) {
 	    !m_isProducer ? "const " : "", ops.c_str());
     // End union
 
+    // Operation enums
+    {
+      o = m_protocol->operations();
+      fprintf(f, "    enum { \n" );
+      for (unsigned nn = 0; nn < m_protocol->nOperations(); nn++, o++) {
+	std::string s;
+	camel(s, o->name().c_str() );	
+	fprintf(f,"      %s_OPERATION\n",  s.c_str());	  
+      }
+      fprintf(f, "    }; \n" );
+    }
 
     // Start Op class
-
 
     // Now we need a class for each operation
     o = m_protocol->operations();
@@ -999,36 +1009,83 @@ emitRccCppImpl(FILE *f) {
 		o->name().c_str(),s.c_str()
 		);
 
+	// Arg enums
+	{
+	  OU::Member *m = o->args();
+	  fprintf(f, "       enum { \n" );
+	  for (unsigned n = 0; n < o->nArgs(); n++, m++) {
+	    std::string s;
+	    camel(s, m->m_name.c_str() );	
+	    fprintf(f,"         %s_ARG\n",  s.c_str());	  
+	  }
+	  fprintf(f, "       }; \n" );
+	}
+
 
 	// And an class for each arg in the operation
 	OU::Member *m = o->args();
 	for (unsigned n = 0; n < o->nArgs(); n++, m++) {
 	  std::string s;
 	  camel(s, m->m_name.c_str() );	
+	  std::string p;
+	  camel(p, name() );	
+	  std::string on;
+	  camel(on, o->name().c_str() );
+
 	  if ( m->m_isSequence ) {
 	    fprintf(f,
 		    "       class %sArg  { \n"
-		    "          size_t dimensions() const;  // Number of dimensions\n"
+		    "       private:\n"
+		    "          void * m_myptr;\n"
+		    "          void * getArgAddress( unsigned int, unsigned int);\n"
+		    "       public:\n"
+		    "          %sArg() : m_myptr(NULL){}\n"
 		    "          bool   endOfWhole() const; \n"
 		    "          void partSize( OCPI::RCC::RCCPartInfo & part ) const;\n"
-		    "          // void value( (protocol) operations_descriptor * to operation, buffer, and ordinal for argument )\n"
+		    "          inline void * value() { return m_myptr ? m_myptr : (m_myptr = getArgAddress((unsigned)%sPort::%s_OPERATION, (unsigned)%s_ARG)); }\n"
 		    "       } m_%sArg;\n"
-		    ,s.c_str(), m->m_name.c_str()
+		    ,s.c_str(), 
+		    s.c_str(),
+		    p.c_str(),on.c_str(),s.c_str(),
+		    s.c_str()
 		    );
 
 	  }
 	  else if ( m->m_arrayRank ) {
 	    fprintf(f,
 		    "       class %sArg  { \n"
+		    "       private:\n"
+		    "          void * m_myptr;\n"
+		    "       public:\n"
+		    "          %sArg() : m_myptr(NULL){}\n"
 		    "          size_t dimensions() const;  // Number of dimensions\n"
 		    "          bool   endOfWhole() const; \n"
 		    "          void partSize( unsigned dimension, OCPI::RCC::RCCPartInfo & part ) const;\n"
-		    "          // void value( (protocol) operations_descriptor * to operation, buffer, and ordinal for argument )\n"
+		    "          inline void * value() { return m_myptr ? m_myptr : (m_myptr = getArgAddress((unsigned)%sPort::%s_OPERATION, (unsigned)%s_ARG)); }\n"
 		    "       } m_%sArg;\n"
-		    ,s.c_str(), m->m_name.c_str()
+		    ,s.c_str(), 
+		    s.c_str(),
+		    p.c_str(),on.c_str(),s.c_str(),
+		    s.c_str()
 		    );
-	  }
 
+	  }
+	  else {
+	    fprintf(f,
+		    "       class %sArg  { \n"
+		    "       private:\n"
+		    "          void * m_myptr;\n"
+		    "       public:\n"
+		    "          %sArg() : m_myptr(NULL){}\n"
+		    "          inline void * value() { return m_myptr ? m_myptr : (m_myptr = getArgAddress((unsigned)%sPort::%s_OPERATION, (unsigned)%s_ARG)); }\n"
+		    "       } m_%sArg;\n"
+		    ,s.c_str(), 
+		    s.c_str(),
+		    p.c_str(),on.c_str(),s.c_str(),
+		    s.c_str()
+		    );
+
+	  }
 
 	}
 	// End args
