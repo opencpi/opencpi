@@ -342,8 +342,10 @@ typedef struct {
    RCCBuffer *m_rccBuffer;
    RCCBuffer  m_taken;
    friend class RCCUserPort;
+   friend class RCCPortOperation;
  protected:
    RCCUserBuffer();
+   virtual ~RCCUserBuffer();
    void setRccBuffer(RCCBuffer *b);
    inline RCCBuffer *getRccBuffer() const { return m_rccBuffer; }
  public:
@@ -365,19 +367,21 @@ typedef struct {
 
  class RCCPortOperation : public RCCUserBufferInterface {
  protected:
-   void setRccBuffer(RCCBuffer *b);
-   RCCBuffer *getRccBuffer() const;
+   RCCPortOperation() : m_buffer(NULL) {}
+   RCCUserBuffer *m_buffer;
+   inline void setRccBuffer(RCCBuffer *b) { m_buffer->setRccBuffer(b); };
+   inline RCCBuffer *getRccBuffer() const { return m_buffer->getRccBuffer(); }
  public:
-   void * data() const;
-   size_t maxLength() const;
+   inline void * data() const { return m_buffer->data(); }
+   inline size_t maxLength() const { return m_buffer->maxLength(); }
    // For input buffers
-   size_t length() const;
-   RCCOpCode opCode() const;
+   inline size_t length() const { return m_buffer->length(); }
+   inline RCCOpCode opCode() const  { return m_buffer->opCode(); };
    // For output buffers
-   void setLength(size_t length);
-   void setOpCode(RCCOpCode op);
-   void setInfo(RCCOpCode op, size_t len);
-   void release();
+   inline void setLength(size_t length) { m_buffer->setLength(length); }
+   inline void setOpCode(RCCOpCode op) { m_buffer->setOpCode(op); }
+   inline void setInfo(RCCOpCode op, size_t len) { m_buffer->setInfo(op, len); }
+   inline void release() { m_buffer->release(); }
 
    unsigned  overlap() const;
    bool      endOfWhole() const;

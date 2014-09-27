@@ -293,6 +293,10 @@ finalizeRccDataPort() {
   return NULL;
 }
 const char *Port::
+finalizeOclDataPort() {
+  return NULL;
+}
+const char *Port::
 finalizeHdlDataPort() {
   return NULL;
 }

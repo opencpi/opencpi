@@ -41,7 +41,7 @@ include $(OCPI_CDK_DIR)/include/ocl/ocl-make.mk
 Model=ocl
 OBJ:=.clo
 # Default is that you are building in a subdirectory of all implementations
-OclImplSuffix=_Worker.h
+OclImplSuffix=-worker.h
 OclSkelSuffix=_skel.cl
 OclSourceSuffix=.cl
 ifeq ($(shell uname),Linux)
@@ -56,12 +56,11 @@ AREXT=.a
 endif
 endif
 
-EntryPointSourceFiles += $(foreach w,$(Workers),$(GeneratedDir)/$(word 1,$(w))_entry_point$(OclSourceSuffix))
-
-GeneratedSourceFiles += $(EntryPointSourceFiles)
+CompiledSourceFiles+=$(foreach w,$(Workers),\
+                        $(GeneratedDir)/$(word 1,$(w))_entry_point$(OclSourceSuffix))
 ArtifactFile=$(BinaryFile)
 # Artifacts are target-specific since they contain things about the binary
-ArtifactXmlFile = $(TargetDir)/$(word 1,$(Workers))_art.xml
+ArtifactXmlFile = $(TargetDir)/$(word 1,$(Workers))_assy_art.xml
 ToolSeparateObjects:=yes
 OcpiLibDir=$(OCPI_CDK_DIR)/lib/$(OclTarget)
 
@@ -71,11 +70,12 @@ LinkBinary= $(ToolsDir)/ocpiocl $(ExtraCompilerOptions) $(foreach i,$(IncludeDir
 Compile_cl=(cat $$< )>$$@
 
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk
-
+# Even though the entry point files are generated, they must be compiled last,
+# so they are not added to generated source files.
 OclAssemblyFile=$(GeneratedDir)/$(word 1,$(Workers))_assy.xml
 $(OclAssemblyFile): | $(GeneratedDir)
-	$(AT)(echo "<OclAssembly Name=\""$(word 1,$(Workers))"\">"; \
-	  for w in $(Workers); do echo "<Worker File=\"$$w.xml\"/>"; done; \
+	$(AT)(echo "<OclAssembly>"; \
+	  for w in $(Workers); do echo "<instance Worker=\"$$w.xml\"/>"; done; \
 	  echo "</OclAssembly>") > $@
 
 # Different since it is in the targetdir

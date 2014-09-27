@@ -8,8 +8,8 @@ export OCPI_CXXFLAGS+=" -Wno-sign-conversion"
 # replace default with our custom version
 #export OCPI_OMNI_DIR=/Users/jek/sw/omniORB-4.1.5-ocpi/OCPI_INSTALL
 #export OPENCL_INCLUDE_DIR=/usr/local/share/NVIDIA_GPU_Computing_SDK/OpenCL/common/inc
-#export OCPI_HAVE_OPENCL=1
-#export OCPI_OPENCL_OBJS=/System/Library/Frameworks/OpenCL.framework/Versions/A/OpenCL
+export OCPI_HAVE_OPENCL=1
+export OCPI_OPENCL_OBJS=/System/Library/Frameworks/OpenCL.framework/Versions/A/OpenCL
 export OCPI_OPENCV_HOME=/opt/opencpi/prerequisites/opencv/macos-10.8-x86_64
 # suppress execution while allowing building
 #export OCPI_HAVE_OPENSPLICE=1

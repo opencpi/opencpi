@@ -1,0 +1,4 @@
+<!-- Properties common to all adc specs and workers -->
+<properties>
+  <property name="overrun" type="Bool" volatile="true"/>
+</properties>

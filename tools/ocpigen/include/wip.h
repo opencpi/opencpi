@@ -147,6 +147,7 @@ class DataPort : public OcpPort {
     const char *parse(DataPort &dp, OU::Operation &op, ezxml_t x);
   };
   std::vector<OpScaling*> m_opScaling;
+  bool m_isPartitioned;
   
   // This constructor is used when data port is inherited
   DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *&err);
@@ -191,6 +192,7 @@ class DataPort : public OcpPort {
 				       OcpAdapt *prodAdapt, OcpAdapt *consAdapt);
   const char *finalizeHdlDataPort();
   const char *finalizeRccDataPort();
+  const char *finalizeOclDataPort();
 };
 class WciPort : public OcpPort {
   size_t m_timeout;
@@ -225,6 +227,10 @@ class WciPort : public OcpPort {
 class RccPort : public DataPort {
 public:
   RccPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
+};
+class OclPort : public RccPort {
+public:
+  OclPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
 };
 
 class WsiPort : public DataPort {
@@ -474,6 +480,7 @@ class Assembly;
 class Worker : public Parsed, public OU::IdentResolver {
  public:
   Model m_model;
+  const char **m_baseTypes;
   const char *m_modelString;
   bool m_isDevice;
   WciPort *m_wci; // Null means no control
@@ -576,10 +583,14 @@ class Worker : public Parsed, public OU::IdentResolver {
     *doParam(ParamConfig &info, PropertiesIter pi, unsigned nParam, size_t &nConfig),
     //    *getParamConfig(const char *id, const ParamConfig *&config),
     *emitImplRCC(),
+    *rccMethodName(const char *method, const char *&mName),
+    *emitImplOCL(),
+    *emitEntryPointOCL(),
     *paramValue(OU::Value &v, std::string &value),
     *rccValue(OU::Value &v, std::string &value, bool param = false),
     *rccPropValue(OU::Property &p, std::string &value),
     *emitSkelRCC(),
+    *emitSkelOCL(),
     *emitAssyHDL();
   virtual const char
     *emitArtXML(const char *wksFile),
@@ -621,10 +632,11 @@ class Worker : public Parsed, public OU::IdentResolver {
 #define VERH ".vh"
 #define BOOL(b) ((b) ? "true" : "false")
 
-#define IMPL_ATTRS "name", "spec", "paramconfig", "reentrant", "scaling", "scalable"
+#define IMPL_ATTRS \
+  "name", "spec", "paramconfig", "reentrant", "scaling", "scalable", "controlOperations"
 #define IMPL_ELEMS "componentspec", "properties", "property", "specproperty", "propertysummary", "xi:include", "controlinterface",  "timeservice", "unoc"
 #define GENERIC_IMPL_CONTROL_ATTRS \
-  "SizeOfConfigSpace", "ControlOperations", "Sub32BitConfigProperties"
+  "name", "SizeOfConfigSpace", "ControlOperations", "Sub32BitConfigProperties"
 #define ASSY_ELEMS "instance", "connection", "external"
 extern const char
   *parseList(const char *list, const char * (*doit)(const char *tok, void *arg), void *arg),
@@ -639,8 +651,6 @@ extern const char
   *tryOneChildInclude(ezxml_t top, std::string &parent, const char *element,
 		      ezxml_t *parsed, const char **childFile, bool optional),
   *emitContainerHDL(Worker*, const char *),
-  *emitImplOCL(Worker*),
-  *emitSkelOCL(Worker*),
   *emitArtOCL(Worker *);
 
 extern void

@@ -107,6 +107,7 @@ subtype uchar_t is unsigned (7 downto 0);
 type uchar_array_t is array (natural range <>) of uchar_t;
 constant uchar_max : uchar_t := to_unsigned(255, 8);
 function To_uchar (c: natural) return uchar_t;
+function To_uchar (c: std_logic_vector(uchar_t'range)) return uchar_t;
 --
 -- ulong type - convertible to/from vhdl native natural
 --

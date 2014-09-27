@@ -6,7 +6,7 @@
  * This file contains the OCL implementation skeleton for worker: fft1d
  */
 
-#include "fft1d_Worker.h"
+#include "fft1d-worker.h"
 
 #define BLOCK_SIZE 16
 
@@ -78,7 +78,7 @@ CooleyTukey1DFFT ( __global float* const r_real,
         const size_t tx = get_local_id(0);
         const unsigned  addr = bx * blockSize + tx;
         //   Swap position
-        unsigned int Target = 0;
+//        unsigned int Target = 0;
         //   Process all positions of input signal
         unsigned int lIndex =  addr % n;
         unsigned int lPosition  = 0;
@@ -116,7 +116,7 @@ CooleyTukey1DFFT ( __global float* const r_real,
         if(lThread>n)
                 return;
         lIndex =  lThread %n;
-        int Iter,nIter;
+        unsigned Iter,nIter;
         for(Iter =0 ,nIter =1;Iter<(powN);Iter ++,nIter*=2)
         {
                 const unsigned lIndexAdd  =  (lThread/n)*n + (lIndex/nIter)*2*nIter + lIndex%nIter ;
@@ -145,19 +145,12 @@ CooleyTukey1DFFT ( __global float* const r_real,
  * Methods to implement for worker fft1d, based on metadata.
  */
 
-OCLResult fft1d_run ( __local OCLWorkerFft1d* self,
-                      OCLBoolean timedOut,
-                      __global OCLBoolean* newRunCondition )
-{
-  (void)timedOut;
-  (void)newRunCondition;
-
-  CooleyTukey1DFFT ( ( __global float* const ) self->in_real.current.data,
-                     ( __global float* const ) self->in_imag.current.data,
-                     ( __global float* ) self->out_real.current.data,
-                     ( __global float* ) self->out_imag.current.data,
-                     ( 1 << self->properties->log2n ),
-                     self->properties->log2n );
-
+OCLResult fft1d_run(__local OCLWorkerFft1d* self) {
+  CooleyTukey1DFFT((__global float* const )self->in_real.current.data,
+                   (__global float* const )self->in_imag.current.data,
+                   (__global float* )self->out_real.current.data,
+                   (__global float* )self->out_imag.current.data,
+                   1 << self->properties->log2n,
+                   self->properties->log2n );
   return OCL_ADVANCE;
 }

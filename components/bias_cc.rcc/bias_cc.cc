@@ -13,8 +13,8 @@ using namespace OCPI::RCC; // for easy access to RCC data types and constants
 
 class Bias_ccWorker : public Bias_ccWorkerBase {
   RCCResult run(bool /*timedout*/) {
-    const uint32_t *inData  = in.data().data;   // data arg of data message at "in" port
-    uint32_t *outData = out.data().data;  // same at "out" port
+    const uint32_t *inData  = in.getdata().data;   // data arg of data message at "in" port
+    uint32_t *outData = out.getdata().data;  // same at "out" port
 
     static int x = 0;
     if (!x) {

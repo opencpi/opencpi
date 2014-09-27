@@ -312,7 +312,7 @@ define DoLinks
     $(foreach n,$(WkrExportNames),\
       $(foreach l,$(basename $(notdir $n))$(if $(filter 0,$c),,_c$c),\
         $(call DoLink,$1,$(strip\
-                           $(if $(or $(filter rcc,$(Model)),\
+                           $(if $(or $(filter rcc ocl,$(Model)),\
                                      $(HdlToolRealCore_$(HdlToolSet_$1))),\
                              $(notdir $n),$l)\
                    ),$l$(suffix $n),$c))))

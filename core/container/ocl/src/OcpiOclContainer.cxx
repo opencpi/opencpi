@@ -377,23 +377,24 @@ namespace OCPI
       friend class ExternalBuffer;
 
       private:
+#if 0
         struct OCLPortInternal
         {
           OCLBuffer current;
-          OCLPortAttr* attr;
           size_t dataValueWidthInBytes;
         };
+#endif
 
         bool isEnabled;
         Container& myContainer;
         const char* implName;
         OU::Worker metadataImpl;
         const char* instName;
-        OU::Worker metadataInst;
+      //        OU::Worker metadataInst;
         std::string myEntryPoint;
         uint8_t* myProperties;
         uint32_t nConnectedPorts;
-        OCLPortInternal* myPorts;
+        OCLPort* myPorts;
         uint32_t readyPorts;
         OCLResult* myResult;
         OCLBoolean timedOut;
@@ -430,7 +431,7 @@ namespace OCPI
 
         {
           const char *err = metadataImpl.parse(implXml);
-	  if (err || (err = metadataInst.parse(instXml)))
+	  if (err) // || (err = metadataInst.parse(instXml)))
 	    throw OU::Error("Error processing worker metadata %s", err);
 	  
           initializeContext ( );
@@ -475,7 +476,7 @@ namespace OCPI
 
           for ( size_t n = 0; n < n_ports; n++ )
           {
-              bool connected = myPorts [ n ].attr->connected;
+              bool connected = myPorts [ n ].isConnected;
 
               if ( opcode != OCPI_OCL_RUN )
               {
@@ -492,8 +493,8 @@ namespace OCPI
                                              sizeof ( myPorts [ n ].current.maxLength ),
                                              &myPorts [ n ].current.maxLength );
 
-                device_worker.setKernelArg ( arg++, myPorts [ n ].attr ); // ptr
-                device_worker.syncPtr ( myPorts [ n ].attr,
+                device_worker.setKernelArg ( arg++, &myPorts [ n ] ); // ptr
+                device_worker.syncPtr ( &myPorts [ n ],
                                         OCPI::OCL::DeviceWorker::HOST_TO_DEVICE );
               }
           }
@@ -516,9 +517,9 @@ namespace OCPI
 
           for ( size_t n = 0; n < metadataImpl.nPorts ( ); n++ )
           {
-            if ( myPorts [ n ].attr->connected && myPorts [ n ].current.data )
+            if ( myPorts [ n ].isConnected && myPorts [ n ].current.data )
             {
-              device_worker.syncPtr ( myPorts [ n ].attr,
+              device_worker.syncPtr ( &myPorts [ n ],
                                       OCPI::OCL::DeviceWorker::DEVICE_TO_HOST );
               // No need to sync myPorts [ n ].current.data map/unmap is used
             }
@@ -536,12 +537,9 @@ namespace OCPI
                                       sizeof ( OCLRunCondition ) );
 
           // Default run condtion for ports
-          myRunCondition->portMasks = 0;
-          for ( uint32_t n = 0; n < n_ports; n++ )
-          {
-            myRunCondition->portMasks |=  ( 1 << n );
-          }
-
+          myRunCondition->usePorts = true;
+          myRunCondition->portMasks[0] = ~(-1 << n_ports);
+	  myRunCondition->portMasks[1] = 0;
           myNewRunCondition = ( OCLBoolean* ) calloc ( 1,  sizeof ( OCLBoolean ) );
 
           device_worker.registerPtr ( (void*)myNewRunCondition,
@@ -556,39 +554,16 @@ namespace OCPI
 
           device_worker.registerPtr ( (void*)dummyBuffer, sizeof ( uint32_t ) );
 
-          myPorts = ( OCLPortInternal* ) calloc ( n_ports, sizeof ( OCLPortInternal ) );
+          myPorts = new OCLPort[n_ports];
+	  size_t length = sizeof(OCLPort) * n_ports;
+	  memset(myPorts, 0, length);
+	  device_worker.registerPtr ((void*)myPorts, length);
 
-          if ( !myPorts )
-          {
-            throw OU::Error( "OCL failed to allocate worker ports." );
-          }
-
-          for ( size_t n = 0; n < n_ports; n++ )
-          {
-            myPorts [ n ].attr = ( OCLPortAttr*) calloc ( 1, sizeof ( OCLPortAttr ) );
-            if ( !myPorts [ n ].attr )
-            {
-              throw OU::Error( "OCL failed to allocate worker port attributes." );
-            }
-            device_worker.registerPtr ( (void*)myPorts [ n ].attr,
-                                        sizeof ( OCLPortAttr ) );
-          }
-
-          myProperties = ( uint8_t* ) calloc ( metadataImpl.totalPropertySize( ) + 4,
-                                               sizeof ( uint8_t ) );
-          if ( !myProperties )
-          {
-            throw OU::Error( "OCL failed to allocate worker properties." );
-          }
-          device_worker.registerPtr ( (void*)myProperties,
-                                      metadataImpl.totalPropertySize( ) + 4 );
-
-          myResult = ( OCLResult* ) calloc ( 1, sizeof ( OCLResult ) );
-
-          if ( !myResult )
-          {
-            throw OU::Error("OCL failed to allocate worker result.");
-          }
+	  length = metadataImpl.totalPropertySize( ) + 4;
+          myProperties = new uint8_t[length];
+	  memset(myProperties, 0, length);
+          device_worker.registerPtr ((void*)myProperties, length);
+          myResult = new OCLResult;
           device_worker.registerPtr ( (void*)myResult, sizeof ( OCLResult ) );
 
           unsigned int nLocalMemories;
@@ -611,11 +586,7 @@ namespace OCPI
 
         void finalizeContext ( )
         {
-          for ( size_t n = 0; n < metadataImpl.nPorts ( ); n++ )
-          {
-            device_worker.unregisterPtr ( myPorts [ n ].attr );
-            free ( myPorts [ n ].attr );
-          }
+	  device_worker.unregisterPtr (myPorts);
           device_worker.unregisterPtr ( myResult );
           device_worker.unregisterPtr ( myProperties );
           device_worker.unregisterPtr ( myRunCondition );
@@ -736,19 +707,18 @@ namespace OCPI
 
           updatePortsPreRun ( );
 
-          if ( !run_timed_out )
-          {
-            if ( ( myRunCondition->portMasks & readyPorts ) != myRunCondition->portMasks )
-            {
-              return;
-            }
+          if (!run_timed_out && myRunCondition->usePorts) {
+	    for (OCLPortMask *p = myRunCondition->portMasks; *p; p++)
+	      if ((*p & readyPorts ) == *p)
+		goto ok;
+	    return;
           }
-
+	ok:
           /* Set the arguments to the worker */
           kernelProlog ( OCPI_OCL_RUN );
 
           /* Local work group size comes fro OCL_WG_XYZ defines in worker */
-          Grid grid ( 0, myPorts [ 0 ].attr->length / myPorts [ 0 ].dataValueWidthInBytes, 0 );
+          Grid grid ( 0, myPorts [ 0 ].current.length / myPorts [ 0 ].dataValueWidthInBytes, 0 );
           device_worker.run ( grid );
 
           kernelEpilog ( );
@@ -1096,9 +1066,10 @@ namespace OCPI
         {
           m_canBeExternal = true;
 
-          parent().myPorts [ myPortOrdinal ].attr->connected = false;
-          parent().myPorts [ myPortOrdinal ].dataValueWidthInBytes = (mPort.m_dataValueWidth + 7) / 8;
-          parent().myPorts [ myPortOrdinal ].attr->optional = mPort.m_optional;
+          parent().myPorts [ myPortOrdinal ].isConnected = false;
+          parent().myPorts [ myPortOrdinal ].dataValueWidthInBytes =
+	    OCPI_UTRUNCATE(uint32_t, (mPort.m_dataValueWidth + 7) / 8);
+	  //          parent().myPorts [ myPortOrdinal ].attr->optional = mPort.m_optional;
 
           myDesc.dataBufferPitch = myDesc.dataBufferSize;
 
@@ -1267,7 +1238,7 @@ namespace OCPI
             OclDpMetadata* metadata = reinterpret_cast<OclDpMetadata*> ( myDesc.metaDataBaseAddr );
             metadata [ n ].length = myDesc.dataBufferSize;
           }
-          parent().myPorts [ parent().nConnectedPorts++ ].attr->connected = true;
+          parent().myPorts [ parent().nConnectedPorts++ ].isConnected = true;
 	  return NULL;
         }
         // Connection between two ports inside this container
@@ -1399,13 +1370,13 @@ namespace OCPI
             ocpiport = ocpiport->nextChild() )
       {
         size_t n = ocpiport->portOrdinal ( );
-        ocpiport->nextLocal->metadata->length = (uint32_t)myPorts [ n ].attr->length;
+        ocpiport->nextLocal->metadata->length = (uint32_t)myPorts [ n ].current.length;
 	// FIXME: figure out a way to make the OCL stuff actually 8 bites..
-        ocpiport->nextLocal->metadata->opcode = (uint8_t)myPorts [ n ].attr->u.operation;
+        ocpiport->nextLocal->metadata->opcode = (uint8_t)myPorts [ n ].current.opCode;
         myPorts [ n ].current.data = 0;
         myPorts [ n ].current.maxLength = 0;
-        myPorts [ n ].attr->length = 0;
-        myPorts [ n ].attr->u.operation = 0;
+        myPorts [ n ].current.length = 0;
+        myPorts [ n ].current.opCode = 0;
         readyPorts &= ~( 1 << n );
       }
     }
@@ -1437,8 +1408,8 @@ namespace OCPI
             readyPorts |= ( 1 << n );
             myPorts [ n ].current.data = bdata;
             myPorts [ n ].current.maxLength = ocpiport->myDesc.dataBufferSize;
-            myPorts [ n ].attr->length = length;
-            myPorts [ n ].attr->u.operation = opcode;
+            myPorts [ n ].current.length = length;
+            myPorts [ n ].current.opCode = opcode;
           }
         }
         else
@@ -1452,8 +1423,8 @@ namespace OCPI
             readyPorts |= ( 1 << n );
             myPorts [ n ].current.data = bdata;
             myPorts [ n ].current.maxLength = ocpiport->myDesc.dataBufferSize;
-            myPorts [ n ].attr->length = length;
-            myPorts [ n ].attr->u.operation = 0;
+            myPorts [ n ].current.length = length;
+            myPorts [ n ].current.opCode = 0;
           }
         }
       }
@@ -1474,8 +1445,8 @@ namespace OCPI
         else
         {
           bool end = false;
-          ocpiport->currentBuffer->put (myPorts [ n ].attr->length,
-					(uint8_t)myPorts [ n ].attr->u.operation, //FIXME
+          ocpiport->currentBuffer->put (myPorts [ n ].current.length,
+					(uint8_t)myPorts [ n ].current.opCode, //FIXME
                                          end );
         }
       }

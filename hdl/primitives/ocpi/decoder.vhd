@@ -18,6 +18,9 @@ entity decoder is
       is_operating           : out bool_t;  -- just a convenience for state = operating_e
       abort_control_op       : out bool_t;
       is_big_endian          : out bool_t;   -- for runtime dynamic endian
+      barrier                : out bool_t;
+      crew                   : out uchar_t;
+      rank                   : out uchar_t;
       -- From here down, only for properties
       write_enables          : out bool_array_t(properties'range);
       read_enables           : out bool_array_t(properties'range);
@@ -147,7 +150,10 @@ begin
                        my_config_error);
   -- The busy output is combinatorial, and my_access might be only registered
   busy <= to_bool(access_in /= none_e or my_access /= none_e);
-  is_big_endian    <= to_bool(ocp_in.MFlag(1) = '1');
+  is_big_endian    <= ocp_in.MFlag(1);
+  barrier          <= ocp_in.MFlag(2);
+  rank             <= to_uchar(ocp_in.MFlag(10 downto 3));
+  crew             <= to_uchar(ocp_in.MFlag(18 downto 11));
   --------------------------------------------------------------------------------
   -- Combi signals and outputs for control operations
   --------------------------------------------------------------------------------

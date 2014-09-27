@@ -130,6 +130,22 @@ DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *
       return;
     m_opScaling[ord] = os;
   }
+  OU::Operation *op = m_protocol->m_operations;
+  for (unsigned o = 0; o < m_protocol->m_nOperations; o++, op++) {
+    OpScaling *os = m_opScaling[o];
+    OU::Member *arg = op->m_args;
+    for (unsigned a = 0; a < op->m_nArgs; a++, arg++) {
+      Partitioning *ap = os ? os->m_partitioning[a] : NULL;
+      if (ap) {
+	if (ap->m_scaling.m_min)
+	  m_isPartitioned = true;
+      } else if (os) {
+	if (os->m_defaultPartitioning.m_scaling.m_min != 0)
+	  m_isPartitioned = true;
+      } else if (m_defaultPartitioning.m_scaling.m_min != 0)
+	m_isPartitioned = true;
+    }
+  }
 }
 
 // Constructor when this is the concrete derived class, when parsing spec ports
@@ -139,7 +155,7 @@ DataPort(Worker &w, ezxml_t x, int ordinal, const char *&err)
   : OcpPort(w, x, NULL, ordinal, WDIPort, NULL, err),
     m_protocol(NULL), m_isProducer(false), m_isOptional(false), m_isBidirectional(false),
     m_nOpcodes(0), m_minBufferCount(0), m_bufferSize(0), m_bufferSizePort(NULL),
-    m_isScalable(false), m_defaultDistribution(All) {
+    m_isScalable(false), m_defaultDistribution(All), m_isPartitioned(false) {
   if (err)
     return;
   // Spec initialization
@@ -218,6 +234,7 @@ DataPort(const DataPort &other, Worker &w , std::string &name, size_t count,
   m_isScalable = other.m_isScalable;
   m_defaultDistribution = other.m_defaultDistribution;
   m_opScaling = other.m_opScaling;
+  m_isPartitioned = other.m_isPartitioned;
   if (role) {
     if (!role->m_provider) {
       if (!other.m_isProducer && !other.m_isBidirectional) {
@@ -365,11 +382,11 @@ emitVHDLShellPortMap(FILE *f, std::string &last) {
   std::string in, out;
   OU::format(in, typeNameIn.c_str(), "");
   OU::format(out, typeNameOut.c_str(), "");
+  fprintf(f,
+	  "%s    %s_in.reset => %s_reset,\n"
+	  "    %s_in.ready => %s_ready,\n",
+	  last.c_str(), name(), name(), name(), name());
   if (masterIn()) {
-    fprintf(f,
-	    "%s    %s_in.reset => %s_reset,\n"
-	    "    %s_in.ready => %s_ready,\n",
-	    last.c_str(), name(), name(), name(), name());
     if (m_dataWidth)
       fprintf(f,
 	      "    %s_in.data => %s_data,\n",
@@ -386,16 +403,30 @@ emitVHDLShellPortMap(FILE *f, std::string &last) {
       fprintf(f,
 	      "    %s_in.valid => %s_valid,\n",
 	      name(), name());
+    if (m_isPartitioned)
+      fprintf(f,
+	      "    %s_in.part_size   => %s_part_size,\n"
+	      "    %s_in.part_offset => %s_part_offset,\n"
+	      "    %s_in.part_start  => %s_part_start,\n"
+	      "    %s_in.part_ready  => %s_part_ready,\n",
+	      name(), name(), name(), name(), name(),
+	      name(), name(), name());
     fprintf(f,
 	    "    %s_out.take => %s_take",
 	    name(), name());
+    if (m_isPartitioned)
+      fprintf(f,
+	      ",\n"
+	      "    %s_out.part_take  => %s_part_take",
+	      name(), name());
     last = ",\n";
   } else {
+    if (m_isPartitioned)
+      fprintf(f,
+	      "    %s_in.part_ready   => %s_part_ready,\n", name(), name());
     fprintf(f,
-	    "%s    %s_in.reset => %s_reset,\n"
-	    "    %s_in.ready => %s_ready,\n"
 	    "    %s_out.give => %s_give,\n",
-	    last.c_str(), name(), name(), name(), name(), name(), name());
+	    name(), name());
     if (m_dataWidth)
       fprintf(f,
 	      "    %s_out.data => %s_data,\n", name(), name());
@@ -411,6 +442,15 @@ emitVHDLShellPortMap(FILE *f, std::string &last) {
       fprintf(f,
 	      "    %s_out.valid => %s_valid",
 	      name(), name());
+    if (m_isPartitioned)
+      fprintf(f,
+	      ",\n"
+	      "    %s_out.part_size   => %s_part_size,\n"
+	      "    %s_out.part_offset => %s_part_offset,\n"
+	      "    %s_out.part_start  => %s_part_start,\n"
+	      "    %s_out.part_give   => %s_part_give",
+	      name(), name(), name(),
+	      name(), name(), name(), name(), name());
     last = ",\n";
   }
 }
@@ -451,6 +491,14 @@ emitImplSignals(FILE *f) {
   if (m_dataWidth)
     fprintf(f,
 	    "  signal %s_valid : Bool_t;   -- valid data\n", name());
+  if (m_isPartitioned)
+    fprintf(f,
+	    "  signal %s_part_size        : UShort_t;\n"
+	    "  signal %s_part_offset      : UShort_t;\n"
+	    "  signal %s_part_start       : Bool_t;\n"
+	    "  signal %s_part_ready       : Bool_t;\n"
+	    "  signal %s_part_%s        : Bool_t;\n",
+	    name(), name(), name(), name(), name(), masterIn() ? "take" : "give");
 }
 
 void DataPort::
