@@ -333,7 +333,8 @@ emitImplRCC() {
 	  " */\n\n"
 	  "#ifndef RCC_WORKER_%s_H__\n"
 	  "#define RCC_WORKER_%s_H__\n"
-	  "#include <RCC_Worker.h>\n",
+	  "#include <RCC_Worker.h>\n"
+	  "#include <vector>\n",
 	  m_implName, m_language == C ? "C" : "C++", upper, upper);
   if (m_language == CC && m_slave)
     fprintf(f, "#include <../OcpiApi.h>\n");
@@ -424,8 +425,13 @@ emitImplRCC() {
 	    " * which inherits this one is declared in the skeleton/implementation file.\n"
 	    " */\n"
 	    "class %s : public OCPI::RCC::RCCUserWorker {\n"
-	    "protected:\n",
+	    "protected:\n"
+	    "  unsigned getRank() const;                        // My rank within my crew \n"
+	    "  unsigned getCrewSize() const ;                   // Number of members in my crew\n"
+	    "  std::vector<unsigned> &getOtherCrewSize() const; // Number of members in crew connected to other end of port, vector len = number of fan in/out\n"
+	    "  unsigned getNearestNeighbor( unsigned next ) const;   // next=0 is nearest, next=1 next nearest etc.\n\n",
 	    s.c_str());
+
     if (m_slave) {
       // This worker is a proxy.  Give it access to its slave
       fprintf(f,
@@ -461,71 +467,8 @@ emitImplRCC() {
 	      toupper(m_implName[0]), m_implName + 1,
 	      toupper(m_implName[0]), m_implName + 1);
     for (unsigned n = 0; n < m_ports.size(); n++)
-#if 1
       m_ports[n]->emitRccCppImpl(f);
-#else
-    {
-      Port *port = m_ports[n];
-      // Define the union of structures for messages for operations
-      fprintf(f,
-	      "  class %c%sPort : public OCPI::RCC::RCCUserPort {\n",
-	      toupper(port->name()[0]), port->name()+1);
-      // Now emit structs for messages
-      OU::Operation *o = port->m_protocol->operations();
-      if (o) {
-	std::string ops;
-	OU::format(ops, "%c%sOperations", toupper(port->name()[0]), port->name()+1);
-	bool first = true;
-	for (unsigned nn = 0; nn < port->m_protocol->nOperations(); nn++, o++)
-	  if (o->nArgs()) {
-	    if (first) {
-	      fprintf(f, "    union %s {\n", ops.c_str());
-	      first = false;
-	    }
-	    std::string s;
-	    camel(s, o->name().c_str());
-	    fprintf(f,
-		    "      // Structure for the '%s' operation on port '%s'\n"
-		    "      struct __attribute__ ((__packed__)) %s {\n",
-		    o->name().c_str(), port->name(), s.c_str());
-	    bool isLast = false;
-	    emitRccStruct(f, o->nArgs(), o->args(), 8, s.c_str(), false, isLast, o->isTopFixedSequence());
-	    fprintf(f, "      } %s;\n", o->name().c_str());
-	  }
-	if (!first) {
-	  fprintf(f,
-		  "    };\n"
-		  "    %s%s &message() %s { return *(%s *)RCCUserPort::data(); }\n",
-		  !port->isDataProducer() ? "const " : "", ops.c_str(),
-		  !port->isDataProducer() ? "const " : "", ops.c_str());
-	}
-	first = true;
-	o = port->m_protocol->operations();
-	for (unsigned nn = 0; nn < port->m_protocol->nOperations(); nn++, o++)
-	  if (o->nArgs()) {
-	    std::string s;
-	    camel(s, o->name().c_str());
-	    if (first) {
-	      fprintf(f, "  public:\n");
-	      first = false;
-	    }
-	    fprintf(f, "    %s%s::%s &%s() %s { return message().%s; }\n",
-		    !port->isDataProducer() ? "const " : "", ops.c_str(),
-		    s.c_str(), o->name().c_str(),
-		    !port->isDataProducer() ? "const " : "",
-		    o->name().c_str());
-	    if (o->isTopFixedSequence()) {
-	      std::string name;
-	      topTypeName(name, o->args());
-	      fprintf(f,
-		      "    size_t %s_length() { return topLength(sizeof(%s)); }\n",
-		      o->name().c_str(), name.c_str());
-	    }
-	  }
-	fprintf(f, "  } %s;\n", port->name());
-      }
-    }
-#endif
+
     fprintf(f,
 	    "};\n\n"
 	    "#define %s_START_INFO \\\n"
@@ -995,29 +938,127 @@ emitRccCppImpl(FILE *f) {
     std::string ops;
     OU::format(ops, "%c%sOperations", toupper(name()[0]), name()+1);
     bool first = true;
-    for (unsigned nn = 0; nn < m_protocol->nOperations(); nn++, o++)
+
+    for (unsigned nn = 0; nn < m_protocol->nOperations(); nn++, o++) 
       if (o->nArgs()) {
-	if (first) {
-	  fprintf(f, "    union %s {\n", ops.c_str());
-	  first = false;
-	}
 	std::string s;
 	camel(s, o->name().c_str());
 	fprintf(f,
-		"      // Structure for the '%s' operation on port '%s'\n"
-		"      struct __attribute__ ((__packed__)) %s {\n",
+		"    // Structure for the '%s' operation on port '%s'\n"
+		"    struct __attribute__ ((__packed__)) %s {\n",
 		o->name().c_str(), name(), s.c_str());
 	bool isLast = false;
 	m_worker->emitRccStruct(f, o->nArgs(), o->args(), 8, s.c_str(), false, isLast, o->isTopFixedSequence());
-	fprintf(f, "      } %s;\n", o->name().c_str());
+	fprintf(f, "    };\n" );
       }
-    if (!first) {
-      fprintf(f,
-	      "    };\n"
-	      "    %s%s &message() %s { return *(%s *)RCCUserPort::data(); }\n",
-	      !m_isProducer ? "const " : "", ops.c_str(),
-	      !m_isProducer ? "const " : "", ops.c_str());
+
+
+    // Start union
+    fprintf(f, "\n\n    union %s {\n", ops.c_str());
+    o = m_protocol->operations();
+    for (unsigned nn = 0; nn < m_protocol->nOperations(); nn++, o++)
+      if (o->nArgs()) {
+	std::string s;
+	camel(s, o->name().c_str());
+	fprintf(f,"      %s m_%s;\n",s.c_str(),  o->name().c_str() );
+      }
+    fprintf(f,
+	    "    };\n"
+	    "    %s %s &message() %s { return *(%s *)RCCUserPort::data(); }\n",
+	    !m_isProducer ? "const " : "", ops.c_str(),
+	    !m_isProducer ? "const " : "", ops.c_str());
+    // End union
+
+
+    // Start Op class
+
+
+    // Now we need a class for each operation
+    o = m_protocol->operations();
+    for (unsigned nn = 0; nn < m_protocol->nOperations(); nn++, o++) {
+      std::string s;
+      camel(s, o->name().c_str());	
+      if (o->nArgs()) {
+	fprintf(f,
+		"    class %sOp : public OCPI::RCC::RCCPortOperation { \n"
+		"    private:\n"
+		"       RCCUserBuffer * m_buffer;\n"
+		"       %s * m_%s; \n"
+
+		"    public:\n"
+		"       %sOp(){}\n"
+		"       %sOp( RCCUserBuffer & buffer ){ setBuffer( &buffer ); }\n"
+		"       %sOp( %sOp& rhs  ){setBuffer( rhs.m_buffer );}\n"
+		"       void setBuffer( RCCUserBuffer* buffer ){m_buffer=buffer; m_%s=(%s *)m_buffer;}\n\n"
+		,
+		s.c_str(), 
+		s.c_str(),o->name().c_str(),
+		s.c_str(),
+		s.c_str(),
+		s.c_str(),s.c_str(),
+		o->name().c_str(),s.c_str()
+		);
+
+
+	// And an class for each arg in the operation
+	OU::Member *m = o->args();
+	for (unsigned n = 0; n < o->nArgs(); n++, m++) {
+	  std::string s;
+	  camel(s, m->m_name.c_str() );	
+	  if ( m->m_isSequence ) {
+	    fprintf(f,
+		    "       class %sArg  { \n"
+		    "          size_t dimensions() const;  // Number of dimensions\n"
+		    "          bool   endOfWhole() const; \n"
+		    "          void partSize( OCPI::RCC::RCCPartInfo & part ) const;\n"
+		    "          // void value( (protocol) operations_descriptor * to operation, buffer, and ordinal for argument )\n"
+		    "       } m_%sArg;\n"
+		    ,s.c_str(), m->m_name.c_str()
+		    );
+
+	  }
+	  else if ( m->m_arrayRank ) {
+	    fprintf(f,
+		    "       class %sArg  { \n"
+		    "          size_t dimensions() const;  // Number of dimensions\n"
+		    "          bool   endOfWhole() const; \n"
+		    "          void partSize( unsigned dimension, OCPI::RCC::RCCPartInfo & part ) const;\n"
+		    "          // void value( (protocol) operations_descriptor * to operation, buffer, and ordinal for argument )\n"
+		    "       } m_%sArg;\n"
+		    ,s.c_str(), m->m_name.c_str()
+		    );
+	  }
+
+
+	}
+	// End args
+
+      }
+
+      fprintf(f, "    } m_%sOp;\n", s.c_str() );
+
+      fprintf(f, 
+	      "    // Conversion operators\n"
+	      "    inline operator %sOp& () {m_%sOp.setBuffer(this); return m_%sOp;}\n"
+	      "    // Factories, used to take messages\n" 
+	      "    inline %sOp* take(%sOp& rhs) const\n "
+	      "    {\n"
+	      "       %sOp * so = new %sOp( rhs );\n"
+	      "       return so;\n"
+	      "    }\n"
+	      , 
+	      s.c_str(),s.c_str(),s.c_str(), 
+	      s.c_str(),s.c_str(),
+	      s.c_str(),s.c_str()
+	      );
+   
+    // End Op class
+
+
     }
+
+
+
     first = true;
     o = m_protocol->operations();
     for (unsigned nn = 0; nn < m_protocol->nOperations(); nn++, o++)
@@ -1028,11 +1069,13 @@ emitRccCppImpl(FILE *f) {
 	  fprintf(f, "  public:\n");
 	  first = false;
 	}
-	fprintf(f, "    %s%s::%s &%s() %s { return message().%s; }\n",
-		!m_isProducer ? "const " : "", ops.c_str(),
+
+	fprintf(f, "    %s %s &get%s() %s { return message().m_%s; }\n",
+		!m_isProducer ? "const " : "",
 		s.c_str(), o->name().c_str(),
 		!m_isProducer ? "const " : "",
 		o->name().c_str());
+
 	if (o->isTopFixedSequence()) {
 	  std::string name;
 	  topTypeName(name, o->args());

@@ -319,7 +319,26 @@ typedef struct {
  class RCCUserWorker;
  typedef RCCUserWorker *RCCConstruct(void *place, RCCWorkerInfo &info);
  class RCCUserPort;
- class RCCUserBuffer {
+
+ class RCCUserBufferInterface {
+ protected:
+   virtual void setRccBuffer(RCCBuffer *b) = 0;
+   virtual RCCBuffer *getRccBuffer() const = 0;
+ public:
+   virtual void * data() const = 0;
+   virtual size_t maxLength() const = 0;
+   // For input buffers
+   virtual size_t length() const = 0;
+   virtual RCCOpCode opCode() const = 0;
+   // For output buffers
+   virtual void setLength(size_t length) = 0;
+   virtual void setOpCode(RCCOpCode op) = 0;
+   virtual void setInfo(RCCOpCode op, size_t len) = 0;
+   virtual void release() = 0;
+
+ };
+
+ class RCCUserBuffer : public RCCUserBufferInterface {
    RCCBuffer *m_rccBuffer;
    RCCBuffer  m_taken;
    friend class RCCUserPort;
@@ -328,7 +347,7 @@ typedef struct {
    void setRccBuffer(RCCBuffer *b);
    inline RCCBuffer *getRccBuffer() const { return m_rccBuffer; }
  public:
-   inline void *data() const { return m_rccBuffer->data; }
+   inline void * data() const { return m_rccBuffer->data; }
    inline size_t maxLength() const { return m_rccBuffer->maxLength; }
    // For input buffers
    inline size_t length() const { return m_rccBuffer->length_; }
@@ -342,6 +361,42 @@ typedef struct {
    }
    void release();
  };
+
+
+ class RCCPortOperation : public RCCUserBufferInterface {
+ protected:
+   void setRccBuffer(RCCBuffer *b);
+   RCCBuffer *getRccBuffer() const;
+ public:
+   void * data() const;
+   size_t maxLength() const;
+   // For input buffers
+   size_t length() const;
+   RCCOpCode opCode() const;
+   // For output buffers
+   void setLength(size_t length);
+   void setOpCode(RCCOpCode op);
+   void setInfo(RCCOpCode op, size_t len);
+   void release();
+
+   unsigned  overlap() const;
+   bool      endOfWhole() const;
+   bool      endOfStream() const;
+   unsigned  wholeSize() const;  // Size of the whole for this message
+
+ };
+
+
+ struct RCCPartInfo {
+   size_t wholeSize;
+   size_t myoffset;
+   size_t roverlap;
+   size_t loverlap;
+ };
+
+
+
+
  // Port inherits the buffer class in order to act as current buffer
  class RCCUserPort : public RCCUserBuffer {
    RCCPort &m_rccPort;
@@ -365,6 +420,8 @@ typedef struct {
     wait(size_t max, unsigned usecs);
    RCCOrdinal ordinal() const;
  };
+
+
  class Worker;
  class RCCUserWorker {
    friend class Worker;
