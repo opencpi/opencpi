@@ -70,9 +70,8 @@ deriveOCP() {
   OcpPort::deriveOCP();
   // Do the WCI port
   ocp.MCmd.width = 3;
-  ocp.MFlag.width = 2;
   ocp.MReset_n.value = s;
-  ocp.SFlag.width = 3;
+  ocp.SFlag.width = 3; // 0: attention, 1: waiting (was present), 2: finished
   ocp.SResp.value = s;
   ocp.SThreadBusy.value = s;
   // From here down things are dependent on properties
@@ -82,7 +81,10 @@ deriveOCP() {
     ocp.MByteEn.width = 4;
     ocp.MData.width = 32;
     ocp.SData.width = 32;
+    ocp.MFlag.width = 19;
   } else {
+    // 0: abort, 1: endian, 2: barrier, 10:3 me, 18:11 total
+    ocp.MFlag.width = m_worker->m_scalable || m_worker->m_assembly ? 19 : 2;
     if (m_worker->m_ctl.sizeOfConfigSpace <= 32)
       ocp.MAddr.width = 5;
     else
@@ -112,8 +114,9 @@ emitImplAliases(FILE *f, unsigned n, Language lang) {
     fprintf(f,
 	    "  wire %sTerminate = %sMFlag[0];\n"
 	    "  wire %sEndian    = %sMFlag[1];\n"
+	    "  wire %sBarrier   = %sMFlag[2];\n"
 	    "  wire [2:0] %sControlOp = %sMAddr[4:2];\n",
-	    pin, pin, pin, pin, pin, pin);
+	    pin, pin, pin, pin, pin, pin, pin, pin);
     if (m_worker->m_ctl.sizeOfConfigSpace)
       fprintf(f,
 	      "  wire %sConfig    = %sMAddrSpace[0];\n"
@@ -129,7 +132,7 @@ emitImplAliases(FILE *f, unsigned n, Language lang) {
       fprintf(f,
 	      "  wire %sIsControlOp = %sMCmd == OCPI_OCP_MCMD_READ;\n", pin, pin);
     fprintf(f,
-	    "  assign %sSFlag[1] = 1; // indicate that this worker is present\n"
+	    "  assign %sSFlag[1] = 0; // no barrier support here\n"
 	    "  // This assignment requires that the %sAttention be used, not SFlag[0]\n"
 	    "  reg %sAttention; assign %sSFlag[0] = %sAttention;\n",
 	    pin, pout, pout, pout, pout);
@@ -178,6 +181,13 @@ emitImplSignals(FILE *f) {
 	  "  signal wci_finished         : Bool_t;\n"
 	  "  signal wci_is_read          : Bool_t;\n"
 	  "  signal wci_is_write         : Bool_t;\n", m_worker->m_implName);
+  if (m_worker->m_scalable)
+    fprintf(f,
+	    "  signal wci_crew             : UChar_t;\n"
+	    "  signal wci_rank             : UChar_t;\n"
+	    "  signal wci_barrier          : Bool_t;\n"
+	    "  signal wci_waiting          : Bool_t;\n");
+
 }
 
 void WciPort::
@@ -189,6 +199,11 @@ emitRecordInputs(FILE *f) {
 	  "    abort_control_op : Bool_t;           -- demand that slow control op finish now\n");
   if (m_worker->m_endian == Dynamic)
     fprintf(f, "    is_big_endian    : Bool_t;           -- for endian-switchable workers\n");
+  if (m_worker->m_scalable)
+    fprintf(f,
+	    "    crew             : UChar_t;          -- crew size\n"
+	    "    rank             : UChar_t;          -- rank in crew\n"
+	    "    barrier          : Bool_t;           -- barrier in progress\n");
 }
 void WciPort::
 emitRecordOutputs(FILE *f) {
@@ -197,6 +212,9 @@ emitRecordOutputs(FILE *f) {
 	  "    error            : Bool_t;           -- the pending prop access/config op is erroneous\n"
 	  "    finished         : Bool_t;           -- worker is finished\n"
 	  "    attention        : Bool_t;           -- worker wants attention\n");
+  if (m_worker->m_scalable)
+    fprintf(f,
+	    "    waiting          : Bool_t;           -- worker is waiting at barrier\n");
 }
 
 void WciPort::
@@ -292,6 +310,11 @@ emitVHDLShellPortMap(FILE *f, std::string &last) {
 	  "    %s_in.abort_control_op => wci_abort_control_op,\n",
 	  last.c_str(), name(), in.c_str(), name(), name(),
 	  name(), name(), name());
+  if (m_worker->m_scalable)
+    fprintf(f,
+	    "    %s_in.barrier => wci_barrier,\n"
+	    "    %s_in.crew => wci_crew,\n"
+	    "    %s_in.rank => wci_rank,\n", name(), name(), name());
   if (m_worker->m_endian == Dynamic)
     fprintf(f, "    %s_in.is_big_endian => wci_is_big_endian,\n", name());
   fprintf(f,
@@ -300,6 +323,10 @@ emitVHDLShellPortMap(FILE *f, std::string &last) {
 	  "    %s_out.finished => wci_finished,\n"
 	  "    %s_out.attention => wci_attention",
 	  name(), name(), name(), name());
+  if (m_worker->m_scalable)
+    fprintf(f,
+	    ",\n"
+	    "    %s_out.waiting => wci_waiting", name());
   last = ",\n";
 }
 

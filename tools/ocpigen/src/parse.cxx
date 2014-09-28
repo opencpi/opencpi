@@ -668,48 +668,6 @@ getValue(const char *sym, OU::ExprValue &val) const {
   return OU::esprintf("here is no property named '%s'", sym);
 }
 
-/*
- * What implementation-specific attributes does an OCL worker have?
- * And which are not available at runtime?
- * And if they are indeed available at runtime, do we really retreive them from the
- * container or just let the container use what it knows?
- */
-const char * Worker::
-parseOcl() {
-  const char *err;
-  if ((err = OE::checkAttrs(m_xml, "Name", "ExternMethods", "StaticMethods", (void*)0)) ||
-      (err = OE::checkElements(m_xml, IMPL_ELEMS, "port", (void*)0)))
-    return err;
-  // We use the pattern value as the method naming for OCL
-  // and its presence indicates "extern" methods.
-  m_pattern = ezxml_cattr(m_xml, "ExternMethods");
-  m_staticPattern = ezxml_cattr(m_xml, "StaticMethods");
-  ezxml_t xctl;
-  if ((err = parseSpec()) ||
-      (err = parseImplControl(xctl)) ||
-      (err = parseImplLocalMemory()))
-    return err;
-  // Parse data port implementation metadata: maxlength, minbuffers.
-  for (ezxml_t x = ezxml_cchild(m_xml, "Port"); x; x = ezxml_next(x)) {
-    if ((err = OE::checkAttrs(x, "Name", "MinBuffers", "MinBufferCount", (void*)0)))
-      return err;
-    const char *name = ezxml_cattr(x, "Name");
-    if (!name)
-      return "Missing \"Name\" attribute on Port element if OclWorker";
-    Port *p = 0; // kill warning
-    unsigned n;
-    for (n = 0; n < m_ports.size(); n++) {
-      p = m_ports[n];
-      if (!strcasecmp(p->name(), name))
-        break;
-    }
-    if (n >= m_ports.size())
-      return OU::esprintf("No DataInterface named \"%s\" from Port element", name);
-  }
-  m_model = OclModel;
-  m_modelString = "ocl";
-  return NULL;
-}
 
 // Get the filename and the name as required.
 // Used when the name defaults from the filename
@@ -885,8 +843,9 @@ summarizeAccess(OU::Property &p) {
   }
 }
 
+// A minimum of zero means NO PARTITIONING
 Scaling::Scaling()
-  : m_min(1), m_max(1), m_modulo(1), m_default(1) {
+  : m_min(0), m_max(1), m_modulo(1), m_default(1) {
 }
 
 const char *Scaling::
@@ -904,7 +863,7 @@ Worker::
 Worker(ezxml_t xml, const char *xfile, const char *parent,
        OU::Assembly::Properties *ipvs, const char *&err)
   : Parsed(xml, xfile, parent, NULL, err),
-    m_model(NoModel), m_modelString(NULL), m_isDevice(false), m_wci(NULL),
+    m_model(NoModel), m_baseTypes(NULL), m_modelString(NULL), m_isDevice(false), m_wci(NULL),
     m_noControl(false), m_reusable(false), m_specFile(0), m_implName(m_name.c_str()),
     m_specName(0), m_isThreaded(false), m_maxPortTypeName(0), m_wciClock(NULL),
     m_endian(NoEndian), m_needsEndian(false), m_pattern(NULL), m_portPattern(NULL),

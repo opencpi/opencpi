@@ -6,7 +6,7 @@
  * This file contains the OCL implementation skeleton for worker: mmul
  */
 
-#include "mmul_Worker.h"
+#include "mmul-worker.h"
 
 #define BLOCK_SIZE 64
 
@@ -98,19 +98,12 @@ __kernel void matrixMul ( __global float* C,
  * Methods to implement for worker mmul, based on metadata.
  */
 
-OCLResult mmul_run ( __local OCLWorkerMmul* self,
-                     OCLBoolean timedOut,
-                     __global OCLBoolean* newRunCondition )
-{
-  (void)timedOut;
-  (void)newRunCondition;
-
-  matrixMul ( ( __global float* ) self->C.current.data,
-              ( __global float* ) self->A.current.data,
-              ( __global float* ) self->B.current.data,
-              self->properties->widthA,
-              self->properties->widthB );
-
+OCLResult mmul_run(__local OCLWorkerMmul* self) {
+  matrixMul((__global float*) self->C.current.data,
+            (__global float*) self->A.current.data,
+	    (__global float* ) self->B.current.data,
+            self->properties->widthA,
+            self->properties->widthB);
   return OCL_ADVANCE;
 }
 

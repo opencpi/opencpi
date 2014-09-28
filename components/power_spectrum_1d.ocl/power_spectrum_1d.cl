@@ -6,7 +6,7 @@
  * This file contains the OCL implementation skeleton for worker: power_spectrum_1d
  */
 
-#include "power_spectrum_1d_Worker.h"
+#include "power_spectrum_1d-worker.h"
 
 #define BLOCK_SIZE 64
 
@@ -17,7 +17,7 @@
 #define OCL_WG_Y 1
 #define OCL_WG_Z 1
 
-void realfft( __global float* src_dst,
+static void realfft( __global float* src_dst,
               const unsigned n )
 {
     const unsigned int blockSize = BLOCK_SIZE;
@@ -51,7 +51,7 @@ void realfft( __global float* src_dst,
     src_dst[iaddr + 1] = imag;
 }
 
-void cvmagsx (  __global float* src,
+static void cvmagsx (  __global float* src,
                 __global float* dst,
                 size_t len )
 {
@@ -66,7 +66,7 @@ void cvmagsx (  __global float* src,
   barrier ( CLK_LOCAL_MEM_FENCE );
 }
 
-void vlogx (  __global float* src,
+static void vlogx (  __global float* src,
               __global float* dst,
               size_t len )
 {
@@ -80,7 +80,7 @@ void vlogx (  __global float* src,
 }
 
 
-void vsmulx ( __global float* src,
+static void vsmulx ( __global float* src,
               float scale,
               __global float* dst,
               size_t len )
@@ -101,34 +101,15 @@ void vsmulx ( __global float* src,
  * Methods to implement for worker power_spectrum_1d, based on metadata.
  */
 
-OCLResult power_spectrum_1d_run ( __local OCLWorkerPower_spectrum_1d* self,
-                                  OCLBoolean timedOut,
-                                  __global OCLBoolean* newRunCondition )
-{
-  (void)timedOut;
-  (void)newRunCondition;
-
+OCLResult power_spectrum_1d_run(__local OCLWorkerPower_spectrum_1d* self) {
   /* Compute the FFT of the real signal */
-  realfft ( ( __global float* ) self->in.current.data,
-             ( 1 << self->properties->log2n ) );
-
-  cvmagsx ( self->in.current.data,
-            self->out.current.data,
-            BLOCK_SIZE );
-
-  vlogx ( self->out.current.data,
-          self->out.current.data,
-          BLOCK_SIZE );
-
   float scale_factor = 10.0;
 
-  vsmulx ( self->out.current.data,
-           scale_factor,
-           self->out.current.data,
-           BLOCK_SIZE );
-
-  self->out.attr.length = self->in.attr.length / 2;
-  self->out.attr.u.operation = 0;
-
+  realfft((__global float *)self->in.current.data, 1 << self->properties->log2n);
+  cvmagsx(self->in.current.data, self->out.current.data, BLOCK_SIZE);
+  vlogx(self->out.current.data, self->out.current.data, BLOCK_SIZE);
+  vsmulx(self->out.current.data, scale_factor, self->out.current.data, BLOCK_SIZE);
+  self->out.current.length = self->in.current.length / 2;
+  self->out.current.opCode = 0;
   return OCL_ADVANCE;
 }

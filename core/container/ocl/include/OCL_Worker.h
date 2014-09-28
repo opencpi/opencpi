@@ -46,6 +46,7 @@ extern "C" {
 #endif
 
 #ifdef __OPENCL_VERSION__
+  #define OCL_CONST const
   #define OCL_GLOBAL __global
   #pragma OPENCL EXTENSION cl_khr_fp64: enable
   typedef char int8_t;
@@ -54,7 +55,11 @@ extern "C" {
   typedef unsigned short uint16_t;
   typedef int int32_t;
   typedef unsigned int uint32_t;
+  typedef unsigned long long uint64_t;
+  typedef long long int64_t;
 #else
+  #include <stdint.h>
+  #define OCL_CONST
   #define OCL_GLOBAL
 #endif
 
@@ -63,56 +68,73 @@ typedef float OCLFloat;
 typedef double OCLDouble;
 typedef unsigned int OCLOrdinal; /* Must be 32-bit to be a kernel argument */
 typedef unsigned int OCLBoolean; /* Must be 32-bit to be a kernel argument */
+typedef uint32_t OCLOpCode;
 
-typedef enum
-{
+typedef enum {
   OCL_OK,
   OCL_ERROR,
   OCL_FATAL,
   OCL_DONE,
   OCL_ADVANCE
-
 } OCLResult;
 
-typedef unsigned int OCLTime;
-typedef unsigned int OCLPortMask;
-typedef struct OCLPort OCLPort;
-typedef struct OCLWorker OCLWorker;
+typedef enum {
+  OCPI_OCL_INITIALIZE = 0,
+  OCPI_OCL_START,
+  OCPI_OCL_STOP,
+  OCPI_OCL_RELEASE,
+  OCPI_OCL_BEFORE_QUERY,
+  OCPI_OCL_AFTER_CONFIGURE,
+  OCPI_OCL_TEST,
+  OCPI_OCL_RUN
+} OCLControlOp;
 
-typedef struct
-{
-  OCLPortMask portMasks;
-  OCLBoolean timeout;
-  OCLTime usecs;
+typedef uint64_t OCLTime;
+typedef uint32_t OCLPortMask;
 
+typedef struct {
+  OCLBoolean  timeout;
+  OCLTime     usecs;
+  OCLBoolean  usePorts;
+  OCLPortMask portMasks[4];
 } OCLRunCondition;
 
-typedef struct
-{
-  OCL_GLOBAL void* data;
-  unsigned int maxLength;
+typedef struct {
+  OCLResult        result;
+  OCLRunCondition  runCondition;
+  OCLBoolean       newRunCondition;
+  uint16_t         crew_size;
+  uint16_t         crew_rank;
+  OCL_GLOBAL void *memory;
+  /* then are memories */
+  /* then are ports */
+  /* then are properties */
+} OCLWorker;
 
+typedef struct {
+  uint32_t length; // the number of elements
+  uint32_t offset; // offset in the "whole" argument in the "whole message".
+  uint32_t left; // left overlap
+  uint32_t right; // right overlap
+} OCLPartInfo;
+
+typedef struct {
+  OCL_GLOBAL void*       data;
+  OCL_CONST uint32_t     maxLength;           // maximum message size that will fit
+  uint32_t               length;              // const on input, set by worker on output
+  OCLOpCode              opCode;              // const on input, set by worker on output
+  OCLPartInfo           *partInfo;            // part info associated with message, if any
 } OCLBuffer;
 
-typedef struct
-{
-  OCLBoolean optional;
-  OCLBoolean connected;
-  unsigned length;
-  union
-  {
-    OCLOrdinal operation;
-    OCLOrdinal exception;
-  } u;
-
-} OCLPortAttr;
-
-struct OCLPort
-{
-  OCLPortAttr attr;
-  OCLBuffer current;
-
-} /* OCLPort */;
+typedef struct {
+  OCLBuffer            current;               // The current buffer (not a pointer to it)
+  OCL_CONST uint32_t   maxLength;             // max for all buffers and messages at this port
+  OCL_CONST OCLBoolean isConnected;           // is this (optional) port connected to something?
+  uint32_t             defaultLength;         // set by worker to avoid setting it all the time
+  OCLOpCode            defaultOpCode;         // set by worker to avoid setting it all the time
+  OCL_CONST uint32_t   connectedCrewSize;     // if connected, now is the other side scaled
+  OCL_CONST uint32_t   dataValueWidthInBytes; // for work group computations sometimes...
+} OCLPort;
 
 void OCLRelease ( OCLBuffer* buffer );
 

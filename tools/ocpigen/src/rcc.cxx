@@ -37,15 +37,6 @@ static void camel(std::string &s, const char *s1, const char *s2 = NULL, const c
   }
 }
 
-#if 0
-static void
-emitStructRCC(FILE *f, size_t nMembers, OU::Member *members, unsigned indent,
-	      const char *parent, bool isFixed, bool &isLast, bool topSeq);
-void Worker::
-printRccMember(FILE *f, OU::Member *m, unsigned indent, size_t &offset, unsigned &pad,
-	    const char *parent, bool isFixed, bool &isLast, bool topSeq);
-#endif
-
 static void
 printArray(FILE *f, OU::Member *m, bool isFixed, bool &isLast, bool topSeq) {
   if (m->m_arrayRank)
@@ -70,12 +61,6 @@ printArray(FILE *f, OU::Member *m, bool isFixed, bool &isLast, bool topSeq) {
   fprintf(f, " */\n");
 }
 
-#if 0
-// Print type, including sequence type etc.
-static void
-printType(FILE *f, OU::Member *m, unsigned indent, size_t &offset, unsigned &pad,
-	  const char *parent, bool isFixed, bool &isLast, bool topSeq);
-#endif
 // Just print the data type, not the "member", with names or arrays etc.
 void Worker::
 printRccBaseType(FILE *f, OU::Member *m, unsigned indent, size_t &offset, unsigned &pad,
@@ -89,7 +74,7 @@ printRccBaseType(FILE *f, OU::Member *m, unsigned indent, size_t &offset, unsign
   } else if (m->m_baseType == OA::OCPI_Type)
     printRccType(f, m->m_type, indent, offset, pad, parent, isFixed, isLast, false);
   else {
-    const char *baseType = rccTypes[m->m_baseType];
+    const char *baseType = m_baseTypes[m->m_baseType];
     if (m_language == C)
       fprintf(f, "%*s%-13s", indent, "", baseType);
     else {
@@ -100,13 +85,13 @@ printRccBaseType(FILE *f, OU::Member *m, unsigned indent, size_t &offset, unsign
   }
 }
 static void
-topTypeName(std::string &name, OU::Member *m) {
+topTypeName(std::string &name, OU::Member *m, const char **baseTypes) {
   if (m->m_baseType == OA::OCPI_Struct)
     camel(name, m->m_name.c_str());
   else if (m->m_baseType == OA::OCPI_Type)
     name = "OCPI_Type";
   else
-    name = rccTypes[m->m_baseType];
+    name = baseTypes[m->m_baseType];
   //  printf("BASETYPE %u:%s\n", m->m_baseType, rccTypes[m->m_baseType]);
 }
 // Print type, including sequence type etc.
@@ -161,15 +146,15 @@ printRccMember(FILE *f, OU::Member *m, unsigned indent, size_t &offset, unsigned
   //	 m->m_name.c_str(), offset, m->m_offset, m->m_nBytes);
 }
 
-static const char *
-methodName(Worker *w, const char *method, const char *&mName) {
-  const char *pat = w->m_pattern ? w->m_pattern : w->m_staticPattern;
+const char *Worker::
+rccMethodName(const char *method, const char *&mName) {
+  const char *pat = m_pattern ? m_pattern : m_staticPattern;
   if (!pat) {
     mName = method;
     return 0;
   }
   size_t length =
-    strlen(w->m_implName) + strlen(method) + strlen(pat) + 1;
+    strlen(m_implName) + strlen(method) + strlen(pat) + 1;
   char c, *s = (char *)malloc(length);
   mName = s;
   while ((c = *pat++)) {
@@ -193,18 +178,18 @@ methodName(Worker *w, const char *method, const char *&mName) {
 	s++;
       break;
     case 'w':
-      strcpy(s, w->m_implName);
+      strcpy(s, m_implName);
       while (*s)
 	s++;
       break;
     case 'W':
-      *s++ = (char)toupper(w->m_implName[0]);
-      strcpy(s, w->m_implName + 1);
+      *s++ = (char)toupper(m_implName[0]);
+      strcpy(s, m_implName + 1);
       while (*s)
 	s++;
       break;
     default:
-      return OU::esprintf("Invalid pattern rule: %s", w->m_pattern);
+      return OU::esprintf("Invalid pattern rule: %s", m_pattern);
     }
   }
   *s++ = 0;
@@ -333,9 +318,10 @@ emitImplRCC() {
 	  " */\n\n"
 	  "#ifndef RCC_WORKER_%s_H__\n"
 	  "#define RCC_WORKER_%s_H__\n"
-	  "#include <RCC_Worker.h>\n"
-	  "#include <vector>\n",
+	  "#include <RCC_Worker.h>\n",
 	  m_implName, m_language == C ? "C" : "C++", upper, upper);
+  if ( m_language == CC )
+    fprintf(f, "#include <vector>\n" );
   if (m_language == CC && m_slave)
     fprintf(f, "#include <../OcpiApi.h>\n");
   const char *last;
@@ -474,7 +460,6 @@ emitImplRCC() {
 	      toupper(m_implName[0]), m_implName + 1);
     for (unsigned n = 0; n < m_ports.size(); n++)
       m_ports[n]->emitRccCppImpl(f);
-
     fprintf(f,
 	    "};\n\n"
 	    "#define %s_START_INFO \\\n"
@@ -510,14 +495,14 @@ emitImplRCC() {
       unsigned op = 0;
       for (const char **cp = OU::Worker::s_controlOpNames; *cp; cp++, op++)
 	if (m_ctl.controlOps & (1 << op)) {
-	  if ((err = methodName(this, *cp, mName)))
+	  if ((err = rccMethodName(*cp, mName)))
 	    return err;
 	  fprintf(f, "%s%s", last, mName);
 	  last = ", ";
 	}
       fprintf(f, ";\\\n");
     }
-    if ((err = methodName(this, "run", mName)))
+    if ((err = rccMethodName("run", mName)))
       return err;
     fprintf(f,
 	    " %s RCCRunMethod %s\\\n",
@@ -548,11 +533,11 @@ emitImplRCC() {
     unsigned op = 0;
     for (const char **cp = OU::Worker::s_controlOpNames; *cp; cp++, op++)
       if (m_ctl.controlOps & (1 << op)) {
-	if ((err = methodName(this, *cp, mName)))
+	if ((err = rccMethodName(*cp, mName)))
 	  return err;
 	fprintf(f, " .%s = %s,\\\n", *cp, mName);
       }
-    if ((err = methodName(this, "run", mName)))
+    if ((err = rccMethodName("run", mName)))
       return err;
     fprintf(f, " .run = %s,\\\n", mName);
     uint32_t optionals = 0;
@@ -718,7 +703,7 @@ emitSkelRCC() {
   const char *mName;
   for (cp = OU::Worker::s_controlOpNames; *cp; cp++, op++)
     if (m_ctl.controlOps & (1 << op)) {
-      if ((err = methodName(this, *cp, mName)))
+      if ((err = rccMethodName(*cp, mName)))
 	return err;
       if (m_language == C)
 	fprintf(f,
@@ -733,7 +718,7 @@ emitSkelRCC() {
 		"    return RCC_OK;\n"
 		"  }\n", mName);
     }
-  if ((err = methodName(this, "run", mName)))
+  if ((err = rccMethodName("run", mName)))
     return err;
   if (m_language == C)
     fprintf(f,
@@ -772,7 +757,7 @@ const char *Worker::
 parseRccImpl(const char *package) {
   const char *err;
   if ((err = OE::checkAttrs(m_xml, IMPL_ATTRS, "ExternMethods", "StaticMethods", "Threaded",
-			    "ControlOperations", "Language", "Slave", (void*)0)) ||
+			    "Language", "Slave", (void*)0)) ||
       (err = OE::checkElements(m_xml, IMPL_ELEMS, "port", (void*)0)))
     return err;
   // We use the pattern value as the method naming for RCC
@@ -784,8 +769,6 @@ parseRccImpl(const char *package) {
       (err = parseImplControl(xctl)) ||
       (xctl && (err = OE::checkAttrs(xctl, GENERIC_IMPL_CONTROL_ATTRS, "Threaded", (void *)0))) ||
       (err = OE::getBoolean(m_xml, "Threaded", &m_isThreaded)))
-    return err;
-  if ((err = parseList(ezxml_cattr(m_xml, "ControlOperations"), parseControlOp, this)))
     return err;
   // Parse data port implementation metadata: maxlength, minbuffers.
   Port *sp;
@@ -832,6 +815,7 @@ parseRccImpl(const char *package) {
   }
   m_model = RccModel;
   m_modelString = "rcc";
+  m_baseTypes = rccTypes;
   return 0;
 }
 
@@ -843,7 +827,7 @@ parseRccAssy() {
   static const char
     *topAttrs[] = {IMPL_ATTRS, RCC_TOP_ATTRS, RCC_IMPL_ATTRS, NULL},
     *instAttrs[] = {INST_ATTRS, "reusable", NULL};
-  // Do the generic assembly parsing, then to more specific to HDL
+  // Do the generic assembly parsing, then to more specific to RCC
   if ((err = a->parseAssy(m_xml, topAttrs, instAttrs, true, m_outDir)))
     return err;
   return NULL;
@@ -944,8 +928,7 @@ emitRccCppImpl(FILE *f) {
     std::string ops;
     OU::format(ops, "%c%sOperations", toupper(name()[0]), name()+1);
     bool first = true;
-
-    for (unsigned nn = 0; nn < m_protocol->nOperations(); nn++, o++) 
+    for (unsigned nn = 0; nn < m_protocol->nOperations(); nn++, o++)
       if (o->nArgs()) {
 	std::string s;
 	camel(s, o->name().c_str());
@@ -954,7 +937,8 @@ emitRccCppImpl(FILE *f) {
 		"    struct __attribute__ ((__packed__)) %s {\n",
 		o->name().c_str(), name(), s.c_str());
 	bool isLast = false;
-	m_worker->emitRccStruct(f, o->nArgs(), o->args(), 8, s.c_str(), false, isLast, o->isTopFixedSequence());
+	m_worker->emitRccStruct(f, o->nArgs(), o->args(), 8, s.c_str(), false, isLast,
+				o->isTopFixedSequence());
 	fprintf(f, "    };\n" );
       }
 
@@ -998,7 +982,7 @@ emitRccCppImpl(FILE *f) {
 	fprintf(f,
 		"    class %sOp : public OCPI::RCC::RCCPortOperation { \n"
 		"    private:\n"
-		"       RCCUserBuffer * m_buffer;\n"
+		//		"       RCCUserBuffer * m_buffer;\n"
 		"       %s * m_%s; \n"
 
 		"    public:\n"
@@ -1071,14 +1055,21 @@ emitRccCppImpl(FILE *f) {
 		    "          void * m_myptr;\n"
 		    "       public:\n"
 		    "          %sArg() : m_myptr(NULL){}\n"
-		    "          size_t dimensions() const;  // Number of dimensions\n"
-		    "          bool   endOfWhole() const; \n"
-		    "          void partSize( unsigned dimension, OCPI::RCC::RCCPartInfo & part ) const;\n"
-		    "          inline void * value() { return m_myptr ? m_myptr : (m_myptr = getArgAddress((unsigned)%sPort::%s_OPERATION, (unsigned)%s_ARG)); }\n"
-		    "       } m_%sArg;\n"
-		    ,s.c_str(), 
+		    "          inline void * value() { return m_myptr ? m_myptr : (m_myptr = getArgAddress((unsigned)%sPort::%s_OPERATION, (unsigned)%s_ARG)); }\n",
+		    s.c_str(), 
 		    s.c_str(),
-		    p.c_str(),on.c_str(),s.c_str(),
+		    p.c_str(),on.c_str(),s.c_str()
+		    );
+
+	    if ( m_opScaling[n] != NULL )
+	      fprintf(f,
+		      "          size_t dimensions() const;  // Number of dimensions\n"
+		      "          bool   endOfWhole() const; \n"
+		      "          void partSize( unsigned dimension, OCPI::RCC::RCCPartInfo & part ) const;\n"
+		      );
+
+	    fprintf(f,
+		    "       } m_%sArg;\n",
 		    s.c_str()
 		    );
 
@@ -1148,7 +1139,7 @@ emitRccCppImpl(FILE *f) {
 
 	if (o->isTopFixedSequence()) {
 	  std::string name;
-	  topTypeName(name, o->args());
+	  topTypeName(name, o->args(), m_worker->m_baseTypes);
 	  fprintf(f,
 		  "    size_t %s_length() { return topLength(sizeof(%s)); }\n",
 		  o->name().c_str(), name.c_str());

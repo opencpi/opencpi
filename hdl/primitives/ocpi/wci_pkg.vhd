@@ -62,7 +62,7 @@ TYPE State_t IS (EXISTS_e,            -- 0
     MByteEn             : std_logic_vector(3 downto 0);
     MCmd                : ocp.MCmd_t;
     MData               : std_logic_vector(31 downto 0);
-    MFlag               : std_logic_vector(1 downto 0);
+    MFlag               : std_logic_vector(18 downto 0);
     MReset_n            : std_logic;
   end record in_t;
 
@@ -119,6 +119,9 @@ TYPE State_t IS (EXISTS_e,            -- 0
       is_operating           : out bool_t;  -- just a convenience for state = operating_e
       abort_control_op       : out bool_t;
       is_big_endian          : out bool_t;   -- for runtime dynamic endian
+      barrier                : out bool_t;
+      crew                   : out UChar_t;
+      rank                   : out UChar_t;
       -- From here down, only for properties
       write_enables          : out bool_array_t(properties'range);
       read_enables           : out bool_array_t(properties'range);

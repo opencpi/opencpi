@@ -43,6 +43,11 @@ architecture rtl of wci_master is
   signal sticky_r             : std_logic_vector(8 downto 0);
   signal assert_command       : bool_t;
   signal cmd_asserted_r       : bool_t;
+  -- Scalability signals
+  signal waiting              : std_logic;                     -- worker is waiting at barrier
+  signal barrier_r            : std_logic;                     -- barrier in progress or next
+  signal crew_r               : std_logic_vector(7 downto 0);
+  signal rank_r               : std_logic_vector(7 downto 0);
 begin
   -- worker is only asserted with a valid worker value when there is
   -- a valid operation
@@ -51,6 +56,7 @@ begin
   starting           <= to_bool(worker_in.id(id_width-1 downto 0) = to_unsigned(id, id_width) and
                                 (not its(active_r) and
                                  (its(ready_r) or reset_n_r = '0' or is_master)));
+  waiting            <= wci_in.SFlag(1);
   -- the gate for the single cycle command
   assert_command     <= to_bool(active_r and its(ready_r) and
                                 not its(is_master) and not its(cmd_asserted_r));
@@ -63,10 +69,17 @@ begin
   wci_out.MData      <= worker_in.data;
   wci_out.MFlag(0)   <= abort_r;
   wci_out.MFlag(1)   <= '0'; -- little endian
+  wci_out.MFlag(2)   <= barrier_r; -- tell worker we're in a barrier
+  wci_out.MFlag(10 downto 3)  <= rank_r; -- position in cres
+  wci_out.MFlag(18 downto 11) <= crew_r; -- tell worker we're in a barrier
+  
   control <= slv(reset_n_r) &            -- 31
              slv(abort_r) &              -- 30
-             slv0(29-5+1) &              -- 29:5
-             std_logic_vector(timeout_r);--  4:0
+             slv0(29-24+1) &             -- 29:24
+             crew_r &                    -- 23:16 size of crew when scaled
+             rank_r &                    -- 15:8  rank in crew
+             slv0(7-5+1) &               -- 7:5
+             std_logic_vector(timeout_r);-- 4:0
   status  <= slv0(31-28+1) &             -- 31:28
              slv(last_write_r) &         -- 27
              last_control_r &            -- 26:24
@@ -75,7 +88,9 @@ begin
              slv(last_control_valid_r) & -- 18
              slv(last_byte_en_valid_r) & -- 17
              slv(last_addr_valid_r) &    -- 16
-             slv0(15-11+1) &             -- 15:11
+             slv(waiting) &              -- 15 - worker is waiting for barrier
+             slv(barrier_r) &            -- 14 - barrier in progress
+             slv0(12-11+1) &             -- 1:11
              slv(wci_in.SFlag(0)) &      -- 10
              slv(attention_r) &          --  9
              sticky_r;                   --  8:0
@@ -126,6 +141,7 @@ begin
         last_control_valid_r <= '0';
         last_byte_en_valid_r <= '0';
         last_addr_valid_r    <= '0';
+        barrier_r            <= '0';
         sticky_r             <= (others => '0');
       else
         ready_r              <= to_bool(wci_in.SThreadBusy(0) = '0'); -- pipelined per spec
@@ -165,6 +181,15 @@ begin
                 end if;
                 if worker_in.data(8) = '1' then
                   sticky_r <= (others => '0');
+                end if;
+                crew_r    <= worker_in.data(23 downto 16);
+                rank_r    <= worker_in.data(15 downto 8);
+              when 11 =>
+                if worker_in.data(0) = '1' then
+                  barrier_r <= '1';
+                end if;
+                if worker_in.data(1) = '1' then
+                  barrier_r <= '0';
                 end if;
               when 12 => -- window register
                 window_r <= worker_in.data(window_r'range);

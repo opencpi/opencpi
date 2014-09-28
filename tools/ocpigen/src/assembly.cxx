@@ -173,129 +173,129 @@ Instance()
 const char *Assembly::
 parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWorkerOk,
 	  const char *outDir) {
-   (void)noWorkerOk; // FIXME: when containers are generated.
-   try {
-     m_utilAssembly = new OU::Assembly(xml, m_assyWorker.m_implName, topAttrs, instAttrs);
-   } catch (std::string &e) {
-     return OU::esprintf("%s", e.c_str());
-   }
-   m_nInstances = m_utilAssembly->nUtilInstances();
-   //   m_nConnections = m_utilAssembly->m_connections.size();
-   const char *err;
+  (void)noWorkerOk; // FIXME: when containers are generated.
+  try {
+    m_utilAssembly = new OU::Assembly(xml, m_assyWorker.m_implName, topAttrs, instAttrs);
+  } catch (std::string &e) {
+    return OU::esprintf("%s", e.c_str());
+  }
+  m_nInstances = m_utilAssembly->nUtilInstances();
+  //   m_nConnections = m_utilAssembly->m_connections.size();
+  const char *err;
  
-   Instance *i = m_instances = new Instance[m_utilAssembly->nUtilInstances()];
-   // Initialize our instances based on the generic assembly instances
-   for (unsigned n = 0; n < m_utilAssembly->nUtilInstances(); n++, i++) {
-     OU::Assembly::Instance *ai = &m_utilAssembly->utilInstance(n);
-     i->iType = Instance::Application; // set the default
-     i->instance = ai;
-     i->name = i->instance->m_name.c_str();
-     i->wName = i->instance->m_implName.size() ? i->instance->m_implName.c_str() : 0;
-     // Find the real worker/impl for each instance, sharing the Worker among instances
-     Worker *w = NULL;
-     if (!i->wName)
-       return OU::esprintf("instance %s has no worker", i->name);
-     for (Instance *ii = m_instances; ii < i; ii++)
-       if (ii->wName && !strcmp(i->wName, ii->wName))
-	 w = ii->worker;
-     // There are two instance attributes that we use when considering workers
-     // in our worker assembly:
-     // 1.  Whether the instance is reentrant, which means one "instance" here can actually
-     //     be dynamically used simultaneously for multiple application instances.
-     //     This implies there will be no hard connections to its ports.
-     // 2.  Which configuration of parameters it is built with.
-     // FIXME: better modularity would be a core worker, a parameterized worker, etc.
-     size_t paramConfig; // zero is with default parameter values
-     ezxml_t ix = ai->xml();
-     bool hasConfig;
-     if ((err = OE::getNumber(ix, "paramConfig", &paramConfig, &hasConfig, 0)))
-       return err;
-     // We consider the property values in two places.
-     // Here we are saying that a worker is unique if it has (non-default) properties,
-     // of if it specifically has a non-default parameter configuration.
-     // So we create a new worker and hand it the properties, so that it can
-     // actually use these values DURING PARSING since some aspects of parsing
-     // need them.  But later below, we really parse the properties after we
-     // know the actual properties and their types from the worker.
-     // FIXME: we are assuming that properties here must be parameters?
-     if (!w || ai->m_properties.size() || paramConfig) {
-       if (!(w = Worker::create(i->wName, m_assyWorker.m_file.c_str(), NULL, outDir,
-				hasConfig ? NULL : &ai->m_properties, paramConfig, err)))
-	 return OU::esprintf("for worker %s: %s", i->wName, err);
-       m_workers.push_back(w);
-     }
-     i->worker = w;
-     // Initialize the instance ports
-     InstancePort *ip = i->m_ports = new InstancePort[i->worker->m_ports.size()];
-     for (unsigned n = 0; n < i->worker->m_ports.size(); n++, ip++) {
-       ip->init(i, i->worker->m_ports[n], NULL);
-       // If the instance in the OU::Assembly has "m_externals=true",
-       // and this instance port has no connections in the OU::Assembly
-       // then we add an external connection for the instance port. Prior to this,
-       // we didn't have access to the worker metadata to know what all the ports are.
-       if (ai->m_externals && ip->m_port->isData()) {
-	 Port *p = NULL;
-	 for (OU::Assembly::Instance::PortsIter pi = ai->m_ports.begin();
-	      pi != ai->m_ports.end(); pi++)
-	   if ((*pi)->m_name.empty()) {
-	     // Port name empty means we don't know it yet.
-	     InstancePort *found;
-	     // Ignore errors here
-	     if (!findPort(**pi, found))
-	       if (ip == found)
-		 p = ip->m_port;
-	   } else if (!strcasecmp((*pi)->m_name.c_str(), ip->m_port->name())) {
-	     p = ip->m_port;
-	     break;
-	   } 
-	 if (!p)
-	   m_utilAssembly->addExternalConnection(i->instance->m_ordinal, ip->m_port->name());
-       }
-     }
-     // Parse property values now that we know the actual workers.
-     OU::Assembly::Property *ap = &ai->m_properties[0];
-     i->properties.resize(ai->m_properties.size());
-     InstanceProperty *ipv = &i->properties[0];
-     for (size_t n = ai->m_properties.size(); n; n--, ap++, ipv++)
-       for (PropertiesIter pi = w->m_ctl.properties.begin(); pi != w->m_ctl.properties.end(); pi++) {
-	 OU::Property &pr = **pi;
-	 if (!strcasecmp(pr.m_name.c_str(), ap->m_name.c_str())) {
-	   if (!pr.m_isParameter)
-	     return OU::esprintf("property '%s' is not a parameter", ap->m_name.c_str());
-	   ipv->property = &pr;
-	   ipv->value.setType(pr);
-	   if ((err = ipv->property->parseValue(ap->m_value.c_str(), ipv->value)))
-	     return err;
-	   break;
-	 }
-       }
-   }
-   // All parsing is done.
-   // Now we fill in the top-level worker stuff.
-   asprintf((char**)&m_assyWorker.m_specName, "local.%s", m_assyWorker.m_implName);
-   // Properties:  we only set the canonical hasDebugLogic property, which is a parameter.
-   if ((err = m_assyWorker.doProperties(xml, m_assyWorker.m_file.c_str(), true, false)))
-     return err;
-   // Parse the Connections, creating external ports for this assembly worker as needed.
-   for (OU::Assembly::ConnectionsIter ci = m_utilAssembly->m_connections.begin();
-	ci != m_utilAssembly->m_connections.end(); ci++)
-     if ((err = parseConnection(*ci)))
-       return err;
-   // Check for unconnected non-optional data ports
-   i = m_instances;
-   for (unsigned n = 0; n < m_nInstances; n++, i++)
-     if (i->worker && !i->worker->m_reusable) {
-       InstancePort *ip = i->m_ports;
-       for (unsigned nn = 0; nn < i->worker->m_ports.size(); nn++, ip++) {
-	 Port *pp = ip->m_port;
-	 if (ip->m_attachments.empty() && pp->isData() && !pp->isOptional())
-	   return OU::esprintf("Port %s of instance %s of worker %s"
-			       " is not connected and not optional",
-			       pp->name(), i->name, i->worker->m_implName);
-       }
-     }
-   return 0;
- }
+  Instance *i = m_instances = new Instance[m_utilAssembly->nUtilInstances()];
+  // Initialize our instances based on the generic assembly instances
+  for (unsigned n = 0; n < m_utilAssembly->nUtilInstances(); n++, i++) {
+    OU::Assembly::Instance *ai = &m_utilAssembly->utilInstance(n);
+    i->iType = Instance::Application; // set the default
+    i->instance = ai;
+    i->name = i->instance->m_name.c_str();
+    i->wName = i->instance->m_implName.size() ? i->instance->m_implName.c_str() : 0;
+    // Find the real worker/impl for each instance, sharing the Worker among instances
+    Worker *w = NULL;
+    if (!i->wName)
+      return OU::esprintf("instance %s has no worker", i->name);
+    for (Instance *ii = m_instances; ii < i; ii++)
+      if (ii->wName && !strcmp(i->wName, ii->wName))
+	w = ii->worker;
+    // There are two instance attributes that we use when considering workers
+    // in our worker assembly:
+    // 1.  Whether the instance is reentrant, which means one "instance" here can actually
+    //     be dynamically used simultaneously for multiple application instances.
+    //     This implies there will be no hard connections to its ports.
+    // 2.  Which configuration of parameters it is built with.
+    // FIXME: better modularity would be a core worker, a parameterized worker, etc.
+    size_t paramConfig; // zero is with default parameter values
+    ezxml_t ix = ai->xml();
+    bool hasConfig;
+    if ((err = OE::getNumber(ix, "paramConfig", &paramConfig, &hasConfig, 0)))
+      return err;
+    // We consider the property values in two places.
+    // Here we are saying that a worker is unique if it has (non-default) properties,
+    // of if it specifically has a non-default parameter configuration.
+    // So we create a new worker and hand it the properties, so that it can
+    // actually use these values DURING PARSING since some aspects of parsing
+    // need them.  But later below, we really parse the properties after we
+    // know the actual properties and their types from the worker.
+    // FIXME: we are assuming that properties here must be parameters?
+    if (!w || ai->m_properties.size() || paramConfig) {
+      if (!(w = Worker::create(i->wName, m_assyWorker.m_file.c_str(), NULL, outDir,
+			       hasConfig ? NULL : &ai->m_properties, paramConfig, err)))
+	return OU::esprintf("for worker %s: %s", i->wName, err);
+      m_workers.push_back(w);
+    }
+    i->worker = w;
+    // Initialize the instance ports
+    InstancePort *ip = i->m_ports = new InstancePort[i->worker->m_ports.size()];
+    for (unsigned n = 0; n < i->worker->m_ports.size(); n++, ip++) {
+      ip->init(i, i->worker->m_ports[n], NULL);
+      // If the instance in the OU::Assembly has "m_externals=true",
+      // and this instance port has no connections in the OU::Assembly
+      // then we add an external connection for the instance port. Prior to this,
+      // we didn't have access to the worker metadata to know what all the ports are.
+      if (ai->m_externals && ip->m_port->isData()) {
+	Port *p = NULL;
+	for (OU::Assembly::Instance::PortsIter pi = ai->m_ports.begin();
+	     pi != ai->m_ports.end(); pi++)
+	  if ((*pi)->m_name.empty()) {
+	    // Port name empty means we don't know it yet.
+	    InstancePort *found;
+	    // Ignore errors here
+	    if (!findPort(**pi, found))
+	      if (ip == found)
+		p = ip->m_port;
+	  } else if (!strcasecmp((*pi)->m_name.c_str(), ip->m_port->name())) {
+	    p = ip->m_port;
+	    break;
+	  } 
+	if (!p)
+	  m_utilAssembly->addExternalConnection(i->instance->m_ordinal, ip->m_port->name());
+      }
+    }
+    // Parse property values now that we know the actual workers.
+    OU::Assembly::Property *ap = &ai->m_properties[0];
+    i->properties.resize(ai->m_properties.size());
+    InstanceProperty *ipv = &i->properties[0];
+    for (size_t n = ai->m_properties.size(); n; n--, ap++, ipv++)
+      for (PropertiesIter pi = w->m_ctl.properties.begin(); pi != w->m_ctl.properties.end(); pi++) {
+	OU::Property &pr = **pi;
+	if (!strcasecmp(pr.m_name.c_str(), ap->m_name.c_str())) {
+	  if (!pr.m_isParameter)
+	    return OU::esprintf("property '%s' is not a parameter", ap->m_name.c_str());
+	  ipv->property = &pr;
+	  ipv->value.setType(pr);
+	  if ((err = ipv->property->parseValue(ap->m_value.c_str(), ipv->value)))
+	    return err;
+	  break;
+	}
+      }
+  }
+  // All parsing is done.
+  // Now we fill in the top-level worker stuff.
+  asprintf((char**)&m_assyWorker.m_specName, "local.%s", m_assyWorker.m_implName);
+  // Properties:  we only set the canonical hasDebugLogic property, which is a parameter.
+  if ((err = m_assyWorker.doProperties(xml, m_assyWorker.m_file.c_str(), true, false)))
+    return err;
+  // Parse the Connections, creating external ports for this assembly worker as needed.
+  for (OU::Assembly::ConnectionsIter ci = m_utilAssembly->m_connections.begin();
+       ci != m_utilAssembly->m_connections.end(); ci++)
+    if ((err = parseConnection(*ci)))
+      return err;
+  // Check for unconnected non-optional data ports
+  i = m_instances;
+  for (unsigned n = 0; n < m_nInstances; n++, i++)
+    if (i->worker && !i->worker->m_reusable) {
+      InstancePort *ip = i->m_ports;
+      for (unsigned nn = 0; nn < i->worker->m_ports.size(); nn++, ip++) {
+	Port *pp = ip->m_port;
+	if (ip->m_attachments.empty() && pp->isData() && !pp->isOptional())
+	  return OU::esprintf("Port %s of instance %s of worker %s"
+			      " is not connected and not optional",
+			      pp->name(), i->name, i->worker->m_implName);
+      }
+    }
+  return 0;
+}
 
 // Make this port an external port
 // Not called for WCIs that are aggreated...
@@ -340,27 +340,6 @@ findInstancePort(const char *name) {
 	  return &(*ai)->m_instPort;
   }
   return NULL;
-}
-
-// This is a parsed for the assembly of what does into a single worker binary
-const char *Worker::
-parseOclAssy() {
-  const char *err;
-  Assembly *a = m_assembly = new Assembly(*this);
-  m_model = OclModel;
-  m_modelString = "ocl";
-  if ((err = OE::checkAttrs(m_xml, "Name", (void*)0)) ||
-      (err = OE::checkElements(m_xml, IMPL_ATTRS, "worker", (void*)0)))
-    return err;
-  for (ezxml_t x = ezxml_cchild(m_xml, "Worker"); !err && x; x = ezxml_next(x)) {
-    const char *wXmlName = ezxml_cattr(x, "File");
-    if (!wXmlName)
-      return "Missing \"File\" attribute is \"Worker\" element";
-    Worker *w = create(wXmlName, m_file.c_str(), NULL, m_outDir, NULL, 0, err);
-    if (w)
-      a->m_workers.push_back(w);
-  }
-  return err;
 }
 
 void Worker::

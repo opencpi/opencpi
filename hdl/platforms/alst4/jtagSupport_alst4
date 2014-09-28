@@ -9,12 +9,12 @@ func=$1
 temp=$2
 dir=`dirname $0`
 #echo bitfile=$1 device=$2 part=$3 esn=$4 position=$5 temp=$6
-if test "$OCPI_ALTERA_TOOLS_DIR" = "" -o "$OCPI_ALTERA_KITS_DIR" = ""; then
-  echo "Altera environment variables (OCPI_ALTERA_TOOLS_DIR and OCPI_ALTERA_KITS_DIR) are not set." 1>&2
+if test "$OCPI_ALTERA_TOOLS_DIR" = ""; then
+  echo "Altera environment variable (OCPI_ALTERA_TOOLS_DIR) is not set." 1>&2
   exit 1
 fi
-if test ! -d "$OCPI_ALTERA_TOOLS_DIR" -o ! -d "$OCPI_ALTERA_KITS_DIR" ; then
-  echo "Altera directories (set by OCPI_ALTERA_TOOLS_DIR and OCPI_ALTERA_KITS_DIR) do not exist." 1>&2
+if test ! -d "$OCPI_ALTERA_TOOLS_DIR" ; then
+  echo "Altera directory (set by OCPI_ALTERA_TOOLS_DIR) does not exist." 1>&2
   exit 1
 fi
 QBIN="$OCPI_ALTERA_TOOLS_DIR/quartus/bin"

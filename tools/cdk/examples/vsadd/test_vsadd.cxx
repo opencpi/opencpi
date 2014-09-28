@@ -1,6 +1,5 @@
 
 #include "OcpiApi.h"
-#include "OcpiUtilException.h"
 
 #include <cmath>
 #include <cstdio>
@@ -118,7 +117,7 @@ namespace
       do
       {
         uint8_t* data;
-        uint32_t length;
+        size_t length;
         uint8_t opcode = 0;
         bool end = false;
 
@@ -131,7 +130,7 @@ namespace
         if ( src )
         {
           float ramp_start = pow ( 10, n_generated++ );
-          printf ( "host src %p data %p length %u %f\n", src, data, length, ramp_start ); fflush(stdout);
+          printf ( "host src %p data %p length %zu %f\n", src, data, length, ramp_start ); fflush(stdout);
           const std::size_t n_elems ( length / sizeof ( float ) );
           sent_data.reserve ( n_elems );
           std::generate_n ( sent_data.begin ( ), n_elems, GenRamp<float> ( ramp_start ) );
@@ -147,7 +146,7 @@ namespace
                                                                end );
         if ( dst )
         {
-          printf ( "host dst %p data %p length %u\n", dst, data, length ); fflush(stdout);
+          printf ( "host dst %p data %p length %zu\n", dst, data, length ); fflush(stdout);
 
           float* pf32 = ( float* ) data;
           for ( size_t n = 0; n < ( length / sizeof ( float) ); n++ )
@@ -191,18 +190,6 @@ int main ( int argc, char* argv [ ] )
 
       test_worker ( "ocl", n_buffers_to_process );
   }
-#if 0
-  catch ( const OCPI::Util::EmbeddedException& e )
-  {
-    std::cerr << "\nException(e): " << e.getAuxInfo ( ) << std::endl;
-    return 1;
-  }
-  catch ( const OCPI::API::Error& e )
-  {
-    std::cerr << "\nException(a): " << e.error ( ) << std::endl;
-    return 1;
-  }
-#endif
   catch ( const std::string& s )
   {
     std::cerr << "\nException(s): " << s << std::endl;

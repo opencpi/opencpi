@@ -6,7 +6,7 @@
  * This file contains the OCL implementation skeleton for worker: vsadd
  */
 
-#include "vsadd_Worker.h"
+#include "vsadd-worker.h"
 
 /*
  * Required work group size for worker vsadd run() function.
@@ -19,31 +19,17 @@
  * Methods to implement for worker vsadd, based on metadata.
  */
 
-OCLResult vsadd_run ( __local OCLWorkerVsadd* self,
-                      OCLBoolean timedOut,
-                     __global OCLBoolean* newRunCondition )
-{
-  (void)timedOut;
-  (void)newRunCondition;
+OCLResult vsadd_run(__local OCLWorkerVsadd* self) {
+  const size_t n_elems = self->in.current.length / sizeof(float);
+  __global const float* src = (__global float *)self->in.current.data;
+  __global float* dst = (__global float *)self->out.current.data;
+  size_t gid = get_global_id(0);
 
-  const size_t n_elems = self->in.attr.length / sizeof ( float );
-
-  __global const float* src = ( __global float* ) self->in.current.data;
-
-  __global float* dst = ( __global float* ) self->out.current.data;
-
-  int gid = get_global_id ( 0 );
-
-  if ( gid >= n_elems )
-  {
+  if (gid >= n_elems)
     return OCL_DONE;
-  }
-
-  dst [ gid ] = src [ gid ] + self->properties->scalar;
-
-  self->out.attr.length = self->in.attr.length;
-  self->out.attr.u.operation = self->in.attr.u.operation;
-
+  dst[gid] = src[gid] + self->properties->scalar;
+  self->out.current.length = self->in.current.length;
+  self->out.current.opCode = self->in.current.opCode;
   return OCL_ADVANCE;
 }
 

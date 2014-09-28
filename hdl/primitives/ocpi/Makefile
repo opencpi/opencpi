@@ -49,6 +49,7 @@ SourceFiles=ocp_pkg.vhd types_pkg.vhd util_pkg.vhd wci_pkg.vhd wsi_pkg.vhd ocpi_
             property_decoder.vhd decoder.vhd readback.vhd control_decoder.vhd \
             gen/props_pkg.vhd \
 	    master.vhd slave.vhd  \
+	    part_master.vhd part_slave.vhd  \
 	    message_bounds.vhd clock_limiter.vhd \
 	    $(TypeFiles)
 

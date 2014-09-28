@@ -11,7 +11,9 @@ WsiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
 			    "EarlyRequest", "MyClock", "RegRequest", "Pattern",
 			    "NumberOfOpcodes", "MaxMessageValues",
 			    "datavaluewidth", "zerolengthmessages",
-			    "implname", "producer", "optional", (void*)0)) ||
+			    "implname", "producer", "optional",
+			    DISTRIBUTION_ATTRS, PARTITION_ATTRS,
+			    (void*)0)) ||
       (err = OE::getBoolean(x, "Abortable", &m_abortable)) ||
       (err = OE::getBoolean(x, "RegRequest", &m_regRequest)) ||
       (err = OE::getBoolean(x, "EarlyRequest", &m_earlyRequest)))
@@ -155,7 +157,7 @@ emitVhdlShell(FILE *f, Port *wci) {
 	      name(), slave ? "" : "_temp", name(), slave ? "_temp" : "");
 	
   fprintf(f,
-	  "  %s_port : component ocpi.wsi.%s\n"
+	  "  %s_port : component ocpi.wsi.%s%s\n"
 	  "    generic map(precise         => %s,\n"
 	  "                data_width      => %zu,\n"
 	  "                data_info_width => %zu,\n"
@@ -165,7 +167,10 @@ emitVhdlShell(FILE *f, Port *wci) {
 	  "                opcode_width    => %zu,\n"
 	  "                own_clock       => %s,\n"
 	  "                early_request   => %s)\n",
-	  name(), slave ? "slave" : "master", BOOL(m_preciseBurst),
+	  name(),
+	  m_isPartitioned ? "part_" : "",
+	  slave ? "slave" : "master",
+	  BOOL(m_preciseBurst),
 	  ocp.MData.value ? ocp.MData.width : 1,
 	  ocp.MDataInfo.value ? ocp.MDataInfo.width : 1,
 	  ocp.MBurstLength.width,
@@ -241,9 +246,20 @@ emitVhdlShell(FILE *f, Port *wci) {
     fprintf(f, "                opcode           => (%zu downto 0 => '0'),\n",
 	    opcode_width-1);
   if (slave)
-    fprintf(f, "                take             => %s_take);\n", name());
+    fprintf(f, "                take             => %s_take", name());
   else
-    fprintf(f, "                give             => %s_give);\n", name());
+    fprintf(f, "                give             => %s_give", name());
+  if (m_isPartitioned)
+    fprintf(f,
+	    ",\n"
+	    "                part_size        => %s_part_size,\n"
+	    "                part_offset      => %s_part_offset,\n"
+	    "                part_start       => %s_part_start,\n"
+	    "                part_ready       => %s_part_ready,\n"
+	    "                part_%s          => %s_part_%s",
+	    name(), name(), name(), name(),
+	    slave ? "take" : "give", name(), slave ? "take" : "give");
+  fprintf(f, ");\n");
 }
 
 const char *WsiPort::
@@ -492,7 +508,15 @@ emitRecordInputs(FILE *f) {
 	    m_dataWidth ?
 	    "    som, eom, valid  : Bool_t;           -- valid means data and byte_enable are present\n" :
 	    "    som, eom  : Bool_t;\n");
-  }
+    if (m_isPartitioned)
+      fprintf(f,
+	      "    part_size        : UShort_t;\n"
+	      "    part_offset      : UShort_t;\n"
+	      "    part_start       : Bool_t;\n"
+	      "    part_ready       : Bool_t;\n");
+  } else if (m_isPartitioned)
+    fprintf(f,
+	      "    part_ready       : Bool_t;\n");
 }
 void WsiPort::
 emitRecordOutputs(FILE *f) {
@@ -501,6 +525,9 @@ emitRecordOutputs(FILE *f) {
     fprintf(f,
 	    "    take             : Bool_t;           -- take data now from this port\n"
 	    "                                         -- can be asserted when ready is true\n");
+    if (m_isPartitioned)
+      fprintf(f,
+	      "    part_take        : Bool_t;           -- take partition data\n");
   } else {
     fprintf(f,
 	    "    give             : Bool_t;           -- give data now to this port\n"
@@ -521,5 +548,11 @@ emitRecordOutputs(FILE *f) {
 	      m_protocol->m_name.c_str() : name());
     fprintf(f,
 	    "    som, eom, valid  : Bool_t;            -- one or more must be true when 'give' is asserted\n");
-      }
+    if (m_isPartitioned)
+      fprintf(f,
+	      "    part_size        : UShort_t;\n"
+	      "    part_offset      : UShort_t;\n"
+	      "    part_start       : Bool_t;\n"
+	      "    part_give        : Bool_t;\n");
+  }
 }

@@ -1,0 +1,4 @@
+<ComponentSpec Name="qdac">
+  <xi:include href='dac-properties'/>
+  <DataInterfaceSpec Name="in" protocol='iqstream_protocol'/>
+</ComponentSpec>

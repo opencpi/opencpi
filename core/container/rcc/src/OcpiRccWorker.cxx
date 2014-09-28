@@ -1111,6 +1111,8 @@ controlOperation(OU::Worker::ControlOperation op) {
    RCCUserBuffer::
    RCCUserBuffer() : m_rccBuffer(&m_taken) {
    }
+   RCCUserBuffer::
+   ~RCCUserBuffer() {}
    void RCCUserBuffer::
    setRccBuffer(RCCBuffer *b) {
      m_rccBuffer = b;

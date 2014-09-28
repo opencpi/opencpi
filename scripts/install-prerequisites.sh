@@ -52,4 +52,7 @@ echo ===========================================================================
 echo Installing Google test '(gtest)' under /opt/opencpi/prerequisites
 scripts/install-gtest.sh
 echo ================================================================================
+echo Installing the LZMA compression library '(lzma)' under /opt/opencpi/prerequisites
+scripts/install-lzma.sh
+echo ================================================================================
 echo All OpenCPI prerequisites have been installed.

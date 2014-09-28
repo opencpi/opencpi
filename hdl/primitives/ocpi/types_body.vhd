@@ -107,6 +107,10 @@ function To_uchar (c: natural) return uchar_t is
 begin
  return to_unsigned(c,uchar_t'length);
 end to_uchar;
+function To_uchar (c: std_logic_vector(uchar_t'range)) return uchar_t is
+begin
+ return unsigned(c);
+end to_uchar;
 function To_ushort (c: natural) return ushort_t is
 begin
  return to_unsigned(c,ushort_t'length);
