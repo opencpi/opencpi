@@ -134,17 +134,25 @@ DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *
   for (unsigned o = 0; o < m_protocol->m_nOperations; o++, op++) {
     OpScaling *os = m_opScaling[o];
     OU::Member *arg = op->m_args;
-    for (unsigned a = 0; a < op->m_nArgs; a++, arg++) {
-      Partitioning *ap = os ? os->m_partitioning[a] : NULL;
-      if (ap) {
-	if (ap->m_scaling.m_min)
-	  m_isPartitioned = true;
-      } else if (os) {
-	if (os->m_defaultPartitioning.m_scaling.m_min != 0)
-	  m_isPartitioned = true;
-      } else if (m_defaultPartitioning.m_scaling.m_min != 0)
-	m_isPartitioned = true;
-    }
+    for (unsigned a = 0; a < op->m_nArgs; a++, arg++)
+      if (arg->m_arrayRank || arg->m_isSequence) {
+	Partitioning *ap = os ? os->m_partitioning[a] : NULL;
+	if (ap) {
+	  if (ap->m_scaling.m_min)
+	    os->m_isPartitioned = true;
+	} else if (os) {
+	  if (os->m_defaultPartitioning.m_scaling.m_min != 0) {
+	    os->m_partitioning[a] = &os->m_defaultPartitioning;
+	    os->m_isPartitioned = true;
+	  }
+	} else if (m_defaultPartitioning.m_scaling.m_min != 0) {
+	  os = m_opScaling[o] = new OpScaling(op->m_nArgs);
+	  os->m_partitioning[a] = &m_defaultPartitioning;
+	  os->m_isPartitioned = true;
+	}
+      }
+    if (os && os->m_isPartitioned)
+      m_isPartitioned = true;
   }
 }
 
@@ -663,7 +671,8 @@ parse(Worker &w, ezxml_t x) {
 
 DataPort::OpScaling::
 OpScaling(size_t nArgs)
-  : m_distribution(All), m_hashField(NULL), m_multiple(false), m_allSeeOne(false), m_allSeeEnd(false) {
+  : m_distribution(All), m_hashField(NULL), m_multiple(false), m_allSeeOne(false),
+    m_allSeeEnd(false), m_isPartitioned(false) {
   m_partitioning.resize(nArgs);
   for (size_t n = 0; n < nArgs; n++)
     m_partitioning[n] = NULL;
