@@ -208,9 +208,17 @@ typedef RCCResult RCCRunMethod(RCCWorker *_this,
 typedef RCCResult RCCPortMethod(RCCWorker *_this,
 				RCCPort *port,
 				RCCResult reason);
+ typedef struct {
+   size_t length;
+   size_t offset;
+   size_t left;
+   size_t right;
+ } RCCPartInfo;
+
 typedef struct {
   void *data;
   size_t maxLength;
+  RCCPartInfo *partInfo;
 
   /* private member for container use */
   size_t length_;
@@ -389,17 +397,6 @@ typedef struct {
    unsigned  wholeSize() const;  // Size of the whole for this message
 
  };
-
-
- struct RCCPartInfo {
-   size_t wholeSize;
-   size_t myoffset;
-   size_t roverlap;
-   size_t loverlap;
- };
-
-
-
 
  // Port inherits the buffer class in order to act as current buffer
  class RCCUserPort : public RCCUserBuffer {
