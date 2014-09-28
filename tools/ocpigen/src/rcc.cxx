@@ -425,12 +425,18 @@ emitImplRCC() {
 	    " * which inherits this one is declared in the skeleton/implementation file.\n"
 	    " */\n"
 	    "class %s : public OCPI::RCC::RCCUserWorker {\n"
-	    "protected:\n"
-	    "  unsigned getRank() const;                        // My rank within my crew \n"
-	    "  unsigned getCrewSize() const ;                   // Number of members in my crew\n"
-	    "  std::vector<unsigned> &getOtherCrewSize() const; // Number of members in crew connected to other end of port, vector len = number of fan in/out\n"
-	    "  unsigned getNearestNeighbor( unsigned next ) const;   // next=0 is nearest, next=1 next nearest etc.\n\n",
+	    "protected:\n",
 	    s.c_str());
+
+    if ( m_scalable ) {
+      fprintf(f,
+	      "\n"
+	      "  unsigned getRank() const;                        // My rank within my crew \n"
+	      "  unsigned getCrewSize() const ;                   // Number of members in my crew\n"
+	      "  std::vector<unsigned> &getOtherCrewSize() const; // Number of members in crew connected to other end of port, vector len = number of fan in/out\n"
+	      "  unsigned getNearestNeighbor( unsigned next ) const;   // next=0 is nearest, next=1 next nearest etc.\n\n"
+	      );
+    }
 
     if (m_slave) {
       // This worker is a proxy.  Give it access to its slave
@@ -1022,7 +1028,7 @@ emitRccCppImpl(FILE *f) {
 	}
 
 
-	// And an class for each arg in the operation
+	// And a class for each arg in the operation
 	OU::Member *m = o->args();
 	for (unsigned n = 0; n < o->nArgs(); n++, m++) {
 	  std::string s;
@@ -1040,13 +1046,20 @@ emitRccCppImpl(FILE *f) {
 		    "          void * getArgAddress( unsigned int, unsigned int);\n"
 		    "       public:\n"
 		    "          %sArg() : m_myptr(NULL){}\n"
-		    "          bool   endOfWhole() const; \n"
-		    "          void partSize( OCPI::RCC::RCCPartInfo & part ) const;\n"
-		    "          inline void * value() { return m_myptr ? m_myptr : (m_myptr = getArgAddress((unsigned)%sPort::%s_OPERATION, (unsigned)%s_ARG)); }\n"
-		    "       } m_%sArg;\n"
-		    ,s.c_str(), 
+		    "          inline void * value() { return m_myptr ? m_myptr : (m_myptr = getArgAddress((unsigned)%sPort::%s_OPERATION, (unsigned)%s_ARG)); }\n",
+		    s.c_str(), 
 		    s.c_str(),
-		    p.c_str(),on.c_str(),s.c_str(),
+		    p.c_str(),on.c_str(),s.c_str()
+		    );
+
+	    if ( m_opScaling[n] != NULL )
+	      fprintf(f,
+		      "          bool   endOfWhole() const; \n"
+		      "          void partSize( OCPI::RCC::RCCPartInfo & part ) const;\n"
+		      );
+
+	    fprintf(f,
+		    "       } m_%sArg;\n",
 		    s.c_str()
 		    );
 
