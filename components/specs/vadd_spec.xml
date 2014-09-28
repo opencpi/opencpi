@@ -2,8 +2,8 @@
   <Properties>
      <Property Name="flag" Type="ULong" Readable="true" Writable="true"/>
   </Properties>
-  <DataInterfaceSpec Name="in0" Producer="false">
-    <ProtocolSummary DataValueWidth="32" MaxMessageValues="4096" NumberOfOpcodes="1" VariableMessageLength="true" ZeroLengthMessages="true"/>
+  <DataInterfaceSpec Name="in0" Producer="false" protocol='stream32_protocol'>
+    <!-- <ProtocolSummary DataValueWidth="32" MaxMessageValues="4096" NumberOfOpcodes="1" VariableMessageLength="true" ZeroLengthMessages="true"/> -->
   </DataInterfaceSpec>
   <DataInterfaceSpec Name="in1" Producer="false">
     <ProtocolSummary DataValueWidth="32" MaxMessageValues="4096" NumberOfOpcodes="1" VariableMessageLength="true" ZeroLengthMessages="true"/>
