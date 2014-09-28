@@ -1219,6 +1219,33 @@ emitRccCImpl1(FILE *f) {
 	m_worker->emitRccStruct(f, o->nArgs(), o->args(), 2, s.c_str(), false, isLast,
 				o->isTopFixedSequence());
 	fprintf(f, "} %s;\n", s.c_str());
+	OpScaling *os = m_opScaling[nn];
+	if (os && os->m_isPartitioned) {
+	  OU::Member *arg = o->m_args;
+	  fprintf(f,
+		  "/*\n"
+		  " * PartInfo Structure for the %s operation on port %s\n"
+		  " */\n"
+		  "typedef struct __attribute__ ((__packed__)) {\n",
+		  o->name().c_str(), name());
+	  for (unsigned a = 0; a < o->m_nArgs; a++, arg++) {
+	    Partitioning *ap = os->m_partitioning[a];
+	    if (ap && ap->m_scaling.m_min) {
+	      fprintf(f, "  %sPartInfo %s_info[%zu];\n",
+		      upperdup(m_worker->m_modelString), arg->m_name.c_str(),
+		      arg->m_isSequence ? 1 : arg->m_arrayRank);
+	      size_t dummy1 = 0;
+	      unsigned dummy2 = 0;
+	      bool dummy3;
+	      m_worker->printRccBaseType(f, arg, 2, dummy1, dummy2, "", false, dummy3);
+	      fprintf(f, " *%s;\n", arg->m_name.c_str());
+	    }
+	  }
+	  fprintf(f,
+		  "} %c%s%c%sPartInfo;\n",
+		  toupper(m_worker->m_implName[0]), m_worker->m_implName+1,
+		  toupper(o->name().c_str()[0]), o->name().c_str() + 1);
+	}
       }
   }
 }

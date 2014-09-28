@@ -143,6 +143,7 @@ class DataPort : public OcpPort {
     bool                        m_allSeeOne;
     bool                        m_allSeeEnd;
     std::vector<Partitioning *> m_partitioning; // tricky: these pointers are arrays for dims
+    bool                        m_isPartitioned;
     OpScaling(size_t nArgs);
     const char *parse(DataPort &dp, OU::Operation &op, ezxml_t x);
   };
