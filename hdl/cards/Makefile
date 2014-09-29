@@ -32,8 +32,7 @@
 Package=ocpi.devices
 XmlIncludeDirs=../../components/specs
 Workers = \
-	limeSPI.hdl \
-
+#	limeSPI.hdl \
 #        limeTx.hdl
 
 include $(OCPI_CDK_DIR)/include/lib.mk
