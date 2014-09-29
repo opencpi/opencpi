@@ -90,7 +90,7 @@ type wci_m2s_t is record
   MAddrSpace : std_logic_vector( 1-1 downto 0);
   MByteEn    : std_logic_vector( 4-1 downto 0);
   MData      : std_logic_vector(32-1 downto 0);
-  MFlag      : std_logic_vector( 2-1 downto 0);
+  MFlag      : std_logic_vector(19-1 downto 0);
 end record wci_m2s_t;
 type wci_m2s_array_t is array(natural range <>) of wci_m2s_t;
 type wci_s2m_t is record
@@ -321,6 +321,28 @@ type unoc_master_out_t is record
   take    : bool_t;                     -- take data from the _in_t: perform dequeue
 end record unoc_master_out_t;
 
+-- The raw property interface for shared I2C and SPIs from the perspective of the
+-- device worker.
+constant raw_max_devices : natural := 4;
+
+-- Output from device worker as master of the rawprop interface
+type raw_prop_out_t is record
+  present : bool_t;                       -- is present - slave ties low
+  reset   : bool_t;                       -- worker is in reset
+  renable : bool_t;                       -- a read is in progress
+  wenable : bool_t;                       -- a write is in progress
+  addr    : ushort_t;                     -- address space within slave
+  benable : std_logic_vector(3 downto 0); -- which bytes are being accessed
+  data    : word32_t;                     -- up to 32 bits of data
+end record raw_prop_out_t;
+-- Input to device worker as master of the rawprop interface
+-- These signals are "broadcast" back to all masters from the one slave
+type raw_prop_in_t is record
+  done    : bool_t;                       -- access is done
+  data    : word32_t;                     -- read data available when done
+  present : std_logic_vector(0 to raw_max_devices-1); -- which of all devices are present
+end record raw_prop_in_t;
+
 component unoc_terminator is
   port(
     up_in      : in  unoc_master_out_t;
@@ -365,6 +387,10 @@ component wci_master is
     worker_in  : in  worker_in_t;
     worker_out : out worker_out_t);
 end component wci_master;
+
+component cwd is
+   port(cwd : out string);
+end component cwd;
 
 end package platform_pkg;
 

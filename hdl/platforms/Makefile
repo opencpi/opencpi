@@ -26,7 +26,7 @@
 ifndef HdlPlatforms
 ifndef HdlPlatform
 ifeq ($(MAKECMDGOALS),clean)
-HdlPlatforms=$(filter-out test Makefile common README README.txt lib specs old,$(wildcard *))
+HdlPlatforms=$(filter-out %.txt test Makefile common README README.txt lib specs old,$(wildcard *))
 else
 HdlPlatforms:=ml605
 endif

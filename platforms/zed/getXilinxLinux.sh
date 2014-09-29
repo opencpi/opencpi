@@ -46,5 +46,9 @@ make ARCH=arm xilinx_zynq_defconfig
 #echo ==============================================================================
 #make ARCH=arm UIMAGE_LOADADDR=0x8000 uImage CROSS_COMPILE=$OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-
 echo ==============================================================================
+echo Preparing the Xilinx linux kernel tree for building external drivers...
+echo ==============================================================================
+make ARCH=arm CROSS_COMPILE=$OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST- modules_prepare
+echo ==============================================================================
 echo The Xilinx Linux Kernel tree for Zynq is available to build the OpenCPI driver
 echo ==============================================================================

@@ -1,4 +1,3 @@
-<RccImplementation>
-  <xi:include href="adc_spec.xml"/>
+<RccImplementation spec='qadc-spec'>
   <ControlInterface SizeOfConfigSpace="1m" ControlOperations="initialize,start,stop,release"/>
 </RccImplementation>
