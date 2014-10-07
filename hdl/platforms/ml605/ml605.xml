@@ -1,5 +1,4 @@
-<HdlPlatform Language="VHDL">
-  <xi:include href="platform_spec"/>
+<HdlPlatform Language="VHDL" spec='platform_spec'>
   <!-- The two ports every platform worker must have - should be in spec but not supported yet -->
   <metadata master='true'/>
   <timeservice master='true'/>
@@ -20,5 +19,57 @@
   <signal input='ppsExtIn'/>
   <signal output='ppsOut'/>
   <device worker='flash'/>
+  <device worker='lime_tx'/>
+  <device worker='lime_spi'/>
+  <!-- <device worker='lime_tx'/> -->
+  <!-- The FMC LPC slot.  We only mention signals that don't have the canonical signal name -->
+  <slot name='FMC_LPC' type='fmc_lpc'>
+   <signal slot='LA00_P_CC' platform='LA00_CC_P'/>
+   <signal slot='LA00_N_CC' platform='LA00_CC_N'/>
+
+   <signal slot='LA01_P_CC' platform='LA01_CC_P'/>
+   <signal slot='LA01_N_CC' platform='LA01_CC_N'/>
+
+   <signal slot='LA17_P_CC' platform='LA17_CC_P'/>
+   <signal slot='LA17_N_CC' platform='LA17_CC_N'/>
+
+   <signal slot='LA18_P_CC' platform='LA18_CC_P'/>
+   <signal slot='LA18_N_CC' platform='LA18_CC_N'/>
+
+  </slot>
+  <slot name='FMC_HPC' type='fmc_hpc'>
+   <signal slot='LA00_P_CC' platform='LA00_CC_P'/>
+   <signal slot='LA00_N_CC' platform='LA00_CC_N'/>
+
+   <signal slot='LA01_P_CC' platform='LA01_CC_P'/>
+   <signal slot='LA01_N_CC' platform='LA01_CC_N'/>
+
+   <signal slot='LA17_P_CC' platform='LA17_CC_P'/>
+   <signal slot='LA17_N_CC' platform='LA17_CC_N'/>
+
+   <signal slot='LA18_P_CC' platform='LA18_CC_P'/>
+   <signal slot='LA18_N_CC' platform='LA18_CC_N'/>
+
+   <signal slot='HA00_P_CC' platform='HA00_CC_P'/>
+   <signal slot='HA00_N_CC' platform='HA00_CC_N'/>
+
+   <signal slot='HA01_P_CC' platform='HA01_CC_P'/>
+   <signal slot='HA01_N_CC' platform='HA01_CC_N'/>
+
+   <signal slot='HA17_P_CC' platform='HA17_CC_P'/>
+   <signal slot='HA17_N_CC' platform='HA17_CC_N'/>
+
+   <signal slot='HB00_P_CC' platform='HB00_CC_P'/>
+   <signal slot='HB00_N_CC' platform='HB00_CC_N'/>
+
+   <signal slot='HB06_P_CC' platform='HB06_CC_P'/>
+   <signal slot='HB06_N_CC' platform='HB06_CC_N'/>
+
+   <signal slot='HB17_P_CC' platform='HB17_CC_P'/>
+   <signal slot='HB17_N_CC' platform='HB17_CC_N'/>
+
+   <signal slot='PG_M2C' platform='PG_M2C_LS'/> <!-- hardware level shifters on carrier -->
+
+  </slot>
 </HdlPlatform>
 

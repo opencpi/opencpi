@@ -23,6 +23,7 @@ enum WIPType {
   TimePort,     // TimeService port
   PropPort,     // raw property port for shared SPI/I2C
   RCCPort,      // An RCC port
+  DevSigPort,   // a port between devices
   NWIPTypes
 };
 
@@ -74,6 +75,8 @@ public:
   const char *doPattern(int n, unsigned wn, bool in, bool master, std::string &suff,
 			bool port = false);
   virtual void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker);
+  virtual bool haveInputs() const { return true; }
+  virtual bool haveWorkerInputs() const { return true; }
   virtual bool haveOutputs() const { return true; }
   virtual bool haveWorkerOutputs() const { return true; }
   virtual const char *typeName() const = 0;

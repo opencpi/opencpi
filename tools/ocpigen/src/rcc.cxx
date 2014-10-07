@@ -879,7 +879,7 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
 
 RccAssembly::
 RccAssembly(ezxml_t xml, const char *xfile, const char *&err)
-  : Worker(xml, xfile, NULL, NULL, err) {
+  : Worker(xml, xfile, "", NULL, err) {
   if (!(err = OE::checkAttrs(xml, IMPL_ATTRS, RCC_TOP_ATTRS, (void*)0)) &&
       !(err = OE::checkElements(xml, IMPL_ELEMS, RCC_IMPL_ELEMS, ASSY_ELEMS, (void*)0)))
     err = parseRcc();

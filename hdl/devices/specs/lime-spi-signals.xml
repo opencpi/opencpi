@@ -1,0 +1,11 @@
+<!-- The signals that are shared between users of the lime_spi module -->
+<signals>
+  <!-- For when there are lime-related input clocks that could be used to drive
+  both RXCLK and TXCLK outputs to the chip or simply be used to clock the IO
+  when the FPGA pins are NOT connected to directly driver the lime. -->
+  <signal input='rx_clk_in'/>
+  <signal input='tx_clk_in'/>
+  <!-- To let each side know whether they are both present -->
+  <signal input='rx_present'/>
+  <signal input='tx_present'/>
+</signals>

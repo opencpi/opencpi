@@ -98,13 +98,13 @@ class Assembly {
   //  size_t m_nConnections;
   Connections   m_connections;
   OU::Assembly *m_utilAssembly;
+  Language      m_language;
   const char
     *parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWorkerOk,
 	       const char *outDir),
     *externalizePort(InstancePort &ip, const char *name, size_t &ordinal),
     *findPort(OU::Assembly::Port &ap, InstancePort *&found),
     *parseConnection(OCPI::Util::Assembly::Connection &aConn);
-  inline const char *myComment() { return m_assyWorker.myComment(); }
   // Find the instance port connected to an external with this name
   InstancePort *
   findInstancePort(const char *name);

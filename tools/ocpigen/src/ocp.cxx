@@ -1,7 +1,7 @@
 #include <assert.h>
 #include "OcpiUtilMisc.h"
 #include "ocp.h"
-#include "wip.h"
+#include "hdl.h"
 #include "assembly.h"
 
 namespace OE=OCPI::Util::EzXml;
@@ -241,7 +241,7 @@ doPatterns(unsigned nWip, size_t &maxPortTypeName) {
   const char *err;
   if ((err = Port::doPatterns(nWip, maxPortTypeName)))
     return err;
-  if (clock && clock->port == this) {
+  if (clock && clock->port == this && !clock->signal) {
     std::string sin;
     // ordinal == -2 means suppress ordinal
     if ((err = doPattern(count > 1 ? 0 : -2, nWip, true, !masterIn(), sin)))

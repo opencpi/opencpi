@@ -1,4 +1,4 @@
-#include "wip.h"
+#include "hdl.h"
 WmemiPort::
 WmemiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
   : OcpPort(w, x, sp, ordinal, WMemIPort, "mem", err) {

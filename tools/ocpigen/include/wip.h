@@ -376,11 +376,28 @@ class RawPropPort : public Port {
   void emitRecordInterface(FILE *f, const char *implName);
   void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
 };
-class CustomPort : public Port {
-  CustomPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
+// The port for inter-device connections
+class DevSignalsPort : public Port {
+  Signals m_signals;
+  bool m_hasInputs;
+  bool m_hasOutputs;
  public:
-  inline const char *prefix() const { return "sig"; }
-  inline const char *typeName() const { return "Signal"; }
+  DevSignalsPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
+  void emitRecordTypes(FILE *f);
+  void emitRecordInterface(FILE *f, const char *implName);
+  inline const char *prefix() const { return "ds"; }
+  inline const char *typeName() const { return "DevSignals"; }
+  bool haveInputs() const { return master ? m_hasInputs : m_hasOutputs; }
+  bool haveWorkerInputs() const { return haveInputs(); }
+  bool haveOutputs() const { return master ? m_hasOutputs : m_hasInputs; }
+  bool haveWorkerOutputs() const { return haveOutputs(); }
+  void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
+  void emitPortSignalsDir(FILE *f, bool output, const char *indent, bool &any,
+			  std::string &comment, std::string &last, std::string &conn,
+			  std::string &index);
+  void emitPortSignals(FILE *f, Attachments &atts, Language lang,
+		       const char *indent, bool &any, std::string &comment,
+		       std::string &last, const char *myComment, OcpAdapt *adapt);
 };
 
 class LocalMemory {
@@ -436,7 +453,7 @@ struct Parsed {
   ezxml_t m_xml;
   Parsed(ezxml_t xml,        // if non-zero, the xml.  If not, then parse the file.
 	 const char *file,   // The file, either where this is embedded or its own file
-	 const char *parent, // The file referencing this file
+	 const std::string &parent, // The file referencing this file
 	 const char *tag,
 	 const char *&err);
 };
@@ -449,30 +466,7 @@ enum Model {
 };
 
 // This class represents a connection to a required worker
-struct Required;
-struct ReqConnection {
-  Port *m_port;
-  Port *m_rq_port;
-  Signal *m_signal;
-  Signal *m_rq_signal;
-  size_t m_index;
-  ReqConnection();
-  const char *parse(ezxml_t x, Worker &w, Required &rq);
-};
-typedef std::list<ReqConnection> ReqConnections;
-typedef ReqConnections::const_iterator ReqConnectionsIter;
-// This class represents a required worker and the connections to it
-struct Required {
-  Worker &m_worker;
-  ReqConnections m_connections;
-  Required(Worker &);
-  const char *parse(ezxml_t rx, Worker &w);
-};
-typedef std::list<Required> Requireds;
-typedef Requireds::const_iterator RequiredsIter;
 
-typedef std::vector<Port*> Ports;
-typedef Ports::const_iterator PortsIter;
 typedef std::vector<Clock*> Clocks;
 typedef Clocks::const_iterator ClocksIter;
 typedef std::list<Worker *> Workers;
@@ -487,7 +481,7 @@ class Worker : public Parsed, public OU::IdentResolver {
   WciPort *m_wci; // Null means no control
   bool m_noControl; // no control port on this one.
   bool m_reusable;
-  const char *m_specFile;
+  std::string m_specFile;
   const char *m_implName;
   const char *m_specName;
   std::string m_package;
@@ -508,7 +502,6 @@ class Worker : public Parsed, public OU::IdentResolver {
   Language m_language;
   Assembly *m_assembly;
   Worker *m_slave;
-  Requireds m_requireds;
   Signals m_signals;
   const char *m_library;            // the component library name where the xml was found
   bool m_outer;                     // only generate the outer skeleton, not the inner one
@@ -523,11 +516,11 @@ class Worker : public Parsed, public OU::IdentResolver {
   std::string m_validScaling; // Expression for error checking overall scaling
   Scaling m_scaling;
   std::map<std::string, Scaling> m_scalingParameters;
-  Worker(ezxml_t xml, const char *xfile, const char *parent,
-	 OU::Assembly::Properties *ipvs, const char *&err);
+  Worker(ezxml_t xml, const char *xfile, const std::string &parent,
+		  OU::Assembly::Properties *ipvs, const char *&err);
   virtual ~Worker();
   static Worker *
-    create(const char *file, const char *parent, const char *package, const char *outDir,
+    create(const char *file, const std::string &parent, const char *package, const char *outDir,
 	   OU::Assembly::Properties *instancePropertyValues, size_t paramConfig, const char *&err);
   bool nonRaw(PropertiesIter pi);
   Clock *addClock();
@@ -597,7 +590,6 @@ class Worker : public Parsed, public OU::IdentResolver {
     *emitArtXML(const char *wksFile),
     *emitWorkersHDL(const char *file),
     *emitAttribute(const char *attr);
-  inline const char *myComment() const { return hdlComment(m_language); }
   Port *findPort(const char *name, Port *except = NULL) const;
   Clock *findClock(const char *name) const;
   void
@@ -649,8 +641,8 @@ extern const char
   *findLibMap(const char *file), // returns mapped lib name from dir name of file or NULL
   *propertyTypes[],
   *getNames(ezxml_t xml, const char *file, const char *tag, std::string &name, std::string &fileName),
-  *tryOneChildInclude(ezxml_t top, std::string &parent, const char *element,
-		      ezxml_t *parsed, const char **childFile, bool optional),
+  *tryOneChildInclude(ezxml_t top, const std::string &parent, const char *element,
+		      ezxml_t *parsed, std::string &childFile, bool optional),
   *emitContainerHDL(Worker*, const char *),
   *emitArtOCL(Worker *);
 

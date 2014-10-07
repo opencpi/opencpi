@@ -8,7 +8,8 @@ namespace OA = OCPI::API;
 Assembly::
 Assembly(Worker &w)
   : m_assyWorker(w), m_isContainer(false), m_isPlatform(false),
-    m_nInstances(0), m_nWCIs(0), m_instances(NULL), m_utilAssembly(NULL) {
+    m_nInstances(0), m_nWCIs(0), m_instances(NULL), m_utilAssembly(NULL),
+    m_language(w.m_language) {
 }
 
 Assembly::
@@ -219,7 +220,7 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
     // know the actual properties and their types from the worker.
     // FIXME: we are assuming that properties here must be parameters?
     if (!w || ai->m_properties.size() || paramConfig) {
-      if (!(w = Worker::create(i->wName, m_assyWorker.m_file.c_str(), NULL, outDir,
+      if (!(w = Worker::create(i->wName, m_assyWorker.m_file, NULL, outDir,
 			       hasConfig ? NULL : &ai->m_properties, paramConfig, err)))
 	return OU::esprintf("for worker %s: %s", i->wName, err);
       m_workers.push_back(w);

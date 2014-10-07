@@ -57,7 +57,9 @@ Implementations = \
 	flash.hdl \
         clkgen_ti_cdce72010.hdl \
 	gbe.hdl \
-
+        lime_spi.hdl \
+        lime_tx.hdl \
+        lime_rx.hdl
 
 
 include $(OCPI_CDK_DIR)/include/lib.mk

@@ -35,6 +35,7 @@
 #ifndef CDKUTILS_H
 #define CDKUTILS_H
 #include <stdio.h>
+#include <string>
 #include "ezxml.h"
 
 extern void
@@ -45,8 +46,8 @@ extern void
 
 extern const char
   **includes, *depFile,
-  *parseFile(const char *file, const char *parent, const char *element,
-	     ezxml_t *xp, const char **xfile, bool optional = false, bool search = true),
+  *parseFile(const char *file, const std::string &parent, const char *element,
+	     ezxml_t *xp, std::string &xfile, bool optional = false, bool search = true),
   *openOutput(const char *name, const char *outDir, const char *prefix, const char *suffix,
 	      const char *ext, const char *other, FILE *&f);
 #endif

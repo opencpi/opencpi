@@ -1,94 +1,86 @@
 #ifndef HDL_DEVICE_H
 #define HDL_DEVICE_H
+#include <assert.h>
 #include <map>
-#include "wip.h"
+#include "ocpigen.h"
+#include "hdl.h"
 
 // A device type is the common information about a set of devices that can use
 // the same device worker implementation.
 // This structure is owned per platform for the sake of the ordinals
-struct DeviceType;
-typedef std::list<DeviceType *>     DeviceTypes;
-typedef DeviceTypes::const_iterator DeviceTypesIter;
-struct DeviceType : public Worker {
-  bool         m_interconnect;  // Can this type of device be used for an interconnect?
-  bool         m_canControl;    // Can this interconnect worker provide control?
-  DeviceType(ezxml_t xml, const char *file, const char *parent, const char *&err);
-  static DeviceType *
-  create(const char *name, const char *parent, DeviceTypes &types, const char *&err);
-  virtual ~DeviceType() {}
-  std::string name() { return m_implName; }
+class Worker;
+struct Required;
+struct ReqConnection {
+  Port  *m_port;
+  Port  *m_rq_port;
+  size_t m_index; // < 0 means no index
+  bool   m_indexed;
+  ReqConnection();
+  const char *parse(ezxml_t x, Worker &w, Required &rq);
 };
-
-struct Device;
-typedef std::list<Device *>     Devices;
-typedef Devices::const_iterator DevicesIter;
-class HdlPlatform;
+typedef std::list<ReqConnection> ReqConnections;
+typedef ReqConnections::const_iterator ReqConnectionsIter;
+// This class represents a required worker and the connections to it
+class HdlDevice;
+struct Required {
+  const HdlDevice &m_type;
+  ReqConnections m_connections;
+  Required(const HdlDevice &);
+  const char *parse(ezxml_t rx, Worker &w);
+};
+typedef std::list<Required> Requireds;
+typedef Requireds::const_iterator RequiredsIter;
+class HdlDevice : public Worker {
+public:
+  bool               m_interconnect;  // Can this type of device be used for an interconnect?
+  bool               m_canControl;    // Can this interconnect worker provide control?
+  Requireds          m_requireds;
+  Worker *create(ezxml_t xml, const char *file, const char *&err);
+  static DeviceTypes s_types;
+  HdlDevice(ezxml_t xml, const char *file, const char *parent, const char *&err);
+  static HdlDevice *
+  get(const char *name, const char *parent, const char *&err);
+  virtual ~HdlDevice() {}
+  const char *name() const;
+  const Ports &ports() const { return m_ports; }
+};
+typedef HdlDevice DeviceType;
+struct Board;
 struct Device {
+  Board &m_board;
   DeviceType *m_deviceType;     // not a reference due to construction issues
   std::string m_name;           // a platform-scoped device name - usually type<ordinal>
   unsigned m_ordinal;           // Ordinal of this device on this platform/card
   // Constructor for defining new devices
-  Device(ezxml_t xml, const char *parent, DeviceTypes &deviceTypes, bool single,
+  Device(Board &b, ezxml_t xml, const char *parent, bool single,
 	 unsigned ordinal, const char *&err);
   static Device *
-  create(ezxml_t xml, const char *parent, DeviceTypes &deviceTypes, bool single,
-	 unsigned ordinal, const char *&err);
-  static const char*
-  parseDevices(ezxml_t xml, const char *parent, DeviceTypes &deviceTypes, Devices &devices);
-  DeviceType &deviceType() { ocpiAssert(m_deviceType); return *m_deviceType; }
-  std::string &name() { return m_name; }
+  create(Board &b, ezxml_t xml, const char *parent, bool single, unsigned ordinal, const char *&err);
+  //  static const char*
+  //  parseDevices(ezxml_t xml, const char *parent, Devices &devices);
+  const DeviceType &deviceType() const { assert(m_deviceType); return *m_deviceType; }
+  const char *name() const { return m_name.c_str(); }
+  static const char *
+  addDevices(Board &b, ezxml_t xml, Devices &devices);
+  static const Device *
+  find(const char *name, const Devices &devices);
+  static const Device &
+  findRequired(const DeviceType &dt, unsigned ordinal, const Devices &devices);
 };
 
-// A slot type is really just a set of signals
-// The direction is all from the perspective of the motherboard (a.k.a. carrier).
-struct SlotType;
-typedef std::map<const char *, SlotType *, OU::ConstCharCaseEqual> SlotTypes;
-typedef SlotTypes::iterator SlotTypesIter;
-struct SlotType {
-  std::string m_name;
-  Signals m_signals;
-  SlotType(const char *file, const char *parent, const char *&err);
-  virtual ~SlotType();
-
-  static SlotType *
-  create(const char *name, const char *parent, SlotTypes &types, const char *&err);
-  static SlotType *
-  find(const char *name, SlotTypes &types);
-};
-
-// A card has a type, a name and a set of card-specific names for its
-// generic (standardized) signals.
-struct Card;
-typedef std::map<const char *, Card *> Cards;
-typedef Cards::iterator CardsIter;
-struct Card {
-  std::string m_name;
-  SlotType &m_type;
-  std::map<Signal *, std::string> m_signals;
-  DeviceTypes m_deviceTypes;  // usually from files, but possibly immediate
-  Devices     m_devices;      // basic physical devices
-  Card(ezxml_t xml, const char *name, SlotType &type, const char *&err);
-  virtual ~Card();
-  static Card *
-  create(const char *file, const char *parent, SlotTypes &types, Cards &cards, const char *&err);
-  static Card *
-  find(const char *name, Cards &cards);
+// common behavior for platforms and cards
+struct Board {
+  Devices  m_devices;      // physical devices on this type of board
+  const Devices &devices() const { return m_devices; }
+  const Device *findDevice(const char *name) const;
   Devices &devices() { return m_devices; }
-  std::string &name() { return m_name; }
-};
-
-struct Slot;
-struct DevInstance {
-  Device &device;
-  Card *card;
-  Slot *slot;
-  bool control;
-  std::string name;
-  DevInstance(Device &d, Card *c, Slot *s, bool control = false)
-  : device(d), card(c), slot(s), control(control) {
+  const Device &findRequired(const DeviceType &dt, unsigned ordinal) const {
+    return Device::findRequired(dt, ordinal, m_devices);
+  }
+  const Device *findDevice(const char *name) {
+    return Device::find(name, m_devices);
   }
 };
-typedef std::list<DevInstance> DevInstances;
-typedef DevInstances::const_iterator DevInstancesIter;
+
 
 #endif

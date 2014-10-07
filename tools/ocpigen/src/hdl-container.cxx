@@ -27,7 +27,37 @@ emitTimeClient(std::string &assy, const char *instance, const char *port) {
 HdlContainer *HdlContainer::
 create(ezxml_t xml, const char *xfile, const char *&err) {
   err = NULL;
-  HdlContainer *p = new HdlContainer(xml, xfile, err);
+  if ((err = OE::checkAttrs(xml, IMPL_ATTRS, HDL_TOP_ATTRS,
+			    HDL_CONTAINER_ATTRS, (void*)0)) ||
+      (err = OE::checkElements(xml, HDL_CONTAINER_ELEMS, (void*)0)))
+    return NULL;
+  std::string myConfig, myAssy;
+  OE::getOptionalString(xml, myConfig, "config");
+  if (myConfig.empty()) {
+    OE::getOptionalString(xml, myConfig, "platform");
+    if (myConfig.empty()) {
+      err = "No platform or platform configration specified in HdlContainer";
+      return NULL;
+    }
+  }
+  OE::getOptionalString(xml, myAssy, "assembly");
+  if (myAssy.empty())
+    if (assembly)
+      myAssy = assembly;
+    else {
+      err = OU::esprintf("No assembly specified for container specified in %s", xfile);
+      return NULL;
+    }
+  std::string configFile, assyFile;
+  HdlConfig *config;
+  HdlAssembly *appAssembly;
+  ezxml_t x;
+  if ((err = parseFile(myConfig.c_str(), xfile, "HdlConfig", &x, configFile)) ||
+      !(config = HdlConfig::create(x, configFile.c_str(), err)) ||
+      (err = parseFile(myAssy.c_str(), xfile, "HdlAssembly", &x, assyFile)) ||
+      !(appAssembly = HdlAssembly::create(x, assyFile.c_str(), err)))
+    return NULL;
+  HdlContainer *p = new HdlContainer(*config, *appAssembly, xml, xfile, err);
   if (err) {
     delete p;
     return NULL;
@@ -35,57 +65,29 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
   return p;
 }
 
-
 HdlContainer::
-HdlContainer(ezxml_t xml, const char *xfile, const char *&err)
-  : Worker(xml, xfile, NULL, NULL, err), m_appAssembly(NULL), m_config(NULL) {
+HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const char *xfile,
+	     const char *&err)
+  : Worker(xml, xfile, "", NULL, err),
+    HdlHasDevInstances(config.m_platform, config.m_plugged),
+    m_appAssembly(appAssembly), m_config(config) {
   bool doDefault = false;
-  if (err ||
-      (err = OE::checkAttrs(m_xml, IMPL_ATTRS, HDL_TOP_ATTRS,
-			    HDL_CONTAINER_ATTRS, (void*)0)) ||
-      (err = OE::checkElements(m_xml, HDL_CONTAINER_ELEMS, (void*)0)) ||
-      (err = OE::getBoolean(m_xml, "default", &doDefault)))
+  if ((err = OE::getBoolean(xml, "default", &doDefault)))
     return;
-  hdlAssy = true;
   // Set the fixed elements that would normally be parsed
   m_noControl = true;
-  std::string myConfig, myAssy;
-  OE::getOptionalString(m_xml, myConfig, "config");
-  if (myConfig.empty()) {
-    OE::getOptionalString(m_xml, myConfig, "platform");
-    if (myConfig.empty()) {
-      err = "No platform or platform configration specified in HdlContainer";
-      return;
-    }
-  }
-  OE::getOptionalString(m_xml, myAssy, "assembly");
-  if (myAssy.empty())
-    if (assembly)
-      myAssy = assembly;
-    else
-      err = OU::esprintf("No assembly specified for container specified in %s", xfile);
-  const char *configFile, *assyFile;
-  if (err || (err = parseFile(myConfig.c_str(), xfile, "HdlConfig", &xml, &configFile)) ||
-      !(m_config = HdlConfig::create(xml, configFile, err)))
-    return;
-  if ((err = parseFile(myAssy.c_str(), xfile, "HdlAssembly", &xml, &assyFile)) ||
-      !(m_appAssembly = HdlAssembly::create(xml, assyFile, err)) ||
-      // This is inferred by a connection, but might have devide attributes someday
-      (err = HdlPlatform::parseDevInstances(m_xml, m_config->platform(),
-					    &m_config->devInstances(), m_devInstances, m_cards, true)))
-    return;
   // Prepare to build (and terminate) the uNocs for interconnects
   // We remember the last instance for each uNoc
   // Establish the NOC usage, if there is any.
   // An interconnect can be on any device worker, but for now it is on the config.
   UNocs uNocs;
-  for (PortsIter pi = m_config->m_ports.begin(); pi != m_config->m_ports.end(); pi++) {
+  for (PortsIter pi = m_config.m_ports.begin(); pi != m_config.m_ports.end(); pi++) {
     Port &p = **pi;
     Port *slave = NULL;
     if (p.master && p.type == NOCPort) {
       size_t len = p.m_name.length();
       // Find the slave port for this master just for error checking
-      for (PortsIter si = m_config->m_ports.begin(); si != m_config->m_ports.end(); si++) {
+      for (PortsIter si = m_config.m_ports.begin(); si != m_config.m_ports.end(); si++) {
 	Port &sp = **si;
 	if (!sp.master && sp.type == NOCPort && !strncasecmp(p.name(), sp.name(), len) &&
 	    !strcasecmp(sp.name() + len, "_slave")) {
@@ -109,10 +111,10 @@ HdlContainer(ezxml_t xml, const char *xfile, const char *&err)
   std::string assy;
   OU::format(assy, "<HdlContainerAssembly name='%s' language='vhdl'>\n", m_name.c_str());
   // The platform configuration instance
-  OU::formatAdd(assy, "  <instance name='pfconfig' worker='%s'/>\n", configFile);
+  OU::formatAdd(assy, "  <instance name='pfconfig' worker='%s'/>\n", m_config.m_file.c_str());
   // Connect the platform configuration to the control plane
-  if (!m_config->m_noControl) {
-    Port &p = *m_config->m_ports[0];
+  if (!m_config.m_noControl) {
+    Port &p = *m_config.m_ports[0];
     OU::formatAdd(assy,
 		  "  <connection count='%zu'>\n"
 		  "    <port instance='ocscp' name='wci'/>\n"
@@ -122,17 +124,17 @@ HdlContainer(ezxml_t xml, const char *xfile, const char *&err)
     nWCIs += p.count;
   }
   // Instance the assembly and connect its wci
-  OU::formatAdd(assy, "  <instance worker='%s'/>\n", assyFile);
+  OU::formatAdd(assy, "  <instance worker='%s'/>\n", m_appAssembly.m_implName);
   // Connect the assembly to the control plane
-  if (!m_appAssembly->m_noControl) {
-    Port &p = *m_appAssembly->m_ports[0];
+  if (!m_appAssembly.m_noControl) {
+    Port &p = *m_appAssembly.m_ports[0];
     OU::formatAdd(assy,
 		  "  <connection count='%zu'>\n"
 		  "    <port instance='ocscp' name='wci' index='%zu'/>\n"
 		  "    <port instance='%s' name='%s'/>\n"
 		  "  </connection>\n",
 		  p.count, nWCIs,
-		  m_appAssembly->m_implName, p.name());
+		  m_appAssembly.m_implName, p.name());
     nWCIs += p.count;
   }
   if (doDefault) {
@@ -144,7 +146,7 @@ HdlContainer(ezxml_t xml, const char *xfile, const char *&err)
       err = "Devices are not allowed in default containers";
       return;
     }
-    for (PortsIter pi = m_appAssembly->m_ports.begin(); pi != m_appAssembly->m_ports.end(); pi++)
+    for (PortsIter pi = m_appAssembly.m_ports.begin(); pi != m_appAssembly.m_ports.end(); pi++)
       if ((*pi)->isData()) {
 	if (uNocs.empty() || uNocs.size() > 1) {
 	  if (!attribute)
@@ -152,7 +154,7 @@ HdlContainer(ezxml_t xml, const char *xfile, const char *&err)
 			       (*pi)->name());
 	  return;
 	}
-	for (PortsIter ii = m_config->m_ports.begin(); ii != m_config->m_ports.end(); ii++) {
+	for (PortsIter ii = m_config.m_ports.begin(); ii != m_config.m_ports.end(); ii++) {
 	  Port &i = **ii;
 	  if (i.master && i.type == NOCPort) {
 	    ContConnect c;
@@ -168,15 +170,15 @@ HdlContainer(ezxml_t xml, const char *xfile, const char *&err)
     for (DevInstancesIter di = m_devInstances.begin(); di != m_devInstances.end(); di++) {
       // Instance the device and connect its wci
       OU::formatAdd(assy, "  <instance name='%s' worker='%s'/>\n",
-		    (*di).device.name().c_str(),
-		    (*di).device.deviceType().name().c_str());
+		    (*di).device.name(),
+		    (*di).device.deviceType().name());
       OU::formatAdd(assy,
 		    "  <connection>\n"
 		    "    <port instance='ocscp' name='wci' index='%zu'/>\n"
 		    "    <port instance='%s' name='%s'/>\n"
 		    "  </connection>\n",
-		    nWCIs, (*di).device.name().c_str(),
-		    (*di).device.deviceType().m_ports[0]->name());
+		    nWCIs, (*di).device.name(),
+		    (*di).device.deviceType().ports()[0]->name());
 
       nWCIs++;
     }
@@ -190,7 +192,7 @@ HdlContainer(ezxml_t xml, const char *xfile, const char *&err)
 		"    <property name='nworkers' value='%zu'/>\n"
 		"  </instance>\n", nWCIs);
   // Connect it to the pf config's cpmaster
-  for (PortsIter ii = m_config->m_ports.begin(); ii != m_config->m_ports.end(); ii++) {
+  for (PortsIter ii = m_config.m_ports.begin(); ii != m_config.m_ports.end(); ii++) {
     Port &i = **ii;
     if (i.master && i.type == CPPort) {
       OU::formatAdd(assy,
@@ -219,42 +221,10 @@ HdlContainer(ezxml_t xml, const char *xfile, const char *&err)
 		  "  </connection>\n",
 		  prevInstance.c_str(), prevPort.c_str(), ii->first);
   }
-#if 0
-  // Add all the requested device instances that are not already in the config
-  for (DevicesIter di = m_devices.begin(); di != m_devices.end(); di++) {
-    Device *dev = *di;
-    for (DevicesIter cdi = m_config->devices().begin(); cdi != m_config->devices().end(); cdi++)
-      if (*cdi == dev) {
-	dev = NULL;
-	break;
-      }
-    if (dev) {
-      Worker &dt = *dev->m_deviceType;
-      OU::formatAdd(assy, "  <instance worker='%s' name='%s' index='%zu'/>\n",
-		    dt.m_implName, dev->m_name.c_str(), index);
-      if (dt.m_noControl)
-	OU::formatAdd(assy, ">\n");
-      else {
-	OU::formatAdd(assy, "index='%zu'/>\n", index);
-	OU::formatAdd(assy,
-		      "  <connection>\n"
-		      "    <port instance='ocscp' name='wci' index='%zu'/>\n"
-		      "    <port instance='%s' name='%s'/>\n"
-		      "  </connection>\n",
-		      index++, dev->m_name.c_str(), dt.m_ports[0]->name);
-      }
-      // Add a time client instance as needed by device instances
-      for (PortsIter pi = dt.m_ports.begin(); pi != dt.m_ports.end(); pi++)
-	if ((*pi)->type == WTIPort)
-	  OU::formatAdd(assy, "  <instance worker='time_client' name='%s_time_client'/>\n",
-			dev->m_name.c_str());
-    }
-  }
-#endif
   // Instance time clients for the assembly
-  for (PortsIter pi = m_appAssembly->m_ports.begin(); pi != m_appAssembly->m_ports.end(); pi++)
+  for (PortsIter pi = m_appAssembly.m_ports.begin(); pi != m_appAssembly.m_ports.end(); pi++)
     if ((*pi)->type == WTIPort)
-      emitTimeClient(assy, m_appAssembly->m_implName, (*pi)->name());
+      emitTimeClient(assy, m_appAssembly.m_implName, (*pi)->name());
   OU::formatAdd(assy,
 		"  <instance worker='metadata'/>\n"
 		"    <connection>\n"
@@ -282,7 +252,7 @@ HdlContainer(ezxml_t xml, const char *xfile, const char *&err)
 
 HdlContainer::
 ~HdlContainer() {
-  delete m_config;
+  delete &m_config;
 }
 
 // Establish and parse connection - THIS MAY IMPLICIT DEVICE INSTANCES
@@ -290,13 +260,13 @@ const char *HdlContainer::
 parseConnection(ezxml_t cx, ContConnect &c) {
   const char *err;
   if ((err = OE::checkAttrs(cx, "external", "instance", "device", "interconnect", "port",
-			    "otherdevice", "otherport", NULL)))
+			    "otherdevice", "otherport", "card", "slot", NULL)))
     return err;
   const char *attr;
   c.external = NULL;
   if ((attr = ezxml_cattr(cx, "external"))) {
     // Instance time clients for the assembly
-    for (PortsIter pi = m_appAssembly->m_ports.begin(); pi != m_appAssembly->m_ports.end(); pi++)
+    for (PortsIter pi = m_appAssembly.m_ports.begin(); pi != m_appAssembly.m_ports.end(); pi++)
       if (!strcasecmp((*pi)->name(), attr)) {
 	c.external = *pi;
 	break;
@@ -311,51 +281,41 @@ parseConnection(ezxml_t cx, ContConnect &c) {
   //    B. Is it instantiated explicitly here
   //    C. Is it instantiated implicitly here
   c.devInConfig = false;
-  if ((attr = ezxml_cattr(cx, "device"))) {
-    std::string card, slot;
-    OE::getOptionalString(cx, card, "card");
-    OE::getOptionalString(cx, slot, "slot");
-    c.devInstance = HdlPlatform::findDevInstance(attr, card, slot, m_config->devInstances());
-    if (c.devInstance)
-      c.devInConfig = true;
-    else if (!(c.devInstance =
-	       HdlPlatform::findDevInstance(attr, card, slot, m_devInstances)) &&
-	     (err =
-	      HdlPlatform::addDevInstance(attr, OE::ezxml_tag(cx), card, slot, false,
-					  m_config->platform(), m_cards, m_devInstances,
-					  c.devInstance)))
-      return err;
-    
-  }
+  if ((attr = ezxml_cattr(cx, "device")) &&
+      (err = parseDevInstance(attr, cx, m_file.c_str(), false, &m_config.devInstances(),
+			      &c.devInstance, &c.devInConfig)))
+    return err;
   if ((attr = ezxml_cattr(cx, "port"))) {
     if (!c.devInstance)
       return OU::esprintf("Port '%s' specified without specifying a device", attr);
-    Device &d = c.devInstance->device;
-    for (PortsIter pi = d.deviceType().m_ports.begin(); pi != d.deviceType().m_ports.end(); pi++)
+    const Device &d = c.devInstance->device;
+    for (PortsIter pi = d.deviceType().ports().begin();
+	 pi != d.deviceType().ports().end(); pi++)
       if (!strcasecmp((*pi)->name(), attr)) {
 	c.port = *pi;
 	break;
       }
     if (!c.port)
-      return OU::esprintf("Port '%s' not found for device '%s'", attr, d.name().c_str());
+      return OU::esprintf("Port '%s' not found for device '%s'", attr, d.name());
     if (!c.port->isData())
-      return OU::esprintf("Port '%s' for device '%s' is not a data port", attr, d.name().c_str());
+      return OU::esprintf("Port '%s' for device '%s' is not a data port", attr, d.name());
   } else if (c.devInstance) {
-    Device &d = c.devInstance->device;
+    const Device &d = c.devInstance->device;
     // Find the one data port
-    for (PortsIter pi = d.deviceType().m_ports.begin(); pi != d.deviceType().m_ports.end(); pi++)
+    for (PortsIter pi = d.deviceType().ports().begin();
+	 pi != d.deviceType().ports().end(); pi++)
       if ((*pi)->isData()) {
 	if (c.port)
 	  return OU::esprintf("There are multiple data ports for device '%s'; you must specify one",
-			      d.name().c_str());
+			      d.name());
 	c.port = *pi;
       }
     if (!c.port)
-      return OU::esprintf("There are no data ports for device '%s'", d.name().c_str());
+      return OU::esprintf("There are no data ports for device '%s'", d.name());
   }
   if ((attr = ezxml_cattr(cx, "interconnect"))) {
     // An interconnect can be on any device worker, but for now it is on the config.
-    for (PortsIter pi = m_config->m_ports.begin(); pi != m_config->m_ports.end(); pi++)
+    for (PortsIter pi = m_config.m_ports.begin(); pi != m_config.m_ports.end(); pi++)
       if (!strcasecmp((*pi)->name(), attr)) {
 	c.interconnect = *pi;
 	break;
@@ -363,7 +323,7 @@ parseConnection(ezxml_t cx, ContConnect &c) {
     if (!c.interconnect ||
 	c.interconnect->type != NOCPort || !c.interconnect->master)
       return OU::esprintf("Interconnect '%s' not found for platform '%s'", attr,
-			   m_config->platform().m_name.c_str());
+			   m_config.platform().m_name.c_str());
   }
   return NULL;
 }
@@ -380,7 +340,7 @@ emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContCon
 			"port %s of %s%s and interconnect %s",
 			port->name(), iname,
 			c.external ? "assembly" : "device",
-			c.external ? "" : c.devInstance->device.name().c_str());
+			c.external ? "" : c.devInstance->device.name());
   // Create the three instances:
   // 1. A unoc node to use the interconnect unoc
   // 2. A DP/DMA module to stream to/from another place on the interconnect
@@ -455,7 +415,7 @@ emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContCon
 		iname, unoc,
 		port->isDataProducer() ? "to" : "from",
 		port->isDataProducer() ? "in" : "out",
-		c.external ? m_appAssembly->m_implName : c.devInstance->device.name().c_str(),
+		c.external ? m_appAssembly.m_implName : c.devInstance->device.name(),
 		port->isDataProducer() ? "from" : "to",
 		port->name());
   OU::format(prevInstance, "%s_ocdp%u", iname, unoc);
@@ -481,14 +441,17 @@ emitConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContConnect
       return err;
   } else if (c.external && c.devInstance) {
     // We need to connect an external port to a port of a device instance.
+    std::string devport;
+    if (c.devInConfig)
+      OU::format(devport, "%s_%s", c.devInstance->device.name(), c.port->name());
     OU::formatAdd(assy,
 		  "  <connection>\n"
 		  "    <port instance='%s' name='%s'/>\n"
 		  "    <port instance='%s' name='%s'/>\n"
 		  "  </connection>\n",
-		  m_appAssembly->m_implName, c.external->name(),
-		  c.devInstance->device.name().c_str(),
-		  c.port->name());
+		  m_appAssembly.m_implName, c.external->name(),
+		  c.devInConfig ? "pfconfig" : c.devInstance->device.name(),
+		  c.devInConfig ? devport.c_str() : c.port->name());
   } else
     return "unsupported container connection";
   return NULL;
@@ -499,9 +462,9 @@ emitAttribute(const char *attr) {
   if (!strcasecmp(attr, "language"))
     printf(m_language == VHDL ? "VHDL" : "Verilog");
   else if (!strcasecmp(attr, "platform"))
-    puts(m_config->platform().m_implName);
+    puts(m_config.platform().m_implName);
   else if (!strcasecmp(attr, "configuration"))
-    puts(m_config->m_implName);
+    puts(m_config.m_implName);
   else
     return OU::esprintf("Unknown container attribute: %s", attr);
   return NULL;
@@ -528,20 +491,20 @@ emitArtXML(const char *wksFile) {
   OU::UuidString uuid_string;
   OU::uuid2string(uuid, uuid_string);
   fprintf(f, "<artifact platform=\"%s\" device=\"%s\" uuid=\"%s\">\n",
-	  m_config->platform().m_name.c_str(), device, uuid_string);
+	  m_config.platform().m_name.c_str(), device, uuid_string);
   // Define all workers: they come from three places:
   // 1. The configuration (which includes the platform worker)
   // 2. The assembly (application workers)
   // 3. The container
   size_t index = 0;
-  m_config->emitXmlWorkers(f);
-  m_appAssembly->emitXmlWorkers(f);
+  m_config.emitXmlWorkers(f);
+  m_appAssembly.emitXmlWorkers(f);
   emitXmlWorkers(f);
-  m_config->emitInstances(f, "p", index);
-  m_appAssembly->emitInstances(f, "a", index);
+  m_config.emitInstances(f, "p", index);
+  m_appAssembly.emitInstances(f, "a", index);
   emitInstances(f, "c", index);
-  m_config->emitInternalConnections(f, "p");
-  m_appAssembly->emitInternalConnections(f, "a");
+  m_config.emitInternalConnections(f, "p");
+  m_appAssembly.emitInternalConnections(f, "a");
   // The only internal data connections in a container might be between
   // an adapter and a device worker or conceivably between two adapters.
   emitInternalConnections(f, "c");
@@ -556,8 +519,8 @@ emitArtXML(const char *wksFile) {
       InstancePort *ap = NULL, *pp = NULL, *ip = NULL; // instance ports for the app, for pf, for internal
       for (AttachmentsIter ai = cc.m_attachments.begin(); ai != cc.m_attachments.end(); ai++) {
 	Attachment &a = **ai;
-	(!strcasecmp(a.m_instPort.m_port->m_worker->m_implName, m_appAssembly->m_implName) ? ap :
-	 !strcasecmp(a.m_instPort.m_port->m_worker->m_implName, m_config->m_implName) ? pp : ip)
+	(!strcasecmp(a.m_instPort.m_port->m_worker->m_implName, m_appAssembly.m_implName) ? ap :
+	 !strcasecmp(a.m_instPort.m_port->m_worker->m_implName, m_config.m_implName) ? pp : ip)
 	  = &a.m_instPort;
       }
       assert(ap || pp || ip);
@@ -565,8 +528,8 @@ emitArtXML(const char *wksFile) {
 	continue; // internal connection already dealt with
       // find the corresponding instport inside each side.
       InstancePort
-	*aap = ap ? m_appAssembly->m_assembly->findInstancePort(ap->m_port->name()) : NULL,
-        *ppp = pp ? m_config->m_assembly->findInstancePort(pp->m_port->name()) : NULL,
+	*aap = ap ? m_appAssembly.m_assembly->findInstancePort(ap->m_port->name()) : NULL,
+        *ppp = pp ? m_config.m_assembly->findInstancePort(pp->m_port->name()) : NULL,
 	*producer = (aap && aap->m_port->isDataProducer() ? aap :
 		     ppp && ppp->m_port->isDataProducer() ? ppp : ip),
 	*consumer = (aap && !aap->m_port->isDataProducer() ? aap :
@@ -586,3 +549,26 @@ emitArtXML(const char *wksFile) {
     return emitWorkersHDL(wksFile);
   return 0;
 }
+
+const char *Worker::
+emitContainerImplHDL(FILE *f) {
+  const char *comment = hdlComment(m_language);
+  fprintf(f,
+	  "%s This file contains the implementation declarations for a container configuration %s\n"
+	  "%s Interface definition signal names are defined with pattern rule: \"%s\"\n\n",
+	  comment, m_implName, comment, m_pattern);
+  fprintf(f,
+	  "Library IEEE; use IEEE.std_logic_1164.all;\n"
+	  "Library ocpi; use ocpi.all, ocpi.types.all;\n"
+          "use work.%s_defs.all;\n",
+	  m_implName);
+  emitVhdlLibraries(f);
+  fprintf(f,
+	  "\nentity %s_rv is\n", m_implName);
+  emitParameters(f, m_language);
+  emitSignals(f, VHDL, true, true, false);
+  fprintf(f, "end entity %s_rv;\n", m_implName);
+  emitVhdlSignalWrapper(f, "ftop");
+  return NULL;
+}
+

@@ -55,8 +55,8 @@ addInclude(const char *inc) {
 // may have the wrong top level element.  If the filename is "-",
 // stdin is assumed.
 const char *
-parseFile(const char *file, const char *parent, const char *element,
-          ezxml_t *xp, const char **xfile, bool optional, bool search) {
+parseFile(const char *file, const std::string &parent, const char *element,
+          ezxml_t *xp, std::string &xfile, bool optional, bool search) {
   const char *err = NULL;
   char *myFile;
   const char *slash = strrchr(file, '/');
@@ -65,9 +65,9 @@ parseFile(const char *file, const char *parent, const char *element,
     asprintf(&myFile, "%s.xml", file);
   else
     myFile = strdup(file);
-  const char *cp = parent ? strrchr(parent, '/') : 0;
+  const char *cp = strrchr(parent.c_str(), '/');
   if (myFile[0] != '/' && cp)
-    asprintf((char**)&cp, "%.*s%s", (int)(cp - parent + 1), parent, myFile);
+    asprintf((char**)&cp, "%.*s%s", (int)(cp - parent.c_str() + 1), parent.c_str(), myFile);
   else
     cp = strdup(myFile);
   std::list<const char *> tries;
@@ -129,9 +129,8 @@ parseFile(const char *file, const char *parent, const char *element,
       }
     } else
       *xp = x;
-    if (xfile)
-      *xfile = strdup(cp);
-    addDep(cp, parent != 0);
+    xfile = cp;
+    addDep(cp, !parent.empty());
   } while (0);
   free(myFile);
   while (!tries.empty()) {

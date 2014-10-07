@@ -159,7 +159,8 @@ parseConfigFile(const char *dir) {
   std::string fname;
   OU::format(fname, "%s/%s-params.xml", dir, m_implName);
   ezxml_t x;
-  if ((err = parseFile(fname.c_str(), NULL, "build", &x, NULL, true, false)))
+  std::string empty;
+  if ((err = parseFile(fname.c_str(), empty, "build", &x, empty, true, false)))
     return err;
   unsigned nConfigs = OE::countChildren(x, "configuration");
   m_paramConfigs.resize(nConfigs);

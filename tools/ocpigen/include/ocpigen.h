@@ -4,6 +4,9 @@
 
 #include <cstdio>
 #include <list>
+#include <string>
+#include <vector>
+#include <ezxml.h>
 
 enum Language {
   NoLanguage,
@@ -13,9 +16,9 @@ enum Language {
   CC
 };
 
-static inline const char *hdlComment(Language lang) { return lang == VHDL ? "--" : "//"; }
-
 class Port;
+typedef std::vector<Port*> Ports;
+typedef Ports::const_iterator PortsIter;
 struct Clock {
   const char *name;
   const char *signal;
@@ -28,10 +31,11 @@ struct Clock {
 
 struct Signal;
 typedef std::list<Signal *> Signals;
-typedef Signals::iterator SignalsIter;
+typedef Signals::const_iterator SignalsIter;
 struct Signal {
   std::string m_name;
-  enum Direction { IN, OUT, INOUT, BIDIRECTIONAL } m_direction;
+  // The NONE is used in contexts where you are saying do not deal with direction
+  enum Direction { IN, OUT, INOUT, BIDIRECTIONAL, NONE } m_direction;
   size_t m_width;
   bool m_differential;
   std::string m_pos; // pattern for positive if not %sp
@@ -39,9 +43,10 @@ struct Signal {
   const char *m_type;
   Signal();
   const char * parse(ezxml_t);
-  static const char *parseSignals(ezxml_t x, Signals &signals);
+  const char *name() const { return m_name.c_str(); }
+  static const char *parseSignals(ezxml_t x, const std::string &parent, Signals &signals);
   static void deleteSignals(Signals &signals);
-  static Signal *find(Signals &signals, const char *name); // poor man's map
+  static Signal *find(const Signals &signals, const char *name); // poor man's map
 };
 
 extern void

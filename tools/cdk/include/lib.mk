@@ -52,7 +52,8 @@ ifneq ($(origin Workers),undefined)
 endif
 unexport Workers
 
-include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
+HdlInstallDir=lib
+include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
 include $(OCPI_CDK_DIR)/include/ocl/ocl-make.mk
 ifndef LibName
@@ -195,6 +196,7 @@ hdlstubs: $(HdlImplementations)
 
 # hdlstubs - no longer
 hdl: speclinks $(HdlImplementations)
+	$(AT)for i in $(HdlTargets); do mkdir -p lib/hdl/$$i; done
 
 cleanxm:
 	$(call CleanModel,xm)

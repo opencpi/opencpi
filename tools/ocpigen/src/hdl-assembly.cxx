@@ -120,15 +120,15 @@ parseHdlAssy() {
     // Create the assy's wci slave port, at the beginning of the list
     Port *wci = createPort<WciPort>(*this, x, NULL, -1, err);
     assert(wci);
-#if 0
-    Port *wci = new Port("wci", this, WCIPort, NULL, nControls);
-    m_ports.insert(m_ports.begin(), wci);
-#endif
     // Clocks: coalesce all WCI clock and clocks with same reqts, into one wci, all for the assy
     clk = addClock();
     // FIXME:  this should access the 0th clock more specifically for VHDL
-    clk->signal = clk->name = nControls > 1 ? "wci0_Clk" : "wci_Clk";
-    clk->reset = nControls > 1 ? "wci0_MReset_n" : "wci_MReset_n";
+    clk->signal =
+      clk->name = nControls > 1 ?
+      (m_language == VHDL ? "wci_in(0).Clk" : "wci0_Clk") : "wci_Clk";
+    clk->reset =
+      nControls > 1 ?
+      (m_language == VHDL ? "wci_in(0).MReset_n" : "wci0_MReset_n") : "wci_MReset_n";
     clk->port = wci;
     wci->myClock = true;
     wci->clock = clk;
@@ -335,10 +335,14 @@ parseHdlAssy() {
         case WSIPort:
         case WMIPort:
 	  // Data ports must explicitly connected.
+	  break;
 	case CPPort:
         case NOCPort:
         case MetadataPort:
         case TimePort:
+          break;
+	case PropPort: // could do partials when multiple count?
+	case DevSigPort: // same?
           break;
         default:
           return "Bad port type";
@@ -385,49 +389,6 @@ Connection(OU::Assembly::Connection *connection, const char *name)
     m_nExternals(0), m_clock(NULL), m_external(NULL), m_count(0) {
 }
 
-#if 0
-// This is where OCP compatibility is checked, and if it can be
-// adjusted via tie-offs or other trivial adaptations, those are done here too
-static const char *
-adjustConnection(Connection &c, InstancePort &consumer, InstancePort &producer, Language lang) {
-  // Check WDI compatibility
-  Port *prod = producer.m_port, *cons = consumer.m_port;
-  // If both sides have protocol, check them for compatibility
-  if (prod->m_protocol->nOperations() && cons->m_protocol->nOperations()) {
-    if (prod->m_protocol->m_dataValueWidth != cons->m_protocol->m_dataValueWidth)
-      return "dataValueWidth incompatibility for connection";
-    if (prod->m_protocol->m_dataValueGranularity < cons->m_protocol->m_dataValueGranularity ||
-	prod->m_protocol->m_dataValueGranularity % cons->m_protocol->m_dataValueGranularity)
-      return "dataValueGranularity incompatibility for connection";
-    if (prod->m_protocol->m_maxMessageValues > cons->m_protocol->m_maxMessageValues)
-      return "maxMessageValues incompatibility for connection";
-    if (prod->m_protocol->name().size() && cons->m_protocol->name().size() &&
-	prod->m_protocol->name() != cons->m_protocol->name())
-      return OU::esprintf("protocol incompatibility: producer: %s vs. consumer: %s",
-			  prod->m_protocol->name().c_str(), cons->m_protocol->name().c_str());
-    if (prod->m_protocol->nOperations() && cons->m_protocol->nOperations() && 
-	prod->m_protocol->nOperations() != cons->m_protocol->nOperations())
-      return "numberOfOpcodes incompatibility for connection";
-    //  if (prod->u.wdi.nOpcodes > cons->u.wdi.nOpcodes)
-    //    return "numberOfOpcodes incompatibility for connection";
-    if (prod->m_protocol->m_variableMessageLength && !cons->m_protocol->m_variableMessageLength)
-      return "variable length producer vs. fixed length consumer incompatibility";
-    if (prod->m_protocol->m_zeroLengthMessages && !cons->m_protocol->m_zeroLengthMessages)
-      return "zero length message incompatibility";
-  }
-  if (prod->type != cons->type)
-    return "profile incompatibility";
-  if (prod->dataWidth != cons->dataWidth)
-    return OU::esprintf("dataWidth incompatibility. producer %zu consumer %zu",
-			prod->dataWidth, cons->dataWidth);
-  if (cons->u.wdi.continuous && !prod->u.wdi.continuous)
-    return "producer is not continuous, but consumer requires it";
-  // Profile-specific error checks and adaptations
-  return prod->adjustConnection(*cons, c.m_masterName.c_str(), lang,
-				producer.m_ocp, consumer.m_ocp);
-}
-#endif
-
 void InstancePort::
 emitConnectionSignal(FILE *f, bool output, Language lang) {
   std::string signal = m_instance->name;
@@ -437,65 +398,7 @@ emitConnectionSignal(FILE *f, bool output, Language lang) {
 		(lang == VHDL ? m_port->typeNameOut.c_str() : m_port->fullNameOut.c_str()) :
 		(lang == VHDL ? m_port->typeNameIn.c_str() : m_port->fullNameIn.c_str()), "");
   (output ? m_signalOut : m_signalIn) = signal;
-#if 1
   m_port->emitConnectionSignal(f, output, lang, signal);
-#else
-   switch (m_port->type) {
-   case WCIPort:
-   case WSIPort:
-   case WMIPort:
-   case WTIPort:
-   case WMemIPort:
-     if (lang == Verilog) {
-       // Generate signals when both sides has the signal configured.
-       OcpSignalDesc *osd;
-       OcpSignal *os;
-       bool wantMaster = m_port->master && output || !m_port->master && !output;
-       for (osd = ocpSignals, os = m_port->ocp.signals; osd->name; os++, osd++)
-	 if (os->master == wantMaster && os->value) {
-	   fprintf(f, "wire ");
-	   if (osd->vector)
-	     fprintf(f, "[%3zu:0] ", os->width - 1);
-	   else
-	     fprintf(f, "        ");
-	   fprintf(f, "%s%s;\n", signal.c_str(), osd->name);
-	 }
-     } else {
-       std::string tname;
-       OU::format(tname, output ? m_port->typeNameOut.c_str() : m_port->typeNameIn.c_str(), "");
-       std::string type;
-       Worker *w = m_instance->worker;
-       // WCI ports on assemblies are always generic generic
-       if (m_port->type == WCIPort && (m_port->master || m_port->m_worker->m_assembly))
-	 OU::format(type, "platform.platform_pkg.wci_%s_%st", output ? "m2s" : "s2m",
-		    m_port->count > 1 ? "array_" : "");
-       else
-	 OU::format(type, "%s.%s_defs.%s%s_t", w->m_library, w->m_implName, tname.c_str(),
-		    m_port->count > 1 ? "_array" : "");
-       if (m_port->count > 1)
-	 OU::formatAdd(type, "(0 to %zu)", m_port->count - 1);
-       // Make master the canonical type?
-       fprintf(f,
-	       "  signal %s : %s;\n", signal.c_str(), type.c_str());
-     }	       
-     break;
-   case CPPort:
-     fprintf(f, "  signal %s : platform.platform_pkg.occp_%s_t;\n",
-	     signal.c_str(), m_port->master == output ? "in" : "out");
-     break;
-   case NOCPort:
-     fprintf(f, "  signal %s : platform.platform_pkg.unoc_master_%s_t;\n",
-	     signal.c_str(), m_port->master == output ? "out" : "in" );
-     break;
-   case MetadataPort:
-     fprintf(f, "  signal %s : platform.platform_pkg.metadata_%s_t;\n",
-	     signal.c_str(), output && m_port->master || !output && !m_port->master ? "out" : "in");
-     break;
-   case TimePort:
-     fprintf(f, "  signal %s : platform.platform_pkg.time_service_t;\n", signal.c_str());
-   default:;
-   }
-#endif
 }
 
 // An instance port that is internal needs to be bound to ONE input and ONE output signal bundle,
@@ -567,88 +470,6 @@ createConnectionSignals(FILE *f, Language lang) {
   return NULL;
 }
 
-#if 0
-// Create the binding for this OCP signal, including any adjustments/adaptations
-// This is a port of an instance in the assembly, never an external one
-void InstancePort::
-connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, OcpAdapt &oa,
-		 std::string &signal, std::string &thisComment, Language lang) {
-#if 0
-  if (&os == &m_port->ocp.Clk)
-    signal = m_instance->m_clocks[m_port->clock->ordinal]->signal;
-  else
-#endif
-  if (m_attachments.empty()) {
-    // A truly unconnected port.  All we want is a tieoff if it is an input
-    // We can always use zero since that will assert reset
-    if (os.master != m_port->master)
-      if (lang == VHDL)
-	signal = osd.vector ? "(others => '0')" : "'0'";
-      else
-	OU::format(signal, "%zu'b0", os.width);
-    else if (lang == VHDL)
-      signal = "open";
-    return;
-  }
-  // Find the other end of the connection
-  assert(m_attachments.size() == 1); // OCP connections are always point-to-point
-  Connection &c = m_attachments.front()->m_connection;
-  assert(c.m_attachments.size() == 2);
-  InstancePort *otherIp = NULL;
-  Attachment *at;
-  for (AttachmentsIter ai = c.m_attachments.begin(); ai != c.m_attachments.end(); ai++)
-    if (&(*ai)->m_instPort != this) {
-      at = *ai;
-      otherIp = &at->m_instPort;
-      break;
-    }
-  assert(otherIp);
-  Port &p = *otherIp->m_port;
-  // Decide on our indexing.  We need an index if our attachment is a subset of
-  // what we are connecting to, which is either another internal port or an external one.
-  // In either case
-  std::string &cName = os.master ? c.m_masterName : c.m_slaveName;
-  size_t index, top, count = 0; // count for indexing purpose
-  if (otherIp->m_port->count > c.m_count) {
-    // We're connecting to something bigger: indexing is needed in this port binding
-    count = c.m_count;
-    index = at->m_index;
-    top = index + count - 1;
-  }
-  std::string temp;
-  if (count) {
-    std::string num, temp1;
-    if (lang == Verilog)
-      OU::format(num, "%zu", index);
-    OU::format(temp1, cName.c_str(), num.c_str());
-    if (count > 1) {
-      assert(lang == VHDL);
-      OU::format(temp, "%s(%zu to %zu)", temp1.c_str(), index, top);
-    } else {
-      if (lang == VHDL)
-	OU::format(temp, "%s(%zu)", temp1.c_str(), index);
-      else
-	temp = temp1;
-    }
-  } else
-    OU::format(temp, cName.c_str(), "");
-  if (lang == VHDL)
-    temp += '.';
-  if (oa.expr) {
-    std::string other;
-    if (oa.other != N_OCP_SIGNALS)
-      temp += ocpSignals[oa.other].name;
-    OU::formatAdd(signal, oa.expr, temp.c_str());
-  } else {
-    signal = temp + osd.name;
-    if (osd.vector && os.width != p.ocp.signals[osd.number].width) {
-      OU::formatAdd(signal, lang == Verilog ? "[%zu:0]" : "(%zu downto 0)", os.width - 1);
-      thisComment = "worker is narrower than external, which is OK";
-    }
-  }
-}
-#endif
-
 void
 doPrev(FILE *f, std::string &last, std::string &comment, const char *myComment) {
   if (last.size()) {
@@ -660,44 +481,6 @@ doPrev(FILE *f, std::string &last, std::string &comment, const char *myComment) 
   last = ",";
   comment = "";
 }
-
-#if 0
-// Emit for one direction
-void InstancePort::
-emitPortSignals(FILE *f, bool output, Language lang, const char *indent,
-		bool &any, std::string &comment, std::string &last) {
-  Port &p = *m_port;
-  std::string name;
-  OU::format(name, output ? p.typeNameOut.c_str() : p.typeNameIn.c_str(), "");
-  // only do WCI with individual signals if it is a slave that isn't an assembly
-  OcpSignalDesc *osd;
-  OcpSignal *os;
-  OcpAdapt *oa;
-  for (osd = ocpSignals, os = p.ocp.signals, oa = m_ocp; osd->name; os++, osd++, oa++)
-    // If the signal is in the interface
-    if (os->value && (output ? os->master == p.master : os->master != p.master)) {
-      std::string signal, thisComment;
-      connectOcpSignal(*osd, *os, *oa, signal, thisComment, lang);
-      /* if (signal.length()) */ {
-	// We have a new one, so can close the previous one
-	doPrev(f, last, comment, hdlComment(lang));
-	if (lang == VHDL) {
-	  if (any)
-	    fputs(indent, f);
-	  fprintf(f, "%s.%s => %s", name.c_str(),
-		  //		  p.master == os->master ? out.c_str() : in.c_str(),
-		  osd->name, signal.c_str());
-	} else {
-	  fprintf(f, "  .%s(%s",
-		  os->signal, signal.c_str());
-	  fprintf(f, ")");
-	}
-	comment = oa->comment ? oa->comment : thisComment.c_str();
-	any = true;
-      }
-    }
-}
-#endif
 
 void Assembly::
 emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
@@ -759,76 +542,30 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
       Clock *c = *ci;
       if (!c->port) {
 	if (lang == Verilog) {
-	  fprintf(f, "  .%s(%s),\n", c->signal,
+	  fprintf(f, "%s  .%s(%s)", any ? ",\n" : "", c->signal,
 		  i->m_clocks[c->ordinal]->signal);
 	  if (c->reset.size())
-	    fprintf(f, "  .%s(%s),\n", c->reset.c_str(),
+	    fprintf(f, ",\n  .%s(%s)", c->reset.c_str(),
 		    i->m_clocks[c->ordinal]->reset.c_str());
 	} else {
 	  fprintf(f, "%s%s%s => %s", any ? ",\n" : "", any ? indent : "",
 		  c->signal, i->m_clocks[c->ordinal]->signal);
 	  if (c->reset.size())
-	    fprintf(f, "%s%s => %s", indent, c->reset.c_str(),
+	    fprintf(f, ",\n%s%s => %s", indent, c->reset.c_str(),
 		    i->m_clocks[c->ordinal]->reset.c_str());
 	}
 	any = true;
       }
     }
-  std::string last;
+  std::string last(any ? "," : "");
   std::string comment;
   InstancePort *ip = i->m_ports;
   for (unsigned n = 0; n < i->worker->m_ports.size(); n++, ip++) {
+    // We can't do this since we need the opportunity of stubbing unconnected ports properly
     //    if (ip->m_attachments.empty())
     //      continue;
-#if 1
     ip->m_port->emitPortSignals(f, ip->m_attachments, lang, indent, any, comment, last,
 				myComment(), ip->m_ocp); 
-#else
-    Attachment *at = ip->m_attachments.front();
-    Connection *c = at ? &at->m_connection : NULL;
-    Port &p = *ip->m_port;
-    std::string in, out;
-    OU::format(in, p.typeNameIn.c_str(), "");
-    OU::format(out, p.typeNameOut.c_str(), "");
-    // only do WCI with individual signals if it is a slave that isn't an assembly
-    if (p.isOCP() && (p.type != WCIPort || (!p.master && !i->worker->m_assembly))) {
-      ip->emitPortSignals(f, false, lang, indent, any, comment, last);
-      ip->emitPortSignals(f, true, lang, indent, any, comment, last);
-    } else {
-      doPrev(f, last, comment, myComment());
-      // Find the widest connection, since that is the one the signal is based on
-      if (p.type == TimePort) {
-	// Only one direction - master outputs to slave
-	fprintf(f, "%s%s => ",
-		any ? indent : "",
-		p.master ? out.c_str() : in.c_str());
-	//	fputs(p.master ? c.m_masterName.c_str() : c.m_slaveName.c_str(), f);
-	fputs(at ? c->m_masterName.c_str() : "open", f);
-      } else {
-	// We need to know the indexing of the other attachment
-	Attachment *otherAt = NULL;
-	for (AttachmentsIter ai = c->m_attachments.begin(); ai != c->m_attachments.end(); ai++)
-	  if (*ai != at) {
-	    otherAt = *ai;
-	    break;
-	  }
-	assert(otherAt);
-	std::string index;
-	// Indexing is necessary when only when we are smaller than the other
-	if (p.count < otherAt->m_instPort.m_port->count)
-	  if (c->m_count > 1)
-	    OU::format(index, "(%zu to %zu)", otherAt->m_index, otherAt->m_index + c->m_count - 1);
-	  else
-	    OU::format(index, "(%zu)", otherAt->m_index);
-	// input, then output
-	fprintf(f, "%s%s => %s%s,\n%s%s => %s%s",
-		any ? indent : "",
-		in.c_str(), p.master ? c->m_slaveName.c_str() : c->m_masterName.c_str(), index.c_str(),
-		indent,
-		out.c_str(), p.master ? c->m_masterName.c_str() : c->m_slaveName.c_str(), index.c_str());
-      }
-    }
-#endif
     any = true;
   } // end of port loop
   // Signals are always mapped as external ports
@@ -859,7 +596,6 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
   fprintf(f, ");%s%s\n", comment.size() ? " // " : "", comment.c_str());
   // Now we must tie off any outputs that are generically expected, but are not
   // part of the worker's interface
-#if 1
   if (i->worker->m_wci) {
     if (!i->worker->m_wci->ocp.SData.value) {
       ip = &i->m_ports[i->worker->m_wci->m_ordinal];
@@ -882,35 +618,6 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
     }
     //    nControlInstances++;
   }
-#else
-  ip = i->m_ports;
-  for (unsigned n = 0; n < i->worker->m_ports.size(); n++, ip++) {
-    switch (ip->m_port->type) {
-    case WCIPort:
-      if (!ip->m_port->ocp.SData.value) {
-	assert(ip->m_attachments.size() == 1);
-	Connection &c = ip->m_attachments.front()->m_connection;
-	assert(c.m_attachments.size() == 2);
-	InstancePort *otherIp = NULL;
-	Attachment *at;
-	for (AttachmentsIter ai = c.m_attachments.begin(); ai != c.m_attachments.end(); ai++)
-	  if (&(*ai)->m_instPort != ip) {
-	    at = *ai;
-	    otherIp = &at->m_instPort;
-	    break;
-	  }
-	assert(otherIp);
-	std::string externalName, num;
-	OU::format(num, "%zu", at->m_index);
-	OU::format(externalName, ip->m_attachments.front()->m_connection.m_slaveName.c_str(), num.c_str());
-	fprintf(f, "assign %sSData = 32'b0;\n", externalName.c_str());
-      }
-      nControlInstances++;
-      break;
-    default:;
-    }
-  }
-#endif
 }
 
  static void
@@ -1223,7 +930,7 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
 
 HdlAssembly::
 HdlAssembly(ezxml_t xml, const char *xfile, const char *&err)
-  : Worker(xml, xfile, NULL, NULL, err) {
+  : Worker(xml, xfile, "", NULL, err) {
   if (!(err = OE::checkAttrs(xml, IMPL_ATTRS, HDL_TOP_ATTRS, (void*)0)) &&
       !(err = OE::checkElements(xml, IMPL_ELEMS, HDL_IMPL_ELEMS, ASSY_ELEMS, (void*)0)))
     err = parseHdl();

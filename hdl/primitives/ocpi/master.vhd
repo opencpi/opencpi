@@ -76,7 +76,8 @@ begin
   MDataLast <= give and eom;
   MReqLast <= give and eom;
   MDataValid <= give and (eom or valid or abort);
-  MDataInfo(MDataInfo'left) <= abort;
+  -- FIXMEL this should be MFlag all over the place
+--  MDataInfo(MDataInfo'left) <= abort;
   MByteEn <= byte_enable when its(valid) else (others => '0');
   MReqInfo <= opcode when last_eom or som else opcode_i;
   -- We need to manage the state at the start of the message

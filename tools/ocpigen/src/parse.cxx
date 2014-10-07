@@ -100,8 +100,8 @@ checkDataPort(ezxml_t impl, Port *&sp) {
 // If not optional then it MUST be the indicated element
 // Also return the file name of the included file.
 static const char *
-tryInclude(ezxml_t x, const char *parent, const char *element, ezxml_t *parsed,
-           const char **child, bool optional) {
+tryInclude(ezxml_t x, const std::string &parent, const char *element, ezxml_t *parsed,
+           std::string &child, bool optional) {
   *parsed = 0;
   const char *eName = ezxml_name(x);
   if (!eName || strcasecmp(eName, "xi:include"))
@@ -109,12 +109,14 @@ tryInclude(ezxml_t x, const char *parent, const char *element, ezxml_t *parsed,
   const char *err;
   if ((err = OE::checkAttrs(x, "href", (void*)0)))
     return err;
-  const char *ifile = ezxml_cattr(x, "href");
-  if (!ifile)
-    return OU::esprintf("xi:include missing an href attribute in file \"%s\"", parent);
-  if ((err = parseFile(ifile, parent, element, parsed, &ifile, optional)))
-    return OU::esprintf("Error in %s: %s", ifile, err);
-  *child = ifile;
+  const char *incfile = ezxml_cattr(x, "href");
+  if (!incfile)
+    return OU::esprintf("xi:include missing an href attribute in file \"%s\"",
+			parent.c_str());
+  std::string ifile;
+  if ((err = parseFile(incfile, parent, element, parsed, ifile, optional)))
+    return OU::esprintf("Error in %s: %s", ifile.c_str(), err);
+  child = ifile;
   return NULL;
 }
 
@@ -122,9 +124,8 @@ tryInclude(ezxml_t x, const char *parent, const char *element, ezxml_t *parsed,
 // optional means the included file can be something else.
 // If success, set *parsed, and maybe *childFile.
 static const char *
-tryChildInclude(ezxml_t x, const char *parent, const char *element,
-                ezxml_t *parsed, const char **childFile, bool optional = false) {
-  *childFile = 0;
+tryChildInclude(ezxml_t x, const std::string &parent, const char *element,
+                ezxml_t *parsed, std::string &childFile, bool optional = false) {
   const char *err = tryInclude(x, parent, element, parsed, childFile, optional);
   if (err || *parsed)
     return err;
@@ -137,8 +138,8 @@ tryChildInclude(ezxml_t x, const char *parent, const char *element,
 
 // Find the single instance of a child, which might be xi:included
 const char *
-tryOneChildInclude(ezxml_t top, std::string &parent, const char *element,
-		   ezxml_t *parsed, const char **childFile, bool optional) {
+tryOneChildInclude(ezxml_t top, const std::string &parent, const char *element,
+		   ezxml_t *parsed, std::string &childFile, bool optional) {
   *parsed = 0;
   const char *err = 0;
   for (ezxml_t x = OE::ezxml_firstChild(top); x; x = OE::ezxml_nextChild(x)) {
@@ -149,24 +150,22 @@ tryOneChildInclude(ezxml_t top, std::string &parent, const char *element,
 	  return OU::esprintf("found duplicate %s element where only one was expected",
 			      element);
 	else {
-	  if (childFile)
-	    *childFile = parent.c_str();
+	  childFile = parent;
 	  *parsed = x;
 	}
       else {
-	const char *file;
+	std::string file;
 	ezxml_t found;
-	if ((err = tryInclude(x, parent.c_str(), element, &found, &file, optional)))
+	if ((err = tryInclude(x, parent, element, &found, file, optional)))
 	  return err;
 	else if (found) {
 	  if (*parsed)
 	    return OU::esprintf("found duplicate %s element in file %s, "
 				"included from file %s, where only one was expected",
-				element, parent.c_str(), file);
+				element, parent.c_str(), file.c_str());
 	  else {
 	    *parsed = found;
-	    if (childFile)
-	      *childFile = file;
+	    childFile = file;
 	  }
 	}
       }
@@ -217,21 +216,21 @@ doMaybeProp(ezxml_t maybe, void *vpinfo) {
   PropInfo &pinfo = *(PropInfo*)vpinfo;
   Worker *w = pinfo.worker;
   ezxml_t props = 0;
-  const char *childFile;
+  std::string childFile;
   const char *err;
   if (pinfo.top) {
-    if ((err = tryChildInclude(maybe, pinfo.parent, "ControlInterface", &props, &childFile, true)))
+    if ((err = tryChildInclude(maybe, pinfo.parent, "ControlInterface", &props, childFile, true)))
       return err;
     if (props) {
       const char *parent = pinfo.parent;
-      pinfo.parent = childFile;
+      pinfo.parent = childFile.c_str();
       err = OE::ezxml_children(props, doMaybeProp, &pinfo);
       pinfo.parent = parent;
       return err;
     }
   }
   if (!props &&
-      (err = tryChildInclude(maybe, pinfo.parent, "Properties", &props, &childFile, pinfo.top)))
+      (err = tryChildInclude(maybe, pinfo.parent, "Properties", &props, childFile, pinfo.top)))
     return err;
   if (props) {
     if (pinfo.anyIsBad)
@@ -239,7 +238,7 @@ doMaybeProp(ezxml_t maybe, void *vpinfo) {
     bool save = pinfo.top;
     pinfo.top = false;
     const char *parent = pinfo.parent;
-    pinfo.parent = childFile;
+    pinfo.parent = childFile.c_str();
     err = OE::ezxml_children(props, doMaybeProp, &pinfo);
     pinfo.parent = parent;
     pinfo.top = save;
@@ -475,9 +474,11 @@ parse(const char *file, ezxml_t prot)
 
 const char *Protocol::
 parseOperation(ezxml_t op) {
-  const char *err, *ifile;
+  const char *err;
+  std::string ifile;
   ezxml_t iprot = 0;
-  if ((err = tryInclude(op, m_port.m_worker->m_file.c_str(), "Protocol", &iprot, &ifile, false)))
+  if ((err = tryInclude(op, m_port.m_worker->m_file.c_str(), "Protocol", &iprot,
+			ifile, false)))
     return err;
   // If it is an "include", basically recurse
   if (iprot) {
@@ -503,16 +504,22 @@ findPackage(ezxml_t spec, const char *package) {
     std::string packageFileDir;
     // If the spec name already has a package, we don't use the package file name
     // to determine the package.
-    const char *base = !strchr(m_specName, '.') && m_specFile ? m_specFile : m_file.c_str();
+    const char *base =
+      !strchr(m_specName, '.') && !m_specFile.empty() ? m_specFile.c_str() : m_file.c_str();
     const char *cp = strrchr(base, '/');
     const char *err;
+    // If the specfile (first) or the implfile (second) has a dir,
+    // look there for package name file.  If not, look in the CWD (the worker dir).
     if (cp)
       packageFileDir.assign(base, cp + 1 - base);
+
     // FIXME: Fix this using the include path maybe?
     std::string packageFileName = packageFileDir + "package-name";
     if ((err = OU::file2String(m_package, packageFileName.c_str()))) {
+      // If that fails, try going up a level (e.g. the top level of a library)
       packageFileName = packageFileDir + "../package-name";
       if ((err = OU::file2String(m_package, packageFileName.c_str()))) {
+	// If that fails, try going up a level and into "lib" where it my be generated
 	packageFileName = packageFileDir + "../lib/package-name";
 	if ((err = OU::file2String(m_package, packageFileName.c_str())))
 	  return OU::esprintf("Missing package-name file: %s", err);
@@ -533,14 +540,13 @@ parseSpec(const char *package) {
   const char *err;
   // xi:includes at this level are component specs, nothing else can be included
   ezxml_t spec = NULL;
-  if ((err = tryOneChildInclude(m_xml, m_file, "ComponentSpec", &spec,
-				&m_specFile, true)))
+  if ((err = tryOneChildInclude(m_xml, m_file, "ComponentSpec", &spec, m_specFile, true)))
     return err;
   const char *specAttr = ezxml_cattr(m_xml, "spec");
   if (specAttr) {
     if (spec)
       return "Can't have both ComponentSpec element (maybe xi:included) and a 'spec' attribute";
-    if ((err = parseFile(specAttr, m_file.c_str(), "ComponentSpec", &spec, &m_specFile, true)))
+    if ((err = parseFile(specAttr, m_file, "ComponentSpec", &spec, m_specFile, true)))
       return err;
   } else if (!spec)
     return "missing componentspec element or spec attribute";
@@ -558,7 +564,8 @@ parseSpec(const char *package) {
     return err;
   // Parse control port info
   ezxml_t ps;
-  if ((err = tryOneChildInclude(spec, m_file, "PropertySummary", &ps, NULL, true)))
+  std::string dummy;
+  if ((err = tryOneChildInclude(spec, m_file, "PropertySummary", &ps, dummy, true)))
     return err;
   if ((err = doProperties(spec, m_file.c_str(), false, ps != NULL)))
     return err;
@@ -589,7 +596,7 @@ parseSpec(const char *package) {
     if (p.isData() && (err = (**pi).parse()))
       return err;
   }
-  return Signal::parseSignals(spec, m_signals);
+  return Signal::parseSignals(spec, m_file, m_signals);
 }
 
 // Called for each non-data impl port type
@@ -695,13 +702,14 @@ getNames(ezxml_t xml, const char *file, const char *tag, std::string &name, std:
 // The factory, which decides which class to instantiate
 // This will evolve as more things are based on derived classes
 Worker *Worker::
-create(const char *file, const char *parent, const char *package, const char *outDir,
+create(const char *file, const std::string &parent, const char *package, const char *outDir,
        OU::Assembly::Properties *instancePVs, size_t paramConfig, const char *&err) {
   err = NULL;
   ezxml_t xml;
-  const char *xfile;
-  if ((err = parseFile(file, parent, NULL, &xml, &xfile)))
+  std::string xf;
+  if ((err = parseFile(file, parent, NULL, &xml, xf)))
     return NULL;
+  const char *xfile = xf.c_str();
   const char *name = ezxml_name(xml);
   if (!name) {
     err = "Missing XML tag";
@@ -718,7 +726,7 @@ create(const char *file, const char *parent, const char *package, const char *ou
     w = HdlAssembly::create(xml, xfile, err);
   else if (!strcasecmp("RccAssembly", name))
     w = RccAssembly::create(xml, xfile, err);
-  else if ((w = new Worker(xml, xfile, NULL, instancePVs, err))) {
+  else if ((w = new Worker(xml, xfile, parent, instancePVs, err))) {
     if (!strcasecmp("RccImplementation", name) || !strcasecmp("RccWorker", name))
       err = w->parseRcc(package);
     else if (!strcasecmp("OclImplementation", name) || !strcasecmp("OclWorker", name))
@@ -860,12 +868,12 @@ parse(Worker &w, ezxml_t x) {
 }
 
 Worker::
-Worker(ezxml_t xml, const char *xfile, const char *parent,
+Worker(ezxml_t xml, const char *xfile, const std::string &parent,
        OU::Assembly::Properties *ipvs, const char *&err)
   : Parsed(xml, xfile, parent, NULL, err),
     m_model(NoModel), m_baseTypes(NULL), m_modelString(NULL), m_isDevice(false), m_wci(NULL),
-    m_noControl(false), m_reusable(false), m_specFile(0), m_implName(m_name.c_str()),
-    m_specName(0), m_isThreaded(false), m_maxPortTypeName(0), m_wciClock(NULL),
+    m_noControl(false), m_reusable(false), m_implName(m_name.c_str()),
+    m_specName(NULL), m_isThreaded(false), m_maxPortTypeName(0), m_wciClock(NULL),
     m_endian(NoEndian), m_needsEndian(false), m_pattern(NULL), m_portPattern(NULL),
     m_staticPattern(NULL), m_defaultDataWidth(-1), m_language(NoLanguage), m_assembly(NULL),
     m_slave(NULL), m_library(NULL), m_outer(false), m_debugProp(NULL), m_instancePVs(ipvs),
@@ -948,10 +956,10 @@ emitAttribute(const char *attr) {
 Parsed::
 Parsed(ezxml_t xml,        // The xml for this entity
        const char *file,   // The file with this as top level, possibly NULL
-       const char *parent, // The file referencing this entity or file, possibly NULL
+       const std::string &parent, // The file referencing this entity or file, possibly NULL
        const char *tag,    // The top level tag for this entity
        const char *&err)   // Errors detected during construction
-  : m_file(file ? file : ""), m_parent(parent ? parent : ""), m_xml(xml) {
+  : m_file(file ? file : ""), m_parent(parent), m_xml(xml) {
   ocpiAssert(xml);
   err = getNames(xml, file, tag, m_name, m_fileName);
 }

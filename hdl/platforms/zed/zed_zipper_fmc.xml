@@ -1,0 +1,3 @@
+<HdlConfig Language='vhdl'>
+  <device name='lime_tx' card='lime-zipper-fmc'/>
+</HdlConfig>

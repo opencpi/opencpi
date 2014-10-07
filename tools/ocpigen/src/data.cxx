@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include "wip.h"
+#include "hdl.h"
 
 const char *DataPort::
 parseDistribution(ezxml_t x, Distribution &d, std::string &hash) {
@@ -174,8 +175,8 @@ DataPort(Worker &w, ezxml_t x, int ordinal, const char *&err)
     return;
   const char *protocolAttr = ezxml_cattr(m_xml, "protocol");
   ezxml_t pSum;
-  const char *protFile = 0;
-  if ((err = tryOneChildInclude(m_xml, m_worker->m_file, "ProtocolSummary", &pSum, &protFile,
+  std::string protFile;
+  if ((err = tryOneChildInclude(m_xml, m_worker->m_file, "ProtocolSummary", &pSum, protFile,
 				true)))
     return;
   m_protocol = new Protocol(*this);
@@ -194,7 +195,7 @@ DataPort(Worker &w, ezxml_t x, int ordinal, const char *&err)
   } else {
     ezxml_t protx = NULL;
     // FIXME: default protocol name from file name
-    if ((err = tryOneChildInclude(m_xml, m_worker->m_file, "Protocol", &protx, &protFile, true)))
+    if ((err = tryOneChildInclude(m_xml, m_worker->m_file, "Protocol", &protx, protFile, true)))
       return;
     if (protocolAttr) {
       if (protx) {
@@ -202,11 +203,11 @@ DataPort(Worker &w, ezxml_t x, int ordinal, const char *&err)
 	return;
       }
       if ((err = parseFile(protocolAttr, m_worker->m_file.c_str(), "protocol", &protx,
-			   &protFile, false)))
+			   protFile, false)))
 	return;
     }
     if (protx) {
-      if ((err = m_protocol->parse(protFile, protx)))
+      if ((err = m_protocol->parse(protFile.c_str(), protx)))
 	return;
       // So if there is a protocol, nOpcodes is initialized from it.
       m_nOpcodes = m_protocol->nOperations();

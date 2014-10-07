@@ -90,7 +90,7 @@ begin
              slv(last_addr_valid_r) &    -- 16
              slv(waiting) &              -- 15 - worker is waiting for barrier
              slv(barrier_r) &            -- 14 - barrier in progress
-             slv0(12-11+1) &             -- 1:11
+             slv0(13-11+1) &             -- 13:11
              slv(wci_in.SFlag(0)) &      -- 10
              slv(attention_r) &          --  9
              sticky_r;                   --  8:0

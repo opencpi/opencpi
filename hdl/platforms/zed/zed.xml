@@ -27,5 +27,35 @@
   <property name="debug_state" type="Ulonglong" volatile='true' debug='true'/>
   <property name="debug_state1" type="Ulonglong" volatile='true' debug='true'/>
   <signal  output='led' width='8'/>
-</HdlPlatform>
 
+  <!-- The Zed FMC LPC slot.
+       Unconnected LPC signals are:
+       - DP0-C2M_P/N
+       - DP0-M2C_P/N
+       - GBTCLK0_M2C_P/N
+       Hard-connected LPC signals are:
+       - PG_C2M is connected to PS_POR_B - the Zynq powerup reset where high is power good.
+       - TCK, TDI, TDO, TMS JTAG for normal jtag chain when an FMC is present
+  -->
+  <slot name='FMC' type='fmc_lpc'>
+    <!-- We only mention signals that don't have the canonical signal name -->
+   <signal slot='LA00_P_CC' platform='LA00_CC_P'/>
+   <signal slot='LA00_N_CC' platform='LA00_CC_N'/>
+
+   <signal slot='LA01_P_CC' platform='LA01_CC_P'/>
+   <signal slot='LA01_N_CC' platform='LA01_CC_N'/>
+
+   <signal slot='LA17_P_CC' platform='LA17_CC_P'/>
+   <signal slot='LA17_N_CC' platform='LA17_CC_N'/>
+
+   <signal slot='LA18_P_CC' platform='LA18_CC_P'/>
+   <signal slot='LA18_N_CC' platform='LA18_CC_N'/>
+
+   <signal slot='CLK0_M2C_N' platform='CLK0_N'/>
+   <signal slot='CLK0_M2C_P' platform='CLK0_P'/>
+
+   <signal slot='CLK1_M2C_N' platform='CLK1_N'/>
+   <signal slot='CLK1_M2C_P' platform='CLK1_P'/>
+
+  </slot>
+</HdlPlatform>

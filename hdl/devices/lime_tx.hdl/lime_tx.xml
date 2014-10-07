@@ -1,0 +1,31 @@
+<!-- Lime transmit/DAC worker.
+     This worker is transmit only - to only use the transmit logic
+     Properties are shared for now -->
+<HdlDevice language="vhdl" FirstRawProperty="dc_regval" spec='qdac-spec'>
+  <!-- This property will tell us which lime modules are present
+       Bit 0 is RX-present, Bit 1 is TX-present -->
+  <property name='Present' type='uchar' volatile='true'/>
+  <!-- This property will tell us which clock to use:
+       0: Use the rxClk input as the transmit clock
+       1: Use the txClk input as the transmit clock
+       2: Use control-clock with divisor as the transmit clock
+  -->
+  <property name='ClkMode' type='uchar' parameter='true' default='0'/>
+  <xi:include href='lime-properties.xml'/>
+  <StreamInterface Name="in" DataWidth="32"/>
+  <rawprop name='rawprops' master='true'/>
+  <devsignals master='true' signals='lime-spi-signals'/>
+  <!-- This device needs a shared submodule for both raw properties and a shared
+       input signal. -->
+  <requires worker='lime_spi'>
+    <connect port="rawprops" to="props" index='1'/>
+    <connect port="dev" to='dev' index='1'/>
+  </requires>
+
+  <!-- Signals connected to the TX pins of the Lime chip -->
+  <!-- Signal names from the data sheet -->
+  <Signal Output="tx_clk"/>           <!-- not connected to the lime on some boards!! -->
+  <Signal Output="txen"/>             <!-- hard to find on the data sheet... -->
+  <Signal Output="tx_iq_sel"/>        <!-- High means I, Low means Q -->
+  <Signal Output="txd" width="12"/>
+</HdlDevice>

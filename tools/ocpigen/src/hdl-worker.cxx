@@ -36,7 +36,7 @@
 #include <assert.h>
 #include <cstdio>
 #include "OcpiUtilMisc.h"
-#include "wip.h"
+#include "hdl.h"
 
 namespace OU = OCPI::Util;
 
@@ -50,7 +50,9 @@ emitSignal(const char *signal, FILE *f, Language lang, Signal::Direction dir,
   OU::format(num, "%u", n);
   asprintf(&name, signal, num.c_str());
   if (lang == VHDL) {
-    const char *io = dir == Signal::IN ? "in " : (dir == Signal::OUT ? "out" : "inout");
+    const char *io =
+      dir == Signal::NONE ? "" :
+      (dir == Signal::IN ? "in  " : (dir == Signal::OUT ? "out " : "inout "));
     if (last.size())
       fprintf(f, last.c_str(), ";");
     if (width < 0) {
@@ -236,18 +238,18 @@ emitParameters(FILE *f, Language lang, bool useDefaults, bool convert) {
 void Worker::
 emitDeviceSignals(FILE *f, Language lang, std::string &last) {
   for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
-    Signal *s = *si;
-    if (s->m_differential) {
+    Signal &s = **si;
+    if (s.m_differential) {
       std::string name;
-      OU::format(name, s->m_pos.c_str(), s->m_name.c_str());
-      emitSignal(name.c_str(), f, lang, s->m_direction, last,
-		 s->m_width ? (int)s->m_width : -1, 0, "", s->m_type);
-      OU::format(name, s->m_neg.c_str(), s->m_name.c_str());
-      emitSignal(name.c_str(), f, lang, s->m_direction, last,
-		 s->m_width ? (int)s->m_width : -1, 0, "", s->m_type);
+      OU::format(name, s.m_pos.c_str(), s.m_name.c_str());
+      emitSignal(name.c_str(), f, lang, s.m_direction, last,
+		 s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
+      OU::format(name, s.m_neg.c_str(), s.m_name.c_str());
+      emitSignal(name.c_str(), f, lang, s.m_direction, last,
+		 s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
     } else
-      emitSignal(s->m_name.c_str(), f, lang, s->m_direction, last,
-		 s->m_width ? (int)s->m_width : -1, 0, "", s->m_type);
+      emitSignal(s.m_name.c_str(), f, lang, s.m_direction, last,
+		 s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
   }
 }
 

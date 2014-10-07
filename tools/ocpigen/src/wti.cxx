@@ -1,4 +1,4 @@
-#include "wip.h"
+#include "hdl.h"
 
 WtiPort::
 WtiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)

@@ -1,0 +1,23 @@
+<!-- Lime SPI module is a no-control, no-data module, supporting
+     two raw property ports, one for rx (always 0), and one for tx (always 1),
+     with a shared reset
+     -->
+<HdlDevice language="vhdl">
+  <ComponentSpec name="lime_spi" nocontrol='true'/>
+  <rawprop name='props' count='2' optional='true'/>
+  <!-- The lime-specific signal bundle used by both tx and rx-->
+  <devsignals count='2' optional='true' signals='lime-spi-signals'/>
+
+  <!-- Signal names from the data sheet -->
+  <!-- Shared reset signal. Active LOW -->
+  <Signal Output="reset"/>
+  <!-- SPI signals -->
+  <Signal Input="sdo"/>
+  <Signal Output="sclk"/>
+  <!-- Serial enable Active LOW -->
+  <Signal Output="sen"/>
+  <Signal Output="sdio"/>
+  <!-- Receive clock from the lime chip which might be used as transmit clock -->
+  <Signal Input="rx_clk_in"/> <!-- could be rx_clk_out from the lime chip -->
+  <Signal Input="tx_clk_in"/>
+</HdlDevice>

@@ -1,5 +1,5 @@
 #include <assert.h>
-#include "wip.h"
+#include "hdl.h"
 #include "assembly.h"
 
 Port::
@@ -371,31 +371,46 @@ emitRecordInterface(FILE */*f*/, const char */*implName*/) {}
 
 void Port::
 emitRecordArray(FILE *f) {
-  std::string in, out;
-  OU::format(in, typeNameIn.c_str(), "");
-  OU::format(out, typeNameOut.c_str(), "");
-  if (count > 1)
-    fprintf(f,
-	    "  type %s_array_t is array(0 to %zu) of %s_t;\n"
-	    "  type %s_array_t is array(0 to %zu) of %s_t;\n",
-	    in.c_str(), count-1, in.c_str(), 
-	    out.c_str(), count-1, out.c_str());
+  if (count > 1) {
+    if (haveInputs()) {
+      std::string in;
+      OU::format(in, typeNameIn.c_str(), "");
+      fprintf(f,
+	      "  type %s_array_t is array(0 to %zu) of %s_t;\n",
+	      in.c_str(), count-1, in.c_str());
+    }
+    if (haveOutputs()) {
+      std::string out;
+      OU::format(out, typeNameOut.c_str(), "");
+      fprintf(f,
+	      "  type %s_array_t is array(0 to %zu) of %s_t;\n",
+	      out.c_str(), count-1, out.c_str());
+    }
+  }
 }
 
 void Port::
-emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool /*inWorker*/) {
-  if (last.size())
-    fprintf(f, last.c_str(), ";");
-  std::string in, out;
-  OU::format(in, typeNameIn.c_str(), "");
-  OU::format(out, typeNameOut.c_str(), "");
-  OU::format(last,
-	     "  %-*s : in  %s%s%s_t;\n"
+emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker) {
+  if (inWorker ? haveWorkerInputs() : haveInputs()) {
+    if (last.size())
+      fprintf(f, last.c_str(), ";\n");
+    std::string in;
+    OU::format(in, typeNameIn.c_str(), "");
+    OU::format(last,
+	       "  %-*s : in  %s%s%s_t%%s",
+	       (int)m_worker->m_maxPortTypeName, in.c_str(), prefix, in.c_str(),
+	       count > 1 ? "_array" : "");
+  }
+  if (inWorker ? haveWorkerOutputs() : haveOutputs()) {
+    if (last.size())
+      fprintf(f, last.c_str(), ";\n");
+    std::string out;
+    OU::format(out, typeNameOut.c_str(), "");
+    OU::format(last,
 	     "  %-*s : out %s%s%s_t%%s",
-	     (int)m_worker->m_maxPortTypeName, in.c_str(), prefix, in.c_str(),
-	     count > 1 ? "_array" : "",
 	     (int)m_worker->m_maxPortTypeName, out.c_str(), prefix, out.c_str(),
 	     count > 1 ? "_array" : "");
+  }
 }
 
 // Default is to just use record signals for VHDL
@@ -414,15 +429,22 @@ emitVerilogSignals(FILE */*f*/) {}
 
 void Port::
 emitVHDLShellPortMap(FILE *f, std::string &last) {
-  std::string in, out;
-  OU::format(in, typeNameIn.c_str(), "");
-  OU::format(out, typeNameOut.c_str(), "");
-  fprintf(f,
-	  "%s    %s => %s,\n"
-	  "    %s => %s",
-	  last.c_str(),
-	  in.c_str(), in.c_str(),
-	  out.c_str(), out.c_str());
+  if (haveWorkerInputs()) {
+    std::string in;
+    OU::format(in, typeNameIn.c_str(), "");
+    fprintf(f,
+	    "%s    %s => %s",
+	    last.c_str(),
+	    in.c_str(), in.c_str());
+  }
+  if (haveWorkerOutputs()) {
+    std::string out;
+    OU::format(out, typeNameOut.c_str(), "");
+    fprintf(f,
+	    "%s    %s => %s",
+	    last.c_str(),
+	    out.c_str(), out.c_str());
+  }
 }
 
 void Port::
@@ -472,11 +494,17 @@ emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *inden
   OU::format(in, typeNameIn.c_str(), "");
   OU::format(out, typeNameOut.c_str(), "");
   // input, then output
-  fprintf(f, "%s%s => %s%s,\n%s%s => %s%s",
-	  any ? indent : "",
-	  in.c_str(), master ? c->m_slaveName.c_str() : c->m_masterName.c_str(),
-	  index.c_str(), indent, out.c_str(),
-	  master ? c->m_masterName.c_str() : c->m_slaveName.c_str(), index.c_str());
+  if (haveInputs()) {
+    fprintf(f, "%s%s => %s%s",
+	    any ? indent : "",
+	    in.c_str(), master ? c->m_slaveName.c_str() : c->m_masterName.c_str(),
+	    index.c_str());
+    any = true;
+  }
+  if (haveOutputs())
+    fprintf(f, "%s%s%s => %s%s",
+	    haveInputs() ? ",\n" : "", any ? indent : "", out.c_str(),
+	    master ? c->m_masterName.c_str() : c->m_slaveName.c_str(), index.c_str());
 }
 
 void Port::
@@ -522,13 +550,21 @@ emitRecordInterface(FILE *f, const char *implName) {
 	  typeName(), name(), implName,
 	  out.c_str(), master ? "out" : "in");
   if (count > 1)
-    emitRecordArray(f);
+      fprintf(f,
+	      "  subtype %s_array_t is platform.platform_pkg.raw_prop_%s_array_t(0 to %zu);\n"
+	      "  subtype %s_array_t is platform.platform_pkg.raw_prop_%s_array_t(0 to %zu);\n",
+	      in.c_str(), master ? "in" : "out", count-1,
+	      out.c_str(), master ? "out" : "in", count-1);
 }
 
 void RawPropPort::
 emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signal) {
-  fprintf(f, "  signal %s : platform.platform_pkg.rawprop_%s_t;\n",
-	  signal.c_str(), master == output ? "out" : "in" );
+  fprintf(f, "  signal %s : platform.platform_pkg.raw_prop_%s%s_t",
+	  signal.c_str(), master == output ? "out" : "in",
+	  count > 1 ? "_array" : "");
+  if (count > 1)
+    fprintf(f, "(0 to %zu)", count - 1);
+  fprintf(f, ";\n");
 }
 
 CpPort::

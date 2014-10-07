@@ -1,5 +1,5 @@
 #include <assert.h>
-#include "wip.h"
+#include "hdl.h"
 
 // Property handling is not implemented here, but is still a worker-level issue.
 // FIXME: move properties into the realm of WCI (big)
@@ -114,9 +114,12 @@ emitImplAliases(FILE *f, unsigned n, Language lang) {
     fprintf(f,
 	    "  wire %sTerminate = %sMFlag[0];\n"
 	    "  wire %sEndian    = %sMFlag[1];\n"
-	    "  wire %sBarrier   = %sMFlag[2];\n"
 	    "  wire [2:0] %sControlOp = %sMAddr[4:2];\n",
-	    pin, pin, pin, pin, pin, pin, pin, pin);
+	    pin, pin, pin, pin, pin, pin);
+    if (m_worker->m_scalable)
+      fprintf(f,
+	      "  wire %sBarrier   = %sMFlag[2];\n",
+	      pin, pin);
     if (m_worker->m_ctl.sizeOfConfigSpace)
       fprintf(f,
 	      "  wire %sConfig    = %sMAddrSpace[0];\n"

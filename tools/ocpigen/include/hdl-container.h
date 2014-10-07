@@ -1,7 +1,8 @@
 #ifndef HDL_CONTAINER_H
 #define HDL_CONTAINER_H
 #include <map>
-#include "hdl-platform.h"
+#include <list>
+#include "hdl-config.h"
 
 // Container connections (user oriented high level)
 struct ContConnect {
@@ -21,7 +22,8 @@ typedef std::map<const char *, unsigned, OU::ConstCharComp> UNocs;
 typedef UNocs::iterator UNocsIter;
 
 // A container builds on a platform configuration and an assembly
-// it adds devices and adapters
+// The pf config has device instances, and cards in slots
+// The container object has MORE devices instances and cards in slots
 // You specify devices and external port mappings
 // basically connecting external ports to device ports
 // <connection external="foo" device="dev" [port="bar"]/>
@@ -29,12 +31,9 @@ typedef UNocs::iterator UNocsIter;
 #define HDL_CONTAINER_ATTRS "platform", "config", "configuration", "assembly", "default"
 #define HDL_CONTAINER_ELEMS "connection"
 class HdlAssembly;
-class HdlContainer : public Worker {
-  HdlAssembly *m_appAssembly;
-  HdlConfig   *m_config;       // FIXME should be reference
-  DeviceTypes  m_deviceTypes;  // Device types introduced by cards in slots
-  DevInstances m_devInstances; // basic physical devices, either on platform or cards
-  Cards        m_cards;        // cards in this configuration
+class HdlContainer : public Worker, public HdlHasDevInstances {
+  HdlAssembly &m_appAssembly;
+  HdlConfig   &m_config;
   const char *
   parseConnection(ezxml_t cx, ContConnect &c);
   const char *
@@ -44,7 +43,8 @@ class HdlContainer : public Worker {
 public:  
   static HdlContainer *
   create(ezxml_t xml, const char *xfile, const char *&err);
-  HdlContainer(ezxml_t xml, const char *xfile, const char *&err);
+  HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const char *xfile,
+	       const char *&err);
   virtual ~HdlContainer();
   const char
     *emitAttribute(const char *attr),

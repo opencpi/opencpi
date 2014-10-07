@@ -37,7 +37,7 @@ Worker_$(Worker)_xml:=$(Worker).xml
 OcpiLanguage:=verilog
 #$(eval $(call OcpiSetLanguage,$(CwdName).xml))
 
-override ComponentLibraries+= components devices adapters # cards
+override ComponentLibraries+= components devices adapters cards
 $(eval $(HdlSearchComponentLibraries))
 override XmlIncludeDirs+=. $(HdlPlatformsDir) $(HdlPlatformsDir)/specs
 override HdlLibraries+=platform
