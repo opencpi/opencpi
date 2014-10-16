@@ -454,7 +454,8 @@ namespace OCPI {
 	m_specName += component;
 	myBase = compName;
       }
-      if ((err = OE::checkElements(ix, "property", NULL)))
+      // FIXME: somehow pass in valid elements or do this test somewhere else...
+      if ((err = OE::checkElements(ix, "property", "signal", NULL)))
 	return err;
       // Figure out the name of this instance.
       if (!OE::getOptionalString(ix, m_name, "name")) {

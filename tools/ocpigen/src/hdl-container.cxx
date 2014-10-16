@@ -39,6 +39,8 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
       err = "No platform or platform configration specified in HdlContainer";
       return NULL;
     }
+    if (!strchr(myConfig.c_str(), '/'))
+      myConfig = myConfig + "/" + myConfig + "_base";
   }
   OE::getOptionalString(xml, myAssy, "assembly");
   if (myAssy.empty())
@@ -68,7 +70,7 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
 HdlContainer::
 HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const char *xfile,
 	     const char *&err)
-  : Worker(xml, xfile, "", NULL, err),
+  : Worker(xml, xfile, "", Worker::Container, NULL, err),
     HdlHasDevInstances(config.m_platform, config.m_plugged),
     m_appAssembly(appAssembly), m_config(config) {
   bool doDefault = false;
@@ -111,7 +113,19 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
   std::string assy;
   OU::format(assy, "<HdlContainerAssembly name='%s' language='vhdl'>\n", m_name.c_str());
   // The platform configuration instance
-  OU::formatAdd(assy, "  <instance name='pfconfig' worker='%s'/>\n", m_config.m_file.c_str());
+  OU::formatAdd(assy, "  <instance name='pfconfig' worker='%s'>\n", m_config.m_file.c_str());
+  // We must map any signals from card-based device workers to the slot signals.
+  // Devices on platforms will already have the right default external signal names.
+  for (DevInstancesIter di = m_config.m_devInstances.begin();
+       di != m_config.m_devInstances.end(); di++)
+    mapDevSignals(assy, *di, false);
+  // We must force platform signals to be mapped to themselves.
+  // FIXME: when platforms are devices, we could remap those signals too.
+  for (SignalsIter s = m_config.m_platform.Worker::m_signals.begin();
+       s != m_config.m_platform.Worker::m_signals.end(); s++)
+    OU::formatAdd(assy, "    <signal name='%s' external='%s'/>\n",
+		  (*s)->name(), (*s)->name());
+  OU::formatAdd(assy, "  </instance>\n");
   // Connect the platform configuration to the control plane
   if (!m_config.m_noControl) {
     Port &p = *m_config.m_ports[0];
@@ -169,22 +183,27 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
   } else {
     for (DevInstancesIter di = m_devInstances.begin(); di != m_devInstances.end(); di++) {
       // Instance the device and connect its wci
-      OU::formatAdd(assy, "  <instance name='%s' worker='%s'/>\n",
-		    (*di).device.name(),
+      OU::formatAdd(assy, "  <instance name='%s' worker='%s'>\n",
+		    (*di).name(),
 		    (*di).device.deviceType().name());
-      OU::formatAdd(assy,
-		    "  <connection>\n"
-		    "    <port instance='ocscp' name='wci' index='%zu'/>\n"
-		    "    <port instance='%s' name='%s'/>\n"
-		    "  </connection>\n",
-		    nWCIs, (*di).device.name(),
-		    (*di).device.deviceType().ports()[0]->name());
-
-      nWCIs++;
+      mapDevSignals(assy, *di, true);
+      assy += "  </instance>\n";
+      if (!(*di).device.deviceType().m_noControl) {
+	OU::formatAdd(assy,
+		      "  <connection>\n"
+		      "    <port instance='ocscp' name='wci' index='%zu'/>\n"
+		      "    <port instance='%s' name='%s'/>\n"
+		      "  </connection>\n",
+		      nWCIs, (*di).name(),
+		      (*di).device.deviceType().ports()[0]->name());
+      
+	nWCIs++;
+      }
     }
     for (ContConnectsIter ci = connections.begin(); ci != connections.end(); ci++)
       if ((err = emitConnection(assy, uNocs, nWCIs, *ci)))
 	return;
+    emitSubdeviceConnections(assy);
   }
   // Instance the scalable control plane
   OU::formatAdd(assy,
@@ -234,20 +253,81 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
   OU::formatAdd(assy, "</HdlContainerAssembly>\n");
   // The assembly will automatically inherit all the signals, prefixed by instance.
   //  if (!attribute)
-    ocpiInfo("=======Begin generated container assembly=======\n"
-	     "%s"
-	     "=======End generated container assembly=======\n",
-	     assy.c_str());
+  ocpiInfo("=======Begin generated container assembly=======\n"
+	   "%s"
+	   "=======End generated container assembly=======\n",
+	   assy.c_str());
   // Now we hack the (inherited) worker to have the xml for the assembly we just generated.
   char *copy = strdup(assy.c_str());
   ezxml_t x;
-  if ((err = OE::ezxml_parse_str(copy, strlen(copy), x)))
+  if ((err = OE::ezxml_parse_str(copy, strlen(copy), x))) {
     err = OU::esprintf("XML Parsing error on generated container assembly: %s", err);
-  else {
-    m_xml = x;
-    err = parseHdl();
-    m_assembly->m_isContainer = true;
+    return;
   }
+  m_xml = x;
+  if ((err = parseHdl()))
+    return;
+  // Make all device instances signals external that are not mapped
+  unsigned n = 0;
+  for (Instance *i = m_assembly->m_instances; n < m_assembly->m_nInstances; i++, n++) {
+    for (SignalsIter si = i->worker->m_signals.begin(); si != i->worker->m_signals.end(); si++) {
+      // If the signal is mapped, that is the external signal.
+      Signal *s = new Signal(**si);
+      bool single;
+      for (unsigned n = 0; s->m_width ? n < s->m_width : n == 0; n++) {
+	const char *external = i->m_extmap.findSignal(*si, n, single);
+	if (external) {
+	  if (!*external)
+	    continue;
+	  // If device signal is explicitly mapped, then external signal name is the mapped name
+	  s->m_name = external;
+	} else if (!i->worker->m_assembly)
+	  // Otherwise, if it is included here, it is prefixed with its instance name
+	  OU::format(s->m_name, "%s_%s", i->name, s->m_name.c_str());
+	// Otherwise its signal name IS the external name
+	m_signals.push_back(s);
+	m_sigmap[s->name()] = s;
+	if (single)
+	  s->m_width = 0;
+	else
+	  break;
+      }
+    }
+  }
+
+  // Make all slot signals external whether they are used or not.
+  for (SlotsIter sli = m_platform.slots().begin(); sli != m_platform.slots().end(); sli++) {
+    const Slot &s = *(*sli).second;
+    const SlotType &t = s.m_type;
+    unsigned n = 0;
+    for (SignalsIter si = t.m_signals.begin(); si != t.m_signals.end(); si++, n++) {
+      Signal &sig = *new Signal(**si);
+      Slot::SignalsIter ssi = s.m_signals.find(*si);
+      sig.m_name = s.m_name + "_" +
+	(ssi == s.m_signals.end() ? (*si)->name() : ssi->second.c_str());
+      if (!m_sigmap.findSignal(sig.m_name)) {
+	m_signals.push_back(&sig);
+	m_sigmap[sig.name()] = &sig;
+      }
+    }
+  }
+#if 0
+  // Externalize all the device signals for devices that aren't on cards.
+  unsigned n = 0;
+  for (Instance *i = m_assembly->m_instances; n < m_assembly->m_nInstances; i++, n++) {
+    for (SignalsIter si = i->worker->m_signals.begin(); si != i->worker->m_signals.end(); si++) {
+      Signal &ws = **si;
+      
+
+
+      Signal *s = new Signal(**si);
+      //if (i->worker->m_isDevice)
+      //s->m_name = i->name + ("_" + s->m_name);
+      OU::format(s->m_name, "%s_%s", i->name, s->m_name.c_str());
+      m_signals.push_back(s);
+    }
+  }
+#endif
 }
 
 HdlContainer::
@@ -288,7 +368,7 @@ parseConnection(ezxml_t cx, ContConnect &c) {
   if ((attr = ezxml_cattr(cx, "port"))) {
     if (!c.devInstance)
       return OU::esprintf("Port '%s' specified without specifying a device", attr);
-    const Device &d = c.devInstance->device;
+    const ::Device &d = c.devInstance->device;
     for (PortsIter pi = d.deviceType().ports().begin();
 	 pi != d.deviceType().ports().end(); pi++)
       if (!strcasecmp((*pi)->name(), attr)) {
@@ -300,7 +380,7 @@ parseConnection(ezxml_t cx, ContConnect &c) {
     if (!c.port->isData())
       return OU::esprintf("Port '%s' for device '%s' is not a data port", attr, d.name());
   } else if (c.devInstance) {
-    const Device &d = c.devInstance->device;
+    const ::Device &d = c.devInstance->device;
     // Find the one data port
     for (PortsIter pi = d.deviceType().ports().begin();
 	 pi != d.deviceType().ports().end(); pi++)
@@ -415,7 +495,7 @@ emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContCon
 		iname, unoc,
 		port->isDataProducer() ? "to" : "from",
 		port->isDataProducer() ? "in" : "out",
-		c.external ? m_appAssembly.m_implName : c.devInstance->device.name(),
+		c.external ? m_appAssembly.m_implName : c.devInstance->name(),
 		port->isDataProducer() ? "from" : "to",
 		port->name());
   OU::format(prevInstance, "%s_ocdp%u", iname, unoc);
@@ -443,14 +523,14 @@ emitConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContConnect
     // We need to connect an external port to a port of a device instance.
     std::string devport;
     if (c.devInConfig)
-      OU::format(devport, "%s_%s", c.devInstance->device.name(), c.port->name());
+      OU::format(devport, "%s_%s", c.devInstance->name(), c.port->name());
     OU::formatAdd(assy,
 		  "  <connection>\n"
 		  "    <port instance='%s' name='%s'/>\n"
 		  "    <port instance='%s' name='%s'/>\n"
 		  "  </connection>\n",
 		  m_appAssembly.m_implName, c.external->name(),
-		  c.devInConfig ? "pfconfig" : c.devInstance->device.name(),
+		  c.devInConfig ? "pfconfig" : c.devInstance->name(),
 		  c.devInConfig ? devport.c_str() : c.port->name());
   } else
     return "unsupported container connection";
@@ -548,6 +628,40 @@ emitArtXML(const char *wksFile) {
   if (wksFile)
     return emitWorkersHDL(wksFile);
   return 0;
+}
+
+void HdlContainer::
+mapDevSignals(std::string &assy, const DevInstance &di, bool inContainer) {
+  const Signals &devsigs = di.device.deviceType().m_signals;
+  for (SignalsIter s = devsigs.begin(); s != devsigs.end(); s++)
+    for (unsigned n = 0; (*s)->m_width ? n < (*s)->m_width : n == 0; n++) {
+      // (Re)create the signal name of the pf_config signal
+      std::string devSig = (*s)->name();
+      if ((*s)->m_width)
+	OU::formatAdd(devSig, "(%u)", n);
+      Signal *boardSig;
+      if (di.device.m_sigmap.findSignal(devSig.c_str(), boardSig)) {
+	std::string boardName;
+	if (boardSig) {
+	  boardName = boardSig->name();
+	  if (di.slot) {
+	    Slot::SignalsIter si = di.slot->m_signals.find(boardSig);
+	    if (si != di.slot->m_signals.end())
+	      boardName = (*si).second;
+	  }
+	}
+	std::string sname;
+	if (di.slot && !inContainer)
+	  OU::format(sname, "%s_%s_%s", di.slot->name(), di.device.name(), devSig.c_str());
+	else
+	  sname = devSig.c_str();
+	OU::formatAdd(assy, "    <signal name='%s' external='%s%s%s'/>\n",
+		      sname.c_str(),
+		      di.slot && boardSig ? di.slot->name() : "",
+		      di.slot && boardSig ? "_" : "",
+		      boardName.c_str());
+      }
+    }
 }
 
 const char *Worker::

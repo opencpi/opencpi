@@ -50,6 +50,7 @@ public:
     *emitAttribute(const char *attr),
     *emitArtXML(const char *wksFile),
     *emitContainer(FILE *f);
+  void mapDevSignals(std::string &assy, const DevInstance &devInstance, bool inContainer);
 };
 
 #endif

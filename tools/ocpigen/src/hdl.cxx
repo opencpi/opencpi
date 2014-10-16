@@ -52,12 +52,12 @@ Clock *Worker::
 addWciClockReset() {
   // If there is no control port, then we synthesize the clock as wci_clk
   for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++)
-    if (!strcasecmp("wci_Clk", (*ci)->name))
+    if (!strcasecmp("wci_Clk", (*ci)->name()))
       return *ci;
   Clock *clock = addClock();
-  clock->name = strdup("wci_Clk");
-  clock->signal = strdup("wci_Clk");
-  clock->reset = "wci_Reset_n";
+  clock->m_name = "wci_Clk";
+  clock->m_signal = "wci_Clk";
+  clock->m_reset = "wci_Reset_n";
   m_wciClock = clock;
   return clock;
 }
@@ -66,7 +66,7 @@ Clock *Worker::
 findClock(const char *name) const {
   for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
     Clock *c = *ci;
-    if (!strcasecmp(name, c->name))
+    if (!strcasecmp(name, c->name()))
       return c;
   }
   return NULL;
@@ -154,10 +154,12 @@ parseHdlImpl(const char *package) {
     if ((err = OE::checkAttrs(xc, "Name", "Signal", "Home", (void*)0)))
       return err;
     Clock *c = addClock();
-    c->name = ezxml_cattr(xc, "Name");
-    if (!c->name)
+    const char *cp = ezxml_cattr(xc, "Name");
+    if (!cp)
       return "Missing Name attribute in Clock subelement of HdlWorker";
-    c->signal = ezxml_cattr(xc, "Signal");
+    c->m_name = cp;
+    cp = ezxml_cattr(xc, "Signal");
+    c->m_signal = cp ? cp : "";
   }
   // Now that we have clocks roughly set up, we process the wci clock
   //  if (wci && (err = checkClock(xctl, wci)))
@@ -197,9 +199,9 @@ parseHdlImpl(const char *package) {
   // Now check that all clocks have a home and all ports have a clock
   for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
     Clock *c = *ci;
-    if (!c->port && !c->signal)
+    if (!c->port && c->m_signal.empty())
       return OU::esprintf("Clock %s is owned by no port and has no signal name",
-			  c->name);
+			  c->name());
   }
   // now make sure clockPort references are sorted out
   for (unsigned i = 0; i < m_ports.size(); i++) {
@@ -210,7 +212,7 @@ parseHdlImpl(const char *package) {
       p->count = 1;
   }
   // process ad hoc signals: FIXME: this should be device only
-  if ((err = Signal::parseSignals(m_xml, m_file, m_signals)))
+  if ((err = Signal::parseSignals(m_xml, m_file, m_signals, m_sigmap)))
     return err;
   // Finalize endian default
   if (m_endian == NoEndian)
@@ -239,7 +241,7 @@ parse(ezxml_t x) {
   else if ((name = ezxml_cattr(x, "Inout")))
     m_direction = INOUT;
   else if ((name = ezxml_cattr(x, "bidirectional")))
-    m_direction = INOUT;
+    m_direction = BIDIRECTIONAL;
   else
     return "Missing input, output, or inout attribute for signal element";
   if ((err = OE::getNumber(x, "Width", &m_width, 0, 0)) ||
@@ -251,23 +253,24 @@ parse(ezxml_t x) {
 }
 
 const char *Signal::
-parseSignals(ezxml_t xml, const std::string &parent, Signals &signals) {
+parseSignals(ezxml_t xml, const std::string &parent, Signals &signals, SigMap &sigmap) {
   const char *err = NULL;
   std::string sigattr;
   if (OE::getOptionalString(xml, sigattr, "signals")) {
     ezxml_t sigx;
     std::string sigFile;
     if ((err = parseFile(sigattr.c_str(), parent, "Signals", &sigx, sigFile, false)) ||
-	(err = parseSignals(sigx, sigFile, signals)))
+	(err = parseSignals(sigx, sigFile, signals, sigmap)))
       return err;
   }
   // process ad hoc signals
   for (ezxml_t xs = ezxml_cchild(xml, "Signal"); !err && xs; xs = ezxml_next(xs)) {
     Signal *s = new Signal;
     if (!(err = s->parse(xs)))
-      if (!Signal::find(signals, s->m_name.c_str()))
+      if (sigmap.find(s->m_name.c_str()) == sigmap.end()) {
 	signals.push_back(s);
-      else {
+	sigmap[s->m_name.c_str()] = s;
+      } else {
 	err = OU::esprintf("Duplicate signal: '%s'", s->m_name.c_str());
 	delete s;
       }
@@ -275,16 +278,28 @@ parseSignals(ezxml_t xml, const std::string &parent, Signals &signals) {
   return err;
 }
 
-Signal *Signal::
-find(const Signals &signals, const char *name) {
-  for (SignalsIter si = signals.begin(); si != signals.end(); si++)
-    if ((*si)->m_name == name)
-      return *si;
-  return NULL;
+const Signal *Signal::
+find(const SigMap &sigmap, const char *name) {
+  SigMap::const_iterator si = sigmap.find(name);
+  return si == sigmap.end() ? NULL : si->second;
 }
 
 void Signal::
 deleteSignals(Signals &signals) {
   for (SignalsIter si = signals.begin(); si != signals.end(); si++)
     delete *si;
+}
+const char *SigMap::
+findSignal(Signal *s) {
+  for (SigMap_::const_iterator si = begin(); si != end(); si++)
+    if ((*si).second == s)
+      return (*si).first;
+  return NULL;
+}
+const char *SigMapIdx::
+findSignal(Signal *sig, size_t idx) const {
+  for (SigMapIdxIter i = begin(); i != end(); i++)
+    if ((*i).second.first == sig && (*i).second.second == idx)
+      return (*i).first;
+  return NULL;
 }

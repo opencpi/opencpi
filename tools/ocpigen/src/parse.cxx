@@ -596,7 +596,7 @@ parseSpec(const char *package) {
     if (p.isData() && (err = (**pi).parse()))
       return err;
   }
-  return Signal::parseSignals(spec, m_file, m_signals);
+  return Signal::parseSignals(spec, m_file, m_signals, m_sigmap);
 }
 
 // Called for each non-data impl port type
@@ -724,15 +724,16 @@ create(const char *file, const std::string &parent, const char *package, const c
     w = HdlContainer::create(xml, xfile, err);
   else if (!strcasecmp("HdlAssembly", name))
     w = HdlAssembly::create(xml, xfile, err);
+  else if (!strcasecmp("HdlDevice", name))
+    w = HdlDevice::create(xml, xfile, err);
   else if (!strcasecmp("RccAssembly", name))
     w = RccAssembly::create(xml, xfile, err);
-  else if ((w = new Worker(xml, xfile, parent, instancePVs, err))) {
+  else if ((w = new Worker(xml, xfile, parent, Worker::Application, instancePVs, err))) {
     if (!strcasecmp("RccImplementation", name) || !strcasecmp("RccWorker", name))
       err = w->parseRcc(package);
     else if (!strcasecmp("OclImplementation", name) || !strcasecmp("OclWorker", name))
       err = w->parseOcl();
-    else if (!strcasecmp("HdlImplementation", name) || !strcasecmp("HdlWorker", name) ||
-	     !strcasecmp("HdlDevice", name)) {
+    else if (!strcasecmp("HdlImplementation", name) || !strcasecmp("HdlWorker", name)) {
       if (!(err = OE::checkAttrs(xml, IMPL_ATTRS, GENERIC_IMPL_CONTROL_ATTRS, HDL_TOP_ATTRS,
 				 HDL_IMPL_ATTRS, (void*)0)) &&
 	  !(err = OE::checkElements(xml, IMPL_ELEMS, HDL_IMPL_ELEMS, (void*)0)))
@@ -869,10 +870,10 @@ parse(Worker &w, ezxml_t x) {
 
 Worker::
 Worker(ezxml_t xml, const char *xfile, const std::string &parent,
-       OU::Assembly::Properties *ipvs, const char *&err)
+       WType type, OU::Assembly::Properties *ipvs, const char *&err)
   : Parsed(xml, xfile, parent, NULL, err),
-    m_model(NoModel), m_baseTypes(NULL), m_modelString(NULL), m_isDevice(false), m_wci(NULL),
-    m_noControl(false), m_reusable(false), m_implName(m_name.c_str()),
+    m_model(NoModel), m_baseTypes(NULL), m_modelString(NULL), m_type(type), m_isDevice(false),
+    m_wci(NULL), m_noControl(false), m_reusable(false), m_implName(m_name.c_str()),
     m_specName(NULL), m_isThreaded(false), m_maxPortTypeName(0), m_wciClock(NULL),
     m_endian(NoEndian), m_needsEndian(false), m_pattern(NULL), m_portPattern(NULL),
     m_staticPattern(NULL), m_defaultDataWidth(-1), m_language(NoLanguage), m_assembly(NULL),
@@ -966,7 +967,7 @@ Parsed(ezxml_t xml,        // The xml for this entity
 
 Clock::
 Clock() 
-  : name(NULL), signal(NULL), port(NULL), assembly(false), ordinal(0) {
+  : port(NULL), assembly(false), ordinal(0) {
 }
 
 // Emit the artifact XML for an HDLcontainer
@@ -995,4 +996,3 @@ findProperty(const char *name) {
       return *pi;
   return NULL;
 }
-

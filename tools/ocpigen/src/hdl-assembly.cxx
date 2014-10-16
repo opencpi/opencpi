@@ -36,9 +36,7 @@
 const char *Worker::
 parseHdlAssy() {
   const char *err;
-  Assembly *a = m_assembly = new Assembly(*this);
-  a->m_isContainer = strcasecmp(m_xml->name, "HdlContainerAssembly") == 0;
-  a->m_isPlatform = strcasecmp(m_xml->name, "HdlPlatformAssembly") == 0;
+  ::Assembly *a = m_assembly = new ::Assembly(*this);
   
   static const char
     *topAttrs[] = {IMPL_ATTRS, HDL_TOP_ATTRS, HDL_IMPL_ATTRS, NULL},
@@ -48,8 +46,8 @@ parseHdlAssy() {
     *platInstAttrs[] = { "Index", "interconnect", "io", "adapter", "configure", NULL};
   // Do the generic assembly parsing, then to more specific to HDL
   if ((err = a->parseAssy(m_xml, topAttrs,
-			  a->m_isContainer ? contInstAttrs :
-			  (a->m_isPlatform ? platInstAttrs : instAttrs),
+			  m_type == Container ? contInstAttrs :
+			  (m_type == Configuration ? platInstAttrs : instAttrs),
 			  true, m_outDir)))
     return err;
   // Do the OCP derivation for all workers
@@ -64,7 +62,7 @@ parseHdlAssy() {
       a->m_nWCIs += i->worker->m_ports[0]->count;
     if (i->worker->m_assembly)
       continue;
-    if (a->m_isContainer || a->m_isPlatform) {
+    if (m_type == Container || m_type == Configuration) {
       ezxml_t x = i->instance->xml();
       const char
         *ic = ezxml_cattr(x, "interconnect"), // which interconnect
@@ -76,12 +74,14 @@ parseHdlAssy() {
 	if (io)
 	  return "Container workers cannot be both IO and Interconnect";
 	i->attach = ic;
-	i->iType = Instance::Interconnect;
+	//	assert(i->m_iType == Instance::Device);
+	i->m_iType = Instance::Interconnect;
       } else if (io) {
 	i->attach = io;
-	i->iType = Instance::IO;
+	assert(i->m_iType == Instance::Device);
       } else if (ad) {
-	i->iType = Instance::Adapter;
+	assert(i->m_iType == Instance::Application);
+	i->m_iType = Instance::Adapter;
 	i->attach = ad; // an adapter is for an interconnect or I/O
       }
     }
@@ -99,14 +99,20 @@ parseHdlAssy() {
   unsigned n;
   Clock *clk, *wciClk = NULL;
   // Establish the wciClk for all wci slaves
-  if (a->m_isContainer) {
+  if (m_type == Container) {
     // The default WCI clock comes from the (single) wci master
     for (n = 0, i = a->m_instances; !wciClk && n < a->m_nInstances; n++, i++)
       if (i->worker) {
 	unsigned nn = 0;
 	for (InstancePort *ip = i->m_ports; nn < i->worker->m_ports.size(); nn++, ip++) 
 	  if (ip->m_port->type == WCIPort && ip->m_port->master) {
-	    wciClk = ip->m_port->clock;
+	    // Found the instance that is mastering the control plane
+	    wciClk = addClock();
+	    // FIXME:  this should access the 0th clock more specifically for VHDL
+	    wciClk->m_name = "wciClk";
+	    OU::format(wciClk->m_signal, "%s_%s_out(0).Clk", i->name, ip->m_port->name());
+	    OU::format(wciClk->m_reset, "%s_%s_out(0).MReset_n", i->name, ip->m_port->name());
+	    wciClk->assembly = true;
 	    if (i->m_clocks)
 	      i->m_clocks[ip->m_port->clock->ordinal] = wciClk;
 	    break;
@@ -123,10 +129,10 @@ parseHdlAssy() {
     // Clocks: coalesce all WCI clock and clocks with same reqts, into one wci, all for the assy
     clk = addClock();
     // FIXME:  this should access the 0th clock more specifically for VHDL
-    clk->signal =
-      clk->name = nControls > 1 ?
-      (m_language == VHDL ? "wci_in(0).Clk" : "wci0_Clk") : "wci_Clk";
-    clk->reset =
+    clk->m_signal =
+      clk->m_name =
+      nControls > 1 ? (m_language == VHDL ? "wci_in(0).Clk" : "wci0_Clk") : "wci_Clk";
+    clk->m_reset =
       nControls > 1 ?
       (m_language == VHDL ? "wci_in(0).MReset_n" : "wci0_MReset_n") : "wci_MReset_n";
     clk->port = wci;
@@ -157,9 +163,13 @@ parseHdlAssy() {
   // Map all the wci slave clocks to the assy's wci clock
   for (n = 0, i = a->m_instances; n < a->m_nInstances; n++, i++)
     // Map the instance's WCI clock to the assembly's WCI clock if it has a wci port
+    if (i->worker && i->worker->m_wciClock && !i->worker->m_assembly)
+      i->m_clocks[i->worker->m_wciClock->ordinal] = wciClk;
+#if 0
     if (i->worker && i->worker->m_ports[0]->type == WCIPort &&
 	!i->worker->m_ports[0]->master && !i->worker->m_assembly)
       i->m_clocks[i->worker->m_ports[0]->clock->ordinal] = wciClk;
+#endif
 
   // Assign the wci clock to connections where we can
   if (wciClk)
@@ -223,15 +233,15 @@ parseHdlAssy() {
               // This clock is owned by a port, so it is a "port clock". So name it
               // after the connection (and external port).
 	      clk = addClock();
-              asprintf((char **)&clk->name, "%s_Clk", c.m_name.c_str());
-              clk->signal = clk->name;
+	      OU::format(clk->m_name, "%s_Clk", c.m_name.c_str());
+              clk->m_signal = clk->m_name;
               clk->port = c.m_external->m_instPort.m_port;
               c.m_external->m_instPort.m_port->myClock = true;
             } else {
               // This port's clock is a separately defined clock
               // We might as well keep the name since we have none better
-              clk->name = strdup(ip.m_port->clock->name);
-              clk->signal = strdup(ip.m_port->clock->signal);
+              clk->m_name = ip.m_port->clock->m_name;
+              clk->m_signal = ip.m_port->clock->m_signal;
             }
             clk->assembly = true;
             c.m_clock = clk;
@@ -263,10 +273,9 @@ parseHdlAssy() {
 				  ip->m_port->name(), i->name);
 	    clk = addClock();
 	    i->m_clocks[nc] = clk;
-	    asprintf((char **)&clk->name, "%s_%s", i->name, ip->m_port->clock->name);
-	    if (ip->m_port->clock->signal)
-	      asprintf((char **)&clk->signal, "%s_%s", i->name,
-		       ip->m_port->clock->signal);
+	    OU::format(clk->m_name, "%s_%s", i->name, ip->m_port->clock->name());
+	    if (ip->m_port->clock->m_signal.size())
+	      OU::format(clk->m_signal, "%s_%s", i->name, ip->m_port->clock->signal());
 	    clk->assembly = true;
 	  }
 	}
@@ -276,87 +285,79 @@ parseHdlAssy() {
   // all ports with WCI clocks are connected.  All that's left is
   // WCI: WTI, WMemI, and the platform ports
   size_t nWti = 0, nWmemi = 0;
-  for (n = 0, i = a->m_instances; n < a->m_nInstances; n++, i++)
-    if (i->worker) {
-      Worker *iw = i->worker;
-      unsigned nn = 0;
-      for (InstancePort *ip = i->m_ports; nn < iw->m_ports.size(); nn++, ip++) {
-        Port *pp = ip->m_port;
-        switch (pp->type) {
-        case WCIPort:
-	  // slave ports that are connected are ok as is.
-	  assert(pp->master || pp == pp->m_worker->m_wci);
-	  if (!pp->master && !m_noControl) {
+  for (n = 0, i = a->m_instances; n < a->m_nInstances; n++, i++) {
+    assert(i->worker);
+    Worker *iw = i->worker;
+    unsigned nn = 0;
+    for (InstancePort *ip = i->m_ports; nn < iw->m_ports.size(); nn++, ip++) {
+      Port *pp = ip->m_port;
+      switch (pp->type) {
+      case WCIPort:
+	// slave ports that are connected are ok as is.
+	assert(pp->master || pp == pp->m_worker->m_wci);
+	if (!pp->master && !m_noControl) {
 
-	    // Make assembly WCI the union of all inside, with a replication count
-	    // We make it easier for CTOP, hoping that wires dissolve appropriately
-	    // FIXME: when we generate containers, these might be customized, but not now
-	    //if (iw->m_ctl.sizeOfConfigSpace > aw->m_ctl.sizeOfConfigSpace)
-	    //            aw->m_ctl.sizeOfConfigSpace = iw->m_ctl.sizeOfConfigSpace;
-	    m_ctl.sizeOfConfigSpace = (1ll<<32) - 1;
-	    if (iw->m_ctl.writables)
-	      m_ctl.writables = true;
+	  // Make assembly WCI the union of all inside, with a replication count
+	  // We make it easier for CTOP, hoping that wires dissolve appropriately
+	  // FIXME: when we generate containers, these might be customized, but not now
+	  //if (iw->m_ctl.sizeOfConfigSpace > aw->m_ctl.sizeOfConfigSpace)
+	  //            aw->m_ctl.sizeOfConfigSpace = iw->m_ctl.sizeOfConfigSpace;
+	  m_ctl.sizeOfConfigSpace = (1ll<<32) - 1;
+	  if (iw->m_ctl.writables)
+	    m_ctl.writables = true;
 #if 0
-	    // FIXME: until container automation we must force this
-	    if (iw->m_ctl.readables)
+	  // FIXME: until container automation we must force this
+	  if (iw->m_ctl.readables)
 #endif
-	      m_ctl.readables = true;
+	    m_ctl.readables = true;
 #if 0
-	    // FIXME: Until we have container automation, we force the assembly level
-	    // WCIs to have byte enables.  FIXME
-	    if (iw->m_ctl.sub32Bits)
+	  // FIXME: Until we have container automation, we force the assembly level
+	  // WCIs to have byte enables.  FIXME
+	  if (iw->m_ctl.sub32Bits)
 #endif
-	      m_ctl.sub32Bits = true;
-	    m_ctl.controlOps |= iw->m_ctl.controlOps; // needed?  useful?
-	    // Reset while suspended: This is really only interesting if all
-	    // external data ports are only connected to ports of workers where this
-	    // is true.  And the use-case is just that you can reset the
-	    // infrastructure while maintaining worker state.  BUT resetting the
-	    // CP could clearly reset anything anyway, so this is only relevant to
-	    // just reset the dataplane infrastructure.
-	    if (!pp->m_worker->m_wci->resetWhileSuspended())
-	      cantDataResetWhileSuspended = true;
-	  }
-          break;
-        case WTIPort:
-          // We don't share ports since the whole point of WTi is to get
-          // intra-chip accuracy via replication of the time clients.
-          // We could have an option to use wires instead to make things smaller
-          // and less accurate...
-	  if (!pp->master && ip->m_attachments.empty() &&
-	      (err = m_assembly->externalizePort(*ip, "wti", nWti)))
-	    return err;
-          break;
-        case WMemIPort:
-	  if (pp->master && ip->m_attachments.empty() &&
-	      (err = m_assembly->externalizePort(*ip, "wmemi", nWmemi)))
-	    return err;
-          break;
-        case WSIPort:
-        case WMIPort:
-	  // Data ports must explicitly connected.
-	  break;
-	case CPPort:
-        case NOCPort:
-        case MetadataPort:
-        case TimePort:
-          break;
-	case PropPort: // could do partials when multiple count?
-	case DevSigPort: // same?
-          break;
-        default:
-          return "Bad port type";
-        }
-      }
-      for (SignalsIter si = i->worker->m_signals.begin(); si != i->worker->m_signals.end(); si++) {
-	Signal *s = new Signal(**si);
-	// The assembly level signal name needs to be prefixed with the instance name
-	if (i->worker->m_isDevice)
-	  s->m_name = i->name + ("_" + s->m_name);
-	// OU::format(s->m_name, "%s_%s", i->name, s->m_name.c_str());
-	m_signals.push_back(s);
+	    m_ctl.sub32Bits = true;
+	  m_ctl.controlOps |= iw->m_ctl.controlOps; // needed?  useful?
+	  // Reset while suspended: This is really only interesting if all
+	  // external data ports are only connected to ports of workers where this
+	  // is true.  And the use-case is just that you can reset the
+	  // infrastructure while maintaining worker state.  BUT resetting the
+	  // CP could clearly reset anything anyway, so this is only relevant to
+	  // just reset the dataplane infrastructure.
+	  if (!pp->m_worker->m_wci->resetWhileSuspended())
+	    cantDataResetWhileSuspended = true;
+	}
+	break;
+      case WTIPort:
+	// We don't share ports since the whole point of WTi is to get
+	// intra-chip accuracy via replication of the time clients.
+	// We could have an option to use wires instead to make things smaller
+	// and less accurate...
+	if (!pp->master && ip->m_attachments.empty() &&
+	    (err = m_assembly->externalizePort(*ip, "wti", nWti)))
+	  return err;
+	break;
+      case WMemIPort:
+	if (pp->master && ip->m_attachments.empty() &&
+	    (err = m_assembly->externalizePort(*ip, "wmemi", nWmemi)))
+	  return err;
+	break;
+      case WSIPort:
+      case WMIPort:
+	// Data ports must explicitly connected.
+	break;
+      case CPPort:
+      case NOCPort:
+      case MetadataPort:
+      case TimePort:
+	break;
+      case PropPort: // could do partials when multiple count?
+      case DevSigPort: // same?
+	break;
+      default:
+	return "Bad port type";
       }
     }
+  }
   if (!cantDataResetWhileSuspended && wci)
     m_wci->setResetWhileSuspended(true);
   // Process the external data ports on the assembly worker
@@ -482,6 +483,22 @@ doPrev(FILE *f, std::string &last, std::string &comment, const char *myComment) 
   comment = "";
 }
 
+static void
+mapOneSignal(FILE *f, Signal *s, unsigned n, bool isSingle, const char *mapped,
+	     const char *indent, const char *pattern) {
+  std::string name, map;
+  OU::format(name, pattern, s->m_name.c_str());
+  if (*mapped)
+    OU::format(map, pattern, mapped);
+  
+  if (s->m_width && isSingle)
+    OU::formatAdd(name, "(%u)", n);
+  fprintf(f, "%s%s => %s", indent, name.c_str(),
+	  *mapped ? map.c_str() : (s->m_direction == Signal::IN ?
+				   (isSingle || !s->m_width ? "'0'" : "(others => '0')") :
+				   "open"));
+}
+
 void Assembly::
 emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
   // emit before parameters
@@ -535,28 +552,27 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
     fprintf(f, "    port map(   ");
   any = false;
   const char *indent = "                ";
-  if (i->worker->m_clocks.size())
-    // For the instance, define the clock signals that are defined separate from
-    // any interface/port.
-    for (ClocksIter ci = i->worker->m_clocks.begin(); ci != i->worker->m_clocks.end(); ci++) {
-      Clock *c = *ci;
-      if (!c->port) {
-	if (lang == Verilog) {
-	  fprintf(f, "%s  .%s(%s)", any ? ",\n" : "", c->signal,
-		  i->m_clocks[c->ordinal]->signal);
-	  if (c->reset.size())
-	    fprintf(f, ",\n  .%s(%s)", c->reset.c_str(),
-		    i->m_clocks[c->ordinal]->reset.c_str());
-	} else {
-	  fprintf(f, "%s%s%s => %s", any ? ",\n" : "", any ? indent : "",
-		  c->signal, i->m_clocks[c->ordinal]->signal);
-	  if (c->reset.size())
-	    fprintf(f, ",\n%s%s => %s", indent, c->reset.c_str(),
-		    i->m_clocks[c->ordinal]->reset.c_str());
-	}
-	any = true;
+  // For the instance, define the clock signals that are defined separate from
+  // any interface/port.
+  for (ClocksIter ci = i->worker->m_clocks.begin(); ci != i->worker->m_clocks.end(); ci++) {
+    Clock *c = *ci;
+    if (!c->port) {
+      if (lang == Verilog) {
+	fprintf(f, "%s  .%s(%s)", any ? ",\n" : "", c->signal(),
+		i->m_clocks[c->ordinal]->signal());
+	if (c->m_reset.size())
+	  fprintf(f, ",\n  .%s(%s)", c->reset(),
+		  i->m_clocks[c->ordinal]->reset());
+      } else {
+	fprintf(f, "%s%s%s => %s", any ? ",\n" : "", any ? indent : "",
+		c->signal(), i->m_clocks[c->ordinal]->signal());
+	if (c->m_reset.size())
+	  fprintf(f, ",\n%s%s => %s", indent, c->reset(),
+		  i->m_clocks[c->ordinal]->reset());
       }
+      any = true;
     }
+  }
   std::string last(any ? "," : "");
   std::string comment;
   InstancePort *ip = i->m_ports;
@@ -568,18 +584,42 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
 				myComment(), ip->m_ocp); 
     any = true;
   } // end of port loop
-  // Signals are always mapped as external ports
+  // Signals are always mapped as external ports, but sometimes they are
+  // mapped to slot names etc.
   for (SignalsIter si = i->worker->m_signals.begin(); si != i->worker->m_signals.end(); si++) {
     Signal *s = *si;
-    doPrev(f, last, comment, myComment());
-    any = true;
     std::string prefix;
-    if (i->worker->m_isDevice) {
+    bool anyMapped = false;
+    std::string name;
+    for (unsigned n = 0; s->m_width ? n < s->m_width : n == 0; n++) {
+      bool isSingle;
+      const char *mappedExt = i->m_extmap.findSignal(s, n, isSingle);
+      if (mappedExt) {
+	if (!anyMapped)
+	  assert(n == 0);
+	any = true;
+	anyMapped = true;
+	doPrev(f, last, comment, myComment());
+	const char *front = any ? indent : "";
+	if (s->m_differential) {
+	  mapOneSignal(f, s, n, isSingle, mappedExt, front, s->m_pos.c_str());
+	  doPrev(f, last, comment, myComment());
+	  mapOneSignal(f, s, n, isSingle, mappedExt, front, s->m_neg.c_str());
+	} else
+	  mapOneSignal(f, s, n, isSingle, mappedExt, front, "%s");
+	if (!isSingle)
+	  break;
+      }	else
+	assert(!anyMapped);
+    }
+    if (anyMapped)
+      continue;
+    doPrev(f, last, comment, myComment());
+    if (i->worker->m_isDevice && i->worker->m_type != Worker::Platform) {
       prefix = i->name;
       prefix += + "_";
     }
     if (s->m_differential) {
-      std::string name;
       OU::format(name, s->m_pos.c_str(), s->m_name.c_str());
       if (lang == VHDL)
 	fprintf(f, "%s%s => %s%s,\n", any ? indent : "",
@@ -746,9 +786,8 @@ emitWorkersHDL(const char *outFile)
   printgen(f, "#", m_file.c_str(), false);
   Instance *i = m_assembly->m_instances;
   fprintf(f, "# Workers in this %s: <implementation>:<instance>\n",
-	  m_assembly->m_isContainer ? "container" : "assembly");
+	  m_type == Container ? "container" : "assembly");
   for (unsigned n = 0; n < m_assembly->m_nInstances; n++, i++) {
-    //    if (!m_assembly->m_isContainer || i->iType != Instance::Application)
     std::string suff;
     if (i->worker->m_paramConfig && i->worker->m_paramConfig->nConfig)
       OU::format(suff, "_c%zu", i->worker->m_paramConfig->nConfig);
@@ -761,11 +800,16 @@ emitWorkersHDL(const char *outFile)
 static void
 emitInstance(Instance *i, FILE *f, const char *prefix, size_t &index)
 {
-  
+  assert(i->m_iType == Instance::Application ||
+	 i->m_iType == Instance::Interconnect ||
+	 i->m_iType == Instance::Device ||
+	 i->m_iType == Instance::Platform ||
+	 i->m_iType == Instance::Adapter);
+  assert(!i->worker->m_assembly);
   fprintf(f, "<%s name=\"%s%s%s\" worker=\"%s",
-	  i->iType == Instance::Application ? "instance" :
-	  i->iType == Instance::Interconnect ? "interconnect" :
-	  i->iType == Instance::IO ? "io" : "adapter",
+	  i->m_iType == Instance::Application ? "instance" :
+	  i->m_iType == Instance::Interconnect ? "interconnect" :
+	  i->m_iType == Instance::Device ? "io" : "adapter",
 	  prefix ? prefix : "", prefix ? "/" : "", i->name, i->worker->m_implName);
   // FIXME - share this param-named implname with emitWorker
   if (i->worker->m_paramConfig && i->worker->m_paramConfig->nConfig)
@@ -775,7 +819,7 @@ emitInstance(Instance *i, FILE *f, const char *prefix, size_t &index)
     fprintf(f, " occpIndex=\"%zu\"", index++);
   if (i->attach)
     fprintf(f, " attachment=\"%s\"", i->attach);
-  if (i->iType == Instance::Interconnect) {
+  if (i->m_iType == Instance::Interconnect) {
     if (i->hasConfig)
       fprintf(f, " ocdpOffset='0x%zx'", i->config * 32 * 1024);
   } else if (i->hasConfig)
@@ -887,11 +931,11 @@ attachPort(InstancePort &ip, size_t index) {
 
 const char *Worker::
 emitAssyImplHDL(FILE *f, bool wrap) {
-  if (m_assembly->m_isPlatform) {
+  if (m_type == Configuration) {
     assert(!wrap);
     return emitConfigImplHDL(f);
   }
-  if (m_assembly->m_isContainer) {  
+  if (m_type == Container) {  
     assert(!wrap);
     return emitContainerImplHDL(f);
   }
@@ -930,7 +974,7 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
 
 HdlAssembly::
 HdlAssembly(ezxml_t xml, const char *xfile, const char *&err)
-  : Worker(xml, xfile, "", NULL, err) {
+  : Worker(xml, xfile, "", Worker::Assembly, NULL, err) {
   if (!(err = OE::checkAttrs(xml, IMPL_ATTRS, HDL_TOP_ATTRS, (void*)0)) &&
       !(err = OE::checkElements(xml, IMPL_ELEMS, HDL_IMPL_ELEMS, ASSY_ELEMS, (void*)0)))
     err = parseHdl();

@@ -34,5 +34,5 @@ XmlIncludeDirs=../../components/specs
 Workers = \
 #	limeSPI.hdl \
 #        limeTx.hdl
-
 include $(OCPI_CDK_DIR)/include/lib.mk
+all: hdl

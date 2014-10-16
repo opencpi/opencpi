@@ -16,10 +16,7 @@ typedef Cards::iterator CardsIter;
 struct Card : public Board {
   std::string                      m_name;
   SlotType                        &m_type;
-  std::map<Signal *, std::string>  m_signals;
-
   static Cards                     s_cards;        // registry of card types
-
   static Card *get(const char *file, const char *parent, const char *&err);
   Card(ezxml_t xml, const char *name, SlotType &type, const char *&err);
   virtual ~Card();

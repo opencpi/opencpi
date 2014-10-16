@@ -1,6 +1,8 @@
 #include "wip.h"
 #include "hdl.h"
 #include "hdl-device.h"
+#include "hdl-slot.h"
+#include "assembly.h"
 
 DeviceTypes DeviceType::s_types;
 
@@ -15,7 +17,8 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
 }
 HdlDevice::
 HdlDevice(ezxml_t xml, const char *file, const char *parent, const char *&err)
-  : Worker(xml, file, parent, NULL, err) {
+  : Worker(xml, file, parent, Worker::Device, NULL, err) {
+  m_isDevice = true;
   if (err ||
       (err = OE::checkTag(xml, "HdlDevice", "Expected 'HdlDevice' as tag in '%s'", file)) ||
       (err = OE::checkAttrs(xml, PARSED_ATTRS, IMPL_ATTRS, HDL_TOP_ATTRS, HDL_IMPL_ATTRS,
@@ -83,16 +86,36 @@ name() const {
   return m_implName;
 }
 
+static const char*
+decodeSignal(std::string &name, std::string &base, size_t &index, bool &hasIndex) {
+  const char *sname = name.c_str();
+  const char *paren = strchr(sname, '(');
+  base = name;
+  if (paren) {
+    char *end;
+    errno = 0;
+    index = strtoul(paren + 1, &end, 0);
+    if (errno != 0 || end == paren + 1 || *end != ')')
+      return OU::esprintf("Bad numeric format in signal index: %s", sname);
+    base.resize(paren - sname);
+    hasIndex = true;
+  } else {
+    hasIndex = false;
+    index = 0;
+  }
+  return NULL;
+}
+
+
 // A device is not in its own file.
-// It is an instance of a device type either on a platform or a card.
+// It is an instance of a device type either on a board
 Device::
-Device(Board &b, ezxml_t xml, const char *parent, bool single, unsigned ordinal,
-       const char *&err)
-  : m_board(b), m_ordinal(ordinal) {
+Device(Board &b, DeviceType &dt, ezxml_t xml, bool single, unsigned ordinal,
+       SlotType *stype, const char *&err)
+  : m_board(b), m_deviceType(dt), m_ordinal(ordinal) {
   err = NULL;
   std::string wname;
-  if ((err = OE::getRequiredString(xml, wname, "worker")) ||
-      !(m_deviceType = DeviceType::get(wname.c_str(), parent, err)))
+  if ((err = OE::getRequiredString(xml, wname, "worker")))
     return;
   const char *cp = strchr(wname.c_str(), '.');
   if (cp)
@@ -103,11 +126,138 @@ Device(Board &b, ezxml_t xml, const char *parent, bool single, unsigned ordinal,
     wname += "%u";
     OE::getNameWithDefault(xml, m_name, wname.c_str(), ordinal);
   }
+  // Now we parse the mapping between device-type signals and board signals
+  for (ezxml_t xs = ezxml_cchild(xml, "Signal"); !err && xs; xs = ezxml_next(xs)) {
+    std::string name, base;
+    size_t index;
+    bool hasIndex;
+    if ((err = OE::getRequiredString(xs, name, "name")) ||
+	(err = decodeSignal(name, base, index, hasIndex)))
+      return;
+    Signal *devSig = m_deviceType.m_sigmap.findSignal(base);
+    if (!devSig) {
+      err = OU::esprintf("Signal \"%s\" is not defined for device type \"%s\"",
+			 base.c_str(), m_deviceType.name());
+      return;
+    }
+    if (hasIndex) {
+      if (devSig->m_width == 0) {
+	err = OU::esprintf("Device signal \"%s\" cannot be indexed", base.c_str());
+	return;
+      } else if (index >= devSig->m_width) {
+	err = OU::esprintf("Device signal \"%s\" has index higher than signal width (%zu)",
+			   name.c_str(), devSig->m_width);
+	return;
+      }
+    }
+    const char *plat = ezxml_cattr(xs, "platform");
+    const char *slot = ezxml_cattr(xs, "slot");
+    const char *board;
+    Signal *boardSig = NULL; // the signal we are mapping a device signal TO
+    if (stype) {
+      board = slot;
+      if (plat)
+        err = OU::esprintf("The platform attribute cannot be specified for signals on cards");
+      else if (!slot)
+        err = OU::esprintf("For signal \"%s\" for a device on a card, "
+			   "the slot attribute must be specified", name.c_str());
+      else if (*slot && !(boardSig = stype->m_sigmap.findSignal(slot)))
+	// The slot signal is not a signal for the slot type of this card
+	err = OU::esprintf("For signal \"%s\", the slot signal \"%s\" is not defined "
+			   "for slot type \"%s\"", name.c_str(), slot, stype->name());
+    } else {
+      if (slot)
+	err = OU::esprintf("For signal \"%s\" for a platform device, "
+			   "the slot attribute cannot be specified", name.c_str());
+      else if (!plat)
+	err = OU::esprintf("For signal \"%s\", the platform attribute must be specified",
+			   name.c_str());
+      else if (*plat) {
+	board = plat;
+	if (!(boardSig = b.m_extmap.findSignal(board))) {
+	  boardSig = new Signal();
+	  boardSig->m_name = board;
+	  boardSig->m_direction = devSig->m_direction;
+	  b.m_extmap[board] = boardSig;
+	  b.m_extsignals.push_back(boardSig);
+	}      
+      }
+    }
+    if (err)
+      return;
+    // Check compatibility between device and slot signal
+    if (boardSig) {
+      switch (boardSig->m_direction) {
+      case Signal::IN: // input to board
+	if (devSig->m_direction != Signal::IN)
+	  err = OU::esprintf("Board signal \"%s\" is input to board, "
+			     "but \"%s\" is not input to device", boardSig->name(),
+			     devSig->name());
+	break;
+      case Signal::OUT: // output from board
+	if (devSig->m_direction != Signal::OUT)
+	  err = OU::esprintf("Slot signal \"%s\" is output from board, "
+			     "but \"%s\" is not output from device", boardSig->name(),
+			     devSig->name());
+	break;
+      case Signal::INOUT: // FIXME: is this really allowed for slots?
+	if (devSig->m_direction != Signal::INOUT)
+	  err = OU::esprintf("Slot signal \"%s\" is inout to/from board, "
+			     "but \"%s\" is not inout at device", boardSig->name(),
+			     devSig->name());
+	break;
+      case Signal::BIDIRECTIONAL:
+	if (devSig->m_direction == Signal::INOUT)
+	  err = OU::esprintf("Slot signal \"%s\" is bidirectional to or from board, "
+			     "but \"%s\" is inout at device", boardSig->name(),
+			     devSig->name());
+	break;
+      default:
+	;
+      }
+      if (err)
+	return;
+      // Here board and boardSig are set
+      Signal *other = b.m_bd2dev.findSignal(board);
+      if (other) {
+	// Multiple device signals to the same board signal.  The other signal was ok by itself.
+	switch (other->m_direction) {
+	case Signal::IN:
+	  if (devSig->m_direction != Signal::IN) {
+	    err = OU::esprintf("Multiple, incompatible device signals assigned to \"%s\" signal",
+			       board);
+	    return;
+	  }
+	case Signal::OUT:
+	  err = OU::esprintf("Multiple device output signals driving \"%s\" signal ", board);
+	  return;
+	default:
+	  ;
+	}
+      } else {
+	// First time we have seen this board signal
+	// Map to find device signal and index from slot/board signal
+	b.m_bd2dev.insert(board, devSig, index);
+      }
+    }
+    // boardSig might be NULL here.
+    std::string devSigIndexed = devSig->name();
+    if (devSig->m_width)
+      OU::formatAdd(devSigIndexed, "(%zu)", index);
+    m_strings.push_front(devSigIndexed);
+    m_sigmap[m_strings.front().c_str()] = boardSig;
+  }
 }
 
 Device *Device::
-create(Board &b, ezxml_t xml, const char *parent, bool single, unsigned ordinal, const char *&err) {
-  Device *d = new Device(b, xml, parent, single, ordinal, err);
+create(Board &b, ezxml_t xml, const char *parent, bool single, unsigned ordinal,
+       SlotType *stype, const char *&err) {
+  std::string wname;
+  DeviceType *dt;
+  if ((err = OE::getRequiredString(xml, wname, "worker")) ||
+      !(dt = DeviceType::get(wname.c_str(), parent, err)))
+    return NULL;
+  Device *d = new Device(b, *dt, xml, single, ordinal, stype, err);
   if (err) {
     delete d;
     d = NULL;
@@ -116,10 +266,15 @@ create(Board &b, ezxml_t xml, const char *parent, bool single, unsigned ordinal,
 }
 
 
+Board::
+Board(SigMap &sigmap, Signals &signals)
+  : m_extmap(sigmap), m_extsignals(signals) {
+}
+
 // Add all the devices for a platform or a card - static
-const char *Device::
-addDevices(Board &b, ezxml_t xml, Devices &devices) {
-  // These devices are declaring that they are part of the platform.
+const char *Board::
+parseDevices(ezxml_t xml, SlotType *stype) {
+  // These devices are declaring that they are part of the board.
   for (ezxml_t xs = ezxml_cchild(xml, "Device"); xs; xs = ezxml_next(xs)) {
     const char *worker = ezxml_cattr(xs, "worker");
     bool single = true;
@@ -136,9 +291,9 @@ addDevices(Board &b, ezxml_t xml, Devices &devices) {
       }
     }
     const char *err;
-    Device *dev = Device::create(b, xs, xml->name, single, n, err);
+    Device *dev = Device::create(*this, xs, xml->name, single, n, stype, err);
     if (dev)
-      devices.push_back(dev);
+      m_devices.push_back(dev);
     else
       return err;
   }
@@ -154,17 +309,19 @@ find(const char *name, const Devices &devices) {
   }
   return NULL;
 }
+
 const Device &Device::
 findRequired(const DeviceType &dt, unsigned ordinal, const Devices &devices) {
   for (DevicesIter di = devices.begin(); di != devices.end(); di++) {
     Device &dev = **di;
     // FIXME: intern the workers
-    if (!strcasecmp(dev.m_deviceType->m_implName, dt.m_implName) && dev.m_ordinal == ordinal)
+    if (!strcasecmp(dev.m_deviceType.m_implName, dt.m_implName) && dev.m_ordinal == ordinal)
       return dev;
   }
   assert("Required device not found"==0);
   return *(Device*)NULL;
 }
+
 const Device *Board::
 findDevice(const char *name) const {
   for (DevicesIter di = m_devices.begin(); di != m_devices.end(); di++) {
@@ -225,6 +382,39 @@ parse(ezxml_t rqx, Worker &w) {
     m_connections.push_back(ReqConnection());
     if ((err = m_connections.back().parse(cx, w, *this)))
       return err;
+  }
+  return NULL;
+}
+
+// This does instance parsing for instances of HdlDevice workers.
+// There is no HdlInstance class, so it is done here for now.
+const char *Worker::
+parseInstance(Instance &i, ezxml_t x) {
+  const char *err;
+  for (ezxml_t sx = ezxml_cchild(x, "signal"); sx; sx = ezxml_next(sx)) {
+    std::string name, base, external;
+    size_t index;
+    bool hasIndex;
+    if ((err = OE::getRequiredString(sx, name, "name")) ||
+	(err = OE::getRequiredString(sx, external, "external")) ||
+	(err = decodeSignal(name, base, index, hasIndex)))
+      return err;
+    Signal *s = m_sigmap.findSignal(base);
+    if (!s)
+      return OU::esprintf("Worker \"%s\" of instance \"%s\" has no signal \"%s\"",
+			  m_implName, i.name, name.c_str());
+    assert(!hasIndex || s->m_width);
+    if (external.length()) {
+      bool single;
+      if (i.m_extmap.findSignal(s, index, single))
+	return OU::esprintf("Duplicate signal \"%s\" for worker \"%s\" instance \"%s\"",
+			    name.c_str(), m_implName, i.name);
+      size_t dummy;
+      if (i.m_extmap.findSignal(external, dummy) && s->m_direction == Signal::OUT)
+	return OU::esprintf("Multiple outputs drive external \"%s\" for worker \"%s\" "
+			    "instance \"%s\"", external.c_str(), m_implName, i.name);
+    }
+    i.m_extmap.push_back(s, index, external, hasIndex);
   }
   return NULL;
 }

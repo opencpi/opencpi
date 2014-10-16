@@ -23,7 +23,9 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
 
 HdlPlatform::
 HdlPlatform(ezxml_t xml, const char *xfile, const char *&err)
-  : Worker(xml, xfile, "", NULL, err), m_control(false) {
+  : Worker(xml, xfile, "", Worker::Platform, NULL, err), Board(m_sigmap, m_signals),
+    m_control(false) {
+  m_isDevice = true;
   if (err ||
       (err = OE::checkAttrs(xml, IMPL_ATTRS, GENERIC_IMPL_CONTROL_ATTRS, HDL_TOP_ATTRS,
 			    HDL_IMPL_ATTRS, HDL_PLATFORM_ATTRS, (void*)0)) ||
@@ -31,7 +33,7 @@ HdlPlatform(ezxml_t xml, const char *xfile, const char *&err)
       (err = parseHdl("ocpi")) ||
       (err = OE::getBoolean(xml, "control", &m_control)))
     return;
-  if ((err = Device::addDevices(*this, xml, m_devices)))
+  if ((err = parseDevices(xml, NULL)))
     return;
   unsigned n = 0;
   for (ezxml_t xs = ezxml_cchild(xml, "slot"); xs; xs = ezxml_next(xs), n++) {
@@ -49,21 +51,13 @@ HdlPlatform(ezxml_t xml, const char *xfile, const char *&err)
     Slot *s = Slot::create(xs, OE::ezxml_tag(xml), m_slots, ordinal, count, n, err);
     if (!s)
       return;
-    // Add the slot signals to this worker
-    for (SignalsIter si = s->m_type.m_signals.begin(); si != s->m_type.m_signals.end(); si++) {
-      Signal *sig = new Signal(**si);
-      Slot::SignalsIter ssi = s->m_signals.find((*si));
-      sig->m_name = s->m_name + "_" +
-	(ssi == s->m_signals.end() ? (*si)->name() : ssi->second.c_str());
-      m_signals.push_back(sig);
-    }
   }
 }
 
 HdlPlatform::
 ~HdlPlatform() {
   while (m_devices.size()) {
-    Device *d = m_devices.front();
+    ::Device *d = m_devices.front();
     m_devices.pop_front();
     delete d;
   }

@@ -1,5 +1,6 @@
 #ifndef OCP_H
 #define OCP_H
+#include <string>
 #include "port.h"
 #define OCP_SIGNALS \
   OCP_SIGNAL_MS(Clk) \
@@ -61,7 +62,7 @@ extern OcpSignalDesc ocpSignals[N_OCP_SIGNALS+1];
 struct OcpSignal {
   uint8_t *value;
   size_t width;
-  const char *signal;
+  char *signal;
   bool master;
 };
 

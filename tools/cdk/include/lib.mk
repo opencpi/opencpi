@@ -195,6 +195,8 @@ hdlstubs: $(HdlImplementations)
 		stublibrary
 
 # hdlstubs - no longer
+
+.PHONY: hdl
 hdl: speclinks $(HdlImplementations)
 	$(AT)for i in $(HdlTargets); do mkdir -p lib/hdl/$$i; done
 
@@ -232,7 +234,7 @@ $(OclImplementations): | $(OutDir)lib/ocl
 $(XmImplementations): | $(OutDir)lib/xm
 	$(AT)$(call BuildImplementation,xm,$@)
 
-.PHONY: $(XmImplementations) $(RccImplementations) $(TestImplementations) $(OclImplementations) $(HdlImplementations) speclinks
+.PHONY: $(XmImplementations) $(RccImplementations) $(TestImplementations) $(OclImplementations) $(HdlImplementations) speclinks hdl
 
 # Worker should only be specified when the target is "new".
 ifeq ($(origin Worker),command line)

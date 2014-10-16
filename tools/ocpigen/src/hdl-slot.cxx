@@ -12,7 +12,7 @@ SlotType(const char *file, const std::string &parent, const char *&err) {
   std::string xfile;
   err = NULL;
   if ((err = parseFile(file, parent, NULL, &xml, xfile)) ||
-      (err = Signal::parseSignals(xml, parent, m_signals)))
+      (err = Signal::parseSignals(xml, parent, m_signals, m_sigmap)))
     return;
   OE::getOptionalString(xml, m_name, "name");
   char *cp = strdup(xfile.c_str());
@@ -87,7 +87,7 @@ Slot(ezxml_t xml, const char */*parent*/, const std::string &name, const SlotTyp
     if ((err = OE::getRequiredString(xs, slot, "slot")) ||
 	(err = OE::getRequiredString(xs, platform, "platform")))
       break;
-    Signal *s = Signal::find(m_type.m_signals, slot.c_str());
+    const Signal *s = m_type.m_sigmap.findSignal(slot);
     if (!s)
       err = OU::esprintf("Slot signal '%s' does not exist for slot type '%s'",
 			 slot.c_str(), m_type.m_name.c_str());

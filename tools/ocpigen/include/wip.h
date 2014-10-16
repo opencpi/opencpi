@@ -379,6 +379,7 @@ class RawPropPort : public Port {
 // The port for inter-device connections
 class DevSignalsPort : public Port {
   Signals m_signals;
+  SigMap m_sigmap;
   bool m_hasInputs;
   bool m_hasOutputs;
  public:
@@ -387,14 +388,13 @@ class DevSignalsPort : public Port {
   void emitRecordInterface(FILE *f, const char *implName);
   inline const char *prefix() const { return "ds"; }
   inline const char *typeName() const { return "DevSignals"; }
-  bool haveInputs() const { return master ? m_hasInputs : m_hasOutputs; }
+  bool haveInputs() const { return m_hasInputs; }
   bool haveWorkerInputs() const { return haveInputs(); }
-  bool haveOutputs() const { return master ? m_hasOutputs : m_hasInputs; }
+  bool haveOutputs() const { return m_hasOutputs; }
   bool haveWorkerOutputs() const { return haveOutputs(); }
   void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
   void emitPortSignalsDir(FILE *f, bool output, const char *indent, bool &any,
-			  std::string &comment, std::string &last, std::string &conn,
-			  std::string &index);
+			  std::string &comment, std::string &last, Attachment &other);
   void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 		       const char *indent, bool &any, std::string &comment,
 		       std::string &last, const char *myComment, OcpAdapt *adapt);
@@ -472,12 +472,17 @@ typedef Clocks::const_iterator ClocksIter;
 typedef std::list<Worker *> Workers;
 typedef Workers::const_iterator WorkersIter;
 class Assembly;
+struct Instance;
 class Worker : public Parsed, public OU::IdentResolver {
  public:
   Model m_model;
   const char **m_baseTypes;
   const char *m_modelString;
-  bool m_isDevice;
+  // These correspond to the worker derived classes
+  enum WType {
+    Application, Platform, Device, Configuration, Assembly, Container
+  } m_type;
+  bool m_isDevice; // applies to Interconnect, IO, Adapter, Platform
   WciPort *m_wci; // Null means no control
   bool m_noControl; // no control port on this one.
   bool m_reusable;
@@ -500,9 +505,10 @@ class Worker : public Parsed, public OU::IdentResolver {
     *m_staticPattern;               // pattern for rcc static methods
   int m_defaultDataWidth;           // initialized to -1 to allow zero
   Language m_language;
-  Assembly *m_assembly;
+  ::Assembly *m_assembly;
   Worker *m_slave;
   Signals m_signals;
+  SigMap  m_sigmap;                 // map signal names to signals
   const char *m_library;            // the component library name where the xml was found
   bool m_outer;                     // only generate the outer skeleton, not the inner one
   OU::Property *m_debugProp;
@@ -516,8 +522,8 @@ class Worker : public Parsed, public OU::IdentResolver {
   std::string m_validScaling; // Expression for error checking overall scaling
   Scaling m_scaling;
   std::map<std::string, Scaling> m_scalingParameters;
-  Worker(ezxml_t xml, const char *xfile, const std::string &parent,
-		  OU::Assembly::Properties *ipvs, const char *&err);
+  Worker(ezxml_t xml, const char *xfile, const std::string &parent, WType type,
+	 OU::Assembly::Properties *ipvs, const char *&err);
   virtual ~Worker();
   static Worker *
     create(const char *file, const std::string &parent, const char *package, const char *outDir,
@@ -587,6 +593,7 @@ class Worker : public Parsed, public OU::IdentResolver {
     *emitSkelOCL(),
     *emitAssyHDL();
   virtual const char
+    *parseInstance(Instance &inst, ezxml_t x), // FIXME: should be HdlInstance...
     *emitArtXML(const char *wksFile),
     *emitWorkersHDL(const char *file),
     *emitAttribute(const char *attr);

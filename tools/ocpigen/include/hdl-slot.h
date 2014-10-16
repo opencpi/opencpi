@@ -14,6 +14,7 @@ typedef SlotTypes::iterator SlotTypesIter;
 struct SlotType {
   std::string      m_name;
   Signals          m_signals;
+  SigMap           m_sigmap;
   static SlotTypes s_slotTypes;
   SlotType(const char *file, const std::string &, const char *&err);
   virtual ~SlotType();
@@ -36,8 +37,9 @@ struct Slot {
   std::string                     m_name;
   const SlotType                 &m_type;
   unsigned                        m_ordinal;
-  std::map<Signal *, std::string> m_signals;
-  typedef std::map<Signal *, std::string>::const_iterator SignalsIter;
+  // A map from the underlying slot type signal to an override signal
+  std::map<const Signal *, std::string> m_signals;
+  typedef std::map<const Signal *, std::string>::const_iterator SignalsIter;
   Slot(ezxml_t xml, const char *parent, const std::string &name, const SlotType &type,
        unsigned ordinal, const char *&err);
   virtual ~Slot();

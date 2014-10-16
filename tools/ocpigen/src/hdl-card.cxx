@@ -11,27 +11,29 @@ Cards Card::s_cards;        // registry of card types
 // ie. <slot-name>_signal.
 Card::
 Card(ezxml_t xml, const char *name, SlotType &type, const char *&err)
-  : m_name(name), m_type(type)
+  : Board(type.m_sigmap, type.m_signals), m_name(name), m_type(type)
 {
+#if 0
   // process non-default signals: slot=pfsig, platform=dddd
   for (ezxml_t xs = ezxml_cchild(xml, "Signal"); xs; xs = ezxml_next(xs)) {
     std::string slot, card;
     if ((err = OE::getRequiredString(xs, slot, "slot")) ||
 	(err = OE::getRequiredString(xs, card, "card")))
       break;
-    Signal *s = Signal::find(m_type.m_signals, slot.c_str());
+    const Signal *s = Signal::find(m_type.m_signals, slot.c_str());
     if (!s) {
       err = OU::esprintf("Slot signal '%s' does not exist for slot type '%s'",
 			 slot.c_str(), m_type.m_name.c_str());
       break;
-    } else if (m_signals.find(s) != m_signals.end()) {
+    } else if (m_sigmap.find(s) != m_sigmap.end())
       err = OU::esprintf("Duplicate slot signal: %s", slot.c_str());
       break;
     } else
       m_signals[s] = card;
   }
+#endif
   if (!err)
-    err = Device::addDevices(*this, xml, m_devices);
+    err = parseDevices(xml, &type);
   if (err)
     err = OU::esprintf("Error for slot '%s': %s", m_name.c_str(), err);
 }

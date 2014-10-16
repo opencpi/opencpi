@@ -7,8 +7,7 @@ namespace OA = OCPI::API;
 
 Assembly::
 Assembly(Worker &w)
-  : m_assyWorker(w), m_isContainer(false), m_isPlatform(false),
-    m_nInstances(0), m_nWCIs(0), m_instances(NULL), m_utilAssembly(NULL),
+  : m_assyWorker(w), m_nInstances(0), m_nWCIs(0), m_instances(NULL), m_utilAssembly(NULL),
     m_language(w.m_language) {
 }
 
@@ -121,40 +120,6 @@ parseConnection(OU::Assembly::Connection &aConn) {
       return OU::esprintf("External connection %s for port %s of instance %s error: %s",
 			  c.m_name.c_str(), intPort.m_port->name(), intPort.m_instance->name,
 			  err);
-#if 0
-    //    m_assyWorker.m_ports.push_back(&p);
-    //    p.m_name = ext.m_name;
-    //    p.m_worker = &m_assyWorker;
-    // The width of the external port comes from the minimum that it is connected to,
-    // unless it is specified
-    //    p.count = ext.m_count ? ext.m_count : c.m_count;
-    p.clock = NULL;
-    p.clockPort = NULL;
-    p.pattern = NULL;
-    // Resolve bidirectional role
-    // See how we expose this externally
-    if (p.isData()) {
-      if (!ext.m_role.m_provider) {
-	if (!p.u.wdi.isProducer && !p.u.wdi.isBidirectional)
-	  return OU::esprintf("Connection %s has external producer role incompatible "
-			      "with port %s of worker %s",
-			      c.m_name.c_str(), p.name(), p.m_worker->m_implName);
-	p.u.wdi.isProducer = true;
-	p.u.wdi.isBidirectional = false;
-      } else if (ext.m_role.m_bidirectional) {
-	if (!p.u.wdi.isBidirectional)
-	  return OU::esprintf("Connection %s has external bidirectional role incompatible "
-			      "with port %s of worker %s",
-			      c.m_name.c_str(), p.name(), p.m_worker->m_implName);
-      } else if (ext.m_role.m_provider) {
-	if (p.u.wdi.isProducer)
-	  return OU::esprintf("Connection %s has external consumer role incompatible "
-			      "with port %s of worker %s",
-			      c.m_name.c_str(), p.name(), p.m_worker->m_implName);
-	p.u.wdi.isBidirectional = false;
-      }
-    }
-#endif
     InstancePort *ip = new InstancePort;
     ip->init(NULL, &p, &ext);
     if ((err = c.attachPort(*ip, 0)))
@@ -166,7 +131,7 @@ parseConnection(OU::Assembly::Connection &aConn) {
 Instance::
 Instance()
   : instance(NULL), name(NULL), wName(NULL), worker(NULL), m_clocks(NULL), m_ports(NULL),
-    iType(Application), attach(NULL), hasConfig(false), config(0) {
+    m_iType(Application), attach(NULL), hasConfig(false), config(0) {
 }
 
 // This parses the assembly using the generic assembly parser in OU::
@@ -188,10 +153,9 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
   // Initialize our instances based on the generic assembly instances
   for (unsigned n = 0; n < m_utilAssembly->nUtilInstances(); n++, i++) {
     OU::Assembly::Instance *ai = &m_utilAssembly->utilInstance(n);
-    i->iType = Instance::Application; // set the default
     i->instance = ai;
     i->name = i->instance->m_name.c_str();
-    i->wName = i->instance->m_implName.size() ? i->instance->m_implName.c_str() : 0;
+    i->wName = i->instance->m_implName.size() ? i->instance->m_implName.c_str() : NULL;
     // Find the real worker/impl for each instance, sharing the Worker among instances
     Worker *w = NULL;
     if (!i->wName)
@@ -226,6 +190,16 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
       m_workers.push_back(w);
     }
     i->worker = w;
+    // Determine instance type as far as we can now
+    switch (w->m_type) {
+    case Worker::Application:   i->m_iType = Instance::Application; break;
+    case Worker::Platform:      i->m_iType = Instance::Platform; break;
+    case Worker::Device:        i->m_iType = Instance::Device; break;
+    case Worker::Configuration: i->m_iType = Instance::Configuration; break;
+    case Worker::Assembly:      i->m_iType = Instance::Assembly; break;
+    default:;
+      assert("Invalid worker type as instance" == 0);
+    }
     // Initialize the instance ports
     InstancePort *ip = i->m_ports = new InstancePort[i->worker->m_ports.size()];
     for (unsigned n = 0; n < i->worker->m_ports.size(); n++, ip++) {
@@ -270,6 +244,9 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
 	  break;
 	}
       }
+    // Parse type-specific aspects of the instance.
+    if ((err = w->parseInstance(*i, ix)))
+      return err;
   }
   // All parsing is done.
   // Now we fill in the top-level worker stuff.

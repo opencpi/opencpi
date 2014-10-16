@@ -327,8 +327,8 @@ constant raw_max_devices : natural := 4;
 
 -- Output from device worker as master of the rawprop interface
 type raw_prop_out_t is record
-  present : bool_t;                       -- is present - slave ties low
-  reset   : bool_t;                       -- worker is in reset
+  present : bool_t;                       -- master is present - slave ties low
+  reset   : bool_t;                       -- master worker is in reset
   renable : bool_t;                       -- a read is in progress
   wenable : bool_t;                       -- a write is in progress
   addr    : ushort_t;                     -- address space within slave

@@ -11,7 +11,7 @@ WsiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
 			    "EarlyRequest", "MyClock", "RegRequest", "Pattern",
 			    "NumberOfOpcodes", "MaxMessageValues",
 			    "datavaluewidth", "zerolengthmessages",
-			    "implname", "producer", "optional",
+			    "datavaluegranularity", "implname", "producer", "optional",
 			    DISTRIBUTION_ATTRS, PARTITION_ATTRS,
 			    (void*)0)) ||
       (err = OE::getBoolean(x, "Abortable", &m_abortable)) ||
@@ -180,7 +180,7 @@ emitVhdlShell(FILE *f, Port *wci) {
 	  BOOL(myClock),
 	  BOOL(m_earlyRequest));
   fprintf(f, "    port map   (Clk              => %s%s,\n",
-	  clock->port ? clock->port->typeNameIn.c_str() : clock->signal,
+	  clock->port ? clock->port->typeNameIn.c_str() : clock->signal(),
 	  clock->port ? ".Clk" : "");
   fprintf(f, "                MBurstLength     => %s.MBurstLength,\n", mName);
   fprintf(f, "                MByteEn          => %s%s,\n",
@@ -208,7 +208,7 @@ emitVhdlShell(FILE *f, Port *wci) {
   fprintf(f, "                SThreadBusy      => %s.SThreadBusy,\n", sName);
   fprintf(f, "                wci_clk          => %s%s,\n",
 	  wci ? wci->typeNameIn.c_str() :
-	  (clock->port ? clock->port->typeNameIn.c_str() : clock->signal),
+	  (clock->port ? clock->port->typeNameIn.c_str() : clock->signal()),
 	  wci || clock->port ? ".Clk" : "");
   fprintf(f, "                wci_reset        => %s,\n", "wci_reset");
   fprintf(f, "                wci_is_operating => %s,\n",	"wci_is_operating");

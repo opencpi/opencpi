@@ -192,8 +192,8 @@
   <signal bidirectional='LA18_N_CC'/>   <!-- Pin C23 -->
   <signal bidirectional='LA27_P'/>      <!-- Pin C26 -->
   <signal bidirectional='LA27_N'/>      <!-- Pin C27 -->
-  <signal input='SCL'/>                 <!-- Pin C30 -->
-  <signal input='SDA'/>                 <!-- Pin C31 -->
+  <signal output='SCL'/>                <!-- Pin C30 -->
+  <signal bidirectional='SDA'/>         <!-- Pin C31 -->
 
   <signal input='CLK_DIR'/>             <!-- Pin B1 -->
   <signal input='DP9_M2C_P'/>           <!-- Pin B4 -->

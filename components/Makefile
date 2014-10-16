@@ -53,6 +53,7 @@ Tests = \
 
 
 Implementations = \
+        bias_16.hdl \
 	bias_spcm.hdl \
 	adc_unpack.rcc \
 	bias.hdl \

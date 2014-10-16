@@ -63,6 +63,8 @@ DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *
 			   false)) ||
       (err = OE::getNumber(m_xml, "DataValueWidth", &m_protocol->m_dataValueWidth, NULL, 0,
 			   false)) ||
+      (err = OE::getNumber(m_xml, "DataValueGranularity", &m_protocol->m_dataValueGranularity, NULL, 0,
+			   false)) ||
       (err = OE::getBoolean(m_xml, "ZeroLengthMessages", &m_protocol->m_zeroLengthMessages,
 			    true)) ||
       (err = OE::getNumber(m_xml, "MinBuffers", &m_minBufferCount, 0, 0)) || // backward compat

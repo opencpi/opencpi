@@ -231,7 +231,7 @@ doPatterns(unsigned nWip, size_t &maxPortTypeName) {
 void Port::
 addMyClock() {
   clock = m_worker->addClock();
-  asprintf((char **)&clock->name, "%s_Clk", name()); // fixme
+  OU::format(clock->m_name, "%s_Clk", name());
   clock->port = this;
 }
 
@@ -282,10 +282,10 @@ emitPortDescription(FILE *f, Language lang) const {
 	    clockPort->name());
   else if (myClock)
     fprintf(f, "  %s   Clock: this interface has its own clock, named \"%s\"\n", comment,
-	    clock->signal);
+	    clock->signal());
   else if (clock)
     fprintf(f, "  %s   Clock: this interface uses the worker's clock named \"%s\"\n", comment,
-	    clock->signal);
+	    clock->signal());
 }
 
 const char *Port::

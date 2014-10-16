@@ -5,16 +5,22 @@ DevSignalsPort::
 DevSignalsPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
   : Port(w, x, sp, ordinal, DevSigPort, "dev", err),
     m_hasInputs(false), m_hasOutputs(false) {
-  if ((err = Signal::parseSignals(x, w.m_file, m_signals)))
+  if ((err = Signal::parseSignals(x, w.m_file, m_signals, m_sigmap)))
     return;
   for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
     Signal &s = **si;
     switch (s.m_direction) {
     case Signal::IN:
-      m_hasInputs = true;
+      if (master)
+	m_hasInputs = true;
+      else
+	m_hasOutputs = true;
       break;
     case Signal::OUT:
-      m_hasOutputs = true;
+      if (master)
+	m_hasOutputs = true;
+      else
+	m_hasInputs = true;
       break;
     default:
       err = "Unsupported signal direction (not in or out) in devsignals port";
@@ -26,13 +32,13 @@ DevSignalsPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
 void DevSignalsPort::
 emitRecordTypes(FILE *f) {
   fprintf(f, "\n");
-  if (master ? m_hasInputs : m_hasOutputs)
+  if (m_hasInputs)
     fprintf(f,
 	    "  -- Record for DevSignals input signals for port \"%s\" of worker \"%s\"\n"
 	    "  alias worker_%s_in_t is work.%s_defs.%s_in_t;\n",
 	    name(), m_worker->m_implName, name(),
 	    m_worker->m_implName, name());
-  if (master ? m_hasOutputs : m_hasInputs)
+  if (m_hasOutputs)
     fprintf(f,
 	    "  -- Record for DevSignals output signals for port \"%s\" of worker \"%s\"\n"
 	    "  alias worker_%s_out_t is work.%s_defs.%s_out_t;\n",
@@ -46,7 +52,7 @@ emitRecordInterface(FILE *f, const char *implName) {
   OU::format(in, typeNameIn.c_str(), "");
   OU::format(out, typeNameOut.c_str(), "");
   // Define input record
-  if (master ? m_hasInputs : m_hasOutputs) {
+  if (m_hasInputs) {
     fprintf(f,
 	    "\n"
 	    "  -- Record for the %s input signals for port \"%s\" of worker \"%s\"\n"
@@ -63,7 +69,7 @@ emitRecordInterface(FILE *f, const char *implName) {
     fprintf(f,
 	    "  end record %s_t;\n", in.c_str());
   }
-  if (master ? m_hasOutputs : m_hasInputs) {
+  if (m_hasOutputs) {
     fprintf(f,
 	    "\n"
 	    "  -- Record for the %s output signals for port \"%s\" of worker \"%s\"\n"
@@ -103,20 +109,30 @@ emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signa
 // Emit for one direction
 void DevSignalsPort::
 emitPortSignalsDir(FILE *f, bool output, const char *indent, bool &any, std::string &comment,
-		   std::string &last, std::string &conn, std::string &index) {
+		   std::string &last, Attachment &other) {
   std::string port;
   OU::format(port, output ? typeNameOut.c_str() : typeNameIn.c_str(), "");
+  Connection &c = other.m_connection;
+  std::string conn = master != output ? c.m_slaveName.c_str() : c.m_masterName.c_str();
 
+  if (!master)
+    output = !output; // signals that are included are not relevant
   for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++)
     if ((*si)->m_direction == Signal::IN && !output ||
-	(*si)->m_direction == Signal::OUT && output) {
-      doPrev(f, last, comment, hdlComment(VHDL));
-      fprintf(f, "%s%s.%s => %s%s.%s",
-	      any ? indent : "", port.c_str(), (*si)->m_name.c_str(),
-	      conn.c_str(),
-	      index.c_str(), (*si)->m_name.c_str());
-      any = true;
-    }
+	(*si)->m_direction == Signal::OUT && output)
+      for (size_t n = 0; n < count; n++) {
+	std::string myindex;
+	if (count > 1)
+	  OU::format(myindex, "(%zu)", n);
+	std::string otherindex;
+	if (other.m_instPort.m_port->count > count || count > 1)
+	  OU::format(otherindex, "(%zu)", n + other.m_index);
+	doPrev(f, last, comment, hdlComment(VHDL));
+	fprintf(f, "%s%s%s.%s => %s%s.%s",
+		any ? indent : "", port.c_str(), myindex.c_str(), (*si)->m_name.c_str(),
+		conn.c_str(), otherindex.c_str(), (*si)->m_name.c_str());
+	any = true;
+      }
 }
 // These signal bundles are defined on both sides independently, so they must
 // be assigned individually...
@@ -125,10 +141,11 @@ emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *inden
 		bool &any, std::string &comment, std::string &last, const char */*myComment*/,
 		OcpAdapt */*adapt*/) {
   Attachment *at = atts.front();
-  Connection *c = at ? &at->m_connection : NULL;
+  assert(at);
+  Connection &c = at->m_connection;
   // We need to know the indexing of the other attachment
   Attachment *otherAt = NULL;
-  for (AttachmentsIter ai = c->m_attachments.begin(); ai != c->m_attachments.end(); ai++)
+  for (AttachmentsIter ai = c.m_attachments.begin(); ai != c.m_attachments.end(); ai++)
     if (*ai != at) {
       otherAt = *ai;
       break;
@@ -137,13 +154,12 @@ emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *inden
   std::string index;
   // Indexing is necessary when only when we are smaller than the other
   if (count < otherAt->m_instPort.m_port->count)
-    if (c->m_count > 1)
-      OU::format(index, "(%zu to %zu)", otherAt->m_index, otherAt->m_index + c->m_count - 1);
+    if (c.m_count > 1)
+      OU::format(index, "(%zu to %zu)", otherAt->m_index, otherAt->m_index + c.m_count - 1);
     else
       OU::format(index, "(%zu)", otherAt->m_index);
-  std::string conn = master ? c->m_slaveName.c_str() : c->m_masterName.c_str();
   if (haveInputs())
-    emitPortSignalsDir(f, false, indent, any, comment, last, conn, index);
+    emitPortSignalsDir(f, false, indent, any, comment, last, *otherAt);
   if (haveOutputs())
-    emitPortSignalsDir(f, true, indent, any, comment, last, conn, index);
+    emitPortSignalsDir(f, true, indent, any, comment, last, *otherAt);
 }

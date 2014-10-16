@@ -34,8 +34,8 @@ class HdlDevice : public Worker {
 public:
   bool               m_interconnect;  // Can this type of device be used for an interconnect?
   bool               m_canControl;    // Can this interconnect worker provide control?
-  Requireds          m_requireds;
-  Worker *create(ezxml_t xml, const char *file, const char *&err);
+  Requireds          m_requireds;     // what subdevices are required?
+  static Worker *create(ezxml_t xml, const char *file, const char *&err);
   static DeviceTypes s_types;
   HdlDevice(ezxml_t xml, const char *file, const char *parent, const char *&err);
   static HdlDevice *
@@ -46,22 +46,26 @@ public:
 };
 typedef HdlDevice DeviceType;
 struct Board;
+struct SlotType;
 struct Device {
   Board &m_board;
-  DeviceType *m_deviceType;     // not a reference due to construction issues
+  DeviceType &m_deviceType;     // not a reference due to construction issues
   std::string m_name;           // a platform-scoped device name - usually type<ordinal>
   unsigned m_ordinal;           // Ordinal of this device on this platform/card
-  // Constructor for defining new devices
-  Device(Board &b, ezxml_t xml, const char *parent, bool single,
-	 unsigned ordinal, const char *&err);
+  SigMap   m_sigmap;            // map from device type signals (WITH INDICES) to board signals
+  Signals  m_signals;           // map from device type signals (WITH INDICES) to board signals
+  std::list<std::string> m_strings; // storage management since sigmaps don't hold strings
+  // The map from the device's signal to the board's signal.
+  //  std::map<Signal *, Signal *> m_dev2bd;
+  // Constructor for defining new devices.
+  // If on a card, the stype will be supplied
+  Device(Board &b, DeviceType &dt, ezxml_t xml, bool single,
+	 unsigned ordinal, SlotType *stype, const char *&err);
   static Device *
-  create(Board &b, ezxml_t xml, const char *parent, bool single, unsigned ordinal, const char *&err);
-  //  static const char*
-  //  parseDevices(ezxml_t xml, const char *parent, Devices &devices);
-  const DeviceType &deviceType() const { assert(m_deviceType); return *m_deviceType; }
+  create(Board &b, ezxml_t xml, const char *parent, bool single, unsigned ordinal,
+	 SlotType *stype, const char *&err);
+  const DeviceType &deviceType() const { return m_deviceType; }
   const char *name() const { return m_name.c_str(); }
-  static const char *
-  addDevices(Board &b, ezxml_t xml, Devices &devices);
   static const Device *
   find(const char *name, const Devices &devices);
   static const Device &
@@ -69,8 +73,13 @@ struct Device {
 };
 
 // common behavior for platforms and cards
+
 struct Board {
-  Devices  m_devices;      // physical devices on this type of board
+  Devices     m_devices;   // physical devices on this type of board
+  SigMapIdx   m_bd2dev;    // map from board/slot signal name to device signal + index
+  SigMap      &m_extmap;   // map from board/slot signal name to board/slot signal
+  Signals     &m_extsignals;  // board/slot signals
+  Board(SigMap &sigmap, Signals &signals);
   const Devices &devices() const { return m_devices; }
   const Device *findDevice(const char *name) const;
   Devices &devices() { return m_devices; }
@@ -80,6 +89,7 @@ struct Board {
   const Device *findDevice(const char *name) {
     return Device::find(name, m_devices);
   }
+  const char *parseDevices(ezxml_t xml, SlotType *stype);
 };
 
 

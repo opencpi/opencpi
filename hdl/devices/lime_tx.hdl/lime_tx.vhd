@@ -5,7 +5,7 @@
 --   Future: use some system clock with some divisor
 
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
-library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
+library ocpi; use ocpi.types.all, ocpi.util.all;
 library bsv;
 architecture rtl of lime_tx_worker is
   --Sync FIFO constants
@@ -38,7 +38,27 @@ architecture rtl of lime_tx_worker is
   --Input OCPI interface signals
   signal in_take : std_logic;
   
+  signal underrun_r     : bool_t;
 begin
+  -- Route the raw property signals to the lime_spi
+  rawprops_out.present <= '1';
+  rawprops_out.reset   <= ctl_in.reset;
+  rawprops_out.renable <= props_in.raw_is_read;
+  rawprops_out.wenable <= props_in.raw_is_write;
+  rawprops_out.addr(props_in.raw_address'left downto 0) <= props_in.raw_address;
+  rawprops_out.addr(rawprops_out.addr'left downto props_in.raw_address'left+1)
+  <= (others => '0');
+  rawprops_out.benable <= props_in.raw_byte_enable;
+  rawprops_out.data    <= props_in.raw_data;
+  props_out.raw_data    <= rawprops_in.data;
+  props_out.underrun    <= underrun_r;
+  props_out.present     <= (0 => dev_in.rx_present, 1 => dev_in.tx_present,
+                            others => '0');
+  ctl_out.done <= rawprops_in.done when
+                  props_in.raw_is_read or props_in.raw_is_write
+                  else '1';
+                            
+  -- FIXME: address issue of the quality of this clock
   my_tx_clk <= dev_in.rx_clk_in when clkmode = to_uchar(0) else dev_in.tx_clk_in;
   ----------------------------------------------------------------------------
   -- TX IQ Select
@@ -47,8 +67,12 @@ begin
   begin  -- process
     if rising_edge(my_tx_clk) then
       if (ctl_in.reset = '1') then
+        underrun_r    <= bfalse;
         tx_iq_sel_sig <= '0';
       else
+        if its(props_in.underrun_written) then
+          underrun_r <= props_in.underrun;
+        end if;
         tx_iq_sel_sig <= not tx_iq_sel_sig;
       end if;
     end if;

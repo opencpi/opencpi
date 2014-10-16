@@ -30,6 +30,39 @@ struct InstanceProperty {
   InstanceProperty();
 };
 typedef std::vector<InstanceProperty> InstanceProperties;
+
+struct ExtTuple {
+  Signal *signal;
+  size_t index;
+  std::string ext;
+  bool single; // single signal in a vector
+ExtTuple(Signal *signal, size_t index, const std::string &ext, bool single)
+: signal(signal), index(index), ext(ext), single(single) {
+  }
+};
+typedef std::list<ExtTuple> ExtMap_;
+class ExtMap : public ExtMap_ {
+ public:
+  Signal *findSignal(const std::string &s, size_t &n) {
+    for (ExtMap_::const_iterator i = begin(); i != end(); i++)
+      if (!strcasecmp((*i).ext.c_str(), s.c_str())) {
+	n = (*i).index;
+	return (*i).signal;
+      }
+    return NULL;
+  }
+  const char *findSignal(Signal *s, size_t n, bool &isSingle) const {
+    for (ExtMap_::const_iterator i = begin(); i != end(); i++)
+      if ((*i).signal == s && (*i).index == n) {
+	isSingle = (*i).single;
+	return (*i).ext.c_str();
+      }
+    return NULL;
+  }
+  void push_back(Signal *s, size_t n, const std::string &e, bool single) {
+    ExtMap_::push_back(ExtTuple(s, n, e, single));
+  }
+};
 struct Instance {
   OCPI::Util::Assembly::Instance *instance; // instance in the underlying generic assembly
   const char *name;
@@ -37,14 +70,26 @@ struct Instance {
   Worker *worker;
   Clock **m_clocks;      // mapping of instance's clocks to assembly clocks
   InstancePort *m_ports;
-  //  size_t index;      // index within container
-  enum {
-    Application, Interconnect, IO, Adapter
-  } iType;
-  const char *attach;  // external node port this worker is attached to for io or interconnect
+  size_t index;      // index within container
+  // These types are roles of the instance rather than some hard attribute of the worker
+  // They are also conveyed to the runtime in the artifact XML
+  // They are more elaborated than worker types since they are only established as
+  // workers are used in an assembly
+  enum IType {
+    Application,   // an application worker that an application can use as such
+    Platform,      // a platform device worker
+    Device,        // a device worker
+    Configuration, // a platform configuration assembly
+    Assembly,      // an application assembly
+    Interconnect,  // an interconnect (device) worker acting as an attachment to an interconnect
+    IO,            // a device worker that is not a platform worker
+    Adapter,       // an adapter inserted by code generation
+  } m_iType;
+  const char *attach;  // external platform port this worker is attached to for io or interconnect
   InstanceProperties properties;
   bool hasConfig;      // hack for adapter configuration FIXME make normal properties
   size_t config;       // hack ditto
+  ExtMap m_extmap;     // map for externals. FIXME: have HdlInstance class...
   Instance();
 };
 // To represent an attachment of a connection to an instance port.
@@ -88,14 +133,12 @@ class Assembly {
   Assembly(Worker &w);
   virtual ~Assembly();
   Worker       &m_assyWorker;
-  bool          m_isContainer;
-  bool          m_isPlatform;
-  //  Worker *m_outside;
+  //  bool          m_isContainer; // FIXME: use class hierarchy to inherit
+  //  bool          m_isPlatform;  // FIXME: use class hierarchy to inherit
   Workers       m_workers;
   size_t        m_nInstances;
   size_t        m_nWCIs;
   Instance     *m_instances;
-  //  size_t m_nConnections;
   Connections   m_connections;
   OU::Assembly *m_utilAssembly;
   Language      m_language;

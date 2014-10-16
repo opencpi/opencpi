@@ -12,10 +12,11 @@ struct DevInstance {
   const Card *card;
   const Slot *slot;
   bool control;
-  std::string name;
-  DevInstance(const Device &d, const Card *c, const Slot *s, bool control = false)
-  : device(d), card(c), slot(s), control(control) {
-  }
+  const DevInstance *parent;
+  std::string m_name;
+  DevInstance(const Device &d, const Card *c, const Slot *s, bool control,
+	      const DevInstance *parent);
+  const char *name() const { return m_name.c_str(); }
 };
 
 typedef std::list<DevInstance> DevInstances;
@@ -27,9 +28,9 @@ typedef DevInstances::const_iterator DevInstancesIter;
 typedef std::vector<const Card*> Plugged;
 
 class HdlHasDevInstances {
+protected:
   HdlPlatform  &m_platform;
   Plugged      &m_plugged;
-protected:
   DevInstances  m_devInstances; // instantiated in this config (or container)
   HdlHasDevInstances(HdlPlatform &platform, Plugged &plugged)
     : m_platform(platform), m_plugged(plugged) {}
@@ -48,7 +49,8 @@ protected:
 		  DevInstances *baseInstances, bool *inBase);
   const char *
   addDevInstance(const Device &dev, const Card *, const Slot *slot, bool control,
-		 const DevInstance *&devInstance);
+		 const DevInstance *parent, const DevInstance *&devInstance);
+  void emitSubdeviceConnections(std::string &assy);
 };
 
 class HdlContainer;

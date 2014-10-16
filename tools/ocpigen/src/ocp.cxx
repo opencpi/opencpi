@@ -128,7 +128,7 @@ emitSignals(FILE *f, Language lang, std::string &last, bool /*inPackage*/, bool 
     if (!myClock)
       fprintf(f,
 	      "  %s No Clk signal here. The \"%s\" interface uses \"%s\" as clock\n",
-	      comment, name(), clock->signal);
+	      comment, name(), clock->signal());
     osd = ocpSignals;
     for (OcpSignal *os = ocp.signals; osd->name; os++, osd++)
       if (os->master == mIn && /* strcmp(osd->name, "Clk") && */ os->value) {
@@ -241,22 +241,22 @@ doPatterns(unsigned nWip, size_t &maxPortTypeName) {
   const char *err;
   if ((err = Port::doPatterns(nWip, maxPortTypeName)))
     return err;
-  if (clock && clock->port == this && !clock->signal) {
+  if (clock && clock->port == this && clock->m_signal.empty()) {
     std::string sin;
     // ordinal == -2 means suppress ordinal
     if ((err = doPattern(count > 1 ? 0 : -2, nWip, true, !masterIn(), sin)))
       return err;
-    asprintf((char **)&ocp.Clk.signal, "%s%s", sin.c_str(), "Clk");
-    clock->signal = ocp.Clk.signal;
+    asprintf(&ocp.Clk.signal, "%s%s", sin.c_str(), "Clk");
+    clock->m_signal = ocp.Clk.signal;
   }
   OcpSignalDesc *osd = ocpSignals;
   for (OcpSignal *os = ocp.signals; osd->name; os++, osd++)
     if (os->master == masterIn() && os->value)
-      asprintf((char **)&os->signal, "%s%s", fullNameIn.c_str(), osd->name);
+      asprintf(&os->signal, "%s%s", fullNameIn.c_str(), osd->name);
   osd = ocpSignals;
   for (OcpSignal *os = ocp.signals; osd->name; os++, osd++)
     if (os->master != masterIn() && os->value)
-      asprintf((char **)&os->signal, "%s%s", fullNameOut.c_str(), osd->name);
+      asprintf(&os->signal, "%s%s", fullNameOut.c_str(), osd->name);
   return NULL;
 }
 

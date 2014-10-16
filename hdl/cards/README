@@ -1,0 +1,13 @@
+This directory contains information about cards.
+The specs directory contains:
+1. slot type definitions
+2. card definition files, which define individual cards
+   -- refer to slot definitions (which type of slot this card plugs into)
+      in hdl/plaforms/specs
+   -- define which devices are on the cards, refering to device workers that are found
+      either in hdl/devices, or here in hdl/cards.
+   -- non-standard signal names between the platform FPGA and the slots, otherwise it is assumed
+      that these signals follow the pattern: <slotname>_<std_signa_name>
+
+3. device workers that are only found on cards and are not already in hdl/cards.
+

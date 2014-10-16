@@ -823,7 +823,7 @@ parseRccImpl(const char *package) {
 const char *Worker::
 parseRccAssy() {
   const char *err;
-  Assembly *a = m_assembly = new Assembly(*this);
+  ::Assembly *a = m_assembly = new ::Assembly(*this);
   static const char
     *topAttrs[] = {IMPL_ATTRS, RCC_TOP_ATTRS, RCC_IMPL_ATTRS, NULL},
     *instAttrs[] = {INST_ATTRS, "reusable", NULL};
@@ -879,7 +879,7 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
 
 RccAssembly::
 RccAssembly(ezxml_t xml, const char *xfile, const char *&err)
-  : Worker(xml, xfile, "", NULL, err) {
+  : Worker(xml, xfile, "", Worker::Assembly, NULL, err) {
   if (!(err = OE::checkAttrs(xml, IMPL_ATTRS, RCC_TOP_ATTRS, (void*)0)) &&
       !(err = OE::checkElements(xml, IMPL_ELEMS, RCC_IMPL_ELEMS, ASSY_ELEMS, (void*)0)))
     err = parseRcc();
@@ -1053,6 +1053,7 @@ emitRccCppImpl(FILE *f) {
 		    "       class %sArg  { \n"
 		    "       private:\n"
 		    "          void * m_myptr;\n"
+		    "          void * getArgAddress( unsigned int, unsigned int);\n"
 		    "       public:\n"
 		    "          %sArg() : m_myptr(NULL){}\n"
 		    "          inline void * value() { return m_myptr ? m_myptr : (m_myptr = getArgAddress((unsigned)%sPort::%s_OPERATION, (unsigned)%s_ARG)); }\n",

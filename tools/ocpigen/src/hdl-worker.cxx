@@ -37,6 +37,7 @@
 #include <cstdio>
 #include "OcpiUtilMisc.h"
 #include "hdl.h"
+#include "assembly.h"
 
 namespace OU = OCPI::Util;
 
@@ -263,20 +264,21 @@ emitSignals(FILE *f, Language lang, bool useRecords, bool inPackage, bool inWork
   const char *comment = hdlComment(lang);
   std::string init = lang == VHDL ? "  port (\n" : "";
   std::string last = init;
-  for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
-    Clock *c = *ci;
-    if (!c->port) {
-      if (last.empty())
-	fprintf(f,
-		"    %s Clock(s) not associated with one specific port:\n", comment);
-      emitSignal(c->signal, f, lang, Signal::IN, last, -1, 0);
-      if (c->reset.size())
-	// FIXME: TOTAL HACK FOR THE INNER WORKER TO HAVE A POSITIVE RESET
-	emitSignal(inWorker && !strcasecmp(c->reset.c_str(), "wci_reset_n") ?
-		   "wci_reset" : c->reset.c_str(),
-		   f, lang, Signal::IN, last, -1, 0);
+  if (m_type != Container)
+    for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
+      Clock *c = *ci;
+      if (!c->port) {
+	if (last.empty())
+	  fprintf(f,
+		  "    %s Clock(s) not associated with one specific port:\n", comment);
+	emitSignal(c->signal(), f, lang, Signal::IN, last, -1, 0);
+	if (c->m_reset.size())
+	  // FIXME: TOTAL HACK FOR THE INNER WORKER TO HAVE A POSITIVE RESET
+	  emitSignal(inWorker && !strcasecmp(c->reset(), "wci_reset_n") ?
+		     "wci_reset" : c->reset(),
+		     f, lang, Signal::IN, last, -1, 0);
+      }
     }
-  }
   for (unsigned i = 0; i < m_ports.size(); i++) {
     Port *p = m_ports[i];
     emitLastSignal(f, last, lang, false);
@@ -626,9 +628,9 @@ emitDefsHDL(bool wrap) {
     for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
       Clock *c = *ci;
       if (!c->port) {
-	fprintf(f, "  input      %s;\n", c->signal);
-	if (c->reset.size())
-	  fprintf(f, "  input      %s;\n", c->reset.c_str());
+	fprintf(f, "  input      %s;\n", c->signal());
+	if (c->m_reset.size())
+	  fprintf(f, "  input      %s;\n", c->reset());
       }
     }
     for (unsigned i = 0; i < m_ports.size(); i++)
@@ -759,19 +761,20 @@ emitVhdlShell(FILE *f) {
   fprintf(f,
 	  "  port map(\n");
   std::string last;
-  for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
-    Clock *c = *ci;
-    if (!c->port) {
-      fprintf(f, "%s    %s => %s", last.c_str(), c->signal, c->signal);
-      last = ",\n";
-      if (c->reset.size()) {
-	// FIXME: HACK FOR EXPOSING POSITIVE RESET TO INNER WORKER
-	const char *reset = !strcasecmp(c->reset.c_str(), "wci_reset_n") ? "wci_reset" :
-	  c->reset.c_str();
-	fprintf(f, "%s    %s => %s", last.c_str(), reset, reset);
+  if (m_type != Container)
+    for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
+      Clock *c = *ci;
+      if (!c->port) {
+	fprintf(f, "%s    %s => %s", last.c_str(), c->signal(), c->signal());
+	last = ",\n";
+	if (c->m_reset.size()) {
+	  // FIXME: HACK FOR EXPOSING POSITIVE RESET TO INNER WORKER
+	  const char *reset = !strcasecmp(c->reset(), "wci_reset_n") ? "wci_reset" :
+	    c->reset();
+	  fprintf(f, "%s    %s => %s", last.c_str(), reset, reset);
+	}
       }
     }
-  }
   for (unsigned i = 0; i < m_ports.size(); i++)
     m_ports[i]->emitVHDLShellPortMap(f, last);
   if (m_ctl.nonRawWritables || m_ctl.nonRawReadables || m_ctl.rawProperties)
@@ -834,18 +837,19 @@ emitVhdlSignalWrapper(FILE *f, const char *topinst) {
       fprintf(f, ")\n");
     std::string init = "    port map(\n";
     std::string last = init;
-    for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
-      Clock *c = *ci;
-      if (!c->port) {
-	if (last.empty())
-	  fprintf(f,
-		  "  -- Clock(s) not associated with one specific port:\n");
-	fprintf(f, "%s      %s => %s", last.c_str(), c->signal, c->signal);
-	last = ",\n";
-	if (c->reset.size())
-	  fprintf(f, "%s      %s => %s", last.c_str(), c->reset.c_str(), c->reset.c_str());
+    if (m_type != Container)
+      for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
+	Clock *c = *ci;
+	if (!c->port) {
+	  if (last.empty())
+	    fprintf(f,
+		    "  -- Clock(s) not associated with one specific port:\n");
+	  fprintf(f, "%s      %s => %s", last.c_str(), c->signal(), c->signal());
+	  last = ",\n";
+	  if (c->m_reset.size())
+	    fprintf(f, "%s      %s => %s", last.c_str(), c->reset(), c->reset());
+	}
       }
-    }
     for (unsigned i = 0; i < m_ports.size(); i++)
       m_ports[i]->emitVHDLSignalWrapperPortMap(f, last);
     for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
@@ -922,16 +926,17 @@ emitVhdlRecordWrapper(FILE *f) {
 
     fprintf(f, "    port map(\n");
     std::string last;
-    for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
-      Clock *c = *ci;
-      if (!c->port) {
-	if (last.empty())
-	  fprintf(f,
-		  "  -- Clock(s) not associated with one specific port:\n");
-	fprintf(f, "%s      %s => %s", last.c_str(), c->signal, c->signal);
-	last = ",\n";
+    if (m_type != Container)
+      for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
+	Clock *c = *ci;
+	if (!c->port) {
+	  if (last.empty())
+	    fprintf(f,
+		    "  -- Clock(s) not associated with one specific port:\n");
+	  fprintf(f, "%s      %s => %s", last.c_str(), c->signal(), c->signal());
+	  last = ",\n";
+	}
       }
-    }
     for (unsigned i = 0; i < m_ports.size(); i++)
       m_ports[i]->emitVHDLRecordWrapperPortMap(f, last);
     for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {

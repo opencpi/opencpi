@@ -446,7 +446,7 @@ parseOcl() {
 const char *Worker::
 parseOclAssy() {
   const char *err;
-  Assembly *a = m_assembly = new Assembly(*this);
+  ::Assembly *a = m_assembly = new ::Assembly(*this);
   m_model = OclModel;
   m_modelString = "ocl";
 
