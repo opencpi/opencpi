@@ -472,39 +472,45 @@ void Port::
 emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *indent,
 		bool &any, std::string &comment, std::string &last, const char *myComment,
 		OcpAdapt */*adapt*/) {
-  Attachment *at = atts.front();
-  Connection *c = at ? &at->m_connection : NULL;
   doPrev(f, last, comment, myComment);
-  // We need to know the indexing of the other attachment
-  Attachment *otherAt = NULL;
-  for (AttachmentsIter ai = c->m_attachments.begin(); ai != c->m_attachments.end(); ai++)
-    if (*ai != at) {
-      otherAt = *ai;
-      break;
-    }
-  assert(otherAt);
-  std::string index;
-  // Indexing is necessary when only when we are smaller than the other
-  if (count < otherAt->m_instPort.m_port->count)
-    if (c->m_count > 1)
-      OU::format(index, "(%zu to %zu)", otherAt->m_index, otherAt->m_index + c->m_count - 1);
-    else
-      OU::format(index, "(%zu)", otherAt->m_index);
-  std::string in, out;
+  std::string in, out, index;
   OU::format(in, typeNameIn.c_str(), "");
   OU::format(out, typeNameOut.c_str(), "");
+  Attachment *at = atts.front();
+  const char *mName, *sName;
+  if (at) {
+    Connection &c = at->m_connection;
+    // We need to know the indexing of the other attachment
+    Attachment *otherAt = NULL;
+    for (AttachmentsIter ai = c.m_attachments.begin(); ai != c.m_attachments.end(); ai++)
+      if (*ai != at) {
+	otherAt = *ai;
+	break;
+      }
+    assert(otherAt);
+    // Indexing is necessary only when we are smaller than the other
+    if (count < otherAt->m_instPort.m_port->count)
+      if (c.m_count > 1)
+	OU::format(index, "(%zu to %zu)", otherAt->m_index, otherAt->m_index + c.m_count - 1);
+      else
+	OU::format(index, "(%zu)", otherAt->m_index);
+    mName = c.m_masterName.c_str();
+    sName = c.m_slaveName.c_str();
+  } else
+    mName = sName = "open";
   // input, then output
   if (haveInputs()) {
     fprintf(f, "%s%s => %s%s",
-	    any ? indent : "",
-	    in.c_str(), master ? c->m_slaveName.c_str() : c->m_masterName.c_str(),
+	    any ? indent : "", in.c_str(),
+	    master ?
+	    (at ? sName : slaveMissing()) : (at ? mName : masterMissing()),
 	    index.c_str());
     any = true;
   }
   if (haveOutputs())
     fprintf(f, "%s%s%s => %s%s",
 	    haveInputs() ? ",\n" : "", any ? indent : "", out.c_str(),
-	    master ? c->m_masterName.c_str() : c->m_slaveName.c_str(), index.c_str());
+	    master ? mName : sName, index.c_str());
 }
 
 void Port::
@@ -520,6 +526,21 @@ emitRccCImpl1(FILE *) {}
 RawPropPort::
 RawPropPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
   : Port(w, x, sp, ordinal, PropPort, "rawProps", err) {
+}
+
+// Our special copy constructor
+RawPropPort::
+RawPropPort(const RawPropPort &other, Worker &w , std::string &name, size_t count,
+	    const char *&err)
+  : Port(other, w, name, count, err) {
+  if (err)
+    return;
+}
+
+Port &RawPropPort::
+clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role *, const char *&err)
+  const {
+  return *new RawPropPort(*this, w, name, count, err);
 }
 
 void RawPropPort::
@@ -566,6 +587,18 @@ emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signa
     fprintf(f, "(0 to %zu)", count - 1);
   fprintf(f, ";\n");
 }
+
+const char *RawPropPort::
+masterMissing() const {
+  return "platform.platform_pkg.raw_prop_out_zero";
+}
+const char *RawPropPort::
+slaveMissing() const {
+  return "platform.platform_pkg.raw_prop_in_zero";
+}
+
+
+
 
 CpPort::
 CpPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
@@ -830,4 +863,24 @@ fixDataConnectionRole(OU::Assembly::Role &role) {
 
 void Port::
 initRole(OCPI::Util::Assembly::Role &) {
+}
+
+void Port::
+emitExtAssignment(FILE *f, bool int2ext, const std::string &extName, const std::string &intName,
+		  const Attachment &extAt, const Attachment &intAt, size_t connCount) const {
+  std::string ours = extName;
+  if (connCount < count) {
+    if (connCount == 1)
+      OU::formatAdd(ours, "(%zu)", extAt.m_index);
+    else
+      OU::formatAdd(ours, "(%zu to %zu)", extAt.m_index, extAt.m_index + connCount - 1);
+  }
+  std::string theirs = intName;
+  if (connCount == 1)
+    OU::formatAdd(theirs, "(%zu)", intAt.m_index);
+  else
+    OU::formatAdd(theirs, "(%zu to %zu)", intAt.m_index, intAt.m_index + connCount - 1);
+  fprintf(f, "  %s <= %s;\n",
+	  int2ext ? ours.c_str() : theirs.c_str(),
+	  int2ext ? theirs.c_str() : ours.c_str());
 }

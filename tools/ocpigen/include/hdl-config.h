@@ -14,13 +14,14 @@ struct DevInstance {
   bool control;
   const DevInstance *parent;
   std::string m_name;
+  std::vector<uint64_t> m_connected;
   DevInstance(const Device &d, const Card *c, const Slot *s, bool control,
 	      const DevInstance *parent);
   const char *name() const { return m_name.c_str(); }
 };
 
 typedef std::list<DevInstance> DevInstances;
-typedef DevInstances::const_iterator DevInstancesIter;
+typedef DevInstances::iterator DevInstancesIter;
 
 #define HDL_CONFIG_ATTRS "platform"
 #define HDL_CONFIG_ELEMS "cpmaster", "nocmaster", "device"
@@ -44,13 +45,14 @@ protected:
 		                                // if !NULL, its ok for it to already exist
 		   bool *inBase);               // whether it was found in the base list
 
-  const DevInstance *
+  DevInstance *
   findDevInstance(const Device &dev, const Card *card, const Slot *slot,
 		  DevInstances *baseInstances, bool *inBase);
   const char *
   addDevInstance(const Device &dev, const Card *, const Slot *slot, bool control,
-		 const DevInstance *parent, const DevInstance *&devInstance);
-  void emitSubdeviceConnections(std::string &assy);
+		 const DevInstance *parent, DevInstances *baseInstances,
+		 const DevInstance *&devInstance);
+  void emitSubdeviceConnections(std::string &assy, DevInstances *baseInstances);
 };
 
 class HdlContainer;

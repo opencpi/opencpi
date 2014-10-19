@@ -203,7 +203,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
     for (ContConnectsIter ci = connections.begin(); ci != connections.end(); ci++)
       if ((err = emitConnection(assy, uNocs, nWCIs, *ci)))
 	return;
-    emitSubdeviceConnections(assy);
+    emitSubdeviceConnections(assy, &m_config.m_devInstances);
   }
   // Instance the scalable control plane
   OU::formatAdd(assy,

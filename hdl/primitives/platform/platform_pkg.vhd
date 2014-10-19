@@ -335,6 +335,8 @@ type raw_prop_out_t is record
   benable : std_logic_vector(3 downto 0); -- which bytes are being accessed
   data    : word32_t;                     -- up to 32 bits of data
 end record raw_prop_out_t;
+constant raw_prop_out_zero : raw_prop_out_t
+  := ('0', '0', '0', '0', (others => '0'), (others => '0'), (others => '0'));
 type raw_prop_out_array_t is array(natural range <>) of raw_prop_out_t;
 -- Input to device worker as master of the rawprop interface
 -- These signals are "broadcast" back to all masters from the one slave
@@ -343,6 +345,9 @@ type raw_prop_in_t is record
   data    : word32_t;                     -- read data available when done
   present : std_logic_vector(0 to raw_max_devices-1); -- which of all devices are present
 end record raw_prop_in_t;
+constant raw_prop_in_zero : raw_prop_in_t
+  := ('0', (others => '0'), (others => '0'));
+
 type raw_prop_in_array_t is array(natural range <>) of raw_prop_in_t;
 
 component unoc_terminator is

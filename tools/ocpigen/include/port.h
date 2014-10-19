@@ -125,6 +125,11 @@ public:
   virtual void emitRccCppImpl(FILE *f); 
   virtual void emitRccCImpl(FILE *f); 
   virtual void emitRccCImpl1(FILE *f); 
+  virtual void emitExtAssignment(FILE *f, bool int2ext, const std::string &extName,
+				 const std::string &intName, const Attachment &extAt,
+				 const Attachment &intAt, size_t count) const;
+  virtual const char *masterMissing() const { return "(others => '0')"; }
+  virtual const char *slaveMissing() const { return "(others => '0')"; }
 };
 
 // Factory function template for port types

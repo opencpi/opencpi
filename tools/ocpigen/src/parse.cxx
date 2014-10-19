@@ -342,6 +342,18 @@ doScaling(ezxml_t x) {
   m_scalingParameters[name] = s;
   return NULL;
 }
+
+const char *Worker::
+addProperty(const char *xml, bool includeImpl) {
+  // Add the built-in properties
+  char *dprop = strdup(xml); // Make the contents persistent
+  ezxml_t dpx = ezxml_parse_str(dprop, strlen(dprop));
+  ocpiDebug("Adding ocpi_debug property xml %p", dpx);
+  const char *err = addProperty(dpx, includeImpl);
+  ezxml_free(dpx);
+  return err;
+}
+
 // Parse the generic implementation control aspects (for rcc and hdl and other)
 const char *Worker::
 parseImplControl(ezxml_t &xctl) {
@@ -363,13 +375,11 @@ parseImplControl(ezxml_t &xctl) {
       xctl && (err = parseList(ezxml_cattr(xctl, "ControlOperations"), parseControlOp, this)))
     return err;
   // Add the built-in properties
-  char *dprop =
-    strdup("<property name='ocpi_debug' type='bool' parameter='true' default='false' readable='true'/>");
-  ezxml_t dpx = ezxml_parse_str(dprop, strlen(dprop));
-  err = addProperty(dpx, true);
-  ezxml_free(dpx);
-  ocpiDebug("Adding ocpi_debug property xml %p", dpx);
-  if (err ||
+  if ((err = addProperty("<property name='ocpi_debug' type='bool' parameter='true' "
+			 "          default='false' readable='true'/>", true)) ||
+      //      (err = addProperty("<property name='ocpi_endian' type='enum' parameter='true' "
+      //			 "          default='little' readable='true'"
+      //			 "          enums='little,big,dynamic'/>", true)) ||
       (err = doProperties(m_xml, m_file.c_str(), true, false)))
     return err;
   // Now that we have all information about properties and we can actually

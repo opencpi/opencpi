@@ -110,8 +110,8 @@ parseHdlAssy() {
 	    wciClk = addClock();
 	    // FIXME:  this should access the 0th clock more specifically for VHDL
 	    wciClk->m_name = "wciClk";
-	    OU::format(wciClk->m_signal, "%s_%s_out(0).Clk", i->name, ip->m_port->name());
-	    OU::format(wciClk->m_reset, "%s_%s_out(0).MReset_n", i->name, ip->m_port->name());
+	    OU::format(wciClk->m_signal, "%s_%s_out_i(0).Clk", i->name, ip->m_port->name());
+	    OU::format(wciClk->m_reset, "%s_%s_out_i(0).MReset_n", i->name, ip->m_port->name());
 	    wciClk->assembly = true;
 	    if (i->m_clocks)
 	      i->m_clocks[ip->m_port->clock->ordinal] = wciClk;
@@ -386,8 +386,9 @@ Attachment(InstancePort &ip, Connection &c, size_t index)
 }
 Connection::
 Connection(OU::Assembly::Connection *connection, const char *name)
-  : /*m_connection(connection), */m_name(name ? name : (connection ? connection->m_name.c_str() : "")),
-    m_nExternals(0), m_clock(NULL), m_external(NULL), m_count(0) {
+  : m_name(name ? name : (connection ? connection->m_name.c_str() : "")),
+    m_nExternals(0), m_clock(NULL), m_external(NULL),
+    m_count(connection ? connection->m_count : 0) {
 }
 
 void InstancePort::
@@ -398,6 +399,7 @@ emitConnectionSignal(FILE *f, bool output, Language lang) {
 		output ?
 		(lang == VHDL ? m_port->typeNameOut.c_str() : m_port->fullNameOut.c_str()) :
 		(lang == VHDL ? m_port->typeNameIn.c_str() : m_port->fullNameIn.c_str()), "");
+  signal += "_i"; // Use this to avoid colliding with port signals
   (output ? m_signalOut : m_signalIn) = signal;
   m_port->emitConnectionSignal(f, output, lang, signal);
 }
@@ -440,7 +442,7 @@ createConnectionSignals(FILE *f, Language lang) {
   // Input side: rare - generate signal when it aggregates members from others,
   // Like a WSI slave port array
   if (m_port->count > 1) {
-    if (maxCount < m_port->count) {
+    if (maxCount < m_port->count || m_attachments.size() > 1) {
       emitConnectionSignal(f, false, lang);
       for (AttachmentsIter ai = m_attachments.begin(); ai != m_attachments.end(); ai++) {
 	Connection &c = (*ai)->m_connection;
@@ -666,22 +668,12 @@ assignExt(FILE *f, Connection &c, std::string &intName, bool in2ext) {
   Port &p = *c.m_external->m_instPort.m_port;
   Attachment
     &extAt = *c.m_external,
-    &intAt = *(c.m_attachments.front() == c.m_external ? c.m_attachments.back() : c.m_attachments.front());
-  std::string ours, theirs;
-  OU::format(ours, in2ext ? p.typeNameOut.c_str() : p.typeNameIn.c_str(), "");
-  theirs = intName.c_str();
-  if (c.m_count < p.count) {
-    if (c.m_count == 1)
-      OU::formatAdd(ours, "(%zu)", extAt.m_index);
-    else
-      OU::formatAdd(ours, "(%zu to %zu)", extAt.m_index, extAt.m_index + c.m_count - 1);
-  }
-  if (c.m_count == 1)
-    OU::formatAdd(theirs, "(%zu)", intAt.m_index);
-  else
-    OU::formatAdd(theirs, "(%zu to %zu)", intAt.m_index, intAt.m_index + c.m_count - 1);
-  fprintf(f, "  %s <= %s;\n",
-	  in2ext ? ours.c_str() : theirs.c_str(), in2ext ? theirs.c_str() : ours.c_str());
+    &intAt = *(c.m_attachments.front() == c.m_external ?
+	       c.m_attachments.back() : c.m_attachments.front());
+  std::string extName;
+  OU::format(extName, in2ext ? p.typeNameOut.c_str() : p.typeNameIn.c_str(), "");
+
+  p.emitExtAssignment(f, in2ext, extName, intName, extAt, intAt, c.m_count);
 }
 
  const char *Worker::
@@ -727,13 +719,13 @@ emitAssyHDL() {
        ci != m_assembly->m_connections.end(); ci++) {
     Connection &c = **ci;
     if (c.m_external) {
-      bool master = c.m_external->m_instPort.m_port->master;
-      std::string &nameExt2In = master ? c.m_slaveName : c.m_masterName;
-      if (nameExt2In.size())
-	assignExt(f, c, nameExt2In, false);
-      std::string &nameIn2Ext = master ? c.m_masterName : c.m_slaveName;
-      if (nameIn2Ext.size())
-	assignExt(f, c, nameIn2Ext, true);
+      Port &p = *c.m_external->m_instPort.m_port;
+      std::string &nameExt = p.master ? c.m_slaveName : c.m_masterName;
+      if (nameExt.size() && p.haveInputs())
+	assignExt(f, c, nameExt, false);
+      nameExt = p.master ? c.m_masterName : c.m_slaveName;
+      if (nameExt.size() && p.haveOutputs())
+	assignExt(f, c, nameExt, true);
     }
   }
   // Assign external port names to connections that don't have temp signals

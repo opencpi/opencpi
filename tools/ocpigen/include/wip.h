@@ -369,12 +369,18 @@ class TimeServicePort : public Port {
 class RawPropPort : public Port {
  public:
   RawPropPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
+  RawPropPort(const RawPropPort &other, Worker &w, std::string &name, size_t count,
+	      const char *&err);
+  Port &clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role *role,
+	      const char *&err) const;
   inline const char *prefix() const { return "rawprop"; }
   inline const char *typeName() const { return "RawProperty"; }
   bool needsControlClock() const { return true; }
   void emitRecordTypes(FILE *f);
   void emitRecordInterface(FILE *f, const char *implName);
   void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
+  const char *masterMissing() const;
+  const char *slaveMissing() const;
 };
 // The port for inter-device connections
 class DevSignalsPort : public Port {
@@ -384,6 +390,10 @@ class DevSignalsPort : public Port {
   bool m_hasOutputs;
  public:
   DevSignalsPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
+  DevSignalsPort(const DevSignalsPort &other, Worker &w, std::string &name, size_t count,
+		 const char *&err);
+  Port &clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role *role,
+	      const char *&err) const;
   void emitRecordTypes(FILE *f);
   void emitRecordInterface(FILE *f, const char *implName);
   inline const char *prefix() const { return "ds"; }
@@ -394,10 +404,13 @@ class DevSignalsPort : public Port {
   bool haveWorkerOutputs() const { return haveOutputs(); }
   void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
   void emitPortSignalsDir(FILE *f, bool output, const char *indent, bool &any,
-			  std::string &comment, std::string &last, Attachment &other);
+			  std::string &comment, std::string &last, Attachment *other);
   void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 		       const char *indent, bool &any, std::string &comment,
 		       std::string &last, const char *myComment, OcpAdapt *adapt);
+  void emitExtAssignment(FILE *f, bool int2ext, const std::string &extName,
+			 const std::string &intName, const Attachment &extAt,
+			 const Attachment &intAt, size_t count) const;
 };
 
 class LocalMemory {
@@ -560,6 +573,8 @@ class Worker : public Parsed, public OU::IdentResolver {
     *initImplPorts(ezxml_t xml, const char *element, PortCreate &pc),
     *checkDataPort(ezxml_t impl, Port *&sp),
     *addProperty(ezxml_t prop, bool includeImpl),
+    // Add a property from an xml string description
+    *addProperty(const char *xml, bool includeImpl),
     //    *doAssyClock(Instance *i, Port *p),
     *openSkelHDL(const char *suff, FILE *&f),
     *emitVhdlRecordInterface(FILE *f),

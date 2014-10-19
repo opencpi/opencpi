@@ -22,6 +22,6 @@
 #
 ########################################################################### #
 
-Containers=lime_in lime_in_cont lime_inout_cont
+Containers=lime_in lime_in_cont lime_inout_cont lime_split_cont
 ExcludePlatforms=isim_pf modelsim_pf
 include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk

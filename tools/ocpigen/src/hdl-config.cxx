@@ -13,6 +13,7 @@ DevInstance::
 DevInstance(const Device &d, const Card *c, const Slot *s, bool control,
 	    const DevInstance *parent)
   : device(d), card(c), slot(s), control(control), parent(parent) {
+  m_connected.resize(d.m_deviceType.m_ports.size(), 0);
   if (slot) {
     m_name = slot->name();
     m_name += "_";
@@ -21,12 +22,12 @@ DevInstance(const Device &d, const Card *c, const Slot *s, bool control,
     m_name = d.name();
 }
 
-const DevInstance *HdlHasDevInstances::
+DevInstance *HdlHasDevInstances::
 findDevInstance(const Device &dev, const Card *card, const Slot *slot,
 		DevInstances *baseInstances, bool *inBase) {
   if (baseInstances)
     for (DevInstancesIter dii = baseInstances->begin(); dii != baseInstances->end(); dii++) {
-      const DevInstance &di = *dii;
+      DevInstance &di = *dii;
       if (&di.device == &dev && di.slot == slot && di.card == card) {
 	if (inBase)
 	  *inBase = true;
@@ -34,7 +35,7 @@ findDevInstance(const Device &dev, const Card *card, const Slot *slot,
       }
     }
   for (DevInstancesIter dii = m_devInstances.begin(); dii != m_devInstances.end(); dii++) {
-    const DevInstance &di = *dii;
+    DevInstance &di = *dii;
     if (&di.device == &dev && di.slot == slot && di.card == card)
       return &di;
   }
@@ -43,7 +44,8 @@ findDevInstance(const Device &dev, const Card *card, const Slot *slot,
 
 const char *HdlHasDevInstances::
 addDevInstance(const Device &dev, const Card *card, const Slot *slot,
-	       bool control, const DevInstance *parent, const DevInstance *&devInstance) {
+	       bool control, const DevInstance *parent, DevInstances *baseInstances,
+	       const DevInstance *&devInstance) {
   const char *err;
   m_devInstances.push_back(DevInstance(dev, card, slot, control, parent));
   assert(card && slot || !card && !slot);
@@ -57,9 +59,9 @@ addDevInstance(const Device &dev, const Card *card, const Slot *slot,
     const Device &rdev = dev.m_board.findRequired(r.m_type, dev.m_ordinal);
     // Note that we only look in the current devinstance list.
     // We can't share subdevices across the config-container boundary
-    const DevInstance *rdi = findDevInstance(rdev, card, slot, NULL, NULL);
+    const DevInstance *rdi = findDevInstance(rdev, card, slot, baseInstances, NULL);
     if (!rdi &&
-	(err = addDevInstance(rdev, card, slot, control, devInstance, rdi)))
+	(err = addDevInstance(rdev, card, slot, control, devInstance, NULL, rdi)))
       return err;
   }      
   return NULL;
@@ -141,7 +143,7 @@ parseDevInstance(const char *device, ezxml_t x, const char *parent, bool control
       return OU::esprintf("Platform Device '%s' is already in the platform configuration",
 			  di->device.name());
   }
-  if ((err = addDevInstance(*dev, card, slot, control, NULL, di)))
+  if ((err = addDevInstance(*dev, card, slot, control, NULL, baseInstances, di)))
     return err;
   if (result)
     *result = di;
@@ -176,14 +178,16 @@ parseDevInstances(ezxml_t xml, const char *parent, DevInstances *baseInstances) 
 }
 
 void HdlHasDevInstances::
-emitSubdeviceConnections(std::string &assy) {
+emitSubdeviceConnections(std::string &assy,  DevInstances *baseInstances) {
   for (DevInstancesIter dii = m_devInstances.begin(); dii != m_devInstances.end(); dii++) {
     const Device &d = (*dii).device;
     // For each required (sub)device type
     for (RequiredsIter ri = d.m_deviceType.m_requireds.begin();
 	 ri != d.m_deviceType.m_requireds.end(); ri++) {
-      const DevInstance *rdi = findDevInstance(d.m_board.findRequired((*ri).m_type, d.m_ordinal),
-					       (*dii).card, (*dii).slot, NULL, NULL);
+      bool inConfig;
+      DevInstance *rdi =
+	findDevInstance(d.m_board.findRequired((*ri).m_type, d.m_ordinal),
+			(*dii).card, (*dii).slot, baseInstances, &inConfig);
       assert(rdi);
       for (ReqConnectionsIter rci = (*ri).m_connections.begin();
 	   rci != (*ri).m_connections.end(); rci++) {
@@ -191,11 +195,14 @@ emitSubdeviceConnections(std::string &assy) {
 	OU::formatAdd(assy,
 		      "  <connection>\n"
 		      "    <port instance='%s' name='%s'/>\n"
-		      "    <port instance='%s' name='%s'",
+		      "    <port instance='%s' name='%s%s%s'",
 		      (*dii).name(), (*rci).m_port->name(),
-		      (*rdi).name(), (*rci).m_rq_port->name());
+		      inConfig ? "pfconfig" : rdi->name(),
+		      inConfig ? rdi->name() : "", inConfig ? "_" : "",
+		      (*rci).m_rq_port->name());
 	if ((*rci).m_indexed)
 	  OU::formatAdd(assy, " index='%zu'", (*rci).m_index);
+	rdi->m_connected[(*rci).m_rq_port->m_ordinal] |= 1 << (*rci).m_index;
 	OU::formatAdd(assy,
 		      "/>\n"
 		      "  </connection>\n");
@@ -304,7 +311,7 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, const char *&err)
       }
   }
   // 4. To and from subdevices
-  emitSubdeviceConnections(assy);
+  emitSubdeviceConnections(assy, NULL);
   // End of internal connections.
   // Start of external connections (not signals)
   //  1. WCI master
@@ -323,12 +330,19 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, const char *&err)
     const ::Device &d = (*dii).device;
     for (PortsIter pi = d.deviceType().ports().begin(); pi != d.deviceType().ports().end(); pi++) {
       Port &p = **pi;
-      if (p.isData() || p.type == NOCPort)
+      if (p.isData() || p.type == NOCPort ||
+	  (!p.master && (p.type == PropPort || p.type == DevSigPort))) {
+	size_t unconnected = 0;
+	for (size_t i = 0; i < p.count; i++)
+	  if (!((*dii).m_connected[p.m_ordinal] & (1 << i)))
+	    unconnected++;
 	OU::formatAdd(assy,
-		      "  <external name='%s_%s' instance='%s' port='%s'/>\n",
+		      "  <external name='%s_%s' instance='%s' port='%s' count='%zu'/>\n",
 		      (*dii).name(), p.name(),
-		      (*dii).name(), p.name());
-    }		
+		      (*dii).name(), p.name(),
+		      unconnected);
+      }
+    }
   }
   for (PortsIter pi = m_platform.m_ports.begin(); pi != m_platform.m_ports.end(); pi++) {
       Port &p = **pi;
