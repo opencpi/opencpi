@@ -122,8 +122,14 @@ namespace OCPI {
 
 typedef uint16_t  RCCOrdinal;
 typedef uint8_t   RCCOpCode;
+typedef enum {
+  RCC_LITTLE,
+  RCC_BIG,
+  RCC_DYNAMIC
+} RCCEndian;
 #ifdef __cplusplus
 typedef bool RCCBoolean;
+
 #else
 typedef uint8_t   RCCBoolean;
 #endif

@@ -43,7 +43,7 @@
 
 // Used both in spec and in impl
 #define ACCESS_ATTRIBUTES \
-  "Readable", "Writable", "Volatile", "Initial", "Padding"
+  "Readable", "Writable", "Volatile", "Initial", "Padding", "Parameter"
 
 #define PROPERTY_ATTRIBUTES \
   OCPI_UTIL_MEMBER_ATTRS, ACCESS_ATTRIBUTES, "IsTest", "Default"
@@ -61,7 +61,6 @@
   "WriteBarrier",  /* impl says you need afterconfig */\
   "ReadError",  /* impl says reading this can return an error */\
   "WriteError", /* impl says writing this can return an error */\
-  "Parameter",  /* impl is supplying a parameter property */	\
   "Indirect",   /* impl is supplying an indirect address */	\
     "Debug",       /* property is for debug only */		\
   "ReadScalable"       /* property is for debug only */     \
@@ -108,6 +107,7 @@ namespace OCPI {
 	  (err = OE::getBoolean(prop, "Writable", &m_isWritable, addAccess)) ||
 	  (err = OE::getBoolean(prop, "Initial", &m_isInitial, addAccess)) ||
 	  (err = OE::getBoolean(prop, "Volatile", &m_isVolatile, addAccess)) ||
+	  (err = OE::getBoolean(prop, "Parameter", &m_isParameter, addAccess)) ||
 	  (err = OE::getBoolean(prop, "Padding", &m_isPadding, false)))
 	return err;
       if (m_isInitial)
@@ -210,7 +210,6 @@ namespace OCPI {
 	  (err = OE::getBoolean(prop, "ReadError", &m_readError)) ||
 	  (err = OE::getBoolean(prop, "WriteError", &m_writeError)) ||
 	  (err = OE::getBoolean(prop, "IsTest", &m_isTest)) ||
-	  (err = OE::getBoolean(prop, "Parameter", &m_isParameter)) ||
 	  (err = OE::getBoolean(prop, "Debug", &m_isDebug)) ||
 	  // FIXME: consider allowing this only for HDL somehow.
 	  (err = OE::getNumber(prop, "Indirect", &m_indirectAddr, &m_isIndirect, 0, true)))

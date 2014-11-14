@@ -2,8 +2,8 @@
 -- via its WCI.  Thus this module is the WCI master.
 
 -- FIXME: ensure that the reset has been asserted for 16 clocks
-library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
-library ocpi; use ocpi.types.all; use ocpi.util.all;
+library IEEE; use IEEE.std_logic_1164.all, ieee.numeric_std.all;
+library ocpi; use ocpi.all, ocpi.types.all, ocpi.util.all;
 use work.platform_pkg.all;
 entity wci_master is
   generic(
@@ -11,8 +11,8 @@ entity wci_master is
     id_width, id : natural);
   port(
     -- worker-facing side - a WCI
-    wci_in     : in  wci_s2m_t;
-    wci_out    : out wci_m2s_t;
+    wci_in     : in  wci.wci_s2m_t;
+    wci_out    : out wci.wci_m2s_t;
     worker_in  : in  worker_in_t;
     worker_out : out worker_out_t);
 end entity  wci_master;
@@ -68,7 +68,7 @@ begin
   wci_out.MByteEn    <= worker_in.byte_en;
   wci_out.MData      <= worker_in.data;
   wci_out.MFlag(0)   <= abort_r;
-  wci_out.MFlag(1)   <= '0'; -- little endian
+  wci_out.MFlag(1)   <= worker_in.is_big_endian;
   wci_out.MFlag(2)   <= barrier_r; -- tell worker we're in a barrier
   wci_out.MFlag(10 downto 3)  <= rank_r; -- position in cres
   wci_out.MFlag(18 downto 11) <= crew_r; -- tell worker we're in a barrier

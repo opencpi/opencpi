@@ -36,6 +36,10 @@
 const char *Worker::
 parseHdlAssy() {
   const char *err;
+  if ((err = addBuiltinProperties()))
+    return err;
+  for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
+    m_ctl.summarizeAccess(**pi);
   ::Assembly *a = m_assembly = new ::Assembly(*this);
   
   static const char
@@ -523,7 +527,7 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
 	if (lang == VHDL) {
 	  std::string value;
 	  fprintf(f, any ? ",\n              "  : "  generic map(");
-	  fprintf(f, "%s => %s", pr->m_name.c_str(), vhdlValue(pv->value, value));
+	  fprintf(f, "%s => %s", pr->m_name.c_str(), vhdlValue(pr->m_name, pv->value, value));
 	} else {
 	  fprintf(f, "%s", any ? ", " : " #(");
 	  int64_t i64 = 0;
@@ -955,8 +959,8 @@ emitAssyImplHDL(FILE *f, bool wrap) {
 }
 
 HdlAssembly *HdlAssembly::
-create(ezxml_t xml, const char *xfile, const char *&err) {
-  HdlAssembly *ha = new HdlAssembly(xml, xfile, err);
+create(ezxml_t xml, const char *xfile, Worker *parent, const char *&err) {
+  HdlAssembly *ha = new HdlAssembly(xml, xfile, parent, err);
   if (err) {
     delete ha;
     ha = NULL;
@@ -965,8 +969,8 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
 }
 
 HdlAssembly::
-HdlAssembly(ezxml_t xml, const char *xfile, const char *&err)
-  : Worker(xml, xfile, "", Worker::Assembly, NULL, err) {
+HdlAssembly(ezxml_t xml, const char *xfile, Worker *parent, const char *&err)
+  : Worker(xml, xfile, "", Worker::Assembly, parent, NULL, err) {
   if (!(err = OE::checkAttrs(xml, IMPL_ATTRS, HDL_TOP_ATTRS, (void*)0)) &&
       !(err = OE::checkElements(xml, IMPL_ELEMS, HDL_IMPL_ELEMS, ASSY_ELEMS, (void*)0)))
     err = parseHdl();

@@ -71,6 +71,9 @@ parseFile(const char *file, const std::string &parent, const char *element,
   else
     cp = strdup(myFile);
   std::list<const char *> tries;
+  bool relative = false;
+  if (*cp != '/')
+    relative = true;
   tries.push_back(cp);
   int fd = open(cp, O_RDONLY);
   ocpiDebug("Trying to open '%s', and %s", cp, fd < 0 ? "failed" : "succeeded");
@@ -84,6 +87,8 @@ parseFile(const char *file, const std::string &parent, const char *element,
 	    cp = strdup(myFile);
 	  else
 	    asprintf((char **)&cp, "%s/%s", *ap, myFile);
+	  if (*cp != '/')
+	    relative = true;
 	  tries.push_back(cp);
 	  fd = open(cp, O_RDONLY);
 	  ocpiDebug("Trying to open '%s', and %s", cp, fd < 0 ? "failed" : "succeeded");
@@ -103,10 +108,17 @@ parseFile(const char *file, const std::string &parent, const char *element,
 	  *xp = 0;
 	  ocpiInfo("Optional file \"%s\" could not be opened for reading/parsing."
 		   "  Files tried: %s", file, files.c_str());
-	} else
+	} else {
+	  if (relative) {
+	    char *cwd = getcwd(NULL, 0);
+	    if (cwd)
+	      OU::formatAdd(files, " CWD is %s", cwd);
+	    free(cwd);
+	  }
 	  err =
 	    OU::esprintf("File \"%s\" could not be opened for reading/parsing."
 			 "  Files tried: %s", file, files.c_str());
+	}
 	break;
       }
     }

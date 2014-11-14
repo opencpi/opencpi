@@ -7,9 +7,26 @@ function slv(v : std_logic_vector) return std_logic_vector is
 begin
   return v;
 end slv;
-function slv(b : std_logic) return std_logic_vector is
-  variable v : std_logic_vector(0 downto 0) := (others => b);
+function slv(v : unsigned) return std_logic_vector is
 begin
+  return std_logic_vector(v);
+end slv;
+function slv(v : signed) return std_logic_vector is
+begin
+  return std_logic_vector(v);
+end slv;
+function slv(s : string_t) return std_logic_vector is
+  variable v : std_logic_vector(s'length * 8 - 1 downto 0);
+begin
+  for i in 0 to s'right loop
+    v((s'length - i) * 8 - 1 downto (s'length - i) * 8 - 7) := from_char(s(i));
+  end loop;
+  return v;
+end slv;
+function slv(b : std_logic) return std_logic_vector is
+  variable v : std_logic_vector(0 downto 0);
+begin
+  v := (others => b);
   return v;
 end slv;
 function slv0(n : natural) return std_logic_vector is

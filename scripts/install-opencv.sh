@@ -1,5 +1,5 @@
 #!/bin/bash --noprofile
-. setup_install.sh
+source scripts/setup-install.sh
 CMAKE=$OCPI_PREREQUISITES_INSTALL_DIR/cmake/$OCPI_TOOL_HOST/bin/cmake
 if test ! -x $CMAKE ; then
   echo No cmake found at: $CMAKE
@@ -8,17 +8,16 @@ if test ! -x $CMAKE ; then
   echo point to an existing cmake.  We don\'t use a system-installed cmake unless you ask for it.
   exit 1
 fi
-if test ! -d opencv ; then
-  mkdir -p opencv
-fi
+mkdir -p opencv
 cd opencv
-OPENCV_MAJOR=2.4.3
+rm -r -f OpenCV* opencv*
+OPENCV_MAJOR=2.4.10
 OPENCV_MINOR=
 OPENCV_VERSION=$OPENCV_MAJOR$OPENCV_MINOR
-TarFile=OpenCV-$OPENCV_VERSION.tar
-BZFile=$TarFile.bz2
-if test ! -f $BZFile ; then
-  curl -O http://softlayer.dl.sourceforge.net/project/opencvlibrary/opencv-unix/$OPENCV_MAJOR/$BZFile
+TarFile=opencv-$OPENCV_VERSION
+ZIPFile=$TarFile.zip
+if test ! -f $ZIPFile ; then
+  curl -O -L http://softlayer.dl.sourceforge.net/project/opencvlibrary/opencv-unix/$OPENCV_MAJOR/$ZIPFile
 #  if test ! -f $TarFile ; then
 #    echo You must download the source tar file: $BZFile from:
 #    echo     http://sourceforge.net/projects/opencvlibrary/files/opencv-unix/2.3.1/
@@ -27,14 +26,14 @@ if test ! -f $BZFile ; then
 #    exit 1
 #  fi
 fi
-rm -f $TarFile
-OPENCV_DIR=OpenCV-$OPENCV_MAJOR
+# rm -f $ZIPFile
+OPENCV_DIR=opencv-$OPENCV_MAJOR
 OPENCV_INSTALL_DIR=$OCPI_PREREQUISITES_INSTALL_DIR/opencv/$OCPI_TARGET_HOST
 rm -f -r $OPENCV_DIR
 rm -f -r $OPENCV_INSTALL_DIR
-bunzip2 -d $BZFile
-tar xf $TarFile
-cd OpenCV-$OPENCV_MAJOR
+unzip $ZIPFile
+#tar xf $TarFile
+cd opencv-$OPENCV_MAJOR
 mkdir build-$OCPI_TARGET_HOST
 if test `uname` == XXXDarwin; then
   # Force the rpath in the various targets to be @rpath

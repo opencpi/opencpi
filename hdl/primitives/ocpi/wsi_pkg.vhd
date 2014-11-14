@@ -6,15 +6,15 @@ library ocpi; use ocpi.types.all; use ocpi.ocp;
 package wsi is
 
 component slave
-  generic (precise         : boolean; -- are we precise-only?
-           data_width      : natural; -- width of data path
-           data_info_width : natural; -- width of data path
-           burst_width     : natural; -- burst width
-           n_bytes         : natural; -- number of bytes
-           byte_width      : natural; -- byte_width
-           opcode_width    : natural; -- bits in reqinfo
-           own_clock       : boolean; -- does the port have a clock different thanthe wci?
-           early_request   : boolean  -- are datavalid and datalast used? 
+  generic (precise          : boolean; -- are we precise-only?
+           mdata_width      : natural; -- width of data path
+           mdata_info_width : natural; -- width of data path
+           burst_width      : natural; -- burst width
+           n_bytes          : natural; -- number of bytes
+           byte_width       : natural; -- byte_width
+           opcode_width     : natural; -- bits in reqinfo
+           own_clock        : boolean; -- does the port have a clock different thanthe wci?
+           early_request    : boolean  -- are datavalid and datalast used? 
            );
   port (
     -- Exterior OCP input/master signals
@@ -25,9 +25,9 @@ component slave
     --- only used if bytesize < data width or zlm 
     MByteEn          : in  std_logic_vector(n_bytes - 1 downto 0);
     MCmd             : in  ocpi.ocp.MCmd_t;
-    MData            : in  std_logic_vector(data_width-1 downto 0);
+    MData            : in  std_logic_vector(mdata_width-1 downto 0);
     --- only used for aborts or bytesize not 8 and less than datawidth
-    MDataInfo        : in  std_logic_vector(data_info_width-1 downto 0);
+    MDataInfo        : in  std_logic_vector(mdata_info_width-1 downto 0);
     MDataLast        : in  std_logic := '0';
     MDataValid       : in  std_logic := '0';
     --- only used if number of opcodes > 1
@@ -59,15 +59,15 @@ component slave
 end component slave;
 
 component master
-  generic (precise         : boolean; -- are we precise-only?
-           data_width      : natural; -- width of data path
-           data_info_width : natural; -- width of data path
-           burst_width     : natural; -- width of burst width
-           n_bytes         : natural; -- number of bytes
-           byte_width      : natural; -- byte_width
-           opcode_width    : natural; -- bits in reqinfo
-           own_clock       : boolean; -- does the port have a clock different thanthe wci?
-           early_request   : boolean  -- are datavalid and datalast used? 
+  generic (precise          : boolean; -- are we precise-only?
+           mdata_width      : natural; -- width of data path
+           mdata_info_width : natural; -- width of data path
+           burst_width      : natural; -- width of burst width
+           n_bytes          : natural; -- number of bytes
+           byte_width       : natural; -- byte_width
+           opcode_width     : natural; -- bits in reqinfo
+           own_clock        : boolean; -- does the port have a clock different thanthe wci?
+           early_request    : boolean  -- are datavalid and datalast used? 
            );
   port (
     -- Exterior OCP input/slave signals
@@ -78,8 +78,8 @@ component master
     MBurstLength     : out std_logic_vector(burst_width - 1 downto 0);
     MByteEn          : out std_logic_vector(n_bytes - 1 downto 0);
     MCmd             : out ocpi.ocp.MCmd_t;
-    MData            : out std_logic_vector(data_width-1 downto 0);
-    MDataInfo        : out std_logic_vector(data_info_width-1 downto 0);
+    MData            : out std_logic_vector(mdata_width-1 downto 0);
+    MDataInfo        : out std_logic_vector(mdata_info_width-1 downto 0);
     MDataLast        : out std_logic;
     MDataValid       : out std_logic;
     MReqInfo         : out std_logic_vector(opcode_width-1 downto 0);
@@ -104,17 +104,17 @@ component master
     som, eom, valid  : in  Bool_t);
 end component master;
 component part_slave
-  generic (precise           : boolean; -- are we precise-only?
-           data_width        : natural; -- width of data path
-           data_info_width   : natural; -- width of data path
-           burst_width       : natural; -- burst width
-           n_bytes           : natural; -- number of bytes
-           byte_width        : natural; -- byte_width
-           opcode_width      : natural; -- bits in reqinfo
-           own_clock         : boolean; -- does the port have a clock different thanthe wci?
-           early_request     : boolean;  -- are datavalid and datalast used? 
-           part_size_width   : natural := 16; -- width of part size path
-           part_offset_width : natural := 16 -- width of part offset path
+  generic (precise            : boolean; -- are we precise-only?
+           mdata_width        : natural; -- width of data path
+           mdata_info_width   : natural; -- width of data path
+           burst_width        : natural; -- burst width
+           n_bytes            : natural; -- number of bytes
+           byte_width         : natural; -- byte_width
+           opcode_width       : natural; -- bits in reqinfo
+           own_clock          : boolean; -- does the port have a clock different thanthe wci?
+           early_request      : boolean;  -- are datavalid and datalast used? 
+           part_size_width    : natural := 16; -- width of part size path
+           part_offset_width  : natural := 16 -- width of part offset path
            );
   port (
     -- Exterior OCP input/master signals
@@ -125,9 +125,9 @@ component part_slave
     --- only used if bytesize < data width or zlm 
     MByteEn          : in  std_logic_vector(n_bytes - 1 downto 0);
     MCmd             : in  ocpi.ocp.MCmd_t;
-    MData            : in  std_logic_vector(data_width-1 downto 0);
+    MData            : in  std_logic_vector(mdata_width-1 downto 0);
     --- only used for aborts or bytesize not 8 and less than datawidth
-    MDataInfo        : in  std_logic_vector(data_info_width-1 downto 0);
+    MDataInfo        : in  std_logic_vector(mdata_info_width-1 downto 0);
     MDataLast        : in  std_logic := '0';
     MDataValid       : in  std_logic := '0';
     --- only used if number of opcodes > 1
@@ -165,17 +165,17 @@ component part_slave
 end component part_slave;
 
 component part_master
-  generic (precise           : boolean; -- are we precise-only?
-           data_width        : natural; -- width of data path
-           data_info_width   : natural; -- width of data path
-           burst_width       : natural; -- width of burst width
-           n_bytes           : natural; -- number of bytes
-           byte_width        : natural; -- byte_width
-           opcode_width      : natural; -- bits in reqinfo
-           own_clock         : boolean; -- does the port have a clock different thanthe wci?
-           early_request     : boolean;  -- are datavalid and datalast used? 
-           part_size_width   : natural := 16; -- width of part size path
-           part_offset_width : natural := 16 -- width of part offset path
+  generic (precise            : boolean; -- are we precise-only?
+           mdata_width        : natural; -- width of data path
+           mdata_info_width   : natural; -- width of data path
+           burst_width        : natural; -- width of burst width
+           n_bytes            : natural; -- number of bytes
+           byte_width         : natural; -- byte_width
+           opcode_width       : natural; -- bits in reqinfo
+           own_clock          : boolean; -- does the port have a clock different thanthe wci?
+           early_request      : boolean;  -- are datavalid and datalast used? 
+           part_size_width    : natural := 16; -- width of part size path
+           part_offset_width  : natural := 16 -- width of part offset path
            );
   port (
     -- Exterior OCP input/slave signals
@@ -186,8 +186,8 @@ component part_master
     MBurstLength     : out std_logic_vector(burst_width - 1 downto 0);
     MByteEn          : out std_logic_vector(n_bytes - 1 downto 0);
     MCmd             : out ocpi.ocp.MCmd_t;
-    MData            : out std_logic_vector(data_width-1 downto 0);
-    MDataInfo        : out std_logic_vector(data_info_width-1 downto 0);
+    MData            : out std_logic_vector(mdata_width-1 downto 0);
+    MDataInfo        : out std_logic_vector(mdata_info_width-1 downto 0);
     MDataLast        : out std_logic;
     MDataValid       : out std_logic;
     MReqInfo         : out std_logic_vector(opcode_width-1 downto 0);

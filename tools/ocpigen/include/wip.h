@@ -535,17 +535,20 @@ class Worker : public Parsed, public OU::IdentResolver {
   std::string m_validScaling; // Expression for error checking overall scaling
   Scaling m_scaling;
   std::map<std::string, Scaling> m_scalingParameters;
-  Worker(ezxml_t xml, const char *xfile, const std::string &parent, WType type,
-	 OU::Assembly::Properties *ipvs, const char *&err);
+  Worker *m_parent;           // If this worker is part of an upper level assembly
+  Worker(ezxml_t xml, const char *xfile, const std::string &parentFile, WType type,
+	 Worker *parent, OU::Assembly::Properties *ipvs, const char *&err);
   virtual ~Worker();
   static Worker *
-    create(const char *file, const std::string &parent, const char *package, const char *outDir,
-	   OU::Assembly::Properties *instancePropertyValues, size_t paramConfig, const char *&err);
+    create(const char *file, const std::string &parentFile, const char *package,
+	   const char *outDir, Worker *parent, OU::Assembly::Properties *instancePropertyValues,
+	   size_t paramConfig, const char *&err);
   bool nonRaw(PropertiesIter pi);
   Clock *addClock();
   Clock *addWciClockReset();
   OU::Property *findProperty(const char *name);
   const char
+    *addBuiltinProperties(),
     *getPort(const char *name, Port *&p, Port *except = NULL) const,
     *getValue(const char *sym, OU::ExprValue &val) const,
     *getNumber(ezxml_t x, const char *attr, size_t *np, bool *found = NULL,
@@ -592,7 +595,8 @@ class Worker : public Parsed, public OU::IdentResolver {
     *emitToolParameters(),
     *setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig),
     *deriveOCP(),
-    *hdlValue(const OU::Value &v, std::string &value, bool param = false, Language = NoLanguage),
+    *hdlValue(const std::string &name, const OU::Value &v, std::string &value,
+	      bool param = false, Language = NoLanguage),
     *findParamProperty(const char *name, OU::Property *&prop, size_t &nParam),
     *addConfig(ParamConfig &info, size_t &nConfig),
     *doParam(ParamConfig &info, PropertiesIter pi, unsigned nParam, size_t &nConfig),
@@ -601,8 +605,8 @@ class Worker : public Parsed, public OU::IdentResolver {
     *rccMethodName(const char *method, const char *&mName),
     *emitImplOCL(),
     *emitEntryPointOCL(),
-    *paramValue(OU::Value &v, std::string &value),
-    *rccValue(OU::Value &v, std::string &value, bool param = false),
+    *paramValue(const OU::Member &param, OU::Value &v, std::string &value),
+    *rccValue(OU::Value &v, std::string &value, const OU::Member *param = NULL),
     *rccPropValue(OU::Property &p, std::string &value),
     *emitSkelRCC(),
     *emitSkelOCL(),
@@ -615,6 +619,11 @@ class Worker : public Parsed, public OU::IdentResolver {
   Port *findPort(const char *name, Port *except = NULL) const;
   Clock *findClock(const char *name) const;
   void
+    setParent(Worker *p), // when it can't happen at construction
+    prType(OU::Property &pr, std::string &type),
+    emitVhdlPropMemberData(FILE *f, OU::Property &pr, unsigned maxPropName),
+    emitVhdlPropMember(FILE *f, OU::Property &pr, unsigned maxPropName, bool in2worker),
+    rccPropType(OU::Property &p, std::string &typeDef, std::string &type, std::string &pretty),
     emitWorkersAttribute(),
     deleteAssy(), // just to keep the assembly details out of most files
     emitXmlWorkers(FILE *f),
@@ -629,11 +638,11 @@ class Worker : public Parsed, public OU::IdentResolver {
     emitSignals(FILE *f, Language lang, bool records, bool inPackage, bool inWorker),
     emitRccStruct(FILE *f, size_t nMembers, OU::Member *members, unsigned indent,
 		  const char *parent, bool isFixed, bool &isLast, bool topSeq),
-    printRccMember(FILE *f, OU::Member *m, unsigned indent, size_t &offset, unsigned &pad,
+    printRccMember(FILE *f, OU::Member &m, unsigned indent, size_t &offset, unsigned &pad,
 		   const char *parent, bool isFixed, bool &isLast, bool topSeq),
-    printRccType(FILE *f, OU::Member *m, unsigned indent, size_t &offset, unsigned &pad,
+    printRccType(FILE *f, OU::Member &m, unsigned indent, size_t &offset, unsigned &pad,
 		 const char *parent, bool isFixed, bool &isLast, bool topSeq),
-    printRccBaseType(FILE *f, OU::Member *m, unsigned indent, size_t &offset, unsigned &pad,
+    printRccBaseType(FILE *f, OU::Member &m, unsigned indent, size_t &offset, unsigned &pad,
 		     const char *parent, bool isFixed, bool &isLast),
     emitDeviceSignals(FILE *f, Language lang, std::string &last);
 };
@@ -656,7 +665,8 @@ class Worker : public Parsed, public OU::IdentResolver {
 extern const char
   *parseList(const char *list, const char * (*doit)(const char *tok, void *arg), void *arg),
   *parseControlOp(const char *op, void *arg),
-  *vhdlValue(const OU::Value &v, std::string &value, bool param = false),
+  *vhdlValue(const std::string &name, const OU::Value &v, std::string &value,
+	     bool param = false),
   *rccValue(OU::Value &v, std::string &value),
   *container, *platform, *device, *load, *os, *os_version, **libraries, **mappedLibraries, *assembly, *attribute,
   *addLibMap(const char *),
@@ -677,5 +687,5 @@ extern void
   emitLastSignal(FILE *f, std::string &last, Language lang, bool end);
 
 extern size_t ceilLog2(uint64_t n), floorLog2(uint64_t n);
-
+inline size_t bitsForMax(uint64_t n) { return ceilLog2(n + 1); }
 #endif

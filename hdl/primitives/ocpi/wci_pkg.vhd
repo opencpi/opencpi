@@ -84,7 +84,7 @@ TYPE State_t IS (EXISTS_e,            -- 0
 --  function be2offset(input: in_t) return byte_offset_t;
 
   -- pull the value from the data bus, shifted and sized
-  function get_value(input : in_t; boffset : unsigned; width : natural) return std_logic_vector;
+--  function get_value(input : in_t; boffset : unsigned; width : natural) return std_logic_vector;
   
   function to_control_op(bits : std_logic_vector(2 downto 0)) return control_op_t;
 
@@ -97,16 +97,38 @@ TYPE State_t IS (EXISTS_e,            -- 0
   type data_a_t is array (natural range <>) of dword_t;
   type offset_a_t is array (natural range <>) of unsigned(31 downto 0);
   type boolean_array_t is array (natural range <>) of boolean;
-  function data_top (property : property_t;
-                     byte_offset : byte_offset_t) -- xst v5 can't do this := to_unsigned(0,byte_offset_t'length))
-                     return bit_offset_t;
+  --function data_top (property : property_t;
+  --                   byte_offset : byte_offset_t) -- xst v5 can't do this := to_unsigned(0,byte_offset_t'length))
+  --                   return bit_offset_t;
+
+-- These records are generic - i.e. a superset of what any given worker might have
+
+type wci_m2s_t is record
+  Clk        : std_logic;
+  MReset_n   : std_logic;
+  MCmd       : std_logic_vector( 3-1 downto 0);
+  MAddr      : std_logic_vector(32-1 downto 0);
+  MAddrSpace : std_logic_vector( 1-1 downto 0);
+  MByteEn    : std_logic_vector( 4-1 downto 0);
+  MData      : std_logic_vector(32-1 downto 0);
+  MFlag      : std_logic_vector(19-1 downto 0);
+end record wci_m2s_t;
+type wci_m2s_array_t is array(natural range <>) of wci_m2s_t;
+type wci_s2m_t is record
+  SData       : std_logic_vector(32-1 downto 0);
+  SResp       : std_logic_vector( 2-1 downto 0);
+  SFlag       : std_logic_vector( 3-1 downto 0);
+  SThreadBusy : std_logic_vector( 0 downto 0);
+end record wci_s2m_t;
+type wci_s2m_array_t is array(natural range <>) of wci_s2m_t;
 
   -- the wci convenience IP that makes it simple to implement a WCI interface
   component decoder
     generic(
       worker                 : worker_t;
       properties             : properties_t;
-      ocpi_debug             : bool_t);
+      ocpi_debug             : bool_t;
+      endian                 : endian_t);
     port(
       ocp_in                 : in  in_t;       
       done                   : in  bool_t := btrue;
@@ -164,20 +186,22 @@ TYPE State_t IS (EXISTS_e,            -- 0
   end component readback;
   component property_decoder
   generic (
-        property     : property_t;   -- property type
-        decode_width : natural);     -- decoder width in bits
+        property      : property_t;   -- property type
+        decode_width  : natural;     -- decoder width in bits
+        endian        : endian_t);
   port (
-        reset        : in  bool_t;                            -- active-low WCI worker reset
-        offset_in    : in  unsigned(decode_width-1 downto 0); -- offset in Bytes
-        nbytes_1     : in  byte_offset_t;                     -- how many valid bytes
-        is_read      : in  bool_t;
-        is_write     : in  bool_t;
-        data_in      : in  std_logic_vector(31 downto 0);     -- WCI master data
-        write_enable : out bool_t;                            -- active-high write pulse
-        read_enable  : out bool_t;                            -- active-high read pulse
-        offset_out   : out unsigned(decode_width-1 downto 0); -- 
-        index_out    : out unsigned(decode_width-1 downto 0); --
-        data_out     : out std_logic_vector(31 downto 0)); --
+        reset         : in  bool_t;                            -- active-low WCI worker reset
+        offset_in     : in  unsigned(decode_width-1 downto 0); -- offset in Bytes
+        nbytes_1      : in  byte_offset_t;                     -- how many valid bytes
+        is_read       : in  bool_t;
+        is_write      : in  bool_t;
+        data_in       : in  std_logic_vector(31 downto 0);     -- WCI master data
+        is_big_endian : in bool_t;
+        write_enable  : out bool_t;                            -- active-high write pulse
+        read_enable   : out bool_t;                            -- active-high read pulse
+        offset_out    : out unsigned(decode_width-1 downto 0); -- 
+        index_out     : out unsigned(decode_width-1 downto 0); --
+        data_out      : out std_logic_vector(31 downto 0)); --
   end component property_decoder;
 end package wci;
 

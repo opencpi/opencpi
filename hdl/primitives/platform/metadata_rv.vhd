@@ -5,6 +5,7 @@ library platform; use platform.platform_pkg.all, platform.metadata_defs.all;
 library bsv;
 library util;
 entity metadata_rv is
+  generic(romwords : natural := 2048);
   port(
     metadata_in  : in  metadata_out_t;
     metadata_out : out metadata_in_t
@@ -32,12 +33,13 @@ architecture rtl of metadata_rv is
   --end function;
 
   --constant metamem : meta_t := initmeta;
+  constant addr_width : natural := ocpi.util.width_for_max(romwords-1);
   signal dout : std_logic_vector(31 downto 0);
-  signal addr : std_logic_vector(9 downto 0);
+  signal addr : std_logic_vector(addr_width-1 downto 0);
 begin
   -- Type conversions
   metadata_out.romData <= to_ulong(dout);
-  addr <= std_logic_vector(metadata_in.romAddr(9 downto 0));
+  addr <= std_logic_vector(metadata_in.romAddr(addr_width-1 downto 0));
 
   -- Instance the (generated) UUID module.
   uu : mkUUID
@@ -49,7 +51,7 @@ begin
   -- Instance the ROM filled from generated metadata file
   rom : component util.util.ROM
     generic map(WIDTH    => 32,
-                SIZE     => 1024,
+                SIZE     => romwords,
                 INITFILE => "metadatarom.dat")
        port map(CLK      => metadata_in.clk,
                 ADDR     => addr,

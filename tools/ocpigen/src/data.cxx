@@ -57,6 +57,8 @@ DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *
   // initializations for specific port types (WSI, etc.)
   bool dwFound;
   if ((err = OE::getNumber(m_xml, "DataWidth", &m_dataWidth, &dwFound)) ||
+      // Adding optionality in the impl xml is only relevant to devices.
+      (err = OE::getBoolean(m_xml, "Optional", &m_isOptional, true)) ||
       // Be careful not to clobber protocol-determined values (i.e. don't set default values)
       (err = OE::getNumber(m_xml, "NumberOfOpcodes", &m_nOpcodes, NULL, 0, false)) ||
       (err = OE::getNumber(m_xml, "MaxMessageValues", &m_protocol->m_maxMessageValues, NULL, 0,

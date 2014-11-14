@@ -170,9 +170,8 @@ emitImplSignals(FILE *f) {
     fprintf(f, "  signal props_from_worker : worker_props_out_t;\n");
   fprintf(f,
 	  "  -- wci information into worker\n");
-  if (m_worker->m_endian == Dynamic)
-    fprintf(f, "  signal wci_is_big_endian    : Bool_t;\n");
   fprintf(f,
+	  "  signal wci_is_big_endian    : Bool_t;\n"
 	  "  signal wci_control_op       : wci.control_op_t;\n"
 	  "  signal raw_offset           : unsigned(work.%s_worker_defs.worker.decode_width-1 downto 0);\n"
 	  "  signal wci_state            : wci.state_t;\n"
@@ -199,9 +198,8 @@ emitRecordInputs(FILE *f) {
 	  "    control_op       : wci.control_op_t; -- control op in progress, or no_op_e\n"
 	  "    state            : wci.state_t;      -- wci state: see state_t\n"
 	  "    is_operating     : Bool_t;           -- shorthand for state = operating_e\n"
-	  "    abort_control_op : Bool_t;           -- demand that slow control op finish now\n");
-  if (m_worker->m_endian == Dynamic)
-    fprintf(f, "    is_big_endian    : Bool_t;           -- for endian-switchable workers\n");
+	  "    abort_control_op : Bool_t;           -- demand that slow control op finish now\n"
+	  "    is_big_endian    : Bool_t;           -- for endian-switchable workers\n");
   if (m_worker->m_scalable)
     fprintf(f,
 	    "    crew             : UChar_t;          -- crew size\n"
@@ -272,8 +270,8 @@ emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker) 
     if (count > 1)
       OU::format(index, "(0 to %zu)", count-1);
     OU::format(last,
-	       "  %-*s : in  platform.platform_pkg.wci_%s%s_t%s;\n"
-	       "  %-*s : out platform.platform_pkg.wci_%s%s_t%s%%s",
+	       "  %-*s : in  wci.wci_%s%s_t%s;\n"
+	       "  %-*s : out wci.wci_%s%s_t%s%%s",
 	       (int)w.m_maxPortTypeName, in.c_str(), master ? "s2m" : "m2s",
 	       count > 1 ? "_array" : "", index.c_str(),
 	       (int)w.m_maxPortTypeName, out.c_str(), master ? "m2s" : "s2m",
@@ -318,14 +316,13 @@ emitVHDLShellPortMap(FILE *f, std::string &last) {
 	    "    %s_in.barrier => wci_barrier,\n"
 	    "    %s_in.crew => wci_crew,\n"
 	    "    %s_in.rank => wci_rank,\n", name(), name(), name());
-  if (m_worker->m_endian == Dynamic)
-    fprintf(f, "    %s_in.is_big_endian => wci_is_big_endian,\n", name());
   fprintf(f,
+	  "    %s_in.is_big_endian => wci_is_big_endian,\n"
 	  "    %s_out.done => wci_done,\n"
 	  "    %s_out.error => wci_error,\n"
 	  "    %s_out.finished => wci_finished,\n"
 	  "    %s_out.attention => wci_attention",
-	  name(), name(), name(), name());
+	  name(), name(), name(), name(), name());
   if (m_worker->m_scalable)
     fprintf(f,
 	    ",\n"

@@ -113,7 +113,7 @@ define HdlSetWorkers
 endef
 # Get the list of cores we depend on, returning the real files that make can depend on
 # With the deferred evaluation of target-specific items
-HdlGetCores=$(call Unique,\
+HdlGetCores=$(infoxx HGC:$(Cores):$(HdlWorkers):$(HdlTarget))$(call Unique,\
     $(foreach c,$(Cores),$(call HdlCoreRef1,$c,$(HdlTarget))) \
     $(foreach w,$(HdlWorkers),\
       $(foreach f,$(strip\
@@ -199,7 +199,7 @@ HdlCompile=\
   $(and $(SubCores),$(call HdlRecordCores,$(basename $@))$(infoxx DONERECORD)) \
   $(infoxx SUBCORES:$(SubCores)) \
   cd $(TargetDir) && \
-  $(and $(HdlPreCompile), $(HdlPreCompile) &&)\
+  $(infoxx PRECOMPILE:$(HdlPreCompile))$(and $(HdlPreCompile), $(HdlPreCompile) &&)\
   export HdlCommand="set -e; $(HdlToolCompile)"; \
   $(TIME) bash -c \
    '(/bin/echo Commands to execute tool:@"$$HdlCommand" | sed "s/\([^\\]\); */\1;@/g" | tr "@" "\n"; /bin/echo Output from executing commands above:;eval "$$HdlCommand") > $(HdlLog) 2>&1' \
@@ -353,24 +353,25 @@ $(call OcpiDbgVar,HdlTargets)
 # This function adjusts only things that have a slash
 HdlAdjustLibraries=$(foreach l,$1,$(if $(findstring /,$l),$(call AdjustRelative,$l),$l))
 
-$(call OcpiDbgVar,HdlPlatforms)
-$(call OcpiDbgVar,HdlTargets)
-
 define HdlSearchComponentLibraries
 $(foreach c,$(ComponentLibraries),\
   $(foreach o,$(ComponentLibraries),\
      $(if $(findstring $o,$c),,\
         $(and $(filter $(notdir $o),$(notdir $c)),
           $(error The component libraries "$(c)" and "$(o)" have the same base name, which is not allowed)))))
+$(infox HSC1:$(XmlIncludeDirs)--$(ComponentLibraries))
+$$(infox HSC2:$$(XmlIncludeDirs)--$$(ComponentLibraries))
 override XmlIncludeDirs += $(call HdlXmlComponentLibraries,$(ComponentLibraries))
+$(infox HSC3:$(XmlIncludeDirs))
+$$(infox HSC4:$$(XmlIncludeDirs))
 endef
 HdlRmRv=$(if $(filter %_rv,$1),$(patsubst %_rv,%,$1),$1)
 
 # Stash all the cores we needed in a file so that tools that do not implement
-# proper hierarchies can include indirectly required cored later
+# proper hierarchies can include indirectly required cores later
 # Called from HdlCompile which is already tool-specific
 HdlRecordCores=\
-  $(infoxx Record:$1:$(SubCores))\
+  $(info Record:$1:$(SubCores))\
   $(and $(call HdlExists,$(dir $1)),\
   (\
    echo '\#' This generated file records cores necessary to build this $(LibName) $(HdlMode); \
@@ -380,7 +381,7 @@ HdlRecordCores=\
 
 #	             $(foreach r,$(call HdlRmRv,$(basename $(call HdlCoreRef,$c,$1))),\
 
-HdlCollectCores=$(infoxx CCC:$(SubCores))$(call Unique,\
+HdlCollectCores=$(info CCC:$(SubCores))$(call Unique,\
 		  $(foreach a,\
                    $(foreach c,$(SubCores),$(infoxx ZC:$c)$c \
 	             $(foreach r,$(basename $(call HdlCoreRef,$(call HdlToolCoreRef,$c),$1)),$(infoxx ZR:$r)\

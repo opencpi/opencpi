@@ -55,9 +55,9 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
   HdlAssembly *appAssembly;
   ezxml_t x;
   if ((err = parseFile(myConfig.c_str(), xfile, "HdlConfig", &x, configFile)) ||
-      !(config = HdlConfig::create(x, configFile.c_str(), err)) ||
+      !(config = HdlConfig::create(x, configFile.c_str(), NULL, err)) ||
       (err = parseFile(myAssy.c_str(), xfile, "HdlAssembly", &x, assyFile)) ||
-      !(appAssembly = HdlAssembly::create(x, assyFile.c_str(), err)))
+      !(appAssembly = HdlAssembly::create(x, assyFile.c_str(), NULL, err)))
     return NULL;
   HdlContainer *p = new HdlContainer(*config, *appAssembly, xml, xfile, err);
   if (err) {
@@ -70,12 +70,25 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
 HdlContainer::
 HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const char *xfile,
 	     const char *&err)
-  : Worker(xml, xfile, "", Worker::Container, NULL, err),
+  : Worker(xml, xfile, "", Worker::Container, NULL, NULL, err),
     HdlHasDevInstances(config.m_platform, config.m_plugged),
     m_appAssembly(appAssembly), m_config(config) {
+  appAssembly.setParent(this);
+  config.setParent(this);
   bool doDefault = false;
   if ((err = OE::getBoolean(xml, "default", &doDefault)))
     return;
+  switch (m_endian) {
+  case NoEndian:
+    m_endian = Little;
+  case Little:
+  case Big:
+    break;
+  default:
+    err = OU::esprintf("The endian setting \"%s\" is not allowed in containers",
+		       endians[m_endian]);
+    return;
+  }
   // Set the fixed elements that would normally be parsed
   m_noControl = true;
   // Prepare to build (and terminate) the uNocs for interconnects
@@ -209,7 +222,9 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
   OU::formatAdd(assy,
 		"  <instance worker='ocscp'>\n"
 		"    <property name='nworkers' value='%zu'/>\n"
-		"  </instance>\n", nWCIs);
+		"    <property name='ocpi_endian' value='%s'/>\n"
+		"  </instance>\n", nWCIs,
+		endians[m_endian]);
   // Connect it to the pf config's cpmaster
   for (PortsIter ii = m_config.m_ports.begin(); ii != m_config.m_ports.end(); ii++) {
     Port &i = **ii;

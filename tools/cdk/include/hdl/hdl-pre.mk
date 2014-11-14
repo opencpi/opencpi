@@ -114,11 +114,11 @@ $(foreach l,$(call Unique,\
 	          $(foreach f,$(call HdlGetFamily,$(or $1,$(HdlTarget))),\
 		    $(foreach v,$(call HdlGetTop,$f),\
 	                $(if $(findstring library,$(HdlMode))$(findstring clean,$(MAKECMDGOALS)),,\
-			$(foreach p,$(filter-out $(LibName),ocpi util bsv),\
+			$(foreach p,$(filter-out $(LibName),fixed_float ocpi util bsv),\
 			  $(if $(wildcard $(call HdlLibraryRefDir,$p,$f)),,\
 			     $(error Primitive library "$p" non-existent or not built for $f))))\
 		      $(if $(findstring library,$(HdlMode)),,\
-	                  $(foreach p,$(filter-out $(LibName),ocpi util bsv vendor_$f vendor_$v),\
+	                  $(foreach p,$(filter-out $(LibName),fixed_float ocpi util bsv vendor_$f vendor_$v),\
 	                    $(and $(wildcard $(call HdlLibraryRefDir,$p,$f)),$p))))))),$(strip \
     $l))
 
@@ -171,8 +171,7 @@ $(call OcpiDbgVar,HdlTargets)
 $(call OcpiDbgVar,HdlPlatform)
 $(call OcpiDbgVar,HdlPlatforms)
 
-
-ifneq ($(filter platform container,$(HdlMode)),)
+ifneq ($(xxfilter platform container,$(HdlMode)),)
   HdlPlatform:=$(or $(HdlMyPlatform),$(CwdName))
   ifdef HdlPlatforms
     ifeq ($(filter $(HdlPlatform),$(HdlPlatforms)),)

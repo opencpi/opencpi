@@ -115,6 +115,7 @@ Implementations = \
 	pattern.hdl pattern.rcc \
 	capture.hdl capture.rcc \
 	ptest.rcc \
+	ptest_cc.rcc \
 	ptest.hdl \
         file_read.hdl \
 	file_write.hdl \

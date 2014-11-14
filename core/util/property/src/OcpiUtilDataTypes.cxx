@@ -221,12 +221,13 @@ namespace OCPI {
 	  if ((err = v.parse(enums)))
 	    return esprintf("Error parsing enums attribute: %s", err);
 	  m_nEnums = v.m_nElements;
-	  m_enums = new const char*[m_nEnums];
+	  m_enums = new const char*[m_nEnums + 1];
 	  const char **ep = m_enums;
 	  for (unsigned n = 0; n < v.m_nElements; n++, ep++) {
 	    *ep = new char[strlen(v.m_pString[n]) + 1];
 	    strcpy((char *)*ep, v.m_pString[n]);
 	  }
+	  *ep = NULL;
 	  // FIXME:  check for duplicate enum values, check for enum string chars being sane
 	  // enums have a baseTypeSize of 32 per IDL
 	}

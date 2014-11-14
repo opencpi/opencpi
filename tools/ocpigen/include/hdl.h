@@ -11,6 +11,7 @@ typedef std::list<Device *>     Devices;
 typedef Devices::const_iterator DevicesIter;
 #define myComment() hdlComment(m_language)
 static inline const char *hdlComment(Language lang) { return lang == VHDL ? "--" : "//"; }
+extern const char *endians[];
 
 // These are for all implementaitons whether assembly or written
 #define HDL_TOP_ATTRS "Pattern", "PortPattern", "DataWidth", "Language", "library"
@@ -22,14 +23,14 @@ static inline const char *hdlComment(Language lang) { return lang == VHDL ? "--"
 class HdlAssembly : public Worker {
 public:  
   static HdlAssembly *
-  create(ezxml_t xml, const char *xfile, const char *&err);
-  HdlAssembly(ezxml_t xml, const char *xfile, const char *&err);
+    create(ezxml_t xml, const char *xfile, Worker *parent, const char *&err);
+  HdlAssembly(ezxml_t xml, const char *xfile, Worker *parent, const char *&err);
   virtual ~HdlAssembly();
 };
 
 
 
 // Global to let worker know whether an assembly is being built or just a worker
-extern bool hdlAssy;
+//extern bool hdlAssy;
 
 #endif

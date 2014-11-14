@@ -62,8 +62,8 @@ class HdlConfig : public Worker, public HdlHasDevInstances {
   Plugged      m_plugged;      // what card is in each slot in this configuration
 public:  
   static HdlConfig *
-  create(ezxml_t xml, const char *xfile, const char *&err);
-  HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, const char *&err);
+  create(ezxml_t xml, const char *xfile, Worker *parent, const char *&err);
+  HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const char *&err);
   virtual ~HdlConfig();
 
   HdlPlatform &platform() { return m_platform; }

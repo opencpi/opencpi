@@ -40,9 +40,10 @@
 # Refine the target list as appropriate for the tool
 $(call OcpiDbgVar,LibName)
 OutLibFile=\
-  $(call WkrTargetDir,$1,$2)/$(call HdlToolLibraryFile,$1,$(LibName)$(if $(filter 0,$2),,_c$2))
-
+  $(call WkrTargetDir,$1,$2)/$(call HdlToolLibraryFile,$1,$(LibName))
+#  $(call WkrTargetDir,$1,$2)/$(call HdlToolLibraryFile,$1,$(LibName)$(if $(filter 0,$2),,_c$2))
 define DoLibTarget
+$(call OcpiDbg,OutLibFile:$(call OutLibFile,$1,$2))
 OutLibFiles+=$(call OutLibFile,$1,$2)
 $(call OutLibFile,$1,$2): override TargetDir:=$(call WkrTargetDir,$1,$2)
 $(call OutLibFile,$1,$2): override HdlTarget:=$1

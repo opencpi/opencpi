@@ -93,6 +93,7 @@ ifeq ($(origin XmlIncludeDirsInternal),undefined)
     endif
   endif
 endif
+#FIXME: why doesn't lib/components flow from component libraries?
 override XmlIncludeDirs:=$(XmlIncludeDirs) . $(XmlIncludeDirsInternal) \
    $(OCPI_CDK_DIR)/lib/components $(OCPI_CDK_DIR)/lib/components/specs
 -include $(GeneratedDir)/*.deps
@@ -102,7 +103,8 @@ ParamShell:=(\
   ($(MakeRawParams) |\
   $(OcpiGenTool) -D $(GeneratedDir) $(and $(Package),-p $(Package))\
     $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) \
-  -r $(Worker).xml) || echo 1\
+  $(and $(AssemblyName),-S $(AssemblyName)) \
+  -r $(Worker_$(Worker)_xml)) || echo 1\
   )
 
 ifeq ($(filter clean,$(MAKECMDGOALS)),)
@@ -129,6 +131,7 @@ $(call OcpiDbgVar,ImplHeaderFiles)
 $(ImplHeaderFiles): $(GeneratedDir)/%$(ImplSuffix) : $$(Worker_%_xml) | $(GeneratedDir)
 	$(AT)echo Generating the implementation header file: $@ from $< 
 	$(AT)$(OcpiGen) -D $(GeneratedDir) $(and $(Package),-p $(Package)) \
+        $(and $(AssemblyName),-S $(AssemblyName)) \
 	$(and $(HdlPlatform),-P $(HdlPlatform)) \
 	 $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) -i $< \
 
@@ -142,7 +145,9 @@ all: skeleton
 
 $(SkelFiles): $(GeneratedDir)/%$(SkelSuffix) : $$(Worker_%_xml) | $(GeneratedDir)
 	$(AT)echo Generating the implementation skeleton file: $@
-	$(AT)$(OcpiGen) -D $(GeneratedDir) $(and $(Package),-p $(Package)) -s $<
+	$(AT)$(OcpiGen) -D $(GeneratedDir) \
+              $(and $(AssemblyName),-S $(AssemblyName)) \
+              $(and $(Package),-p $(Package)) -s $<
 endif
 
 clean:: cleanfirst
@@ -197,7 +202,6 @@ WkrTargetDirWild=$(OutDir)target-*$1
 
 # Function to generate final binary from target: $(call WkrBinary,target,config)
 WkrBinary=$(call WkrTargetDir,$1,$2)/$(WkrBinaryName)$(call BF,$2)
-
 # Function to generate object file name from source: $(call WkrObject,src,target,config)
 WkrObject=$(call WkrTargetDir,$2,$3)/$(basename $(notdir $1))$(call OBJ,$3)
 
@@ -249,10 +253,10 @@ define WkrDoTargetConfig
 	$(AT)if test -f "$(call ArtifactXmlFile,$1,$2)"; then \
 	  $(ToolsDir)/../../scripts/addmeta "$(call ArtifactXmlFile,$1,$2)" $$@; \
 	fi
+    # Make sure we actually make the final binary for this target
+    $(call OcpiDbg,Before all: WkrBinary is "$(call WkrBinary,$1,$2)")
+    all: $(call WkrBinary,$1,$2)
   endif
-  # Make sure we actuall make the final binary for this target
-  $(call OcpiDbg,Before all: WkrBinary is "$(call WkrBinary,$1,$2)")
-  all: $(call WkrBinary,$1,$2)
 
   # If not an application, make the worker object files depend on the impl headers
   $(foreach w,$(Workers),$(call WkrWorkerDep,$w,$1,$2))
@@ -279,25 +283,33 @@ ifdef LibDir
 # export directory for this target
 
 # $(call DoLink,<target>,<binary>,<linkname>,<confname>)
-MyBBLibFile=$(call BBLibFile,$1,$(basename $2)$(if $(filter 0,$3),,_c$3),$3,$1)
+MyBBLibFile=$(info MBB:$1:$2:$3)$(call BBLibFile,$1,$(call HdlRmRv,$(basename $2))$(if $(filter 0,$3),,_c$3),$3,$1)
 
 define DoLink
 
-  $(infox DoLink:$1:$2:$3:$4)
+  $(info DoLink:$1:$2:$3:$4)
+  $$(info DoLink2:$1:$2:$3:$4)
   LibLinks+=$(LibDir)/$1/$3
   $(LibDir)/$1/$3: $(call WkrTargetDir,$1,$4)/$2 | $(LibDir)/$1
 	$(AT)echo Creating link from $$@ -\> $$< to export the worker binary.
 	$(AT)$$(call MakeSymLink2,$(call WkrTargetDir,$1,$4)/generics.vhd,$(LibDir)/$1,$(basename $3)-generics.vhd)
+	$(AT)if test -f $(call WkrTargetDir,$1,$4)/$(call HdlRmRv,$(basename $2)).cores; then \
+               $$(call MakeSymLink,$(call WkrTargetDir,$1,$4)/$(call HdlRmRv,$(basename $2)).cores,$(LibDir)/$1);\
+              fi
 	$(AT)$$(call MakeSymLink2,$(call WkrTargetDir,$1,$4)/$2,$(LibDir)/$1,$3)
 
+  $(info DoLink3:$1:$(HdlToolSet_$1):$(HdlToolNeedBB_$(HdlToolSet_$1)))
+  $$(info DoLink4:$1:$(HdlToolSet_$1):$(HdlToolNeedBB_$(HdlToolSet_$1)))
   ifdef HdlToolNeedBB_$(HdlToolSet_$1)
-    ifeq (,$(filter %_rv,$(basename $2)))
-      $$(infox DLHTNB:$1:$2:$3:$4==$$(call MyBBLibFile,$1,$2,$4))
-      LibLinks+=$(LibDir)/$1/$(basename $3)
-      $(LibDir)/$1/$(basename $3): $$$$(call MyBBLibFile,$1,$2,$4) | $(LibDir)/$1
+      $$(info DLHTNB1:$1:$2:$3:$4==$$(call MyBBLibFile,$1,$2,$4))
+      $$(info DLHTNB2:$1:$2:$3:$4==$$(call MyBBLibFile,$1,$2,$4))
+    ifeq (,)#$(filter %_rv,$(basename $2)))
+      $$(info DLHTNB:$1:$2:$3:$4==$$(call MyBBLibFile,$1,$2,$4))
+      LibLinks+=$(LibDir)/$1/$(call HdlRmRv,$(basename $3))
+      $(LibDir)/$1/$(call HdlRmRv,$(basename $3)): $$$$(call MyBBLibFile,$1,$2,$4) | $(LibDir)/$1
 	$(AT)echo Creating link from $$@ -\> $(call WkrTargetDir,$1,$4)/bb/$(basename $3) to export the stub library.
-	$(AT)$$(call MakeSymLink2,$(call WkrTargetDir,$1,$4)/bb/$(basename $3),$(strip\
-                                  $(LibDir)/$1),$(basename $3))
+	$(AT)$$(call MakeSymLink2,$(call WkrTargetDir,$1,$4)/bb/$(call HdlRmRv,$(basename $3)),$(strip\
+                                  $(LibDir)/$1),$(call HdlRmRv,$(basename $3)))
     endif
   endif
 
@@ -311,11 +323,12 @@ define DoLinks
   $(foreach c,$(ParamConfigurations),\
     $(foreach n,$(WkrExportNames),\
       $(foreach l,$(basename $(notdir $n))$(if $(filter 0,$c),,_c$c),\
+        $(info LLL:$n:$l:$1:$(HdlToolSet_$1))\
         $(call DoLink,$1,$(strip\
                            $(if $(or $(filter rcc ocl,$(Model)),\
                                      $(HdlToolRealCore_$(HdlToolSet_$1))),\
-                             $(notdir $n),$l)\
-                   ),$l$(suffix $n),$c))))
+                             $(notdir $n),$(call HdlRmRv,$l))\
+                   ),$(if $(HdlToolRealCore_$(HdlToolSet_$1)),$l$(suffix $n),$(call HdlRmRv,$l)$(suffix $n)),$c))))
 
   $$(call OcpiDbgVar,WkrExportNames,In Dolinks )
 
@@ -335,7 +348,7 @@ $(call OcpiDbgVar,LibLinks,Before all:)
 all: $(LibLinks)
 
 $(LibDir) $(LibDirs):
-	$(AT)mkdir $@
+	$(AT)mkdir -p $@
 
 endif # LibDir to export into
 

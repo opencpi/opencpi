@@ -18,17 +18,17 @@ library ieee; use ieee.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.all; use ocpi.types.all; use ocpi.wsi.all; use ocpi.util.all;
 
 entity part_slave is
-  generic (precise           : boolean; -- are we precise-only?
-           data_width        : natural; -- width of data path
-           data_info_width   : natural; -- width of data info path
-           burst_width       : natural; -- burst width
-           n_bytes           : natural; -- number of bytes
-           byte_width        : natural; -- byte_width
-           opcode_width      : natural; -- bits in reqinfo
-           own_clock         : boolean; -- does the port have a clock different thanthe wci?
-           early_request     : boolean;  -- are datavalid and datalast used? 
-           part_size_width   : natural := 16; -- width of part size path
-           part_offset_width : natural := 16 -- width of part offset path
+  generic (precise            : boolean; -- are we precise-only?
+           mdata_width        : natural; -- width of data path
+           mdata_info_width   : natural; -- width of data info path
+           burst_width        : natural; -- burst width
+           n_bytes            : natural; -- number of bytes
+           byte_width         : natural; -- byte_width
+           opcode_width       : natural; -- bits in reqinfo
+           own_clock          : boolean; -- does the port have a clock different thanthe wci?
+           early_request      : boolean;  -- are datavalid and datalast used? 
+           part_size_width    : natural := 16; -- width of part size path
+           part_offset_width  : natural := 16 -- width of part offset path
            );
   port (
     -- Exterior OCP input/master signals
@@ -39,9 +39,9 @@ entity part_slave is
     --- only used if bytesize < data width or zlm 
     MByteEn          : in  std_logic_vector(n_bytes - 1 downto 0);
     MCmd             : in  ocpi.ocp.MCmd_t;
-    MData            : in  std_logic_vector(data_width-1 downto 0);
+    MData            : in  std_logic_vector(mdata_width-1 downto 0);
     --- only used for aborts or bytesize not 8 and less than datawidth
-    MDataInfo        : in  std_logic_vector(data_info_width-1 downto 0);
+    MDataInfo        : in  std_logic_vector(mdata_info_width-1 downto 0);
     --- only used if the "early_request" option is selected.
     MDataLast        : in  std_logic;
     MDataValid       : in  std_logic;
@@ -61,7 +61,7 @@ entity part_slave is
     reset            : out Bool_t; -- this port is being reset from outside/peer
     ready            : out Bool_t; -- data can be taken
     som, eom, valid  : out Bool_t;
-    data             : out  std_logic_vector(data_width-1 downto 0);
+    data             : out  std_logic_vector(byte_width*n_bytes-1 downto 0);
     -- only used if abortable
     abort            : out Bool_t; -- message is aborted
     -- only used if bytes are required (zlm or byte size < data width)
@@ -86,8 +86,12 @@ architecture rtl of part_slave is
   signal reset_i : Bool_t; -- internal version of output to worker
   signal reset_n   : Bool_t; -- internal assert-low reset (to avoid silly isim warning).
 
-  constant fifo_width : natural :=
-    data_width + 3 + data_info_width + n_bytes + burst_width + opcode_width;
+  constant data_width : natural := n_bytes * byte_width;
+  constant fifo_width : natural := data_width +  -- actual data bits
+                                   4 +           -- valid, som, eom, abort
+                                   n_bytes +     -- byte enables
+                                   burst_width + -- burstlength field (per OCP)
+                                   opcode_width; -- opcode for message
 
   -- The bundle of signals that goes through the FIFO.  Packing and unpacking records isn't worth it.
   constant data_bits   : natural := fifo_width - 1;
@@ -99,8 +103,7 @@ architecture rtl of part_slave is
   constant burst_bits  : natural := enable_bits - n_bytes;
   constant opcode_bits : natural := burst_bits - burst_width;
   function pack(data : std_logic_vector(data_width - 1 downto 0);
-                valid, som, eom : std_logic;
-                abort : std_logic;
+                valid, som, eom, abort : std_logic;
                 enable : std_logic_vector(n_bytes - 1 downto 0);
                 burst : std_logic_vector(burst_width - 1 downto 0);
                 opcode : std_logic_vector(opcode_width - 1 downto 0))
@@ -121,6 +124,7 @@ architecture rtl of part_slave is
   signal fifo_enq : std_logic;
   signal fifo_ready : bool_t;
   signal my_data : std_logic_vector(data_width - 1 downto 0);
+  signal my_abort : bool_t := bfalse;
   --signal fifo_full_r : bool_t;
 --  for fifo : FIFO2X use entity bsv.FIFO2X;
 begin
@@ -135,7 +139,7 @@ begin
   SReset_n <= not wci_reset; -- FIXME WHEN OWN CLOCK
   -- If there are parts of bytes in data_info_width, combine them nicely for the worker
   -- This also covers the case of zero-width data
-  gen0: if data_info_width > 1 generate
+  gen0: if mdata_info_width > 1 generate
     gen1: for i in 0 to n_bytes-1 generate
       my_data(i*byte_width + 7 downto i*byte_width) <= MData(i*8+7 downto i*8);
       my_data(i*byte_width + byte_width-1 downto i*byte_width + byte_width - (byte_width - 8)) <=
@@ -143,16 +147,19 @@ begin
     end generate gen1;
   end generate gen0;
   -- If there are no partial bytes in datainfo, the worker's data is just MData.
-  gen2: if data_info_width <= 1 generate
+  gen2: if mdata_info_width <= 1 generate
     my_data <= MData;
   end generate gen2;
+  gen3: if mdata_info_width + mdata_width > data_width generate
+    my_abort <= MDataInfo(MDataInfo'left);
+  end generate gen3;
 
   -- pack fifo input
   fifo_in <= pack(my_data,
                   fifo_valid,
                   fifo_som,
                   fifo_eom,
-                  MDataInfo(data_info_width-1),
+                  my_abort,
                   MByteEn,
                   MBurstLength,
                   MReqInfo);

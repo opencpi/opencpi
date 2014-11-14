@@ -23,6 +23,7 @@
 #
 ########################################################################### #
 
+# FIXME: create an hdl-platforms.mk template to share among platform developers.
 ifndef HdlPlatforms
 ifndef HdlPlatform
 ifeq ($(MAKECMDGOALS),clean)
@@ -51,3 +52,7 @@ clean::
 	      echo Cleaning platform $$p; \
 	      $(MAKE) --no-print-directory -C $$p clean; \
 	     done
+cleanall:
+	$(AT)find . -depth -name gen -exec rm -r -f "{}" ";"
+	$(AT)find . -depth -name "target-*" -exec rm -r -f "{}" ";"
+	$(AT)rm -r -f lib

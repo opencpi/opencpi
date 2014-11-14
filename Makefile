@@ -72,7 +72,7 @@ endif
 # Basic packages.
 #
 
-PACKAGES += adapt/os/ocpios core/local/logger core/util
+PACKAGES += adapt/os/ocpios core/util
 
 #PACKAGES += core/control/wci_api
 
@@ -130,7 +130,6 @@ PACKAGES += tests
 #	core/control/wci_api
 ALLPACKAGES = \
 	adapt/os/ocpios \
-	core/local/logger \
 	core/util \
 	core/corba/corba_util \
 	core/corba/orb_services \
@@ -287,8 +286,8 @@ diff.q:
 # Shallow package dependencies.
 #
 
-core/local/logger: adapt/os/ocpios
-core/util: core/local/logger
+#core/local/logger: adapt/os/ocpios
+#core/util: core/local/logger
 core/dataplane/tests: \
 	core/container/rcc core/dataplane/transport \
 	core/dataplane/rdma_driver_interface

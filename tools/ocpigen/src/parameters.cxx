@@ -63,14 +63,14 @@ parse(Worker &w, ezxml_t cx) {
 }
 
 const char *Worker::
-paramValue(OU::Value &v, std::string &value) {
+paramValue(const OU::Member &param, OU::Value &v, std::string &value) {
   switch (m_model) {
   case HdlModel:
-    return hdlValue(v, value, true);
+    return hdlValue(param.m_name.c_str(), v, value, true);
   case RccModel:
-    return rccValue(v, value, true);
+    return rccValue(v, value, &param);
   case OclModel:
-    return rccValue(v, value, true);
+    return rccValue(v, value, &param);
   default:
     assert("bad model" == 0);
   }
@@ -97,14 +97,16 @@ write(Worker &w, FILE *xf, FILE *mf) {
 	else
 	  fprintf(mf, "%s", type.c_str());
 	fprintf(mf, " := ");
-	for (const char *cp = w.hdlValue(*p.value, val, true, VHDL); *cp; cp++) {
+	for (const char *cp = w.hdlValue(p.param->m_name, *p.value, val, false, VHDL);
+	     *cp; cp++) {
 	  if (*cp == '#' || *cp == '\\' && !cp[1])
 	    fputc('\\', mf);
 	  fputc(*cp, mf);
 	}
 	fputs("\n", mf);
 	fprintf(mf, "ParamVerilog_%zu_%s:=", nConfig, p.param->m_name.c_str());
-	for (const char *cp = w.hdlValue(*p.value, val, true, Verilog); *cp; cp++) {
+	for (const char *cp = w.hdlValue(p.param->m_name, *p.value, val, true, Verilog);
+	     *cp; cp++) {
 	  if (*cp == '#' || *cp == '\\' && !cp[1])
 	    fputc('\\', mf);
 	  fputc(*cp, mf);
@@ -112,7 +114,7 @@ write(Worker &w, FILE *xf, FILE *mf) {
 	fputs("\n", mf);
       } else {
 	fprintf(mf, "Param_%zu_%s:=", nConfig, p.param->m_name.c_str());
-	for (const char *cp = w.paramValue(*p.value, val); *cp; cp++) {
+	for (const char *cp = w.paramValue(*p.param, *p.value, val); *cp; cp++) {
 	  if (*cp == '#' || *cp == '\\' && !cp[1])
 	    fputc('\\', mf);
 	  fputc(*cp, mf);

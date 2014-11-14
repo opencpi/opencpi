@@ -12,7 +12,7 @@
   -->
   <property name='ClkMode' type='uchar' parameter='true' default='0'/>
   <xi:include href='lime-properties.xml'/>
-  <StreamInterface Name="out" producer='true' DataWidth="32"/>
+  <StreamInterface Name="out" producer='true' DataWidth="32" optional='true'/>
   <rawprop name='rawprops' master='true'/>
   <devsignals master='true' signals='lime-spi-signals'/>
   <!-- This device needs a shared submodule for both raw properties and a shared

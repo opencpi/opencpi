@@ -35,18 +35,22 @@ ifdef OCPI_OUTPUT_DIR
 PassOutDir=OutDir=$(call AdjustRelative,$(OutDir:%/=%))/$@
 endif
 endif
-
+ComponentLibrariesInternal:=$(call HdlAdjustLibraries,$(ComponentLibraries))
 all: $(Assemblies)
 
 .PHONY: $(Assemblies) $(Platforms) $(Targets) clean
 
+# We use the "internal" versions of variables to allow subsidiary makefiles to
+# simply set those variables again
 $(Assemblies):
 	$(AT)echo =============Building assembly $@
-	$(AT)$(MAKE) -L -C $@ $(HdlPassTargets) $(if $(HdlPlatforms)$(HdlPlatform),,HdlPlatforms=ml605) \
+	$(AT)$(MAKE) -L -C $@ \
+               $(HdlPassTargets) $(if $(HdlPlatforms)$(HdlPlatform),,HdlPlatforms=ml605) \
 	       LibDir=$(call AdjustRelative,$(LibDir)) \
 	       GenDir=$(call AdjustRelative,$(GenDir)) \
-	       ComponentLibraries="$(call HdlAdjustLibraries,$(ComponentLibraries))" \
+	       ComponentLibrariesInternal="$(ComponentLibrariesInternal)" \
 	       HdlLibraries="$(call HdlAdjustLibraries,$(HdlLibraries))" \
+               XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirs))" \
 	       $(PassOutDir)
 
 clean:

@@ -106,7 +106,7 @@ namespace OCPI {
       OCPI_Type,    // recursive type that is not a struct
       OCPI_scalar_type_limit
     };
-// Missing types that ARE in minimum IDL: longdouble, wchar, wstring, fixed, enum, union, any
+// Missing types that ARE in minimum IDL: longdouble, wchar, wstring, fixed, union, any
 
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) typedef run pretty;
     OCPI_DATA_TYPES

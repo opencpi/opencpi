@@ -4,6 +4,8 @@
 library ieee;
 use IEEE.std_logic_1164.all;
 use ieee.numeric_std.all;
+library fixed_float; use fixed_float.all;
+
 package body types is
 function bit2vec(b : std_logic; n : natural) return std_logic_vector is
   variable r : std_logic_vector(n-1 downto 0);
@@ -20,6 +22,14 @@ function To_bool(b : boolean) return Bool_t is begin if b then return '1'; else 
 function from_bool(b : bool_t) return std_logic_vector is begin
 if b = '1' then return std_logic_vector'(b"1"); else return std_logic_vector'(b"0"); end if;
 end from_bool;                                                            
+function slv(a: bool_array_t) return std_logic_vector is
+  variable v: std_logic_vector(a'length  - 1 downto 0);
+begin
+  for i in 0 to a'left loop
+    v(a'length - i - 1) := a(i);
+  end loop;
+  return v;
+end slv;
 function "and"  ( l : bool_t; r : bool_t ) return boolean is begin return its(l) and its(r); end;
 function "nand" ( l : bool_t; r : bool_t ) return boolean is begin return its(l) nand its(r); end;
 function "or"   ( l : bool_t; r : bool_t ) return boolean is begin return its(l) or its(r); end;
@@ -61,23 +71,41 @@ function "not"  ( l : bool_t             ) return boolean is begin return not it
 function btrue return bool_t is begin return to_bool(true); end;
 function bfalse return bool_t is begin return to_bool(false); end;
 function To_boolean(b : bool_t) return boolean is begin return its(b); end to_boolean;
-function from_bool_array(ba : bool_array_t; index, nbytes_1, byte_offset : unsigned) return dword_t is
+function from_bool_array(ba : bool_array_t;
+                         index, nbytes_1, byte_offset : unsigned;
+                         is_big_endian : boolean) return dword_t is
   variable result: dword_t := (others => '0');
   variable i : natural := to_integer(index);
   variable o : natural := to_integer(byte_offset) * 8;
 begin
-  result(o + 0) := from_bool(ba(i))(0);
-  if nbytes_1 > 0 then
-    result(o + 8) := from_bool(ba(i+1))(0);
-    if nbytes_1 > 1 then
-      result(o + 16) := from_bool(ba(i+2))(0);
-      if nbytes_1 = 3 then
-        result(o + 24) := from_bool(ba(i+3))(0);
-      end if; 
+  if is_big_endian then
+    result(o + 24) := from_bool(ba(i))(0);
+    if nbytes_1 > 0 then
+      result(o + 16) := from_bool(ba(i+1))(0);
+      if nbytes_1 > 1 then
+        result(o + 8) := from_bool(ba(i+2))(0);
+        if nbytes_1 = 3 then
+          result(o + 0) := from_bool(ba(i+3))(0);
+        end if; 
+      end if;
+    end if;
+  else
+    result(o + 0) := from_bool(ba(i))(0);
+    if nbytes_1 > 0 then
+      result(o + 8) := from_bool(ba(i+1))(0);
+      if nbytes_1 > 1 then
+        result(o + 16) := from_bool(ba(i+2))(0);
+        if nbytes_1 = 3 then
+          result(o + 24) := from_bool(ba(i+3))(0);
+        end if; 
+      end if;
     end if;
   end if;
   return result;
 end from_bool_array;
+
+-- char
+
 function To_character (c : Char_t) return character is
 begin
   return character'val(to_integer(c));
@@ -93,15 +121,52 @@ end to_char;
 function from_char (c: char_t) return std_logic_vector is begin
   return std_logic_vector(c);
 end from_char;                                                            
+function slv(a: char_array_t) return std_logic_vector is
+  variable v: std_logic_vector((a'length * 8) - 1 downto 0);
+begin
+  for i in 0 to a'left loop
+    v((a'length - i) * 8 - 1 downto (a'length - i) * 8 - 7) := from_char(a(i));
+  end loop;
+  return v;
+end slv;
+
+-- short
 
 function To_short (c: integer) return short_t is
 begin
  return to_signed(c,short_t'length);
 end to_short;
+function from_short (c: short_t) return std_logic_vector is begin
+  return std_logic_vector(c);
+end from_short;                                                            
+function slv(a: short_array_t) return std_logic_vector is
+  variable v: std_logic_vector((a'length * 16) - 1 downto 0);
+begin
+  for i in 0 to a'left loop
+    v((a'length - i) * 16 - 1 downto (a'length - i) * 16 - 15) := from_short(a(i));
+  end loop;
+  return v;
+end slv;
+
+-- long
+
 function To_long (c: integer) return long_t is
 begin
  return to_signed(c,long_t'length);
 end to_long;
+function from_long (c: long_t) return std_logic_vector is begin
+  return std_logic_vector(c);
+end from_long;                                                            
+function slv(a: long_array_t) return std_logic_vector is
+  variable v: std_logic_vector((a'length * 32) - 1 downto 0);
+begin
+  for i in 0 to a'left loop
+    v((a'length - i) * 32 - 1 downto (a'length - i) * 32 - 31) := from_long(a(i));
+  end loop;
+  return v;
+end slv;
+
+-- uchar
 
 function To_uchar (c: natural) return uchar_t is
 begin
@@ -111,10 +176,38 @@ function To_uchar (c: std_logic_vector(uchar_t'range)) return uchar_t is
 begin
  return unsigned(c);
 end to_uchar;
+function from_uchar (c: uchar_t) return std_logic_vector is begin
+  return std_logic_vector(c);
+end from_uchar;                                                            
+function slv(a: uchar_array_t) return std_logic_vector is
+  variable v: std_logic_vector((a'length * 8) - 1 downto 0);
+begin
+  for i in 0 to a'left loop
+    v((a'length - i) * 8 - 1 downto (a'length - i) * 8 - 7) := from_uchar(a(i));
+  end loop;
+  return v;
+end slv;
+
+-- ushort
+
 function To_ushort (c: natural) return ushort_t is
 begin
  return to_unsigned(c,ushort_t'length);
 end to_ushort;
+function from_ushort (c: ushort_t) return std_logic_vector is begin
+  return std_logic_vector(c);
+end from_ushort;                                                            
+function slv(a: ushort_array_t) return std_logic_vector is
+  variable v: std_logic_vector((a'length * 16) - 1 downto 0);
+begin
+  for i in 0 to a'left loop
+    v((a'length - i) * 16 - 1 downto (a'length - i) * 16 - 15) := from_ushort(a(i));
+  end loop;
+  return v;
+end slv;
+
+-- ulong
+
 function To_ulong (c: natural) return ulong_t is
 begin
  return to_unsigned(c,ulong_t'length);
@@ -123,6 +216,46 @@ function To_ulong (c: std_logic_vector(31 downto 0)) return ulong_t is
 begin
   return ulong_t(c);
 end To_ulong;
+function from_ulong (c: ulong_t) return std_logic_vector is begin
+  return std_logic_vector(c);
+end from_ulong;                                                            
+function slv(a: ulong_array_t) return std_logic_vector is
+  variable v: std_logic_vector((a'length * 32) - 1 downto 0);
+begin
+  for i in 0 to a'left loop
+    v((a'length - i) * 32 - 1 downto (a'length - i) * 32 - 31) := from_ulong(a(i));
+  end loop;
+  return v;
+end slv;
+
+-- longlong
+
+function To_longlong (c: integer) return longlong_t is
+begin
+ return to_signed(c, longlong_t'length);
+end to_longlong;
+function to_longlong (c: long_t) return longlong_t is
+begin
+  return resize(c, longlong_t'length);
+end to_longlong;
+function to_longlong (c: std_logic_vector(longlong_t'range)) return longlong_t is
+begin
+  return longlong_t(c);
+end to_longlong;
+function from_longlong (c: longlong_t) return std_logic_vector is begin
+  return std_logic_vector(c);
+end from_longlong;                                                            
+function slv(a: longlong_array_t) return std_logic_vector is
+  variable v: std_logic_vector((a'length * 64) - 1 downto 0);
+begin
+  for i in 0 to a'left loop
+    v((a'length - i) * 64 - 1 downto (a'length - i) * 64 - 63) := from_longlong(a(i));
+  end loop;
+  return v;
+end slv;
+
+-- ulonglong
+
 function To_ulonglong (c: natural) return ulonglong_t is
 begin
  return to_unsigned(c, ulonglong_t'length);
@@ -135,6 +268,17 @@ function to_ulonglong (c: std_logic_vector(ulonglong_t'range)) return ulonglong_
 begin
   return ulonglong_t(c);
 end to_ulonglong;
+function from_ulonglong (c: ulonglong_t) return std_logic_vector is begin
+  return std_logic_vector(c);
+end from_ulonglong;                                                            
+function slv(a: ulonglong_array_t) return std_logic_vector is
+  variable v: std_logic_vector((a'length * 64) - 1 downto 0);
+begin
+  for i in 0 to a'left loop
+    v((a'length - i) * 64 - 1 downto (a'length - i) * 64 - 63) := from_ulonglong(a(i));
+  end loop;
+  return v;
+end slv;
 
 --function To_char (c: std_logic_vector) return char_t is
 --begin
@@ -149,39 +293,118 @@ begin
           char_t(inword(31 downto 24)));
 end to_string;
 
+-- Note the length argument is the "stringlength" which does not include the null
 function to_string(instring : string; length : natural) return string_t is
-  variable s : string_t(0 to length-1);
+  variable s : string_t(0 to length);
 begin
-  for i in instring'left to instring'right loop
-    s(i - instring'left) := to_char(instring(i));
-  end loop;
-  if instring'length < length then
-    for i in instring'length to length - 1 loop
+  if instring'length /= 0 then
+    for i in instring'left to instring'right loop
+      s(i - instring'left) := to_char(instring(i));
+    end loop;
+  end if;
+  if instring'length < s'length then
+    for i in instring'length to s'length-1 loop
       s(i) := to_char(0);
     end loop;
   end if;
   return s;
 end to_string;
-
-function from_string(s : string_t; offset : unsigned) return dword_t is
+  
+function from_string(s : string_t; offset : unsigned; is_big_endian : bool_t) return dword_t is
 begin 
-  return from_string(s, to_integer(offset));
+  return from_string(s, to_integer(offset), its(is_big_endian));
 end from_string;
 
-function from_string(s : string_t; off : natural := 0) return dword_t is
+function from_string(s : string_t; off : natural; is_big_endian : boolean) return dword_t is
   variable w : dword_t;
 begin 
   w := (others => '0');
-  w(7 downto  0) := std_logic_vector(s(off));
-  if off+1 <= s'right then
-    w(15 downto  8) := std_logic_vector(s(off+1));
-    if off+2 <= s'right then
-      w(23 downto 16) := std_logic_vector(s(off+2));
-      if off+3 < s'right then
-        w(31 downto 24) := std_logic_vector(s(off+3));
+  if is_big_endian then
+    w(31 downto 24) := std_logic_vector(s(off));
+    if off+1 <= s'right then
+      w(23 downto 16) := std_logic_vector(s(off+1));
+      if off+2 <= s'right then
+        w(15 downto 8) := std_logic_vector(s(off+2));
+        if off+3 < s'right then
+          w(7 downto 0) := std_logic_vector(s(off+3));
+        end if;
+      end if;
+    end if;
+  else
+    w(7 downto  0) := std_logic_vector(s(off));
+    if off+1 <= s'right then
+      w(15 downto  8) := std_logic_vector(s(off+1));
+      if off+2 <= s'right then
+        w(23 downto 16) := std_logic_vector(s(off+2));
+        if off+3 < s'right then
+          w(31 downto 24) := std_logic_vector(s(off+3));
+        end if;
       end if;
     end if;
   end if;
   return w;
 end from_string;
+
+function from_string(s : string_t) return std_logic_vector is
+  variable v: std_logic_vector(s'length * 8 - 1 downto 0);
+begin
+  for i in 0 to s'right loop
+    v((s'length - i) * 8 - 1 downto (s'length - i)*8 - 7) := from_char(s(i));
+  end loop;
+  return v;
+end from_string;
+
+function slv(a : string_t) return std_logic_vector is
+  variable v: std_logic_vector((a'length * 8) - 1 downto 0);
+begin
+  for i in 0 to a'left loop
+    v((a'length - i) * 8 - 1 downto (a'length - i) * 8 - 8) := from_char(a(i));
+  end loop;
+  return v;
+end slv;
+    
+-- Conversions based on the ieee_proposed fixed/float libraries
+
+function to_float(r: real) return float_t is
+begin
+  return float_pkg.to_slv(float_pkg.to_float32(float_pkg.to_float(r)));
+end to_float;
+function from_float(f: float_t) return real is
+begin
+  return float_pkg.to_real(float_pkg.to_float(f));
+end from_float;
+function from_float (f: float_t) return std_logic_vector is begin
+  return std_logic_vector(f);
+end from_float;                                                            
+function slv(a: float_array_t) return std_logic_vector is
+  variable v: std_logic_vector((a'length * 32) - 1 downto 0);
+begin
+  for i in 0 to a'left loop
+    v((a'length - i) * 32 - 1 downto (a'length - i) * 32 - 31) := from_float(a(i));
+  end loop;
+  return v;
+end slv;
+
+-- double
+
+function to_double(r: real) return double_t is
+begin
+  return float_pkg.to_slv(float_pkg.to_float64(float_pkg.to_float(r)));
+end to_double;
+function from_double(d: double_t) return real is
+begin
+  return float_pkg.to_real(float_pkg.to_float(d, 11, 52));
+end from_double;
+function from_double (d: double_t) return std_logic_vector is begin
+  return std_logic_vector(d);
+end from_double;                                                            
+function slv(a: double_array_t) return std_logic_vector is
+  variable v: std_logic_vector((a'length * 64) - 1 downto 0);
+begin
+  for i in 0 to a'left loop
+    v((a'length - i) * 64 - 1 downto (a'length - i) * 64 - 63) := from_double(a(i));
+  end loop;
+  return v;
+end slv;
+  
 end types;

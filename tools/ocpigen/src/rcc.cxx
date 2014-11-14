@@ -36,51 +36,75 @@ static void camel(std::string &s, const char *s1, const char *s2 = NULL, const c
     s += s3 + 1;
   }
 }
+static void
+upperconstant(std::string &s, const char *s1, const char *s2 = NULL, const char *s3 = NULL) {
+  for (const char *cp = s1; *cp; cp++)
+    s += (char)toupper(*cp);
+  if (s2) {
+    s += "_";
+    upperconstant(s, s2, s3);
+  }
+}
 
 static void
-printArray(FILE *f, OU::Member *m, bool isFixed, bool &isLast, bool topSeq) {
-  if (m->m_arrayRank)
-    for (unsigned n = 0; n < m->m_arrayRank; n++)
-      fprintf(f, "[%zu]", m->m_arrayDimensions[n]);
+printRccArray(FILE *f, OU::Member &m, bool isFixed, bool &isLast, bool topSeq, bool end) {
+  if (m.m_arrayRank)
+    for (unsigned n = 0; n < m.m_arrayRank; n++)
+      fprintf(f, "[%zu]", m.m_arrayDimensions[n]);
   if (topSeq) {
-    if (m->m_sequenceLength)
-      fprintf(f, "[%zu]", m->m_sequenceLength);
+    if (m.m_sequenceLength)
+      fprintf(f, "[%zu]", m.m_sequenceLength);
     else
       fprintf(f, "[1]");
   }
   // We align strings on a 4 byte boundary, and implicitly pad them to a 4 byte boundary too
-  if (m->m_baseType == OA::OCPI_String) {
-    fprintf(f, "[%zu]", isFixed ? (m->m_stringLength + 4) & ~3 : 4);
-    if (m->m_stringLength == 0)
+  if (m.m_baseType == OA::OCPI_String) {
+    fprintf(f, "[%zu]", isFixed ? (m.m_stringLength + 4) & ~3 : 4);
+    if (m.m_stringLength == 0)
       isLast = true;
   }
-  // End of declarator. If we're a sequence we close off the struct.
-  fprintf(f, "; /* %8zxx", m->m_offset); 
-  if (topSeq)
-    fprintf(f, " this is a top level sequence of fixed size elements");
-  fprintf(f, " */\n");
+  if (end) {
+    // End of declarator. If we're a sequence we close off the struct.
+    fprintf(f, "; /* %8zxx", m.m_offset); 
+    if (topSeq)
+      fprintf(f, " this is a top level sequence of fixed size elements");
+    fprintf(f, " */\n");
+  }
 }
-
 // Just print the data type, not the "member", with names or arrays etc.
 void Worker::
-printRccBaseType(FILE *f, OU::Member *m, unsigned indent, size_t &offset, unsigned &pad,
-	      const char *parent, bool isFixed, bool &isLast) {
-  if (m->m_baseType == OA::OCPI_Struct) {
+printRccBaseType(FILE *f, OU::Member &m, unsigned indent, size_t &offset, unsigned &pad,
+		 const char *parent, bool isFixed, bool &isLast) {
+  if (m.m_baseType == OA::OCPI_Struct) {
     std::string s;
-    camel(s, parent, m->m_name.c_str());
+    camel(s, parent, m.m_name.c_str());
     fprintf(f, "%*sstruct %s {\n", indent, "", s.c_str());
-    emitRccStruct(f, m->m_nMembers, m->m_members, indent + 2, s.c_str(), isFixed, isLast, false);
+    emitRccStruct(f, m.m_nMembers, m.m_members, indent + 2, s.c_str(), isFixed, isLast, false);
     fprintf(f, "%*s}", indent, "");
-  } else if (m->m_baseType == OA::OCPI_Type)
-    printRccType(f, m->m_type, indent, offset, pad, parent, isFixed, isLast, false);
-  else {
-    const char *baseType = m_baseTypes[m->m_baseType];
+  } else if (m.m_baseType == OA::OCPI_Type)
+    printRccType(f, *m.m_type, indent, offset, pad, parent, isFixed, isLast, false);
+  else if (m.m_baseType == OA::OCPI_Enum) {
+    if (!strcasecmp("ocpi_endian", m.m_name.c_str())) {
+      fprintf(f, "%*s%sRCCEndian", indent, "", m_language == CC ? "OCPI::RCC::" : "");
+    } else {
+      fprintf(f, "%*senum {\n", indent, "");
+      for (const char **ep = m.m_enums; *ep; ep++) {
+	std::string s;
+	upperconstant(s, parent, m.m_name.c_str(), *ep);
+	fprintf(f, "%*s  %s,\n", indent, "", s.c_str());
+      }
+      std::string s;
+      upperconstant(s, parent, m.m_name.c_str(), "PAD_ = 0x7fffffff");
+      fprintf(f, "%*s  %s\n%*s}", indent, "", s.c_str(), indent, "");
+    }
+  } else {
+    const char *baseType = m_baseTypes[m.m_baseType];
     if (m_language == C)
-      fprintf(f, "%*s%-13s", indent, "", baseType);
+      fprintf(f, "%*s%-*s", indent, "", indent ? 13 : 0, baseType);
     else {
       std::string type = !strncmp("RCC", baseType, 3) ? "OCPI::RCC::" : "";
       type += baseType;
-      fprintf(f, "%*s%-24s", indent, "", type.c_str());
+      fprintf(f, "%*s%-*s", indent, "", indent ? 24 : 0, type.c_str());
     }
   }
 }
@@ -94,30 +118,34 @@ topTypeName(std::string &name, OU::Member *m, const char **baseTypes) {
     name = baseTypes[m->m_baseType];
   //  printf("BASETYPE %u:%s\n", m->m_baseType, rccTypes[m->m_baseType]);
 }
-// Print type, including sequence type etc.
+// Print type for a member, including sequence type etc.
+// Note this is called for two different purposes:
+// 1. When a higher level structure is being defined (like Properties) and thus
+//    the type will be immediately and anonymously used as the type of a struct member
+// 2. When a type for a parameter is being defined in advance of its value being defined.
 void Worker::
-printRccType(FILE *f, OU::Member *m, unsigned indent, size_t &offset, unsigned &pad,
+printRccType(FILE *f, OU::Member &m, unsigned indent, size_t &offset, unsigned &pad,
 	  const char *parent, bool isFixed, bool &isLast, bool topSeq) {
-  if (m->m_isSequence && !topSeq) {
+  if (m.m_isSequence && !topSeq) {
     fprintf(f,
 	    "%*sstruct {\n"
 	    "%*s  uint32_t length;\n",
 	    indent, "", indent, "");
     //    offset += 4;
-    if (m->m_dataAlign > sizeof(uint32_t)) {
-      size_t align = m->m_dataAlign - (unsigned)sizeof(uint32_t);
+    if (m.m_dataAlign > sizeof(uint32_t)) {
+      size_t align = m.m_dataAlign - (unsigned)sizeof(uint32_t);
       fprintf(f, "%*s  char pad%u_[%zu];\n", indent, "", pad++, align);
       //      offset += align;
     }
     printRccBaseType(f, m, indent + 2, offset, pad, parent, isFixed, isLast);
     fprintf(f, " data");
-    if (m->m_sequenceLength && isFixed)
-      fprintf(f, "[%zu]", m->m_sequenceLength);
+    if (m.m_sequenceLength && isFixed)
+      fprintf(f, "[%zu]", m.m_sequenceLength);
     else {
       fprintf(f, "[]");
       isLast = true;
     }
-    printArray(f, m, isFixed, isLast, false);
+    printRccArray(f, m, isFixed, isLast, false, true);
     fprintf(f, "%*s}", indent, "");
   } else
     printRccBaseType(f, m, indent, offset, pad, parent, isFixed, isLast);
@@ -126,22 +154,20 @@ printRccType(FILE *f, OU::Member *m, unsigned indent, size_t &offset, unsigned &
 // Returns true when something is variable length.
 // strings or sequences are like that unless then are bounded.
 void Worker::
-printRccMember(FILE *f, OU::Member *m, unsigned indent, size_t &offset, unsigned &pad,
+printRccMember(FILE *f, OU::Member &m, unsigned indent, size_t &offset, unsigned &pad,
 	    const char *parent, bool isFixed, bool &isLast, bool topSeq)
 {
-  //  printf("name %s offset %u m->m_offset %u bytes %u\n",
-  //	 m->m_name.c_str(), offset, m->m_offset, m->m_nBytes);
-  if (offset < m->m_offset) {
+  if (offset < m.m_offset) {
     fprintf(f, "%*schar pad%u_[%zu];\n",
-	    indent, "", pad++, m->m_offset - offset);
-    offset = m->m_offset;
+	    indent, "", pad++, m.m_offset - offset);
+    offset = m.m_offset;
   }
   printRccType(f, m, indent, offset, pad, parent, isFixed, isLast, topSeq);
   //  printf("1name %s offset %u m->m_offset %u bytes %u\n",
   //	 m->m_name.c_str(), offset, m->m_offset, m->m_nBytes);
-  fprintf(f, " %s", m->m_name.c_str());
-  printArray(f, m, isFixed, isLast, topSeq);
-  offset += m->m_nBytes;
+  fprintf(f, " %s", m.m_name.c_str());
+  printRccArray(f, m, isFixed, isLast, topSeq, true);
+  offset += m.m_nBytes;
   //  printf("2name %s offset %u m->m_offset %u bytes %u\n",
   //	 m->m_name.c_str(), offset, m->m_offset, m->m_nBytes);
 }
@@ -202,11 +228,11 @@ emitRccStruct(FILE *f, size_t nMembers, OU::Member *members, unsigned indent,
   size_t offset = 0;
   unsigned pad = 0;
   for (unsigned n = 0; !isLast && n < nMembers; n++, members++)
-    printRccMember(f, members, indent, offset, pad, parent, isFixed, isLast, topSeq);
+    printRccMember(f, *members, indent, offset, pad, parent, isFixed, isLast, topSeq);
 }
 
 const char *Worker::
-rccValue(OU::Value &v, std::string &value, bool /* param */) {
+rccValue(OU::Value &v, std::string &value, const OU::Member *param) {
   // Convert value to something nice for C
   // In particular, large integer constants do not want to be truncated.
   // From ISO: "The type of an integer constant is the first of the corresponding list
@@ -244,7 +270,13 @@ rccValue(OU::Value &v, std::string &value, bool /* param */) {
       value += '\"';
       break;
     case OA::OCPI_Enum:
-      // Should we define an enum here?
+      assert(param);
+      if (!strcasecmp("ocpi_endian", param->m_name.c_str())) {
+	if (m_language == CC)
+	  value = "OCPI::RCC::";
+	upperconstant(value, "RCC", v.m_vt->m_enums[v.m_ULong]);
+      } else
+	upperconstant(value, m_implName, param->m_name.c_str(), v.m_vt->m_enums[v.m_ULong]);
     default:
       ;
     }
@@ -294,8 +326,8 @@ static const char *ccpretty[] = {
   0
 };
 
-static void
-cc_type(OU::Property &p, std::string &typeDef, std::string &type, std::string &pretty) {
+void Worker::
+rccPropType(OU::Property &p, std::string &typeDef, std::string &type, std::string &pretty) {
   (void)p;(void)typeDef;(void)type;
   type = cctypes[p.m_baseType];
   pretty = ccpretty[p.m_baseType];
@@ -363,18 +395,30 @@ emitImplRCC() {
       OU::Property &p = **pi;
       if (p.m_isParameter) {
 	std::string value;
+#if 0
 	if (m_language == C)
 	  fprintf(f,
 		  "#ifndef PARAM_%s\n"
 		  "#define PARAM_%s() (%s)\n"
 		  "#endif\n",
 		  p.m_name.c_str(), p.m_name.c_str(), rccPropValue(p, value));
-	else {
+	else
+#endif
+	  {
 	  std::string typeDef, type, pretty;
-	  cc_type(p, typeDef, type, pretty);
+	  rccPropType(p, typeDef, type, pretty);
 	  fprintf(f,
-		  "static const %s PARAM_%s = %s;\n",
-		   type.c_str(), p.m_name.c_str(), rccPropValue(p, value));
+		  "/* The constant value of the parameter property named: %s */\n"
+		  "static const ", p.m_name.c_str());
+	  size_t offset = 0;
+	  unsigned pad = 0;
+	  bool isLast = false;
+	  printRccType(f, p, 0, offset, pad, m_implName, true, isLast, false);
+	  std::string param;
+	  upperconstant(param, m_implName, p.m_name.c_str());
+	  fprintf(f, " %s", param.c_str());
+	  printRccArray(f, p, true, isLast, false, false);
+	  fprintf(f, " = PARAM_%s();\n", p.m_name.c_str());
 	}
       }
     }
@@ -394,7 +438,7 @@ emitImplRCC() {
     bool isLastDummy = false;
     for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
       if (!(*pi)->m_isParameter)
-	printRccMember(f, *pi, 2, offset, pad, m_implName, true, isLastDummy, false);
+	printRccMember(f, **pi, 2, offset, pad, m_implName, true, isLastDummy, false);
     if (m_language == C)
       fprintf(f, "} %c%sProperties;\n\n", toupper(m_implName[0]), m_implName + 1);
     else
@@ -436,14 +480,16 @@ emitImplRCC() {
 	for (PropertiesIter pi = m_slave->m_ctl.properties.begin();
 	     pi != m_slave->m_ctl.properties.end(); pi++) {
 	  OU::Property &p = **pi;
-	  std::string typeDef, type, pretty;
-	  cc_type(p, typeDef, type, pretty);
-	  if (p.m_isReadable)
-	    fprintf(f, "    inline %s get_%s() { return m_worker.get%sProperty(%u); }\n",
-		    type.c_str(), p.m_name.c_str(), pretty.c_str(), p.m_ordinal);
-	  if (p.m_isWritable)
-	    fprintf(f, "    inline void set_%s(%s val) { return m_worker.set%sProperty(%u, val); }\n",
-		    p.m_name.c_str(), type.c_str(), pretty.c_str(), p.m_ordinal);
+	  if (!p.m_isParameter) {
+	    std::string typeDef, type, pretty;
+	    rccPropType(p, typeDef, type, pretty);
+	    if (p.m_isReadable)
+	      fprintf(f, "    inline %s get_%s() { return m_worker.get%sProperty(%u); }\n",
+		      type.c_str(), p.m_name.c_str(), pretty.c_str(), p.m_ordinal);
+	    if (p.m_isWritable)
+	      fprintf(f, "    inline void set_%s(%s val) { return m_worker.set%sProperty(%u, val); }\n",
+		      p.m_name.c_str(), type.c_str(), pretty.c_str(), p.m_ordinal);
+	  }
 	}
       fprintf(f,
 	      "  } slave;\n");
@@ -810,7 +856,8 @@ parseRccImpl(const char *package) {
     if (!dot)
       return OU::esprintf("slave attribute: '%s' has no authoring model suffix", slave.c_str());
     OU::format(sw, "../%s/%.*s.xml", slave.c_str(), (int)(dot - slave.c_str()), slave.c_str());
-    if (!(m_slave = Worker::create(sw.c_str(), m_file.c_str(), NULL, m_outDir, NULL, 0, err)))
+    if (!(m_slave = Worker::create(sw.c_str(), m_file.c_str(), NULL, m_outDir, NULL, NULL, 0,
+				   err)))
       return OU::esprintf("for slave worker %s: %s", slave.c_str(), err);
   }
   m_model = RccModel;
@@ -879,7 +926,7 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
 
 RccAssembly::
 RccAssembly(ezxml_t xml, const char *xfile, const char *&err)
-  : Worker(xml, xfile, "", Worker::Assembly, NULL, err) {
+  : Worker(xml, xfile, "", Worker::Assembly, this, NULL, err) {
   if (!(err = OE::checkAttrs(xml, IMPL_ATTRS, RCC_TOP_ATTRS, (void*)0)) &&
       !(err = OE::checkElements(xml, IMPL_ELEMS, RCC_IMPL_ELEMS, ASSY_ELEMS, (void*)0)))
     err = parseRcc();
@@ -1238,7 +1285,7 @@ emitRccCImpl1(FILE *f) {
 	      size_t dummy1 = 0;
 	      unsigned dummy2 = 0;
 	      bool dummy3;
-	      m_worker->printRccBaseType(f, arg, 2, dummy1, dummy2, "", false, dummy3);
+	      m_worker->printRccBaseType(f, *arg, 2, dummy1, dummy2, "", false, dummy3);
 	      fprintf(f, " *%s;\n", arg->m_name.c_str());
 	    }
 	  }

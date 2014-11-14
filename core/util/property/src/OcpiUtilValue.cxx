@@ -852,23 +852,23 @@ namespace OCPI {
       return err;
 #endif
 
-bool Value::
-unparseDimension(std::string &s, unsigned nseq, size_t dim, size_t offset, size_t nItems,
-		 bool hex, char comma, const Unparser &up) const {
+bool Unparser::
+dimensionUnparse(const Value &val, std::string &s, unsigned nseq, size_t dim, size_t offset,
+		 size_t nItems, bool hex, char comma, const Unparser &up) const {
   size_t
     nextDim = dim + 1,
-    dimension = m_vt->m_arrayDimensions[dim],
+    dimension = val.m_vt->m_arrayDimensions[dim],
     skip = nItems/dimension;
   bool prevNull = false, allNull = true;
   size_t length = 0;
   std::string v;
-  for (unsigned n = 0; n < m_vt->m_arrayDimensions[dim]; n++) {
+  for (unsigned n = 0; n < val.m_vt->m_arrayDimensions[dim]; n++) {
     bool thisNull;
-    if (nextDim < m_vt->m_arrayRank) { // if not outer dimension
+    if (nextDim < val.m_vt->m_arrayRank) { // if not outer dimension
       if (n != 0)
 	v += comma;
       v += '{';
-      thisNull = unparseDimension(v, nseq, nextDim, offset, skip, hex, comma, up);
+      thisNull = up.dimensionUnparse(val, v, nseq, nextDim, offset, skip, hex, comma, up);
       v += '}';
       offset += skip;
     } else { // outer dimension
@@ -882,7 +882,7 @@ unparseDimension(std::string &s, unsigned nseq, size_t dim, size_t offset, size_
       } else
 	thisNull = unparseValue(v, nseq, offset++, hex, comma, up);
 #else
-      thisNull = up.valueUnparse(*this, v, nseq, offset++, hex, comma, needsCommaDimension(), up);
+      thisNull = up.valueUnparse(val, v, nseq, offset++, hex, comma, val.needsCommaDimension(), up);
 #endif
     }
     if (thisNull) {
@@ -909,7 +909,7 @@ elementUnparse(const Value &v, std::string &s, unsigned nSeq, bool hex, char com
 void Value::
 unparseElement(std::string &s, unsigned nSeq, bool hex, char comma, const Unparser &up) const {
   if (m_vt->m_arrayRank)
-    unparseDimension(s, nSeq, 0, 0, m_vt->m_nItems, hex, comma, up);
+    up.dimensionUnparse(*this, s, nSeq, 0, 0, m_vt->m_nItems, hex, comma, up);
   else
     up.valueUnparse(*this, s, nSeq, 0, hex, comma, false, up);
 }

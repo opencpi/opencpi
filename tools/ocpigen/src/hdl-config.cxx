@@ -200,9 +200,28 @@ emitSubdeviceConnections(std::string &assy,  DevInstances *baseInstances) {
 		      inConfig ? "pfconfig" : rdi->name(),
 		      inConfig ? rdi->name() : "", inConfig ? "_" : "",
 		      (*rci).m_rq_port->name());
-	if ((*rci).m_indexed)
-	  OU::formatAdd(assy, " index='%zu'", (*rci).m_index);
-	rdi->m_connected[(*rci).m_rq_port->m_ordinal] |= 1 << (*rci).m_index;
+	if ((*rci).m_indexed) {
+	  size_t
+	    rqOrdinal = (*rci).m_rq_port->m_ordinal,
+	    rqIndex = (*rci).m_index,
+	    unconnected = 0,
+	    index = rqIndex;
+	  // If we are in a container and the subdevice is in the config,
+	  // we may need to index relative to what is NOT connected in the config,
+	  // and thus externalized.
+	  if (inConfig) {
+	    for (size_t i = 0; i < (*rci).m_rq_port->count; i++)
+	      if (rdi->m_connected[rqOrdinal] & (1 << i)) {
+		assert(i != rqIndex);
+		if (i < rqIndex)
+		  index--;
+	      } else
+		unconnected++; // count how many were unconnected in the config
+	    assert(unconnected > 0 && index < unconnected);
+	  } else // the subdevice is where the device is, so record the connection
+	    rdi->m_connected[rqOrdinal] |= 1 << rqIndex;
+	  OU::formatAdd(assy, " index='%zu'", index);
+	}
 	OU::formatAdd(assy,
 		      "/>\n"
 		      "  </connection>\n");
@@ -212,7 +231,7 @@ emitSubdeviceConnections(std::string &assy,  DevInstances *baseInstances) {
 }
 
 HdlConfig *HdlConfig::
-create(ezxml_t xml, const char *xfile, const char *&err) {
+create(ezxml_t xml, const char *xfile, Worker *parent, const char *&err) {
   err = NULL;
   std::string myPlatform;
   OE::getOptionalString(xml, myPlatform, "platform");
@@ -237,10 +256,11 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
   std::string pfile;
   ezxml_t pxml;
   HdlPlatform *pf;
+  // 
   if ((err = parseFile(myPlatform.c_str(), xfile, "HdlPlatform", &pxml, pfile)) ||
-      !(pf = HdlPlatform::create(pxml, pfile.c_str(), err)))
+      !(pf = HdlPlatform::create(pxml, pfile.c_str(), NULL, err)))
     return NULL;
-  HdlConfig *p = new HdlConfig(*pf, xml, xfile, err);
+  HdlConfig *p = new HdlConfig(*pf, xml, xfile, parent, err);
   if (err) {
     delete p;
     p = NULL;
@@ -249,15 +269,17 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
 }
 
 HdlConfig::
-HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, const char *&err)
-  : Worker(xml, xfile, "", Worker::Configuration, NULL, err), HdlHasDevInstances(pf, m_plugged),
+HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const char *&err)
+  : Worker(xml, xfile, "", Worker::Configuration, parent, NULL, err),
+    HdlHasDevInstances(pf, m_plugged),
     m_platform(pf) {
   if (err ||
       (err = OE::checkAttrs(xml, IMPL_ATTRS, HDL_TOP_ATTRS,
 			    HDL_CONFIG_ATTRS, (void*)0)) ||
       (err = OE::checkElements(xml, HDL_CONFIG_ELEMS, (void*)0)))
     return;
-  hdlAssy = true;
+  pf.setParent(this);
+  //hdlAssy = true;
   m_plugged.resize(pf.m_slots.size());
   if ((err = parseDevInstances(xml, xfile, NULL)))
     return;
@@ -332,15 +354,21 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, const char *&err)
       Port &p = **pi;
       if (p.isData() || p.type == NOCPort ||
 	  (!p.master && (p.type == PropPort || p.type == DevSigPort))) {
-	size_t unconnected = 0;
+	size_t unconnected = 0, first = 0;
 	for (size_t i = 0; i < p.count; i++)
-	  if (!((*dii).m_connected[p.m_ordinal] & (1 << i)))
-	    unconnected++;
-	OU::formatAdd(assy,
-		      "  <external name='%s_%s' instance='%s' port='%s' count='%zu'/>\n",
-		      (*dii).name(), p.name(),
-		      (*dii).name(), p.name(),
-		      unconnected);
+	  if (!((*dii).m_connected[p.m_ordinal] & (1 << i))) {
+	    if (!unconnected++)
+	      first = i;
+	  }
+	// FIXME: (hard) this will not work if the connectivity is not simply contiguous.
+	// (at one end or the other).
+	if (unconnected)
+	  OU::formatAdd(assy,
+			"  <external name='%s_%s' instance='%s' port='%s' "
+			"index='%zu' count='%zu'/>\n",
+			(*dii).name(), p.name(),
+			(*dii).name(), p.name(),
+			first, unconnected);
       }
     }
   }

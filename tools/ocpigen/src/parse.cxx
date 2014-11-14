@@ -354,6 +354,17 @@ addProperty(const char *xml, bool includeImpl) {
   return err;
 }
 
+const char *Worker::
+addBuiltinProperties() {
+  const char *err;
+  if ((err = addProperty("<property name='ocpi_debug' type='bool' parameter='true' "
+			 "          default='false' readable='true'/>", true)) ||
+      (err = addProperty("<property name='ocpi_endian' type='enum' parameter='true' "
+			 "          default='little' readable='true'"
+      			 "          enums='little,big,dynamic'/>", true)))
+    return err;
+  return NULL;
+}
 // Parse the generic implementation control aspects (for rcc and hdl and other)
 const char *Worker::
 parseImplControl(ezxml_t &xctl) {
@@ -375,11 +386,7 @@ parseImplControl(ezxml_t &xctl) {
       xctl && (err = parseList(ezxml_cattr(xctl, "ControlOperations"), parseControlOp, this)))
     return err;
   // Add the built-in properties
-  if ((err = addProperty("<property name='ocpi_debug' type='bool' parameter='true' "
-			 "          default='false' readable='true'/>", true)) ||
-      //      (err = addProperty("<property name='ocpi_endian' type='enum' parameter='true' "
-      //			 "          default='little' readable='true'"
-      //			 "          enums='little,big,dynamic'/>", true)) ||
+  if ((err = addBuiltinProperties()) ||
       (err = doProperties(m_xml, m_file.c_str(), true, false)))
     return err;
   // Now that we have all information about properties and we can actually
@@ -712,12 +719,13 @@ getNames(ezxml_t xml, const char *file, const char *tag, std::string &name, std:
 // The factory, which decides which class to instantiate
 // This will evolve as more things are based on derived classes
 Worker *Worker::
-create(const char *file, const std::string &parent, const char *package, const char *outDir,
-       OU::Assembly::Properties *instancePVs, size_t paramConfig, const char *&err) {
+create(const char *file, const std::string &parentFile, const char *package, const char *outDir,
+       Worker *parent, OU::Assembly::Properties *instancePVs, size_t paramConfig,
+       const char *&err) {
   err = NULL;
   ezxml_t xml;
   std::string xf;
-  if ((err = parseFile(file, parent, NULL, &xml, xf)))
+  if ((err = parseFile(file, parentFile, NULL, &xml, xf)))
     return NULL;
   const char *xfile = xf.c_str();
   const char *name = ezxml_name(xml);
@@ -727,18 +735,18 @@ create(const char *file, const std::string &parent, const char *package, const c
   }
   Worker *w;
   if (!strcasecmp("HdlPlatform", name))
-    w = HdlPlatform::create(xml, xfile, err);
+    w = HdlPlatform::create(xml, xfile, parent, err);
   else if (!strcasecmp("HdlConfig", name))
-    w = HdlConfig::create(xml, xfile, err);
+    w = HdlConfig::create(xml, xfile, parent, err);
   else if (!strcasecmp("HdlContainer", name))
     w = HdlContainer::create(xml, xfile, err);
   else if (!strcasecmp("HdlAssembly", name))
-    w = HdlAssembly::create(xml, xfile, err);
+    w = HdlAssembly::create(xml, xfile, parent, err);
   else if (!strcasecmp("HdlDevice", name))
-    w = HdlDevice::create(xml, xfile, err);
+    w = HdlDevice::create(xml, xfile, parent, err);
   else if (!strcasecmp("RccAssembly", name))
     w = RccAssembly::create(xml, xfile, err);
-  else if ((w = new Worker(xml, xfile, parent, Worker::Application, instancePVs, err))) {
+  else if ((w = new Worker(xml, xfile, parentFile, Worker::Application, parent, instancePVs, err))) {
     if (!strcasecmp("RccImplementation", name) || !strcasecmp("RccWorker", name))
       err = w->parseRcc(package);
     else if (!strcasecmp("OclImplementation", name) || !strcasecmp("OclWorker", name))
@@ -879,16 +887,17 @@ parse(Worker &w, ezxml_t x) {
 }
 
 Worker::
-Worker(ezxml_t xml, const char *xfile, const std::string &parent,
-       WType type, OU::Assembly::Properties *ipvs, const char *&err)
-  : Parsed(xml, xfile, parent, NULL, err),
+Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
+       WType type, Worker *parent, OU::Assembly::Properties *ipvs, const char *&err)
+  : Parsed(xml, xfile, parentFile, NULL, err),
     m_model(NoModel), m_baseTypes(NULL), m_modelString(NULL), m_type(type), m_isDevice(false),
     m_wci(NULL), m_noControl(false), m_reusable(false), m_implName(m_name.c_str()),
     m_specName(NULL), m_isThreaded(false), m_maxPortTypeName(0), m_wciClock(NULL),
     m_endian(NoEndian), m_needsEndian(false), m_pattern(NULL), m_portPattern(NULL),
     m_staticPattern(NULL), m_defaultDataWidth(-1), m_language(NoLanguage), m_assembly(NULL),
     m_slave(NULL), m_library(NULL), m_outer(false), m_debugProp(NULL), m_instancePVs(ipvs),
-  m_mkFile(NULL), m_xmlFile(NULL), m_outDir(NULL), m_paramConfig(NULL), m_scalable(false)
+    m_mkFile(NULL), m_xmlFile(NULL), m_outDir(NULL), m_paramConfig(NULL), m_scalable(false),
+    m_parent(parent)
 {
   const char *name = ezxml_name(xml);
   // FIXME: make HdlWorker and RccWorker classes  etc.
@@ -915,15 +924,30 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parent,
       ocpiDebug("m_library set from xml attr: %s", m_library);
     else if (xfile && (m_library = findLibMap(xfile)))
       ocpiDebug("m_library set from map from file %s: %s", xfile, m_library);
-    else if (hdlAssy && (m_library = m_implName))
+    else if (m_parent && (m_library = m_implName))
       ocpiDebug("m_library set from worker name: %s", m_implName);
     else
       ocpiDebug("m_library not set");
-    // Add the library to the global list
-#if 0 // donein create
-    if (m_library)
-      addLibMap(m_library);
-#endif
+    // Parse the optional endian attribute.
+    // If not specified, it will be defaulted later based on protocols
+    const char *myendian = ezxml_cattr(m_xml, "endian");
+    if (myendian) {
+      for (const char **ap = endians; *ap; ap++)
+	if (!strcasecmp(myendian, *ap)) {
+	  m_endian = (Endian)(ap - endians);
+	  break;
+	}
+    }
+  }
+}
+
+void Worker::
+setParent(Worker *parent) {
+  assert(!m_parent);
+  m_parent = parent;
+  if (parent && !m_library) {
+    ocpiDebug("m_library set from worker name: %s", m_implName);
+    m_library = m_implName;
   }
 }
 

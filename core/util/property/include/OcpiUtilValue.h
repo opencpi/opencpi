@@ -70,7 +70,9 @@ namespace OCPI {
       virtual bool
       valueUnparse(const Value &v, std::string &s, unsigned nSeq, size_t nArray, bool hex,
 		   char comma, bool wrap, const Unparser &up) const;
-
+      virtual bool
+      dimensionUnparse(const Value &v, std::string &s, unsigned nseq, size_t dim, size_t offset,
+			 size_t nItems, bool hex, char comma, const Unparser &up) const;
     };
 
     // A typed value
@@ -143,9 +145,6 @@ namespace OCPI {
 		  bool hex = false, char comma = ',') const,
 	  unparseElement(std::string &s, unsigned nSeq, bool hex, char comma,
 			 const Unparser &up) const;
-      bool
-	unparseDimension(std::string &s, unsigned nseq, size_t dim, size_t offset,
-			 size_t nItems, bool hex, char comma, const Unparser &up) const;
       // return TRUE if value is an empty value
       bool unparseValue(std::string &s, unsigned nSeq, size_t nArray, bool hex, char comma,
 			const Unparser &up) const;

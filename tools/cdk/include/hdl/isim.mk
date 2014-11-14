@@ -87,7 +87,7 @@ IsimLibs=\
       -lib $(notdir $(l))=$(strip \
             $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$l,isim)))) \
     $(foreach c,$(call HdlCollectCores,isim),\
-      -lib $(call HdlRmRv,$(notdir $(c)))=$(xxxxinfo fc:$c)$(call FindRelative,$(TargetDir),$(strip \
+      -lib $(call HdlRmRv,$(notdir $(c)))=$(info fc:$c)$(call FindRelative,$(TargetDir),$(strip \
           $(firstword $(foreach l,$(call IsimCoreLibraryChoices,$c),$(call HdlExists,$l))))))
 
 MyIncs=\
@@ -138,8 +138,8 @@ $1/$3.tar:
 	$(AT)echo Building isim simulation executable: "$$@" with details in $1/$3-fuse.out
 	$(AT)echo verilog work $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v > $1/$3.prj
 	$(AT)(set -e; cd $1; $(call XilinxInit,); \
-	      fuse $4.$4 work.glbl -v 2  -prj $3.prj \
-              -lib $4=$4 $$(IsimLibs) -L unisims_ver \
+	      fuse $3.$3 work.glbl -v 2  -prj $3.prj \
+              -lib $3=$3 $$(IsimLibs) -L unisims_ver \
 	      -o $3.exe ; \
 	      tar cf $3.tar $3.exe metadatarom.dat isim) > $1/$3-fuse.out 2>&1
 

@@ -184,7 +184,7 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
     // know the actual properties and their types from the worker.
     // FIXME: we are assuming that properties here must be parameters?
     if (!w || ai->m_properties.size() || paramConfig) {
-      if (!(w = Worker::create(i->wName, m_assyWorker.m_file, NULL, outDir,
+      if (!(w = Worker::create(i->wName, m_assyWorker.m_file, NULL, outDir, &m_assyWorker,
 			       hasConfig ? NULL : &ai->m_properties, paramConfig, err)))
 	return OU::esprintf("for worker %s: %s", i->wName, err);
       m_workers.push_back(w);

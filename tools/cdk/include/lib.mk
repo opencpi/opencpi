@@ -69,6 +69,7 @@ RccImplementations=$(filter %.rcc,$(Implementations))
 HdlImplementations=$(filter %.hdl,$(Implementations))
 OclImplementations=$(filter %.ocl,$(Implementations))
 TestImplementations=$(filter %.test,$(Implementations))
+AssyImplementations=$(filter %.assy,$(Implementations))
 LibDir=$(OutDir)lib
 GenDir=$(OutDir)gen
 #LibDirs=$(foreach m,$(CapModels),$(foreach ht,$($(m)Targets),$(LibDir)/$(call UnCapitalize,$(m))/$(ht)))
@@ -95,6 +96,10 @@ endif
 
 ifneq ($(HdlImplementations),)
 build_targets += hdl
+endif
+
+ifneq ($(AssyImplementations),)
+build_targets += assy
 endif
 
 $(call OcpiDbgVar,build_targets)
@@ -200,8 +205,14 @@ hdlstubs: $(HdlImplementations)
 hdl: speclinks $(HdlImplementations)
 	$(AT)for i in $(HdlTargets); do mkdir -p lib/hdl/$$i; done
 
+assy: speclinks $(AssyImplementations)
+	$(AT)for i in $(HdlTargets); do mkdir -p lib/hdl/$$i; done
+
 cleanxm:
 	$(call CleanModel,xm)
+
+cleanassy:
+	$(call CleanModel,assy)
 
 cleanrcc:
 	$(call CleanModel,rcc)
@@ -234,7 +245,10 @@ $(OclImplementations): | $(OutDir)lib/ocl
 $(XmImplementations): | $(OutDir)lib/xm
 	$(AT)$(call BuildImplementation,xm,$@)
 
-.PHONY: $(XmImplementations) $(RccImplementations) $(TestImplementations) $(OclImplementations) $(HdlImplementations) speclinks hdl
+$(AssyImplementations): | $(OutDir)lib/assy
+	$(AT)$(call BuildImplementation,assy,$@)
+
+.PHONY: $(XmImplementations) $(RccImplementations) $(TestImplementations) $(OclImplementations) $(HdlImplementations) $(AssyImplementations) speclinks hdl
 
 # Worker should only be specified when the target is "new".
 ifeq ($(origin Worker),command line)
@@ -347,3 +361,7 @@ new:
 	     if test $$? != 0; then echo You should probably do: rm -r -f $(Worker); fi
 
 
+cleanall:
+	$(AT)find . -depth -name gen -exec rm -r -f "{}" ";"
+	$(AT)find . -depth -name "target-*" -exec rm -r -f "{}" ";"
+	$(AT)rm -r -f lib

@@ -2,7 +2,7 @@
 #include "hdl.h"
 #include "hdl-device.h"
 
-bool hdlAssy = false;
+//bool hdlAssy = false;
 
 // This is an HDL file, and perhaps an assembly or a platform
 const char *Worker::
@@ -72,6 +72,8 @@ findClock(const char *name) const {
   return NULL;
 }
 
+const char *endians[] = {ENDIANS, NULL};
+
 const char *Worker::
 parseHdlImpl(const char *package) {
   const char *err;
@@ -87,17 +89,6 @@ parseHdlImpl(const char *package) {
     return err;
   if (dwFound)
     m_defaultDataWidth = (int)dw; // override the -1 default if set
-  // Parse the optional endian attribute.
-  // If not specified, it will be defaulted later based on protocols
-  const char *myendian = ezxml_cattr(m_xml, "endian");
-  if (myendian) {
-    static const char *endians[] = {ENDIANS, NULL};
-    for (const char **ap = endians; *ap; ap++)
-      if (!strcasecmp(myendian, *ap)) {
-	m_endian = (Endian)(ap - endians);
-	break;
-      }
-  }
   if (!m_noControl) {
     if (!createPort<WciPort>(*this, xctl, NULL, -1, err))
       return err;

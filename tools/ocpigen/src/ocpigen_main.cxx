@@ -228,7 +228,7 @@ main(int argc, char **argv) {
     else
       try {
 	std::string parent;
-	Worker *w = Worker::create(*ap, parent, package, outDir, NULL, 0, err);
+	Worker *w = Worker::create(*ap, parent, package, outDir, NULL, NULL, 0, err);
 	if (err)
 	  fprintf(stderr, "For file %s: %s\n", *ap, err);
 	else if (attribute && (err = w->emitAttribute(attribute)))

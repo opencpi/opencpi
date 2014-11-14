@@ -5,7 +5,8 @@ entity decoder is
   generic (
       worker                 : worker_t;
       properties             : properties_t;
-      ocpi_debug             : bool_t);
+      ocpi_debug             : bool_t;
+      endian                 : endian_t);
   port (
       ocp_in                 : in in_t;       
       done                   : in bool_t := btrue;
@@ -101,16 +102,27 @@ architecture rtl of decoder is
   signal my_write_enables, my_read_enables : bool_array_t(properties'range);
   type my_offset_a_t is array(properties'range) of unsigned (worker.decode_width -1 downto 0);
   signal my_offsets      : my_offset_a_t;
+  signal my_big_endian   : bool_t;
+  signal high_dw         : bool_t;
   -- convert byte enables to low order address bytes
-  function be2offset(input: in_t) return byte_offset_t is
+  impure function be2offset(input: in_t) return byte_offset_t is
     variable byte_en : std_logic_vector(input.MByteEn'range) := input.MByteEn; -- avoid pedantic error
   begin
-    case byte_en is
-      when b"0010" =>           return b"01";
-      when b"0100" | b"1100" => return b"10";
-      when b"1000" =>           return b"11";
-      when others =>            return b"00";
-    end case;
+    if endian = little_e or (endian = dynamic_e and not its(my_big_endian)) then
+      case byte_en is
+        when b"0010" =>           return b"01";
+        when b"0100" | b"1100" => return b"10";
+        when b"1000" =>           return b"11";
+        when others =>            return b"00";
+      end case;
+    else
+      case byte_en is
+        when b"0100" =>           return b"01";
+        when b"0010" | b"0011" => return b"10";
+        when b"0001" =>           return b"11";
+        when others =>            return b"00";
+      end case;
+    end if;
   end be2offset;
   function num_bytes_1(input : in_t) return byte_offset_t is
     variable byte_en : std_logic_vector(input.MByteEn'range) := input.MByteEn; -- avoid pedantic error
@@ -150,7 +162,9 @@ begin
                        my_config_error);
   -- The busy output is combinatorial, and my_access might be only registered
   busy <= to_bool(access_in /= none_e or my_access /= none_e);
-  is_big_endian    <= ocp_in.MFlag(1);
+  -- This should be a constant in the whole synthesized worker unit
+  my_big_endian    <= to_bool(endian = big_e or (endian = dynamic_e and ocp_in.MFlag(1) = '1'));
+  is_big_endian    <= my_big_endian;
   barrier          <= ocp_in.MFlag(2);
   rank             <= to_uchar(ocp_in.MFlag(10 downto 3));
   crew             <= to_uchar(ocp_in.MFlag(18 downto 11));
@@ -182,7 +196,10 @@ begin
   my_offset       <= offset_in when my_reset or my_access_r = none_e else my_offset_r;
   my_data         <= ocp_in.MData        when my_access_r = none_e else my_data_r;
   my_nbytes_1     <= num_bytes_1(ocp_in) when my_access_r = none_e else my_nbytes_1_r;
-  my_hi32         <= to_bool(ocp_in.MAddr(2) = '1') when my_access_r = none_e else my_hi32_r;
+  high_dw         <= to_bool(ocp_in.MAddr(2) = '1')
+                     when endian = little_e or (endian = dynamic_e and not its(my_big_endian))
+                     else to_bool(ocp_in.MAddr(2) = '0');
+  my_hi32         <= high_dw when my_access_r = none_e else my_hi32_r;
   my_is_read      <= to_bool(my_access = read_e);
   my_is_write     <= to_bool(my_access = write_e);
   my_config_error <= to_bool((my_access = read_e and done and not any_true(my_read_enables)) or
@@ -221,7 +238,7 @@ begin
         my_data_r       <= ocp_in.MData;
         my_nbytes_1_r   <= num_bytes_1(ocp_in);
         my_offset_r     <= offset_in;
-        my_hi32_r       <= to_bool(ocp_in.MAddr(2) = '1');
+        my_hi32_r       <= high_dw; -- to_bool(ocp_in.MAddr(2) = '1');
       elsif its(done) or error or my_error then
         -- the last cycle of the request
         my_access_r <= none_e;
@@ -255,20 +272,21 @@ begin
     g1: for i in 0 to properties'right generate -- properties'left to 0 generate
       g2: if its(ocpi_debug) or not properties(i).debug generate
       prop: component ocpi.wci.property_decoder
-              generic map (properties(i), worker.decode_width)
-              port map(reset        => my_reset,
+              generic map (properties(i), worker.decode_width, endian)
+              port map(reset         => my_reset,
                        -- inputs describing property access
-                       offset_in    => my_offset,
-                       nbytes_1     => my_nbytes_1,
-                       is_write     => my_is_write,
-                       is_read      => my_is_read,
-                       data_in      => my_data,
+                       offset_in     => my_offset,
+                       nbytes_1      => my_nbytes_1,
+                       is_write      => my_is_write,
+                       is_read       => my_is_read,
+                       data_in       => my_data,
+                       is_big_endian => my_big_endian,
                        -- outputs from the decoding process
-                       write_enable => my_write_enables(i),
-                       read_enable  => my_read_enables(i),
-                       offset_out   => my_offsets(i),
-                       index_out    => indices(i)(worker.decode_width-1 downto 0),
-                       data_out     => data_outputs(i));
+                       write_enable  => my_write_enables(i),
+                       read_enable   => my_read_enables(i),
+                       offset_out    => my_offsets(i),
+                       index_out     => indices(i)(worker.decode_width-1 downto 0),
+                       data_out      => data_outputs(i));
             indices(i)(indices(i)'left downto worker.decode_width) <= (others => '0');
             offsets(i) <= resize(my_offsets(i),offsets(i)'length);
       end generate g2;

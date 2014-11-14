@@ -73,7 +73,7 @@ OcpiLibDir=$(OCPI_CDK_DIR)/lib/$$(RccTarget)
 RccLibraries=rcc application
 LinkBinary=$$(G$(OcpiLanguage)_LINK_$$(RccTarget)) $(SharedLibLinkOptions) -o $$@ \
 $(AEPLibraries) \
-$(foreach l,$(RccLibraries) $(Libraries),-l $l -L $(OcpiLibDir))
+$(foreach l,$(RccLibraries) $(Libraries),-l ocpi_$l -L $(OcpiLibDir))
 
 #  $$(or $$(wildcard $(OcpiLibDir)/lib$(ol)$(SOEXT)),$(OcpiLibDir)/lib$(ol)$(AREXT)))
 
@@ -88,7 +88,7 @@ endif
 # Prepare the parameters for compile-command-line injection into the worker compilation
 RccParams=\
   $(foreach n,$(WorkerParamNames),\
-	     "-DPARAM_$n()=$(Param_$(ParamConfig)_$n)")
+	     '-DPARAM_$n()=$(Param_$(ParamConfig)_$n)')
 Compile_c=\
   $$(Gc_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
   $(CompilerWarnings) $(CompilerOptions) \

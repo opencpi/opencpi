@@ -34,7 +34,7 @@ static unsigned myfls(uint64_t n) {
       return i;
   return 0;
 }
-// Derive the OCP signal configuration based on the WIP profile
+
 size_t ceilLog2(uint64_t n) {
   return OCPI_UTRUNCATE(size_t, n ? myfls(n - 1) : 0);
 }
@@ -405,7 +405,7 @@ emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal) {
     Worker &w = *m_worker;
     // WCI ports on assemblies are always generic generic
     if (type == WCIPort && (master || w.m_assembly))
-      OU::format(stype, "platform.platform_pkg.wci_%s_%st", output ? "m2s" : "s2m",
+      OU::format(stype, "wci.wci_%s_%st", output ? "m2s" : "s2m",
 		 count > 1 ? "array_" : "");
     else
       OU::format(stype, "%s.%s_defs.%s%s_t", w.m_library, w.m_implName, tname.c_str(),

@@ -45,7 +45,10 @@ ifeq ($(MAKECMDGOALS),skeleton)
 endif
 Compile=$(HdlCompile)
 $(call OcpiDbgVar,HdlBin)
-BF=$(call OBJ,$1)
+$(info LANGUAGE:$(HdlLanguage))
+#BF=$(call OBJ,$1)
+BF=$(HdlBin)
+#BF=$(if $(filter vhdl,$(HdlLanguage)),_rv)$(HdlBin)
 # This could change someday if any hdl tools have separate object files.
 OBJ=$(and $1,$(if $(filter 0,$1),,_c$1))$(HdlBin)
 # We don't build independent standalone worker binaries (no artifact file here)
@@ -87,6 +90,16 @@ $(call OcpiDbgVar,Tops)
 $(call OcpiDbgVar,HdlCores)
 $(call OcpiDbgVar,Core)
 $(call OcpiDbgVar,WkrExportNames)
+# Specify the name of the primary binary result for the worker.
+# There are three interacting issues:
+# 1. The language of this worker
+# 2. The langauge of any assembly this worker might be used in.
+# 3. The mode we are building in
+ifneq ($(filter $(HdlMode),config assembly),)
+WkrBinaryName=$(Worker)_rv
+else
+WkrBinaryName=$(Worker)
+endif
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk
 override VerilogIncludeDirs += $(IncludeDirs)
 ImplXmlFile=$(firstword $(ImplXmlFiles))
@@ -109,9 +122,11 @@ HdlOtherImplSourceFile=$(GeneratedDir)/$(Worker)$(HdlOtherImplSuffix)
 HdlVerilogTargetDefs=$(call WkrTargetDir,$1,$2)/$(Worker)$(HdlDefs)$(HdlVerilogIncSuffix)
 HdlVHDLTargetDefs=$(call WkrTargetDir,$1,$2)/$(Worker)$(HdlDefs)$(HdlVHDLSuffix)
 
-CoreBlackBoxFiles=$(foreach d,$(DefsFile) $(WDefsFile),$(infoxx CBBF:$d)\
+CoreBlackBoxFiles=$(foreach d,$(DefsFile) \
+                              $(if $(filter $(HdlMode),container config),,$(WDefsFile)),\
+                              $(infoxx CBBF:$d)\
                      $(if $(filter 0,$2),$d,$(call WkrTargetDir,$1,$2)/$(notdir $d)))\
-                  $(call WkrTargetDir,$1,$2)/generics.vhd
+                     $(call WkrTargetDir,$1,$2)/generics.vhd
 
 OcpiHdl=$(DYN_PREFIX) $(ToolsDir)/ocpihdl 
 
@@ -119,6 +134,7 @@ $(WDefsFile): $(Worker_$(Worker)_xml) | $(GeneratedDir)
 	$(AT)echo Generating the opposite language definition file: $@
 	$(AT)$(OcpiGen) -D $(GeneratedDir) $(and $(Package),-p $(Package))  \
 	  $(and $(HdlPlatform),-P $(HdlPlatform)) \
+          $(and $(AssemblyName),-S $(AssemblyName)) \
 	  $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) \
 	  -w -d $<
 
@@ -126,12 +142,14 @@ $(DefsFile): $(Worker_$(Worker)_xml) | $(GeneratedDir)
 	$(AT)echo Generating the definition file: $@
 	$(AT)$(OcpiGen) -D $(GeneratedDir) $(and $(Package),-p $(Package)) \
 	   $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) \
+           $(and $(AssemblyName),-S $(AssemblyName)) \
 	   $(and $(HdlPlatform),-P $(HdlPlatform)) \
 	   -d $<
 
 $(HdlOtherImplSourceFile): $(WDefsFile) $$(Worker_$(Worker)_xml) | $(GeneratedDir)
 	$(AT)echo Generating the $(HdlOtherLanguage) implementation file: $@ from $(Worker_$(Worker)_xml)
 	$(AT)$(OcpiGen) -D $(GeneratedDir) $(and $(Package),-p $(Package)) \
+        $(and $(AssemblyName),-S $(AssemblyName)) \
 	$(and $(HdlPlatform),-P $(HdlPlatform)) \
 	$(if $(Libraries),$(foreach l,$(Libraries),-l $l)) -w -i $(Worker_$(Worker)_xml) \
 
@@ -150,24 +168,17 @@ endif
 
 
 # VHDL doesn't have header files - they are just source files
-#ifeq ($(HdlLanguage),vhdl)
 $(call OcpiDbgVar,GeneratedSourceFiles,before vhdl)
-GeneratedSourceFiles+=$(WDefsFile) $(HdlOtherImplSourceFile)
-#ifeq ($(HdlLanguage),vhdl)
-#GeneratedSourceFiles+=$(DefsFile)
-#endif
+ifeq (,$(filter $(HdlMode),container config))
+  GeneratedSourceFiles+=$(WDefsFile) $(HdlOtherImplSourceFile)
+endif
 $(call OcpiDbgVar,GeneratedSourceFiles,after vhdl)
 
-#WkrExportNames=$(Worker)$(BF) $(Worker)_rv$(BF)
 ifdef HdlToolRealCore
-$(WkrExportNames): $(GeneratedSourceFiles)
+  $(WkrExportNames): $(GeneratedSourceFiles)
 endif
 $(call OcpiDbgVar,WkrExportNames)
 $(call OcpiDbgVar,GeneratedSourceFiles)
-#all: 
-#else
-#GeneratedSourceFiles+=$(WDefsFile)
-#endif
 LibName=$(Worker)
 
 ################################################################################

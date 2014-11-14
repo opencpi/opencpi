@@ -13,7 +13,7 @@ struct Required;
 struct ReqConnection {
   Port  *m_port;
   Port  *m_rq_port;
-  size_t m_index; // < 0 means no index
+  size_t m_index;
   bool   m_indexed;
   ReqConnection();
   const char *parse(ezxml_t x, Worker &w, Required &rq);
@@ -35,9 +35,10 @@ public:
   bool               m_interconnect;  // Can this type of device be used for an interconnect?
   bool               m_canControl;    // Can this interconnect worker provide control?
   Requireds          m_requireds;     // what subdevices are required?
-  static Worker *create(ezxml_t xml, const char *file, const char *&err);
+  static Worker *create(ezxml_t xml, const char *file, Worker *parent, const char *&err);
   static DeviceTypes s_types;
-  HdlDevice(ezxml_t xml, const char *file, const char *parent, const char *&err);
+  HdlDevice(ezxml_t xml, const char *file, const char *parentFile, Worker *parent,
+	    const char *&err);
   static HdlDevice *
   get(const char *name, const char *parent, const char *&err);
   virtual ~HdlDevice() {}

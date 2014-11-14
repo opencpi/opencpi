@@ -153,7 +153,7 @@ begin
       );
 
   -- Output/readable properties
-  props_out.platform        <= to_string("ml605", props_out.platform'length);
+  props_out.platform        <= to_string("ml605", props_out.platform'length-1);
   props_out.dna             <= (others => '0');
   props_out.nSwitches       <= (others => '0');
   props_out.switches        <= (others => '0');

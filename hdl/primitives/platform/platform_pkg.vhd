@@ -59,16 +59,17 @@ type worker_response_t is (none_e,     -- no response yet
 
 -- Internal interface to WCI master modules, driven to all workers in parallel
 type worker_in_t is record
-  clk       : std_logic;
-  reset     : bool_t;
-  cmd       : ocp.MCmd_t;                    -- cmd per WCI
-  address   : std_logic_vector(worker_config_bits-1+2 downto 0); -- Byte Addr
-  id        : unsigned(worker_id_bits-1 downto 0);
-  is_config : bool_t;                        -- same as WCI MAddrSpace;
-  byte_en   : std_logic_vector(3 downto 0);  -- byte enable for read or write
-  data      : std_logic_vector(31 downto 0); -- write data
-  operation : worker_operation_t;            -- what op is in progress or starting
-  timedout  : bool_t;                        -- operation has timed out
+  clk           : std_logic;
+  reset         : bool_t;
+  cmd           : ocp.MCmd_t;                    -- cmd per WCI
+  address       : std_logic_vector(worker_config_bits-1+2 downto 0); -- Byte Addr
+  id            : unsigned(worker_id_bits-1 downto 0);
+  is_config     : bool_t;                        -- same as WCI MAddrSpace;
+  byte_en       : std_logic_vector(3 downto 0);  -- byte enable for read or write
+  data          : std_logic_vector(31 downto 0); -- write data
+  operation     : worker_operation_t;            -- what op is in progress or starting
+  timedout      : bool_t;                        -- operation has timed out
+  is_big_endian : bool_t;
 end record worker_in_t;
 
 -- Internal interface from WCI master modules, each drives its own version
@@ -79,27 +80,6 @@ type worker_out_t is record
   present   : bool_t;
 end record worker_out_t;
 
-
--- These records are generic - i.e. a superset of what any given worker might have
-
-type wci_m2s_t is record
-  Clk        : std_logic;
-  MReset_n   : std_logic;
-  MCmd       : std_logic_vector( 3-1 downto 0);
-  MAddr      : std_logic_vector(32-1 downto 0);
-  MAddrSpace : std_logic_vector( 1-1 downto 0);
-  MByteEn    : std_logic_vector( 4-1 downto 0);
-  MData      : std_logic_vector(32-1 downto 0);
-  MFlag      : std_logic_vector(19-1 downto 0);
-end record wci_m2s_t;
-type wci_m2s_array_t is array(natural range <>) of wci_m2s_t;
-type wci_s2m_t is record
-  SData       : std_logic_vector(32-1 downto 0);
-  SResp       : std_logic_vector( 2-1 downto 0);
-  SFlag       : std_logic_vector( 3-1 downto 0);
-  SThreadBusy : std_logic_vector( 0 downto 0);
-end record wci_s2m_t;
-type wci_s2m_array_t is array(natural range <>) of wci_s2m_t;
 
 --------------------------------------------------------------------------------
 -- Metadata definitions
@@ -389,8 +369,8 @@ component wci_master is
     id_width, id : natural);
   port(
     -- worker-facing side - a WCI
-    wci_in     : in  wci_s2m_t;
-    wci_out    : out wci_m2s_t;
+    wci_in     : in  wci.wci_s2m_t;
+    wci_out    : out wci.wci_m2s_t;
     worker_in  : in  worker_in_t;
     worker_out : out worker_out_t);
 end component wci_master;
@@ -421,8 +401,8 @@ component occp_rv is
   port(
     cp_in    : in  occp_in_t;
     cp_out   : out occp_out_t;
-    wci_out  : out wci_m2s_array_t(0 to 14); -- (0 to nWCIs-1);
-    wci_in   : in  wci_s2m_array_t(0 to 14) --(0 to nWCIs-1)
+    wci_out  : out wci.wci_m2s_array_t(0 to 14); -- (0 to nWCIs-1);
+    wci_in   : in  wci.wci_s2m_array_t(0 to 14) --(0 to nWCIs-1)
     );
 end component occp_rv;
 end package occp_defs;
@@ -433,11 +413,12 @@ use work.platform_pkg.all;
 package ocscp_defs is
 component ocscp_rv is
   generic(
-    ocpi_debug    : bool_t := bfalse;
-    nWorkers      : ulong_t);
+    ocpi_debug  : bool_t := bfalse;
+    ocpi_endian : endian_t := little_e;
+    nWorkers    : ulong_t);
   port(
-    wci_in  : in  wci_s2m_array_t(0 to to_integer(nWorkers)-1);
-    wci_out : out wci_m2s_array_t(0 to to_integer(nWorkers)-1);
+    wci_in  : in  wci.wci_s2m_array_t(0 to to_integer(nWorkers)-1);
+    wci_out : out wci.wci_m2s_array_t(0 to to_integer(nWorkers)-1);
     cp_in   : in  occp_in_t;
     cp_out  : out occp_out_t);
 end component ocscp_rv;
@@ -473,6 +454,7 @@ library ocpi; use ocpi.all, ocpi.types.all;
 use work.platform_pkg.all;
 package metadata_defs is
 component metadata_rv is
+  generic(romwords : natural := 2048);
   port(
     metadata_in  : in  metadata_out_t;
     metadata_out : out  metadata_in_t

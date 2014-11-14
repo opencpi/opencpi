@@ -38,42 +38,40 @@
 # This file basically imports a hard core or builds one from a library
 
 ifndef Tops
-ifdef Top
-Tops:=$(Top)
-else
-Tops:=$(Core)
-endif
+  ifdef Top
+    Tops:=$(Top)
+  else
+    Tops:=$(Core)
+  endif
 endif
 ifndef LibName
-LibName:=$(word 1,$(HdlCores))
+  LibName:=$(word 1,$(HdlCores))
 endif
 ifndef WorkLib
-WorkLib:=$(LibName)
+  WorkLib:=$(LibName)
 endif
 $(call OcpiDbgVar,HdlToolRealCore)
 $(call OcpiDbgVar,LibName)
 define DoImplConfig
-
-ifneq ($2,0)
-$(call HdlVHDLImplFiles,$1,$2): $(call WkrTargetDir,$1,$2)/%: $(GeneratedDir)/%
+  ifneq ($2,0)
+    $(call HdlVHDLImplFiles,$1,$2): $(call WkrTargetDir,$1,$2)/%: $(GeneratedDir)/%
 	$(AT)sed s/--__/_c$2/ $$< > $$@
-endif
-
+  endif
 endef
 
 ifdef HdlToolRealCore
-################################################################################
-# Build the real core if the tools can do it $(call DoCore,target,name)
-define DoCore
-CoreResults+=$(call WkrTargetDir,$1,$4)/$2$(HdlBin)
-$(call WkrTargetDir,$1,$4)/$2$(HdlBin): override HdlTarget:=$1
-$(call WkrTargetDir,$1,$4)/$2$(HdlBin): TargetDir=$(call WkrTargetDir,$1,$4)
-$(call WkrTargetDir,$1,$4)/$2$(HdlBin): | $$$$(TargetDir)
-$(call WkrTargetDir,$1,$4)/$2$(HdlBin): Core=$2
-$(call WkrTargetDir,$1,$4)/$2$(HdlBin): Top=$(or $(filter %_rv,$3),$3$(and $(WorkerParamNames),$(filter-out 0,$4),_c$4))
-$(call WkrTargetDir,$1,$4)/$2$(HdlBin): ParamConfig=$4
-ifdef PreBuiltCore
-$(call WkrTargetDir,$1,$4)/$2$(HdlBin): $(PreBuiltCore)
+  ################################################################################
+  # Build the real core if the tools can do it $(call DoCore,target,core,top,config)
+  define DoCore
+    CoreResults+=$(call WkrTargetDir,$1,$4)/$2$(HdlBin)
+    $(call WkrTargetDir,$1,$4)/$2$(HdlBin): override HdlTarget:=$1
+    $(call WkrTargetDir,$1,$4)/$2$(HdlBin): TargetDir=$(call WkrTargetDir,$1,$4)
+    $(call WkrTargetDir,$1,$4)/$2$(HdlBin): | $$$$(TargetDir)
+    $(call WkrTargetDir,$1,$4)/$2$(HdlBin): Core=$2
+    $(call WkrTargetDir,$1,$4)/$2$(HdlBin): Top=$(or $(filter %_rv,$3),$3$(and $(WorkerParamNames),$(filter-out 0,$4),_c$4))
+    $(call WkrTargetDir,$1,$4)/$2$(HdlBin): ParamConfig=$4
+    ifdef PreBuiltCore
+      $(call WkrTargetDir,$1,$4)/$2$(HdlBin): $(PreBuiltCore)
 	$(AT)if test ! -L $@; then \
 		$(ECHO) -n Establishing pre-built core file $(2)$(HdlBin) for; \
 	        $(ECHO) ' 'target \"$(HdlTarget)\"; \
@@ -82,62 +80,62 @@ $(call WkrTargetDir,$1,$4)/$2$(HdlBin): $(PreBuiltCore)
                 $(PreBuiltCore)),$(strip \
                 $$(TargetDir)),$(2)$(HdlBin))
 
-else
-$(call OcpiDbgVar,CompiledSourceFiles)
-$$(call OcpiDbgVar,CompiledSourceFiles)
+    else
+      $(call OcpiDbgVar,CompiledSourceFiles)
+      $$(call OcpiDbgVar,CompiledSourceFiles)
 
-$(call WkrTargetDir,$1,$4)/$2$(HdlBin): $$(call HdlTargetSrcFiles,$1,$4)
-$(call WkrTargetDir,$1,$4)/$2$(HdlBin): \
-  HdlSources=$$(filter-out %.vh,$$(call HdlTargetSrcFiles,$1,$4)) $$(HdlShadowFiles)
+      $(call WkrTargetDir,$1,$4)/$2$(HdlBin): $$(call HdlTargetSrcFiles,$1,$4)
+      $(call WkrTargetDir,$1,$4)/$2$(HdlBin): \
+      HdlSources=$$(filter-out %.vh,$$(call HdlTargetSrcFiles,$1,$4)) $$(HdlShadowFiles)
 
-#   HdlSources=$$(filter-out $$(filter-out %.vhd,$$(CoreBlackBoxFiles)),$$(CompiledSourceFiles))
-
-$(call WkrTargetDir,$1,$4)/$2$(HdlBin): \
-   $$$$(foreach l,$$$$(HdlLibrariesInternal),$$$$(call HdlLibraryRefDir,$$$$l,$$$$(HdlTarget)))
-$(call WkrTargetDir,$1,$4)/$2$(HdlBin): $$$$(HdlPreCore) \
-      $$(filter-out $$(filter-out %.vhd,$$(CoreBlackBoxFiles)) $$(TargetSourceFiles),$$(CompiledSourceFiles)) 
-	$(AT)echo Building $(and $(filter-out core,$(HdlMode))) core \"$(2)\" for target \"$$(HdlTarget)\" $$(ParamMsg)
+      $(info TARGET:$(call WkrTargetDir,$1,$4)/$2$(HdlBin))
+      $(call WkrTargetDir,$1,$4)/$2$(HdlBin): \
+        $$$$(foreach l,$$$$(HdlLibrariesInternal),$$$$(call HdlLibraryRefDir,$$$$l,$$$$(HdlTarget)))
+      $(call WkrTargetDir,$1,$4)/$2$(HdlBin): $$$$(HdlPreCore) \
+        $$(filter-out $$(filter-out %.vhd,$$(CoreBlackBoxFiles)) $$(TargetSourceFiles),$$(CompiledSourceFiles)) 
+	$(AT)echo Building $(and $(filter-out core,$(HdlMode))) core \"$(2)\" for target \"$$(HdlTarget)\" $$(ParamMsg) $$@
 	$(AT)$$(HdlCompile)
-endif
+    endif # end of else of prebuilt
 
-#	$(AT)$$(call HdlRecordCores,$(basename $(OutDir)target-$1/$2))
+    #	$(AT)$$(call HdlRecordCores,$(basename $(OutDir)target-$1/$2))
 
-all: $(call WkrTargetDir,$1,$4)/$2$(HdlBin)
+    $(call OcpiDbg,Binary: $(call WkrTargetDir,$1,$4)/$2$(HdlBin))
+    all: $(call WkrTargetDir,$1,$4)/$2$(HdlBin)
 
-endef # DoCore
+  endef # DoCore
 
-#define DoCores
-#  $(foreach c,$(ParamConfigurations),$(call DoCore,$1,$2,$3,$c)$(call DoImplConfig,$1,$c))
-#endef
-$(call OcpiDbgVar,CompiledSourceFiles,b2 )
-$(call OcpiDbgVar,HdlActualTargets)
-$(call OcpiDbgVar,HdlCores)
-#$(foreach t,$(HdlActualTargets),$(eval $(call DoCore,$(t),$(Core))))
-ifneq ($(MAKECMDGOALS),clean)
-$(foreach c,$(ParamConfigurations),\
-  $(foreach t,$(HdlActualTargets),\
-    $(eval $(call DoImplConfig,$t,$c)) \
-    $(foreach both,$(join $(HdlCores),$(Tops:%=:%)),\
-      $(foreach core,$(word 1,$(subst :, ,$(both))),\
-       $(foreach top,$(word 2,$(subst :, ,$(both))),\
-         $(eval $(call DoCore,$t,$(core),$(top),$c)))))))
-endif
-$(call OcpiDbgVar,CompiledSourceFiles,b3 )
+  #define DoCores
+  #  $(foreach c,$(ParamConfigurations),$(call DoCore,$1,$2,$3,$c)$(call DoImplConfig,$1,$c))
+  #endef
+  $(call OcpiDbgVar,CompiledSourceFiles,b2 )
+  $(call OcpiDbgVar,HdlActualTargets)
+  $(call OcpiDbgVar,HdlCores)
+  #$(foreach t,$(HdlActualTargets),$(eval $(call DoCore,$(t),$(Core))))
+  ifneq ($(MAKECMDGOALS),clean)
+    $(foreach c,$(ParamConfigurations),\
+      $(foreach t,$(HdlActualTargets),\
+        $(eval $(call DoImplConfig,$t,$c)) \
+        $(foreach both,$(join $(HdlCores),$(Tops:%=:%)),\
+          $(foreach core,$(word 1,$(subst :, ,$(both))),\
+            $(foreach top,$(word 2,$(subst :, ,$(both))),\
+              $(eval $(call DoCore,$t,$(core),$(top),$c)))))))
+  endif # end of not cleaning
+  $(call OcpiDbgVar,CompiledSourceFiles,b3 )
 
-ifdef Imports
-$(CoreResults): $(ImportsDir)
-endif
+  ifdef Imports
+    $(CoreResults): $(ImportsDir)
+  endif
 
-cores:$(LibResults) $(CoreResults)
-all: cores
-$(call OcpiDbgVar,PreBuiltCore)
-$(call OcpiDbgVar,CoreResults)
-$(call OcpiDbgVar,LibResults)
+  cores:$(LibResults) $(CoreResults)
+  all: cores
+  $(call OcpiDbgVar,PreBuiltCore)
+  $(call OcpiDbgVar,CoreResults)
+  $(call OcpiDbgVar,LibResults)
 
-else
+else # end of tool real core
 ################################################################################
 # Just build a library if the tools can't build a core
-include $(OCPI_CDK_DIR)/include/hdl/hdl-lib2.mk
+  include $(OCPI_CDK_DIR)/include/hdl/hdl-lib2.mk
 endif
 
 ################################################################################
@@ -159,8 +157,8 @@ ifdef HdlToolNeedBB
 $(call OcpiDbgVar,HdlToolNeedBB)
 
 # A function taking a target-dir-name, a libname, and a build target
-BBLibFile=$(infox BBF:$1,$2,$3,$4)$(strip\
-            $(foreach f,$(call WkrTargetDir,$1,$3)/bb/$(call HdlToolLibraryFile,$4,$(basename $2)),$(infox BBFile:$f)$f))
+BBLibFile=$(info BBF:$1,$2,$3,$4)$(strip\
+            $(foreach f,$(call WkrTargetDir,$1,$3)/bb/$(call HdlToolLibraryFile,$4,$(basename $2)),$(info BBFile:$f)$f))
 
 # $(call DoBBLibraryTarget,target-dir-name,libname,config,target,bbfiles)
 define DoBBLibraryTarget

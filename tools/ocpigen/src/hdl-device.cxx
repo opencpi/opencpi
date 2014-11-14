@@ -7,8 +7,8 @@
 DeviceTypes DeviceType::s_types;
 
 Worker *HdlDevice::
-create(ezxml_t xml, const char *xfile, const char *&err) {
-  HdlDevice *hd = new HdlDevice(xml, xfile, "", err);
+create(ezxml_t xml, const char *xfile, Worker *parent, const char *&err) {
+  HdlDevice *hd = new HdlDevice(xml, xfile, "", parent, err);
   if (err) {
     delete hd;
     hd = NULL;
@@ -16,8 +16,9 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
   return hd;
 }
 HdlDevice::
-HdlDevice(ezxml_t xml, const char *file, const char *parent, const char *&err)
-  : Worker(xml, file, parent, Worker::Device, NULL, err) {
+HdlDevice(ezxml_t xml, const char *file, const char *parentFile, Worker *parent,
+	  const char *&err)
+  : Worker(xml, file, parentFile, Worker::Device, parent, NULL, err) {
   m_isDevice = true;
   if (err ||
       (err = OE::checkTag(xml, "HdlDevice", "Expected 'HdlDevice' as tag in '%s'", file)) ||
@@ -71,7 +72,7 @@ get(const char *name, const char *parent, const char *&err) {
     ezxml_t xml;
     std::string xfile;
     if (!(err = parseFile(name, parent, NULL, &xml, xfile))) {
-      dt = new DeviceType(xml, xfile.c_str(), parent, err);
+      dt = new DeviceType(xml, xfile.c_str(), parent, NULL, err);
       if (err) {
 	delete dt;
 	dt = NULL;

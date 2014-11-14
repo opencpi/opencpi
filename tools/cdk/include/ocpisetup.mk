@@ -27,12 +27,14 @@ export OCPI_BIN_DIR:=$(OCPI_CDK_DIR)/bin/$(OCPI_TARGET_HOST)
 export OCPI_INC_DIR:=$(OCPI_CDK_DIR)/include
 ifneq ($(findstring macos,$(OCPI_TARGET_OS)),)
 OcpiLibraryPathEnv=DYLD_LIBRARY_PATH
-OCPI_OCL_LIBS=-locl -framework OpenCL
+OCPI_OCL_LIBS=-locpi_ocl -framework OpenCL
 OcpiAsNeeded=
+OCPI_EXPORT_DYNAMIC=-Xlinker -export_dynamic
 else
 OcpiLibraryPathEnv=LD_LIBRARY_PATH
 OCPI_OCL_LIBS=  -Xlinker --undefined=_ZN4OCPI3OCL6driverE -locl -lOpenCL
 OCPI_EXTRA_LIBS=rt dl pthread
+OCPI_EXPORT_DYNAMIC=-Xlinker --export-dynamic
 # for static builds
 ifneq ($(wildcard $(OCPI_LIB_DIR)/*.a),)
 OCPI_DRIVER_OBJS=\
@@ -48,7 +50,7 @@ endif
 export OCPI_SET_LIB_PATH=$(OcpiLibraryPathEnv)=$$$(OcpiLibraryPathEnv):$(OCPI_LIB_DIR)
 #$(info export OCPI_SET_LIB_PATH=$(OCPI_SET_LIB_PATH))
 # Note most of these are just required for static linking
-export OCPI_API_LIBS=application rcc hdl interfaces library transport rdma_driver_interface rdma_drivers rdma_utils rdma_smb util  msg_driver_interface ocpios $(OCPI_EXTRA_LIBS)
+export OCPI_API_LIBS=application rcc hdl interfaces library transport rdma_driver_interface rdma_drivers rdma_utils rdma_smb util  msg_driver_interface ocpios
 export OCPI_TRANSPORT_LIBS=rdma_drivers util  msg_driver_interface  msg_drivers
 #$(info export OCPI_API_LIBS=$(OCPI_API_LIBS))
 
@@ -64,7 +66,7 @@ endif
 # 1. When executed at runtime, look in OCPI_LIB_DIR to resolve shared libraries
 # 2. At link time, look in OCPI_LIB_DIR to find explicitly mentioned libraries
 # 3. At link time, look in OCPI_API_LIBS for functions called from the program
-export OCPI_LD_FLAGS= $(OCPI_DRIVER_OBJS) $(OcpiAsNeeded) -Xlinker -rpath -Xlinker "$(OCPI_LIB_DIR)" -L"$(OCPI_LIB_DIR)" $(OCPI_API_LIBS:%=-l%) $(foreach l,$(OCPI_PREREQUISITES_LIBS),-l $l -L $(OCPI_PREREQUISITES_DIR)/$l/$(OCPI_TARGET_HOST)/lib)
+export OCPI_LD_FLAGS= $(OCPI_DRIVER_OBJS) $(OcpiAsNeeded) -Xlinker -rpath -Xlinker "$(OCPI_LIB_DIR)" -L"$(OCPI_LIB_DIR)" $(OCPI_API_LIBS:%=-locpi_%) $(OCPI_EXTRA_LIBS:%=-l%) $(foreach l,$(OCPI_PREREQUISITES_LIBS),-l $l -L $(OCPI_PREREQUISITES_DIR)/$l/$(OCPI_TARGET_HOST)/lib)
 
 ifeq ($(origin OCPI_HAVE_OPENCL),undefined)
 OCPI_HAVE_OPENCL:=$(if $(realpath $(OCPI_BIN_DIR)/ocpiocl),$(shell $(OCPI_BIN_DIR)/ocpiocl test; if [ $$? = 0 ]; then echo 1; fi),)

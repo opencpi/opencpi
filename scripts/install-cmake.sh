@@ -1,5 +1,5 @@
 #!/bin/bash --noprofile
-. setup_install.sh
+source scripts/setup-install.sh
 if test ! -d cmake ; then
   mkdir -p cmake
 fi

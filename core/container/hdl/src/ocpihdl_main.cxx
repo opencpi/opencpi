@@ -776,20 +776,20 @@ bram(const char **ap) {
   total = zs.total_out;
   check = zs.adler;
 #endif
-  size_t oWords = (total + 3)/4;
-  if (oWords + 4 > 1024)
+  size_t oWords = (total + OH::ROM_WIDTH_BYTES-1)/OH::ROM_WIDTH_BYTES;
+  if (oWords + OH::ROM_HEADER_WORDS > OH::ROM_NWORDS)
     bad("Compressfile is too large for BRAM. Input is %zu, output is %zu",
-	length, total + 16);
-  uint32_t *u32p = (uint32_t *)out;
-  for (unsigned n = 0; n < 1024; n++) {
-    uint32_t i;
+	length, total + OH::ROM_HEADER_BYTES);
+  OH::RomWord *u32p = (OH::RomWord *)out;
+  for (unsigned n = 0; n < OH::ROM_NWORDS; n++) {
+    OH::RomWord i;
     switch(n) {
     case 0: i = 1; break;
-    case 1: i = OCPI_UTRUNCATE(uint32_t, total); break;
-    case 2: i = OCPI_UTRUNCATE(uint32_t, length); break;
-    case 3: i = OCPI_UTRUNCATE(uint32_t, check); break;
+    case 1: i = OCPI_UTRUNCATE(OH::RomWord, total); break;
+    case 2: i = OCPI_UTRUNCATE(OH::RomWord, length); break;
+    case 3: i = OCPI_UTRUNCATE(OH::RomWord, check); break;
     default:
-      i = n < oWords+4 ? *u32p++ : 0;
+      i = n < oWords+OH::ROM_HEADER_WORDS ? *u32p++ : 0;
     }
     fprintf(ofp, "%08x\n", i);
   }
@@ -798,7 +798,7 @@ bram(const char **ap) {
     bad("Error writing output file '%s'", ap[1]);
   }
   printf("Wrote bram file '%s' (%lu bytes) from file '%s' (%lu bytes)\n",
-	 ap[1], total + 16, *ap, (unsigned long)length);
+	 ap[1], total + OH::ROM_HEADER_BYTES, *ap, (unsigned long)length);
   if (in) free(in);
   if (out) free(out);
 }
@@ -817,10 +817,10 @@ unbram(const char **ap) {
     bad("Cannot open output file: \"%s\"", ap[1]);
   size_t
     adler,
-    olength = 64*1024, // worst case output size
-    inWords = 1024,
-    inBytes = inWords * sizeof(uint32_t);
-  uint32_t *in, *u32p;
+    olength = 16*OH::ROM_NBYTES, // worst case output size
+    inWords = OH::ROM_NWORDS,
+    inBytes = inWords * sizeof(OH::RomWord);
+  OH::RomWord *in, *u32p;
   unsigned char *out;
   for (unsigned n = 0; n < inWords; n++) {
     char line[34];
@@ -836,7 +836,7 @@ unbram(const char **ap) {
     unsigned long l = strtoul(line, &end, 16);
     if (errno != 0 || *end != 0)
       bad("error in data in input file data");
-    uint32_t i = OCPI_UTRUNCATE(uint32_t, l);
+    OH::RomWord i = OCPI_UTRUNCATE(OH::RomWord, l);
     switch(n) {
     case 0:
       if (i != 1)
@@ -844,12 +844,12 @@ unbram(const char **ap) {
       break;
     case 1:
       inBytes = i;
-      if (!(u32p = in = (uint32_t *)malloc(inBytes)))
+      if (!(u32p = in = (OH::RomWord *)malloc(inBytes)))
 	bad("Error allocating %zu bytes for input file", inBytes);
       break;
     case 2:
       olength = i;
-      if (olength > 100*1024 ||
+      if (olength > 100*OH::ROM_NBYTES ||
 	  !(out = (unsigned char *)malloc(olength)))
 	bad("Error allocating %zu bytes for output file", olength);
       break;

@@ -24,7 +24,7 @@
 ############################################################################
 
 # This primitive library contains VHDL primitive modules for zynq platforms.
-HdlLibraries=ocpi platform
+HdlLibraries=fixed_float ocpi platform
 
 XilinxZynqCore=processing_system7_v4_03_a
 ifndef OCPI_XILINX_EDK_DIR

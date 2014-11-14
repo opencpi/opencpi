@@ -36,14 +36,6 @@
 
 OCPI_CDK_DIR=../../ocpi
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
-##nifndef HdlTargets
-#HdlTargets:=virtex6
-#endif
-# Process the imported cores, which will end up in the
-# list $(ImportCores).
-
-# has problems, probably don't need anymore
-#  $(OCPI_HDL_IMPORTS_DIR)/coregen/dram_v6_mig34
 
 ImportCoreDirs=\
   $(OCPI_HDL_IMPORTS_DIR)/coregen/temac_v6 \
@@ -60,7 +52,7 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-import-cores.mk
 
 # These libraries may be order sensitive if they depend on each other
 # bsv is "leaf".
-Libs=bsv ocpi util platform zynq stratix4 virtex5 virtex6 xilinx
+Libs=bsv fixed_float ocpi util platform zynq stratix4 virtex5 virtex6 xilinx
 
 #LocalCores=xfft_v7_1 \
  temac_v6 \

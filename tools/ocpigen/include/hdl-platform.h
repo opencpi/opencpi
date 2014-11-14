@@ -16,8 +16,8 @@ class HdlPlatform : public Worker, public Board {
   bool        m_control; // should the platform be used for control?
 			 // FIXME should inherit device type and be a device
 public:  
-  static HdlPlatform *create(ezxml_t xml, const char *xfile, const char *&err);
-  HdlPlatform(ezxml_t xml, const char *xfile, const char *&err);
+  static HdlPlatform *create(ezxml_t xml, const char *xfile, Worker *parent, const char *&err);
+  HdlPlatform(ezxml_t xml, const char *xfile, Worker *parent, const char *&err);
   virtual ~HdlPlatform();
 
   const char *name() { return m_name.c_str(); }

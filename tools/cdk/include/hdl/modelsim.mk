@@ -113,14 +113,14 @@ $1/$3.tar:
 	     echo -L $4 $$$$(grep = modelsim.ini | grep -v others= | sed 's/=.*//' | sed 's/^/-L /') > vsim.args && \
 	     export LM_LICENSE_FILE=$(OCPI_MODELSIM_LICENSE_FILE) && \
 	     echo 'log -r /*; archive write vsim.dbar -wlf vsim.wlf -include_src ; quit' | \
-	     $(OCPI_MODELSIM_DIR)/bin/vsim -c $4.$4 -modelsimini modelsim.ini \
+	     $(OCPI_MODELSIM_DIR)/bin/vsim -c $3.$3 -modelsimini modelsim.ini \
 	       -f vsim.args && \
              echo vsim exited successfully, now creating archive: $$@ && \
              pax -wf $$(notdir $$@) -L vsim.dbar vsim.args metadatarom.dat \
 	       $$(foreach i,$$(shell grep = $1/modelsim.ini | grep -v others=),\
                  $$(foreach l,$$(firstword $$(subst =, ,$$i)),\
                    $$(foreach p,$$(word 2,$$(subst =, ,$$i)),\
-		     -s =$$p=$$l= $$p ))) $4 ) > $1/$3.out 2>&1
+		     -s =$$p=$$l= $$p ))) $3 ) > $1/$3.out 2>&1
 
 endef
 

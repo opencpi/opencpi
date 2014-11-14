@@ -35,13 +35,13 @@ end decode_access;
 --  return property_access_t'(None_e, property_offset_t'(others => '0'));
 --end decode_property;
 
-function get_value(input : in_t; boffset : unsigned; width : natural) return std_logic_vector is
-  variable bitoffset : natural := to_integer(boffset & "000");
-  variable bitwidth  : natural := width;
-begin
-  if bitwidth > 32 then bitwidth := 32; end if;
-  return input.MData(bitoffset + bitwidth - 1 downto bitoffset);
-end get_value;     
+--function get_value(input : in_t; boffset : unsigned; width : natural) return std_logic_vector is
+--  variable bitoffset : natural := to_integer(boffset & "000");
+--  variable bitwidth  : natural := width;
+--begin
+--  if bitwidth > 32 then bitwidth := 32; end if;
+--  return input.MData(bitoffset + bitwidth - 1 downto bitoffset);
+--end get_value;     
 
 function to_control_op(bits : std_logic_vector(2 downto 0)) return control_op_t is
 begin
@@ -70,19 +70,19 @@ begin
 --  end case;
 end to_control_op;
 
--- How wide should the data path be from the decoder to the property
-function data_top (property : property_t;
-                   byte_offset : byte_offset_t)-- v5 xst can't do it := to_unsigned(0,byte_offset_t'length))
-  return bit_offset_t is
-begin
-  if property.data_width >= 32 then
-    return 31;
-  elsif property.nitems > 1 then
-    return property.data_width - 1;
-  else
-    return (property.data_width - 1) + (to_integer(byte_offset) * 8);
-  end if;
-end data_top;
+---- How wide should the data path be from the decoder to the property
+--function data_top (property : property_t;
+--                   byte_offset : byte_offset_t)-- v5 xst can't do it := to_unsigned(0,byte_offset_t'length))
+--  return bit_offset_t is
+--begin
+--  if property.data_width >= 32 then
+--    return 31;
+--  elsif property.nitems > 1 then
+--    return property.data_width - 1;
+--  else
+--    return (property.data_width - 1) + (to_integer(byte_offset) * 8);
+--  end if;
+--end data_top;
 
 function resize(bits : std_logic_vector; n : natural) return std_logic_vector is begin
   return std_logic_vector(resize(unsigned(bits),n));

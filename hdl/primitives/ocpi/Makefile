@@ -38,7 +38,7 @@
 # by all workers
 
 # the generated entities for each property type
-HdlLibraries=bsv
+HdlLibraries=bsv fixed_float
 Types=bool char double float short long uchar ulong ushort longlong ulonglong string
 TypeEntities=$(foreach t,$(Types),$t_property $t_array_property $t_read_property $t_read_array_property)
 TypeFiles=$(TypeEntities:%=gen/%.vhd)

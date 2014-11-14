@@ -1,4 +1,4 @@
-HdlLibraries=ocpi bsv util
+HdlLibraries=bsv fixed_float ocpi util
 # We can't successfully elaborate this since it references the metadata stuff
 HdlNoElaboration=yes
 # FIXME FIXME: The low level primitives (FIFO etc.) are COPIED here due to an XST bug
@@ -12,6 +12,6 @@ wci_master.vhd ocscp_rv.vhd \
 mkPktFork.v mkPktMerge.v mkTLPSM.v unoc_node_rv.vhd unoc_terminator.vhd \
 mkTimeClient.v \
 mkSimIO.v mkSimDCP.v \
-FIFO1.v FIFO2.v MakeResetA.v SyncResetA.v SyncRegister.v SyncHandshake.v
+FIFO1.v FIFO2.v MakeResetA.v SyncResetA.v SyncRegister.v SyncHandshake.v arSRLFIFOD.v
 
 include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk

@@ -180,7 +180,8 @@ $(OBJDIR)/%.exe : $(OBJDIR)/%.obj $$(DYNOBJS)
 		$(DYNOBJS) \
 		$(patsubst %,-L%$(OCPI_OUT_DIR),$(dir $(ALLLIBS))) \
 		$(addprefix -L,$(call OcpiDir,$(SYSLIBS))) \
-		$(addprefix -l,$(notdir $(ALLLIBS) $(SYSLIBS))) \
+		$(addprefix -locpi_,$(notdir $(ALLLIBS))) \
+		$(addprefix -l,$(notdir $(SYSLIBS))) \
 		$(BASICLIBS)
 
 else
@@ -446,7 +447,8 @@ $(OBJDIR)/%.exe : $(OBJDIR)/%.obj $(DYNOBJS)
 		$(MAINOBJS) \
 		$(patsubst %,-L%$(OCPI_OUT_DIR),$(dir $(ALLLIBS))) \
 		$(addprefix -L,$(call OcpiDir,$(SYSLIBS)) $(SYSLIBDIRS)) \
-		$(addprefix -l,$(notdir $(ALLLIBS) $(SYSLIBS))) \
+		$(addprefix -locpi_,$(notdir $(ALLLIBS))) \
+		$(addprefix -l,$(notdir $(SYSLIBS))) \
 		$(BASICLIBS)
 
 else
@@ -610,7 +612,8 @@ $(OBJDIR)/%.exe : $(OBJDIR)/%.obj
 		$(filter %.obj,$^) \
 		$(patsubst %,-L%$(OCPI_OUT_DIR),$(dir $(ALLLIBS))) \
 		$(addprefix -L,$(call OcpiDir,$(SYSLIBS))) \
-		$(addprefix -l,$(notdir $(ALLLIBS) $(SYSLIBS))) \
+		$(addprefix -locpi_,$(notdir $(ALLLIBS))) \
+		$(addprefix -l,$(notdir $(SYSLIBS))) \
 		$(BASICLIBS)
 endif
 
@@ -816,8 +819,8 @@ ifeq ($(OCPI_HAVE_OPENCL),1)
 ALL_CONTAINER_LIBS += $(OCL_CONTAINER_LIBS)
 endif
 
-LOGGER_EXPORTS = $(OCPI_BASE_DIR)/core/local/logger/logger/include
-LOGGER_LIBS = $(OCPI_BASE_DIR)/core/local/logger/logger
+LOGGER_EXPORTS = $(OCPI_BASE_DIR)/core/util/logger/include
+#LOGGER_LIBS = $(OCPI_BASE_DIR)/core/local/logger/logger
 
 UTIL_EXPORTS = \
 	$(OCPI_BASE_DIR)/core/util/driver/include \
@@ -843,6 +846,7 @@ UTIL_EXPORTS = \
 	$(OCPI_BASE_DIR)/core/util/sockets/include \
 	$(OCPI_BASE_DIR)/core/util/assembly/include \
 	$(OCPI_BASE_DIR)/core/util/zlib/include \
+	$(OCPI_BASE_DIR)/core/util/logger/include \
 	$(OCPI_BASE_DIR)/core/include 
 UTIL_LIBS = $(OCPI_BASE_DIR)/core/util/util
 

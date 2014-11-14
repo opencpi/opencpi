@@ -63,8 +63,8 @@ PACKAGE = $(shell pwd|sed 's-.*/\([^/]*$$\)-\1-')
 #$(info PACKAGE $(PACKAGE))
 WINLIB = $(patsubst %,$(OBJDIR)/%.lib,$(PACKAGE))
 WINDLL = $(patsubst %,$(OBJDIR)/%.dll,$(PACKAGE))
-UNIXLIB = $(OBJDIR)/lib$(PACKAGE).a
-UNIXSHLIB = $(OBJDIR)/lib$(PACKAGE).$(SO)
+UNIXLIB = $(OBJDIR)/libocpi_$(PACKAGE).a
+UNIXSHLIB = $(OBJDIR)/libocpi_$(PACKAGE).$(SO)
 EXPORTSHLIB=$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR)/$(notdir $(UNIXSHLIB))
 EXPORTLIB=$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR)/$(notdir $(UNIXLIB))
 VXWORKSDKM = $(patsubst %,$(OBJDIR)/lib%.out,$(PACKAGE))
@@ -175,7 +175,8 @@ $(UNIXSHLIB): $(OBJECTS)
 	$(CXX) $(OCPI_SHARED_LIBRARIES_FLAGS) $(SHARED) -o "$@" $(call FILTEROBJS,$(OBJECTS),$(EXCLUDE_OBJECTS)) $(EXTRALIBOBJS) \
 	       	$(patsubst %,-L%$(OBJDIR),$(dir $(ALLLIBS))) \
 		$(sort $(addprefix -L,$(call OcpiDir,$(SYSLIBS)))) \
-		$(addprefix -l,$(notdir $(ALLLIBS) $(SYSLIBS))) \
+		$(addprefix -locpi_,$(notdir $(ALLLIBS))) \
+                $(addprefix -l,$(notdir $(SYSLIBS))) \
 		$(BASICLIBS)
 endif
 
@@ -191,7 +192,8 @@ $(WINDLL): $(OBJECTS)
 		$(OBJECTS) \
 		$(patsubst %,-L%$(OBJDIR),$(dir $(ALLLIBS))) \
 		$(addprefix -L,$(call OcpiDir,$(SYSLIBS))) \
-		$(addprefix -l,$(notdir $(ALLLIBS) $(SYSLIBS))) \
+		$(addprefix -locpi_,$(notdir $(ALLLIBS))) \
+		$(addprefix -l,$(notdir $(SYSLIBS))) \
 		$(BASICLIBS)
 else
 

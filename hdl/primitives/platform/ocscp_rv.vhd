@@ -6,16 +6,17 @@
 -- FIXME: Reset should in fact reset more of the status bits...
 -- FIXME: no way at all to reset "last op valid" etc.?
 
-library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
-library ocpi; use ocpi.types.all, ocpi.util.all;
+library IEEE; use IEEE.std_logic_1164.all, ieee.numeric_std.all;
+library ocpi; use ocpi.all, ocpi.types.all, ocpi.util.all;
 use work.platform_pkg.all;
 entity ocscp_rv is
   generic(
-    ocpi_debug : bool_t := bfalse;
-    nWorkers   : ulong_t);
+    ocpi_debug  : bool_t := bfalse;
+    ocpi_endian : endian_t := little_e;
+    nWorkers    : ulong_t);
   port(
-    wci_in  : in  wci_s2m_array_t(0 to to_integer(nWorkers)-1);
-    wci_out : out wci_m2s_array_t(0 to to_integer(nWorkers)-1);
+    wci_in  : in  wci.wci_s2m_array_t(0 to to_integer(nWorkers)-1);
+    wci_out : out wci.wci_m2s_array_t(0 to to_integer(nWorkers)-1);
     cp_in   : in  occp_in_t;
     cp_out  : out occp_out_t);
 end entity ocscp_rv;
@@ -31,8 +32,8 @@ architecture rtl of ocscp_rv is
   constant OCCP_RESET_RESULT   : dword_t := X"c0de4204";
   constant OCCP_SUCCESS_RESULT : dword_t := X"c0de4201";
   constant OCCP_FATAL_RESULT   : dword_t := X"c0de4205";
-  constant OCCP_MAGIC_0        : dword_t := swap(from_string(to_string("Open",5)));
-  constant OCCP_MAGIC_1        : dword_t := swap(from_string(to_string("CPI",4)));
+  constant OCCP_MAGIC_0        : dword_t := swap(from_string(to_string("Open",4),0,false));
+  constant OCCP_MAGIC_1        : dword_t := swap(from_string(to_string("CPI",3),0,false));
   -- Combi values
   signal   is_admin            : boolean;
   signal   is_control          : boolean;
@@ -54,14 +55,24 @@ architecture rtl of ocscp_rv is
   signal   active_r            : bool_t; -- pipelined "cp_in.valid"
   signal   reading_r           : bool_t;
   signal   timeout_r           : unsigned(2**worker_timeout_t'length - 1 downto 0);
-  signal   scratch_r           : word64_t;
+  signal   scratch20_r         : dword_t;
+  signal   scratch24_r         : dword_t;
   signal   reset_r             : bool_t; -- master reset
+  signal   big_endian_r        : bool_t; -- master endian
   signal   lowbits             : std_logic_vector(1 downto 0);
   signal   address             : unsigned(cp_in.address'range);
   signal   byte_en             : std_logic_vector(cp_in.byte_en'range);
   signal   admin_address       : std_logic_vector(7 downto 0);
+  signal   magic0              : dword_t;
+  signal   magic1              : dword_t;
   constant default_timeout_c   : natural := 4; -- log2 value
 begin
+  magic0 <= OCCP_MAGIC_0
+            when ocpi_endian = little_e or (ocpi_endian = dynamic_e and not its(big_endian_r))
+            else OCCP_MAGIC_1;
+  magic1 <= OCCP_MAGIC_1
+            when ocpi_endian = little_e or (ocpi_endian = dynamic_e and not its(big_endian_r))
+            else OCCP_MAGIC_0;
   -- Ancient VHDL simplifications
   address       <= unsigned(cp_in.address);
   byte_en       <= cp_in.byte_en;
@@ -95,7 +106,10 @@ begin
                                     worker_config_bits));
   -- Decode worker id, carefully to make it easy for workers to be enabled by it
   id                    <= id_bits - 1 when is_control or is_config else worker_max_id;        
-  admin_control         <= (0 => reset_r, others => '0');
+  admin_control         <= slv0(32-4) &
+                           slvn(endian_t'pos(ocpi_endian), 2) &
+                           slv(big_endian_r) &
+                           slv(reset_r);
   worker_in             <= workers_in(0) when id_r = worker_max_id
                            else workers_in(to_integer(id_r));
   worker_in_timeout     <= worker_timeout_t(worker_in.data(worker_timeout_t'left downto 0));
@@ -118,16 +132,16 @@ begin
   workers_out.timedout  <= to_bool(timeout_r = 1); --to_unsigned(1, timeout_r'length));
   cp_out.data           <= admin_data when is_admin else worker_data;
   with admin_address select admin_data <=
-    OCCP_MAGIC_0                             when x"00",
-    OCCP_MAGIC_1                             when x"04",
+    magic0                                   when x"00",
+    magic1                                   when x"04",
     slvn(1,32)                               when x"08", -- version 1
     slv0(32)                                 when x"0C", -- old birthday - in metadata now
     present(31 downto 0)                     when x"10", -- old present bits - see later
     slv0(32)                                 when x"14", -- PCI device - pf worker now
     attention(31 downto 0)                   when x"18", -- old attention bits - see later
     slv0(32)                                 when x"1C", -- was tlp drops - see pf worker
-    scratch_r(31 downto 0)                   when x"20",
-    scratch_r(63 downto 32)                  when x"24",
+    scratch20_r                              when x"20",
+    scratch24_r                              when x"24",
     admin_control                            when x"28", -- was unused, now is master reset
     std_logic_vector(nWorkers)               when x"2C", -- now many workers configured?
     slvn(1,32)                               when x"7C",
@@ -175,10 +189,11 @@ begin
     if rising_edge(cp_in.clk) then
       if its(cp_in.reset) then
         -- Core state
-        active_r  <= '0';
-        reading_r <= '0';
-        timeout_r <= (others => '0');
-        reset_r   <= '0'; -- master reset for all workers defaults OFF
+        active_r      <= '0';
+        reading_r     <= '0';
+        timeout_r     <= (others => '0');
+        reset_r       <= '0'; -- master reset for all workers defaults OFF
+        big_endian_r  <= '0';
         -- Debug state
       elsif not its(active_r) and cp_in.valid = '1' then
         id_r      <= id;
@@ -190,6 +205,17 @@ begin
                        to_integer(worker_timeout);
         elsif timeout_r /= 1 then
           timeout_r <= timeout_r - 1;
+        end if;
+        if is_admin and not its(reading_r) then
+          -- Writable admin registers
+          case admin_address is
+            when x"20" => scratch20_r <= cp_in.data;
+            when x"24" => scratch24_r <= cp_in.data;
+            when x"28" =>
+              reset_r      <= cp_in.data(0);
+              big_endian_r <= cp_in.data(1);
+            when others => null;
+          end case;
         end if;
         if (is_admin or worker_in.response /= none_e) and
            (not its(reading_r) or cp_in.take) then

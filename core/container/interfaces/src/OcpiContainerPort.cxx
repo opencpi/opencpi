@@ -703,7 +703,8 @@ namespace OCPI {
     {
       const char *preferred = port.getPreferredProtocol();
       OU::PValue *newExtParams, *newPortParams;
-      // Grab any connect parameters onto our params
+      // Grab any connection parameters from both param lists to both lists.
+      // I.e. ensure that any connection parameters are on both lists.
       mergeConnectParams(portParams, preferred, extParams, newExtParams);
       mergeConnectParams(extParams, preferred, portParams, newPortParams);
       if (isProvider) {

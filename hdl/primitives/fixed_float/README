@@ -1,0 +1,11 @@
+This primitive library is just an extract from the libraries available at 
+www.vhdl.org/fpvhdl.  There doesn't appear to be any licensing language associated with them,
+thus we assume we are free to use them.
+We have a copy to avoid whether some vendors supply the ieee_proposed and some don't.
+We just use it for floating point converstions.
+The changes we made is to call the library fixed_float rather than ieee_proposed,
+and split the package declaration and package bodies into separate files,
+per the rules for OpenCPI HDL primitive libraries (where the pkg declaration file must
+end in "_pkg".
+
+

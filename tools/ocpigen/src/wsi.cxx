@@ -96,7 +96,7 @@ deriveOCP() {
     ocp.MDataValid.value = s;
   }
   if (m_abortable)
-    ocp.MFlag.width = 1;
+    ocp.MDataInfo.width++;
   if (m_nOpcodes > 1)
     ocp.MReqInfo.width = ceilLog2(m_nOpcodes);
   ocp.MReqLast.value = s;
@@ -158,15 +158,15 @@ emitVhdlShell(FILE *f, Port *wci) {
 	
   fprintf(f,
 	  "  %s_port : component ocpi.wsi.%s%s\n"
-	  "    generic map(precise         => %s,\n"
-	  "                data_width      => %zu,\n"
-	  "                data_info_width => %zu,\n"
-	  "                burst_width     => %zu,\n"
-	  "                n_bytes         => %zu,\n"
-	  "                byte_width      => %zu,\n"
-	  "                opcode_width    => %zu,\n"
-	  "                own_clock       => %s,\n"
-	  "                early_request   => %s)\n",
+	  "    generic map(precise          => %s,\n"
+	  "                mdata_width      => %zu,\n"
+	  "                mdata_info_width => %zu,\n"
+	  "                burst_width      => %zu,\n"
+	  "                n_bytes          => %zu,\n"
+	  "                byte_width       => %zu,\n"
+	  "                opcode_width     => %zu,\n"
+	  "                own_clock        => %s,\n"
+	  "                early_request    => %s)\n",
 	  name(),
 	  m_isPartitioned ? "part_" : "",
 	  slave ? "slave" : "master",
@@ -256,7 +256,7 @@ emitVhdlShell(FILE *f, Port *wci) {
 	    "                part_offset      => %s_part_offset,\n"
 	    "                part_start       => %s_part_start,\n"
 	    "                part_ready       => %s_part_ready,\n"
-	    "                part_%s          => %s_part_%s",
+	    "                part_%s        => %s_part_%s",
 	    name(), name(), name(), name(),
 	    slave ? "take" : "give", name(), slave ? "take" : "give");
   fprintf(f, ");\n");
@@ -322,8 +322,8 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
   // Abortable compatibility and adaptation
   if (cons.m_abortable) {
     if (!m_abortable) {
-      oa = &consAdapt[OCP_MFlag];
-      oa->expr = "1'b0";
+      oa = &consAdapt[OCP_MDataInfo];
+      oa->expr = lang == Verilog ? "{1'b0,%s}" : "\"0\" & %s";
       oa->comment = "Tell consumer no frames are ever aborted";
     }
   } else if (m_abortable)
@@ -368,40 +368,58 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
       oa->comment = "Consumer doesn't have opcodes (or has exactly one)";
     }
   // Byte enable compatibility
+  oa = &consAdapt[OCP_MByteEn];
   if (cons.ocp.MByteEn.value && ocp.MByteEn.value) {
     if (cons.ocp.MByteEn.width < ocp.MByteEn.width) {
       // consumer has less - "inclusive-or" the various bits
       if (ocp.MByteEn.width % cons.ocp.MByteEn.width)
 	return "byte enable producer width not a multiple of consumer width";
       size_t nper = ocp.MByteEn.width / cons.ocp.MByteEn.width;
-      std::string expr = "{";
+      std::string expr;
       size_t pw = ocp.MByteEn.width;
-      //oa = &consumer.m_ocp[OCP_MByteEn];
-      for (size_t n = 0; n < cons.ocp.MByteEn.width; n++) {
-	if (n)
-	  expr += ",";
-	for (size_t nn = 0; nn < nper; nn++)
-	  OU::formatAdd(expr, "%s%sMByteEn[%zu]", nn ? "|" : "",
-			masterName, --pw);
+      if (lang == Verilog) {
+	for (size_t n = 0; n < cons.ocp.MByteEn.width; n++) {
+	  expr += n ? "," : "{";
+	  for (size_t nn = 0; nn < nper; nn++)
+	    OU::formatAdd(expr, "%s%sMByteEn[%zu]", nn ? "|" : "",
+			  masterName, --pw);
+	}
+	expr += "}";
+      } else {
+	for (size_t n = 0; n < cons.ocp.MByteEn.width; n++) {
+	  expr += n ? "&(" : "(";
+	  for (size_t nn = 0; nn < nper; nn++)
+	    OU::formatAdd(expr, "%s%s.MByteEn(%zu)", nn ? " or " : "",
+			  masterName, --pw);
+	  expr += ")";
+	}
       }
-      expr += "}";
+      oa->expr = strdup(expr.c_str());
+      oa->comment = "inclusive-or more numerous producer byte enables for consumer";
     } else if (cons.ocp.MByteEn.width > ocp.MByteEn.width) {
       // consumer has more - requiring replicating
       if (cons.ocp.MByteEn.width % ocp.MByteEn.width)
 	return "byte enable consumer width not a multiple of producer width";
       size_t nper = cons.ocp.MByteEn.width / ocp.MByteEn.width;
-      std::string expr = "{";
-      size_t pw = cons.ocp.MByteEn.width;
-      //oa = &consumer.m_ocp[OCP_MByteEn];
-      for (size_t n = 0; n < ocp.MByteEn.width; n++)
-	for (size_t nn = 0; nn < nper; nn++)
-	  OU::formatAdd(expr, "%s%sMByteEn[%zu]", n || nn ? "," : "",
-			masterName, --pw);
-      expr += "}";
+      std::string expr;
+      if (lang == Verilog) {
+	expr = "{";
+	for (size_t n = 0; n < ocp.MByteEn.width; n++)
+	  for (size_t nn = 0; nn < nper; nn++)
+	    OU::formatAdd(expr, "%s%sMByteEn[%zu]", n || nn ? "," : "",
+			  masterName, ocp.MByteEn.width - n - 1);
+	expr += "}";
+      } else {
+	for (size_t n = 0; n < ocp.MByteEn.width; n++)
+	  for (size_t nn = 0; nn < nper; nn++)
+	    OU::formatAdd(expr, "%s%s.MByteEn(%zu)", n || nn ? "&" : "",
+			  masterName, ocp.MByteEn.width - n - 1);
+      }
+      oa->comment = "replicate producers fewer byte enables for consumer";
+      oa->expr = strdup(expr.c_str());
     }
   } else if (cons.ocp.MByteEn.value) {
     // only consumer has byte enables - make them all 1
-    oa = &consAdapt[OCP_MByteEn];
     if (lang == VHDL)
       oa->expr = strdup("(others => '1')");
     else
@@ -411,6 +429,81 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
     oa = &prodAdapt[OCP_MByteEn];
     oa->expr = lang == Verilog ? "" : "open";
     oa->comment = "consumer does not have byte enables";
+  }
+  size_t
+    cmdi = cons.ocp.MDataInfo.width - (cons.m_abortable ? 1 : 0),
+    pmdi = ocp.MDataInfo.width - (m_abortable ? 1 : 0),
+    pbytes = ocp.MByteEn.value ? ocp.MByteEn.width : 1,
+    cbytes = cons.ocp.MByteEn.value ? cons.ocp.MByteEn.width : 1,
+    pbs = (pmdi + ocp.MData.width) / pbytes,
+    cbs = (cmdi + cons.ocp.MData.width) / cbytes;
+  ocpiInfo("pbytes %zu, cbytes %zu, pbs %zu cbs %zu cmdi %zu pmdi %zu",
+	   pbytes, cbytes, pbs, cbs, cmdi, pmdi);
+  if (cons.ocp.MData.width + cmdi != ocp.MData.width + pmdi)
+    return "data widths do not match";
+  // total data bits do match, but may be different bytes
+  std::string expr;
+  if (cmdi < pmdi) {
+    // Consumer byte size is less than producer
+    if (cmdi == 0) {
+      // make consumer's mdata from a mix of producer's mdatainfo and mdata
+      oa = &consAdapt[OCP_MData];
+      oa->comment = "Consumer has no MDataInfo";
+      if (lang == Verilog) {
+	for (size_t n = pbytes; n > 0; n--)
+	  OU::formatAdd(expr, "%s%sMDataInfo[%zu:%zu],%sMData[%zu:%zu]",
+			n == pbytes ? "{" : ",",
+			masterName, n*(pbs-8)-1, (n-1)*(pbs-8),
+			masterName, n*8-1, (n-1)*8);
+	expr += "}";
+      } else {
+	for (size_t n = pbytes; n > 0; n--)
+	  OU::formatAdd(expr, "%s%s.MDataInfo(%zu downto %zu) & %s.MData(%zu downto %zu)",
+			n == pbytes ? "" : "&",
+			masterName, n*(pbs-8)-1, (n-1)*(pbs-8),
+			masterName, n*8-1, (n-1)*8);
+      }
+      oa->expr = strdup(expr.c_str());
+      ocpiInfo("expr: %s", oa->expr);
+    } else {
+      // remap producer's larger bytes into consumer's smaller bytes
+    }
+  } else if (pmdi < cmdi) {
+    // Consumer byte size is greater than producer
+    if (pmdi == 0) {
+      // make consumer's mdata and mdatainfo from producer's mdata
+      std::string dexpr, iexpr;
+      OcpAdapt
+	&oad = consAdapt[OCP_MData],
+	&oai = consAdapt[OCP_MDataInfo];
+      oad.comment = "Consumer gets 8 LSBs of each of the larger bytes in MData";
+      oai.comment = "Consumer gets MSBs > 8 of each of the larger bytes in MDataInfo";
+      if (lang == Verilog) {
+	for (size_t n = cbytes; n > 0; n--) {
+	  OU::formatAdd(dexpr, "%s%sMData[%zu:%zu]", n == cbytes ? "{" : ",",
+			masterName, (n-1)*cbs+7, (n-1)*cbs);
+	  OU::formatAdd(iexpr, "%s%sMData[%zu:%zu]", n == cbytes ? "{" : ",",
+			masterName, n*cbs-1, (n-1)*cbs + 8);
+	}
+	dexpr += "}";
+	iexpr += "}";
+      } else {
+	for (size_t n = cbytes; n > 0; n--) {
+	  OU::formatAdd(dexpr, "%s%s.MData(%zu downto %zu)",
+			n == cbytes ? "" : "&",
+			masterName, (n-1)*cbs+7, (n-1)*cbs);
+	  OU::formatAdd(iexpr, "%s%s.MData(%zu downto %zu)",
+			n == cbytes ? "" : "&",
+			masterName, n*cbs-1, (n-1)*cbs + 8);
+	}
+      }
+      oad.expr = strdup(dexpr.c_str());
+      oai.expr = strdup(iexpr.c_str());
+      ocpiInfo("dexpr: %s", oad.expr);
+      ocpiInfo("iexpr: %s", oai.expr);
+    } else {
+      // remap producer's smaller bytes into consumer's larger bytes
+    }
   }
   return NULL;
 }
@@ -459,19 +552,19 @@ emitImplAliases(FILE *f, unsigned n, Language lang) {
     }
     emitOpcodes(f, mIn ? pin : pout, lang);
   }
-  if (ocp.MFlag.width) {
+  if (m_abortable) {
     if (lang == VHDL)
       fprintf(f,
-	      "  alias %sAbort : std_logic is %s.MFlag(0);\n",
-	      mIn ? pin : pout, mIn ? pin : pout);
+	      "  alias %sAbort : std_logic is %s.MDataInfo(%s.MDataInfo'left);\n",
+	      mIn ? pin : pout, mIn ? pin : pout, mIn ? pin : pout);
     else if (mIn)
       fprintf(f,
-	      "  wire %sAbort = %sMFlag[0];\n",
-	      pin, pin);
+	      "  wire %sAbort = %sMDataInfo[%zu];\n",
+	      pin, pin, ocp.MDataInfo.width-1);
     else
       fprintf(f,
-	      "  wire %sAbort; assign %sMFlag[0] = %sAbort;\n",
-	      pout, pout, pout);
+	      "  wire %sAbort; assign %sMDataInfo[%zu] = %sAbort;\n",
+	      pout, pout, ocp.MDataInfo.width-1, pout);
   }
 }
 

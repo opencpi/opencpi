@@ -1,5 +1,6 @@
 <!-- Lime transmit/DAC worker.
      This worker is transmit only - to only use the transmit logic
+     The input port is optional in case we are instanced with it being unconnected
      Properties are shared for now -->
 <HdlDevice language="vhdl" FirstRawProperty="dc_regval" spec='qdac-spec'>
   <!-- This property will tell us which lime modules are present
@@ -12,7 +13,7 @@
   -->
   <property name='ClkMode' type='uchar' parameter='true' default='0'/>
   <xi:include href='lime-properties.xml'/>
-  <StreamInterface Name="in" DataWidth="32"/>
+  <StreamInterface Name="in" DataWidth="32" optional='true'/>
   <rawprop name='rawprops' master='true'/>
   <devsignals master='true' signals='lime-spi-signals'/>
   <!-- This device needs a shared submodule for both raw properties and a shared

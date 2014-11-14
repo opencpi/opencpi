@@ -114,14 +114,15 @@ namespace OCPI {
 	((uint8_t*)&m_UUID)[n] = ((uint8_t *)&myUUIDtmp)[(n & ~3) + (3 - (n&3))];
       memcpy(m_loadedUUID, m_UUID.uuid, sizeof(m_loadedUUID));
     }
-    uint32_t Device::
+    RomWord Device::
     getRomWord(uint16_t n) {
       m_pfWorker->m_properties.set16RegisterOffset(sizeof(HdlUUID) + sizeof(uint64_t), n);
-      return m_pfWorker->m_properties.get32RegisterOffset(sizeof(HdlUUID) + sizeof(uint64_t) +
-							  sizeof(uint32_t));
+      return OCPI_UTRUNCATE(RomWord,
+			    m_pfWorker->m_properties.get32RegisterOffset(sizeof(HdlUUID) +
+									 sizeof(uint64_t) +
+									 sizeof(uint32_t)));
     }
-    static const unsigned NROMWORDS = 1024;
-    static const unsigned MAXXMLBYTES = NROMWORDS * sizeof(uint32_t) * 16;
+    static const unsigned MAXXMLBYTES = ROM_NBYTES * 16;
 #ifndef USE_LZMA
     static voidpf zalloc(voidpf , uInt items, uInt size) {
       return malloc(items * size);
@@ -132,9 +133,9 @@ namespace OCPI {
 #endif
     bool Device::
     getMetadata(std::vector<char> &xml, std::string &err) {
-      uint32_t rom[NROMWORDS];
+      RomWord rom[ROM_NWORDS];
       if ((rom[0] = getRomWord(0)) != 1 ||
-	  (rom[1] = getRomWord(1)) >= NROMWORDS*sizeof(uint32_t) ||
+	  (rom[1] = getRomWord(1)) >= ROM_NBYTES ||
 	  (rom[2] = getRomWord(2)) >= MAXXMLBYTES) {
 	OU::format(err, "Metadata ROM appears corrupted: 0x%x 0x%x 0x%x",
 		   rom[0], rom[1], rom[2]);
@@ -142,8 +143,8 @@ namespace OCPI {
       }
       xml.resize(rom[2]);
       rom[3] = getRomWord(3);
-      uint16_t nWords = OCPI_UTRUNCATE(uint16_t, (rom[1] + sizeof(uint32_t) - 1)/sizeof(uint32_t));
-      for (uint16_t n = 4; n < 4 + nWords; n++)
+      uint16_t nWords = OCPI_UTRUNCATE(uint16_t, (rom[1] + sizeof(RomWord) - 1)/sizeof(RomWord));
+      for (uint16_t n = ROM_HEADER_WORDS; n < ROM_HEADER_WORDS + nWords; n++)
 	rom[n] = getRomWord(n);
 #if USE_LZMA
       lzma_ret lr;

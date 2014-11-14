@@ -109,12 +109,12 @@ $(EXECUTABLES): $(OBJDIR)/%: $(OBJDIR)/%_main.exe
 #$(info $(wildcard $(LIBDIR)/lib*.$(SO)) xxx)
 #$(info DYNOBJS $(DYNOBJS))
 $(ORIGEXECUTABLES): $(OBJDIR)/%.exe: $(OBJDIR)/%.obj $(OTHEROBJS) $(wildcard $(LIBDIR)/lib*.$(SO)) \
-	$(join $(addsuffix $(OCPI_OUT_DIR)/,$(dir $(ALLLIBS))),$(patsubst %,lib%.$(SO),$(notdir $(ALLLIBS)))) \
+	$(join $(addsuffix $(OCPI_OUT_DIR)/,$(dir $(ALLLIBS))),$(patsubst %,libocpi_%.$(SO),$(notdir $(ALLLIBS)))) \
         $(DYNOBJS)
 else
 $(EXECUTABLES): $(OBJDIR)/%: $(OBJDIR)/%_main.exe
 $(ORIGEXECUTABLES): $(OBJDIR)/%.exe: $(OBJDIR)/%.obj $(OTHEROBJS) $(wildcard $(LIBDIR)/lib*.a) \
-	$(join $(addsuffix $(OCPI_OUT_DIR)/,$(dir $(ALLLIBS))),$(patsubst %,lib%.a,$(notdir $(ALLLIBS)))) \
+	$(join $(addsuffix $(OCPI_OUT_DIR)/,$(dir $(ALLLIBS))),$(patsubst %,libocpi_%.a,$(notdir $(ALLLIBS)))) \
         $(DYNOBJS)
 endif
 else
@@ -126,7 +126,7 @@ $(ORIGEXECUTABLES): $(OBJDIR)/%.exe: $(OBJDIR)/%.obj $(OTHEROBJS)
 else
 $(EXECUTABLES): $(OBJDIR)/%.out: $(OBJDIR)/%_main.exe
 $(ORIGEXECUTABLES): $(OBJDIR)/%.exe: $(OBJDIR)/%.obj $(OTHEROBJS) $(wildcard $(LIBDIR)/lib*.a) \
-	$(join $(addsuffix $(OCPI_OUT_DIR)/,$(dir $(ALLLIBS))),$(patsubst %,lib%.a,$(notdir $(ALLLIBS))))
+	$(join $(addsuffix $(OCPI_OUT_DIR)/,$(dir $(ALLLIBS))),$(patsubst %,libocpi_%.a,$(notdir $(ALLLIBS))))
 endif
 
 endif

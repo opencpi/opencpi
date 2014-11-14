@@ -5,6 +5,7 @@
 #define HDL_DEVICE_H
 #include <stdint.h>
 #include <stddef.h>
+#include <limits.h>
 #include <cstdlib>
 #include <string>
 #include <vector>
@@ -19,6 +20,14 @@ namespace OCPI {
     // This class represents a raw HDL device before it is a container, or when there is no
     // need to create a container (utilities, discovery etc.).
     // It is specialized by the access paths and driver issues (for pci, ethernet etc.)
+    typedef uint32_t RomWord;
+    static const unsigned
+      ROM_NBYTES = 8*1024,
+      ROM_WIDTH  = sizeof(RomWord)*CHAR_BIT,
+      ROM_WIDTH_BYTES = sizeof(RomWord),
+      ROM_NWORDS = (ROM_NBYTES + ROM_WIDTH_BYTES-1) / ROM_WIDTH_BYTES,
+      ROM_HEADER_WORDS = 4,
+      ROM_HEADER_BYTES = ROM_HEADER_WORDS * sizeof(RomWord);
     class Device {
       HdlUUID m_UUID;
       OCPI::Util::Uuid m_loadedUUID;
@@ -52,7 +61,7 @@ namespace OCPI {
       inline bool isAlive() { return m_isAlive; }
       bool isLoadedUUID(const std::string &uuid);
       void getUUID();
-      uint32_t getRomWord(uint16_t n);
+      RomWord getRomWord(uint16_t n);
       bool  getMetadata(std::vector<char> &xml, std::string &err);
       virtual void load(const char *name) = 0;
       void getWorkerAccess(size_t index,

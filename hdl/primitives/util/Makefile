@@ -33,5 +33,5 @@
 #  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
 #
 ########################################################################### #
-Libraries=ocpi
+Libraries=fixed_float ocpi
 include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk # we are a library of primitives

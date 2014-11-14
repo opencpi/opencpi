@@ -3,17 +3,17 @@
 library ieee; use ieee.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.all; use ocpi.types.all; use ocpi.wsi.all; use ocpi.util.all;
 entity part_master is
-  generic (precise           : boolean; -- are we precise-only?
-           data_width        : natural; -- width of data path
-           data_info_width   : natural; -- width of data path
-           burst_width       : natural; -- width of burst length
-           n_bytes           : natural; -- number of bytes
-           byte_width        : natural; -- byte_width
-           opcode_width      : natural; -- bits in reqinfo
-           own_clock         : boolean; -- does the port have a clock different thanthe wci?
-           early_request     : boolean; -- are datavalid and datalast used? 
-           part_size_width   : natural := 16; -- width of part size path
-           part_offset_width : natural := 16 -- width of part offset path
+  generic (precise            : boolean; -- are we precise-only?
+           mdata_width        : natural; -- width of data path
+           mdata_info_width   : natural; -- width of data path
+           burst_width        : natural; -- width of burst length
+           n_bytes            : natural; -- number of bytes
+           byte_width         : natural; -- byte_width
+           opcode_width       : natural; -- bits in reqinfo
+           own_clock          : boolean; -- does the port have a clock different thanthe wci?
+           early_request      : boolean; -- are datavalid and datalast used? 
+           part_size_width    : natural := 16; -- width of part size path
+           part_offset_width  : natural := 16 -- width of part offset path
            );
   port (
     -- Exterior OCP input/slave signals
@@ -24,8 +24,8 @@ entity part_master is
     MBurstLength     : out std_logic_vector(burst_width - 1 downto 0);
     MByteEn          : out std_logic_vector(n_bytes - 1 downto 0);
     MCmd             : out ocpi.ocp.MCmd_t;
-    MData            : out std_logic_vector(data_width-1 downto 0);
-    MDataInfo        : out std_logic_vector(data_info_width-1 downto 0);
+    MData            : out std_logic_vector(mdata_width-1 downto 0);
+    MDataInfo        : out std_logic_vector(mdata_info_width-1 downto 0);
     MDataLast        : out std_logic;
     MDataValid       : out std_logic;
     MReqInfo         : out std_logic_vector(opcode_width-1 downto 0);
@@ -57,6 +57,7 @@ entity part_master is
     );
 end entity;
 architecture rtl of part_master is
+  constant data_width : natural := n_bytes * byte_width;
   signal reset_i   : Bool_t; -- internal reset, in ports clock domain
   signal ready_i   : Bool_t;
   signal early_som : Bool_t; -- som has been given without eom or valid
@@ -71,7 +72,7 @@ begin
   MReset_n <= not wci_reset;
   MCmd <= ocpi.ocp.MCmd_WRITE when its(give) and ready_i and not its(early_som) else ocpi.ocp.MCmd_IDLE;
   -- If there are parts of bytes in data_info_width, split them properly for OCP
-  gen0: if data_info_width > 1 generate
+  gen0: if mdata_info_width > 1 generate
     gen1: for i in 0 to n_bytes-1 generate
       MData(i*8+7 downto i*8) <= data(i*byte_width+7 downto i*byte_width);
       MDataInfo(i*(byte_width-8) + (byte_width-8)-1 downto i*(byte_width-8)) <=
@@ -79,13 +80,16 @@ begin
     end generate gen1;
   end generate gen0;
   -- If there are no partial bytes in datainfo, the worker's data is just MData.
-  gen2: if data_info_width <= 1 generate
+  gen2: if mdata_info_width <= 1 generate
     MData <= data;
   end generate gen2;
+  -- If there is room in mdatainfo for abort, assign it
+  gen3: if mdata_info_width + mdata_width > data_width generate
+    MDataInfo(MDataInfo'left) <= abort;
+  end generate gen3;
   MDataLast <= give and eom;
   MReqLast <= give and eom;
   MDataValid <= give and (eom or valid or abort);
-  MDataInfo(MDataInfo'left) <= abort;
   MByteEn <= byte_enable when its(valid) else (others => '0');
   MReqInfo <= opcode when last_eom or som else opcode_i;
   -- We need to manage the state at the start of the message

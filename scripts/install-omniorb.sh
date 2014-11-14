@@ -5,7 +5,7 @@
 # 3. OCPI_CROSS_TARGET is the gnu cross target
 set -e
 OCPI_OMNIORB_VERSION=4.2.0
-. ./setup_install.sh
+. ./scripts/setup-install.sh
 mkdir -p omniorb
 cd omniorb
 echo Building omniorb in `pwd` for $OCPI_TARGET_HOST
