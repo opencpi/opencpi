@@ -88,12 +88,12 @@ ifdef HdlToolRealCore
       $(call WkrTargetDir,$1,$4)/$2$(HdlBin): \
       HdlSources=$$(filter-out %.vh,$$(call HdlTargetSrcFiles,$1,$4)) $$(HdlShadowFiles)
 
-      $(info TARGET:$(call WkrTargetDir,$1,$4)/$2$(HdlBin))
+      $(infox TARGET:$(call WkrTargetDir,$1,$4)/$2$(HdlBin))
       $(call WkrTargetDir,$1,$4)/$2$(HdlBin): \
         $$$$(foreach l,$$$$(HdlLibrariesInternal),$$$$(call HdlLibraryRefDir,$$$$l,$$$$(HdlTarget)))
       $(call WkrTargetDir,$1,$4)/$2$(HdlBin): $$$$(HdlPreCore) \
         $$(filter-out $$(filter-out %.vhd,$$(CoreBlackBoxFiles)) $$(TargetSourceFiles),$$(CompiledSourceFiles)) 
-	$(AT)echo Building $(and $(filter-out core,$(HdlMode))) core \"$(2)\" for target \"$$(HdlTarget)\" $$(ParamMsg) $$@
+	$(AT)echo Building $(and $(filter-out core,$(HdlMode))) core \"$(2)\" for target \"$$(HdlTarget)\" $$(ParamConfig):$$(ParamMsg) $$@
 	$(AT)$$(HdlCompile)
     endif # end of else of prebuilt
 
@@ -157,8 +157,8 @@ ifdef HdlToolNeedBB
 $(call OcpiDbgVar,HdlToolNeedBB)
 
 # A function taking a target-dir-name, a libname, and a build target
-BBLibFile=$(info BBF:$1,$2,$3,$4)$(strip\
-            $(foreach f,$(call WkrTargetDir,$1,$3)/bb/$(call HdlToolLibraryFile,$4,$(basename $2)),$(info BBFile:$f)$f))
+BBLibFile=$(infox BBF:$1,$2,$3,$4)$(strip\
+            $(foreach f,$(call WkrTargetDir,$1,$3)/bb/$(call HdlToolLibraryFile,$4,$(basename $2)),$(infox BBFile:$f)$f))
 
 # $(call DoBBLibraryTarget,target-dir-name,libname,config,target,bbfiles)
 define DoBBLibraryTarget

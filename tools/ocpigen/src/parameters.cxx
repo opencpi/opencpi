@@ -88,10 +88,11 @@ write(Worker &w, FILE *xf, FILE *mf) {
       if (w.m_model == HdlModel) {
 	std::string typeDecl, type;
 	vhdlType(*p.value->m_vt, typeDecl, type);
-	if (typeDecl.length())
-	  fprintf(mf, "ParamVHDLtype_%zu_%s:=type %s_t is %s;\n",
-		  nConfig, p.param->m_name.c_str(), p.param->m_name.c_str(), typeDecl.c_str());
-	fprintf(mf, "ParamVHDL_%zu_%s:=", nConfig, p.param->m_name.c_str());
+	//	if (typeDecl.length())
+	//	  fprintf(mf, "ParamVHDLtype_%zu_%s:=type %s_t is %s;\n",
+	//		  nConfig, p.param->m_name.c_str(), p.param->m_name.c_str(), typeDecl.c_str());
+	fprintf(mf, "ParamVHDL_%zu_%s:=constant %s : ",
+		nConfig, p.param->m_name.c_str(), p.param->m_name.c_str());
 	if (typeDecl.length())
 	  fprintf(mf, "%s_t", p.param->m_name.c_str());
 	else
@@ -104,7 +105,9 @@ write(Worker &w, FILE *xf, FILE *mf) {
 	  fputc(*cp, mf);
 	}
 	fputs("\n", mf);
-	fprintf(mf, "ParamVerilog_%zu_%s:=", nConfig, p.param->m_name.c_str());
+	fprintf(mf, "ParamVerilog_%zu_%s:=parameter [%zu:0] %s = ",
+		nConfig, p.param->m_name.c_str(), rawBitWidth(*p.param) - 1,
+		p.param->m_name.c_str());
 	for (const char *cp = w.hdlValue(p.param->m_name, *p.value, val, true, Verilog);
 	     *cp; cp++) {
 	  if (*cp == '#' || *cp == '\\' && !cp[1])
@@ -366,16 +369,15 @@ getParamConfig(const char *id, const ParamConfig *&config) {
   return err;
 }
 #endif
-// Given assembly properties or a parameter configuration,
+// Given assembly instance properties or a parameter configuration,
 // establish the parameter values for this worker.
 // Note this worker will then be parameter-value-specific.
 // If instancePVs is NULL, use paramconfig
 const char *Worker::
 setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig) {
-  if (instancePVs && instancePVs->size() && paramConfig)
-    return "instance property values cannot be specified with a parameter configuration";
   const char *err;
-  // FIXME: we could cache this in one place, but workers can still be
+  // So we have parameter configurations
+  // FIXME: we could cache this parsing in one place, but workers can still be
   // parameterized by xml attribute values, so it can't simply be cached in a Worker object.
   const char *slash = strrchr(m_file.c_str(), '/');
   std::string dir;
@@ -385,41 +387,76 @@ setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig) {
     dir = "gen"; // FIXME: this needs to be in a search path or something?
   if ((err = parseConfigFile(dir.c_str())))
     return err;
-  // FIXME: I suppose paramconfigs should have nice names, although they are not UI things.
-  if (instancePVs && m_paramConfigs.size()) {
-    // Scan the configs until one matches. FIXME: use scoring via selection expression...
-    ParamConfig *pc = &m_paramConfigs[0];
-    for (unsigned n = 0; n < m_paramConfigs.size(); n++, pc++) {
+  if (m_paramConfigs.size() == 0) {
+    // FIXME: check whether it is ever possible to have no paramconfigs any more...
+    // No parameter configurations, so we just do error checking
+    if (paramConfig != 0)
+      return OU::esprintf("Worker '%s' has no parameter configurations, but config %zu specified",
+			  m_implName, paramConfig);
+    if (instancePVs && instancePVs->size()) {
       OU::Assembly::Property *ap = &(*instancePVs)[0];
       for (unsigned nn = 0; nn < instancePVs->size(); nn++, ap++)
 	if (ap->m_hasValue) {
-	  Param *p = &pc->params[0];
-	  for (unsigned nn = 0; nn < pc->params.size(); nn++, p++)
-	    if (!strcasecmp(ap->m_name.c_str(), p->param->m_name.c_str())) {
-	      OU::Value apValue;
-	      if ((err = p->param->parseValue(ap->m_value.c_str(), apValue)))
-		return err;
-	      std::string apString;
-	      apValue.unparse(apString); // to get canonicalized value of APV
-	      if (apString != p->uValue)
-		goto nextConfig; // a mismatch - this paramconfig can't used
-	      break;
+	  OU::Property *p = findProperty(ap->m_name.c_str());
+	  if (!p || !p->m_isParameter)
+	    return OU::esprintf("Worker \"%s\" has no parameter property named \"%s\"",
+				m_implName, ap->m_name.c_str());
+	  if (p->m_default) {
+	    std::string defValue, newValue;
+	    p->m_default->unparse(defValue);
+	    OU::Value ipv;
+	    ipv.setType(*p);
+	    if (!(err = ipv.parse(ap->m_value.c_str()))) {
+	      ipv.unparse(newValue);
+	      if (defValue != newValue)
+		err = "value doesn't match default, and no other choices exist";
 	    }
+	    if (err)
+	      return OU::esprintf("Bad value \"%s\" for parameter \"%s\" for worker \"%s\": %s",
+				  ap->m_value.c_str(), p->m_name.c_str(), m_implName, err);
+	  }
 	}
-      m_paramConfig = pc;
-      break;
-    nextConfig:;
     }
-    if (!m_paramConfig)
-      return
-	OU::esprintf("No parameter configuration for worker matches requested parameter values");
-  } else {
-    if (paramConfig >= m_paramConfigs.size()) {
-      if (paramConfig > 0)
-	return OU::esprintf("Parameter configuration %zu exceeds available configurations (%zu)",
-			    paramConfig, m_paramConfigs.size());
-    } else
-      m_paramConfig = &m_paramConfigs[paramConfig];
+    return NULL;
   }
+  if (paramConfig >= m_paramConfigs.size())
+    return OU::esprintf("Parameter configuration %zu exceeds available configurations (%zu)",
+			paramConfig, m_paramConfigs.size());
+  if (!instancePVs || instancePVs->size() == 0) {
+    m_paramConfig = &m_paramConfigs[paramConfig];
+    return NULL;
+  }
+  size_t low, high;
+  if (paramConfig)
+    low = high = paramConfig;
+  else
+    low = 0, high = m_paramConfigs.size() - 1;
+  // At this point we know we have configurations and values to match against them
+  // Scan the configs until one matches. FIXME: use scoring via selection expression...
+  ParamConfig *pc = &m_paramConfigs[low];
+  for (size_t n = low; n <= high; n++, pc++) {
+    OU::Assembly::Property *ap = &(*instancePVs)[0];
+    for (unsigned nn = 0; nn < instancePVs->size(); nn++, ap++)
+      if (ap->m_hasValue) {
+	Param *p = &pc->params[0];
+	for (unsigned nn = 0; nn < pc->params.size(); nn++, p++)
+	  if (!strcasecmp(ap->m_name.c_str(), p->param->m_name.c_str())) {
+	    OU::Value apValue;
+	    if ((err = p->param->parseValue(ap->m_value.c_str(), apValue)))
+	      return err;
+	    std::string apString;
+	    apValue.unparse(apString); // to get canonicalized value of APV
+	    if (apString != p->uValue)
+	      goto nextConfig; // a mismatch - this paramconfig can't used
+	    break;
+	  }
+      }
+    m_paramConfig = pc;
+    break;
+  nextConfig:;
+  }
+  if (!m_paramConfig)
+    return
+      OU::esprintf("No parameter configuration for worker matches requested parameter values");
   return NULL;
 }

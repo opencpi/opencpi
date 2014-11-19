@@ -103,12 +103,12 @@ QuartusMakeDevice=$(strip $(if $(findstring $(HdlMode),platform config container
 		     $(xxinfo GOTZ:AUTO:$(HdlMode))AUTO))
 
 # arg 1 is hdltarget arg2 is platform
-QuartusMakeDevices=\
+QuartusMakeDevices=$(infox QMD:$1:$2)\
   echo set_global_assignment -name FAMILY '\"'$(QuartusFamily_$(call HdlGetFamily,$1))'\"'; \
   echo set_global_assignment -name DEVICE \
       $(strip $(if $(findstring $(HdlMode),platform config container),\
-                  $(foreach x,$(call ToUpper,$(call QuartusMakePart,$(HdlPart_$2))),$(xxinfo GOT:$x)$x),\
-		  $(zxinfo GOTZ:AUTO:$(HdlMode))AUTO));
+                  $(foreach x,$(call ToUpper,$(call QuartusMakePart,$(HdlPart_$2))),$(infox GOT:$x)$x),\
+		  $(infox GOTZ:AUTO:$(HdlMode))AUTO));
 
 # Make the settings file
 # Note that the local source files use notdir names and search paths while the
@@ -129,14 +129,16 @@ QuartusMakeQsf=\
   $(foreach c,$(SubCores),\
     echo set_global_assignment -name QXP_FILE \
       '\"'$(call FindRelative,$(TargetDir),$(call HdlCoreRef,$c,$(HdlTarget)))'\"';\
-    $(foreach w,$(call HdlRmRv,$(basename $(notdir $c))),\
-      $(foreach d,$(dir $c),\
-        $(foreach f,$(or $(call HdlExists,$d../gen/$w-defs.vhd),\
-                         $(call HdlExists,$d../$(shell echo $w | sed 's/_c[0-9][0-9]*$$//').vhd)),\
-          echo set_global_assignment -name VHDL_FILE -library $w '\"'$(call FindRelative,$(TargetDir),$f)'\"';)\
-        $(foreach f,$(or $(call HdlExists,$d/generics.vhd),\
-                         $(call HdlExists,$d/$(basename $(notdir $c))-generics.vhd)),\
-          echo set_global_assignment -name VHDL_FILE -library $w '\"'$(call FindRelative,$(TargetDir),$f)'\"';))))\
+    $(foreach w,$(call HdlRmRv,$(basename $(notdir $c))),$(infox WWW:$w)\
+      $(foreach d,$(dir $c),$(infox DDD:$d)\
+        $(foreach l,$(if $(filter vhdl,$(HdlLanguage)),vhd,v),$(infox LLLLL:$l)\
+          $(foreach f,$(or $(xxcall HdlExists,$d../gen/$w-defs.$l),\
+                           $(call HdlExists,$d../$(shell echo $w | sed 's/_c[0-9][0-9]*$$//').$l)),$(infox FFFF:$f)\
+            echo set_global_assignment -name $(if $(filter vhdl,$(HdlLanguage)),VHDL,VERILOG)_FILE -library $w '\"'$(call FindRelative,$(TargetDir),$f)'\"';\
+            $(and $(filter vhdl,$(HdlLanguage)),\
+              $(foreach g,$(or $(call HdlExists,$d/generics.vhd),\
+                               $(call HdlExists,$d/$(basename $(notdir $c))-generics.vhd)),\
+                echo set_global_assignment -name VHDL_FILE -library $w '\"'$(call FindRelative,$(TargetDir),$g)'\"';)))))))\
   echo '\# Search path(s) for local files'; \
   $(foreach d,$(call Unique,$(patsubst %/,%,$(dir $(QuartusSources)) $(VerilogIncludeDirs))), \
     echo set_global_assignment -name SEARCH_PATH '\"'$(strip \
@@ -229,17 +231,17 @@ QuartusMakeBits=\
 	$(call DoAltera,quartus_asm,$1-top,$1-top,asm) && \
 	cp $1-top.sof $2.sof
 
-# Invoke the tool-specific build with: <target-dir>,<assy-name>,<core-file-name>,<config>,<platform>
+# $(call HdlToolDoPlatform,1:<target-dir>,2:<app-name>,3:<app-core-name>,4:<pfconfig>,5:<platform-name>,6: paramconfig)
 define HdlToolDoPlatform_quartus
 $1/$3.sof: 
-	$(AT)echo Building Quartus Bit file: $$@.  Assembly $2 on platform $5.
+	$(AT)echo Building Quartus Bit file: $$@.  Assembly $2 on platform $5 using $4 "($6)".
 	$(AT)cd $1 && \
 	rm -r -f db incremental_db *-top.* && \
 	(echo \# Common assignments whether a library or a core; \
 	 echo set_global_assignment -name FAMILY '"'$$(call QuartusMakeFamily,$(HdlPart_$5))'"'; \
 	 echo set_global_assignment -name DEVICE $$(call QuartusMakeDevice,$5); \
-	 echo set_global_assignment -name TOP_LEVEL_ENTITY $4; \
-	 echo set_global_assignment -name QXP_FILE '"'$4.qxp'"'; \
+	 echo set_global_assignment -name TOP_LEVEL_ENTITY $3; \
+	 echo set_global_assignment -name QXP_FILE '"'$3.qxp'"'; \
 	 echo set_global_assignment -name SDC_FILE '"'$(HdlPlatformsDir)/$5/$5.sdc'"'; \
 	 echo source $(HdlPlatformsDir)/$5/$5.qsf \
 	 ) > $4-top.qsf && \
@@ -251,64 +253,3 @@ $1/$3.sof:
 	cp $4-top.sof $3.sof
 
 endef
-
-ifneq (,)
------junk from here-----
-#	QuartusStatus=$$$$? ; echo QuartusStatus after fit is $$$$QuartusStatus; \
-# From when we had a dangling container?
-#	$(call DoAltera,quartus_cdb,--merge=on --override_partition_netlist_type=container=import --write_settings_files=off $4-top,$4) && \
-
-xxx=$(and $(ComponentLibraries),echo '\#' Search paths for component libraries;) \
-    $(foreach l,$(ComponentLibraries),\
-      echo set_global_assignment -name SEARCH_PATH '\"'$(strip \
-      $(foreach found,\
-        $(foreach t,$(sort $(HdlTarget) $(call HdlGetFamily,$(HdlTarget))),\
-	  $(realpath $l/lib/hdl/$t)), \
-        $(if $(found),\
-          $(call FindRelative,$(TargetDir),$(found))'\"';,\
-	  $(error No component library at $(abspath $t)))))) \
-    $(eval HdlWorkers:=$$(strip $$(foreach i,$$(shell grep -v '\\\#' $$(ImplWorkersFile)),\
-                         $$(if $$(filter $$(firstword $$(subst :, ,$$i)),$$(HdlPlatformWorkers)),,$$i))))
-  # $(and $(findstring $(HdlMode),platform),\
-  #   echo '\#' Make sure the container is defined as an empty partition. ;\
-  #   echo set_instance_assignment -name PARTITION_HIERARCHY container -to '\"mkFTop_alst4:ftop|mkCTop4B:ctop|mkOCApp4B:app\"' \
-  #     -section_id '\"'container'\"'; \
-  #   echo set_global_assignment -name PARTITION_NETLIST_TYPE -section_id '\"'container'\"' EMPTY; \
-  #   echo set_instance_assignment -name PARTITION_HIERARCHY root_partition -to '|' \
-  #     -section_id Top; \
-  #   echo set_global_assignment -name PARTITION_NETLIST_TYPE -section_id '\"'Top'\"' POST_SYNTH; ) \
-  #
-################################################################################
-# Final bitstream building support, given that the "container" core is built
-QuartusMakeTopQsf=\
-
-# echo set_global_assignment -name QXP_FILE '"'$(ContainerModule)$(HdlBin)'"'; \
-#  echo set_instance_assignment -name PARTITION_HIERARCHY db/container -to '"'fpgaTop|mkFTop_alst4:ftop|mkCTop4B:ctop|mkOCApp4B:app'"' \
-        -section_id container; \
-#  echo set_instance_assignment -name PARTITION_ALWAYS_USE_QXP_NETLIST -to '"'fpgaTop|mkFTop_alst4:ftop|mkCTop4B:ctop|mkOCApp4B:app'"' -section_id container On\
-#  echo set_global_assignment -name PARTITION_IMPORT_FILE '"'$(ContainerModule)$(HdlBin)'"' \
-        -section_id container; \
-#  echo set_instance_assignment -name PARTITION_HIERARCHY db/container -to '"'mkFTop_alst4:ftop|mkCTop4B:ctop|mkOCApp4B:app'"' \
-        -section_id container; \
-#  echo set_global_assignment -name PARTITION_IMPORT_FILE '"'$(HdlPlatformsDir)/$1/target-$(call HdlGetPart,$1)/$1$(HdlBin)'"' \
-        -section_id Top; \
-#  echo set_instance_assignment -name PARTITION_HIERARCHY db/top -to '|' -section_id Top; \
-# echo 'module onewire(input  W_IN, output W_OUT); assign W_OUT = W_IN; endmodule' > onewire.v; \
-#  echo set_global_assignment -name VERILOG_FILE onewire.v; \
-#  echo set_global_assignment -name PARTITION_IMPORT_FILE '"'$(ContainerModule)$(HdlBin)'"' -section_id "app"; \
-  echo set_global_assignment -name PARTITION_HIERARCHY dp/app -to '"mkFTop_alst4:ftop|mkCTop4B:ctop|mkOCApp4B:app"' -section_id "app"; \
-  echo set_global_assignment -name PARTITION_IMPORT_FILE '"'$(HdlPlatformsDir)/$1/target-$(call HdlGetPart,$1)/$1$(HdlBin)'"' -section_id "plat"; \
-  echo set_global_assignment -name PARTITION_HIERARCHY db/plat -to '"fpgaTop"' -section_id "plat" ; \
-QuartusCmd=\
-	set -e; \
-	rm -r -f db incremental_db ; \
-	$(call QuartusMakeTopQsf,$1) ; \
-	cp $(call AppName,$1).qsf $(call AppName,$1).qsf.pre-fit ; \
-	$(call DoAltera,quartus_map $(call AppName,$1)); \
-	$(call DoAltera,quartus_cdb --merge=on --override_partition_netlist_type=container=import --write_settings_files=off $(call AppName,$1)); \
-	$(call DoAltera,quartus_fit $(call AppName,$1)); \
-	QuartusStatus=$$$$? ; echo QuartusStatus after fit is $$$$QuartusStatus; \
-	cp $(call AppName,$1).qsf $(call AppName,$1).qsf.post-fit; \
-	$(call DoAltera,quartus_asm $(call AppName,$1))
-
-endif

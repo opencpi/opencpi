@@ -40,8 +40,8 @@
 # Refine the target list as appropriate for the tool
 $(call OcpiDbgVar,LibName)
 OutLibFile=\
-  $(call WkrTargetDir,$1,$2)/$(call HdlToolLibraryFile,$1,$(LibName))
-#  $(call WkrTargetDir,$1,$2)/$(call HdlToolLibraryFile,$1,$(LibName)$(if $(filter 0,$2),,_c$2))
+  $(call WkrTargetDir,$1,$2)/$(call HdlToolLibraryFile,$1,$(LibName)$(if $(filter 0,$2),,_c$2))
+#  $(call WkrTargetDir,$1,$2)/$(call HdlToolLibraryFile,$1,$(LibName))
 define DoLibTarget
 $(call OcpiDbg,OutLibFile:$(call OutLibFile,$1,$2))
 OutLibFiles+=$(call OutLibFile,$1,$2)
@@ -57,7 +57,7 @@ $(call OutLibFile,$1,$2): \
 $$$$(foreach l,$$$$(HdlLibrariesInternal),$$$$(call HdlLibraryRefDir,$$$$l,$$$$(HdlTarget)))
 
 $(call OutLibFile,$1,$2): $$$$(HdlPreCore) $$$$(HdlSources) | $$$$(TargetDir)
-	$(AT)echo Building the $(LibName) $(HdlMode) for $$(HdlTarget) \($$@\) $$(ParamMsg)
+	$(AT)echo Building the $(LibName) $(HdlMode) for $$(HdlTarget) \($$@\) $$(ParamConfig):$$(ParamMsg)
 	$(AT)$$(HdlCompile)
 
 endef

@@ -89,7 +89,7 @@ namespace
     unsigned int msecs = e.seconds() * 1000 + e.nanoseconds() / 1000000;
     // Allow for a 1% skew
     EXPECT_GE( msecs, 2970u );
-    EXPECT_LE( msecs, 3030u );
+    EXPECT_LE( msecs, 3050u );
   }
 
 
@@ -118,7 +118,7 @@ namespace
     unsigned int msecs = e.seconds() * 1000 + e.nanoseconds() / 1000000;
     // Allow for a 1% skew
     EXPECT_GE( msecs, 2970u );
-    EXPECT_LE( msecs, 3030u );
+    EXPECT_LE( msecs, 3050u );
   }
 
 

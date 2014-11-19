@@ -497,8 +497,8 @@ int  main( int argc, char** argv)
 
 
   // Patch the producers run condition so that it only has a 1 second timout
-  RCCPortMask portMask = 1;
-  rc.portMasks = &portMask;
+  RCCPortMask portMask[] = {1, 0};
+  rc.portMasks = portMask;
   rc.timeout    = 1;
   rc.usecs = 1000 * 1000 *  1;
   UTGProducerWorkerDispatchTable.runCondition = &rc;

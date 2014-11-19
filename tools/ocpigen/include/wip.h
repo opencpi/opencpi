@@ -546,7 +546,7 @@ class Worker : public Parsed, public OU::IdentResolver {
   bool nonRaw(PropertiesIter pi);
   Clock *addClock();
   Clock *addWciClockReset();
-  OU::Property *findProperty(const char *name);
+  OU::Property *findProperty(const char *name) const;
   const char
     *addBuiltinProperties(),
     *getPort(const char *name, Port *&p, Port *except = NULL) const,
@@ -686,6 +686,6 @@ extern void
   addLibrary(const char *lib),
   emitLastSignal(FILE *f, std::string &last, Language lang, bool end);
 
-extern size_t ceilLog2(uint64_t n), floorLog2(uint64_t n);
+extern size_t ceilLog2(uint64_t n), floorLog2(uint64_t n), rawBitWidth(const OU::ValueType &dt);
 inline size_t bitsForMax(uint64_t n) { return ceilLog2(n + 1); }
 #endif

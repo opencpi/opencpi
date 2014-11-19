@@ -149,7 +149,7 @@ $(call OcpiDbgVar,HdlMode)
 # -vlgpath to search for modules
 
 # there is no such thing
-OBJ:=.xxx
+#OBJ:=.xxx
 # Options that the user should not specify
 XstBadOptions=\
     -ifn -ofn -top -xsthdpini -ifmt -sd -vlgincdir -vlgpath -lso
@@ -285,13 +285,13 @@ XstCompLibs=$(ComponentLibraries) $(DeviceLibraries) $(CDKComponentLibraries) $(
 XstMakeLso=\
   (\
    $(foreach l,$(XstCompLibs),\
-      $(info CL:$l) \
+      $(infox CL:$l) \
       echo $(lastword $(subst -, ,$(notdir $l)));)\
    $(foreach l,$(HdlLibrariesInternal),\
-      $(info HL:$l) \
+      $(infox HL:$l) \
       echo $(lastword $(subst -, ,$(notdir $l)));)\
    $(foreach l,$(SubCores), \
-      $(info CC:$l) \
+      $(infox CC:$l) \
       echo $(patsubst %_rv,%,$(basename $(notdir $l)));)\
   ) > $(XstLsoFile);
 
@@ -301,9 +301,9 @@ XstMakeIni=\
       echo $(lastword $(subst -, ,$(notdir $(l))))=$(strip \
         $(call FindRelative,$(TargetDir),$(strip \
            $(call HdlLibraryRefDir,$(l),$(HdlTarget)))));) \
-   $(foreach l,$(info SubCores:$(SubCores))$(SubCores),\
+   $(foreach l,$(infox SubCores:$(SubCores))$(SubCores),\
       echo $(patsubst %_rv,%,$(basename $(notdir $l)))=$(call FindRelative,$(TargetDir),$(strip \
-          $(firstword $(foreach c,$(call XstCoreLibraryChoices,$(call HdlRmRv,$(basename $l))),$(info CECEL:$c)$(call HdlExists,$c)))));) \
+          $(firstword $(foreach c,$(call XstCoreLibraryChoices,$(call HdlRmRv,$(basename $l))),$(infox CECEL:$c)$(call HdlExists,$c)))));) \
   ) > $(XstIniFile);
 
 XstOptions += $(and $(XstNeedIni),-lso $(XstLsoFile))
@@ -354,8 +354,8 @@ XstOptions +=\
      $(and $(findstring platform,$(HdlMode)),..) \
       })
 
-XstNgdOptions=$(info XNO with XstCores:$(XstCores))\
-     $(foreach c,$(XstCores),$(info XNO:$c)-sd $(call FindRelative,$(TargetDir),$(dir $(call HdlCoreRef,$c,$(HdlTarget)))))
+XstNgdOptions=$(infox XNO with XstCores:$(XstCores))\
+     $(foreach c,$(XstCores),$(infox XNO:$c)-sd $(call FindRelative,$(TargetDir),$(dir $(call HdlCoreRef,$c,$(HdlTarget)))))
 
 ifneq (,)
   $(foreach l,$(CDKComponentLibraries), -sd \
@@ -445,7 +445,7 @@ ChipScopeName=$1/$2-csi.ngc
 PcfName=$1/$2.pcf
 #TopNgcName=$(HdlPlatformsDir)/$1/target-$(call HdlGetPart,$1)/$1.ngc
 
-# $(call HdlToolDoPlatform,1:<target-dir>,2:<app-name>,3:<app-core-name>,4:<config>,5:<platform-name>)
+# $(call HdlToolDoPlatform,1:<target-dir>,2:<app-name>,3:<app-core-name>,4:<pfconfig>,5:<platform-name>,6: paramconfig)
 define HdlToolDoPlatform_xst
 
 # This dependency is required, since without it, ngdbuild can fail

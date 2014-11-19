@@ -29,7 +29,7 @@ elif test -f /etc/os-release; then
   HostVersion=d$VERSION_ID
 elif test $HostSystem = darwin -a "`which sw_vers`" != ""; then
   HostSystem=macos
-  HostVersion=`sw_vers -productVersion | sed 's/\(.*\.[0-9]*\).*/\1/' | tr . _`
+  HostVersion=`sw_vers -productVersion | sed 's/^\([0-9][0-9]*\.[0-9][0-9]*\).*/\1/' | tr . _`
 #  HostVersion=`sw_vers -productVersion | sed 's/\.[0-9][0-9]*$//'`
 elif test "$HostSystem" = linux -a -f /etc/rootfs_version; then
   HostVersion=iv

@@ -522,7 +522,7 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
     unsigned n = 0;
     // Emit the compile-time properties (a.k.a. parameter properties).
     for (InstanceProperty *pv = &i->properties[0]; n < i->properties.size(); n++, pv++) {
-      OU::Property *pr = pv->property;
+      const OU::Property *pr = pv->property;
       if (pr->m_isParameter) {
 	if (lang == VHDL) {
 	  std::string value;
@@ -542,7 +542,7 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
 	  }
 	  size_t bits =
 	    pr->m_baseType == OA::OCPI_Bool ?
-	    1 : pr->m_nBits;
+	    1 : (pr->m_baseType == OA::OCPI_Enum ? rawBitWidth(*pr) : pr->m_nBits);
 	  fprintf(f, ".%s(%zu'd%lld)",
 		  pr->m_name.c_str(), bits, (long long)i64);
 	}

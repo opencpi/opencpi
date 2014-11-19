@@ -45,11 +45,14 @@ ifeq ($(MAKECMDGOALS),skeleton)
 endif
 Compile=$(HdlCompile)
 $(call OcpiDbgVar,HdlBin)
-$(info LANGUAGE:$(HdlLanguage))
-#BF=$(call OBJ,$1)
-BF=$(HdlBin)
+$(infox LANGUAGE:$(HdlLanguage))
+BF=$(call OBJ,$1)
+#BF=$(HdlBin)
 #BF=$(if $(filter vhdl,$(HdlLanguage)),_rv)$(HdlBin)
-# This could change someday if any hdl tools have separate object files.
+# This object suffix must include the paramconfig name because, at least for
+# library-only tool chains, the library name must include the paramconfig
+# name since an assembly might include multiple instances of the same
+# worker but with different paramconfigs.
 OBJ=$(and $1,$(if $(filter 0,$1),,_c$1))$(HdlBin)
 # We don't build independent standalone worker binaries (no artifact file here)
 ArtifactFile=
@@ -190,14 +193,14 @@ $(call OcpiDbg,After skipping)
 ################################################################################
 # If not an assembly or container, we have to contribute to the exports for the
 # component library we are a part of.
-ifneq ($(HdlMode),assembly)
+#ifneq ($(HdlMode),assembly)
 # Expose the implementation xml file for apps that instantiate this worker core
 ifdef LibDir
 $(call OcpiDbg,Before all: "$(LibDir)/$(ImplXmlFile)")
 
-all: $(LibDir)/$(ImplXmlFile)
+links: $(LibDir)/$(notdir $(ImplXmlFile))
 
-$(LibDir)/$(ImplXmlFile): | $(LibDir)
+$(LibDir)/$(notdir $(ImplXmlFile)): | $(LibDir)
 	$(AT)echo Creating link from $(LibDir) -\> $(ImplXmlFile) to expose the $(CwdName) implementation xml.
 	$(AT)$(call MakeSymLink,$(ImplXmlFile),$(LibDir))
 
@@ -216,8 +219,9 @@ $(LibDir)/$(Worker)$(HdlOtherSourceSuffix): $(WDefsFile) | $(LibDir)
 	$(AT)$(call MakeSymLink2,$(WDefsFile),$(LibDir),$(Worker)$(HdlOtherSourceSuffix))
 
 $(call OcpiDbg,Before all: "$(LibDir)/$(Worker)$(HdlSourceSuffix)")
-all: $(LibDir)/$(Worker)$(HdlSourceSuffix) $(LibDir)/$(Worker)$(HdlOtherSourceSuffix) 
+links: $(LibDir)/$(Worker)$(HdlSourceSuffix) $(LibDir)/$(Worker)$(HdlOtherSourceSuffix) 
+all: links
 
 endif
-endif # if not an assembly
+#endif # if not an assembly
 

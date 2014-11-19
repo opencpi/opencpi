@@ -86,25 +86,26 @@ emitLastSignal(FILE *f, std::string &last, Language lang, bool end) {
   }
 }
 
+size_t
+rawBitWidth(const OU::ValueType &dt) {
+  switch (dt.m_baseType) {
+  case OA::OCPI_Bool:
+    return 1;
+  case OA::OCPI_Enum:
+    return bitsForMax(dt.m_nEnums - 1);
+  case OA::OCPI_String:
+    return (dt.m_stringLength+1) * 8;
+  default:
+    return dt.m_nBits;
+  }
+}
 // Third arg is saying that the type must be appropriate for VHDL to pass
 // to verilog
 static void
 vhdlBaseType(const OU::ValueType &dt, std::string &s, bool convert) {
-  if (convert) {
-    switch (dt.m_baseType) {
-    case OA::OCPI_Bool:
-      s = "std_logic_vector(0 to 0)";
-      break;
-    case OA::OCPI_Enum:
-      OU::formatAdd(s, "std_logic_vector(%zu downto 0)", bitsForMax(dt.m_nEnums - 1) - 1);
-      break;
-    case OA::OCPI_String:
-      OU::formatAdd(s, "std_logic_vector(%zu downto 0)", (dt.m_stringLength+1) * 8 - 1);
-      break;
-    default:
-      OU::formatAdd(s, "std_logic_vector(%zu downto 0)", dt.m_nBits - 1);
-    }
-  } else if (dt.m_baseType == OA::OCPI_String)
+  if (convert)
+    OU::formatAdd(s, "std_logic_vector(%zu downto 0)", rawBitWidth(dt)-1);
+  else if (dt.m_baseType == OA::OCPI_String)
       OU::formatAdd(s, "string_t(0 to %zu)", dt.m_stringLength);
   else {
     for (const char *cp = OU::baseTypeNames[dt.m_baseType]; *cp; cp++)
@@ -115,9 +116,13 @@ vhdlBaseType(const OU::ValueType &dt, std::string &s, bool convert) {
 static void
 vhdlArrayType(const OU::ValueType &dt, size_t rank, const size_t *dims, std::string &s,
 	      bool convert) {
-  if (convert) {
-    OU::formatAdd(s, "std_logic_vector(%zu downto 0)", dt.m_nItems * dt.m_nBits - 1);
-  } else {
+  if (convert)
+    OU::formatAdd(s, "std_logic_vector(%zu downto 0)", dt.m_nItems * rawBitWidth(dt) - 1);
+  else if (dt.m_baseType == OA::OCPI_String) 
+    OU::formatAdd(s,
+		  "type %%s_t is array(0 to %zu) of string_t(0 to %zu)",
+  		  dims[0] - 1, dt.m_stringLength);
+  else {
     s += "type %s_t is array";
     for (unsigned i = 0; i < rank; i++)
       OU::formatAdd(s, "%s0 to %zu", i == 0 ? "(" : ", ", dims[i] - 1);
@@ -140,7 +145,7 @@ vhdlType(const OU::ValueType &dt, std::string &decl, std::string &type, bool con
 #if 0
     decl = "type %s_t is ";
     vhdlArrayType(dt, 1, &dt.m_sequenceLength, decl, convert);
-    decl += "; type seq is record length : ulong_t; data : array : seqarray_t; end record";
+X<    decl += "; type seq is record length : ulong_t; data : array : seqarray_t; end record;\n";
 #endif
   } else
     vhdlBaseType(dt, type, convert);
@@ -225,48 +230,59 @@ vhdlInnerValue(const OU::Value &v, std::string &s) {
     s += ")";
 }
 
-// Convert a value in v for passing to verilog.  It might be a variable name.
+// Convert a value in v for passing between vhdl _rv and verilog.  The "v" string might be a variable name.
 static const char*
-vhdlConvert(const std::string &name, const OU::ValueType &dt, std::string &v,
-	    std::string &s) {
+vhdlConvert(const std::string &name, const OU::ValueType &dt, std::string &v, std::string &s,
+	    bool toVerilog = true) {
   if (dt.m_arrayRank) {
-    if (dt.m_baseType == OA::OCPI_String) {
-      // This is pretty hideous
-      size_t len = v.length();
-      char last = 0;
-      for (size_t i = 0; i < len; i++) {
-	if (v[i] == ',' && last == ')')
-	  v[i] = '&';
-	last = v[i];
-      }
-      OU::formatAdd(s, "ocpi.types.slv(%s)", v.c_str());
-    } else
-      OU::formatAdd(s, "ocpi.types.slv(%s_array_t'%s)", OU::baseTypeNames[dt.m_baseType],
-		    v.c_str());
-  } else if (dt.m_baseType == OA::OCPI_Enum)
-    OU::formatAdd(s, "std_logic_vector(to_unsigned(%s_t'pos(%s), %zu))",
-		  name.c_str(), v.c_str(), bitsForMax(dt.m_nEnums - 1));
-  else
-    OU::formatAdd(s, "from_%s(%s)", OU::baseTypeNames[dt.m_baseType], v.c_str());
-#if 0    
-  switch (dt.m_baseType) {
-  case OA::OCPI_Bool:
-    if (dt.m_arrayRank)
-      s = v;
+    if (toVerilog) {
+      if (dt.m_baseType == OA::OCPI_String) {
+	// This is pretty hideous
+	s += "ocpi.types.slv(";
+	if (isalpha(v[0])) {
+	  for (size_t i = 0; i < dt.m_arrayDimensions[0]; i++)
+	    OU::formatAdd(s, "%s%s(%zu)", i == 0 ? "" : "&", name.c_str(), i);
+	  s += ")";
+	} else {
+	  size_t len = v.length();
+	  char last = 0;
+	  for (size_t i = 0; i < len; i++) {
+	    if (v[i] == ',' && last == ')')
+	      v[i] = '&';
+	    last = v[i];
+	  }
+	  OU::formatAdd(s, "%s)", v.c_str());
+	}
+      } else
+	if (isalpha(v[0]))
+	  OU::formatAdd(s, "ocpi.types.slv(%s_array_t(%s))", OU::baseTypeNames[dt.m_baseType],
+			v.c_str());
+	else
+	  OU::formatAdd(s, "ocpi.types.slv(%s_array_t'%s)", OU::baseTypeNames[dt.m_baseType],
+			v.c_str());
+    } else if (dt.m_baseType == OA::OCPI_String)
+      OU::formatAdd(s, "%s_t(to_%s_t(%s,%zu))", name.c_str(),
+		    name.c_str(), v.c_str(), dt.m_stringLength);
     else
-      OU::formatAdd(s, "ocpi.util.slv(%s)", v.c_str());
-    break;
-  case OA::OCPI_Enum:
-    OU::formatAdd(s, "ocpi.util.slv(to_unsigned(%s_t'pos(%s), %zu))",
-		  name.c_str(), v.c_str(), bitsForMax(dt.m_nEnums - 1));
-    break;
-  case OA::OCPI_String:
-    OU::formatAdd(s, "ocpi.util.slv(%s)", v.c_str());
-    break;
-  default:
-    OU::formatAdd(s, "std_logic_vector(%s)", v.c_str());
-  }
-#endif
+      OU::formatAdd(s, "%s_t(ocpi.types.to_%s_array(%s))", name.c_str(),
+		    OU::baseTypeNames[dt.m_baseType], v.c_str());
+  } else if (dt.m_baseType == OA::OCPI_Enum) {
+    if (toVerilog)
+      OU::formatAdd(s, "std_logic_vector(to_unsigned(%s_t'pos(%s), %zu))",
+		    name.c_str(), v.c_str(), bitsForMax(dt.m_nEnums - 1));
+    else
+      OU::formatAdd(s, "%s_t'val(to_integer(unsigned(%s)))",
+		    name.c_str(), v.c_str());
+  } else if (dt.m_baseType == OA::OCPI_Bool || dt.m_baseType == OA::OCPI_String) {
+    if (toVerilog)
+      OU::formatAdd(s, "from_%s(%s)", OU::baseTypeNames[dt.m_baseType], v.c_str());
+    else
+      OU::formatAdd(s, "to_%s(%s)", OU::baseTypeNames[dt.m_baseType], v.c_str());
+  } else if (toVerilog)
+    OU::formatAdd(s, "from_%s(%s)", OU::baseTypeNames[dt.m_baseType], v.c_str());
+  else
+    OU::formatAdd(s, "%s_t(%s)", OU::baseTypeNames[dt.m_baseType], v.c_str());
+
   return s.c_str();
 }
 // Provide a string suitable for initializing a generic
@@ -290,8 +306,10 @@ static const char*
 verilogValue(const OU::Value &v, std::string &s, bool) {
   if (v.m_vt->m_baseType == OA::OCPI_Bool)
     OU::format(s, "1'b%u", v.m_Bool ? 1 : 0);
+  else if (v.m_vt->m_baseType == OA::OCPI_Enum)
+    OU::format(s, "%zu'd%zu", rawBitWidth(*v.m_vt), (size_t)v.m_ULong);
   else
-    OU::format(s, "%zu'h%" PRIx32, v.m_vt->m_nBits/4, v.m_ULong);
+    OU::format(s, "%zu'h%" PRIx32, v.m_vt->m_nBits, v.m_ULong);
   return s.c_str();
 }
 const char *Worker::
@@ -326,10 +344,16 @@ emitParameters(FILE *f, Language lang, bool useDefaults, bool convert) {
 	if (useDefaults) {
 	  if (pr.m_default)
 	    vhdlValue(pr.m_name.c_str(), *pr.m_default, value, convert);
-	} else
-	  OU::format(value, "work.%s_defs.%s", m_implName, pr.m_name.c_str());
-	emitSignal(pr.m_name.c_str(), f, lang, Signal::IN, last, -1, 0, "  ",
-		   type.c_str(), value.empty() ? NULL : value.c_str());
+	} else {
+	  std::string tmp;
+	  OU::format(tmp, "work.%s_defs.%s", m_implName, pr.m_name.c_str());
+	  if (convert)
+	    vhdlConvert(pr.m_name, pr, tmp, value);
+	  else
+	    value = tmp;
+	}
+	emitSignal(pr.m_name.c_str(), f, lang, Signal::IN, last, -1, 0, "  ", type.c_str(),
+		   value.empty() ? NULL : value.c_str());
       } else {
 	  int64_t i64 = 0;
 	  if (pr.m_default)
@@ -344,6 +368,10 @@ emitParameters(FILE *f, Language lang, bool useDefaults, bool convert) {
 	if (pr.m_baseType == OA::OCPI_Bool)
 	  fprintf(f, "  parameter [0:0] %s = 1'b%u;\n",
 		  pr.m_name.c_str(), (i64 != 0) & 1);
+        else if (pr.m_baseType == OA::OCPI_Enum)
+	  fprintf(f, "  parameter [%zu:0] %s = %zu'd%zu;\n",
+		  bitsForMax(pr.m_nEnums - 1) - 1, pr.m_name.c_str(),
+		  bitsForMax(pr.m_nEnums - 1), (size_t)pr.m_default->m_ULong);
 	else
 	  fprintf(f, "  parameter [%zu:0] %s = %zu'h%llx;\n",
 		  pr.m_nBits - 1, pr.m_name.c_str(), pr.m_nBits, (long long)i64);
@@ -721,7 +749,9 @@ emitDefsHDL(bool wrap) {
 	  if (!strcasecmp("ocpi_endian", p.m_name.c_str()))
 	    fprintf(f, "alias ocpi_endian_t is ocpi.types.endian_t");
 	  else
-	    fprintf(f, decl.c_str(), p.m_name.c_str());
+	    fprintf(f, decl.c_str(),
+		    p.m_name.c_str(), p.m_name.c_str(), p.m_name.c_str(),
+		    p.m_name.c_str(), p.m_name.c_str(), p.m_name.c_str());
 	  fprintf(f, ";\n");
 	}
 	if (p.m_isParameter)
@@ -937,7 +967,7 @@ emitVhdlSignalWrapper(FILE *f, const char *topinst) {
     emitVhdlLibraries(f);
     fprintf(f,
 	    "entity %s--__\n is\n", m_implName);
-    emitParameters(f, m_language, false);
+    emitParameters(f, m_language, false, true);
     emitSignals(f, m_language, false, false, false);
     fprintf(f, "end entity %s--__\n;\n", m_implName);
     fprintf(f,
@@ -945,9 +975,31 @@ emitVhdlSignalWrapper(FILE *f, const char *topinst) {
 	    "library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions\n");
     emitVhdlLibraries(f);
     fprintf(f,
-	    "architecture rtl of %s--__\nis begin\n"
+	    "architecture rtl of %s--__\nis\n",
+	    m_implName);
+    // Insert the conversion functions as needed
+    for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
+      if ((*pi)->m_isParameter && (*pi)->m_baseType == OA::OCPI_String && (*pi)->m_arrayRank)
+	fprintf(f,
+		  "  function to_%s_t(v: std_logic_vector; length : natural) return %s_t is\n"
+		  "    variable a : %s_t;\n"
+		  "  begin\n"
+		  "    for i in 0 to a'right loop\n"
+		  "      for j in 0 to length loop\n"
+		  "        a(i)(j) := char_t(v(v'left - (i*(length+1)+j)*8 downto\n"
+		  "                            v'left-7 - (i*(length+1)+j)*8));\n"
+		  "      end loop;\n"
+		  "    end loop;\n"
+		  "    return a;\n"
+		  "  end to_%s_t;\n",
+		(*pi)->m_name.c_str(),
+		(*pi)->m_name.c_str(),
+		(*pi)->m_name.c_str(),
+		(*pi)->m_name.c_str());
+    fprintf(f,
+	    "begin\n"
 	    "  %s: entity work.%s_rv\n",
-	    m_implName, topinst, m_implName);
+	    topinst, m_implName);
     bool first = true;
     for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
       if ((*pi)->m_isParameter) {
@@ -955,8 +1007,12 @@ emitVhdlSignalWrapper(FILE *f, const char *topinst) {
 	  fprintf(f,
 		  "    generic map(\n");
 	}
+	// Here we are wrapping the _rv instance, but our generics must be
+	// verilog compatible, so we need to convert the verilog values to vhdl
+	std::string tmp;
 	fprintf(f,  "%s      %s => %s",
-		first ? "" : ",\n", (*pi)->m_name.c_str(), (*pi)->m_name.c_str());
+		first ? "" : ",\n", (*pi)->m_name.c_str(),
+		vhdlConvert((*pi)->m_name, **pi, (*pi)->m_name, tmp, false));
 	first = false;
       }
     if (!first)

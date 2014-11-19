@@ -25,7 +25,7 @@ typedef std::list<Connection*> Connections;
 typedef Connections::const_iterator ConnectionsIter;
 
 struct InstanceProperty {
-  OU::Property *property;
+  const OU::Property *property;
   OU::Value value;
   InstanceProperty();
 };
@@ -87,6 +87,7 @@ struct Instance {
   } m_iType;
   const char *attach;  // external platform port this worker is attached to for io or interconnect
   InstanceProperties properties;
+  OCPI::Util::Assembly::Properties m_xmlProperties; // explicit unparsed values for the instance
   bool hasConfig;      // hack for adapter configuration FIXME make normal properties
   size_t config;       // hack ditto
   ExtMap m_extmap;     // map for externals. FIXME: have HdlInstance class...
@@ -142,12 +143,19 @@ class Assembly {
   Connections   m_connections;
   OU::Assembly *m_utilAssembly;
   Language      m_language;
+  InstanceProperties m_properties; // property values applied to the whole assembly
   const char
     *parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWorkerOk,
 	       const char *outDir),
     *externalizePort(InstancePort &ip, const char *name, size_t &ordinal),
     *findPort(OU::Assembly::Port &ap, InstancePort *&found),
+    // Add the assembly's parameters to the instance's parameter values list, as needed
+    *addAssemblyParameters(OCPI::Util::Assembly::Properties &aips),
+    *addInstanceParameters(const Worker &w, const OU::Assembly::Properties &aiprops,
+			   InstanceProperty *&ipv),
     *parseConnection(OCPI::Util::Assembly::Connection &aConn);
+void addParamConfigParameters(const ParamConfig &pc, const OU::Assembly::Properties &aiprops,
+			      InstanceProperty *&ipv);
   // Find the instance port connected to an external with this name
   InstancePort *
   findInstancePort(const char *name);

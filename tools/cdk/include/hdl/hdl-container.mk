@@ -5,7 +5,7 @@
 # The HdlAssembly variable must be set to point to the relative or absolute path
 # to the assembly's directory, ending in the name of the assembly.
 HdlMode:=container
-$(info MYCL:$(ComponentLibraries))
+$(infox MYCL:$(ComponentLibraries))
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 # These next lines are similar to what worker.mk does
 override Workers:=$(CwdName:container-%=%)
@@ -24,7 +24,7 @@ OcpiLanguage:=vhdl
 override HdlLibraries+=platform
 # ComponentLibraries and XmlIncludeDirs are already passed to us on the command line.
 #$(eval $(HdlSearchComponentLibraries))
-#$(info XMLI:$(XmlIncludeDirs))
+#$(infox XMLI:$(XmlIncludeDirs))
 #override XmlIncludeDirs+=$(HdlPlatformsDir) $(HdlPlatformsDir)/specs $(HdlAssembly)
 $(infox XMLI2:$(XmlIncludeDirs))
 AssemblyName=$(notdir $(HdlAssembly))
@@ -77,8 +77,8 @@ ifneq ($(MAKECMDGOALS),clean)
       HdlContBitZName=$(call HdlContBitName,$1).gz
       HdlContBitZ=$(basename $(call HdlContBitName,$1)).bitz
       define ContDoConfig
-        $(info ART:$(call ArtifactXmlName,$1):UUID:$(call UUIDFileName,$1):BIT:$(call HdlBitName,$1):ROM:$(call MetadataRom,$1):BIN:$(call WkrBinary,$(HdlTarget),$1))
-        $(info HCBF:$(call HdlContBitName,$1))
+        $(infox ART:$(call ArtifactXmlName,$1):UUID:$(call UUIDFileName,$1):BIT:$(call HdlBitName,$1):ROM:$(call MetadataRom,$1):BIN:$(call WkrBinary,$(HdlTarget),$1))
+        $(infox HCBF:$(call HdlContBitName,$1))
         $(call UUIDFileName,$1):
         $(call WkrBinary,$(HdlTarget),$1): HdlPreCompile=$(call HdlContPreCompile,$1)
         $(call WkrBinary,$(HdlTarget),$1): TargetSourceFiles+=$(call UUIDFileName,$1)

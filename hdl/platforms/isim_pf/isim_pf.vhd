@@ -57,7 +57,7 @@ begin
       cp_out                  => cp_out
       );
     
-  props_out.platform          <= to_string("isim_pf", props_out.platform'length);
+  props_out.platform          <= to_string("isim_pf", props_out.platform'length-1);
   props_out.dna               <= (others => '0');
   props_out.nSwitches         <= (others => '0');
   props_out.switches          <= (others => '0');

@@ -134,6 +134,95 @@ Instance()
     m_iType(Application), attach(NULL), hasConfig(false), config(0) {
 }
 
+// Add the assembly's parameters to the instance's parameters when that is appropriate.
+// Note this must be done BEFORE actual workers and paramconfigs are selected.
+// Thus we are not in a position to see whether the worker actually supports this
+// parameter - we assume for now that these are builtin params that all workers support.
+// For each parameter property of the assembly:
+// Find the value in the assy worker's paramconfig.
+
+const char *Assembly::
+addAssemblyParameters(OU::Assembly::Properties &aiprops) {
+  for (PropertiesIter api = m_assyWorker.m_ctl.properties.begin();
+       api != m_assyWorker.m_ctl.properties.end(); api++)
+    if ((*api)->m_isParameter) {
+      const OU::Property &ap = **api;
+      assert(m_assyWorker.m_paramConfig);
+      Param *p = &m_assyWorker.m_paramConfig->params[0];
+      for (unsigned nn = 0; nn < m_assyWorker.m_paramConfig->params.size(); nn++, p++)
+	if (&ap == p->param && p->value != ap.m_default) {
+	  // We have a non-default-value parameter value in this assy wkr's configuration
+	  OU::Assembly::Property *aip = &aiprops[0];
+	  size_t n;
+	  for (n = aiprops.size(); n; n--, aip++)
+	    if (!strcasecmp(ap.m_name.c_str(), aip->m_name.c_str()))
+	      break;
+	  if (n == 0) {
+	    // There is no explicit value of the parameter for the instance
+	    // So add a parameter value for the instance, xml-style
+	    // FIXME: use emplace_back from c++ with a proper constructor!
+	    aiprops.resize(aiprops.size() + 1);
+	    aip = &aiprops.back();
+	    aip->m_name = ap.m_name;
+	    aip->m_hasValue = true;
+	    aip->m_value = p->uValue;
+	  }
+	}
+    }
+  return NULL;
+}
+
+// Add parameter values from the list of values that came from the instance XML,
+// possibly augmented by values from the assembly.  This happens AFTER we know
+// about the worker, so we can do error checking and value parsing
+const char *Assembly::
+addInstanceParameters(const Worker &w, const OU::Assembly::Properties &aiprops,
+		      InstanceProperty *&ipv) {
+  const char *err;
+  const OU::Assembly::Property *ap = &aiprops[0];
+  for (size_t n = aiprops.size(); n; n--, ap++) {
+    const OU::Property *p = w.findProperty(ap->m_name.c_str());
+    if (!p)
+      return OU::esprintf("property '%s' is not a property of worker '%s'", ap->m_name.c_str(),
+			  w.m_implName);
+    if (!p->m_isParameter)
+      return OU::esprintf("property '%s' is not a parameter property of worker '%s'",
+			  ap->m_name.c_str(), w.m_implName);
+    // set up the ipv and parse the value
+    ipv->property = p;
+    ipv->value.setType(*p);
+    if ((err = ipv->property->parseValue(ap->m_value.c_str(), ipv->value)))
+      return err;
+    if (p->m_default) {
+      std::string defValue, newValue;
+      p->m_default->unparse(defValue);
+      ipv->value.unparse(newValue);
+      if (defValue == newValue)
+	continue;
+    }
+    ipv++;
+  }
+  return NULL;
+}
+void Assembly::
+addParamConfigParameters(const ParamConfig &pc, const OU::Assembly::Properties &aiprops,
+			 InstanceProperty *&ipv) {
+  const Param *p = &pc.params[0];
+  // For each parameter in the config
+  for (unsigned nn = 0; nn < pc.params.size(); nn++, p++) {
+    const OU::Assembly::Property *ap = &aiprops[0];
+    size_t n;
+    for (n = aiprops.size(); n; n--, ap++)
+      if (!strcasecmp(ap->m_name.c_str(), p->param->m_name.c_str()))
+	break;
+    if (n == 0) {
+      // a setting in the param config is not mentioned explicitly
+      ipv->property = p->param;
+      ipv->value = *p->value;
+      ipv++;
+    }
+  }
+}
 // This parses the assembly using the generic assembly parser in OU::
 // It then does the binding to actual implementations.
 const char *Assembly::
@@ -176,16 +265,24 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
     if ((err = OE::getNumber(ix, "paramConfig", &paramConfig, &hasConfig, 0)))
       return err;
     // We consider the property values in two places.
-    // Here we are saying that a worker is unique if it has (non-default) properties,
-    // of if it specifically has a non-default parameter configuration.
+    // Here we are saying that a worker can't be shared if it has explicit properties,
+    // or if it specifically has a non-default parameter configuration.
     // So we create a new worker and hand it the properties, so that it can
     // actually use these values DURING PARSING since some aspects of parsing
     // need them.  But later below, we really parse the properties after we
     // know the actual properties and their types from the worker.
     // FIXME: we are assuming that properties here must be parameters?
-    if (!w || ai->m_properties.size() || paramConfig) {
+    // FIXME: we basically are forcing replication of workers...
+
+    // Initialize this instance's explicit xml property/parameter values from the assembly XML.
+    i->m_xmlProperties = ai->m_properties;
+    // Add any assembly-level parameters that also need to be applied to the instance
+    // and used during worker and paramconfig selection
+    if (m_assyWorker.m_paramConfig && (err = addAssemblyParameters(i->m_xmlProperties)))
+      return err;
+    if (!w || i->m_xmlProperties.size() || paramConfig) {
       if (!(w = Worker::create(i->wName, m_assyWorker.m_file, NULL, outDir, &m_assyWorker,
-			       hasConfig ? NULL : &ai->m_properties, paramConfig, err)))
+			       hasConfig ? NULL : &i->m_xmlProperties, paramConfig, err)))
 	return OU::esprintf("for worker %s: %s", i->wName, err);
       m_workers.push_back(w);
     }
@@ -200,6 +297,17 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
     default:;
       assert("Invalid worker type as instance" == 0);
     }
+    // Parse property values now that we know the actual workers.
+    i->properties.resize(w->m_ctl.nParameters);
+    InstanceProperty *ipv = &i->properties[0];
+    // Even though we used the ipv's to select a worker and paramconfig,
+    // we queue them up here to actually apply to the instance in the generated code.
+    // Someday this will force top-down building
+    if ((err = addInstanceParameters(*w, ai->m_properties, ipv)))
+      return err;
+    if (w->m_paramConfig)
+      addParamConfigParameters(*w->m_paramConfig, ai->m_properties, ipv);
+    i->properties.resize(ipv - &i->properties[0]);
     // Initialize the instance ports
     InstancePort *ip = i->m_ports = new InstancePort[i->worker->m_ports.size()];
     for (unsigned n = 0; n < i->worker->m_ports.size(); n++, ip++) {
@@ -227,23 +335,6 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
 	  m_utilAssembly->addExternalConnection(i->instance->m_ordinal, ip->m_port->name());
       }
     }
-    // Parse property values now that we know the actual workers.
-    OU::Assembly::Property *ap = &ai->m_properties[0];
-    i->properties.resize(ai->m_properties.size());
-    InstanceProperty *ipv = &i->properties[0];
-    for (size_t n = ai->m_properties.size(); n; n--, ap++, ipv++)
-      for (PropertiesIter pi = w->m_ctl.properties.begin(); pi != w->m_ctl.properties.end(); pi++) {
-	OU::Property &pr = **pi;
-	if (!strcasecmp(pr.m_name.c_str(), ap->m_name.c_str())) {
-	  if (!pr.m_isParameter)
-	    return OU::esprintf("property '%s' is not a parameter", ap->m_name.c_str());
-	  ipv->property = &pr;
-	  ipv->value.setType(pr);
-	  if ((err = ipv->property->parseValue(ap->m_value.c_str(), ipv->value)))
-	    return err;
-	  break;
-	}
-      }
     // Parse type-specific aspects of the instance.
     if ((err = w->parseInstance(*i, ix)))
       return err;

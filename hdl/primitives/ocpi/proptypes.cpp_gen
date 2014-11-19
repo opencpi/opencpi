@@ -142,7 +142,7 @@ $@@@@@@if its(reset) then\
 $@@@@@@@ temp <= (others => to_signed(0,char_t~length));\
 $@@@@@@@ written <= bfalse;\
 $@@@@@@elsif its(write_enable) then\
-$@@@@@@@@temp(base to base + 3) <= to_string(data);\
+$@@@@@@@@temp(base to base + 3) <= to_string_dw(data);\
 $@@@@@@@@written <= btrue;\
 $@@@@@@else\
 $@@@@@@@@written <= bfalse;\

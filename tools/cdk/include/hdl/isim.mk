@@ -87,7 +87,7 @@ IsimLibs=\
       -lib $(notdir $(l))=$(strip \
             $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$l,isim)))) \
     $(foreach c,$(call HdlCollectCores,isim),\
-      -lib $(call HdlRmRv,$(notdir $(c)))=$(info fc:$c)$(call FindRelative,$(TargetDir),$(strip \
+      -lib $(call HdlRmRv,$(notdir $(c)))=$(infox fc:$c)$(call FindRelative,$(TargetDir),$(strip \
           $(firstword $(foreach l,$(call IsimCoreLibraryChoices,$c),$(call HdlExists,$l))))))
 
 MyIncs=\
@@ -124,9 +124,9 @@ HdlToolCompile=\
 # Since there is not a singular output, make's builtin deletion will not work
 HdlToolPost=\
   if test $$HdlExit != 0; then \
-    rm -r -f $(LibName); \
+    rm -r -f $(WorkLib); \
   else \
-    touch $(LibName);\
+    touch $(WorkLib);\
   fi;
 
 BitFile_isim=$1.tar

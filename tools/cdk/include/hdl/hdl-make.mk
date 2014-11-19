@@ -246,7 +246,7 @@ HdlSimPost=\
 # (Note: the make wildcard function caches results so can't probe something that
 # might come into existence during execution of make)
 # Sad, as it slows things down.  Perhaps better to use realpath?
-HdlExists=$(infoxx HDLE:$1)$(strip $(shell if test -e $1; then echo $1; fi))
+HdlExists=$(infox HDLE:$1)$(strip $(shell if test -e $1; then echo $1; fi))
 
 ################################################################################
 # $(call HdlLibraryRefDir,location-dir,target)
@@ -371,7 +371,7 @@ HdlRmRv=$(if $(filter %_rv,$1),$(patsubst %_rv,%,$1),$1)
 # proper hierarchies can include indirectly required cores later
 # Called from HdlCompile which is already tool-specific
 HdlRecordCores=\
-  $(info Record:$1:$(SubCores))\
+  $(infox Record:$1:$(SubCores))\
   $(and $(call HdlExists,$(dir $1)),\
   (\
    echo '\#' This generated file records cores necessary to build this $(LibName) $(HdlMode); \
@@ -381,7 +381,7 @@ HdlRecordCores=\
 
 #	             $(foreach r,$(call HdlRmRv,$(basename $(call HdlCoreRef,$c,$1))),\
 
-HdlCollectCores=$(info CCC:$(SubCores))$(call Unique,\
+HdlCollectCores=$(infox CCC:$(SubCores))$(call Unique,\
 		  $(foreach a,\
                    $(foreach c,$(SubCores),$(infoxx ZC:$c)$c \
 	             $(foreach r,$(basename $(call HdlCoreRef,$(call HdlToolCoreRef,$c),$1)),$(infoxx ZR:$r)\
@@ -427,8 +427,8 @@ $(OutDir)target-%/generics.vhd: | $(OutDir)target-%
 	     echo -- This file sets values for top level generics ;\
 	     echo library ocpi\; use ocpi.all, ocpi.types.all\; ;\
 	     echo package body $(Worker)_defs is ;\
-	     $(foreach n,$(WorkerParamNames),\
-		echo constant $n : '$(ParamVHDL_$(ParamConfig)_$n)'\; ;) \
+	     $(foreach n,$(WorkerParamNames)$(infox WPN:$(WorkerParamNames):),\
+		echo '$(ParamVHDL_$(ParamConfig)_$n)'\; ;) \
 	     echo end $(Worker)_defs\; \
 	) > $@
 
@@ -436,7 +436,7 @@ $(OutDir)target-%/generics.vh: | $(OutDir)target-%
 	$(AT)(\
 	     echo // This file sets values for top level parameters ;\
 	     $(foreach n,$(WorkerParamNames),\
-		echo parameter '[0:0]' $n = "$(ParamVerilog_$(ParamConfig)_$n)"\; ;) \
+		echo "$(ParamVerilog_$(ParamConfig)_$n)"\; ;) \
 	) > $@
 
 # Establish where the platforms are

@@ -1024,7 +1024,7 @@ deriveOCP() {
 }
 
 OU::Property *Worker::
-findProperty(const char *name) {
+findProperty(const char *name) const {
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
     if (!strcasecmp((*pi)->m_name.c_str(), name))
       return *pi;

@@ -203,12 +203,13 @@ else
       # We have containers to build locally.
       # We already build the directories for default containers, and we already
       # did a first pass parse of the container XML for these containers
+      HdlContResult=$(call HdlContOutDir,$1)/target-$(HdlTarget_$1)/$1.bitz
       define doContainer
          .PHONY: $(call HdlContOutDir,$1)
-         all: $(call HdlContOutDir,$1)
-        $(call HdlContOutDir,$1):
-	  $(AT)mkdir -p $$@
-	  $(AT)$(MAKE) -C $$@ -f $(OCPI_CDK_DIR)/include/hdl/hdl-container.mk \
+         all: $(call HdlContResult,$1)$(infox DEPEND:$(call HdlContResult,$1))
+        $(call HdlContResult,$1): links
+	  $(AT)mkdir -p $(call HdlContOutDir,$1)
+	  $(AT)$(MAKE) -C $(call HdlContOutDir,$1) -f $(OCPI_CDK_DIR)/include/hdl/hdl-container.mk \
                HdlAssembly=../../$(CwdName) \
                ComponentLibraries="$(call HdlAdjustLibraries,$(ComponentLibraries))" \
                XmlIncludeDirs="$(call AdjustRelative,$(XmlIncludeDirs))"
