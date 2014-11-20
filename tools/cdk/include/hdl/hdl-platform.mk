@@ -43,15 +43,21 @@ XmlIncludeDirs+=. ../specs
 ComponentLibraries+=devices cards
 LibDir=lib/hdl
 ifndef HdlPlatforms
-   HdlPlatform:=$(Worker)
- endif
-include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
+  override HdlPlatforms:=$(HdlPlatform)
+endif
 ifdef HdlPlatforms
   ifeq ($(filter $(Worker),$(HdlPlatforms)),)
-    $(info Skipping this platform ($(Worker)) since it is not in HdlPlatforms ($(HdlPlatforms)))
-    HdlSkip:=1
+    $(info Skipping platform ($(Worker)) since it is not in HdlPlatforms ($(HdlPlatforms)).)
+    HdlSkip := 1
+    skip:
   endif
 endif
+ifndef HdlSkip
+override HdlPlatforms:=$(Worker)
+override HdlPlatform:=$(Worker)
+override HdlTargets:=$(call HdlGetFamily,$(Worker))
+override HdlTarget:=$(call HdlGetFamily,$(Worker))
+include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 ifndef HdlSkip
   HdlPlatform:=$(Worker)
   # add xml search in component libraries
@@ -97,6 +103,10 @@ ifndef HdlSkip
 	  $(AT)$(MAKE) -C $$@ -f $(OCPI_CDK_DIR)/include/hdl/hdl-config.mk \
                HdlPlatforms=$(Worker) \
                HdlPlatformWorker=../../$(Worker) \
+	       HdlLibrariesCommand=\
+	       HdlLibraries="$(call HdlAdjustLibraries,$(HdlLibraries))" \
+	       Cores="$(call HdlAdjustLlibraries,$(Cores))" \
+	       ComponentLibrariesInternal=\
                ComponentLibraries="../lib $(call HdlAdjustLibraries,$(ComponentLibraries))" \
                XmlIncludeDirs="$(call AdjustRelative,$(XmlIncludeDirs))"
       endef
@@ -104,5 +114,6 @@ ifndef HdlSkip
     endif # have configurations
   endif # skip after hdl-workers.mk
 endif # skip after hdl-pre.mk
+endif # skip after platform check
 clean::
 	$(AT) rm -r -f config-* lib

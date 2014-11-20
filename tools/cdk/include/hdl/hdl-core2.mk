@@ -97,8 +97,6 @@ ifdef HdlToolRealCore
 	$(AT)$$(HdlCompile)
     endif # end of else of prebuilt
 
-    #	$(AT)$$(call HdlRecordCores,$(basename $(OutDir)target-$1/$2))
-
     $(call OcpiDbg,Binary: $(call WkrTargetDir,$1,$4)/$2$(HdlBin))
     all: $(call WkrTargetDir,$1,$4)/$2$(HdlBin)
 

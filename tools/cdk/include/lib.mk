@@ -118,7 +118,8 @@ MyMake=$(MAKE) --no-print-directory
 #    $(MyMake) -C $(2) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) \
 #               $$tn="$$t" \
 
-BuildImplementation=\
+HdlLibrariesCommand=$(call HdlAdjustLibraries,$(HdlLibraries))
+BuildImplementation=$(infoxx BI:$1:$2:$(call HdlLibrariesCommand))\
     set -e; \
     t="$(or $($(call Capitalize,$1)Target),$($(call Capitalize,$(1))Targets))"; \
     $(ECHO) =============Building $(call ToUpper,$(1)) implementation $(2) for targets: $$t; \
@@ -126,8 +127,9 @@ BuildImplementation=\
 	       LibDir=$(call AdjustRelative,$(LibDir)/$(1)) \
 	       GenDir=$(call AdjustRelative,$(GenDir)/$(1)) \
 	       $(PassOutDir) \
-	       $(and $(filter hdl,$1),HdlLibraries="$(foreach l,$(HdlLibraries),$(if $(findstring /,$l),$(call AdjustRelative,$l),$l))"\
-               VerilogIncludeDirs=$(call AdjustRelative,$(VerilogIncludeDirs))) \
+	       $(and $(filter $1,hdl),\
+                  HdlLibrariesCommand="$(call HdlLibrariesCommand)" \
+                  VerilogIncludeDirs="$(call AdjustRelative,$(VerilogIncludeDirs))") \
                XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirs))";\
 
 BuildModel=\
@@ -226,7 +228,7 @@ cleanocl:
 cleanhdl:
 	$(call CleanModel,hdl)
 
-clean:: cleanxm cleanrcc cleanocl cleantest
+clean:: cleanall cleanxm cleanrcc cleanocl cleantest
 	$(AT)echo Cleaning library directory for all targets.
 	$(AT)rm -fr $(OutDir)lib $(OutDir)gen $(OutDir)
 

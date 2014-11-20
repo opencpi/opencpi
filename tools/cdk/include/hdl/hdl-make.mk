@@ -96,15 +96,15 @@ define HdlSetWorkers
   HdlInstances:=$$(and $$(ImplWorkersFile),$$(strip $$(foreach i,$$(shell grep -h -v '\\\#' $$(ImplWorkersFile)),\
 	               $$(if $$(filter $$(firstword $$(subst :, ,$$i)),$$(HdlPlatformWorkers)),,$$i))))
   HdlWorkers:=$$(call Unique,$$(foreach i,$$(HdlInstances),$$(firstword $$(subst :, ,$$i))))
-  $$(infoxx Cores:$$(Cores))
+  $$(infox Cores:$$(Cores))
   SubCores:=$$(call Unique,\
     $$(Cores) \
     $$(foreach w,$$(HdlWorkers),\
       $$(or $(strip\
         $$(foreach f,$$(strip\
           $$(firstword \
-            $$(foreach c,$$(ComponentLibraries),$$(xinfo CC:$$c:$$(ImplFile):)\
-              $$(foreach d,$$(call HdlComponentLibraryDir,$$c,$$(HdlTarget)),$$(xinfo DD:$$d/$$w)\
+            $$(foreach c,$$(ComponentLibraries),$$(infox CC:$$c:$$(ImplFile):)\
+              $$(foreach d,$$(call HdlComponentLibraryDir,$$c,$$(HdlTarget)),$$(infox DD:$$d/$$w)\
                 $$(call HdlExists,$$d/$$w$$(and $$(HdlToolRealCore),$$(filter %.vhd,$$(ImplFile)),_rv)$$(HdlBin)))))),\
           $$(call FindRelative,.,$$f)),\
 	),$$(info Warning: Worker $$w was not found in any of the component libraries))))
@@ -113,7 +113,7 @@ define HdlSetWorkers
 endef
 # Get the list of cores we depend on, returning the real files that make can depend on
 # With the deferred evaluation of target-specific items
-HdlGetCores=$(infoxx HGC:$(Cores):$(HdlWorkers):$(HdlTarget))$(call Unique,\
+HdlGetCores=$(infox HGC:$(Cores):$(HdlWorkers):$(HdlTarget))$(call Unique,\
     $(foreach c,$(Cores),$(call HdlCoreRef1,$c,$(HdlTarget))) \
     $(foreach w,$(HdlWorkers),\
       $(foreach f,$(strip\
@@ -375,7 +375,7 @@ HdlRecordCores=\
   $(and $(call HdlExists,$(dir $1)),\
   (\
    echo '\#' This generated file records cores necessary to build this $(LibName) $(HdlMode); \
-   echo $(foreach c,$(SubCores),$(strip\
+   echo $(foreach c,$(call HdlCollectCores,$(HdlTarget)),$(strip\
            $(call OcpiAbsPath,$(call HdlCoreRef,$(call HdlToolCoreRef,$c),$(HdlTarget))))) \
   ) > $(call HdlRmRv,$1).cores;)
 
@@ -383,10 +383,10 @@ HdlRecordCores=\
 
 HdlCollectCores=$(infox CCC:$(SubCores))$(call Unique,\
 		  $(foreach a,\
-                   $(foreach c,$(SubCores),$(infoxx ZC:$c)$c \
-	             $(foreach r,$(basename $(call HdlCoreRef,$(call HdlToolCoreRef,$c),$1)),$(infoxx ZR:$r)\
-                       $(foreach f,$(call HdlExists,$(call HdlRmRv,$r).cores),$(infoxx ZF:$f)\
-                          $(foreach z,$(shell grep -v '\#' $f),$(infoxx found:$z)$z)))),$a))
+                   $(foreach c,$(SubCores),$(infox ZC:$c)$c \
+	             $(foreach r,$(basename $(call HdlCoreRef,$(call HdlToolCoreRef,$c),$1)),$(infox ZR:$r)\
+                       $(foreach f,$(call HdlExists,$(call HdlRmRv,$r).cores),$(infox ZF:$f)\
+                          $(foreach z,$(shell grep -v '\#' $f),$(infox found:$z)$z)))),$a))
 
 HdlPassTargets=$(and $(HdlTargets),HdlTargets="$(HdlTargets)") \
                $(and $(HdlTarget),HdlTargets="$(HdlTarget)") \

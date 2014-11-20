@@ -96,18 +96,24 @@ HdlOtherLanguage:=Verilog
 endif
 $(call OcpiDbgVar,HdlSourceSuffix)
 
-################################################################################
-# Add the default libraries
-# FIXME: when tools don't really elaborate or search, capture the needed libraries for later
-# FIXME: but that still means a flat library space...
-# Note this is evaluted in a context when HdlTarget is set, but can also just supply it as $1
+# Add any inbound (internally via command line) libraries to what is specified in the makefile
+# FIXME: override should be unnecessary
+HdlLibraries := $(HdlLibrariesCommand) $(HdlLibraries)
+
 ifdef Libraries
 override HdlLibraries += $(Libraries)
 # This is for the convenience of model-independent library handling
 endif
 override Libraries := $(HdlLibraries)
 
-HdlLibrariesInternal=$(infoxx HLI:$1)\
+$(infoxx HLU:$(HdlLibrariesCommand):$(HdlMode):$(HdlLibraries))
+
+################################################################################
+# Add the default libraries
+# FIXME: when tools don't really elaborate or search, capture the needed libraries for later
+# FIXME: but that still means a flat library space...
+# Note this is evaluted in a context when HdlTarget is set, but can also just supply it as $1
+override HdlLibrariesInternal=$(infoxx HLI:$1:$(HdlLibraries))\
 $(foreach l,$(call Unique,\
                 $(HdlLibraries)\
                 $(if $(HdlNoLibraries),,\

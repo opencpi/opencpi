@@ -211,7 +211,10 @@ else
 	  $(AT)mkdir -p $(call HdlContOutDir,$1)
 	  $(AT)$(MAKE) -C $(call HdlContOutDir,$1) -f $(OCPI_CDK_DIR)/include/hdl/hdl-container.mk \
                HdlAssembly=../../$(CwdName) \
+	       ComponentLibrariesInternal=\
                ComponentLibraries="$(call HdlAdjustLibraries,$(ComponentLibraries))" \
+	       HdlLibrariesCommand=\
+	       HdlLibraries="$(call HdlAdjustLibraries,$(HdlLibraries))" \
                XmlIncludeDirs="$(call AdjustRelative,$(XmlIncludeDirs))"
       endef
       $(foreach c,$(Containers),$(and $(filter $(HdlPlatform_$c),$(HdlPlatforms)),$(eval $(call doContainer,$c))))
