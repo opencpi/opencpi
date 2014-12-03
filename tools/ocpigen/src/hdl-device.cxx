@@ -1,3 +1,4 @@
+#include <errno.h>
 #include "wip.h"
 #include "hdl.h"
 #include "hdl-device.h"
