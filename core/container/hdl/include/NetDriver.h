@@ -63,7 +63,7 @@ namespace OCPI {
 	virtual ~Driver();
 	// device constructor
 	virtual Device &createDevice(OS::Ether::Interface &ifc, OS::Ether::Address &addr,
-					  bool discovery, std::string &error) = 0;
+				     bool discovery, std::string &error) = 0;
       public:
 	// Find the discovery socket for this interface
 	OCPI::OS::Ether::Socket *

@@ -89,6 +89,7 @@ PACKAGES += \
 	 core/container/hdl \
 	 core/container/ocl \
 	 core/container/rcc \
+	 core/container/remote \
 	 core/container/ctests \
 	 core/dataplane/rdma_tests \
          core/application
@@ -145,6 +146,7 @@ ALLPACKAGES = \
 	core/container/hdl \
 	core/container/ocl \
 	core/container/rcc \
+	core/container/remote \
 	core/container/ctests \
 	core/container/ctests \
 	core/dataplane/rdma_tests \
@@ -245,6 +247,7 @@ $(PACKAGES):
 	fi
 
 clean: cleancomponents cleanexamples
+	$(AT)rm -r -f lib
 	$(AT)$(foreach p,$(ALLPACKAGES),\
 		if test -f $p/Makefile.ocpi ; then \
 			$(MAKE) --no-print-directory $(call DescendMake,$p) -f Makefile.ocpi $@ ; \

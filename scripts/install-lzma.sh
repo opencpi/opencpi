@@ -33,15 +33,19 @@ if test -d build-$OCPI_TARGET_HOST; then
 fi
 mkdir build-$OCPI_TARGET_HOST
 cd build-$OCPI_TARGET_HOST
+# We currently say that cross compilation means using static runtime libraries.
+SHARED=yes
 echo Building lzma in `pwd` for $OCPI_TARGET_HOST
 if test "$OCPI_CROSS_HOST" != ""; then
  export PATH=$OCPI_CROSS_BUILD_BIN_DIR:$PATH
  crossConfig="CC=$OCPI_CROSS_HOST-gcc CXX=$OCPI_CROSS_HOST-g++ --host=$OCPI_CROSS_HOST"
+ SHARED=no
 fi
 ../configure  \
   $crossConfig \
   --prefix=$OCPI_PREREQUISITES_INSTALL_DIR/lzma \
   --exec-prefix=$OCPI_PREREQUISITES_INSTALL_DIR/lzma/$OCPI_TARGET_HOST \
+  --enable-shared=$SHARED --enable-static
   CFLAGS=-g CXXFLAGS=-g
 make
 make install

@@ -58,14 +58,31 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  ssize_t n;
 
  (void)timedOut;(void)newRunCondition;
- if (props->messageSize > port->current.maxLength)
-   return self->container.setError("message size property (%u) too large for max buffer size (%u)",
-				   props->messageSize, port->current.maxLength);
- if (props->granularity)
-   n2read -= n2read % props->granularity;
+ if (props->messagesInFile) {
+   struct {
+     uint32_t length;
+     uint32_t opcode;
+   } m;
+   if (read(s->fd, &m, sizeof(m)) != sizeof(m)) {
+     props->badMessage = 1;
+     return self->container.setError("can't read message header from file: %s",
+				     strerror(errno));
+   }
+   n2read = m.length;
+   port->output.u.operation = (RCCOpCode)m.opcode;
+ }
+ if (n2read > port->current.maxLength)
+   return self->container.setError("message size (%zu) too large for max buffer size (%u)",
+				   n2read, port->current.maxLength);
  if ((n = read(s->fd, port->current.data, n2read)) < 0)
    return self->container.setError("error reading file: %s", strerror(errno));
- if (props->granularity && n)
+ if (props->messagesInFile && n != (ssize_t)n2read) {
+   props->badMessage = 1;
+   return self->container.setError("message truncated in file. header said %zu file had %zu",
+				   n2read, n);
+ }
+ // Truncate the message for the granularity
+ if (props->granularity)
    n -= n % props->granularity;
  // printf("In file_read.c got %zu data = %x\n", n, *(uint32_t *)port->current.data);
  port->output.length = n;
@@ -80,5 +97,8 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
    return RCC_OK;
  }
  close(s->fd);
- return props->suppressEOF ? RCC_DONE : RCC_ADVANCE_DONE;
+ if (props->suppressEOF)
+   return RCC_DONE;
+ props->messagesWritten++;
+ return RCC_ADVANCE_DONE;
 }

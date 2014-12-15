@@ -30,7 +30,7 @@ fi
 export OCPI_CDK_DIR=`dirname $_MYPATH`
 export OCPI_CDK_DIR=`cd $OCPI_CDK_DIR; pwd`
 if test "$OCPI_TOOL_HOST" = ""; then
-  vars=($(platforms/getPlatform.sh))
+  vars=($($OCPI_CDK_DIR/platforms/getPlatform.sh))
   if test $? != 0; then
     echo Failed to determine runtime platform.
     return 1

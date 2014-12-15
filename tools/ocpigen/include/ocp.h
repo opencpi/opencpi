@@ -102,7 +102,8 @@ class OcpPort : public Port {
   bool isOCP() const { return true; }
   bool needsControlClock() const;
   void emitPortDescription(FILE *f, Language lang) const;
-  void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker);
+  void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker,
+			const char *defaultIn, const char *defaultOut);
   void emitSignals(FILE *f, Language lang, std::string &last, bool inPackage, bool inWorker);
   void emitRecordInterface(FILE *f, const char *implName);
   void emitVerilogSignals(FILE *f);

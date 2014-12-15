@@ -42,7 +42,7 @@ namespace OCPI {
     }
     // Take the content and ownership away from the other access structure
     Access::
-    Access(Access &other) : m_accessor(NULL) {
+    Access(Access &other) : m_accessor(NULL), m_child(false) {
       setAccess(other.m_registers, other.m_accessor); //, other.m_base);
     }
 

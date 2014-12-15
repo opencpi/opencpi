@@ -67,7 +67,7 @@ o2fd (const OCPI::OS::uint64_t * ptr)
   return *reinterpret_cast<const int *> (ptr);
 }
 
-int OCPI::OS::Socket::fd() throw() {
+int OCPI::OS::Socket::fd() const throw() {
   return o2fd(m_osOpaque);
 }
 OCPI::OS::Socket::Socket ()

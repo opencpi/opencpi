@@ -257,7 +257,7 @@ namespace OCPI {
 		    bool setDefault = true),
         *getNumber64(ezxml_t x, const char *attr, uint64_t *np,
 		     bool *found = NULL, uint64_t defaultValue = 0,
-		     bool setDefault = true);
+		     bool setDefault = true, bool required = false);
       extern unsigned
 	countChildren(ezxml_t x, const char*cName),
 	countAttributes(ezxml_t x);

@@ -387,7 +387,8 @@ namespace OCPI {
 	  *response = 'E';
 	  assert(!m_xferSrvr);
 	  try {
-	    if (!(m_metadata = OL::Artifact::getMetadata(m_exec.c_str()))) {
+	    std::time_t mtime;
+	    if (!(m_metadata = OL::Artifact::getMetadata(m_exec.c_str(), mtime))) {
 	      OU::format(err, "simulation executable file '%s' is not valid: cannot find metadata",
 			 m_exec.c_str());
 	      return true;
@@ -538,10 +539,10 @@ namespace OCPI {
 		    m_platform.c_str(), file);
 	  ocpiDebug("Starting the %s simulator loading bitstream file: %s", m_platform.c_str(), file);
 	  // First establish a directory for the simulation based on the name of the file
-	  const char
-	    *slash = strrchr(file, '/'),
-	    *suff = strrchr(file, '-');
-	  if (!suff) {
+	  const char *slash = strrchr(file, '/');
+	  slash = slash ? slash + 1 : file;
+	  const char *suff = strstr(slash, m_platform.c_str());
+	  if (!suff || (*--suff != '_' && *suff != '-')) {
 	    OU::format(err, "simulator file name %s is not formatted properly", file);
 	    return true;
 	  }
@@ -550,7 +551,6 @@ namespace OCPI {
 	    OU::format(err, "simulator file name %s is not formatted properly", file);
 	    return true;
 	  }
-	  slash = slash ? slash + 1 : file;
 	  m_file.assign(slash, dot - slash);
 	  m_app.assign(slash, suff - slash);
 	  m_dir = m_app;
@@ -571,10 +571,10 @@ namespace OCPI {
 	    return true;
 	  }
 	  // At this point we are ready to actually receive the file.
-	  // If the client is local, we try and ready it directly (from "file"), otherwise
+	  // If the client is local, we try and read it directly (from "file"), otherwise
+	  m_cwd = cwd ? cwd : "";
 	  if (size == 0) {
 	    m_exec = file;
-	    m_cwd = cwd ? cwd : "";
 	    return finishLoadRun(response, err);
 	  }
 	  // This name is the local name for when a copy is made
@@ -976,7 +976,6 @@ namespace OCPI {
 	    m_xferSckt->shutdown(true);
 	    m_xferDone = true;
 	    return false;
-	    break;
 	  case ~(size_t)0:
 	    OU::format(m_xferError, "Unexpected timeout on reading transfer socket");
 	    break;
@@ -1101,7 +1100,7 @@ namespace OCPI {
 
 	bool
 	run(const std::string &exec, std::string &error) {
-	  assert(signal(SIGINT, sigint) != SIG_ERR);
+	  ocpiCheck(signal(SIGINT, sigint) != SIG_ERR);
 	  // If we were given an executable, start sim with it.
 	  char response[1];
 	  if (exec.length() && loadRun(exec.c_str(), 0, NULL, response, error))

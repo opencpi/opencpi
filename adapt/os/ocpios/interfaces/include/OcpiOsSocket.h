@@ -293,7 +293,7 @@ namespace OCPI {
       Socket dup ()
         throw (std::string);
 
-      int fd()
+      int fd() const
 	throw();
 
     protected:

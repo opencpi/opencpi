@@ -1,6 +1,8 @@
 #include <string.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <errno.h>
+#include <sys/stat.h>
 #include <climits>
 #include "OcpiOsFileIterator.h"
 #include "OcpiUtilException.h"
@@ -184,7 +186,12 @@ namespace OCPI {
       return a;
     }
 
+    Library::Library(const std::string &name) : m_name(name) {
+      if (!s_firstLibrary)
+	s_firstLibrary = this;
+    }
     Library::~Library(){}
+    Library *Library::s_firstLibrary;
     Artifact * Library::
     findArtifact(const Capabilities &caps,
 		 const char *specName,
@@ -210,6 +217,11 @@ namespace OCPI {
       }
       return best;
     }
+    Artifact * Library::
+    findArtifact(const char *uuid) {
+      ArtifactsIter ai = m_artifacts.find(uuid);
+      return ai == m_artifacts.end() ? NULL : ai->second;
+    }
 
     // The artifact base class
     Artifact::Artifact() : m_xml(NULL), m_nImplementations(0), m_metaImplementations(NULL), m_nWorkers(0) {}
@@ -224,11 +236,15 @@ namespace OCPI {
     // This scheme allows for binary metadata, but we are doing XML now.
     // The returned value must be deleted with delete[];
     char *Artifact::
-    getMetadata(const char *name) {
+    getMetadata(const char *name, std::time_t &mtime) {
 	  char *data = 0;
 	  int fd = open(name, O_RDONLY);
 	  if (fd < 0)
 	    throw OU::Error("Cannot open file: \"%s\"", name);
+	  struct stat info;
+	  if (fstat(fd, &info))
+	    throw OU::Error("Cannot get modification time: \"%s\" (%d)", name, errno);
+	  mtime = info.st_mtime;
 	  char buf[64/3+4]; // octal + \r + \n + null
 	  off_t fileLength, second, third;
 	  if (fd >= 0 &&

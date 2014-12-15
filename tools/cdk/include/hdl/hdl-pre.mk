@@ -186,7 +186,7 @@ ifneq ($(xxfilter platform container,$(HdlMode)),)
     endif
   endif
   HdlPlatforms:=$(HdlPlatform)
-  HdlExactPart:=$(call HdlGetPart,$(HdlPlatform))
+  HdlExactPart:=$(HdlPart_$(HdlPlatform))
   override HdlTarget:=$(call HdlGetFamily,$(HdlPlatform))
   override HdlActualTargets:=$(HdlTarget)
   HdlPlatformDir:=$(HdlPlatformsDir)/$(HdlPlatform)
@@ -280,7 +280,8 @@ $(call OcpiDbgVar,SourceFiles,Before searching: )
 ifdef SourceFiles
 AuthoredSourceFiles:= $(SourceFiles)
 else
-AuthoredSourceFiles:= $(wildcard *.[vV]) $(wildcard *.vhd) $(wildcard *.vhdl)
+Temp:=$(wildcard *.[vV]) $(wildcard *.vhd) $(wildcard *.vhdl)
+AuthoredSourceFiles:= $(filter %_pkg.vhd,$(Temp)) $(filter-out %_pkg.vhd,$(Temp))
 endif
 $(call OcpiDbgVar,AuthoredSourceFiles,After searching: )
 endif

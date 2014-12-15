@@ -43,6 +43,12 @@
 #include "OcpiUtilExceptionApi.h"
 #include "OcpiLibraryApi.h"
 namespace OCPI {
+  namespace Container {
+    class Port;
+  }
+  namespace Application {
+    class LocalLauncher; class RemoteLauncher;
+  }
   namespace API {
     class ExternalBuffer {
     protected:
@@ -72,8 +78,11 @@ namespace OCPI {
       virtual bool tryFlush() = 0;
     };
     class Port {
+      friend class OCPI::Application::LocalLauncher;
+      friend class OCPI::Application::RemoteLauncher;
     protected:
       virtual ~Port();
+      virtual OCPI::Container::Port &containerPort() = 0;
     public:
       virtual void connect(Port &other, const PValue *myParams = NULL,
 			   const PValue *otherParams = NULL) = 0;
@@ -207,6 +216,7 @@ namespace OCPI {
       virtual void stop() = 0;
       virtual const std::string &name() const = 0;
       virtual const std::string &os() const = 0;
+      virtual const std::string &osVersion() const = 0;
       virtual const std::string &platform() const = 0;
       virtual const std::string &model() const = 0;
     };

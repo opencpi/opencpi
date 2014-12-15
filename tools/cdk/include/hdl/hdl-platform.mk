@@ -28,6 +28,7 @@
 # get built elsewhere based on assemblies and configurations
 
 HdlMode:=platform
+SubCores:=$(Cores)
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 # Theses next lines are similar to what worker.mk does
 ifneq ($(MAKECMDGOALS),clean)
@@ -86,9 +87,16 @@ ifndef HdlSkip
     # From here its about building the platform configuration cores
     ifndef Configurations
       ifneq ($(MAKECMDGOALS),clean)
-        $(info No platform configurations will be built since none are specified.)
+        ifeq ($(origin Configurations),undefined)
+          Configurations:=$(Worker)_base
+          $(shell test -r $(GeneratedDir)/$(Worker)_base.xml || \
+                  echo '<HdlConfig Language="vhdl"/>' > $(GeneratedDir)/$(Worker)_base.xml)
+        else
+          $(info No platform configurations will be built since none are specified.)
+        endif
       endif
-    else
+    endif
+    ifdef Configurations
       HdlConfName=$(Worker)_$1
       HdlConfOutDir=$(OutDir)config-$1
       HdlConfDir=$(call HdlConfOutDir,$(call HdlConfName,$1))

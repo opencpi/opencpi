@@ -74,7 +74,8 @@ public:
   inline const char *name() const { return m_name.c_str(); }
   const char *doPattern(int n, unsigned wn, bool in, bool master, std::string &suff,
 			bool port = false);
-  virtual void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker);
+  virtual void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker,
+				const char *defaultIn = NULL, const char *defaultOut = NULL);
   virtual bool haveInputs() const { return true; }
   virtual bool haveWorkerInputs() const { return true; }
   virtual bool haveOutputs() const { return true; }

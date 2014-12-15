@@ -110,7 +110,7 @@ define HdlToolDoPlatform_modelsim
 $1/$3.tar:
 	$(AT)echo Building modelsim simulation executable: "$$@" with details in $1/$3-fuse.out
 	$(AT)(set -e ; cd $1 && \
-	     echo -L $4 $$$$(grep = modelsim.ini | grep -v others= | sed 's/=.*//' | sed 's/^/-L /') > vsim.args && \
+	     echo -L $3 $$$$(grep = modelsim.ini | grep -v others= | sed 's/=.*//' | sed 's/^/-L /') > vsim.args && \
 	     export LM_LICENSE_FILE=$(OCPI_MODELSIM_LICENSE_FILE) && \
 	     echo 'log -r /*; archive write vsim.dbar -wlf vsim.wlf -include_src ; quit' | \
 	     $(OCPI_MODELSIM_DIR)/bin/vsim -c $3.$3 -modelsimini modelsim.ini \

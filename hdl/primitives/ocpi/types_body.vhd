@@ -120,7 +120,7 @@ end from_bool_array;
 
 function To_character (c : Char_t) return character is
 begin
-  return character'val(to_integer(c));
+  return character'val(to_integer(unsigned(c)));
 end to_character;
 function To_char (c: Character) return char_t is
 begin
@@ -466,6 +466,15 @@ function from_string(s : string_t) return std_logic_vector is
 begin
   for i in 0 to s'right loop
     v((s'length - i) * 8 - 1 downto (s'length - i)*8 - 8) := from_char(s(i));
+  end loop;
+  return v;
+end from_string;
+
+function from_string(s : string_t) return string is
+  variable v: string(1 to s'length-1);
+begin
+  for i in 0 to s'right-1 loop
+    v(i+1) := character'val(to_integer(s(i)));
   end loop;
   return v;
 end from_string;

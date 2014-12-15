@@ -216,8 +216,9 @@ class WciPort : public OcpPort {
   void emitRecordInputs(FILE *f);
   void emitRecordOutputs(FILE *f);
   void emitRecordInterface(FILE *f, const char *implName);
-  void emitWorkerEntitySignals(FILE *f, std::string &last, unsigned maxPropName);
-  void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker);
+  //  void emitWorkerEntitySignals(FILE *f, std::string &last, unsigned maxPropName);
+  void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker,
+			const char *defaultIn, const char *defaultOut);
   void emitRecordArray(FILE *f);
   void emitVHDLShellPortMap(FILE *f, std::string &last);
   void emitPortSignals(FILE *f, Attachments &atts, Language lang,
@@ -357,7 +358,8 @@ class TimeServicePort : public Port {
   inline const char *prefix() const { return "time"; }
   inline const char *typeName() const { return "TimeService"; }
   void emitRecordTypes(FILE *f);
-  void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker);
+  void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker,
+			const char *defaultIn, const char *defaultOut);
   void emitRecordInterface(FILE *f, const char *implName);
   void emitVHDLShellPortMap(FILE *f, std::string &last);
   void emitVHDLSignalWrapperPortMap(FILE *f, std::string &last);
@@ -618,6 +620,10 @@ class Worker : public Parsed, public OU::IdentResolver {
     *emitAttribute(const char *attr);
   Port *findPort(const char *name, Port *except = NULL) const;
   Clock *findClock(const char *name) const;
+  virtual void
+    emitXmlWorkers(FILE *f),
+    emitXmlInstances(FILE *f),
+    emitXmlConnections(FILE *f);
   void
     setParent(Worker *p), // when it can't happen at construction
     prType(OU::Property &pr, std::string &type),
@@ -626,7 +632,6 @@ class Worker : public Parsed, public OU::IdentResolver {
     rccPropType(OU::Property &p, std::string &typeDef, std::string &type, std::string &pretty),
     emitWorkersAttribute(),
     deleteAssy(), // just to keep the assembly details out of most files
-    emitXmlWorkers(FILE *f),
     emitXmlWorker(FILE *f),
     emitInstances(FILE *f, const char *prefix, size_t &index),
     emitInternalConnections(FILE *f, const char *prefix),

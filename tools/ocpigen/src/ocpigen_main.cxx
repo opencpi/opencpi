@@ -100,7 +100,7 @@ add to tree.
 #include "CmdOption.h"
 
 int
-main(int argc, char **argv) {
+main(int argc, const char **argv) {
   if (options.setArgv(argv))
     return 1;
   const char *outDir = NULL, *wksFile = NULL, *package = NULL;
@@ -137,7 +137,7 @@ main(int argc, char **argv) {
     return 1;
   }
   const char *err = 0;
-  for (char **ap = argv+1; *ap; ap++)
+  for (const char **ap = argv+1; *ap; ap++)
     if (ap[0][0] == '-')
       switch (ap[0][1]) {
       case 'd':

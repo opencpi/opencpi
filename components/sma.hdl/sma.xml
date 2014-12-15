@@ -14,6 +14,11 @@
     <Property Name="wsiMpMesgCount" Readable="true"/>
     <Property Name="wsiMiMesgCount" Readable="true"/>
     <Property Name="wsiMtBusyCount" Readable="true"/>
+    <Property Name="wmwtBeginCount" Readable="true"/>
+    <Property Name="wmwtPushCount" Readable="true"/>
+    <Property Name="wmwtFinalCount" Readable="true"/>
+    <Property Name="wmianyBusy" Readable="true"/>
+    <Property Name="FEED_C0DE" Readable="true"/>
     <Property Name="smaCtrlInit" Parameter="true" default='0'/>
   </ControlInterface>
   <StreamInterface Name="in" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256" MaxMessageValues="8191"/>

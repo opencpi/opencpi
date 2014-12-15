@@ -577,6 +577,9 @@ namespace OCPI {
 	Emit::EventQEntry* qe = (*it)->full ? (*it)->current : (*it)->start;
 	Emit::EventQEntry* begin = qe;
 	do {
+	  ocpiAssert(qe >= (*it)->start &&
+		     qe < (Emit::EventQEntry *)((*it)->end) &&
+		     (uint8_t*)(qe) + sizeof(Emit::EventQEntry) + qe->size <= (*it)->end);
 	  Emit::EventMap* emap = getEventMap( qe );
 	  if ( !emap ) {
 	    qe = getNextEntry( qe, (*it) );

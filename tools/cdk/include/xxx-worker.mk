@@ -102,6 +102,7 @@ ParamShell:=(\
   mkdir -p $(GeneratedDir) &&\
   ($(MakeRawParams) |\
   $(OcpiGenTool) -D $(GeneratedDir) $(and $(Package),-p $(Package))\
+    $(and $(Platform),-P $(Platform)) \
     $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) \
   $(and $(AssemblyName),-S $(AssemblyName)) \
   -r $(Worker_$(Worker)_xml)) || echo 1\
@@ -147,6 +148,7 @@ $(SkelFiles): $(GeneratedDir)/%$(SkelSuffix) : $$(Worker_%_xml) | $(GeneratedDir
 	$(AT)echo Generating the implementation skeleton file: $@
 	$(AT)$(OcpiGen) -D $(GeneratedDir) \
               $(and $(AssemblyName),-S $(AssemblyName)) \
+	      $(and $(Platform),-P $(Platform)) \
               $(and $(Package),-p $(Package)) -s $<
 endif
 
@@ -291,12 +293,15 @@ define DoLink
   $(infox DoLink:$1:$2:$3:$4)
   $$(infox DoLink2:$1:$2:$3:$4)
   LibLinks+=$(LibDir)/$1/$3
-  $(LibDir)/$1/$3: $(call WkrTargetDir,$1,$4)/$2 | $(LibDir)/$1
-	$(AT)echo Creating link from $$@ -\> $$< to export the worker binary.
+  ifeq ($(Model),hdl)
+    $(LibDir)/$1/$(basename $3)-generics.vhd: | $(LibDir)/$1
 	$(AT)$$(call MakeSymLink2,$(call WkrTargetDir,$1,$4)/generics.vhd,$(LibDir)/$1,$(basename $3)-generics.vhd)
 	$(AT)if test -f $(call WkrTargetDir,$1,$4)/$(call HdlRmRv,$(basename $2)).cores; then \
                $$(call MakeSymLink,$(call WkrTargetDir,$1,$4)/$(call HdlRmRv,$(basename $2)).cores,$(LibDir)/$1);\
               fi
+  endif
+  $(LibDir)/$1/$3: $(call WkrTargetDir,$1,$4)/$2 $(and $(filter hdl,$(Model)),$(LibDir)/$1/$(basename $3)-generics.vhd) | $(LibDir)/$1
+	$(AT)echo Creating link to export worker binary: $(LibDir)/$1/$3 '->' $(call WkrTargetDir,$1,$4)/$2
 	$(AT)$$(call MakeSymLink2,$(call WkrTargetDir,$1,$4)/$2,$(LibDir)/$1,$3)
 
   $(infox DoLink3:$1:$(HdlToolSet_$1):$(HdlToolNeedBB_$(HdlToolSet_$1)))

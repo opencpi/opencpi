@@ -1004,10 +1004,42 @@ Clock()
   : port(NULL), assembly(false), ordinal(0) {
 }
 
-// Emit the artifact XML for an HDLcontainer
+// Emit the artifact XML.
 const char *Worker::
-emitArtXML(const char */* wksfile*/) {
-  return "Artifact XML files can only be generated for containers or RCC assemblies";
+emitArtXML(const char *wksFile) {
+  const char *err;
+  OU::Uuid uuid;
+  OU::generateUuid(uuid);
+  if ((err = emitUuidHDL(uuid)))
+    return err;
+  FILE *f;
+  if ((err = openOutput(m_implName, m_outDir, "", "-art", ".xml", NULL, f)))
+    return err;
+  fprintf(f, "<!--\n");
+  printgen(f, "", m_file.c_str());
+  fprintf(f,
+	  " This file contains the artifact descriptor XML for the container\n"
+	  " named \"%s\". It must be attached (appended) to the bitstream\n",
+	  m_implName);
+  fprintf(f, "  -->\n");
+  OU::UuidString uuid_string;
+  OU::uuid2string(uuid, uuid_string);
+  fprintf(f,
+	  "<artifact uuid=\"%s\" ", uuid_string);
+  if (os)         fprintf(f, " os=\"%s\"",        os);
+  if (os_version) fprintf(f, " osVersion=\"%s\"", os_version);
+  if (platform)   fprintf(f, " platform=\"%s\"",  platform);
+  if (device)     fprintf(f, " device=\"%s\"",    device);
+  fprintf(f, ">\n");
+  emitXmlWorkers(f);
+  emitXmlInstances(f);
+  emitXmlConnections(f);
+  fprintf(f, "</artifact>\n");
+  if (fclose(f))
+    return "Could not close output file. No space?";
+  if (wksFile)
+    return emitWorkersHDL(wksFile);
+  return 0;
 }
 
 const char *Worker::

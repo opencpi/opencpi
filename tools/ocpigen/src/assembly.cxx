@@ -412,6 +412,14 @@ findInstancePort(const char *name) {
 }
 
 void Worker::
+emitXmlInstances(FILE *) {
+}
+
+void Worker::
+emitXmlConnections(FILE *) {
+}
+
+void Worker::
 emitXmlWorker(FILE *f) {
   fprintf(f, "<worker name=\"%s", m_implName);
   // FIXME - share this param-named implname with emitInstance

@@ -48,9 +48,13 @@ public:
   virtual ~HdlContainer();
   const char
     *emitAttribute(const char *attr),
-    *emitArtXML(const char *wksFile),
+    //    *emitArtXML(const char *wksFile),
     *emitContainer(FILE *f);
-  void mapDevSignals(std::string &assy, const DevInstance &devInstance, bool inContainer);
+  void 
+    emitXmlWorkers(FILE *f),
+    emitXmlInstances(FILE *f),
+    emitXmlConnections(FILE *f),
+    mapDevSignals(std::string &assy, const DevInstance &devInstance, bool inContainer);
 };
 
 #endif

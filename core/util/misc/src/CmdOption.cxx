@@ -16,7 +16,7 @@ namespace OCPI {
     BaseCommandOptions::
     BaseCommandOptions(Member *members, unsigned nMembers, const char *help, const char **defaults)
       : m_options(members), m_seen(new bool[nMembers]), m_defaults(defaults),
-        m_nOptions(nMembers), m_error(NULL), m_help(help)
+        m_nOptions(nMembers), m_error(""), m_help(help)
     {
       Member *m = members;
       for (unsigned n = 0; n < m_nOptions; n++, m++) {
@@ -32,7 +32,7 @@ namespace OCPI {
       return err;
     }
     const char *BaseCommandOptions::
-    doValue(Member &m, const char *argValue, char **&argv) {
+    doValue(Member &m, const char *argValue, const char **&argv) {
       Value &v = *m.m_default;
       bool seen = m_seen[&m - m_options];
       if (!m.m_isSequence && seen)
@@ -57,7 +57,7 @@ namespace OCPI {
       return NULL;
     }
     const char *BaseCommandOptions::
-    setArgv(char **ap) {
+    setArgv(const char **ap) {
       m_beforeArgv = ap++;
       const char *err;
       if (!ap[0]) {
@@ -149,6 +149,37 @@ namespace OCPI {
 	      "Boolean options have no value; their presence indicates 'true'.  Other types require values.\n"
 	      "\n%s", m_help);
       
+    }
+    int BaseCommandOptions::
+    main(const char **initargv, int (*themain)(const char **a)) {
+      try {
+	if (setArgv(initargv))
+	  return 1;
+	themain(argv());
+      } catch (std::string &e) {
+	exitbad(e.c_str());
+      } catch (const char *e) {
+	exitbad(e);
+      } catch (...) {
+	exitbad("Unexpected exception");
+      }
+      return 0;
+    }
+    void BaseCommandOptions::
+    exitbad(const char *e) {
+      fprintf(stderr, "%s\n", e);
+      exit(1);
+    }
+    void BaseCommandOptions::
+    bad(const char *fmt, ...) {
+      va_list ap;
+      va_start(ap, fmt);
+      std::string e = "Exiting for problem: ";
+      formatAddV(e, fmt, ap);
+      if (m_error.size())
+	formatAdd(e, ": %s", m_error.c_str());
+      va_end(ap);
+      throw e;
     }
   }
 }

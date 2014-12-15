@@ -128,7 +128,7 @@ namespace
     OS::ElapsedTime e;
     OS::Timer::getPrecision ( e );
     EXPECT_EQ( e.seconds(), 0u );
-    EXPECT_NE( e.nanoseconds(), 0u );
+    EXPECT_NE( e.bits(), 0u );
     EXPECT_LE( e.nanoseconds(), 100000000u );
   }
 

@@ -522,6 +522,15 @@ format(std::string &out, const char *fmt, ...) {
   formatAddV(out, fmt, ap);
   va_end(ap);
 }
+bool 
+eformat(std::string &out, const char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  out.clear();
+  formatAddV(out, fmt, ap);
+  va_end(ap);
+  return true;
+}
 void 
 formatAdd(std::string &out, const char *fmt, ...) {
   va_list ap;

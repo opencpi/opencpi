@@ -34,22 +34,26 @@
 namespace OCPI {
   namespace Util {
     class BaseCommandOptions {
-      char **m_beforeArgv, **m_argv; // what is left after options
+      const char **m_beforeArgv, **m_argv; // what is left after options
     protected:
       Member *m_options;
       bool *m_seen;
       const char **m_defaults;
       //      Value *m_values;
       unsigned m_nOptions;
-      const char *m_error, *m_help;
+      std::string m_error;
+      const char *m_help;
       BaseCommandOptions(Member *members, unsigned nMembers, const char *help, const char **defaults);
       const char *setError(const char *);
-      const char *doValue(Member &m, const char *value, char **&argv);
+      const char *doValue(Member &m, const char *value, const char **&argv);
     public:
       void usage();
-      const char *setArgv(char **argv);
-      char **argv() const { return m_argv; }
-      bool error() const { return m_error; }
+      const char *setArgv(const char **argv);
+      const char **argv() const { return m_argv; }
+      std::string &error() { return m_error; }
+      int main(const char **argv, int (*main)(const char **argv));
+      void exitbad(const char *e);
+      void bad(const char *fmt, ...);
     };
   }
 }

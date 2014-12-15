@@ -63,7 +63,7 @@ namespace OCPI {
       // Default is that no polling is done
       virtual void checkControlState() {}
 
-      inline OCPI::Util::Worker::ControlState getControlState() {
+      OCPI::Util::Worker::ControlState getControlState() {
 	checkControlState();
 	return m_state;
       }	
@@ -128,7 +128,6 @@ namespace OCPI {
       inline const std::string &instTag() const { return m_instTag; }
       inline const std::string &implTag() const { return m_implTag; }
       inline const Artifact *artifact() const { return m_artifact; }
-      virtual const std::string &name() const = 0;
       inline ezxml_t myXml() const { return m_xml; }
       inline ezxml_t myInstXml() const { return m_instXml; }
       Worker(Artifact *art, ezxml_t impl, ezxml_t inst, const OCPI::Util::PValue *props = NULL);
@@ -150,6 +149,7 @@ namespace OCPI {
 
 
     public:
+      virtual const std::string &name() const = 0;
       // This class is actually used in some contexts (e.g. ocpihdl),
       // Where it is not a child of an application, hence this method
       // is allowed to return NULL in this case, hence it returns a pointer.

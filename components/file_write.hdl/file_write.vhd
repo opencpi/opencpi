@@ -1,143 +1,102 @@
--- THIS FILE WAS ORIGINALLY GENERATED ON Mon Jun  3 17:13:21 2013 EDT
--- BASED ON THE FILE: gen/file_write.xml
--- YOU *ARE* EXPECTED TO EDIT IT
--- This file initially contains the architecture skeleton for worker: file_write
+-- TODO/FIXME:  use precise bursts to eliminate buffering when they are there
+--              implement both endians
 
-library IEEE; 
-  use IEEE.std_logic_1164.all; 
-  use ieee.numeric_std.all;
-  use std.textio.all; 
-library ocpi; 
-  use ocpi.types.all; -- remove this to avoid all ocpi name collisions
-
---entity file_write_worker is
---  port(
---    -- Signals for control and configuration.  See record types above.
---    ctl_in               : in  worker_ctl_in_t;
---    ctl_out              : out worker_ctl_out_t := (btrue, bfalse, bfalse, bfalse); done, error, finished, attention
---    -- Input values and strobes for this worker's writable properties
---    props_in             : in  worker_props_in_t;
---    -- Outputs for this worker's volatile, readable properties
---    props_out            : out worker_props_out_t;
---    -- Signals for WSI input port named "in".  See record types above.
---    in_in                : in  worker_in_in_t;
---    in_out               : out worker_in_out_t);
---end entity file_write_worker;
+library ieee, ocpi, util;
+use ieee.std_logic_1164.all, ieee.numeric_std.all, std.textio.all; 
+use ocpi.types.all, util.util.all;
 
 architecture rtl of file_write_worker is
-
-  signal bytes_remaining : std_logic_vector(31 downto 0):= (others => '0');
-  signal message_length  : std_logic_vector(31 downto 0):= (others => '0');
-  signal byte_count      : std_logic_vector(11 downto 0):= (others => '0'); -- max bytes per message 4096
-  signal init : bool_t := bfalse;
-  signal done : bool_t := btrue;
-  signal msg_count : ulonglong_t := (others=> '0');
-  signal opcode_pad    : std_logic_vector(23 downto 0) := (others => '0');
-  signal bytes_written : ulonglong_t := (others => '0');
-
+  -- for file I/O and using util.cwd module
+  constant pathLength      : natural := props_in.fileName'right;
+  signal cwd               : string_t(0 to props_out.cwd'right);
+  file   data_file         : char_file_t;
+  -- our state machine
+  signal init_r            : boolean := false;
+  signal messageLength_r   : ulong_t := (others => '0');
+  -- registers driving ctl_out
+  signal finished_r        : boolean := false;
+  -- registers driving props_out
+  signal messagesWritten_r : ulonglong_t := (others => '0');
+  signal bytesWritten_r    : ulonglong_t := (others => '0');
+  -- pull a byte out of a dword and convert to char type. FIXME: endian!
+  function char(dw : ulong_t; pos : natural) return character is begin
+    return to_character(char_t(dw(pos*8+7 downto pos*8)));
+  end char;
 begin
+  -- worker outputs
+  ctl_out.finished          <= to_bool(finished_r);
+  props_out.cwd             <= cwd;
+  props_out.bytesWritten    <= bytesWritten_r; 
+  props_out.messagesWritten <= messagesWritten_r;
+  in_out.take               <= in_in.ready;
 
-  in_out.take <= in_in.ready;
-  props_out.bytesWritten <= bytes_written; 
-  props_out.messagesWritten <= msg_count; 
-  
+  -- get access to the CWD for pathname resolution (and as a readable property)
+  cwd_i : component util.util.cwd
+    generic map(length     => cwd'right)
+    port    map(cwd        => cwd);
+
   process(ctl_in.clk)
-    type msg_array is array (96*4-1 downto 0) of std_logic_vector(7 downto 0); -- stores 4096 words
-    variable msg_buffer : msg_array:=(others => (others => '0'));
-    type char_file_t is file of character;
-    file sig_data_file     : char_file_t;
-    variable status       : file_open_status;
-    variable file_name     : string(1 to props_in.filename'right);
-    variable i             : integer range 0 to props_in.filename'right := 0;
-    variable c             : character;
-    variable byte_count    : integer:=0;
-    variable opcode_32     : std_logic_vector(31 downto 0):= (others => '0');
-    variable byte_count_64 : ulonglong_t := (others => '0');
-    variable bytes_in_msg  : std_logic_vector(31 downto 0) := (others => '0');
+    variable c              : character;
+    variable msg_buffer     : string(1 to 16*1024);
+    variable new_msg_length : natural;
   begin
-    
     if rising_edge(ctl_in.clk) then
       if its(ctl_in.reset) then
-        init      <= bfalse;
-        done      <= bfalse;
-        msg_count <= (others => '0');
-        bytes_written <= (others => '0');
-      elsif its(ctl_in.is_operating and not done) then
-        if its(not init) then  
-          -- convert file name for function file_open
-          for i in (props_in.fileName'left) to (props_in.fileName'right - 1) loop
-            file_name(i+1) := To_character(props_in.fileName(i));         
-          end loop;
-          
-          file_open(sig_data_file, file_name, write_mode);
-          if status = open_ok then
-            init <= btrue;
-            report "File opened successfully:";
-            report file_name;
-          else
-            done <= btrue;
-            report "File could not be opened:";
-            report file_name;
-          end if; 
-        
-        elsif its(props_in.messagesInFile) then 
-          if its(in_in.som) then
-            byte_count := 0;
-          end if;
-
-          if its(in_in.ready and in_in.valid) then
-            msg_buffer_loop: for i in 0 to 3 loop
-              if in_in.byte_enable(i) = '1' then
-                msg_buffer(byte_count) := in_in.data(i*8+7 downto i*8);
-                byte_count := byte_count + 1;
+        init_r            <= false;
+        messageLength_r   <= (others => '0');
+        finished_r        <= false;
+        messagesWritten_r <= (others => '0');
+        bytesWritten_r    <= (others => '0');
+      elsif its(ctl_in.is_operating) and not finished_r then
+        if not init_r then  
+          open_file(data_file, cwd, props_in.fileName, write_mode);
+          init_r <= true;
+        elsif its(in_in.ready) then
+          new_msg_length := to_integer(messageLength_r);
+          if its(in_in.valid) and in_in.byte_enable /= "0000" then
+            -- There is data: either write it directly or put it in the buffer
+            for i in 0 to 3 loop
+              if in_in.byte_enable(i) = '1' then -- FIXME: endian!
+                c := char(ulong_t(in_in.data), i);
+                if its(props_in.messagesInFile) then 
+                  if new_msg_length >= msg_buffer'length then
+                    report "The messagesInFile property is true so messages are being buffered";
+                    report "A message is too large for the message buffer" severity failure;
+                  end if;
+                  msg_buffer(new_msg_length) := c;
+                else
+                  write(data_file, c);
+                end if;
+                new_msg_length := new_msg_length + 1;
               end if;
-            end loop; 
-          end if;
-          
-          bytes_in_msg := std_logic_vector(to_unsigned(byte_count, bytes_in_msg'length));
-          
-          if its(in_in.eom) then
-            -- write message length
-            byte_count_64 := byte_count + byte_count_64;
-            bytes_written <= byte_count_64;
-            length_loop: for i in 0 to 3 loop
-              c := character'val(to_integer(unsigned(bytes_in_msg(i*8+7 downto i*8))));
-              write(sig_data_file,c);   
-            end loop;            
-            -- write opcode
-            opcode_32 := std_logic_vector(resize(unsigned(in_in.opcode), opcode_32'length));
-            opcode_loop: for i in 0 to 3 loop
-              c := character'val(to_integer(unsigned(opcode_32(i*8+7 downto i*8))));
-              write(sig_data_file,c);   
-            end loop;
-            -- write message data
-            data_loop: for i in 0 to byte_count-1 loop
-                c := character'val(to_integer(unsigned(msg_buffer(i))));
-                write(sig_data_file,c);
             end loop;    
-            msg_count <= msg_count + 1;
           end if;
-
-        elsif in_in.byte_enable > "0000" and its(in_in.ready and in_in.valid) then 
           if its(in_in.eom) then
-            done <= btrue;
-            msg_count <= msg_count + 1;
-          end if;
-          data_word_loop: for i in 0 to 3 loop
-            if in_in.byte_enable(i) = '1' and its(in_in.valid) then
-              c := character'val(to_integer(unsigned(in_in.data(i*8+7 downto i*8))));
-              write(sig_data_file,c);
-              byte_count_64 := byte_count_64 + 1;
+            if its(props_in.messagesInFile) then
+              for i in 0 to 3 loop
+                write(data_file, char(to_ulong(new_msg_length),i));
+              end loop;
+              for i in 0 to 3 loop
+                write(data_file, char(to_ulong(in_in.opcode), i));
+              end loop;
+              for i in 0 to new_msg_length-1 loop
+                write(data_file, msg_buffer(i));   
+              end loop;            
             end if;
-          end loop;  
-          bytes_written <= byte_count_64;
-        end if; --if not init
-      elsif its(done) then
-        file_close(sig_data_file);
-      end if; -- if ctl_in.reset
+            if new_msg_length = 0 and its(props_in.stopOnEOF) then
+              finished_r <= true;
+              file_close(data_file);
+            end if;
+            bytesWritten_r <= bytesWritten_r + new_msg_length;
+            messageLength_r <= (others => '0');
+            if new_msg_length /= 0 or its(props_in.messagesInFile) then
+              messagesWritten_r <= messagesWritten_r + 1;
+            end if;
+          else
+            messageLength_r <= to_ulong(new_msg_length);
+          end if; -- eom
+        end if; --if in_in.ready
+      end if; -- if operating and not finished
     end if; -- if rising_edge(ctl_in.clk)  
-
   end process;
-  
-
 end rtl;

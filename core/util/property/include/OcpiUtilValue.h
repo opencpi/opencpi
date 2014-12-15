@@ -74,7 +74,7 @@ namespace OCPI {
       dimensionUnparse(const Value &v, std::string &s, unsigned nseq, size_t dim, size_t offset,
 			 size_t nItems, bool hex, char comma, const Unparser &up) const;
     };
-
+    extern bool parseOneChar(const char *&cp, const char *end, char &vp);
     // A typed value
     class Value : public Unparser {
       static const ValueType *s_vt;

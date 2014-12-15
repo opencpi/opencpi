@@ -128,6 +128,7 @@ begin
   workers_out.is_config <= to_bool(is_config);
   workers_out.byte_en   <= cp_in.byte_en;
   workers_out.data      <= cp_in.data;
+  workers_out.is_big_endian <= big_endian_r;
   -- We don't allow the log timeout value to be 0, so 1 is always the timedout value
   workers_out.timedout  <= to_bool(timeout_r = 1); --to_unsigned(1, timeout_r'length));
   cp_out.data           <= admin_data when is_admin else worker_data;
@@ -194,6 +195,8 @@ begin
         timeout_r     <= (others => '0');
         reset_r       <= '0'; -- master reset for all workers defaults OFF
         big_endian_r  <= '0';
+        scratch20_r   <= (others => '0');
+        scratch24_r   <= (others => '0');
         -- Debug state
       elsif not its(active_r) and cp_in.valid = '1' then
         id_r      <= id;

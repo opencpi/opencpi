@@ -5,7 +5,7 @@
 # The HdlAssembly variable must be set to point to the relative or absolute path
 # to the assembly's directory, ending in the name of the assembly.
 HdlMode:=container
-$(infox MYCL:$(ComponentLibraries))
+$(infox MYCL:$(ComponentLibraries):$(XmlIncludeDirs):$(MdlAssembly))
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 # These next lines are similar to what worker.mk does
 override Workers:=$(CwdName:container-%=%)
@@ -15,6 +15,7 @@ Worker_$(Worker)_xml:=$(or $(wildcard $(XmlName)),\
                            $(wildcard $(HdlAssembly)/$(XmlName)),\
                            $(wildcard $(GeneratedDir)/$(XmlName)))
 Worker_xml:=$(Worker_$(Worker)_xml)
+Assembly:=$(HdlAssembly)
 ifneq ($(MAKECMDGOALS),clean)
   ifndef Worker_xml
     $(error The XML for the container assembly, $(Worker).xml, is missing))
@@ -40,7 +41,7 @@ ifneq ($(MAKECMDGOALS),clean)
   $(if $(HdlContPlatform),,$(error Could not get HdlPlatform for container $1))
   $(if $(HdlContConfig),,$(error Could not get HdlConfiguration for container $1))
   override HdlPlatforms:=$(HdlContPlatform)
-  override HdlPart:=$(HdlPart_$(HdlContPlatform))
+  override HdlPart:=$(call HdlGetPart,$(HdlContPlatform))
   override HdlTargets:=$(call HdlGetFamily,$(HdlPart))
   override HdlPlatform:=$(HdlContPlatform)
   override HdlTarget:=$(HdlTargets)
@@ -48,17 +49,7 @@ ifneq ($(MAKECMDGOALS),clean)
   include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
   ifndef HdlSkip
     override ComponentLibraries+=$(HdlPlatformsDir)/$(HdlContPlatform) $(HdlAssembly)
-    $(eval $(HdlSearchComponentLibraries))
-    ImplFile:=$(GeneratedDir)/$(Worker)-assy$(HdlSourceSuffix)
-    WorkerSourceFiles=$(ImplFile)
-    $(call OcpiDbgVar,ImplFile)
-    ImplWorkersFile=$(GeneratedDir)/$(Worker).wks
-    $(ImplFile): $$(ImplXmlFile) | $$(GeneratedDir)
-	$(AT)echo Generating the container assembly source file: $@ from $<
-	$(AT)$(call OcpiGen) -D $(GeneratedDir) -W $(Worker) -S $(AssemblyName) -a  $<
-    # The workers file is actually created at the same time as the -assy.v file
-    $(ImplWorkersFile): $(ImplFile)
-    HdlPreCore=$(HdlGetCores)
+    $(eval $(HdlPrepareAssembly))
     include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
     ifndef HdlSkip
       HdlContName=$(Worker)$(if $(filter 0,$1),,_$1)

@@ -10,9 +10,8 @@ fi
 #set -evx
 
 echo Filename: $1
-echo Compute is: `echo $1 | sed 's/\..*$//' | tr '\-' ' '`
 read assyname contname<<EOF
-`echo $1 | sed 's/\..*$//' | tr '\-' ' '`
+`echo $1 | sed 's/^\(.*\)_modelsim_pf.*$/\1 &/'`
 EOF
 echo Assembly: $assyname  Container: $contname
 shift

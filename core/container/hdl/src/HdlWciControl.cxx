@@ -144,8 +144,12 @@ namespace OCPI {
       // setControlState(OC::FINISHED);
       // setControlState(OC::UNUSABLE);
       uint32_t status = get32Register(status, OccpWorkerRegisters);
+      ocpiDebug("Checking control state for worker: status: 0x%x", status);
       if (status & OCCP_STATUS_ALL_ERRORS)
 	ocpiDebug("Worker %s has errors: %" PRIx32, m_instName, status);
+      if ((status & OCCP_STATUS_FINISHED) &&
+	  (getState() == OU::Worker::OPERATING || getState() == OU::Worker::SUSPENDED))
+	setControlState(OU::Worker::FINISHED);
     }
     void WciControl::
     controlOperation(OU::Worker::ControlOperation op) {

@@ -13,5 +13,4 @@ mkPktFork.v mkPktMerge.v mkTLPSM.v unoc_node_rv.vhd unoc_terminator.vhd \
 mkTimeClient.v \
 mkSimIO.v mkSimDCP.v \
 FIFO1.v FIFO2.v MakeResetA.v SyncResetA.v SyncRegister.v SyncHandshake.v arSRLFIFOD.v
-
 include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk

@@ -71,11 +71,11 @@ namespace OCPI {
   namespace OS {
     namespace Ether {
       Address::
-      Address(bool isUdp) {
+      Address(bool isUdp, uint16_t port) {
 	m_broadcast = true;
 	m_isEther = !isUdp;
 	if (isUdp) {
-	  m_udp.port = 0;
+	  m_udp.port = port;
 	  m_udp.addr = INADDR_BROADCAST;
 	} else
 	m_addr64 = s_broadcast.m_addr64;
@@ -213,16 +213,19 @@ namespace OCPI {
 	      OS::setError(error, "opening raw socket");
 	      return;
 	    }
-	    struct sockaddr_ocpi sa;
-	    memset(&sa, 0, sizeof(sa));
-	    sa.ocpi_family = PF_OPENCPI;      // supposedly not used for bind
-	    sa.ocpi_role = (uint8_t)role;
-	    sa.ocpi_ifindex = (uint8_t)i.index;
+	    union {
+	      struct sockaddr_ocpi sa;
+	      struct sockaddr      sock; // here to suppress valgrind error
+	    } s;
+	    memset(&s, 0, sizeof(s));
+	    s.sa.ocpi_family = PF_OPENCPI;      // supposedly not used for bind
+	    s.sa.ocpi_role = (uint8_t)role;
+	    s.sa.ocpi_ifindex = (uint8_t)i.index;
 	    if (remote)
-	      memcpy(sa.ocpi_remote, remote->addr(), sizeof(sa.ocpi_remote));
+	      memcpy(s.sa.ocpi_remote, remote->addr(), sizeof(s.sa.ocpi_remote));
 	    if (role == ocpi_data)
-	      sa.ocpi_endpoint = endpoint;
-	    if (bind(m_fd, (const struct sockaddr *)&sa, sizeof(sa))) {
+	      s.sa.ocpi_endpoint = endpoint;
+	    if (bind(m_fd, &s.sock, sizeof(s.sa))) {
 	      OS::setError(error, "binding ethertype socket");
 	      return;
 	    }
@@ -307,7 +310,7 @@ namespace OCPI {
 	    sin.sin_len = sizeof(sin);
 #endif
 	    sin.sin_family = AF_INET;
-	    sin.sin_port = role == ocpi_slave ? htons(c_udpPort) : (uint16_t)0;
+	    sin.sin_port = role == ocpi_slave ? htons(endpoint ? endpoint : c_udpPort) : (uint16_t)0;
 	    sin.sin_addr.s_addr = i.ipAddr.addrInAddr();
 	    if (::bind(m_fd, (struct sockaddr*)&sin, sizeof(sin))) {
 	      OS::setError(error, "binding udp socket for role %u", role);
@@ -512,8 +515,8 @@ namespace OCPI {
 	return send(iov, 1, addr, timeoutms, ifc, error);
       }
       bool Socket::
-      send(IOVec *iov, unsigned iovlen, Address &addr, unsigned /*timeoutms*/, Interface *ifc,
-	   std::string &error) {
+      send(IOVec *iov, unsigned iovlen, Address &addr, unsigned /*timeoutms*/,
+	   Interface *ifc, std::string &error) {
 	IOVec myiov[10];
 	ocpiAssert(iovlen < 10);
 	union {
@@ -589,7 +592,7 @@ namespace OCPI {
 	      return false;
 	    }
 	    sa.in.sin_addr.s_addr = ifc->brdAddr.addrInAddr();
-	    sa.in.sin_port = htons(c_udpPort);
+	    sa.in.sin_port = htons(addr.addrPort() ? addr.addrPort() : c_udpPort);
 	    // For broadcast, we specify the interface, otherwise IP routing does the right thing.
 	    memset(cbuf, 0, sizeof(cbuf));
 	    msg.msg_control = cbuf;
@@ -613,8 +616,9 @@ namespace OCPI {
         msg.msg_iov = (iovec*)iov;
 	msg.msg_iovlen = iovlen;
 	ssize_t rlen = sendmsg(m_fd, &msg, 0);
-	ocpiDebug("Send packet length %zd, to %s, port %u returned %zd errno %u fd %u", len,
-		  inet_ntoa(sa.in.sin_addr), ntohs(sa.in.sin_port), rlen, errno, m_fd);
+	ocpiDebug("Send packet length %zd, to %s via %u, port %u returned %zd errno %u fd %u",
+		  len, inet_ntoa(sa.in.sin_addr), ifc ? ifc->index : 0, ntohs(sa.in.sin_port),
+		  rlen, errno, m_fd);
 	if (rlen != (ssize_t)len) {
 	  setError(error, "sendto of %u bytes failed, returning %d", len, rlen);
 	  return false;
@@ -746,7 +750,8 @@ namespace OCPI {
 	  if (ifm->ifm_addrs & (1 << n)) {
 	    struct sockaddr *sa = (struct sockaddr *)extra;
 	    extra += SA_SIZE(sa);
-	    ocpiDebug("NEWADDR n %u len %u af %u", n, sa->sa_len, sa->sa_family);
+	    ocpiDebug("%u: NEWADDR n %u len %u af %u",
+		      ifm->ifm_index, n, sa->sa_len, sa->sa_family);
 	    if (sa->sa_family == AF_INET) {
 	      struct sockaddr_in *sin = (struct sockaddr_in *)sa;
 	      ocpiDebug("IP Addr is %u %s", ntohs(sin->sin_port), inet_ntoa(sin->sin_addr));
@@ -777,8 +782,11 @@ namespace OCPI {
 	      ocpiDebug("sockaddr_dl: addr %2u alen %2u %2u %2u %2u", n,
 			sdl->sdl_len, sdl->sdl_nlen, sdl->sdl_alen, sdl->sdl_slen);
 	      ocpiAssert(sdl->sdl_nlen);
-	      ocpiDebug("iface type %u name: '%.*s'", sdl->sdl_type, sdl->sdl_nlen, sdl->sdl_data);
-	      if (ifm->ifm_data.ifi_type == IFT_ETHER &&
+	      ocpiDebug("iface sock type %u if type %u name: '%.*s' only: %s",
+			sdl->sdl_type, ifm->ifm_data.ifi_type, sdl->sdl_nlen, sdl->sdl_data,
+			only ? only : "\"\"");
+	      if ((ifm->ifm_data.ifi_type == IFT_ETHER ||
+		   ifm->ifm_data.ifi_type == IFT_BRIDGE) &&
 		  (!only || 	    
 		   (sdl->sdl_nlen == strlen(only) &&
 		    !strncmp(sdl->sdl_data, only, sdl->sdl_nlen)))) {
@@ -813,6 +821,7 @@ namespace OCPI {
       bool IfScanner::
       getNext(Interface &i, std::string &err, const char *only) {
 	err.clear();
+	i.init();
 	Opaque &o = *(Opaque *)m_opaque;
 	if (m_index == 0) {
 	  m_index = 1;
@@ -843,6 +852,8 @@ namespace OCPI {
 	  case RTM_NEWADDR:
 	    if (!found)
 	      continue; // skip it if we skipped the interface itself
+	    ocpiDebug("RTM_NEWADDR: %u: len: %u vers: %u flags: 0x%x",
+		      ifm->ifm_index, ifm->ifm_msglen, ifm->ifm_version, ifm->ifm_flags);
 	    doNewAddr(ifm, end, i);
 	    break;
 	  case RTM_IFINFO:
@@ -934,7 +945,17 @@ namespace OCPI {
 #endif
 #endif
       }
-      Interface::Interface(){}
+      Interface::Interface() {
+	init();
+      }
+      void Interface::init() {
+	index = 0;
+	name.clear();
+	addr.set(0);
+	ipAddr.set(0);
+	brdAddr.set(0);
+	up = connected = loopback = false;
+      }
       Interface::Interface(const char *name, std::string &error) {
 	IfScanner ifs(error);
 	while (error.empty() && ifs.getNext(*this, error, name))

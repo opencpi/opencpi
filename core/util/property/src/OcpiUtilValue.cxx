@@ -315,8 +315,8 @@ namespace OCPI {
     // We implement the defined escapes (in IDL, and C/C++), and we make sure
     // escaping commas and braces works too
     // We advance cp over the char
-    static bool
-    parseOneChar(const char*&cp, const char *end, char &vp) {
+    bool
+    parseOneChar(const char *&cp, const char *end, char &vp) {
       if (!*cp || cp == end)
 	return true;
       if (*cp != '\\' || cp + 1 >= end) {

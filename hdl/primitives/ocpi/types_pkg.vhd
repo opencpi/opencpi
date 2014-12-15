@@ -216,6 +216,7 @@ function to_string(v : std_logic_vector) return string_t;
 function from_string(s : string_t; offset : unsigned; is_big_endian : bool_t) return dword_t;
 function from_string(s : string_t; off : natural; is_big_endian : boolean) return dword_t;
 function from_string(s : string_t) return std_logic_vector;
+function from_string(s : string_t) return string;
 function slv(a : string_t) return std_logic_vector;
 function to_slv(a: string_array_t) return std_logic_vector;
 function to_string_array(a: std_logic_vector; length : natural) return string_array_t;

@@ -37,6 +37,7 @@
 
 ifndef HdlMode
 HdlMode:=worker
+SubCores:=$(Cores)
 endif
 $(call OcpiDbg,Entering hdl-worker.mk)
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk

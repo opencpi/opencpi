@@ -370,7 +370,7 @@ namespace OCPI {
 	if (devAddr.isEther()) {
 	  if ((s = findSocket(ifc, discovery, error)))
 	    return trySocket(ifc, *s, devAddr, discovery, exclude, dev, error); 
-	  // not "bad" due to needing sudo for bare sockets without a driver
+	  // not "ocpiBad" due to needing sudo for bare sockets without a driver
 	  ocpiDebug("Could not open socket on interface '%s' to reach device at '%s: %s",
 		    ifc.name.c_str(), devAddr.pretty(), error.c_str());
 	} else {
@@ -435,9 +435,11 @@ namespace OCPI {
 	while (ifs.getNext(eif, error, ifName)) {
 	  if (eif.name == "udp") // the udp pseudo interface is not used for discovery
 	    continue;
-	  if (eif.up && eif.connected) {
-	    Access cAccess, dAccess;
-	    std::string name, endpoint;
+	  ocpiDebug("NetDriver: Considering interface \"%s\", addr 0x%x",
+		    eif.name.c_str(), eif.ipAddr.addrInAddr());
+	  if (eif.up && eif.connected && (!udp || eif.ipAddr.addrInAddr())) {
+	    //	    Access cAccess, dAccess;
+	    //	    std::string name, endpoint;
 	    OE::Address bcast(udp);
 	    count += tryIface(eif, bcast, exclude, NULL, discoveryOnly, error);
 	    if (error.size()) {
@@ -457,6 +459,6 @@ namespace OCPI {
 		   eif.name.c_str(), error.c_str());
 	return count;
       }
-    } // namespace Ether
+    } // namespace Net
   } // namespace HDL
 } // namespace OCPI

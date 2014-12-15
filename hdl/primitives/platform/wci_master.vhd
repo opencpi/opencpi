@@ -41,7 +41,7 @@ architecture rtl of wci_master is
   signal last_byte_en_valid_r : std_logic;
   signal last_addr_valid_r    : std_logic;
   signal sticky_r             : std_logic_vector(8 downto 0);
-  signal assert_command       : bool_t;
+--  signal assert_command       : bool_t;
   signal cmd_asserted_r       : bool_t;
   -- Scalability signals
   signal waiting              : std_logic;                     -- worker is waiting at barrier
@@ -57,12 +57,13 @@ begin
                                 (not its(active_r) and
                                  (its(ready_r) or reset_n_r = '0' or is_master)));
   waiting            <= wci_in.SFlag(1);
-  -- the gate for the single cycle command
-  assert_command     <= to_bool(active_r and its(ready_r) and
-                                not its(is_master) and not its(cmd_asserted_r));
+  -- command is asserted after we go active - i.e. one cycle after we start
+  -- FIXME: can we back this up now that occp is gone?
+  -- assert_command     <= to_bool(active_r and its(ready_r) and
+  -- assert_command     <= to_bool(active_r and not its(is_master) and not its(cmd_asserted_r));
   wci_out.Clk        <= worker_in.clk;
   wci_out.MReset_n   <= reset_n_r;
-  wci_out.MCmd       <= worker_in.cmd when its(assert_command) else ocpi.ocp.MCmd_IDLE;
+  wci_out.MCmd       <= worker_in.cmd when its(cmd_asserted_r) else ocpi.ocp.MCmd_IDLE;
   wci_out.MAddr      <= window_r & worker_in.address;
   wci_out.MAddrSpace(0) <= worker_in.is_config;
   wci_out.MByteEn    <= worker_in.byte_en;
@@ -90,7 +91,8 @@ begin
              slv(last_addr_valid_r) &    -- 16
              slv(waiting) &              -- 15 - worker is waiting for barrier
              slv(barrier_r) &            -- 14 - barrier in progress
-             slv0(13-11+1) &             -- 13:11
+             slv0(13-12+1) &             -- 13:12
+             slv(wci_in.SFlag(2)) &      -- 11
              slv(wci_in.SFlag(0)) &      -- 10
              slv(attention_r) &          --  9
              sticky_r;                   --  8:0
@@ -147,6 +149,9 @@ begin
         ready_r              <= to_bool(wci_in.SThreadBusy(0) = '0'); -- pipelined per spec
         if its(starting) then
           active_r <= '1';
+          if not is_master then
+            cmd_asserted_r <= btrue;
+          end if;
           -- Capture "last request" info upon startup
           case worker_in.operation is
             when config_write_e | config_read_e =>
@@ -163,11 +168,9 @@ begin
               null;
           end case;
         elsif its(active_r) then
+          cmd_asserted_r <= bfalse;
           if response /= none_e then
             active_r <= bfalse;
-            cmd_asserted_r <= bfalse;
-          elsif its(assert_command) then
-            cmd_asserted_r <= btrue;
           end if;
           if worker_in.operation = control_write_e then
             -- Write to one of 2 control registers

@@ -175,7 +175,7 @@ $(UNIXSHLIB): $(OBJECTS)
 	$(CXX) $(OCPI_SHARED_LIBRARIES_FLAGS) $(SHARED) -o "$@" $(call FILTEROBJS,$(OBJECTS),$(EXCLUDE_OBJECTS)) $(EXTRALIBOBJS) \
 	       	$(patsubst %,-L%$(OBJDIR),$(dir $(ALLLIBS))) \
 		$(sort $(addprefix -L,$(call OcpiDir,$(SYSLIBS)))) \
-		$(addprefix -locpi_,$(notdir $(ALLLIBS))) \
+		$(OCPI_LIBS) \
                 $(addprefix -l,$(notdir $(SYSLIBS))) \
 		$(BASICLIBS)
 endif
@@ -192,7 +192,7 @@ $(WINDLL): $(OBJECTS)
 		$(OBJECTS) \
 		$(patsubst %,-L%$(OBJDIR),$(dir $(ALLLIBS))) \
 		$(addprefix -L,$(call OcpiDir,$(SYSLIBS))) \
-		$(addprefix -locpi_,$(notdir $(ALLLIBS))) \
+		$(OCPI_LIBS) \
 		$(addprefix -l,$(notdir $(SYSLIBS))) \
 		$(BASICLIBS)
 else

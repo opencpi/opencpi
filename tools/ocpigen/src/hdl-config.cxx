@@ -235,24 +235,32 @@ create(ezxml_t xml, const char *xfile, Worker *parent, const char *&err) {
   err = NULL;
   std::string myPlatform;
   OE::getOptionalString(xml, myPlatform, "platform");
-  if (myPlatform.empty()) {
-    if (!::platform) {
-      // how about using the dir?
+  // Note that we generate the name of the platform file here to be findable
+  // in the hdl/platforms directory since:
+  // 1. The platform config might be remote from the platform.
+  // 2. The platform config is parsed during container processing elsewhere.
+  if (myPlatform.empty())
+    if (::platform)
+      OU::format(myPlatform, "%s/%s", ::platform, ::platform);
+    else {
       const char *slash = xfile ? strrchr(xfile, '/') : NULL;
       if (slash) {
 	std::string pfdir(xfile, slash - xfile);
 	const char *sl2 = strrchr(pfdir.c_str(), '/');
 	if (sl2)
-	  myPlatform = sl2 + 1;
-	else
-	  myPlatform = pfdir.c_str();
+	  if (!strcmp(sl2 + 1, "gen")) {
+	    pfdir.resize(sl2 - pfdir.c_str());
+	    sl2 = strrchr(pfdir.c_str(), '/');
+	    myPlatform = sl2 ? sl2 + 1 : pfdir.c_str();
+	    myPlatform += "/";
+	    myPlatform += sl2 ? sl2 + 1 : pfdir.c_str();
+	  } else
+	    myPlatform = sl2 + 1;
       } else {
 	err = "No platform specified in HdlConfig nor on command line";
 	return NULL;
       }
-    } else
-      myPlatform = ::platform;
-  }
+    }
   std::string pfile;
   ezxml_t pxml;
   HdlPlatform *pf;
@@ -286,8 +294,10 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
   std::string assy;
   OU::format(assy, "<HdlPlatformAssembly name='%s'>\n", m_name.c_str());
   // Add the platform instance
-  OU::formatAdd(assy, "  <instance worker='%s'/>\n", // index='%zu'/>\n",
-		m_platform.m_name.c_str()); //, index++);
+  // We make the worker name platform/platform so it is findable from the platforms
+  // directory.
+  OU::formatAdd(assy, "  <instance worker='%s/%s'/>\n", // index='%zu'/>\n",
+		m_platform.m_name.c_str(), m_platform.m_name.c_str()); //, index++);
   // Add all the device instances
   for (DevInstancesIter dii = m_devInstances.begin(); dii != m_devInstances.end(); dii++) {
     const ::Device &d = (*dii).device;

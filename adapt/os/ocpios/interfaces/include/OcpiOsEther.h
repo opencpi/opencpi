@@ -77,7 +77,7 @@ namespace OCPI {
 	void set(const void *x);
 	void set(uint16_t, uint32_t);
 	void set64(uint64_t a) { m_addr64 = a; }
-	Address(bool isUdp);
+	Address(bool isUdp, uint16_t port = 0);
 
 	inline explicit Address(const unsigned char *m = NULL) {
 	  set(m);
@@ -155,10 +155,10 @@ namespace OCPI {
 	// If no "addr", then use address in socket.
 	// If an ifc is supplied, send on that ifc.
 	// Return false if error or timeout
-	bool send(Packet &, size_t payloadLength, Address &addr, unsigned timeoutms, Interface *,
-		  std::string &error);
-	bool send(IOVec *, unsigned vecLen, Address &addr, unsigned timeoutms, Interface *,
-		  std::string &error);
+	bool send(Packet &, size_t payloadLength, Address &addr, unsigned timeoutms,
+		  Interface *, std::string &error);
+	bool send(IOVec *, unsigned vecLen, Address &addr, unsigned timeoutms,
+		  Interface *, std::string &error);
 	inline int fd() const { return m_fd; }
       };
       // The interface object has no dependencies on the scanner.
@@ -166,6 +166,7 @@ namespace OCPI {
       struct Interface {
 	Interface();
 	Interface(const char *name, std::string &error);
+	void init();
 	unsigned index;
 	std::string name;
 	Address addr, ipAddr, brdAddr;

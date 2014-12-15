@@ -1,217 +1,165 @@
--- THIS FILE WAS ORIGINALLY GENERATED ON Mon Mar 18 13:03:40 2013 EDT
--- BASED ON THE FILE: gen/file_read.xml
--- YOU *ARE* EXPECTED TO EDIT IT
--- This file initially contains the architecture skeleton for worker: file_read
+-- TODO/FIXME:  eliminate the dead cycle between output messages
+--              implement the "repeat" property/feature
+--              implement the "granularity" feature: requires buffering
+--              should badMessage set attention?
+--              use precise bursts on output when messagesInFile
+--              implement endians
 
-library IEEE; 
-  use IEEE.std_logic_1164.all; 
-  use ieee.numeric_std.all;
-  use ieee.std_logic_textio.all;
-  use ieee.math_real.all;
-  use std.textio.all;  
-library ocpi; 
-  use ocpi.types.all; -- remove this to avoid all ocpi name collisions
-  use work.file_read_worker_defs.all;
+library ieee, ocpi, util;
+use ieee.std_logic_1164.all, ieee.numeric_std.all, std.textio.all;  
+use util.util.all, ocpi.types.all, work.file_read_worker_defs.all;
 
---entity file_read_worker is
---  port(
---    -- Signals for control and configuration.  See record types above.
---    ctl_in               : in  worker_ctl_in_t;
---    ctl_out              : out worker_ctl_out_t := (btrue, bfalse, bfalse, bfalse);
---    -- Input values and strobes for this worker's writable properties
---    props_in             : in  worker_props_in_t;
---    -- Outputs for this worker's volatile, readable properties
---    props_out            : out worker_props_out_t;
---    -- Signals for WSI output port named "out".  See record types above.
---    out_in               : in  worker_out_in_t;
---    out_out              : out worker_out_out_t);
---end entity file_read_worker;
-
-architecture behavior of file_read_worker is
-
-  signal bytes_remaining_1                     : ulong_t:= (others => '0');  -- left in message PLUS 1
-  signal som_now, som_now_q                    : std_logic            := '0';
-  signal som_next                              : std_logic            := '0';
-  signal bytes_read, bytes_read_q              : ulonglong_t:= (others => '0');
-  signal messages_written, messages_written_q  : ulonglong_t:= (others => '0');
-  signal opcode_r, opcode_r_q                  : out_opcode_t; -- opcode from file that is 32 bits
-  signal data_r, data_r_q                      : std_logic_vector(31 downto 0);
-  signal byte_enable, byte_enable_q            : std_logic_vector(3 downto 0);
---  signal give_now, give_now_q                  : bool_t;
-  signal eom_now, eom_now_q                    : bool_t;
-  signal sending_message, sending_message_q    : bool_t;
-  signal done               : bool_t := bfalse;  -- to indicate file is done and closed
-  signal init               : bool_t := bfalse;  -- to initialize file name from props once
-  signal ready_r            : bool_t := bfalse;
-
+architecture rtl of file_read_worker is
+  -- for file I/O and using util.cwd module
+  constant pathLength      : natural := props_in.fileName'right;
+  signal cwd               : string_t(0 to props_out.cwd'right); -- from cwd module to props_out
+  file   data_file         : char_file_t;
+  -- our state machine
+  signal init_r            : boolean     := false;           -- did one-time init
+  signal som_next_r        : boolean     := false;           -- is staged data a SOM?
+  signal bytesLeft_r       : ulong_t     := (others => '0'); -- bytes left in current message
+  signal ready_r           : boolean     := false;           -- have staged data for out_out
+  -- registers driving ctl_out
+  signal finished_r        : boolean     := false;           -- to drive ctl_out.finished
+  -- registers driving props_out
+  signal bad_r             : boolean     := false;           -- to drive props_out.badMessage
+  signal messagesWritten_r : ulonglong_t := (others => '0'); -- drive props_out.messagesWritten
+  signal bytesRead_r       : ulonglong_t := (others => '0'); -- drive props_out.bytesRead
+  -- registers driving out_out - initialized just for simulator cleanliness, not functionality
+  signal data_r            : ulong_t     := (others => '0');     -- to drive out_out.data;
+  signal opcode_r          : uchar_t     := (others => '0');     -- to drive out_out.opcode
+  signal byte_enable_r     : std_logic_vector(3 downto 0) := "0000"; -- drive out.byte_enable
+  signal som_r             : boolean     := false;               -- to driver out_out.som
+  signal eom_r             : boolean     := false;               -- to driver out_out.eom
+  signal valid_r           : boolean     := false;               -- to driver out_out.valid
+  -- combi indication that we are giving to output port in the current cycle
+  signal giving            : boolean;
 begin
-   props_out.bytesread       <= bytes_read_q;
-   props_out.messageswritten <= messages_written_q;
-   out_out.opcode            <= opcode_r_q;
-   out_out.byte_enable       <= byte_enable_q;
-   out_out.data              <= data_r_q;
-   out_out.valid             <= sending_message_q and out_in.ready;
-   out_out.som               <= som_now_q;
-   out_out.give              <= sending_message_q and out_in.ready;
-   out_out.eom               <= eom_now_q and out_in.ready;
+   ctl_out.finished          <= to_bool(finished_r);
+   props_out.cwd             <= cwd;
+   props_out.bytesRead       <= bytesRead_r;
+   props_out.messageswritten <= messagesWritten_r;
+   props_out.badMessage      <= to_bool(bad_r);
+   out_out.give              <= to_bool(giving);
+   out_out.som               <= to_bool(som_r);
+   out_out.eom               <= to_bool(eom_r);
+   out_out.valid             <= to_bool(valid_r);
+   out_out.opcode            <= out_Opcode_t(resize(opcode_r,out_out.opcode'length));
+   out_out.byte_enable       <= byte_enable_r;
+   out_out.data              <= std_logic_vector(data_r);
+   giving                    <= out_in.ready and ready_r;
+
+  -- get access to the CWD for pathname resolution (and as a readable property)
+  cwd_i : component util.util.cwd
+    generic map(length     => cwd'right)
+    port    map(cwd        => cwd);
 
    process (ctl_in.clk) is
-   begin
-     if rising_edge(ctl_in.clk) and its(out_in.ready) then
-       bytes_read_q       <= bytes_read;
-       messages_written_q <= messages_written;
-       opcode_r_q         <= opcode_r;
-       byte_enable_q      <= byte_enable;
-       data_r_q           <= data_r;
---       give_now_q         <= give_now;
-       som_now_q          <= som_now;
-       eom_now_q          <= eom_now;
-       sending_message_q  <= sending_message;
-     end if;
-   
-   end process;
-
-   process (ctl_in.clk) is
-     type char_file_t is file of character;
-     file data_file          : char_file_t;
-     variable i              : integer range 0 to props_in.filename'right := 0;
-     variable file_name      : string(1 to props_in.filename'right);--:= (others => '0');
-     variable status         : file_open_status;
-     variable length_to_read : natural;
-     variable nbytes         : std_logic_vector(31 downto 0);
-     variable data           : character;
-     variable eom            : bool_t;
-     variable bad            : bool_t;
+     variable ulong_bytes       : natural; -- how many bytes from read_ulong
+     variable ulong_byte_enable : std_logic_vector(3 downto 0); -- byte enables from read_ulong
+     variable eom               : boolean; -- temp indicating we want eom
+     -- impure function that also sets the above two process variables
+     impure function read_ulong(max2read : natural; eof_bad : boolean) return ulong_t is
+       variable data : character;
+       variable ulong : ulong_t;
+       variable n2read : natural := max2read;
+     begin
+       if n2read > 4 then
+         n2read := 4;
+       end if;
+       ulong_bytes := 0;
+       ulong_byte_enable := "0000";
+       for i in 0 to n2read-1 loop
+         if endfile(data_file) then
+           bad_r <= eof_bad;
+           return ulong;
+         end if;
+         read(data_file, data);
+         ulong(8*i+7 downto 8*i) := to_unsigned(character'pos(data), 8);
+         ulong_bytes := ulong_bytes + 1;
+         ulong_byte_enable(i) := '1';
+       end loop;
+       return ulong;
+     end read_ulong;
+     -- check for EOF and do the right thing.
+     procedure finish(msg : string) is begin
+       report "EOF on input file: " & msg;
+       file_close(data_file);
+       if its(props_in.suppressEOF) then
+         finished_r <= true; -- nothing to do at this EOF except be finished
+       else
+         -- We must send a zero-length message
+         opcode_r <= props_in.opcode;
+         bytesLeft_r <= (others => '0');
+         som_next_r <= true;
+       end if;
+     end finish;
    begin    
      if rising_edge(ctl_in.clk) then
-       --give_now <= bfalse;
-       --eom_now <= bfalse;
-       ready_r <= out_in.ready;
        if its(ctl_in.reset) then
-         sending_message  <= bfalse; 
-         init             <= bfalse;
-         done             <= bfalse;
-         eom_now          <= bfalse;
-         bytes_read       <= (others => '0');
-         messages_written <= (others => '0');
-         som_next         <= '0';
-       elsif its(ctl_in.is_operating and not done) then    
-    
-         if not init then
-           -- convert file name for function file_open
-           for i in (props_in.fileName'left) to (props_in.fileName'right-1) loop
-             file_name(i+1) := To_character(props_in.fileName(i));     
-           end loop;
-           file_open(status, data_file, file_name, read_mode);
-           if status = open_ok then
-             init <= btrue;
-             report "File opened successfully:";
-             report file_name;
-           else
-             done <= btrue;
-             report "File could not be opened:";
-             report file_name;
-           end if;
-         elsif bytes_remaining_1 = 0 then
-           sending_message  <= bfalse; 
-           -- start a new message
-           if its(props_in.messagesInFile) then
-             if endfile(data_file) then
-               -- clean eof, no more messages
-               file_close(data_file);
-               done <= btrue;
-             else
-               nbytes := (others => '0');
-               for i in 0 to 3 loop
-                 if endfile(data_file) then
-                   bad := btrue;
-                   exit;
-                 else
-                   read(data_file, data);
-                   nbytes(8*i+7 downto 8*i) := std_logic_vector(to_unsigned(character'pos(data), 8));
-                 end if;
-               end loop;
-               if not bad then
-                 bytes_remaining_1 <= unsigned(nbytes) + 1;
-                 for i in 0 to 3 loop
-                   if endfile(data_file) then
-                     bad := btrue;
-                     exit;
-                   else 
-                     read(data_file, data);
-                     if i = 0 then
-                       opcode_r <= std_logic_vector(to_unsigned(character'pos(data),8));
-                     end if;
-                   end if;
-                 end loop;
-               end if;
-               if its(bad) then
-                 report "Bad message header at EOF";
-                 done <= btrue;
-               else
-                 som_next <= '1';
-               end if;
-             end if;
-           else                         -- else of messagesinfile
-             opcode_r <= out_opcode_t(props_in.opcode);
-             bytes_remaining_1  <= props_in.messageSize + 1;
-             som_next <= '1';
-             report "prepared for new message";
-           end if;
-         elsif its(out_in.ready) and bytes_remaining_1 /= 0 then
-           sending_message  <= btrue; 
-           -- output is ready and we should read and send some bytes
-           byte_enable <= (others => '0');
-           nbytes := (others => '0');
-           eom := bfalse;
-           data_r <= (others => '0');
-
-           if endfile(data_file) then
-             file_close(data_file);
-             done <= '1';
-             report "File closed";
-             eom := btrue;
-           else
-             if bytes_remaining_1 < 6 then -- on the last word
-               eom := btrue;
-             end if;
-             length_to_read := to_integer(bytes_remaining_1) - 1;
-             if length_to_read > 4 then
-               length_to_read := 4;
-             end if;
-             for i in 0 to length_to_read - 1 loop
-               if endfile(data_file) then
-                 byte_enable(i) <= '0';
-                 data_r(i*8+7 downto i*8) <= (others => '0');  -- for non-byte-enabled
-               else
-                 read(data_file, data);
-                 data_r(i*8+7 downto i*8) <= std_logic_vector(to_unsigned(character'pos(data),8));
-                 byte_enable(i) <= '1';
-                 nbytes := std_logic_vector(unsigned(nbytes) + 1);
-               end if;
-             end loop;
-             bytes_remaining_1 <= bytes_remaining_1 - unsigned(nbytes);
-             bytes_read <= bytes_read + unsigned(nbytes);
-
-             if endfile(data_file) then
-               eom := btrue;
-               done <= btrue;
-             end if;
-             if its(eom) then
-               eom_now <= btrue;
-               bytes_remaining_1 <= (others => '0');
-               messages_written <= messages_written + 1;
-             end if;
-           end if;
---           give_now <= out_in.ready;
-           som_now <= som_next;
-           som_next <= '0';
-
+         init_r            <= false;
+         som_next_r        <= false;
+         bytesLeft_r       <= (others => '0');
+         ready_r           <= false;
+         finished_r        <= false;
+         bad_r             <= false;
+         messagesWritten_r <= (others => '0');
+         bytesRead_r       <= (others => '0');
+       elsif its(ctl_in.is_operating) and not finished_r then    
+         if giving and eom_r then
+           ready_r <= false;
          end if;
-       elsif its(ctl_in.is_operating and done) and its(out_in.ready) then
-         eom_now <= bfalse;
-         sending_message <= bfalse;
+         if not init_r then  
+           -- do the one time (after is_operating so properties are set)
+           open_file(data_file, cwd, props_in.fileName, read_mode);
+           opcode_r <= props_in.opcode;
+           init_r <= true;
+         elsif bytesLeft_r = 0 and not som_next_r then
+           -- between messages - see if we can start one
+           if endfile(data_file) then
+             finish("between messages");
+           else
+             -- Starting a message
+             som_next_r <= true;
+             if its(props_in.messagesInFile) then
+               bytesLeft_r <= read_ulong(4, true);
+               opcode_r <= resize(read_ulong(4, true),opcode_r'length);
+               if bad_r then
+                 finish("Bad message header");
+               end if;
+             else
+               bytesLeft_r <= props_in.messageSize;
+             end if;
+           end if;
+         elsif giving or not ready_r then
+           -- there was nothing previously staged, or we are giving it now anyway
+           ready_r    <= true;
+           som_r      <= som_next_r;
+           som_next_r <= false;
+           eom        := false;
+           if bytesLeft_r = 0 then -- we are staging an EOF/zlm.  There is no file I/O
+             eom        := true;
+             valid_r    <= false;
+             finished_r <= true;
+           elsif endfile(data_file) then -- EOF mid-message, w/ no data: shouldn't happen
+             report "Unexpected EOF" severity failure;
+           else -- we want data (message_length_r != 0), and there is data (not eof)
+             data_r        <= read_ulong(to_integer(bytesLeft_r), false);
+             byte_enable_r <= ulong_byte_enable;
+             eom           := ulong_bytes = bytesLeft_r or endfile(data_file);
+             bytesLeft_r   <= bytesLeft_r - ulong_bytes;
+             valid_r       <= true;
+             bytesRead_r <= bytesRead_r + ulong_bytes;
+           end if;
+           if eom then
+             messagesWritten_r <= messagesWritten_r + 1;
+           end if;
+           eom_r <= eom;
+         end if;  -- end of producing output
+       else -- end of operating and not finished
+         -- this is needed for the very last ZLM at EOF
+         ready_r <= false;
        end if;
-     end if;
+     end if; -- end of clock edge
    end process;
-end behavior;
+end rtl;

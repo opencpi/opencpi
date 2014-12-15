@@ -390,7 +390,8 @@ emitRecordArray(FILE *f) {
 }
 
 void Port::
-emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker) {
+emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker,
+		 const char */*defaultIn*/, const char */*defaultOut*/) {
   if (inWorker ? haveWorkerInputs() : haveInputs()) {
     if (last.size())
       fprintf(f, last.c_str(), ";\n");
@@ -727,7 +728,8 @@ emitRecordTypes(FILE *f) {
 }
 
 void TimeServicePort::
-emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool /*inWorker*/) {
+emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool /*inWorker*/,
+		 const char *, const char *) {
   if (last.size())
     fprintf(f, last.c_str(), ";");
   std::string in, out;

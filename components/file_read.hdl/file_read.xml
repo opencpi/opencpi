@@ -1,5 +1,7 @@
 <HdlImplementation Language="vhdl">
   <xi:include href="file_read_spec.xml"/>
   <specproperty name="fileName" readable='true'/>
+  <specproperty name="suppressEOF" readable='true'/>
   <streaminterface name="out" datawidth='32'/>
+  <property name="cwd" type='string' stringlength='100' volatile='true'/>
 </HdlImplementation>

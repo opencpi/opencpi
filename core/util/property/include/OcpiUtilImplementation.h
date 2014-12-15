@@ -97,7 +97,7 @@ namespace OCPI {
 	  m_platform,
 	  m_tool, m_toolVersion,
 	  m_runtime, m_runtimeVersion;
-      inline const std::string &uuid() { return m_uuid; }
+      inline const std::string &uuid() const { return m_uuid; }
       inline const std::string &platform() const { return m_platform; }
     protected:
       // Parse from target string

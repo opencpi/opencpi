@@ -51,7 +51,7 @@ if test "$esn" = ""; then
 fi
 # Here we have not checked the part or the position yet.
 # Do more generic work that does not depend on the platform-specifics
-echo Checking existing loaded bitstream on \"$device\"...
+echo Checking existing loaded bitstream on OpenCPI HDL device \"$device\"...
 ocf="$dir/sudo_ocpi $OCPI_CDK_DIR/bin/$OCPI_TOOL_HOST/ocfrp_check"
 $ocf $pciDevice
 if test $? != 0; then
@@ -95,13 +95,14 @@ first=
 firstser=
 #echo Cables are \"$cables\".
 OFS="$IFS"
-IFS=
+IFS="~"
 for c in $cables; do
+  #echo Cable is =$c=
   IFS="$OFS"
   read port serial <<EOF
 `echo $c | tee yy |sed 's/ /\\\ /g' | tr '=' ' '|tee xx`
 EOF
-  # echo Found USB cable port: \"$port\" with serial number: \"$serial\".   Esn is \"$esn\".
+  #echo Found USB cable port: \"$port\" with serial number: \"$serial\".   Esn is \"$esn\".
   if test "$esn" = any; then
     if test "$first" != ""; then
        echo No serial number specified for device \"$device\", but multiple JTAG cables found.
@@ -111,7 +112,7 @@ EOF
     firstser=$serial
   elif test "$serial" = "$esn"; then
     if test "$found" != ""; then
-       echo Mulitple cables found for device \"$device\" with JTAB cable serial number \"$esn\".
+       echo Multiple cables found for device \"$device\" with JTAB cable serial number \"$esn\".
        exit 1
     fi
     found=$port
@@ -139,7 +140,8 @@ fi
 # Now we do the platform-specific part search to check that the part we want
 # to load is at the proper place in the jtag chain
 ################################################################################
-pos=`$dir/jtagSupport_$platform part $temp "$cable" "$part"`
+jtagpart=`echo $part | sed 's/\(^[^-]*\).*$/\1/'`
+pos=`$dir/jtagSupport_$platform part $temp "$cable" "$jtagpart"`
 if test $? != 0; then
   echo Error: Could not find jtag position for part $part on JTAG cable \"$cable\".
   exit 1

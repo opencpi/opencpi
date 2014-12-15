@@ -51,7 +51,7 @@ function bad {
 }
 
 ################################################################################
-# Now we do inividual functions
+# Now we do individual functions
 ################################################################################
 case $func in
   (cables)
@@ -60,7 +60,7 @@ listusbcables
 EOF
     # impact doesn't have reliable exit codes
     CABLES=`grep '^port=' < $temp.log | \
-        sed 's/port= *\([^ ]*\) *, *esn= *\([^ ]*\) *$/\1=\2/'`
+        sed 's/port= *\([^ ]*\) *, *esn= *\([^ ]*\) *$/\1=\2~/'`
     if test $? != 0 -o "$CABLES" = ""; then
       echo No Xilinx USB JTAG cables found using the Xilinx \"impact\" tool. 1>&2
       bad
@@ -71,6 +71,7 @@ EOF
   (part)
     port=$3
     part=$4
+    echo Finding cable position of part \"$part\" on cable at port \"$port\" 1>&2
     temps=$temp.part
     for pp in 1 2 3 4 5 6 7 8 9; do
       $imp <<EOF 2> $temp.log 1>&2

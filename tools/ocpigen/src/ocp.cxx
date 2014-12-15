@@ -98,23 +98,24 @@ emitPortDescription(FILE *f, Language lang) const {
 }
 
 void OcpPort::
-emitRecordSignal(FILE *f, std::string &last, const char */*prefix*/, bool inWorker) {
+emitRecordSignal(FILE *f, std::string &last, const char */*prefix*/, bool inWorker,
+		 const char *defaultIn, const char *defaultOut) {
   if (last.size())
     fprintf(f, last.c_str(), ";");
   std::string temp;
   OU::format(temp,
 	     "    -- Signals for %s %s port named \"%s\".  See record types above.\n"
-	     "    %-*s : in  %s%s_t",
+	     "    %-*s : in  %s%s_t%s%s",
 	     typeName(), masterIn() ? "input" : "output", name(),
 	     (int)m_worker->m_maxPortTypeName, typeNameIn.c_str(), inWorker ? "worker_" : "",
-	     typeNameIn.c_str());
+	     typeNameIn.c_str(), defaultIn ? " := " : "", defaultIn ? defaultIn : "");
   if (inWorker ? haveWorkerOutputs() : haveOutputs())
     OU::format(last,
 	       "%s;\n"
-	       "    %-*s : out %s%s_t%%s",
+	       "    %-*s : out %s%s_t%s%s%%s",
 	       temp.c_str(),
 	       (int)m_worker->m_maxPortTypeName, typeNameOut.c_str(), inWorker ? "worker_" : "",
-	       typeNameOut.c_str());
+	       typeNameOut.c_str(), defaultOut ? " := " : "", defaultOut ? defaultOut : "");
   else
     OU::format(last, "%s%%s", temp.c_str());
 }

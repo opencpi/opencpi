@@ -345,7 +345,7 @@ namespace OCPI {
     }
     bool Worker::wait(OCPI::OS::Timer *timer) {
       while (!isDone()) {
-	OS::sleep(1);
+	OS::sleep(10);
 	if (timer && timer->expired())
 	  return true;
       }

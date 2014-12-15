@@ -154,6 +154,7 @@ namespace OCPI {
 					   const OCPI::Util::PValue *extParams,
 					   const OCPI::Util::PValue *connParams) = 0;
     public:
+      inline Port &containerPort() { return *this; }
       // If isLocal(), then this method can be used.
       virtual void localConnect(OCPI::DataTransport::Port &/*input*/) {}
       // If islocal(), then this can be used.
@@ -244,7 +245,7 @@ namespace OCPI {
       // Best case:
       //     we're done.  no further info exchange needed, return 0;
 
-      virtual void setInitialProviderInfo(const OCPI::Util::PValue *p, const std::string &, std::string &out);
+      virtual bool setInitialProviderInfo(const OCPI::Util::PValue *p, const std::string &, std::string &out);
 
       // Step 3: (after passing initialUserInfo to provider side)
       // Give remote initial user info to this local provider port.
@@ -256,7 +257,7 @@ namespace OCPI {
       // Best case:
       //     we're done, no further info exchange needed, return 0;
 
-      virtual void setInitialUserInfo(const std::string &, std::string &out);
+      virtual bool setInitialUserInfo(const std::string &, std::string &out);
 
       // Step 4: (after passing finalProviderInfo to user side)
       // Give remote final provider info to this local user port.
@@ -269,7 +270,7 @@ namespace OCPI {
       // Best case:
       //     we're done, no further info exchange needed, return 0;
 
-      virtual void setFinalProviderInfo(const std::string &, std::string &out);
+      virtual bool setFinalProviderInfo(const std::string &, std::string &out);
 
       // Step 5: (after passing finalUserInfo to provider side)
       // Worst case:

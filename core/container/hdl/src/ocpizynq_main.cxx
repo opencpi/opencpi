@@ -53,7 +53,7 @@ static uint8_t*map(off_t addr, size_t arg_size) {
 }
 
 int
-main(int, char **argv) {
+main(int, const char **argv) {
 #ifndef OCPI_ARCH_arm
   fprintf(stderr, "This program is only functional on Zynq/Arm platforms\n");
   return 1;

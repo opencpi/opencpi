@@ -66,6 +66,10 @@
 
 namespace OCPI {
 
+  namespace Application {
+    class Launcher;
+    extern Launcher *g_localLauncher;
+  }
   namespace Container {
 
     class Driver;
@@ -122,6 +126,7 @@ namespace OCPI {
       const std::string &platform() const { return m_platform; }
       const std::string &model() const { return m_model; }
       const std::string &os() const { return m_os; }
+      const std::string &osVersion() const { return m_osVersion; }
 
       virtual Container *nextContainer() = 0;
       bool supportsImplementation(OCPI::Util::Worker &);
@@ -192,10 +197,10 @@ namespace OCPI {
       static Container &nthContainer(unsigned n);
       typedef uint32_t CMap;
       static const unsigned maxContainer = sizeof(CMap) * 8;
-      // Server - if a container is remote, it has a server.
-      class Server;
-      Server *m_server;
-      inline Server *server() const { return m_server; }
+      // Launcher: default is to
+      OCPI::Application::Launcher &launcher() const {
+	return *OCPI::Application::g_localLauncher;
+      }
       inline OCPI::DataTransport::Transport &getTransport() { return m_transport; }
     protected:
       void shutdown();

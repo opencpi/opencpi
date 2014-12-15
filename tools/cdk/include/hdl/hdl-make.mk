@@ -93,10 +93,10 @@ HdlXmlComponentLibraries=$(strip \
 # Note we are silent about workers that don't have cores.
 # FIXME: put in the error check here, but avoid building platform modules like "occp" etc.
 define HdlSetWorkers
-  HdlInstances:=$$(and $$(ImplWorkersFile),$$(strip $$(foreach i,$$(shell grep -h -v '\\\#' $$(ImplWorkersFile)),\
+  HdlInstances:=$$(and $$(AssyWorkersFile),$$(strip $$(foreach i,$$(shell grep -h -v '\\\#' $$(AssyWorkersFile)),\
 	               $$(if $$(filter $$(firstword $$(subst :, ,$$i)),$$(HdlPlatformWorkers)),,$$i))))
   HdlWorkers:=$$(call Unique,$$(foreach i,$$(HdlInstances),$$(firstword $$(subst :, ,$$i))))
-  $$(infox Cores:$$(Cores))
+  $$(infox HdlSetWorkers:Cores:$$(Cores):$$(HdlWorkers):$$(HdlInstances))
   SubCores:=$$(call Unique,\
     $$(Cores) \
     $$(foreach w,$$(HdlWorkers),\
@@ -193,11 +193,10 @@ HdlName=$(or $(Core),$(LibName))
 HdlLog=$(HdlName)-$(HdlToolSet).out
 HdlTime=$(HdlName)-$(HdlToolSet).time
 HdlCompile=\
-  $(infoxx Compile0:$(HdlWorkers):$(Cores):$(ImplWorkersFile):$(ImplFile):to-$@) \
-  $(eval $(HdlSetWorkers)) \
-  $(infoxx Compile:$(HdlWorkers):$(Cores):$(ImplWorkersFile)) \
+  $(infox Compile0:$(HdlWorkers):$(Cores):$(ImplWorkersFile):$(ImplFile):to-$@) \
+  $(infox Compile:$(HdlWorkers):$(Cores):$(ImplWorkersFile)) \
   $(and $(SubCores),$(call HdlRecordCores,$(basename $@))$(infoxx DONERECORD)) \
-  $(infoxx SUBCORES:$(SubCores)) \
+  $(infox SUBCORES:$(SubCores)) \
   cd $(TargetDir) && \
   $(infoxx PRECOMPILE:$(HdlPreCompile))$(and $(HdlPreCompile), $(HdlPreCompile) &&)\
   export HdlCommand="set -e; $(HdlToolCompile)"; \
@@ -354,16 +353,12 @@ $(call OcpiDbgVar,HdlTargets)
 HdlAdjustLibraries=$(foreach l,$1,$(if $(findstring /,$l),$(call AdjustRelative,$l),$l))
 
 define HdlSearchComponentLibraries
-$(foreach c,$(ComponentLibraries),\
-  $(foreach o,$(ComponentLibraries),\
-     $(if $(findstring $o,$c),,\
-        $(and $(filter $(notdir $o),$(notdir $c)),
-          $(error The component libraries "$(c)" and "$(o)" have the same base name, which is not allowed)))))
-$(infox HSC1:$(XmlIncludeDirs)--$(ComponentLibraries))
-$$(infox HSC2:$$(XmlIncludeDirs)--$$(ComponentLibraries))
-override XmlIncludeDirs += $(call HdlXmlComponentLibraries,$(ComponentLibraries))
-$(infox HSC3:$(XmlIncludeDirs))
-$$(infox HSC4:$$(XmlIncludeDirs))
+  $(foreach c,$(ComponentLibraries),\
+    $(foreach o,$(ComponentLibraries),\
+       $(if $(findstring $o,$c),,\
+          $(and $(filter $(notdir $o),$(notdir $c)),
+            $(error The component libraries "$(c)" and "$(o)" have the same base name, which is not allowed)))))
+  override XmlIncludeDirs += $(call HdlXmlComponentLibraries,$(ComponentLibraries))
 endef
 HdlRmRv=$(if $(filter %_rv,$1),$(patsubst %_rv,%,$1),$1)
 
@@ -381,7 +376,7 @@ HdlRecordCores=\
 
 #	             $(foreach r,$(call HdlRmRv,$(basename $(call HdlCoreRef,$c,$1))),\
 
-HdlCollectCores=$(infox CCC:$(SubCores))$(call Unique,\
+HdlCollectCores=$(infox CCCC:$(SubCores))$(call Unique,\
 		  $(foreach a,\
                    $(foreach c,$(SubCores),$(infox ZC:$c)$c \
 	             $(foreach r,$(basename $(call HdlCoreRef,$(call HdlToolCoreRef,$c),$1)),$(infox ZR:$r)\
@@ -450,4 +445,33 @@ ifndef HdlPlatformsDir
   endif
 endif
 
+# Do the stuff necessary when building an assembly
+# This applies to platform configurations, application assemblies, and containers
+define HdlPrepareAssembly
+
+  # 1. Scan component libraries to add to XmlIncludeDirs
+  $(HdlSearchComponentLibraries)
+  # 2. Generate (when needed) the workers file immediately to use for dependencies
+  AssyWorkersFile:=$$(GeneratedDir)/$$(Worker).wks
+  $$(if\
+    $$(call DoShell,$$(MAKE) -f $$(OCPI_CDK_DIR)/include/hdl/hdl-get-workers.mk\
+                    Platform=$(Platform) \
+                    Assembly=$(Assembly) \
+                    AssyWorkersFile=$$(AssyWorkersFile) \
+                    Worker=$$(Worker) Worker_xml=$$(Worker_xml) XmlIncludeDirs="$$(XmlIncludeDirs)",\
+                   Output), \
+    $$(error Error deriving workers from file $$(Worker).xml. $$(Output)),\
+   )
+  # 3. Generated the assembly source file
+  ImplFile:=$$(GeneratedDir)/$$(Worker)-assy$$(HdlSourceSuffix)
+  $$(ImplFile): $$$$(ImplXmlFile) | $$$$(GeneratedDir)
+	$(AT)echo Generating the $$(HdlMode) source file: $@ from $$<
+	$(AT)$$(OcpiGen) -D $$(GeneratedDir) \
+                         $(and $(Assembly),-S $(Assembly)) $(and $(Platform),-P $(Platform)) \
+                         -a $$<
+  # 4. Make the generated assembly source file one of the files to compile
+  WorkerSourceFiles=$$(ImplFile)
+  # 5. Define the variable used for dependencies when the worker is actually built
+  HdlPreCore=$$(eval $$(HdlSetWorkers))$$(call HdlCollectCores,$$(HdlTarget))
+endef
 endif

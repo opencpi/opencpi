@@ -59,6 +59,9 @@ namespace OL = OCPI::Library;
 
 
 namespace OCPI {
+  namespace Application {
+     Launcher *g_localLauncher;
+  }
   namespace Container {
 
 #if 0
@@ -125,8 +128,7 @@ namespace OCPI {
 	return *art;
       // If it is not loaded, let's get it from the library system,
       // and load it ourselves.
-      return createArtifact(OL::Manager::getArtifact(url, artifactParams),
-			    artifactParams);
+      return createArtifact(OL::Manager::getArtifact(url, artifactParams), artifactParams);
     }
     Artifact & Container::
     loadArtifact(OL::Artifact &libArt, const OA::PValue *artifactParams) {

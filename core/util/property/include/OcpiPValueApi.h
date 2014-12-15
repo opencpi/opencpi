@@ -65,6 +65,7 @@ namespace OCPI {
       inline PValue()
 	: name(0), type(OCPI_none), owned(false) {}
       unsigned length() const;
+      const std::string &unparse(std::string &value, bool append = false) const;
       const char *name;
       BaseType type;
       bool owned;

@@ -52,7 +52,7 @@ case $func in
         echo "Cable \"$c\": cannot get serial number." 1>&2
         bad
       fi
-      echo $c=$SERIAL
+      echo $c=$SERIAL~
       good
     done
     ;;
@@ -87,7 +87,8 @@ case $func in
      (*)
        tempfile=$temp.sof
        temps+=$tempfile
-       ln -s $tempfile $bitfile
+       echo Creating link with the quartus suffix '".sof"': $bitfile '->' $tempfile.
+       ln -s $bitfile $tempfile
        bitfile=$tempfile
        ;;
     esac

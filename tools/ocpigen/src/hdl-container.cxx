@@ -31,16 +31,34 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
 			    HDL_CONTAINER_ATTRS, (void*)0)) ||
       (err = OE::checkElements(xml, HDL_CONTAINER_ELEMS, (void*)0)))
     return NULL;
-  std::string myConfig, myAssy;
+  std::string myConfig, myPlatform, myAssy;
+  // Process the configuration name.
+  // It might have a slash between platform and config, or just be a platform.
+  // The configuration might be auto-generated (in the gen subdir) or not.
+  // So first we split things, and then check for hand-authored (in the platform dir),
+  // then try the "gen" subdir.
   OE::getOptionalString(xml, myConfig, "config");
-  if (myConfig.empty()) {
-    OE::getOptionalString(xml, myConfig, "platform");
-    if (myConfig.empty()) {
-      err = "No platform or platform configration specified in HdlContainer";
+  OE::getOptionalString(xml, myPlatform, "platform");
+  if (myConfig.length() && myPlatform.length()) {
+    if (strchr(myConfig.c_str(), '/') ||
+	strchr(myPlatform.c_str(), '/')) {
+      err = "Slashes not allowed when both platform and config attributes specified";
       return NULL;
     }
-    if (!strchr(myConfig.c_str(), '/'))
-      myConfig = myConfig + "/" + myConfig + "_base";
+  } else if (myConfig.empty() && myPlatform.empty()) {
+      err = "No platform or platform configration specified in HdlContainer";
+      return NULL;
+  } else {
+    // one or the other
+    if (myConfig.length())
+      myPlatform = myConfig;
+    // assume only platform is specified
+    const char *slash = strchr(myPlatform.c_str(), '/');
+    if (slash) {
+      myConfig = slash + 1;
+      myPlatform.resize(slash - myPlatform.c_str());
+    } else
+      myConfig = myPlatform + "_base";
   }
   OE::getOptionalString(xml, myAssy, "assembly");
   if (myAssy.empty())
@@ -50,12 +68,17 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
       err = OU::esprintf("No assembly specified for container specified in %s", xfile);
       return NULL;
     }
-  std::string configFile, assyFile;
+  std::string configFile, assyFile, configName;
   HdlConfig *config;
   HdlAssembly *appAssembly;
   ezxml_t x;
-  if ((err = parseFile(myConfig.c_str(), xfile, "HdlConfig", &x, configFile)) ||
-      !(config = HdlConfig::create(x, configFile.c_str(), NULL, err)) ||
+  configName = myPlatform + "/" + myConfig;
+  if ((err = parseFile(configName.c_str(), xfile, "HdlConfig", &x, configFile))) {
+    configName = myPlatform + "/gen/" + myConfig;
+    if (parseFile(configName.c_str(), xfile, "HdlConfig", &x, configFile))
+      return NULL;
+  }      
+  if (!(config = HdlConfig::create(x, configFile.c_str(), NULL, err)) ||
       (err = parseFile(myAssy.c_str(), xfile, "HdlAssembly", &x, assyFile)) ||
       !(appAssembly = HdlAssembly::create(x, assyFile.c_str(), NULL, err)))
     return NULL;
@@ -75,6 +98,8 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
     m_appAssembly(appAssembly), m_config(config) {
   appAssembly.setParent(this);
   config.setParent(this);
+  if (!platform)
+    platform = m_config.platform().m_name.c_str();
   bool doDefault = false;
   if ((err = OE::getBoolean(xml, "default", &doDefault)))
     return;
@@ -565,6 +590,65 @@ emitAttribute(const char *attr) {
   return NULL;
 }
 
+void HdlContainer::
+emitXmlWorkers(FILE *f) {
+  m_config.emitXmlWorkers(f);
+  m_appAssembly.emitXmlWorkers(f);
+  Worker::emitXmlWorkers(f);
+}
+
+void HdlContainer::
+emitXmlInstances(FILE *f) {
+  size_t index = 0;
+  m_config.emitInstances(f, "p", index);
+  m_appAssembly.emitInstances(f, "a", index);
+  emitInstances(f, "c", index);
+}
+void HdlContainer::
+emitXmlConnections(FILE *f) {
+  m_config.emitInternalConnections(f, "p");
+  m_appAssembly.emitInternalConnections(f, "a");
+  // The only internal data connections in a container might be between
+  // an adapter and a device worker or conceivably between two adapters.
+  emitInternalConnections(f, "c");
+  // What is left is data connections that go through the container to the app.
+  // 1. pf config to container (e.g. to an adapter in the container).
+  // 2. pf config to app (e.g. to a dev wkr in the pf config)
+  // 3. container to app (e.g. a dev wkr or adapter in the container)
+  for (ConnectionsIter cci = m_assembly->m_connections.begin();
+       cci != m_assembly->m_connections.end(); cci++) {
+    Connection &cc = **cci;
+    if (cc.m_attachments.front()->m_instPort.m_port->isData()) {
+      InstancePort *ap = NULL, *pp = NULL, *ip = NULL; // instance ports for the app, for pf, for internal
+      for (AttachmentsIter ai = cc.m_attachments.begin(); ai != cc.m_attachments.end(); ai++) {
+	Attachment &a = **ai;
+	(!strcasecmp(a.m_instPort.m_port->m_worker->m_implName, m_appAssembly.m_implName) ? ap :
+	 !strcasecmp(a.m_instPort.m_port->m_worker->m_implName, m_config.m_implName) ? pp : ip)
+	  = &a.m_instPort;
+      }
+      assert(ap || pp || ip);
+      if (!ap && !pp)
+	continue; // internal connection already dealt with
+      // find the corresponding instport inside each side.
+      InstancePort
+	*aap = ap ? m_appAssembly.m_assembly->findInstancePort(ap->m_port->name()) : NULL,
+        *ppp = pp ? m_config.m_assembly->findInstancePort(pp->m_port->name()) : NULL,
+	*producer = (aap && aap->m_port->isDataProducer() ? aap :
+		     ppp && ppp->m_port->isDataProducer() ? ppp : ip),
+	*consumer = (aap && !aap->m_port->isDataProducer() ? aap :
+		     ppp && !ppp->m_port->isDataProducer() ? ppp : ip);
+      // Application is producing to an external consumer
+      fprintf(f, "<connection from=\"%s/%s\" out=\"%s\" to=\"%s/%s\" in=\"%s\"/>\n",
+	      producer == ip ? "c" : producer == aap ? "a" : "p",
+	      producer->m_instance->name, producer->m_port->name(),
+	      consumer == ip ? "c" : consumer == aap ? "a" : "p",
+	      consumer->m_instance->name, consumer->m_port->name());
+    }
+  }
+}
+
+#if 0
+superceded
 // Emit the artifact XML for an HDLcontainer
 const char *HdlContainer::
 emitArtXML(const char *wksFile) {
@@ -644,7 +728,7 @@ emitArtXML(const char *wksFile) {
     return emitWorkersHDL(wksFile);
   return 0;
 }
-
+#endif
 void HdlContainer::
 mapDevSignals(std::string &assy, const DevInstance &di, bool inContainer) {
   const Signals &devsigs = di.device.deviceType().m_signals;

@@ -218,6 +218,7 @@ emitRecordOutputs(FILE *f) {
 	    "    waiting          : Bool_t;           -- worker is waiting at barrier\n");
 }
 
+#if 0
 void WciPort::
 emitWorkerEntitySignals(FILE *f, std::string &last, unsigned maxPropName) {
   if (master)
@@ -245,6 +246,7 @@ emitWorkerEntitySignals(FILE *f, std::string &last, unsigned maxPropName) {
 	    last.c_str(), maxPropName, "props_out");
   }
 }
+#endif
 
 void WciPort::
 emitRecordInterface(FILE *f, const char *implName) {
@@ -258,7 +260,8 @@ emitRecordArray(FILE *f) {
 }
 
 void WciPort::
-emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker) {
+emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker,
+		 const char */*defaultIn*/, const char */*defaultOut*/) {
   Worker &w = *m_worker;
   if (master || m_worker->m_assembly) {
     if (last.size())
@@ -277,11 +280,13 @@ emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker) 
 	       (int)w.m_maxPortTypeName, out.c_str(), master ? "m2s" : "s2m",
 	       count > 1 ? "_array" : "", index.c_str());
   } else {
-    OcpPort::emitRecordSignal(f, last, prefix, inWorker);
+    OcpPort::emitRecordSignal(f, last, prefix, inWorker, NULL,
+			      inWorker ? "(done=>btrue, others=>bfalse)" : NULL);
     if (inWorker) {
       if (w.m_ctl.writables || w.m_ctl.readbacks || w.m_ctl.rawProperties) {
 	emitLastSignal(f, last, VHDL, false);
 	OU::format(last,
+		   "\n"
 		   "    -- Input values and strobes for this worker's writable properties\n"
 		   "    %-*s : in  worker_props_in_t%%s",
 		   (int)w.m_maxPortTypeName, "props_in");

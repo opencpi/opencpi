@@ -50,29 +50,52 @@
 #include "OcpiContainerManager.h"
 #include "OcpiContainerApplication.h"
 #include "OcpiApplicationApi.h"
+#include "OcpiLauncher.h"
 
 namespace OCPI {
+  namespace Application {
+    class Launcher;
+    class LocalLauncher;
+    class RemoteLauncher;
+  }
   namespace API {
 
     class ApplicationI : public OCPI::Container::Callback {
+      friend class OCPI::Application::LocalLauncher;
+      friend class OCPI::Application::RemoteLauncher;
       typedef OCPI::Container::Container::CMap CMap;
       OCPI::Library::Assembly &m_assembly;
 
       size_t m_nInstances;
+      // This structure is used during deployment planning.
       struct Instance {
 	const OCPI::Library::Implementation *m_impl; // The chosen, best implementation
 	unsigned m_container;                        // LOCAL ordinal - among those we are using
-	size_t m_nPropValues;                        // number of values to SET (not dump-only ones)
-	OCPI::Util::Value *m_propValues;             // the parsed property values to set
-	unsigned *m_propOrdinals;
 	CMap *m_feasibleContainers;                  // map per candidate, from findContainers
 	size_t m_nCandidates;                        // convenience
-	//	unsigned m_candidate;                        // temp during algorithm
-	//	unsigned *m_containers;                      // counters of where we are in containers for candidate
 	Instance();
 	~Instance();
       } *m_instances;
-
+      // The instance objects for the launcher
+      OCPI::Application::Launcher::Instances m_launchInstances;
+#if 0
+      // State of a connection in the application as it comes into being
+      // For now, only support one-to-one connections
+      struct Connection {
+	OCPI::Util::Assembly::Connection &m_assyConnection;     // reference to xml conn
+	OCPI::Util::Assembly::Port *m_assyInput, *m_assyOutput; // null if external
+	OCPI::Util::Assembly::External *m_external;             // input or output
+	Port *m_input, *m_output;                               // ports or null
+	
+	std::string m_ipi, m_fpi, m_iui, m_fui;
+	// Other status?
+	Connection(OCPI::Util::Assembly::Connection &c);
+      };
+      typedef std::list<Connection> Connections;
+      typedef Connections::iterator ConnectionsIter;
+      Connections m_connections;
+#endif
+      OCPI::Application::Launcher::Connections m_launchConnections;
       struct Booking {
 	OCPI::Library::Artifact *m_artifact;
 	CMap m_usedImpls;         // which fixed implementations in the artifact are in use
@@ -115,7 +138,7 @@ namespace OCPI {
       typedef std::map<const char*, External, OCPI::Util::ConstCharComp> Externals;
       typedef std::pair<const char*, External> ExternalPair;
       Externals m_externals;
-      OCPI::Container::Worker **m_workers;
+      //      OCPI::Container::Worker **m_workers;
       OCPI::Container::Worker *m_doneWorker;
       // OCPI::Container::ExternalPort **m_externalPorts;
       // const char **m_externalNames;
@@ -130,10 +153,13 @@ namespace OCPI {
       unsigned m_currConn;
       unsigned m_bestScore;
       bool m_hex;
+      bool m_launched;
       Application &m_apiApplication;
 
       void init(const OCPI::API::PValue *params);
       void initExternals(const OCPI::API::PValue *params);
+      void initConnections();
+      void initInstances();
       // return our used-container ordinal
       unsigned addContainer(unsigned container);
       bool connectionsOk(OCPI::Library::Candidate &c, unsigned instNum);
@@ -157,8 +183,10 @@ namespace OCPI {
       ~ApplicationI();
       OCPI::Library::Assembly & assembly() { return m_assembly; }
       bool foundContainer(OCPI::Container::Container &i);
-      OCPI::Container::Worker &createWorker(Instance &i, unsigned n,
-					    OCPI::Container::Worker *slave);
+#if 0
+      OCPI::Container::Worker &createWorker(const Instance &i, OCPI::Container::Worker *slave,
+					    bool remote = false);
+#endif
       void initialize();
       void start();
       void stop();

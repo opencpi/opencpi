@@ -74,6 +74,8 @@ namespace OCPI {
     typedef std::pair<WorkerIter,WorkerIter> WorkerRange;
     class Artifact : public OCPI::Util::Attributes {
     protected:
+      std::time_t m_mtime; // modification time associated with when we read the metadata
+      uint64_t m_length;
       ezxml_t m_xml;
       // A count and array of implementations found in the artifact, *not* static instances.
       unsigned m_nImplementations;
@@ -100,8 +102,10 @@ namespace OCPI {
 				      );
       inline ezxml_t xml() const { return m_xml; }
       virtual const std::string &name() const = 0;
+      std::time_t mtime() const { return m_mtime; }
+      uint64_t length() const { return m_length; }
       virtual Artifact *nextArtifact() = 0;
-      static char *getMetadata(const char *name);
+      static char *getMetadata(const char *name, std::time_t &mtime);
     };
 
     // This class is what is used when looking for implementations.
@@ -211,7 +215,14 @@ namespace OCPI {
     };
     // This is the base class for all libraries for all drivers.
     class Library {
+      const std::string &m_name;
+      typedef std::map<const char *, Artifact *, OCPI::Util::ConstCharComp > Artifacts;
+      typedef std::pair<const char*, Implementation *> ArtifactsPair;
+      typedef Artifacts::const_iterator ArtifactsIter;
+      Artifacts m_artifacts;
+      
     protected:
+      Library(const std::string &name);
       virtual ~Library();
     public:
       void findImplementations(ImplementationCallback &icb, const char *specName,
@@ -223,8 +234,13 @@ namespace OCPI {
 		   const char *selectCriteria,
 		   const OCPI::API::Connection *conns,
 		   const char *&inst);
+      Artifact *findArtifact(const char *uuid);
       virtual Artifact *firstArtifact() = 0;
       virtual Library *nextLibrary() = 0;
+      const std::string &libName() const { return m_name; };
+      virtual Artifact *addArtifact(const char *url,
+				    const OCPI::API::PValue *props = NULL) = 0;
+      static Library *s_firstLibrary;
     };
     // The template class inherited by all concrete libraries.
     template <class Dri, class Lib, class Art>
@@ -243,7 +259,9 @@ namespace OCPI {
       }
     protected:
       LibraryBase<Dri, Lib, Art>(Lib &lib, const char *childName)
-	: OCPI::Driver::DeviceBase<Dri, Lib>(childName, lib) {}
+      : OCPI::Driver::DeviceBase<Dri, Lib>(childName, lib),
+      // ugh: the base class needs to know the name too...
+	Library(OCPI::Driver::DeviceBase<Dri, Lib>::name()) {}
     };
 
     // This is the template inherited by concrete artifacts

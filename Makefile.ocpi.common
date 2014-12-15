@@ -179,10 +179,12 @@ $(OBJDIR)/%.exe : $(OBJDIR)/%.obj $$(DYNOBJS)
 		$(filter %.obj,$^) \
 		$(DYNOBJS) \
 		$(patsubst %,-L%$(OCPI_OUT_DIR),$(dir $(ALLLIBS))) \
+		$(OCPI_LIBS) \
 		$(addprefix -L,$(call OcpiDir,$(SYSLIBS))) \
-		$(addprefix -locpi_,$(notdir $(ALLLIBS))) \
 		$(addprefix -l,$(notdir $(SYSLIBS))) \
 		$(BASICLIBS)
+
+#		$(addprefix -locpi_,$(notdir $(ALLLIBS))) \
 
 else
 
@@ -325,10 +327,15 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC -Wall
 else
 # This forces everything to be static, and some libraries aren't available (-ldl).
-# MAIN_LDFLAGS+=-static
+#MAIN_LDFLAGS+=-static
+#MAIN_LDFLAGS+=-Xlinker --gc-sections
+PRE_OCPI_LIBS=-dn
+POST_OCPI_LIBS=-dy
 endif
 SO=so
 endif
+# This allows us to make OpenCPI librarys different (static vs. dynamic) than system libs
+OCPI_LIBS=$(PRE_OCPI_LIBS) $(addprefix -locpi_,$(notdir $(ALLLIBS))) $(POST_OCPI_LIBS)
 ifeq ($(OCPI_CROSS_HOST),)
 CC = gcc
 CXX = c++
@@ -447,7 +454,7 @@ $(OBJDIR)/%.exe : $(OBJDIR)/%.obj $(DYNOBJS)
 		$(MAINOBJS) \
 		$(patsubst %,-L%$(OCPI_OUT_DIR),$(dir $(ALLLIBS))) \
 		$(addprefix -L,$(call OcpiDir,$(SYSLIBS)) $(SYSLIBDIRS)) \
-		$(addprefix -locpi_,$(notdir $(ALLLIBS))) \
+		$(OCPI_LIBS) \
 		$(addprefix -l,$(notdir $(SYSLIBS))) \
 		$(BASICLIBS)
 
@@ -612,7 +619,7 @@ $(OBJDIR)/%.exe : $(OBJDIR)/%.obj
 		$(filter %.obj,$^) \
 		$(patsubst %,-L%$(OCPI_OUT_DIR),$(dir $(ALLLIBS))) \
 		$(addprefix -L,$(call OcpiDir,$(SYSLIBS))) \
-		$(addprefix -locpi_,$(notdir $(ALLLIBS))) \
+		$(OCPI_LIBS) \
 		$(addprefix -l,$(notdir $(SYSLIBS))) \
 		$(BASICLIBS)
 endif
@@ -785,6 +792,7 @@ DATA_TRANSPORT_LIBS = $(OCPI_BASE_DIR)/core/dataplane/transport/transport
 CONTAINER_EXPORTS = \
 	$(OCPI_BASE_DIR)/core/container/interfaces/include \
 	$(OCPI_BASE_DIR)/core/container/ocl/include \
+	$(OCPI_BASE_DIR)/core/container/remote/include \
 	$(OCPI_BASE_DIR)/core/container/rcc/include
 
 HDL_CONTAINER_EXPORTS = \
@@ -811,7 +819,11 @@ HDL_CONTAINER_LIBS = \
 OCL_CONTAINER_LIBS = \
 	$(OCPI_BASE_DIR)/core/container/ocl/ocl
 
+REM_CONTAINER_LIBS = \
+	$(OCPI_BASE_DIR)/core/container/remote/remote
+
 ALL_CONTAINER_LIBS = \
+        $(REM_CONTAINER_LIBS) \
 	$(RCC_CONTAINER_LIBS) \
 	$(HDL_CONTAINER_LIBS) \
 

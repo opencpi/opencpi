@@ -375,10 +375,6 @@ component wci_master is
     worker_out : out worker_out_t);
 end component wci_master;
 
-component cwd is
-   port(cwd : out string);
-end component cwd;
-
 end package platform_pkg;
 
 -- modules instantiated as workers must have the component definition in their

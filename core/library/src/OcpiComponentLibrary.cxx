@@ -8,6 +8,7 @@
 #include "OcpiUtilException.h"
 #include "OcpiUtilEzxml.h"
 #include "OcpiLibraryManager.h"
+#include "OcpiComponentLibrary.h"
 
 // This file is the (loadable) driver for ocpi component libraries.
 
@@ -32,7 +33,7 @@ namespace OCPI {
 	    m_metadata(0)
 	{	
 	  // The returned value must be deleted with delete[];
-	  if (!(m_metadata = getMetadata(name)))
+	  if (!(m_metadata = getMetadata(name, m_mtime)))
 	    throw OU::Error(OCPI_LOG_DEBUG, "Cannot open or retrieve metadata from file \"%s\"", name);
 	  m_xml = OX::Doc::parse(m_metadata);
 	  char *xname = ezxml_name(m_xml);
@@ -50,20 +51,22 @@ namespace OCPI {
 	  
       class Driver;
 
+      Library *g_firstLibrary;
       // Our concrete library class
       class Library : public OL::LibraryBase<Driver, Library, Artifact> {
 	std::set<OS::FileSystem::FileId> m_file_ids; // unordered set cxx11 is better
 	friend class Driver;
 	Library(const char *name)
-	  : OL::LibraryBase<Driver,Library,Artifact>(*this, name) {}
+	  : OL::LibraryBase<Driver,Library,Artifact>(*this, name) {
+	}
 
 	void doPath(const std::string &libName) {
 	  ocpiDebug("Processing library path: %s", libName.c_str());
 	  bool isDir;
 	  OS::FileSystem::FileId file_id; 
 	  if (!OS::FileSystem::exists(libName, &isDir, NULL, NULL, &file_id))
-	    ocpiInfo("Component library path name in OCPI_LIBRARY_PATH, \"%s\", "
-		     "is nonexistent.  It will be ignored", libName.c_str());
+	    ocpiDebug("Component library path name in OCPI_LIBRARY_PATH, \"%s\", "
+		      "is nonexistent.  It will be ignored", libName.c_str());
 	  else if (m_file_ids.insert(file_id).second)
 	    // New id was inserted, and thus was not already there
 	    if (isDir) {
@@ -84,7 +87,7 @@ namespace OCPI {
 	    }
 	}
 	public:
-	  // Do a recursive dirctory search for all files.
+	  // Do a recursive directory search for all files.
 	  void configure(ezxml_t) {
 	    doPath(name());
 	  }

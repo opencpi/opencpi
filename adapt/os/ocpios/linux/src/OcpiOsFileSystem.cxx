@@ -450,7 +450,7 @@ exists(const std::string & name, bool * isDir, uint64_t *size, std::time_t *mtim
   if (mtime)
     *mtime = info.st_mtime;
   if (id) {
-    struct PosixId{
+    struct PosixId {
       dev_t device;
       ino_t inode;  
     } *posix_id;

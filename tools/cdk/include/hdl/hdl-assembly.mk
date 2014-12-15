@@ -34,6 +34,7 @@ endif
 override Workers:=$(CwdName)
 override Worker:=$(Workers)
 Worker_$(Worker)_xml:=$(Worker).xml
+Worker_xml:=$(Worker).xml
 OcpiLanguage:=verilog
 override LibDir=lib/hdl
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
@@ -48,12 +49,8 @@ $(infox XMLII:$(XmlIncludeDirs)--$(ComponentLibraries))
 # this assembly's XML from container XML that is not in this dir
 # and also include those passed down from the "assemblies" level - the internals
 # FIXME: we should avoid full parsing of container XML here
-XmlIncludeDirs+=. $(HdlPlatformsDir) $(HdlPlatformsDir)/specs $(XmlIncludeDirsInternal)
-$(infox XMLII2:$(XmlIncludeDirs))
 # Override since they may be passed in from assemblies level
-# Dot is included since assembly xml is here, referenced from container
-# (implicitly)
-$(infox XMLII3:$(XmlIncludeDirs))
+override XmlIncludeDirs+=. $(HdlPlatformsDir) $(HdlPlatformsDir)/specs $(XmlIncludeDirsInternal)
 override HdlLibraries+=platform
 ifdef Container
   ifndef Containers
@@ -64,8 +61,7 @@ HdlContName=$(Worker)_$1_$2
 HdlContOutDir=$(OutDir)container-$1
 HdlContDir=$(call HdlContOutDir,$(call HdlContName,$1,$2))
 ifneq ($(MAKECMDGOALS),clean)
-  # This will add to xmlincludedirs in this assembly's makefile
-  $(eval $(HdlSearchComponentLibraries))
+  $(eval $(HdlPrepareAssembly))
   # default the container names
   $(foreach c,$(Containers),$(eval HdlContXml_$c:=$c))
   ## Extract the platforms and targets from the containers
@@ -164,35 +160,6 @@ $(call OcpiDbgVar,OnlyPlatforms)
 ifeq ($(filter $(or $(OnlyPlatforms),$(HdlAllPlatforms)),$(filter-out $(ExcludePlatforms),$(HdlPlatforms))),)
   $(info No targets or platforms to build for this assembly)
 else
-  # Generate the source code for this "assembly worker" implementation file.
-  $(call OcpiDgbVar,$(HdlSourceSuffix))
-  # This variable is also used when processing the ImplWorkersFile to determine the language
-  ImplFile:=$(GeneratedDir)/$(Worker)-assy$(HdlSourceSuffix)
-  $(call OcpiDbgVar,ImplFile)
-  ImplWorkersFile=$(GeneratedDir)/$(Worker).wks
-
-  $(ImplFile): $$(ImplXmlFile) | $$(GeneratedDir)
-	$(AT)echo Generating the assembly source file: $@ from $<
-	$(AT)$(call OcpiGen) -D $(GeneratedDir) -W $(Worker) -a  $<
-
-  # The workers file is actually created at the same time as the -assy.v file
-  $(ImplWorkersFile): $(ImplFile)
-
-  # We need to get the list of workers early to establish dependencies
-  ifneq ($(MAKECMDGOALS),clean)
-    $(and $(call DoShell,$(OcpiGen) -x workers $(CwdName).xml,HdlWorkers),\
-      $(error Processing assembly XML $(ImplXmlFile): $(HdlWorkers)))
-  endif
-  # Make the assembly core depend on all the explicitly requested cores and the workers
-  HdlPreCore=$(HdlGetCores)
-
-  # The source code for this "worker" is the generated assembly file.
-  GeneratedSourceFiles:=$(ImplFile)
-
-  # When parsing the HdlAssembly file, we need access to the xml from the 
-  # workers in the assembly, both at the implementation level and the spec level
-  #override XmlIncludeDirs += $(call HdlXmlComponentLibraries,$(ComponentLibraries))
-
   include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
   ifndef HdlSkip
     ifndef Containers

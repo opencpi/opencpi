@@ -287,7 +287,7 @@ namespace OCPI {
     }
 
     // User/output side initial method, that carries provider info and returns user info
-    void Port::setInitialProviderInfo(const OU::PValue *params,
+    bool Port::setInitialProviderInfo(const OU::PValue *params,
 				       const std::string &ipi, std::string &out) {
       OU::SelfAutoMutex guard (this);
       // User side, producer side.
@@ -305,14 +305,17 @@ namespace OCPI {
       Descriptors feedback;
       const Descriptors *outDesc;
       // This "finish" might be provisional - i.e.we might get more info
-      if ((outDesc = finishConnect(otherPortData, feedback)))
+      if ((outDesc = finishConnect(otherPortData, feedback))) {
 	packPortDesc(*outDesc, out);
-      else
+	return true;
+      } else {
 	out.clear();
+	return false;
+      }
     }
 
     // Input side being told about output side
-    void Port::setInitialUserInfo(const std::string &iui, std::string &out) {
+    bool Port::setInitialUserInfo(const std::string &iui, std::string &out) {
       OU::SelfAutoMutex guard (this);
       ocpiAssert(isProvider());
       Descriptors otherPortData;
@@ -321,24 +324,30 @@ namespace OCPI {
       determineRoles(otherPortData);
       Descriptors feedback;
       const Descriptors *outDesc;
-      if ((outDesc = finishConnect(otherPortData, feedback)))
+      if ((outDesc = finishConnect(otherPortData, feedback))) {
 	packPortDesc(*outDesc, out);
-      else
+	return true;
+      } else {
 	out.clear();
+	return false;
+      }
     }
 
     // User only
-    void Port::setFinalProviderInfo(const std::string &fpi, std::string &out) {
+    bool Port::setFinalProviderInfo(const std::string &fpi, std::string &out) {
       OU::SelfAutoMutex guard (this);
       ocpiAssert(!isProvider());
       Descriptors otherPortData;
       unpackPortDesc(fpi, otherPortData);
       Descriptors feedback;
       const Descriptors *outDesc;
-      if ((outDesc = finishConnect(otherPortData, feedback)))
+      if ((outDesc = finishConnect(otherPortData, feedback))) {
 	packPortDesc(*outDesc, out);
-      else
+	return true;
+      } else {
 	out.clear();
+	return false;
+      }
     }
     // Provider Only
     void Port::setFinalUserInfo(const std::string &fui) {

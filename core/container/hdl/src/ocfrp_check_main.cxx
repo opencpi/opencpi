@@ -161,7 +161,7 @@ found(const char *name, OP::Bar *bars, unsigned nbars, bool verbose) {
       printf("OpenCPI FPGA at PCI %s: bitstream date %s, "
 	     //	     "platform \"%s\", device \"%s\", UUID %s, loadParam \"%s\"\n",
 	     // name, tbuf, tbuf1, platform, device, textUUID, load);
-	     "platform \"%s\", device \"%s\", UUID %s\n",
+	     "platform \"%s\", part \"%s\", UUID %s\n",
 	     name, tbuf1, platform, device, textUUID);
 #else
       printf("OpenCPI FPGA at PCI %s\n", name);

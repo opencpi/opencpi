@@ -332,6 +332,10 @@ namespace OCPI {
 	format(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
 	formatAdd(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
 	formatAddV(std::string &out, const char *fmt, va_list ap);
+      bool
+	// This one just returns true as a convenience for the error handling protocol
+	// that sets an error string and returns true if an error occurred.
+	eformat(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
       // Return an error string (caller can throw if desired)
       const char
 	*file2String(std::string &out, const char *file, char replaceNewline = 0),

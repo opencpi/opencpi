@@ -203,9 +203,6 @@ namespace OCPI {
 	WciControl::controlOperation(op);
       }
 
-      void checkControlState() {
-	// Override, and eventually poll/check for FINISHED etc.
-      }
       // FIXME: These (and sequence/string stuff above) need to be sensitive to
       // addresing windows in OCCP.
       void read(size_t, size_t, void*) {

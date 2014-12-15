@@ -530,9 +530,12 @@ namespace OCPI {
     }
       const char *
       getNumber64(ezxml_t x, const char *attr, uint64_t *np, bool *found,
-		  uint64_t defaultValue, bool setDefault) {
+		  uint64_t defaultValue, bool setDefault, bool required) {
 	const char *a = ezxml_cattr(x, attr);
 	if (!a) {
+	  if (required)
+	    return esprintf("Missing number attribute '%s' in element '%s'",
+			     attr, ezxml_tag(x));
 	  if (found)
 	    *found = false;
 	  if (setDefault)

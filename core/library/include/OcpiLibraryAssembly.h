@@ -65,6 +65,7 @@ namespace OCPI {
       // This class is the library layer's instance.
       // It usually just references the OU::Assembly instance, but in the case of
       // proxies, the library layer may add instances for slaves.
+    public:
       struct Instance {
 	OCPI::Util::Assembly::Instance &m_utilInstance; // lower level assy instance structure
 	OCPI::Util::Assembly::Port **m_assyPorts;       // map impl port ordinal to OU assy port
@@ -79,12 +80,13 @@ namespace OCPI {
 	bool foundImplementation(const Implementation &i,
 				 std::string &model, std::string &platform,
 				 Assembly &assy);
-	const std::string &name() { return m_utilInstance.m_name; }
-	const std::string &specName() { return m_utilInstance.m_specName; }
-	const OCPI::Util::Assembly::Properties &properties() {
+	const std::string &name() const { return m_utilInstance.m_name; }
+	const std::string &specName() const { return m_utilInstance.m_specName; }
+	const OCPI::Util::Assembly::Properties &properties() const {
 	  return m_utilInstance.m_properties;
 	}
       };
+    private:
       typedef std::vector<Instance *> Instances;
       typedef Instances::iterator InstancesIter;
       std::string m_model;                        // used during implementation processing

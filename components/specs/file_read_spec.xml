@@ -32,4 +32,6 @@ Properties:
   <property name='bytesRead' type='uLongLong' volatile='true'/>
   <property name='messagesWritten' type='uLongLong' volatile='true'/>
   <property name='suppressEOF' type='bool' initial='true'/>
+  <!-- a message-in-file header was bad or a read error occurred -->
+  <property name='badMessage' type='bool' volatile='true'/>
 </ComponentSpec>

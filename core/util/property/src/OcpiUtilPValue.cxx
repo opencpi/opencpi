@@ -43,7 +43,9 @@
 #include "OcpiUtilValue.h"
 #include "OcpiPValue.h"
 
+namespace OU = OCPI::Util;
 namespace OE = OCPI::Util::EzXml;
+namespace OA = OCPI::API;
 namespace OCPI {
   namespace API {
     PVULong PVEnd(0,0);
@@ -54,6 +56,12 @@ namespace OCPI {
 	for (const PValue *p = this; p->name; p++, n++)
 	  ;
       return n;
+    }
+    const std::string &PValue::unparse(std::string &sval, bool add) const {
+      OU::ValueType vtype(type);
+      OU::Value val(vtype);
+      val.unparse(sval, NULL, add);
+      return sval;
     }
   }
   namespace Util {
@@ -98,7 +106,7 @@ namespace OCPI {
     find##pretty(const PValue* p, const char* name, run &value) { \
       const PValue *fp = find(p, name);					\
       if (fp) {								\
-        if (fp->type == OCPI::API::OCPI_##pretty) {	                \
+        if (fp->type == OA::OCPI_##pretty) {	                \
           value = fp->v##pretty;					\
           return true;							\
 	} else								\
@@ -112,7 +120,7 @@ namespace OCPI {
     find##pretty(const PValue* p, const char* name, run &value) {	\
       const PValue *fp = find(p, name);					\
       if (fp) {								\
-        if (fp->type == OCPI::API::OCPI_##pretty) {	                \
+        if (fp->type == OA::OCPI_##pretty) {	                \
           value = fp->v##pretty;					\
           return true;							\
 	} else								\
@@ -141,7 +149,7 @@ namespace OCPI {
       if (p)
 	for (; p->name; p++)
 	  if (!strcasecmp(p->name, name)) {
-	    if (p->type == OCPI::API::OCPI_String) {
+	    if (p->type == OA::OCPI_String) {
 	      size_t len = p->vString[0] == '=' ? 0 : strlen(var);
 	      if (len == 0 ||
 		  !strncasecmp(var, p->vString, len) && p->vString[len] == '=') {
@@ -160,7 +168,7 @@ namespace OCPI {
       if (p)
 	for (unsigned n = 0; p->name; p++, n++)
 	  if (n >= next && !strcasecmp(p->name, name)) {
-	    if (p->type == OCPI::API::OCPI_String) {
+	    if (p->type == OA::OCPI_String) {
 	      if (!var) {
 		val = p->vString;
 		next = n + 1;
@@ -250,7 +258,7 @@ namespace OCPI {
 	  const char *err = val.parse(value);
 	  if (err)
 	    return err;
-	  if (p->type == OCPI::API::OCPI_String) {
+	  if (p->type == OA::OCPI_String) {
 	    p->vString = strdup(val.m_String);
 	    p->owned = true;
 	  } else

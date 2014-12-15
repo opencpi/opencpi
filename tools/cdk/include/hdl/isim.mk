@@ -86,7 +86,7 @@ IsimLibs=\
       $(HdlLibrariesInternal),\
       -lib $(notdir $(l))=$(strip \
             $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$l,isim)))) \
-    $(foreach c,$(call HdlCollectCores,isim),\
+    $(foreach c,$(call HdlCollectCores,isim),$(infox CCC:$c)\
       -lib $(call HdlRmRv,$(notdir $(c)))=$(infox fc:$c)$(call FindRelative,$(TargetDir),$(strip \
           $(firstword $(foreach l,$(call IsimCoreLibraryChoices,$c),$(call HdlExists,$l))))))
 

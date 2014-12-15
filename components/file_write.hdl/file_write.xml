@@ -1,4 +1,5 @@
 <HdlImplementation Language="vhdl" datawidth='32'>
   <xi:include href="file_write_spec.xml"/>
   <specproperty name='fileName' readable='true'/>
+  <property name="cwd" type='string' stringlength='100' volatile='true'/>
 </HdlImplementation>
