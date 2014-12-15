@@ -29,3 +29,6 @@ a.out*
 \#*\#
 .DS_Store
 timeData.raw
+lib/
+!tools/cdk/export/lib
+
