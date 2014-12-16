@@ -1,4 +1,4 @@
-<HdlImplementation Name="dac" Language="Verilog" Pattern="%w%M%0_">
+<HdlDevice Name="dac" Language="Verilog" Pattern="%w%M%0_">
   <ComponentSpec Name="dac">
     <Properties >
       <Property Name="Control" Type="ULong" Readable="true" Writable="true"/>
@@ -33,6 +33,6 @@
   <Signal Output="CLK_dac0_dacSdrClk"/>
   <Signal Output="CLK_GATE_dac0_dacSdrClk"/>
   <Signal Output="RST_N_dac0_dacSdrRst"/>
-</HdlImplementation>
+</HdlDevice>
 
 

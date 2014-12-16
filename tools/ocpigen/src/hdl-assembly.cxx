@@ -524,12 +524,13 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
     for (InstanceProperty *pv = &i->properties[0]; n < i->properties.size(); n++, pv++) {
       const OU::Property *pr = pv->property;
       if (pr->m_isParameter) {
+	std::string value;
 	if (lang == VHDL) {
-	  std::string value;
 	  fprintf(f, any ? ",\n              "  : "  generic map(");
 	  fprintf(f, "%s => %s", pr->m_name.c_str(), vhdlValue(pr->m_name, pv->value, value));
 	} else {
 	  fprintf(f, "%s", any ? ", " : " #(");
+#if 0
 	  int64_t i64 = 0;
 	  switch (pr->m_baseType) {
 #define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)	\
@@ -545,6 +546,9 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
 	    1 : (pr->m_baseType == OA::OCPI_Enum ? rawBitWidth(*pr) : pr->m_nBits);
 	  fprintf(f, ".%s(%zu'd%lld)",
 		  pr->m_name.c_str(), bits, (long long)i64);
+#endif
+	  fprintf(f, ".%s(%s)",
+		  pr->m_name.c_str(), verilogValue(pv->value, value));
 	}
 	any = true;
       }

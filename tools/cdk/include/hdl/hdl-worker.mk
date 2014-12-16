@@ -73,7 +73,15 @@ ifndef Tops
 #    Tops=$(Worker) $(Worker)_rv
   else ifeq ($(HdlMode),worker)
 # FIXME: when we create assemblies in VHDL, we can finally nuke this
-    Tops:=$(Worker) $(Worker)_rv
+    ifneq ($(shell egrep -i '<hdldevice' $(Worker_$(Worker)_xml)),)
+      Tops:=$(Worker)_rv
+    else
+      ifneq ($(shell egrep -i '<hdlworker' $(Worker_$(Worker)_xml)),)
+        Tops:=$(Worker)
+      else # usually HdlImplementation - legacy
+        Tops:=$(Worker) $(Worker)_rv
+      endif
+    endif
   else ifeq ($(HdlMode),container)
     Tops:=$(Worker)
   else

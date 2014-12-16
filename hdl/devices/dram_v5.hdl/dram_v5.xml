@@ -1,4 +1,4 @@
-<HdlImplementation Name="dram_v5" Language="Verilog" Pattern="%w%M%0_">
+<HdlDevice Name="dram_v5" Language="Verilog" Pattern="%w%M%0_">
   <ComponentSpec Name="dram">
     <Properties>
       <property name="dramStatus" readable="true"/>
@@ -60,6 +60,6 @@
   <Signal Output="dram_dm" Width="4"/>
   <Signal Output="dram_ck_p" Width="2"/>
   <Signal Output="dram_ck_n" Width="2"/>
-</HdlImplementation>
+</HdlDevice>
 
 

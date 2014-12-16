@@ -35,6 +35,7 @@
 #include <inttypes.h>
 #include <assert.h>
 #include <cstdio>
+#include <climits>
 #include "OcpiUtilMisc.h"
 #include "hdl.h"
 #include "assembly.h"
@@ -86,6 +87,7 @@ emitLastSignal(FILE *f, std::string &last, Language lang, bool end) {
   }
 }
 
+// This is the encoded bit width when encoded for std_logic_vectors
 size_t
 rawBitWidth(const OU::ValueType &dt) {
   switch (dt.m_baseType) {
@@ -97,6 +99,22 @@ rawBitWidth(const OU::ValueType &dt) {
     return (dt.m_stringLength+1) * 8;
   default:
     return dt.m_nBits;
+  }
+}
+// This is the width as it lives in the OU::Value object
+// which is based on the "run" value of the OCPI_DATA_TYPE macro
+// which is in bytes
+size_t
+rawValueBytes(const OU::ValueType &dt) {
+  switch (dt.m_baseType) {
+  case OA::OCPI_Bool:
+    return sizeof(bool);// must be consistent with the "run" value
+  case OA::OCPI_Enum:
+    return sizeof(uint32_t);
+  case OA::OCPI_String:
+    return 0; // this must be special cased in the caller anyway
+  default:
+    return dt.m_nBits / CHAR_BIT;
   }
 }
 // Third arg is saying that the type must be appropriate for VHDL to pass
@@ -302,14 +320,58 @@ vhdlValue(const std::string &name, const OU::Value &v, std::string &s, bool conv
   return s.c_str();
 }
 
-static const char*
-verilogValue(const OU::Value &v, std::string &s, bool) {
-  if (v.m_vt->m_baseType == OA::OCPI_Bool)
-    OU::format(s, "1'b%u", v.m_Bool ? 1 : 0);
-  else if (v.m_vt->m_baseType == OA::OCPI_Enum)
-    OU::format(s, "%zu'd%zu", rawBitWidth(*v.m_vt), (size_t)v.m_ULong);
-  else
-    OU::format(s, "%zu'h%" PRIx32, v.m_vt->m_nBits, v.m_ULong);
+const char*
+verilogValue(const OU::Value &v, std::string &s) {
+  const OU::ValueType &dt = *v.m_vt;
+  if (dt.m_baseType == OA::OCPI_String) {
+    bool indirect = dt.m_arrayRank || dt.m_isSequence;
+    s = "\"";
+    for (size_t n = 0; n < dt.m_nItems; n++) {
+      const char *cp = indirect ? v.m_pString[n] : v.m_String;
+      for (size_t i = 0; i <= dt.m_stringLength; i++) {
+	int c = (unsigned char)(cp ? *cp : 0);
+	switch(c) {
+	case '\n':
+	  s += "\\n"; break;
+	case '\t':
+	  s += "\\t"; break;
+	case '\\':
+	  s += "\\\\"; break;
+	case '"':
+	  s += "\\\""; break;
+	default:
+	  if (isprint(c))
+	    s += (char)c;
+	  else
+	    OU::formatAdd(s, "\\%03u", c);
+	}
+	if (c)
+	  cp++;
+      }
+    }
+    s += "\"";
+  } else {
+    // Everything else is linear in memory
+    // How many bits in the std_logic_vector
+    size_t bits = rawBitWidth(dt); // bits in verilog constant
+    // How many bytes per scalar value
+    size_t bytes = rawValueBytes(dt);
+    const uint8_t *data = dt.m_arrayRank || dt.m_isSequence ? v.m_pUChar : &v.m_UChar;
+    OU::format(s, "%zu'%c", bits * dt.m_nItems, (bits & 3) ? 'b' : 'h');
+    for (size_t n = 0; n < dt.m_nItems; n++) {
+      uint64_t v = 0;
+      for (size_t i = 0; i < bytes; i++) {
+	v |= *data++ << (i*CHAR_BIT);
+      }
+      if (bits & 3) { // binary
+	for (uint64_t mask = 1 << (bits - 1); mask; mask >>= 1)
+	  s += v & mask ? '1' : '0';
+      } else { // hex
+	for (size_t i = bits; i; i -= 4)
+	  s += "0123456789abcdef"[(v >> (i - 4)) & 0xf];
+      }
+    }
+  }
   return s.c_str();
 }
 const char *Worker::
@@ -318,7 +380,7 @@ hdlValue(const std::string &name, const OU::Value &v, std::string &value, bool c
   if (lang == NoLanguage)
     lang = m_language;
   return lang == VHDL ?
-    vhdlValue(name, v, value, convert) : verilogValue(v, value, convert);
+    vhdlValue(name, v, value, convert) : verilogValue(v, value);
 }
 
 void Worker::

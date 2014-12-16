@@ -1,4 +1,4 @@
-<HdlWorker language='vhdl' rawProperties='true' outer='true'>
+<HdlDevice language='vhdl' rawProperties='true' outer='true'>
   <ComponentSpec name='ocdp'>
     <property name='nLocalBuffers' readable='true' writable='true'/>
     <property name='nRemoteBuffers' readable='true' writable='true'/>
@@ -36,4 +36,4 @@
   <timeinterface secondswidth='32' fractionwidth='32'/>
   <property name='includePull' type='bool' default='1' parameter='1'/>
   <property name='includePush' type='bool' default='1' parameter='1'/>
-</HdlWorker>
+</HdlDevice>

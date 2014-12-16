@@ -9,7 +9,7 @@ EEPROM, and we don't want to automatically program them to those
 values and override values written in EEPROM.
 
 -->
-<HdlImplementation Language="Verilog" Pattern="%w%M%0_">
+<HdlDevice Language="Verilog" Pattern="%w%M%0_">
   <xi:include href="clock_gen_spec"/>
   <controlinterface>
   <!-- These properties are specific to this clock generator mchip/implementation 
@@ -50,5 +50,5 @@ values and override values written in EEPROM.
   <Signal output="spi_le"/>
   <Signal output="spi_clk"/>
   <Signal output="spi_mosi"/>
-</HdlImplementation>
+</HdlDevice>
 

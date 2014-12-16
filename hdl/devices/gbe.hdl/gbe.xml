@@ -1,4 +1,4 @@
-<HdlImplementation Name="gbe" Language="Verilog" Pattern="%w%M%0_" datawidth='32'>
+<HdlDevice Name="gbe" Language="Verilog" Pattern="%w%M%0_" datawidth='32'>
   <ComponentSpec Name="gbe">
     <Properties>
       <property name="dramStatus" readable="true"/>
@@ -75,6 +75,6 @@
   <Signal Output="CLK_GATE_rxclkBnd"/>
   <Signal Output="RST_N_gmii_rstn"/>
   <Signal Output="gmii_led"/>
-</HdlImplementation>
+</HdlDevice>
 
 

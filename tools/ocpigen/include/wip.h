@@ -672,6 +672,7 @@ extern const char
   *parseControlOp(const char *op, void *arg),
   *vhdlValue(const std::string &name, const OU::Value &v, std::string &value,
 	     bool param = false),
+  *verilogValue(const OU::Value &v, std::string &value),
   *rccValue(OU::Value &v, std::string &value),
   *container, *platform, *device, *load, *os, *os_version, **libraries, **mappedLibraries, *assembly, *attribute,
   *addLibMap(const char *),
