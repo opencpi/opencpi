@@ -37,10 +37,12 @@
 
 ifndef HdlMode
 HdlMode:=worker
-SubCores:=$(Cores)
 endif
 $(call OcpiDbg,Entering hdl-worker.mk)
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
+ifneq ($(filter worker,$(HdlMode)),)
+$(foreach t,$(HdlTargets),$(eval SubCores_$t:=$(Cores)))
+endif
 ifeq ($(MAKECMDGOALS),skeleton)
   HdlSkip:=
 endif

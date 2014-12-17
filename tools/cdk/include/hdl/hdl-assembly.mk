@@ -38,7 +38,7 @@ Worker_xml:=$(Worker).xml
 OcpiLanguage:=verilog
 override LibDir=lib/hdl
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
-
+ifndef HdlSkip
 # Add to the component libraries specified in the assembly Makefile,
 # and also include those passed down from the "assemblies" level
 # Note we also add libraries that are needed to parse containers (FIXME).
@@ -188,5 +188,6 @@ else
     endif # containers
   endif # of skip
 endif # check for no targets
+endif
 clean::
 	$(AT) rm -r -f container-* lib

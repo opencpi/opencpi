@@ -125,8 +125,8 @@ QuartusMakeQsf=\
   $(call QuartusMakeDevices,$(HdlTarget),$(HdlPlatform)) \
   echo set_global_assignment -name TOP_LEVEL_ENTITY $(or $(Top),$(Core)); \
   \
-  $(and $(SubCores),echo '\#' Import QXP file for each core;) \
-  $(foreach c,$(SubCores),\
+  $(and $(SubCores_$(HdlTarget)),echo '\#' Import QXP file for each core;) \
+  $(foreach c,$(SubCores_$(HdlTarget)),\
     echo set_global_assignment -name QXP_FILE \
       '\"'$(call FindRelative,$(TargetDir),$(call HdlCoreRef,$c,$(HdlTarget)))'\"';\
     $(foreach w,$(call HdlRmRv,$(basename $(notdir $c))),$(infox WWW:$w)\

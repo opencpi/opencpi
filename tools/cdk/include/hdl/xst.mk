@@ -242,7 +242,7 @@ $(call XstPruneOption,$(XstDefaultOptions)) $(XstMyExtraOptions) $(XstInternalOp
 # Note that "Libraries" is for precompiled libraries, whereas "OcpiLibraries" are for cores (in the -sd path),
 # BUT! the empty module declarations must be in the lso list to get cores we need the bb in a library too.
 
-XstCores=$(call HdlCollectCores,$(HdlTarget))
+XstCores=$(call HdlCollectCores,$(HdlTarget),XstCores)
 XstLsoFile=$(Core).lso
 XstIniFile=$(Core).ini
 
@@ -290,7 +290,7 @@ XstMakeLso=\
    $(foreach l,$(HdlLibrariesInternal),\
       $(infox HL:$l) \
       echo $(lastword $(subst -, ,$(notdir $l)));)\
-   $(foreach l,$(SubCores), \
+   $(foreach l,$(SubCores_$(HdlTarget)), \
       $(infox CC:$l) \
       echo $(patsubst %_rv,%,$(basename $(notdir $l)));)\
   ) > $(XstLsoFile);
@@ -301,7 +301,7 @@ XstMakeIni=\
       echo $(lastword $(subst -, ,$(notdir $(l))))=$(strip \
         $(call FindRelative,$(TargetDir),$(strip \
            $(call HdlLibraryRefDir,$(l),$(HdlTarget)))));) \
-   $(foreach l,$(infox SubCores:$(SubCores))$(SubCores),\
+   $(foreach l,$(infox SubCores:$(SubCores_$(HdlTarget)))$(SubCores_$(HdlTarget)),\
       echo $(patsubst %_rv,%,$(basename $(notdir $l)))=$(call FindRelative,$(TargetDir),$(strip \
           $(firstword $(foreach c,$(call XstCoreLibraryChoices,$(call HdlRmRv,$(basename $l))),$(infox CECEL:$c)$(call HdlExists,$c)))));) \
   ) > $(XstIniFile);

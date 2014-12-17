@@ -96,8 +96,8 @@ define HdlSetWorkers
   HdlInstances:=$$(and $$(AssyWorkersFile),$$(strip $$(foreach i,$$(shell grep -h -v '\\\#' $$(AssyWorkersFile)),\
 	               $$(if $$(filter $$(firstword $$(subst :, ,$$i)),$$(HdlPlatformWorkers)),,$$i))))
   HdlWorkers:=$$(call Unique,$$(foreach i,$$(HdlInstances),$$(firstword $$(subst :, ,$$i))))
-  $$(infox HdlSetWorkers:Cores:$$(Cores):$$(HdlWorkers):$$(HdlInstances))
-  SubCores:=$$(call Unique,\
+  $$(infos HdlSetWorkers:Cores:$$(Cores):$$(HdlWorkers):$$(HdlInstances):$$(HdlTarget))
+  SubCores_$$(HdlTarget):=$$(call Unique,\
     $$(Cores) \
     $$(foreach w,$$(HdlWorkers),\
       $$(or $(strip\
@@ -108,7 +108,7 @@ define HdlSetWorkers
                 $$(call HdlExists,$$d/$$w$$(and $$(HdlToolRealCore),$$(filter %.vhd,$$(ImplFile)),_rv)$$(HdlBin)))))),\
           $$(call FindRelative,.,$$f)),\
 	),$$(info Warning: Worker $$w was not found in any of the component libraries))))
-   $$(infoxx Cores is $$(origin SubCores) $$(flavor SubCores):$$(SubCores))
+   $$(infoss Cores is $$(origin SubCores_$$(HdlTarge)) $$(flavor SubCores_$$(HdlTarget)):$$(SubCores_$$(HdlTarget)))
 
 endef
 # Get the list of cores we depend on, returning the real files that make can depend on
@@ -195,8 +195,8 @@ HdlTime=$(HdlName)-$(HdlToolSet).time
 HdlCompile=\
   $(infox Compile0:$(HdlWorkers):$(Cores):$(ImplWorkersFile):$(ImplFile):to-$@) \
   $(infox Compile:$(HdlWorkers):$(Cores):$(ImplWorkersFile)) \
-  $(and $(SubCores),$(call HdlRecordCores,$(basename $@))$(infoxx DONERECORD)) \
-  $(infox SUBCORES:$(SubCores)) \
+  $(and $(SubCores_$(HdlTarget)),$(call HdlRecordCores,$(basename $@))$(infoxx DONERECORD:$(HdlTarget))) \
+  $(infox SUBCORES:$(SubCores_$(HdlTarget))) \
   cd $(TargetDir) && \
   $(infoxx PRECOMPILE:$(HdlPreCompile))$(and $(HdlPreCompile), $(HdlPreCompile) &&)\
   export HdlCommand="set -e; $(HdlToolCompile)"; \
@@ -366,19 +366,19 @@ HdlRmRv=$(if $(filter %_rv,$1),$(patsubst %_rv,%,$1),$1)
 # proper hierarchies can include indirectly required cores later
 # Called from HdlCompile which is already tool-specific
 HdlRecordCores=\
-  $(infox Record:$1:$(SubCores))\
+  $(infox Record:$1:$(SubCores_$(HdlTarget)):$(HdlTarget))\
   $(and $(call HdlExists,$(dir $1)),\
   (\
    echo '\#' This generated file records cores necessary to build this $(LibName) $(HdlMode); \
-   echo $(foreach c,$(call HdlCollectCores,$(HdlTarget)),$(strip\
+   echo $(foreach c,$(call HdlCollectCores,$(HdlTarget),HdlRecordCores),$(strip\
            $(call OcpiAbsPath,$(call HdlCoreRef,$(call HdlToolCoreRef,$c),$(HdlTarget))))) \
   ) > $(call HdlRmRv,$1).cores;)
 
 #	             $(foreach r,$(call HdlRmRv,$(basename $(call HdlCoreRef,$c,$1))),\
 
-HdlCollectCores=$(infox CCCC:$(SubCores))$(call Unique,\
+HdlCollectCores=$(infox CCCC:$(SubCores_$(HdlTarget)):$1:$2)$(call Unique,\
 		  $(foreach a,\
-                   $(foreach c,$(SubCores),$(infox ZC:$c)$c \
+                   $(foreach c,$(SubCores_$(HdlTarget)),$(infox ZC:$c)$c \
 	             $(foreach r,$(basename $(call HdlCoreRef,$(call HdlToolCoreRef,$c),$1)),$(infox ZR:$r)\
                        $(foreach f,$(call HdlExists,$(call HdlRmRv,$r).cores),$(infox ZF:$f)\
                           $(foreach z,$(shell grep -v '\#' $f),$(infox found:$z)$z)))),$a))
@@ -472,6 +472,37 @@ define HdlPrepareAssembly
   # 4. Make the generated assembly source file one of the files to compile
   WorkerSourceFiles=$$(ImplFile)
   # 5. Define the variable used for dependencies when the worker is actually built
-  HdlPreCore=$$(eval $$(HdlSetWorkers))$$(call HdlCollectCores,$$(HdlTarget))
+  HdlPreCore=$$(eval $$(HdlSetWorkers))$$(call HdlCollectCores,$$(HdlTarget),HdlPrepareAssembly)
 endef
+define HdlPreprocessTargets
+  OCPI_HDL_PLATFORM=ml605
+  ifeq ($$(origin HdlPlatforms),undefined)
+    ifdef HdlPlatform
+      ifneq ($$(words $$(HdlPlatform)),1)
+        $$(error HdlPlatform variable must only have one platform.)
+      endif
+      HdlPlatforms:=$$(HdlPlatform)
+    else
+      HdlPlatforms:=$$(if $$(filter platform,$$(HdlMode)),$$(CwdName),$$(OCPI_HDL_PLATFORM))
+    endif
+  else ifeq ($$(HdlPlatforms),all)
+    override HdlPlatforms:=$$(HdlAllPlatforms)
+  endif
+
+  ifeq ($$(origin HdlTargets),undefined)
+    ifdef HdlTarget
+      HdlTargets:=$$(HdlTarget)
+    else
+      ifdef HdlPlatforms
+        HdlTargets:=$$(call Unique,$$(foreach p,$$(HdlPlatforms),$$(if $$(HdlPart_$$p),,$$(error Unknown platform: $$p))$$(call HdlGetFamily,$$(HdlPart_$$p))))
+      else
+        HdlTargets:=$$(call HdlGetFamily,$$(OCPI_HDL_PLATFORM))
+      endif
+    endif
+  else ifeq ($$(HdlTargets),all)
+    override HdlTargets:=$$(HdlAllFamilies)
+  endif
+endef
+
+
 endif

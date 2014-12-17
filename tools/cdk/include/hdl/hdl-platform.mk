@@ -28,7 +28,6 @@
 # get built elsewhere based on assemblies and configurations
 
 HdlMode:=platform
-SubCores:=$(Cores)
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 # Theses next lines are similar to what worker.mk does
 ifneq ($(MAKECMDGOALS),clean)
@@ -58,6 +57,7 @@ override HdlPlatforms:=$(Worker)
 override HdlPlatform:=$(Worker)
 override HdlTargets:=$(call HdlGetFamily,$(Worker))
 override HdlTarget:=$(call HdlGetFamily,$(Worker))
+SubCores_$(HdlTarget):=$(Cores)
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 ifndef HdlSkip
   HdlPlatform:=$(Worker)

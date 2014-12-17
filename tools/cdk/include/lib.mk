@@ -53,7 +53,8 @@ endif
 unexport Workers
 
 HdlInstallDir=lib
-include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
+include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
+$(eval $(HdlPreprocessTargets))
 include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
 include $(OCPI_CDK_DIR)/include/ocl/ocl-make.mk
 ifndef LibName
@@ -184,6 +185,8 @@ checkocl:
 
 ocl: checkocl speclinks $(OclImplementations)
 
+ifneq (,)
+# - obsolete, but keep it here for future reference...
 # this is HDL-specific:  for some HDL targets, we need to build a stub library
 # so that higher level builds can reference cores using such a library.
 # (e.g. xilinx xst).
@@ -202,6 +205,7 @@ hdlstubs: $(HdlImplementations)
 		stublibrary
 
 # hdlstubs - no longer
+endif
 
 .PHONY: hdl
 hdl: speclinks $(HdlImplementations)

@@ -148,30 +148,7 @@ $(call OcpiDbgVar,HdlTarget)
 $(call OcpiDbgVar,HdlTargets)
 $(call OcpiDbgVar,HdlPlatform)
 $(call OcpiDbgVar,HdlPlatforms)
-OCPI_HDL_PLATFORM=ml605
-ifeq ($(origin HdlPlatforms),undefined)
-  ifdef HdlPlatform
-    HdlPlatforms:=$(HdlPlatform)
-  else
-    HdlPlatforms:=$(if $(filter platform,$(HdlMode)),$(CwdName),$(OCPI_HDL_PLATFORM))
-  endif
-else ifeq ($(HdlPlatforms),all)
-  override HdlPlatforms:=$(HdlAllPlatforms)
-endif
-
-ifeq ($(origin HdlTargets),undefined)
-  ifdef HdlTarget
-    HdlTargets:=$(HdlTarget)
-  else
-    ifdef HdlPlatforms
-      HdlTargets:=$(call Unique,$(foreach p,$(HdlPlatforms),$(if $(HdlPart_$p),,$(error Unknown platform: $p))$(call HdlGetFamily,$(HdlPart_$p))))
-    else
-      HdlTargets:=$(call HdlGetFamily,$(OCPI_HDL_PLATFORM))
-    endif
-  endif
-else ifeq ($(HdlTargets),all)
-  override HdlTargets:=$(HdlAllFamilies)
-endif
+$(eval $(HdlPreprocessTargets))
 $(call OcpiDbgVar,HdlTarget)
 $(call OcpiDbgVar,HdlTargets)
 $(call OcpiDbgVar,HdlPlatform)
