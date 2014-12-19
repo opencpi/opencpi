@@ -12,7 +12,7 @@
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilUUID.h"
 #include "OcpiDriverManager.h"
-#include "OcpiUtilImplementation.h"
+#include "OcpiUtilWorker.h"
 #include "OcpiLibraryApi.h"
 
 namespace OCPI {

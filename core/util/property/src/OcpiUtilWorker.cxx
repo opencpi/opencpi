@@ -39,17 +39,16 @@
 #include "OcpiOsAssert.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
-#include "OcpiUtilImplementation.h"
+#include "OcpiUtilWorker.h"
 
 namespace OCPI {
   namespace Util {
 
     namespace OE = OCPI::Util::EzXml;
     Worker::Worker()
-      : m_ports(0), m_memories(0), // m_tests(0), m_nTests(0), 
-	m_nPorts(0), m_nMemories(0),// size(0),
-        m_totalPropertySize(0), m_nProperties(0), m_properties(0), m_xml(NULL)
-    {}
+      : m_attributes(NULL), m_ports(NULL), m_memories(NULL), m_nPorts(0), m_nMemories(0),
+	m_totalPropertySize(0),	m_nProperties(0), m_properties(0), m_xml(NULL), m_ordinal(0) {
+    }
 
     Worker::~Worker() {
       delete [] m_ports;
@@ -88,7 +87,9 @@ namespace OCPI {
        ocpiAssert(0); return *m_tests;
     }
 #endif
-    const char *Worker::parse(ezxml_t xml, Attributes *attr) {
+    const char *Worker::
+    parse(ezxml_t xml, Attributes *attr) {
+      m_xml = xml;
       m_attributes = attr;
       const char *err = OE::getRequiredString(xml, m_name, "name", "worker");
       if (err ||
@@ -138,9 +139,21 @@ namespace OCPI {
       for (x = ezxml_cchild(xml, "memory"); x; x = ezxml_next(x), m++ )
         if ((err = m->parse(x)))
           return esprintf("Invalid xml local memory description: %s", err);
-      m_xml = xml;
+      
+      for (x = ezxml_cchild(xml, "scaling"); x; x = ezxml_next(x)) {
+	std::string name;
+	OE::getOptionalString(x, name, "name");
+	Port::Scaling s;
+	if ((err = s.parse(x, *this)))
+	  return err;
+	if (name.empty())
+	  m_scaling = s;
+	else
+	  m_scalingParameters[name] = s;
+      }
       return NULL;
     }
+    // These values are coming from the artifact itself.
     // Get a property value from the metadata
     const char *Worker::getValue(const char *sym, ExprValue &val) const {
       // Our builtin symbols take precendence, but can be overridden with $
@@ -165,12 +178,11 @@ namespace OCPI {
 	  return p->getValue(val);
       return esprintf("no property found for identifier \"%s\"", sym);
     }
-#if 0
-    const char *Worker::isVariable(const char *sym) {
-      ExprValue dummy;
-      return getValue(sym, dummy);
+    const char *Worker::
+    getNumber(ezxml_t x, const char *attr, size_t *np, bool *found, size_t defaultValue,
+	      bool setDefault) {
+      return OE::getNumber(x, attr, np, found, defaultValue, setDefault);
     }
-#endif
     void parse3(char *s, std::string &s1, std::string &s2,
 		std::string &s3) {
       char *temp = strdup(s);

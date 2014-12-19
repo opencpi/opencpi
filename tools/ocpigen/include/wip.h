@@ -44,7 +44,7 @@
 #include "OcpiUtilValue.h"
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilMisc.h"
-#include "OcpiUtilImplementation.h"
+#include "OcpiUtilWorker.h"
 #include "OcpiUtilAssembly.h"
 #include "OcpiUuid.h"
 #include "ezxml.h"
@@ -59,6 +59,7 @@ namespace OA=OCPI::API;
 
 class Port;
 
+#if 0
 // We derive a class to implement xi:include parsing, file names, etc.
 class Protocol : public OU::Protocol {
 public:
@@ -67,61 +68,13 @@ public:
   const char *parse(const char *file, ezxml_t prot = NULL);
   const char *parseOperation(ezxml_t op);
 };
-
+#endif
 class Worker;
 
-struct Scaling {
-  size_t m_min, m_max, m_modulo, m_default;
-  Scaling();
-  const char *parse(Worker &w, ezxml_t x);
-};
-#define SCALING_ATTRS "min", "max", "modulo", "default"
-#define OCPI_PADDINGS \
-  OCPI_PADDING(None) \
-  OCPI_PADDING(Replicate) \
-  OCPI_PADDING(Zero) \
-  OCPI_PADDING(Wrap)
-
-#define OCPI_PADDING(x) x,
-  enum Padding { OCPI_PADDINGS };
-#undef OCPI_PADDING
-
-struct Overlap {
-  size_t m_left, m_right;
-  Padding m_padding;
-  Overlap();
-  const char *parse(ezxml_t x);
-};
-#define OVERLAP_ATTRS "left", "right", "padding"
-// This structure is per-dimension
-struct Partitioning {
-  Scaling  m_scaling;
-  Overlap  m_overlap;
-  size_t   m_sourceDimension;
-  Partitioning();
-  const char *parse(Worker &w, ezxml_t x);
-};
-#define PARTITION_ATTRS SCALING_ATTRS, OVERLAP_ATTRS, "source"
-#define OCPI_DISTRIBUTIONS \
-  OCPI_DISTRIBUTION(All) \
-  OCPI_DISTRIBUTION(Cyclic) \
-  OCPI_DISTRIBUTION(First) \
-  OCPI_DISTRIBUTION(Balanced) \
-  OCPI_DISTRIBUTION(Directed) \
-  OCPI_DISTRIBUTION(Random) \
-  OCPI_DISTRIBUTION(Hashed) \
-
-#define OCPI_DISTRIBUTION(x) x,
-  enum Distribution { OCPI_DISTRIBUTIONS DistributionLimit };
-
-#undef OCPI_DISTRIBUTION
-
-#define DISTRIBUTION_ATTRS "distribution", "hashfield"
 
 #define SPEC_DATA_PORT_ATTRS "Name", "Producer", "Count", "Optional", "Protocol", "buffersize"
 class DataPort : public OcpPort {
  protected:
-  Protocol *m_protocol;
   bool m_isProducer;
   bool m_isOptional;
   bool m_isBidirectional;
@@ -129,26 +82,6 @@ class DataPort : public OcpPort {
   size_t m_minBufferCount;
   size_t m_bufferSize;
   Port *m_bufferSizePort;
-  // Scalability
-  bool m_isScalable;
-  std::string m_scaleExpr;
-  Distribution m_defaultDistribution;
-  Partitioning m_defaultPartitioning;
-  std::string m_defaultHashField;
-  struct OpScaling {
-    Distribution                m_distribution;
-    OU::Member                 *m_hashField;
-    Partitioning                m_defaultPartitioning; // default for all args
-    bool                        m_multiple;
-    bool                        m_allSeeOne;
-    bool                        m_allSeeEnd;
-    std::vector<Partitioning *> m_partitioning; // tricky: these pointers are arrays for dims
-    bool                        m_isPartitioned;
-    OpScaling(size_t nArgs);
-    const char *parse(DataPort &dp, OU::Operation &op, ezxml_t x);
-  };
-  std::vector<OpScaling*> m_opScaling;
-  bool m_isPartitioned;
   
   // This constructor is used when data port is inherited
   DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *&err);
@@ -157,8 +90,7 @@ class DataPort : public OcpPort {
  public:
   // Virtual constructor - every derived class must have one
   Port &clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role *role,
-	      const char *&err)
-    const;
+	      const char *&err) const;
   inline const char *typeName() const { return "WDI"; }
   inline const char *prefix() const { return "data"; }
   bool matchesDataProducer(bool isProducer) const { return m_isProducer == isProducer; }
@@ -170,7 +102,8 @@ class DataPort : public OcpPort {
   bool isDataBidirectional() const { return m_isBidirectional; } // call isData first
   bool isOptional() const { return m_isOptional; }
   const char *parse();
-  const char *parseDistribution(ezxml_t x, Distribution &d, std::string &hash);
+  const char *parseProtocolChild(ezxml_t op);
+  //  const char *parseDistribution(ezxml_t x, Distribution &d, std::string &hash);
   const char *finalize();
   const char *fixDataConnectionRole(OU::Assembly::Role &role);
   void initRole(OCPI::Util::Assembly::Role &role);
@@ -463,6 +396,7 @@ enum Endian {
 #define ENDIANS "none", "neutral", "big", "little", "static", "dynamic"
 
 #define PARSED_ATTRS "name"
+#if 0
 struct Parsed {
   std::string m_name, m_file, m_parent, m_fileName;
   ezxml_t m_xml;
@@ -472,6 +406,7 @@ struct Parsed {
 	 const char *tag,
 	 const char *&err);
 };
+#endif
 
 enum Model {
   NoModel,
@@ -488,8 +423,10 @@ typedef std::list<Worker *> Workers;
 typedef Workers::const_iterator WorkersIter;
 class Assembly;
 struct Instance;
-class Worker : public Parsed, public OU::IdentResolver {
+class Worker : public OU::Worker {
  public:
+  ezxml_t m_xml;
+  std::string m_file, m_parentFile, m_fileName;
   Model m_model;
   const char **m_baseTypes;
   const char *m_modelString;
@@ -532,12 +469,8 @@ class Worker : public Parsed, public OU::IdentResolver {
   const char *m_outDir;             // state during parameter processing
   ParamConfigs m_paramConfigs;      // the parsed file of all configs
   ParamConfig  *m_paramConfig;      // the config for this Worker.
-  // Scalability
-  bool m_scalable;            // Is this worker scalable at all?
-  std::string m_validScaling; // Expression for error checking overall scaling
-  Scaling m_scaling;
-  std::map<std::string, Scaling> m_scalingParameters;
   Worker *m_parent;           // If this worker is part of an upper level assembly
+  bool m_scalable;
   Worker(ezxml_t xml, const char *xfile, const std::string &parentFile, WType type,
 	 Worker *parent, OU::Assembly::Properties *ipvs, const char *&err);
   virtual ~Worker();
@@ -573,7 +506,6 @@ class Worker : public Parsed, public OU::IdentResolver {
     *parseHdlImpl(const char* package = NULL),
     *parseConfigFile(const char *dir),
     *doProperties(ezxml_t top, const char *parent, bool impl, bool anyIsBad),
-    *doScaling(ezxml_t x),
     *parseHdlAssy(),
     *initImplPorts(ezxml_t xml, const char *element, PortCreate &pc),
     *checkDataPort(ezxml_t impl, Port *&sp),
@@ -682,6 +614,8 @@ extern const char
   *tryOneChildInclude(ezxml_t top, const std::string &parent, const char *element,
 		      ezxml_t *parsed, std::string &childFile, bool optional),
   *emitContainerHDL(Worker*, const char *),
+  *tryInclude(ezxml_t x, const std::string &parent, const char *element, ezxml_t *parsed,
+	      std::string &child, bool optional),
   *emitArtOCL(Worker *);
 
 extern void

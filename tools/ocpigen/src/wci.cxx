@@ -1,4 +1,5 @@
 #include <assert.h>
+#include "OcpiUtilWorker.h"
 #include "hdl.h"
 
 // Property handling is not implemented here, but is still a worker-level issue.

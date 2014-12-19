@@ -5,7 +5,8 @@
 Port::
 Port(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *defaultName,
      const char *&err)
-  : m_clone(false), m_worker(&w), m_ordinal(0), count(0), master(false), m_xml(x), type(type),
+  : OU::Port(sp),
+    m_clone(false), m_worker(&w), m_ordinal(0), count(0), master(false), m_xml(x), type(type),
     pattern(NULL), clock(0), clockPort(0), myClock(false), m_specXml(x) {
   if (sp) {
     // A sort of copy constructor from a spec port to an impl port

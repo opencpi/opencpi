@@ -44,6 +44,7 @@
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilAssembly.h"
+#include "OcpiUtilWorker.h"
 #include "wip.h"
 #include "hdl.h"
 #include "rcc.h"
@@ -99,7 +100,7 @@ checkDataPort(ezxml_t impl, Port *&sp) {
 // If not, *parsed is set to zero.
 // If not optional then it MUST be the indicated element
 // Also return the file name of the included file.
-static const char *
+const char *
 tryInclude(ezxml_t x, const std::string &parent, const char *element, ezxml_t *parsed,
            std::string &child, bool optional) {
   *parsed = 0;
@@ -322,27 +323,6 @@ const char *parseControlOp(const char *op, void *arg) {
     *p ? NULL : "Invalid control operation name in ControlOperations attribute";
 }
 
-static const char *
-doScaling(ezxml_t x, void *worker) {
-  return !strcasecmp(OE::ezxml_tag(x), "scaling") ? ((Worker*)worker)->doScaling(x) : NULL;
-}
-const char *Worker::
-doScaling(ezxml_t x) {
-  std::string name;
-  const char *err = OE::getRequiredString(x, name, "name");
-  if (err)
-    return err;
-  if (findProperty(name.c_str()))
-    return OU::esprintf("Scaling parameter \"%s\" conflicts with property name", name.c_str());
-  Scaling s;
-  if ((err = s.parse(*this, x)))
-    return err;
-  if (m_scalingParameters.find(name) != m_scalingParameters.end())
-    return OU::esprintf("Duplicate scaling parameter name: \"%s\"", name.c_str());
-  m_scalingParameters[name] = s;
-  return NULL;
-}
-
 const char *Worker::
 addProperty(const char *xml, bool includeImpl) {
   // Add the built-in properties
@@ -399,7 +379,8 @@ parseImplControl(ezxml_t &xctl) {
   // Allow overriding sizeof config space, giving priority to controlinterface
   uint64_t sizeOfConfigSpace;
   bool haveSize = false;
-  if (xctl && (err = OE::getNumber64(xctl, "SizeOfConfigSpace", &sizeOfConfigSpace, &haveSize, 0)))
+  if (xctl &&
+      (err = OE::getNumber64(xctl, "SizeOfConfigSpace", &sizeOfConfigSpace, &haveSize, 0)))
     return err;
   if (!haveSize &&
       (err = OE::getNumber64(m_xml, "SizeOfConfigSpace", &sizeOfConfigSpace, &haveSize, 0)))
@@ -409,14 +390,31 @@ parseImplControl(ezxml_t &xctl) {
       return "SizeOfConfigSpace attribute of ControlInterface smaller than properties indicate";
     m_ctl.sizeOfConfigSpace = sizeOfConfigSpace;
   }
-  // Scalability
-  if ((err = OE::getBoolean(m_xml, "scalable", &m_scalable)) ||
+  // Parse worker's scalability
+  if ((err = OE::getBoolean(m_xml, "m_scalable", &m_scalable)) ||
       (err = OE::getBoolean(m_xml, "startBarrier", &m_ctl.startBarrier)))
     return err;
+  if (m_scalable)
+    m_scaling.m_max = 0;
   // FIXME: have an expression validator
   OE::getOptionalString(m_xml, m_validScaling, "validScaling");
-  if ((err = OE::ezxml_children(m_xml, ::doScaling, this)))
-    return err;
+  for (ezxml_t x = ezxml_cchild(m_xml, "scaling"); x; x = ezxml_next(x)) {
+    std::string name;
+    OE::getOptionalString(x, name, "name");
+    if (findProperty(name.c_str()))
+      return OU::esprintf("Scaling parameter \"%s\" conflicts with property name",
+			  name.c_str());
+    OU::Port::Scaling s;
+    if ((err = s.parse(x, *this)))
+      return err;
+    if (name.empty())
+      m_scaling = s;
+    else if (m_scalingParameters.find(name) != m_scalingParameters.end())
+      return OU::esprintf("Duplicate scaling parameter name: \"%s\"", name.c_str());
+    else
+      m_scalingParameters[name] = s;
+    m_scalable = true;
+  }
   return 0;
 }
 
@@ -454,11 +452,7 @@ parseSpecControl(ezxml_t ps) {
   return 0;
 }
 
-static const char *checkSuffix(const char *str, const char *suff, const char *last) {
-  size_t nstr = last - str, nsuff = strlen(suff);
-  const char *start = str + nstr - nsuff;
-  return nstr > nsuff && !strncmp(suff, start, nsuff) ? start : str + nstr;
-}
+#if 0
 
 Protocol::
 Protocol(Port &port)
@@ -507,7 +501,7 @@ parseOperation(ezxml_t op) {
   }
   return OU::Protocol::parseOperation(op);
 }
-
+#endif
 // The package serves two purposes: the spec and the impl.
 // If the spec already has a package prefix, then it will only
 // be used as the package of the impl.
@@ -642,23 +636,43 @@ initImplPorts(ezxml_t xml, const char *element, PortCreate &create) {
 
 // Parse a numeric value that might be overridden by assembly property values.
 const char *Worker::
-getNumber(ezxml_t x, const char *attr, size_t *np, bool *found,
-	  size_t defaultValue, bool setDefault) {
+getNumber(ezxml_t x, const char *attr, size_t *np, bool *found, size_t defaultValue,
+	  bool setDefault) {
   const char *a = ezxml_cattr(x, attr);
-  if (a && !isdigit(*a) && m_instancePVs) {
-    // FIXME: obviously a map would be good here..
-    OU::Assembly::Property *ap = &(*m_instancePVs)[0];
-    for (size_t n = m_instancePVs->size(); n; n--, ap++)
-      if (ap->m_hasValue && !strcasecmp(a, ap->m_name.c_str())) {
-	// The value of the numeric attribute matches the name of a provided property
-	// So we use that property value in place of this attribute's value
-	if (OE::getUNum(ap->m_value.c_str(), np))
-	  return OU::esprintf("Bad '%s' property value: '%s' for attribute '%s' in element '%s'",
-			      ap->m_name.c_str(), ap->m_value.c_str(), attr, x->name);
-	if (found)
-	  *found = true;
-	return NULL;
-      }    
+  if (a && !isdigit(*a)) {
+    if (m_instancePVs) {
+      // First see if the value is an assembly instance override of the value
+      // FIXME: obviously a map would be good here..
+      OU::Assembly::Property *ap = &(*m_instancePVs)[0];
+      for (size_t n = m_instancePVs->size(); n; n--, ap++)
+	if (ap->m_hasValue && !strcasecmp(a, ap->m_name.c_str())) {
+	  // The non-numeric value of the numeric attribute matches the name of a provided
+	  // instance property value, so we use that property value.
+	  if (OE::getUNum(ap->m_value.c_str(), np))
+	    return
+	      OU::esprintf("Bad '%s' property value: '%s' for attribute '%s' in element '%s'",
+			   ap->m_name.c_str(), ap->m_value.c_str(), attr, x->name);
+	  if (found)
+	    *found = true;
+	  return NULL;
+	}
+    }
+    // the non-numeric value of this numeric attribute didn't match an instance property
+    // value, but it might match a property with a default value (parameter or not)
+    OU::Property *p = findProperty(a);
+    if (!p)
+      return OU::esprintf("The value \"%s\" of attribute \"%s\" is not numeric and not the "
+			  "name of a property", a, attr);
+    if (!p->m_default)
+      return OU::esprintf("For attribute \"%s\", property \"%s\" has no value",
+			  attr, a);
+    if (p->m_default->m_vt->m_baseType != OA::OCPI_ULong)
+      return OU::esprintf("For attribute \"%s\", property \"%s\" is not a ULong value",
+			  attr, a);
+    *np = p->m_default->m_ULong;
+    if (found)
+      *found = true;
+    return NULL;
   }
   return OE::getNumber(x, attr, np, found, defaultValue, setDefault);
 }
@@ -870,35 +884,21 @@ summarizeAccess(OU::Property &p) {
   }
 }
 
-// A minimum of zero means NO PARTITIONING
-Scaling::Scaling()
-  : m_min(0), m_max(1), m_modulo(1), m_default(1) {
-}
-
-const char *Scaling::
-parse(Worker &w, ezxml_t x) {
-  const char *err;
-  if ((err = w.getNumber(x, "min", &m_min, NULL, 0, false)) ||
-      (err = w.getNumber(x, "max", &m_max, NULL, 0, false)) ||
-      (err = w.getNumber(x, "modulo", &m_modulo, NULL, 0, false)) ||
-      (err = w.getNumber(x, "default", &m_default, NULL, 0, false)))
-    return err;
-  return NULL;
-}
-
 Worker::
 Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
        WType type, Worker *parent, OU::Assembly::Properties *ipvs, const char *&err)
-  : Parsed(xml, xfile, parentFile, NULL, err),
+  : m_xml(xml), m_file(xfile ? xfile : ""), m_parentFile(parentFile),
     m_model(NoModel), m_baseTypes(NULL), m_modelString(NULL), m_type(type), m_isDevice(false),
-    m_wci(NULL), m_noControl(false), m_reusable(false), m_implName(m_name.c_str()),
+    m_wci(NULL), m_noControl(false), m_reusable(false),
     m_specName(NULL), m_isThreaded(false), m_maxPortTypeName(0), m_wciClock(NULL),
     m_endian(NoEndian), m_needsEndian(false), m_pattern(NULL), m_portPattern(NULL),
     m_staticPattern(NULL), m_defaultDataWidth(-1), m_language(NoLanguage), m_assembly(NULL),
     m_slave(NULL), m_library(NULL), m_outer(false), m_debugProp(NULL), m_instancePVs(ipvs),
-    m_mkFile(NULL), m_xmlFile(NULL), m_outDir(NULL), m_paramConfig(NULL), m_scalable(false),
-    m_parent(parent)
-{
+    m_mkFile(NULL), m_xmlFile(NULL), m_outDir(NULL), m_paramConfig(NULL), m_parent(parent),
+    m_scalable(false) {
+  if ((err = getNames(xml, xfile, NULL, m_name, m_fileName)))
+    return;
+  m_implName = m_name.c_str();
   const char *name = ezxml_name(xml);
   // FIXME: make HdlWorker and RccWorker classes  etc.
   if (!err && name && !strncasecmp("hdl", name, 3)) {
@@ -987,7 +987,7 @@ emitAttribute(const char *attr) {
   return OU::esprintf("Unknown worker attribute: %s", attr);
 }
 
-
+#if 0
 Parsed::
 Parsed(ezxml_t xml,        // The xml for this entity
        const char *file,   // The file with this as top level, possibly NULL
@@ -998,6 +998,7 @@ Parsed(ezxml_t xml,        // The xml for this entity
   ocpiAssert(xml);
   err = getNames(xml, file, tag, m_name, m_fileName);
 }
+#endif
 
 Clock::
 Clock() 

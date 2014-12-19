@@ -648,6 +648,15 @@ namespace OCPI {
 	return xml->ordered;
       }
       const char *
+      ezxml_cchildren(ezxml_t xml, const char* (*func)(ezxml_t child, void *arg), void *arg,
+		      const char *tag) {
+	const char *err;
+	for (xml = ezxml_cchild(xml, tag); xml; xml = ezxml_next(xml))
+	  if ((err = (*func)(xml, arg)))
+	    return err;
+	return 0;
+      }
+      const char *
       ezxml_children(ezxml_t xml, const char* (*func)(ezxml_t child, void *arg), void *arg) {
 	const char *err;
 	for (xml = xml ? xml->child : NULL; xml; xml = xml->ordered)

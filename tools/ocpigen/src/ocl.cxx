@@ -40,6 +40,7 @@
 #include <ctype.h>
 #include <sys/time.h>
 #include "OcpiUtilCppMacros.h"
+#include "OcpiUtilWorker.h"
 #include "OcpiUtilMisc.h"
 #include "wip.h"
 #include "assembly.h"

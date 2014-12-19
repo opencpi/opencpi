@@ -50,7 +50,7 @@ deriveOCP() {
   OcpPort::deriveOCP();
   ocp.MCmd.width = 3;
   {
-    size_t n = (m_protocol->m_maxMessageValues * m_protocol->m_dataValueWidth +
+    size_t n = (m_maxMessageValues * m_dataValueWidth +
 		m_dataWidth - 1) / m_dataWidth;
     if (n > 1) {
       ocp.MAddr.width = ceilLog2(n);
@@ -78,8 +78,8 @@ deriveOCP() {
     ocp.MDataValid.value = s;
   }
   if ((m_isProducer || m_isBidirectional) &&
-      (m_nOpcodes > 1 || m_protocol->m_variableMessageLength))
-    ocp.MFlag.width = 8 + ceilLog2(m_protocol->m_maxMessageValues + 1);
+      (m_nOpcodes > 1 || m_variableMessageLength))
+    ocp.MFlag.width = 8 + ceilLog2(m_maxMessageValues + 1);
   ocp.MReqInfo.width = 1;
   ocp.MReqLast.value = s;
   ocp.MReset_n.value = s;
@@ -88,8 +88,8 @@ deriveOCP() {
   if (m_isProducer || m_talkBack || m_isBidirectional)
     ocp.SDataThreadBusy.value = s;
   if ((!m_isProducer || m_isBidirectional) &&
-      (m_nOpcodes > 1 || m_protocol->m_variableMessageLength))
-    ocp.SFlag.width = 8 + ceilLog2(m_protocol->m_maxMessageValues + 1);
+      (m_nOpcodes > 1 || m_variableMessageLength))
+    ocp.SFlag.width = 8 + ceilLog2(m_maxMessageValues + 1);
   ocp.SReset_n.value = s;
   if (!m_isProducer || m_talkBack || m_isBidirectional)
     ocp.SResp.value = s;
@@ -146,7 +146,7 @@ emitImplAliases(FILE *f, unsigned /*n*/, Language lang) {
     }
     emitOpcodes(f, mIn ? pin : pout, lang);
   }
-  if (m_protocol->m_variableMessageLength) {
+  if (m_variableMessageLength) {
     if (lang != VHDL) {
       if (m_isProducer) { // length is an output
 	size_t width =
@@ -185,8 +185,7 @@ emitRecordInputs(FILE *f) {
     if (m_nOpcodes > 1)
       fprintf(f,
 	      "    opcode           : %s_OpCode_t;\n",
-	      m_protocol && m_protocol->operations() ?
-	      m_protocol->m_name.c_str() : name());
+	      operations() ? OU::Protocol::m_name.c_str() : name());
     fprintf(f,
 	    m_dataWidth ?
 	    "    som, eom, valid  : Bool_t;           -- valid means data and byte_enable are present\n" :
@@ -216,8 +215,7 @@ emitRecordOutputs(FILE *f) {
     if (m_nOpcodes > 1)
       fprintf(f,
 	      "    opcode           : %s_OpCode_t;\n",
-	      m_protocol && m_protocol->operations() ?
-	      m_protocol->m_name.c_str() : name());
+	      operations() ? OU::Protocol::m_name.c_str() : name());
     fprintf(f,
 	    "    som, eom, valid  : Bool_t;            -- one or more must be true when 'give' is asserted\n");
       }

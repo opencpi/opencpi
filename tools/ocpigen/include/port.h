@@ -6,6 +6,7 @@
 #include <cassert>
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilAssembly.h"
+#include "OcpiUtilPort.h"
 #include "ocpigen.h"
 
 // FIXME: this will not be needed when we fully migrate to classes...
@@ -39,7 +40,7 @@ typedef std::list<Attachment*> Attachments;
 typedef Attachments::const_iterator AttachmentsIter;
 
 // FIXME: have "implPort" class??
-class Port {
+class Port : public OCPI::Util::Port {
  protected:
   bool m_clone;
 public:

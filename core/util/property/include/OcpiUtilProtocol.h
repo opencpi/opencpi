@@ -81,6 +81,7 @@ namespace OCPI  {
       Operation *m_op;                 // used during parsing
       std::string
 	m_qualifiedName,               // IDL-style qualified name (double colon separators)
+	m_file,
 	m_name;
       // Summary attributes derived from protocols.  May be specified in the absense of protocol
       size_t m_defaultBufferSize;      // Allow the protocol to simply override the protocol size, if != 0
@@ -102,17 +103,21 @@ namespace OCPI  {
       bool m_isUnbounded;              // are there messages with no upper bound?
       Protocol();
       Protocol(const Protocol & p );
-      virtual ~Protocol();
+      Protocol(Protocol *p); // clone
+      ~Protocol();
       Protocol & operator=( const Protocol & p );
       Protocol & operator=( const Protocol * p );
-      virtual const char *parseOperation(ezxml_t op);
+      void init();
+      const char *parseOperation(ezxml_t op);
       Operation *findOperation(const char *name);
       void finishOperation(const Operation &op);
       inline bool isTwoWay() { return m_isTwoWay; }
       inline size_t &nOperations() { return m_nOperations; }
       inline Operation *operations() { return m_operations; }
       inline const std::string &name() const { return m_name; }
-      const char *parse(ezxml_t x, bool top = true);
+      const char *parseChild(ezxml_t x);
+      const char *parse(ezxml_t x, const char *defName, const char *file,
+			const char *(*dochild)(ezxml_t op, void *arg), void *arg);
       // Note this is NOT const char array and must be modifiable in place
       const char *parse(char *proto);
       const char *parseSummary(ezxml_t x);

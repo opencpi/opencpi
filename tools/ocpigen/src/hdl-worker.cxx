@@ -37,6 +37,7 @@
 #include <cstdio>
 #include <climits>
 #include "OcpiUtilMisc.h"
+#include "OcpiUtilWorker.h"
 #include "hdl.h"
 #include "assembly.h"
 

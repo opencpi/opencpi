@@ -1,4 +1,5 @@
 #include <assert.h>
+#include "OcpiUtilWorker.h"
 #include "assembly.h"
 // Generic (actually non-HDL) assembly support
 // This isn't as purely generic as it should be  FIXME
@@ -72,7 +73,7 @@ parseConnection(OU::Assembly::Connection &aConn) {
 			  "instance %s has count %zu",
 			  ap.m_index, c.m_count ? c.m_count: 1, c.m_name.c_str(),
 			  ap.m_name.empty() ? "<unknown>" : ap.m_name.c_str(),
-			  m_instances[ap.m_instance].worker->m_name.c_str(),
+			  m_instances[ap.m_instance].worker->name().c_str(),
 			  found->m_port->count);
     size_t count = found->m_port->count - ap.m_index;
     if (count < minCount)

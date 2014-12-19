@@ -73,28 +73,15 @@ namespace OCPI {
 	unsigned m_container;                        // LOCAL ordinal - among those we are using
 	CMap *m_feasibleContainers;                  // map per candidate, from findContainers
 	size_t m_nCandidates;                        // convenience
+	// For scalability
+	size_t m_scale;                              // size of crew
+	unsigned *m_containers;                      // container for each crew member
+	const OCPI::Library::Implementation **m_impls; // impl for eacn crew member
 	Instance();
 	~Instance();
       } *m_instances;
       // The instance objects for the launcher
       OCPI::Application::Launcher::Instances m_launchInstances;
-#if 0
-      // State of a connection in the application as it comes into being
-      // For now, only support one-to-one connections
-      struct Connection {
-	OCPI::Util::Assembly::Connection &m_assyConnection;     // reference to xml conn
-	OCPI::Util::Assembly::Port *m_assyInput, *m_assyOutput; // null if external
-	OCPI::Util::Assembly::External *m_external;             // input or output
-	Port *m_input, *m_output;                               // ports or null
-	
-	std::string m_ipi, m_fpi, m_iui, m_fui;
-	// Other status?
-	Connection(OCPI::Util::Assembly::Connection &c);
-      };
-      typedef std::list<Connection> Connections;
-      typedef Connections::iterator ConnectionsIter;
-      Connections m_connections;
-#endif
       OCPI::Application::Launcher::Connections m_launchConnections;
       struct Booking {
 	OCPI::Library::Artifact *m_artifact;

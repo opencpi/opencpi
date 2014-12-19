@@ -55,6 +55,7 @@
 #ifndef OCPI_UTIL_WORKER_H
 #define OCPI_UTIL_WORKER_H
 
+#include <map>
 #include "ezxml.h"
 #include "OcpiOsAssert.h"
 #include "OcpiUtilException.h"
@@ -120,6 +121,7 @@ namespace OCPI {
     // This class represents what we know, generically, about a component implementation
     // Currently there is no separate "spec" metadata - it is redundant in each implementation
     class Worker : public IdentResolver {
+    protected:
       std::string
 	m_specName,
 	m_name,
@@ -137,6 +139,10 @@ namespace OCPI {
       Property *m_properties;
       ezxml_t m_xml;
       unsigned m_ordinal; // ordinal within artifact
+      // Scalability
+      std::string m_validScaling; // Expression for error checking overall scaling
+      Port::Scaling m_scaling;
+      std::map<std::string, Port::Scaling> m_scalingParameters;
       Worker();
       ~Worker();
       inline const std::string &model() const { return m_model; }
@@ -145,6 +151,9 @@ namespace OCPI {
       inline const std::string &slave() const { return m_slave; }
       inline const Attributes &attributes() const { return *m_attributes; }
       const char *parse(ezxml_t xml, Attributes *attr = NULL);
+      virtual const char
+	*getNumber(ezxml_t x, const char *attr, size_t *np, bool *found = NULL,
+		   size_t defaultValue = 0, bool setDefault = true);
       // These two use exceptions
       Property &findProperty(const char *id) const;
       unsigned whichProperty(const char *id) const;

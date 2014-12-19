@@ -910,7 +910,7 @@ attach(Attachment *a, size_t index) {
     if (m_connected[n])
       if (!(m_port->type == TimePort && m_port->master))
 	return OU::esprintf("Multiple connections not allowed for port '%s' on worker '%s'",
-			    m_port->name(), m_port->m_worker->m_name.c_str());
+			    m_port->name(), m_port->m_worker->name().c_str());
     m_connected[n] = true;
   }
   m_attachments.push_back(a);

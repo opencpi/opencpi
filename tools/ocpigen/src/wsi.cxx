@@ -68,12 +68,12 @@ deriveOCP() {
   ocp.MCmd.width = 3;
   if (m_preciseBurst) {
     ocp.MBurstLength.width =
-      floorLog2((m_protocol->m_maxMessageValues * m_protocol->m_dataValueWidth +
+      floorLog2((m_maxMessageValues * m_dataValueWidth +
 		 m_dataWidth - 1)/
 		m_dataWidth) + 1;
     //	ocpiInfo("Burst %u from mmv %u dvw %u dw %u",
-    //		  ocp->MBurstLength.width, p->m_protocol->m_maxMessageValues,
-    //		  p->m_protocol->m_dataValueWidth, p->dataWidth);
+    //		  ocp->MBurstLength.width, p->m_maxMessageValues,
+    //		  p->m_dataValueWidth, p->dataWidth);
     if (ocp.MBurstLength.width < 2)
       ocp.MBurstLength.width = 2;
     // FIXME: this is not really supported, but was for compatibility
@@ -81,7 +81,7 @@ deriveOCP() {
       ocp.MBurstPrecise.value = s;
   } else
     ocp.MBurstLength.width = 2;
-  if (m_byteWidth != m_dataWidth || m_protocol->m_zeroLengthMessages) {
+  if (m_byteWidth != m_dataWidth || m_zeroLengthMessages) {
     ocp.MByteEn.width = m_dataWidth / m_byteWidth;
     ocp.MByteEn.value = s;
   }
@@ -123,23 +123,22 @@ emitVhdlShell(FILE *f, Port *wci) {
 	  "  -- The WSI interface helper component instance for port \"%s\"\n",
 	  name());
   if (ocp.MReqInfo.value)
-    if (m_protocol && m_protocol->nOperations())
+    if (nOperations())
       if (slave)
 	fprintf(f,
 		"  %s_opcode <= %s_opcode_t'val(to_integer(unsigned(%s_opcode_temp)));\n",
-		name(), m_protocol && m_protocol->operations() ?
-		m_protocol->m_name.c_str() : name(), name());
+		name(), operations() ? OU::Protocol::m_name.c_str() : name(), name());
       else {
 	fprintf(f,
 		"  -- Xilinx/ISE 14.6 synthesis doesn't do the t'pos(x) function properly\n"
 		"  -- Hence this workaround\n");
 	fprintf(f,
 		"  %s_opcode_pos <=\n", name());
-	OU::Operation *op = m_protocol->operations();
+	OU::Operation *op = operations();
 	unsigned nn;
-	for (nn = 0; nn < m_protocol->nOperations(); nn++, op++)
+	for (nn = 0; nn < nOperations(); nn++, op++)
 	  fprintf(f, "    %u when %s_opcode = %s_%s_op_e else\n",
-		  nn, name(), m_protocol->m_name.c_str(), op->name().c_str());
+		  nn, name(), OU::Protocol::m_name.c_str(), op->name().c_str());
 	//			nn == m_nOpcodes - 1 ? "" : " else");
 	// If the protocol opcodes do not fill the space, fill it
 	if (nn < m_nOpcodes) {
@@ -595,8 +594,7 @@ emitRecordInputs(FILE *f) {
     if (m_nOpcodes > 1)
       fprintf(f,
 	      "    opcode           : %s_OpCode_t;\n",
-	      m_protocol && m_protocol->operations() ?
-	      m_protocol->m_name.c_str() : name());
+	      operations() ? OU::Protocol::m_name.c_str() : name());
     fprintf(f,
 	    m_dataWidth ?
 	    "    som, eom, valid  : Bool_t;           -- valid means data and byte_enable are present\n" :
@@ -637,8 +635,7 @@ emitRecordOutputs(FILE *f) {
     if (m_nOpcodes > 1)
       fprintf(f,
 	      "    opcode           : %s_OpCode_t;\n",
-	      m_protocol && m_protocol->operations() ?
-	      m_protocol->m_name.c_str() : name());
+	      operations() ? OU::Protocol::m_name.c_str() : name());
     fprintf(f,
 	    "    som, eom, valid  : Bool_t;            -- one or more must be true when 'give' is asserted\n");
     if (m_isPartitioned)

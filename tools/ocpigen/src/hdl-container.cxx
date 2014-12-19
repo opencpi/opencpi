@@ -99,7 +99,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
   appAssembly.setParent(this);
   config.setParent(this);
   if (!platform)
-    platform = m_config.platform().m_name.c_str();
+    platform = m_config.platform().name().c_str();
   bool doDefault = false;
   if ((err = OE::getBoolean(xml, "default", &doDefault)))
     return;
@@ -443,7 +443,7 @@ parseConnection(ezxml_t cx, ContConnect &c) {
     if (!c.interconnect ||
 	c.interconnect->type != NOCPort || !c.interconnect->master)
       return OU::esprintf("Interconnect '%s' not found for platform '%s'", attr,
-			   m_config.platform().m_name.c_str());
+			  m_config.platform().name().c_str());
   }
   return NULL;
 }

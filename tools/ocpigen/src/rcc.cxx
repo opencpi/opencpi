@@ -1,3 +1,4 @@
+#include "OcpiUtilWorker.h"
 #include "assembly.h"
 #include "rcc.h"
 
@@ -970,12 +971,12 @@ emitRccCppImpl(FILE *f) {
 	  "  class %c%sPort : public OCPI::RCC::RCCUserPort {\n",
 	  toupper(name()[0]), name()+1);
   // Now emit structs for messages
-  OU::Operation *o = m_protocol->operations();
+  OU::Operation *o = operations();
   if (o) {
     std::string ops;
     OU::format(ops, "%c%sOperations", toupper(name()[0]), name()+1);
     bool first = true;
-    for (unsigned nn = 0; nn < m_protocol->nOperations(); nn++, o++)
+    for (unsigned nn = 0; nn < nOperations(); nn++, o++)
       if (o->nArgs()) {
 	std::string s;
 	camel(s, o->name().c_str());
@@ -992,8 +993,8 @@ emitRccCppImpl(FILE *f) {
 
     // Start union
     fprintf(f, "\n\n    union %s {\n", ops.c_str());
-    o = m_protocol->operations();
-    for (unsigned nn = 0; nn < m_protocol->nOperations(); nn++, o++)
+    o = operations();
+    for (unsigned nn = 0; nn < nOperations(); nn++, o++)
       if (o->nArgs()) {
 	std::string s;
 	camel(s, o->name().c_str());
@@ -1008,9 +1009,9 @@ emitRccCppImpl(FILE *f) {
 
     // Operation enums
     {
-      o = m_protocol->operations();
+      o = operations();
       fprintf(f, "    enum { \n" );
-      for (unsigned nn = 0; nn < m_protocol->nOperations(); nn++, o++) {
+      for (unsigned nn = 0; nn < nOperations(); nn++, o++) {
 	std::string s;
 	camel(s, o->name().c_str() );	
 	fprintf(f,"      %s_OPERATION\n",  s.c_str());	  
@@ -1021,8 +1022,8 @@ emitRccCppImpl(FILE *f) {
     // Start Op class
 
     // Now we need a class for each operation
-    o = m_protocol->operations();
-    for (unsigned nn = 0; nn < m_protocol->nOperations(); nn++, o++) {
+    o = operations();
+    for (unsigned nn = 0; nn < nOperations(); nn++, o++) {
       std::string s;
       camel(s, o->name().c_str());	
       if (o->nArgs()) {
@@ -1169,8 +1170,8 @@ emitRccCppImpl(FILE *f) {
 
 
     first = true;
-    o = m_protocol->operations();
-    for (unsigned nn = 0; nn < m_protocol->nOperations(); nn++, o++)
+    o = operations();
+    for (unsigned nn = 0; nn < nOperations(); nn++, o++)
       if (o->nArgs()) {
 	std::string s;
 	camel(s, o->name().c_str());
@@ -1198,14 +1199,14 @@ emitRccCppImpl(FILE *f) {
 }
 void DataPort::
 emitRccCImpl(FILE *f) {
-  if (m_protocol->operations()) {
+  if (operations()) {
     unsigned nn;
     for (nn = 0; nn < m_ordinal; nn++)
       if (m_worker->m_ports[nn]->isData()) {
 	DataPort *dp = static_cast<DataPort*>(m_worker->m_ports[nn]);
 
-	if (dp->m_protocol->operations() &&
-	    !strcasecmp(dp->m_protocol->m_name.c_str(), m_protocol->m_name.c_str()))
+	if (operations() &&
+	    !strcasecmp(dp->OU::Protocol::m_name.c_str(), OU::Protocol::m_name.c_str()))
 	  break;
       }
     if (nn >= m_ordinal) {
@@ -1214,25 +1215,25 @@ emitRccCImpl(FILE *f) {
 	      " * Enumeration of operations for protocol %s (%s)\n"
 	      " */\n"
 	      "typedef enum {\n",
-	      m_protocol->m_name.c_str(), m_protocol->m_qualifiedName.c_str());
-      OU::Operation *o = m_protocol->operations();
-      char *puName = upperdup(m_protocol->m_name.c_str());
-      for (unsigned no = 0; no < m_protocol->nOperations(); no++, o++) {
+	      OU::Protocol::m_name.c_str(), OU::Protocol::m_qualifiedName.c_str());
+      OU::Operation *o = operations();
+      char *puName = upperdup(OU::Protocol::m_name.c_str());
+      for (unsigned no = 0; no < nOperations(); no++, o++) {
 	char *ouName = upperdup(o->name().c_str());
 	fprintf(f, " %s_%s,\n", puName, ouName);
 	free((void*)ouName);
       }
       free(puName);
       fprintf(f, "} %c%sOperation;\n",
-	      toupper(*m_protocol->m_name.c_str()),
-	      m_protocol->m_name.c_str() + 1);
+	      toupper(*OU::Protocol::m_name.c_str()),
+	      OU::Protocol::m_name.c_str() + 1);
     }
   }
 }
 
 void DataPort::
 emitRccCImpl1(FILE *f) {
-  if (m_protocol->operations()) {
+  if (operations()) {
     char *upper = upperdup(m_worker->m_implName);
     fprintf(f,
 	    "/*\n"
@@ -1240,9 +1241,9 @@ emitRccCImpl1(FILE *f) {
 	    " */\n"
 	    "typedef enum {\n",
 	    name(), m_worker->m_implName);
-    OU::Operation *o = m_protocol->operations();
+    OU::Operation *o = operations();
     char *puName = upperdup(name());
-    for (unsigned nn = 0; nn < m_protocol->nOperations(); nn++, o++) {
+    for (unsigned nn = 0; nn < nOperations(); nn++, o++) {
       char *ouName = upperdup(o->name().c_str());
       fprintf(f, "  %s_%s_%s,\n", upper, puName, ouName);
       free(ouName);
@@ -1252,8 +1253,8 @@ emitRccCImpl1(FILE *f) {
 	    toupper(m_worker->m_implName[0]), m_worker->m_implName+1,
 	    toupper(name()[0]), name()+1);
     // Now emit structs for messages
-    o = m_protocol->operations();
-    for (unsigned nn = 0; nn < m_protocol->nOperations(); nn++, o++)
+    o = operations();
+    for (unsigned nn = 0; nn < nOperations(); nn++, o++)
       if (o->nArgs()) {
 	fprintf(f,
 		"/*\n"

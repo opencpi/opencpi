@@ -238,6 +238,8 @@ namespace OCPI {
 	__attribute__((format(printf, 3, 4))),
 	*getRequiredString(ezxml_t x, std::string &s, const char *attr, const char *element = NULL),
 	*ezxml_children(ezxml_t xml, const char* (*func)(ezxml_t child, void *arg), void *arg),
+	*ezxml_cchildren(ezxml_t xml, const char* (*func)(ezxml_t child, void *arg), void *arg,
+			 const char *tag),
 	*ezxml_attrs(ezxml_t xml, const char* (*func)(const char *name, const char *value, void *arg), void *arg),
 	// true only means its an error to do anything but true, for cases
 	// when you are only allowed to "add truth", not set false

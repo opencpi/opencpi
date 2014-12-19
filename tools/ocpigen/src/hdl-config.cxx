@@ -167,7 +167,7 @@ parseDevInstances(ezxml_t xml, const char *parent, DevInstances *baseInstances) 
       return err;
     if (control && baseInstances)
       return "It is invalid to specify a 'control' attribute to a device in a container";
-    if (!strcasecmp(m_platform.name(), name.c_str())) {
+    if (!strcasecmp(m_platform.name().c_str(), name.c_str())) {
       m_platform.setControl(control); // FIXME make the platform a device...
       continue;
     }

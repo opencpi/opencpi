@@ -47,6 +47,70 @@ namespace OCPI {
     class Worker;
     class Port : public Protocol {
     public:
+      struct Scaling {
+	size_t
+	  m_min,     // zero means no minimum
+	  m_max,     // zero means no maximum.  1 essentially means not scalable
+	  m_modulo,  // initialized to 1, can't be zero
+	  m_default; // suggested value.  can't be zero
+	Scaling();
+	const char *parse(ezxml_t x, Worker &w);
+      };
+#define SCALING_ATTRS "min", "max", "modulo", "default"
+#define OCPI_PADDINGS	      \
+      OCPI_PADDING(None)      \
+      OCPI_PADDING(Replicate) \
+      OCPI_PADDING(Zero)      \
+      OCPI_PADDING(Wrap)
+
+#define OCPI_PADDING(x) x,
+      enum Padding { OCPI_PADDINGS };
+#undef OCPI_PADDING
+
+      struct Overlap {
+	size_t m_left, m_right;
+	Padding m_padding;
+	Overlap();
+	const char *parse(ezxml_t x);
+      };
+#define OVERLAP_ATTRS "left", "right", "padding"
+      // This structure is per-dimension
+      struct Partitioning {
+	Scaling  m_scaling;
+	Overlap  m_overlap;
+	size_t   m_sourceDimension;
+	Partitioning();
+        const char *parse(ezxml_t x, Worker &w);
+      };
+#define PARTITION_ATTRS SCALING_ATTRS, OVERLAP_ATTRS, "source"
+#define OCPI_DISTRIBUTIONS			\
+        OCPI_DISTRIBUTION(All)			\
+	OCPI_DISTRIBUTION(Cyclic)		\
+	OCPI_DISTRIBUTION(First)		\
+	OCPI_DISTRIBUTION(Balanced)		\
+	OCPI_DISTRIBUTION(Directed)		\
+	OCPI_DISTRIBUTION(Random)		\
+	OCPI_DISTRIBUTION(Hashed)		\
+
+#define OCPI_DISTRIBUTION(x) x,
+      enum Distribution { OCPI_DISTRIBUTIONS DistributionLimit };
+
+#undef OCPI_DISTRIBUTION
+
+#define DISTRIBUTION_ATTRS "distribution", "hashfield"
+      struct OpScaling {
+	Distribution                m_distribution;
+	Member                     *m_hashField;
+	Partitioning                m_defaultPartitioning; // default for all args
+	bool                        m_multiple;
+	bool                        m_allSeeOne;
+	bool                        m_allSeeEnd;
+	std::vector<Partitioning *> m_partitioning; // tricky: these pointers are arrays for dims
+	bool                        m_isPartitioned;
+	OpScaling(size_t nArgs);
+	const char *parse(Port &dp, Operation &op, ezxml_t x);
+      };
+    public:
       typedef uint32_t Mask;
       static const Mask c_maxPorts = sizeof(Mask)*8;
       std::string m_name;
@@ -59,10 +123,24 @@ namespace OCPI {
       ezxml_t     m_xml;
       Worker     *m_worker;
       Port       *m_bufferSizePort;  // The port we should copy our buffer size from
+      // Scalability
+      bool                    m_isScalable;
+      std::string             m_scaleExpr;
+      bool                    m_isPartitioned;
+      std::vector<OpScaling*> m_opScaling;
+      Distribution m_defaultDistribution;
+      Partitioning m_defaultPartitioning;
+      std::string m_defaultHashField;
+
       Port(bool provider = true);
+      // cloning constructor
+      Port(Port *p);
+      void init();
       const char *preParse(Worker &w, ezxml_t x, PortOrdinal ord);
       const char *parse(ezxml_t x);
       const char *postParse();
+      const char *parseDistribution(ezxml_t x, Distribution &d, std::string &hash);
+      const char *parseOperations(ezxml_t x);
     };
 
   }

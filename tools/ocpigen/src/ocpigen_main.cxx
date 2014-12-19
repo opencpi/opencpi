@@ -225,7 +225,7 @@ main(int argc, const char **argv) {
 	fprintf(stderr, "Unknown flag: %s\n", *ap);
 	return 1;
       }
-    else
+    else {
       try {
 	std::string parent;
 	Worker *w = Worker::create(*ap, parent, package, outDir, NULL, NULL, 0, err);
@@ -289,5 +289,7 @@ main(int argc, const char **argv) {
 	fprintf(stderr, "Unexpected/unknown exception thrown\n");
 	return 1;
       }
+      break;
+    }
   return err ? 1 : 0;
 }

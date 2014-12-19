@@ -72,7 +72,7 @@ emitIDL(const char *outDir, const char *protoFile) {
   ezxml_t x;
   std::string dummy;
   if ((err = parseFile(protoFile, NULL, "protocol", &x, dummy, false)) ||
-      (err = p.parse(x)))
+      (err = p.parse(x, NULL, NULL, NULL, NULL)))
     return err;
   p.printXML(stdout, 0);
   return NULL;

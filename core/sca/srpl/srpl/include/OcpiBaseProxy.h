@@ -62,7 +62,7 @@
 #include <CF_s.h>
 #include <OcpiOsMutex.h>
 #include <OcpiLoggerLogger.h>
-#include "OcpiUtilImplementation.h"
+#include "OcpiUtilWorker.h"
 
 namespace OCPI {
   namespace SCA {

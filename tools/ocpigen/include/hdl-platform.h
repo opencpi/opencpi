@@ -19,8 +19,6 @@ public:
   static HdlPlatform *create(ezxml_t xml, const char *xfile, Worker *parent, const char *&err);
   HdlPlatform(ezxml_t xml, const char *xfile, Worker *parent, const char *&err);
   virtual ~HdlPlatform();
-
-  const char *name() { return m_name.c_str(); }
   Slots &slots() { return m_slots; }
   void setControl(bool c) { m_control = c; }
   Slot *findSlot(const char *name, const char *&err) const;

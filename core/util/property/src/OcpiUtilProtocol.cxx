@@ -81,7 +81,6 @@ namespace OCPI {
       return *this;
     }
 #endif
-
     const char *Operation::parse(ezxml_t op, Protocol &p) {
       const char *err;
       if ((err = OE::checkAttrs(op, "Name", "Twoway", "QualifiedName", (void*)0)))
@@ -213,14 +212,26 @@ namespace OCPI {
       
     }
 
+    void Protocol::init() {
+      m_nOperations = 0;
+      m_operations = NULL;
+      m_op = NULL;
+      m_defaultBufferSize = 0;
+      m_minBufferSize = 0;
+      m_dataValueWidth = 8;
+      m_dataValueGranularity = 1;
+      m_diverseDataSizes = false;
+      m_minMessageValues = 0;
+      m_maxMessageValues = 1;
+      m_variableMessageLength = false;
+      m_zeroLengthMessages = false;
+      m_isTwoWay = false;
+      m_isUnbounded = false;
+    }
     // These defaults are for when there is no protocol at all.
     // Notice that the default is for 1 byte fixed size messages...
-    Protocol::Protocol()
-      : m_nOperations(0), m_operations(NULL), m_op(NULL), m_defaultBufferSize(0),
-	m_minBufferSize(0), m_dataValueWidth(8), m_dataValueGranularity(1), m_diverseDataSizes(false),
-	m_minMessageValues(0), m_maxMessageValues(1), m_variableMessageLength(false),
-	m_zeroLengthMessages(false), m_isTwoWay(false), m_isUnbounded(false)
-    {
+    Protocol::Protocol() {
+      init();
     }
 #if 0
     Protocol::
@@ -234,6 +245,31 @@ namespace OCPI {
       if (m_operations)
 	delete [] m_operations;
     }
+    // clone constructor
+    Protocol::
+    Protocol(Protocol *p) {
+      if (p) {
+	m_nOperations = p->m_nOperations;
+	m_operations = p->m_operations;
+	p->m_operations = NULL;
+	m_op = NULL;
+	m_qualifiedName = p->m_qualifiedName;
+	m_file = p->m_file;
+	m_name = p->m_name;
+	m_defaultBufferSize = p->m_defaultBufferSize;
+	m_minBufferSize = p->m_minBufferSize;
+	m_dataValueWidth = p->m_dataValueWidth;
+	m_dataValueGranularity = p->m_dataValueGranularity;
+	m_diverseDataSizes = p->m_diverseDataSizes;
+	m_minMessageValues = p->m_minMessageValues;
+	m_maxMessageValues = p->m_maxMessageValues;
+	m_variableMessageLength = p->m_variableMessageLength;
+	m_zeroLengthMessages = p->m_zeroLengthMessages;
+	m_isTwoWay = p->m_isTwoWay;
+	m_isUnbounded = p->m_isUnbounded;
+      } else
+	init();
+    }
 #if 0
     Protocol & 
     Protocol::
@@ -245,7 +281,6 @@ namespace OCPI {
     Protocol::
     operator=( const Protocol * p )
     {
-      
       m_nOperations = p->m_nOperations;
       m_qualifiedName = p->m_qualifiedName;
       m_name = p->m_name;
@@ -280,26 +315,27 @@ namespace OCPI {
 	m_minMessageValues = op.m_myOffset;
     }
 
+    // Interface for C iterator in ezxml
+    static const char *doProtocolChild(ezxml_t op, void *arg) {
+      return ((Protocol *)arg)->parseChild(op);
+    }
+    // Called on each child element of the protocol
     const char *Protocol::
-    parseOperation(ezxml_t op) {
-      const char *name = ezxml_name(op);
-      // FIXME:  support xi:included protocols
-      if (!name || strcasecmp(name, "Operation"))
-	return "Element under Protocol is neither Operation, Protocol or or xi:include";
+    parseChild(ezxml_t op) {
+      const char *err;
+      if ((err = OE::checkTag(op, "operation", "within protocol \"%s\"",
+			      m_name.c_str())))
+	return err;
       // If this is NULL we're just counting properties.
+      // FIXME: this is pretty gross if there are include files
       if (!m_operations) {
 	m_nOperations++;
 	return NULL;
       }
       Operation *o = m_op++;
-      const char *err = o->parse(op, *this);
-      if (!err)
+      if (!(err = o->parse(op, *this)))
 	finishOperation(*o);
       return err;
-    }
-    // Interface for C iterator in ezxml
-    const char *doOperation(ezxml_t op, void *arg) {
-      return ((Protocol *)arg)->parseOperation(op);
     }
     // Parse summary attributes, presumably when there is no explicit protocol
     // although possibly to forcibly override?
@@ -368,24 +404,25 @@ namespace OCPI {
       ezxml_t x;
       const char *err = OE::ezxml_parse_str(proto, strlen(proto), x);
       if (err ||
-	  (err = parse(x)))
+	  (err = parse(x, NULL, NULL, doProtocolChild, this)))
 	err = esprintf("Error parsing xml protocol description: %s", err);
       return err;
     }
 
-    const char *Protocol::parse(ezxml_t prot, bool top) {
-      if (!top)
-	return OE::ezxml_children(prot, doOperation, this);
-      const char *err;
+    // Top level protocol parsing method.
+    const char *Protocol::parse(ezxml_t prot, const char *defName, const char *file,
+				const char *(*doChild)(ezxml_t child, void *arg), void *arg) {
+      if (file)
+	m_file = file;
       const char *name = ezxml_cattr(prot, "name");
-      if (name)
-	m_name = name;
-      name = ezxml_cattr(prot, "qualifiedname");
-      if (name)
+      m_name = name ? name : (defName ? defName : "");
+      if ((name = ezxml_cattr(prot, "qualifiedname")))
 	m_qualifiedName = name;
       m_dataValueWidth = 0;
       // First time we call this it will just be for counting.
-      if ((err = OE::ezxml_children(prot, doOperation, this)))
+      const char *err;
+      if ((err = OE::ezxml_children(prot, doChild ? doChild : doProtocolChild,
+				    arg ? arg : this)))
 	return err;
       if (m_nOperations) {
 	// If we are actually parsing the protocol, there is no default value width.
@@ -396,7 +433,8 @@ namespace OCPI {
 	  return err;
 	m_operations = m_op = new Operation[m_nOperations];
 	// Now we call a second time t make them.
-	if ((err = OE::ezxml_children(prot, doOperation, this)) ||
+	if ((err = OE::ezxml_children(prot, doChild ? doChild : doProtocolChild,
+				      arg ? arg : this)) ||
 	    (err = OE::getBoolean(prot, "ZeroLengthMessages", &m_zeroLengthMessages)))
 	  return err;
 	// Allow dvw to be overridden to provide for future finer granularity 
