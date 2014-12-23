@@ -100,12 +100,13 @@ namespace OCPI {
 				      const char *&inst,
 				      unsigned & score
 				      );
+      Implementation *findImplementation(const char *specName, const char *staticInstance);
       inline ezxml_t xml() const { return m_xml; }
       virtual const std::string &name() const = 0;
       std::time_t mtime() const { return m_mtime; }
       uint64_t length() const { return m_length; }
       virtual Artifact *nextArtifact() = 0;
-      static char *getMetadata(const char *name, std::time_t &mtime);
+      static char *getMetadata(const char *name, std::time_t &mtime, uint64_t &length);
     };
 
     // This class is what is used when looking for implementations.
@@ -235,6 +236,7 @@ namespace OCPI {
 		   const OCPI::API::Connection *conns,
 		   const char *&inst);
       Artifact *findArtifact(const char *uuid);
+      void registerUuid(const char *uuid, Artifact *art) { m_artifacts[uuid] = art; }
       virtual Artifact *firstArtifact() = 0;
       virtual Library *nextLibrary() = 0;
       const std::string &libName() const { return m_name; };

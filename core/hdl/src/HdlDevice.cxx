@@ -22,15 +22,9 @@
  */
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
-#include <stdlib.h>
-#include <signal.h>
 #include <setjmp.h>
-#include <zlib.h>
+#include <signal.h>
 #include <lzma.h>
-#include "OcpiUuid.h"
-#include "OcpiOsAssert.h"
-#include "OcpiUtilMisc.h"
-#include "OcpiUtilException.h"
 #include "HdlDevice.h"
 
 #define USE_LZMA 1

@@ -31,7 +31,7 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "OcpiContainerManager.h"
+#include "ContainerManager.h"
 namespace OCPI {
   namespace Container {
     namespace OA = OCPI::API;
@@ -96,6 +96,16 @@ namespace OCPI {
 	  std::string error;
 	  return c ? c : d->probeContainer(which, error, props);
 	}
+      }
+      return NULL;
+    }
+    Container *Manager::
+    findX(const char *which) {
+      parent().configureOnce();
+      for (Driver *d = firstChild(); d; d = d->nextChild()) {
+	Container *c = d->findContainer(which);
+	if (c)
+	  return c;
       }
       return NULL;
     }

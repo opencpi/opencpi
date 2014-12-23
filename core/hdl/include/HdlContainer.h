@@ -1,7 +1,7 @@
 #ifndef HdlContainer_H
 #define HdlContainer_H
-#include "HdlOCCP.h"
-#include "OcpiContainerInterface.h"
+#include "Container.h"
+#include "HdlDriver.h"
 
 namespace OCPI {
   namespace HDL {

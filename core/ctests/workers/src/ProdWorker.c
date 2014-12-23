@@ -205,7 +205,7 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   this_->ports[ProducerWorker_Data_Out_Port].output.length = len;
   this_->ports[ProducerWorker_Data_Out_Port].output.u.operation = 0;
   this_->container.send( &this_->ports[ProducerWorker_Data_Out_Port], 
-                          &this_->ports[ProducerWorker_Data_Out_Port].current, 0x54, len );
+			 &this_->ports[ProducerWorker_Data_Out_Port].current, (RCCOpCode)0x54, len );
 
 #define DELAY_AFTER_SEND__
 #ifdef DELAY_AFTER_SEND

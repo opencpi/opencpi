@@ -22,7 +22,7 @@ export OCPI_ARCH=$OCPI_TARGET_ARCH
 # For now this script needs to know where it is, and on some circa 2002 bash versions,
 # it can't.  This sets up the CDK VARS
 source ocpi/ocpisetup.sh ocpi/ocpisetup.sh
-if test "$OCPI_OPENCL_EXPORTS" = ""; then
+if test "$OPENCL_EXPORTS" = ""; then
   export OPENCL_EXPORTS="$OCPI_OPENCL_INCLUDE_DIR $OCPI_OPENCL_INCLUDE_DIR/CL"
 fi
 echo ""; echo " *** OpenCPI Environment settings"; echo ""

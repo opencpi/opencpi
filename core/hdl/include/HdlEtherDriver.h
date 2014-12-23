@@ -40,9 +40,9 @@
   Thus this module knows about ethernet, but not about the details of discovery payloads.
 */
 
-#ifndef ETHERDRIVER_H
-#define ETHERDRIVER_H
-#include "NetDriver.h"
+#ifndef HDLETHERDRIVER_H
+#define HDLETHERDRIVER_H
+#include "HdlNetDriver.h"
 namespace OCPI {
   namespace HDL {
     namespace Ether {

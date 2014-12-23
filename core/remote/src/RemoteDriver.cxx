@@ -1,9 +1,9 @@
-#include <string.h>
-#include "OcpiOsEther.h"
 #include "OcpiOsMisc.h"
-#include "OcpiContainerManager.h"
-#include "OcpiContainerErrorCodes.h"
-#include "OcpiUtilMisc.h"
+#include "OcpiOsEther.h"
+#include "OcpiUtilValue.h"
+#include "ContainerManager.h"
+#include "RemoteLauncher.h"
+
 // This is the "driver" for remote containers, which finds them, constructs them, and 
 // in general manages them.  It is an object managed by the Container::Manager class.
 // It acts as the factory for Remote containers.
@@ -72,15 +72,15 @@ class Application;
 class Worker
   : public OC::WorkerBase<Application,Worker,Port> {
   friend class Application;
+  unsigned m_remoteInstance;
+  Launcher &m_launcher;
   Worker(Application & app, Artifact *art, const char *name,
-	 ezxml_t impl, ezxml_t inst, OC::Worker */*slave*/, const OU::PValue *wParams)
-    : OC::WorkerBase<Application,Worker,Port>(app, *this, art, name, impl, inst, wParams) {
-  }
+	 ezxml_t impl, ezxml_t inst, OC::Worker */*slave*/, const OU::PValue *wParams,
+	 unsigned remoteInstance);
   virtual ~Worker() {}
   OC::Port &createPort(const OU::Port&, const OU::PValue *params) {
     return *(OC::Port*)NULL;
   }
-  void controlOperation(OU::Worker::ControlOperation) {}
   OC::Port &createInputPort(OU::PortOrdinal portId,      
 			    size_t bufferCount,
 			    size_t bufferSize, 
@@ -95,7 +95,19 @@ class Worker
     throw ( OU::EmbeddedException ) {
     return *(OC::Port*)NULL;
   }
-  void setPropertyValue(const OA::Property &p, const OU::Value &v) {}
+  void controlOperation(OU::Worker::ControlOperation op) {
+    if (getControlMask() & (1 << op))
+      m_launcher.controlOp(m_remoteInstance, op);
+  }
+  void setPropertyValue(const OA::Property &p, const OU::Value &v) {
+    std::string val;
+    v.unparse(val);
+    m_launcher.setPropertyValue(m_remoteInstance,
+				static_cast<OU::Property *>(&p.m_info) - m_properties, val);
+  }
+  void getPropertyValue(const OU::Property &p, std::string &v, bool hex, bool add) {
+    m_launcher.getPropertyValue(m_remoteInstance, &p - m_properties, v, hex, add);
+  }
 
   void read(size_t offset, size_t nBytes, void *p_data) {}
   void write(size_t offset, size_t nBytes, const void* p_data ) {}
@@ -167,23 +179,46 @@ class Application
   createWorker(OC::Artifact *art, const char *appInstName,
 	       ezxml_t impl, ezxml_t inst, OC::Worker *slave,
 	       const OU::PValue *wParams) {
+    uint32_t remoteInstance;
+    if (!OU::findULong(wParams, "remoteInstance", remoteInstance))
+      throw OU::Error("Remote ContainerApplication expects remoteInstance parameter");
     return *new Worker(*this, art ? static_cast<Artifact*>(art) : NULL,
-		       appInstName ? appInstName : "unnamed-worker", impl, inst, slave, wParams);
+		       appInstName ? appInstName : "unnamed-worker", impl, inst, slave, wParams,
+		       remoteInstance);
   }
 };
 
 class Driver;
-class Client;
+
 extern const char *remote;
+// The "client" class that knows how to talk to some remote containers.
+// There is no parent-child relationship since containers are always
+// the children of container drivers.
+class Client 
+  : public OU::Child<Driver,Client,remote>,
+    public Launcher {
+  friend class Driver;
+protected:
+  Client(Driver &d, const std::string &name, const char *host, uint16_t port, std::string &error)
+    : OU::Child<Driver,Client,remote>(d, *this, name.c_str()),
+      Launcher(host, port, error)
+  {
+  }
+public:
+  const std::string &name() const {
+    return OU::Child<Driver,Client,remote>::name();
+  }
+};
+
 class Container
   : public OC::ContainerBase<Driver,Container,Application,Artifact> {
   Client &m_client;
 public:
-  Container(Client &client, const char *name,
+  Container(Client &client, const std::string &name,
 	    const char *model, const char *os, const char *osVersion, const char *platform,
 	    const OA::PValue* /*params*/)
     throw ( OU::EmbeddedException )
-    : OC::ContainerBase<Driver,Container,Application,Artifact>(*this, name),
+    : OC::ContainerBase<Driver,Container,Application,Artifact>(*this, name.c_str()),
       m_client(client) {
     m_model = model;
     m_os = os;
@@ -192,6 +227,9 @@ public:
   }
   virtual ~Container()
   throw () {
+  }
+  OC::Launcher &launcher() const {
+    return m_client;
   }
   OA::ContainerApplication*
   createApplication(const char *name, const OU::PValue *props)
@@ -204,24 +242,24 @@ public:
     return *new Artifact(*this, lart, artifactParams);
   }
 };
-// The "client" class that knows how to talk to some remote containers.
-// There is no parent-child relationship since containers are always
-// the children of container drivers.
-class Client 
-  : public OU::Child<Driver,Client,remote> {
-  friend class Driver;
-protected:
-  Client(Driver &d, const char *name, const char *host, const char *port, std::string &error)
-    : OU::Child<Driver,Client,remote>(d, *this, name) {
-  }
-};
+
+Worker::
+Worker(Application & app, Artifact *art, const char *name,
+       ezxml_t impl, ezxml_t inst, OC::Worker */*slave*/, const OU::PValue *wParams,
+       unsigned remoteInstance)
+  : OC::WorkerBase<Application,Worker,Port>(app, *this, art, name, impl, inst, wParams),
+    m_remoteInstance(remoteInstance),
+    m_launcher(*static_cast<Launcher *>(&app.parent().launcher())) {
+  setControlMask(getControlMask() | (OU::Worker::OpInitialize|
+				     OU::Worker::OpStart|
+				     OU::Worker::OpStop|
+				     OU::Worker::OpRelease));
+}
 
 // The driver class owns the containers (like all container driver classes)
 // and also owns the clients of those containers.
 class Driver : public OC::DriverBase<Driver, Container, remote>,
 	       public OU::Parent<Client> {
-  //      OCPI::DataTransport::TransportGlobal *m_tpg_events, *m_tpg_no_events;
-  //      unsigned m_count;
 public:
   static pthread_key_t s_threadKey;
   Driver() throw() {
@@ -266,15 +304,15 @@ public:
 		   devAddr.pretty(), strlen(response), length);
 	  continue;
 	}
-	ocpiDebug("Discovery response is:\n%s\n-- end of discovery", response);
+	ocpiDebug("Discovery response is:\n%s-- end of discovery", response);
 	char *cp = strchr(response, '\n');
-	char *port = strchr(response, ':');
-	if (!cp || !port || cp < port)
+	char *sport = strchr(response, ':');
+	if (!cp || !sport || cp < sport)
 	  goto bad;
 	*cp = '\0';
 	{ 
 	  std::string serverName(response);
-	  *port++ = '\0';
+	  *sport++ = '\0';
 	  if (exclude)
 	    for (const char **ap = exclude; *ap; ap++) {
 	      if (!strcasecmp(serverName.c_str(), *ap) ||
@@ -285,6 +323,13 @@ public:
 	    }
 	  if (!servers.insert(serverName).second)
 	    continue;
+	  uint16_t port;
+	  const char *err;
+	  if ((err = OU::Value::parseUShort(sport, NULL, port))) {
+	    error = err;
+	    ocpiBad("Port number from remote container server \"%s\" invalid: %s", sport, err);
+            goto bad;
+          }
 	  char *end;
 	  for (*cp++ = '\0'; *cp; cp = end) {
 	    if (!(end = strchr(cp, '\n')))
@@ -309,9 +354,11 @@ public:
 		  goto cskip;
 		}
 	    {
+	      // Only create the client when we are actually going to use one of the
+	      // containers it is offering to us (e.g. after the exclude check)
 	      Client *client = OU::Parent<Client>::findChildByName(serverName.c_str());
 	      if (!client) {
-		client = new Client(*this, serverName.c_str(), response, port, error);
+		client = new Client(*this, serverName, response, port, error);
 		if (error.length()) {
 		  delete client;
 		  return true;

@@ -45,27 +45,23 @@
 
 #include <stdio.h>
 #include <unistd.h>
-#include <OcpiOsMisc.h>
-#include <OcpiOsAssert.h>
-#include <DtIntEventHandler.h>
-#include <OcpiContainerInterface.h>
-#include <OcpiContainerPort.h>
-#include <OcpiContainerPort.h>
-#include <OcpiContainerApplication.h>
-#include <OcpiWorker.h>
-#include <OcpiRDTInterface.h>
-#include <ConsumerWorker.h>
-#include <ProdWorker.h>
-#include <LoopbackWorker.h>
-#include <test_utilities.h>
-
-#include <OcpiBuffer.h>
-
-#include <sstream>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <dirent.h>
+#include <sstream>
+#include "OcpiOsMisc.h"
+#include "OcpiOsAssert.h"
+#include "DtIntEventHandler.h"
+#include "OcpiBuffer.h"
+#include "OcpiRDTInterface.h"
+#include "ContainerPort.h"
+#include "ContainerApplication.h"
+#include "ContainerWorker.h"
+#include "ConsumerWorker.h"
+#include "ProdWorker.h"
+#include "LoopbackWorker.h"
+#include "test_utilities.h"
 
 #define PORT_0 0
 #define PORT_1 1

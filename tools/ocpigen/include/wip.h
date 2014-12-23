@@ -583,7 +583,6 @@ class Worker : public Parsed, public OU::IdentResolver {
     //    *doAssyClock(Instance *i, Port *p),
     *openSkelHDL(const char *suff, FILE *&f),
     *emitVhdlRecordInterface(FILE *f),
-    *emitUuidHDL(const OU::Uuid &uuid),
     *emitImplHDL( bool wrap = false),
     *emitAssyImplHDL(FILE *f, bool wrap),
     *emitConfigImplHDL(FILE *f),
@@ -617,7 +616,8 @@ class Worker : public Parsed, public OU::IdentResolver {
     *parseInstance(Instance &inst, ezxml_t x), // FIXME: should be HdlInstance...
     *emitArtXML(const char *wksFile),
     *emitWorkersHDL(const char *file),
-    *emitAttribute(const char *attr);
+    *emitAttribute(const char *attr),
+    *emitUuid(const OU::Uuid &uuid);
   Port *findPort(const char *name, Port *except = NULL) const;
   Clock *findClock(const char *name) const;
   virtual void
@@ -681,8 +681,7 @@ extern const char
   *getNames(ezxml_t xml, const char *file, const char *tag, std::string &name, std::string &fileName),
   *tryOneChildInclude(ezxml_t top, const std::string &parent, const char *element,
 		      ezxml_t *parsed, std::string &childFile, bool optional),
-  *emitContainerHDL(Worker*, const char *),
-  *emitArtOCL(Worker *);
+  *emitContainerHDL(Worker*, const char *);
 
 extern void
   doPrev(FILE *f, std::string &last, std::string &comment, const char *myComment),

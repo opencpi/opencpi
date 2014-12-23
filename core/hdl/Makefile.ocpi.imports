@@ -58,30 +58,23 @@ SYSLIBS += $(OCPI_LZMA_DIR)/$(OCPI_TARGET_HOST)/lib/lzma
 
 EXTRAOBJS += ../../linux-bin/HdlContainer.obj 
 
-ifeq ($(OCPI_CROSS_HOST),ppc86xx-linux)
-else
 ifeq ($(OCPI_OS),darwin)
-#DYNOBJS += ../../../cp289_container/$(OCPI_OUT_DIR)/OcpiContainerDriver.obj \
-#	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPioXfer.obj
 DYNOBJS += \
-../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramXfer.obj \
-../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramEtherDriver.obj
+../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramXfer.obj \
+../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramEtherDriver.obj
 
 else
-#../../../cp289_container/$(OCPI_OUT_DIR)/OcpiContainerDriver.obj 
-#../../../../core/container/hdl/$(OCPI_OUT_DIR)/HdlContainer.obj
 DYNOBJS += \
-	../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDmaXfer.obj \
-	../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPioXfer.obj \
-        ../../../../core/library/$(OCPI_OUT_DIR)/OcpiComponentLibrary.obj \
-../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramXfer.obj \
-../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramEtherDriver.obj
+	../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDmaXfer.obj \
+	../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPioXfer.obj \
+        ../../../core/library/$(OCPI_OUT_DIR)/OcpiComponentLibrary.obj \
+../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramXfer.obj \
+../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramEtherDriver.obj
 
-endif
 endif
 
 ifeq ($(OCPI_HAVE_IBVERBS),1)
-DYNOBJS += ../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtOfedXfer.obj 
+DYNOBJS += ../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtOfedXfer.obj 
 SYSLIBS += ibverbs	
 endif
 

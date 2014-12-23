@@ -1,7 +1,8 @@
 #ifndef HDL_WCI_CONTROL_H
 #define HDL_WCI_CONTROL_H
-#include "OcpiContainerApi.h"
-#include "OcpiWorker.h"
+
+#include "ContainerWorker.h"
+#include "HdlOCCP.h"
 #include "HdlAccess.h"
 
 namespace OCPI {

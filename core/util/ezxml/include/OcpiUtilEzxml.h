@@ -264,6 +264,7 @@ namespace OCPI {
       extern bool
 	inList(const char *item, const char *list),
 	hasAttrEq(ezxml_t x, const char *attrName, const char *val),
+	// FIXME: move to util:misc if they are not about xml
         getUNum(const char *s, size_t *valp),
         getUNum64(const char *s, const char *end, uint64_t &valp),
         getNum64(const char *s, const char *end, int64_t &valp),

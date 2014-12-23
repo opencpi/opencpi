@@ -52,16 +52,13 @@
 
 #ifndef OCPI_CONTAINER_DRIVER_H
 #define OCPI_CONTAINER_DRIVER_H
+#include "OcpiContainerApi.h"
+
 #include "OcpiParentChild.h"
 #include "OcpiDriverManager.h"
-#include "OcpiContainerApi.h"
 #include "OcpiTransportGlobal.h"
 #include "OcpiUtilImplementation.h"
-//#include "OcpiContainerInterface.h"
-//#include "OcpiContainerApplication.h"
-//#include "OcpiContainerArtifact.h"
-//#include "OcpiWorker.h"
-//#include "OcpiContainerPort.h"
+
 namespace OCPI {
   namespace Container {
     using OCPI::Util::Child;
@@ -95,6 +92,10 @@ namespace OCPI {
       ~Manager();
       OCPI::API::Container *find(const char *model, const char *which,
 				 const OCPI::API::PValue *props);
+      Container *findX(const char *which);
+      inline static Container*find(const char *name) {
+	return getSingleton().findX(name);
+      }
       bool findContainersX(Callback &cb, OCPI::Util::Worker &i, const char *name); 
       inline static bool findContainers(Callback &cb, OCPI::Util::Worker &i, const char *name) {
 	return getSingleton().findContainersX(cb, i, name);

@@ -48,13 +48,13 @@
  */
 
 #include <string>
-#include <CosEventComm.h>
-#include <OcpiLwLogLoggerOutput.h>
-#include <OcpiCFUtilReceptacleHelper.h>
-#include <OcpiCFUtilDeviceBase.h>
-#include <OcpiContainerInterface.h>
-#include <Cp289GenericProxy.h>
-#include <CF_s.h>
+#include "CosEventComm.h"
+#include "OcpiLwLogLoggerOutput.h"
+#include "OcpiCFUtilReceptacleHelper.h"
+#include "OcpiCFUtilDeviceBase.h"
+#include "Container.h"
+#include "Cp289GenericProxy.h"
+#include "CF_s.h"
 
 namespace OCPI {
   namespace SCA {

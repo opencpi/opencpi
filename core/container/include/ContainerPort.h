@@ -33,15 +33,16 @@
  */
 
 // This file exposes the OCPI user interface for workers and the ports they own.
-#ifndef OCPI_CONTAINER_PORT_H
-#define OCPI_CONTAINER_PORT_H
+#ifndef CONTAINER_PORT_H
+#define CONTAINER_PORT_H
 
-#include "OcpiParentChild.h"
+#include "OcpiContainerApi.h"
+
 #include "OcpiUtilSelfMutex.h"
 #include "OcpiPValue.h"
 #include "OcpiRDTInterface.h"
 #include "OcpiUtilPort.h"
-#include "OcpiContainerApi.h"
+#include "OcpiParentChild.h"
 
 namespace OCPI {
   namespace DataTransport {

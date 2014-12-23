@@ -45,12 +45,9 @@
  *
  */
 
-#define WORKER_INTERNAL
-#include <OcpiOsAssert.h>
-#include <OcpiContainerManager.h>
-#include <OcpiRccApplication.h>
-#include <OcpiRccWorker.h>
-#include <OcpiRccContainer.h>
+#include "RccWorker.h"
+#include "RccContainer.h"
+#include "RccApplication.h"
 
 namespace OCPI {
   namespace RCC {

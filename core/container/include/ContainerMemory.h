@@ -32,12 +32,11 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OCPI_METADATA_LOCAL_MEMORY_H
-#define OCPI_METADATA_LOCAL_MEMORY_H
-
-#include "ezxml.h"
+#ifndef CONTAINER_MEMORY_H
+#define CONTAINER_MEMORY_H
 
 #include <string>
+#include "ezxml.h"
 
 namespace OCPI
 {

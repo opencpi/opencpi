@@ -1,15 +1,12 @@
 #ifndef HdlDriver_H
 #define HdlDriver_H
 
-#include <arpa/inet.h>
 #include <string>
-#include "OcpiPValue.h"
-#include "OcpiUtilEzxml.h"
-#include "OcpiContainerManager.h"
-#include "EtherDriver.h"
-#include "PciDriver.h"
-#include "SimDriver.h"
-#include "BusDriver.h"
+#include "HdlSimDriver.h"
+#include "HdlBusDriver.h"
+#include "HdlEtherDriver.h"
+#include "HdlPciDriver.h"
+#include "ContainerManager.h"
 
 namespace OCPI {
   namespace HDL {

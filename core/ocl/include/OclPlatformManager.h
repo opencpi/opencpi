@@ -31,12 +31,10 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef INCLUDED_OCPI_OCL_PLATFORM_MANAGER_H
-#define INCLUDED_OCPI_OCL_PLATFORM_MANAGER_H
+#ifndef OCL_PLATFORM_MANAGER_H
+#define OCL_PLATFORM_MANAGER_H
 
-#include "OcpiPValue.h"
-#include "OcpiPValueApi.h"
-
+#include <string>
 #include <vector>
 #ifdef _LIBCPP_VERSION
 #include <memory>
@@ -45,6 +43,9 @@
 #include <tr1/memory>
 #define STDTR1 std::tr1
 #endif
+
+#include "OcpiPValue.h"
+
 namespace OCPI
 {
   namespace OCL
@@ -129,7 +130,7 @@ namespace OCPI
         ~DeviceContext ( );
 
         void loadArtifact ( const std::string& pathToArtifact,
-                            const OCPI::API::PValue* artifactParams );
+                            const OCPI::Util::PValue* artifactParams );
 
         void unloadArtifact ( const std::string& pathToArtifact );
 

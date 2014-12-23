@@ -32,8 +32,8 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OCDP_H
-#define OCDP_H
+#ifndef HDLOCDP_H
+#define HDLOCDP_H
 #ifdef __cplusplus
 namespace OCPI {
   namespace HDL {

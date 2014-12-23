@@ -49,11 +49,11 @@
  */
 
 #include <map>
-#include "OcpiContainerInterface.h"
-#include "OcpiContainerPort.h"
+#include "OcpiUtilIOP.h"
+#include "Container.h"
+#include "ContainerPort.h"
 #include "OcpiBaseProxy.h"
 #include "Cp289ProviderPort.h"
-#include "OcpiUtilIOP.h"
 
 namespace OCPI {
   namespace SCA {
@@ -243,7 +243,7 @@ OCPI_CONTROL_OPS
         std::string localPortName;
         CF::Port_var remotePort;
         CC::PortData remotePortData;
-        CC::ConnectionCookie * connectionCookie;
+	//        CC::ConnectionCookie * connectionCookie;
       };
 
 

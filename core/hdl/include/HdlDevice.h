@@ -4,17 +4,12 @@
 #ifndef HDL_DEVICE_H
 #define HDL_DEVICE_H
 #include <stdint.h>
-#include <stddef.h>
-#include <limits.h>
-#include <cstdlib>
-#include <string>
-#include <vector>
+
+#include <climits>
 #include "OcpiUuid.h"
-#include "OcpiUtilEzxml.h"
-#include "OcpiUtilMisc.h"
-#include "DtOsDataTypes.h"
 #include "HdlWciControl.h"
-#include "HdlOCCP.h"
+#include "HdlAccess.h"
+
 namespace OCPI {
   namespace HDL {
     // This class represents a raw HDL device before it is a container, or when there is no

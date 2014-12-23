@@ -46,20 +46,18 @@
  */
 
 
-#ifndef OCPI_RCC_PORT_H_
-#define OCPI_RCC_PORT_H_
+#ifndef RCC_PORT_H_
+#define RCC_PORT_H_
 
 #ifndef WORKER_INTERNAL
 #define WORKER_INTERNAL
 #endif
 
-#include <OcpiPort.h>
-#include <OcpiBuffer.h>
-#include <OcpiContainerPort.h>
-#include <OcpiRccContainer.h>
-#include <OcpiRccApplication.h>
-#include <RCC_Worker.h>
-
+#include "RCC_Worker.h"
+#include "OcpiPort.h"
+#include "ContainerPort.h"
+#include "RccApplication.h"
+#include "RccContainer.h"
 
 namespace DataTransfer {
   namespace Msg {

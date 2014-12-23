@@ -252,6 +252,7 @@ define WkrDoTargetConfig
     # user and group names with spaces.
     $(call WkrBinary,$1,$2): $$(ObjectFiles_$1_$2) $$(call ArtifactXmlFile,$1,$2) \
                             | $(call WkrTargetDir,$1,$2)
+	@echo Linking final artifact file $$@ and adding metadata to it.
 	$(LinkBinary) $$(ObjectFiles_$1_$2) $(OtherLibraries)
 	$(AT)if test -f "$(call ArtifactXmlFile,$1,$2)"; then \
 	  $(ToolsDir)/../../scripts/addmeta "$(call ArtifactXmlFile,$1,$2)" $$@; \

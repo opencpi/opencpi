@@ -14,7 +14,7 @@
 #include <time.h>
 #include "OcpiUtilMisc.h"
 #include "CmdOption.h"
-#include "Zynq.h"
+#include "HdlZynq.h"
 
 namespace OU = OCPI::Util;
 using namespace OCPI::HDL::Zynq;

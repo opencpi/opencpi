@@ -52,32 +52,21 @@
  */
 
 #include <iostream>
-#include <string>
-#include <cstring>
 #include <fstream>
-#include <cstdlib>
-#include <vector>
 #include <map>
-#include <cctype>
-#include <OcpiOsMisc.h>
-#include <OcpiOsDebug.h>
-#include <OcpiOsAssert.h>
-#include <OcpiOsTimer.h>
-#include <OcpiOsDataTypes.h>
-#include <OcpiOsFileSystem.h>
-#include <OcpiOsFileIterator.h>
-#include <OcpiOsThreadManager.h>
-#include <OcpiUtilVfs.h>
-#include <OcpiUtilMisc.h>
-#include <OcpiUtilFileFs.h>
-#include <OcpiUtilZipFs.h>
-#include <OcpiUtilEzxml.h>
-#include <OcpiUtilLoadableModule.h>
-#include <OcpiUtilCommandLineConfiguration.h>
-#include <OcpiContainerInterface.h>
-#include <OcpiContainerPort.h>
-#include <OcpiWorker.h>
-#include <RCC_Worker.h>
+#include "OcpiOsTimer.h"
+#include "OcpiOsMisc.h"
+#include "OcpiOsFileSystem.h"
+#include "OcpiOsFileIterator.h"
+#include "OcpiUtilEzxml.h"
+#include "OcpiUtilMisc.h"
+#include "OcpiUtilZipFs.h"
+#include "OcpiUtilFileFs.h"
+#include "OcpiUtilCommandLineConfiguration.h"
+#include "OcpiUtilLoadableModule.h"
+#include "OcpiContainerApi.h"
+#include "ContainerPort.h"
+#include "ContainerWorker.h"
 #include "sca_props.h"
 
 #if ! defined (__VXWORKS__)

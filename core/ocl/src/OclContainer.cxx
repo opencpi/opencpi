@@ -39,15 +39,11 @@
 ************************************************************************** */
 
 #include <unistd.h>
-#include <string.h>
 #include <climits>
 #include "OCL_Worker.h"
-#include "OcpiWorker.h"
-#include "OcpiOsTimer.h"
-#include "OcpiUtilMisc.h"
-#include "OcpiContainerMisc.h"
-#include "OcpiContainerManager.h"
-#include "OcpiOclPlatformManager.h"
+
+#include "ContainerManager.h"
+#include "OclPlatformManager.h"
 
 namespace OCPI
 {

@@ -20,8 +20,8 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef SIM_SERVER_H
-#define SIM_SERVER_H
+#ifndef HDL_SIM_SERVER_H
+#define HDL_SIM_SERVER_H
 #include "HdlOCCP.h"
 namespace OCPI {
   namespace HDL {

@@ -42,17 +42,16 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <OcpiOsMisc.h>
-#include <OcpiOsAssert.h>
-#include <DtIntEventHandler.h>
-#include <OcpiContainerInterface.h>
-#include <OcpiWorker.h>
-#include <OcpiContainerPort.h>
-#include <ConsumerWorker.h>
-#include <ProdWorker.h>
-#include <OcpiThread.h>
-#include <OcpiPValue.h>
-#include <OcpiUtilCommandLineConfiguration.h>
+#include "OcpiOsMisc.h"
+#include "OcpiOsAssert.h"
+#include "DtIntEventHandler.h"
+#include "OcpiThread.h"
+#include "OcpiPValue.h"
+#include "OcpiUtilCommandLineConfiguration.h"
+#include "ContainerWorker.h"
+#include "ContainerPort.h"
+#include "ConsumerWorker.h"
+#include "ProdWorker.h"
 #include "test_utilities.h"
 
 #define OCPI_RCC_DATA_BUFFER_SIZE 32

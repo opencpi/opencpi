@@ -936,33 +936,6 @@ RccAssembly::
 ~RccAssembly() {
 }
 
-const char *RccAssembly::
-emitArtXML(const char */*wksfile*/) {
-  const char *err;
-  FILE *f;
-  if ((err = openOutput(m_fileName.c_str(), m_outDir, "", "-art", ".xml", NULL, f)))
-    return err;
-  fprintf(f, "<!--\n");
-  printgen(f, "", m_file.c_str());
-  fprintf(f,
-	  " This file contains the artifact descriptor XML for the application assembly\n"
-	  " named \"%s\". It must be attached (appended) to the shared object file\n",
-	  m_implName);
-  fprintf(f, " -->\n");
-  // This assumes native compilation of course
-  fprintf(f,
-	  "<artifact os=\"%s\" osVersion=\"%s\" platform=\"%s\" "
-	  "runtime=\"%s\" runtimeVersion=\"%s\" "
-	  "tool=\"%s\" toolVersion=\"%s\">\n",
-	  os, os_version, platform,
-	  "", "", "", "");
-  emitXmlWorkers(f);
-  fprintf(f, "</artifact>\n");
-  if (fclose(f))
-    return "Could not close output file. No space?";
-  return 0;
-}
-
 void DataPort::
 emitRccCppImpl(FILE *f) {
   // Define the union of structures for messages for operations

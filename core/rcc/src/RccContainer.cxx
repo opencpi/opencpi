@@ -47,28 +47,7 @@
  *
  ************************************************************************/
 
-#include <string>
-#include <cstring>
-#include <cstdlib>
-#include <memory>
-
-#define WORKER_INTERNAL
-#include <OcpiOsMisc.h>
-//#include <OcpiTransport.h>
-#include <OcpiOsAssert.h>
-#include <OcpiUtilCDR.h>
-#include <OcpiRDTInterface.h>
-#include <OcpiRccPort.h>
-#include <OcpiRccContainer.h>
-#include <OcpiRccApplication.h>
-#include <OcpiPortMetaData.h>
-#include <OcpiUtilAutoMutex.h>
-#include <OcpiContainerErrorCodes.h>
-#include <DtTransferInternal.h>
-#include <OcpiIntParallelDataDistribution.h>
-#include <OcpiPValue.h>
-#include <OcpiUtilMisc.h>
-#include <RCC_Worker.h>
+#include "RccContainer.h"
 
 namespace OC = OCPI::Container;
 namespace OA = OCPI::API;

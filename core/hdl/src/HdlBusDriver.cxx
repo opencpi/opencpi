@@ -27,15 +27,14 @@
   * The data plane is implemented with the AXI_HP0-3 and other ports, acting
   * as bus masters only.
   */
+#include <stdint.h>
 #include <errno.h>
 #include <unistd.h>
 #include <sys/mman.h>
 #include "zlib.h"
 #include "OcpiOsFileSystem.h"
-#include "OcpiUtilMisc.h"
-#include "HdlOCCP.h"
-#include "BusDriver.h"
-#include "Zynq.h"
+#include "HdlZynq.h"
+#include "HdlBusDriver.h"
 
  namespace OCPI {
    namespace HDL {

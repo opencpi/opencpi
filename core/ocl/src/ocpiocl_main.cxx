@@ -1,4 +1,3 @@
-//#ifdef OCPI_OPENCL_SUPPORT
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
  *
@@ -50,7 +49,7 @@
 #include <stdexcept>
 
 #include "OcpiOsLoadableModule.h"
-#include "OcpiOclPlatformManager.h"
+#include "OclPlatformManager.h"
 
 
 namespace
@@ -244,8 +243,3 @@ int main ( int argc, char* argv [ ] )
 
   return success ? 0 : 1;
 }
-
-//#else 
-//int main(){}
-
-//#endif

@@ -49,14 +49,15 @@
  *
  */
 
-#ifndef OCPI_CONTAINER_MANAGER_H
-#define OCPI_CONTAINER_MANAGER_H
-#include "OcpiContainerDriver.h"
-#include "OcpiContainerInterface.h"
-#include "OcpiContainerApplication.h"
-#include "OcpiContainerArtifact.h"
-#include "OcpiWorker.h"
-#include "OcpiContainerPort.h"
+#ifndef CONTAINER_MANAGER_H
+#define CONTAINER_MANAGER_H
+#include "ContainerDriver.h"
+#include "Container.h"
+#include "ContainerApplication.h"
+#include "ContainerArtifact.h"
+#include "ContainerWorker.h"
+#include "ContainerPort.h"
+
 namespace OCPI {
   namespace Container {
     // The templated base class inherited by all actual container classes

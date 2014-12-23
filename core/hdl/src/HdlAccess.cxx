@@ -24,14 +24,11 @@
 #include <inttypes.h>
 #include "OcpiOsAssert.h"
 #include "OcpiOsMisc.h"
-#include "OcpiUuid.h"
 #include "OcpiUtilMisc.h"
-#include "OcpiUtilException.h"
 #include "HdlAccess.h"
 
 namespace OCPI {
   namespace HDL {
-    namespace OE = OCPI::Util::EzXml;
     namespace OU = OCPI::Util;
 
     Access::

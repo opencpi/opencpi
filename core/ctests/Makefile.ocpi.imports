@@ -67,14 +67,14 @@ MAIN_DRIVERS+= \
 
 ifneq (,)
 DYNOBJS += \
-	../../../../../core/library/$(OCPI_OUT_DIR)/OcpiComponentLibrary.obj \
-	../../../../../core/container/rcc/$(OCPI_OUT_DIR)/OcpiRccDriver.obj \
-	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramUDPDriver.obj \
-	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramXfer.obj \
-	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPioXfer.obj \
-	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDmaXfer.obj \
-	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtSocketsXfer.obj \
-	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramEtherDriver.obj \
+	../../../../core/library/$(OCPI_OUT_DIR)/OcpiComponentLibrary.obj \
+	../../../../core/container/rcc/$(OCPI_OUT_DIR)/OcpiRccDriver.obj \
+	../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramUDPDriver.obj \
+	../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramXfer.obj \
+	../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPioXfer.obj \
+	../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDmaXfer.obj \
+	../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtSocketsXfer.obj \
+	../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramEtherDriver.obj \
 
 ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
 	SYSLIBS += dl 
@@ -83,12 +83,12 @@ endif
 
 ifeq ($(OCPI_HAVE_OPENSPLICE__),1)
 LDFLAGS += -L$(OSPL_HOME)/lib 
-DYNOBJS += ../../../../../core/dataplane/msg_drivers/$(OCPI_OUT_DIR)/OcpiDDSTransport.obj
+DYNOBJS += ../../../../core/dataplane/msg_drivers/$(OCPI_OUT_DIR)/OcpiDDSTransport.obj
 SYSLIBS += ddsdatabase dcpsgapi dcpssacpp ddsos ddsutil ddsserialization ddskernel ddsuser ddsconf ddsconfparser
 endif
 
 ifeq ($(OCPI_HAVE_IBVERBS),1)
-DYNOBJS += ../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtOfedXfer.obj 
+DYNOBJS += ../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtOfedXfer.obj 
 SYSLIBS += ibverbs	
 endif
 

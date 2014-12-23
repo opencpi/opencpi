@@ -274,7 +274,7 @@ main(int argc, const char **argv) {
 		      *ap, err);
 	    break;
 	  case OclModel:
-	    if ((err = emitArtOCL(w)))
+	    if ((err = w->emitArtXML(wksFile)))
 	      fprintf(stderr, "%s: Error generating shared library artifact XML: %s\n",
 		      *ap, err);
 	    break;

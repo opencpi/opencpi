@@ -32,10 +32,10 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "OcpiContainerInterface.h"
-#include "OcpiContainerApplication.h"
-#include "OcpiContainerArtifact.h"
-#include "OcpiPValue.h"
+#include "Container.h"
+#include "ContainerWorker.h"
+#include "ContainerArtifact.h"
+#include "ContainerApplication.h"
 
 
 namespace OA = OCPI::API;

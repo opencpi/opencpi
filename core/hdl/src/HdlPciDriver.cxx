@@ -33,25 +33,24 @@
 
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <limits.h>
-#include <errno.h>
-#include <unistd.h>
-#include <fcntl.h>
 #include <dirent.h>
 #include <sys/mman.h>
-#include <string>
+#include <unistd.h>
+#include <cerrno>
 #ifdef OCPI_OS_macos
 #define mmap64 mmap
 #endif
 
-#include "fasttime.h"
+#if 0
 #include "OcpiUtilMisc.h"
-#include "KernelDriver.h"
 #include "HdlOCCP.h"
-#include "PciDriver.h"
+#endif
+
+#include "fasttime.h"
+
+#include "KernelDriver.h"
+#include "HdlPciDriver.h"
+
 // This should be in OCPIOS.
 // This is the linux version (kernel 2.6+).
 namespace OCPI {

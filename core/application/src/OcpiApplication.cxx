@@ -30,13 +30,16 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "OcpiContainerApi.h"
+
 #include "OcpiOsMisc.h"
 #include "OcpiUtilValue.h"
 #include "OcpiPValue.h"
-#include "OcpiLauncher.h"
 #include "OcpiTimeEmit.h"
 #include "OcpiUtilMisc.h"
+#include "ContainerLauncher.h"
 #include "OcpiApplication.h"
+
 namespace OC = OCPI::Container;
 namespace OU = OCPI::Util;
 namespace OE = OCPI::Util::EzXml;
@@ -350,7 +353,7 @@ namespace OCPI {
 	if (nPropValues) {
 	  // This allocation will include dump-only properties, which won't be put into the
 	  // array by prepareInstanceProperties
-	  OCPI::Application::Launcher::Instance &li = m_launchInstances[n];
+	  OC::Launcher::Instance &li = m_launchInstances[n];
 	  li.m_propValues.resize(nPropValues);
 	  li.m_propOrdinals.resize(nPropValues);
 	  OU::Value *pv = &li.m_propValues[0];
@@ -463,7 +466,6 @@ namespace OCPI {
 
     void ApplicationI::
     init(const PValue * params) {
-      OCPI::Application::g_localLauncher = &OCPI::Application::LocalLauncher::getSingleton();
       // In order from class definition except for instance-related
       m_bookings = new Booking[OC::Manager::s_nContainers];
       m_properties = NULL;
@@ -626,7 +628,7 @@ namespace OCPI {
     void ApplicationI::
     initConnections() {
       m_launchConnections.resize(m_assembly.m_connections.size());
-      OCPI::Application::Launcher::Connection *lc = &m_launchConnections[0];
+      OC::Launcher::Connection *lc = &m_launchConnections[0];
       for (OU::Assembly::ConnectionsIter ci = m_assembly.m_connections.begin();
 	   ci != m_assembly.m_connections.end(); ci++, lc++) {
 	for (OU::Assembly::Connection::PortsIter pi = (*ci).m_ports.begin();
@@ -662,7 +664,7 @@ namespace OCPI {
     }
     void ApplicationI::
     initInstances() {
-      OCPI::Application::Launcher::Instance *i = &m_launchInstances[0];
+      OC::Launcher::Instance *i = &m_launchInstances[0];
       for (unsigned n = 0; n < m_nInstances; n++, i++) {
 	i->m_container = m_containers[m_instances[n].m_container];
 	i->m_containerApp = m_containerApps[m_instances[n].m_container];
@@ -690,43 +692,6 @@ namespace OCPI {
       return false;
     }
 
-#if 0
-    OC::Worker &ApplicationI::
-    createWorker(const Instance &i, OC::Worker *slave, bool remote) {
-      const OL::Implementation &impl = *i.m_impl;
-      OC::Worker &w =
-	m_containerApps[i.m_container]->
-	createWorker(impl.m_artifact,                       // The artifact of the library impl
-		     i.m_libInstance->name().c_str(), // The instance name in the assembly
-		     impl.m_metadataImpl.m_xml,             // xml of impl (from artifact)
-		     impl.m_staticInstance,                 // xml of fixed instance (from artifact)
-		     slave,
-		     NULL);                                 // wparams
-      if (!remote) {
-	// Now we need to set the initial properties - either from assembly or from defaults
-	for (unsigned p = 0; p < i.m_nPropValues; p++)
-	  w.setProperty(i.m_propOrdinals[p], i.m_propValues[p]);
-	unsigned nProps = impl.m_metadataImpl.m_nProperties;
-	OU::Property *prop = impl.m_metadataImpl.m_properties;
-	for (unsigned nn = 0; nn < nProps; nn++, prop++)
-	  if (prop->m_default && !prop->m_isParameter) {
-	    bool found = false;
-	    for (unsigned m = 0; m < i.m_nPropValues; m++)
-	      if (i.m_propOrdinals[m] == prop->m_ordinal) {
-		found = true;
-		break;
-	      }
-	    if (!found) {
-	      ocpiDebug("Setting the default value of property '%s' of instance '%s'",
-			prop->m_name.c_str(),
-			i.m_libInstance->name().c_str());
-	      w.setProperty(prop->m_ordinal, *prop->m_default);
-	    }
-	  }
-      }
-      return w;
-    }
-#endif
     void ApplicationI::
     initialize() {
       m_nInstances = m_assembly.nInstances();
@@ -734,9 +699,6 @@ namespace OCPI {
 
       m_containers = new OC::Container *[m_nContainers];
       m_containerApps = new OC::Application *[m_nContainers];
-      //      m_workers = new OC::Worker *[m_nInstances];
-#if 1
-      
       for (unsigned n = 0; n < m_nContainers; n++) {
 	m_containers[n] = &OC::Container::nthContainer(m_usedContainers[n]);
 	m_containerApps[n] = static_cast<OC::Application*>(m_containers[n]->createApplication());
@@ -744,14 +706,12 @@ namespace OCPI {
       }
       initInstances();
       initConnections();
-      typedef std::set<OCPI::Application::Launcher *> Launchers;
+      typedef std::set<OC::Launcher *> Launchers;
       typedef Launchers::iterator LaunchersIter;
       Launchers launchers;
       for (unsigned n = 0; n < m_nContainers; n++)
 	if (launchers.insert(&m_containers[n]->launcher()).second)
 	  m_containers[n]->launcher().launch(m_launchInstances, m_launchConnections);
-      if (m_assembly.m_doneInstance != -1)
-	m_doneWorker = m_launchInstances[m_assembly.m_doneInstance].m_worker;
       // Now we have interned our launchers
       bool more;
       do {
@@ -760,7 +720,9 @@ namespace OCPI {
 	  if ((*li)->notDone() && (*li)->work(m_launchInstances, m_launchConnections))
 	    more = true;
       } while (more);
-      OCPI::Application::Launcher::Connection *c = &m_launchConnections[0];
+      if (m_assembly.m_doneInstance != -1)
+	m_doneWorker = m_launchInstances[m_assembly.m_doneInstance].m_worker;
+      OC::Launcher::Connection *c = &m_launchConnections[0];
       for (unsigned n = 0; n < m_launchConnections.size(); n++, c++)
 	if (!c->m_url && (!c->m_instIn || !c->m_instOut))
 	  m_externals.
@@ -768,44 +730,6 @@ namespace OCPI {
 				External(*(c->m_input ? c->m_input : c->m_output),
 					 c->m_input ? c->m_paramsOut : c->m_paramsIn)));
       m_launched = true;
-#else
-      for (unsigned n = 0; n < m_nContainers; n++) {
-	m_containers[n] = &OC::Container::nthContainer(m_usedContainers[n]);
-	// FIXME: get rid of this cast...
-	m_containerApps[n] = static_cast<OC::Application*>(m_containers[n]->createApplication());
-	m_containerApps[n]->setApplication(&m_apiApplication);
-      }
-      Instance *i = m_instances;
-      for (unsigned n = 0; n < m_nInstances; n++, i++)
-	if (m_assembly.instance(n).m_utilInstance.m_hasMaster)
-	  m_workers[n] = &createWorker(*i, NULL);
-      i = m_instances;
-      for (unsigned n = 0; n < m_nInstances; n++, i++)
-	if (!m_assembly.instance(n).m_utilInstance.m_hasMaster) {
-	  m_workers[n] =
-	    &createWorker(*i,
-			  m_assembly.instance(n).m_utilInstance.m_hasSlave ?
-			  m_workers[m_assembly.instance(n).m_utilInstance.m_slave] : NULL);
-	}
-      for (OU::Assembly::ConnectionsIter ci = m_assembly.m_connections.begin();
-	   ci != m_assembly.m_connections.end(); ci++) {
-	const OU::Assembly::Connection &c = *ci;
-	const OU::Assembly::Port &assPort = c.m_ports.front();
-	OA::Port &apiPort =
-	  m_workers[assPort.m_instance]->getPort(assPort.m_name.c_str());
-	if (c.m_externals.size() == 0)
-	  apiPort.connect(m_workers[c.m_ports.back().m_instance]->getPort(c.m_ports.back().m_name.c_str()),
-			  assPort.m_parameters, c.m_ports.back().m_parameters);
-	else {
-	  const OU::Assembly::External &e = c.m_externals.front();
-	  //	  const char *ext;
-	  if (e.m_url.size())
-	    apiPort.connectURL(e.m_url.c_str(), assPort.m_parameters, e.m_parameters);
-	  else
-	    m_externals.insert(ExternalPair(e.m_name.c_str(), External(apiPort, e.m_parameters)));
-	}
-      }
-#endif
       if (m_assembly.m_doneInstance != -1)
 	m_doneWorker = m_launchInstances[m_assembly.m_doneInstance].m_worker;
     }

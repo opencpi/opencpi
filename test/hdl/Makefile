@@ -73,16 +73,16 @@ $(OCPI_OUT_DIR):
 	mkdir $@
 
 $(ALLBINC): $(OCPI_OUT_DIR)/%: src/%.c | $(OCPI_OUT_DIR)
-	$(CC) -o $@ -std=c99 -I../../core/container/hdl/include $(DOSTATIC) -Wall -g $^ $(LIBS) $(BASICLIBS)
+	$(CC) -o $@ -std=c99 -I../../core/hdl/include $(DOSTATIC) -Wall -g $^ $(LIBS) $(BASICLIBS)
 $(ALLBINCXX): $(OCPI_OUT_DIR)/%: src/%.cxx | $(OCPI_OUT_DIR)
 	$(CXX) -o $@ \
-	-I../../core/container/hdl/include \
-	-I../../core/local/util/uuid/include \
-	-I../../core/local/util/property/include \
-	-I../../core/local/util/ezxml/include \
-	-I../../core/local/util/misc/include \
-	-I../../core/local/util/vfs/include \
-	-I../../core/local/util/res/include \
+	-I../../core/hdl/include \
+	-I../../core/util/uuid/include \
+	-I../../core/util/property/include \
+	-I../../core/util/ezxml/include \
+	-I../../core/util/misc/include \
+	-I../../core/util/vfs/include \
+	-I../../core/util/res/include \
 	-I../../adapt/os/ocpios/interfaces/include \
 	-I../../core/dataplane/rdma_driver_interface/interfaces/include \
 	$(DOSTATIC) -Wall -g $^ $(LIBS) $(BASICLIBS)

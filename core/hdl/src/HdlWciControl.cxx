@@ -22,11 +22,8 @@
  */
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
-#include "OcpiUtilException.h"
-#include "OcpiUtilImplementation.h"
-#include "OcpiContainerMisc.h"
-#include "HdlWciControl.h"
 #include "HdlDevice.h"
+#include "HdlWciControl.h"
 
 namespace OCPI {
   namespace HDL {
@@ -136,6 +133,8 @@ namespace OCPI {
     }
     void WciControl::
     checkControlState() {
+      if (!m_hasControl)
+	return;
       // This polling call is to detect the current control state when
       // it might be changed by the worker or container autonomously,
       // in a way that does not update the state here.
@@ -165,7 +164,6 @@ namespace OCPI {
 	  // *((volatile uint32_t *)myRegisters + controlOffsets[op]);
 	  get32RegisterOffset(controlOffsets[op]);
 	if (result != OCCP_SUCCESS_RESULT) {
-	  //	    && result != 0 && result != 0x01020304) { // TEMP HACK UNTIL SHEP FIXES WCI MASTER
 	  const char *oops;
 	  switch (result) {
 	  case OCCP_TIMEOUT_RESULT:

@@ -45,19 +45,17 @@
  *
  */
 
-#ifndef OCPI_RCC_APPLICATION_H__
-#define OCPI_RCC_APPLICATION_H__
+#ifndef RCC_APPLICATION_H__
+#define RCC_APPLICATION_H__
 
-#include <vector>
-#include <OcpiList.h>
-#include <OcpiOsDataTypes.h>
-#include <OcpiContainerDataTypes.h>
-#include <OcpiContainerApplication.h>
-#include <OcpiContainerManager.h>
-#include <OcpiLibraryManager.h>
-#include <RCC_Worker.h>
-#include <OcpiOsLoadableModule.h>
+#ifndef WORKER_INTERNAL
+#define WORKER_INTERNAL
+#endif
+#include "RCC_Worker.h"
 
+#include "OcpiOsLoadableModule.h"
+
+#include "ContainerManager.h"
 
 namespace OCPI {
 
@@ -130,12 +128,7 @@ It wasnt actually used anyway.
 #endif      
       private:
 
-      // RCC container
       RCCContainer *  m_rccContainer;
-
-      // All circuits in this application
-      //      std::vector<OCPI::DataTransport::Circuit*> m_circuits;
-
     };
 
     }

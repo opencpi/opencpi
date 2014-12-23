@@ -32,8 +32,8 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PCIDRIVER_H
-#define PCIDRIVER_H
+#ifndef HDLPCIDRIVER_H
+#define HDLPCIDRIVER_H
 #ifndef __KERNEL__
 #include <stdint.h>
 #endif

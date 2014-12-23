@@ -23,18 +23,10 @@
 
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
-#include <errno.h> 
-#include <signal.h>
-#include <dirent.h>
 #include <unistd.h>
-#include <arpa/inet.h>
 #include "OcpiOsFileSystem.h"
-#include "OcpiOsMisc.h"
-#include "OcpiOsTimer.h"
 #include "OcpiOsClientSocket.h"
-#include "OcpiUtilMisc.h"
-#include "OcpiUtilException.h"
-#include "SimDriver.h"
+#include "HdlSimDriver.h"
 
 namespace OCPI {
   namespace HDL {

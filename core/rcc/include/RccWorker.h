@@ -47,15 +47,17 @@
  *
  */
 
+#ifndef RCC_WORKER_H_
+#define RCC_WORKER_H_
 
-#ifndef OCPI_RCC_WORKER_H_
-#define OCPI_RCC_WORKER_H_
+#include <cstdarg>
 
-#include <stdarg.h>
-#include <climits>
-#include <OcpiOsTimer.h>
-#include <OcpiTimeEmit.h>
-#include <OcpiContainerManager.h>
+#ifndef WORKER_INTERNAL
+#define WORKER_INTERNAL
+#endif
+#include "RCC_Worker.h"
+
+#include "ContainerManager.h"
 
 namespace OCPI {
   namespace RCC {

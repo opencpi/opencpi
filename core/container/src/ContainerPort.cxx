@@ -32,12 +32,11 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "OcpiOsAssert.h"
 #include "OcpiUtilCDR.h"
-#include "OcpiPValue.h"
-#include "OcpiWorker.h"
-#include "OcpiContainerApplication.h"
-#include "OcpiUtilException.h"
-#include "OcpiContainerPort.h"
+#include "Container.h"
+#include "ContainerWorker.h"
+#include "ContainerPort.h"
 
 namespace OCPI {
   namespace Container {
@@ -140,7 +139,7 @@ namespace OCPI {
     // FIXME: parse buffer count here at least? (check that others don't do it).
     Port::Port(Container &container, const OU::Port &mPort, bool isProvider,
 	       unsigned xferOptions, const OU::PValue *params, PortConnectionDesc *desc) :
-      BasicPort( mPort, isProvider, xferOptions, container, params, desc),
+      BasicPort(mPort, isProvider, xferOptions, container, params, desc),
       m_container(container), m_canBeExternal(true)
     {
     }

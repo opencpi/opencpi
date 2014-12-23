@@ -32,44 +32,20 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <string>
-#include <cstring>
-#include <cstdlib>
-#include <pthread.h>
 #include <signal.h>
-#include <OcpiOsAssert.h>
-#include <OcpiOsMisc.h>
+#include "OcpiOsMisc.h"
 #include "OcpiUtilCppMacros.h"
-#include <OcpiPortMetaData.h>
-#include <OcpiLibraryManager.h>
-#include <OcpiContainerManager.h>
-#include <OcpiContainerInterface.h>
-#include <OcpiContainerPort.h>
-#include <OcpiContainerApplication.h>
-#include <OcpiContainerArtifact.h>
-#include "OcpiContainerErrorCodes.h"
-
-
+#include "ContainerManager.h"
+#include "ContainerLauncher.h"
+#include "Container.h"
 
 namespace OA = OCPI::API;
 namespace OU = OCPI::Util;
 namespace OS = OCPI::OS;
 namespace OL = OCPI::Library;
 
-
-
 namespace OCPI {
-  namespace Application {
-     Launcher *g_localLauncher;
-  }
   namespace Container {
-
-#if 0
-    static uint32_t mkUID() {
-      static uint32_t id = 1;
-      return id++ + getpid();
-    }
-#endif
 
     Container::Container(const char *name, const ezxml_t config, const OCPI::Util::PValue *params)
       throw ( OU::EmbeddedException )
@@ -278,6 +254,12 @@ namespace OCPI {
       if (n >= Manager::s_maxContainer)
 	throw OU::Error("Invalid container %u", n);
       return *Manager::s_containers[n];
+    }
+    Launcher *Container::s_localLauncher;
+    Launcher &Container::launcher() const {
+      if (!s_localLauncher)
+	s_localLauncher = new LocalLauncher();
+      return *s_localLauncher;
     }
   }
   namespace API {

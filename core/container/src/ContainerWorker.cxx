@@ -33,15 +33,12 @@
  */
 
 #include "OcpiOsMisc.h"
-#include "OcpiUtilAutoMutex.h"
-#include "OcpiContainerApplication.h"
-#include "OcpiContainerErrorCodes.h"
-#include "OcpiWorker.h"
-#include "OcpiContainerPort.h"
-#include "OcpiContainerInterface.h"
-#include "OcpiContainerMisc.h"
-#include "OcpiContainerArtifact.h"
 #include "OcpiUtilValue.h"
+#include "Container.h"
+#include "ContainerPort.h"
+#include "ContainerApplication.h"
+#include "ContainerArtifact.h"
+#include "ContainerWorker.h"
 
 namespace OA = OCPI::API;
 namespace OU = OCPI::Util;
@@ -111,12 +108,15 @@ namespace OCPI {
       return prop;
     }
     // Internal used by others.
-    void Worker::setPropertyValue(const OA::Property &prop, const OU::Value &v) {
-      OA::PropertyInfo &info = prop.m_info;
+    void Worker::setPropertyValue(const OU::Property &prop, const std::string &v) {
+    }
+
+    // Internal used by others.
+    void Worker::setPropertyValue(const OU::Property &info, const OU::Value &v) {
       if (info.m_baseType == OA::OCPI_Struct ||
 	  info.m_baseType == OA::OCPI_Type)
 	throw OU::Error("Struct and Typedef properties are not settable");
-      if (info.m_isSequence || prop.m_info.m_arrayRank > 0) {
+      if (info.m_isSequence || info.m_arrayRank > 0) {
 	if (info.m_baseType == OA::OCPI_String) {
 	  const char **sp = v.m_pString;
 	  size_t offset = info.m_offset + (info.m_isSequence ? info.m_align : 0);
@@ -152,36 +152,73 @@ namespace OCPI {
 	  setProperty64(info, v.m_ULongLong); break;
 	default:;
 	}
-#if 0
-      switch (info.m_baseType) {
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		 \
-	case OA::OCPI_##pretty:					         \
-	  if (info.m_isSequence)   	         		 \
-	    set##pretty##SequenceProperty(prop, (const run*)(v.m_p##pretty), \
-					  v.m_nElements);	\
-	  else								 \
-	    prop.set##pretty##Value(v.m_##pretty);			 \
-          break;
-      OCPI_PROPERTY_DATA_TYPES
-#undef OCPI_DATA_TYPE
-      case OA::OCPI_none: case OA::OCPI_Struct: case OA::OCPI_Type: case OA::OCPI_Enum:
-      case OA::OCPI_scalar_type_limit:;
-      }
-#endif
     }
     void Worker::setProperty(const char *pname, const char *value) {
-      OA::Property prop(*this, pname);
-      if (!prop.m_info.m_isWritable)
+      OU::Property &prop = findProperty(pname);
+      if (!prop.m_isWritable)
 	throw OU::Error("The '%s' property of worker '%s' is not writable",
 			pname, name().c_str());
-      OU::ValueType &vt = prop.m_info;
+      OU::ValueType &vt = prop;
       OU::Value v(vt); // FIXME storage when not scalar
       if (vt.m_baseType == OA::OCPI_Struct)
-	throw ApiError("No support yet for setting struct properties", NULL);
+	throw OU::ApiError("No support yet for setting struct properties", NULL);
       const char *err = v.parse(value);
       if (err)
-        throw ApiError("Error parsing property value:\"", value, "\"", NULL);
+        throw OU::ApiError("Error parsing property value:\"", value, "\"", NULL);
       setPropertyValue(prop, v);
+    }
+    void Worker::
+    getPropertyValue(const OU::Property &p, std::string &value, bool hex, bool add) {
+      OU::Value v(p);
+      OA::Property a(*this, p.m_name.c_str()); // FIXME clumsy because get methods take API props
+      OA::PropertyInfo &info = a.m_info;
+      if (info.m_isSequence || info.m_arrayRank > 0) {
+	v.m_nTotal = info.m_nItems;
+	if (info.m_isSequence) {
+	  v.m_nElements = getProperty32(info);
+	  if (v.m_nElements > info.m_sequenceLength)
+	    throw OU::Error("Worker's %s property has invalid sequence length: %zu",
+			    info.m_name.c_str(), v.m_nElements);
+	  v.m_nTotal *= v.m_nElements;
+	}
+	if (info.m_baseType == OA::OCPI_String) {
+	  size_t length = OU::roundUp(info.m_stringLength + 1, 4);
+	  v.m_stringSpaceLength = v.m_nTotal * length;
+	  v.m_stringNext = v.m_stringSpace = new char[v.m_stringSpaceLength];
+	  char **sp = new char *[v.m_nTotal];
+	  v.m_pString = (const char **)sp;
+	  size_t offset = info.m_offset + (info.m_isSequence ? info.m_align : 0);
+	  for (unsigned n = 0; n < v.m_nTotal; n++) {
+	    sp[n] = v.m_stringNext;
+	    getPropertyBytes(info, offset, (uint8_t *)v.m_stringNext, length);
+	    v.m_stringNext += length;
+	    offset += length;
+	  }	  
+	} else {
+	  size_t nBytes = v.m_nTotal * (info.m_nBits/8);
+	  uint8_t *data = new uint8_t[nBytes];
+	  v.m_pUChar = data;
+	  if (nBytes)
+	    getPropertyBytes(info, info.m_offset + (info.m_isSequence ? info.m_align : 0), data, nBytes);
+	}
+      } else if (info.m_baseType == OA::OCPI_String) {
+	// FIXME: a gross modularity violation
+	v.m_stringSpace = new char[info.m_stringLength + 1];
+	v.m_String = v.m_stringSpace;
+	getPropertyBytes(info, info.m_offset, (uint8_t*)v.m_pString, info.m_stringLength + 1);
+      } else switch (info.m_nBits) {
+	case 8:
+	  v.m_UChar = getProperty8(info); break;
+	case 16:
+	  v.m_UShort = getProperty16(info); break;
+	case 32:
+	  v.m_ULong = getProperty32(info); break;
+	case 64:
+	  v.m_ULongLong = getProperty64(info); break;
+	default:;
+	}
+      
+      v.unparse(value, NULL, add, hex);
     }
     bool Worker::getProperty(unsigned ordinal, std::string &name, std::string &value,
 			     bool *unreadablep, bool hex) {
@@ -205,6 +242,8 @@ namespace OCPI {
 	p.m_default->unparse(value, NULL, false, hex);
 	return true;
       }
+      getPropertyValue(p, value, hex);
+#if 0
       OU::Value v(p);
       OA::Property a(*this, p.m_name.c_str()); // FIXME clumsy because get methods take API props
       OA::PropertyInfo &info = a.m_info;
@@ -255,13 +294,14 @@ namespace OCPI {
 	}
       
       v.unparse(value, NULL, false, hex);
+#endif
       return true;
     }
     void Worker::setProperty(unsigned ordinal, OCPI::Util::Value &value) {
-      OA::Property prop(*this, ordinal);
-      if (!prop.m_info.m_isWritable)
+      OU::Property &prop(property(ordinal));
+      if (!prop.m_isWritable)
 	throw OU::Error("The '%s' property of worker '%s' is not writable",
-			prop.m_info.m_name.c_str(), name().c_str());
+			prop.m_name.c_str(), name().c_str());
       setPropertyValue(prop, value);
     }
 

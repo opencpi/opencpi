@@ -31,14 +31,7 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <arpa/inet.h>
-#include <set>
-#include "OcpiOsMisc.h"
-#include "OcpiOsTimer.h"
-#include "OcpiUtilMisc.h"
-#include "HdlAccess.h"
-#include "HdlOCCP.h"
-#include "EtherDriver.h"
+#include "HdlEtherDriver.h"
 
 namespace OCPI {
   namespace HDL {

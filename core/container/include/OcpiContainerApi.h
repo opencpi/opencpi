@@ -42,12 +42,14 @@
 #include "OcpiUtilPropertyApi.h"
 #include "OcpiUtilExceptionApi.h"
 #include "OcpiLibraryApi.h"
+
 namespace OCPI {
   namespace Container {
     class Port;
+    class LocalLauncher;
   }
-  namespace Application {
-    class LocalLauncher; class RemoteLauncher;
+  namespace Remote {
+    class RemoteLauncher;
   }
   namespace API {
     class ExternalBuffer {
@@ -78,8 +80,8 @@ namespace OCPI {
       virtual bool tryFlush() = 0;
     };
     class Port {
-      friend class OCPI::Application::LocalLauncher;
-      friend class OCPI::Application::RemoteLauncher;
+      friend class OCPI::Container::LocalLauncher;
+      friend class OCPI::Remote::RemoteLauncher;
     protected:
       virtual ~Port();
       virtual OCPI::Container::Port &containerPort() = 0;

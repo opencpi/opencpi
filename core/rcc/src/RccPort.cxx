@@ -42,12 +42,9 @@
  *    Revision Detail: Created
  *
  */
-#define WORKER_INTERNAL
-#include <OcpiRccPort.h>
-#include <OcpiRccWorker.h>
-#include <OcpiOsAssert.h>
-#include <OcpiUtilMisc.h>
 #include "DtMsgDriver.h"
+#include "RccWorker.h"
+#include "RccPort.h"
 
 namespace OC = OCPI::Container;
 namespace OA = OCPI::API;

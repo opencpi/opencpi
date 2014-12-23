@@ -37,13 +37,11 @@
   <localMemory name="mem1" size="2048"/>
 */
 
-#include "OcpiMetadataLocalMemory.h"
-
-#include "OcpiOsAssert.h"
-#include "OcpiUtilEzxml.h"
-#include "OcpiContainerMisc.h"
-
 #include <iostream>
+#include "OcpiUtilEzxml.h"
+#include "ContainerMemory.h"
+
+namespace OX = OCPI::Util::EzXml;
 
 namespace OCPI
 {
@@ -76,7 +74,11 @@ namespace OCPI
 
       bool found;
 
-      n_bytes = OCPI::Container::getAttrNum ( x, "size", true, &found );
+      const char *err = OX::getNumber(x, "size", &n_bytes, &found, 0, false, false);
+      if (err) {
+        std::cout << "Error on size value: " << err << std::endl;
+      }
+      //      n_bytes = OCPI::Container::getAttrNum ( x, "size", true, &found );
 
       if ( !found )
       {

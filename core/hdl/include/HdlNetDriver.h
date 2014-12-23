@@ -25,13 +25,17 @@
  * Generic net driver, used for ethernet, udp, and sim
  */
 
-#ifndef NETDRIVER_H
-#define NETDRIVER_H
+#ifndef HDLNETDRIVER_H
+#define HDLNETDRIVER_H
+
+#include <string>
 #include <map>
+
 #include "OcpiOsEther.h"
 #include "OcpiPValue.h"
 #include "HdlDevice.h"
-#include "NetDefs.h"
+#include "HdlNetDefs.h"
+
 namespace OCPI {
   namespace HDL {
     namespace Net {

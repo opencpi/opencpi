@@ -41,26 +41,10 @@
  *                  Initial version
  */
 
-#include <new>
-#include <string>
-#include <OcpiOsAssert.h>
-#include <OcpiOsMutex.h>
-#include <OcpiUtilCDR.h>
-#include <OcpiUtilIOP.h>
-#include <OcpiUtilMisc.h>
-#include <OcpiUtilAutoMutex.h>
-#include <OcpiLoggerLogger.h>
-#include <OcpiLoggerNullOutput.h>
-#include <OcpiLoggerDebugLogger.h>
-#include <OcpiContainerInterface.h>
-#include "OcpiWorker.h"
-#include <OcpiStringifyCorbaException.h>
-#include <OcpiCFUtilLegacyErrorNumbers.h>
-#include <CF.h>
-#include <Cp289ProviderPort.h>
-#include "OcpiContainerPort.h"
+#include "OcpiLoggerDebugLogger.h"
+#include "OcpiUtilIOP.h"
 #include "Cp289GenericProxy.h"
-
+#include "Cp289ProviderPort.h"
 /*
  * Counteract the TAO/ORBexpress compatibility magic.
  */

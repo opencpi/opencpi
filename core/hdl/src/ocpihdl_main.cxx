@@ -35,10 +35,11 @@
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <errno.h>
-#include <sys/mman.h>
 #include <signal.h> // for SIGPIPE
 #include <unistd.h>
 #include <stdlib.h>
+#include <sys/mman.h>
+#include <arpa/inet.h>
 #include "lzma.h"
 #include "zlib.h"
 #include "OcpiOsMisc.h"
@@ -47,7 +48,7 @@
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilImplementation.h"
 #include "DtTransferInternal.h"
-#include "SimServer.h"
+#include "HdlSimServer.h"
 #include "HdlDriver.h"
 #include "HdlContainer.h"
 #include "HdlOCDP.h"

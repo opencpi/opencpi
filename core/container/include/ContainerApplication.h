@@ -44,14 +44,14 @@
  *
  */
 
-#ifndef OCPI_CONTAINER_APPLICATION_H
-#define OCPI_CONTAINER_APPLICATION_H
+#ifndef CONTAINER_APPLICATION_H
+#define CONTAINER_APPLICATION_H
 
-#include "OcpiParentChild.h"
-#include "OcpiContainerInterface.h"
-#include "OcpiWorker.h"
+#include "OcpiContainerApi.h"
+
+#include "OcpiOsTimer.h"
 #include "OcpiPValue.h"
-
+#include "OcpiLibraryManager.h"
 
 namespace OCPI {
   namespace API {
@@ -61,6 +61,8 @@ namespace OCPI {
 
     // A (local) application running in this container
     class Artifact;
+    class Container;
+    class Worker;
     class Application :
       public OCPI::API::ContainerApplication {
       friend class Container;

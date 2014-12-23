@@ -50,33 +50,26 @@
 
 ************************************************************************** */
 
-#ifndef OCPI_CONTAINER_INTERFACE_H_
-#define OCPI_CONTAINER_INTERFACE_H_
+#ifndef CONTAINER_H_
+#define CONTAINER_H_
 
 #include <vector>
-#include <OcpiOsDataTypes.h>
-#include <OcpiParentChild.h>
-#include <OcpiOsThreadManager.h>
+
+#include "OcpiContainerApi.h"
+
+#include "OcpiOsThreadManager.h"
 #include "OcpiUtilSelfMutex.h"
 #include "OcpiTransport.h"
-#include <DtIntEventHandler.h>
-#include <OcpiContainerDataTypes.h>
-#include <OcpiContainerApi.h>
-#include <OcpiLibraryManager.h>
+#include "OcpiLibraryManager.h"
 
 namespace OCPI {
-
-  namespace Application {
-    class Launcher;
-    extern Launcher *g_localLauncher;
-  }
   namespace Container {
 
     class Driver;
     class PortData;
     class Application;
     class Artifact;
-
+    class Launcher;
     /**
        @class Container
 
@@ -88,7 +81,6 @@ namespace OCPI {
        @sa OCPI::Container::Container
 
        ********************************************************************** */
-    class Artifact; // the class representing a loaded artifact on the container
     class Container
       : public OCPI::API::Container,
 	public OCPI::Library::Capabilities,
@@ -198,9 +190,7 @@ namespace OCPI {
       typedef uint32_t CMap;
       static const unsigned maxContainer = sizeof(CMap) * 8;
       // Launcher: default is to
-      OCPI::Application::Launcher &launcher() const {
-	return *OCPI::Application::g_localLauncher;
-      }
+      virtual Launcher &launcher() const;
       inline OCPI::DataTransport::Transport &getTransport() { return m_transport; }
     protected:
       void shutdown();
@@ -216,6 +206,7 @@ namespace OCPI {
       OCPI::OS::ThreadManager *m_thread;
       // This is not an embedded member to potentially control lifecycle better...
       OCPI::DataTransport::Transport &m_transport;
+      static Launcher *s_localLauncher;
     };
   }
 }

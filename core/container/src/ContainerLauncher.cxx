@@ -1,8 +1,13 @@
-#include "OcpiLauncher.h"
+#include "Container.h"
+#include "ContainerPort.h"
+#include "ContainerWorker.h"
+#include "ContainerApplication.h"
+#include "ContainerLauncher.h"
+
 namespace OA = OCPI::API;
-namespace OC = OCPI::Container;
+namespace OU = OCPI::Util;
 namespace OCPI {
-  namespace Application {
+  namespace Container {
 
 
 void LocalLauncher::

@@ -43,18 +43,17 @@
 #include <sstream>
 #include <fcntl.h>
 
-#include <OcpiOsMisc.h>
-#include <OcpiOsAssert.h>
-#include <OcpiUtilMisc.h>
-#include <OcpiContainerInterface.h>
-#include <DtTransferInternal.h>
-#include <OcpiContainerPort.h>
-#include <OcpiWorker.h>
-#include <ConsumerWorker.h>
-#include <ProdWorker.h>
-#include <LoopbackWorker.h>
-#include <test_utilities.h>
-#include <OcpiUtilCommandLineConfiguration.h>
+#include "OcpiOsMisc.h"
+#include "OcpiOsAssert.h"
+#include "OcpiUtilMisc.h"
+#include "OcpiUtilCommandLineConfiguration.h"
+#include "DtTransferInternal.h"
+#include "ContainerPort.h"
+#include "ContainerWorker.h"
+#include "ConsumerWorker.h"
+#include "ProdWorker.h"
+#include "LoopbackWorker.h"
+#include "test_utilities.h"
 
 using namespace OCPI::Container;
 using namespace OCPI;

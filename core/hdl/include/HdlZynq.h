@@ -1,5 +1,5 @@
-#ifndef ZYNQ_H
-#define ZYNQ_H
+#ifndef HDLZYNQ_H
+#define HDLZYNQ_H
 namespace OCPI {
   namespace HDL {
     namespace Zynq {

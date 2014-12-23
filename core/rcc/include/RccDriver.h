@@ -1,7 +1,8 @@
-#ifndef OCPI_RCC_DRIVER_H
-#define OCPI_RCC_DRIVER_H
+#ifndef RCC_DRIVER_H
+#define RCC_DRIVER_H
 #include <pthread.h>
-#include <OcpiContainerManager.h>
+#include "ContainerManager.h"
+
 namespace OCPI {
   namespace RCC {
     extern const char *rcc;

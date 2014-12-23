@@ -40,26 +40,21 @@
 
 ************************************************************************** */
 
-#include <errno.h>
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-
-#include <cstdlib>
+#include <cerrno>
 #include <climits>
+#include <cstdlib>
 #include <map>
-#include <vector>
-#include <cstring>
-#include <sstream>
 #include <fstream>
-#include <iostream>
+#include <sstream>
 
 #include <opencl.h>
 
 #include "OcpiUtilMisc.h"
-#include "OcpiOclPlatformManager.h"
 #include "OcpiDriverManager.h"
-#include "OcpiUtilException.h"
+#include "OclPlatformManager.h"
 
 namespace OU = OCPI::Util;
 

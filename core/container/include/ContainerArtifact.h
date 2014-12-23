@@ -44,11 +44,11 @@
  *
  */
 
-#ifndef OCPI_ARTIFACT_H
-#define OCPI_ARTIFACT_H
+#ifndef CONTAINER_ARTIFACT_H
+#define CONTAINER_ARTIFACT_H
 #include <list>
 #include "ezxml.h"
-#include "OcpiParentChild.h"
+#include "OcpiLibraryManager.h"
 
 namespace OCPI {
 

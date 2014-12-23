@@ -32,8 +32,8 @@
   Thus this module knows about ethernet, but not about the details of discovery payloads.
 */
 
-#ifndef NETDEFS_H
-#define NETDEFS_H
+#ifndef HDLNETDEFS_H
+#define HDLNETDEFS_H
 #ifdef __cplusplus
 namespace OCPI {
   namespace HDL {

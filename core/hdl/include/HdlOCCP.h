@@ -32,8 +32,8 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OCCP_H
-#define OCCP_H
+#ifndef HDLOCCP_H
+#define HDLOCCP_H
 #ifndef __KERNEL__ // for linux driver
 #include <stdint.h>
 #endif

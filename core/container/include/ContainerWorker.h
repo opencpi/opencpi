@@ -30,19 +30,18 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-
-#ifndef OCPI_WORKER_H
-#define OCPI_WORKER_H
+#ifndef CONTAINER_WORKER_H
+#define CONTAINER_WORKER_H
 
 #include "ezxml.h"
-#include "OcpiParentChild.h"
+
+#include "OcpiContainerApi.h"
+
 #include "OcpiOsMutex.h"
 #include "OcpiOsTimer.h"
 #include "OcpiUtilProperty.h"
 #include "OcpiUtilImplementation.h"
-#include "OcpiContainerDataTypes.h"
-#include "OcpiContainerApi.h"
+#include "OcpiPValue.h"
 
 namespace OCPI {
 
@@ -121,8 +120,6 @@ namespace OCPI {
       OCPI::OS::Mutex m_workerMutex;
       bool beforeStart();
     protected:
-      // Return true when ignored due to "ignored due to existing state"
-      bool controlOp(OCPI::Util::Worker::ControlOperation);
       inline OCPI::OS::Mutex &mutex() { return m_workerMutex; }
       virtual Port *findPort(const char *name) = 0;
       inline const std::string &instTag() const { return m_instTag; }
@@ -145,10 +142,13 @@ namespace OCPI {
       virtual Port &createPort(const OCPI::Util::Port &metaport,
 			       const OCPI::Util::PValue *props) = 0;
       virtual Worker *nextWorker() = 0;
-      void setPropertyValue(const OCPI::API::Property &p, const OCPI::Util::Value &v);
+      virtual void setPropertyValue(const OCPI::Util::Property &p, const OCPI::Util::Value &v);
 
 
     public:
+      // Return true when ignored due to "ignored due to existing state"
+      bool controlOp(OCPI::Util::Worker::ControlOperation);
+      void setPropertyValue(const OCPI::Util::Property &p, const std::string &v);
       virtual const std::string &name() const = 0;
       // This class is actually used in some contexts (e.g. ocpihdl),
       // Where it is not a child of an application, hence this method
@@ -172,6 +172,8 @@ namespace OCPI {
       virtual uint32_t getProperty32(const OCPI::API::PropertyInfo &info) const = 0;
       virtual uint64_t getProperty64(const OCPI::API::PropertyInfo &info) const = 0;
 #endif
+      virtual void getPropertyValue(const OCPI::Util::Property &p, std::string &value, bool hex,
+				    bool add = false);
       bool getProperty(unsigned ordinal, std::string &name, std::string &value,
 		       bool *unreadablep = NULL, bool hex = false);
       bool hasImplTag(const char *tag);
@@ -205,6 +207,3 @@ namespace OCPI {
   }
 }
 #endif
-
-
-

@@ -47,18 +47,11 @@
  *
  *************************************************************************/
 
-#ifndef OCPI_RCC_CONTAINER_H_
-#define OCPI_RCC_CONTAINER_H_
+#ifndef RCC_CONTAINER_H_
+#define RCC_CONTAINER_H_
 
-#include <OcpiList.h>
-#include <OcpiOsMutex.h>
-#include <OcpiOsTimer.h>
-#include <OcpiContainerManager.h>
-#include <RCC_Worker.h>
-//#include <OcpiTransport.h>
-#include <OcpiRccDriver.h>
-#include <OcpiRccApplication.h>
-#include <OcpiTimeEmit.h>
+#include "RccApplication.h"
+#include "RccDriver.h"
 
 namespace OCPI {
 
@@ -75,13 +68,13 @@ namespace OCPI {
     struct RCCPortData;
 
     // Our Custom exception definitions
-    const OCPI::OS::uint32_t CP289_EX_SOURCE_ID          = 10;
-    const OCPI::OS::uint32_t BAD_ARTIFACT_URL            = (CP289_EX_SOURCE_ID << 16) + 1;
-    const OCPI::OS::uint32_t REQUIRED_PROPERTY_NOT_SET   = (CP289_EX_SOURCE_ID << 16) + 2;
-    const OCPI::OS::uint32_t WORKER_INIT_FAILED          = (CP289_EX_SOURCE_ID << 16) + 3;
-    const OCPI::OS::uint32_t WORKER_ENABLE_FAILED          = (CP289_EX_SOURCE_ID << 16) + 4;
-    const OCPI::OS::uint32_t WORKER_DISABLE_FAILED          = (CP289_EX_SOURCE_ID << 16) + 5;
-    const OCPI::OS::uint32_t CP289_CSINTERNAL_ERROR          = (CP289_EX_SOURCE_ID << 16) + 6;
+    const uint32_t CP289_EX_SOURCE_ID          = 10;
+    const uint32_t BAD_ARTIFACT_URL            = (CP289_EX_SOURCE_ID << 16) + 1;
+    const uint32_t REQUIRED_PROPERTY_NOT_SET   = (CP289_EX_SOURCE_ID << 16) + 2;
+    const uint32_t WORKER_INIT_FAILED          = (CP289_EX_SOURCE_ID << 16) + 3;
+    const uint32_t WORKER_ENABLE_FAILED          = (CP289_EX_SOURCE_ID << 16) + 4;
+    const uint32_t WORKER_DISABLE_FAILED          = (CP289_EX_SOURCE_ID << 16) + 5;
+    const uint32_t CP289_CSINTERNAL_ERROR          = (CP289_EX_SOURCE_ID << 16) + 6;
 
     class Container
       : public OCPI::Container::ContainerBase<Driver,Container,Application,Artifact>

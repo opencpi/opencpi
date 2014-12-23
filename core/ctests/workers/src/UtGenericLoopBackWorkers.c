@@ -142,7 +142,7 @@ static RCCResult UTGProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
   this_->ports[UTGProducerWorker_Data_Out_Port0].output.length = len;
   this_->ports[UTGProducerWorker_Data_Out_Port0].output.u.operation = (RCCOpCode)(props->buffersProcessed%256);
   this_->container.send( &this_->ports[UTGProducerWorker_Data_Out_Port0], 
-                          &this_->ports[UTGProducerWorker_Data_Out_Port0].current, 0x54, len );
+			 &this_->ports[UTGProducerWorker_Data_Out_Port0].current, (RCCOpCode) 0x54, len );
 
   OCPI_TIME_EMIT_C( "Producer Start End" );
         
@@ -486,7 +486,7 @@ static RCCResult UTGLoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
   case 0:
     {
       this_->container.send( &this_->ports[UTGLoopbackWorker_Data_Out_Port0], 
-                              &this_->ports[UTGLoopbackWorker_Data_In_Port0].current, 0x54, len );
+			     &this_->ports[UTGLoopbackWorker_Data_In_Port0].current, (RCCOpCode)0x54, len );
       printf("LB len %zu\n", len);
     }
     break;
@@ -505,7 +505,7 @@ static RCCResult UTGLoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
       }
       memcpy(out_buffer,in_buffer,len);
       this_->container.send( &this_->ports[UTGLoopbackWorker_Data_Out_Port0], 
-                              &this_->ports[UTGLoopbackWorker_Data_Out_Port0].current, 0x54, len );
+			     &this_->ports[UTGLoopbackWorker_Data_Out_Port0].current, (RCCOpCode)0x54, len );
       this_->container.release( &this_->ports[UTGLoopbackWorker_Data_In_Port0].current );
     }
     break;

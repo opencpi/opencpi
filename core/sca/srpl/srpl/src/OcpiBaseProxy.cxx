@@ -53,14 +53,9 @@
  *
  */
 
-#include <string>
-#include <OcpiUtilAutoMutex.h>
-#include <OcpiLoggerLogger.h>
-#include <OcpiLoggerNullOutput.h>
-#include <OcpiLoggerDebugLogger.h>
-#include <OcpiCFUtilLegacyErrorNumbers.h>
-#include <CF.h>
-#include <CF_s.h>
+#include "OcpiUtilAutoMutex.h"
+#include "OcpiLoggerNullOutput.h"
+#include "OcpiLoggerDebugLogger.h"
 #include "OcpiBaseProxy.h"
 
 namespace OCPI {

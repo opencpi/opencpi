@@ -22,32 +22,27 @@
  */
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <errno.h>
-#include <assert.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <signal.h>     // for kill
+#include <string>
 #include <unistd.h>
+#include <stdlib.h>
+#include <signal.h>     // for kill
 #include <sys/types.h>  // for mkfifo, waitpid
 #include <sys/stat.h>   // for mkfifo
 #include <sys/wait.h>   // for waitpid
 #include <netinet/in.h> // for ntohs etc.
-#include <set>
-#include <queue>
 #include <list>
-#include "OcpiOsDebug.h"
+#include <queue>
+#include <climits>
+#include <cerrno>
 #include "OcpiOsFileIterator.h"
 #include "OcpiOsFileSystem.h"
 #include "OcpiOsServerSocket.h"
-#include "OcpiOsTimer.h"
 #include "OcpiUuid.h"
-#include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
 #include "OcpiLibraryManager.h"
-#include "SimServer.h"
-#include "SimDriver.h"
+#include "HdlSimDriver.h"
+#include "HdlNetDriver.h"
+#include "HdlSimServer.h"
 
 namespace OCPI {
   namespace HDL {
@@ -388,7 +383,8 @@ namespace OCPI {
 	  assert(!m_xferSrvr);
 	  try {
 	    std::time_t mtime;
-	    if (!(m_metadata = OL::Artifact::getMetadata(m_exec.c_str(), mtime))) {
+	    uint64_t length;
+	    if (!(m_metadata = OL::Artifact::getMetadata(m_exec.c_str(), mtime, length))) {
 	      OU::format(err, "simulation executable file '%s' is not valid: cannot find metadata",
 			 m_exec.c_str());
 	      return true;

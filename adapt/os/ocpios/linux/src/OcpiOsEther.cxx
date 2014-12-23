@@ -150,7 +150,8 @@ namespace OCPI {
 		     m_addr[0], m_addr[1], m_addr[2], m_addr[3], m_addr[4], m_addr[5]);
 	  else {
 	    struct in_addr x = {m_udp.addr};
-	    snprintf(m_pretty, sizeof(m_pretty), "%s:%u", inet_ntoa(x), m_udp.port);
+	    snprintf(m_pretty, sizeof(m_pretty), "%s:%u",
+		     x.s_addr == INADDR_ANY ? "<ANY>" : inet_ntoa(x), m_udp.port);
 	  }
 	}
 	return m_pretty;

@@ -1,9 +1,5 @@
-#include <string.h>
-#include "OcpiContainerManager.h"
-#include "OcpiContainerErrorCodes.h"
-#include "OcpiRccContainer.h"
-#include "OcpiTransport.h"
-#include "OcpiUtilMisc.h"
+#include "RccContainer.h"
+#include "RccDriver.h"
 // This is the "driver" for RCC containers, which finds them, constructs them, and 
 // in general manages them.  It is an object manages by the Container::Manager class.
 // It acts as the factory for RCC containers.

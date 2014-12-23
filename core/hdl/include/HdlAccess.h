@@ -8,15 +8,11 @@
 #define __STDC_FORMAT_MACROS
 #endif
 #include <inttypes.h>
-#include <stdint.h>
-#include <stddef.h>
-#include <cstdlib>
-#include <string>
-#include "OcpiUuid.h"
-#include "OcpiUtilEzxml.h"
+#include <cstddef>
+
 #include "OcpiUtilMisc.h"
 #include "DtOsDataTypes.h"
-#include "HdlOCCP.h"
+
 namespace OCPI {
   namespace HDL {
     // FIXME:  when do we check for unexpected errors when the worker said they don't produce errors?

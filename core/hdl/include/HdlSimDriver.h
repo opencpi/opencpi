@@ -23,9 +23,9 @@
  */
 
 
-#ifndef SIMDRIVER_H
-#define SIMDRIVER_H
-#include "NetDriver.h"
+#ifndef HDLSIMDRIVER_H
+#define HDLSIMDRIVER_H
+#include "HdlNetDriver.h"
 
 namespace OCPI {
   namespace HDL {

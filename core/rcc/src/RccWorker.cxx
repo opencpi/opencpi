@@ -44,30 +44,11 @@
   *
   */
 
-#include <cstdarg>
-#define WORKER_INTERNAL
-#include <OcpiRccPort.h>
-#include <OcpiRccContainer.h>
-#include <OcpiRccApplication.h>
-#include <OcpiRccWorker.h>
-#include <OcpiRccDriver.h>
-#include <OcpiOsMisc.h>
-#include <OcpiTransport.h>
-#include <OcpiBuffer.h>
-#include <OcpiRDTInterface.h>
-#include <OcpiOsAssert.h>
-#include <OcpiUtilCDR.h>
-#include <OcpiPortMetaData.h>
-#include <OcpiUtilAutoMutex.h>
-#include <OcpiUtilImplementation.h>
-#include <OcpiContainerErrorCodes.h>
-#include <OcpiContainerMisc.h>
-#include <DtTransferInternal.h>
-#include <OcpiIntParallelDataDistribution.h>
-#include <OcpiPValue.h>
-#include <OcpiUtilMisc.h>
-#include <OcpiParentChild.h>
-#include <OcpiTimeEmitCategories.h>
+#include <climits>
+#include "OcpiTimeEmitCategories.h"
+#include "RccApplication.h"
+#include "RccPort.h"
+#include "RccWorker.h"
 
  namespace OC = OCPI::Container;
  namespace OS = OCPI::OS;
@@ -186,7 +167,7 @@
  #endif
 
    deleteChildren();
-   OS::uint32_t m = 0;
+   uint32_t m = 0;
    while ( m_context->memories && m_context->memories[m] ) {
      delete [] (char*)m_context->memories[m];
      m++;

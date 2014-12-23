@@ -49,21 +49,14 @@
 ************************************************************************** */
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
-#include <errno.h>
 #include <unistd.h>
 #include "OcpiOsAssert.h"
 #include "OcpiUtilMisc.h"
-#include "OcpiPValue.h"
 #include "DtTransferInternal.h"
-
-#include "OcpiWorker.h"
-#include "OcpiContainerMisc.h"
-
-#include "HdlOCCP.h"
+#include "ContainerManager.h"
 #include "HdlOCDP.h"
 #include "HdlDriver.h"
 #include "HdlContainer.h"
-#include "HdlWciControl.h"
 
 #define wmb()        asm volatile("sfence" ::: "memory"); usleep(0)
 #define clflush(p) asm volatile("clflush %0" : "+m" (*(char *)(p))) //(*(volatile char __force *)p))
@@ -353,7 +346,7 @@ OCPI_DATA_TYPES
       {
 	const char *err;
 	if (m_adapter && adXml &&
-	    (err = OU::EzXml::getNumber(adXml, "configure", &m_adapterConfig, &m_hasAdapterConfig, 0)))
+	    (err = OE::getNumber(adXml, "configure", &m_adapterConfig, &m_hasAdapterConfig, 0)))
 	  throw OU::Error("Invalid configuration value for adapter: %s", err);
         if (!icwXml || !usable()) {
           m_canBeExternal = false;
@@ -372,7 +365,10 @@ OCPI_DATA_TYPES
 	OD::Transport::fillDescriptorFromEndPoint(*m_endPoint, getData().data);
 	// This should be the region address from admin, using the 0x1c region register
 	// The region addresses are offsets in BAR1 at this point
-        uint32_t myOcdpOffset = (uint32_t)OC::getAttrNum(icXml, "ocdpOffset"); // FIXME
+	size_t myOcdpOffset;
+	if ((err = OE::getNumber(icXml, "ocdpOffset", &myOcdpOffset, NULL, 0, false, true)))
+	  throw OU::Error("Invalid or missing ocdpOffset attribute: %s", err);
+	//        uint32_t myOcdpOffset = (uint32_t)OC::getAttrNum(icXml, "ocdpOffset"); // FIXME
         // These will be determined at connection time
         myDesc.dataBufferPitch   = 0;
         myDesc.metaDataBaseAddr  = 0;
@@ -528,9 +524,9 @@ OCPI_DATA_TYPES
 	  m_properties.set32Register(remoteMetadataHi, OcdpProperties, (uint32_t)(addr >> 32));
           if ( isProvider()) {
             if (other.desc.dataBufferSize > myDesc.dataBufferSize)
-              throw OC::ApiError("At consumer, remote buffer size is larger than mine", NULL);
+              throw OU::ApiError("At consumer, remote buffer size is larger than mine", NULL);
           } else if (other.desc.dataBufferSize < myDesc.dataBufferSize) {
-            throw OC::ApiError("At producer, remote buffer size smaller than mine", NULL);
+            throw OU::ApiError("At producer, remote buffer size smaller than mine", NULL);
           }
           m_properties.set32Register(nRemoteBuffers, OcdpProperties, other.desc.nBuffers);
 	  m_properties.set32Register(remoteBufferSize, OcdpProperties, other.desc.dataBufferPitch);
@@ -876,7 +872,7 @@ OCPI_DATA_TYPES
 #if 0
 	myEndpoint = OCPI::RDT::GetEndpoint("ocpi-dma//bus-id");
 	if (!myEndpoint)
-	  OC::ApiError("No local (CPU) endpoint support for pci bus %s", NULL);
+	  OU::ApiError("No local (CPU) endpoint support for pci bus %s", NULL);
 	localData = myEndpoint->alloc(nAlloc);
 #endif
         memset((void *)localData, 0, nAlloc);

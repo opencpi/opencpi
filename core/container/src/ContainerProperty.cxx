@@ -32,16 +32,11 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "OcpiContainerApplication.h"
-#include "OcpiWorker.h"
-#include "OcpiContainerPort.h"
-#include "OcpiContainerInterface.h"
-#include "OcpiContainerMisc.h"
-#include "OcpiContainerArtifact.h"
+#include "OcpiUtilProperty.h"
+#include "OcpiContainerApi.h"
 
 namespace OCPI {
   namespace API {
-    namespace OU = OCPI::Util;
     PropertyAccess::~PropertyAccess(){}
     void Property::checkTypeAlways(BaseType ctype, size_t n, bool write) const {
       if (write && !m_info.m_isWritable && !m_worker.beforeStart())

@@ -32,13 +32,13 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <climits>
-#include "OcpiContainerMisc.h"
-#include "OcpiContainerApplication.h"
-#include "OcpiContainerArtifact.h"
+#include "ContainerWorker.h"
+#include "ContainerApplication.h"
+#include "ContainerArtifact.h"
 
 namespace OL = OCPI::Library;
 namespace OA = OCPI::API;
+namespace OU = OCPI::Util;
 
 namespace OCPI {
   namespace Container {
@@ -60,7 +60,7 @@ namespace OCPI {
           return true;
         if (strcmp("false", val) && strcmp("FALSE", val) && strcmp("0", val) &&
             val[0] != 0)
-          throw ApiError("Boolean attribute \"", attr, "\" has bad value \"",
+          throw OU::ApiError("Boolean attribute \"", attr, "\" has bad value \"",
                          val, "\"", NULL);
       }
       return false;
@@ -96,30 +96,30 @@ namespace OCPI {
       if (!implTag ||
           !(impl = findChildWithAttr(xml, "worker", "specname", implTag)) &&
           !(impl = findChildWithAttr(xml, "worker", "name", implTag))) {
-	throw ApiError("No implementation found for \"", implTag, "\"", NULL);
+	throw OU::ApiError("No implementation found for \"", implTag, "\"", NULL);
       }
 
       if (instTag) {
         inst = findChildWithAttr(xml, "instance", "name", instTag);
         if (!inst)
-          throw ApiError("no worker instance named \"", instTag,
+          throw OU::ApiError("no worker instance named \"", instTag,
                              "\" found in this artifact", NULL);
         if (!implTag || !hasAttrEq(inst, "worker", implTag))
-          throw ApiError("worker instance named \"", instTag,
+          throw OU::ApiError("worker instance named \"", instTag,
                              "\" is not a \"", implTag ? implTag : "<null>",
                              "\" worker", NULL);
 	// Is any other worker in the whole container using this implementation instance
 	// in this artifact?
 	for (WorkersIter wi = m_workers.begin(); wi != m_workers.end(); wi++)
 	  if (!strcmp((*wi)->instTag().c_str(), instTag))
-	    throw ApiError("worker instance named \"", instTag,
+	    throw OU::ApiError("worker instance named \"", instTag,
 			   "\" already used", NULL);
       } else {
         inst = 0;
         // I didn't specify an instance, so I must want a floating
         // implementation.  Find one.
         if (boolAttrValue(impl, "connected"))
-          throw ApiError("specified implementation \"", implTag,
+          throw OU::ApiError("specified implementation \"", implTag,
                              "\", is already connected", NULL);
 
 #ifdef JK_LOOK_AT_ME
@@ -127,7 +127,7 @@ namespace OCPI {
         if (!boolAttrValue(impl, "reusable"))
 	  for (WorkersIter wi = m_workers.begin(); wi != m_workers.end(); wi++)
 	    if (!strcmp((*wi)->implTag().c_str(), implTag))
-	      throw ApiError("non-reusable worker named \"", implTag,
+	      throw OU::ApiError("non-reusable worker named \"", implTag,
                              "\" already used", NULL);
 #endif
 

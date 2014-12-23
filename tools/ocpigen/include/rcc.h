@@ -16,7 +16,6 @@ public:
   create(ezxml_t xml, const char *xfile, const char *&err);
   RccAssembly(ezxml_t xml, const char *xfile, const char *&err);
   virtual ~RccAssembly();
-  const char *emitArtXML(const char *wksfile);
 };
 
 #endif

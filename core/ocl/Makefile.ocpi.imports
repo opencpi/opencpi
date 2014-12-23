@@ -34,8 +34,6 @@
 #
 ########################################################################### #
 
-ALLIDLINC += $(SCA_CF_EXPORTS)
-
 ALLINC += \
 	$(CONTAINER_EXPORTS) \
 	$(LIBRARY_EXPORTS) \
@@ -57,6 +55,7 @@ ALLLIBS += \
 	$(OCPIOS_LIBS)
 
 EXTRALIBOBJS += $(OCPI_OPENCL_OBJS)
+EXTRA_LDFLAGS=$(LD_ALLOW_UNDEFINED)
 
 ifeq ($(OCPI_HAVE_OPENCL),1)
 SYSLIBS += dl # OpenCL
