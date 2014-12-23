@@ -136,6 +136,8 @@ namespace OCPI {
     }
     void WciControl::
     checkControlState() {
+      if (!m_hasControl)
+	return;
       // This polling call is to detect the current control state when
       // it might be changed by the worker or container autonomously,
       // in a way that does not update the state here.
