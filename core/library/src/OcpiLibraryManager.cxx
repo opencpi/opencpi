@@ -6,16 +6,13 @@
 #include <climits>
 #include "OcpiOsFileIterator.h"
 #include "OcpiUtilException.h"
-#include "OcpiContainerErrorCodes.h"
 #include "OcpiLibraryManager.h"
 #include <OcpiOsAssert.h>
-//#include <OcpiExpParser.h>
 
 // This file contains code common to all library drivers
 
 namespace OA = OCPI::API;
 namespace OU = OCPI::Util;
-namespace OC = OCPI::Container; // only for error codes...
 namespace OD = OCPI::Driver;
 namespace OE = OCPI::Util::EzXml;
 
@@ -236,7 +233,7 @@ namespace OCPI {
     // This scheme allows for binary metadata, but we are doing XML now.
     // The returned value must be deleted with delete[];
     char *Artifact::
-    getMetadata(const char *name, std::time_t &mtime) {
+    getMetadata(const char *name, std::time_t &mtime, uint64_t &length) {
 	  char *data = 0;
 	  int fd = open(name, O_RDONLY);
 	  if (fd < 0)
@@ -245,6 +242,7 @@ namespace OCPI {
 	  if (fstat(fd, &info))
 	    throw OU::Error("Cannot get modification time: \"%s\" (%d)", name, errno);
 	  mtime = info.st_mtime;
+	  length = info.st_size;
 	  char buf[64/3+4]; // octal + \r + \n + null
 	  off_t fileLength, second, third;
 	  if (fd >= 0 &&
@@ -280,6 +278,21 @@ namespace OCPI {
 	  return data;
 	}
 
+    Implementation *Artifact::
+    findImplementation(const char *specName, const char *staticInstance) {
+      WorkerRange range = m_workers.equal_range(specName);
+      for (WorkerIter wi = range.first; wi != range.second; wi++) {
+	Implementation &impl = *wi->second;
+	if (impl.m_staticInstance) {
+	  if (staticInstance) {
+	    const char *name = ezxml_cattr(impl.m_staticInstance, "name");
+	    if (name && !strcasecmp(name, staticInstance))
+	      return &impl;
+	  }
+	} else if (!staticInstance)
+	  return &impl;
+      }
+    }
     bool Artifact::
     meetsRequirements (const Capabilities &caps,
 		       const char *specName,

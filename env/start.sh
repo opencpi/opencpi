@@ -39,7 +39,7 @@ export OCPI_OMNI_DIR=/opt/opencpi/prerequisites/omniorb
 export OCPI_HAVE_IBVERBS=
 
 # ##########OpenCL - default is that we have headers to compile against
-export OCPI_OPENCL_INCLUDE_DIR=$OCPI_BASE_DIR/core/container/ocl/include
+export OCPI_OPENCL_INCLUDE_DIR=$OCPI_BASE_DIR/core/ocl/include
 export OCPI_OPENCL_OBJS=
 export OCPI_HAVE_OPENCL=
 

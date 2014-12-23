@@ -3,9 +3,12 @@
 #include <errno.h>
 #include "OcpiContainerApi.h"
 #include "OcpiComponentLibrary.h"
+#include "Container.h"
 #include "RemoteDriver.h"
-
 #include "OcpiServer.h"
+
+namespace OU =  OCPI::Util;
+
 
 #define OCPI_OPTIONS_HELP \
   "Usage syntax is: ocpiserve [options]\n" \
@@ -13,7 +16,7 @@
 #define OCPI_OPTIONS \
   CMD_OPTION(directory,  D,    String, "artifacts", "The directory used to capture artifact/executable files") \
   CMD_OPTION(verbose,    v,    Bool,   "false", "Provide verbose output during operation") \
-  CMD_OPTION(log,        l,    UChar,  "0",     "The logging level to be used during operation") \
+  CMD_OPTION(loglevel,   l,    UChar,  "0",     "The logging level to be used during operation") \
   CMD_OPTION(processors, n,    UChar,  "1",     "The number of software (rcc) containers to create") \
   CMD_OPTION(containers, C,    Bool,   "false", "List containers")  \
   CMD_OPTION(serve,      s,    Bool,   "false", "Serve containers") \
@@ -63,6 +66,7 @@ static int mymain(const char **) {
   // Cause the normal library discovery process to only use the one directory
   // that will also act as a cache.
   // The directory is not created until it is needed.
+  OCPI::OS::logSetLevel(options.loglevel());
   setenv("OCPI_LIBRARY_PATH", options.directory(), 1);
   for (unsigned n = 1; n < options.processors(); n++) {
     std::string name;

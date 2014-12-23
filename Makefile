@@ -74,8 +74,6 @@ endif
 
 PACKAGES += adapt/os/ocpios core/util
 
-#PACKAGES += core/control/wci_api
-
 PACKAGES += \
 	 core/dataplane/rdma_utils \
 	 core/dataplane/rdma_driver_interface \
@@ -84,14 +82,14 @@ PACKAGES += \
 	 core/dataplane/transport \
 	 core/dataplane/msg_driver_interface \
 	 core/dataplane/msg_drivers \
-	 core/library \
-	 core/container/interfaces \
-	 core/container/hdl \
-	 core/container/ocl \
-	 core/container/rcc \
-	 core/container/remote \
-	 core/container/ctests \
 	 core/dataplane/rdma_tests \
+	 core/library \
+	 core/container \
+	 core/hdl \
+	 core/ocl \
+	 core/rcc \
+	 core/remote \
+	 core/ctests \
          core/application
 
 ifeq ($(OCPI_HAVE_CORBA),1)
@@ -107,13 +105,13 @@ PACKAGES += tools/ocpigen
 PACKAGES += tools/cdk/ocpidds
 PACKAGES += tools/astyle
 # if we don't have opencl and we are building statically, don't bother with this
-ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
-PACKAGES += tools/cdk/ocpiocl
-else
-ifeq ($(OCPI_HAVE_OPENCL),1)
-PACKAGES += tools/cdk/ocpiocl
-endif
-endif
+#ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
+#PACKAGES += tools/cdk/ocpiocl
+#else
+#ifeq ($(OCPI_HAVE_OPENCL),1)
+#PACKAGES += tools/cdk/ocpiocl
+#endif
+#endif
 PACKAGES += tools/cdk/ocpixm
 PACKAGES += test
 
@@ -141,15 +139,14 @@ ALLPACKAGES = \
 	core/dataplane/transport \
 	core/dataplane/msg_driver_interface \
 	core/dataplane/msg_drivers \
-	core/library \
-	core/container/interfaces \
-	core/container/hdl \
-	core/container/ocl \
-	core/container/rcc \
-	core/container/remote \
-	core/container/ctests \
-	core/container/ctests \
 	core/dataplane/rdma_tests \
+	core/library \
+	core/container \
+	core/hdl \
+	core/ocl \
+	core/rcc \
+	core/remote \
+	core/ctests \
         core/application \
 	core/sca/cf \
 	core/sca/cf_util \
@@ -161,7 +158,6 @@ ALLPACKAGES = \
 	tools/cdkutils \
 	tools/ocpigen \
 	tools/cdk/ocpidds \
-	tools/cdk/ocpiocl \
 	tools/cdk/ocpixm \
 	tools/astyle \
 	tests \
@@ -265,6 +261,7 @@ distclean: clean
 
 cleaneverything: distclean cleandrivers
 	make -C components cleanhdl
+	-find . -depth -name 'timeData.raw' -exec rm -f '{}' ';'
 	-find . -depth -name 'target-*' -exec rm -r '{}' ';'
 	-find . -depth -name 'gen' -exec rm -r '{}' ';'
 	-find . -depth -name "lib" -a ! -path "*export*" -a -type d -a -exec rm -r "{}" ";"
@@ -292,10 +289,8 @@ diff.q:
 #core/local/logger: adapt/os/ocpios
 #core/util: core/local/logger
 core/dataplane/tests: \
-	core/container/rcc core/dataplane/transport \
+	core/rcc core/dataplane/transport \
 	core/dataplane/rdma_driver_interface
-
-#core/control/wci_api
 
 core/corba/corba_util: core/corba/orb_services core/util
 core/sca/cf_util: core/sca/cf core/corba/corba_util core/corba/orb_services \
@@ -304,7 +299,7 @@ core/sca/sgac: core/sca/cf_util
 core/sca/gpped: core/sca/cf_util
 tools/local/binder: core/util
 tools/local/tester: \
-	core/container/rcc core/dataplane/transport \
+	core/rcc core/dataplane/transport \
 	core/dataplane/rdma_driver_interface
 test: tools/local/binder tools/local/tester
 

@@ -53,6 +53,7 @@
 #include <string>
 #include <cstddef>
 #include <OcpiOsDataTypes.h>
+#include <OcpiOsEther.h>
 #include <OcpiOsSocket.h>
 namespace OCPI {
   namespace OS {
@@ -104,6 +105,10 @@ namespace OCPI {
       ~ServerSocket ()
         throw ();
 
+      /**
+       * Retrieve the address of the server socket.
+       */
+      void getAddr(Ether::Address &addr);
       /**
        * Bind the server socket to a local port.
        *

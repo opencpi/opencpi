@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
+#include "HdlOCCP.h"
 #include "assembly.h"
 #include "hdl.h"
 #include "hdl-container.h"
@@ -647,88 +648,6 @@ emitXmlConnections(FILE *f) {
   }
 }
 
-#if 0
-superceded
-// Emit the artifact XML for an HDLcontainer
-const char *HdlContainer::
-emitArtXML(const char *wksFile) {
-  const char *err;
-  OU::Uuid uuid;
-  OU::generateUuid(uuid);
-  if ((err = emitUuidHDL(uuid)))
-    return err;
-  FILE *f;
-  if ((err = openOutput(m_implName, m_outDir, "", "-art", ".xml", NULL, f)))
-    return err;
-  fprintf(f, "<!--\n");
-  printgen(f, "", m_file.c_str());
-  fprintf(f,
-	  " This file contains the artifact descriptor XML for the container\n"
-	  " named \"%s\". It must be attached (appended) to the bitstream\n",
-	  m_implName);
-  fprintf(f, "  -->\n");
-  OU::UuidString uuid_string;
-  OU::uuid2string(uuid, uuid_string);
-  fprintf(f, "<artifact platform=\"%s\" device=\"%s\" uuid=\"%s\">\n",
-	  m_config.platform().m_name.c_str(), device, uuid_string);
-  // Define all workers: they come from three places:
-  // 1. The configuration (which includes the platform worker)
-  // 2. The assembly (application workers)
-  // 3. The container
-  size_t index = 0;
-  m_config.emitXmlWorkers(f);
-  m_appAssembly.emitXmlWorkers(f);
-  emitXmlWorkers(f);
-  m_config.emitInstances(f, "p", index);
-  m_appAssembly.emitInstances(f, "a", index);
-  emitInstances(f, "c", index);
-  m_config.emitInternalConnections(f, "p");
-  m_appAssembly.emitInternalConnections(f, "a");
-  // The only internal data connections in a container might be between
-  // an adapter and a device worker or conceivably between two adapters.
-  emitInternalConnections(f, "c");
-  // What is left is data connections that go through the container to the app.
-  // 1. pf config to container (e.g. to an adapter in the container).
-  // 2. pf config to app (e.g. to a dev wkr in the pf config)
-  // 3. container to app (e.g. a dev wkr or adapter in the container)
-  for (ConnectionsIter cci = m_assembly->m_connections.begin();
-       cci != m_assembly->m_connections.end(); cci++) {
-    Connection &cc = **cci;
-    if (cc.m_attachments.front()->m_instPort.m_port->isData()) {
-      InstancePort *ap = NULL, *pp = NULL, *ip = NULL; // instance ports for the app, for pf, for internal
-      for (AttachmentsIter ai = cc.m_attachments.begin(); ai != cc.m_attachments.end(); ai++) {
-	Attachment &a = **ai;
-	(!strcasecmp(a.m_instPort.m_port->m_worker->m_implName, m_appAssembly.m_implName) ? ap :
-	 !strcasecmp(a.m_instPort.m_port->m_worker->m_implName, m_config.m_implName) ? pp : ip)
-	  = &a.m_instPort;
-      }
-      assert(ap || pp || ip);
-      if (!ap && !pp)
-	continue; // internal connection already dealt with
-      // find the corresponding instport inside each side.
-      InstancePort
-	*aap = ap ? m_appAssembly.m_assembly->findInstancePort(ap->m_port->name()) : NULL,
-        *ppp = pp ? m_config.m_assembly->findInstancePort(pp->m_port->name()) : NULL,
-	*producer = (aap && aap->m_port->isDataProducer() ? aap :
-		     ppp && ppp->m_port->isDataProducer() ? ppp : ip),
-	*consumer = (aap && !aap->m_port->isDataProducer() ? aap :
-		     ppp && !ppp->m_port->isDataProducer() ? ppp : ip);
-      // Application is producing to an external consumer
-      fprintf(f, "<connection from=\"%s/%s\" out=\"%s\" to=\"%s/%s\" in=\"%s\"/>\n",
-	      producer == ip ? "c" : producer == aap ? "a" : "p",
-	      producer->m_instance->name, producer->m_port->name(),
-	      consumer == ip ? "c" : consumer == aap ? "a" : "p",
-	      consumer->m_instance->name, consumer->m_port->name());
-    }
-  }
-  fprintf(f, "</artifact>\n");
-  if (fclose(f))
-    return "Could not close output file. No space?";
-  if (wksFile)
-    return emitWorkersHDL(wksFile);
-  return 0;
-}
-#endif
 void HdlContainer::
 mapDevSignals(std::string &assy, const DevInstance &di, bool inContainer) {
   const Signals &devsigs = di.device.deviceType().m_signals;
@@ -761,6 +680,32 @@ mapDevSignals(std::string &assy, const DevInstance &di, bool inContainer) {
 		      boardName.c_str());
       }
     }
+}
+
+const char *HdlContainer::
+emitUuid(const OU::Uuid &uuid) {
+  const char *err;
+  FILE *f;
+  if ((err = openOutput(m_implName, m_outDir, "", "_UUID", VER, NULL, f)))
+    return err;
+  const char *comment = hdlComment(Verilog);
+  printgen(f, comment, m_file.c_str(), true);
+  OCPI::HDL::HdlUUID uuidRegs;
+  memcpy(uuidRegs.uuid, uuid, sizeof(uuidRegs.uuid));
+  uuidRegs.birthday = (uint32_t)time(0);
+  strncpy(uuidRegs.platform, platform, sizeof(uuidRegs.platform));
+  strncpy(uuidRegs.device, device, sizeof(uuidRegs.device));
+  strncpy(uuidRegs.load, load ? load : "", sizeof(uuidRegs.load));
+  assert(sizeof(uuidRegs) * 8 == 512);
+  fprintf(f,
+	  "module mkUUID(uuid);\n"
+	  "output [511 : 0] uuid;\nwire [511 : 0] uuid = 512'h");
+  for (unsigned n = 0; n < sizeof(uuidRegs); n++)
+    fprintf(f, "%02x", ((char*)&uuidRegs)[n]&0xff);
+  fprintf(f, ";\nendmodule // mkUUID\n");
+  if (fclose(f))
+    return "Could not close output file. No space?";
+  return NULL;
 }
 
 const char *Worker::

@@ -47,13 +47,13 @@
 #include <map>
 #include "OcpiUtilMisc.h"
 #include "OcpiLibraryAssembly.h"
-#include "OcpiContainerManager.h"
-#include "OcpiContainerApplication.h"
+#include "ContainerManager.h"
+#include "ContainerApplication.h"
+#include "ContainerLauncher.h"
 #include "OcpiApplicationApi.h"
-#include "OcpiLauncher.h"
 
 namespace OCPI {
-  namespace Application {
+  namespace Container {
     class Launcher;
     class LocalLauncher;
     class RemoteLauncher;
@@ -61,8 +61,6 @@ namespace OCPI {
   namespace API {
 
     class ApplicationI : public OCPI::Container::Callback {
-      friend class OCPI::Application::LocalLauncher;
-      friend class OCPI::Application::RemoteLauncher;
       typedef OCPI::Container::Container::CMap CMap;
       OCPI::Library::Assembly &m_assembly;
 
@@ -81,8 +79,25 @@ namespace OCPI {
 	~Instance();
       } *m_instances;
       // The instance objects for the launcher
-      OCPI::Application::Launcher::Instances m_launchInstances;
-      OCPI::Application::Launcher::Connections m_launchConnections;
+      OCPI::Container::Launcher::Instances m_launchInstances;
+#if 0
+      // State of a connection in the application as it comes into being
+      // For now, only support one-to-one connections
+      struct Connection {
+	OCPI::Util::Assembly::Connection &m_assyConnection;     // reference to xml conn
+	OCPI::Util::Assembly::Port *m_assyInput, *m_assyOutput; // null if external
+	OCPI::Util::Assembly::External *m_external;             // input or output
+	Port *m_input, *m_output;                               // ports or null
+	
+	std::string m_ipi, m_fpi, m_iui, m_fui;
+	// Other status?
+	Connection(OCPI::Util::Assembly::Connection &c);
+      };
+      typedef std::list<Connection> Connections;
+      typedef Connections::iterator ConnectionsIter;
+      Connections m_connections;
+#endif
+      OCPI::Container::Launcher::Connections m_launchConnections;
       struct Booking {
 	OCPI::Library::Artifact *m_artifact;
 	CMap m_usedImpls;         // which fixed implementations in the artifact are in use

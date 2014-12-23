@@ -30,13 +30,16 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "OcpiContainerApi.h"
+
 #include "OcpiOsMisc.h"
 #include "OcpiUtilValue.h"
 #include "OcpiPValue.h"
-#include "OcpiLauncher.h"
 #include "OcpiTimeEmit.h"
 #include "OcpiUtilMisc.h"
+#include "ContainerLauncher.h"
 #include "OcpiApplication.h"
+
 namespace OC = OCPI::Container;
 namespace OU = OCPI::Util;
 namespace OE = OCPI::Util::EzXml;
@@ -350,7 +353,7 @@ namespace OCPI {
 	if (nPropValues) {
 	  // This allocation will include dump-only properties, which won't be put into the
 	  // array by prepareInstanceProperties
-	  OCPI::Application::Launcher::Instance &li = m_launchInstances[n];
+	  OC::Launcher::Instance &li = m_launchInstances[n];
 	  li.m_propValues.resize(nPropValues);
 	  li.m_propOrdinals.resize(nPropValues);
 	  OU::Value *pv = &li.m_propValues[0];
@@ -463,7 +466,6 @@ namespace OCPI {
 
     void ApplicationI::
     init(const PValue * params) {
-      OCPI::Application::g_localLauncher = &OCPI::Application::LocalLauncher::getSingleton();
       // In order from class definition except for instance-related
       m_bookings = new Booking[OC::Manager::s_nContainers];
       m_properties = NULL;
@@ -620,7 +622,7 @@ namespace OCPI {
     void ApplicationI::
     initConnections() {
       m_launchConnections.resize(m_assembly.m_connections.size());
-      OCPI::Application::Launcher::Connection *lc = &m_launchConnections[0];
+      OC::Launcher::Connection *lc = &m_launchConnections[0];
       for (OU::Assembly::ConnectionsIter ci = m_assembly.m_connections.begin();
 	   ci != m_assembly.m_connections.end(); ci++, lc++) {
 	for (OU::Assembly::Connection::PortsIter pi = (*ci).m_ports.begin();
@@ -656,7 +658,7 @@ namespace OCPI {
     }
     void ApplicationI::
     initInstances() {
-      OCPI::Application::Launcher::Instance *i = &m_launchInstances[0];
+      OC::Launcher::Instance *i = &m_launchInstances[0];
       for (unsigned n = 0; n < m_nInstances; n++, i++) {
 	i->m_container = m_containers[m_instances[n].m_container];
 	i->m_containerApp = m_containerApps[m_instances[n].m_container];
@@ -698,14 +700,12 @@ namespace OCPI {
       }
       initInstances();
       initConnections();
-      typedef std::set<OCPI::Application::Launcher *> Launchers;
+      typedef std::set<OC::Launcher *> Launchers;
       typedef Launchers::iterator LaunchersIter;
       Launchers launchers;
       for (unsigned n = 0; n < m_nContainers; n++)
 	if (launchers.insert(&m_containers[n]->launcher()).second)
 	  m_containers[n]->launcher().launch(m_launchInstances, m_launchConnections);
-      if (m_assembly.m_doneInstance != -1)
-	m_doneWorker = m_launchInstances[m_assembly.m_doneInstance].m_worker;
       // Now we have interned our launchers
       bool more;
       do {
@@ -714,7 +714,9 @@ namespace OCPI {
 	  if ((*li)->notDone() && (*li)->work(m_launchInstances, m_launchConnections))
 	    more = true;
       } while (more);
-      OCPI::Application::Launcher::Connection *c = &m_launchConnections[0];
+      if (m_assembly.m_doneInstance != -1)
+	m_doneWorker = m_launchInstances[m_assembly.m_doneInstance].m_worker;
+      OC::Launcher::Connection *c = &m_launchConnections[0];
       for (unsigned n = 0; n < m_launchConnections.size(); n++, c++)
 	if (!c->m_url && (!c->m_instIn || !c->m_instOut))
 	  m_externals.

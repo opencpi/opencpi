@@ -248,7 +248,7 @@ OCPI::OS::Socket::getPortNo ()
 void
 OCPI::OS::Socket::getPeerName (std::string & peerHost,
                               uint16_t & peerPort)
-  throw (std::string)
+  const throw (std::string)
 {
   struct sockaddr_in sin;
   socklen_t len = sizeof (sin);

@@ -28,7 +28,6 @@
 #include <cstring>
 #include <cassert>
 #include "OcpiUtilMisc.h"
-#include "HdlOCCP.h"
 #include "assembly.h"
 #include "hdl.h"
 #include "hdl-platform.h"
@@ -872,33 +871,6 @@ emitInternalConnections(FILE *f, const char *prefix) {
     }
   }
 }
-
-const char *Worker::
-emitUuidHDL(const OU::Uuid &uuid) {
-  const char *err;
-  FILE *f;
-  if ((err = openOutput(m_implName, m_outDir, "", "_UUID", VER, NULL, f)))
-    return err;
-  const char *comment = hdlComment(Verilog);
-  printgen(f, comment, m_file.c_str(), true);
-  OCPI::HDL::HdlUUID uuidRegs;
-  memcpy(uuidRegs.uuid, uuid, sizeof(uuidRegs.uuid));
-  uuidRegs.birthday = (uint32_t)time(0);
-  strncpy(uuidRegs.platform, platform, sizeof(uuidRegs.platform));
-  strncpy(uuidRegs.device, device, sizeof(uuidRegs.device));
-  strncpy(uuidRegs.load, load ? load : "", sizeof(uuidRegs.load));
-  assert(sizeof(uuidRegs) * 8 == 512);
-  fprintf(f,
-	  "module mkUUID(uuid);\n"
-	  "output [511 : 0] uuid;\nwire [511 : 0] uuid = 512'h");
-  for (unsigned n = 0; n < sizeof(uuidRegs); n++)
-    fprintf(f, "%02x", ((char*)&uuidRegs)[n]&0xff);
-  fprintf(f, ";\nendmodule // mkUUID\n");
-  if (fclose(f))
-    return "Could not close output file. No space?";
-  return NULL;
-}
-
 
 const char *InstancePort::
 attach(Attachment *a, size_t index) {

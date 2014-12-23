@@ -115,12 +115,18 @@ namespace OCPI {
         OCPI_DATA_TYPE(sca,corba,letter,bits,EnumValue,Enum,store)
 #undef OCPI_DATA_TYPE
       };
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
+#undef OCPI_DATA_TYPE_S
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store) \
       const char *parse##pretty(const char*cp, const char *end, run &vp);
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
+      static const char *parse##pretty(const char*cp, const char *end, run &vp);
 	OCPI_PROPERTY_DATA_TYPES
-        OCPI_DATA_TYPE(sca,corba,letter,bits,StructValue,Struct,store)
-        OCPI_DATA_TYPE(sca,corba,letter,bits,TypeValue,Type,store)
-        OCPI_DATA_TYPE(sca,corba,letter,bits,EnumValue,Enum,store)
+
+        OCPI_DATA_TYPE_S(sca,corba,letter,bits,StructValue,Struct,store)
+        OCPI_DATA_TYPE_S(sca,corba,letter,bits,TypeValue,Type,store)
+        OCPI_DATA_TYPE_S(sca,corba,letter,bits,EnumValue,Enum,store)
+#undef OCPI_DATA_TYPE_S
+#define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE
       const char *parse(const char *unparsed, const char *stop = NULL, bool add = false);
       const char *allocate(bool add = false);

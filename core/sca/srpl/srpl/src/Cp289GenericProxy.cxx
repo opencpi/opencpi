@@ -41,23 +41,9 @@
  *                  Initial version
  */
 
-#include <new>
-#include <string>
-#include "OcpiOsAssert.h"
-#include "OcpiOsMutex.h"
-#include "OcpiUtilCDR.h"
-#include "OcpiUtilIOP.h"
-#include "OcpiUtilMisc.h"
-#include "OcpiUtilAutoMutex.h"
-#include "OcpiLoggerLogger.h"
-#include "OcpiLoggerNullOutput.h"
-#include "OcpiLoggerDebugLogger.h"
-#include "OcpiContainerInterface.h"
 #include "OcpiStringifyCorbaException.h"
-#include "OcpiCFUtilLegacyErrorNumbers.h"
-#include "CF.h"
-#include "Cp289ProviderPort.h"
-#include "OcpiContainerApplication.h"
+#include "OcpiLoggerDebugLogger.h"
+#include "ContainerWorker.h"
 #include "Cp289GenericProxy.h"
 
 /*

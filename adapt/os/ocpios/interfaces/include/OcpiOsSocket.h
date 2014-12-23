@@ -204,7 +204,7 @@ namespace OCPI {
 
       void getPeerName (std::string & peerHost,
                         uint16_t & peerPort)
-        throw (std::string);
+        const throw (std::string);
 
       /**
        * Configure behavior upon close().

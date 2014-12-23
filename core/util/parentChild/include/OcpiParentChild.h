@@ -56,7 +56,8 @@
 // I wish that 
 #ifndef OCPI_PARENTCHILD_H
 #define OCPI_PARENTCHILD_H
-#include <assert.h>
+#include <cassert>
+#include <cstring>
 #include <string>
 
 #define PCOLD 1

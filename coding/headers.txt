@@ -7,13 +7,15 @@ shoud use "".
 "distant" headers are included first since we don't want to collide
 with anything in headers we don't control.
 
+Our API headers should preceed our other files since they are "distant".
+
 A typical ordering is:
 
 1. C langauge headers if there are any. (from the C standard library) e.g. stdint.h
 2. POSIX C headers (from the POSIX standard)
-3. OS headers (linux-specific etc.) when we use them.
-4. C++ language headers if there are any.
-5. External library dependency headers (if any)
+4. OS headers (linux-specific etc.) when we use them.
+5. C++ language headers if there are any.
+6. External library dependency headers (if any)
 
 The above headers should be in angle brackets since they are not in opencpi.
 
@@ -27,10 +29,11 @@ After the above headers are those from OpenCPI, also in the order of
 "lower" or "more distant" first, enclosed in double quotes, not angle brackets,
 typically ordered:
 
-6. OcpiOS headers (OS abstraction)
-7. OcpiUtil headers (general utilities)
-8. Other layers below the current code
-9. Headers for the current code classes etc.
+7. Our API headers
+8. OcpiOS headers (OS abstraction)
+9. OcpiUtil headers (general utilities)
+10. Other layers below the current code
+11. Headers for the current code classes etc.
 
 Our headers start with typical
 #ifdef UPPERCASEDFILENAME_H
@@ -52,4 +55,22 @@ It is a good idea to periodically prune include files by commenting
 them all out, and then including those that are needed.  If a file
 gets a significant update, do this.  But generally, headers should be
 included for all specifically referenced items and no more.
+
+File Naming:
+
+In general, header files should be camelcase named:
+<namespace-within-OCPI><filename>.h
+
+Where API headers should have a Ocpi prefix, and generally one per
+namespace:
+
+Ocpi<namespace>Api.h
+
+
+Headers should use forward class declarations rather than including other files
+when the classes are in the same namespace and the implementation of the class is
+not required,
+I.e. when a forward declaration is sufficient, use it rather than including the
+header for that class.
+
 

@@ -49,7 +49,9 @@ public:
   const char
     *emitAttribute(const char *attr),
     //    *emitArtXML(const char *wksFile),
-    *emitContainer(FILE *f);
+    *emitContainer(FILE *f),
+    *emitUuid(const OU::Uuid &uuid);
+
   void 
     emitXmlWorkers(FILE *f),
     emitXmlInstances(FILE *f),

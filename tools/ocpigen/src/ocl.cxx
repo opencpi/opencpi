@@ -322,38 +322,6 @@ emitSkelOCL() {
     return "Error closing file for writing.  No space?";
   return emitEntryPointOCL();
 }
-/*
-  FIXME
-  1. Add local memory to metadata.
-*/
-const char *
-emitArtOCL(Worker *aw) {
-  const char *err;
-  FILE *f;
-  if ((err = openOutput(aw->m_implName, aw->m_outDir, "", "_art", ".xml", NULL, f)))
-    return err;
-  fprintf(f, "<!--\n");
-  printgen(f, "", aw->m_file.c_str());
-  fprintf(f,
-	  " This file contains the artifact descriptor XML for the application assembly\n"
-	  " named \"%s\". It must be attached (appended) to the shared object file\n",
-	  aw->m_implName);
-  fprintf(f, "  -->\n");
-  // This assumes native compilation of course
-  fprintf(f,
-	  "<artifact os=\"%s\" osVersion=\"%s\" platform=\"%s\" "
-	  "runtime=\"%s\" runtimeVersion=\"%s\" "
-	  "tool=\"%s\" toolVersion=\"%s\">\n",
-	  OCPI_CPP_STRINGIFY(OCPI_OS) + strlen("OCPI"),
-	  OCPI_CPP_STRINGIFY(OCPI_OS_VERSION),
-	  OCPI_CPP_STRINGIFY(OCPI_PLATFORM),
-	  "", "", "", "");
-  aw->emitXmlWorkers(f);
-  fprintf(f, "</artifact>\n");
-  if (fclose(f))
-    return "Could close output file. No space?";
-  return 0;
-}
 
 const char *Worker::
 emitEntryPointOCL() {

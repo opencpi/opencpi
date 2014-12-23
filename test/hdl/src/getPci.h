@@ -33,7 +33,7 @@
  */
 #include <limits.h>
 #include <stdio.h>
-#include "PciDriver.h"
+#include "HdlPciDriver.h"
 
 #ifndef __cplusplus
 typedef int bool;

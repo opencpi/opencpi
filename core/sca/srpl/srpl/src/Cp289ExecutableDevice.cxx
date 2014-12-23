@@ -41,31 +41,9 @@
  *                  Initial version, starting from old parts
  */
 
-#include <new>
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <cstring>
-#include <cstdlib>
-#include <ctime>
-#include <OcpiOsMisc.h>
-#include <OcpiOsAssert.h>
-#include <OcpiLoggerLogger.h>
-#include <OcpiLoggerDebugLogger.h>
-#include <OcpiUtilMisc.h>
-#include <OcpiUtilAutoMutex.h>
-#include "OcpiContainerInterface.h"
-#include "OcpiPValue.h"
-#include "OcpiContainerApplication.h"
-#include "OcpiContainerMisc.h"
-#include <OcpiCFUtilMisc.h>
-#include <OcpiCFUtilDeviceBase.h>
-#include <OcpiCFUtilLegacyErrorNumbers.h>
-#include <OcpiStringifyCorbaException.h>
-#include <Cp289GenericProxy.h>
-#include <CF_s.h>
+#include "OcpiCFUtilMisc.h"
+#include "OcpiLoggerDebugLogger.h"
 #include "Cp289ExecutableDevice.h"
-
 
 namespace OA = OCPI::API;
 namespace OU = OCPI::Util;
@@ -195,7 +173,7 @@ namespace OCPI {
 									   ocpiDeviceUnit.c_str(),
 									   cprops));
         if (!container)
-          throw CC::ApiError("Couldn't find or create container of type \"",
+          throw OU::ApiError("Couldn't find or create container of type \"",
                              ocpiDeviceType.c_str(), "\" with name \"", aIdentifier.c_str(), "\"", NULL);
 
         try { // catch errors to release container. Note it will take everything else down
@@ -539,7 +517,7 @@ namespace OCPI {
         // Application is torn down.
         // FIXME:  we might tear down the app when Nworkers goes to 0 from non-zero...
         m_container->loadArtifact(fileName, 0);
-      } catch (CC::ApiError &e) {
+      } catch (OU::ApiError &e) {
         std::string msg;
         msg  = "Can not load file \"";
         msg += fileName;

@@ -72,6 +72,20 @@ namespace {
 int OCPI::OS::ServerSocket::fd() throw() {
   return o2fd(m_osOpaque);
 }
+
+void OCPI::OS::ServerSocket::getAddr(Ether::Address &addr) {
+  int fd = o2fd(m_osOpaque);
+  ocpiAssert (fd >= 0);
+
+  struct sockaddr_in sin;
+  socklen_t len = sizeof(sin);
+  if (getsockname(fd, (struct sockaddr *)&sin, &len))
+    throw OCPI::OS::Posix::getErrorMessage (errno, "getsockname");
+  ocpiAssert(sin.sin_family == AF_INET);
+  addr.set(ntohs(sin.sin_port), ntohl(sin.sin_addr.s_addr));
+}
+
+
 OCPI::OS::ServerSocket::ServerSocket ()
   throw ()
 {

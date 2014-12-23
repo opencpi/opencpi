@@ -58,10 +58,10 @@
 
 #include <set>
 #include <string>
-#include <CF.h>
-#include <CF_s.h>
-#include <OcpiOsMutex.h>
-#include <OcpiLoggerLogger.h>
+#include "CF.h"
+#include "CF_s.h"
+#include "OcpiOsMutex.h"
+#include "OcpiLoggerLogger.h"
 #include "OcpiUtilWorker.h"
 
 namespace OCPI {

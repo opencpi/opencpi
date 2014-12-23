@@ -110,7 +110,10 @@ $(call RccAssemblyFile,$1,$2): | $(call WkrTargetDir,$1,$2)
 	  echo "</RccAssembly>") > $$@
 
 # Different since it is in the targetdir
-$(call ArtifactXmlFile,$1,$2): $(call RccAssemblyFile,$1,$2)
+# note the dependency on the object files so that there will be a new UUID
+# whenever the object files are changed.
+# FIXME: it is theoretically better to generate the XML as part of the final link phase.
+$(call ArtifactXmlFile,$1,$2): $(call RccAssemblyFile,$1,$2) $$(ObjectFiles_$1_$2)
 	@echo Generating artifact/runtime xml file $$@ for all workers in one binary
 	$(AT)$(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(call WkrTargetDir,$1,$2)/$$(@F).deps \
 	     -O $(call RccOs,$1) \

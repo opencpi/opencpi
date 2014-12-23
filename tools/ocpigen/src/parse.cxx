@@ -1005,13 +1005,18 @@ Clock()
   : port(NULL), assembly(false), ordinal(0) {
 }
 
+const char *Worker::
+emitUuid(const OU::Uuid &) {
+  return NULL;
+}
+
 // Emit the artifact XML.
 const char *Worker::
 emitArtXML(const char *wksFile) {
   const char *err;
   OU::Uuid uuid;
   OU::generateUuid(uuid);
-  if ((err = emitUuidHDL(uuid)))
+  if ((err = emitUuid(uuid)))
     return err;
   FILE *f;
   if ((err = openOutput(m_implName, m_outDir, "", "-art", ".xml", NULL, f)))
@@ -1026,7 +1031,7 @@ emitArtXML(const char *wksFile) {
   OU::UuidString uuid_string;
   OU::uuid2string(uuid, uuid_string);
   fprintf(f,
-	  "<artifact uuid=\"%s\" ", uuid_string);
+	  "<artifact uuid=\"%s\"", uuid_string);
   if (os)         fprintf(f, " os=\"%s\"",        os);
   if (os_version) fprintf(f, " osVersion=\"%s\"", os_version);
   if (platform)   fprintf(f, " platform=\"%s\"",  platform);
