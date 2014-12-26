@@ -66,7 +66,7 @@ namespace OCPI {
 	: name(0), type(OCPI_none), owned(false) {}
       unsigned length() const;
       const std::string &unparse(std::string &value, bool append = false) const;
-      const char *name;
+      const char *name; // NULL name is end of list
       BaseType type;
       bool owned;
       // Anonymous union here for convenience even though redundant with ValueType.

@@ -17,12 +17,10 @@ namespace OU =  OCPI::Util;
   CMD_OPTION(directory,  D,    String, "artifacts", "The directory used to capture artifact/executable files") \
   CMD_OPTION(verbose,    v,    Bool,   "false", "Provide verbose output during operation") \
   CMD_OPTION(loglevel,   l,    UChar,  "0",     "The logging level to be used during operation") \
-  CMD_OPTION(processors, n,    UChar,  "1",     "The number of software (rcc) containers to create") \
-  CMD_OPTION(containers, C,    Bool,   "false", "List containers")  \
-  CMD_OPTION(serve,      s,    Bool,   "false", "Serve containers") \
+  CMD_OPTION(processors, n,    UShort,  "1",     "The number of software (rcc) containers to create") \
   CMD_OPTION(remove,     r,    Bool,   "false", "Remove artifacts") \
   CMD_OPTION(port,       p,    UShort, 0, "Explicit TCP port for server") \
-  CMD_OPTION(discoverable, d,  Bool,   "true", "Make server discoverable") \
+  CMD_OPTION(discoverable, d,  Bool,   "true", "Don't make server discoverable.") \
 
 // Others: socket number to use, whether to be discoverable, whether to be loopback/local only?
 
@@ -72,17 +70,6 @@ static int mymain(const char **) {
     std::string name;
     OU::formatString(name, "rcc%d", n);
     OA::ContainerManager::find("rcc", name.c_str());
-  }
-  if (options.containers()) {
-    OA::Container *ac;
-    for (unsigned n = 0; (ac = OA::ContainerManager::get(n)); n++) {
-      OC::Container &c = *static_cast<OC::Container *>(ac);
-      fprintf(stderr,
-	      "Container: \"%s\", model \"%s\", os \"%s\", version \"%s\", platform \"%s\"\n",
-	      c.name().c_str(), c.model().c_str(), c.os().c_str(), c.osVersion().c_str(),
-	      c.platform().c_str());
-    }
-    return 0;
   }
   // Catch signals in order to delete the artifact cache
   if (options.remove()) {

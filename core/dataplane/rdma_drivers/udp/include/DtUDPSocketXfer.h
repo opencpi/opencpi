@@ -250,7 +250,7 @@ namespace DataTransfer {
       uint32_t        m_nAcksTx;
       uint32_t        m_nAcksRx;
       std::vector<ACKTxData>   m_acks;
-      OCPI::OS::Socket * m_socket;
+      OCPI::OS::ServerSocket * m_socket;
       TxTemplate      *m_txTemplate;
       uint32_t        m_id;
       sockaddr_in     m_adr;

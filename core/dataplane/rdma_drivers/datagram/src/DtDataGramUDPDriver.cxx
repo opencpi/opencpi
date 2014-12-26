@@ -138,7 +138,7 @@ namespace DataTransfer {
       void start() {
 	DatagramEndPoint *sep = (DatagramEndPoint*)m_lsmem->endpoint();
 	try {
-	  m_socket = m_server.bind(sep->getId(),false,true);
+	  m_server.bind(sep->getId(), false, true);
 	}
 	catch( std::string & err ) {
 	  m_error=true;
@@ -152,7 +152,6 @@ namespace DataTransfer {
 	  return;
 	}
 	sep->updatePortNum(m_server.getPortNo());
-	m_socket.linger(false); // we want to give some time for data to the client FIXME timeout param?
 	OCPI::Util::Thread::start();
       }
 
@@ -163,13 +162,13 @@ namespace DataTransfer {
 	// We are depending on structure compatibility
 	m_msghdr.msg_iov = (struct iovec *)frame.iov;
 	m_msghdr.msg_iovlen = frame.iovlen;
-	m_socket.sendmsg(&m_msghdr, 0);
+	m_server.sendmsg(&m_msghdr, 0);
       }
       size_t
       receive(uint8_t *buffer, size_t &offset) {
 	struct sockaddr sad;
 	size_t size = sizeof(struct sockaddr);
-	size_t n = m_socket.recvfrom((char*)buffer, DATAGRAM_PAYLOAD_SIZE, 0, (char*)&sad, &size, 200);
+	size_t n = m_server.recvfrom((char*)buffer, DATAGRAM_PAYLOAD_SIZE, 0, (char*)&sad, &size, 200);
 	offset = 0;
 #ifdef DEBUG_TxRx_Datagram
 	// All DEBUG
@@ -177,14 +176,13 @@ namespace DataTransfer {
 	  int port = ntohs ( ((struct sockaddr_in *)&sad)->sin_port );
 	  char * a  = inet_ntoa ( ((struct sockaddr_in *)&sad)->sin_addr );
 	  ocpiDebug(" Recved %lld bytes of data on port %lld from addr %s port %d\n",
-		    (long long)n , (long long)m_socket.getPortNo(), a, port);
+		    (long long)n , (long long)m_server.getPortNo(), a, port);
 	}
 #endif
 	return n;
       }
     private:
       struct msghdr                 m_msghdr;
-      OCPI::OS::Socket              m_socket;
       OCPI::OS::ServerSocket        m_server;
     };
 

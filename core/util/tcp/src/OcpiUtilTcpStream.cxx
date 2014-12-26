@@ -280,7 +280,7 @@ OCPI::Util::Tcp::Stream::dup (bool shutdownWhenClosed,
   if (!m_mode) {
     throw std::string ("not connected");
   }
-  OCPI::OS::Socket duped = m_buf.getSocket().dup();
+  OCPI::OS::Socket duped = m_buf.getSocket(); // assignment dups the socket
   OCPI::Util::Tcp::Stream * newStream =
     new OCPI::Util::Tcp::Stream (duped, m_mode);
   newStream->m_shutdownWhenClosed = shutdownWhenClosed;

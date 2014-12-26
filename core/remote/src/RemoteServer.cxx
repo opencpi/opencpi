@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <cerrno>
 #include "OcpiOsFileSystem.h"
+#include "OcpiOsEther.h"
 #include "Container.h"
 #include "ContainerManager.h"
 #include "ContainerLauncher.h"
@@ -14,13 +15,20 @@ namespace OX = OCPI::Util::EzXml;
 namespace OC = OCPI::Container;
 namespace OL = OCPI::Library;
 namespace OU = OCPI::Util;
+namespace OE = OCPI::OS::Ether;
+namespace OA = OCPI::API;
 namespace OCPI {
   namespace Remote {
 
     Server::
     Server(OL::Library &l, OS::ServerSocket &svrSock, std::string &/*error*/)
-      : m_library(l), m_socket(svrSock.accept()), m_downloading(false), m_downloaded(false),
-	m_rx(NULL), m_lx(NULL), m_local(NULL) {
+      : m_library(l), m_downloading(false), m_downloaded(false), m_rx(NULL), m_lx(NULL),
+	m_local(NULL) {
+      svrSock.accept(m_socket);
+      std::string host;
+      uint16_t port;
+      m_socket.getPeerName(host, port);
+      OU::format(m_client, "%s:%u", host.c_str(), port);
     }
     Server::
     ~Server() {
@@ -45,6 +53,8 @@ namespace OCPI {
 	return update(error);
       else if (!strcasecmp(tag, "control"))
 	return control(error);
+      else if (!strcasecmp(tag, "discover"))
+	return discover(error);
       return OU::eformat(error, "bad request tag: \"%s\"", tag);
     }
     const char *Server::
@@ -120,6 +130,35 @@ namespace OCPI {
 	  utime(fileName.c_str(), &times);
 	  // double check uuid.  setmtime?
 	}
+      return false;
+    }
+
+    bool Server::
+    doConnection(ezxml_t cx, OC::Launcher::Connection &c, std::string &error) {
+      bool in, out;
+      size_t instIn, instOut;
+      if ((c.m_nameIn = ezxml_cattr(cx, "nameIn")))
+	c.m_launchIn = m_local;
+      if ((c.m_nameOut = ezxml_cattr(cx, "nameOut")))
+	c.m_launchOut = m_local;
+      c.m_url = ezxml_cattr(cx, "url");
+      const char *err;
+      if ((err = OX::getNumber(cx, "instIn", &instIn, &in)) ||
+	  (err = OX::getNumber(cx, "instOut", &instOut, &out)))
+	return OU::eformat(error, "Error processing connection values for launch: %s", err);
+      if (in) {
+	assert(instIn < m_instances.size());
+	c.m_instIn = &m_instances[instIn];
+      }
+      if (out) {
+	assert(instOut < m_instances.size());
+	c.m_instOut = &m_instances[instOut];
+      }
+      ezxml_t px;
+      if ((px = ezxml_cchild(cx, "paramsin")))
+	c.m_paramsIn.addXml(px);
+      if ((px = ezxml_cchild(cx, "paramsout")))
+	c.m_paramsOut.addXml(px);
       return false;
     }
 
@@ -200,27 +239,9 @@ namespace OCPI {
       }
       m_connections.resize(OX::countChildren(m_lx, "connection"));
       OC::Launcher::Connection *c = &m_connections[0];
-      for (ezxml_t cx = ezxml_cchild(m_lx, "connection"); cx; cx = ezxml_next(cx), c++) {
-	bool in, out;
-	size_t instIn, instOut;
-	if ((c->m_nameIn = ezxml_cattr(cx, "nameIn")))
-	  c->m_launchIn = m_local;
-	if ((c->m_nameOut = ezxml_cattr(cx, "nameOut")))
-	  c->m_launchOut = m_local;
-	c->m_url = ezxml_cattr(cx, "url");
-	const char *err;
-	if ((err = OX::getNumber(cx, "instIn", &instIn, &in)) ||
-	    (err = OX::getNumber(cx, "instOut", &instOut, &out)))
-	  return OU::eformat(error, "Error processing connection values for launch: %s", err);
-	if (in) {
-	  assert(instIn < m_instances.size());
-	  c->m_instIn = &m_instances[instIn];
-	}
-	if (out) {
-	  assert(instOut < m_instances.size());
-	  c->m_instOut = &m_instances[instOut];
-	}
-      }
+      for (ezxml_t cx = ezxml_cchild(m_lx, "connection"); cx; cx = ezxml_next(cx), c++)
+	if (doConnection(cx, *c, error))
+	  return true;
       m_response
 	 = m_local->launch(m_instances, m_connections) ? "<launching>" : "<launching done='1'>";
       // We know that the only thing that can happen at launch time is to
@@ -321,19 +342,20 @@ namespace OCPI {
 	    c->m_fui.clear();
 	  }
 	}
-      return false;
+      return Launcher::sendXml(fd(), m_response, "responding from server", error);
     }
     bool Server::
     control(std::string &error) {
       const char *err;
       size_t inst, n;
-      bool get, set, op;
+      bool get, set, op, wait;
       
       bool hex;
-      if ((err = OX::getNumber(m_rx, "id",  &inst, NULL, 0, false, true)) ||
-	  (err = OX::getNumber(m_rx, "get", &n,    &get, 0, false)) ||
-	  (err = OX::getNumber(m_rx, "set", &n,    &set, 0, false)) ||
-	  (err = OX::getNumber(m_rx, "op",  &n,    &op,  0, false)) ||
+      if ((err = OX::getNumber(m_rx, "id",   &inst, NULL, 0, false, true)) ||
+	  (err = OX::getNumber(m_rx, "get",  &n,    &get, 0, false)) ||
+	  (err = OX::getNumber(m_rx, "set",  &n,    &set, 0, false)) ||
+	  (err = OX::getNumber(m_rx, "op",   &n,    &op,  0, false)) ||
+	  (err = OX::getNumber(m_rx, "wait", &n,    &wait,  0, false)) ||
 	  (err = OX::getBoolean(m_rx, "hex", &hex)) ||
 	  inst >= m_instances.size() || !m_instances[inst].m_worker ||
 	  (get || set) && n >= m_instances[inst].m_worker->m_nProperties)
@@ -350,6 +372,13 @@ namespace OCPI {
 	    w.setPropertyValue(p, m_response);
 	} else if (op)
 	  w.controlOp((OU::Worker::ControlOperation)n);
+	else if (wait)
+	  if (n) {
+	    OS::Timer t(OCPI_UTRUNCATE(uint32_t, n), 0);
+	    if (w.wait(&t))
+	      m_response = "<control timeout='1'>";
+	  } else
+	    w.wait();
 	else
 	  throw OU::Error("Illegal remote control operation");
       } catch (const std::string &e) {
@@ -360,6 +389,36 @@ namespace OCPI {
 	return true;
       }
       return Launcher::sendXml(fd(), m_response, "responding from server", error);
+    }
+    bool Server::
+    discover(std::string &error) {
+      // Use a buffer the same size as a datagram payload.
+      size_t length = OE::MaxPacketSize;
+      char buf[OE::MaxPacketSize];
+      if (fillDiscoveryInfo(buf, length, error))
+	return true;
+      OU::format(m_response, "<discovery>\n%s", buf);
+      return Launcher::sendXml(fd(), m_response, "responding with discovery from server",
+			       error);
+    }
+    bool Server::
+    fillDiscoveryInfo(char *cp, size_t &length, std::string &error) {
+      OA::Container *ac;
+      *cp = '\0'; // in case there are NO containers
+      for (unsigned n = 0; (ac = OA::ContainerManager::get(n)); n++) {
+	OC::Container &c = *static_cast<OC::Container *>(ac);
+	size_t inserted =
+	  snprintf(cp, length, "%s|%s|%s|%s|%s\n", c.name().c_str(), c.model().c_str(),
+		   c.os().c_str(), c.osVersion().c_str(), c.platform().c_str());
+	if (inserted >= length) {
+	  OU::format(error, "Too many containers, discovery buffer would overflow");
+	  return true;
+	}
+	cp += inserted;
+	length -= inserted;
+      }
+      length--; // account for the null char of the last line
+      return false;
     }
   }
 }

@@ -526,19 +526,18 @@ createInputPort(OCPI::RDT::Descriptors& desc, const OU::PValue *params )
   Circuit *circuit = 0;
   // First, process params to establish the right endpoint
   DT::EndPoint *ep;
-  const char *endpoint = NULL, *protocol = NULL;
+  const char *endpoint = NULL, *transport = NULL;
   if (OU::findString(params, "endpoint", endpoint))
-    ep = &getLocalEndpoint(endpoint); // caller is specific, potentiall specifying QoS etc.
+    ep = &getLocalEndpoint(endpoint); // caller is specific, potentially specifying QoS etc.
   else {
-    if (!OU::findString(params, "protocol", protocol) &&
-	!OU::findString(params, "transport", protocol) &&
-	!OU::findString(params, "remote", protocol) &&
-	(protocol = getenv("OCPI_DEFAULT_PROTOCOL")))
-      ocpiDebug("Forcing protocol = %s because OCPI_DEFAULT_PROTOCOL set in environment", protocol);
-    ep = &getLocalCompatibleEndpoint(protocol);
+    if (!OU::findString(params, "protocol", transport) &&
+	!OU::findString(params, "transport", transport) &&
+	(transport = getenv("OCPI_DEFAULT_TRANSPORT")))
+      ocpiDebug("Forcing protocol = %s because OCPI_DEFAULT_TRANSPORT set in environment",
+		transport);
+    ep = &getLocalCompatibleEndpoint(transport);
   }
   fillDescriptorFromEndPoint(*ep, desc);
-  //  strcpy(desc.desc.oob.oep, ep->end_point.c_str());
   
   int ord=-1;
   Port * port=NULL;  

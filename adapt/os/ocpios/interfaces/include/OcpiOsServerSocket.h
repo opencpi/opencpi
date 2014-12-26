@@ -133,7 +133,7 @@ namespace OCPI {
        * an active process.
        */
 
-      OCPI::OS::Socket 
+      void
       bind (uint16_t portNo = 0, bool reuse = false, bool udp = false)
         throw (std::string);
 
@@ -165,7 +165,7 @@ namespace OCPI {
        * \pre The server socket is bound.
        */
 
-      OCPI::OS::Socket accept ()
+      void accept (OCPI::OS::Socket &sock)
         throw (std::string);
 
       /**
@@ -205,10 +205,16 @@ namespace OCPI {
 
       int fd()
 	throw();
+      size_t sendmsg (const void * iovect, unsigned int flags ) throw (std::string);
+      size_t sendto (const char * data, size_t amount, int flags,  char * src_addr,
+		     size_t addrlen) throw (std::string);
+      size_t recvfrom(char  *buf, size_t amount, int flags, char *  src_addr,
+		      size_t *addrlen, unsigned timeoutms = 0) throw (std::string);
     protected:
       OCPI::OS::uint64_t m_osOpaque[1];
 
     private:
+      unsigned m_timeoutms;
       /**
        * Not implemented.
        */

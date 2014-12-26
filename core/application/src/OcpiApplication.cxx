@@ -45,6 +45,7 @@ namespace OU = OCPI::Util;
 namespace OE = OCPI::Util::EzXml;
 namespace OL = OCPI::Library;
 namespace OA = OCPI::API;
+namespace OT = DataTransport;
 namespace OCPI {
   namespace API {
     ApplicationI::ApplicationI(Application &app, const char *file, const PValue *params)
@@ -633,13 +634,13 @@ namespace OCPI {
 	    assert(!lc->m_instIn);
 	    lc->m_instIn = &m_launchInstances[pi->m_instance];
 	    lc->m_nameIn = pi->m_name.c_str();
-	    lc->m_paramsIn = pi->m_parameters;
+	    lc->m_paramsIn.add((*ci).m_parameters, pi->m_parameters);
 	    lc->m_launchIn = &lc->m_instIn->m_container->launcher();
 	  } else {
 	    assert(!lc->m_instOut);
 	    lc->m_instOut = &m_launchInstances[pi->m_instance];
 	    lc->m_nameOut = pi->m_name.c_str();
-	    lc->m_paramsOut = pi->m_parameters;
+	    lc->m_paramsOut.add((*ci).m_parameters, pi->m_parameters);
 	    lc->m_launchOut = &lc->m_instOut->m_container->launcher();
 	  }
 	}
@@ -711,7 +712,8 @@ namespace OCPI {
       do {
 	more = false;
 	for (LaunchersIter li = launchers.begin(); li != launchers.end(); li++)
-	  if ((*li)->notDone() && (*li)->work(m_launchInstances, m_launchConnections))
+	  if (//(*li)->notDone() &&
+	      (*li)->work(m_launchInstances, m_launchConnections))
 	    more = true;
       } while (more);
       if (m_assembly.m_doneInstance != -1)

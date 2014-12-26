@@ -338,6 +338,8 @@ namespace OCPI {
 	eformat(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
       // Return an error string (caller can throw if desired)
       const char
+	*parseList(const char *list, const char * (*doit)(const char *tok, void *arg),
+		   void *arg = NULL),
 	*file2String(std::string &out, const char *file, char replaceNewline = 0),
 	*string2File(const std::string &in, const char *file),
 	*evsprintf(const char *fmt, va_list ap),

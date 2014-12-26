@@ -140,12 +140,12 @@ namespace DataTransfer {
   class ServerUDPSocketHandler : public Thread
   {
   public:
-    ServerUDPSocketHandler( OCPI::OS::Socket & socket, UDPSocketStartupParams & sp  )
-      : m_run(true), m_startupParms(sp), m_socket(socket) {}
+    ServerUDPSocketHandler( OCPI::OS::ServerSocket & socket, UDPSocketStartupParams & sp  )
+      : m_run(true), m_startupParms(sp), m_server(socket) {}
 
     virtual ~ServerUDPSocketHandler()
     {
-      m_socket.close();
+      m_server.close();
       ocpiDebug("In ~ServerUDPSocketHandler()");
     }
 
@@ -161,7 +161,7 @@ namespace DataTransfer {
 	  char   buf[RX_BUFFER_SIZE];
 	  struct sockaddr sad;
 	  size_t size = sizeof( struct sockaddr);
-	  size_t n = m_socket.recvfrom( buf,RX_BUFFER_SIZE, 0, (char*)&sad, &size);
+	  size_t n = m_server.recvfrom( buf,RX_BUFFER_SIZE, 0, (char*)&sad, &size);
 	  if ( n == 0 ) {
 	    ocpiInfo("Got a socket EOF, terminating connection");
 	    break;
@@ -231,7 +231,7 @@ namespace DataTransfer {
 
 	      // Send back the ACK now
 	      header->type = DataTransfer::UDPSocketXferRequest::UDPSocketDataHeader::Ack;
-	      m_socket.sendto( (const char*)header, sizeof(UDPSocketXferRequest::UDPSocketDataHeader), 0, (char*)&sad, size );
+	      m_server.sendto( (const char*)header, sizeof(UDPSocketXferRequest::UDPSocketDataHeader), 0, (char*)&sad, size );
 	    }
 	    break;
 
@@ -249,7 +249,7 @@ namespace DataTransfer {
       } catch (...) {
 	ocpiBad("Unknown exception in socket background thread");
       }
-      m_socket.close();
+      m_server.close();
 
 
     }
@@ -259,7 +259,7 @@ namespace DataTransfer {
   private:
     bool   m_run;
     UDPSocketStartupParams   m_startupParms;
-    OCPI::OS::Socket & m_socket;
+    OCPI::OS::ServerSocket & m_server;
   };
 
 
@@ -269,14 +269,14 @@ namespace DataTransfer {
     UDPSocketServerT( UDPSocketStartupParams& sp )
       :m_startupParms(sp),m_stop(false),m_started(false),m_error(false){}
     ~UDPSocketServerT(){}
-    OCPI::OS::Socket m_socket;
-    OCPI::OS::Socket & socket() {return  m_socket;}    
+    //    OCPI::OS::Socket m_socket;
+    OCPI::OS::ServerSocket & socket() { return m_server;}    
 
     void run() {
       UDPEndPoint *sep = static_cast<UDPEndPoint*>(m_startupParms.lsmem->endpoint());
    
       try {
-	m_socket = m_server.bind(sep->portNum,false,true);
+	m_server.bind(sep->portNum, false, true);
       }
       catch( std::string & err ) {
 	m_error=true;
@@ -297,12 +297,7 @@ namespace DataTransfer {
 						sep->maxCount);
       }
       m_started = true;
-
-
-
-      //	  m_socket = m_server.accept();
-      m_socket.linger(true); // we want to give some time for data to the client FIXME timeout param?
-      ServerUDPSocketHandler * ssh = new ServerUDPSocketHandler(m_socket ,m_startupParms);
+      ServerUDPSocketHandler * ssh = new ServerUDPSocketHandler(m_server, m_startupParms);
       m_sockets.push_back( ssh );
       ssh->start();
 

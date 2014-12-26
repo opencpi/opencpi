@@ -41,8 +41,8 @@ namespace OCPI {
     namespace OA = OCPI::API;
     namespace OE = OCPI::Util::EzXml;
 
-    Assembly::Assembly(const char *file, const char **extraTopAttrs, const char **extraInstAttrs,
-		       const PValue *params)
+    Assembly::Assembly(const char *file, const char **extraTopAttrs,
+		       const char **extraInstAttrs, const PValue *params)
       : m_copy(NULL), m_xmlOnly(false), m_isImpl(false) {
       const char *cp = file;
       while (isspace(*cp))
@@ -58,8 +58,8 @@ namespace OCPI {
       if (err || (err = parse(NULL, extraTopAttrs, extraInstAttrs, params)))
 	throw Error("%s", err);
     }
-    Assembly::Assembly(const std::string &string, const char **extraTopAttrs, const char **extraInstAttrs,
-		       const PValue *params)
+    Assembly::Assembly(const std::string &string, const char **extraTopAttrs,
+		       const char **extraInstAttrs, const PValue *params)
       : m_xmlOnly(false), m_isImpl(false) {
       m_copy = new char[string.size() + 1];
       strcpy(m_copy, string.c_str());
@@ -68,8 +68,8 @@ namespace OCPI {
 	throw Error("%s", err);
     }
     // FIXME:  we infer that this is an impl assy from this constructor.  Make it explicit?
-    Assembly::Assembly(const ezxml_t top, const char *defaultName,
-		       const char **extraTopAttrs, const char **extraInstAttrs, const PValue *params)
+    Assembly::Assembly(const ezxml_t top, const char *defaultName, const char **extraTopAttrs,
+		       const char **extraInstAttrs, const PValue *params)
       : m_xml(top), m_copy(NULL), m_xmlOnly(true), m_isImpl(true) {
       const char *err = parse(defaultName, extraTopAttrs, extraInstAttrs, params);
       if (err)
@@ -96,7 +96,8 @@ namespace OCPI {
       bool maxProcs = false, minProcs = false, roundRobin = false;
       // FIXME: move app-specific parsing up into library assy
       if ((err = OE::checkAttrsVV(ax, baseAttrs, extraTopAttrs, NULL)) ||
-	  (err = OE::checkElements(ax, "instance", "connection", "policy", "property", "external", NULL)) ||
+	  (err = OE::checkElements(ax, "instance", "connection", "policy", "property",
+				   "external", NULL)) ||
 	  (err = OE::getNumber(ax, "maxprocessors", &m_processors, &maxProcs)) ||
 	  (err = OE::getNumber(ax, "minprocessors", &m_processors, &minProcs)) ||
 	  (err = OE::getBoolean(ax, "roundrobin", &roundRobin)))
@@ -166,10 +167,11 @@ namespace OCPI {
 	  return err;
       i = &m_instances[0];
       for (ezxml_t ix = ezxml_cchild(ax, "Instance"); ix; ix = ezxml_next(ix), i++)
-	if ((err = i->parseConnection(ix, *this)))
+	if ((err = i->parseConnection(ix, *this, params)))
 	  return err;
       // Check instance parameters that don't name instances properly
       if ((err = checkInstanceParams("selection", params)) ||
+	  (err = checkInstanceParams("transport", params)) ||
 	  (err = checkInstanceParams("worker", params)) ||
 	  (err = checkInstanceParams("property", params, true)))
 	return err;
@@ -223,7 +225,8 @@ namespace OCPI {
       return NULL;
     }
     const char *Assembly::
-    addPortConnection(unsigned from, const char *fromPort, unsigned to, const char *toPort) {
+    addPortConnection(unsigned from, const char *fromPort, unsigned to, const char *toPort,
+		      const char *transport) {
       std::string name = m_instances[from].m_name + "." + (fromPort ? fromPort : "output");
       Connection *c;
       const char *err = addConnection(name.c_str(), c);
@@ -233,6 +236,8 @@ namespace OCPI {
 	toP.m_connectedPort = &fromP;
 	fromP.m_connectedPort = &toP;
       }
+      if (transport)
+	c->m_parameters.add("transport", transport);
       return err;
     }
     // This is called to create an external connection either from the very short shortcut
@@ -335,14 +340,21 @@ namespace OCPI {
     // connect, then optionally, which local port (from) and which dest port (to).
     // external=port, connect=instance, then to or from?
     const char *Assembly::Instance::
-    parseConnection(ezxml_t ix, Assembly &a) {
+    parseConnection(ezxml_t ix, Assembly &a, const PValue *params) {
       const char *err, *c, *e, *s;
       unsigned n;
-      if ((c = ezxml_cattr(ix, "connect")) &&
-	  ((err = a.getInstance(c, n)) ||
-	   (err = a.addPortConnection(m_ordinal, ezxml_cattr(ix, "from"), n,
-				      ezxml_cattr(ix, "to")))))
-	return err;
+      if ((c = ezxml_cattr(ix, "connect"))) {
+	const char *transport;
+	if (!findAssign(params, "transport", m_name.c_str(), transport))
+	  transport = ezxml_cattr(ix, "transport");
+	if ((err = a.getInstance(c, n)) ||
+	    (err = a.addPortConnection(m_ordinal, ezxml_cattr(ix, "from"), n,
+				       ezxml_cattr(ix, "to"), transport)))
+	  return err;
+      } else if (ezxml_cattr(ix, "transport"))
+	return esprintf("Instance %s has transport attribute without connect attribute",
+			m_name.c_str());
+
       if ((e = ezxml_cattr(ix, "external")) &&
 	  (err = a.addExternalConnection(m_ordinal, e)))
 	return err;
@@ -426,9 +438,9 @@ namespace OCPI {
       m_hasSlave = false;
       m_hasMaster = false;
       const char *err;
-      static const char *instAttrs[] = { "component", "Worker", "Name", "connect", "to", "from",
-					 "external", "selection", "index", "externals", "slave",
-					 NULL};
+      static const char *instAttrs[] =
+	{ "component", "Worker", "Name", "connect", "to", "from", "external", "selection",
+	  "index", "externals", "slave", "transport", NULL};
       if ((err = OE::checkAttrsVV(ix, instAttrs, extraInstAttrs, NULL)) ||
 	  (err = OE::getBoolean(ix, "externals", &m_externals)))
 	return err;
@@ -509,7 +521,8 @@ namespace OCPI {
 	  return err;
       // Now check for additional or override values from parameters
       return m_parameters.parse(ix, "name", "component", "worker", "selection", "connect",
-				"external", "from", "to", "externals", "slave", NULL);
+				"external", "from", "to", "externals", "slave", "transport",
+				NULL);
     }
 
     Assembly::Connection::

@@ -60,15 +60,9 @@ namespace OCPI {
   namespace Util {
     typedef OCPI::API::PValue PValue;
     extern PValue allPVParams[];
-#define OCPI_DATA_TYPE(sca, corba, letter, bits, run, pretty, store)	\
+#define OCPI_DATA_TYPE(sca, corba, letter, bits, run, pretty, store) \
+    void add##pretty(const PValue *&p, const char *name, run value); \
     bool find##pretty(const PValue* p, const char* name, run &value);
-#if 0
-#undef OCPI_DATA_TYPE_S
-#define OCPI_DATA_TYPE_S(sca, corba, letter, bits, run, pretty, store)	\
-      bool find##pretty(const PValue* p, const char* name, run &value);
-#undef OCPI_DATA_TYPE_S
-#define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
-#endif
       OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
     bool
@@ -90,9 +84,14 @@ namespace OCPI {
       PValueList(const PValue *params, const PValue *override = NULL);
       PValueList();
       ~PValueList();
+      inline const PValue *list() const { return m_list; }
       inline operator const PValue*() const { return m_list; }
-      const char *parse(ezxml_t x, ...);
-      const char *parse(const PValue *p, ezxml_t x, ...);
+      const char 
+	*addXml(ezxml_t x),
+	*parse(ezxml_t x, ...),
+	*parse(const PValue *p, ezxml_t x, ...),
+	*add(const char *name, const char *value);
+      void add(const PValue *params, const PValue *override = NULL);
     };
   }
 } // OCPI

@@ -96,6 +96,7 @@ namespace OCPI {
 	inline uint16_t addrPort() const { return m_udp.port; }
 	inline uint32_t addrInAddr() const { return m_udp.addr; }
 	const char *pretty();
+	const char *prettyInAddr();
 	inline bool hasError() const { return m_error; }
 	inline bool isBroadcast() const { return m_broadcast; }
 	inline bool operator==(const Address &rhs) {
@@ -183,6 +184,7 @@ namespace OCPI {
 	~IfScanner();
 	// Get the basic information about the current interface, without "opening" it for I/O
 	bool getNext(Interface &i, std::string &err, const char *only = NULL);
+	void reset();
       private:
 	bool init(std::string &err);
       };

@@ -89,8 +89,9 @@ OCPI::Util::Tcp::Server::accept (unsigned long timeout)
     return 0;
   }
 
-  OCPI::OS::Socket conn = m_socket.accept ();
-  return new OCPI::Util::Tcp::Stream (conn);
+  OCPI::OS::Socket conn;
+  m_socket.accept(conn);
+  return new OCPI::Util::Tcp::Stream(conn);
 }
 
 uint16_t

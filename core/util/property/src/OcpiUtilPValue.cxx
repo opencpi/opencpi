@@ -60,6 +60,14 @@ namespace OCPI {
     const std::string &PValue::unparse(std::string &sval, bool add) const {
       OU::ValueType vtype(type);
       OU::Value val(vtype);
+      // FIXME: PValues and Values must be better integrated...
+      switch (type) {
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
+	case OA::OCPI_##pretty: val.m_##pretty = v##pretty; break;
+	OCPI_PROPERTY_DATA_TYPES
+#undef OCPI_DATA_TYPE
+      default:;
+      }
       val.unparse(sval, NULL, add);
       return sval;
     }
@@ -100,35 +108,24 @@ namespace OCPI {
       return NULL;
     }
  
-    //#undef OCPI_DATA_TYPE_S
-#define OCPI_DATA_TYPE(sca, corba, letter, bits, run, pretty, store)	\
-    bool 							        \
-    find##pretty(const PValue* p, const char* name, run &value) { \
-      const PValue *fp = find(p, name);					\
-      if (fp) {								\
-        if (fp->type == OA::OCPI_##pretty) {	                \
-          value = fp->v##pretty;					\
-          return true;							\
-	} else								\
-	  throw ApiError("Property \"", name, "\" is not a ", #pretty, NULL); \
-      }                                                                 \
-      return false;							\
+#define OCPI_DATA_TYPE(sca, corba, letter, bits, run, pretty, store)\
+    bool 							    \
+    find##pretty(const PValue* p, const char* name, run &value) {   \
+      const PValue *fp = find(p, name);				    \
+      if (fp) {							    \
+        if (fp->type == OA::OCPI_##pretty) {	                    \
+          value = fp->v##pretty;				    \
+          return true;						    \
+	} else							    \
+	  throw Error("Property \"%s\" is not a %s", name, #pretty);\
+      }                                                             \
+      return false;						    \
+    }                                                               \
+    void 							    \
+    add##pretty(const PValue*&p, const char* name, run value) {     \
+      PValue pv[] = { PV##pretty(name, value), PVEnd };             \
+      p = (new PValueList(p, pv))->list();			    \
     }
-#if 0
-#define OCPI_DATA_TYPE_S(sca, corba, letter, bits, run, pretty, store)	\
-    bool 							        \
-    find##pretty(const PValue* p, const char* name, run &value) {	\
-      const PValue *fp = find(p, name);					\
-      if (fp) {								\
-        if (fp->type == OA::OCPI_##pretty) {	                \
-          value = fp->v##pretty;					\
-          return true;							\
-	} else								\
-	  throw ApiError("Parameter \"", name, "\" is not a ", #pretty, NULL); \
-      }                                                                 \
-      return false;							\
-    }
-#endif
 
     OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
@@ -190,23 +187,53 @@ namespace OCPI {
 
     PValueList::PValueList() : m_list(NULL) {}
     PValueList::PValueList(const PValue *params, const PValue *override) : m_list(NULL) {
-      size_t n = 0;
-      for (const PValue *p = params; p && p->name; p++, n++)
-	;
-      for (const PValue *p = override; p && p->name; p++, n++)
-	;
+      add(params, override);
+    }
+    void PValueList::
+    add(const PValue *params, const PValue *override) {
+      size_t n = m_list ? m_list->length() : 0;
+      n += params ? params->length() : 0;
+      n += override ? override->length() : 0;
       if (!n)
 	return;
+      PValue *old = m_list;
       PValue *p = m_list = new PValue[n + 1];
       for (const PValue *op = override; op && op->name; op++)
 	*p++ = *op;
       for (const PValue *pp = params; pp && pp->name; pp++) {
 	for (const PValue *xp = m_list; xp < p; xp++)
 	  if (!strcasecmp(pp->name, xp->name))
-	    goto skipit;
+	    goto skipit1;
 	*p++ = *pp;
-      skipit:;
+      skipit1:;
       }
+      for (const PValue *pp = old; pp && pp->name; pp++) {
+	for (const PValue *xp = m_list; xp < p; xp++)
+	  if (!strcasecmp(pp->name, xp->name))
+	    goto skipit2;
+	*p++ = *pp;
+      skipit2:;
+      }
+      *p = PVEnd;
+    }
+
+    static const char *parseParam(const char *name, const char *value, PValue &p) {
+      const PValue *allP = find(allPVParams, name);
+      if (!allP)
+	return esprintf("parameter named \"%s\" not defined, misspelled?", name);
+      p.name = allP->name;
+      p.type = allP->type;
+      ValueType type(allP->type);
+      Value val(type);
+      const char *err = val.parse(value);
+      if (err)
+	return err;
+      if (p.type == OA::OCPI_String) {
+	p.vString = strdup(val.m_String);
+	p.owned = true;
+      } else
+	p.vULongLong = val.m_ULongLong;
+      return NULL;
     }
 
     PValueList::~PValueList() { delete [] m_list; }
@@ -248,25 +275,50 @@ namespace OCPI {
 	  }
 	va_end(dest);
 	if (!found) {
-	  const PValue *allP = find(allPVParams, name);
-	  if (!allP)
-	    return esprintf("parameter named \"%s\" not defined, misspelled?", name);
-	  p->name = allP->name;
-	  p->type = allP->type;
-	  ValueType type(allP->type);
-	  Value val(type);
-	  const char *err = val.parse(value);
+	  const char *err = parseParam(name, value, *p);
 	  if (err)
 	    return err;
-	  if (p->type == OA::OCPI_String) {
-	    p->vString = strdup(val.m_String);
-	    p->owned = true;
-	  } else
-	    p->vULongLong = val.m_ULongLong;
 	  p++;
 	}
       }
       p->name = NULL;
+      return NULL;
+    }
+    const char *PValueList::addXml(ezxml_t x) {
+      unsigned nPvl = m_list ? m_list->length() : 0;
+      unsigned nXml = OE::countAttributes(x);
+      unsigned n = nPvl + nXml;
+      if (!n) {
+	m_list = NULL;
+	return NULL;
+      }
+      PValue *old = m_list;
+      PValue *p = m_list = new PValue[n + 1];
+      while (old && old->name)
+	*p++ = *old++;
+      const char *name, *value;
+      EZXML_FOR_ALL_ATTRIBUTES(x, name, value) {
+	const char *err = parseParam(name, value, *p);
+	if (err)
+	  return err;
+	p++;
+      }
+      p->name = NULL;
+      return NULL;
+    }
+    const char *PValueList::
+    add(const char *name, const char *value) {
+      PValue newp;
+      const char *err;
+      if ((err = parseParam(name, value, newp)))
+	return err;
+      PValue *oldp = m_list;
+      PValue *p = m_list = new PValue[(m_list ? m_list->length() : 0) + 2];
+      for (const PValue *op = oldp; op && op->name; op++)
+	*p++ = *op;
+      *p++ = newp;
+      *p++ = PVEnd;
+      delete [] oldp;
       return NULL;
     }
   }

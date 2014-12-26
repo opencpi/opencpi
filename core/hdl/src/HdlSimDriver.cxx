@@ -25,7 +25,7 @@
 #include <inttypes.h>
 #include <unistd.h>
 #include "OcpiOsFileSystem.h"
-#include "OcpiOsClientSocket.h"
+#include "OcpiOsSocket.h"
 #include "HdlSimDriver.h"
 
 namespace OCPI {
@@ -84,7 +84,8 @@ namespace OCPI {
 	      std::string addr = this->addr().pretty(); // this will have a colon and port...
 	      addr.resize(addr.find_first_of(':'));
 	      
-	      OS::Socket wskt = OS::ClientSocket::connect(addr, port);
+	      OS::Socket wskt;
+	      wskt.connect(addr, port);
 	      wskt.linger(true); //  wait on close for far side ack of all data
 	      int rfd;
 	      try { // socket I/O can throw

@@ -70,6 +70,10 @@ namespace OCPI {
      */
 
     class Socket {
+      void init() throw();
+    protected:
+      friend class ServerSocket;
+      void setOpaque(uint64_t *opaque) throw();
     public:
       /**
        * Constructor: Initialize an unconnected socket.
@@ -82,16 +86,19 @@ namespace OCPI {
        * \post The socket is not connected.
        */
 
-      Socket ()
-        throw ();
+      Socket()
+        throw();
 
+      Socket(const std::string & remoteHost,
+	     uint16_t remotePort,
+	     bool udp = false) throw(std::string);
+#if 0
       /**
        * Constructor: For internal use only.
        */
-
       Socket (const OCPI::OS::uint64_t * opaque)
         throw (std::string);
-
+#endif
       /**
        * Copy constructor: Assigns ownership of the \a other socket to
        *                   this instance. After this, \a other may not
@@ -296,13 +303,17 @@ namespace OCPI {
       int fd() const
 	throw();
 
+      void connect (const std::string & remoteHost,
+		    uint16_t remotePort,
+		    bool udp = false)
+        throw (std::string);
+
     protected:
-      OCPI::OS::uint64_t m_osOpaque[1];
+      uint64_t m_osOpaque[1];
     private:
       bool m_temporary; // kludge to make up for broken interface
       unsigned m_timeoutms;
     };
-
   }
 }
 

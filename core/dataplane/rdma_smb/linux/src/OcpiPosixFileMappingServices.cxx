@@ -60,6 +60,7 @@
 #include "OcpiOsAssert.h"
 #include "OcpiHostFileMappingServices.h"
 
+#define REAL_SHM 1
 namespace DataTransfer {
 
   // OcpiPosixFileMappingServices implements basic file mapping support on Posix compliant platforms.
@@ -207,7 +208,7 @@ namespace DataTransfer {
       m_name = strMapName[0] == '/' ? strMapName : "/" + strMapName;
       
       // Open a shared memory object
-#if REAL_SHM
+#ifdef REAL_SHM
       m_fd = shm_open (m_name.c_str (), iOpenFlags | iFlags, 0666);
 #else
       // Use anonymous mappings

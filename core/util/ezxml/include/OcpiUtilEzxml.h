@@ -230,6 +230,7 @@ namespace OCPI {
 	ezxml_nextChild(ezxml_t xml),
 	findChildWithAttr(ezxml_t x, const char *cName, const char *aName,
 			  const char *value);
+      inline char *ezxml_content(ezxml_t x) { return x->txt; }
       extern const char
 	*ezxml_parse_file(const char *file, ezxml_t &xml),
 	*ezxml_parse_str(char *string, size_t len, ezxml_t &xml),

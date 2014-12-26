@@ -1068,7 +1068,7 @@ namespace OCPI {
 			 m_exec.c_str(), strerror(errno));
 	    } else {
 	      m_xferSckt = new OS::Socket();
-	      *m_xferSckt = m_xferSrvr->accept();
+	      m_xferSrvr->accept(*m_xferSckt);
 	      m_xferDone = false;
 	      addFd(m_xferSckt->fd(), false);
 

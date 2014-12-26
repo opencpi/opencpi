@@ -13,15 +13,19 @@
 #include <vector>
 #include <signal.h>
 #include <unistd.h>
-#include "OcpiOsDebug.h"
-#include "OcpiOsFileSystem.h"
+
 #include "OcpiContainerApi.h"
 #include "OcpiApplicationApi.h"
+
+#include "OcpiOsDebug.h"
+#include "OcpiOsFileSystem.h"
 #include "OcpiUtilMisc.h"
+#include "RemoteDriver.h"
 
 namespace OA = OCPI::API;
 namespace OU = OCPI::Util;
 namespace OS = OCPI::OS;
+namespace OR = OCPI::Remote;
 
 static std::string error;
 
@@ -57,7 +61,13 @@ usage(const char *name) {
 	  "                 # set log level during execution\n"
 	  "    -t <seconds>\n"
 	  "                 # specify seconds of runtime\n"
-	  "    -C           # show available containers\n",
+	  "    -C           # show available containers\n"
+	  "    -S           # list of servers to explicitly contact (no UDP discovery)\n"
+	  "    -R           # suppress discovery of remote containers\n"
+	  "    -X           # list of containers to exclude from usage\n"
+	  "    -T <instance-name>=<port-name>=<transport-name>\n"
+	  "                 # set transport of connection at a port\n"
+	  "                 # if no port name, then the single output port\n",
 	  name);
   exit(1);
 }
@@ -68,10 +78,17 @@ static void addParam(const char *name, const char **&ap) {
   params.push_back(OA::PVString(name, value));
 }
 
+static bool verbose = false;
+static const char *doServer(const char *server, void *) {
+  static std::string error;
+  return OR::useServer(server, verbose, NULL, error) ? error.c_str() : NULL;
+}
+
 int
 main(int /*argc*/, const char **argv) {
-  bool verbose = false, dump = false, containers = false, hex = false;
+  bool dump = false, containers = false, hex = false, noRemote = false;
   unsigned seconds = 0, nProcs = 0;
+  const char *servers = NULL;
   const char *argv0 = strrchr(argv[0], '/');
   if (argv0)
     argv0++;
@@ -126,6 +143,9 @@ main(int /*argc*/, const char **argv) {
       case 'u':
 	addParam("url", ap);
 	break;
+      case 'T':
+	addParam("transport", ap);
+	break;
       case 'n':
 	nProcs = atoi(ap[0][2] ? &ap[0][2] : *++ap);
 	break;
@@ -134,6 +154,12 @@ main(int /*argc*/, const char **argv) {
 	break;
       case 'C':
 	containers = true;
+	break;
+      case 'S':
+	servers = ap[0][2] ? &ap[0][2] : *++ap;
+	break;
+      case 'R':
+	noRemote = true;
 	break;
       default:
 	usage(argv0);
@@ -153,6 +179,16 @@ main(int /*argc*/, const char **argv) {
     }
     if (params.size())
       params.push_back(OA::PVEnd);
+    if (noRemote)
+      OR::g_suppressRemoteDiscovery = true;
+    if (servers) {
+      const char *err;
+      if ((err = OU::parseList(servers, doServer))) {
+	fprintf(stderr, "Error processing server list (\"%s\"): %s\n",
+		servers, err);
+	return 1;
+      }
+    }
     OA::Container *c;
     if (nProcs)
       for (unsigned n = 1; n < nProcs; n++) {
@@ -163,10 +199,11 @@ main(int /*argc*/, const char **argv) {
     if (containers) {
       (void)OA::ContainerManager::get(0); // force config
       printf("Available containers:\n"
-	     " #  Model  Platform     OS         Name\n");
+	     " #  Model Platform    OS     OS Version  Name\n");
       for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)
-	printf("%2u  %-6s %-12s %-10s %s\n",
-	       n,  c->model().c_str(), c->platform().c_str(), c->os().c_str(), c->name().c_str());
+	printf("%2u  %-5s %-11s %-6s %-11s %s\n",
+	       n,  c->model().c_str(), c->platform().c_str(), c->os().c_str(),
+	       c->osVersion().c_str(), c->name().c_str());
       fflush(stdout);
     } else if (verbose) {
       for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)

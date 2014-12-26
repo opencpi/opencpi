@@ -33,7 +33,7 @@
  */
 
 #include <OcpiUtilTcpClient.h>
-#include <OcpiOsClientSocket.h>
+#include <OcpiOsSocket.h>
 #include <string>
 
 /*
@@ -62,6 +62,7 @@ void
 OCPI::Util::Tcp::Client::connect (const std::string & host, uint16_t port)
     throw (std::string)
 {
-  OCPI::OS::Socket conn = OCPI::OS::ClientSocket::connect (host, port);
-  setSocket (conn);
+  OCPI::OS::Socket conn;
+  conn.connect(host, port);
+  setSocket(conn);
 }

@@ -108,9 +108,10 @@ namespace OCPI {
 	typedef std::list<Port*>::iterator PortsIter;
 	ezxml_t m_xml;
 	const char
-	  *parse(ezxml_t ix, Assembly &a, unsigned ordinal, const char **extraInstAttrs, const PValue *params),
+	  *parse(ezxml_t ix, Assembly &a, unsigned ordinal, const char **extraInstAttrs,
+		 const PValue *params),
 	  *addProperty(const char *name, ezxml_t px),
-	  *parseConnection(ezxml_t ix, Assembly &a),
+	  *parseConnection(ezxml_t ix, Assembly &a, const PValue *params),
 	  *setProperty(const char *propAssign);
 	ezxml_t xml() const { return m_xml; }
       };
@@ -203,7 +204,8 @@ namespace OCPI {
 	*checkInstanceParams(const char *pName, const PValue *params, bool checkMapped = false),
         *addConnection(const char *name, Connection *&c),
         *getInstance(const char *name, unsigned &),
-        *addPortConnection(unsigned from, const char *name, unsigned to, const char *toPort),
+        *addPortConnection(unsigned from, const char *name, unsigned to, const char *toPort,
+			   const char *transport),
         *addExternalConnection(unsigned instance, const char *port),
         *addExternalConnection(ezxml_t x);
       inline ezxml_t xml() { return m_xml; }
