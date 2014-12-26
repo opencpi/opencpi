@@ -142,6 +142,10 @@ namespace OCPI {
 	return false;
       }
 
+      const char *Address::prettyInAddr() {
+	struct in_addr x = {m_udp.addr};
+	return inet_ntoa(x);
+      }
       const char *Address::pretty() {
 	if (!m_pretty[0]) {
 	  if (m_isEther)
@@ -655,6 +659,16 @@ namespace OCPI {
 #endif
       }
 
+      void IfScanner::
+      reset() {
+	m_index = 0;
+	Opaque &o = *(Opaque *)m_opaque;
+#ifdef OCPI_OS_macos
+	o.ifm = (struct if_msghdr *)o.buffer;
+#else
+	rewinddir(o.dfd);
+#endif
+      }
       // Delayed initialization - done when we get to the real interfaces
       // (after the udp one).
       // return true if error set

@@ -1,3 +1,4 @@
+#include <cstring>
 #include "OcpiOsMisc.h"
 #include "OcpiOsEther.h"
 #include "OcpiUtilValue.h"
@@ -5,46 +6,29 @@
 #include "RemoteLauncher.h"
 
 // This is the "driver" for remote containers, which finds them, constructs them, and 
-// in general manages them.  It is an object managed by the Container::Manager class.
-// It acts as the factory for Remote containers.
+// in general manages them. It acts as the factory for Remote containers.
 
 // This is similar to simulation HDL containers in that they are discovered by UDP,
-// but different, in that one UDP endpoint sources multiple containers
+// but different, in that one UDP endpoint sources multiple containers for purposes of
+// discovery.  But after being discovered a TCP socket is established to talk to the
+// server.  The derived object on the client side is a Client in this namespace,
+// which inherits the specifically functional Launcher class that knows how to be
+// a "network launcher" of applications.
 
-// Summary of what the application class does:
-/*
-containermanager->findcontainers
--- so this is about search
-container->nthContainer
-container->createApplication
--- can be local until other stuff
-containerapplication->start - generic just starts workers one by one - no args
-containerapplication->stop - generic just stops workers one by one - no args
-containerapplication->isdone - -generic just queries workers one by one - no args
-containerapplication->createworker - generic: container->loadartifact, artifact->create worker
- -- passes the xml, slave reference (must be local...), params
-containerapplication->setApplication() - doesn't need to be remoted
-containerworker->setProperty
-worker->getPort
-worker->wait
-worker->getProperty
-worker->setProperty
-worker->setupProperty
-port->connecct
-port->connectURL
-port->connectExternal
-
-*/
 namespace OC = OCPI::Container;
 namespace OU = OCPI::Util;
+namespace OX = OCPI::Util::EzXml;
 namespace OA = OCPI::API;
 namespace OL = OCPI::Library;
 namespace OE = OCPI::OS::Ether;
 namespace OS = OCPI::OS;
 namespace OCPI {
   namespace Remote {
-    bool g_suppressRemoteDiscovery = false;
-    extern const char *remote;
+
+const uint16_t REMOTE_PORT = 17171;
+    const uint16_t REMOTE_NARGS = 5; // fields int the discovery entries
+bool g_suppressRemoteDiscovery = false;
+extern const char *remote;
 const unsigned RETRIES = 3;
 const unsigned DELAYMS = 500;
 const char *remote = "remote";
@@ -104,6 +88,9 @@ class Worker
     v.unparse(val);
     m_launcher.setPropertyValue(m_remoteInstance,
 				static_cast<OU::Property *>(&p.m_info) - m_properties, val);
+  }
+  bool wait(OS::Timer *t) {
+    return m_launcher.wait(m_remoteInstance, t ? t->getRemaining() : 0);
   }
   void getPropertyValue(const OU::Property &p, std::string &v, bool hex, bool add) {
     m_launcher.getPropertyValue(m_remoteInstance, &p - m_properties, v, hex, add);
@@ -199,10 +186,16 @@ class Client
     public Launcher {
   friend class Driver;
 protected:
-  Client(Driver &d, const std::string &name, const char *host, uint16_t port, std::string &error)
-    : OU::Child<Driver,Client,remote>(d, *this, name.c_str()),
-      Launcher(host, port, error)
+  OS::Socket &m_socket;
+  // Take ownership of the provided socket
+  Client(Driver &d, const char *name, OS::Socket &socket)
+    : OU::Child<Driver,Client,remote>(d, *this, name),
+      Launcher(socket),
+      m_socket(socket)
   {
+  }
+  ~Client() {
+    delete &m_socket; // we took ownership at construction
   }
 public:
   const std::string &name() const {
@@ -266,9 +259,100 @@ public:
     ocpiCheck(pthread_key_create(&s_threadKey, NULL) == 0);
     ocpiDebug("Registering the Remote Container driver");
   }
+  // Called either from UDP discovery or explicitly, e.g. from ocpirun
+  // If the latter, the "containers" argument will be NULL
+  bool
+  probeServer(const char *server, bool verbose, const char **exclude, char *containers,
+	      std::string &error) {
+    ocpiDebug("probing remote container server: %s", server);
+    error.clear();
+    OS::Socket *sock = NULL;
+    uint16_t port;
+    std::string host(server);
+    const char *sport = strchr(server, ':');
+    if (sport) {
+      const char *err;
+      if ((err = OU::Value::parseUShort(sport + 1, NULL, port)))
+	return OU::eformat(error, "Bad port number in server name: \"%s\"", server);
+      host.resize(sport - server);
+    } else
+      port = REMOTE_PORT;
+    ezxml_t rx = NULL; // need to explicitly free this below via "bad:" or "out:"
+    std::vector<char> rbuf;
+    bool taken = false; // whether the socket has been taken by a launcher
+    Client *client = OU::Parent<Client>::findChildByName(server);
+    if (!containers) {
+      // We are not being called during discovery, but explicitly (when avoiding discovery).
+      // Whereas during UDP discovery, this info comes back in the UDP datagram, here we must go
+      // get it via TCP by opening the TCP socket early, before excluding specific containers.
+      try {
+	sock = new OS::Socket(host, port);
+      } catch (const std::string &e) {
+	return OU::eformat(error, "Error connecting to server \"%s\": %s", server, e.c_str());
+      }
+      std::string request("<discover>");
+      bool eof;
+      if (Launcher::sendXml(sock->fd(), request, "TCP server for discovery", error) ||
+	  Launcher::receiveXml(sock->fd(), rx, rbuf, eof, error))
+	goto out;
+      if (strcmp(OX::ezxml_tag(rx), "discovery") || !(containers = OX::ezxml_content(rx)))
+	goto bad;
+    }
+    // Now process the discovery information per container - either from UDP discovery or from
+    // explicit contact via TCP and xml
+    for (char *cp = containers, *end; *cp; cp = end) {
+      while (isspace(*cp)) cp++;
+      if (!(end = strchr(cp, '\n')))
+	goto bad;
+      *end++ = '\0';
+      char *args[REMOTE_NARGS + 1];
+      for (char **ap = args; (*ap++ = strsep(&cp, "|")); )
+	if ((ap - args) > REMOTE_NARGS)
+	  goto bad;
+      std::string cname;
+      OU::format(cname, "remote:%s:%s", host.c_str(), args[0]);
+      if (exclude) {
+	bool excluded = false;
+	for (const char **ap = exclude; *ap; ap++)
+	  if (!strcasecmp(cname.c_str(), *ap)) {
+	    ocpiInfo("Remote container \"%s specifically excluded/ignored", *ap);
+	    excluded = true;
+	    break;
+	  }
+	if (excluded)
+	  continue;
+      }
+      // We have a remote container.  Make sure we have a client (remote launcher) for it.
+      if (!client) {
+	if (!sock) { // if we got the discovery info from UDP, the TCP socket wasn't created
+	  try {
+	    sock = new OS::Socket(host, port);
+	  } catch (const std::string &e) {
+	    OU::format(error, "Error opening socket to server: %s", e.c_str());
+	    goto out;
+	  }
+	}
+	client = new Client(*this, server, *sock);
+	taken = true;
+      }
+      ocpiDebug("Creating remote container: \"%s\", model %s, os %s, version %s, platform %s",
+		cname.c_str(), args[1], args[2], args[3], args[4]);
+      Container &c = *new Container(*client, cname.c_str(),
+				    args[1], args[2], args[3], args[4], NULL);
+    }
+    sock = NULL;
+    return false;
+  bad:
+    OU::format(error, "Bad server container response from \"%s\"", server);
+  out:
+    if (sock && !taken)
+      delete sock;
+    if (rx)
+      ezxml_free(rx);
+    return !error.empty();
+  }
   OC::Container *
-  probeContainer(const char *which, std::string &error, const OA::PValue *params)
-    throw ( OU::EmbeddedException ) {
+  probeContainer(const char *which, std::string &error, const OA::PValue *params) {
     throw OU::Error("Remote containers may only be discovered, not probed: \"%s\"", which);
   }
   // Try a discovery (send and receive) on a socket from an interface
@@ -304,80 +388,22 @@ public:
 		   devAddr.pretty(), strlen(response), length);
 	  continue;
 	}
-	ocpiDebug("Discovery response is:\n%s-- end of discovery", response);
+	ocpiDebug("Discovery response from %s is:\n%s-- end of discovery",
+		  devAddr.pretty(), response);
 	char *cp = strchr(response, '\n');
 	char *sport = strchr(response, ':');
 	if (!cp || !sport || cp < sport)
-	  goto bad;
-	*cp = '\0';
-	{ 
-	  std::string serverName(response);
-	  *sport++ = '\0';
-	  if (exclude)
-	    for (const char **ap = exclude; *ap; ap++) {
-	      if (!strcasecmp(serverName.c_str(), *ap) ||
-		  !strcasecmp(response, *ap)) {
-		ocpiInfo("Container server host %s specifically excluded/ignored", *ap);
-		goto next;
-	      }
-	    }
-	  if (!servers.insert(serverName).second)
+	  ocpiBad("Invalid response during container server discovery from %s",
+		  devAddr.pretty());
+	else {
+	  *cp++ = '\0';
+	  if (!servers.insert(response).second) {
+	    ocpiDebug("Received redundant server discovery response from: \"%s\"", response);
 	    continue;
-	  uint16_t port;
-	  const char *err;
-	  if ((err = OU::Value::parseUShort(sport, NULL, port))) {
-	    error = err;
-	    ocpiBad("Port number from remote container server \"%s\" invalid: %s", sport, err);
-            goto bad;
-          }
-	  char *end;
-	  for (*cp++ = '\0'; *cp; cp = end) {
-	    if (!(end = strchr(cp, '\n')))
-	      goto bad;
-	    char *p = end;
-	    *end++ = '\0';
-	    const unsigned NARGS = 5;
-	    char *args[NARGS];
-	    for (unsigned n = NARGS; n; args[--n] = p--) {
-	      *p = 0;
-	      while (p > cp && p[-1] != ':')
-		p--;
-	    }
-	    if (p >= cp)
-	      goto bad;
-	    std::string name;
-	    OU::format(name, "remote:%s:%s", response, args[0]);
-	    if (exclude)
-	      for (const char **ap = exclude; *ap; ap++)
-		if (!strcasecmp(name.c_str(), *ap)) {
-		  ocpiInfo("Remote container %s specifically excluded/ignored", *ap);
-		  goto cskip;
-		}
-	    {
-	      // Only create the client when we are actually going to use one of the
-	      // containers it is offering to us (e.g. after the exclude check)
-	      Client *client = OU::Parent<Client>::findChildByName(serverName.c_str());
-	      if (!client) {
-		client = new Client(*this, serverName, response, port, error);
-		if (error.length()) {
-		  delete client;
-		  return true;
-		}
-	      }
-	      ocpiDebug("Creating remote container: \"%s\", model %s, os %s, version %s, platform %s",
-			name.c_str(), args[1], args[2], args[3], args[4]);
-	      Container &c = *new Container(*client, name.c_str(),
-					    args[1], args[2], args[3], args[4], NULL);
-	      count++;
-	    }
-	  cskip:;
 	  }
+	  if (probeServer(response, false, exclude, cp, error))
+	    ocpiBad("Discovered server error: %s", error.c_str());
 	}
-	continue;
-      bad:
-	ocpiInfo("Invalid response during container server discovery from %s",
-		 devAddr.pretty());
-      next:;
       }
       if (!timer.expired())
 	OS::sleep(2);
@@ -435,7 +461,7 @@ public:
       ocpiDebug("RemoteDriver: Considering interface \"%s\", addr 0x%x",
 		eif.name.c_str(), eif.ipAddr.addrInAddr());
       if (eif.up && eif.connected && eif.ipAddr.addrInAddr()) {
-	OE::Address bcast(true, 17171);
+	OE::Address bcast(true, REMOTE_PORT);
 	count += tryIface(servers, eif, bcast, exclude, discoveryOnly, error);
 	if (error.size()) {
 	  ocpiDebug("Error during container server discovery on '%s': %s",
@@ -462,8 +488,14 @@ public:
     ocpiCheck(pthread_key_delete(s_threadKey) == 0);
   }
 };
-    pthread_key_t Driver::s_threadKey;
-    // Register this driver
-    OC::RegisterContainerDriver<Driver> driver;
+bool
+useServer(const char *server, bool verbose, const char **exclude, std::string &error) {
+  return Driver::getSingleton().probeServer(server, verbose, exclude, NULL, error);
+}
+
+
+pthread_key_t Driver::s_threadKey;
+// Register this driver
+OC::RegisterContainerDriver<Driver> driver;
   }
 }

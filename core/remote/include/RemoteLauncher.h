@@ -37,7 +37,6 @@ namespace OCPI {
   namespace Remote {
     class Launcher : public OCPI::Container::LocalLauncher {
       int m_fd;              // socket fd
-      OCPI::OS::Socket m_socket;
       bool m_sending;        // Is next phase to send something?
       std::string m_request; // xml text request being constructed
       std::vector<char> m_response;      // char buffer of received response
@@ -50,7 +49,7 @@ namespace OCPI {
       std::vector<OCPI::Container::Launcher::Connection *> m_connections;
       std::vector<OCPI::Library::Artifact *> m_artifacts;
     protected:
-      Launcher(const char *host, uint16_t port, std::string &error);
+      Launcher(OCPI::OS::Socket &socket);
       virtual ~Launcher();
     private:
       virtual const std::string &name() const = 0;
@@ -67,6 +66,7 @@ namespace OCPI {
       void updateConnection(ezxml_t cx);
     public:
       bool
+	wait(unsigned remoteInstance, OCPI::OS::ElapsedTime timeout),
 	launch(Launcher::Instances &instances, Launcher::Connections &connections),
 	work(Launcher::Instances &instances, Launcher::Connections &connections);
       void

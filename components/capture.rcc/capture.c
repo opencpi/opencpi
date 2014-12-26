@@ -54,5 +54,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
     else
       p->nextMeta = 0;
   }
+  if (in->input.length == 0)
+    done = true;
   return done ? RCC_ADVANCE_DONE : RCC_ADVANCE;
 }

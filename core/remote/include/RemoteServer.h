@@ -9,7 +9,6 @@
 namespace OCPI {
   namespace Remote {
     class Server {
-      friend class Server;
       OCPI::Library::Library &m_library;
       OCPI::OS::Socket m_socket;
       bool m_downloading;                     // true when downloading artifacts
@@ -20,6 +19,7 @@ namespace OCPI {
       ezxml_t m_lx;                           // saved initial launch XML
       std::vector<OCPI::Library::Artifact*> m_artifacts; // in order of launch request
       std::string m_response;                 // xml response to send to client
+      std::string m_client;
       std::vector<char> m_downloadBuf;
       OCPI::Container::Launcher *m_local;
       // These two are what the underlying local launcher needs
@@ -31,6 +31,12 @@ namespace OCPI {
       bool receive(bool &eof, std::string &error);
       inline int fd() const { return m_socket.fd(); }
       const OCPI::OS::Socket &socket() const { return m_socket; }
+      const char *client() const { return m_client.c_str(); }
+      // fill discovery into (container list) into buf, including null termination.
+      // length argument is the actual buffer size, and it is decremented with what is
+      // put into the buffer, NOT including the NULL termination that is also put in,
+      // just like snprintf
+      static bool fillDiscoveryInfo(char *buf, size_t &length, std::string &error);
     private:
       const char *downloadFile(int wfd, uint64_t length);
       bool
@@ -38,6 +44,8 @@ namespace OCPI {
 	launch(std::string &error),
 	update(std::string &error),
 	control(std::string &error),
+	discover(std::string &error),
+	doConnection(ezxml_t cx, OCPI::Container::Launcher::Connection &c, std::string &error),
 	doLaunch(std::string &error);
     };
   }

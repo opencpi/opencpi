@@ -29,7 +29,6 @@
 #include "OcpiOsSocket.h"
 #include "OcpiOsMisc.h"
 #include "OcpiOsDebug.h"
-#include "OcpiOsClientSocket.h"
 #include "OcpiOsServerSocket.h"
 #include "OcpiOsThreadManager.h"
 
@@ -46,9 +45,9 @@ namespace
     try
     {
       uint16_t* portNoPtr = reinterpret_cast<uint16_t*> ( opaque );
-      OCPI::OS::Socket cs = OCPI::OS::ClientSocket::connect ( OCPI::OS::getHostname ( ),
-                                                            *portNoPtr );
-      cs.close ( );
+      OCPI::OS::Socket cs;
+      cs.connect(OCPI::OS::getHostname(), *portNoPtr);
+      cs.close();
     }
     catch ( const std::string& s )
     {
@@ -66,8 +65,8 @@ namespace
   void test04Thread ( void* opaque )
   {
     uint16_t* portNoPtr = reinterpret_cast<uint16_t*> ( opaque );
-    OCPI::OS::Socket cs = OCPI::OS::ClientSocket::connect ( OCPI::OS::getHostname ( ),
-                                                            *portNoPtr );
+    OCPI::OS::Socket cs;
+    cs.connect ( OCPI::OS::getHostname ( ), *portNoPtr );
     cs.send ( "Hello World!", 13 );
     cs.close ( );
   }
@@ -76,8 +75,8 @@ namespace
   {
     uint16_t* portNoPtr = reinterpret_cast<uint16_t*> ( opaque );
 
-    OCPI::OS::Socket cs = OCPI::OS::ClientSocket::connect ( OCPI::OS::getHostname ( ),
-                                                            *portNoPtr );
+    OCPI::OS::Socket cs;
+    cs.connect ( OCPI::OS::getHostname ( ), *portNoPtr );
     char buffer [ 1024] ;
     char* ptr = buffer;
     size_t count, total = 0;
@@ -150,8 +149,8 @@ namespace
 
     uint16_t* portNoPtr = reinterpret_cast<uint16_t*> ( opaque );
 
-    OCPI::OS::Socket cs =
-      OCPI::OS::ClientSocket::connect ( myAddress, *portNoPtr );
+    OCPI::OS::Socket cs;
+    cs.connect ( myAddress, *portNoPtr );
 
     if ( !*ap )
     {
@@ -195,7 +194,8 @@ namespace
       uint16_t portNo = 6275;
       OCPI::OS::ServerSocket se ( portNo, true );
       OCPI::OS::ThreadManager tm ( test03Thread, &portNo );
-      OCPI::OS::Socket so = se.accept ( );
+      OCPI::OS::Socket so;
+      se.accept (so);
       so.close ( );
       se.close ( );
       tm.join ( );
@@ -222,7 +222,8 @@ namespace
       uint16_t portNo = 6276;
       OCPI::OS::ServerSocket se ( portNo, true );
       OCPI::OS::ThreadManager tm ( test04Thread, &portNo );
-      OCPI::OS::Socket so = se.accept ( );
+      OCPI::OS::Socket so;
+      se.accept(so);
       char buf [ 16 ];
       size_t count = so.recv ( buf, 16 );
       EXPECT_EQ( count, 13u );
@@ -252,7 +253,8 @@ namespace
       uint16_t portNo = 6277;
       OCPI::OS::ServerSocket se ( portNo, true );
       OCPI::OS::ThreadManager tm ( test05Thread, &portNo );
-      OCPI::OS::Socket so = se.accept ( );
+      OCPI::OS::Socket so;
+      se.accept(so);
 
       const char * ptr = "Hello World!";
       unsigned long long count;
@@ -321,7 +323,8 @@ namespace
     uint16_t portNo = 6276;
     OCPI::OS::ServerSocket se ( portNo, true) ;
     OCPI::OS::ThreadManager tm ( test07Thread, &portNo );
-    OCPI::OS::Socket so = se.accept ( );
+    OCPI::OS::Socket so;
+    se.accept(so);
     char buf [ 16 ];
     size_t count = so.recv ( buf, 16 );
     EXPECT_EQ( count, 13u );

@@ -52,7 +52,6 @@
 
 #include <OcpiOsSocket.h>
 #include <OcpiOsServerSocket.h>
-#include <OcpiOsClientSocket.h>
 
 namespace DataTransfer {
 
@@ -119,7 +118,7 @@ public:
     :m_startupParms(sp)
   {
     SocketEndPoint *rsep = static_cast<SocketEndPoint*>(m_startupParms.rsmem->endpoint());
-    m_socket =   OS::ClientSocket::connect(rsep->ipAddress,rsep->portNum);
+    m_socket.connect(rsep->ipAddress,rsep->portNum);
     m_socket.linger(false);
   }
   ~ClientSocketT( )
@@ -139,7 +138,8 @@ private:
 {
 public:
   ServerSocketHandler( OS::ServerSocket & server, SocketStartupParams & sp  )
-    : m_run(true), m_startupParms(sp), m_socket(server.accept()) {
+    : m_run(true), m_startupParms(sp) {
+    server.accept(m_socket);
     m_socket.linger(true); // we want to give some time for data to the client FIXME timeout param?
     start();
   }
@@ -324,7 +324,7 @@ setEndpointString(std::string &ep, const char *ipAddr, unsigned port,
 		  size_t size, uint16_t mbox, uint16_t maxCount)
 {
   char tep[128];
-  snprintf(tep, 128, "ocpi-socket-rdma:%s;%u:%zu.%" PRIu16 ".%" PRIu16,
+  snprintf(tep, 128, "ocpi-socket-rdma:%s:%u;%zu.%" PRIu16 ".%" PRIu16,
 	   ipAddr, port, size, mbox, maxCount);
   ep = tep;
 }
@@ -374,19 +374,21 @@ allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBo
     return new SocketEndPoint(endpoint, local);
   }
 
-
-// Sets smem location data based upon the specified endpoint
-int32_t 
-SocketEndPoint::
-parse( std::string& ep )
-{
-  char ipaddr[80];
-  int rv = sscanf(ep.c_str(), "ocpi-socket-rdma:%[^;];%hu:", ipaddr, &portNum);
-  if (rv != 2) {
-    fprintf( stderr, "SocketEndPoint  ERROR: Bad socket endpoint format (%s)\n", ep.c_str() );
-    throw DataTransfer::DataTransferEx( UNSUPPORTED_ENDPOINT, ep.c_str() );	  
-  }
-  ipAddress = ipaddr;  
+int32_t SocketEndPoint::
+parse(std::string& ep) {
+  // Note that IPv6 addresses may have colons, even though colons are commonly used to
+  // separate addresses from ports.  Since there must be a port, it will be after the last
+  // colon.  There is also a convention that IPV6 addresses embedded in URLs are in fact
+  // enclosed in square brackets, like {--ipv6-addr-with-colons]:port
+  // So this scheme will work whether the square bracket convention is used or not
+  const char
+    *firstcolon = strchr(ep.c_str(), ':'), // after our protocol name
+    *lastcolon = strrchr(ep.c_str(), ':');  // before the port
+  if (strncasecmp("ocpi-socket-rdma:", ep.c_str(), (firstcolon - ep.c_str()) + 1) ||
+      sscanf(lastcolon+1, "%hu;", &portNum) != 1)
+    throw OU::Error("Invalid socket endpoint format in \"%s\"", ep.c_str());
+  // FIXME: we could do more parsing/checking on the ipaddress
+  ipAddress.assign(firstcolon+1, (lastcolon - firstcolon) - 1);
   return 0;
 }
 

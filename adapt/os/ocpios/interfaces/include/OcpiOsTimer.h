@@ -226,6 +226,7 @@ namespace OCPI {
         throw ();
       // Does not stop the timer, allowing it to be sampled
       ElapsedTime getElapsed() throw();
+      ElapsedTime getRemaining() throw();
       inline Time getStart() const throw() { return tci.startTime;}
 
 

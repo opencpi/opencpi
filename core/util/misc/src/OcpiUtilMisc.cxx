@@ -622,5 +622,24 @@ evsprintf(const char *fmt, va_list ap) {
   return buf;
 }
 
+// parse an attribute value as a list separated by comma, space or tab
+// and call a function with the given arg for each token found
+const char *
+parseList(const char *list, const char * (*doit)(const char *tok, void *arg), void *arg) {
+  const char *err = 0;
+  if (list) {
+    char
+      *mylist = strdup(list),
+      *base,
+      *last = 0,
+      *tok;
+    for (base = mylist; (tok = strtok_r(base, ", \t", &last)); base = NULL)
+      if ((err = doit(tok, arg)))
+        break;
+    free(mylist);
+  }
+  return err;
+}
+
 }
 }

@@ -292,6 +292,7 @@ namespace OCPI {
 	} else if (!staticInstance)
 	  return &impl;
       }
+      return NULL;
     }
     bool Artifact::
     meetsRequirements (const Capabilities &caps,

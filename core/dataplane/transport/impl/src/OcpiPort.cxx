@@ -1650,7 +1650,8 @@ sendOutputBuffer( BufferUserFacet* buf, size_t length, uint8_t opcode )
   // buffer can be NULL.  The user should not be advancing all in this case, but we need to protect against it.
   Circuit * c = getCircuit();
   OU::SelfAutoMutex guard(c); // FIXME: refactor to make this a circuit method
-  ocpiDebug("Sending buffer %p on port %p on circuit %p", b, this, c);
+  ocpiDebug("Sending buffer %p on port %p on circuit %p length %zu op %u", b, this, c,
+	    length, opcode);
   if ( c->canTransferBuffer( b ) ) {
     c->startBufferTransfer( b );
   }

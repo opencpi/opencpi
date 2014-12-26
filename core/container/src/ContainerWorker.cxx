@@ -109,6 +109,12 @@ namespace OCPI {
     }
     // Internal used by others.
     void Worker::setPropertyValue(const OU::Property &prop, const std::string &v) {
+      OU::Value val(prop);
+      const char *err = val.parse(v.c_str());
+      if (err)
+	throw OU::Error("For value \"%s\" for property \"%s\": %s",
+			v.c_str(), prop.m_name.c_str(), err);
+      setPropertyValue(prop, val);
     }
 
     // Internal used by others.

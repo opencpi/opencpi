@@ -2,6 +2,7 @@
 #include <inttypes.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <arpa/inet.h>
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -47,6 +48,8 @@ namespace OCPI {
 	  if (eif.up && eif.connected && eif.ipAddr.addrInAddr()) {
 	    ocpiDebug("Interface \"%s\" up and connected and has IP address.",
 		      eif.name.c_str());
+	    if (m_name.empty())
+	      m_name = eif.ipAddr.prettyInAddr();
 	    OE::Socket *s = new OE::Socket(eif, ocpi_device, &udp, 0, error);
 	    if (!error.empty()) {
 	      delete s;
@@ -65,37 +68,50 @@ namespace OCPI {
       port = m_server.getPortNo();
       OE::Address a;
       m_server.getAddr(a);
-      m_name = OS::getHostname();
       addFd(m_server.fd(), true);
+      // Note that m_name has the IP address of hte FIRST interface we found...
       OU::formatAdd(m_name, ":%u", port);
       if (verbose) {
 	if (discoverable) {
 	  fprintf(stderr,
-		  "Container server at %s (TCP: %s, discoverable at UDP %s)\n"
-		  " using UDP response addresses:  ",
+		  "Container server at %s\n  TCP: %s, discoverable at UDP %s)\n"
+		  "  Using UDP discovery response addresses:\n",
 		  m_name.c_str(), a.pretty(), m_disc->ifAddr().pretty());
 	  for (DiscSocketsIter ci = m_discSockets.begin(); ci != m_discSockets.end(); ci++)
-	    fprintf(stderr, "%s%s", ci == m_discSockets.begin() ? "" : ", ",
-		    (*ci)->ifAddr().pretty());
-	  fprintf(stderr, "\n");
+	    fprintf(stderr, "    %s\n", (*ci)->ifAddr().pretty());
 	} else
 	  fprintf(stderr, "Container server at %s (IP: %s)\n", m_name.c_str(), a.pretty());
 	if (a.addrInAddr() == 0) {
-	  fprintf(stderr, "Available TCP addresses are: ");
+	  fprintf(stderr, "  Available TCP addresses are:\n");
 	  OE::IfScanner ifs(error);
 	  if (error.length())
 	    return;
 	  OE::Interface eif;
+	  size_t len = 0;
+	  for (unsigned n = 0; ifs.getNext(eif, error, NULL) && error.empty(); n++)
+	    if (eif.up && eif.connected && eif.ipAddr.addrInAddr() &&
+		eif.name.length() > len)
+	      len = eif.name.length();
+	  ifs.reset();
 	  for (unsigned n = 0; ifs.getNext(eif, error, NULL) && error.empty(); n++)
 	    if (eif.up && eif.connected && eif.ipAddr.addrInAddr()) {
 	      const char *pretty = eif.ipAddr.pretty();
-	      fprintf(stderr, "%son %s: %*s:%u", n ? ", " : "", 
-		      eif.name.c_str(), (int)(strrchr(pretty, ':') - pretty), pretty, a.addrPort());
+	      fprintf(stderr, "    On interface %s: %*s%.*s:%u\n", eif.name.c_str(),
+		      (int)(len - eif.name.length()), "",
+		      (int)(strchr(pretty, ':') - pretty), pretty, a.addrPort());
 	    }
-	  fprintf(stderr, "\n");
 	}
-	fprintf(stderr, "Artifacts stored and cached in the directory \"%s\"; will be %s on exit.\n",
+	fprintf(stderr,
+		"Artifacts stored/cached in the directory \"%s\"; which will be %s on exit.\n",
 		m_library.libName().c_str(), m_remove ? "removed" : "retained");
+	fprintf(stderr, "Containers offered to clients are:\n");
+	  OA::Container *ac;
+	  for (unsigned n = 0; (ac = OA::ContainerManager::get(n)); n++) {
+	    OC::Container &c = *static_cast<OC::Container *>(ac);
+	    fprintf(stderr, "  %2d: %s model %s os %s osVersion %s platform %s\n",
+		    n, c.name().c_str(), c.model().c_str(), c.os().c_str(),
+		    c.osVersion().c_str(), c.platform().c_str());
+	  }
 	fflush(stderr);
       }
     }
@@ -140,7 +156,7 @@ namespace OCPI {
 	;
       }
       ocpiDebug("Select returned a real fd %"PRIx64" server %d", *(uint64_t *)fds, m_server.fd());
-      if (FD_ISSET(m_disc->fd(), fds) && receiveDisc(error))
+      if (m_disc && FD_ISSET(m_disc->fd(), fds) && receiveDisc(error))
 	return true;
       for (DiscSocketsIter dsi = m_discSockets.begin(); dsi != m_discSockets.end(); dsi++)
 	if (FD_ISSET((*dsi)->fd(), fds) && receiveDiscSocket(**dsi, error))
@@ -150,14 +166,14 @@ namespace OCPI {
       bool eof;
       for (ClientsIter ci = m_clients.begin(); ci != m_clients.end();)
 	if (FD_ISSET((*ci)->fd(), fds) && (*ci)->receive(eof, error)) {
-	  std::string host;
-	  uint16_t port;
-	  (*ci)->socket().getPeerName(host, port);
 	  if (m_verbose)
-	    fprintf(stderr, "Shutting down client %s:%u due to error: %s\n",
-		    host.c_str(), port, error.c_str());
-	  ocpiInfo("Shutting down client %s:%u due to error: %s",
-		   host.c_str(), port, error.c_str());
+	    if (eof)
+	      fprintf(stderr, "Client \"%s\" has disconnected.\n", (*ci)->client());
+	    else
+	      fprintf(stderr, "Shutting down client \"%s\" due to error: %s\n",
+		      (*ci)->client(), error.c_str());
+	  ocpiInfo("Shutting down client \"%s\" due to error: %s",
+		   (*ci)->client(), error.c_str());
 	  error.clear();
 	  OR::Server *c = *ci;
 	  ClientsIter tmp = ci;
@@ -195,22 +211,11 @@ namespace OCPI {
 	  strcpy(cp, m_name.c_str());
 	  cp += m_name.length();
 	  *cp++ = '\n';
-	  OA::Container *ac;
-	  for (unsigned n = 0; (ac = OA::ContainerManager::get(n)); n++) {
-	    OC::Container &c = *static_cast<OC::Container *>(ac);
-	    size_t
-	      left = OE::MaxPacketSize - (cp - start),
-	      inserted = snprintf(cp, left, "%s:%s:%s:%s:%s\n",
-				  c.name().c_str(), c.model().c_str(), c.os().c_str(),
-				  c.osVersion().c_str(), c.platform().c_str());
-	      if (inserted+1 > left)
-		OU::format(error, "Too many containers, discovery buffer would overflow");
-	    cp += inserted;
-	  }
-	  *cp++ = 0;
-	  length = cp - (char*)rFrame.payload;
-	  ocpiDebug("Container server discovery returns: \n%s\n---end of discovery",
-		    start);
+	  size_t left = OE::MaxPacketSize - (cp - start);
+	  if (OR::Server::fillDiscoveryInfo(cp, left, error))
+	    return true;
+	  length = OE::MaxPacketSize - left;
+	  ocpiDebug("Container server discovery returns: \n%s---end of discovery", start);
 	  return !s->send(rFrame, length, from, 0, NULL, error);
 	} else
 	  error = "No interface index for receiving discovery datagrams";
@@ -232,6 +237,8 @@ namespace OCPI {
       }
       m_clients.push_back(c);
       addFd(c->fd(), true);
+      if (m_verbose)
+	fprintf(stderr, "New client is \"%s\".\n", c->client());
       return false;
     }
   }

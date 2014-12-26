@@ -55,55 +55,48 @@
 #include "OcpiOsDataTypes.h"
 #include "OcpiOsPosixError.h"
 
-inline
-int &
-o2fd (OCPI::OS::uint64_t * ptr)
-  throw ()
-{
-  return *reinterpret_cast<int *> (ptr);
-}
+static inline int &o2fd(uint64_t *o) { return *(int*)o; }
+static inline const int &o2fd(const uint64_t *o) { return *(int*)o; }
 
-namespace {
-  enum {
-    DEFAULT_LISTEN_BACKLOG = 10
-  };
-}
+namespace OCPI {
+  namespace OS {
+    const int DEFAULT_LISTEN_BACKLOG = 10;
 
-int OCPI::OS::ServerSocket::fd() throw() {
+int ServerSocket::fd() throw() {
   return o2fd(m_osOpaque);
 }
 
-void OCPI::OS::ServerSocket::getAddr(Ether::Address &addr) {
+void ServerSocket::getAddr(Ether::Address &addr) {
   int fd = o2fd(m_osOpaque);
   ocpiAssert (fd >= 0);
 
   struct sockaddr_in sin;
   socklen_t len = sizeof(sin);
   if (getsockname(fd, (struct sockaddr *)&sin, &len))
-    throw OCPI::OS::Posix::getErrorMessage (errno, "getsockname");
+    throw Posix::getErrorMessage (errno, "getsockname");
   ocpiAssert(sin.sin_family == AF_INET);
   addr.set(ntohs(sin.sin_port), ntohl(sin.sin_addr.s_addr));
 }
 
 
-OCPI::OS::ServerSocket::ServerSocket ()
-  throw ()
-{
+ServerSocket::
+ServerSocket () throw ()
+  : m_timeoutms(0) {
   ocpiAssert ((compileTimeSizeCheck<sizeof (m_osOpaque), sizeof (int)> ()));
   ocpiAssert (sizeof (m_osOpaque) >= sizeof (int));
   o2fd (m_osOpaque) = -1;
 }
 
-OCPI::OS::ServerSocket::ServerSocket (uint16_t portNo, bool reuse )
-  throw (std::string)
-{
+ServerSocket::
+ServerSocket (uint16_t portNo, bool reuse ) throw (std::string)
+  : m_timeoutms(0) {
   ocpiAssert ((compileTimeSizeCheck<sizeof (m_osOpaque), sizeof (int)> ()));
   ocpiAssert (sizeof (m_osOpaque) >= sizeof (int));
   o2fd (m_osOpaque) = -1;
   bind (portNo, reuse);
 }
 
-OCPI::OS::ServerSocket::~ServerSocket ()
+ServerSocket::~ServerSocket ()
   throw ()
 {
   if (o2fd (m_osOpaque) >= 0)
@@ -111,10 +104,8 @@ OCPI::OS::ServerSocket::~ServerSocket ()
   ocpiAssert (o2fd (m_osOpaque) == -1);
 }
 
-OCPI::OS::Socket
-OCPI::OS::ServerSocket::bind (uint16_t portNo, bool reuse, bool udp )
-  throw (std::string)
-{
+void ServerSocket::
+bind(uint16_t portNo, bool reuse, bool udp ) throw (std::string) {
   ocpiAssert (o2fd (m_osOpaque) == -1);
 
   struct sockaddr_in sin;
@@ -127,51 +118,21 @@ OCPI::OS::ServerSocket::bind (uint16_t portNo, bool reuse, bool udp )
   sin.sin_port = htons (portNo);
   sin.sin_addr.s_addr = INADDR_ANY;
 
-  int fileno;
-  if ( ! udp ) {
-    fileno = ::socket (PF_INET, SOCK_STREAM, 0);
-  }
-  else {
-    fileno = ::socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP);
-  }
-  
-  if (fileno < 0) {
-    throw OCPI::OS::Posix::getErrorMessage (errno, "bind/socket");
-  }
-
+  int fileno = ::socket (PF_INET, udp ? SOCK_DGRAM : SOCK_STREAM, udp ? IPPROTO_UDP : 0);
+  if (fileno < 0)
+    throw Posix::getErrorMessage (errno, "bind/socket");
   int reuseopt = reuse ? 1 : 0;
-
-  if (::setsockopt (fileno, SOL_SOCKET, SO_REUSEADDR,
-                    (char *) &reuseopt, sizeof (int)) != 0) {
-    int err = errno;
+  if (::setsockopt(fileno, SOL_SOCKET, SO_REUSEADDR, (void *)&reuseopt, sizeof (int)) != 0 ||
+      ::bind (fileno, (struct sockaddr *) &sin, sizeof (sin)) != 0 ||
+      !udp && ::listen (fileno, DEFAULT_LISTEN_BACKLOG) != 0) {
     ::close (fileno);
-    throw OCPI::OS::Posix::getErrorMessage (err, "bind/setsockopt");
+    throw Posix::getErrorMessage(errno, "bind/setsockopt/listen");
   }
-  
-  if (::bind (fileno, (struct sockaddr *) &sin, sizeof (sin)) != 0) {
-    int err = errno;
-    ::close (fileno);
-    throw OCPI::OS::Posix::getErrorMessage (err, "bind/bind");
-  }
-
-  if ( ! udp ) {
-    if (::listen (fileno, DEFAULT_LISTEN_BACKLOG) != 0) {
-      int err = errno;
-      ::close (fileno);
-      throw OCPI::OS::Posix::getErrorMessage (err, "bind/listen");
-    }
-  }
-
   o2fd (m_osOpaque) = fileno;
-
-  OCPI::OS::uint64_t * fd2o = reinterpret_cast<OCPI::OS::uint64_t *> (&fileno);
-  return OCPI::OS::Socket( fd2o );
 }
 
-uint16_t
-OCPI::OS::ServerSocket::getPortNo ()
-  throw (std::string)
-{
+uint16_t ServerSocket::
+getPortNo() throw (std::string) {
   ocpiAssert (o2fd (m_osOpaque) != -1);
 
   struct sockaddr_in sin;
@@ -180,29 +141,26 @@ OCPI::OS::ServerSocket::getPortNo ()
   int ret = ::getsockname (o2fd (m_osOpaque), (struct sockaddr *) &sin, &len);
 
   if (ret != 0 || len != sizeof (sin)) {
-    throw OCPI::OS::Posix::getErrorMessage (errno);
+    throw Posix::getErrorMessage (errno);
   }
 
   return ntohs (sin.sin_port);
 }
 
-OCPI::OS::Socket
-OCPI::OS::ServerSocket::accept ()
-  throw (std::string)
-{
-  ocpiAssert (o2fd (m_osOpaque) != -1);
+void ServerSocket::
+accept (Socket &sock) throw (std::string) {
+  ocpiAssert(o2fd(m_osOpaque) != -1);
 
   int newfd = ::accept(o2fd(m_osOpaque), 0, 0);
-  if (newfd == -1) {
-    throw OCPI::OS::Posix::getErrorMessage (errno, "server/accept");
-  }
-
-  OCPI::OS::uint64_t * fd2o = reinterpret_cast<OCPI::OS::uint64_t *> (&newfd);
-  return OCPI::OS::Socket (fd2o);
+  if (newfd == -1)
+    throw Posix::getErrorMessage (errno, "server/accept");
+  uint64_t opaque;
+  o2fd(&opaque) = newfd;
+  sock.setOpaque(&opaque);
 }
 
 bool
-OCPI::OS::ServerSocket::wait (unsigned long msecs)
+ServerSocket::wait (unsigned long msecs)
   throw (std::string)
 {
   ocpiAssert (o2fd (m_osOpaque) != -1);
@@ -237,7 +195,7 @@ OCPI::OS::ServerSocket::wait (unsigned long msecs)
   int res = ::select (fd+1, &readfds, 0, 0, &timeout);
 
   if (res < 0) {
-    throw OCPI::OS::Posix::getErrorMessage (errno);
+    throw Posix::getErrorMessage (errno);
   }
 
   if (res == 0) {
@@ -267,14 +225,65 @@ OCPI::OS::ServerSocket::wait (unsigned long msecs)
 }
 
 void
-OCPI::OS::ServerSocket::close ()
+ServerSocket::close ()
   throw (std::string)
 {
   ocpiAssert (o2fd (m_osOpaque) != -1);
 
   if (::close (o2fd (m_osOpaque))) {
-    throw OCPI::OS::Posix::getErrorMessage (errno);
+    throw Posix::getErrorMessage (errno);
   }
 
   o2fd (m_osOpaque) = -1;
+}
+
+// NOTE THIS CODE IS REPLICATED IN THE SOCKET CODE FOR DATAGRAMS
+// FIXME SHARE CODE AT THE RIGHT LEVEL
+size_t ServerSocket::
+sendmsg (const void * iovect, unsigned int flags  ) throw (std::string) {
+  const struct msghdr * iov = static_cast<const struct msghdr *>(iovect);
+  ssize_t ret = ::sendmsg (o2fd (m_osOpaque), iov, flags);
+  if (ret == -1)
+    throw Posix::getErrorMessage (errno);
+  return static_cast<size_t>(ret);
+}
+
+size_t ServerSocket::
+sendto (const char * data, size_t amount, int flags,  char * src_addr, size_t addrlen)
+  throw (std::string) {
+  struct sockaddr * si_other = reinterpret_cast< struct sockaddr *>(src_addr);
+  size_t ret = ::sendto (o2fd (m_osOpaque), data, amount, flags, si_other, (socklen_t)addrlen );
+  if (ret == static_cast<size_t> (-1))
+    throw Posix::getErrorMessage(errno);
+  return static_cast<size_t>(ret);
+}
+
+size_t ServerSocket::
+recvfrom(char  *buf, size_t amount, int flags,
+	 char * src_addr, size_t * addrlen, unsigned timeoutms) throw (std::string) {
+  if (timeoutms != m_timeoutms) {
+    struct timeval tv;
+    tv.tv_sec = timeoutms/1000;
+    tv.tv_usec = (timeoutms % 1000) * 1000;
+    ocpiDebug("Setting socket timeout to %u ms", timeoutms);
+    if (setsockopt(o2fd (m_osOpaque), SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) != 0)
+      throw Posix::getErrorMessage (errno);
+    m_timeoutms = timeoutms;
+  }
+  struct sockaddr * si_other = reinterpret_cast< struct sockaddr *>(src_addr);
+  ssize_t ret;
+  ret= ::recvfrom (o2fd (m_osOpaque), buf, amount, flags, si_other, (socklen_t*)addrlen);
+  if (ret == -1) {
+    if (errno != EAGAIN && errno != EINTR)
+      throw Posix::getErrorMessage(errno);
+    return 0;
+  }
+  return static_cast<size_t> (ret);
+}
+
+
+
+
+
+}
 }

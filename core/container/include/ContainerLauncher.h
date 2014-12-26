@@ -62,9 +62,10 @@ namespace OCPI {
 	Instance *m_instIn, *m_instOut;
 	OCPI::API::Port *m_input, *m_output;
 	const char *m_nameIn, *m_nameOut, *m_url;
-	const OCPI::API::PValue *m_paramsIn, *m_paramsOut;
+	OCPI::Util::PValueList m_paramsIn, m_paramsOut;
 	std::string m_ipi, m_fpi, m_iui, m_fui;
 	Connection();
+	void prepare();
       };
       typedef std::vector<Connection> Connections;
     protected:

@@ -6,7 +6,7 @@
 #include <sys/stat.h>
 #include <cstring>
 #include <set>
-#include "OcpiOsClientSocket.h"
+#include "OcpiOsSocket.h"
 #include "OcpiUtilValue.h"
 #include "Container.h"
 #include "ContainerApplication.h"
@@ -22,15 +22,8 @@ namespace OCPI {
   namespace Remote {
 
 Launcher::
-Launcher(const char *host, uint16_t port, std::string &error)
-  : m_fd(-1), m_sending(false), m_rx(NULL) {
-  std::string tmp(host);
-  try {
-    m_socket = OS::ClientSocket::connect(tmp, port);
-  } catch (std::string &s) {
-    error = s;
-  }
-  m_fd = m_socket.fd();
+Launcher(OS::Socket &socket)
+  : m_fd(socket.fd()), m_sending(false), m_rx(NULL) {
 }
 
 Launcher::
@@ -120,8 +113,14 @@ encodeDescriptor(const std::string &s, std::string &out) {
   OU::formatAdd(out, "%zu.", s.length());
   OU::Unparser up;
   const char *cp = s.data();
-  for (size_t n = s.length(); n; n--, cp++)
-    up.unparseChar(out, *cp, true);
+  for (size_t n = s.length(); n; n--, cp++) {
+    if (*cp == '\'')
+      out += "&apos;";
+    else if (*cp == '&')
+      out += "&amp;";
+    else
+      up.unparseChar(out, *cp, true);
+  }
 }
 void Launcher::
 decodeDescriptor(const char *info, std::string &s) {
@@ -203,6 +202,14 @@ emitPort(const Launcher::Instance &i, const char *port, const OA::PValue *params
   } else
     m_request += "/>\n";
 }
+static void 
+unparseParams(const OU::PValue *params, std::string &out) {
+  for (;params && params->name; params++) {
+    OU::formatAdd(out, " %s='", params->name);
+    params->unparse(out, true);
+    out += '\'';
+  }
+}
 // This connection is one of ours, either internal or external
 void Launcher::
 emitConnection(const Launcher::Instances &instances, const Launcher::Connection &c) { 
@@ -215,8 +222,21 @@ emitConnection(const Launcher::Instances &instances, const Launcher::Connection 
 		  m_instanceMap[c.m_instOut - &instances[0]], c.m_nameOut);
   if (c.m_url)
     OU::formatAdd(m_request, "  url='%s'", c.m_url);
-  // We could put in the params of the endpoints and the connections here...
-  m_request += "/>\n";
+  if (c.m_paramsIn.list() || c.m_paramsOut.list()) {
+    m_request +=">\n";
+    if (c.m_paramsIn.list()) {
+      m_request += "    <paramsin";
+      unparseParams(c.m_paramsIn, m_request);
+      m_request += "/>\n";
+    }
+    if (c.m_paramsOut.list()) {
+      m_request += "    <paramsout";
+      unparseParams(c.m_paramsOut, m_request);
+      m_request += "/>\n";
+    }
+    m_request += "  </connection>\n";
+  } else
+    m_request += "/>\n";
 }
 void Launcher::
 emitConnectionUpdate(unsigned connN, const char *iname, std::string &sinfo) {
@@ -227,6 +247,7 @@ emitConnectionUpdate(unsigned connN, const char *iname, std::string &sinfo) {
   // This encoding escapes double quotes and allows for embedded null characters
   encodeDescriptor(sinfo, m_request);
   m_request += "\"/>\n";
+  sinfo.clear();
 }
 void Launcher::
 loadArtifact(ezxml_t ax) {
@@ -279,12 +300,14 @@ updateConnection(ezxml_t cx) {
   OC::Launcher::Connection &c = *m_connections[n];
   // We should only get this for connections that we are one side of.
   const char *info;
-  if (c.m_launchIn) {
+  if (c.m_launchIn == this) {
+    // The remote is an input, so we should be receiving provider info in the update
     if ((info = ezxml_cattr(cx, "ipi")))
       decodeDescriptor(info, c.m_ipi);
     else if ((info = ezxml_cattr(cx, "fpi")))
       decodeDescriptor(info, c.m_fpi);
-  } else if (c.m_launchOut) {
+  } else if (c.m_launchOut == this) {
+    // The remote is an input, so we should be receiving user info in the update
     if ((info = ezxml_cattr(cx, "iui")))
       decodeDescriptor(info, c.m_iui);
     else if ((info = ezxml_cattr(cx, "fui")))
@@ -346,12 +369,14 @@ launch(Launcher::Instances &instances, Launcher::Connections &connections) {
   m_artifacts.resize(nArtifacts);
   unsigned nConnections = 0;
   Launcher::Connection *c = &connections[0];
-  for (unsigned n = 0; n < connections.size(); n++, c++)
+  for (unsigned n = 0; n < connections.size(); n++, c++) {
+    c->prepare();
     if (c->m_launchIn == this || c->m_launchOut == this) {
       emitConnection(instances, *c);
-      m_connections[nConnections++] = c;
       m_connectionMap[n] = nConnections;
+      m_connections[nConnections++] = c;
     }
+  }
   m_connections.resize(nConnections);
   send();
   return m_more = true; // more to do
@@ -459,8 +484,20 @@ controlOp(unsigned remoteInstance, OU::Worker::ControlOperation op) {
     throw OU::Error("Error in control operation: %s", err);
 }
 
-
-
+bool Launcher::
+wait(unsigned remoteInstance, OCPI::OS::ElapsedTime timeout) {
+  OU::format(m_request, "<control id='%u' wait='%"PRIu32"'>\n", remoteInstance,
+	     timeout != 0 ?
+	     timeout.seconds() + (timeout.nanoseconds() >= 500000000 ? 1 : 0)
+	     : 0);
+  send();
+  receive();
+  assert(!strcasecmp(OX::ezxml_tag(m_rx), "control"));
+  const char *err = ezxml_cattr(m_rx, "error");
+  if (err)
+    throw OU::Error("Error in control operation: %s", err);
+  return ezxml_cattr(m_rx, "timeout") != NULL;
+}
 
   }
 }

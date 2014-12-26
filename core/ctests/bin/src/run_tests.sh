@@ -26,16 +26,16 @@
 ########################################################################### #
 
 # quick hack to run all tests
-# run this in the binary executables directory by doing: ../bin/src/run_tests.csh
+# run this in the binary executables directory by doing: ../bin/src/run_tests.sh
 export OCPI_RCC_TARGET=$OCPI_TOOL_HOST
 export OCPI_SMB_SIZE=3000000
-export OCPI_LIBRARY_PATH=../../../../components/lib/rcc
+export OCPI_LIBRARY_PATH=../../../components/lib/rcc
 if test "$OCPI_TOOL_OS" = macos; then
   export OCPI_RCC_SUFFIX=dylib
 #  setenv DYLD_LIBRARY_PATH ../../../../lib/target-$OCPI_TOOL_HOST
 else
   export OCPI_RCC_SUFFIX=so
-  export LD_LIBRARY_PATH=../../../../lib/target-$OCPI_TOOL_HOST
+  export LD_LIBRARY_PATH=../../../lib/target-$OCPI_TOOL_HOST
 fi
 tmp=/tmp/ocpictest$$
 failed=

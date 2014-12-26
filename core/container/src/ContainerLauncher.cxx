@@ -1,3 +1,4 @@
+#include "DtSharedMemoryInterface.h" // FIXME This should simply be "DtEndPoint.h"
 #include "Container.h"
 #include "ContainerPort.h"
 #include "ContainerWorker.h"
@@ -6,9 +7,9 @@
 
 namespace OA = OCPI::API;
 namespace OU = OCPI::Util;
+namespace OT = DataTransfer;
 namespace OCPI {
   namespace Container {
-
 
 void LocalLauncher::
 createWorker(Launcher::Instance &i) {
@@ -52,7 +53,8 @@ launch(Launcher::Instances &instances, Launcher::Connections &connections) {
     if (&i->m_container->launcher() == this && !i->m_hasMaster)
       createWorker(*i);
   Launcher::Connection *c = &connections[0];
-  for (unsigned n = 0; n < connections.size(); n++, c++)
+  for (unsigned n = 0; n < connections.size(); n++, c++) {
+    c->prepare();
     if (c->m_launchIn == this) {
       OA::Worker &wIn = *c->m_instIn->m_worker;
       c->m_input = &wIn.getPort(c->m_nameIn);
@@ -62,25 +64,28 @@ launch(Launcher::Instances &instances, Launcher::Connections &connections) {
 	c->m_output = &wOut.getPort(c->m_nameOut);
 	// Connection is entirely under the purview of this launcher.
 	c->m_input->connect(*c->m_output, c->m_paramsIn, c->m_paramsOut);
-      } else if (c->m_launchOut) {
-	// A connect between ports with different launchers
-	c->m_input->containerPort().getInitialProviderInfo(c->m_paramsIn, c->m_ipi);
-	m_more = true;
-      } else if (c->m_url)
+      } else if (c->m_url) {
 	// Input that is connected to a URL.  We will do this locally
 	c->m_input->connectURL(c->m_url, c->m_paramsIn, c->m_paramsOut);
+      } else {
+	// We are the input side, some other launcher has the output
+	c->m_input->containerPort().getInitialProviderInfo(c->m_paramsIn, c->m_ipi);
+	m_more = true;
+      }
     } else if (c->m_launchOut == this) {
       // Output is here, but input is elsewhere or external
       OA::Worker &wOut = *c->m_instOut->m_worker;
       c->m_output = &wOut.getPort(c->m_nameOut);
-      if (c->m_launchIn) {
-	// A connect between ports with different launchers
-	// Since input is accessed first, we do nothing here at this time.
-      } else if (c->m_url)
+      if (c->m_url)
 	// Input that is connected to a URL.
 	// We will do this locally
 	c->m_output->connectURL(c->m_url, c->m_paramsOut, c->m_paramsIn);
+      else
+	// Since input is accessed first, we do nothing here at this time.
+	// But we need the info, so we "need more"
+	m_more = true;
     }
+  }
   return m_more;
 }
 
@@ -124,6 +129,33 @@ Connection()
     m_input(NULL), m_output(NULL), m_nameIn(NULL), m_nameOut(NULL), m_url(NULL),
     m_paramsIn(NULL), m_paramsOut(NULL) {
 }
+void Launcher::Connection::
+prepare() {
+  // Make sure that the input side knows about any transports implied at the
+  // output side.
+  const char *cp;
+  if (!OU::findString(m_paramsIn, "endpoint", cp) &&
+      !OU::findString(m_paramsIn, "transport", cp)) {
+    // There is no transport specified on the input side,
+    // check the output side.
+    std::string transport;
+    if (OU::findString(m_paramsOut, "endpoint", cp))
+      OT::EndPoint::getProtocolFromString(cp, transport);
+    else if (OU::findString(m_paramsOut, "transport", cp))
+      transport = cp;
+    if (transport.length())
+      m_paramsIn.add("transport", transport.c_str());
+  }
+  if (m_launchIn != m_launchOut) {
+    // For now, force connections to use the sockets transport if the
+    // launchers are different, and there is non specified
+    const char *endpoint = NULL, *transport = NULL;
+    if (!OU::findString(m_paramsIn, "endpoint", endpoint) &&
+	!OU::findString(m_paramsIn, "transport", transport))
+      m_paramsIn.add("transport", "socket");
+  }
+}
+
 
   }
 }

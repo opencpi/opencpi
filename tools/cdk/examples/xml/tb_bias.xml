@@ -1,7 +1,8 @@
-<application package='ocpi'>
+<application package='ocpi' done='capture'>
   <instance component="pattern" connect="bias">
-    <property name="messagesToSend" value='1'/>
-    <property name="metadata" value='{12,3}'/>
+    <property name='metadatacount' value='2'/>
+    <property name="messagesToSend" value='2'/>
+    <property name="metadata" value='{12,3},{0,0}'/>
     <property name="data" value='9,8,7,6'/>
   </instance>
   <instance component='bias' connect="capture">

@@ -420,6 +420,8 @@ namespace OCPI {
       unsigned Driver::
       search(const OU::PValue *props, const char **exclude, bool discoveryOnly, bool udp,
 	     std::string &error) {
+	if (getenv("OCPI_SUPPRESS_HDL_NETWORK_DISCOVERY"))
+	  return 0;
 	unsigned count = 0;
 	OE::IfScanner ifs(error);
 	if (error.size())

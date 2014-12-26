@@ -289,26 +289,6 @@ doProperties(ezxml_t top, const char *parent, bool impl, bool anyIsBad) {
   return OE::ezxml_children(top, doMaybeProp, &pi);
 }
 
-// parse an attribute value as a list separated by comma, space or tab
-// and call a function with the given arg for each token found
-// FIXME: make this a utility
-const char *
-parseList(const char *list, const char * (*doit)(const char *tok, void *arg), void *arg) {
-  const char *err = 0;
-  if (list) {
-    char
-      *mylist = strdup(list),
-      *base,
-      *last = 0,
-      *tok;
-    for (base = mylist; (tok = strtok_r(base, ", \t", &last)); base = NULL)
-      if ((err = doit(tok, arg)))
-        break;
-    free(mylist);
-  }
-  return err;
-}
-
 const char *parseControlOp(const char *op, void *arg) {
   Worker *w = (Worker *)arg;
   unsigned n = 0;
@@ -382,8 +362,9 @@ parseImplControl(ezxml_t &xctl) {
   if (sub32)
     m_ctl.sub32Bits = true;
   // We take ops from either place as true
-  if ((err = parseList(ezxml_cattr(m_xml, "ControlOperations"), parseControlOp, this)) ||
-      xctl && (err = parseList(ezxml_cattr(xctl, "ControlOperations"), parseControlOp, this)))
+  if ((err = OU::parseList(ezxml_cattr(m_xml, "ControlOperations"), parseControlOp, this)) ||
+      xctl &&
+      (err = OU::parseList(ezxml_cattr(xctl, "ControlOperations"), parseControlOp, this)))
     return err;
   // Add the built-in properties
   if ((err = addBuiltinProperties()) ||

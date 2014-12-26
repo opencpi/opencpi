@@ -499,6 +499,12 @@ getElapsed ()
   return tci.accumulatedTime;
 }
 
+ElapsedTime Timer::
+getRemaining() throw() {
+  return expiration - getElapsed();
+}
+
+
 void
 Timer::
 getValue (ElapsedTime & timer)

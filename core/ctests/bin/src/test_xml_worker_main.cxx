@@ -189,10 +189,10 @@ int  main( int argc, char** argv)
   if (!suffix)
     suffix = "so";
   char *w1Url;
-  asprintf(&w1Url, "../../../../components/lib/rcc/%s/zcworkers.%s",
+  asprintf(&w1Url, "../../../components/lib/rcc/%s/zcworkers.%s",
 	   target, suffix);
 #else
-  const char * w1Url = "../../../../components/lib/rcc/Linux-x86_64/zcworkers.so";
+  const char * w1Url = "../../../components/lib/rcc/Linux-x86_64/zcworkers.so";
 #endif
   OCPI::API::Worker & consumer = ca[0].app->createWorker( w1Url, NULL, "testConsumer", "ocpi.Consumer" );
   OCPI::API::Worker & producer = ca[0].app->createWorker( w1Url, NULL, "testProducer", "ocpi.Producer" );
