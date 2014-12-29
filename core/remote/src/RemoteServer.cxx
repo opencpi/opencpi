@@ -253,7 +253,7 @@ namespace OCPI {
 	  Launcher::encodeDescriptor(c->m_ipi, m_response);
 	  m_response += "'/>\n";
 	}
-      return false;
+      return Launcher::sendXml(fd(), m_response, "responding from server after initial launch", error);
     }
 
     bool Server::
@@ -280,9 +280,7 @@ namespace OCPI {
 	m_downloaded = true;
 	return Launcher::sendXml(fd(), m_response, "responding from server", error);
       }
-      if (doLaunch(error))
-	return true;
-      return Launcher::sendXml(fd(), m_response, "responding from server", error);
+      return doLaunch(error);
     }
     // After initial launch, and after any downloading
     bool Server::
