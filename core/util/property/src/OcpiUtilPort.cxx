@@ -32,6 +32,7 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <cassert>
 #include <string>
 #include <ctype.h>
 #include "OcpiUtilEzxml.h"
@@ -46,79 +47,163 @@ namespace OCPI {
     void Port::
     init() {
       m_ordinal = 0;
-      m_provider = false;
-      m_optional = false;
-      m_bidirectional = false;
+      m_provider = true;
+      m_isProducer = false; // this default is consistent with OWD usage.
+      m_isOptional = false;
+      m_isBidirectional = false;
       m_minBufferCount = 1;
       m_bufferSize = 0;
       m_xml = NULL;
       m_worker = NULL;
-      m_bufferSizePort = NULL;
+      m_bufferSizePort = -1;
+      m_nOpcodes = 0;
+      m_clone = false;
+      m_parsed = false;
+      m_seenSummary = false;
       m_isScalable = false;
       m_isPartitioned = false;
       m_defaultDistribution = All;
     }
     Port::
-    Port(bool prov) {
+    Port() { // bool prov) {
       init();
-      m_provider = prov;
+      //      m_provider = prov;
+      //      m_isProducer = !prov;
     }
 
-    // Clone constructor - meaning we can trash the source.
+    // A constructor called by tools
+    // If p == NULL, normal construction
+    // If p != NULL, we are cloning/morphing from spec to impl
     Port::
-    Port(Port *p) : Protocol(p) {
+    Port(Port *p, Worker &w, ezxml_t x, size_t ordinal, int nameOrdinal,
+	 const char *defaultName, const char *&err)
+      : Protocol(p) {
+      err = NULL;
+      init();
       if (p) {
-	m_name = p->m_name;
+	// We are morphing from a spec.  Copy only spec-related members
 	m_ordinal = p->m_ordinal;
-	m_provider = p->m_provider;
-	m_optional = p->m_optional;
-	m_bidirectional = p->m_bidirectional;
-	m_minBufferCount = p->m_minBufferCount;
-	m_bufferSize = p->m_bufferSize;
-	m_xml = p->m_xml;
 	m_worker = p->m_worker;
-	Port       *m_bufferSizePort;  // The port we should copy our buffer size from
-	m_isScalable = p->m_isScalable;
-	m_scaleExpr = p->m_scaleExpr;
-	m_isPartitioned = p->m_isPartitioned;
-	m_opScaling = p->m_opScaling;
-	p->m_opScaling.clear(); // pointers moved to clone
-	m_defaultDistribution = p->m_defaultDistribution;
-	m_defaultPartitioning = p->m_defaultPartitioning;
-	m_defaultHashField = p->m_defaultHashField;
+	m_name = p->m_name;
+	m_provider = p->m_provider;
+	m_isProducer = p->m_isProducer;
+	m_isOptional = p->m_isOptional;
+	m_nOpcodes = p->m_nOpcodes; // in case the spec does not mention protocol etc.
+	m_seenSummary = p->m_seenSummary;
+	// Set the new xml
+	m_xml = x;
       } else
-	init();
-    }
-    // First pass captures name
-    const char *Port::
-    preParse(Worker &w, ezxml_t x, PortOrdinal ordinal) {
-      m_worker = &w;
-      m_ordinal = ordinal;
-      m_xml = x;
-      return OE::getRequiredString(x, m_name, "name", "port");
+	err = preParse(w, x, ordinal, nameOrdinal, defaultName);
     }
 
-    // second pass can use names of other ports.
+    // This is the clone constructor from internal to external - i.e. a different worker.
+    // No xml here at all.
+    Port::
+    Port(const Port &other, Worker &w, std::string &name, size_t ordinal, const char *&err)
+    {
+      err = NULL;
+      if (w.findMetaPort(name)) {
+	err = esprintf("Can't create port named \"%s\" since it already exists", name.c_str());
+	return;
+      }
+      init();
+      m_worker = &w;
+      m_ordinal = OCPI_UTRUNCATE(PortOrdinal, ordinal);
+      m_name = name;
+      m_clone = true;
+      // everything else copied.
+      m_provider = other.m_provider;
+      m_isProducer = other.m_isProducer;
+      m_isOptional = other.m_isOptional;
+      m_isBidirectional = other.m_isBidirectional;
+      m_minBufferCount = other.m_minBufferCount;
+      m_bufferSize = other.m_bufferSize;
+      m_bufferSizePort = other.m_bufferSizePort;
+      m_nOpcodes = other.m_nOpcodes;
+      m_seenSummary = other.m_seenSummary;
+      m_isScalable = other.m_isScalable;
+      m_scaleExpr = other.m_scaleExpr;
+      m_isPartitioned = other.m_isPartitioned;
+      m_opScaling = other.m_opScaling; // we are sharing pointers
+      m_defaultDistribution = other.m_defaultDistribution;
+      m_defaultPartitioning = other.m_defaultPartitioning;
+      m_defaultHashField = other.m_defaultHashField;
+    }
+
+    Port::~Port() {}
+
+    // First pass captures worker, name, ordinal and xml
     const char *Port::
-    parse(ezxml_t x) {
+    preParse(Worker &w, ezxml_t x, size_t ord, int nameOrdinal, const char *defaultName) {
+      const char *name = ezxml_cattr(x, "name");
+      if (!name) {
+	name = ezxml_cattr(x, "implName");
+	if (!name)
+	  if (defaultName) {
+	    if (nameOrdinal == -1)
+	      name = defaultName;
+	  } else
+	    return "Missing \"name\" attribute for port";
+      }
+      if (name)
+	m_name = name;
+      else
+	format(m_name, "%s%u", defaultName, nameOrdinal);
+      if (w.findMetaPort(m_name.c_str(), this))
+	return esprintf("Can't create port named \"%s\" since it already exists",
+			    m_name.c_str());
+      m_worker = &w;
+      m_ordinal = OCPI_UTRUNCATE(PortOrdinal, ord);
+      m_xml = x;
+      return NULL;
+    }
+
+    // The default runtime protocol parser expects simple inline protocols
+    // FIXME: intern the protocols...
+    const char *Port::
+    parseProtocol() {
+      // Initialize everything from the protocol, then other attributes can override the protocol
+      ezxml_t protocol = ezxml_cchild(m_xml, "protocol");
+      if (protocol) {
+	const char *err;
+	if ((err = Protocol::parse(protocol, NULL, NULL, NULL, NULL)))
+	  return err;
+	m_nOpcodes = nOperations();
+      } else
+	m_nOpcodes = 256;
+      return NULL;
+    }
+
+    // second pass parsing can use names of other ports.
+    // Note this parsing will occur on the spec port, and then later when it morphs to
+    // an impl port.
+    const char *Port::
+    parse() {
+      m_parsed = true;
       const char *err;
       // Initialize everything from the protocol, then other attributes can override the protocol
-      ezxml_t protocol = ezxml_cchild(x, "protocol");
-      if (protocol &&
-	  (err = Protocol::parse(protocol, NULL, NULL, NULL, NULL)))
+      if ((err = parseProtocol()) ||
+	  (err = OE::getBoolean(m_xml, "twoWay", &m_isTwoWay)) ||           // protocol override
+	  (err = OE::getBoolean(m_xml, "bidirectional", &m_isBidirectional)) ||
+	  // Don't use absence to set value
+	  (err = OE::getBoolean(m_xml, "producer", &m_isProducer, false, false)) ||
+	  // Be sure we don't clobber a spec that has set optional,
+	  // but impls can have optional ports in devices...
+	  (err = OE::getBoolean(m_xml, "optional", &m_isOptional, true)) ||
+	  (err = OE::getNumber(m_xml, "minBufferCount", &m_minBufferCount, 0, 1)) ||
+	  // Be careful not to clobber protocol-determined values (i.e. don't set default values)
+	  (err = OE::getNumber(m_xml, "NumberOfOpcodes", &m_nOpcodes, NULL, 0, false)))
 	return err;
-      if ((err = OE::getBoolean(x, "twoWay", &m_isTwoWay)) ||           // protocol override
-	  (err = OE::getBoolean(x, "bidirectional", &m_bidirectional)) ||
-	  (err = OE::getBoolean(x, "provider", &m_provider)) ||
-	  (err = OE::getBoolean(x, "optional", &m_optional)) ||
-	  (err = OE::getNumber(x, "minBufferCount", &m_minBufferCount, 0, 1)))
-	return err;
-      const char *bs = ezxml_cattr(x, "bufferSize");
+      m_provider = !m_isProducer;
+      const char *bs = ezxml_cattr(m_xml, "bufferSize");
       if (bs && !isdigit(bs[0])) {
-	if (!(m_bufferSizePort = m_worker->findMetaPort(bs)))
+	Port *bsp = m_worker->findMetaPort(bs);
+	if (bsp)
+	  m_bufferSizePort = bsp->m_ordinal;
+	else
 	  return esprintf("Buffersize set to '%s', which is not a port name or a number",
 			      bs);
-      } else if ((err = OE::getNumber(x, "bufferSize", &m_bufferSize, 0, 0)))
+      } else if ((err = OE::getNumber(m_xml, "bufferSize", &m_bufferSize, 0, 0)))
 	return err;
       if (m_bufferSize == 0)
 	m_bufferSize = m_defaultBufferSize; // from protocol
@@ -128,8 +213,8 @@ namespace OCPI {
     }
     const char *Port::
     postParse() {
-      if (m_bufferSizePort)
-	m_bufferSize = m_bufferSizePort->m_bufferSize;
+      if (m_bufferSizePort != -1)
+	m_bufferSize = m_worker->port(m_bufferSizePort).m_bufferSize;
       return NULL;
     }
 
@@ -148,6 +233,17 @@ namespace OCPI {
 	return err;
       return NULL;
     }
+    void Port::Scaling::
+    emit(std::string &out, const Scaling *def) const {
+      Scaling s;
+      if (!def)
+	def = &s;
+      if (m_min != def->m_min) formatAdd(out, " min='%zu'", m_min);
+      if (m_max != def->m_max) formatAdd(out, " max='%zu'", m_max);
+      if (m_modulo != def->m_modulo) formatAdd(out, " modulo='%zu'", m_modulo);
+      if (m_default != def->m_default) formatAdd(out, " default='%zu'", m_default);
+    }
+
     Port::Partitioning::Partitioning()
       : m_sourceDimension(0) {
     }
@@ -159,40 +255,59 @@ namespace OCPI {
 	err = m_overlap.parse(x);
       return err;
     }
+    void Port::Partitioning::
+    emit(std::string &out, const Partitioning *def) const {
+      m_scaling.emit(out, def ? &def->m_scaling : NULL);
+      m_overlap.emit(out, def ? &def->m_overlap : NULL);
+      if (m_sourceDimension && (!def || m_sourceDimension != def->m_sourceDimension))
+	formatAdd(out, " source='%zu'", m_sourceDimension);
+    }
+
     Port::Overlap::
     Overlap()
       : m_left(0), m_right(0), m_padding(None) {
     }
 
+    const char *Port::Overlap::s_oNames[] = {
+#define OCPI_PADDING(x) #x,
+      OCPI_PADDINGS
+#undef OCPI_PADDING
+      NULL
+    };
+
     const char *Port::Overlap::
     parse(ezxml_t x) {
-      static const char *pNames[] = {
-#define OCPI_PADDING(x) #x,
-	OCPI_PADDINGS
-#undef OCPI_PADDING
-	NULL
-      };
       const char *err;
       size_t n;
       if ((err = OE::getNumber(x, "left", &m_left)) ||
 	  (err = OE::getNumber(x, "right", &m_right)) ||
-	  (err = OE::getEnum(x, "padding", pNames, "overlap padding", n)))
+	  (err = OE::getEnum(x, "padding", s_oNames, "overlap padding", n)))
 	return err;
       m_padding = (Padding)n;
       return NULL;
     }
 
-    const char *Port::
-    parseDistribution(ezxml_t x, Distribution &d, std::string &hash) {
-      const char *err;
-      static const char *dNames[] = {
+    void Port::Overlap::
+    emit(std::string &out, const Overlap *def) const {
+      Overlap o;
+      if (!def)
+	def = &o;
+      if (m_left != def->m_left) formatAdd(out, " left='%zu'", m_left);
+      if (m_right != def->m_right) formatAdd(out, " right='%zu'", m_right);
+      if (m_padding != def->m_padding) formatAdd(out, " padding='%s'", s_oNames[m_padding]);
+    }
+
+    const char *Port::s_dNames[] = {
 #define OCPI_DISTRIBUTION(d) #d,	  
 	OCPI_DISTRIBUTIONS
 #undef OCPI_DISTRIBUTION
 	NULL
-      };
+    };
+    const char *Port::
+    parseDistribution(ezxml_t x, Distribution &d, std::string &hash) {
+      const char *err;
       size_t n;
-      if ((err = OE::getEnum(x, "distribution", dNames, "distribution type", n, d)))
+      if ((err = OE::getEnum(x, "distribution", s_dNames, "distribution type", n, d)))
 	return err;
       d = (Distribution)n;
       if (OE::getOptionalString(m_xml, hash, "hashField")) {
@@ -213,9 +328,10 @@ namespace OCPI {
     }
 
     const char *Port::
-    parseOperations(ezxml_t x) {
+    parseOperations() {
       // Now we parse the child elements for operations.
-      for (ezxml_t ox = ezxml_cchild(x, "operation"); ox; ox = ezxml_next(ox)) {
+      m_opScaling.resize(m_nOperations, NULL);
+      for (ezxml_t ox = ezxml_cchild(m_xml, "operation"); ox; ox = ezxml_next(ox)) {
 	const char *err;
 	std::string oName;
 	if ((err = OE::checkAttrs(ox, "name", DISTRIBUTION_ATTRS, PARTITION_ATTRS, (void*)0)) ||
@@ -237,6 +353,92 @@ namespace OCPI {
       return NULL;
     }
 
+    const char *Port::
+    parseScaling() {
+      const char *err;
+      if (OE::getOptionalString(m_xml, m_scaleExpr, "scale")) {
+	// only for assembly scaling
+      }
+      // Here we parse defaults for operations and arguments.
+      if ((err = parseDistribution(m_xml, m_defaultDistribution, m_defaultHashField)) ||
+	  (err = m_defaultPartitioning.parse(m_xml, *m_worker)) ||
+	  (err = parseOperations()))
+	return err;
+      Operation *op = m_operations;
+      for (unsigned o = 0; o < m_nOperations; o++, op++) {
+	OpScaling *os = m_opScaling[o];
+	Member *arg = op->m_args;
+	for (unsigned a = 0; a < op->m_nArgs; a++, arg++)
+	  if (arg->m_arrayRank || arg->m_isSequence) {
+	    Partitioning *ap = os ? os->m_partitioning[a] : NULL;
+	    if (ap) {
+	      if (ap->m_scaling.m_min)
+		os->m_isPartitioned = true;
+	    } else if (os) {
+	      if (os->m_defaultPartitioning.m_scaling.m_min != 0) {
+		os->m_partitioning[a] = &os->m_defaultPartitioning;
+		os->m_isPartitioned = true;
+	      }
+	    } else if (m_defaultPartitioning.m_scaling.m_min != 0) {
+	      os = m_opScaling[o] = new OpScaling(op->m_nArgs);
+	      os->m_partitioning[a] = &m_defaultPartitioning;
+	      os->m_isPartitioned = true;
+	    }
+	  }
+	if (os && os->m_isPartitioned)
+	  m_isPartitioned = true;
+      }
+      return NULL;
+    }
+
+    void Port::
+    emitDistribution(std::string &out, const Distribution &d) const {
+      formatAdd(out, " distribution='%s'", s_dNames[d - (Distribution)0]);
+    }
+
+    void Port::
+    emitScalingAttrs(std::string &out) const {
+      if (m_scaleExpr.length())
+	formatAdd(out, " scale='%s'", m_scaleExpr.c_str());
+      if (m_defaultDistribution != All)
+	emitDistribution(out, m_defaultDistribution);
+      if (m_defaultHashField.length())
+	formatAdd(out, " hashField='%s'", m_defaultHashField.c_str());
+      m_defaultPartitioning.emit(out, NULL);
+    }
+    void Port::
+    emitScaling(std::string &out) const {
+      Operation *op = m_operations;
+      for (unsigned n = 0; n < m_nOperations; n++, op++)
+	if (m_opScaling[n])
+	  m_opScaling[n]->emit(out, *this, *op);
+    }
+
+    void Port::
+    emitXml(std::string &out) const {
+      formatAdd(out, "  <port name=\"%s\"", m_name.c_str());
+      if (m_isBidirectional)
+	formatAdd(out, " bidirectional='1'");
+      else if (m_isProducer)
+	formatAdd(out, " producer='1'");
+      if (!m_operations || m_nOpcodes != m_nOperations)
+	formatAdd(out, " numberOfOpcodes=\"%zu\"", m_nOpcodes);
+      if (m_minBufferCount != 1)
+	formatAdd(out, " minBufferCount=\"%zu\"", m_minBufferCount);
+      if (m_bufferSizePort != -1)
+	formatAdd(out, " buffersize='%s'", m_worker->port(m_bufferSizePort).m_name.c_str());
+      else if (m_bufferSize && m_bufferSize != m_defaultBufferSize)
+	formatAdd(out, " bufferSize='%zu'", m_bufferSize);
+      if (m_isOptional)
+	formatAdd(out, " optional=\"%u\"", m_isOptional);
+	
+      emitScalingAttrs(out);
+      formatAdd(out, ">\n");
+      printXML(out, 2);
+      emitScaling(out);
+      formatAdd(out, "  </port>\n");
+    }
+
     Port::OpScaling::
     OpScaling(size_t nArgs)
       : m_distribution(All), m_hashField(NULL), m_multiple(false), m_allSeeOne(false),
@@ -246,7 +448,7 @@ namespace OCPI {
 	m_partitioning[n] = NULL;
     }
     const char *Port::OpScaling::
-    parse(Port &dp, Operation &op, ezxml_t x) {
+    parse(Port &dp, const Operation &op, ezxml_t x) {
       Worker &w = *dp.m_worker;
       const char *err;
       m_defaultPartitioning = dp.m_defaultPartitioning;
@@ -296,6 +498,35 @@ namespace OCPI {
 	}
       }
       return NULL;
+    }
+    void Port::OpScaling::
+    emit(std::string &out, const Port &port, const Operation &op) const {
+      formatAdd(out, "<operation name='%s'", op.m_name.c_str());
+      if (m_distribution != port.m_defaultDistribution)
+	port.emitDistribution(out, m_distribution);
+      if (m_hashField && m_hashField->m_name != port.m_defaultHashField)
+	formatAdd(out, " hashField='%s'", m_hashField->m_name.c_str());
+      m_defaultPartitioning.emit(out, &port.m_defaultPartitioning);
+      if (m_multiple) formatAdd(out, " multiple='1'");
+      if (m_allSeeOne) formatAdd(out, " allSeeOne='1'");
+      if (m_allSeeEnd) formatAdd(out, " allSeeEnd='1'");
+      Member *a = op.m_args;
+      bool first = true;
+      for (unsigned n = 0; n < op.m_nArgs; n++, a++)
+	if (m_partitioning[n]) {
+	  size_t nDims = a->m_isSequence ? 1 : a->m_arrayRank;
+	  Partitioning *p = m_partitioning[n];
+	  for (unsigned i = 0; i < nDims; i++, p++) {
+	    if (first) {
+	      out += ">\n";
+	      first = false;
+	    }
+	    out += "<dimension ";
+	    p->emit(out, &m_defaultPartitioning);
+	    out += "/>\n";
+	  }
+	}
+      out += first ? "/>\n" : "</operation>\n";
     }
   }
 }

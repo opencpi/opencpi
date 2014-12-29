@@ -564,7 +564,8 @@ namespace OCPI {
       }
 
       const char *
-      getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly) {
+      getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly, bool setDefault,
+		 bool *found) {
 	const char *a = ezxml_cattr(x, name);
 	if (a) {
 	  bool val;
@@ -573,7 +574,9 @@ namespace OCPI {
 	  if (trueOnly && !val)
 	    return "can only set the value to true in this context";
 	  *b = val;
-	} else if (!trueOnly)
+	  if (found)
+	    *found = true;
+	} else if (!trueOnly && setDefault)
 	  *b = false;
 	return 0;
       }

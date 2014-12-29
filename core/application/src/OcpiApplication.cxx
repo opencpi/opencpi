@@ -88,23 +88,21 @@ namespace OCPI {
     }
 
     /*
-    we made choices during the feasibility analysis, but here we want to add some policy.
-    the default allocation will bias toward collocation, so this is basically to 
-    spread things out.
-    Since exclusive/bitstream allocations are not really adjustable, we just deal with the others.
-    we haven't remembered ALL deployments, just the "best".
-    we have preferred internally connected impls by scoring them up, which has inherently consolidated then.
-    (preferred collocation)
-    so somehow we need to keep the policy while keeping the fixed allocation...
-    perhaps we need to record some sort of exclusivity and collocation constraints
-    the def
+     * We made choices during the feasibility analysis, but here we want to add some policy.
+     * The default allocation will bias toward collocation, so this is basically to 
+     * spread things out.
+     * Since exclusive/bitstream allocations are not really adjustable, we just deal with the
+     * others.
+     * we haven't remembered ALL deployments, just the "best".
+     * we have preferred internally connected impls by scoring them up, which has inherently
+     * consolidated then.
+     * (preferred collocation)
     */
-    // For dynamic instances only, distribute them according to policy
     void ApplicationI::
-    policyMap( Instance * i, CMap & bestMap)
+    policyMap(Instance *i, CMap &bestMap)
     {
-      // bestMap is a bitmap of the best availabe containers that the implementation can be mapped to
-      // alliMap is the bitmap of all suitable containers for the implementation
+      // bestMap is bitmap of best available containers that the implementation can be mapped to
+      // allMap is the bitmap of all suitable containers for the implementation
       switch ( m_cMapPolicy ) {
 
       case MaxProcessors:
@@ -435,7 +433,8 @@ namespace OCPI {
 	  ocpiDebug("doInstance connections ok");
 	  for (unsigned cont = 0; cont < OC::Manager::s_nContainers; cont++) {
 	    Booking &b = m_bookings[cont];
-	    ocpiDebug("doInstance container: cont %u feasible 0x%x", cont, i->m_feasibleContainers[m]);
+	    ocpiDebug("doInstance container: cont %u feasible 0x%x", cont,
+		      i->m_feasibleContainers[m]);
 	    if (i->m_feasibleContainers[m] & (1 << cont) && bookingOk(b, c, instNum)) {
 	      d->container = cont;
 	      d->candidate = m;
@@ -504,30 +503,31 @@ namespace OCPI {
       m_bestDeployments = new Deployment[m_nInstances];
       // Check that params that reference instances are valid.
       const char *err;
-      //      checkInstanceParams("property", params, true); done in OU::Assembly
-      //      checkInstanceParams("selection", params); done in OU::Assembly
-      // checkInstanceParams("model", params); done in OL::Assembly
-      // checkInstanceParams("platform", params); done in OL::Assembly
-      if ((err = m_assembly.checkInstanceParams("container", params, false)))
+      if ((err = m_assembly.checkInstanceParams("container", params, false)) ||
+	  (err = m_assembly.checkInstanceParams("scale", params, false)))
 	throw OU::Error("%s", err);
       // First pass - make sure there are some containers to support some candidate
       // and remember which containers can support which candidates
       Instance *i = m_instances;
       for (size_t n = 0; n < m_nInstances; n++, i++) {
-	//	i->m_libInstance = &m_assembly.instance(n);
 	OL::Candidates &cs = m_assembly.instance(n).m_candidates;
 	const OU::Assembly::Instance &ai = m_assembly.utilInstance(n);
 	i->m_nCandidates = cs.size();
 	i->m_feasibleContainers = new CMap[cs.size()];
-	std::string container;
+	const char *container;
 	if (!OU::findAssign(params, "container", ai.m_name.c_str(), container))
-	  OE::getOptionalString(ai.xml(), container, "container");
+	  container = ezxml_cattr(ai.xml(), "container");
+	const char *scale;
+	if (!OU::findAssign(params, "scale", ai.m_name.c_str(), scale))
+	  scale = ezxml_cattr(ai.xml(), "scale");
+	size_t crewSize = 1;
+	if (scale && OE::getUNum(scale, &crewSize))
+	  throw OU::Error("Invalid scale factor: \"%s\"", scale);
 	CMap sum = 0;
 	for (unsigned m = 0; m < i->m_nCandidates; m++) {
 	  m_curMap = 0;        // to accumulate containers suitable for this candidate
 	  m_curContainers = 0; // to count suitable containers for this candidate
-	  (void)OC::Manager::findContainers(*this, cs[m].impl->m_metadataImpl,
-					    container.empty() ? NULL : container.c_str());
+	  (void)OC::Manager::findContainers(*this, cs[m].impl->m_metadataImpl, container);
 	  i->m_feasibleContainers[m] = m_curMap;
 	  sum |= m_curMap;
 	}
@@ -631,28 +631,32 @@ namespace OCPI {
 	  OU::Assembly::Role &r = (*pi).m_role;
 	  assert(r.m_knownRole && !r.m_bidirectional);
 	  if (r.m_provider) {
-	    assert(!lc->m_instIn);
-	    lc->m_instIn = &m_launchInstances[pi->m_instance];
-	    lc->m_nameIn = pi->m_name.c_str();
-	    lc->m_paramsIn.add((*ci).m_parameters, pi->m_parameters);
-	    lc->m_launchIn = &lc->m_instIn->m_container->launcher();
+	    assert(!lc->m_in.m_instance);
+	    lc->m_in.m_instance = &m_launchInstances[pi->m_instance];
+	    lc->m_in.m_name = pi->m_name.c_str();
+	    lc->m_in.m_params.add((*ci).m_parameters, pi->m_parameters);
+	    lc->m_in.m_launcher = &lc->m_in.m_instance->m_container->launcher();
+	    lc->m_in.m_metaPort =
+	      lc->m_in.m_instance->m_impl->m_metadataImpl.findMetaPort(lc->m_in.m_name);
 	  } else {
-	    assert(!lc->m_instOut);
-	    lc->m_instOut = &m_launchInstances[pi->m_instance];
-	    lc->m_nameOut = pi->m_name.c_str();
-	    lc->m_paramsOut.add((*ci).m_parameters, pi->m_parameters);
-	    lc->m_launchOut = &lc->m_instOut->m_container->launcher();
+	    assert(!lc->m_out.m_instance);
+	    lc->m_out.m_instance = &m_launchInstances[pi->m_instance];
+	    lc->m_out.m_name = pi->m_name.c_str();
+	    lc->m_out.m_params.add((*ci).m_parameters, pi->m_parameters);
+	    lc->m_out.m_launcher = &lc->m_out.m_instance->m_container->launcher();
+	    lc->m_out.m_metaPort =
+	      lc->m_out.m_instance->m_impl->m_metadataImpl.findMetaPort(lc->m_out.m_name);
 	  }
 	}
 	for (OU::Assembly::ExternalsIter ei = (*ci).m_externals.begin();
 	     ei != (*ci).m_externals.end(); ei++) {
-	  assert(!lc->m_instIn || !lc->m_instOut);
-	  if (lc->m_instIn) {
-	    lc->m_nameOut = ei->m_name.c_str();
-	    lc->m_paramsOut = ei->m_parameters;
+	  assert(!lc->m_in.m_instance || !lc->m_out.m_instance);
+	  if (lc->m_in.m_instance) {
+	    lc->m_out.m_name = ei->m_name.c_str();
+	    lc->m_out.m_params = ei->m_parameters;
 	  } else {
-	    lc->m_nameIn = ei->m_name.c_str();
-	    lc->m_paramsIn = ei->m_parameters;
+	    lc->m_in.m_name = ei->m_name.c_str();
+	    lc->m_in.m_params = ei->m_parameters;
 	  }
 	}
       }
@@ -720,11 +724,11 @@ namespace OCPI {
 	m_doneWorker = m_launchInstances[m_assembly.m_doneInstance].m_worker;
       OC::Launcher::Connection *c = &m_launchConnections[0];
       for (unsigned n = 0; n < m_launchConnections.size(); n++, c++)
-	if (!c->m_url && (!c->m_instIn || !c->m_instOut))
+	if (!c->m_url && (!c->m_in.m_instance || !c->m_out.m_instance))
 	  m_externals.
-	    insert(ExternalPair(c->m_instIn ? c->m_nameOut : c->m_nameIn,
-				External(*(c->m_input ? c->m_input : c->m_output),
-					 c->m_input ? c->m_paramsOut : c->m_paramsIn)));
+	    insert(ExternalPair(c->m_in.m_instance ? c->m_out.m_name : c->m_in.m_name,
+				External(*(c->m_in.m_port ? c->m_in.m_port : c->m_out.m_port),
+					 c->m_in.m_port ? c->m_out.m_params : c->m_in.m_params)));
       m_launched = true;
       if (m_assembly.m_doneInstance != -1)
 	m_doneWorker = m_launchInstances[m_assembly.m_doneInstance].m_worker;

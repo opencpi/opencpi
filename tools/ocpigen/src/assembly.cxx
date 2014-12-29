@@ -112,8 +112,7 @@ parseConnection(OU::Assembly::Connection &aConn) {
       return OU::esprintf("External port '%s' can't have index/count %zu/%zu "
 			  "when internal port has count: %zu",
 			  ext.m_name.c_str(), ext.m_index, ext.m_count, intPort.m_port->count);
-    // Create the external port of this assembly
-    // Start with a copy of the port, then patch it
+    // Create the external port of this assembly by cloning the internal one
     Port &p = intPort.m_port->clone(m_assyWorker, ext.m_name,
 				    ext.m_count ? ext.m_count : c.m_count,
 				    &ext.m_role, err);
@@ -451,31 +450,32 @@ emitXmlWorker(FILE *f) {
     fprintf(f, "  Slave='%s.%s'", m_slave->m_implName, m_slave->m_modelString);
   fprintf(f, ">\n");
   unsigned nn;
+  std::string out;
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
     OU::Property *prop = *pi;
-    prop->printAttrs(f, "property", 1, prop->m_isParameter); // suppress default values for parameters
+    prop->printAttrs(out, "property", 1, prop->m_isParameter); // suppress default values for parameters
     if (prop->m_isVolatile)
-      fprintf(f, " volatile='1'");
+      out += " volatile='1'";
     else if (prop->m_isReadable)
-      fprintf(f, " readable='1'");
+      out += " readable='1'";
     if (prop->m_isInitial)
-      fprintf(f, " initial='1'");
+      out += " initial='1'";
     else if (prop->m_isWritable)
-      fprintf(f, " writable='1'");
+      out += " writable='1'";
     if (prop->m_readSync)
-      fprintf(f, " readSync='1'");
+      out += " readSync='1'";
     if (prop->m_writeSync)
-      fprintf(f, " writeSync='1'");
+      out += " writeSync='1'";
     if (prop->m_readError)
-      fprintf(f, " readError='1'");
+      out += " readError='1'";
     if (prop->m_writeError)
-      fprintf(f, " writeError='1'");
+      out += " writeError='1'";
     if (!prop->m_isReadable && !prop->m_isWritable && !prop->m_isParameter)
-      fprintf(f, " padding='1'");
+      out += " padding='1'";
     if (prop->m_isIndirect)
-      fprintf(f, " indirect=\"%zu\"", prop->m_indirectAddr);
+      OU::formatAdd(out, " indirect=\"%zu\"", prop->m_indirectAddr);
     if (prop->m_isParameter) {
-      fprintf(f, " parameter='1'");
+      out += " parameter='1'";
       OU::Value *v = 
 	m_paramConfig && prop->m_paramOrdinal < m_paramConfig->params.size() &&
 	m_paramConfig->params[prop->m_paramOrdinal].value ?
@@ -483,18 +483,18 @@ emitXmlWorker(FILE *f) {
       if (v) {
 	std::string value;
 	v->unparse(value);
-	fprintf(f, " default='%s'", value.c_str());
+	OU::formatAdd(out, " default='%s'", value.c_str());
       }
     }
-    prop->printChildren(f, "property");
+    prop->printChildren(out, "property");
   }
   for (nn = 0; nn < m_ports.size(); nn++)
-    m_ports[nn]->emitXML(f);
+    m_ports[nn]->emitXML(out);
   for (nn = 0; nn < m_localMemories.size(); nn++) {
     LocalMemory* m = m_localMemories[nn];
-    fprintf(f, "  <localMemory name=\"%s\" size=\"%zu\"/>\n", m->name, m->sizeOfLocalMemory);
+    OU::formatAdd(out, "  <localMemory name=\"%s\" size=\"%zu\"/>\n", m->name, m->sizeOfLocalMemory);
   }
-  fprintf(f, "</worker>\n");
+  fprintf(f, "%s</worker>\n", out.c_str());
 }
 
 void Worker::

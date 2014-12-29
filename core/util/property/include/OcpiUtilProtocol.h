@@ -59,13 +59,13 @@ namespace OCPI  {
       Operation & operator=(const Operation * p );
       Operation & operator=(const Operation & p );
       const char *parse(ezxml_t op, Protocol &);
-      Member *findArg(const char *name);
+      Member *findArg(const char *name) const;
       inline bool isTwoWay() const { return m_isTwoWay; }
       inline Member *args() const { return m_args; }
       inline size_t nArgs() const { return m_nArgs; }
       inline const std::string &name() const { return m_name; }
       inline bool isTopFixedSequence() const { return m_topFixedSequence; }
-      void printXML(FILE *f, unsigned indent = 0) const;
+      void printXML(std::string &out, unsigned indent = 0) const;
       void write(Writer &writer, const uint8_t *data, size_t length);
       size_t read(Reader &reader, uint8_t *&data, size_t maxLength);
       // for testing
@@ -122,7 +122,7 @@ namespace OCPI  {
       const char *parse(char *proto);
       const char *parseSummary(ezxml_t x);
       const char *finishParse();
-      void printXML(FILE *f, unsigned indent = 0) const;
+      void printXML(std::string &out, unsigned indent = 0) const;
       void write(Writer &writer, const uint8_t *data, uint32_t length, uint8_t opcode);
       size_t read(Reader &reader, uint8_t *data, size_t maxLength, uint8_t opcode);
       void generate(const char *name);

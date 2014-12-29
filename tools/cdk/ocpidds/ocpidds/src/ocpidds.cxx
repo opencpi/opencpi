@@ -74,7 +74,9 @@ emitIDL(const char *outDir, const char *protoFile) {
   if ((err = parseFile(protoFile, NULL, "protocol", &x, dummy, false)) ||
       (err = p.parse(x, NULL, NULL, NULL, NULL)))
     return err;
-  p.printXML(stdout, 0);
+  std::string out;
+  p.printXML(out, 0);
+  printf("%s", out.c_str());
   return NULL;
 }
 
@@ -785,7 +787,9 @@ emitProtocol(const char *outDir, const char *file, const char *structName) {
 	FILE *f;
 	if (!(err = openOutput(structName, outDir, "", "_protocol", ".xml", NULL, f))) {
 	  printgen(f, "<!--", file, false, " -->");
-	  p.printXML(f, 0);
+	  std::string out;
+	  p.printXML(out, 0);
+	  fprintf(f, "%s", out.c_str());
 	  fclose(f);
 	}
 	found = true;

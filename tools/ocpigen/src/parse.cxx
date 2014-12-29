@@ -600,15 +600,6 @@ initImplPorts(ezxml_t xml, const char *element, PortCreate &create) {
     ordinal = 0;
   // Clocks depend on port names, so get those names in first pass(non-control ports)
   for (ezxml_t x = ezxml_cchild(xml, element); x; x = ezxml_next(x), ordinal++) {
-#if 0
-    
-    if (!ezxml_cattr(x, "name")) {
-      std::string name = prefix;
-      if (nTotal != 1)
-	OU::format(name, "%s%u", prefix, ordinal);
-      ezxml_set_attr_d(xml, "name", name.c_str());
-    }
-#endif
     if (!create(*this, x, NULL, nTotal == 1 ? -1 : ordinal, err))
       return err;
   }
@@ -618,7 +609,7 @@ initImplPorts(ezxml_t xml, const char *element, PortCreate &create) {
 // Parse a numeric value that might be overridden by assembly property values.
 const char *Worker::
 getNumber(ezxml_t x, const char *attr, size_t *np, bool *found, size_t defaultValue,
-	  bool setDefault) {
+	  bool setDefault) const {
   const char *a = ezxml_cattr(x, attr);
   if (a && !isdigit(*a)) {
     if (m_instancePVs) {
@@ -934,7 +925,7 @@ setParent(Worker *parent) {
 
 // FIXME: look for all the places this can be used..
 Port *Worker::
-findPort(const char *name, Port *except) const {
+findPort(const char *name, const OU::Port *except) const {
   for (unsigned i = 0; i < m_ports.size(); i++) {
     Port *dp = m_ports[i];
     if (dp && dp->m_name.length() && !strcasecmp(dp->name(), name) && (!except || dp != except))
@@ -1048,4 +1039,8 @@ findProperty(const char *name) const {
     if (!strcasecmp((*pi)->m_name.c_str(), name))
       return *pi;
   return NULL;
+}
+OU::Port *Worker::
+findMetaPort(const char *id, const OU::Port *except) const {
+  return findPort(id, except);
 }

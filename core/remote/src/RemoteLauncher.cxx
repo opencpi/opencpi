@@ -175,6 +175,8 @@ emitInstance(const char *name, unsigned contN, unsigned artN, const Launcher::In
     OU::formatAdd(m_request, " slave='%u'", slave);
   if (i.m_doneInstance)
     m_request += " done='1'";
+   if (i.m_crewSize != 1)
+     OU::formatAdd(m_request, " crew='%zu' member='%zu", i.m_crewSize, i.m_member);
   if (i.m_propValues.size()) {
     m_request += ">\n";
     const OU::Value *vals = &i.m_propValues[0];
@@ -188,6 +190,7 @@ emitInstance(const char *name, unsigned contN, unsigned artN, const Launcher::In
   } else
     m_request += "/>\n";
 }
+#if 0
 void Launcher::
 emitPort(const Launcher::Instance &i, const char *port, const OA::PValue *params,
 	 const char *which) {
@@ -202,6 +205,7 @@ emitPort(const Launcher::Instance &i, const char *port, const OA::PValue *params
   } else
     m_request += "/>\n";
 }
+#endif
 static void 
 unparseParams(const OU::PValue *params, std::string &out) {
   for (;params && params->name; params++) {
@@ -214,29 +218,38 @@ unparseParams(const OU::PValue *params, std::string &out) {
 void Launcher::
 emitConnection(const Launcher::Instances &instances, const Launcher::Connection &c) { 
   OU::formatAdd(m_request, "  <connection");
-  if (c.m_launchIn == this)
+  if (c.m_in.m_launcher == this)
     OU::formatAdd(m_request, " instIn='%u' nameIn='%s'",
-		  m_instanceMap[c.m_instIn - &instances[0]], c.m_nameIn);
-  if (c.m_launchOut == this)
+		  m_instanceMap[c.m_in.m_instance - &instances[0]], c.m_in.m_name);
+  if (c.m_out.m_launcher == this)
     OU::formatAdd(m_request, " instOut='%u' nameOut='%s'",
-		  m_instanceMap[c.m_instOut - &instances[0]], c.m_nameOut);
+		  m_instanceMap[c.m_out.m_instance - &instances[0]], c.m_out.m_name);
   if (c.m_url)
     OU::formatAdd(m_request, "  url='%s'", c.m_url);
-  if (c.m_paramsIn.list() || c.m_paramsOut.list()) {
-    m_request +=">\n";
-    if (c.m_paramsIn.list()) {
-      m_request += "    <paramsin";
-      unparseParams(c.m_paramsIn, m_request);
-      m_request += "/>\n";
-    }
-    if (c.m_paramsOut.list()) {
-      m_request += "    <paramsout";
-      unparseParams(c.m_paramsOut, m_request);
-      m_request += "/>\n";
-    }
-    m_request += "  </connection>\n";
-  } else
+  m_request += ">/n";
+  if (c.m_in.m_params.list()) {
+    m_request += "    <paramsin";
+    unparseParams(c.m_in.m_params, m_request);
     m_request += "/>\n";
+  }
+  if (c.m_out.m_params.list()) {
+    m_request += "    <paramsout";
+    unparseParams(c.m_out.m_params, m_request);
+    m_request += "/>\n";
+  }
+  // Now we need to send port metainfo for ports that are not on the targetted server,
+  // since it does not necessarily have the metadata for the connected port that is not there
+  if (!c.m_url) {
+    if (c.m_in.m_launcher == this) {
+      if (c.m_out.m_launcher != this) {
+	c.m_in.m_metaPort->emitXml(m_request);
+	// send output metaport info
+      }
+    } else if (c.m_out.m_launcher == this)
+      // send input metaport info
+      ;
+  }
+  m_request += "  </connection>\n";
 }
 void Launcher::
 emitConnectionUpdate(unsigned connN, const char *iname, std::string &sinfo) {
@@ -300,18 +313,18 @@ updateConnection(ezxml_t cx) {
   OC::Launcher::Connection &c = *m_connections[n];
   // We should only get this for connections that we are one side of.
   const char *info;
-  if (c.m_launchIn == this) {
+  if (c.m_in.m_launcher == this) {
     // The remote is an input, so we should be receiving provider info in the update
     if ((info = ezxml_cattr(cx, "ipi")))
-      decodeDescriptor(info, c.m_ipi);
+      decodeDescriptor(info, c.m_in.m_initial);
     else if ((info = ezxml_cattr(cx, "fpi")))
-      decodeDescriptor(info, c.m_fpi);
-  } else if (c.m_launchOut == this) {
+      decodeDescriptor(info, c.m_in.m_final);
+  } else if (c.m_out.m_launcher == this) {
     // The remote is an input, so we should be receiving user info in the update
     if ((info = ezxml_cattr(cx, "iui")))
-      decodeDescriptor(info, c.m_iui);
+      decodeDescriptor(info, c.m_out.m_initial);
     else if ((info = ezxml_cattr(cx, "fui")))
-      decodeDescriptor(info, c.m_fui);
+      decodeDescriptor(info, c.m_out.m_final);
   }
 }
 
@@ -371,7 +384,7 @@ launch(Launcher::Instances &instances, Launcher::Connections &connections) {
   Launcher::Connection *c = &connections[0];
   for (unsigned n = 0; n < connections.size(); n++, c++) {
     c->prepare();
-    if (c->m_launchIn == this || c->m_launchOut == this) {
+    if (c->m_in.m_launcher == this || c->m_out.m_launcher == this) {
       emitConnection(instances, *c);
       m_connectionMap[n] = nConnections;
       m_connections[nConnections++] = c;
@@ -400,20 +413,21 @@ work(Launcher::Instances &instances, Launcher::Connections &connections) {
       }
     Launcher::Connection *c = &connections[0];
     for (unsigned n = 0; n < connections.size(); n++, c++)
-      if (c->m_launchIn == this) {
-	if (c->m_launchOut && c->m_launchOut != this) {
+      if (c->m_in.m_launcher == this) {
+	if (c->m_out.m_launcher && c->m_out.m_launcher != this) {
 	  // We are input.  See what there is to do:
-	  if (c->m_iui.length())
-	    emitConnectionUpdate(n, "iui", c->m_iui), m_more = true;
-	  else if (c->m_fui.length())
-	    emitConnectionUpdate(n, "fui", c->m_fui), m_more = true;
+	  if (c->m_out.m_initial.length())
+	    emitConnectionUpdate(n, "iui", c->m_out.m_initial), m_more = true;
+	  else if (c->m_out.m_final.length())
+	    emitConnectionUpdate(n, "fui", c->m_out.m_final), m_more = true;
 	}
-      } else if (c->m_launchOut == this && c->m_launchIn && c->m_launchIn != this) {
+      } else if (c->m_out.m_launcher == this && c->m_in.m_launcher &&
+		 c->m_in.m_launcher != this) {
 	  // We are output.  See what there is to do:
-	  if (c->m_ipi.length())
-	    emitConnectionUpdate(n, "ipi", c->m_ipi), m_more = true;
-	  else if (c->m_fpi.length())
-	    emitConnectionUpdate(n, "fpi", c->m_fpi), m_more = true;
+	  if (c->m_in.m_initial.length())
+	    emitConnectionUpdate(n, "ipi", c->m_in.m_initial), m_more = true;
+	  else if (c->m_in.m_final.length())
+	    emitConnectionUpdate(n, "fpi", c->m_in.m_final), m_more = true;
       }
     if (m_more)
       send();

@@ -4,7 +4,6 @@
 #include "wip.h"
 #include "hdl.h"
 
-
 // Constructor when creating a derived impl port from a spec port
 // Based on an existing spec port (sp).
 DataPort::
@@ -12,35 +11,12 @@ DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *
   : OcpPort(w, x, sp, ordinal, type, NULL, err) {
   assert(sp != NULL);
   DataPort *dp = static_cast<DataPort*>(sp);
-  m_isProducer      = dp->m_isProducer;
-  m_isOptional      = dp->m_isOptional;
-  m_nOpcodes        = dp->m_nOpcodes;
-  // The rest are really impl-only
-  m_isBidirectional = dp->m_isBidirectional;
-  m_minBufferCount  = dp->m_minBufferCount; 
-  m_bufferSize      = dp->m_bufferSize;
-  m_bufferSizePort  = dp->m_bufferSizePort;
-  // Scalability all defaults since it is not a spec issue.  Initialize from protocol
-  m_opScaling.resize(m_nOperations, NULL);
-  // Now we do implementation-specific initialization that will precede the
-  // initializations for specific port types (WSI, etc.)
+  // Now we do data port initialization that will precede the initializations for specific port
+  // types (WSI, etc.)
+  // These are AFTER the protocol parsing is done
   bool dwFound;
-  if ((err = OE::getNumber(m_xml, "DataWidth", &m_dataWidth, &dwFound)) ||
-      // Adding optionality in the impl xml is only relevant to devices.
-      (err = OE::getBoolean(m_xml, "Optional", &m_isOptional, true)) ||
-      // Be careful not to clobber protocol-determined values (i.e. don't set default values)
-      (err = OE::getNumber(m_xml, "NumberOfOpcodes", &m_nOpcodes, NULL, 0, false)) ||
-      (err = OE::getNumber(m_xml, "MaxMessageValues", &m_maxMessageValues, NULL, 0,
-			   false)) ||
-      (err = OE::getNumber(m_xml, "DataValueWidth", &m_dataValueWidth, NULL, 0,
-			   false)) ||
-      (err = OE::getNumber(m_xml, "DataValueGranularity", &m_dataValueGranularity, NULL, 0,
-			   false)) ||
-      (err = OE::getBoolean(m_xml, "ZeroLengthMessages", &m_zeroLengthMessages,
-			    true)) ||
-      (err = OE::getNumber(m_xml, "MinBuffers", &m_minBufferCount, 0, 0)) || // backward compat
-      (err = OE::getNumber(m_xml, "MinBufferCount", &m_minBufferCount, 0, m_minBufferCount)) ||
-      (err = OE::getNumber(m_xml, "Buffersize", &m_bufferSize, 0, m_defaultBufferSize)))
+  if ((err = parse()) ||
+      (err = OE::getNumber(m_xml, "DataWidth", &m_dataWidth, &dwFound)))
     return;
   if (!dwFound) {
     if (w.m_defaultDataWidth >= 0)
@@ -72,40 +48,7 @@ DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *
   if (!m_defaultBufferSize && m_maxMessageValues)
     m_defaultBufferSize =
       (m_maxMessageValues * m_dataValueWidth + 7) / 8;
-  // Scalability
-  if (OE::getOptionalString(m_xml, m_scaleExpr, "scale")) {
-    // only for assembly scaling
-  }
-  // Here we parse defaults for operations and arguments.
-  if ((err = parseDistribution(m_xml, m_defaultDistribution, m_defaultHashField)) ||
-      (err = m_defaultPartitioning.parse(m_xml, w)))
-    return;
-  if ((err = parseOperations(x)))
-    return;
-  OU::Operation *op = m_operations;
-  for (unsigned o = 0; o < m_nOperations; o++, op++) {
-    OpScaling *os = m_opScaling[o];
-    OU::Member *arg = op->m_args;
-    for (unsigned a = 0; a < op->m_nArgs; a++, arg++)
-      if (arg->m_arrayRank || arg->m_isSequence) {
-	Partitioning *ap = os ? os->m_partitioning[a] : NULL;
-	if (ap) {
-	  if (ap->m_scaling.m_min)
-	    os->m_isPartitioned = true;
-	} else if (os) {
-	  if (os->m_defaultPartitioning.m_scaling.m_min != 0) {
-	    os->m_partitioning[a] = &os->m_defaultPartitioning;
-	    os->m_isPartitioned = true;
-	  }
-	} else if (m_defaultPartitioning.m_scaling.m_min != 0) {
-	  os = m_opScaling[o] = new OpScaling(op->m_nArgs);
-	  os->m_partitioning[a] = &m_defaultPartitioning;
-	  os->m_isPartitioned = true;
-	}
-      }
-    if (os && os->m_isPartitioned)
-      m_isPartitioned = true;
-  }
+  err = parseScaling();
 }
 
 // Very poor man's virtual callback
@@ -138,84 +81,12 @@ static const char *checkSuffix(const char *str, const char *suff, const char *la
 
 // Constructor when this is the concrete derived class, when parsing spec ports
 // Note the "parse" method is called after all spec ports are created - second pass
+// Note that the underlying OU::Port class calls parseProtocol
 DataPort::
 DataPort(Worker &w, ezxml_t x, int ordinal, const char *&err)
-  : OcpPort(w, x, NULL, ordinal, WDIPort, NULL, err),
-    m_isProducer(false), m_isOptional(false), m_isBidirectional(false), m_nOpcodes(0),
-    m_minBufferCount(0), m_bufferSize(0), m_bufferSizePort(NULL) {
-  if (err)
-    return;
-  // Spec initialization
-  if (type == WDIPort &&
-      (err = OE::checkAttrs(m_xml, SPEC_DATA_PORT_ATTRS, (void*)0)) ||
-      (err = OE::getBoolean(m_xml, "Producer", &m_isProducer)) ||
-      (err = OE::getBoolean(m_xml, "Optional", &m_isOptional)))
-    return;
-  const char *protocolAttr = ezxml_cattr(m_xml, "protocol");
-  ezxml_t pSum;
-  std::string protFile;
-  if ((err = tryOneChildInclude(m_xml, m_worker->m_file, "ProtocolSummary", &pSum, protFile,
-				true)))
-    return;
-  if (pSum) {
-    if (protocolAttr || ezxml_cchild(m_xml, "Protocol")) {
-      err = "cannot have both Protocol and ProtocolSummary";
-      return;
-    }
-    if ((err = OE::checkAttrs(pSum, "DataValueWidth", "DataValueGranularity",
-			      "DiverDataSizes", "MaxMessageValues", "NumberOfOpcodes",
-			      "VariableMessageLength", "ZeroLengthMessages",
-			      "MinMessageValues",  (void*)0)) ||
-	(err = OE::getNumber(pSum, "NumberOfOpcodes", &m_nOpcodes, 0, 1)) ||
-	(err = OU::Protocol::parseSummary(pSum)))
-      return;
-  } else {
-    ezxml_t protx = NULL;
-    if ((err = tryOneChildInclude(m_xml, m_worker->m_file, "Protocol", &protx, protFile, true)))
-      return;
-    if (protocolAttr) {
-      if (protx) {
-	err = "can't have both 'protocol' element (maybe xi:included) and 'protocol' attribute";
-	return;
-      }
-      if ((err = parseFile(protocolAttr, m_worker->m_file.c_str(), "protocol", &protx,
-			   protFile, false)))
-	return;
-    }
-    if (protx) {
-      if (protFile.length()) {
-	// If we are being parsed from a protocol file, default the name.
-	const char *file = protFile.c_str();
-	const char *start = strrchr(file, '/');
-	if (start)
-	  start++;
-	else
-	  start = file;
-	const char *last = strrchr(file, '.');
-	if (!last)
-	  last = file + strlen(file);
-	last = checkSuffix(start, "_protocol", last);
-	last = checkSuffix(start, "_prot", last);
-	last = checkSuffix(start, "-prot", last);
-	std::string name(start, last - start);
-	err = OU::Protocol::parse(protx, name.c_str(), protFile.c_str(), doProtocolChild, this);
-      } else
-	err = OU::Protocol::parse(protx, NULL, w.m_file.c_str(), doProtocolChild, this);
-      if (err)
-	return;
-      m_nOpcodes = nOperations();
-    } else {
-      // When there is no protocol, we force it to variable, unbounded at 64k, diverse, zlm
-      // I.e. assume it can do anything up to 64KB
-      // But with no operations, we can scale back when connecting to something more specific
-      m_diverseDataSizes = true;
-      m_variableMessageLength = true;
-      m_maxMessageValues = 64*1024;
-      m_zeroLengthMessages = true;
-      m_isUnbounded = true;
-      m_nOpcodes = 256;
-    }
-  }
+  : OcpPort(w, x, NULL, ordinal, WDIPort, NULL, err) {
+  if (!err && type == WDIPort)
+    err = OE::checkAttrs(m_xml, SPEC_DATA_PORT_ATTRS, (void*)0);
 }
 
 // Our special clone copy constructor
@@ -225,17 +96,17 @@ DataPort(const DataPort &other, Worker &w , std::string &name, size_t count,
   : OcpPort(other, w, name, count, err) {
   if (err)
     return;
-  m_isProducer = other.m_isProducer;
-  m_isOptional = other.m_isOptional;
-  m_isBidirectional = other.m_isBidirectional;
-  m_nOpcodes = other.m_nOpcodes;
-  m_minBufferCount = other.m_minBufferCount;
-  m_bufferSize = other.m_bufferSize;
-  m_bufferSizePort = other.m_bufferSizePort;
+  //  m_isProducer = other.m_isProducer;
+  //  m_isOptional = other.m_isOptional;
+  //  m_isBidirectional = other.m_isBidirectional;
+  //  m_nOpcodes = other.m_nOpcodes;
+  //  m_minBufferCount = other.m_minBufferCount;
+  //  m_bufferSize = other.m_bufferSize;
+  //  m_bufferSizePort = other.m_bufferSizePort;
   //  m_isScalable = other.m_isScalable;
-  m_defaultDistribution = other.m_defaultDistribution;
-  m_opScaling = other.m_opScaling;
-  m_isPartitioned = other.m_isPartitioned;
+  //  m_defaultDistribution = other.m_defaultDistribution;
+  //  m_opScaling = other.m_opScaling;
+  //  m_isPartitioned = other.m_isPartitioned;
   if (role) {
     if (!role->m_provider) {
       if (!other.m_isProducer && !other.m_isBidirectional) {
@@ -267,23 +138,88 @@ clone(Worker &, std::string &, size_t, OCPI::Util::Assembly::Role *, const char 
   assert("Can't clone generic data port" == 0);
 }
 
+// This is basically a callback from the low level OU::Port parser
+// It needs the protocol to be parsed at this point.  From tools we allow file includes etc.
+// Thus it is entirely replacing the protocol parsing in OU::port
+const char *DataPort::
+parseProtocol() {
+  ezxml_t pSum;
+  std::string protFile;
+  const char *err;
+  if ((err = tryOneChildInclude(m_xml, m_worker->m_file, "ProtocolSummary", &pSum, protFile,
+				true)))
+    return err;
+  const char *protocolAttr = ezxml_cattr(m_xml, "protocol");
+  if (pSum) {
+    if (protocolAttr || ezxml_cchild(m_xml, "Protocol"))
+      return "cannot have both Protocol and ProtocolSummary";
+    if ((err = OE::checkAttrs(pSum, "DataValueWidth", "DataValueGranularity",
+			      "DiverDataSizes", "MaxMessageValues", "NumberOfOpcodes",
+			      "VariableMessageLength", "ZeroLengthMessages",
+			      "MinMessageValues",  (void*)0)) ||
+	(err = OE::getNumber(pSum, "NumberOfOpcodes", &m_nOpcodes, NULL, 0, false)) ||
+	(err = OU::Protocol::parseSummary(pSum)))
+      return err;
+    m_seenSummary = true;
+  } else {
+    ezxml_t protx = NULL;
+    if ((err = tryOneChildInclude(m_xml, m_worker->m_file, "Protocol", &protx, protFile, true)))
+      return err;
+    if (protocolAttr) {
+      if (protx)
+	return "can't have both 'protocol' element (maybe xi:included) and 'protocol' attribute";
+      if ((err = parseFile(protocolAttr, m_worker->m_file.c_str(), "protocol", &protx, protFile,
+			   false)))
+	return err;
+    }
+    // The protx comes from an include, a child element, or the protocol attr file
+    if (protx) {
+      if (protFile.length()) {
+	// If we are being parsed from a protocol file, default the name.
+	const char *file = protFile.c_str();
+	const char *start = strrchr(file, '/');
+	if (start)
+	  start++;
+	else
+	  start = file;
+	const char *last = strrchr(file, '.');
+	if (!last)
+	  last = file + strlen(file);
+	last = checkSuffix(start, "_protocol", last);
+	last = checkSuffix(start, "_prot", last);
+	last = checkSuffix(start, "-prot", last);
+	std::string name(start, last - start);
+	err = OU::Protocol::parse(protx, name.c_str(), protFile.c_str(), doProtocolChild, this);
+      } else
+	err = OU::Protocol::parse(protx, NULL, m_worker->m_file.c_str(), doProtocolChild, this);
+      if (err)
+	return err;
+      m_nOpcodes = nOperations();
+    } else if (m_nOperations == 0 && !m_seenSummary) { // if we have never parsed a protocol yet
+      // When there is no protocol, we force it to variable, unbounded at 64k, diverse, zlm
+      // I.e. assume it can do anything up to 64KB
+      // But with no operations, we can scale back when connecting to something more specific
+      // Note that these values can be overridden at the port level.
+      // FIXME: why are these just not the basic defaults?
+      m_diverseDataSizes = true;
+      m_variableMessageLength = true;
+      m_maxMessageValues = 64*1024;
+      m_zeroLengthMessages = true;
+      m_isUnbounded = true;
+      m_nOpcodes = 256;
+    }
+    // Allow port level overrides for protocol
+    if ((err = parseSummary(m_xml)))
+      return err;
+  }
+  return NULL;
+}
+
 // Second pass parsing of spec data ports when they might refer to each other.
 // FIXME: consider whether this should be done for impls also...
 const char *DataPort::
 parse() {
-  const char *err;
-  const char *bs = ezxml_cattr(m_xml, "bufferSize");
-  if (bs && !isdigit(bs[0])) {
-    Port *other;
-    if ((err = m_worker->getPort(bs, other, this)))
-      return err;
-    m_bufferSizePort = other;
-  } else if ((err = OE::getNumber(m_xml, "bufferSize", &m_bufferSize, 0, 0)))
-    return err;
-  // FIXME: outlaw buffer size port when you have protocol?
-  if (m_bufferSize == 0)
-    m_bufferSize = m_defaultBufferSize; // from protocol
-  return NULL;
+  return OU::Port::parse();
 }
 
 // After the specific port types have parsed everything
@@ -339,7 +275,7 @@ emitRecordDataTypes(FILE *f) {
 	if (m_worker->m_ports[nn]->isData()) {
 	  DataPort *dp = static_cast<DataPort*>(m_worker->m_ports[nn]);
 
-	  if (operations() &&
+	  if (dp->operations() &&
 	      !strcasecmp(dp->OU::Protocol::m_name.c_str(), OU::Protocol::m_name.c_str()))
 	    break;
 	}
@@ -501,23 +437,8 @@ emitImplSignals(FILE *f) {
 }
 
 void DataPort::
-emitXML(FILE *f) {
-  fprintf(f, "  <port name=\"%s\" numberOfOpcodes=\"%zu\"", name(), m_nOpcodes);
-  if (m_isBidirectional)
-    fprintf(f, " bidirectional='1'");
-  else if (!m_isProducer)
-    fprintf(f, " provider='1'");
-  if (m_minBufferCount)
-    fprintf(f, " minBufferCount=\"%zu\"", m_minBufferCount);
-  if (m_bufferSizePort)
-    fprintf(f, " buffersize='%s'", m_bufferSizePort->name());
-  else if (m_bufferSize)
-    fprintf(f, " bufferSize='%zu'", m_bufferSize);
-  if (m_isOptional)
-    fprintf(f, " optional=\"%u\"", m_isOptional);
-  fprintf(f, ">\n");
-  printXML(f, 2);
-  fprintf(f, "  </port>\n");
+emitXML(std::string &out) {
+  OU::Port::emitXml(out);
 }
 
 // static method
@@ -540,7 +461,7 @@ adjustConnection(const char *masterName,
     if (prod.m_maxMessageValues > cons.m_maxMessageValues)
       return "maxMessageValues incompatibility for connection";
     if (prod.OU::Protocol::name().size() && cons.OU::Protocol::name().size() &&
-	prod.name() != cons.name())
+	prod.OU::Protocol::name() != cons.OU::Protocol::name())
       return OU::esprintf("protocol incompatibility: producer: %s vs. consumer: %s",
 			  prod.OU::Protocol::name().c_str(), cons.OU::Protocol::name().c_str());
     if (prod.nOperations() && cons.nOperations() && 
@@ -580,6 +501,7 @@ finalizeHdlDataPort() {
   }
   return err;
 }
+    
 
 const char *DataPort::
 adjustConnection(Port &, const char *, Language, OcpAdapt *, OcpAdapt *) {

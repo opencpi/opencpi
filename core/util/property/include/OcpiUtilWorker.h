@@ -153,7 +153,7 @@ namespace OCPI {
       const char *parse(ezxml_t xml, Attributes *attr = NULL);
       virtual const char
 	*getNumber(ezxml_t x, const char *attr, size_t *np, bool *found = NULL,
-		   size_t defaultValue = 0, bool setDefault = true);
+		   size_t defaultValue = 0, bool setDefault = true) const;
       // These two use exceptions
       Property &findProperty(const char *id) const;
       unsigned whichProperty(const char *id) const;
@@ -171,7 +171,7 @@ namespace OCPI {
         return m_properties[which];
       }
       inline Port *findMetaPort(const std::string &id) const { return findMetaPort(id.c_str()); }
-      Port *findMetaPort(const char *) const;
+      virtual Port *findMetaPort(const char *name, const Port *except = NULL) const;
       inline Port &port(unsigned long which) const
       {
         ocpiAssert(which < m_nPorts);

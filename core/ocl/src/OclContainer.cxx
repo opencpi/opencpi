@@ -1451,7 +1451,7 @@ namespace OCPI
     OC::Port& Worker::createPort ( const OU::Port& metaPort,
                                    const OA::PValue* props )
     {
-      return *new Port ( *this, props, metaPort, metaPort.m_provider );
+      return *new Port(*this, props, metaPort, metaPort.m_provider);
     }
 
     OC::Port& Worker::createOutputPort ( OU::PortOrdinal portId,

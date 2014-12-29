@@ -53,17 +53,25 @@ namespace OCPI {
 	bool m_hasMaster, m_doneInstance;
 	Instance *m_slave;
 	Worker *m_worker;
+	size_t m_crewSize, m_member;
 	Instance();
       };
       typedef std::vector<Instance> Instances;
       // The instance object needed by the launcher
+      // FIXME: create a "Launcher::Port" here...
+      struct Port {
+	Launcher *m_launcher;
+	Instance *m_instance;
+	OCPI::API::Port *m_port;
+	const char *m_name;
+	OCPI::Util::PValueList m_params;
+	OCPI::Util::Port *m_metaPort;
+	std::string m_initial, m_final;
+	Port();
+      };
       struct Connection {
-	Launcher *m_launchIn, *m_launchOut;
-	Instance *m_instIn, *m_instOut;
-	OCPI::API::Port *m_input, *m_output;
-	const char *m_nameIn, *m_nameOut, *m_url;
-	OCPI::Util::PValueList m_paramsIn, m_paramsOut;
-	std::string m_ipi, m_fpi, m_iui, m_fui;
+	Port m_in, m_out;
+	const char *m_url;
 	Connection();
 	void prepare();
       };

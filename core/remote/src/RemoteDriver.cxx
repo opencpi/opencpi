@@ -83,11 +83,10 @@ class Worker
     if (getControlMask() & (1 << op))
       m_launcher.controlOp(m_remoteInstance, op);
   }
-  void setPropertyValue(const OA::Property &p, const OU::Value &v) {
+  void setPropertyValue(const OU::Property &p, const OU::Value &v) {
     std::string val;
     v.unparse(val);
-    m_launcher.setPropertyValue(m_remoteInstance,
-				static_cast<OU::Property *>(&p.m_info) - m_properties, val);
+    m_launcher.setPropertyValue(m_remoteInstance, &p - m_properties, val);
   }
   bool wait(OS::Timer *t) {
     return m_launcher.wait(m_remoteInstance, t ? t->getRemaining() : 0);

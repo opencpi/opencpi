@@ -75,13 +75,13 @@ class Worker;
 #define SPEC_DATA_PORT_ATTRS "Name", "Producer", "Count", "Optional", "Protocol", "buffersize"
 class DataPort : public OcpPort {
  protected:
-  bool m_isProducer;
-  bool m_isOptional;
-  bool m_isBidirectional;
-  size_t m_nOpcodes;
-  size_t m_minBufferCount;
-  size_t m_bufferSize;
-  Port *m_bufferSizePort;
+  // bool m_isProducer;
+  //  bool m_isOptional;
+  //  bool m_isBidirectional;
+  //  size_t m_nOpcodes;
+  //   size_t m_minBufferCount;
+  //   size_t m_bufferSize;
+  //  Port *m_bufferSizePort;
   
   // This constructor is used when data port is inherited
   DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *&err);
@@ -103,7 +103,7 @@ class DataPort : public OcpPort {
   bool isOptional() const { return m_isOptional; }
   const char *parse();
   const char *parseProtocolChild(ezxml_t op);
-  //  const char *parseDistribution(ezxml_t x, Distribution &d, std::string &hash);
+  const char *parseProtocol();
   const char *finalize();
   const char *fixDataConnectionRole(OU::Assembly::Role &role);
   void initRole(OCPI::Util::Assembly::Role &role);
@@ -114,7 +114,7 @@ class DataPort : public OcpPort {
   void emitRecordOutputs(FILE *f);
   void emitVHDLShellPortMap(FILE *f, std::string &last);
   void emitImplSignals(FILE *f);
-  void emitXML(FILE *f);
+  void emitXML(std::string &out);
   void emitRccCppImpl(FILE *f);
   void emitRccCImpl(FILE *f);
   void emitRccCImpl1(FILE *f);
@@ -482,12 +482,13 @@ class Worker : public OU::Worker {
   Clock *addClock();
   Clock *addWciClockReset();
   OU::Property *findProperty(const char *name) const;
+  OU::Port *findMetaPort(const char *id, const OU::Port *except) const;
   const char
     *addBuiltinProperties(),
     *getPort(const char *name, Port *&p, Port *except = NULL) const,
     *getValue(const char *sym, OU::ExprValue &val) const,
     *getNumber(ezxml_t x, const char *attr, size_t *np, bool *found = NULL,
-	       size_t defaultValue = 0, bool setDefault = true),
+	       size_t defaultValue = 0, bool setDefault = true) const,
     *getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly),
     *parse(const char *file, const char *parent, const char *package = NULL),
     *parseRcc(const char *package = NULL),
@@ -550,7 +551,7 @@ class Worker : public OU::Worker {
     *emitWorkersHDL(const char *file),
     *emitAttribute(const char *attr),
     *emitUuid(const OU::Uuid &uuid);
-  Port *findPort(const char *name, Port *except = NULL) const;
+  Port *findPort(const char *name, const OU::Port *except = NULL) const;
   Clock *findClock(const char *name) const;
   virtual void
     emitXmlWorkers(FILE *f),

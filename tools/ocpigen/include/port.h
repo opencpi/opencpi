@@ -45,12 +45,9 @@ class Port : public OCPI::Util::Port {
   bool m_clone;
 public:
   // These members are for spec ports
-  Worker *m_worker;    // spec: FIXME: name this a reference 
-  std::string m_name;  // spec:
-  size_t m_ordinal;    // spec:
+  Worker *m_worker;    // spec: FIXME: make this a reference 
   size_t count;        // spec: FIXME: can this change in impl???
   bool master;         // spec
-  ezxml_t m_xml;       // spec or impl
   WIPType type;        // spec with WDI, with limited types, then impl ports
   // These members are for impl ports
   std::string fullNameIn, fullNameOut; // used during HDL generation
@@ -120,7 +117,7 @@ public:
 			       std::string &last, const char *myComment, OcpAdapt *adapt);
   virtual const char *fixDataConnectionRole(OCPI::Util::Assembly::Role &role);
   virtual const char *doPatterns(unsigned nWip, size_t &maxPortTypeName);
-  virtual void emitXML(FILE *f);
+  virtual void emitXML(std::string &out);
   virtual const char *finalizeRccDataPort();
   virtual const char *finalizeHdlDataPort();
   virtual const char *finalizeOclDataPort();

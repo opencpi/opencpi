@@ -882,7 +882,7 @@ namespace OCPI {
 	return found;
 #else
 	// Somewhat ugly and unscalable.  We can use the driver if needed.
-	while (m_index++ < 10) {
+	for (; m_index <= 10; m_index++) {
 	  seekdir(o.dfd, o.start);
 	  struct dirent ent, *entp;
 	  while (readdir_r(o.dfd, &ent, &entp) == 0 && entp)
@@ -918,6 +918,7 @@ namespace OCPI {
 				entp->d_name, i.up ? "up" : "down",
 				i.connected ? "connected" : "disconnected", i.addr.pretty());
 		      ::close(fd);
+		      m_index++;
 		      return true;
 		    }
 		  }

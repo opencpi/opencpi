@@ -58,8 +58,6 @@ namespace OCPI {
       void emitContainer(const OCPI::Container::Container &cont);
       void emitArtifact(const OCPI::Library::Artifact &art);
       void emitInstance(const char *name, unsigned contN, unsigned artN, const Launcher::Instance &i, int slave);
-      void emitPort(const Launcher::Instance &i, const char *port,
-		    const OCPI::API::PValue *params, const char *which);
       void emitConnection(const Launcher::Instances &instances, const Launcher::Connection &c);
       void emitConnectionUpdate(unsigned nConn, const char *iname, std::string &sinfo);
       void loadArtifact(ezxml_t ax); // Just push the bytes down the pipe, getting a response for each.

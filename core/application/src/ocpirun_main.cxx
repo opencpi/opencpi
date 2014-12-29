@@ -67,7 +67,8 @@ usage(const char *name) {
 	  "    -X           # list of containers to exclude from usage\n"
 	  "    -T <instance-name>=<port-name>=<transport-name>\n"
 	  "                 # set transport of connection at a port\n"
-	  "                 # if no port name, then the single output port\n",
+	  "                 # if no port name, then the single output port\n"
+	  "    -N <instance-name>=<scale-factor>\n",
 	  name);
   exit(1);
 }
@@ -146,6 +147,8 @@ main(int /*argc*/, const char **argv) {
       case 'T':
 	addParam("transport", ap);
 	break;
+      case 'N':
+	addParam("scale", ap);
       case 'n':
 	nProcs = atoi(ap[0][2] ? &ap[0][2] : *++ap);
 	break;
@@ -207,7 +210,8 @@ main(int /*argc*/, const char **argv) {
       fflush(stdout);
     } else if (verbose) {
       for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)
-	fprintf(stderr, "%s%s [model: %s os: %s platform: %s]", n ? ", " : "Available containers are: ",
+	fprintf(stderr, "%s%u: %s [model: %s os: %s platform: %s]",
+		n ? ", " : "Available containers are:  ", n,
 		c->name().c_str(), c->model().c_str(), c->os().c_str(), c->platform().c_str());
       fprintf(stderr, "\n");
     }

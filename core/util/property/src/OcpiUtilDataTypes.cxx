@@ -341,58 +341,58 @@ namespace OCPI {
     }
 
     void Member::
-    printAttrs(FILE *f, const char *tag, unsigned indent, bool suppressDefault) {
-      fprintf(f, "%*s<%s", indent * 2, "", tag);
+    printAttrs(std::string &out, const char *tag, unsigned indent, bool suppressDefault) {
+      formatAdd(out, "%*s<%s", indent * 2, "", tag);
       if (!m_name.empty())
-	fprintf(f, " name=\"%s\"", m_name.c_str());
+	formatAdd(out, " name=\"%s\"", m_name.c_str());
       if (m_baseType != OA::OCPI_ULong)
-	fprintf(f, " type=\"%s\"", baseTypeNames[m_baseType]);
+	formatAdd(out, " type=\"%s\"", baseTypeNames[m_baseType]);
       if (m_baseType == OA::OCPI_String)
-	fprintf(f, " stringLength=\"%zu\"", m_stringLength);
+	formatAdd(out, " stringLength=\"%zu\"", m_stringLength);
       if (m_isSequence)
-	fprintf(f, " sequenceLength=\"%zu\"", m_sequenceLength);
+	formatAdd(out, " sequenceLength=\"%zu\"", m_sequenceLength);
       if (m_arrayRank == 1)
-	fprintf(f, " arrayLength=\"%zu\"", m_arrayDimensions[0]);
+	formatAdd(out, " arrayLength=\"%zu\"", m_arrayDimensions[0]);
       else if (m_arrayRank > 1) {
-	fprintf(f, " arrayDimensions=\"");
+	formatAdd(out, " arrayDimensions=\"");
 	for (size_t n = 0; n < m_arrayRank; n++)
-	  fprintf(f, "%s%zu", n ? "," : "", m_arrayDimensions[n]);
-	fprintf(f, "\"");
+	  formatAdd(out, "%s%zu", n ? "," : "", m_arrayDimensions[n]);
+	formatAdd(out, "\"");
       }
       if (m_nEnums) {
-	fprintf(f, " enums=\"");
+	formatAdd(out, " enums=\"");
 	for (unsigned n = 0; n < m_nEnums; n++)
-	  fprintf(f, "%s%s", n ? "," : "", m_enums[n]);
-	fprintf(f, "\"");
+	  formatAdd(out, "%s%s", n ? "," : "", m_enums[n]);
+	formatAdd(out, "\"");
       }
       if (m_isKey)
-	fprintf(f, " key=\"true\"");
+	formatAdd(out, " key=\"true\"");
       if (m_default && !suppressDefault) {
 	std::string val;
 	m_default->unparse(val);
-	fprintf(f, " default=\"%s\"", val.c_str()); // FIXME: string value properties may have extra quotes
+	formatAdd(out, " default=\"%s\"", val.c_str()); // FIXME: string value properties may have extra quotes
       }
     }
     void Member::
-    printChildren(FILE *f, const char *tag, unsigned indent) {
+    printChildren(std::string &out, const char *tag, unsigned indent) {
       if (m_baseType == OA::OCPI_Struct || m_baseType == OA::OCPI_Type) {
-	fprintf(f, ">\n");
+	formatAdd(out, ">\n");
 	if (m_baseType == OA::OCPI_Struct) {
 	  for (unsigned n = 0; n < m_nMembers; n++) {
-	    m_members[n].printAttrs(f, "member", indent + 1);
-	    m_members[n].printChildren(f, "member", indent + 1);
+	    m_members[n].printAttrs(out, "member", indent + 1);
+	    m_members[n].printChildren(out, "member", indent + 1);
 	  }
 	} else {
-	  m_type->printAttrs(f, "type", indent + 1);
-	  m_type->printChildren(f, "type", indent + 1);
+	  m_type->printAttrs(out, "type", indent + 1);
+	  m_type->printChildren(out, "type", indent + 1);
 	}
-	fprintf(f, "%*s</%s>\n", indent * 2, "", tag);
+	formatAdd(out, "%*s</%s>\n", indent * 2, "", tag);
       } else
-	fprintf(f, "/>\n");
+	formatAdd(out, "/>\n");
     }
-    void Member::printXML(FILE *f, const char *tag, unsigned indent) {
-      printAttrs(f, tag, indent);
-      printChildren(f, tag, indent);
+    void Member::printXML(std::string &out, const char *tag, unsigned indent) {
+      printAttrs(out, tag, indent);
+      printChildren(out, tag, indent);
     }
     inline void advance(const uint8_t *&p, size_t nBytes, size_t &length) {
       if (nBytes > length)

@@ -2,50 +2,24 @@
 #include "hdl.h"
 #include "assembly.h"
 
+// nameOrdinal -1 is for using the default name without a number appended
+// if sp != NULL we are morphing a spec port to a concrete impl port
 Port::
-Port(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *defaultName,
+Port(Worker &w, ezxml_t x, Port *sp, int nameOrdinal, WIPType type, const char *defaultName,
      const char *&err)
-  : OU::Port(sp),
-    m_clone(false), m_worker(&w), m_ordinal(0), count(0), master(false), m_xml(x), type(type),
-    pattern(NULL), clock(0), clockPort(0), myClock(false), m_specXml(x) {
+  : OU::Port(sp, w, x, w.m_ports.size(), nameOrdinal, defaultName, err),
+    m_worker(&w), count(0), master(false), type(type), pattern(NULL), clock(0), clockPort(0),
+    myClock(false), m_specXml(x) {
+  if (err)
+    return;
   if (sp) {
     // A sort of copy constructor from a spec port to an impl port
-    m_name = sp->m_name;
-    m_ordinal = sp->m_ordinal;
     count = sp->count; // may be overridden?
     master = sp->master;
     m_specXml = sp->m_xml;
-  } else {
-    const char *name = ezxml_cattr(x, "Name");
-    m_name = name ? name : "";
-    const char *portImplName = ezxml_cattr(x, "implName");
-    if (m_name.empty()) {
-      if (portImplName)
-	m_name = portImplName;
-      else if (defaultName)
-	if (ordinal == -1)
-	  m_name = defaultName;
-	else
-	  OU::format(m_name, "%s%u", defaultName, ordinal);
-      else {
-	err = "Missing \"name\" attribute for port";
-	return;
-      }
-    } else if (portImplName) {
-      err = OU::esprintf("Both \"Name\" and \"ImplName\" attributes of %s element are present",
-			 x->name);
-      return;
-    }
-    if (w.findPort(m_name.c_str())) {
-      err = OU::esprintf("Can't create port named \"%s\" since it already exists",
-			 m_name.c_str());
-      return;
-    }
-    if ((err = OE::getBoolean(m_xml, "master", &master)) ||
-	(err = w.getNumber(m_xml, "count", &count)))
-      return;
-    m_ordinal = w.m_ports.size();
-  }
+  } else if ((err = OE::getBoolean(m_xml, "master", &master)) ||
+	     (err = w.getNumber(m_xml, "count", &count)))
+    return;
   pattern = ezxml_cattr(m_xml, "Pattern");
   if (sp)
     w.m_ports[m_ordinal] = this;
@@ -64,11 +38,10 @@ Port(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *defa
 // Only used by cloning - a special copy constructor
 Port::
 Port(const Port &other, Worker &w, std::string &name, size_t count, const char *&err)
-  : m_clone(true), m_worker(&w), m_name(name), m_ordinal(w.m_ports.size()), count(count),
-    master(other.master), m_xml(other.m_xml), type(other.type), pattern(NULL),
+  : OU::Port(other, w, name, w.m_ports.size(), err),
+    m_worker(&w), count(count), master(other.master), type(other.type), pattern(NULL),
     clock(NULL), clockPort(NULL), myClock(false), m_specXml(other.m_specXml)
 {
-  err = NULL; // this is the base class for everything
   w.m_ports.push_back(this);
 }
 
@@ -516,7 +489,7 @@ emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *inden
 }
 
 void Port::
-emitXML(FILE *) {}
+emitXML(std::string &out) {}
 
 void Port::
 emitRccCppImpl(FILE *) {}

@@ -309,7 +309,7 @@
 		       m_nPorts, wd->numInputs, wd->numOutputs);
      RCCPortMask optional = 0;
      for (unsigned n = 0; n < m_nPorts; n++)
-       if (ports[n].m_optional)
+       if (ports[n].m_isOptional)
 	 optional |= 1 << n;
      if (m_dispatch) {
        if (m_info.optionallyConnectedPorts != optional)
@@ -906,16 +906,16 @@ controlOperation(OU::Worker::ControlOperation op) {
       void Worker::get##pretty##Property(unsigned ordinal, char *cp,        \
 					   size_t length) const {	    \
           OA::PropertyInfo &info = properties()[ordinal];                   \
-	  size_t stringLength = info.m_stringLength;                    \
+	  size_t stringLength = info.m_stringLength;                        \
 	  if (length < stringLength+1)			                    \
 	    throw; /*"string buffer smaller than property"*/;		    \
-	  if (info.m_readError)					    \
+	  if (info.m_readError)					            \
 	    throw; /*"worker has errors before write */			    \
-	  uint32_t i32, *p32 = (uint32_t *)(getPropertyVaddr() + info.m_offset);   \
+	  uint32_t i32, *p32 = (uint32_t *)(getPropertyVaddr() + info.m_offset);\
 	  memcpy(cp + 32/CHAR_BIT, p32 + 1, stringLength + 1 - 32/CHAR_BIT);\
 	  i32 = *p32;							    \
 	  memcpy(cp, &i32, 32/CHAR_BIT);				    \
-	  if (info.m_readError)					    \
+	  if (info.m_readError)					            \
 	    throw; /*"worker has errors after write */			    \
 	}								    \
       unsigned Worker::get##pretty##SequenceProperty			    \
@@ -935,7 +935,7 @@ controlOperation(OU::Worker::ControlOperation op) {
           memcpy(buf, cp, wlen);                                            \
           cp += wlen;                                                       \
           vals[i] = buf;                                                    \
-          size_t slen = strlen(buf) + 1;                                  \
+          size_t slen = strlen(buf) + 1;                                    \
           buf += slen;                                                      \
           space -= slen;                                                    \
         }                                                                   \

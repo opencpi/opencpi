@@ -52,15 +52,16 @@ namespace OCPI {
   namespace Msg {
     namespace CORBA {
 
-      // Note that this message channel for connecting by URL is to connect to CORBA on the other side,
-      // and that the assumption is that there is a way to talk to the other CORBA using ocpi rdma transports.
+      // This message channel is for connecting by URL to connect to CORBA on the other side,
+      // and that the assumption is that there is a way to talk to the other CORBA using ocpi
+      // rdma transports.
       // Thus the URL is of the form:
       // corbaloc:<omni-ocpi-endpoint>[,<omni-ocpi-endpoint>]*/<key-string>
 
       // Where <omni-ocpi-endpoint> is "omniocpi:" followed by the ocpi endpoint string.
 
-      // Note that double slash (//) immediately after the ocpi sub-protocol colon is ignored and 
-      // doesn't count as the slash before the key.
+      // Note that double slash (//) immediately after the ocpi sub-protocol colon is ignored
+      // and doesn't count as the slash before the key.
 
       // Note that this string is ALSO usable by CORBA as a real corbaloc (for omniorb anyway).
       
@@ -111,9 +112,11 @@ namespace OCPI {
 	  // The key is encoded according to RFC 2396, but we will leave it that way
 	  m_key = url;
 
+#if 1
+	  std::string info;
+	  protocol.printXML(info, 0);
+#else
 	  // Now must encode the procotol info in a string, with the key being the first line
-	  // Until the protocol printing stuff uses strings or string streams, we need to use a temp
-	  // file. Ugh.
 	  char *temp = strdup("/tmp/tmpXXXXXXX");
 	  int tempfd = mkstemp(temp);
 	  free(temp);
@@ -131,19 +134,18 @@ namespace OCPI {
 	  fread(info, size, 1, f);
 	  fclose(f);
 	  // End of kludge that can be fixed when XML printing is to a stream...
-
+#endif
 	  // Here we try all endpoints in turn.
 	  for (RdmaEndpoints::const_iterator i = m_rdmaEndpoints.begin();
 	       i != m_rdmaEndpoints.end(); i++)
 	    try {
-	      m_circuit = &OT::MessageEndpoint::connect(i->c_str(), 4096, info, NULL);
+	      m_circuit = &OT::MessageEndpoint::connect(i->c_str(), 4096, info.c_str(), NULL);
 	    } catch (...) {
 #ifndef NDEBUG
 	      printf("CORBA URL connection failed: endpoint '%s' key '%s'\n",
 		     i->c_str(), m_key.c_str());
 #endif
 	    }
-	  delete [] info;
 	  if (!m_circuit)
 	    throw OU::Error("No endpoints in CORBA URL '%s' could be connected",
 			    m_url.c_str());

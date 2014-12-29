@@ -1275,17 +1275,22 @@ emitRccCImpl1(FILE *f) {
 const char *DataPort::
 finalizeRccDataPort() {
   const char *err = NULL;
-  if (type == WDIPort)
+  if (type == WDIPort) {
     createPort<RccPort>(*m_worker, NULL, this, -1, err);
+    if (!err)
+      err = m_worker->m_ports[m_ordinal]->parse();
+  }
   return err;
 }
 RccPort::
 RccPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
   : DataPort(w, x, sp, ordinal, RCCPort, err) {
-  if (x && !err &&
-      !(err = OE::checkAttrs(x, "Name", "implname",
+  if (err ||
+      x &&
+      ((err = OE::checkAttrs(x, "Name", "implname",
 			     "minbuffers", "minbuffercount", "buffersize",
-			     DISTRIBUTION_ATTRS, PARTITION_ATTRS, (void*)0)))
-    err = OE::checkElements(x, "operation" ,(void*)0);
+			     DISTRIBUTION_ATTRS, PARTITION_ATTRS, (void*)0)) ||
+       (err = OE::checkElements(x, "operation" ,(void*)0))))
+    return;
   
 }

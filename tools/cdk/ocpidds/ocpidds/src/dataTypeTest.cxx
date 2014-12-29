@@ -240,7 +240,9 @@ void dataTypeTest(const char *arg) {
     OU::Protocol &p = ppp ? *ppp : genp;
     if (!ppp)
       p.generate("test");
-    p.printXML(stdout);
+    std::string out;
+    p.printXML(out);
+    printf("%s", out.c_str());
     OU::Value **v;
     uint8_t opcode = 0;
     p.generateOperation(opcode, v);

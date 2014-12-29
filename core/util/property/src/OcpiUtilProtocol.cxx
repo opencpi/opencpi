@@ -109,7 +109,7 @@ namespace OCPI {
       }
       return err;
     }
-    Member *Operation::findArg(const char *name) {
+    Member *Operation::findArg(const char *name) const {
       Member *a = m_args;
       for (unsigned n = 0; n < m_nArgs; n++, a++)
 	if (!strcasecmp(name, a->m_name.c_str()))
@@ -125,20 +125,20 @@ namespace OCPI {
       return NULL;
     }
 
-    void Operation::printXML(FILE *f, unsigned indent) const {
-      fprintf(f, "%*s<operation", indent * 2, "");
+    void Operation::printXML(std::string &out, unsigned indent) const {
+      formatAdd(out, "%*s<operation", indent * 2, "");
       if (!m_name.empty())
-	fprintf(f, " name=\"%s\"", m_name.c_str());
+	formatAdd(out, " name=\"%s\"", m_name.c_str());
       if (!m_qualifiedName.empty())
-	fprintf(f, " qualifiedName=\"%s\"", m_qualifiedName.c_str());
+	formatAdd(out, " qualifiedName=\"%s\"", m_qualifiedName.c_str());
       if (m_nArgs) {
-	fprintf(f, ">\n");
+	formatAdd(out, ">\n");
 	Member *a = m_args;
 	for (unsigned n = 0; n < m_nArgs; n++, a++)
-	  a->printXML(f, "argument", indent + 1);
-	fprintf(f, "%*s</operation>\n", indent * 2, "");
+	  a->printXML(out, "argument", indent + 1);
+	formatAdd(out, "%*s</operation>\n", indent * 2, "");
       } else
-	fprintf(f, "/>\n");
+	formatAdd(out, "/>\n");
     }
     void Operation::write(Writer &writer, const uint8_t *data, size_t length) {
       for (size_t n = 0; n < m_nArgs; n++)
@@ -338,27 +338,43 @@ namespace OCPI {
       return err;
     }
     // Parse summary attributes, presumably when there is no explicit protocol
-    // although possibly to forcibly override?
+    // although possibly to forcibly override, so don't "set default".
+    // This is called in these contexts:
+    // In an explicit child element in the spec
+    // In the port element in a spec
+    // in the port element in an impl
     const char *Protocol::parseSummary(ezxml_t pSum) {
-      bool maxSet = false;
+      bool maxSet = false, minSet = false, ddsSet = false, zlmSet = false, vlmSet = false,
+	unBoundedSet = false, twoWaySet = false;
       const char *err;
-      if ((err = OE::getNumber(pSum, "DataValueWidth", &m_dataValueWidth, 0, 8)) ||
-          (err = OE::getNumber(pSum, "DataValueGranularity", &m_dataValueGranularity, 0, 1)) ||
-          (err = OE::getBoolean(pSum, "DiverseDataSizes", &m_diverseDataSizes)) ||
-          (err = OE::getBoolean(pSum, "ZeroLengthMessages", &m_zeroLengthMessages)) ||
-          (err = OE::getBoolean(pSum, "VariableMessageLength", &m_variableMessageLength)) ||
-	  (err = OE::getBoolean(pSum, "unBounded", &m_isUnbounded)) ||
-	  (err = OE::getBoolean(pSum, "twoway", &m_isTwoWay)) ||
-	  (err = OE::getNumber(pSum, "MaxMessageValues", &m_maxMessageValues, &maxSet, 0)) ||
-          (err = OE::getNumber(pSum, "MinMessageValues", &m_minMessageValues, 0,
-			       m_zeroLengthMessages ? 0 : 1)))
+      if ((err = OE::getNumber(pSum, "DataValueWidth", &m_dataValueWidth, NULL, 0, false)) ||
+          (err = OE::getNumber(pSum, "DataValueGranularity", &m_dataValueGranularity, NULL, 0,
+			       false)) ||
+          (err = OE::getBoolean(pSum, "DiverseDataSizes", &m_diverseDataSizes, false, false,
+				&ddsSet)) ||
+          (err = OE::getBoolean(pSum, "ZeroLengthMessages", &m_zeroLengthMessages, false,
+				false, &zlmSet)) ||
+          (err = OE::getBoolean(pSum, "VariableMessageLength", &m_variableMessageLength, false,
+				false, &vlmSet)) ||
+	  (err = OE::getBoolean(pSum, "unBounded", &m_isUnbounded, false, false,
+				&unBoundedSet)) ||
+	  (err = OE::getBoolean(pSum, "twoway", &m_isTwoWay, false, false, &twoWaySet)) ||
+	  (err = OE::getNumber(pSum, "MaxMessageValues", &m_maxMessageValues, &maxSet, 0,
+			       false)) ||
+          (err = OE::getNumber(pSum, "MinMessageValues", &m_minMessageValues, &minSet, 0,
+			       false)))
 	return err;
-      // Fill in any complicated defaults
-      if (m_zeroLengthMessages && m_minMessageValues != 0)
-	return "MinMessageValues cannot > 0 when ZeroLengthMessages is true";
-      if (!maxSet) {
-	m_variableMessageLength = true;
-	m_isUnbounded = true;
+      if (maxSet || minSet || ddsSet || zlmSet || vlmSet || unBoundedSet || twoWaySet) {
+	// specifying ZLM also overrides minMessageValues
+	if (!minSet && m_zeroLengthMessages)
+	  m_minMessageValues = 0;
+	// Fill in any complicated defaults
+	if (m_zeroLengthMessages && m_minMessageValues != 0)
+	  return "MinMessageValues cannot > 0 when ZeroLengthMessages is true";
+	if (!maxSet) {
+	  m_variableMessageLength = true;
+	  m_isUnbounded = true;
+	}
       }
       return NULL;
     }
@@ -463,23 +479,26 @@ namespace OCPI {
 	  return err;
 	// We can also override the granularity
 	
-      } else if ((err = parseSummary(prot)))
+      }
+      // Note we parse the summary attribute to allow overriding of attributes derived from
+      // the operations.
+      if ((err = parseSummary(prot)))
 	return err;
       if ((err = OE::getNumber(prot, "defaultbuffersize", &m_defaultBufferSize, 0,
 			       m_isUnbounded ? 0 : (m_maxMessageValues * m_dataValueWidth + 7) / 8)))
 	return err;
       return finishParse();
     }
-    void Protocol::printXML(FILE *f, unsigned indent) const {
-      fprintf(f, "%*s<protocol", indent * 2, "");
+    void Protocol::printXML(std::string &out, unsigned indent) const {
+      formatAdd(out, "%*s<protocol", indent * 2, "");
       if (!m_name.empty())
-	fprintf(f, " name=\"%s\"", m_name.c_str());
+	formatAdd(out, " name=\"%s\"", m_name.c_str());
       if (!m_qualifiedName.empty())
-	fprintf(f, " qualifiedName=\"%s\"", m_qualifiedName.c_str());
+	formatAdd(out, " qualifiedName=\"%s\"", m_qualifiedName.c_str());
       if (!m_operations) {
 	// We don't have operation details so we'll put out all the summary attributes
 	// We could prune this to what is needed by anyone
-	fprintf(f,
+	formatAdd(out,
 		" dataValueWidth=\"%zu\""
 		" dataValueGranularity=\"%zu\""
 		" diverseDataSizes=\"%u\""
@@ -488,18 +507,18 @@ namespace OCPI {
 		m_dataValueWidth, m_dataValueGranularity, m_diverseDataSizes,
 		m_minMessageValues, m_maxMessageValues);
 	if (m_zeroLengthMessages)
-	  fprintf(f, " zeroLengthMessages=\"true\"");
+	  formatAdd(out, " zeroLengthMessages=\"true\"");
 	if (m_isTwoWay)
-	  fprintf(f, " twoWay=\"true\"");
+	  formatAdd(out, " twoWay=\"true\"");
 	if (m_isUnbounded)
-	  fprintf(f, " unBounded=\"true\"");
+	  formatAdd(out, " unBounded=\"true\"");
       }
-      fprintf(f, ">\n");
+      formatAdd(out, ">\n");
       Operation *o = m_operations;
       if (o) // clang-analyzer
 	for (unsigned n = 0; n < m_nOperations; n++, o++)
-	  o->printXML(f, indent + 1);
-      fprintf(f, "%*s</protocol>\n", indent * 2, "");
+	  o->printXML(out, indent + 1);
+      formatAdd(out, "%*s</protocol>\n", indent * 2, "");
     }
     // Send the data in the buffer to the writer
     void Protocol::write(Writer &writer, const uint8_t *data, uint32_t length, uint8_t opcode) {

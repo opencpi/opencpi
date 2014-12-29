@@ -168,9 +168,9 @@ namespace OCPI {
       Member(const char *name, const char *abbrev, const char *description, OCPI::API::BaseType type,
 	     bool isSequence, const char *defaultValue);
       virtual ~Member();
-      void printAttrs(FILE *f, const char *tag, unsigned indent = 0, bool suppressDefault = false);
-      void printChildren(FILE *f, const char *tag, unsigned indent = 0);
-      void printXML(FILE *f, const char *tag, unsigned indent);
+      void printAttrs(std::string &out, const char *tag, unsigned indent = 0, bool suppressDefault = false);
+      void printChildren(std::string &out, const char *tag, unsigned indent = 0);
+      void printXML(std::string &out, const char *tag, unsigned indent);
       void write(Writer &writer, const uint8_t *&data, size_t &length, bool topSeq = false);
       void read(Reader &reader, uint8_t *&data, size_t &length);
       void generate(const char *name, unsigned ordinal = 0, unsigned depth = 0);

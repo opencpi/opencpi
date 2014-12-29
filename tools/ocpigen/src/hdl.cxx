@@ -183,8 +183,8 @@ parseHdlImpl(const char *package) {
   //    needed.
   for (unsigned i = 0; i < m_ports.size(); i++) {
     Port &p = *m_ports[i];
-    p.finalizeHdlDataPort(); // This will convert to a concrete impl type if not one yet
-    if ((err = p.checkClock()))
+    if ((err = p.finalizeHdlDataPort()) || // This converts to concrete impl type if not one yet
+	(err = p.checkClock()))
       return err;
   }
   // Now check that all clocks have a home and all ports have a clock

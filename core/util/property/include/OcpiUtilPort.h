@@ -36,13 +36,14 @@
 #define OCPI_UTIL_PORT_H
 
 #include <string>
+#include <cstdio>
 #include "OcpiUtilPort.h"
 #include "OcpiUtilProtocol.h"
 #include "ezxml.h"
 
 namespace OCPI {
   namespace Util {
-    typedef uint32_t PortOrdinal;
+    typedef uint32_t PortOrdinal; // this must be fixed size across achitectures
     // FIXME:  use a pointer to a protocol, and share protocols in the artifact xml
     class Worker;
     class Port : public Protocol {
@@ -55,6 +56,7 @@ namespace OCPI {
 	  m_default; // suggested value.  can't be zero
 	Scaling();
 	const char *parse(ezxml_t x, Worker &w);
+	void emit(std::string &out, const Scaling *def) const;
       };
 #define SCALING_ATTRS "min", "max", "modulo", "default"
 #define OCPI_PADDINGS	      \
@@ -70,8 +72,10 @@ namespace OCPI {
       struct Overlap {
 	size_t m_left, m_right;
 	Padding m_padding;
+	static const char *s_oNames[];
 	Overlap();
 	const char *parse(ezxml_t x);
+	void emit(std::string &out, const Overlap *def) const;
       };
 #define OVERLAP_ATTRS "left", "right", "padding"
       // This structure is per-dimension
@@ -81,7 +85,9 @@ namespace OCPI {
 	size_t   m_sourceDimension;
 	Partitioning();
         const char *parse(ezxml_t x, Worker &w);
+	void emit(std::string &out, const Partitioning *def) const;
       };
+
 #define PARTITION_ATTRS SCALING_ATTRS, OVERLAP_ATTRS, "source"
 #define OCPI_DISTRIBUTIONS			\
         OCPI_DISTRIBUTION(All)			\
@@ -94,7 +100,7 @@ namespace OCPI {
 
 #define OCPI_DISTRIBUTION(x) x,
       enum Distribution { OCPI_DISTRIBUTIONS DistributionLimit };
-
+      static const char *s_dNames[];
 #undef OCPI_DISTRIBUTION
 
 #define DISTRIBUTION_ATTRS "distribution", "hashfield"
@@ -108,21 +114,30 @@ namespace OCPI {
 	std::vector<Partitioning *> m_partitioning; // tricky: these pointers are arrays for dims
 	bool                        m_isPartitioned;
 	OpScaling(size_t nArgs);
-	const char *parse(Port &dp, Operation &op, ezxml_t x);
+	const char *parse(Port &dp, const Operation &op, ezxml_t x);
+	void emit(std::string &out, const Port &port, const Operation &op) const;
       };
+    private:
+      Worker     *m_worker;
     public:
       typedef uint32_t Mask;
       static const Mask c_maxPorts = sizeof(Mask)*8;
       std::string m_name;
       PortOrdinal m_ordinal;
+      // These two values are redundant and opposite, but lots of code likes them that way.
+      // In general runtime code uses "provider" and tool-time code uses "producer".
       bool        m_provider;
-      bool        m_optional;
-      bool        m_bidirectional;   // implementation-defined value
+      bool        m_isProducer;
+      bool        m_isOptional;
+      bool        m_isBidirectional; // implementation-defined value
       size_t      m_minBufferCount;  // implementation-defined value
       size_t      m_bufferSize;      // metadata protocol override, if non-zero
       ezxml_t     m_xml;
-      Worker     *m_worker;
-      Port       *m_bufferSizePort;  // The port we should copy our buffer size from
+      ssize_t     m_bufferSizePort;  // The ordinal of port we copy our buffer size from or -1
+      size_t      m_nOpcodes;
+      bool        m_clone;
+      bool        m_parsed;          // for assertions
+      bool        m_seenSummary;     // ugly - for inheritors, but must be here for construction
       // Scalability
       bool                    m_isScalable;
       std::string             m_scaleExpr;
@@ -132,15 +147,29 @@ namespace OCPI {
       Partitioning m_defaultPartitioning;
       std::string m_defaultHashField;
 
-      Port(bool provider = true);
-      // cloning constructor
-      Port(Port *p);
+      //      Port(bool provider = true);
+      Port();
+      // constructor from tools, with new xml (to turn a spec port into an impl port)
+      // If oldP != NULL, its cloning/taking.
+      // nameOrdinal (when not == -1), and defaultName are used when xml has no name
+      Port(Port *oldP, Worker &w, ezxml_t xml, size_t ordinal, int nameOrdinal,
+	   const char *defaultName, const char *&err);
+      Port(const Port &other, Worker &w, std::string &name, size_t ordinal,
+	   const char *&err);
+      virtual ~Port();
       void init();
-      const char *preParse(Worker &w, ezxml_t x, PortOrdinal ord);
-      const char *parse(ezxml_t x);
+      const char *preParse(Worker &w, ezxml_t x, size_t ordinal, int nameOrdinal = -1,
+			   const char *defaultName = NULL);
+      const char *parse();
       const char *postParse();
+      virtual const char *parseProtocol();
       const char *parseDistribution(ezxml_t x, Distribution &d, std::string &hash);
-      const char *parseOperations(ezxml_t x);
+      void emitDistribution(std::string &out, const Distribution &d) const;
+      const char *parseOperations();
+      const char *parseScaling();
+      void emitXml(std::string &out) const;
+      void emitScalingAttrs(std::string &out) const;
+      void emitScaling(std::string &out) const;
     };
 
   }

@@ -60,7 +60,10 @@
 #include "OcpiOsAssert.h"
 #include "OcpiHostFileMappingServices.h"
 
+#ifndef OCPI_OS_VERSION_zynq
+// This fails on zynq and we have not dug into it yet.
 #define REAL_SHM 1
+#endif
 namespace DataTransfer {
 
   // OcpiPosixFileMappingServices implements basic file mapping support on Posix compliant platforms.
