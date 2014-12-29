@@ -54,7 +54,6 @@ namespace OCPI {
       if (m_exceptions)
 	delete [] m_exceptions;
     }
-#if 0
     Operation & 
     Operation::
     operator=(const Operation & p ) {
@@ -69,18 +68,17 @@ namespace OCPI {
       m_qualifiedName = p->m_qualifiedName;
       m_isTwoWay = p->m_isTwoWay;
       m_nArgs = p->m_nArgs;
-      m_nExceptions = p->m_nExceptions;
-      m_myOffset = p->m_myOffset;
       m_args = m_nArgs ? new Member[ m_nArgs ] : NULL;
-      m_exceptions = m_nExceptions ? new Operation[m_nExceptions] : NULL;
-      for (unsigned int n = 0; n < m_nArgs; n++ )
+      for (unsigned n = 0; n < m_nArgs; n++)
 	m_args[n] = p->m_args[n];
-      for (unsigned int n = 0; n < m_nExceptions; n++ )
+      m_nExceptions = p->m_nExceptions;
+      m_exceptions = m_nExceptions ? new Operation[m_nExceptions] : NULL;
+      for (unsigned n = 0; n < m_nExceptions; n++)
 	m_exceptions[n] = p->m_exceptions[n];
+      m_myOffset = p->m_myOffset;
       m_topFixedSequence = p->m_topFixedSequence;
       return *this;
     }
-#endif
     const char *Operation::parse(ezxml_t op, Protocol &p) {
       const char *err;
       if ((err = OE::checkAttrs(op, "Name", "Twoway", "QualifiedName", (void*)0)))
@@ -233,19 +231,17 @@ namespace OCPI {
     Protocol::Protocol() {
       init();
     }
-#if 0
     Protocol::
     Protocol(const Protocol & p )
     {
       *this = p;
     }
-#endif
     Protocol::~Protocol() {
 
       if (m_operations)
 	delete [] m_operations;
     }
-    // clone constructor
+    // morph/clone constructor where we can take from source
     Protocol::
     Protocol(Protocol *p) {
       if (p) {
@@ -270,19 +266,24 @@ namespace OCPI {
       } else
 	init();
     }
-#if 0
     Protocol & 
     Protocol::
     operator=( const Protocol & p ) 
     {
       return operator=(&p);
     }
+    // FIXME: This would all be unnecessary if we interned protocols..
     Protocol & 
     Protocol::
     operator=( const Protocol * p )
     {
       m_nOperations = p->m_nOperations;
+      m_operations = m_nOperations ? new Operation[m_nOperations] : NULL;
+      for (unsigned int n = 0; n < m_nOperations; n++)
+	m_operations[n] = p->m_operations[n];
+      m_op = NULL;
       m_qualifiedName = p->m_qualifiedName;
+      m_file = p->m_file;
       m_name = p->m_name;
       m_defaultBufferSize = p->m_defaultBufferSize;
       m_minBufferSize = p->m_minBufferSize;
@@ -295,13 +296,9 @@ namespace OCPI {
       m_zeroLengthMessages = p->m_zeroLengthMessages;
       m_isTwoWay = p->m_isTwoWay;
       m_isUnbounded = p->m_isUnbounded;
-      m_operations = m_nOperations ? new Operation[m_nOperations] : NULL;
-      for ( unsigned int n=0; n<m_nOperations; n++ )
-	m_operations[n] = p->m_operations[n];
-      m_op = NULL;
       return *this;
     }
-#endif
+
     void Protocol::
     finishOperation(const Operation &op) {
       if (m_isUnbounded ||

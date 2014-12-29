@@ -100,6 +100,7 @@ namespace OCPI {
     // No xml here at all.
     Port::
     Port(const Port &other, Worker &w, std::string &name, size_t ordinal, const char *&err)
+      : Protocol(other)
     {
       err = NULL;
       if (w.findMetaPort(name)) {

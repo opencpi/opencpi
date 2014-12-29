@@ -255,7 +255,7 @@ namespace OCPI {
 	  Launcher::encodeDescriptor(c->m_in.m_initial, m_response);
 	  m_response += "'/>\n";
 	}
-      return false;
+      return Launcher::sendXml(fd(), m_response, "responding from server after initial launch", error);
     }
 
     bool Server::
@@ -282,20 +282,20 @@ namespace OCPI {
 	m_downloaded = true;
 	return Launcher::sendXml(fd(), m_response, "responding from server", error);
       }
-      if (doLaunch(error))
-	return true;
-      return Launcher::sendXml(fd(), m_response, "responding from server", error);
+      return doLaunch(error);
     }
     // After initial launch, and after any downloading
     bool Server::
     update(std::string &error) {
       // 1. If we were downloading, then this "update" is just doing the real launch
+      ocpiDebug("Launch update request.  %s", m_downloaded ? "We downloaded" : "We had no downloading to do");
       if (m_downloaded) {
 	m_downloaded = true;
 	return doLaunch(error);
       }
       // 2. We take any connection updates from the wire, and prepare then
       //    for the local launcher to chew on
+      ocpiDebug("Launch downloads complete.  Processing Connections");
       for (ezxml_t cx = ezxml_cchild(m_rx, "connection"); cx; cx = ezxml_next(cx)) {
 	const char *err;
 	size_t n;
@@ -317,9 +317,11 @@ namespace OCPI {
 	}
       }
       // 3. Give the local launcher a chance to deal with connection info and produce mode
+      ocpiDebug("Connections processed.  Entering local launcher work function.");
       m_response =
 	m_local->work(m_instances, m_connections) ? "<launching>" : "<launching done='1'>";
       // 4. Take whatever the local launcher produced, and send it back
+      ocpiDebug("Local launcher returned.  m_response is: %s", m_response.c_str());
       OC::Launcher::Connection *c = &m_connections[0];
       for (unsigned n = 0; n < m_connections.size(); n++, c++)
 	if (c->m_in.m_launcher) {
@@ -344,6 +346,7 @@ namespace OCPI {
 	    c->m_out.m_final.clear();
 	  }
 	}
+      ocpiDebug("Response prepared.  m_response is: %s", m_response.c_str());
       return Launcher::sendXml(fd(), m_response, "responding from server", error);
     }
     bool Server::
