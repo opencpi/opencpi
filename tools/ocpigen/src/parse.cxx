@@ -651,6 +651,16 @@ getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly) {
   return NULL;
 }
 
+const char*
+extractExprValue(const OU::Property &p, const OU::Value &v, OU::ExprValue &val) {
+  if (p.m_baseType != OA::OCPI_ULong)
+    return OU::esprintf("the '%s' parameter property is not ULong, so is invalid here",
+			p.m_name.c_str());
+  val.isNumber = true;
+  val.number = v.m_ULong;
+  return NULL;
+}
+
 // This is a callback from the property parser used when some of the
 // property attributes (like array dimensions, sequence or string length),
 // are actually expressions in terms of other properties.
@@ -664,11 +674,7 @@ getValue(const char *sym, OU::ExprValue &val) const {
 			    sym);
       if (!p.m_default)
 	return OU::esprintf("the '%s' parameter property has no value", sym);
-      if (p.m_baseType != OA::OCPI_ULong)
-	return OU::esprintf("the '%s' parameter property is not ULong, so is invalid here", sym);
-      val.isNumber = true;
-      val.number = p.m_default->m_ULong;
-      return NULL;
+      return extractExprValue(p, *p.m_default, val);
     }
   return OU::esprintf("here is no property named '%s'", sym);
 }

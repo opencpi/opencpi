@@ -668,6 +668,7 @@ class Worker : public Parsed, public OU::IdentResolver {
   "name", "SizeOfConfigSpace", "ControlOperations", "Sub32BitConfigProperties"
 #define ASSY_ELEMS "instance", "connection", "external"
 extern const char
+  *extractExprValue(const OU::Property &p, const OU::Value &v, OU::ExprValue &val),
   *parseList(const char *list, const char * (*doit)(const char *tok, void *arg), void *arg),
   *parseControlOp(const char *op, void *arg),
   *vhdlValue(const std::string &name, const OU::Value &v, std::string &value,

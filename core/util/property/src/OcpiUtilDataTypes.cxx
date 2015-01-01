@@ -138,14 +138,19 @@ namespace OCPI {
       }
       return NULL;
     }
+    // Evaluate the expression, using the resolver, and if the expression was variable,
+    // save the expression so it can be reevaluated again later when the values of
+    // variables are different.
     static const char *
     parseExprNumber(const char *a, size_t &np, std::string *expr,
 		    const IdentResolver *resolver) {
       ExprValue v;
       const char *err = evalExpression(a, v, resolver);
       if (!err) {
+	if (!v.isNumber)
+	  err = esprintf("the expression \"%s\" does not evaluate to a number", a);
 	np = v.number;
-	if (expr)
+	if (expr && v.isVariable)
 	  *expr = a; // provide the expression to the caller in
       }
       return err;
@@ -157,11 +162,12 @@ namespace OCPI {
     getExprNumber(ezxml_t x, const char *attr, size_t &np, bool &found, std::string &expr,
 		  const IdentResolver *resolver) {
       const char *a = ezxml_cattr(x, attr);
-      if (a && resolver) {
+      if (a) {
 	found = true;
         return parseExprNumber(a, np, &expr, resolver);
       }
-      return OE::getNumber(x, attr, &np, &found, 0, false, false);
+      found = false;
+      return NULL;
     }
 
     const char *
@@ -314,7 +320,8 @@ namespace OCPI {
       if (m_arrayRank) {
 	m_nItems = 1;
 	for (unsigned i = 0; i < m_arrayRank; i++) {
-	  if ((err = parseExprNumber(m_arrayDimensionsExprs[i].c_str(), m_arrayDimensions[i],
+	  if (m_arrayDimensionsExprs[i].length() &&
+	      (err = parseExprNumber(m_arrayDimensionsExprs[i].c_str(), m_arrayDimensions[i],
 				     NULL,  &resolver)))
 	    return err;
 	  // FIXME: this is redundant with the code in parse() - share it
@@ -324,15 +331,16 @@ namespace OCPI {
 	}
       }
       if (m_isSequence) {
-	if ((err = parseExprNumber(m_sequenceLengthExpr.c_str(), m_sequenceLength, NULL,
+	if (m_sequenceLengthExpr.length() &&
+	    (err = parseExprNumber(m_sequenceLengthExpr.c_str(), m_sequenceLength, NULL,
 				   &resolver)))
 	  return err;
 	if (isFixed && m_sequenceLength == 0)
 	  return "Sequence must have a bounded size";
       }
       if (m_baseType == OA::OCPI_String) {
-	if ((err = parseExprNumber(m_stringLengthExpr.c_str(), m_stringLength, NULL,
-				   &resolver)))
+	if (m_stringLengthExpr.length() &&
+	    (err = parseExprNumber(m_stringLengthExpr.c_str(), m_stringLength, NULL, &resolver)))
 	  return err;
 	if (isFixed && m_stringLength == 0)
 	  return "StringLength cannot be zero";
