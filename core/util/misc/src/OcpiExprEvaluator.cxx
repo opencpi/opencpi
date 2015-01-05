@@ -245,9 +245,9 @@ namespace {
 	if (end != t->end)
 	  return "bad number syntax";
 	switch (*t->end) {
-	case 'k': case 'K': t->number *= 1024; t->end++; break;
-	case 'm': case 'M': t->number *= 1024*1024; t->end++; break;
-	case 'g': case 'G': t->number *= 1024ul*1024ul*1024ul; t->end++; break;
+	case 'k': case 'K': t->number *= 1024; t->end++; cp++; break;
+	case 'm': case 'M': t->number *= 1024*1024; t->end++; cp++; break;
+	case 'g': case 'G': t->number *= 1024ul*1024ul*1024ul; t->end++; cp++; break;
 	}
 	break;
       case OpIdent:
