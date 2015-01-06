@@ -133,6 +133,8 @@ namespace OCPI {
 	  for (unsigned n = 0; n < m_nPorts; n++, p++)
 	    if (!strcasecmp(ports[n].m_name.c_str(), (*pi)->m_name.c_str())) {
 	      ap[n] = *pi;
+	      (*pi)->m_role.m_knownRole = true;
+	      (*pi)->m_role.m_provider = ports[n].m_provider;
 	      found = true;
 	      break;
 	    }

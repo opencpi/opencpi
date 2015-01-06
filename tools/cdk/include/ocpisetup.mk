@@ -50,7 +50,7 @@ endif
 export OCPI_SET_LIB_PATH=$(OcpiLibraryPathEnv)=$$$(OcpiLibraryPathEnv):$(OCPI_LIB_DIR)
 #$(info export OCPI_SET_LIB_PATH=$(OCPI_SET_LIB_PATH))
 # Note most of these are just required for static linking
-export OCPI_API_LIBS=application rcc hdl interfaces library transport rdma_driver_interface rdma_drivers rdma_utils rdma_smb util  msg_driver_interface ocpios
+export OCPI_API_LIBS=application rcc hdl container library transport rdma_driver_interface rdma_drivers rdma_utils rdma_smb util  msg_driver_interface ocpios
 export OCPI_TRANSPORT_LIBS=rdma_drivers util  msg_driver_interface  msg_drivers
 #$(info export OCPI_API_LIBS=$(OCPI_API_LIBS))
 
