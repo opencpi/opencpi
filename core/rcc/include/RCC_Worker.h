@@ -183,10 +183,10 @@ struct RunCondition {
   ~RunCondition();
   // initialize the default run condition, given how many ports there are
   // assume default contructor has already been run
-  inline void initDefault(unsigned m_nPorts) {
-    m_myMasks[0] = ~(-1 << m_nPorts);
+  inline void initDefault(unsigned nPorts) {
+    m_myMasks[0] = ~(-1 << nPorts);
     m_myMasks[1] = 0;
-    m_portMasks = m_myMasks;
+    m_portMasks = nPorts ? m_myMasks : NULL;
     m_allMasks = m_myMasks[0];
   }
   // Compatibility hack to support older C-langage run conditions

@@ -66,7 +66,7 @@ endif
 # 1. When executed at runtime, look in OCPI_LIB_DIR to resolve shared libraries
 # 2. At link time, look in OCPI_LIB_DIR to find explicitly mentioned libraries
 # 3. At link time, look in OCPI_API_LIBS for functions called from the program
-export OCPI_LD_FLAGS= $(OCPI_DRIVER_OBJS) $(OcpiAsNeeded) -Xlinker -rpath -Xlinker "$(OCPI_LIB_DIR)" -L"$(OCPI_LIB_DIR)" $(OCPI_API_LIBS:%=-locpi_%) $(OCPI_EXTRA_LIBS:%=-l%) $(foreach l,$(OCPI_PREREQUISITES_LIBS),-l $l -L $(OCPI_PREREQUISITES_DIR)/$l/$(OCPI_TARGET_HOST)/lib)
+export OCPI_LD_FLAGS= $(OCPI_DRIVER_OBJS) $(OcpiAsNeeded) -Xlinker -rpath -Xlinker "$(OCPI_LIB_DIR)" -L"$(OCPI_LIB_DIR)" $(OCPI_API_LIBS:%=-locpi_%) $(OCPI_EXTRA_LIBS:%=-l%) $(foreach l,$(OCPI_PREREQUISITES_LIBS),-l $l -L $(OCPI_PREREQUISITES_DIR)/$l/$(OCPI_TARGET_HOST)/lib -Xlinker -rpath -Xlinker $(OCPI_PREREQUISITES_DIR)/$l/$(OCPI_TARGET_HOST)/lib )
 
 ifeq ($(origin OCPI_HAVE_OPENCL),undefined)
 OCPI_HAVE_OPENCL:=$(if $(realpath $(OCPI_BIN_DIR)/ocpiocl),$(shell $(OCPI_BIN_DIR)/ocpiocl test; if [ $$? = 0 ]; then echo 1; fi),)

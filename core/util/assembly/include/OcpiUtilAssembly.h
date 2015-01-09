@@ -206,7 +206,8 @@ namespace OCPI {
         *getInstance(const char *name, unsigned &),
         *addPortConnection(unsigned from, const char *name, unsigned to, const char *toPort,
 			   const char *transport),
-        *addExternalConnection(unsigned instance, const char *port),
+        *addExternalConnection(unsigned instance, const char *port, bool isInput = false,
+			       bool bidi = false, bool known = false),
         *addExternalConnection(ezxml_t x);
       inline ezxml_t xml() { return m_xml; }
       inline bool isImpl() { return m_isImpl; }

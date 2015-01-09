@@ -67,6 +67,8 @@ launch(Launcher::Instances &instances, Launcher::Connections &connections) {
       } else if (c->m_url) {
 	// Input that is connected to a URL.  We will do this locally
 	c->m_input->connectURL(c->m_url, c->m_paramsIn, c->m_paramsOut);
+      } else if (c->m_launchOut == NULL && c->m_nameOut && !c->m_instOut) {
+	// This is an external port
       } else {
 	// We are the input side, some other launcher has the output
 	c->m_input->containerPort().getInitialProviderInfo(c->m_paramsIn, c->m_ipi);
@@ -145,14 +147,6 @@ prepare() {
       transport = cp;
     if (transport.length())
       m_paramsIn.add("transport", transport.c_str());
-  }
-  if (m_launchIn != m_launchOut) {
-    // For now, force connections to use the sockets transport if the
-    // launchers are different, and there is non specified
-    const char *endpoint = NULL, *transport = NULL;
-    if (!OU::findString(m_paramsIn, "endpoint", endpoint) &&
-	!OU::findString(m_paramsIn, "transport", transport))
-      m_paramsIn.add("transport", "socket");
   }
 }
 

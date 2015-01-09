@@ -245,14 +245,15 @@ namespace OCPI {
     // own name), or with the other short cut: a top level "external" that just describes
     // the instance, port and other options.
     const char *Assembly::
-    addExternalConnection(unsigned instance, const char *port) {
+    addExternalConnection(unsigned instance, const char *port, bool isInput, bool bidi,
+			  bool known) {
       Connection *c;
       const char *err;
       if ((err = addConnection(port, c)))
 	return err;
       External &e = c->addExternal();
       e.init(port);
-      c->addPort(*this, instance, port, false, false, false);
+      c->addPort(*this, instance, port, isInput, bidi, known);
       return NULL;
     }
 

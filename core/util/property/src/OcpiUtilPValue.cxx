@@ -189,6 +189,13 @@ namespace OCPI {
     PValueList::PValueList(const PValue *params, const PValue *override) : m_list(NULL) {
       add(params, override);
     }
+    PValueList & PValueList::
+    operator=(const PValueList & p ) {
+      delete [] m_list;
+      m_list = NULL;
+      add(p.m_list);
+      return *this;
+    }
     void PValueList::
     add(const PValue *params, const PValue *override) {
       size_t n = m_list ? m_list->length() : 0;

@@ -73,7 +73,8 @@ namespace OCPI {
     // that already knows the property ordinal
     Property::Property(Worker &w, unsigned n) :
       m_worker(w), m_writeVaddr(0), m_readVaddr(0),
-      m_info(w.setupProperty(n, m_writeVaddr, m_readVaddr))
+      m_info(w.setupProperty(n, m_writeVaddr, m_readVaddr)),
+      m_ordinal(m_info.m_ordinal)
     {
       m_readSync = m_info.m_readSync;
       m_writeSync = m_info.m_writeSync;

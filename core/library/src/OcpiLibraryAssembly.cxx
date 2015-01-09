@@ -134,7 +134,7 @@ namespace OCPI {
 	    if (!strcasecmp(ports[n].m_name.c_str(), (*pi)->m_name.c_str())) {
 	      ap[n] = *pi;
 	      (*pi)->m_role.m_knownRole = true;
-	      (*pi)->m_role.m_provider = ports[n].m_provider;
+	      (*pi)->m_role.m_provider = p->m_provider;
 	      found = true;
 	      break;
 	    }
@@ -161,7 +161,8 @@ namespace OCPI {
 	    }
 	  // FIXME: should this externalization only apply to spec ports?
 	  if (!found) // Not mentioned in the assembly. Add an external.
-	    utilAssy.addExternalConnection(inst.m_ordinal, p->m_name.c_str());
+	    utilAssy.addExternalConnection(inst.m_ordinal, p->m_name.c_str(),
+					   p->m_provider, false, true);
 	}	  
       }
       p = ports;

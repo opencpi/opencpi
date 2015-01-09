@@ -653,6 +653,8 @@ namespace OCPI {
 	for (OU::Assembly::ExternalsIter ei = (*ci).m_externals.begin();
 	     ei != (*ci).m_externals.end(); ei++) {
 	  assert(!lc->m_instIn || !lc->m_instOut);
+	  if (ei->m_url.length())
+	    lc->m_url = ei->m_url.c_str();
 	  if (lc->m_instIn) {
 	    lc->m_nameOut = ei->m_name.c_str();
 	    lc->m_paramsOut = ei->m_parameters;
@@ -813,7 +815,8 @@ namespace OCPI {
     Property::Property(Application &app, const char *aname)
       : m_worker(app.getPropertyWorker(aname)),
 	m_readSync(false), m_writeSync(false), m_writeVaddr(0), m_readVaddr(0),
-	m_info(m_worker.setupProperty(maybePeriod(aname), m_writeVaddr, m_readVaddr))
+	m_info(m_worker.setupProperty(maybePeriod(aname), m_writeVaddr, m_readVaddr)),
+	m_ordinal(m_info.m_ordinal)
     {
       m_readSync = m_info.m_readSync;
       m_writeSync = m_info.m_writeSync;

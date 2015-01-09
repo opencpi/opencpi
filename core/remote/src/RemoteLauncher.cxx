@@ -222,6 +222,13 @@ emitConnection(const Launcher::Instances &instances, const Launcher::Connection 
 		  m_instanceMap[c.m_instOut - &instances[0]], c.m_nameOut);
   if (c.m_url)
     OU::formatAdd(m_request, "  url='%s'", c.m_url);
+  else {
+    // put out names for external ports
+    if (!c.m_instIn && c.m_nameIn)
+      OU::formatAdd(m_request, "  nameIn='%s'", c.m_nameIn);
+    if (!c.m_instOut && c.m_nameOut)
+      OU::formatAdd(m_request, "  nameOut='%s'", c.m_nameOut);
+  }
   if (c.m_paramsIn.list() || c.m_paramsOut.list()) {
     m_request +=">\n";
     if (c.m_paramsIn.list()) {
@@ -370,8 +377,16 @@ launch(Launcher::Instances &instances, Launcher::Connections &connections) {
   unsigned nConnections = 0;
   Launcher::Connection *c = &connections[0];
   for (unsigned n = 0; n < connections.size(); n++, c++) {
-    c->prepare();
+    c->prepare(); // make sure transport parameters are on both sides
     if (c->m_launchIn == this || c->m_launchOut == this) {
+      if (c->m_launchIn != c->m_launchOut) {
+	// If the connection is off of the remote server and no
+	// transport is specified, force sockets on the input side
+	const char *endpoint = NULL, *transport = NULL;
+	if (!OU::findString(c->m_paramsIn, "endpoint", endpoint) &&
+	    !OU::findString(c->m_paramsIn, "transport", transport))
+	  c->m_paramsIn.add("transport", "socket");
+      }
       emitConnection(instances, *c);
       m_connectionMap[n] = nConnections;
       m_connections[nConnections++] = c;

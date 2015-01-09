@@ -135,22 +135,22 @@ namespace OCPI {
 
     bool Server::
     doConnection(ezxml_t cx, OC::Launcher::Connection &c, std::string &error) {
+      const char *err;
       bool in, out;
       size_t instIn, instOut;
-      if ((c.m_nameIn = ezxml_cattr(cx, "nameIn")))
-	c.m_launchIn = m_local;
-      if ((c.m_nameOut = ezxml_cattr(cx, "nameOut")))
-	c.m_launchOut = m_local;
-      c.m_url = ezxml_cattr(cx, "url");
-      const char *err;
       if ((err = OX::getNumber(cx, "instIn", &instIn, &in)) ||
 	  (err = OX::getNumber(cx, "instOut", &instOut, &out)))
 	return OU::eformat(error, "Error processing connection values for launch: %s", err);
+      c.m_nameIn = ezxml_cattr(cx, "nameIn");
+      c.m_nameOut = ezxml_cattr(cx, "nameOut");
+      c.m_url = ezxml_cattr(cx, "url");
       if (in) {
+	c.m_launchIn = m_local;
 	assert(instIn < m_instances.size());
 	c.m_instIn = &m_instances[instIn];
       }
       if (out) {
+	c.m_launchOut = m_local;
 	assert(instOut < m_instances.size());
 	c.m_instOut = &m_instances[instOut];
       }
