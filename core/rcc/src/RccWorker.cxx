@@ -777,8 +777,10 @@ controlOperation(OU::Worker::ControlOperation op) {
     break;
   default:
     enabled = false;
-    throw OU::EmbeddedException( OU::WORKER_API_ERROR, "Control operation returned invalid RCCResult",
-				 OU::ApplicationFatal);
+    throw
+      OU::Error("Control operation \"%s\" on RCC worker \"%s\" returned invalid "
+		"RCCResult value: 0x%x", OU::Worker::s_controlOpNames[op],
+		name().c_str(), rc);
   }    
 }
 
