@@ -118,8 +118,11 @@ namespace OCPI {
       std::string m_implTag, m_instTag;
       // Our thread safe mutex for the worker itself
       OCPI::OS::Mutex m_workerMutex;
+      OCPI::OS::Mutex m_controlMutex; // HACK since sched_yield is busted with SCHED_OTHER
+      bool m_controlOpPending;
       bool beforeStart();
     protected:
+      void checkControl();
       inline OCPI::OS::Mutex &mutex() { return m_workerMutex; }
       virtual Port *findPort(const char *name) = 0;
       inline const std::string &instTag() const { return m_instTag; }

@@ -353,7 +353,28 @@ namespace OCPI {
 #undef CONTROL_OP
     };
 
+    // Begin hack due to the fact that sched_yield does not work with the default
+    // Linux scheduler: SCHED_OTHER, and it requires special permission/capability to use
+    // the other "realtime" schedulers that actually implement sched_yield.  For many
+    // other reasons enabling realtime scheduling is worse that this hack for now.
+    // (e.g. special permissions and capabilities are required).
+    void Worker::checkControl() {
+      if (m_controlOpPending) {
+	m_controlMutex.lock();
+	m_controlMutex.unlock();
+      }
+    }	
+
     bool Worker::controlOp(OU::Worker::ControlOperation op) {
+      // Begin hack due to the fact that sched_yield does not work with the default
+      // Linux scheduler: SCHED_OTHER, and it requires special permission/capability to use
+      // the other "realtime" schedulers that actually implement sched_yield.
+      OU::AutoMutex ctl (m_controlMutex);
+      struct autoflag {
+	bool &m_flag;
+	autoflag(bool &flag) : m_flag(flag) { m_flag = true; }
+	~autoflag() { m_flag = false; }
+      } flag(m_controlOpPending);
       OU::AutoMutex guard (m_workerMutex, true);
       ControlState cs = getControlState();
       ControlTransition ct = controlTransitions[op];

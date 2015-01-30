@@ -547,10 +547,10 @@
 
  void Worker::
  run(bool &anyone_run) {
-   OU::AutoMutex guard (mutex(), true);
-
+   checkControl();
    if (!enabled)
      return;
+   OU::AutoMutex guard (mutex(), true);
    // Before run condition processing happens, perform callbacks, and, if we did any,
    // skip runcondition processing
    // FIXME: have a bit mask of these
