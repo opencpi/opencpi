@@ -23,6 +23,7 @@ static RCCResult
 run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  (void)self;(void)timedOut;(void)newRunCondition;
  printf("Hello, world\n");
+ fflush(stdout);
  sleep(1);
  return RCC_ADVANCE;
 }

@@ -136,6 +136,7 @@ Circuit(
                     m_transport->m_transportGlobal->m_gen_temp_gen;
 
     m_transport->m_transportGlobal->m_gen_pat1 = new TransferTemplateGeneratorPattern1( );
+    m_transport->m_transportGlobal->m_gen_pat1passive = new TransferTemplateGeneratorPattern1Passive( );
     m_transport->m_transportGlobal->m_gen_pat1AFC = new TransferTemplateGeneratorPattern1AFC( );
     m_transport->m_transportGlobal->m_gen_pat1AFCShadow = new TransferTemplateGeneratorPattern1AFCShadow( );
     m_transport->m_transportGlobal->m_gen_pat2 = new TransferTemplateGeneratorPattern2( );
@@ -152,7 +153,6 @@ Circuit(
       [true] [OCPI::RDT::ActiveMessage] [OCPI::RDT::ActiveFlowControl] 
       = m_transport->m_transportGlobal->m_gen_pat1;
 
-
     // If the output port is AFC, the same transfer pattern generator is used for any input port role
     for( y=0; y<OCPI::RDT::MaxRole; y++) {
 
@@ -167,10 +167,18 @@ Circuit(
         = m_transport->m_transportGlobal->m_gen_pat1AFCShadow;
     }
 
-
-
-
+    // Passive is same whether input or output
     // Fixme.  All other DD&P patterns have not yet beed ported to the new port "roles" paradigm
+    m_transport->m_transportGlobal->m_templateGenerators[DataDistributionMetaData::parallel][DataDistributionMetaData::parallel]
+      [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
+      [false] [OCPI::RDT::Passive] [OCPI::RDT::ActiveOnly] 
+      = m_transport->m_transportGlobal->m_gen_pat1passive;
+
+    m_transport->m_transportGlobal->m_templateGenerators[DataDistributionMetaData::parallel][DataDistributionMetaData::parallel]
+      [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
+      [true] [OCPI::RDT::ActiveOnly] [OCPI::RDT::Passive] 
+      = m_transport->m_transportGlobal->m_gen_pat1passive;
+
     m_transport->m_transportGlobal->m_templateGenerators[DataDistributionMetaData::parallel][DataDistributionMetaData::sequential]
       [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
       [false] [OCPI::RDT::ActiveMessage] [OCPI::RDT::ActiveFlowControl] 
@@ -185,7 +193,6 @@ Circuit(
       [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::BLOCK] 
       [false] [OCPI::RDT::ActiveMessage] [OCPI::RDT::ActiveFlowControl] 
       = m_transport->m_transportGlobal->m_gen_pat4;
-        
 
     // Same thing for the transfer controllers
     m_transport->m_transportGlobal->m_gen_control = new TransferControllerNotSupported();
@@ -201,6 +208,7 @@ Circuit(
 
     
     m_transport->m_transportGlobal->m_cont1 = new TransferController1();
+    m_transport->m_transportGlobal->m_cont1passive = new TransferController1Passive();
     m_transport->m_transportGlobal->m_cont1AFCShadow = new TransferController1AFCShadow();
     m_transport->m_transportGlobal->m_cont2 = new TransferController2();
     m_transport->m_transportGlobal->m_cont3 = new TransferController3();
@@ -229,10 +237,15 @@ Circuit(
         [false] [OCPI::RDT::ActiveFlowControl] [y] 
         = m_transport->m_transportGlobal->m_cont1AFCShadow;
     }
+    m_transport->m_transportGlobal->m_transferControllers[DataDistributionMetaData::parallel] [DataDistributionMetaData::parallel]
+      [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
+      [true] [OCPI::RDT::Passive] [OCPI::RDT::ActiveOnly] 
+      = m_transport->m_transportGlobal->m_cont1passive;
 
-
-
-
+    m_transport->m_transportGlobal->m_transferControllers[DataDistributionMetaData::parallel] [DataDistributionMetaData::parallel]
+      [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
+      [false] [OCPI::RDT::ActiveOnly] [OCPI::RDT::Passive] 
+        = m_transport->m_transportGlobal->m_cont1passive;
 
     // Fixme.  All other DD&P patterns have not yet beed ported to the new port "roles" paradigm
     m_transport->m_transportGlobal->m_transferControllers[DataDistributionMetaData::parallel][DataDistributionMetaData::sequential]

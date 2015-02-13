@@ -52,6 +52,7 @@
 #include <string>
 #include <istream>
 #include <functional>
+#include <limits>
 
 #include "OcpiOsAssert.h"
 

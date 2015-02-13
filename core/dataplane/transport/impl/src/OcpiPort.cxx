@@ -87,6 +87,7 @@ void OCPI::DataTransport::Port::reset()
   }
   m_sequence = 0;
   m_lastBufferOrd=MAXBUFORD;
+  m_nextBridgeOrd=0;
   getCircuit()->release();
 }
 
@@ -101,6 +102,7 @@ void OCPI::DataTransport::Port::initialize()
 
   m_sequence = 0;
   m_lastBufferOrd=MAXBUFORD;
+  m_nextBridgeOrd=0;
 
   m_realSMemResources = XferFactoryManager::getFactoryManager().getSMBResources( m_data->real_location_string );
   if ( !  m_realSMemResources ) {
@@ -181,33 +183,34 @@ void OCPI::DataTransport::Port::initialize()
  *********************************/
 OCPI::DataTransport::Port::Port( PortMetaData* data, PortSet* ps )
   : CU::Child<PortSet,Port>(*ps, *this), OCPI::Time::Emit( ps, "Port", "",NULL ), 
-    m_initialized(false), 
-    m_data( data ),
+    m_initialized(false), // reset to false in reset(), set to true in initialize()
+    m_data(data),
     m_realSMemResources(NULL),
     m_shadowSMemResources(NULL),
     m_localSMemResources(NULL),
     m_hsPortControl(NULL),
+    m_lastBufferTidProcessed(0),
+    m_sequence(0),   // will be reset in reset()
+    m_shadow(false), // will be set properly in initialize()
+    m_busyFactor(0),
+    m_eos(false),
+    m_mailbox(0),    // will be set property in initialize()
+    // portDependencyData
+    m_offsetsOffset(),
+    m_lastBufferOrd(MAXBUFORD),  // will be reset in reset()
+    m_nextBridgeOrd(0),          // will be reset in reset() 
     m_externalState(NotExternal),
     m_pdDriver(NULL),
     m_portSet(ps),
     m_bufferCount(ps->getBufferCount()),
-    m_buffers(new Buffer*[m_bufferCount])
+    m_buffers(new Buffer*[m_bufferCount]),
+    m_zCopyBufferQ(0)
 {
-  memset(m_buffers, 0, sizeof(Buffer*) * m_bufferCount);
-  m_zCopyBufferQ = 0;
-
   ocpiDebug("In OCPI::DataTransport::Port::Port()");
-
-
-  // Init member data
-  m_lastBufferTidProcessed = 0;
-  m_eos = false;
+  memset(m_buffers, 0, sizeof(Buffer*) * m_bufferCount);
   m_data->rank = ps->getPortCount();
-
-  if ( m_data->real_location_string.length() ) {
+  if (m_data->real_location_string.length())
     initialize();
-  }
-
 }
 
 /**********************************
@@ -224,37 +227,47 @@ SmemServices* OCPI::DataTransport::Port::getRealShemServices()
 /**********************************
  * Finalize the port - called when the roles are finally established and won't change any more
  * The return value is the resulting descriptor which is either "mine" or "flow"
+ * (flow is a buffer provided by the caller).
+ * If "other" is NULL, it means there is no "other", and we are passive
+ * If the return value is ! NULL, it means send it to the other side.
+ * If the done is set to true, it means we can go operational and need no more info.
+ * E.g. an input port might need to send some info back, but it is immediately done,
+ * and needs no more handshaking
  *********************************/
 const OCPI::RDT::Descriptors * Port::
-finalize( const OCPI::RDT::Descriptors& other, OCPI::RDT::Descriptors &mine, OCPI::RDT::Descriptors *flow )
+finalize(const OCPI::RDT::Descriptors *other, OCPI::RDT::Descriptors &mine,
+	 OCPI::RDT::Descriptors *flow, bool &done)
 {
   const OCPI::RDT::Descriptors *result = &mine;
   Circuit &c = *getCircuit();
   Port *otherPort;
   if (m_data->output) {
+    ocpiAssert(mine.type == OCPI::RDT::ProducerDescT);
     switch (mine.role) {
     case OCPI::RDT::ActiveFlowControl:
+      // We are output w/ActiveFlowControl role, we do not need to tell the input about
+      // our local input-buffer-empty flags since they do not need to indicate when input
+      // buffers are consumed. We don't care because we are not managing the transfers from our
+      // output to their inputs. Instead, we will send them the output descriptor so that they
+      // can "pull" data from us, and indicate to us when the data transfer has completed.
+      // We need to hear back from them about the 
       ocpiAssert(flow);
-      // If we, as output, are in "ActiveFlowControl" mode, we do not need to tell the input about
-      // our input shadow buffers since they do not need to indicate when they have consumed data.
-      // We don't care because we are not managing the transfers from our output to their inputs.
-      // Instead, we will send them the output descriptor so that they can "pull" data from us,
-      // and indicate when the data transfer has completed.
-      *flow = mine;
-      ocpiAssert(flow->type == OCPI::RDT::ProducerDescT);
+      *flow = mine; // we are taking a snapshot of "mine" before modifications below
+      // result = flow; why not this?
+      done = false;
       break;
     case OCPI::RDT::ActiveOnly:
       ocpiDebug("Found a Passive Consumer Port !!");
-      attachPullDriver(c.createPullDriver( other ));
+      assert(other);
+      attachPullDriver(c.createPullDriver(*other));
       break;
     case OCPI::RDT::ActiveMessage:
-      if (flow) {
-	PortMetaData *inputMeta = c.getInputPortSet(0)->getPort(0)->getMetaData();
-	if (inputMeta->m_shadow) {
-	  *flow = c.getInputPortSet(0)->getPort(0)->getMetaData()->m_shadowPortDescriptor;
-	  flow->type = OCPI::RDT::ConsumerFlowControlDescT;
-	  result = flow;
-	}
+      assert(flow);
+      PortMetaData *inputMeta = c.getInputPortSet(0)->getPort(0)->getMetaData();
+      if (inputMeta->m_shadow) {
+	*flow = c.getInputPortSet(0)->getPort(0)->getMetaData()->m_shadowPortDescriptor;
+	flow->type = OCPI::RDT::ConsumerFlowControlDescT;
+	result = flow;
       }
       break;
     }
@@ -262,19 +275,22 @@ finalize( const OCPI::RDT::Descriptors& other, OCPI::RDT::Descriptors &mine, OCP
       flow->desc.oob.cookie = mine.desc.oob.cookie;
     otherPort = c.getInputPortSet(0)->getPort(0);
   } else {
-    // We are input, other is output.
-    EndPoint &otherEp = getCircuit()->m_transport->addRemoteEndPoint(other.desc.oob.oep);
-    c.setFlowControlDescriptor(this, other);
-    ocpiAssert(getRealShemServices());
+    if (other) {
+      // We are input, other is output.
+      EndPoint &otherEp = getCircuit()->m_transport->addRemoteEndPoint(other->desc.oob.oep);
+      c.setFlowControlDescriptor(this, *other);
+      ocpiAssert(getRealShemServices());
 
-    XferServices * xfers =   
-      XferFactoryManager::getFactoryManager().getService( getEndpoint(), &otherEp);
-    xfers->finalize( other.desc.oob.cookie );
+      XferServices * xfers =   
+	XferFactoryManager::getFactoryManager().getService( getEndpoint(), &otherEp);
+      xfers->finalize( other->desc.oob.cookie );
+    }
     otherPort = c.getOutputPortSet()->getPort(0);
   }
-  getPortDescriptor(mine, &other);
+  getPortDescriptor(mine, other);
   ocpiAssert(m_data->m_descriptor.role != 5);
-  otherPort->m_data->m_descriptor = other;
+  if (other)
+    otherPort->m_data->m_descriptor = *other;
   ocpiAssert(otherPort->m_data->m_descriptor.role != 5);
   ocpiDebug("Circuit %s %p is closed", m_data->output ? "output" : "in", &c);
   c.m_openCircuit = false;
@@ -1427,6 +1443,7 @@ hasFullInputBuffer()
   // We may need to do more work here if we are attached to a output buffer for ZCopy
   if ( ! available ) {
     if ( tb->m_zCopyPort && tb->m_attachedZBuffer ) {
+      assert("Unexpected zero copy to input port"==0);
       if ( tb->m_attachedZBuffer->isEmpty() && ! tb->m_attachedZBuffer->inUse() ) {
         OCPI::DataTransport::PortSet* aps = static_cast<OCPI::DataTransport::PortSet*>(tb->m_zCopyPort->getPortSet());
         aps->getTxController()->modifyOutputOffsets( tb->m_attachedZBuffer, tb, true );
@@ -1458,7 +1475,7 @@ hasEmptyOutputBuffer()
 
 OCPI::DataTransport::BufferUserFacet* 
 OCPI::DataTransport::Port::
-getNextFullInputBuffer(void *&data, size_t &length, uint8_t &opcode)
+getNextFullInputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode)
 {
   Circuit *c = getCircuit();
   OU::SelfAutoMutex guard(c); // FIXME: refactor to make this a circuit method
@@ -1473,7 +1490,7 @@ getNextFullInputBuffer(void *&data, size_t &length, uint8_t &opcode)
     if (buf && buf->getMetaData()->endOfCircuit)
       c->m_status = Circuit::Disconnecting;
 
-    data = (void*)buf->getBuffer(); // cast off the volatile
+    data = (uint8_t*)buf->getBuffer(); // cast off the volatile
     opcode = (uint8_t)buf->getMetaData()->ocpiMetaDataWord.opCode;
     length = buf->getDataLength();
     OCPI_EMIT_CAT__("Data Buffer Received" , OCPI_EMIT_CAT_WORKER_DEV,OCPI_EMIT_CAT_WORKER_DEV_BUFFER_FLOW, buf);
@@ -1487,30 +1504,52 @@ getNextFullInputBuffer(void *&data, size_t &length, uint8_t &opcode)
   return buf;
 }
 
-#if 0
-OCPI::DataTransport::Buffer* 
-OCPI::DataTransport::Port::
-getNextFullInputBuffer()
-{
-  Circuit *c = getCircuit();
-  OU::SelfAutoMutex guard(c); // FIXME: refactor to make this a circuit method
-
-  if (!hasFullInputBuffer())
-    return NULL;
-  TransferController* txc = getPortSet()->getTxController();
-  InputBuffer* buf = 
-    static_cast<InputBuffer*>(txc->getNextFullInputBuffer(this));
-  ocpiDebug("Getting buffer %p on port %p on circuit %p on transport %p",
-	    buf, this, c, &c->parent());
-  if ( buf && buf->isEOS() ) {
-    setEOS();
+// For use by bridge ports, meaning this port is passive
+BufferUserFacet* OCPI::DataTransport::Port::
+getNextEmptyInputBuffer(uint8_t *&data, size_t &length) {
+  OU::SelfAutoMutex guard(getCircuit());
+  Buffer &b = *m_buffers[m_nextBridgeOrd];
+  if (b.isEmpty()) {
+    assert(!b.inUse());
+    if (++m_nextBridgeOrd >= m_portSet->getBufferCount())
+      m_nextBridgeOrd = 0;
+    data = (uint8_t*)b.getBuffer();
+    length = b.getLength();
+    return &b;
   }
-  if ( buf && buf->getMetaData()->endOfCircuit ) {
-    c->m_status = Circuit::Disconnecting;
-  }
-  return buf;
+  return NULL;
 }
-#endif
+void OCPI::DataTransport::Port::
+sendInputBuffer(BufferUserFacet &ib, size_t length, uint8_t opcode) {
+  OU::SelfAutoMutex guard(getCircuit());
+  Buffer &b = *static_cast<Buffer *>(&ib);
+  b.getMetaData()->ocpiMetaDataWord.opCode = opcode;
+  b.getMetaData()->ocpiMetaDataWord.length = OCPI_UTRUNCATE(uint32_t,length);
+  b.markBufferFull();
+}
+
+BufferUserFacet* OCPI::DataTransport::Port::
+getNextFullOutputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode) {
+  OU::SelfAutoMutex guard(getCircuit());
+  Buffer &b = *m_buffers[m_nextBridgeOrd];
+  if (!b.isEmpty()) {
+    assert(!b.inUse());
+    if (++m_nextBridgeOrd >= m_portSet->getBufferCount())
+      m_nextBridgeOrd = 0;
+    data = (uint8_t*)b.getBuffer();
+    length = b.getDataLength();
+    opcode = (uint8_t)b.getMetaData()->ocpiMetaDataWord.opCode;
+    return &b;
+  }
+  return NULL;
+}
+
+void OCPI::DataTransport::Port::
+releaseOutputBuffer(BufferUserFacet &ob) {
+  OU::SelfAutoMutex guard(getCircuit());
+  Buffer &b = *static_cast<Buffer *>(&ob);
+  b.markBufferEmpty();
+}
 
 /**********************************
  * This method causes the specified input buffer to be marked
@@ -1545,11 +1584,11 @@ inputAvailable( Buffer* input_buf )
  *********************************/
 OCPI::DataTransport::BufferUserFacet* 
 OCPI::DataTransport::Port::
-getNextEmptyOutputBuffer(void *&data, size_t &length)
+getNextEmptyOutputBuffer(uint8_t *&data, size_t &length)
 {
   OCPI::DataTransport::Buffer *buf = getNextEmptyOutputBuffer();
   if (buf) {
-    data = (void*)buf->getBuffer(); // cast off the volatile
+    data = (uint8_t*)buf->getBuffer(); // cast off the volatile
     length = buf->getLength(); // not really data length, but buffer length
   }
   return buf;
@@ -1612,11 +1651,11 @@ getNextEmptyOutputBuffer()
   return static_cast<OCPI::DataTransport::Buffer*>(buffer);
 }
 
-
 void 
 Port::
-sendZcopyInputBuffer( Buffer* src_buf, size_t len, uint8_t op)
+sendZcopyInputBuffer(BufferUserFacet &buf, size_t len, uint8_t op, bool /*end*/)
 {
+  Buffer *src_buf = static_cast<Buffer*>(&buf);
   src_buf->getMetaData()->ocpiMetaDataWord.length = (uint32_t)len;
   src_buf->getMetaData()->ocpiMetaDataWord.opCode = op;
   src_buf->getMetaData()->ocpiMetaDataWord.timestamp = 0x0123456789abcdefull;
@@ -1633,7 +1672,8 @@ getBufferLength()
 
 void 
 Port::
-sendOutputBuffer( BufferUserFacet* buf, size_t length, uint8_t opcode )
+sendOutputBuffer( BufferUserFacet* buf, size_t length, uint8_t opcode, bool /*end*/,
+		  bool /*data*/)
 {
   if (length > getBufferLength())
     throw OU::Error("Buffer being sent with data length (%zu) exceeding buffer length (%zu)",

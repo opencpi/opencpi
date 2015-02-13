@@ -8,7 +8,11 @@
 // These structures capture what is in or will be put in
 // the build configuration file.
 // They are also used to dump the makefile fragment output
-typedef std::vector<OCPI::Util::Value *> Values;
+
+// This vector holds a sequence of alternative values for a given parameter
+// It is held as a string because it can't be parsed until the other
+// parameter values are known (e.g. the length of an array in another parameter).
+typedef std::vector<std::string> Values;
 
 struct Param {
   OCPI::Util::Value *value;    // the specific value for the current configuration, perhaps the default
@@ -21,20 +25,26 @@ struct Param {
 };
 
 class Worker;
-struct ParamConfig {
+class ParamConfig : public OCPI::Util::IdentResolver {
+  Worker &m_worker;
+ public:
   std::vector<Param> params;
   std::string id;
   size_t nConfig; // ordinal
   bool used;  // Is this config in the current set?
-  ParamConfig();
+  ParamConfig(Worker &w);
   ParamConfig(const ParamConfig &);
-  const char * parse(Worker &w, ezxml_t cx);
-  void write(Worker &w, FILE *xf, FILE *mf);
+  ParamConfig &operator=(const ParamConfig * p);
+  const char * parse(ezxml_t cx);
+  void write(FILE *xf, FILE *mf);
   // Is the given configuration the same as this one?
   bool equal(ParamConfig &other);
+  // The callback when evaluating expressions for data types (e.g. array length).
+  const char *getValue(const char *sym, OCPI::Util::ExprValue &val) const;
 };
 
-struct ParamConfig;
-typedef std::vector<ParamConfig> ParamConfigs;
+// This must be pointers since it has a reference member which can't be copied,
+// and we're not using c++11 yet, with "emplace".
+typedef std::vector<ParamConfig*> ParamConfigs;
 
 #endif

@@ -165,10 +165,10 @@ namespace OCPI {
       //Circuit * createCircuit( DataTransfer::EndPoint *ep );
 
       // Initialize descriptor from endpoint info
-      static void fillDescriptorFromEndPoint(DataTransfer::EndPoint &ep, OCPI::RDT::Descriptors &desc);
-      //      Port * createInputPort( Circuit * &c,  OCPI::RDT::Descriptors& desc, const OCPI::Util::PValue *);
+      static void fillDescriptorFromEndPoint(DataTransfer::EndPoint &ep,
+					     OCPI::RDT::Descriptors &desc);
       // Use this one when you know there is only one input port
-      Port * createInputPort(OCPI::RDT::Descriptors& desc, const OCPI::Util::PValue *);
+      Port * createInputPort(OCPI::RDT::Descriptors& desc);
       // Use this one when you know there is only one output port
       // And the input port is remote
       Port * createOutputPort(OCPI::RDT::Descriptors& outputDesc,

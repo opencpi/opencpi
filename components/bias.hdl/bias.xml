@@ -3,9 +3,8 @@
   <specproperty name='biasvalue' readable='true'/>
   <ControlInterface SizeOfConfigSpace="4g" Sub32BitConfigProperties="true" ControlOperations="initialize" Timeout="444"/>
   <StreamInterface 
-      Name="in" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"
-      NumberOfOpcodes="256"/>
-  <StreamInterface Name="out" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"/>
+      Name="in" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
+  <StreamInterface Name="out" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
 </HdlImplementation>
 
 

@@ -226,6 +226,22 @@ namespace OCPI {
 
 
     };
+    // This is the class that is used for the passive role.  No transfers are created at all.
+    class TransferTemplateGeneratorPattern1Passive : public TransferTemplateGeneratorPattern1
+    {
+    public:
+
+      // Constructor
+      TransferTemplateGeneratorPattern1Passive( )
+        :TransferTemplateGeneratorPattern1(){};
+
+    protected:
+
+      virtual void createOutputTransfers(OCPI::DataTransport::Port* s_port, OCPI::DataTransport::PortSet* input,
+                                         TransferController* cont );
+      virtual void createInputTransfers(OCPI::DataTransport::PortSet* output, OCPI::DataTransport::Port* input,
+                                         TransferController* cont );
+    };
 
 
     // This is the class that is used for pattern 1 when the port role is ActiveFlowControl for the 

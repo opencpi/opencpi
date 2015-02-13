@@ -181,6 +181,7 @@ namespace OCPI {
 	       unsigned ordinal, const IdentResolver *resolv = NULL),
 	*offset(size_t &maxAlign, size_t &argOffset, size_t &minSize, bool &diverseSizes,
 		bool &sub32, bool &unBounded, bool isTop = false);
+      uint8_t *getField(uint8_t *data, size_t &length) const;
       static const char *
       parseMembers(ezxml_t prop, size_t &nMembers, Member *&members,
 		   bool isFixed, const char *tag, const char *vtag);

@@ -112,7 +112,7 @@ namespace OCPI  {
       Operation *findOperation(const char *name);
       void finishOperation(const Operation &op);
       inline bool isTwoWay() { return m_isTwoWay; }
-      inline size_t &nOperations() { return m_nOperations; }
+      inline size_t nOperations() const { return m_nOperations; }
       inline Operation *operations() { return m_operations; }
       inline const std::string &name() const { return m_name; }
       const char *parseChild(ezxml_t x);

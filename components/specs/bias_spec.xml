@@ -1,9 +1,10 @@
 <ComponentSpec Name="bias">
   <Property Name="biasValue" Initial="true" readable='true'/>
-  <DataInterfaceSpec Name="in">
+  <!-- Force 256 opcodes so we can use this generically -->
+  <DataInterfaceSpec Name="in" numberofopcodes='256'>
     <xi:include href="stream32_protocol.xml"/>
   </DataInterfaceSpec>
-  <DataInterfaceSpec Name="out" Producer="true">
+  <DataInterfaceSpec Name="out" Producer="true" numberofopcodes='256'>
     <xi:include href="stream32_protocol.xml"/>
   </DataInterfaceSpec>
 </ComponentSpec>

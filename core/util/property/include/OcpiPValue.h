@@ -84,6 +84,9 @@ namespace OCPI {
       PValueList(const PValue *params, const PValue *override = NULL);
       PValueList();
       ~PValueList();
+      PValueList(const PValueList&);
+      PValueList(const PValueList*);
+      PValueList &operator=(const PValueList & p);
       inline const PValue *list() const { return m_list; }
       inline operator const PValue*() const { return m_list; }
       const char 

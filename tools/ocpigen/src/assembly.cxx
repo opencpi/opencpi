@@ -447,8 +447,18 @@ emitXmlWorker(FILE *f) {
     //  if (m_ports.size() && m_ports[0]->type == WCIPort && m_ports[0]->u.wci.timeout)
     fprintf(f, " Timeout=\"%zu\"", m_wci->timeout());
   if (m_slave)
-    fprintf(f, "  Slave='%s.%s'", m_slave->m_implName, m_slave->m_modelString);
+    fprintf(f, " Slave='%s.%s'", m_slave->m_implName, m_slave->m_modelString);
+  if (m_scalable)
+    fprintf(f, " Scalable='1'");
   fprintf(f, ">\n");
+  if (m_scalable) {
+    OU::Port::Scaling s;
+    if (!(s == m_scaling)) {
+      std::string out;
+      m_scaling.emit(out, NULL);
+      fprintf(f, "  <scaling %s/>\n", out.c_str());
+    }
+  }
   unsigned nn;
   std::string out;
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {

@@ -61,6 +61,7 @@ MAIN_DRIVERS+= \
   _ZN4OCPI7Library7CompLib9componentE\
   _ZN4OCPI3HDL3hdlE\
   _ZN4OCPI3DMA3dmaE\
+  _ZN4OCPI5Local5localE\
   _ZN4OCPI6Remote6remoteE\
 
 

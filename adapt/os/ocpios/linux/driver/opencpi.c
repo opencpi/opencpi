@@ -69,8 +69,8 @@
 #endif
 
 #include "HdlOCCP.h"
-#include "PciDriver.h"
-#include "NetDefs.h"
+#include "HdlPciDriver.h"
+#include "HdlNetDefs.h"
 #include "KernelDriver.h"                    // includes shared with user mode
 
 #define DRIVER_NAME "opencpi"

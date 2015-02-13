@@ -90,6 +90,7 @@ namespace OCPI {
 
     class TransferTemplateGenerator;
     class TransferTemplateGeneratorPattern1;
+    class TransferTemplateGeneratorPattern1Passive;
     class TransferTemplateGeneratorPattern1AFC;
     class TransferTemplateGeneratorPattern1AFCShadow;
     class TransferTemplateGeneratorPattern2;
@@ -145,6 +146,7 @@ namespace OCPI {
         P_STATIC bool m_Circuitinit;
         P_STATIC TransferTemplateGenerator                  *m_gen_temp_gen;
         P_STATIC TransferTemplateGeneratorPattern1          *m_gen_pat1;
+        P_STATIC TransferTemplateGeneratorPattern1          *m_gen_pat1passive;
         P_STATIC TransferTemplateGeneratorPattern1AFC       *m_gen_pat1AFC;
         P_STATIC TransferTemplateGeneratorPattern1AFCShadow *m_gen_pat1AFCShadow;
         P_STATIC TransferTemplateGeneratorPattern2 *m_gen_pat2;
@@ -152,6 +154,7 @@ namespace OCPI {
         P_STATIC TransferTemplateGeneratorPattern4 *m_gen_pat4;
         P_STATIC TransferController                *m_gen_control;
         P_STATIC TransferController1               *m_cont1;
+        P_STATIC TransferController1               *m_cont1passive;
         P_STATIC TransferController1AFCShadow      *m_cont1AFCShadow;
         P_STATIC TransferController2               *m_cont2;
         P_STATIC TransferController3               *m_cont3;

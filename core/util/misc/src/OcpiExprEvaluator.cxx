@@ -94,7 +94,7 @@ namespace {
       }
       if (isdigit(*cp)) {
 	cp++;
-	while (isdigit(*cp) || *cp == '.' || *cp == 'e')
+	while (isdigit(*cp)) // || *cp == '.' || *cp == 'e') no floats yet
 	  cp++;
 	end = cp;
 	op = OpNumber;
@@ -230,6 +230,7 @@ namespace {
       ;
     if (err)
       return err;
+    val.isVariable = false;
     ExprToken *lpar = 0, *t = tokens = new ExprToken[++nTokens];
     cp = buf;
     do {
@@ -243,6 +244,11 @@ namespace {
 	t->number = strtoll(t->start, (char **)&end, 0);
 	if (end != t->end)
 	  return "bad number syntax";
+	switch (*t->end) {
+	case 'k': case 'K': t->number *= 1024; t->end++; cp++; break;
+	case 'm': case 'M': t->number *= 1024*1024; t->end++; cp++; break;
+	case 'g': case 'G': t->number *= 1024ul*1024ul*1024ul; t->end++; cp++; break;
+	}
 	break;
       case OpIdent:
 	{
@@ -252,6 +258,7 @@ namespace {
 	    return "no symbols are available for this expression";
 	  if ((err = resolver->getValue(sym.c_str(), v)))
 	    return err;
+	  val.isVariable = true;
 	  if (v.isNumber) {
 	    t->op = OpNumber;
 	    t->number = v.number;

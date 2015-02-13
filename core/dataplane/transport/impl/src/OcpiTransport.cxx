@@ -474,34 +474,28 @@ fillDescriptorFromEndPoint(DT::EndPoint &ep, OCPI::RDT::Descriptors &desc) {
 // Also returning a flowcontrol descriptor to give to that remote port
 Port * 
 Transport::
-createOutputPort(OCPI::RDT::Descriptors& outputDesc,
-		 const OCPI::RDT::Descriptors& inputDesc )
-{
-  // Before creating the output port, we need to 
-  // create a local endpoint that is compatible with the remote.
+createOutputPort(OCPI::RDT::Descriptors& outputDesc, const OCPI::RDT::Descriptors& inputDesc) {
+  // Before creating the output port, create a local endpoint compatible with the remote.
   // It will throw an exception if it isn't workable
   DT::EndPoint &oep = getLocalCompatibleEndpoint(inputDesc.desc.oob.oep);
   fillDescriptorFromEndPoint(oep, outputDesc);
   // Ensure that the input port endpoint is registered
   DT::EndPoint &iep = addRemoteEndPoint(inputDesc.desc.oob.oep);
-  if (outputDesc.desc.dataBufferSize > inputDesc.desc.dataBufferSize) {
+  ocpiAssert(outputDesc.desc.dataBufferSize <= inputDesc.desc.dataBufferSize);
+#if 0
     ocpiDebug("createOutputPort: setting buffer size on output from %zu to %zu",
 	      (size_t)outputDesc.desc.dataBufferSize, (size_t)inputDesc.desc.dataBufferSize);
     outputDesc.desc.dataBufferSize = inputDesc.desc.dataBufferSize;
-  }
-  Circuit *c = createCircuit(0, new ConnectionMetaData( oep, outputDesc ));
+#endif
+  Circuit *c = createCircuit(0, new ConnectionMetaData(oep, outputDesc));
   c->addInputPort(iep, inputDesc, oep);
-
   Port *p = c->getOutputPort();
   p->getPortDescriptor(outputDesc, &inputDesc);
   return p;
 }
 // Create an output port given an existing input port.
-Port * 
-Transport::
-createOutputPort(OCPI::RDT::Descriptors& outputDesc,
-		 Port &inputPort )
-{
+Port *Transport::
+createOutputPort(OCPI::RDT::Descriptors& outputDesc, Port &inputPort) {
   // With an inside connection, the endpoints are the same
   DT::EndPoint &iep = *inputPort.getEndpoint();
   fillDescriptorFromEndPoint(iep, outputDesc);
@@ -519,75 +513,22 @@ createOutputPort(OCPI::RDT::Descriptors& outputDesc,
   return p;
 }
 
-Port * 
-Transport::
-createInputPort(OCPI::RDT::Descriptors& desc, const OU::PValue *params )
+Port *Transport::
+createInputPort(OCPI::RDT::Descriptors& desc)
 {
-  Circuit *circuit = 0;
-  // First, process params to establish the right endpoint
+  const char *epString = desc.desc.oob.oep;
   DT::EndPoint *ep;
-  const char *endpoint = NULL, *transport = NULL;
-  if (OU::findString(params, "endpoint", endpoint))
-    ep = &getLocalEndpoint(endpoint); // caller is specific, potentially specifying QoS etc.
-  else {
-    if (!OU::findString(params, "protocol", transport) &&
-	!OU::findString(params, "transport", transport) &&
-	(transport = getenv("OCPI_DEFAULT_TRANSPORT")))
-      ocpiDebug("Forcing protocol = %s because OCPI_DEFAULT_TRANSPORT set in environment",
-		transport);
-    ep = &getLocalCompatibleEndpoint(transport);
-  }
+  ep = strchr(desc.desc.oob.oep, ':') ?
+    &getLocalEndpoint(epString) : // caller is specific, potentially specifying QoS etc.
+    &getLocalCompatibleEndpoint(epString);
+  // We may be overwriting the endpoint string, but that should be ok.
   fillDescriptorFromEndPoint(*ep, desc);
-  
-  int ord=-1;
-  Port * port=NULL;  
-  
-#if 0
-  // For sake of efficiency we make sure to re-use the circuits that relate 
-  // to the same connecton
-  if ( circuit  ) {
-    if ( circuit->getInputPortSetCount() ) {
-      ord = 1 + circuit->getInputPortSet(0)->getPortCount();
-    }
-    else {
-      ord = 1;
-    }      
-
-    // Create the port meta-data
-    PortSetMetaData* psmd;
-    if ( ! circuit->getInputPortSet(0) ) {
-      psmd = new PortSetMetaData(  false, 1,new ParallelDataDistribution(), 
-                                                       desc.desc.nBuffers,
-                                                       desc.desc.dataBufferSize,
-                                                       circuit->getConnectionMetaData() );
-    }
-    else {
-      psmd = circuit->getInputPortSet(0)->getPsMetaData();
-    }
-    port = circuit->addPort( new PortMetaData( ord, *ep, desc, psmd) );
-    circuit->updatePort( port );
-  }
-  else
-#endif
- {
-
-    // Create the port meta-data
-    ConnectionMetaData* cmd = new ConnectionMetaData(NULL,
-						     ep,
-						     desc.desc.nBuffers,
-						     desc.desc.dataBufferSize);
-    ord = 1;
-    circuit = createCircuit(0, cmd);
-
-    PortSet* ps = circuit->getInputPortSet(0);
-    port = ps->getPortFromOrdinal(ord);    
-  }
-
+  Circuit *circuit = createCircuit(0, new ConnectionMetaData(NULL, ep, desc.desc.nBuffers,
+							     desc.desc.dataBufferSize));
+  Port *port = circuit->getInputPortSet(0)->getPortFromOrdinal(1);    
   circuit->attach(); // FIXME: why wouldn't port creation do the attach?
   // Merge port descriptor info between what was passed in and what is determined here.
   port->getPortDescriptor(desc, NULL);
- // Make sure the port's descriptor is consistent
-  //port->getMetaData()->m_descriptor = desc;
   return port;
 }
 

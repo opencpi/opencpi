@@ -90,6 +90,18 @@ namespace OCPI {
       };
       typedef std::vector<Property> Properties;
       struct Port;
+      // Capture the values that drive processor allocation policy.
+      #define COLLOCATION_POLICY_ATTRS \
+	"minCollocation", "maxCollocation", "minContainers", "maxContainers"
+      struct CollocationPolicy {
+	size_t m_minCollocation, m_maxCollocation, m_minContainers, m_maxContainers;
+	CollocationPolicy();
+	const char
+	  *parse(ezxml_t x),
+	  *apply(size_t scale, size_t nContainers,
+		 size_t &collocation, size_t &usedContainers, size_t &finalScale)
+	  const;
+      };
       struct Instance {
 	std::string
 	  m_name,                  // name of the instance within the assembly
@@ -106,6 +118,7 @@ namespace OCPI {
 	PValueList m_parameters;
 	std::list<Port*> m_ports; // attachments to connections
 	typedef std::list<Port*>::iterator PortsIter;
+	CollocationPolicy m_collocation;
 	ezxml_t m_xml;
 	const char
 	  *parse(ezxml_t ix, Assembly &a, unsigned ordinal, const char **extraInstAttrs,
@@ -130,6 +143,8 @@ namespace OCPI {
 	size_t m_count;
 	PValueList m_parameters;
 	External();
+	//	External(const External &);
+	//	External(const External *);
 	const char *parse(ezxml_t, const char *, unsigned&, const PValue *pvl);
 	const char *init(const char *name, const char *role = NULL);
       };
@@ -146,6 +161,9 @@ namespace OCPI {
 	size_t m_index;
 	PValueList m_parameters;
 	Port *m_connectedPort; // the "other" port of the connection
+	//	Port();
+	//	Port(const Port&);
+	//	Port(const Port*);
 	const char *parse(ezxml_t x, Assembly &a, const PValue *pvl);
 	void init(Assembly &a, const char *name, unsigned instance, bool isInput, bool bidi, bool known,
 		  size_t index = 0); //, size_t count = 1);
@@ -158,6 +176,8 @@ namespace OCPI {
 	PValueList m_parameters;
 	size_t m_count; // all attachments have same count. zero if unknown
 	Connection();
+	//	Connection(const Connection&);
+	//	Connection(const Connection*);
 	const char *parse(ezxml_t x, Assembly &a, unsigned &ord);
 	Port &addPort(Assembly &a, unsigned instance, const char *port, bool isInput, bool bidi, bool known,
 		      size_t index = 0); //, size_t count = 1);
@@ -175,8 +195,6 @@ namespace OCPI {
       char *m_copy;
       bool m_xmlOnly;
       bool m_isImpl; // Is this assembly of worker (implementation) instances or component instances?
-      const char *parse(const char *defaultName = NULL, const char **extraTopAttrs = NULL,
-			const char **extraInstAttrs = NULL, const OCPI::Util::PValue *params = NULL);
       std::vector<Instance> m_instances;
     public:
       Instance &utilInstance(size_t n) { return m_instances[n]; }
@@ -190,6 +208,7 @@ namespace OCPI {
       CMapPolicy m_cMapPolicy;
       size_t   m_processors;
       MappedProperties m_mappedProperties; // top level mapped to instance properties.
+      CollocationPolicy m_collocation;
       // Provide a file name.
       explicit Assembly(const char *file, const char **extraTopAttrs = NULL,
 			const char **extraInstAttrs = NULL, const OCPI::Util::PValue *params = NULL);
@@ -200,13 +219,19 @@ namespace OCPI {
       explicit Assembly(const ezxml_t top, const char *defaultName, const char **topAttrs = NULL,
 			const char **instAttrs = NULL, const OCPI::Util::PValue *params = NULL);
       ~Assembly();
+    private:
+      const char *parse(const char *defaultName = NULL, const char **extraTopAttrs = NULL,
+			const char **extraInstAttrs = NULL,
+			const OCPI::Util::PValue *params = NULL);
+    public:
       const char
 	*checkInstanceParams(const char *pName, const PValue *params, bool checkMapped = false),
         *addConnection(const char *name, Connection *&c),
         *getInstance(const char *name, unsigned &),
         *addPortConnection(unsigned from, const char *name, unsigned to, const char *toPort,
 			   const char *transport),
-        *addExternalConnection(unsigned instance, const char *port),
+        *addExternalConnection(unsigned instance, const char *port, bool isInput = false,
+			       bool bidi = false, bool known = false),
         *addExternalConnection(ezxml_t x);
       inline ezxml_t xml() { return m_xml; }
       inline bool isImpl() { return m_isImpl; }

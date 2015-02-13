@@ -200,7 +200,7 @@ int gpp_cont(int argc, char** argv)
       delete [] protocol;
       for (unsigned msg_count = 0; msg_count <= 101; msg_count++) {
         OCPI::DataTransport::BufferUserFacet* buffer;        
-	void *data;
+	uint8_t *data;
 	size_t bufferLength;
 	while (!(buffer = mc->getNextEmptyOutputBuffer(data, bufferLength)))
 	  mc->dispatch();
@@ -229,7 +229,7 @@ int gpp_cont(int argc, char** argv)
 
       for (unsigned n = 0; n < 1000; n++) {
         OCPI::DataTransport::BufferUserFacet* buffer;        
-	void *data = 0;// for debug
+	uint8_t *data = 0;// for debug
 	size_t length;
 	uint8_t opcode;
 	while (!(buffer = c->getNextFullInputBuffer(data, length, opcode)))

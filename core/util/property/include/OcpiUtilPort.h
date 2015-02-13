@@ -37,13 +37,15 @@
 
 #include <string>
 #include <cstdio>
-#include "OcpiUtilPort.h"
 #include "OcpiUtilProtocol.h"
+#include "OcpiPValue.h"
 #include "ezxml.h"
 
 namespace OCPI {
   namespace Util {
     typedef uint32_t PortOrdinal; // this must be fixed size across achitectures
+    const size_t DEFAULT_BUFFER_SIZE = 2*1024;
+    const unsigned BUFFER_ALIGNMENT = 16;
     // FIXME:  use a pointer to a protocol, and share protocols in the artifact xml
     class Worker;
     class Port : public Protocol {
@@ -55,6 +57,11 @@ namespace OCPI {
 	  m_modulo,  // initialized to 1, can't be zero
 	  m_default; // suggested value.  can't be zero
 	Scaling();
+	bool operator==(const Scaling &s) {
+	  return m_min == s.m_min && m_max == s.m_max && m_modulo == s.m_modulo &&
+	  m_default == s.m_default;
+	}
+	const char *check(size_t scale);
 	const char *parse(ezxml_t x, Worker &w);
 	void emit(std::string &out, const Scaling *def) const;
       };
@@ -103,7 +110,7 @@ namespace OCPI {
       static const char *s_dNames[];
 #undef OCPI_DISTRIBUTION
 
-#define DISTRIBUTION_ATTRS "distribution", "hashfield"
+#define DISTRIBUTION_ATTRS "distribution", "hashfield", "indistribution", "outdistribution"
       struct OpScaling {
 	Distribution                m_distribution;
 	Member                     *m_hashField;
@@ -130,7 +137,9 @@ namespace OCPI {
       bool        m_isProducer;
       bool        m_isOptional;
       bool        m_isBidirectional; // implementation-defined value
+      bool        m_isInternal;
       size_t      m_minBufferCount;  // implementation-defined value
+      size_t      m_defaultBufferCount; // specify default when none is specified.
       size_t      m_bufferSize;      // metadata protocol override, if non-zero
       ezxml_t     m_xml;
       ssize_t     m_bufferSizePort;  // The ordinal of port we copy our buffer size from or -1
@@ -147,8 +156,7 @@ namespace OCPI {
       Partitioning m_defaultPartitioning;
       std::string m_defaultHashField;
 
-      //      Port(bool provider = true);
-      Port();
+      Port(ezxml_t x = NULL);
       // constructor from tools, with new xml (to turn a spec port into an impl port)
       // If oldP != NULL, its cloning/taking.
       // nameOrdinal (when not == -1), and defaultName are used when xml has no name
@@ -170,6 +178,14 @@ namespace OCPI {
       void emitXml(std::string &out) const;
       void emitScalingAttrs(std::string &out) const;
       void emitScaling(std::string &out) const;
+      // Get the buffer size to use on this port given meta info and params and defaults
+      size_t getBufferSize(const PValue *portParams, const PValue *connParams);
+      Distribution getDistribution(unsigned op) const;
+      // Determine the buffer size for a connection, where "in" or "out" could be NULL when
+      // they are "external" and not specified by any port metadata.
+      static size_t determineBufferSize(Port *in, const PValue *paramsIn,
+					Port *out, const PValue *paramsOut,
+					const PValue *connParams);
     };
 
   }

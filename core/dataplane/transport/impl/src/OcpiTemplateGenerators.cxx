@@ -896,7 +896,14 @@ void TransferTemplateGeneratorPattern1AFC::createInputTransfers(PortSet* output,
 
 }
 
-
+void 
+TransferTemplateGeneratorPattern1Passive::
+createOutputTransfers(OCPI::DataTransport::Port *s_port, OCPI::DataTransport::PortSet *input,
+		      TransferController *cont ) {
+}
+void TransferTemplateGeneratorPattern1Passive::
+createInputTransfers(PortSet *output, Port *input, TransferController *cont) {
+}
 
 // In AFC mode, the shadow port is responsible for pulling the data from the real output port, and then
 // Telling the output port that its buffer is empty.

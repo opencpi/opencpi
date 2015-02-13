@@ -19,7 +19,7 @@ RCCDispatch hello = {
  */
 
 // The message we send all the time
-#define MESSAGE "Hello, world\n"
+#define MESSAGE "Hello, world."
 
 static RCCResult
 run(RCCWorker *self, RCCBoolean timeout, RCCBoolean *newRunCondition) {

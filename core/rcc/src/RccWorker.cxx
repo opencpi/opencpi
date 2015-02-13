@@ -44,256 +44,259 @@
   *
   */
 
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <sys/types.h>
 #include <climits>
 #include "OcpiTimeEmitCategories.h"
 #include "RccApplication.h"
 #include "RccPort.h"
 #include "RccWorker.h"
 
- namespace OC = OCPI::Container;
- namespace OS = OCPI::OS;
- namespace OU = OCPI::Util;
- namespace OA = OCPI::API;
+namespace OC = OCPI::Container;
+namespace OS = OCPI::OS;
+namespace OU = OCPI::Util;
+namespace OA = OCPI::API;
 
- namespace OCPI {
-   namespace RCC {
+namespace OCPI {
+  namespace RCC {
 
- Worker::
- Worker(Application & app, Artifact *art, const char *name,
-	ezxml_t impl, ezxml_t inst, OC::Worker *slave, const OU::PValue *wParams)
- : OC::WorkerBase<Application,Worker,Port>(app, *this, art, name, impl, inst, wParams),
-   OCPI::Time::Emit( &parent().parent(), "Worker", name), 
-   m_entry(art ? art->getDispatch(ezxml_cattr(impl, "name")) : NULL), m_user(NULL),
-   m_dispatch(NULL), m_portInit(0), m_context(NULL), m_mutex(app.container()),
-   m_runCondition(NULL), m_errorString(NULL), m_slave(slave), enabled(false), hasRun(false),
-   sourcePortCount(0), targetPortCount(0), m_nPorts(nPorts()), worker_run_count(0),
-   m_transport(app.parent().getTransport())
- {
-   memset(&m_info, 0, sizeof(m_info));
-   if (art)
-     if (!strcasecmp(m_entry->type, "c"))
-       m_dispatch = m_entry->dispatch;
-     else
-       // Get the info, without constructing the worker.
-       ((RCCConstruct *)m_entry->dispatch)(NULL, m_info);
-   else
-     // Note the "hack" to use "name" as dispatch when artifact is not present
-     m_dispatch = (RCCDispatch *)name;
-   if (m_dispatch) {
-     m_info.memSize = m_dispatch->memSize;
-     m_info.memSizes = m_dispatch->memSizes;
-     m_info.portInfo = m_dispatch->portInfo;
-     m_info.propertySize = m_dispatch->propertySize;
-     m_info.optionallyConnectedPorts = m_dispatch->optionallyConnectedPorts;
-   }
-   initializeContext();
+Worker::
+Worker(Application & app, Artifact *art, const char *name, ezxml_t impl, ezxml_t inst,
+       OC::Worker *slave, size_t member, size_t crewSize, const OU::PValue *wParams)
+  : OC::WorkerBase<Application,Worker,Port>(app, *this, art, name, impl, inst, member,
+					    crewSize, wParams),
+    OCPI::Time::Emit( &parent().parent(), "Worker", name), 
+    m_entry(art ? art->getDispatch(ezxml_cattr(impl, "name")) : NULL), m_user(NULL),
+    m_dispatch(NULL), m_portInit(0), m_context(NULL), m_mutex(app.container()),
+    m_runCondition(NULL), m_errorString(NULL), m_slave(slave), enabled(false), hasRun(false),
+    sourcePortCount(0), targetPortCount(0), m_nPorts(nPorts()), worker_run_count(0),
+    m_transport(app.parent().getTransport())
+{
+  memset(&m_info, 0, sizeof(m_info));
+  if (art)
+    if (!strcasecmp(m_entry->type, "c"))
+      m_dispatch = m_entry->dispatch;
+    else
+      // Get the info, without constructing the worker.
+      ((RCCConstruct *)m_entry->dispatch)(NULL, m_info);
+  else
+    // Note the "hack" to use "name" as dispatch when artifact is not present
+    m_dispatch = (RCCDispatch *)name;
+  if (m_dispatch) {
+    m_info.memSize = m_dispatch->memSize;
+    m_info.memSizes = m_dispatch->memSizes;
+    m_info.portInfo = m_dispatch->portInfo;
+    m_info.propertySize = m_dispatch->propertySize;
+    m_info.optionallyConnectedPorts = m_dispatch->optionallyConnectedPorts;
+  }
+  initializeContext();
 #if 0
-   // If we have an event handler, we need to inform it about the timeout
-   if (m_runCondition->m_timeout ) {
-     runTimeout.set(m_runCondition->m_usecs / 1000000,
-		    (m_runCondition->m_usecs % 1000000) * 1000);
-     if ( m_transport.m_transportGlobal->getEventManager() ) {
+  // If we have an event handler, we need to inform it about the timeout
+  if (m_runCondition->m_timeout ) {
+    runTimeout.set(m_runCondition->m_usecs / 1000000,
+		   (m_runCondition->m_usecs % 1000000) * 1000);
+    if ( m_transport.m_transportGlobal->getEventManager() ) {
 
- #ifdef EM_PORT_COMPLETE
-       parent().myparent->m_transport->m_transportGlobal->getEventManager()->setMinTimeout( workerId, 
-									 m_runCondition->m_usecs );
- #endif
-
-     }
-   }
+#ifdef EM_PORT_COMPLETE
+      parent().myparent->m_transport->m_transportGlobal->getEventManager()->setMinTimeout( workerId, 
+											   m_runCondition->m_usecs );
 #endif
- }
 
- void 
- Worker::
- read(size_t offset, 
-      size_t nBytes, 
-      void * p_data  )
- {
-   OU::AutoMutex guard(m_mutex);
-   if (!m_context->properties || (offset+nBytes) > m_info.propertySize)
-     throw OU::EmbeddedException( OU::PROPERTY_GET_EXCEPTION, NULL, OU::ApplicationRecoverable);
-   memcpy( p_data, (char*)m_context->properties+offset, nBytes );
- }
+    }
+  }
+#endif
+}
 
- void 
- Worker::
- write(size_t offset, 
-       size_t nBytes, 
-       const void * p_data  )
- {
-   OU::AutoMutex guard (m_mutex);
-   if (!m_context->properties || (offset+nBytes) > m_info.propertySize)
-     throw OU::EmbeddedException( OU::PROPERTY_SET_EXCEPTION, NULL, OU::ApplicationRecoverable);
-   memcpy( (char*)m_context->properties+offset, p_data, nBytes );
- }
+void 
+Worker::
+read(size_t offset, size_t nBytes, void * p_data)
+{
+  OU::AutoMutex guard(m_mutex);
+  if (!m_context->properties || (offset+nBytes) > m_info.propertySize)
+    throw OU::EmbeddedException( OU::PROPERTY_GET_EXCEPTION, NULL, OU::ApplicationRecoverable);
+  memcpy( p_data, (char*)m_context->properties+offset, nBytes );
+}
 
- RCCResult Worker::
- setError(const char *fmt, va_list ap) {
-   if (m_errorString) {
-     free(m_errorString);
-     m_errorString = NULL;
-   }
-   vasprintf(&m_errorString, fmt, ap);
-   return RCC_ERROR;
- }
+void 
+Worker::
+write(size_t offset, size_t nBytes, const void * p_data)
+{
+  OU::AutoMutex guard (m_mutex);
+  if (!m_context->properties || (offset+nBytes) > m_info.propertySize)
+    throw OU::EmbeddedException(OU::PROPERTY_SET_EXCEPTION, NULL, OU::ApplicationRecoverable);
+  memcpy((char*)m_context->properties+offset, p_data, nBytes);
+}
 
- OC::Worker &Worker::
- getSlave() {
-   if (!m_slave)
-     throw OU::Error("No slave has been set for this worker");
-   return *m_slave;
- }
+RCCResult Worker::
+setError(const char *fmt, va_list ap) {
+  if (m_errorString) {
+    free(m_errorString);
+    m_errorString = NULL;
+  }
+  vasprintf(&m_errorString, fmt, ap);
+  return RCC_ERROR;
+}
 
- Worker::
- ~Worker()
- {
-   // FIXME - this sort of thing should be generic and be reused in portError
-   try {
-     if (enabled) {
-       enabled = false;
-       controlOperation(OU::Worker::OpStop);
-     }
-     controlOperation(OU::Worker::OpRelease);
-   } catch(...) {
-   }
- #ifdef EM_PORT_COMPLETE
-     // If we have an event handler, we need to inform it about the timeout
-     if ( m_runCondition && m_runCondition->m_timeout ) {
-       if ( parent().m_transport->m_transportGlobal->getEventManager() ) {
-	 parent().m_transport->m_transportGlobal->getEventManager()->removeMinTimeout( w->workerId );
-       }
-     }
- #endif
+OC::Worker &Worker::
+getSlave() {
+  if (!m_slave)
+    throw OU::Error("No slave has been set for this worker");
+  return *m_slave;
+}
 
-   deleteChildren();
-   uint32_t m = 0;
-   while ( m_context->memories && m_context->memories[m] ) {
-     delete [] (char*)m_context->memories[m];
-     m++;
-   }
-   delete[] m_context->memories;
-   delete[] (char*)m_context->memory;
-   if (m_dispatch && m_context->properties)
-     delete[] (char*)m_context->properties;
-   delete[] m_context;
-   if (m_errorString)
-     free(m_errorString);
-   while (!m_testPmds.empty()) {
-     OU::Port *pmd = m_testPmds.front();
-     m_testPmds.pop_front();
-     delete pmd;
-   }
- }
+Worker::
+~Worker()
+{
+  // FIXME - this sort of thing should be generic and be reused in portError
+  try {
+    if (enabled) {
+      enabled = false;
+      controlOperation(OU::Worker::OpStop);
+    }
+    controlOperation(OU::Worker::OpRelease);
+  } catch(...) {
+  }
+#ifdef EM_PORT_COMPLETE
+  // If we have an event handler, we need to inform it about the timeout
+  if ( m_runCondition && m_runCondition->m_timeout ) {
+    if ( parent().m_transport->m_transportGlobal->getEventManager() ) {
+      parent().m_transport->m_transportGlobal->getEventManager()->removeMinTimeout( w->workerId );
+    }
+  }
+#endif
 
- static RCCResult
-   rccSetError(const char *fmt, ...);
- static void
-   rccRelease(RCCBuffer *),
-   cSend(RCCPort *, RCCBuffer*, RCCOpCode op, size_t length),
-   rccSend(RCCPort *, RCCBuffer*),
-   rccTake(RCCPort *,RCCBuffer *old_buffer, RCCBuffer *new_buffer);
- static RCCBoolean
-   rccRequest(RCCPort *port, size_t maxlength),
-   cAdvance(RCCPort *port, size_t maxlength),
-   rccAdvance(RCCPort *port, size_t maxlength),
-   rccWait(RCCPort *, size_t max, unsigned usecs);
+  deleteChildren();
+  uint32_t m = 0;
+  while ( m_context->memories && m_context->memories[m] ) {
+    delete [] (char*)m_context->memories[m];
+    m++;
+  }
+  delete[] m_context->memories;
+  delete[] (char*)m_context->memory;
+  if (m_dispatch && m_context->properties)
+    delete[] (char*)m_context->properties;
+  delete[] m_context;
+  if (m_errorString)
+    free(m_errorString);
+  while (!m_testPmds.empty()) {
+    OU::Port *pmd = m_testPmds.front();
+    m_testPmds.pop_front();
+    delete pmd;
+  }
+}
 
- static RCCResult
- rccSetError(const char *fmt, ...)
- {
-   va_list ap;
-   va_start(ap, fmt);
-   RCCResult rc = ((Worker *)pthread_getspecific(Driver::s_threadKey))->setError(fmt, ap);
-   va_end(ap);
-   return rc;
- }
+static RCCResult
+  rccSetError(const char *fmt, ...);
+static void
+  rccRelease(RCCBuffer *),
+  cSend(RCCPort *, RCCBuffer*, RCCOpCode op, size_t length),
+  rccSend(RCCPort *, RCCBuffer*),
+  rccTake(RCCPort *,RCCBuffer *old_buffer, RCCBuffer *new_buffer);
+static RCCBoolean
+  rccRequest(RCCPort *port, size_t maxlength),
+  cAdvance(RCCPort *port, size_t maxlength),
+  rccAdvance(RCCPort *port, size_t maxlength),
+  rccWait(RCCPort *, size_t max, unsigned usecs);
 
- static void
- rccRelease(RCCBuffer* buffer)
- {
-   OCPI::DataTransport::BufferUserFacet* dti_buffer = buffer->containerBuffer;
-   ocpiAssert(dti_buffer);
-   Port * port = static_cast<Port*>( dti_buffer->m_ud );
-   ocpiAssert(port);
-   // An API might be called incorrectly.
-   if (port->isOutput())
-     throw OU::Error("RCC release container function called on an output port, which is not supported");
-   port->release(dti_buffer);    
- }
- // C language only
- static void
- cSend(RCCPort* rccPort, RCCBuffer* rccBuffer, RCCOpCode op, size_t len)
- {
-   rccBuffer->length_ = len;
-   rccBuffer->opCode_ = op;
-   rccSend(rccPort, rccBuffer);
- }
- static void
- rccSend(RCCPort* rccPort, RCCBuffer* rccBuffer)
- {
-   Port* port = rccPort->containerPort;
-   ocpiAssert(port);
-   if (!port->isOutput() )
-     throw OU::Error("The 'send' container function cannot be called on an input port");
-   OCPI::DataTransport::BufferUserFacet *buffer = rccBuffer->containerBuffer;
-   Port *bufferPort = static_cast<Port*>(buffer->m_ud);
-   if (bufferPort != port && bufferPort->isOutput())
-     throw OU::Error("Cannot send a buffer from a different output port");
-   port->send(buffer, rccBuffer->length_, rccBuffer->opCode_);
- }
- // C language only
- static RCCBoolean
- cAdvance(RCCPort* rccPort, size_t max)
- {
-   // This is only useful for output buffers
-   rccPort->current.length_ = rccPort->output.length;
-   rccPort->current.opCode_ = rccPort->output.u.operation;
-   return rccAdvance(rccPort, max);
- }
- static RCCBoolean
- rccAdvance(RCCPort* rccPort, size_t max)
- {
-   Port *port = rccPort->containerPort; 
-   ocpiAssert(port);
-   bool ready = port->advance();
-   if (ready && max && max > rccPort->current.maxLength)
-     throw OU::Error("Output buffer request/advance (size %zu) greater than buffer size (%zu)",
-		     max, rccPort->current.maxLength);
-   return ready;
- }
+static RCCResult
+rccSetError(const char *fmt, ...)
+{
+  va_list ap;
+  va_start(ap, fmt);
+  RCCResult rc = ((Worker *)pthread_getspecific(Driver::s_threadKey))->setError(fmt, ap);
+  va_end(ap);
+  return rc;
+}
 
- static RCCBoolean
- rccRequest(RCCPort* rccPort, size_t max )
- {
-   if (rccPort->current.data )
-     return true;
-   Port* port = rccPort->containerPort;
-   ocpiAssert(port);
-   bool ready = port->request();
-   if (ready && max && port->isOutput() && max < rccPort->output.length)
-     throw OU::Error("Requested output buffer size is unavailable");
-   return ready;
- }
+static void
+rccRelease(RCCBuffer* buffer)
+{
+  ocpiAssert(buffer && buffer->workerPort && buffer);
+  buffer->workerPort->releaseRcc(*buffer);
+#if 0
+  OCPI::DataTransport::BufferUserFacet* dti_buffer = buffer->containerBuffer;
+  ocpiAssert(dti_buffer);
+  Port * port = static_cast<Port*>( dti_buffer->m_ud );
+  ocpiAssert(port);
+  // An API might be called incorrectly.
+  if (port->isOutput())
+    throw OU::Error("RCC release container function called on an output port, which is not supported");
+  port->release(dti_buffer);    
+#endif
+}
 
- static RCCBoolean
- rccWait(RCCPort* port, size_t max, unsigned usec )
- {
-   // Not implemented yet
-   ( void ) port;
-   ( void ) max;
-   ( void ) usec;
-   return false;
- }
- static void rccTake(RCCPort *rccPort, RCCBuffer *oldBuffer, RCCBuffer *newBuffer)
- {
-   Port *port = rccPort->containerPort;
-   if ( port->isOutput() )
-     throw OU::Error("The 'take' container function cannot be used on an output port");
-   if (!rccPort->current.data)
-     throw OU::Error("The 'take' container function cannot be called when there is no current buffer");
-   port->take(oldBuffer, newBuffer);
- }
+// C language only for legacy dumb api
+static void
+cSend(RCCPort* rccPort, RCCBuffer* rccBuffer, RCCOpCode op, size_t len)
+{
+  rccBuffer->length_ = len;
+  rccBuffer->opCode_ = op;
+  rccSend(rccPort, rccBuffer);
+}
+
+static void
+rccSend(RCCPort* rccPort, RCCBuffer* rccBuffer)
+{
+  ocpiAssert(rccPort && rccPort->workerPort);
+  rccPort->workerPort->sendRcc(*rccBuffer);
+#if 0
+  OCPI::DataTransport::BufferUserFacet *buffer = rccBuffer->containerBuffer;
+  Port *bufferPort = static_cast<Port*>(buffer->m_ud);
+  if (bufferPort != port && bufferPort->isOutput())
+    throw OU::Error("Cannot send a buffer from a different output port");
+  port->send(buffer, rccBuffer->length_, rccBuffer->opCode_);
+#endif
+}
+
+// C language only
+static RCCBoolean
+cAdvance(RCCPort* rccPort, size_t max)
+{
+  // This is only useful for output buffers
+  rccPort->current.length_ = rccPort->output.length;
+  rccPort->current.opCode_ = rccPort->output.u.operation;
+  return rccAdvance(rccPort, max);
+}
+
+static RCCBoolean
+rccAdvance(RCCPort* rccPort, size_t max)
+{
+  ocpiAssert(rccPort && rccPort->workerPort);
+  return rccPort->workerPort->advanceRcc(max);
+}
+
+static RCCBoolean
+rccRequest(RCCPort* rccPort, size_t max )
+{
+  ocpiAssert(rccPort && rccPort->workerPort);
+  return rccPort->workerPort->requestRcc(max);
+}
+
+static RCCBoolean
+rccWait(RCCPort* port, size_t max, unsigned usec )
+{
+  // Not implemented yet
+  ( void ) port;
+  ( void ) max;
+  ( void ) usec;
+  return false;
+}
+
+static void
+rccTake(RCCPort *rccPort, RCCBuffer *oldBuffer, RCCBuffer *newBuffer)
+{
+  ocpiAssert(rccPort && rccPort->workerPort && newBuffer);
+  rccPort->workerPort->takeRcc(oldBuffer, *newBuffer);
+#if 0
+  Port *port = rccPort->containerPort;
+  if ( port->isOutput() )
+    throw OU::Error("The 'take' container function cannot be used on an output port");
+  if (!rccPort->current.data)
+    throw OU::Error("The 'take' container function cannot be called when there is no current buffer");
+  port->take(oldBuffer, newBuffer);
+#endif
+}
 
  // FIXME:  recover memory on exceptions
  void Worker::
@@ -347,6 +350,9 @@
    size_t n = sizeof(RCCWorker) + m_nPorts * sizeof(RCCPort);
    m_context = (RCCWorker *)new char[n];
    memset(m_context, 0, n);
+   m_context->member = member();
+   m_context->crewSize = crewSize();
+   m_context->firstRun = true;
    static RCCContainer rccContainer =
      { rccRelease, cSend, rccRequest, cAdvance, rccWait, rccTake, rccSetError};
    m_context->container = rccContainer;
@@ -355,7 +361,7 @@
    // We initialize in one of these structures for all of the ports that are defined in the
    // worker. However, the actual data ports may be optional at runtime.
    for (unsigned n=0;  n< m_nPorts; n++) {
-     m_context->ports[n].containerPort = NULL;
+     m_context->ports[n].workerPort = NULL;
      m_context->ports[n].current.data = NULL;
      m_context->ports[n].current.maxLength = 0;
      m_context->ports[n].callBack = 0;
@@ -453,7 +459,7 @@
    // FIXME: RccPort Object should know about its C RCCPort and do this itself
    // FIXME: this can change on connections
    m_context->ports[mp.m_ordinal].current.maxLength = port->getData().data.desc.dataBufferSize;
-   m_context->ports[mp.m_ordinal].containerPort = port;
+   m_context->ports[mp.m_ordinal].workerPort = port;
    return *port;
  }
 
@@ -524,7 +530,7 @@
    controlOperation(OU::Worker::OpStop);
    controlOperation(OU::Worker::OpRelease);
    setControlState(OU::Worker::UNUSABLE);
-   ocpiBad("Worker %s received port error: %s", name().c_str(), error.c_str());
+   ocpiBad("Worker \"%s\" received port error: %s", name().c_str(), error.c_str());
  }
 
  void 
@@ -547,10 +553,11 @@
 
  void Worker::
  run(bool &anyone_run) {
-   OU::AutoMutex guard (mutex(), true);
-
+   checkControl();
    if (!enabled)
      return;
+
+   OU::AutoMutex guard (mutex(), true);
    // Before run condition processing happens, perform callbacks, and, if we did any,
    // skip runcondition processing
    // FIXME: have a bit mask of these
@@ -558,7 +565,7 @@
    RCCPort *rccPort = m_context->ports;
    for (unsigned n = 0; n < m_nPorts; n++, rccPort++)
      if (rccPort->callBack && m_context->connectedPorts & (1 << n) &&
-	 rccPort->containerPort->checkReady())
+	 rccPort->workerPort->checkReady())
        if (rccPort->callBack(m_context, rccPort, RCC_OK) == RCC_OK)
 	 didCallBack = true;
        else {
@@ -597,7 +604,7 @@
      RCCPort *rccPort = m_context->ports;
      RCCPortMask portBit = 1;
      for (unsigned n = m_nPorts; n; n--, rccPort++, portBit <<= 1)
-       if ((portBit & relevantMask) && rccPort->containerPort->checkReady())
+       if ((portBit & relevantMask) && rccPort->workerPort->checkReady())
 	 readyMask |= portBit;
      if (!readyMask)
        return;
@@ -623,10 +630,11 @@
      RCCResult rc = m_dispatch ?
        m_dispatch->run(m_context, timedOut, &newRunCondition) : m_user->run(timedOut);
      OCPI_EMIT_STATE_CAT_NR_(wre, 0, OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_CAT_WORKER_DEV_RUN_TIME);
+     m_context->firstRun = false;
      char *err = m_context->errorString ? m_context->errorString : m_errorString;
      if (err) {
        std::string e;
-       OU::format(e, "Worker %s produced error during execution: %s",
+       OU::format(e, "Worker \"%s\" produced error during execution: %s",
 		  name().c_str(), err);
        m_context->errorString = NULL;
        if (m_errorString) {
@@ -690,7 +698,7 @@ advanceAll() {
 void Worker::
 controlOperation(OU::Worker::ControlOperation op) {
   RCCResult rc = RCC_OK;
-  OU::AutoMutex guard (mutex(), true);
+  //  OU::AutoMutex guard (mutex(), true); the caller has done this
   pthread_setspecific(Driver::s_threadKey, this);
 #define DISPATCH(op)							\
   (m_dispatch ? (m_dispatch->op ? m_dispatch->op(m_context) : RCC_OK) : m_user->op())
@@ -705,7 +713,7 @@ controlOperation(OU::Worker::ControlOperation op) {
       // FIXME - this should be in generic code, not RCC
       if ((mandatory & m_context->connectedPorts) != mandatory) {
 	const char *inst = instTag().c_str();
-	throw OU::Error("A port of%s%s%s worker '%s' is not connected",
+	throw OU::Error("A port of%s%s%s worker '%s' is not connected and is not optional",
 			inst[0] ? " instance '" : "", inst, inst[0] ? "'" : "",
 			implTag().c_str());
       }
@@ -777,8 +785,10 @@ controlOperation(OU::Worker::ControlOperation op) {
     break;
   default:
     enabled = false;
-    throw OU::EmbeddedException( OU::WORKER_API_ERROR, "Control operation returned invalid RCCResult",
-				 OU::ApplicationFatal);
+    throw
+      OU::Error("Control operation \"%s\" on RCC worker \"%s\" returned invalid "
+		"RCCResult value: 0x%x", OU::Worker::s_controlOpNames[op],
+		m_name.c_str(), rc);
   }    
 }
 
@@ -870,9 +880,9 @@ controlOperation(OU::Worker::ControlOperation op) {
 	  uint32_t u32[bits/32];                                            \
         } u;								    \
         if (bits > 32)							    \
-          u.u32[1] = pp[1];						    \
+          u.u32[bits/32-1] = pp[bits/32-1];				    \
         u.u32[0] = pp[0];						    \
-        if (info.m_readError )					    \
+        if (info.m_readError)					            \
           throw; /*"worker has errors after read */			    \
         return u.r;							    \
       }									    \
@@ -1050,12 +1060,11 @@ controlOperation(OU::Worker::ControlOperation op) {
    // FIXME: the connectivity indication should be cached somewhere better...
    bool RCCUserPort::
    isConnected() {
-     return m_rccPort.containerPort->parent().m_context->connectedPorts &
-       (1 << m_rccPort.containerPort->ordinal());
+     return m_rccPort.workerPort->parent().m_context->connectedPorts &
+       (1 << m_rccPort.workerPort->ordinal());
    }
    RCCOrdinal RCCUserPort::
-   ordinal() const { return (RCCOrdinal)m_rccPort.containerPort->ordinal(); }
-
+   ordinal() const { return (RCCOrdinal)m_rccPort.workerPort->ordinal(); }
    bool RCCUserPort::
    wait(size_t max, unsigned usecs) {
      return rccWait(&m_rccPort, max, usecs);

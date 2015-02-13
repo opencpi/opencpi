@@ -7,6 +7,7 @@
 
 #include <climits>
 #include "OcpiUuid.h"
+#include "OcpiRDTInterface.h"
 #include "HdlWciControl.h"
 #include "HdlAccess.h"
 
@@ -44,7 +45,6 @@ namespace OCPI {
       virtual ~Device();
       bool init(std::string &error);
       inline Access &properties() const { return m_pfWorker->m_properties; }
-      inline const char *protocol() const { return m_protocol.c_str(); }
       inline const std::string &name() const { return m_name; }
       inline const std::string &platform() const { return m_platform; }
       inline const std::string &esn() const { return m_esn; }

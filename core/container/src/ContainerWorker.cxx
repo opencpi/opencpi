@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -32,6 +31,7 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <pthread.h>
 #include "OcpiOsMisc.h"
 #include "OcpiUtilValue.h"
 #include "Container.h"
@@ -57,10 +57,12 @@ namespace OCPI {
       }
     }
 
-    Worker::Worker(Artifact *art, ezxml_t impl, ezxml_t inst, const OA::PValue *) 
+    Worker::
+    Worker(Artifact *art, ezxml_t impl, ezxml_t inst, size_t member, size_t crewSize,
+	   const OA::PValue *) 
       : OU::Worker::Worker(),
-	m_artifact(art), m_xml(impl), m_instXml(inst), m_workerMutex(true)
-    {
+	m_artifact(art), m_xml(impl), m_instXml(inst), m_workerMutex(true), m_member(member),
+	m_crewSize(crewSize) {
       if (impl) {
 	const char *err = parse(impl);
 	if (err)
@@ -78,15 +80,27 @@ namespace OCPI {
 	m_artifact->removeWorker(*this);
     }
 
-    OA::Port &Worker::
-    getPort(const char *name, const OA::PValue *params ) {
+    Port &Worker::
+    getPort(const char *name, size_t nOthers, const OA::PValue *params ) {
       Port *p = findPort(name);
-      if (p)
+      if (p) {
+	assert(p->nOthers() == nOthers);
         return *p;
+      }
       OU::Port *metaPort = findMetaPort(name);
       if (!metaPort)
         throw OU::Error("no port found with name \"%s\"", name);
-      return createPort(*metaPort, params);
+      Port &newP = createPort(*metaPort, params);
+      // This setting of the "other" is separate from construction so that the derived
+      // port classes in particular containers stay unaware of the scaling.  If that changes
+      // then this will become a constructor argument and an argument to worker::createPort.
+      if (nOthers > 1)
+	newP.prepareOthers(nOthers, m_crewSize);
+      return newP;
+    }
+    OA::Port &Worker::
+    getPort(const char *name, const OA::PValue *params ) {
+      return getPort(name, 1, params);
     }
     OA::PropertyInfo & Worker::setupProperty(const char *pname, 
 					     volatile void *&m_writeVaddr,
@@ -318,9 +332,9 @@ namespace OCPI {
 	  OA::Property prop(*this, p->name); // exception goes out
 	  prop.checkTypeAlways(p->type, 1, true);
 	  switch (prop.m_info.m_baseType) {
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
-	    case OA::OCPI_##pretty:				\
-	      prop.set##pretty##Value(p->v##pretty);			\
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
+	    case OA::OCPI_##pretty:			       \
+	      prop.set##pretty##Value(p->value.v##pretty);     \
 	      break;
             OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
@@ -353,7 +367,29 @@ namespace OCPI {
 #undef CONTROL_OP
     };
 
+    // Begin hack due to the fact that sched_yield does not work with the default
+    // Linux scheduler: SCHED_OTHER, and it requires special permission/capability to use
+    // the other "realtime" schedulers that actually implement sched_yield.  For many
+    // other reasons enabling realtime scheduling is worse that this hack for now.
+    // (e.g. special permissions and capabilities are required).
+    void Worker::checkControl() {
+      if (m_controlOpPending) {
+	m_controlMutex.lock();
+	m_controlMutex.unlock();
+      }
+    }	
+
     bool Worker::controlOp(OU::Worker::ControlOperation op) {
+      //      display_thread_sched_attr();
+      // Begin hack due to the fact that sched_yield does not work with the default
+      // Linux scheduler: SCHED_OTHER, and it requires special permission/capability to use
+      // the other "realtime" schedulers that actually implement sched_yield.
+      OU::AutoMutex ctl (m_controlMutex);
+      struct autoflag {
+	bool &m_flag;
+	autoflag(bool &flag) : m_flag(flag) { m_flag = true; }
+	~autoflag() { m_flag = false; }
+      } flag(m_controlOpPending);
       OU::AutoMutex guard (m_workerMutex, true);
       ControlState cs = getControlState();
       ControlTransition ct = controlTransitions[op];

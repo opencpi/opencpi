@@ -1352,7 +1352,7 @@ receiveRDMA(const char **ap) {
   myInputDesc.desc.oob.port_id = 0;
   memset( myInputDesc.desc.oob.oep, 0, sizeof(myInputDesc.desc.oob.oep));
   myInputDesc.desc.oob.cookie = 0;
-  OD::Port &port = *transport.createInputPort(myInputDesc, params);
+  OD::Port &port = *transport.createInputPort(myInputDesc);
   ocpiDebug("Our input descriptor: %s", myInputDesc.desc.oob.oep);
   // Now the normal transport/transfer driver has initialized (not finalized) the input port.
   OD::Descriptor theOutputDesc;
@@ -1438,7 +1438,8 @@ receiveRDMA(const char **ap) {
   }
   // Finalizing the input port takes: role, type flow, emptyflagbase, size, pitch, value
   // This makes the input port ready to data from the output port
-  port.finalize(theOutputDesc, myInputDesc);
+  bool done;
+  port.finalize(&theOutputDesc, myInputDesc, NULL, done);
   ocpiDebug("Our output descriptor is: %s", theOutputDesc.desc.oob.oep);
   if (!*ap) {
     // If the other side is software (sendRDMA below), it will start when told.
@@ -1523,16 +1524,16 @@ receiveRDMA(const char **ap) {
   for (unsigned n = 0; n < 10; n++) {
     uint8_t opCode;
     size_t length;
-    void *vdata;
+    uint8_t *data;
     OD::BufferUserFacet *buf;
     unsigned t;
-    for (t = 0; t < 1000000 && !(buf = port.getNextFullInputBuffer(vdata, length, opCode)); t++)
+    for (t = 0; t < 1000000 && !(buf = port.getNextFullInputBuffer(data, length, opCode)); t++)
       OS::sleep(1);
     if (t == 1000000)
       ocpiBad("Receive DMA timeout\n");
     else {
       ocpiDebug("Received RDMA buffer: first DW 0x%" PRIx32 ", length %zu, op %u\n",
-		*(uint32_t *)vdata, length, opCode);
+		*(uint32_t *)data, length, opCode);
       if (opCode != n)
 	ocpiBad("Bad opcode: wanted %u, got %u", n, opCode);
       port.releaseInputBuffer(buf);
@@ -1605,7 +1606,9 @@ sendRDMA(const char **ap) {
   }
   OD::Port &port = *transport.createOutputPort(myOutputDesc, theInputDesc);
   OD::Descriptor localShadowPort, feedback;
-  const OD::Descriptor &outDesc = *port.finalize(theInputDesc, myOutputDesc, &localShadowPort);
+  bool done;
+  const OD::Descriptor &outDesc =
+    *port.finalize(&theInputDesc, myOutputDesc, &localShadowPort, done);
   if (*ap) {
     file = *ap;
     file += ".out";
@@ -1624,20 +1627,20 @@ sendRDMA(const char **ap) {
     getchar();
   }
   for (unsigned n = 0; n < 10; n++) {
-    void *vdata;
+    uint8_t *data;
     size_t length;
     OD::BufferUserFacet *buf;
     unsigned t;
-    for (t = 0; t < 1000000 && !(buf = port.getNextEmptyOutputBuffer(vdata, length)); t++)
+    for (t = 0; t < 1000000 && !(buf = port.getNextEmptyOutputBuffer(data, length)); t++)
       OS::sleep(1);
     if (t == 1000000)
       bad("Receive DMA timeout\n");
     else {
       for (unsigned d = 0; d < length/sizeof(uint32_t); d++)
-	((uint32_t *)vdata)[d] = n + d;
+	((uint32_t *)data)[d] = n + d;
       port.sendOutputBuffer(buf, 4096, (uint8_t)n);
       ocpiDebug("Sent RDMA buffer: first DW 0x%" PRIx32 ", length %zu, op %u\n",
-		*(uint32_t *)vdata, length, n);
+		*(uint32_t *)data, length, n);
     }
   }
   printf("Sent 10 buffers, sleeping to allow frames to get through and be ack'd...\n");
@@ -1678,7 +1681,7 @@ class Worker : public OC::Worker, public OH::WciControl {
   std::string m_name, m_wName;
 public:
   Worker(ezxml_t impl, ezxml_t inst, const char *idx) 
-    : OC::Worker(NULL, impl, inst),
+    : OC::Worker(NULL, impl, inst, 0, 1, NULL),
       OH::WciControl(*dev, impl, inst, properties(), false),
       m_name(ezxml_cattr(inst, "name")),
       m_wName(ezxml_cattr(impl, "name"))

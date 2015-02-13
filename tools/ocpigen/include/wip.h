@@ -72,7 +72,9 @@ public:
 class Worker;
 
 
-#define SPEC_DATA_PORT_ATTRS "Name", "Producer", "Count", "Optional", "Protocol", "buffersize"
+#define SPEC_DATA_PORT_ATTRS \
+  "Name", "Producer", "Count", "Optional", "Protocol", "buffersize", "numberofopcodes"
+
 class DataPort : public OcpPort {
  protected:
   // bool m_isProducer;
@@ -601,6 +603,7 @@ class Worker : public OU::Worker {
   "name", "SizeOfConfigSpace", "ControlOperations", "Sub32BitConfigProperties"
 #define ASSY_ELEMS "instance", "connection", "external"
 extern const char
+  *extractExprValue(const OU::Property &p, const OU::Value &v, OU::ExprValue &val),
   *tryInclude(ezxml_t x, const std::string &parent, const char *element, ezxml_t *parsed,
 	      std::string &child, bool optional),
   *parseList(const char *list, const char * (*doit)(const char *tok, void *arg), void *arg),

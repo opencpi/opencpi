@@ -53,6 +53,8 @@ namespace OCPI
     namespace OA = OCPI::API;
     namespace OU = OCPI::Util;
     namespace OC = OCPI::Container;
+    namespace OR = OCPI::RDT;
+    namespace OO = OCPI::OCL;
 
     const size_t OCLDP_LOCAL_BUFFER_ALIGN ( 16 );
 
@@ -177,62 +179,62 @@ namespace OCPI
 
     class Container : public OC::ContainerBase<Driver, Container, Application, Artifact>
     {
-        friend class Port;
-        friend class Driver;
-        friend class Artifact;
+      friend class Port;
+      friend class Driver;
+      friend class Artifact;
 
-      private:
-        DeviceContext* d_device;
+    private:
+      DeviceContext* d_device;
 
-      protected:
-        Container ( const char* name,
-                    DeviceContext* device,
-                    const ezxml_t config = NULL,
-                    const OU::PValue* props = NULL )
-          : OC::ContainerBase<Driver,Container,Application,Artifact>(*this, name, config, props),
-            d_device ( device )
-        {
-	  m_model = "ocl";
-        }
+    protected:
+      Container ( const char* name,
+		  DeviceContext* device,
+		  const ezxml_t config = NULL,
+		  const OU::PValue* props = NULL )
+	: OC::ContainerBase<Driver,Container,Application,Artifact>(*this, name, config, props),
+	  d_device ( device )
+      {
+	m_model = "ocl";
+      }
 
-      public:
-        ~Container ()
-        {
-          OC::Container::shutdown();
-          this->lock();
-          OU::Parent<Application>::deleteChildren();
-        }
+    public:
+      ~Container ()
+      {
+	OC::Container::shutdown();
+	this->lock();
+	OU::Parent<Application>::deleteChildren();
+      }
 
-        OC::Container::DispatchRetCode dispatch ( DataTransfer::EventManager* event_manager )
+      OC::Container::DispatchRetCode dispatch ( DataTransfer::EventManager* event_manager )
         throw ( OU::EmbeddedException );
 
-        OC::Artifact& createArtifact ( OCPI::Library::Artifact& lart,
-                                       const OA::PValue* artifactParams );
+      OC::Artifact& createArtifact ( OCPI::Library::Artifact& lart,
+				     const OA::PValue* artifactParams );
 
-        OA::ContainerApplication* createApplication ( const char* name,
-                                                      const OCPI::Util::PValue* props )
-        throw ( OCPI::Util::EmbeddedException );
+      OA::ContainerApplication* createApplication ( const char* name,
+						    const OCPI::Util::PValue* props )
+      throw ( OCPI::Util::EmbeddedException );
 
-        bool needThread ()
-        {
-          return true;
-        }
+      bool needThread ()
+      {
+	return true;
+      }
 
-        DeviceContext& device ( )
-        {
-          return *d_device;
-        }
+      DeviceContext& device ( )
+      {
+	return *d_device;
+      }
 
-        void loadArtifact ( const std::string& pathToArtifact,
-                            const OA::PValue* artifactParams )
-        {
-          device().loadArtifact ( pathToArtifact, artifactParams );
-        }
+      void loadArtifact ( const std::string& pathToArtifact,
+			  const OA::PValue* artifactParams )
+      {
+	device().loadArtifact ( pathToArtifact, artifactParams );
+      }
 
-        void unloadArtifact ( const std::string& pathToArtifact )
-        {
-          device().unloadArtifact ( pathToArtifact );
-        }
+      void unloadArtifact ( const std::string& pathToArtifact )
+      {
+	device().unloadArtifact ( pathToArtifact );
+      }
 
     }; // End: class Container
 
@@ -286,20 +288,13 @@ namespace OCPI
       friend class Container;
 
       private:
-        Application ( Container& con,
-                      const char* name,
-                      const OA::PValue* props )
-          : OC::ApplicationBase<Container, Application, Worker> ( con, *this, name, props )
-        {
-          // Empty
+        Application(Container& con, const char* name, const OA::PValue* props)
+          : OC::ApplicationBase<Container, Application, Worker>(con, *this, name, props) {
         }
 
-        OC::Worker& createWorker ( OC::Artifact* art,
-                                   const char* appInstName,
-                                   ezxml_t impl,
-                                   ezxml_t inst,
-				   OC::Worker *slave,
-                                   const OCPI::Util::PValue* wParams );
+        OC::Worker &createWorker(OC::Artifact* art, const char* appInstName, ezxml_t impl,
+				 ezxml_t inst, OC::Worker *slave, size_t member,
+				 size_t crewSize, const OCPI::Util::PValue* wParams);
 
         void run ( DataTransfer::EventManager* event_manager,
                    bool& more_to_do );
@@ -401,31 +396,17 @@ namespace OCPI
         OCPI::OS::Timer runTimer;
         std::vector<void*> myLocalMemories;
 
-        Worker ( Application& app,
-                 OC::Artifact* art,
-                 const char* name,
-                 ezxml_t implXml,
-                 ezxml_t instXml,
-                 const OA::PValue* execParams )
-	  : OC::WorkerBase<Application, Worker, Port> ( app, *this, art, name, implXml, instXml, execParams ),
-          isEnabled ( false ),
-          myContainer ( app.parent() ),
-          implName ( ezxml_attr ( implXml, "name" ) ),
-          instName ( ezxml_attr ( instXml, "name" ) ),
-          myEntryPoint ( std::string ( implName ) + std::string ( "_entry_point" ) ),
-          myProperties ( 0 ),
-          nConnectedPorts ( 0 ),
-          myPorts ( 0 ),
-          readyPorts ( 0 ),
-          myResult ( 0 ),
-          timedOut ( false ),
-          myRunCondition ( 0 ),
-          dummyBuffer ( 0 ),
-          device_worker ( parent().loadWorker ( myEntryPoint.c_str ( ) ) ),
-          runTimer (),
-          myLocalMemories ( )
-
-        {
+        Worker(Application& app, OC::Artifact* art, const char* name, ezxml_t implXml,
+	       ezxml_t instXml, size_t member, size_t crewSize, const OA::PValue* execParams)
+	  : OC::WorkerBase<Application, Worker, Port>(app, *this, art, name, implXml, instXml,
+						      member, crewSize, execParams),
+	    isEnabled(false), myContainer(app.parent()), implName(ezxml_attr(implXml, "name")),
+	    instName(ezxml_attr(instXml, "name")),
+	    myEntryPoint(std::string(implName) + std::string("_entry_point")), myProperties(0),
+	    nConnectedPorts(0), myPorts(0), readyPorts(0), myResult(0), timedOut(false),
+	    myRunCondition(0), dummyBuffer(0),
+	    device_worker(parent().loadWorker(myEntryPoint.c_str())), runTimer(),
+            myLocalMemories() {
           const char *err = metadataImpl.parse(implXml);
 	  if (err) // || (err = metadataInst.parse(instXml)))
 	    throw OU::Error("Error processing worker metadata %s", err);
@@ -953,15 +934,12 @@ namespace OCPI
 
     }; // End: class Worker
 
-    OC::Worker& Application::createWorker ( OC::Artifact* art,
-                                            const char* appInstName,
-                                            ezxml_t impl,
-                                            ezxml_t inst,
-					    OC::Worker *slave,
-                                            const OCPI::Util::PValue* wParams )
-    {
+    OC::Worker& Application::
+    createWorker(OC::Artifact* art, const char* appInstName, ezxml_t impl, ezxml_t inst,
+		 OC::Worker *slave, size_t member, size_t crewSize,
+		 const OCPI::Util::PValue* wParams) {
       assert(!slave);
-      return *new Worker ( *this, art, appInstName, impl, inst, wParams );
+      return *new Worker(*this, art, appInstName, impl, inst, member, crewSize, wParams);
     }
 
     void Application::run ( DataTransfer::EventManager* event_manager,
@@ -969,7 +947,7 @@ namespace OCPI
     {
       ( void ) event_manager;
 
-      for ( Worker* w = firstChild (); w; w = w->nextChild ( ) )
+      for ( Worker* w = OU::Parent<Worker>::firstChild (); w; w = w->nextChild ( ) )
       {
         w->run ( more_to_do );
       }
@@ -1031,7 +1009,7 @@ namespace OCPI
         uint32_t* remote;
         uint32_t* shadow;
 
-      void setMode( ConnectionMode ){}
+      //      void setMode( ConnectionMode ){}
 
         void disconnect ()
         throw ( OCPI::Util::EmbeddedException )
@@ -1039,24 +1017,20 @@ namespace OCPI
           throw OU::Error( "OCL disconnect not yet implemented." );
         }
 
-      bool isLocal() const { return false; }
-        void startConnect (const OCPI::RDT::Descriptors */*other*/, const OCPI::Util::PValue */*params*/ )
+#if 0
+      bool startConnect (
+	//(const OCPI::RDT::Descriptors */*other*/, const OCPI::Util::PValue */*params*/ )
         {
           if ( !m_canBeExternal )
           {
             return;
           }
         }
-
+#endif
         Port ( Worker& w,
                const OA::PValue* params,
-               const OU::Port& mPort, // the parsed port metadata
-               bool argIsProvider )
-          : OC::PortBase<Worker,Port,ExternalPort> ( w, *this, mPort, argIsProvider,
-						     ( 1 << OCPI::RDT::ActiveFlowControl ) |
-						     ( 1 << OCPI::RDT::ActiveMessage ),
-						     params ),
-	    //            remoteIndex ( 0 ),
+               const OU::Port& mPort)
+	: OC::PortBase<OO::Worker,OO::Port,OO::ExternalPort> ( w, *this, mPort, params ),
             m_connection ( 0 ),
             myPortOrdinal ( mPort.m_ordinal )
         {
@@ -1144,15 +1118,17 @@ namespace OCPI
           myDesc.fullFlagBaseAddr = OCPI_UTRUNCATE(DtOsDataTypes::Offset, local);
 
           // Allow default connect params on port construction prior to connect
-          applyConnectParams(NULL, params);
+	  //          applyConnectParams(NULL, params);
         }
     public:
       ~Port() {
       }
+      bool isInProcess() const { return false; }
     private:
         // All the info is in.  Do final work to (locally) establish the connection
-        const OCPI::RDT::Descriptors *finishConnect(const OCPI::RDT::Descriptors &other,
-						    OCPI::RDT::Descriptors &/*feedback*/) {
+        const OCPI::RDT::Descriptors *finishConnect(const OCPI::RDT::Descriptors *other,
+						    OCPI::RDT::Descriptors &/*feedback*/,
+						    bool &done) {
           OCPI::RDT::PortRole myRole = (OCPI::RDT::PortRole) getData().data.role;
 
           // FIXME - can't we avoid string processing here?
@@ -1161,7 +1137,7 @@ namespace OCPI
           int mailbox;
           int max_mailbox;
 
-          if ( sscanf ( other.desc.oob.oep,
+          if ( sscanf ( other->desc.oob.oep,
                         "ocpi-smb-pio:pioXfer%d;%d.%d.%d",
                         &pid,
                         &nAlloc,
@@ -1169,7 +1145,7 @@ namespace OCPI
                         &max_mailbox ) != 4 )
           {
             throw OU::Error("OCL other port's endpoint description wrong: \"%s\"",
-			    other.desc.oob.oep);
+			    other->desc.oob.oep);
           }
 
           switch ( myRole )
@@ -1181,11 +1157,11 @@ namespace OCPI
 
               if ( isProvider())
               {
-                if ( other.desc.dataBufferSize > myDesc.dataBufferSize )
+                if ( other->desc.dataBufferSize > myDesc.dataBufferSize )
                 {
                   throw OU::Error("At consumer, remote buffer size is larger than mine");
                 }
-                else if (other.desc.dataBufferSize < myDesc.dataBufferSize )
+                else if (other->desc.dataBufferSize < myDesc.dataBufferSize )
                 {
                   throw OU::Error("At producer, remote buffer size smaller than mine");
                 }
@@ -1204,7 +1180,7 @@ namespace OCPI
 
           uint8_t* localData = reinterpret_cast<uint8_t*>( myDesc.dataBufferBaseAddr );
 
-          uint32_t* otherRemote = reinterpret_cast<uint32_t*> ( other.desc.fullFlagBaseAddr );
+          uint32_t* otherRemote = reinterpret_cast<uint32_t*> ( other->desc.fullFlagBaseAddr );
 
           for ( unsigned int i = 0; i < myDesc.nBuffers; i++, lb++ )
           {
@@ -1235,14 +1211,17 @@ namespace OCPI
             metadata [ n ].length = myDesc.dataBufferSize;
           }
           parent().myPorts [ parent().nConnectedPorts++ ].isConnected = true;
+	  done = true;
 	  return NULL;
         }
+#if 0
         // Connection between two ports inside this container
         // We know they must be in the same artifact, and have a metadata-defined connection
-        void connectInside ( OC::Port& provider,
+      bool connectInside ( OC::Launcher::Connection &c) {
+OC::Port& provider,
                              const OA::PValue* /*myProps*/,
                              const OA::PValue* /*otherProps*/)
-        {
+
           // We're both in the same runtime artifact object, so we know the port class
           Port& pport = static_cast<Port&>(provider);
 
@@ -1250,11 +1229,10 @@ namespace OCPI
           {
             throw OU::Error ( "Ports are both local in artifact, but are not connected");
           }
-#if 0
 	  pport.applyConnectParams(&getData().data, otherProps);
 	  applyConnectParams(&provider.getData().data, myProps);
-#endif
         }
+#endif
 
 #if 0
         // Connect to a port in a like container (same driver)
@@ -1297,7 +1275,7 @@ namespace OCPI
         }
 
         // The input method = get a buffer that has data in it.
-        InternalBuffer* getBuffer ( uint8_t*& bdata,
+        InternalBuffer* getIBuffer ( uint8_t*& bdata,
                                     uint32_t& length,
                                     uint8_t& opcode,
                                     bool& end )
@@ -1315,7 +1293,7 @@ namespace OCPI
           return static_cast<InternalBuffer*>( nextLocal );
         }
 
-        InternalBuffer* getBuffer ( uint8_t*& bdata,
+        InternalBuffer* getIBuffer ( uint8_t*& bdata,
                                     uint32_t& length )
         {
           ocpiAssert(!isProvider());
@@ -1329,9 +1307,10 @@ namespace OCPI
           return static_cast<InternalBuffer*>( nextLocal );
         }
 
-        void endOfData()
+        bool endOfData()
         {
           ocpiAssert( !isProvider() );
+	  return false;
         }
 
         void advanceLocal ();
@@ -1395,7 +1374,7 @@ namespace OCPI
           uint32_t length;
           uint8_t opcode;
           bool end;
-          ocpiport->currentBuffer = ocpiport->getBuffer ( bdata,
+          ocpiport->currentBuffer = ocpiport->getIBuffer ( bdata,
                                                           length,
                                                           opcode,
                                                           end );
@@ -1412,7 +1391,7 @@ namespace OCPI
         {
           uint8_t* bdata;
           uint32_t length;
-          ocpiport->currentBuffer = ocpiport->getBuffer ( bdata,
+          ocpiport->currentBuffer = ocpiport->getIBuffer ( bdata,
                                                           length );
           if ( ocpiport->currentBuffer )
           {
@@ -1451,7 +1430,7 @@ namespace OCPI
     OC::Port& Worker::createPort ( const OU::Port& metaPort,
                                    const OA::PValue* props )
     {
-      return *new Port(*this, props, metaPort, metaPort.m_provider);
+      return *new Port(*this, props, metaPort);
     }
 
     OC::Port& Worker::createOutputPort ( OU::PortOrdinal portId,
@@ -1510,6 +1489,7 @@ namespace OCPI
         }
     }; // End: class ExternalBuffer
 
+#if 0
     // Producer or consumer
     class ExternalPort : public OC::ExternalPortBase<Port,ExternalPort>
     {
@@ -1762,6 +1742,7 @@ namespace OCPI
       finishConnect(myExternalPort->getData().data);
       return *myExternalPort;
     }
+#endif
 #endif
     void Port::advanceLocal ()
     {

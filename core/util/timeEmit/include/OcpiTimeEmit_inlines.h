@@ -350,42 +350,42 @@ inline void OCPI::Time::Emit::emitT( EventId id, OCPI::API::PValue& p, Time t, E
   switch ( p.type ) {
 
   case OCPI::API::OCPI_Short:
-    dp->ivalue = p.vShort;    
+    dp->ivalue = p.value.vShort;    
     break;
   case OCPI::API::OCPI_Long:
-    dp->ivalue = p.vLong;
+    dp->ivalue = p.value.vLong;
     break;
   case OCPI::API::OCPI_Char:
-    dp->ivalue = p.vChar;
+    dp->ivalue = p.value.vChar;
     break;    
   case OCPI::API::OCPI_LongLong:
-    dp->ivalue = p.vLongLong;
+    dp->ivalue = p.value.vLongLong;
     break;    
   case OCPI::API::OCPI_Bool:
-    dp->uvalue = p.vBool;
+    dp->uvalue = p.value.vBool;
     break;    
   case OCPI::API::OCPI_ULong:
-    dp->uvalue = p.vULong;
+    dp->uvalue = p.value.vULong;
     break;    
   case OCPI::API::OCPI_UShort:
-    dp->uvalue = p.vUShort;
+    dp->uvalue = p.value.vUShort;
     break;    
   case OCPI::API::OCPI_ULongLong:
-    dp->uvalue = p.vULongLong;
+    dp->uvalue = p.value.vULongLong;
     break;    
   case OCPI::API::OCPI_UChar:
-    dp->uvalue = p.vUShort;
+    dp->uvalue = p.value.vUShort;
     break;    
   case OCPI::API::OCPI_Double:
-    dp->dvalue = p.vDouble;
+    dp->dvalue = p.value.vDouble;
     break;    
   case OCPI::API::OCPI_Float:
-    dp->dvalue = p.vFloat;
+    dp->dvalue = p.value.vFloat;
     break;    
 
   case OCPI::API::OCPI_String:
-    m_q->current->size = (unsigned)strlen(p.vString) + 1;
-    memcpy( &m_q->current[1], &p.vString, m_q->current->size );
+    m_q->current->size = (unsigned)strlen(p.value.vString) + 1;
+    memcpy( &m_q->current[1], p.value.vString, m_q->current->size );
     break;    
 
   case OCPI::API::OCPI_none:

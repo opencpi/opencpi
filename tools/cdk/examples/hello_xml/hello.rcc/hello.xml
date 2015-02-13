@@ -1,3 +1,4 @@
 <RCCImplementation>
   <xi:include href="hello_spec.xml"/>
+  <property name='stest' type='string' stringlength='1024' writable='1' volatile='1'/>
 </RCCImplementation>

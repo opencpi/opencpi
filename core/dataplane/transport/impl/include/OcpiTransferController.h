@@ -408,6 +408,65 @@ namespace OCPI {
 
     };
 
+    // This controller is used for pattern1 when either the output or input port(s) are Passive
+
+    class TransferController1Passive : public TransferController1
+    {
+    public:
+      TransferController1Passive(){};
+      virtual ~TransferController1Passive(){};
+      TransferController1Passive( OCPI::DataTransport::PortSet* output, OCPI::DataTransport::PortSet* input, bool whole_ss );
+      virtual TransferController* createController( 
+                                                   OCPI::DataTransport::PortSet* output, 
+                                                   OCPI::DataTransport::PortSet* input,
+                                                   bool whole_output_set);
+
+#if 0
+      /**********************************
+       * This method gets the next available buffer from the specified output port
+       *********************************/
+      virtual Buffer* getNextEmptyOutputBuffer( OCPI::DataTransport::Port* src_port );
+
+      /**********************************
+       * This method gets the next available buffer from the specified input port
+       *********************************/
+      Buffer* getNextFullInputBuffer( OCPI::DataTransport::Port* input_port );
+
+
+      /**********************************
+       * This method determines if there is data available, but does not affect the
+       * state of the object.
+       *********************************/
+       bool hasFullInputBuffer(
+                                OCPI::DataTransport::Port* port,               
+                                InputBuffer**
+                                )const;
+#endif
+  
+      /**********************************
+       * This method determines if we can produce from the indicated buffer
+       *********************************/
+      virtual bool canProduce( Buffer* buffer );
+
+      /**********************************
+       * This initiates a data transfer from the output buffer.  If the transfer can take place, 
+       * it will be initiated, if not it will be queued in the circuit.
+       *********************************/
+      virtual int produce( Buffer* buffer, bool bcast=false );
+
+      /**********************************
+       * Modify
+       *********************************/
+      virtual void modifyOutputOffsets( Buffer* me, Buffer* new_buffer, bool reverse );
+
+      /**********************************
+       * This marks the input buffer as "Empty" and informs all interested outputs that
+       * the input is now available.
+       *********************************/
+      virtual Buffer*  consume( Buffer* buffer );
+
+    };
+
     /*
      *  This controller is used for the following patterns
      *

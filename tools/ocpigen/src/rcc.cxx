@@ -817,11 +817,46 @@ parseRccImpl(const char *package) {
       (xctl && (err = OE::checkAttrs(xctl, GENERIC_IMPL_CONTROL_ATTRS, "Threaded", (void *)0))) ||
       (err = OE::getBoolean(m_xml, "Threaded", &m_isThreaded)))
     return err;
-  // Parse data port implementation metadata: maxlength, minbuffers.
+  // Parse data port implementation metadata: e.g. maxlength, minbuffers.
   Port *sp;
-  for (ezxml_t x = ezxml_cchild(m_xml, "Port"); x; x = ezxml_next(x))
-    if ((err = checkDataPort(x, sp)) || !createPort<RccPort>(*this, x, sp, -1, err))
+  for (ezxml_t x = ezxml_cchild(m_xml, "Port"); x; x = ezxml_next(x)) {
+    const char *internal = ezxml_cattr(x, "internal");
+    if (internal) {
+      const char
+	*input = ezxml_cattr(x, "inputname"),
+	*output = ezxml_cattr(x, "outputname"),
+	*inDist = ezxml_cattr(x, "inDistribution"),
+	*outDist = ezxml_cattr(x, "outDistribution"),
+	*dist = ezxml_cattr(x, "distribution");
+
+      std::string in, out;
+      if (!input && !output) {
+	in = internal;
+	in += "_in";
+	input = in.c_str();
+	out = internal;
+	out += "_out";
+	output = out.c_str();
+      } else if (!input || !output)
+	return
+	  OU::esprintf("Both \"inputname\" and \"outputname\" must be specified or neither");
+      ezxml_set_attr(x, "optional", "1");
+      // Create the input port
+      ezxml_set_attr(x, "producer", "0");
+      ezxml_set_attr(x, "implname", input);
+      if (!dist)
+	ezxml_set_attr(x, "distribution", inDist);
+      if (!createPort<RccPort>(*this, x, NULL, -1, err))
+	return err;
+      if (!dist)
+	ezxml_set_attr(x, "distribution", outDist);
+      ezxml_set_attr(x, "producer", "1");
+      ezxml_set_attr(x, "implname", output);
+      if (!createPort<RccPort>(*this, x, NULL, -1, err))
+	return err;
+    } else if ((err = checkDataPort(x, sp)) || !createPort<RccPort>(*this, x, sp, -1, err))
       return err;
+  }
   for (unsigned i = 0; i < m_ports.size(); i++)
     m_ports[i]->finalizeRccDataPort();
 
@@ -1287,10 +1322,10 @@ RccPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
   : DataPort(w, x, sp, ordinal, RCCPort, err) {
   if (err ||
       x &&
-      ((err = OE::checkAttrs(x, "Name", "implname",
-			     "minbuffers", "minbuffercount", "buffersize",
+      ((err = OE::checkAttrs(x, "Name", "implname", "internal", "producer", "minbuffers",
+			     "minbuffercount", "buffersize", "bufferCount", "optional",
 			     DISTRIBUTION_ATTRS, PARTITION_ATTRS, (void*)0)) ||
-       (err = OE::checkElements(x, "operation" ,(void*)0))))
+       (err = OE::checkElements(x, "operation", "protocol", (void*)0))))
     return;
   
 }

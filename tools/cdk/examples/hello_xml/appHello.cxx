@@ -9,7 +9,9 @@ namespace OA = OCPI::API;
 int main(int argc, char **argv) {
   std::string hello("<application>"
 		    // instance name defaults to hello since there is only one
-		    "  <instance component='local.hello' selection='model==\"rcc\"'/>"
+		    "  <instance component='local.hello' selection='model==\"rcc\"'>"
+		    "    <property name='stest' value='a string\\nsecond line, with a comma.'/>"
+		    "  </instance>"
 		    "  <connection>"
 		    "    <external name='out'/>"
 		    "    <port instance='hello' name='out'/>"
@@ -31,7 +33,11 @@ int main(int argc, char **argv) {
       uint8_t opcode;
       bool end;
       if ((b = ep.getBuffer(data, length, opcode, end))) {
-	fprintf(stderr, "%s", (char *)data);
+	fprintf(stderr, "Message is: '%s'\n", (char *)data);
+	OA::Property p(app, "hello.stest");
+	char buf[p.stringBufferLength()];
+	p.getStringValue(buf, sizeof(buf));
+	fprintf(stderr, "String value: is '%s'\n", buf);
 	return 0;
       }
       sleep(1);

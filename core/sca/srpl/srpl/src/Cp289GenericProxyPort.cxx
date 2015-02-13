@@ -75,7 +75,7 @@ namespace OCPI {
        */
       if (m_ocpiPort.isProvider()) {
         std::string providerInfo;
-	m_ocpiPort.getInitialProviderInfo(0, providerInfo);
+	m_ocpiPort.getInitialProviderInfo(0, NULL, providerInfo);
         /*
          * Unfortunately, the only portable way to get to the IOR is
          * by detour via IOR: string.
@@ -193,7 +193,7 @@ namespace OCPI {
           else {
             // Tell our local port about the provider's initial information
             std::string initialUserInfo;
-	    m_ocpiPort.setInitialProviderInfo(0, ipi, initialUserInfo);
+	    m_ocpiPort.setInitialProviderInfo(0, NULL, ipi, initialUserInfo);
             if (!initialUserInfo.empty()) {
 #if 1
               // We need to exchange information with the remote port using our private IDL.
@@ -217,7 +217,7 @@ namespace OCPI {
                 if (!fpi.empty()) {
                   // The connection protocol has given us more/final information about the provider.
                   std::string finalUserInfo;
-		  m_ocpiPort.setFinalProviderInfo(fpi, finalUserInfo);
+		  m_ocpiPort.setFinalProviderInfo(0, fpi, finalUserInfo);
                   if (!finalUserInfo.empty()) {
                     const Cp289ProviderPort::Octets fui(OCPI_UTRUNCATE(CORBA::ULong,finalUserInfo.length()),
 							OCPI_UTRUNCATE(CORBA::ULong,finalUserInfo.length()),
@@ -296,7 +296,7 @@ namespace OCPI {
           // A copy here from corba to our string
           const std::string iui((const char*)initialUserInfo.get_buffer(), (size_t)initialUserInfo.length());
           std::string finalProviderInfo;
-	  m_ocpiPort.setInitialUserInfo(iui, finalProviderInfo);
+	  m_ocpiPort.setInitialUserInfo(0, iui, finalProviderInfo);
           // String is not copied here
           Cp289ProviderPort::Octets* fpi =
             new Cp289ProviderPort::Octets(OCPI_UTRUNCATE(CORBA::ULong,finalProviderInfo.length()),
@@ -331,7 +331,7 @@ namespace OCPI {
         try {
           // A copy here from corba to our string
           const std::string fui((const char*)finalUserInfo.get_buffer(), (size_t)finalUserInfo.length());
-          m_ocpiPort.setFinalUserInfo(fui);
+          m_ocpiPort.setFinalUserInfo(0, fui);
           return;
         } catch (const char* e) {
           oops = e;

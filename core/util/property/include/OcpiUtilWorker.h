@@ -126,6 +126,7 @@ namespace OCPI {
 	m_specName,
 	m_name,
 	m_model,
+	m_package,
 	m_slave; // the model.impl name of a slave
       Attributes *m_attributes; // not a reference due to these being in arrays
       Port *m_ports;
@@ -146,6 +147,7 @@ namespace OCPI {
       Worker();
       ~Worker();
       inline const std::string &model() const { return m_model; }
+      inline const std::string &package() const { return m_package; }
       inline const std::string &specName() const { return m_specName; }
       inline const std::string &name() const { return m_name; }
       inline const std::string &slave() const { return m_slave; }

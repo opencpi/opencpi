@@ -36,57 +36,57 @@
 #include "HdlZynq.h"
 #include "HdlBusDriver.h"
 
- namespace OCPI {
-   namespace HDL {
-     namespace Zynq {
-       namespace OU = OCPI::Util;
+namespace OCPI {
+  namespace HDL {
+    namespace Zynq {
+      namespace OU = OCPI::Util;
 
-       class Device
-	 : public OCPI::HDL::Device {
-	 Driver    &m_driver;
-	 uint8_t  *m_vaddr;
-	 friend class Driver;
-	 Device(Driver &driver, std::string &name, bool forLoad, std::string &err)
-	   : OCPI::HDL::Device(name, "ocpi-dma-pio"),
-	     m_driver(driver), m_vaddr(NULL) {
-	   m_isAlive = false;
-	   m_endpointSize = sizeof(OccpSpace);
-	   OU::format(m_endpointSpecific,
-		      "ocpi-dma-pio:0x%" PRIx32 ".0x%" PRIx32 ".0x%" PRIx32,
-		      GP0_PADDR, 0, 0);
-	   if (isProgrammed(err)) {
-	     if (setup(err)) {
-	       if (forLoad)
-		 err.clear();
-	     }
-	   } else if (err.empty())
-	       ocpiInfo("There is no bitstream loaded on this HDL device: %s", name.c_str());
-	 }
-	 ~Device() {
-	   if (m_vaddr)
-	     munmap((void*)m_vaddr, sizeof(OccpSpace));
-	 }
+      class Device
+	: public OCPI::HDL::Device {
+	Driver    &m_driver;
+	uint8_t  *m_vaddr;
+	friend class Driver;
+	Device(Driver &driver, std::string &name, bool forLoad, std::string &err)
+	  : OCPI::HDL::Device(name, "ocpi-dma-pio"),
+	    m_driver(driver), m_vaddr(NULL) {
+	  m_isAlive = false;
+	  m_endpointSize = sizeof(OccpSpace);
+	  OU::format(m_endpointSpecific,
+		     "ocpi-dma-pio:0x%" PRIx32 ".0x%" PRIx32 ".0x%" PRIx32,
+		     GP0_PADDR, 0, 0);
+	  if (isProgrammed(err)) {
+	    if (setup(err)) {
+	      if (forLoad)
+		err.clear();
+	    }
+	  } else if (err.empty())
+	    ocpiInfo("There is no bitstream loaded on this HDL device: %s", name.c_str());
+	}
+	~Device() {
+	  if (m_vaddr)
+	    munmap((void*)m_vaddr, sizeof(OccpSpace));
+	}
 
-	 bool
-	 configure(ezxml_t config, std::string &err) {
-	   if (!m_isAlive) {
-	     volatile SLCR *slcr =
-	       (volatile SLCR *)m_driver.map(sizeof(SLCR), SLCR_ADDR, err);
-	     if (!slcr)
-	       return true;
-	     // We're not loaded, but fake as much stuff as possible.
-	     m_platform = "zed"; // FIXME: we don't know the part yet
-	     switch ((slcr->pss_idcode >> 12) & 0x1f) {
-	     case 0x02: m_part = "xc7z010"; break;
-	     case 0x07: m_part = "xc7z020"; break;
-	     case 0x0c: m_part = "xc7z030"; break;
-	     case 0x11: m_part = "xc7z045"; break;
-	     default:
-	       m_part = "xc7zXXX";
-	     }
-	     ocpiDebug("Zynq SLCR PSS_IDCODE: 0x%x", slcr->pss_idcode);
-	     return false;
-	   }
+	bool
+	configure(ezxml_t config, std::string &err) {
+	  if (!m_isAlive) {
+	    volatile SLCR *slcr =
+	      (volatile SLCR *)m_driver.map(sizeof(SLCR), SLCR_ADDR, err);
+	    if (!slcr)
+	      return true;
+	    // We're not loaded, but fake as much stuff as possible.
+	    m_platform = "zed"; // FIXME: we don't know the part yet
+	    switch ((slcr->pss_idcode >> 12) & 0x1f) {
+	    case 0x02: m_part = "xc7z010"; break;
+	    case 0x07: m_part = "xc7z020"; break;
+	    case 0x0c: m_part = "xc7z030"; break;
+	    case 0x11: m_part = "xc7z045"; break;
+	    default:
+	      m_part = "xc7zXXX";
+	    }
+	    ocpiDebug("Zynq SLCR PSS_IDCODE: 0x%x", slcr->pss_idcode);
+	    return false;
+	  }
 	  return OCPI::HDL::Device::configure(config, err);
 	}
 	bool
@@ -297,7 +297,7 @@
 		goto skipit;
 	  if (!found(*dev, error))
 	    return 1;
-      skipit:
+	skipit:
 	  delete dev;
 	}
 	return 0;
@@ -330,22 +330,6 @@
 	  return (uint8_t*)vaddr;
 	return NULL;
       }
-#if 0
-      void *Driver::
-      map(uint32_t size, uint64_t &phys, std::string &error) {
-	// FIXME: mutex
-	(void)size;(void)phys;
-	if (m_memFd == -1) {
-	  m_memFd = ::open("/dev/mem", O_RDWR | O_SYNC);
-	  if (m_memFd < 0) {
-	    OU::format(error,
-		       "Can't open /dev/mem for DMA memory.  Forgot sudo or missing driver?");
-	    return NULL;
-	  }
-	}
-	return NULL;
-      }
-#endif
     } // namespace BUS
   } // namespace HDL
 } // namespace OCPI

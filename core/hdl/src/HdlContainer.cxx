@@ -68,7 +68,8 @@ namespace OU = OCPI::Util;
 namespace OE = OCPI::Util::EzXml;
 namespace OD = OCPI::DataTransport;
 namespace OT = OCPI::Time;
-namespace DDT = DtOsDataTypes;
+namespace OR = OCPI::RDT;
+namespace OH = OCPI::HDL;
 
 namespace OCPI {
   namespace Container {}
@@ -99,6 +100,15 @@ namespace OCPI {
       m_os = "";
       m_osVersion = "";
       m_platform = m_device.platform();
+      m_transports.resize(1);
+      m_transports[0].transport = "ocpi-dma-pio";
+      m_transports[0].id = ""; // someday this might be root node MAC address
+      m_transports[0].roleIn = OR::ActiveMessage;
+      m_transports[0].roleOut = OR::ActiveMessage;
+      m_transports[0].optionsIn =
+	(1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive);
+      m_transports[0].optionsOut =
+	(1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive);
       ocpiDebug("HDL Container for device %s constructed.  ESN: '%s' Platform/part is %s/%s.",
 		name().c_str(), m_device.esn().c_str(), m_device.platform().c_str(),
 		m_device.part().c_str());
@@ -117,7 +127,6 @@ namespace OCPI {
     stop() {}
     bool Container::
     needThread() { return false; }
-
     // This simply insulates the driver code from needing the container class implementation decl.
     OC::Container *Driver::
     createContainer(OCPI::HDL::Device &dev, ezxml_t config, const OU::PValue *params)  {
@@ -162,11 +171,9 @@ namespace OCPI {
       Application(Container &con, const char *name, const OA::PValue *props) 
 	: OC::ApplicationBase<Container, Application, Worker>(con, *this, name, props)
       {}
-      OC::Worker & createWorker(OC::Artifact *art,
-				const char *appInstName,
-				ezxml_t impl, ezxml_t inst,
-				OC::Worker *slave,
-				const OU::PValue *wParams);
+      OC::Worker &createWorker(OC::Artifact *art, const char *appInstName, ezxml_t impl,
+			       ezxml_t inst, OC::Worker *slave, size_t member, size_t crewSize,
+			       const OU::PValue *wParams);
     };
 
     OA::ContainerApplication *Container::
@@ -179,14 +186,14 @@ namespace OCPI {
       friend class Application;
       friend class Port;
       friend class ExternalPort;
+      friend class Container;
       Container &m_container;
-      Worker(Application &app, OC::Artifact *art, const char *name,
-             ezxml_t implXml, ezxml_t instXml, const OA::PValue* execParams) :
-        OC::WorkerBase<Application, Worker, Port>(app, *this, art, name, implXml,
-						  instXml, execParams),
-        WciControl(app.parent().hdlDevice(), implXml, instXml, properties()),
-        m_container(app.parent())
-      {
+      Worker(Application &app, OC::Artifact *art, const char *name, ezxml_t implXml,
+	     ezxml_t instXml, size_t member, size_t crewSize, const OA::PValue* execParams)
+        : OC::WorkerBase<Application, Worker, Port>(app, *this, art, name, implXml,
+						    instXml, member, crewSize, execParams),
+	  WciControl(app.parent().hdlDevice(), implXml, instXml, properties()),
+	  m_container(app.parent()) {
       }
     public:
       ~Worker()
@@ -287,11 +294,12 @@ OCPI_DATA_TYPES
 	WciControl::getPropertyBytes(info, offset, buf, nBytes);
       }
     };
-    OC::Worker & Application::createWorker(OC::Artifact *art, const char *appInstName,
-					   ezxml_t impl, ezxml_t inst, OC::Worker *slave,
-					   const OCPI::Util::PValue *wParams) {
+    OC::Worker & Application::
+    createWorker(OC::Artifact *art, const char *appInstName, ezxml_t impl, ezxml_t inst,
+		 OC::Worker *slave, size_t member, size_t crewSize,
+		 const OCPI::Util::PValue *wParams) {
       assert(!slave);
-      return *new Worker(*this, art, appInstName, impl, inst, wParams);
+      return *new Worker(*this, art, appInstName, impl, inst, member, crewSize, wParams);
     }
     // This port class really has two cases: externally connected ports and
     // internally connected ports.
@@ -300,9 +308,10 @@ OCPI_DATA_TYPES
     // minor as to not be worth (re)factoring (currently).
     // The inheritance of WciControl is for the external case
     class ExternalPort;
-    class Port : public OC::PortBase<OCPI::HDL::Worker,Port,ExternalPort>, WciControl {
+    class Port : public OC::PortBase<OH::Worker,OH::Port,OH::ExternalPort>, WciControl {
       friend class Worker;
       friend class ExternalPort;
+      friend class Container;
       ezxml_t m_connection;
       // These are for external-to-FPGA ports
       // Which would be in a different class if we separate them
@@ -324,12 +333,8 @@ OCPI_DATA_TYPES
            ezxml_t icwXml,  // the xml interconnect/infrastructure worker attached to this port if any
            ezxml_t icXml,   // the xml interconnect instance attached to this port if any
            ezxml_t adwXml,  // the xml adapter/infrastructure worker attached to this port if any
-           ezxml_t adXml,   // the xml adapter instance attached to this port if any
-	   bool argIsProvider) :
-        OC::PortBase<OCPI::HDL::Worker,Port,ExternalPort>(w, *this, mPort, argIsProvider,
-					       // (1 << OCPI::RDT::Passive) |
-					       //     (1 << OCPI::RDT::ActiveFlowControl) |
-					       (1 << OCPI::RDT::ActiveMessage), params),
+           ezxml_t adXml) :   // the xml adapter instance attached to this port if any
+        OC::PortBase<OH::Worker,OH::Port,OH::ExternalPort>(w, *this, mPort, params),
 	// The WCI will control the interconnect worker.
 	// If there is no such worker, usable will fail.
         WciControl(w.m_container.hdlDevice(), icwXml, icXml, NULL),
@@ -428,13 +433,9 @@ OCPI_DATA_TYPES
           OC::PortData *pd = this;
           ocpiCheck(::write(dumpFd, (void *)pd, sizeof(*pd)) == sizeof(*pd));
         }
-#if 0
-        if (getenv("OCPI_OCFRP_DUMMY"))
-          *(uint32_t*)&m_ocdpRegisters->foodFace = 0xf00dface;
-#endif
 	// Allow default connect params on port construction prior to connect
 	// FIXME: isnt this redundant with the generic code?
-	applyConnectParams(NULL, params);
+	//applyConnectParams(NULL, params);
       }
     public: // for parent/child...
       ~Port() {
@@ -442,27 +443,26 @@ OCPI_DATA_TYPES
 	  m_endPoint->release();
       }
     private:
-      const char *getPreferredProtocol() {
-	return parent().m_container.hdlDevice().protocol();
-      }
-      void setMode( ConnectionMode ){};
       void disconnect()
         throw ( OCPI::Util::EmbeddedException )
       {
         throw OCPI::Util::EmbeddedException("disconnect not yet implemented !!");
       }
 
-      bool isLocal() const { return false; }
+      bool isInProcess() const { return false; }
 
+    protected:
       // Called after connection PValues have been set, which is after our constructor
       // userDataBaseAddr, dataBufferBaseAddr are assumed set
       // Also error-check for bad combinations or values of parameters
       // FIXME:  we are relying on dataBufferBaseAddr being set before we know
       // buffer sizes etc.  If we are sharing a memory pool, this will not be the case,
       // and we would probably allocate the whole thing here.
-      void startConnect(const OCPI::RDT::Descriptors */*other*/, const OCPI::Util::PValue */*params*/) {
+      const OCPI::RDT::Descriptors *
+      startConnect(const OCPI::RDT::Descriptors *other, bool &done) {
         if (!m_canBeExternal)
-          return;
+	  throw OU::Error("Port %s of this HDL worker is connected internally", name().c_str());
+
         if (myDesc.nBuffers *
             (OU::roundUp(myDesc.dataBufferSize, OCDP_LOCAL_BUFFER_ALIGN) + OCDP_METADATA_SIZE) > m_ocdpSize)
           throw OU::Error("Requested buffer count/size (%u/%u) on port '%s' of worker '%s' won't fit in the OCDP's memory (%u)",
@@ -472,17 +472,18 @@ OCPI_DATA_TYPES
         myDesc.metaDataBaseAddr =
           myDesc.dataBufferBaseAddr +
           m_ocdpSize - myDesc.nBuffers * OCDP_METADATA_SIZE;
-	//          OCPI_UTRUNCATE(DDT::Offset, m_ocdpSize - myDesc.nBuffers * OCDP_METADATA_SIZE);
         userMetadataBaseAddr = (OcdpMetadata *)(userDataBaseAddr +
                                                 (myDesc.metaDataBaseAddr -
                                                  myDesc.dataBufferBaseAddr));
+	done = false;
+	return &getData().data;
       }
 
       // All the info is in.  Do final work to (locally) establish the connection
       // If we're output, we must return the flow control descriptor
       const OCPI::RDT::Descriptors *
-      finishConnect(const OCPI::RDT::Descriptors &other,
-		    OCPI::RDT::Descriptors &/*feedback*/) {
+      finishConnect(const OCPI::RDT::Descriptors *other,
+		    OCPI::RDT::Descriptors &/*feedback*/, bool &done) {
         // Here is where we can setup the OCDP producer/user
         ocpiAssert(m_properties.get32Register(foodFace, OcdpProperties) == 0xf00dface);
 	m_properties.set32Register(nLocalBuffers, OcdpProperties, myDesc.nBuffers);
@@ -493,21 +494,25 @@ OCPI_DATA_TYPES
         OcdpRole myOcdpRole;
         OCPI::RDT::PortRole myRole = (OCPI::RDT::PortRole)getData().data.role;
 	
-        ocpiDebug("finishConnection: other = %" PRIx64 ", offset = %" DTOSDATATYPES_OFFSET_PRIx
-		  ", RFB = %" PRIx64 "",
-		  other.desc.oob.address,
-		  isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr,
-		  other.desc.oob.address +
-		  (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr));
-	ocpiDebug("Other ep = %s\n", other.desc.oob.oep );
+	if (other) {
+	  ocpiDebug("finishConnection: other = %" PRIx64 ", offset = %" DTOSDATATYPES_OFFSET_PRIx
+		    ", RFB = %" PRIx64 "",
+		    other->desc.oob.address,
+		    isProvider() ? other->desc.emptyFlagBaseAddr : other->desc.fullFlagBaseAddr,
+		    other->desc.oob.address +
+		    (isProvider() ? other->desc.emptyFlagBaseAddr : other->desc.fullFlagBaseAddr));
+	  ocpiDebug("Other ep = %s\n", other->desc.oob.oep );
+	} else
+	  ocpiDebug("Hdl finishConnect with no other");
         switch (myRole) {
 	  uint64_t addr;
 	  uint32_t pitch;
         case OCPI::RDT::ActiveFlowControl:
+	  assert(other);
           myOcdpRole = OCDP_ACTIVE_FLOWCONTROL;
-	  addr = other.desc.oob.address +
-	    (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr);
-	  pitch = isProvider() ? other.desc.emptyFlagPitch : other.desc.fullFlagPitch;
+	  addr = other->desc.oob.address +
+	    (isProvider() ? other->desc.emptyFlagBaseAddr : other->desc.fullFlagBaseAddr);
+	  pitch = isProvider() ? other->desc.emptyFlagPitch : other->desc.fullFlagPitch;
           m_properties.set32Register(remoteFlagBase, OcdpProperties, (uint32_t)addr);
 	  m_properties.set32Register(remoteFlagHi, OcdpProperties, (uint32_t)(addr >> 32));
           m_properties.set32Register(remoteFlagPitch, OcdpProperties, pitch);
@@ -516,31 +521,31 @@ OCPI_DATA_TYPES
           break;
         case OCPI::RDT::ActiveMessage:
           myOcdpRole = OCDP_ACTIVE_MESSAGE;
-	  addr = other.desc.oob.address + other.desc.dataBufferBaseAddr;
+	  addr = other->desc.oob.address + other->desc.dataBufferBaseAddr;
           m_properties.set32Register(remoteBufferBase, OcdpProperties, (uint32_t)addr);
 	  m_properties.set32Register(remoteBufferHi, OcdpProperties, (uint32_t)(addr >> 32));
-	  addr = other.desc.oob.address + other.desc.metaDataBaseAddr;
+	  addr = other->desc.oob.address + other->desc.metaDataBaseAddr;
 	  m_properties.set32Register(remoteMetadataBase, OcdpProperties, (uint32_t)addr);
 	  m_properties.set32Register(remoteMetadataHi, OcdpProperties, (uint32_t)(addr >> 32));
-          if ( isProvider()) {
-            if (other.desc.dataBufferSize > myDesc.dataBufferSize)
+          if (isProvider()) {
+            if (other->desc.dataBufferSize > myDesc.dataBufferSize)
               throw OU::ApiError("At consumer, remote buffer size is larger than mine", NULL);
-          } else if (other.desc.dataBufferSize < myDesc.dataBufferSize) {
+          } else if (other->desc.dataBufferSize < myDesc.dataBufferSize) {
             throw OU::ApiError("At producer, remote buffer size smaller than mine", NULL);
           }
-          m_properties.set32Register(nRemoteBuffers, OcdpProperties, other.desc.nBuffers);
-	  m_properties.set32Register(remoteBufferSize, OcdpProperties, other.desc.dataBufferPitch);
+          m_properties.set32Register(nRemoteBuffers, OcdpProperties, other->desc.nBuffers);
+	  m_properties.set32Register(remoteBufferSize, OcdpProperties, other->desc.dataBufferPitch);
 #ifdef WAS
           m_properties.set32Register(remoteMetadataSize, OcdpProperties, OCDP_METADATA_SIZE);
 #else
-          m_properties.set32Register(remoteMetadataSize, OcdpProperties, other.desc.metaDataPitch);
+          m_properties.set32Register(remoteMetadataSize, OcdpProperties, other->desc.metaDataPitch);
 #endif
-          addr = other.desc.oob.address + (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr);
+          addr = other->desc.oob.address + (isProvider() ? other->desc.emptyFlagBaseAddr : other->desc.fullFlagBaseAddr);
           m_properties.set32Register(remoteFlagBase, OcdpProperties, (uint32_t)addr);
           m_properties.set32Register(remoteFlagHi, OcdpProperties, (uint32_t)(addr >> 32));
           m_properties.set32Register(remoteFlagPitch, OcdpProperties, 
 				      isProvider() ?
-				      other.desc.emptyFlagPitch : other.desc.fullFlagPitch);
+				      other->desc.emptyFlagPitch : other->desc.fullFlagPitch);
           break;
         case OCPI::RDT::Passive:
           myOcdpRole = OCDP_PASSIVE;
@@ -567,26 +572,32 @@ OCPI_DATA_TYPES
 	  m_adapter->controlOperation(OU::Worker::OpStart);
 	}
 	controlOperation(OU::Worker::OpStart);
+	done = true;
 	return isProvider() ? NULL : &getData().data;
-      }
-      // Connection between two ports inside this container
-      // We know they must be in the same artifact, and have a metadata-defined connection
-      void connectInside(OC::Port &provider, const OA::PValue *, const OA::PValue *otherParams) {
-	provider.startConnect(NULL, otherParams);
-        // We're both in the same runtime artifact object, so we know the port class
-        Port &pport = static_cast<Port&>(provider);
-        if (m_connection != pport.m_connection)
-          throw OU::Error("Ports %s (instance %s) and %s (instance %s) are both local in "
-			  "bitstream/artifact %s, but are not connected (%p %p)",
-			  name().c_str(), parent().name().c_str(),
-			  pport.name().c_str(), pport.parent().name().c_str(),
-			  pport.parent().artifact() ?
-			  pport.parent().artifact()->name().c_str() : "<none>",
-			  m_connection, pport.m_connection);
       }
       OC::ExternalPort &createExternal(const char *extName, bool isProvider,
 				       const OU::PValue *extParams, const OU::PValue *connParams);
     };
+    // Connection between two ports inside this container
+    // We know they must be in the same artifact, and have a metadata-defined connection
+    bool Container::
+    connectInside(OC::BasicPort &in, OC::BasicPort &out) {
+      Port 
+	&pport = static_cast<Port&>(in.isProvider() ? in : out),
+	&uport = static_cast<Port&>(out.isProvider() ? in : out);
+      bool done;
+      pport.startConnect(NULL, done);
+      // We're both in the same runtime artifact object, so we know the port class
+      if (uport.m_connection != pport.m_connection)
+	throw OU::Error("Ports %s (instance %s) and %s (instance %s) are both local in "
+			"bitstream/artifact %s, but are not connected (%p %p)",
+			uport.name().c_str(), uport.parent().name().c_str(),
+			pport.name().c_str(), pport.parent().name().c_str(),
+			pport.parent().artifact() ?
+			pport.parent().artifact()->name().c_str() : "<none>",
+			uport.m_connection, pport.m_connection);
+      return true;
+    }
     int Port::dumpFd = -1;
 
     // The port may be bidirectional.  If so we need to defer its direction.
@@ -594,7 +605,6 @@ OCPI_DATA_TYPES
     OC::Port &Worker::
     createPort(const OU::Port &metaPort, const OA::PValue *props) {
       const char *myName = metaPort.m_name.c_str();
-      bool isProvider = metaPort.m_provider;
       // Find connections attached to this port
       ezxml_t conn, ic = 0, icw = 0, ad = 0, adw = 0;
       for (conn = ezxml_cchild(myXml()->parent, "connection"); conn; conn = ezxml_next(conn)) {
@@ -678,7 +688,7 @@ OCPI_DATA_TYPES
 	  break; // we found a connection
 	}
       } // loop over all connections
-      return *new Port(*this, props, metaPort, conn, icw, ic, adw, ad, isProvider);
+      return *new Port(*this, props, metaPort, conn, icw, ic, adw, ad);
     }
     // Here because these depend on Port
     OC::Port &Worker::
@@ -697,428 +707,6 @@ OCPI_DATA_TYPES
       (void)portId; (void)bufferCount; (void)bufferSize;(void)props;
       return *(Port *)0;//      return *new Port(*this);
     }
-
-    // only here for proper parent/child
-    class ExternalPort : public OC::ExternalPortBase<Port,ExternalPort> {
-      friend class Port;
-    protected:
-      ExternalPort(Port &port, const char *name, bool isProvider,
-		   const OA::PValue *extParams, const OA::PValue *connParams) :
-        OC::ExternalPortBase<Port,ExternalPort>(port, *this, name, extParams, connParams, isProvider) {
-      }
-    public:
-      virtual ~ExternalPort() {}
-    };
-    OC::ExternalPort &Port::createExternal(const char *extName, bool isProvider,
-					       const OU::PValue *extParams, const OU::PValue *connParams) {
-      return *new ExternalPort(*this, extName, isProvider, extParams, connParams);
-    }
-#if 0
-#ifdef GENERIC_EXTERNAL
-    class ExternalBuffer : OC::ExternalBuffer {
-      friend class ExternalPort;
-      OD::BufferUserFacet *m_dtBuffer;
-      OD::Port *m_dtPort;
-      ExternalBuffer() :
-	m_dtBuffer(NULL), m_dtPort(NULL)
-      {}
-      void release() {
-	if (m_dtBuffer) {
-	  m_dtPort->releaseInputBuffer(m_dtBuffer);
-	  m_dtBuffer = NULL;
-	}
-      }
-      void put( uint32_t length, uint8_t opCode, bool /*endOfData*/) {
-	m_dtPort->sendOutputBuffer(m_dtBuffer, length, opCode);
-      }
-    };
-    // Producer or consumer
-    class ExternalPort : public OC::ExternalPortBase<Port,ExternalPort> {
-      OD::Port *m_dtPort;
-      ExternalBuffer m_lastBuffer;
-    public:
-      ExternalPort(Port &port, const char *name, bool isProvider, const OA::PValue *params) :
-        OC::ExternalPortBase<Port,ExternalPort>(port, name, params, port.metaPort(), isProvider),
-	m_dtPort(NULL)
-      {
-	if (isProvider) {
-	  m_dtPort = port.parent().m_container.getTransport().createInputPort(getData().data, params);
-	  // Since our worker port is finalized at this point...
-	  m_dtPort->finalize(parent().getData().data, getData().data);
-	  m_lastBuffer.m_dtPort = m_dtPort;
-	} else {
-	  m_dtPort = port.parent().m_container.getTransport().
-	    createOutputPort(getData().data, port.getData().data);
-	  m_dtPort->finalize(port.getData().data, getData().data);
-	}
-      }
-      ~ExternalPort() {
-	delete m_dtPort;
-      }
-      OA::ExternalBuffer *
-      getBuffer(uint8_t *&data, uint32_t &length, uint8_t &opCode, bool &end) {
-	end = false;
-	ocpiAssert(m_lastBuffer.m_dtBuffer == NULL);
-	void *vdata;
-	if ((m_lastBuffer.m_dtBuffer = m_dtPort->getNextFullInputBuffer(vdata, length, opCode))) {
-	  data = (uint8_t*)vdata; // fix all the buffer data types to match the API: uint8_t*
-	  return &m_lastBuffer;
-	}
-	return NULL;
-      }
-      OC::ExternalBuffer *
-      getBuffer(uint8_t *&data, uint32_t &length) {
-	ocpiAssert(m_lastBuffer.m_dtBuffer == NULL);
-	void *vdata;
-	if ((m_lastBuffer.m_dtBuffer = m_dtPort->getNextEmptyOutputBuffer(vdata, length))) {
-	  data = (uint8_t*)vdata; // fix all the buffer data types to match the API: uint8_t*
-	  return &m_lastBuffer;
-	}
-	return NULL;
-      }
-      void endOfData() {
-	ocpiAssert(!"No EndOfData support for external ports");
-      }
-      bool tryFlush() {
-	return false;
-      }
-    };    
-#endif
-#if OLD_EXTERNAL
-    // Buffers directly used by the "user" (non-container/component) API
-    class ExternalBuffer : OC::ExternalBuffer {
-      friend class ExternalPort;
-      ExternalPort *myExternalPort;
-      OcdpMetadata *metadata;   // where is the metadata buffer
-      uint8_t *data;            // where is the data buffer
-      uint32_t length;          // length of the buffer (not message)
-      volatile uint32_t *readyForLocal;  // where is the flag set by remote on data movement
-      volatile uint32_t *readyForRemote; // where is ready flag for remote data movement
-      bool busy;                // in use by local processing (for error checking)
-      bool last;                // last buffer in the set
-      void release();
-      void put(uint32_t dataLength, uint8_t opCode, bool endOfData) {
-	(void)endOfData;
-        ocpiAssert(dataLength <= length);
-        metadata->opCode = opCode;
-        metadata->length = dataLength;
-        release();
-      }
-    };
-
-    // Producer or consumer
-    class ExternalPort : public OC::ExternalPortBase<Port,ExternalPort> {
-      friend class ExternalBuffer;
-      // What we know about a far buffer
-      struct FarBuffer {
-        // When we are active, we use these far data pointers
-        volatile OcdpMetadata *metadata;
-        volatile uint8_t *data;
-        // We use this all the time.
-        volatile uint32_t *ready;
-        bool last;
-      };
-      //      uint32_t nBuffers, *ready, next;
-      OcdpMetadata *metadata;
-      uint32_t *flags;
-      ExternalBuffer *localBuffers, *nextLocal, *nextRemote;
-      FarBuffer *farBuffers, *nextFar;
-      uint8_t *localData;
-      friend class Port;
-
-      ExternalPort(Port &port, const char *name, bool isProvider, const OA::PValue *props) :
-        OC::ExternalPortBase<Port,ExternalPort>(port, name, props, port.metaPort(), isProvider)
-      {
-        // Default is active only (host is master, never slave)
-        getData().data.options =
-          (1 << OCPI::RDT::ActiveFlowControl) |
-          (1 << OCPI::RDT::ActiveMessage) |
-          (1 << OCPI::RDT::ActiveOnly);
-        applyConnectParams(props);
-        port.determineRoles(getData().data);
-        unsigned nFar = parent().getData().data.desc.nBuffers;
-        unsigned nLocal = myDesc.nBuffers;
-        myDesc.dataBufferPitch = parent().getData().data.desc.dataBufferPitch;
-        myDesc.metaDataPitch = parent().getData().data.desc.metaDataPitch;
-        myDesc.fullFlagPitch = sizeof(uint32_t);
-        myDesc.emptyFlagPitch = sizeof(uint32_t);
-        myDesc.emptyFlagValue = 1;
-        myDesc.fullFlagValue = 1;
-        // Allocate my local memory, making everything on a nice boundary.
-        // (assume empty flag pitch same as full flag pitch)
-        unsigned nAlloc =
-          OU::roundUp(myDesc.dataBufferPitch * nLocal, LOCAL_DMA_ALIGN) +
-          OU::roundUp(myDesc.metaDataPitch * nLocal, LOCAL_DMA_ALIGN) +
-          OU::roundUp(sizeof(uint32_t) * nLocal, LOCAL_DMA_ALIGN) + // local flags
-          // These might actually be remote
-          OU::roundUp(sizeof(uint32_t) * nLocal, LOCAL_DMA_ALIGN) + // remote flags
-          // These might not be needed if we are ActiveFlowControl
-          OU::roundUp(sizeof(uint32_t) * nFar, LOCAL_DMA_ALIGN);
-        // Now we allocate all the (local) endpoint memory
-        uint64_t phys;
-        // If we are ActiveOnly we need no DMAable memory at all, so get it from the heap.
-        if (getData().data.role == OCPI::RDT::ActiveOnly) {
-          localData = new uint8_t[nAlloc];
-	  phys = 0;
-	} else {
-	  std::string error;
-	  if (!(localData = (uint8_t *)Driver::getSingleton().map(nAlloc, phys, error)))
-	    throw error;
-	}
-	// FIXME: this has got to be broken...
-        snprintf(myDesc.oob.oep, sizeof(myDesc.oob.oep),
-                 "ocpi-dma-pio:%lld:%lld.3.10", (unsigned long long)phys,
-                 (unsigned long long)nAlloc);
-#if 0
-	myEndpoint = OCPI::RDT::GetEndpoint("ocpi-dma//bus-id");
-	if (!myEndpoint)
-	  OU::ApiError("No local (CPU) endpoint support for pci bus %s", NULL);
-	localData = myEndpoint->alloc(nAlloc);
-#endif
-        memset((void *)localData, 0, nAlloc);
-        myDesc.dataBufferBaseAddr  = 0;
-	uint8_t *allocation = localData;
-        allocation += OU::roundUp(myDesc.dataBufferPitch * nLocal, LOCAL_BUFFER_ALIGN);
-        metadata = (OcdpMetadata *)allocation;
-        myDesc.metaDataBaseAddr = allocation - localData;
-        allocation += OU::roundUp(myDesc.metaDataPitch * nLocal, LOCAL_BUFFER_ALIGN);
-        uint32_t *localFlags = (uint32_t*)allocation;
-        allocation += OU::roundUp(sizeof(uint32_t) * nLocal, LOCAL_BUFFER_ALIGN);
-        uint32_t *remoteFlags = (uint32_t*)allocation;
-        allocation += OU::roundUp(sizeof(uint32_t) * nLocal, LOCAL_BUFFER_ALIGN);
-        uint32_t *farFlags = (uint32_t*)allocation;
-        switch (getData().data.role) {
-        case OCPI::RDT::ActiveMessage:
-          // my exposed addresses are the flags in my memory that indicate far buffer state
-          myDesc.emptyFlagBaseAddr =
-            myDesc.fullFlagBaseAddr = allocation - localData;
-          // FALL THROUGH
-        case OCPI::RDT::ActiveOnly:
-          {
-            FarBuffer *fb = nextFar = farBuffers = new FarBuffer[nFar];
-            for (unsigned i = 0; i < nFar; i++, fb++) {
-              fb->metadata = parent().userMetadataBaseAddr + i;
-              fb->data = parent().userDataBaseAddr + i * parent().myDesc.dataBufferPitch;
-              fb->ready = farFlags + i; // not used for ActiveOnly
-              *fb->ready = parent().isProvider();
-              fb->last = false;
-            }
-            (fb-1)->last = true;
-          }
-          break;
-        case OCPI::RDT::ActiveFlowControl:
-          // here the far side needs to know about the remote flags;
-          myDesc.emptyFlagBaseAddr =
-            myDesc.fullFlagBaseAddr = (uint8_t*)localFlags - localData;
-        }
-
-        // Initialize our structures that keep track of LOCAL buffer status
-        ExternalBuffer *lb = nextLocal = nextRemote = localBuffers = new ExternalBuffer[nLocal];
-        for (unsigned i = 0; i < nLocal; i++, lb++) {
-          lb->myExternalPort = this;
-          lb->metadata = metadata + i;
-          lb->data = localData + i * myDesc.dataBufferPitch;
-          lb->length = myDesc.dataBufferPitch;
-          lb->last = false;
-          lb->busy = false;
-          lb->readyForLocal = localFlags + i;
-          *lb->readyForLocal = parent().isProvider();
-          lb->readyForRemote = remoteFlags + i; //&parent().m_ocdpRegisters->nRemoteDone;
-          *lb->readyForRemote = !parent().isProvider();
-        }
-        (lb-1)->last = true;
-      }
-    public:
-      ~ExternalPort() {
-	delete [] localBuffers;
-      }
-void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
-{
-  while (nbytes > 128) {
-    *to++ = *from++;
-    *to++ = *from++;
-    *to++ = *from++;
-    *to++ = *from++;
-    *to++ = *from++;
-    *to++ = *from++;
-    *to++ = *from++;
-    *to++ = *from++;
-    *to++ = *from++;
-    *to++ = *from++;
-    *to++ = *from++;
-    *to++ = *from++;
-    *to++ = *from++;
-    *to++ = *from++;
-    *to++ = *from++;
-    *to++ = *from++;
-    nbytes -= 128;
-  }
-  while (nbytes > 8) {
-    *to++ = *from++;
-    nbytes -= 8;
-  }
-  if (nbytes)
-    memcpy(to, from, nbytes);
-}
-      // We know a move can be done.  Do it.
-      // We are either ActiveOnly or ActiveMessage
-      void moveData() {
-        if (parent().isProvider()) {
-          // Here to far
-          memcpy64((uint64_t *)nextFar->metadata, (uint64_t *)nextRemote->metadata, sizeof(OcdpMetadata));
-          memcpy64((uint64_t *)nextFar->data, (uint64_t *)nextRemote->data, nextRemote->metadata->length);
-        } else {
-          // Far to here
-          memcpy64((uint64_t *)nextRemote->metadata, (uint64_t *)nextFar->metadata, sizeof(OcdpMetadata));
-          memcpy64((uint64_t *)nextRemote->data, (uint64_t *)nextFar->data, nextRemote->metadata->length);
-        }
-        // Set the local indication of readiness of the far buffer to false.
-        // Far side will make it true (or us when we are ActiveOnly).
-        *nextFar->ready = false;
-        //        __asm__ __volatile__  ("lock; addl $0,0(%%esp)": : :"memory");
-        // FIXME:  memory barrier to be sure?
-        // Tell the far side that a its buffer has been used (filled or emptied)
-        //wmb();
-        if (parent().m_properties.get32Register(foodFace, OcdpProperties) != 0xf00dface)
-          abort();
-        parent().m_properties.set32Register(nRemoteDone, OcdpProperties, 1);
-        // Advance our far side status
-        if (nextFar->last)
-          nextFar = farBuffers;
-        else
-          nextFar++;
-        // Advance remote state (we are moving data)
-        // The local buffer state has become ready for local access
-        *nextRemote->readyForLocal = true;
-        *nextRemote->readyForRemote = false;
-        if (nextRemote->last)
-          nextRemote = localBuffers;
-        else
-          nextRemote++;
-      }
-      // Try to move some data, return if there is data that can't be moved
-      void tryMove() {
-        // Try to advance my remote side
-        switch (getData().data.role) {
-        case OCPI::RDT::ActiveOnly:
-          // Use far side "ready" register to determine whether far buffers are ready
-          // Thus we need to do a remote PCIe read to know far size status
-          if (*nextRemote->readyForRemote) { // avoid remote read if local is not ready
-            for (uint32_t nReady = parent().m_properties.get32RegisterOffset(offsetof(OcdpProperties, nReady));
-                 nReady && *nextRemote->readyForRemote; nReady--)
-	      moveData();
-          }
-          break;
-        case OCPI::RDT::ActiveMessage:
-          // Use local version of far-is-ready flag for the far buffer,
-          // which will be written by the ActiveFlowControl far side.
-          while (*nextRemote->readyForRemote && *nextFar->ready)
-            moveData();
-          break;
-        case OCPI::RDT::ActiveFlowControl:
-          // Nothing to do here.  We don't move data.
-          // When the other side moves data it will set our far-is-ready flag
-          break;
-        case OCPI::RDT::Passive:
-        case OCPI::RDT::NoRole:
-          ocpiAssert(0);
-        }
-      }
-      bool getLocal() {
-        tryMove();
-        if (!*nextLocal->readyForLocal)
-          return false;
-        ocpiAssert(getData().data.role == OCPI::RDT::ActiveFlowControl ||
-                  getData().data.role == OCPI::RDT::Passive ||
-                  !*nextLocal->readyForRemote);
-        ocpiAssert(!nextLocal->busy);
-        nextLocal->busy = true; // to ensure callers use the API correctly
-        *nextLocal->readyForLocal = 0;
-        return true;
-      }
-      // The input method = get a buffer that has data in it.
-      OA::ExternalBuffer *
-      getBuffer(uint8_t *&bdata, uint32_t &length, uint8_t &opCode, bool &end) {
-        ocpiAssert(!parent().isProvider());
-        if (!getLocal())
-          return 0;
-        bdata = nextLocal->data;
-        length = nextLocal->metadata->length;
-        opCode = nextLocal->metadata->opCode;
-        end = false; // someday bit in metadata
-        //FIXME cast unnecessary
-        return static_cast<OC::ExternalBuffer *>(nextLocal);
-      }
-      OC::ExternalBuffer *getBuffer(uint8_t *&bdata, uint32_t &length) {
-        ocpiAssert(parent().isProvider());
-        if (!getLocal())
-          return 0;
-        bdata = nextLocal->data;
-        length = nextLocal->length;
-        return static_cast<OC::ExternalBuffer *>(nextLocal);
-      }
-      void endOfData() {
-        ocpiAssert(parent().isProvider());
-      }
-      bool tryFlush() {
-        ocpiAssert(parent().isProvider());
-        tryMove();
-        switch (getData().data.role) {
-        case OCPI::RDT::ActiveOnly:
-        case OCPI::RDT::ActiveMessage:
-	  return *nextRemote->readyForRemote != 0;
-        case OCPI::RDT::ActiveFlowControl:
-	  {
-	    ExternalBuffer *local = nextLocal; 
-	    do {
-	      if (local == localBuffers)
-		local = localBuffers + myDesc.nBuffers - 1;
-	      else
-		local--;
-	      if (!*local->readyForLocal)
-		return true;
-	    } while (local != nextLocal);
-	  }
-	  break;
-        case OCPI::RDT::Passive:
-        case OCPI::RDT::NoRole:
-          ocpiAssert(0);
-	}
-	return false;
-      }
-      void advanceLocal() {
-        if (getData().data.role == OCPI::RDT::ActiveFlowControl) {
-          //          if (parent().m_ocdpRegisters->foodFace != 0xf00dface)
-          //            abort();
-          //          wmb();
-          parent().m_properties.set32Register(nRemoteDone, OcdpProperties, 1);
-          //usleep(0);
-        }
-        if (nextLocal->last)
-          nextLocal = localBuffers;
-        else
-          nextLocal++;
-        tryMove();
-      }
-    };
-
-    // FIXME make readyForRemote zero when active flow control
-    void ExternalBuffer::release() {
-      ocpiAssert(myExternalPort->getData().data.role == OCPI::RDT::ActiveFlowControl ||
-                myExternalPort->getData().data.role == OCPI::RDT::Passive ||
-                !*readyForRemote);
-      // The buffer is not ready for local processing
-      //      *readyForLocal = false;
-      //      clflush(readyForLocal);
-      // The remote process can use this local buffer now
-      *readyForRemote = true;
-      // The local buffer is not being used locally
-      busy = false;
-      // Tell the other side that the buffer has become available
-      myExternalPort->advanceLocal();
-    }
-#endif
-#endif
   }
 }
 

@@ -214,13 +214,13 @@ namespace OCPI {
       m_nOperations = 0;
       m_operations = NULL;
       m_op = NULL;
-      m_defaultBufferSize = 0;
+      m_defaultBufferSize = SIZE_MAX;
       m_minBufferSize = 0;
       m_dataValueWidth = 8;
       m_dataValueGranularity = 1;
       m_diverseDataSizes = false;
       m_minMessageValues = 0;
-      m_maxMessageValues = 1;
+      m_maxMessageValues = SIZE_MAX; // default is no maximum.
       m_variableMessageLength = false;
       m_zeroLengthMessages = false;
       m_isTwoWay = false;
@@ -302,9 +302,9 @@ namespace OCPI {
     void Protocol::
     finishOperation(const Operation &op) {
       if (m_isUnbounded ||
-	  m_maxMessageValues && m_maxMessageValues != op.m_myOffset)
+	  m_maxMessageValues != SIZE_MAX && m_maxMessageValues != op.m_myOffset)
 	m_variableMessageLength = true;
-      if (op.m_myOffset > m_maxMessageValues)
+      if (m_maxMessageValues == SIZE_MAX || op.m_myOffset > m_maxMessageValues)
 	m_maxMessageValues = op.m_myOffset; // still in bytes until later
       if (!op.m_nArgs)
 	m_zeroLengthMessages = true;
@@ -465,7 +465,7 @@ namespace OCPI {
 	    return "DataValueWidth attribute must divide into implied datavaluewidth";
 	  m_dataValueWidth = dvwattr;
 	}
-	if (m_dataValueWidth) {
+	if (m_dataValueWidth && m_maxMessageValues != SIZE_MAX) {
 	  // Convert max size from bytes back to values
 	  size_t bytes = (m_dataValueWidth + CHAR_BIT - 1) / CHAR_BIT;
 	  m_maxMessageValues += bytes - 1;
@@ -482,7 +482,8 @@ namespace OCPI {
       if ((err = parseSummary(prot)))
 	return err;
       if ((err = OE::getNumber(prot, "defaultbuffersize", &m_defaultBufferSize, 0,
-			       m_isUnbounded ? 0 : (m_maxMessageValues * m_dataValueWidth + 7) / 8)))
+			       m_isUnbounded || m_maxMessageValues == SIZE_MAX ?
+			       SIZE_MAX : (m_maxMessageValues * m_dataValueWidth + 7) / 8)))
 	return err;
       return finishParse();
     }
@@ -492,30 +493,32 @@ namespace OCPI {
 	formatAdd(out, " name=\"%s\"", m_name.c_str());
       if (!m_qualifiedName.empty())
 	formatAdd(out, " qualifiedName=\"%s\"", m_qualifiedName.c_str());
-      if (!m_operations) {
+      if (m_operations) {
+	formatAdd(out, ">\n");
+	Operation *o = m_operations;
+	for (unsigned n = 0; n < m_nOperations; n++, o++)
+	  o->printXML(out, indent + 1);
+	formatAdd(out, "%*s</protocol>\n", indent * 2, "");
+      } else {
 	// We don't have operation details so we'll put out all the summary attributes
 	// We could prune this to what is needed by anyone
 	formatAdd(out,
 		" dataValueWidth=\"%zu\""
 		" dataValueGranularity=\"%zu\""
 		" diverseDataSizes=\"%u\""
-		" minMessageValues=\"%zu\""
-		" maxMessageValues=\"%zu\"",
+		  " minMessageValues=\"%zu\"",
 		m_dataValueWidth, m_dataValueGranularity, m_diverseDataSizes,
-		m_minMessageValues, m_maxMessageValues);
+		m_minMessageValues);
+	if (m_maxMessageValues != SIZE_MAX)
+	  formatAdd(out, " maxMessageValues=\"%zu\"", m_maxMessageValues);
 	if (m_zeroLengthMessages)
 	  formatAdd(out, " zeroLengthMessages=\"true\"");
 	if (m_isTwoWay)
 	  formatAdd(out, " twoWay=\"true\"");
 	if (m_isUnbounded)
 	  formatAdd(out, " unBounded=\"true\"");
+	formatAdd(out, "/>\n");
       }
-      formatAdd(out, ">\n");
-      Operation *o = m_operations;
-      if (o) // clang-analyzer
-	for (unsigned n = 0; n < m_nOperations; n++, o++)
-	  o->printXML(out, indent + 1);
-      formatAdd(out, "%*s</protocol>\n", indent * 2, "");
     }
     // Send the data in the buffer to the writer
     void Protocol::write(Writer &writer, const uint8_t *data, uint32_t length, uint8_t opcode) {

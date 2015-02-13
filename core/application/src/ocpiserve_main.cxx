@@ -66,11 +66,6 @@ static int mymain(const char **) {
   // The directory is not created until it is needed.
   OCPI::OS::logSetLevel(options.loglevel());
   setenv("OCPI_LIBRARY_PATH", options.directory(), 1);
-  for (unsigned n = 1; n < options.processors(); n++) {
-    std::string name;
-    OU::formatString(name, "rcc%d", n);
-    OA::ContainerManager::find("rcc", name.c_str());
-  }
   // Catch signals in order to delete the artifact cache
   if (options.remove()) {
     ocpiCheck(signal(SIGINT, sigint) != SIG_ERR);
@@ -79,6 +74,11 @@ static int mymain(const char **) {
   OCPI::Remote::g_suppressRemoteDiscovery = true;
   OCPI::Driver::ManagerManager::configure();
   assert(OCPI::Library::Library::s_firstLibrary);
+  for (unsigned n = 1; n < options.processors(); n++) {
+    std::string name;
+    OU::formatString(name, "rcc%d", n);
+    OA::ContainerManager::find("rcc", name.c_str());
+  }
   OCPI::Application::Server server(options.verbose(), options.discoverable(),
 				   *OCPI::Library::Library::s_firstLibrary,
 				   options.port(), options.remove(), options.error());

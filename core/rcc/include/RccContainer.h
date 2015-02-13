@@ -77,55 +77,30 @@ namespace OCPI {
     const uint32_t CP289_CSINTERNAL_ERROR          = (CP289_EX_SOURCE_ID << 16) + 6;
 
     class Container
-      : public OCPI::Container::ContainerBase<Driver,Container,Application,Artifact>
-    {
+      : public OCPI::Container::ContainerBase<Driver,Container,Application,Artifact> {
+    public:
+      friend class Port;
+      friend class RDMAPort;
+      friend class Worker;
+      friend class Application;
+      friend class PortDelegator;
 
-      public:
-        friend class Port;
-        friend class RDMAPort;
-        friend class Worker;
-        friend class Application;
-	friend class PortDelegator;
-
-        /**********************************
-         * Constructors
-         *********************************/
-        Container(const char *name,
-		  //		  OCPI::DataTransport::TransportGlobal* tpg, 
-		  const OCPI::API::PValue* props )
-          throw ( OCPI::Util::EmbeddedException );
-
-        virtual ~Container()
-          throw ();
-
-	OCPI::Container::Container::DispatchRetCode dispatch(DataTransfer::EventManager* event_manager=NULL);
-
-        OCPI::API::ContainerApplication*
-	createApplication(const char *name, const OCPI::Util::PValue *props)
-          throw ( OCPI::Util::EmbeddedException );
-
-	OCPI::Container::Artifact &createArtifact(OCPI::Library::Artifact &lart,
-						  const OCPI::API::PValue *artifactParams);
-      
-        //!< Start/Stop the container
-        void start(DataTransfer::EventManager* event_manager)
-          throw();
-        void stop(DataTransfer::EventManager* event_manager)
-          throw();
-
-        //! get the event manager for this container
-        DataTransfer::EventManager*  getEventManager();
-
-	//	inline OCPI::DataTransport::Transport& getTransport() { return *m_transport; }
-
-	bool needThread() { return true; }
-	//      protected:
-
-        // Ocpi transport 
-	//        OCPI::DataTransport::Transport *m_transport;
-
-
-      };
+      Container(const char *name, const OCPI::API::PValue* props)
+	throw (OCPI::Util::EmbeddedException);
+      virtual ~Container()
+      throw ();
+      OCPI::Container::Container::DispatchRetCode
+      dispatch(DataTransfer::EventManager* event_manager=NULL);
+      OCPI::API::ContainerApplication*
+      createApplication(const char *name, const OCPI::Util::PValue *props)
+      throw (OCPI::Util::EmbeddedException);
+      OCPI::Container::Artifact &
+      createArtifact(OCPI::Library::Artifact &lart, const OCPI::API::PValue *artifactParams);
+      void start(DataTransfer::EventManager* event_manager) throw();
+      void stop(DataTransfer::EventManager* event_manager) throw();
+      DataTransfer::EventManager*  getEventManager();
+      bool needThread() { return true; }
+    };
   }
 }
 

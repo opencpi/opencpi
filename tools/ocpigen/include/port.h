@@ -58,6 +58,7 @@ public:
   Port *clockPort;     // impl: used temporarily until other port has clocks defined
   bool myClock;        // impl
   ezxml_t m_specXml;   // impl
+  bool m_implOnly;     // not in spec
   Port(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *defaultName,
        const char *&err);
   Port(const Port &other, Worker &w, std::string &name, size_t count, const char *&err);
