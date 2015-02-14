@@ -839,7 +839,6 @@ namespace OCPI {
 	i.init();
 	Opaque &o = *(Opaque *)m_opaque;
 	if (m_index == 0) {
-	  m_index = 1;
 	  if (only && !strcmp(only, "udp")) {
 	    // The udp "pseudo-interface"
 	    i.addr.set(0, INADDR_ANY); // let the (one) socket have its own address
@@ -849,9 +848,9 @@ namespace OCPI {
 	    i.connected = true;
 	    return true;
 	  }
+	  if (!m_init && init(err))
+	    return false;
 	}
-	if (m_index == 1 && !m_init && init(err))
-	  return false;
 #ifdef OCPI_OS_macos
 	ocpiAssert(o.buffer);
 	// Loop through all messages until we have a good one.
@@ -882,7 +881,7 @@ namespace OCPI {
 	return found;
 #else
 	// Somewhat ugly and unscalable.  We can use the driver if needed.
-	while (m_index++ < 10) {
+	while (++m_index < 10) {
 	  seekdir(o.dfd, o.start);
 	  struct dirent ent, *entp;
 	  while (readdir_r(o.dfd, &ent, &entp) == 0 && entp)
@@ -892,7 +891,7 @@ namespace OCPI {
 	      s += entp->d_name;
 	      long nval, carrier, index;
 
-	      if (getValue(s, "type", &nval) && nval == ARPHRD_ETHER &&
+	      if (getValue(s, "type", &nval) && (nval == ARPHRD_ETHER || nval == ARPHRD_LOOPBACK) &&
 		  getValue(s, "address", NULL, &addr) &&
 		  getValue(s, "ifindex", &index) && (only || (unsigned)index == m_index) &&
 		  getValue(s, "carrier", &carrier) &&
