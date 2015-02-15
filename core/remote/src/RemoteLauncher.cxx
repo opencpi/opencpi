@@ -247,7 +247,7 @@ void Launcher::
 emitConnection(const Launcher::Members &members, const Launcher::Connection &c) { 
   OU::formatAdd(m_request,
 		"  <connection transport='%s' id='%s' roleIn='%u' roleOut='%u' "
-		"buffsize='%zu'>\n",
+		"buffersize='%zu'>\n",
 		c.m_transport.transport.c_str(), c.m_transport.id.c_str(),
 		c.m_transport.roleIn, c.m_transport.roleOut, c.m_bufferSize);
   emitSide(members, c.m_in, "in");

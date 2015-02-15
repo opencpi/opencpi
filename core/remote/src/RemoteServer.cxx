@@ -145,9 +145,9 @@ namespace OCPI {
       p.m_url = ezxml_cattr(px, "url");
       p.m_name = ezxml_cattr(px, "name");
       const char *err;
-      if ((err = OX::getNumber(cx, "scale", &p.m_scale, NULL, 1)) ||
-	  (err = OX::getNumber(cx, "index", &p.m_index, NULL, 0)) ||
-	  (err = OX::getNumber(cx, "member", &member, &hasMember)))
+      if ((err = OX::getNumber(px, "scale", &p.m_scale, NULL, 1)) ||
+	  (err = OX::getNumber(px, "index", &p.m_index, NULL, 0)) ||
+	  (err = OX::getNumber(px, "member", &member, &hasMember)))
 	return err;
       if (hasMember) {
 	assert(member < m_members.size());
@@ -463,6 +463,7 @@ namespace OCPI {
 			t.transport.c_str(), t.id.c_str(), t.roleIn, t.roleOut, t.optionsIn,
 			t.optionsOut);
 	}
+	info += '\n';
 	if (info.length() >= length) {
 	  OU::format(error, "Too many containers, discovery buffer would overflow");
 	  return true;

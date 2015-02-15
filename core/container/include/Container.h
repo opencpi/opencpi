@@ -98,7 +98,7 @@ namespace OCPI {
       // This is not an embedded member to potentially control lifecycle better...
       OCPI::DataTransport::Transport &m_transport;
     protected:
-      // This vector will be filled in  by derived classes
+      // This vector will be filled in by derived classes
       Transports m_transports;  // terminology clash is unfortunate....
       BridgedPorts m_bridgedPorts;
       // The singleton local launcher in this process: FIXME: use OU::Singleton

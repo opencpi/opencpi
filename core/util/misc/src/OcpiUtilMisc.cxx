@@ -33,14 +33,15 @@
  */
 
 #include <stdarg.h>
+#include <assert.h>
 #include <istream>
 #include <string>
 #include <cstdlib>
 #include <cerrno>
 #include <cctype>
-#include <assert.h>
-#include <OcpiUtilException.h>
-#include <OcpiUtilMisc.h>
+#include "OcpiOsEther.h"
+#include "OcpiUtilException.h"
+#include "OcpiUtilMisc.h"
 
 /*
  * ----------------------------------------------------------------------
@@ -55,6 +56,7 @@ namespace {
   };
 }
 
+namespace OE = OCPI::OS::Ether;
 namespace OCPI {
   namespace Util {
 std::string
@@ -640,6 +642,33 @@ parseList(const char *list, const char * (*doit)(const char *tok, void *arg), vo
   }
   return err;
 }
+
+const std::string &
+getSystemId() {
+  static std::string *id = NULL;
+  // no static construction
+  if (!id) {
+    std::string error;
+    OE::IfScanner ifs(error);
+    if (error.empty()) {
+      OE::Interface eif;
+      while (ifs.getNext(eif, error))
+	if (eif.addr.isEther()) {
+	  id = new std::string(eif.addr.pretty());
+	  ocpiDebug("Establishing system identify from interface '%s': %s",
+		    eif.name.c_str(), id->c_str());
+	  break;
+	}
+      if (error.empty() && !id)
+	throw Error("No network interface found to establish a system identify from its MAC address");
+    }
+    if (error.length())
+      throw Error("Error finding a network interface for establishing a system identify: %s",
+		  error.c_str());
+  }  
+  return *id;
+}
+
 
 }
 }
