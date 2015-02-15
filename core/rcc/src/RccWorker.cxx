@@ -623,6 +623,8 @@
      RCCResult rc = m_dispatch ?
        m_dispatch->run(m_context, timedOut, &newRunCondition) : m_user->run(timedOut);
      OCPI_EMIT_STATE_CAT_NR_(wre, 0, OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_CAT_WORKER_DEV_RUN_TIME);
+     if (m_user)
+       m_user->m_first = false;
      char *err = m_context->errorString ? m_context->errorString : m_errorString;
      if (err) {
        std::string e;
@@ -984,7 +986,7 @@ controlOperation(OU::Worker::ControlOperation op) {
 
    RCCUserWorker::RCCUserWorker()
      : m_worker(*(Worker *)pthread_getspecific(Driver::s_threadKey)), m_ports(NULL),
-       m_rcc(m_worker.context()) {
+       m_first(true), m_rcc(m_worker.context()) {
    }
    RCCUserWorker::~RCCUserWorker() {
      delete [] m_ports;

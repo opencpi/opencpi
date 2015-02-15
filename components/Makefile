@@ -123,6 +123,7 @@ Implementations = \
 	bias_cc.rcc \
         bias_param.rcc \
 	hello_world.rcc \
+	hello_world_cc.rcc \
 	proxy.rcc \
 	$(Tests)
 
