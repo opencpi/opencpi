@@ -6,7 +6,6 @@
  * This file contains the RCC implementation skeleton for worker: hello_world
  */
 #include <stdio.h>
-#include <unistd.h>
 #include "hello_world_Worker.h"
 
 HELLO_WORLD_METHOD_DECLARATIONS;
@@ -23,7 +22,5 @@ static RCCResult
 run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  (void)self;(void)timedOut;(void)newRunCondition;
  printf("Hello, world\n");
- fflush(stdout);
- sleep(1);
- return RCC_ADVANCE;
+ return RCC_DONE;
 }

@@ -1,4 +1,4 @@
-rifndef OCPI_CDK_DIR
+ifndef OCPI_CDK_DIR
 # if not set, assume we are either in the development tree or in an exported cdk
 OCPI_CDK_DIR=$(or $(wildcard ../../export),../..)
 endif
@@ -14,7 +14,7 @@ run:
 	$(VG) ocpirun -v -d -pbias=biasValue=0 $(OPTS) $(FR) $(FW) bias $(CMP)
 	$(VG) ocpirun -v -d $(OPTS) $(FR) $(FW) copy $(CMP)
 	$(VG) ocpirun -v -d $(OPTS) $(FR) file-bias-capture
-	$(VG) ocpirun -v -d -t 5 $(OPTS) hello
+	$(VG) ocpirun -v -d $(OPTS) hello
 	$(VG) ocpirun -v -d $(OPTS) $(FW) pattern-bias-file
 	$(VG) ocpirun -v -d $(OPTS) $(FW) pattern
 	$(VG) ocpirun -v -d $(OPTS) $(FR) $(FW) proxybias

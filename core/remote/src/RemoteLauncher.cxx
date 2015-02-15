@@ -429,7 +429,6 @@ launch(Launcher::Members &instances, Launcher::Connections &connections) {
   Launcher::Connection *c = &connections[0];
   for (unsigned n = 0; n < connections.size(); n++, c++) {
     c->prepare(); // make sure transport parameters are on both sides
-#if 1
     if (c->m_in.m_launcher == this || c->m_out.m_launcher == this) {
       if (c->m_in.m_launcher != c->m_out.m_launcher) {
 	// If the connection is off of the remote server and no
@@ -438,16 +437,6 @@ launch(Launcher::Members &instances, Launcher::Connections &connections) {
 	if (!OU::findString(c->m_in.m_params, "endpoint", endpoint) &&
 	    !OU::findString(c->m_in.m_params, "transport", transport))
 	  c->m_in.m_params.add("transport", "socket");
-#else
-    if (c->m_launchIn == this || c->m_launchOut == this) {
-      if (c->m_launchIn != c->m_launchOut) {
-	// If the connection is off of the remote server and no
-	// transport is specified, force sockets on the input side
-	const char *endpoint = NULL, *transport = NULL;
-	if (!OU::findString(c->m_paramsIn, "endpoint", endpoint) &&
-	    !OU::findString(c->m_paramsIn, "transport", transport))
-	  c->m_paramsIn.add("transport", "socket");
-#endif
       }
       emitConnection(instances, *c);
       m_connectionMap[n] = nConnections;

@@ -550,8 +550,28 @@ parseSpec(const char *package) {
       return err;
   } else if (!spec)
     return "missing componentspec element or spec attribute";
+#if 0
   if (!(m_specName = ezxml_cattr(spec, "Name")))
     return "Missing Name attribute for ComponentSpec";
+#else
+  if (m_specFile == m_file) {
+    // If not in its own file, then it must have a name attr
+    if (!(m_specName = ezxml_cattr(spec, "Name")))
+      return "Missing Name attribute for ComponentSpec";
+  } else {
+    // If the spec is in its own file, we can default the name from the file
+    std::string name, fileName;
+    if ((err = getNames(spec, m_file.c_str(), "ComponentSpec", name, fileName)))
+      return err;
+    size_t len = strlen("-spec");
+    if (name.length() > len) {
+      const char *tail = name.c_str() + name.length() - len;
+      if (!strcasecmp(tail, "-spec") || !strcasecmp(tail, "_spec"))
+	name.resize(name.size() - len);
+    }
+    m_specName = strdup(name.c_str());
+  }
+#endif
   // Find the package even though the spec package might be specified already
   if ((err = findPackage(spec, package)))
     return err;

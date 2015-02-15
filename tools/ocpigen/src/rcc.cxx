@@ -1202,8 +1202,8 @@ emitRccCppImpl(FILE *f) {
 		  o->name().c_str(), name.c_str());
 	}
       }
-    fprintf(f, "  } %s;\n", name());
   }
+  fprintf(f, "  } %s;\n", name());
 }
 void DataPort::
 emitRccCImpl(FILE *f) {

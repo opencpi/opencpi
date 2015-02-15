@@ -438,6 +438,7 @@ typedef struct {
    Worker &m_worker;
    RCCUserPort *m_ports; // array of C++ port objects
  protected:
+   bool m_first;
    RCCWorker &m_rcc;
    RCCUserWorker();
    virtual ~RCCUserWorker();
@@ -445,6 +446,7 @@ typedef struct {
    // These are called by the worker.
 
    RCCUserPort &getPort(unsigned n) const { return m_ports[n]; }
+   inline bool firstRun() const { return m_first; };
    // access the current run condition
    const RunCondition *getRunCondition() const;
    // Change the current run condition - if NULL, revert to the default run condition

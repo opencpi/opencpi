@@ -1086,20 +1086,10 @@ namespace OCPI {
     // FIXME:  consolidate the constructors (others are in OcpiProperty.cxx) (have in internal class for init)
     // FIXME:  avoid the double lookup since the first one gets us the ordinal
     Property::Property(Application &app, const char *aname)
-<<<<<<< .merge_file_fFW4Hk
       : m_worker(app.getPropertyWorker(aname)), m_readVaddr(NULL), m_writeVaddr(NULL),
 	m_info(m_worker.setupProperty(maybePeriod(aname), m_writeVaddr, m_readVaddr)),
 	m_ordinal(m_info.m_ordinal), m_readSync(m_info.m_readSync),
 	m_writeSync(m_info.m_writeSync) {
-=======
-      : m_worker(app.getPropertyWorker(aname)),
-	m_readSync(false), m_writeSync(false), m_writeVaddr(0), m_readVaddr(0),
-	m_info(m_worker.setupProperty(maybePeriod(aname), m_writeVaddr, m_readVaddr)),
-	m_ordinal(m_info.m_ordinal)
-    {
-      m_readSync = m_info.m_readSync;
-      m_writeSync = m_info.m_writeSync;
->>>>>>> .merge_file_zGcAg0
     }
 
     bool ApplicationI::getProperty(unsigned ordinal, std::string &name, std::string &value,

@@ -155,11 +155,7 @@ prepare() {
     else if (OU::findString(m_out.m_params, "transport", cp))
       transport = cp;
     if (transport.length())
-#if 1
       m_in.m_params.add("transport", transport.c_str());
-#else
-      m_paramsIn.add("transport", transport.c_str());
-#endif
   }
 }
 

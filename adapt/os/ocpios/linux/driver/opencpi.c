@@ -1067,7 +1067,7 @@ net_notify(struct notifier_block *this, unsigned long msg, void *data) {
 }
 static const struct proto_ops opencpi_socket;
 static struct proto opencpi_proto;
-static DEFINE_MUTEX(net_mutex);
+//static DEFINE_MUTEX(net_mutex);
 
 // A user level socket is being created - do our part
 static int
@@ -1212,7 +1212,13 @@ net_receive_cp(struct sk_buff *skb, struct net_device *dev, struct packet_type *
 	ocpi_sock_t *osk = get_ocpi_sk(sk);
 	if (osk->any)
 	  found = osk;
-	else if (!compare_ether_addr(osk->sockaddr.ocpi_remote, source)) {
+	else if
+#ifdef OCPI_RH5
+	(!compare_ether_addr(osk->sockaddr.ocpi_remote, source))
+#else
+	(ether_addr_equal(osk->sockaddr.ocpi_remote, source))
+#endif
+	  {
 	  found = osk;
 	  break;
 	}
