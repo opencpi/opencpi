@@ -775,6 +775,7 @@ namespace OCPI {
 	  assert(r.m_knownRole && !r.m_bidirectional);
 	  (r.m_provider ? iIn : iOut) = &m_instances[pi->m_instance];
 	}
+#if 1
 	nMemberConnections += (iIn ? iIn->m_crew.m_size : 1) * (iOut ? iOut->m_crew.m_size : 1);
       }
       // Pass 1a: count the connections required that are internal to an instance crew
@@ -810,6 +811,16 @@ namespace OCPI {
 	    iIn = i;
 	    pIn = p;
 	    inScale = i->m_crew.m_size;
+#else
+	for (OU::Assembly::ExternalsIter ei = (*ci).m_externals.begin();
+	     ei != (*ci).m_externals.end(); ei++) {
+	  assert(!lc->m_instIn || !lc->m_instOut);
+	  if (ei->m_url.length())
+	    lc->m_url = ei->m_url.c_str();
+	  if (lc->m_instIn) {
+	    lc->m_nameOut = ei->m_name.c_str();
+	    lc->m_paramsOut = ei->m_parameters;
+#endif
 	  } else {
 	    aOut = &*pi;
 	    iOut = i;
@@ -1075,10 +1086,20 @@ namespace OCPI {
     // FIXME:  consolidate the constructors (others are in OcpiProperty.cxx) (have in internal class for init)
     // FIXME:  avoid the double lookup since the first one gets us the ordinal
     Property::Property(Application &app, const char *aname)
+<<<<<<< .merge_file_fFW4Hk
       : m_worker(app.getPropertyWorker(aname)), m_readVaddr(NULL), m_writeVaddr(NULL),
 	m_info(m_worker.setupProperty(maybePeriod(aname), m_writeVaddr, m_readVaddr)),
 	m_ordinal(m_info.m_ordinal), m_readSync(m_info.m_readSync),
 	m_writeSync(m_info.m_writeSync) {
+=======
+      : m_worker(app.getPropertyWorker(aname)),
+	m_readSync(false), m_writeSync(false), m_writeVaddr(0), m_readVaddr(0),
+	m_info(m_worker.setupProperty(maybePeriod(aname), m_writeVaddr, m_readVaddr)),
+	m_ordinal(m_info.m_ordinal)
+    {
+      m_readSync = m_info.m_readSync;
+      m_writeSync = m_info.m_writeSync;
+>>>>>>> .merge_file_zGcAg0
     }
 
     bool ApplicationI::getProperty(unsigned ordinal, std::string &name, std::string &value,

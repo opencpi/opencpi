@@ -556,7 +556,6 @@ rccTake(RCCPort *rccPort, RCCBuffer *oldBuffer, RCCBuffer *newBuffer)
    checkControl();
    if (!enabled)
      return;
-
    OU::AutoMutex guard (mutex(), true);
    // Before run condition processing happens, perform callbacks, and, if we did any,
    // skip runcondition processing

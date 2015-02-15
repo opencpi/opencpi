@@ -1,4 +1,4 @@
-ifndef OCPI_CDK_DIR
+rifndef OCPI_CDK_DIR
 # if not set, assume we are either in the development tree or in an exported cdk
 OCPI_CDK_DIR=$(or $(wildcard ../../export),../..)
 endif

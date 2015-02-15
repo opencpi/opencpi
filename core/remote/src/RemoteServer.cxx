@@ -168,6 +168,7 @@ namespace OCPI {
 
     bool Server::
     doConnection(ezxml_t cx, OC::Launcher::Connection &c, std::string &error) {
+#if 1
       c.m_transport.transport = ezxml_cattr(cx, "transport");
       c.m_transport.id = ezxml_cattr(cx, "id");
       const char *err;
@@ -180,6 +181,27 @@ namespace OCPI {
 	return OU::eformat(error, "Error processing connection values for launch: %s", err);
       c.m_transport.roleIn = OCPI_UTRUNCATE(OR::PortRole, roleIn);
       c.m_transport.roleOut = OCPI_UTRUNCATE(OR::PortRole, roleOut);
+#else
+      const char *err;
+      bool in, out;
+      size_t instIn, instOut;
+      if ((err = OX::getNumber(cx, "instIn", &instIn, &in)) ||
+	  (err = OX::getNumber(cx, "instOut", &instOut, &out)))
+	return OU::eformat(error, "Error processing connection values for launch: %s", err);
+      c.m_nameIn = ezxml_cattr(cx, "nameIn");
+      c.m_nameOut = ezxml_cattr(cx, "nameOut");
+      c.m_url = ezxml_cattr(cx, "url");
+      if (in) {
+	c.m_launchIn = m_local;
+	assert(instIn < m_instances.size());
+	c.m_instIn = &m_instances[instIn];
+      }
+      if (out) {
+	c.m_launchOut = m_local;
+	assert(instOut < m_instances.size());
+	c.m_instOut = &m_instances[instOut];
+      }
+#endif
       ezxml_t px;
       if ((px = ezxml_cchild(cx, "paramsin")))
 	c.m_in.m_params.addXml(px);

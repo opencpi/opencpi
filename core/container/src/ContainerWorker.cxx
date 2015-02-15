@@ -380,7 +380,6 @@ namespace OCPI {
     }	
 
     bool Worker::controlOp(OU::Worker::ControlOperation op) {
-      //      display_thread_sched_attr();
       // Begin hack due to the fact that sched_yield does not work with the default
       // Linux scheduler: SCHED_OTHER, and it requires special permission/capability to use
       // the other "realtime" schedulers that actually implement sched_yield.
