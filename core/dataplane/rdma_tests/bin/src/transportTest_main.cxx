@@ -1,3 +1,4 @@
+#define DEBUG 1
 
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
@@ -128,27 +129,51 @@ int server_connect(int port)
     return -1;
 
   n = getaddrinfo(NULL, service, &hints, &res);
-
   if (n < 0) {
     fprintf(stderr, "%s for port %d\n", gai_strerror(n), port);
     return n;
+  }  
+
+  
+  const char* env = getenv("OCPI_TT_IP_ADDR");
+  if( !env || (env[0] == 0)) {
+    printf("You can select the interface by setting OCPI_TT_IP_ADDR\n");
+    for (t = res; t; t = t->ai_next) {
+      sockfd = socket(t->ai_family, t->ai_socktype, t->ai_protocol);
+      if (sockfd >= 0) {
+	n = 1;
+
+	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &n, sizeof n);
+	
+	if (!bind(sockfd, t->ai_addr, t->ai_addrlen))
+	  break;
+	close(sockfd);
+	sockfd = -1;
+      }
+    }
+    freeaddrinfo(res);
   }
+  else {
 
-  for (t = res; t; t = t->ai_next) {
-    sockfd = socket(t->ai_family, t->ai_socktype, t->ai_protocol);
-    if (sockfd >= 0) {
-      n = 1;
+    struct sockaddr_in myaddr;
 
-      setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &n, sizeof n);
+    myaddr.sin_family = AF_INET;
+    myaddr.sin_port = htons(port);
+    inet_aton("192.168.100.101", (in_addr*)&myaddr.sin_addr.s_addr);
 
-      if (!bind(sockfd, t->ai_addr, t->ai_addrlen))
-	break;
+    sockfd  = socket(PF_INET, SOCK_STREAM, 0);
+
+    printf("BINDING TO  ALTERNATE SOCKET\n");
+
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &n, sizeof n);
+
+    if ( bind(sockfd, (struct sockaddr*)&myaddr, sizeof(myaddr)) ) {
       close(sockfd);
       sockfd = -1;
-    }
+    } 
+       
   }
 
-  freeaddrinfo(res);
 
   if (sockfd < 0) {
     fprintf(stderr, "Couldn't listen to port %d\n", port);
@@ -240,7 +265,7 @@ OcpiRccBinderConfigurator ()
     verbose (false),
     protocol_index(-1),
     endpoint_index(0),
-    iters(2000000),
+    iters(10),
     show_drivers(false),
     xml_config("../dconf.xml")
   
@@ -296,11 +321,12 @@ struct ConnectMemLayout {
   volatile uint32_t   connected;
   uint8_t    url[256];
 };
-const int BUFFER_SIZE=1024;
+const int BUFFER_SIZE=2;
+
 struct TestMemLayout {
-  volatile uint32_t    full_flag;
-  uint32_t    nbytes;
   uint8_t     data[BUFFER_SIZE];
+  uint32_t    nbytes;
+  volatile uint32_t    full_flag;
 };
 const int BUFFER_COUNT = 20;
 struct MemLayout {
@@ -317,13 +343,21 @@ public:
     // Get the resources that we will need for the test
     m_endpoint = factory->getEndPoint( ep, true );
     m_smem     = m_endpoint->getSmemServices();
-    m_tmem     = (MemLayout*)m_smem->map(0, m_endpoint->size );
+
+
+    printf("About to call MAP !!\n");
+
+
+    m_Txmem     = (MemLayout*)m_smem->mapTx(0, m_endpoint->size );
+    m_Rxmem     = (MemLayout*)m_smem->mapRx(0, m_endpoint->size );
+
+    printf("m_Rxmem after map = %p\n");
+
   }
 
   ~TestBase()
   {
-    delete m_tmem;
-    delete m_smem;
+    m_smem->unMap();
     delete m_endpoint;
   }
 
@@ -331,6 +365,9 @@ public:
     m_other_endpoint_url = other_ep;
     m_other_endpoint = m_factory->getEndPoint( other_ep, false );
     m_other_smem = m_other_endpoint->getSmemServices();
+
+    printf("About to getXferServices\n");
+
     m_xferServices = m_factory->getXferServices( m_smem, m_other_smem );
   }
   
@@ -356,25 +393,36 @@ public:
 	DataTransfer::XferRequest * req = m_xferServices->createXferRequest();
 	req->copy(OCPI_UTRUNCATE(DDT::Offset, s_data_off), OCPI_UTRUNCATE(DDT::Offset, t_data_off),
 		  BUFFER_SIZE, DataTransfer::XferRequest::DataTransfer );    
-	req->copy(OCPI_UTRUNCATE(DDT::Offset, s_ff_off), OCPI_UTRUNCATE(DDT::Offset, t_ff_off),
-		  sizeof(uint32_t) , DataTransfer::XferRequest::FlagTransfer );	
 	req->copy(OCPI_UTRUNCATE(DDT::Offset, s_nbytes_off), OCPI_UTRUNCATE(DDT::Offset, t_nbytes_off),
 		  sizeof(uint32_t), DataTransfer::XferRequest::None );    
+	req->copy(OCPI_UTRUNCATE(DDT::Offset, s_ff_off), OCPI_UTRUNCATE(DDT::Offset, t_ff_off),
+		  sizeof(uint32_t) , DataTransfer::XferRequest::FlagTransfer );	
+
 	m_reqs[ n ][ y ] = req;
       }
     }
   }
 
-  volatile uint8_t * getMsgBuffer( int buffer_id )
+  volatile uint8_t * getMsgBuffer( int buffer_id, bool Tx )
   {
-    return m_tmem->buffers[buffer_id].data;
+    if ( Tx ) {
+      return m_Txmem->buffers[buffer_id].data;
+    }
+    else {
+      return m_Rxmem->buffers[buffer_id].data;
+    }
   }
 
   void produce( int sbid, int tbid, uint32_t nbytes ) {
 
     //    ocpiAssert(     m_reqs [ sbid ] [ tbid ] ->getStatus() == DataTransfer::XferRequest::CompleteSuccess );
-    m_tmem->buffers[sbid].full_flag = 1;
-    m_tmem->buffers[sbid].nbytes = nbytes;
+    m_Txmem->buffers[sbid].full_flag = 1;
+    m_Txmem->buffers[sbid].nbytes = nbytes;
+
+
+    printf("Posting %d bytes to buffer %d,%d \n", nbytes, sbid, tbid );
+
+
     m_reqs [ sbid ] [ tbid ] ->post();
 
 #ifdef DEBUG
@@ -387,19 +435,22 @@ public:
   }
 
   void consume( int buffer_id ) {
-    m_tmem->buffers[buffer_id].full_flag = 0;    
+    m_Txmem->buffers[buffer_id].full_flag = 0;    
   }
 
   uint32_t waitForMsg( int buffer_id ) {
-    while ( m_tmem->buffers[buffer_id].full_flag == 0 ) {
-      //      OCPI::OS::sleep( 0 );
+    while ( m_Rxmem->buffers[buffer_id].full_flag == 0 ) {
+           OCPI::OS::sleep( 0 );
     }
-    return  m_tmem->buffers[buffer_id].nbytes;
+    //    OCPI::OS::sleep( 1000 );          
+    printf("The full flag =%d\n", m_Rxmem->buffers[buffer_id].full_flag );
+    printf("N BYTES  =%d\n", m_Rxmem->buffers[buffer_id].nbytes );
+    return  m_Rxmem->buffers[buffer_id].nbytes;
   }
 
   int32_t checkForMsg( int buffer_id ) {
-    if ( m_tmem->buffers[buffer_id].full_flag != 0 ) {
-      return  m_tmem->buffers[buffer_id].nbytes;
+    if ( m_Rxmem->buffers[buffer_id].full_flag != 0 ) {
+      return  m_Rxmem->buffers[buffer_id].nbytes;
     }
     return -1;
   }
@@ -415,7 +466,8 @@ protected:
   std::string                  m_endpoint_url;
   DataTransfer::EndPoint     * m_endpoint;
   DataTransfer::SmemServices * m_smem;
-  MemLayout         * m_tmem;
+  MemLayout                  * m_Txmem;
+  MemLayout                  * m_Rxmem;
   DataTransfer::XferServices * m_xferServices;
   std::string                  m_other_endpoint_url;
   DataTransfer::EndPoint     * m_other_endpoint;
@@ -434,9 +486,10 @@ public:
     :TestBase(factory,ep){}
 
   bool clientConnected(){
-    if ( m_tmem->connection.connected ) {
-      printf("The client URL is (%s)\n",  m_tmem->connection.url );
-      std::string oep =  (char*)m_tmem->connection.url;
+
+    if ( m_Rxmem->connection.connected ) {
+      printf("The client URL is (%s)\n",  m_Rxmem->connection.url );
+      std::string oep =  (char*)m_Rxmem->connection.url;
       return true;
     }
     return false;
@@ -451,38 +504,35 @@ public:
   void reflectTillDone()
   {
 
+    printf("******** Reflect till done\n");
+
     // Here we just take full buffers from our input and send them back
     int count=0;
 
     for (;;) {
 
+      printf("*****  About to wait for message\n");
       int c = waitForMsg( 0 );
-
-      /*
-      while ( (c=checkForMsg( 0 )) < 0 ) {
-	//	OCPI::OS::sleep( 0 );	
-	produce( 2, 4, 20);	
-      }
-      */
-
+      printf("Got a  message\n");
 
       if (  c == 0 ) {
 	printf("Received %d buffers\n", count );
+	printf("Terminating\n");
 
 	// Allow any pending writes to complete
-	OCPI::OS::sleep( 100 );
+	OCPI::OS::sleep( 1000 );
 	break;
       }
 
-      if ( (count%1000) == 0 ) 
-	printf("Server: b(%d) got a message and sending it back, nbytes = %d\n", count, m_tmem->buffers[0].nbytes );
+      if ( (count%1) == 0 ) 
+	printf("Server: b(%d) got a message and sending it back, nbytes = %d\n", count, m_Rxmem->buffers[0].nbytes );
 
 
       // We will move the message to our buffer #3 and send it back from there
-      memcpy( (void*)&m_tmem->buffers[3], (void*)&m_tmem->buffers[0], sizeof(TestMemLayout) );
+      memcpy( (void*)&m_Txmem->buffers[3], (void*)&m_Rxmem->buffers[0], sizeof(TestMemLayout) );
 
+      produce( 3, 0, m_Txmem->buffers[0].nbytes );
       consume(0);
-      produce( 3, 0, m_tmem->buffers[0].nbytes );
       
       count++;
     }
@@ -497,6 +547,8 @@ public:
     :TestBase(factory,ep){}
 
   void connect( std::string & ) {
+
+    printf("IN client connect\n");
     
     
     // Create the transfer that sends our URL
@@ -512,7 +564,7 @@ public:
     server_init_req->copy( s_start_off + con_off, con_off, 4, DataTransfer::XferRequest::FlagTransfer );    
 
     // Now init the data in our local SMB
-    MemLayout *scratch = (MemLayout*) m_smem->map( s_start_off, sizeof(MemLayout) );
+    MemLayout *scratch = (MemLayout*) m_smem->mapTx( s_start_off, sizeof(MemLayout) );
     strcpy( (char*)scratch->connection.url, (char*)endpoint().c_str() );
     scratch->connection.connected = 1;
 
@@ -523,7 +575,7 @@ public:
 
     printf("Waiting for request to complete\n");
     while( server_init_req->getStatus() != DataTransfer::XferRequest::CompleteSuccess ) {
-      printf("request is still pending\n");
+      //      printf("request is still pending\n");
       OCPI::OS::sleep( 10 );
     }
     printf("Sent the server connect request\n");
@@ -549,6 +601,8 @@ int main( int argc, char** argv )
     return false;
   }
 
+
+#ifdef JWH
   ezxml_t xml_data = NULL;
   const char *err;
   if (config.xml_config.empty())
@@ -559,6 +613,8 @@ int main( int argc, char** argv )
   } else
     printf("Top level XML node name = %s\n", ezxml_name(xml_data));
   fm.configure ( xml_data );
+#endif
+
 
   // Print out the available protocols
   std::vector<std::string> protolist  = fm.getListOfSupportedProtocols();  
@@ -587,6 +643,9 @@ int main( int argc, char** argv )
       exit(-1);
     }
     std::string p = protolist[config.protocol_index];
+    
+    printf("Selected protocol = %s\n", p.c_str() );
+
     std::vector<std::string>::iterator it;
     int n=0;
     for ( it=eplist.begin(); it!=eplist.end(); it++ ) {      
@@ -627,15 +686,25 @@ int main( int argc, char** argv )
       // Now we get the client url and connection cookie
       hand_shake(  sdesc, cdesc );
 
+      printf("Server: in HS 1, client ep = %s\n", cdesc.url.c_str());
+
       // Now we get the other url and allocate our resources.
       server.setClientEp( cdesc.url );
+
+
       server.finalize( cdesc );
+
+      printf("Server: in HS 2\n");
 
       // Now we can give the client our cookie
       server.getConnectionCookie( sdesc );      
       hand_shake( sdesc, cdesc );      
 
+      printf("Server: in HS 3\n");
+
       server.createBufferXferLists();
+
+      printf("Done creating buffers\n");
 
       while ( ! server.clientConnected() ) { 
 	OCPI::OS::sleep( 0 );
@@ -649,12 +718,16 @@ int main( int argc, char** argv )
     else {
 
       ClientTest client( factory, config.endpoint  );
+      //      sleep( 2 );
 
       printf("Client URL  = \n");
       printf("%s\n\n", client.endpoint().c_str() );
 
+      printf("Connecting to host = %s\n", config.host.c_str() );
+
 
       socket_fd = client_connect(config.host.c_str() ,18077);
+
 
       HSDesc cdesc, sdesc;
 
@@ -672,6 +745,8 @@ int main( int argc, char** argv )
       // Get the servers connection cookie
       hand_shake( cdesc, sdesc );
 
+
+      printf("About to finalize the connection\n");
       client.finalize( sdesc );
         
       client.createBufferXferLists();
@@ -682,8 +757,8 @@ int main( int argc, char** argv )
       int count=0;
 
       // For this test we will use buffer 2 as our output buffer and buffer 0 as input
-      uint8_t * out_data = (uint8_t*)client.getMsgBuffer(2);
-      uint8_t * in_data = (uint8_t*)client.getMsgBuffer(0);
+      uint8_t * out_data = (uint8_t*)client.getMsgBuffer(2, true);
+      uint8_t * in_data = (uint8_t*)client.getMsgBuffer(0, false);
 
       for ( int n=0; n<config.iters; n++ ) {
 
@@ -695,16 +770,18 @@ int main( int argc, char** argv )
 
 	  int z;
 	  for ( z=0; z<y; z++ ) {
-	    out_data[z] = (uint8_t)((z + y)%256);
+	    out_data[z] = (uint8_t)((z + y + 11)%256);
 	  }
 
-	  client.produce( 1,4,y );
-	  client.produce( 3,5,y );
-	  client.produce( 6,6,y );
-	  client.produce( 4,7,y );
+	  //	  client.produce( 1,4,y );
+	  //	  client.produce( 3,5,y );
+	  //	  client.produce( 6,6,y );
+	  //      client.produce( 4,7,y );
 
 
 	  client.produce( 2,0,y );
+
+	  //	  OCPI::OS::sleep( 1000 );
 
 	  int c = client.waitForMsg(0);
 
@@ -728,14 +805,22 @@ int main( int argc, char** argv )
       client.produce( 2,0,0);	
     }
 
+    
+
     OCPI::OS::sleep( 1000 );
   }
   catch ( OCPI::Util::EmbeddedException & ex ) {
     printf("Caught a 'OCPI::Util::EmbeddedException' \n");
     printf(" Error codes = %d, aux = %s\n", ex.getErrorCode(), ex.getAuxInfo() );
+    tpassed = false;
+  }
+  catch ( std::string & str ) {
+    printf("ERROR: caught exception %s\n", str.c_str() );
+    tpassed = false;
   }
   catch ( ... ) {
     printf("Caught an unknown exception\n");
+    tpassed = false;
   }
 
   // Print out the test results

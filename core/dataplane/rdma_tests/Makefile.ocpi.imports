@@ -48,23 +48,31 @@ ALLINC += $(OCPIOS_EXPORTS) \
 DYNOBJS += \
 	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPioXfer.obj \
 	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDmaXfer.obj \
-	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtSocketsXfer.obj 
+	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtUDPSocketXfer.obj \
+	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtSocketsXfer.obj
+
 
 ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
 	SYSLIBS += dl 
 endif
-
-
-
 
 ifeq ($(OCPI_HAVE_IBVERBS),1)
 DYNOBJS += ../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtOfedXfer.obj 
 SYSLIBS += ibverbs	
 endif
 
+ifeq ($(OCPI_HAVE_TILERA),1)
+DYNOBJS += \
+	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtTileraDmaXfer.obj
+#SYSLIBS += $(TILERA_ROOT)/tile/lib/gxpci gxio tmc
+
+endif
+
 ALLLIBS +=  $(DATA_TRANSPORT_LIBS) $(TX_DRIVER_SUPPORT_LIBS) \
  $(DATA_TRANSFER_LIBS)  \
  $(UTIL_LIBS) $(LOGGER_LIBS) $(OCPIOS_LIBS)
+
+
 
 
 

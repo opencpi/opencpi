@@ -50,6 +50,7 @@
 #include "RccPort.h"
 #include "RccWorker.h"
 
+
  namespace OC = OCPI::Container;
  namespace OS = OCPI::OS;
  namespace OU = OCPI::Util;
@@ -67,8 +68,9 @@
    m_dispatch(NULL), m_portInit(0), m_context(NULL), m_mutex(app.container()),
    m_runCondition(NULL), m_errorString(NULL), m_slave(slave), enabled(false), hasRun(false),
    sourcePortCount(0), targetPortCount(0), m_nPorts(nPorts()), worker_run_count(0),
-   m_transport(app.parent().getTransport())
+   m_transport(app.parent().getTransport()), m_taskSem(0)
  {
+
    memset(&m_info, 0, sizeof(m_info));
    if (art)
      if (!strcasecmp(m_entry->type, "c"))
@@ -348,7 +350,8 @@
    m_context = (RCCWorker *)new char[n];
    memset(m_context, 0, n);
    static RCCContainer rccContainer =
-     { rccRelease, cSend, rccRequest, cAdvance, rccWait, rccTake, rccSetError};
+     //     { rccRelease, cSend, rccRequest, cAdvance, rccWait, rccTake, rccSetError, addTask };
+     { rccRelease, cSend, rccRequest, cAdvance, rccWait, rccTake, rccSetError  };
    m_context->container = rccContainer;
    m_context->runCondition = wd ? wd->runCondition : NULL;
 
@@ -1003,6 +1006,54 @@ controlOperation(OU::Worker::ControlOperation op) {
 		   m_worker.name().c_str());
      return *app;
    }
+
+   typedef void(*Witem)(void *);
+
+   RCCUserTask::
+   RCCUserTask()
+     : m_worker( *(OCPI::RCC::Worker *)pthread_getspecific(Driver::s_threadKey) )
+   {
+   }
+
+   void
+   RCCUserTask::
+   spawn() {
+     Container * c = static_cast<Container*>(&m_worker.parent().parent());
+     c->addTask( this  );
+   }
+
+   void
+   RCCUserTask::
+   done() {
+     // no=op
+   }
+     
+
+   void RCCUserWorker::   
+   addTask( RCCUserTask * task ) {
+     printf("^^^^^^ In RCCTaskHandle RCCUserWorker::addTask\n");
+     Container * c = static_cast<Container*>(&m_worker.parent().parent());
+     c->addTask( task  );
+   }
+
+
+   void RCCUserWorker::
+   addTask(  RCCTask task, RCCTaskArgs * args ) {
+     printf("^^^^^^ In RCCTaskHandle RCCUserWorker::addTask\n");
+
+     Container * c = static_cast<Container*>(&m_worker.parent().parent());
+
+     c->addTask(  (Witem)task, args );
+   }
+
+   bool RCCUserWorker::
+   join(bool block) {
+     Container * c = static_cast<Container*>(&m_worker.parent().parent());     
+     return c->join( block, m_worker.m_taskSem );
+   }
+
+
+
 
    // Default worker methods
    RCCResult RCCUserWorker::initialize() { return RCC_OK;}

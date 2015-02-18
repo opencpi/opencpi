@@ -267,6 +267,17 @@ struct RCCPort {
 #endif
 };
 
+
+typedef struct {
+  void * args[3];
+} RCCTaskArgs;
+
+
+
+
+typedef void (*RCCTask)( RCCTaskArgs * args);
+
+
 typedef struct {
   void (*release)(RCCBuffer *);
   void (*send)(RCCPort *, RCCBuffer*, RCCOpCode op, size_t length);
@@ -274,7 +285,8 @@ typedef struct {
   RCCBoolean (*advance)(RCCPort *port, size_t maxlength);
   RCCBoolean (*wait)(RCCPort *, size_t max, unsigned usecs);
   void (*take)(RCCPort *,RCCBuffer *old_buffer, RCCBuffer *new_buffer);
-  RCCResult (*setError)(const char *, ...);
+  RCCResult (*setError)(const char *, ...);  
+  //  void (*addTask)(RCCWorker * self, RCCTask task, RCCTaskArgs * args );
 } RCCContainer;
 
 struct RCCWorker {
@@ -430,10 +442,27 @@ typedef struct {
 
 
  class Worker;
+ class RCCUserWorker;
+ class RCCUserTask {
+ public:
+   RCCUserTask();
+   virtual void run()=0;
+   virtual void done();   // This method is called when the task is complete, the default handler is a no-op
+   void spawn(); 
+ private:
+   Worker & m_worker;
+ };
  class RCCUserWorker {
    friend class Worker;
+   friend class RCCUserTask;
    Worker &m_worker;
    RCCUserPort *m_ports; // array of C++ port objects
+
+ public:
+   void addTask(  RCCTask task, RCCTaskArgs * args );
+   void addTask(  RCCUserTask * task  );
+   bool join(bool block=true);
+
  protected:
    RCCWorker &m_rcc;
    RCCUserWorker();
@@ -460,6 +489,7 @@ typedef struct {
    virtual RCCTime getTime();
    
  };
+
  // This class emulates the API worker, and is customized for the specific implementation
  // It forwards all the API methods
  class RCCUserSlave {

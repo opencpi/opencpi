@@ -25,6 +25,9 @@ namespace OCPI {
       // These two are what the underlying local launcher needs
       OCPI::Container::Launcher::Instances m_instances;
       OCPI::Container::Launcher::Connections m_connections;
+      std::vector<OCPI::Container::Container *> containers;
+      std::vector<OCPI::Container::Application *> containerApps;
+
     public:
       Server(OCPI::Library::Library &l, OCPI::OS::ServerSocket &svrSock, std::string &error);
       ~Server();

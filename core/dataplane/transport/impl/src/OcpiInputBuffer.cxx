@@ -109,7 +109,7 @@ void InputBuffer::update(bool critical)
 
     ocpiDebug("InputBuffer:update:mapping buffer offset");
 
-    m_bVaddr = getPort()->getLocalShemServices()->map
+    m_bVaddr = getPort()->getLocalShemServices()->mapRx
       (input_offsets->bufferOffset, 
        input_offsets->bufferSize );
     m_startOffset = input_offsets->bufferOffset;
@@ -129,7 +129,7 @@ void InputBuffer::update(bool critical)
 
     ocpiDebug("InputBuffer %p:update: mapping states", this);
 
-    m_bsVaddr = getPort()->getLocalShemServices()->map
+    m_bsVaddr = getPort()->getLocalShemServices()->mapRx
       (input_offsets->localStateOffset, 
        sizeof(BufferState)*MAX_PCONTRIBS*2);
 
@@ -154,7 +154,7 @@ void InputBuffer::update(bool critical)
 
     ocpiDebug("InputBuffer:update: mapping meta data");
 
-    m_bmdVaddr = getPort()->getLocalShemServices()->map
+    m_bmdVaddr = getPort()->getLocalShemServices()->mapRx
       (input_offsets->metaDataOffset, 
        sizeof(BufferMetaData)*MAX_PCONTRIBS);
 
@@ -186,7 +186,7 @@ void InputBuffer::update(bool critical)
 
       ocpiDebug("InputBuffer:update: mapping shadows");
 
-      m_rssVaddr[idx] = shadow_port->getRealShemServices()->map
+      m_rssVaddr[idx] = shadow_port->getRealShemServices()->mapRx
         (input_offsets->myShadowsRemoteStateOffsets[idx], 
          sizeof(BufferState));
 

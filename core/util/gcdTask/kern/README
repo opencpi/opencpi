@@ -1,0 +1,31 @@
+Kernel Module Design Notes
+--------------------------
+
+The purpose of the pwq kernel module is to provide a global load balancing
+mechanism so that multiple pwq-driven processes can coexist on the same
+system. Without this mechanism, each process would attempt to monopolize
+all CPU resources which leads to CPU saturation and increased scheduling
+overhead.
+
+This mechanism could be considered a form of "cooperative multiprocess multithreading", in that the kernel does not forcibly terminate idle threads but provides information to each process to help it determine the size of it's own thread pool.
+
+Let's define a few variables: 
+
+    P      := number of pwq processes
+    R0..Rn := requested concurrency level of each processes
+    G      := the global concurrency value
+
+The value of P is maintained by the kernel and is updated when processes
+are created or terminated. As part of the pwq initialization code, the
+process will open /dev/pthread_workqueue which registers the process as
+a pwq-driven process and increments the value of P. When the process exits,
+  the descriptor will be closed, causing the kernel to decrement the value of P.
+
+Each pwq-driven process computes it's own value of R, which it shares
+with the kernel. It represents the amount of parallel tasks that could 
+be concurrently executed by the process. In terms of libdispatch, it would
+correspond to the number of parallel dispatch queues that are non-empty.
+
+The value of G is computed by the kernel via a regularly scheduled
+task. It takes into account the sum of all R values, along with the total
+number of CPUs, and the empty/non-empty state of each CPU's runqueue.

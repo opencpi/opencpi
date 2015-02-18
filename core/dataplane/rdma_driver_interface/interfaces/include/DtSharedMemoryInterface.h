@@ -169,7 +169,11 @@ namespace DataTransfer {
      *                Returns address if success, NULL on error and sets platform dependent exception
      *
      */
+
     virtual void* map(DtOsDataTypes::Offset offset, size_t size ) = 0;
+    virtual void* mapTx(DtOsDataTypes::Offset offset, size_t size ){return map(offset,size);}
+    virtual void* mapRx(DtOsDataTypes::Offset offset, size_t size ){return map(offset,size);}
+
 
     /*
      * Unmap the current mapped view.

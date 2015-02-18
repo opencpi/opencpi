@@ -184,6 +184,7 @@ namespace OCPI {
       const char *err;
       // Initialize everything from the protocol, then other attributes can override the protocol
       if ((err = parseProtocol()) ||
+	  (err = parseScaling()) ||
 	  (err = OE::getBoolean(m_xml, "twoWay", &m_isTwoWay)) ||           // protocol override
 	  (err = OE::getBoolean(m_xml, "bidirectional", &m_isBidirectional)) ||
 	  // Don't use absence to set value

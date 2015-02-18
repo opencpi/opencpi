@@ -1,6 +1,6 @@
 ###########################################################################
 #
-#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#  Copyright vompile (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
 #
 #    Mercury Federal Systems, Incorporated
 #    1901 South Bell Street
@@ -121,6 +121,7 @@ Implementations = \
 	file_write.hdl \
         replicate.rcc \
 	bias_cc.rcc \
+	biasFGM_cc.rcc \
         bias_param.rcc \
 	hello_world.rcc \
 	proxy.rcc \

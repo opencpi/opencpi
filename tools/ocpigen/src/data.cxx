@@ -48,7 +48,7 @@ DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *
   if (!m_defaultBufferSize && m_maxMessageValues)
     m_defaultBufferSize =
       (m_maxMessageValues * m_dataValueWidth + 7) / 8;
-  err = parseScaling();
+  //  err = parseScaling();
 }
 
 // Very poor man's virtual callback

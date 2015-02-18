@@ -52,6 +52,8 @@
 
 #include "RccApplication.h"
 #include "RccDriver.h"
+#include "OcpiOsSemaphore.h"
+#include "pthread_workqueue.h"
 
 namespace OCPI {
 
@@ -61,10 +63,13 @@ namespace OCPI {
 
   namespace RCC {
 
+
+
     class Port;
     class Component;     
     class RCCWorkerInterface;
     class Worker;
+    class RCCUserTask;
     struct RCCPortData;
 
     // Our Custom exception definitions
@@ -79,6 +84,13 @@ namespace OCPI {
     class Container
       : public OCPI::Container::ContainerBase<Driver,Container,Application,Artifact>
     {
+
+    private:
+      static bool m_staticInit;
+      static const int WORKQUEUE_COUNT = 2;
+      static const int LOW_PRI_Q = 0;
+      static const int HIGH_PRI_Q = 1;
+      pthread_workqueue_t m_workqueues[WORKQUEUE_COUNT]; 
 
       public:
         friend class Port;
@@ -106,6 +118,12 @@ namespace OCPI {
 
 	OCPI::Container::Artifact &createArtifact(OCPI::Library::Artifact &lart,
 						  const OCPI::API::PValue *artifactParams);
+
+
+	// worker task management
+	void addTask( void (*workitem_func)(void *), void * args );
+	void addTask( RCCUserTask * task );
+	bool join( bool block, OCPI::OS::Semaphore & sem );
       
         //!< Start/Stop the container
         void start(DataTransfer::EventManager* event_manager)

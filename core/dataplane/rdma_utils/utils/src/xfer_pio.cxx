@@ -252,8 +252,8 @@ xfer_pio_create(DataTransfer::SmemServices* src, DataTransfer::SmemServices* dst
   void *dst_va;
 
   // Map source and destination
-  src_va = src->map (0, 0);
-  dst_va = dst->map (0, 0);
+  src_va = src->mapTx (0, 0);
+  dst_va = dst->mapRx (0, 0);
   ocpiDebug("Template src_va %p dst_va %p", src_va, dst_va);
 
   /* Allocate template */
@@ -305,7 +305,7 @@ xfer_pio_copy(PIO_template pio_template, DtOsDataTypes::Offset src_os, DtOsDataT
 #if CONTIGUOUS_MAP
     pio_transfer->src_va = ((char *)pio_template->src_va + src_os);
 #else
-    pio_transfer->src_va = pio_template->s_smem->map(src_os, nbytes);
+    pio_transfer->src_va = pio_template->s_smem->mapTx(src_os, nbytes);
 #endif
     pio_transfer->src_off = src_os;
     pio_transfer->dst_off = dst_os;
@@ -330,7 +330,7 @@ xfer_pio_copy(PIO_template pio_template, DtOsDataTypes::Offset src_os, DtOsDataT
 #if CONTIGUOUS_MAP
     pio_transfer->dst_va = ((char *)pio_template->dst_va + dst_os);
 #else
-    pio_transfer->dst_va = pio_template->t_smem->map(dst_os, nbytes);
+    pio_transfer->dst_va = pio_template->t_smem->mapTx(dst_os, nbytes);
 #endif
 #endif
                 

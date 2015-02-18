@@ -15,7 +15,16 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <sys/time.h>
-#ifdef __arm__
+
+#ifdef __tile__
+static inline uint64_t getticks()
+{
+  return 0;
+}
+#endif
+
+
+#ifdef __arm__ 
 static inline uint64_t getticks()
 {
   struct timeval tv;

@@ -130,6 +130,10 @@ static inline void get_tick_count(tick_t *t)
 #endif /* _CPU_POWERPC */
 
 
+
+
+
+
 /* Tick count code for IA-32 architecture (Intel and AMD x86, and 64-bit 
  * versions) */
 #if (defined(_CPU_IA32) || defined(_CPU_IA64))
@@ -189,5 +193,21 @@ static inline void atomic_inc(unsigned int *addr)
     (*addr)++;
 }
 #endif /* Other archs */
+
+
+
+
+/* Tick count code for SPARC architecture */
+#if defined(__tile__)
+static inline void get_tick_count(tick_t *t)
+{
+
+}
+static inline void atomic_inc(unsigned int *addr)
+{
+    (*addr)++;
+}
+#endif 
+
 
 #endif /* FASTTIME_PRIVATE_H */

@@ -54,9 +54,27 @@ ALLLIBS += \
   $(UTIL_LIBS) \
   $(OCPIOS_LIBS)
 
+
+DYNOBJS += \
+	../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtUDPSocketXfer.obj \
+	../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtSocketsXfer.obj \
+	../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtTileraDmaXfer.obj
+
 SYSLIBS += $(OCPI_LZMA_DIR)/$(OCPI_TARGET_HOST)/lib/lzma
 
+ifeq ($(OCPI_HAVE_PTWORKQUEUE),10)
+CXXFLAGS+= -DPTWORKQUEUE
+SYSLIBS += $(WORKQUEUE_LIB)/pthread_workqueue
+endif
+
+
+ifeq ($(OCPI_HAVE_TILERA),1)
+#SYSLIBS += $(TILERA_ROOT)/tile/lib/gxpci gxio tmc
+endif
+
+
 MAIN_DRIVERS+= \
+  _N4OCPI6TILERA12XferServicesE\
   _ZN4OCPI3RCC3rccE\
   _ZN4OCPI7Library7CompLib9componentE\
   _ZN4OCPI3HDL3hdlE\

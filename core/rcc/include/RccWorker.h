@@ -51,6 +51,7 @@
 #define RCC_WORKER_H_
 
 #include <cstdarg>
+#include "OcpiOsSemaphore.h"
 
 #ifndef WORKER_INTERNAL
 #define WORKER_INTERNAL
@@ -180,6 +181,8 @@ namespace OCPI {
 
       std::list<OCPI::Util::Port*> m_testPmds;
     private:
+      
+
       void initializeContext();
       inline void setRunCondition(const RunCondition &rc) {
 	m_runCondition = &rc;
@@ -223,6 +226,9 @@ namespace OCPI {
 
       // Pointer into actual RCC worker binary for its dispatch struct
       OCPI::DataTransport::Transport &m_transport;
+
+      // Task semaphore
+      OCPI::OS::Semaphore m_taskSem;
 
       // Override the port data based on hardcoded requirements from the worker
       void overRidePortInfo( OCPI::Util::Port & portData );

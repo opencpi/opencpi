@@ -110,7 +110,7 @@ void OutputBuffer::update(bool critical)
 	      getPort(), getPort()->getMetaData()->m_bufferData,
 	      this, tid, output_offsets->bufferOffset, output_offsets);
 
-    m_bVaddr = getPort()->getLocalShemServices()->map
+    m_bVaddr = getPort()->getLocalShemServices()->mapTx
       (output_offsets->bufferOffset, 
        output_offsets->bufferSize);
     m_startOffset = output_offsets->bufferOffset;
@@ -129,7 +129,7 @@ void OutputBuffer::update(bool critical)
 
     ocpiDebug("OutputBuffer:%p update: mapping states", this);
 
-    m_bsVaddr = getPort()->getLocalShemServices()->map
+    m_bsVaddr = getPort()->getLocalShemServices()->mapTx
       (output_offsets->localStateOffset, 
        sizeof(BufferState)*MAX_PCONTRIBS*2);
 
@@ -153,7 +153,7 @@ void OutputBuffer::update(bool critical)
 
     ocpiDebug("OutputBuffer:update: mapping metadata");
 
-    m_bmdVaddr = getPort()->getLocalShemServices()->map
+    m_bmdVaddr = getPort()->getLocalShemServices()->mapTx
       (output_offsets->metaDataOffset, 
        sizeof(BufferMetaData)*MAX_PCONTRIBS);
 
@@ -167,7 +167,7 @@ void OutputBuffer::update(bool critical)
 
     ocpiDebug("OutputBuffer: mapping control structure");
 
-    m_bcsVaddr = getPort()->getLocalShemServices()->map
+    m_bcsVaddr = getPort()->getLocalShemServices()->mapTx
       (output_offsets->portSetControlOffset, 
        sizeof(OutputPortSetControl));
 

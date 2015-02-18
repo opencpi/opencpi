@@ -53,6 +53,7 @@ int clock_filter_index;     /* index into circular buffer */
 double pll_gain;
 #define DEFAULT_PLL_GAIN 0.1
 
+extern void get_tick_count( tick_t * );
 
 int loop_delay;
 int loop_delay_min;

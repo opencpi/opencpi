@@ -628,22 +628,22 @@ createPullDriver( const OCPI::RDT::Descriptors& pdesc)
     PullDataInfo* pull_data_info = new PullDataInfo;
     // Get the local and remote vaddrs
     pull_data_info->src_buffer = (volatile uint8_t*)
-      sres->sMemServices->map( pdesc.desc.dataBufferBaseAddr, 
+      sres->sMemServices->mapTx( pdesc.desc.dataBufferBaseAddr, 
                                pdesc.desc.dataBufferPitch == 0 ? 
                                pdesc.desc.dataBufferSize : pdesc.desc.dataBufferPitch * pdesc.desc.nBuffers );
 
     pull_data_info->src_metaData = (volatile uint64_t*)
-      sres->sMemServices->map( pdesc.desc.metaDataBaseAddr,
+      sres->sMemServices->mapTx( pdesc.desc.metaDataBaseAddr,
                                pdesc.desc.metaDataPitch == 0 ? 
                                sizeof(uint64_t) : pdesc.desc.metaDataPitch * pdesc.desc.nBuffers );
 
     pull_data_info->src_flag = (volatile uint32_t*)
-      sres->sMemServices->map( pdesc.desc.fullFlagBaseAddr,
+      sres->sMemServices->mapTx( pdesc.desc.fullFlagBaseAddr,
                                pdesc.desc.fullFlagPitch == 0 ? 
                                sizeof(uint32_t) : pdesc.desc.fullFlagPitch * pdesc.desc.nBuffers );
 
     pull_data_info->empty_flag = (uint32_t*)
-      sres->sMemServices->map( pdesc.desc.emptyFlagBaseAddr,
+      sres->sMemServices->mapTx( pdesc.desc.emptyFlagBaseAddr,
                                pdesc.desc.emptyFlagPitch == 0 ? 
                                sizeof(uint32_t) : pdesc.desc.emptyFlagPitch * pdesc.desc.nBuffers );
     memcpy(&pull_data_info->pdesc, &pdesc, sizeof(OCPI::RDT::Descriptors));
@@ -671,12 +671,12 @@ createPullDriver( const OCPI::RDT::Descriptors& pdesc)
 
     PullDataInfo* pull_data_info = new PullDataInfo;
     pull_data_info->empty_flag = (uint32_t*)
-      tres->sMemServices->map( pdesc.desc.emptyFlagBaseAddr,
+      tres->sMemServices->mapTx( pdesc.desc.emptyFlagBaseAddr,
                                pdesc.desc.emptyFlagPitch == 0 ? 
                                sizeof(uint32_t) : pdesc.desc.emptyFlagPitch * pdesc.desc.nBuffers );
 
     pull_data_info->src_flag = (volatile uint32_t*)
-      tres->sMemServices->map( pdesc.desc.fullFlagBaseAddr,
+      tres->sMemServices->mapTx( pdesc.desc.fullFlagBaseAddr,
                                pdesc.desc.fullFlagPitch == 0 ? 
                                sizeof(uint32_t) : pdesc.desc.fullFlagPitch * pdesc.desc.nBuffers );
     memcpy(&pull_data_info->pdesc, &pdesc, sizeof(OCPI::RDT::Descriptors));

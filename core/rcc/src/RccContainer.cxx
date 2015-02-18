@@ -48,6 +48,8 @@
  ************************************************************************/
 
 #include "RccContainer.h"
+#include "OcpiOsMisc.h"
+#include "RCC_Worker.h"
 
 namespace OC = OCPI::Container;
 namespace OA = OCPI::API;
@@ -56,6 +58,7 @@ namespace OU = OCPI::Util;
 namespace OCPI {
   namespace RCC {
 
+    bool Container::m_staticInit = false;
 
 DataTransfer::EventManager*  
 Container::
@@ -74,6 +77,36 @@ Container(const char *name,
 {
   m_model = "rcc";
   //temp  m_ourUID = g_unique_id;
+
+
+   if ( m_staticInit == false ) {
+
+     pthread_workqueue_attr_t attr;
+
+     memset(&m_workqueues, 0, sizeof(m_workqueues));     
+
+    // Create the worker queues
+     if (pthread_workqueue_attr_init_np(&attr) != 0)
+       throw  OU::Error("Worker static initialization: Could not init workqueue attributes");
+
+     //     if (pthread_attr_setinheritsched( &attr, 0) != 0 ) 
+     //       throw  OU::Error("Worker static initialization: Could not set scheduler in  workqueue attributes");
+
+     if (pthread_workqueue_attr_setqueuepriority_np(&attr, WORKQ_HIGH_PRIOQUEUE) != 0) 
+       throw  OU::Error("Worker static initialization: Could not set workqueue priorities");        
+     if (pthread_workqueue_create_np(&m_workqueues[HIGH_PRI_Q], &attr) != 0)
+       throw  OU::Error("Worker static initialization: Could not create workqueue ");
+
+     if (pthread_workqueue_attr_init_np(&attr) != 0)
+       throw  OU::Error("Worker static initialization: Could not init workqueue attributes");
+     if (pthread_workqueue_attr_setqueuepriority_np(&attr, WORKQ_LOW_PRIOQUEUE) != 0) 
+       throw  OU::Error("Worker static initialization: Could not set workqueue priorities");        
+     if (pthread_workqueue_create_np(&m_workqueues[LOW_PRI_Q], &attr) != 0)
+       throw  OU::Error("Worker static initialization: Could not create workqueue ");
+
+     m_staticInit = true;
+   }
+
 
 #if 0
   // The underlying tranport system has some number of endpoints registered.  Lets make sure
@@ -121,6 +154,95 @@ Container::
     printf("ERROR: Got an exception in OCPI::RCC::Container::~Container)\n");
   }
 #endif
+}
+
+
+struct Wargs {
+  RCCUserTask * taskc;
+  void (*task)(void *);
+  void * args;
+};
+
+static volatile int task_count = 0;
+void wait_join( void *  args) {
+  OCPI::OS::Semaphore * sem = (OCPI::OS::Semaphore *)args;
+  while( task_count > 0 ) {
+    OCPI::OS::sleep( 0 );
+  }
+  sem->post();  
+}
+
+bool
+Container::
+join( bool block, OCPI::OS::Semaphore & sem ) {
+
+  //  printf("In join \n");
+  if ( task_count == 0 ) {
+    return true;
+  }
+
+  if ( ! block ) {
+    return false;
+  }
+  else {
+    pthread_workqueue_additem_np(m_workqueues[LOW_PRI_Q], wait_join, (void*)&sem, NULL, NULL);    
+  }
+
+
+  printf("IN Con join about to wait for sem\n");
+  sem.wait();
+  printf("IN Con join , joined \n");
+  return true;
+}
+
+static OCPI::OS::Mutex mutex;
+void 
+taskWrapper(  void * args ) {
+  Wargs * wargs = (Wargs*)args;
+
+  if ( wargs->taskc == NULL ) {
+    wargs->task(wargs->args);
+  }
+  else {
+    wargs->taskc->run();
+    wargs->taskc->done();
+  }
+
+  mutex.lock();
+  task_count--;
+  mutex.unlock();
+
+  delete wargs;
+}
+
+void
+Container::
+addTask( void (*task)(void *), void * args ) {
+
+  mutex.lock();
+  task_count++;
+  mutex.unlock();
+
+  Wargs *wargs = new Wargs();
+  wargs->taskc = NULL;  
+  wargs->task = task;
+  wargs->args = args;
+  pthread_workqueue_additem_np(m_workqueues[HIGH_PRI_Q], taskWrapper, wargs, NULL, NULL);    
+}
+
+
+
+void
+Container::
+addTask( OCPI::RCC::RCCUserTask * task ) {
+  mutex.lock();
+  task_count++;
+  mutex.unlock();
+
+  Wargs *wargs = new Wargs();
+  wargs->taskc = task;
+  wargs->args = NULL;
+  pthread_workqueue_additem_np(m_workqueues[HIGH_PRI_Q], taskWrapper, wargs, NULL, NULL);    
 }
 
 volatile int ocpi_dbg_run=0;

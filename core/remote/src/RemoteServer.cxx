@@ -34,6 +34,12 @@ namespace OCPI {
     ~Server() {
       ezxml_free(m_rx);
       ezxml_free(m_lx);
+      
+      std::vector<OCPI::Container::Application *>::iterator it;
+      for (it=containerApps.begin(); it != containerApps.end(); it++ ) {
+	delete (*it);
+      }
+
     }
 
     bool Server::
@@ -166,10 +172,8 @@ namespace OCPI {
     // This might happen in "launch" if all the artifacts are already present.
     bool Server::
     doLaunch(std::string &error) {
-      std::vector<OC::Container *> containers;
-      std::vector<OC::Application *> containerApps;
-      containers.resize(OX::countChildren(m_lx, "container"));
-      containerApps.resize(containers.size());
+      containers.resize(OX::countChildren(m_lx, "container"),0);
+      containerApps.resize(containers.size(),0);
       unsigned n = 0;
       for (ezxml_t cx = ezxml_cchild(m_lx, "container"); cx; cx = ezxml_next(cx), n++) {
 	const char *name = ezxml_cattr(cx, "name");
@@ -375,8 +379,11 @@ namespace OCPI {
 	    w.getPropertyValue(p, m_response, hex, true);
 	  else
 	    w.setPropertyValue(p, m_response);
-	} else if (op)
+	} else if (op) {
+
+	  printf("******* &&&&&& Got a control op !!, op = %d\n", op );
 	  w.controlOp((OU::Worker::ControlOperation)n);
+	}
 	else if (wait)
 	  if (n) {
 	    OS::Timer t(OCPI_UTRUNCATE(uint32_t, n), 0);

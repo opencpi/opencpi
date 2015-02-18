@@ -136,11 +136,10 @@ getResourceValuesFromString( const char* ep,
 			     size_t* size)
 {
   const char *semi = strrchr(ep, ';');
-
-  if (!semi ||
-      sscanf(semi+1, "%zu.%" SCNu16 ".%" SCNu16,
-	     size, mailBox, maxMb) != 3)
-    throw OU::Error("Invalid endpoint: %s", ep);
+  if (!semi || sscanf(semi+1, "%zu.%" SCNu16 ".%" SCNu16,
+		      size, mailBox, maxMb) != 3) {
+      throw OU::Error("Invalid endpoint: %s", ep);
+  }
 }
 
 void EndPoint::
@@ -256,7 +255,7 @@ finalize(EndPoint &ep) {
     if (sMemResourceMgr->alloc( sizeof(ContainerComms), 0, &offset) != 0)
       throw OCPI::Util::EmbeddedException(  NO_MORE_SMB, ep.end_point.c_str() );
     m_comms = static_cast<ContainerComms*>
-      (sMemServices->map(offset, sizeof(ContainerComms)));
+      (sMemServices->mapTx(offset, sizeof(ContainerComms)));
   }
 }
 

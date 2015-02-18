@@ -158,7 +158,7 @@ void OCPI::DataTransport::Port::initialize()
 
   // map our meta-data
   m_portDependencyData.offsets = static_cast<PortMetaData::BufferOffsets*>
-    (m_localSMemResources->sMemServices->map 
+    (m_localSMemResources->sMemServices->mapRx 
      (m_offsetsOffset, 
       sizeof(PortMetaData::BufferOffsets)*m_bufferCount));
 
@@ -889,7 +889,7 @@ bool OCPI::DataTransport::Port::ready()
 		    (unsigned long long)protocolOffset, (unsigned long)protocolSize);
 	  // protocolSize from the circuit is set by the incoming request from the client,
 	  // and cleared when the information is stashed into the circuit.
-	  void *myProtocolBuffer = s_res->sMemServices->map(protocolOffset, protocolSize);
+	  void *myProtocolBuffer = s_res->sMemServices->mapRx(protocolOffset, protocolSize);
 	  // This string constructor essentially copies the info into the string
 	  char *copy = new char[protocolSize];
 	  memcpy(copy, myProtocolBuffer, protocolSize);

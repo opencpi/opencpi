@@ -28,6 +28,10 @@
 #include "fasttime_private.h"
 #include "calibration.h"
 
+
+extern void get_tick_count( tick_t * );
+extern void atomic_inc( unsigned  * );
+
 /* Opaque context structure */
 struct _fasttime_context_t {
     int method;         /* Method in use -- one of FASTTIME_METHOD_* */
