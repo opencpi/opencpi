@@ -39,6 +39,9 @@ endif
 # simply set those variables again
 ComponentLibrariesInternal:=$(call HdlAdjustLibraries,$(ComponentLibraries))
 HdlLibrariesCommand:=$(call HdlAdjustLibraries,$(HdlLibraries))
+ifndef Assemblies
+Assemblies=$(shell for i in *; do if test -d $$i; then echo $$i; fi; done)
+endif
 all: $(Assemblies)
 
 .PHONY: $(Assemblies) $(Platforms) $(Targets) clean
