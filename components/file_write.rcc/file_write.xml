@@ -1,9 +1,15 @@
-<!-- 
-The file writer writes a file from data it recieves on its input
-Properties:
- messagesInFile: indicates that messages, including length and opcode, should be written in the file
--->
-<RccImplementation controloperations="start,release">
-  <xi:include href="file_write_spec.xml"/>
+<!-- The file writer writes a file from data it receives on its input -->
+<RccWorker controloperations="start,release" scalable='true' spec='file_write_spec'>
   <specproperty name="fileName" readable='true'/>
-</RccImplementation>
+  <!-- internal port to communicate EOF from the (random) member who encounters it to
+       all members, which signals them all to terminate properly. -->
+  <port name='in' distribution='cyclic'/> <!-- this is really the default -->
+  <port internal='eof' bufferCount='1' indistribution='all' outdistribution='random'>
+    <protocol>
+      <operation name='eof'>
+	<argument name='fileLength' type='ulonglong'/>
+      </operation>
+    </protocol>
+  </port>
+</RccWorker>
+

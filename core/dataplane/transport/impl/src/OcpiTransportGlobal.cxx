@@ -99,11 +99,13 @@ void TransportGlobal::init()
     m_gen_pat1AFCShadow = NULL;
     m_gen_temp_gen = NULL;
     m_gen_pat1 = NULL;
+    m_gen_pat1passive = NULL;
     m_gen_pat2 = NULL;
     m_gen_pat3 = NULL;
     m_gen_pat4 = NULL;
     m_gen_control = NULL;
     m_cont1 = NULL;
+    m_cont1passive = NULL;
     m_cont1AFCShadow = NULL;
     m_cont2 = NULL;
     m_cont3 = NULL;
@@ -155,11 +157,13 @@ TransportGlobal::~TransportGlobal()
   delete m_gen_pat1AFCShadow;
   delete m_gen_temp_gen;
   delete m_gen_pat1;
+  delete m_gen_pat1passive;
   delete m_gen_pat2;
   delete m_gen_pat3;
   delete m_gen_pat4;
   delete m_gen_control;
   delete m_cont1;
+  delete m_cont1passive;
   delete m_cont1AFCShadow;
   delete m_cont2;
   delete m_cont3;

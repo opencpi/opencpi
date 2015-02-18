@@ -9,4 +9,6 @@
     <property name='bytesWritten' type='uLongLong' volatile='true'/>
     <property name='messagesWritten' type='uLongLong' volatile='true'/>
     <property name='stopOnEOF' type='bool' initial='true' default='true'/>
+    <!-- Fixed message size if messagesInFile is false.  Required if scaled -->
+    <property name='messageSize' type='ulong' readable='true' initial='true' default='0'/>
   </ComponentSpec>

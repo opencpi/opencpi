@@ -50,27 +50,24 @@ namespace OC = OCPI::Container;
 namespace OA = OCPI::API;
 namespace OU = OCPI::Util;
 namespace OD = OCPI::DataTransport;
+namespace OR = OCPI::RDT;
 namespace DTM = DataTransfer::Msg;
 
 namespace OCPI {
   namespace RCC {
 
     Port::
-    Port( Worker& w, const OU::Port & pmd, const OU::PValue *params, RCCPort &rp)
-      :  OC::PortBase< Worker, Port, ExternalPort>
-	 (w, *this, pmd, pmd.m_provider,
-	  (1 << OCPI::RDT::ActiveFlowControl) | (1 << OCPI::RDT::ActiveMessage),
-	  params),
-	 m_dtPort(NULL), m_localOther(NULL), //m_params(params),
-	 m_mode(OC::Port::CON_TYPE_NONE), m_rccPort(rp), m_buffer(NULL), m_wantsBuffer(true)
+    Port(Worker& w, const OU::Port & pmd, const OU::PValue *params, RCCPort &rp)
+      :  OC::PortBase<Worker, Port, OCPI::RCC::ExternalPort>(w, *this, pmd, params),
+	 /*m_dtPort(NULL), */m_localOther(NULL), //m_params(params),
+	 m_rccPort(rp), m_buffer(NULL), m_wantsBuffer(true)
     {
-      // FIXME: deep copy params?
     }
 
     Port::
     ~Port()
     {
-      disconnect();
+      //      disconnect();
     }
     void Port::
     error(std::string &e) {
@@ -78,9 +75,11 @@ namespace OCPI {
     }
 
     void Port::
-    connectURL(const char* url, const OU::PValue *myProps,
-	       const OU::PValue *otherProps)
+    connectURL(const char */*url*/, const OU::PValue */*myParams*/, const OU::PValue */*otherProps*/)
     {
+    }
+#if 0
+{
       setMode(OCPI::Container::Port::CON_TYPE_MESSAGE);
       
       // See if we have a message driver that is capable of handling this message type
@@ -93,7 +92,6 @@ namespace OCPI {
       m_dtPort = NULL; // msgService->getMsgChannel(url,myProps,otherProps);
       parent().portIsConnected(ordinal());
     }
-
     // We are being told by our local peer that they are being disconnected.
     void Port::
     disconnectInternal( ) {
@@ -144,15 +142,38 @@ namespace OCPI {
 		   const OU::PValue *extParams, const OU::PValue *connParams) {
       return *new ExternalPort(*this, extName, isProvider, extParams, connParams);
     }
+#endif
 
-    // For an output port, other == NULL signifies the collocated special case
+    // We use the default behavior of basic ports, but do some
+    const OR::Descriptors *Port::
+    startConnect(const OR::Descriptors *other, bool &done) {
+      const OR::Descriptors *result = OC::Port::startConnect(other, done);
+      if (done)
+	parent().portIsConnected(ordinal());
+      return result;
+    }
+    const OR::Descriptors *Port::
+    finishConnect(const OR::Descriptors *other, OR::Descriptors &buf, bool &done) {
+      const OR::Descriptors *result = OC::Port::finishConnect(other, buf, done);
+      if (done)
+	parent().portIsConnected(ordinal());
+      return result;
+    }
     void Port::
-    startConnect(const OCPI::RDT::Descriptors *other, const OU::PValue *params) {
+    portIsConnected() {
+      parent().portIsConnected(ordinal());
+      if (!(m_rccPort.connectedCrewSize = nOthers()))
+	m_rccPort.connectedCrewSize = 1;
+    }
+
+#if 0
+    void Port::
+    startConnect(const OR::Descriptors *other, const OU::PValue *params) {
       ocpiAssert(m_mode == CON_TYPE_NONE);
       setMode(CON_TYPE_RDMA);
       ocpiAssert(!m_dtPort);
       if (isProvider())
-	m_dtPort = parent().getTransport().createInputPort(getData().data, params );
+	m_dtPort = parent().getTransport().createInputPort(getData().data);
       else if (other)
 	m_dtPort = parent().getTransport().createOutputPort(getData().data, *other);
       if (m_dtPort) {
@@ -173,42 +194,77 @@ namespace OCPI {
       m_dtPort->setInstanceName( n.c_str() ); // FIXME: put this in the dt port constructor
       parent().portIsConnected(ordinal());
     }
-    const OCPI::RDT::Descriptors *Port::
-    finishConnect(const OCPI::RDT::Descriptors &other,
-		  OCPI::RDT::Descriptors &feedback) {
-      const OCPI::RDT::Descriptors *d = NULL;
-      if (isProvider())
-	m_dtPort->finalize(other, getData().data);
-      else
-	d = m_dtPort->finalize(other, getData().data, &feedback);
+    const OR::Descriptors *Port::
+    finishConnect(const OR::Descriptors *other, OR::Descriptors &feedback, bool &done) {
+      const OR::Descriptors *d = m_dtPort->finalize(other, getData().data, &feedback, done);
       parent().portIsConnected(ordinal());
+      m_lastBuffer.m_dtPort = m_dtPort;
       return d;
     }
 
     // The input/other is already started via startConnect
     void Port::
-    connectInside(OC::Port & input, const OU::PValue *myParams, const OU::PValue *otherParams)
+    connectInside(OC::Port &input, const OU::PValue *myParams, const OU::PValue *otherParams)
     {
       Port &myInput = *static_cast<Port *>(&input);
       ocpiAssert(!m_dtPort);
       // start up the output side with no input information - just for params
       setConnectParams(myParams);
       // We forcibly ignore mandatory transfer roles here:
-      input.getData().data.options &= ~OCPI::RDT::MandatedRole;
-      getData().data.options |= OCPI::RDT::MandatedRole;
-      getData().data.role = OCPI::RDT::ActiveMessage;
+      input.getData().data.options &= ~OR::MandatedRole;
+      getData().data.options |= OR::MandatedRole;
+      getData().data.role = OR::ActiveMessage;
       // Perform the final negotiation between the input side with all its
       determineRoles(input.getData().data);
       input.startConnect(NULL, otherParams);
       startConnect(NULL, myParams);
       // Setup the output port, providing the collocated input port info, but NOT finalizing
       localConnect(input.dtPort());
-      OCPI::RDT::Descriptors feedback;
-      const OCPI::RDT::Descriptors *outDesc;
-      if ((outDesc = finishConnect(input.getData().data, feedback)))
-	myInput.finishConnect(*outDesc, feedback);
+      OR::Descriptors feedback;
+      const OR::Descriptors *outDesc;
+      bool done;
+      if ((outDesc = finishConnect(&input.getData().data, feedback, done)))
+	myInput.finishConnect(outDesc, feedback, done);
       m_localOther = &myInput;
       myInput.m_localOther = this;
     }
+    // These directly access the "back side" of a worker port.
+    // Get a buffer that the worker member has produced
+    OA::ExternalBuffer *Port::
+    getBuffer(uint8_t *&data, size_t &length, uint8_t &opCode, bool &end) {
+      assert(!isProvider() && !m_lastBuffer.m_dtBuffer);
+      end = false;
+      return (m_lastBuffer.m_dtBuffer = m_dtPort->getNextFullOutputBuffer(data, length, opCode)) ?
+	&m_lastBuffer : NULL;
+      return NULL;
+    }
+    // Get a buffer that the worker member will consume
+    OA::ExternalBuffer *Port::
+    getBuffer(uint8_t *&data, size_t &length) {
+      assert(isProvider() && !m_lastBuffer.m_dtBuffer);
+      return (m_lastBuffer.m_dtBuffer = m_dtPort->getNextEmptyInputBuffer(data, length)) ?
+	&m_lastBuffer : NULL;
+    }
+    void Port::
+    release(OCPI::API::ExternalBuffer &b) {
+      assert(!isProvider() && m_lastBuffer.m_dtBuffer && &m_lastBuffer == &b);
+      m_dtPort->releaseOutputBuffer(*m_lastBuffer.m_dtBuffer);
+      m_lastBuffer.m_dtBuffer = NULL;
+    }
+    void Port::
+    put(OCPI::API::ExternalBuffer &b, size_t length, uint8_t opCode, bool /*endOfData*/) {
+      assert(isProvider() && m_lastBuffer.m_dtBuffer && &b == &m_lastBuffer);
+      m_dtPort->sendInputBuffer(*m_lastBuffer.m_dtBuffer, length, opCode);
+      m_lastBuffer.m_dtBuffer = NULL;
+    }
+    // Indicate EOF on worker member's input port
+    void Port::
+    endOfData() {
+    }
+    bool Port::
+    tryFlush() {
+      return false;
+    }
+#endif
   }
 }

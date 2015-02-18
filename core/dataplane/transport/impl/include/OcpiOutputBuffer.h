@@ -161,6 +161,7 @@ namespace OCPI {
 	// This is a local operation
 	ocpiDebug("Mark output buffer full: %p before %x", &m_state[0][m_pid].bufferIsEmpty, m_state[0][m_pid].bufferIsEmpty);
         m_state[0][m_pid].bufferIsEmpty = EF_FULL_VALUE;
+	assert(inUse());
         setInUse(false);
 	ocpiDebug("Mark output buffer full: after %x", m_state[0][m_pid].bufferIsEmpty);
       }

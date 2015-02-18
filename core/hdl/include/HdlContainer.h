@@ -32,8 +32,9 @@ namespace OCPI {
 	  m_lastTick;
       }
     protected:
-      inline HDL::Device &hdlDevice() { return m_device; }
+      inline HDL::Device &hdlDevice() const { return m_device; }
     public:
+      bool connectInside(OCPI::Container::BasicPort &in, OCPI::Container::BasicPort &out);
       void start();
       void stop();
       OCPI::Container::Artifact &
@@ -42,6 +43,10 @@ namespace OCPI {
 	createApplication(const char *name, const OCPI::Util::PValue *props)
 	throw ( OCPI::Util::EmbeddedException );
       bool needThread();
+#if 0
+      const char * preferredTransport(bool remote, bool producer, OCPI::RDT::PortRole &role,
+				      uint32_t &options) const;
+#endif
     };
   }
 }

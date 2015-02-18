@@ -1,9 +1,9 @@
-<application done='file_write'>
+<application done='file_write' package='ocpi'>
   <instance component='pattern'>
     <property name='control' value='3'/>
     <property name='metadataCount' value='4'/>
     <property name='messagesToSend' value='4'/>
-    <property name='metadata' value='{4,0,0,0}{8,1,0,0}{12,2,0,0}{0,0,0,0}'/>
+    <property name='metadata' value='{4,0,0,0},{8,1,0,0},{12,2,0,0},{0,0,0,0}'/>
     <property name='data' value='1,2,3,4,5,6'/>
   </instance>
   <instance component='bias'>

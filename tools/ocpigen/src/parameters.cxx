@@ -36,29 +36,42 @@ parse(ezxml_t px, const OU::Property *argParam) {
 }
 
 ParamConfig::
-ParamConfig() : nConfig(0), used(false) {}
+ParamConfig(Worker &w) : m_worker(w), nConfig(0), used(false) {}
 
 ParamConfig::
 ParamConfig(const ParamConfig &other)
-  : params(other.params), id(other.id), nConfig(other.nConfig), used(other.used) {
+  : m_worker(other.m_worker), params(other.params), id(other.id), nConfig(other.nConfig),
+    used(other.used) {
 }
 
 const char *ParamConfig::
-parse(Worker &w, ezxml_t cx) {
+parse(ezxml_t cx) {
   const char *err;
   if ((err = OE::getNumber(cx, "id", &nConfig, NULL, 0, false, true)))
     return err;
   OU::format(id, "%zu", nConfig);
-  params.resize(w.m_ctl.nParameters);
+  params.resize(m_worker.m_ctl.nParameters);
   for (ezxml_t px = ezxml_cchild(cx, "parameter"); px; px = ezxml_next(px)) {
     std::string name;
     size_t nParam;
     OU::Property *p;
     if ((err = OE::getRequiredString(px, name, "name")) ||
-	(err = w.findParamProperty(name.c_str(), p, nParam)) ||
+	(err = m_worker.findParamProperty(name.c_str(), p, nParam)) ||
+	(err = p->finalize(*this, false)) ||
 	(err = params[nParam].parse(px, p)))
       return err;
   }
+  return NULL;
+}
+
+const char *ParamConfig::
+getValue(const char *sym, OU::ExprValue &val) const {
+  OU::Property *prop;
+  size_t nParam; // FIXME not needed since properties have m_paramOrdinal?
+  const char *err;
+  if ((err = m_worker.findParamProperty(sym, prop, nParam)) ||
+      (err = extractExprValue(*prop, *params[nParam].value, val)))
+    return err;
   return NULL;
 }
 
@@ -77,7 +90,7 @@ paramValue(const OU::Member &param, OU::Value &v, std::string &value) {
   return NULL;
 }
 void ParamConfig::
-write(Worker &w, FILE *xf, FILE *mf) {
+write(FILE *xf, FILE *mf) {
   if (xf)
     fprintf(xf, "  <configuration id='%s'>\n", id.c_str());
   for (unsigned n = 0; n < params.size(); n++) {
@@ -85,7 +98,7 @@ write(Worker &w, FILE *xf, FILE *mf) {
     if (used) {
       // Put out the Makefile value lines
       std::string val;
-      if (w.m_model == HdlModel) {
+      if (m_worker.m_model == HdlModel) {
 	std::string typeDecl, type;
 	vhdlType(*p.value->m_vt, typeDecl, type);
 	//	if (typeDecl.length())
@@ -98,7 +111,7 @@ write(Worker &w, FILE *xf, FILE *mf) {
 	else
 	  fprintf(mf, "%s", type.c_str());
 	fprintf(mf, " := ");
-	for (const char *cp = w.hdlValue(p.param->m_name, *p.value, val, false, VHDL);
+	for (const char *cp = m_worker.hdlValue(p.param->m_name, *p.value, val, false, VHDL);
 	     *cp; cp++) {
 	  if (*cp == '#' || *cp == '\\' && !cp[1])
 	    fputc('\\', mf);
@@ -108,7 +121,7 @@ write(Worker &w, FILE *xf, FILE *mf) {
 	fprintf(mf, "ParamVerilog_%zu_%s:=parameter [%zu:0] %s = ",
 		nConfig, p.param->m_name.c_str(), rawBitWidth(*p.param) - 1,
 		p.param->m_name.c_str());
-	for (const char *cp = w.hdlValue(p.param->m_name, *p.value, val, true, Verilog);
+	for (const char *cp = m_worker.hdlValue(p.param->m_name, *p.value, val, true, Verilog);
 	     *cp; cp++) {
 	  if (*cp == '#' || *cp == '\\' && !cp[1])
 	    fputc('\\', mf);
@@ -117,7 +130,7 @@ write(Worker &w, FILE *xf, FILE *mf) {
 	fputs("\n", mf);
       } else {
 	fprintf(mf, "Param_%zu_%s:=", nConfig, p.param->m_name.c_str());
-	for (const char *cp = w.paramValue(*p.param, *p.value, val); *cp; cp++) {
+	for (const char *cp = m_worker.paramValue(*p.param, *p.value, val); *cp; cp++) {
 	  if (*cp == '#' || *cp == '\\' && !cp[1])
 	    fputc('\\', mf);
 	  fputc(*cp, mf);
@@ -167,12 +180,12 @@ parseConfigFile(const char *dir) {
   std::string empty;
   if ((err = parseFile(fname.c_str(), empty, "build", &x, empty, true, false)))
     return err;
-  unsigned nConfigs = OE::countChildren(x, "configuration");
-  m_paramConfigs.resize(nConfigs);
-  ParamConfig *pc = &m_paramConfigs[0];
-  for (ezxml_t cx = ezxml_cchild(x, "configuration"); cx; cx = ezxml_next(cx), pc++)
-    if ((err = pc->parse(*this, cx)))
+  for (ezxml_t cx = ezxml_cchild(x, "configuration"); cx; cx = ezxml_next(cx)) {
+    ParamConfig *pc = new ParamConfig(*this);
+    if ((err = pc->parse(cx)))
       return err;
+    m_paramConfigs.push_back(pc); // FIXME...emplace_back for C++11
+  }
   return NULL;
 }
 
@@ -180,17 +193,13 @@ parseConfigFile(const char *dir) {
 // Add it if it is new
 const char *Worker::
 addConfig(ParamConfig &info, size_t &nConfig) {
-  ParamConfigs &pcs = m_paramConfigs;
   // Check that the configuration we have is not already in the existing file
-  if (!pcs.empty()) {
-    ParamConfig *pc = &pcs[0];
-    for (size_t n = pcs.size(); n; n--, pc++)
-      if (pc->equal(info)) {
-	// Mark the old config as used so it will be written to the Makefile
-	pc->used = true;
-	return NULL;
-      }
-  }
+  for (unsigned n = 0; n < m_paramConfigs.size(); n++)
+    if (m_paramConfigs[n]->equal(info)) {
+      // Mark the old config as used so it will be written to the Makefile
+      m_paramConfigs[n]->used = true;
+      return NULL;
+    }
   info.nConfig = nConfig++;
   OU::format(info.id, "%zu", info.nConfig);
   // We have a new one, so we know we will be writing out the XML file
@@ -205,8 +214,9 @@ addConfig(ParamConfig &info, size_t &nConfig) {
       return err;
     fprintf(m_xmlFile, "<build>\n");
   }
-  info.used = true;
-  pcs.push_back(info);  // This basically copies/snapshots the conf.
+  ParamConfig *newpc = new ParamConfig(info);
+  newpc->used = true;
+  m_paramConfigs.push_back(newpc);
   return NULL;
 }
 
@@ -218,37 +228,46 @@ doParam(ParamConfig &info, PropertiesIter pi, unsigned nParam, size_t &nConfig) 
     addConfig(info, nConfig);
   else {
     Param &p = info.params[nParam];
+    OU::Property &prop = **pi;
     pi++;
+    nParam++;
     for (unsigned n = 0; n < p.values.size(); n++) {
-      p.value = p.values[n];
-      p.value->unparse(p.uValue);
       const char *err;
-      if ((err = doParam(info, pi, nParam + 1, nConfig)))
+      p.value = new OU::Value(prop);
+      if ((err = prop.finalize(info, false)) ||
+	  (err = prop.parseValue(p.values[n].c_str(), *p.value)))
+	return err;
+      p.value->unparse(p.uValue); // make the canonical value
+      if ((err = doParam(info, pi, nParam, nConfig)))
 	return err;
     }
   }
   return NULL;
 }
 
- static const char *
+static void // const char *
 addValue(OU::Property &p, const char *start, const char *end, Values &values) {
+#if 0
    OU::Value *v = new OU::Value();
    const char *err = p.parseValue(start, *v, end);
    if (err)
      delete v;
    else {
-     values.push_back(v);
+#endif
+     std::string sval(start, end - start);
+     values.push_back(sval);
      ocpiDebug("Adding a value for the %s parameter: \"%.*s\"",
 	       p.m_name.c_str(), (unsigned)(end - start), start);
+#if 0
    }
    return err;
+#endif
  }
 
-static const char *
+static void
 addValues(OU::Property &p, Values &values, bool hasValues, const char *content) {
   // The text content is now undone with XML-quoting, but if there are
   // multiple values, we have to look for slashes unprotected by backslash.
-  const char *err = NULL;
   while (*content == '\n')
     content++;
   const char *end = content + strlen(content);
@@ -261,14 +280,12 @@ addValues(OU::Property &p, Values &values, bool hasValues, const char *content) 
 	if (*ep == '\\')
 	  if (++ep == end)
 	    break;
-      if ((err = addValue(p, cp, ep, values)))
-	break;
+      addValue(p, cp, ep, values);
       if (*ep && *ep != '\n')
 	ep++;
     }
   } else
-    err = addValue(p, content, end, values);
-  return err;
+    addValue(p, content, end, values);
 }
 
 static const char *
@@ -300,10 +317,11 @@ emitToolParameters() {
       (err = parseRawParams(x)) ||
       (err = openOutput(m_fileName.c_str(), m_outDir, "", "-params", ".mk", NULL, m_mkFile)))
     return err;
-  ParamConfig info;                          // Current config for generating them
-  //  info.nConfig = m_paramConfigs.size();  // start counting after existing ones
+  ParamConfig info(*this);                          // Current config for generating them
   size_t nConfig = m_paramConfigs.size();
   info.params.resize(m_ctl.nParameters);
+  // This loop has parameters as the outer loop, and possible values for each parameter
+  // as the inner loop.
   for (ezxml_t px = ezxml_cchild(x, "parameter"); px; px = ezxml_next(px)) {
     std::string name;
     bool hasValues;
@@ -316,10 +334,10 @@ emitToolParameters() {
     if ((err = findParamProperty(name.c_str(), p, nParam)))
       fprintf(stderr,
 	      "Warning: parameter '%s' ignored due to: %s", name.c_str(), err);
-    else if ((err = addValues(*p, info.params[nParam].values, hasValues, ezxml_txt(px))))
-      return err;
+    addValues(*p, info.params[nParam].values, hasValues, ezxml_txt(px));
   }
-  // Fill in default values
+  // Fill in default values when there are no values specified for a given parameter.
+  // i.e. for this parameter, make the single value for all configs the default value
   Param *par = &info.params[0];
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
     if ((*pi)->m_isParameter) {
@@ -329,21 +347,24 @@ emitToolParameters() {
 	  return OU::esprintf("The parameter property '%s' has no value and no default value",
 			      (*pi)->m_name.c_str());
 	//	assert((*pi)->m_default);
-	par->values.push_back((*pi)->m_default);
+	std::string sval;
+	(*pi)->m_default->unparse(sval);
+	par->values.push_back(sval);
       }
       par++;
     }
   // Generate all configurations, merging with existing, keeping existing ones
   // in the same position.
-  doParam(info, m_ctl.properties.begin(), 0, nConfig);
+  if ((err = doParam(info, m_ctl.properties.begin(), 0, nConfig)))
+    return err;
   // Write the makefile as well as the xml file if anything was added
   fprintf(m_mkFile, "ParamConfigurations:=");
   for (size_t n = 0; n < m_paramConfigs.size(); n++)
-    if (m_paramConfigs[n].used)
+    if (m_paramConfigs[n]->used)
       fprintf(m_mkFile, "%s%zu", n ? " " : "", n);
   fprintf(m_mkFile, "\n");
   for (size_t n = 0; n < m_paramConfigs.size(); n++)
-    m_paramConfigs[n].write(*this, m_xmlFile, m_mkFile);
+    m_paramConfigs[n]->write(m_xmlFile, m_mkFile);
   if (m_xmlFile)
     fprintf(m_xmlFile, "</build>\n");
   ocpiDebug("m_xmlFile closing %p m_mkFile closing %p", m_xmlFile, m_mkFile);
@@ -423,7 +444,7 @@ setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig) {
     return OU::esprintf("Parameter configuration %zu exceeds available configurations (%zu)",
 			paramConfig, m_paramConfigs.size());
   if (!instancePVs || instancePVs->size() == 0) {
-    m_paramConfig = &m_paramConfigs[paramConfig];
+    m_paramConfig = m_paramConfigs[paramConfig];
     return NULL;
   }
   size_t low, high;
@@ -433,8 +454,8 @@ setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig) {
     low = 0, high = m_paramConfigs.size() - 1;
   // At this point we know we have configurations and values to match against them
   // Scan the configs until one matches. FIXME: use scoring via selection expression...
-  ParamConfig *pc = &m_paramConfigs[low];
-  for (size_t n = low; n <= high; n++, pc++) {
+  for (size_t n = low; n <= high; n++) {
+    ParamConfig *pc = m_paramConfigs[n];
     OU::Assembly::Property *ap = &(*instancePVs)[0];
     for (unsigned nn = 0; nn < instancePVs->size(); nn++, ap++)
       if (ap->m_hasValue) {

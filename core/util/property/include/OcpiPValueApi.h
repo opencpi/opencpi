@@ -48,6 +48,7 @@
 #ifndef OCPI_PVALUE_API_H
 #define OCPI_PVALUE_API_H
 
+#include <cstdlib>
 #include "OcpiUtilDataTypesApi.h"
 
 namespace OCPI {
@@ -64,6 +65,10 @@ namespace OCPI {
 	: name(aName), type(aType), owned(false) {}
       inline PValue()
 	: name(0), type(OCPI_none), owned(false) {}
+      ~PValue() { if (owned) free((void*)value.vString); }
+      PValue(const PValue &p);
+      PValue & operator=(const PValue * p );
+      PValue & operator=(const PValue & p );
       unsigned length() const;
       const std::string &unparse(std::string &value, bool append = false) const;
       const char *name; // NULL name is end of list
@@ -74,7 +79,7 @@ namespace OCPI {
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) run v##pretty;
 	OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
-      };
+      } value;
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) friend class PV##pretty;
       OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE  
@@ -86,7 +91,7 @@ namespace OCPI {
       PValue(aname,						 \
 	     OCPI_##pretty/*,					 \
 			    sizeof(v##pretty)*/) {		 \
-	v##pretty = (run)val;					 \
+	value.v##pretty = (run)val;					 \
       }								 \
     };
     OCPI_PROPERTY_DATA_TYPES

@@ -135,19 +135,49 @@ vhdlBaseType(const OU::ValueType &dt, std::string &s, bool convert) {
 static void
 vhdlArrayType(const OU::ValueType &dt, size_t rank, const size_t *dims, std::string &s,
 	      bool convert) {
-  if (convert)
+  if (convert) {
     OU::formatAdd(s, "std_logic_vector(%zu downto 0)", dt.m_nItems * rawBitWidth(dt) - 1);
-  else if (dt.m_baseType == OA::OCPI_String) 
-    OU::formatAdd(s,
-		  "type %%s_t is array(0 to %zu) of string_t(0 to %zu)",
-  		  dims[0] - 1, dt.m_stringLength);
-  else {
-    s += "type %s_t is array";
-    for (unsigned i = 0; i < rank; i++)
-      OU::formatAdd(s, "%s0 to %zu", i == 0 ? "(" : ", ", dims[i] - 1);
-    s += ") of ";
-    vhdlBaseType(dt, s, convert);
+    return;
   }
+  //  else if (dt.m_baseType == OA::OCPI_String) {
+  //    OU::formatAdd(s,
+  //		  "type %%s_t is array(0 to natural range <>) of string_t(0 to %zu)",
+  //		  dt.m_stringLength);
+  //		  //"type %%s_t is array(0 to %zu) of string_t(0 to %zu)",
+  //		  //  		  dims[0] - 1, dt.m_stringLength);
+  //    else {
+  rank = dt.m_arrayRank + (dt.m_isSequence ? 1 : 0);
+  s += "type %s_t is array (";
+  for (unsigned i = 0; i < rank; i++) {
+    std::string asize;
+    size_t dim = i >= dt.m_arrayRank ? dt.m_sequenceLength : dt.m_arrayDimensions[i];
+    static std::string null;
+    std::string expr =
+      i >= dt.m_arrayRank ? dt.m_sequenceLengthExpr :
+      (i < dt.m_arrayDimensionsExprs.size() ? dt.m_arrayDimensionsExprs[i] : null);
+    if (expr.empty())
+      OU::format(asize, "0 to %zu", dim-1);
+    else
+      asize = "natural range <>";
+
+      //      asize = expr; // for now simply expressions should work;
+    // allow parameter values to determine the size of the array
+    //      OU::formatAdd(s, "%s0 to %zu", i ? ", " : "", dims[i] - 1);
+    OU::formatAdd(s, "%s%s", i ? ", " : "", asize.c_str());
+  }
+  s += ") of ";
+  if (dt.m_baseType == OA::OCPI_String) {
+    s += "string_t(0 to ";
+    if (dt.m_stringLengthExpr.empty())
+      OU::formatAdd(s, "%zu", dt.m_stringLength);
+    else {
+      fprintf(stderr, "strlenexp:%s\n", dt.m_stringLengthExpr.c_str());
+      ocpiCheck("arrays of strings must have fixed stringlength"==0);
+    }
+    //      s += dt.m_stringLengthExpr; // for now simply expressions should work;
+    s += ")";
+  } else
+    vhdlBaseType(dt, s, convert);
 }
 // Only put out types that have parameters, otherwise the
 // built-in types are used.
@@ -1042,10 +1072,15 @@ emitVhdlSignalWrapper(FILE *f, const char *topinst) {
 	    m_implName);
     // Insert the conversion functions as needed
     for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
-      if ((*pi)->m_isParameter && (*pi)->m_baseType == OA::OCPI_String && (*pi)->m_arrayRank)
+      if ((*pi)->m_isParameter && (*pi)->m_baseType == OA::OCPI_String && (*pi)->m_arrayRank) {
+	std::string alen;
+	if ((*pi)->m_arrayDimensionsExprs.size())
+	  OU::format(alen, "to_integer(unsigned(%s))-1", (*pi)->m_arrayDimensionsExprs[0].c_str());
+	else
+	  OU::format(alen, "%zu-1", (*pi)->m_arrayDimensions[0]);
 	fprintf(f,
 		  "  function to_%s_t(v: std_logic_vector; length : natural) return %s_t is\n"
-		  "    variable a : %s_t;\n"
+		  "    variable a : %s_t(0 to %s);\n"
 		  "  begin\n"
 		  "    for i in 0 to a'right loop\n"
 		  "      for j in 0 to length loop\n"
@@ -1058,7 +1093,9 @@ emitVhdlSignalWrapper(FILE *f, const char *topinst) {
 		(*pi)->m_name.c_str(),
 		(*pi)->m_name.c_str(),
 		(*pi)->m_name.c_str(),
+		alen.c_str(),
 		(*pi)->m_name.c_str());
+      }
     fprintf(f,
 	    "begin\n"
 	    "  %s: entity work.%s_rv\n",

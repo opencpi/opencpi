@@ -183,10 +183,10 @@ struct RunCondition {
   ~RunCondition();
   // initialize the default run condition, given how many ports there are
   // assume default contructor has already been run
-  inline void initDefault(unsigned m_nPorts) {
-    m_myMasks[0] = ~(-1 << m_nPorts);
+  inline void initDefault(unsigned nPorts) {
+    m_myMasks[0] = ~(-1 << nPorts);
     m_myMasks[1] = 0;
-    m_portMasks = m_myMasks;
+    m_portMasks = nPorts ? m_myMasks : NULL;
     m_allMasks = m_myMasks[0];
   }
   // Compatibility hack to support older C-langage run conditions
@@ -230,15 +230,15 @@ typedef struct {
   size_t length_;
   RCCOpCode opCode_;
 #ifdef WORKER_INTERNAL
-  OCPI::DataTransport::BufferUserFacet *containerBuffer;
+  OCPI::RCC::Port *workerPort;
+  OCPI::API::ExternalBuffer *portBuffer;
 #else
-  void *id_; 
+  void *id_, *id1_; 
 #endif
 } RCCBuffer;
 
 struct RCCPort {
   RCCBuffer current;
-
   RCC_CONST struct {
     size_t length;
     union {
@@ -254,14 +254,14 @@ struct RCCPort {
     } u;
   } output;
   RCCPortMethod *callBack;
-
+  size_t connectedCrewSize;
   /* Used by the container */
   RCCBoolean useDefaultLength_; // for C++, use the length field as default
   size_t defaultLength_;
   RCCBoolean useDefaultOpCode_; // for C++, use the length field as default
   RCCOpCode defaultOpCode_;
 #ifdef WORKER_INTERNAL
-  OCPI::RCC::Port *containerPort;
+  OCPI::RCC::Port *workerPort;
 #else
   void* opaque;
 #endif
@@ -297,6 +297,9 @@ struct RCCWorker {
   RCCRunCondition        * runCondition;
   RCCPortMask              connectedPorts;
   char                   * errorString;
+  size_t                   member;
+  size_t                   crewSize;
+  RCCBoolean               firstRun;
   RCCPort                  ports[1];
 };
 
@@ -464,6 +467,7 @@ typedef struct {
    bool join(bool block=true);
 
  protected:
+   bool m_first;
    RCCWorker &m_rcc;
    RCCUserWorker();
    virtual ~RCCUserWorker();
@@ -471,6 +475,7 @@ typedef struct {
    // These are called by the worker.
 
    RCCUserPort &getPort(unsigned n) const { return m_ports[n]; }
+   inline bool firstRun() const { return m_first; };
    // access the current run condition
    const RunCondition *getRunCondition() const;
    // Change the current run condition - if NULL, revert to the default run condition

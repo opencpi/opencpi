@@ -797,33 +797,42 @@ namespace OCPI {
 	      ocpiDebug("sockaddr_dl: addr %2u alen %2u %2u %2u %2u", n,
 			sdl->sdl_len, sdl->sdl_nlen, sdl->sdl_alen, sdl->sdl_slen);
 	      ocpiAssert(sdl->sdl_nlen);
-	      ocpiDebug("iface sock type %u if type %u name: '%.*s' only: %s",
-			sdl->sdl_type, ifm->ifm_data.ifi_type, sdl->sdl_nlen, sdl->sdl_data,
-			only ? only : "\"\"");
+	      ocpiDebug("iface sock type %u if type %u ifphys %u name: '%.*s' only: %s",
+			sdl->sdl_type, ifm->ifm_data.ifi_type, ifm->ifm_data.ifi_physical, sdl->sdl_nlen,
+			sdl->sdl_data, only ? only : "\"\"");
 	      if ((ifm->ifm_data.ifi_type == IFT_ETHER ||
+		   ifm->ifm_data.ifi_type == IFT_LOOP ||
 		   ifm->ifm_data.ifi_type == IFT_BRIDGE) &&
 		  (!only || 	    
 		   (sdl->sdl_nlen == strlen(only) &&
 		    !strncmp(sdl->sdl_data, only, sdl->sdl_nlen)))) {
-		// PF_INET/SOCK_DGRAM since it works without root privileges.
-		int s = socket(PF_INET, SOCK_DGRAM, 0);
-		ocpiAssert(s);
-		struct ifmediareq ifmr;
-		memset(&ifmr, 0, sizeof(ifmr));
-		strncpy(ifmr.ifm_name, sdl->sdl_data, sdl->sdl_nlen);
-		ifmr.ifm_name[sdl->sdl_nlen] = 0;
-		ocpiCheck(ioctl(s, SIOCGIFMEDIA, &ifmr) == 0);
-		ocpiDebug("IFMEDIA: 0x%x:", ifmr.ifm_status);
-		if (sdl->sdl_alen && sdl->sdl_type == IFT_ETHER &&
-		    sdl->sdl_alen == Address::s_size) {
-		  i.connected =
-		    (ifmr.ifm_status & (IFM_AVALID|IFM_ACTIVE)) == (IFM_AVALID|IFM_ACTIVE);
-		  i.name.assign(sdl->sdl_data, sdl->sdl_nlen);
-		  i.addr.set(sdl->sdl_data + sdl->sdl_nlen);
-		  i.index = ifm->ifm_index;
-		  i.up = (ifm->ifm_flags & IFF_UP) != 0;
-		  ocpiDebug("ether: %s, up: %d connected: %d", i.addr.pretty(), i.up, i.connected);
+		i.name.assign(sdl->sdl_data, sdl->sdl_nlen);
+		i.index = ifm->ifm_index;
+		i.up = (ifm->ifm_flags & IFF_UP) != 0;
+		if (ifm->ifm_data.ifi_type == IFT_LOOP) {
+		  i.connected = true;
+		  ocpiDebug("loopback: %s, up: %d connected: %d", i.addr.pretty(), i.up, i.connected);
+		  i.addr.set(0,0);
 		  return true;
+		} else {
+		  // PF_INET/SOCK_DGRAM since it works without root privileges.
+		  int s = socket(PF_INET, SOCK_DGRAM, 0);
+		  ocpiAssert(s);
+		  struct ifmediareq ifmr;
+		  memset(&ifmr, 0, sizeof(ifmr));
+		  strncpy(ifmr.ifm_name, sdl->sdl_data, sdl->sdl_nlen);
+		  ifmr.ifm_name[sdl->sdl_nlen] = 0;
+		  ocpiCheck(ioctl(s, SIOCGIFMEDIA, &ifmr) == 0);
+		  close(s);
+		  ocpiDebug("IFMEDIA: 0x%x:", ifmr.ifm_status);
+		  if (sdl->sdl_alen && sdl->sdl_type == IFT_ETHER &&
+		      sdl->sdl_alen == Address::s_size) {
+		    i.connected =
+		      (ifmr.ifm_status & (IFM_AVALID|IFM_ACTIVE)) == (IFM_AVALID|IFM_ACTIVE);
+		    i.addr.set(sdl->sdl_data + sdl->sdl_nlen);
+		    ocpiDebug("ether: %s, up: %d connected: %d", i.addr.pretty(), i.up, i.connected);
+		    return true;
+		  }
 		}
 	      }
 	    }
@@ -839,7 +848,6 @@ namespace OCPI {
 	i.init();
 	Opaque &o = *(Opaque *)m_opaque;
 	if (m_index == 0) {
-	  m_index = 1;
 	  if (only && !strcmp(only, "udp")) {
 	    // The udp "pseudo-interface"
 	    i.addr.set(0, INADDR_ANY); // let the (one) socket have its own address
@@ -849,9 +857,9 @@ namespace OCPI {
 	    i.connected = true;
 	    return true;
 	  }
+	  if (!m_init && init(err))
+	    return false;
 	}
-	if (m_index == 1 && !m_init && init(err))
-	  return false;
 #ifdef OCPI_OS_macos
 	ocpiAssert(o.buffer);
 	// Loop through all messages until we have a good one.
@@ -882,7 +890,7 @@ namespace OCPI {
 	return found;
 #else
 	// Somewhat ugly and unscalable.  We can use the driver if needed.
-	for (; m_index <= 10; m_index++) {
+	while (++m_index < 10) {
 	  seekdir(o.dfd, o.start);
 	  struct dirent ent, *entp;
 	  while (readdir_r(o.dfd, &ent, &entp) == 0 && entp)
@@ -890,14 +898,17 @@ namespace OCPI {
 	      std::string s(NETIFDIR), addr;
 	      s += '/';
 	      s += entp->d_name;
-	      long nval, carrier, index;
+	      long nval, carrier, index, flags;
 
-	      if (getValue(s, "type", &nval) && nval == ARPHRD_ETHER &&
+	      if (getValue(s, "type", &nval) && (nval == ARPHRD_ETHER || nval == ARPHRD_LOOPBACK) &&
 		  getValue(s, "address", NULL, &addr) &&
 		  getValue(s, "ifindex", &index) && (only || (unsigned)index == m_index) &&
 		  getValue(s, "carrier", &carrier) &&
-		  getValue(s, "flags", &nval)) {
-		i.addr.setString(addr.c_str());
+		  getValue(s, "flags", &flags)) {
+		if (nval == ARPHRD_LOOPBACK)
+		  i.addr.set(0,0);
+		else
+		  i.addr.setString(addr.c_str());
 		if (!i.addr.hasError()) {
 		  int fd = socket(PF_INET, SOCK_DGRAM, 0);
 		  if (fd < 0) {
@@ -912,13 +923,12 @@ namespace OCPI {
 		      i.brdAddr.set(0, ((struct sockaddr_in *)&ifr.ifr_broadaddr)->sin_addr.s_addr);
 		      i.index = (unsigned)index;
 		      i.name = entp->d_name;
-		      i.up = (nval & IFF_UP) != 0;
+		      i.up = (flags & IFF_UP) != 0;
 		      i.connected = carrier != 0;
 		      ocpiDebug("found ether interface '%s' which is %s, %s, at address %s",
 				entp->d_name, i.up ? "up" : "down",
 				i.connected ? "connected" : "disconnected", i.addr.pretty());
 		      ::close(fd);
-		      m_index++;
 		      return true;
 		    }
 		  }

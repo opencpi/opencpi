@@ -13,6 +13,6 @@ include ../setup.mk
 OCPI_LD_FLAGS+= $(OCPI_OCL_LIBS)
 
 run: $(PROG) all
-	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/ocl $(PROG)
+	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/ocl $(VG) $(PROG)
 
 endif

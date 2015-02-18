@@ -79,6 +79,7 @@ checkDataPort(ezxml_t impl, Port *&sp) {
   const char
     *err,
     *name = ezxml_cattr(impl, "Name"),
+    *internal = ezxml_cattr(impl, "internal"),
     *portImplName = ezxml_cattr(impl, "implName");
   sp = NULL;
   if (name) {
@@ -90,9 +91,16 @@ checkDataPort(ezxml_t impl, Port *&sp) {
     if (sp->type != WDIPort)
       return OU::esprintf("Name attribute of Stream/MessageInterface \"%s\" "
 			  "matches an implementation port, not a spec data port", name);
-  } else if (!portImplName)
-    return OU::esprintf("Missing \"Name\" or \"ImplName\" attribute of %s element",
-			impl->name);
+  } else if (portImplName) {
+    if (!getPort(portImplName,sp))
+      return OU::esprintf("Port with ImplName=\"%s\" already exists", portImplName);
+  } else if (internal) {
+    if (!getPort(internal, sp))
+      return OU::esprintf("Port with Internal=\"%s\" already exists", internal);
+  } else
+    return
+      OU::esprintf("Missing \"Name\", \"ImplName\" or \"Internal\" attribute of %s element",
+		   impl->name);
   return NULL;
 }
 
@@ -372,7 +380,7 @@ parseImplControl(ezxml_t &xctl) {
     m_ctl.sizeOfConfigSpace = sizeOfConfigSpace;
   }
   // Parse worker's scalability
-  if ((err = OE::getBoolean(m_xml, "m_scalable", &m_scalable)) ||
+  if ((err = OE::getBoolean(m_xml, "scalable", &m_scalable)) ||
       (err = OE::getBoolean(m_xml, "startBarrier", &m_ctl.startBarrier)))
     return err;
   if (m_scalable)
@@ -542,8 +550,28 @@ parseSpec(const char *package) {
       return err;
   } else if (!spec)
     return "missing componentspec element or spec attribute";
+#if 0
   if (!(m_specName = ezxml_cattr(spec, "Name")))
     return "Missing Name attribute for ComponentSpec";
+#else
+  if (m_specFile == m_file) {
+    // If not in its own file, then it must have a name attr
+    if (!(m_specName = ezxml_cattr(spec, "Name")))
+      return "Missing Name attribute for ComponentSpec";
+  } else {
+    // If the spec is in its own file, we can default the name from the file
+    std::string name, fileName;
+    if ((err = getNames(spec, m_file.c_str(), "ComponentSpec", name, fileName)))
+      return err;
+    size_t len = strlen("-spec");
+    if (name.length() > len) {
+      const char *tail = name.c_str() + name.length() - len;
+      if (!strcasecmp(tail, "-spec") || !strcasecmp(tail, "_spec"))
+	name.resize(name.size() - len);
+    }
+    m_specName = strdup(name.c_str());
+  }
+#endif
   // Find the package even though the spec package might be specified already
   if ((err = findPackage(spec, package)))
     return err;
@@ -656,6 +684,16 @@ getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly) {
   return NULL;
 }
 
+const char*
+extractExprValue(const OU::Property &p, const OU::Value &v, OU::ExprValue &val) {
+  if (p.m_baseType != OA::OCPI_ULong)
+    return OU::esprintf("the '%s' parameter property is not ULong, so is invalid here",
+			p.m_name.c_str());
+  val.isNumber = true;
+  val.number = v.m_ULong;
+  return NULL;
+}
+
 // This is a callback from the property parser used when some of the
 // property attributes (like array dimensions, sequence or string length),
 // are actually expressions in terms of other properties.
@@ -669,11 +707,7 @@ getValue(const char *sym, OU::ExprValue &val) const {
 			    sym);
       if (!p.m_default)
 	return OU::esprintf("the '%s' parameter property has no value", sym);
-      if (p.m_baseType != OA::OCPI_ULong)
-	return OU::esprintf("the '%s' parameter property is not ULong, so is invalid here", sym);
-      val.isNumber = true;
-      val.number = p.m_default->m_ULong;
-      return NULL;
+      return extractExprValue(p, *p.m_default, val);
     }
   return OU::esprintf("here is no property named '%s'", sym);
 }

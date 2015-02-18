@@ -80,7 +80,7 @@ MODNAME = opencpi
 MyDir:=$(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 MyTargetDir:=target-$(OCPI_TARGET_HOST)
 MyIncs= \
-         -I$(realpath $(MyDir)/../../../../../core/container/hdl/include) \
+         -I$(realpath $(MyDir)/../../../../../core/hdl/include) \
          -I$(realpath $(MyDir)/../../interfaces/include)
 MyLib:=$(realpath $(MyDir)/../../../../../lib/$(MyTargetDir))
 ifeq ($(strip $(MyLib)),)

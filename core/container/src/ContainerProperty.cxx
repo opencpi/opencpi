@@ -62,21 +62,31 @@ namespace OCPI {
     // It is intended to be constructed on the user's stack - a cache of
     // just the items needed for fastest access
     Property::Property(Worker &w, const char *aname) :
-      m_worker(w), m_readSync(false), m_writeSync(false), m_writeVaddr(0), m_readVaddr(0),
-      m_info(w.setupProperty(aname, m_writeVaddr, m_readVaddr)),
+      m_worker(w), m_readVaddr(NULL), m_writeVaddr(NULL),
+      m_info(w.setupProperty(aname, m_writeVaddr, m_readVaddr)), m_ordinal(m_info.m_ordinal),
+      m_readSync(m_info.m_readSync), m_writeSync(m_info.m_writeSync) {
+    }
+    // This is a sort of side-door from the application code
+    // that already knows the property ordinal
+#if 1
+    Property::Property(Worker &w, unsigned n)
+      : m_worker(w), m_readVaddr(NULL), m_writeVaddr(NULL),
+	m_info(w.setupProperty(n, m_writeVaddr, m_readVaddr)),  m_ordinal(m_info.m_ordinal),
+	m_readSync(m_info.m_readSync), m_writeSync(m_info.m_writeSync) {
+    }
+    size_t Property::stringBufferLength() const {
+      if (m_info.m_baseType != OCPI_String)
+	throw "cannot use stringBufferLength() on properties that are not strings";
+      return m_info.m_stringLength + 1;
+#else
+    Property::Property(Worker &w, unsigned n) :
+      m_worker(w), m_writeVaddr(0), m_readVaddr(0),
+      m_info(w.setupProperty(n, m_writeVaddr, m_readVaddr)),
       m_ordinal(m_info.m_ordinal)
     {
       m_readSync = m_info.m_readSync;
       m_writeSync = m_info.m_writeSync;
-    }
-    // This is a sort of side-door from the application code
-    // that already knows the property ordinal
-    Property::Property(Worker &w, unsigned n) :
-      m_worker(w), m_writeVaddr(0), m_readVaddr(0),
-      m_info(w.setupProperty(n, m_writeVaddr, m_readVaddr))
-    {
-      m_readSync = m_info.m_readSync;
-      m_writeSync = m_info.m_writeSync;
+#endif
     }
   }
 }

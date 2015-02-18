@@ -32,7 +32,7 @@
  */
 
 /*
- * A small expression parser that deals in strings or (uint64_t) numbers.
+ * A small expression parser that deals in strings or (int64_t) numbers.
  * There is a callback to provide the value of "variables", whose value can be numeric or string.
  * The syntax is that of C/C++ "constant expression", without enums, sizeof, casting or functions.
  * Per C/C++, no comma operator or assignment operators or pointers or references (unary & or *).
@@ -84,6 +84,7 @@ namespace OCPI {
       std::string string;
       int64_t number;
       bool isNumber;
+      bool isVariable; // a variable was used to compute the result
     };
 
     // The class provideed by the caller that can provide the value of identifiers

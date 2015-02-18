@@ -32,6 +32,7 @@
 #include "OcpiContainerApi.h"
 #include "OcpiUtilValue.h"
 #include "OcpiLibraryManager.h"
+#include "OcpiRDTInterface.h"
 
 namespace OCPI {
   namespace Container {
@@ -40,38 +41,66 @@ namespace OCPI {
     class Port;
     class Container;
     class Worker;
+    class LocalPort;
+
+    // This structure describes what a container can do with connections that
+    // go outside the container.  A container will offer these in preference order.
+    // If a transport is only usable for one direction, the "role" for the other
+    // direction will be NoRole;
+    struct Transport {
+      std::string   transport;     // transport driver/mechanism/protocol to move data
+      std::string   id;            // the identity of the instance of the fabric/network
+      OCPI::RDT::PortRole roleIn;  // what is the preferred role for input
+      OCPI::RDT::PortRole roleOut; // what is the preferred role for output
+      uint32_t optionsIn;          // available options for input
+      uint32_t optionsOut;         // available options for output
+    };
+    typedef std::vector<Transport> Transports;
+
     class Launcher {
       // This instance class contains the minimal amount needed for local launching.
     public:
-      struct Instance {
-	Application *m_containerApp;
-	Container *m_container;       // ptr since set after construction
-	std::string m_name;                            // if local, copied from assembly
-	const OCPI::Library::Implementation *m_impl;   // ptr since set after construction
+      // This structure shared by launch instances (members) in the same crew.
+      struct Crew {
+	size_t m_size;
 	std::vector<OCPI::Util::Value> m_propValues;   // Array of property values to set
 	std::vector<unsigned> m_propOrdinals;          // Array of property ordinals
-	bool m_hasMaster, m_doneInstance;
-	Instance *m_slave;
-	Worker *m_worker;
-	size_t m_crewSize, m_member;
-	Instance();
+	Crew();
       };
-      typedef std::vector<Instance> Instances;
+      struct Member {
+	Application *m_containerApp;
+	Container *m_container;  // note that this will be set for external ports
+	std::string m_name;                            // if local, copied from assembly
+	const OCPI::Library::Implementation *m_impl;   // ptr since set after construction
+	bool m_hasMaster, m_doneInstance;
+	Member *m_slave;
+	Worker *m_worker;
+	size_t m_member;
+	Crew *m_crew;
+	Member();
+      };
+      typedef std::vector<Member> Members;
       // The instance object needed by the launcher
       // FIXME: create a "Launcher::Port" here...
       struct Port {
 	Launcher *m_launcher;
-	Instance *m_instance;
-	OCPI::API::Port *m_port;
+	Container *m_container;
+	Application *m_containerApp;
+	const Member *m_member;
+	LocalPort *m_port;
 	const char *m_name;
 	OCPI::Util::PValueList m_params;
-	OCPI::Util::Port *m_metaPort;
+	const OCPI::Util::Port *m_metaPort; // needed on a server for the port that is not local
+	size_t m_scale, m_index;      // ditto
+	const char *m_url;
 	std::string m_initial, m_final;
 	Port();
       };
       struct Connection {
 	Port m_in, m_out;
-	const char *m_url;
+	size_t m_bufferSize;   // negotiated/final
+	Transport m_transport; // negotiated/final
+	bool m_done;
 	Connection();
 	void prepare();
       };
@@ -83,15 +112,15 @@ namespace OCPI {
     public:
       bool notDone() const { return m_more; }
       virtual bool
-	launch(Launcher::Instances &instances, Launcher::Connections &connections) = 0,
-	work(Launcher::Instances &instances, Launcher::Connections &connections) = 0;
+	launch(Launcher::Members &members, Launcher::Connections &connections) = 0,
+	work(Launcher::Members &members, Launcher::Connections &connections) = 0;
     };
     // Concrete class that will be a singleton
-    class LocalLauncher : public Launcher, public OCPI::Driver::Singleton<LocalLauncher> {
-      void createWorker(Launcher::Instance &i);
+    class LocalLauncher : public Launcher { //, public OCPI::Driver::Singleton<LocalLauncher> {
+      void createWorker(Launcher::Member &i);
     public:
-      bool launch(Launcher::Instances &instances, Launcher::Connections &connections);
-      bool work(Launcher::Instances &instances, Launcher::Connections &connections);
+      bool launch(Launcher::Members &members, Launcher::Connections &connections);
+      bool work(Launcher::Members &members, Launcher::Connections &connections);
     };
   }
 }

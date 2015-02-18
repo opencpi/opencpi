@@ -117,10 +117,13 @@ namespace OCPI {
       Artifact *m_artifact;
       ezxml_t m_xml, m_instXml;
       std::string m_implTag, m_instTag;
-      // Our thread safe mutex for the worker itself
-      OCPI::OS::Mutex m_workerMutex;
+      OCPI::OS::Mutex m_workerMutex; // Our thread safe mutex for the worker itself
+      OCPI::OS::Mutex m_controlMutex; // HACK since sched_yield is busted with SCHED_OTHER
+      bool m_controlOpPending;
+      size_t m_member, m_crewSize;
       bool beforeStart();
     protected:
+      void checkControl();
       inline OCPI::OS::Mutex &mutex() { return m_workerMutex; }
       virtual Port *findPort(const char *name) = 0;
       inline const std::string &instTag() const { return m_instTag; }
@@ -128,7 +131,10 @@ namespace OCPI {
       inline const Artifact *artifact() const { return m_artifact; }
       inline ezxml_t myXml() const { return m_xml; }
       inline ezxml_t myInstXml() const { return m_instXml; }
-      Worker(Artifact *art, ezxml_t impl, ezxml_t inst, const OCPI::Util::PValue *props = NULL);
+      inline size_t member() const { return m_member; }
+      inline size_t crewSize() const { return m_crewSize; }
+      Worker(Artifact *art, ezxml_t impl, ezxml_t inst, size_t member, size_t crewSize,
+	     const OCPI::Util::PValue *props = NULL);
       OCPI::API::PropertyInfo &setupProperty(const char *name,
 					     volatile void *&m_writeVaddr,
 					     const volatile void *&m_readVaddr);
@@ -183,7 +189,8 @@ namespace OCPI {
       // Generic setting method
 
       virtual ~Worker();
-      OCPI::API::Port &getPort(const char *name, const OCPI::API::PValue *props = NULL);
+      OCPI::API::Port &getPort(const char *name, const OCPI::API::PValue *params = NULL);
+      Port &getPort(const char *name, size_t nOthers, const OCPI::API::PValue *params = NULL);
 
       virtual Port & createOutputPort(OCPI::Util::PortOrdinal portId,
 				      size_t bufferCount,

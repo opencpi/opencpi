@@ -80,88 +80,76 @@ namespace OCPI {
     class ExternalPort;
     class ExternalBuffer;
 
-    class Port : public OCPI::Container::PortBase<Worker, Port, ExternalPort> {
-      OCPI::DataTransport::Port *           m_dtPort;
+    class Port :
+      public OCPI::Container::PortBase<OCPI::RCC::Worker, OCPI::RCC::Port, OCPI::RCC::ExternalPort> {
+      //      OCPI::DataTransport::Port *           m_dtPort;
       Port *                                m_localOther; // a connected local (same container) port.
-      //      const OCPI::Util::PValue *            m_params;     // Our initial properties
-      ConnectionMode                        m_mode;
+      //      const OCPI::Util::PValue *    m_params;     // Our initial properties
+      //      ConnectionMode                m_mode;
       RCCPort                              &m_rccPort;    // The RCC port of this port
-      OCPI::DataTransport::BufferUserFacet *m_buffer;     // A buffer in use by this port
+      OCPI::API::ExternalBuffer            *m_buffer;     // A buffer in use by this port
       bool                                  m_wantsBuffer; // wants a buffer but does not have one
+      //      OCPI::Container::ExternalBuffer m_lastBuffer; // for bridge port interface
       //  invalid state: m_wantsBuffer && m_buffer
       //  The initial state is m_wantsBuffer == true, which implies that there is no way for a worker
       //  to start out NOT requesting any buffers... Someday that should be an option:  i.e. like
       //  optionally connected ports, you have optionally requested ports so that no buffer resources
       //  are used on a port until you specifically request buffers.
     public:
-      Port( Worker& w, const OCPI::Util::Port & pmd, const OCPI::Util::PValue *params, RCCPort &rp);
+      Port(Worker &w, const OCPI::Util::Port &md, const OCPI::Util::PValue *params, RCCPort &rp);
       virtual ~Port();
 
-      bool isLocal() const { return true; }
-      void setMode(ConnectionMode mode) { m_mode = mode; }
+      bool isInProcess() const { return true; }
+      void portIsConnected();
+      //      void setMode(ConnectionMode mode) { m_mode = mode; }
       void connectURL(const char* url, const OCPI::Util::PValue *myProps,
 		      const OCPI::Util::PValue * otherProps);
     private:
       void disconnectInternal();
       void disconnect();
       void error(std::string &e);
-      inline bool definitionComplete() { return m_dtPort && m_dtPort->isFinalized(); }
+      //      inline bool definitionComplete() { return m_dtPort && m_dtPort->isFinalized(); }
     protected:
       // These next methods are required by or override the OCPI::Container::Port implementation
       OCPI::Container::ExternalPort &
       createExternal(const char *extName, bool provider,
 		     const OCPI::Util::PValue *extParams,
 		     const OCPI::Util::PValue *connParams);
-      
-      void startConnect(const OCPI::RDT::Descriptors *, const OCPI::Util::PValue * my_props);
-      void localConnect(OCPI::DataTransport::Port &input);
       const OCPI::RDT::Descriptors *
-      finishConnect(const OCPI::RDT::Descriptors &/*other*/, OCPI::RDT::Descriptors &/*feedback*/);
+      startConnect(const OCPI::RDT::Descriptors *other, bool &done);
+      //      void localConnect(OCPI::DataTransport::Port &input);
+      const OCPI::RDT::Descriptors *
+      finishConnect(const OCPI::RDT::Descriptors */*other*/,
+		    OCPI::RDT::Descriptors &/*feedback*/, bool &done);
+#if 0
       OCPI::DataTransport::Port &dtPort(){ ocpiAssert(m_dtPort); return *m_dtPort;}
       void connectInside(OCPI::Container::Port & other,
 			 const OCPI::Util::PValue * myParams,
 			 const OCPI::Util::PValue * otherParams);
+      // These methods are used in the context of bridge ports and represent the "back side"
+      // of these ports - the one NOT facing the worker.
+      OCPI::API::ExternalBuffer
+        *getBuffer(uint8_t *&data, size_t &length, uint8_t &opCode, bool &end),
+	*getBuffer(uint8_t *&data, size_t &length);
+      bool endOfData();
+      bool tryFlush();
+      void release(OCPI::API::ExternalBuffer &b);
+      void put(OCPI::API::ExternalBuffer &b, size_t length, uint8_t opCode, bool /*endOfData*/);
+#endif
     public:
-      // These next methods are called (in one place) from the worker from C, hence public and inline
-      inline void release( OCPI::DataTransport::BufferUserFacet* buffer) {
-	ocpiAssert(isProvider());
-	if (m_buffer == buffer) {
-	  m_buffer = NULL;
-	  m_rccPort.current.data = NULL;
-	}
-	ocpiAssert(m_dtPort);
-	try {
-	  m_dtPort->releaseInputBuffer(buffer);
-	} catch (std::string &e) {
-	  error(e);
-	}
-      }
-      inline void take( RCCBuffer *oldBuffer, RCCBuffer *newBuffer) {
-	*newBuffer = m_rccPort.current; // copy the structure
-	m_rccPort.current.data = NULL;
-	m_buffer = NULL;
-	if ( oldBuffer ) {
-	  OCPI::DataTransport::BufferUserFacet* old = oldBuffer->containerBuffer;
-	  Port *bp = static_cast<Port *>(old->m_ud);
-	  bp->release(old);
-	}
-	request();
-      }
-      // return true if we are ready, and try to make us ready in the process
-      inline bool checkReady() {
-	return m_buffer ? true : (m_wantsBuffer ? request() : false);
-      }
-      bool request() {
+      // These methods are called in one place from the worker from C, hence public and inline
+      bool requestRcc(size_t max = 0) {
 	if (m_buffer)
 	  return true;
 	m_wantsBuffer = true;
-	if (!definitionComplete())
-	  return false;
+	//	if (!definitionComplete())
+	//	  return false;
 	// We want a buffer and we don't have one
 	try {
+	  uint8_t *data;
 	  if (isOutput()) {
-	    if ((m_buffer = m_dtPort->getNextEmptyOutputBuffer(m_rccPort.current.data,
-							       m_rccPort.current.maxLength))) {
+	    if ((m_buffer = getBuffer(data, m_rccPort.current.maxLength))) {
+	      m_rccPort.current.data = (void*)data;
 	      m_rccPort.output.length = 
 		m_rccPort.useDefaultLength_ ? m_rccPort.defaultLength_ : 
 		m_rccPort.current.maxLength;
@@ -171,65 +159,93 @@ namespace OCPI {
 	      m_rccPort.current.length_ = m_rccPort.output.length;
 	    }
 	  } else {
-	    if ((m_buffer = m_dtPort->getNextFullInputBuffer(m_rccPort.current.data,
-							     m_rccPort.current.length_,
-							     m_rccPort.current.opCode_))) {
+	    bool end;
+	    if ((m_buffer = getBuffer(data, m_rccPort.current.length_,
+				      m_rccPort.current.opCode_, end))) {
+	      m_rccPort.current.data = (void*)data;
 	      m_rccPort.input.u.operation = m_rccPort.current.opCode_;
 	      m_rccPort.input.length = m_rccPort.current.length_;
 	    }
 	  }
+	  if (m_buffer) {
+	    if (max && isOutput() && max < m_rccPort.output.length)
+	      throw OU::Error("Requested output buffer size is unavailable");
+	    m_rccPort.current.portBuffer = m_buffer;
+	    m_wantsBuffer = false;
+	    return true;
+	  }
 	} catch (std::string &e) {
 	  error(e);
-	}
-	if (m_buffer) {
-	  m_rccPort.current.containerBuffer = m_buffer;
-	  m_buffer->m_ud = this;
-	  m_wantsBuffer = false;
-	  return true;
 	}
 	return false;
       }
 
-      inline bool advance() {
+      inline void releaseRcc(RCCBuffer &buffer) {
+	ocpiAssert(isProvider() && buffer.portBuffer);
+	if (&m_rccPort.current == &buffer) {
+	  m_buffer = NULL;
+	  m_rccPort.current.data = NULL;
+	}
+	try {
+	  buffer.portBuffer->release();
+	} catch (std::string &e) {
+	  error(e);
+	}
+      }
+
+      inline void takeRcc(RCCBuffer *oldBuffer, RCCBuffer &newBuffer) {
+	if (isOutput())
+	  throw OU::Error("The 'take' container function cannot be used on an output port");
+	if (!m_buffer)
+	  throw OU::Error("The 'take' container function cannot be called when there is no current buffer");
+
+	newBuffer = m_rccPort.current; // copy the structure
+	m_rccPort.current.data = NULL;
+	m_buffer = NULL;
+	if (oldBuffer) {
+	  ocpiAssert(oldBuffer->portBuffer);
+	  oldBuffer->portBuffer->release();
+	}
+	requestRcc();
+      }
+      // return true if we are ready, and try to make us ready in the process
+      inline bool checkReady() {
+	return m_buffer ? true : (m_wantsBuffer ? requestRcc() : false);
+      }
+      inline bool advanceRcc(size_t max) {
 	try {
 	  if (m_buffer) {
 	    if (isOutput())
-	      m_dtPort->sendOutputBuffer(m_buffer, m_rccPort.current.length_, m_rccPort.current.opCode_);
+	      m_buffer->put(m_rccPort.current.length_, m_rccPort.current.opCode_, false);
 	    else
-	      m_dtPort->releaseInputBuffer(m_buffer);
+	      m_buffer->release();
 	    m_rccPort.current.data = NULL;
 	    m_buffer = NULL;
 	  }
-	  return request();
+	  bool ready = requestRcc();
+	  if (ready && max && max > m_rccPort.current.maxLength)
+	    throw OU::Error("Output buffer request/advance (size %zu) greater than buffer size "
+			    " (%zu)", max, m_rccPort.current.maxLength);
 	} catch (std::string &e) {
 	  error(e);
 	}
 	return false;
       }
 
-      void send(OCPI::DataTransport::BufferUserFacet* buffer, size_t length,
-		uint8_t opcode) {
-	Port *bufferPort = static_cast<Port*>(buffer->m_ud);
+      void sendRcc(RCCBuffer &buffer) {
+	ocpiAssert(buffer.portBuffer && buffer.workerPort);
 	try {
-	  if (bufferPort == this) {
-	    m_dtPort->sendOutputBuffer(buffer, length, opcode);
-	    if (buffer == m_buffer) {
-	      m_buffer = NULL;
-	      m_rccPort.current.data = NULL;
-	      // If we send the current buffer, it is an implicit advance
-	      m_wantsBuffer = true;
-	    }
-	  } else {
-	    // Potential zero copy
-	    m_dtPort->sendZcopyInputBuffer(static_cast<OCPI::DataTransport::Buffer*>(buffer),
-					   length, opcode);
-	    if (bufferPort->m_buffer == buffer) {
-	      bufferPort->m_buffer = NULL;
-	      bufferPort->m_rccPort.current.data = NULL;
-	      // If we send the current buffer, it is an implicit advance
-	      bufferPort->m_wantsBuffer = true;
-	    }
+	  if (isInput())
+	    throw OU::Error("The 'send' container function cannot be called on an input port");
+	  Port &bufferPort = *buffer.workerPort;
+	  if (&buffer == &bufferPort.m_rccPort.current) {
+	    bufferPort.m_buffer = NULL;
+	    bufferPort.m_rccPort.current.data = NULL;
+	    bufferPort.m_wantsBuffer = true;
 	  }
+	  buffer.portBuffer->length() = buffer.length_;
+	  buffer.portBuffer->opCode() = buffer.opCode_;
+	  put(*buffer.portBuffer);
 	} catch (std::string &e) {
 	  error(e);
 	}

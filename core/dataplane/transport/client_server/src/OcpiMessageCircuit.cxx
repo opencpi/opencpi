@@ -125,7 +125,7 @@ namespace OCPI {
     }
 
     BufferUserFacet* MessageCircuit::
-    getNextEmptyOutputBuffer(void *&data, size_t &length, OS::Timer *timer)
+    getNextEmptyOutputBuffer(uint8_t *&data, size_t &length, OS::Timer *timer)
     {
       m_transport.dispatch();
       if (timer) {
@@ -158,7 +158,7 @@ namespace OCPI {
     //    }
 
     BufferUserFacet* MessageCircuit::
-    getNextFullInputBuffer(void *&data, size_t &length, uint8_t &opcode, OS::Timer *timer)
+    getNextFullInputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode, OS::Timer *timer)
     {
       BufferUserFacet *r_buf = NULL;
 

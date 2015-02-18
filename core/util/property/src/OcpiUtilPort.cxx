@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -42,7 +41,8 @@
 
 namespace OCPI {
   namespace Util {
-  namespace OE = OCPI::Util::EzXml;
+    namespace OE = OCPI::Util::EzXml;
+    namespace OA = OCPI::API;
 
     void Port::
     init() {
@@ -51,8 +51,10 @@ namespace OCPI {
       m_isProducer = false; // this default is consistent with OWD usage.
       m_isOptional = false;
       m_isBidirectional = false;
+      m_isInternal = false;
       m_minBufferCount = 1;
-      m_bufferSize = 0;
+      m_defaultBufferCount = SIZE_MAX;
+      m_bufferSize = SIZE_MAX;
       m_xml = NULL;
       m_worker = NULL;
       m_bufferSizePort = -1;
@@ -62,13 +64,16 @@ namespace OCPI {
       m_seenSummary = false;
       m_isScalable = false;
       m_isPartitioned = false;
-      m_defaultDistribution = All;
+      m_defaultDistribution = Cyclic;
     }
+    // When supplied with initial xml, its a "poor man's preparse" - see below.
     Port::
-    Port() { // bool prov) {
+    Port(ezxml_t x) {
       init();
-      //      m_provider = prov;
-      //      m_isProducer = !prov;
+      if (x) {
+	m_xml = x;
+	OE::getOptionalString(m_xml, m_name, "name");
+      }
     }
 
     // A constructor called by tools
@@ -117,6 +122,7 @@ namespace OCPI {
       m_isProducer = other.m_isProducer;
       m_isOptional = other.m_isOptional;
       m_isBidirectional = other.m_isBidirectional;
+      m_isInternal = other.m_isInternal;
       m_minBufferCount = other.m_minBufferCount;
       m_bufferSize = other.m_bufferSize;
       m_bufferSizePort = other.m_bufferSizePort;
@@ -193,9 +199,13 @@ namespace OCPI {
 	  // but impls can have optional ports in devices...
 	  (err = OE::getBoolean(m_xml, "optional", &m_isOptional, true)) ||
 	  (err = OE::getNumber(m_xml, "minBufferCount", &m_minBufferCount, 0, 1)) ||
+	  (err = OE::getNumber(m_xml, "bufferCount", &m_defaultBufferCount, NULL, 0, false)) ||
+	  (err = OE::getNumber(m_xml, "minBuffers", &m_minBufferCount, 0, m_minBufferCount)) ||
 	  // Be careful not to clobber protocol-determined values (i.e. don't set default values)
 	  (err = OE::getNumber(m_xml, "NumberOfOpcodes", &m_nOpcodes, NULL, 0, false)))
 	return err;
+      // Kludgerama: in user xml, internal is a port name, in artificat xml it is boolean
+      m_isInternal = ezxml_cattr(m_xml, "internal") != NULL;
       m_provider = !m_isProducer;
       const char *bs = ezxml_cattr(m_xml, "bufferSize");
       if (bs && !isdigit(bs[0])) {
@@ -205,9 +215,9 @@ namespace OCPI {
 	else
 	  return esprintf("Buffersize set to '%s', which is not a port name or a number",
 			      bs);
-      } else if ((err = OE::getNumber(m_xml, "bufferSize", &m_bufferSize, 0, 0)))
+      } else if ((err = OE::getNumber(m_xml, "bufferSize", &m_bufferSize, 0, 0, false)))
 	return err;
-      if (m_bufferSize == 0)
+      if (m_bufferSize == SIZE_MAX)
 	m_bufferSize = m_defaultBufferSize; // from protocol
 	  
       // FIXME: do we need the separately overridable nOpcodes here?
@@ -217,7 +227,65 @@ namespace OCPI {
     postParse() {
       if (m_bufferSizePort != -1)
 	m_bufferSize = m_worker->port(m_bufferSizePort).m_bufferSize;
-      return NULL;
+      return parseScaling();
+    }
+
+    // Start with the size in the port metadata, which we assume has come from
+    // or overrided the default from the protocol.  If it is SIZE_MAX, then there is
+    // no protocol and no default at all.
+    size_t Port::
+    getBufferSize(const PValue *portParams, const PValue *connParams) {
+      size_t size = m_bufferSize;
+      const char *type = "default";
+      do {
+	if (size == SIZE_MAX) {
+	  size = DEFAULT_BUFFER_SIZE;
+	  if (size < m_minBufferSize)
+	    break;
+	}
+	type = "port";
+	OA::ULong ul;
+	if (findULong(portParams, "bufferSize", ul) && (size = ul) < m_minBufferSize)
+	  break;
+	type = "connection";
+	if (findULong(connParams, "bufferSize", ul) && (size = ul) < m_minBufferSize)
+	  break;
+	return size;
+      } while (0);
+      throw Error("%s bufferSize %zu is below minimum for worker %s port %s of: %zu",
+		  type, (size_t)size, m_worker->name().c_str(), m_name.c_str(),
+		  m_minBufferSize);
+    }
+
+    Port::Distribution Port::
+    getDistribution(unsigned op) const {
+      if (op < m_nOperations &&
+	  op < m_opScaling.size() &&
+	  m_opScaling[op])
+	return m_opScaling[op]->m_distribution;
+      return m_defaultDistribution;
+    }
+
+    // Static method to determine the buffer size for a connection.
+    // The metaports may be NULL if they are external
+    // Challenges:
+    //    buffer sizes may legitimately be zero (for ZLM-only protocols)
+    //    external ports have no inherent buffer size, but may override
+    //    external-to-external MUST specify a buffer size somehow.
+    size_t Port::
+    determineBufferSize(Port *in, const PValue *paramsIn,
+			Port *out, const PValue *paramsOut,
+			const PValue *connParams) {
+      size_t
+	sizeIn = in ? in->getBufferSize(paramsIn, connParams) : SIZE_MAX,
+	sizeOut = out ? out->getBufferSize(paramsOut, connParams) : SIZE_MAX;
+      size_t size =
+	sizeIn == SIZE_MAX ? sizeOut :
+	sizeOut == SIZE_MAX ? sizeIn :
+	std::max(sizeIn, sizeOut);
+      if (size == SIZE_MAX)
+	throw Error("Buffer size for connection must be specified");
+      return size;
     }
 
     Port::Scaling::Scaling()
@@ -245,6 +313,16 @@ namespace OCPI {
       if (m_modulo != def->m_modulo) formatAdd(out, " modulo='%zu'", m_modulo);
       if (m_default != def->m_default) formatAdd(out, " default='%zu'", m_default);
     }
+
+    const char *Port::Scaling::
+    check(size_t scale) {
+      if (scale &&
+	  (scale < m_min || m_max && scale > m_max || m_modulo && scale % m_modulo))
+	return esprintf("Scaling value of %zu incompatible with min: %zu, max: %zu, mod: %zu",
+			scale, m_min, m_max, m_modulo);
+      return NULL;
+    }
+
 
     Port::Partitioning::Partitioning()
       : m_sourceDimension(0) {
@@ -312,9 +390,16 @@ namespace OCPI {
       if ((err = OE::getEnum(x, "distribution", s_dNames, "distribution type", n, d)))
 	return err;
       d = (Distribution)n;
+      if (m_isProducer && (d == Balanced || d == Hashed))
+	return esprintf("For port \"%s\": output ports cannot declare \"balanced\" "
+			"or hashed distribution", m_name.c_str());
+      if (!m_isProducer && d == Directed)
+	return esprintf("For port \"%s\": input ports cannot declare \"directed\" "
+			"distribution", m_name.c_str());
       if (OE::getOptionalString(m_xml, hash, "hashField")) {
 	if (d != Hashed)
-	  return esprintf("The \"hashfield\" attribute is only allowed with hashed distribution");
+	  return
+	    esprintf("The \"hashfield\" attribute is only allowed with hashed distribution");
 	if (!m_operations)
 	  return esprintf("The \"hashfield\" attribute cannot be used with there is no protocol");
 	Operation *o = m_operations;
@@ -332,7 +417,8 @@ namespace OCPI {
     const char *Port::
     parseOperations() {
       // Now we parse the child elements for operations.
-      m_opScaling.resize(m_nOperations, NULL);
+      assert(m_nOpcodes >= m_nOperations);
+      m_opScaling.resize(m_nOpcodes, NULL);
       for (ezxml_t ox = ezxml_cchild(m_xml, "operation"); ox; ox = ezxml_next(ox)) {
 	const char *err;
 	std::string oName;
@@ -342,7 +428,7 @@ namespace OCPI {
 	  return err;
 	Operation *op = findOperation(oName.c_str());
 	if (!op)
-	  return esprintf("Here is no operation named \"%s\" in the protocol", oName.c_str());
+	  return esprintf("There is no operation named \"%s\" in the protocol", oName.c_str());
 	size_t ord = op - m_operations;
 	if (m_opScaling[ord])
 	  return esprintf("Duplicate operation element with name \"%s\" for port \"%s\"",
@@ -402,7 +488,7 @@ namespace OCPI {
     emitScalingAttrs(std::string &out) const {
       if (m_scaleExpr.length())
 	formatAdd(out, " scale='%s'", m_scaleExpr.c_str());
-      if (m_defaultDistribution != All)
+      if (m_defaultDistribution != Cyclic)
 	emitDistribution(out, m_defaultDistribution);
       if (m_defaultHashField.length())
 	formatAdd(out, " hashField='%s'", m_defaultHashField.c_str());
@@ -427,13 +513,16 @@ namespace OCPI {
 	formatAdd(out, " numberOfOpcodes=\"%zu\"", m_nOpcodes);
       if (m_minBufferCount != 1)
 	formatAdd(out, " minBufferCount=\"%zu\"", m_minBufferCount);
+      if (m_defaultBufferCount != SIZE_MAX)
+	formatAdd(out, " BufferCount=\"%zu\"", m_defaultBufferCount);
       if (m_bufferSizePort != -1)
 	formatAdd(out, " buffersize='%s'", m_worker->port(m_bufferSizePort).m_name.c_str());
-      else if (m_bufferSize && m_bufferSize != m_defaultBufferSize)
+      else if (m_bufferSize != SIZE_MAX && m_bufferSize != m_defaultBufferSize)
 	formatAdd(out, " bufferSize='%zu'", m_bufferSize);
       if (m_isOptional)
 	formatAdd(out, " optional=\"%u\"", m_isOptional);
-	
+      if (m_isInternal)
+	formatAdd(out, " internal='1'");
       emitScalingAttrs(out);
       formatAdd(out, ">\n");
       printXML(out, 2);

@@ -50,6 +50,22 @@ namespace OCPI {
   namespace API {
     PVULong PVEnd(0,0);
 
+    PValue::
+    PValue(const PValue &p) {
+      *this = p;
+    }
+    PValue &PValue::
+    operator=(const PValue & p ) {
+      name = p.name;
+      type = p.type;
+      owned = p.owned;
+      if (owned)
+	value.vString = strdup(p.value.vString);
+      else
+	value = p.value;
+      return *this;
+    }
+
     unsigned PValue::length() const {
       unsigned n = 0;
       if (this)
@@ -63,7 +79,7 @@ namespace OCPI {
       // FIXME: PValues and Values must be better integrated...
       switch (type) {
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
-	case OA::OCPI_##pretty: val.m_##pretty = v##pretty; break;
+	case OA::OCPI_##pretty: val.m_##pretty = value.v##pretty; break;
 	OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
       default:;
@@ -79,8 +95,8 @@ namespace OCPI {
       PVString("xferrole"),
       PVString("DLLEntryPoint"),
       PVString("monitorIPAddress"),
-      PVString("protocol"),
-      PVString("endpoint"),
+      PVString("protocol"), // deprecated in favor or transport
+      PVString("endpoint"), // a specific endpoint
       PVString("Device"),
       PVBool("ownthread"),
       PVBool("polled"),
@@ -99,6 +115,7 @@ namespace OCPI {
     };
 
     PVULong PVEnd(0,0);
+
     static const PValue *
     find(const PValue* p, const char* name) {
       if (p)
@@ -114,7 +131,7 @@ namespace OCPI {
       const PValue *fp = find(p, name);				    \
       if (fp) {							    \
         if (fp->type == OA::OCPI_##pretty) {	                    \
-          value = fp->v##pretty;				    \
+          value = fp->value.v##pretty;				    \
           return true;						    \
 	} else							    \
 	  throw Error("Property \"%s\" is not a %s", name, #pretty);\
@@ -147,10 +164,10 @@ namespace OCPI {
 	for (; p->name; p++)
 	  if (!strcasecmp(p->name, name)) {
 	    if (p->type == OA::OCPI_String) {
-	      size_t len = p->vString[0] == '=' ? 0 : strlen(var);
+	      size_t len = p->value.vString[0] == '=' ? 0 : strlen(var);
 	      if (len == 0 ||
-		  !strncasecmp(var, p->vString, len) && p->vString[len] == '=') {
-		val = p->vString + len + 1;
+		  !strncasecmp(var, p->value.vString, len) && p->value.vString[len] == '=') {
+		val = p->value.vString + len + 1;
 		return true;
 	      }
 	    } else
@@ -167,14 +184,14 @@ namespace OCPI {
 	  if (n >= next && !strcasecmp(p->name, name)) {
 	    if (p->type == OA::OCPI_String) {
 	      if (!var) {
-		val = p->vString;
+		val = p->value.vString;
 		next = n + 1;
 		return true;
 	      } else {
-		size_t len = p->vString[0] == '=' ? 0 : strlen(var);
+		size_t len = p->value.vString[0] == '=' ? 0 : strlen(var);
 		if (len == 0 ||
-		    !strncasecmp(var, p->vString, len) && p->vString[len] == '=') {
-		  val = p->vString + len + 1;
+		    !strncasecmp(var, p->value.vString, len) && p->value.vString[len] == '=') {
+		  val = p->value.vString + len + 1;
 		  next = n + 1;
 		  return true;
 		}
@@ -188,6 +205,20 @@ namespace OCPI {
     PValueList::PValueList() : m_list(NULL) {}
     PValueList::PValueList(const PValue *params, const PValue *override) : m_list(NULL) {
       add(params, override);
+    }
+    
+    PValueList::
+    PValueList(const PValueList &other) 
+      : m_list(NULL) {
+      add(other.m_list);
+    }
+
+    PValueList & PValueList::
+    operator=(const PValueList & p ) {
+      delete [] m_list;
+      m_list = NULL;
+      add(p.m_list);
+      return *this;
     }
     void PValueList::
     add(const PValue *params, const PValue *override) {
@@ -229,10 +260,10 @@ namespace OCPI {
       if (err)
 	return err;
       if (p.type == OA::OCPI_String) {
-	p.vString = strdup(val.m_String);
+	p.value.vString = strdup(val.m_String);
 	p.owned = true;
       } else
-	p.vULongLong = val.m_ULongLong;
+	p.value.vULongLong = val.m_ULongLong;
       return NULL;
     }
 

@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -86,8 +85,8 @@ namespace OCPI {
       RCCResult setError(const char *fmt, va_list ap);
       inline RCCWorker &context() const { return *m_context; }
 
-      Worker(Application & app, Artifact *art, const char *name,
-	     ezxml_t impl, ezxml_t inst, OCPI::Container::Worker *slave,
+      Worker(Application & app, Artifact *art, const char *name, ezxml_t impl, ezxml_t inst,
+	     OCPI::Container::Worker *slave, size_t member, size_t crewSize,
 	     const OCPI::Util::PValue *wParams);
       OCPI::Container::Port& createPort(const OCPI::Util::Port&, const OCPI::Util::PValue *props);
       void controlOperation(OCPI::Util::Worker::ControlOperation);

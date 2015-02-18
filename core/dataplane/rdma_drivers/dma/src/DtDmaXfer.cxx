@@ -233,10 +233,7 @@ namespace OCPI {
     public:
       virtual ~SmemServices () {
       }
-      // FIXME these should have defaults...
-      int32_t attach(DT::EndPoint*) { return 0; }
-      int32_t detach() { return 0; }
-      int32_t unMap() { return 0; }
+
       void* map(DtOsDataTypes::Offset offset, size_t size ) {
 	EndPoint &ep = m_dmaEndPoint;
 	OU::SelfAutoMutex guard (&m_driver);

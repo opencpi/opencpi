@@ -1,6 +1,10 @@
 #!/bin/sh
 if [[ $OCPI_XILINX_TOOLS_DIR == "" ]]; then
-   echo "The OCPI_XILINX_TOOLS_DIR environment variable is not set, and is required for isim executables."
+   echo "Error:  The OCPI_XILINX_TOOLS_DIR environment variable is not set, and is required for isim executables." | tee /dev/tty
+   exit 1
+fi
+if [[ ! -d $OCPI_XILINX_TOOLS_DIR ]]; then
+   echo "Error: The OCPI_XILINX_TOOLS_DIR environment variable ($OCPI_XILINX_TOOLS_DIR) indicates a non-existent directory." | tee /dev/tty
    exit 1
 fi
 set -e

@@ -83,8 +83,17 @@ SmemServices::
 {
 }
 
+int32_t SmemServices::
+attach(EndPoint*) { return 0; }
+
+int32_t SmemServices::
+detach() { return 0; }
+
+int32_t SmemServices::
+unMap() { return 0; }
+
 EndPoint::
-EndPoint( std::string& end_point, size_t psize, bool l )
+EndPoint(const std::string& end_point, size_t psize, bool l )
   :mailbox(0),maxCount(0),size(psize),address(0),local(l),factory(NULL),refCount(0)
 {
   if ( ! size ) {
@@ -110,7 +119,7 @@ release() {
 
 // Sets smem location data based upon the specified endpoint
 OCPI::OS::int32_t
-EndPoint::setEndpoint(std::string& ep)
+EndPoint::setEndpoint(const std::string& ep)
 {
   char buf[ep.length() + 1]; //::MAX_PROTOS_SIZE];
   end_point = ep;

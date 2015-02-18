@@ -162,37 +162,42 @@ emitArtifact(const OCPI::Library::Artifact &art) {
 		art.name().c_str(), OCPI_UTRUNCATE(uint32_t,art.mtime()), art.uuid().c_str(),
 		art.length());
 }
+void Launcher::
+emitCrew(const OCPI::Container::Launcher::Crew &crew) {
+  OU::formatAdd(m_request, "  <crew size='%zu'", crew.m_size);
+  if (crew.m_propValues.size()) {
+    m_request += ">\n";
+    const OU::Value *vals = &crew.m_propValues[0];
+    const unsigned *po = &crew.m_propOrdinals[0];
+    for (unsigned n = 0; n < crew.m_propValues.size(); n++, vals++, po++) {
+      OU::formatAdd(m_request, "    <property n='%u' v='", *po);
+      vals->unparse(m_request, NULL, true); // FIXME: someday an XML unparser for perfect quoting
+      m_request += "'/>\n";
+    } 
+    m_request += "  </crew>\n";
+  } else
+    m_request += "/>\n";
+}
 // FIXME: someday allow for instance parameters?
 void Launcher::
-emitInstance(const char *name, unsigned contN, unsigned artN, const Launcher::Instance &i,
-	     int slave) {
+emitMember(const char *name, unsigned contN, unsigned artN, unsigned crewN,
+	   const Launcher::Member &i, int slave) {
   OU::formatAdd(m_request,
-		"  <instance name='%s' container='%u' artifact='%u' worker='%s'",
-		name, contN, artN, i.m_impl->m_metadataImpl.specName().c_str());
+		"  <member name='%s' container='%u' artifact='%u' crew='%u' worker='%s'",
+		name, contN, artN, crewN, i.m_impl->m_metadataImpl.specName().c_str());
   if (i.m_impl->m_staticInstance)
     OU::formatAdd(m_request, " static='%s'", ezxml_cattr(i.m_impl->m_staticInstance, "name"));
   if (slave >= 0)
     OU::formatAdd(m_request, " slave='%u'", slave);
   if (i.m_doneInstance)
     m_request += " done='1'";
-   if (i.m_crewSize != 1)
-     OU::formatAdd(m_request, " crew='%zu' member='%zu", i.m_crewSize, i.m_member);
-  if (i.m_propValues.size()) {
-    m_request += ">\n";
-    const OU::Value *vals = &i.m_propValues[0];
-    for (unsigned n = 0; n < i.m_propValues.size(); n++, vals++) {
-      OU::formatAdd(m_request,
-		    "    <property n='%u' v='", i.m_propOrdinals[n]);
-      vals->unparse(m_request, NULL, true); // FIXME: someday an XML unparser for perfect quoting
-      m_request += "'/>\n";
-    }
-    m_request += "  </instance>\n";
-  } else
-    m_request += "/>\n";
+   if (i.m_crew->m_size != 1)
+     OU::formatAdd(m_request, " member='%zu'", i.m_member);
+   m_request += "/>\n";
 }
 #if 0
 void Launcher::
-emitPort(const Launcher::Instance &i, const char *port, const OA::PValue *params,
+emitPort(const Launcher::Member &i, const char *port, const OA::PValue *params,
 	 const char *which) {
   OU::formatAdd(m_request, "  <%s instance='%p' port='%s'", which, &i, port);
   if (params) {
@@ -214,41 +219,69 @@ unparseParams(const OU::PValue *params, std::string &out) {
     out += '\'';
   }
 }
-// This connection is one of ours, either internal or external
 void Launcher::
+#if 1
+emitSide(const Launcher::Members &members, const Launcher::Port &p, const char *type) {
+  OU::formatAdd(m_request, "    <%s scale='%zu' index='%zu'", type, p.m_scale, p.m_index);
+  if (p.m_name)
+    OU::formatAdd(m_request, " name='%s'", p.m_name);
+  if (p.m_member)
+    OU::formatAdd(m_request, " member='%u'", m_instanceMap[p.m_member - &members[0]]);
+  if (p.m_url)
+    OU::formatAdd(m_request, " url='%s'", p.m_url);
+  if (p.m_params.list() || !p.m_url && p.m_launcher != this) {
+    m_request += ">\n";
+    if (p.m_params.list()) {
+      m_request += "<params";
+      unparseParams(p.m_params, m_request);
+#else
 emitConnection(const Launcher::Instances &instances, const Launcher::Connection &c) { 
   OU::formatAdd(m_request, "  <connection");
-  if (c.m_in.m_launcher == this)
+  if (c.m_launchIn == this)
     OU::formatAdd(m_request, " instIn='%u' nameIn='%s'",
-		  m_instanceMap[c.m_in.m_instance - &instances[0]], c.m_in.m_name);
-  if (c.m_out.m_launcher == this)
+		  m_instanceMap[c.m_instIn - &instances[0]], c.m_nameIn);
+  if (c.m_launchOut == this)
     OU::formatAdd(m_request, " instOut='%u' nameOut='%s'",
-		  m_instanceMap[c.m_out.m_instance - &instances[0]], c.m_out.m_name);
+		  m_instanceMap[c.m_instOut - &instances[0]], c.m_nameOut);
   if (c.m_url)
     OU::formatAdd(m_request, "  url='%s'", c.m_url);
-  m_request += ">/n";
-  if (c.m_in.m_params.list()) {
-    m_request += "    <paramsin";
-    unparseParams(c.m_in.m_params, m_request);
+  else {
+    // put out names for external ports
+    if (!c.m_instIn && c.m_nameIn)
+      OU::formatAdd(m_request, "  nameIn='%s'", c.m_nameIn);
+    if (!c.m_instOut && c.m_nameOut)
+      OU::formatAdd(m_request, "  nameOut='%s'", c.m_nameOut);
+  }
+  if (c.m_paramsIn.list() || c.m_paramsOut.list()) {
+    m_request +=">\n";
+    if (c.m_paramsIn.list()) {
+      m_request += "    <paramsin";
+      unparseParams(c.m_paramsIn, m_request);
+      m_request += "/>\n";
+    }
+    if (c.m_paramsOut.list()) {
+      m_request += "    <paramsout";
+      unparseParams(c.m_paramsOut, m_request);
+#endif
+      m_request += "/>\n";
+    }
+    if (!p.m_url && p.m_launcher != this)
+	p.m_metaPort->emitXml(m_request);
+    OU::formatAdd(m_request, "    </%s>\n", type);
+  } else
     m_request += "/>\n";
-  }
-  if (c.m_out.m_params.list()) {
-    m_request += "    <paramsout";
-    unparseParams(c.m_out.m_params, m_request);
-    m_request += "/>\n";
-  }
-  // Now we need to send port metainfo for ports that are not on the targetted server,
-  // since it does not necessarily have the metadata for the connected port that is not there
-  if (!c.m_url) {
-    if (c.m_in.m_launcher == this) {
-      if (c.m_out.m_launcher != this) {
-	c.m_in.m_metaPort->emitXml(m_request);
-	// send output metaport info
-      }
-    } else if (c.m_out.m_launcher == this)
-      // send input metaport info
-      ;
-  }
+}
+
+// This connection is one of ours, either internal or external
+void Launcher::
+emitConnection(const Launcher::Members &members, const Launcher::Connection &c) { 
+  OU::formatAdd(m_request,
+		"  <connection transport='%s' id='%s' roleIn='%u' roleOut='%u' "
+		"buffersize='%zu'>\n",
+		c.m_transport.transport.c_str(), c.m_transport.id.c_str(),
+		c.m_transport.roleIn, c.m_transport.roleOut, c.m_bufferSize);
+  emitSide(members, c.m_in, "in");
+  emitSide(members, c.m_out, "out");
   m_request += "  </connection>\n";
 }
 void Launcher::
@@ -329,7 +362,7 @@ updateConnection(ezxml_t cx) {
 }
 
 bool Launcher::
-launch(Launcher::Instances &instances, Launcher::Connections &connections) {
+launch(Launcher::Members &instances, Launcher::Connections &connections) {
   // Initialize various maps - they will be truncated later
   m_connections.resize(connections.size());
   m_artifacts.resize(instances.size());
@@ -343,13 +376,18 @@ launch(Launcher::Instances &instances, Launcher::Connections &connections) {
 
   // A temporary map to keep track of which artifacts we have emitted
   typedef std::map<OL::Artifact*, unsigned> Artifacts;
-  typedef Artifacts::value_type ArtifactsPair;
   typedef Artifacts::const_iterator ArtifactsIter;
   Artifacts artifacts;
   unsigned nArtifacts = 0;
 
+  // A temporary map to keep track of which crews we have emitted
+  typedef std::map<OC::Launcher::Crew*, unsigned> Crews;
+  typedef Crews::const_iterator CrewsIter;
+  Crews crews;
+  unsigned nCrews = 0;
+
  // Create map from global instance num to remote instance num
-  Launcher::Instance *i = &instances[0];
+  Launcher::Member *i = &instances[0];
   unsigned nRemote = 0;
   for (unsigned n = 0; n < instances.size(); n++, i++)
     if (&i->m_container->launcher() == this)
@@ -375,16 +413,31 @@ launch(Launcher::Instances &instances, Launcher::Connections &connections) {
 	m_artifacts[artN] = &a;
       } else
 	artN = arti->second;
-      emitInstance(i->m_name.c_str(), contN, artN, *i,
-		   i->m_slave && &i->m_slave->m_container->launcher() == this ?
-		   m_instanceMap[i->m_slave - &instances[0]] : -1);
+      OC::Launcher::Crew &c = *i->m_crew;
+      unsigned crewN = 0;
+      CrewsIter crewi = crews.find(&c);
+      if (crewi == crews.end())  {
+	emitCrew(c);
+	crews[&c] = crewN = nCrews++;
+      }
+      emitMember(i->m_name.c_str(), contN, artN, crewN, *i,
+		 i->m_slave && &i->m_slave->m_container->launcher() == this ?
+		 m_instanceMap[i->m_slave - &instances[0]] : -1);
     }
   m_artifacts.resize(nArtifacts);
   unsigned nConnections = 0;
   Launcher::Connection *c = &connections[0];
   for (unsigned n = 0; n < connections.size(); n++, c++) {
-    c->prepare();
+    c->prepare(); // make sure transport parameters are on both sides
     if (c->m_in.m_launcher == this || c->m_out.m_launcher == this) {
+      if (c->m_in.m_launcher != c->m_out.m_launcher) {
+	// If the connection is off of the remote server and no
+	// transport is specified, force sockets on the input side
+	const char *endpoint = NULL, *transport = NULL;
+	if (!OU::findString(c->m_in.m_params, "endpoint", endpoint) &&
+	    !OU::findString(c->m_in.m_params, "transport", transport))
+	  c->m_in.m_params.add("transport", "socket");
+      }
       emitConnection(instances, *c);
       m_connectionMap[n] = nConnections;
       m_connections[nConnections++] = c;
@@ -398,14 +451,14 @@ launch(Launcher::Instances &instances, Launcher::Connections &connections) {
 // We get here because we "asked for more".
 // We in fact ping-pong between receiving responses and sending requests
 bool Launcher::
-work(Launcher::Instances &instances, Launcher::Connections &connections) {
+work(Launcher::Members &instances, Launcher::Connections &connections) {
   m_more = false;
   if (m_sending) {
     m_request = "<update>";
     // Time to send request for more stuff.  The only reason after the initial send,
     // is to advance the state of the connections.  We expect that the caller
     // has advanced the connection since the last receive.
-    Launcher::Instance *i = &instances[0];
+    Launcher::Member *i = &instances[0];
     for (unsigned n = 0; n < instances.size(); n++, i++)
       if (!i->m_worker) {
 	m_more = true;
@@ -441,16 +494,17 @@ work(Launcher::Instances &instances, Launcher::Connections &connections) {
     m_more = ezxml_cattr(m_rx, "done") == NULL;
     if (!m_more) {
       // Finally create the local client-side workers.
-      Launcher::Instance *i = &instances[0];
+      Launcher::Member *i = &instances[0];
       for (unsigned n = 0; n < instances.size(); n++, i++)
 	if (&i->m_container->launcher() == this && !i->m_worker) {
 	  OU::PValue pv[] = { OU::PVULong("remoteInstance", m_instanceMap[n]), OU::PVEnd };
-	  i->m_worker = &i->m_containerApp->createWorker(i->m_impl->m_artifact,
-							 i->m_name.c_str(),
-							 i->m_impl->m_metadataImpl.m_xml,
-							 i->m_impl->m_staticInstance,
-							 i->m_slave ? i->m_slave->m_worker : NULL,
-							 pv);
+	  i->m_worker =
+	    &i->m_containerApp->createWorker(i->m_impl->m_artifact, i->m_name.c_str(),
+					     i->m_impl->m_metadataImpl.m_xml,
+					     i->m_impl->m_staticInstance,
+					     i->m_slave ? i->m_slave->m_worker : NULL,
+					     i->m_member, i->m_crew ? i->m_crew->m_size : 1,
+					     pv);
 	}    
     }
     m_sending = true;
@@ -496,6 +550,20 @@ controlOp(unsigned remoteInstance, OU::Worker::ControlOperation op) {
   const char *err = ezxml_cattr(m_rx, "error");
   if (err)
     throw OU::Error("Error in control operation: %s", err);
+}
+
+OU::Worker::ControlState Launcher::
+getState(unsigned remoteInstance) {
+  OU::format(m_request, "<control id='%u' getState=''>\n", remoteInstance);
+  send();
+  receive();
+  assert(!strcasecmp(OX::ezxml_tag(m_rx), "control"));
+  const char *err;
+  size_t state;
+  if ((err  = ezxml_cattr(m_rx, "error")) ||
+      (err = OX::getNumber(m_rx, "state", &state, NULL, 0, false, true)))
+    throw OU::Error("Error in getControlState operation: %s", err);
+  return (OU::Worker::ControlState)state;
 }
 
 bool Launcher::

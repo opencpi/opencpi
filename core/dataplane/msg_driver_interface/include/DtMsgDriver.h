@@ -191,13 +191,13 @@ namespace DataTransfer {
        * Get a free output buffer if one is available
        */
       virtual  OCPI::DataTransport::BufferUserFacet*
-	getNextEmptyOutputBuffer(void *&data, size_t &length) = 0;    
+	getNextEmptyOutputBuffer(uint8_t *&data, size_t &length) = 0;    
 
       /*
        *  Get data on the channel, If no data is available this may block
        */
       virtual OCPI::DataTransport::BufferUserFacet*
-	getNextFullInputBuffer(void *&data, size_t & length, uint8_t &opcode ) = 0;
+	getNextFullInputBuffer(uint8_t *&data, size_t & length, uint8_t &opcode ) = 0;
 
       // Destructor - Note that invoking OcpiXferServices::Release is the preferred method.
       virtual ~MsgChannel () {};

@@ -66,6 +66,12 @@ namespace OCPI {
       MaxRole,           // Number of valid roles
       NoRole             // Role is unspecified (during negotiation)
     };
+#define OCPI_RDT_ROLE_NAMES \
+  "ActiveMessage", "ActiveFlowControl", "ActiveOnly", "Passive", "MaxRole", "NoRole"    
+#define OCPI_RDT_OTHER_ROLES \
+    OCPI::RDT::ActiveFlowControl, OCPI::RDT::ActiveMessage, OCPI::RDT::Passive, \
+    OCPI::RDT::ActiveOnly
+
     // These options are smaller issues than port roles, and may apply across roles
     // The low order bits are used for what roles are possible for a port (during negotiation)
     enum ProtocolOptions {

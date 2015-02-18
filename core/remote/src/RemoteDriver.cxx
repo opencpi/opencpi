@@ -22,11 +22,12 @@ namespace OA = OCPI::API;
 namespace OL = OCPI::Library;
 namespace OE = OCPI::OS::Ether;
 namespace OS = OCPI::OS;
+namespace OR = OCPI::RDT;
 namespace OCPI {
   namespace Remote {
 
 const uint16_t REMOTE_PORT = 17171;
-    const uint16_t REMOTE_NARGS = 5; // fields int the discovery entries
+const uint16_t REMOTE_NARGS = 5; // fields in the discovery entries before transports
 bool g_suppressRemoteDiscovery = false;
 extern const char *remote;
 const unsigned RETRIES = 3;
@@ -42,11 +43,9 @@ class Artifact : public OC::ArtifactBase<Container,Artifact> {
 };
 class ExternalPort;
 class Worker;
-class Port : public OC::PortBase<Worker, Port, ExternalPort> {
+class Port : public OC::PortBase<Worker, Port, OCPI::API::ExternalPort> {
   Port( Worker& w, const OU::Port & pmd, const OU::PValue *params)
-    :  OC::PortBase< Worker, Port, ExternalPort>
-       (w, *this, pmd, pmd.m_provider,
-	(1 << OCPI::RDT::ActiveFlowControl) | (1 << OCPI::RDT::ActiveMessage), params) {
+    :  OC::PortBase<Worker, Port, OCPI::API::ExternalPort> (w, *this, pmd, params) {
   }
 
   ~Port() {
@@ -58,8 +57,8 @@ class Worker
   friend class Application;
   unsigned m_remoteInstance;
   Launcher &m_launcher;
-  Worker(Application & app, Artifact *art, const char *name,
-	 ezxml_t impl, ezxml_t inst, OC::Worker */*slave*/, const OU::PValue *wParams,
+  Worker(Application & app, Artifact *art, const char *name, ezxml_t impl, ezxml_t inst,
+	 OC::Worker */*slave*/, size_t member, size_t crewSize, const OU::PValue *wParams,
 	 unsigned remoteInstance);
   virtual ~Worker() {}
   OC::Port &createPort(const OU::Port&, const OU::PValue *params) {
@@ -90,6 +89,9 @@ class Worker
   }
   bool wait(OS::Timer *t) {
     return m_launcher.wait(m_remoteInstance, t ? t->getRemaining() : 0);
+  }
+  void checkControlState() {
+    setControlState(m_launcher.getState(m_remoteInstance));
   }
   void getPropertyValue(const OU::Property &p, std::string &v, bool hex, bool add) {
     m_launcher.getPropertyValue(m_remoteInstance, &p - m_properties, v, hex, add);
@@ -162,15 +164,14 @@ class Application
   virtual ~Application() {
   }
   OC::Worker &
-  createWorker(OC::Artifact *art, const char *appInstName,
-	       ezxml_t impl, ezxml_t inst, OC::Worker *slave,
-	       const OU::PValue *wParams) {
+  createWorker(OC::Artifact *art, const char *appInstName, ezxml_t impl, ezxml_t inst,
+	       OC::Worker *slave, size_t member, size_t crewSize, const OU::PValue *wParams) {
     uint32_t remoteInstance;
     if (!OU::findULong(wParams, "remoteInstance", remoteInstance))
       throw OU::Error("Remote ContainerApplication expects remoteInstance parameter");
     return *new Worker(*this, art ? static_cast<Artifact*>(art) : NULL,
-		       appInstName ? appInstName : "unnamed-worker", impl, inst, slave, wParams,
-		       remoteInstance);
+		       appInstName ? appInstName : "unnamed-worker", impl, inst, slave, member,
+		       crewSize, wParams, remoteInstance);
   }
 };
 
@@ -208,7 +209,7 @@ class Container
 public:
   Container(Client &client, const std::string &name,
 	    const char *model, const char *os, const char *osVersion, const char *platform,
-	    const OA::PValue* /*params*/)
+	    const char *transports, const OA::PValue* /*params*/)
     throw ( OU::EmbeddedException )
     : OC::ContainerBase<Driver,Container,Application,Artifact>(*this, name.c_str()),
       m_client(client) {
@@ -216,6 +217,23 @@ public:
     m_os = os;
     m_osVersion = osVersion;
     m_platform = platform;
+    unsigned nTransports = 0;
+    for (const char *p = transports; *p; p++)
+      if (*p == '|')
+	nTransports++;
+    m_transports.resize(nTransports);
+    OC::Transport *t = &m_transports[0];
+    char transport[strlen(transports)+1];
+    char id[strlen(transports)+1];
+    for (unsigned n = nTransports; n; n--, t++) {
+      int nChars;
+      if (sscanf(transports, "%s,%s,%u,%u,0x%x,0x%x|%n", transport, id, &t->roleIn, &t->roleOut,
+		 &t->optionsIn, &t->optionsOut, &nChars) != 6)
+	throw OU::Error("Bad transport string in container discovery: %s", transports);
+      t->transport = transport;
+      t->id = id;
+      transports += nChars;
+    }
   }
   virtual ~Container()
   throw () {
@@ -233,13 +251,27 @@ public:
   createArtifact(OCPI::Library::Artifact &lart, const OA::PValue *artifactParams) {
     return *new Artifact(*this, lart, artifactParams);
   }
+  bool connectInside(OCPI::Container::Launcher::Connection &) {
+  return false;
+  }
+#if 0
+  const char *
+  preferredTransport(bool remote, bool isProducer, OCPI::RDT::PortRole &role, uint32_t &options)
+  const {
+    // We like to push, but can do everything but ActiveOnly.
+    role = isProducer ? OR::ActiveMessage : OR::ActiveFlowControl;
+    options = (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage);
+    return "ocpi-sockets-rdma";
+}
+#endif
 };
 
 Worker::
-Worker(Application & app, Artifact *art, const char *name,
-       ezxml_t impl, ezxml_t inst, OC::Worker */*slave*/, const OU::PValue *wParams,
+Worker(Application & app, Artifact *art, const char *name, ezxml_t impl, ezxml_t inst,
+       OC::Worker */*slave*/, size_t member, size_t crewSize, const OU::PValue *wParams,
        unsigned remoteInstance)
-  : OC::WorkerBase<Application,Worker,Port>(app, *this, art, name, impl, inst, wParams),
+  : OC::WorkerBase<Application,Worker,Port>(app, *this, art, name, impl, inst, member, crewSize,
+					    wParams),
     m_remoteInstance(remoteInstance),
     m_launcher(*static_cast<Launcher *>(&app.parent().launcher())) {
   setControlMask(getControlMask() | (OU::Worker::OpInitialize|
@@ -306,8 +338,9 @@ public:
       *end++ = '\0';
       char *args[REMOTE_NARGS + 1];
       for (char **ap = args; (*ap++ = strsep(&cp, "|")); )
-	if ((ap - args) > REMOTE_NARGS)
-	  goto bad;
+	if ((ap - args) >= REMOTE_NARGS)
+	  break;
+      // cp now points to transports
       std::string cname;
       OU::format(cname, "remote:%s:%s", host.c_str(), args[0]);
       if (exclude) {
@@ -336,8 +369,8 @@ public:
       }
       ocpiDebug("Creating remote container: \"%s\", model %s, os %s, version %s, platform %s",
 		cname.c_str(), args[1], args[2], args[3], args[4]);
-      Container &c = *new Container(*client, cname.c_str(),
-				    args[1], args[2], args[3], args[4], NULL);
+      ocpiDebug("Transports are: '%s'", cp);
+      new Container(*client, cname.c_str(), args[1], args[2], args[3], args[4], cp, NULL);
     }
     sock = NULL;
     return false;

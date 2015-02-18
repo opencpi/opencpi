@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -76,10 +75,6 @@ namespace OCPI {
       m_os = OCPI_CPP_STRINGIFY(OCPI_OS) + strlen("OCPI");
       m_osVersion = OCPI_CPP_STRINGIFY(OCPI_OS_VERSION);
       m_platform = OCPI_CPP_STRINGIFY(OCPI_PLATFORM);
-#if 0
-      m_runtime = 0;
-      m_runtimeVersion = 0;
-#endif
     }
 
     bool Container::supportsImplementation(OU::Worker &i) {
@@ -173,6 +168,9 @@ namespace OCPI {
     bool Container::runInternal(uint32_t usecs, bool verbose) {
       if (!m_enabled)
 	return false;
+      OS::sleep(0);
+      for (BridgedPortsIter bpi = m_bridgedPorts.begin(); bpi != m_bridgedPorts.end(); bpi++)
+	(*bpi)->runBridge();
       DataTransfer::EventManager *em = getEventManager();
       switch (dispatch(em)) {
       case DispatchNoMore:
@@ -187,7 +185,6 @@ namespace OCPI {
       case Stopped:
 	// Exit from dispatch thread, it will be restarted.
 	return false;
-	break;
 
       case Spin:
 	/*
@@ -255,11 +252,24 @@ namespace OCPI {
 	throw OU::Error("Invalid container %u", n);
       return *Manager::s_containers[n];
     }
-    Launcher *Container::s_localLauncher;
+
+    Container &Container::baseContainer() {
+      Container &c = Container::nthContainer(0);
+      assert(!strncmp("rcc", c.name().c_str(), 3));
+      return c;
+    }
+
+    static LocalLauncher local;
+    Launcher *Container::s_localLauncher = &local;
+    // This static instance doesn't really amount to much...
     Launcher &Container::launcher() const {
-      if (!s_localLauncher)
-	s_localLauncher = new LocalLauncher();
-      return *s_localLauncher;
+      return local;
+    }
+    void Container::registerBridgedPort(LocalPort &p) {
+      m_bridgedPorts.insert(&p);
+    }
+    void Container::unregisterBridgedPort(LocalPort &p) {
+      m_bridgedPorts.erase(&p);
     }
   }
   namespace API {

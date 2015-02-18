@@ -9,7 +9,7 @@ Port(Worker &w, ezxml_t x, Port *sp, int nameOrdinal, WIPType type, const char *
      const char *&err)
   : OU::Port(sp, w, x, w.m_ports.size(), nameOrdinal, defaultName, err),
     m_worker(&w), count(0), master(false), type(type), pattern(NULL), clock(0), clockPort(0),
-    myClock(false), m_specXml(x) {
+    myClock(false), m_specXml(x), m_implOnly(false) {
   if (err)
     return;
   if (sp) {
@@ -20,6 +20,8 @@ Port(Worker &w, ezxml_t x, Port *sp, int nameOrdinal, WIPType type, const char *
   } else if ((err = OE::getBoolean(m_xml, "master", &master)) ||
 	     (err = w.getNumber(m_xml, "count", &count)))
     return;
+  else if (ezxml_cattr(m_xml, "implname"))
+    m_implOnly = true;
   pattern = ezxml_cattr(m_xml, "Pattern");
   if (sp)
     w.m_ports[m_ordinal] = this;
@@ -40,7 +42,8 @@ Port::
 Port(const Port &other, Worker &w, std::string &name, size_t count, const char *&err)
   : OU::Port(other, w, name, w.m_ports.size(), err),
     m_worker(&w), count(count), master(other.master), type(other.type), pattern(NULL),
-    clock(NULL), clockPort(NULL), myClock(false), m_specXml(other.m_specXml)
+    clock(NULL), clockPort(NULL), myClock(false), m_specXml(other.m_specXml),
+    m_implOnly(other.m_implOnly)
 {
   w.m_ports.push_back(this);
 }
@@ -489,7 +492,7 @@ emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *inden
 }
 
 void Port::
-emitXML(std::string &out) {}
+emitXML(std::string &) {}
 
 void Port::
 emitRccCppImpl(FILE *) {}

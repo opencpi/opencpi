@@ -162,7 +162,7 @@ namespace OCPI {
     const char *Property::
     offset(size_t &cumOffset, uint64_t &sizeofConfigSpace, const IdentResolver *resolver) {
       const char *err = NULL;
-      if (resolver && (err = finalize(*resolver, true)))
+      if (resolver && (err = finalize(*resolver, !m_isParameter)))
 	return err;
       if (m_isIndirect) {
 	uint64_t top = m_indirectAddr;

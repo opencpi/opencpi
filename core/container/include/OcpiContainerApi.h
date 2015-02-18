@@ -46,20 +46,28 @@
 namespace OCPI {
   namespace Container {
     class Port;
+    class Controllable;
+    class Worker;
     class LocalLauncher;
   }
   namespace Remote {
     class RemoteLauncher;
   }
   namespace API {
+    class ExternalPort;
     class ExternalBuffer {
     protected:
       virtual ~ExternalBuffer();
     public:
-      // For consumer buffers
-      virtual void release() = 0;
-      // For producer buffers
-      virtual void put( size_t length, uint8_t opCode = 0, bool endOfData = false) = 0;
+      virtual size_t &length() = 0;
+      virtual uint8_t &opCode() = 0;
+      virtual bool &end() = 0;
+      virtual void
+	release() = 0,
+	put() = 0,
+	//	put(ExternalPort &port) = 0,
+	put(size_t length, uint8_t opCode = 0, bool endOfData = false, size_t direct = 0) = 0;
+	//	put(ExternalPort &port, size_t length, uint8_t opCode = 0, bool endOfData = false) = 0;
     };
     class ExternalPort {
     protected:
@@ -75,9 +83,15 @@ namespace OCPI {
       virtual ExternalBuffer *getBuffer(uint8_t *&data, size_t &length) = 0;
       // Use this when end of data indication happens AFTER the last message.
       // Use the endOfData argument to put, when it is known at that time
-      virtual void endOfData() = 0;
+      // Return false when cannot do it due to flow control.
+      // i.e. both getBuffer and endOfData can return zero when it can't be done
+      virtual bool endOfData() = 0;
       // Return whether there are still buffers to send that can't be flushed now.
       virtual bool tryFlush() = 0;
+      // put/send the most recently gotten output buffer
+      virtual void put(size_t length, uint8_t opCode, bool end, size_t direct = 0) = 0;
+      // put/send a particular buffer, PERHAPS FROM ANOTHER PORT
+      virtual void put(OCPI::API::ExternalBuffer &b) = 0;
     };
     class Port {
       friend class OCPI::Container::LocalLauncher;
@@ -88,6 +102,7 @@ namespace OCPI {
     public:
       virtual void connect(Port &other, const PValue *myParams = NULL,
 			   const PValue *otherParams = NULL) = 0;
+#if 0
       virtual void connectURL(const char* url, const PValue *myProps = NULL,
 			   const PValue *otherProps = NULL) = 0;
 
@@ -97,6 +112,7 @@ namespace OCPI {
 					    const PValue *myParams = NULL,
 					    const PValue *extParams = NULL) = 0;
       virtual void loopback(Port &other) = 0;
+#endif
     };
     class Property;
     class PropertyInfo;
@@ -237,24 +253,32 @@ namespace OCPI {
     // Note that the API for this has the user typically constructing this structure
     // on their stack so that access to members (in inline methods) has no indirection.
     class Property {
+      friend class OCPI::Container::Worker;
       Worker &m_worker;               // which worker do I belong to
-      bool m_readSync, m_writeSync;   // these exist to avoid exposing the innards of m_info.
+      const volatile void *m_readVaddr;
+      volatile void *m_writeVaddr;
     public:
+      PropertyInfo &m_info;           // details about property, not defined in the API
+    private:
+      // These next/last three must be after m_info so they can be initialized in the member
+      // initialize list based on m_info
+      unsigned m_ordinal;
+      bool m_readSync, m_writeSync;   // these exist to avoid exposing the innards of m_info.
+      //    protected:
       void checkTypeAlways(BaseType ctype, size_t n, bool write) const;
       inline void checkType(BaseType ctype, size_t n, bool write) const {
 #if !defined(NDEBUG) || defined(OCPI_API_CHECK_PROPERTIES)
         checkTypeAlways(ctype, n, write);
 #endif
       }
-      inline bool readSync() const { return m_readSync; }
-      inline bool writeSync() const { return m_writeSync; }
-      volatile void *m_writeVaddr;
-      const volatile void *m_readVaddr;
-      PropertyInfo &m_info;           // details about property, not defined in the API
-      unsigned m_ordinal;
+      Property(Worker &, unsigned);
+    public:
       Property(Application &, const char *);
       Property(Worker &, const char *);
-      Property(Worker &, unsigned);
+      inline bool readSync() const { return m_readSync; }
+      inline bool writeSync() const { return m_writeSync; }
+      // If it is a string property, how big a buffer should I allocate to retrieve the value?
+      size_t stringBufferLength() const;
       // We don't use scalar-type-based templates (sigh) so we can control which
       // types are supported explicitly.  C++ doesn't quite do the right thing.
       // The "m_writeVaddr/m_readVaddr" members are only non-zero if the 

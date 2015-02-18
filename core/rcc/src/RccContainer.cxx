@@ -54,6 +54,7 @@
 namespace OC = OCPI::Container;
 namespace OA = OCPI::API;
 namespace OU = OCPI::Util;
+namespace OR = OCPI::RDT;
 
 namespace OCPI {
   namespace RCC {
@@ -76,8 +77,6 @@ Container(const char *name,
   : OC::ContainerBase<Driver,Container,Application,Artifact>(*this, name)
 {
   m_model = "rcc";
-  //temp  m_ourUID = g_unique_id;
-
 
    if ( m_staticInit == false ) {
 
@@ -119,6 +118,7 @@ Container(const char *name,
     throw OU::EmbeddedException( OU::NO_MORE_MEMORY, "new", OU::ContainerFatal);
   }
 #endif
+
   const char* monitorIPAddress = NULL;
   OU::findString(props, "monitorIPAddress", monitorIPAddress);
   //  start(NULL);
@@ -146,14 +146,6 @@ Container::
   // We need to shut down the apps and workers since they
   // depend on artifacts and transport.
   OU::Parent<Application>::deleteChildren();
-#if 0
-  try {
-    delete m_transport;
-  }
-  catch( ... ) {
-    printf("ERROR: Got an exception in OCPI::RCC::Container::~Container)\n");
-  }
-#endif
 }
 
 

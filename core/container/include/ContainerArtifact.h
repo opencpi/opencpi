@@ -84,6 +84,7 @@ namespace OCPI {
       Worker &createWorker(Application &app,
 			   const char *appInstName,
 			   ezxml_t impl, ezxml_t inst, Worker *slave,
+			   size_t member, size_t crewSize,
 			   const OCPI::Util::PValue *wparams = NULL);
     protected:
       virtual ~Artifact();

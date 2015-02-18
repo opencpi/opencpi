@@ -157,7 +157,7 @@ namespace OCPI {
 	    delete m_circuit;
 	}
 	  
-	OCPI::DataTransport::BufferUserFacet*  getNextEmptyOutputBuffer(void *&data, size_t &length)
+	OCPI::DataTransport::BufferUserFacet*  getNextEmptyOutputBuffer(uint8_t *&data, size_t &length)
 	{
 	  return m_circuit->getNextEmptyOutputBuffer(data, length, NULL);
 	}
@@ -167,7 +167,7 @@ namespace OCPI {
 	  m_circuit->sendOutputBuffer(b, msg_size, opcode);
 	}
 
-	OCPI::DataTransport::BufferUserFacet*  getNextFullInputBuffer(void *&data, size_t &length,
+	OCPI::DataTransport::BufferUserFacet*  getNextFullInputBuffer(uint8_t *&data, size_t &length,
 								      uint8_t &opcode)
 	{
 	  return m_circuit->getNextFullInputBuffer(data, length, opcode);

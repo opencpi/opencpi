@@ -95,7 +95,7 @@ namespace DataTransfer {
     SMBResources         resources;    // SMB resources associated with this endpoint
     XferFactory*         factory;
     unsigned             refCount;
-    EndPoint( std::string& ep, size_t size=0, bool local=false);
+    EndPoint(const std::string& ep, size_t size=0, bool local=false);
     virtual bool isCompatibleLocal(const char *) const { return true; }
     //    EndPoint& operator=(EndPoint&);
     //    EndPoint& operator=(EndPoint*);
@@ -110,7 +110,7 @@ namespace DataTransfer {
     bool canSupport(const char *remote_endpoint);
 
     // Sets smem location data based upon the specified endpoint
-    OCPI::OS::int32_t setEndpoint( std::string& ep );
+    int32_t setEndpoint(const std::string& ep );
 
     // Get the address from the endpoint
     virtual const char* getAddress()=0;
@@ -148,7 +148,7 @@ namespace DataTransfer {
      *                Returns 0 if success, platform dependent error otherwise
      *
      */
-    virtual OCPI::OS::int32_t attach(EndPoint* loc) = 0;
+    virtual OCPI::OS::int32_t attach(EndPoint* loc);
 
     /*
      * Detach from shared memory object
@@ -157,7 +157,7 @@ namespace DataTransfer {
      *                Returns 0 if success, platform dependent error otherwise
      *
      */
-    virtual OCPI::OS::int32_t detach() = 0;
+    virtual OCPI::OS::int32_t detach();
 
     /*
      * Map a view of the shared memory area at some offset/size and return the virtual address.
@@ -182,7 +182,7 @@ namespace DataTransfer {
      *                Returns 0 if success, platform dependent error otherwise
      *
      */
-    virtual int32_t unMap() = 0;
+    virtual int32_t unMap();
 
     /*
      *        GetEndPoint - Returns the endpoint of the shared memory area

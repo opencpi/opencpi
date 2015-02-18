@@ -5,12 +5,12 @@
 #include "hdl.h"
 
 // Constructor when creating a derived impl port from a spec port
-// Based on an existing spec port (sp).
+// Based on an existing spec port (sp), unless impl-only
 DataPort::
 DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *&err)
   : OcpPort(w, x, sp, ordinal, type, NULL, err) {
-  assert(sp != NULL);
-  DataPort *dp = static_cast<DataPort*>(sp);
+  // assert(sp != NULL);
+  //  DataPort *dp = static_cast<DataPort*>(sp);
   // Now we do data port initialization that will precede the initializations for specific port
   // types (WSI, etc.)
   // These are AFTER the protocol parsing is done
@@ -174,7 +174,7 @@ parseProtocol() {
     }
     // The protx comes from an include, a child element, or the protocol attr file
     if (protx) {
-      if (protFile.length()) {
+      if (protFile.length() && protFile != m_worker->m_file) {
 	// If we are being parsed from a protocol file, default the name.
 	const char *file = protFile.c_str();
 	const char *start = strrchr(file, '/');

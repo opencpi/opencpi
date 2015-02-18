@@ -410,12 +410,12 @@ namespace OCPI {
 #undef SCA_SIMPLE
 #define SCA_SIMPLE(l,c,t,n,h,pt,run)                        \
               case OA::OCPI_##pt: {	      \
-              CORBA::c typed_value = p->v##pt;                \
+              CORBA::c typed_value = p->value.v##pt;                \
               property.value <<= h; \
               break; }
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)        \
               case OA::OCPI_String:        {        \
-              property.value <<= p->vString; \
+              property.value <<= p->value.vString; \
               break; }
               OCPI_PROPERTY_DATA_TYPES
             default:;

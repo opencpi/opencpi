@@ -5,7 +5,6 @@
  *
  * This file contains the RCC implementation skeleton for worker: file_read
  */
-#define _GNU_SOURCE // for asprintf
 #include <fcntl.h>
 #include <stdio.h>
 #include <errno.h>
@@ -16,75 +15,124 @@
 typedef struct {
   int fd;
   int started;
+  uint64_t fileLength;
+  off_t nextSeek;
 } MyState;
 static size_t mysizes[] = {sizeof(MyState), 0};
+
+// We will run when we get a data message, OR an EOF message
+static uint32_t myPortMasks[] = {(1<<FILE_WRITE_IN) | (1 << FILE_WRITE_EOF_OUT),
+				 1<<FILE_WRITE_EOF_IN, 0 };
+static RCCRunCondition myRunCondition = {myPortMasks, 0, 0};
 
 FILE_WRITE_METHOD_DECLARATIONS;
 RCCDispatch file_write = {
  /* insert any custom initializations here */
  FILE_WRITE_DISPATCH
+ .runCondition = &myRunCondition,
  .memSizes = mysizes
 };
-
-/*
- * Methods to implement for worker file_read, based on metadata.
- */
 
 static RCCResult
 start(RCCWorker *self) {
   MyState *s = self->memories[0];
   File_writeProperties *p = self->properties;
 
-  if (s->started) {
-    self->errorString = "file_read cannot be restarted";
-    return RCC_ERROR;
-  }
+  if (s->started)
+    return self->container.setError("file_read cannot be restarted");
   s->started = 1;
-  if ((s->fd = creat(p->fileName, 0666)) < 0) {
-    asprintf(&self->errorString, "error creating file \"%s\": %s", p->fileName, strerror(errno));
-    return RCC_ERROR;
+  if ((s->fd = creat(p->fileName, 0666)) < 0)
+    return self->container.setError("error creating file \"%s\": %s",
+				    p->fileName, strerror(errno));
+  if (self->crewSize > 1) {
+    if (!p->messageSize)
+      return
+	self->container.setError("worker can only be scaled if a message size is specified");
+    if ((s->nextSeek =
+	 lseek(s->fd, self->member * p->messageSize, SEEK_SET)) == -1)
+      return
+	self->container.setError("error seeking file \"%s\": %s", p->fileName, strerror(errno));
   }
   return RCC_OK;
-} 
+}
 
 static RCCResult
 release(RCCWorker *self) {
- MyState *s = self->memories[0];
+  MyState *s = self->memories[0];
   if (s->started)
     close(s->fd);
- return RCC_OK;
+  return RCC_OK;
 }
 
 static RCCResult
 run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
- RCCPort *port = &self->ports[FILE_WRITE_IN];
- File_writeProperties *props = self->properties;
- MyState *s = self->memories[0];
+  RCCPort
+    *data = &self->ports[FILE_WRITE_IN],
+    *eof_in = &self->ports[FILE_WRITE_EOF_IN];
+  File_writeProperties *props = self->properties;
+  MyState *s = self->memories[0];
+  uint64_t fileLength;
 
- // printf("In file_write.c got %u data = %x\n", port->input.length, *(uint32_t *)port->current.data);
-
- (void)timedOut;(void)newRunCondition;
- ssize_t n;
- if (props->messagesInFile) {
-   struct {
-     uint32_t length;
-     uint32_t opcode;
-   } m;
-   m.length = port->input.length;
-   m.opcode = port->input.u.operation;
-   if ((n = write(s->fd, &m, sizeof(m))) < 0) {
-     asprintf(&self->errorString, "error writing header to file: %s", strerror(errno));
-     return RCC_ERROR;
-   }
- }
- if (port->input.length) {
-   if ((n = write(s->fd, port->current.data, port->input.length)) < 0 || (size_t)n != port->input.length) {
-     asprintf(&self->errorString, "error writing data to file: %s", strerror(errno));
-     return RCC_ERROR;
-   }
-   props->bytesWritten += n;
- } else if (props->stopOnEOF)
-   return RCC_DONE;
- props->messagesWritten++;
- return RCC_ADVANCE;
+  (void)timedOut;(void)newRunCondition;
+  if (eof_in->current.data) {
+    // In the scaled case grab the file length determined by whichever member got the EOF
+    s->fileLength = *(uint64_t*)eof_in->current.data;
+    self->container.advance(eof_in, 0);
+    //printf("Member %zu got FILELENGTH: %llu %llu\n", self->member, s->fileLength, s->nextSeek);
+  }
+  if (s->fileLength && (uint64_t)s->nextSeek >= s->fileLength)
+    return RCC_DONE;
+  if (!data->current.data)
+    return RCC_OK;
+  ssize_t n = data->input.length;
+  if (props->messagesInFile) {
+    struct {
+      uint32_t length;
+      uint32_t opcode;
+    } m;
+    m.length = n;
+    m.opcode = data->input.u.operation;
+    if (write(s->fd, &m, sizeof(m)) < 0)
+      return self->container.setError("error writing header to file: %s", strerror(errno));
+  }
+#if 0
+  printf("writer %zu of %zu others %zu length %zu written %zu pos %zu data %x\n",
+	 self->member, self->crewSize, data->connectedCrewSize, data->input.length,
+	 (size_t)props->messagesWritten, (size_t)lseek(s->fd, 0, SEEK_CUR),
+	 *(uint32_t*)(data->current.data));
+#endif
+  if (self->crewSize > 1 && n < props->messageSize)
+    fileLength = (size_t)lseek(s->fd, 0, SEEK_CUR) + n;
+  if (n) {
+    if ((n = write(s->fd, data->current.data, n)) < 0 ||
+	(size_t)n != data->input.length)
+      return self->container.setError("error writing data to file: %s", strerror(errno));
+    props->bytesWritten += n;
+    props->messagesWritten++;
+#if 0
+    printf("written %zu others %zu crew %zu ms %zu skip %zu\n", n,
+	   data->connectedCrewSize, self->crewSize, (size_t)props->messageSize,
+	   data->connectedCrewSize * (self->crewSize - 1) * props->messageSize);
+#endif
+    if (self->crewSize > 1 && n >= props->messageSize && 
+	//	props->messagesWritten % data->connectedCrewSize == 0 &&
+	(s->nextSeek =
+	 lseek(s->fd, (self->crewSize - 1) * props->messageSize, SEEK_CUR)) == -1)
+      return
+	self->container.setError("scaled seeking output file failed: %s", strerror(errno));
+  }
+  self->container.advance(data, 0);
+  if (s->fileLength && (uint64_t)s->nextSeek >= s->fileLength)
+    return RCC_DONE;
+  if (self->crewSize > 1 && n < props->messageSize) {
+    RCCPort *eof_out = &self->ports[FILE_WRITE_EOF_OUT];
+    *(uint64_t*)eof_out->current.data = s->fileLength = fileLength;
+    eof_out->output.length = sizeof(uint64_t);
+    self->container.advance(eof_out, 0);
+    //printf("Member %zu sending FILELENGTH: %llu\n", self->member, s->fileLength);
+    return RCC_DONE;
+  }
+  if (n == 0 && props->stopOnEOF)
+    return RCC_DONE;
+  return RCC_OK;
 }

@@ -30,8 +30,8 @@
      <Property Name="pap7" Type="ULong" arraylength="8" parameter='1' default='1,2,3,4'/>
      <Property Name="pap8" Type="UShort" arraylength="9" parameter='1' default='1,2,3,4'/>
      <Property Name="pap9" Type="LongLong"  arraylength="10" parameter='1' default='1,2,3,4'/>
-     <Property Name="pap10" Type="ULongLong" arraylength="11" parameter='1' default='1,2,3,4'/>
-     <Property Name="pap11" Type="String" StringLength="20" arraylength="12" parameter='1' default='1,2,3,4'/>
+     <Property Name="pap10" Type="ULongLong" arraylength="pp7" parameter='1' default='1,2,3,4'/>
+     <Property Name="pap11" Type="String" StringLength="7" arraylength="pp7" parameter='1' default='1,2,3,4'/>
   <property name='romAddr' writable='true'/>
   <property name='romData' volatile='true'/>
 </HdlWorker>

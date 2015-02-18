@@ -13,6 +13,7 @@
 #include <vector>
 #include <signal.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include "OcpiContainerApi.h"
 #include "OcpiApplicationApi.h"
@@ -20,6 +21,7 @@
 #include "OcpiOsDebug.h"
 #include "OcpiOsFileSystem.h"
 #include "OcpiUtilMisc.h"
+#include "OcpiUtilException.h"
 #include "RemoteDriver.h"
 
 namespace OA = OCPI::API;
@@ -61,7 +63,7 @@ usage(const char *name) {
 	  "                 # set log level during execution\n"
 	  "    -t <seconds>\n"
 	  "                 # specify seconds of runtime\n"
-	  "    -C           # show available containers\n"
+	  "    -C           # show available containers, even with no application xml file\n"
 	  "    -S           # list of servers to explicitly contact (no UDP discovery)\n"
 	  "    -R           # suppress discovery of remote containers\n"
 	  "    -X           # list of containers to exclude from usage\n"
@@ -172,7 +174,8 @@ main(int /*argc*/, const char **argv) {
     std::string file;
     if (*ap) {
       file = *ap;
-      if (!OS::FileSystem::exists(file)) {
+      bool isDir;
+      if (!OS::FileSystem::exists(file, &isDir) || isDir) {
 	file += ".xml";
 	if (!OS::FileSystem::exists(file)) {
 	  fprintf(stderr, "Error: file %s (or %s.xml) does not exist\n", *ap, *ap);
@@ -247,6 +250,8 @@ main(int /*argc*/, const char **argv) {
       if (verbose)
 	fprintf(stderr, "After %u seconds, stopping application...\n", seconds);
       app.stop();
+      if (verbose)
+	fprintf(stderr, "Application stopped...\n");
     } else {
       if (verbose)
 	fprintf(stderr, "Waiting for application to be finished (no timeout)\n");

@@ -134,16 +134,20 @@ namespace OCPI {
       /**********************************
        * Reteives the next available input buffer.
        *********************************/
-      BufferUserFacet* getNextFullInputBuffer(void *&data, size_t &length, uint8_t &opcode);
-      //      Buffer* getNextFullInputBuffer();
+      BufferUserFacet* getNextFullInputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode);
+      // For use by bridge ports
+      BufferUserFacet* getNextEmptyInputBuffer(uint8_t *&data, size_t &length);
+      void sendInputBuffer(BufferUserFacet &b, size_t length, uint8_t opcode);
 
       /**********************************
        * This method retreives the next available buffer from the local (our)
        * port set.  A NULL port indicates local context.
        *********************************/
-      BufferUserFacet* getNextEmptyOutputBuffer(void *&data, size_t &length);
       Buffer* getNextEmptyOutputBuffer();
-
+      BufferUserFacet* getNextEmptyOutputBuffer(uint8_t *&data, size_t &length);
+      // For use by bridge ports
+      BufferUserFacet* getNextFullOutputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode);
+      void releaseOutputBuffer(BufferUserFacet &b);
       /**********************************
        * Get the port dependency data
        *********************************/
@@ -152,8 +156,9 @@ namespace OCPI {
       /**********************************
        * Finalize the port
        *********************************/
-      virtual const OCPI::RDT::Descriptors *finalize( const OCPI::RDT::Descriptors& other, OCPI::RDT::Descriptors &mine,
-						      OCPI::RDT::Descriptors *flow = NULL );
+      virtual const OCPI::RDT::Descriptors *
+      finalize(const OCPI::RDT::Descriptors *other, OCPI::RDT::Descriptors &mine,
+	       OCPI::RDT::Descriptors *flow, bool &done);
       bool isFinalized(); 
 
       /**************************************
@@ -204,7 +209,7 @@ namespace OCPI {
        * This method is used to send an input buffer thru an output port with Zero copy, 
        * if possible.
        *********************************/
-      void sendZcopyInputBuffer( Buffer* src_buf, size_t len, uint8_t op );
+      void sendZcopyInputBuffer( BufferUserFacet& src_buf, size_t len, uint8_t op, bool end);
 
       /**********************************
        * This method causes the specified input buffer to be marked
@@ -216,7 +221,9 @@ namespace OCPI {
       /**********************************
        * Send an output buffer
        *********************************/
-      void sendOutputBuffer( BufferUserFacet* b, size_t length, uint8_t opcode );
+      void sendOutputBuffer(BufferUserFacet* buf, size_t length, uint8_t opcode,
+			    bool end = false, bool data = true);
+      //      void sendOutputBuffer( BufferUserFacet* b, size_t length, uint8_t opcode );
 
 
       // Advanced buffer management
@@ -292,6 +299,8 @@ namespace OCPI {
 
       // used to cycle through buffers
       BufferOrdinal m_lastBufferOrd;
+      // The ordinal used on the bridge side
+      BufferOrdinal m_nextBridgeOrd;
 
       // This port is externally connected
       enum ExternalConnectState {

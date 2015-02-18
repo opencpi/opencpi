@@ -37,6 +37,7 @@
 #include "OcpiOsFileIterator.h"
 #include "OcpiOsFileSystem.h"
 #include "OcpiOsServerSocket.h"
+#include "OcpiOsMisc.h"
 #include "OcpiUuid.h"
 #include "OcpiUtilEzxml.h"
 #include "OcpiLibraryManager.h"
@@ -302,7 +303,10 @@ namespace OCPI {
 	  if (wpid == 0) // can't happen if hanging
 	    ;//    ocpiDebug("Wait returned 0 - subprocess running");
 	  else if ((int)wpid == -1) {
-	    error = "waitpid error";
+	    if (errno == ECHILD)
+	      OU::format(error, "simulator failed: look in sim.out");
+	    else
+	      OU::format(error, "waitpid error %s (%d)", strerror(errno), errno);
 	    return true;
 	  } else if (WIFEXITED(status)) {
 	    int exitStatus = WEXITSTATUS(status);
@@ -510,9 +514,10 @@ namespace OCPI {
 	  uint8_t msg[2];
 	  msg[0] = m_dump ? DUMP_ON : DUMP_OFF;
 	  msg[1] = 0;
-	  assert(write(m_ctl.m_wfd, msg, 2) == 2);
+	  ocpiCheck(write(m_ctl.m_wfd, msg, 2) == 2);
 	  // Improve the odds of an immediate error giving a good error message by letting the sim run
 	  ocpiInfo("Waiting for simulator to start before issueing any more credits.");
+	  OS::sleep(100);
 	  for (unsigned n = 0; n < 1; n++)
 	    if (spin(err) || mywait(s_pid, false, err) || ack(err))
 	      return true;
@@ -613,7 +618,7 @@ namespace OCPI {
 	    msg[0] = TERMINATE;
 	    msg[1] = 0;
 	    ocpiInfo("Telling the simulator process (%u) to exit", s_pid);
-	    assert(write(m_ctl.m_wfd, msg, 2) == 2);
+	    ocpiCheck(write(m_ctl.m_wfd, msg, 2) == 2);
 	    ocpiInfo("Waiting for simulator process to exit");
 	    mywait(s_pid, true, error);
 	    m_ctl.flush();

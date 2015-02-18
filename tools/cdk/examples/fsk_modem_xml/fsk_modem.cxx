@@ -95,7 +95,7 @@ int main ( int argc, char* argv [ ] )
 
 		      "  <instance component='file_read_msg' >"
 		      "    <property name='fileName' value='dataIn.dat'/> "		      
-		      "    <property name='genTestFile' value='true'/> "		      
+		      "    <property name='genTestFile' value='false'/> "		      
 		      "    <property name='stepThruMsg' value='%s'/> "
 		      "    <property name='stepNow' value='%s'/> "
 		      "    <property name='continuous' value='%s'/> "

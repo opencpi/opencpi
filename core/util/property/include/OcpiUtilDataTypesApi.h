@@ -44,6 +44,7 @@
 #define __STDC_LIMIT_MACROS // wierd standards goof up
 #endif
 #include <stdint.h>
+#include <limits>
 /*
   These are the "simple" scalar property data types we support
   The list is built from several sources, the SCA, and CORBA IDL,
@@ -111,6 +112,15 @@ namespace OCPI {
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) typedef run pretty;
     OCPI_DATA_TYPES
 #undef OCPI_DATA_TYPE
+#undef OCPI_DATA_TYPE_S
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
+  const run pretty##_MAX = std::numeric_limits<run>::max(); \
+  const run pretty##_MIN = std::numeric_limits<run>::min();
+    OCPI_DATA_TYPES
+#undef OCPI_DATA_TYPE
+#undef OCPI_DATA_TYPE_S
+#define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
   }
 }
 #endif

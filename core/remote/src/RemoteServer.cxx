@@ -17,6 +17,7 @@ namespace OL = OCPI::Library;
 namespace OU = OCPI::Util;
 namespace OE = OCPI::OS::Ether;
 namespace OA = OCPI::API;
+namespace OR = OCPI::RDT;
 namespace OCPI {
   namespace Remote {
 
@@ -34,12 +35,8 @@ namespace OCPI {
     ~Server() {
       ezxml_free(m_rx);
       ezxml_free(m_lx);
-      
-      std::vector<OCPI::Container::Application *>::iterator it;
-      for (it=containerApps.begin(); it != containerApps.end(); it++ ) {
-	delete (*it);
-      }
-
+      for (unsigned n = 0; n < m_containerApps.size(); n++)
+	delete m_containerApps[n];
     }
 
     bool Server::
@@ -139,27 +136,50 @@ namespace OCPI {
       return false;
     }
 
+    const char *Server::
+    doSide(ezxml_t cx, OC::Launcher::Port &p, const char *type) {
+      ezxml_t px = ezxml_cchild(cx, type);
+      ocpiAssert(px);
+      size_t member;
+      bool hasMember;
+      p.m_url = ezxml_cattr(px, "url");
+      p.m_name = ezxml_cattr(px, "name");
+      const char *err;
+      if ((err = OX::getNumber(px, "scale", &p.m_scale, NULL, 1)) ||
+	  (err = OX::getNumber(px, "index", &p.m_index, NULL, 0)) ||
+	  (err = OX::getNumber(px, "member", &member, &hasMember)))
+	return err;
+      if (hasMember) {
+	assert(member < m_members.size());
+	p.m_launcher = m_local;
+	p.m_member = &m_members[member];
+      }
+      ezxml_t x;
+      if ((x = ezxml_cchild(px, "params")) && (err = p.m_params.addXml(x)))
+	return err;
+      if ((x = ezxml_cchild(px, "port"))) {
+	OU::Port *mp = new OU::Port(x);
+	if ((err = mp->parse()))
+	  return err;
+	p.m_metaPort = mp;
+      }
+      return NULL;
+    }
+
     bool Server::
     doConnection(ezxml_t cx, OC::Launcher::Connection &c, std::string &error) {
-      bool in, out;
-      size_t instIn, instOut;
-      if ((c.m_in.m_name = ezxml_cattr(cx, "nameIn")))
-	c.m_in.m_launcher = m_local;
-      if ((c.m_out.m_name = ezxml_cattr(cx, "nameOut")))
-	c.m_out.m_launcher = m_local;
-      c.m_url = ezxml_cattr(cx, "url");
+      c.m_transport.transport = ezxml_cattr(cx, "transport");
+      c.m_transport.id = ezxml_cattr(cx, "id");
       const char *err;
-      if ((err = OX::getNumber(cx, "instIn", &instIn, &in)) ||
-	  (err = OX::getNumber(cx, "instOut", &instOut, &out)))
+      size_t roleIn, roleOut;
+      if ((err = OX::getNumber(cx, "roleIn", &roleIn, NULL, 0)) ||
+	  (err = OX::getNumber(cx, "roleOut", &roleOut, NULL, 0)) ||
+	  (err = OX::getNumber(cx, "bufferSize", &c.m_bufferSize, NULL, 0)) ||
+	  (err = doSide(cx, c.m_in, "in")) ||
+	  (err = doSide(cx, c.m_out, "out")))
 	return OU::eformat(error, "Error processing connection values for launch: %s", err);
-      if (in) {
-	assert(instIn < m_instances.size());
-	c.m_in.m_instance = &m_instances[instIn];
-      }
-      if (out) {
-	assert(instOut < m_instances.size());
-	c.m_out.m_instance = &m_instances[instOut];
-      }
+      c.m_transport.roleIn = OCPI_UTRUNCATE(OR::PortRole, roleIn);
+      c.m_transport.roleOut = OCPI_UTRUNCATE(OR::PortRole, roleOut);
       ezxml_t px;
       if ((px = ezxml_cchild(cx, "paramsin")))
 	c.m_in.m_params.addXml(px);
@@ -172,26 +192,43 @@ namespace OCPI {
     // This might happen in "launch" if all the artifacts are already present.
     bool Server::
     doLaunch(std::string &error) {
+
       containers.resize(OX::countChildren(m_lx, "container"),0);
       containerApps.resize(containers.size(),0);
+
       unsigned n = 0;
       for (ezxml_t cx = ezxml_cchild(m_lx, "container"); cx; cx = ezxml_next(cx), n++) {
 	const char *name = ezxml_cattr(cx, "name");
 	assert(name);
-	assert(!containers[n]);
-	containers[n] = OC::Manager::find(name);
-	assert(containers[n]);
-	assert(!containerApps[n]);
-	OC::Launcher *l = &containers[n]->launcher();
+	assert(!m_containers[n]);
+	m_containers[n] = OC::Manager::find(name);
+	assert(m_containers[n]);
+	assert(!m_containerApps[n]);
+	OC::Launcher *l = &m_containers[n]->launcher();
 	assert(!m_local || m_local == l);
 	m_local = l;
-	containerApps[n] = static_cast<OC::Application*>(containers[n]->createApplication());
+	m_containerApps[n] = static_cast<OC::Application*>(m_containers[n]->createApplication());
       }
-      m_instances.resize(OX::countChildren(m_lx, "instance"));
-      OC::Launcher::Instance *i = &m_instances[0];
-      for (ezxml_t ix = ezxml_cchild(m_lx, "instance"); ix; ix = ezxml_next(ix), i++) {
+      std::vector<ezxml_t> crewsXml; // hold onto the xml until we are parsing members
+      m_crews.resize(OX::countChildren(m_lx, "crew"));
+      crewsXml.resize(m_crews.size());
+      ezxml_t *cxp = &crewsXml[0];
+      OC::Launcher::Crew *cr = &m_crews[0];
+      for (ezxml_t cx = ezxml_cchild(m_lx, "crew"); cx; cx = ezxml_next(cx), cr++, cxp++) {
+	const char *err;
+	if ((err = OX::getNumber(cx, "size", &cr->m_size, NULL, 0, false, true))) {
+	  error = err;
+	  return true;
+	}
+	cr->m_propValues.resize(OX::countChildren(cx, "property"));
+	cr->m_propOrdinals.resize(cr->m_propValues.size());
+	*cxp = ezxml_cchild(cx, "property");
+      }
+      m_members.resize(OX::countChildren(m_lx, "member"));
+      OC::Launcher::Member *i = &m_members[0];
+      for (ezxml_t ix = ezxml_cchild(m_lx, "member"); ix; ix = ezxml_next(ix), i++) {
 	std::string inst, impl;
-	size_t artN, contN, slave;
+	size_t artN, contN, slave, crewN;
 	bool slaveFound;
 	const char *err;
 	if ((err = OX::getRequiredString(ix, i->m_name, "name")) ||
@@ -200,16 +237,16 @@ namespace OCPI {
 	    (err = OX::getNumber(ix, "slave", &slave, &slaveFound)) ||
 	    (err = OX::getNumber(ix, "container", &contN, NULL, 0, false, true)) ||
 	    (err = OX::getNumber(ix, "artifact", &artN, NULL, 0, false, true)) ||
-	    (err = OX::getNumber(ix, "crew", &i->m_crewSize, NULL, 0, false, false)) ||
+	    (err = OX::getNumber(ix, "crew", &crewN, NULL, 0, false, true)) ||
 	    (err = OX::getNumber(ix, "member", &i->m_member, NULL, 0, false, false))) {
 	  error = err;
 	  return true;
 	}
 	OX::getOptionalString(ix, inst, "static");
-	assert(contN < containers.size() && containers[contN]);
+	assert(contN < m_containers.size() && m_containers[contN]);
 	assert(artN < m_artifacts.size() && m_artifacts[artN]);
-	i->m_container = containers[contN];
-	i->m_containerApp = containerApps[contN];
+	i->m_container = m_containers[contN];
+	i->m_containerApp = m_containerApps[contN];
 	OL::Artifact &art = *m_artifacts[artN];
 	// FIXME: this could easily be indexed if OL::Artifact had an impl index
 	if (!(i->m_impl = art.findImplementation(impl.c_str(),
@@ -218,29 +255,31 @@ namespace OCPI {
 		     impl.c_str(), inst.length() ? " with instance " : "",
 		     inst.length() ? inst.c_str() : "", art.name().c_str());
 	}
-	i->m_propValues.resize(OX::countChildren(ix, "property"));
-	i->m_propOrdinals.resize(i->m_propValues.size());
-	if (i->m_propValues.size()) {
-	  OU::Value *v = &i->m_propValues[0];
-	  unsigned *u = &i->m_propOrdinals[0];
-	  for (ezxml_t px = ezxml_cchild(ix, "property"); px; px = ezxml_next(px), v++, u++) {
-	    const char *val = ezxml_cattr(px, "v");
+	if (slaveFound) {
+	  assert(slave < m_members.size());
+	  i->m_slave = &m_members[slave];
+	  i->m_slave->m_hasMaster = true;
+	}
+	i->m_crew = &m_crews[crewN];
+	if (crewsXml[crewN]) {
+	  // we are the first seen member of the crew - we can parse the property values since we
+	  // know the impl now
+	  unsigned *u = &i->m_crew->m_propOrdinals[0];
+	  OU::Value *v = &i->m_crew->m_propValues[0];
+	  for (ezxml_t px = crewsXml[crewN]; px; px = ezxml_next(px), u++, v++) {
 	    size_t ord;
 	    if ((err = OX::getNumber(px, "n", &ord)))
 	      OU::eformat(error, "Error processing instances for launch: %s", err);
+	    *u = OCPI_UTRUNCATE(unsigned, ord);
+	    const char *val = ezxml_cattr(px, "v");
 	    assert(ord <= i->m_impl->m_metadataImpl.m_nProperties);
 	    OU::Property &p = i->m_impl->m_metadataImpl.m_properties[ord];
-	    assert(v && !p.m_isParameter);
+	    assert(!p.m_isParameter);
 	    v->setType(p);
-	    if ((err = v->parse(val)))	
+	    if ((err = v->parse(val)))
 	      return OU::eformat(error, "Error processing property values for launch: %s", err);
-	    *u = OCPI_UTRUNCATE(unsigned, ord);
 	  }
-	}
-	if (slaveFound) {
-	  assert(slave < m_instances.size());
-	  i->m_slave = &m_instances[slave];
-	  i->m_slave->m_hasMaster = true;
+	  crewsXml[crewN] = NULL;
 	}
       }
       m_connections.resize(OX::countChildren(m_lx, "connection"));
@@ -249,7 +288,7 @@ namespace OCPI {
 	if (doConnection(cx, *c, error))
 	  return true;
       m_response
-	 = m_local->launch(m_instances, m_connections) ? "<launching>" : "<launching done='1'>";
+	 = m_local->launch(m_members, m_connections) ? "<launching>" : "<launching done='1'>";
       // We know that the only thing that can happen at launch time is to
       // get initial provider info from input ports
       c = &m_connections[0];
@@ -323,7 +362,7 @@ namespace OCPI {
       // 3. Give the local launcher a chance to deal with connection info and produce mode
       ocpiDebug("Connections processed.  Entering local launcher work function.");
       m_response =
-	m_local->work(m_instances, m_connections) ? "<launching>" : "<launching done='1'>";
+	m_local->work(m_members, m_connections) ? "<launching>" : "<launching done='1'>";
       // 4. Take whatever the local launcher produced, and send it back
       ocpiDebug("Local launcher returned.  m_response is: %s", m_response.c_str());
       OC::Launcher::Connection *c = &m_connections[0];
@@ -357,20 +396,19 @@ namespace OCPI {
     control(std::string &error) {
       const char *err;
       size_t inst, n;
-      bool get, set, op, wait;
+      bool get, set, op, wait, hex, getState = ezxml_cattr(m_rx, "getstate") != NULL;
       
-      bool hex;
       if ((err = OX::getNumber(m_rx, "id",   &inst, NULL, 0, false, true)) ||
 	  (err = OX::getNumber(m_rx, "get",  &n,    &get, 0, false)) ||
 	  (err = OX::getNumber(m_rx, "set",  &n,    &set, 0, false)) ||
 	  (err = OX::getNumber(m_rx, "op",   &n,    &op,  0, false)) ||
 	  (err = OX::getNumber(m_rx, "wait", &n,    &wait,  0, false)) ||
 	  (err = OX::getBoolean(m_rx, "hex", &hex)) ||
-	  inst >= m_instances.size() || !m_instances[inst].m_worker ||
-	  (get || set) && n >= m_instances[inst].m_worker->m_nProperties)
+	  inst >= m_members.size() || !m_members[inst].m_worker ||
+	  (get || set) && n >= m_members[inst].m_worker->m_nProperties)
 	return OU::eformat(error, "Control message error: %s", err);
       m_response = "<control>";
-      OC::Worker &w = *m_instances[inst].m_worker;
+      OC::Worker &w = *m_members[inst].m_worker;
 
       try {
 	if (get || set) {
@@ -391,6 +429,8 @@ namespace OCPI {
 	      m_response = "<control timeout='1'>";
 	  } else
 	    w.wait();
+	else if (getState)
+	  OU::format(m_response, "<control state='%u'>", w.getControlState());
 	else
 	  throw OU::Error("Illegal remote control operation");
       } catch (const std::string &e) {
@@ -419,15 +459,23 @@ namespace OCPI {
       *cp = '\0'; // in case there are NO containers
       for (unsigned n = 0; (ac = OA::ContainerManager::get(n)); n++) {
 	OC::Container &c = *static_cast<OC::Container *>(ac);
-	size_t inserted =
-	  snprintf(cp, length, "%s|%s|%s|%s|%s\n", c.name().c_str(), c.model().c_str(),
-		   c.os().c_str(), c.osVersion().c_str(), c.platform().c_str());
-	if (inserted >= length) {
+	std::string info;
+	OU::format(info, "%s|%s|%s|%s|%s|", c.name().c_str(), c.model().c_str(), c.os().c_str(),
+		   c.osVersion().c_str(), c.platform().c_str());
+	for (unsigned n = 0;  n < c.transports().size(); n++) {
+	  const OC::Transport &t = c.transports()[n];
+	  OU::formatAdd(info, "%s,%s,%u,%u,0x%x,0x%x|",
+			t.transport.c_str(), t.id.c_str(), t.roleIn, t.roleOut, t.optionsIn,
+			t.optionsOut);
+	}
+	info += '\n';
+	if (info.length() >= length) {
 	  OU::format(error, "Too many containers, discovery buffer would overflow");
 	  return true;
 	}
-	cp += inserted;
-	length -= inserted;
+	strcpy(cp, info.c_str());
+	cp += info.length();
+	length -= info.length();
       }
       length--; // account for the null char of the last line
       return false;

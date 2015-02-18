@@ -23,7 +23,11 @@ namespace OCPI {
       std::vector<char> m_downloadBuf;
       OCPI::Container::Launcher *m_local;
       // These two are what the underlying local launcher needs
-      OCPI::Container::Launcher::Instances m_instances;
+      typedef std::vector<OCPI::Container::Launcher::Crew> Crews;
+      std::vector<OCPI::Container::Container *> m_containers;
+      std::vector<OCPI::Container::Application *> m_containerApps;
+      Crews m_crews;
+      OCPI::Container::Launcher::Members m_members;
       OCPI::Container::Launcher::Connections m_connections;
       std::vector<OCPI::Container::Container *> containers;
       std::vector<OCPI::Container::Application *> containerApps;
@@ -41,7 +45,9 @@ namespace OCPI {
       // just like snprintf
       static bool fillDiscoveryInfo(char *buf, size_t &length, std::string &error);
     private:
-      const char *downloadFile(int wfd, uint64_t length);
+      const char
+	*downloadFile(int wfd, uint64_t length),
+	*doSide(ezxml_t cx, OCPI::Container::Launcher::Port &p, const char *type);
       bool
 	download(std::string &error),
 	launch(std::string &error),
