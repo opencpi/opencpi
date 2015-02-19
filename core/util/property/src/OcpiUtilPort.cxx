@@ -34,6 +34,9 @@
 #include <cassert>
 #include <string>
 #include <ctype.h>
+
+#define __STDC_LIMIT_MACROS
+#include <stdint.h>
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilPort.h"
 #include "OcpiUtilWorker.h"

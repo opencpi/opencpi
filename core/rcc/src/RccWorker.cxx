@@ -61,17 +61,17 @@ namespace OA = OCPI::API;
 namespace OCPI {
   namespace RCC {
 
-
- Worker::
- Worker(Application & app, Artifact *art, const char *name,
-	ezxml_t impl, ezxml_t inst, OC::Worker *slave, const OU::PValue *wParams)
- : OC::WorkerBase<Application,Worker,Port>(app, *this, art, name, impl, inst, wParams),
-   OCPI::Time::Emit( &parent().parent(), "Worker", name), 
-   m_entry(art ? art->getDispatch(ezxml_cattr(impl, "name")) : NULL), m_user(NULL),
-   m_dispatch(NULL), m_portInit(0), m_context(NULL), m_mutex(app.container()),
-   m_runCondition(NULL), m_errorString(NULL), m_slave(slave), enabled(false), hasRun(false),
-   sourcePortCount(0), targetPortCount(0), m_nPorts(nPorts()), worker_run_count(0),
-   m_transport(app.parent().getTransport()), m_taskSem(0)
+Worker::
+Worker(Application & app, Artifact *art, const char *name, ezxml_t impl, ezxml_t inst,
+       OC::Worker *slave, size_t member, size_t crewSize, const OU::PValue *wParams)
+  : OC::WorkerBase<Application,Worker,Port>(app, *this, art, name, impl, inst, member,
+					    crewSize, wParams),
+    OCPI::Time::Emit( &parent().parent(), "Worker", name), 
+    m_entry(art ? art->getDispatch(ezxml_cattr(impl, "name")) : NULL), m_user(NULL),
+    m_dispatch(NULL), m_portInit(0), m_context(NULL), m_mutex(app.container()),
+    m_runCondition(NULL), m_errorString(NULL), m_slave(slave), enabled(false), hasRun(false),
+    sourcePortCount(0), targetPortCount(0), m_nPorts(nPorts()), worker_run_count(0),
+    m_transport(app.parent().getTransport()),m_taskSem(0)
  {
 
    memset(&m_info, 0, sizeof(m_info));

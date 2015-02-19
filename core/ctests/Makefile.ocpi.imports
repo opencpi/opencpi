@@ -58,6 +58,14 @@ ALLLIBS += \
 
 SYSLIBS += $(OCPI_LZMA_DIR)/$(OCPI_TARGET_HOST)/lib/lzma
 
+
+ifeq ($(OCPI_HAVE_PTWORKQUEUE),10)
+CXXFLAGS+= -DPTWORKQUEUE
+SYSLIBS += $(WORKQUEUE_LIB)/pthread_workqueue
+endif
+
+
+
 MAIN_DRIVERS+= \
   _ZN4OCPI3RCC3rccE\
   _ZN4OCPI7Library7CompLib9componentE\
@@ -104,6 +112,7 @@ ALLLIBS +=  $(OCPI_BASE_DIR)/lib/ppp_rdma_driver \
 	 $(UTIL_LIBS) $(LOGGER_LIBS) $(OCPIOS_LIBS) 
 
 BASICLIBS += -L$(OCPI_PPP_LIBRARY_DIR) -lrose 
+
 
 
 endif

@@ -82,7 +82,6 @@ namespace OCPI {
     const uint32_t CP289_CSINTERNAL_ERROR          = (CP289_EX_SOURCE_ID << 16) + 6;
 
     class Container
-<<<<<<< HEAD
       : public OCPI::Container::ContainerBase<Driver,Container,Application,Artifact>
     {
 

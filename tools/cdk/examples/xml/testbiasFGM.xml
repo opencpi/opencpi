@@ -1,0 +1,21 @@
+<application done='file_write' package='ocpi'>
+  <instance component='file_read' >
+    <property name='filename' value='test.input'/>
+    <property name='granularity' value='4'/>
+    <property name='messageSize' value='16'/>
+  </instance>
+    <connection buffersize='16'>
+      <port from='out' instance='file_read'/>
+      <port to='in' instance='biasFGM'/>
+    </connection>
+  <instance component='biasFGM' >
+    <property name='biasValue' value='0x01020304'/>
+  </instance>
+    <connection buffersize='16'>
+      <port from='out' instance='biasFGM'/>
+      <port to='in' instance='file_write'/>
+    </connection>
+  <instance component='file_write'>
+    <property name='filename' value='test.outputbias'/>
+  </instance>
+</application>
