@@ -16,6 +16,8 @@ class Bias_ccWorker : public Bias_ccWorkerBase {
     const uint32_t *inData  = in.getdata().data;   // data arg of data message at "in" port
     uint32_t *outData = out.getdata().data;  // same at "out" port
 
+#if 0
+    // just for testing app.getProperty
     static int x = 0;
     if (!x) {
       OCPI::API::Application &app = getApplication(); // test this method
@@ -25,6 +27,7 @@ class Bias_ccWorker : public Bias_ccWorkerBase {
 	fprintf(stderr, "Property %2u: %s = \"%s\"\n", n, name.c_str(), value.c_str());
       x = 1;
     }
+#endif
     out.checkLength(in.length());               // make sure input will fit in output buffer
     for (unsigned n = in.data_length(); n; n--) // n is length in sequence elements of input
       *outData++ = *inData++ + properties().biasValue;

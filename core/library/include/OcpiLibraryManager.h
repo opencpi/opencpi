@@ -90,16 +90,15 @@ namespace OCPI {
       Implementation *addImplementation(OCPI::Util::Worker &metaImpl, ezxml_t staticInstance);
     public:
       void configure(ezxml_t x = NULL);
-      //      bool evaluateWorkerSuitability( const OCPI::API::PValue *p, unsigned & score );
       // Can this artifact run on something with these capabilities?
-      virtual bool meetsRequirements (const Capabilities &caps,
-				      const char *impl,
-				      const OCPI::API::PValue *props,
-				      const char *selectCriteria,
-				      const OCPI::API::Connection *conns,
-				      const char *&inst,
-				      unsigned & score
-				      );
+      bool meetsCapabilities(const Capabilities &caps);
+      bool meetsRequirements (const Capabilities &caps,
+			      const char *impl,
+			      const OCPI::API::PValue *props,
+			      const char *selectCriteria,
+			      const OCPI::API::Connection *conns,
+			      const char *&inst,
+			      unsigned & score);
       Implementation *findImplementation(const char *specName, const char *staticInstance);
       inline ezxml_t xml() const { return m_xml; }
       virtual const std::string &name() const = 0;
@@ -158,6 +157,7 @@ namespace OCPI {
 				    const char *selectCriteria, 
 				    const OCPI::API::Connection *conns,
 				    const char *&inst);
+      void printArtifactsX(const Capabilities &caps);
       // Inform the manager about an implementation
       void addImplementation(Implementation &imp);
     private:
@@ -167,6 +167,9 @@ namespace OCPI {
     public:
       inline static bool findImplementations(ImplementationCallback &icb, const char *specName) {
 	return getSingleton().findImplementationsX(icb, specName);
+      }
+      inline static void printArtifacts(const Capabilities &caps) {
+	getSingleton().printArtifactsX(caps);
       }
       // Find one good implementation, return true one is found that satisfies the criteria
       bool findImplementation(const char *specName, const char *selectCriteria, const Implementation *&impl);

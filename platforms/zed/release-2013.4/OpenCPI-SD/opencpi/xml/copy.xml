@@ -1,0 +1,14 @@
+<application package='ocpi'>
+  <instance component='file_read'>
+    <property name='filename' value='test.input'/>
+    <property name='messageSize' value='4'/>
+  </instance>
+  <instance component='file_write'>
+    <property name='filename' value='test.output'/>
+  </instance>
+  <connection>
+  <port instance='file_read' name='out'/>
+    <port instance='file_write' name='in'/>
+  </connection>
+</application>
+

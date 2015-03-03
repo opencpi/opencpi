@@ -1873,6 +1873,7 @@ struct Arg {
     const char *err;
     if ((!strcasecmp(x->name, "instance") ||
 	 !strcasecmp(x->name, "adapter") ||
+	 !strcasecmp(x->name, "io") ||
 	 !strcasecmp(x->name, "interconnect"))) {
       size_t iindex;
       bool ifound;

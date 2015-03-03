@@ -17,6 +17,9 @@
 #include "OcpiContainerApi.h"
 #include "OcpiApplicationApi.h"
 
+#include "OcpiLibraryManager.h"
+#include "DtDriver.h"
+#include "ContainerManager.h"
 #include "OcpiOsDebug.h"
 #include "OcpiOsFileSystem.h"
 #include "OcpiUtilMisc.h"
@@ -25,6 +28,7 @@
 namespace OA = OCPI::API;
 namespace OU = OCPI::Util;
 namespace OS = OCPI::OS;
+namespace OL = OCPI::Library;
 namespace OR = OCPI::Remote;
 
 static std::string error;
@@ -63,7 +67,7 @@ usage(const char *name) {
 	  "                 # specify seconds of runtime\n"
 	  "    -C           # show available containers\n"
 	  "    -S           # list of servers to explicitly contact (no UDP discovery)\n"
-	  "    -R           # suppress discovery of remote containers\n"
+	  "    -R           # discover/include/use remote containers\n"
 	  "    -X           # list of containers to exclude from usage\n"
 	  "    -T <instance-name>=<port-name>=<transport-name>\n"
 	  "                 # set transport of connection at a port\n"
@@ -83,12 +87,38 @@ static const char *doServer(const char *server, void *) {
   static std::string error;
   return OR::useServer(server, verbose, NULL, error) ? error.c_str() : NULL;
 }
+static const char *doTarget(const char *target, void *) {
+  static std::string error;
+  OL::Capabilities caps;
+  const char *dash = strchr(target, '-');
+  if (dash) {
+    caps.m_os.assign(target, dash - target);
+    target = ++dash;
+    dash = strchr(target, '-');
+    if (dash) {
+      caps.m_osVersion.assign(target, dash - target);
+      target = ++dash;
+    }
+    caps.m_platform = target;
+  } else
+    caps.m_platform = target;
+  OL::Manager::printArtifacts(caps);
+  return NULL;
+}
+
+static const char *arg(const char **&ap) {
+  if (ap[0][2])
+    return &ap[0][2];
+  if (!ap[1])
+    throw OU::Error("Missing argument to the -%c option", ap[0][1]);
+  return *++ap;
+}
 
 int
 main(int /*argc*/, const char **argv) {
-  bool dump = false, containers = false, hex = false, noRemote = false;
+  bool dump = false, containers = false, hex = false, remote = false;
   unsigned seconds = 0, nProcs = 0;
-  const char *servers = NULL;
+  const char *servers = NULL, *artifacts = NULL;
   const char *argv0 = strrchr(argv[0], '/');
   if (argv0)
     argv0++;
@@ -114,7 +144,7 @@ main(int /*argc*/, const char **argv) {
 	params.push_back(OA::PVBool("hex", true));
 	break;
       case 't':
-	seconds = atoi(ap[0][2] ? &ap[0][2] : *++ap);
+	seconds = atoi(arg(ap));
 	break;
       case 'd':
 	dump = true;
@@ -147,24 +177,27 @@ main(int /*argc*/, const char **argv) {
 	addParam("transport", ap);
 	break;
       case 'n':
-	nProcs = atoi(ap[0][2] ? &ap[0][2] : *++ap);
+	nProcs = atoi(arg(ap));
 	break;
       case 'l':
-	OCPI::OS::logSetLevel(atoi(ap[0][2] ? &ap[0][2] : *++ap));
+	OCPI::OS::logSetLevel(atoi(arg(ap)));
 	break;
       case 'C':
 	containers = true;
 	break;
+      case 'A':
+	artifacts = arg(ap);
+	break;
       case 'S':
-	servers = ap[0][2] ? &ap[0][2] : *++ap;
+	servers = arg(ap);
 	break;
       case 'R':
-	noRemote = true;
+	remote = true;
 	break;
       default:
 	usage(argv0);
       }
-    if (!*ap && !containers)
+    if (!*ap && !containers && !artifacts)
       usage(argv0);
     std::string file;
     if (*ap) {
@@ -179,7 +212,25 @@ main(int /*argc*/, const char **argv) {
     }
     if (params.size())
       params.push_back(OA::PVEnd);
-    if (noRemote)
+    if (artifacts) {
+      if (*ap) {
+	  fprintf(stderr,
+		  "Error: can't request artifact dump (-A) and specify an xml file (%s)\n",
+		  *ap);
+	  return 1;
+      }
+      // FIXME: no way to suppress all discovery EXCEPT one manager...
+      OCPI::Container::Manager::getSingleton().suppressDiscovery();
+      DataTransfer::XferFactoryManager::getSingleton().suppressDiscovery();
+      const char *err;
+      if ((err = OU::parseList(artifacts, doTarget))) {
+	fprintf(stderr, "Error processing artifact target list (\"%s\"): %s\n",
+		artifacts, err);
+	return 1;
+      }
+    }
+
+    if (!remote)
       OR::g_suppressRemoteDiscovery = true;
     if (servers) {
       const char *err;
