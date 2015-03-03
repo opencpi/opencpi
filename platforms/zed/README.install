@@ -216,7 +216,7 @@ Xilinx happily includes NFS client support.
 Step 12: Source the startup script on the SD card, supplying the development host's IP
 as an argument:
 
-   root@zynq:~# source /mnt/card/mynetsetup.sh 10.0.1.108
+   root@zynq:~# source /mnt/card/opencpi/mynetsetup.sh 10.0.1.108
 
 If this works ok, then it proves you can run OpenCPI utilities (and applications).
 
