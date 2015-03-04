@@ -29,7 +29,7 @@ serve your purposes (initially), you can skip the rest of this file and proceed 
 the README.install for hardware setup.  Of course you can add any of your own
 files to the SD card.
 
-Summary: you can use the pre-built SD card contents unless:
+Summary:  you can use the pre-built SD card contents unless:
 - You need to use a more up-to-date OpenCPI version.
 - You need a more up-to-date or different Xilinx Linux release.
 
@@ -102,7 +102,19 @@ You do *NOT* need to run any Xilinx-supplied initialization scripts.
 Using these Xilinx ISE+EDK tools has been tested in ISE 14.6 and 14.7.
 
 ================================================================================
-Step 2. Build OpenCPI software using the Xilinx-supplied cross-compiler tools
+Step 2. Cross build prerequisite packages for Zynq
+================================================================================
+
+Before building OpenCPI for the embedded target, the prerequisite
+libraries must be installed and cross-built for this embedded target.
+This uses the same script as for the development host, but it is
+running in a cross-building environment set up by your myzed.sh
+script.
+
+  % scripts/install-prerequisites.sh
+
+================================================================================
+Step 3. Build OpenCPI software using the Xilinx-supplied cross-compiler tools
 ================================================================================
 
 After the above setup, the normal OpenCPI build scripts should function and succeed:
@@ -118,7 +130,7 @@ OpenCPI build rely on a "kernel headers" package created there.  This
 takes a few minutes.
 
 ================================================================================
-Step 3. Build FPGA libraries, components, platform and bitstreams
+Step 4. Build FPGA libraries, components, platform and bitstreams
 ================================================================================
 
 In order to build the HDL/FPGA code, including test bitstreams, you do:
@@ -134,7 +146,7 @@ any Xilinx license issues will only show up in the "map" phase for the
 bitstreams.
 
 ================================================================================
-Step 4. Creating and populating a directory to be copied to an SD card
+Step 5. Creating and populating a directory to be copied to an SD card
 ================================================================================
 
 A final software step to perform on the development system is to create and
@@ -162,11 +174,11 @@ that can be used directly, but it is not updated for every patch
 release in the repository.  These instructions prepare a directory
 tree for an SD card locally (in this directory), to be copied to a
 real SD card, that can then be unmounted, plugged into the Zed board,
-and used to boot the Zed board.
+and used to boot the ZedBoard.
 
 There are two files that must be customized before making the SD card.
 One for standalone mode and one for network mode (NFS mounting of the
-development system).  If you are not using the network/NSF code you
+development system).  If you are not using the network/NSF mode you
 can ignore the second one.
 
 Standalone mode startup script:
@@ -195,11 +207,11 @@ Network mode startup script:
 ===============================
 
 Network mode is when you mount the development system (and the OpenCPI
-tree), as an NFS server and ZedBoard as NFS client.  This provides
+tree), as an NFS server with the ZedBoard as NFS client.  This provides
 easy and dynamic access to all of OpenCPI, and presumably any
 components and applications you may have.  You can avoid customizing this
 file if you only want to use standalone mode, but you must make sure
-exists.
+the "mynetsetup.sh" file exists.
 
 Make a copy of the "defaultnetsetup.sh" file into "mynetsetup.sh"
 (here in the platforms/zed directory) and customize it, in particular,
@@ -245,7 +257,7 @@ customize it if needed to add contents to the SD card, or of course
 put additional content on the SD card itself later.
 
 ================================================================================
-Step 5. Initialize (partition, erase) the SD card.
+Step 6. Initialize (partition, erase) the SD card.
 ================================================================================
 
 This step completely initializes, formats, and partitions the SD card,
@@ -272,7 +284,7 @@ The "sudo" is usually necessary unless the device has general write permission.
 % sudo ./formatSD.sh /dev/sdX
 
 ================================================================================
-Step 6. Put the Xilinx Linux + OpenCPI ZedBoard release onto the SD card
+Step 7. Put the Xilinx Linux + OpenCPI ZedBoard release onto the SD card
 ================================================================================
 
 The source of this step is the directory created from the makeSD.sh script above,
@@ -302,7 +314,8 @@ in a fresh/new shell/window, do these steps:
  { customize myzed.sh for your build environment, e.g. where Xilinx tools are }
  { customize the Xilinx Linux release if needed - see README.linux if you need to}
  % source myzed.sh
- % ./scripts/build-opencpi.sh
+ % scripts/install-prerequisites.sh
+ % scripts/build-opencpi.sh
  % make hdl HdlPlatforms='isim_pf zed'
  % cd platforms/zed
  % cp defaultsetup.sh mysetup.sh
