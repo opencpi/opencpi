@@ -126,6 +126,7 @@ mkdir kernel-headers-$tag
 (cd kernel-headers/arch; for i in *; do if test $i != arm; then rm -r -f $i; fi; done)
 rm -r -f kernel-headers/arch/arm/boot
 find kernel-headers -name "*.[csSo]" -exec rm {} \;
+rm kernel-headers/scripts/{basic,mod}/.gitignore
 echo ==============================================================================
 echo The kernel-headers-$tag directory has been populated and is ready to use for building drivers
 echo ==============================================================================

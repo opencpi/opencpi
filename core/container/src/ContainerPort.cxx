@@ -223,11 +223,11 @@ namespace OCPI {
 	  mergeConnectParams(myParams, preferred, otherParams, newOtherParams);
 #if 1
 	  if (!other.m_canBeExternal)
-	    throw OU::Error("Port \"%s\" cannot be connected external to container",
-			    other.m_metaPort.m_name.c_str());
+	    throw OU::Error("Port \"%s\" of \"%s\" cannot be connected external to container",
+			    other.m_metaPort.m_name.c_str(), worker().name().c_str());
 	  if (!m_canBeExternal)
-	    throw OU::Error("Port \"%s\" cannot be connected external to container",
-			    m_metaPort.m_name.c_str());
+	    throw OU::Error("Port \"%s\" of \"%s\" cannot be connected external to container",
+			    m_metaPort.m_name.c_str(), worker().name().c_str());
 	  other.setConnectParams(otherParams);
 	  setConnectParams(myParams);
 	  determineRoles(other.getData().data);

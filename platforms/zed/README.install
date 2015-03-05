@@ -1,8 +1,8 @@
 This file describes how, after installing Xilinx tools, installing and building
-OpenCPI (software and FPGA aspects) for Zynq/Zed, and preparing an SD card, you
+OpenCPI (software and FPGA aspects) for Zynq/ZedBoard, and preparing an SD card, you
 actually set up your ZedBoard itself.  All the prerequisites are described in
 README.build.  Here is the info before you can run OpenCPI applications and
-components on the Zed itself.
+components on the ZedBoard itself.
 
 Note that these steps do not enable any particular devices that might be 
 attached to the FPGA/PL part of Zynq.
@@ -10,6 +10,11 @@ attached to the FPGA/PL part of Zynq.
 ================================================================================
 Set up the hardware jumpers and switches
 ================================================================================
+
+It is a good idea to have the Digilent ZedBoard Hardware Users Guide
+at: http://www.zedboard.org/sites/default/files/documentations/ZedBoard_HW_UG_v2_2.pdf
+The “Jumpers” section has good photographs showing the location of
+jumpers on the board.  Only change the jumpers when the power is OFF.
 
 Step 0: Always be careful of static electricity when touching the board.  Touch
 some metal shell first each time. Start with the power cable disconnected.  The
@@ -24,7 +29,7 @@ file on the original SD card:
     MIO 3: set to GND
     MIO 2: set to GND
 
-    VADJ Select: Set to 1V8
+    J18 VADJ Select: Set to 1V8
 
     JP6: shorted (only needed for "CES" silicon versions)
     JP2: shorted (needed to power USB peripherals or dongles).
@@ -53,7 +58,7 @@ you can't really see anything.
 If something smokes, you and the board are toast...
 
 ================================================================================
-Get access to the serial system console of the Zed, and reboot it from there
+Get access to the serial console of the ZedBoard, and reboot from there
 ================================================================================
 
 Step 6: Establish Serial Console Communications on the Linux Development Host
@@ -132,7 +137,7 @@ Now you know linux can boot, and that you have console access.
 
 ================================================================================
 ================================================================================
-If you want to start in standlone mode, without needing a network or connection
+If you want to start in standalone mode, without needing a network or connection
 to the development host, skip to Standalone Mode below.
 ================================================================================
 ================================================================================
@@ -188,6 +193,7 @@ Step 11: verify you have NFS connectivity
 Once the NFS is configured and enabled, try to manually mount it on the Zed
 by typing, on the zed console:
 
+
  % mount -t nfs -o udp,nolock,soft,intr <ipaddr>:<dir> /mnt/net
 
 Where <ipaddr> is the address of the development host, and <dir> is the
@@ -210,8 +216,7 @@ create any persistent file you should use the SD card, at /mnt/card.
 
 Our standard setup uses the built-in NFS client to access the
 development tree from these types of systems (in a development
-environment anyway), and the default Linux configuration built by
-Xilinx happily includes NFS client support.
+environment anyway).
 
 Step 12: Source the startup script on the SD card, supplying the development host's IP
 as an argument:

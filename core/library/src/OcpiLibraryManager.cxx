@@ -366,6 +366,11 @@ namespace OCPI {
 	    haveInstances = true;
 	    instances[ezxml_cattr(i, "name")] = addImplementation(*metaImpl, i);
 	  }
+	for (ezxml_t i = ezxml_cchild(m_xml, "io"); i; i = ezxml_next(i))
+	  if (!strcasecmp(metaImpl->name().c_str(), ezxml_cattr(i, "worker"))) {
+	    haveInstances = true;
+	    instances[ezxml_cattr(i, "name")] = addImplementation(*metaImpl, i);
+	  }
 	if (!haveInstances)
 	  (void)addImplementation(*metaImpl, NULL);
       }

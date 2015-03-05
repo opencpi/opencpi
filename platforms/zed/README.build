@@ -241,10 +241,13 @@ To create a directory that can be copied to an SD card, you use the
 makeSD.sh script.  If run with no arguments it describes what it will
 do.  If the single argument is "-", then it will populate the SD card
 based on the current Xilinx Zynq Linux release installed in the
-OpenCPI tree.  THe current Xilinx Llinux release is shown by doing: "ls
+OpenCPI tree.  The current Xilinx Linux release is shown by doing: "ls
 -l release", which shows a link to the current release.  If there are
 other releases present, you can select a different one by indicating
 it as the first argument.
+
+This script depends on the OCPI_LIBRARY_PATHenvironment variable, since
+it copies all valid component artifacts found in this path. 
 
  % ./makeSD.sh -
 
@@ -271,14 +274,14 @@ If you don't want a "fresh" SD card, but want to use an existing one that is
 correctly formatted for a ZedBoard boot disk, you can skip this step.
 
 You must determine the linux device name of the SD card, usually something like
-/dev/sdb.  The "sudo fdisk -l" command lists all disk devices on the system
+/dev/sdb.  The "sudo fdisk -l" command describes all disk devices on the system
 and can help in identifying the device for the SD card you plugged in.
 Using the wrong device name could erase the disk, so be careful!
 Also, you can use the "mount" command to see if any of the partitions of the
 disk are already mounted.  They should be unmounted before running this script.
 
 The following script completely reinitializes/partitions/erases the SD card for
-use with the Zed.  The single argument is the linux disk device name.
+use with the ZedBoard.  The single argument is the linux disk device name.
 The "sudo" is usually necessary unless the device has general write permission.
 
 % sudo ./formatSD.sh /dev/sdX
