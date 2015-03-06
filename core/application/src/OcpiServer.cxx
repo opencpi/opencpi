@@ -155,7 +155,8 @@ namespace OCPI {
       default:
 	;
       }
-      ocpiDebug("Select returned a real fd %"PRIx64" server %d", *(uint64_t *)fds, m_server.fd());
+      ocpiDebug("Select returned a real fd %" PRIx64 " server %d",
+		*(uint64_t *)fds, m_server.fd());
       if (m_disc && FD_ISSET(m_disc->fd(), fds) && receiveDisc(error))
 	return true;
       for (DiscSocketsIter dsi = m_discSockets.begin(); dsi != m_discSockets.end(); dsi++)

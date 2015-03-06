@@ -155,7 +155,7 @@ namespace OCPI {
 					  rom[2])) == LZMA_OK) {
 	if (out_pos != rom[2]) {
 	  OU::format(err, "length on decompressed data: is %lx, "
-		     "should be %"PRIx32, out_pos, rom[2]);
+		     "should be %" PRIx32, out_pos, rom[2]);
 	  return true;
 	}
 	return false;
@@ -178,7 +178,7 @@ namespace OCPI {
 	  inflateEnd(&zs) == Z_OK) {
 	if (zs.adler != rom[3] || zs.total_out != rom[2]) {
 	  OU::format(err, "bad checksum or length on decompressed data: is %lx/%lx, "
-		     "should be %"PRIx32"/%"PRIx32,
+		     "should be %" PRIx32 "/%" PRIx32,
 		     zs.adler, zs.total_out, rom[3], rom[2]);
 	  return true;
 	}

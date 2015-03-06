@@ -470,7 +470,7 @@ opencpi_vma_close(struct vm_area_struct *vma) {
 
 // Map an individual page - in our case only for kernel allocation (not mmio, not reserved)
 #if defined(RHEL_MAJOR)
-#if RHEL_MAJOR==6
+#if RHEL_MAJOR==6 || RHEL_MAJOR==7
 #define OCPI_RH6
 #else
 #define OCPI_RH5

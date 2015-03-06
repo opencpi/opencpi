@@ -337,7 +337,7 @@ launch(Launcher::Instances &instances, Launcher::Connections &connections) {
 
   // A temporary map to keep track of which artifacts we have emitted
   typedef std::map<OL::Artifact*, unsigned> Artifacts;
-  typedef Artifacts::value_type ArtifactsPair;
+  //  typedef Artifacts::value_type ArtifactsPair;
   typedef Artifacts::const_iterator ArtifactsIter;
   Artifacts artifacts;
   unsigned nArtifacts = 0;
@@ -501,7 +501,7 @@ controlOp(unsigned remoteInstance, OU::Worker::ControlOperation op) {
 
 bool Launcher::
 wait(unsigned remoteInstance, OCPI::OS::ElapsedTime timeout) {
-  OU::format(m_request, "<control id='%u' wait='%"PRIu32"'>\n", remoteInstance,
+  OU::format(m_request, "<control id='%u' wait='%" PRIu32 "'>\n", remoteInstance,
 	     timeout != 0 ?
 	     timeout.seconds() + (timeout.nanoseconds() >= 500000000 ? 1 : 0)
 	     : 0);

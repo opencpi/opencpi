@@ -18,5 +18,7 @@ Thus adding a platform requires at least:
 1. Adding a directory here with the files mentioned above.
 2. Enhancing the getPlatform.sh script to recognize when running on the new platform
 3. Ensuring that there is compilation (or cross-compilation) support for the target.
-
-
+4. Add the "target" and "<platform>-env.sh" script to the new directory.
+5. Once getPlatform.sh works on the new platform (and doesn't break on other platforms),
+the "tools/cdk/scripts/makeTargetLinks.sh" script should be run with the new target string
+as the only argument.

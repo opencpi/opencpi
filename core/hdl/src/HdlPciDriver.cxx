@@ -179,8 +179,8 @@ namespace OCPI {
 	  uint64_t nw1bs = swap32(nw1b);
 	  int64_t dt = m_cAccess.get64Register(admin.timeDelta, OccpSpace);
 	  ocpiDebug("Now delta is: %" PRIi64 "ns "
-		    "(dt 0x%"PRIx64" dtsw 0x%"PRIx64" nw1 0x%"PRIx64" nw1a 0x%"PRIx64 " nw1as 0x%"PRIx64
-		    " nw1b 0x%"PRIx64" nw1bs 0x%"PRIx64" nw2 0x%"PRIx64" nw2s 0x%"PRIx64" t 0x%lx)",
+		    "(dt 0x%" PRIx64 " dtsw 0x%" PRIx64 " nw1 0x%" PRIx64 " nw1a 0x%" PRIx64 " nw1as 0x%" PRIx64
+		    " nw1b 0x%" PRIx64 " nw1bs 0x%" PRIx64 " nw2 0x%" PRIx64 " nw2s 0x%" PRIx64 " t 0x%lx)",
 		    dticks2ns(swap32(dt)), dt, swap32(dt), nw1, nw1a, nw1as, 
 		    nw1b, nw1bs, nw2, nw2s, time(0));
 #ifndef __APPLE__
@@ -496,13 +496,13 @@ namespace OCPI {
 	      error = "Bad format for OCPI_DMA_MEMORY environment setup";
 	      return NULL;
 	    }
-	    ocpiDebug("DMA Memory:  %uM at 0x%"PRIx64"\n", sizeM, base);
+	    ocpiDebug("DMA Memory:  %uM at 0x%" PRIx64 "\n", sizeM, base);
 	    top = base + sizeM * 1024llu * 1024llu;
 	    if (base & (pagesize-1)) {
 	      base += pagesize - 1;
 	      base &= ~(pagesize - 1);
 	      top &= ~(pagesize - 1);
-	      ocpiDebug("DMA Memory is NOT page aligned.  Now %"PRIu64"u at 0x%"PRIx64"\n",
+	      ocpiDebug("DMA Memory is NOT page aligned.  Now %" PRIu64 "u at 0x%" PRIx64 "\n",
 			top - base, base);
 	    }
 	  }

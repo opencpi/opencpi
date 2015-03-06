@@ -110,7 +110,7 @@ namespace OCPI {
     void Access::
     setBytes(RegisterOffset offset, const uint8_t *from8, size_t bytes) const {
       volatile uint8_t *to8 = m_registers + offset;
-      ocpiDebug("setBytes %p off %"PRIx64" from %p to %p bytes %zx",
+      ocpiDebug("setBytes %p off %" PRIx64 " from %p to %p bytes %zx",
 		this, (uint64_t)offset, from8, to8, bytes);
       if (bytes >= 8 && !(((intptr_t)from8 | offset) & 7)) {
 	ocpiDebug("setBytes 64 bits: %zx", bytes);
