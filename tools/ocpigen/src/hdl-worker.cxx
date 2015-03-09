@@ -132,7 +132,7 @@ vhdlBaseType(const OU::ValueType &dt, std::string &s, bool convert) {
   }
 }
 static void
-vhdlArrayType(const OU::ValueType &dt, size_t rank, const size_t *dims, std::string &s,
+vhdlArrayType(const OU::ValueType &dt, size_t rank, const size_t */*dims*/, std::string &s,
 	      bool convert) {
   if (convert) {
     OU::formatAdd(s, "std_logic_vector(%zu downto 0)", dt.m_nItems * rawBitWidth(dt) - 1);

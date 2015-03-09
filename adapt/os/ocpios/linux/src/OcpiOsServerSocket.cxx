@@ -56,7 +56,7 @@
 #include "OcpiOsPosixError.h"
 
 static inline int &o2fd(uint64_t *o) { return *(int*)o; }
-static inline const int &o2fd(const uint64_t *o) { return *(int*)o; }
+//static inline const int &o2fd(const uint64_t *o) { return *(int*)o; }
 
 namespace OCPI {
   namespace OS {
