@@ -86,7 +86,8 @@ namespace OCPI {
     {
 
     private:
-      static bool m_staticInit;
+      // FIXME:  someday this thread pool will be private to the container
+      static bool m_wqInit;
       static const int WORKQUEUE_COUNT = 2;
       static const int LOW_PRI_Q = 0;
       static const int HIGH_PRI_Q = 1;
@@ -103,6 +104,7 @@ namespace OCPI {
 	throw (OCPI::Util::EmbeddedException);
       virtual ~Container()
       throw ();
+      void initWorkQueues();
       OCPI::Container::Container::DispatchRetCode
       dispatch(DataTransfer::EventManager* event_manager=NULL);
       OCPI::API::ContainerApplication*

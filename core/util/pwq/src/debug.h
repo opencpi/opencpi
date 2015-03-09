@@ -35,7 +35,9 @@ extern char *WORKQUEUE_DEBUG_IDENT;
 # define THREAD_ID (0)
 #elif defined(_WIN32)
 # define THREAD_ID (int)(GetCurrentThreadId())
-#else 
+#elif defined(__APPLE__)
+#define THREAD_ID ((int)pthread_self())
+#else
 # error Unsupported platform
 #endif
 

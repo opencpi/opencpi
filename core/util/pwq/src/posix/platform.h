@@ -58,4 +58,14 @@
 #define pthread_spin_destroy   pthread_mutex_destroy
 #endif /* defined(__ANDROID__) */
 
+#if defined(__APPLE__)
+#define clock_gettime(c,ts) \
+  do { \
+    struct timeval t; \
+    gettimeofday(&t, NULL); \
+    (ts)->tv_sec = t.tv_sec; \
+    (ts)->tv_nsec = t.tv_usec * 1000; \
+  } while(0)
+#define sem_timedwait(a,b) (assert("sem_timedwait unimplemented"==0),0)
+#endif
 #endif  /* _PTWQ_POSIX_PLATFORM_H */

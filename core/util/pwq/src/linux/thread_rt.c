@@ -28,18 +28,12 @@
 
 #include "platform.h"
 #include "private.h"
-#include <pthread.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <errno.h>
 
 void ptwq_set_current_thread_priority(int priority)
 {    
   struct sched_param param;
-
   printf("******** IN ptwq_set_current_thread_priority \n");
-  
+
   if ( priority == 2 ) {
     param.sched_priority = priority;
     int s = pthread_setschedparam(pthread_self(), SCHED_FIFO, &param);

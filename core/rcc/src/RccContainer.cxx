@@ -59,7 +59,7 @@ namespace OR = OCPI::RDT;
 namespace OCPI {
   namespace RCC {
 
-    bool Container::m_staticInit = false;
+    bool Container::m_wqInit = false;
 
 DataTransfer::EventManager*  
 Container::
@@ -77,8 +77,12 @@ Container(const char *name,
   : OC::ContainerBase<Driver,Container,Application,Artifact>(*this, name)
 {
   m_model = "rcc";
+}
 
-   if ( m_staticInit == false ) {
+void Container::
+initWorkQueues() {
+  OU::SelfAutoMutex guard(this);
+  if (m_wqInit == false ) {
 
      pthread_workqueue_attr_t attr;
 
@@ -103,25 +107,9 @@ Container(const char *name,
      if (pthread_workqueue_create_np(&m_workqueues[LOW_PRI_Q], &attr) != 0)
        throw  OU::Error("Worker static initialization: Could not create workqueue ");
 
-     m_staticInit = true;
+     m_wqInit = true;
    }
 
-
-#if 0
-  // The underlying tranport system has some number of endpoints registered.  Lets make sure
-  // that their is at least 1 available or we will complain.
-  // Initialize the underlying transport system
-  try {
-    m_transport = new OCPI::DataTransport::Transport( tpg, false, this );
-  }
-  catch( std::bad_alloc ) {
-    throw OU::EmbeddedException( OU::NO_MORE_MEMORY, "new", OU::ContainerFatal);
-  }
-#endif
-
-  const char* monitorIPAddress = NULL;
-  OU::findString(props, "monitorIPAddress", monitorIPAddress);
-  //  start(NULL);
 }
 
 
@@ -210,7 +198,8 @@ taskWrapper(  void * args ) {
 void
 Container::
 addTask( void (*task)(void *), void * args ) {
-
+  if (!m_wqInit)
+    initWorkQueues();
   mutex.lock();
   task_count++;
   mutex.unlock();
@@ -227,6 +216,8 @@ addTask( void (*task)(void *), void * args ) {
 void
 Container::
 addTask( OCPI::RCC::RCCUserTask * task ) {
+  if (!m_wqInit)
+    initWorkQueues();
   mutex.lock();
   task_count++;
   mutex.unlock();

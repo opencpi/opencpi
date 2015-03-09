@@ -47,6 +47,9 @@
 # if defined(__sun)
 #  include "solaris/platform.h"
 # endif
+# if defined(__APPLE__)
+typedef int pthread_spinlock_t;
+# endif
 #endif
 
 #include "pthread_workqueue.h"
@@ -145,7 +148,6 @@ struct work {
 #endif
 };
 
-typedef int pthread_spinlock_t;
 struct _pthread_workqueue {
     unsigned int         sig;    /* Unique signature for this structure */
     unsigned int         flags;
