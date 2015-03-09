@@ -482,7 +482,7 @@ namespace DataTransfer {
   {
 
 #ifdef DEBUG_TxRx_UDP
-    printf("\n\n *** COPY to %"OCPI_UTIL_RESADDR_PRIx", len = %zu\n", dstoffs, nbytes );
+    printf("\n\n *** COPY to %" OCPI_UTIL_RESADDR_PRIx ", len = %zu\n", dstoffs, nbytes );
 #endif
 
     TxPacket * txPkt;

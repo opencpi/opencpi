@@ -11,5 +11,5 @@ export OCPI_BUILD_SHARED_LIBRARIES=0
 if test "$OCPI_KERNEL_DIR" = ""; then
   # When we build the driver the kernel should be cloned, checked out
   # with the label consistent with the ISE version, and build there
-  export OCPI_KERNEL_DIR=$OCPI_XILINX_DIR/$OCPI_XILINX_VERSION/git/linux-xlnx
+  export OCPI_KERNEL_DIR=$OCPI_BASE_DIR/platforms/zed/release/kernel-headers
 fi

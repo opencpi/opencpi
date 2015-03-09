@@ -1,0 +1,46 @@
+#!/bin/sh
+
+# This script makes the symlinks in a target bin directory and for a target
+# lib directory.
+
+if test $# != 1; then
+  echo This script creates symbolic links for a given target platform.
+  echo The first '(and only)' argument is the target string, like linux-c6-x86_64 or linux-zynq-arm
+  echo It replaces all existing links that it is '(re)'creating, but does not remove any others.
+  exit 1
+fi
+
+if test "$OCPI_BASE_DIR" = ""; then
+  echo The OCPI_BASE_DIR environment variable must be set to run this script
+  exit 1
+fi
+
+D=$OCPI_BASE_DIR/tools/cdk/export/bin
+echo Creating links for target: $1 in directory $D/$1
+
+if test ! -d $D/$1; then
+  echo There is no directory named $D/$1 yet.
+  echo Please create it.  This script does not do that for you.
+  exit 1
+fi
+
+set -e
+cd $D/$1
+
+ln -s -f -v ../../../../astyle/target-$1/astyle
+ln -s -f -v ../../../../../test/hdl/target-$1/nft
+ln -s -f -v ../../../../../core/hdl/target-$1/ocfrp_check
+ln -s -f -v ../../../ocpidds/target-$1/ocpidds
+ln -s -f -v ../../../../ocpigen/target-$1/ocpigen
+ln -s -f -v ../../../../../core/hdl/target-$1/ocpihdl
+ln -s -f -v ../../../../../core/ocl/target-$1/ocpiocl
+ln -s -f -v ../../../../../core/application/target-$1/ocpirun
+ln -s -f -v ../../../../local/binder/target-$1/ocpisca
+ln -s -f -v ../../../../../core/application/target-$1/ocpiserve
+ln -s -f -v ../../../../../test/hdl/target-$1/swctl
+ln -s -f -v ../../../../../core/hdl/target-$1/testRpl
+
+D=$OCPI_BASE_DIR/tools/cdk/export/lib
+echo Creating links for target: $1 in the export/lib directory.
+cd $D
+ln -s -f -v ../../../../lib/target-$1 $1

@@ -57,6 +57,7 @@ for i in $(dirname $0)/*; do
 done
 if test "$Platform" = ""; then
   echo Cannot determine platform from runtime host: $Target 1>&2
+  echo There is no platform defined that matches that target.
   exit 1
 fi
 echo $HostSystem $HostVersion $HostProcessor $HostPlatform $Target $Platform

@@ -93,7 +93,7 @@ namespace OCPI {
 	ocpiDebug("get64RegisterOffset %p %zx", m_registers, offset);
 	uint64_t val = m_registers ? *(volatile uint64_t *)(m_registers + offset) :
 	  m_accessor->get64(m_base + offset);
-	ocpiDebug("get64RegisterOffset %p %zx -> %"PRIx64, m_registers, offset, val);
+	ocpiDebug("get64RegisterOffset %p %zx -> %" PRIx64, m_registers, offset, val);
 	return val;
       }
       inline void set8RegisterOffset(size_t offset, uint8_t val) const {
@@ -118,7 +118,7 @@ namespace OCPI {
 	  m_accessor->set32(m_base + offset, val);
       }
       inline void set64RegisterOffset(size_t offset, uint64_t val) const{
-	ocpiDebug("set64RegisterOffset %p %zx %"PRIx64, m_registers, offset, val);
+	ocpiDebug("set64RegisterOffset %p %zx %" PRIx64, m_registers, offset, val);
 	if (m_registers)
 	  *(volatile uint64_t *)(m_registers + offset) = val;
 	else

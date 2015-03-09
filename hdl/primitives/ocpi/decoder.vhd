@@ -241,7 +241,8 @@ begin
         my_hi32_r       <= high_dw; -- to_bool(ocp_in.MAddr(2) = '1');
       elsif its(done) or error or my_error then
         -- the last cycle of the request
-        my_access_r <= none_e;
+        my_access_r     <= none_e;
+        my_control_op_r <= no_op_e;
         if my_access = control_e and its(done) and not its(my_error) then
           -- successful control op - advance control state
           case my_control_op is

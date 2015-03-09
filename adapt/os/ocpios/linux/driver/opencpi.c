@@ -31,7 +31,7 @@
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 9, 0)
 #define ocpi_sk_for_each sk_for_each
 #else
-#define ocpi_sk_for_each(a,b,c) sk_for_each(a,c)
+#define ocpi_sk_for_each(a,b,c) (void)b;sk_for_each(a,c)
 #endif
 #include <linux/init.h>			// Kernel module initialization
 #include <linux/kernel.h>		// Kernel common functions
@@ -470,7 +470,7 @@ opencpi_vma_close(struct vm_area_struct *vma) {
 
 // Map an individual page - in our case only for kernel allocation (not mmio, not reserved)
 #if defined(RHEL_MAJOR)
-#if RHEL_MAJOR==6
+#if RHEL_MAJOR==6 || RHEL_MAJOR==7
 #define OCPI_RH6
 #else
 #define OCPI_RH5
@@ -1453,6 +1453,7 @@ free_driver(void) {
 }
 
 #ifdef CONFIG_ARCH_ZYNQ
+#if 0 // here if we ever want it again..
 static void enable_counters(void*info) {
   /* enable user-mode access to the performance counter*/
   asm volatile("MCR p15, 0, %0, C9, C14, 0\n\t" :: "r"(1));
@@ -1465,6 +1466,7 @@ static void enable_counters(void*info) {
   // clear overflows:
   asm volatile ("MCR p15, 0, %0, c9, c12, 3\t\n" :: "r"(0x8000000f));
 }
+#endif
 #endif
 
 // Initialize the driver - at load time

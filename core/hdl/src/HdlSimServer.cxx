@@ -741,7 +741,7 @@ namespace OCPI {
 		return false;
 	      else if (m_xferSize != m_xferCount) {
 		*response++ = 'E';
-		OU::format(error, "Received %" PRIu64 " bytes, expected %" PRIu64" bytes when receiving file",
+		OU::format(error, "Received %" PRIu64 " bytes, expected %" PRIu64 " bytes when receiving file",
 			   m_xferCount, m_xferSize);
 	      } else
 		// So everything is ok.  Let's try running the sim
@@ -852,7 +852,7 @@ namespace OCPI {
 	      ocpiBad("Read offset out of range3: 0x%zx", offset);
 	      pkt.readResponse.data = 0xa5a5a5a5;
 	    }
-	    ocpiDebug("Read command response: 0x%"PRIx32, ntohl(pkt.readResponse.data));
+	    ocpiDebug("Read command response: 0x%" PRIx32, ntohl(pkt.readResponse.data));
 	    break;
 	  case HN::OCCP_NOP:
 	    len = sizeof(HN::EtherControlNopResponse);

@@ -1,0 +1,22 @@
+The documents at the top level of this directory are current and relevant for users.
+The "internal" directory contains specifications and documents about the internals of OpenCPI.
+The "old" directory contains documents that are no longer current, but are available for historical reasons.
+
+Near term documentation plans (GFY15):
+
+The "Generic Authoring Model" content will be absorbed into the "Component Development" doc.
+The "RCC Reference" content will be absorbed into the "Component Development" doc.
+The C++ Language variant of the RCC model will be documented in the "Component Development" doc.
+A new Platform Development doc will be introduced.
+A "Introduction/Technical Summary" document will be added.
+
+Thus the key doc set will be:
+1. Introduction
+2. Installation/Getting Started
+3. Application Development
+4. Component Development
+5. Platform Development
+
+
+
+

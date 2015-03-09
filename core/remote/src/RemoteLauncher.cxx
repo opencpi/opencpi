@@ -568,7 +568,7 @@ getState(unsigned remoteInstance) {
 
 bool Launcher::
 wait(unsigned remoteInstance, OCPI::OS::ElapsedTime timeout) {
-  OU::format(m_request, "<control id='%u' wait='%"PRIu32"'>\n", remoteInstance,
+  OU::format(m_request, "<control id='%u' wait='%" PRIu32 "'>\n", remoteInstance,
 	     timeout != 0 ?
 	     timeout.seconds() + (timeout.nanoseconds() >= 500000000 ? 1 : 0)
 	     : 0);

@@ -561,7 +561,7 @@ parseSpec(const char *package) {
   } else {
     // If the spec is in its own file, we can default the name from the file
     std::string name, fileName;
-    if ((err = getNames(spec, m_file.c_str(), "ComponentSpec", name, fileName)))
+    if ((err = getNames(spec, m_specFile.c_str(), "ComponentSpec", name, fileName)))
       return err;
     size_t len = strlen("-spec");
     if (name.length() > len) {

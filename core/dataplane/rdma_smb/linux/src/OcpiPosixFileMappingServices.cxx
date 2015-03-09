@@ -157,7 +157,7 @@ namespace DataTransfer {
 	  ocpiDebug("mmap on %d at offset %u length %zu returns %p errno %d",
 		    m_fd, iOffset, lLength, iRet, errno);
 	  if (iRet != MAP_FAILED)
-	    ocpiDebug("mmap value at %p is %"PRIx32, iRet, *(uint32_t*)iRet);
+	    ocpiDebug("mmap value at %p is %" PRIx32, iRet, *(uint32_t*)iRet);
 	}
       m_length = lLength;
       return iRet;

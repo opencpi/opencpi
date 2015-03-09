@@ -3,7 +3,7 @@
 
 library ieee, ocpi, util;
 use ieee.std_logic_1164.all, ieee.numeric_std.all, std.textio.all; 
-use ocpi.types.all, util.util.all;
+use ocpi.types.all, ocpi.wci.all, util.util.all;
 
 architecture rtl of file_write_worker is
   -- for file I/O and using util.cwd module
@@ -47,6 +47,9 @@ begin
         finished_r        <= false;
         messagesWritten_r <= (others => '0');
         bytesWritten_r    <= (others => '0');
+      elsif ctl_in.control_op = STOP_e or ctl_in.control_op = RELEASE_e then
+        finished_r <= true;
+        file_close(data_file);
       elsif its(ctl_in.is_operating) and not finished_r then
         if not init_r then  
           open_file(data_file, cwd, props_in.fileName, write_mode);

@@ -616,14 +616,14 @@ testdma(const char **) {
   if (sscanf(dmaEnv, "%zuM$0x%" SCNx64, &dmaMeg, &dmaBase) != 2)
     bad("The OCPI_DMA_MEMORY environment variable is not formatted correctly");
   dmaSize = (uint64_t)dmaMeg * 1024 * 1024;
-  printf("The OCPI_DMA_MEMORY environment variable indicates %zuMB at 0x%"PRIx64", ending at 0x%"PRIx64"\n",
+  printf("The OCPI_DMA_MEMORY environment variable indicates %zuMB at 0x%" PRIx64 ", ending at 0x%" PRIx64 "\n",
 	 dmaMeg, dmaBase, dmaBase + dmaSize);
   int pageSize = getpagesize();
   if (dmaBase & (pageSize - 1))
-    bad("DMA memory starting address 0x%"PRIx64" does not start on a page boundary, %u (0x%x)", 
+    bad("DMA memory starting address 0x%" PRIx64 " does not start on a page boundary, %u (0x%x)", 
 	dmaBase, pageSize, pageSize);
   if (dmaSize & (pageSize -1))
-    bad("DMA memory size %"PRIu64" (0x%"PRIx64") does not start on a page boundary, %u (0x%x)", 
+    bad("DMA memory size %" PRIu64 " (0x%" PRIx64 ") does not start on a page boundary, %u (0x%x)", 
 	dmaSize, dmaSize, pageSize, pageSize);
   if ((fd = open("/dev/mem", O_RDWR|O_SYNC)) < 0 ||
 	     (cpuBase = (uint8_t*)mmap(NULL, dmaMeg * 1024 * 1024,
@@ -1000,7 +1000,7 @@ radmin(const char **ap) {
     if (parseable)
       printf("0x%" PRIx64 "\n", x);
     else
-      printf("Admin for hdl-device '%s' at offset 0x%x is 0x%"PRIx64" (%"PRIi64")\n",
+      printf("Admin for hdl-device '%s' at offset 0x%x is 0x%" PRIx64 " (%" PRIi64 ")\n",
 	     device, off, x, x);
   } else
     bad("bad size for radmin");
@@ -1022,7 +1022,7 @@ rmeta(const char **ap) {
     if (parseable)
       printf("0x%" PRIx64 "\n", x);
     else
-      printf("Metadata for hdl-device '%s' at offset 0x%x is 0x%"PRIx64" (%"PRIi64")\n",
+      printf("Metadata for hdl-device '%s' at offset 0x%x is 0x%" PRIx64 " (%" PRIi64 ")\n",
 	     device, off, x, x);
   } else
     bad("bad size for rmeta");
@@ -1101,12 +1101,12 @@ deltatime(const char **) {
     sum += delta[n];
   sum = (sum + 45) / 90;
   // we have average delay
-  printf("Delta ns min %"PRIi64" max %"PRIi64". average: (of best 90 out of 100) %"PRIi64"\n",
+  printf("Delta ns min %" PRIi64 " max %" PRIi64 ". average: (of best 90 out of 100) %" PRIi64 "\n",
 	 ticks2ns(delta[0]), ticks2ns(delta[99]), ticks2ns(sum));
   uint64_t time = swap32(cAccess->get64Register(time, OH::OccpAdminRegisters));
   cAccess->set64Register(timeDelta, OH::OccpAdminRegisters, swap32(time + sum));
   int32_t deltatime = (int32_t)swap32(cAccess->get64Register(timeDelta, OH::OccpAdminRegisters));
-  printf("Now after correction, delta is: %"PRIi64"ns\n", dticks2ns(deltatime));
+  printf("Now after correction, delta is: %" PRIi64 "ns\n", dticks2ns(deltatime));
 }
 static void
 wdump(const char **) {
@@ -1881,6 +1881,7 @@ struct Arg {
     const char *err;
     if ((!strcasecmp(x->name, "instance") ||
 	 !strcasecmp(x->name, "adapter") ||
+	 !strcasecmp(x->name, "io") ||
 	 !strcasecmp(x->name, "interconnect"))) {
       size_t iindex;
       bool ifound;

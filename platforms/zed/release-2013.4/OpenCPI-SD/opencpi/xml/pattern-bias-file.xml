@@ -1,0 +1,28 @@
+<application package='ocpi' done='file_write'>
+  <instance component="pattern">
+
+    <property name="metadataCount" value='2'/>
+    <property name="messagesToSend" value='2'/>
+
+<!--    <property name="metadata" value='{1056,0},{8,4},{0,2},{7,3}'/> 
+        <property name="data" value='0x04030201,0x08070605,0x0c0b0a09,0x000f0e0d,0x04030201,0x08070605,0x0c0b0a09,0x000f0e0d,0x04030201,0x08070605,0x0c0b0a09,0x000f0e0d'/> -->
+
+    <property name="metadata" value='{20,3,2,1},{0,4},{0,2},{7,3}'/> 
+    <property name="data" value='0x03020100,0x07060504,0x0b0a0908,0x0f0e0d0c,0x13121110,0x17161514,0x1b1a1918,0x1f1e1d1c,0x23222120,0x27262524,0x2b2a2928,0x2f2e2c2d,
+                                 0x33323130,0x37363534,0x3b3a3938,0x3f3e3d3c' />,
+                                 <!-- 0x43424140,0x47464544,0x4b4a4948,0x4f4e4d4c,0x53525150,0x57565554,0x5b5a5958,0x5f5e5c5d,
+                                 0x63626160,0x67666564,0x6b6a6968,0x6f6e6d6c,0x73727170,0x77767574,0x7b7a7978,0x7f7e7d7c,0x83828180,0x87868584,0x8b8a8988,0x8f8e8c8d,
+                                 0x93929190,0x97969594,0x9b9a9998,0x9f9e9d9c,0xa3a2a1a0,0xa7a6a5a4,0xabaaa9a8,0xafaeadac,0xb3b2b1b0,0xb7b6b5b4,0xbbbab9b8,0xbfbebcbd' /> -->
+                 
+  </instance>
+  <connection buffersize='4000'>
+    <port from='out' instance='pattern'/>
+    <port to='in' instance='bias'/>
+  </connection>
+  <instance component='bias' connect='file_write'/>
+
+  <instance component="file_write">
+    <property name="messagesInFile" value='true' />
+    <property name="fileName" value='test.out' />
+  </instance>
+</application>

@@ -113,6 +113,14 @@ namespace OCPI {
       }
       return found;
     }
+    void Manager::printArtifactsX(const Capabilities &caps) {
+      parent().configureOnce();
+      for (Driver *d = firstDriver(); d; d = d->nextDriver())
+	for (Library *l = d->firstLibrary(); l; l = l->nextLibrary())
+	  for (Artifact *a = l->firstArtifact(); a; a = a->nextArtifact())
+	    if (a->meetsCapabilities(caps))
+	      printf("%s\n", a->name().c_str());
+    }
     // Find one good implementation, return true if one is found that satisfies the criteria
     bool Manager::findImplementation(const char *specName, const char *selectCriteria,
 				     const Implementation *&impl) {
@@ -295,6 +303,11 @@ namespace OCPI {
       return NULL;
     }
     bool Artifact::
+    meetsCapabilities(const Capabilities &caps) {
+      return
+	m_os == caps.m_os && m_osVersion == caps.m_osVersion && m_platform == caps.m_platform;
+    }
+    bool Artifact::
     meetsRequirements (const Capabilities &caps,
 		       const char *specName,
 		       const OCPI::API::PValue * /*props*/,
@@ -302,8 +315,7 @@ namespace OCPI {
 		       const OCPI::API::Connection * /*conns*/,
 		       const char *& /* artInst */,
 		       unsigned & score ) {
-      if (m_os == caps.m_os && m_osVersion == caps.m_osVersion &&
-	  m_platform == caps.m_platform) {
+      if (meetsCapabilities(caps)) {
 	WorkerRange range = m_workers.equal_range(specName);
 
 	for (WorkerIter wi = range.first; wi != range.second; wi++) {
@@ -350,6 +362,11 @@ namespace OCPI {
 			  name().c_str(), err);
 	bool haveInstances = false;
 	for (ezxml_t i = ezxml_cchild(m_xml, "instance"); i; i = ezxml_next(i))
+	  if (!strcasecmp(metaImpl->name().c_str(), ezxml_cattr(i, "worker"))) {
+	    haveInstances = true;
+	    instances[ezxml_cattr(i, "name")] = addImplementation(*metaImpl, i);
+	  }
+	for (ezxml_t i = ezxml_cchild(m_xml, "io"); i; i = ezxml_next(i))
 	  if (!strcasecmp(metaImpl->name().c_str(), ezxml_cattr(i, "worker"))) {
 	    haveInstances = true;
 	    instances[ezxml_cattr(i, "name")] = addImplementation(*metaImpl, i);
