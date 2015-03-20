@@ -42,7 +42,7 @@
 #include "dac_Worker.h"
 
 #include <stdio.h>
-#include <string.h>
+#include <strings.h> // for bzero
 
 DAC_METHOD_DECLARATIONS;
 RCCDispatch dac = {

@@ -167,10 +167,8 @@ begin
   --                        note we need the AWID for the all responses
   axi_out.AWREADY <= write_done;
   -- Write Data Channel: we accept the data whenever a write request is taken
-  axi_out.WREADY  <= to_bool(cp_in.take = '1' and
-                             (address_state = a_first_e or
-                              address_state = a_last_e));
-
+  axi_out.WREADY  <= to_bool(read_state = r_idle_e and cp_in.take = '1' and
+                             (address_state = a_first_e or address_state = a_last_e));
   -- Write Response Channel: we offer the write response
   axi_out.BID     <= axi_in.AWID; -- we only do one at a time so we loop back the ID
   axi_out.BRESP   <= Resp_OKAY;
