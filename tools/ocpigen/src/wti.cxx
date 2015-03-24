@@ -74,7 +74,7 @@ void WtiPort::
 emitImplSignals(FILE *f) {
   fprintf(f,
 	  "  -- Signals for the outer WTI converted to the inner worker ones\n"
-	  "  signal wti_outer_out : wti_out_t;\n"
+	  //	  "  signal wti_outer_out : wti_out_t;\n"
 	  "  signal worker_wti_in : worker_wti_in_t;\n");
   if (m_allowUnavailable)
     fprintf(f,
@@ -85,16 +85,16 @@ emitVhdlShell(FILE *f, Port *wci) {
   // FIXME: use a common clock and reset retrieval here
   fprintf(f,
 	  "  -- The WTI interface conversion between OCP and inner worker interfaces\n"
-	  "  wti_outer_out.Clk <= %s;\n"
-	  "  wti_outer_out.SReset_n <= from_bool(not wci_reset)(0);\n",
+	  "  wti_out.Clk <= %s;\n"
+	  "  wti_out.SReset_n <= from_bool(not wci_reset)(0);\n",
 	  wci ? "ctl_in.Clk" : "wci_Clk");
   if (m_allowUnavailable)
     fprintf(f,
-	    "  wti_outer_out.SThreadBusy <= from_bool(not worker_wti_out.request);\n"
+	    "  wti_out.SThreadBusy <= from_bool(not worker_wti_out.request);\n"
 	    "  worker_wti_in.valid <= to_bool(wci_reset and wti_in.MCmd = ocp.MCmd_WRITE);\n");
   else
     fprintf(f,
-	    "  wti_outer_out.SThreadBusy <= from_bool(wci_reset);\n");
+	    "  wti_out.SThreadBusy <= from_bool(wci_reset);\n");
   if (m_secondsWidth)
     fprintf(f, "  worker_wti_in.seconds <= unsigned(wti_in.MData(%zu downto 32));\n",
 	    m_secondsWidth + 31);

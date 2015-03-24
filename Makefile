@@ -217,7 +217,7 @@ cleancomponents:
 	make -C components clean
 
 .PHONY: prims
-hdlprims:
+hdlprimitives:
 	$(MAKE) -C hdl primitives
 
 driver:
@@ -264,7 +264,7 @@ cleaneverything: distclean cleandrivers
 	-find . -depth -name 'timeData.raw' -exec rm -f '{}' ';'
 	-find . -depth -name 'target-*' -exec rm -r '{}' ';'
 	-find . -depth -name 'gen' -exec rm -r '{}' ';'
-	-find . -depth -name "lib" -a ! -path "*export*" -a -type d -a -exec rm -r "{}" ";"
+	-find . -depth -name "lib" -a ! -path "*export*" -a ! -path "*/platforms/*" -a -type d -a -exec rm -r "{}" ";"
 
 tar:
 	tar cvf ocpi.tar Makefile MakeVars.ocpi Makefile.ocpi.for-* scripts platforms $(ALLPACKAGES)

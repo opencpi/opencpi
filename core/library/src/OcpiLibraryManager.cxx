@@ -336,6 +336,10 @@ namespace OCPI {
       m_workers.insert(WorkerMapPair(metaImpl.specName().c_str(), impl));
       // Record in the globalmapping
       Manager::getSingleton().addImplementation(*impl);
+      ocpiDebug("Added implementation in artifact \"%s\" spec \"%s\" name \"%s\" inst \"%s\"",
+		name().c_str(), metaImpl.specName().c_str(), metaImpl.name().c_str(), 
+		staticInstance ? ezxml_cattr(staticInstance, "name") : "no-instance-name");
+
       return impl;
     }
     // Note this XML argument is from the system config file, not the
