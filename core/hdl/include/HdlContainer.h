@@ -25,6 +25,7 @@ namespace OCPI {
       Container(OCPI::HDL::Device &device, ezxml_t config = NULL, const OCPI::API::PValue *params = NULL);
     public:
       virtual ~Container();
+      bool portsInProcess() { return false; }
       inline uint64_t getMyTicks() {
 	return
 	  m_device.isAlive() ? 

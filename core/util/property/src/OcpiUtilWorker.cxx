@@ -46,7 +46,8 @@ namespace OCPI {
     namespace OE = OCPI::Util::EzXml;
     Worker::Worker()
       : m_attributes(NULL), m_ports(NULL), m_memories(NULL), m_nPorts(0), m_nMemories(0),
-	m_totalPropertySize(0),	m_nProperties(0), m_properties(0), m_xml(NULL), m_ordinal(0) {
+	m_totalPropertySize(0),	m_nProperties(0), m_nRunProperties(0), m_properties(0),
+	m_xml(NULL), m_ordinal(0) {
     }
 
     Worker::~Worker() {
@@ -113,8 +114,11 @@ namespace OCPI {
       prop = m_properties;
       size_t offset = 0;
       uint64_t totalSize = 0;
-      for (unsigned n = 0; n < m_nProperties; n++, prop++)
+      for (unsigned n = 0; n < m_nProperties; n++, prop++) {
+	if (!prop->m_isParameter)
+	  m_nRunProperties++;
 	prop->offset(offset, totalSize);
+      }
       ocpiAssert(totalSize < UINT32_MAX);
       m_totalPropertySize = OCPI_UTRUNCATE(size_t, totalSize);
       // Ports at this level are unidirectional? Or do we support the pairing at this point?

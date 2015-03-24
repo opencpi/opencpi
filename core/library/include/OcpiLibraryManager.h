@@ -76,7 +76,8 @@ namespace OCPI {
     protected:
       std::time_t m_mtime; // modification time associated with when we read the metadata
       uint64_t m_length;
-      ezxml_t m_xml;
+      size_t   m_metadataLength;
+      ezxml_t  m_xml;
       // A count and array of implementations found in the artifact, *not* static instances.
       unsigned m_nImplementations;
       OCPI::Util::Worker *m_metaImplementations; // this array 
@@ -104,8 +105,10 @@ namespace OCPI {
       virtual const std::string &name() const = 0;
       std::time_t mtime() const { return m_mtime; }
       uint64_t length() const { return m_length; }
+      uint64_t metadataLength() const { return m_metadataLength; }
       virtual Artifact *nextArtifact() = 0;
-      static char *getMetadata(const char *name, std::time_t &mtime, uint64_t &length);
+      static char *getMetadata(const char *name, std::time_t &mtime, uint64_t &length,
+			       size_t &metadaLength);
     };
 
     // This class is what is used when looking for implementations.

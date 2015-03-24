@@ -101,11 +101,12 @@ static void vsmulx ( __global float* src,
  * Methods to implement for worker power_spectrum_1d, based on metadata.
  */
 
-OCLResult power_spectrum_1d_run(__local OCLWorkerPower_spectrum_1d* self) {
+OCLResult power_spectrum_1d_run(Power_spectrum_1dWorker* self,
+				__global Power_spectrum_1dProperties *properties) {
   /* Compute the FFT of the real signal */
   float scale_factor = 10.0;
 
-  realfft((__global float *)self->in.current.data, 1 << self->properties->log2n);
+  realfft((__global float *)self->in.current.data, 1 << properties->log2n);
   cvmagsx(self->in.current.data, self->out.current.data, BLOCK_SIZE);
   vlogx(self->out.current.data, self->out.current.data, BLOCK_SIZE);
   vsmulx(self->out.current.data, scale_factor, self->out.current.data, BLOCK_SIZE);

@@ -39,6 +39,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <sys/time.h>
+#include "OCL_Worker.h"
 #include "OcpiUtilCppMacros.h"
 #include "OcpiUtilWorker.h"
 #include "OcpiUtilMisc.h"
@@ -219,45 +220,60 @@ emitImplOCL() {
 	printRccMember(f, **pi, 2, offset, pad, m_implName, true, isLastDummy, false);
     fprintf(f, "} %c%sProperties;\n\n", toupper(m_implName[0]), m_implName + 1);
   }
-  // We care about making this small
   fprintf(f,
           "/*\n"
-          " * Worker context structure for worker %s\n"
+          " * Worker kernel arg structure for worker %s\n"
           " */\n"
           "typedef struct {\n"
-	  "  OCLResult            result;\n"
-	  "  OCLRunCondition      runCondition;\n"
-	  "  OCLBoolean           newRunCondition;\n"
-	  "  const OCLBoolean     timedOut;\n"
-	  "  const uint16_t       crewSize;\n"
-	  "  const uint16_t       crewRank;\n"
-	  "  __global void *const memory;\n", m_implName);
-  if (m_localMemories.size()) {
-    for (unsigned n = 0; n < m_localMemories.size(); n++) {
-      LocalMemory* mem = m_localMemories[n];
-      fprintf(f, "  __global void* %s;\n", mem->name );
-    }
-  }
+	  "  OCL_SELF\n",
+	  m_implName);
   for (unsigned n = 0; n < m_ports.size(); n++)
     fprintf(f, "  OCLPort %s;\n", m_ports[n]->name() );
-  if (m_ctl.properties.size())
-    fprintf(f,"  __global %c%sProperties* properties;\n",
-            toupper(m_implName[0]), m_implName + 1);
   fprintf(f,
-          "} OCLWorker%c%s;\n\n",
+          "} %c%sWorker;\n",
+          toupper(m_implName[0]), m_implName + 1);
+  fprintf(f,
+          "/*\n"
+          " * Worker persistent structure for worker %s\n"
+          " */\n"
+	  "typedef struct {\n"
+	  "  OCLReturned      returned;\n"
+	  "  %c%sWorker        self;\n",
+	  m_implName, toupper(m_implName[0]), m_implName + 1);
+  assert(!(sizeof(OCPI::OCL::OCLReturned) & 7));
+  if (m_ctl.nRunProperties) {
+    fprintf(f,"  %c%sProperties properties;\n",
+            toupper(m_implName[0]), m_implName + 1);
+    if (m_ctl.sizeOfConfigSpace & 7)
+      fprintf(f, "  uint8_t pad0[(sizeof(%c%sProperties)+7)&~7];\n",
+            toupper(m_implName[0]), m_implName + 1);
+  }
+  if (m_localMemories.size())
+    for (unsigned n = 0; n < m_localMemories.size(); n++) {
+      LocalMemory* mem = m_localMemories[n];
+      fprintf(f, "  uint8_t %s[%zu];\n", mem->name, (mem->sizeOfLocalMemory+7)&~7);
+    }
+  fprintf(f,
+          "} %c%sPersist;\n\n",
           toupper(m_implName[0]), m_implName + 1);
 
   fprintf(f,
 	  "\n"
-	  "OCLResult %s_run(__local OCLWorker%c%s* self);\n"
-          "\n"
-          "#endif /* ifndef OCL_WORKER_%s_H__ */\n",
-	  m_implName, toupper(m_implName[0]), m_implName + 1, upper);
+	  "OCLResult %s_run(%c%sWorker *self",
+	  m_implName, toupper(m_implName[0]), m_implName + 1);
+  if (m_ctl.nRunProperties)
+    fprintf(f, ", __global %c%sProperties *properties", toupper(m_implName[0]), m_implName + 1);
+  fprintf(f, ");\n");
+  
   for (unsigned n = 0; n < m_ports.size(); n++)
     m_ports[n]->emitRccCImpl(f);
   for (unsigned n = 0; n < m_ports.size(); n++)
     m_ports[n]->emitRccCImpl1(f);
-    if (fclose(f))
+  fprintf(f,
+          "\n"
+          "#endif /* ifndef OCL_WORKER_%s_H__ */\n",
+	  upper);
+  if (fclose(f))
     return "File close for writing failed.  No space?";
   return 0;
 }
@@ -294,7 +310,7 @@ emitSkelOCL() {
 	return err;
       fprintf(f,
 	      "\n"
-	      "OCLResult %s_%s(__local OCLWorker%c%s* self)\n{\n"
+	      "OCLResult %s_%s(%c%sWorker *self)\n{\n"
 	      "\n  (void)self;\n"
 	      "  return OCL_OK;\n"
 	      "}\n",
@@ -313,11 +329,15 @@ emitSkelOCL() {
     return err;
   fprintf(f,
 	  "\n"
-	  "OCLResult %s_run(__local OCLWorker%c%s* self)\n"
+	  "OCLResult %s_run(%c%sWorker *self",
+	  m_implName, toupper(m_implName[0]), m_implName + 1);
+  if (m_ctl.nRunProperties)
+    fprintf(f, ", __global %c%sProperties *properties", toupper(m_implName[0]), m_implName + 1);
+  fprintf(f,
+	  ") {\n"
 	  "  (void)self;\n"
 	  "  return OCL_ADVANCE;\n"
-	  "}\n",
-	  m_implName, toupper(m_implName[0]), m_implName + 1);
+	  "}\n");
   if (fclose(f))
     return "Error closing file for writing.  No space?";
   return emitEntryPointOCL();
@@ -329,31 +349,78 @@ emitEntryPointOCL() {
   FILE* f;
   if ((err = openOutput(m_fileName.c_str(), m_outDir, "", OCLENTRYPOINT, SOURCE, m_implName, f)))
     return err;
-  size_t pad = 20 + strlen(m_implName);
+  unsigned pad = OCPI_UTRUNCATE(unsigned, 18 + strlen(m_implName));
   fprintf(f,
-	  "\n\n"
-	  "/* ---- Generated code that dispatches to the worker's functions --------- */\n\n"
-	  "/* ----- Single function to dispatch both run() and control operations. -- */\n\n"
+	  "#ifndef OCL_START_PORT\n"
+	  "#define OCL_START_PORT\n"
+	  "static void startPort(OCLPort *p, __global uint8_t *base) {\n"
+	  "  __global OCLHeader *h = (__global OCLHeader *)(base + p->readyOffset+8);\n"
+          "  p->current.data = h->m_data ? (__global uint8_t*)h + h->m_data : 0;\n"
+	  "  p->current.length = h->m_length;\n"
+	  "  p->current.opCode = h->m_opCode;\n" // not needed for output
+	  "  p->current.end = h->m_eof;\n"       // not needed for output
+	  "  p->current.header = h;\n"
+	  "}\n"
+	  "#endif\n"
+	  "/*\n"
+	  " * This generated kernel dispatches to the worker's methods\n"
+	  " * This single kernel/function dispatches the run method and control operations.\n"
+	  " */\n"
 	  "__kernel __attribute__((reqd_work_group_size(OCL_WG_X, OCL_WG_Y, OCL_WG_Z)))\n"
-	  "void %s_entry_point(OCLControlOp controlOp,\n"
-	  "%*sOCLBoolean timedOut,\n"
-	  "%*s__global OCLWorker%c%s* worker) {"
-	  "  __local OCLWorker%c%s self;\n"
-	  "  barrier ( CLK_GLOBAL_MEM_FENCE );\n\n"
-	  "  /* ---- Only one worker runs control operations ------------------------ */\n\n"
-	  "  if (controlOp != OCPI_OCL_RUN && get_global_id(0) != 0)\n"
-	  "    return;\n"
-	  "  /* ---- Copy Worker from global to local ------------------------------ */\n\n"
-	  "  self = *worker;\n"
-	  "  self.newRunCondition = 0;\n"
-          "  /* ---- Perform the actual operation ----------------------------------- */\n\n"
-	  "  barrier(CLK_LOCAL_MEM_FENCE);\n\n"
-          "  switch(controlOp) {\n"
-          "  case OCPI_OCL_RUN:\n"
-	  "    self.result = %s_run(&self);\n"
-	  "    break;\n",
-	  m_implName, (int)pad, "", (int)pad, "", toupper(m_implName[0]), m_implName+1,
-	  toupper(m_implName[0]), m_implName + 1, m_implName);
+	  "void %s_kernel(__global %c%sPersist *persist",
+	  m_implName, toupper(m_implName[0]), m_implName+1);
+  for (unsigned n = 0; n < m_ports.size(); n++)
+    fprintf(f, ",\n%*s__global uint8_t *buffers%u", pad, "", n);
+  fprintf(f,
+	  ") {\n");
+  if (m_ports.size()) {
+    fprintf(f,
+	    "  __global uint8_t *bases[%zu] = {", m_ports.size());
+    for (unsigned n = 0; n < m_ports.size(); n++)
+      fprintf(f, "%sbuffers%u", n ? ", " : "", n);
+    fprintf(f,
+	    "};\n");
+  }
+  fprintf(f, "%c%sWorker self = persist->self;\n", toupper(m_implName[0]), m_implName+1);
+  fprintf(f,
+	  "  if (self.logLevel >= 10)\n"
+	  "    printf(\"OpenCL Kernel running op: %%d count: %%d nd: %%d %%p %%p %%p\\n\",\n"
+	  "           self.controlOp, self.runCount, get_work_dim(), persist, buffers0, buffers1);\n"
+	  "  switch (self.controlOp) {\n"
+          "  case OCPI_OCL_RUN:\n");
+  fprintf(f,
+	  "    while (self.runCount--) {\n");
+  if (m_ports.size())
+    fprintf(f,
+	    "      OCLPort *p = &self.%s;\n"
+	    "      for (unsigned n = 0; n < self.nPorts; n++, p++)\n"
+	    "        startPort(p, bases[n]);\n",
+	    m_ports[0]->m_name.c_str());
+      fprintf(f,
+	      "      persist->returned.result = %s_run(&self%s);\n",
+	      m_implName, m_ctl.nRunProperties ? ", &persist->properties" : "");
+  if (m_ports.size())
+    fprintf(f,
+	    "      p = &self.%s;\n"
+	    "      for (unsigned n = 0; n < self.nPorts; n++, p++)\n"
+	    "        if (p->isOutput) {\n"
+	    "          __global OCLHeader *h = p->current.header;\n"
+	    "          if (p->current.data == 0)\n"
+	    "             h->m_data = 0;\n"
+	    "          h->m_length = p->current.length;\n"
+	    "          h->m_opCode = p->current.opCode;\n"
+	    "          h->m_eof = p->current.end;\n"
+	    "        }\n"
+	    "      if (self.runCount) {\n"
+	    "          p = &self.%s;\n"
+	    "          for (unsigned n = 0; n < self.nPorts; n++, p++)\n"
+	    "            if ((p->readyOffset += p->bufferStride) >= p->endOffset)\n"
+	    "              p->readyOffset = 0;\n"
+	    "      }\n",
+	    m_ports[0]->m_name.c_str(), m_ports[0]->m_name.c_str());
+  fprintf(f,
+	  "    }\n"
+	  "    break;\n");
   unsigned op = 0;
   const char* mName;
   for (const char** cp = OU::Worker::s_controlOpNames; *cp; cp++, op++)
@@ -363,15 +430,14 @@ emitEntryPointOCL() {
       else {
 	const char* mUname = upperdup(mName);
 	fprintf(f,
-		"    case OCPI_OCL_%s:\n"
-		"      self.rc = %s_%s(&self);\n"
-		"      break;\n",
+		"  case OCPI_OCL_%s:\n"
+		"    persist->returned.result = %s_%s(&self);\n"
+		"    break;\n",
 		mUname, m_implName, mName);
       }
   fprintf(f,
-	  "   default:;\n  }\n\n"
-	  "  barrier ( CLK_LOCAL_MEM_FENCE );\n"
-	  "  barrier ( CLK_GLOBAL_MEM_FENCE );\n\n"
+	  "  default:;\n"
+	  "  }\n"
 	  "}\n\n");
   if (fclose(f))
     return "Could not close output file. No space?";
@@ -387,9 +453,12 @@ emitEntryPointOCL() {
 const char * Worker::
 parseOcl() {
   const char *err;
-  if ((err = OE::checkAttrs(m_xml,  IMPL_ATTRS, (void*)0)) ||
+  if ((err = OE::checkAttrs(m_xml,  IMPL_ATTRS, "language", (void*)0)) ||
       (err = OE::checkElements(m_xml, IMPL_ELEMS, "port", (void*)0)))
     return err;
+  const char *lang = ezxml_cattr(m_xml, "Language");
+  if (lang && strcasecmp(lang, "cl"))
+    return OU::esprintf("For an OCL worker, language \"%s\" is invalid", lang);
   ezxml_t xctl;
   if ((err = parseSpec()) ||
       (err = parseImplControl(xctl)) ||

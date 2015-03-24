@@ -144,29 +144,28 @@ namespace OCPI {
     }
 #endif
 
+#if 0
     // We use the default behavior of basic ports, but do some
     const OR::Descriptors *Port::
     startConnect(const OR::Descriptors *other, bool &done) {
-      const OR::Descriptors *result = OC::Port::startConnect(other, done);
+      returnnconst OR::Descriptors *result = OC::Port::startConnect(other, done);
       if (done)
 	parent().portIsConnected(ordinal());
       return result;
     }
     const OR::Descriptors *Port::
     finishConnect(const OR::Descriptors *other, OR::Descriptors &buf, bool &done) {
-      const OR::Descriptors *result = OC::Port::finishConnect(other, buf, done);
-      if (done)
-	parent().portIsConnected(ordinal());
-      return result;
+      return OC::Port::finishConnect(other, buf, done);
     }
+#endif
+#if 0
     void Port::
     portIsConnected() {
-      parent().portIsConnected(ordinal());
+      OC::Port::portIsConnected();
       if (!(m_rccPort.connectedCrewSize = nOthers()))
 	m_rccPort.connectedCrewSize = 1;
     }
 
-#if 0
     void Port::
     startConnect(const OR::Descriptors *other, const OU::PValue *params) {
       ocpiAssert(m_mode == CON_TYPE_NONE);

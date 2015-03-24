@@ -105,6 +105,7 @@ namespace OCPI {
       virtual uint64_t getProperty64(const OCPI::API::PropertyInfo &info) const = 0;
       virtual void controlOperation(OCPI::Util::Worker::ControlOperation) = 0;
     };
+    typedef uint32_t PortMask;
     class Worker
       : public OCPI::Util::Worker, public OCPI::API::Worker, virtual public Controllable,
 	virtual public WorkerControl
@@ -121,8 +122,13 @@ namespace OCPI {
       OCPI::OS::Mutex m_controlMutex; // HACK since sched_yield is busted with SCHED_OTHER
       bool m_controlOpPending;
       size_t m_member, m_crewSize;
+      PortMask m_connectedPorts, m_optionalPorts;
       bool beforeStart();
+      void connectPort(OCPI::Util::PortOrdinal ordinal);
     protected:
+      PortMask &connectedPorts() { return m_connectedPorts; }
+      PortMask &optionalPorts() { return m_optionalPorts; }
+      virtual void portIsConnected(OCPI::Util::PortOrdinal /*ordinal*/) {};
       void checkControl();
       inline OCPI::OS::Mutex &mutex() { return m_workerMutex; }
       virtual Port *findPort(const char *name) = 0;

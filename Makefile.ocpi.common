@@ -329,6 +329,9 @@ else
     CXXFLAGS += -fPIC -Wall
   else
     LD_ALLOW_UNDEFINED=-Xlinker --warn-unresolved-symbols
+    ifdef MAIN_DYNAMIC_LIST
+       MAIN_LDFLAGS+=--dynamic-list=$(MAIN_DYNAMIC_LIST)
+    endif
     # This forces everything to be static, and some libraries aren't available (-ldl).
     #MAIN_LDFLAGS+=-static
     #MAIN_LDFLAGS+=-Xlinker --gc-sections
@@ -451,7 +454,7 @@ ifneq (,)
 		-o "$@"
 endif
 #$(info WE ARE HERE: $(OBJDIR) $(LDFLAGS))
-$(OBJDIR)/%.exe : $(OBJDIR)/%.obj $(DYNOBJS)
+$(OBJDIR)/%.exe : $(OBJDIR)/%.obj $(MAINOBJS)
 	$(LD) $(MAIN_LDFLAGS) -o "$@"\
 		$(filter %.obj,$^) \
 		$(MAINOBJS) \

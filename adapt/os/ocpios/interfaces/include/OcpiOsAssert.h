@@ -47,7 +47,6 @@
  *                  Moved over from OcpiOsDebug.h
  */
 
-#include <iostream>
 #include "OcpiOsDebug.h"
 
 namespace OCPI {

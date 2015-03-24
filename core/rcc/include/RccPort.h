@@ -100,7 +100,7 @@ namespace OCPI {
       virtual ~Port();
 
       bool isInProcess() const { return true; }
-      void portIsConnected();
+      //void portIsConnected();
       //      void setMode(ConnectionMode mode) { m_mode = mode; }
       void connectURL(const char* url, const OCPI::Util::PValue *myProps,
 		      const OCPI::Util::PValue * otherProps);
@@ -115,12 +115,12 @@ namespace OCPI {
       createExternal(const char *extName, bool provider,
 		     const OCPI::Util::PValue *extParams,
 		     const OCPI::Util::PValue *connParams);
-      const OCPI::RDT::Descriptors *
-      startConnect(const OCPI::RDT::Descriptors *other, bool &done);
+      //      const OCPI::RDT::Descriptors *
+      //      startConnect(const OCPI::RDT::Descriptors *other, bool &done);
       //      void localConnect(OCPI::DataTransport::Port &input);
-      const OCPI::RDT::Descriptors *
-      finishConnect(const OCPI::RDT::Descriptors */*other*/,
-		    OCPI::RDT::Descriptors &/*feedback*/, bool &done);
+      //      const OCPI::RDT::Descriptors *
+      //      finishConnect(const OCPI::RDT::Descriptors */*other*/,
+      //		    OCPI::RDT::Descriptors &/*feedback*/, bool &done);
 #if 0
       OCPI::DataTransport::Port &dtPort(){ ocpiAssert(m_dtPort); return *m_dtPort;}
       void connectInside(OCPI::Container::Port & other,
@@ -243,9 +243,7 @@ namespace OCPI {
 	    bufferPort.m_rccPort.current.data = NULL;
 	    bufferPort.m_wantsBuffer = true;
 	  }
-	  buffer.portBuffer->length() = buffer.length_;
-	  buffer.portBuffer->opCode() = buffer.opCode_;
-	  put(*buffer.portBuffer);
+	  put(*buffer.portBuffer, buffer.length_, buffer.opCode_, false, 0);
 	} catch (std::string &e) {
 	  error(e);
 	}

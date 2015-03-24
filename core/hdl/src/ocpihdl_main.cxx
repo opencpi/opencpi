@@ -1330,10 +1330,12 @@ receiveRDMA(const char **ap) {
   OD::Transport transport(&global, false);
   if (endpoint.empty())
     endpoint = "ocpi-ether-rdma";
+#if 0
   OU::PValue params[2] = { 
     OA::PVString("remote", endpoint.c_str()),
     OA::PVEnd
   };
+#endif
   OD::Descriptor myInputDesc;
   // Initialize out input descriptor before it is processed and
   // completed by the transport system.

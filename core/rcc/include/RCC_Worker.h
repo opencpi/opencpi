@@ -49,8 +49,9 @@
 #include <stdio.h>
 #include <stddef.h>
 #ifdef __cplusplus
-// For proxy slaves
-#include "OcpiContainerApi.h"
+
+#include "OcpiContainerApi.h" // For proxy slaves
+#include "RCC_RunCondition.h"
 #endif
 #if defined (WIN32)
     /**
@@ -154,59 +155,16 @@ typedef enum {
   RCC_ADVANCE_DONE
 } RCCResult;
 
+#ifndef __cplusplus
 typedef uint32_t RCCPortMask;
-typedef struct RCCWorker RCCWorker;
-typedef struct RCCPort RCCPort;
-
 typedef struct {
   RCCPortMask *portMasks;
   RCCBoolean   timeout;
   uint32_t     usecs;
 } RCCRunCondition;
-
-#ifdef __cplusplus
-struct RunCondition {
-  RCCPortMask *m_portMasks;  // the masks used for checking
-  RCCPortMask  m_myMasks[3]; // non-allocated masks used almost all the time
-  RCCBoolean   m_timeout;    // is timeout enabled?
-  uint32_t     m_usecs;      // usecs of timeout, zero is valid
-  RCCPortMask *m_allocated;  // NULL or allocated
-  RCCPortMask  m_allMasks;   // summary of all masks in the list
-  // Constructors
-  // Default constructor: no timeout, all ports must be ready
-  RunCondition();
-  // This allows a zero-terminated list of masks to be provided in the argument list.
-  // No timeout is enabled.  A very common case.  If given one arg == 0, then never runs
-  RunCondition(RCCPortMask first, ...);
-  // This allows the specification of a mask array (which can be nullptr) and a timeout.
-  RunCondition(RCCPortMask*, uint32_t usecs = 0, bool timeout = false);
-  ~RunCondition();
-  // initialize the default run condition, given how many ports there are
-  // assume default contructor has already been run
-  inline void initDefault(unsigned nPorts) {
-    m_myMasks[0] = ~(-1 << nPorts);
-    m_myMasks[1] = 0;
-    m_portMasks = nPorts ? m_myMasks : NULL;
-    m_allMasks = m_myMasks[0];
-  }
-  // Compatibility hack to support older C-langage run conditions
-  inline void setRunCondition(const RCCRunCondition &crc) {
-    m_portMasks = crc.portMasks;
-    m_timeout = crc.timeout;
-    m_usecs = crc.usecs;
-    m_allMasks = 0;
-    for (RCCPortMask *pm = m_portMasks; *pm; pm++)
-      m_allMasks |= *pm;
-  }
-  // Disable the timeout, without changing its value
-  inline void disableTimeout() { m_timeout = false; }
-  // Enable the timeout, setting its value
-  inline void enableTimeout(uint32_t usecs) { m_timeout = true; m_usecs = usecs; }
-  // Enable the tinmeout, without changing its value
-  inline void enableTimeout() { m_timeout = true; }
-  inline void setTimeout(uint32_t usecs) { m_usecs = usecs; }
-};
 #endif
+typedef struct RCCWorker RCCWorker;
+typedef struct RCCPort RCCPort;
 typedef RCCResult RCCMethod(RCCWorker *_this);
 typedef RCCResult RCCRunMethod(RCCWorker *_this,
 			       RCCBoolean timedout,
@@ -333,7 +291,7 @@ typedef struct {
 typedef struct {
   size_t size, memSize, *memSizes, propertySize;
   RCCPortInfo *portInfo;
-  RCCPortMask optionallyConnectedPorts; // usually initialized from metadata
+  //  RCCPortMask optionallyConnectedPorts; // usually initialized from metadata
 } RCCWorkerInfo;
 
 typedef struct {
@@ -479,7 +437,7 @@ typedef struct {
    // access the current run condition
    const RunCondition *getRunCondition() const;
    // Change the current run condition - if NULL, revert to the default run condition
-   void setRunCondition(const RunCondition *rc);
+   void setRunCondition(RunCondition *rc);
    virtual uint8_t *rawProperties(size_t &size) const;
    RCCResult setError(const char *fmt, ...);
    OCPI::API::Application &getApplication();

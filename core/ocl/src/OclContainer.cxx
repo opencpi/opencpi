@@ -1,14 +1,4 @@
 /*
- *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
- *
- *    Mercury Federal Systems, Incorporated
- *    1901 South Bell Street
- *    Suite 402
- *    Arlington, Virginia 22202
- *    United States of America
- *    Telephone 703-413-0781
- *    FAX 703-413-0784
- *
  *  This file is part of OpenCPI (www.opencpi.org).
  *     ____                   __________   ____
  *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
@@ -31,24 +21,22 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
-  @brief
-  This file contains the implementation for the OpenCPI OpenCL (OCL)
-  container.
-
-************************************************************************** */
-
+#define __STDC_LIMIT_MACROS
+#include <stdint.h>
+#include <errno.h>
 #include <unistd.h>
 #include <climits>
+#include <sys/mman.h>
+#include <regex.h>
+#include <opencl.h>
+#include "RCC_RunCondition.h"
 #include "OCL_Worker.h"
-
-#include "ContainerManager.h"
+#include "OclContainer.h"
+#include "OclDevice.h"
 #include "OclPlatformManager.h"
 
-namespace OCPI
-{
-  namespace OCL
-  {
+namespace OCPI {
+  namespace OCL {
     namespace OS = OCPI::OS;
     namespace OA = OCPI::API;
     namespace OU = OCPI::Util;
@@ -56,726 +44,739 @@ namespace OCPI
     namespace OR = OCPI::RDT;
     namespace OO = OCPI::OCL;
 
-    const size_t OCLDP_LOCAL_BUFFER_ALIGN ( 16 );
+    // Data base of vendor, family, device
+    struct OclVendor {
+      const char *name;
+      const char *regexpr;
+    } vendors[] = {{ "amd", "amd"},
+		   { "nvidia", "nvidia"},
+		   { "intel", "intel" },
+		   { NULL, NULL}};
 
-    typedef struct
-    {
-      uint32_t length;
-      uint8_t opcode;
-      uint32_t tag;
-      uint32_t interval;
+    // A family has binary compatibility
+    struct OclFamily {
+      const char *name;
+      OclVendor *vendor;
+    } families[] = {{ "cpu", &vendors[0]},
+		    { "cpu", &vendors[2]},
+		    { "iris", &vendors[2]},
+		    { "wildfire", &vendors[0]},
+		    { "geforce", &vendors[1]},
+		    { NULL, NULL}};
+		    
+    struct OclDevice {
+      const char *regexpr;
+      OclFamily *family;
+    } devices[] = {{ " i7-", &families[1] },
+		   { "Iris", &families[2] },
+		   { "GeForce", &families[4] },
+		   { NULL, NULL}};
 
-    } OclDpMetadata;
+    // Since they are retrieved as a vector, we'll leave them that way
+    typedef std::vector<cl_kernel> ClKernels;
+    // Ancillary information we retrieve per kernel from the artifact
+    struct Kernel {
+      std::string m_name;
+      size_t m_work_group_size[3];
+      cl_uint m_nDims;
+    };
+    typedef std::vector<Kernel> Kernels;
 
-    namespace
-    {
-#if 0
-      void printDesc ( const OCPI::RDT::Desc_t& desc,
-                       const char* msg )
-      {
-        printf ( "RDT Descriptor: %s\n"
-                 "  Address            = %p\n"
-                 "  Number of Buffers  = %u\n"
-                 "  DataBufferBaseAddr = 0x%llx\n"
-                 "  DataBufferSize     = %u\n"
-                 "  DataBufferPitch    = %u\n"
-                 "  MetaDataBaseAddr   = 0x%llx\n"
-                 "  MetaDataPitch      = %u\n"
-                 "  FullFlagBaseAddr   = 0x%llx\n"
-                 "  FullFlagPitch      = %u\n"
-                 "  FullFlagSize       = %u\n"
-                 "  FullFlagValue      = 0x%llx\n"
-                 "  EmptyFlagBaseAddr  = 0x%llx\n"
-                 "  EmptyFlagPitch     = %u\n"
-                 "  EmptyFlagSize      = %u\n"
-                 "  EmptyFlagValue     = 0x%llx\n"
-                 "  OOB port ID        = %llu\n"
-                 "  OOB OEP            = %s\n",
-                 msg,
-                 (void*)&desc,
-                 desc.nBuffers,
-                 (long long)desc.dataBufferBaseAddr,
-                 desc.dataBufferPitch,
-                 desc.dataBufferSize,
-                 (long long)desc.metaDataBaseAddr,
-                 desc.metaDataPitch,
-                 (long long)desc.fullFlagBaseAddr,
-                 desc.fullFlagPitch,
-                 desc.fullFlagSize,
-                 (long long)desc.fullFlagValue,
-                 (long long)desc.emptyFlagBaseAddr,
-                 desc.emptyFlagPitch,
-                 desc.emptyFlagSize,
-                 (long long)desc.emptyFlagValue,
-                 (long long)desc.oob.port_id,
-                 desc.oob.oep );
+    void printExtensions(const char *space, const std::string &extensions) {
+      int indent;
+      printf("%sExtensions: %n", space, &indent);
+      for (const char *next = 0, *cp = extensions.c_str(); *cp; cp = ++next) {
+	if (next)
+	  printf("%*s", indent, "");
+	if ((next = strchr(cp, ' ')))
+	  printf("%.*s\n", (int)(next - cp), cp);
+	else {
+	  printf("%s\n", cp);
+	  break;
+	}
       }
+    }
+    const char* ocl_strerror(cl_int errnum) {
+      switch (errnum) {
+      case CL_SUCCESS:
+	return "CL_SUCCESS";
+      case CL_DEVICE_NOT_FOUND:
+	return "CL_DEVICE_NOT_FOUND";
+      case CL_DEVICE_NOT_AVAILABLE:
+	return "CL_DEVICE_NOT_AVAILABLE";
+      case CL_COMPILER_NOT_AVAILABLE:
+	return "CL_COMPILER_NOT_AVAILABLE";
+      case CL_MEM_OBJECT_ALLOCATION_FAILURE:
+	return "CL_MEM_OBJECT_ALLOCATION_FAILURE";
+      case CL_OUT_OF_RESOURCES:
+	return "CL_OUT_OF_RESOURCES";
+      case CL_OUT_OF_HOST_MEMORY:
+	return "CL_OUT_OF_HOST_MEMORY";
+      case CL_PROFILING_INFO_NOT_AVAILABLE:
+	return "CL_PROFILING_INFO_NOT_AVAILABLE";
+      case CL_MEM_COPY_OVERLAP:
+	return "CL_MEM_COPY_OVERLAP";
+      case CL_IMAGE_FORMAT_MISMATCH:
+	return "CL_IMAGE_FORMAT_MISMATCH";
+      case CL_IMAGE_FORMAT_NOT_SUPPORTED:
+	return "CL_IMAGE_FORMAT_NOT_SUPPORTED";
+      case CL_BUILD_PROGRAM_FAILURE:
+	return "CL_BUILD_PROGRAM_FAILURE";
+      case CL_MAP_FAILURE:
+	return "CL_MAP_FAILURE";
+      case 13:
+	return "reserved error 1";
+      case 14:
+	return "reserved error 2";
+      case 15:
+	return "reserved error 3";
+      case 16:
+	return "reserved error 4";
+      case 17:
+	return "reserved error 5";
+      case 18:
+	return "reserved error 6";
+      case 19:
+	return "reserved error 7";
+      case 20:
+	return "reserved error 8";
+      case 21:
+	return "reserved error 9";
+      case 22:
+	return "reserved error 10";
+      case 23:
+	return "reserved error 11";
+      case 24:
+	return "reserved error 12";
+      case 25:
+	return "reserved error 13";
+      case 26:
+	return "reserved error 14";
+      case 27:
+	return "reserved error 15";
+      case 28:
+	return "reserved error 16";
+      case 29:
+	return "reserved error 17";
+      case CL_INVALID_VALUE:
+	return "CL_INVALID_VALUE";
+      case CL_INVALID_DEVICE_TYPE:
+	return "CL_INVALID_DEVICE_TYPE";
+      case CL_INVALID_PLATFORM:
+	return "CL_INVALID_PLATFORM";
+      case CL_INVALID_DEVICE:
+	return "CL_INVALID_DEVICE";
+      case CL_INVALID_CONTEXT:
+	return "CL_INVALID_CONTEXT";
+      case CL_INVALID_QUEUE_PROPERTIES:
+	return "CL_INVALID_QUEUE_PROPERTIES";
+      case CL_INVALID_COMMAND_QUEUE:
+	return "CL_INVALID_COMMAND_QUEUE";
+      case CL_INVALID_HOST_PTR:
+	return "CL_INVALID_HOST_PTR";
+      case CL_INVALID_MEM_OBJECT:
+	return "CL_INVALID_MEM_OBJECT";
+      case CL_INVALID_IMAGE_FORMAT_DESCRIPTOR:
+	return "CL_INVALID_IMAGE_FORMAT_DESCRIPTOR";
+      case CL_INVALID_IMAGE_SIZE:
+	return "CL_INVALID_IMAGE_SIZE";
+      case CL_INVALID_SAMPLER:
+	return "CL_INVALID_SAMPLER";
+      case CL_INVALID_BINARY:
+	return "CL_INVALID_BINARY";
+      case CL_INVALID_BUILD_OPTIONS:
+	return "CL_INVALID_BUILD_OPTIONS";
+      case CL_INVALID_PROGRAM:
+	return "CL_INVALID_PROGRAM";
+      case CL_INVALID_PROGRAM_EXECUTABLE:
+	return "CL_INVALID_PROGRAM_EXECUTABLE";
+      case CL_INVALID_KERNEL_NAME:
+	return "CL_INVALID_KERNEL_NAME";
+      case CL_INVALID_KERNEL_DEFINITION:
+	return "CL_INVALID_KERNEL_DEFINITION";
+      case CL_INVALID_KERNEL:
+	return "CL_INVALID_KERNEL";
+      case CL_INVALID_ARG_INDEX:
+	return "CL_INVALID_ARG_INDEX";
+      case CL_INVALID_ARG_VALUE:
+	return "CL_INVALID_ARG_VALUE";
+      case CL_INVALID_ARG_SIZE:
+	return "CL_INVALID_ARG_SIZE";
+      case CL_INVALID_KERNEL_ARGS:
+	return "CL_INVALID_KERNEL_ARGS";
+      case CL_INVALID_WORK_DIMENSION:
+	return "CL_INVALID_WORK_DIMENSION";
+      case CL_INVALID_WORK_GROUP_SIZE:
+	return "CL_INVALID_WORK_GROUP_SIZE";
+      case CL_INVALID_WORK_ITEM_SIZE:
+	return "CL_INVALID_WORK_ITEM_SIZE";
+      case CL_INVALID_GLOBAL_OFFSET:
+	return "CL_INVALID_GLOBAL_OFFSET";
+      case CL_INVALID_EVENT_WAIT_LIST:
+	return "CL_INVALID_EVENT_WAIT_LIST";
+      case CL_INVALID_EVENT:
+	return "CL_INVALID_EVENT";
+      case CL_INVALID_OPERATION:
+	return "CL_INVALID_OPERATION";
+      case CL_INVALID_GL_OBJECT:
+	return "CL_INVALID_GL_OBJECT";
+      case CL_INVALID_BUFFER_SIZE:
+	return "CL_INVALID_BUFFER_SIZE";
+      case CL_INVALID_MIP_LEVEL:
+	return "CL_INVALID_MIP_LEVEL";
+      case CL_INVALID_GLOBAL_WORK_SIZE:
+	return "CL_INVALID_GLOBAL_WORK_SIZE";
+#ifdef CL_PLATFORM_NOT_FOUND_KHR
+      case  CL_PLATFORM_NOT_FOUND_KHR:
+	return "CL_PLATFORM_NOT_FOUND_KHR";
 #endif
-
-      typedef enum
-      {
-        OCPI_OCL_INITIALIZE = 0,
-        OCPI_OCL_START,
-        OCPI_OCL_STOP,
-        OCPI_OCL_RELEASE,
-        OCPI_OCL_BEFORE_QUERY,
-        OCPI_OCL_AFTER_CONFIGURE,
-        OCPI_OCL_TEST,
-        OCPI_OCL_RUN
-
-      } OcpiOclOpcodes_t;
-
-      OcpiOclOpcodes_t controlOp2Opcode ( OU::Worker::ControlOperation op )
-      {
-        switch ( op )
-        {
-	case OU::Worker::OpInitialize:
-            return OCPI_OCL_INITIALIZE;
-	case OU::Worker::OpStart:
-            return OCPI_OCL_START;
-	case OU::Worker::OpStop:
-            return OCPI_OCL_STOP;
-	case OU::Worker::OpRelease:
-            return OCPI_OCL_RELEASE;
-	case OU::Worker::OpTest:
-            return OCPI_OCL_TEST;
-	case OU::Worker::OpBeforeQuery:
-            return OCPI_OCL_BEFORE_QUERY;
-	case OU::Worker::OpAfterConfigure:
-            return OCPI_OCL_AFTER_CONFIGURE;
-          default:
-            return OCPI_OCL_RUN;
-        }
-
-        return OCPI_OCL_RUN;
+      default:
+	return "Unknown error";
       }
+    }
+    void throwOclError(cl_int errnum, const char *fmt, ...) {
+      va_list ap;
+      va_start(ap, fmt);
+      std::string s;
+      OU::formatAddV(s, fmt, ap);
+      va_end(ap);
+      OU::formatAdd(s, ": OpenCL error: %s [%d]", ocl_strerror(errnum), errnum);
+      throw OU::Error("Ocl Error: %s", s.c_str());
+    }
 
-    } // End: namespace<unamed>
 
-    class Container;
+    // The Device before it is a container
+    // This info is for runtime.  We don't save everything from discovery time
+    Device::
+    Device(const std::string &dname, cl_platform_id pid, cl_device_id did, bool verbose,
+	   bool print)
+      : m_name(dname), m_id(did), m_context(NULL), m_cmdq(NULL), m_bufferAlignment(0),
+	m_isCPU(false), m_pid(pid), m_vendor(NULL), m_family(NULL) {
+      cl_context_properties ctx_props[] = {CL_CONTEXT_PLATFORM, (cl_context_properties)pid, 0};
+      cl_int rc;
+      OCL_RC(m_context, clCreateContext(ctx_props, 1, &m_id, 0, 0, &rc));
+      OCL_RC(m_cmdq, clCreateCommandQueue(m_context, m_id, 0, &rc));
+      cl_device_type type;
+      cl_uint vendorId, nUnits, nDimensions;
+      size_t *sizes, groupSize, argSize;
+      cl_bool available, compiler;
+      cl_device_exec_capabilities capabilities;
+      cl_command_queue_properties properties;
+      OCLDEV_VAR(TYPE, type);
+      m_isCPU = type == CL_DEVICE_TYPE_CPU;
+      OCLDEV_VAR(VENDOR_ID, vendorId);
+      OCLDEV_VAR(MAX_COMPUTE_UNITS, nUnits);
+      OCLDEV_VAR(MAX_WORK_ITEM_DIMENSIONS, nDimensions);
+      sizes = new size_t[nDimensions];
+      OCLDEV(MAX_WORK_ITEM_SIZES, sizes, nDimensions * sizeof(size_t));
+      OCLDEV_VAR(MAX_WORK_GROUP_SIZE, groupSize);
+      OCLDEV_VAR(MAX_PARAMETER_SIZE, argSize);
+      OCLDEV_VAR(AVAILABLE, available);
+      OCLDEV_VAR(COMPILER_AVAILABLE, compiler);
+      OCLDEV_VAR(EXECUTION_CAPABILITIES, capabilities);
+      OCLDEV_VAR(QUEUE_PROPERTIES, properties);
+      cl_uint addrAlign;
+      OCLDEV_VAR(MEM_BASE_ADDR_ALIGN, addrAlign);
+      m_bufferAlignment = addrAlign / 8;
+      char info[1024];
+      std::string driverVersion, profile, version, cVersion, extensions;
+      OCLDEV_STRING(NAME, m_type);
+      OCLDEV_STRING(VENDOR, m_vendorName);
+      OCLDEV_STRING(PROFILE, profile);
+      OCLDEV_STRING(VERSION, version);
+      OCLDEV_STRING(OPENCL_C_VERSION, cVersion); // not on Apple?
+      OCLDEV_STRING(EXTENSIONS, extensions);
+      for (OclVendor *v = vendors; v->name; v++) {
+	regex_t rx;
+	if (regcomp(&rx, v->regexpr, REG_NOSUB|REG_ICASE))
+	  throw OU::Error("Invalid regular expression for OpenCL vendor: %s", v->regexpr);
+	if (!regexec(&rx, m_vendorName.c_str(), 0, NULL, 0)) {
+	  m_vendor = v;
+	  break;
+	}
+      }
+      for (OclDevice *d = devices; d->regexpr; d++) {
+	regex_t rx;
+	if (regcomp(&rx, d->regexpr, REG_NOSUB|REG_ICASE))
+	  throw OU::Error("Invalid regular expression for OpenCL device: %s", d->regexpr);
+	if (!regexec(&rx, m_type.c_str(), 0, NULL, 0)) {
+	  m_family = d->family;
+	}
+      }
+      if (print || verbose)
+	printf("  OpenCPI OCL Device Found: %s target: %s-%s device: \"%s\"\n",
+	       m_name.c_str(), m_vendor ? m_vendor->name : "unknown",
+	       m_family ? m_family->name : "unknown", m_type.c_str());
+      if (verbose) {
+	printf("    Vendor:     \"%s\" profile \"%s\" version \"%s\" C version \"%s\"\n",
+	       m_vendorName.c_str(), profile.c_str(), version.c_str(), cVersion.c_str());
+	printf("    Alignment:  %zu\n", m_bufferAlignment);
+	printf("    MaxArgSize: %zu\n", argSize);
+	if (m_family)
+	  printf("    Family:     %s(%s)\n", m_family->name, m_family->vendor->name);
+	printExtensions("    ", extensions);
+      }
+    }
+
+    Device::
+    ~Device() {}
+
 
     class ExternalPort;
 
     const char *ocl = "ocl";
 
-    class Driver : public OC::DriverBase<Driver, Container, ocl>
-    {
-      friend class ExternalPort;
-
-      public:
-        unsigned search ( const OA::PValue*,
-                          const char** exclude, bool discoveryOnly );
-
-        OC::Container* probeContainer ( const char* which,
-					std::string &error,
-                                        const OA::PValue* props );
-    }; // End: class Driver
-
     OC::RegisterContainerDriver<Driver> driver;
 
     class Port;
-    class Artifact;
     class Application;
 
-    class Container : public OC::ContainerBase<Driver, Container, Application, Artifact>
-    {
-      friend class Port;
-      friend class Driver;
-      friend class Artifact;
-
-    private:
-      DeviceContext* d_device;
-
-    protected:
-      Container ( const char* name,
-		  DeviceContext* device,
-		  const ezxml_t config = NULL,
-		  const OU::PValue* props = NULL )
-	: OC::ContainerBase<Driver,Container,Application,Artifact>(*this, name, config, props),
-	  d_device ( device )
-      {
-	m_model = "ocl";
-      }
-
-    public:
-      ~Container ()
-      {
-	OC::Container::shutdown();
-	this->lock();
-	OU::Parent<Application>::deleteChildren();
-      }
-
-      OC::Container::DispatchRetCode dispatch ( DataTransfer::EventManager* event_manager )
-        throw ( OU::EmbeddedException );
-
-      OC::Artifact& createArtifact ( OCPI::Library::Artifact& lart,
-				     const OA::PValue* artifactParams );
-
-      OA::ContainerApplication* createApplication ( const char* name,
-						    const OCPI::Util::PValue* props )
-      throw ( OCPI::Util::EmbeddedException );
-
-      bool needThread ()
-      {
-	return true;
-      }
-
-      DeviceContext& device ( )
-      {
-	return *d_device;
-      }
-
-      void loadArtifact ( const std::string& pathToArtifact,
-			  const OA::PValue* artifactParams )
-      {
-	device().loadArtifact ( pathToArtifact, artifactParams );
-      }
-
-      void unloadArtifact ( const std::string& pathToArtifact )
-      {
-	device().unloadArtifact ( pathToArtifact );
-      }
-
-    }; // End: class Container
-
-    unsigned Driver::search ( const OA::PValue* /* params */, const char** /* exclude */,
-			      bool /*discoveryOnly*/ )
-    {
-      return 1;
-    }
-
-    // FIXME: leak of DeviceContext on constructor error
-    // FIXME: return errors, don't throw.
-    OC::Container* Driver::probeContainer ( const char* which, std::string &/*error*/,
-                                            const OA::PValue* props )
-    {
-      return new Container ( which, new DeviceContext ( props ), 0, props );
-    }
-
-    class Artifact : public OC::ArtifactBase<Container,Artifact>
-    {
+    class Artifact : public OC::ArtifactBase<Container,Artifact> {
       friend class Container;
+      friend class Worker;
+      friend class Application;
+      cl_program m_program;
+      ClKernels  m_clKernels;
+      Kernels    m_kernels;
 
-      private:
-        Artifact ( Container& c,
-                   OCPI::Library::Artifact& lart,
-                   const OA::PValue* artifactParams )
-          : OC::ArtifactBase<Container,Artifact> ( c, *this, lart, artifactParams )
-        {
-          printf ( "OCL loading OpenCL artifact %s into OCL container %s\n",
-                   name().c_str(),
-                   c.name().c_str() );
-          c.loadArtifact ( name(), artifactParams );
-        }
+      Artifact(Container &c, OCPI::Library::Artifact &lart, const OA::PValue *artifactParams) :
+	OC::ArtifactBase<Container,Artifact>(c, *this, lart, artifactParams) {
+	ocpiInfo("Loading artifact %s (UUID \"%s\") on OCL container %s\n",
+		 name().c_str(), lart.uuid().c_str(), c.name().c_str());
+	cl_device_id &id = c.device().id();
+	cl_context &ctx = c.device().context();
+	int fd = ::open(name().c_str(), O_RDONLY);
+	try {
+	  off_t length;
+	  void *mapped;
+	  if (fd < 0 ||
+	      (length = lseek(fd, 0, SEEK_END)) == -1 ||
+	      (mapped = mmap(NULL, length, PROT_READ, MAP_PRIVATE, fd, 0)) == MAP_FAILED)
+	    throw OU::Error("Can't load artifact: %s (%s, %d)\n",
+			    name().c_str(), strerror(errno), errno);
+	  cl_int rc, rc1;
+	  size_t bytes = length - lart.metadataLength();
+	  const unsigned char *binary = (const unsigned char *)mapped;
+	  m_program = clCreateProgramWithBinary(ctx, 1, &id, &bytes, &binary, &rc, &rc1);
+	  switch (rc) {
+	  case CL_INVALID_BINARY:
+	    throw OU::Error("Artifact \"%s\" not valid for OpenCL device", name().c_str());
+	  default:
+	    throw OU::Error("clCreateProgramWithBinary error from \%s\": %s (%d)",
+			    name().c_str(), ocl_strerror(rc), rc);
+	  case CL_SUCCESS:;
+	  }
+	  if (rc1 != CL_SUCCESS)
+	    throw OU::Error("clCreateProgramWithBinary error from \%s\": %s (%d)",
+			    name().c_str(), ocl_strerror(rc1), rc1);
+	  OCL(clBuildProgram(m_program, 1, &id, 0, 0, 0));
+	  size_t n;
+	  OCL(clGetProgramBuildInfo(m_program, id, CL_PROGRAM_BUILD_LOG, 0, 0, &n));
+	  std::vector<char> log(n + 1, 0);
+	  OCL(clGetProgramBuildInfo(m_program, id, CL_PROGRAM_BUILD_LOG, n, &log[0], NULL));
+	  ocpiDebug("OpenCL Binary Loading start log:\n%s\n====End Log", &log[0]);
+	  cl_uint cln;
+	  OCL(clCreateKernelsInProgram(m_program, 0, 0, &cln));
+	  m_clKernels.resize(cln);
+	  m_kernels.resize(cln);
+	  OCL(clCreateKernelsInProgram(m_program, cln, &m_clKernels[0], 0));
+	  for (size_t k = 0; k < m_kernels.size(); k++) {
+	    char str[1024];
+	    OCL(clGetKernelInfo(m_clKernels[k], CL_KERNEL_FUNCTION_NAME, sizeof(str), str,
+				0));
+	    ocpiDebug("In artifact %s, found kernel %s", name().c_str(), str);
+	    m_kernels[k].m_name = str;
+	    OCL(clGetKernelWorkGroupInfo(m_clKernels[k], id,
+					 CL_KERNEL_COMPILE_WORK_GROUP_SIZE,
+					 sizeof(m_kernels[k].m_work_group_size),
+					 (void*)m_kernels[k].m_work_group_size, 0));
+	    for (unsigned n = 0; n < 3; n++)
+	      if (m_kernels[k].m_work_group_size)
+		m_kernels[k].m_nDims++;
+	  }
+	} catch (...) {
+	  if (fd >= 0)
+	    ::close(fd);
+	}
+      }
+      ~Artifact() {
+	for (unsigned n = 0; n < m_clKernels.size(); n++)
+	  OCL(clReleaseKernel(m_clKernels[n]));
+	OCL(clReleaseProgram(m_program));
+      }
+    protected:
+      OC::Worker &createWorker(Application &, const char* appInstName, ezxml_t impl,
+			       ezxml_t inst, size_t member, size_t crewSize,
+			       const OU::PValue* wParams);
 
-      public:
-        ~Artifact()
-        {
-          parent().unloadArtifact ( name() );
-        }
-    }; // End: class Artifact
+      cl_program &program() { return m_program; }
+    };
 
-    OC::Artifact& Container::createArtifact ( OCPI::Library::Artifact& lart,
-                                              const OA::PValue* artifactParams )
-    {
-      return *new Artifact ( *this, lart, artifactParams );
+    Container::
+    Container(OCPI::OCL::Device &device, const ezxml_t config, const OU::PValue* params)
+      : OC::ContainerBase<Driver,Container,Application,Artifact>
+	(*this, device.name().c_str(), config, params),
+	m_device(device) {
+      m_model = "ocl";
+      m_os = "opencl";
+      m_osVersion = device.family()->vendor->name;
+      m_platform = device.family()->name;
+    }
+
+    Container::~Container() {
+      OC::Container::shutdown();
+      this->lock();
+      OU::Parent<Application>::deleteChildren();
+    }
+
+    unsigned Driver::
+    search(const OA::PValue*params, const char**exclude, bool discoveryOnly) {
+      return search(params, exclude, discoveryOnly, NULL, NULL);
+    }
+
+    Device &Driver::
+    find(const char *target) {
+      Device *d = NULL;
+      search(NULL, NULL, false, target, &d);
+      if (d)
+	return *d;
+      throw OU::Error("No OpenCL device found for target: %s", target);
+    }
+
+    unsigned Driver::
+    search(const OA::PValue*params, const char**exclude, bool /*discoveryOnly*/,
+	   const char *type, Device **found) {
+      cl_uint np, nd;
+      unsigned ndevs = 0;
+      OclFamily *family = NULL;
+      if (type) {
+	std::string vendorName, familyName;
+	const char *dash = strchr(type, '-');
+	if (dash) {
+	  vendorName.assign(type, dash - type);
+	  familyName = dash + 1;
+	} else
+	  familyName = type;
+	OclFamily *f;
+	for (f = families; f->name; f++) {
+	  ocpiDebug("Vendor: %s Family: %s, looking at %s (%s)",
+		    vendorName.c_str(), familyName.c_str(), f->name, f->vendor->name);
+	  if (!strcasecmp(f->name, familyName.c_str())) {
+	    if (vendorName.size())
+	      if (!strcasecmp(f->vendor->name, vendorName.c_str())) {
+		family = f;
+		break;
+	      } else
+		continue;
+	    if (family)
+	      throw OU::Error("Ambiguous OCL target \"%s\".  Need <vendor>-<family>",
+			      type);
+	    family = f;
+	  }
+	}
+	if (!family)
+	  throw OU::Error("No OCL target named \"%s\"", type);
+      }
+      bool printOnly = false, verbose = false;
+      OU::findBool(params, "printOnly", printOnly);
+      OU::findBool(params, "verbose", verbose);
+      OCL(clGetPlatformIDs(0, 0,&np));
+      if (!np)
+	return 0;
+      std::vector<cl_platform_id> pids(np);
+      OCL(clGetPlatformIDs(np, &pids[0], 0));
+      for (size_t p = 0; p < np; p++) {
+	std::string name, vendor, profile, version, extensions;
+        char info[1024];
+        OCL(clGetPlatformInfo(pids[p], CL_PLATFORM_PROFILE, sizeof(info), info, 0));
+	profile = info;
+        OCL(clGetPlatformInfo(pids[p], CL_PLATFORM_VERSION, sizeof(info), info, 0));
+	version = info;
+        OCL(clGetPlatformInfo(pids[p], CL_PLATFORM_NAME, sizeof(info), info, 0));
+	name = info;
+        OCL(clGetPlatformInfo(pids[p], CL_PLATFORM_VENDOR, sizeof(info), info, 0));
+	vendor = info;
+        OCL(clGetPlatformInfo(pids[p], CL_PLATFORM_EXTENSIONS, sizeof(info), info, 0));
+	extensions = info;
+        OCL(clGetDeviceIDs(pids[p], CL_DEVICE_TYPE_ALL, 0, 0, &nd));
+        std::vector<cl_device_id> dids(nd);
+        OCL(clGetDeviceIDs(pids[p], CL_DEVICE_TYPE_ALL, nd, &dids[0], 0));
+	if (verbose) {
+	  printf("OpenCL Platform: %zu/%p \"%s\" vendor \"%s\" profile \"%s\" version \"%s\"\n",
+		 p, pids[p], name.c_str(), vendor.c_str(), profile.c_str(), version.c_str());
+	  printExtensions("    ", extensions);
+	}
+	for (size_t d = 0; d < nd; d++) {
+	  std::string dname;
+	  OU::format(dname, "ocl%zu.%zu", p, d);
+	  for (const char **ep = exclude; ep && *ep; ep++)
+	    if (!strcasecmp(*ep, dname.c_str()))
+	      goto cont2;
+	  {
+	    Device *dev = new Device(dname, pids[p], dids[d], verbose, printOnly);
+	    if (type)
+	      if (family == dev->family()) {
+		*found = dev;
+		return 0;
+	      } else
+		delete dev;
+	    else if (printOnly)
+	      delete dev;
+	    else
+	      new Container(*dev);
+	  }
+	  ndevs++;
+	cont2:;
+	}
+      }
+      return ndevs;
+    }
+    Device *Driver::
+    open(const char *name, bool verbose, bool print, std::string &error) {
+      unsigned p, d;
+      if (sscanf(name, "ocl%u.%u", &p, &d) != 2)
+	OU::format(error, "Bad format for OCL device: \"%s\".  Must be \"ocl<pnum>.<dnum>\"",
+		   name);
+      else {
+	cl_uint np, nd;
+	OCL(clGetPlatformIDs(0, 0,&np));
+	if (!np)
+	  error = "There are no OpenCL platforms";
+	else if (p >= np)
+	  OU::format(error, "Bad platform number in OCL device name: \"%s\"", name);
+	else {
+	  std::vector<cl_platform_id> pids(np);
+	  OCL(clGetPlatformIDs(np, &pids[0], 0));
+	  OCL(clGetDeviceIDs(pids[p], CL_DEVICE_TYPE_ALL, 0, 0, &nd));
+	  if (d >= nd)
+	    OU::format(error, "Bad device number in OCL device name: \"%s\"", name);
+	  else {
+	    std::vector<cl_device_id> dids(nd);
+	    OCL(clGetDeviceIDs(pids[p], CL_DEVICE_TYPE_ALL, nd, &dids[0], 0));
+	    std::string dname;
+	    OU::format(dname, "ocl%u.%u", p, d);
+	    return new Device(dname, pids[p], dids[d], verbose, print);
+	  }
+	}
+      }
+      return NULL;
+    }
+
+    OC::Container* Driver::
+    probeContainer(const char* which, std::string &error, const OA::PValue *params) {
+      Device *dev = open(which, false, false, error);
+      if (!dev)
+	return NULL;
+      return new Container(*dev, NULL, params);
+    }
+
+    OC::Artifact& Container::
+    createArtifact(OCPI::Library::Artifact& lart, const OA::PValue* artifactParams) {
+      return *new Artifact(*this, lart, artifactParams);
     }
 
     class Worker;
 
-    class Application : public OC::ApplicationBase<Container,Application,Worker>
-    {
+    class Application : public OC::ApplicationBase<Container,Application,Worker> {
       friend class Container;
 
-      private:
-        Application(Container& con, const char* name, const OA::PValue* props)
-          : OC::ApplicationBase<Container, Application, Worker>(con, *this, name, props) {
-        }
+      Application(Container& con, const char* name, const OA::PValue* params)
+	: OC::ApplicationBase<Container, Application, Worker>(con, *this, name, params) {
+      }
 
-        OC::Worker &createWorker(OC::Artifact* art, const char* appInstName, ezxml_t impl,
-				 ezxml_t inst, OC::Worker *slave, size_t member,
-				 size_t crewSize, const OCPI::Util::PValue* wParams);
+      OC::Worker &
+      createWorker(OC::Artifact* artifact, const char* appInstName, ezxml_t impl, ezxml_t inst,
+		   OC::Worker *slave, size_t member, size_t crewSize, const OU::PValue* params) {
+	assert(!slave);
+	assert(artifact);
+	Artifact &art = static_cast<Artifact&>(*artifact);
+	return art.createWorker(*this, appInstName, impl, inst, member, crewSize, params);
+      }
 
-        void run ( DataTransfer::EventManager* event_manager,
-                   bool& more_to_do );
-
-      public:
-        DeviceWorker& loadWorker ( const std::string& entryPoint )
-        {
-          return parent().device().loadWorker ( entryPoint );
-        }
-
-        void unloadWorker ( DeviceWorker& worker )
-        {
-          parent().device().unloadWorker ( worker );
-        }
-
+      void
+      run(DataTransfer::EventManager* event_manager, bool& more_to_do);
     }; // End: class Application
 
-    OA::ContainerApplication* Container::createApplication ( const char* name,
-                                                             const OCPI::Util::PValue* props )
-    throw ( OCPI::Util::EmbeddedException )
+    OA::ContainerApplication* Container::
+    createApplication (const char* name, const OCPI::Util::PValue* params)
+      throw (OCPI::Util::EmbeddedException)
     {
-      return new Application ( *this, name, props );
+      return new Application(*this, name, params);
     }
 
-    OC::Container::DispatchRetCode Container::dispatch ( DataTransfer::EventManager* event_manager )
-    throw ( OU::EmbeddedException )
-    {
+    OC::Container::DispatchRetCode Container::
+    dispatch(DataTransfer::EventManager* event_manager) throw (OU::EmbeddedException) {
       bool more_to_do = false;
-      try
-      {
-        if ( !m_enabled )
-        {
-          return Stopped;
-        }
+      if (!m_enabled)
+	return Stopped;
 
-        OU::SelfAutoMutex guard ( this );
+      OU::SelfAutoMutex guard(this);
 
-        // Process the workers
-        for ( Application* a = OU::Parent<Application>::firstChild();
-              a;
-              a = a->nextChild() )
-        {
-          a->run ( event_manager, more_to_do );
-        }
-      }
-      catch ( const OCPI::Util::EmbeddedException& e )
-      {
-        std::cerr << "\nException(e): " << e.getAuxInfo ( ) << std::endl;
-      }
-      catch ( const OCPI::API::Error& e )
-      {
-        std::cerr << "\nException(a): " << e.error ( ) << std::endl;
-      }
-      catch ( const std::string& s )
-      {
-        std::cerr << "\nException(s): " << s << std::endl;
-      }
-      catch ( ... )
-      {
-        std::cerr << "\nException(u): unknown" << std::endl;
-      }
-
+      // Process the workers
+      for (Application* a = OU::Parent<Application>::firstChild(); a; a = a->nextChild())
+	a->run(event_manager, more_to_do);
       return more_to_do ? MoreWorkNeeded : Spin;
     }
 
-    class Worker : public OC::WorkerBase<Application,Worker,Port>
-    {
+    class Worker : public OC::WorkerBase<Application,Worker,Port>, public OCPI::Time::Emit {
       friend class Port;
+      friend class Artifact;
       friend class Application;
       friend class ExternalPort;
       friend class ExternalBuffer;
 
-      private:
-#if 0
-        struct OCLPortInternal
-        {
-          OCLBuffer current;
-          size_t dataValueWidthInBytes;
-        };
-#endif
+      uint8_t        *m_persistent;
+      size_t          m_persistBytes;
+      cl_mem          m_clPersistent; // handle on OpenCL buffer object
+      uint8_t        *m_memory;
+      OCLReturned    *m_returned;
+      OCLWorker      *m_self;
+      uint8_t        *m_properties;
+      OCLWorker      *m_oclWorker;
+      uint8_t        *m_oclWorkerBytes;
+      size_t          m_oclWorkerSize;
+      OCLPort        *m_oclPorts;
+      OCPI::RCC::RunCondition  m_defaultRunCondition;
+      OCPI::RCC::RunCondition  m_myRunCondition;
+      OCPI::RCC::RunCondition *m_runCondition;
+      Kernel                  &m_kernel;
+      Container               &m_container;
+      bool                     m_isEnabled;
+      cl_kernel                m_clKernel;
+      OCPI::OS::Timer          m_runTimer;
+      std::vector<Port*>       m_myPorts;
 
-        bool isEnabled;
-        Container& myContainer;
-        const char* implName;
-        OU::Worker metadataImpl;
-        const char* instName;
-      //        OU::Worker metadataInst;
-        std::string myEntryPoint;
-        uint8_t* myProperties;
-        uint32_t nConnectedPorts;
-        OCLPort* myPorts;
-        uint32_t readyPorts;
-        OCLResult* myResult;
-        OCLBoolean timedOut;
-        OCLBoolean* myNewRunCondition;
-        OCLRunCondition* myRunCondition;
-        uint8_t* dummyBuffer; // Port buffer placed holder for control ops
-        DeviceWorker& device_worker;
-        OCPI::OS::Timer runTimer;
-        std::vector<void*> myLocalMemories;
-
-        Worker(Application& app, OC::Artifact* art, const char* name, ezxml_t implXml,
+      Worker(Application& app, Artifact& art, Kernel &k, const char* name, ezxml_t implXml,
 	       ezxml_t instXml, size_t member, size_t crewSize, const OA::PValue* execParams)
-	  : OC::WorkerBase<Application, Worker, Port>(app, *this, art, name, implXml, instXml,
+	  : OC::WorkerBase<Application, Worker, Port>(app, *this, &art, name, implXml, instXml,
 						      member, crewSize, execParams),
-	    isEnabled(false), myContainer(app.parent()), implName(ezxml_attr(implXml, "name")),
-	    instName(ezxml_attr(instXml, "name")),
-	    myEntryPoint(std::string(implName) + std::string("_entry_point")), myProperties(0),
-	    nConnectedPorts(0), myPorts(0), readyPorts(0), myResult(0), timedOut(false),
-	    myRunCondition(0), dummyBuffer(0),
-	    device_worker(parent().loadWorker(myEntryPoint.c_str())), runTimer(),
-            myLocalMemories() {
-          const char *err = metadataImpl.parse(implXml);
-	  if (err) // || (err = metadataInst.parse(instXml)))
-	    throw OU::Error("Error processing worker metadata %s", err);
-	  
-          initializeContext ( );
+	    OCPI::Time::Emit(&parent().parent(), "Worker", name), m_kernel(k),
+	    m_container(app.parent()), m_isEnabled(false), m_clKernel(NULL) {
+	  m_persistBytes =
+	    OU::roundUp(sizeof(OCLReturned), 8) + OU::roundUp(totalPropertySize(), 8);
+	  size_t nMemories;
+	  OU::Memory *m = memories(nMemories);
+	  for (size_t n = 0; n < nMemories; n++, m++)
+	    m_persistBytes += OU::roundUp(m->m_nBytes, 8);
+	  OCL_RC(m_clPersistent,
+		 clCreateBuffer(m_container.device().context(),
+				CL_MEM_READ_WRITE|CL_MEM_ALLOC_HOST_PTR, m_persistBytes,
+				NULL, &rc));
+	  void *vp;
+	  OCL_RC(vp, clEnqueueMapBuffer(m_container.device().cmdq(), m_clPersistent,
+					false, CL_MAP_READ|CL_MAP_WRITE, 0, m_persistBytes,
+					0, 0, 0, &rc));
+	  OCL(clFinish(m_container.device().cmdq()));
+	  m_persistent = (uint8_t *)vp;
+	  memset(m_persistent, 0, m_persistBytes);
+	  m_returned = (OCLReturned *)m_persistent;
+	  m_self = (OCLWorker *)(m_returned + 1);
+	  m_properties = (uint8_t *)(m_self) + m_nPorts + sizeof(OCLPort);
 
-          setControlOperations ( ezxml_cattr ( implXml, "controlOperations" ) );
-
-          setControlMask ( getControlMask() | ( 1 << OU::Worker::OpStart ) );
+	  m_memory = m_properties + OU::roundUp(totalPropertySize(), 8);
+	  m_oclWorkerSize = sizeof(OCLWorker) + m_nPorts * sizeof(OCLPort);
+	  m_oclWorkerBytes = new uint8_t[m_oclWorkerSize];
+	  m_oclWorker = (OCLWorker*)m_oclWorkerBytes;
+	  m_oclPorts = (OCLPort *)(m_oclWorker + 1);
+	  memset(m_oclWorker, 0, sizeof(*m_oclWorker));
+	  m_oclWorker->crew_size = OCPI_UTRUNCATE(uint16_t, crewSize);
+	  m_oclWorker->member = OCPI_UTRUNCATE(uint16_t, member);
+	  m_oclWorker->firstRun = true;
+	  m_oclWorker->timedOut = false;
+	  m_oclWorker->nPorts = OCPI_UTRUNCATE(uint8_t, m_nPorts);
+	  m_oclWorker->logLevel = OS::logGetLevel();
+	  ocpiDebug("Worker/kernel %s in %s has persistent size of %zu bytes, self %zu bytes",
+		    name, art.name().c_str(), m_persistBytes, m_oclWorkerSize);
+	  m_defaultRunCondition.initDefault(m_nPorts);
+	  // FIXME: how can the worker declare a run condition?
+	  // Perhaps with an init? or XML? (might be nice).
+	  m_runCondition = &m_defaultRunCondition;
+	  OCL_RC(m_clKernel, clCreateKernel(art.program(), m_kernel.m_name.c_str(), &rc));
+	  // This argument will change each time because the contents of the structure change
+	  //	  OCL(clSetKernelArg(m_clKernel, 0, m_oclWorkerSize, m_oclWorkerBytes));
+	  // This argument is persistent and will never change.
+	  OCL(clSetKernelArg(m_clKernel, 0, sizeof(m_clPersistent), &m_clPersistent));
+	  // The rest of the arguments are created by the ports
+	  setControlOperations(ezxml_cattr(implXml, "controlOperations"));
+	  m_myPorts.resize(m_nPorts, NULL);
         }
+      ~Worker() {
+	try {
+	  if (m_isEnabled) {
+	    m_isEnabled = false;
+	    controlOperation ( OU::Worker::OpStop );
+	  }
+	  controlOperation ( OU::Worker::OpRelease );
+	} catch (...) {
+	}
+	deleteChildren();
+	if (m_clPersistent)
+	  clReleaseMemObject(m_clPersistent);
+	// destruct rest
+      }
 
-        void updatePortsPreRun ( );
+      void kernelProlog(OCLOpCode opcode) {
+	m_oclWorker->controlOp = opcode;
+	//uint32_t *p32 = (uint32_t*)m_oclWorkerBytes;
+	//ocpiDebug("self: %zu bytes %x %x %x %x %x %x\n", m_oclWorkerSize,
+	// p32[0], p32[1], p32[2], p32[3], p32[4], p32[5]);
+	//	OCL(clSetKernelArg(m_clKernel, 0, m_oclWorkerSize, m_oclWorkerBytes));
+	memcpy(m_self, m_oclWorkerBytes, m_oclWorkerSize);
+	OCL(clEnqueueUnmapMemObject(m_container.device().cmdq(), m_clPersistent, m_persistent,
+				    0, 0, 0));
+      }
 
-        void updatePortsPostRun ( );
+      void kernelEpilog() {
+	void *vp;
+	OCL_RC(vp, clEnqueueMapBuffer(m_container.device().cmdq(), m_clPersistent,
+				      false, CL_MAP_READ|CL_MAP_WRITE, 0, m_persistBytes,
+				      0, 0, 0, &rc));
+	assert(vp = m_persistent);
+	OCL(clFinish(m_container.device().cmdq()));
+	//	memcpy(m_oclWorkerBytes, m_self, m_oclWorkerSize);
+      }
 
-        void advancedPortBuffers ( );
-
-        void kernelProlog ( OcpiOclOpcodes_t opcode )
-        {
-          size_t arg ( 0 );
-
-          device_worker.setKernelArg ( arg++, sizeof ( opcode ), &opcode );
-          device_worker.setKernelArg ( arg++, sizeof ( timedOut ), &timedOut );
-
-          device_worker.setKernelArg ( arg++, myProperties ); // ptr
-          device_worker.syncPtr ( myProperties,
-                                  OCPI::OCL::DeviceWorker::HOST_TO_DEVICE );
-
-          device_worker.setKernelArg ( arg++, myRunCondition ); // ptr
-          device_worker.syncPtr ( myRunCondition,
-                                  OCPI::OCL::DeviceWorker::HOST_TO_DEVICE );
-
-          device_worker.setKernelArg ( arg++, myNewRunCondition ); // ptr
-          device_worker.syncPtr ( myNewRunCondition,
-                                  OCPI::OCL::DeviceWorker::HOST_TO_DEVICE );
-
-          for ( size_t n = 0; n < myLocalMemories.size ( ); n++ )
-          {
-            device_worker.setKernelArg ( arg++, myLocalMemories [ n ] ); // ptr
-            // No need to call syncPtr. Host does not touch "local memory"
-          }
-
-          size_t n_ports = metadataImpl.nPorts ( );
-
-          for ( size_t n = 0; n < n_ports; n++ )
-          {
-              bool connected = myPorts [ n ].isConnected;
-
-              if ( opcode != OCPI_OCL_RUN )
-              {
-                connected = true;
-                myPorts [ n ].current.data = dummyBuffer;
-              }
-
-              if ( connected && myPorts [ n ].current.data  )
-              {
-                // ptr - uses map/unmap - no need to sync data buffer
-                device_worker.setKernelArg ( arg++, myPorts [ n ].current.data );
-
-                device_worker.setKernelArg ( arg++,
-                                             sizeof ( myPorts [ n ].current.maxLength ),
-                                             &myPorts [ n ].current.maxLength );
-
-                device_worker.setKernelArg ( arg++, &myPorts [ n ] ); // ptr
-                device_worker.syncPtr ( &myPorts [ n ],
-                                        OCPI::OCL::DeviceWorker::HOST_TO_DEVICE );
-              }
-          }
-          *myResult = OCL_OK;
-          device_worker.setKernelArg ( arg++, myResult ); // ptr
-          device_worker.syncPtr ( myResult,
-                                  OCPI::OCL::DeviceWorker::HOST_TO_DEVICE );
-        }
-
-        void kernelEpilog ( )
-        {
-          device_worker.syncPtr ( myResult,
-                                  OCPI::OCL::DeviceWorker::DEVICE_TO_HOST );
-          device_worker.syncPtr ( myProperties,
-                                  OCPI::OCL::DeviceWorker::DEVICE_TO_HOST );
-          device_worker.syncPtr ( myRunCondition,
-                                  OCPI::OCL::DeviceWorker::DEVICE_TO_HOST );
-          device_worker.syncPtr ( myNewRunCondition,
-                                  OCPI::OCL::DeviceWorker::DEVICE_TO_HOST );
-
-          for ( size_t n = 0; n < metadataImpl.nPorts ( ); n++ )
-          {
-            if ( myPorts [ n ].isConnected && myPorts [ n ].current.data )
-            {
-              device_worker.syncPtr ( &myPorts [ n ],
-                                      OCPI::OCL::DeviceWorker::DEVICE_TO_HOST );
-              // No need to sync myPorts [ n ].current.data map/unmap is used
-            }
-            myPorts [ n ].current.data = 0;
-          }
-       }
-
-        void initializeContext ( )
-        {
-          uint32_t n_ports = metadataImpl.nPorts ( );
-
-          myRunCondition = ( OCLRunCondition* ) calloc ( 1,  sizeof ( OCLRunCondition ) );
-
-          device_worker.registerPtr ( (void*)myRunCondition,
-                                      sizeof ( OCLRunCondition ) );
-
-          // Default run condtion for ports
-          myRunCondition->usePorts = true;
-          myRunCondition->portMasks[0] = ~(-1 << n_ports);
-	  myRunCondition->portMasks[1] = 0;
-          myNewRunCondition = ( OCLBoolean* ) calloc ( 1,  sizeof ( OCLBoolean ) );
-
-          device_worker.registerPtr ( (void*)myNewRunCondition,
-                                      sizeof ( OCLBoolean ) );
-
-          dummyBuffer = ( uint8_t* ) calloc ( 1, sizeof ( uint32_t ) );
-
-          if ( !dummyBuffer )
-          {
-            throw OU::Error( "OCL failed to allocate worker dummy buffer." );
-          }
-
-          device_worker.registerPtr ( (void*)dummyBuffer, sizeof ( uint32_t ) );
-
-          myPorts = new OCLPort[n_ports];
-	  size_t length = sizeof(OCLPort) * n_ports;
-	  memset(myPorts, 0, length);
-	  device_worker.registerPtr ((void*)myPorts, length);
-
-	  length = metadataImpl.totalPropertySize( ) + 4;
-          myProperties = new uint8_t[length];
-	  memset(myProperties, 0, length);
-          device_worker.registerPtr ((void*)myProperties, length);
-          myResult = new OCLResult;
-          device_worker.registerPtr ( (void*)myResult, sizeof ( OCLResult ) );
-
-          unsigned int nLocalMemories;
-          OU::Memory* local_memories =
-                         metadataImpl.memories ( nLocalMemories );
-          if ( nLocalMemories )
-          {
-            for ( size_t n = 0; n < nLocalMemories; n++ )
-            {
-              void* p = calloc ( local_memories [ n ].m_nBytes, sizeof ( uint8_t ) );
-              if ( !p )
-              {
-                throw OU::Error("OCL failed to allocate local memory.");
-              }
-              myLocalMemories.push_back ( p );
-              device_worker.registerPtr ( p, local_memories [ n ].m_nBytes );
-            }
-          }
-        }
-
-        void finalizeContext ( )
-        {
-	  device_worker.unregisterPtr (myPorts);
-          device_worker.unregisterPtr ( myResult );
-          device_worker.unregisterPtr ( myProperties );
-          device_worker.unregisterPtr ( myRunCondition );
-          device_worker.unregisterPtr ( myNewRunCondition );
-          device_worker.unregisterPtr ( dummyBuffer );
-
-          for ( size_t n = 0; n < myLocalMemories.size ( ); n++ )
-          {
-            device_worker.unregisterPtr ( myLocalMemories [ n ] );
-            free ( myLocalMemories [ n ] );
-          }
-
-          free ( myPorts );
-          free ( myResult );
-          free ( myProperties );
-          free ( myRunCondition );
-          free ( myNewRunCondition );
-          free ( dummyBuffer );
-        }
+      // Defined below the port class since it needs it to be defined.
+      void controlOperation(OU::Worker::ControlOperation op);
+      void run(bool &anyone_run);
 
       public:
-        ~Worker()
-        {
-          try
-          {
-            if ( isEnabled )
-            {
-              controlOperation ( OU::Worker::OpStop );
-              controlOperation ( OU::Worker::OpRelease );
-              isEnabled = false;
-            }
+      void read ( size_t, size_t, void* ) {
+	ocpiAssert ( 0 );
+      }
 
-            finalizeContext ( );
-            parent().unloadWorker ( device_worker );
-          }
-          catch ( const std::string& s )
-          {
-            std::cout << "Exception(s): " << __PRETTY_FUNCTION__ << s << std::endl;
-          }
-        }
+      void write (size_t, size_t, const void*) {
+	ocpiAssert ( 0 );
+      }
 
-      void controlOperation (OU::Worker::ControlOperation op )
-        {
-          if ( !( getControlMask () & ( 1 << op ) ) )
-          {
-            return;
-          }
+      OC::Port &createPort(const OU::Port& metaport, const OA::PValue* props);
 
-          if ( op == OU::Worker::OpStart )
-          {
-            if ( nConnectedPorts != metadataImpl.nPorts ( ) )
-            {
-               throw OU::Error( "OCL worker cannot be started until all ports are connected." );
-            }
-          }
+      bool enabled() const {
+	return m_isEnabled;
+      }
 
-          kernelProlog ( controlOp2Opcode ( op ) );
+      void prepareProperty(OU::Property& md,
+			   volatile void *&writeVaddr,
+			   const volatile void *&readVaddr) {
+	if (md.m_baseType != OA::OCPI_Struct && !md.m_isSequence &&
+	    md.m_baseType != OA::OCPI_String && OU::baseTypeSizes[md.m_baseType] <= 32 &&
+	    !md.m_writeError) {
+	  if ((md.m_offset + md.m_nBytes) > totalPropertySize())
+	    throw OU::Error( "OCL property is out of bounds." );
+	  readVaddr = (uint8_t*)m_properties + md.m_offset;
+	  writeVaddr = (uint8_t*)m_properties + md.m_offset;
+	}
+      }
+      
+      OC::Port& createOutputPort(OU::PortOrdinal portId,
+				 size_t bufferCount,
+				 size_t bufferSize,
+				 const OA::PValue* props) throw();
 
-          size_t offset = 0; // Control op is just a single work item
-          size_t gtid = 1;
-          size_t ltid = 1;
-
-          Grid grid ( offset, gtid, ltid );
-
-          device_worker.run ( grid );
-
-          kernelEpilog ( );
-
-          switch ( op )
-          {
-	  case OU::Worker::OpStart:
-              isEnabled = true;
-              runTimer.reset();
-              runTimer.start();
-              break;
-	  case  OU::Worker::OpStop:
-	  case OU::Worker::OpRelease:
-              if ( isEnabled )
-              {
-                runTimer.stop();
-                runTimer.reset();
-              }
-              isEnabled = false;
-              break;
-            default:
-              break;
-          }
-        }
-
-        bool has_run_timedout ( )
-        {
-          timedOut = false;
-          if ( myRunCondition->timeout )
-          {
-            OS::ElapsedTime et;
-            runTimer.stop();
-            runTimer.getValue( et );
-            unsigned int elapsed_usecs =
-	      et.seconds() * 1000000 + et.nanoseconds() / 1000 ;
-            runTimer.start();
-            if ( elapsed_usecs > myRunCondition->usecs )
-            {
-              timedOut = true;
-              return true;
-            }
-          }
-          return false;
-        }
-
-        void run ( bool& anyone_run )
-        {
-          if ( !enabled ( ) )
-          {
-            return;
-          }
-
-          bool run_timed_out = has_run_timedout ( );
-
-          updatePortsPreRun ( );
-
-          if (!run_timed_out && myRunCondition->usePorts) {
-	    for (OCLPortMask *p = myRunCondition->portMasks; *p; p++)
-	      if ((*p & readyPorts ) == *p)
-		goto ok;
-	    return;
-          }
-	ok:
-          /* Set the arguments to the worker */
-          kernelProlog ( OCPI_OCL_RUN );
-
-          /* Local work group size comes fro OCL_WG_XYZ defines in worker */
-          Grid grid ( 0, myPorts [ 0 ].current.length / myPorts [ 0 ].dataValueWidthInBytes, 0 );
-          device_worker.run ( grid );
-
-          kernelEpilog ( );
-          anyone_run = true;
-
-          switch ( *myResult )
-          {
-            case OCL_ADVANCE:
-              advancedPortBuffers ( );
-              break;
-            case OCL_DONE:
-              if ( isEnabled )
-              {
-                runTimer.stop();
-              }
-              isEnabled = false;
-              break;
-            case OCL_OK:
-              /* Nothing to do */
-              break;
-            case OCL_FATAL:
-            default:
-              if ( isEnabled )
-              {
-                runTimer.stop();
-              }
-              isEnabled = false;
-              setControlState ( OU::Worker::UNUSABLE );
-          }
-          updatePortsPostRun();
-        }
-
-        void read ( size_t, size_t, void* )
-        {
-          ocpiAssert ( 0 );
-        }
-
-        void write (size_t, size_t, const void* )
-        {
-          ocpiAssert ( 0 );
-        }
-
-        OC::Port& createPort ( const OU::Port& metaport,
-                               const OA::PValue* props );
-
-        bool enabled ( ) const
-        {
-          return isEnabled;
-        }
-
-        virtual void prepareProperty ( OU::Property& md,
-				   volatile void *&writeVaddr,
-				   const volatile void *&readVaddr)
-        {
-          if ( md.m_baseType != OA::OCPI_Struct &&
-               !md.m_isSequence &&
-               ( md.m_baseType != OA::OCPI_String ) &&
-               OU::baseTypeSizes [ md.m_baseType ] <= 32 &&
-              !md.m_writeError )
-          {
-            if ( ( md.m_offset + md.m_nBytes ) >
-                 metadataImpl.totalPropertySize( ) )
-            {
-               throw OU::Error( "OCL property is out of bounds." );
-            }
-            readVaddr = (uint8_t*) myProperties + md.m_offset;
-            writeVaddr = (uint8_t*) myProperties + md.m_offset;
-          }
-        }
-
-
-        OC::Port& createOutputPort ( OU::PortOrdinal portId,
-                                     size_t bufferCount,
-                                     size_t bufferSize,
-                                     const OA::PValue* props ) throw();
-
-        OC::Port&createInputPort ( OU::PortOrdinal portId,
-                                   size_t bufferCount,
-                                   size_t bufferSize,
-                                   const OA::PValue* props ) throw();
+      OC::Port&createInputPort(OU::PortOrdinal portId,
+			       size_t bufferCount,
+			       size_t bufferSize,
+			       const OA::PValue* props) throw();
 
 #undef OCPI_DATA_TYPE_S
       // Set a scalar property value
@@ -784,7 +785,7 @@ namespace OCPI
 	OA::PropertyInfo &info = properties()[ordinal];		  \
         if (info.m_writeError ) \
           throw; /*"worker has errors before write */ \
-        volatile store *pp = (volatile store *)(myProperties + info.m_offset); \
+        volatile store *pp = (volatile store *)(m_properties + info.m_offset); \
         if (bits > 32) { \
           assert(bits == 64); \
           volatile uint32_t *p32 = (volatile uint32_t *)pp; \
@@ -798,8 +799,8 @@ namespace OCPI
       void set##pretty##SequenceProperty(const OA::Property &p,const run *vals, size_t length) const { \
         if (p.m_info.m_writeError) \
           throw; /*"worker has errors before write */ \
-        memcpy((void *)(myProperties + p.m_info.m_offset + p.m_info.m_align), vals, length * sizeof(run)); \
-        *(volatile uint32_t *)(myProperties + p.m_info.m_offset) = (uint32_t)length; \
+        memcpy((void *)(m_properties + p.m_info.m_offset + p.m_info.m_align), vals, length * sizeof(run)); \
+        *(volatile uint32_t *)(m_properties + p.m_info.m_offset) = (uint32_t)length; \
         if (p.m_info.m_writeError) \
           throw; /*"worker has errors after write */ \
       }
@@ -815,7 +816,7 @@ namespace OCPI
           throw; /*"string property too long"*/; \
         if (info.m_writeError) \
           throw; /*"worker has errors before write */ \
-        uint32_t *p32 = (uint32_t *)(myProperties + info.m_offset); \
+        uint32_t *p32 = (uint32_t *)(m_properties + info.m_offset); \
         /* if length to be written is more than 32 bits */ \
         if (++ocpi_length > 32/CHAR_BIT) \
           memcpy(p32 + 1, val + 32/CHAR_BIT, ocpi_length - 32/CHAR_BIT); \
@@ -830,14 +831,14 @@ namespace OCPI
           throw; \
         if (p.m_info.m_writeError) \
           throw; /*"worker has errors before write */ \
-        char *cp = (char *)(myProperties + p.m_info.m_offset + 32/CHAR_BIT); \
+        char *cp = (char *)(m_properties + p.m_info.m_offset + 32/CHAR_BIT); \
         for (size_t i = 0; i < length; i++) { \
           size_t len = strlen(vals[i]); \
           if (len > p.m_info.m_sequenceLength) \
             throw; /* "string in sequence too long" */ \
           memcpy(cp, vals[i], len+1); \
         } \
-        *(uint32_t *)(myProperties + p.m_info.m_offset) = (uint32_t)length; \
+        *(uint32_t *)(m_properties + p.m_info.m_offset) = (uint32_t)length; \
         if (p.m_info.m_writeError) \
           throw; /*"worker has errors after write */ \
       }
@@ -850,7 +851,7 @@ namespace OCPI
 	OA::PropertyInfo &info = properties()[ordinal];		  \
         if (info.m_readError) \
           throw; /*"worker has errors before read "*/ \
-        uint32_t *pp = (uint32_t *)(myProperties + info.m_offset); \
+        uint32_t *pp = (uint32_t *)(m_properties + info.m_offset); \
         union { \
                 run r; \
                 uint32_t u32[bits/32]; \
@@ -865,10 +866,10 @@ namespace OCPI
       unsigned get##pretty##SequenceProperty(const OA::Property &p, run *vals, size_t length) const { \
         if (p.m_info.m_readError) \
           throw; /*"worker has errors before read "*/ \
-        uint32_t n = *(uint32_t *)(myProperties + p.m_info.m_offset); \
+        uint32_t n = *(uint32_t *)(m_properties + p.m_info.m_offset); \
         if (n > length) \
           throw; /* sequence longer than provided buffer */ \
-        memcpy(vals, (void*)(myProperties + p.m_info.m_offset + p.m_info.m_align), \
+        memcpy(vals, (void*)(m_properties + p.m_info.m_offset + p.m_info.m_align), \
                n * sizeof(run)); \
         if (p.m_info.m_readError) \
           throw; /*"worker has errors after read */ \
@@ -886,7 +887,7 @@ namespace OCPI
           throw; /*"string buffer smaller than property"*/; \
         if (info.m_readError) \
           throw; /*"worker has errors before write */ \
-        uint32_t i32, *p32 = (uint32_t *)(myProperties + info.m_offset); \
+        uint32_t i32, *p32 = (uint32_t *)(m_properties + info.m_offset); \
         memcpy(cp + 32/CHAR_BIT, p32 + 1, stringLength + 1 - 32/CHAR_BIT); \
         i32 = *p32; \
         memcpy(cp, &i32, 32/CHAR_BIT); \
@@ -897,11 +898,11 @@ namespace OCPI
       (const OA::Property &p, char **vals, size_t length, char *buf, size_t space) const { \
         if (p.m_info.m_readError) \
           throw; /*"worker has errors before read */ \
-        uint32_t n = *(uint32_t *)(myProperties + p.m_info.m_offset);	       \
+        uint32_t n = *(uint32_t *)(m_properties + p.m_info.m_offset);	       \
         size_t wlen = p.m_info.m_stringLength + 1;		       \
         if (n > length) \
           throw; /* sequence longer than provided buffer */ \
-        char *cp = (char *)(myProperties + p.m_info.m_offset + 32/CHAR_BIT); \
+        char *cp = (char *)(m_properties + p.m_info.m_offset + 32/CHAR_BIT); \
         for (unsigned i = 0; i < n; i++) { \
           if (space < wlen) \
             throw; \
@@ -920,9 +921,13 @@ namespace OCPI
 #undef OCPI_DATA_TYPE_S
 #undef OCPI_DATA_TYPE
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
-#define PUT_GET_PROPERTY(n)						\
-      void setProperty##n(const OA::PropertyInfo &, uint##n##_t) const {} \
-      uint##n##_t getProperty##n(const OA::PropertyInfo &) const { return 0; }
+#define PUT_GET_PROPERTY(n)						         \
+      void setProperty##n(const OA::PropertyInfo &info, uint##n##_t val) const { \
+        *(uint##n##_t*)(m_properties+info.m_offset) = val;                       \
+      }									         \
+      uint##n##_t getProperty##n(const OA::PropertyInfo &info) const {           \
+        return *(uint##n##_t*)(m_properties+info.m_offset);                      \
+      }
       PUT_GET_PROPERTY(8)
       PUT_GET_PROPERTY(16)
       PUT_GET_PROPERTY(32)
@@ -934,828 +939,329 @@ namespace OCPI
 
     }; // End: class Worker
 
-    OC::Worker& Application::
-    createWorker(OC::Artifact* art, const char* appInstName, ezxml_t impl, ezxml_t inst,
-		 OC::Worker *slave, size_t member, size_t crewSize,
-		 const OCPI::Util::PValue* wParams) {
-      assert(!slave);
-      return *new Worker(*this, art, appInstName, impl, inst, member, crewSize, wParams);
+
+    OC::Worker& Artifact::
+    createWorker(Application &app, const char* appInstName, ezxml_t impl, ezxml_t inst,
+		 size_t member, size_t crewSize, const OU::PValue* wParams) {
+      const char *kname = ezxml_cattr(impl, "name");
+      assert(kname);
+      std::string kstr(kname);
+      kstr += "_kernel";
+      for (unsigned n = 0; n < m_kernels.size(); n++)
+	if (m_kernels[n].m_name == kstr)
+	  return *new Worker(app, *this, m_kernels[n], appInstName, impl, inst, member, crewSize,
+			     wParams);
+      throw OU::Error("Could not find OCL worker(kernel) named \"%s\" in \"%s\"",
+		      kname, name().c_str());
     }
 
-    void Application::run ( DataTransfer::EventManager* event_manager,
-                            bool& more_to_do )
-    {
-      ( void ) event_manager;
+    void Application::
+    run(DataTransfer::EventManager* /*event_manager*/, bool &more_to_do) {
+      for (Worker* w = OU::Parent<Worker>::firstChild (); w; w = w->nextChild())
+        w->run(more_to_do);
+    }
 
-      for ( Worker* w = OU::Parent<Worker>::firstChild (); w; w = w->nextChild ( ) )
-      {
-        w->run ( more_to_do );
+    class Port : public OC::PortBase<Worker,Port,ExternalPort> {
+      friend class Worker;
+      cl_mem m_clBuffers;
+
+
+      OC::Container *hasAllocator() {
+	return &parent().m_container;
       }
-    }
+      uint8_t *allocateBuffers(size_t nBytes) {
+	// Allow host reading and writing for now
+	OCL_RC(m_clBuffers,
+	       clCreateBuffer(parent().m_container.device().context(),
+			      (isProvider() ? CL_MEM_READ_ONLY : CL_MEM_WRITE_ONLY) |
+			      CL_MEM_ALLOC_HOST_PTR,
+			      nBytes, NULL, &rc));
+	ocpiDebug("Allocating buffer set for OCL port \"%s\". nbuf %zu, total %zu",
+		  name().c_str(), m_nBuffers, nBytes);
+	void *vp;
+	OCL_RC(vp, clEnqueueMapBuffer(parent().m_container.device().cmdq(), m_clBuffers,
+				      false,
+				      CL_MAP_READ|CL_MAP_WRITE,
+				      0, nBytes,
+				      0, 0, 0, &rc));
+	OCL(clFinish(parent().m_container.device().cmdq()));
+	return (uint8_t *)vp;
+      }
+      virtual void freeBuffers(uint8_t *) {
+	assert(m_clBuffers);
+	OCL(clReleaseMemObject(m_clBuffers));
+      }
+      virtual void mapBuffers(size_t offset, size_t size) {
+	ocpiDebug("OCL map buffers %s %s %p %zu %zu %p %p %p",
+		  parent().name().c_str(), name().c_str(),
+		  this, offset, size, m_clBuffers, allocation(), m_forward);
+	if (m_clBuffers) {
+	  void *vp;
+	  OCL_RC(vp, clEnqueueMapBuffer(parent().m_container.device().cmdq(), m_clBuffers,
+					false,
+					CL_MAP_READ|CL_MAP_WRITE,
+					offset, size,
+					0, 0, 0, &rc));
+	  assert(vp == (m_forward ? m_forward : this)->allocation() + offset);
+	} else {
+	  assert(m_forward);
+	  m_forward->mapBuffers(offset, size);
+	}
 
-    class InternalBuffer
-    {
-      friend class Port;
-      friend class Worker;
-      friend class ExternalPort;
-
-      private:
-        Port* myPort;
-        OclDpMetadata* metadata;  // where is the metadata buffer
-        uint8_t* data;  // where is the data buffer
-        uint32_t length;  // length of the buffer (not message)
-        bool last;  // last buffer in the set
-        volatile uint32_t* local;  // Read locally and written remotely
-        volatile uint32_t* remote; // Written remotely (never read)
-        volatile uint32_t* shadow; // Read/write locally
-
-        void release();
-
-        void put ( size_t dataLength,
-                   uint8_t opcode,
-                   bool endOfData )
-        {
-          (void)endOfData;
-          ocpiAssert(dataLength <= length);
-          metadata->opcode = opcode;
-          metadata->length = (uint32_t)dataLength;
-          release();
-        }
-
-    }; // End: class InternalBuffer
-
-    class Port : public OC::PortBase<Worker,Port,ExternalPort>
-    {
-      friend class Worker;
-      friend class ExternalPort;
-      friend class InternalBuffer;
-
-      private:
-      //        uint32_t remoteIndex;
-        ezxml_t m_connection;
-      //        ExternalPort* myExternalPort;
-        OU::PortOrdinal myPortOrdinal;
-
-      //        uint32_t* flags;
-        InternalBuffer* currentBuffer;
-        InternalBuffer* localBuffers;
-        InternalBuffer* nextLocal;
-        InternalBuffer* nextRemote;
-        uint32_t* farFlags;
-        uint32_t* remoteFlags;
-        uint32_t* localFlags;
-
-        uint32_t* local;
-        uint32_t* remote;
-        uint32_t* shadow;
-
-      //      void setMode( ConnectionMode ){}
-
-        void disconnect ()
+      };
+      virtual void unmapBuffers(size_t offset, size_t size) {
+	ocpiDebug("OCL unmap buffers %s %s %p %zu %zu %p %p %p",
+		  parent().name().c_str(), name().c_str(),
+		  this, offset, size, m_clBuffers, allocation(), m_forward);
+	if (m_clBuffers)
+	  OCL(clEnqueueUnmapMemObject(parent().m_container.device().cmdq(), m_clBuffers,
+				      allocation() + offset, 0, 0, 0));
+	else {
+	  assert(m_forward);
+	  m_forward->unmapBuffers(offset, size);
+	}
+      };
+      intptr_t clBuffers() {
+	return (intptr_t)m_clBuffers;
+      }
+      cl_mem myClBuffers() {
+	intptr_t clb = clBuffers() ? clBuffers() : (m_forward ? m_forward->clBuffers() : NULL);
+	assert(clb);
+	return (cl_mem)(clb);
+      }
+      void disconnect ()
         throw ( OCPI::Util::EmbeddedException )
-        {
-          throw OU::Error( "OCL disconnect not yet implemented." );
-        }
-
-#if 0
-      bool startConnect (
-	//(const OCPI::RDT::Descriptors */*other*/, const OCPI::Util::PValue */*params*/ )
-        {
-          if ( !m_canBeExternal )
-          {
-            return;
-          }
-        }
-#endif
-        Port ( Worker& w,
-               const OA::PValue* params,
-               const OU::Port& mPort)
-	: OC::PortBase<OO::Worker,OO::Port,OO::ExternalPort> ( w, *this, mPort, params ),
-            m_connection ( 0 ),
-            myPortOrdinal ( mPort.m_ordinal )
-        {
-          m_canBeExternal = true;
-
-          parent().myPorts [ myPortOrdinal ].isConnected = false;
-          parent().myPorts [ myPortOrdinal ].dataValueWidthInBytes =
-	    OCPI_UTRUNCATE(uint32_t, (mPort.m_dataValueWidth + 7) / 8);
-	  //          parent().myPorts [ myPortOrdinal ].attr->optional = mPort.m_optional;
-
-          myDesc.dataBufferPitch = myDesc.dataBufferSize;
-
-          myDesc.dataBufferBaseAddr = 0;
-
-          myDesc.metaDataPitch = sizeof ( OclDpMetadata );
-          myDesc.metaDataBaseAddr = 0;
-
-          myDesc.fullFlagSize = sizeof ( uint32_t );
-          myDesc.fullFlagPitch = sizeof ( uint32_t );
-          myDesc.fullFlagValue = 1;
-          myDesc.fullFlagBaseAddr = 0;
-
-          myDesc.emptyFlagSize = sizeof ( uint32_t );
-          myDesc.emptyFlagPitch = sizeof ( uint32_t );
-          myDesc.emptyFlagValue = 1;
-          myDesc.emptyFlagBaseAddr = 0;
-
-          size_t nAlloc =
-              OU::roundUp( myDesc.dataBufferPitch * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN) +
-              OU::roundUp( myDesc.metaDataPitch * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN) +
-              OU::roundUp( sizeof(uint32_t) * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN) + // local flags
-              // These might actually be remote
-              OU::roundUp( sizeof(uint32_t) * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN) + // remote flags
-              // These might not be needed if we are ActiveFlowControl
-              OU::roundUp( sizeof(uint32_t) * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN);
-
-          // FIXME how do we set these?
-          uint16_t mailbox = 6;
-          uint16_t max_mailbox = 10;
-
-          int pid = getpid ( );
-
-          myDesc.oob.port_id = myPortOrdinal;
-
-          snprintf ( myDesc.oob.oep,
-                     sizeof ( myDesc.oob.oep ),
-                     "ocpi-smb-pio:pioXfer%d:%zu.%hu.%hu",
-                     pid,
-                     nAlloc,
-                     mailbox,
-                     max_mailbox );
-
-          uint8_t* allocation = ( uint8_t* ) calloc ( nAlloc,
-                                                      sizeof ( uint8_t ) );
-          if ( !allocation )
-          {
-            throw OU::Error( "OCL failed to allocate external port buffers." );
-          }
-
-          myDesc.dataBufferBaseAddr = OCPI_UTRUNCATE(DtOsDataTypes::Offset, allocation);
-          uint8_t* buffer = allocation;
-          allocation += OU::roundUp(myDesc.dataBufferPitch * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN);
-
-          for ( size_t n = 0; n < myDesc.nBuffers; n++ )
-          {
-            w.device_worker.registerPtr ( (void*)buffer, myDesc.dataBufferPitch );
-            buffer += myDesc.dataBufferPitch;
-          }
-
-          myDesc.metaDataBaseAddr = OCPI_UTRUNCATE(DtOsDataTypes::Offset, allocation);
-          allocation += OU::roundUp(myDesc.metaDataPitch * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN);
-
-          localFlags = (uint32_t*)allocation;
-          local = localFlags;
-          allocation += OU::roundUp(sizeof(uint32_t) * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN);
-
-          remoteFlags = (uint32_t*)allocation;
-          remote = remoteFlags;
-          allocation += OU::roundUp(sizeof(uint32_t) * myDesc.nBuffers, OCLDP_LOCAL_BUFFER_ALIGN);
-
-          farFlags = (uint32_t*)allocation;
-          shadow = farFlags;
-
-          myDesc.emptyFlagBaseAddr = 0;
-          myDesc.fullFlagBaseAddr = OCPI_UTRUNCATE(DtOsDataTypes::Offset, local);
-
-          // Allow default connect params on port construction prior to connect
-	  //          applyConnectParams(NULL, params);
-        }
-    public:
-      ~Port() {
+      {
+	throw OU::Error( "OCL disconnect not yet implemented." );
       }
-      bool isInProcess() const { return false; }
-    private:
-        // All the info is in.  Do final work to (locally) establish the connection
-        const OCPI::RDT::Descriptors *finishConnect(const OCPI::RDT::Descriptors *other,
-						    OCPI::RDT::Descriptors &/*feedback*/,
-						    bool &done) {
-          OCPI::RDT::PortRole myRole = (OCPI::RDT::PortRole) getData().data.role;
 
-          // FIXME - can't we avoid string processing here?
-          int pid;
-          int nAlloc;
-          int mailbox;
-          int max_mailbox;
+      Port(Worker& w, const OA::PValue* params, const OU::Port& mPort)
+	: OC::PortBase<OO::Worker,OO::Port,OO::ExternalPort> (w, *this, mPort, params),
+	  m_clBuffers(NULL) {
+      }
+    protected:
+      ~Port() {
+	if (m_clBuffers) {
+	  freeBuffers(allocation());
+	  allocation() = NULL;
+	}
+      }
 
-          if ( sscanf ( other->desc.oob.oep,
-                        "ocpi-smb-pio:pioXfer%d;%d.%d.%d",
-                        &pid,
-                        &nAlloc,
-                        &mailbox,
-                        &max_mailbox ) != 4 )
-          {
-            throw OU::Error("OCL other port's endpoint description wrong: \"%s\"",
-			    other->desc.oob.oep);
-          }
-
-          switch ( myRole )
-          {
-            case OCPI::RDT::ActiveFlowControl:
-              // Nothing to do
-              break;
-            case OCPI::RDT::ActiveMessage:
-
-              if ( isProvider())
-              {
-                if ( other->desc.dataBufferSize > myDesc.dataBufferSize )
-                {
-                  throw OU::Error("At consumer, remote buffer size is larger than mine");
-                }
-                else if (other->desc.dataBufferSize < myDesc.dataBufferSize )
-                {
-                  throw OU::Error("At producer, remote buffer size smaller than mine");
-                }
-              }
-              break;
-            case OCPI::RDT::Passive:
-              break;
-            default:
-              ocpiAssert(0);
-          }
-
-          // Initialize our structures that keep track of LOCAL buffer status
-          InternalBuffer* lb = nextLocal = nextRemote = localBuffers = new InternalBuffer[myDesc.nBuffers];
-
-          OclDpMetadata* metadata = reinterpret_cast<OclDpMetadata*>( myDesc.metaDataBaseAddr );
-
-          uint8_t* localData = reinterpret_cast<uint8_t*>( myDesc.dataBufferBaseAddr );
-
-          uint32_t* otherRemote = reinterpret_cast<uint32_t*> ( other->desc.fullFlagBaseAddr );
-
-          for ( unsigned int i = 0; i < myDesc.nBuffers; i++, lb++ )
-          {
-            lb->myPort = this;
-            lb->metadata = metadata + i;
-            lb->data = localData + i * myDesc.dataBufferPitch;
-            lb->length = myDesc.dataBufferPitch;
-            lb->last = false;
-            lb->local = local + i;
-            lb->remote = otherRemote + i;
-            lb->shadow = shadow + i;
-            *lb->shadow= 0;
-
-            if ( isProvider( ) )
-            {
-              (*lb->remote) = 1;
-            }
-            else
-            {
-              (*lb->remote) = 0;
-            }
-          }
-          (lb-1)->last = true;
-
-          for ( size_t n = 0; n < myDesc.nBuffers; n++ )
-          {
-            OclDpMetadata* metadata = reinterpret_cast<OclDpMetadata*> ( myDesc.metaDataBaseAddr );
-            metadata [ n ].length = myDesc.dataBufferSize;
-          }
-          parent().myPorts [ parent().nConnectedPorts++ ].isConnected = true;
-	  done = true;
-	  return NULL;
-        }
-#if 0
-        // Connection between two ports inside this container
-        // We know they must be in the same artifact, and have a metadata-defined connection
-      bool connectInside ( OC::Launcher::Connection &c) {
-OC::Port& provider,
-                             const OA::PValue* /*myProps*/,
-                             const OA::PValue* /*otherProps*/)
-
-          // We're both in the same runtime artifact object, so we know the port class
-          Port& pport = static_cast<Port&>(provider);
-
-          if ( m_connection != pport.m_connection )
-          {
-            throw OU::Error ( "Ports are both local in artifact, but are not connected");
-          }
-	  pport.applyConnectParams(&getData().data, otherProps);
-	  applyConnectParams(&provider.getData().data, myProps);
-        }
-#endif
-
-#if 0
-        // Connect to a port in a like container (same driver)
-        bool connectLike ( const OA::PValue* uProps,
-                           OC::Port& provider,
-                           const OA::PValue* pProps )
-        {
-          Port& pport = static_cast<Port&> ( provider );
-
-          ocpiAssert(m_canBeExternal && pport.m_canBeExternal);
-
-          pport.applyConnectParams ( pProps );
-          applyConnectParams ( uProps );
-          determineRoles ( provider.getData().data );
-          finishConnect ( provider.getData().data );
-          pport.finishConnect ( getData().data );
-          return true;
-        }
-#endif
-        bool isLocalBufferReady ( )
-        {
-          if ( *nextLocal->local == *nextLocal->shadow )
-          {
-            return false;
-          }
-
-          return true;
-        }
-
-        bool getLocal ( )
-        {
-          if ( *nextLocal->local == *nextLocal->shadow )
-          {
-            return false;
-          }
-
-          (*nextLocal->shadow)++;
-
-          return true;
-        }
-
-        // The input method = get a buffer that has data in it.
-        InternalBuffer* getIBuffer ( uint8_t*& bdata,
-                                    uint32_t& length,
-                                    uint8_t& opcode,
-                                    bool& end )
-        {
-          ocpiAssert( isProvider() );
-
-          if ( !getLocal() )
-          {
-            return 0;
-          }
-          bdata = nextLocal->data;
-          length = nextLocal->metadata->length;
-          opcode = nextLocal->metadata->opcode;
-          end = false; // someday bit in metadata
-          return static_cast<InternalBuffer*>( nextLocal );
-        }
-
-        InternalBuffer* getIBuffer ( uint8_t*& bdata,
-                                    uint32_t& length )
-        {
-          ocpiAssert(!isProvider());
-          if ( !getLocal() )
-          {
-            return 0;
-          }
-          bdata = nextLocal->data;
-          length = nextLocal->length;
-
-          return static_cast<InternalBuffer*>( nextLocal );
-        }
-
-        bool endOfData()
-        {
-          ocpiAssert( !isProvider() );
-	  return false;
-        }
-
-        void advanceLocal ();
-
-#if 0
-        // Directly connect to this port
-        // which creates a dummy user port
-        OA::ExternalPort& connectExternal ( const char* name,
-                                            const OA::PValue* userProps,
-                                            const OA::PValue* props );
-#endif
-        OC::ExternalPort &createExternal(const char *extName, bool provider, 
-					 const OU::PValue *extParams,
-					 const OU::PValue *connParams);
-      public:
-        OU::PortOrdinal portOrdinal ( )
-        {
-          return myPortOrdinal;
-        }
-
+      // This is a hook that happens when considering to run a worker.
+      // Return the number of buffers available
+      unsigned checkReady() {
+	return isProvider() ? fullCount() : emptyCount();
+      }
+      bool isInProcess() const { return true; }
+      size_t bufferAlignment() const { return parent().m_container.device().bufferAlignment(); }
     }; // End: class Port
 
-    void InternalBuffer::release()
-    {
-      myPort->advanceLocal();
+    void Worker::
+    controlOperation(OU::Worker::ControlOperation op) {
+      if (op == OU::Worker::OpStart) {
+	m_oclWorker->connectedPorts = connectedPorts();
+	for (Port* p = firstChild(); p; p = p->nextChild()) {
+	  assert(p->ordinal() < m_nPorts);
+	  m_myPorts[p->ordinal()] = p;
+	}
+	// Initialize the port structures in the kernel args.
+	OCLPort *op = m_oclPorts;
+	for (unsigned n = 0; n < m_nPorts; n++, op++) {
+	  Port &p = *m_myPorts[n];
+	  memset(op, 0, sizeof(*op));
+	  op->maxLength =
+	    OCPI_UTRUNCATE(uint32_t, p.bufferSize());
+	  op->isConnected = (connectedPorts() & (1 << n)) != 0;
+	  op->isOutput = !p.isProvider();
+	  op->connectedCrewSize = OCPI_UTRUNCATE(uint32_t, p.nOthers());
+	  op->dataValueWidthInBytes = OCPI_UTRUNCATE(uint32_t, p.metaPort().m_dataValueWidth);
+	  op->bufferStride = OCPI_UTRUNCATE(uint32_t, p.bufferStride());
+	  op->endOffset = OCPI_UTRUNCATE(uint32_t, p.bufferStride() * p.nBuffers());
+	  cl_mem clb = p.myClBuffers();
+	  OCL(clSetKernelArg(m_clKernel, 1+n, sizeof(p.m_clBuffers), &clb));
+	}
+      }
+      if ((getControlMask () & (1 << op))) {
+	kernelProlog((OCLOpCode)op);
+	cl_event event;
+	OCL(clEnqueueTask(m_container.device().cmdq(), m_clKernel, 0, 0, &event));
+	kernelEpilog();
+      } else
+	m_returned->result = OCL_OK;
+      switch (op) {
+      case OU::Worker::OpStart:
+	m_isEnabled = true;
+	m_runTimer.reset();
+	m_runTimer.start();
+	break;
+      case  OU::Worker::OpStop:
+      case OU::Worker::OpRelease:
+	if (m_isEnabled) {
+	  m_runTimer.stop();
+	  m_runTimer.reset();
+	}
+	m_isEnabled = false;
+	break;
+      default:
+	break;
+      }
+      switch (m_returned->result) {
+      case OCL_OK:
+	break;
+      case OCL_ERROR:
+	throw OU::Error("Control operation \"%s\" on OCL worker \"%s\" returned ERROR",
+			OU::Worker::s_controlOpNames[op], m_name.c_str());
+	break;
+      case OCL_FATAL:
+	m_isEnabled = false;
+	setControlState(OU::Worker::UNUSABLE);
+	throw OU::Error("Control operation \"%s\" on OCL worker \"%s\" returned FATAL ",
+			OU::Worker::s_controlOpNames[op], m_name.c_str());
+	break;
+      default:
+	m_isEnabled = false;
+	throw
+	  OU::Error("Control operation \"%s\" on OCL worker \"%s\" returned invalid "
+		    "RCCResult value: 0x%x", OU::Worker::s_controlOpNames[op],
+		    m_name.c_str(), m_returned->result);
+      }    
     }
-
-    void Worker::updatePortsPostRun ( )
-    {
-      for ( Port* ocpiport = firstChild();
-            ocpiport;
-            ocpiport = ocpiport->nextChild() )
-      {
-        size_t n = ocpiport->portOrdinal ( );
-        ocpiport->nextLocal->metadata->length = (uint32_t)myPorts [ n ].current.length;
-	// FIXME: figure out a way to make the OCL stuff actually 8 bites..
-        ocpiport->nextLocal->metadata->opcode = (uint8_t)myPorts [ n ].current.opCode;
-        myPorts [ n ].current.data = 0;
-        myPorts [ n ].current.maxLength = 0;
-        myPorts [ n ].current.length = 0;
-        myPorts [ n ].current.opCode = 0;
-        readyPorts &= ~( 1 << n );
+    void Worker::
+    run(bool& anyone_run) {
+      if (!m_isEnabled)
+	return;
+      bool timedOut = false, dont = false;
+      size_t minReady = 1;
+      OCLPortMask relevantMask = 0;
+      do {
+	// First do the checks that don't depend on port readiness.
+	if (m_runCondition->shouldRun(m_runTimer, timedOut, dont))
+	  break;
+	else if (dont)
+	  return;
+	// Start out assuming optional unconnected ports are "ready"
+	OCLPortMask readyMask = optionalPorts() & ~connectedPorts();
+	relevantMask = connectedPorts() & m_runCondition->m_allMasks;
+	OCLPort *oclPort = m_oclPorts;
+	OCLPortMask portBit = 1;
+	size_t nReady;
+	minReady = SIZE_MAX;
+	for (unsigned n = 0; n < m_nPorts; n++, oclPort++, portBit <<= 1)
+	  if ((portBit & relevantMask) && (nReady = m_myPorts[n]->checkReady())) {
+	    readyMask |= portBit;
+	    if (nReady < minReady)
+	      minReady = nReady;
+	  }
+	if (!minReady || minReady == SIZE_MAX)
+	  return;
+	// See if any of our masks are satisfied
+	OC::PortMask *pmp;
+	for (pmp = m_runCondition->m_portMasks; *pmp; pmp++)
+	  if ((*pmp & readyMask) == *pmp)
+	    break;
+	if (!*pmp)
+	  return;
+	m_oclWorker->runCount = OCPI_UTRUNCATE(uint8_t, minReady);
+	OCLPort *op = m_oclPorts;
+	for (unsigned n = 0; n < m_nPorts; n++, op++)
+	  if (relevantMask & (1 << n)) {
+	    Port *p = m_myPorts[n];
+	    ocpiAssert(p->checkReady() >= minReady);
+	    for (unsigned r = 0; r < minReady; r++) {
+	      OC::ExternalBuffer *b = p->isProvider() ? p->getFullBuffer() : p->getEmptyBuffer();
+	      if (!b)
+		p->debug(n);
+	      assert(b);
+	      // Buffer was being read or written by the CPU, and now should be switch to the GPU
+	      p->unmapBuffers(b->offset(), p->bufferStride());
+	      if (r == 0)
+		op->readyOffset = OCPI_UTRUNCATE(uint32_t, b->offset());
+	    }
+	  }
+      } while (0);
+      /* Set the arguments to the worker */
+      kernelProlog(OCPI_OCL_RUN);
+      cl_event event;
+      ocpiDebug("Enqueueing OCL worker kernel for %s, minReady %zu", name().c_str(), minReady);
+      OCL(clEnqueueNDRangeKernel(m_container.device().cmdq(),
+				 m_clKernel,
+				 m_kernel.m_nDims,
+				 NULL,                       // global work offset
+				 m_kernel.m_work_group_size, // size of groups to use
+				 m_kernel.m_work_group_size, // size of groups to use
+				 0,
+				 0,
+				 &event));
+      OCLPort *op = m_oclPorts;
+      // FIXME: We must retrieve opcode, length, direct, eof for output.
+      for (unsigned n = 0; n < m_nPorts; n++, op++)
+	if (relevantMask & (1 << n)) {
+	  Port *p = m_myPorts[n];
+	  OC::ExternalBuffer *b =
+	    p->isProvider() ? p->nextToRelease() : p->nextToPut();
+	  for (unsigned r = 0; r < minReady; r++) {
+	    assert(b);
+	    // Buffer was being read or written by the GPU, and now should be switch to the CPU
+	    p->mapBuffers(b->offset(), p->bufferStride());
+	    assert(b->next());
+	    b = b->next();
+	  }
+	}
+      kernelEpilog();
+      ocpiDebug("Execution of OCL worker %s completes, minReady %zu", name().c_str(), minReady);
+      m_oclWorker->firstRun = false;
+      anyone_run = true;
+      switch (m_returned->result) {
+      case OCL_ADVANCE:
+      case OCL_ADVANCE_DONE:
+	for (unsigned n = 0; n < m_nPorts; n++, op++)
+	  if (relevantMask & (1 << n)) {
+	    Port *p = m_myPorts[n];
+	    for (unsigned r = 0; r < minReady; r++) {
+	      OC::ExternalBuffer *b =
+		p->isProvider() ? p->nextToRelease() : p->nextToPut();
+	      assert(b);
+	      if (p->isProvider()) {
+		p->releaseBuffer();
+	      } else
+		b->put();
+	      assert(b);
+	    }
+	  }
+	if (m_returned->result == OCL_ADVANCE)
+	  break;
+      case OCL_DONE:
+	if (m_isEnabled)
+	  m_runTimer.stop();
+	m_isEnabled = false;
+	break;
+      case OCL_OK:
+	/* Nothing to do */
+	break;
+      case OCL_FATAL:
+      default:
+	if (m_isEnabled)
+	    m_runTimer.stop();
+        m_isEnabled = false;
+	setControlState(OU::Worker::UNUSABLE);
       }
     }
 
-    void Worker::updatePortsPreRun ( )
-    {
-      for ( Port* ocpiport = firstChild();
-            ocpiport;
-            ocpiport = ocpiport->nextChild() )
-      {
-        size_t n = ocpiport->portOrdinal ( );
-
-        if ( myPorts [ n ].current.data ) {
-          continue;
-        }
-
-        if ( ocpiport->isProvider ( ) )
-        {
-          uint8_t* bdata;
-          uint32_t length;
-          uint8_t opcode;
-          bool end;
-          ocpiport->currentBuffer = ocpiport->getIBuffer ( bdata,
-                                                          length,
-                                                          opcode,
-                                                          end );
-          if ( ocpiport->currentBuffer )
-          {
-            readyPorts |= ( 1 << n );
-            myPorts [ n ].current.data = bdata;
-            myPorts [ n ].current.maxLength = ocpiport->myDesc.dataBufferSize;
-            myPorts [ n ].current.length = length;
-            myPorts [ n ].current.opCode = opcode;
-          }
-        }
-        else
-        {
-          uint8_t* bdata;
-          uint32_t length;
-          ocpiport->currentBuffer = ocpiport->getIBuffer ( bdata,
-                                                          length );
-          if ( ocpiport->currentBuffer )
-          {
-            readyPorts |= ( 1 << n );
-            myPorts [ n ].current.data = bdata;
-            myPorts [ n ].current.maxLength = ocpiport->myDesc.dataBufferSize;
-            myPorts [ n ].current.length = length;
-            myPorts [ n ].current.opCode = 0;
-          }
-        }
-      }
-    }
-
-    void Worker::advancedPortBuffers ( )
-    {
-      for ( Port* ocpiport = firstChild();
-            ocpiport;
-            ocpiport = ocpiport->nextChild() )
-      {
-        size_t n = ocpiport->portOrdinal ( );
-
-        if ( ocpiport->isProvider ( ) )
-        {
-          ocpiport->currentBuffer->release ( );
-        }
-        else
-        {
-          bool end = false;
-          ocpiport->currentBuffer->put (myPorts [ n ].current.length,
-					(uint8_t)myPorts [ n ].current.opCode, //FIXME
-                                         end );
-        }
-      }
-    }
-
-    OC::Port& Worker::createPort ( const OU::Port& metaPort,
-                                   const OA::PValue* props )
-    {
+    OC::Port& Worker::
+    createPort(const OU::Port& metaPort, const OA::PValue* props) {
       return *new Port(*this, props, metaPort);
     }
 
-    OC::Port& Worker::createOutputPort ( OU::PortOrdinal portId,
-                                         size_t bufferCount,
-                                         size_t bufferSize,
-                                         const OA::PValue* props )
-    throw()
-    {
-      ( void ) portId;
-      ( void ) bufferCount;
-      ( void ) bufferSize;
-      ( void ) props;
+    OC::Port& Worker::
+    createOutputPort(OU::PortOrdinal /*portId*/, size_t /*bufferCount*/, size_t /*bufferSize*/,
+		     const OA::PValue* /*params*/) throw() {
       return *(Port *)0;
     }
 
-    OC::Port& Worker::createInputPort ( OU::PortOrdinal portId,
-                                        size_t bufferCount,
-                                        size_t bufferSize,
-                                        const OA::PValue* props )
-    throw()
-    {
-      ( void ) portId;
-      ( void ) bufferCount;
-      ( void ) bufferSize;
-      ( void ) props;
+    OC::Port& Worker::
+    createInputPort(OU::PortOrdinal /*portId*/, size_t /*bufferCount*/, size_t /*bufferSize*/,
+		    const OA::PValue* /*params*/) throw() {
       return *(Port *)0;
-    }
-
-    // Buffers directly used by the "user" (non-container/component) API
-    class ExternalBuffer : OA::ExternalBuffer
-    {
-      friend class Port;
-      friend class ExternalPort;
-
-      private:
-        ExternalPort* myExternalPort;
-        OclDpMetadata* metadata; // where is the metadata buffer
-        uint8_t* data; // where is the data buffer
-        uint32_t length; // length of the buffer (not message)
-        bool last; // last buffer in the set
-        volatile uint32_t* local;  // Read locally and written remotely
-        volatile uint32_t* remote; // Written remotely (never read)
-        volatile uint32_t* shadow; // Read/write locally
-
-        void release();
-
-        void put ( size_t dataLength,
-                   uint8_t opcode,
-                   bool endOfData )
-        {
-          (void)endOfData;
-          ocpiAssert(dataLength <= length);
-          metadata->opcode = opcode;
-          metadata->length = (uint32_t)dataLength;
-          release();
-        }
-    }; // End: class ExternalBuffer
-
-#if 0
-    // Producer or consumer
-    class ExternalPort : public OC::ExternalPortBase<Port,ExternalPort>
-    {
-      friend class Port;
-      friend class ExternalBuffer;
-
-      private:
-      //        uint32_t* flags;
-        ExternalBuffer* localBuffers;
-        ExternalBuffer* nextLocal;
-        ExternalBuffer* nextRemote;
-        uint8_t *localData;
-        OclDpMetadata *metadata;
-
-        uint32_t* local;
-        uint32_t* remote;
-        uint32_t* shadow;
-
-        ExternalPort( Port& port,
-		      const char* name,
-		      bool isProvider,
-		      const OA::PValue* extParams,
-		      const OA::PValue* connParams )
-	  : OC::ExternalPortBase<Port,ExternalPort> ( port, *this, name, extParams, connParams, isProvider )
-        {
-          getData().data.options = ( 1 << OCPI::RDT::ActiveFlowControl ) |
-                                        ( 1 << OCPI::RDT::ActiveMessage ) |
-                                        ( 1 << OCPI::RDT::ActiveOnly );
-
-          applyConnectParams (NULL, extParams);
-
-          port.determineRoles ( getData().data );
-
-          /*
-              Buffer are shared between host and device so buffer count
-             must match
-          */
-          myDesc.nBuffers = parent().getData().data.desc.nBuffers;
-          unsigned int nFar = parent().getData().data.desc.nBuffers;
-          unsigned int nLocal = myDesc.nBuffers;
-
-          // Reuse the parent's buffer to avoid a copy
-          myDesc.dataBufferBaseAddr = parent().getData().data.desc.dataBufferBaseAddr;
-          myDesc.dataBufferSize = parent().getData().data.desc.dataBufferSize;
-          myDesc.dataBufferPitch = parent().getData().data.desc.dataBufferPitch;
-          myDesc.metaDataBaseAddr =  parent().getData().data.desc.metaDataBaseAddr;
-          myDesc.metaDataPitch = parent().getData().data.desc.metaDataPitch;
-          myDesc.fullFlagBaseAddr = 0;
-          myDesc.fullFlagPitch = parent().getData().data.desc.fullFlagPitch;
-          myDesc.fullFlagSize = parent().getData().data.desc.fullFlagSize;
-          myDesc.fullFlagValue = parent().getData().data.desc.fullFlagValue;
-          myDesc.emptyFlagBaseAddr = 0;
-          myDesc.emptyFlagSize = parent().getData().data.desc.emptyFlagSize;
-          myDesc.emptyFlagPitch = parent().getData().data.desc.emptyFlagPitch;
-          myDesc.emptyFlagValue = parent().getData().data.desc.emptyFlagValue;
-
-          // Allocate my local memory, making everything on a nice boundary.
-          // (assume empty flag pitch same as full flag pitch)
-          size_t nAlloc =
-              OU::roundUp( myDesc.dataBufferPitch * nLocal, OCLDP_LOCAL_BUFFER_ALIGN) +
-              OU::roundUp( myDesc.metaDataPitch * nLocal, OCLDP_LOCAL_BUFFER_ALIGN) +
-              OU::roundUp( sizeof(uint32_t) * nLocal, OCLDP_LOCAL_BUFFER_ALIGN) + // local flags
-              // These might actually be remote
-              OU::roundUp( sizeof(uint32_t) * nLocal, OCLDP_LOCAL_BUFFER_ALIGN) + // remote flags
-              // These might not be needed if we are ActiveFlowControl
-              OU::roundUp( sizeof(uint32_t) * nFar, OCLDP_LOCAL_BUFFER_ALIGN);
-
-          // FIXME where do we get the mailbox information?
-          uint16_t mailbox = 7;
-          uint16_t max_mailbox = 10;
-          int pid = getpid ( );
-          myDesc.oob.port_id = port.metaPort().m_ordinal;
-          snprintf ( myDesc.oob.oep,
-                     sizeof ( myDesc.oob.oep ),
-                     "ocpi-smb-pio:pioXfer%d:%zu.%hu.%hu",
-                     pid,
-                     nAlloc,
-                     mailbox,
-                     max_mailbox );
-
-          uint8_t* allocation = ( uint8_t* ) calloc ( nAlloc, sizeof ( uint8_t ) );
-
-          if ( !allocation )
-          {
-            throw OU::Error( "OCL failed to allocate external port buffers." );
-          }
-
-          // Resuing the far data buffers
-          localData = reinterpret_cast<uint8_t*>(myDesc.dataBufferBaseAddr);
-          allocation += OU::roundUp(myDesc.dataBufferPitch * nLocal, OCLDP_LOCAL_BUFFER_ALIGN);
-
-          // Resuing the far metadata buffers
-          metadata = reinterpret_cast<OclDpMetadata*>(myDesc.metaDataBaseAddr);
-          allocation += OU::roundUp(myDesc.metaDataPitch * nLocal, OCLDP_LOCAL_BUFFER_ALIGN);
-
-          uint32_t* localFlags = (uint32_t*)allocation;
-          local = localFlags;
-          allocation += OU::roundUp(sizeof(uint32_t) * nLocal, OCLDP_LOCAL_BUFFER_ALIGN);
-
-          uint32_t* remoteFlags = (uint32_t*)allocation;
-          remote = remoteFlags;
-
-          allocation += OU::roundUp(sizeof(uint32_t) * nLocal, OCLDP_LOCAL_BUFFER_ALIGN);
-          uint32_t* farFlags = (uint32_t*)allocation;
-          shadow = farFlags;
-
-          myDesc.emptyFlagBaseAddr = 0;
-          myDesc.fullFlagBaseAddr  = OCPI_UTRUNCATE(DtOsDataTypes::Offset, local );
-
-          uint32_t* otherRemote = reinterpret_cast<uint32_t*> ( parent().getData().data.desc.fullFlagBaseAddr );
-
-          // Initialize our structures that keep track of LOCAL buffer status
-          ExternalBuffer *lb = nextLocal = nextRemote = localBuffers = new ExternalBuffer[nLocal];
-          for (unsigned i = 0; i < nLocal; i++, lb++) {
-            lb->myExternalPort = this;
-            lb->metadata = metadata + i;
-            lb->data = localData + i * myDesc.dataBufferPitch;
-            lb->length = myDesc.dataBufferPitch;
-            lb->last = false;
-            lb->local = local + i;
-            lb->remote = otherRemote + i;
-            lb->shadow = shadow + i;
-            *lb->shadow = 0;
-
-            if ( !parent().isProvider( ) )
-            {
-              (*lb->remote) = 1;
-            }
-            else
-            {
-              (*lb->remote) = 0;
-            }
-          }
-          (lb-1)->last = true;
-        }
-
-      public:
-        ~ExternalPort()
-        {
-          delete [] localBuffers;
-        }
-
-        bool getLocal ( )
-        {
-          if ( *nextLocal->local == *nextLocal->shadow )
-          {
-            return false;
-          }
-
-          (*nextLocal->shadow)++;
-
-          return true;
-        }
-
-        OA::ExternalBuffer* getBuffer ( uint8_t*& bdata,
-                                        size_t& length,
-                                        uint8_t& opcode,
-                                        bool& end )
-        {
-          ocpiAssert( !parent().isProvider() );
-
-          if ( !getLocal() )
-          {
-            return 0;
-          }
-
-          bdata = (uint8_t*)parent().parent().device_worker.mapPtr ( nextLocal->data,
-                                                           OCPI::OCL::DeviceWorker::MAP_TO_READ );
-          length = nextLocal->metadata->length;
-          opcode = nextLocal->metadata->opcode;
-          end = false;
-
-          return static_cast<OA::ExternalBuffer *>( nextLocal );
-        }
-
-        OA::ExternalBuffer* getBuffer ( uint8_t*& bdata,
-                                        size_t& length )
-        {
-          ocpiAssert(parent().isProvider());
-          if ( !getLocal() )
-          {
-            return 0;
-          }
-
-          bdata = (uint8_t*)parent().parent().device_worker.mapPtr ( nextLocal->data,
-                                                           OCPI::OCL::DeviceWorker::MAP_TO_WRITE );
-
-          length = nextLocal->length;
-
-          return static_cast<OA::ExternalBuffer *>( nextLocal );
-        }
-
-        void advanceLocal ()
-        {
-          (*nextLocal->remote)++;
-
-          if ( nextLocal->last )
-          {
-            nextLocal = localBuffers;
-          }
-          else
-          {
-            nextLocal++;
-          }
-        }
-
-        void endOfData ( )
-        {
-          ocpiAssert(parent().isProvider());
-        }
-
-        bool tryFlush ( )
-        {
-          return false;
-        }
-
-    }; // End: class ExternalPort
-
-    void ExternalBuffer::release()
-    {
-      myExternalPort->parent().parent().device_worker.unmapPtr ( (void*)myExternalPort->nextLocal->data );
-      myExternalPort->advanceLocal();
-    }
-
-#if 1
-    OC::ExternalPort &Port::createExternal(const char *extName, bool isProvider,
-					   const OU::PValue *extParams, const OU::PValue *connParams) {
-      return *new ExternalPort(*this, extName, !isProvider, extParams, connParams);
-    }
-#else
-    OA::ExternalPort& Port::connectExternal ( const char* extName,
-                                              const OA::PValue* userProps,
-                                              const OA::PValue* props )
-    {
-      if ( !m_canBeExternal )
-      {
-        throw OU::Error ( "OCL For external port \"", extName, "\", port \"",
-                             name().c_str(), "\" of worker \"",
-                             parent().implTag().c_str(), "/", parent().instTag().c_str(), "/",
-                             parent().name().c_str(),
-                            "\" is locally connected in the OCL bitstream. ", NULL);
-      }
-
-      applyConnectParams ( props );
-
-      myExternalPort = new ExternalPort ( *this,
-                                           extName,
-                                           !isProvider(),
-                                           userProps );
-      finishConnect(myExternalPort->getData().data);
-      return *myExternalPort;
-    }
-#endif
-#endif
-    void Port::advanceLocal ()
-    {
-      (*nextLocal->remote)++;
-
-      if ( nextLocal->last )
-      {
-        nextLocal = localBuffers;
-      }
-      else
-      {
-        nextLocal++;
-      }
     }
   } // End: namespace OCL
 

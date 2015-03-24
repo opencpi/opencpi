@@ -82,8 +82,7 @@ namespace OCPI {
     const uint32_t CP289_CSINTERNAL_ERROR          = (CP289_EX_SOURCE_ID << 16) + 6;
 
     class Container
-      : public OCPI::Container::ContainerBase<Driver,Container,Application,Artifact>
-    {
+      : public OCPI::Container::ContainerBase<Driver,Container,Application,Artifact> {
 
     private:
       // FIXME:  someday this thread pool will be private to the container
@@ -93,31 +92,32 @@ namespace OCPI {
       static const int HIGH_PRI_Q = 1;
       pthread_workqueue_t m_workqueues[WORKQUEUE_COUNT]; 
 
-      public:
-        friend class Port;
-        friend class RDMAPort;
-        friend class Worker;
-        friend class Application;
-	friend class PortDelegator;
+    public:
+      friend class Port;
+      friend class RDMAPort;
+      friend class Worker;
+      friend class Application;
+      friend class PortDelegator;
 
       Container(const char *name, const OCPI::API::PValue* props)
 	throw (OCPI::Util::EmbeddedException);
       virtual ~Container()
-      throw ();
+	throw ();
       void initWorkQueues();
+      bool portsInProcess() { return true; }
       OCPI::Container::Container::DispatchRetCode
-      dispatch(DataTransfer::EventManager* event_manager=NULL);
+	dispatch(DataTransfer::EventManager* event_manager=NULL);
       OCPI::API::ContainerApplication*
-      createApplication(const char *name, const OCPI::Util::PValue *props)
-      throw (OCPI::Util::EmbeddedException);
+	createApplication(const char *name, const OCPI::Util::PValue *props)
+	throw (OCPI::Util::EmbeddedException);
       OCPI::Container::Artifact &
-      createArtifact(OCPI::Library::Artifact &lart, const OCPI::API::PValue *artifactParams);
+	createArtifact(OCPI::Library::Artifact &lart, const OCPI::API::PValue *artifactParams);
 
 
-	// worker task management
-	void addTask( void (*workitem_func)(void *), void * args );
-	void addTask( RCCUserTask * task );
-	bool join( bool block, OCPI::OS::Semaphore & sem );
+      // worker task management
+      void addTask( void (*workitem_func)(void *), void * args );
+      void addTask( RCCUserTask * task );
+      bool join( bool block, OCPI::OS::Semaphore & sem );
       
 
       void start(DataTransfer::EventManager* event_manager) throw();
@@ -126,7 +126,7 @@ namespace OCPI {
       bool needThread() { return true; }
 
 
-      };
+    };
   }
 }
 

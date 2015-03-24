@@ -317,13 +317,15 @@ namespace OCPI {
       if (m_default != def->m_default) formatAdd(out, " default='%zu'", m_default);
     }
 
-    const char *Port::Scaling::
-    check(size_t scale) {
+    bool Port::Scaling::
+    check(size_t scale, std::string &error) {
       if (scale &&
-	  (scale < m_min || m_max && scale > m_max || m_modulo && scale % m_modulo))
-	return esprintf("Scaling value of %zu incompatible with min: %zu, max: %zu, mod: %zu",
-			scale, m_min, m_max, m_modulo);
-      return NULL;
+	  (scale < m_min || m_max && scale > m_max || m_modulo && scale % m_modulo)) {
+	format(error, "Scaling value of %zu incompatible with min: %zu, max: %zu, mod: %zu",
+		   scale, m_min, m_max, m_modulo);
+	return true;
+      }
+      return false;
     }
 
 

@@ -8,6 +8,10 @@ include $(OCPI_CDK_DIR)/ocpisetup.mk
 all:
 
 CMP= && cmp test.input test.output
+SCALE=$(VG) ocpirun -v -d -pbias=biasValue=0 $(OPTS) $(FR) $(FW) \
+                    -pfile_write=messagesize=200 -pfile_read=messagesize=200 \
+                    -Nfile_read=$1 -Nbias=$2 -Nfile_write=$3 \
+                      testbias $(CMP)
 
 run:
 	$(VG) ocpirun -v -d $(OPTS) $(FR) $(FW) bias
@@ -25,6 +29,16 @@ run:
 	$(VG) ocpirun -v -d -pbias=biasValue=0 $(OPTS) $(FR) $(FW) testbias $(CMP)
 	$(VG) ocpirun -v -d $(OPTS) $(FR) $(FW) testbias2
 	$(VG) ocpirun -v -d -pbias0=biasValue=0 -pbias1=biasValue=0 $(OPTS) $(FR) $(FW) testbias2 $(CMP)
+
+scale:
+	$(call SCALE,1,1,1)
+	$(call SCALE,1,1,2)
+	$(call SCALE,1,2,1)
+	$(call SCALE,1,2,2)
+	$(call SCALE,2,1,1)
+	$(call SCALE,2,1,2)
+	$(call SCALE,2,2,1)
+	$(call SCALE,2,2,2)
 
 test:
 

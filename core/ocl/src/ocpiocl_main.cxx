@@ -1,245 +1,93 @@
-/*
- *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
- *
- *    Mercury Federal Systems, Incorporated
- *    1901 South Bell Street
- *    Suite 402
- *    Arlington, Virginia 22202
- *    United States of America
- *    Telephone 703-413-0781
- *    FAX 703-413-0784
- *
- *  This file is part of OpenCPI (www.opencpi.org).
- *     ____                   __________   ____
- *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
- *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
- *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
- *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
- *      /_/                                             /____/
- *
- *  OpenCPI is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU Lesser General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  OpenCPI is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU Lesser General Public License for more details.
- *
- *  You should have received a copy of the GNU Lesser General Public License
- *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-/**
-  @file
-    Implementation of the OpenCPI/OpenCL worker compiler.
-
-  $ ocpiocl
-    -o <output file name> required
-     other - source files
-    -I <Include path>
-    -D <Compiler define>
-
-************************************************************************** */
-
-#include <string>
-#include <vector>
-#include <iostream>
-#include <stdexcept>
-
+#include <signal.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <unistd.h>
+#include <sys/mman.h>
+#include <cstring>
 #include "OcpiOsLoadableModule.h"
-#include "OclPlatformManager.h"
+#include "OclContainer.h"
 
+namespace OU =  OCPI::Util;
 
-namespace
-{
-  bool is_output_file ( size_t argc,
-                        char* argv [ ],
-                        size_t& n,
-                        std::string& output )
-  {
-    if ( std::string ( argv [ n ] ).compare ( 0, 2, "-o" ) == 0 )
-    {
-      n++;
-      if ( n < argc )
-      {
-        output = std::string ( argv [ n ] );
-        return true;
-      }
-      else
-      {
-        throw std::string ( "Missing value for -o output filename." );
-      }
-    }
-    return false;
-  }
+#define OCPI_OPTIONS_HELP \
+  "Usage syntax is: ocpiocl [options] <command>\n" \
+  "  Commands are:\n" \
+  "    compile   - act like a compiler, building worker binaries\n" \
+  "    search    - find available OpenCL devices\n" \
+  "    probe     - test whether an OpenCL device exists\n" \
+  "    compile   - act like a compiler, converting source (.cl) to object (.clo)\n" \
+  "    test      - test for the existence of an OpenCL environment\n"
 
-  bool is_define ( size_t argc,
-                   char* argv [ ],
-                   size_t& n,
-                   std::string& defines )
-  {
-    if ( std::string ( argv [ n ] ).compare ( 0, 2, "-D" ) == 0 )
-    {
-      defines += std::string ( argv [ n ] );
+//           name      abbrev  type    value description
+#define OCPI_OPTIONS \
+  CMD_OPTION_S(define,     D,    String, NULL,    "Set preprocessor definition") \
+  CMD_OPTION_S(include,    I,    String, NULL,    "Set include directory") \
+  CMD_OPTION(  output,     o,    String, NULL,    "Set name of output file") \
+  CMD_OPTION(  device,     d,    String, NULL,    "Specific OCL device to use") \
+  CMD_OPTION(  target,     t,    String, NULL,    "Target device type to compile for") \
+  CMD_OPTION(  verbose,    v,    Bool,   "false", "Provide verbose output during operation") \
+  CMD_OPTION(  loglevel,   l,    UChar,  "0",     "Set logging level used during operation") \
 
-      if ( *( argv [ n ] + 3 ) == ' ' ) // -D Value - note the space
-      {
-        n++;
-        if ( n < argc )
-        {
-          defines += std::string ( argv [ n ] );
-        }
-        else
-        {
-          throw std::string ( "Missing value for -D define." );
-        }
-      }
-      defines += std::string ( " " );
-      return true;
-    }
-    return false;
-  }
+#include "CmdOption.h"
 
-  bool is_include ( size_t argc,
-                    char* argv [ ],
-                    size_t& n,
-                    std::string& includes )
-  {
-    if ( std::string ( argv [ n ] ).compare ( 0, 2, "-I" ) == 0 )
-    {
-      includes += "-I";//std::string ( argv [ n ] );
+namespace OC = OCPI::Container;
+namespace OA = OCPI::API;
 
-      if (argv[n][2]) // *( argv [ n ] + 3 ) == ' ' ) // -I Path - note the space
-	includes += &argv[n][2];
-      else
-      {
-        n++;
-        if ( n < argc )
-        {
-          includes += std::string ( argv [ n ] );
-        }
-        else
-        {
-          throw std::string ( "Missing value for -I include." );
-        }
-      }
-      includes += std::string ( " " );
-      return true;
-    }
-    return false;
-  }
-
-  void source_file ( char* argv [ ],
-                     size_t& n,
-                     std::vector<std::string>& sources )
-  {
-    sources.push_back ( std::string ( argv [ n ] ) );
-  }
-
-  void get_compiler_options ( size_t argc,
-                              char* argv [ ],
-                              std::string& output,
-                              std::string& defines,
-                              std::string& includes,
-                              std::vector<std::string>& sources )
-  {
-    for ( size_t n = 1; n < argc; n++ )
-    {
-      if ( is_output_file ( argc, argv, n, output ) )
-      {
-        continue;
-      }
-      else if ( is_define ( argc, argv, n, defines ) )
-      {
-        continue;
-      }
-      else if ( is_include ( argc, argv, n, includes ) )
-      {
-        continue;
-      }
-      else
-      {
-        source_file ( argv, n, sources );
-      }
-    }
-
-    if ( output.empty ( ) )
-    {
-      throw std::string ( "Missing output file. Use \"-o filename\" to specify output file." );
-    }
-
-    if ( !sources.size ( ) )
-    {
-      throw std::string ( "Missing source files." );
-    }
-  }
-
-  bool compile_ocl_worker ( size_t argc, char* argv [ ] )
-  {
-    std::string output_file;
-    std::string defines;
-    std::string includes;
-    std::vector<std::string> sources;
-
-    get_compiler_options ( argc,
-                           argv,
-                           output_file,
-                           defines,
-                           includes,
-                           sources );
-
-    const OCPI::Util::PValue* props = 0; // Use to lookup specific device
-
-    OCPI::OCL::DeviceContext device ( props );
-
-    std::string options = defines + includes;
-
-    return device.compile ( options, sources, output_file );
-  }
-
-} // namespace<unamed>
-
-int main ( int argc, char* argv [ ] )
-{
-  if ( argc == 1 )
-  {
-    std::cout << "\n\nUsage: "
-              << argv [ 0 ]
-              << " -o <output file> [-I<include paths>] [-D<defines>] <sources files>\n"
-              << std::endl;
-    return 0;
-  }
-  bool test = argc == 2 && !strcmp(argv[1],"test");
+static int mymain(const char **ap) {
+  OCPI::OS::logSetLevel(options.loglevel());
+  OCPI::Driver::ManagerManager::suppressDiscovery();
   const char *env = getenv("OCPI_OPENCL_OBJS");
-  bool success = false;
-  try
-  {
-    OCPI::OS::LoadableModule lm(env ? env : "libOpenCL.so", true);
-    if (test)
-      success = true;
-    else {
-    
-      std::cout << "\nOCL worker compiler is running." << std::endl;
+  OCPI::OS::LoadableModule lm(env ? env : "libOpenCL.so", true);
 
-      success = compile_ocl_worker ( argc, argv );
-
-      std::cout << "\nOCL worker compile was "
-		<< ( ( success ) ? "successful." : "NOT successful." )
-		<< std::endl;
+  if (!strcasecmp(*ap, "test"))
+    return 0;
+  if (!strcasecmp(*ap, "search")) {
+    OA::PVarray vals(5);
+    unsigned n = 0;
+    vals[n++] = OA::PVBool("printOnly", true);
+    if (options.verbose())
+      vals[n++] = OA::PVBool("verbose", true);
+    vals[n++] = OA::PVEnd;
+    OCPI::OCL::Driver::getSingleton().search(vals, NULL, true);
+  } else if(!strcasecmp(*ap, "probe")) {
+    if (!*++ap)
+      options.bad("Missing device name argument to probe");
+    std::string err;
+    if (!OCPI::OCL::Driver::getSingleton().open(*ap, options.verbose(), true, err))
+      options.bad("Error during probe for \"%s\": %s", *ap, err.c_str());
+  } else if(!strcasecmp(*ap, "compile")) {
+    if (!options.target())
+      options.bad("The target (-t) option must be specified for the compile command");
+    size_t numIncludes, numDefines, numSources;
+    const char
+      **includes = options.include(numIncludes),
+      **defines = options.define(numDefines),
+      **sources = ++ap;
+    for (numSources = 0; *ap++; numSources++)
+      ;
+    if (!numSources)
+      options.bad("No source files supplied after \"compile\" command.");
+    std::vector<int> fds(numSources, -1);
+    std::vector<off_t> sizes(numSources*2, 0);
+    std::vector<void *> mapped(numSources*2, NULL);
+    for (unsigned n = 0; n < numSources; n++) {
+      if ((fds[n] = open(sources[n], O_RDONLY)) < 0 ||
+	  (sizes[n*2+1] = lseek(fds[n], 0, SEEK_END)) == -1 ||
+	  (mapped[n*2+1] = mmap(NULL, sizes[n*2+1], PROT_READ, MAP_SHARED, fds[n], 0)) == MAP_FAILED)
+	options.bad("Can't open source file: %s", sources[n]);
+      std::string line;
+      OU::format(line, "# 1 \"%s\"\n", sources[n]);
+      mapped[n*2] = new char[line.size()];
+      memcpy(mapped[n*2], line.c_str(), line.size());
+      sizes[n*2] = line.size();
     }
+    OCPI::OCL::compile(numSources*2, &mapped[0], &sizes[0], includes, defines,
+		       options.output(), options.target(), options.verbose());
   }
-  catch ( const std::string& s )
-  {
-    if (!test)
-      std::cerr << "\nException(s): " << s << std::endl;
-  }
-  catch ( ... )
-  {
-    if (!test)
-      std::cerr << "\nException(u): unknown" << std::endl;
-  }
+  return 0;
+}
 
-  return success ? 0 : 1;
+int
+main(int /*argc*/, const char **argv) {
+  return options.main(argv, mymain);
 }

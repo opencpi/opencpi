@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -70,9 +69,7 @@ getEventManager()
 
 class Driver;
 Container::
-Container(const char *name,
-	  //	  OCPI::DataTransport::TransportGlobal *tpg, 
-	  const OA::PValue* props )
+Container(const char *name, const OA::PValue* /*params*/)
   throw ( OU::EmbeddedException )
   : OC::ContainerBase<Driver,Container,Application,Artifact>(*this, name)
 {

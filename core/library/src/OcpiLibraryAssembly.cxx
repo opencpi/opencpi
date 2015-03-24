@@ -243,8 +243,9 @@ namespace OCPI {
 	score = (unsigned)(val.number < 0 ? 0 : val.number);
       }
       // Check for scalability suitability.
-      if ((err = i.m_metadataImpl.m_scaling.check(m_scale))) {
-	ocpiInfo("Rejected: %s", err);
+      std::string error;
+      if (i.m_metadataImpl.m_scaling.check(m_scale, error)) {
+	ocpiInfo("Rejected: %s", error.c_str());
 	return false;
       }
       // To this point all the checking has applied to the worker we are looking at.

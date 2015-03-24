@@ -183,10 +183,9 @@ namespace OCPI {
       
 
       void initializeContext();
-      inline void setRunCondition(const RunCondition &rc) {
+      inline void setRunCondition(RunCondition &rc) {
 	m_runCondition = &rc;
-	if (rc.m_timeout)
-	  m_runTimer.reset(rc.m_usecs / 1000000, (rc.m_usecs % 1000000) * 1000);
+	m_runCondition->activate(m_runTimer);
       }
 
       // Our dispatch table
@@ -200,7 +199,7 @@ namespace OCPI {
       OCPI::OS::Mutex &m_mutex;
       RunCondition     m_defaultRunCondition; // run condition we create
       RunCondition     m_cRunCondition;       // run condition we use when C-language RC changes
-      const RunCondition *m_runCondition;        // current active run condition used in dispatching
+      RunCondition    *m_runCondition;        // current active run condition used in dispatching
       
       char            *m_errorString;         // error string set via "setError"
       OCPI::Container::Worker      *m_slave;
@@ -210,7 +209,6 @@ namespace OCPI {
       inline uint8_t * getPropertyVaddr() const { return  (uint8_t*)m_context->properties; }
 
       bool enabled;                // Worker enabled flag
-      bool hasRun;                 // Has the worker ever run so far?
 
       uint32_t sourcePortCount;
       uint32_t targetPortCount;
@@ -230,10 +228,10 @@ namespace OCPI {
       OCPI::OS::Semaphore m_taskSem;
 
       // Override the port data based on hardcoded requirements from the worker
-      void overRidePortInfo( OCPI::Util::Port & portData );
+      //      void overRidePortInfo( OCPI::Util::Port & portData );
 
       // Update a ports information (as a result of a connection)
-      void portIsConnected( unsigned ordinal );
+      void portIsConnected(unsigned ordinal);
     };
 
 

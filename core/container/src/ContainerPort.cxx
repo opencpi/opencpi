@@ -61,6 +61,10 @@ namespace OCPI {
       return (name == m_metaPort.m_name );
     }
 
+    void Port::portIsConnected() {
+      worker().connectPort(ordinal());
+    }
+
     // The default behavior is that there is nothing special to do between
     // ports of like containers.
     bool Port::connectLike(Port &other, const OU::PValue *myProps,
@@ -330,24 +334,6 @@ namespace OCPI {
     BridgePort(LocalPort &port, const OU::PValue *params)
       : BasicPort(port.container(), port.metaPort(), params)
     {
-#if 0
-      applyConnection(c);
-      LocalPort *other = (isProvider() ? c.m_out : c.m_in).m_port;
-      if (!other)
-	more = startRemote(c);
-      else if (other->m_bridgePorts.size()) {
-	// bridge ports on both sides locally.  whoever is last does it with forwarding
-	BridgePort *otherBridge =
-	  other->m_bridgePorts[(isProvider() ? c.m_in : c.m_out).m_index];
-	if (otherBridge)
-	  connectInProcess(*otherBridge);
-	else
-	  other->initialConnect(c);
-      } else if (other->isInProcess())
-	connectInProcess(*other);
-      else
-	connectLocal(c);
-#endif
     }
 
     BridgePort::

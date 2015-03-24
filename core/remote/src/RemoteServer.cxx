@@ -272,8 +272,8 @@ namespace OCPI {
 	      OU::eformat(error, "Error processing instances for launch: %s", err);
 	    *u = OCPI_UTRUNCATE(unsigned, ord);
 	    const char *val = ezxml_cattr(px, "v");
-	    assert(ord <= i->m_impl->m_metadataImpl.m_nProperties);
-	    OU::Property &p = i->m_impl->m_metadataImpl.m_properties[ord];
+	    assert(ord <= i->m_impl->m_metadataImpl.nProperties());
+	    OU::Property &p = i->m_impl->m_metadataImpl.properties()[ord];
 	    assert(!p.m_isParameter);
 	    v->setType(p);
 	    if ((err = v->parse(val)))
@@ -405,14 +405,14 @@ namespace OCPI {
 	  (err = OX::getNumber(m_rx, "wait", &n,    &wait,  0, false)) ||
 	  (err = OX::getBoolean(m_rx, "hex", &hex)) ||
 	  inst >= m_members.size() || !m_members[inst].m_worker ||
-	  (get || set) && n >= m_members[inst].m_worker->m_nProperties)
+	  (get || set) && n >= m_members[inst].m_worker->nProperties())
 	return OU::eformat(error, "Control message error: %s", err);
       m_response = "<control>";
       OC::Worker &w = *m_members[inst].m_worker;
 
       try {
 	if (get || set) {
-	  OU::Property &p = w.m_properties[n];
+	  OU::Property &p = w.properties()[n];
 	  if (get)
 	    w.getPropertyValue(p, m_response, hex, true);
 	  else

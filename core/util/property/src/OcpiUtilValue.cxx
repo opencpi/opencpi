@@ -605,7 +605,7 @@ namespace OCPI {
 	m_length = m_nTotal * sizeof(run);	       \
 	if (m_vt->m_isSequence || m_vt->m_arrayRank) { \
 	  run *old = m_p##pretty;                      \
-	  m_p##pretty = new run[m_nTotal];	       \
+	  m_p##pretty = new run[m_nTotal+1];	       \
           /* FIXME: type-specific default value? */    \
           memset(m_p##pretty, 0, m_length);            \
 	  if (add) {                                   \
@@ -711,6 +711,9 @@ namespace OCPI {
 	    if ((err = parseElement(start, end, n)))
 	      return err;
 	  }
+	// Null terminate 
+	if (m_vt->m_baseType == OA::OCPI_String && !m_vt->m_arrayRank)
+	  m_pString[m_nElements] = NULL;
       } else if ((err = parseElement(unparsed, stop, 0)))
 	return err;
       m_parsed = true;

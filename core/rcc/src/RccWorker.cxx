@@ -1,48 +1,48 @@
- /*
-  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
-  *
-  *    Mercury Federal Systems, Incorporated
-  *    1901 South Bell Street
-  *    Suite 402
-  *    Arlington, Virginia 22202
-  *    United States of America
-  *    Telephone 703-413-0781
-  *    FAX 703-413-0784
-  *
-  *  This file is part of OpenCPI (www.opencpi.org).
-  *     ____                   __________   ____
-  *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
-  *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
-  *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
-  *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
-  *      /_/                                             /____/
-  *
-  *  OpenCPI is free software: you can redistribute it and/or modify
-  *  it under the terms of the GNU Lesser General Public License as published
-  *  by the Free Software Foundation, either version 3 of the License, or
-  *  (at your option) any later version.
-  *
-  *  OpenCPI is distributed in the hope that it will be useful,
-  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  *  GNU Lesser General Public License for more details.
-  *
-  *  You should have received a copy of the GNU Lesser General Public License
-  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
-  */
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 
- /*
-  * Abstact:
-  *   Container application context class.
-  *
-  * Revision History: 
-  * 
-  *    Author: John F. Miller
-  *    Date: 3/2005
-  *    Revision Detail: Created
-  *
-  */
+/*
+ * Abstact:
+ *   Container application context class.
+ *
+ * Revision History: 
+ * 
+ *    Author: John F. Miller
+ *    Date: 3/2005
+ *    Revision Detail: Created
+ *
+ */
 
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -69,7 +69,7 @@ Worker(Application & app, Artifact *art, const char *name, ezxml_t impl, ezxml_t
     OCPI::Time::Emit( &parent().parent(), "Worker", name), 
     m_entry(art ? art->getDispatch(ezxml_cattr(impl, "name")) : NULL), m_user(NULL),
     m_dispatch(NULL), m_portInit(0), m_context(NULL), m_mutex(app.container()),
-    m_runCondition(NULL), m_errorString(NULL), m_slave(slave), enabled(false), hasRun(false),
+    m_runCondition(NULL), m_errorString(NULL), m_slave(slave), enabled(false),
     sourcePortCount(0), targetPortCount(0), m_nPorts(nPorts()), worker_run_count(0),
     m_transport(app.parent().getTransport()),m_taskSem(0)
  {
@@ -89,7 +89,7 @@ Worker(Application & app, Artifact *art, const char *name, ezxml_t impl, ezxml_t
      m_info.memSizes = m_dispatch->memSizes;
      m_info.portInfo = m_dispatch->portInfo;
      m_info.propertySize = m_dispatch->propertySize;
-     m_info.optionallyConnectedPorts = m_dispatch->optionallyConnectedPorts;
+     //     m_info.optionallyConnectedPorts = m_dispatch->optionallyConnectedPorts;
    }
    initializeContext();
 
@@ -307,28 +307,21 @@ rccTake(RCCPort *rccPort, RCCBuffer *oldBuffer, RCCBuffer *newBuffer)
    RCCDispatch *wd = m_dispatch;
 
    // check masks for bad bits
-   OU::Port *ports = getPorts();
+   //   OU::Port *ports = getPorts();
    if (m_nPorts) {
      if (wd && m_nPorts != wd->numInputs + wd->numOutputs)
        throw OU::Error("metadata port count (%u) and dispatch port count (in: %u + out: %u) differ",
 		       m_nPorts, wd->numInputs, wd->numOutputs);
-     RCCPortMask optional = 0;
-     for (unsigned n = 0; n < m_nPorts; n++)
-       if (ports[n].m_isOptional)
-	 optional |= 1 << n;
-     if (m_dispatch) {
-       if (m_info.optionallyConnectedPorts != optional)
+     if (m_dispatch && m_dispatch->optionallyConnectedPorts != optionalPorts())
 	 throw OU::Error("metadata optional ports (%x) and dispatch optional ports (%x) differ",
-			 optional, m_info.optionallyConnectedPorts);
-     } else
-       m_info.optionallyConnectedPorts = optional;
+			 optionalPorts(), m_dispatch->optionallyConnectedPorts);
    } else {
      if (wd && (wd->numInputs || wd->numOutputs))
        m_nPorts = wd->numInputs + wd->numOutputs;
    }
 
    RCCPortMask ourMask = ~(-1 << m_nPorts);
-   if (~ourMask & m_info.optionallyConnectedPorts)
+   if (~ourMask & optionalPorts())
      throw OU::EmbeddedException( OU::PORT_COUNT_MISMATCH,
 				  "optional port mask is invalid",
 				  OU::ApplicationRecoverable);
@@ -519,15 +512,12 @@ rccTake(RCCPort *rccPort, RCCBuffer *oldBuffer, RCCBuffer *newBuffer)
  }
 
 
- void 
- Worker::
- portIsConnected( unsigned ordinal )
- {
-   m_context->connectedPorts |= (1<<ordinal);
+ void Worker::
+ portIsConnected(unsigned ordinal) {
+   m_context->connectedPorts |= (1 << ordinal);
  }
 
- void
- Worker::
+ void Worker::
  portError(std::string &error) {
    enabled = false;
    controlOperation(OU::Worker::OpStop);
@@ -582,25 +572,15 @@ rccTake(RCCPort *rccPort, RCCBuffer *oldBuffer, RCCBuffer *newBuffer)
 
    // Run condition processing: we break if we're going to run, and return if not
    ocpiAssert(m_runCondition);
-   bool timedOut = false;
+   bool timedOut = false, dont = false;
    do {
-     if (!m_runCondition->m_portMasks) // no port mask array means run all the time
+     // First do the checks that don't depend on port readiness.
+     if (m_runCondition->shouldRun(m_runTimer, timedOut, dont))
        break;
-     if (m_runCondition->m_timeout && m_runTimer.expired()) {
-       ocpiInfo("WORKER TIMED OUT, elapsed time = %u,%u", 
-		 m_runTimer.getElapsed().seconds(), m_runTimer.getElapsed().nanoseconds());
-       timedOut = true;
-       break;
-     }
-     // If no port masks, then we don't run except for timeouts, checked above
-     if (!m_runCondition->m_portMasks[0])
-       if (m_runCondition->m_timeout && !hasRun) {
-	 hasRun = true;
-	 break; // run if we're in period execution and haven't run at all yet
-       } else
-	 return;
+     else if (dont)
+       return;
      // Start out assuming optional unconnected ports are "ready"
-     RCCPortMask readyMask = m_info.optionallyConnectedPorts & ~m_context->connectedPorts;
+     RCCPortMask readyMask = optionalPorts() & ~m_context->connectedPorts;
      // Only examine connected ports that are in the run condition
      RCCPortMask relevantMask = m_context->connectedPorts & m_runCondition->m_allMasks;
      RCCPort *rccPort = m_context->ports;
@@ -613,13 +593,12 @@ rccTake(RCCPort *rccPort, RCCBuffer *oldBuffer, RCCBuffer *newBuffer)
      // See if any of our masks are satisfied
      RCCPortMask *pmp;
      for (pmp = m_runCondition->m_portMasks; *pmp; pmp++)
-       if ((*pmp & readyMask) == *pmp)
+       if ((*pmp & readyMask) == *pmp && (*pmp & relevantMask))
 	 break;
-     if (!*pmp)
+     if (!(*pmp * relevantMask))
        return;
    } while (0);
-   assert(enabled);
-   if (!m_dispatch || m_dispatch->run) {
+   if (enabled && (!m_dispatch || m_dispatch->run)) {
      anyone_run = true;
      //      OCPI_EMIT_STATE_CAT_NR_(were, 0, OCPI_EMIT_CAT_TUNING, OCPI_EMIT_CAT_TUNING_WC);
      RCCBoolean newRunCondition = false;
@@ -629,6 +608,7 @@ rccTake(RCCPort *rccPort, RCCBuffer *oldBuffer, RCCBuffer *newBuffer)
        m_runTimer.restart();
      OCPI_EMIT_REGISTER_FULL_VAR( "Worker Run", OCPI::Time::Emit::u, 1, OCPI::Time::Emit::State, wre ); \
      OCPI_EMIT_STATE_CAT_NR_(wre, 1, OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_CAT_WORKER_DEV_RUN_TIME);
+     ocpiDebug("Running worker %s", name().c_str());
      RCCResult rc = m_dispatch ?
        m_dispatch->run(m_context, timedOut, &newRunCondition) : m_user->run(timedOut);
      OCPI_EMIT_STATE_CAT_NR_(wre, 0, OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_CAT_WORKER_DEV_RUN_TIME);
@@ -711,7 +691,9 @@ controlOperation(OU::Worker::ControlOperation op) {
     rc = DISPATCH(initialize);
     break;
   case OU::Worker::OpStart:
+#if 0
     {
+      // Done in common code
       // If a worker gets started before all of its required ports are created: error
       RCCPortMask mandatory = ~(-1 << m_nPorts) & ~m_info.optionallyConnectedPorts;
       // FIXME - this should be in generic code, not RCC
@@ -722,10 +704,16 @@ controlOperation(OU::Worker::ControlOperation op) {
 			implTag().c_str());
       }
     }
-    if ((rc = DISPATCH(start)) == RCC_OK) {
-      enabled = true;
-      hasRun = false; // allow immediate execution after suspension for period execution
+#endif
+    {
+      RCCPort *rccPort = m_context->ports;
+      for (unsigned n = 0; n < m_nPorts; n++, rccPort++)
+	if (m_context->connectedPorts & (1 << n))
+	  if (!(rccPort->connectedCrewSize = rccPort->workerPort->nOthers()))
+	    rccPort->connectedCrewSize = 1;
     }
+    if ((rc = DISPATCH(start)) == RCC_OK)
+      enabled = true;
     break;
   case OU::Worker::OpStop:
     // If the worker says that stop failed, we're not stopped.
@@ -1006,7 +994,7 @@ controlOperation(OU::Worker::ControlOperation op) {
        m_worker.m_runCondition == &m_worker.m_defaultRunCondition ?
        NULL : m_worker.m_runCondition;
    }
-   void RCCUserWorker::setRunCondition(const RunCondition *rc) {
+   void RCCUserWorker::setRunCondition(RunCondition *rc) {
      m_worker.setRunCondition(rc ? *rc : m_worker.m_defaultRunCondition);
    }
    OCPI::API::Application &RCCUserWorker::getApplication() {
@@ -1174,54 +1162,79 @@ controlOperation(OU::Worker::ControlOperation op) {
    ~RCCUserSlave() {
    }
 #endif
-   RunCondition::
-   RunCondition()
-     : m_portMasks(m_myMasks), m_timeout(false), m_usecs(0), m_allocated(NULL), m_allMasks(0) {
-     m_myMasks[0] = 0;
-   }
-   RunCondition::
-   RunCondition(RCCPortMask pm, ...) :
-     m_timeout(false), m_usecs(0), m_allocated(NULL), m_allMasks(0) {
-     va_list ap;
-     va_start(ap, pm);
-     unsigned n;
-     RCCPortMask m;
-     for (n = 0; (m = va_arg(ap, RCCPortMask)); n++)
-       ;
-     if (n <= sizeof(m_myMasks)/sizeof(RCCPortMask))
-       m_portMasks = m_allocated = new RCCPortMask[n + 1];
-     else
-       m_portMasks = m_myMasks;
-     va_end(ap);
-     va_start(ap, pm);
-     RCCPortMask *pms = m_portMasks;
-     do {
-       *pms++ = m = va_arg(ap, RCCPortMask);
-       m_allMasks |= m;
-     } while (m);
-   }
-   RunCondition::
-   RunCondition(RCCPortMask *rpm, uint32_t usecs, bool timeout)
-     : m_portMasks(NULL), m_timeout(timeout), m_usecs(usecs), m_allocated(NULL), m_allMasks(0) {
-     if (rpm) {
-       unsigned n;
-       for (n = 0; rpm[n]; n++)
-	 ;
-       if (n <= sizeof(m_myMasks)/sizeof(RCCPortMask))
-	 m_portMasks = m_allocated = new RCCPortMask[n + 1];
-       else
-	 m_portMasks = m_myMasks;
-       RCCPortMask m;
-       RCCPortMask *pms = m_portMasks;
-       do {
-	 *pms++ = m = *rpm++;
-	 m_allMasks |= m;
-       } while (m);
-     }
-   }
-   RunCondition::
-   ~RunCondition() {
-     delete [] m_allocated;
-   }
+    RunCondition::
+    RunCondition()
+      : m_portMasks(m_myMasks), m_timeout(false), m_usecs(0), m_allocated(NULL), m_allMasks(0) {
+      m_myMasks[0] = 0;
+    }
+    RunCondition::
+    RunCondition(RCCPortMask pm, ...) :
+      m_timeout(false), m_usecs(0), m_allocated(NULL), m_allMasks(0) {
+      va_list ap;
+      va_start(ap, pm);
+      unsigned n;
+      RCCPortMask m;
+      for (n = 0; (m = va_arg(ap, RCCPortMask)); n++)
+	;
+      if (n <= sizeof(m_myMasks)/sizeof(RCCPortMask))
+	m_portMasks = m_allocated = new RCCPortMask[n + 1];
+      else
+	m_portMasks = m_myMasks;
+      va_end(ap);
+      va_start(ap, pm);
+      RCCPortMask *pms = m_portMasks;
+      do {
+	*pms++ = m = va_arg(ap, RCCPortMask);
+	m_allMasks |= m;
+      } while (m);
+    }
+    RunCondition::
+    RunCondition(RCCPortMask *rpm, uint32_t usecs, bool timeout)
+      : m_portMasks(NULL), m_timeout(timeout), m_usecs(usecs), m_allocated(NULL), m_allMasks(0) {
+      if (rpm) {
+	unsigned n;
+	for (n = 0; rpm[n]; n++)
+	  ;
+	if (n <= sizeof(m_myMasks)/sizeof(RCCPortMask))
+	  m_portMasks = m_allocated = new RCCPortMask[n + 1];
+	else
+	  m_portMasks = m_myMasks;
+	RCCPortMask m;
+	RCCPortMask *pms = m_portMasks;
+	do {
+	  *pms++ = m = *rpm++;
+	  m_allMasks |= m;
+	} while (m);
+      }
+    }
+    RunCondition::
+    ~RunCondition() {
+      delete [] m_allocated;
+    }
+    void RunCondition::
+    activate(OCPI::OS::Timer &tmr) {
+      if (m_timeout)
+	tmr.reset(m_usecs / 1000000, (m_usecs % 1000000) * 1000);
+      m_hasRun = false;
+    }
+    bool RunCondition::
+    shouldRun(OCPI::OS::Timer &timer, bool &timedOut, bool &bail) {
+      if (!m_portMasks) // no port mask array means run all the time
+	return true;
+      if (m_timeout && timer.expired()) {
+	ocpiInfo("WORKER TIMED OUT, elapsed time = %u,%u", 
+		 timer.getElapsed().seconds(), timer.getElapsed().nanoseconds());
+	timedOut = true;
+	return true;
+      }
+      // If no port masks, then we don't run except for timeouts, checked above
+      if (!m_portMasks[0])
+	if (m_timeout && !m_hasRun) {
+	  m_hasRun = true;
+	  return true; // run if we're in period execution and haven't run at all yet
+	} else
+	  bail = true;
+      return false;
+    }
   }
 }

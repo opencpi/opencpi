@@ -77,12 +77,23 @@ endif
 
 MAIN_DRIVERS+= \
   _ZN4OCPI3RCC3rccE\
+  _ZN4OCPI3OCL3oclE\
   _ZN4OCPI7Library7CompLib9componentE\
   _ZN4OCPI3HDL3hdlE\
   _ZN4OCPI3DMA3dmaE\
   _ZN4OCPI5Local5localE\
   _ZN4OCPI6Remote6remoteE\
 
+EXTRA_LDFLAGS=$(LD_ALLOW_UNDEFINED)
+ifeq ($(OCPI_HAVE_OPENCL),1)
+SYSLIBS += dl
+MAIN_LDFLAGS+=-Xlinker -rpath -Xlinker $(dir $(OCPI_OPENCL_OBJS))
+ifeq ($(OCPI_TARGET_OS),linux)
+SYSLIBS += $(dir $(OCPI_OPENCL_OBJS))/OpenCL
+else
+BASICLIBS+=$(OCPI_OPENCL_OBJS)
+endif
+endif
 
 
 

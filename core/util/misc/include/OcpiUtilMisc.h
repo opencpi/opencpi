@@ -76,6 +76,8 @@
 #define TRACE(s)
 #endif
 
+// This is here because offsetof doesn't work on members that are structures
+#define OCPI_OFFSETOF(type, member) ((size_t)&((type *)0)->member)
 #if defined(NDEBUG)
 #define OCPI_UTRUNCATE(type, val) ((type)(val))
 #define OCPI_STRUNCATE(type, val) ((type)(val))

@@ -1,7 +1,7 @@
 <ComponentSpec Name="cos">
-  <Properties>
-     <Property Name="flag" Type="ULong" Readable="true" Writable="true"/>
-  </Properties>
+  <!-- <Properties> -->
+  <!--    <Property Name="flag" Type="ULong" Readable="true" Writable="true"/> -->
+  <!-- </Properties> -->
   <DataInterfaceSpec Name="in" Producer="false">
     <ProtocolSummary DataValueWidth="32" MaxMessageValues="4096" NumberOfOpcodes="1" VariableMessageLength="true" ZeroLengthMessages="true"/>
   </DataInterfaceSpec>

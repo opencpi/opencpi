@@ -59,9 +59,9 @@ namespace OCPI {
     protected:
       virtual ~ExternalBuffer();
     public:
-      virtual size_t &length() = 0;
-      virtual uint8_t &opCode() = 0;
-      virtual bool &end() = 0;
+      //      virtual size_t &length() = 0;
+      //      virtual uint8_t &opCode() = 0;
+      //      virtual bool &end() = 0;
       virtual void
 	release() = 0,
 	put() = 0,

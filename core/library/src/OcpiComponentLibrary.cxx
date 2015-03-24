@@ -137,7 +137,7 @@ namespace OCPI {
 	: ArtifactBase<Library,Artifact>(lib, *this, name),
 	  m_metadata(0) {
 	// The returned value must be deleted with delete[];
-	if (!(m_metadata = getMetadata(name, m_mtime, m_length)))
+	if (!(m_metadata = getMetadata(name, m_mtime, m_length, m_metadataLength)))
 	  throw OU::Error(OCPI_LOG_DEBUG, "Cannot open or retrieve metadata from file \"%s\"", name);
 	m_xml = OX::Doc::parse(m_metadata);
 	char *xname = ezxml_name(m_xml);

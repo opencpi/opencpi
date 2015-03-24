@@ -229,7 +229,8 @@ namespace OCPI {
     }
 
     // The artifact base class
-    Artifact::Artifact() : m_xml(NULL), m_nImplementations(0), m_metaImplementations(NULL), m_nWorkers(0) {}
+    Artifact::Artifact() :
+      m_xml(NULL), m_nImplementations(0), m_metaImplementations(NULL), m_nWorkers(0) {}
     Artifact::~Artifact() {
       for (WorkerIter wi = m_workers.begin(); wi != m_workers.end(); wi++)
 	delete (*wi).second;
@@ -241,7 +242,8 @@ namespace OCPI {
     // This scheme allows for binary metadata, but we are doing XML now.
     // The returned value must be deleted with delete[];
     char *Artifact::
-    getMetadata(const char *name, std::time_t &mtime, uint64_t &length) {
+    getMetadata(const char *name, std::time_t &mtime, uint64_t &length,
+		size_t &metadataLength) {
 	  char *data = 0;
 	  int fd = open(name, O_RDONLY);
 	  if (fd < 0)
@@ -267,7 +269,8 @@ namespace OCPI {
 		off_t n = (off_t)l;
 		// strtoll error reporting is truly bizarre
 		if (l != LONG_MAX && l > 0 && cp[1] && isspace(*end)) {
-		  off_t metaStart = fileLength - sizeof(buf) + (cp - buf) - n;
+		  metadataLength = n + (&buf[sizeof(buf)] - cp);
+		  off_t metaStart = fileLength - metadataLength;
 		  if (lseek(fd, metaStart, SEEK_SET) != -1) {
 		    data = new char[n + 1];
 		    if (read(fd, data, n) == n)

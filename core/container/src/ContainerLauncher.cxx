@@ -22,8 +22,8 @@ createWorker(Launcher::Member &i) {
   // Now we need to set the initial properties - either from instance or from defaults
   for (unsigned p = 0; p < i.m_crew->m_propValues.size(); p++)
     i.m_worker->setProperty(i.m_crew->m_propOrdinals[p], i.m_crew->m_propValues[p]);
-  unsigned nProps = i.m_impl->m_metadataImpl.m_nProperties;
-  OU::Property *prop = i.m_impl->m_metadataImpl.m_properties;
+  unsigned nProps = i.m_impl->m_metadataImpl.nProperties();
+  OU::Property *prop = i.m_impl->m_metadataImpl.properties();
   for (unsigned nn = 0; nn < nProps; nn++, prop++)
     if (prop->m_default && !prop->m_isParameter) {
       bool found = false;

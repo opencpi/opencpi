@@ -459,7 +459,7 @@ OCPI_DATA_TYPES
       // buffer sizes etc.  If we are sharing a memory pool, this will not be the case,
       // and we would probably allocate the whole thing here.
       const OCPI::RDT::Descriptors *
-      startConnect(const OCPI::RDT::Descriptors *other, bool &done) {
+      startConnect(const OCPI::RDT::Descriptors */*other*/, bool &done) {
         if (!m_canBeExternal)
 	  throw OU::Error("Port %s of this HDL worker is connected internally", name().c_str());
 

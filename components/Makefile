@@ -107,6 +107,7 @@ Implementations = \
 	vsadd.ocl \
 	power_spectrum_1d.ocl \
 	testmulti.ocl \
+	bias.ocl \
         file_read.rcc \
         file_read_msg.rcc \
         file_write.rcc \

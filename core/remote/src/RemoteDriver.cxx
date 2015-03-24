@@ -85,7 +85,7 @@ class Worker
   void setPropertyValue(const OU::Property &p, const OU::Value &v) {
     std::string val;
     v.unparse(val);
-    m_launcher.setPropertyValue(m_remoteInstance, &p - m_properties, val);
+    m_launcher.setPropertyValue(m_remoteInstance, &p - properties(), val);
   }
   bool wait(OS::Timer *t) {
     return m_launcher.wait(m_remoteInstance, t ? t->getRemaining() : 0);
@@ -94,7 +94,7 @@ class Worker
     setControlState(m_launcher.getState(m_remoteInstance));
   }
   void getPropertyValue(const OU::Property &p, std::string &v, bool hex, bool add) {
-    m_launcher.getPropertyValue(m_remoteInstance, &p - m_properties, v, hex, add);
+    m_launcher.getPropertyValue(m_remoteInstance, &p - properties(), v, hex, add);
   }
 
   void read(size_t offset, size_t nBytes, void *p_data) {}
@@ -238,6 +238,7 @@ public:
   virtual ~Container()
   throw () {
   }
+  bool portsInProcess() { return false; }
   OC::Launcher &launcher() const {
     return m_client;
   }

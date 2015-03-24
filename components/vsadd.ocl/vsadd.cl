@@ -19,7 +19,7 @@
  * Methods to implement for worker vsadd, based on metadata.
  */
 
-OCLResult vsadd_run(__local OCLWorkerVsadd* self) {
+OCLResult vsadd_run(VsaddWorker* self, __global VsaddProperties *properties) {
   const size_t n_elems = self->in.current.length / sizeof(float);
   __global const float* src = (__global float *)self->in.current.data;
   __global float* dst = (__global float *)self->out.current.data;
@@ -27,7 +27,7 @@ OCLResult vsadd_run(__local OCLWorkerVsadd* self) {
 
   if (gid >= n_elems)
     return OCL_DONE;
-  dst[gid] = src[gid] + self->properties->scalar;
+  dst[gid] = src[gid] + properties->scalar;
   self->out.current.length = self->in.current.length;
   self->out.current.opCode = self->in.current.opCode;
   return OCL_ADVANCE;

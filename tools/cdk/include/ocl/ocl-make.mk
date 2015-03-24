@@ -1,4 +1,3 @@
-
 # #####
 #
 #  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
@@ -44,12 +43,15 @@ OclTarget:=$(OclTargets)
 endif
 
 ifndef OclTarget
-OclTarget:=$(OCPI_TARGET_HOST)
+OclTarget:=intel-cpu
 endif
 
 $(call OcpiDbgVar,OclTarget)
 ifndef OclTargets
 OclTargets=$(OclTarget)
 endif
+OclOs=opencl
+OclOsVersion=$(word 1,$(subst -, ,$1))
+OclArch=$(word 2,$(subst -, ,$1))
 
 endif

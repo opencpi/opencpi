@@ -39,11 +39,15 @@ namespace OCPI {
     LocalPort(Container &container, const OCPI::Util::Port &mPort, const OU::PValue *params)
       :  BasicPort(container, mPort, params),
 	 m_scale(1), m_external(NULL), m_connectedBridgePorts(0), m_localBuffer(NULL),
-	 m_localDistribution(OU::Port::DistributionLimit), m_currentBridge(0) {
+	 m_localDistribution(OU::Port::DistributionLimit), m_firstBridge(0), m_currentBridge(0),
+	 m_nextBridge(0) {
     }
 
     LocalPort::
     ~LocalPort() {
+      for (unsigned n = 0; n < m_bridgePorts.size(); n++)
+	if (m_bridgePorts[n]) // maybe connections did not complete
+	  delete m_bridgePorts[n];
     }
 
     // This is called soon after construction, but not in the constructor.
@@ -269,11 +273,12 @@ namespace OCPI {
 
     void LocalPort::
     setupBridging(Launcher::Connection &c) {
-      if (isInProcess())
-	becomeShim();         // skinny set of buffers and flags between codec and worker
-      else
-	insertExternal(c);     // insert external port between codec and worker port
       LocalPort *other = (isProvider() ? c.m_out : c.m_in).m_port;
+      if (isInProcess()) {
+	assert(other);
+	becomeShim(NULL);    // skinny set of buffers and flags between codec and worker
+      } else
+	insertExternal(c);     // insert external port between codec and worker port
       assert(other || (isProvider() ? c.m_out : c.m_in).m_metaPort);
       const OU::Port &otherMeta =
 	other ? other->m_metaPort : *(isProvider() ? c.m_out : c.m_in).m_metaPort,
@@ -316,8 +321,10 @@ namespace OCPI {
 	  bp.connectInProcess(*other);
 	else
 	  bp.connectLocal(c);
-	if (++m_connectedBridgePorts == m_bridgePorts.size())
+	if (++m_connectedBridgePorts == m_bridgePorts.size()) {
 	  container().registerBridgedPort(*this);
+	  portIsConnected();
+	}
       } else if (!other) // if other size is remote
 	more = startRemote(c); // could return false on output port
       else if (other->m_bridgePorts.size())
@@ -446,7 +453,7 @@ namespace OCPI {
     send2Bridge(ExternalBuffer &local, ExternalBuffer &bridge) {
       assert(bridge.length() >= local.length());
       memcpy(bridge.data(), local.data(), local.length());
-      bridge.put(local.length(), local.opCode(), local.end());
+      bridge.send(local.length(), local.opCode(), local.end());
     }
 
     // The callback to do bridge port processing on a local port.
@@ -463,12 +470,14 @@ namespace OCPI {
 	  ocpiDebug("bridge got input %p", m_localBuffer);
 	  // getLocalBuffer already found a bridge port so it is ready to go.
 	  // it had to find a bridge port since it had to know what message opcode is current
-	  ExternalBuffer *b = m_bridgePorts[bo.m_next]->getFullBuffer();
+	  BridgePort &bp = *m_bridgePorts[bo.m_next];
+	  ExternalBuffer *b = bp.getFullBuffer();
 	  assert(b);
-	  assert(m_localBuffer->m_length >= b->m_length);
-	  memcpy(m_localBuffer->m_data, b->m_data, b->m_length);
-	  put(b->m_length, b->m_opCode, b->m_eof);
-	  b->release();
+	  assert(m_localBuffer->length() >= b->length());
+	  assert(m_localBuffer->data());
+	  memcpy(m_localBuffer->data(), b->data(), b->length());
+	  m_localBuffer->send(b->length(), b->opCode(), b->end());
+	  bp.releaseBuffer();
 	  m_localBuffer = NULL;
 	  // Cycle nextBridge globally among all bridge ports.
 	  if (++m_nextBridge == m_bridgePorts.size())
@@ -547,7 +556,7 @@ namespace OCPI {
 	    }
 	    m_localBuffer = NULL;
 	  }
-	  release();
+	  releaseBuffer();
 	} // end of output processing
       } // end of loop through local buffers
     }  // end of method

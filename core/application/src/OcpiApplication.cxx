@@ -374,7 +374,7 @@ namespace OCPI {
       m_nProperties = m_assembly.m_mappedProperties.size();
       i = m_instances;
       for (unsigned n = 0; n < m_nInstances; n++, i++)
-	m_nProperties += i->m_bestDeployment.m_impls[0]->m_metadataImpl.m_nProperties;
+	m_nProperties += i->m_bestDeployment.m_impls[0]->m_metadataImpl.nProperties();
       // Over allocate: mapped ones plus all the instances' ones
       Property *p = m_properties = new Property[m_nProperties];
       OU::Assembly::MappedProperty *mp = &m_assembly.m_mappedProperties[0];
@@ -859,7 +859,9 @@ namespace OCPI {
 	    // FIXME: cache results for same inputs
 	    // Check for collocated ports
 	    if (lc->m_in.m_container && lc->m_out.m_container &&
-		lc->m_in.m_container != lc->m_out.m_container)
+		lc->m_in.m_container != lc->m_out.m_container &&
+		(!lc->m_in.m_container->portsInProcess() ||
+		 !lc->m_in.m_container->portsInProcess()))
 	      OC::BasicPort::
 		determineTransport(lc->m_in.m_container->transports(),
 				   lc->m_out.m_container->transports(),

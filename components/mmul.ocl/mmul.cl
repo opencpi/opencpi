@@ -98,12 +98,12 @@ __kernel void matrixMul ( __global float* C,
  * Methods to implement for worker mmul, based on metadata.
  */
 
-OCLResult mmul_run(__local OCLWorkerMmul* self) {
+OCLResult mmul_run(MmulWorker* self, __global MmulProperties *properties) {
   matrixMul((__global float*) self->C.current.data,
             (__global float*) self->A.current.data,
 	    (__global float* ) self->B.current.data,
-            self->properties->widthA,
-            self->properties->widthB);
+            properties->widthA,
+            properties->widthB);
   return OCL_ADVANCE;
 }
 

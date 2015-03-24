@@ -117,13 +117,14 @@ namespace OCPI {
       void determineBridgeOp(Launcher::Connection &c, const OCPI::Util::Port &output,
 			     const OCPI::Util::Port &input, unsigned op, BridgeOp &bo);
     protected:
-      size_t nOthers() const { return m_bridgePorts.size(); }
       bool initialConnect(Launcher::Connection &c);
       bool finalConnect(Launcher::Connection &c);
       void insertExternal(Launcher::Connection &c);
       virtual bool canBeExternal() const = 0;
       void prepareOthers(size_t nOthers, size_t myCrewSize);
       void runBridge(); // flow data between this port and its bridge ports
+    public:
+      size_t nOthers() const { return m_bridgePorts.size(); }
 #if 0
       void applyConnectParams(const OCPI::RDT::Descriptors *other,
 			      const OCPI::Util::PValue *params);

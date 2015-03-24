@@ -40,8 +40,8 @@ export OCPI_HAVE_IBVERBS=
 
 # ##########OpenCL - default is that we have headers to compile against
 export OCPI_OPENCL_INCLUDE_DIR=$OCPI_BASE_DIR/core/ocl/include
-export OCPI_OPENCL_OBJS=
-export OCPI_HAVE_OPENCL=
+#export OCPI_OPENCL_OBJS=
+#export OCPI_HAVE_OPENCL=
 
 
 export OCPI_LIBRARY_PATH=$OCPI_BASE_DIR/components/lib/rcc

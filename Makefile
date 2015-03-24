@@ -86,8 +86,8 @@ PACKAGES += \
 	 core/library \
 	 core/container \
 	 core/hdl \
-	 core/ocl \
 	 core/rcc \
+	 core/ocl \
 	 core/remote \
 	 core/ctests \
          core/application

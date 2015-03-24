@@ -120,6 +120,7 @@ namespace OCPI {
       const std::string &model() const { return m_model; }
       const std::string &os() const { return m_os; }
       const std::string &osVersion() const { return m_osVersion; }
+      virtual bool portsInProcess() = 0;
       virtual Container *nextContainer() = 0;
       bool supportsImplementation(OCPI::Util::Worker &);
       virtual OCPI::API::ContainerApplication *

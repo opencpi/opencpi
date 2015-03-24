@@ -286,7 +286,7 @@ rccValue(OU::Value &v, std::string &value, const OU::Member *param) {
 const char *Worker::
 rccPropValue(OU::Property &p, std::string &value) {
   if (p.m_default)
-    return rccValue(*p.m_default, value);
+    return rccValue(*p.m_default, value, &p);
   // Generate a default value
   switch(p.m_baseType) {
   case OA::OCPI_Bool: 

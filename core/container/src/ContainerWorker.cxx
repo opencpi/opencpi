@@ -62,7 +62,7 @@ namespace OCPI {
 	   const OA::PValue *) 
       : OU::Worker::Worker(),
 	m_artifact(art), m_xml(impl), m_instXml(inst), m_workerMutex(true), m_member(member),
-	m_crewSize(crewSize) {
+	m_crewSize(crewSize), m_connectedPorts(0), m_optionalPorts(0) {
       if (impl) {
 	const char *err = parse(impl);
 	if (err)
@@ -72,12 +72,21 @@ namespace OCPI {
       }
       if (inst)
 	m_instTag = ezxml_cattr(inst, "name");
+      for (unsigned n = 0; n < m_nPorts; n++)
+	if (port(n).m_isOptional)
+	  m_optionalPorts |= 1 << n;
     }
 
     Worker::~Worker()
     {
       if (m_artifact)
 	m_artifact->removeWorker(*this);
+    }
+
+    void Worker::
+    connectPort(OCPI::Util::PortOrdinal ordinal) {
+      m_connectedPorts |= 1 << ordinal;
+      portIsConnected(ordinal); // the virtual notification
     }
 
     Port &Worker::
@@ -403,6 +412,18 @@ namespace OCPI {
 	  (ct.valid[1] != NONE && cs == ct.valid[1]) ||
 	  (ct.valid[2] != NONE && cs == ct.valid[2]) ||
 	  (ct.valid[3] != NONE && cs == ct.valid[3])) {
+	if (op == OU::Worker::OpStart) {
+	  // If a worker gets started before all of its required ports are created: error
+	  PortMask mandatory = ~(-1 << m_nPorts) & ~optionalPorts();
+	  PortMask bad = mandatory & ~connectedPorts();
+	  for (unsigned n = 0; n < m_nPorts; n++)
+	    if (bad & (1 << n)) {
+	      const char *inst = instTag().c_str();
+	      throw OU::Error("Port \"%s\" of%s%s%s worker \"%s\" is not connected",
+			      port(n).m_name.c_str(), inst[0] ? " instance '" : "",
+			      inst, inst[0] ? "'" : "", implTag().c_str());
+	    }
+	}
 	controlOperation(op);
 	if (ct.next != NONE)
 	  setControlState(ct.next);

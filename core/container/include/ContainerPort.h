@@ -92,6 +92,7 @@ namespace OCPI {
       void startLocalConnect(const OCPI::Util::PValue *extParams);
       void finishLocalConnect(const OCPI::RDT::Descriptors &other);
 #endif
+      void portIsConnected();
     public:
       //      void determineRoles(OCPI::RDT::Descriptors &other);
       inline Port &containerPort() { return *this; }

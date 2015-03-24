@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
  *
@@ -51,7 +50,6 @@
 */
 
 //  This file implements worker metadata
-// FIXME: rename this worker, not implementation
 #ifndef OCPI_UTIL_WORKER_H
 #define OCPI_UTIL_WORKER_H
 
@@ -133,11 +131,12 @@ namespace OCPI {
       Memory *m_memories;
       //      Test *m_tests;
       unsigned m_nPorts, m_nMemories; //, size , m_nTests
+    private: // FIXME: make more of this stuff private
       size_t m_totalPropertySize;
       //      Test &findTest(unsigned int testId) const;
-    public:
-      unsigned m_nProperties;
+      unsigned m_nProperties, m_nRunProperties;
       Property *m_properties;
+    public:
       ezxml_t m_xml;
       unsigned m_ordinal; // ordinal within artifact
       // Scalability
@@ -163,6 +162,8 @@ namespace OCPI {
       Property *getProperty(const char *id) const;
       const char *getValue(const char *sym, ExprValue &val) const;
       inline Property *properties() const { return m_properties; }
+      inline unsigned nRunProperties() const { return m_nRunProperties; }
+      inline unsigned nProperties() const { return m_nProperties; }
       inline Property *properties(unsigned &np) const {
         np = m_nProperties;
         return m_properties;
@@ -192,9 +193,9 @@ namespace OCPI {
       {
         return m_nPorts;
       }
-      inline Memory* memories( unsigned int& n_memories ) const
+      inline Memory* memories(size_t &nMemories) const
       {
-        n_memories = m_nMemories;
+        nMemories = m_nMemories;
         return m_memories;
       }
       inline size_t totalPropertySize( ) const

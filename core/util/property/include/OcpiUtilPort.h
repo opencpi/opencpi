@@ -61,7 +61,7 @@ namespace OCPI {
 	  return m_min == s.m_min && m_max == s.m_max && m_modulo == s.m_modulo &&
 	  m_default == s.m_default;
 	}
-	const char *check(size_t scale);
+	bool check(size_t scale, std::string &err);
 	const char *parse(ezxml_t x, Worker &w);
 	void emit(std::string &out, const Scaling *def) const;
       };

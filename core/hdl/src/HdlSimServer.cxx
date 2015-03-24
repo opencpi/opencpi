@@ -388,8 +388,11 @@ namespace OCPI {
 	  try {
 	    std::time_t mtime;
 	    uint64_t length;
-	    if (!(m_metadata = OL::Artifact::getMetadata(m_exec.c_str(), mtime, length))) {
-	      OU::format(err, "simulation executable file '%s' is not valid: cannot find metadata",
+	    size_t metadataLength;
+	    if (!(m_metadata = OL::Artifact::getMetadata(m_exec.c_str(), mtime, length,
+							 metadataLength))) {
+	      OU::format(err, "simulation executable file '%s' is not valid: "
+			 "cannot find metadata",
 			 m_exec.c_str());
 	      return true;
 	    }
