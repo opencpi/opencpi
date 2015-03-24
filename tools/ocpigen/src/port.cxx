@@ -323,8 +323,9 @@ emitRecordTypes(FILE *f) {
 	    "    clk              : std_logic;        -- %s\n",
 	    type == WCIPort ? "control clock for this worker" :
 	    " this port has a clk different from the control clock\n");
-  fprintf(f,
-	  "    reset            : Bool_t;           -- this port is being reset from the outside peer\n");
+  if (type != WTIPort)
+    fprintf(f,
+	    "    reset            : Bool_t;           -- this port is being reset from the outside peer\n");
   emitRecordInputs(f);
   fprintf(f,
 	  "  end record worker_%s_t;\n", in.c_str());

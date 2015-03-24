@@ -239,6 +239,9 @@ class WtiPort : public OcpPort {
   inline const char *prefix() const { return "wti"; }
   bool haveWorkerOutputs() const;
   const char *deriveOCP();
+  void emitVhdlShell(FILE *f, Port *wci);
+  void emitImplSignals(FILE *f);
+  void emitVHDLShellPortMap(FILE *f, std::string &last);
   void emitRecordInputs(FILE *f);
   void emitRecordOutputs(FILE *f);
   //  void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker);

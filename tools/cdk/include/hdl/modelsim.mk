@@ -116,11 +116,11 @@ $1/$3.tar:
 	     $(OCPI_MODELSIM_DIR)/bin/vsim -c $3.$3 -modelsimini modelsim.ini \
 	       -f vsim.args && \
              echo vsim exited successfully, now creating archive: $$@ && \
-             pax -wf $$(notdir $$@) -L vsim.dbar vsim.args metadatarom.dat \
+             tar -cf $$(notdir $$@) -h vsim.dbar vsim.args metadatarom.dat \
 	       $$(foreach i,$$(shell grep = $1/modelsim.ini | grep -v others=),\
                  $$(foreach l,$$(firstword $$(subst =, ,$$i)),\
                    $$(foreach p,$$(word 2,$$(subst =, ,$$i)),\
-		     -s =$$p=$$l= $$p ))) $3 ) > $1/$3.out 2>&1
+		     --xform=s=$$(subst ../,,$$p)=$$l= $$p ))) $3 ) > $1/$3.out 2>&1
 
 endef
 
