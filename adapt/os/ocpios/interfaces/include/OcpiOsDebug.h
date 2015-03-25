@@ -51,6 +51,7 @@
  *                  Initial version.
  */
 
+#include <stdint.h>
 #include <iostream>
 
 #define OCPI_LOG_DEBUG_MIN 10
@@ -108,8 +109,8 @@ namespace OCPI {
     void debugBreak ()
       throw ();
 
-    void logSetLevel(unsigned n);
-    unsigned logGetLevel();
+    void logSetLevel(uint8_t n);
+    uint8_t logGetLevel();
     void logPrint(unsigned n, const char *fmt, ...) throw() __attribute__((format(printf, 2, 3)));
   }
 }

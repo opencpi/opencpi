@@ -23,6 +23,7 @@
 
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <unistd.h>
 #include <climits>
@@ -429,6 +430,15 @@ namespace OCPI {
       OU::Parent<Application>::deleteChildren();
     }
 
+    uint8_t Driver::
+    s_logLevel = 0;
+
+    Driver::
+    Driver() {
+      const char *ll = getenv("OCPI_OPENCL_LOG_LEVEL");
+      if (ll)
+	s_logLevel = OCPI_UTRUNCATE(uint8_t, atoi(ll));
+    }
     unsigned Driver::
     search(const OA::PValue*params, const char**exclude, bool discoveryOnly) {
       return search(params, exclude, discoveryOnly, NULL, NULL);
@@ -652,54 +662,58 @@ namespace OCPI {
 						      member, crewSize, execParams),
 	    OCPI::Time::Emit(&parent().parent(), "Worker", name), m_kernel(k),
 	    m_container(app.parent()), m_isEnabled(false), m_clKernel(NULL) {
-	  m_persistBytes =
-	    OU::roundUp(sizeof(OCLReturned), 8) + OU::roundUp(totalPropertySize(), 8);
-	  size_t nMemories;
-	  OU::Memory *m = memories(nMemories);
-	  for (size_t n = 0; n < nMemories; n++, m++)
-	    m_persistBytes += OU::roundUp(m->m_nBytes, 8);
-	  OCL_RC(m_clPersistent,
-		 clCreateBuffer(m_container.device().context(),
-				CL_MEM_READ_WRITE|CL_MEM_ALLOC_HOST_PTR, m_persistBytes,
-				NULL, &rc));
-	  void *vp;
-	  OCL_RC(vp, clEnqueueMapBuffer(m_container.device().cmdq(), m_clPersistent,
-					false, CL_MAP_READ|CL_MAP_WRITE, 0, m_persistBytes,
-					0, 0, 0, &rc));
-	  OCL(clFinish(m_container.device().cmdq()));
-	  m_persistent = (uint8_t *)vp;
-	  memset(m_persistent, 0, m_persistBytes);
-	  m_returned = (OCLReturned *)m_persistent;
-	  m_self = (OCLWorker *)(m_returned + 1);
-	  m_properties = (uint8_t *)(m_self) + m_nPorts + sizeof(OCLPort);
+	assert(!(sizeof(OCLWorker) & 7));
+	assert(!(sizeof(OCLPort) & 7));
+	assert(!(sizeof(OCLReturned) & 7));
+	m_oclWorkerSize = sizeof(OCLWorker) + m_nPorts * sizeof(OCLPort);
+	m_persistBytes =
+	  sizeof(OCLReturned) + m_oclWorkerSize + OU::roundUp(totalPropertySize(), 8);
+	size_t nMemories;
+	OU::Memory *m = memories(nMemories);
+	for (size_t n = 0; n < nMemories; n++, m++)
+	  m_persistBytes += OU::roundUp(m->m_nBytes, 8);
+	OCL_RC(m_clPersistent,
+	       clCreateBuffer(m_container.device().context(),
+			      CL_MEM_READ_WRITE|CL_MEM_ALLOC_HOST_PTR, m_persistBytes,
+			      NULL, &rc));
+	void *vp;
+	OCL_RC(vp, clEnqueueMapBuffer(m_container.device().cmdq(), m_clPersistent,
+				      false, CL_MAP_READ|CL_MAP_WRITE, 0, m_persistBytes,
+				      0, 0, 0, &rc));
+	OCL(clFinish(m_container.device().cmdq()));
+	m_persistent = (uint8_t *)vp;
+	memset(m_persistent, 0, m_persistBytes);
+	m_returned = (OCLReturned *)m_persistent;
+	m_self = (OCLWorker *)(m_returned + 1);
+	m_properties = (uint8_t *)(m_self) + m_nPorts + sizeof(OCLPort);
 
-	  m_memory = m_properties + OU::roundUp(totalPropertySize(), 8);
-	  m_oclWorkerSize = sizeof(OCLWorker) + m_nPorts * sizeof(OCLPort);
-	  m_oclWorkerBytes = new uint8_t[m_oclWorkerSize];
-	  m_oclWorker = (OCLWorker*)m_oclWorkerBytes;
-	  m_oclPorts = (OCLPort *)(m_oclWorker + 1);
-	  memset(m_oclWorker, 0, sizeof(*m_oclWorker));
-	  m_oclWorker->crew_size = OCPI_UTRUNCATE(uint16_t, crewSize);
-	  m_oclWorker->member = OCPI_UTRUNCATE(uint16_t, member);
-	  m_oclWorker->firstRun = true;
-	  m_oclWorker->timedOut = false;
-	  m_oclWorker->nPorts = OCPI_UTRUNCATE(uint8_t, m_nPorts);
-	  m_oclWorker->logLevel = OS::logGetLevel();
-	  ocpiDebug("Worker/kernel %s in %s has persistent size of %zu bytes, self %zu bytes",
-		    name, art.name().c_str(), m_persistBytes, m_oclWorkerSize);
-	  m_defaultRunCondition.initDefault(m_nPorts);
-	  // FIXME: how can the worker declare a run condition?
-	  // Perhaps with an init? or XML? (might be nice).
-	  m_runCondition = &m_defaultRunCondition;
-	  OCL_RC(m_clKernel, clCreateKernel(art.program(), m_kernel.m_name.c_str(), &rc));
-	  // This argument will change each time because the contents of the structure change
-	  //	  OCL(clSetKernelArg(m_clKernel, 0, m_oclWorkerSize, m_oclWorkerBytes));
-	  // This argument is persistent and will never change.
-	  OCL(clSetKernelArg(m_clKernel, 0, sizeof(m_clPersistent), &m_clPersistent));
-	  // The rest of the arguments are created by the ports
-	  setControlOperations(ezxml_cattr(implXml, "controlOperations"));
-	  m_myPorts.resize(m_nPorts, NULL);
-        }
+	m_memory = m_properties + OU::roundUp(totalPropertySize(), 8);
+	m_oclWorkerBytes = new uint8_t[m_oclWorkerSize];
+	m_oclWorker = (OCLWorker*)m_oclWorkerBytes;
+	m_oclPorts = (OCLPort *)(m_oclWorker + 1);
+	memset(m_oclWorker, 0, sizeof(*m_oclWorker));
+	m_oclWorker->crew_size = OCPI_UTRUNCATE(uint16_t, crewSize);
+	m_oclWorker->member = OCPI_UTRUNCATE(uint16_t, member);
+	m_oclWorker->firstRun = true;
+	m_oclWorker->timedOut = false;
+	m_oclWorker->nPorts = OCPI_UTRUNCATE(uint8_t, m_nPorts);
+	m_oclWorker->logLevel = OS::logGetLevel();
+	m_oclWorker->kernelLogLevel = Driver::s_logLevel;
+	ocpiDebug("Worker/kernel %s in %s has persistent size of %zu bytes, self %zu bytes",
+		  name, art.name().c_str(), m_persistBytes, m_oclWorkerSize);
+	m_defaultRunCondition.initDefault(m_nPorts);
+	// FIXME: how can the worker declare a run condition?
+	// Perhaps with an init? or XML? (might be nice).
+	m_runCondition = &m_defaultRunCondition;
+	OCL_RC(m_clKernel, clCreateKernel(art.program(), m_kernel.m_name.c_str(), &rc));
+	// This argument will change each time because the contents of the structure change
+	//	  OCL(clSetKernelArg(m_clKernel, 0, m_oclWorkerSize, m_oclWorkerBytes));
+	// This argument is persistent and will never change.
+	OCL(clSetKernelArg(m_clKernel, 0, sizeof(m_clPersistent), &m_clPersistent));
+	// The rest of the arguments are created by the ports
+	setControlOperations(ezxml_cattr(implXml, "controlOperations"));
+	m_myPorts.resize(m_nPorts, NULL);
+      }
       ~Worker() {
 	try {
 	  if (m_isEnabled) {

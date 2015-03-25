@@ -91,23 +91,23 @@ namespace OCPI {
     // We can't use the C++ mutex since its destruction is unpredictable and
     // we want logging to work in destructors
     pthread_mutex_t mine = PTHREAD_MUTEX_INITIALIZER;
-    static unsigned logLevel = UINT_MAX;
+    static uint8_t logLevel = UINT8_MAX;
     void
-    logSetLevel(unsigned level) {
+    logSetLevel(uint8_t level) {
       logLevel = level;
     }
-    unsigned
+    uint8_t
     logGetLevel() {
       return logLevel;
     }
     void
     logPrint(unsigned n, const char *fmt, ...) throw() {
-      if (logLevel != UINT_MAX && n > logLevel)
+      if (logLevel != UINT8_MAX && n > logLevel)
 	return;
       pthread_mutex_lock (&mine);
-      if (logLevel == UINT_MAX) {
+      if (logLevel == UINT8_MAX) {
 	const char *e = getenv("OCPI_LOG_LEVEL");
-	logLevel = e ? atoi(e) : OCPI_LOG_WIERD;
+	logLevel = e ? (uint8_t)atoi(e) : OCPI_LOG_WIERD;
       }
       if (n <= (unsigned)logLevel)  {
 	va_list ap;

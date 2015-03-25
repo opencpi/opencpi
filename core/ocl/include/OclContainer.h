@@ -1,5 +1,6 @@
 #ifndef _OCL_CONTAINER_H_
 #define _OCL_CONTAINER_H_
+#include <stdint.h>
 #include "ContainerManager.h"
 
 namespace OCPI {
@@ -54,6 +55,8 @@ namespace OCPI {
       friend class ExternalPort;
 
     public:
+      Driver();
+      static uint8_t s_logLevel;
       // This is the standard driver discovery routine
       unsigned search(const OCPI::API::PValue*, const char** exclude, bool discoveryOnly);
       // This is our special one that does some extra stuff...

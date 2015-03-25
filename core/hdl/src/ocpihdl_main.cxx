@@ -33,6 +33,7 @@
 
 
 #define __STDC_FORMAT_MACROS
+#define __STDC_LIMIT_MACROS
 #include <inttypes.h>
 #include <errno.h>
 #include <signal.h> // for SIGPIPE
@@ -89,7 +90,7 @@ search, emulate, ethers, probe, testdma, admin, bram, unbram, uuid, reset, set, 
   radmin, wadmin, rmeta, settime, deltatime, wdump, wreset, wunreset, wop, wwctl, wclear, wwpage,
   wread, wwrite, sendData, receiveData, receiveRDMA, sendRDMA, simulate, getxml, load, status;
 static bool verbose = false, parseable = false, hex = false;
-static int log = -1;
+static uint8_t log = UINT8_MAX;
 std::string platform, simExec;
 static const char
 *interface = NULL, *device = NULL, *part = NULL;
@@ -284,7 +285,7 @@ doFlags(const char **&ap) {
       part = next(ap);
       break;
     case 'l':
-      log = atoi(next(ap));
+      log = OCPI_UTRUNCATE(uint8_t, atoi(next(ap)));
       break;
     case 's':
       spinCount = atoi(next(ap));
@@ -349,7 +350,7 @@ main(int argc, const char **argv)
 	exact = found;
     argv++;
     doFlags(argv);
-    if (log != -1)
+    if (log != UINT8_MAX)
       OCPI::OS::logSetLevel(log);
 #if 0
     if ((exact->options & SUDO) && geteuid()) {

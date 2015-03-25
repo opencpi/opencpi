@@ -123,7 +123,7 @@ typedef struct {
   uint8_t         runCount; \
   uint8_t         nPorts; \
   uint8_t         logLevel; \
-  uint8_t         pad;
+  uint8_t         kernelLogLevel;
 // This structure is send to the worker as a kernel argument
 typedef struct {
   OCL_SELF

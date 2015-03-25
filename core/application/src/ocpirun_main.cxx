@@ -185,7 +185,7 @@ main(int /*argc*/, const char **argv) {
 	nProcs = atoi(arg(ap));
 	break;
       case 'l':
-	OCPI::OS::logSetLevel(atoi(arg(ap)));
+	OCPI::OS::logSetLevel(OCPI_UTRUNCATE(uint8_t, atoi(arg(ap))));
 	break;
       case 'C':
 	containers = true;
