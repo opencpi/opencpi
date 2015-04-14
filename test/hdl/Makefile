@@ -73,7 +73,7 @@ $(OCPI_OUT_DIR):
 	mkdir $@
 
 $(ALLBINC): $(OCPI_OUT_DIR)/%: src/%.c | $(OCPI_OUT_DIR)
-	$(CC) -o $@ -std=c99 -I../../core/hdl/include $(DOSTATIC) -Wall -g $^ $(LIBS) $(BASICLIBS)
+	$(CC) -o $@ -std=c99 -I../../core/hdl/include -I../../adapt/os/ocpios/interfaces/include $(DOSTATIC) -Wall -g $^ $(LIBS) $(BASICLIBS)
 $(ALLBINCXX): $(OCPI_OUT_DIR)/%: src/%.cxx | $(OCPI_OUT_DIR)
 	$(CXX) -o $@ \
 	-I../../core/hdl/include \
