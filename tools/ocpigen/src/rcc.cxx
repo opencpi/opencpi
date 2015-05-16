@@ -446,6 +446,7 @@ emitImplRCC() {
   }
   const char *mName;
   if (m_language == CC) {
+    bool notifiers = false, writeNotifiers = false, readNotifiers = false;
     std::string s;
     camel(s, m_implName, "WorkerBase", NULL);
     fprintf(f,
@@ -458,7 +459,7 @@ emitImplRCC() {
 	    "protected:\n",
 	    s.c_str());
 
-    if ( m_scalable ) {
+    if (m_scalable) {
       fprintf(f,
 	      "\n"
 	      "  unsigned getRank() const;                        // My rank within my crew \n"
@@ -494,7 +495,7 @@ emitImplRCC() {
       fprintf(f,
 	      "  } slave;\n");
     }
-    if (m_ctl.nRunProperties)
+    if (m_ctl.nRunProperties) {
       fprintf(f,
 	      "  %c%sProperties m_properties;\n"
 	      "  uint8_t *rawProperties(size_t &size) const {\n"
@@ -504,6 +505,37 @@ emitImplRCC() {
 	      "  inline %c%sProperties &properties() { return m_properties; }\n",
 	      toupper(m_implName[0]), m_implName + 1,
 	      toupper(m_implName[0]), m_implName + 1);
+      for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
+	if ((**pi).m_writeSync || (**pi).m_readSync) {
+	  if (!notifiers)
+	    fprintf(f, "  typedef void (%s::*Notification)();\n", s.c_str());
+	  notifiers = true;
+	  if ((**pi).m_writeSync) {
+	    if (!writeNotifiers)
+	      fprintf(f, 
+		      "  static Notification s_write_notifiers[];\n"
+		      "  void propertyWritten(unsigned ordinal) {\n"
+		      "    Notification n = s_write_notifiers[ordinal];\n"
+		      "    if (n) (this->*n)(); \n"
+		      "  }\n");
+	    writeNotifiers = true;
+	    fprintf(f,
+		    "  virtual void %s_written() = 0;\n", (**pi).m_name.c_str());
+	  }
+	  if ((**pi).m_readSync) {
+	    if (!readNotifiers)
+	      fprintf(f, 
+		      "  static Notification s_read_notifiers[];\n"
+		      "  void propertyRead(unsigned ordinal) {\n"
+		      "    Notification n = s_read_notifiers[ordinal];\n"
+		      "    if (n) (this->*n)(); \n"
+		      "  }\n");
+	    readNotifiers = true;
+	    fprintf(f,
+		    "  virtual void %s_read() = 0;\n", (**pi).m_name.c_str());
+	  }
+	}
+    }
     for (unsigned n = 0; n < m_ports.size(); n++)
       m_ports[n]->emitRccCppImpl(f);
     fprintf(f,
@@ -521,10 +553,35 @@ emitImplRCC() {
 	    "#define %s_END_INFO \\\n"
 	    "      return place ? new /*((%c%sWorker *)place)*/ %c%sWorker : NULL;\\\n"
 	    "    }\\\n"
-	    "  }\n",
+	    "  }\\\n",
 	    upper,
 	    toupper(m_implName[0]), m_implName + 1,
 	    toupper(m_implName[0]), m_implName + 1);
+    if (writeNotifiers) {
+      fprintf(f, "  %s::Notification %s::s_write_notifiers[] = {\\\n", s.c_str(), s.c_str());
+      for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
+	OU::Property &p = **pi;
+	if (!p.m_isParameter && p.m_writeSync)
+	  fprintf(f, "  &%c%sWorkerBase::%s_written,\\\n", toupper(m_implName[0]),
+		  m_implName + 1, p.m_name.c_str());
+	else
+	  fprintf(f, "  NULL,\\\n");
+      }
+      fprintf(f, "  };\\\n");
+    }
+    if (readNotifiers) {
+      fprintf(f, "  %s::Notification %s::s_read_notifiers[] = {\\\n", s.c_str(), s.c_str());
+      for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
+	OU::Property &p = **pi;
+	if (!p.m_isParameter && p.m_readSync)
+	  fprintf(f, "  &%c%sWorker::%s_read,\\\n", toupper(m_implName[0]),
+		  m_implName + 1, p.m_name.c_str());
+	else
+	  fprintf(f, "  NULL,\\\n");
+      }
+      fprintf(f, "  };\\\n");
+    }
+    fprintf(f, "\n");
   } else {
     fprintf(f,
 	    "/*\n"
@@ -774,12 +831,18 @@ emitSkelRCC() {
 	    " return RCC_ADVANCE;\n"
 	    "}\n",
 	    m_pattern ? "extern" : "static", mName);
-  else
+  else {
+    for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
+      if ((**pi).m_writeSync)
+	fprintf(f,
+		"  void %s_written() {} // notification that %s property has been written\n",
+		(**pi).m_name.c_str(), (**pi).m_name.c_str());
     fprintf(f,
 	    "  RCCResult run(bool /*timedout*/) {\n"
 	    "    return RCC_ADVANCE;\n"
 	    "  }\n");
-  if (m_language == CC)
+  }
+  if (m_language == CC) {
     fprintf(f,
 	    "};\n\n"
 	    "%s_START_INFO\n"
@@ -787,7 +850,7 @@ emitSkelRCC() {
             "// e.g.: info.memSize = sizeof(MyMemoryStruct);\n"
 	    "%s_END_INFO\n",
 	    upper, upper);
-  // FIXME Compilable - any initial functionality??? cool.
+  }
   fclose(f);
   return 0;
 }

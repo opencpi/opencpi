@@ -144,9 +144,11 @@ namespace OCPI {
       uint64_t getProperty64(const OCPI::API::PropertyInfo &info) const;
 
 
-        virtual void prepareProperty(OCPI::Util::Property&,
-				     volatile void *&writeVaddr,
-				     const volatile void *&readVaddr);
+      void propertyWritten(unsigned ordinal) const;
+      void propertyRead(unsigned ordinal) const;
+      void prepareProperty(OCPI::Util::Property&,
+			   volatile void *&writeVaddr,
+			   const volatile void *&readVaddr);
 
       OCPI::Container::Port &  createInputPort(
 					       OCPI::Util::PortOrdinal   portId,      

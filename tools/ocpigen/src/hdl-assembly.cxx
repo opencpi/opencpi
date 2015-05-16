@@ -121,13 +121,13 @@ parseHdlAssy() {
 	    break;
 	  }
       }
-  } else {
+  } else if (a->m_nWCIs) {
     //    assert(m_ports.size() == 0);
     char *cp;
     asprintf(&cp, "<control name='wci' count='%zu'>", nControls);
     ezxml_t x = ezxml_parse_str(cp, strlen(cp));
     // Create the assy's wci slave port, at the beginning of the list
-    Port *wci = createPort<WciPort>(*this, x, NULL, -1, err);
+    wci = createPort<WciPort>(*this, x, NULL, -1, err);
     assert(wci);
     // Clocks: coalesce all WCI clock and clocks with same reqts, into one wci, all for the assy
     clk = addClock();
@@ -444,15 +444,13 @@ createConnectionSignals(FILE *f, Language lang) {
     
   // Input side: rare - generate signal when it aggregates members from others,
   // Like a WSI slave port array
-  if (m_port->count > 1) {
-    if (maxCount < m_port->count || m_attachments.size() > 1) {
-      emitConnectionSignal(f, false, lang);
-      for (AttachmentsIter ai = m_attachments.begin(); ai != m_attachments.end(); ai++) {
-	Connection &c = (*ai)->m_connection;
-	std::string &cName = m_port->master ? c.m_slaveName : c.m_masterName;
-	assert(cName.empty());
-	cName = m_signalIn;
-	}
+  if (m_port->count > 1 && (maxCount < m_port->count || m_attachments.size() > 1)) {
+    emitConnectionSignal(f, false, lang);
+    for (AttachmentsIter ai = m_attachments.begin(); ai != m_attachments.end(); ai++) {
+      Connection &c = (*ai)->m_connection;
+      std::string &cName = m_port->master ? c.m_slaveName : c.m_masterName;
+      assert(cName.empty());
+      cName = m_signalIn;
     }
   }
   if (m_port->isData())
@@ -506,7 +504,11 @@ mapOneSignal(FILE *f, Signal *s, unsigned n, bool isSingle, const char *mapped,
 
 void Assembly::
 emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
-  // emit before parameters
+  // Before we emit the instantiation, we first emit any tieoff assignments related to
+  // unconnected parts (indices) of the intermiediate connection signal
+  InstancePort *ip = i->m_ports;
+  for (unsigned n = 0; n < i->worker->m_ports.size(); n++, ip++)
+    ip->emitTieoffAssignments(f);
   Language lang = m_assyWorker.m_language;
   if (lang == Verilog) {
     std::string suff;
@@ -584,7 +586,7 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
   }
   std::string last(any ? "," : "");
   std::string comment;
-  InstancePort *ip = i->m_ports;
+  ip = i->m_ports;
   for (unsigned n = 0; n < i->worker->m_ports.size(); n++, ip++) {
     // We can't do this since we need the opportunity of stubbing unconnected ports properly
     //    if (ip->m_attachments.empty())
@@ -593,8 +595,16 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
 				myComment(), ip->m_ocp); 
     any = true;
   } // end of port loop
-  // Signals are always mapped as external ports, but sometimes they are
-  // mapped to slot names etc.
+  // First we need to figure out whether this is an emulator worker or a worker that
+  // has a paired emulator worker.
+  Instance *emulator = NULL, *ii = m_instances;
+  for (unsigned n = 0; n < m_nInstances; n++, ii++)
+    if (ii->worker->m_emulate && ii->worker->m_emulate == i->worker) {
+      emulator = ii;
+      break;
+    }
+  // Signals are mapped as external ports unless they are connected to an emulator, and
+  // sometimes they are mapped to slot names etc.
   for (SignalsIter si = i->worker->m_signals.begin(); si != i->worker->m_signals.end(); si++) {
     Signal *s = *si;
     std::string prefix;
@@ -625,8 +635,11 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
       continue;
     doPrev(f, last, comment, myComment());
     if (i->worker->m_isDevice && i->worker->m_type != Worker::Platform) {
-      prefix = i->name;
-      prefix += + "_";
+      if (emulator)
+	prefix = emulator->name;
+      else
+	prefix = i->name;
+      prefix += "_";
     }
     if (s->m_differential) {
       OU::format(name, s->m_pos.c_str(), s->m_name.c_str());
@@ -641,7 +654,6 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
       fprintf(f, "%s%s => %s%s", any ? indent : "",
 	      s->m_name.c_str(), prefix.c_str(), s->m_name.c_str());
   }
-
   fprintf(f, ");%s%s\n", comment.size() ? " // " : "", comment.c_str());
   // Now we must tie off any outputs that are generically expected, but are not
   // part of the worker's interface
@@ -713,12 +725,17 @@ emitAssyHDL() {
     fprintf(f, "wire [255:0] nowhere; // for passing output ports\n");
   // Generate the intermediate signals for internal connections
   Instance *i = m_assembly->m_instances;
-  for (unsigned n = 0; n < m_assembly->m_nInstances; n++, i++)
+  for (unsigned n = 0; n < m_assembly->m_nInstances; n++, i++) {
     for (unsigned nn = 0; nn < i->worker->m_ports.size(); nn++) {
       InstancePort &ip = i->m_ports[nn];
+      assert(!ip.m_external);
       if (!ip.m_external && (err = ip.createConnectionSignals(f, m_language)))
 	return err;
     }
+    // Generate internal signal for emulation implicit connections
+    if (i->worker->m_emulate)
+      Signal::emitConnectionSignals(f, i->name, i->worker->m_signals);
+  }
   if (m_language == VHDL)
     fprintf(f, "begin\n");
   // Set assign external signals where necessary
@@ -754,7 +771,6 @@ emitAssyHDL() {
     }
   }
   // Create the instances
-  //  unsigned nControlInstances = 0;
   i = m_assembly->m_instances;
   for (unsigned n = 0; n < m_assembly->m_nInstances; n++, i++)
     m_assembly->emitAssyInstance(f, i); //, nControlInstances);
@@ -887,6 +903,25 @@ attach(Attachment *a, size_t index) {
   }
   m_attachments.push_back(a);
   return NULL;
+}
+
+// Emit any tieoff assignments related to unconnected parts (indices) of the intermediate
+// connection signal
+void InstancePort::
+emitTieoffAssignments(FILE *f) {
+  // Tie off all indices with no connection
+  if (m_port->haveInputs() && m_port->count > 1)
+    for (unsigned i = 0; i < m_port->count; i++) {
+      bool connected = false;
+      // For all connections to this port
+      for (AttachmentsIter ai = m_attachments.begin();
+	   !connected && ai != m_attachments.end(); ai++)
+	if ((*ai)->m_index <= i && i < (*ai)->m_index + (*ai)->m_connection.m_count)
+	  connected = true;
+      if (!connected)
+	fprintf(f, "  %s(%u) <= %s;\n", m_signalIn.c_str(), i,
+		m_port->master ? m_port->slaveMissing() : m_port->masterMissing());
+    }
 }
 
 // Attach an instance port to a connection

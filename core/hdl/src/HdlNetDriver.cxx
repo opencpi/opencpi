@@ -137,6 +137,7 @@ namespace OCPI {
 	  if (status)
 	    *status =
 	      response == WORKER_TIMEOUT ? OCCP_STATUS_READ_TIMEOUT :
+	      response == WORKER_BUSY ? OCCP_STATUS_READ_FAIL :
 	      response == ERROR ? OCCP_STATUS_READ_ERROR :
 	      OCCP_STATUS_ACCESS_ERROR;
 	  else {
@@ -145,6 +146,7 @@ namespace OCPI {
 			    extra ? "command" : (type == OCCP_READ ? "read" :
 						 (type == OCCP_WRITE ? "write" : "nop")),
 			    response == WORKER_TIMEOUT ? "worker timeout" :
+			    response == WORKER_BUSY ? "worker busy" :
 			    response == ERROR ? "worker error" :
 			    "ethernet timeout - no valid response");
 	  }

@@ -55,7 +55,8 @@ type worker_response_t is (none_e,     -- no response yet
                            data_e,     -- success for something with data
                            error_e,    -- error
                            timedout_e, -- worker timed out
-                           reset_e);   -- worker was reset
+                           reset_e,    -- worker was reset
+                           busy_e);    -- worker was busy
 
 -- Internal interface to WCI master modules, driven to all workers in parallel
 type worker_in_t is record
@@ -301,34 +302,6 @@ type unoc_master_out_t is record
   take    : bool_t;                     -- take data from the _in_t: perform dequeue
 end record unoc_master_out_t;
 
--- The raw property interface for shared I2C and SPIs from the perspective of the
--- device worker.
-constant raw_max_devices : natural := 4;
-
--- Output from device worker as master of the rawprop interface
-type raw_prop_out_t is record
-  present : bool_t;                       -- master is present - slave ties low
-  reset   : bool_t;                       -- master worker is in reset
-  renable : bool_t;                       -- a read is in progress
-  wenable : bool_t;                       -- a write is in progress
-  addr    : ushort_t;                     -- address space within slave
-  benable : std_logic_vector(3 downto 0); -- which bytes are being accessed
-  data    : word32_t;                     -- up to 32 bits of data
-end record raw_prop_out_t;
-constant raw_prop_out_zero : raw_prop_out_t
-  := ('0', '0', '0', '0', (others => '0'), (others => '0'), (others => '0'));
-type raw_prop_out_array_t is array(natural range <>) of raw_prop_out_t;
--- Input to device worker as master of the rawprop interface
--- These signals are "broadcast" back to all masters from the one slave
-type raw_prop_in_t is record
-  done    : bool_t;                       -- access is done
-  data    : word32_t;                     -- read data available when done
-  present : std_logic_vector(0 to raw_max_devices-1); -- which of all devices are present
-end record raw_prop_in_t;
-constant raw_prop_in_zero : raw_prop_in_t
-  := ('0', (others => '0'), (others => '0'));
-
-type raw_prop_in_array_t is array(natural range <>) of raw_prop_in_t;
 
 component unoc_terminator is
   port(

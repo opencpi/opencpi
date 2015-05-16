@@ -120,11 +120,12 @@ namespace OCPI {
 #define OCCP_MAGIC2 (('C'<<24)|('P'<<16)|('I'<<8))
 #define OCCP_MAGIC ((((uint64_t)OCCP_MAGIC2) << 32) | OCCP_MAGIC1)
 // Read return values from workers
-#define OCCP_ERROR_RESULT   0xc0de4202
-#define OCCP_TIMEOUT_RESULT 0xc0de4203
-#define OCCP_RESET_RESULT   0xc0de4204
+#define OCCP_ERROR_RESULT   0xc0de4202 // worker reported error
+#define OCCP_TIMEOUT_RESULT 0xc0de4203 // operation timed out
+#define OCCP_RESET_RESULT   0xc0de4204 // worker was in reset
 #define OCCP_SUCCESS_RESULT 0xc0de4201
-#define OCCP_FATAL_RESULT   0xc0de4205
+#define OCCP_FATAL_RESULT   0xc0de4205 // worker reported fatal error (unimplemented)
+#define OCCP_BUSY_RESULT    0xc0de4206 // worker was busy, unable to start access
 #define OCCP_STATUS_CONFIG_WRITE (1 << 27)
 #define OCCP_STATUS_CONFIG_OP (0x7 << 24)
 #define OCCP_STATUS_LAST_OP(i) (((i) & (0x7 << 24)) >> 24)

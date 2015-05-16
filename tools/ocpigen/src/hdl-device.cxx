@@ -31,24 +31,25 @@ HdlDevice(ezxml_t xml, const char *file, const char *parentFile, Worker *parent,
     return;
   if ((err = parseHdl()))
     return;
-  // Parse submodule requirements - note that this information is only used
+  // Parse submodule support for users - note that this information is only used
   // for platform configurations and containers, but we do a bit of error checking here
-  for (ezxml_t rqx = ezxml_cchild(m_xml, "requires"); rqx; rqx = ezxml_next(rqx)) {
+  for (ezxml_t spx = ezxml_cchild(m_xml, "supports"); spx; spx = ezxml_next(spx)) {
     std::string worker;
-    if ((err = OE::checkAttrs(rqx, "worker", NULL)) ||
-	(err = OE::checkElements(rqx, "connect", NULL)) ||
-	(err = OE::getRequiredString(rqx, worker, "worker")))
+    if ((err = OE::checkAttrs(spx, "worker", NULL)) ||
+	(err = OE::checkElements(spx, "connect", NULL)) ||
+	(err = OE::getRequiredString(spx, worker, "worker")))
       return;
-    std::string rqFile;
-    OU::format(rqFile, "../%s.hdl/%s.xml", worker.c_str(),  worker.c_str());
-    DeviceType *dt = DeviceType::get(rqFile.c_str(), m_file.c_str(), err);
+    std::string supFile;
+    OU::format(supFile, "../%s.hdl/%s.xml", worker.c_str(),  worker.c_str());
+    DeviceType *dt = DeviceType::get(supFile.c_str(), m_file.c_str(), this, err);
     if (!dt) {
-      err = OU::esprintf("for required worker %s: %s", worker.c_str(), err);
+      err = OU::esprintf("for supported worker %s: %s", worker.c_str(), err);
       return;
     }
-    m_requireds.push_back(Required(*dt));
-    m_requireds.back().parse(rqx, *this);
-    for (ezxml_t cx = ezxml_cchild(rqx, "connect"); cx; cx = ezxml_next(cx)) {
+    m_supports.push_back(Support(*dt));
+    if ((err = m_supports.back().parse(spx, *this)))
+      return;
+    for (ezxml_t cx = ezxml_cchild(spx, "connect"); cx; cx = ezxml_next(cx)) {
       std::string port, to;
       size_t index;
       bool idxFound = false;
@@ -57,23 +58,33 @@ HdlDevice(ezxml_t xml, const char *file, const char *parentFile, Worker *parent,
 	  (err = OE::getRequiredString(cx, port, "port")) ||
 	  (err = OE::getRequiredString(cx, to, "to")) ||
 	  (err = OE::getNumber(cx, "index", &index, &idxFound)))
-	return ;
+	return;
     }
   }
 }
 
+// The name argument can be a file name.
 HdlDevice *HdlDevice::
-get(const char *name, const char *parent, const char *&err) {
+get(const char *name, const char *parentFile, Worker *parent, const char *&err) {
+  const char *dot = strrchr(name, '.');
+  const char *slash = strrchr(name, '/');
+  if (slash && dot && slash > dot) {
+    err = OU::esprintf("Badly formed device worker name: %s", name);
+    return NULL;
+  }
+  slash = slash ? slash + 1 : name;
+  std::string wname;
+  wname.assign(slash, dot ? dot - slash : strlen(slash));
   DeviceType *dt = NULL;
   for (DeviceTypesIter dti = s_types.begin(); !dt && dti != s_types.end(); dti++)
-    if (!strcasecmp(name, (*dti)->name()))
+    if (!strcasecmp(wname.c_str(), (*dti)->name()))
       dt = *dti;
   if (!dt) {
     // New device type, which must be a file.
     ezxml_t xml;
     std::string xfile;
-    if (!(err = parseFile(name, parent, NULL, &xml, xfile))) {
-      dt = new DeviceType(xml, xfile.c_str(), parent, NULL, err);
+    if (!(err = parseFile(name, parentFile, NULL, &xml, xfile))) {
+      dt = new DeviceType(xml, xfile.c_str(), parentFile, parent, err);
       if (err) {
 	delete dt;
 	dt = NULL;
@@ -128,6 +139,12 @@ Device(Board &b, DeviceType &dt, ezxml_t xml, bool single, unsigned ordinal,
     wname += "%u";
     OE::getNameWithDefault(xml, m_name, wname.c_str(), ordinal);
   }
+  // This might happen in floating devices in containers.
+  if (b.findDevice(m_name.c_str())) {
+    err = OU::esprintf("Duplicate device name \"%s\" for platform/card",
+		       m_name.c_str());
+    return;
+  }
   // Now we parse the mapping between device-type signals and board signals
   for (ezxml_t xs = ezxml_cchild(xml, "Signal"); !err && xs; xs = ezxml_next(xs)) {
     std::string name, base;
@@ -176,6 +193,8 @@ Device(Board &b, DeviceType &dt, ezxml_t xml, bool single, unsigned ordinal,
 			   name.c_str());
       else if (*plat) {
 	board = plat;
+	// FIXME: check for using the same signal in the same device
+	// FIXME: specify mutex to allow same signal to be reused between mutex devices
 	if (!(boardSig = b.m_extmap.findSignal(board))) {
 	  boardSig = new Signal();
 	  boardSig->m_name = board;
@@ -252,12 +271,12 @@ Device(Board &b, DeviceType &dt, ezxml_t xml, bool single, unsigned ordinal,
 }
 
 Device *Device::
-create(Board &b, ezxml_t xml, const char *parent, bool single, unsigned ordinal,
-       SlotType *stype, const char *&err) {
+create(Board &b, ezxml_t xml, const char *parentFile, Worker *parent, bool single,
+       unsigned ordinal, SlotType *stype, const char *&err) {
   std::string wname;
   DeviceType *dt;
   if ((err = OE::getRequiredString(xml, wname, "worker")) ||
-      !(dt = DeviceType::get(wname.c_str(), parent, err)))
+      !(dt = DeviceType::get(wname.c_str(), parentFile, parent, err)))
     return NULL;
   Device *d = new Device(b, *dt, xml, single, ordinal, stype, err);
   if (err) {
@@ -273,9 +292,20 @@ Board(SigMap &sigmap, Signals &signals)
   : m_extmap(sigmap), m_extsignals(signals) {
 }
 
+const char *Board::
+addFloatingDevice(ezxml_t xs, const char *parentFile, Worker *parent, std::string &name) {
+  const char *err = NULL;
+  Device *dev = Device::create(*this, xs, parentFile, parent, true, 0, NULL, err);
+  if (dev) {
+    m_devices.push_back(dev);
+    name = dev->name();
+  }
+  return err;
+}
+
 // Add all the devices for a platform or a card - static
 const char *Board::
-parseDevices(ezxml_t xml, SlotType *stype) {
+parseDevices(ezxml_t xml, SlotType *stype, const char *parentFile, Worker *parent) {
   // These devices are declaring that they are part of the board.
   for (ezxml_t xs = ezxml_cchild(xml, "Device"); xs; xs = ezxml_next(xs)) {
     const char *worker = ezxml_cattr(xs, "worker");
@@ -293,7 +323,7 @@ parseDevices(ezxml_t xml, SlotType *stype) {
       }
     }
     const char *err;
-    Device *dev = Device::create(*this, xs, xml->name, single, n, stype, err);
+    Device *dev = Device::create(*this, xs, parentFile, parent, single, n, stype, err);
     if (dev)
       m_devices.push_back(dev);
     else
@@ -313,14 +343,14 @@ find(const char *name, const Devices &devices) {
 }
 
 const Device &Device::
-findRequired(const DeviceType &dt, unsigned ordinal, const Devices &devices) {
+findSupport(const DeviceType &dt, unsigned ordinal, const Devices &devices) {
   for (DevicesIter di = devices.begin(); di != devices.end(); di++) {
     Device &dev = **di;
     // FIXME: intern the workers
     if (!strcasecmp(dev.m_deviceType.m_implName, dt.m_implName) && dev.m_ordinal == ordinal)
       return dev;
   }
-  assert("Required device not found"==0);
+  assert("Support (sub)device not found"==0);
   return *(Device*)NULL;
 }
 
@@ -334,12 +364,12 @@ findDevice(const char *name) const {
   return NULL;
 }
 
-ReqConnection::
-ReqConnection()
-  : m_port(NULL), m_rq_port(NULL), m_index(0), m_indexed(false) {
+SupportConnection::
+SupportConnection()
+  : m_port(NULL), m_sup_port(NULL), m_index(0), m_indexed(false) {
 }
-const char *ReqConnection::
-parse(ezxml_t cx, Worker &w, Required &r) {
+const char *SupportConnection::
+parse(ezxml_t cx, Worker &w, Support &r) {
   const char *err;
   std::string port, to;
   if ((err = OE::checkAttrs(cx, "port", "signal", "to", "index", (void *)0)) ||
@@ -347,41 +377,41 @@ parse(ezxml_t cx, Worker &w, Required &r) {
       (err = OE::getRequiredString(cx, port, "port")) ||
       (err = OE::getRequiredString(cx, to, "to")) ||
       (err = OE::getNumber(cx, "index", &m_index, &m_indexed, 0, false)) ||
-      (err = w.getPort(port.c_str(), m_port)) ||
-      (err = r.m_type.getPort(to.c_str(), m_rq_port)))
+      (err = r.m_type.getPort(port.c_str(), m_port)) ||
+      (err = w.getPort(to.c_str(), m_sup_port)))
     return err;
-  if (m_rq_port->type != m_port->type)
-    return OU::esprintf("Required worker port \"%s\" is not the same type", to.c_str());
-  if (m_rq_port->master == m_port->master)
-    return OU::esprintf("Required worker port \"%s\" has same role (master) as port \"%s\"",
+  if (m_sup_port->type != m_port->type)
+    return OU::esprintf("Supported worker port \"%s\" is not the same type", to.c_str());
+  if (m_sup_port->master == m_port->master)
+    return OU::esprintf("Supported worker port \"%s\" has same role (master) as port \"%s\"",
 			to.c_str(), port.c_str());
-  if (m_rq_port->count > 1) {
+  if (m_sup_port->count > 1) {
     if (!m_indexed)
-      return OU::esprintf("Required worker port \"%s\" has count > 1, index must be specified",
+      return OU::esprintf("Supported worker port \"%s\" has count > 1, index must be specified",
 			  to.c_str());
-    if (m_index >= m_rq_port->count)
-      return OU::esprintf("Required worker port \"%s\" has count %zu, index (%zu) too high",
-			  to.c_str(), m_rq_port->count, m_index);
+    if (m_index >= m_sup_port->count)
+      return OU::esprintf("Supported worker port \"%s\" has count %zu, index (%zu) too high",
+			  to.c_str(), m_sup_port->count, m_index);
   }      
   // FIXME: check signal compatibility...
   return NULL;
 }
 
-Required::
-Required(const DeviceType &dt)
+Support::
+Support(const DeviceType &dt)
   : m_type(dt) {
 }
 
-const char *Required::
-parse(ezxml_t rqx, Worker &w) {
+const char *Support::
+parse(ezxml_t spx, Worker &w) {
   const char *err;
   std::string worker;
-  if ((err = OE::checkAttrs(rqx, "worker", (void *)0)) ||
-      (err = OE::checkElements(rqx, "connect", (void*)0)) ||
-      (err = OE::getRequiredString(rqx, worker, "worker")))
+  if ((err = OE::checkAttrs(spx, "worker", (void *)0)) ||
+      (err = OE::checkElements(spx, "connect", (void*)0)) ||
+      (err = OE::getRequiredString(spx, worker, "worker")))
     return err;
-  for (ezxml_t cx = ezxml_cchild(rqx, "connect"); cx; cx = ezxml_next(cx)) {
-    m_connections.push_back(ReqConnection());
+  for (ezxml_t cx = ezxml_cchild(spx, "connect"); cx; cx = ezxml_next(cx)) {
+    m_connections.push_back(SupportConnection());
     if ((err = m_connections.back().parse(cx, w, *this)))
       return err;
   }

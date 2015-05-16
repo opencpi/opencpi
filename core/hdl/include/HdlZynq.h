@@ -1,8 +1,10 @@
 #ifndef HDLZYNQ_H
 #define HDLZYNQ_H
+#ifdef __cplusplus
 namespace OCPI {
   namespace HDL {
     namespace Zynq {
+#endif
       const uint32_t GP0_PADDR = 0x40000000;
       const uint32_t FTM_ADDR = 0xF880B000;
       struct FTM {
@@ -65,7 +67,8 @@ namespace OCPI {
 	  thr_count,
 	  thr_sta;
       };
-      const unsigned NFCLKS = 4;
+#define NFCLKS 4
+      //      const unsigned NFCLKS = 4;
       const uint32_t SLCR_ADDR = 0xf8000000;
       struct SLCR {
 	uint32_t
@@ -102,7 +105,7 @@ namespace OCPI {
 	  dbg_clk_ctrl,
 	  pcap_clk_ctrl,
 	  topsw_clk_ctrl;
-	FCLK fpga[NFCLKS];
+	struct FCLK fpga[NFCLKS];
 	uint32_t
 	  pad2[(0x1c4-0x1ac-4)/4],
 	  clk_621_true,
@@ -140,7 +143,9 @@ namespace OCPI {
 	  pad8[(0x530-0x448-4)/4],
 	  pss_idcode;
       };
+#ifdef __cplusplus
     }
   }
 }
+#endif
 #endif

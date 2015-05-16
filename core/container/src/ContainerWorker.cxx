@@ -158,6 +158,8 @@ namespace OCPI {
 	  setProperty64(info, v.m_ULongLong); break;
 	default:;
 	}
+      if (info.m_writeSync)
+	propertyWritten(info.m_ordinal);
     }
     void Worker::setProperty(const char *pname, const char *value) {
       OU::Property &prop = findProperty(pname);
@@ -178,6 +180,8 @@ namespace OCPI {
       OU::Value v(p);
       OA::Property a(*this, p.m_name.c_str()); // FIXME clumsy because get methods take API props
       OA::PropertyInfo &info = a.m_info;
+      if (info.m_readSync)
+	propertyRead(info.m_ordinal);
       if (info.m_isSequence || info.m_arrayRank > 0) {
 	v.m_nTotal = info.m_nItems;
 	if (info.m_isSequence) {
@@ -249,58 +253,6 @@ namespace OCPI {
 	return true;
       }
       getPropertyValue(p, value, hex);
-#if 0
-      OU::Value v(p);
-      OA::Property a(*this, p.m_name.c_str()); // FIXME clumsy because get methods take API props
-      OA::PropertyInfo &info = a.m_info;
-      if (info.m_isSequence || info.m_arrayRank > 0) {
-	v.m_nTotal = info.m_nItems;
-	if (info.m_isSequence) {
-	  v.m_nElements = getProperty32(info);
-	  if (v.m_nElements > info.m_sequenceLength)
-	    throw OU::Error("Worker's %s property has invalid sequence length: %zu",
-			    info.m_name.c_str(), v.m_nElements);
-	  v.m_nTotal *= v.m_nElements;
-	}
-	if (info.m_baseType == OA::OCPI_String) {
-	  size_t length = OU::roundUp(info.m_stringLength + 1, 4);
-	  v.m_stringSpaceLength = v.m_nTotal * length;
-	  v.m_stringNext = v.m_stringSpace = new char[v.m_stringSpaceLength];
-	  char **sp = new char *[v.m_nTotal];
-	  v.m_pString = (const char **)sp;
-	  size_t offset = info.m_offset + (info.m_isSequence ? info.m_align : 0);
-	  for (unsigned n = 0; n < v.m_nTotal; n++) {
-	    sp[n] = v.m_stringNext;
-	    getPropertyBytes(info, offset, (uint8_t *)v.m_stringNext, length);
-	    v.m_stringNext += length;
-	    offset += length;
-	  }	  
-	} else {
-	  size_t nBytes = v.m_nTotal * (info.m_nBits/8);
-	  uint8_t *data = new uint8_t[nBytes];
-	  v.m_pUChar = data;
-	  if (nBytes)
-	    getPropertyBytes(info, info.m_offset + (info.m_isSequence ? info.m_align : 0), data, nBytes);
-	}
-      } else if (info.m_baseType == OA::OCPI_String) {
-	// FIXME: a gross modularity violation
-	v.m_stringSpace = new char[info.m_stringLength + 1];
-	v.m_String = v.m_stringSpace;
-	getPropertyBytes(info, info.m_offset, (uint8_t*)v.m_pString, info.m_stringLength + 1);
-      } else switch (info.m_nBits) {
-	case 8:
-	  v.m_UChar = getProperty8(info); break;
-	case 16:
-	  v.m_UShort = getProperty16(info); break;
-	case 32:
-	  v.m_ULong = getProperty32(info); break;
-	case 64:
-	  v.m_ULongLong = getProperty64(info); break;
-	default:;
-	}
-      
-      v.unparse(value, NULL, false, hex);
-#endif
       return true;
     }
     void Worker::setProperty(unsigned ordinal, OCPI::Util::Value &value) {

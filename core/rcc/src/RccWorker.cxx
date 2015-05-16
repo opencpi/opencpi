@@ -527,23 +527,32 @@
    ocpiBad("Worker %s received port error: %s", name().c_str(), error.c_str());
  }
 
- void 
- Worker::
- prepareProperty(OU::Property& md , 
-		 volatile void *&writeVaddr,
-		 const volatile void *&readVaddr)
- {
-   (void)readVaddr;
-   if (md.m_baseType != OA::OCPI_Struct && !md.m_isSequence && md.m_baseType != OA::OCPI_String &&
-       OU::baseTypeSizes[md.m_baseType] <= 32 &&
-       !md.m_writeError) {
-     if (!m_context->properties ||
-	 (md.m_offset+OU::baseTypeSizes[md.m_baseType]/8) > m_info.propertySize ) {
-       throw OU::EmbeddedException( OU::PROPERTY_SET_EXCEPTION, NULL, OU::ApplicationRecoverable);
-     }
-     writeVaddr = (uint8_t*)m_context->properties + md.m_offset;
-   }
- }
+void Worker::
+propertyWritten(unsigned ordinal) const {
+  if (m_user)
+    m_user->propertyWritten(ordinal);
+}
+void Worker::
+propertyRead(unsigned ordinal) const {
+  if (m_user)
+    m_user->propertyRead(ordinal);
+}
+
+void Worker::
+prepareProperty(OU::Property& md , 
+		volatile void *&writeVaddr,
+		const volatile void *&readVaddr) {
+  (void)readVaddr;
+  if (md.m_baseType != OA::OCPI_Struct && !md.m_isSequence && md.m_baseType != OA::OCPI_String &&
+      OU::baseTypeSizes[md.m_baseType] <= 32 &&
+      !md.m_writeError) {
+    if (!m_context->properties ||
+	(md.m_offset+OU::baseTypeSizes[md.m_baseType]/8) > m_info.propertySize ) {
+      throw OU::EmbeddedException( OU::PROPERTY_SET_EXCEPTION, NULL, OU::ApplicationRecoverable);
+    }
+    writeVaddr = (uint8_t*)m_context->properties + md.m_offset;
+  }
+}
 
  void Worker::
  run(bool &anyone_run) {
@@ -807,21 +816,26 @@ controlOperation(OU::Worker::ControlOperation op) {
       *pp = *(const store *)&val;					      \
     if (info.m_writeError)					              \
       throw; /*"worker has errors after write */			      \
-  }									            \
-  void Worker::set##pretty##SequenceProperty(const OA::Property &p,const run *vals, \
-					 size_t length) const {		\
-        if (p.m_info.m_writeError)                                              \
-          throw; /*"worker has errors before write */                           \
-	if (p.m_info.m_isSequence) {     					\
-	  memcpy((void *)(getPropertyVaddr() + p.m_info.m_offset + p.m_info.m_align), vals, \
-		 length * sizeof(run));					        \
-	  *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset) = (uint32_t)(length/p.m_info.m_nItems); \
-	} else								        \
-	  memcpy((void *)(getPropertyVaddr() + p.m_info.m_offset), vals,        \
-		 length * sizeof(run));					        \
-        if (p.m_info.m_writeError)                                              \
-          throw; /*"worker has errors after write */                            \
-      }
+    if (info.m_writeSync)                                                     \
+     propertyWritten(ordinal);                                                \
+  }                                                                           \
+  void Worker::set##pretty##SequenceProperty(const OA::Property &p, const run *vals, \
+					     size_t length) const {	\
+    if (p.m_info.m_writeError)						\
+      throw; /*"worker has errors before write */			\
+    if (p.m_info.m_isSequence) {     					\
+      memcpy((void *)(getPropertyVaddr() + p.m_info.m_offset + p.m_info.m_align), vals, \
+	     length * sizeof(run));					\
+      *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset) =           \
+	(uint32_t)(length/p.m_info.m_nItems);				\
+    } else								\
+      memcpy((void *)(getPropertyVaddr() + p.m_info.m_offset), vals,	\
+	     length * sizeof(run));					\
+    if (p.m_info.m_writeError)						\
+      throw; /*"worker has errors after write */			\
+    if (p.m_info.m_writeSync)						\
+      propertyWritten(p.m_ordinal); 				        \
+  }
 // Set a string property value
 // ASSUMPTION:  strings always occupy at least 4 bytes, and
 // are aligned on 4 byte boundaries.  The offset calculations
@@ -843,22 +857,26 @@ controlOperation(OU::Worker::ControlOperation op) {
     p32[0] = i;								\
     if (info.m_writeError)						\
       throw; /*"worker has errors after write */			\
+    if (info.m_writeSync)						\
+      propertyWritten(ordinal); 				        \
   }									\
   void Worker::set##pretty##SequenceProperty(const OA::Property &p,const run *vals,\
-					 size_t length) const {		   \
-        if (p.m_info.m_writeError)                                                 \
-          throw; /*"worker has errors before write */                              \
-        char *cp = (char *)(getPropertyVaddr() + p.m_info.m_offset + 32/CHAR_BIT); \
-        for (unsigned i = 0; i < length; i++) {                                    \
-          size_t len = strlen(vals[i]);                                          \
-          if (len > p.m_info.m_stringLength)	                                   \
-            throw; /* "string in sequence too long" */                             \
-          memcpy(cp, vals[i], len+1);                                              \
-        }                                                                          \
-        *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset) = (uint32_t)length; \
-        if (p.m_info.m_writeError)                                                 \
-          throw; /*"worker has errors after write */                               \
-      }
+					     size_t length) const {	\
+    if (p.m_info.m_writeError)						\
+      throw; /*"worker has errors before write */			\
+    char *cp = (char *)(getPropertyVaddr() + p.m_info.m_offset + 32/CHAR_BIT); \
+    for (unsigned i = 0; i < length; i++) {				\
+      size_t len = strlen(vals[i]);					\
+      if (len > p.m_info.m_stringLength)				\
+	throw; /* "string in sequence too long" */			\
+      memcpy(cp, vals[i], len+1);					\
+    }									\
+    *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset) = (uint32_t)length; \
+    if (p.m_info.m_writeError)						\
+      throw; /*"worker has errors after write */			\
+    if (p.m_info.m_writeSync)						\
+      propertyWritten(p.m_ordinal); 				        \
+  }
       OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE_S
 #undef OCPI_DATA_TYPE
@@ -866,6 +884,8 @@ controlOperation(OU::Worker::ControlOperation op) {
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		    \
       run Worker::get##pretty##Property(unsigned ordinal) const {           \
         OA::PropertyInfo &info = properties()[ordinal];                     \
+	if (info.m_readSync)						    \
+	  propertyRead(ordinal);					    \
         if (info.m_readError )					            \
           throw; /*"worker has errors before read "*/			    \
         uint32_t *pp = (uint32_t *)(getPropertyVaddr() + info.m_offset);    \
@@ -876,31 +896,33 @@ controlOperation(OU::Worker::ControlOperation op) {
         if (bits > 32)							    \
           u.u32[1] = pp[1];						    \
         u.u32[0] = pp[0];						    \
-        if (info.m_readError )					    \
+        if (info.m_readError )				        	    \
           throw; /*"worker has errors after read */			    \
         return u.r;							    \
       }									    \
       unsigned Worker::get##pretty##SequenceProperty(const OA::Property &p, \
 					     run *vals,			    \
 					     size_t length) const {	    \
+	if (p.m_info.m_readSync)					    \
+	  propertyRead(p.m_info.m_ordinal);				    \
         if (p.m_info.m_readError )					    \
           throw; /*"worker has errors before read "*/			    \
-	if (p.m_info.m_isSequence) {					\
+	if (p.m_info.m_isSequence) {					    \
 	  uint32_t nSeq = *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset); \
-	  size_t n = nSeq * p.m_info.m_nItems;					\
-	  if (n > length)						\
-	    throw "sequence longer than provided buffer";		\
-	  memcpy(vals,							\
+	  size_t n = nSeq * p.m_info.m_nItems;				    \
+	  if (n > length)						    \
+	    throw "sequence longer than provided buffer";		    \
+	  memcpy(vals,							    \
 		 (void*)(getPropertyVaddr() + p.m_info.m_offset + p.m_info.m_align), \
-		 n * sizeof(run));					\
-	  length = n;							\
-	} else								\
-	  memcpy(vals,							\
-		 (void*)(getPropertyVaddr() + p.m_info.m_offset),	\
-		 length * sizeof(run));					\
-	if (p.m_info.m_readError )					\
-	  throw; /*"worker has errors after read */			\
-	return (unsigned)length;         				\
+		 n * sizeof(run));					    \
+	  length = n;							    \
+	} else								    \
+	  memcpy(vals,							    \
+		 (void*)(getPropertyVaddr() + p.m_info.m_offset),	    \
+		 length * sizeof(run));					    \
+	if (p.m_info.m_readError )					    \
+	  throw; /*"worker has errors after read */			    \
+	return (unsigned)length;         				    \
       }
 
       // ASSUMPTION:  strings always occupy at least 4 bytes, and
@@ -910,21 +932,25 @@ controlOperation(OU::Worker::ControlOperation op) {
       void Worker::get##pretty##Property(unsigned ordinal, char *cp,        \
 					   size_t length) const {	    \
           OA::PropertyInfo &info = properties()[ordinal];                   \
-	  size_t stringLength = info.m_stringLength;                    \
+	  if (info.m_readSync)	   				            \
+	    propertyRead(ordinal);				            \
+	  size_t stringLength = info.m_stringLength;                        \
 	  if (length < stringLength+1)			                    \
 	    throw; /*"string buffer smaller than property"*/;		    \
-	  if (info.m_readError)					    \
+	  if (info.m_readError)					            \
 	    throw; /*"worker has errors before write */			    \
 	  uint32_t i32, *p32 = (uint32_t *)(getPropertyVaddr() + info.m_offset);   \
 	  memcpy(cp + 32/CHAR_BIT, p32 + 1, stringLength + 1 - 32/CHAR_BIT);\
 	  i32 = *p32;							    \
 	  memcpy(cp, &i32, 32/CHAR_BIT);				    \
-	  if (info.m_readError)					    \
+	  if (info.m_readError)					            \
 	    throw; /*"worker has errors after write */			    \
 	}								    \
       unsigned Worker::get##pretty##SequenceProperty			    \
 	(const OA::Property &p, char **vals, size_t length, char *buf,      \
 	 size_t space) const {					            \
+	if (p.m_info.m_readSync)	  				    \
+	    propertyRead(p.m_info.m_ordinal);				    \
         if (p.m_info.m_readError)					    \
           throw; /*"worker has errors before read */                        \
         uint32_t                                                            \
@@ -984,7 +1010,7 @@ controlOperation(OU::Worker::ControlOperation op) {
         return *(uint64_t *)(getPropertyVaddr() + info.m_offset);
       }
 
-   RCCUserWorker::RCCUserWorker()
+     RCCUserWorker::RCCUserWorker()
      : m_worker(*(Worker *)pthread_getspecific(Driver::s_threadKey)), m_ports(NULL),
        m_first(true), m_rcc(m_worker.context()) {
    }
@@ -1026,6 +1052,21 @@ controlOperation(OU::Worker::ControlOperation op) {
    }
    RCCTime RCCUserWorker::getTime() {
      return OS::Time::now().bits();
+   }
+   bool RCCUserWorker::isInitialized() const {
+     return m_worker.getControlState() == OU::Worker::INITIALIZED;
+   }
+   bool RCCUserWorker::isOperating() const {
+     return m_worker.getControlState() == OU::Worker::OPERATING;
+   }
+   bool RCCUserWorker::isSuspended() const {
+     return m_worker.getControlState() == OU::Worker::SUSPENDED;
+   }
+   bool RCCUserWorker::isFinished() const {
+     return m_worker.getControlState() == OU::Worker::FINISHED;
+   }
+   bool RCCUserWorker::isUnusable() const {
+     return m_worker.getControlState() == OU::Worker::UNUSABLE;
    }
    RCCUserPort::
    RCCUserPort()

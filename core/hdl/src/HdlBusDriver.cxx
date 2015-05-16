@@ -137,6 +137,14 @@
 	    err = "No /sys/devices/amba*/f8007000.ps7-dev-cfg/prog_done was found.";
 	  return false;
 	}
+	bool getMetadata(std::vector<char> &xml, std::string &err) {
+	  if (isProgrammed(err))
+	    return OCPI::HDL::Device::getMetadata(xml, err);
+	  if (err.empty())
+	    OU::format(err,
+		       "There is no bitstream loaded on this HDL device: %s", name().c_str());
+	  return true;
+	}
 	// Scan the buffer and identify the start of the sync pattern
 	static uint8_t *findsync(uint8_t *buf, size_t len) {
 	  static uint8_t startup[] = {
@@ -272,6 +280,14 @@
 	    throw OU::Error("After loading, the USR_ACCESS code was not correct: 0x%x - should be 0x%x",
 			    axss, c_opencpi);
 #endif
+	}
+	void
+	unload() {
+	  int xfd;
+	  if ((xfd = ::open("/dev/xdevcfg", O_WRONLY)) < 0)
+	    throw OU::Error("Can't open /dev/xdevcfg for bitstream unloading: %s(%d)",
+			    strerror(errno), errno);
+	  close(xfd);
 	}
       };
 

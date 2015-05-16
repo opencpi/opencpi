@@ -533,7 +533,8 @@ namespace OCPI {
 	// Put the string for the response in "err"
 	// Return true if not ok
 	bool
-	loadRun(const char *file, uint64_t size, const char *cwd, char *response, std::string &err) {
+	loadRun(const char *file, uint64_t size, const char *cwd, char *response,
+		std::string &err) {
 	  *response = 'E';
 	  if (m_verbose)
 	    fprintf(stderr, "Initializing %s simulator from executable/bitstream: %s\n",
@@ -543,17 +544,20 @@ namespace OCPI {
 	  const char *slash = strrchr(file, '/');
 	  slash = slash ? slash + 1 : file;
 	  const char *suff = strstr(slash, m_platform.c_str());
-	  if (!suff || (*--suff != '_' && *suff != '-')) {
-	    OU::format(err, "simulator file name %s is not formatted properly", file);
-	    return true;
-	  }
-	  const char *dot = strchr(suff + 1, '.');
-	  if (!dot) {
-	    OU::format(err, "simulator file name %s is not formatted properly", file);
-	    return true;
-	  }
-	  m_file.assign(slash, dot - slash);
-	  m_app.assign(slash, suff - slash);
+	  if (suff) {
+	    if (*--suff != '_' && *suff != '-') {
+	      OU::format(err, "simulator file name %s is not formatted properly", file);
+	      return true;
+	    }
+	    const char *dot = strchr(suff + 1, '.');
+	    if (!dot) {
+	      OU::format(err, "simulator file name %s is not formatted properly", file);
+	      return true;
+	    }
+	    m_file.assign(slash, dot - slash);
+	    m_app.assign(slash, suff - slash);
+	  } else
+	    m_file = m_app = slash;
 	  m_dir = m_app;
 
 	  char date[100];

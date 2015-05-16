@@ -29,7 +29,7 @@ typedef UNocs::iterator UNocsIter;
 // <connection external="foo" device="dev" [port="bar"]/>
 // <device foo>
 #define HDL_CONTAINER_ATTRS "platform", "config", "configuration", "assembly", "default"
-#define HDL_CONTAINER_ELEMS "connection"
+#define HDL_CONTAINER_ELEMS "connection", "device"
 class HdlAssembly;
 class HdlContainer : public Worker, public HdlHasDevInstances {
   HdlAssembly &m_appAssembly;

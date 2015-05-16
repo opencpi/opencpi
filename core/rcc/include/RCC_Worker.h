@@ -441,9 +441,15 @@ typedef struct {
    virtual ~RCCUserWorker();
 
    // These are called by the worker.
-
+   virtual void propertyWritten(unsigned /*ordinal*/) {}
+   virtual void propertyRead(unsigned /*ordinal*/) {}
    RCCUserPort &getPort(unsigned n) const { return m_ports[n]; }
    inline bool firstRun() const { return m_first; };
+   bool isInitialized() const;
+   bool isOperating() const;
+   bool isSuspended() const;
+   bool isFinished() const;
+   bool isUnusable() const;
    // access the current run condition
    const RunCondition *getRunCondition() const;
    // Change the current run condition - if NULL, revert to the default run condition

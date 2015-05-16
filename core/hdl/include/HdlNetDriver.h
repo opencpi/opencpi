@@ -98,7 +98,7 @@ namespace OCPI {
       public:
 	virtual ~Device();
 	// Load a bitstream via jtag
-	virtual void load(const char *) = 0;
+	//	virtual void load(const char *) = 0;
 	inline OS::Ether::Address &addr() { return m_devAddr; }
       protected:
 	// Tell me which socket to use (not to own)

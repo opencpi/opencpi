@@ -99,7 +99,6 @@ struct Attachment {
   InstancePort           &m_instPort;   // which instance port
   Connection             &m_connection; // which connection
   size_t                  m_index;      // base of this attachment
-  //  size_t                  m_count;      // width of this attachment, or zero if all
   Attachment(InstancePort &ip, Connection &c, size_t index); // , size_t count);
 };
 
@@ -126,6 +125,7 @@ struct InstancePort {
     emitPortSignals(FILE *f, bool out, Language lang, const char *indent,
 		    bool &any, std::string &comment, std::string &last),
     emitConnectionSignal(FILE *f, bool output, Language lang),
+    emitTieoffAssignments(FILE *f),
     connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, OcpAdapt &oa,
 		     std::string &signal, std::string &thisComment, Language lang);
 };

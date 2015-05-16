@@ -36,6 +36,9 @@
 # Makefile for an RCC worker
 ifndef RCC_WORKER_MK
 RCC_WORKER_MK:=xxx
+ifneq ($(words $(Workers)),1)
+BinaryName:=$(CwdName)
+endif
 include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
 Model=rcc
 # Default is that you are building in a subdirectory of all implementations
@@ -63,11 +66,11 @@ SharedLibLinkOptions+=-dynamiclib
 SharedLibCompileOptions=
 endif
 endif
-DispatchSourceFile = $(GeneratedDir)/$(word 1,$(Workers))_dispatch.c
+DispatchSourceFile = $(GeneratedDir)/$(CwdName)_dispatch.c
 GeneratedSourceFiles += $(DispatchSourceFile)
 ArtifactFile=$(BinaryFile)
 # Artifacts are target-specific since they contain things about the binary
-ArtifactXmlFile=$(call WkrTargetDir,$1,$2)/$(word 1,$(Workers))_assy-art.xml
+ArtifactXmlFile=$(call WkrTargetDir,$1,$2)/$(CwdName)_assy-art.xml
 ToolSeparateObjects:=yes
 OcpiLibDir=$(OCPI_CDK_DIR)/lib/$$(RccTarget)
 RccLibraries=rcc application

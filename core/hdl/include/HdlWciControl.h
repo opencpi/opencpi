@@ -33,6 +33,8 @@ namespace OCPI {
       //      const std::string &name() const { return m_wName; }
       void init(bool redo, bool doInit);
       inline size_t index() const { return m_occpIndex; }
+      void propertyWritten(unsigned ordinal) const;
+      void propertyRead(unsigned ordinal) const;
       // Add the hardware considerations to the property object that supports
       // fast memory-mapped property access directly to users
       // the key members are "readVaddr" and "writeVaddr"
@@ -59,23 +61,37 @@ namespace OCPI {
       static void throwPropertyWriteError(uint32_t status);
       static void throwPropertySequenceError();
 
-#define PUT_GET_PROPERTY(n)						          \
+#define PUT_GET_PROPERTY(n,wb)                                                    \
       void                                                                        \
       setProperty##n(const OCPI::API::PropertyInfo &info, uint##n##_t val) const; \
       inline uint##n##_t						          \
       getProperty##n(const OCPI::API::PropertyInfo &info) const {	          \
         uint32_t offset = checkWindow(info.m_offset, n/8);			  \
-	uint32_t status = 0;						          \
+	uint32_t status = 0;                                                      \
+        uint##wb##_t val##wb;							  \
 	uint##n##_t val;						          \
 	if (m_properties.m_registers) {					          \
 	  if (!info.m_readError ||					          \
 	      !(status =						          \
 		get32Register(status, OccpWorkerRegisters) &		          \
-		OCCP_STATUS_READ_ERRORS))				          \
-	    val = m_properties.get##n##RegisterOffset(offset);                    \
-	  else							                  \
+		OCCP_STATUS_READ_ERRORS)) {                                       \
+	    val##wb = m_properties.get##n##RegisterOffset(offset);      	  \
+	    switch ((uint32_t)val##wb) {                                          \
+	    case OCCP_TIMEOUT_RESULT:                                             \
+            case OCCP_RESET_RESULT:                                               \
+            case OCCP_ERROR_RESULT:                                               \
+            case OCCP_FATAL_RESULT:                                               \
+            case OCCP_BUSY_RESULT:                                                \
+	      /* The returned data value matches our error codes so we read */    \
+	      /* the status register to be sure */			          \
+	      status = get32Register(status, OccpWorkerRegisters) &	          \
+		       OCCP_STATUS_READ_ERRORS;				          \
+	    default:							          \
+	      val = (uint##n##_t)val##wb;                                         \
+            }								          \
+	  } else                                                                  \
             val = 0;                                                              \
-	  if (info.m_readError && !status)				          \
+	  if (!status && info.m_readError)				          \
 	    status =							          \
 	      get32Register(status, OccpWorkerRegisters) &		          \
 	      OCCP_STATUS_READ_ERRORS;					          \
@@ -86,10 +102,10 @@ namespace OCPI {
 	  throwPropertyReadError(status);				          \
 	return val;							          \
       }
-      PUT_GET_PROPERTY(8)
-      PUT_GET_PROPERTY(16)
-      PUT_GET_PROPERTY(32)
-      PUT_GET_PROPERTY(64)
+      PUT_GET_PROPERTY(8,32)
+      PUT_GET_PROPERTY(16,32)
+      PUT_GET_PROPERTY(32,32)
+      PUT_GET_PROPERTY(64,64)
 #undef PUT_GET_PROPERTY
       void setPropertyBytes(const OCPI::API::PropertyInfo &info, size_t offset,
 			    const uint8_t *data, size_t nBytes) const;

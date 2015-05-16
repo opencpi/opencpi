@@ -228,6 +228,10 @@ namespace OCPI {
 	  if (err)
 	    throw OU::Error("%s", err);
 	}
+	void
+	unload() {
+	  throw "Can't unload bitstreams for PCI/JTAG devices yet";
+	}
       };
 
       Driver::

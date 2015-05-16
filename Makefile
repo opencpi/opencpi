@@ -130,8 +130,6 @@ PACKAGES += tests
 ALLPACKAGES = \
 	adapt/os/ocpios \
 	core/util \
-	core/corba/corba_util \
-	core/corba/orb_services \
 	core/dataplane/rdma_utils \
 	core/dataplane/rdma_driver_interface \
 	core/dataplane/rdma_smb \
@@ -148,11 +146,6 @@ ALLPACKAGES = \
 	core/remote \
 	core/ctests \
         core/application \
-	core/sca/cf \
-	core/sca/cf_util \
-	core/sca/gpped \
-	core/sca/sgac \
-	core/sca/srpl \
 	tools/local/binder \
 	tools/local/tester \
 	tools/cdkutils \
@@ -162,6 +155,18 @@ ALLPACKAGES = \
 	tools/astyle \
 	tests \
 	test \
+
+ifeq ($(OCPI_HAVE_CORBA),1)
+ALLPACKAGES += \
+	core/corba/corba_util \
+	core/corba/orb_services \
+	core/sca/cf \
+	core/sca/cf_util \
+	core/sca/gpped \
+	core/sca/sgac \
+	core/sca/srpl \
+
+endif
 
 #
 # ----------------------------------------------------------------------

@@ -123,7 +123,8 @@ namespace OCPI {
 	return esprintf("Property \"%s\" is a parameter and can't be writable or indirect",
 			m_name.c_str());
       if (!m_isWritable && !m_isReadable && !m_isParameter && !m_isPadding)
-	return "property is not readable or writable or padding or a parameter";
+	return esprintf("Property \"%s\" is not readable or writable or padding or a parameter",
+			m_name.c_str());
       return NULL;
     }
     // This is parsing a newly create property that might be only defined in

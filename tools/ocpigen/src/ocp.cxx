@@ -430,7 +430,18 @@ emitPortSignalsDir(FILE *f, bool output, Language lang, const char *indent,
   OcpSignalDesc *osd;
   OcpSignal *os;
   OcpAdapt *oa;
-  for (osd = ocpSignals, os = ocp.signals, oa = adapt; osd->name; os++, osd++, oa++)
+  if (lang == VHDL && atts.size() == 0 && output) {
+    doPrev(f, last, comment, hdlComment(lang));
+    if (any)
+      fputs(indent, f);
+    any = true;
+    comment = "";
+    fprintf(f, "%s => open", name.c_str());
+    return;
+  }
+  for (osd = ocpSignals, os = ocp.signals, oa = adapt; osd->name; os++, osd++, oa++) {
+    ocpiDebug("Perhaps connecting OCP signal %s value %p master %u os->master %u atts %zu",
+	      osd->name, os->value, master, os->master, atts.size());
     // If the signal is in the interface
     if (os->value && (output ? os->master == master : os->master != master)) {
       std::string signal, thisComment;
@@ -453,6 +464,7 @@ emitPortSignalsDir(FILE *f, bool output, Language lang, const char *indent,
 	any = true;
       }
     }
+  }
 }
 
 void OcpPort::

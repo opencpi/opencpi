@@ -6,13 +6,16 @@
 # to the assembly's directory, ending in the name of the assembly.
 HdlMode:=container
 $(infox MYCL:$(ComponentLibraries):$(XmlIncludeDirs):$(MdlAssembly))
+ifndef HdlPlatforms
+HdlPlatforms:=$(HdlPlatform)
+endif
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 # These next lines are similar to what worker.mk does
 override Workers:=$(CwdName:container-%=%)
 override Worker:=$(Workers)
 XmlName:=$(Worker).xml
 Worker_$(Worker)_xml:=$(or $(wildcard $(XmlName)),\
-                           $(wildcard $(HdlAssembly)/$(XmlName)),\
+                           $(wildcard $(HdlAssembly)/gen/$(XmlName)),\
                            $(wildcard $(GeneratedDir)/$(XmlName)))
 Worker_xml:=$(Worker_$(Worker)_xml)
 Assembly:=$(HdlAssembly)
@@ -32,9 +35,13 @@ AssemblyName=$(notdir $(HdlAssembly))
 override LibDir=$(HdlAssembly)/lib/hdl
 ifneq ($(MAKECMDGOALS),clean)
   # Manipulate targets before this
-  $(and $(call DoShell,$(OcpiGen) -S $(AssemblyName) -x platform $(Worker_xml),HdlContPlatform),\
+  $(call OcpiDbgVar,HdlPlatform)
+  $(call OcpiDbgVar,HdlPlatforms)
+  HdlOnePlatform:=$(if $(filter 1,$(words $(HdlPlatforms))),-P $(HdlPlatforms))
+  override Platform:=$(if $(filter 1,$(words $(HdlPlatforms))),$(HdlPlatforms))
+  $(and $(call DoShell,$(OcpiGen) -S $(AssemblyName) $(HdlOnePlatform) -x platform $(Worker_xml),HdlContPlatform),\
     $(error Processing container XML $1: $(HdlContPlatform)))
-  $(and $(call DoShell,$(OcpiGen) -S $(AssemblyName) -x configuration $(Worker_xml),HdlContConfig),\
+  $(and $(call DoShell,$(OcpiGen) -S $(AssemblyName) $(HdlOnePlatform) -x configuration $(Worker_xml),HdlContConfig),\
     $(error Processing container XML $1: $(HdlContConfig)))
   $(call OcpiDbgVar,HdlContPlatform)
   $(call OcpiDbgVar,HdlContConfig)

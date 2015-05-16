@@ -55,6 +55,10 @@ namespace OCPI {
 	void load(const char *) {
 	  throw "Can't load bitstreams for ethernet devices yet";
 	}
+	void
+	unload() {
+	  throw "Can't unload bitstreams for ethernet devices yet";
+	}
       };
       Driver::
       ~Driver() {

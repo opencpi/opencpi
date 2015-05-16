@@ -102,7 +102,12 @@ parseHdlImpl(const char *package) {
       if (!m_ctl.firstRaw)
 	return OU::esprintf("FirstRawProperty: '%s' not found as a property", firstRaw);
       m_ctl.rawProperties = true;
-    }
+    } else if (m_ctl.rawProperties)
+      for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
+	if (!(*pi)->m_isParameter) {
+	  m_ctl.firstRaw = *pi;
+	  break;
+	}
     bool raw = false;
     for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
       OU::Property &p = **pi;
@@ -127,8 +132,7 @@ parseHdlImpl(const char *package) {
 	    m_ctl.nonRawVolatiles = true;
 	  if (p.m_isVolatile || p.m_isReadable && !p.m_isWritable)
 	    m_ctl.nonRawReadbacks = true;
-	  if (!p.m_isParameter || p.m_isReadable)
-	    m_ctl.nNonRawRunProperties++;
+	  m_ctl.nNonRawRunProperties++;
 	  if (p.m_isSub32)
 	    m_ctl.nonRawSub32Bits = true;
 	}
@@ -202,8 +206,27 @@ parseHdlImpl(const char *package) {
     if (p->count == 0)
       p->count = 1;
   }
-  // process ad hoc signals: FIXME: this should be device only
-  if ((err = Signal::parseSignals(m_xml, m_file, m_signals, m_sigmap)))
+  const char *emulate = ezxml_cattr(m_xml, "emulate");
+  if (emulate) {
+    if (m_ports.size())
+      return OU::esprintf("Device emulation workers can't have any ports");
+    addWciClockReset();
+    if (ezxml_cchild(m_xml, "signal") || ezxml_cchild(m_xml, "signals"))
+      return OU::esprintf("Can't have both \"emulate\" attributed and \"signal\" elements");
+    const char *dot = strrchr(emulate, '.');
+    if (!dot)
+      return OU::esprintf("'emulate' attribute: '%s' has no authoring model suffix", emulate);
+    std::string ew;
+    OU::format(ew, "../%s/%.*s.xml", emulate, (int)(dot - emulate), emulate);
+    if (!(m_emulate = HdlDevice::get(ew.c_str(), m_file.c_str(), this, err)))
+      return OU::esprintf("for emulated device worker %s: %s", emulate, err);
+    for (SignalsIter si = m_emulate->m_signals.begin();
+	 si != m_emulate->m_signals.end(); si++) {
+      Signal *s = (*si)->reverse();
+      m_signals.push_back(s);
+      m_sigmap[s->m_name.c_str()] = s;
+    }
+  } else if ((err = Signal::parseSignals(m_xml, m_file, m_signals, m_sigmap)))
     return err;
   // Finalize endian default
   if (m_endian == NoEndian)
@@ -216,6 +239,18 @@ Signal::
 Signal()
   : m_direction(IN), m_width(0), m_differential(false), m_pos("%sp"), m_neg("%sn"),
     m_type(NULL) {
+}
+
+Signal * Signal::
+reverse() {
+  Signal *s = new Signal(*this);
+  switch(m_direction) {
+  case IN: s->m_direction = OUT; break;
+  case OUT:s->m_direction = IN; break;
+  default:
+    break;
+  }
+  return s;
 }
 
 const char *Signal::
@@ -293,4 +328,28 @@ findSignal(Signal *sig, size_t idx) const {
     if ((*i).second.first == sig && (*i).second.second == idx)
       return (*i).first;
   return NULL;
+}
+
+// emit one side of differential, or only side..
+void Signal::
+emitConnectionSignal(FILE *f, const char *iname, const char *pattern) {
+  std::string name;
+  OU::format(name, pattern, m_name.c_str());
+  fprintf(f, "  signal %s_%s : std_logic", iname, name.c_str());
+  if (m_width)
+    fprintf(f, "_vector(%zu downto 0)", m_width-1);
+  fprintf(f, ";\n");
+}
+
+// static, for emulation signals
+void Signal::
+emitConnectionSignals(FILE *f, const char *name, Signals &signals) {
+  for (SignalsIter si = signals.begin(); si != signals.end(); si++) {
+    Signal &s = **si;
+    if (s.m_differential) {
+      s.emitConnectionSignal(f, name, s.m_pos.c_str());
+      s.emitConnectionSignal(f, name, s.m_neg.c_str());
+    } else
+      s.emitConnectionSignal(f, name, "%s");
+  }
 }

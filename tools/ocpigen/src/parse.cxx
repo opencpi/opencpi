@@ -544,32 +544,31 @@ parseSpec(const char *package) {
   if (specAttr) {
     if (spec)
       return "Can't have both ComponentSpec element (maybe xi:included) and a 'spec' attribute";
-    if ((err = parseFile(specAttr, m_file, "ComponentSpec", &spec, m_specFile, true)))
+    if ((err = parseFile(specAttr, m_file, "ComponentSpec", &spec, m_specFile, false)))
       return err;
   } else if (!spec)
     return "missing componentspec element or spec attribute";
 #if 0
-  if (!(m_specName = ezxml_cattr(spec, "Name")))
-    return "Missing Name attribute for ComponentSpec";
-#else
   if (m_specFile == m_file) {
     // If not in its own file, then it must have a name attr
     if (!(m_specName = ezxml_cattr(spec, "Name")))
       return "Missing Name attribute for ComponentSpec";
-  } else {
-    // If the spec is in its own file, we can default the name from the file
-    std::string name, fileName;
-    if ((err = getNames(spec, m_specFile.c_str(), "ComponentSpec", name, fileName)))
-      return err;
-    size_t len = strlen("-spec");
-    if (name.length() > len) {
-      const char *tail = name.c_str() + name.length() - len;
-      if (!strcasecmp(tail, "-spec") || !strcasecmp(tail, "_spec"))
-	name.resize(name.size() - len);
-    }
-    m_specName = strdup(name.c_str());
-  }
+  } else
 #endif
+   {
+     // default the specname from the file of the current file,
+     // which may in fact be the name of the worker file if the component spec is embedded
+     std::string name, fileName;
+     if ((err = getNames(spec, m_specFile.c_str(), "ComponentSpec", name, fileName)))
+       return err;
+     size_t len = strlen("-spec");
+     if (name.length() > len) {
+       const char *tail = name.c_str() + name.length() - len;
+       if (!strcasecmp(tail, "-spec") || !strcasecmp(tail, "_spec"))
+	 name.resize(name.size() - len);
+     }
+     m_specName = strdup(name.c_str());
+   }
   // Find the package even though the spec package might be specified already
   if ((err = findPackage(spec, package)))
     return err;
@@ -703,7 +702,8 @@ getValue(const char *sym, OU::ExprValue &val) const {
 // Get the filename and the name as required.
 // Used when the name defaults from the filename
 const char *
-getNames(ezxml_t xml, const char *file, const char *tag, std::string &name, std::string &fileName) {
+getNames(ezxml_t xml, const char *file, const char *tag, std::string &name,
+	 std::string &fileName) {
   const char *xname = ezxml_name(xml);
   if (!xname)
     xname = "";
@@ -744,14 +744,15 @@ create(const char *file, const std::string &parentFile, const char *package, con
   if (!strcasecmp("HdlPlatform", name))
     w = HdlPlatform::create(xml, xfile, parent, err);
   else if (!strcasecmp("HdlConfig", name))
-    w = HdlConfig::create(xml, xfile, parent, err);
+    w = HdlConfig::create(xml, NULL, xfile, parent, err);
   else if (!strcasecmp("HdlContainer", name))
     w = HdlContainer::create(xml, xfile, err);
   else if (!strcasecmp("HdlAssembly", name))
     w = HdlAssembly::create(xml, xfile, parent, err);
-  else if (!strcasecmp("HdlDevice", name))
-    w = HdlDevice::create(xml, xfile, parent, err);
-  else if (!strcasecmp("RccAssembly", name))
+  else if (!strcasecmp("HdlDevice", name)) {
+    w = HdlDevice::get(file, parentFile.c_str(), parent, err);
+    //    w = HdlDevice::create(xml, xfile, parent, err);
+  } else if (!strcasecmp("RccAssembly", name))
     w = RccAssembly::create(xml, xfile, err);
   else if ((w = new Worker(xml, xfile, parentFile, Worker::Application, parent, instancePVs, err))) {
     if (!strcasecmp("RccImplementation", name) || !strcasecmp("RccWorker", name))
@@ -902,9 +903,9 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
     m_specName(NULL), m_isThreaded(false), m_maxPortTypeName(0), m_wciClock(NULL),
     m_endian(NoEndian), m_needsEndian(false), m_pattern(NULL), m_portPattern(NULL),
     m_staticPattern(NULL), m_defaultDataWidth(-1), m_language(NoLanguage), m_assembly(NULL),
-    m_slave(NULL), m_library(NULL), m_outer(false), m_debugProp(NULL), m_instancePVs(ipvs),
-    m_mkFile(NULL), m_xmlFile(NULL), m_outDir(NULL), m_paramConfig(NULL), m_scalable(false),
-    m_parent(parent)
+    m_slave(NULL), m_emulate(NULL), m_library(NULL), m_outer(false), m_debugProp(NULL), 
+    m_instancePVs(ipvs), m_mkFile(NULL), m_xmlFile(NULL), m_outDir(NULL), m_paramConfig(NULL),
+    m_scalable(false), m_parent(parent)
 {
   const char *name = ezxml_name(xml);
   // FIXME: make HdlWorker and RccWorker classes  etc.
@@ -932,7 +933,7 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
     else if (xfile && (m_library = findLibMap(xfile)))
       ocpiDebug("m_library set from map from file %s: %s", xfile, m_library);
     else if (m_parent && (m_library = m_implName))
-      ocpiDebug("m_library set from worker name: %s", m_implName);
+      ocpiDebug("m_library set from worker name: %s parent: %s", m_implName, parent->m_implName);
     else
       ocpiDebug("m_library not set");
     // Parse the optional endian attribute.
@@ -1001,7 +1002,7 @@ Parsed(ezxml_t xml,        // The xml for this entity
        const std::string &parent, // The file referencing this entity or file, possibly NULL
        const char *tag,    // The top level tag for this entity
        const char *&err)   // Errors detected during construction
-  : m_file(file ? file : ""), m_parent(parent), m_xml(xml) {
+  : m_file(file ? file : ""), m_parentFile(parent), m_xml(xml) {
   ocpiAssert(xml);
   err = getNames(xml, file, tag, m_name, m_fileName);
 }

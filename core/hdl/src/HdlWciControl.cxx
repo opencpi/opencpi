@@ -178,6 +178,9 @@ namespace OCPI {
 	  case OCCP_FATAL_RESULT:
 	    oops = "indicated a fatal error from control operation";
 	    break;
+	  case OCCP_BUSY_RESULT:
+	    oops = "indicated the worker was (still) busy from a previous operation";
+	    break;
 	  default:
 	    oops = "returned unknown result value from control operation";
 	  }
@@ -196,6 +199,9 @@ namespace OCPI {
 		 m_implName, m_instName, m_occpIndex, OU::Worker::s_controlOpNames[op], op);
       return false;
     }
+
+    void WciControl::propertyWritten(unsigned /*ordinal*/) const {};
+    void WciControl::propertyRead(unsigned /*ordinal*/) const {};
 
 #define PUT_GET_PROPERTY(n)						     \
     void WciControl::                                                        \
@@ -358,14 +364,16 @@ namespace OCPI {
     void WciControl::
     throwPropertyReadError(uint32_t status) {
       throw OU::Error("property reading error: %s",
-		      status & OCCP_STATUS_READ_TIMEOUT ?
-		      "timeout" : "worker generated error response");
+		      status & OCCP_STATUS_READ_TIMEOUT ? "timeout" :
+		      (status & OCCP_STATUS_READ_FAIL ?
+		       "busy" : "worker generated error response"));
     }
     void WciControl::
     throwPropertyWriteError(uint32_t status) {
       throw OU::Error("property writing error: %s",
-		      status & OCCP_STATUS_WRITE_TIMEOUT ?
-		      "timeout" : "worker generated error response");
+		      status & OCCP_STATUS_WRITE_TIMEOUT ? "timeout" :
+		      (status & OCCP_STATUS_WRITE_FAIL ?
+		       "busy" : "worker generated error response"));
     }
     void WciControl::
     throwPropertySequenceError() {

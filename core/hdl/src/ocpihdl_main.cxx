@@ -87,7 +87,8 @@ typedef void Function(const char **ap);
 static Function
 search, emulate, ethers, probe, testdma, admin, bram, unbram, uuid, reset, set, get, control,
   radmin, wadmin, rmeta, settime, deltatime, wdump, wreset, wunreset, wop, wwctl, wclear, wwpage,
-  wread, wwrite, sendData, receiveData, receiveRDMA, sendRDMA, simulate, getxml, load, status;
+  wread, wwrite, sendData, receiveData, receiveRDMA, sendRDMA, simulate, getxml, load, unload,
+  status;
 static bool verbose = false, parseable = false, hex = false;
 static int log = -1;
 std::string platform, simExec;
@@ -123,6 +124,7 @@ struct Command {
   { "get", get, DEVICE},
   { "getxml", getxml, DEVICE},
   { "load", load, 0},
+  { "unload", unload, DEVICE},
   { "probe", probe, SUDO | DEVICE | DISCOVERY},
   { "radmin", radmin, DEVICE },
   { "receiveData", receiveData, INTERFACE},
@@ -196,6 +198,7 @@ usage(const char *name) {
 	  "                                 # perform config space write of size bytes (default 4) at offset\n"
 	  "                                 # generate UUID verilog file\n"
 	  "    load  <hdl-dev> <file>       # load bitstream from file\n"
+	  "    unload  <hdl-dev>            # revert device to unloaded state: no bitstream\n"
           "    getxml <hdl-dev> <file>      # Extract the xml metadata from the device into the file\n"
           "    simulate                     # run simulator inside created sim: device\n"
           "  Options: (values are either directly after the letter or in the next argument)\n"
@@ -758,7 +761,7 @@ bram(const char **ap) {
   strm.next_out = out;
   if ((lr = lzma_code(&strm, LZMA_FINISH)) != LZMA_STREAM_END)
     bad("lzma didn't finish: %u", lr);
-  total = strm.total_out;
+  total = OCPI_UTRUNCATE(size_t, strm.total_out);
   check = 0;
 #else
   z_stream zs;
@@ -798,8 +801,8 @@ bram(const char **ap) {
     unlink(ap[1]);
     bad("Error writing output file '%s'", ap[1]);
   }
-  printf("Wrote bram file '%s' (%lu bytes) from file '%s' (%lu bytes)\n",
-	 ap[1], total + OH::ROM_HEADER_BYTES, *ap, (unsigned long)length);
+  printf("Wrote bram file '%s' (%zu bytes) from file '%s' (%zu bytes)\n",
+	 ap[1], total + OH::ROM_HEADER_BYTES, *ap, (size_t)length);
   if (in) free(in);
   if (out) free(out);
 }
@@ -903,7 +906,7 @@ unbram(const char **ap) {
     unlink(ap[1]);
     bad("Error writing output file '%s'", ap[1]);
   }
-  printf("Wrote unbram file '%s' (%lu bytes) from file '%s' (%zu bytes)\n",
+  printf("Wrote unbram file '%s' (%zu bytes) from file '%s' (%zu bytes)\n",
 	 ap[1], total, ap[0], inBytes);
 }
 
@@ -1112,10 +1115,16 @@ wdump(const char **) {
     printf(" ctlError");
   if (i & OCCP_STATUS_READ_ERROR)
     printf(" rdError");
+  if (i & OCCP_STATUS_READ_FAIL)
+    printf(" rdBusy");
   if (i & OCCP_STATUS_WRITE_ERROR)
     printf(" wrtError");
+  if (i & OCCP_STATUS_WRITE_FAIL)
+    printf(" wrtBusy");
   if (i & OCCP_STATUS_CONTROL_TIMEOUT)
     printf(" ctlTimeout");
+  if (i & OCCP_STATUS_CONTROL_FAIL)
+    printf(" ctlBusy");
   if (i & OCCP_STATUS_READ_TIMEOUT)
     printf(" rdTimeout");
   if (i & OCCP_STATUS_ACCESS_ERROR)
@@ -1196,6 +1205,7 @@ wop(const char **ap) {
 	   r == OCCP_TIMEOUT_RESULT ? "timeout" :
 	   r == OCCP_RESET_RESULT ? "reset" :
 	   r == OCCP_SUCCESS_RESULT ? "success" : 
+	   r == OCCP_BUSY_RESULT ? "busy" : 
 	   r == OCCP_FATAL_RESULT  ? "fatal" : "unknown",
 	   r);
 }
@@ -1832,38 +1842,43 @@ struct Arg {
     ezxml_t impl = OX::findChildWithAttr(top, "worker", "name", wkr);
     if (!impl)
       bad("Can't find worker '%s' for instance '%s'", name, wkr);
-    Worker w(impl, inst, idx);
-    if (control)
-      w.control(prop);
-    else if (status)
-      w.status();
-    else if (value) {
-      // Setting a property
-      w.setProperty(prop, value);
-      printf("Setting the %s property to '%s' on instance '%s'\n",
-	     prop, value, name);
-      fflush(stdout);
+    Worker *w = NULL;
+    if (!idx) {
+      if (control || status || value || prop)
+	bad("Can't to control/status/get/put on workers with no control interface");
     } else {
-      printf("  Instance %s of %s worker %s (spec %s)",
-	     w.name().c_str(), strcasecmp(inst->name, "instance") ? inst->name :
-	     idx && !strcmp(idx, "0") ? "platform" : "normal",
-	     wkr, wkr ? ezxml_cattr(impl, "specname") : "<none>");
-      if (idx)
-	printf(" with index %s", idx);
-      printf("\n");
-      fflush(stdout);
-      std::string pname, value;
-      bool unreadable;
-      if (prop) {
-	unsigned i = w.whichProperty(prop);
-	w.getProperty(i, pname, value, &unreadable, hex);
+      w = new Worker(impl, inst, idx);
+      if (control)
+	w->control(prop);
+      else if (status)
+	w->status();
+      else if (value) {
+	// Setting a property
+	w->setProperty(prop, value);
+	printf("Setting the %s property to '%s' on instance '%s'\n",
+	       prop, value, name);
+	fflush(stdout);
+      }
+    }
+    printf("  Instance %s of %s worker %s (spec %s)",
+	   name, strcasecmp(inst->name, "instance") ? inst->name :
+	   idx && !strcmp(idx, "0") ? "platform" : "normal",
+	   wkr, wkr ? ezxml_cattr(impl, "specname") : "<none>");
+    if (idx)
+      printf(" with index %s", idx);
+    printf("\n");
+    fflush(stdout);
+    std::string pname, value;
+    bool unreadable;
+    if (prop) {
+      unsigned i = w->whichProperty(prop);
+      w->getProperty(i, pname, value, &unreadable, hex);
+      printf("%3u %20s: %s\n", i, pname.c_str(),
+	     unreadable ? "<unreadable>" : value.c_str());
+    } else if (verbose && w) {
+      for (unsigned i = 0; w->getProperty(i, pname, value, &unreadable, hex); i++)
 	printf("%3u %20s: %s\n", i, pname.c_str(),
 	       unreadable ? "<unreadable>" : value.c_str());
-      } else if (verbose) {
-	for (unsigned i = 0; w.getProperty(i, pname, value, &unreadable, hex); i++)
-	  printf("%3u %20s: %s\n", i, pname.c_str(),
-		 unreadable ? "<unreadable>" : value.c_str());
-      }
     }
     fflush(stdout);
   }
@@ -1876,27 +1891,25 @@ struct Arg {
 	 !strcasecmp(x->name, "io") ||
 	 !strcasecmp(x->name, "interconnect"))) {
       size_t iindex;
-      bool ifound;
+      bool ifound = false;
       if ((err = OX::getNumber(x, "occpIndex", &iindex, &ifound)))
 	return err;
-      if (ifound) {
-	const char *iname = ezxml_cattr(x, "name");
-	if (letter && iname && iname[0] == letter ||
-	    name && iname && !strcasecmp(name, iname) ||
-	    !letter && !name && index == iindex)
-	  doWorker(x);
-	else if (name && iname && !strcasecmp(name, ezxml_cattr(x, "worker"))) {
-	  // Check for a duplicate, among all children
-	  for (ezxml_t c = top->child; c; c = c->ordered)
-	    if (x != c) {
-	      const char *w = ezxml_cattr(c, "worker");
-	      const char *n = ezxml_cattr(c, "name");
-	      if (w && !strcasecmp(w, name))
-		bad("More than one instance (%s and %s) matches worker '%s'",
-		    iname, n, name);
-	    }
-	  doWorker(x);
-	}
+      const char *iname = ezxml_cattr(x, "name");
+      if (letter && iname && iname[0] == letter ||
+	  name && iname && !strcasecmp(name, iname) ||
+	  !letter && !name && ifound && index == iindex)
+	doWorker(x);
+      else if (name && iname && !strcasecmp(name, ezxml_cattr(x, "worker"))) {
+	// Check for a duplicate, among all children
+	for (ezxml_t c = top->child; c; c = c->ordered)
+	  if (x != c) {
+	    const char *w = ezxml_cattr(c, "worker");
+	    const char *n = ezxml_cattr(c, "name");
+	    if (w && !strcasecmp(w, name))
+	      bad("More than one instance (%s and %s) matches worker '%s'",
+		  iname, n, name);
+	  }
+	doWorker(x);
       }
     }
     return NULL;
@@ -1988,4 +2001,8 @@ load(const char **ap) {
   if (!(dev = driver->open(device, false, true, error)))
     bad("error opening device %s", device);
   dev->load(ap[0]);
+}
+static void
+unload(const char **) {
+  dev->unload();
 }

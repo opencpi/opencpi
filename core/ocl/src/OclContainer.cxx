@@ -765,7 +765,10 @@ namespace OCPI
           return isEnabled;
         }
 
-        virtual void prepareProperty ( OU::Property& md,
+      void propertyWritten(unsigned /*ordinal*/) const {};
+      void propertyRead(unsigned /*ordinal*/) const {};
+
+        void prepareProperty ( OU::Property& md,
 				   volatile void *&writeVaddr,
 				   const volatile void *&readVaddr)
         {

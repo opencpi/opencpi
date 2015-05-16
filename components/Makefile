@@ -98,6 +98,7 @@ Implementations = \
 	sym_fir_complex.rcc \
 	sym_fir_real.rcc \
 	testmulti.rcc \
+	testmulti_cc.rcc \
 	testzc.rcc \
 	psd.hdl \
 	ddc.hdl \
@@ -116,7 +117,6 @@ Implementations = \
 	capture.hdl capture.rcc \
 	ptest.rcc \
 	ptest_cc.rcc \
-	ptest.hdl \
         file_read.hdl \
 	file_write.hdl \
         replicate.rcc \
@@ -125,6 +125,8 @@ Implementations = \
 	hello_world.rcc \
 	hello_world_cc.rcc \
 	proxy.rcc \
+	nothing.hdl \
+	ptest.hdl \
 	$(Tests)
 
 #	fir_prog.hdl \

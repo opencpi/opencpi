@@ -111,6 +111,8 @@ class Worker
   uint32_t getProperty32(const OA::PropertyInfo &info) const  { return 0; }
   uint64_t getProperty64(const OA::PropertyInfo &info) const  { return 0; }
       
+  void propertyWritten(unsigned ordinal) const {};
+  void propertyRead(unsigned ordinal) const {};
   void prepareProperty(OU::Property&,
 		       volatile void *&writeVaddr,
 		       const volatile void *&readVaddr) {}

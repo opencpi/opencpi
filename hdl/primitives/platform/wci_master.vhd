@@ -54,8 +54,9 @@ begin
   is_master          <= to_bool(worker_in.operation = control_read_e or
                                 worker_in.operation = control_write_e);
   starting           <= to_bool(worker_in.id(id_width-1 downto 0) = to_unsigned(id, id_width) and
-                                (not its(active_r) and
-                                 (its(ready_r) or reset_n_r = '0' or is_master)));
+                                not its(active_r));
+                                --(not its(active_r) and (reset_n_r = '0' or is_master)));
+                                 --(its(ready_r) or reset_n_r = '0' or is_master)));
   waiting            <= wci_in.SFlag(1);
   -- command is asserted after we go active - i.e. one cycle after we start
   -- FIXME: can we back this up now that occp is gone?
@@ -117,6 +118,7 @@ begin
                error_e    when wci_in.SResp = ocpi.ocp.SResp_ERR or
                                wci_in.SResp = ocpi.ocp.SResp_FAIL else
                timedout_e when worker_in.timedout = '1' else
+               busy_e     when not ready_r else
                none_e;
   worker_out.response   <= response when its(active_r) else none_e;
   worker_out.attention  <= wci_in.SFlag(0);
@@ -169,9 +171,6 @@ begin
           end case;
         elsif its(active_r) then
           cmd_asserted_r <= bfalse;
-          if response /= none_e then
-            active_r <= bfalse;
-          end if;
           if worker_in.operation = control_write_e then
             -- Write to one of 2 control registers
             case to_integer(unsigned(worker_in.address(5 downto 2))) is
@@ -198,38 +197,36 @@ begin
                 window_r <= worker_in.data(window_r'range);
               when others => null;
             end case;
-          elsif worker_in.operation /= control_read_e and reset_n_r = '1' then
-            -- Note that control_read as well as
-            -- the "worker-is-reset" case of worker accesses take care of themselves
-            -- due to combi muxing on output data and responses (above)
-            -- So we just doing config read/write and control op here
-            -- 
-            -- Capture bad things in sticky bits
-            if wci_in.SResp = ocpi.ocp.SResp_FAIL then
-              case worker_in.operation is
-                when config_write_e => sticky_r(5) <= '1';
-                when config_read_e  => sticky_r(4) <= '1';
-                when control_op_e   => sticky_r(3) <= '1';
-                when others         => null;
-              end case;
-            elsif wci_in.SResp = ocpi.ocp.SResp_ERR then
-              case worker_in.operation is
-                when config_write_e => sticky_r(2) <= '1';
-                when config_read_e  => sticky_r(1) <= '1';
-                when control_op_e   => sticky_r(0) <= '1';
-                when others         => null;
-              end case;
-            end if;
-          elsif its(worker_in.timedout) then
-            case worker_in.operation is
-              when config_write_e => sticky_r(8) <= '1';
-              when config_read_e  => sticky_r(7) <= '1';
-              when control_op_e   => sticky_r(6) <= '1';
-              when others         => null;
-            end case;
           end if;
-        end if;
-      end if;
-    end if;
+          if response /= none_e then
+            active_r <= bfalse;
+            case response is
+              when error_e    => -- error
+                case worker_in.operation is
+                  when config_write_e => sticky_r(2) <= '1';
+                  when config_read_e  => sticky_r(1) <= '1';
+                  when control_op_e   => sticky_r(0) <= '1';
+                  when others         => null;
+                end case;
+              when timedout_e => -- worker timed out
+                case worker_in.operation is
+                  when config_write_e => sticky_r(8) <= '1';
+                  when config_read_e  => sticky_r(7) <= '1';
+                  when control_op_e   => sticky_r(6) <= '1';
+                  when others         => null;
+                end case;
+              when busy_e     => -- worker was busy
+                case worker_in.operation is
+                  when config_write_e => sticky_r(5) <= '1';
+                  when config_read_e  => sticky_r(4) <= '1';
+                  when control_op_e   => sticky_r(3) <= '1';
+                  when others         => null;
+                end case;
+              when others     => null; -- ok/none//data/reset
+            end case;
+          end if; -- there is a response
+        end if; -- active
+      end if; -- reset
+    end if; -- rising edge
   end process;
 end rtl;

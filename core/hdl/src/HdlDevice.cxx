@@ -154,7 +154,7 @@ namespace OCPI {
 					  &out_pos,  // updated output index
 					  rom[2])) == LZMA_OK) {
 	if (out_pos != rom[2]) {
-	  OU::format(err, "length on decompressed data: is %lx, "
+	  OU::format(err, "length on decompressed data: is %zx, "
 		     "should be %" PRIx32, out_pos, rom[2]);
 	  return true;
 	}

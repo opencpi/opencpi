@@ -137,11 +137,6 @@ namespace OCPI {
       OCPI::API::PropertyInfo &setupProperty(unsigned n,
 					     volatile void *&m_writeVaddr,
 					     const volatile void *&m_readVaddr);
-#if 0
-      virtual void prepareProperty(OCPI::Util::Property &p,
-				   volatile void *&m_writeVaddr,
-				   const volatile void *&m_readVaddr) = 0;
-#endif
       virtual Port &createPort(const OCPI::Util::Port &metaport,
 			       const OCPI::Util::PValue *props) = 0;
       virtual Worker *nextWorker() = 0;
@@ -161,20 +156,6 @@ namespace OCPI {
       void setProperty(unsigned ordinal, OCPI::Util::Value &value);
       void setProperties(const char *props[][2]);
       void setProperties(const OCPI::API::PValue *props);
-#if 0
-      virtual void setPropertyBytes(const OCPI::API::PropertyInfo &info, size_t offset,
-				    const uint8_t *data, size_t nBytes) const = 0;
-      virtual void setProperty8(const OCPI::API::PropertyInfo &info, uint8_t data) const = 0;
-      virtual void setProperty16(const OCPI::API::PropertyInfo &info, uint16_t data) const = 0;
-      virtual void setProperty32(const OCPI::API::PropertyInfo &info, uint32_t data) const = 0;
-      virtual void setProperty64(const OCPI::API::PropertyInfo &info, uint64_t data) const = 0;
-      virtual void getPropertyBytes(const OCPI::API::PropertyInfo &info, size_t offset,
-				    uint8_t *data, size_t nBytes) const = 0;
-      virtual uint8_t getProperty8(const OCPI::API::PropertyInfo &info) const = 0;
-      virtual uint16_t getProperty16(const OCPI::API::PropertyInfo &info) const = 0;
-      virtual uint32_t getProperty32(const OCPI::API::PropertyInfo &info) const = 0;
-      virtual uint64_t getProperty64(const OCPI::API::PropertyInfo &info) const = 0;
-#endif
       virtual void getPropertyValue(const OCPI::Util::Property &p, std::string &value, bool hex,
 				    bool add = false);
       bool getProperty(unsigned ordinal, std::string &name, std::string &value,

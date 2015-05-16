@@ -467,7 +467,7 @@ enum Endian {
 
 #define PARSED_ATTRS "name"
 struct Parsed {
-  std::string m_name, m_file, m_parent, m_fileName;
+  std::string m_name, m_file, m_parentFile, m_fileName;
   ezxml_t m_xml;
   Parsed(ezxml_t xml,        // if non-zero, the xml.  If not, then parse the file.
 	 const char *file,   // The file, either where this is embedded or its own file
@@ -490,6 +490,7 @@ typedef Clocks::const_iterator ClocksIter;
 typedef std::list<Worker *> Workers;
 typedef Workers::const_iterator WorkersIter;
 class Assembly;
+class HdlDevice;
 struct Instance;
 class Worker : public Parsed, public OU::IdentResolver {
  public:
@@ -525,6 +526,7 @@ class Worker : public Parsed, public OU::IdentResolver {
   Language m_language;
   ::Assembly *m_assembly;
   Worker *m_slave;
+  HdlDevice *m_emulate;
   Signals m_signals;
   SigMap  m_sigmap;                 // map signal names to signals
   const char *m_library;            // the component library name where the xml was found

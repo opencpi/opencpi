@@ -101,6 +101,7 @@ typedef enum {
 typedef enum {
   OK,
   WORKER_TIMEOUT,
+  WORKER_BUSY,
   ERROR,
   ETHER_TIMEOUT,
   RESPONSE_LIMIT

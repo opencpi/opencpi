@@ -257,7 +257,19 @@ $(AssyImplementations): | $(OutDir)lib/assy
 .PHONY: $(XmImplementations) $(RccImplementations) $(TestImplementations) $(OclImplementations) $(HdlImplementations) $(AssyImplementations) speclinks hdl
 
 # Worker should only be specified when the target is "new".
-ifeq ($(origin Worker),command line)
+ifeq ($(origin Device),command line)
+  ifdef Worker
+    $(error You can not set both the Worker and the Device variables.)
+  endif
+  Worker:=$(Device)
+else
+  ifdef Worker
+    ifneq ($(origin Worker),command line)
+      $(error Worker definition is invalid: it can only be on the command line with "new")
+    endif
+  endif
+endif
+ifdef Worker
   ifneq ($(MAKECMDGOALS),new)
     $(error You cannot set the "Worker" variable unless the make goal/target is "new")
   endif
@@ -275,6 +287,9 @@ ifeq ($(origin Worker),command line)
   Name:=$(word 1,$(Words))
   UCModel=$(call ToUpper,$(Model))
   ifeq ($(origin SpecFile),command line)
+    ifdef Emulate then
+      $(error Cannot specify Emulate= variable with SpecFile);
+    endif
     ifeq ($(SpecFile),none)
       OcpiSpecFile:=
     else
@@ -301,6 +316,14 @@ ifeq ($(origin Worker),command line)
         endif
       endif
     endif
+  else ifdef Emulate
+    ifeq ($(wildcard $(Emulate)),)
+      $(error There is no worker named '$(Emulate)' as specified in the Emulate variable.)
+    endif
+    ifndef Device
+      Device:=$(Worker)
+    endif
+    OcpiSpecFile:=
   else
     # the default will be using an underscore or hypen, whichever exists
     MySpecFile:=$(or $(wildcard specs/$(Name)_spec.xml),specs/$(Name)-spec.xml)
@@ -352,12 +375,12 @@ new:
               echo;\
 	      echo include '$$(OCPI_CDK_DIR)/include/worker.mk' \
 	     ) > $(Worker)/Makefile
-	$(AT)$(and $(or $(OcpiSpecFile),$(OcpiLanguage)), \
+	$(AT)$(and $(OcpiSpecFile)$(OcpiLanguage)$(Device)$(Emulate), \
 	     (\
-	      echo '<$(CapModel)Worker$(and $(LangAttr),'' $(LangAttr))$(and $(OcpiSpecFile),'' spec="$(OcpiSpecFile)")>'; \
-	      $(if $(OcpiSpecFile),,echo '  <componentspec name="$(Name)"/>';) \
+	      echo '<$(if $(Device),HdlDevice,$(CapModel)Worker)$(and $(LangAttr),'' $(LangAttr))$(and $(OcpiSpecFile),'' spec="$(OcpiSpecFile)")$(and $(Emulate),'' emulate="$(Emulate)")>'; \
+	      $(if $(OcpiSpecFile),,echo '  <componentspec$(and $(Emulate),'' nocontrol="1")/>';) \
               echo '  <!-- Insert any other implementation-specific information here -->'; \
-              echo '</$(CapModel)Worker>' \
+              echo '</$(if $(Device),HdlDevice,$(CapModel)Worker)>' \
 	     ) > $(Worker)/$(Name).xml)
 	$(AT)echo Running \"make skeleton\" to make initial skeleton in $(Worker)/$(Name).$(Suffix_$(Model)_$(or $(OcpiLanguage),$(Language_$(Model))))
 	$(AT)$(MAKE) --no-print-directory -C $(Worker) \

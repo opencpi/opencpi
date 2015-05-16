@@ -46,13 +46,17 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
       err = "Slashes not allowed when both platform and config attributes specified";
       return NULL;
     }
-  } else if (myConfig.empty() && myPlatform.empty()) {
-      err = "No platform or platform configration specified in HdlContainer";
-      return NULL;
   } else {
     // one or the other
     if (myConfig.length())
       myPlatform = myConfig;
+    else if (myPlatform.empty())
+      if (platform)
+	myPlatform = platform;
+      else {
+	err = "No platform or platform configuration specified in HdlContainer";
+	return NULL;
+      }
     // assume only platform is specified
     const char *slash = strchr(myPlatform.c_str(), '/');
     if (slash) {
@@ -78,8 +82,8 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
     configName = myPlatform + "/gen/" + myConfig;
     if (parseFile(configName.c_str(), xfile, "HdlConfig", &x, configFile))
       return NULL;
-  }      
-  if (!(config = HdlConfig::create(x, configFile.c_str(), NULL, err)) ||
+  }
+  if (!(config = HdlConfig::create(x, myPlatform.c_str(), configFile.c_str(), NULL, err)) ||
       (err = parseFile(myAssy.c_str(), xfile, "HdlAssembly", &x, assyFile)) ||
       !(appAssembly = HdlAssembly::create(x, assyFile.c_str(), NULL, err)))
     return NULL;
@@ -140,6 +144,29 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
       uNocs[p.name()] = 0;
     }
   }
+  // Preinstall device instances.  These may be devices in the platform OR may be
+  // random devices that are just standalone workers.
+  for (ezxml_t dx = ezxml_cchild(m_xml, "device"); dx; dx = ezxml_next(dx)) {
+    bool floating = false;
+    if ((err = OE::getBoolean(dx, "floating", &floating)))
+      return;
+    std::string name;
+    if (floating) {
+      // This device is not part of the platform.
+      // FIXME:  Apologies for this gross unconsting, but its the least of various evils
+      // Fixing would involve allowing containers to own devices...
+      HdlPlatform &pf = *(HdlPlatform *)&m_platform;
+      err = pf.addFloatingDevice(dx, xfile, this, name);
+    } else if (!(err = OE::getRequiredString(dx, name, "name")) &&
+	       !m_platform.findDevice(name.c_str()))
+      err = OU::esprintf("Container device named '%s' in container XML file '%s' is not in "
+			   "an existing device in the platform", name.c_str(), xfile);
+    if (err ||
+	// We have a device to add to the container that exists on the platform.
+	(err = parseDevInstance(name.c_str(), dx, m_file.c_str(), this, false,
+				&m_config.devInstances(), NULL, NULL)))
+      return;
+  }
   // Establish connections, WHICH MAY ALSO IMPLICITLY CREATE DEVICE INSTANCES
   ContConnects connections;
   for (ezxml_t cx = ezxml_cchild(m_xml, "connection"); cx; cx = ezxml_next(cx)) {
@@ -176,19 +203,21 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 		  p.count, p.name());
     nWCIs += p.count;
   }
-  // Instance the assembly and connect its wci
-  OU::formatAdd(assy, "  <instance worker='%s'/>\n", m_appAssembly.m_implName);
-  // Connect the assembly to the control plane
-  if (!m_appAssembly.m_noControl) {
-    Port &p = *m_appAssembly.m_ports[0];
-    OU::formatAdd(assy,
-		  "  <connection count='%zu'>\n"
-		  "    <port instance='ocscp' name='wci' index='%zu'/>\n"
-		  "    <port instance='%s' name='%s'/>\n"
-		  "  </connection>\n",
-		  p.count, nWCIs,
-		  m_appAssembly.m_implName, p.name());
-    nWCIs += p.count;
+  if (m_appAssembly.m_assembly && m_appAssembly.m_assembly->m_nInstances != 0) {
+    // Instance the assembly and connect its wci
+    OU::formatAdd(assy, "  <instance worker='%s'/>\n", m_appAssembly.m_implName);
+    // Connect the assembly to the control plane
+    if (!m_appAssembly.m_noControl) {
+      Port &p = *m_appAssembly.m_ports[0];
+      OU::formatAdd(assy,
+		    "  <connection count='%zu'>\n"
+		    "    <port instance='ocscp' name='wci' index='%zu'/>\n"
+		    "    <port instance='%s' name='%s'/>\n"
+		    "  </connection>\n",
+		    p.count, nWCIs,
+		    m_appAssembly.m_implName, p.name());
+      nWCIs += p.count;
+    }
   }
   if (doDefault) {
     if (ezxml_cchild(m_xml, "connection")) {
@@ -225,7 +254,17 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
       OU::formatAdd(assy, "  <instance name='%s' worker='%s'>\n",
 		    (*di).name(),
 		    (*di).device.deviceType().name());
-      mapDevSignals(assy, *di, true);
+      // Decide whether to map the signals or not, based on whether we are an emulator
+      // or are paired with an emulator
+      const DevInstance *emulator = NULL;
+      for (DevInstancesIter edi = m_devInstances.begin(); edi != m_devInstances.end(); edi++)
+	if ((*edi).device.deviceType().m_emulate &&
+	    (*edi).device.deviceType().m_emulate == &(*di).device.deviceType()) {
+	  emulator = &*edi;
+	  break;
+	}
+      if (!emulator && !(*di).device.deviceType().m_emulate)
+	mapDevSignals(assy, *di, true);
       assy += "  </instance>\n";
       if (!(*di).device.deviceType().m_noControl) {
 	OU::formatAdd(assy,
@@ -306,11 +345,26 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
     return;
   }
   m_xml = x;
+  // During the parsing of the container assembly we KNOW what the platform is,
+  // but the platform config XML that might be parsed might thing it is defaulting
+  // from the platform where it lives, so we temporarily set the global to the
+  // platform we know.
+  const char *save = platform;
+  platform = m_platform.m_name.c_str();
   if ((err = parseHdl()))
     return;
+  platform = save;
   // Make all device instances signals external that are not mapped
   unsigned n = 0;
   for (Instance *i = m_assembly->m_instances; n < m_assembly->m_nInstances; i++, n++) {
+    Instance *emulator = NULL, *ii = m_assembly->m_instances;
+    for (unsigned nn = 0; nn < m_assembly->m_nInstances; nn++, ii++)
+      if (ii->worker->m_emulate && ii->worker->m_emulate == i->worker) {
+	emulator = ii;
+	break;
+      }
+    if (i->worker->m_emulate || emulator)
+      continue;
     for (SignalsIter si = i->worker->m_signals.begin(); si != i->worker->m_signals.end(); si++) {
       // If the signal is mapped, that is the external signal.
       Signal *s = new Signal(**si);
@@ -376,7 +430,7 @@ HdlContainer::
   delete &m_config;
 }
 
-// Establish and parse connection - THIS MAY IMPLICIT DEVICE INSTANCES
+// Establish and parse connection - THIS MAY IMPLICITLY CREATE DEVICE INSTANCES
 const char *HdlContainer::
 parseConnection(ezxml_t cx, ContConnect &c) {
   const char *err;
@@ -403,7 +457,7 @@ parseConnection(ezxml_t cx, ContConnect &c) {
   //    C. Is it instantiated implicitly here
   c.devInConfig = false;
   if ((attr = ezxml_cattr(cx, "device")) &&
-      (err = parseDevInstance(attr, cx, m_file.c_str(), false, &m_config.devInstances(),
+      (err = parseDevInstance(attr, cx, m_file.c_str(), this, false, &m_config.devInstances(),
 			      &c.devInstance, &c.devInConfig)))
     return err;
   if ((attr = ezxml_cattr(cx, "port"))) {

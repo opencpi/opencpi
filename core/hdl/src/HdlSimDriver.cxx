@@ -125,6 +125,10 @@ namespace OCPI {
 	    }
 	  }
 	}
+	void
+	unload() {
+	  throw "Can't unload bitstreams for simulated devices yet";
+	}
       };
 
       Driver::

@@ -274,8 +274,9 @@ define WkrDoTarget
 endef
 
 # Do all the targets
+ifneq ($(MAKECMDGOALS),skeleton)
 $(foreach t,$($(CapModel)Targets),$(eval $(call WkrDoTarget,$t)))
-
+endif
 ################################################################################
 # Export support - what we put into the (export) library above us
 

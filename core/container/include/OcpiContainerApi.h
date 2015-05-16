@@ -89,7 +89,7 @@ namespace OCPI {
       virtual void connect(Port &other, const PValue *myParams = NULL,
 			   const PValue *otherParams = NULL) = 0;
       virtual void connectURL(const char* url, const PValue *myProps = NULL,
-			   const PValue *otherProps = NULL) = 0;
+			      const PValue *otherProps = NULL) = 0;
 
       virtual void disconnect() = 0;
       // Connect directly to this port, which creates a UserPort object.
@@ -103,6 +103,8 @@ namespace OCPI {
     class PropertyAccess {
     public:
       virtual ~PropertyAccess();
+      virtual void propertyWritten(unsigned ordinal) const = 0;
+      virtual void propertyRead(unsigned ordinal) const = 0;
       // These methods are used by the Property methods below when the
       // fast path using memory-mapped access cannot be used.
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		  \
@@ -259,30 +261,34 @@ namespace OCPI {
       // types are supported explicitly.  C++ doesn't quite do the right thing.
       // The "m_writeVaddr/m_readVaddr" members are only non-zero if the 
       // implementation does not produce errors and it is atomic at this data size
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)              \
-      inline void set##pretty##Value(run val) const {                       \
-        checkType(OCPI_##pretty, 1, true);				    \
-        if (m_writeVaddr)                                                   \
-          *(store *)m_writeVaddr= *(store*)((void*)&(val));                 \
-        else                                                                \
-          m_worker.set##pretty##Property(m_ordinal, val);			    \
-      }                                                                     \
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                  \
+      inline void set##pretty##Value(run val) const {                           \
+        checkType(OCPI_##pretty, 1, true);				        \
+        if (m_writeVaddr) {						        \
+          *(store *)m_writeVaddr= *(store*)((void*)&(val));                     \
+	  if (m_writeSync)						        \
+             m_worker.propertyWritten(m_ordinal);                               \
+        } else								        \
+          m_worker.set##pretty##Property(m_ordinal, val);			\
+      }                                                                         \
       inline void set##pretty##SequenceValue(const run *vals, size_t n) const { \
-        checkType(OCPI_##pretty, n, true);				    \
-        m_worker.set##pretty##SequenceProperty(*this, vals, n);             \
-      }                                                                     \
-      inline run get##pretty##Value() const {                               \
-        checkType(OCPI_##pretty, 1, false);				    \
-        if (m_readVaddr) {                                                  \
-          union { store s; run r; }u;                                       \
-          u.s = *(store *)m_readVaddr;                                      \
-          return u.r;                                                       \
-        } else                                                              \
-          return m_worker.get##pretty##Property(m_ordinal);                 \
-      }                                                                     \
+        checkType(OCPI_##pretty, n, true);				        \
+        m_worker.set##pretty##SequenceProperty(*this, vals, n);                 \
+      }                                                                         \
+      inline run get##pretty##Value() const {                                   \
+        checkType(OCPI_##pretty, 1, false);				        \
+        if (m_readVaddr) {                                                      \
+	  if (m_readSync)			         			\
+             m_worker.propertyRead(m_ordinal);                                  \
+          union { store s; run r; }u;                                           \
+          u.s = *(store *)m_readVaddr;                                          \
+          return u.r;                                                           \
+        } else                                                                  \
+          return m_worker.get##pretty##Property(m_ordinal);                     \
+      }                                                                         \
       inline unsigned get##pretty##SequenceValue(run *vals, size_t n) const {   \
-        checkType(OCPI_##pretty, n, false);				    \
-        return m_worker.get##pretty##SequenceProperty(*this, vals, n);      \
+        checkType(OCPI_##pretty, n, false);				        \
+        return m_worker.get##pretty##SequenceProperty(*this, vals, n);          \
       }
 #undef OCPI_DATA_TYPE_S
       // for a string we will take a function call

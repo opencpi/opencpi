@@ -550,9 +550,9 @@ emitRecordTypes(FILE *f) {
   fprintf(f,
 	  "\n"
 	  "  -- Record for the RawProp input signals for port \"%s\" of worker \"%s\"\n"
-	  "  alias worker_%s_in_t is platform.platform_pkg.raw_prop_%s_t;\n"
+	  "  alias worker_%s_in_t is wci.raw_prop_%s_t;\n"
 	  "  -- Record for the RawProp  output signals for port \"%s\" of worker \"%s\"\n"
-	  "  alias worker_%s_out_t is platform.platform_pkg.raw_prop_%s_t;\n",
+	  "  alias worker_%s_out_t is wci.raw_prop_%s_t;\n",
 	  name(), m_worker->m_implName, name(), master ? "in" : "out",
 	  name(), m_worker->m_implName, name(), master ? "out" : "in");
 }
@@ -565,24 +565,24 @@ emitRecordInterface(FILE *f, const char *implName) {
   fprintf(f,
 	  "\n"
 	  "  -- Record for the %s input signals for port \"%s\" of worker \"%s\"\n"
-	  "  alias %s_t is platform.platform_pkg.raw_prop_%s_t;\n"
+	  "  alias %s_t is wci.raw_prop_%s_t;\n"
 	  "  -- Record for the %s output signals for port \"%s\" of worker \"%s\"\n"
-	  "  alias %s_t is platform.platform_pkg.raw_prop_%s_t;\n",
+	  "  alias %s_t is wci.raw_prop_%s_t;\n",
 	  typeName(), name(), implName,
 	  in.c_str(), master ? "in" : "out",
 	  typeName(), name(), implName,
 	  out.c_str(), master ? "out" : "in");
   if (count > 1)
       fprintf(f,
-	      "  subtype %s_array_t is platform.platform_pkg.raw_prop_%s_array_t(0 to %zu);\n"
-	      "  subtype %s_array_t is platform.platform_pkg.raw_prop_%s_array_t(0 to %zu);\n",
+	      "  subtype %s_array_t is wci.raw_prop_%s_array_t(0 to %zu);\n"
+	      "  subtype %s_array_t is wci.raw_prop_%s_array_t(0 to %zu);\n",
 	      in.c_str(), master ? "in" : "out", count-1,
 	      out.c_str(), master ? "out" : "in", count-1);
 }
 
 void RawPropPort::
 emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signal) {
-  fprintf(f, "  signal %s : platform.platform_pkg.raw_prop_%s%s_t",
+  fprintf(f, "  signal %s : wci.raw_prop_%s%s_t",
 	  signal.c_str(), master == output ? "out" : "in",
 	  count > 1 ? "_array" : "");
   if (count > 1)
@@ -592,11 +592,11 @@ emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signa
 
 const char *RawPropPort::
 masterMissing() const {
-  return "platform.platform_pkg.raw_prop_out_zero";
+  return "wci.raw_prop_out_zero";
 }
 const char *RawPropPort::
 slaveMissing() const {
-  return "platform.platform_pkg.raw_prop_in_zero";
+  return "wci.raw_prop_in_zero";
 }
 
 

@@ -116,5 +116,14 @@ component SyncBit
            sD_IN     : in  std_logic;
            dD_OUT    : out std_logic);
 end component SyncBIT;
+component SyncHandshake
+  generic (init      : natural := 0);
+  port(    sCLK      : in  std_logic;
+           sRST      : in  std_logic;
+           dCLK      : in  std_logic;
+           sEN       : in  std_logic;
+           sRDY      : out std_logic;
+           dPulse    : out std_logic);
+end component SyncHandshake;
 
 end package bsv;

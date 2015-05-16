@@ -173,7 +173,7 @@ emitImplSignals(FILE *f) {
   fprintf(f,
 	  "  signal wci_is_big_endian    : Bool_t;\n"
 	  "  signal wci_control_op       : wci.control_op_t;\n"
-	  "  signal raw_offset           : unsigned(work.%s_worker_defs.worker.decode_width-1 downto 0);\n"
+	  //	  "  signal raw_offset           : unsigned(work.%s_worker_defs.worker.decode_width-1 downto 0);\n"
 	  "  signal wci_state            : wci.state_t;\n"
 	  "  -- wci information from worker\n"
 	  "  signal wci_attention        : Bool_t;\n"
@@ -181,8 +181,9 @@ emitImplSignals(FILE *f) {
 	  "  signal wci_done             : Bool_t;\n"
 	  "  signal wci_error            : Bool_t;\n"
 	  "  signal wci_finished         : Bool_t;\n"
-	  "  signal wci_is_read          : Bool_t;\n"
-	  "  signal wci_is_write         : Bool_t;\n", m_worker->m_implName);
+	  //	  "  signal wci_is_read          : Bool_t;\n"
+	  //"  signal wci_is_write         : Bool_t;\n"
+	  , m_worker->m_implName);
   if (m_worker->m_scalable)
     fprintf(f,
 	    "  signal wci_crew             : UChar_t;\n"
