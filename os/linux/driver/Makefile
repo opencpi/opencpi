@@ -80,12 +80,13 @@ MODNAME = opencpi
 MyDir:=$(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 MyTargetDir:=target-$(OCPI_TARGET_HOST)
 MyIncs= \
-         -I$(realpath $(MyDir)/../../../../../runtime/hdl/include) \
+         -I$(realpath $(MyDir)/../../../runtime/hdl/include) \
          -I$(realpath $(MyDir)/../../interfaces/include)
-MyLib:=$(realpath $(MyDir)/../../../../../lib/$(MyTargetDir))
+MyLib:=$(realpath $(MyDir)/../../../lib/$(MyTargetDir))
+$(info x:$(MyTargetDir) $(MyDir))
 ifeq ($(strip $(MyLib)),)
   ifneq ($(MAKECMDGOALS),topclean)
-    $(error OpenCpi libraries must be built before the driver is built)
+    $(error OpenCPI libraries must be built before the driver is built)
   endif
 endif
 # This is what works with RHEL5
