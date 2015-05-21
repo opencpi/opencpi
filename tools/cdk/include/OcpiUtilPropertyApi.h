@@ -1,1 +1,1 @@
-../../../core/util/property/include/OcpiUtilPropertyApi.h
+../../../runtime/util/property/include/OcpiUtilPropertyApi.h
