@@ -19,8 +19,6 @@
   <signal input='ppsExtIn'/>
   <signal output='ppsOut'/>
   <device worker='flash'/>
-  <device worker='lime_tx'/>
-  <device worker='lime_spi'/>
   <!-- <device worker='lime_tx'/> -->
   <!-- The FMC LPC slot.  We only mention signals that don't have the canonical signal name -->
   <slot name='FMC_LPC' type='fmc_lpc'>

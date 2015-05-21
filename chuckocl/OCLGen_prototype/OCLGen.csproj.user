@@ -1,5 +1,0 @@
-﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <StartArguments>"C:\Documents and Settings\Chuck\My Documents\backup\open_cpi\code\OclPrototype2\components\matrixMul.ocl\matrixMul.xml" -max_num_dyn_local_buffs 2 -outdir  "C:\Documents and Settings\Chuck\My Documents\backup\open_cpi\code\OclPrototype2\components\matrixMul.ocl"</StartArguments>
-  </PropertyGroup>
-</Project>

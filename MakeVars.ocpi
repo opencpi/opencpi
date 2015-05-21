@@ -155,7 +155,7 @@ endif
 #
 
 ifeq "$(MKDEPEND)" ""
-  MKDEPEND = $(OCPI_BASE_DIR)/mkdepend
+  MKDEPEND = $(OCPI_BASE_DIR)/scripts/mkdepend
 endif
 
 #

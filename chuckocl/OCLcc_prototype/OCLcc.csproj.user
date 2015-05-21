@@ -1,5 +1,0 @@
-﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <StartArguments>..\..\..\OclPrototype2\OCL_Worker.h ..\..\..\OCLPrototype2\components\matrixMul.ocl\gen\matrixMul_Worker.h ..\..\..\OCLPrototype2\components\matrixMul.ocl\gen\matrixMul_library.cl ..\..\..\OclPrototype2\matrixMul.cl -o  ..\..\..\OclPrototype2\components\matrixMul.ocl\matrixMul.bin -build_options -cl-fast-relaxed-math</StartArguments>
-  </PropertyGroup>
-</Project>

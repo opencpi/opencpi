@@ -89,7 +89,7 @@ parseDevInstance(const char *device, ezxml_t x, const char *parentFile, Worker *
   if (slot) {
     const Card *plug = m_plugged[slot->m_ordinal];
     if (card) {
-      if (card != plug)
+      if (plug && card != plug)
 	return
 	  OU::esprintf("Conflicting cards (\"%s\" vs. \"%s\") specified in slot \"%s\"",
 		       plug->name(), card->name(), slot->name());

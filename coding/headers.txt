@@ -1,8 +1,8 @@
 Headers should be included in the order of basic dependency layers,
-with the botton layers first.
+with the bottom layers first.
 
-Headers outside opencpi should use <>, while headers inside opencpi
-shoud use "".
+Headers outside opencpi should use #include <xxx>, while headers inside opencpi
+shoud use #include "xxx".
 
 "distant" headers are included first since we don't want to collide
 with anything in headers we don't control.
@@ -21,9 +21,7 @@ The above headers should be in angle brackets since they are not in opencpi.
 
 One wierd case is the formatting macros like PRIu64, found in <inttypes.h>.
 The ISO C99 spec says the are only included from inttypes.h if __STDC_FORMAT_MACROS
-is defined.  So if you use these, you must put this as *the first header*:
-#define __STD_FORMAT_MACROS
-#include <inttypes.h>
+is defined.  We define __STD_FORMAT_MACROS on the command line for all compilation.
 
 After the above headers are those from OpenCPI, also in the order of
 "lower" or "more distant" first, enclosed in double quotes, not angle brackets,
@@ -50,7 +48,6 @@ Our headers start with typical
 <namespace scoping closing>
 #endif
 
-
 It is a good idea to periodically prune include files by commenting
 them all out, and then including those that are needed.  If a file
 gets a significant update, do this.  But generally, headers should be
@@ -61,11 +58,9 @@ File Naming:
 In general, header files should be camelcase named:
 <namespace-within-OCPI><filename>.h
 
-Where API headers should have a Ocpi prefix, and generally one per
-namespace:
+API headers should have a Ocpi prefix, and generally one per namespace:
 
 Ocpi<namespace>Api.h
-
 
 Headers should use forward class declarations rather than including other files
 when the classes are in the same namespace and the implementation of the class is
