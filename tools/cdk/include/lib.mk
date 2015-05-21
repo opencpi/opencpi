@@ -323,7 +323,7 @@ ifdef Worker
     ifndef Device
       Device:=$(Worker)
     endif
-    OcpiSpecFile:=
+    OcpiSpecFile:=emulator-spec
   else
     # the default will be using an underscore or hypen, whichever exists
     MySpecFile:=$(or $(wildcard specs/$(Name)_spec.xml),specs/$(Name)-spec.xml)
@@ -377,7 +377,7 @@ new:
 	     ) > $(Worker)/Makefile
 	$(AT)$(and $(OcpiSpecFile)$(OcpiLanguage)$(Device)$(Emulate), \
 	     (\
-	      echo '<$(if $(Device),HdlDevice,$(CapModel)Worker)$(and $(LangAttr),'' $(LangAttr))$(and $(OcpiSpecFile),'' spec="$(OcpiSpecFile)")$(and $(Emulate),'' emulate="$(Emulate)")>'; \
+	      echo '<$(if $(Device),HdlDevice,$(CapModel)Worker)$(and $(LangAttr),'' $(LangAttr))$(and $(OcpiSpecFile),'' spec="$(OcpiSpecFile)")$(and $(Emulate),'' emulate="$(Emulate)" spec="emulator")>'; \
 	      $(if $(OcpiSpecFile),,echo '  <componentspec$(and $(Emulate),'' nocontrol="1")/>';) \
               echo '  <!-- Insert any other implementation-specific information here -->'; \
               echo '</$(if $(Device),HdlDevice,$(CapModel)Worker)>' \

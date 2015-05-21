@@ -1,0 +1,7 @@
+<!-- Include zipper devices -->
+<HdlConfig>
+  <device worker='lime_adc'/>
+  <device worker='lime_dac'/>
+  <device worker='lime_spi'/>
+  <device worker='si5351'/>
+</HdlConfig>

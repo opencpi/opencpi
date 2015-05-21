@@ -574,12 +574,17 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
 	if (c->m_reset.size())
 	  fprintf(f, ",\n  .%s(%s)", c->reset(),
 		  i->m_clocks[c->ordinal]->reset());
-      } else {
+      } else if (i->m_clocks[c->ordinal]) {
 	fprintf(f, "%s%s%s => %s", any ? ",\n" : "", any ? indent : "",
 		c->signal(), i->m_clocks[c->ordinal]->signal());
 	if (c->m_reset.size())
 	  fprintf(f, ",\n%s%s => %s", indent, c->reset(),
 		  i->m_clocks[c->ordinal]->reset());
+      } else {
+	fprintf(f, "%s%s%s => '0'", any ? ",\n" : "", any ? indent : "",
+		c->signal());
+	if (c->m_reset.size())
+	  fprintf(f, ",\n%s%s => '1'", indent, c->reset());
       }
       any = true;
     }

@@ -1,3 +1,4 @@
+<!-- The spec for quadrature ADCs, that all such things should be based on -->
 <ComponentSpec Name="qadc">
   <xi:include href='adc-properties'/>
   <DataInterfaceSpec Name="out" Producer="true" protocol='iqstream_protocol'/>

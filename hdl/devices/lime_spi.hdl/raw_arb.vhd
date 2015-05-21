@@ -1,7 +1,7 @@
 -- RAW arbitrator/multiplexor.  Allows for multiple users, servicing them round-robin
-library IEEE, ocpi, platform;
+library IEEE, ocpi;
 use IEEE.std_logic_1164.all, ieee.numeric_std.all;
-use ocpi.types.all, ocpi.util.all, ocpi.all, platform.all;
+use ocpi.types.all, ocpi.util.all, ocpi.all;
 entity raw_arb is
   generic (
     nusers        : positive := 1
@@ -72,6 +72,7 @@ begin
     end generate g2;
     to_users(i).raw.data    <= from_device.raw.data; -- broadcast data to all
     to_users(i).raw.done    <= to_bool(from_device.raw.done and who_has_it_r = i);
+    to_users(i).raw.error   <= bfalse;
   end generate g0;
   to_device.present <= btrue;
   to_device.reset   <= all_reset;

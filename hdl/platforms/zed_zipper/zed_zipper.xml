@@ -1,0 +1,35 @@
+<!-- A zed platform with a myriad zipper/lime permanently attached rather in a slot -->
+<HdlPlatform Language="VHDL" spec='platform_spec'>
+  <!-- The two ports every platform worker must have - should be in spec but not supported yet -->
+  <metadata master='true'/>
+  <timeservice master='true'/>
+  <!-- This platform worker provides a control plane -->
+  <cpmaster master='true'/>
+  <unoc name="zynq" master='true'/>
+  <unoc name="zynq_slave"/>
+  <property name="axi_error" type="bool" volatile='true'/>
+  <property name="unocDropCount" type='uchar' volatile='true'/>
+  <property name="unoc_headers_in" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
+  <property name="unoc_headers_in1" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
+  <property name="unoc_headers_out" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
+  <property name="unoc_headers_out1" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
+  <property name="unoc_out_status" arraylength='16' volatile='true' debug='true'/>
+  <property name="unoc_count_in" volatile='true' debug='true'/>
+  <property name="unoc_count_out" volatile='true' debug='true'/>
+  <property name="axi_racount" volatile='true' debug='true'/>
+  <property name="axi_raddr" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
+  <property name="axi_rdcount" volatile='true' debug='true'/>
+  <property name="axi_rdata" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
+  <property name="axi_wacount" volatile='true' debug='true'/>
+  <property name="axi_waddr" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
+  <property name="axi_wdcount" volatile='true' debug='true'/>
+  <property name="axi_wdata" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
+  <property name="debug_state" type="Ulonglong" volatile='true' debug='true'/>
+  <property name="debug_state1" type="Ulonglong" volatile='true' debug='true'/>
+  <signal  output='led' width='8'/>
+  <!-- Make believe these are directly attached rather than a card plugged into the FMC slot -->
+  <device worker='lime_adc'/>
+  <device worker='lime_dac'/>
+  <device worker='lime_spi'/>
+  <device worker='si5351'/>
+</HdlPlatform>

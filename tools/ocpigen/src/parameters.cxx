@@ -95,6 +95,10 @@ write(FILE *xf, FILE *mf) {
     fprintf(xf, "  <configuration id='%s'>\n", id.c_str());
   for (unsigned n = 0; n < params.size(); n++) {
     Param &p = params[n];
+    if (p.param == NULL) {
+      // This is a new parameter that was not in this (existing) param config.
+      continue;
+    }
     if (used) {
       // Put out the Makefile value lines
       std::string val;

@@ -195,8 +195,7 @@ parseHdlImpl(const char *package) {
   for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
     Clock *c = *ci;
     if (!c->port && c->m_signal.empty())
-      return OU::esprintf("Clock %s is owned by no port and has no signal name",
-			  c->name());
+      c->m_signal = c->m_name;
   }
   // now make sure clockPort references are sorted out
   for (unsigned i = 0; i < m_ports.size(); i++) {
@@ -208,7 +207,7 @@ parseHdlImpl(const char *package) {
   }
   const char *emulate = ezxml_cattr(m_xml, "emulate");
   if (emulate) {
-    if (m_ports.size())
+    if (m_ports.size() > 1 || m_ports.size() == 1 && m_ports[0]->type != WCIPort)
       return OU::esprintf("Device emulation workers can't have any ports");
     addWciClockReset();
     if (ezxml_cchild(m_xml, "signal") || ezxml_cchild(m_xml, "signals"))

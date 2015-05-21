@@ -1,0 +1,24 @@
+<!-- Lime Receive ADC worker.
+     This worker is receive only - to only use the receive logic -->
+<HdlDevice language="vhdl" FirstRawProperty="dc_regval" spec='qadc-spec'>
+  <property name='source' type='enum' enums='adc,count,loopback' default='adc' initial='1'/>
+  <!-- Should we use the source synchronous lime clock output? (rx only) -->
+  <property name='use_clk_out' type='bool' parameter='1' default='1'/>
+  <!-- start of common elements for adc and dac -->
+  <ControlInterface Timeout="1024"/>
+  <xi:include href='lime-iq-properties.xml'/>
+  <xi:include href='lime-properties.xml'/>
+  <clock name='sample_clk'/>
+  <rawprop name='rawprops' master='true'/>
+  <!-- end of common elements for adc and dac -->
+  <StreamInterface Name="out" producer='true' DataWidth="32" optional='1'/>
+  <!-- Signals connected to the RX pins of the Lime chip (or associated clocks)
+       Signal names from the data sheet -->
+  <Signal Output="rx_clk"/>         <!-- FPGA->Lime, sometimes not connected -->
+  <Signal  Input="rx_clk_out"/>     <!-- lime->FPGA, syncd w/ data, maybe not connected -->
+  <Signal Output="rxen"/>           <!-- receive enable -->
+  <Signal  Input="rx_iq_sel"/>      <!-- Low is I, high is Q (unless configured as opposite) -->
+  <Signal  Input="rxd" width="12"/> <!-- The data -->
+  <!-- Not strictly speaking from a lime pin, but a clock specifically for the lime IQ -->
+  <Signal  Input="rx_clk_in"/>      <!-- A copy of an rx_clk sent directly to line rx_clk -->
+</HdlDevice>

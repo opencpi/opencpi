@@ -1,4 +1,10 @@
 <!-- Properties common to all adc specs and workers -->
 <properties>
-  <property name="overrun" type="Bool" volatile="true"/>
+  <!-- The overrun indicator comes on when there are samples that can't be captured,
+       after the worker is operating and at least one sample has passed.
+       it is sticky, and can be dynamically cleared -->
+  <property name="overrun" type="Bool" writable='1' volatile="true"/>
+  <!-- Size of the message in BYTES that will be produced.
+       Partial messages may be produced under some circomstances. -->
+  <property name="messageSize" initial='1'/>
 </properties>

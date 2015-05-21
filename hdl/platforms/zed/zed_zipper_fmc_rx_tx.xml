@@ -1,4 +1,4 @@
 <HdlConfig Language='vhdl'>
-  <device name='lime_rx' card='lime-zipper-fmc'/>
-  <device name='lime_tx' card='lime-zipper-fmc'/>
+  <device name='lime_adc' card='lime-zipper-fmc'/>
+  <device name='lime_dac' card='lime-zipper-fmc'/>
 </HdlConfig>

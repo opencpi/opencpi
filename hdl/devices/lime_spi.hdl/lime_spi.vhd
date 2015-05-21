@@ -25,11 +25,7 @@ begin
   -- These are temp signals because Xilinx isim can't put them as actuals
   wdata        <= raw_in.raw.data(lsb + 7 downto lsb);
   addr         <= raw_in.raw.address(addr'range);
-  raw_out.raw.data <= rdata & rdata & rdata & rdata;
-  g0: for i in 0 to 1 generate
-    dev_out(i).rx_clk_in <= rx_clk_in;
-    dev_out(i).tx_clk_in <= tx_clk_in;
-  end generate;
+  raw_out.raw.data  <= rdata & rdata & rdata & rdata;
   -- Use the generic raw property arbiter between rx and tx
   arb : entity work.raw_arb
     generic map(nusers => 2)

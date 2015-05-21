@@ -1,0 +1,20 @@
+<!-- Lime transmit/Quadrature DAC worker.
+     This worker is transmit only - to only use the transmit logic -->
+<HdlDevice language="vhdl" FirstRawProperty="dc_regval" spec='qdac-spec'>
+  <!-- start of common elements for adc and dac -->
+  <ControlInterface Timeout="1024"/>
+  <xi:include href='lime-iq-properties.xml'/>
+  <xi:include href='lime-properties.xml'/>
+  <clock name='sample_clk'/>
+  <rawprop name='rawprops' master='true'/>
+  <!-- end of common elements for adc and dac -->
+  <StreamInterface Name="in" DataWidth="32" optional='1'/>
+
+  <!-- Signals connected to the TX pins of the Lime chip -->
+  <!-- Signal names from the data sheet -->
+  <Signal Output="tx_clk"/>           <!-- not connected to the lime on some boards!! -->
+  <Signal  Input="tx_clk_in"/>        <!-- A copy of a tx_clk sent directly to line rx_clk -->
+  <Signal Output="txen"/>             <!-- hard to find on the data sheet... -->
+  <Signal Output="tx_iq_sel"/>        <!-- High means I, Low means Q -->
+  <Signal Output="txd" width="12"/>
+</HdlDevice>

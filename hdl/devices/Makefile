@@ -1,4 +1,3 @@
-
 # #####
 #
 #  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
@@ -58,8 +57,10 @@ Implementations = \
         clkgen_ti_cdce72010.hdl \
 	gbe.hdl \
         lime_spi.hdl \
-        lime_tx.hdl \
-        lime_rx.hdl
-
+        lime_dac.hdl \
+        lime_adc.hdl \
+	lime_spi_em.hdl \
+	lime_adc_em.hdl \
+	lime_dac_em.hdl
 
 include $(OCPI_CDK_DIR)/include/lib.mk

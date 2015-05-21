@@ -1,0 +1,2 @@
+Libraries=zynq
+Configurations=base

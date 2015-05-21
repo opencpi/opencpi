@@ -1,4 +1,4 @@
 <HdlContainer config='zed/zed_zipper_fmc_tx'>
-<connection external='out' card='lime-zipper-fmc' device='lime_tx'/>
-<connection card='lime-zipper-fmc' device ='lime_rx' interconnect='zynq'/>
+<connection external='out' card='lime-zipper-fmc' device='lime_dac'/>
+<connection card='lime-zipper-fmc' device ='lime_adc' interconnect='zynq'/>
 </HdlContainer>

@@ -1457,8 +1457,7 @@ emitImplHDL(bool wrap) {
 	      "  signal my_big_endian : bool_t;\n",
 	      m_implName);
       if (m_ctl.nonRawWritables || m_ctl.nonRawReadables || m_ctl.rawProperties)
-	fprintf(f, "  signal raw_to_worker : wci.raw_in_t;\n",
-		m_ctl.nonRawReadbacks || m_ctl.rawReadables ? ";\n" : "");
+	fprintf(f, "  signal raw_to_worker : wci.raw_in_t;\n");
       if (m_ctl.nNonRawRunProperties) {
 	unsigned nProps_1 = m_ctl.nNonRawRunProperties - 1;
 	fprintf(f,
@@ -1832,6 +1831,8 @@ emitSkelHDL() {
 	      "architecture rtl of %s_worker is\n"
 	      "begin\n",
 	      m_implName);
+      if (m_emulate)
+        fprintf(f, "  props_out.violation <= bfalse;\n");
       if (m_signals.size())
 	for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
 	  Signal &s = **si;
