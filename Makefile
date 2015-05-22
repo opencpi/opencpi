@@ -183,6 +183,7 @@ ocl:
 cleanocl:
 	make -C components cleanocl
 
+.PHONY : examples
 examples:
 	make -C examples
 

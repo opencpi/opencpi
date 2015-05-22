@@ -70,7 +70,7 @@ DispatchSourceFile = $(GeneratedDir)/$(CwdName)_dispatch.c
 GeneratedSourceFiles += $(DispatchSourceFile)
 ArtifactFile=$(BinaryFile)
 # Artifacts are target-specific since they contain things about the binary
-ArtifactXmlFile=$(call WkrTargetDir,$1,$2)/$(CwdName)_assy-art.xml
+ArtifactXmlFile=$(call WkrTargetDir,$1,$2)/$(word 1,$(Workers))_assy-art.xml
 ToolSeparateObjects:=yes
 OcpiLibDir=$(OCPI_CDK_DIR)/lib/$$(RccTarget)
 RccLibraries=rcc application
