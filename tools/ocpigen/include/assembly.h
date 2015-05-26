@@ -51,9 +51,9 @@ class ExtMap : public ExtMap_ {
       }
     return NULL;
   }
-  const char *findSignal(Signal *s, size_t n, bool &isSingle) const {
+  const char *findSignal(Signal &s, size_t n, bool &isSingle) const {
     for (ExtMap_::const_iterator i = begin(); i != end(); i++)
-      if ((*i).signal == s && (*i).index == n) {
+      if ((*i).signal == &s && (*i).index == n) {
 	isSingle = (*i).single;
 	return (*i).ext.c_str();
       }

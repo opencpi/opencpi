@@ -83,14 +83,15 @@ ifndef HdlSkip
   include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
   ifndef HdlSkip
 
+    ifneq ($(MAKECMDGOALS),clean)
+      $(shell test -r $(GeneratedDir)/base.xml || echo '<HdlConfig/>' > $(GeneratedDir)/base.xml)
+    endif
     ################################################################################
     # From here its about building the platform configuration cores
     ifndef Configurations
       ifneq ($(MAKECMDGOALS),clean)
         ifeq ($(origin Configurations),undefined)
-          Configurations:=$(Worker)_base
-          $(shell test -r $(GeneratedDir)/$(Worker)_base.xml || \
-                  echo '<HdlConfig Language="vhdl"/>' > $(GeneratedDir)/$(Worker)_base.xml)
+          Configurations:=base
         else
           $(info No platform configurations will be built since none are specified.)
         endif

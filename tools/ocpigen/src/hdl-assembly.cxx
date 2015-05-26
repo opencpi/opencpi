@@ -487,18 +487,17 @@ doPrev(FILE *f, std::string &last, std::string &comment, const char *myComment) 
 }
 
 static void
-mapOneSignal(FILE *f, Signal *s, unsigned n, bool isSingle, const char *mapped,
-	     const char *indent, const char *pattern) {
+mapOneSignal(FILE *f, Signal &s, unsigned n, bool isWhole, const char *mapped,
+	     const char *indent, const char *pattern, bool single) {
   std::string name, map;
-  OU::format(name, pattern, s->m_name.c_str());
+  OU::format(name, pattern, s.name());
   if (*mapped)
     OU::format(map, pattern, mapped);
-  
-  if (s->m_width && isSingle)
+  if (s.m_width && isWhole && !single)
     OU::formatAdd(name, "(%u)", n);
   fprintf(f, "%s%s => %s", indent, name.c_str(),
-	  *mapped ? map.c_str() : (s->m_direction == Signal::IN ?
-				   (isSingle || !s->m_width ? "'0'" : "(others => '0')") :
+	  *mapped ? map.c_str() : (s.m_direction == Signal::IN ?
+				   (isWhole || !s.m_width ? "'0'" : "(others => '0')") :
 				   "open"));
 }
 
@@ -611,11 +610,11 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
   // Signals are mapped as external ports unless they are connected to an emulator, and
   // sometimes they are mapped to slot names etc.
   for (SignalsIter si = i->worker->m_signals.begin(); si != i->worker->m_signals.end(); si++) {
-    Signal *s = *si;
+    Signal &s = **si;
     std::string prefix;
     bool anyMapped = false;
     std::string name;
-    for (unsigned n = 0; s->m_width ? n < s->m_width : n == 0; n++) {
+    for (unsigned n = 0; s.m_width ? n < s.m_width : n == 0; n++) {
       bool isSingle;
       const char *mappedExt = i->m_extmap.findSignal(s, n, isSingle);
       if (mappedExt) {
@@ -625,12 +624,21 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
 	anyMapped = true;
 	doPrev(f, last, comment, myComment());
 	const char *front = any ? indent : "";
-	if (s->m_differential) {
-	  mapOneSignal(f, s, n, isSingle, mappedExt, front, s->m_pos.c_str());
+	if (s.m_differential) {
+	  mapOneSignal(f, s, n, isSingle, mappedExt, front, s.m_pos.c_str(), false);
 	  doPrev(f, last, comment, myComment());
-	  mapOneSignal(f, s, n, isSingle, mappedExt, front, s->m_neg.c_str());
+	  mapOneSignal(f, s, n, isSingle, mappedExt, front, s.m_neg.c_str(), false);
+	} else if (s.m_direction == Signal::INOUT) {
+	  mapOneSignal(f, s, n, isSingle, mappedExt, front, s.m_in.c_str(), false);
+	  doPrev(f, last, comment, myComment());
+	  mapOneSignal(f, s, n, isSingle, mappedExt, front, s.m_out.c_str(), false);
+	  doPrev(f, last, comment, myComment());
+	  mapOneSignal(f, s, n, isSingle, mappedExt, front, s.m_oe.c_str(), true);
 	} else
-	  mapOneSignal(f, s, n, isSingle, mappedExt, front, "%s");
+	  mapOneSignal(f, s, n, isSingle, mappedExt, front, "%s", false);
+	Signal *es = m_assyWorker.m_sigmap[mappedExt];
+	assert(es);
+	m_assyWorker.recordSignalConnection(*es);
 	if (!isSingle)
 	  break;
       }	else
@@ -646,18 +654,33 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
 	prefix = i->name;
       prefix += "_";
     }
-    if (s->m_differential) {
-      OU::format(name, s->m_pos.c_str(), s->m_name.c_str());
+    if (s.m_differential) {
+      OU::format(name, s.m_pos.c_str(), s.name());
       if (lang == VHDL)
 	fprintf(f, "%s%s => %s%s,\n", any ? indent : "",
 		name.c_str(), prefix.c_str(), name.c_str());
-      OU::format(name, s->m_neg.c_str(), s->m_name.c_str());
+      OU::format(name, s.m_neg.c_str(), s.name());
       if (lang == VHDL)
 	fprintf(f, "%s%s => %s%s", any ? indent : "",
 		name.c_str(), prefix.c_str(), name.c_str());
+    } else if (s.m_direction == Signal::INOUT) {
+      OU::format(name, s.m_in.c_str(), s.name());
+      fprintf(f, "%s%s => %s%s,\n", any ? indent : "",
+	      name.c_str(), prefix.c_str(), name.c_str());
+      OU::format(name, s.m_out.c_str(), s.name());
+      fprintf(f, "%s%s => %s%s,\n", any ? indent : "",
+	      name.c_str(), prefix.c_str(), name.c_str());
+      OU::format(name, s.m_oe.c_str(), s.name());
+      fprintf(f, "%s%s => %s%s", any ? indent : "",
+	      name.c_str(), prefix.c_str(), name.c_str());
     } else if (lang == VHDL)
       fprintf(f, "%s%s => %s%s", any ? indent : "",
-	      s->m_name.c_str(), prefix.c_str(), s->m_name.c_str());
+	      s.name(), prefix.c_str(), s.name());
+    if (!emulator && !i->worker->m_emulate) {
+      Signal *es = m_assyWorker.m_sigmap[(prefix + s.m_name).c_str()];
+      assert(es);
+      m_assyWorker.recordSignalConnection(*es);
+    }
   }
   fprintf(f, ");%s%s\n", comment.size() ? " // " : "", comment.c_str());
   // Now we must tie off any outputs that are generically expected, but are not
@@ -700,7 +723,7 @@ assignExt(FILE *f, Connection &c, std::string &intName, bool in2ext) {
   p.emitExtAssignment(f, in2ext, extName, intName, extAt, intAt, c.m_count);
 }
 
- const char *Worker::
+const char *Worker::
 emitAssyHDL() {
   FILE *f;
   const char *err = openSkelHDL(ASSY, f);
@@ -719,7 +742,7 @@ emitAssyHDL() {
   } else {
     fprintf(f,
 	    "library ieee; use ieee.std_logic_1164.all; use ieee.numeric_std.all;\n"
-	    "library ocpi;\n");
+	    "library ocpi, util;\n");
     emitVhdlLibraries(f);
     fprintf(f,
 	    "architecture rtl of %s_rv is\n",
@@ -779,6 +802,7 @@ emitAssyHDL() {
   i = m_assembly->m_instances;
   for (unsigned n = 0; n < m_assembly->m_nInstances; n++, i++)
     m_assembly->emitAssyInstance(f, i); //, nControlInstances);
+  emitTieoffSignals(f);
   if (m_language == Verilog)
     fprintf(f, "\n\nendmodule //%s\n",  m_implName);
   else

@@ -70,7 +70,7 @@ ModelsimVlogLibs=
 
 ModelSimVlogIncs=\
   $(foreach d,$(VerilogDefines),+define+$d) \
-  $(foreach d,$(VerilogIncludeDirs),+incdir+$(call FindRelative,$(TargetDir),$d))
+  $(foreach d,. $(VerilogIncludeDirs),+incdir+$(call FindRelative,$(TargetDir),$d))
 
 ModelsimArgs=-pedanticerrors -work $(WorkLib) -modelsimini modelsim.ini
 

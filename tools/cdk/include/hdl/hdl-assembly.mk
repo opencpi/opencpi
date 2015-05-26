@@ -103,7 +103,7 @@ ifneq ($(MAKECMDGOALS),clean)
   endif
   # Create the default container directories and files
   # $(call doDefaultContainer,<platform>,<config>)
-  HdlDefContXml=<HdlContainer platform='$1/$1_$2' default='true'/>
+  HdlDefContXml=<HdlContainer platform='$1/$2' default='true'/>
   define doDefaultContainer
     $(call OcpiDbg,In doDefaultContainer for $1/$2 and HdlPlatforms: $(HdlPlatforms))
     ifneq (,$(if $(HdlPlatforms),$(filter $1,$(HdlPlatforms)),yes))

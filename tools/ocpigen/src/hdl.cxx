@@ -237,7 +237,7 @@ parseHdlImpl(const char *package) {
 Signal::
 Signal()
   : m_direction(IN), m_width(0), m_differential(false), m_pos("%sp"), m_neg("%sn"),
-    m_type(NULL) {
+    m_in("%s_i"), m_out("%s_o"), m_oe("%s_oe"), m_type(NULL) {
 }
 
 Signal * Signal::
@@ -272,6 +272,8 @@ parse(ezxml_t x) {
   if ((err = OE::getNumber(x, "Width", &m_width, 0, 0)) ||
       (err = OE::getBoolean(x, "differential", &m_differential)))
     return err;
+  if (m_direction == INOUT && m_differential)
+    return OU::esprintf("Signals that are both \"inout\" and differential are not supported");
   m_type = ezxml_cattr(x, "type");
   m_name = name;
   return NULL;
@@ -331,11 +333,11 @@ findSignal(Signal *sig, size_t idx) const {
 
 // emit one side of differential, or only side..
 void Signal::
-emitConnectionSignal(FILE *f, const char *iname, const char *pattern) {
+emitConnectionSignal(FILE *f, const char *iname, const char *pattern, bool single) {
   std::string name;
   OU::format(name, pattern, m_name.c_str());
   fprintf(f, "  signal %s_%s : std_logic", iname, name.c_str());
-  if (m_width)
+  if (m_width && !single)
     fprintf(f, "_vector(%zu downto 0)", m_width-1);
   fprintf(f, ";\n");
 }
@@ -346,9 +348,13 @@ emitConnectionSignals(FILE *f, const char *name, Signals &signals) {
   for (SignalsIter si = signals.begin(); si != signals.end(); si++) {
     Signal &s = **si;
     if (s.m_differential) {
-      s.emitConnectionSignal(f, name, s.m_pos.c_str());
-      s.emitConnectionSignal(f, name, s.m_neg.c_str());
+      s.emitConnectionSignal(f, name, s.m_pos.c_str(), false);
+      s.emitConnectionSignal(f, name, s.m_neg.c_str(), false);
+    } else if (s.m_direction == INOUT) {
+      s.emitConnectionSignal(f, name, s.m_in.c_str(), false);
+      s.emitConnectionSignal(f, name, s.m_out.c_str(), false);
+      s.emitConnectionSignal(f, name, s.m_oe.c_str(), true);
     } else
-      s.emitConnectionSignal(f, name, "%s");
+      s.emitConnectionSignal(f, name, "%s", false);
   }
 }

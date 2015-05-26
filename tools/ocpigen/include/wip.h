@@ -618,7 +618,7 @@ class Worker : public Parsed, public OU::IdentResolver {
     *emitSkelOCL(),
     *emitAssyHDL();
   virtual const char
-    *parseInstance(Instance &inst, ezxml_t x), // FIXME: should be HdlInstance...
+    *parseInstance(Worker &parent, Instance &inst, ezxml_t x), // FIXME: should be HdlInstance...
     *emitArtXML(const char *wksFile),
     *emitWorkersHDL(const char *file),
     *emitAttribute(const char *attr),
@@ -626,6 +626,10 @@ class Worker : public Parsed, public OU::IdentResolver {
   Port *findPort(const char *name, Port *except = NULL) const;
   Clock *findClock(const char *name) const;
   virtual void
+    emitDeviceSignalMapping(FILE *f, std::string &last, Signal &s),
+    emitDeviceSignal(FILE *f, Language lang, std::string &last, Signal &s),
+    recordSignalConnection(Signal &s),
+    emitTieoffSignals(FILE *f),
     emitXmlWorkers(FILE *f),
     emitXmlInstances(FILE *f),
     emitXmlConnections(FILE *f);

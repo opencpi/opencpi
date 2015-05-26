@@ -889,14 +889,17 @@ namespace OCPI {
 	      std::string s(NETIFDIR), addr;
 	      s += '/';
 	      s += entp->d_name;
-	      long nval, carrier, index;
+	      long nval, carrier, index, flags;
 
 	      if (getValue(s, "type", &nval) && (nval == ARPHRD_ETHER || nval == ARPHRD_LOOPBACK) &&
 		  getValue(s, "address", NULL, &addr) &&
 		  getValue(s, "ifindex", &index) && (only || (unsigned)index == m_index) &&
 		  getValue(s, "carrier", &carrier) &&
-		  getValue(s, "flags", &nval)) {
-		i.addr.setString(addr.c_str());
+		  getValue(s, "flags", &flags)) {
+		if (nval == ARPHRD_ETHER)
+		  i.addr.setString(addr.c_str());
+		else
+		  i.addr.set(0,0); // loop back is not an ether interface
 		if (!i.addr.hasError()) {
 		  int fd = socket(PF_INET, SOCK_DGRAM, 0);
 		  if (fd < 0) {
@@ -911,7 +914,7 @@ namespace OCPI {
 		      i.brdAddr.set(0, ((struct sockaddr_in *)&ifr.ifr_broadaddr)->sin_addr.s_addr);
 		      i.index = (unsigned)index;
 		      i.name = entp->d_name;
-		      i.up = (nval & IFF_UP) != 0;
+		      i.up = (flags & IFF_UP) != 0;
 		      i.connected = carrier != 0;
 		      ocpiDebug("found ether interface '%s' which is %s, %s, at address %s",
 				entp->d_name, i.up ? "up" : "down",

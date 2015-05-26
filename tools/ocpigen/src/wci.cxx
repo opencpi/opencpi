@@ -183,7 +183,8 @@ emitImplSignals(FILE *f) {
 	  "  signal wci_finished         : Bool_t;\n"
 	  //	  "  signal wci_is_read          : Bool_t;\n"
 	  //"  signal wci_is_write         : Bool_t;\n"
-	  , m_worker->m_implName);
+	  //, m_worker->m_implName
+	  );
   if (m_worker->m_scalable)
     fprintf(f,
 	    "  signal wci_crew             : UChar_t;\n"

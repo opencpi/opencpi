@@ -28,8 +28,12 @@
   <property name="debug_state1" type="Ulonglong" volatile='true' debug='true'/>
   <signal  output='led' width='8'/>
   <!-- Make believe these are directly attached rather than a card plugged into the FMC slot -->
-  <device worker='lime_adc'/>
-  <device worker='lime_dac'/>
+  <device worker='lime_adc'>
+    <signal name='rx_clk' platform=''/>
+  </device>
+  <device worker='lime_dac'>
+    <signal name='tx_clk' platform=''/>
+  </device>
   <device worker='lime_spi'/>
   <device worker='si5351'/>
 </HdlPlatform>

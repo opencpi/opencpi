@@ -2,6 +2,7 @@
 #define HDL_CONTAINER_H
 #include <map>
 #include <list>
+#include <set>
 #include "hdl-config.h"
 
 // Container connections (user oriented high level)
@@ -34,6 +35,7 @@ class HdlAssembly;
 class HdlContainer : public Worker, public HdlHasDevInstances {
   HdlAssembly &m_appAssembly;
   HdlConfig   &m_config;
+  std::set<Signal*> m_connectedSignals;
   const char *
   parseConnection(ezxml_t cx, ContConnect &c);
   const char *
@@ -53,6 +55,10 @@ public:
     *emitUuid(const OU::Uuid &uuid);
 
   void 
+    emitDeviceSignalMapping(FILE *f, std::string &last, Signal &s),
+    emitDeviceSignal(FILE *f, Language lang, std::string &last, Signal &s),
+    recordSignalConnection(Signal &s),
+    emitTieoffSignals(FILE *f),
     emitXmlWorkers(FILE *f),
     emitXmlInstances(FILE *f),
     emitXmlConnections(FILE *f),

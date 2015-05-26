@@ -145,7 +145,7 @@ parseDevInstance(const char *device, ezxml_t x, const char *parentFile, Worker *
 		     "already in the platform configuration",
 		     di->device.name(), di->card->name(), di->slot->name());
     else
-      return OU::esprintf("Platform Device '%s' is already in the platform configuration",
+      return OU::esprintf("Platform device '%s' is already in the platform configuration",
 			  di->device.name());
   }
   if ((err = addDevInstance(*dev, card, slot, control, NULL, baseInstances, di)))
@@ -447,7 +447,7 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
       m_sigmap[s->name()] = s;
     }
   }
-}  
+}
 
 HdlConfig::
 ~HdlConfig() {

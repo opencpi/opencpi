@@ -336,7 +336,7 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
       }
     }
     // Parse type-specific aspects of the instance.
-    if ((err = w->parseInstance(*i, ix)))
+    if ((err = w->parseInstance(m_assyWorker, *i, ix)))
       return err;
   }
   // All parsing is done.

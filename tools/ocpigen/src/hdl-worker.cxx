@@ -477,22 +477,35 @@ emitParameters(FILE *f, Language lang, bool useDefaults, bool convert) {
   }
 }
 
+// Default may be overridden
+void Worker::
+emitDeviceSignal(FILE *f, Language lang, std::string &last, Signal &s) {
+  std::string name;
+  if (s.m_differential) {
+    OU::format(name, s.m_pos.c_str(), s.m_name.c_str());
+    emitSignal(name.c_str(), f, lang, s.m_direction, last,
+	       s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
+    OU::format(name, s.m_neg.c_str(), s.m_name.c_str());
+    emitSignal(name.c_str(), f, lang, s.m_direction, last,
+	       s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
+  } else if (s.m_direction == Signal::INOUT) {
+    OU::format(name, s.m_in.c_str(), s.m_name.c_str());
+    emitSignal(name.c_str(), f, lang, Signal::IN, last,
+	       s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
+    OU::format(name, s.m_out.c_str(), s.m_name.c_str());
+    emitSignal(name.c_str(), f, lang, Signal::OUT, last,
+	       s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
+    OU::format(name, s.m_oe.c_str(), s.m_name.c_str());
+    emitSignal(name.c_str(), f, lang, Signal::OUT, last, -1, 0, "", s.m_type);
+  } else
+    emitSignal(s.m_name.c_str(), f, lang, s.m_direction, last,
+	       s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
+}
+
 void Worker::
 emitDeviceSignals(FILE *f, Language lang, std::string &last) {
-  for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
-    Signal &s = **si;
-    if (s.m_differential) {
-      std::string name;
-      OU::format(name, s.m_pos.c_str(), s.m_name.c_str());
-      emitSignal(name.c_str(), f, lang, s.m_direction, last,
-		 s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
-      OU::format(name, s.m_neg.c_str(), s.m_name.c_str());
-      emitSignal(name.c_str(), f, lang, s.m_direction, last,
-		 s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
-    } else
-      emitSignal(s.m_name.c_str(), f, lang, s.m_direction, last,
-		 s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
-  }
+  for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++)
+    emitDeviceSignal(f, lang, last, **si);
 }
 
 // Used in various places:
@@ -905,8 +918,8 @@ emitDefsHDL(bool wrap) {
 	const char *dir =
 	  s->m_direction == Signal::IN ? "input" :
 	  (s->m_direction == Signal::OUT ? "output    " : "inout");
+	std::string name;
 	if (s->m_differential) {
-	  std::string name;
 	  OU::format(name, s->m_pos.c_str(), s->m_name.c_str());
 	  if (s->m_width)
 	    fprintf(f, "  %s [%3zu:0] %s;\n", dir, s->m_width - 1, name.c_str());
@@ -917,6 +930,19 @@ emitDefsHDL(bool wrap) {
 	    fprintf(f, "  %s [%3zu:0] %s;\n", dir, s->m_width - 1, name.c_str());
 	  else
 	    fprintf(f, "  %s         %s;\n", dir, name.c_str());
+	} else if (s->m_direction == Signal::INOUT) {
+	  OU::format(name, s->m_in.c_str(), s->m_name.c_str());
+	  if (s->m_width)
+	    fprintf(f, "  input [%3zu:0] %s;\n", s->m_width - 1, name.c_str());
+	  else
+	    fprintf(f, "  input         %s;\n", name.c_str());
+	  OU::format(name, s->m_out.c_str(), s->m_name.c_str());
+	  if (s->m_width)
+	    fprintf(f, "  output [%3zu:0] %s;\n", s->m_width - 1, name.c_str());
+	  else
+	    fprintf(f, "  output         %s;\n", name.c_str());
+	  OU::format(name, s->m_oe.c_str(), s->m_name.c_str());
+	  fprintf(f, "  output         %s;\n", name.c_str());
 	} else if (s->m_width)
 	  fprintf(f, "  %s [%3zu:0] %s;\n", dir, s->m_width - 1, s->m_name.c_str());
 	else
@@ -1045,11 +1071,18 @@ emitVhdlShell(FILE *f) {
   if (m_signals.size()) {
     for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
       Signal *s = *si;
+      std::string name;
       if (s->m_differential) {
-	std::string name;
 	OU::format(name, s->m_pos.c_str(), s->m_name.c_str());
 	fprintf(f, ",\n    %s => %s", name.c_str(), name.c_str());
 	OU::format(name, s->m_neg.c_str(), s->m_name.c_str());
+	fprintf(f, ",\n    %s => %s", name.c_str(), name.c_str());
+      } else if (s->m_direction == Signal::INOUT) {
+	OU::format(name, s->m_in.c_str(), s->m_name.c_str());
+	fprintf(f, ",\n    %s => %s", name.c_str(), name.c_str());
+	OU::format(name, s->m_out.c_str(), s->m_name.c_str());
+	fprintf(f, ",\n    %s => %s", name.c_str(), name.c_str());
+	OU::format(name, s->m_oe.c_str(), s->m_name.c_str());
 	fprintf(f, ",\n    %s => %s", name.c_str(), name.c_str());
       } else
 	fprintf(f, ",\n    %s => %s", s->m_name.c_str(), s->m_name.c_str());
@@ -1057,6 +1090,25 @@ emitVhdlShell(FILE *f) {
   }
   fprintf(f, ");\n");
   fprintf(f, "end rtl;\n");
+}
+
+void Worker::
+emitDeviceSignalMapping(FILE *f, std::string &last, Signal &s) {
+  std::string name;
+  if (s.m_differential) {
+    OU::format(name, s.m_pos.c_str(), s.m_name.c_str());
+    fprintf(f, "%s      %s => %s,\n", last.c_str(), name.c_str(), name.c_str());
+    OU::format(name, s.m_neg.c_str(), s.m_name.c_str());
+    fprintf(f, "      %s => %s", name.c_str(), name.c_str());
+  } else if (s.m_direction == Signal::INOUT) {
+    OU::format(name, s.m_in.c_str(), s.m_name.c_str());
+    fprintf(f, "%s      %s => %s,\n", last.c_str(), name.c_str(), name.c_str());
+    OU::format(name, s.m_out.c_str(), s.m_name.c_str());
+    fprintf(f, "      %s => %s,\n", name.c_str(), name.c_str());
+    OU::format(name, s.m_oe.c_str(), s.m_name.c_str());
+    fprintf(f, "      %s => %s", name.c_str(), name.c_str());
+  } else
+    fprintf(f, "%s      %s => %s", last.c_str(), s.m_name.c_str(), s.m_name.c_str());
 }
 
 void Worker::
@@ -1147,15 +1199,7 @@ emitVhdlSignalWrapper(FILE *f, const char *topinst) {
     for (unsigned i = 0; i < m_ports.size(); i++)
       m_ports[i]->emitVHDLSignalWrapperPortMap(f, last);
     for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
-      Signal *s = *si;
-      if (s->m_differential) {
-	std::string name;
-	OU::format(name, s->m_pos.c_str(), s->m_name.c_str());
-	fprintf(f, "%s      %s => %s,\n", last.c_str(), name.c_str(), name.c_str());
-	OU::format(name, s->m_neg.c_str(), s->m_name.c_str());
-	fprintf(f, "      %s => %s", name.c_str(), name.c_str());
-      } else
-	fprintf(f, "%s      %s => %s", last.c_str(), s->m_name.c_str(), s->m_name.c_str());
+      emitDeviceSignalMapping(f, last, **si);
       last = ",\n";
     }
     if (last != init)
@@ -1237,11 +1281,18 @@ emitVhdlRecordWrapper(FILE *f) {
 	m_ports[i]->emitVHDLRecordWrapperPortMap(f, last);
       for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
 	Signal *s = *si;
+	std::string name;
 	if (s->m_differential) {
-	  std::string name;
 	  OU::format(name, s->m_pos.c_str(), s->m_name.c_str());
 	  fprintf(f, "%s      %s => %s,\n", last.c_str(), name.c_str(), name.c_str());
 	  OU::format(name, s->m_neg.c_str(), s->m_name.c_str());
+	  fprintf(f, "      %s => %s", name.c_str(), name.c_str());
+	} else if (s->m_direction == Signal::INOUT) {
+	  OU::format(name, s->m_in.c_str(), s->m_name.c_str());
+	  fprintf(f, "%s      %s => %s,\n", last.c_str(), name.c_str(), name.c_str());
+	  OU::format(name, s->m_out.c_str(), s->m_name.c_str());
+	  fprintf(f, "      %s => %s,\n", name.c_str(), name.c_str());
+	  OU::format(name, s->m_oe.c_str(), s->m_name.c_str());
 	  fprintf(f, "      %s => %s", name.c_str(), name.c_str());
 	} else
 	  fprintf(f, "%s      %s => %s", last.c_str(), s->m_name.c_str(), s->m_name.c_str());
@@ -1321,7 +1372,7 @@ emitImplHDL(bool wrap) {
 	    "-- Port based  ==| \\ | and the <worker>_worker entity, both in this file,   |   =| \\ Port based\n"
 	    "-- on the WSI  ==| / | both in the \"work\" library.                          |   =| / on the WSI\n"
 	    "-- OCP Profile   |/  | Package and entity declarations are in this          |    |/  OCP Profile\n"
-	    "--               O   | <worker>_impl.vhd file. Architeture is in your       |    |\n"
+	    "--               O   | <worker>_impl.vhd file. Architecture is in your      |    |\n"
 	    "--               O   |  <worker>.vhd file                                   |    O\n"
 	    "--               C   |                                                      |    C\n"
 	    "--               P   +------------------------------------------------------+    P\n"
@@ -1837,15 +1888,21 @@ emitSkelHDL() {
 	for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
 	  Signal &s = **si;
 	  const char *val = s.m_width ? "(others => '0')" : "'0'";
+	  std::string name;
 	  if (s.m_direction == Signal::OUT)
 	    if (s.m_differential) {
-	      std::string name;
 	      OU::format(name, s.m_pos.c_str(), s.m_name.c_str());
 	      fprintf(f, "  %s <= %s;\n", name.c_str(), val);
 	      OU::format(name, s.m_neg.c_str(), s.m_name.c_str());
 	      fprintf(f, "  %s <= %s;\n", name.c_str(), val);
 	    } else
 	      fprintf(f, "  %s <= %s;\n", s.m_name.c_str(), val);
+	  else if (s.m_direction == Signal::INOUT) {
+	      OU::format(name, s.m_out.c_str(), s.m_name.c_str());
+	      fprintf(f, "  %s <= %s;\n", name.c_str(), val);
+	      OU::format(name, s.m_oe.c_str(), s.m_name.c_str());
+	      fprintf(f, "  %s <= '0';\n", name.c_str());
+	  }
 	}
       fprintf(f,
 	      "end rtl;\n");

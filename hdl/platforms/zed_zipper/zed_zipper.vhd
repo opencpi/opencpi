@@ -9,7 +9,7 @@ library platform; use platform.platform_pkg.all;
 library zynq; use zynq.zynq_pkg.all;
 library unisim; use unisim.vcomponents.all;
 library bsv;
-architecture rtl of zed_worker is
+architecture rtl of zed_zipper_worker is
   signal ps_axi_gp_in  : m_axi_gp_in_t;        -- s2m
   signal ps_axi_gp_out : m_axi_gp_out_t;       -- m2s
   signal ps_axi_hp_in  : s_axi_hp_in_array_t(0 to C_S_AXI_HP_COUNT-1);  -- m2s

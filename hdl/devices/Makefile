@@ -50,8 +50,6 @@ Implementations = \
 	adcx.hdl \
 	adc.rcc \
 	dac.rcc \
-	dram_v5.hdl \
-	dram_v6.hdl \
 	icap.hdl \
 	flash.hdl \
         clkgen_ti_cdce72010.hdl \
@@ -61,6 +59,12 @@ Implementations = \
         lime_adc.hdl \
 	lime_spi_em.hdl \
 	lime_adc_em.hdl \
-	lime_dac_em.hdl
+	lime_dac_em.hdl \
+	si5351.hdl
+
+# These two require support for embedded IOBUFs which is currently turned off
+#	dram_v5.hdl \
+#	dram_v6.hdl \
+#
 
 include $(OCPI_CDK_DIR)/include/lib.mk

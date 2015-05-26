@@ -121,7 +121,7 @@ decodeSignal(std::string &name, std::string &base, size_t &index, bool &hasIndex
 
 
 // A device is not in its own file.
-// It is an instance of a device type either on a board
+// It is an instance of a device type on a board
 Device::
 Device(Board &b, DeviceType &dt, ezxml_t xml, bool single, unsigned ordinal,
        SlotType *stype, const char *&err)
@@ -421,7 +421,7 @@ parse(ezxml_t spx, Worker &w) {
 // This does instance parsing for instances of HdlDevice workers.
 // There is no HdlInstance class, so it is done here for now.
 const char *Worker::
-parseInstance(Instance &i, ezxml_t x) {
+parseInstance(Worker &parent, Instance &i, ezxml_t x) {
   const char *err;
   for (ezxml_t sx = ezxml_cchild(x, "signal"); sx; sx = ezxml_next(sx)) {
     std::string name, base, external;
@@ -438,13 +438,17 @@ parseInstance(Instance &i, ezxml_t x) {
     assert(!hasIndex || s->m_width);
     if (external.length()) {
       bool single;
-      if (i.m_extmap.findSignal(s, index, single))
+      if (i.m_extmap.findSignal(*s, index, single))
 	return OU::esprintf("Duplicate signal \"%s\" for worker \"%s\" instance \"%s\"",
 			    name.c_str(), m_implName, i.name);
       size_t dummy;
       if (i.m_extmap.findSignal(external, dummy) && s->m_direction == Signal::OUT)
 	return OU::esprintf("Multiple outputs drive external \"%s\" for worker \"%s\" "
 			    "instance \"%s\"", external.c_str(), m_implName, i.name);
+      if (parent.m_sigmap.find(external.c_str()) == parent.m_sigmap.end())
+	return OU::esprintf("External signal \"%s\" specified for signal \"%s\" of "
+			    "instance \"%s\" of worker \"%s\" is not an external signal of the "
+			    "assembly", external.c_str(), name.c_str(), i.name, m_implName);
     }
     i.m_extmap.push_back(s, index, external, hasIndex);
   }

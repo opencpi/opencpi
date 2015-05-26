@@ -54,7 +54,7 @@ struct Device {
   std::string m_name;           // a platform-scoped device name - usually type<ordinal>
   unsigned m_ordinal;           // Ordinal of this device on this platform/card
   SigMap   m_sigmap;            // map from device type signals (WITH INDICES) to board signals
-  Signals  m_signals;           // map from device type signals (WITH INDICES) to board signals
+  //  Signals  m_signals;           // mapped board signals
   std::list<std::string> m_strings; // storage management since sigmaps don't hold strings
   // The map from the device's signal to the board's signal.
   //  std::map<Signal *, Signal *> m_dev2bd;

@@ -125,5 +125,11 @@ component SyncHandshake
            sRDY      : out std_logic;
            dPulse    : out std_logic);
 end component SyncHandshake;
-
+component TriState
+  generic (width : natural := 1);
+  port    (O     : out   std_logic_vector(width-1 downto 0);
+           IO    : inout std_logic_vector(width-1 downto 0);
+           OE    : in    std_logic;
+           I     : in    std_logic_vector(width-1 downto 0));
+end component TriState;
 end package bsv;

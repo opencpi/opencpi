@@ -60,12 +60,15 @@ struct Signal {
   bool m_differential;
   std::string m_pos; // pattern for positive if not %sp
   std::string m_neg; // pattern for negative if not %sn
+  std::string m_in;  // pattern for in of tristate if not %s_i
+  std::string m_out; // pattern for out of tristate if not %s_o
+  std::string m_oe;  // pattern for output enable of tristate if not %s_oe
   const char *m_type;
   Signal();
   const char * parse(ezxml_t);
   const char *name() const { return m_name.c_str(); }
   Signal *reverse();
-  void emitConnectionSignal(FILE *f, const char *iname, const char *pattern);
+  void emitConnectionSignal(FILE *f, const char *iname, const char *pattern, bool single);
   static void emitConnectionSignals(FILE *f, const char *iname, Signals &signals);
   static const char *parseSignals(ezxml_t x, const std::string &parent, Signals &signals,
 				  SigMap &sigmap);

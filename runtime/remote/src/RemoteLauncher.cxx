@@ -371,7 +371,7 @@ launch(Launcher::Instances &instances, Launcher::Connections &connections) {
 	artN = arti->second;
       emitInstance(i->m_name.c_str(), contN, artN, *i,
 		   i->m_slave && &i->m_slave->m_container->launcher() == this ?
-		   m_instanceMap[i->m_slave - &instances[0]] : -1);
+		   (int)(m_instanceMap[i->m_slave - &instances[0]]) : -1);
     }
   m_artifacts.resize(nArtifacts);
   unsigned nConnections = 0;

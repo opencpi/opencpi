@@ -388,6 +388,7 @@ namespace OCPI {
 	  (((value) & 0xff) << 24) | (((value) & 0xff00) << 8) |
 	  (((value) & 0xff0000) >> 8) | (((value) >> 24));
       }
+      const std::string &getSystemId();
   }
 }
 

@@ -913,7 +913,7 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
     // Parse things that the base class should parse.
     const char *lang = ezxml_cattr(m_xml, "Language");
     if (!lang)
-      if (!strcasecmp("HdlContainer", name))
+      if (!strcasecmp("HdlContainer", name) || !strcasecmp("HdlConfig", name))
 	m_language = VHDL;
       else if (!strcasecmp("HdlAssembly", name))
 	m_language = Verilog;
@@ -1074,4 +1074,10 @@ findProperty(const char *name) const {
     if (!strcasecmp((*pi)->m_name.c_str(), name))
       return *pi;
   return NULL;
+}
+void Worker::
+recordSignalConnection(Signal &/*s*/) {
+}
+void Worker::
+emitTieoffSignals(FILE */*f*/) {
 }

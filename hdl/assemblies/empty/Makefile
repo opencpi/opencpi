@@ -22,7 +22,5 @@
 #  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
 #
 ########################################################################### #
-
-DefaultContainers=
 Containers=dc
 include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk

@@ -593,10 +593,15 @@ ethers(const char **) {
   if (error.size())
     bad("Error establishing interface scanner");
   OE::Interface eif;
-  while (ifs.getNext(eif, error))
-    printf("Interface %s: address %s, %s, %s\n",
-	   eif.name.c_str(), eif.addr.pretty(),
+  while (ifs.getNext(eif, error)) {
+    printf("Interface %s: MAC address %s, %s, %s",
+	   eif.name.c_str(), eif.addr.isEther() ? eif.addr.pretty() : "none",
 	   eif.up ? "up" : "down", eif.connected ? "connected" : "disconnected");
+    if (eif.ipAddr.addrInAddr())
+      printf(", IP address: %s", eif.ipAddr.prettyInAddr());
+    printf("\n");
+  }
+  printf("System identity is: %s\n", OU::getSystemId().c_str());
   if (error.size())
     bad("Error scanning for interfaces");
 }
