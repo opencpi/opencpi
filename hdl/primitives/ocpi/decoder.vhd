@@ -180,10 +180,11 @@ begin
                      when endian = little_e or (endian = dynamic_e and not its(my_big_endian))
                      else to_bool(ocp_in.MAddr(2) = '0');
   my_hi32         <= high_dw when my_access_r = none_e else my_hi32_r;
-  my_config_error <= to_bool((my_access = read_e and done and not its(is_raw) and
-                              not any_true(my_read_enables)) or
-                             (my_access = write_e and done and not its(is_raw) and
-                              not any_true(my_write_enables)));
+  my_config_error <= bfalse;
+--  my_config_error <= to_bool((my_access = read_e and done and not its(is_raw) and
+--                              not any_true(my_read_enables)) or
+--                             (my_access = write_e and done and not its(is_raw) and
+--                              not any_true(my_write_enables)));
   -- output ports, based on internally generated signals that are also used internally
   -- force it to always be valid so that workers (even in sim) can assume a valid value.
   raw_out.address     <= resize(my_offset - worker.raw_property_base, raw_out.address'length)
