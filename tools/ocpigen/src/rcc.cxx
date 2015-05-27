@@ -574,7 +574,7 @@ emitImplRCC() {
       for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
 	OU::Property &p = **pi;
 	if (!p.m_isParameter && p.m_readSync)
-	  fprintf(f, "  &%c%sWorker::%s_read,\\\n", toupper(m_implName[0]),
+	  fprintf(f, "  &%c%sWorkerBase::%s_read,\\\n", toupper(m_implName[0]),
 		  m_implName + 1, p.m_name.c_str());
 	else
 	  fprintf(f, "  NULL,\\\n");
@@ -832,11 +832,16 @@ emitSkelRCC() {
 	    "}\n",
 	    m_pattern ? "extern" : "static", mName);
   else {
-    for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
+    for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
       if ((**pi).m_writeSync)
 	fprintf(f,
 		"  void %s_written() {} // notification that %s property has been written\n",
 		(**pi).m_name.c_str(), (**pi).m_name.c_str());
+      if ((**pi).m_readSync)
+	fprintf(f,
+		"  void %s_read() {} // notification that %s property will be read\n",
+		(**pi).m_name.c_str(), (**pi).m_name.c_str());
+    }
     fprintf(f,
 	    "  RCCResult run(bool /*timedout*/) {\n"
 	    "    return RCC_ADVANCE;\n"

@@ -265,7 +265,7 @@ namespace OCPI {
       } else
 	m_properties.m_accessor->getBytes(m_properties.m_base + offset, buf, nBytes, &status);
       if (status)
-	throwPropertyReadError(status);
+	throwPropertyReadError(status, (uint32_t)offset, nBytes, 0);
     }
     void WciControl::
     setPropertySequence(const OA::PropertyInfo &p,
@@ -302,6 +302,7 @@ namespace OCPI {
     getPropertySequence(const OA::PropertyInfo &p, uint8_t *buf, size_t n) const {
       uint32_t offset = checkWindow(p.m_offset, n);
       uint32_t status = 0, nItems;
+      size_t nBytes;
 
       if (m_properties.m_registers) {
 	if (!p.m_readError ||
@@ -311,14 +312,14 @@ namespace OCPI {
 	  nItems = m_properties.get32RegisterOffset(offset);
 	else
 	  nItems = 0; // warning
+	nBytes = nItems * (p.m_nBits/8);
 	if (!p.m_readError && 
 	    !(status =
 	      get32Register(status, OccpWorkerRegisters) &
 	      OCCP_STATUS_READ_ERRORS)) {
-	  if (nItems * (p.m_nBits/8) <= n)
+	  if (nBytes > n)
 	    throwPropertySequenceError();
-	  m_properties.getBytesRegisterOffset(offset + p.m_align, 
-					      buf, nItems * (p.m_nBits/8));
+	  m_properties.getBytesRegisterOffset(offset + p.m_align, buf, nBytes);
 	  if (p.m_readError && !status)
 	    status =
 	      get32Register(status, OccpWorkerRegisters) &
@@ -326,16 +327,16 @@ namespace OCPI {
 	}
       } else {
 	nItems = m_properties.m_accessor->get32(m_properties.m_base + offset, &status);
+	nBytes = nItems * (p.m_nBits/8);
 	if (!status) {
-	  if (nItems * (p.m_nBits/8) <= n)
+	  if (nBytes > n)
 	    throwPropertySequenceError();
 	  m_properties.m_accessor->getBytes(m_properties.m_base + offset + p.m_align, 
-					    buf, nItems * (p.m_nBits/8),
-					    &status);
+					    buf, nBytes, &status);
 	}
       }
       if (status)
-	throwPropertyReadError(status);
+	throwPropertyReadError(status, offset, nBytes, 0);
       return nItems;
     }
 
@@ -362,22 +363,25 @@ namespace OCPI {
     }
 
     void WciControl::
-    throwPropertyReadError(uint32_t status) {
-      throw OU::Error("property reading error: %s",
+    throwPropertyReadError(uint32_t status, uint32_t offset, size_t n, uint64_t val) const {
+      throw OU::Error("property read error on worker %s instance %s status %x offset %x bytes %zd val %" PRIx64 ": %s",
+		      m_implName, m_instName, status, offset, n, val,
 		      status & OCCP_STATUS_READ_TIMEOUT ? "timeout" :
 		      (status & OCCP_STATUS_READ_FAIL ?
 		       "busy" : "worker generated error response"));
     }
     void WciControl::
-    throwPropertyWriteError(uint32_t status) {
-      throw OU::Error("property writing error: %s",
+    throwPropertyWriteError(uint32_t status) const {
+      throw OU::Error("property writing error on worker %s instance %s status %x: %s",
+		      m_implName, m_instName, status,
 		      status & OCCP_STATUS_WRITE_TIMEOUT ? "timeout" :
 		      (status & OCCP_STATUS_WRITE_FAIL ?
 		       "busy" : "worker generated error response"));
     }
     void WciControl::
-    throwPropertySequenceError() {
-      throw OU::Error("property sequence length overflow on read/get");
+    throwPropertySequenceError() const {
+      throw OU::Error("property sequence length overflow on worker %s instance %s",
+		      m_implName, m_instName);
     }
     // c++ doesn't allow static initializations in class definitions.
     const unsigned WciControl::

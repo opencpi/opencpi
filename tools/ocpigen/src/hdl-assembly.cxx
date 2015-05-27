@@ -608,7 +608,8 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
       break;
     }
   // Signals are mapped as external ports unless they are connected to an emulator, and
-  // sometimes they are mapped to slot names etc.
+  // sometimes they are mapped to slot names, and sometimes that are mapped to nothing when
+  // the platform doesn't support the signal.
   for (SignalsIter si = i->worker->m_signals.begin(); si != i->worker->m_signals.end(); si++) {
     Signal &s = **si;
     std::string prefix;
@@ -618,6 +619,7 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
       bool isSingle;
       const char *mappedExt = i->m_extmap.findSignal(s, n, isSingle);
       if (mappedExt) {
+	// mappedExt might actually be an empty string: ""
 	if (!anyMapped)
 	  assert(n == 0);
 	any = true;
@@ -636,9 +638,11 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
 	  mapOneSignal(f, s, n, isSingle, mappedExt, front, s.m_oe.c_str(), true);
 	} else
 	  mapOneSignal(f, s, n, isSingle, mappedExt, front, "%s", false);
-	Signal *es = m_assyWorker.m_sigmap[mappedExt];
-	assert(es);
-	m_assyWorker.recordSignalConnection(*es);
+	if (*mappedExt) {
+	  Signal *es = m_assyWorker.m_sigmap[mappedExt];
+	  assert(es);
+	  m_assyWorker.recordSignalConnection(*es);
+	}
 	if (!isSingle)
 	  break;
       }	else
@@ -761,8 +765,7 @@ emitAssyHDL() {
 	return err;
     }
     // Generate internal signal for emulation implicit connections
-    if (i->worker->m_emulate)
-      Signal::emitConnectionSignals(f, i->name, i->worker->m_signals);
+    i->worker->emitDeviceConnectionSignals(f, i->name, m_type == Container);
   }
   if (m_language == VHDL)
     fprintf(f, "begin\n");

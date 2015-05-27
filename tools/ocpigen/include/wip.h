@@ -634,6 +634,7 @@ class Worker : public Parsed, public OU::IdentResolver {
     emitXmlInstances(FILE *f),
     emitXmlConnections(FILE *f);
   void
+    emitDeviceConnectionSignals(FILE *f, const char *iname, bool container),
     setParent(Worker *p), // when it can't happen at construction
     prType(OU::Property &pr, std::string &type),
     emitVhdlPropMemberData(FILE *f, OU::Property &pr, unsigned maxPropName),

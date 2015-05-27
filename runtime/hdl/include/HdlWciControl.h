@@ -57,9 +57,9 @@ namespace OCPI {
 	}
 	return offset & (OCCP_WORKER_CONFIG_SIZE - 1);
       }
-      static void throwPropertyReadError(uint32_t status);
-      static void throwPropertyWriteError(uint32_t status);
-      static void throwPropertySequenceError();
+      void throwPropertyReadError(uint32_t status, uint32_t offset, size_t n, uint64_t val) const;
+      void throwPropertyWriteError(uint32_t status) const;
+      void throwPropertySequenceError() const;
 
 #define PUT_GET_PROPERTY(n,wb)                                                    \
       void                                                                        \
@@ -99,7 +99,7 @@ namespace OCPI {
 	  val = m_properties.m_accessor->get##n(m_properties.m_base + offset,     \
 						&status);                         \
 	if (status)							          \
-	  throwPropertyReadError(status);				          \
+	  throwPropertyReadError(status, offset, n/8, val);			\
 	return val;							          \
       }
       PUT_GET_PROPERTY(8,32)

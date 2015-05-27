@@ -387,7 +387,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
   if ((err = parseHdl()))
     return;
   platform = save;
-  // Make all device instances signals external, whether mapped or not
+  // Make all device instances signals external that are not mapped already
   unsigned n = 0;
   for (Instance *i = m_assembly->m_instances; n < m_assembly->m_nInstances; i++, n++) {
     Instance *emulator = NULL, *ii = m_assembly->m_instances;
@@ -399,26 +399,22 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
     if (i->worker->m_emulate || emulator)
       continue;
     for (SignalsIter si = i->worker->m_signals.begin(); si != i->worker->m_signals.end(); si++) {
-      // If the signal is mapped, that is the external signal.
-      Signal &s = *new Signal(**si);
-      bool single;
+      Signal &s = **si;
       for (unsigned n = 0; s.m_width ? n < s.m_width : n == 0; n++) {
+	bool single;
 	const char *external = i->m_extmap.findSignal(s, n, single);
 	if (external) {
-	  if (!*external)
-	    continue;
-	  // If device signal is explicitly mapped, then external signal name is the mapped name
-	  s.m_name = external;
-	} else if (!i->worker->m_assembly)
-	  // Otherwise, if it is included here, it is prefixed with its instance name
-	  OU::format(s.m_name, "%s_%s", i->name, (*si)->name());
-	// Otherwise its signal name IS the external name
-	m_signals.push_back(&s);
-	m_sigmap[s.name()] = &s;
-	if (single)
-	  s.m_width = 0;
-	else
+	  assert(!*external || m_sigmap.find(external) != m_sigmap.end());
+	  if (!single) // if mapped whole, we're done with this (maybe vector) signal
+	    break;
+	} else {
+	  Signal *ns = new Signal(s);
+	  if (!i->worker->m_assembly)
+	    OU::format(ns->m_name, "%s_%s", i->name, s.name());
+	  m_signals.push_back(ns);
+	  m_sigmap[s.name()] = ns;
 	  break;
+	}
       }
     }
   }
@@ -887,8 +883,12 @@ emitTieoffSignals(FILE *f) {
       // Signal has a connection and is INOUT - generate the top level tristate
       fprintf(f,
 	      "  -- Inout signal \"%s\" needs a tristate buffer.\n"
-		"  %s_ts: util.util.TSINOUT_%s\n",
-	      s.name(), s.name(), s.m_width ? "N\n    generic map(width => %zu);" : "1");
+		"  %s_ts: util.util.TSINOUT_",
+	      s.name(), s.name());
+      if (s.m_width)
+	fprintf(f, "N\n    generic map(width => %zu)\n", s.m_width);
+      else
+	fprintf(f, "1\n");
       fprintf(f,
 	      "    port map(I => %s, IO => %s, O => %s, OE => %s);\n",
 	      in.c_str(), s.name(), out.c_str(), oe.c_str());
