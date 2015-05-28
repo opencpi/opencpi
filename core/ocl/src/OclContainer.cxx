@@ -30,11 +30,29 @@
 #include <sys/mman.h>
 #include <regex.h>
 #include <opencl.h>
+#include <cl_ext.h>
 #include "RCC_RunCondition.h"
 #include "OCL_Worker.h"
 #include "OclContainer.h"
 #include "OclDevice.h"
 #include "OclPlatformManager.h"
+
+
+
+static clCreateSubDevicesEXT_fn pfn_clCreateSubDevicesEXT = NULL;
+static clReleaseDeviceEXT_fn pfn_clReleaseDeviceEXT = NULL;
+
+// Init extension function pointers
+#define INIT_CL_EXT_FCN_PTR(name) \
+    if(!pfn_##name) { \
+        pfn_##name = (name##_fn) clGetExtensionFunctionAddress(#name); \
+        if(!pfn_##name) { \
+            std::cout << "Cannot get pointer to ext. fcn. " #name << std::endl; \
+            throw "SDK_FAILURE";						\
+        } \
+    }
+
+
 
 namespace OCPI {
   namespace OCL {
@@ -251,14 +269,13 @@ namespace OCPI {
     Device::
     Device(const std::string &dname, cl_platform_id pid, cl_device_id did, bool verbose,
 	   bool print)
-      : m_name(dname), m_id(did), m_context(NULL), m_cmdq(NULL), m_bufferAlignment(0),
-	m_isCPU(false), m_pid(pid), m_vendor(NULL), m_family(NULL) {
+      : m_name(dname), m_id(did), m_context(NULL), m_bufferAlignment(0),
+	m_isCPU(false), m_pid(pid), m_vendor(NULL), m_family(NULL), m_nextQOrd(0) {
       cl_context_properties ctx_props[] = {CL_CONTEXT_PLATFORM, (cl_context_properties)pid, 0};
       cl_int rc;
       OCL_RC(m_context, clCreateContext(ctx_props, 1, &m_id, 0, 0, &rc));
-      OCL_RC(m_cmdq, clCreateCommandQueue(m_context, m_id, 0, &rc));
       cl_device_type type;
-      cl_uint vendorId, nUnits, nDimensions;
+      cl_uint vendorId,nDimensions;
       size_t *sizes, groupSize, argSize;
       cl_bool available, compiler;
       cl_device_exec_capabilities capabilities;
@@ -266,11 +283,39 @@ namespace OCPI {
       OCLDEV_VAR(TYPE, type);
       m_isCPU = type == CL_DEVICE_TYPE_CPU;
       OCLDEV_VAR(VENDOR_ID, vendorId);
-      OCLDEV_VAR(MAX_COMPUTE_UNITS, nUnits);
+      OCLDEV_VAR(MAX_COMPUTE_UNITS, m_nUnits);
+
+
+      cl_device_partition_property_ext pp[] = {CL_DEVICE_PARTITION_EQUALLY_EXT, 1, 0 };
+
+      // Initialize clCreateSubDevicesEXT and clReleaseDeviceEXT function pointers             
+      INIT_CL_EXT_FCN_PTR(clCreateSubDevicesEXT);                                           
+      INIT_CL_EXT_FCN_PTR(clReleaseDeviceEXT);                                                 
+                                                
+      rc = pfn_clCreateSubDevicesEXT ( m_id,  pp, m_nUnits, m_outDevices,
+				&m_numSubDevices );
+
+      printf("$$$$$$$$$$$$$   got %d partitioned subunits \n", m_numSubDevices );	
+
+
+
+      for ( int n=0; n<m_nUnits; n++ ) {
+	OCL_RC(m_cmdq[n], clCreateCommandQueue(m_context, m_outDevices[n], 0, &rc));
+      }
       OCLDEV_VAR(MAX_WORK_ITEM_DIMENSIONS, nDimensions);
       sizes = new size_t[nDimensions];
+
+      printf("***  Dims  = %d\n", nDimensions );
+      printf("***  Max compute units  = %d\n", m_nUnits );
+
       OCLDEV(MAX_WORK_ITEM_SIZES, sizes, nDimensions * sizeof(size_t));
       OCLDEV_VAR(MAX_WORK_GROUP_SIZE, groupSize);
+
+
+
+
+      printf("Max work item size = %d\n", groupSize );
+
       OCLDEV_VAR(MAX_PARAMETER_SIZE, argSize);
       OCLDEV_VAR(AVAILABLE, available);
       OCLDEV_VAR(COMPILER_AVAILABLE, compiler);
@@ -408,7 +453,7 @@ namespace OCPI {
     protected:
       OC::Worker &createWorker(Application &, const char* appInstName, ezxml_t impl,
 			       ezxml_t inst, size_t member, size_t crewSize,
-			       const OU::PValue* wParams);
+			       const OU::PValue* wParams, int que);
 
       cl_program &program() { return m_program; }
     };
@@ -600,7 +645,12 @@ namespace OCPI {
 	assert(!slave);
 	assert(artifact);
 	Artifact &art = static_cast<Artifact&>(*artifact);
-	return art.createWorker(*this, appInstName, impl, inst, member, crewSize, params);
+
+	int nq = static_cast<Container&>(container()).device().nextQOrd();
+
+	printf("Next Q ordinal = %d\n", nq );
+
+	return art.createWorker(*this, appInstName, impl, inst, member, crewSize, params, nq);
       }
 
       void
@@ -627,6 +677,7 @@ namespace OCPI {
 	a->run(event_manager, more_to_do);
       return more_to_do ? MoreWorkNeeded : Spin;
     }
+
 
     class Worker : public OC::WorkerBase<Application,Worker,Port>, public OCPI::Time::Emit {
       friend class Port;
@@ -655,13 +706,22 @@ namespace OCPI {
       cl_kernel                m_clKernel;
       OCPI::OS::Timer          m_runTimer;
       std::vector<Port*>       m_myPorts;
+      uint32_t                 m_que;
+
+
+      bool                     m_running;
+      size_t                   m_minReady;
+      OCLPortMask              m_relevantMask;
+      cl_event                 m_taskEvent;
+
 
       Worker(Application& app, Artifact& art, Kernel &k, const char* name, ezxml_t implXml,
-	       ezxml_t instXml, size_t member, size_t crewSize, const OA::PValue* execParams)
+	     ezxml_t instXml, size_t member, size_t crewSize, const OA::PValue* execParams, uint32_t que )
 	  : OC::WorkerBase<Application, Worker, Port>(app, *this, &art, name, implXml, instXml,
 						      member, crewSize, execParams),
 	    OCPI::Time::Emit(&parent().parent(), "Worker", name), m_kernel(k),
-	    m_container(app.parent()), m_isEnabled(false), m_clKernel(NULL) {
+	    m_container(app.parent()), m_isEnabled(false), m_clKernel(NULL), m_que(que),
+            m_running(false) {
 	assert(!(sizeof(OCLWorker) & 7));
 	assert(!(sizeof(OCLPort) & 7));
 	assert(!(sizeof(OCLReturned) & 7));
@@ -672,20 +732,35 @@ namespace OCPI {
 	OU::Memory *m = memories(nMemories);
 	for (size_t n = 0; n < nMemories; n++, m++)
 	  m_persistBytes += OU::roundUp(m->m_nBytes, 8);
+
+
+	//	printf("****** Persistbytes = %d\n", m_persistBytes);
+
+
 	OCL_RC(m_clPersistent,
 	       clCreateBuffer(m_container.device().context(),
 			      CL_MEM_READ_WRITE|CL_MEM_ALLOC_HOST_PTR, m_persistBytes,
 			      NULL, &rc));
 	void *vp;
-	OCL_RC(vp, clEnqueueMapBuffer(m_container.device().cmdq(), m_clPersistent,
+	OCL_RC(vp, clEnqueueMapBuffer(m_container.device().cmdq(m_que), m_clPersistent,
 				      false, CL_MAP_READ|CL_MAP_WRITE, 0, m_persistBytes,
 				      0, 0, 0, &rc));
-	OCL(clFinish(m_container.device().cmdq()));
+	OCL(clFinish(m_container.device().cmdq(0)));
+
 	m_persistent = (uint8_t *)vp;
 	memset(m_persistent, 0, m_persistBytes);
 	m_returned = (OCLReturned *)m_persistent;
+
+
+	//	printf("((((((( Host sizeof returned = %d, self = %d, ports = %d", sizeof(OCLReturned), sizeof(OCLWorker), sizeof(OCLPort)*m_nPorts );
+
+
 	m_self = (OCLWorker *)(m_returned + 1);
-	m_properties = (uint8_t *)(m_self) + m_nPorts + sizeof(OCLPort);
+	//	m_properties = (uint8_t *)(m_self) + sizeof(OCLReturned) + m_nPorts * sizeof(OCLPort);
+	m_properties = (uint8_t *)(m_self + 1) + m_nPorts * sizeof(OCLPort);
+	//	printf(" offset to props = %d\n", (uint8_t*)m_properties - (uint8_t*)m_returned);
+
+
 
 	m_memory = m_properties + OU::roundUp(totalPropertySize(), 8);
 	m_oclWorkerBytes = new uint8_t[m_oclWorkerSize];
@@ -730,29 +805,53 @@ namespace OCPI {
       }
 
       void kernelProlog(OCLOpCode opcode) {
+
+	//	printf("IN kernelProlog\n");
+
+
 	m_oclWorker->controlOp = opcode;
 	//uint32_t *p32 = (uint32_t*)m_oclWorkerBytes;
 	//ocpiDebug("self: %zu bytes %x %x %x %x %x %x\n", m_oclWorkerSize,
 	// p32[0], p32[1], p32[2], p32[3], p32[4], p32[5]);
 	//	OCL(clSetKernelArg(m_clKernel, 0, m_oclWorkerSize, m_oclWorkerBytes));
+
+
+
+	uint32_t prop = ((uint32_t*)(m_properties))[0];
+	//	printf("fffffffffffff BEFORE prop1 = %d\n", prop );
 	memcpy(m_self, m_oclWorkerBytes, m_oclWorkerSize);
-	OCL(clEnqueueUnmapMemObject(m_container.device().cmdq(), m_clPersistent, m_persistent,
+
+	prop = ((uint32_t*)(m_properties))[0];
+	//	printf("fffffffffffff AFTER prop1 = %d\n", prop );
+
+	OCL(clEnqueueUnmapMemObject(m_container.device().cmdq(m_que), m_clPersistent, m_persistent,
 				    0, 0, 0));
+
+
       }
 
       void kernelEpilog() {
-	void *vp;
-	OCL_RC(vp, clEnqueueMapBuffer(m_container.device().cmdq(), m_clPersistent,
-				      false, CL_MAP_READ|CL_MAP_WRITE, 0, m_persistBytes,
-				      0, 0, 0, &rc));
-	assert(vp = m_persistent);
-	OCL(clFinish(m_container.device().cmdq()));
+
+
+
+
+	//	OCL(clFinish(m_container.device().cmdq(m_que)));
+
+	//	uint32_t prop = ((uint32_t*)(m_properties))[0];
+	//	printf("fffffffffffff wa prop1 = %d\n", prop );
+
+
+
+
+	//	printf("IN kernelEpiLog\n");
+
 	//	memcpy(m_oclWorkerBytes, m_self, m_oclWorkerSize);
       }
 
       // Defined below the port class since it needs it to be defined.
       void controlOperation(OU::Worker::ControlOperation op);
       void run(bool &anyone_run);
+      bool waitForCompletion();
 
       public:
       void read ( size_t, size_t, void* ) {
@@ -780,6 +879,11 @@ namespace OCPI {
 	  readVaddr = (uint8_t*)m_properties + md.m_offset;
 	  writeVaddr = (uint8_t*)m_properties + md.m_offset;
 	}
+
+
+	//	printf("In prepareProperty\n");
+
+
       }
       
       OC::Port& createOutputPort(OU::PortOrdinal portId,
@@ -956,7 +1060,7 @@ namespace OCPI {
 
     OC::Worker& Artifact::
     createWorker(Application &app, const char* appInstName, ezxml_t impl, ezxml_t inst,
-		 size_t member, size_t crewSize, const OU::PValue* wParams) {
+		 size_t member, size_t crewSize, const OU::PValue* wParams, int que) {
       const char *kname = ezxml_cattr(impl, "name");
       assert(kname);
       std::string kstr(kname);
@@ -964,7 +1068,7 @@ namespace OCPI {
       for (unsigned n = 0; n < m_kernels.size(); n++)
 	if (m_kernels[n].m_name == kstr)
 	  return *new Worker(app, *this, m_kernels[n], appInstName, impl, inst, member, crewSize,
-			     wParams);
+			     wParams, que);
       throw OU::Error("Could not find OCL worker(kernel) named \"%s\" in \"%s\"",
 		      kname, name().c_str());
     }
@@ -993,12 +1097,13 @@ namespace OCPI {
 	ocpiDebug("Allocating buffer set for OCL port \"%s\". nbuf %zu, total %zu",
 		  name().c_str(), m_nBuffers, nBytes);
 	void *vp;
-	OCL_RC(vp, clEnqueueMapBuffer(parent().m_container.device().cmdq(), m_clBuffers,
+	uint32_t que = static_cast<Worker&>(parent()).m_que;
+	OCL_RC(vp, clEnqueueMapBuffer(parent().m_container.device().cmdq(que), m_clBuffers,
 				      false,
 				      CL_MAP_READ|CL_MAP_WRITE,
 				      0, nBytes,
 				      0, 0, 0, &rc));
-	OCL(clFinish(parent().m_container.device().cmdq()));
+	OCL(clFinish(parent().m_container.device().cmdq(que)));
 	return (uint8_t *)vp;
       }
       virtual void freeBuffers(uint8_t *) {
@@ -1009,9 +1114,10 @@ namespace OCPI {
 	ocpiDebug("OCL map buffers %s %s %p %zu %zu %p %p %p",
 		  parent().name().c_str(), name().c_str(),
 		  this, offset, size, m_clBuffers, allocation(), m_forward);
+	uint32_t que = static_cast<Worker&>(parent()).m_que;
 	if (m_clBuffers) {
 	  void *vp;
-	  OCL_RC(vp, clEnqueueMapBuffer(parent().m_container.device().cmdq(), m_clBuffers,
+	  OCL_RC(vp, clEnqueueMapBuffer(parent().m_container.device().cmdq(que), m_clBuffers,
 					false,
 					CL_MAP_READ|CL_MAP_WRITE,
 					offset, size,
@@ -1027,8 +1133,9 @@ namespace OCPI {
 	ocpiDebug("OCL unmap buffers %s %s %p %zu %zu %p %p %p",
 		  parent().name().c_str(), name().c_str(),
 		  this, offset, size, m_clBuffers, allocation(), m_forward);
+	uint32_t que = static_cast<Worker&>(parent()).m_que;
 	if (m_clBuffers)
-	  OCL(clEnqueueUnmapMemObject(parent().m_container.device().cmdq(), m_clBuffers,
+	  OCL(clEnqueueUnmapMemObject(parent().m_container.device().cmdq(que), m_clBuffers,
 				      allocation() + offset, 0, 0, 0));
 	else {
 	  assert(m_forward);
@@ -1098,7 +1205,10 @@ namespace OCPI {
       if ((getControlMask () & (1 << op))) {
 	kernelProlog((OCLOpCode)op);
 	cl_event event;
-	OCL(clEnqueueTask(m_container.device().cmdq(), m_clKernel, 0, 0, &event));
+
+	printf("**********   About to enque task on %d\n", m_que);
+	OCL(clEnqueueTask(m_container.device().cmdq(m_que), m_clKernel, 0, 0, &event));
+
 	kernelEpilog();
       } else
 	m_returned->result = OCL_OK;
@@ -1140,80 +1250,46 @@ namespace OCPI {
 		    m_name.c_str(), m_returned->result);
       }    
     }
-    void Worker::
-    run(bool& anyone_run) {
-      if (!m_isEnabled)
-	return;
-      bool timedOut = false, dont = false;
-      size_t minReady = 1;
-      OCLPortMask relevantMask = 0;
-      do {
-	// First do the checks that don't depend on port readiness.
-	if (m_runCondition->shouldRun(m_runTimer, timedOut, dont))
-	  break;
-	else if (dont)
-	  return;
-	// Start out assuming optional unconnected ports are "ready"
-	OCLPortMask readyMask = optionalPorts() & ~connectedPorts();
-	relevantMask = connectedPorts() & m_runCondition->m_allMasks;
-	OCLPort *oclPort = m_oclPorts;
-	OCLPortMask portBit = 1;
-	size_t nReady;
-	minReady = SIZE_MAX;
-	for (unsigned n = 0; n < m_nPorts; n++, oclPort++, portBit <<= 1)
-	  if ((portBit & relevantMask) && (nReady = m_myPorts[n]->checkReady())) {
-	    readyMask |= portBit;
-	    if (nReady < minReady)
-	      minReady = nReady;
-	  }
-	if (!minReady || minReady == SIZE_MAX)
-	  return;
-	// See if any of our masks are satisfied
-	OC::PortMask *pmp;
-	for (pmp = m_runCondition->m_portMasks; *pmp; pmp++)
-	  if ((*pmp & readyMask) == *pmp)
-	    break;
-	if (!*pmp)
-	  return;
-	m_oclWorker->runCount = OCPI_UTRUNCATE(uint8_t, minReady);
-	OCLPort *op = m_oclPorts;
-	for (unsigned n = 0; n < m_nPorts; n++, op++)
-	  if (relevantMask & (1 << n)) {
-	    Port *p = m_myPorts[n];
-	    ocpiAssert(p->checkReady() >= minReady);
-	    for (unsigned r = 0; r < minReady; r++) {
-	      OC::ExternalBuffer *b = p->isProvider() ? p->getFullBuffer() : p->getEmptyBuffer();
-	      if (!b)
-		p->debug(n);
-	      assert(b);
-	      // Buffer was being read or written by the CPU, and now should be switch to the GPU
-	      p->unmapBuffers(b->offset(), p->bufferStride());
-	      if (r == 0)
-		op->readyOffset = OCPI_UTRUNCATE(uint32_t, b->offset());
-	    }
-	  }
-      } while (0);
-      /* Set the arguments to the worker */
-      kernelProlog(OCPI_OCL_RUN);
-      cl_event event;
-      ocpiDebug("Enqueueing OCL worker kernel for %s, minReady %zu", name().c_str(), minReady);
-      OCL(clEnqueueNDRangeKernel(m_container.device().cmdq(),
-				 m_clKernel,
-				 m_kernel.m_nDims,
-				 NULL,                       // global work offset
-				 m_kernel.m_work_group_size, // size of groups to use
-				 m_kernel.m_work_group_size, // size of groups to use
-				 0,
-				 0,
-				 &event));
+
+
+
+    bool
+    Worker::
+    waitForCompletion() {
+      if ( ! m_running ) {
+	return true;
+      }
+
+
+      cl_int info,ret;
+      ret = clGetEventInfo(m_taskEvent, CL_EVENT_COMMAND_EXECUTION_STATUS, sizeof(cl_int), (void *)&info, NULL);
+      bool done = false;
+      /* Checking the return values corresponding to CL_EVENT_COMMAND_EXECUTION_STATUS flag */
+      if ( info == CL_SUBMITTED ){
+	printf("the command has been submitted successfully.\n");
+      } else if ( info == CL_QUEUED ){
+	printf("the command has been queued successfully.\n");
+      } else if ( info == CL_RUNNING ){
+	printf("the command is running.\n");
+      } else if ( info < 0 ){
+	printf("the command was terminated abnormally.\n");
+      } else if ( info == CL_COMPLETE ){
+	printf("the command has been completed successfully.\n");
+	done = true;
+      }
+
+      if ( !done )
+	return false;
+
+
       OCLPort *op = m_oclPorts;
       // FIXME: We must retrieve opcode, length, direct, eof for output.
       for (unsigned n = 0; n < m_nPorts; n++, op++)
-	if (relevantMask & (1 << n)) {
+	if (m_relevantMask & (1 << n)) {
 	  Port *p = m_myPorts[n];
 	  OC::ExternalBuffer *b =
 	    p->isProvider() ? p->nextToRelease() : p->nextToPut();
-	  for (unsigned r = 0; r < minReady; r++) {
+	  for (unsigned r = 0; r < m_minReady; r++) {
 	    assert(b);
 	    // Buffer was being read or written by the GPU, and now should be switch to the CPU
 	    p->mapBuffers(b->offset(), p->bufferStride());
@@ -1221,17 +1297,22 @@ namespace OCPI {
 	    b = b->next();
 	  }
 	}
+
       kernelEpilog();
-      ocpiDebug("Execution of OCL worker %s completes, minReady %zu", name().c_str(), minReady);
+      m_running = false;
+
+
+
+      //      ocpiDebug("Execution of OCL worker %s completes, m_minReady %zu", name().c_str(), m_minReady);
       m_oclWorker->firstRun = false;
-      anyone_run = true;
+      bool anyone_run = true;
       switch (m_returned->result) {
       case OCL_ADVANCE:
       case OCL_ADVANCE_DONE:
 	for (unsigned n = 0; n < m_nPorts; n++, op++)
-	  if (relevantMask & (1 << n)) {
+	  if (m_relevantMask & (1 << n)) {
 	    Port *p = m_myPorts[n];
-	    for (unsigned r = 0; r < minReady; r++) {
+	    for (unsigned r = 0; r < m_minReady; r++) {
 	      OC::ExternalBuffer *b =
 		p->isProvider() ? p->nextToRelease() : p->nextToPut();
 	      assert(b);
@@ -1259,6 +1340,100 @@ namespace OCPI {
         m_isEnabled = false;
 	setControlState(OU::Worker::UNUSABLE);
       }
+
+      return true;
+
+    }
+
+
+    void Worker::
+    run(bool& anyone_run) {
+
+      if (!m_isEnabled)
+	return;
+
+      // If we are running in a Q, we need to wait for it to complete
+      if ( ! waitForCompletion() ) {
+	return;
+      }
+
+      bool timedOut = false, dont = false;
+      m_minReady = 1;
+      m_relevantMask = 0;
+      do {
+	// First do the checks that don't depend on port readiness.
+	if (m_runCondition->shouldRun(m_runTimer, timedOut, dont))
+	  break;
+	else if (dont)
+	  return;
+	// Start out assuming optional unconnected ports are "ready"
+	OCLPortMask readyMask = optionalPorts() & ~connectedPorts();
+	m_relevantMask = connectedPorts() & m_runCondition->m_allMasks;
+	OCLPort *oclPort = m_oclPorts;
+	OCLPortMask portBit = 1;
+	size_t nReady;
+	m_minReady = SIZE_MAX;
+	for (unsigned n = 0; n < m_nPorts; n++, oclPort++, portBit <<= 1)
+	  if ((portBit & m_relevantMask) && (nReady = m_myPorts[n]->checkReady())) {
+	    readyMask |= portBit;
+	    if (nReady < m_minReady)
+	      m_minReady = nReady;
+	  }
+	if (!m_minReady || m_minReady == SIZE_MAX)
+	  return;
+	// See if any of our masks are satisfied
+	OC::PortMask *pmp;
+	for (pmp = m_runCondition->m_portMasks; *pmp; pmp++)
+	  if ((*pmp & readyMask) == *pmp)
+	    break;
+	if (!*pmp)
+	  return;
+	m_oclWorker->runCount = OCPI_UTRUNCATE(uint8_t, m_minReady);
+	OCLPort *op = m_oclPorts;
+	for (unsigned n = 0; n < m_nPorts; n++, op++)
+	  if (m_relevantMask & (1 << n)) {
+	    Port *p = m_myPorts[n];
+	    ocpiAssert(p->checkReady() >= m_minReady);
+	    for (unsigned r = 0; r < m_minReady; r++) {
+	      OC::ExternalBuffer *b = p->isProvider() ? p->getFullBuffer() : p->getEmptyBuffer();
+	      if (!b)
+		p->debug(n);
+	      assert(b);
+	      // Buffer was being read or written by the CPU, and now should be switch to the GPU
+	      p->unmapBuffers(b->offset(), p->bufferStride());
+	      if (r == 0)
+		op->readyOffset = OCPI_UTRUNCATE(uint32_t, b->offset());
+	    }
+	  }
+      } while (0);
+      /* Set the arguments to the worker */
+      kernelProlog(OCPI_OCL_RUN);
+      cl_event event;
+      ocpiDebug("Enqueueing OCL worker kernel for %s, m_minReady %zu", name().c_str(), m_minReady);
+
+      printf("Enqueueing OCL worker kernel for %s, m_minReady %zu\n", name().c_str(), m_minReady);
+
+
+      OCL(clEnqueueNDRangeKernel(m_container.device().cmdq(m_que),
+				 m_clKernel,
+				 m_kernel.m_nDims,
+				 NULL,                       // global work offset
+				 m_kernel.m_work_group_size, // size of groups to use
+				 m_kernel.m_work_group_size, // size of groups to use
+				 0,
+				 0,
+				 0));
+
+      void *vp;
+      OCL_RC(vp, clEnqueueMapBuffer(m_container.device().cmdq(m_que), m_clPersistent,
+				    false, CL_MAP_READ|CL_MAP_WRITE, 0, m_persistBytes,
+				    0, 0, &m_taskEvent, &rc));
+      assert(vp = m_persistent);
+
+      m_running = true;
+
+
+
     }
 
     OC::Port& Worker::

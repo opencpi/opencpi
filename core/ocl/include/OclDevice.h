@@ -51,19 +51,25 @@ namespace OCPI {
       std::string m_name, m_vendorName, m_type;
       cl_device_id m_id;
       cl_context m_context;
-      cl_command_queue m_cmdq;
+      static const uint16_t MAX_CMDQ_LEN = 32;
+      cl_command_queue m_cmdq[MAX_CMDQ_LEN];
       size_t m_bufferAlignment;
       bool m_isCPU;
       cl_platform_id m_pid;
       OclVendor *m_vendor;
       OclFamily *m_family;
+      cl_uint m_nUnits;
+      uint32_t m_nextQOrd;
+      static const uint32_t MAX_SUB_DEVICES = 256;
+      cl_device_id  m_outDevices[MAX_SUB_DEVICES];
+      cl_uint  m_numSubDevices;
     protected:
 
       Device(const std::string &dname, cl_platform_id pid, cl_device_id did, bool verbose,
 	     bool print);
       ~Device();
       cl_platform_id id() const { return m_pid; }
-      cl_command_queue &cmdq() { return m_cmdq; }
+      cl_command_queue &cmdq(int idx ) { return m_cmdq[idx]; }
       const std::string &name() const { return m_name; }
       size_t bufferAlignment() const { return m_bufferAlignment; }
       const OclVendor *vendor() const { return m_vendor; }
@@ -71,10 +77,12 @@ namespace OCPI {
       const std::string &type() const { return m_type; }
       
       
+      
     public:
       bool isCPU() const { return m_isCPU; }
       cl_context &context() { return m_context; }
       cl_device_id &id() { return m_id; }
+      uint32_t nextQOrd() { return (++m_nextQOrd)%m_nUnits; }
     };
     void throwOclError(cl_int errnum, const char *fmt, ...);
     const char* ocl_strerror(cl_int errnum);
