@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -31,9 +30,10 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #include "OcpiOsMisc.h"
 #include "OcpiUtilValue.h"
+#include "ValueReader.h"
+#include "ValueWriter.h"
 #include "Container.h"
 #include "ContainerPort.h"
 #include "ContainerApplication.h"
@@ -119,25 +119,37 @@ namespace OCPI {
 
     // Internal used by others.
     void Worker::setPropertyValue(const OU::Property &info, const OU::Value &v) {
-      if (info.m_baseType == OA::OCPI_Struct ||
-	  info.m_baseType == OA::OCPI_Type)
-	throw OU::Error("Struct and Typedef properties are not settable");
-      if (info.m_isSequence || info.m_arrayRank > 0) {
+      if (info.m_baseType == OA::OCPI_Type)
+	throw OU::Error("Typedef properties are not settable");
+      if (info.m_baseType == OA::OCPI_Struct || info.m_isSequence || info.m_arrayRank > 0) {
+	size_t offset = info.m_offset + (info.m_isSequence ? info.m_align : 0);
 	if (info.m_baseType == OA::OCPI_String) {
 	  const char **sp = v.m_pString;
-	  size_t offset = info.m_offset + (info.m_isSequence ? info.m_align : 0);
 	  for (unsigned n = 0; n < v.m_nTotal; n++) {
 	    size_t l = strlen(sp[n]);
 	    setPropertyBytes(info, offset, (uint8_t*)sp[n], l + 1);
 	    offset += OU::roundUp(info.m_stringLength + 1, 4);
 	  }	  
 	} else {
-	  uint8_t *data = v.m_pUChar;
-	  size_t nBytes = v.m_nTotal * (info.m_nBits/8);
+	  uint8_t *data;
+	  uint64_t *alloc = NULL;
+	  size_t nBytes = v.m_nTotal * info.m_elementBytes;
+	  if (info.m_baseType == OA::OCPI_Struct) {
+	    // We need to create a temporary linear value - explicitly align it
+	    size_t length = (nBytes + 7)/8;
+	    alloc = new uint64_t[length];
+	    length *= 8;
+	    data = (uint8_t*)alloc;
+	    const OU::Value *vp = &v;
+	    OU::ValueReader reader(&vp);
+	    info.read(reader, data, length);
+	    assert(length == 0);
+	    data = (uint8_t*)alloc;
+	  } else
+	    data = v.m_pUChar;
 	  if (nBytes)
-	    setPropertyBytes(info,
-			     info.m_offset + (info.m_isSequence ? info.m_align : 0),
-			     data, nBytes);
+	    setPropertyBytes(info, offset, data, nBytes);
+	  delete [] alloc;
 	}
 	if (info.m_isSequence)
 	  setProperty32(info, (uint32_t)v.m_nElements);
@@ -168,11 +180,11 @@ namespace OCPI {
 			pname, name().c_str());
       OU::ValueType &vt = prop;
       OU::Value v(vt); // FIXME storage when not scalar
-      if (vt.m_baseType == OA::OCPI_Struct)
-	throw OU::ApiError("No support yet for setting struct properties", NULL);
       const char *err = v.parse(value);
       if (err)
         throw OU::ApiError("Error parsing property value:\"", value, "\"", NULL);
+      if (vt.m_baseType == OA::OCPI_Struct)
+	throw OU::ApiError("No support yet for setting struct properties", NULL);
       setPropertyValue(prop, v);
     }
     void Worker::
@@ -180,9 +192,11 @@ namespace OCPI {
       OU::Value v(p);
       OA::Property a(*this, p.m_name.c_str()); // FIXME clumsy because get methods take API props
       OA::PropertyInfo &info = a.m_info;
+      if (p.m_baseType == OA::OCPI_Type)
+	throw OU::Error("Typedef properties are unsupported");
       if (info.m_readSync)
 	propertyRead(info.m_ordinal);
-      if (info.m_isSequence || info.m_arrayRank > 0) {
+      if (info.m_baseType == OA::OCPI_Struct || info.m_isSequence || info.m_arrayRank > 0) {
 	v.m_nTotal = info.m_nItems;
 	if (info.m_isSequence) {
 	  v.m_nElements = getProperty32(info);
@@ -191,25 +205,37 @@ namespace OCPI {
 			    info.m_name.c_str(), v.m_nElements);
 	  v.m_nTotal *= v.m_nElements;
 	}
+	size_t offset = info.m_offset + (info.m_isSequence ? info.m_align : 0);
+	size_t nBytes = v.m_nTotal * info.m_elementBytes;
 	if (info.m_baseType == OA::OCPI_String) {
 	  size_t length = OU::roundUp(info.m_stringLength + 1, 4);
 	  v.m_stringSpaceLength = v.m_nTotal * length;
 	  v.m_stringNext = v.m_stringSpace = new char[v.m_stringSpaceLength];
 	  char **sp = new char *[v.m_nTotal];
 	  v.m_pString = (const char **)sp;
-	  size_t offset = info.m_offset + (info.m_isSequence ? info.m_align : 0);
 	  for (unsigned n = 0; n < v.m_nTotal; n++) {
 	    sp[n] = v.m_stringNext;
 	    getPropertyBytes(info, offset, (uint8_t *)v.m_stringNext, length);
 	    v.m_stringNext += length;
 	    offset += length;
 	  }	  
-	} else {
-	  size_t nBytes = v.m_nTotal * (info.m_nBits/8);
+	} else if (nBytes) {
 	  uint8_t *data = new uint8_t[nBytes];
-	  v.m_pUChar = data;
-	  if (nBytes)
-	    getPropertyBytes(info, info.m_offset + (info.m_isSequence ? info.m_align : 0), data, nBytes);
+	  getPropertyBytes(info, offset, data, nBytes);
+	  if (info.m_baseType == OA::OCPI_Struct) {
+	    const uint8_t *tmp = data;
+	    size_t length = nBytes;
+	    // The writer creates its own value objects...
+	    // FIXME: use more ValueWriter functionality for this whole method
+	    OU::Value *vp = NULL;
+	    OU::ValueWriter writer(&vp, 1);
+	    info.write(writer, tmp, length, false);
+	    assert(length == 0);
+	    delete [] data;
+	    vp->unparse(value, NULL, add, hex);
+	    return; // FIXME - see above
+	  } else
+	    v.m_pUChar = data;
 	}
       } else if (info.m_baseType == OA::OCPI_String) {
 	// FIXME: a gross modularity violation
@@ -227,7 +253,6 @@ namespace OCPI {
 	  v.m_ULongLong = getProperty64(info); break;
 	default:;
 	}
-      
       v.unparse(value, NULL, add, hex);
     }
     bool Worker::getProperty(unsigned ordinal, std::string &name, std::string &value,
@@ -246,8 +271,6 @@ namespace OCPI {
 	return true;
       } else
 	throw OU::Error("Property number %u '%s' is unreadable", ordinal, p.m_name.c_str());
-      if (p.m_baseType == OA::OCPI_Struct || p.m_baseType == OA::OCPI_Type)
-	throw OU::Error("Struct and Typedef properties are unsupported");
       if (p.m_isParameter) {
 	p.m_default->unparse(value, NULL, false, hex);
 	return true;

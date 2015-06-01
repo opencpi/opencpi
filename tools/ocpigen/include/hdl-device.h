@@ -32,15 +32,16 @@ typedef std::list<Support> Supports;
 typedef Supports::const_iterator SupportsIter;
 class HdlDevice : public Worker {
 public:
-  static DeviceTypes s_types;
+  //  static DeviceTypes s_types;
   bool               m_interconnect;  // Can this type of device be used for an interconnect?
   bool               m_canControl;    // Can this interconnect worker provide control?
   Supports           m_supports;      // what subdevices are supported?
   static HdlDevice *
   get(const char *name, const char *parentFile, Worker *parent, const char *&err);
-  static Worker *create(ezxml_t xml, const char *parentFile, Worker *parent, const char *&err);
+  static Worker *create(ezxml_t xml, const char *parentFile, Worker *parent,
+			OU::Assembly::Properties *instancePVs, const char *&err);
   HdlDevice(ezxml_t xml, const char *file, const char *parentFile, Worker *parent,
-	    const char *&err);
+	    OU::Assembly::Properties *instancePVs, const char *&err);
   virtual ~HdlDevice() {}
   const char *name() const;
   const Ports &ports() const { return m_ports; }
@@ -65,12 +66,15 @@ struct Device {
   static Device *
   create(Board &b, ezxml_t xml, const char *parentFile, Worker *parent, bool single,
 	 unsigned ordinal, SlotType *stype, const char *&err);
+  const char *parse(ezxml_t x, Board &b, SlotType *stype);
   const DeviceType &deviceType() const { return m_deviceType; }
   const char *name() const { return m_name.c_str(); }
   static const Device *
   find(const char *name, const Devices &devices);
+#if 0
   static const Device &
   findSupport(const DeviceType &dt, unsigned ordinal, const Devices &devices);
+#endif
 };
 
 // common behavior for platforms and cards
@@ -84,9 +88,11 @@ struct Board {
   const Devices &devices() const { return m_devices; }
   const Device *findDevice(const char *name) const;
   Devices &devices() { return m_devices; }
+#if 0
   const Device &findSupport(const DeviceType &dt, unsigned ordinal) const {
     return Device::findSupport(dt, ordinal, m_devices);
   }
+#endif
   const Device *findDevice(const char *name) {
     return Device::find(name, m_devices);
   }

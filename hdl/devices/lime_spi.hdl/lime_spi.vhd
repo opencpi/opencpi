@@ -27,7 +27,7 @@ begin
   addr         <= raw_in.raw.address(addr'range);
   raw_out.raw.data  <= rdata & rdata & rdata & rdata;
   -- Use the generic raw property arbiter between rx and tx
-  arb : entity work.raw_arb
+  arb : wci.raw_arb
     generic map(nusers => 2)
     port map(
       clk         => wci_clk,

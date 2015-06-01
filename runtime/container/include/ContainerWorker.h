@@ -91,17 +91,26 @@ namespace OCPI {
 				   volatile void *&m_writeVaddr,
 				   const volatile void *&m_readVaddr) = 0;
       virtual void setPropertyBytes(const OCPI::API::PropertyInfo &info, size_t offset,
-				    const uint8_t *data, size_t nBytes) const = 0;
-      virtual void setProperty8(const OCPI::API::PropertyInfo &info, uint8_t data) const = 0;
-      virtual void setProperty16(const OCPI::API::PropertyInfo &info, uint16_t data) const = 0;
-      virtual void setProperty32(const OCPI::API::PropertyInfo &info, uint32_t data) const = 0;
-      virtual void setProperty64(const OCPI::API::PropertyInfo &info, uint64_t data) const = 0;
+				    const uint8_t *data, size_t nBytes,
+				    unsigned idx = 0) const = 0;
+      virtual void setProperty8(const OCPI::API::PropertyInfo &info, uint8_t data,
+				unsigned idx = 0) const = 0;
+      virtual void setProperty16(const OCPI::API::PropertyInfo &info, uint16_t data,
+				 unsigned idx = 0) const = 0;
+      virtual void setProperty32(const OCPI::API::PropertyInfo &info, uint32_t data,
+				 unsigned idx = 0) const = 0;
+      virtual void setProperty64(const OCPI::API::PropertyInfo &info, uint64_t data,
+				 unsigned idx = 0) const = 0;
       virtual void getPropertyBytes(const OCPI::API::PropertyInfo &info, size_t offset,
-				    uint8_t *data, size_t nBytes) const = 0;
-      virtual uint8_t getProperty8(const OCPI::API::PropertyInfo &info) const = 0;
-      virtual uint16_t getProperty16(const OCPI::API::PropertyInfo &info) const = 0;
-      virtual uint32_t getProperty32(const OCPI::API::PropertyInfo &info) const = 0;
-      virtual uint64_t getProperty64(const OCPI::API::PropertyInfo &info) const = 0;
+				    uint8_t *data, size_t nBytes, unsigned idx = 0) const = 0;
+      virtual uint8_t getProperty8(const OCPI::API::PropertyInfo &info, unsigned idx = 0)
+	const = 0;
+      virtual uint16_t getProperty16(const OCPI::API::PropertyInfo &info, unsigned idx = 0)
+	const = 0;
+      virtual uint32_t getProperty32(const OCPI::API::PropertyInfo &info, unsigned idx = 0)
+	const = 0;
+      virtual uint64_t getProperty64(const OCPI::API::PropertyInfo &info, unsigned idx = 0)
+	const = 0;
       virtual void controlOperation(OCPI::Util::Worker::ControlOperation) = 0;
     };
     class Worker

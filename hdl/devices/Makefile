@@ -44,7 +44,9 @@
 Package=ocpi.devices
 XmlIncludeDirs=../../components/specs
 HdlLibraries=platform
-Implementations = \
+# Remember that subdevices that support other devices must occur AFTER the devices they support
+# Similarly, emulators must occur after the devices they emulate
+Workers = \
 	ocdp.hdl \
 	dac.hdl \
 	adcx.hdl \
@@ -52,19 +54,20 @@ Implementations = \
 	dac.rcc \
 	icap.hdl \
 	flash.hdl \
-        clkgen_ti_cdce72010.hdl \
 	gbe.hdl \
-        lime_spi.hdl \
         lime_dac.hdl \
         lime_adc.hdl \
+        lime_spi.hdl \
 	lime_spi_em.hdl \
 	lime_adc_em.hdl \
 	lime_dac_em.hdl \
+	si5351_proxy.rcc \
 	si5351.hdl
 
 # These two require support for embedded IOBUFs which is currently turned off
 #	dram_v5.hdl \
 #	dram_v6.hdl \
 #
+#        clkgen_ti_cdce72010.hdl \
 
 include $(OCPI_CDK_DIR)/include/lib.mk

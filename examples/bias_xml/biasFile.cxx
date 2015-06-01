@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
   hello +=
     "'/>"
     "  </instance>"
-    "  <instance component='bias' selection='";
+    "  <instance component='bias' worker='bias_cc' selection='";
   hello += selection;
   hello +=
     "'>"
@@ -56,12 +56,9 @@ int main(int argc, char **argv) {
     app.initialize();
     fprintf(stderr, "Application established: containers, workers, connections all created\n");
     fprintf(stderr, "Communication with the application established\n");
-#if 0 // original simple way
     app.setProperty("file_write", "filename", "test.output");
-#else
-    OA::Property p(app, "file_write.filename");
-    p.setStringValue("test.output");
-#endif
+    OA::Property p(app, "bias.testws");
+    p.setULongValue(12);
     app.start();
     fprintf(stderr, "Application started/running\n");
     app.wait();

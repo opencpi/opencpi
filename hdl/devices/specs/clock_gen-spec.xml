@@ -1,15 +1,36 @@
 <!-- 
-This is the component spec for clock generator chips.  Any properties
-mentioned here are common to device workers that manage such
-chips.  Specific clock_gen infrastructure device workers will extend
-this list of properties with the properties that are specific for a
-given chip properties with the properties that are specific for a
-given chip
-
+This is the component spec for clock generator device proxies.  Any properties
+mentioned here are common to device proxies for such workers.  Software device workers
+might directly implement this as well as act as the device worker, whereas
+HDL device workers might need a proxy.
 -->
 <ComponentSpec>
-  <Properties>
-  <!-- no generic properties defined here yet -->
-  </Properties>
-  <!-- no data ports -->
+  <!-- capabilities of this device -->
+  <property name='canDriveLow' parameter='1' readable='1' type='bool'/>
+  <property name='canDriveHigh' parameter='1' readable='1' type='bool'/>
+  <property name='canDriveZ' parameter='1' readable='1' type='bool'/>
+  <property name='canDriveDown' parameter='1' readable='1' type='bool'/>
+  <property name='canDriveInvert' parameter='1' readable='1' type='bool'/>
+  <!-- How many inputs to the programmable outputs are there? -->
+  <property name='nsources' readable='1' parameter='1' default='1'/>
+  <!-- What is the frequency of the sources to the clock generator -->
+  <property name='input_hz' readable='1' type='float' arraylength='nsources'/>
+  <!-- How many programmable outputs are there? -->
+  <property name='nchannels' readable='1' parameter='1' default='1'/>
+  <!-- Attributes for each channel -->
+  <!-- The state of a given channel:
+       on:     the output is enabled
+       low:    the output is set to drive low
+       high:   the output is set to drive high
+       z:      the output is set to be not driven (tristate)
+       down:   the output is powered off
+       invert: the output is on and inverted
+  -->
+  <property name='channels' initial='1' arraylength='nchannels' readable='1' type='struct'>
+    <member name='source' type='uchar' default='0'/>
+    <member name='state' type='enum' enums='on,low,high,z,off,invert' default='off'/>
+    <member name='spread' type='enum' enums='none,down,center,up' default='none'/>
+    <member name='spreadAmount' type='float' default='0'/>
+    <member name='output_hz' type='float'/>
+  </property>
 </ComponentSpec>

@@ -187,7 +187,7 @@ namespace OCPI {
 	  ocpiInfo("HDL Control Op Failed: worker %s:%s(%zu) op %s(%u) %s (%0x" PRIx32 ")",
 		   m_implName, m_instName, m_occpIndex, OU::Worker::s_controlOpNames[op],
 		   op, oops, result);
-	  OU::format(err, "HDL Control Op Failed: worker %s:%s(%zu) op %s(%u) %s (%0x" PRIx32 ")",
+	  OU::format(err, "HDL Control Op Failed: worker %s:%s(%zu) op %s(%u) %s (0x%" PRIx32 ")",
 		     m_implName, m_instName, m_occpIndex, OU::Worker::s_controlOpNames[op],
 		     op, oops, result);
 	  return true;
@@ -205,8 +205,8 @@ namespace OCPI {
 
 #define PUT_GET_PROPERTY(n)						     \
     void WciControl::                                                        \
-    setProperty##n(const OA::PropertyInfo &info, uint##n##_t val) const {    \
-        uint32_t offset = checkWindow(info.m_offset, n/8);		     \
+    setProperty##n(const OA::PropertyInfo &info, uint##n##_t val, unsigned idx) const { \
+      uint32_t offset = checkWindow(info.m_offset + idx * (n/8), n/8);	\
 	uint32_t status = 0;						     \
 	if (m_properties.m_registers) {					     \
 	  if (!info.m_writeError ||					     \
@@ -231,8 +231,8 @@ namespace OCPI {
 #undef PUT_GET_PROPERTY
     void WciControl::
     setPropertyBytes(const OA::PropertyInfo &info, size_t offset,
-		     const uint8_t *data, size_t nBytes) const {
-      offset = checkWindow(offset, nBytes);
+		     const uint8_t *data, size_t nBytes, unsigned idx) const {
+      offset = checkWindow(offset + idx * info.m_elementBytes, nBytes);
       uint32_t status = 0;
       if (m_properties.m_registers) {
 	if (!info.m_writeError ||
@@ -250,8 +250,8 @@ namespace OCPI {
 
     void WciControl::
     getPropertyBytes(const OA::PropertyInfo &info, size_t offset, uint8_t *buf,
-		     size_t nBytes) const {
-      offset = checkWindow(offset, nBytes);
+		     size_t nBytes, unsigned idx) const {
+      offset = checkWindow(offset + idx * info.m_elementBytes, nBytes);
       uint32_t status = 0;
 
       if (m_properties.m_registers) {
@@ -312,7 +312,7 @@ namespace OCPI {
 	  nItems = m_properties.get32RegisterOffset(offset);
 	else
 	  nItems = 0; // warning
-	nBytes = nItems * (p.m_nBits/8);
+	nBytes = nItems * p.m_elementBytes;
 	if (!p.m_readError && 
 	    !(status =
 	      get32Register(status, OccpWorkerRegisters) &
@@ -327,7 +327,7 @@ namespace OCPI {
 	}
       } else {
 	nItems = m_properties.m_accessor->get32(m_properties.m_base + offset, &status);
-	nBytes = nItems * (p.m_nBits/8);
+	nBytes = nItems * p.m_elementBytes;
 	if (!status) {
 	  if (nBytes > n)
 	    throwPropertySequenceError();
@@ -341,9 +341,10 @@ namespace OCPI {
     }
 
     void WciControl::
-    setStringProperty(unsigned ordinal, const char* val) const {
+    setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
       size_t n = strlen(val) + 1;
-      setPropertySequence(m_propInfo[ordinal], (const uint8_t *)val, n, n);
+      const OA::PropertyInfo &info = m_propInfo[ordinal];
+      setPropertyBytes(info, info.m_offset, (const uint8_t*)val, n, idx);
     }
     void WciControl::
     setStringSequenceProperty(const OA::Property &, const char * const *,
@@ -351,9 +352,10 @@ namespace OCPI {
       throw OU::Error("No support for properties that are sequences of strings");
     }
     void WciControl::
-    getStringProperty(unsigned ordinal, char *val, size_t length) const {
+    getStringProperty(unsigned ordinal, char *val, size_t length, unsigned idx) const {
       // ignore return value
-      getPropertySequence(m_propInfo[ordinal], (uint8_t*)val, length);
+      const OA::PropertyInfo &info = m_propInfo[ordinal];
+      getPropertyBytes(info, info.m_offset, (uint8_t*)val, length, idx);
     }
     unsigned WciControl::
     getStringSequenceProperty(const OA::Property &, char * *,

@@ -1,5 +1,5 @@
 /*
- * THIS FILE WAS ORIGINALLY GENERATED ON Fri May 15 17:12:14 2015 EDT
+ * THIS FILE WAS ORIGINALLY GENERATED ON Thu May 28 20:30:32 2015 EDT
  * BASED ON THE FILE: cons.xml
  * YOU *ARE* EXPECTED TO EDIT IT
  *
@@ -9,9 +9,11 @@
 #include "cons-worker.hh"
 
 using namespace OCPI::RCC; // for easy access to RCC data types and constants
+using namespace ConsWorkerTypes;
 
 class ConsWorker : public ConsWorkerBase {
   RCCResult run(bool /*timedout*/) {
+    // Test worker
     return RCC_ADVANCE;
   }
 };

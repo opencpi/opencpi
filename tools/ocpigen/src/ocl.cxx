@@ -215,7 +215,7 @@ emitImplOCL() {
     bool isLastDummy = false;
     for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
       if (!(*pi)->m_isParameter)
-	printRccMember(f, **pi, 2, offset, pad, m_implName, true, isLastDummy, false);
+	printRccMember(f, **pi, 2, offset, pad, m_implName, true, isLastDummy, false, false);
     fprintf(f, "} %c%sProperties;\n\n", toupper(m_implName[0]), m_implName + 1);
   }
   // We care about making this small

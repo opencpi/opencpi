@@ -86,8 +86,8 @@ struct Instance {
     Adapter,       // an adapter inserted by code generation
   } m_iType;
   const char *attach;  // external platform port this worker is attached to for io or interconnect
-  InstanceProperties properties;
   OCPI::Util::Assembly::Properties m_xmlProperties; // explicit unparsed values for the instance
+  InstanceProperties properties;                    // fully parsed w/ full knowledge of worker
   bool hasConfig;      // hack for adapter configuration FIXME make normal properties
   size_t config;       // hack ditto
   ExtMap m_extmap;     // map for externals. FIXME: have HdlInstance class...

@@ -287,20 +287,18 @@ ifdef LibDir
 # The default for things in the target dir to export into the component library's
 # export directory for this target
 
-# $(call DoLink,<target>,<binary>,<linkname>,<confname>)
+# $(call DoLink,<target>,<binary>,<linkname>,<confname>,<rmrvname>)
 MyBBLibFile=$(infox MBB:$1:$2:$3)$(call BBLibFile,$1,$(call HdlRmRv,$(basename $2))$(if $(filter 0,$3),,_c$3),$3,$1)
-
 define DoLink
-
-  $(infox DoLink:$1:$2:$3:$4)
-  $$(infox DoLink2:$1:$2:$3:$4)
+  $(infox DoLink:$1:$2:$3:$4:$5)
+  $$(infox DoLink2:$1:$2:$3:$4:$5)
   LibLinks+=$(LibDir)/$1/$3
   ifeq ($(Model),hdl)
     $(LibDir)/$1/$(basename $3)-generics.vhd: | $(LibDir)/$1
 	$(AT)$$(call MakeSymLink2,$(call WkrTargetDir,$1,$4)/generics.vhd,$(LibDir)/$1,$(basename $3)-generics.vhd)
 	$(AT)if test -f $(call WkrTargetDir,$1,$4)/$(call HdlRmRv,$(basename $2)).cores; then \
                $$(call MakeSymLink,$(call WkrTargetDir,$1,$4)/$(call HdlRmRv,$(basename $2)).cores,$(LibDir)/$1);\
-              fi
+             fi
   endif
   $(LibDir)/$1/$3: $(call WkrTargetDir,$1,$4)/$2 $(and $(filter hdl,$(Model)),$(LibDir)/$1/$(basename $3)-generics.vhd) | $(LibDir)/$1
 	$(AT)echo Creating link to export worker binary: $(LibDir)/$1/$3 '->' $(call WkrTargetDir,$1,$4)/$2
@@ -313,12 +311,12 @@ define DoLink
       $$(infox DLHTNB2:$1:$2:$3:$4==$$(call MyBBLibFile,$1,$2,$4))
     ifeq ($(and $(filter %_rv,$(basename $2)),$(filter 2,$(words $(HdlCores)))),)
       $$(infox DLHTNB:$1:$2:$3:$4==$$(call MyBBLibFile,$1,$2,$4))
-      LibLinks+=$(LibDir)/$1/$(call HdlRmRv,$(basename $3))
+      LibLinks+=$(LibDir)/$1/$5
       # This will actually be included/evaluated twice
-      $(LibDir)/$1/$(call HdlRmRv,$(basename $3)): $$$$(call MyBBLibFile,$1,$2,$4) | $(LibDir)/$1
-	$(AT)echo Creating link from $$@ -\> $(call WkrTargetDir,$1,$4)/bb/$(basename $3) to export the stub library.
-	$(AT)$$(call MakeSymLink2,$(call WkrTargetDir,$1,$4)/bb/$(call HdlRmRv,$(basename $3)),$(strip\
-                                  $(LibDir)/$1),$(call HdlRmRv,$(basename $3)))
+      $(LibDir)/$1/$5: $$$$(call MyBBLibFile,$1,$2,$4) | $(LibDir)/$1
+	$(AT)echo Creating link from $$@ -\> $$(patsubst %/,%,$$(dir $$<)) to export the stub library.
+	$(AT)$$(call MakeSymLink2,$$(patsubst %/,%,$$(dir $$<)),$(strip\
+                                  $(LibDir)/$1),$5)
     endif
   endif
 
@@ -331,14 +329,15 @@ define DoLinks
   $(LibDir)/$1: | $(LibDir)
   $(foreach c,$(ParamConfigurations),\
     $(foreach n,$(WkrExportNames),\
-      $(foreach l,$(basename $(notdir $n))$(if $(filter 0,$c),,_c$c),\
-        $(infox LLL:$n:$l:$1:$(HdlToolSet_$1))\
-        $(call DoLink,$1,$(strip\
-                           $(if $(or $(filter rcc ocl,$(Model)),\
-                                     $(HdlToolRealCore_$(HdlToolSet_$1))),\
-                             $(notdir $n),$(call HdlRmRv,$l))\
-                   ),$(if $(HdlToolRealCore_$(HdlToolSet_$1)),$l$(suffix $n),$(or $(call HdlRmRv,$l),$l)$(suffix $n)),$c))))
-
+     $(foreach b,$(basename $(notdir $n)),\
+       $(foreach r,$(call HdlRmRv,$b)$(if $(filter 0,$c),,_c$c),
+         $(foreach l,$b$(if $(filter 0,$c),,_c$c),\
+           $(infox LLL:$c:$n:$b:$r:$l:$1:$(HdlToolSet_$1))\
+           $(call DoLink,$1,$(strip\
+                             $(if $(or $(filter rcc ocl,$(Model)),\
+                                       $(HdlToolRealCore_$(HdlToolSet_$1))),\
+                               $(notdir $n),$r)),$(strip\
+                     $(if $(HdlToolRealCore_$(HdlToolSet_$1)),$l,$r)$(suffix $n)),$c,$r))))))
   $$(call OcpiDbgVar,WkrExportNames,In Dolinks )
 
 endef

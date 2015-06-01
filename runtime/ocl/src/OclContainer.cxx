@@ -801,22 +801,24 @@ namespace OCPI
 
 #undef OCPI_DATA_TYPE_S
       // Set a scalar property value
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
-      void set##pretty##Property(unsigned ordinal, const run val) const { \
-	OA::PropertyInfo &info = properties()[ordinal];		  \
-        if (info.m_writeError ) \
-          throw; /*"worker has errors before write */ \
-        volatile store *pp = (volatile store *)(myProperties + info.m_offset); \
-        if (bits > 32) { \
-          assert(bits == 64); \
-          volatile uint32_t *p32 = (volatile uint32_t *)pp; \
-          p32[1] = ((const uint32_t *)&val)[1]; \
-          p32[0] = ((const uint32_t *)&val)[0]; \
-        } else \
-          *pp = *(const store *)&val; \
-        if (info.m_writeError) \
-          throw; /*"worker has errors after write */ \
-      } \
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                 \
+      void set##pretty##Property(unsigned ordinal, const run val,              \
+				 unsigned idx) const {			       \
+	OA::PropertyInfo &info = properties()[ordinal];		               \
+        if (info.m_writeError )                                                \
+          throw; /*"worker has errors before write */                          \
+        volatile store *pp = (volatile store *)(myProperties + info.m_offset + \
+						info.m_elementBytes * idx);    \
+        if (bits > 32) {						       \
+          assert(bits == 64);						       \
+          volatile uint32_t *p32 = (volatile uint32_t *)pp;		       \
+          p32[1] = ((const uint32_t *)&val)[1];				       \
+          p32[0] = ((const uint32_t *)&val)[0];				       \
+        } else								       \
+          *pp = *(const store *)&val;                                          \
+        if (info.m_writeError)						       \
+          throw; /*"worker has errors after write */                           \
+      }									       \
       void set##pretty##SequenceProperty(const OA::Property &p,const run *vals, size_t length) const { \
         if (p.m_info.m_writeError) \
           throw; /*"worker has errors before write */ \
@@ -829,25 +831,28 @@ namespace OCPI
       // ASSUMPTION:  strings always occupy at least 4 bytes, and
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this.
-#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store) \
-      virtual void set##pretty##Property(unsigned ordinal, const run val) const { \
-	OA::PropertyInfo &info = properties()[ordinal];		  \
-        size_t ocpi_length; \
-        if (!val || (ocpi_length = strlen(val)) > info.m_stringLength) \
-          throw; /*"string property too long"*/; \
-        if (info.m_writeError) \
-          throw; /*"worker has errors before write */ \
-        uint32_t *p32 = (uint32_t *)(myProperties + info.m_offset); \
-        /* if length to be written is more than 32 bits */ \
-        if (++ocpi_length > 32/CHAR_BIT) \
-          memcpy(p32 + 1, val + 32/CHAR_BIT, ocpi_length - 32/CHAR_BIT); \
-        uint32_t i; \
-        memcpy(&i, val, 32/CHAR_BIT); \
-        p32[0] = i; \
-        if (info.m_writeError) \
-          throw; /*"worker has errors after write */ \
-      } \
-      void set##pretty##SequenceProperty(const OA::Property &p, const run *vals, size_t length) const { \
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                    \
+      virtual void set##pretty##Property(unsigned ordinal, const run val,           \
+      unsigned idx) const {					                    \
+	OA::PropertyInfo &info = properties()[ordinal];		                    \
+        size_t ocpi_length;                                                         \
+        if (!val || (ocpi_length = strlen(val)) > info.m_stringLength)              \
+          throw; /*"string property too long"*/;                                    \
+        if (info.m_writeError)                                                      \
+          throw; /*"worker has errors before write */                               \
+        uint32_t *p32 = (uint32_t *)(myProperties + info.m_offset +                 \
+				     info.m_elementBytes * idx);	            \
+        /* if length to be written is more than 32 bits */                          \
+        if (++ocpi_length > 32/CHAR_BIT)                                            \
+          memcpy(p32 + 1, val + 32/CHAR_BIT, ocpi_length - 32/CHAR_BIT);            \
+        uint32_t i;                                                                 \
+        memcpy(&i, val, 32/CHAR_BIT);                                               \
+        p32[0] = i;                                                                 \
+        if (info.m_writeError)                                                      \
+          throw; /*"worker has errors after write */                                \
+      }                                                                             \
+      void set##pretty##SequenceProperty(const OA::Property &p, const run *vals,    \
+	  size_t length) const {		\
         if (length > p.m_info.m_sequenceLength) \
           throw; \
         if (p.m_info.m_writeError) \
@@ -868,22 +873,22 @@ namespace OCPI
 #undef OCPI_DATA_TYPE
       // Get Scalar Property
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
-      virtual run get##pretty##Property(unsigned ordinal) const { \
-	OA::PropertyInfo &info = properties()[ordinal];		  \
-        if (info.m_readError) \
-          throw; /*"worker has errors before read "*/ \
-        uint32_t *pp = (uint32_t *)(myProperties + info.m_offset); \
-        union { \
-                run r; \
-                uint32_t u32[bits/32]; \
-        } u; \
-        if (bits > 32) \
-          u.u32[1] = pp[1]; \
-        u.u32[0] = pp[0]; \
-        if (info.m_readError) \
-          throw; /*"worker has errors after read */ \
-        return u.r; \
-      } \
+      virtual run get##pretty##Property(unsigned ordinal, unsigned idx) const {	               \
+	OA::PropertyInfo &info = properties()[ordinal];		                               \
+        if (info.m_readError)						                       \
+          throw; /*"worker has errors before read "*/			                       \
+        uint32_t *pp = (uint32_t *)(myProperties + info.m_offset + info.m_elementBytes * idx); \
+        union {								                       \
+                run r;                                                                         \
+                uint32_t u32[bits/32];                                                         \
+        } u;                                                                                   \
+        if (bits > 32)                                                                         \
+          u.u32[1] = pp[1];                                                                    \
+        u.u32[0] = pp[0];                                                                      \
+        if (info.m_readError)                                                                  \
+          throw; /*"worker has errors after read */                                            \
+        return u.r;							                       \
+      }									                       \
       unsigned get##pretty##SequenceProperty(const OA::Property &p, run *vals, size_t length) const { \
         if (p.m_info.m_readError) \
           throw; /*"worker has errors before read "*/ \
@@ -900,21 +905,23 @@ namespace OCPI
       // ASSUMPTION:  strings always occupy at least 4 bytes, and
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this. FIXME redundant length check
-#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store) \
-      virtual void get##pretty##Property(unsigned ordinal, char *cp, size_t length) const { \
-	OA::PropertyInfo &info = properties()[ordinal];			\
-        size_t stringLength = info.m_stringLength; \
-        if (length < stringLength + 1) \
-          throw; /*"string buffer smaller than property"*/; \
-        if (info.m_readError) \
-          throw; /*"worker has errors before write */ \
-        uint32_t i32, *p32 = (uint32_t *)(myProperties + info.m_offset); \
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)           \
+      virtual void get##pretty##Property(unsigned ordinal, char *cp, size_t length, \
+					 unsigned idx) const {		   \
+	OA::PropertyInfo &info = properties()[ordinal];			   \
+        size_t stringLength = info.m_stringLength;                         \
+        if (length < stringLength + 1)                                     \
+          throw; /*"string buffer smaller than property"*/;                \
+        if (info.m_readError)                                              \
+          throw; /*"worker has errors before write */                      \
+        uint32_t i32, *p32 = (uint32_t *)(myProperties + info.m_offset +   \
+                                          info.m_elementBytes * idx);	   \
         memcpy(cp + 32/CHAR_BIT, p32 + 1, stringLength + 1 - 32/CHAR_BIT); \
-        i32 = *p32; \
-        memcpy(cp, &i32, 32/CHAR_BIT); \
-        if (info.m_readError) \
-          throw; /*"worker has errors after write */ \
-      } \
+        i32 = *p32;                                                        \
+        memcpy(cp, &i32, 32/CHAR_BIT);                                     \
+        if (info.m_readError)                                              \
+          throw; /*"worker has errors after write */                       \
+      }                                                                    \
       unsigned get##pretty##SequenceProperty \
       (const OA::Property &p, char **vals, size_t length, char *buf, size_t space) const { \
         if (p.m_info.m_readError) \
@@ -943,16 +950,16 @@ namespace OCPI
 #undef OCPI_DATA_TYPE
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
 #define PUT_GET_PROPERTY(n)						\
-      void setProperty##n(const OA::PropertyInfo &, uint##n##_t) const {} \
-      uint##n##_t getProperty##n(const OA::PropertyInfo &) const { return 0; }
+      void setProperty##n(const OA::PropertyInfo &, uint##n##_t, unsigned) const {} \
+      uint##n##_t getProperty##n(const OA::PropertyInfo &, unsigned) const { return 0; }
       PUT_GET_PROPERTY(8)
       PUT_GET_PROPERTY(16)
       PUT_GET_PROPERTY(32)
       PUT_GET_PROPERTY(64)
       void setPropertyBytes(const OA::PropertyInfo &, size_t,
-			    const uint8_t *, size_t ) const {}
+			    const uint8_t *, size_t, unsigned ) const {}
       void getPropertyBytes(const OA::PropertyInfo &, size_t,
-			    uint8_t *, size_t ) const {}
+			    uint8_t *, size_t, unsigned ) const {}
 
     }; // End: class Worker
 

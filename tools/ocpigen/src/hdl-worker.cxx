@@ -815,11 +815,11 @@ emitVhdlRecordInterface(FILE *f) {
   for (unsigned i = 0; i < m_ports.size(); i++)
     m_ports[i]->emitRecordInterface(f, m_implName);
   fprintf(f,
-	  "\ncomponent %s_rv is\n", m_implName);
+	  "\ncomponent %s_rv--__\n  is\n", m_implName);
   emitParameters(f, VHDL);
   emitSignals(f, VHDL, true, true, false);
   fprintf(f,
-	  "end component %s_rv;\n\n",
+	  "end component %s_rv--__\n;\n\n",
 	  m_implName);
   return err;
 }
@@ -969,7 +969,7 @@ emitVhdlShell(FILE *f) {
   fprintf(f,
 	  "library IEEE; use IEEE.std_logic_1164.all, ieee.numeric_std.all;\n"
 	  "library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions\n"
-	  "architecture rtl of %s_rv is\n",
+	  "architecture rtl of %s_rv--__\n  is\n",
 	  m_implName);
   if (!m_wci) {
     // with no control interface we have to directly generate wci_reset and wci_is_operating
@@ -1123,7 +1123,7 @@ emitVhdlSignalWrapper(FILE *f, const char *topinst) {
 	    m_implName);
     emitVhdlLibraries(f);
     fprintf(f,
-	    "entity %s--__\n is\n", m_implName);
+	    "entity %s--__\n  is\n", m_implName);
     emitParameters(f, m_language, false, true);
     emitSignals(f, m_language, false, false, false);
     fprintf(f, "end entity %s--__\n;\n", m_implName);
@@ -1162,7 +1162,7 @@ emitVhdlSignalWrapper(FILE *f, const char *topinst) {
       }
     fprintf(f,
 	    "begin\n"
-	    "  %s: entity work.%s_rv\n",
+	    "  %s: entity work.%s_rv--__\n",
 	    topinst, m_implName);
     bool first = true;
     for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
@@ -1221,16 +1221,16 @@ emitVhdlRecordWrapper(FILE *f) {
 	    m_implName);
     emitVhdlLibraries(f);
     fprintf(f,
-	    "entity %s_rv is\n", m_implName);
+	    "entity %s_rv--__\n  is\n", m_implName);
     emitParameters(f, VHDL, false);
     emitSignals(f, VHDL, true, false, false);
-    fprintf(f, "end entity %s_rv;\n", m_implName);
+    fprintf(f, "end entity %s_rv--__\n;\n", m_implName);
     fprintf(f,
 	    "library IEEE; use IEEE.std_logic_1164.all, ieee.numeric_std.all;\n"
 	    "library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions\n");
     emitVhdlLibraries(f);
     fprintf(f,
-	    "architecture rtl of %s_rv is\n", m_implName);
+	    "architecture rtl of %s_rv--__\n  is\n", m_implName);
     // Define individual signals to work around isim bug that it can't use indexed records in actuals
     // What a waste of time for a vendor bug
     for (unsigned i = 0; i < m_ports.size(); i++)
@@ -1407,7 +1407,7 @@ emitImplHDL(bool wrap) {
 	    m_implName, m_implName);
     emitVhdlLibraries(f);
     fprintf(f,
-	    "entity %s_rv is\n", m_implName);
+	    "entity %s_rv--__\n  is\n", m_implName);
     emitParameters(f, m_language, false);
     emitSignals(f, m_language, true, false, false);
     fprintf(f,
@@ -1434,7 +1434,7 @@ emitImplHDL(bool wrap) {
     for (unsigned i = 0; i < m_ports.size(); i++)
       m_ports[i]->emitImplSignals(f);
     fprintf(f,
-	    "end entity %s_rv;\n"
+	    "end entity %s_rv--__\n;\n"
 	    "\n", m_implName);
     if (m_wci && !m_outer) {
       size_t decodeWidth = m_wci->decodeWidth();

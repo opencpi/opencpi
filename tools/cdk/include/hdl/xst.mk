@@ -282,6 +282,11 @@ XstCoreLibraryChoices=$(xinfo XCLT:$1)$(strip \
 # This must be consistent with the XstMakeIni
 # The trick is to filter out component library BB libs from the cores.
 XstCompLibs=$(ComponentLibraries) $(DeviceLibraries) $(CDKComponentLibraries) $(CDKDeviceLibraries)
+# Remove the RV in the middle or at the end.
+# This will get fixed when we put the RV at the end everywhere...
+XstLibFromCore=$(foreach n,$(patsubst %_rv,%,$(basename $(notdir $1))),\
+                 $(if $(findstring _rv_c,$n),$(subst _rv_c,_c,$n),$n))
+XstPathFromCore=$(foreach n,$(call XstLibFromCore,$1),$(dir $1)/$n)
 XstMakeLso=\
   (\
    $(foreach l,$(XstCompLibs),\
@@ -292,7 +297,7 @@ XstMakeLso=\
       echo $(lastword $(subst -, ,$(notdir $l)));)\
    $(foreach l,$(SubCores_$(HdlTarget)), \
       $(infox CC:$l) \
-      echo $(patsubst %_rv,%,$(basename $(notdir $l)));)\
+      echo $(call XstLibFromCore,$l);)\
   ) > $(XstLsoFile);
 
 XstMakeIni=\
@@ -302,8 +307,8 @@ XstMakeIni=\
         $(call FindRelative,$(TargetDir),$(strip \
            $(call HdlLibraryRefDir,$(l),$(HdlTarget)))));) \
    $(foreach l,$(infox SubCores:$(SubCores_$(HdlTarget)))$(SubCores_$(HdlTarget)),\
-      echo $(patsubst %_rv,%,$(basename $(notdir $l)))=$(call FindRelative,$(TargetDir),$(strip \
-          $(firstword $(foreach c,$(call XstCoreLibraryChoices,$(call HdlRmRv,$(basename $l))),$(infox CECEL:$c)$(call HdlExists,$c)))));) \
+      echo $(call XstLibFromCore,$l)=$(call FindRelative,$(TargetDir),$(strip \
+          $(firstword $(foreach c,$(call XstCoreLibraryChoices,$(call XstPathFromCore,$l)),$(infox CECEL:$c)$(call HdlExists,$c)))));) \
   ) > $(XstIniFile);
 
 XstOptions += $(and $(XstNeedIni),-lso $(XstLsoFile))
@@ -339,6 +344,7 @@ XstOptions +=\
      $(foreach d,$(VerilogIncludeDirs),$(call FindRelative,$(TargetDir),$(d))) \
     })) \
   $(and $(CDKComponentLibraries)$(CDKDeviceLibraries)$(ComponentLibraries)$(DeviceLibraries)$(XstCores)$(PlatformCores),-sd { \
+     $(call Unique, \
      $(foreach l,$(CDKComponentLibraries),$(strip \
        $(call FindRelative,$(TargetDir),\
          $(l)/hdl/$(call XstLibRef,$(LibName),$(HdlTarget)))))\
@@ -352,7 +358,7 @@ XstOptions +=\
          $(l)/lib/hdl/$(call XstLibRef,$(LibName),$(HdlTarget)))))\
      $(foreach c,$(XstCores),$(xxinfo XST:$c)$(call FindRelative,$(TargetDir),$(dir $(call HdlCoreRef,$c,$(HdlTarget)))))\
      $(and $(findstring platform,$(HdlMode)),..) \
-      })
+      ) })
 
 XstNgdOptions=$(infox XNO with XstCores:$(XstCores))\
      $(foreach c,$(XstCores),$(infox XNO:$c)-sd $(call FindRelative,$(TargetDir),$(dir $(call HdlCoreRef,$c,$(HdlTarget)))))

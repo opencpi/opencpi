@@ -61,7 +61,8 @@ namespace OCPI {
       size_t 
 	m_dataAlign,                  // Alignment of data for this type (i.e. not sequence count)
 	m_align,                      // The alignment requirement for this type
-	m_nBits;
+	m_nBits,                      // Bits in each element
+	m_elementBytes;               // Bytes in each element
       bool m_isSequence;              // Are we a sequence?
       size_t
         m_nBytes,                     // Total bytes (if bounded), minimum bytes if unbounded
@@ -73,6 +74,7 @@ namespace OCPI {
       const char **m_enums;
       size_t m_nEnums;
       size_t m_nItems;                // total number of fixed items
+      bool   m_fixedLayout;           // is this type fixed length in its parent?
       std::string m_typeDef;          // If we were created from a typedef
       std::string m_format;
       // string references for array dimensions and lengths
@@ -134,18 +136,18 @@ namespace OCPI {
       virtual ~Reader();
     public:      
       virtual size_t
-	beginSequence(Member &m) = 0,
-	beginString(Member &m, const char *&chars, bool first) = 0;
+	beginSequence(const Member &m) = 0,
+	beginString(const Member &m, const char *&chars, bool first) = 0;
       virtual void 
-	beginArray(Member &m, size_t nItems),
-	endArray(Member &m ),
-	endSequence(Member &m),
-	endString(Member &m),
-	beginStruct(Member &m),
-	endStruct(Member &m),
-	beginType(Member &m),
-	endType(Member &m),
-	readData(Member &m, ReadDataPtr p, size_t nBytes, size_t nElements) = 0,
+	beginArray(const Member &m, size_t nItems),
+	endArray(const Member &m ),
+	endSequence(const Member &m),
+	endString(const Member &m),
+	beginStruct(const Member &m),
+	endStruct(const Member &m),
+	beginType(const Member &m),
+	endType(const Member &m),
+	readData(const Member &m, ReadDataPtr p, size_t nBytes, size_t nElements) = 0,
 	end();
     };
     // There are the data type attributes allowed for members
@@ -172,7 +174,7 @@ namespace OCPI {
       void printChildren(FILE *f, const char *tag, unsigned indent = 0);
       void printXML(FILE *f, const char *tag, unsigned indent);
       void write(Writer &writer, const uint8_t *&data, size_t &length, bool topSeq = false);
-      void read(Reader &reader, uint8_t *&data, size_t &length);
+      void read(Reader &reader, uint8_t *&data, size_t &length) const;
       void generate(const char *name, unsigned ordinal = 0, unsigned depth = 0);
       const char
         *finalize(const IdentResolver &resolv, bool isFixed),

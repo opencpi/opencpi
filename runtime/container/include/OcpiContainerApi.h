@@ -108,7 +108,7 @@ namespace OCPI {
       // These methods are used by the Property methods below when the
       // fast path using memory-mapped access cannot be used.
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		  \
-      virtual void set##pretty##Property(unsigned ordinal, const run) const = 0; \
+      virtual void set##pretty##Property(unsigned ordinal, const run, unsigned idx) const = 0; \
       virtual void set##pretty##SequenceProperty(const Property &,        \
 						 const run *,		  \
 						 size_t nElements) const = 0;
@@ -120,7 +120,7 @@ namespace OCPI {
       // need a special item for strings
       //      virtual run get##pretty##Property(const Property &) const = 0;
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		     \
-      virtual run get##pretty##Property(unsigned ordinal) const = 0;		     \
+      virtual run get##pretty##Property(unsigned ordinal, unsigned idx) const = 0;	\
       virtual unsigned get##pretty##SequenceProperty(const Property&, run *, \
 						     size_t length) const = 0;
 
@@ -128,7 +128,7 @@ namespace OCPI {
       //					 size_t length) const = 0;
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)   \
       virtual void get##pretty##Property(unsigned ordinal, char *, \
-					 size_t length) const = 0;	   \
+					 size_t length, unsigned idx) const = 0; \
       virtual unsigned get##pretty##SequenceProperty               \
         (const Property &, char **, size_t length, char *buf,    \
 	 size_t space) const = 0;
@@ -269,7 +269,7 @@ namespace OCPI {
 	  if (m_writeSync)						        \
              m_worker.propertyWritten(m_ordinal);                               \
         } else								        \
-          m_worker.set##pretty##Property(m_ordinal, val);			\
+          m_worker.set##pretty##Property(m_ordinal, val, 0);     		\
       }                                                                         \
       inline void set##pretty##SequenceValue(const run *vals, size_t n) const { \
         checkType(OCPI_##pretty, n, true);				        \
@@ -284,7 +284,7 @@ namespace OCPI {
           u.s = *(store *)m_readVaddr;                                          \
           return u.r;                                                           \
         } else                                                                  \
-          return m_worker.get##pretty##Property(m_ordinal);                     \
+          return m_worker.get##pretty##Property(m_ordinal, 0);		\
       }                                                                         \
       inline unsigned get##pretty##SequenceValue(run *vals, size_t n) const {   \
         checkType(OCPI_##pretty, n, false);				        \
@@ -295,7 +295,7 @@ namespace OCPI {
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)            \
       inline void set##pretty##Value(const run val) const {                 \
         checkType(OCPI_##pretty, 1, true);				    \
-        m_worker.set##pretty##Property(m_ordinal, val);                     \
+        m_worker.set##pretty##Property(m_ordinal, val, 0);		    \
       }                                                                     \
       inline void set##pretty##SequenceValue(const run *vals, size_t n) const { \
         checkType(OCPI_##pretty, n, true);				    \
@@ -303,10 +303,10 @@ namespace OCPI {
       }                                                                     \
       inline void get##pretty##Value(char *val, size_t length) const {      \
         checkType(OCPI_##pretty, 1, false);				    \
-        m_worker.get##pretty##Property(m_ordinal, val, length);             \
+        m_worker.get##pretty##Property(m_ordinal, val, length, 0);	    \
       }                                                                     \
       inline unsigned get##pretty##SequenceValue                            \
-        (char **vals, size_t n, char *buf, size_t space) const {        \
+        (char **vals, size_t n, char *buf, size_t space) const {            \
         checkType(OCPI_##pretty, n, false);				    \
         return m_worker.get##pretty##SequenceProperty                       \
           (*this, vals, n, buf, space);                                     \

@@ -48,22 +48,17 @@
 #define PROPERTY_ATTRIBUTES \
   OCPI_UTIL_MEMBER_ATTRS, ACCESS_ATTRIBUTES, "IsTest", "Default"
 
-// Readable/writable/volatile/initial are here redundantly to allow the implementation to
-// have more access than the spec.  I.e. the spec might not specify readable,
-// but for debugging the implementation might want it.  Similarly, the spec
-// might say "initial", but the implementation supports dynamic writability
-
 #define IMPL_ATTRIBUTES \
   ACCESS_ATTRIBUTES, \
-  "ReadSync",   /* impl says you need before query */\
-  "WriteSync",  /* impl says you need afterconfig */\
+  "ReadSync",      /* impl says you need before query */\
+  "WriteSync",     /* impl says you need afterconfig */\
   "ReadBarrier",   /* impl says you need before query */\
   "WriteBarrier",  /* impl says you need afterconfig */\
-  "ReadError",  /* impl says reading this can return an error */\
-  "WriteError", /* impl says writing this can return an error */\
-  "Indirect",   /* impl is supplying an indirect address */	\
-    "Debug",       /* property is for debug only */		\
-  "ReadScalable"       /* property is for debug only */     \
+  "ReadError",     /* impl says reading this can return an error */\
+  "WriteError",    /* impl says writing this can return an error */\
+  "Indirect",      /* impl is supplying an indirect address */	\
+  "Debug",         /* property is for debug only */		\
+  "ReadScalable"   /* property has scalable read behavior */     \
 
 
 namespace OCPI {
@@ -80,7 +75,7 @@ namespace OCPI {
     namespace OA = OCPI::API;
     Property::Property()
       : m_smallest(0), m_granularity(0), m_isParameter(false), m_isSub32(false),
-	m_isTest(false), m_dataOffset(0), m_paramOrdinal(0),
+	m_isTest(false), m_dataOffset(0), m_paramOrdinal(0), m_hasValue(false),
 	m_readBarrier(false), m_writeBarrier(false), m_reduction(None) {
     }
     Property::~Property() {
@@ -234,11 +229,25 @@ namespace OCPI {
     const char *Property::
     parseImpl(ezxml_t x) {
       const char *err;
-      if ((err = OE::checkAttrs(x, "Name", IMPL_ATTRIBUTES, "default", NULL)) ||
+      if ((err = OE::checkAttrs(x, "Name", IMPL_ATTRIBUTES, "default", "value", NULL)) ||
 	  (err = parseAccess(x, true)) ||
-	  // FIXME: should this be illegal if the property is not initiall or writable?
-	  (err = parseDefault(x, "default")) ||
 	  (err = parseImplAlso(x)))
+	return err;
+      const char
+	*v = ezxml_cattr(x, "value"),
+	*d = ezxml_cattr(x, "default");
+      if (m_default && (v || d) && !m_isParameter)
+	return esprintf("Implementation property named \"%s\" cannot override "
+			"previous default value in spec", m_name.c_str());
+
+      if (v) {
+	if (m_hasValue)
+	  return esprintf("Property \"%s\" already has a non-default value which cannot be "
+			  "overridden", m_name.c_str());
+	if ((err = parseDefault(x, "value")))
+	  return err;
+	m_hasValue = true;
+      } else if (d && (err = parseDefault(x, "default")))
 	return err;
       return parseCheck();
     }

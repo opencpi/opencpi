@@ -87,6 +87,7 @@ namespace OCPI {
 	m_isTest;
       unsigned long m_dataOffset;
       size_t m_paramOrdinal; // Among parameters, which position?
+      bool   m_hasValue;     // A value is set that is not a default, but an immutable value
       // Scalability:
       bool m_readBarrier, m_writeBarrier;
 #define OCPI_REDUCTIONS \

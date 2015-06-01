@@ -7,6 +7,8 @@
 WciPort::
 WciPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
   : OcpPort(w, x, sp, ordinal, WCIPort, "ctl", err) {
+  if (err)
+    return;
   assert(master || !m_worker->m_wci);
   // WCI ports implicitly a clock to the worker in all cases, master or slave
   if (x && ezxml_cattr(x, "clock")) {

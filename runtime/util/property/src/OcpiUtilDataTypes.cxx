@@ -31,9 +31,8 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define __STDC_LIMIT_MACROS // wierd standards goof up
-
 #include <string.h>
+#include <assert.h>
 #include <climits>
 #include <set>
 
@@ -51,9 +50,9 @@ namespace OCPI {
 
     ValueType::ValueType(OA::BaseType bt, bool isSequence)
       : m_baseType(bt), m_arrayRank(0), m_nMembers(0), m_dataAlign(0), m_align(1), m_nBits(0),
-	m_isSequence(isSequence), m_nBytes(0), m_arrayDimensions(NULL), m_stringLength(0),
-	m_sequenceLength(0), m_members(NULL), m_type(NULL), m_enums(NULL), m_nEnums(0),
-	m_nItems(1)
+	m_elementBytes(0), m_isSequence(isSequence), m_nBytes(0), m_arrayDimensions(NULL),
+	m_stringLength(0), m_sequenceLength(0), m_members(NULL), m_type(NULL), m_enums(NULL),
+	m_nEnums(0), m_nItems(1), m_fixedLayout(true)
     {}
     ValueType::~ValueType() {
       if (m_arrayDimensions)
@@ -87,14 +86,14 @@ namespace OCPI {
 
     Reader::Reader(){}
     Reader::~Reader(){}
-    void Reader::endSequence(Member &){}
-    void Reader::endString(Member &){}
-    void Reader::beginStruct(Member &){}
-    void Reader::beginArray(Member &, size_t){}
-    void Reader::endArray(Member &){}
-    void Reader::endStruct(Member &){}
-    void Reader::beginType(Member &){}
-    void Reader::endType(Member &){}
+    void Reader::endSequence(const Member &){}
+    void Reader::endString(const Member &){}
+    void Reader::beginStruct(const Member &){}
+    void Reader::beginArray(const Member &, size_t){}
+    void Reader::endArray(const Member &){}
+    void Reader::endStruct(const Member &){}
+    void Reader::beginType(const Member &){}
+    void Reader::endType(const Member &){}
     void Reader::end(){}
     Writer::Writer(){}
     Writer::~Writer(){}
@@ -131,42 +130,12 @@ namespace OCPI {
     Member::parseDefault(ezxml_t xm, const char *hasDefault) {
       const char *defValue = ezxml_cattr(xm, hasDefault);
       if (defValue) {
+	delete m_default;
 	m_default = new Value(*this);
 	const char *err = m_default->parse(defValue);
 	if (err)
 	  return esprintf("for member %s: %s", m_name.c_str(), err);
       }
-      return NULL;
-    }
-    // Evaluate the expression, using the resolver, and if the expression was variable,
-    // save the expression so it can be reevaluated again later when the values of
-    // variables are different.
-    static const char *
-    parseExprNumber(const char *a, size_t &np, std::string *expr,
-		    const IdentResolver *resolver) {
-      ExprValue v;
-      const char *err = evalExpression(a, v, resolver);
-      if (!err) {
-	if (!v.isNumber)
-	  err = esprintf("the expression \"%s\" does not evaluate to a number", a);
-	np = v.number;
-	if (expr && v.isVariable)
-	  *expr = a; // provide the expression to the caller in
-      }
-      return err;
-    }
-    // Parse an integer (size_t) attribute that might be an expression
-    // Only consider if we have an identifier resolver
-    // The string value of the expression is returned in expr.
-    static const char *
-    getExprNumber(ezxml_t x, const char *attr, size_t &np, bool &found, std::string &expr,
-		  const IdentResolver *resolver) {
-      const char *a = ezxml_cattr(x, attr);
-      if (a) {
-	found = true;
-        return parseExprNumber(a, np, &expr, resolver);
-      }
-      found = false;
       return NULL;
     }
 
@@ -191,22 +160,30 @@ namespace OCPI {
 	return err;
       if (!strcasecmp(typeName, "struct")) {
 	m_baseType = OA::OCPI_Struct;
-	if ((err = parseMembers(xm, m_nMembers, m_members, isFixed, "member", hasDefault)))
+	if ((err = OE::checkElements(xm, "member", (void*)0)) ||
+	    (err = parseMembers(xm, m_nMembers, m_members, isFixed, "member", hasDefault)))
 	  return err;
 	if (m_nMembers == 0)
 	  return "No struct members under type == \"struct\"";
+	for (unsigned n = 0; n < m_nMembers; n++)
+	  if (!m_members[n].m_fixedLayout)
+	    m_fixedLayout = false;
       } else if (!strcasecmp(typeName, "type")) {
+	m_fixedLayout = false;
 	m_baseType = OA::OCPI_Type;
 	m_type = new Member();
 	ezxml_t xt = ezxml_cchild(xm, "type");
 	if (!xt)
 	  return "missing \"type\" child element under data type with type=\"type\"";
 	if ((err = OE::checkAttrs(xt, OCPI_UTIL_MEMBER_ATTRS, NULL)) ||
+	    (err = OE::checkElements(xm, "type", (void*)0)) ||
 	    (err = m_type->parse(xt, isFixed, false, NULL, 0)))
 	  return err;
 	if (!m_type->m_isSequence)
 	  return "recursive \"type\" element must be a sequence";
       } else {
+	if ((err = OE::checkElements(xm, (void*)0)))
+	  return err;
 	// A primitive/scalar type
 	const char **tp;
 	for (tp = baseTypeNames; *tp; tp++)
@@ -238,10 +215,10 @@ namespace OCPI {
 	  // enums have a baseTypeSize of 32 per IDL
 	}
 	if (m_baseType == OA::OCPI_String) {
-	  if ((err = getExprNumber(xm, "StringLength", m_stringLength, found,
-				   m_stringLengthExpr, resolver)) ||
+	  if ((err = getExprNumber(xm, "StringLength", m_stringLength, &found,
+				   &m_stringLengthExpr, resolver)) ||
 	      (!found &&
-	       (err = getExprNumber(xm, "size", m_stringLength, found, m_stringLengthExpr,
+	       (err = getExprNumber(xm, "size", m_stringLength, &found, &m_stringLengthExpr,
 				    resolver))))
 	    return err;
 	  if (isFixed) {
@@ -249,7 +226,8 @@ namespace OCPI {
 	      return "Missing StringLength attribute for string type that must be bounded";
 	    if (m_stringLength == 0)
 	      return "StringLength cannot be zero";
-	  }
+	  } else
+	    m_fixedLayout = false;
 	}
       }
       if (ezxml_cattr(xm, "StringLength") && m_baseType != OA::OCPI_String)
@@ -261,7 +239,7 @@ namespace OCPI {
       size_t arrayLength;
       std::string expr;
       const char *arrayDimensions;
-      if ((err = getExprNumber(xm, "ArrayLength", arrayLength, isArray, expr, resolver)))
+      if ((err = getExprNumber(xm, "ArrayLength", arrayLength, &isArray, &expr, resolver)))
 	return err;
       if (isArray) {
 	if (arrayLength == 0)
@@ -296,14 +274,18 @@ namespace OCPI {
       }
 
       // Deal with sequences after arrays (because arrays belong to declarators)
-      if ((err = getExprNumber(xm, "SequenceLength", m_sequenceLength, m_isSequence,
-			       m_sequenceLengthExpr, resolver)) ||
+      if ((err = getExprNumber(xm, "SequenceLength", m_sequenceLength, &m_isSequence,
+			       &m_sequenceLengthExpr, resolver)) ||
 	  (!m_isSequence &&
-	   ((err = getExprNumber(xm, "SequenceSize", m_sequenceLength, m_isSequence,
-				 m_sequenceLengthExpr, resolver)))))
+	   ((err = getExprNumber(xm, "SequenceSize", m_sequenceLength, &m_isSequence,
+				 &m_sequenceLengthExpr, resolver)))))
 	return err;
-      if (m_isSequence && isFixed && m_sequenceLength == 0)
-	return "Sequence must have a bounded size";
+      if (m_isSequence)
+	if (isFixed) {
+	  if (m_sequenceLength == 0)
+	    return "Sequence must have a bounded size";
+	} else
+	  m_fixedLayout = false;
       // Process default values
       if (hasDefault && (err = parseDefault(xm, hasDefault)))
 	return err;
@@ -404,7 +386,8 @@ namespace OCPI {
     }
     inline void advance(const uint8_t *&p, size_t nBytes, size_t &length) {
       if (nBytes > length)
-	throw Error("Aligning data exceeds buffer when writing");
+	throw Error("Aligning data exceeds buffer when writing: length %zu advance %zu",
+		    length, nBytes);
       length -= nBytes;
       p += nBytes;
     }
@@ -422,6 +405,8 @@ namespace OCPI {
     // Push the data in the linear buffer into a writer object
     void Member::write(Writer &writer, const uint8_t *&data, size_t &length, bool topSeq) {
       size_t nElements = 1;
+      const uint8_t *startData;
+      size_t startLength;
       if (m_isSequence) {
 	if (topSeq) {
 	  ocpiAssert(((intptr_t)data & ~(m_align - 1)) == 0);
@@ -431,19 +416,20 @@ namespace OCPI {
 	  align(data, m_align, length);
 	  nElements = *(uint32_t *)data;
 	}
+	startData = data;
+	startLength = length;
 	if (m_sequenceLength != 0 && nElements > m_sequenceLength)
 	  throw Error("Sequence in buffer exceeds max length (%zu)", m_sequenceLength);
 	writer.beginSequence(*this, nElements);
-	advance(data, m_align, length); // skip over count, and align for data
-	if (!nElements)
+	if (!nElements) {
+	  advance(data, m_fixedLayout ? m_nBytes : m_align, length);
 	  return;
+	}
+	advance(data, m_align, length);
       }
       nElements *= m_nItems;
-
-      if ( m_arrayRank ) {
+      if (m_arrayRank)
 	writer.beginArray(*this, m_nItems);			  
-      }
-
       align(data, m_dataAlign, length);
       switch (m_baseType) {
       case OA::OCPI_Struct:
@@ -464,7 +450,7 @@ namespace OCPI {
 	  align(data, 4, length);
 	  WriteDataPtr p = {data};
 	  size_t nBytes = strlen((const char *)data) + 1;
-	  advance(data, nBytes, length);
+	  advance(data, m_fixedLayout ?  (m_stringLength + 4) & ~3 : nBytes, length);
 	  writer.writeString(*this, p, nBytes - 1, n == 0, topSeq);
 	}
 	break;
@@ -472,7 +458,7 @@ namespace OCPI {
 	{ // Scalar - write them all at once
 	  align(data, m_align, length);
 	  WriteDataPtr p = {data};
-	  size_t nBytes = nElements * (m_nBits / 8);
+	  size_t nBytes = nElements * m_elementBytes;
 	  advance(data, nBytes, length);
 	  writer.writeData(*this, p, nBytes, nElements);
 	  break;
@@ -481,32 +467,43 @@ namespace OCPI {
       case OA::OCPI_scalar_type_limit:
 	ocpiAssert(0);
       }
+      if (m_arrayRank )
+	writer.endArray(*this);
       if (m_isSequence) {
 	writer.endSequence(*this);
-      }
-      if (m_arrayRank ) {
-	writer.endArray(*this);
+	if (m_fixedLayout) {
+	  // If fixed layout override the incremental data/length advance and 
+	  // advance over the whole thing, including the length prefix
+	  advance(startData, m_nBytes, startLength);
+	  assert(startData >= data && startLength <= length);
+	  data = startData;
+	  length = startLength;
+	}
       }
     }
 
     // Fill the linear buffer from a reader object
-    void Member::read(Reader &reader, uint8_t *&data, size_t &length) {
+    void Member::read(Reader &reader, uint8_t *&data, size_t &length) const {
       size_t nElements = 1;
+      uint8_t *startData;
+      size_t startLength;
       if (m_isSequence) {
 	ralign(data, m_align, length);
-	uint32_t *start = (uint32_t *)data;
-	radvance(data, m_align, length); // skip over count, check for space
+	startData = data;
+	startLength = length;
 	nElements = reader.beginSequence(*this);
-	if (!(*start = (uint32_t)nElements))
-	  return;
 	if (m_sequenceLength != 0 && nElements > m_sequenceLength)
 	  throw Error("Sequence in being read exceeds max length (%zu)", m_sequenceLength);
+	if (!(*(uint32_t *)data = (uint32_t)nElements)) {
+	  // Sequence is empty. skip over header or whole thing if fixedLayout
+	  radvance(data, m_fixedLayout ? m_nBytes : m_align, length);
+	  return;
+	}
+	// Non empty - skip over header for now
+	radvance(data, m_align, length);
       }
-
-      if ( m_arrayRank ) {
+      if (m_arrayRank)
 	reader.beginArray(*this, m_nItems);			  
-      }
-
       nElements *= m_nItems;
       ralign(data, m_dataAlign, length);
       switch (m_baseType) {
@@ -531,7 +528,8 @@ namespace OCPI {
 	  if (m_stringLength != 0 && strLength > m_stringLength)
 	    throw Error("String being read is larger than max length");
 	  uint8_t *start = data;
-	  radvance(data, strLength + 1, length); // perform error check
+	  // Error check before copy
+	  radvance(data, m_fixedLayout ? (m_stringLength + 4) & ~3 : strLength + 1, length);
 	  memcpy(start, chars, strLength);
 	  start[strLength] = 0;
 	}
@@ -540,7 +538,7 @@ namespace OCPI {
 	{ // Scalar - write them all at once
 	  ralign(data, m_align, length);
 	  ReadDataPtr p = {data};
-	  size_t nBytes = nElements * (m_nBits / 8);
+	  size_t nBytes = nElements * m_elementBytes;
 	  radvance(data, nBytes, length);
 	  reader.readData(*this, p, nBytes, nElements);
 	  break;
@@ -549,11 +547,18 @@ namespace OCPI {
       case OA::OCPI_scalar_type_limit:
 	ocpiAssert(0);
       }
+      if (m_arrayRank)
+	reader.endArray(*this);
       if (m_isSequence) {
 	reader.endSequence(*this);
-      }
-      if (m_arrayRank ) {
-	reader.endArray(*this);
+	if (m_fixedLayout) {
+	  // If fixed layout override the incremental data/length advance and 
+	  // advance over the whole thing, including the length prefix
+	  radvance(startData, m_nBytes, startLength);
+	  assert(startData >= data && startLength <= length);
+	  data = startData;
+	  length = startLength;
+	}
       }
     }
     void Member::generate(const char *name, unsigned ordinal, unsigned depth) {
@@ -563,9 +568,14 @@ namespace OCPI {
       // printf(" %d", m_baseType);
       if (++depth == 4 && (m_baseType == OA::OCPI_Type || m_baseType == OA::OCPI_Struct))
 	m_baseType = OA::OCPI_ULong;
+      if (m_baseType == OA::OCPI_Type)
+	m_fixedLayout = false;
       m_isSequence = random() % 3 == 0;
-      if (m_isSequence)
+      if (m_isSequence) {
 	m_sequenceLength = random() & 1 ? 0 : random() % 10;
+	if (m_sequenceLength == 0 || random() & 1)
+	  m_fixedLayout = false;
+      }
       if (random() & 1) {
 	m_arrayRank = random() % 3 + 1;
 	m_arrayDimensions = new size_t[m_arrayRank];
@@ -577,6 +587,8 @@ namespace OCPI {
       switch (m_baseType) {
       case OA::OCPI_String:
 	m_stringLength = random() & 1 ? 0 : random() % testMaxStringLength;
+	if (m_stringLength == 0 || random() & 1)
+	  m_fixedLayout = false;
 	break;
       case OA::OCPI_Enum:
 	m_nEnums = random() % 5 + 1;
@@ -608,6 +620,8 @@ namespace OCPI {
 	  asprintf(&e, "member%u", n);
 	  m_members[n].generate(e, n, depth);
 	  free(e);
+	  if (!m_members[n].m_fixedLayout)
+	    m_fixedLayout = false;
 	}
 	break;
       default:
@@ -636,7 +650,6 @@ namespace OCPI {
 	  if (m->m_abbrev.size() && !abbrevs.insert(m->m_abbrev.c_str()).second)
 	    return esprintf("Duplicate member abbreviation: %s", m->m_name.c_str());
 	}
-	
       }
       return NULL;
     }
@@ -685,6 +698,7 @@ namespace OCPI {
 	} else
 	  minSizeBits = scalarBits;
       }
+      m_elementBytes = m_nBits/CHAR_BIT;
       // Calculate the number of bytes in each element of an array/sequence
       if (nBytes > UINT32_MAX)
 	return "Total member size in bytes is too large (> 4G)";

@@ -76,28 +76,28 @@ ifneq ($(MAKECMDGOALS),clean)
     # platforms mentioned by all the containers.  This list then is the default targets when
     # targets are not specified.
     define doGetPlatform
-      $(and $(call DoShell,$(OcpiGen) -S $(CwdName) $(HdlOnePlatform) -x platform $1,HdlContPlatform),\
-          $(error Processing container XML $1: $(HdlContPlatform)))
-      $(and $(call DoShell,$(OcpiGen) -S $(CwdName) $(HdlOnePlatform) -x configuration $1,HdlContConfig),\
-          $(error Processing container XML $1: $(HdlContConfig)))
-      $(call OcpiDbgVar,HdlContPlatform)
-      $(call OcpiDbgVar,HdlContConfig)
-      $(if $(HdlContPlatform),,$(error Could not get HdlPlatform for container $1))
-      $(if $(HdlContConfig),,$(error Could not get HdlConfiguration for container $1))
-      HdlMyTargets+=$(call OcpiDbg,HdlPart_$(HdlContPlatform) is $(HdlPart_$(HdlContPlatform)))$(call HdlGetFamily,$(HdlPart_$(HdlContPlatform)))
-      ContName:=$(Worker)_$(HdlContPlatform)_$(HdlContConfig)_$1
-      HdlPlatform_$$(ContName):=$(HdlContPlatform)
-      HdlTarget_$$(ContName):=$(call HdlGetFamily,$(HdlPart_$(HdlContPlatform)))
-      HdlConfig_$$(ContName):=$(HdlContConfig)
+      $$(and $$(call DoShell,$(OcpiGen) -X $1,HdlContPfConfig),\
+          $$(error Processing container XML $1: $$(HdlContPfConfig)))
+      HdlContPlatform:=$$(word 1,$$(HdlContPfConfig))
+      HdlContConfig:=$$(word 2,$$(HdlContPfConfig))
+      $$(call OcpiDbgVar,HdlContPlatform)
+      $$(call OcpiDbgVar,HdlContConfig)
+      $$(if $$(HdlContPlatform),,$$(error Could not get platform attribute for container $1))
+      $$(if $$(HdlContConfig),,$$(error Could not get config attribute for container $1))
+      HdlMyTargets+=$$(call OcpiDbg,HdlPart_$$(HdlContPlatform) is $$(HdlPart_$$(HdlContPlatform)))$$(call HdlGetFamily,$$(HdlPart_$$(HdlContPlatform)))
+      ContName:=$(Worker)_$$(HdlContPlatform)_$$(HdlContConfig)_$1
+      HdlPlatform_$$(ContName):=$$(HdlContPlatform)
+      HdlTarget_$$(ContName):=$$(call HdlGetFamily,$$(HdlPart_$$(HdlContPlatform)))
+      HdlConfig_$$(ContName):=$$(HdlContConfig)
       HdlContXml_$$(ContName):=$$(call HdlContOutDir,$$(ContName))/gen/$$(ContName).xml
       $$(shell mkdir -p $$(call HdlContOutDir,$$(ContName))/gen; \
                if ! test -e  $$(HdlContXml_$$(ContName)); then \
                  ln -s ../../$1.xml $$(HdlContXml_$$(ContName)); \
                fi)
       HdlContainers:=$$(HdlContainers) $$(ContName)
-      $(call OcpiDbgVar,HdlPlatform_$1)
-      $(call OcpiDbgVar,HdlMyPlatforms)
-      $(call OcpiDbgVar,HdlMyTargets)
+      $$(call OcpiDbgVar,HdlPlatform_$1)
+      $$(call OcpiDbgVar,HdlMyPlatforms)
+      $$(call OcpiDbgVar,HdlMyTargets)
     endef
     $(foreach c,$(Containers),$(eval $(call doGetPlatform,$(call HdlStripXml,$c))))
   endif
@@ -122,7 +122,7 @@ ifneq ($(MAKECMDGOALS),clean)
       HdlContXml_$$(ContName):=$$(call HdlContOutDir,$$(ContName))/gen/$$(ContName).xml
       HdlContainers:=$$(HdlContainers) $$(ContName)
     endif
-  endef  
+  endef
   ifeq ($(origin DefaultContainers),undefined)
     $(call OcpiDbg,No Default Containers: HdlPlatforms: $(HdlPlatforms))
     # If undefined, we determine the default containers based on HdlPlatforms
@@ -136,7 +136,7 @@ ifneq ($(MAKECMDGOALS),clean)
          $(eval \
            $(call doDefaultContainer $(word 1,$(subst /, ,$d)),$(word 2,$(subst /, ,$d)))),\
          $(if $(filter $d,$(filter $(or $(OnlyPlatforms),$(HdlAllPlatforms)),$(filter-out $(ExcludePlatforms),$(HdlAllPlatforms)))),\
-              $(eval $(call doDefaultContainer,$d,$d_base)),\
+              $(eval $(call doDefaultContainer,$d,base)),\
               $(error In DefaultContainers, $d is not a defined HDL platform.))))
   endif
   HdlContXml=$(or $($1_xml),$(if $(filter .xml,$(suffix $1)),$1,$1.xml))

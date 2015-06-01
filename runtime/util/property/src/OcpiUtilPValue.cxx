@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -31,12 +30,11 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-
 #include <memory>
 #include <unistd.h>
 #include <stdarg.h>
 #include <strings.h>
+#include <assert.h>
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilDataTypes.h"
@@ -52,9 +50,9 @@ namespace OCPI {
 
     unsigned PValue::length() const {
       unsigned n = 0;
-      if (this)
-	for (const PValue *p = this; p->name; p++, n++)
-	  ;
+      assert(this);
+      for (const PValue *p = this; p->name; p++, n++)
+	;
       return n;
     }
     const std::string &PValue::unparse(std::string &sval, bool add) const {

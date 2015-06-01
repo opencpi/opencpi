@@ -63,10 +63,11 @@ namespace OCPI {
 
 #define PUT_GET_PROPERTY(n,wb)                                                    \
       void                                                                        \
-      setProperty##n(const OCPI::API::PropertyInfo &info, uint##n##_t val) const; \
+	setProperty##n(const OCPI::API::PropertyInfo &info, uint##n##_t val,      \
+                       unsigned idx) const;					  \
       inline uint##n##_t						          \
-      getProperty##n(const OCPI::API::PropertyInfo &info) const {	          \
-        uint32_t offset = checkWindow(info.m_offset, n/8);			  \
+      getProperty##n(const OCPI::API::PropertyInfo &info, unsigned idx) const {	  \
+        uint32_t offset = checkWindow(info.m_offset + idx * (n/8), n/8); \
 	uint32_t status = 0;                                                      \
         uint##wb##_t val##wb;							  \
 	uint##n##_t val;						          \
@@ -108,10 +109,10 @@ namespace OCPI {
       PUT_GET_PROPERTY(64,64)
 #undef PUT_GET_PROPERTY
       void setPropertyBytes(const OCPI::API::PropertyInfo &info, size_t offset,
-			    const uint8_t *data, size_t nBytes) const;
+			    const uint8_t *data, size_t nBytes, unsigned idx) const;
 
       void getPropertyBytes(const OCPI::API::PropertyInfo &info, size_t offset, uint8_t *buf,
-			    size_t nBytes) const;
+			    size_t nBytes, unsigned idx) const;
       void setPropertySequence(const OCPI::API::PropertyInfo &p,
 			       const uint8_t *val,
 			       size_t nItems, size_t nBytes) const;
@@ -122,8 +123,8 @@ namespace OCPI {
 
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)     	         \
       inline void							 \
-      set##pretty##Property(unsigned ordinal, const run val) const {     \
-	setProperty##bits(m_propInfo[ordinal], *(uint##bits##_t *)&val); \
+	set##pretty##Property(unsigned ordinal, const run val, unsigned idx) const { \
+	setProperty##bits(m_propInfo[ordinal], *(uint##bits##_t *)&val, idx); \
       }									 \
       inline void        						\
       set##pretty##SequenceProperty(const OCPI::API::Property &p,       \
@@ -133,8 +134,8 @@ namespace OCPI {
 			    length, length * (bits/8));			\
       }									\
       inline run							\
-      get##pretty##Property(unsigned ordinal) const {	\
-	return (run)getProperty##bits(m_propInfo[ordinal]);			\
+	get##pretty##Property(unsigned ordinal, unsigned idx) const {	\
+	return (run)getProperty##bits(m_propInfo[ordinal], idx);        \
       }									\
       inline unsigned							\
       get##pretty##SequenceProperty(const OCPI::API::Property &p, run *vals, \
@@ -145,10 +146,10 @@ namespace OCPI {
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)
 OCPI_DATA_TYPES
 #undef OCPI_DATA_TYPE
-      void setStringProperty(unsigned ordinal, const char* val) const;
+      void setStringProperty(unsigned ordinal, const char* val, unsigned idx) const;
       void setStringSequenceProperty(const OCPI::API::Property &, const char * const *,
 				     size_t ) const;
-      void getStringProperty(unsigned, char *val, size_t length) const;
+      void getStringProperty(unsigned ordinal, char *val, size_t length, unsigned idx) const;
       unsigned getStringSequenceProperty(const OCPI::API::Property &, char * *,
 					 size_t ,char*, size_t) const;
     };

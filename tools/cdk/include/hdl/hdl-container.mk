@@ -23,6 +23,12 @@ ifneq ($(MAKECMDGOALS),clean)
   ifndef Worker_xml
     $(error The XML for the container assembly, $(Worker).xml, is missing))
   endif
+  ifeq ($(wildcard $(Worker_xml)),)
+    $(error Cannot find an XML file for container: $(Worker))
+  endif
+  $(and $(call DoShell,$(OcpiGen) -X $(Worker_xml),HdlContPfConfig),\
+     $(error Processing container XML $1: $(HdlContPfConfig)))
+  HdlPlatform:=$(word 1,$(HdlContPfConfig))
 endif
 OcpiLanguage:=vhdl
 override HdlLibraries+=platform
@@ -39,6 +45,11 @@ ifneq ($(MAKECMDGOALS),clean)
   $(call OcpiDbgVar,HdlPlatforms)
   HdlOnePlatform:=$(if $(filter 1,$(words $(HdlPlatforms))),-P $(HdlPlatforms))
   override Platform:=$(if $(filter 1,$(words $(HdlPlatforms))),$(HdlPlatforms))
+  override ComponentLibraries+=\
+    $(HdlPlatformsDir)/$(HdlPlatform) \
+    $(wildcard $(HdlPlatformsDir)/$(HdlPlatform)/devices) \
+    $(HdlAssembly)
+  $(eval $(HdlSearchComponentLibraries))
   $(and $(call DoShell,$(OcpiGen) -S $(AssemblyName) $(HdlOnePlatform) -x platform $(Worker_xml),HdlContPlatform),\
     $(error Processing container XML $1: $(HdlContPlatform)))
   $(and $(call DoShell,$(OcpiGen) -S $(AssemblyName) $(HdlOnePlatform) -x configuration $(Worker_xml),HdlContConfig),\
@@ -55,7 +66,6 @@ ifneq ($(MAKECMDGOALS),clean)
   override HdlConfig:=$(HdlContConfig)
   include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
   ifndef HdlSkip
-    override ComponentLibraries+=$(HdlPlatformsDir)/$(HdlContPlatform) $(HdlAssembly)
     $(eval $(HdlPrepareAssembly))
     include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
     ifndef HdlSkip

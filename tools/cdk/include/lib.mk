@@ -131,7 +131,7 @@ BuildImplementation=$(infoxx BI:$1:$2:$(call HdlLibrariesCommand))\
 	       $(and $(filter $1,hdl),\
                   HdlLibrariesCommand="$(call HdlLibrariesCommand)" \
                   VerilogIncludeDirs="$(call AdjustRelative,$(VerilogIncludeDirs))") \
-               XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirs))";\
+               XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirs)) ../lib/hdl";\
 
 BuildModel=\
 $(AT)set -e;if test "$($(call Capitalize,$(1))Implementations)"; then \
@@ -233,7 +233,7 @@ cleanhdl:
 	$(call CleanModel,hdl)
 
 clean:: cleanall cleanxm cleanrcc cleanocl cleantest
-	$(AT)echo Cleaning library directory for all targets.
+	$(AT)echo Cleaning \"$(CwdName)\" component library directory for all targets.
 	$(AT)rm -fr $(OutDir)lib $(OutDir)gen $(OutDir)
 
 $(HdlImplementations): | $(OutDir)lib/hdl $(OutDir)gen/hdl
@@ -287,7 +287,7 @@ ifdef Worker
   Name:=$(word 1,$(Words))
   UCModel=$(call ToUpper,$(Model))
   ifeq ($(origin SpecFile),command line)
-    ifdef Emulate then
+    ifdef Emulate
       $(error Cannot specify Emulate= variable with SpecFile);
     endif
     ifeq ($(SpecFile),none)
@@ -367,7 +367,7 @@ endif
 
 new:
 	$(AT)$(if $(Worker),,\
-	       $(error The "Worker=" variable must be specified when "new" is specified.)) \
+	       $(error The "Worker=" or "Device=" variable must be specified when "new" is specified.)) \
 	     echo Creating worker subdirectory named $(Worker).
 	$(AT)mkdir -p $(Worker) && \
 	     (\

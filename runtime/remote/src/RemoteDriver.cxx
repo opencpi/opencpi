@@ -62,20 +62,20 @@ class Worker
 	 ezxml_t impl, ezxml_t inst, OC::Worker */*slave*/, const OU::PValue *wParams,
 	 unsigned remoteInstance);
   virtual ~Worker() {}
-  OC::Port &createPort(const OU::Port&, const OU::PValue *params) {
+  OC::Port &createPort(const OU::Port&, const OU::PValue */*params*/) {
     return *(OC::Port*)NULL;
   }
-  OC::Port &createInputPort(OU::PortOrdinal portId,      
-			    size_t bufferCount,
-			    size_t bufferSize, 
-			    const OU::PValue *params = NULL)
+  OC::Port &createInputPort(OU::PortOrdinal /*portId*/,      
+			    size_t /*bufferCount*/,
+			    size_t /*bufferSize*/, 
+			    const OU::PValue */*params*/ = NULL)
     throw (OU::EmbeddedException) {
     return *(OC::Port*)NULL;
   }
-  OC::Port &createOutputPort(OU::PortOrdinal portId,     
-			     size_t bufferCount,
-			     size_t bufferSize, 
-			     const OU::PValue *props = NULL)
+  OC::Port &createOutputPort(OU::PortOrdinal /*portId*/,
+			     size_t /*bufferCount*/,
+			     size_t /*bufferSize*/, 
+			     const OU::PValue */*props*/ = NULL)
     throw ( OU::EmbeddedException ) {
     return *(OC::Port*)NULL;
   }
@@ -83,11 +83,10 @@ class Worker
     if (getControlMask() & (1 << op))
       m_launcher.controlOp(m_remoteInstance, op);
   }
-  void setPropertyValue(const OA::Property &p, const OU::Value &v) {
+  void setPropertyValue(const OU::Property &p, const OU::Value &v) {
     std::string val;
     v.unparse(val);
-    m_launcher.setPropertyValue(m_remoteInstance,
-				static_cast<OU::Property *>(&p.m_info) - m_properties, val);
+    m_launcher.setPropertyValue(m_remoteInstance, &p - m_properties, val);
   }
   bool wait(OS::Timer *t) {
     return m_launcher.wait(m_remoteInstance, t ? t->getRemaining() : 0);
@@ -96,60 +95,65 @@ class Worker
     m_launcher.getPropertyValue(m_remoteInstance, &p - m_properties, v, hex, add);
   }
 
-  void read(size_t offset, size_t nBytes, void *p_data) {}
-  void write(size_t offset, size_t nBytes, const void* p_data ) {}
-  void setPropertyBytes(const OA::PropertyInfo &info, size_t offset,
-			const uint8_t *data, size_t nBytes) const {};
-  void setProperty8(const OA::PropertyInfo &info, uint8_t data) const {}
-  void setProperty16(const OA::PropertyInfo &info, uint16_t data) const {}
-  void setProperty32(const OA::PropertyInfo &info, uint32_t data) const {}
-  void setProperty64(const OA::PropertyInfo &info, uint64_t data) const {}
-  void getPropertyBytes(const OA::PropertyInfo &info, size_t offset,
-			uint8_t *data, size_t nBytes) const {}
-  uint8_t getProperty8(const OA::PropertyInfo &info) const { return 0; }
-  uint16_t getProperty16(const OA::PropertyInfo &info) const { return 0; }
-  uint32_t getProperty32(const OA::PropertyInfo &info) const  { return 0; }
-  uint64_t getProperty64(const OA::PropertyInfo &info) const  { return 0; }
+  void read(size_t /*offset*/, size_t /*nBytes*/, void */*p_data*/) {}
+  void write(size_t /*offset*/, size_t /*nBytes*/, const void */*p_data*/ ) {}
+  void setPropertyBytes(const OA::PropertyInfo &/*info*/, size_t /*offset*/,
+			const uint8_t */*data*/, size_t /*nBytes*/, unsigned /*idx*/) const {};
+  void setProperty8(const OA::PropertyInfo &/*info*/, uint8_t /*data*/,
+		    unsigned /*idx*/) const {}
+  void setProperty16(const OA::PropertyInfo &/*info*/, uint16_t /*data*/,
+		     unsigned /*idx*/) const {}
+  void setProperty32(const OA::PropertyInfo &/*info*/, uint32_t /*data*/,
+		     unsigned /*idx*/) const {}
+  void setProperty64(const OA::PropertyInfo &/*info*/, uint64_t /*data*/,
+		     unsigned /*idx*/) const {}
+  void getPropertyBytes(const OA::PropertyInfo &/*info*/, size_t /*offset*/,
+			uint8_t */*data*/, size_t /*nBytes*/, unsigned /*idx*/) const {}
+  uint8_t getProperty8(const OA::PropertyInfo &/*info*/, unsigned /*idx*/) const { return 0; }
+  uint16_t getProperty16(const OA::PropertyInfo &/*info*/, unsigned /*idx*/) const { return 0; }
+  uint32_t getProperty32(const OA::PropertyInfo &/*info*/, unsigned /*idx*/) const  { return 0; }
+  uint64_t getProperty64(const OA::PropertyInfo &/*info*/, unsigned /*idx*/) const  { return 0; }
       
-  void propertyWritten(unsigned ordinal) const {};
-  void propertyRead(unsigned ordinal) const {};
+  void propertyWritten(unsigned /*ordinal*/) const {};
+  void propertyRead(unsigned /*ordinal*/) const {};
   void prepareProperty(OU::Property&,
-		       volatile void *&writeVaddr,
-		       const volatile void *&readVaddr) {}
+		       volatile void *&/*writeVaddr*/,
+		       const volatile void *&/*readVaddr*/) {}
   // These property access methods are called when the fast path
   // is not enabled, either due to no MMIO or that the property can
   // return errors. 
 #undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
-  void set##pretty##Property(unsigned ordinal, const run val) const {}	\
-  void set##pretty##SequenceProperty(const OA::Property &p,const run *vals, \
-				     size_t length) const {}
+  void set##pretty##Property(unsigned /*ordinal*/, const run /*val*/, unsigned /*idx*/) const {} \
+  void set##pretty##SequenceProperty(const OA::Property &/*p*/,const run */*vals*/, \
+				     size_t /*length*/) const {}
   // Set a string property value
   // ASSUMPTION:  strings always occupy at least 4 bytes, and
   // are aligned on 4 byte boundaries.  The offset calculations
   // and structure padding are assumed to do this.
-#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)	\
-  void set##pretty##Property(unsigned ordinal, const run val) const {}	\
-  void set##pretty##SequenceProperty(const OA::Property &p,const run *vals, \
-				     size_t length) const {}
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)      \
+  void set##pretty##Property(unsigned /*ordinal*/, const run /*val*/, \
+			     unsigned /*idx*/) const {}		      \
+  void set##pretty##SequenceProperty(const OA::Property &/*p*/, const run */*vals*/, \
+				     size_t /*length*/) const {}
   OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE_S
 #undef OCPI_DATA_TYPE
   // Get Scalar Property
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
-  run get##pretty##Property(unsigned ordinal) const { return 0; }       \
-  unsigned get##pretty##SequenceProperty(const OA::Property &p,		\
-					 run *vals,			\
-					 size_t length) const { return 0; }
+  run get##pretty##Property(unsigned /*ordinal*/, unsigned /*idx*/) const { return 0; }	\
+  unsigned get##pretty##SequenceProperty(const OA::Property &/*p*/,	\
+					 run */*vals*/,			\
+					 size_t /*length*/) const { return 0; }
   // ASSUMPTION:  strings always occupy at least 4 bytes, and
   // are aligned on 4 byte boundaries.  The offset calculations
   // and structure padding are assumed to do this.
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)	\
-  void get##pretty##Property(unsigned ordinal, char *cp,		\
-			     size_t length) const {}			\
+  void get##pretty##Property(unsigned /*ordinal*/, char */*cp*/,	\
+			     size_t /*length*/, unsigned /*idx*/) const {} \
   unsigned get##pretty##SequenceProperty				\
-  (const OA::Property &p, char **vals, size_t length, char *buf,	\
-   size_t space) const { return 0; }
+  (const OA::Property &/*p*/, char **/*vals*/, size_t /*length*/, char */*buf*/, \
+   size_t /*space*/) const { return 0; }
 
   OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE_S
@@ -264,7 +268,7 @@ public:
   // Called either from UDP discovery or explicitly, e.g. from ocpirun
   // If the latter, the "containers" argument will be NULL
   bool
-  probeServer(const char *server, bool verbose, const char **exclude, char *containers,
+  probeServer(const char *server, bool /*verbose*/, const char **exclude, char *containers,
 	      std::string &error) {
     ocpiDebug("probing remote container server: %s", server);
     error.clear();
@@ -339,8 +343,9 @@ public:
       }
       ocpiDebug("Creating remote container: \"%s\", model %s, os %s, version %s, platform %s",
 		cname.c_str(), args[1], args[2], args[3], args[4]);
-      Container &c = *new Container(*client, cname.c_str(),
-				    args[1], args[2], args[3], args[4], NULL);
+      Container &c = *new Container(*client, cname.c_str(), args[1], args[2], args[3], args[4],
+				  NULL);
+      (void)&c;
     }
     sock = NULL;
     return false;
@@ -354,13 +359,13 @@ public:
     return !error.empty();
   }
   OC::Container *
-  probeContainer(const char *which, std::string &error, const OA::PValue *params) {
+  probeContainer(const char *which, std::string &/*error*/, const OA::PValue */*params*/) {
     throw OU::Error("Remote containers may only be discovered, not probed: \"%s\"", which);
   }
   // Try a discovery (send and receive) on a socket from an interface
   bool
   trySocket(std::set<std::string> &servers, OE::Interface &ifc, OE::Socket &s,
-	    OE::Address &addr, bool discovery, const char **exclude, std::string &error) {
+	    OE::Address &addr, bool /*discovery*/, const char **exclude, std::string &error) {
     // keep track of different addresses discovered when we broadcast.
     std::set<OE::Address,OE::Address::Compare> addrs;
     OE::Packet sendFrame;

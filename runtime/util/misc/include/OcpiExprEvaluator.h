@@ -76,6 +76,7 @@
 #define OCPI_EXPREVALUATOR_H
 #include <stdint.h>
 #include <string>
+#include "ezxml.h"
 
 namespace OCPI {
   namespace Util {
@@ -99,6 +100,16 @@ namespace OCPI {
     // The core function that evaluates expressions
     const char *evalExpression(const char *string, ExprValue &val, const
 			       IdentResolver *resolve = NULL);
+    // Evaluate the expression, using the resolver, and if the expression was variable,
+    // save the expression so it can be reevaluated again later when the values of
+    // variables are different.
+    const char *parseExprNumber(const char *a, size_t &np, std::string *expr,
+				const IdentResolver *resolver);
+    // Parse an integer (size_t) attribute that might be an expression
+    // Only consider if we have an identifier resolver
+    // The string value of the expression is returned in expr.
+    const char *getExprNumber(ezxml_t x, const char *attr, size_t &np, bool *found,
+			      std::string *expr, const IdentResolver *resolver);
   }
 }
 

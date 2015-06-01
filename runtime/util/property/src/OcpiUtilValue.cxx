@@ -192,7 +192,7 @@ namespace OCPI {
       return NULL;
     }
 
-    Value::Value(const ValueType &vt, Value *parent)
+    Value::Value(const ValueType &vt, const Value *parent)
       : m_vt(&vt), m_parent(parent) {
       init();
     }

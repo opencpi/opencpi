@@ -35,5 +35,22 @@
     <signal name='tx_clk' platform=''/>
   </device>
   <device worker='lime_spi'/>
-  <device worker='si5351'/>
+  <device worker='si5351'>
+    <!-- Input clock on Zipper is from the 30.72 MHz TXCO, via a CDCV304PW clock buffer -->
+    <property name='clkin_present' value='1'/>
+    <property name='clkin_freq' value='30.72e6'/>
+    <!-- Clock output channels on Zipper:
+	 0: (Normally Not Filled) to CLK_IN P75 on Myriad/RF connector and to PLLCLK
+	    CLK_IN is normally driven from the 30.72MHz TXCO on the Zipper.
+	 1: Not connected
+	 2: RXCLK to Lime RXCLK
+         3: RXCLK_C to FMC H07 to FPGA P17
+	 4: TXCLK to Lime TXCLK
+	 5: TXCLK_C to FMC H11 to FPGA M22
+	 6: Not connected
+	 7: Not connected
+    -->
+    <property name='outputs_present' value='1,0,1,1,1,1,0,0'/>
+  </device>
+  <device worker='zipper_i2c'/>
 </HdlPlatform>

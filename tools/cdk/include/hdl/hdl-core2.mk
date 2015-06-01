@@ -68,7 +68,8 @@ ifdef HdlToolRealCore
     $(call WkrTargetDir,$1,$4)/$2$(HdlBin): TargetDir=$(call WkrTargetDir,$1,$4)
     $(call WkrTargetDir,$1,$4)/$2$(HdlBin): | $$$$(TargetDir)
     $(call WkrTargetDir,$1,$4)/$2$(HdlBin): Core=$2
-    $(call WkrTargetDir,$1,$4)/$2$(HdlBin): Top=$(or $(filter %_rv,$3),$3$(and $(WorkerParamNames),$(filter-out 0,$4),_c$4))
+#    $(call WkrTargetDir,$1,$4)/$2$(HdlBin): Top=$(or $(filter %_rv,$3),$3$(and $(WorkerParamNames),$(filter-out 0,$4),_c$4))
+    $(call WkrTargetDir,$1,$4)/$2$(HdlBin): Top=$3$(and $(filter-out 0,$4),_c$4)
     $(call WkrTargetDir,$1,$4)/$2$(HdlBin): ParamConfig=$4
     ifdef PreBuiltCore
       $(call WkrTargetDir,$1,$4)/$2$(HdlBin): $(PreBuiltCore)

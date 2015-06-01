@@ -95,6 +95,7 @@ add to tree.
   CMD_OPTION  (os_version,V,    String, NULL, "Specify the operating system version for the artifact XML") \
   CMD_OPTION  (package,   p,    String, NULL, "Specify the HDL package for the worker") \
   CMD_OPTION  (config,    c,    String, NULL, "Specify the configuration for the artifact XML") \
+  CMD_OPTION  (pfconfig,  X,    String, NULL, "Parse top level platform/configuration attribute") \
 
 #include "CmdOption.h"
 
@@ -105,7 +106,7 @@ main(int argc, const char **argv) {
   const char *outDir = NULL, *wksFile = NULL, *package = NULL;
   bool
     doDefs = false, doImpl = false, doSkel = false, doAssy = false, doWrap = false,
-    doBsv = false, doArt = false;
+    doBsv = false, doArt = false, doTop = false;
   if (argc <= 1) {
     fprintf(stderr,
 	    "Usage is: ocpigen [options] <owd>.xml\n"
@@ -159,6 +160,9 @@ main(int argc, const char **argv) {
 	break;
       case 'w':
 	doWrap = true;
+	break;
+      case 'X':
+	doTop = true;
 	break;
       case 'W':
 	wksFile =*++ap;
@@ -227,6 +231,33 @@ main(int argc, const char **argv) {
     else
       try {
 	std::string parent;
+	if (doTop) {
+	  // This little hack is to help the container build scripts extract the platform
+	  // and platform configuration from a container XML file without fully parsing it.
+	  // I.e. the only error checks done are the simple lexical check on this XML file,
+	  // and the correct top level element and attributes.  Any other errors in this file
+	  // or files it references will be generated later, in a better place to report them.
+	  ezxml_t xml;
+	  std::string file;
+	  if ((err = parseFile(*ap, parent, "HdlContainer", &xml, file, false, false)))
+	    throw OU::Error("For file %s (%s): %s\n", *ap, file.c_str(), err);
+	  const char
+	    *pf = ezxml_cattr(xml, "platform"),
+	    *cf = ezxml_cattr(xml, "config");
+	  if (pf && cf)
+	    printf("%s %s\n", pf, cf);
+	  else {
+	    if (cf)
+	      pf = cf;
+	    else if (!pf)
+	      throw OU::Error("For file %s (%s): no platform or config attribute is present",
+			      *ap, file.c_str());
+	    const char *slash = strchr(pf, '/');
+	    printf("%.*s %s\n",
+		   (int)(slash ? slash - pf : strlen(pf)), pf, slash ? slash + 1 : "base");
+	  }
+	  return 0;
+	}
 	Worker *w = Worker::create(*ap, parent, package, outDir, NULL, NULL, 0, err);
 	if (err)
 	  fprintf(stderr, "For file %s: %s\n", *ap, err);

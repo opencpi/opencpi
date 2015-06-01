@@ -294,6 +294,9 @@ namespace OCPI {
       const char *df = ezxml_cattr(px, "dumpFile");
       m_hasValue = false;
       if ((cp = ezxml_cattr(px, "value"))) {
+	if (ezxml_cattr(px, "valueFile"))
+	  return esprintf("For instance property \"%s\", having both \"value\" and \"valueFile\""
+			  " attributes is invalid", m_name.c_str());
 	m_hasValue = true;
 	m_value = cp;
       } else if ((cp = ezxml_cattr(px, "valueFile"))) {

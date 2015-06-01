@@ -91,12 +91,13 @@ namespace OCPI {
       // allocated space for an array of Value ptrs that might be zero for missing members
       Value **m_struct, **m_structNext;
       // allocated space for OCPI_Type - a contiguous array of value objects
-      Value *m_types, *m_typeNext;
-      Value *m_parent;       // for navigating upward
-      unsigned m_next;       // for navigating horizontally
+      Value *m_types;
+      mutable Value *m_typeNext;
+      const Value *m_parent;       // for navigating upward
+      mutable unsigned m_next;       // for navigating horizontally
       size_t m_length;     // for debugging - length of value buffer
       bool m_parsed;
-      Value(const ValueType &vt, Value* parent = Value::s_parent);
+      Value(const ValueType &vt, const Value* parent = Value::s_parent);
       Value();
       virtual ~Value();
       void setType(const ValueType &vt);

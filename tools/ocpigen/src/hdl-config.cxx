@@ -1,4 +1,4 @@
-#define __STDC_LIMIT_MACROS
+#include <strings.h>
 #include <stdint.h>
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
@@ -62,7 +62,9 @@ addDevInstance(const Device &dev, const Card *card, const Slot *slot,
   for (DevicesIter bi = bd.m_devices.begin(); bi != bd.m_devices.end(); bi++)
     for (SupportsIter si = (*bi)->m_deviceType.m_supports.begin();
 	 si != (*bi)->m_deviceType.m_supports.end(); si++)
-      if (&(*si).m_type == &dev.m_deviceType && // the sdev supports this TYPE of device
+      // FIXME: use the package name here...
+      //      if (&(*si).m_type == &dev.m_deviceType && // the sdev supports this TYPE of device
+      if (!strcasecmp((*si).m_type.m_implName, dev.m_deviceType.m_implName) &&
 	  (*bi)->m_ordinal == dev.m_ordinal) { // the ordinals match. FIXME allow mapping
 	const DevInstance *sdi = findDevInstance(**bi, card, slot, baseInstances, NULL);
 	if (!sdi && (err = addDevInstance(**bi, card, slot, control, devInstance, NULL, sdi)))
@@ -202,7 +204,8 @@ emitSubdeviceConnections(std::string &assy,  DevInstances *baseInstances) {
       if (&*sii != &*dii)
 	for (SupportsIter si = s.m_deviceType.m_supports.begin();
 	     si != s.m_deviceType.m_supports.end(); si++)
-	  if (&(*si).m_type == &d.m_deviceType && // the subdevice supports this TYPE of device
+	  //	  if (&(*si).m_type == &d.m_deviceType && // the subdevice supports this TYPE of device
+	  if (!strcasecmp((*si).m_type.m_implName, d.m_deviceType.m_implName) &&
 	      s.m_ordinal == d.m_ordinal) {  // and the ordinals match. FIXME allow mapping
 	    // Find whether it is in the platform config or not.
 	    sdi = findDevInstance(s, (*dii).card, (*dii).slot, baseInstances, &inConfig);
@@ -327,8 +330,16 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
   // Add all the device instances
   for (DevInstancesIter dii = m_devInstances.begin(); dii != m_devInstances.end(); dii++) {
     const ::Device &d = (*dii).device;
-    OU::formatAdd(assy, "  <instance worker='%s' name='%s'/>\n",
-		  d.m_deviceType.name(), (*dii).name());
+    const DeviceType &dt = d.m_deviceType;
+    OU::formatAdd(assy, "  <instance worker='%s' name='%s'%s>\n",
+		  d.m_deviceType.name(), (*dii).name(), dt.m_instancePVs ? "" : "/");
+    if (dt.m_instancePVs) {
+      OU::Assembly::Property *ap = &(*dt.m_instancePVs)[0];
+      for (size_t n = dt.m_instancePVs->size(); n; n--, ap++)
+	OU::formatAdd(assy, "    <property name='%s' value='%s'/>\n",
+		      ap->m_name.c_str(), ap->m_value.c_str());
+      OU::formatAdd(assy, "  </instance>\n");
+    }
     // Add a time client instance as needed by device instances
     for (PortsIter pi = d.m_deviceType.ports().begin();
 	 pi != d.m_deviceType.ports().end(); pi++)
@@ -474,8 +485,7 @@ addControlConnection(std::string &assy) {
     }
   for (DevInstancesIter dii = m_devInstances.begin(); dii != m_devInstances.end(); dii++) {
     const ::Device &d = (*dii).device;
-    for (PortsIter pi = d.m_deviceType.ports().begin();
-	 pi != d.m_deviceType.ports().end(); pi++)
+    for (PortsIter pi = d.m_deviceType.ports().begin(); pi != d.m_deviceType.ports().end(); pi++)
       if ((*pi)->type == CPPort) {
 	if (cpInstanceName)
 	  multiple = true;

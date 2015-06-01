@@ -251,5 +251,14 @@ type wci_s2m_array_t is array(natural range <>) of wci_s2m_t;
         index_out     : out unsigned(decode_width-1 downto 0); --
         data_out      : out std_logic_vector(31 downto 0)); --
   end component property_decoder;
+  component raw_arb is
+    generic (nusers      : positive := 1);
+    port    (clk         : in  std_logic;
+             reset       : in  bool_t;
+             from_users  : in  wci.raw_prop_out_array_t(0 to nusers-1);
+             to_users    : out wci.raw_prop_in_array_t(0 to nusers-1);
+             from_device : in  wci.raw_prop_in_t;
+             to_device   : out wci.raw_prop_out_t);
+  end component raw_arb;
 end package wci;
 

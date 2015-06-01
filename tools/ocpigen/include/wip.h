@@ -503,7 +503,7 @@ class Worker : public Parsed, public OU::IdentResolver {
   } m_type;
   bool m_isDevice; // applies to Interconnect, IO, Adapter, Platform
   WciPort *m_wci; // Null means no control
-  bool m_noControl; // no control port on this one.
+  bool m_noControl; // no control port on this one. FIXME: nuke this in favor of !m_wci
   bool m_reusable;
   std::string m_specFile;
   const char *m_implName;
@@ -543,6 +543,7 @@ class Worker : public Parsed, public OU::IdentResolver {
   Scaling m_scaling;
   std::map<std::string, Scaling> m_scalingParameters;
   Worker *m_parent;           // If this worker is part of an upper level assembly
+  unsigned m_maxLevel;        // when data type processing
   Worker(ezxml_t xml, const char *xfile, const std::string &parentFile, WType type,
 	 Worker *parent, OU::Assembly::Properties *ipvs, const char *&err);
   virtual ~Worker();
@@ -560,7 +561,7 @@ class Worker : public Parsed, public OU::IdentResolver {
     *getValue(const char *sym, OU::ExprValue &val) const,
     *getNumber(ezxml_t x, const char *attr, size_t *np, bool *found = NULL,
 	       size_t defaultValue = 0, bool setDefault = true),
-    *getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly),
+    //    *getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly),
     *parse(const char *file, const char *parent, const char *package = NULL),
     *parseRcc(const char *package = NULL),
     *parseRccImpl(const char *package),
@@ -582,7 +583,7 @@ class Worker : public Parsed, public OU::IdentResolver {
     *parseHdlAssy(),
     *initImplPorts(ezxml_t xml, const char *element, PortCreate &pc),
     *checkDataPort(ezxml_t impl, Port *&sp),
-    *addProperty(ezxml_t prop, bool includeImpl),
+    *addProperty(ezxml_t prop, bool includeImpl, bool anyIsBad),
     // Add a property from an xml string description
     *addProperty(const char *xml, bool includeImpl),
     //    *doAssyClock(Instance *i, Port *p),
@@ -651,14 +652,14 @@ class Worker : public Parsed, public OU::IdentResolver {
     emitParameters(FILE *f, Language lang, bool useDefaults = true, bool convert = false),
     //    emitPortDescription(Port *p, FILE *f, Language lang),
     emitSignals(FILE *f, Language lang, bool records, bool inPackage, bool inWorker),
-    emitRccStruct(FILE *f, size_t nMembers, OU::Member *members, unsigned indent,
-		  const char *parent, bool isFixed, bool &isLast, bool topSeq),
-    printRccMember(FILE *f, OU::Member &m, unsigned indent, size_t &offset, unsigned &pad,
-		   const char *parent, bool isFixed, bool &isLast, bool topSeq),
-    printRccType(FILE *f, OU::Member &m, unsigned indent, size_t &offset, unsigned &pad,
-		 const char *parent, bool isFixed, bool &isLast, bool topSeq),
-    printRccBaseType(FILE *f, OU::Member &m, unsigned indent, size_t &offset, unsigned &pad,
-		     const char *parent, bool isFixed, bool &isLast),
+    emitRccStruct(FILE *f, size_t nMembers, OU::Member *members, unsigned level,
+		  const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef),
+    printRccMember(FILE *f, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
+		   const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef),
+    printRccType(FILE *f, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
+		 const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef),
+    printRccBaseType(FILE *f, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
+		     const char *parent, bool isFixed, bool &isLast, unsigned predefine),
     emitDeviceSignals(FILE *f, Language lang, std::string &last);
 };
 

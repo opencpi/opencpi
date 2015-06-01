@@ -509,14 +509,15 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
   for (unsigned n = 0; n < i->worker->m_ports.size(); n++, ip++)
     ip->emitTieoffAssignments(f);
   Language lang = m_assyWorker.m_language;
-  if (lang == Verilog) {
-    std::string suff;
-    if (i->worker->m_paramConfig && i->worker->m_paramConfig->nConfig)
-      OU::format(suff, "_c%zu", i->worker->m_paramConfig->nConfig);
+  std::string suff;
+  if (i->worker->m_paramConfig && i->worker->m_paramConfig->nConfig)
+    OU::format(suff, "_c%zu", i->worker->m_paramConfig->nConfig);
+  if (lang == Verilog)
     fprintf(f, "%s%s", i->worker->m_implName, suff.c_str());
-  } else
-    fprintf(f, "  %s_i : component %s.%s_defs.%s_rv\n",
-	    i->name, i->worker->m_library, i->worker->m_implName, i->worker->m_implName);
+  else
+    fprintf(f, "  %s_i : component %s%s.%s_defs.%s_rv%s\n",
+	    i->name, i->worker->m_library, suff.c_str(), i->worker->m_implName,
+	    i->worker->m_implName, suff.c_str());
   bool any = false;
   if (i->properties.size()) {
     unsigned n = 0;
@@ -603,7 +604,8 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
   // has a paired emulator worker.
   Instance *emulator = NULL, *ii = m_instances;
   for (unsigned n = 0; n < m_nInstances; n++, ii++)
-    if (ii->worker->m_emulate && ii->worker->m_emulate == i->worker) {
+    if (ii->worker->m_emulate &&
+	!strcasecmp(ii->worker->m_emulate->m_implName, i->worker->m_implName)) {
       emulator = ii;
       break;
     }
@@ -835,10 +837,13 @@ emitWorkersHDL(const char *outFile)
   fprintf(f, "# Workers in this %s: <implementation>:<instance>\n",
 	  m_type == Container ? "container" : "assembly");
   for (unsigned n = 0; n < m_assembly->m_nInstances; n++, i++) {
+#if 0
     std::string suff;
     if (i->worker->m_paramConfig && i->worker->m_paramConfig->nConfig)
       OU::format(suff, "_c%zu", i->worker->m_paramConfig->nConfig);
-    fprintf(f, "%s%s:%s\n", i->worker->m_implName, suff.c_str(), i->name);
+#endif
+    fprintf(f, "%s:%u:%s\n", i->worker->m_implName,
+	    i->worker->m_paramConfig ? i->worker->m_paramConfig->nConfig : 0, i->name);
   }
   fprintf(f, "# end of instances\n");
   return NULL;
@@ -856,7 +861,8 @@ emitInstance(Instance *i, FILE *f, const char *prefix, size_t &index)
   fprintf(f, "<%s name=\"%s%s%s\" worker=\"%s",
 	  i->m_iType == Instance::Application ? "instance" :
 	  i->m_iType == Instance::Interconnect ? "interconnect" :
-	  i->m_iType == Instance::Device ? "io" : "adapter",
+	  (i->m_iType == Instance::Device ||
+	   i->m_iType == Instance::Platform) ? "io" : "adapter",
 	  prefix ? prefix : "", prefix ? "/" : "", i->name, i->worker->m_implName);
   // FIXME - share this param-named implname with emitWorker
   if (i->worker->m_paramConfig && i->worker->m_paramConfig->nConfig)

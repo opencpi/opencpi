@@ -801,24 +801,25 @@ controlOperation(OU::Worker::ControlOperation op) {
 #undef OCPI_DATA_TYPE_S
       // Set a scalar property value
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                \
-  void Worker::set##pretty##Property(unsigned ordinal, const run val) const { \
-    OA::PropertyInfo &info = properties()[ordinal];                           \
-    assert(info.m_baseType == OCPI::API::OCPI_##pretty);		      \
-    if (info.m_writeError)                                                    \
-      throw; /*"worker has errors before write */                             \
-    store *pp = (store *)(getPropertyVaddr() + info.m_offset);	              \
-    if (bits > 32) {                                                          \
-      assert(bits == 64);                                                     \
-      uint32_t *p32 = (uint32_t *)pp;                                         \
-      p32[1] = ((const uint32_t *)&val)[1];                                   \
-      p32[0] = ((const uint32_t *)&val)[0];                                   \
-    } else								      \
-      *pp = *(const store *)&val;					      \
-    if (info.m_writeError)					              \
-      throw; /*"worker has errors after write */			      \
-    if (info.m_writeSync)                                                     \
-     propertyWritten(ordinal);                                                \
-  }                                                                           \
+    void Worker::set##pretty##Property(unsigned ordinal, const run val, unsigned idx) const { \
+      OA::PropertyInfo &info = properties()[ordinal];	       \
+    assert(info.m_baseType == OCPI::API::OCPI_##pretty);       \
+    if (info.m_writeError)                                     \
+      throw; /*"worker has errors before write */              \
+    store *pp = (store *)(getPropertyVaddr() + info.m_offset + \
+			  info.m_elementBytes * idx);          \
+    if (bits > 32) {                                           \
+      assert(bits == 64);                                      \
+      uint32_t *p32 = (uint32_t *)pp;                          \
+      p32[1] = ((const uint32_t *)&val)[1];                    \
+      p32[0] = ((const uint32_t *)&val)[0];                    \
+    } else						       \
+      *pp = *(const store *)&val;			       \
+    if (info.m_writeError)				       \
+      throw; /*"worker has errors after write */	       \
+    if (info.m_writeSync)                                      \
+     propertyWritten(ordinal);                                 \
+  }                                                            \
   void Worker::set##pretty##SequenceProperty(const OA::Property &p, const run *vals, \
 					     size_t length) const {	\
     if (p.m_info.m_writeError)						\
@@ -840,26 +841,27 @@ controlOperation(OU::Worker::ControlOperation op) {
 // ASSUMPTION:  strings always occupy at least 4 bytes, and
 // are aligned on 4 byte boundaries.  The offset calculations
 // and structure padding are assumed to do this.
-#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)              \
-  void Worker::set##pretty##Property(unsigned ordinal, const run val) const { \
-    OA::PropertyInfo &info = properties()[ordinal];                           \
-    size_t ocpi_length;                                                      \
-    if (!val || (ocpi_length = strlen(val)) > info.m_stringLength)         \
-      throw; /*"string property too long"*/;				\
-    if (info.m_writeError)						\
-      throw; /*"worker has errors before write */			\
-    uint32_t *p32 = (uint32_t *)(getPropertyVaddr() + info.m_offset); \
-    /* if length to be written is more than 32 bits */			\
-    if (++ocpi_length > 32/CHAR_BIT)					\
-      memcpy(p32 + 1, val + 32/CHAR_BIT, ocpi_length - 32/CHAR_BIT);	\
-    uint32_t i;								\
-    memcpy(&i, val, 32/CHAR_BIT);					\
-    p32[0] = i;								\
-    if (info.m_writeError)						\
-      throw; /*"worker has errors after write */			\
-    if (info.m_writeSync)						\
-      propertyWritten(ordinal); 				        \
-  }									\
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)      \
+     void Worker::set##pretty##Property(unsigned ordinal, const run val, unsigned idx) const { \
+    OA::PropertyInfo &info = properties()[ordinal];                   \
+    size_t ocpi_length;                                               \
+    if (!val || (ocpi_length = strlen(val)) > info.m_stringLength)    \
+      throw; /*"string property too long"*/;			      \
+    if (info.m_writeError)					      \
+      throw; /*"worker has errors before write */		      \
+    uint32_t *p32 = (uint32_t *)(getPropertyVaddr() + info.m_offset + \
+				 info.m_elementBytes * idx);	      \
+    /* if length to be written is more than 32 bits */		      \
+    if (++ocpi_length > 32/CHAR_BIT)				      \
+      memcpy(p32 + 1, val + 32/CHAR_BIT, ocpi_length - 32/CHAR_BIT);  \
+    uint32_t i;							      \
+    memcpy(&i, val, 32/CHAR_BIT);				      \
+    p32[0] = i;							      \
+    if (info.m_writeError)					      \
+      throw; /*"worker has errors after write */		      \
+    if (info.m_writeSync)					      \
+      propertyWritten(ordinal); 				      \
+  }								      \
   void Worker::set##pretty##SequenceProperty(const OA::Property &p,const run *vals,\
 					     size_t length) const {	\
     if (p.m_info.m_writeError)						\
@@ -882,13 +884,15 @@ controlOperation(OU::Worker::ControlOperation op) {
 #undef OCPI_DATA_TYPE
       // Get Scalar Property
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		    \
-      run Worker::get##pretty##Property(unsigned ordinal) const {           \
+      run Worker::get##pretty##Property(unsigned ordinal, unsigned idx) const { \
         OA::PropertyInfo &info = properties()[ordinal];                     \
+	assert("slave property access to rcc unsupported"==0);              \
 	if (info.m_readSync)						    \
 	  propertyRead(ordinal);					    \
         if (info.m_readError )					            \
           throw; /*"worker has errors before read "*/			    \
-        uint32_t *pp = (uint32_t *)(getPropertyVaddr() + info.m_offset);    \
+        uint32_t *pp = (uint32_t *)(getPropertyVaddr() + info.m_offset +    \
+				    info.m_elementBytes * idx);		    \
         union {								    \
 	  run r;							    \
 	  uint32_t u32[bits/32];                                            \
@@ -928,24 +932,25 @@ controlOperation(OU::Worker::ControlOperation op) {
       // ASSUMPTION:  strings always occupy at least 4 bytes, and
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this.
-#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)	    \
-      void Worker::get##pretty##Property(unsigned ordinal, char *cp,        \
-					   size_t length) const {	    \
-          OA::PropertyInfo &info = properties()[ordinal];                   \
-	  if (info.m_readSync)	   				            \
-	    propertyRead(ordinal);				            \
-	  size_t stringLength = info.m_stringLength;                        \
-	  if (length < stringLength+1)			                    \
-	    throw; /*"string buffer smaller than property"*/;		    \
-	  if (info.m_readError)					            \
-	    throw; /*"worker has errors before write */			    \
-	  uint32_t i32, *p32 = (uint32_t *)(getPropertyVaddr() + info.m_offset);   \
-	  memcpy(cp + 32/CHAR_BIT, p32 + 1, stringLength + 1 - 32/CHAR_BIT);\
-	  i32 = *p32;							    \
-	  memcpy(cp, &i32, 32/CHAR_BIT);				    \
-	  if (info.m_readError)					            \
-	    throw; /*"worker has errors after write */			    \
-	}								    \
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)	            \
+      void Worker::get##pretty##Property(unsigned ordinal, char *cp, size_t length, \
+					 unsigned idx) const {		            \
+          OA::PropertyInfo &info = properties()[ordinal];                           \
+	  if (info.m_readSync)	   				                    \
+	    propertyRead(ordinal);				                    \
+	  size_t stringLength = info.m_stringLength;                                \
+	  if (length < stringLength+1)			                            \
+	    throw; /*"string buffer smaller than property"*/;		            \
+	  if (info.m_readError)					                    \
+	    throw; /*"worker has errors before write */			            \
+	  uint32_t i32, *p32 = (uint32_t *)(getPropertyVaddr() + info.m_offset +    \
+					    info.m_elementBytes * idx);		    \
+	  memcpy(cp + 32/CHAR_BIT, p32 + 1, stringLength + 1 - 32/CHAR_BIT);        \
+	  i32 = *p32;							            \
+	  memcpy(cp, &i32, 32/CHAR_BIT);				            \
+	  if (info.m_readError)					                    \
+	    throw; /*"worker has errors after write */			            \
+	}								            \
       unsigned Worker::get##pretty##SequenceProperty			    \
 	(const OA::Property &p, char **vals, size_t length, char *buf,      \
 	 size_t space) const {					            \
@@ -977,37 +982,42 @@ controlOperation(OU::Worker::ControlOperation op) {
 #undef OCPI_DATA_TYPE_S
 #undef OCPI_DATA_TYPE
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
-      void Worker::setPropertyBytes(const OCPI::API::PropertyInfo &/*info*/, size_t offset,
-			    const uint8_t *data, size_t nBytes) const {
-        memcpy((void *)(getPropertyVaddr() + offset), data, nBytes);
+      void Worker::setPropertyBytes(const OCPI::API::PropertyInfo &info, size_t offset,
+			    const uint8_t *data, size_t nBytes, unsigned idx) const {
+        memcpy((void *)(getPropertyVaddr() + offset + idx * info.m_elementBytes), data, nBytes);
       }
-      void Worker::setProperty8(const OCPI::API::PropertyInfo &info, uint8_t data) const {
-        *(uint8_t *)(getPropertyVaddr() + info.m_offset) = data;
+      void Worker::setProperty8(const OCPI::API::PropertyInfo &info, uint8_t data,
+				unsigned idx) const {
+        ((uint8_t *)(getPropertyVaddr() + info.m_offset))[idx] = data;
       }
-      void Worker::setProperty16(const OCPI::API::PropertyInfo &info, uint16_t data) const {
-        *(uint16_t *)(getPropertyVaddr() + info.m_offset) = data;
+     void Worker::setProperty16(const OCPI::API::PropertyInfo &info, uint16_t data,
+				unsigned idx) const {
+       ((uint16_t *)(getPropertyVaddr() + info.m_offset))[idx] = data;
       }
-      void Worker::setProperty32(const OCPI::API::PropertyInfo &info, uint32_t data) const {
-        *(uint32_t *)(getPropertyVaddr() + info.m_offset) = data;
+     void Worker::setProperty32(const OCPI::API::PropertyInfo &info, uint32_t data,
+				unsigned idx) const {
+       ((uint32_t *)(getPropertyVaddr() + info.m_offset))[idx] = data;
       };
-      void Worker::setProperty64(const OCPI::API::PropertyInfo &info, uint64_t data) const {
-        *(uint64_t *)(getPropertyVaddr() + info.m_offset) = data;
+     void Worker::setProperty64(const OCPI::API::PropertyInfo &info, uint64_t data,
+				unsigned idx) const {
+       ((uint64_t *)(getPropertyVaddr() + info.m_offset))[idx] = data;
       }
-      void Worker::getPropertyBytes(const OCPI::API::PropertyInfo &/*info*/, size_t offset,
-			    uint8_t *data, size_t nBytes) const {
-        memcpy(data, (void *)(getPropertyVaddr() + offset), nBytes);
+      void Worker::getPropertyBytes(const OCPI::API::PropertyInfo &info, size_t offset,
+				    uint8_t *data, size_t nBytes, unsigned idx) const {
+        memcpy(data, (void *)(getPropertyVaddr() + offset + idx * info.m_elementBytes), nBytes);
       }
-      uint8_t Worker::getProperty8(const OCPI::API::PropertyInfo &info) const {
-        return *(uint8_t *)(getPropertyVaddr() + info.m_offset);
+     uint8_t Worker::getProperty8(const OCPI::API::PropertyInfo &info, unsigned idx) const {
+       return ((uint8_t *)(getPropertyVaddr() + info.m_offset))[idx];
       }
-      uint16_t Worker::getProperty16(const OCPI::API::PropertyInfo &info) const {
-        return *(uint16_t *)(getPropertyVaddr() + info.m_offset);
+     uint16_t Worker::getProperty16(const OCPI::API::PropertyInfo &info, unsigned idx) const {
+       return ((uint16_t *)(getPropertyVaddr() + info.m_offset))[idx];
+
       }
-      uint32_t Worker::getProperty32(const OCPI::API::PropertyInfo &info) const {
-        return *(uint32_t *)(getPropertyVaddr() + info.m_offset);
+     uint32_t Worker::getProperty32(const OCPI::API::PropertyInfo &info, unsigned idx) const {
+       return ((uint32_t *)(getPropertyVaddr() + info.m_offset))[idx];
       };
-      uint64_t Worker::getProperty64(const OCPI::API::PropertyInfo &info) const {
-        return *(uint64_t *)(getPropertyVaddr() + info.m_offset);
+     uint64_t Worker::getProperty64(const OCPI::API::PropertyInfo &info, unsigned idx) const {
+       return ((uint64_t *)(getPropertyVaddr() + info.m_offset))[idx];
       }
 
      RCCUserWorker::RCCUserWorker()

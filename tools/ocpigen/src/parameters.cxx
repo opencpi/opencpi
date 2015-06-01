@@ -317,7 +317,7 @@ const char *Worker::
 emitToolParameters() {
   ezxml_t x;
   const char *err;
-  if ((err = parseConfigFile(m_outDir)) ||
+  if (m_paramConfigs.size() == 0 && (err = parseConfigFile(m_outDir)) ||
       (err = parseRawParams(x)) ||
       (err = openOutput(m_fileName.c_str(), m_outDir, "", "-params", ".mk", NULL, m_mkFile)))
     return err;
