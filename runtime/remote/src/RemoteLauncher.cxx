@@ -446,12 +446,14 @@ work(Launcher::Instances &instances, Launcher::Connections &connections) {
       for (unsigned n = 0; n < instances.size(); n++, i++)
 	if (&i->m_container->launcher() == this && !i->m_worker) {
 	  OU::PValue pv[] = { OU::PVULong("remoteInstance", m_instanceMap[n]), OU::PVEnd };
-	  i->m_worker = &i->m_containerApp->createWorker(i->m_impl->m_artifact,
-							 i->m_name.c_str(),
-							 i->m_impl->m_metadataImpl.m_xml,
-							 i->m_impl->m_staticInstance,
-							 i->m_slave ? i->m_slave->m_worker : NULL,
-							 pv);
+	  i->m_worker =
+	    &i->m_containerApp->createWorker(i->m_impl->m_artifact,
+					     i->m_name.c_str(),
+					     i->m_impl->m_metadataImpl.m_xml,
+					     i->m_impl->m_staticInstance,
+					     i->m_slave ? i->m_slave->m_worker : NULL,
+					     i->m_hasMaster,
+					     pv);
 	}    
     }
     m_sending = true;

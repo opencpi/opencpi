@@ -30,6 +30,7 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "OcpiOsFileSystem.h"
 #include "OcpiContainerApi.h"
 
 #include "OcpiOsMisc.h"
@@ -599,15 +600,20 @@ namespace OCPI {
 	  i->m_container = m_allMap & (1 << cNum) ? m_global2used[cNum] : addContainer(cNum);
 	}
 	OC::Container &c = OC::Container::nthContainer(m_usedContainers[i->m_container]);
-	if (verbose)
-	  fprintf(stderr, " Instance %2u %s (spec %s) on %s container %s, using %s%s%s in %s\n", 
+	if (verbose) {
+	  std::time_t bd = OS::FileSystem::lastModified(impl.m_artifact.name());
+	  char tbuf[30];
+	  ctime_r(&bd, tbuf);
+	  fprintf(stderr,
+		  " Instance %2u %s (spec %s) on %s container %s, using %s%s%s in %s dated %s", 
 		  n, m_assembly.instance(n).name().c_str(),
 		  m_assembly.instance(n).specName().c_str(),
 		  c.m_model.c_str(), c.name().c_str(),
 		  impl.m_metadataImpl.name().c_str(),
 		  impl.m_staticInstance ? "/" : "",
 		  impl.m_staticInstance ? ezxml_cattr(impl.m_staticInstance, "name") : "",
-		  impl.m_artifact.name().c_str());
+		  impl.m_artifact.name().c_str(), tbuf);
+	}
       }
       // To prepare for remote containers, we need to organize the containers we are
       // using by their server.  Then we essentially synthesize an "app" for each server.
@@ -740,13 +746,26 @@ namespace OCPI {
     void ApplicationI::start() {
 
       ocpiDebug("Using %d containers to support the application", m_nContainers );
-
+      ocpiDebug("Starting master workers that are not slaves.");
       for (unsigned n = 0; n < m_nContainers; n++)
-	m_containerApps[n]->start();
+	m_containerApps[n]->start(true, false); // start masters that are not slaves
+      ocpiDebug("Starting master workers that are also slaves.");
+      for (unsigned n = 0; n < m_nContainers; n++)
+	m_containerApps[n]->start(true, true);  // start masters that are slaves
+      ocpiDebug("Starting workers that are not masters.");
+      for (unsigned n = 0; n < m_nContainers; n++)
+	m_containerApps[n]->start(false, false); // start non-masters
     };
     void ApplicationI::stop() {
+      ocpiDebug("Stopping master workers that are not slaves.");
       for (unsigned n = 0; n < m_nContainers; n++)
-	m_containerApps[n]->stop();
+	m_containerApps[n]->stop(true, false); // start masters that are not slaves
+      ocpiDebug("Stopping master workers that are also slaves.");
+      for (unsigned n = 0; n < m_nContainers; n++)
+	m_containerApps[n]->stop(true, true);  // start masters that are slaves
+      ocpiDebug("Stopping workers that are not masters.");
+      for (unsigned n = 0; n < m_nContainers; n++)
+	m_containerApps[n]->stop(false, false); // start non-masters
     }
     bool ApplicationI::wait(OS::Timer *timer) {
       if (m_doneWorker) {

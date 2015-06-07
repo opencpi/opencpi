@@ -192,7 +192,7 @@
   <signal bidirectional='LA18_N_CC'/>   <!-- Pin C23 -->
   <signal bidirectional='LA27_P'/>      <!-- Pin C26 -->
   <signal bidirectional='LA27_N'/>      <!-- Pin C27 -->
-  <signal output='SCL'/>                <!-- Pin C30 -->
+  <signal bidirectional='SCL'/>         <!-- Pin C30 Should be output, but it is used as general purpose sometimes-->
   <signal bidirectional='SDA'/>         <!-- Pin C31 -->
 
   <signal input='CLK_DIR'/>             <!-- Pin B1 -->

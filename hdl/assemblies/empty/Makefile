@@ -22,5 +22,5 @@
 #  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
 #
 ########################################################################### #
-Containers=dc
+Containers=dc zipsi
 include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk

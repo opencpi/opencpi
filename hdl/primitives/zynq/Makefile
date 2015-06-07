@@ -35,10 +35,16 @@ XilinxZynq=$(OCPI_XILINX_EDK_DIR)/hw/XilinxProcessorIPLib/pcores/$(XilinxZynqCor
 #XilinxPS7=$(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/unisims/PS7.v
 XilinxZynqPSFiles=atc aw_atc b_atc processing_system7 trace_buffer w_atc
 
-SourceFiles=\
-  $(XilinxPS7) \
-  $(XilinxZynqPSFiles:%=$(XilinxZynq)/%.v) \
-  zynq_pkg.vhd unoc2axi_wd.vhd unoc2axi_rd.vhd unoc2axi.vhd axinull.vhd \
-  zynq_ps.vhd axi2cp.vhd
+SourceFiles=zynq_pkg.vhd unoc2axi_wd.vhd unoc2axi_rd.vhd unoc2axi.vhd axinull.vhd axi2cp.vhd
+
+ifneq ($(wildcard $(XilinxZynq)),)
+  SourceFiles+=$(XilinxZynqPSFiles:%=$(XilinxZynq)/%.v) zynq_ps.vhd
+endif
 
 include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk
+
+ifeq ($(HdlTarget),zynq)
+  ifeq ($(wildcard $(XilinxZynq)),)
+    $(error The Xilinx EDK is missing at $(XilinxZynq) when building for HdlTarget=zynq)
+  endif
+endif

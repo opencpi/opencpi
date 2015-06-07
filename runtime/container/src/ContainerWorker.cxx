@@ -57,10 +57,12 @@ namespace OCPI {
       }
     }
 
-    Worker::Worker(Artifact *art, ezxml_t impl, ezxml_t inst, const OA::PValue *) 
+    Worker::
+    Worker(Artifact *art, ezxml_t impl, ezxml_t inst, Worker *slave, bool hasMaster,
+	   const OA::PValue *) 
       : OU::Worker::Worker(),
-	m_artifact(art), m_xml(impl), m_instXml(inst), m_workerMutex(true)
-    {
+	m_artifact(art), m_xml(impl), m_instXml(inst), m_workerMutex(true),
+	m_slave(slave), m_hasMaster(hasMaster) {
       if (impl) {
 	const char *err = parse(impl);
 	if (err)

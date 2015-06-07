@@ -265,7 +265,7 @@ XstNeedIni= $(strip $(XstLibraries)$(ComponentLibraries)$(CDKCompenentLibraries)
 # Choices as to where a bb might be
 # 1. For pointing to a built target directory with the filename being the core name,
 #    where the core, and bblib is built.  Core is $1.$(HdlBin) Lib is $(dir $1)/bb/$(notdir $1)
-XstCoreLibraryChoices=$(xinfo XCLT:$1)$(strip \
+XstCoreLibraryChoices=$(info XCLT:$1:$2)$(strip \
   $(and $(filter target-%,$(subst /, ,$1)),$(dir $1)/bb/$(notdir $1)) \
   $(and $(filter target-%,$(subst /, ,$1)),$(dir $1)/bb/$(patsubst %_rv,%,$(notdir $1))) \
   $(call HdlLibraryRefDir,$1_bb,$(if $(HdlTarget),$(call HdlGetFamily,$(HdlTarget)),NONE3)) \
@@ -286,7 +286,8 @@ XstCompLibs=$(ComponentLibraries) $(DeviceLibraries) $(CDKComponentLibraries) $(
 # This will get fixed when we put the RV at the end everywhere...
 XstLibFromCore=$(foreach n,$(patsubst %_rv,%,$(basename $(notdir $1))),\
                  $(if $(findstring _rv_c,$n),$(subst _rv_c,_c,$n),$n))
-XstPathFromCore=$(foreach n,$(call XstLibFromCore,$1),$(dir $1)/$n)
+XstPathFromCore=$(foreach n,$(call XstLibFromCore,$1),$(and $(findstring /,$1),$(dir $1))$n)
+
 XstMakeLso=\
   (\
    $(foreach l,$(XstCompLibs),\
@@ -308,7 +309,7 @@ XstMakeIni=\
            $(call HdlLibraryRefDir,$(l),$(HdlTarget)))));) \
    $(foreach l,$(infox SubCores:$(SubCores_$(HdlTarget)))$(SubCores_$(HdlTarget)),\
       echo $(call XstLibFromCore,$l)=$(call FindRelative,$(TargetDir),$(strip \
-          $(firstword $(foreach c,$(call XstCoreLibraryChoices,$(call XstPathFromCore,$l)),$(infox CECEL:$c)$(call HdlExists,$c)))));) \
+          $(firstword $(foreach c,$(call XstCoreLibraryChoices,$(call XstPathFromCore,$l),a),$(info CECEL:$c)$(call HdlExists,$c)))));) \
   ) > $(XstIniFile);
 
 XstOptions += $(and $(XstNeedIni),-lso $(XstLsoFile))
@@ -382,9 +383,9 @@ HdlToolCompile=\
      $(if $(wildcard $(call HdlLibraryRefDir,$(l),$(HdlTarget))),,\
           $(error Error: Specified library: "$l", in the "HdlLibraries" variable, was not found for $(call HdlGetFamily,$(HdlTarget)).))) \
   $(foreach l,$(XstCores),$(xxxinfo AC:$l)\
-    $(if $(foreach x,$(call XstCoreLibraryChoices,$1),$(call HdlExists,$x)),,\
+    $(if $(foreach x,$(call XstCoreLibraryChoices,$l,b),$(call HdlExists,$x)),,\
 	$(info Error: Specified core library for "$l", in the "Cores" variable, was not found.) \
-        $(error Error:   after looking in $(call HdlExists,$(call XstCoreLibraryChoices,$1))))) \
+        $(error Error:   after looking in $(call HdlExists,$(call XstCoreLibraryChoices,$l,c))))) \
   $(xxxinfo ALLCORE1) \
   echo '  'Creating $@ with top == $(Top)\; details in $(TargetDir)/xst-$(Core).out.;\
   rm -f $(notdir $@);\

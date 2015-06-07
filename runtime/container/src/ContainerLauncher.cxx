@@ -17,7 +17,8 @@ createWorker(Launcher::Instance &i) {
 					       i.m_name.c_str(),
 					       i.m_impl->m_metadataImpl.m_xml,
 					       i.m_impl->m_staticInstance,
-					       i.m_slave ? i.m_slave->m_worker : NULL);
+					       i.m_slave ? i.m_slave->m_worker : NULL,
+					       i.m_hasMaster);
   // Now we need to set the initial properties - either from instance or from defaults
   for (unsigned p = 0; p < i.m_propValues.size(); p++)
     i.m_worker->setProperty(i.m_propOrdinals[p], i.m_propValues[p]);

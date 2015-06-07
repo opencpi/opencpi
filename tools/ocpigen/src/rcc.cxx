@@ -371,6 +371,9 @@ emitImplRCC() {
   fprintf(f,
 	  " * This file contains the implementation declarations for the %s worker in %s\n"
 	  " */\n\n"
+	  "#ifndef __STDC_FORMAT_MACROS\n"
+	  "#define __STDC_FORMAT_MACROS\n"
+	  "#endif\n"
 	  "#ifndef RCC_WORKER_%s_H__\n"
 	  "#define RCC_WORKER_%s_H__\n"
 	  "#include <RCC_Worker.h>\n",
@@ -378,7 +381,10 @@ emitImplRCC() {
   if ( m_language == CC )
     fprintf(f, "#include <vector>\n" );
   if (m_language == CC && m_slave)
-    fprintf(f, "#include <../OcpiApi.h>\n");
+    fprintf(f,
+	    "#include <inttypes.h>\n"
+	    "#include <../OcpiApi.h>\n"
+	    "#include <../OcpiOsDebug.h>\n");
   const char *last;
   unsigned in = 0, out = 0;
   if (m_ports.size()) {
@@ -555,14 +561,32 @@ emitImplRCC() {
 	      fprintf(f, "    inline void set_%s(", p.m_name.c_str());
 	      for (unsigned n = 0; n < p.m_arrayRank; n++)
 		fprintf(f, "unsigned idx%u, ", n);
-	      fprintf(f, "%s val) { m_worker.set%sProperty(%u",
-		      type.c_str(), pretty.c_str(), p.m_ordinal);
-	      if (p.m_arrayRank)
+	      fprintf(f, "%s val) {\n", type.c_str());
+	      if (p.m_arrayRank) {
+		fprintf(f, "      unsigned idx = ");
 		for (unsigned n = 0; n < p.m_arrayRank; n++)
-		  fprintf(f, "%sidx%u*%zu", n ? " + " : ", ", n, offsets[n]);
+		  fprintf(f, "%sidx%u*%zu", n ? " + " : "", n, offsets[n]);
+		fprintf(f,
+			";\n"
+			"      m_worker.set%sProperty(%u, idx, val);\n",
+			pretty.c_str(), p.m_ordinal);
+	      } else
+		fprintf(f,
+			"      m_worker.set%sProperty(%u, 0, val);\n",
+			pretty.c_str(), p.m_ordinal);
+	      fprintf(f,
+		      "#if !defined(NDEBUG)\n"
+		      "    OCPI::OS::logPrint(OCPI_LOG_DEBUG, \"Setting slave.set_%s",
+		      p.m_name.c_str());
+	      if (p.m_arrayRank)
+		fprintf(f,
+			" at index %%u(0x%%x): 0x%%\" PRIx64, idx, idx, (uint64_t)val);\n");
 	      else
-		fprintf(f, ", 0");
-	      fprintf(f,", val); }\n");
+		fprintf(f,
+			": 0x%%\" PRIx64, (uint64_t)val);\n");
+	      fprintf(f,
+		      "#endif\n"
+		      "    }\n");
 	    }
 	    delete [] offsets;
 	  }
@@ -584,7 +608,7 @@ emitImplRCC() {
       for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
 	if ((**pi).m_writeSync || (**pi).m_readSync) {
 	  if (!notifiers)
-	    fprintf(f, "  typedef void (%s::*Notification)();\n", s.c_str());
+	    fprintf(f, "  typedef OCPI::RCC::RCCResult (%s::*Notification)();\n", s.c_str());
 	  notifiers = true;
 	  if ((**pi).m_writeSync) {
 	    if (!writeNotifiers)
@@ -596,7 +620,7 @@ emitImplRCC() {
 		      "  }\n");
 	    writeNotifiers = true;
 	    fprintf(f,
-		    "  virtual void %s_written() = 0;\n", (**pi).m_name.c_str());
+		    "  virtual OCPI::RCC::RCCResult %s_written() = 0;\n", (**pi).m_name.c_str());
 	  }
 	  if ((**pi).m_readSync) {
 	    if (!readNotifiers)
@@ -608,7 +632,7 @@ emitImplRCC() {
 		      "  }\n");
 	    readNotifiers = true;
 	    fprintf(f,
-		    "  virtual void %s_read() = 0;\n", (**pi).m_name.c_str());
+		    "  virtual OCPI::RCC::RCCResult %s_read() = 0;\n", (**pi).m_name.c_str());
 	  }
 	}
     }
@@ -847,11 +871,17 @@ emitSkelRCC() {
     for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
       if ((**pi).m_writeSync)
 	fprintf(f,
-		"  void %s_written() {} // notification that %s property has been written\n",
+		"  // notification that %s property has been written\n"
+		"  RCCResult %s_written() {\n"
+		"    return RCC_OK;\n"
+		"  }\n",
 		(**pi).m_name.c_str(), (**pi).m_name.c_str());
       if ((**pi).m_readSync)
 	fprintf(f,
-		"  void %s_read() {} // notification that %s property will be read\n",
+		"  // notification that %s property will be read\n"
+		"  RCCResult %s_read() {\n"
+		"    return RCC_OK;\n"
+		"  }\n",
 		(**pi).m_name.c_str(), (**pi).m_name.c_str());
     }
     fprintf(f,

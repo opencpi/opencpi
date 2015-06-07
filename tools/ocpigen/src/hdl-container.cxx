@@ -165,16 +165,12 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
       // FIXME:  Apologies for this gross unconsting, but its the least of various evils
       // Fixing would involve allowing containers to own devices...
       HdlPlatform &pf = *(HdlPlatform *)&m_platform;
-      err = pf.addFloatingDevice(dx, xfile, this, name);
-    } else if (!(err = OE::getRequiredString(dx, name, "name")) &&
-	       !m_platform.findDevice(name.c_str()))
-      err = OU::esprintf("Container device named '%s' in container XML file '%s' is not in "
-			   "an existing device in the platform", name.c_str(), xfile);
-    if (err ||
-	// We have a device to add to the container that exists on the platform.
-	(err = parseDevInstance(name.c_str(), dx, m_file.c_str(), this, false,
-				&m_config.devInstances(), NULL, NULL)))
-      return;
+      if ((err = pf.addFloatingDevice(dx, xfile, this, name)))
+	return;
+    }
+    // We have a device to add to the container that exists on the platform or on a card
+    err = parseDevInstance(name.c_str(), dx, m_file.c_str(), this, false,
+			   &m_config.devInstances(), NULL, NULL);
   }
   // Establish connections, WHICH MAY ALSO IMPLICITLY CREATE DEVICE INSTANCES
   ContConnects connections;
@@ -412,7 +408,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 	  if (!i->worker->m_assembly)
 	    OU::format(ns->m_name, "%s_%s", i->name, s.name());
 	  m_signals.push_back(ns);
-	  m_sigmap[s.name()] = ns;
+	  m_sigmap[ns->m_name.c_str()] = ns;
 	  break;
 	}
       }

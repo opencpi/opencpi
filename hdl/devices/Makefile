@@ -57,12 +57,16 @@ Workers = \
 	gbe.hdl \
         lime_dac.hdl \
         lime_adc.hdl \
-        lime_spi.hdl \
-	lime_spi_em.hdl \
 	lime_adc_em.hdl \
 	lime_dac_em.hdl \
 	si5351_proxy.rcc \
-	si5351.hdl
+	si5351.hdl \
+	lime_rx.hdl \
+	lime_tx.hdl \
+	lime_rx_proxy.rcc \
+	lime_tx_proxy.rcc \
+        lime_spi.hdl \
+	lime_spi_em.hdl \
 
 # These two require support for embedded IOBUFs which is currently turned off
 #	dram_v5.hdl \

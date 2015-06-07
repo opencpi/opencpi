@@ -31,7 +31,6 @@
     <Signal name="rx_clk"     slot=''/>          <!--  17   rx_clk     rxclk           59    NONE - From SI5351 CLK2 to Myriad RF to Lime -->
     <Signal name="rx_clk_out" slot=''/>          <!--  40   rx_clk_out rx_clk_out    NONE    NONE -->
     <Signal name='rx_clk_in'  slot='LA02_P'/>    <!--  NONE            rxclk_c       NONE     H07 From SI5351 CLK3 to FMC -->
-    <Signal name="rxen"       slot='LA01_N_CC'/> <!--  76   rxen       rxen            80     D09 -->
     <Signal name="rx_iq_sel"  slot='LA01_P_CC'/> <!--  16   rx_iq_sel  rxiqsel         39     D08 -->
     <Signal name="rxd(0)"     slot='LA26_N'/>    <!--  15   rxd0       rxd0            43     D27 -->
     <Signal name="rxd(1)"     slot='LA26_P'/>    <!--  14   rxd1       rxd1            44     D26 -->
@@ -50,7 +49,6 @@
   <device worker='lime_dac'>
     <Signal name="tx_clk"    slot=''/>           <!--  19   tx_clk     txclk           60    NONE - From SI5351 CLK4 to Myriad RF to Lime -->
     <Signal name='tx_clk_in' slot='LA04_N'/>     <!--  NONE            txclk_c       NONE     H11 From SI5351 CLK5 to FMC -->
-    <Signal name="txen"      slot='LA29_P'/>     <!--  66   txen       txen            79     G30 -->
     <Signal name="tx_iq_sel" slot='LA29_N'/>     <!--  20   tx_iq_sel  txiqsel         19     G31 -->
     <Signal name="txd(0)"    slot='LA25_N'/>     <!--  21   txd0       txd0            23     G28 -->
     <Signal name="txd(1)"    slot='LA25_P'/>     <!--  22   txd1       txd1            24     G27 -->
@@ -72,7 +70,20 @@
     <Signal name='sen'       slot='LA14_P'/>     <!--  67   sen        saen(spi_ncs0)  74     C18 -->
     <Signal name='sdio'      slot='LA18_N_CC'/>  <!--  69   sdio       sadio(spi_mosi) 68     C23 -->
   </device>
-
+  <device worker='lime_rx'>
+    <Signal name="rxen"       slot='LA01_N_CC'/> <!--  76   rxen       rxen            80     D09 -->
+  </device>
+  <device worker='lime_tx'>
+    <Signal name="txen"      slot='LA29_P'/>     <!--  66   txen       txen            79     G30 -->
+  </device>
+  <device worker='si5351'>
+    <Signal name='intr'      slot=''/>           <!--  si5351 pin 3 not connected on zipper -->
+  </device>
+  <device worker='zipper_i2c'>
+    <!-- Note that the sda/scl signals are swapped and use the opposite slot signals -->
+    <Signal name='scl'       slot='SDA'/>        <!--                  scl_c                  C31 -->
+    <Signal name='sda'       slot='SCL'/>        <!--                  sda_c                  C30 -->
+  </device>
   <!-- other non-lime signals available in zipper
                              slot='DP0_M2C_P'                         MIPI_CLK_C      76     C06 - not connected to anything on lime module. USB chip pin 5 (PC2)
                              slot='DP0_M2C_N'                         MIPI_DATA_C     78     C07 - not connected on anything on lime module. USB chip pin 26 (PC4)
@@ -80,8 +91,6 @@
                              slot='LA10_P'                            GPIO1_C         67     C14 - 
                              slot='LA06_N'                            GPIO2_C         69     C11 - tx out select: 0 hi band, 1 broadband
                              slot='LA27_P'                            GPIO3_C         71     C26 - not connected to lime module - USB chip pin 12 (PD6)
-                             slot='SCL'                               SDA_C                  C30 - SDA pin 5 on SI5351C (note SCL/SDA reversed here)
-                             slot='SDA'                               SCL_C                  C31 - SCL pin 4 on SI5351C (note SCL/SDA reversed here)
                              slot='LA19_P'                            SPI_NCS_1_C            H22 - LE pin 14 on ADF4002, shares SPI_CLK and SPI_MOSI with lime module
                                                                                                    The ADF4002 is used only to discipline the TXCO
                              slot='LA21_P'                            SPI_NCS_2_C            H25 - pin header P37

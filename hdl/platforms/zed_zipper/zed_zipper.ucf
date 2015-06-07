@@ -22,7 +22,7 @@ NET "led(7)" LOC = U14 | IOSTANDARD = LVCMOS33;
 # Pins of the lime_dac device
 NET "lime_dac_tx_clk_in"          LOC = "M22" | IOSTANDARD=LVCMOS25;    ## H11 on J63
 NET "lime_dac_tx_clk_in"          CLOCK_DEDICATED_ROUTE = FALSE;
-NET "lime_dac_txen"               LOC = "C17" | IOSTANDARD=LVCMOS25;    ## G30 on J63
+NET "lime_tx_txen"                LOC = "C17" | IOSTANDARD=LVCMOS25;    ## G30 on J63
 NET "lime_dac_tx_iq_sel"          LOC = "C18" | IOSTANDARD=LVCMOS25;    ## G31 on J63
 
 # Timing Constraints...
@@ -45,7 +45,7 @@ NET "lime_dac_txd[11]"            LOC = "J21" | IOSTANDARD=LVCMOS25;    ## G12 o
 # Pins of the lime_adc device
 NET "lime_adc_rx_clk_in"          LOC = "P17" | IOSTANDARD=LVCMOS25;    ## H7  on J63
 NET "lime_adc_rx_clk_in"          CLOCK_DEDICATED_ROUTE = FALSE;
-NET "lime_adc_rxen"               LOC = "N20" | IOSTANDARD=LVCMOS25;    ## D9  on J63
+NET "lime_rx_rxen"                LOC = "N20" | IOSTANDARD=LVCMOS25;    ## D9  on J63
 NET "lime_adc_rx_iq_sel"          LOC = "N19" | IOSTANDARD=LVCMOS25;    ## D8  on J63
 
 # Timing Constraints...

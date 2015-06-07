@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -42,7 +41,7 @@
 namespace OCPI {
   namespace HDL {
 #endif
-#define OCCP_MAX_WORKERS 15
+#define OCCP_MAX_WORKERS 63
 #define OCCP_MAX_REGIONS 16
     typedef struct {
       uint32_t birthday; // The time the final build was started
@@ -57,9 +56,9 @@ namespace OCPI {
       const uint32_t
         revision,           // 08
         birthday,           // 0c
-        config,             // 10 - bit mask of existing workers
+        pad0,               // 10 - bit mask of existing workers
         pciDevice,          // 14
-        attention,          // 18
+        pad1,               // 18
         status;             // 1c
       uint32_t
         scratch20,          // 20
@@ -76,9 +75,11 @@ namespace OCPI {
       const uint32_t
         timeClksPerPps,     // 48
 	readCounter;        // 4c
-      const uint64_t dna;   // 5054
+      const uint64_t 
+        attention,          // 5054
+        present;	    // 585c
       const uint32_t
-        pad1[9],            // 585c6064686c707478
+        pad2[7],            // 6064686c707478
         numRegions,         // 7c
         regions[OCCP_MAX_REGIONS];// 8084888c9094989ca0a4a8acb0b4b8bc
       HdlUUID uuid;         // c0...
@@ -105,7 +106,7 @@ namespace OCPI {
     } OccpWorkerRegisters;
 #define OCCP_WORKER_CONTROL_ENABLE 0x80000000
 #define OCCP_WORKER_CONTROL_TIMEOUT(i) ((i) & 0x1f)
-#define OCCP_WORKER_CONTROL_SIZE 0x10000
+#define OCCP_WORKER_CONTROL_SIZE 0x4000
 #define OCCP_CONTROL_CLEAR_ATTENTION  (1 << 9)
 #define OCCP_CONTROL_CLEAR_ERRORS     (1 << 8)
 #define OCCP_ADMIN_SIZE OCCP_WORKER_CONTROL_SIZE

@@ -210,6 +210,8 @@ addParamConfigParameters(const ParamConfig &pc, const OU::Assembly::Properties &
   const Param *p = &pc.params[0];
   // For each parameter in the config
   for (unsigned nn = 0; nn < pc.params.size(); nn++, p++) {
+    if (!p->param) // an orphaned parameter if the number of them grew..
+      continue;
     const OU::Assembly::Property *ap = &aiprops[0];
     size_t n;
     for (n = aiprops.size(); n; n--, ap++)

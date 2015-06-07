@@ -60,12 +60,13 @@
 
  Worker::
  Worker(Application & app, Artifact *art, const char *name,
-	ezxml_t impl, ezxml_t inst, OC::Worker *slave, const OU::PValue *wParams)
- : OC::WorkerBase<Application,Worker,Port>(app, *this, art, name, impl, inst, wParams),
+	ezxml_t impl, ezxml_t inst, OC::Worker *slave, bool hasMaster, const OU::PValue *wParams)
+   : OC::WorkerBase<Application,Worker,Port>(app, *this, art, name, impl, inst, slave, hasMaster,
+					     wParams),
    OCPI::Time::Emit( &parent().parent(), "Worker", name), 
    m_entry(art ? art->getDispatch(ezxml_cattr(impl, "name")) : NULL), m_user(NULL),
    m_dispatch(NULL), m_portInit(0), m_context(NULL), m_mutex(app.container()),
-   m_runCondition(NULL), m_errorString(NULL), m_slave(slave), enabled(false), hasRun(false),
+   m_runCondition(NULL), m_errorString(NULL), enabled(false), hasRun(false),
    sourcePortCount(0), targetPortCount(0), m_nPorts(nPorts()), worker_run_count(0),
    m_transport(app.parent().getTransport())
  {
@@ -140,9 +141,9 @@
 
  OC::Worker &Worker::
  getSlave() {
-   if (!m_slave)
+   if (!slave())
      throw OU::Error("No slave has been set for this worker");
-   return *m_slave;
+   return *slave();
  }
 
  Worker::

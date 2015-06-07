@@ -22,6 +22,7 @@ entity adc_fifo is
         messageSize : in  ulong_t;
         -- ADC side signals in the adc_clock domain
         adc_clk     : in  std_logic;
+        adc_give    : in  std_logic; -- qualifier to take adc data into FIFO
         adc_data    : in  std_logic_vector(width-1 downto 0));
 end entity adc_fifo;
 architecture rtl of adc_fifo is
@@ -38,6 +39,7 @@ architecture rtl of adc_fifo is
 begin
   -- Give when we're operating and when we can
   fifo_d_deq <= wsi_ready and operating and fifo_d_not_empty;
+  wsi_valid  <= fifo_d_not_empty;
   wsi_give   <= fifo_d_deq;
   wsi_som    <= to_bool(samplesInMessage_r = 0);
   wsi_eom    <= to_bool(samplesInMessage_r = messageSize - 1);
@@ -55,7 +57,7 @@ begin
 
   -- Synchronizing FIFO from the WSI input clock domain to the ADC clock domain
   fifo_s_reset_n <= not adc_reset;
-  fifo_s_enq     <= fifo_s_not_full;
+  fifo_s_enq     <= fifo_s_not_full and adc_give;
   fifo : bsv.bsv.SyncFIFO
     generic map (dataWidth => width,
                  depth     => depth,

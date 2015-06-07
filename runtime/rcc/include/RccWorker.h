@@ -86,7 +86,7 @@ namespace OCPI {
       inline RCCWorker &context() const { return *m_context; }
 
       Worker(Application & app, Artifact *art, const char *name,
-	     ezxml_t impl, ezxml_t inst, OCPI::Container::Worker *slave,
+	     ezxml_t impl, ezxml_t inst, OCPI::Container::Worker *slave, bool hasMaster,
 	     const OCPI::Util::PValue *wParams);
       OCPI::Container::Port& createPort(const OCPI::Util::Port&, const OCPI::Util::PValue *props);
       void controlOperation(OCPI::Util::Worker::ControlOperation);
@@ -203,7 +203,6 @@ namespace OCPI {
       const RunCondition *m_runCondition;        // current active run condition used in dispatching
       
       char            *m_errorString;         // error string set via "setError"
-      OCPI::Container::Worker      *m_slave;
     protected:
       OCPI::Container::Worker &getSlave();
       RCCPort &portInit() { return m_context->ports[m_portInit++]; }

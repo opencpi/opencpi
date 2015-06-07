@@ -1236,7 +1236,6 @@ namespace OCPI {
 	unconst64(admin.magic) = OCCP_MAGIC;
 	unconst32(admin.revision) = 0;
 	unconst32(admin.birthday) = OCPI_UTRUNCATE(uint32_t, time(0));
-	unconst32(admin.config) = 0xf0;
 	unconst32(admin.pciDevice) = 0;
 	unconst32(admin.attention) = 0;
 	unconst32(admin.status) = 0;
@@ -1249,7 +1248,8 @@ namespace OCPI {
 	admin.time = 0;
 	admin.timeDelta = 0;
 	unconst32(admin.timeClksPerPps) = 0;
-	unconst64(admin.dna) = 0;
+	unconst64(admin.present) = 1;
+	unconst64(admin.attention) = 1;
 	unconst32(admin.numRegions) = 1;
 	unconst32(admin.regions[0]) = 0;
 	OU::Uuid uuid;

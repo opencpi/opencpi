@@ -162,10 +162,8 @@ namespace OCPI {
       Application(Container &con, const char *name, const OA::PValue *props) 
 	: OC::ApplicationBase<Container, Application, Worker>(con, *this, name, props)
       {}
-      OC::Worker & createWorker(OC::Artifact *art,
-				const char *appInstName,
-				ezxml_t impl, ezxml_t inst,
-				OC::Worker *slave,
+      OC::Worker & createWorker(OC::Artifact *art, const char *appInstName, ezxml_t impl,
+				ezxml_t inst, OC::Worker *slave, bool hasMaster,
 				const OU::PValue *wParams);
     };
 
@@ -180,10 +178,10 @@ namespace OCPI {
       friend class Port;
       friend class ExternalPort;
       Container &m_container;
-      Worker(Application &app, OC::Artifact *art, const char *name,
-             ezxml_t implXml, ezxml_t instXml, const OA::PValue* execParams) :
-        OC::WorkerBase<Application, Worker, Port>(app, *this, art, name, implXml,
-						  instXml, execParams),
+      Worker(Application &app, OC::Artifact *art, const char *name, ezxml_t implXml,
+	     ezxml_t instXml, OC::Worker *slave, bool hasMaster, const OA::PValue* execParams) :
+        OC::WorkerBase<Application, Worker, Port>(app, *this, art, name, implXml, instXml, slave,
+						  hasMaster, execParams),
         WciControl(app.parent().hdlDevice(), implXml, instXml, properties()),
         m_container(app.parent())
       {
@@ -289,9 +287,9 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
     };
     OC::Worker & Application::createWorker(OC::Artifact *art, const char *appInstName,
 					   ezxml_t impl, ezxml_t inst, OC::Worker *slave,
-					   const OCPI::Util::PValue *wParams) {
+					   bool hasMaster, const OCPI::Util::PValue *wParams) {
       assert(!slave);
-      return *new Worker(*this, art, appInstName, impl, inst, wParams);
+      return *new Worker(*this, art, appInstName, impl, inst, slave, hasMaster, wParams);
     }
     // This port class really has two cases: externally connected ports and
     // internally connected ports.

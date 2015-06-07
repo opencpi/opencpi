@@ -8,6 +8,7 @@
 
 #include "si5351_proxy-worker.hh"
 #include <math.h>
+#include <cstring>
 
 
 using namespace OCPI::RCC; // for easy access to RCC data types and constants
@@ -16,64 +17,102 @@ using namespace Si5351_proxyWorkerTypes;
 class Si5351_proxyWorker : public Si5351_proxyWorkerBase {
   static const unsigned nPLLs = SI5351_PROXY_NSOURCES;
   static const unsigned nChannels = SI5351_PROXY_NCHANNELS;
-  //Global Variables
-  struct Si5351_Channel {
-    int outputDivider;
-    float outputFreqHz;
-    float multisynthDivider;
-    int pllsource;
-    float phaseOffset;
-    int powered;
-    bool inverted;
-    bool int_mode;
-  } clks[nChannels];
-
-  struct Si5351_PLL {
-    double inputFreqHz;
-    double VCO_Hz;
-    double feedbackDivider;
-    int CLKIN_DIV;
-  } plls[nPLLs];
+  Channels savedChannels[nChannels]; // to see which channels have changed.
 
   // Just make sure all the outputs are disabled to start with...
   // Slaves are initialized first before the proxies.
   RCCResult initialize() {
-    for (unsigned i = 0; i < nChannels; i++) {
-      m_properties.channels[i].state = CHANNELS_STATE_OFF;
+    return disableAll();
+  }
+
+  RCCResult stop() {
+    return disableAll();
+  }
+
+  RCCResult config(unsigned i) {
+    setDisabledMode(i); // Set the right mode, but don't enable it, separate from counters
+    if (m_properties.channels[i].output_hz > .001) {
+      if (enable(i) != RCC_OK)
+	return RCC_ERROR;
+    } else
       disable(i);
-    }
+    memcpy(&savedChannels[i], &m_properties.channels[i], sizeof(Channels));
     return RCC_OK;
   }
+
+  // We know everything is disabled.  Configure all channels
   RCCResult start() {
     for (unsigned i = 0; i < nChannels; i++)
-      if (m_properties.channels[i].state == CHANNELS_STATE_ON ||
-	  m_properties.channels[i].state == CHANNELS_STATE_INVERT)
-	if (enable(i) != RCC_OK)
-	  return RCC_ERROR;
+      if (config(i) != RCC_OK)
+	return RCC_ERROR;
     return RCC_OK;
   }
+
   RCCResult run(bool /*timedout*/) {
     // This proxy doesn't do anything except respond to property writes.
     return RCC_OK;
   }
-  void channels_written() {}
 
-  //Check if clock frequency property is within bounds. If so, set up dividers. 
-  //This function sets up the clocks for both Clock 4 and Clock 5 on the Si5351.
-  //Clock 4 goes to the Lime, Clock 5 goes to the FPGA. They should be set to the same frequency
+  // Only process the notifications if we are operating - otherwise
+  // we enable everything during "start".
+  // Configure the changed channels
+  RCCResult channels_written() {
+    if (isOperating())
+      for (unsigned i = 0; i < nChannels; i++)
+	if (memcmp(&m_properties.channels[i], &savedChannels[i], sizeof(Channels)))
+	  if (config(i) != RCC_OK)
+	    return RCC_ERROR;
+    return RCC_OK;
+  }
+
+  // Per data sheet, disable and power down all outputs
+  RCCResult disableAll() {
+    if (slave.get_dev_status() & 0x80)
+      return setError("SI5351 has not completed system initialization");
+    slave.set_clk30_dis_st(0xAA); // drive Z when disabled
+    slave.set_clk74_dis_st(0xAA); // drive Z when disabled
+    // Disable output drivers
+    slave.set_out_en_ctl(0xFF);
+    // Make output enables not controlled by the master OEB pin so we control them
+    slave.set_oeb_pin_en(0xFF);
+    // Power down outputs
+    for (unsigned i = 0; i < nChannels; i++)
+      slave.set_clk_ctl(i, 0x80);
+    // Mask all the interrupts
+    slave.set_int_sts_mask(slave.get_int_sts_mask() | 0xF0);
+    return RCC_OK;
+  }
+  // Configure how the output is driven when disabled
+  void setDisabledMode(unsigned i) {
+    Channels &c = m_properties.channels[i];
+    uint8_t dis = i < 4 ? slave.get_clk30_dis_st() : slave.get_clk74_dis_st();
+    unsigned shift = (i & 3) * 2;
+    dis &= ~(3 << shift); // default set to drive low when disabled
+    switch (c.disabled_mode) {
+    case CHANNELS_DISABLED_MODE_LOW: dis |= 0 << shift; break;
+    case CHANNELS_DISABLED_MODE_HIGH: dis |= 1 << shift; break;
+    case CHANNELS_DISABLED_MODE_Z: dis |= 2 << shift; break;
+    case CHANNELS_DISABLED_MODE_NEVER: dis |= 3 << shift; break; // what does this really mean?
+    default:;
+    };
+    if (i < 4)
+      slave.set_clk30_dis_st(dis);
+    else
+      slave.set_clk74_dis_st(dis);
+  }
+
+  // Check if clock frequency property is within bounds. If so, set up dividers. 
+  // This function sets up the clocks for both Clock 4 and Clock 5 on the Si5351.
+  // Clock 4 goes to the Lime, Clock 5 goes to the FPGA. They should be set to the same frequency
   RCCResult enable(unsigned i) {
     float clk_freq = m_properties.channels[i].output_hz;
     if (clk_freq < 500000 || clk_freq  > 80000000)
       return setError("Invalid frequency entered.\n"
 		      "Enter Frequency in (Hz) between 500000 Hz and 80000000 Hz\n");
-    unsigned source = m_properties.channels[i].source;
-    plls[source].inputFreqHz = m_properties.input_hz[source];
-    clks[i].powered=1;
-    clks[i].inverted=0;
-    clks[i].outputFreqHz=clk_freq;
-
-    FindVCO(i);
-    slave.set_out_en_ctl(slave.get_out_en_ctl() & ~(1 << i));
+    if (FindVCO(i) != RCC_OK)
+      return RCC_ERROR;
+    slave.set_clk_ctl(i, slave.get_clk_ctl(i) & ~(1 << 7));   // power up
+    slave.set_out_en_ctl(slave.get_out_en_ctl() & ~(1 << i)); // output enabled
     return RCC_OK;
   }
   
@@ -82,14 +121,17 @@ class Si5351_proxyWorker : public Si5351_proxyWorkerBase {
     slave.set_out_en_ctl(slave.get_out_en_ctl() | (1 << i));
   }
 
-  //Calculate and set the divider registers. Argument is which clocks is being setup.
-  //This procedure follows the Si5351 I2C programming procedure found on page 17 of the data sheet
-  void FindVCO(int k)
+  // Calculate and set the divider registers. Argument is which clocks is being setup.
+  // This procedure follows the Si5351 I2C programming procedure found on page 17 of the data sheet
+  RCCResult FindVCO(int k)
   {
-    Si5351_Channel &clk = clks[k];
+    float outputFreqHz = m_properties.channels[k].output_hz;
+    double inputFreqHz = m_properties.input_hz[m_properties.channels[k].source];
+    double VCO_Hz;
+    double feedbackDivider;
+    bool int_mode;
+    float multisynthDivider;
     unsigned pllN = m_properties.channels[k].source;
-    Si5351_PLL &pll = plls[pllN];
-    
     double freq,fmin=600000000,fmax=900000000;
     double availablefreqplla[10000],bestvcoa=0,bestvcob=0;
     unsigned int bestscore=0;
@@ -99,40 +141,13 @@ class Si5351_proxyWorker : public Si5351_proxyWorkerBase {
     unsigned MSX_P1, MSX_P2,MSX_P3;
     double tmp1;
     int MSNX_P1,MSNX_P2,MSNX_P3;
-    uint8_t outputEnableRegister;
     uint8_t tempReg;
 	
-    //Debug statement
-    //printf("Setting clock %x\n",k);
-
-    //Save output enable register
-    outputEnableRegister = slave.get_out_en_ctl();
-
-    //Disable outputs
-    slave.set_out_en_ctl(0xFF);
-    //printf("Reg 3 is %x\n",slave.get_out_en_ctl());
-
-    //Power Down Output Drivers
-    for (unsigned n = 0; n < nChannels; n++) {
-      slave.set_clk_ctl(n, 0x80);
-      // printf("Reg %u is %x\n", n+16, slave.get_clk_ctl(n));
-    }
-    // printf("Reg 16 is %x\n",slave.get_clk0_ctl());
-    // printf("Reg 17 is %x\n",slave.get_clk1_ctl());
-    // printf("Reg 18 is %x\n",slave.get_clk2_ctl());
-    // printf("Reg 19 is %x\n",slave.get_clk3_ctl());
-    // printf("Reg 20 is %x\n",slave.get_clk4_ctl());
-    // printf("Reg 21 is %x\n",slave.get_clk5_ctl());
-    // printf("Reg 22 is %x\n",slave.get_clk6_ctl());
-    // printf("Reg 23 is %x\n",slave.get_clk7_ctl());
-
     //Setup interrupt mask
     slave.set_int_sts_mask(0xF0);
-    //printf("Reg 2 is %x\n",slave.get_int_sts_mask());
 
     //Set input source to clkin and clkin_div to 00 (divide by 1)
     slave.set_pll_in_src(0x04);
-    //printf("Reg 15 is %x\n",slave.get_pll_in_src());
 
     //Clear it_second array??
     for(i=0;i<60;i++)
@@ -142,22 +157,21 @@ class Si5351_proxyWorker : public Si5351_proxyWorkerBase {
 
     //Reseting parameters
     i=0;
-    clk.pllsource = 0;
-    clk.int_mode = 0;
-    clk.multisynthDivider = 0;
+    int_mode = false;
+    multisynthDivider = 0;
 	
-    //Set freq based clk.outputFreqHz
-    freq = clk.outputFreqHz > fmin ? clk.outputFreqHz :
-      (clk.outputFreqHz*((fmin/clk.outputFreqHz) +
+    //Set freq based outputFreqHz
+    freq = outputFreqHz > fmin ? outputFreqHz :
+      (outputFreqHz*((fmin/outputFreqHz) +
 			 (((unsigned long)fmin %
-			   (unsigned long)round(clk.outputFreqHz))!=0)));
+			   (unsigned long)round(outputFreqHz))!=0)));
        
     //Setup possible solutions arrays 
     while (freq >= fmin && freq <= fmax)
       {
 	availablefreqplla[i]=freq;
 	availableintplla[i]=0;
-	freq=freq+clk.outputFreqHz;
+	freq=freq+outputFreqHz;
 	i++;
       }
 	
@@ -169,7 +183,7 @@ class Si5351_proxyWorker : public Si5351_proxyWorkerBase {
     //Compute score
     for(i=0;i<j;i++)
       {
-	if((unsigned long)round(availablefreqplla[i])%(unsigned long)round(clk.outputFreqHz)==0)
+	if((unsigned long)round(availablefreqplla[i])%(unsigned long)round(outputFreqHz)==0)
 	  {
 	    it_second[i] = it_second[i]+1;
 	  }
@@ -182,49 +196,46 @@ class Si5351_proxyWorker : public Si5351_proxyWorkerBase {
 
       }
 
-    pll.VCO_Hz = bestvcoa;
-    pll.feedbackDivider = bestvcoa/pll.inputFreqHz;
-    clk.multisynthDivider = bestvcoa/clk.outputFreqHz;
+    VCO_Hz = bestvcoa;
+    feedbackDivider = bestvcoa/inputFreqHz;
+    multisynthDivider = bestvcoa/outputFreqHz;
 
-    if((unsigned long)round(bestvcoa)%(unsigned long)round(clk.outputFreqHz)==0)
+    if((unsigned long)round(bestvcoa)%(unsigned long)round(outputFreqHz)==0)
       {
-	clk.int_mode =true;
-	clk.multisynthDivider =  bestvcoa/clk.outputFreqHz;
+	int_mode = true;
+	multisynthDivider =  bestvcoa/outputFreqHz;
       }
     else
       {
-	clk.int_mode=false;
-	clk.multisynthDivider=bestvcoa/clk.outputFreqHz;
+	int_mode = false;
+	multisynthDivider=bestvcoa/outputFreqHz;
       }
 
-    clk.pllsource=0;
 
     bestvcob=bestvcoa;
 
-    pll.VCO_Hz=bestvcob;
-    pll.feedbackDivider = bestvcob/pll.inputFreqHz;
+    VCO_Hz=bestvcob;
+    feedbackDivider = bestvcob/inputFreqHz;
 
-    clk.multisynthDivider = bestvcob/clk.outputFreqHz;
+    multisynthDivider = bestvcob/outputFreqHz;
 
-    if((unsigned long)round(bestvcob)%(unsigned long)round(clk.outputFreqHz) == 0)
+    if((unsigned long)round(bestvcob)%(unsigned long)round(outputFreqHz) == 0)
       {
-	clk.int_mode = true;
-	clk.multisynthDivider = bestvcob/clk.outputFreqHz;
+	int_mode = true;
+	multisynthDivider = bestvcob/outputFreqHz;
       }
     else
       {
-	clk.int_mode = false;
-	clk.multisynthDivider = bestvcob/clk.outputFreqHz;
-      }
-    clk.pllsource = 1;
-
-    if(clk.multisynthDivider<8||900<clk.multisynthDivider)
-      {
-	printf("Error %f\n",clk.multisynthDivider);
+	int_mode = false;
+	multisynthDivider = bestvcob/outputFreqHz;
       }
 
-    DivA = (int)clk.multisynthDivider;
-    DivB = (int)((clk.multisynthDivider-DivA)*1048576+0.5);
+    if(multisynthDivider<8||900<multisynthDivider)
+      return setError("Error setting up divider for channel %u source %u: %g",
+		      k, m_properties.channels[k].source, multisynthDivider);
+
+    DivA = (int)multisynthDivider;
+    DivB = (int)((multisynthDivider-DivA)*1048576+0.5);
     DivC = 1048576;
 
 
@@ -240,7 +251,7 @@ class Si5351_proxyWorker : public Si5351_proxyWorkerBase {
     DivB=DivB/a;
     DivC=DivC/a;
 
-    if(clk.outputFreqHz <= 150000000)
+    if(outputFreqHz <= 150000000)
       {
 	tmp1=128 *((float)DivB/DivC);
 	MSX_P1 = 128 * DivA + floor(128 *((float)DivB/DivC)) - 512;
@@ -248,8 +259,8 @@ class Si5351_proxyWorker : public Si5351_proxyWorkerBase {
 	MSX_P3 = DivC;
       }
 
-    DivA = (int)pll.feedbackDivider;
-    DivB = (int)((pll.feedbackDivider-DivA)*1048576+0.5);
+    DivA = (int)feedbackDivider;
+    DivB = (int)((feedbackDivider-DivA)*1048576+0.5);
     DivC = 1048576;
 
     a = DivB;
@@ -272,10 +283,11 @@ class Si5351_proxyWorker : public Si5351_proxyWorkerBase {
     //printf("MSX_P3 is %x\n",MSX_P3);
 
     //Write clock control register (Regs 18-21)
-    tempReg = !clk.powered << 7;
-    tempReg |=  clk.int_mode <<6;
+    // We are enabling, so we must power it on == 0
+    tempReg = 0; // !powered << 7;
+    tempReg |=  (int_mode ? 1 : 0) <<6;
     tempReg |=  0 << 5;
-    tempReg |=  clk.inverted << 4;
+    tempReg |=  m_properties.channels[k].inverted << 4;
     tempReg |=  3 << 2;
     tempReg |=  3;
     //printf("tempReg is %x\n",tempReg);
@@ -303,15 +315,10 @@ class Si5351_proxyWorker : public Si5351_proxyWorkerBase {
     slave.set_ms_div_params(pllN, 5, ((MSNX_P2 >> 16) & 0x0F)|((MSNX_P3 >> 16) << 4));
     slave.set_ms_div_params(pllN, 6, MSNX_P2 >> 8);
     slave.set_ms_div_params(pllN, 7, MSNX_P2);
-
-    // for (unsigned n = 0; n < 8; n++)
-    //   print("Reg %2u is %x\n", 26+n, slave.get_ms_na_param(n));
-
-    slave.set_pll_reset(0xAC);
-    //printf("Reg 177 is %x\n",slave.get_pll_reset());
-
-    slave.set_out_en_ctl(outputEnableRegister & ~(1 << k));
-  }   
+    // Data sheet says to write 0xAC to reset both...
+    slave.set_pll_reset((slave.get_pll_reset() & ~((1<<7)|(1<<5))) | 1 << (pllN == 0 ? 5 : 7));
+    return RCC_OK;
+  }
 };
 
 SI5351_PROXY_START_INFO

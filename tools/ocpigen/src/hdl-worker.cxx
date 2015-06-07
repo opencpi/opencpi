@@ -268,9 +268,13 @@ static struct VhdlUnparser : public OU::Unparser {
 } vhdlUnparser;
 
 static void
-vhdlInnerValue(const OU::Value &v, std::string &s) {
+vhdlInnerValue(const char *pkg, const OU::Value &v, std::string &s) {
   if (v.needsComma())
     s += "(";
+  if (v.m_vt->m_baseType == OA::OCPI_Enum && pkg) {
+    s += pkg;
+    s += ".";
+  }
   v.unparse(s, &vhdlUnparser, true);
   if (v.m_vt->m_baseType == OA::OCPI_Enum)
     s += "_e";
@@ -339,9 +343,10 @@ vhdlConvert(const std::string &name, const OU::ValueType &dt, std::string &v, st
 // on the visibility of our packages and libraries.
 // If param==true, the value is used in a top level generic setting in tools
 const char *
-vhdlValue(const std::string &name, const OU::Value &v, std::string &s, bool convert) {
+vhdlValue(const char *pkg, const std::string &name, const OU::Value &v, std::string &s,
+	  bool convert) {
   std::string tmp;
-  vhdlInnerValue(v, tmp);
+  vhdlInnerValue(pkg, v, tmp);
   if (convert) {
     //    if (v.m_vt->m_baseType == OA::OCPI_Enum)
     //      OU::format(tmp, "%zu", (size_t)v.m_ULong);
@@ -411,7 +416,7 @@ hdlValue(const std::string &name, const OU::Value &v, std::string &value, bool c
   if (lang == NoLanguage)
     lang = m_language;
   return lang == VHDL ?
-    vhdlValue(name, v, value, convert) : verilogValue(v, value);
+    vhdlValue(NULL, name, v, value, convert) : verilogValue(v, value);
 }
 
 void Worker::
@@ -436,7 +441,7 @@ emitParameters(FILE *f, Language lang, bool useDefaults, bool convert) {
 	    OU::format(type, "%s_t", pr.m_name.c_str());
 	if (useDefaults) {
 	  if (pr.m_default)
-	    vhdlValue(pr.m_name.c_str(), *pr.m_default, value, convert);
+	    vhdlValue(NULL, pr.m_name.c_str(), *pr.m_default, value, convert);
 	} else {
 	  std::string tmp;
 	  OU::format(tmp, "work.%s_defs.%s", m_implName, pr.m_name.c_str());
@@ -715,8 +720,8 @@ emitVhdlPackageConstants(FILE *f) {
   }
   if (!m_noControl)
     fprintf(f,
-	    "  constant worker : ocpi.wci.worker_t := (%zu, %zu, %zu, \"%s\");\n",
-	    decodeWidth, firstRaw, rawBase, ops);
+	    "  constant worker : ocpi.wci.worker_t := (%zu, %zu, \"%s\");\n",
+	    decodeWidth, rawBase, ops);
   return NULL;
 }
 
@@ -1718,7 +1723,7 @@ emitImplHDL(bool wrap) {
 		    ",\n"
 		    "                default     => ");
 	    std::string vv;
-	    vhdlValue(pr.m_name.c_str(), *pr.m_default, vv, false);
+	    vhdlValue(NULL, pr.m_name.c_str(), *pr.m_default, vv, false);
 	    if (pr.m_baseType == OA::OCPI_Enum)
 	      fprintf(f, "to_ulong(%s_t'pos(%s))", pr.m_name.c_str(), vv.c_str());
 	    else

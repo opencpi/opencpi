@@ -234,27 +234,29 @@ parse(ezxml_t xml, Board &b, SlotType *stype) {
       switch (boardSig->m_direction) {
       case Signal::IN: // input to board
 	if (devSig->m_direction != Signal::IN)
-	  return OU::esprintf("Board signal \"%s\" is input to board, "
+	  return OU::esprintf("Board signal \"%s\" is input to card/paltform, "
 			      "but \"%s\" is not input to device", boardSig->name(),
 			      devSig->name());
 	break;
       case Signal::OUT: // output from board
 	if (devSig->m_direction != Signal::OUT)
-	  return OU::esprintf("Slot signal \"%s\" is output from board, "
+	  return OU::esprintf("Slot signal \"%s\" is output from card/platform, "
 			      "but \"%s\" is not output from device", boardSig->name(),
 			      devSig->name());
 	break;
       case Signal::INOUT: // FIXME: is this really allowed for slots?
 	if (devSig->m_direction != Signal::INOUT)
-	  return OU::esprintf("Slot signal \"%s\" is inout to/from board, "
+	  return OU::esprintf("Slot signal \"%s\" is inout to/from card/platform, "
 			      "but \"%s\" is not inout at device", boardSig->name(),
 			      devSig->name());
 	break;
       case Signal::BIDIRECTIONAL:
+#if 0
 	if (devSig->m_direction == Signal::INOUT)
 	  return OU::esprintf("Slot signal \"%s\" is bidirectional to or from board, "
 			      "but \"%s\" is inout at device", boardSig->name(),
 			      devSig->name());
+#endif
 	break;
       default:
 	;

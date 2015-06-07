@@ -17,20 +17,14 @@ HDL device workers might need a proxy.
   <property name='input_hz' readable='1' type='float' arraylength='nsources'/>
   <!-- How many programmable outputs are there? -->
   <property name='nchannels' readable='1' parameter='1' default='1'/>
-  <!-- Attributes for each channel -->
-  <!-- The state of a given channel:
-       on:     the output is enabled
-       low:    the output is set to drive low
-       high:   the output is set to drive high
-       z:      the output is set to be not driven (tristate)
-       down:   the output is powered off
-       invert: the output is on and inverted
-  -->
+  <!-- To enable a channel with default other attributes, just set the output_hz -->
   <property name='channels' initial='1' arraylength='nchannels' readable='1' type='struct'>
-    <member name='source' type='uchar' default='0'/>
-    <member name='state' type='enum' enums='on,low,high,z,off,invert' default='off'/>
-    <member name='spread' type='enum' enums='none,down,center,up' default='none'/>
-    <member name='spreadAmount' type='float' default='0'/>
     <member name='output_hz' type='float'/>
+    <member name='source' type='uchar'/>    <!-- which of the available inputs is used -->
+    <member name='inverted' type='bool'/>     <!-- should output be inverted? -->
+    <member name='spread' type='enum' enums='none,down,center,up'/>
+    <member name='spreadAmount' type='float'/>
+    <!-- When NOT enabled, how should it be driven. Default is low power Z -->
+    <member name='disabled_mode' type='enum' enums='z,low,high,never'/>
   </property>
 </ComponentSpec>

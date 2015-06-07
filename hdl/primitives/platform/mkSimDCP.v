@@ -9,7 +9,7 @@
 // RDY_host_request_put           O     1 reg
 // host_response_get              O     8 reg
 // RDY_host_response_get          O     1 reg
-// client_request_get             O    59 reg
+// client_request_get             O    61 reg
 // RDY_client_request_get         O     1 reg
 // RDY_client_response_put        O     1 reg
 // CLK                            I     1 clock
@@ -71,7 +71,7 @@ module mkSimDCP(CLK,
 
   // actionvalue method client_request_get
   input  EN_client_request_get;
-  output [58 : 0] client_request_get;
+  output [60 : 0] client_request_get;
   output RDY_client_request_get;
 
   // action method client_response_put
@@ -80,7 +80,7 @@ module mkSimDCP(CLK,
   output RDY_client_response_put;
 
   // signals for module outputs
-  wire [58 : 0] client_request_get;
+  wire [60 : 0] client_request_get;
   wire [7 : 0] host_response_get;
   wire RDY_client_request_get,
        RDY_client_response_put,
@@ -185,7 +185,7 @@ module mkSimDCP(CLK,
   wire ptr$EN;
 
   // ports of submodule cpReqF
-  wire [58 : 0] cpReqF$D_IN, cpReqF$D_OUT;
+  wire [60 : 0] cpReqF$D_IN, cpReqF$D_OUT;
   wire cpReqF$CLR, cpReqF$DEQ, cpReqF$EMPTY_N, cpReqF$ENQ, cpReqF$FULL_N;
 
   // ports of submodule cpRespF
@@ -293,7 +293,7 @@ module mkSimDCP(CLK,
   assign RDY_client_response_put = cpRespF$FULL_N ;
 
   // submodule cpReqF
-  FIFO2 #(.width(32'd59), .guarded(32'd1)) cpReqF(.RST(RST_N),
+  FIFO2 #(.width(32'd61), .guarded(32'd1)) cpReqF(.RST(RST_N),
 						  .CLK(CLK),
 						  .D_IN(cpReqF$D_IN),
 						  .ENQ(cpReqF$ENQ),
@@ -694,6 +694,7 @@ module mkSimDCP(CLK,
   assign ptr$EN = WILL_FIRE_RL_sim_ingress ;
 
   // submodule cpReqF
+`ifdef old
   assign cpReqF$D_IN =
 	     { dcpReqF$D_OUT[78:77] != 2'd1,
 	       (dcpReqF$D_OUT[78:77] == 2'd1) ?
@@ -704,6 +705,14 @@ module mkSimDCP(CLK,
 		   dcpReqF$D_OUT[39:32],
 		   dcpReqF$D_OUT[23:2],
 		   dcpReqF$D_OUT[43:40] } } ;
+`else
+  assign cpReqF$D_IN = { dcpReqF$D_OUT[78:77] != 2'd1,
+			 dcpReqF$D_OUT[25:2], // DWADDR 24 bits, 64MB, 63 workers
+			 (dcpReqF$D_OUT[78:77] == 2'd1) ?
+			 { dcpReqF$D_OUT[75:72], dcpReqF$D_OUT[63:32] } :
+			 { dcpReqF$D_OUT[43:40], 24'h000000, dcpReqF$D_OUT[39:32] }
+			 } ;
+`endif
   assign cpReqF$ENQ =
 	     WILL_FIRE_RL_dcp_to_cp_request && dcpReqF$D_OUT[78:77] != 2'd0 &&
 	     dcpReqF_first__33_BITS_78_TO_77_34_EQ_1_37_AND_ETC___d207 ;

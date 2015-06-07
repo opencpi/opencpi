@@ -1,4 +1,3 @@
-
 # #####
 #
 #  This file is part of OpenCPI (www.opencpi.org).
@@ -30,8 +29,8 @@
 # This directory should only depend on the "primitives" library
 
 Package=ocpi.devices
-XmlIncludeDirs=../../components/specs
-Workers = \
+XmlIncludeDirs=../../components/specs ../devices/lib/hdl
+Workers = zipper_i2c.hdl
 #	limeSPI.hdl \
 #        limeTx.hdl
 include $(OCPI_CDK_DIR)/include/lib.mk

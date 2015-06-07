@@ -11,16 +11,9 @@ architecture rtl of lime_adc_worker is
   -- ADC clock domain
   signal adc_clk      : std_logic;
   signal adc_data     : std_logic_vector(23 downto 0);
-  signal adc_ready    : bool_t;
   signal adc_give     : bool_t;
   signal hold_i_r     : std_logic_vector(11 downto 0); -- hold I waiting for Q
 begin
-  -- Route the raw property signals to the lime_spi
-  rawprops_out.present     <= '1';
-  rawprops_out.reset       <= ctl_in.reset;
-  rawprops_out.raw         <= props_in.raw;
-  props_out.raw            <= rawprops_in.raw;
-  props_out.other_present  <= rawprops_in.present(1);
   -- Take data out of the FIFO and sign extend each I/Q part
   out_out.data             <= (31 downto 28 => wsi_data(23)) & wsi_data(23 downto 12) &
                               (15 downto 12 => wsi_data(11)) & wsi_data(11 downto 0);
@@ -50,7 +43,7 @@ begin
   end process;
 
   -- Temp signals necessary only because of older VHDL restrictions on "actuals".
-  adc_give             <= to_bool(adc_ready and rx_iq_sel = '1');
+  adc_give             <= to_bool(rx_iq_sel = '1');
   adc_data             <= rxd & hold_i_r;
   fifo : entity work.adc_fifo
     generic map(width       => 24,
@@ -69,5 +62,6 @@ begin
                 messageSize => props_in.messageSize,
                 -- In ADC clock domain
                 adc_clk     => adc_clk,
+                adc_give    => adc_give,
                 adc_data    => adc_data);
 end rtl;

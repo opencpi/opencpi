@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -31,7 +30,6 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 
 /*
  * Abstact:
@@ -149,8 +147,11 @@ dispatch(DataTransfer::EventManager* event_manager)
   } catch(...) {
     ocpiBad("RCC Container dispatch thread encountered transport exception.  Shutting down.");
     // Release all the current workers if there is a transport failure.
-    for (Application *a = OU::Parent<Application>::firstChild(); a; a = a->nextChild())
-      a->release();
+    for (Application *a = OU::Parent<Application>::firstChild(); a; a = a->nextChild()) {
+      a->release(true, false);
+      a->release(true, true);
+      a->release(false, false);
+    }
     return DispatchNoMore;
   }
   //#define VECTOR_BUFFERS_FROM_EVENTS

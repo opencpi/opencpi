@@ -105,7 +105,7 @@ namespace OCPI {
 	OCPI::Container::Worker &
 	  createWorker(OCPI::Container::Artifact *art, const char *appInstName,
 		       ezxml_t impl, ezxml_t inst, OCPI::Container::Worker *slave,
-		       const OCPI::Util::PValue *wParams);
+		       bool hasMaster, const OCPI::Util::PValue *wParams);
 
       /**********************************
        * Constructor

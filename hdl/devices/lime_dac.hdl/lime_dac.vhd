@@ -16,12 +16,6 @@ architecture rtl of lime_dac_worker is
   signal dac_take     : bool_t;    -- take data from FIFO
   signal sel_iq_r     : bool_t;    -- true for I, false for Q, sent to lime
 begin
-  -- Control plane outputs.  Raw props routed to underlying SPI, raw done from SPI respected
-  rawprops_out.present    <= '1';
-  rawprops_out.reset      <= ctl_in.reset;
-  rawprops_out.raw        <= props_in.raw;
-  props_out.raw           <= rawprops_in.raw;
-  props_out.other_present <= rawprops_in.present(0);
   --------------------------------------------------------------------------------
   -- DAC Sample Clock choices
   --------------------------------------------------------------------------------

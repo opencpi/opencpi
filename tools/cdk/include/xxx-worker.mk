@@ -288,7 +288,7 @@ ifdef LibDir
 # export directory for this target
 
 # $(call DoLink,<target>,<binary>,<linkname>,<confname>,<rmrvname>)
-MyBBLibFile=$(infox MBB:$1:$2:$3)$(call BBLibFile,$1,$(call HdlRmRv,$(basename $2))$(if $(filter 0,$3),,_c$3),$3,$1)
+MyBBLibFile=$(infox MBB:$1:$2:$3)$(call BBLibFile,$1,$(call RmRv,$(basename $2))$(if $(filter 0,$3),,_c$3),$3,$1)
 define DoLink
   $(infox DoLink:$1:$2:$3:$4:$5)
   $$(infox DoLink2:$1:$2:$3:$4:$5)
@@ -296,8 +296,8 @@ define DoLink
   ifeq ($(Model),hdl)
     $(LibDir)/$1/$(basename $3)-generics.vhd: | $(LibDir)/$1
 	$(AT)$$(call MakeSymLink2,$(call WkrTargetDir,$1,$4)/generics.vhd,$(LibDir)/$1,$(basename $3)-generics.vhd)
-	$(AT)if test -f $(call WkrTargetDir,$1,$4)/$(call HdlRmRv,$(basename $2)).cores; then \
-               $$(call MakeSymLink,$(call WkrTargetDir,$1,$4)/$(call HdlRmRv,$(basename $2)).cores,$(LibDir)/$1);\
+	$(AT)if test -f $(call WkrTargetDir,$1,$4)/$(call RmRv,$(basename $2)).cores; then \
+               $$(call MakeSymLink,$(call WkrTargetDir,$1,$4)/$(call RmRv,$(basename $2)).cores,$(LibDir)/$1);\
              fi
   endif
   $(LibDir)/$1/$3: $(call WkrTargetDir,$1,$4)/$2 $(and $(filter hdl,$(Model)),$(LibDir)/$1/$(basename $3)-generics.vhd) | $(LibDir)/$1
@@ -330,7 +330,7 @@ define DoLinks
   $(foreach c,$(ParamConfigurations),\
     $(foreach n,$(WkrExportNames),\
      $(foreach b,$(basename $(notdir $n)),\
-       $(foreach r,$(call HdlRmRv,$b)$(if $(filter 0,$c),,_c$c),
+       $(foreach r,$(call RmRv,$b)$(if $(filter 0,$c),,_c$c),
          $(foreach l,$b$(if $(filter 0,$c),,_c$c),\
            $(infox LLL:$c:$n:$b:$r:$l:$1:$(HdlToolSet_$1))\
            $(call DoLink,$1,$(strip\

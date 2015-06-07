@@ -512,12 +512,14 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
   std::string suff;
   if (i->worker->m_paramConfig && i->worker->m_paramConfig->nConfig)
     OU::format(suff, "_c%zu", i->worker->m_paramConfig->nConfig);
+  std::string pkg;
   if (lang == Verilog)
     fprintf(f, "%s%s", i->worker->m_implName, suff.c_str());
-  else
-    fprintf(f, "  %s_i : component %s%s.%s_defs.%s_rv%s\n",
-	    i->name, i->worker->m_library, suff.c_str(), i->worker->m_implName,
-	    i->worker->m_implName, suff.c_str());
+  else {
+    OU::format(pkg, "%s%s.%s_defs", i->worker->m_library, suff.c_str(), i->worker->m_implName);
+    fprintf(f, "  %s_i : component %s.%s_rv%s\n",
+	    i->name, pkg.c_str(), i->worker->m_implName, suff.c_str());
+  }
   bool any = false;
   if (i->properties.size()) {
     unsigned n = 0;
@@ -528,7 +530,8 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
 	std::string value;
 	if (lang == VHDL) {
 	  fprintf(f, any ? ",\n              "  : "  generic map(");
-	  fprintf(f, "%s => %s", pr->m_name.c_str(), vhdlValue(pr->m_name, pv->value, value));
+	  fprintf(f, "%s => %s", pr->m_name.c_str(),
+		  vhdlValue(pkg.c_str(), pr->m_name, pv->value, value));
 	} else {
 	  fprintf(f, "%s", any ? ", " : " #(");
 #if 0
@@ -842,7 +845,7 @@ emitWorkersHDL(const char *outFile)
     if (i->worker->m_paramConfig && i->worker->m_paramConfig->nConfig)
       OU::format(suff, "_c%zu", i->worker->m_paramConfig->nConfig);
 #endif
-    fprintf(f, "%s:%u:%s\n", i->worker->m_implName,
+    fprintf(f, "%s:%zu:%s\n", i->worker->m_implName,
 	    i->worker->m_paramConfig ? i->worker->m_paramConfig->nConfig : 0, i->name);
   }
   fprintf(f, "# end of instances\n");

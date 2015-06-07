@@ -682,7 +682,7 @@ extern const char
   *extractExprValue(const OU::Property &p, const OU::Value &v, OU::ExprValue &val),
   *parseList(const char *list, const char * (*doit)(const char *tok, void *arg), void *arg),
   *parseControlOp(const char *op, void *arg),
-  *vhdlValue(const std::string &name, const OU::Value &v, std::string &value,
+  *vhdlValue(const char *pkg, const std::string &name, const OU::Value &v, std::string &value,
 	     bool param = false),
   *verilogValue(const OU::Value &v, std::string &value),
   *rccValue(OU::Value &v, std::string &value),

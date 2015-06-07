@@ -6,5 +6,5 @@
   <property name="overrun" type="Bool" writable='1' volatile="true"/>
   <!-- Size of the message in BYTES that will be produced.
        Partial messages may be produced under some circomstances. -->
-  <property name="messageSize" initial='1'/>
+  <property name="messageSize" initial='1' readable='1'/>
 </properties>

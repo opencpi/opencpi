@@ -143,14 +143,14 @@ Application::
 OC::Worker &
 Application::
 createWorker(OC::Artifact *art, const char *appInstName,
-	     ezxml_t impl, ezxml_t inst, OC::Worker *slave,
+	     ezxml_t impl, ezxml_t inst, OC::Worker *slave, bool hasMaster,
 	     const OCPI::Util::PValue *wParams)
 {
   OU::SelfAutoMutex guard (&container());
   if ( appInstName ) 
-    return *new Worker(*this, art ? static_cast<Artifact*>(art) : NULL, appInstName, impl, inst, slave, wParams);
+    return *new Worker(*this, art ? static_cast<Artifact*>(art) : NULL, appInstName, impl, inst, slave, hasMaster, wParams);
   else 
-    return *new Worker(*this, art ? static_cast<Artifact*>(art) : NULL, "unnamed-worker", impl, inst, slave, wParams);
+    return *new Worker(*this, art ? static_cast<Artifact*>(art) : NULL, "unnamed-worker", impl, inst, slave, hasMaster, wParams);
 }
 
 void Application::

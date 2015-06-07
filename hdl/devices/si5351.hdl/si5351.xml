@@ -26,6 +26,8 @@
   <!-- Does this chip have a VCXO as input? -->
   <property name='vc_present' type='bool' parameter='1' readable='1' default='0'/>
   <property name='outputs_present' type='bool' arraylength='8' parameter='1' readable='1' default='0'/>
+  <property name='oeb_mode' type='enum' parameter='1' enums='low,high,connected' readable='1' default='low'/>
+  <property name='intr_connected' type='bool' parameter='1' readable='1' default='0'/>
   <!-- ==============================================================
        Hardware registers in this chip
        ============================================================== -->
@@ -82,4 +84,8 @@
   <property name='reserved04'	 type='uchar' padding='true'                   arraylength='68'/>      <!-- 188-255 -->
   <!--Need these signals to control i2c_opencores -->
   <rawprop name='rawprops' master='true'/>
+  <!-- Interrupt indication, when connected -->
+  <signal input='intr'/>
+ <!-- master output enable of all clock outputs, asserted LOW.  Disabled by reg 9 -->
+  <signal output='oeb'/>
 </HdlDevice>

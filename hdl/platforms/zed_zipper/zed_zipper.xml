@@ -29,12 +29,18 @@
   <signal  output='led' width='8'/>
   <!-- Make believe these are directly attached rather than a card plugged into the FMC slot -->
   <device worker='lime_adc'>
+    <property name='use_clk_in' value='1'/>
+    <property name='use_clk_out' value='0'/>
+    <property name='use_ctl_clk' value='0'/>
     <signal name='rx_clk' platform=''/>
+    <signal name='rx_clk_out' platform=''/>
   </device>
   <device worker='lime_dac'>
     <signal name='tx_clk' platform=''/>
   </device>
   <device worker='lime_spi'/>
+  <device worker='lime_rx'/>
+  <device worker='lime_tx'/>
   <device worker='si5351'>
     <!-- Input clock on Zipper is from the 30.72 MHz TXCO, via a CDCV304PW clock buffer -->
     <property name='clkin_present' value='1'/>
@@ -51,6 +57,8 @@
 	 7: Not connected
     -->
     <property name='outputs_present' value='1,0,1,1,1,1,0,0'/>
+    <signal name='intr' platform=''/>
+    <signal name='oeb' platform=''/>
   </device>
   <device worker='zipper_i2c'/>
 </HdlPlatform>

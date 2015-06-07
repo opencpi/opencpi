@@ -124,10 +124,10 @@ found(const char *name, OP::Bar *bars, unsigned nbars, bool verbose) {
     }
     {
       volatile OH::OccpWorkerRegisters *w = &occp->worker[0].control;
-      uint32_t bits = occp->admin.config;
+      uint64_t bits = occp->admin.present;
       volatile uint8_t *uuid;
       // new platform worker: worker zero connected
-      if (bits != (uint32_t)-1 && (bits & 1)) {
+      if (bits != (uint64_t)-1 && (bits & 1)) {
 	uint32_t control = w->control;
 	if (!(control & OCCP_WORKER_CONTROL_ENABLE))
 	  w->control = control | OCCP_WORKER_CONTROL_ENABLE;

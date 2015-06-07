@@ -20,7 +20,7 @@
   <property name='tx_nint'      type='uchar' writable='true' volatile='true'/>  <!--10-->
   <property name='tx_nfrac_hi'  type='uchar' writable='true' volatile='true'/>  <!--11-->
   <property name='tx_nfrac_mid' type='uchar' writable='true' volatile='true'/>  <!--12-->
-  <property name='tx_nfrac_low' type='uchar' writable='true' volatile='true'/>  <!--13-->
+  <property name='tx_nfrac_lo'  type='uchar' writable='true' volatile='true'/>  <!--13-->
   <property name='tx_dither'    type='uchar' writable='true' volatile='true'/>  <!--14-->
   <property name='tx_freqsel'   type='uchar' writable='true' volatile='true'/>  <!--15-->
   <property name='tx_cpcurrent' type='uchar' writable='true' volatile='true'/>  <!--16-->
@@ -37,7 +37,7 @@
   <property name='rx_nint'      type='uchar' writable='true' volatile='true'/>  <!--20-->
   <property name='rx_nfrac_hi'  type='uchar' writable='true' volatile='true'/>  <!--21-->
   <property name='rx_nfrac_mid' type='uchar' writable='true' volatile='true'/>  <!--22-->
-  <property name='rx_nfrac_low' type='uchar' writable='true' volatile='true'/>  <!--23-->
+  <property name='rx_nfrac_lo'  type='uchar' writable='true' volatile='true'/>  <!--23-->
   <property name='rx_dither'    type='uchar' writable='true' volatile='true'/>  <!--24-->
   <property name='rx_freqsel'   type='uchar' writable='true' volatile='true'/>  <!--25-->
   <property name='rx_cpcurrent' type='uchar' writable='true' volatile='true'/>  <!--26-->

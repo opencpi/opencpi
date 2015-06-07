@@ -299,6 +299,7 @@ namespace OCPI
                                    ezxml_t impl,
                                    ezxml_t inst,
 				   OC::Worker *slave,
+				   bool hasMaster,
                                    const OCPI::Util::PValue* wParams );
 
         void run ( DataTransfer::EventManager* event_manager,
@@ -401,13 +402,16 @@ namespace OCPI
         OCPI::OS::Timer runTimer;
         std::vector<void*> myLocalMemories;
 
-        Worker ( Application& app,
-                 OC::Artifact* art,
-                 const char* name,
-                 ezxml_t implXml,
-                 ezxml_t instXml,
-                 const OA::PValue* execParams )
-	  : OC::WorkerBase<Application, Worker, Port> ( app, *this, art, name, implXml, instXml, execParams ),
+        Worker(Application& app,
+	       OC::Artifact* art,
+	       const char* name,
+	       ezxml_t implXml,
+	       ezxml_t instXml,
+	       OC::Worker *slave,
+	       bool hasMaster,
+	       const OA::PValue* execParams)
+	  : OC::WorkerBase<Application, Worker, Port>(app, *this, art, name, implXml, instXml,
+						      slave, hasMaster, execParams),
           isEnabled ( false ),
           myContainer ( app.parent() ),
           implName ( ezxml_attr ( implXml, "name" ) ),
@@ -968,10 +972,11 @@ namespace OCPI
                                             ezxml_t impl,
                                             ezxml_t inst,
 					    OC::Worker *slave,
+					    bool hasMaster,
                                             const OCPI::Util::PValue* wParams )
     {
       assert(!slave);
-      return *new Worker ( *this, art, appInstName, impl, inst, wParams );
+      return *new Worker(*this, art, appInstName, impl, inst, slave, hasMaster, wParams);
     }
 
     void Application::run ( DataTransfer::EventManager* event_manager,

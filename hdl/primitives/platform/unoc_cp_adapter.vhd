@@ -32,7 +32,7 @@ architecture rtl of unoc_cp_adapter is
 
       -- actionvalue method client_request_get
       EN_client_request_get   : in  std_logic ;
-      client_request_get      : out std_logic_vector(58 downto 0);
+      client_request_get      : out std_logic_vector(60 downto 0);
       RDY_client_request_get  : out std_logic;
 
       -- action method client_response_put
@@ -47,7 +47,7 @@ architecture rtl of unoc_cp_adapter is
   signal EN_client_response_put  : std_logic;
   signal server_response_get     : std_logic_vector(unoc_data_width-1 downto 0);
   -- Our request and response bundles
-  signal request : std_logic_vector(58 downto 0);
+  signal request : std_logic_vector(60 downto 0);
   signal response : std_logic_vector(39 downto 0);
 begin
   -- The outoing take signal is a DEQ to the producer side computed by us
@@ -61,16 +61,10 @@ begin
   cp_out.clk          <= client_in.clk;
   cp_out.reset        <= not client_in.reset_n;
   -- request fields to occp
-  cp_out.is_read      <= request(58);
-  cp_out.address      <= request(25 downto 4)
-                         when request(58) = '1' else
-                         request(57 downto 36);
-  cp_out.byte_en      <= request(3 downto 0)
-                         when request(58) = '1' else
-                         request(35 downto 32);
-  cp_out.data         <= x"000000" & request(33 downto 26)
-                         when request(58) = '1' else
-                         request(31 downto 0);
+  cp_out.is_read      <= request(60);
+  cp_out.address      <= request(59 downto 36);
+  cp_out.byte_en      <= request(35 downto 32);
+  cp_out.data         <= request(31 downto 0);
   cp_out.take         <= EN_client_response_put;
 
   response            <= cp_in.tag & cp_in.data;

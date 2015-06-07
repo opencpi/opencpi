@@ -68,7 +68,8 @@ namespace OCPI {
 								   wProps, wParams);
       // This is the special hack for passing in a dispatch table for RCC workers.
       else {
-	Worker &w = createWorker(NULL, instName, (ezxml_t)NULL, (ezxml_t)NULL, NULL, aParams);
+	Worker &w =
+	  createWorker(NULL, instName, (ezxml_t)NULL, (ezxml_t)NULL, NULL, false, aParams);
 	w.initialize();
 	return w;
       }
@@ -97,26 +98,39 @@ namespace OCPI {
     }
     Worker &Application::
     createWorker(OCPI::Library::Artifact &art, const char *appInstName, 
-		 ezxml_t impl, ezxml_t inst, Worker *slave,
+		 ezxml_t impl, ezxml_t inst, Worker *slave, bool hasMaster,
 		 const OCPI::Util::PValue *wParams) {
       // Load the artifact and create the worker
       return
-	container().loadArtifact(art).createWorker(*this, appInstName, impl, inst, slave, wParams);
+	container().loadArtifact(art).createWorker(*this, appInstName, impl, inst, slave,
+						   hasMaster, wParams);
     }
+    // If not master, then we ignore slave, so there are three cases
     void Application::
-    start() {
+    start(bool isMaster, bool isSlave) {
       for (Worker *w = firstWorker(); w; w = w->nextWorker())
-	if (w->getState() != OU::Worker::EXISTS)
+	if (w->getState() != OU::Worker::EXISTS &&
+	    (isMaster && w->slave() &&
+	     (isSlave && w->hasMaster() || !isSlave && !w->hasMaster())) ||
+	    (!isMaster && !w->slave()))
 	  w->start();
     }
+    // If not master, then we ignore slave, so there are three cases
     void Application::
-    stop() {
+    stop(bool isMaster, bool isSlave) {
       for (Worker *w = firstWorker(); w; w = w->nextWorker())
+	if ((isMaster && w->slave() &&
+	     (isSlave && w->hasMaster() || !isSlave && !w->hasMaster())) ||
+	    (!isMaster && !w->slave()))
 	w->stop();
     }
+    // If not master, then we ignore slave, so there are three cases
     void Application::
-    release() {
+    release(bool isMaster, bool isSlave) {
       for (Worker *w = firstWorker(); w; w = w->nextWorker())
+	if ((isMaster && w->slave() &&
+	     (isSlave && w->hasMaster() || !isSlave && !w->hasMaster())) ||
+	    (!isMaster && !w->slave()))
 	w->release();
     }
     bool Application::

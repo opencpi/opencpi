@@ -75,9 +75,9 @@ namespace OCPI {
       void setApplication(OCPI::API::Application *app) { m_apiApplication = app; }
       OCPI::API::Application *getApplication() { return m_apiApplication; }
       virtual Container &container() = 0;
-      virtual Worker & createWorker(Artifact *, const char *appInstName,
-				    ezxml_t impl, ezxml_t inst, Worker *slave,
-				    const OCPI::Util::PValue *wparams) = 0;
+      virtual Worker &createWorker(Artifact *, const char *appInstName,
+				   ezxml_t impl, ezxml_t inst, Worker *slave, bool hasMaster,
+				   const OCPI::Util::PValue *wparams) = 0;
       virtual ~Application();
 
       // This the API method using explicit artifact file names
@@ -96,14 +96,15 @@ namespace OCPI {
 				      const char *selectCriteria = NULL,
 				      const OCPI::API::Connection *connections = NULL);
       Worker &createWorker(OCPI::Library::Artifact &art, const char *appInstName, 
-			   const ezxml_t impl, const ezxml_t inst, Worker *slave,
+			   const ezxml_t impl, const ezxml_t inst, Worker *slave, bool hasMaster,
 			   const OCPI::Util::PValue *wparams = NULL);
 
 
       virtual Worker *firstWorker() const = 0;
-      void start();
-      void stop();
-      void release();
+      // If not master, then we ignore slave, so there are three cases
+      void start(bool isMaster, bool isSlave);
+      void stop(bool isMaster, bool isSlave);
+      void release(bool isMaster, bool isSlave);
       bool isDone();
       // This method should block until all the workers in the application are "done".
       virtual bool wait(OCPI::OS::Timer *timer = NULL);

@@ -54,7 +54,6 @@ function get_op_pos(input: control_op_t) return natural;
 
 type worker_t is record
   decode_width      : natural;
-  first_raw         : natural;
   raw_property_base : natural;
   allowed_ops       : control_op_mask_t;
 end record worker_t;

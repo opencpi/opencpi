@@ -129,6 +129,8 @@ namespace OCPI {
       OCPI::OS::Mutex m_workerMutex;
       OCPI::OS::Mutex m_controlMutex; // HACK since sched_yield is busted with SCHED_OTHER
       bool m_controlOpPending;
+      Worker *m_slave;
+      bool m_hasMaster;
       bool beforeStart();
     protected:
       void checkControl();
@@ -139,7 +141,10 @@ namespace OCPI {
       inline const Artifact *artifact() const { return m_artifact; }
       inline ezxml_t myXml() const { return m_xml; }
       inline ezxml_t myInstXml() const { return m_instXml; }
-      Worker(Artifact *art, ezxml_t impl, ezxml_t inst, const OCPI::Util::PValue *props = NULL);
+      inline bool hasMaster() const { return m_hasMaster; }
+      inline Worker *slave() const { return m_slave; }
+      Worker(Artifact *art, ezxml_t impl, ezxml_t inst, Worker *slave, bool hasMaster,
+	     const OCPI::Util::PValue *props = NULL);
       OCPI::API::PropertyInfo &setupProperty(const char *name,
 					     volatile void *&m_writeVaddr,
 					     const volatile void *&m_readVaddr);

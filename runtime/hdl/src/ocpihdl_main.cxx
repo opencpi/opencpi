@@ -652,7 +652,8 @@ testdma(const char **) {
 }
 static void
 admin(const char **) {
-  uint32_t i, j, k;
+  uint32_t i, k;
+  uint64_t j;
   time_t epochtime;
   struct tm *etime, *ntime;
   static union {
@@ -669,13 +670,13 @@ admin(const char **) {
   printf(" OpenCpi:      0x%016llx \"%s\"\n", (unsigned long long)u.uint, u.c);
   printf(" revision:     0x%08x\n", cAccess->get32Register(revision, OH::OccpAdminRegisters));
   printf(" birthday:     0x%08x %s", (uint32_t)epochtime, asctime(etime));
-  printf(" workerMask:   0x%08x workers", j = cAccess->get32Register(config, OH::OccpAdminRegisters));
-  for (i = 0; i < sizeof(uint32_t) * 8; i++)
+  printf(" workerMask:   0x%08" PRIx64 " workers", j = cAccess->get64Register(present, OH::OccpAdminRegisters));
+  for (i = 0; i < sizeof(uint64_t) * 8; i++)
     if (j & (1 << i))
       printf(" %d", i);
   printf(" exist\n");
   printf(" pci_dev_id:   0x%08x\n", cAccess->get32Register(pciDevice, OH::OccpAdminRegisters));
-  printf(" attention:    0x%08x\n", cAccess->get32Register(attention, OH::OccpAdminRegisters));
+  printf(" attention:    0x%08" PRIx64 "\n", cAccess->get64Register(attention, OH::OccpAdminRegisters));
   printf(" cpStatus:     0x%08x\n", cAccess->get32Register(status, OH::OccpAdminRegisters));
   printf(" scratch20:    0x%08x\n", cAccess->get32Register(scratch20, OH::OccpAdminRegisters));
   printf(" scratch24:    0x%08x\n", cAccess->get32Register(scratch24, OH::OccpAdminRegisters));
@@ -1693,7 +1694,7 @@ class Worker : public OC::Worker, public OH::WciControl {
   std::string m_name, m_wName;
 public:
   Worker(ezxml_t impl, ezxml_t inst, const char *idx) 
-    : OC::Worker(NULL, impl, inst),
+    : OC::Worker(NULL, impl, inst, NULL, false),
       OH::WciControl(*dev, impl, inst, properties(), false),
       m_name(ezxml_cattr(inst, "name")),
       m_wName(ezxml_cattr(impl, "name"))
