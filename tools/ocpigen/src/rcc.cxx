@@ -371,9 +371,6 @@ emitImplRCC() {
   fprintf(f,
 	  " * This file contains the implementation declarations for the %s worker in %s\n"
 	  " */\n\n"
-	  "#ifndef __STDC_FORMAT_MACROS\n"
-	  "#define __STDC_FORMAT_MACROS\n"
-	  "#endif\n"
 	  "#ifndef RCC_WORKER_%s_H__\n"
 	  "#define RCC_WORKER_%s_H__\n"
 	  "#include <RCC_Worker.h>\n",
@@ -568,11 +565,11 @@ emitImplRCC() {
 		  fprintf(f, "%sidx%u*%zu", n ? " + " : "", n, offsets[n]);
 		fprintf(f,
 			";\n"
-			"      m_worker.set%sProperty(%u, idx, val);\n",
+			"      m_worker.set%sProperty(%u, val, idx);\n",
 			pretty.c_str(), p.m_ordinal);
 	      } else
 		fprintf(f,
-			"      m_worker.set%sProperty(%u, 0, val);\n",
+			"      m_worker.set%sProperty(%u, val, 0);\n",
 			pretty.c_str(), p.m_ordinal);
 	      fprintf(f,
 		      "#if !defined(NDEBUG)\n"
@@ -580,10 +577,10 @@ emitImplRCC() {
 		      p.m_name.c_str());
 	      if (p.m_arrayRank)
 		fprintf(f,
-			" at index %%u(0x%%x): 0x%%\" PRIx64, idx, idx, (uint64_t)val);\n");
+			" at index %%u(0x%%x): 0x%%llx\", idx, idx, (unsigned long long)val);\n");
 	      else
 		fprintf(f,
-			": 0x%%\" PRIx64, (uint64_t)val);\n");
+			": 0x%%llx\", (unsigned long long)val);\n");
 	      fprintf(f,
 		      "#endif\n"
 		      "    }\n");

@@ -25,3 +25,4 @@ echo Discovering available containers...
 ocpirun -C
 # Since we are sourcing this script we can't use "exit", do "done" is for "break"
 done
+trap - ERR

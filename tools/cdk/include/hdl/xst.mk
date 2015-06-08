@@ -265,7 +265,7 @@ XstNeedIni= $(strip $(XstLibraries)$(ComponentLibraries)$(CDKCompenentLibraries)
 # Choices as to where a bb might be
 # 1. For pointing to a built target directory with the filename being the core name,
 #    where the core, and bblib is built.  Core is $1.$(HdlBin) Lib is $(dir $1)/bb/$(notdir $1)
-XstCoreLibraryChoices=$(info XCLT:$1:$2)$(strip \
+XstCoreLibraryChoices=$(infox XCLT:$1:$2)$(strip \
   $(and $(filter target-%,$(subst /, ,$1)),$(dir $1)/bb/$(notdir $1)) \
   $(and $(filter target-%,$(subst /, ,$1)),$(dir $1)/bb/$(patsubst %_rv,%,$(notdir $1))) \
   $(call HdlLibraryRefDir,$1_bb,$(if $(HdlTarget),$(call HdlGetFamily,$(HdlTarget)),NONE3)) \
@@ -309,7 +309,7 @@ XstMakeIni=\
            $(call HdlLibraryRefDir,$(l),$(HdlTarget)))));) \
    $(foreach l,$(infox SubCores:$(SubCores_$(HdlTarget)))$(SubCores_$(HdlTarget)),\
       echo $(call XstLibFromCore,$l)=$(call FindRelative,$(TargetDir),$(strip \
-          $(firstword $(foreach c,$(call XstCoreLibraryChoices,$(call XstPathFromCore,$l),a),$(info CECEL:$c)$(call HdlExists,$c)))));) \
+          $(firstword $(foreach c,$(call XstCoreLibraryChoices,$(call XstPathFromCore,$l),a),$(infox CECEL:$c)$(call HdlExists,$c)))));) \
   ) > $(XstIniFile);
 
 XstOptions += $(and $(XstNeedIni),-lso $(XstLsoFile))

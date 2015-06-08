@@ -35,8 +35,10 @@ else
     export TZ=$5
     export LD_LIBRARY_PATH+=$OCPI_BASE_DIR/ocpi/lib/linux-zynq-arm
     echo OpenCPI ready for zed.
-    if test -r $OCPI_BASE_DIR/platforms/zed/mynetsetup.sh; then
-       source $OCPI_BASE_DIR/platforms/zed/mynetsetup.sh
+    if test -r /mnt/card/opencpi/mynetsetup.sh; then
+       source /mnt/card/opencpi/mynetsetup.sh
+    else
+       echo Error: enable to find /mnt/card/opencpi/mynetsetup.sh
     fi
 EOF
   source $HOME/.profile

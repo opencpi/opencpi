@@ -887,7 +887,6 @@ controlOperation(OU::Worker::ControlOperation op) {
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		    \
       run Worker::get##pretty##Property(unsigned ordinal, unsigned idx) const { \
         OA::PropertyInfo &info = properties()[ordinal];                     \
-	assert("slave property access to rcc unsupported"==0);              \
 	if (info.m_readSync)						    \
 	  propertyRead(ordinal);					    \
         if (info.m_readError )					            \
