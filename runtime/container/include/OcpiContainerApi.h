@@ -203,7 +203,7 @@ namespace OCPI {
 				   const PValue *wParams = NULL,
 				   const char *selectCriteria = NULL,
 				   const Connection *connections = NULL) = 0;
-      // virtual void start() = 0;
+      virtual void start() = 0;
     };
     class Container {
     public:

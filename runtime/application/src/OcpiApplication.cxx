@@ -748,13 +748,13 @@ namespace OCPI {
       ocpiDebug("Using %d containers to support the application", m_nContainers );
       ocpiDebug("Starting master workers that are not slaves.");
       for (unsigned n = 0; n < m_nContainers; n++)
-	m_containerApps[n]->start(true, false); // start masters that are not slaves
+	m_containerApps[n]->startMasterSlave(true, false); // start masters that are not slaves
       ocpiDebug("Starting master workers that are also slaves.");
       for (unsigned n = 0; n < m_nContainers; n++)
-	m_containerApps[n]->start(true, true);  // start masters that are slaves
+	m_containerApps[n]->startMasterSlave(true, true);  // start masters that are slaves
       ocpiDebug("Starting workers that are not masters.");
       for (unsigned n = 0; n < m_nContainers; n++)
-	m_containerApps[n]->start(false, false); // start non-masters
+	m_containerApps[n]->startMasterSlave(false, false); // start non-masters
     };
     void ApplicationI::stop() {
       ocpiDebug("Stopping master workers that are not slaves.");

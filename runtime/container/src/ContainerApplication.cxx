@@ -107,7 +107,7 @@ namespace OCPI {
     }
     // If not master, then we ignore slave, so there are three cases
     void Application::
-    start(bool isMaster, bool isSlave) {
+    startMasterSlave(bool isMaster, bool isSlave) {
       for (Worker *w = firstWorker(); w; w = w->nextWorker())
 	if (w->getState() != OU::Worker::EXISTS &&
 	    (isMaster && w->slave() &&
@@ -146,6 +146,12 @@ namespace OCPI {
 	if (w->wait(timer))
 	  return true;
       return false;
+    }
+    void Application::
+    start() {
+      startMasterSlave(true, false); // start masters that are not slaves
+      startMasterSlave(true, true);  // start masters that are slaves
+      startMasterSlave(false, false); // start non-masters
     }
   }
   namespace API {

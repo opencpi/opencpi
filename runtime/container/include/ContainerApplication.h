@@ -101,8 +101,9 @@ namespace OCPI {
 
 
       virtual Worker *firstWorker() const = 0;
+      void start();
       // If not master, then we ignore slave, so there are three cases
-      void start(bool isMaster, bool isSlave);
+      void startMasterSlave(bool isMaster, bool isSlave);
       void stop(bool isMaster, bool isSlave);
       void release(bool isMaster, bool isSlave);
       bool isDone();
