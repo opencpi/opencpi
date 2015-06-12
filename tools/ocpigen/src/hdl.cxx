@@ -342,22 +342,4 @@ emitConnectionSignal(FILE *f, const char *iname, const char *pattern, bool singl
   fprintf(f, ";\n");
 }
 
-void Worker::
-emitDeviceConnectionSignals(FILE *f, const char *iname, bool container) {
-  for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
-    Signal &s = **si;
-    if (s.m_differential && m_emulate) {
-      s.emitConnectionSignal(f, iname, s.m_pos.c_str(), false);
-      s.emitConnectionSignal(f, iname, s.m_neg.c_str(), false);
-    } else if (s.m_direction == Signal::INOUT && (m_emulate || container)) {
-      // Suppress the prefix if the instance is a configuration since
-      // device signals are already prefixed.
-      const char *prefix = m_type == Configuration ? NULL : iname;
-      s.emitConnectionSignal(f, prefix, s.m_in.c_str(), false);
-      s.emitConnectionSignal(f, prefix, s.m_out.c_str(), false);
-      s.emitConnectionSignal(f, prefix, s.m_oe.c_str(), true);
-    } else if (m_emulate)
-      s.emitConnectionSignal(f, iname, "%s", false);
-  }
-}
 

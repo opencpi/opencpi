@@ -118,7 +118,7 @@ begin
                error_e    when wci_in.SResp = ocpi.ocp.SResp_ERR or
                                wci_in.SResp = ocpi.ocp.SResp_FAIL else
                timedout_e when worker_in.timedout = '1' else
-               busy_e     when not ready_r else
+               busy_e     when starting and not its(ready_r) else
                none_e;
   worker_out.response   <= response when its(active_r) else none_e;
   worker_out.attention  <= wci_in.SFlag(0);

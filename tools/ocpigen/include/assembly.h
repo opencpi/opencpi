@@ -92,6 +92,8 @@ struct Instance {
   size_t config;       // hack ditto
   ExtMap m_extmap;     // map for externals. FIXME: have HdlInstance class...
   Instance();
+  void emitHdl(FILE *f, const char *prefix, size_t &index);
+  void emitDeviceConnectionSignals(FILE *f, bool container);
 };
 // To represent an attachment of a connection to an instance port.
 // This is currently only used for indexed ports

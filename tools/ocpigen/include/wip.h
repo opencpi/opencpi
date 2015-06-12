@@ -629,7 +629,7 @@ class Worker : public Parsed, public OU::IdentResolver {
   virtual void
     emitDeviceSignalMapping(FILE *f, std::string &last, Signal &s),
     emitDeviceSignal(FILE *f, Language lang, std::string &last, Signal &s),
-    recordSignalConnection(Signal &s),
+    recordSignalConnection(Signal &s, const char *from),
     emitTieoffSignals(FILE *f),
     emitXmlWorkers(FILE *f),
     emitXmlInstances(FILE *f),

@@ -1,4 +1,3 @@
-#define __STDC_LIMIT_MACROS
 #include <stdint.h>
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
@@ -165,12 +164,13 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
       // FIXME:  Apologies for this gross unconsting, but its the least of various evils
       // Fixing would involve allowing containers to own devices...
       HdlPlatform &pf = *(HdlPlatform *)&m_platform;
-      if ((err = pf.addFloatingDevice(dx, xfile, this, name)))
-	return;
-    }
+      err = pf.addFloatingDevice(dx, xfile, this, name);
+    } else
+      err = OE::getRequiredString(dx, name, "name");
     // We have a device to add to the container that exists on the platform or on a card
-    err = parseDevInstance(name.c_str(), dx, m_file.c_str(), this, false,
-			   &m_config.devInstances(), NULL, NULL);
+    if (err || (err = parseDevInstance(name.c_str(), dx, m_file.c_str(), this, false,
+				       &m_config.devInstances(), NULL, NULL)))
+      return;
   }
   // Establish connections, WHICH MAY ALSO IMPLICITLY CREATE DEVICE INSTANCES
   ContConnects connections;
@@ -427,8 +427,13 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 	Signal *cs = NULL; // The container signal we will create
 	if ((*di)->m_sigmap.findSignal((*si)->name(), bs)) {
 	  // There is a mapping, but it might be NULL if the signal is not on the platform
-	  if (bs)
+	  if (bs) {
 	    cs = new Signal(*bs); // clone the board signal for the container signal
+	    // If the board signal is bidirectional (can be anything), it should inherit
+	    // the direction of the device's signal
+	    if (bs->m_direction == Signal::BIDIRECTIONAL)
+	      bs->m_direction = (*si)->m_direction;
+	  }
 	} else {
 	  // No mapping - the device signal has the default mapping - clone the device signal
 	  cs = new Signal(**si);
@@ -804,9 +809,10 @@ emitContainerImplHDL(FILE *f) {
 }
 
 void HdlContainer::
-recordSignalConnection(Signal &s) {
+recordSignalConnection(Signal &s, const char *from) {
   assert(m_connectedSignals.find(&s) == m_connectedSignals.end());
-  m_connectedSignals.insert(&s);
+  m_connectedSignals[&s] = from;
+  //  m_connectedSignals.insert(&s);
 }
 void HdlContainer::
 emitDeviceSignalMapping(FILE *f, std::string &last, Signal &s) {
@@ -830,7 +836,8 @@ void HdlContainer::
 emitTieoffSignals(FILE *f) {
   for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
     Signal &s = **si;
-    if (m_connectedSignals.find(*si) == m_connectedSignals.end()) {
+    ConnectedSignalsIter csi = m_connectedSignals.find(*si);
+    if (csi == m_connectedSignals.end()) {
       // Assign device signal tieoffs for signals with no connections.
       std::string name;
       switch (s.m_direction) {
@@ -873,9 +880,9 @@ emitTieoffSignals(FILE *f) {
       }
     } else if (s.m_direction == Signal::INOUT) {
       std::string in, out, oe;
-      OU::format(in, s.m_in.c_str(), s.name());
-      OU::format(out, s.m_out.c_str(), s.name());
-      OU::format(oe, s.m_oe.c_str(), s.name());
+      OU::format(in, s.m_in.c_str(), csi->second.c_str());
+      OU::format(out, s.m_out.c_str(), csi->second.c_str());
+      OU::format(oe, s.m_oe.c_str(), csi->second.c_str());
       // Signal has a connection and is INOUT - generate the top level tristate
       fprintf(f,
 	      "  -- Inout signal \"%s\" needs a tristate buffer.\n"

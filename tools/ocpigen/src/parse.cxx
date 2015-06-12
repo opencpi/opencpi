@@ -30,8 +30,6 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-#define __STDC_LIMIT_MACROS // wierd standards goof up
 #include <stdint.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -1083,7 +1081,7 @@ findProperty(const char *name) const {
   return NULL;
 }
 void Worker::
-recordSignalConnection(Signal &/*s*/) {
+recordSignalConnection(Signal &/*s*/, const char */*from*/) {
 }
 void Worker::
 emitTieoffSignals(FILE */*f*/) {

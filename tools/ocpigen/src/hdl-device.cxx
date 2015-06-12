@@ -451,10 +451,15 @@ parseInstance(Worker &parent, Instance &i, ezxml_t x) {
       if (i.m_extmap.findSignal(external, dummy) && s->m_direction == Signal::OUT)
 	return OU::esprintf("Multiple outputs drive external \"%s\" for worker \"%s\" "
 			    "instance \"%s\"", external.c_str(), m_implName, i.name);
-      if (parent.m_sigmap.find(external.c_str()) == parent.m_sigmap.end())
+      Signal *ps = parent.m_sigmap.findSignal(external.c_str());
+      if (!ps)
 	return OU::esprintf("External signal \"%s\" specified for signal \"%s\" of "
 			    "instance \"%s\" of worker \"%s\" is not an external signal of the "
 			    "assembly", external.c_str(), name.c_str(), i.name, m_implName);
+      // If the board signal is bidirectional (can be anything), it should inherit
+      // the direction of the device's signal
+      if (ps->m_direction == Signal::BIDIRECTIONAL)
+	ps->m_direction = s->m_direction;
     }
     i.m_extmap.push_back(s, index, external, hasIndex);
   }

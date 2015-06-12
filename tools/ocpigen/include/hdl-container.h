@@ -35,7 +35,10 @@ class HdlAssembly;
 class HdlContainer : public Worker, public HdlHasDevInstances {
   HdlAssembly &m_appAssembly;
   HdlConfig   &m_config;
-  std::set<Signal*> m_connectedSignals;
+  // This maps top level signals to the instance signal it is mapped from.
+  typedef std::map<Signal*,std::string> ConnectedSignals;
+  ConnectedSignals m_connectedSignals;
+  typedef ConnectedSignals::iterator ConnectedSignalsIter;
   const char *
   parseConnection(ezxml_t cx, ContConnect &c);
   const char *
@@ -57,7 +60,7 @@ public:
   void 
     emitDeviceSignalMapping(FILE *f, std::string &last, Signal &s),
     emitDeviceSignal(FILE *f, Language lang, std::string &last, Signal &s),
-    recordSignalConnection(Signal &s),
+    recordSignalConnection(Signal &s, const char *from),
     emitTieoffSignals(FILE *f),
     emitXmlWorkers(FILE *f),
     emitXmlInstances(FILE *f),
