@@ -522,8 +522,8 @@ emitConfigImplHDL(FILE *f) {
   fprintf(f,
 	  "Library IEEE; use IEEE.std_logic_1164.all;\n"
 	  "Library ocpi; use ocpi.all, ocpi.types.all;\n"
-          "use work.%s_defs.all;\n",
-	  m_implName);
+          "use work.%s_defs.all, work.%s_constants.all;\n",
+	  m_implName, m_implName);
   emitVhdlLibraries(f);
   fprintf(f,
 	  "\nentity %s_rv is\n", m_implName);

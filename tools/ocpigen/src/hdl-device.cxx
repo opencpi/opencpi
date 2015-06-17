@@ -258,6 +258,8 @@ parse(ezxml_t xml, Board &b, SlotType *stype) {
 			      devSig->name());
 #endif
 	break;
+      case Signal::OUTIN:
+	return OU::esprintf("Emulators can not be used with slots");
       default:
 	;
       }

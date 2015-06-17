@@ -43,7 +43,7 @@ namespace OU = OCPI::Util;
 void
 emitSignal(const char *signal, FILE *f, Language lang, Signal::Direction dir,
 	   std::string &last, int width, unsigned n, const char *pref,
-	   const char *type, const char *value) {
+	   const char *type, const char *value, const char *widthExpr) {
   int pad = 22 - (int)strlen(signal);
   char *name;
   std::string num;
@@ -59,9 +59,13 @@ emitSignal(const char *signal, FILE *f, Language lang, Signal::Direction dir,
       OU::format(last, "  %s  %s%*s: %s %s%s%s%%s\n",
 		 pref, name, pad, "", io, type ? type : "std_logic",
 		 value ? " := " : "", value ? value : "");
-    } else
-      OU::format(last, "  %s  %s%*s: %s std_logic_vector(%u downto 0)%%s\n",
-		 pref, name, pad, "", io, width - 1);
+    } else {
+      std::string sw;
+      if (!widthExpr)
+	OU::format(sw, "%u", width);
+      OU::format(last, "  %s  %s%*s: %s std_logic_vector(%s-1 downto 0)%%s\n",
+		 pref, name, pad, "", io, widthExpr ? widthExpr : sw.c_str());
+    }
   } else {
     const char *io = dir == Signal::IN ? "input" : (dir == Signal::OUT ? "output" : "inout");
     if (last.size())
@@ -442,7 +446,7 @@ emitParameters(FILE *f, Language lang, bool useDefaults, bool convert) {
 	    vhdlValue(NULL, pr.m_name.c_str(), *pr.m_default, value, convert);
 	} else {
 	  std::string tmp;
-	  OU::format(tmp, "work.%s_defs.%s", m_implName, pr.m_name.c_str());
+	  OU::format(tmp, "work.%s_constants.%s", m_implName, pr.m_name.c_str());
 	  if (convert)
 	    vhdlConvert(pr.m_name, pr, tmp, value);
 	  else
@@ -500,6 +504,15 @@ emitDeviceSignal(FILE *f, Language lang, std::string &last, Signal &s) {
 	       s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
     OU::format(name, s.m_oe.c_str(), s.m_name.c_str());
     emitSignal(name.c_str(), f, lang, Signal::OUT, last, -1, 0, "", s.m_type);
+  } else if (s.m_direction == Signal::OUTIN) {
+    OU::format(name, s.m_in.c_str(), s.m_name.c_str());
+    emitSignal(name.c_str(), f, lang, Signal::OUT, last,
+	       s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
+    OU::format(name, s.m_out.c_str(), s.m_name.c_str());
+    emitSignal(name.c_str(), f, lang, Signal::IN, last,
+	       s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
+    OU::format(name, s.m_oe.c_str(), s.m_name.c_str());
+    emitSignal(name.c_str(), f, lang, Signal::IN, last, -1, 0, "", s.m_type);
   } else
     emitSignal(s.m_name.c_str(), f, lang, s.m_direction, last,
 	       s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
@@ -517,7 +530,8 @@ emitDeviceSignals(FILE *f, Language lang, std::string &last) {
 // 3. In the signal-to-record wrapper entity
 // 4. In the actual worker vhdl entity
 void Worker::
-emitSignals(FILE *f, Language lang, bool useRecords, bool inPackage, bool inWorker) {
+emitSignals(FILE *f, Language lang, bool useRecords, bool inPackage, bool inWorker,
+	    bool convert) {
   const char *comment = hdlComment(lang);
   std::string init = lang == VHDL ? "  port (\n" : "";
   std::string last = init;
@@ -544,7 +558,7 @@ emitSignals(FILE *f, Language lang, bool useRecords, bool inPackage, bool inWork
     if (useRecords && lang == VHDL)
       p->emitRecordSignal(f, last, "", inWorker);
     else
-      p->emitSignals(f, lang, last, inPackage, inWorker);
+      p->emitSignals(f, lang, last, inPackage, inWorker, convert);
   }
   if (m_signals.size()) {
     emitLastSignal(f, last, lang, false);
@@ -567,7 +581,7 @@ prType(OU::Property &pr, std::string &type) {
     nElements *= pr.m_sequenceLength; // can't be zero
   std::string base = OU::baseTypeNames[pr.m_baseType];
   if (pr.m_baseType == OA::OCPI_Enum)
-    OU::format(base, "work.%s_defs.%s", m_implName, pr.m_name.c_str());
+    OU::format(base, "work.%s_constants.%s", m_implName, pr.m_name.c_str());
   if (pr.m_baseType == OA::OCPI_String)
     if (pr.m_arrayRank || pr.m_isSequence)
       OU::format(type,
@@ -731,8 +745,9 @@ emitVhdlWorkerPackage(FILE *f, unsigned maxPropName) {
 	  "library ocpi; use ocpi.all, ocpi.types.all;\n");
   emitVhdlLibraries(f);
   fprintf(f,
+	  "use work.%s_constants.all, work.%s_defs.all;\n"
 	  "package %s_worker_defs is\n",
-	  m_implName);
+	  m_implName, m_implName, m_implName);
   if (m_ctl.writables || m_ctl.readbacks || m_ctl.rawProperties) {
     fprintf(f,"\n"
 	    "  -- The following record is for the writable properties of worker \"%s\"\n"
@@ -800,9 +815,9 @@ emitVhdlWorkerEntity(FILE *f) {
 	  "library ocpi; use ocpi.types.all;\n");
   emitVhdlLibraries(f);
   fprintf(f,
-	  "use work.%s_worker_defs.all, work.%s_defs.all;\n"
+	  "use work.%s_worker_defs.all, work.%s_defs.all, work.%s_constants.all;\n"
 	  "entity %s_worker is\n",
-	  m_implName, m_implName, m_implName);
+	  m_implName, m_implName, m_implName, m_implName);
   emitParameters(f, VHDL);
     
   emitSignals(f, VHDL, true, true, true);
@@ -851,7 +866,8 @@ emitDefsHDL(bool wrap) {
     emitVhdlLibraries(f);
     fprintf(f,
 	    "\n"
-	    "package %s_defs is\n", m_implName);
+	    "-- Package with constant definitions for instantiating this worker\n"
+	    "package %s_constants is\n", m_implName);
     bool first = true;
     for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
       OU::Property &p = **pi;
@@ -881,6 +897,18 @@ emitDefsHDL(bool wrap) {
 		  decl.length() ? "_t" : "");
       }
     }
+    for (unsigned i = 0; i < m_ports.size(); i++)
+      m_ports[i]->emitRecordInterfaceConstants(f);
+    fprintf(f,
+	    "end package %s_constants;\n"
+	    "-- Package with definitions for instantiating this worker\n"
+	    "Library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;\n"
+	    "Library ocpi; use ocpi.all, ocpi.types.all;\n",
+	    m_implName);
+    emitVhdlLibraries(f);
+    fprintf(f,
+	    "use work.%s_constants.all;\n"
+	    "package %s_defs is\n", m_implName, m_implName, m_implName);
     if ((err = emitVhdlRecordInterface(f)))
       return err;
     fprintf(f,
@@ -894,7 +922,7 @@ emitDefsHDL(bool wrap) {
 	    "(* box_type=\"user_black_box\" *)\n"
 	    "`endif\n"
 	    "module %s//__\n(\n", m_implName, m_implName);
-  emitSignals(f, lang, false, true, false);
+  emitSignals(f, lang, false, true, false, true);
   if (lang == VHDL) {
     fprintf(f,
 	    "end component %s;\n\n",
@@ -946,6 +974,19 @@ emitDefsHDL(bool wrap) {
 	    fprintf(f, "  output         %s;\n", name.c_str());
 	  OU::format(name, s->m_oe.c_str(), s->m_name.c_str());
 	  fprintf(f, "  output         %s;\n", name.c_str());
+	} else if (s->m_direction == Signal::OUTIN) {
+	  OU::format(name, s->m_in.c_str(), s->m_name.c_str());
+	  if (s->m_width)
+	    fprintf(f, "  output [%3zu:0] %s;\n", s->m_width - 1, name.c_str());
+	  else
+	    fprintf(f, "  output         %s;\n", name.c_str());
+	  OU::format(name, s->m_out.c_str(), s->m_name.c_str());
+	  if (s->m_width)
+	    fprintf(f, "  input [%3zu:0] %s;\n", s->m_width - 1, name.c_str());
+	  else
+	    fprintf(f, "  input         %s;\n", name.c_str());
+	  OU::format(name, s->m_oe.c_str(), s->m_name.c_str());
+	  fprintf(f, "  input         %s;\n", name.c_str());
 	} else if (s->m_width)
 	  fprintf(f, "  %s [%3zu:0] %s;\n", dir, s->m_width - 1, s->m_name.c_str());
 	else
@@ -1080,7 +1121,7 @@ emitVhdlShell(FILE *f) {
 	fprintf(f, ",\n    %s => %s", name.c_str(), name.c_str());
 	OU::format(name, s->m_neg.c_str(), s->m_name.c_str());
 	fprintf(f, ",\n    %s => %s", name.c_str(), name.c_str());
-      } else if (s->m_direction == Signal::INOUT) {
+      } else if (s->m_direction == Signal::INOUT || s->m_direction == Signal::OUTIN) {
 	OU::format(name, s->m_in.c_str(), s->m_name.c_str());
 	fprintf(f, ",\n    %s => %s", name.c_str(), name.c_str());
 	OU::format(name, s->m_out.c_str(), s->m_name.c_str());
@@ -1103,7 +1144,7 @@ emitDeviceSignalMapping(FILE *f, std::string &last, Signal &s) {
     fprintf(f, "%s      %s => %s,\n", last.c_str(), name.c_str(), name.c_str());
     OU::format(name, s.m_neg.c_str(), s.m_name.c_str());
     fprintf(f, "      %s => %s", name.c_str(), name.c_str());
-  } else if (s.m_direction == Signal::INOUT) {
+  } else if (s.m_direction == Signal::INOUT || s.m_direction == Signal::OUTIN) {
     OU::format(name, s.m_in.c_str(), s.m_name.c_str());
     fprintf(f, "%s      %s => %s,\n", last.c_str(), name.c_str(), name.c_str());
     OU::format(name, s.m_out.c_str(), s.m_name.c_str());
@@ -1122,8 +1163,8 @@ emitVhdlSignalWrapper(FILE *f, const char *topinst) {
 	    "-- It \"wraps\" the _rv entity that DOES use records for ports\n"
 	    "library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;\n"
 	    "library ocpi; use ocpi.all, ocpi.types.all;\n"
-	    "use work.%s_defs.all;\n",
-	    m_implName);
+	    "use work.%s_defs.all, work.%s_constants.all;\n",
+	    m_implName, m_implName);
     emitVhdlLibraries(f);
     fprintf(f,
 	    "entity %s--__\n  is\n", m_implName);
@@ -1220,8 +1261,8 @@ emitVhdlRecordWrapper(FILE *f) {
 	    "-- It \"wraps\" the signal-level, Verilog compatible entity that only uses signals for ports\n"
 	    "library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;\n"
 	    "library ocpi; use ocpi.all, ocpi.types.all;\n"
-	    "use work.%s_defs.all;\n",
-	    m_implName);
+	    "use work.%s_defs.all, work.%s_constants.all;\n",
+	    m_implName, m_implName);
     emitVhdlLibraries(f);
     fprintf(f,
 	    "entity %s_rv--__\n  is\n", m_implName);
@@ -1290,7 +1331,7 @@ emitVhdlRecordWrapper(FILE *f) {
 	  fprintf(f, "%s      %s => %s,\n", last.c_str(), name.c_str(), name.c_str());
 	  OU::format(name, s->m_neg.c_str(), s->m_name.c_str());
 	  fprintf(f, "      %s => %s", name.c_str(), name.c_str());
-	} else if (s->m_direction == Signal::INOUT) {
+	} else if (s->m_direction == Signal::INOUT || s->m_direction == Signal::OUTIN) {
 	  OU::format(name, s->m_in.c_str(), s->m_name.c_str());
 	  fprintf(f, "%s      %s => %s,\n", last.c_str(), name.c_str(), name.c_str());
 	  OU::format(name, s->m_out.c_str(), s->m_name.c_str());
@@ -1406,8 +1447,8 @@ emitImplHDL(bool wrap) {
 	    "-- The achitecture for this entity will be in the implementation file\n"
 	    "library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;\n"
 	    "library ocpi; use ocpi.all, ocpi.types.all;\n"
-	    "use work.%s_worker_defs.all, work.%s_defs.all;\n",
-	    m_implName, m_implName);
+	    "use work.%s_worker_defs.all, work.%s_defs.all, work.%s_constants.all;\n",
+	    m_implName, m_implName, m_implName);
     emitVhdlLibraries(f);
     fprintf(f,
 	    "entity %s_rv--__\n  is\n", m_implName);
@@ -1446,7 +1487,7 @@ emitImplHDL(bool wrap) {
 	      "-- which can be used by the worker implementer to avoid all the OCP/WCI issues\n"
 	      "library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;\n"
 	      "library ocpi; use ocpi.all, ocpi.types.all;\n"
-	      "use work.%s_worker_defs.all, work.%s_defs.all;\n"
+	      "use work.%s_worker_defs.all, work.%s_constants.all, work.%s_defs.all;\n"
 	      "entity %s_wci is\n"
 	      "  generic(ocpi_debug : bool_t; endian : endian_t);\n"
 	      "  port(\n"
@@ -1468,7 +1509,7 @@ emitImplHDL(bool wrap) {
 	      "    %-*s : out bool_t;            -- for endian-switchable workers\n"
 	      "    %-*s : out bool_t%s            -- forcible abort a control-op when\n"
 	      "                                              -- worker uses 'done' to delay it\n",
-	      m_implName, m_implName, m_implName,
+	      m_implName, m_implName, m_implName, m_implName,
 	      maxPropName, "inputs", m_wci->typeNameIn.c_str(),
 	      maxPropName, "done",
 	      maxPropName, "error",
@@ -1774,7 +1815,7 @@ emitImplHDL(bool wrap) {
 	  if (pr.m_baseType == OA::OCPI_Enum)
 	    fprintf(f,
 		    "  props_to_worker.%s <= "
-		    "work.%s_defs.%s_t'val(to_integer(my_%s_value));\n",
+		    "work.%s_constants.%s_t'val(to_integer(my_%s_value));\n",
 		    name, m_implName, name, name);
 	  else if (pr.m_isReadable && !pr.m_isVolatile)
 	    fprintf(f, "  props_to_worker.%s <= my_%s_value;\n", name, name);
@@ -1905,6 +1946,9 @@ emitSkelHDL() {
 	      fprintf(f, "  %s <= %s;\n", name.c_str(), val);
 	      OU::format(name, s.m_oe.c_str(), s.m_name.c_str());
 	      fprintf(f, "  %s <= '0';\n", name.c_str());
+	  } else if (s.m_direction == Signal::OUTIN) {
+	      OU::format(name, s.m_in.c_str(), s.m_name.c_str());
+	      fprintf(f, "  %s <= %s;\n", name.c_str(), val);
 	  }
 	}
       fprintf(f,

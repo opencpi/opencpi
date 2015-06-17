@@ -24,6 +24,7 @@
 ############################################################################
 
 # This primitive library contains VHDL primitive modules for zynq platforms.
+OnlyTargets=zynq isim modelsim
 HdlLibraries=fixed_float ocpi platform
 
 XilinxZynqCore=processing_system7_v4_03_a

@@ -32,6 +32,8 @@ WciPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
   w.m_ctl.controlOps |= 1 << OU::Worker::OpStart;
   if (w.m_language == VHDL)
     w.m_ctl.controlOps |= 1 << OU::Worker::OpStop;
+  m_dataWidth = 32;
+  m_byteWidth = 8;
 }
 
 bool WciPort::
@@ -80,8 +82,8 @@ deriveOCP() {
   if (master) {
     ocp.MAddr.width = 32;
     ocp.MAddrSpace.value = s;
-    ocp.MByteEn.width = 4;
-    ocp.MData.width = 32;
+    ocp.MData.width = m_dataWidth;
+    ocp.MByteEn.width = m_dataWidth /m_byteWidth;
     ocp.SData.width = 32;
     ocp.MFlag.width = 19;
   } else {

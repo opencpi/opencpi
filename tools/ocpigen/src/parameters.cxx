@@ -337,8 +337,9 @@ emitToolParameters() {
       return err;
     if ((err = findParamProperty(name.c_str(), p, nParam)))
       fprintf(stderr,
-	      "Warning: parameter '%s' ignored due to: %s", name.c_str(), err);
-    addValues(*p, info.params[nParam].values, hasValues, ezxml_txt(px));
+	      "Warning: parameter '%s' ignored due to: %s\n", name.c_str(), err);
+    else
+      addValues(*p, info.params[nParam].values, hasValues, ezxml_txt(px));
   }
   // Fill in default values when there are no values specified for a given parameter.
   // i.e. for this parameter, make the single value for all configs the default value

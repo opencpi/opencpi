@@ -104,7 +104,7 @@ ParamShell:=(\
   $(OcpiGenTool) -D $(GeneratedDir) $(and $(Package),-p $(Package))\
     $(and $(Platform),-P $(Platform)) \
     $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) \
-  $(and $(AssemblyName),-S $(AssemblyName)) \
+  $(and $(Assembly),-S $(Assembly)) \
   -r $(Worker_$(Worker)_xml)) || echo 1\
   )
 
@@ -132,7 +132,7 @@ $(call OcpiDbgVar,ImplHeaderFiles)
 $(ImplHeaderFiles): $(GeneratedDir)/%$(ImplSuffix) : $$(Worker_%_xml) | $(GeneratedDir)
 	$(AT)echo Generating the implementation header file: $@ from $< 
 	$(AT)$(OcpiGen) -D $(GeneratedDir) $(and $(Package),-p $(Package)) \
-        $(and $(AssemblyName),-S $(AssemblyName)) \
+        $(and $(Assembly),-S $(Assembly)) \
 	$(and $(HdlPlatform),-P $(HdlPlatform)) \
 	 $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) -i $< \
 
@@ -147,7 +147,7 @@ all: skeleton
 $(SkelFiles): $(GeneratedDir)/%$(SkelSuffix) : $$(Worker_%_xml) | $(GeneratedDir)
 	$(AT)echo Generating the implementation skeleton file: $@
 	$(AT)$(OcpiGen) -D $(GeneratedDir) \
-              $(and $(AssemblyName),-S $(AssemblyName)) \
+              $(and $(Assembly),-S $(Assembly)) \
 	      $(and $(Platform),-P $(Platform)) \
               $(and $(Package),-p $(Package)) -s $<
 endif

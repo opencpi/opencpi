@@ -118,7 +118,10 @@ struct Partitioning {
 
 #define DISTRIBUTION_ATTRS "distribution", "hashfield"
 
-#define SPEC_DATA_PORT_ATTRS "Name", "Producer", "Count", "Optional", "Protocol", "buffersize"
+#define SPEC_DATA_PORT_ATTRS \
+  "Name", "Producer", "Count", "Optional", "Protocol", "buffersize", \
+    OCPI_PROTOCOL_SUMMARY_ATTRS, "numberofopcodes"
+
 class DataPort : public OcpPort {
  protected:
   Protocol *m_protocol;
@@ -185,12 +188,15 @@ class DataPort : public OcpPort {
   void emitRccCppImpl(FILE *f);
   void emitRccCImpl(FILE *f);
   void emitRccCImpl1(FILE *f);
+  void emitRecordInterface(FILE *f, const char *implName);
+  void emitRecordInterfaceConstants(FILE *f);
   static const char *adjustConnection(const char *masterName,
 				      Port &prodPort, OcpAdapt *prodAdapt,
 				      Port &consPort, OcpAdapt *consAdapt,
 				      Language lang);
   virtual const char *adjustConnection(Port &consumer, const char *masterName, Language lang,
 				       OcpAdapt *prodAdapt, OcpAdapt *consAdapt);
+  virtual unsigned extraDataInfo() const;
   const char *finalizeHdlDataPort();
   const char *finalizeRccDataPort();
   const char *finalizeOclDataPort();
@@ -258,6 +264,7 @@ class WsiPort : public DataPort {
   void emitSkelSignals(FILE *f);
   void emitRecordInputs(FILE *f);
   void emitRecordOutputs(FILE *f);
+  unsigned extraDataInfo() const;
 };
 class WmiPort : public DataPort {
   bool m_talkBack;
@@ -650,8 +657,8 @@ class Worker : public Parsed, public OU::IdentResolver {
     emitVhdlSignalWrapper(FILE *f, const char *topinst = "rv"),
     emitVhdlRecordWrapper(FILE *f),
     emitParameters(FILE *f, Language lang, bool useDefaults = true, bool convert = false),
-    //    emitPortDescription(Port *p, FILE *f, Language lang),
-    emitSignals(FILE *f, Language lang, bool records, bool inPackage, bool inWorker),
+    emitSignals(FILE *f, Language lang, bool records, bool inPackage, bool inWorker,
+		bool convert = false),
     emitRccStruct(FILE *f, size_t nMembers, OU::Member *members, unsigned level,
 		  const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef),
     printRccMember(FILE *f, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,

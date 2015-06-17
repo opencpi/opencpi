@@ -427,10 +427,10 @@ $(OutDir)target-%/generics.vhd: | $(OutDir)target-%
 	$(AT)(\
 	     echo -- This file sets values for top level generics ;\
 	     echo library ocpi\; use ocpi.all, ocpi.types.all\; ;\
-	     echo package body $(Worker)_defs is ;\
+	     echo package body $(Worker)_constants is ;\
 	     $(foreach n,$(WorkerParamNames)$(infox WPN:$(WorkerParamNames):),\
 		echo '$(ParamVHDL_$(ParamConfig)_$n)'\; ;) \
-	     echo end $(Worker)_defs\; \
+	     echo end $(Worker)_constants\; \
 	) > $@
 
 $(OutDir)target-%/generics.vh: | $(OutDir)target-%
@@ -464,9 +464,10 @@ define HdlPrepareAssembly
                     Platform=$(Platform) \
                     Assembly=$(Assembly) \
                     AssyWorkersFile=$$(AssyWorkersFile) \
-                    Worker=$$(Worker) Worker_xml=$$(Worker_xml) XmlIncludeDirs="$$(XmlIncludeDirs)",\
+                    Worker=$$(Worker) Worker_xml=$$(Worker_xml) XmlIncludeDirs="$$(XmlIncludeDirs)"\
+		    AT=$(AT), \
                    Output), \
-    $$(error Error deriving workers from file $$(Worker).xml. $$(Output)),\
+    $$(error Error deriving workers from file $$(Worker).xml: $$(Output)),\
    )
   # 3. Generated the assembly source file
   ImplFile:=$$(GeneratedDir)/$$(Worker)-assy$$(HdlSourceSuffix)

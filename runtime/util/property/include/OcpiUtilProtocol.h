@@ -38,6 +38,10 @@
 #include "OcpiUtilProperty.h"
 #include "OcpiUtilEzxml.h"
 
+#define OCPI_PROTOCOL_SUMMARY_ATTRS \
+  "DataValueWidth", "DataValueGranularity", "DiverDataSizes", "MaxMessageValues", \
+  "VariableMessageLength", "ZeroLengthMessages", "MinMessageValues"
+
 namespace OCPI  {
   namespace Util {
     // A class that represents information about the protocol at a port.

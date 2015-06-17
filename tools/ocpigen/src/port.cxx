@@ -369,6 +369,8 @@ void Port::
 emitRecordOutputs(FILE *) {}
 void Port::
 emitRecordInterface(FILE */*f*/, const char */*implName*/) {}
+void Port::
+emitRecordInterfaceConstants(FILE */*f*/) {}
 
 void Port::
 emitRecordArray(FILE *f) {
@@ -417,7 +419,8 @@ emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker,
 
 // Default is to just use record signals for VHDL
 void Port::
-emitSignals(FILE *f, Language lang, std::string &last, bool inPackage, bool inWorker) {
+emitSignals(FILE *f, Language lang, std::string &last, bool inPackage, bool inWorker,
+	    bool /*convert*/) {
   if (lang == VHDL) {
     std::string prefix;
     if (!inPackage)

@@ -117,5 +117,5 @@ end resize;
     end case;
   end get_op_pos;
 
-end wci;
+end package body wci;
 

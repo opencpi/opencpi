@@ -56,7 +56,8 @@ DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *
   // Now we do implementation-specific initialization that will precede the
   // initializations for specific port types (WSI, etc.)
   bool dwFound;
-  if ((err = OE::getNumber(m_xml, "DataWidth", &m_dataWidth, &dwFound)) ||
+  if ((err = getExprNumber(m_xml, "DataWidth", m_dataWidth, &dwFound, &m_dataWidthExpr, &w)) ||
+      //  if ((err = w.getNumber(m_xml, "DataWidth", &m_dataWidth, &dwFound)) ||
       // Adding optionality in the impl xml is only relevant to devices.
       (err = OE::getBoolean(m_xml, "Optional", &m_isOptional, true)) ||
       // Be careful not to clobber protocol-determined values (i.e. don't set default values)
@@ -189,10 +190,8 @@ DataPort(Worker &w, ezxml_t x, int ordinal, const char *&err)
       err = "cannot have both Protocol and ProtocolSummary";
       return;
     }
-    if ((err = OE::checkAttrs(pSum, "DataValueWidth", "DataValueGranularity",
-			      "DiverDataSizes", "MaxMessageValues", "NumberOfOpcodes",
-			      "VariableMessageLength", "ZeroLengthMessages",
-			      "MinMessageValues",  (void*)0)) ||
+    if ((err = OE::checkAttrs(pSum, OCPI_PROTOCOL_SUMMARY_ATTRS, "NumberOfOpcodes",
+			      (void*)0)) ||
 	(err = OE::getNumber(pSum, "NumberOfOpcodes", &m_nOpcodes, 0, 1)) ||
 	(err = m_protocol->parseSummary(pSum)))
       return;
@@ -343,6 +342,48 @@ emitPortDescription(FILE *f, Language lang) const {
 }
 
 void DataPort::
+emitRecordInterfaceConstants(FILE */*f*/) {
+  // Before emitting the record, define the constants for the data path width.
+#if 0
+  fprintf(f,
+	  "\n"
+	  "  -- Constant declarations related to data width for port \"%s\"\n"
+	  "  constant ocpi_port_%s_data_width : natural;\n"
+	  "  constant ocpi_port_%s_MData_width : natural;\n"
+	  "  constant ocpi_port_%s_MByteEn_width : natural;\n"
+	  "  constant ocpi_port_%s_MDataInfo_width : natural;\n",
+	  name(), name(), name(), name(), name());
+#endif
+}
+
+#if 1
+void DataPort::
+emitRecordInterface(FILE *f, const char *implName) {
+
+  std::string width = m_dataWidthExpr;
+  if (m_dataWidthExpr.empty())
+    OU::format(width, "%zu", m_dataWidth);
+  else
+    OU::format(width, "to_integer(%s)", m_dataWidthExpr.c_str());
+  fprintf(f, "  constant ocpi_port_%s_data_width : natural := %s;\n", name(), width.c_str());
+  vectorWidth(&ocpSignals[OCP_MData], width, false, true);
+  fprintf(f, "  constant ocpi_port_%s_MData_width : natural := %s;\n", name(), width.c_str());
+  vectorWidth(&ocpSignals[OCP_MByteEn], width, false, true);
+  fprintf(f, "  constant ocpi_port_%s_MByteEn_width : natural := %s;\n", name(), width.c_str());
+  vectorWidth(&ocpSignals[OCP_MDataInfo], width, false, true);
+  std::string extra;
+  size_t n = extraDataInfo();
+  if (n)
+    OU::format(extra, "(%s)+%zu", width.c_str(), n);
+  else
+    extra = width;
+  fprintf(f, "  constant ocpi_port_%s_MDataInfo_width : natural := %s;\n",
+	  name(), extra.c_str());
+  OcpPort::emitRecordInterface(f, implName);
+}
+#endif
+
+void DataPort::
 emitRecordDataTypes(FILE *f) {
   if (m_nOpcodes > 1) {
     Protocol *prot = m_protocol;
@@ -478,12 +519,11 @@ emitImplSignals(FILE *f) {
 	  name(), masterIn() ? "take" : "give", name(), name());
   if (m_dataWidth)
     fprintf(f,
-	    "  signal %s_data  : std_logic_vector(%zu downto 0);\n",
-	    name(),
-	    m_dataWidth-1);
+	    "  signal %s_data  : std_logic_vector(ocpi_port_%s_data_width-1 downto 0);\n",
+	    name(), name());
   if (ocp.MByteEn.value)
-    fprintf(f, "  signal %s_byte_enable: std_logic_vector(%zu downto 0);\n",
-	    name(), m_dataWidth / m_byteWidth - 1);		    
+    fprintf(f, "  signal %s_byte_enable: std_logic_vector(ocpi_port_%s_MByteEn_width-1 downto 0);\n",
+	    name(), name());
   if (m_preciseBurst)
     fprintf(f, "  signal %s_burst_length: std_logic_vector(%zu downto 0);\n",
 	    name(), ocp.MBurstLength.width - 1);
@@ -628,6 +668,11 @@ fixDataConnectionRole(OU::Assembly::Role &role) {
     role.m_knownRole = true;
   }
   return NULL;
+}
+
+unsigned DataPort::
+extraDataInfo() const {
+  return 0;
 }
 
 void DataPort::

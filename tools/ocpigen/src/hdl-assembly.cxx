@@ -512,11 +512,12 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
   std::string suff;
   if (i->worker->m_paramConfig && i->worker->m_paramConfig->nConfig)
     OU::format(suff, "_c%zu", i->worker->m_paramConfig->nConfig);
-  std::string pkg;
+  std::string pkg, tpkg;
   if (lang == Verilog)
     fprintf(f, "%s%s", i->worker->m_implName, suff.c_str());
   else {
     OU::format(pkg, "%s%s.%s_defs", i->worker->m_library, suff.c_str(), i->worker->m_implName);
+    OU::format(tpkg, "%s%s.%s_constants", i->worker->m_library, suff.c_str(), i->worker->m_implName);
     fprintf(f, "  %s_i : component %s.%s_rv%s\n",
 	    i->name, pkg.c_str(), i->worker->m_implName, suff.c_str());
   }
@@ -531,7 +532,7 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
 	if (lang == VHDL) {
 	  fprintf(f, any ? ",\n              "  : "  generic map(");
 	  fprintf(f, "%s => %s", pr->m_name.c_str(),
-		  vhdlValue(pkg.c_str(), pr->m_name, pv->value, value));
+		  vhdlValue(tpkg.c_str(), pr->m_name, pv->value, value));
 	} else {
 	  fprintf(f, "%s", any ? ", " : " #(");
 #if 0
@@ -645,7 +646,7 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
 	  mapOneSignal(f, s, n, isSingle, mappedExt, front, s.m_pos.c_str(), false);
 	  doPrev(f, last, comment, myComment());
 	  mapOneSignal(f, s, n, isSingle, mappedExt, front, s.m_neg.c_str(), false);
-	} else if (s.m_direction == Signal::INOUT) {
+	} else if (s.m_direction == Signal::INOUT || s.m_direction == Signal::OUTIN) {
 	  // For inout, we only want to map the signals if they are NOT connected,
 	  if (!*mappedExt) {
 	    doPrev(f, last, comment, myComment());
@@ -669,7 +670,7 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
       }	else
 	assert(!anyMapped);
     }
-    if (anyMapped && s.m_direction != Signal::INOUT)
+    if (anyMapped && (s.m_direction != Signal::INOUT && s.m_direction != Signal::OUTIN))
       continue;
     doPrev(f, last, comment, myComment());
     if (s.m_differential) {
@@ -681,7 +682,7 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
       if (lang == VHDL)
 	fprintf(f, "%s%s => %s%s", any ? indent : "",
 		name.c_str(), prefix.c_str(), name.c_str());
-    } else if (s.m_direction == Signal::INOUT) {
+    } else if (s.m_direction == Signal::INOUT || s.m_direction == Signal::OUTIN) {
       OU::format(name, s.m_in.c_str(), s.name());
       fprintf(f, "%s%s => %s%s,\n", any ? indent : "",
 	      name.c_str(), prefix.c_str(), name.c_str());

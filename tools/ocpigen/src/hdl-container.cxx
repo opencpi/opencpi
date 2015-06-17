@@ -796,8 +796,8 @@ emitContainerImplHDL(FILE *f) {
   fprintf(f,
 	  "Library IEEE; use IEEE.std_logic_1164.all;\n"
 	  "Library ocpi; use ocpi.all, ocpi.types.all;\n"
-          "use work.%s_defs.all;\n",
-	  m_implName);
+          "use work.%s_defs.all, work.%s_constants.all;\n",
+	  m_implName, m_implName);
   emitVhdlLibraries(f);
   fprintf(f,
 	  "\nentity %s_rv is\n", m_implName);
@@ -825,7 +825,7 @@ emitDeviceSignalMapping(FILE *f, std::string &last, Signal &s) {
 void HdlContainer::
 emitDeviceSignal(FILE *f, Language lang, std::string &last, Signal &s) {
   if (s.m_direction == Signal::INOUT) {
-    // Inouts are different for containers since  the tristate IOBUF is inserted.
+    // Inouts are different for containers since the tristate IOBUF is inserted.
     emitSignal(s.m_name.c_str(), f, lang, s.m_direction, last,
 	       s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
   } else
@@ -855,6 +855,9 @@ emitTieoffSignals(FILE *f) {
 	  fprintf(f, "  %s => %s,\n", name.c_str(), s.m_width ? "(others => '0')" : "'0'");
 	} else
 	  fprintf(f, "  %s <= %s;\n", s.name(), s.m_width ? "(others => '0')" : "'0'");
+	break;
+      case Signal::OUTIN:
+	assert("Emulated INOUT signals must be connected"==0);
 	break;
       case Signal::INOUT:
 	assert(s.m_differential == false);

@@ -91,6 +91,7 @@ class OcpPort : public Port {
   bool m_impreciseBurst;
   bool m_preciseBurst;
   size_t m_dataWidth;
+  std::string m_dataWidthExpr;
   size_t m_byteWidth;
   bool m_continuous;
   OcpSignals ocp;
@@ -104,7 +105,12 @@ class OcpPort : public Port {
   void emitPortDescription(FILE *f, Language lang) const;
   void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker,
 			const char *defaultIn, const char *defaultOut);
-  void emitSignals(FILE *f, Language lang, std::string &last, bool inPackage, bool inWorker);
+  void vectorWidth(const OcpSignalDesc *osd, std::string &out, bool convert = false,
+		   bool value = false);
+  void emitVector(FILE *f, const OcpSignalDesc *osd);
+  void emitSignals(FILE *f, Language lang, std::string &last, bool inPackage, bool inWorker,
+		   bool convert);
+  void emitDirection(FILE *f, const char *implName, bool mIn, std::string &dir);
   void emitRecordInterface(FILE *f, const char *implName);
   void emitVerilogSignals(FILE *f);
   void emitVHDLSignalWrapperPortMap(FILE *f, std::string &last);

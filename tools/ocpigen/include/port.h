@@ -103,10 +103,11 @@ public:
   virtual void emitRecordInputs(FILE *f);
   virtual void emitRecordOutputs(FILE *f);
   virtual void emitRecordInterface(FILE *f, const char *implName);
+  virtual void emitRecordInterfaceConstants(FILE *f);
   virtual void emitRecordArray(FILE *f);
   //  virtual void emitWorkerEntitySignals(FILE *f, std::string &last, unsigned maxPropName);
   virtual void emitSignals(FILE *f, Language lang, std::string &last, bool inPackage,
-			   bool inWorker);
+			   bool inWorker, bool convert = false);
   virtual void emitVerilogSignals(FILE *f);
   virtual void emitVHDLShellPortMap(FILE *f, std::string &last);
   virtual void emitVHDLSignalWrapperPortMap(FILE *f, std::string &last);

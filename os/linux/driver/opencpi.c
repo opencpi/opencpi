@@ -911,7 +911,8 @@ probe_pci(struct pci_dev *pcidev, const struct pci_device_id *id) {
       pci_resource_flags(pcidev, 1) & IORESOURCE_IO ||
       (pci_resource_flags(pcidev, 0) & PCI_BASE_ADDRESS_MEM_TYPE_MASK) !=
       PCI_BASE_ADDRESS_MEM_TYPE_32 ||
-      sizes[0] != 16*1024*1024) {
+      // FIXME: make this based on the HdlOCCP stuff?
+      (sizes[0] != 64*1024*1024 && sizes[0] != 16*1024*1024)) {
     log_pci_err(pcidev, 0, "opencpi PCI device misconfigured, rejected");
     return -ENODEV;
   }
