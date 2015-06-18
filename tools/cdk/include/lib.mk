@@ -385,7 +385,8 @@ new:
 	$(AT)echo Running \"make skeleton\" to make initial skeleton in $(Worker)/$(Name).$(Suffix_$(Model)_$(or $(OcpiLanguage),$(Language_$(Model))))
 	$(AT)$(MAKE) --no-print-directory -C $(Worker) \
 		OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) \
-		XmlIncludeDirs=../specs Worker= Workers= \
+                XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirs)) ../lib/hdl"\
+		Worker= Workers= \
 		skeleton; \
 	     if test $$? != 0; then echo You should probably do: rm -r -f $(Worker); fi
 

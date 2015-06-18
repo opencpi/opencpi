@@ -261,19 +261,21 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
       }
   } else {
     for (DevInstancesIter di = m_devInstances.begin(); di != m_devInstances.end(); di++) {
-      // Instance the device and connect its wci
-      OU::formatAdd(assy, "  <instance name='%s' worker='%s'>\n",
-		    (*di).name(),
-		    (*di).device.deviceType().name());
       // Decide whether to map the signals or not, based on whether we are an emulator
       // or are paired with an emulator
       const DevInstance *emulator = NULL;
       for (DevInstancesIter edi = m_devInstances.begin(); edi != m_devInstances.end(); edi++)
 	if ((*edi).device.deviceType().m_emulate &&
-	    (*edi).device.deviceType().m_emulate == &(*di).device.deviceType()) {
+	    !strcasecmp((*edi).device.deviceType().m_emulate->m_implName,
+			(*di).device.deviceType().m_implName)) {
 	  emulator = &*edi;
 	  break;
 	}
+      // Instance the device and connect its wci
+      OU::formatAdd(assy, "  <instance name='%s' worker='%s'%s>\n",
+		    (*di).name(),
+		    (*di).device.deviceType().name(),
+		    emulator ? " emulated='1'" : "");
       if (!emulator && !(*di).device.deviceType().m_emulate)
 	mapDevSignals(assy, *di, true);
       assy += "  </instance>\n";
@@ -386,13 +388,16 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
   // Make all device instances signals external that are not mapped already
   unsigned n = 0;
   for (Instance *i = m_assembly->m_instances; n < m_assembly->m_nInstances; i++, n++) {
+#if 0
     Instance *emulator = NULL, *ii = m_assembly->m_instances;
     for (unsigned nn = 0; nn < m_assembly->m_nInstances; nn++, ii++)
-      if (ii->worker->m_emulate && ii->worker->m_emulate == i->worker) {
+      if (ii->worker->m_emulate &&
+	  !strcasecmp(ii->worker->m_emulate->m_implName, i->worker->m_implName) {
 	emulator = ii;
 	break;
       }
-    if (i->worker->m_emulate || emulator)
+#endif
+    if (i->worker->m_emulate || i->m_emulated)
       continue;
     for (SignalsIter si = i->worker->m_signals.begin(); si != i->worker->m_signals.end(); si++) {
       Signal &s = **si;

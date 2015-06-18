@@ -91,6 +91,7 @@ struct Instance {
   bool hasConfig;      // hack for adapter configuration FIXME make normal properties
   size_t config;       // hack ditto
   ExtMap m_extmap;     // map for externals. FIXME: have HdlInstance class...
+  bool   m_emulated;   // is this an instance of a device worker with an emulator?
   Instance();
   void emitHdl(FILE *f, const char *prefix, size_t &index);
   void emitDeviceConnectionSignals(FILE *f, bool container);

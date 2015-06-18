@@ -246,6 +246,7 @@ reverse() {
   switch(m_direction) {
   case IN: s->m_direction = OUT; break;
   case OUT:s->m_direction = IN; break;
+  case INOUT:s->m_direction = OUTIN; break;
   default:
     break;
   }

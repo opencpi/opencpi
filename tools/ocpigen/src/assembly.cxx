@@ -131,7 +131,7 @@ parseConnection(OU::Assembly::Connection &aConn) {
 Instance::
 Instance()
   : instance(NULL), name(NULL), wName(NULL), worker(NULL), m_clocks(NULL), m_ports(NULL),
-    m_iType(Application), attach(NULL), hasConfig(false), config(0) {
+    m_iType(Application), attach(NULL), hasConfig(false), config(0), m_emulated(false) {
 }
 
 // Add the assembly's parameters to the instance's parameters when that is appropriate.

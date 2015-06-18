@@ -93,6 +93,7 @@ namespace OCPI {
       PVString("model"),
       PVString("platform"),
       PVBool("signal"),
+      PVBool("emulated"),
       PVEnd
     };
 

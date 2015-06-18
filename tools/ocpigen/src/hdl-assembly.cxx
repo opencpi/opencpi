@@ -45,7 +45,7 @@ parseHdlAssy() {
     *topAttrs[] = {IMPL_ATTRS, HDL_TOP_ATTRS, HDL_IMPL_ATTRS, NULL},
     // FIXME: reduce to those that are hdl specific
     *instAttrs[] =  { INST_ATTRS },
-    *contInstAttrs[] = { "Index", "interconnect", "io", "adapter", "configure", NULL},
+    *contInstAttrs[] = { "Index", "interconnect", "io", "adapter", "configure", "emulated", NULL},
     *platInstAttrs[] = { "Index", "interconnect", "io", "adapter", "configure", NULL};
   // Do the generic assembly parsing, then to more specific to HDL
   if ((err = a->parseAssy(m_xml, topAttrs,
@@ -67,6 +67,8 @@ parseHdlAssy() {
       continue;
     if (m_type == Container || m_type == Configuration) {
       ezxml_t x = i->instance->xml();
+      if ((err = OE::getBoolean(x, "emulated", &i->m_emulated)))
+	return err;
       const char
         *ic = ezxml_cattr(x, "interconnect"), // which interconnect
 	*ad = ezxml_cattr(x, "adapter"),      // adapter to which interconnect or io
@@ -606,13 +608,13 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
   } // end of port loop
   // First we need to figure out whether this is an emulator worker or a worker that
   // has a paired emulator worker.
-  Instance *emulator = NULL, *ii = m_instances;
-  for (unsigned n = 0; n < m_nInstances; n++, ii++)
-    if (ii->worker->m_emulate &&
-	!strcasecmp(ii->worker->m_emulate->m_implName, i->worker->m_implName)) {
-      emulator = ii;
-      break;
-    }
+  Instance *emulated = NULL, *ii = m_instances;
+  if (i->worker->m_emulate)
+    for (unsigned n = 0; n < m_nInstances; n++, ii++)
+      if (!strcasecmp(ii->worker->m_implName, i->worker->m_emulate->m_implName)) {
+	emulated = ii;
+	break;
+      }
   // Instance signals are connected to external ports unless they are connected to an emulator,
   // and sometimes they are mapped to slot names, and sometimes they are mapped to nothing when
   // the platform doesn't support the signal.  Also, if they are tristate, they may be
@@ -620,8 +622,8 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
   // container.
   std::string prefix;
   if (i->worker->m_isDevice && i->worker->m_type != Worker::Platform) {
-    if (emulator)
-      prefix = emulator->name;
+    if (emulated)
+      prefix = emulated->name;
     else
       prefix = i->name;
     prefix += "_";
@@ -695,7 +697,7 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
     } else if (lang == VHDL)
       fprintf(f, "%s%s => %s%s", any ? indent : "",
 	      s.name(), prefix.c_str(), s.name());
-    if (!emulator && !i->worker->m_emulate && !anyMapped) {
+    if (!i->m_emulated && !i->worker->m_emulate && !anyMapped) {
       Signal *es = m_assyWorker.m_sigmap[(prefix + s.m_name).c_str()];
       assert(es);
       m_assyWorker.recordSignalConnection(*es, (prefix + s.m_name).c_str());
@@ -903,16 +905,15 @@ void Instance::
 emitDeviceConnectionSignals(FILE *f, bool container) {
   for (SignalsIter si = worker->m_signals.begin(); si != worker->m_signals.end(); si++) {
     Signal &s = **si;
-    if (s.m_differential && worker->m_emulate) {
+    if (s.m_differential && m_emulated) {
       s.emitConnectionSignal(f, name, s.m_pos.c_str(), false);
       s.emitConnectionSignal(f, name, s.m_neg.c_str(), false);
-    } else if (s.m_direction == Signal::INOUT &&
-	       (worker->m_emulate || container)) {
+    } else if (s.m_direction == Signal::INOUT && container) {
       const char *prefix = worker->m_type == Worker::Configuration ? NULL : name;
       s.emitConnectionSignal(f, prefix, s.m_in.c_str(), false);
       s.emitConnectionSignal(f, prefix, s.m_out.c_str(), false);
       s.emitConnectionSignal(f, prefix, s.m_oe.c_str(), true);
-    } else if (worker->m_emulate)
+    } else if (m_emulated)
       s.emitConnectionSignal(f, name, "%s", false);
   }
 }

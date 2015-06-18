@@ -61,8 +61,11 @@ Workers = \
 	lime_dac_em.hdl \
 	si5351_proxy.rcc \
 	si5351.hdl \
+	si5351_em.hdl \
 	lime_rx.hdl \
+	lime_rx_em.hdl \
 	lime_tx.hdl \
+	lime_tx_em.hdl \
 	lime_rx_proxy.rcc \
 	lime_tx_proxy.rcc \
         lime_spi.hdl \

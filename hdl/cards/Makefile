@@ -29,8 +29,9 @@
 # This directory should only depend on the "primitives" library
 
 Package=ocpi.devices
-XmlIncludeDirs=../../components/specs ../devices/lib/hdl
-Workers = zipper_i2c.hdl
+XmlIncludeDirs=../../components/specs ../devices/lib/hdl ../devices/specs
+Workers = zipper_i2c.hdl \
+          zipper_i2c_em.hdl
 #	limeSPI.hdl \
 #        limeTx.hdl
 include $(OCPI_CDK_DIR)/include/lib.mk

@@ -908,7 +908,7 @@ emitDefsHDL(bool wrap) {
     emitVhdlLibraries(f);
     fprintf(f,
 	    "use work.%s_constants.all;\n"
-	    "package %s_defs is\n", m_implName, m_implName, m_implName);
+	    "package %s_defs is\n", m_implName, m_implName);
     if ((err = emitVhdlRecordInterface(f)))
       return err;
     fprintf(f,

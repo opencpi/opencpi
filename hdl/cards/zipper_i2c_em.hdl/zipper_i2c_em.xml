@@ -1,0 +1,3 @@
+<HdlDevice language="vhdl" spec="emulator-spec" emulate="zipper_i2c.hdl" spec="emulator">
+  <!-- Insert any other implementation-specific information here -->
+</HdlDevice>
