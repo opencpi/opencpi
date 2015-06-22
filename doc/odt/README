@@ -1,0 +1,14 @@
+This directory contains OpenOffice/LibreOffice documents for OpenCPI.
+They all use the template here named OCPI_ODT.ott, which must be imported
+into LibreOffice before editing any of these odt documents.
+
+After editing a document, the Export PDF function under the file menu should be used
+to place the PDF in the ../pdf directory, and that PDF file should be part of the commit.
+Set "pages and bookmarks" as the initial view.
+
+Also, export as html in ../html using the Writer2xhtml extension.
+For now, both html5 and xhtml are exports.
+
+
+Similarly, if the template is edited, it should be re-exported into this directory.
+

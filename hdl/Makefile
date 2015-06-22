@@ -10,7 +10,9 @@ $(info Setting OCPI_CDK_DIR to $(OCPI_CDK_DIR))
 endif
 all hdl:assemblies
 
-base: components adapters devices cards platforms
+base: portable platforms
+
+portable: components adapters devices cards
 
 adapters: primitives
 	$(AT)$(call MyMake,adapters)

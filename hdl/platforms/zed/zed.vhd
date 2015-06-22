@@ -14,7 +14,6 @@ architecture rtl of zed_worker is
   signal ps_axi_gp_out : m_axi_gp_out_t;       -- m2s
   signal ps_axi_hp_in  : s_axi_hp_in_array_t(0 to C_S_AXI_HP_COUNT-1);  -- m2s
   signal ps_axi_hp_out : s_axi_hp_out_array_t(0 to C_S_AXI_HP_COUNT-1); -- s2m
-  signal my_cp_out     : occp_in_t;
   signal fclk          : std_logic_vector(3 downto 0);
   signal clk           : std_logic;
   signal raw_rst_n     : std_logic; -- FCLKRESET_Ns need synchronization
@@ -59,7 +58,6 @@ begin
     props_out.unoc_headers_out <= unoc_header_out;
     props_out.unoc_headers_out1 <= unoc_header_out1;
   end generate g0;
-  cp_out <= my_cp_out;
   clkbuf   : BUFG   port map(I => fclk(3),
                              O => clk);
   -- The FCLKRESET signals from the PS are documented as asynchronous with the
@@ -90,7 +88,7 @@ begin
       axi_in  => ps_axi_gp_out,
       axi_out => ps_axi_gp_in,
       cp_in   => cp_in,
-      cp_out  => my_cp_out
+      cp_out  => cp_out
       );
   zynq_out <= my_zynq_out;
   props_out.debug_state <= dbg_state;
@@ -187,7 +185,7 @@ begin
   metadata_out.romEn        <= props_in.romData_read;
   led(0) <= count(count'left);
   led(1) <= ps_axi_gp_out.ARVALID;
-  led(2) <= seen_burst; -- my_cp_out.is_read;
+  led(2) <= seen_burst;
   led(3) <= cp_in.take;
 
   led(4) <= cp_in.valid;

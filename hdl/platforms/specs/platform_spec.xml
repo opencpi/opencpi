@@ -17,7 +17,7 @@
        Bit 31:28 - External bus/BAR connected to this memory (0 is none)
        Bit 27:14 - Offset in bus/BAR of this memory (4KB units)
        Bit  13:0 - Size of this memory (4KB units)
-   FIXME: this should be a sequence, not an array, but sequence properties are not working yet
+   FIXME: this should be a sequence or parameterized-length array
   -->
   <property name="memories_length"  readable='true'/>
   <property name="memories" arrayLength='4' readable='true'/>
