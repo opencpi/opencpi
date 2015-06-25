@@ -318,6 +318,8 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
   pf.setParent(this);
   //hdlAssy = true;
   m_plugged.resize(pf.m_slots.size());
+  ezxml_t tx = ezxml_add_child(xml, "device", 0);
+  ezxml_set_attr(tx, "name", "time_server");
   if ((err = parseDevInstances(xml, xfile, this, NULL)))
     return;
   std::string assy;
@@ -356,6 +358,13 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
   // So: 1. Add the internal connection from the platform and/or device workers to occp
   if ((err = addControlConnection(assy)))
     return;
+  // 2. Connect the time service to the platform worker
+  OU::formatAdd(assy,
+		"  <connection>\n"
+		"    <port instance='%s' name='timebase'/>\n"
+		"    <port instance='time_server' name='timebase'/>\n"
+		"  </connection>\n",
+		m_platform.m_name.c_str());
   // 3. To and from time clients
   unsigned tIndex = 0;
   for (DevInstancesIter dii = m_devInstances.begin(); dii != m_devInstances.end(); dii++) {
@@ -366,10 +375,10 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
 	// connection from platform worker's time service to the client
 	OU::formatAdd(assy,
 		      "  <connection>\n"
-		      "    <port instance='%s' name='time'/>\n"
+		      "    <port instance='time_server' name='time'/>\n"
 		      "    <port instance='time_client%u' name='time'/>\n"
 		      "  </connection>\n",
-		      m_platform.m_name.c_str(), tIndex);
+		      tIndex);
 	// connection from the time client to the device worker
 	OU::formatAdd(assy,
 		      "  <connection>\n"
@@ -389,11 +398,8 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
   //  4. Any data ports from device worker
   //  5. Any unocs from device workers
   OU::formatAdd(assy,
-		//		"  <external port='wci' count='%zu' role='slave'/>\n"
-		"  <external instance='%s' port='time'/>\n"
+		"  <external instance='time_server' port='time'/>\n"
 		"  <external instance='%s' port='metadata'/>\n",
-		//		nWCI,
-		m_platform.m_name.c_str(),
 		m_platform.m_name.c_str());
   for (DevInstancesIter dii = m_devInstances.begin(); dii != m_devInstances.end(); dii++) {
     const ::Device &d = (*dii).device;

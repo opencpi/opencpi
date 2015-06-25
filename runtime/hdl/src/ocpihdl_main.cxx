@@ -712,14 +712,14 @@ admin(const char **) {
   i = cAccess->get32Register(numRegions, OH::OccpAdminRegisters);
   printf(" numDPMemReg:  0x%08x (%u)\n", i, i);
   uint32_t regions[OCCP_MAX_REGIONS];
-  cAccess->getRegisterBytes(regions, regions, OH::OccpAdminRegisters);
+  cAccess->getRegisterBytes(regions, regions, OH::OccpAdminRegisters, 8);
   if (i < 16) 
     for (k=0; k<i; k++)
       printf("    DP%2d:      0x%08x\n", k, regions[k]);
 
   // Print out the 64B 16DW UUID in little-endian looking format...
   uint32_t uuid[16];
-  cAccess->getRegisterBytes(uuid, uuid, OH::OccpAdminRegisters);
+  cAccess->getRegisterBytes(uuid, uuid, OH::OccpAdminRegisters, 8);
   for (k=0;k<16;k+=4)
     printf(" UUID[%2d:%2d]:  0x%08x 0x%08x 0x%08x 0x%08x\n",
 	   k+3, k, uuid[k+3], uuid[k+2], uuid[k+1], uuid[k]);

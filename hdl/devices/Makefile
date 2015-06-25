@@ -70,6 +70,7 @@ Workers = \
 	lime_tx_proxy.rcc \
         lime_spi.hdl \
 	lime_spi_em.hdl \
+        time_server.hdl
 
 # These two require support for embedded IOBUFs which is currently turned off
 #	dram_v5.hdl \

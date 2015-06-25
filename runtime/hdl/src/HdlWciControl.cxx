@@ -20,7 +20,6 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include "HdlDevice.h"
 #include "HdlWciControl.h"
@@ -238,12 +237,13 @@ namespace OCPI {
 	if (!info.m_writeError ||
 	    !(status = (get32Register(status, OccpWorkerRegisters) &
 			OCCP_STATUS_WRITE_ERRORS)))
-	  m_properties.setBytesRegisterOffset(offset,	data, nBytes);
+	  m_properties.setBytesRegisterOffset(offset, data, nBytes, info.m_elementBytes);
 	if (info.m_writeError && !status)
 	  status = (get32Register(status, OccpWorkerRegisters) &
 		    OCCP_STATUS_WRITE_ERRORS);
       } else
-	m_properties.m_accessor->setBytes(m_properties.m_base + offset, data, nBytes, &status);
+	m_properties.m_accessor->setBytes(m_properties.m_base + offset, data, nBytes,
+					  info.m_elementBytes, &status);
       if (status)
 	throwPropertyWriteError(status);
     }
@@ -258,12 +258,13 @@ namespace OCPI {
 	if (!info.m_readError ||
 	    !(status = (get32Register(status, OccpWorkerRegisters) &
 			OCCP_STATUS_READ_ERRORS))) {
-	  m_properties.getBytesRegisterOffset(offset, buf, nBytes);
+	  m_properties.getBytesRegisterOffset(offset, buf, nBytes, info.m_elementBytes);
 	  if (info.m_readError)
 	    status = get32Register(status, OccpWorkerRegisters) & OCCP_STATUS_READ_ERRORS;
 	}
       } else
-	m_properties.m_accessor->getBytes(m_properties.m_base + offset, buf, nBytes, &status);
+	m_properties.m_accessor->getBytes(m_properties.m_base + offset, buf, nBytes,
+					  info.m_elementBytes, &status);
       if (status)
 	throwPropertyReadError(status, (uint32_t)offset, nBytes, 0);
     }
@@ -278,23 +279,24 @@ namespace OCPI {
 	    !(status =
 	      get32Register(status, OccpWorkerRegisters) &
 	      OCCP_STATUS_WRITE_ERRORS))
-	  if (p.m_isSequence) {				\
+	  if (p.m_isSequence) {
 	    m_properties.setBytesRegisterOffset(offset + p.m_align,
-						val, nBytes);
+						val, nBytes, p.m_elementBytes);
 	    m_properties.set32RegisterOffset(offset, (uint32_t)nItems);
 	  } else
-	    m_properties.setBytesRegisterOffset(offset, val, nBytes);
+	    m_properties.setBytesRegisterOffset(offset, val, nBytes, p.m_elementBytes);
 	if (p.m_writeError && !status)
 	  status =
 	    get32Register(status, OccpWorkerRegisters) &
 	    OCCP_STATUS_WRITE_ERRORS;
-      } else if (p.m_isSequence) {					\
+      } else if (p.m_isSequence) {
 	m_properties.m_accessor->setBytes(m_properties.m_base + offset + p.m_align,
-					  val, nBytes, &status);
+					  val, nBytes, p.m_elementBytes, &status);
 	if (!status)
 	  m_properties.m_accessor->set32(m_properties.m_base + offset, (uint32_t)nItems, &status);
       } else
-	m_properties.m_accessor->setBytes(m_properties.m_base + offset, val, nBytes, &status);
+	m_properties.m_accessor->setBytes(m_properties.m_base + offset, val, nBytes,
+					  p.m_elementBytes, &status);
       if (status)
 	throwPropertyWriteError(status);
     }
@@ -319,7 +321,7 @@ namespace OCPI {
 	      OCCP_STATUS_READ_ERRORS)) {
 	  if (nBytes > n)
 	    throwPropertySequenceError();
-	  m_properties.getBytesRegisterOffset(offset + p.m_align, buf, nBytes);
+	  m_properties.getBytesRegisterOffset(offset + p.m_align, buf, nBytes, p.m_elementBytes);
 	  if (p.m_readError && !status)
 	    status =
 	      get32Register(status, OccpWorkerRegisters) &
@@ -332,7 +334,7 @@ namespace OCPI {
 	  if (nBytes > n)
 	    throwPropertySequenceError();
 	  m_properties.m_accessor->getBytes(m_properties.m_base + offset + p.m_align, 
-					    buf, nBytes, &status);
+					    buf, nBytes, p.m_elementBytes, &status);
 	}
       }
       if (status)

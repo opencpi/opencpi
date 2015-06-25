@@ -30,6 +30,7 @@ ifneq ($(MAKECMDGOALS),clean)
   $(and $(call DoShell,$(OcpiGen) -X $(Worker_xml),HdlContPfConfig),\
      $(error Processing container XML $(Worker_xml): $(HdlContPfConfig)))
   HdlPlatform:=$(word 1,$(HdlContPfConfig))
+  -include $(HdlPlatformsDir)/$(HdlPlatform)/$(HdlPlatform).mk
 endif
 OcpiLanguage:=vhdl
 override HdlLibraries+=platform

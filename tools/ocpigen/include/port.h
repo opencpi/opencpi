@@ -21,6 +21,7 @@ enum WIPType {
   NOCPort,      // NOC port, ready to support CP and DP
   MetadataPort, // Metadata to/from platform worker
   TimePort,     // TimeService port
+  TimeBase,     // TimeBase port - basis for time service
   PropPort,     // raw property port for shared SPI/I2C
   RCCPort,      // An RCC port
   DevSigPort,   // a port between devices

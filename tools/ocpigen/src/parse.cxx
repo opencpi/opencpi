@@ -344,7 +344,7 @@ addBuiltinProperties() {
 }
 // Parse the generic implementation control aspects (for rcc and hdl and other)
 const char *Worker::
-parseImplControl(ezxml_t &xctl) {
+parseImplControl(ezxml_t &xctl, const char *firstRaw) {
   // Now we do the rest of the control interface
   const char *err;
   if ((xctl = ezxml_cchild(m_xml, "ControlInterface")) &&
@@ -370,9 +370,13 @@ parseImplControl(ezxml_t &xctl) {
   // Now that we have all information about properties and we can actually
   // do the offset calculations and summarize the access type counts and flags
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
-    if ((err = (**pi).offset(m_ctl.offset, m_ctl.sizeOfConfigSpace, this)))
+    OU::Property &p = **pi;
+    // Raw properties must start on a 4 byte boundary
+    if (firstRaw && !strcasecmp(p.m_name.c_str(), firstRaw))
+      m_ctl.offset = OU::roundUp(m_ctl.offset, 4);
+    if ((err = p.offset(m_ctl.offset, m_ctl.sizeOfConfigSpace, this)))
       return err;
-    m_ctl.summarizeAccess(**pi);
+    m_ctl.summarizeAccess(p);
   }
   // Allow overriding sizeof config space, giving priority to controlinterface
   uint64_t sizeOfConfigSpace;

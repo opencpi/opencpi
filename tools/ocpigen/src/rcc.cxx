@@ -919,7 +919,7 @@ parseRccImpl(const char *package) {
   m_staticPattern = ezxml_cattr(m_xml, "StaticMethods");
   ezxml_t xctl;
   if ((err = parseSpec(package)) ||
-      (err = parseImplControl(xctl)) ||
+      (err = parseImplControl(xctl, NULL)) ||
       (xctl && (err = OE::checkAttrs(xctl, GENERIC_IMPL_CONTROL_ATTRS, "Threaded", (void *)0))) ||
       (err = OE::getBoolean(m_xml, "Threaded", &m_isThreaded)))
     return err;

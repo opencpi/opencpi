@@ -18,9 +18,10 @@ library ml605;
 architecture rtl of ml605_worker is
   signal ctl_clk                : std_logic;        -- clock we produce and use for the control plane
   signal ctl_rst_n              : std_logic;        -- reset associated with control plane clock
+  signal ctl_rst                : std_logic;
   signal sys0_clkunbuf          : std_logic;        -- unbuffered 200mhz clock
   signal sys0_clk               : std_logic;        -- timebase clock we produce and use
-  signal sys0_rst_n             : std_logic;        -- reset for timebase
+  signal sys0_rst               : std_logic;        -- reset for timebase
   signal sys1_clk_in            : std_logic;        -- received sys1 clk before bufg
   signal sys1_clk               : std_logic;        -- GBE clock we have produced for GMII
   signal sys1_rst_n             : std_logic;        -- reset for GBE clock
@@ -34,6 +35,11 @@ architecture rtl of ml605_worker is
   --signal ila_data               : std_logic_vector(31 downto 0);
   --signal ila_trigger            : std_logic_vector(7 downto 0);
 begin
+  ctl_rst            <= not ctl_rst_n;
+  timebase_out.clk   <= sys0_clk;
+  timebase_out.reset <= sys0_rst;
+  timebase_out.ppsIn <= ppsExtIn;
+  ppsOut             <= timebase_in.ppsOut;
   -- Provide the highest available quality clock and reset used for the time server,
   -- without regard for it being in any particular time domain.
 
@@ -49,8 +55,8 @@ begin
   sys0_sr : bsv.bsv.SyncResetA
     generic map(RSTDELAY => 0)
     port    map(CLK      => sys0_clk,
-                IN_RST   => ctl_rst_n,
-                OUT_RST  => sys0_rst_n);
+                IN_RST   => ctl_rst,
+                OUT_RST  => sys0_rst);
 
   
   -- Establish the sys1 clock which drives the SGMII transceiver
@@ -122,35 +128,6 @@ begin
                 cp_in    => cp_in,
                 cp_out   => cp_out);
 
-  -- This piece of generic infrastructure in is instantiated here because
-  -- it localizes all these signals here in the platform worker, and thus
-  -- the platform worker simply produces clock, reset, and time, all in the
-  -- clock domain of the timekeepping clock.
-  ts : time_server
-    port map(
-      CLK                 => ctl_clk,
-      RST_N               => ctl_rst_n,
-      timeCLK             => sys0_clk,
-      timeRST_N           => sys0_rst_n,
-
-      timeControl         => props_in.timeControl,
-      timeControl_written => props_in.timeControl_written,
-      timeStatus          => props_out.timeStatus,
-      timeNowIn           => props_in.timeNow,
-      timeNow_written     => props_in.timeNow_written,
-      timeNowOut          => props_out.timeNow,
-      timeDeltaIn         => props_in.timeDelta,
-      timeDelta_written   => props_in.timeDelta_written,
-      timeDeltaOut        => props_out.timeDelta,
-      ticksPerSecond      => props_out.ticksPerSecond,
-      
-      -- PPS interface
-      ppsIn               => ppsExtIn,
-      ppsOut              => ppsOut,
-
-      -- Time service output
-      time_service        => time_out
-      );
 
   -- Output/readable properties
   props_out.platform        <= to_string("ml605", props_out.platform'length-1);

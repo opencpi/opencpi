@@ -710,11 +710,11 @@ opencpi_io_mmap(struct file * file, struct vm_area_struct * vma) {
       log_err("mmap to bad addresses %lx @ %016llx\n", (unsigned long)size, start_address);
       block = NULL;
     }
-  } else if (start_address == 0 && end_address == sizeof(OccpSpace)) {
+  } else if (start_address == 0 && end_address == mydev->bar0->size) {
     log_debug("bar0 mapping\n");
     block = mydev->bar0;
     pfn = block->start_phys >> PAGE_SHIFT;
-  } else if (start_address == sizeof(OccpSpace) && size == mydev->bar1->size) {
+  } else if (start_address == mydev->bar0->size && size == mydev->bar1->size) {
     log_debug("bar1 mapping\n");
     block = mydev->bar1;
     pfn = block->start_phys >> PAGE_SHIFT;

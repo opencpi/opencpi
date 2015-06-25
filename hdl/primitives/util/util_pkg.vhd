@@ -40,6 +40,20 @@ component TSINOUT_N is
            IO : inout std_logic_vector(width-1 downto 0)); -- pin/pad
 end component TSINOUT_N;
 
+component SyncRegister is
+  generic (
+      width : positive := 1;
+      init  : natural := 0);
+    port (
+      sCLK   : in std_logic;
+      sRST   : in std_logic;
+      dCLK   : in std_logic;
+      sEN    : in std_logic;
+      sRDY   : out std_logic;
+      sD_IN  : in std_logic_vector(width-1 downto 0);      
+      dD_OUT : out std_logic_vector(width-1 downto 0));
+end component SyncRegister;
+
 -- A convenience function to join a CWD to a filename
 function cwd_join(cwd : string_t; name : string_t) return string;
 

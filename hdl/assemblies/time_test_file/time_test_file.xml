@@ -1,0 +1,4 @@
+<HdlAssembly>
+  <instance worker='time_gen' connect='file_write'/>
+  <instance worker='file_write'/>
+</HdlAssembly>

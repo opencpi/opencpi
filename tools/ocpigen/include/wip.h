@@ -378,6 +378,28 @@ class TimeServicePort : public Port {
 		       std::string &last, const char *myComment, OcpAdapt *adapt);
   void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
 };
+class TimeBasePort : public Port {
+  TimeBasePort(const TimeBasePort &other, Worker &w , std::string &name, size_t count,
+		  const char *&err);
+ public:
+  TimeBasePort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
+  Port &clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role *role,
+	      const char *&err) const;
+  inline const char *prefix() const { return "timebase"; }
+  inline const char *typeName() const { return "TimeBase"; }
+  void emitRecordTypes(FILE *f);
+  //  void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker,
+  //			const char *defaultIn, const char *defaultOut);
+  void emitRecordInterface(FILE *f, const char *implName);
+  //  void emitVHDLShellPortMap(FILE *f, std::string &last);
+  void emitVHDLSignalWrapperPortMap(FILE *f, std::string &last);
+#if 0 
+  void emitPortSignals(FILE *f, Attachments &atts, Language lang,
+		       const char *indent, bool &any, std::string &comment,
+		       std::string &last, const char *myComment, OcpAdapt *adapt);
+#endif
+  void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
+};
 class RawPropPort : public Port {
  public:
   RawPropPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
@@ -576,7 +598,7 @@ class Worker : public Parsed, public OU::IdentResolver {
     *parseHdl(const char *package = NULL),
     *parseRccAssy(),
     *parseOclAssy(),
-    *parseImplControl(ezxml_t &xctl),
+    *parseImplControl(ezxml_t &xctl, const char *firstRaw),
     *parseImplLocalMemory(),
     *findPackage(ezxml_t spec, const char *package),
     *parseSpecControl(ezxml_t ps),
@@ -681,7 +703,7 @@ class Worker : public Parsed, public OU::IdentResolver {
 
 #define IMPL_ATTRS \
   "name", "spec", "paramconfig", "reentrant", "scaling", "scalable", "controlOperations"
-#define IMPL_ELEMS "componentspec", "properties", "property", "specproperty", "propertysummary", "xi:include", "controlinterface",  "timeservice", "unoc"
+#define IMPL_ELEMS "componentspec", "properties", "property", "specproperty", "propertysummary", "xi:include", "controlinterface",  "timeservice", "unoc", "timebase"
 #define GENERIC_IMPL_CONTROL_ATTRS \
   "name", "SizeOfConfigSpace", "ControlOperations", "Sub32BitConfigProperties"
 #define ASSY_ELEMS "instance", "connection", "external"

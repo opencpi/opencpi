@@ -391,7 +391,7 @@ parseOcl() {
     return err;
   ezxml_t xctl;
   if ((err = parseSpec()) ||
-      (err = parseImplControl(xctl)) ||
+      (err = parseImplControl(xctl, NULL)) ||
       (xctl && (err = OE::checkAttrs(xctl, GENERIC_IMPL_CONTROL_ATTRS, (void *)0))) ||
       (err = parseImplLocalMemory()))
     return err;

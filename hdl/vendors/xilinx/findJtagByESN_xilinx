@@ -1,0 +1,36 @@
+#!/bin/sh --noprofile
+dir=`dirname $0`
+# This internal script takes an ESN and returns the usb port that has it.
+
+# arg 1 is impact command
+# arg 2 is ESN that we're looking for
+rm -f _impactbatch.log
+temp=/tmp/ocpibitstream$$
+tlog=$temp.1
+tmp=$temp.2
+imp=$1
+echo Looking for the Xilinx USB port corresponding to JTAG Pod ESN $2. 1>&2
+echo listusbcables | $imp -batch 2> $tlog > $tmp
+ports=`grep '^port=' $tmp | sed 's/port=\(.*\), .*$/\1/'`
+if test "$ports" = ""; then
+  echo No Xilinx JTAG Pods found. 1>&2
+  exit 1
+fi
+echo Discovered ports are: $ports 1>&2
+for p in $ports; do
+  echo -n Trying $p... 1>&2
+  esn=`$dir/getESNfromUSB_xilinx $1 $p`
+  if test $? != 0; then
+    echo " Can't find an ESN from $p" 1>&2
+    continue;
+  fi
+  echo -n " ESN is: $esn" 1>&2
+  if test "$esn" != $2; then
+    echo ". Skipping it." 1>&2
+    continue;
+  fi
+  echo 1>&2
+  echo $p
+  exit 0
+done
+

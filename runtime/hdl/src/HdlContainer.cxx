@@ -30,24 +30,6 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-
-
-
-/**
-  @brief
-  This file contains the implementation for the HDL container for FPGA
-  Platformms
-  It implements the OCPI::HDL::Container class, which implements the
-  OCPI::Container::Interface class.
-
-  Revision History:
-
-    5/6/2009 - Jim Kulp
-    Initial version.
-
-************************************************************************** */
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <unistd.h>
 #include "OcpiOsAssert.h"

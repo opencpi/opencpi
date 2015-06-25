@@ -529,6 +529,9 @@ end from_float;
 function from_float (f: float_t) return std_logic_vector is begin
   return std_logic_vector(f);
 end from_float;                                                            
+function from_float (f: float_t) return integer is begin
+  return integer(float_pkg.to_real(float_pkg.to_float(f)));
+end from_float;                                                            
 function slv(a: float_array_t) return std_logic_vector is
   variable v: std_logic_vector((a'length * 32) - 1 downto 0);
 begin

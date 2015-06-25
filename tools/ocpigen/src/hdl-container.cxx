@@ -902,7 +902,7 @@ emitTieoffSignals(FILE *f) {
 	fprintf(f, "1\n");
       fprintf(f,
 	      "    port map(I => %s, IO => %s, O => %s, OE => %s);\n",
-	      in.c_str(), s.name(), out.c_str(), oe.c_str());
+	      out.c_str(), s.name(), in.c_str(), oe.c_str());
     }
   }
 }

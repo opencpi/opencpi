@@ -99,7 +99,7 @@ masterIn() const {
 
 static const char *wipNames[] =
   { "Unknown", "WCI", "WSI", "WMI", "WDI", "WMemI", "WTI", "CPMaster",
-    "uNOC", "Metadata", "TimeService", "RawProperty", 0};
+    "uNOC", "Metadata", "TimeService", "TimeBase", "RawProperty", 0};
 const char *Port::
 typeName() const { return wipNames[type]; }
 
@@ -710,8 +710,6 @@ TimeServicePort::
 TimeServicePort(const TimeServicePort &other, Worker &w , std::string &name, size_t count,
 		const char *&err)
   : Port(other, w, name, count, err) {
-  if (err)
-    return;
 }
 
 // Virtual constructor: the concrete instantiated classes must have a clone method,
@@ -797,6 +795,112 @@ emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *inden
 void TimeServicePort::
 emitConnectionSignal(FILE *f, bool /*output*/, Language /*lang*/, std::string &signal) {
   fprintf(f, "  signal %s : platform.platform_pkg.time_service_t;\n", signal.c_str());
+}
+
+TimeBasePort::
+TimeBasePort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
+  : Port(w, x, sp, ordinal, TimeBase, "timebase", err) {
+}
+// Our special copy constructor
+TimeBasePort::
+TimeBasePort(const TimeBasePort &other, Worker &w , std::string &name, size_t count,
+		const char *&err)
+  : Port(other, w, name, count, err) {
+}
+
+// Virtual constructor: the concrete instantiated classes must have a clone method,
+// which calls the corresponding specialized copy constructor
+Port &TimeBasePort::
+clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role */*role*/,
+      const char *&err) const {
+  return *new TimeBasePort(*this, w, name, count, err);
+}
+
+void TimeBasePort::
+emitRecordTypes(FILE *f) {
+  fprintf(f,
+	  "\n"
+	  "  -- Record for the Timebase output signals for port \"%s\" of worker \"%s\"\n"
+	  "  alias worker_%s_out_t is platform.platform_pkg.time_base_%s_t;\n"
+	  "  alias worker_%s_in_t is platform.platform_pkg.time_base_%s_t;\n",
+	  name(), m_worker->m_implName,
+	  name(), master ? "out" : "in",
+	  name(), master ? "in" : "out");
+}
+
+#if 0
+void TimeBasePort::
+emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool /*inWorker*/,
+		 const char *, const char *) {
+  if (last.size())
+    fprintf(f, last.c_str(), ";");
+  std::string in, out;
+  OU::format(in, typeNameIn.c_str(), "");
+  OU::format(out, typeNameOut.c_str(), "");
+  OU::format(last,
+	     "  %-*s : %s  %s%s_t%%s",
+	     (int)m_worker->m_maxPortTypeName, 
+	     master ? out.c_str() : in.c_str(),
+	     master ? "out" : "in", prefix,
+	     master ? out.c_str() : in.c_str());
+}
+#endif
+void TimeBasePort::
+emitRecordInterface(FILE *f, const char *implName) {
+  std::string in, out;
+  OU::format(in, typeNameIn.c_str(), "");
+  OU::format(out, typeNameOut.c_str(), "");
+  fprintf(f,
+	  "\n"
+	  "  -- Records for the %s input signals for port \"%s\" of worker \"%s\"\n"
+	  "  alias %s_t is platform.platform_pkg.time_base_%s_t;\n"
+	  "  alias %s_t is platform.platform_pkg.time_base_%s_t;\n",
+	  typeName(), name(), implName,
+	  in.c_str(), master ? "in" : "out",
+	  out.c_str(), master ? "out" : "in");
+}
+
+#if 0
+void TimeBasePort::
+emitVHDLShellPortMap(FILE *f, std::string &last) {
+  std::string in, out;
+  OU::format(in, typeNameIn.c_str(), "");
+  OU::format(out, typeNameOut.c_str(), "");
+  fprintf(f,
+	  "%s    %s => %s",
+	  last.c_str(),
+	  master ? out.c_str() : in.c_str(),
+	  master ? out.c_str() : in.c_str());
+}
+#endif
+void TimeBasePort::
+emitVHDLSignalWrapperPortMap(FILE *f, std::string &last) {
+  emitVHDLShellPortMap(f, last);
+}
+
+#if 0
+void TimeBasePort::
+emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *indent,
+		bool &any, std::string &comment, std::string &last, const char *myComment,
+		OcpAdapt */*adapt*/) {
+  doPrev(f, last, comment, myComment);
+  std::string in, out;
+  OU::format(in, typeNameIn.c_str(), "");
+  OU::format(out, typeNameOut.c_str(), "");
+  // Only one direction - master outputs to slave
+  fprintf(f, "%s%s => ",
+	  any ? indent : "",
+	  master ? out.c_str() : in.c_str());
+  //	fputs(p.master ? c.m_masterName.c_str() : c.m_slaveName.c_str(), f);
+  Attachment *at = atts.front();
+  Connection *c = at ? &at->m_connection : NULL;
+  fputs(at ? c->m_masterName.c_str() : "open", f);
+}
+#endif
+
+void TimeBasePort::
+emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signal) {
+  fprintf(f, "  signal %s : platform.platform_pkg.time_base_%s_t;\n", signal.c_str(), master == output ? "out" : "in");
 }
 
 MetaDataPort::

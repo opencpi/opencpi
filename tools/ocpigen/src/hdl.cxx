@@ -82,8 +82,11 @@ parseHdlImpl(const char *package) {
   bool dwFound;
   if (!strcasecmp(OE::ezxml_tag(m_xml),"hdldevice"))
     m_isDevice = true;
+  // This must be here so that when the properties are parsed,
+  // the first raw one is properly aligned.
+  const char *firstRaw = ezxml_cattr(m_xml, "FirstRawProperty");
   if ((err = parseSpec(package)) ||
-      (err = parseImplControl(xctl)) ||
+      (err = parseImplControl(xctl, firstRaw)) ||
       (err = OE::getNumber(m_xml, "datawidth", &dw, &dwFound)) ||
       (err = OE::getBoolean(m_xml, "outer", &m_outer)))
     return err;
@@ -92,7 +95,6 @@ parseHdlImpl(const char *package) {
   if (!m_noControl) {
     if (!createPort<WciPort>(*this, xctl, NULL, -1, err))
       return err;
-    const char *firstRaw = ezxml_cattr(m_xml, "FirstRawProperty");
     if ((err = OE::getBoolean(m_xml, "RawProperties", &m_ctl.rawProperties)))
       return err;
     if (firstRaw) {
@@ -165,6 +167,7 @@ parseHdlImpl(const char *package) {
   if ((err = initImplPorts(m_xml, "MemoryInterface", createPort<WmemiPort>)) ||
       (err = initImplPorts(m_xml, "TimeInterface", createPort<WtiPort>)) ||
       (err = initImplPorts(m_xml, "timeservice", createPort<TimeServicePort>)) ||
+      (err = initImplPorts(m_xml, "timebase", createPort<TimeBasePort>)) ||
       (err = initImplPorts(m_xml, "CPMaster", createPort<CpPort>)) ||
       (err = initImplPorts(m_xml, "uNOC", createPort<NocPort>)) ||
       (err = initImplPorts(m_xml, "Metadata", createPort<MetaDataPort>)) ||

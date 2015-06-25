@@ -46,6 +46,10 @@ architecture rtl of alst4x_worker is
     unoc_in_take            : in  std_logic);
   end component pci_alst4;
 begin
+  timebase_out.clk   <= sys0_clk;
+  timebase_out.reset <= not sys0_rstn;
+  timebase_out.ppsIn <= ppsExtIn;
+  ppsOut             <= timebase_in.ppsOut;
   -- Instantiate the PCI core, which will also provide back to us a 125MHz clock
   -- based on the incoming 250Mhz PCI clock (based on the backplane 100Mhz PCI clock).
   -- We will use that 125MHz clock as our control plane clock since that avoids
@@ -100,36 +104,6 @@ begin
                 client_out => cp2unoc,
                 cp_in    => cp_in,
                 cp_out   => cp_out);
-
-  -- This piece of generic infrastructure in is instantiated here because
-  -- it localizes all these signals here in the platform worker, and thus
-  -- the platform worker simply produces clock, reset, and time, all in the
-  -- clock domain of the timekeepping clock.
-  ts : time_server
-    port map(
-      CLK                 => ctl_clk,
-      RST_N               => ctl_rst_n,
-      timeCLK             => sys0_clk,
-      timeRST_N           => sys0_rstn,
-
-      timeControl         => props_in.timeControl,
-      timeControl_written => props_in.timeControl_written,
-      timeStatus          => props_out.timeStatus,
-      timeNowIn           => props_in.timeNow,
-      timeNow_written     => props_in.timeNow_written,
-      timeNowOut          => props_out.timeNow,
-      timeDeltaIn         => props_in.timeDelta,
-      timeDelta_written   => props_in.timeDelta_written,
-      timeDeltaOut        => props_out.timeDelta,
-      ticksPerSecond      => props_out.ticksPerSecond,
-      
-      -- PPS interface
-      ppsIn               => ppsExtIn,
-      ppsOut              => ppsOut,
-
-      -- Time service output
-      time_service        => time_out
-      );
 
   -- Output/readable properties
   props_out.platform        <= to_string("alst4x", props_out.platform'length-1);

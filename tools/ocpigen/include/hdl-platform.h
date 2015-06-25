@@ -6,7 +6,8 @@
 #include "hdl-slot.h"
 
 #define HDL_PLATFORM_ATTRS "dummy", "control"
-#define HDL_PLATFORM_ELEMS "cpmaster", "nocmaster", "device", "timeservice", "metadata", "slot"
+#define HDL_PLATFORM_ELEMS \
+  "cpmaster", "nocmaster", "device", "metadata", "slot", "timebase"
 
 
 class HdlConfig;

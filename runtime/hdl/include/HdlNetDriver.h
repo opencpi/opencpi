@@ -121,7 +121,8 @@ namespace OCPI {
 	inline uint8_t get8(RegisterOffset offset, uint32_t *status) {
 	  return (uint8_t)(get(offset, sizeof(uint8_t), status) >> ((offset&3)*8));
 	}
-	void getBytes(RegisterOffset offset, uint8_t *buf, size_t length, uint32_t *status);
+	void getBytes(RegisterOffset offset, uint8_t *buf, size_t length, size_t elementBytes,
+		      uint32_t *status);
 	void set64(RegisterOffset offset, uint64_t val, uint32_t *status);
 	inline void set32(RegisterOffset offset, uint32_t val, uint32_t *status) {
 	  set(offset, sizeof(uint32_t), val, status);
@@ -132,7 +133,8 @@ namespace OCPI {
 	inline void set8(RegisterOffset offset, uint8_t val, uint32_t *status) {
 	  set(offset, sizeof(uint8_t), val << ((offset & 3) * 8), status);
 	}
-	void setBytes(RegisterOffset offset, const uint8_t *buf, size_t length, uint32_t *status);
+	void setBytes(RegisterOffset offset, const uint8_t *buf, size_t length,
+		      size_t elementBytes, uint32_t *status);
       };
     }
   }

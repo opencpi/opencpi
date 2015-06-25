@@ -20,7 +20,6 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include "OcpiOsAssert.h"
 #include "OcpiOsMisc.h"
@@ -74,9 +73,9 @@ namespace OCPI {
     }
 
     void Access::
-    getBytes(RegisterOffset offset, uint8_t *to8, size_t bytes) const {
+    getBytes(RegisterOffset offset, uint8_t *to8, size_t bytes, size_t elementBytes) const {
       volatile uint8_t *from8 = m_registers + offset;
-      if (bytes >= 8 && !(((intptr_t)to8 | offset) & 7)) {
+      if (elementBytes >= 4 && bytes >= 8 && !(((intptr_t)to8 | offset) & 7)) {
 	uint64_t *to64 = (uint64_t *)to8;
 	volatile uint64_t *from64 = (uint64_t *)from8;
 	do
@@ -85,7 +84,7 @@ namespace OCPI {
 	to8 = (uint8_t*)to64;
 	from8 = (uint8_t *)from64;
       }
-      if (bytes >= 4 && !(((intptr_t)to8 | offset) & 3)) {
+      if (elementBytes >= 4 && bytes >= 4 && !(((intptr_t)to8 | offset) & 3)) {
 	uint32_t *to32 = (uint32_t *)to8;
 	volatile uint32_t *from32 = (uint32_t *)from8;
 	do
@@ -94,7 +93,7 @@ namespace OCPI {
 	to8 = (uint8_t*)to32;
 	from8 = (uint8_t *)from32;
       }
-      if (bytes >= 2 && !(((intptr_t)to8 | offset) & 1)) {
+      if (elementBytes >= 2 && bytes >= 2 && !(((intptr_t)to8 | offset) & 1)) {
 	uint16_t *to16 = (uint16_t *)to8;
 	volatile uint16_t *from16 = (uint16_t *)from8;
 	do
@@ -108,7 +107,8 @@ namespace OCPI {
     }
     
     void Access::
-    setBytes(RegisterOffset offset, const uint8_t *from8, size_t bytes) const {
+    setBytes(RegisterOffset offset, const uint8_t *from8, size_t bytes,
+	     size_t elementBytes) const {
       volatile uint8_t *to8 = m_registers + offset;
       ocpiDebug("setBytes %p off %" PRIx64 " from %p to %p bytes %zx",
 		this, (uint64_t)offset, from8, to8, bytes);
