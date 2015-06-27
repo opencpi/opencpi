@@ -296,7 +296,7 @@ XstMakeLso=\
    $(foreach l,$(HdlLibrariesInternal),\
       $(infox HL:$l) \
       echo $(lastword $(subst -, ,$(notdir $l)));)\
-   $(foreach l,$(SubCores_$(HdlTarget)), \
+   $(foreach l,$(XstCores), \
       $(infox CC:$l) \
       echo $(call XstLibFromCore,$l);)\
   ) > $(XstLsoFile);
@@ -307,7 +307,7 @@ XstMakeIni=\
       echo $(lastword $(subst -, ,$(notdir $(l))))=$(strip \
         $(call FindRelative,$(TargetDir),$(strip \
            $(call HdlLibraryRefDir,$(l),$(HdlTarget)))));) \
-   $(foreach l,$(infox SubCores:$(SubCores_$(HdlTarget)))$(SubCores_$(HdlTarget)),\
+   $(foreach l,$(XstCores),$(infox XstCore:$l)\
       echo $(call XstLibFromCore,$l)=$(call FindRelative,$(TargetDir),$(strip \
           $(firstword $(foreach c,$(call XstCoreLibraryChoices,$(call XstPathFromCore,$l),a),$(infox CECEL:$c)$(call HdlExists,$c)))));) \
   ) > $(XstIniFile);

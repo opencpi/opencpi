@@ -520,17 +520,17 @@ end to_string_array;
 
 function to_float(r: real) return float_t is
 begin
-  return float_pkg.to_slv(float_pkg.to_float32(float_pkg.to_float(r)));
+  return float_pkg.to_slv(float_pkg.to_float(r, 8, 23));
 end to_float;
 function from_float(f: float_t) return real is
 begin
-  return float_pkg.to_real(float_pkg.to_float(f));
+  return float_pkg.to_real(float_pkg.to_float(f, 8, 23));
 end from_float;
 function from_float (f: float_t) return std_logic_vector is begin
   return std_logic_vector(f);
 end from_float;                                                            
 function from_float (f: float_t) return integer is begin
-  return integer(float_pkg.to_real(float_pkg.to_float(f)));
+  return float_pkg.to_integer(float_pkg.to_float(f, 8, 23));
 end from_float;                                                            
 function slv(a: float_array_t) return std_logic_vector is
   variable v: std_logic_vector((a'length * 32) - 1 downto 0);
@@ -557,7 +557,7 @@ end to_float_array;
 
 function to_double(r: real) return double_t is
 begin
-  return float_pkg.to_slv(float_pkg.to_float64(float_pkg.to_float(r)));
+  return float_pkg.to_slv(float_pkg.to_float(r, 11, 52));
 end to_double;
 function from_double(d: double_t) return real is
 begin

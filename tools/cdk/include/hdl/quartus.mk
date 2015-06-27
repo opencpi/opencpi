@@ -126,14 +126,14 @@ QuartusMakeQsf=\
   echo set_global_assignment -name TOP_LEVEL_ENTITY $(or $(Top),$(Core)); \
   \
   $(and $(SubCores_$(HdlTarget)),echo '\#' Import QXP file for each core;) \
-  $(foreach c,$(SubCores_$(HdlTarget)),\
+  $(foreach c,$(SubCores_$(HdlTarget)),$(infox CCC$c)\
     echo set_global_assignment -name QXP_FILE \
       '\"'$(call FindRelative,$(TargetDir),$(call HdlCoreRef,$c,$(HdlTarget)))'\"';\
-    $(foreach w,$(call HdlRmRv,$(basename $(notdir $c))),$(infox WWW:$w)\
+    $(foreach w,$(subst _rv,,$(basename $(notdir $c))),$(infox WWW:$w)\
       $(foreach d,$(dir $c),$(infox DDD:$d)\
         $(foreach l,$(if $(filter vhdl,$(HdlLanguage)),vhd,v),$(infox LLLLL:$l)\
           $(foreach f,$(or $(xxcall HdlExists,$d../gen/$w-defs.$l),\
-                           $(call HdlExists,$d../$(shell echo $w | sed 's/_c[0-9][0-9]*$$//').$l)),$(infox FFFF:$f)\
+                           $(call HdlExists,$d$w.$l)),$(infox FFFF:$f)\
             echo set_global_assignment -name $(if $(filter vhdl,$(HdlLanguage)),VHDL,VERILOG)_FILE -library $w '\"'$(call FindRelative,$(TargetDir),$f)'\"';\
             $(and $(filter vhdl,$(HdlLanguage)),\
               $(foreach g,$(or $(call HdlExists,$d/generics.vhd),\

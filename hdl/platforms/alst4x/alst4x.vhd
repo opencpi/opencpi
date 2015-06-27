@@ -47,7 +47,7 @@ architecture rtl of alst4x_worker is
   end component pci_alst4;
 begin
   timebase_out.clk   <= sys0_clk;
-  timebase_out.reset <= not sys0_rstn;
+  timebase_out.reset <= not ctl_rst_n;
   timebase_out.ppsIn <= ppsExtIn;
   ppsOut             <= timebase_in.ppsOut;
   -- Instantiate the PCI core, which will also provide back to us a 125MHz clock

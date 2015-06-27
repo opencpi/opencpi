@@ -313,9 +313,9 @@ define DoLink
       $$(infox DLHTNB:$1:$2:$3:$4==$$(call MyBBLibFile,$1,$2,$4))
       LibLinks+=$(LibDir)/$1/$5
       # This will actually be included/evaluated twice
-      $(LibDir)/$1/$5: $$$$(call MyBBLibFile,$1,$2,$4) | $(LibDir)/$1
-	$(AT)echo Creating link from $$@ -\> $$(patsubst %/,%,$$(dir $$<)) to export the stub library.
-	$(AT)$$(call MakeSymLink2,$$(patsubst %/,%,$$(dir $$<)),$(strip\
+      $(LibDir)/$1/$5: | $$$$(call MyBBLibFile,$1,$2,$4) $(LibDir)/$1
+	$(AT)echo Creating link from $$@ -\> $$(patsubst %/,%,$$(dir $$(call MyBBLibFile,$1,$2,$4))) to export the stub library.
+	$(AT)$$(call MakeSymLink2,$$(patsubst %/,%,$$(dir $$(call MyBBLibFile,$1,$2,$4))),$(strip\
                                   $(LibDir)/$1),$5)
     endif
   endif

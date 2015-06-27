@@ -402,9 +402,6 @@ HdlShadowFiles=\
 	  $(wildcard $(call HdlGetTop,$(HdlTarget))/$f),\
           $f))
 
-HdlVHDLImplFiles=\
-  $(call WkrTargetDir,$1,$2)/$(Worker)-impl.vhd
-
 # This is the list of files that will be generated in the TARGET
 # directory.
 # The VHDL defs file must preceed the generics file
@@ -412,12 +409,14 @@ HdlVHDLImplFiles=\
 # FIXME: this has worker stuff in it - should it be elsewhere?
 # $(call HdlTargetSrcFiles,target-dir,paramconfig)
 HdlTargetSrcFiles=\
-  $(VHDLDefsFile) \
+  $(if $(and $2,$(filter-out 0,$2)),\
+    $(call HdlVHDLTargetDefs,$1,$2) $(call HdlVerilogTargetDefs,$1,$2), \
+    $(DefsFile) $(WDefsFile)) \
   $(and $(WorkerParamNames),$(strip \
      $(call WkrTargetDir,$1,$2)/generics$(HdlVHDLIncSuffix)\
      $(and $(filter .v,$(HdlSourceSuffix)),\
        $(call WkrTargetDir,$1,$2)/generics$(HdlVerilogIncSuffix))))\
-  $(if $(and $2,$(filter-out 0,$2)),$(call HdlVHDLImplFiles,$1,$2),$(ImplHeaderFiles))
+  $(if $(and $2,$(filter-out 0,$2)),$(call HdlVHDLTargetImpl,$1,$2),$(ImplHeaderFiles))
 
 #		$(and $(ParamVHDLtype_$(ParamConfig)_$n), \
 #		   echo '$(ParamVHDLtype_$(ParamConfig)_$n)' ;) \

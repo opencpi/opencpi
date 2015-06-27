@@ -61,6 +61,7 @@ OBJ=$(and $1,$(if $(filter 0,$1),,_c$1))$(HdlBin)
 ArtifactFile=
 
 HdlDefs=-defs
+HdlImpl=-impl
 HdlSkelSuffix=-skel$(HdlSourceSuffix)
 HdlDefsSuffix=$(HdlDefs)$(HdlIncSuffix)
 HdlOtherDefsSuffix=$(HdlDefs)$(HdlOtherIncSuffix)
@@ -135,6 +136,7 @@ HdlOtherImplSourceFile=$(GeneratedDir)/$(Worker)$(HdlOtherImplSuffix)
 # $(call CoreBlackBoxFiles,target,param-config)
 HdlVerilogTargetDefs=$(call WkrTargetDir,$1,$2)/$(Worker)$(HdlDefs)$(HdlVerilogIncSuffix)
 HdlVHDLTargetDefs=$(call WkrTargetDir,$1,$2)/$(Worker)$(HdlDefs)$(HdlVHDLSuffix)
+HdlVHDLTargetImpl=$(call WkrTargetDir,$1,$2)/$(Worker)$(HdlImpl)$(HdlVHDLSuffix)
 
 CoreBlackBoxFiles=$(foreach d,$(DefsFile) \
                               $(if $(filter $(HdlMode),container config),,$(WDefsFile)),\
@@ -215,22 +217,34 @@ $(LibDir)/$(notdir $(ImplXmlFile)): | $(LibDir)
 	$(AT)echo Creating link from $(LibDir) -\> $(ImplXmlFile) to expose the $(CwdName) implementation xml.
 	$(AT)$(call MakeSymLink,$(ImplXmlFile),$(LibDir))
 
-# Generate the stub files by providing a link from gen/worker.v to gen/worker-defs.v
-# This enables 2 different things:
-# 1. Creating of precompiled black-box-stub libraries for, e.g. XST (build in gen/hdl)
-# 2. Allow tools with no precompiled libraries to access component decls (e.g. quartus)
-# Note that this is not used or needed when real cores do not get built (sim)
-$(call OcpiDbgVar,DefsFile)
-$(LibDir)/$(Worker)$(HdlSourceSuffix): $(DefsFile) | $(LibDir)
-	$(AT)echo Creating link from $@ -\> $(DefsFile) to expose the stub for worker "$(Worker)".
-	$(AT)$(call MakeSymLink2,$(DefsFile),$(LibDir),$(Worker)$(HdlSourceSuffix))
+# Export the stub/defs files by providing links to the defs files that are
+# in the target directories.  This allows assemblies to compile with these source files
+# to instantiate cores.
 
-$(LibDir)/$(Worker)$(HdlOtherSourceSuffix): $(WDefsFile) | $(LibDir)
-	$(AT)echo Creating link from $@ -\> $(WDefsFile) to expose the other-language stub for worker "$(Worker)".
-	$(AT)$(call MakeSymLink2,$(WDefsFile),$(LibDir),$(Worker)$(HdlOtherSourceSuffix))
+$(call OcpiDbgVar,DefsFile)
+# Macro to generate a links for a target $1 and a configuration $2
+HdlDefsDir=$(if $(filter $2,0),$(GeneratedDir),$(call WkrTargetDir,$1,$2))
+define DoDefsLinks
+
+$(LibDir)/$1/$(Worker)$3$(HdlSourceSuffix): \
+                 $(call HdlDefsDir,$1,$2)/$(notdir $(DefsFile)) | $(LibDir)/$1
+	$(AT)echo Creating link from $$@ -\> $$< to expose the definition of worker "$(Worker)$3".
+	$(AT)$$(call MakeSymLink2,$$<,$$(dir $$@),$$(notdir $$@))
+
+$(LibDir)/$1/$(Worker)$3$(HdlOtherSourceSuffix): \
+                 $(call HdlDefsDir,$1,$2)/$(notdir $(WDefsFile)) | $(LibDir)
+	$(AT)echo Creating link from $$@ -\> $$< to expose the other-language stub for worker "$(Worker)$3".
+	$(AT)$$(call MakeSymLink2,$$<,$$(dir $$@),$$(notdir $$@))
 
 $(call OcpiDbg,Before all: "$(LibDir)/$(Worker)$(HdlSourceSuffix)")
-links: $(LibDir)/$(Worker)$(HdlSourceSuffix) $(LibDir)/$(Worker)$(HdlOtherSourceSuffix) 
+links: $(LibDir)/$1/$(Worker)$3$(HdlSourceSuffix) $(LibDir)/$1/$(Worker)$3$(HdlOtherSourceSuffix)
+
+endef
+
+$(foreach t,$(HdlTargets),\
+  $(foreach c,$(ParamConfigurations),\
+    $(eval $(call DoDefsLinks,$t,$c,$(if $(filter $c,0),,_c$c)))))
+
 all: links
 
 endif

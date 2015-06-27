@@ -14,7 +14,8 @@ if test "$OCPI_ROOT_DIR" = ""; then
 fi
 # Tell the ocpihdl utility to always assume the FPGA device is the zynq PL.
 export OCPI_DEFAULT_HDL_DEVICE=pl:0
-export OCPI_SMB_SIZE=100000
+# The system config file sets the default SMB size
+export OCPI_SYSTEM_CONFIG=/mnt/card/opencpi/system.xml
 export OCPI_SUPPRESS_HDL_NETWORK_DISCOVERY=1
 # Get ready to run some test xml-based applications
 cd $OCPI_ROOT_DIR/xml

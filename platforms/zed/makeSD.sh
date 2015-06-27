@@ -75,6 +75,8 @@ cp ../libstdc++.so.6 $sd/opencpi/lib
 cp $OCPI_CDK_DIR/scripts/ocpidriver $sd/opencpi/bin
 cp $OCPI_CDK_DIR/scripts/ocpi_linux_driver $sd/opencpi/bin
 cp $OCPI_CDK_DIR/examples/xml/{*.xml,test.input} $sd/opencpi/xml
+# Add the default system.xml to the SD card.
+cp system.xml $sd/opencpi
 n=0
 echo Adding artifacts found in OCPI_LIBRARY_PATH for linux-zynq-arm and zed targets.
 for i in $(ocpirun -A linux-zynq-arm,zed); do

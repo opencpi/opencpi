@@ -65,7 +65,4 @@
     <signal name='oeb' platform=''/>
   </device>
   <device worker='zipper_i2c'/>
-  <device worker='time_server'>
-    <property name='frequency' value='50e6'/>
-  </device>
 </HdlPlatform>
