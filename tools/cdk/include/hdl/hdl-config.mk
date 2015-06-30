@@ -15,8 +15,6 @@ Worker_$(Worker)_xml:=$(or $(wildcard $(XmlName)),\
                            $(wildcard $(HdlPlatformWorker)/gen/$(XmlName)),\
                            $(wildcard $(GeneratedDir)/$(XmlName)))
 Worker_xml:=$(Worker_$(Worker)_xml)
-# This is here since this config might be remote from the platform
-override XmlIncludeDirs+=$(HdlPlatformsDir)
 ifndef Worker_xml
   $(error The XML for the platform configuration, $(Worker).xml, is missing)
 endif
@@ -31,6 +29,7 @@ override HdlTargets:=$(call HdlGetFamily,$(HdlPart))
 override HdlPlatform:=$(HdlPlatforms)
 override HdlTarget:=
 override Platform:=$(HdlPlatform)
+override XmlIncludeDirs+=$(HdlPlatformDir_$(Platform))
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 ifneq ($(MAKECMDGOALS),clean)
   ifndef HdlSkip

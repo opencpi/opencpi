@@ -135,6 +135,7 @@ namespace OCPI {
     public:
       unsigned m_nProperties;
       Property *m_properties;
+      Property *m_firstRaw;
       ezxml_t m_xml;
       unsigned m_ordinal; // ordinal within artifact
       Worker();

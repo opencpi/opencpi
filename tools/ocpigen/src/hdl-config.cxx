@@ -268,9 +268,15 @@ create(ezxml_t xml, const char *knownPlatform, const char *xfile, Worker *parent
   // 2. The platform config is parsed during container processing elsewhere.
   if (myPlatform.empty())
     if (knownPlatform)
-      OU::format(myPlatform, "%s/%s", knownPlatform, knownPlatform);
+      myPlatform = knownPlatform;
     else if (::platform)
-      OU::format(myPlatform, "%s/%s", ::platform, ::platform);
+      myPlatform = ::platform;
+    else {
+	err = "No platform specified in HdlConfig nor on command line";
+	return NULL;
+    }
+      
+#if 0
     else {
       const char *slash = xfile ? strrchr(xfile, '/') : NULL;
       if (slash) {
@@ -290,6 +296,7 @@ create(ezxml_t xml, const char *knownPlatform, const char *xfile, Worker *parent
 	return NULL;
       }
     }
+#endif
   std::string pfile;
   ezxml_t pxml;
   HdlPlatform *pf;
@@ -327,8 +334,8 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
   // Add the platform instance
   // We make the worker name platform/platform so it is findable from the platforms
   // directory.
-  OU::formatAdd(assy, "  <instance worker='%s/%s'/>\n", // index='%zu'/>\n",
-		m_platform.m_name.c_str(), m_platform.m_name.c_str()); //, index++);
+  OU::formatAdd(assy, "  <instance worker='%s'/>\n", // index='%zu'/>\n",
+		m_platform.m_name.c_str()); //, index++);
   // Add all the device instances
   for (DevInstancesIter dii = m_devInstances.begin(); dii != m_devInstances.end(); dii++) {
     const ::Device &d = (*dii).device;

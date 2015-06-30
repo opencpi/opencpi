@@ -53,6 +53,13 @@ class Si5351_proxyWorker : public Si5351_proxyWorkerBase {
     return RCC_OK;
   }
 
+  // notification that input_hz property will be read
+  RCCResult input_hz_read() {
+    m_properties.input_hz(0) = slave.clkin_freq; // we call the clkin source 0
+    m_properties.input_hz(1) = slave.xtal_freq;  // we call the xtalin source 1
+    return RCC_OK;
+  }
+
   // Only process the notifications if we are operating - otherwise
   // we enable everything during "start".
   // Configure the changed channels

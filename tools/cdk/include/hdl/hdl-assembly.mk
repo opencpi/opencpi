@@ -45,12 +45,8 @@ ifndef HdlSkip
 override ComponentLibraries+= $(ComponentLibrariesInternal) components devices adapters cards
 $(infox XMLII:$(XmlIncludeDirs)--$(ComponentLibraries))
 
-# Add XML include dirs for parsing container XML, including "dot" for parsing
-# this assembly's XML from container XML that is not in this dir
-# and also include those passed down from the "assemblies" level - the internals
-# FIXME: we should avoid full parsing of container XML here
 # Override since they may be passed in from assemblies level
-override XmlIncludeDirs+=. $(HdlPlatformsDir) $(HdlPlatformsDir)/specs $(XmlIncludeDirsInternal)
+override XmlIncludeDirs+=. $(XmlIncludeDirsInternal)
 override HdlLibraries+=platform
 ifdef Container
   ifndef Containers
@@ -70,7 +66,6 @@ ifneq ($(MAKECMDGOALS),clean)
   ifdef Containers
     $(call OcpiDbgVar,HdlPlatform)
     $(call OcpiDbgVar,HdlPlatforms)
-    HdlOnePlatform:=$(if $(filter 1,$(words $(HdlPlatforms))),-P $(HdlPlatforms))
     # This procedure is (simply) to extract platform, target, and configuration info from the
     # xml for each explicit container. This allows us to build the list of targets necessary for all the
     # platforms mentioned by all the containers.  This list then is the default targets when

@@ -43,10 +43,10 @@ namespace OCPI {
 
     namespace OE = OCPI::Util::EzXml;
     Worker::Worker()
-      : m_ports(0), m_memories(0), // m_tests(0), m_nTests(0), 
-	m_nPorts(0), m_nMemories(0),// size(0),
-        m_totalPropertySize(0), m_nProperties(0), m_properties(0), m_xml(NULL)
-    {}
+      : m_attributes(NULL), m_ports(0), m_memories(0), m_nPorts(0), m_nMemories(0),
+        m_totalPropertySize(0), m_nProperties(0), m_properties(NULL), m_firstRaw(NULL),
+	m_xml(NULL), m_ordinal(0) {
+    }
 
     Worker::~Worker() {
       delete [] m_ports;
@@ -101,6 +101,14 @@ namespace OCPI {
       m_nMemories = OE::countChildren(xml, "localMemory");
       if ((m_nMemories += OE::countChildren(xml, "memory")))
         m_memories = new Memory[m_nMemories];
+      size_t firstRaw;
+      bool haveRaw;
+      if ((err = OE::getNumber(xml, "firstRaw", &firstRaw, &haveRaw)))
+	return err;
+      if (haveRaw) {
+	m_firstRaw = m_properties + firstRaw;
+	ocpiAssert(firstRaw < m_nProperties);
+      }
       // Second pass - decode all information
       Property *prop = m_properties;
       ezxml_t x;
@@ -110,8 +118,11 @@ namespace OCPI {
       prop = m_properties;
       size_t offset = 0;
       uint64_t totalSize = 0;
-      for (unsigned n = 0; n < m_nProperties; n++, prop++)
+      for (unsigned n = 0; n < m_nProperties; n++, prop++) {
+	if (m_firstRaw && prop == m_firstRaw)
+	  offset = roundUp(offset, 4);
 	prop->offset(offset, totalSize);
+      }
       ocpiAssert(totalSize < UINT32_MAX);
       m_totalPropertySize = OCPI_UTRUNCATE(size_t, totalSize);
       // Ports at this level are unidirectional? Or do we support the pairing at this point?

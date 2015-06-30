@@ -53,10 +53,10 @@ class Lime_tx_proxyWorker : public Lime_tx_proxyWorkerBase {
     uint8_t freqsel;
     const char *err = getFreqValue(m_properties.center_freq_hz, freqsel);
     if (err)
-      return setError("Error in center frequency (%g): %s", m_properties.center_freq_hz);
+      return setError("Error in center frequency (%g): %s", m_properties.center_freq_hz, err);
     Divider div;
     calcDividers(30.72e6, m_properties.center_freq_hz, div);
-    slave.set_tx_freqsel(freqsel|m_properties.output_select);
+    slave.set_tx_freqsel((freqsel << 2) | m_properties.output_select);
     slave.set_tx_nint(div.nint);
     slave.set_tx_nfrac_hi(div.nfrac_hi);
     slave.set_tx_nfrac_mid(div.nfrac_mid);

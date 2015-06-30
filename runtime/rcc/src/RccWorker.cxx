@@ -530,13 +530,17 @@
 
 void Worker::
 propertyWritten(unsigned ordinal) const {
-  if (m_user)
+  if (m_user) {
     m_user->propertyWritten(ordinal);
+    checkError();
+  }
 }
 void Worker::
 propertyRead(unsigned ordinal) const {
-  if (m_user)
+  if (m_user) {
     m_user->propertyRead(ordinal);
+    checkError();
+  }
 }
 
 void Worker::
@@ -552,6 +556,21 @@ prepareProperty(OU::Property& md ,
       throw OU::EmbeddedException( OU::PROPERTY_SET_EXCEPTION, NULL, OU::ApplicationRecoverable);
     }
     writeVaddr = (uint8_t*)m_context->properties + md.m_offset;
+  }
+}
+
+void Worker::
+checkError() const {
+  char *err = m_context->errorString ? m_context->errorString : m_errorString;
+  if (err) {
+    std::string e;
+    OU::format(e, "Worker %s produced error during execution: %s", name().c_str(), err);
+    m_context->errorString = NULL;
+    if (m_errorString) {
+      free(m_errorString);
+      m_errorString = NULL;
+    }
+    throw OU::Error("%s", e.c_str());
   }
 }
 
@@ -635,18 +654,7 @@ prepareProperty(OU::Property& md ,
      OCPI_EMIT_STATE_CAT_NR_(wre, 0, OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_CAT_WORKER_DEV_RUN_TIME);
      if (m_user)
        m_user->m_first = false;
-     char *err = m_context->errorString ? m_context->errorString : m_errorString;
-     if (err) {
-       std::string e;
-       OU::format(e, "Worker %s produced error during execution: %s",
-		  name().c_str(), err);
-       m_context->errorString = NULL;
-       if (m_errorString) {
-	 free(m_errorString);
-	 m_errorString = NULL;
-       }
-       throw OU::Error("%s", e.c_str());
-     }
+     checkError();
      if (newRunCondition) {
        if (m_runCondition->m_timeout)
 	 m_runTimer.reset();

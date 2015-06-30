@@ -53,9 +53,9 @@
   <property name='clk30_dis_st'  type='uchar' volatile='true'  writable='true'/>    	               <!-- 24 -->
   <property name='clk74_dis_st'  type='uchar' volatile='true'  writable='true'/>    	               <!-- 25 -->
   <!-- Feedback Multisynth Divider Parameters (doc section 3.2) - one set per PLL (NOT per MS output) -->
-  <property name='ms_div_params' type='uchar' readable='true'  writable='true' arraydimensions='8,2'/> <!-- 26 - 41 -->
+  <property name='ms_div_params' type='uchar' readable='true'  writable='true' arraydimensions='2,8'/> <!-- 26 - 41 -->
   <!-- Output Multisynth Parameters (doc section 4.1) - one set of 8 regs per MS output for the first 6 -->
-  <property name='ms_0_5_params' type='uchar' readable='true'  writable='true' arraydimensions='8,6'/> <!-- 42 - 89 -->
+  <property name='ms_0_5_params' type='uchar' readable='true'  writable='true' arraydimensions='6,8'/> <!-- 42 - 89 -->
   <!-- Output Multisynth Parameters (doc section 4.1) - one register per MS output for the last 2 -->
   <property name='ms_6_7_params' type='uchar' readable='true'  writable='true' arraylength='2'/>       <!-- 90 - 91 -->
   <!--Clock 6-7 Output divider -->

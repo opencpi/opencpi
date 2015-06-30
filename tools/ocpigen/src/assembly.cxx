@@ -449,7 +449,9 @@ emitXmlWorker(FILE *f) {
     //  if (m_ports.size() && m_ports[0]->type == WCIPort && m_ports[0]->u.wci.timeout)
     fprintf(f, " Timeout=\"%zu\"", m_wci->timeout());
   if (m_slave)
-    fprintf(f, "  Slave='%s.%s'", m_slave->m_implName, m_slave->m_modelString);
+    fprintf(f, " Slave='%s.%s'", m_slave->m_implName, m_slave->m_modelString);
+  if (m_ctl.firstRaw)
+    fprintf(f, " FirstRaw='%u'", m_ctl.firstRaw->m_ordinal);
   fprintf(f, ">\n");
   unsigned nn;
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {

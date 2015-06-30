@@ -166,13 +166,18 @@ ifneq ($(xxfilter platform container,$(HdlMode)),)
   HdlExactPart:=$(HdlPart_$(HdlPlatform))
   override HdlTarget:=$(call HdlGetFamily,$(HdlPlatform))
   override HdlActualTargets:=$(HdlTarget)
-  HdlPlatformDir:=$(HdlPlatformsDir)/$(HdlPlatform)
 else # now for builds that accept platforms and targets as inputs
 
   # Make sure all the platforms are present
   $(foreach p,$(HdlPlatforms),\
-    $(if $(realpath $(HdlPlatformsDir)/$(p)),,\
-       $(error No $(p) platform found in $(HdlPlatformsDir))))
+    $(if $(filter $p,$(HdlAllPlatforms)),,$(error $p not in the HDL platforms list)) \
+    $(foreach y,\
+      $(foreach d,$(subst :, ,$(OCPI_HDL_PLATFORM_PATH)),$(infox DDD:$d)\
+        $(foreach n,$(notdir $d),$(infox NNN:$n)\
+          $(foreach x,$(if $(filter platforms,$n),$(notdir $(wildcard $d/*)),$n),$(infox XXX:$x)\
+           $(and $(filter $p,$x),$(if $(filter platforms,$n),$d/$p,$d))))),\
+      $(if $(realpath $y),,\
+       $(error No $p platform found))))
 
 # The general pattern is:
 # If Target is specified, build for that target.

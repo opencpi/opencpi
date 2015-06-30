@@ -461,6 +461,7 @@ define HdlPrepareAssembly
   $$(if\
     $$(call DoShell,$$(MAKE) -f $$(OCPI_CDK_DIR)/include/hdl/hdl-get-workers.mk\
                     Platform=$(Platform) \
+                    PlatformDir=$(PlatformDir) \
                     Assembly=$(Assembly) \
                     AssyWorkersFile=$$(AssyWorkersFile) \
                     Worker=$$(Worker) Worker_xml=$$(Worker_xml) XmlIncludeDirs="$$(XmlIncludeDirs)"\
@@ -509,6 +510,4 @@ define HdlPreprocessTargets
     override HdlTargets:=$$(HdlAllFamilies)
   endif
 endef
-
-
 endif

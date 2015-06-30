@@ -20,6 +20,7 @@ Worker_$(Worker)_xml:=$(or $(wildcard $(XmlName)),\
                            $(wildcard $(GeneratedDir)/$(XmlName)))
 Worker_xml:=$(Worker_$(Worker)_xml)
 Assembly:=$(notdir $(HdlAssembly))
+# Unless we are cleaning, figure out our platform, its dir, and the platform config
 ifneq ($(MAKECMDGOALS),clean)
   ifndef Worker_xml
     $(error The XML for the container assembly, $(Worker).xml, was not found)
@@ -29,44 +30,42 @@ ifneq ($(MAKECMDGOALS),clean)
   endif
   $(and $(call DoShell,$(OcpiGen) -X $(Worker_xml),HdlContPfConfig),\
      $(error Processing container XML $(Worker_xml): $(HdlContPfConfig)))
-  HdlPlatform:=$(word 1,$(HdlContPfConfig))
-  -include $(HdlPlatformsDir)/$(HdlPlatform)/$(HdlPlatform).mk
+  HdlContPf:=$(word 1,$(HdlContPfConfig))
+  ifdef HdlPlatforms
+   ifeq ($(filter $(HdlContPf),$(HdlPlatforms)),)
+     $(info Nothing built since container platform is $(HdlContPf), which is not in HdlPlatforms: $(HdlPlatforms))
+     HdlSkip:= 1
+   endif
+  endif
+  ifeq ($(filter $(HdlContPf),$(HdlAllPlatforms)),)
+    $(error The platform $(HdlContPfConfig) in $(Worker_xml) is unknown.)
+  endif
+  override HdlPlatform:=$(HdlContPf)
+  override HdlPlatforms:=$(HdlPlatform)
+  HdlPlatformDir:=$(HdlPlatformDir_$(HdlPlatform))
+  HdlPart:=$(call HdlGetPart,$(HdlPlatform))
+  override HdlTargets:=$(call HdlGetFamily,$(HdlPart))
+  override HdlTarget:=$(HdlTargets)
+  HdlConfig:=$(word 2,$(HdlContPfConfig))
+  Platform:=$(HdlPlatform)
+  PlatformDir:=$(HdlPlatformDir)
 endif
 OcpiLanguage:=vhdl
 override HdlLibraries+=platform
 # ComponentLibraries and XmlIncludeDirs are already passed to us on the command line.
-#$(eval $(HdlSearchComponentLibraries))
-$(infox XMLI:$(XmlIncludeDirs):$(HdlPlatformsDir):$(ComponentLibraries))
-override XmlIncludeDirs:=$(call Unique,$(XmlIncludeDirs) $(HdlPlatformsDir) $(HdlPlatformsDir)/specs $(HdlAssembly))
-override ComponentLibraries:=$(call Unique,$(ComponentLibraries)  components devices adapters cards)
-$(infox XMLI2:$(XmlIncludeDirs):$(ComponentLibraries))
+# Note that the platform directory should be first XML dir since the config file name should be
+# scoped to the platform.
+override XmlIncludeDirs:=\
+   $(call Unique,$(HdlPlatformDir) $(XmlIncludeDirs) \
+      $(HdlPlatformsDir)/specs $(HdlAssembly))
+override ComponentLibraries:=$(call Unique,$(ComponentLibraries) $(HdlPlatformDir) $(HdlAssembly) \
+				components devices adapters cards)
+$(info XMLI2:$(XmlIncludeDirs):$(ComponentLibraries):$(HdlPlatformDir_$(HdlPlatform)))
 #AssemblyName=$(notdir $(HdlAssembly))
 override LibDir=$(HdlAssembly)/lib/hdl
 ifneq ($(MAKECMDGOALS),clean)
-  # Manipulate targets before this
-  $(call OcpiDbgVar,HdlPlatform)
-  $(call OcpiDbgVar,HdlPlatforms)
-  HdlOnePlatform:=$(if $(filter 1,$(words $(HdlPlatforms))),-P $(HdlPlatforms))
   override Platform:=$(if $(filter 1,$(words $(HdlPlatforms))),$(HdlPlatforms))
-  override ComponentLibraries+=\
-    $(HdlPlatformsDir)/$(HdlPlatform) \
-    $(wildcard $(HdlPlatformsDir)/$(HdlPlatform)/devices) \
-    $(HdlAssembly)
   $(eval $(HdlSearchComponentLibraries))
-  $(and $(call DoShell,$(OcpiGen) -X $(Worker_xml),HdlContPfConfig),\
-      $$(error Processing container XML $(Worker_xml): $(HdlContPfConfig)))
-  HdlContPlatform:=$(word 1,$(HdlContPfConfig))
-  HdlContConfig:=$(word 2,$(HdlContPfConfig))
-  $(call OcpiDbgVar,HdlContPlatform)
-  $(call OcpiDbgVar,HdlContConfig)
-  $(if $(HdlContPlatform),,$(error Could not get HdlPlatform for container $1))
-  $(if $(HdlContConfig),,$(error Could not get HdlConfiguration for container $1))
-  override HdlPlatforms:=$(HdlContPlatform)
-  override HdlPart:=$(call HdlGetPart,$(HdlContPlatform))
-  override HdlTargets:=$(call HdlGetFamily,$(HdlPart))
-  override HdlPlatform:=$(HdlContPlatform)
-  override HdlTarget:=$(HdlTargets)
-  override HdlConfig:=$(HdlContConfig)
   include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
   ifndef HdlSkip
     $(eval $(HdlPrepareAssembly))

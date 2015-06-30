@@ -183,6 +183,7 @@ namespace OCPI {
       std::list<OCPI::Util::Port*> m_testPmds;
     private:
       void initializeContext();
+      void checkError() const;
       inline void setRunCondition(const RunCondition &rc) {
 	m_runCondition = &rc;
 	if (rc.m_timeout)
@@ -202,7 +203,8 @@ namespace OCPI {
       RunCondition     m_cRunCondition;       // run condition we use when C-language RC changes
       const RunCondition *m_runCondition;        // current active run condition used in dispatching
       
-      char            *m_errorString;         // error string set via "setError"
+      // Mutable since this is a side effect of clearing the worker-set error when reported
+      mutable char     *m_errorString;         // error string set via "setError"
     protected:
       OCPI::Container::Worker &getSlave();
       RCCPort &portInit() { return m_context->ports[m_portInit++]; }

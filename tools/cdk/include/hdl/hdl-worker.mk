@@ -151,6 +151,7 @@ $(WDefsFile): $(Worker_$(Worker)_xml) | $(GeneratedDir)
 	$(AT)$(OcpiGen) -D $(GeneratedDir) $(and $(Package),-p $(Package))  \
 	  $(and $(HdlPlatform),-P $(HdlPlatform)) \
           $(and $(Assembly),-S $(Assembly)) \
+          $(and $(PlatformDir), -F $(PlatformDir)) \
 	  $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) \
 	  -w -d $<
 
@@ -160,6 +161,7 @@ $(DefsFile): $(Worker_$(Worker)_xml) | $(GeneratedDir)
 	   $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) \
            $(and $(Assembly),-S $(Assembly)) \
 	   $(and $(HdlPlatform),-P $(HdlPlatform)) \
+           $(and $(PlatformDir), -F $(PlatformDir)) \
 	   -d $<
 
 $(HdlOtherImplSourceFile): $(WDefsFile) $$(Worker_$(Worker)_xml) | $(GeneratedDir)
@@ -167,6 +169,7 @@ $(HdlOtherImplSourceFile): $(WDefsFile) $$(Worker_$(Worker)_xml) | $(GeneratedDi
 	$(AT)$(OcpiGen) -D $(GeneratedDir) $(and $(Package),-p $(Package)) \
         $(and $(Assembly),-S $(Assembly)) \
 	$(and $(HdlPlatform),-P $(HdlPlatform)) \
+        $(and $(PlatformDir), -F $(PlatformDir)) \
 	$(if $(Libraries),$(foreach l,$(Libraries),-l $l)) -w -i $(Worker_$(Worker)_xml) \
 
 $(ImplHeaderFiles): $(DefsFile)

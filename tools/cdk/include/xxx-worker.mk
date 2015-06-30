@@ -103,9 +103,10 @@ ParamShell:=(\
   ($(MakeRawParams) |\
   $(OcpiGenTool) -D $(GeneratedDir) $(and $(Package),-p $(Package))\
     $(and $(Platform),-P $(Platform)) \
+    $(and $(PlatformDir), -F $(PlatformDir)) \
     $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) \
-  $(and $(Assembly),-S $(Assembly)) \
-  -r $(Worker_$(Worker)_xml)) || echo 1\
+    $(and $(Assembly),-S $(Assembly)) \
+    -r $(Worker_$(Worker)_xml)) || echo 1\
   )
 
 ifeq ($(filter clean,$(MAKECMDGOALS)),)

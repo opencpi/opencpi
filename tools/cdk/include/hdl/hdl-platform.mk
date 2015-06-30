@@ -42,6 +42,13 @@ HdlLibraries+=platform
 ComponentLibraries+=devices cards
 XmlIncludeDirs+=. ../specs 
 LibDir=lib/hdl
+# We are building a platform that is not known in the core or in the environment
+ifeq (,$(filter $(Worker),$(HdlAllPlatforms)))
+  HdlAllPlatforms+=$(Worker)
+  include $(Worker).mk
+  XmlIncludeDirs+=$(HdlPlatformsDir)/specs
+  export OCPI_HDL_PLATFORM_PATH+=:$(call OcpiAbsPath,.)
+endif
 ifndef HdlPlatforms
   override HdlPlatforms:=$(HdlPlatform)
 endif

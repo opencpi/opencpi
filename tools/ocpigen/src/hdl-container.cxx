@@ -84,7 +84,7 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
     ocpiCheck(OE::ezxml_parse_str(xml, strlen(xml), x) == NULL);
     configFile = "base.xml"; // where is this really used?
   } else {
-    configName = myPlatform + "/" + myConfig;
+    OU::format(configName, "%s/%s", ::platformDir, myConfig.c_str());
     if ((err = parseFile(configName.c_str(), xfile, "HdlConfig", &x, configFile))) {
       configName = myPlatform + "/gen/" + myConfig;
       if (parseFile(configName.c_str(), xfile, "HdlConfig", &x, configFile))
