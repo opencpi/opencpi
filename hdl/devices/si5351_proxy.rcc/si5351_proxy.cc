@@ -55,8 +55,8 @@ class Si5351_proxyWorker : public Si5351_proxyWorkerBase {
 
   // notification that input_hz property will be read
   RCCResult input_hz_read() {
-    m_properties.input_hz(0) = slave.clkin_freq; // we call the clkin source 0
-    m_properties.input_hz(1) = slave.xtal_freq;  // we call the xtalin source 1
+    m_properties.input_hz[0] = slave.get_clkin_freq(); // we call the clkin source 0
+    m_properties.input_hz[1] = slave.get_xtal_freq();  // we call the xtalin source 1
     return RCC_OK;
   }
 

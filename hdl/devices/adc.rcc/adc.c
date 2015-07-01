@@ -69,14 +69,6 @@ ADC_METHOD_DECLARATIONS;
 RCCDispatch adc = {
   /* insert any custom initializations here */
   .memSizes = memories,
-
-  .test = 0,
-  .afterConfigure = 0,
-  .beforeQuery = 0,
-  .runCondition = 0,
-  .portInfo = 0,
-  .optionallyConnectedPorts = 0,
-
   ADC_DISPATCH
 };
 

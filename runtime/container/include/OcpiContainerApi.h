@@ -118,19 +118,16 @@ namespace OCPI {
 #undef OCPI_DATA_TYPE_S
       // generate the simple-type-specific getting methods
       // need a special item for strings
-      //      virtual run get##pretty##Property(const Property &) const = 0;
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		     \
-      virtual run get##pretty##Property(unsigned ordinal, unsigned idx) const = 0;	\
-      virtual unsigned get##pretty##SequenceProperty(const Property&, run *, \
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		           \
+      virtual run get##pretty##Property(unsigned ordinal, unsigned idx) const = 0; \
+      virtual unsigned get##pretty##SequenceProperty(const Property&, run *,       \
 						     size_t length) const = 0;
 
-      //      virtual void get##pretty##Property(const Property &, char *,
-      //					 size_t length) const = 0;
-#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)   \
-      virtual void get##pretty##Property(unsigned ordinal, char *, \
-					 size_t length, unsigned idx) const = 0; \
-      virtual unsigned get##pretty##SequenceProperty               \
-        (const Property &, char **, size_t length, char *buf,    \
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                  \
+      virtual void get##pretty##Property(unsigned ordinal, char *,                \
+					 size_t length, unsigned idx) const = 0;  \
+      virtual unsigned get##pretty##SequenceProperty                              \
+        (const Property &, char **, size_t length, char *buf,                     \
 	 size_t space) const = 0;
     OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
@@ -164,6 +161,17 @@ namespace OCPI {
       virtual void setProperties(const PValue *props) =  0;
       virtual bool getProperty(unsigned ordinal, std::string &name, std::string &value,
 			       bool *unreadablep = NULL, bool hex = false) = 0;
+#undef OCPI_DATA_TYPE
+#undef OCPI_DATA_TYPE_S
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		           \
+      virtual run get##pretty##Parameter(unsigned ordinal, unsigned idx) const = 0;
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                  \
+      virtual void get##pretty##Parameter(unsigned ordinal, char *,               \
+					  size_t length, unsigned idx) const = 0;
+    OCPI_PROPERTY_DATA_TYPES
+#undef OCPI_DATA_TYPE
+#undef OCPI_DATA_TYPE_S
+#define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
     };
 
     // This class is used when the application is being constructed using

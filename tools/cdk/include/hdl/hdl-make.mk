@@ -475,6 +475,7 @@ define HdlPrepareAssembly
 	$(AT)echo Generating the $$(HdlMode) source file: $@ from $$<
 	$(AT)$$(OcpiGen) -D $$(GeneratedDir) \
                          $(and $(Assembly),-S $(Assembly)) $(and $(Platform),-P $(Platform)) \
+			 $(and $(PlatformDir),-F $(PlatformDir)) \
                          -a $$<
   # 4. Make the generated assembly source file one of the files to compile
   WorkerSourceFiles=$$(ImplFile)

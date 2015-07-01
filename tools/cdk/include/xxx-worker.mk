@@ -135,6 +135,7 @@ $(ImplHeaderFiles): $(GeneratedDir)/%$(ImplSuffix) : $$(Worker_%_xml) | $(Genera
 	$(AT)$(OcpiGen) -D $(GeneratedDir) $(and $(Package),-p $(Package)) \
         $(and $(Assembly),-S $(Assembly)) \
 	$(and $(HdlPlatform),-P $(HdlPlatform)) \
+	$(and $(PlatformDir),-F $(PlatformDir)) \
 	 $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) -i $< \
 
 ifeq ($(origin SkelFiles),undefined)
@@ -150,6 +151,7 @@ $(SkelFiles): $(GeneratedDir)/%$(SkelSuffix) : $$(Worker_%_xml) | $(GeneratedDir
 	$(AT)$(OcpiGen) -D $(GeneratedDir) \
               $(and $(Assembly),-S $(Assembly)) \
 	      $(and $(Platform),-P $(Platform)) \
+              $(and $(PlatformDir),-F $(PlatformDir)) \
               $(and $(Package),-p $(Package)) -s $<
 endif
 

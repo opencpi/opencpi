@@ -642,7 +642,8 @@ class Worker : public Parsed, public OU::IdentResolver {
     *emitImplOCL(),
     *emitEntryPointOCL(),
     *paramValue(const OU::Member &param, OU::Value &v, std::string &value),
-    *rccValue(OU::Value &v, std::string &value, const OU::Member *param = NULL),
+    *rccBaseValue(OU::Value &v, std::string &value, const OU::Member *param = NULL),
+    *rccValue(OU::Value &v, std::string &value, const OU::Member &param),
     *rccPropValue(OU::Property &p, std::string &value),
     *emitSkelRCC(),
     *emitSkelOCL(),
@@ -664,6 +665,7 @@ class Worker : public Parsed, public OU::IdentResolver {
     emitXmlInstances(FILE *f),
     emitXmlConnections(FILE *f);
   void
+    emitCppTypesNamespace(FILE *f, std::string &nsName),
     emitDeviceConnectionSignals(FILE *f, const char *iname, bool container),
     setParent(Worker *p), // when it can't happen at construction
     prType(OU::Property &pr, std::string &type),

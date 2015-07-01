@@ -39,7 +39,7 @@
 #include "OcpiUtilEzxml.h"
 
 #define OCPI_PROTOCOL_SUMMARY_ATTRS \
-  "DataValueWidth", "DataValueGranularity", "DiverDataSizes", "MaxMessageValues", \
+  "DataValueWidth", "DataValueGranularity", "DiverseDataSizes", "MaxMessageValues", \
   "VariableMessageLength", "ZeroLengthMessages", "MinMessageValues"
 
 namespace OCPI  {

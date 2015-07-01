@@ -78,7 +78,8 @@ ifneq ($(MAKECMDGOALS),clean)
       HdlContPreCompile=\
         echo Generating UUID, artifact xml file and metadata ROM file for container $(Worker) "($1)". && \
         (cd .. && \
-         $(OcpiGen) -D $(call WkrTargetDir,$(HdlTarget),$1) -A -S $(Assembly) -P $(HdlPlatform) -e $(HdlPart) $(ImplXmlFile) && \
+         $(OcpiGen) -D $(call WkrTargetDir,$(HdlTarget),$1) -A -S $(Assembly) -P $(HdlPlatform) \
+                    -e $(HdlPart) -F $(PlatformDir) $(ImplXmlFile) && \
          $(OcpiHdl) bram $(call ArtifactXmlName,$1) $(call MetadataRom,$1) \
         )
       # Now we need to make a bit file from every paramconfig for this worker

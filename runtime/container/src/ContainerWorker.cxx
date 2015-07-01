@@ -395,7 +395,33 @@ namespace OCPI {
       }
       return false;
     }
+
+#undef OCPI_DATA_TYPE
+#undef OCPI_DATA_TYPE_S
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
+    run Worker:: \
+    get##pretty##Parameter(unsigned ordinal, unsigned idx) const { \
+      OU::Property &p = m_properties[ordinal]; \
+      assert(p.m_default); \
+      OU::Value &v = *p.m_default; \
+      return p.m_isSequence || p.m_arrayRank ? v.m_p##pretty[idx] : v.m_##pretty; \
+    }
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)
+    OCPI_PROPERTY_DATA_TYPES
+#undef OCPI_DATA_TYPE
+#undef OCPI_DATA_TYPE_S
+#define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
+
+    void Worker::
+    getStringParameter(unsigned ordinal, char *out, size_t length, unsigned idx) const {
+      OU::Property &p = m_properties[ordinal];
+      assert(p.m_default);
+      OU::Value &v = *p.m_default;
+      strncpy(out, p.m_isSequence || p.m_arrayRank ? v.m_pString[idx] : v.m_String, length);
+    }
+
     WorkerControl::~WorkerControl(){}
+
   }
   namespace API {
     Worker::~Worker(){}
