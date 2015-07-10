@@ -63,7 +63,7 @@ class ExtMap : public ExtMap_ {
     ExtMap_::push_back(ExtTuple(s, n, e, single));
   }
 };
-struct Instance {
+struct Instance : public OU::IdentResolver {
   OCPI::Util::Assembly::Instance *instance; // instance in the underlying generic assembly
   const char *name;
   const char *wName;
@@ -95,6 +95,7 @@ struct Instance {
   Instance();
   void emitHdl(FILE *f, const char *prefix, size_t &index);
   void emitDeviceConnectionSignals(FILE *f, bool container);
+  const char *getValue(const char *sym, OU::ExprValue &val) const;
 };
 // To represent an attachment of a connection to an instance port.
 // This is currently only used for indexed ports

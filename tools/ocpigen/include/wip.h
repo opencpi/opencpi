@@ -176,6 +176,7 @@ class DataPort : public OcpPort {
   const char *parseDistribution(ezxml_t x, Distribution &d, std::string &hash);
   const char *finalize();
   const char *fixDataConnectionRole(OU::Assembly::Role &role);
+  const char *resolveExpressions(OCPI::Util::IdentResolver &ir);
   void initRole(OCPI::Util::Assembly::Role &role);
   void emitOpcodes(FILE *f, const char *pName, Language lang);
   void emitPortDescription(FILE *f, Language lang) const;
@@ -188,8 +189,10 @@ class DataPort : public OcpPort {
   void emitRccCppImpl(FILE *f);
   void emitRccCImpl(FILE *f);
   void emitRccCImpl1(FILE *f);
+  void emitRccArgTypes(FILE *f, bool &first);
   void emitRecordInterface(FILE *f, const char *implName);
   void emitRecordInterfaceConstants(FILE *f);
+  void emitVerilogPortParameters(FILE *f);
   static const char *adjustConnection(const char *masterName,
 				      Port &prodPort, OcpAdapt *prodAdapt,
 				      Port &consPort, OcpAdapt *consAdapt,
@@ -649,6 +652,7 @@ class Worker : public Parsed, public OU::IdentResolver {
     *emitSkelOCL(),
     *emitAssyHDL();
   virtual const char
+    *resolveExpressions(OU::IdentResolver &ir),
     *parseInstance(Worker &parent, Instance &inst, ezxml_t x), // FIXME: should be HdlInstance...
     *emitArtXML(const char *wksFile),
     *emitWorkersHDL(const char *file),
@@ -683,14 +687,14 @@ class Worker : public Parsed, public OU::IdentResolver {
     emitParameters(FILE *f, Language lang, bool useDefaults = true, bool convert = false),
     emitSignals(FILE *f, Language lang, bool records, bool inPackage, bool inWorker,
 		bool convert = false),
-    emitRccStruct(FILE *f, size_t nMembers, OU::Member *members, unsigned level,
-		  const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef),
-    printRccMember(FILE *f, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
-		   const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef),
-    printRccType(FILE *f, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
-		 const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef),
-    printRccBaseType(FILE *f, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
-		     const char *parent, bool isFixed, bool &isLast, unsigned predefine),
+    rccStruct(std::string &type, size_t nMembers, OU::Member *members, unsigned level,
+	      const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef),
+    rccMember(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
+	      const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef),
+    rccType(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
+	    const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef),
+    rccBaseType(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
+		const char *parent, bool isFixed, bool &isLast, unsigned predefine),
     emitDeviceSignals(FILE *f, Language lang, std::string &last);
 };
 

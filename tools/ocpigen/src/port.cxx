@@ -12,6 +12,7 @@ Port(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *defa
     m_name = sp->m_name;
     m_ordinal = sp->m_ordinal;
     count = sp->count; // may be overridden?
+    m_countExpr = sp->m_countExpr;
     master = sp->master;
     m_specXml = sp->m_xml;
   } else {
@@ -41,7 +42,7 @@ Port(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *defa
       return;
     }
     if ((err = OE::getBoolean(m_xml, "master", &master)) ||
-	(err = w.getNumber(m_xml, "count", &count)))
+	(err = getExprNumber(m_xml, "count", count, NULL, &m_countExpr, &w)))
       return;
     m_ordinal = w.m_ports.size();
   }
@@ -61,6 +62,8 @@ Port(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *defa
 }
 
 // Only used by cloning - a special copy constructor
+// Note we don't clone the m_countExpr since the count must be resolved at the
+// instance's port in the assembly that we are cloning/externalizing.
 Port::
 Port(const Port &other, Worker &w, std::string &name, size_t count, const char *&err)
   : m_clone(true), m_worker(&w), m_name(name), m_ordinal(w.m_ports.size()), count(count),
@@ -84,6 +87,12 @@ Port::
 const char *Port::
 parse() {
   return NULL;
+}
+
+const char *Port::
+resolveExpressions(OU::IdentResolver &ir) {
+  return m_countExpr.length() ?
+    parseExprNumber(m_countExpr.c_str(), count, NULL, &ir) : NULL;
 }
 
 bool Port::
@@ -170,7 +179,7 @@ doPattern(int n, unsigned wn, bool in, bool master, std::string &suff, bool port
 	while (*s)
 	  s++;
 	// Port indices are not embedded in VHDL names since they are proper arrays
-	if (count > 1)
+	if (count > 1 || m_countExpr.length())
 	  switch (n) {
 	  case -1:
 	    *s++ = '%';
@@ -271,11 +280,15 @@ void Port::
 emitPortDescription(FILE *f, Language lang) const {
   const char *comment = hdlComment(lang);
   std::string nbuf;
-  OU::format(nbuf, " %zu", count);
+  if (count > 1 || m_countExpr.length())
+    if (m_countExpr.length())
+      nbuf = m_countExpr;
+    else
+      OU::format(nbuf, " %zu", count);
   fprintf(f,
 	  "\n  %s The%s %s interface%s named \"%s\", with \"%s\" acting as %s%s:\n",
-	  comment, count > 1 ? nbuf.c_str() : "", typeName(),
-	  count > 1 ? "s" : "", name(), m_worker->m_implName,
+	  comment, nbuf.c_str(), typeName(),
+	  nbuf.length() ? "s" : "", name(), m_worker->m_implName,
 	  isOCP() ? "OCP " : "", masterIn() ? "slave" : "master");
   if (clockPort)
     fprintf(f, "  %s   Clock: uses the clock from interface named \"%s\"\n", comment,
@@ -374,20 +387,25 @@ emitRecordInterfaceConstants(FILE */*f*/) {}
 
 void Port::
 emitRecordArray(FILE *f) {
-  if (count > 1) {
+  if (count > 1 || m_countExpr.length()) {
+    std::string scount;
+    if (m_countExpr.length())
+      OU::format(scount, "ocpi_port_%s_count", name());
+    else
+      OU::format(scount, "%zu", count);
     if (haveInputs()) {
       std::string in;
       OU::format(in, typeNameIn.c_str(), "");
       fprintf(f,
-	      "  type %s_array_t is array(0 to %zu) of %s_t;\n",
-	      in.c_str(), count-1, in.c_str());
+	      "  type %s_array_t is array(0 to %s-1) of %s_t;\n",
+	      in.c_str(), scount.c_str(), in.c_str());
     }
     if (haveOutputs()) {
       std::string out;
       OU::format(out, typeNameOut.c_str(), "");
       fprintf(f,
-	      "  type %s_array_t is array(0 to %zu) of %s_t;\n",
-	      out.c_str(), count-1, out.c_str());
+	      "  type %s_array_t is array(0 to %s-1) of %s_t;\n",
+	      out.c_str(), scount.c_str(), out.c_str());
     }
   }
 }
@@ -403,7 +421,7 @@ emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker,
     OU::format(last,
 	       "  %-*s : in  %s%s%s_t%%s",
 	       (int)m_worker->m_maxPortTypeName, in.c_str(), prefix, in.c_str(),
-	       count > 1 ? "_array" : "");
+	       count > 1 || m_countExpr.length() ? "_array" : "");
   }
   if (inWorker ? haveWorkerOutputs() : haveOutputs()) {
     if (last.size())
@@ -411,9 +429,9 @@ emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker,
     std::string out;
     OU::format(out, typeNameOut.c_str(), "");
     OU::format(last,
-	     "  %-*s : out %s%s%s_t%%s",
-	     (int)m_worker->m_maxPortTypeName, out.c_str(), prefix, out.c_str(),
-	     count > 1 ? "_array" : "");
+	       "  %-*s : out %s%s%s_t%%s",
+	       (int)m_worker->m_maxPortTypeName, out.c_str(), prefix, out.c_str(),
+	       count > 1 || m_countExpr.length() ? "_array" : "");
   }
 }
 
@@ -431,6 +449,9 @@ emitSignals(FILE *f, Language lang, std::string &last, bool inPackage, bool inWo
 
 void Port::
 emitVerilogSignals(FILE */*f*/) {}
+
+void Port::
+emitVerilogPortParameters(FILE */*f*/) {}
 
 void Port::
 emitVHDLShellPortMap(FILE *f, std::string &last) {
@@ -527,6 +548,8 @@ void Port::
 emitRccCImpl(FILE *) {}
 void Port::
 emitRccCImpl1(FILE *) {}
+void Port::
+emitRccArgTypes(FILE *, bool &) {}
 
 RawPropPort::
 RawPropPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
@@ -562,6 +585,12 @@ emitRecordTypes(FILE *f) {
 
 void RawPropPort::
 emitRecordInterface(FILE *f, const char *implName) {
+  std::string scount = m_countExpr;
+  if (scount.empty())
+    OU::format(scount, "%zu", count);
+  else
+    OU::format(scount, "to_integer(%s)", m_countExpr.c_str());
+  fprintf(f, "  constant ocpi_port_%s_count : natural := %s;\n", name(), scount.c_str());
   std::string in, out;
   OU::format(in, typeNameIn.c_str(), "");
   OU::format(out, typeNameOut.c_str(), "");
@@ -575,21 +604,21 @@ emitRecordInterface(FILE *f, const char *implName) {
 	  in.c_str(), master ? "in" : "out",
 	  typeName(), name(), implName,
 	  out.c_str(), master ? "out" : "in");
-  if (count > 1)
+  if (count > 1 || m_countExpr.length())
       fprintf(f,
-	      "  subtype %s_array_t is wci.raw_prop_%s_array_t(0 to %zu);\n"
-	      "  subtype %s_array_t is wci.raw_prop_%s_array_t(0 to %zu);\n",
-	      in.c_str(), master ? "in" : "out", count-1,
-	      out.c_str(), master ? "out" : "in", count-1);
+	      "  subtype %s_array_t is wci.raw_prop_%s_array_t(0 to ocpi_port_%s_count-1);\n"
+	      "  subtype %s_array_t is wci.raw_prop_%s_array_t(0 to ocpi_port_%s_count-1);\n",
+	      in.c_str(), master ? "in" : "out", name(),
+	      out.c_str(), master ? "out" : "in", name());
 }
 
 void RawPropPort::
 emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signal) {
   fprintf(f, "  signal %s : wci.raw_prop_%s%s_t",
 	  signal.c_str(), master == output ? "out" : "in",
-	  count > 1 ? "_array" : "");
-  if (count > 1)
-    fprintf(f, "(0 to %zu)", count - 1);
+	  count > 1 || m_countExpr.length() ? "_array" : "");
+  if (count > 1 || m_countExpr.length())
+    fprintf(f, "(0 to %s.%s_defs.ocpi_port_%s_count-1)", m_worker->m_implName, m_worker->m_implName, name());
   fprintf(f, ";\n");
 }
 

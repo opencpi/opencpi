@@ -954,6 +954,8 @@ emitDefsHDL(bool wrap) {
   } else {
     // Now we emit parameters in the body.
     emitParameters(f, lang);
+    for (unsigned i = 0; i < m_ports.size(); i++)
+      m_ports[i]->emitVerilogPortParameters(f);
     // Now we emit the declarations (input, output, width) for each module port
     for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
       Clock *c = *ci;

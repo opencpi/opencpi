@@ -1091,6 +1091,22 @@ controlOperation(OU::Worker::ControlOperation op) {
      : m_rccPort((*(Worker *)pthread_getspecific(Driver::s_threadKey)).portInit()) {
      setRccBuffer(&m_rccPort.current);
    };
+   void *RCCUserPort::
+   getArgAddress(RCCUserBuffer &buf, unsigned op, unsigned arg, size_t *length) const {
+     OU::Operation &o = m_rccPort.containerPort->metaPort().m_operations[op];
+     OU::Member &m = o.m_args[arg];
+     uint8_t *p = (uint8_t *)buf.m_rccBuffer->data + m.m_offset;
+     if (length && m.m_isSequence)
+       if (o.m_nArgs == 1) {
+	 assert(buf.m_rccBuffer->length_ % m.m_elementBytes == 0);
+	 *length = buf.m_rccBuffer->length_ / m.m_elementBytes;
+       } else {
+	 *length = *(uint32_t *)p;
+	 assert(!m.m_sequenceLength || *length <= m.m_sequenceLength);
+	 return p + m.m_align;
+       }
+     return p;
+   }
    void RCCUserPort::
    send(RCCUserBuffer&buf) {
      rccSend(&m_rccPort, buf.getRccBuffer());
@@ -1152,6 +1168,12 @@ controlOperation(OU::Worker::ControlOperation op) {
      m_rccPort.defaultOpCode_ = op;
      m_rccPort.useDefaultOpCode_ = true;
    }
+
+   RCCPortOperationArg::
+   RCCPortOperationArg(RCCPortOperation &po, unsigned arg)
+     : m_arg(arg), m_op(po) {
+   }
+
    RCCUserBuffer::
    RCCUserBuffer() : m_rccBuffer(&m_taken) {
    }

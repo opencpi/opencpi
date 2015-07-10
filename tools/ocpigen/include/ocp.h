@@ -92,6 +92,7 @@ class OcpPort : public Port {
   bool m_preciseBurst;
   size_t m_dataWidth;
   std::string m_dataWidthExpr;
+  bool m_dataWidthFound; // it was specified in XML
   size_t m_byteWidth;
   bool m_continuous;
   OcpSignals ocp;
@@ -105,8 +106,8 @@ class OcpPort : public Port {
   void emitPortDescription(FILE *f, Language lang) const;
   void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker,
 			const char *defaultIn, const char *defaultOut);
-  void vectorWidth(const OcpSignalDesc *osd, std::string &out, bool convert = false,
-		   bool value = false);
+  void vectorWidth(const OcpSignalDesc *osd, std::string &out, Language lang,
+		   bool convert = false, bool value = false);
   void emitVector(FILE *f, const OcpSignalDesc *osd);
   void emitSignals(FILE *f, Language lang, std::string &last, bool inPackage, bool inWorker,
 		   bool convert);
@@ -129,6 +130,7 @@ class OcpPort : public Port {
 			Attachments &atts);
   const char *doPatterns(unsigned nWip, size_t &maxPortTypeName);
   const char *deriveOCP();
+  const char *resolveExpressions(OCPI::Util::IdentResolver &ir);
 };
 
 struct OcpAdapt {

@@ -19,7 +19,7 @@ end record raw_out_t;
 constant raw_out_zero : raw_out_t := (bfalse, bfalse, (others => '0'));
 -- The raw property interface for shared I2C and SPIs from the perspective of the
 -- device worker.
-constant raw_max_devices : natural := 4;
+constant raw_max_devices : natural := 6;
 
 -- Output from device worker as master of the rawprop interface
 type raw_prop_out_t is record

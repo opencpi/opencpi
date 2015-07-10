@@ -6,6 +6,7 @@
 #include <cassert>
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilAssembly.h"
+#include "OcpiExprEvaluator.h"
 #include "ocpigen.h"
 
 // FIXME: this will not be needed when we fully migrate to classes...
@@ -49,6 +50,7 @@ public:
   std::string m_name;  // spec:
   size_t m_ordinal;    // spec:
   size_t count;        // spec: FIXME: can this change in impl???
+  std::string m_countExpr;
   bool master;         // spec
   ezxml_t m_xml;       // spec or impl
   WIPType type;        // spec with WDI, with limited types, then impl ports
@@ -69,6 +71,7 @@ public:
 		      OCPI::Util::Assembly::Role *role, const char *&err) const;
   virtual ~Port();
   virtual const char *parse();    // second pass parsing for ports referring to each other
+  virtual const char *resolveExpressions(OCPI::Util::IdentResolver &ir);
   virtual bool masterIn() const;  // Are master signals inputs at this port?
   void addMyClock();
   virtual const char *checkClock();
@@ -110,6 +113,7 @@ public:
   virtual void emitSignals(FILE *f, Language lang, std::string &last, bool inPackage,
 			   bool inWorker, bool convert = false);
   virtual void emitVerilogSignals(FILE *f);
+  virtual void emitVerilogPortParameters(FILE *f);
   virtual void emitVHDLShellPortMap(FILE *f, std::string &last);
   virtual void emitVHDLSignalWrapperPortMap(FILE *f, std::string &last);
   virtual void emitVHDLRecordWrapperSignals(FILE *f);
@@ -128,6 +132,7 @@ public:
   virtual void emitRccCppImpl(FILE *f); 
   virtual void emitRccCImpl(FILE *f); 
   virtual void emitRccCImpl1(FILE *f); 
+  virtual void emitRccArgTypes(FILE *f, bool &first);
   virtual void emitExtAssignment(FILE *f, bool int2ext, const std::string &extName,
 				 const std::string &intName, const Attachment &extAt,
 				 const Attachment &intAt, size_t count) const;
@@ -137,7 +142,7 @@ public:
 
 // Factory function template for port types
 template <typename ptype> Port *createPort(Worker &w, ezxml_t x, Port *sp, int ordinal,
-const char *&err) {
+					   const char *&err) {
   err = NULL;
   Port *p = new ptype(w, x, sp, ordinal, err);
   if (err) {

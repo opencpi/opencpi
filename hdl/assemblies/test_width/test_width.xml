@@ -1,6 +1,7 @@
 <!-- Assembly to test width adapters and parameterized-width bias worker -->
 <HdlAssembly>
-  <instance worker='file_read' connect='wsi_width_adapter0'/>
+  <!-- <instance worker='file_read' connect='wsi_width_adapter0'/> -->
+  <instance worker='pattern' connect='wsi_width_adapter0'/>
   <instance worker='wsi_width_adapter' connect='bias_wide0'>
     <property name='width_in' value='32'/>
     <property name='width_out' value='64'/>
@@ -15,9 +16,10 @@
   <instance worker='bias_wide' connect='wsi_width_adapter2'>
     <property name='nwide' value='4'/>
   </instance>
-  <instance worker='wsi_width_adapter' connect='file_write'>
+  <instance worker='wsi_width_adapter' connect='capture'>
     <property name='width_in' value='128'/>
     <property name='width_out' value='32'/>
   </instance>
-  <instance worker='file_write'/>
+  <!-- <instance worker='file_write'/> -->
+  <instance worker='capture'/>
 </HdlAssembly>

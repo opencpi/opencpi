@@ -685,6 +685,7 @@ getValue(const char *sym, OU::ExprValue &val) const {
 	// The value of the numeric attribute matches the name of a provided property
 	// So we use that property value in place of this attribute's value
 	// FIXME: why isn't this string value already parsed?
+	// FIXME: the instance has parsed property values but it not accessible here
 	size_t nval;
 	if (OE::getUNum(ap->m_value.c_str(), &nval))
 	  return OU::esprintf("Bad '%s' property value: '%s'",
@@ -956,6 +957,16 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
 	}
     }
   }
+}
+
+// Base class has no worker level expressions, but does all the ports
+const char *Worker::
+resolveExpressions(OU::IdentResolver &ir) {
+  const char *err;
+  for (PortsIter pi = m_ports.begin(); pi != m_ports.end(); pi++)
+    if ((err = (**pi).resolveExpressions(ir)))
+      return err;
+  return NULL;
 }
 
 void Worker::

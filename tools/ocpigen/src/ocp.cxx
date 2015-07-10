@@ -47,8 +47,8 @@ OcpPort::
 OcpPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *defName,
 	const char *&err) 
   : Port(w, x, sp, ordinal, type, defName, err),
-    m_values(NULL), m_nAlloc(0), m_impreciseBurst(false),
-    m_preciseBurst(false), m_dataWidth(0), m_byteWidth(0), m_continuous(false) {
+    m_values(NULL), m_nAlloc(0), m_impreciseBurst(false), m_preciseBurst(false), m_dataWidth(8),
+    m_dataWidthFound(false), m_byteWidth(0), m_continuous(false) {
   memset(&ocp, 0, sizeof(ocp));
   if (err)
     return;
@@ -56,17 +56,17 @@ OcpPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *d
     // WHAT CAN YOU SPECIFY HERE IN A SPEC PORT?  We assume nothing
   }
   const char *clockName;
-  if (!(err = OE::getBoolean(x, "MyClock", &myClock)) &&
-      myClock &&
-      (clockName = ezxml_cattr(x, "clock")))
-    err = OU::esprintf("port \"%s\" refers to clock \"%s\","
-		       " and also has MyClock=true, which is invalid",
-		       name(), clockName);
-  else if (!(err = OE::getBoolean(x, "ImpreciseBurst", &m_impreciseBurst)) &&
-	   !(err = OE::getBoolean(x, "Continuous", &m_continuous)) &&
-	   !(err = OE::getNumber(x, "DataWidth", &m_dataWidth, 0, 8)) &&
-	   !(err = OE::getNumber(x, "ByteWidth", &m_byteWidth, 0, m_dataWidth)))
-    err = OE::getBoolean(x, "PreciseBurst", &m_preciseBurst);
+  if ((err = OE::getBoolean(x, "MyClock", &myClock)) ||
+      (err = OE::getBoolean(x, "ImpreciseBurst", &m_impreciseBurst)) ||
+      (err = OE::getBoolean(x, "Continuous", &m_continuous)) ||
+      (err = getExprNumber(x, "DataWidth", m_dataWidth,
+			   &m_dataWidthFound, &m_dataWidthExpr, &w)) ||
+      (err = OE::getNumber(x, "ByteWidth", &m_byteWidth, 0, m_dataWidth)) ||
+      (err = OE::getBoolean(x, "PreciseBurst", &m_preciseBurst)))
+    return;
+  if (myClock && (clockName = ezxml_cattr(x, "clock")))
+    err = OU::esprintf("port \"%s\" refers to clock \"%s\", and also has MyClock=true, "
+		       "which is invalid", name(), clockName);
   // We can't create clocks at this point based on myclock, since
   // it might depend on what happens with other ports.
 }
@@ -128,22 +128,23 @@ emitRecordSignal(FILE *f, std::string &last, const char */*prefix*/, bool inWork
 // be acceptable to the VHDL parser.  FIXME: translate the C expression into a
 // VHDL expression with a function call for the ?: operator, etc.
 void OcpPort::
-vectorWidth(const OcpSignalDesc *osd, std::string &out, bool /*convert*/, bool value) {
+vectorWidth(const OcpSignalDesc *osd, std::string &out, Language lang, bool /*convert*/,
+	    bool value) {
   if (m_dataWidthExpr.length()) {
     if (osd->number == OCP_MData)
-      if (value)
+      if (value && lang == VHDL)
 	OU::format(out, "wsi.MData_width(to_integer(%s), %zu)",
 		   m_dataWidthExpr.c_str(), m_byteWidth);
       else
 	OU::format(out, "ocpi_port_%s_MData_width", name());
     else if (osd->number == OCP_MByteEn)
-      if (value)
+      if (value && lang == VHDL)
 	OU::format(out, "wsi.MByteEn_width(to_integer(%s), %zu)",
 		   m_dataWidthExpr.c_str(), m_byteWidth);
       else
 	OU::format(out, "ocpi_port_%s_MByteEn_width", name());
     else if (osd->number == OCP_MDataInfo)
-      if (value)
+      if (value && lang == VHDL)
 	OU::format(out, "wsi.MDataInfo_width(to_integer(%s), %zu)",
 		   m_dataWidthExpr.c_str(), m_byteWidth);
       else
@@ -169,7 +170,7 @@ emitSignals(FILE *f, Language lang, std::string &last, bool /*inPackage*/, bool 
     std::string ws;
     for (OcpSignal *os = ocp.signals; osd->name; os++, osd++)
       if (os->master == mIn && /* strcmp(osd->name, "Clk") && */ os->value) {
-	vectorWidth(osd, ws, convert);
+	vectorWidth(osd, ws, lang, convert);
 	emitSignal(os->signal, f, lang, Signal::IN,
 		   last, osd->vector ? (int)os->width : -1, n,
 		   "", NULL, NULL, osd->vector ? ws.c_str() : NULL);
@@ -177,7 +178,7 @@ emitSignals(FILE *f, Language lang, std::string &last, bool /*inPackage*/, bool 
     osd = ocpSignals;
     for (OcpSignal *os = ocp.signals; osd->name; os++, osd++)
       if (os->master != mIn && /* strcmp(osd->name, "Clk") && */ os->value) {
-	vectorWidth(osd, ws, convert);
+	vectorWidth(osd, ws, lang, convert);
 	emitSignal(os->signal, f, lang, Signal::OUT,
 		   last, osd->vector ? (int)os->width : -1, n,
 		   "", NULL, NULL, osd->vector ? ws.c_str() : NULL);
@@ -189,7 +190,7 @@ void OcpPort::
 emitVector(FILE *f, const OcpSignalDesc *osd) {
   fprintf(f, "std_logic_vector(");
   std::string wstr;
-  vectorWidth(osd, wstr, false);
+  vectorWidth(osd, wstr, VHDL, false);
   fprintf(f, "%s-1 downto 0)", wstr.c_str());
 }
 
@@ -303,24 +304,25 @@ emitVerilogSignals(FILE *f) {
     OcpSignalDesc *osd = ocpSignals;
     std::string num;
     OU::format(num, "%u", n);
+    std::string name, width;
     for (OcpSignal *os = ocp.signals; osd->name; os++, osd++)
       if (os->master == masterIn() && /* strcmp(osd->name, "Clk")) && */ os->value) {
-	char *name;
-	asprintf(&name, os->signal, num.c_str());
-	if (osd->vector)
-	  fprintf(f, "  input  [%3zu:0] %s;\n", os->width - 1, name);
-	else
-	  fprintf(f, "  input          %s;\n", name);
+	OU::format(name, os->signal, num.c_str());
+	if (osd->vector) {
+	  vectorWidth(osd, width, Verilog);
+	  fprintf(f, "  input  [%3s-1:0] %s;\n", width.c_str(), name.c_str());
+	} else
+	  fprintf(f, "  input            %s;\n", name.c_str());
       }
     osd = ocpSignals;
     for (OcpSignal *os = ocp.signals; osd->name; os++, osd++)
       if (os->master != masterIn() && /* strcmp(osd->name, "Clk")) && */ os->value) {
-	char *name;
-	asprintf(&name, os->signal, num.c_str());
-	if (osd->vector)
-	  fprintf(f, "  output [%3zu:0] %s;\n", os->width - 1, name);
-	else
-	  fprintf(f, "  output         %s;\n", name);
+	OU::format(name, os->signal, num.c_str());
+	if (osd->vector) {
+	  vectorWidth(osd, width, Verilog);
+	  fprintf(f, "  output [%3s-1:0] %s;\n", width.c_str(), name.c_str());
+	} else
+	  fprintf(f, "  output           %s;\n", name.c_str());
       }
   }
 }
@@ -586,3 +588,15 @@ connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, OcpAdapt &oa,
     }
   }
 }
+
+const char *OcpPort::
+resolveExpressions(OCPI::Util::IdentResolver &ir) {
+  if (m_dataWidthExpr.length()) {
+    const char *err = parseExprNumber(m_dataWidthExpr.c_str(), m_dataWidth, NULL, &ir);
+    if (err)
+      return err;
+    m_dataWidthExpr.clear();
+  }
+  return Port::resolveExpressions(ir);
+}
+

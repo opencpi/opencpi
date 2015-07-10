@@ -56,14 +56,12 @@ namespace OCPI {
   namespace RCC {
 
     Port::
-    Port( Worker& w, const OU::Port & pmd, const OU::PValue *params, RCCPort &rp)
-      :  OC::PortBase< Worker, Port, ExternalPort>
-	 (w, *this, pmd, pmd.m_provider,
-	  (1 << OCPI::RDT::ActiveFlowControl) | (1 << OCPI::RDT::ActiveMessage),
-	  params),
-	 m_dtPort(NULL), m_localOther(NULL), //m_params(params),
-	 m_mode(OC::Port::CON_TYPE_NONE), m_rccPort(rp), m_buffer(NULL), m_wantsBuffer(true)
-    {
+    Port(Worker& w, const OU::Port & pmd, const OU::PValue *params, RCCPort &rp)
+      : OC::PortBase< Worker, Port, ExternalPort>
+	(w, *this, pmd, pmd.m_provider,
+	 (1 << OCPI::RDT::ActiveFlowControl) | (1 << OCPI::RDT::ActiveMessage), params),
+	m_dtPort(NULL), m_localOther(NULL), //m_params(params),
+	m_mode(OC::Port::CON_TYPE_NONE), m_rccPort(rp), m_buffer(NULL), m_wantsBuffer(true) {
       // FIXME: deep copy params?
     }
 
