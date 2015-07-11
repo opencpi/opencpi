@@ -60,7 +60,7 @@ override XmlIncludeDirs:=\
       $(HdlPlatformsDir)/specs $(HdlAssembly))
 override ComponentLibraries:=$(call Unique,$(ComponentLibraries) $(HdlPlatformDir) $(HdlAssembly) \
 				components devices adapters cards)
-$(info XMLI2:$(XmlIncludeDirs):$(ComponentLibraries):$(HdlPlatformDir_$(HdlPlatform)))
+$(infox XMLI2:$(XmlIncludeDirs):$(ComponentLibraries):$(HdlPlatformDir_$(HdlPlatform)))
 #AssemblyName=$(notdir $(HdlAssembly))
 override LibDir=$(HdlAssembly)/lib/hdl
 ifneq ($(MAKECMDGOALS),clean)
