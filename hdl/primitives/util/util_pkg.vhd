@@ -19,7 +19,7 @@ component cwd is
    port   (cwd        : out ocpi.types.string_t(0 to length));
 end component cwd;
 
--- The basic verilog function for getting at the "plusarg".
+-- The basic verilog function for getting at the cwd= "plusarg".
 component cwd_internal is
    generic(length : natural := cwd_length);
    port   (cwd    : out std_logic_vector(0 to length*8-1));

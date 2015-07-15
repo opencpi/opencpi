@@ -410,7 +410,7 @@ typedef struct {
    friend class RCCPortOperationArg;
  protected:
    RCCUserBuffer *m_buffer;
-   RCCPortOperation(RCCUserPort &p, unsigned op) : m_port(p), m_op(op), m_buffer(NULL) {}
+   RCCPortOperation(RCCUserPort &p, unsigned op) : m_port(p), m_op(op), m_buffer(&p) {}
    inline void setRccBuffer(RCCBuffer *b) { m_buffer->setRccBuffer(b); };
    inline RCCBuffer *getRccBuffer() const { return m_buffer->getRccBuffer(); }
    inline void *getArgAddress(unsigned arg, size_t *length) const {
@@ -435,7 +435,7 @@ typedef struct {
 
  };
 
- // A class that simply provides access to the port
+ // A class that simply provides access to the arg
  class RCCPortOperationArg {
    unsigned m_arg;
    friend class RCCPortOperation;
