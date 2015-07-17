@@ -354,7 +354,7 @@ emitRecordTypes(FILE *f) {
   fprintf(f,
 	  "  type worker_%s_t is record\n", 
 	  in.c_str());
-  if (clock != m_worker->m_wciClock || this == m_worker->m_wci)
+  if ((clock != m_worker->m_wciClock && type != WTIPort) || this == m_worker->m_wci)
     fprintf(f,
 	    "    clk              : std_logic;        -- %s\n",
 	    type == WCIPort ? "control clock for this worker" :

@@ -66,8 +66,7 @@ SharedLibLinkOptions+=-dynamiclib
 SharedLibCompileOptions=
 endif
 endif
-DispatchSourceFile = $(GeneratedDir)/$(CwdName)_dispatch.c
-GeneratedSourceFiles += $(DispatchSourceFile)
+DispatchSourceFile=$(call WkrTargetDir,$1,$2)/$(CwdName)_dispatch.c
 ArtifactFile=$(BinaryFile)
 # Artifacts are target-specific since they contain things about the binary
 ArtifactXmlFile=$(call WkrTargetDir,$1,$2)/$(word 1,$(Workers))_assy-art.xml
@@ -107,6 +106,31 @@ RccAssemblyFile=$(call WkrTargetDir,$1,$2)/$(word 1,$(Workers))_assy.xml
 
 define DoRccArtifactFile
 
+TargetSourceFiles += $(call DispatchSourceFile,$1,$2)
+$(call WkrMakeObject,$(call DispatchSourceFile,$1,$2),$1,$2)
+
+$(call DispatchSourceFile,$1,$2): $$(ImplHeaderFiles) | $$(call WkrTargetDir,$1,$2)
+	$(AT)echo Generating dispatch file: $$@
+	$(AT)(echo "#include <RCC_Worker.h>";\
+	  echo "#define STR(foo) _STR(foo)";\
+	  echo "#define _STR(foo) #foo";\
+	  for w in $(Workers); do \
+	      echo "#include \"$$$${w}_map.h\"";\
+	  done; \
+	  for w in $(Workers); do \
+	      echo "extern RCCDispatch RCC_FILE_WORKER_$$$$w;";\
+	  done; \
+	  echo "RCCEntryTable ocpi_EntryTable[] = {";\
+	  for w in $(Workers); do \
+	      echo "  {";\
+	      echo "    .name=STR(RCC_FILE_WORKER_$$$${w}$(and $(filter-out 0,$2),-$2)),";\
+	      echo "    .dispatch=&RCC_FILE_WORKER_$$$$w,";\
+	      echo "    .type=STR($(OcpiLanguage))";\
+	      echo "  },";\
+	  done; \
+	  echo "  {.name=0}};";\
+	 ) > $$@
+
 $(call RccAssemblyFile,$1,$2): | $(call WkrTargetDir,$1,$2)
 	$(AT)(echo "<RccAssembly>"; \
 	  for w in $$(Workers); do echo "<Instance worker=\"$$$$w.xml\" paramconfig=\"$2\"/>"; done; \
@@ -133,28 +157,6 @@ $(foreach t,$(RccTargets),$(foreach c,$(ParamConfigurations),$(eval $(call DoRcc
 #disable builtin suffix rules
 %.o : %.c
 %.o : %.cc
-
-$(DispatchSourceFile):
-	$(AT)echo Generating dispatch file: $@
-	$(AT)(echo "#include <RCC_Worker.h>";\
-	  echo "#define STR(foo) _STR(foo)";\
-	  echo "#define _STR(foo) #foo";\
-	  for w in $(Workers); do \
-	      echo "#include \"$${w}_map.h\"";\
-	  done; \
-	  for w in $(Workers); do \
-	      echo "extern RCCDispatch RCC_FILE_WORKER_$$w;";\
-	  done; \
-	  echo "RCCEntryTable ocpi_EntryTable[] = {";\
-	  for w in $(Workers); do \
-	      echo "  {";\
-	      echo "    .name=STR(RCC_FILE_WORKER_$$w),";\
-	      echo "    .dispatch=&RCC_FILE_WORKER_$$w,";\
-	      echo "    .type=STR($(OcpiLanguage))";\
-	      echo "  },";\
-	  done; \
-	  echo "  {.name=0}};";\
-	 ) > $@
 
 
 

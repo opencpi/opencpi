@@ -43,7 +43,7 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 ifneq ($(filter worker,$(HdlMode)),)
 $(foreach t,$(HdlTargets),$(eval SubCores_$t:=$(Cores)))
 endif
-ifeq ($(MAKECMDGOALS),skeleton)
+ifneq ($(filter skeleton generated,$(MAKECMDGOALS)),)
   HdlSkip:=
 endif
 Compile=$(HdlCompile)
@@ -206,6 +206,7 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-core2.mk
 
 endif # HdlSkip
 $(call OcpiDbg,After skipping)
+generated: skeleton  $(GeneratedSourceFiles)
 ################################################################################
 # If not an assembly or container, we have to contribute to the exports for the
 # component library we are a part of.

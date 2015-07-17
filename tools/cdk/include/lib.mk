@@ -87,10 +87,6 @@ ifneq ($(RccImplementations),)
 build_targets += rcc
 endif
 
-ifneq ($(TestImplementations),)
-build_targets += test
-endif
-
 ifneq ($(OclImplementations),)
 build_targets += ocl
 endif
@@ -101,6 +97,10 @@ endif
 
 ifneq ($(AssyImplementations),)
 build_targets += assy
+endif
+
+ifneq ($(TestImplementations),)
+build_targets += test
 endif
 
 $(call OcpiDbgVar,build_targets)

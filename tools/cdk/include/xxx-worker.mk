@@ -212,6 +212,7 @@ WkrObject=$(call WkrTargetDir,$2,$3)/$(basename $(notdir $1))$(call OBJ,$3)
 
 # Function to make an object from source: $(call WkrMakeObject,src,target,config)
 define WkrMakeObject
+
   # A line is needed here for the "define" to work (no extra eval)
   $(infox WkrMakeObject:$1:$2:$3:$(call WkrObject,$1,$2,$3))
   ObjectFiles_$2_$3 += $(call WkrObject,$1,$2,$3)
@@ -219,7 +220,8 @@ define WkrMakeObject
   $(call WkrObject,$1,$2,$3): \
      $1 $(ImplHeaderFiles)\
      | $(call WkrTargetDir,$2,$3)
-	$(Compile_$(subst .,,$(suffix $1)))
+	$(AT)echo Compiling $$< to create $$@
+	$(AT)$(Compile_$(subst .,,$(suffix $1)))
 
 endef
 
@@ -249,14 +251,14 @@ define WkrDoTargetConfig
   # Make them individually, and then link them together
   ifdef ToolSeparateObjects
     $$(call OcpiDbgVar,CompiledSourceFiles)
-    $(foreach s,$(CompiledSourceFiles),$(call WkrMakeObject,$s,$1,$2))
+    $$(foreach s,$$(CompiledSourceFiles),$$(eval $$(call WkrMakeObject,$$s,$1,$2)))
     $(call WkrBinary,$1,$2): $(CapModel)Target=$1
     # Note the use of ls -o -g -l below is to not be affected by
     # user and group names with spaces.
-    $(call WkrBinary,$1,$2): $$(ObjectFiles_$1_$2) $$(call ArtifactXmlFile,$1,$2) \
+    $(call WkrBinary,$1,$2): $$$$(ObjectFiles_$1_$2) $$(call ArtifactXmlFile,$1,$2) \
                             | $(call WkrTargetDir,$1,$2)
-	@echo Linking final artifact file $$@ and adding metadata to it.
-	$(LinkBinary) $$(ObjectFiles_$1_$2) $(OtherLibraries)
+	$(AT)echo Linking final artifact file \"$$@\" and adding metadata to it...
+	$(AT)$(LinkBinary) $$(ObjectFiles_$1_$2) $(OtherLibraries)
 	$(AT)if test -f "$(call ArtifactXmlFile,$1,$2)"; then \
 	  $(ToolsDir)/../../scripts/addmeta "$(call ArtifactXmlFile,$1,$2)" $$@; \
 	fi

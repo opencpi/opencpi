@@ -41,7 +41,7 @@ clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role */*
 
 bool WtiPort::
 haveWorkerOutputs() const {
-  return m_allowUnavailable;
+  return m_allowUnavailable || clock != m_worker->m_wciClock;
 }
 
 void WtiPort::
@@ -58,6 +58,7 @@ const char *WtiPort::
 deriveOCP() {
   static uint8_t s[1]; // a non-zero string pointer
   OcpPort::deriveOCP();
+  // The OCP interface must have a clock like any other.
   ocp.Clk.master = false; //  FIXME. this should be smart...
   ocp.Clk.value = s;
   ocp.MCmd.width = 3;
@@ -78,23 +79,27 @@ emitImplSignals(FILE *f) {
   fprintf(f,
 	  "  -- Signals for the outer WTI converted to the inner worker ones\n"
 	  "  signal worker_%s : worker_%s_t;\n", in.c_str(), in.c_str());
-  if (m_allowUnavailable)
+  if (m_allowUnavailable || clock != m_worker->m_wciClock)
     fprintf(f,
 	    "  signal worker_%s : worker_%s_t;\n", out.c_str(), out.c_str());
 }
 void WtiPort::
 emitVhdlShell(FILE *f, Port *wci) {
-  std::string in, out;
+  std::string in, out, clk;
   OU::format(in, typeNameIn.c_str(), "");
   OU::format(out, typeNameOut.c_str(), "");
   // FIXME: use a common clock and reset retrieval here
+  if (clock == m_worker->m_wciClock)
+    clk = wci ? "ctl_in.Clk" : "wci_Clk";
+  else
+    OU::format(clk, "%s.clk", out.c_str());
   fprintf(f,
 	  "  -- The WTI interface conversion between OCP and inner worker interfaces\n"
 	  "  %s.Clk <= %s;\n"
 	  "  -- should be this, but isim crashes.\n"
 	  "  -- .SReset_n <= from_bool(not wci_reset);\n"
 	  "  %s.SReset_n <= '0' when its(wci_reset) else '1';\n",
-	  out.c_str(), wci ? "ctl_in.Clk" : "wci_Clk", out.c_str());
+	  out.c_str(), clk.c_str(), out.c_str());
   if (m_allowUnavailable)
     fprintf(f,
 	    "  %s.SThreadBusy(0) <= not worker_%s.request;\n"
@@ -119,16 +124,13 @@ emitVHDLShellPortMap(FILE *f, std::string &last) {
   fprintf(f,
 	  "%s    %s_in => worker_%s",
 	  last.c_str(), name(), in.c_str());
-  if (m_allowUnavailable)
+  if (m_allowUnavailable || clock != m_worker->m_wciClock)
     fprintf(f, ",\n    %s_out => worker_%s", name(), out.c_str());
   last = ",\n";
 }
 
 void WtiPort::
 emitRecordInputs(FILE *f) {
-  if (clock != m_worker->m_wciClock)
-    fprintf(f,
-	    "    clk        : std_logic; -- this ports clk, different from wci_clk");
   if (m_allowUnavailable)
     fprintf(f, "    valid    : Bool_t;\n");
   if (m_secondsWidth)
@@ -139,6 +141,9 @@ emitRecordInputs(FILE *f) {
 
 void WtiPort::
 emitRecordOutputs(FILE *f) {
+  if (clock != m_worker->m_wciClock)
+    fprintf(f,
+	    "    clk        : std_logic; -- this ports clk, different from wci_clk\n");
   if (m_allowUnavailable)
     fprintf(f,
 	    "    request    : Bool_t; -- worker wants the clock to be valid\n");
