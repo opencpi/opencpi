@@ -46,8 +46,11 @@ extern void
 
 extern const char
   **includes, *depFile,
+  // Optional allows the element type might not match
+  // NonExistentOK allows the file to not exist at all.
   *parseFile(const char *file, const std::string &parent, const char *element,
-	     ezxml_t *xp, std::string &xfile, bool optional = false, bool search = true),
+	     ezxml_t *xp, std::string &xfile, bool optional = false, bool search = true,
+	     bool nonExistentOK = false),
   *openOutput(const char *name, const char *outDir, const char *prefix, const char *suffix,
 	      const char *ext, const char *other, FILE *&f);
 #endif

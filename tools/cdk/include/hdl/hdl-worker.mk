@@ -116,13 +116,11 @@ else
 WkrBinaryName=$(Worker)
 endif
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk
-override VerilogIncludeDirs += $(IncludeDirs)
+override VerilogIncludeDirs=$(call Unique, . $(GeneratedDir) $(HdlIncludeDirs) $(IncludeDirs) $(HdlIncludeDirsInternal) $(OCPI_CDK_DIR)/include/hdl)
+$(call OcpiDbgVar,VerilogIncludeDirs)
 ImplXmlFile=$(firstword $(ImplXmlFiles))
 ################################################################################
 # Generated files: impl depends on defs, worker depends on impl
-# map the generic "IncludeDirs" into the verilog
-#$(HdlDefsSuffix))
-#RefDefsFile=$(Workers:%=$(GeneratedDir)/%-defs.vh)
 DefsFile=$(Worker:%=$(GeneratedDir)/%$(HdlDefsSuffix))
 WDefsFile=$(Worker:%=$(GeneratedDir)/%$(HdlOtherDefsSuffix))
 VHDLDefsFile=$(Worker:%=$(GeneratedDir)/%$(HdlDefs)$(HdlVHDLSuffix))
@@ -152,17 +150,15 @@ $(WDefsFile): $(Worker_$(Worker)_xml) | $(GeneratedDir)
 	  $(and $(HdlPlatform),-P $(HdlPlatform)) \
           $(and $(Assembly),-S $(Assembly)) \
           $(and $(PlatformDir), -F $(PlatformDir)) \
-	  $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) \
-	  -w -d $<
+	  $(HdlVhdlLibraries) -w -d $<
 
 $(DefsFile): $(Worker_$(Worker)_xml) | $(GeneratedDir)
 	$(AT)echo Generating the definition file: $@
 	$(AT)$(OcpiGen) -D $(GeneratedDir) $(and $(Package),-p $(Package)) \
-	   $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) \
            $(and $(Assembly),-S $(Assembly)) \
 	   $(and $(HdlPlatform),-P $(HdlPlatform)) \
            $(and $(PlatformDir), -F $(PlatformDir)) \
-	   -d $<
+	   $(HdlVhdlLibraries) -d $<
 
 $(HdlOtherImplSourceFile): $(WDefsFile) $$(Worker_$(Worker)_xml) | $(GeneratedDir)
 	$(AT)echo Generating the $(HdlOtherLanguage) implementation file: $@ from $(Worker_$(Worker)_xml)
@@ -170,7 +166,7 @@ $(HdlOtherImplSourceFile): $(WDefsFile) $$(Worker_$(Worker)_xml) | $(GeneratedDi
         $(and $(Assembly),-S $(Assembly)) \
 	$(and $(HdlPlatform),-P $(HdlPlatform)) \
         $(and $(PlatformDir), -F $(PlatformDir)) \
-	$(if $(Libraries),$(foreach l,$(Libraries),-l $l)) -w -i $(Worker_$(Worker)_xml) \
+	$(HdlVhdlLibraries) -w -i $(Worker_$(Worker)_xml) \
 
 $(ImplHeaderFiles): $(DefsFile)
 

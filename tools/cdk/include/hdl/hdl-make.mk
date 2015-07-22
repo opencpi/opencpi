@@ -9,8 +9,15 @@ Model:=hdl
 # i.e. a Makefile file that does other makefiles.
 # Note that targets are generally families except when a primitive core is actually part-specific.
 
+$(call OcpiDbgVar,HdlPlatforms)
+$(call OcpiDbgVar,HdlTargets)
+
 include $(OCPI_CDK_DIR)/include/util.mk
 include $(OCPI_CDK_DIR)/include/hdl/hdl-targets.mk
+
+# The libraries with names suitable for the library clause in VHDL, as passed to ocpigen
+HdlVhdlLibraries=\
+  $(and $(HdlMyLibraries),$(foreach l,$(HdlMyLibraries),-l $(notdir $l)))
 
 # This default is only overridden for testing the makefiles
 HdlError:=error
@@ -353,10 +360,6 @@ HdlGetTargetsForToolSet=$(call Unique,\
 $(call OcpiDbgVar,HdlPlatforms)
 $(call OcpiDbgVar,HdlTargets)
 
-
-# This function adjusts only things that have a slash
-HdlAdjustLibraries=$(foreach l,$1,$(if $(findstring /,$l),$(call AdjustRelative,$l),$l))
-
 #  $(foreach c,$(ComponentLibraries),\
 #    $(foreach o,$(ComponentLibraries),\
 #       $(if $(findstring $o,$c),,\
@@ -364,7 +367,9 @@ HdlAdjustLibraries=$(foreach l,$1,$(if $(findstring /,$l),$(call AdjustRelative,
 #            $(error The component libraries "$(c)" and "$(o)" have the same base name, which is not allowed)))))
 
 define HdlSearchComponentLibraries
-  override XmlIncludeDirs += $(call HdlXmlComponentLibraries,$(ComponentLibraries))
+
+  override XmlIncludeDirsInternal += $(call HdlXmlComponentLibraries,$(ComponentLibraries))
+
 endef
 HdlRmRv=$(if $(filter %_rv,$1),$(patsubst %_rv,%,$1),$1)
 
@@ -455,7 +460,7 @@ endif
 define HdlPrepareAssembly
 
   # 1. Scan component libraries to add to XmlIncludeDirs
-  $(HdlSearchComponentLibraries)
+  $$(eval $$(HdlSearchComponentLibraries))
   # 2. Generate (when needed) the workers file immediately to use for dependencies
   AssyWorkersFile:=$$(GeneratedDir)/$$(Worker).wks
   $$(if\
@@ -463,8 +468,9 @@ define HdlPrepareAssembly
                     Platform=$(Platform) \
                     PlatformDir=$(PlatformDir) \
                     Assembly=$(Assembly) \
+		    XmlIncludeDirsInternal="$$(XmlIncludeDirsInternal)" \
                     AssyWorkersFile=$$(AssyWorkersFile) \
-                    Worker=$$(Worker) Worker_xml=$$(Worker_xml) XmlIncludeDirs="$$(XmlIncludeDirs)"\
+                    Worker=$$(Worker) Worker_xml=$$(Worker_xml) \
 		    AT=$(AT), \
                    Output), \
     $$(error Error deriving workers from file $$(Worker).xml: $$(Output)),\

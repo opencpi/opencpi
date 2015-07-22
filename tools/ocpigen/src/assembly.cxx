@@ -390,6 +390,7 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
 // Not called for WCIs that are aggreated...
 // Note that this is called for ports that are IMPLICITLY made external,
 // rather than those that are explicitly connected as eternal
+// This is NOT called for data ports;
 const char *Assembly::
 externalizePort(InstancePort &ip, const char *name, size_t &ordinal) {
   Port &p = *ip.m_port;
@@ -407,6 +408,9 @@ externalizePort(InstancePort &ip, const char *name, size_t &ordinal) {
   Port &extPort = p.clone(m_assyWorker, extName, p.count, NULL, err);
   if (err)
     return err;
+  // If the port has its own clock, use it.
+  if (!ip.m_instance->m_clocks[ip.m_port->clock->ordinal] && ip.m_port->myClock) 
+    ip.m_instance->m_clocks[ip.m_port->clock->ordinal] = ip.m_port->clock;
   c.m_clock = extPort.clock = ip.m_instance->m_clocks[ip.m_port->clock->ordinal];
   assert(extPort.clock);
   OU::Assembly::External *ext = new OU::Assembly::External;

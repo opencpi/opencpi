@@ -166,7 +166,7 @@
        }
      }
  #endif
-
+   delete m_user;
    deleteChildren();
    uint32_t m = 0;
    while ( m_context->memories && m_context->memories[m] ) {

@@ -86,7 +86,7 @@ search, emulate, ethers, probe, testdma, admin, bram, unbram, uuid, reset, set, 
   radmin, wadmin, rmeta, settime, deltatime, wdump, wreset, wunreset, wop, wwctl, wclear, wwpage,
   wread, wwrite, sendData, receiveData, receiveRDMA, sendRDMA, simulate, getxml, load, unload,
   status;
-static bool verbose = false, parseable = false, hex = false;
+static bool verbose = false, parseable = false, hex = false, isPublic = false;
 static int log = -1;
 std::string platform, simExec;
 static const char
@@ -209,6 +209,7 @@ usage(const char *name) {
 	  "    -T <sim-time>                # total simulation time before terminating\n"
 	  "    -D                           # turn off simulation dumping\n"
 	  "    -e <sim-executable>          # simulator executable \"bitstream\" file\n"
+	  "    -A                           # make the simulator publically available on the LAN\n"
 	  "    -v                           # be verbose\n"
 	  "    -x                           # print numeric values in hex rather than decimal\n"
 	  "  <worker> can be multiple workers such as 1,2,3,4,5.  No ranges.\n"
@@ -279,6 +280,9 @@ doFlags(const char **&ap) {
       break;
     case 'p':
       platform = next(ap);
+      break;
+    case 'A':
+      isPublic = true;
       break;
     case 'c':
       part = next(ap);
@@ -591,9 +595,10 @@ ethers(const char **) {
     bad("Error establishing interface scanner");
   OE::Interface eif;
   while (ifs.getNext(eif, error)) {
-    printf("Interface %s: MAC address %s, %s, %s",
+    printf("Interface %s: MAC address %s, %s, %s%s",
 	   eif.name.c_str(), eif.addr.isEther() ? eif.addr.pretty() : "none",
-	   eif.up ? "up" : "down", eif.connected ? "connected" : "disconnected");
+	   eif.up ? "up" : "down", eif.connected ? "connected" : "disconnected",
+	   eif.loopback ? ", loopback" : "");
     if (eif.ipAddr.addrInAddr())
       printf(", IP address: %s", eif.ipAddr.prettyInAddr());
     printf("\n");
@@ -1663,7 +1668,7 @@ sendRDMA(const char **ap) {
 static void
 simulate(const char **ap) {
   OH::Sim::Server server(*ap, platform, OCPI_UTRUNCATE(uint8_t,spinCount), sleepUsecs,
-			 simTicks, verbose, simDump, error);
+			 simTicks, verbose, simDump, isPublic, error);
   if (error.length())
     bad("Simulator server creation error");
   if (server.run(simExec, error))

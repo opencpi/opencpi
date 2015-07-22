@@ -1,7 +1,6 @@
 # This is the makefile for platform configuration directories where the platform is elsewhere.
 # If configurations are built in subdirectories of platforms, then the platform is ..
-# One configuration will be built here, but it may be build for multiple build configurations
-# for each target.
+# One configuration will be built here.
 # The HdlPlatformWorker variable must be set to point to the relative or absolute path
 # to the platform's directory, ending in the name of the platform.
 HdlMode:=config
@@ -22,14 +21,17 @@ OcpiLanguage:=vhdl
 HdlLibraries+=platform
 PlatformName=$(notdir $(HdlPlatformWorker))
 LibDir=$(HdlPlatformWorker)/lib/hdl
-# Manipulate targets before this
 override HdlPlatforms:=$(notdir $(HdlPlatformWorker))
+override HdlPlatform:=$(HdlPlatforms)
 override HdlPart:=$(HdlPart_$(HdlPlatforms))
 override HdlTargets:=$(call HdlGetFamily,$(HdlPart))
-override HdlPlatform:=$(HdlPlatforms)
-override HdlTarget:=
+override HdlTarget:=$(HdlTargets)
 override Platform:=$(HdlPlatform)
-override XmlIncludeDirs+=$(HdlPlatformDir_$(Platform))
+override XmlIncludeDirsInternal+=$(HdlPlatformDir_$(Platform))
+# Platforms need all these.  We can also accept some from the platform if we are below it.
+# otherwise the config's makefile can supply more?
+override ComponentLibraries=\
+  $(call Unique,devices cards $(HdlPlatformDir_$(Platform)) $(wildcard $(HdlPlatformDir_$(Platform))/devices) $(ComponentLibrariesInternal))
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 ifneq ($(MAKECMDGOALS),clean)
   ifndef HdlSkip

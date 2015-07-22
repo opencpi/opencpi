@@ -85,26 +85,22 @@ MakeRawParams:= \
      echo "</parameter>";) \
    echo "</parameters>")
 
-IncludeDirs:=$(OCPI_CDK_DIR)/include/$(Model) $(GeneratedDir) $(IncludeDirs)
-ifeq ($(origin XmlIncludeDirsInternal),undefined)
-  ifeq ($(origin XmlIncludeDirs),undefined)
-    ifneq ($(wildcard ../specs),)
-      XmlIncludeDirsInternal:=../specs
-    endif
-  endif
-endif
-#FIXME: why doesn't lib/components flow from component libraries?
-override XmlIncludeDirs:=$(XmlIncludeDirs) . $(XmlIncludeDirsInternal) \
-   $(OCPI_CDK_DIR)/lib/components $(OCPI_CDK_DIR)/lib/components/specs
+override XmlIncludeDirsInternal:=\
+  $(call Unique,\
+    $(IncludeDirs) $(XmlIncludeDirs) $(XmlIncludeDirsInternal) \
+    . $(GeneratedDir) ../specs \
+    $(OCPI_CDK_DIR)/lib/components $(OCPI_CDK_DIR)/include/$(Model)) \
+$(call OcpiDbgVar,XmlIncludeDirsInternal)
+
 -include $(GeneratedDir)/*.deps
 
-ParamShell:=(\
+ParamShell=(\
   mkdir -p $(GeneratedDir) &&\
   ($(MakeRawParams) |\
   $(OcpiGenTool) -D $(GeneratedDir) $(and $(Package),-p $(Package))\
     $(and $(Platform),-P $(Platform)) \
     $(and $(PlatformDir), -F $(PlatformDir)) \
-    $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) \
+    $(HdlVhdlLibraries) \
     $(and $(Assembly),-S $(Assembly)) \
     -r $(Worker_$(Worker)_xml)) || echo 1\
   )
@@ -136,7 +132,7 @@ $(ImplHeaderFiles): $(GeneratedDir)/%$(ImplSuffix) : $$(Worker_%_xml) | $(Genera
         $(and $(Assembly),-S $(Assembly)) \
 	$(and $(HdlPlatform),-P $(HdlPlatform)) \
 	$(and $(PlatformDir),-F $(PlatformDir)) \
-	 $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) -i $< \
+	$(HdlVhdlLibraries) -i $<
 
 ifeq ($(origin SkelFiles),undefined)
   SkelFiles=$(foreach w,$(Workers),$(GeneratedDir)/$w$(SkelSuffix))
@@ -280,6 +276,8 @@ endef
 
 # Do all the targets
 ifneq ($(MAKECMDGOALS),skeleton)
+$(call OcpiDbgVar,HdlTargets)
+$(call OcpiDbgVar,HdlTarget)
 $(foreach t,$($(CapModel)Targets),$(eval $(call WkrDoTarget,$t)))
 endif
 ################################################################################

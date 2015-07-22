@@ -92,7 +92,7 @@ emitVhdlShell(FILE *f, Port *wci) {
   if (clock == m_worker->m_wciClock)
     clk = wci ? "ctl_in.Clk" : "wci_Clk";
   else
-    OU::format(clk, "%s.clk", out.c_str());
+    OU::format(clk, "worker_%s.clk", out.c_str());
   fprintf(f,
 	  "  -- The WTI interface conversion between OCP and inner worker interfaces\n"
 	  "  %s.Clk <= %s;\n"

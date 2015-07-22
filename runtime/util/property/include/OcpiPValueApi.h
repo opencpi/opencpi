@@ -64,6 +64,8 @@ namespace OCPI {
 	: name(aName), type(aType), owned(false) {}
       inline PValue()
 	: name(0), type(OCPI_none), owned(false) {}
+      inline ~PValue() { if (owned) delete [] vString; }
+      PValue &operator=(const PValue &);
       unsigned length() const;
       const std::string &unparse(std::string &value, bool append = false) const;
       const char *name; // NULL name is end of list

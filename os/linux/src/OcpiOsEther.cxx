@@ -801,6 +801,7 @@ namespace OCPI {
 			sdl->sdl_type, ifm->ifm_data.ifi_type, sdl->sdl_nlen, sdl->sdl_data,
 			only ? only : "\"\"");
 	      if ((ifm->ifm_data.ifi_type == IFT_ETHER ||
+		   ifm->ifm_data.ifi_type == IFT_LOOP ||
 		   ifm->ifm_data.ifi_type == IFT_BRIDGE) &&
 		  (!only || 	    
 		   (sdl->sdl_nlen == strlen(only) &&
@@ -808,6 +809,15 @@ namespace OCPI {
 		// PF_INET/SOCK_DGRAM since it works without root privileges.
 		int s = socket(PF_INET, SOCK_DGRAM, 0);
 		ocpiAssert(s);
+		i.name.assign(sdl->sdl_data, sdl->sdl_nlen);
+		i.index = ifm->ifm_index;
+		i.up = (ifm->ifm_flags & IFF_UP) != 0;
+		if (ifm->ifm_data.ifi_type == IFT_LOOP) {
+		  i.connected = true;
+		  i.addr.set(0, 0);
+		  i.loopback = true;
+		  return true;
+		}
 		struct ifmediareq ifmr;
 		memset(&ifmr, 0, sizeof(ifmr));
 		strncpy(ifmr.ifm_name, sdl->sdl_data, sdl->sdl_nlen);
@@ -818,10 +828,8 @@ namespace OCPI {
 		    sdl->sdl_alen == Address::s_size) {
 		  i.connected =
 		    (ifmr.ifm_status & (IFM_AVALID|IFM_ACTIVE)) == (IFM_AVALID|IFM_ACTIVE);
-		  i.name.assign(sdl->sdl_data, sdl->sdl_nlen);
 		  i.addr.set(sdl->sdl_data + sdl->sdl_nlen);
-		  i.index = ifm->ifm_index;
-		  i.up = (ifm->ifm_flags & IFF_UP) != 0;
+		  i.loopback = false;
 		  ocpiDebug("ether: %s, up: %d connected: %d", i.addr.pretty(), i.up, i.connected);
 		  return true;
 		}
@@ -898,8 +906,10 @@ namespace OCPI {
 		  getValue(s, "flags", &flags)) {
 		if (nval == ARPHRD_ETHER)
 		  i.addr.setString(addr.c_str());
-		else
+		else {
 		  i.addr.set(0,0); // loop back is not an ether interface
+		  i.loopback = true;
+		}
 		if (!i.addr.hasError()) {
 		  int fd = socket(PF_INET, SOCK_DGRAM, 0);
 		  if (fd < 0) {

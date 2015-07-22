@@ -207,6 +207,8 @@ namespace OCPI {
 	  size_t bytes = sizeof(uint32_t) - (offset & 3); // bytes in word
 	  if (bytes > length)
 	    bytes = length;
+	  if (bytes > elementBytes)
+	    bytes = elementBytes;
 	  uint32_t val = get(offset, bytes, status);
 	  if (status && *status)
 	    return;
@@ -229,6 +231,8 @@ namespace OCPI {
 	  size_t bytes = sizeof(uint32_t) - (offset & 3); // bytes in word
 	  if (bytes > length)
 	    bytes = length;
+	  if (bytes > elementBytes)
+	    bytes = elementBytes;
 	  uint32_t data;
 	  memcpy((uint8_t*)&data + (offset & 3), buf, bytes);
 	  set(offset, bytes, data, status);

@@ -47,38 +47,43 @@ RccSourceSuffix:=.$(Suffix_rcc_$(OcpiLanguage))
 RccImplSuffix=$(if $(filter c++,$(OcpiLanguage)),-worker.hh,_Worker.h)
 RccSkelSuffix=-skel$(RccSourceSuffix)
 OBJ:=.o
-IncludeDirs+=../include
+override RccIncludeDirsInternal+=../include gen $(OCPI_CDK_DIR)/include/rcc
+BF=$(BF_$(call RccOs,))
+SharedLibLinkOptions=$(SharedLibLinkOptions_$(call RccOs,))
+SharedLibCompileOptions=$(SharedLibCompileOptions_$(call RccOs,))
 ifneq ($(OCPI_DEBUG),0)
 SharedLibLinkOptions+=-g
 endif
-ifeq ($(shell uname),Linux)
-BF=.so
-SOEXT=.so
-AREXT=.a
-SharedLibLinkOptions+=-shared
-SharedLibCompileOptions=-fPIC
-else
-ifeq ($(shell uname),Darwin)
-BF=.dylib
-SOEXT=.dylib
-AREXT=.a
-SharedLibLinkOptions+=-dynamiclib
-SharedLibCompileOptions=
-endif
-endif
+# Linux values
+BF_linux=.so
+SOEXT_linux=.so
+AREXT_linux=.a
+SharedLibLinkOptions_linux=-shared
+SharedLibCompileOptions_linux=-fPIC
+# macos values
+BF_macos=.dylib
+SOEXT_macos=.dylib
+AREXT_macos=.a
+SharedLibLinkOptions_macos=-dynamiclib
+SharedLibCompileOptions_macos=
 DispatchSourceFile=$(call WkrTargetDir,$1,$2)/$(CwdName)_dispatch.c
 ArtifactFile=$(BinaryFile)
 # Artifacts are target-specific since they contain things about the binary
 ArtifactXmlFile=$(call WkrTargetDir,$1,$2)/$(word 1,$(Workers))_assy-art.xml
 ToolSeparateObjects:=yes
 OcpiLibDir=$(OCPI_CDK_DIR)/lib/$$(RccTarget)
-RccLibraries=rcc application os
+# Add the libraries we know a worker might reference.
+override RccLibrariesInternal+=rcc application os
 LinkBinary=$$(G$(OcpiLanguage)_LINK_$$(RccTarget)) $(SharedLibLinkOptions) -o $$@ \
 $(AEPLibraries) \
-$(foreach l,$(RccLibraries) $(Libraries),-l ocpi_$l -L $(OcpiLibDir))
-
-#  $$(or $$(wildcard $(OcpiLibDir)/lib$(ol)$(SOEXT)),$(OcpiLibDir)/lib$(ol)$(AREXT)))
-
+$(foreach l,$(RccLibrariesInternal) $(Libraries),\
+  $(if $(findstring /,$l),\
+    $(foreach p,$(dir $l)$(RccTarget)/lib$(notdir $l),\
+       $(or $(wildcard $p$(AREXT_$(call RccOs,))),\
+            $(wildcard $p$(SOEXT_$(call RccOs,))),\
+            $(error No RCC library found for $l, tried $p$(AREXT_$(call RccOs,)) and $p$(SOEXT_$(call RccOs,))))), \
+    -l ocpi_$l)) \
+  -L $(OcpiLibDir)
 CompilerWarnings= -Wall -Wextra
 CompilerDebugFlags=-g
 CompilerOptimizeFlags=-O
@@ -94,11 +99,11 @@ RccParams=\
 Compile_c=\
   $$(Gc_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
   $(CompilerWarnings) $(CompilerOptions) \
-  $(SharedLibCompileOptions) $(ExtraCompilerOptions) $(IncludeDirs:%=-I%) -o $$@ $$(RccParams) $$<
+  $(SharedLibCompileOptions) $(ExtraCompilerOptions) $(RccIncludeDirsInternal:%=-I%) -o $$@ $$(RccParams) $$<
 Compile_cc=\
   $$(Gc++_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
   $(CompilerWarnings) $(CompilerOptions) \
-  $(SharedLibCompileOptions) $(ExtraCompilerOptions) $(IncludeDirs:%=-I%) -o $$@ $$(RccParams) $$<
+  $(SharedLibCompileOptions) $(ExtraCompilerOptions) $(RccIncludeDirsInternal:%=-I%) -o $$@ $$(RccParams) $$<
 
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk
 
@@ -142,11 +147,11 @@ $(call RccAssemblyFile,$1,$2): | $(call WkrTargetDir,$1,$2)
 # FIXME: it is theoretically better to generate the XML as part of the final link phase.
 $(call ArtifactXmlFile,$1,$2): $(call RccAssemblyFile,$1,$2) $$(ObjectFiles_$1_$2)
 	@echo Generating artifact/runtime xml file $$@ for all workers in one binary
-	$(AT)$(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(call WkrTargetDir,$1,$2)/$$(@F).deps \
+	$(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(call WkrTargetDir,$1,$2)/$$(@F).deps \
 	     -O $(call RccOs,$1) \
              -V $(call RccOsVersion,$1) \
              -P $(call RccArch,$1) \
-	     -D $(call WkrTargetDir,$1,$2) $(XmlIncludeDirs:%=-I%) -A $(RccAssemblyFile)
+	     -D $(call WkrTargetDir,$1,$2) $(XmlIncludeDirsInternal:%=-I%) -A $(RccAssemblyFile)
 
 endef
 

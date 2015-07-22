@@ -255,11 +255,10 @@ namespace OCPI {
 	throw OU::Error("Invalid container %u", n);
       return *Manager::s_containers[n];
     }
-    Launcher *Container::s_localLauncher;
     Launcher &Container::launcher() const {
-      if (!s_localLauncher)
-	s_localLauncher = new LocalLauncher();
-      return *s_localLauncher;
+      if (!Manager::s_localLauncher)
+	Manager::s_localLauncher = new LocalLauncher();
+      return *Manager::s_localLauncher;
     }
   }
   namespace API {

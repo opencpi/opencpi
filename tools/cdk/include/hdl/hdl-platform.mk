@@ -28,6 +28,7 @@
 # get built elsewhere based on assemblies and configurations
 
 HdlMode:=platform
+HdlLibraries+=platform
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 # Theses next lines are similar to what worker.mk does
 ifneq ($(MAKECMDGOALS),clean)
@@ -38,17 +39,15 @@ override Workers:=$(CwdName)
 override Worker:=$(Workers)
 Worker_$(Worker)_xml:=$(Worker).xml
 OcpiLanguage:=vhdl
-HdlLibraries+=platform
 ComponentLibraries+=devices cards
-XmlIncludeDirs+=. ../specs 
 LibDir=lib/hdl
 # We are building a platform that is not known in the core or in the environment
 ifeq (,$(filter $(Worker),$(HdlAllPlatforms)))
   HdlAllPlatforms+=$(Worker)
   include $(Worker).mk
-  XmlIncludeDirs+=$(HdlPlatformsDir)/specs
   export OCPI_HDL_PLATFORM_PATH+=:$(call OcpiAbsPath,.)
 endif
+XmlIncludeDirs+=$(HdlPlatformsDir)/specs
 ifndef HdlPlatforms
   override HdlPlatforms:=$(HdlPlatform)
 endif
@@ -79,13 +78,14 @@ ifndef HdlSkip
     $(call OcpiDbgVar,HdlExactPart)
     $(call OcpiDbgVar,HdlTargets)
     $(eval $(HdlSearchComponentLibraries))
+    $(call OcpiDbgVar,XmlIncludeDirsInternal)
     $(and $(shell \
        if test -d devices; then \
         ( \
 	 echo ======= Entering the \"devices\" library for the \"$(Worker)\" platform.; \
          $(MAKE) -C devices \
-           ComponentLibraries=" $(call HdlAdjustLibraries,$(ComponentLibraries))" \
-           XmlIncludeDirs="$(call AdjustRelative,$(XmlIncludeDirs))" \
+           ComponentLibrariesInternal="$(call OcpiAdjustLibraries,$(ComponentLibraries))" \
+           XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirsInternal))" \
 	   HdlPlatform="$(HdlPlatform)" ; \
 	 echo ======= Exiting the \"devices\" library for th \"$(Worker)\" platform. \
         ) 1>&2 ; \
@@ -134,12 +134,10 @@ ifndef HdlSkip
 	  $(AT)$(MAKE) -C $$@ -f $(OCPI_CDK_DIR)/include/hdl/hdl-config.mk \
                HdlPlatforms=$(Worker) \
                HdlPlatformWorker=../../$(Worker) \
-	       HdlLibrariesCommand=\
-	       HdlLibraries="$(call HdlAdjustLibraries,$(HdlLibraries))" \
+	       HdlLibrariesInternal="$(call OcpiAdjustLibraries,$(HdlLibraries))" \
 	       Cores="$(call HdlAdjustLlibraries,$(Cores))" \
-	       ComponentLibrariesInternal=\
-               ComponentLibraries="../lib $(call HdlAdjustLibraries,$(ComponentLibraries))" \
-               XmlIncludeDirs="$(call AdjustRelative,$(XmlIncludeDirs))"
+               ComponentLibrariesInternal="../lib $(call OcpiAdjustLibraries,$(ComponentLibraries))" \
+               XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirsInternal))"
 	  $(AT)echo ======= Exiting the \"$1\" configuration for the \"$(Worker)\" platform.
       endef
       $(foreach c,$(Configurations),$(eval $(call doConfig,$c)))

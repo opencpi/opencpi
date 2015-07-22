@@ -11,6 +11,8 @@ namespace OT = DataTransfer;
 namespace OCPI {
   namespace Container {
 
+LocalLauncher::~LocalLauncher() {}
+
 void LocalLauncher::
 createWorker(Launcher::Instance &i) {
   i.m_worker = &i.m_containerApp->createWorker(i.m_impl->m_artifact,

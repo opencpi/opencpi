@@ -74,7 +74,7 @@ AssyImplementations=$(filter %.assy,$(Implementations))
 LibDir=$(OutDir)lib
 GenDir=$(OutDir)gen
 #LibDirs=$(foreach m,$(CapModels),$(foreach ht,$($(m)Targets),$(LibDir)/$(call UnCapitalize,$(m))/$(ht)))
-XmlIncludeDirs+=specs
+XmlIncludeDirs+=specs $(XmlIncludeDirsInternal)
 # default is what we are running on
 
 build_targets := speclinks
@@ -119,7 +119,8 @@ MyMake=$(MAKE) --no-print-directory
 #    $(MyMake) -C $(2) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) \
 #               $$tn="$$t" \
 
-HdlLibrariesCommand=$(call HdlAdjustLibraries,$(HdlLibraries))
+HdlLibrariesCommand=$(call OcpiAdjustLibraries,$(HdlLibraries))
+RccLibrariesCommand=$(call OcpiAdjustLibraries,$(RccLibraries))
 BuildImplementation=$(infoxx BI:$1:$2:$(call HdlLibrariesCommand))\
     set -e; \
     t="$(or $($(call Capitalize,$1)Target),$($(call Capitalize,$(1))Targets))"; \
@@ -128,9 +129,8 @@ BuildImplementation=$(infoxx BI:$1:$2:$(call HdlLibrariesCommand))\
 	       LibDir=$(call AdjustRelative,$(LibDir)/$(1)) \
 	       GenDir=$(call AdjustRelative,$(GenDir)/$(1)) \
 	       $(PassOutDir) \
-	       $(and $(filter $1,hdl),\
-                  HdlLibrariesCommand="$(call HdlLibrariesCommand)" \
-                  VerilogIncludeDirs="$(call AdjustRelative,$(VerilogIncludeDirs))") \
+	       $(call Capitalize,$1)LibrariesInternal="$(call OcpiAdjustLibraries,$($(call Capitalize,$1)Libraries))" \
+	       $(call Capitalize,$1)IncludeDirsInternal="$(call AdjustRelative,$($(call Capitalize,$1)IncludeDirs))" \
                XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirs)) ../lib/hdl";\
 
 BuildModel=\
@@ -184,28 +184,6 @@ checkocl:
 	$(AT)if ! test -x $(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_HOST)/ocpiocl || ! $(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_HOST)/ocpiocl test; then echo Error: OpenCL is not available; exit 1; fi
 
 ocl: checkocl speclinks $(OclImplementations)
-
-ifneq (,)
-# - obsolete, but keep it here for future reference...
-# this is HDL-specific:  for some HDL targets, we need to build a stub library
-# so that higher level builds can reference cores using such a library.
-# (e.g. xilinx xst).
-# We have all the empty module definitions in the "gen/hdl" directory.
-MyHdlMake=$(MyMake) $(and $(HdlTargets),HdlTargets="$(HdlTargets)")
-hdlstubs: $(HdlImplementations)
-	$(AT)echo =============Building HDL stub libraries for this component library \($(LibName)\)
-	$(AT)(echo SourceFiles=$(foreach v,$(wildcard lib/hdl/*.v*),../../$v); \
-              echo OcpiDynamicMakefile=yes; \
-              echo include $(call AdjustRelative2,$(OCPI_CDK_DIR))/include/hdl/hdl-lib.mk \
-	     ) > $(GenDir)/hdl/Makefile
-	$(AT)$(MyHdlMake) -C $(GenDir)/hdl -L LibName=$(LibName) \
-		HdlLibraries="$(foreach l,$(HdlLibraries),$(if $(findstring /,$l),$(call AdjustRelative2,$l),$l)) ocpi" \
-		OCPI_CDK_DIR=$(call AdjustRelative2,$(OCPI_CDK_DIR)) \
-		HdlInstallLibDir=$(call AdjustRelative2,$(LibDir)/hdl/stubs) \
-		stublibrary
-
-# hdlstubs - no longer
-endif
 
 .PHONY: hdl
 hdl: speclinks $(HdlImplementations)

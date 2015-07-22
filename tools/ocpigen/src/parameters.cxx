@@ -182,7 +182,7 @@ parseConfigFile(const char *dir) {
   OU::format(fname, "%s/%s-params.xml", dir, m_implName);
   ezxml_t x;
   std::string empty;
-  if ((err = parseFile(fname.c_str(), empty, "build", &x, empty, true, false)))
+  if ((err = parseFile(fname.c_str(), empty, "build", &x, empty, true, false, true)))
     return err;
   for (ezxml_t cx = ezxml_cchild(x, "configuration"); cx; cx = ezxml_next(cx)) {
     ParamConfig *pc = new ParamConfig(*this);
