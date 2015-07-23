@@ -120,6 +120,7 @@ namespace OCPI {
     // This class represents what we know, generically, about a component implementation
     // Currently there is no separate "spec" metadata - it is redundant in each implementation
     class Worker : public IdentResolver {
+    protected:
       std::string
 	m_specName,
 	m_name,
@@ -130,6 +131,7 @@ namespace OCPI {
       Memory *m_memories;
       //      Test *m_tests;
       unsigned m_nPorts, m_nMemories; //, size , m_nTests
+    private: // FIXME: make more of this stuff private
       size_t m_totalPropertySize;
       //      Test &findTest(unsigned int testId) const;
     public:

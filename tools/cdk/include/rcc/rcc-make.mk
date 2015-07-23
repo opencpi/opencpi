@@ -70,7 +70,7 @@ RccArch=$(word 3,$(subst -, ,$1))
 ifeq ($(filter clean cleanrcc,$(MAKECMDGOALS)),)
 
 $(foreach t,$(RccTargets),\
-  $(foreach m,$(if $(findstring $(OCPI_TOOL_HOST),$t),$t, $(OCPI_TOOL_HOST)=$t),\
+  $(foreach m,$(if $(findstring $(OCPI_TOOL_HOST),$t),$t,$(OCPI_TOOL_HOST)=$t),\
     $(if $(or $(wildcard $(OCPI_CDK_DIR)/include/rcc/$m.mk),$(strip \
               $(wildcard $(OCPI_CDK_DIR)/platforms/$(OCPI_TARGET_PLATFORM)/$m.mk))),\
        $(eval include $(OCPI_CDK_DIR)/include/rcc/$m.mk),\

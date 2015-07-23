@@ -85,11 +85,27 @@ MakeRawParams:= \
      echo "</parameter>";) \
    echo "</parameters>")
 
+$(call OcpiDbgVar,XmlIncludeDirsInternal)
+# Here we add access to:
+# 0. The current directory
+# 1. The generated directory
+# 2. What is locally set in the worker's Makefile (perhaps to override specs/protocols)
+# 3. What was passed from the library Makefile above (perhaps to override specs/protocols)
+# 4. The library's specs directory
+# 5. The library's export directory to find other (slave or emulated) workers
+# 6. The standard component library for specs
+# 7. The standard component library's exports for proxy slaves
 override XmlIncludeDirsInternal:=\
   $(call Unique,\
-    $(IncludeDirs) $(XmlIncludeDirs) $(XmlIncludeDirsInternal) \
-    . $(GeneratedDir) ../specs \
-    $(OCPI_CDK_DIR)/lib/components $(OCPI_CDK_DIR)/include/$(Model)) \
+    . $(GeneratedDir) \
+    $(IncludeDirs) $(XmlIncludeDirs) \
+    $(XmlIncludeDirsInternal) \
+    ../specs \
+    $(foreach m,$(Models),../lib/$m)\
+    $(OCPI_CDK_DIR)/lib/components \
+    $(foreach m,$(Models),$(OCPI_CDK_DIR)/lib/components/$m)\
+   )
+
 $(call OcpiDbgVar,XmlIncludeDirsInternal)
 
 -include $(GeneratedDir)/*.deps

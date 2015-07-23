@@ -69,6 +69,7 @@ namespace OCPI {
 	wait(unsigned remoteInstance, OCPI::OS::ElapsedTime timeout),
 	launch(Launcher::Instances &instances, Launcher::Connections &connections),
 	work(Launcher::Instances &instances, Launcher::Connections &connections);
+      OCPI::Util::Worker::ControlState getState(unsigned remoteInstance);
       void
 	controlOp(unsigned remoteInstance, OU::Worker::ControlOperation),
 	setPropertyValue(unsigned remoteInstance, size_t propN, std::string &v),

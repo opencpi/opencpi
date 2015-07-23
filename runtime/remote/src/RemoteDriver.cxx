@@ -26,7 +26,7 @@ namespace OCPI {
   namespace Remote {
 
 const uint16_t REMOTE_PORT = 17171;
-    const uint16_t REMOTE_NARGS = 5; // fields int the discovery entries
+const uint16_t REMOTE_NARGS = 5; // fields int the discovery entries
 bool g_suppressRemoteDiscovery = false;
 extern const char *remote;
 const unsigned RETRIES = 3;
@@ -90,6 +90,9 @@ class Worker
   }
   bool wait(OS::Timer *t) {
     return m_launcher.wait(m_remoteInstance, t ? t->getRemaining() : 0);
+  }
+  void checkControlState() {
+    setControlState(m_launcher.getState(m_remoteInstance));
   }
   void getPropertyValue(const OU::Property &p, std::string &v, bool hex, bool add) {
     m_launcher.getPropertyValue(m_remoteInstance, &p - m_properties, v, hex, add);

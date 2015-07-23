@@ -49,11 +49,13 @@ RccSkelSuffix=-skel$(RccSourceSuffix)
 OBJ:=.o
 override RccIncludeDirsInternal+=../include gen $(OCPI_CDK_DIR)/include/rcc
 BF=$(BF_$(call RccOs,))
-SharedLibLinkOptions=$(SharedLibLinkOptions_$(call RccOs,))
-SharedLibCompileOptions=$(SharedLibCompileOptions_$(call RccOs,))
 ifneq ($(OCPI_DEBUG),0)
-SharedLibLinkOptions+=-g
+eSharedLibLinkOptions=-g
 endif
+SharedLibLinkOptions+=\
+  $(or $(SharedLibLinkOptions_$(HdlTarget)),$(SharedLibLinkOptions_$(call RccOs,)))
+SharedLibCompileOptions=\
+  $(or $(SharedLibCompileOptions_$(HdlTarget)),$(SharedLibCompileOptions_$(call RccOs,)))
 # Linux values
 BF_linux=.so
 SOEXT_linux=.so
@@ -80,7 +82,7 @@ $(foreach l,$(RccLibrariesInternal) $(Libraries),\
   $(if $(findstring /,$l),\
     $(foreach p,$(dir $l)$(RccTarget)/lib$(notdir $l),\
        $(or $(wildcard $p$(AREXT_$(call RccOs,))),\
-            $(wildcard $p$(SOEXT_$(call RccOs,))),\
+            $(and $(wildcard $p$(SOEXT_$(call RccOs,))),-L $(dir $l)$(RccTarget) -l $(notdir $l)),\
             $(error No RCC library found for $l, tried $p$(AREXT_$(call RccOs,)) and $p$(SOEXT_$(call RccOs,))))), \
     -l ocpi_$l)) \
   -L $(OcpiLibDir)
@@ -98,12 +100,14 @@ RccParams=\
 	     '-DPARAM_$n()=$(Param_$(ParamConfig)_$n)')
 Compile_c=\
   $$(Gc_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
-  $(CompilerWarnings) $(CompilerOptions) \
-  $(SharedLibCompileOptions) $(ExtraCompilerOptions) $(RccIncludeDirsInternal:%=-I%) -o $$@ $$(RccParams) $$<
+  $(CompilerWarnings_$$(RccTarget)) $(CompilerOptions_$$(RccTarget)) \
+  $(call SharedLibCompileOptions) $(ExtraCompilerOptions_$$(RccTarget)) \
+  $(RccIncludeDirsInternal:%=-I%) -o $$@ $$(RccParams) $$<
 Compile_cc=\
   $$(Gc++_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
-  $(CompilerWarnings) $(CompilerOptions) \
-  $(SharedLibCompileOptions) $(ExtraCompilerOptions) $(RccIncludeDirsInternal:%=-I%) -o $$@ $$(RccParams) $$<
+  $(CompilerWarnings_$$(RccTarget)) $(CompilerOptions_$$(RccTarget)) \
+  $(call SharedLibCompileOptions) $(ExtraCompilerOptions_$$(RccTarget)) \
+  $(RccIncludeDirsInternal:%=-I%) -o $$@ $$(RccParams) $$<
 
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk
 
@@ -146,8 +150,8 @@ $(call RccAssemblyFile,$1,$2): | $(call WkrTargetDir,$1,$2)
 # whenever the object files are changed.
 # FIXME: it is theoretically better to generate the XML as part of the final link phase.
 $(call ArtifactXmlFile,$1,$2): $(call RccAssemblyFile,$1,$2) $$(ObjectFiles_$1_$2)
-	@echo Generating artifact/runtime xml file $$@ for all workers in one binary
-	$(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(call WkrTargetDir,$1,$2)/$$(@F).deps \
+	$(AT)echo Generating artifact/runtime xml file $$@ for all workers in one binary
+	$(AT)$(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(call WkrTargetDir,$1,$2)/$$(@F).deps \
 	     -O $(call RccOs,$1) \
              -V $(call RccOsVersion,$1) \
              -P $(call RccArch,$1) \

@@ -368,7 +368,7 @@ $(call OcpiDbgVar,HdlTargets)
 
 define HdlSearchComponentLibraries
 
-  override XmlIncludeDirsInternal += $(call HdlXmlComponentLibraries,$(ComponentLibraries))
+  override XmlIncludeDirsInternal := $(call Unique,$(XmlIncludeDirsInternal) $(call HdlXmlComponentLibraries,$(ComponentLibraries)))
 
 endef
 HdlRmRv=$(if $(filter %_rv,$1),$(patsubst %_rv,%,$1),$1)

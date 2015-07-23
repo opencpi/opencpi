@@ -1118,20 +1118,20 @@ emitRccCppImpl(FILE *f) {
   if (o) {
     std::string ops;
     OU::format(ops, "%c%sOperations", toupper(name()[0]), name()+1);
-    bool first = true;
     // Constructor
     fprintf(f,
 	    "  public:\n"
-	    "    %c%sPort()\n"
-	    "      : ",
+	    "    %c%sPort()",
 	    toupper(name()[0]), &name()[1]);
     o = m_protocol->operations();
+    bool first = true;
     for (unsigned nn = 0; nn < m_protocol->nOperations(); nn++, o++)
       if (o->nArgs()) {
 	std::string s;
 	camel(s, o->name().c_str());
-	fprintf(f, "m_%sOp(*this)%s", s.c_str(), nn != m_protocol->nOperations()-1 ? ", " : "");
-      }    
+	fprintf(f, "%s m_%sOp(*this)", first ? " :" : ",", s.c_str());
+	first = false;
+      }
     fprintf(f, " {\n    }\n");
 
     // Start Op class
