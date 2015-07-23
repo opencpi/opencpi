@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -32,7 +31,6 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
  /*
  * Abstact:
  *	This file contain the "C" implementation for Posix file mapping functions
@@ -48,7 +46,6 @@
 #ifndef OCPI_POSIX_FILEMAPPING_SERVICES_H_
 #define OCPI_POSIX_FILEMAPPING_SERVICES_H_
 
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <string>
 #include <cstdio>

@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -31,7 +30,6 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 
 //#define SLEEP_DEBUG
 //#define DEBUG_WITH_EMULATOR
@@ -74,7 +72,6 @@
 #include <OcpiRDTInterface.h>
 #include <OcpiTimeEmit.h>
 #include <OcpiPullDataDriver.h>
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <OcpiTimeEmitCategories.h>
 

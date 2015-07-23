@@ -31,7 +31,6 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 /*
  * Abstact:
  *   This file contains the implementation for the base class for SMB transfers.
@@ -47,14 +46,7 @@
 
    07/20/04 - John Miller
    Initial version.
-
- *
- *
  */
-
-
-
-#define __STDC_FORMAT_MACROS
 #include <stdlib.h>
 #include <inttypes.h>
 #include <string.h>
