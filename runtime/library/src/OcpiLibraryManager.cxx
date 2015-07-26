@@ -4,11 +4,11 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <climits>
+#include "OcpiOsAssert.h"
 #include "OcpiOsFileIterator.h"
 #include "OcpiUtilException.h"
 #include "OcpiLibraryManager.h"
-#include <OcpiOsAssert.h>
-
+#include "LibrarySimple.h"
 // This file contains code common to all library drivers
 
 namespace OA = OCPI::API;
@@ -69,6 +69,7 @@ namespace OCPI {
       for (d = firstDriver(); d; d = d->nextDriver())
 	if ((a = d->findArtifact(url)))
 	  return *a;
+#if 0
       // The artifact was not found in any driver's libraries
       // Now we need to find a library driver that can deal with this
       // artifact. In this case a driver returning NULL means the driver is
@@ -77,6 +78,12 @@ namespace OCPI {
       for (Driver *d = firstChild(); d; d = d->nextChild())
 	if ((a = d->addArtifact(url, params)))
 	  return *a;
+#else
+      // If the artifact is not found, we will put it in the "simple" library that
+      // is not associated with any directory.
+      if ((a = Simple::getDriver().addArtifact(url, params)))
+	return *a;
+#endif
       throw OU::EmbeddedException(OU::ARTIFACT_UNSUPPORTED,
 				  "No library driver supports this file",
 				  OU::ApplicationRecoverable);
@@ -229,11 +236,15 @@ namespace OCPI {
     }
 
     // The artifact base class
-    Artifact::Artifact() : m_xml(NULL), m_nImplementations(0), m_metaImplementations(NULL), m_nWorkers(0) {}
+    Artifact::
+    Artifact()
+      : m_xml(NULL), m_nImplementations(0), m_metaImplementations(NULL), m_nWorkers(0),
+	m_metaData(NULL) {}
     Artifact::~Artifact() {
       for (WorkerIter wi = m_workers.begin(); wi != m_workers.end(); wi++)
 	delete (*wi).second;
       delete [] m_metaImplementations;
+      delete [] m_metaData;
     }
     // Get the metadata from the end of the file.
     // The length of the appended file is appended on a line starting with X
@@ -285,6 +296,25 @@ namespace OCPI {
 	    (void)close(fd);
 	  return data;
 	}
+
+    void Artifact::
+    getFileMetaData(const char *name) {
+      if (!(m_metaData = getMetadata(name, m_mtime, m_length)))
+	throw OU::Error(OCPI_LOG_DEBUG, "Cannot open or retrieve metadata from file \"%s\"",
+			name);
+      const char *err = OE::ezxml_parse_str(m_metaData, m_length, m_xml);
+      if (err)
+	throw OU::Error("Error parsing artifact metadata from \"%s\": %s",
+			name, err);
+      char *xname = ezxml_name(m_xml);
+      if (!xname || strcasecmp("artifact", xname))
+	throw OU::Error("invalid metadata in binary/artifact file \"%s\": no <artifact>", name);
+      const char *uuid = ezxml_cattr(m_xml, "uuid");
+      if (!uuid)
+	throw OU::Error("no uuid in binary/artifact file \"%s\"", name);
+      library().registerUuid(uuid, this);
+      ocpiDebug("Artifact file %s has artifact metadata", name);
+    }
 
     Implementation *Artifact::
     findImplementation(const char *specName, const char *staticInstance) {

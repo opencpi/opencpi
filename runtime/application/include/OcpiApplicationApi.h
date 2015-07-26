@@ -48,11 +48,13 @@ namespace OCPI {
     class ApplicationI;
     class Application {
       ApplicationI &m_application;
+    protected:
+      Application(ApplicationI &);
     public:
+
       // The constructor does the planning, deciding what impl will run where
       explicit Application(const char *file, const OCPI::API::PValue *params = NULL);
       explicit Application(const std::string &string, const OCPI::API::PValue *params = NULL);
-      
       // Creates a new Application instance from the app template
       explicit Application(Application & app, const OCPI::API::PValue *params = NULL);     
 
@@ -78,6 +80,7 @@ namespace OCPI {
       void getProperty(const char* instance_name, const char* prop_name, std::string &value,
 		       bool hex = false);
       void setProperty(const char* instance_name, const char* prop_name, const char *value);
+      void dumpDeployment(const char *appFile, const std::string &file);
     private:
       friend class Property;
       Worker &getPropertyWorker(const char *name);

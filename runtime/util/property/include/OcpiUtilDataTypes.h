@@ -167,8 +167,8 @@ namespace OCPI {
       Value *m_default;               // A default value, if one is appropriate and there is one
       unsigned m_ordinal;             // ordinal within group
       Member();
-      Member(const char *name, const char *abbrev, const char *description, OCPI::API::BaseType type,
-	     bool isSequence, const char *defaultValue);
+      Member(const char *name, const char *abbrev, const char *description,
+	     OCPI::API::BaseType type, bool isSequence, const char *defaultValue);
       virtual ~Member();
       void printAttrs(FILE *f, const char *tag, unsigned indent = 0, bool suppressDefault = false);
       void printChildren(FILE *f, const char *tag, unsigned indent = 0);

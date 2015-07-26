@@ -98,6 +98,7 @@ namespace OCPI {
     public:
       explicit Assembly(const char *file, const OCPI::Util::PValue *params);
       explicit Assembly(const std::string &string, const OCPI::Util::PValue *params);
+      explicit Assembly(ezxml_t xml, const char *name, const OCPI::Util::PValue *params);
       ~Assembly();
       Instance &instance(size_t n) { return *m_instances[n]; }
       size_t nInstances() { return m_instances.size(); }

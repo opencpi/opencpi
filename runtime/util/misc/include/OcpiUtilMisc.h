@@ -389,6 +389,10 @@ namespace OCPI {
 	  (((value) & 0xff0000) >> 8) | (((value) >> 24));
       }
       const std::string &getSystemId();
+      // The posix.2 definition, meaning initial removal of trailing slashes.
+      // empty strings and "/" result in an empty string.
+      // The return value is a convenience - the c_str() of the output buffer.
+      const char *baseName(const char *path, std::string &buf);
   }
 }
 

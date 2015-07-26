@@ -112,11 +112,12 @@ namespace OCPI {
     {
     }
     // Constructor when you are not parsing, and doing static initialization
-    Member::Member(const char *name, const char *abbrev, const char *description, OA::BaseType type,
-		   bool isSequence, const char *defaultValue)
-		   : ValueType(type, isSequence), m_name(name), m_abbrev(abbrev ? abbrev : ""),
-		     m_description(description ? description : ""),
-		     m_offset(0), m_isIn(false), m_isOut(false), m_isKey(false), m_default(NULL) {
+    Member::
+    Member(const char *name, const char *abbrev, const char *description, OA::BaseType type,
+	   bool isSequence, const char *defaultValue)
+      : ValueType(type, isSequence), m_name(name), m_abbrev(abbrev ? abbrev : ""),
+	m_description(description ? description : ""),
+	m_offset(0), m_isIn(false), m_isOut(false), m_isKey(false), m_default(NULL) {
       if (defaultValue) {
 	  m_default = new Value(*this);
 	  ocpiCheck(m_default->parse(defaultValue) == 0);
