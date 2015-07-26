@@ -1,0 +1,98 @@
+#!/bin/sh
+
+# A script specific to the alst4 platform, with the sgx230 part
+# Args are:
+# 1. The bitstream file to load to flash
+# 2. The serial number of the jtag pod to use
+# 3. The promgen args is one argument
+dir=`dirname $0`
+if ! test -d $OCPI_XILINX_TOOLS_DIR; then
+  echo OCPI_XILINX_TOOLS_DIR environment variable not set or is not a directory.
+fi
+if [[ $# != 3 ]]; then
+  echo Usage is: `basename $0` bitfile jtag-esn 1>&2
+  exit 1
+fi
+if ! test -r $1; then
+  echo Bitstream file \'$1\' does not exist.
+  exit 1
+fi
+if [[ "$OCPI_XILINX_TOOLS_DIR" == "" ]] ; then
+  echo Error: environment variable OCPI_XILINX_TOOLS_DIR not set.
+  exit 1
+fi
+if test -x $OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact; then
+  imp="$OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact"
+  pgen="$OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/promgen"
+elif test -x $OCPI_XILINX_TOOLS_DIR/LabTools/bin/lin64/impact; then
+  imp="$OCPI_XILINX_TOOLS_DIR/LabTools/bin/lin64/impact"
+  pgen="$OCPI_XILINX_TOOLS_DIR/LabTools/bin/lin64/promgen"
+else
+  echo Error: neither $OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact nor $OCPI_XILINX_TOOLS_DIR/LabTools/bin/lin64/impact was found
+  exit 1
+fi
+myusb=`$dir/findJtagByESN_xilinx $imp $2`
+if test $? != 0; then
+  echo Failed to find a JTAG USB Pod with ESN $2.
+  exit 1;
+fi
+echo Found ESN $2 on "$myusb", using it.
+temp=/tmp/ocpibitstream$$
+tlog=$temp.1
+function good {
+  #rm -f $temp.*
+  exit 0
+}
+function bad {
+  echo Look at $temp.\* for details, then remove them.
+  exit 1
+}
+case $1 in 
+  (*.gz|*.bitz)
+    echo The bitstream file \"$1\" is compressed.  Expanding it.
+    gunzip -q -c < $1 > $temp.bit 2> $tlog
+    # Note that gunzip issues warnings and returns status == 2 when there is
+    # junk at the end of the file - which we use for artifact metadata of course.
+    if test $? != 0 -a $? != 2; then
+      echo Decompression failed. Log is in $tlog; exit 1
+      exit 1
+    fi
+    rm $temp.1
+    echo Bitstream file decompressed into \"$temp.bit\"
+    bitfile=$temp.bit
+    ;;
+  (*.bit)
+    echo The bitstream file \"$1\" is not compressed.  Using it directly.
+    bitfile=$5
+    ;;
+  (*)
+    echo The bitstream file \"$1\" does not have a valid suffix "(.bit or .bitz)".
+    exit 1
+esac
+
+echo Converting \"$bitfile\" to flash format in \"$temp.mcs\" using xilinx promgen tool.
+echo Executing command: $pgen -w -p mcs -c FF $3 $bitfile
+$pgen -w -p mcs -c FF $3 $bitfile >> $tlog 2>&1
+if test $? != 0; then
+  echo "Conversion to flash file format failed.  See log in $temp.2"
+  bad
+fi
+# NOTE THIS IS PRETTY ML605 SPECIFIC.  We can parameterize when we know the next one.
+echo Conversion to flash file format succeeded.  Starting flash programming.
+echo This can take a while - 10-15 minutes.   Starting at `date +%T`.
+time $imp -batch <<EOF >> $tlog 2>&1
+setMode -bs
+setCable -port $myusb
+Identify -inferir 
+identifyMPM 
+attachflash -position 2 -bpi "XCF128X"
+assignfiletoattachedflash -position 2 -file $temp.mcs
+Program -p 2 -dataWidth 16 -rs1 NONE -rs0 NONE -bpionly -e -v -loadfpga 
+EOF
+if test $? != 0; then
+  echo Flash programming had an error.
+  bad
+fi
+echo Flash programming is complete.  You must power-cycle the system to use it.
+echo Use the \"ocpihdl search\" command after power cycling to confirm success.
+good

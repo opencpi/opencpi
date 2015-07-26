@@ -35,6 +35,7 @@
 #include <stdarg.h>
 #include <strings.h>
 #include <assert.h>
+#include <cstring>
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilDataTypes.h"
@@ -48,6 +49,17 @@ namespace OCPI {
   namespace API {
     PVULong PVEnd(0,0);
 
+    PValue &PValue::operator=(const PValue &p) {
+      name = p.name;
+      type = p.type;
+      if (p.owned) {
+	vString = new char[strlen(p.vString) + 1];
+	strcpy((char*)vString, p.vString);
+	owned = true;
+      } else
+	vULongLong = p.vULongLong;
+      return  *this;
+    }
     unsigned PValue::length() const {
       unsigned n = 0;
       if (this) // FIXME - this is really not kosher.
@@ -235,7 +247,8 @@ namespace OCPI {
       if (err)
 	return err;
       if (p.type == OA::OCPI_String) {
-	p.vString = strdup(val.m_String);
+	p.vString = new char[strlen(val.m_String) + 1];
+	strcpy((char*)p.vString, val.m_String);
 	p.owned = true;
       } else
 	p.vULongLong = val.m_ULongLong;

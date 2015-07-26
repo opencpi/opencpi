@@ -59,7 +59,7 @@ OCPI_PROPERTY_DATA_TYPES
 0};
 #undef OCPI_DATA_TYPE
 
-const char *container = 0, *platform = 0, *device = 0, *load = 0, *os = 0, *os_version = 0, *assembly = 0, *attribute;
+const char *platform = 0, *device = 0, *load = 0, *os = 0, *os_version = 0, *assembly = 0, *attribute, *platformDir;
 
 Clock *Worker::
 addClock() {
@@ -344,7 +344,7 @@ addBuiltinProperties() {
 }
 // Parse the generic implementation control aspects (for rcc and hdl and other)
 const char *Worker::
-parseImplControl(ezxml_t &xctl) {
+parseImplControl(ezxml_t &xctl, const char *firstRaw) {
   // Now we do the rest of the control interface
   const char *err;
   if ((xctl = ezxml_cchild(m_xml, "ControlInterface")) &&
@@ -370,9 +370,13 @@ parseImplControl(ezxml_t &xctl) {
   // Now that we have all information about properties and we can actually
   // do the offset calculations and summarize the access type counts and flags
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
-    if ((err = (**pi).offset(m_ctl.offset, m_ctl.sizeOfConfigSpace, this)))
+    OU::Property &p = **pi;
+    // Raw properties must start on a 4 byte boundary
+    if (firstRaw && !strcasecmp(p.m_name.c_str(), firstRaw))
+      m_ctl.offset = OU::roundUp(m_ctl.offset, 4);
+    if ((err = p.offset(m_ctl.offset, m_ctl.sizeOfConfigSpace, this)))
       return err;
-    m_ctl.summarizeAccess(**pi);
+    m_ctl.summarizeAccess(p);
   }
   // Allow overriding sizeof config space, giving priority to controlinterface
   uint64_t sizeOfConfigSpace;
@@ -681,6 +685,7 @@ getValue(const char *sym, OU::ExprValue &val) const {
 	// The value of the numeric attribute matches the name of a provided property
 	// So we use that property value in place of this attribute's value
 	// FIXME: why isn't this string value already parsed?
+	// FIXME: the instance has parsed property values but it not accessible here
 	size_t nval;
 	if (OE::getUNum(ap->m_value.c_str(), &nval))
 	  return OU::esprintf("Bad '%s' property value: '%s'",
@@ -952,6 +957,16 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
 	}
     }
   }
+}
+
+// Base class has no worker level expressions, but does all the ports
+const char *Worker::
+resolveExpressions(OU::IdentResolver &ir) {
+  const char *err;
+  for (PortsIter pi = m_ports.begin(); pi != m_ports.end(); pi++)
+    if ((err = (**pi).resolveExpressions(ir)))
+      return err;
+  return NULL;
 }
 
 void Worker::

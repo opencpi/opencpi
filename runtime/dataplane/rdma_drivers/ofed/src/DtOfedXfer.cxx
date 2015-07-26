@@ -31,14 +31,11 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 /*
  *  John Miller -  12/2010
  *  Initial version
  *
  */
-
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>

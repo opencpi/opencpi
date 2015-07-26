@@ -20,7 +20,6 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <setjmp.h>
 #include <signal.h>
@@ -100,9 +99,10 @@ namespace OCPI {
     getUUID() {
       HdlUUID myUUIDtmp;
       if (m_old)
-	m_cAccess.getRegisterBytes(admin.uuid, &myUUIDtmp, OccpSpace);
+	m_cAccess.getRegisterBytes(admin.uuid, &myUUIDtmp, OccpSpace, 8);
       else
-	m_pfWorker->m_properties.getBytesRegisterOffset(0, (uint8_t *)&myUUIDtmp, sizeof(HdlUUID));
+	m_pfWorker->m_properties.getBytesRegisterOffset(0, (uint8_t *)&myUUIDtmp,
+							sizeof(HdlUUID), 8);
       // Fix the endianness
       for (unsigned n = 0; n < sizeof(HdlUUID); n++)
 	((uint8_t*)&m_UUID)[n] = ((uint8_t *)&myUUIDtmp)[(n & ~3) + (3 - (n&3))];

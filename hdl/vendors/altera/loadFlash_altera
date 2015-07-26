@@ -83,7 +83,7 @@ if test ! -r $5; then
   exit 1
 fi
 case $5 in 
-  (*.gz)
+  (*.gz|*.bitz)
     echo The bitstream file \"$5\" is compressed.  Expanding it.
     gunzip -q -c < $5 > $temp.sof 2> $temp.1
     # Note that gunzip issues warnings and returns status == 2 when there is
@@ -101,7 +101,7 @@ case $5 in
     bitfile=$5
     ;;
   (*)
-    echo The bitstream file \"$5\" does not have a valid suffix "(.sof or .gz)".
+    echo The bitstream file \"$5\" does not have a valid suffix "(.sof or .bitz)".
     exit 1
 esac
 
@@ -124,11 +124,12 @@ fi
 rm $temp.3
 echo JTAG Loading of the factory bitstream succeeded.  Now using it to write the flash.
 echo "$NSH" nios2-flash-programmer --base 0x08000000 $temp.flash > $temp.4
-"$NSH" nios2-flash-programmer --base 0x08000000 $temp.flash > $temp.5 2>$temp.6
+time "$NSH" nios2-flash-programmer --base 0x08000000 $temp.flash > $temp.5 2>$temp.6
 if test $? != 0; then
   echo Writing flash failed.  See log in $temp.4
   exit 1
 fi
 rm $temp.4
 rm $temp.flash
-echo Writing bitstream to flash memory succeeded.
+echo Flash programming is complete.  You must power-cycle the system to use it.
+echo Use the \"ocpihdl search\" command after power cycling to confirm success.

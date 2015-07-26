@@ -1,4 +1,3 @@
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <utime.h>
 #include <unistd.h>
@@ -346,9 +345,8 @@ namespace OCPI {
     control(std::string &error) {
       const char *err;
       size_t inst, n;
-      bool get, set, op, wait;
-      
-      bool hex;
+      bool get, set, op, wait, hex, getState = ezxml_cattr(m_rx, "getstate") != NULL;
+
       if ((err = OX::getNumber(m_rx, "id",   &inst, NULL, 0, false, true)) ||
 	  (err = OX::getNumber(m_rx, "get",  &n,    &get, 0, false)) ||
 	  (err = OX::getNumber(m_rx, "set",  &n,    &set, 0, false)) ||
@@ -377,6 +375,8 @@ namespace OCPI {
 	      m_response = "<control timeout='1'>";
 	  } else
 	    w.wait();
+	else if (getState)
+	  OU::format(m_response, "<control state='%u'>", w.getControlState());
 	else
 	  throw OU::Error("Illegal remote control operation");
       } catch (const std::string &e) {

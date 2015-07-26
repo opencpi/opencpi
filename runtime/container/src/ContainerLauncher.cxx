@@ -11,6 +11,8 @@ namespace OT = DataTransfer;
 namespace OCPI {
   namespace Container {
 
+LocalLauncher::~LocalLauncher() {}
+
 void LocalLauncher::
 createWorker(Launcher::Instance &i) {
   i.m_worker = &i.m_containerApp->createWorker(i.m_impl->m_artifact,
@@ -58,11 +60,11 @@ launch(Launcher::Instances &instances, Launcher::Connections &connections) {
     c->prepare();
     if (c->m_launchIn == this) {
       OA::Worker &wIn = *c->m_instIn->m_worker;
-      c->m_input = &wIn.getPort(c->m_nameIn);
+      c->m_input = &wIn.getPort(c->m_nameIn, c->m_paramsIn);
       if (c->m_launchOut == this) {
 	// Both ports of the connection is under this launcher
 	OA::Worker &wOut = *c->m_instOut->m_worker;
-	c->m_output = &wOut.getPort(c->m_nameOut);
+	c->m_output = &wOut.getPort(c->m_nameOut, c->m_paramsOut);
 	// Connection is entirely under the purview of this launcher.
 	c->m_input->connect(*c->m_output, c->m_paramsIn, c->m_paramsOut);
       } else if (c->m_url) {
@@ -78,7 +80,7 @@ launch(Launcher::Instances &instances, Launcher::Connections &connections) {
     } else if (c->m_launchOut == this) {
       // Output is here, but input is elsewhere or external
       OA::Worker &wOut = *c->m_instOut->m_worker;
-      c->m_output = &wOut.getPort(c->m_nameOut);
+      c->m_output = &wOut.getPort(c->m_nameOut, c->m_paramsOut);
       if (c->m_url)
 	// Input that is connected to a URL.
 	// We will do this locally

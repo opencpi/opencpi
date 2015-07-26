@@ -101,38 +101,22 @@ end record metadata_out_t;
 -- Time service definitions
 --------------------------------------------------------------------------------
 
+-- Input from the platform worker to the time server.
+type time_base_out_t is record
+  clk     : std_logic;
+  reset   : std_logic; -- assert hi
+  ppsIn   : std_logic;
+end record time_base_out_t;
+type time_base_in_t is record
+  ppsOut   : std_logic;
+end record time_base_in_t;
+
 -- The time_server's (and platform worker's) output that is the time service.
 type time_service_t is record
   clk     : std_logic;
-  reset_n : std_logic;
+  reset   : std_logic;
   now     : ocpi.types.ulonglong_t;
 end record time_service_t;
-
--- The time server module that is generally instantiated in the platform worker.
-
-component time_server is
-  port (
-    CLK                 : in  std_logic;
-    RST_N               : in  std_logic;
-    timeCLK             : in  std_logic;
-    timeRST_N           : in  std_logic;
-    ppsIn               : in  std_logic;  -- ASYNC
-    -- Property interface
-    timeControl         : in  ulong_t;
-    timeControl_written : in  bool_t;
-    timeStatus          : out ulong_t;
-    timeNowIn           : in  ulonglong_t;
-    timeNow_written     : in  bool_t;
-    timeNowOut          : out ulonglong_t;
-    timeDeltaIn         : in  ulonglong_t;
-    timeDelta_written   : in  bool_t;
-    timeDeltaOut        : out ulonglong_t;
-    ticksPerSecond      : out ulong_t;
-    -- Outputs in tiock clock domain
-    ppsOut              : out std_logic;
-    time_service        : out time_service_t  -- time service clock domain
-    );
-end component time_server;
 
 --------------------------------------------------------------------------------
 -- uNoc definitions

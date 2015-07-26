@@ -32,7 +32,8 @@ namespace OCPI {
 	std::string m_simDir;
       public:
 	Server(const char *name, const std::string &platform, uint8_t spinCount,
-	       unsigned sleepUsecs, unsigned simTicks, bool verbose, bool dump, std::string &error);
+	       unsigned sleepUsecs, unsigned simTicks, bool verbose, bool dump, bool isPublic,
+	       std::string &error);
 	~Server();
 	bool run(const std::string &exec, std::string &error);
 	static void initAdmin(OCPI::HDL::OccpAdminRegisters &admin, const char *platform,

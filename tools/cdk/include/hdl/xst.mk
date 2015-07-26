@@ -296,7 +296,7 @@ XstMakeLso=\
    $(foreach l,$(HdlLibrariesInternal),\
       $(infox HL:$l) \
       echo $(lastword $(subst -, ,$(notdir $l)));)\
-   $(foreach l,$(SubCores_$(HdlTarget)), \
+   $(foreach l,$(XstCores), \
       $(infox CC:$l) \
       echo $(call XstLibFromCore,$l);)\
   ) > $(XstLsoFile);
@@ -307,7 +307,7 @@ XstMakeIni=\
       echo $(lastword $(subst -, ,$(notdir $(l))))=$(strip \
         $(call FindRelative,$(TargetDir),$(strip \
            $(call HdlLibraryRefDir,$(l),$(HdlTarget)))));) \
-   $(foreach l,$(infox SubCores:$(SubCores_$(HdlTarget)))$(SubCores_$(HdlTarget)),\
+   $(foreach l,$(XstCores),$(infox XstCore:$l)\
       echo $(call XstLibFromCore,$l)=$(call FindRelative,$(TargetDir),$(strip \
           $(firstword $(foreach c,$(call XstCoreLibraryChoices,$(call XstPathFromCore,$l),a),$(infox CECEL:$c)$(call HdlExists,$c)))));) \
   ) > $(XstIniFile);
@@ -457,9 +457,9 @@ define HdlToolDoPlatform_xst
 
 # This dependency is required, since without it, ngdbuild can fail
 # I.e. the input container ngc depends on it in some obscure way.
-$(call NgcName,$1,$3): $(wildcard $(HdlPlatformsDir)/$5/*.ucf)
+$(call NgcName,$1,$3): $(wildcard $(HdlPlatformDir_$5)/*.ucf)
 # Convert ngc to ngd (we don't do merging here)
-$(call NgdName,$1,$3): $(call NgcName,$1,$3) $(wildcard $(HdlPlatformsDir)/$5/*.ucf)
+$(call NgdName,$1,$3): $(call NgcName,$1,$3) $(wildcard $(HdlPlatformDir_$5)/*.ucf)
 	$(AT)echo -n For $2 on $5 using config $4: creating merged NGC file using '"ngcbuild"'.
 	$(AT)$(call DoXilinx,ngcbuild,$1,\
 	        -verbose \
@@ -469,7 +469,7 @@ $(call NgdName,$1,$3): $(call NgcName,$1,$3) $(wildcard $(HdlPlatformsDir)/$5/*.
 	$(AT)echo -n For $2 on $5 using config $4: creating NGD '(Xilinx Native Generic Database)' file using '"ngdbuild"'.
 	$(AT)rm -f $$@
 	$(AT)$(call DoXilinx,ngdbuild,$1,\
-	        -verbose $(foreach u,$(wildcard $(HdlPlatformsDir)/$5/*.ucf),-uc $u) -p $(HdlPart_$5) \
+	        -verbose $(foreach u,$(wildcard $(HdlPlatformDir_$5)/*.ucf),-uc $u) -p $(HdlPart_$5) \
 		$$(XstNgdOptions) $3-b.ngc $3.ngd)
 
 # Map to physical elements
@@ -499,7 +499,7 @@ $(call BitName,$1,$3,$6): $(call ParName,$1,$3) $(call PcfName,$1,$3) $(call Trc
 	$(AT)echo -n For $2 on $5 using config $4: Generating Xilinx bitstream file $$@.
 	$(AT)$(call DoXilinxPat,bitgen,$1,\
 		-f $$(call FindRelative,$1,$(strip \
-		$(or $(wildcard $(HdlPlatformsDir)/$5/$5.ut),$(HdlPlatformsDir)/common/bitgen_bit.ut))) \
+		$(or $(wildcard $(HdlPlatformDir_$5)/$5.ut),$(HdlPlatformsDir)/common/bitgen_bit.ut))) \
                 $(notdir $(call ParName,$1,$3)) $(notdir $(call BitName,$1,$3,$6)) \
 		$(notdir $(call PcfName,$1,$3)), 'DRC detected 0 errors')
 

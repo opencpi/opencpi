@@ -20,7 +20,6 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <string>
 #include <unistd.h>
@@ -207,7 +206,7 @@ namespace OCPI {
 	// End local state for executable file transfer
 	Sim(std::string &simDir, std::string &script, const std::string &platform,
 	    uint8_t spinCount, unsigned sleepUsecs, unsigned simTicks, bool verbose, bool dump,
-	    std::string &error)
+	    bool isPublic, std::string &error)
 	  : m_udp("udp", error),                       // the generic interface for udp broadcast receives
 	    m_disc(m_udp, ocpi_slave, NULL, 0, error), // the broadcast receiver
 	    //      m_ext(m_udp, ocpi_device, NULL, 0, error),
@@ -235,7 +234,7 @@ namespace OCPI {
 	  OE::Interface eif;
 	  OE::Address udp(true);
 	  while (ifs.getNext(eif, error, NULL) && error.empty()) {
-	    if (eif.up && eif.connected) {
+	    if (eif.up && eif.connected && (isPublic || eif.loopback)) {
 	      OE::Socket *s = new OE::Socket(eif, ocpi_device, &udp, 0, error);
 	      if (!error.empty()) {
 		delete s;
@@ -1145,7 +1144,8 @@ namespace OCPI {
 
       Server::
       Server(const char *name, const std::string &platform, uint8_t spinCount,
-	     unsigned sleepUsecs, unsigned simTicks, bool verbose, bool dump, std::string &error)
+	     unsigned sleepUsecs, unsigned simTicks, bool verbose, bool dump, bool isPublic,
+	     std::string &error)
 	: m_sim(NULL) {
 	// FIXME - determine this via argv0
 	const char *xenv = getenv("OCPI_CDK_DIR");
@@ -1204,8 +1204,8 @@ namespace OCPI {
 	    OU::format(error, "Can't create the new diretory for this simulator: %s", m_simDir.c_str());
 	  return;
 	}
-	m_sim = new Sim(m_simDir, script, actualPlatform, spinCount, sleepUsecs, simTicks, verbose, dump,
-			error);
+	m_sim = new Sim(m_simDir, script, actualPlatform, spinCount, sleepUsecs, simTicks,
+			verbose, dump, isPublic, error);
 	if (error.size())
 	  return;
 	ocpiInfo("Simulator named \"sim:%s\" created in %s. All fifos are open.",

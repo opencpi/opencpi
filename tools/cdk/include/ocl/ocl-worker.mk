@@ -82,6 +82,6 @@ $(OclAssemblyFile): | $(GeneratedDir)
 $(ArtifactXmlFile): $(OclAssemblyFile)
 	@echo Generating artifact/runtime xml file \($(ArtifactXmlFile)\) for all workers in one binary
 	$(AT)$(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(TargetDir)/$(@F).deps \
-	     -D $(TargetDir) $(XmlIncludeDirs:%=-I%) -A $(OclAssemblyFile)
+	     -D $(TargetDir) $(XmlIncludeDirsInternal:%=-I%) -A $(OclAssemblyFile)
 
 endif

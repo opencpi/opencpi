@@ -1,5 +1,4 @@
 //#define DEBUG_TxRx_Datagram 1
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -33,7 +32,6 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 /*
  * Abstact:
  *   This file contains the interface for the Ocpi Datagram transfer driver.
@@ -42,8 +40,6 @@
  *  Initial version
  *
  */
-
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <OcpiOsEther.h>
 #include <DtDataGramXfer.h>

@@ -69,6 +69,7 @@ namespace OCPI {
     // It is called back on containers that are suitable.
     // It returns true if the search should stop.
     class Container;
+    class LocalLauncher;
     class Callback {
     protected:
       virtual ~Callback(){};
@@ -86,6 +87,7 @@ namespace OCPI {
     protected:
       static Container **s_containers;
       static unsigned s_maxContainer;
+      static LocalLauncher *s_localLauncher;
     public:
       static unsigned s_nContainers;
       Manager();

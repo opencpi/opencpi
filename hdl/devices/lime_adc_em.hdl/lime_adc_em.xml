@@ -1,4 +1,3 @@
-<HdlWorker language="vhdl" emulate='lime_adc.hdl'>
-  <componentspec nocontrol='1'/>
+<HdlWorker language="vhdl" emulate='lime_adc.hdl' spec='emulator-spec'>
   <!-- Insert any other implementation-specific information here -->
 </HdlWorker>

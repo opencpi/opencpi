@@ -166,7 +166,7 @@
        }
      }
  #endif
-
+   delete m_user;
    deleteChildren();
    uint32_t m = 0;
    while ( m_context->memories && m_context->memories[m] ) {
@@ -530,13 +530,17 @@
 
 void Worker::
 propertyWritten(unsigned ordinal) const {
-  if (m_user)
+  if (m_user) {
     m_user->propertyWritten(ordinal);
+    checkError();
+  }
 }
 void Worker::
 propertyRead(unsigned ordinal) const {
-  if (m_user)
+  if (m_user) {
     m_user->propertyRead(ordinal);
+    checkError();
+  }
 }
 
 void Worker::
@@ -552,6 +556,21 @@ prepareProperty(OU::Property& md ,
       throw OU::EmbeddedException( OU::PROPERTY_SET_EXCEPTION, NULL, OU::ApplicationRecoverable);
     }
     writeVaddr = (uint8_t*)m_context->properties + md.m_offset;
+  }
+}
+
+void Worker::
+checkError() const {
+  char *err = m_context->errorString ? m_context->errorString : m_errorString;
+  if (err) {
+    std::string e;
+    OU::format(e, "Worker %s produced error during execution: %s", name().c_str(), err);
+    m_context->errorString = NULL;
+    if (m_errorString) {
+      free(m_errorString);
+      m_errorString = NULL;
+    }
+    throw OU::Error("%s", e.c_str());
   }
 }
 
@@ -635,18 +654,7 @@ prepareProperty(OU::Property& md ,
      OCPI_EMIT_STATE_CAT_NR_(wre, 0, OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_CAT_WORKER_DEV_RUN_TIME);
      if (m_user)
        m_user->m_first = false;
-     char *err = m_context->errorString ? m_context->errorString : m_errorString;
-     if (err) {
-       std::string e;
-       OU::format(e, "Worker %s produced error during execution: %s",
-		  name().c_str(), err);
-       m_context->errorString = NULL;
-       if (m_errorString) {
-	 free(m_errorString);
-	 m_errorString = NULL;
-       }
-       throw OU::Error("%s", e.c_str());
-     }
+     checkError();
      if (newRunCondition) {
        if (m_runCondition->m_timeout)
 	 m_runTimer.reset();
@@ -1083,6 +1091,22 @@ controlOperation(OU::Worker::ControlOperation op) {
      : m_rccPort((*(Worker *)pthread_getspecific(Driver::s_threadKey)).portInit()) {
      setRccBuffer(&m_rccPort.current);
    };
+   void *RCCUserPort::
+   getArgAddress(RCCUserBuffer &buf, unsigned op, unsigned arg, size_t *length) const {
+     OU::Operation &o = m_rccPort.containerPort->metaPort().m_operations[op];
+     OU::Member &m = o.m_args[arg];
+     uint8_t *p = (uint8_t *)buf.m_rccBuffer->data + m.m_offset;
+     if (length && m.m_isSequence)
+       if (o.m_nArgs == 1) {
+	 assert(buf.m_rccBuffer->length_ % m.m_elementBytes == 0);
+	 *length = buf.m_rccBuffer->length_ / m.m_elementBytes;
+       } else {
+	 *length = *(uint32_t *)p;
+	 assert(!m.m_sequenceLength || *length <= m.m_sequenceLength);
+	 return p + m.m_align;
+       }
+     return p;
+   }
    void RCCUserPort::
    send(RCCUserBuffer&buf) {
      rccSend(&m_rccPort, buf.getRccBuffer());
@@ -1144,6 +1168,12 @@ controlOperation(OU::Worker::ControlOperation op) {
      m_rccPort.defaultOpCode_ = op;
      m_rccPort.useDefaultOpCode_ = true;
    }
+
+   RCCPortOperationArg::
+   RCCPortOperationArg(RCCPortOperation &po, unsigned arg)
+     : m_arg(arg), m_op(po) {
+   }
+
    RCCUserBuffer::
    RCCUserBuffer() : m_rccBuffer(&m_taken) {
    }

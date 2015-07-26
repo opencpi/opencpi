@@ -82,6 +82,7 @@ namespace OCPI {
     class LocalLauncher : public Launcher, public OCPI::Driver::Singleton<LocalLauncher> {
       void createWorker(Launcher::Instance &i);
     public:
+      virtual ~LocalLauncher();
       bool launch(Launcher::Instances &instances, Launcher::Connections &connections);
       bool work(Launcher::Instances &instances, Launcher::Connections &connections);
     };

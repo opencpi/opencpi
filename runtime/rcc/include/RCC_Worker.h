@@ -352,7 +352,7 @@ typedef struct {
 
  };
 
- class RCCUserBuffer : public RCCUserBufferInterface {
+ class RCCUserBuffer { // : public RCCUserBufferInterface {
    RCCBuffer *m_rccBuffer;
    RCCBuffer  m_taken;
    friend class RCCUserPort;
@@ -378,13 +378,44 @@ typedef struct {
    void release();
  };
 
-
- class RCCPortOperation : public RCCUserBufferInterface {
+ // Port inherits the buffer class in order to act as current buffer
+ class RCCUserPort : public RCCUserBuffer {
+   RCCPort &m_rccPort;
+   friend class RCCUserWorker;
+   friend class RCCPortOperation;
  protected:
-   RCCPortOperation() : m_buffer(NULL) {}
+   RCCUserPort();
+   void *getArgAddress(RCCUserBuffer &buf, unsigned op, unsigned arg, size_t *length) const;
+ public:
+   inline bool hasBuffer() const { return m_rccBuffer != NULL; }
+   size_t
+     topLength(size_t elementLength);
+   void
+     checkLength(size_t length),
+     setDefaultLength(size_t length),
+     setDefaultOpCode(RCCOpCode op),
+     send(RCCUserBuffer&);
+   RCCUserBuffer &take(RCCUserBuffer *oldBuffer = NULL);
+   bool
+    request(size_t maxlength = 0),
+    advance(size_t maxlength = 0),
+    isConnected(),
+    wait(size_t max, unsigned usecs);
+   RCCOrdinal ordinal() const;
+ };
+
+ class RCCPortOperation { // : public RCCUserBufferInterface {
+   RCCUserPort &m_port;
+   unsigned m_op;
+   friend class RCCPortOperationArg;
+ protected:
    RCCUserBuffer *m_buffer;
+   RCCPortOperation(RCCUserPort &p, unsigned op) : m_port(p), m_op(op), m_buffer(&p) {}
    inline void setRccBuffer(RCCBuffer *b) { m_buffer->setRccBuffer(b); };
    inline RCCBuffer *getRccBuffer() const { return m_buffer->getRccBuffer(); }
+   inline void *getArgAddress(unsigned arg, size_t *length) const {
+     return m_port.getArgAddress(*m_buffer, m_op, arg, length);
+   }
  public:
    inline void * data() const { return m_buffer->data(); }
    inline size_t maxLength() const { return m_buffer->maxLength(); }
@@ -404,28 +435,16 @@ typedef struct {
 
  };
 
- // Port inherits the buffer class in order to act as current buffer
- class RCCUserPort : public RCCUserBuffer {
-   RCCPort &m_rccPort;
-   friend class RCCUserWorker;
+ // A class that simply provides access to the arg
+ class RCCPortOperationArg {
+   unsigned m_arg;
+   friend class RCCPortOperation;
  protected:
-   RCCUserPort();
- public:
-   inline bool hasBuffer() const { return m_rccBuffer != NULL; }
-   size_t
-     topLength(size_t elementLength);
-   void
-     checkLength(size_t length),
-     setDefaultLength(size_t length),
-     setDefaultOpCode(RCCOpCode op),
-     send(RCCUserBuffer&);
-   RCCUserBuffer &take(RCCUserBuffer *oldBuffer = NULL);
-   bool
-    request(size_t maxlength = 0),
-    advance(size_t maxlength = 0),
-    isConnected(),
-    wait(size_t max, unsigned usecs);
-   RCCOrdinal ordinal() const;
+   RCCPortOperation &m_op;
+   RCCPortOperationArg(RCCPortOperation &, unsigned arg);
+   inline void *getArgAddress(size_t *length) const {
+     return m_op.getArgAddress(m_arg, length);
+   }
  };
 
 

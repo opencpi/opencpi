@@ -1,5 +1,5 @@
 This directory contains OpenOffice/LibreOffice documents for OpenCPI.
-They all use the template here named OCPI_ODT.ott, which must be imported
+They all use the template here named shared/OCPI_ODT.ott, which must be imported
 into LibreOffice before editing any of these odt documents.
 
 After editing a document, the Export PDF function under the file menu should be used
@@ -7,8 +7,14 @@ to place the PDF in the ../pdf directory, and that PDF file should be part of th
 Set "pages and bookmarks" as the initial view.
 
 Also, export as html in ../html using the Writer2xhtml extension.
-For now, both html5 and xhtml are exports.
+Use HTML5 export, and select "put images in a subdirectory".
 
+Similarly, if the template is edited, it should be re-exported into the shared directory.
 
-Similarly, if the template is edited, it should be re-exported into this directory.
+If any editing of these ODT documents is done, the template should be imported
+first.
+
+Look at the "diagrams.txt" file if you are adding or editing diagrams in these
+documents. They are currently edited in powerpoint, and not yet included in the repo.
+
 

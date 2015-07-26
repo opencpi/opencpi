@@ -9,8 +9,15 @@ Model:=hdl
 # i.e. a Makefile file that does other makefiles.
 # Note that targets are generally families except when a primitive core is actually part-specific.
 
+$(call OcpiDbgVar,HdlPlatforms)
+$(call OcpiDbgVar,HdlTargets)
+
 include $(OCPI_CDK_DIR)/include/util.mk
 include $(OCPI_CDK_DIR)/include/hdl/hdl-targets.mk
+
+# The libraries with names suitable for the library clause in VHDL, as passed to ocpigen
+HdlVhdlLibraries=\
+  $(and $(HdlMyLibraries),$(foreach l,$(HdlMyLibraries),-l $(notdir $l)))
 
 # This default is only overridden for testing the makefiles
 HdlError:=error
@@ -353,10 +360,6 @@ HdlGetTargetsForToolSet=$(call Unique,\
 $(call OcpiDbgVar,HdlPlatforms)
 $(call OcpiDbgVar,HdlTargets)
 
-
-# This function adjusts only things that have a slash
-HdlAdjustLibraries=$(foreach l,$1,$(if $(findstring /,$l),$(call AdjustRelative,$l),$l))
-
 #  $(foreach c,$(ComponentLibraries),\
 #    $(foreach o,$(ComponentLibraries),\
 #       $(if $(findstring $o,$c),,\
@@ -364,7 +367,9 @@ HdlAdjustLibraries=$(foreach l,$1,$(if $(findstring /,$l),$(call AdjustRelative,
 #            $(error The component libraries "$(c)" and "$(o)" have the same base name, which is not allowed)))))
 
 define HdlSearchComponentLibraries
-  override XmlIncludeDirs += $(call HdlXmlComponentLibraries,$(ComponentLibraries))
+
+  override XmlIncludeDirsInternal := $(call Unique,$(XmlIncludeDirsInternal) $(call HdlXmlComponentLibraries,$(ComponentLibraries)))
+
 endef
 HdlRmRv=$(if $(filter %_rv,$1),$(patsubst %_rv,%,$1),$1)
 
@@ -402,9 +407,6 @@ HdlShadowFiles=\
 	  $(wildcard $(call HdlGetTop,$(HdlTarget))/$f),\
           $f))
 
-HdlVHDLImplFiles=\
-  $(call WkrTargetDir,$1,$2)/$(Worker)-impl.vhd
-
 # This is the list of files that will be generated in the TARGET
 # directory.
 # The VHDL defs file must preceed the generics file
@@ -412,12 +414,14 @@ HdlVHDLImplFiles=\
 # FIXME: this has worker stuff in it - should it be elsewhere?
 # $(call HdlTargetSrcFiles,target-dir,paramconfig)
 HdlTargetSrcFiles=\
-  $(VHDLDefsFile) \
+  $(if $(and $2,$(filter-out 0,$2)),\
+    $(call HdlVHDLTargetDefs,$1,$2) $(call HdlVerilogTargetDefs,$1,$2), \
+    $(DefsFile) $(WDefsFile)) \
   $(and $(WorkerParamNames),$(strip \
      $(call WkrTargetDir,$1,$2)/generics$(HdlVHDLIncSuffix)\
      $(and $(filter .v,$(HdlSourceSuffix)),\
        $(call WkrTargetDir,$1,$2)/generics$(HdlVerilogIncSuffix))))\
-  $(if $(and $2,$(filter-out 0,$2)),$(call HdlVHDLImplFiles,$1,$2),$(ImplHeaderFiles))
+  $(if $(and $2,$(filter-out 0,$2)),$(call HdlVHDLTargetImpl,$1,$2),$(ImplHeaderFiles))
 
 #		$(and $(ParamVHDLtype_$(ParamConfig)_$n), \
 #		   echo '$(ParamVHDLtype_$(ParamConfig)_$n)' ;) \
@@ -456,15 +460,17 @@ endif
 define HdlPrepareAssembly
 
   # 1. Scan component libraries to add to XmlIncludeDirs
-  $(HdlSearchComponentLibraries)
+  $$(eval $$(HdlSearchComponentLibraries))
   # 2. Generate (when needed) the workers file immediately to use for dependencies
   AssyWorkersFile:=$$(GeneratedDir)/$$(Worker).wks
   $$(if\
     $$(call DoShell,$$(MAKE) -f $$(OCPI_CDK_DIR)/include/hdl/hdl-get-workers.mk\
                     Platform=$(Platform) \
+                    PlatformDir=$(PlatformDir) \
                     Assembly=$(Assembly) \
+		    XmlIncludeDirsInternal="$$(XmlIncludeDirsInternal)" \
                     AssyWorkersFile=$$(AssyWorkersFile) \
-                    Worker=$$(Worker) Worker_xml=$$(Worker_xml) XmlIncludeDirs="$$(XmlIncludeDirs)"\
+                    Worker=$$(Worker) Worker_xml=$$(Worker_xml) \
 		    AT=$(AT), \
                    Output), \
     $$(error Error deriving workers from file $$(Worker).xml: $$(Output)),\
@@ -475,6 +481,7 @@ define HdlPrepareAssembly
 	$(AT)echo Generating the $$(HdlMode) source file: $@ from $$<
 	$(AT)$$(OcpiGen) -D $$(GeneratedDir) \
                          $(and $(Assembly),-S $(Assembly)) $(and $(Platform),-P $(Platform)) \
+			 $(and $(PlatformDir),-F $(PlatformDir)) \
                          -a $$<
   # 4. Make the generated assembly source file one of the files to compile
   WorkerSourceFiles=$$(ImplFile)
@@ -510,6 +517,4 @@ define HdlPreprocessTargets
     override HdlTargets:=$$(HdlAllFamilies)
   endif
 endef
-
-
 endif

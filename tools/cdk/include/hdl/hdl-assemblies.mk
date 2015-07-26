@@ -37,8 +37,6 @@ endif
 endif
 # We use the "internal" versions of variables to allow subsidiary makefiles to
 # simply set those variables again
-ComponentLibrariesInternal:=$(call HdlAdjustLibraries,$(ComponentLibraries))
-HdlLibrariesCommand:=$(call HdlAdjustLibraries,$(HdlLibraries))
 ifndef Assemblies
 Assemblies=$(shell for i in *; do if test -d $$i; then echo $$i; fi; done)
 endif
@@ -52,8 +50,8 @@ $(Assemblies):
                $(HdlPassTargets) $(if $(HdlPlatforms)$(HdlPlatform),,HdlPlatforms=ml605) \
 	       LibDir=$(call AdjustRelative,$(LibDir)) \
 	       GenDir=$(call AdjustRelative,$(GenDir)) \
-	       ComponentLibrariesInternal="$(ComponentLibrariesInternal)" \
-	       HdlLibrariesCommand="$(HdlLibrariesCommand)" \
+	       ComponentLibrariesInternal="$(call OcpiAdjustLibraries,$(ComponentLibraries))" \
+	       HdlLibrariesInternal="$(call OcpiAdjustLibraries,$(HdlLibraries))" \
                XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirs))" \
 	       $(PassOutDir)
 

@@ -73,8 +73,9 @@ TestImplementations=$(filter %.test,$(Implementations))
 AssyImplementations=$(filter %.assy,$(Implementations))
 LibDir=$(OutDir)lib
 GenDir=$(OutDir)gen
-#LibDirs=$(foreach m,$(CapModels),$(foreach ht,$($(m)Targets),$(LibDir)/$(call UnCapitalize,$(m))/$(ht)))
-XmlIncludeDirs+=specs
+# In case this library is a subdirectory that might receive XmlIncludeDirs from the
+# parent (e.g. when a platform directory has a "devices" library as a subdirectory
+XmlIncludeDirs+=$(XmlIncludeDirsInternal)
 # default is what we are running on
 
 build_targets := speclinks
@@ -87,10 +88,6 @@ ifneq ($(RccImplementations),)
 build_targets += rcc
 endif
 
-ifneq ($(TestImplementations),)
-build_targets += test
-endif
-
 ifneq ($(OclImplementations),)
 build_targets += ocl
 endif
@@ -101,6 +98,10 @@ endif
 
 ifneq ($(AssyImplementations),)
 build_targets += assy
+endif
+
+ifneq ($(TestImplementations),)
+build_targets += test
 endif
 
 $(call OcpiDbgVar,build_targets)
@@ -119,7 +120,8 @@ MyMake=$(MAKE) --no-print-directory
 #    $(MyMake) -C $(2) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) \
 #               $$tn="$$t" \
 
-HdlLibrariesCommand=$(call HdlAdjustLibraries,$(HdlLibraries))
+HdlLibrariesCommand=$(call OcpiAdjustLibraries,$(HdlLibraries))
+RccLibrariesCommand=$(call OcpiAdjustLibraries,$(RccLibraries))
 BuildImplementation=$(infoxx BI:$1:$2:$(call HdlLibrariesCommand))\
     set -e; \
     t="$(or $($(call Capitalize,$1)Target),$($(call Capitalize,$(1))Targets))"; \
@@ -128,10 +130,9 @@ BuildImplementation=$(infoxx BI:$1:$2:$(call HdlLibrariesCommand))\
 	       LibDir=$(call AdjustRelative,$(LibDir)/$(1)) \
 	       GenDir=$(call AdjustRelative,$(GenDir)/$(1)) \
 	       $(PassOutDir) \
-	       $(and $(filter $1,hdl),\
-                  HdlLibrariesCommand="$(call HdlLibrariesCommand)" \
-                  VerilogIncludeDirs="$(call AdjustRelative,$(VerilogIncludeDirs))") \
-               XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirs)) ../lib/hdl";\
+	       $(call Capitalize,$1)LibrariesInternal="$(call OcpiAdjustLibraries,$($(call Capitalize,$1)Libraries))" \
+	       $(call Capitalize,$1)IncludeDirsInternal="$(call AdjustRelative,$($(call Capitalize,$1)IncludeDirs))" \
+               XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirs))";\
 
 BuildModel=\
 $(AT)set -e;if test "$($(call Capitalize,$(1))Implementations)"; then \
@@ -185,28 +186,6 @@ checkocl:
 
 ocl: checkocl speclinks $(OclImplementations)
 
-ifneq (,)
-# - obsolete, but keep it here for future reference...
-# this is HDL-specific:  for some HDL targets, we need to build a stub library
-# so that higher level builds can reference cores using such a library.
-# (e.g. xilinx xst).
-# We have all the empty module definitions in the "gen/hdl" directory.
-MyHdlMake=$(MyMake) $(and $(HdlTargets),HdlTargets="$(HdlTargets)")
-hdlstubs: $(HdlImplementations)
-	$(AT)echo =============Building HDL stub libraries for this component library \($(LibName)\)
-	$(AT)(echo SourceFiles=$(foreach v,$(wildcard lib/hdl/*.v*),../../$v); \
-              echo OcpiDynamicMakefile=yes; \
-              echo include $(call AdjustRelative2,$(OCPI_CDK_DIR))/include/hdl/hdl-lib.mk \
-	     ) > $(GenDir)/hdl/Makefile
-	$(AT)$(MyHdlMake) -C $(GenDir)/hdl -L LibName=$(LibName) \
-		HdlLibraries="$(foreach l,$(HdlLibraries),$(if $(findstring /,$l),$(call AdjustRelative2,$l),$l)) ocpi" \
-		OCPI_CDK_DIR=$(call AdjustRelative2,$(OCPI_CDK_DIR)) \
-		HdlInstallLibDir=$(call AdjustRelative2,$(LibDir)/hdl/stubs) \
-		stublibrary
-
-# hdlstubs - no longer
-endif
-
 .PHONY: hdl
 hdl: speclinks $(HdlImplementations)
 	$(AT)for i in $(HdlTargets); do mkdir -p lib/hdl/$$i; done
@@ -232,8 +211,10 @@ cleanocl:
 cleanhdl:
 	$(call CleanModel,hdl)
 
-clean:: cleanall cleanxm cleanrcc cleanocl cleantest
+clean:: cleanxm cleanrcc cleanocl cleanhdl cleantest
 	$(AT)echo Cleaning \"$(CwdName)\" component library directory for all targets.
+	$(AT)find . -depth -name gen -exec rm -r -f "{}" ";"
+	$(AT)find . -depth -name "target-*" -exec rm -r -f "{}" ";"
 	$(AT)rm -fr $(OutDir)lib $(OutDir)gen $(OutDir)
 
 $(HdlImplementations): | $(OutDir)lib/hdl $(OutDir)gen/hdl

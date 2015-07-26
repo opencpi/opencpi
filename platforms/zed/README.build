@@ -295,13 +295,15 @@ which is release/OpenCPI-SD.  If you have just formatted the SD card with the
 previous step, you would need to mount it first using the mount command, or simply
 unplug it and plug it in again, which normally automatically mounts it.
 
-After it is mounted (e.g. /dev/sdb1 is mounted on /media/xyz)
+After the BOOT partition (the first one) is mounted (e.g. /dev/sdb1 is mounted on /media/xyz)
   % rm -r -f /media/xyz/*
-  % cp -r -p release/OpenCP-SD/* /media/xyz
+  % cp -r -p release/OpenCPI-SD/* /media/xyz
 
 If you have more files to add, do so now so you can remove it
 
   % umount /media/xyz
+
+Remember to unmount any other partitions on the SD card before removing it.
 
 ================================================================================
 Summary of pre-hardware steps to prepare to run OpenCPI on Zed
@@ -332,10 +334,10 @@ in a fresh/new shell/window, do these steps:
 
    % sudo ./formatSD.sh /dev/sdX
  }
- { Plug in the SD card, e.g. mounted as /media/xyz }
+ { Plug in the SD card, e.g. with the BOOT partition mounted as /media/xyz }
  % rm -r -f /media/xyz/*
- % cp -r -p release/OpenCP-SD/* /media/xyz
- % umount /media/xyz
+ % cp -r -p release/OpenCPI-SD/* /media/xyz
+ % umount /media/xyz { and unmount any other partitions on the card }
 
 Now everything is built and ready for the ZedBoard, and you have a bootable SD card for
 using OpenCPI on a ZedBoard.  The README.install file describes how to install the

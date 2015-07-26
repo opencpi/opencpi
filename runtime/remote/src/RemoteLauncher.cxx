@@ -1,4 +1,3 @@
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <unistd.h>
 #include <errno.h>
@@ -499,6 +498,20 @@ controlOp(unsigned remoteInstance, OU::Worker::ControlOperation op) {
   const char *err = ezxml_cattr(m_rx, "error");
   if (err)
     throw OU::Error("Error in control operation: %s", err);
+}
+
+OU::Worker::ControlState Launcher::
+getState(unsigned remoteInstance) {
+  OU::format(m_request, "<control id='%u' getState=''>\n", remoteInstance);
+  send();
+  receive();
+  assert(!strcasecmp(OX::ezxml_tag(m_rx), "control"));
+  const char *err;
+  size_t state;
+  if ((err  = ezxml_cattr(m_rx, "error")) ||
+      (err = OX::getNumber(m_rx, "state", &state, NULL, 0, false, true)))
+    throw OU::Error("Error in getControlState operation: %s", err);
+  return (OU::Worker::ControlState)state;
 }
 
 bool Launcher::

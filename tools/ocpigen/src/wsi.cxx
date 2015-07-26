@@ -353,7 +353,9 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
       if (ocp.MReqInfo.value) {
 	if (cons.ocp.MReqInfo.width > ocp.MReqInfo.width) {
 	  oa = &consAdapt[OCP_MReqInfo];
-	  asprintf((char **)&oa->expr, "{%zu'b0,%%s}",
+	  asprintf((char **)&oa->expr,
+		   lang == Verilog ?
+		   "{%zu'b0,%%s}" : "std_logic_vector(to_unsigned(0,%zu)) & %%s",
 		   cons.ocp.MReqInfo.width - ocp.MReqInfo.width);
 	  oa->other = OCP_MReqInfo;
 	} else {

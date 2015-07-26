@@ -176,6 +176,7 @@ class DataPort : public OcpPort {
   const char *parseDistribution(ezxml_t x, Distribution &d, std::string &hash);
   const char *finalize();
   const char *fixDataConnectionRole(OU::Assembly::Role &role);
+  const char *resolveExpressions(OCPI::Util::IdentResolver &ir);
   void initRole(OCPI::Util::Assembly::Role &role);
   void emitOpcodes(FILE *f, const char *pName, Language lang);
   void emitPortDescription(FILE *f, Language lang) const;
@@ -188,8 +189,10 @@ class DataPort : public OcpPort {
   void emitRccCppImpl(FILE *f);
   void emitRccCImpl(FILE *f);
   void emitRccCImpl1(FILE *f);
+  void emitRccArgTypes(FILE *f, bool &first);
   void emitRecordInterface(FILE *f, const char *implName);
   void emitRecordInterfaceConstants(FILE *f);
+  void emitVerilogPortParameters(FILE *f);
   static const char *adjustConnection(const char *masterName,
 				      Port &prodPort, OcpAdapt *prodAdapt,
 				      Port &consPort, OcpAdapt *consAdapt,
@@ -376,6 +379,28 @@ class TimeServicePort : public Port {
   void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 		       const char *indent, bool &any, std::string &comment,
 		       std::string &last, const char *myComment, OcpAdapt *adapt);
+  void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
+};
+class TimeBasePort : public Port {
+  TimeBasePort(const TimeBasePort &other, Worker &w , std::string &name, size_t count,
+		  const char *&err);
+ public:
+  TimeBasePort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
+  Port &clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role *role,
+	      const char *&err) const;
+  inline const char *prefix() const { return "timebase"; }
+  inline const char *typeName() const { return "TimeBase"; }
+  void emitRecordTypes(FILE *f);
+  //  void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker,
+  //			const char *defaultIn, const char *defaultOut);
+  void emitRecordInterface(FILE *f, const char *implName);
+  //  void emitVHDLShellPortMap(FILE *f, std::string &last);
+  void emitVHDLSignalWrapperPortMap(FILE *f, std::string &last);
+#if 0 
+  void emitPortSignals(FILE *f, Attachments &atts, Language lang,
+		       const char *indent, bool &any, std::string &comment,
+		       std::string &last, const char *myComment, OcpAdapt *adapt);
+#endif
   void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
 };
 class RawPropPort : public Port {
@@ -576,7 +601,7 @@ class Worker : public Parsed, public OU::IdentResolver {
     *parseHdl(const char *package = NULL),
     *parseRccAssy(),
     *parseOclAssy(),
-    *parseImplControl(ezxml_t &xctl),
+    *parseImplControl(ezxml_t &xctl, const char *firstRaw),
     *parseImplLocalMemory(),
     *findPackage(ezxml_t spec, const char *package),
     *parseSpecControl(ezxml_t ps),
@@ -620,12 +645,14 @@ class Worker : public Parsed, public OU::IdentResolver {
     *emitImplOCL(),
     *emitEntryPointOCL(),
     *paramValue(const OU::Member &param, OU::Value &v, std::string &value),
-    *rccValue(OU::Value &v, std::string &value, const OU::Member *param = NULL),
+    *rccBaseValue(OU::Value &v, std::string &value, const OU::Member *param = NULL),
+    *rccValue(OU::Value &v, std::string &value, const OU::Member &param),
     *rccPropValue(OU::Property &p, std::string &value),
     *emitSkelRCC(),
     *emitSkelOCL(),
     *emitAssyHDL();
   virtual const char
+    *resolveExpressions(OU::IdentResolver &ir),
     *parseInstance(Worker &parent, Instance &inst, ezxml_t x), // FIXME: should be HdlInstance...
     *emitArtXML(const char *wksFile),
     *emitWorkersHDL(const char *file),
@@ -642,6 +669,7 @@ class Worker : public Parsed, public OU::IdentResolver {
     emitXmlInstances(FILE *f),
     emitXmlConnections(FILE *f);
   void
+    emitCppTypesNamespace(FILE *f, std::string &nsName),
     emitDeviceConnectionSignals(FILE *f, const char *iname, bool container),
     setParent(Worker *p), // when it can't happen at construction
     prType(OU::Property &pr, std::string &type),
@@ -659,14 +687,14 @@ class Worker : public Parsed, public OU::IdentResolver {
     emitParameters(FILE *f, Language lang, bool useDefaults = true, bool convert = false),
     emitSignals(FILE *f, Language lang, bool records, bool inPackage, bool inWorker,
 		bool convert = false),
-    emitRccStruct(FILE *f, size_t nMembers, OU::Member *members, unsigned level,
-		  const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef),
-    printRccMember(FILE *f, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
-		   const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef),
-    printRccType(FILE *f, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
-		 const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef),
-    printRccBaseType(FILE *f, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
-		     const char *parent, bool isFixed, bool &isLast, unsigned predefine),
+    rccStruct(std::string &type, size_t nMembers, OU::Member *members, unsigned level,
+	      const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef),
+    rccMember(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
+	      const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef),
+    rccType(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
+	    const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef),
+    rccBaseType(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
+		const char *parent, bool isFixed, bool &isLast, unsigned predefine),
     emitDeviceSignals(FILE *f, Language lang, std::string &last);
 };
 
@@ -681,7 +709,7 @@ class Worker : public Parsed, public OU::IdentResolver {
 
 #define IMPL_ATTRS \
   "name", "spec", "paramconfig", "reentrant", "scaling", "scalable", "controlOperations"
-#define IMPL_ELEMS "componentspec", "properties", "property", "specproperty", "propertysummary", "xi:include", "controlinterface",  "timeservice", "unoc"
+#define IMPL_ELEMS "componentspec", "properties", "property", "specproperty", "propertysummary", "xi:include", "controlinterface",  "timeservice", "unoc", "timebase"
 #define GENERIC_IMPL_CONTROL_ATTRS \
   "name", "SizeOfConfigSpace", "ControlOperations", "Sub32BitConfigProperties"
 #define ASSY_ELEMS "instance", "connection", "external"
@@ -693,7 +721,8 @@ extern const char
 	     bool param = false),
   *verilogValue(const OU::Value &v, std::string &value),
   *rccValue(OU::Value &v, std::string &value),
-  *container, *platform, *device, *load, *os, *os_version, **libraries, **mappedLibraries, *assembly, *attribute,
+  *platform, *device, *load, *os, *os_version, **libraries, **mappedLibraries, *assembly,
+  *attribute, *platformDir,
   *addLibMap(const char *),
   *findLibMap(const char *file), // returns mapped lib name from dir name of file or NULL
   *propertyTypes[],

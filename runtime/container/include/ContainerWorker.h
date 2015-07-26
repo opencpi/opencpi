@@ -201,6 +201,16 @@ namespace OCPI {
 #undef CONTROL_OP
       virtual bool wait(OCPI::OS::Timer *t = NULL);
       bool isDone();
+#undef OCPI_DATA_TYPE
+#undef OCPI_DATA_TYPE_S
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
+      run get##pretty##Parameter(unsigned ordinal, unsigned idx) const;
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store) \
+      void get##pretty##Parameter(unsigned ordinal, char *, size_t length, unsigned idx) const;
+    OCPI_PROPERTY_DATA_TYPES
+#undef OCPI_DATA_TYPE
+#undef OCPI_DATA_TYPE_S
+#define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
     };
   }
 }

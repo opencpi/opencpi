@@ -23,7 +23,8 @@ fi
 export OCPI_DEFAULT_HDL_DEVICE=pl:0
 # Set my OCPI path to some bitstream directories I am working on.
 export OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:$OCPI_BASE_DIR/hdl/assemblies/biascapture:$OCPI_BASE_DIR/hdl/assemblies/testbias:$OCPI_BASE_DIR/hdl/assemblies/patternbias
-export OCPI_SMB_SIZE=100000
+# The system config file sets the default SMB size
+export OCPI_SYSTEM_CONFIG=/mnt/card/opencpi/system.xml
 export OCPI_SUPPRESS_HDL_NETWORK_DISCOVERY=1
 # Get ready to run some test xml-based applications
 cd $OCPI_BASE_DIR/examples/xml

@@ -25,7 +25,7 @@ static const char *rccTypes[] = {"none",
 				 "RCCBoolean", "RCCChar", "RCCDouble", "RCCFloat", "int16_t", "int32_t", "uint8_t",
 				 "uint32_t", "uint16_t", "int64_t", "uint64_t", "RCCChar" };
 
-static void camel(std::string &s, const char *s1, const char *s2 = NULL, const char *s3 = NULL) {
+static void camel(std::string &s, const char *s1, const char *s2 = NULL, const char *s3 = NULL, const char *s4 = NULL) {
   if (s1) {
     s = (char)toupper(s1[0]);
     s += s1 + 1;
@@ -37,6 +37,10 @@ static void camel(std::string &s, const char *s1, const char *s2 = NULL, const c
   if (s3) {
     s += (char)toupper(s3[0]);
     s += s3 + 1;
+  }
+  if (s4) {
+    s += (char)toupper(s4[0]);
+    s += s4 + 1;
   }
 }
 static void
@@ -53,88 +57,81 @@ upperconstant(std::string &s, const char *s1, const char *s2 = NULL, const char 
 }
 
 static void
-printRccArray(FILE *f, OU::Member &m, bool isFixed, bool &isLast, bool topSeq, bool end) {
+rccArray(std::string &type, OU::Member &m, bool isFixed, bool &isLast, bool topSeq, bool end) {
   if (m.m_arrayRank)
     for (unsigned n = 0; n < m.m_arrayRank; n++)
-      fprintf(f, "[%zu]", m.m_arrayDimensions[n]);
+      OU::formatAdd(type, "[%zu]", m.m_arrayDimensions[n]);
   if (topSeq) {
     if (m.m_sequenceLength)
-      fprintf(f, "[%zu]", m.m_sequenceLength);
+      OU::formatAdd(type, "[%zu]", m.m_sequenceLength);
     else
-      fprintf(f, "[1]");
+      type += "[1]";
   }
   // We align strings on a 4 byte boundary, and implicitly pad them to a 4 byte boundary too
   if (m.m_baseType == OA::OCPI_String) {
-    fprintf(f, "[%zu]", isFixed ? (m.m_stringLength + 4) & ~3 : 4);
+    OU::formatAdd(type, "[%zu]", isFixed ? (m.m_stringLength + 4) & ~3 : 4);
     if (m.m_stringLength == 0)
       isLast = true;
   }
   if (end) {
     // End of declarator. If we're a sequence we close off the struct.
-    fprintf(f, "; /* %8zxx", m.m_offset); 
+    OU::formatAdd(type, "; /* %8zxx", m.m_offset); 
     if (topSeq)
-      fprintf(f, " this is a top level sequence of fixed size elements");
-    fprintf(f, " */\n");
+      type += " this is a top level sequence of fixed size elements";
+    type += " */\n";
   }
 }
 // Just print the data type, not the "member", with names or arrays etc.
 void Worker::
-printRccBaseType(FILE *f, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
+rccBaseType(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
 		 const char *parent, bool isFixed, bool &isLast, unsigned predefine) {
   if (level > m_maxLevel)
     m_maxLevel = level;
-  int indent = (level + 1) * 2;
+  int indent = level * 2;
   if (m.m_baseType == OA::OCPI_Struct) {
     std::string s;
     camel(s, parent, m.m_name.c_str());
     if (level == predefine || predefine == UINT_MAX-1) {
-      fprintf(f, "%*sstruct %s {\n", indent, "", s.c_str());
-      emitRccStruct(f, m.m_nMembers, m.m_members, level + 1, s.c_str(), isFixed, isLast,
+      OU::formatAdd(type, "%*sstruct %s {\n", indent, "", s.c_str());
+      rccStruct(type, m.m_nMembers, m.m_members, level + 1, s.c_str(), isFixed, isLast,
 		    false, predefine);
-      fprintf(f, "%*s}%s", indent, "", predefine == UINT_MAX-1 ? "" : ";\n");
+      OU::formatAdd(type, "%*s}%s", indent, "", predefine == UINT_MAX-1 ? "" : ";\n");
     } else if (level > predefine)
-      fprintf(f, "%*sstruct %s", indent, "", s.c_str());
+      OU::formatAdd(type, "%*sstruct %s", indent, "", s.c_str());
     else
-      emitRccStruct(f, m.m_nMembers, m.m_members, level + 1, s.c_str(), isFixed, isLast, false,
-		    predefine);
+      rccStruct(type, m.m_nMembers, m.m_members, level + 1, s.c_str(), isFixed, isLast,
+		    false, predefine);
   } else if (m.m_baseType == OA::OCPI_Type)
-    printRccType(f, *m.m_type, level + 1, offset, pad, parent, isFixed, isLast, false, predefine);
+    rccType(type, *m.m_type, level + 1, offset, pad, parent, isFixed, isLast, false, predefine);
   else if (m.m_baseType == OA::OCPI_Enum) {
-    if (!strcasecmp("ocpi_endian", m.m_name.c_str())) {
-      fprintf(f, "%*s%sRCCEndian", indent, "", m_language == CC ? "OCPI::RCC::" : "");
-    } else if (level == predefine || predefine == UINT_MAX-1) {
-      fprintf(f, "%*senum %c%s {\n", indent, "", toupper(*m.m_name.c_str()), m.m_name.c_str()+1);
+    if (strcasecmp("ocpi_endian", m.m_name.c_str()) &&
+	(level == predefine || predefine == UINT_MAX-1)) {
+      OU::formatAdd(type, "%*senum %c%s {\n", indent, "", toupper(*m.m_name.c_str()),
+		    m.m_name.c_str()+1);
       for (const char **ep = m.m_enums; *ep; ep++) {
 	std::string s;
 	upperconstant(s, parent, m.m_name.c_str(), *ep);
-	fprintf(f, "%*s  %s,\n", indent, "", s.c_str());
+	OU::formatAdd(type, "%*s  %s,\n", indent, "", s.c_str());
       }
       std::string s;
       upperconstant(s, parent, m.m_name.c_str(), "PAD_ = 0x7fffffff");
-      fprintf(f, "%*s  %s\n%*s}%s", indent, "", s.c_str(), indent, "",
+      OU::formatAdd(type, "%*s  %s\n%*s}%s", indent, "", s.c_str(), indent, "",
 	      predefine == UINT_MAX-1 ? "" : ";\n");
-    } else if (level > predefine)
-      fprintf(f, "%*senum %c%s", indent, "", toupper(*m.m_name.c_str()), m.m_name.c_str()+1);
+    } else if (level > predefine || predefine == UINT_MAX-1)
+      if (!strcasecmp("ocpi_endian", m.m_name.c_str()))
+	OU::formatAdd(type, "%*s%sRCCEndian", indent, "", m_language == CC ? "OCPI::RCC::" : "");
+      else
+	OU::formatAdd(type, "%*senum %c%s", indent, "", toupper(*m.m_name.c_str()), m.m_name.c_str()+1);
   } else if (level > predefine || predefine == UINT_MAX-1) {
     const char *baseType = m_baseTypes[m.m_baseType];
     if (m_language == C)
-      fprintf(f, "%*s%-*s", indent, "", indent ? 13 : 0, baseType);
+      OU::formatAdd(type, "%*s%-*s", indent, "", indent ? 13 : 0, baseType);
     else {
-      std::string type = !strncmp("RCC", baseType, 3) ? "OCPI::RCC::" : "";
-      type += baseType;
-      fprintf(f, "%*s%-*s", indent, "", indent ? 24 : 0, type.c_str());
+      std::string mytype = !strncmp("RCC", baseType, 3) ? "OCPI::RCC::" : "";
+      mytype += baseType;
+      OU::formatAdd(type, "%*s%-*s", indent, "", indent ? 24 : 0, mytype.c_str());
     }
   }
-}
-static void
-topTypeName(std::string &name, OU::Member *m, const char **baseTypes) {
-  if (m->m_baseType == OA::OCPI_Struct)
-    camel(name, m->m_name.c_str());
-  else if (m->m_baseType == OA::OCPI_Type)
-    name = "OCPI_Type";
-  else
-    name = baseTypes[m->m_baseType];
-  //  printf("BASETYPE %u:%s\n", m->m_baseType, rccTypes[m->m_baseType]);
 }
 // Print type for a member, including sequence type etc.
 // Note this is called for two different purposes:
@@ -142,57 +139,51 @@ topTypeName(std::string &name, OU::Member *m, const char **baseTypes) {
 //    the type will be immediately and anonymously used as the type of a struct member
 // 2. When a type for a parameter is being defined in advance of its value being defined.
 void Worker::
-printRccType(FILE *f, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
-	     const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predefine) {
-  int indent = (level + 1) * 2;
+rccType(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
+	const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predefine) {
+  int indent = level * 2;
   if (m.m_isSequence && !topSeq) {
-    fprintf(f,
+    OU::formatAdd(type,
 	    "%*sstruct {\n"
 	    "%*s  uint32_t length;\n",
 	    indent, "", indent, "");
-    //    offset += 4;
     if (m.m_dataAlign > sizeof(uint32_t)) {
       size_t align = m.m_dataAlign - (unsigned)sizeof(uint32_t);
-      fprintf(f, "%*s  char pad%u_[%zu];\n", indent, "", pad++, align);
-      //      offset += align;
+      OU::formatAdd(type, "%*s  char pad%u_[%zu];\n", indent, "", pad++, align);
     }
-    printRccBaseType(f, m, level + 1, offset, pad, parent, isFixed, isLast, predefine);
-    fprintf(f, " data");
+    rccBaseType(type, m, level + 1, offset, pad, parent, isFixed, isLast, predefine);
+    OU::formatAdd(type, " data");
     if (m.m_sequenceLength && isFixed)
-      fprintf(f, "[%zu]", m.m_sequenceLength);
+      OU::formatAdd(type, "[%zu]", m.m_sequenceLength);
     else {
-      fprintf(f, "[]");
+      type += "[]";
       isLast = true;
     }
-    printRccArray(f, m, isFixed, isLast, false, true);
-    fprintf(f, "%*s}", indent, "");
+    rccArray(type, m, isFixed, isLast, false, true);
+    OU::formatAdd(type, "%*s}", indent, "");
   } else
-    printRccBaseType(f, m, level, offset, pad, parent, isFixed, isLast, predefine);
+    rccBaseType(type, m, level, offset, pad, parent, isFixed, isLast, predefine);
 }
 // FIXME: a tool-time member class should have this...OCPI::Tools::RCC::Member...
 // Returns true when something is variable length.
 // strings or sequences are like that unless then are bounded.
 void Worker::
-printRccMember(FILE *f, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
+rccMember(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
 	       const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predefine)
 {
-  int indent = (level + 1) * 2;
+  int indent = level * 2;
   if (level > predefine || predefine == UINT_MAX-1) {
     if (offset < m.m_offset) {
-      fprintf(f, "%*schar pad%u_[%zu];\n",
-	      indent, "", pad++, m.m_offset - offset);
+      OU::formatAdd(type, "%*schar pad%u_[%zu];\n",
+		    indent, "", pad++, m.m_offset - offset);
       offset = m.m_offset;
     }
-    printRccType(f, m, level, offset, pad, parent, isFixed, isLast, topSeq, predefine);
-    //  printf("1name %s offset %u m->m_offset %u bytes %u\n",
-    //	 m->m_name.c_str(), offset, m->m_offset, m->m_nBytes);
-    fprintf(f, " %s", m.m_name.c_str());
-    printRccArray(f, m, isFixed, isLast, topSeq, true);
+    rccType(type, m, level, offset, pad, parent, isFixed, isLast, topSeq, predefine);
+    OU::formatAdd(type, " %s", m.m_name.c_str());
+    rccArray(type, m, isFixed, isLast, topSeq, true);
     offset += m.m_nBytes;
-    //  printf("2name %s offset %u m->m_offset %u bytes %u\n",
-    //	 m->m_name.c_str(), offset, m->m_offset, m->m_nBytes);
   } else
-    printRccType(f, m, level, offset, pad, parent, isFixed, isLast, topSeq, predefine);
+    rccType(type, m, level, offset, pad, parent, isFixed, isLast, topSeq, predefine);
 }
 
 const char *Worker::
@@ -246,69 +237,91 @@ rccMethodName(const char *method, const char *&mName) {
 }
 
 void Worker::
-emitRccStruct(FILE *f, size_t nMembers, OU::Member *members, unsigned level,
-	      const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predefine) {
+rccStruct(std::string &type, size_t nMembers, OU::Member *members, unsigned level,
+	  const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predefine) {
   size_t offset = 0;
   unsigned pad = 0;
   for (unsigned n = 0; !isLast && n < nMembers; n++, members++)
-    printRccMember(f, *members, level, offset, pad, parent, isFixed, isLast, topSeq, predefine);
+    rccMember(type, *members, level, offset, pad, parent, isFixed, isLast, topSeq, predefine);
 }
 
-const char *Worker::
-rccValue(OU::Value &v, std::string &value, const OU::Member *param) {
-  // Convert value to something nice for C
-  // In particular, large integer constants do not want to be truncated.
-  // From ISO: "The type of an integer constant is the first of the corresponding list
-  //            in which its value can be represented."
-  // This theoretically means a problem for a decimal version of ULL_MAX
-  // This implies that unsigned decimal numbers for the largest type must have
-  // the suffix applied.
-  switch(v.m_vt->m_baseType) {
-    case OA::OCPI_Bool:
-      // Bool is special because we allow C++/true/false syntax which is illegal in C
-      value += m_language == C ? (v.m_Bool ? "1" : "0") : (v.m_Bool ? "true" : "false");
-      break;
-    case OA::OCPI_Char: 
-    case OA::OCPI_Double:
-    case OA::OCPI_Float:
-    case OA::OCPI_Short: 
-    case OA::OCPI_Long:
-    case OA::OCPI_UChar:
-    case OA::OCPI_ULong:
-    case OA::OCPI_UShort: 
-    case OA::OCPI_LongLong:
-      // These are ok since there is no risk of truncation and we use C syntax
-      v.unparse(value, NULL, true);
-      break;
-    case OA::OCPI_ULongLong:
-      // This can be bad unless we force it to ull since decimal is assumed signed
-      // FIXME: perhaps make this an option in the unparser? C++?
-      v.unparse(value, NULL, true);
-      value += "ull";
-      break;
-    case OA::OCPI_String:
-      value += '\"';
-      if (v.m_String && v.m_String[0])
-	v.unparse(value, NULL, true);
-      value += '\"';
-      break;
-    case OA::OCPI_Enum:
-      assert(param);
-      if (!strcasecmp("ocpi_endian", param->m_name.c_str())) {
-	if (m_language == CC)
-	  value = "OCPI::RCC::";
-	upperconstant(value, "RCC", v.m_vt->m_enums[v.m_ULong]);
-      } else
-	upperconstant(value, m_implName, param->m_name.c_str(), v.m_vt->m_enums[v.m_ULong]);
-    default:
-      ;
+// An unparser specialized for C
+struct C_Unparser : public OU::Unparser {
+  const Worker &m_worker;
+  const OU::Member &m_member;
+  C_Unparser(const Worker &w, const OU::Member &mem) : m_worker(w), m_member(mem) {
+  }
+  bool
+  dimensionUnparse(const OU::Value &v, std::string &s, unsigned nseq, size_t dim,
+		   size_t offset, size_t nItems, bool hex, char comma,
+		   const Unparser &up) const {
+    if (dim == 0)
+      s += "{ ";
+    bool r = Unparser::dimensionUnparse(v, s, nseq, dim, offset, nItems, hex, comma, up);
+    if (dim == 0)
+      s += "}";
+    return r;
+  }
+  bool 
+  unparseBool(std::string &s, bool val, bool) const {
+    s += val ? "1" : "0";
+    return !val;
+  }
+  bool
+  unparseEnum(std::string &s, OU::EnumValue val, const char **enums, bool /*hex*/) const {
+    if (!strcasecmp("ocpi_endian", m_member.m_name.c_str()))
+      upperconstant(s, "RCC", enums[val]);
+    else
+      upperconstant(s, m_worker.m_implName, m_member.m_name.c_str(), enums[val]);
+    return val == 0;
+  }
+  bool
+  unparseString(std::string &s, const char *val, bool hex) const {
+    if (*val)
+      s += '\"';
+    Unparser::unparseString(s, val, hex);
+    if (*val)
+      s += '\"';
+    return *val != '\0';
+  }
+};
+
+struct CC_Unparser : public C_Unparser {
+  CC_Unparser(const Worker &w, const OU::Member &mem) : C_Unparser(w, mem) {}
+  bool 
+  unparseBool(std::string &s, bool val, bool) const {
+    s += val ? "true" : "false";
+    return !val;
+  }
+  bool
+  unparseEnum(std::string &s, OU::EnumValue val, const char **enums, bool hex) const {
+    if (!strcasecmp("ocpi_endian", m_member.m_name.c_str())) {
+      s = "OCPI::RCC::";
+      upperconstant(s, "RCC", enums[val]);
+      return val == 0;
     }
+    return C_Unparser::unparseEnum(s, val, enums, hex);
+  }
+};
+
+const char *Worker::
+rccValue(OU::Value &v, std::string &value, const OU::Member &param) {
+  if (m_language == CC) {
+    CC_Unparser p(*this, param);
+    v.unparse(value, &p);
+  } else {
+    C_Unparser p(*this, param);
+    v.unparse(value, &p);
+  }
   return value.c_str();
 }
+
+
+
 const char *Worker::
 rccPropValue(OU::Property &p, std::string &value) {
   if (p.m_default)
-    return rccValue(*p.m_default, value);
+    return rccValue(*p.m_default, value, p);
   // Generate a default value
   switch(p.m_baseType) {
   case OA::OCPI_Bool: 
@@ -350,16 +363,145 @@ static const char *ccpretty[] = {
 };
 
 void Worker::
-rccPropType(OU::Property &p, std::string &typeDef, std::string &type, std::string &pretty) {
-  (void)p;(void)typeDef;(void)type;
-  type = cctypes[p.m_baseType];
-  pretty = ccpretty[p.m_baseType];
+emitCppTypesNamespace(FILE *f, std::string &nsName) {
+  std::string s;
+  camel(nsName, m_implName, "WorkerTypes", NULL);
+  fprintf(f, "\nnamespace %s {\n", nsName.c_str());
+  m_maxLevel = 0;
+  unsigned pad = 0;
+  size_t offset = 0;
+  bool isLastDummy = false;
+  // First pass, determine max depth
+  for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
+    if ((*pi)->m_baseType == OA::OCPI_Enum || (*pi)->m_baseType == OA::OCPI_Struct) {
+      std::string type;
+      rccType(type, **pi, 0, offset, pad, NULL, true, isLastDummy, false, UINT_MAX);
+    }
+  bool first = true;
+  // Second pass, define types bottom up
+  for (unsigned l = m_maxLevel+1; l--; ) {
+    pad = 0;
+    offset = 0;
+    isLastDummy = false;
+    for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
+      if ((*pi)->m_baseType == OA::OCPI_Enum && (*pi)->m_name != "ocpi_endian" ||
+	  (*pi)->m_baseType == OA::OCPI_Struct) {
+	if (first)
+	  fprintf(f,
+		  "  /*\n"
+		  "   * Property types for worker %s\n"
+		  "   */\n",
+		  m_implName);
+	first = false;
+	std::string type;
+	rccType(type, **pi, 0, offset, pad, NULL, true, isLastDummy, false, l);
+	fputs(type.c_str(), f);
+      }
+  }
+  fprintf(f,
+	  "  /*\n"
+	  "   * Property structure for worker %s\n"
+	  "   */\n",
+	  m_implName);
+  fprintf(f, "  struct Properties {\n");
+  offset = 0;
+  pad = 0;
+  isLastDummy = false;
+  for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
+    if (!(*pi)->m_isParameter) {
+      std::string type;
+      rccMember(type, **pi, 2, offset, pad, NULL, true, isLastDummy, false, 0);
+      fputs(type.c_str(), f);
+    }
+  fprintf(f, "  };\n");
+  // Emit types for protocol operations
+  first = true;
+  for (unsigned n = 0; n < m_ports.size(); n++)
+    m_ports[n]->emitRccArgTypes(f, first);
+  fprintf(f, "}\n");
+}
+
+void DataPort::
+emitRccArgTypes(FILE *f, bool &first) {
+  if (m_protocol->operations()) {
+    for (unsigned n = 0; n < m_ordinal; n++)
+      if (m_worker->m_ports[n]->isData()) {
+	DataPort &other = *static_cast<DataPort*>(m_worker->m_ports[n]);
+	if (other.m_protocol->operations() &&
+	    !strcasecmp(other.m_protocol->m_name.c_str(), m_protocol->m_name.c_str()))
+	  return;
+      }
+    if (first)
+      fprintf(f,
+	      "  /*\n"
+	      "   * Data types for each protocol used by a port of this worker\n"
+	      "   */\n");
+    first = false;
+    OU::Operation *o = m_protocol->operations();
+    std::string prefix;
+    if (m_protocol->nOperations()) {
+      camel(prefix, m_protocol->name().c_str());
+      fprintf(f,
+	      "  // Enumeration constants for the operations of protocol \"%s\"\n"
+	      "  enum %sOpCodes { \n",
+	      m_protocol->name().c_str(), prefix.c_str());
+      for (unsigned nn = 0; nn < m_protocol->nOperations(); o++) {
+	std::string s;
+	camel(s, o->name().c_str());	
+	fprintf(f,"    %s%s_OPERATION%s\n", prefix.c_str(), s.c_str(),
+		++nn == m_protocol->nOperations() ? "" : ",");
+      }
+      fprintf(f, "  }; \n" );
+    }
+    bool pfirst = true;
+    o = m_protocol->operations();
+    for (unsigned n  = 0; n < m_protocol->nOperations(); n++, o++) {
+      OU::Member *m = o->args();
+      bool ofirst = true;
+      for (unsigned nn = 0; nn < o->nArgs(); nn++, m++)
+	if (m->m_baseType == OA::OCPI_Enum || m->m_baseType == OA::OCPI_Struct) {
+	  if (pfirst)
+	    fprintf(f,
+		    "  /*\n"
+		    "   * Argument data types for the \"%s\" protocol\n"
+		    "   */\n",
+		    m_protocol->name().c_str());
+	  if (ofirst)
+	    fprintf(f,
+		    "  /* Argument data types for the \"%s\" operation of the \"%s\" protocol */\n",
+		    o->name().c_str(), m_protocol->name().c_str());
+	  pfirst = ofirst = false;
+	  camel(prefix, m_protocol->name().c_str(), o->name().c_str(), NULL);
+
+	  m_worker->m_maxLevel = 0;
+	  unsigned pad = 0;
+	  size_t offset = 0;
+	  bool isLastDummy = false;
+	  // First pass, determine max depth
+	  std::string type;
+	  m_worker->rccType(type, *m, 0, offset, pad, NULL, true, isLastDummy,
+			    nn == 0 && o->nArgs() == 1, UINT_MAX);
+	  // Second pass, define types bottom up
+	  for (unsigned l = m_worker->m_maxLevel+1; l--; ) {
+	    std::string type;
+	    m_worker->rccType(type, *m, 0, offset, pad, prefix.c_str(), true, isLastDummy,
+			      nn == 0 && o->nArgs() == 1, l);
+	    fputs(type.c_str(), f);
+	  }
+	}
+    }
+  }
 }
 
 const char *Worker::
 emitImplRCC() {
   const char *err;
   FILE *f;
+  const char **slaveBaseTypes;
+  if (m_slave) {
+    slaveBaseTypes = m_slave->m_baseTypes;
+    m_slave->m_baseTypes = rccTypes;
+  }
   if ((err = openOutput(m_fileName.c_str(), m_outDir, "",
 			m_language == C ? RCC_C_IMPL : RCC_CC_IMPL,
 			m_language == C ? RCC_C_HEADER : RCC_CC_HEADER, m_implName, f)))
@@ -373,6 +515,7 @@ emitImplRCC() {
 	  " */\n\n"
 	  "#ifndef RCC_WORKER_%s_H__\n"
 	  "#define RCC_WORKER_%s_H__\n"
+	  "#include <assert.h>\n"
 	  "#include <RCC_Worker.h>\n",
 	  m_implName, m_language == C ? "C" : "C++", upper, upper);
   if ( m_language == CC )
@@ -421,81 +564,31 @@ emitImplRCC() {
       OU::Property &p = **pi;
       if (p.m_isParameter) {
 	std::string value;
-#if 0
-	if (m_language == C)
-	  fprintf(f,
-		  "#ifndef PARAM_%s\n"
-		  "#define PARAM_%s() (%s)\n"
-		  "#endif\n",
-		  p.m_name.c_str(), p.m_name.c_str(), rccPropValue(p, value));
-	else
-#endif
 	  {
-	  std::string typeDef, type, pretty;
-	  rccPropType(p, typeDef, type, pretty);
 	  fprintf(f,
 		  "/* The constant value of the parameter property named: %s */\n"
 		  "static const ", p.m_name.c_str());
+	  m_maxLevel = 0;
 	  size_t offset = 0;
 	  unsigned pad = 0;
 	  bool isLast = false;
-	  printRccType(f, p, 0, offset, pad, m_implName, true, isLast, false, UINT_MAX-1);
+	  std::string type;
+	  rccType(type, p, 0, offset, pad, m_implName, true, isLast, false, UINT_MAX-1);
 	  std::string param;
 	  upperconstant(param, m_implName, p.m_name.c_str());
-	  fprintf(f, " %s", param.c_str());
-	  printRccArray(f, p, true, isLast, false, false);
-	  fprintf(f, " = PARAM_%s();\n", p.m_name.c_str());
+	  OU::formatAdd(type, " %s", param.c_str());
+	  rccArray(type, p, true, isLast, false, false);
+	  fprintf(f, "%s = PARAM_%s();\n", type.c_str(), p.m_name.c_str());
 	}
       }
     }
   }
   if (m_language == CC) {
-    bool notifiers = false, writeNotifiers = false, readNotifiers = false;
-    std::string s, stypes;
-    camel(stypes, m_implName, "WorkerTypes", NULL);
-    fprintf(f, "\nnamespace %s {\n", stypes.c_str());
-    if (m_ctl.nRunProperties) {
-      m_maxLevel = 0;
-      unsigned pad = 0;
-      size_t offset = 0;
-      bool isLastDummy = false;
-      // First pass, determine max depth
-      for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
-	if (!(*pi)->m_isParameter &&
-	    ((*pi)->m_baseType == OA::OCPI_Enum || (*pi)->m_baseType == OA::OCPI_Struct)) {
-	  printRccType(f, **pi, 0, offset, pad, NULL, true, isLastDummy, false, UINT_MAX);
-	}
-      fprintf(f,
-	      "  /*\n"
-	      "   * Property types for worker %s\n"
-	      "   */\n",
-	      m_implName);
-      // Second path, define types bottom up
-      for (unsigned l = m_maxLevel+1; l--; ) {
-	pad = 0;
-	offset = 0;
-	isLastDummy = false;
-	for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
-	  if (!(*pi)->m_isParameter &&
-	      ((*pi)->m_baseType == OA::OCPI_Enum || (*pi)->m_baseType == OA::OCPI_Struct)) {
-	    printRccType(f, **pi, 0, offset, pad, NULL, true, isLastDummy, false, l);
-	  }
-      }
-      fprintf(f,
-	      "  /*\n"
-	      "   * Property structure for worker %s\n"
-	      "   */\n",
-	      m_implName);
-      fprintf(f, "  struct Properties {\n"); //, toupper(m_implName[0]), m_implName + 1);
-      offset = 0;
-      pad = 0;
-      isLastDummy = false;
-      for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
-	if (!(*pi)->m_isParameter)
-	  printRccMember(f, **pi, 1, offset, pad, NULL, true, isLastDummy, false, 0);
-      fprintf(f, "  };\n");
-    }
-    fprintf(f, "}\n");
+    std::string myTypes, slaveTypes;
+    emitCppTypesNamespace(f, myTypes);
+    if (m_slave)
+      m_slave->emitCppTypesNamespace(f, slaveTypes);
+    std::string s;
     camel(s, m_implName, "WorkerBase", NULL);
     fprintf(f,
 	    "/*\n"
@@ -525,72 +618,84 @@ emitImplRCC() {
 	      "   */\n"
 	      "  class Slave : OCPI::RCC::RCCUserSlave {\n"
 	      "  public:\n");
-      if (m_slave->m_ctl.nRunProperties)
-	for (PropertiesIter pi = m_slave->m_ctl.properties.begin();
-	     pi != m_slave->m_ctl.properties.end(); pi++) {
-	  OU::Property &p = **pi;
-	  if (!p.m_isParameter) {
-	    std::string typeDef, type, pretty;
-	    rccPropType(p, typeDef, type, pretty);
-	    size_t *offsets = NULL;
-	    if (p.m_arrayRank) {
-	      offsets = new size_t[p.m_arrayRank];
-	      size_t n = p.m_arrayRank - 1;
-	      offsets[n] = 1;
-	      while (n > 0) {
-		offsets[n-1] = offsets[n] * p.m_arrayDimensions[n];
-		n--;
-	      }
-	    }
-	    if (p.m_isReadable) {
-	      fprintf(f, "    inline %s get_%s(", type.c_str(), p.m_name.c_str());
-	      for (unsigned n = 0; n < p.m_arrayRank; n++)
-		fprintf(f, "%sunsigned idx%u", n ? ", " : "", n);
-	      fprintf(f, ") { return m_worker.get%sProperty(%u", pretty.c_str(), p.m_ordinal);
-	      if (p.m_arrayRank)
-		for (unsigned n = 0; n < p.m_arrayRank; n++)
-		  fprintf(f, "%sidx%u*%zu", n ? " + " : ", ", n, offsets[n]);
-	      else
-		fprintf(f, ", 0");
-	      fprintf(f,"); }\n");
-	    }
-	    if (p.m_isWritable) {
-	      fprintf(f, "    inline void set_%s(", p.m_name.c_str());
-	      for (unsigned n = 0; n < p.m_arrayRank; n++)
-		fprintf(f, "unsigned idx%u, ", n);
-	      fprintf(f, "%s val) {\n", type.c_str());
-	      if (p.m_arrayRank) {
-		fprintf(f, "      unsigned idx = ");
-		for (unsigned n = 0; n < p.m_arrayRank; n++)
-		  fprintf(f, "%sidx%u*%zu", n ? " + " : "", n, offsets[n]);
-		fprintf(f,
-			";\n"
-			"      m_worker.set%sProperty(%u, val, idx);\n",
-			pretty.c_str(), p.m_ordinal);
-	      } else
-		fprintf(f,
-			"      m_worker.set%sProperty(%u, val, 0);\n",
-			pretty.c_str(), p.m_ordinal);
-	      fprintf(f,
-		      "#if !defined(NDEBUG)\n"
-		      "    OCPI::OS::logPrint(OCPI_LOG_DEBUG, \"Setting slave.set_%s",
-		      p.m_name.c_str());
-	      if (p.m_arrayRank)
-		fprintf(f,
-			" at index %%u(0x%%x): 0x%%llx\", idx, idx, (unsigned long long)val);\n");
-	      else
-		fprintf(f,
-			": 0x%%llx\", (unsigned long long)val);\n");
-	      fprintf(f,
-		      "#endif\n"
-		      "    }\n");
-	    }
-	    delete [] offsets;
+      for (PropertiesIter pi = m_slave->m_ctl.properties.begin();
+	   pi != m_slave->m_ctl.properties.end(); pi++) {
+	OU::Property &p = **pi;
+	std::string cast, type, pretty;
+	// This is the bare minimum for enum types and base types.
+	// FIXME: more types
+	if (p.m_baseType == OA::OCPI_Enum) {
+	  if (!strcasecmp(p.m_name.c_str(), "ocpi_endian")) {
+	    type = "OCPI::RCC::RCCEndian";
+	  } else
+	    OU::format(type, "%s::%c%s", slaveTypes.c_str(), toupper(p.m_name.c_str()[0]),
+		       p.m_name.c_str() + 1);
+	  pretty = "ULong";
+	  OU::format(cast, "(%s)", type.c_str());
+	} else {
+	  type = cctypes[p.m_baseType];
+	  pretty = ccpretty[p.m_baseType];
+	}
+	size_t *offsets = NULL;
+	if (p.m_arrayRank) {
+	  offsets = new size_t[p.m_arrayRank];
+	  size_t n = p.m_arrayRank - 1;
+	  offsets[n] = 1;
+	  while (n > 0) {
+	    offsets[n-1] = offsets[n] * p.m_arrayDimensions[n];
+	    n--;
 	  }
 	}
+	if (p.m_isReadable) {
+	  fprintf(f, "    inline %s get_%s(", type.c_str(), p.m_name.c_str());
+	  for (unsigned n = 0; n < p.m_arrayRank; n++)
+	    fprintf(f, "%sunsigned idx%u", n ? ", " : "", n);
+	  fprintf(f, ") { return %sm_worker.get%s%s(%u", cast.c_str(), pretty.c_str(),
+		  p.m_isParameter ? "Parameter" : "Property", p.m_ordinal);
+	  if (p.m_arrayRank)
+	    for (unsigned n = 0; n < p.m_arrayRank; n++)
+	      fprintf(f, "%sidx%u*%zu", n ? " + " : ", ", n, offsets[n]);
+	  else
+	    fprintf(f, ", 0");
+	  fprintf(f,"); }\n");
+	}
+	if (p.m_isWritable) {
+	  fprintf(f, "    inline void set_%s(", p.m_name.c_str());
+	  for (unsigned n = 0; n < p.m_arrayRank; n++)
+	    fprintf(f, "unsigned idx%u, ", n);
+	  fprintf(f, "%s val) {\n", type.c_str());
+	  if (p.m_arrayRank) {
+	    fprintf(f, "      unsigned idx = ");
+	    for (unsigned n = 0; n < p.m_arrayRank; n++)
+	      fprintf(f, "%sidx%u*%zu", n ? " + " : "", n, offsets[n]);
+	    fprintf(f,
+		    ";\n"
+		    "      m_worker.set%sProperty(%u, %sval, idx);\n",
+		    pretty.c_str(), p.m_ordinal, cast.c_str());
+	  } else
+	    fprintf(f,
+		    "      m_worker.set%sProperty(%u, %sval, 0);\n",
+		    pretty.c_str(), p.m_ordinal, cast.c_str());
+	  fprintf(f,
+		  "#if !defined(NDEBUG)\n"
+		  "      OCPI::OS::logPrint(OCPI_LOG_DEBUG, \"Setting slave.set_%s",
+		  p.m_name.c_str());
+	  if (p.m_arrayRank)
+	    fprintf(f,
+		    " at index %%u(0x%%x): 0x%%llx\", idx, idx, (unsigned long long)val);\n");
+	  else
+	    fprintf(f,
+		    ": 0x%%llx\", (unsigned long long)val);\n");
+	  fprintf(f,
+		  "#endif\n"
+		  "    }\n");
+	}
+	delete [] offsets;
+      }
       fprintf(f,
 	      "  } slave;\n");
     }
+    bool notifiers = false, writeNotifiers = false, readNotifiers = false;
     if (m_ctl.nRunProperties) {
       fprintf(f,
 	      "  %s::Properties m_properties;\n"
@@ -599,9 +704,7 @@ emitImplRCC() {
 	      "    return (uint8_t*)&m_properties;\n"
 	      "  }\n"
 	      "  inline %s::Properties &properties() { return m_properties; }\n",
-	      stypes.c_str(), stypes.c_str());
-      // toupper(m_implName[0]), m_implName + 1,
-      // toupper(m_implName[0]), m_implName + 1);
+	      myTypes.c_str(), myTypes.c_str());
       for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
 	if ((**pi).m_writeSync || (**pi).m_readSync) {
 	  if (!notifiers)
@@ -690,10 +793,12 @@ emitImplRCC() {
       unsigned pad = 0;
       size_t offset = 0;
       bool isLastDummy = false;
+      std::string type;
       for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
 	if (!(*pi)->m_isParameter)
-	  printRccMember(f, **pi, 0, offset, pad, m_implName, true, isLastDummy, false, UINT_MAX-1);
-      fprintf(f, "} %c%sProperties;\n\n", toupper(m_implName[0]), m_implName + 1);
+	  rccMember(type, **pi, 0, offset, pad, m_implName, true, isLastDummy, false, UINT_MAX-1);
+      fprintf(f, "%s} %c%sProperties;\n\n", type.c_str(),
+	      toupper(m_implName[0]), m_implName + 1);
     }
     const char *mName;
     fprintf(f,
@@ -776,6 +881,8 @@ emitImplRCC() {
     return err;
   fprintf(f, "#define RCC_FILE_WORKER_%s %s\n", m_fileName.c_str(), m_implName);
   fclose(f);
+  if (m_slave)
+    m_slave->m_baseTypes = slaveBaseTypes;
   return 0;
 }
 
@@ -797,21 +904,6 @@ emitSkelRCC() {
 	  m_language == C ? RCC_C_IMPL : RCC_CC_IMPL,
 	  m_language == C ? RCC_C_HEADER : RCC_CC_HEADER);
   const char *upper = upperdup(m_implName);
-#if 0
-  if (m_language == CC) {
-    if (m_ctl.controlOps) {
-      fprintf(f,"  RCCResult ");
-      const char *last = "";
-      unsigned op = 0;
-      for (const char **cp = OU::Worker::s_controlOpNames; *cp; cp++, op++)
-	if (m_ctl.controlOps & (1 << op)) {
-	  fprintf(f, "%s    %s", last, *cp);
-	  last = ", ";
-	}
-      fprintf(f, ";\n");
-    }
-  }
-#endif
   if (m_language == C) {
     fprintf(f,
 	    "%s_METHOD_DECLARATIONS;\n"
@@ -919,7 +1011,7 @@ parseRccImpl(const char *package) {
   m_staticPattern = ezxml_cattr(m_xml, "StaticMethods");
   ezxml_t xctl;
   if ((err = parseSpec(package)) ||
-      (err = parseImplControl(xctl)) ||
+      (err = parseImplControl(xctl, NULL)) ||
       (xctl && (err = OE::checkAttrs(xctl, GENERIC_IMPL_CONTROL_ATTRS, "Threaded", (void *)0))) ||
       (err = OE::getBoolean(m_xml, "Threaded", &m_isThreaded)))
     return err;
@@ -931,29 +1023,6 @@ parseRccImpl(const char *package) {
   for (unsigned i = 0; i < m_ports.size(); i++)
     m_ports[i]->finalizeRccDataPort();
 
-#if 0
-    {
-    if ((err = OE::checkAttrs(x, "Name", "MinBuffers", "MinBufferCount", "BufferSize", (void*)0)))
-      return err;
-    const char *name = ezxml_cattr(x, "Name");
-    if (!name)
-      return "Missing \"Name\" attribute on Port element if RccWorker";
-    Port *p = 0; // kill warning
-    unsigned n;
-    for (n = 0; n < m_ports.size(); n++) {
-      p = m_ports[n];
-      if (!strcasecmp(p->name(), name))
-        break;
-    }
-    if (n >= m_ports.size())
-      return OU::esprintf("No DataInterface named \"%s\" from Port element", name);
-    if ((err = OE::getNumber(x, "MinBuffers", &p->u.wdi.minBufferCount, 0, 0)) || // backward compat
-        (err = OE::getNumber(x, "MinBufferCount", &p->u.wdi.minBufferCount, 0, p->u.wdi.minBufferCount)) ||
-        (err = OE::getNumber(x, "Buffersize", &p->u.wdi.bufferSize, 0,
-			     p->m_protocol ? p->m_protocol->m_defaultBufferSize : 0)))
-      return err;
-  }
-#endif
   std::string slave;
   if (OE::getOptionalString(m_xml, slave, "slave")) {
     // The slave attribute is the name of an implementation including the model.
@@ -1000,11 +1069,6 @@ parseRcc(const char *package) {
   else
     return OU::esprintf("Language attribute \"%s\" is not \"C\" or \"C++\""
 			" in RccWorker xml file: '%s'", lang, m_file.c_str());
-#if 0
-  if (strcmp(m_implName, m_fileName.c_str()))
-    return OU::esprintf("File name (%s) and implementation name in XML (%s) don't match",
-			m_fileName.c_str(), m_implName);
-#endif
   const char *err;
   // Here is where there is a difference between a implementation and an assembly
   if (!strcasecmp(m_xml->name, "RccWorker") || !strcasecmp(m_xml->name, "RccImplementation")) {
@@ -1054,49 +1118,21 @@ emitRccCppImpl(FILE *f) {
   if (o) {
     std::string ops;
     OU::format(ops, "%c%sOperations", toupper(name()[0]), name()+1);
+    // Constructor
+    fprintf(f,
+	    "  public:\n"
+	    "    %c%sPort()",
+	    toupper(name()[0]), &name()[1]);
+    o = m_protocol->operations();
     bool first = true;
     for (unsigned nn = 0; nn < m_protocol->nOperations(); nn++, o++)
       if (o->nArgs()) {
 	std::string s;
 	camel(s, o->name().c_str());
-	fprintf(f,
-		"    // Structure for the '%s' operation on port '%s'\n"
-		"    struct __attribute__ ((__packed__)) %s {\n",
-		o->name().c_str(), name(), s.c_str());
-	bool isLast = false;
-	m_worker->emitRccStruct(f, o->nArgs(), o->args(), 8, s.c_str(), false, isLast,
-				o->isTopFixedSequence(), 0);
-	fprintf(f, "    };\n" );
+	fprintf(f, "%s m_%sOp(*this)", first ? " :" : ",", s.c_str());
+	first = false;
       }
-
-
-    // Start union
-    fprintf(f, "\n\n    union %s {\n", ops.c_str());
-    o = m_protocol->operations();
-    for (unsigned nn = 0; nn < m_protocol->nOperations(); nn++, o++)
-      if (o->nArgs()) {
-	std::string s;
-	camel(s, o->name().c_str());
-	fprintf(f,"      %s m_%s;\n",s.c_str(),  o->name().c_str() );
-      }
-    fprintf(f,
-	    "    };\n"
-	    "    %s %s &message() %s { return *(%s *)RCCUserPort::data(); }\n",
-	    !m_isProducer ? "const " : "", ops.c_str(),
-	    !m_isProducer ? "const " : "", ops.c_str());
-    // End union
-
-    // Operation enums
-    {
-      o = m_protocol->operations();
-      fprintf(f, "    enum { \n" );
-      for (unsigned nn = 0; nn < m_protocol->nOperations(); nn++, o++) {
-	std::string s;
-	camel(s, o->name().c_str() );	
-	fprintf(f,"      %s_OPERATION\n",  s.c_str());	  
-      }
-      fprintf(f, "    }; \n" );
-    }
+    fprintf(f, " {\n    }\n");
 
     // Start Op class
 
@@ -1106,172 +1142,161 @@ emitRccCppImpl(FILE *f) {
       std::string s;
       camel(s, o->name().c_str());	
       if (o->nArgs()) {
+	std::string op;
+	camel(op, m_worker->m_implName, "WorkerTypes::", m_protocol->name().c_str(),
+	      o->name().c_str());
 	fprintf(f,
-		"    class %sOp : public OCPI::RCC::RCCPortOperation { \n"
-		"    private:\n"
-		//		"       RCCUserBuffer * m_buffer;\n"
-		"       %s * m_%s; \n"
-
+		"    class %sOp : public OCPI::RCC::RCCPortOperation {\n"
 		"    public:\n"
-		"       %sOp(){}\n"
-		"       %sOp( RCCUserBuffer & buffer ){ setBuffer( &buffer ); }\n"
-		"       %sOp( %sOp& rhs  ){setBuffer( rhs.m_buffer );}\n"
-		"       void setBuffer( RCCUserBuffer* buffer ){m_buffer=buffer; m_%s=(%s *)m_buffer;}\n\n"
-		,
-		s.c_str(), 
-		s.c_str(),o->name().c_str(),
-		s.c_str(),
-		s.c_str(),
-		s.c_str(),s.c_str(),
-		o->name().c_str(),s.c_str()
+		"       %sOp(RCCUserPort &p)\n"
+		"         : OCPI::RCC::RCCPortOperation(p, %s_OPERATION),\n",
+		s.c_str(), s.c_str(), op.c_str());
+	OU::Member *m = o->args();
+	for (unsigned n = 0; n < o->nArgs(); m++) {
+	  std::string s;
+	  camel(s, m->m_name.c_str());	
+	  fprintf(f, "           m_%sArg(*this)%s", s.c_str(), ++n == o->nArgs() ? "" : ", ");
+	}
+	fprintf(f,
+		" {\n"
+		"         }\n"
+		"       %sOp(RCCUserPort &p, const %sOp &rhs)\n"
+		"         : OCPI::RCC::RCCPortOperation(p, %s_%s),\n",
+		s.c_str(), s.c_str(), upperdup(m_worker->m_implName), upperdup(name()));
+	m = o->args();
+	for (unsigned n = 0; n < o->nArgs(); m++) {
+	  std::string s;
+	  camel(s, m->m_name.c_str());	
+	  fprintf(f, "           m_%sArg(*this)%s", s.c_str(), ++n == o->nArgs() ? "" : ", ");
+	}
+	fprintf(f,
+		" {\n"
+		"         setBuffer(rhs.m_buffer);\n"
+		"       }\n"
+		"       void setBuffer(RCCUserBuffer* buffer) {\n"
+		"         m_buffer = buffer;\n"
+		"       }\n"
 		);
 
 	// Arg enums
-	{
-	  OU::Member *m = o->args();
-	  fprintf(f, "       enum { \n" );
-	  for (unsigned n = 0; n < o->nArgs(); n++, m++) {
-	    std::string s;
-	    camel(s, m->m_name.c_str() );	
-	    fprintf(f,"         %s_ARG\n",  s.c_str());	  
-	  }
-	  fprintf(f, "       }; \n" );
+	m = o->args();
+	fprintf(f, "       enum { \n" );
+	for (unsigned n = 0; n < o->nArgs(); n++, m++) {
+	  std::string s;
+	  camel(s, m->m_name.c_str() );	
+	  fprintf(f,"         %s_ARG\n",  s.c_str());	  
 	}
-
+	fprintf(f, "       }; \n" );
 
 	// And a class for each arg in the operation
-	OU::Member *m = o->args();
+	m = o->args();
 	for (unsigned n = 0; n < o->nArgs(); n++, m++) {
 	  std::string s;
 	  camel(s, m->m_name.c_str() );	
 	  std::string p;
 	  camel(p, name() );	
 	  std::string on;
-	  camel(on, o->name().c_str() );
-
-	  if ( m->m_isSequence ) {
+	  camel(on, m_worker->m_implName, "WorkerTypes::", m_protocol->name().c_str(),
+		o->name().c_str());
+	  std::string type;
+	  size_t offset;
+	  unsigned pad;
+	  bool isLast;
+	  m_worker->rccType(type, *m, 1, offset, pad, on.c_str(), false, isLast,
+			    n == 0 && o->nArgs() == 1, 0);
+	  fprintf(f,
+		  "       class %sArg : public OCPI::RCC::RCCPortOperationArg { \n"
+		  "       private:\n"
+		  "          mutable %s *m_myptr;\n",
+		  s.c_str(), type.c_str());
+	  if (m->m_isSequence)
+	    fprintf(f, "          mutable size_t m_length;\n");
+	  fprintf(f,
+		  "       public:\n"
+		  "          %sArg(RCCPortOperation &po) : RCCPortOperationArg(po, %s_ARG), m_myptr(NULL) {}\n"
+		  "          inline%s %s *data() %s{\n"
+		  "            return m_myptr ? m_myptr : (m_myptr = (%s*)getArgAddress(%s));\n"
+		  "          }\n",
+		  s.c_str(), s.c_str(),
+		  m_isProducer ? "" : " const", type.c_str(), m_isProducer ? "" : "const ",
+		  type.c_str(), m->m_isSequence ? "&m_length" : "NULL");
+	  if (m->m_isSequence) {
 	    fprintf(f,
-		    "       class %sArg  { \n"
-		    "       private:\n"
-		    "          void * m_myptr;\n"
-		    "          void * getArgAddress( unsigned int, unsigned int);\n"
-		    "       public:\n"
-		    "          %sArg() : m_myptr(NULL){}\n"
-		    "          inline void * value() { return m_myptr ? m_myptr : (m_myptr = getArgAddress((unsigned)%sPort::%s_OPERATION, (unsigned)%s_ARG)); }\n",
-		    s.c_str(), 
-		    s.c_str(),
-		    p.c_str(),on.c_str(),s.c_str()
-		    );
-
-	    if ( m_opScaling[n] != NULL )
+		    "         inline size_t %s() %s{\n"
+		    "           if (!m_myptr)\n"
+		    "              m_myptr = (%s*)getArgAddress(&m_length);\n"
+		    "           return m_length;\n"
+		    "         }\n",
+		    m_isProducer ? "capacity" : "size",
+		    m_isProducer ? "" : "const ",
+		    type.c_str());
+	    if (m_isProducer && o->isTopFixedSequence())
 	      fprintf(f,
-		      "          bool   endOfWhole() const; \n"
-		      "          void partSize( OCPI::RCC::RCCPartInfo & part ) const;\n"
-		      );
+		      "         inline void resize(size_t length) {\n"
+		      "           m_op.setLength(length*sizeof(%s));\n"
+		      "         }\n",
+		      type.c_str());
+	  }
+	    if (m_opScaling[n] != NULL)
+	      fprintf(f,
+		      "          bool endOfWhole() const; \n"
+		      "          void partSize(%sOCPI::RCC::RCCPartInfo &part) const;\n",
+		      m->m_arrayRank ? "unsigned dimension, " : "");
 
 	    fprintf(f,
 		    "       } m_%sArg;\n",
-		    s.c_str()
-		    );
-
-	  }
-	  else if ( m->m_arrayRank ) {
-	    fprintf(f,
-		    "       class %sArg  { \n"
-		    "       private:\n"
-		    "          void * m_myptr;\n"
-		    "          void * getArgAddress( unsigned int, unsigned int);\n"
-		    "       public:\n"
-		    "          %sArg() : m_myptr(NULL){}\n"
-		    "          inline void * value() { return m_myptr ? m_myptr : (m_myptr = getArgAddress((unsigned)%sPort::%s_OPERATION, (unsigned)%s_ARG)); }\n",
-		    s.c_str(), 
-		    s.c_str(),
-		    p.c_str(),on.c_str(),s.c_str()
-		    );
-
-	    if ( m_opScaling[n] != NULL )
+		    s.c_str());
+	    // Add an accessor for each argument in case they are variable length.
+	    type.clear();
+	    m_worker->rccType(type, *m, 1, offset, pad, on.c_str(), false, isLast,
+			      o->isTopFixedSequence(), 0);
+	    if (m->m_isSequence || m->m_arrayRank)
 	      fprintf(f,
-		      "          size_t dimensions() const;  // Number of dimensions\n"
-		      "          bool   endOfWhole() const; \n"
-		      "          void partSize( unsigned dimension, OCPI::RCC::RCCPartInfo & part ) const;\n"
-		      );
-
-	    fprintf(f,
-		    "       } m_%sArg;\n",
-		    s.c_str()
-		    );
-
-	  }
-	  else {
-	    fprintf(f,
-		    "       class %sArg  { \n"
-		    "       private:\n"
-		    "          void * m_myptr;\n"
-		    "       public:\n"
-		    "          %sArg() : m_myptr(NULL){}\n"
-		    "          inline void * value() { return m_myptr ? m_myptr : (m_myptr = getArgAddress((unsigned)%sPort::%s_OPERATION, (unsigned)%s_ARG)); }\n"
-		    "       } m_%sArg;\n"
-		    ,s.c_str(), 
-		    s.c_str(),
-		    p.c_str(),on.c_str(),s.c_str(),
-		    s.c_str()
-		    );
-
-	  }
-
+		      "      %s%sArg %s() %s{ return m_%sArg; }\n",
+		      m_isProducer ? "" : "const ", s.c_str(),
+		      m->m_name.c_str(), m_isProducer ? "" : "const ",
+		      s.c_str());
+	    else
+	      fprintf(f,
+		      "      %s%s &%s() %s{ return *m_%sArg.data(); }\n",
+		      m_isProducer ? "" : "const ", type.c_str(), m->m_name.c_str(),
+		      m_isProducer ? "" : "const ", s.c_str());
 	}
 	// End args
-
+	fprintf(f, 
+		"    } m_%sOp;\n"
+		"    // Conversion operators\n"
+		"    inline operator %sOp &() { m_%sOp.setBuffer(this); return m_%sOp; }\n"
+		"    // Factories, used to take messages\n" 
+		"    inline %sOp* take(%sOp &rhs) const {\n"
+		"      %sOp *so = new %sOp(rhs);\n"
+		"      return so;\n"
+		"    }\n", 
+		s.c_str(), s.c_str(), s.c_str(), s.c_str(), s.c_str(), s.c_str(), s.c_str(),
+		s.c_str());
+      // End Op class
       }
-
-      fprintf(f, "    } m_%sOp;\n", s.c_str() );
-
-      fprintf(f, 
-	      "    // Conversion operators\n"
-	      "    inline operator %sOp& () {m_%sOp.setBuffer(this); return m_%sOp;}\n"
-	      "    // Factories, used to take messages\n" 
-	      "    inline %sOp* take(%sOp& rhs) const\n "
-	      "    {\n"
-	      "       %sOp * so = new %sOp( rhs );\n"
-	      "       return so;\n"
-	      "    }\n"
-	      , 
-	      s.c_str(),s.c_str(),s.c_str(), 
-	      s.c_str(),s.c_str(),
-	      s.c_str(),s.c_str()
-	      );
-   
-    // End Op class
-
-
     }
-
-
-
     first = true;
     o = m_protocol->operations();
     for (unsigned nn = 0; nn < m_protocol->nOperations(); nn++, o++)
       if (o->nArgs()) {
-	std::string s;
+	std::string s, prot, prefix;
 	camel(s, o->name().c_str());
+	camel(prot, m_protocol->m_name.c_str());
+	camel(prefix, m_worker->m_implName, "WorkerTypes::", prot.c_str(),
+	      o->name().c_str());
 	if (first) {
 	  fprintf(f, "  public:\n");
 	  first = false;
 	}
-
-	fprintf(f, "    %s %s &get%s() %s { return message().m_%s; }\n",
-		!m_isProducer ? "const " : "",
-		s.c_str(), o->name().c_str(),
-		!m_isProducer ? "const " : "",
-		o->name().c_str());
-
-	if (o->isTopFixedSequence()) {
-	  std::string name;
-	  topTypeName(name, o->args(), m_worker->m_baseTypes);
-	  fprintf(f,
-		  "    size_t %s_length() { return topLength(sizeof(%s)); }\n",
-		  o->name().c_str(), name.c_str());
-	}
+	fprintf(f,
+		"    %s%sOp &%s() %s{\n"
+		"      assert(hasBuffer() && opCode() == %s_OPERATION);\n"
+		"      return m_%sOp;\n"
+		"    }\n",
+		!m_isProducer ? "const " : "", s.c_str(), o->name().c_str(),
+		!m_isProducer ? "const " : "", prefix.c_str(), s.c_str());
       }
   }
   fprintf(f, "  } %s;\n", name());
@@ -1344,9 +1369,10 @@ emitRccCImpl1(FILE *f) {
 	std::string s;
 	camel(s, m_worker->m_implName, name(), o->name().c_str());
 	bool isLast = false;
-	m_worker->emitRccStruct(f, o->nArgs(), o->args(), 0, s.c_str(), false, isLast,
-				o->isTopFixedSequence(), UINT_MAX-1);
-	fprintf(f, "} %s;\n", s.c_str());
+	std::string type;
+	m_worker->rccStruct(type, o->nArgs(), o->args(), 0, s.c_str(), false, isLast,
+			    o->isTopFixedSequence(), UINT_MAX-1);
+	fprintf(f, "%s} %s;\n", type.c_str(), s.c_str());
 	OpScaling *os = m_opScaling[nn];
 	if (os && os->m_isPartitioned) {
 	  OU::Member *arg = o->m_args;
@@ -1365,8 +1391,9 @@ emitRccCImpl1(FILE *f) {
 	      size_t dummy1 = 0;
 	      unsigned dummy2 = 0;
 	      bool dummy3;
-	      m_worker->printRccBaseType(f, *arg, 2, dummy1, dummy2, "", false, dummy3, false);
-	      fprintf(f, " *%s;\n", arg->m_name.c_str());
+	      std::string type;
+	      m_worker->rccBaseType(type, *arg, 2, dummy1, dummy2, "", false, dummy3, false);
+	      fprintf(f, "%s *%s;\n", type.c_str(), arg->m_name.c_str());
 	    }
 	  }
 	  fprintf(f,

@@ -40,6 +40,8 @@ DataPort::
 DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *&err)
   : OcpPort(w, x, sp, ordinal, type, NULL, err) {
   assert(sp != NULL);
+  if (err)
+    return;
   DataPort *dp = static_cast<DataPort*>(sp);
   m_protocol = dp->m_protocol;
   dp->m_protocol = NULL;
@@ -55,10 +57,7 @@ DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *
   m_opScaling.resize(m_protocol->m_nOperations, NULL);
   // Now we do implementation-specific initialization that will precede the
   // initializations for specific port types (WSI, etc.)
-  bool dwFound;
-  if ((err = getExprNumber(m_xml, "DataWidth", m_dataWidth, &dwFound, &m_dataWidthExpr, &w)) ||
-      //  if ((err = w.getNumber(m_xml, "DataWidth", &m_dataWidth, &dwFound)) ||
-      // Adding optionality in the impl xml is only relevant to devices.
+  if (// Adding optionality in the impl xml is only relevant to devices.
       (err = OE::getBoolean(m_xml, "Optional", &m_isOptional, true)) ||
       // Be careful not to clobber protocol-determined values (i.e. don't set default values)
       (err = OE::getNumber(m_xml, "NumberOfOpcodes", &m_nOpcodes, NULL, 0, false)) ||
@@ -75,23 +74,12 @@ DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *
       (err = OE::getNumber(m_xml, "Buffersize", &m_bufferSize, 0,
 			   m_protocol ? m_protocol->m_defaultBufferSize : 0)))
     return;
-  if (!dwFound) {
+  // Data width can be unspecified, specified explicitly, or specified with an expression
+  if (!m_dataWidthFound) {
     if (w.m_defaultDataWidth >= 0)
       m_dataWidth = (unsigned)w.m_defaultDataWidth;
     else
       m_dataWidth = m_protocol->m_dataValueWidth;  // or granularity?
-  } else if (!m_protocol->m_dataValueWidth && !m_protocol->nOperations())
-    m_protocol->m_dataValueWidth = m_dataWidth;
-  if (m_dataWidth >= m_protocol->m_dataValueWidth) {
-    if (m_dataWidth % m_protocol->m_dataValueWidth) {
-      err = OU::esprintf("DataWidth (%zu) on port '%s' not a multiple of DataValueWidth (%zu)",
-			 m_dataWidth, name(), m_protocol->m_dataValueWidth);
-      return;
-    }
-  } else if (m_protocol->m_dataValueWidth % m_dataWidth) {
-    err =  OU::esprintf("DataValueWidth (%zu) on port '%s' not a multiple of DataWidth (%zu)",
-			m_protocol->m_dataValueWidth, name(), m_dataWidth);
-    return;
   }
   if (!m_impreciseBurst && !m_preciseBurst)
     m_impreciseBurst = true;
@@ -298,8 +286,18 @@ parse() {
 }
 
 // After the specific port types have parsed everything
+// and also *AGAIN* after all expressions are resolved when instanced in an assembly
 const char *DataPort::
 finalize() {
+  if (!m_protocol->m_dataValueWidth && !m_protocol->nOperations())
+    m_protocol->m_dataValueWidth = m_dataWidth;
+  if (m_dataWidth >= m_protocol->m_dataValueWidth) {
+    if (m_dataWidth % m_protocol->m_dataValueWidth)
+      return OU::esprintf("DataWidth (%zu) on port '%s' not a multiple of DataValueWidth (%zu)",
+			  m_dataWidth, name(), m_protocol->m_dataValueWidth);
+  } else if (m_protocol->m_dataValueWidth % m_dataWidth)
+    return OU::esprintf("DataValueWidth (%zu) on port '%s' not a multiple of DataWidth (%zu)",
+			m_protocol->m_dataValueWidth, name(), m_dataWidth);
   // If messages are always a multiple of datawidth and we don't have zlms, bytes are datawidth
   size_t granuleWidth =
     m_protocol->m_dataValueWidth * m_protocol->m_dataValueGranularity;
@@ -366,11 +364,11 @@ emitRecordInterface(FILE *f, const char *implName) {
   else
     OU::format(width, "to_integer(%s)", m_dataWidthExpr.c_str());
   fprintf(f, "  constant ocpi_port_%s_data_width : natural := %s;\n", name(), width.c_str());
-  vectorWidth(&ocpSignals[OCP_MData], width, false, true);
+  vectorWidth(&ocpSignals[OCP_MData], width, VHDL, false, true);
   fprintf(f, "  constant ocpi_port_%s_MData_width : natural := %s;\n", name(), width.c_str());
-  vectorWidth(&ocpSignals[OCP_MByteEn], width, false, true);
+  vectorWidth(&ocpSignals[OCP_MByteEn], width, VHDL, false, true);
   fprintf(f, "  constant ocpi_port_%s_MByteEn_width : natural := %s;\n", name(), width.c_str());
-  vectorWidth(&ocpSignals[OCP_MDataInfo], width, false, true);
+  vectorWidth(&ocpSignals[OCP_MDataInfo], width, VHDL, false, true);
   std::string extra;
   size_t n = extraDataInfo();
   if (n)
@@ -682,6 +680,44 @@ initRole(OCPI::Util::Assembly::Role &role) {
     role.m_bidirectional = true;
   else
     role.m_provider = !m_isProducer;
+}
+
+const char *DataPort::
+resolveExpressions(OCPI::Util::IdentResolver &ir) {
+  const char *err;
+  return (err = OcpPort::resolveExpressions(ir)) ? err : finalize();
+}
+
+void DataPort::
+emitVerilogPortParameters(FILE *f) {
+  std::string width = m_dataWidthExpr;
+  if (m_dataWidthExpr.empty()) {
+    if (m_dataWidth == 0)
+      return;
+    OU::format(width, "%zu", m_dataWidth);
+  } else
+    OU::format(width, "%s", m_dataWidthExpr.c_str());
+  // FIXME: Can we use some sort of global procedure or macro?
+  fprintf(f,
+	  "  localparam ocpi_port_%s_data_width = %s;\n"
+	  "  localparam ocpi_port_%s_MData_width = \n"
+	  "    ocpi_port_%s_data_width == 0 ? 0 :\n"
+	  "    ocpi_port_%s_data_width != %zu && %zu != 8 ?\n"
+	  "    (8 * ocpi_port_%s_data_width) / %zu :\n"
+	  "    ocpi_port_%s_data_width;\n",
+	  name(), width.c_str(), name(), name(), name(), m_byteWidth, m_byteWidth, name(),
+	  m_byteWidth, name());
+  if (ocp.MByteEn.value)
+    fprintf(f,
+	    "  localparam ocpi_port_%s_MByteEn_width = ocpi_port_%s_data_width / %zu;\n",
+	    name(), name(), m_byteWidth);
+  if (ocp.MDataInfo.value)
+    fprintf(f,
+	    "  localparam ocpi_port_%s_MDataInfo_width = \n"
+	    "    ocpi_port_%s_data_width != %zu && %zu != 8 ?\n"
+	    "    ocpi_port_%s_data_width - ((8 * ocpi_port_%s_data_width) / %zu) :\n"
+	    "    ocpi_port_%s_data_width;\n",
+	    name(), name(), m_byteWidth, m_byteWidth, name(), name(), m_byteWidth, name());
 }
 
 Overlap::

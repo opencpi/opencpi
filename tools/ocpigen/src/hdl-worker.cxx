@@ -263,7 +263,22 @@ static struct VhdlUnparser : public OU::Unparser {
   unparseDouble(std::string &s, double val, bool hex) const {
     size_t len = s.length();
     bool zip = Unparser::unparseDouble(s, val, hex);
-    if (!strchr(s.c_str() + len, '.'))
+    // Make it VHDL friendly by making sure there is a decimal point on the fraction.
+    bool dot = false;
+    for (const char *cp = s.c_str() + len; *cp; cp++)
+      if (*cp == 'e' || *cp == 'E') {
+	// An exponent without a decimal point.
+	std::string e(cp);
+	s.resize(cp - s.c_str());
+	s += ".0";
+	s += e;
+	dot = true;
+	break;
+      } else if (*cp == '.') {
+	dot = true;
+	break;
+      }
+    if (!dot)
       s += ".0";
     return zip;
   }
@@ -273,10 +288,12 @@ static void
 vhdlInnerValue(const char *pkg, const OU::Value &v, std::string &s) {
   if (v.needsComma())
     s += "(";
+#if 1
   if (v.m_vt->m_baseType == OA::OCPI_Enum && pkg) {
     s += pkg;
     s += ".";
   }
+#endif
   v.unparse(s, &vhdlUnparser, true);
   if (v.m_vt->m_baseType == OA::OCPI_Enum)
     s += "_e";
@@ -883,9 +900,15 @@ emitDefsHDL(bool wrap) {
 	}
 	if (decl.length()) {
 	  fprintf(f, "  ");
-	  if (!strcasecmp("ocpi_endian", p.m_name.c_str()))
+	  if (!strcasecmp("ocpi_endian", p.m_name.c_str())) {
+	    // FIXME: a more general solution to built-in enumeration types
 	    fprintf(f, "alias ocpi_endian_t is ocpi.types.endian_t");
-	  else
+#if 0
+		    "  alias little_e is ocpi.types.little_e[return ocpi_endian_t];\n"
+		    "  alias big_e is ocpi.types.big_e[return ocpi_endian_t];\n"
+		    "  alias dynamic_e is ocpi.types.dynamic_e[return ocpi_endian_t]");
+#endif
+	  } else
 	    fprintf(f, decl.c_str(),
 		    p.m_name.c_str(), p.m_name.c_str(), p.m_name.c_str(),
 		    p.m_name.c_str(), p.m_name.c_str(), p.m_name.c_str());
@@ -931,6 +954,8 @@ emitDefsHDL(bool wrap) {
   } else {
     // Now we emit parameters in the body.
     emitParameters(f, lang);
+    for (unsigned i = 0; i < m_ports.size(); i++)
+      m_ports[i]->emitVerilogPortParameters(f);
     // Now we emit the declarations (input, output, width) for each module port
     for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
       Clock *c = *ci;

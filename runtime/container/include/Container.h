@@ -206,7 +206,6 @@ namespace OCPI {
       OCPI::OS::ThreadManager *m_thread;
       // This is not an embedded member to potentially control lifecycle better...
       OCPI::DataTransport::Transport &m_transport;
-      static Launcher *s_localLauncher;
     };
   }
 }

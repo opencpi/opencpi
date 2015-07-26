@@ -113,6 +113,11 @@ parseConnection(OU::Assembly::Connection &aConn) {
 			  ext.m_name.c_str(), ext.m_index, ext.m_count, intPort.m_port->count);
     // Create the external port of this assembly
     // Start with a copy of the port, then patch it
+    ocpiDebug("Clone of port %s of instance %s of worker %s for assembly worker %s: %s/%zu/%zu",
+	      intPort.m_port->name(), intPort.m_instance->name,
+	      intPort.m_port->m_worker->m_implName, m_assyWorker.m_implName,
+	      intPort.m_port->m_countExpr.c_str(), intPort.m_port->count,
+	      ext.m_count ? ext.m_count : c.m_count);
     Port &p = intPort.m_port->clone(m_assyWorker, ext.m_name,
 				    ext.m_count ? ext.m_count : c.m_count,
 				    &ext.m_role, err);
@@ -132,6 +137,15 @@ Instance::
 Instance()
   : instance(NULL), name(NULL), wName(NULL), worker(NULL), m_clocks(NULL), m_ports(NULL),
     m_iType(Application), attach(NULL), hasConfig(false), config(0), m_emulated(false) {
+}
+
+const char *Instance::
+getValue(const char *sym, OU::ExprValue &val) const {
+  const InstanceProperty *ipv = &properties[0];
+  for (unsigned n = 0; n < properties.size(); n++, ipv++)
+    if (!strcasecmp(ipv->property->name().c_str(), sym))
+      return extractExprValue(*ipv->property, ipv->value, val);
+  return worker->getValue(sym, val);
 }
 
 // Add the assembly's parameters to the instance's parameters when that is appropriate.
@@ -340,6 +354,10 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
     // Parse type-specific aspects of the instance.
     if ((err = w->parseInstance(m_assyWorker, *i, ix)))
       return err;
+    // Now that all parsing relating to the instance is done, we need to recompute any
+    // expressions that might depend on instance parameters or paramconfig values
+    if ((err = w->resolveExpressions(*i)))
+      return err;
   }
   // All parsing is done.
   // Now we fill in the top-level worker stuff.
@@ -372,6 +390,7 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
 // Not called for WCIs that are aggreated...
 // Note that this is called for ports that are IMPLICITLY made external,
 // rather than those that are explicitly connected as eternal
+// This is NOT called for data ports;
 const char *Assembly::
 externalizePort(InstancePort &ip, const char *name, size_t &ordinal) {
   Port &p = *ip.m_port;
@@ -382,9 +401,16 @@ externalizePort(InstancePort &ip, const char *name, size_t &ordinal) {
   c.m_count = p.count;
   m_connections.push_back(&c);
   const char *err;
+  ocpiDebug("Clone of port %s of instance %s of worker %s for assembly worker %s: %s/%zu",
+	    ip.m_port->name(), ip.m_instance->name,
+	    ip.m_port->m_worker->m_implName, m_assyWorker.m_implName,
+	    ip.m_port->m_countExpr.c_str(), ip.m_port->count);
   Port &extPort = p.clone(m_assyWorker, extName, p.count, NULL, err);
   if (err)
     return err;
+  // If the port has its own clock, use it.
+  if (!ip.m_instance->m_clocks[ip.m_port->clock->ordinal] && ip.m_port->myClock) 
+    ip.m_instance->m_clocks[ip.m_port->clock->ordinal] = ip.m_port->clock;
   c.m_clock = extPort.clock = ip.m_instance->m_clocks[ip.m_port->clock->ordinal];
   assert(extPort.clock);
   OU::Assembly::External *ext = new OU::Assembly::External;
@@ -449,7 +475,9 @@ emitXmlWorker(FILE *f) {
     //  if (m_ports.size() && m_ports[0]->type == WCIPort && m_ports[0]->u.wci.timeout)
     fprintf(f, " Timeout=\"%zu\"", m_wci->timeout());
   if (m_slave)
-    fprintf(f, "  Slave='%s.%s'", m_slave->m_implName, m_slave->m_modelString);
+    fprintf(f, " Slave='%s.%s'", m_slave->m_implName, m_slave->m_modelString);
+  if (m_ctl.firstRaw)
+    fprintf(f, " FirstRaw='%u'", m_ctl.firstRaw->m_ordinal);
   fprintf(f, ">\n");
   unsigned nn;
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {

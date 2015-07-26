@@ -201,11 +201,14 @@ namespace OCPI {
 	return u.u64;
       }
       void Device::
-      getBytes(RegisterOffset offset, uint8_t *buf, size_t length, uint32_t *status) {
+      getBytes(RegisterOffset offset, uint8_t *buf, size_t length, size_t elementBytes,
+	       uint32_t *status) {
 	while (length) {
 	  size_t bytes = sizeof(uint32_t) - (offset & 3); // bytes in word
 	  if (bytes > length)
 	    bytes = length;
+	  if (bytes > elementBytes)
+	    bytes = elementBytes;
 	  uint32_t val = get(offset, bytes, status);
 	  if (status && *status)
 	    return;
@@ -222,11 +225,14 @@ namespace OCPI {
 	  set(offset + sizeof(uint32_t), sizeof(uint32_t), (uint32_t)(val >> 32), status);
       }
       void Device::
-      setBytes(RegisterOffset offset, const uint8_t *buf, size_t length, uint32_t *status)  {
+      setBytes(RegisterOffset offset, const uint8_t *buf, size_t length, size_t elementBytes,
+	       uint32_t *status)  {
 	while (length) {
 	  size_t bytes = sizeof(uint32_t) - (offset & 3); // bytes in word
 	  if (bytes > length)
 	    bytes = length;
+	  if (bytes > elementBytes)
+	    bytes = elementBytes;
 	  uint32_t data;
 	  memcpy((uint8_t*)&data + (offset & 3), buf, bytes);
 	  set(offset, bytes, data, status);

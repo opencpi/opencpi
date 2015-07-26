@@ -20,7 +20,7 @@ namespace OU =  OCPI::Util;
   CMD_OPTION(processors, n,    UShort,  "1",     "The number of software (rcc) containers to create") \
   CMD_OPTION(remove,     r,    Bool,   "false", "Remove artifacts") \
   CMD_OPTION(port,       p,    UShort, 0, "Explicit TCP port for server") \
-  CMD_OPTION(discoverable, d,  Bool,   "true", "Don't make server discoverable.") \
+  CMD_OPTION(discoverable, d,  Bool,   "true", "Make server discoverable.") \
 
 // Others: socket number to use, whether to be discoverable, whether to be loopback/local only?
 

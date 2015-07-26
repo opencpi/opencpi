@@ -354,12 +354,13 @@ parseHdlAssy() {
       case NOCPort:
       case MetadataPort:
       case TimePort:
+      case TimeBase:
 	break;
       case PropPort: // could do partials when multiple count?
       case DevSigPort: // same?
 	break;
       default:
-	return "Bad port type";
+	return OU::esprintf("Bad port type: %u", pp->type);
       }
     }
   }
@@ -534,7 +535,9 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
 	if (lang == VHDL) {
 	  fprintf(f, any ? ",\n              "  : "  generic map(");
 	  fprintf(f, "%s => %s", pr->m_name.c_str(),
-		  vhdlValue(tpkg.c_str(), pr->m_name, pv->value, value));
+		  vhdlValue(!strcasecmp(pr->m_name.c_str(), "ocpi_endian") ?
+			    "ocpi.types" : tpkg.c_str(),
+			    pr->m_name, pv->value, value));
 	} else {
 	  fprintf(f, "%s", any ? ", " : " #(");
 #if 0

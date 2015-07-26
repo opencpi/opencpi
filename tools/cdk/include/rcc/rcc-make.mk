@@ -1,4 +1,3 @@
-
 # #####
 #
 #  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
@@ -39,10 +38,16 @@ ifndef RCC_MAKE_MK
 RCC_MAKE_MK:=xxx
 include $(OCPI_CDK_DIR)/include/util.mk
 
-#ifdef RccTargets
-#RccTarget:=$(RccTargets)
-#endif
-
+# This allows component library level RCC libraries to be fed down to workers,
+# via RccLibrariesInternal, while allowing the worker itself to have more libraries
+# via setting Libraries or RccLibraries.
+# Library level RCC libraries also are specified via RccLibraries.
+override RccLibrariesInternal := $(RccLibraries) $(Libraries) $(RccLibrariesInternal)
+override RccIncludeDirsInternal := \
+  $(foreach l,$(RccLibrariesInternal),$(dir $l)include) \
+  $(RccIncludeDirs) $(IncludeDirs) $(RccIncludeDirsInternal)
+$(call OcpiDbgVar,RccLibrariesInternal)
+$(call OcpiDbgVar,RccIncludeDirsInternal)
 ifndef RccTargets
 ifdef RccTarget
 RccTargets:=$(RccTarget)
@@ -56,19 +61,16 @@ endif
 
 $(call OcpiDbgVar,RccTargets)
 
-RccOs=$(word 1,$(subst -, ,$1))
+RccOs=$(word 1,$(subst -, ,$(or $1,$(RccTarget))))
 RccOsVersion=$(word 2,$(subst -, ,$1))
 RccArch=$(word 3,$(subst -, ,$1))
 
-#ifndef RccTargets
-#RccTargets=$(RccTarget)
-#endif
 # Read in all the tool sets indicated by the targets
 # 
 ifeq ($(filter clean cleanrcc,$(MAKECMDGOALS)),)
 
 $(foreach t,$(RccTargets),\
-  $(foreach m,$(if $(findstring $(OCPI_TOOL_HOST),$t),$t, $(OCPI_TOOL_HOST)=$t),\
+  $(foreach m,$(if $(findstring $(OCPI_TOOL_HOST),$t),$t,$(OCPI_TOOL_HOST)=$t),\
     $(if $(or $(wildcard $(OCPI_CDK_DIR)/include/rcc/$m.mk),$(strip \
               $(wildcard $(OCPI_CDK_DIR)/platforms/$(OCPI_TARGET_PLATFORM)/$m.mk))),\
        $(eval include $(OCPI_CDK_DIR)/include/rcc/$m.mk),\

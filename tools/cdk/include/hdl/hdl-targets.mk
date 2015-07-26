@@ -43,49 +43,25 @@ HdlToolSet_icarus:=icarus
 HdlToolSet_stratix4:=quartus
 HdlToolSet_stratix5:=quartus
 
-# Platforms
-ifdef comment
-# Leave this out until we verify the basic function.
+# Make the initial definition as a simply-expanded variable
+HdlAllPlatforms:=
 ifndef OCPI_HDL_PLATFORM_PATH
-  # Default platform path is first a local platforms dir, then the OpenCPI one
   OCPI_HDL_PLATFORM_PATH:=$(OCPI_BASE_DIR)/hdl/platforms
-  ifneq ($(wildcard ../../platforms),)
-    OCPI_HDL_PLATFORM_PATH:=$(call OcpiAbsPath,../../platforms):$(OCPI_HDL_PLATFORM_PATH)
-  endif
-endif  
 endif
-ifdef OCPI_HDL_PLATFORM_PATH
-define doPlatformDir
-  HdlPlatformsInDir:=$$(< $$1/lib/platforms)
-  ifndef HdlPlatformsInDir
-    $$(error The file $1/lib/platforms has no platform names in it.)
-  endif
-  $(foreach p,$(HdlPlatformsInDir),\
-    $(eval include $$1/$p/platform.mk)\
-    $(eval HdlPlatformDir_$p:=$$1/$p))
+define doPlatformsDir
+  HdlSavePlatforms:=$(HdlAllPlatforms)
+  include $1/$(notdir $1).mk
+  HdlNewPlatforms:=$(filter-out $(HdlSavePlatforms),$(HdlAllPlatforms))
+  $(foreach p,$(filter-out $(HdlSavePlatforms),$(HdlAllPlatforms)),
+    $(eval HdlPlatformDir_$p:=$1/$p))
 endef
-# The platform path is only for built platforms
+  
 $(foreach d,$(subst :, ,$(OCPI_HDL_PLATFORM_PATH)),\
-  $(or $(wildcard $d),\
-    $(error Platform directory %d not found.)) \
-  $(eval $(call doPlatformDir,$d)))
-else
-HdlAllPlatforms:=ml555 schist ml605 ocpiIsim alst4 alst4x wilda5 isim_pf xsim_pf n210 modelsim_pf iva1lpe zed wilda5 zzed sp6 zed_zipper
-# Parts as chip-speed-package
-HdlPart_ml555:=xc5vlx50t-1-ff1136
-HdlPart_schist:=xc5vsx95t-2-ff1136
-HdlPart_ml605:=xc6vlx240t-1-ff1156
-HdlPart_alst4:=ep4sgx230k-c2-f40
-HdlPart_alst4x:=ep4sgx530k-c2-h40
-HdlPart_n210:=xc3sd3400a-5-fg676
-HdlPart_iva1lpe:=xc6slx45-2-csg324
-HdlPart_isim_pf:=isim
-HdlPart_xsim_pf:=xsim
-HdlPart_modelsim_pf:=modelsim
-HdlPart_wilda5:=ep5sgsmd8k2-c3-f40
-HdlPart_zed:=xc7z020-1-clg484
-HdlPart_zed_zipper:=xc7z020-1-clg484
-HdlPart_zzed:=xc7z020-1-clg484
-endif
+  $(foreach p,$(notdir $d),\
+    $(eval -include $d/$(notdir $d).mk)\
+    $(if $(filter platforms,$p),$(eval $(call doPlatformsDir,$d)), \
+       $(eval HdlAllPlatforms+=$p) \
+       $(eval HdlPlatformDir_$p:=$d))))
 
+$(call OcpiDbgVar,HdlAllPlatforms)
 endif

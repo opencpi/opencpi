@@ -1,10 +1,14 @@
 <!-- A zed platform with a myriad zipper/lime permanently attached rather in a slot -->
-<HdlPlatform Language="VHDL" spec='platform_spec'>
-  <!-- The two ports every platform worker must have - should be in spec but not supported yet -->
-  <metadata master='true'/>
-  <timeservice master='true'/>
+<HdlPlatform Language="VHDL" spec='platform-spec'>
+  <!-- All platform workers must provide these two ports -->
+  <metadata master='true'/> <!-- access to container metadata via the platform worker -->
+  <timebase master='true'/> <!-- providing a timebase for the time service -->
   <!-- This platform worker provides a control plane -->
   <cpmaster master='true'/>
+  <!-- Declare and parameterize the time_server device worker for this platform -->
+  <device worker='time_server'>
+    <property name='frequency' value='50e6'/>
+  </device>
   <unoc name="zynq" master='true'/>
   <unoc name="zynq_slave"/>
   <property name="axi_error" type="bool" volatile='true'/>

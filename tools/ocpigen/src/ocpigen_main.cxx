@@ -94,8 +94,8 @@ add to tree.
   CMD_OPTION  (os,        O,    String, NULL, "Specify the operating system target for the artifact XML") \
   CMD_OPTION  (os_version,V,    String, NULL, "Specify the operating system version for the artifact XML") \
   CMD_OPTION  (package,   p,    String, NULL, "Specify the HDL package for the worker") \
-  CMD_OPTION  (config,    c,    String, NULL, "Specify the configuration for the artifact XML") \
   CMD_OPTION  (pfconfig,  X,    String, NULL, "Parse top level platform/configuration attribute") \
+  CMD_OPTION  (pfdir,     F,    String, NULL, "The directory where the current platform lives") \
 
 #include "CmdOption.h"
 
@@ -182,9 +182,6 @@ main(int argc, const char **argv) {
 	else
 	  addInclude(*++ap);
 	break;
-      case 'c':
-	container = *++ap;
-	break;
       case 'D':
 	outDir = *++ap;
 	break;
@@ -223,6 +220,9 @@ main(int argc, const char **argv) {
 	attribute = *++ap;
 	break;
       case 'r':
+	break;
+      case 'F':
+	platformDir = *++ap;
 	break;
       default:
 	fprintf(stderr, "Unknown flag: %s\n", *ap);

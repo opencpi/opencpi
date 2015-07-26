@@ -81,6 +81,7 @@ namespace OCPI {
     class ExternalBuffer;
 
     class Port : public OCPI::Container::PortBase<Worker, Port, ExternalPort> {
+      friend class Worker;
       OCPI::DataTransport::Port *           m_dtPort;
       Port *                                m_localOther; // a connected local (same container) port.
       //      const OCPI::Util::PValue *            m_params;     // Our initial properties
