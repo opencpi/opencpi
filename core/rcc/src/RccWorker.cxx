@@ -1005,6 +1005,22 @@ controlOperation(OU::Worker::ControlOperation op) {
 		   m_worker.name().c_str());
      return *app;
    }
+   size_t RCCUserWorker::
+   memberItemTotal(uint64_t total, size_t maxPerMessage, size_t *perMessagep) {
+    size_t 
+      perMessage = std::min((uint64_t)maxPerMessage, (total + getCrewSize() - 1)/getCrewSize()),
+      nMessages = (total + perMessage - 1)/perMessage,
+      itemRemainder = total % perMessage,
+      msgRemainder = (nMessages - (itemRemainder ? 1 : 0)) % getCrewSize();
+    ocpiDebug("per %zu, messages %zu, mremainder %zu iremainder %zu\n",
+	      perMessage, nMessages, msgRemainder, itemRemainder);
+    if (perMessagep)
+      *perMessagep = perMessage;
+    return
+      ((nMessages - msgRemainder) / getCrewSize()) * perMessage + 
+      (msgRemainder && getMember() < msgRemainder ? perMessage : 0) +
+      (itemRemainder && getMember() == msgRemainder ? itemRemainder : 0);
+   }
 
    typedef void(*Witem)(void *);
 

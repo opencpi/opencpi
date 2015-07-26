@@ -96,6 +96,8 @@ namespace OCPI {
 	unsigned *m_usedContainers;     // container for each crew member
 	unsigned m_firstMember;         // index of first member in launch members
 	void collectCandidate(OCPI::Library::Candidate &c, unsigned n);
+	void finalizePortParam(OU::Assembly::Instance &ui, const OCPI::Util::PValue *params,
+			       const char *param);
 	Instance();
 	~Instance();
       };
@@ -174,6 +176,7 @@ namespace OCPI {
       unsigned getUsedContainer(unsigned container);
       bool connectionsOk(OCPI::Library::Candidate &c, unsigned instNum);
       void finalizeProperties(const OCPI::Util::PValue *params);
+      void finalizePorts(const OCPI::Util::PValue *params);
       void finalizeExternals();
       bool bookingOk(Booking &b, OCPI::Library::Candidate &c, unsigned n);
       //      CMap assessCandidate(Instance &i, OCPI::Library::Candidate &c, unsigned &backUp);

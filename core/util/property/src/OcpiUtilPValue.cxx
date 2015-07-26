@@ -263,7 +263,7 @@ namespace OCPI {
 	p.value.vString = strdup(val.m_String);
 	p.owned = true;
       } else
-	p.value.vULongLong = val.m_ULongLong;
+	p.value.vULongLong = val.m_ULongLong; // FIXME: little endian assumption
       return NULL;
     }
 

@@ -110,14 +110,16 @@ printRccBaseType(FILE *f, OU::Member &m, unsigned indent, size_t &offset, unsign
   }
 }
 static void
-topTypeName(std::string &name, OU::Member *m, const char **baseTypes) {
+topTypeName(std::string &name, OU::Member *m, const char **baseTypes, Language lang) {
   if (m->m_baseType == OA::OCPI_Struct)
     camel(name, m->m_name.c_str());
   else if (m->m_baseType == OA::OCPI_Type)
     name = "OCPI_Type";
-  else
-    name = baseTypes[m->m_baseType];
-  //  printf("BASETYPE %u:%s\n", m->m_baseType, rccTypes[m->m_baseType]);
+  else {
+    const char *btype = baseTypes[m->m_baseType];
+    OU::format(name, "%s%s", !strncmp("RCC", btype, 3)  && lang == CC ? "OCPI::RCC::" : "",
+	       btype);
+  }
 }
 // Print type for a member, including sequence type etc.
 // Note this is called for two different purposes:
@@ -462,9 +464,6 @@ emitImplRCC() {
     if ( m_scalable ) {
       fprintf(f,
 	      "\n"
-	      "  unsigned getRank() const;                        // My rank within my crew \n"
-	      "  unsigned getCrewSize() const ;                   // Number of members in my crew\n"
-	      "  std::vector<unsigned> &getOtherCrewSize() const; // Number of members in crew connected to other end of port, vector len = number of fan in/out\n"
 	      "  unsigned getNearestNeighbor( unsigned next ) const;   // next=0 is nearest, next=1 next nearest etc.\n\n"
 	      );
     }
@@ -1196,7 +1195,13 @@ emitRccCppImpl(FILE *f) {
 
 	if (o->isTopFixedSequence()) {
 	  std::string name;
-	  topTypeName(name, o->args(), m_worker->m_baseTypes);
+	  topTypeName(name, o->args(), m_worker->m_baseTypes, m_worker->m_language);
+	  if (m_isProducer)
+	    fprintf(f,
+		    "    void %s_set_length(size_t n) {\n"
+		    "      setLength(n*sizeof(%s));\n"
+		    "    }\n",
+		    o->name().c_str(), name.c_str());
 	  fprintf(f,
 		  "    size_t %s_length() { return topLength(sizeof(%s)); }\n",
 		  o->name().c_str(), name.c_str());

@@ -412,6 +412,42 @@ namespace OCPI {
 	}
       }
     }
+    void ApplicationI::Instance::
+    finalizePortParam(OU::Assembly::Instance &ui, const OU::PValue *params, const char *param) {
+      const char *portAssignment;
+      for (unsigned nn = 0; OU::findAssignNext(params, param, ui.m_name.c_str(), portAssignment,
+					       nn); ) {
+	const char *eq = strchr(portAssignment, '=');
+	if (!eq)
+	  throw OU::Error("Setting of \"%s\" value for a port is invalid: \"%s\"",
+			  param, portAssignment);
+	std::string port;
+	OU::Assembly::Port *ap = NULL;
+	port.assign(portAssignment, eq - portAssignment);
+	for (std::list<OU::Assembly::Port*>::const_iterator pi = ui.m_ports.begin(); 
+	     pi != ui.m_ports.end(); pi++)
+	  if (!strcasecmp((*pi)->m_name.c_str(), port.c_str())) {
+	    ap = *pi;
+	    break;
+	  }
+	if (!ap)
+	  throw OU::Error("In \"%s\" parameter \"%s\", port \"%s\" not found",
+			  param, portAssignment, port.c_str());
+	ap->m_parameters.add(param, eq + 1);
+      }
+    }
+
+    // Apply any port-related parameters now that we actually know all the port names.
+    void ApplicationI::
+    finalizePorts(const OU::PValue *params) {
+      Instance *i = m_instances;
+      for (unsigned n = 0; n < m_nInstances; n++, i++) {
+	OU::Assembly::Instance &ui = m_assembly.instance(n).m_utilInstance;
+	i->finalizePortParam(ui, params, "transport");
+	i->finalizePortParam(ui, params, "buffersize");
+	i->finalizePortParam(ui, params, "buffercount");
+      }
+    }
 
     void ApplicationI::
     finalizeExternals() {
@@ -605,10 +641,15 @@ namespace OCPI {
       // instance-related initializations
       m_nInstances = m_assembly.nInstances();
       m_instances = new Instance[m_nInstances];
-      // Check that params that reference instances are valid.
+      // Check that params that reference instances are valid, and that cannot be
+      // checked in the assembly parsing in any case (i.e. do not depend on
+      // any library info).
       const char *err;
       if ((err = m_assembly.checkInstanceParams("container", params, false)) ||
-	  (err = m_assembly.checkInstanceParams("scale", params, false)))
+	  (err = m_assembly.checkInstanceParams("scale", params, false)) ||
+	  (err = m_assembly.checkInstanceParams("transport", params, false)) ||
+	  (err = m_assembly.checkInstanceParams("buffersize", params, false)) ||
+	  (err = m_assembly.checkInstanceParams("buffercount", params, false)))
 	throw OU::Error("%s", err);
       // First pass - make sure there are some containers to support some candidate
       // and remember which containers can support which candidates
@@ -722,6 +763,7 @@ namespace OCPI {
       // All the implementation selection is done, so now do the final check of properties
       // since properties can be implementation specific.  This includes parsing values.
       finalizeProperties(params);
+      finalizePorts(params);
       finalizeExternals();
     }
 

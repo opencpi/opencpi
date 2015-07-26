@@ -385,6 +385,7 @@ typedef struct {
    RCCUserPort();
  public:
    inline bool hasBuffer() const { return m_rccBuffer != NULL; }
+   inline size_t connectedCrewSize() const { return m_rccPort.connectedCrewSize; }
    size_t
      topLength(size_t elementLength);
    void
@@ -420,9 +421,15 @@ typedef struct {
    RCCUserPort *m_ports; // array of C++ port objects
 
  public:
-   void addTask(  RCCTask task, RCCTaskArgs * args );
-   void addTask(  RCCUserTask * task  );
+   size_t getMember() const { return m_rcc.member; }
+   size_t getCrewSize() const { return m_rcc.crewSize; };
+   void addTask(RCCTask task, RCCTaskArgs *args);
+   void addTask(RCCUserTask *task);
    bool join(bool block=true);
+   // Simple distribution calculation of now many items a given member will be responsible
+   // for given a total, and a limit on message sizes.
+   size_t memberItemTotal(uint64_t totalItems, size_t maxPerMessage = 0,
+			  size_t *perMessage = NULL);
 
  protected:
    bool m_first;

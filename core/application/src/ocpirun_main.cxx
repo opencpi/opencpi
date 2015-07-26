@@ -74,6 +74,9 @@ usage(const char *name) {
 	  "    -T <instance-name>=<port-name>=<transport-name>\n"
 	  "                 # set transport of connection at a port\n"
 	  "                 # if no port name, then the single output port\n"
+	  "    -Z <instance-name>=<port-name>=<buffersize>\n"
+	  "                 # set buffer size of connection at a port\n"
+	  "                 # if no port name, then the single output port\n"
 	  "    -N <instance-name>=<scale-factor>\n",
 	  name);
   exit(1);
@@ -179,8 +182,15 @@ main(int /*argc*/, const char **argv) {
       case 'T':
 	addParam("transport", ap);
 	break;
+      case 'B':
+	addParam("buffercount", ap);
+	break;
+      case 'Z':
+	addParam("buffersize", ap);
+	break;
       case 'N':
 	addParam("scale", ap);
+	break;
       case 'n':
 	nProcs = atoi(arg(ap));
 	break;

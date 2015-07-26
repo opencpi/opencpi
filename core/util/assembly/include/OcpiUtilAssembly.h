@@ -159,7 +159,9 @@ namespace OCPI {
 	mutable Role m_role;
 	unsigned m_instance;
 	size_t m_index;
-	PValueList m_parameters;
+	// This mutable is because some port parameter values are added later by name
+	// and the XML assembly might not use port names
+	mutable PValueList m_parameters;
 	Port *m_connectedPort; // the "other" port of the connection
 	//	Port();
 	//	Port(const Port&);
