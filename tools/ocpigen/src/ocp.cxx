@@ -28,6 +28,7 @@ OCP_SIGNALS
 #undef OCP_SIGNAL_SS
 #undef OCP_SIGNAL_SV
 
+#if 0
 static unsigned myfls(uint64_t n) {
   for (int i = sizeof(n)*8; i > 0; i--)
     if (n & ((uint64_t)1 << (i - 1)))
@@ -42,13 +43,14 @@ size_t floorLog2(uint64_t n) {
   //  ocpiInfo("Floor log2 of %u is %u", n, myfls(n)-1);
   return OCPI_UTRUNCATE(size_t, myfls(n) - 1);
 }
+#endif
 
 OcpPort::
 OcpPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *defName,
 	const char *&err) 
   : Port(w, x, sp, ordinal, type, defName, err),
-    m_values(NULL), m_nAlloc(0), m_impreciseBurst(false),
-    m_preciseBurst(false), m_dataWidth(0), m_byteWidth(0), m_continuous(false) {
+    m_values(NULL), m_nAlloc(0), m_impreciseBurst(false), m_preciseBurst(false), m_dataWidth(0),
+    m_dwFound(false), m_byteWidth(0), m_bwFound(false), m_continuous(false) {
   memset(&ocp, 0, sizeof(ocp));
   if (err)
     return;
@@ -64,8 +66,9 @@ OcpPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *d
 		       name(), clockName);
   else if (!(err = OE::getBoolean(x, "ImpreciseBurst", &m_impreciseBurst)) &&
 	   !(err = OE::getBoolean(x, "Continuous", &m_continuous)) &&
-	   !(err = OE::getNumber(x, "DataWidth", &m_dataWidth, 0, 8)) &&
-	   !(err = OE::getNumber(x, "ByteWidth", &m_byteWidth, 0, m_dataWidth)))
+	   !(err = OE::getExprNumber(x, "DataWidth", m_dataWidth, m_dwFound, NULL, &w)) &&
+	   //	   !(err = OE::getNumber(x, "DataWidth", &m_dataWidth, &m_dwFound, 8)) &&
+	   !(err = OE::getNumber(x, "ByteWidth", &m_byteWidth, &m_bwFound, m_dataWidth)))
     err = OE::getBoolean(x, "PreciseBurst", &m_preciseBurst);
   // We can't create clocks at this point based on myclock, since
   // it might depend on what happens with other ports.
@@ -98,7 +101,8 @@ emitPortDescription(FILE *f, Language lang) const {
 }
 
 void OcpPort::
-emitRecordSignal(FILE *f, std::string &last, const char */*prefix*/, bool inWorker,
+emitRecordSignal(FILE *f, std::string &last, const char */*prefix*/, bool /*useRecord*/,
+		 bool /*inPackage*/, bool inWorker,
 		 const char *defaultIn, const char *defaultOut) {
   if (last.size())
     fprintf(f, last.c_str(), ";");

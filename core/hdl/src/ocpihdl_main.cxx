@@ -30,9 +30,6 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <errno.h>
 #include <signal.h> // for SIGPIPE
@@ -97,7 +94,7 @@ static bool simDump = true;
 static unsigned
   sleepUsecs = 200000,  // how much time between quota injections
   spinCount = 20,      // how much quote per timeout AND per control message
-  simTicks = 10000000;   // how much quote to run
+  simTicks = 10000000;   // how much quota to run
 static std::string name, error, endpoint;
 static OH::Driver *driver;
 static OH::Device *dev;
@@ -706,14 +703,14 @@ admin(const char **) {
   i = cAccess->get32Register(numRegions, OH::OccpAdminRegisters);
   printf(" numDPMemReg:  0x%08x (%u)\n", i, i);
   uint32_t regions[OCCP_MAX_REGIONS];
-  cAccess->getRegisterBytes(regions, regions, OH::OccpAdminRegisters);
+  cAccess->getRegisterBytes(regions, regions, OH::OccpAdminRegisters, false);
   if (i < 16) 
     for (k=0; k<i; k++)
       printf("    DP%2d:      0x%08x\n", k, regions[k]);
 
   // Print out the 64B 16DW UUID in little-endian looking format...
   uint32_t uuid[16];
-  cAccess->getRegisterBytes(uuid, uuid, OH::OccpAdminRegisters);
+  cAccess->getRegisterBytes(uuid, uuid, OH::OccpAdminRegisters, false);
   for (k=0;k<16;k+=4)
     printf(" UUID[%2d:%2d]:  0x%08x 0x%08x 0x%08x 0x%08x\n",
 	   k+3, k, uuid[k+3], uuid[k+2], uuid[k+1], uuid[k]);
@@ -1655,6 +1652,7 @@ simulate(const char **ap) {
     bad("Simulator server creation error");
   if (server.run(simExec, error))
     bad("Simulator server execution error");
+  ocpiDebug("Simulation server finished: '%s'", error.c_str());
 }
 
 static void

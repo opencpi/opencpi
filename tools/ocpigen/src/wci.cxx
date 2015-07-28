@@ -88,7 +88,7 @@ deriveOCP() {
     if (m_worker->m_ctl.sizeOfConfigSpace <= 32)
       ocp.MAddr.width = 5;
     else
-      ocp.MAddr.width = ceilLog2(m_worker->m_ctl.sizeOfConfigSpace);
+      ocp.MAddr.width = OU::ceilLog2(m_worker->m_ctl.sizeOfConfigSpace);
     if (m_worker->m_ctl.sizeOfConfigSpace != 0)
       ocp.MAddrSpace.value = s;
     if (m_worker->m_ctl.sub32Bits)
@@ -260,7 +260,8 @@ emitRecordArray(FILE *f) {
 }
 
 void WciPort::
-emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker,
+emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord,
+		 bool inPackage, bool inWorker,
 		 const char */*defaultIn*/, const char */*defaultOut*/) {
   Worker &w = *m_worker;
   if (master || m_worker->m_assembly) {
@@ -280,7 +281,7 @@ emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker,
 	       (int)w.m_maxPortTypeName, out.c_str(), master ? "m2s" : "s2m",
 	       count > 1 ? "_array" : "", index.c_str());
   } else {
-    OcpPort::emitRecordSignal(f, last, prefix, inWorker, NULL,
+    OcpPort::emitRecordSignal(f, last, prefix, inRecord, inPackage, inWorker, NULL,
 			      inWorker ? "(done=>btrue, others=>bfalse)" : NULL);
     if (inWorker) {
       if (w.m_ctl.writables || w.m_ctl.readbacks || w.m_ctl.rawProperties) {
@@ -343,4 +344,42 @@ emitPortSignals(FILE *f, Attachments &atts, Language lang, const char *indent,
     Port::emitPortSignals(f, atts, lang, indent, any, comment, last, myComment, adapt);
   else
     OcpPort::emitPortSignals(f, atts, lang, indent, any, comment, last, myComment, adapt);
+}
+
+const char *WciPort::
+finalizeExternal(Worker &aw, Worker &iw, InstancePort &/*ip*/,
+		 bool &cantDataResetWhileSuspended) {
+  // slave ports that are connected are ok as is.
+  assert(master || this == m_worker->m_wci);
+  if (!master && !aw.m_noControl) {
+    // Make assembly WCI the union of all inside, with a replication count
+    // We make it easier for CTOP, hoping that wires dissolve appropriately
+    // FIXME: when we generate containers, these might be customized, but not now
+    //if (iw->m_ctl.sizeOfConfigSpace > aw->m_ctl.sizeOfConfigSpace)
+    //            aw->m_ctl.sizeOfConfigSpace = iw->m_ctl.sizeOfConfigSpace;
+    aw.m_ctl.sizeOfConfigSpace = (1ll<<32) - 1;
+    if (iw.m_ctl.writables)
+      aw.m_ctl.writables = true;
+#if 0
+    // FIXME: until container automation we must force this
+    if (iw.m_ctl.readables)
+#endif
+      aw.m_ctl.readables = true;
+#if 0
+    // FIXME: Until we have container automation, we force the assembly level
+    // WCIs to have byte enables.  FIXME
+    if (iw.m_ctl.sub32Bits)
+#endif
+      aw.m_ctl.sub32Bits = true;
+    aw.m_ctl.controlOps |= iw.m_ctl.controlOps; // needed?  useful?
+    // Reset while suspended: This is really only interesting if all
+    // external data ports are only connected to ports of workers where this
+    // is true.  And the use-case is just that you can reset the
+    // infrastructure while maintaining worker state.  BUT resetting the
+    // CP could clearly reset anything anyway, so this is only relevant to
+    // just reset the dataplane infrastructure.
+    if (!m_worker->m_wci->resetWhileSuspended())
+      cantDataResetWhileSuspended = true;
+  }
+  return NULL;
 }

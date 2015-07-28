@@ -84,7 +84,7 @@ parseHdlImpl(const char *package) {
     m_isDevice = true;
   if ((err = parseSpec(package)) ||
       (err = parseImplControl(xctl)) ||
-      (err = OE::getNumber(m_xml, "datawidth", &dw, &dwFound)) ||
+      (err = OE::getExprNumber(m_xml, "datawidth", dw, dwFound, NULL, this)) ||
       (err = OE::getBoolean(m_xml, "outer", &m_outer)))
     return err;
   if (dwFound)
@@ -163,6 +163,7 @@ parseHdlImpl(const char *package) {
       (err = initImplPorts(m_xml, "timeservice", createPort<TimeServicePort>)) ||
       (err = initImplPorts(m_xml, "CPMaster", createPort<CpPort>)) ||
       (err = initImplPorts(m_xml, "uNOC", createPort<NocPort>)) ||
+      (err = initImplPorts(m_xml, "SDP", createPort<SdpPort>)) ||
       (err = initImplPorts(m_xml, "Metadata", createPort<MetaDataPort>)) ||
       (err = initImplPorts(m_xml, "Control", createPort<WciPort>)) ||
       (err = initImplPorts(m_xml, "DevSignals", createPort<DevSignalsPort>)) ||

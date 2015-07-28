@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -43,7 +42,6 @@
  *    Revision Detail: Created
  */
 
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <DtHandshakeControl.h>
 #include <OcpiOutputBuffer.h>

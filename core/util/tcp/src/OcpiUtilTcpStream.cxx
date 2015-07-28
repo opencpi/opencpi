@@ -163,7 +163,7 @@ overflow (int_type i)
   }
 
   char c = traits_type::to_char_type (i);
-  unsigned long long count;
+  size_t count;
 
   try {
     count = m_socket.send (&c, 1);

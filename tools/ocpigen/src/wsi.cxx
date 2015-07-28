@@ -68,7 +68,7 @@ deriveOCP() {
   ocp.MCmd.width = 3;
   if (m_preciseBurst) {
     ocp.MBurstLength.width =
-      floorLog2((m_protocol->m_maxMessageValues * m_protocol->m_dataValueWidth +
+      OU::floorLog2((m_protocol->m_maxMessageValues * m_protocol->m_dataValueWidth +
 		 m_dataWidth - 1)/
 		m_dataWidth) + 1;
     //	ocpiInfo("Burst %u from mmv %u dvw %u dw %u",
@@ -98,7 +98,7 @@ deriveOCP() {
   if (m_abortable)
     ocp.MDataInfo.width++;
   if (m_nOpcodes > 1)
-    ocp.MReqInfo.width = ceilLog2(m_nOpcodes);
+    ocp.MReqInfo.width = OU::ceilLog2(m_nOpcodes);
   ocp.MReqLast.value = s;
   ocp.MReset_n.value = s;
   ocp.SReset_n.value = s;

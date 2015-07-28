@@ -4,7 +4,7 @@ export OCPI_HAVE_CORBA=1
 export OCPI_EXCLUDE_TARGETS=xilinx
 export OCPI_VERILATOR_DIR=/opt/opencpi/prerequisites/verilator/$OCPI_BUILD_HOST
 export OCPI_ICARUS_DIR=/opt/opencpi/prerequisites/icarus/$OCPI_BUILD_HOST
-export OCPI_CXXFLAGS+=" -Wno-sign-conversion"
+export OCPI_CXXFLAGS+=" -std=c++11 -Wno-sign-conversion"
 # replace default with our custom version
 #export OCPI_OMNI_DIR=/Users/jek/sw/omniORB-4.1.5-ocpi/OCPI_INSTALL
 #export OPENCL_INCLUDE_DIR=/usr/local/share/NVIDIA_GPU_Computing_SDK/OpenCL/common/inc

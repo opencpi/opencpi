@@ -217,13 +217,16 @@ class WciPort : public OcpPort {
   void emitRecordOutputs(FILE *f);
   void emitRecordInterface(FILE *f, const char *implName);
   //  void emitWorkerEntitySignals(FILE *f, std::string &last, unsigned maxPropName);
-  void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker,
-			const char *defaultIn, const char *defaultOut);
+  void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord,
+			bool inPackage, bool inWorker, const char *defaultIn,
+			const char *defaultOut);
   void emitRecordArray(FILE *f);
   void emitVHDLShellPortMap(FILE *f, std::string &last);
   void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 		       const char *indent, bool &any, std::string &comment,
 		       std::string &last, const char *myComment, OcpAdapt *adapt);
+  const char *finalizeExternal(Worker &aw, Worker &iw, InstancePort &ip,
+			       bool &cantDataResetWhileSuspended);
 };
 
 class RccPort : public DataPort {
@@ -291,6 +294,8 @@ class WmemiPort : public OcpPort {
   inline const char *typeName() const { return "WMemI"; }
   const char *deriveOCP();
   void emitPortDescription(FILE *f, Language lang) const;
+  const char *finalizeExternal(Worker &aw, Worker &iw, InstancePort &ip,
+			       bool &cantDataResetWhileSuspended);
 };
 class WtiPort : public OcpPort {
   size_t m_secondsWidth, m_fractionWidth;
@@ -309,8 +314,9 @@ class WtiPort : public OcpPort {
   void emitVHDLShellPortMap(FILE *f, std::string &last);
   void emitRecordInputs(FILE *f);
   void emitRecordOutputs(FILE *f);
-  //  void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker);
   void emitPortDescription(FILE *f, Language lang) const;
+  const char *finalizeExternal(Worker &aw, Worker &iw, InstancePort &ip,
+			       bool &cantDataResetWhileSuspended);
 };
 class CpPort : public Port {
   CpPort(const CpPort &other, Worker &w , std::string &name, size_t count, const char *&err);
@@ -338,6 +344,25 @@ class NocPort : public Port {
   void emitRecordInterface(FILE *f, const char *implName);
   void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
 };
+class SdpPort : public Port {
+  SdpPort(const SdpPort &other, Worker &w , std::string &name, size_t count,
+	  const char *&err);
+ public:
+  SdpPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
+  Port &clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role *role,
+	      const char *&err) const;
+  inline const char *prefix() const { return "sdp"; }
+  inline const char *typeName() const { return "SDP"; }
+  void emitRecordTypes(FILE *f);
+  void emitRecordInterface(FILE *f, const char *implName);
+  void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
+  void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord,
+			bool inPackage, bool inWorker, const char *defaultIn,
+			const char *defaultOut);
+  void emitVHDLShellPortMap(FILE *f, std::string &last);
+  void emitPortSignal(FILE *f, bool any, const char *indent, std::string &sName,
+		      const char *name, std::string &index);
+};
 class MetaDataPort : public Port {
   MetaDataPort(const MetaDataPort &other, Worker &w , std::string &name, size_t count,
 		  const char *&err);
@@ -361,7 +386,8 @@ class TimeServicePort : public Port {
   inline const char *prefix() const { return "time"; }
   inline const char *typeName() const { return "TimeService"; }
   void emitRecordTypes(FILE *f);
-  void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker,
+  void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord,
+			bool inPackage, bool inWorker,
 			const char *defaultIn, const char *defaultOut);
   void emitRecordInterface(FILE *f, const char *implName);
   void emitVHDLShellPortMap(FILE *f, std::string &last);
@@ -666,7 +692,7 @@ class Worker : public Parsed, public OU::IdentResolver {
 
 #define IMPL_ATTRS \
   "name", "spec", "paramconfig", "reentrant", "scaling", "scalable", "controlOperations"
-#define IMPL_ELEMS "componentspec", "properties", "property", "specproperty", "propertysummary", "xi:include", "controlinterface",  "timeservice", "unoc"
+#define IMPL_ELEMS "componentspec", "properties", "property", "specproperty", "propertysummary", "xi:include", "controlinterface",  "timeservice", "unoc", "sdp"
 #define GENERIC_IMPL_CONTROL_ATTRS \
   "name", "SizeOfConfigSpace", "ControlOperations", "Sub32BitConfigProperties"
 #define ASSY_ELEMS "instance", "connection", "external"
@@ -695,6 +721,5 @@ extern void
   addLibrary(const char *lib),
   emitLastSignal(FILE *f, std::string &last, Language lang, bool end);
 
-extern size_t ceilLog2(uint64_t n), floorLog2(uint64_t n), rawBitWidth(const OU::ValueType &dt);
-inline size_t bitsForMax(uint64_t n) { return ceilLog2(n + 1); }
+extern size_t rawBitWidth(const OU::ValueType &dt);
 #endif

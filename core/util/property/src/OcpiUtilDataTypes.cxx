@@ -31,8 +31,6 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define __STDC_LIMIT_MACROS // wierd standards goof up
-
 #include <string.h>
 #include <climits>
 #include <set>
@@ -138,6 +136,7 @@ namespace OCPI {
       }
       return NULL;
     }
+#if 0
     // Evaluate the expression, using the resolver, and if the expression was variable,
     // save the expression so it can be reevaluated again later when the values of
     // variables are different.
@@ -164,12 +163,12 @@ namespace OCPI {
       const char *a = ezxml_cattr(x, attr);
       if (a) {
 	found = true;
-        return parseExprNumber(a, np, &expr, resolver);
+        return OE::parseExprNumber(a, np, &expr, resolver);
       }
       found = false;
       return NULL;
     }
-
+#endif
     const char *
     Member::parse(ezxml_t xm, bool isFixed, bool hasName, const char *hasDefault,
 		  unsigned ordinal, const IdentResolver *resolver) {
@@ -238,11 +237,11 @@ namespace OCPI {
 	  // enums have a baseTypeSize of 32 per IDL
 	}
 	if (m_baseType == OA::OCPI_String) {
-	  if ((err = getExprNumber(xm, "StringLength", m_stringLength, found,
-				   m_stringLengthExpr, resolver)) ||
+	  if ((err = OE::getExprNumber(xm, "StringLength", m_stringLength, found,
+				       &m_stringLengthExpr, resolver)) ||
 	      (!found &&
-	       (err = getExprNumber(xm, "size", m_stringLength, found, m_stringLengthExpr,
-				    resolver))))
+	       (err = OE::getExprNumber(xm, "size", m_stringLength, found, &m_stringLengthExpr,
+					resolver))))
 	    return err;
 	  if (isFixed) {
 	    if (!found)
@@ -261,7 +260,7 @@ namespace OCPI {
       size_t arrayLength;
       std::string expr;
       const char *arrayDimensions;
-      if ((err = getExprNumber(xm, "ArrayLength", arrayLength, isArray, expr, resolver)))
+      if ((err = OE::getExprNumber(xm, "ArrayLength", arrayLength, isArray, &expr, resolver)))
 	return err;
       if (isArray) {
 	if (arrayLength == 0)
@@ -286,7 +285,7 @@ namespace OCPI {
 	m_arrayDimensionsExprs.resize(v.m_nElements);
 	const char **p = v.m_pString;
 	for (unsigned n = 0; n < v.m_nElements; n++, p++) {
-	  if ((err = parseExprNumber(*p, m_arrayDimensions[n], &m_arrayDimensionsExprs[n],
+	  if ((err = OE::parseExprNumber(*p, m_arrayDimensions[n], &m_arrayDimensionsExprs[n],
 				     resolver)))
 	    return err;
 	  if (m_arrayDimensions[n] == 0)
@@ -296,11 +295,11 @@ namespace OCPI {
       }
 
       // Deal with sequences after arrays (because arrays belong to declarators)
-      if ((err = getExprNumber(xm, "SequenceLength", m_sequenceLength, m_isSequence,
-			       m_sequenceLengthExpr, resolver)) ||
+      if ((err = OE::getExprNumber(xm, "SequenceLength", m_sequenceLength, m_isSequence,
+			       &m_sequenceLengthExpr, resolver)) ||
 	  (!m_isSequence &&
-	   ((err = getExprNumber(xm, "SequenceSize", m_sequenceLength, m_isSequence,
-				 m_sequenceLengthExpr, resolver)))))
+	   ((err = OE::getExprNumber(xm, "SequenceSize", m_sequenceLength, m_isSequence,
+				 &m_sequenceLengthExpr, resolver)))))
 	return err;
       if (m_isSequence && isFixed && m_sequenceLength == 0)
 	return "Sequence must have a bounded size";
@@ -321,7 +320,7 @@ namespace OCPI {
 	m_nItems = 1;
 	for (unsigned i = 0; i < m_arrayRank; i++) {
 	  if (m_arrayDimensionsExprs[i].length() &&
-	      (err = parseExprNumber(m_arrayDimensionsExprs[i].c_str(), m_arrayDimensions[i],
+	      (err = OE::parseExprNumber(m_arrayDimensionsExprs[i].c_str(), m_arrayDimensions[i],
 				     NULL,  &resolver)))
 	    return err;
 	  // FIXME: this is redundant with the code in parse() - share it
@@ -332,7 +331,7 @@ namespace OCPI {
       }
       if (m_isSequence) {
 	if (m_sequenceLengthExpr.length() &&
-	    (err = parseExprNumber(m_sequenceLengthExpr.c_str(), m_sequenceLength, NULL,
+	    (err = OE::parseExprNumber(m_sequenceLengthExpr.c_str(), m_sequenceLength, NULL,
 				   &resolver)))
 	  return err;
 	if (isFixed && m_sequenceLength == 0)
@@ -340,7 +339,7 @@ namespace OCPI {
       }
       if (m_baseType == OA::OCPI_String) {
 	if (m_stringLengthExpr.length() &&
-	    (err = parseExprNumber(m_stringLengthExpr.c_str(), m_stringLength, NULL, &resolver)))
+	    (err = OE::parseExprNumber(m_stringLengthExpr.c_str(), m_stringLength, NULL, &resolver)))
 	  return err;
 	if (isFixed && m_stringLength == 0)
 	  return "StringLength cannot be zero";

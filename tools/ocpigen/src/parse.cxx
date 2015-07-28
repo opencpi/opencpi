@@ -31,8 +31,7 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define __STDC_LIMIT_MACROS // wierd standards goof up
-#include <stdint.h>
+#include <inttypes.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -673,11 +672,26 @@ getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly) {
 
 const char*
 extractExprValue(const OU::Property &p, const OU::Value &v, OU::ExprValue &val) {
-  if (p.m_baseType != OA::OCPI_ULong)
-    return OU::esprintf("the '%s' parameter property is not ULong, so is invalid here",
+  switch (p.m_baseType) {
+  case OA::OCPI_Bool: val.number = v.m_Bool ? 1 : 0; break;
+  case OA::OCPI_UChar: val.number = v.m_UChar; break;
+  case OA::OCPI_UShort: val.number = v.m_UShort; break;
+  case OA::OCPI_ULong: val.number = v.m_ULong; break;
+  case OA::OCPI_Char: val.number = v.m_Char; break;
+  case OA::OCPI_Short: val.number = v.m_Short; break;
+  case OA::OCPI_Long: val.number = v.m_Long; break;
+  case OA::OCPI_LongLong: val.number = v.m_LongLong; break;
+  case OA::OCPI_ULongLong:
+    if (v.m_ULongLong > INT64_MAX)
+      return OU::esprintf("the \"%s\" parameter property value is too large.  Max is: %" PRIu64
+			  ", value is %" PRIu64, p.m_name.c_str(), INT64_MAX, v.m_ULongLong);
+    val.number = (int64_t)v.m_ULongLong;
+    break;
+  default:
+    return OU::esprintf("the \"%s\" parameter property is of an unsupported type", 
 			p.m_name.c_str());
+  }
   val.isNumber = true;
-  val.number = v.m_ULong;
   return NULL;
 }
 
@@ -696,7 +710,7 @@ getValue(const char *sym, OU::ExprValue &val) const {
 	return OU::esprintf("the '%s' parameter property has no value", sym);
       return extractExprValue(p, *p.m_default, val);
     }
-  return OU::esprintf("here is no property named '%s'", sym);
+  return OU::esprintf("there is no property named '%s'", sym);
 }
 
 

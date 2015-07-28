@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -50,12 +49,13 @@
 #include <iostream>
 #include <cstring>
 #include <stdint.h>
-#include <OcpiUtilVfs.h>
+#include "OcpiUtilVfs.h"
+#include "OcpiExprEvaluator.h"
 #include "ezxml.h"
 
 namespace OCPI {
   namespace Util {
-
+    struct IdentResolver;
     /**
      * \brief Defines the OCPI::Util::EzXml::Doc class.
      */
@@ -258,7 +258,11 @@ namespace OCPI {
 		    bool setDefault = true),
         *getNumber64(ezxml_t x, const char *attr, uint64_t *np,
 		     bool *found = NULL, uint64_t defaultValue = 0,
-		     bool setDefault = true, bool required = false);
+		     bool setDefault = true, bool required = false),
+	*getExprNumber(ezxml_t x, const char *attr, size_t &np, bool &found, std::string *expr,
+		       const IdentResolver *resolver),
+	*parseExprNumber(const char *a, size_t &np, std::string *expr,
+			 const IdentResolver *resolver);
       extern unsigned
 	countChildren(ezxml_t x, const char*cName),
 	countAttributes(ezxml_t x);

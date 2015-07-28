@@ -34,8 +34,6 @@
  * If holeOffset is zero there is no hole
  */
 
-#define __STDC_FORMAT_MACROS
-#define __STDC_LIMIT_MACROS
 #include <inttypes.h>
 #include <unistd.h>
 #include <sys/mman.h>

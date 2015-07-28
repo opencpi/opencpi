@@ -52,9 +52,6 @@
  *
  */
 
-
-
-#define __STDC_FORMAT_MACROS
 #include <stdlib.h>
 #include <inttypes.h>
 #include <string.h>

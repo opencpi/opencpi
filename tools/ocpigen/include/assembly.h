@@ -144,6 +144,7 @@ class Assembly {
   OU::Assembly *m_utilAssembly;
   Language      m_language;
   InstanceProperties m_properties; // property values applied to the whole assembly
+  size_t        m_nWti, m_nWmemi;
   const char
     *parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWorkerOk,
 	       const char *outDir),

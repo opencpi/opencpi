@@ -8,7 +8,7 @@ namespace OA = OCPI::API;
 Assembly::
 Assembly(Worker &w)
   : m_assyWorker(w), m_nInstances(0), m_nWCIs(0), m_instances(NULL), m_utilAssembly(NULL),
-    m_language(w.m_language) {
+    m_language(w.m_language), m_nWti(0), m_nWmemi(0) {
 }
 
 Assembly::

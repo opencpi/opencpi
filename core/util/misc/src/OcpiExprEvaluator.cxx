@@ -332,7 +332,7 @@ namespace OCPI {
       delete [] tokens;
       return err;
     }
-    //    IdentResolver::~IdentResolver(){}
+    IdentResolver::~IdentResolver() {}
   }
 }
 

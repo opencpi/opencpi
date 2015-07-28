@@ -39,6 +39,8 @@ class HdlContainer : public Worker, public HdlHasDevInstances {
   const char *
   emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContConnect &c);
   const char *
+  emitSDPConnection(std::string &assy, unsigned &unoc, size_t &index, const ContConnect &c);
+  const char *
   emitConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContConnect &c);
 public:  
   static HdlContainer *

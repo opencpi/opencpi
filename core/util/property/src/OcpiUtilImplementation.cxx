@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -32,7 +31,6 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define __STDC_LIMIT_MACROS
 #include <stdint.h>
 #include <string.h>
 #include <strings.h>

@@ -1,6 +1,7 @@
 // Support for data ports
 
 #include <assert.h>
+#include "OcpiUtilMisc.h"
 #include "wip.h"
 #include "hdl.h"
 
@@ -55,8 +56,8 @@ DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *
   m_opScaling.resize(m_protocol->m_nOperations, NULL);
   // Now we do implementation-specific initialization that will precede the
   // initializations for specific port types (WSI, etc.)
-  bool dwFound;
-  if ((err = OE::getNumber(m_xml, "DataWidth", &m_dataWidth, &dwFound)) ||
+  //  bool dwFound;
+  if (//(err = w.getNumber(m_xml, "DataWidth", &m_dataWidth, &dwFound)) ||
       // Adding optionality in the impl xml is only relevant to devices.
       (err = OE::getBoolean(m_xml, "Optional", &m_isOptional, true)) ||
       // Be careful not to clobber protocol-determined values (i.e. don't set default values)
@@ -74,11 +75,13 @@ DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *
       (err = OE::getNumber(m_xml, "Buffersize", &m_bufferSize, 0,
 			   m_protocol ? m_protocol->m_defaultBufferSize : 0)))
     return;
-  if (!dwFound) {
+  if (!m_dwFound) {
     if (w.m_defaultDataWidth >= 0)
       m_dataWidth = (unsigned)w.m_defaultDataWidth;
     else
       m_dataWidth = m_protocol->m_dataValueWidth;  // or granularity?
+    if (!m_bwFound)
+      m_byteWidth = m_dataWidth;
   } else if (!m_protocol->m_dataValueWidth && !m_protocol->nOperations())
     m_protocol->m_dataValueWidth = m_dataWidth;
   if (m_dataWidth >= m_protocol->m_dataValueWidth) {
@@ -376,7 +379,7 @@ emitRecordDataTypes(FILE *f) {
       }
     } else {
       fprintf(f, "  subtype %s_OpCode_t is std_logic_vector(%zu downto 0); -- for %zu opcodes\n",
-	      name(), ceilLog2(m_nOpcodes) - 1, m_nOpcodes);
+	      name(), OU::ceilLog2(m_nOpcodes) - 1, m_nOpcodes);
     }
   }
 }

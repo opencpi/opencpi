@@ -47,7 +47,6 @@
     Initial version.
 
 ************************************************************************** */
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <unistd.h>
 #include "OcpiOsAssert.h"
@@ -106,7 +105,14 @@ namespace OCPI {
     Container::
     ~Container() {
       ocpiDebug("Entering ~HDL::Container()");
-      OT::Emit::shutdown();
+      // Shut this base class down while we're still here
+      // Ignore any errors since it is not critical.
+      try {
+	OT::Emit::shutdown();
+      } catch (...) {
+	static const char msg[] = "***Exception during container shutdown\n";
+	write(2, msg, strlen(msg));
+      }
       this->lock();
       delete &m_device;
       ocpiDebug("Leaving ~HDL::Container()");
@@ -129,10 +135,11 @@ namespace OCPI {
 
       Artifact(Container &c, OCPI::Library::Artifact &lart, const OA::PValue *artifactParams) :
 	OC::ArtifactBase<Container,Artifact>(c, *this, lart, artifactParams) {
-	if (!lart.uuid().empty() && c.hdlDevice().isLoadedUUID(lart.uuid()))
-	  ocpiInfo("For HDL container %s, when loading bitstream %s, uuid matches what is already loaded\n",
-		   c.name().c_str(), name().c_str());
-	else {
+	if (!lart.uuid().empty() && c.hdlDevice().isLoadedUUID(lart.uuid())) {
+	  ocpiInfo("For HDL container %s, when loading bitstream %s, uuid matches what is "
+		   "already loaded\n", c.name().c_str(), name().c_str());
+	  c.hdlDevice().connect();
+	} else {
 	  ocpiInfo("Loading bitstream %s on HDL container %s\n",
 		   name().c_str(), c.name().c_str());
 	  c.hdlDevice().load(name().c_str());
@@ -283,8 +290,8 @@ OCPI_DATA_TYPES
       }
       inline void
       getPropertyBytes(const OA::PropertyInfo &info, size_t offset, uint8_t *buf,
-		       size_t nBytes) const {
-	WciControl::getPropertyBytes(info, offset, buf, nBytes);
+		       size_t nBytes, bool string) const {
+	WciControl::getPropertyBytes(info, offset, buf, nBytes, string);
       }
     };
     OC::Worker & Application::createWorker(OC::Artifact *art, const char *appInstName,

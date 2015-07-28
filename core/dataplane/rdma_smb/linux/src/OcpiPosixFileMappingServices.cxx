@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -48,7 +47,6 @@
 #ifndef OCPI_POSIX_FILEMAPPING_SERVICES_H_
 #define OCPI_POSIX_FILEMAPPING_SERVICES_H_
 
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <string>
 #include <cstdio>

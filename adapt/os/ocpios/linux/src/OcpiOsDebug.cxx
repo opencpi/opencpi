@@ -96,6 +96,10 @@ namespace OCPI {
     logSetLevel(unsigned level) {
       logLevel = level;
     }
+    unsigned
+    logGetLevel() {
+      return logLevel;
+    }
     void
     logPrint(unsigned n, const char *fmt, ...) throw() {
       if (logLevel != UINT_MAX && n > logLevel)

@@ -46,7 +46,8 @@ namespace OCPI {
       protected:
 	Device(Driver &driver, OS::Ether::Interface &ifc, std::string &name,
 	       OE::Address &addr, bool discovery, std::string &error)
-	  : Net::Device(driver, ifc, name, addr, discovery, "ocpi-ether-rdma", 0, error) {
+	  : Net::Device(driver, ifc, name, addr, discovery, "ocpi-ether-rdma", 0,
+			(uint64_t)1 << 32, ((uint64_t)1 << 32) - sizeof(OccpSpace), 0, error) {
 	}
       public:
 	~Device() {

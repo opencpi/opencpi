@@ -52,9 +52,8 @@ namespace OCPI {
 
     unsigned PValue::length() const {
       unsigned n = 0;
-      if (this)
-	for (const PValue *p = this; p->name; p++, n++)
-	  ;
+      for (const PValue *p = this; p->name; p++, n++)
+	;
       return n;
     }
     const std::string &PValue::unparse(std::string &sval, bool add) const {

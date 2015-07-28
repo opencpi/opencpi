@@ -7,6 +7,12 @@ function slv(v : std_logic_vector) return std_logic_vector is
 begin
   return v;
 end slv;
+function slv(v : std_logic_vector; len : natural) return std_logic_vector is
+  variable r : std_logic_vector(len - 1 downto 0) := (others => '0');
+begin
+  r(v'left downto 0) := v;
+  return r;
+end slv;
 function slv(v : unsigned) return std_logic_vector is
 begin
   return std_logic_vector(v);

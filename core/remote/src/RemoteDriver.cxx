@@ -105,7 +105,7 @@ class Worker
   void setProperty32(const OA::PropertyInfo &info, uint32_t data) const {}
   void setProperty64(const OA::PropertyInfo &info, uint64_t data) const {}
   void getPropertyBytes(const OA::PropertyInfo &info, size_t offset,
-			uint8_t *data, size_t nBytes) const {}
+			uint8_t *data, size_t nBytes, bool string) const {}
   uint8_t getProperty8(const OA::PropertyInfo &info) const { return 0; }
   uint16_t getProperty16(const OA::PropertyInfo &info) const { return 0; }
   uint32_t getProperty32(const OA::PropertyInfo &info) const  { return 0; }

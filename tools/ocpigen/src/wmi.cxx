@@ -53,14 +53,14 @@ deriveOCP() {
     size_t n = (m_protocol->m_maxMessageValues * m_protocol->m_dataValueWidth +
 		m_dataWidth - 1) / m_dataWidth;
     if (n > 1) {
-      ocp.MAddr.width = ceilLog2(n);
-      unsigned long nn = ceilLog2(m_dataWidth);
+      ocp.MAddr.width = OU::ceilLog2(n);
+      unsigned long nn = OU::ceilLog2(m_dataWidth);
       if (nn > 3)
-	ocp.MAddr.width += ceilLog2(m_dataWidth) - 3;
+	ocp.MAddr.width += OU::ceilLog2(m_dataWidth) - 3;
     }
     ocp.MAddrSpace.value = s;
     if (m_preciseBurst) {
-      ocp.MBurstLength.width = n < 4 ? 2 : floorLog2(n-1) + 1;
+      ocp.MBurstLength.width = n < 4 ? 2 : OU::floorLog2(n-1) + 1;
       if (m_impreciseBurst)
 	ocp.MBurstPrecise.value = s;
     } else
@@ -79,7 +79,7 @@ deriveOCP() {
   }
   if ((m_isProducer || m_isBidirectional) &&
       (m_nOpcodes > 1 || m_protocol->m_variableMessageLength))
-    ocp.MFlag.width = 8 + ceilLog2(m_protocol->m_maxMessageValues + 1);
+    ocp.MFlag.width = 8 + OU::ceilLog2(m_protocol->m_maxMessageValues + 1);
   ocp.MReqInfo.width = 1;
   ocp.MReqLast.value = s;
   ocp.MReset_n.value = s;
@@ -89,7 +89,7 @@ deriveOCP() {
     ocp.SDataThreadBusy.value = s;
   if ((!m_isProducer || m_isBidirectional) &&
       (m_nOpcodes > 1 || m_protocol->m_variableMessageLength))
-    ocp.SFlag.width = 8 + ceilLog2(m_protocol->m_maxMessageValues + 1);
+    ocp.SFlag.width = 8 + OU::ceilLog2(m_protocol->m_maxMessageValues + 1);
   ocp.SReset_n.value = s;
   if (!m_isProducer || m_talkBack || m_isBidirectional)
     ocp.SResp.value = s;

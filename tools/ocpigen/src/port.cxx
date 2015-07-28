@@ -99,7 +99,7 @@ masterIn() const {
 
 static const char *wipNames[] =
   { "Unknown", "WCI", "WSI", "WMI", "WDI", "WMemI", "WTI", "CPMaster",
-    "uNOC", "Metadata", "TimeService", "RawProperty", 0};
+    "uNOC", "Metadata", "TimeService", "RawProperty", "SDP", 0};
 const char *Port::
 typeName() const { return wipNames[type]; }
 
@@ -391,7 +391,8 @@ emitRecordArray(FILE *f) {
 }
 
 void Port::
-emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker,
+emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool /*useRecord*/,
+		 bool /*inPackage*/, bool inWorker,
 		 const char */*defaultIn*/, const char */*defaultOut*/) {
   if (inWorker ? haveWorkerInputs() : haveInputs()) {
     if (last.size())
@@ -415,14 +416,14 @@ emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker,
   }
 }
 
-// Default is to just use record signals for VHDL
+// Default for all (non-ocp!) types is to just use record signals for VHDL anyway
 void Port::
 emitSignals(FILE *f, Language lang, std::string &last, bool inPackage, bool inWorker) {
   if (lang == VHDL) {
     std::string prefix;
     if (!inPackage)
       OU::format(prefix, "work.%s_defs.", m_worker->m_implName);
-    emitRecordSignal(f, last, prefix.c_str(), inWorker);
+    emitRecordSignal(f, last, prefix.c_str(), false, inPackage, inWorker);
   }	  
 }
 
@@ -438,6 +439,7 @@ emitVHDLShellPortMap(FILE *f, std::string &last) {
 	    "%s    %s => %s",
 	    last.c_str(),
 	    in.c_str(), in.c_str());
+    last = ",\n";
   }
   if (haveWorkerOutputs()) {
     std::string out;
@@ -480,7 +482,7 @@ emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *inden
   OU::format(out, typeNameOut.c_str(), "");
   Attachment *at = atts.front();
   const char *mName, *sName;
-  if (at) {
+  if (atts.size()) {
     Connection &c = at->m_connection;
     // We need to know the indexing of the other attachment
     Attachment *otherAt = NULL;
@@ -502,18 +504,27 @@ emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *inden
     mName = sName = "open";
   // input, then output
   if (haveInputs()) {
-    fprintf(f, "%s%s => %s%s",
-	    any ? indent : "", in.c_str(),
-	    master ?
-	    (at ? sName : slaveMissing()) : (at ? mName : masterMissing()),
-	    index.c_str());
+    emitPortSignal(f, any, indent, in,
+		   master ? (at ? sName : slaveMissing()) : (at ? mName : masterMissing()),
+		   index);
     any = true;
   }
-  if (haveOutputs())
-    fprintf(f, "%s%s%s => %s%s",
-	    haveInputs() ? ",\n" : "", any ? indent : "", out.c_str(),
-	    master ? mName : sName, index.c_str());
+  if (haveOutputs()) {
+    if (haveInputs())
+      fprintf(f, ",\n");
+    emitPortSignal(f, any, indent, out, master ? mName : sName, index);
+  }
 }
+
+void Port::
+emitPortSignal(FILE *f, bool any, const char *indent, std::string &sName, const char *name,
+	       std::string &index) {
+  fprintf(f, "%s%s => %s%s", any ? indent : "", sName.c_str(), name, index.c_str());
+}
+
+
+
+
 
 void Port::
 emitXML(FILE *) {}
@@ -524,6 +535,11 @@ void Port::
 emitRccCImpl(FILE *) {}
 void Port::
 emitRccCImpl1(FILE *) {}
+const char *Port::
+finalizeExternal(Worker &/*aw*/, Worker &/*iw*/, InstancePort &/*ip*/,
+		 bool &/*cantDataResetWhileSuspended*/) {
+  return NULL;
+}
 
 RawPropPort::
 RawPropPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
@@ -698,6 +714,7 @@ emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signa
 	  signal.c_str(), master == output ? "out" : "in" );
 }
 
+
 TimeServicePort::
 TimeServicePort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
   : Port(w, x, sp, ordinal, TimePort, "time", err) {
@@ -729,8 +746,8 @@ emitRecordTypes(FILE *f) {
 }
 
 void TimeServicePort::
-emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool /*inWorker*/,
-		 const char *, const char *) {
+emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool /*useRecord*/,
+		 bool /*inPackage*/, bool /*inWorker*/, const char *, const char *) {
   if (last.size())
     fprintf(f, last.c_str(), ";");
   std::string in, out;

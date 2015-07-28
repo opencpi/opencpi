@@ -46,6 +46,9 @@ Package=ocpi.devices
 XmlIncludeDirs=../../components/specs
 HdlLibraries=platform
 Implementations = \
+	sdp_node.hdl \
+	sdp_send.hdl \
+	sdp2cp.hdl \
 	ocdp.hdl \
 	dac.hdl \
 	adcx.hdl \

@@ -97,7 +97,7 @@ namespace OCPI {
       virtual void setProperty32(const OCPI::API::PropertyInfo &info, uint32_t data) const = 0;
       virtual void setProperty64(const OCPI::API::PropertyInfo &info, uint64_t data) const = 0;
       virtual void getPropertyBytes(const OCPI::API::PropertyInfo &info, size_t offset,
-				    uint8_t *data, size_t nBytes) const = 0;
+				    uint8_t *data, size_t nBytes, bool string = false) const = 0;
       virtual uint8_t getProperty8(const OCPI::API::PropertyInfo &info) const = 0;
       virtual uint16_t getProperty16(const OCPI::API::PropertyInfo &info) const = 0;
       virtual uint32_t getProperty32(const OCPI::API::PropertyInfo &info) const = 0;

@@ -27,8 +27,10 @@ namespace OCPI {
       virtual ~Container();
       inline uint64_t getMyTicks() {
 	return
-	  m_device.isAlive() ? 
-	  (m_lastTick = swap32(m_device.properties().get64RegisterOffset(sizeof(HdlUUID))) + hdlDevice().m_timeCorrection) :
+	  m_device.isAlive() && !m_device.isFailed() ? 
+	  (m_lastTick =
+	   swap32(m_device.properties().get64RegisterOffset(sizeof(HdlUUID))) +
+	   hdlDevice().m_timeCorrection) :
 	  m_lastTick;
       }
     protected:

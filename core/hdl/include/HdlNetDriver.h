@@ -90,11 +90,11 @@ namespace OCPI {
 	std::string m_error;
 	bool m_discovery;
 	unsigned m_delayms;
-	bool m_failed;
       protected:
 	Device(Driver &driver, OCPI::OS::Ether::Interface &ifc, std::string &name,
-	       OCPI::OS::Ether::Address &devAddr, bool discovery,
-	       const char *data_proto, unsigned delayms, std::string &);
+	       OCPI::OS::Ether::Address &devAddr, bool discovery, const char *data_proto,
+	       unsigned delayms,  uint64_t ep_size, uint64_t controlOffset, uint64_t dataOffset,
+	       std::string &);
       public:
 	virtual ~Device();
 	// Load a bitstream via jtag
@@ -112,6 +112,7 @@ namespace OCPI {
 	void command(const char *cmd, size_t bytes, char *response, size_t rlen, unsigned delay);
       public:
 	uint64_t get64(RegisterOffset offset, uint32_t *status);
+#if 0
 	inline uint32_t get32(RegisterOffset offset, uint32_t *status) {
 	  return get(offset, sizeof(uint32_t), status);
 	}
@@ -121,8 +122,11 @@ namespace OCPI {
 	inline uint8_t get8(RegisterOffset offset, uint32_t *status) {
 	  return (uint8_t)(get(offset, sizeof(uint8_t), status) >> ((offset&3)*8));
 	}
-	void getBytes(RegisterOffset offset, uint8_t *buf, size_t length, uint32_t *status);
+#endif
+	void getBytes(RegisterOffset offset, uint8_t *buf, size_t length, uint32_t *status,
+		      bool string);
 	void set64(RegisterOffset offset, uint64_t val, uint32_t *status);
+#if 0
 	inline void set32(RegisterOffset offset, uint32_t val, uint32_t *status) {
 	  set(offset, sizeof(uint32_t), val, status);
 	}
@@ -132,6 +136,7 @@ namespace OCPI {
 	inline void set8(RegisterOffset offset, uint8_t val, uint32_t *status) {
 	  set(offset, sizeof(uint8_t), val << ((offset & 3) * 8), status);
 	}
+#endif
 	void setBytes(RegisterOffset offset, const uint8_t *buf, size_t length, uint32_t *status);
       };
     }

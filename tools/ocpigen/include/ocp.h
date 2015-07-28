@@ -91,7 +91,9 @@ class OcpPort : public Port {
   bool m_impreciseBurst;
   bool m_preciseBurst;
   size_t m_dataWidth;
+  bool m_dwFound;
   size_t m_byteWidth;
+  bool m_bwFound;
   bool m_continuous;
   OcpSignals ocp;
   OcpPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *defaultName,
@@ -102,7 +104,8 @@ class OcpPort : public Port {
   bool isOCP() const { return true; }
   bool needsControlClock() const;
   void emitPortDescription(FILE *f, Language lang) const;
-  void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker,
+  void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord,
+			bool inPackage, bool inWorker,
 			const char *defaultIn, const char *defaultOut);
   void emitSignals(FILE *f, Language lang, std::string &last, bool inPackage, bool inWorker);
   void emitRecordInterface(FILE *f, const char *implName);

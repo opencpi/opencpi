@@ -1,6 +1,8 @@
 <HdlPlatform Language="VHDL">
   <xi:include href="platform_spec"/>
-  <cpmaster master='true'/>
+  <property name='sdpDropCount' type='uchar' volatile='1'/>
   <metadata master='true'/>
   <timeservice master='true'/>
+  <sdp name='sdp' master='true'/>
+  <sdp name='sdp_slave'/>
 </HdlPlatform>

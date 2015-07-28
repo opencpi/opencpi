@@ -641,5 +641,12 @@ parseList(const char *list, const char * (*doit)(const char *tok, void *arg), vo
   return err;
 }
 
+unsigned fls64(uint64_t n) {
+  for (int i = sizeof(n)*8; i > 0; i--)
+    if (n & ((uint64_t)1 << (i - 1)))
+      return i;
+  return 0;
+}
+
 }
 }

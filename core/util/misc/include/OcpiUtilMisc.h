@@ -47,6 +47,8 @@
  */
 
 #include <stdint.h>
+#include <strings.h>
+#include <assert.h>
 #include <cstring>
 #include <cstdio>
 #include <string>
@@ -387,6 +389,17 @@ namespace OCPI {
 	return
 	  (((value) & 0xff) << 24) | (((value) & 0xff00) << 8) |
 	  (((value) & 0xff0000) >> 8) | (((value) >> 24));
+      }
+      unsigned fls64(uint64_t n);
+      inline size_t ceilLog2(uint64_t n) {
+	return OCPI_UTRUNCATE(size_t, n ? fls64(n - 1) : 0);
+      }
+      inline size_t floorLog2(uint64_t n) {
+	//  ocpiInfo("Floor log2 of %u is %u", n, myfls(n)-1);
+	return OCPI_UTRUNCATE(size_t, fls64(n) - 1);
+      }
+      inline size_t bitsForMax(uint64_t n) {
+	return ceilLog2(n + 1);
       }
   }
 }

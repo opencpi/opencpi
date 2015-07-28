@@ -196,7 +196,7 @@ namespace OCPI {
 	  size_t offset = info.m_offset + (info.m_isSequence ? info.m_align : 0);
 	  for (unsigned n = 0; n < v.m_nTotal; n++) {
 	    sp[n] = v.m_stringNext;
-	    getPropertyBytes(info, offset, (uint8_t *)v.m_stringNext, length);
+	    getPropertyBytes(info, offset, (uint8_t *)v.m_stringNext, length, true);
 	    v.m_stringNext += length;
 	    offset += length;
 	  }	  
@@ -211,7 +211,8 @@ namespace OCPI {
 	// FIXME: a gross modularity violation
 	v.m_stringSpace = new char[info.m_stringLength + 1];
 	v.m_String = v.m_stringSpace;
-	getPropertyBytes(info, info.m_offset, (uint8_t*)v.m_pString, info.m_stringLength + 1);
+	getPropertyBytes(info, info.m_offset, (uint8_t*)v.m_pString, info.m_stringLength + 1,
+			 true);
       } else switch (info.m_nBits) {
 	case 8:
 	  v.m_UChar = getProperty8(info); break;

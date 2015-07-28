@@ -28,14 +28,21 @@
 #include <cstring>
 #include <cassert>
 #include "OcpiUtilMisc.h"
+#include "OcpiUtilEzxml.h"
 #include "assembly.h"
 #include "hdl.h"
 #include "hdl-platform.h"
 
+namespace OX = OCPI::Util::EzXml;
 const char *Worker::
 parseHdlAssy() {
   const char *err;
   if ((err = addBuiltinProperties()))
+    return err;
+  if (strcasecmp(OX::ezxml_tag(m_xml), "HdlAssembly") &&
+      (err =
+       addProperty("<property name='sdp_width' type='uchar' parameter='true' default='1'/>",
+		   true)))
     return err;
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
     m_ctl.summarizeAccess(**pi);
@@ -287,79 +294,14 @@ parseHdlAssy() {
   // Now all data ports that are connected have mapped clocks and
   // all ports with WCI clocks are connected.  All that's left is
   // WCI: WTI, WMemI, and the platform ports
-  size_t nWti = 0, nWmemi = 0;
+  //  size_t nWti = 0, nWmemi = 0;
   for (n = 0, i = a->m_instances; n < a->m_nInstances; n++, i++) {
     assert(i->worker);
     Worker *iw = i->worker;
     unsigned nn = 0;
-    for (InstancePort *ip = i->m_ports; nn < iw->m_ports.size(); nn++, ip++) {
-      Port *pp = ip->m_port;
-      switch (pp->type) {
-      case WCIPort:
-	// slave ports that are connected are ok as is.
-	assert(pp->master || pp == pp->m_worker->m_wci);
-	if (!pp->master && !m_noControl) {
-
-	  // Make assembly WCI the union of all inside, with a replication count
-	  // We make it easier for CTOP, hoping that wires dissolve appropriately
-	  // FIXME: when we generate containers, these might be customized, but not now
-	  //if (iw->m_ctl.sizeOfConfigSpace > aw->m_ctl.sizeOfConfigSpace)
-	  //            aw->m_ctl.sizeOfConfigSpace = iw->m_ctl.sizeOfConfigSpace;
-	  m_ctl.sizeOfConfigSpace = (1ll<<32) - 1;
-	  if (iw->m_ctl.writables)
-	    m_ctl.writables = true;
-#if 0
-	  // FIXME: until container automation we must force this
-	  if (iw->m_ctl.readables)
-#endif
-	    m_ctl.readables = true;
-#if 0
-	  // FIXME: Until we have container automation, we force the assembly level
-	  // WCIs to have byte enables.  FIXME
-	  if (iw->m_ctl.sub32Bits)
-#endif
-	    m_ctl.sub32Bits = true;
-	  m_ctl.controlOps |= iw->m_ctl.controlOps; // needed?  useful?
-	  // Reset while suspended: This is really only interesting if all
-	  // external data ports are only connected to ports of workers where this
-	  // is true.  And the use-case is just that you can reset the
-	  // infrastructure while maintaining worker state.  BUT resetting the
-	  // CP could clearly reset anything anyway, so this is only relevant to
-	  // just reset the dataplane infrastructure.
-	  if (!pp->m_worker->m_wci->resetWhileSuspended())
-	    cantDataResetWhileSuspended = true;
-	}
-	break;
-      case WTIPort:
-	// We don't share ports since the whole point of WTi is to get
-	// intra-chip accuracy via replication of the time clients.
-	// We could have an option to use wires instead to make things smaller
-	// and less accurate...
-	if (!pp->master && ip->m_attachments.empty() &&
-	    (err = m_assembly->externalizePort(*ip, "wti", nWti)))
-	  return err;
-	break;
-      case WMemIPort:
-	if (pp->master && ip->m_attachments.empty() &&
-	    (err = m_assembly->externalizePort(*ip, "wmemi", nWmemi)))
-	  return err;
-	break;
-      case WSIPort:
-      case WMIPort:
-	// Data ports must explicitly connected.
-	break;
-      case CPPort:
-      case NOCPort:
-      case MetadataPort:
-      case TimePort:
-	break;
-      case PropPort: // could do partials when multiple count?
-      case DevSigPort: // same?
-	break;
-      default:
-	return "Bad port type";
-      }
-    }
+    for (InstancePort *ip = i->m_ports; nn < iw->m_ports.size(); nn++, ip++)
+      if ((err = ip->m_port->finalizeExternal(*this, *iw, *ip, cantDataResetWhileSuspended)))
+	return err;
   }
   if (!cantDataResetWhileSuspended && wci)
     m_wci->setResetWhileSuspended(true);
@@ -403,8 +345,8 @@ emitConnectionSignal(FILE *f, bool output, Language lang) {
 		(lang == VHDL ? m_port->typeNameOut.c_str() : m_port->fullNameOut.c_str()) :
 		(lang == VHDL ? m_port->typeNameIn.c_str() : m_port->fullNameIn.c_str()), "");
   signal += "_i"; // Use this to avoid colliding with port signals
-  (output ? m_signalOut : m_signalIn) = signal;
   m_port->emitConnectionSignal(f, output, lang, signal);
+  (output ? m_signalOut : m_signalIn) = signal;
 }
 
 // An instance port that is internal needs to be bound to ONE input and ONE output signal bundle,
@@ -426,7 +368,8 @@ createConnectionSignals(FILE *f, Language lang) {
   }
   // Output side: generate signal except when external or connected only to external
   // Or when there is a wider one
-  if (!(m_attachments.size() == 1 &&
+  if (m_attachments.size() &&
+      !(m_attachments.size() == 1 &&
 	m_attachments.front()->m_connection.m_attachments.size() == 2 &&
 	m_attachments.front()->m_connection.m_external) &&
       maxCount <= m_port->count &&
@@ -444,7 +387,7 @@ createConnectionSignals(FILE *f, Language lang) {
     
   // Input side: rare - generate signal when it aggregates members from others,
   // Like a WSI slave port array
-  if (m_port->count > 1) {
+  if (m_attachments.size() && m_port->count > 1) {
     if (maxCount < m_port->count || m_attachments.size() > 1) {
       emitConnectionSignal(f, false, lang);
       for (AttachmentsIter ai = m_attachments.begin(); ai != m_attachments.end(); ai++) {

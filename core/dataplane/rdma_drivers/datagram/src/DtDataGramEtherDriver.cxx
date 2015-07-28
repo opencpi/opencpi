@@ -43,7 +43,6 @@
  *
  */
 
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <OcpiOsEther.h>
 #include <DtDataGramXfer.h>

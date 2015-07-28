@@ -30,6 +30,7 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <unistd.h>
 #include "OcpiOsFileSystem.h"
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilAutoMutex.h"
@@ -144,11 +145,25 @@ namespace OCPI {
       OCPI::Time::Emit::shutdown();
       delete mm;
     }
+    static void exitbad(const char *e) {
+      static const char msg[] = "\n*********During shutdown********\n";
+      write(2, e, strlen(e));
+      write(2, msg, sizeof(msg));
+      _exit(1);
+    }
     // A static-destructor hook to perform manager cleanup.
     static class cleanup {
     public:
       ~cleanup() {
-	ManagerManager::cleanup();
+	try {
+	  ManagerManager::cleanup();
+	} catch (std::string &e) {
+	  exitbad(e.c_str());
+	} catch (const char *e) {
+	  exitbad(e);
+	} catch (...) {
+	  exitbad("Unexpected exception");
+	}
       }
     } x;
     Driver::Driver() : m_config(NULL) {}

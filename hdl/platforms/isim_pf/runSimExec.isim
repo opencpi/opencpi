@@ -16,10 +16,11 @@ shift
 for i in $*; do echo for $i; plusargs="$plusargs -testplusarg $i"; done
 echo plusargs are: $plusargs
 echo doing ./$appname.exe $plusargs
+# The quit is necessary below to dump out the simulation.  Without it, it doesn't happen.
 exec ./$appname.exe $plusargs <<EOF
 scope
 show child -r
 wave log -r /
 run 1 s
+quit
 EOF
-echo Hello 4

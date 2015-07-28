@@ -1,0 +1,16 @@
+<application done='pattern' package='ocpi'>
+  <instance component="pattern" connect='sdp_send'>
+    <property name='control' value='3'/>
+    <property name="metadataCount" value='4'/>
+    <property name="messagesToSend" value='4'/>
+    <property name="metadata" value='{20,3,2,1},{7,4},{0,2},{8,7}'/> 
+    <property name="data" value='0x03020100,0x07060504,0x0b0a0908,0x0f0e0d0c,0x13121110,
+				 0x17161514,0x1b1a1918,0x1f1e1d1c,0x23222120,0x27262524,
+				 0x2b2a2928,0x2f2e2c2d, 0x33323130,0x37363534,0x3b3a3938,
+				 0x3f3e3d3c'/>,
+  </instance>
+  <instance component='ocpi.devices.sdp_send'>
+    <property name='buffersize' value='24'/>
+    <property name='buffercount' value='2'/>
+  </instance>
+</application>

@@ -23,8 +23,8 @@ struct DevInstance {
 typedef std::list<DevInstance> DevInstances;
 typedef DevInstances::iterator DevInstancesIter;
 
-#define HDL_CONFIG_ATTRS "platform"
-#define HDL_CONFIG_ELEMS "cpmaster", "nocmaster", "device"
+#define HDL_CONFIG_ATTRS "platform", "sdpWidth"
+#define HDL_CONFIG_ELEMS "cpmaster", "nocmaster", "device", "property"
 
 typedef std::vector<const Card*> Plugged;
 
@@ -60,6 +60,7 @@ class HdlConfig : public Worker, public HdlHasDevInstances {
   friend class HdlContainer;
   HdlPlatform &m_platform;
   Plugged      m_plugged;      // what card is in each slot in this configuration
+  size_t       m_sdpWidth;
 public:  
   static HdlConfig *
   create(ezxml_t xml, const char *xfile, Worker *parent, const char *&err);
@@ -67,6 +68,7 @@ public:
   virtual ~HdlConfig();
 
   HdlPlatform &platform() { return m_platform; }
+  size_t sdpWidth() { return m_sdpWidth; }
   const char
     *addControlConnection(std::string &assy),
     *emitConfig(FILE *f);

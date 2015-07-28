@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -45,7 +44,6 @@
  *
  */
 
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <ctype.h>
 #include <DtTransferInternal.h>

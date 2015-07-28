@@ -84,7 +84,8 @@ begin
      -- check for EOF and do the right thing.
      procedure finish(msg : string) is begin
        report "EOF on input file: " & msg;
-       file_close(data_file);
+--       file_close(data_file);
+       close_file(data_file, props_in.fileName);
        if its(props_in.suppressEOF) then
          finished_r <= true; -- nothing to do at this EOF except be finished
        else
@@ -105,6 +106,12 @@ begin
          bad_r             <= false;
          messagesWritten_r <= (others => '0');
          bytesRead_r       <= (others => '0');
+         data_r            <= (others => '0');     -- to drive out_out.data;
+         opcode_r          <= (others => '0');     -- to drive out_out.opcode
+         byte_enable_r     <= "0000";              -- drive out.byte_enable
+         som_r             <= false;               -- to driver out_out.som
+         eom_r             <= false;               -- to driver out_out.eom
+         valid_r           <= false;               -- to driver out_out.valid
        elsif its(ctl_in.is_operating) and not finished_r then    
          if giving and eom_r then
            ready_r <= false;
@@ -141,7 +148,9 @@ begin
              eom        := true;
              valid_r    <= false;
              finished_r <= true;
+             close_file(data_file, props_in.fileName);
            elsif endfile(data_file) then -- EOF mid-message, w/ no data: shouldn't happen
+             finish("EOF mid-message");
              report "Unexpected EOF" severity failure;
            else -- we want data (message_length_r != 0), and there is data (not eof)
              data_r        <= read_ulong(to_integer(bytesLeft_r), false);

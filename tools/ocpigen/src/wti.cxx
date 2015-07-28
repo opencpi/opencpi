@@ -1,3 +1,4 @@
+#include "assembly.h"
 #include "hdl.h"
 
 WtiPort::
@@ -73,8 +74,7 @@ deriveOCP() {
 void WtiPort::
 emitImplSignals(FILE *f) {
   fprintf(f,
-	  "  -- Signals for the outer WTI converted to the inner worker ones\n"
-	  //	  "  signal wti_outer_out : wti_out_t;\n"
+	  "  -- Signals from the outer WTI converted to the inner worker ones\n"
 	  "  signal worker_wti_in : worker_wti_in_t;\n");
   if (m_allowUnavailable)
     fprintf(f,
@@ -138,7 +138,8 @@ emitRecordOutputs(FILE *f) {
 
 #if 0
 void WtiPort::
-emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker) {
+emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord, bool inPackage,
+		 bool inWorker) {
   ocpiAssert(!master);
   fprintf(f, "%s    -- Signals for %s %s port named \"%s\".  See record type(s) above.\n",
 	  last.c_str(), typeName(), masterIn() ? "slave" : "master", name());
@@ -153,3 +154,16 @@ emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker) 
   last = ";\n";
 }
 #endif
+const char *WtiPort::
+finalizeExternal(Worker &aw, Worker &/*iw*/, InstancePort &ip,
+		 bool &/*cantDataResetWhileSuspended*/) {
+  // We don't share ports since the whole point of WTi is to get
+  // intra-chip accuracy via replication of the time clients.
+  // We could have an option to use wires instead to make things smaller
+  // and less accurate...
+  const char *err;
+  if (!master && ip.m_attachments.empty() &&
+      (err = aw.m_assembly->externalizePort(ip, "wti", aw.m_assembly->m_nWti)))
+    return err;
+  return NULL;
+}

@@ -31,7 +31,6 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <limits.h>
 #include <stdlib.h>

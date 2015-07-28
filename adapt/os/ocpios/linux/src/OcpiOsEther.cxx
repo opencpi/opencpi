@@ -599,9 +599,9 @@ namespace OCPI {
 	    sa.in.sin_addr.s_addr = ifc->brdAddr.addrInAddr();
 	    sa.in.sin_port = htons(addr.addrPort() ? addr.addrPort() : c_udpPort);
 	    // For broadcast, we specify the interface, otherwise IP routing does the right thing.
-	    memset(cbuf, 0, sizeof(cbuf));
+	    memset(cbuf, 0, sizeof cbuf);
 	    msg.msg_control = cbuf;
-	    msg.msg_controllen = sizeof cbuf;
+	    msg.msg_controllen = (socklen_t)(sizeof cbuf);
 	    struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
 	    //msg.msg_control = NULL;
 	    //	    msg.msg_controllen = 0;

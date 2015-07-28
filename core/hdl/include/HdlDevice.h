@@ -38,9 +38,12 @@ namespace OCPI {
       uint64_t m_endpointSize;
       bool m_isAlive;
       WciControl *m_pfWorker;
-      Device(std::string &name, const char *protocol = "");
+      bool m_isFailed; // protection during shutdown
     public:
       uint32_t m_timeCorrection;
+    protected:
+      Device(std::string &name, const char *protocol = "");
+    public:
       virtual ~Device();
       bool init(std::string &error);
       inline Access &properties() const { return m_pfWorker->m_properties; }
@@ -54,11 +57,13 @@ namespace OCPI {
       inline std::string &endpointSpecific() { return m_endpointSpecific; }
       inline uint64_t endpointSize() { return m_endpointSize; }
       inline bool isAlive() { return m_isAlive; }
+      inline bool isFailed() { return m_isFailed; }
       bool isLoadedUUID(const std::string &uuid);
       void getUUID();
       RomWord getRomWord(uint16_t n);
       bool  getMetadata(std::vector<char> &xml, std::string &err);
       virtual void load(const char *name) = 0;
+      virtual void connect() {}
       void getWorkerAccess(size_t index,
 			   Access &worker,
 			   Access &properties);

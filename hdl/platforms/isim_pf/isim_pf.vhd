@@ -48,14 +48,23 @@ begin
       time_service            => time_out
       );
 
-  -- The control plan connection for simulators
-  dcp : sim_dcp
-    port map(
-      clk                     => ctl_clk,
-      reset                   => ctl_reset,
-      cp_in                   => cp_in,
-      cp_out                  => cp_out
-      );
+  sdp_sim_i : sdp.sdp.sdp_sim
+    generic map(ocpi_debug => ocpi_debug,
+                sdp_width  => sdp_width)
+    port map(clk => ctl_clk,
+             reset => ctl_reset,
+             sdp_in => sdp_in,
+             sdp_out => sdp_out,
+             sdp_in_data => sdp_in_data,
+             sdp_out_data => sdp_out_data);
+  sdp_term_i : sdp.sdp.sdp_term
+    generic map(ocpi_debug => ocpi_debug,
+                sdp_width => sdp_width)
+    port map(up_in => sdp_slave_in,
+             up_in_data => sdp_slave_in_data,
+             up_out => sdp_slave_out,
+             up_out_data => sdp_slave_out_data,
+             drop_count => props_out.sdpDropCount);
     
   props_out.platform          <= to_string("isim_pf", props_out.platform'length-1);
   props_out.dna               <= (others => '0');

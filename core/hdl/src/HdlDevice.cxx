@@ -20,7 +20,6 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <setjmp.h>
 #include <signal.h>
@@ -37,8 +36,8 @@ namespace OCPI {
     // So we can't perform accesses until that time, which is the "init" call.
     Device::
     Device(std::string &name, const char *protocol)
-      : m_metadata(NULL), m_implXml(NULL), m_old(false), m_name(name), m_protocol(protocol), m_isAlive(true),
-	m_pfWorker(NULL) {
+      : m_metadata(NULL), m_implXml(NULL), m_old(false), m_name(name), m_protocol(protocol),
+	m_isAlive(true), m_pfWorker(NULL), m_isFailed(false), m_timeCorrection(0) {
       memset((void*)&m_UUID, sizeof(m_UUID), 0);
     }
     Device::
@@ -65,6 +64,9 @@ namespace OCPI {
 	  ocpiBad("HDL Device '%s' gets a bus error on probe: ", m_name.c_str());
 	  err = "bus error on probe";
 	}
+      } catch (std::string &e) {
+	ocpiBad("HDL Device '%s' gets error '%s' on probe: ", e.c_str(), m_name.c_str());
+	err = "access exception on probe";
       } catch (...) {
 	ocpiBad("HDL Device '%s' gets access exception on probe: ", m_name.c_str());
 	err = "access exception on probe";
@@ -100,7 +102,7 @@ namespace OCPI {
     getUUID() {
       HdlUUID myUUIDtmp;
       if (m_old)
-	m_cAccess.getRegisterBytes(admin.uuid, &myUUIDtmp, OccpSpace);
+	m_cAccess.getRegisterBytes(admin.uuid, &myUUIDtmp, OccpSpace, false);
       else
 	m_pfWorker->m_properties.getBytesRegisterOffset(0, (uint8_t *)&myUUIDtmp, sizeof(HdlUUID));
       // Fix the endianness

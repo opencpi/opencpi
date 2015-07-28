@@ -20,7 +20,6 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include "HdlDevice.h"
 #include "HdlWciControl.h"
@@ -212,9 +211,11 @@ namespace OCPI {
 	    status =							     \
 	      get32Register(status, OccpWorkerRegisters) &		     \
 	      OCCP_STATUS_WRITE_ERRORS;					     \
-	} else								     \
-	  m_properties.m_accessor->set##n(m_properties.m_base + offset, val, \
-					  &status);			     \
+	} else if (n == 64)						\
+	  m_properties.m_accessor->set64(m_properties.m_base + offset, val, &status); \
+	else								\
+	  m_properties.m_accessor->set(m_properties.m_base + offset, sizeof(uint##n##_t), \
+                                       (uint32_t)(val << ((offset &3) * 8)), &status);    \
 	if (status)							     \
 	  throwPropertyWriteError(status);				     \
       }
@@ -244,7 +245,7 @@ namespace OCPI {
 
     void WciControl::
     getPropertyBytes(const OA::PropertyInfo &info, size_t offset, uint8_t *buf,
-		     size_t nBytes) const {
+		     size_t nBytes, bool string) const {
       offset = checkWindow(offset, nBytes);
       uint32_t status = 0;
 
@@ -286,7 +287,8 @@ namespace OCPI {
 	m_properties.m_accessor->setBytes(m_properties.m_base + offset + p.m_align,
 					  val, nBytes, &status);
 	if (!status)
-	  m_properties.m_accessor->set32(m_properties.m_base + offset, (uint32_t)nItems, &status);
+	  m_properties.m_accessor->set(m_properties.m_base + offset, sizeof(uint32_t),
+				       (uint32_t)nItems, &status);
       } else
 	m_properties.m_accessor->setBytes(m_properties.m_base + offset, val, nBytes, &status);
       if (status)
@@ -319,7 +321,8 @@ namespace OCPI {
 	      OCCP_STATUS_READ_ERRORS;
 	}
       } else {
-	nItems = m_properties.m_accessor->get32(m_properties.m_base + offset, &status);
+	nItems = m_properties.m_accessor->get(m_properties.m_base + offset, sizeof(uint32_t),
+					      &status);
 	if (!status) {
 	  if (nItems * (p.m_nBits/8) <= n)
 	    throwPropertySequenceError();

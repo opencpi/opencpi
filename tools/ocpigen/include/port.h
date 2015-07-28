@@ -24,6 +24,7 @@ enum WIPType {
   PropPort,     // raw property port for shared SPI/I2C
   RCCPort,      // An RCC port
   DevSigPort,   // a port between devices
+  SDPPort,
   NWIPTypes
 };
 
@@ -38,6 +39,7 @@ struct Attachment;
 typedef std::list<Attachment*> Attachments;
 typedef Attachments::const_iterator AttachmentsIter;
 
+struct InstancePort;
 // FIXME: have "implPort" class??
 class Port {
  protected:
@@ -74,8 +76,9 @@ public:
   inline const char *name() const { return m_name.c_str(); }
   const char *doPattern(int n, unsigned wn, bool in, bool master, std::string &suff,
 			bool port = false);
-  virtual void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker,
-				const char *defaultIn = NULL, const char *defaultOut = NULL);
+  virtual void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord,
+				bool inPackage, bool inWorker, const char *defaultIn = NULL,
+				const char *defaultOut = NULL);
   virtual bool haveInputs() const { return true; }
   virtual bool haveWorkerInputs() const { return true; }
   virtual bool haveOutputs() const { return true; }
@@ -117,6 +120,8 @@ public:
   virtual void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 			       const char *indent, bool &any, std::string &comment,
 			       std::string &last, const char *myComment, OcpAdapt *adapt);
+  virtual void emitPortSignal(FILE *f, bool any, const char *indent, std::string &sName,
+			      const char *name, std::string &index);
   virtual const char *fixDataConnectionRole(OCPI::Util::Assembly::Role &role);
   virtual const char *doPatterns(unsigned nWip, size_t &maxPortTypeName);
   virtual void emitXML(FILE *f);
@@ -131,6 +136,8 @@ public:
 				 const Attachment &intAt, size_t count) const;
   virtual const char *masterMissing() const { return "(others => '0')"; }
   virtual const char *slaveMissing() const { return "(others => '0')"; }
+  virtual const char *finalizeExternal(Worker &aw, Worker &iw, InstancePort &ip,
+				       bool &cantDataResetWhileSuspended);
 };
 
 // Factory function template for port types

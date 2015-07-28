@@ -864,7 +864,7 @@ controlOperation(OU::Worker::ControlOperation op) {
 #undef OCPI_DATA_TYPE
       // Get Scalar Property
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		    \
-      run Worker::get##pretty##Property(unsigned ordinal) const {           \
+      run Worker::get##pretty##Property(unsigned ordinal) const {	    \
         OA::PropertyInfo &info = properties()[ordinal];                     \
         if (info.m_readError )					            \
           throw; /*"worker has errors before read "*/			    \
@@ -955,7 +955,7 @@ controlOperation(OU::Worker::ControlOperation op) {
 			    const uint8_t *data, size_t nBytes) const {
         memcpy((void *)(getPropertyVaddr() + offset), data, nBytes);
       }
-      void Worker::setProperty8(const OCPI::API::PropertyInfo &info, uint8_t data) const {
+     void Worker::setProperty8(const OCPI::API::PropertyInfo &info, uint8_t data) const {
         *(uint8_t *)(getPropertyVaddr() + info.m_offset) = data;
       }
       void Worker::setProperty16(const OCPI::API::PropertyInfo &info, uint16_t data) const {
@@ -968,8 +968,11 @@ controlOperation(OU::Worker::ControlOperation op) {
         *(uint64_t *)(getPropertyVaddr() + info.m_offset) = data;
       }
       void Worker::getPropertyBytes(const OCPI::API::PropertyInfo &/*info*/, size_t offset,
-			    uint8_t *data, size_t nBytes) const {
-        memcpy(data, (void *)(getPropertyVaddr() + offset), nBytes);
+				    uint8_t *data, size_t nBytes, bool string) const {
+	if (string)
+	  strncpy((char*)data, (char *)(getPropertyVaddr() + offset), nBytes);
+	else
+	  memcpy(data, (void *)(getPropertyVaddr() + offset), nBytes);
       }
       uint8_t Worker::getProperty8(const OCPI::API::PropertyInfo &info) const {
         return *(uint8_t *)(getPropertyVaddr() + info.m_offset);

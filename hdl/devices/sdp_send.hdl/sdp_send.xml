@@ -1,0 +1,36 @@
+<HdlWorker language="vhdl" firstRawProperty='memory'>
+  <componentspec name="sdp_send">
+    <property name='sdp_width' parameter='1' type='uchar' default='1'/>
+    <property name='memory_bytes' parameter='1' default='64'/>
+    <property name='max_buffers' parameter='1' type='uchar' default='4'/>
+    <port name='in'/>
+    <!-- <sdp name="sdp"/> -->
+  </componentspec>
+  <streaminterface name='in'
+		   datawidth='sdp_width*32' numberofopcodes='256' datavaluewidth='8'
+		   zerolengthmessages='true'/>
+  <property name='bufferSize' initial='true' type='ushort' readable='true'/>
+  <property name='bufferCount' initial='true' type='uchar' readable='true'/>
+  <!-- How many remote destinations -->
+  <property name='remoteCount' initial='true' type='uchar' readable='true'/>
+  <!-- Where in memory is the remote information -->
+  <property name='remoteBase' initial='true' readable='true'/>
+  <!-- How many buffers are available for remote processing, including currently used -->
+  <property name='remoteAvailable' type='uchar' volatile='true'/>
+  <!-- How many buffers are available for local processing, including currently used -->
+  <property name='localAvailable' type='uchar' volatile='true'/>
+  <!-- Current buffer being processed for remote -->
+  <property name='remoteBuffer' type='uchar' volatile='true'/>
+  <!-- Current buffer being processed for local -->
+  <property name='localBuffer' type='uchar' volatile='true'/>
+  <!-- A buffer arrived that was larger than the buffersize setting -->
+  <property name='overflow' type='bool' volatile='true'/>
+  <!-- Current remote destination being used for current remote buffer -->
+  <property name='currentRemote' type='uchar' volatile='true'/>
+  <!-- Metadata for buffers -->
+  <property name='metadata' arrayLength='max_buffers' volatile='true'/>
+  <!-- Doorbell for software - write to take a buffer -->
+  <property name='remoteTake' type='bool' writable='true'/>
+  <!-- Memory exposed to the control plane -->
+  <property name='memory' arrayLength='memory_bytes / 4' volatile='true'/>
+</HdlWorker>

@@ -1,4 +1,3 @@
-#define __STDC_LIMIT_MACROS
 #include <stdint.h>
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
@@ -280,12 +279,19 @@ HdlConfig::
 HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const char *&err)
   : Worker(xml, xfile, "", Worker::Configuration, parent, NULL, err),
     HdlHasDevInstances(pf, m_plugged),
-    m_platform(pf) {
+    m_platform(pf), m_sdpWidth(1) {
   if (err ||
       (err = OE::checkAttrs(xml, IMPL_ATTRS, HDL_TOP_ATTRS,
 			    HDL_CONFIG_ATTRS, (void*)0)) ||
-      (err = OE::checkElements(xml, HDL_CONFIG_ELEMS, (void*)0)))
+      (err = OE::checkElements(xml, HDL_CONFIG_ELEMS, (void*)0)) ||
+      (err = OE::getNumber(xml, "sdp_width", &m_sdpWidth, NULL, 0, false)))
     return;
+#if 0
+  if (m_sdpWidth & (32-1)) {
+    err = "SDP Width must be a multiple of 32";
+    return;
+  }
+#endif
   pf.setParent(this);
   //hdlAssy = true;
   m_plugged.resize(pf.m_slots.size());
@@ -296,8 +302,11 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
   // Add the platform instance
   // We make the worker name platform/platform so it is findable from the platforms
   // directory.
-  OU::formatAdd(assy, "  <instance worker='%s/%s'/>\n", // index='%zu'/>\n",
-		m_platform.m_name.c_str(), m_platform.m_name.c_str()); //, index++);
+  OU::formatAdd(assy,
+		"  <instance worker='%s/%s'>\n"
+		"    <property name='sdp_width' value='%zu'/>\n"
+		"  </instance>\n",
+		m_platform.m_name.c_str(), m_platform.m_name.c_str(), m_sdpWidth);
   // Add all the device instances
   for (DevInstancesIter dii = m_devInstances.begin(); dii != m_devInstances.end(); dii++) {
     const ::Device &d = (*dii).device;
@@ -362,7 +371,7 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
     const ::Device &d = (*dii).device;
     for (PortsIter pi = d.deviceType().ports().begin(); pi != d.deviceType().ports().end(); pi++) {
       Port &p = **pi;
-      if (p.isData() || p.type == NOCPort ||
+      if (p.isData() || p.type == NOCPort || p.type == SDPPort ||
 	  (!p.master && (p.type == PropPort || p.type == DevSigPort))) {
 	size_t unconnected = 0, first = 0;
 	for (size_t i = 0; i < p.count; i++)
@@ -384,7 +393,7 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
   }
   for (PortsIter pi = m_platform.m_ports.begin(); pi != m_platform.m_ports.end(); pi++) {
       Port &p = **pi;
-      if (p.type == NOCPort) {
+      if (p.type == NOCPort || p.type == SDPPort) {
 	// Port names of noc ports are interconnect names on the platform
 	OU::formatAdd(assy,
 		      "  <external name='%s' instance='%s' port='%s'/>\n",
@@ -467,7 +476,7 @@ addControlConnection(std::string &assy) {
     else
       return "No control-capable port designated among the multiple possibilities";
   else if (!cpInstanceName)
-    return "No feasible control port was found";
+    return NULL; // "No feasible control port was found";
   // Connect the control master port of the platform or device/interconnect worker to
   // the control plane worker
   OU::formatAdd(assy,
@@ -484,7 +493,7 @@ emitConfigImplHDL(FILE *f) {
 	  "%s Interface definition signal names are defined with pattern rule: \"%s\"\n\n",
 	  comment, m_implName, comment, m_pattern);
   fprintf(f,
-	  "Library IEEE; use IEEE.std_logic_1164.all;\n"
+	  "Library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;\n"
 	  "Library ocpi; use ocpi.all, ocpi.types.all;\n"
           "use work.%s_defs.all;\n",
 	  m_implName);

@@ -49,7 +49,7 @@ begin
         bytesWritten_r    <= (others => '0');
       elsif ctl_in.control_op = STOP_e or ctl_in.control_op = RELEASE_e then
         finished_r <= true;
-        file_close(data_file);
+        close_file(data_file, props_in.fileName);
       elsif its(ctl_in.is_operating) and not finished_r then
         if not init_r then  
           open_file(data_file, cwd, props_in.fileName, write_mode);
@@ -88,7 +88,7 @@ begin
             end if;
             if new_msg_length = 0 and its(props_in.stopOnEOF) then
               finished_r <= true;
-              file_close(data_file);
+              close_file(data_file, props_in.fileName);
             end if;
             bytesWritten_r <= bytesWritten_r + new_msg_length;
             messageLength_r <= (others => '0');

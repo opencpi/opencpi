@@ -22,7 +22,7 @@ ifneq ($(MAKECMDGOALS),clean)
   endif
 endif
 OcpiLanguage:=vhdl
-override HdlLibraries+=platform
+override HdlLibraries+=sdp platform
 # ComponentLibraries and XmlIncludeDirs are already passed to us on the command line.
 #$(eval $(HdlSearchComponentLibraries))
 #$(infox XMLI:$(XmlIncludeDirs))
@@ -48,7 +48,7 @@ ifneq ($(MAKECMDGOALS),clean)
   override HdlConfig:=$(HdlContConfig)
   include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
   ifndef HdlSkip
-    override ComponentLibraries+=$(HdlPlatformsDir)/$(HdlContPlatform) $(HdlAssembly)
+    override ComponentLibraries+=$(HdlPlatformsDir)/$(HdlContPlatform) $(HdlAssembly) devices
     $(eval $(HdlPrepareAssembly))
     include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
     ifndef HdlSkip

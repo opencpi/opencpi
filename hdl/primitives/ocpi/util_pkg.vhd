@@ -7,6 +7,7 @@ function slv(v : std_logic_vector) return std_logic_vector;
 function slv(v : unsigned) return std_logic_vector;
 function slv(v : signed) return std_logic_vector;
 function slv(s : string_t) return std_logic_vector;
+function slv(v : std_logic_vector; len : natural) return std_logic_vector;
 function slv0(n : natural) return std_logic_vector;
 function slvn(n, width : natural) return std_logic_vector;
 function bit2unsigned(b : std_logic; len : natural := 1) return unsigned;

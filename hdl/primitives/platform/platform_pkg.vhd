@@ -323,7 +323,7 @@ type raw_prop_out_array_t is array(natural range <>) of raw_prop_out_t;
 type raw_prop_in_t is record
   done    : bool_t;                       -- access is done
   data    : word32_t;                     -- read data available when done
-  present : std_logic_vector(0 to raw_max_devices-1); -- which of all devices are present
+  present : bool_array_t(0 to raw_max_devices-1); -- which of all devices are present
 end record raw_prop_in_t;
 constant raw_prop_in_zero : raw_prop_in_t
   := ('0', (others => '0'), (others => '0'));
@@ -331,20 +331,16 @@ constant raw_prop_in_zero : raw_prop_in_t
 type raw_prop_in_array_t is array(natural range <>) of raw_prop_in_t;
 
 component unoc_terminator is
-  port(
-    up_in      : in  unoc_master_out_t;
-    up_out     : out unoc_master_in_t;
-    drop_count : out unsigned(7 downto 0)
-    );
+  port(up_in      : in  unoc_master_out_t;
+       up_out     : out unoc_master_in_t;
+       drop_count : out uchar_t);
 end component unoc_terminator;
 
 component unoc_cp_adapter is
-  port(
-    client_in  : in  unoc_master_out_t;
-    client_out : out unoc_master_in_t;
-    cp_in      : in  occp_out_t;
-    cp_out     : out occp_in_t
-    );
+  port(client_in  : in  unoc_master_out_t;
+       client_out : out unoc_master_in_t;
+       cp_in      : in  occp_out_t;
+       cp_out     : out occp_in_t);
 end component unoc_cp_adapter;
 
 -- Component to drive the OCCP in a simulator

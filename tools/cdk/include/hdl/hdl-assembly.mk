@@ -26,7 +26,7 @@
 HdlMode:=assembly
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 
-# Theses next lines are similar to what worker.mk does
+# These next lines are similar to what worker.mk does
 ifneq ($(MAKECMDGOALS),clean)
 $(if $(wildcard $(CwdName).xml),,\
   $(error The XML for the assembly, $(CwdName).xml, is missing))
@@ -51,7 +51,7 @@ $(infox XMLII:$(XmlIncludeDirs)--$(ComponentLibraries))
 # FIXME: we should avoid full parsing of container XML here
 # Override since they may be passed in from assemblies level
 override XmlIncludeDirs+=. $(HdlPlatformsDir) $(HdlPlatformsDir)/specs $(XmlIncludeDirsInternal)
-override HdlLibraries+=platform
+override HdlLibraries+=sdp platform
 ifdef Container
   ifndef Containers
     Containers:=$(Container)

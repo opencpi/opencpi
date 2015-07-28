@@ -9,8 +9,9 @@ function cwd_join(cwd : string_t; name : string_t) return string is
   variable n,i    : natural;
   variable result : string(1 to length);
 begin
+  report "CWD Join of cwd: '" & from_string(cwd) & "' name: '" & from_string(name) & "'";
   n := 1;
-  if to_character(name(0)) /= '/' then
+  if to_character(name(0)) /= '/' and cwd(0) /= 0 then
     -- if not absolute, copy cwd to the front of the result. we know it will fit
     while n <= cwd'length and cwd(n-1) /= 0 loop
       result(n) := to_character(cwd(n-1));
@@ -53,10 +54,15 @@ begin
   file_name := cwd_join(cwd, name);
   file_open(status, thefile, file_name, mode);
   if status = open_ok then
-    report "Output file opened successfully for " & msg & ": " & file_name;
+    report "File opened successfully for " & msg & ": " & file_name;
   else
-    report "Output could not be opened for " & msg & ": " & file_name severity failure;
+    report "File could not be opened for " & msg & ": " & file_name severity failure;
   end if; 
 end open_file;
 
+procedure close_file(file thefile : char_file_t; name : string_t) is
+begin
+  file_close(thefile);
+  report "file closed: " & from_string(name);
+end close_file;
 end package body util;

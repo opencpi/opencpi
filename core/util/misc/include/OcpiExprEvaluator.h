@@ -90,10 +90,8 @@ namespace OCPI {
     // The class provideed by the caller that can provide the value of identifiers
     // in the expression
     struct IdentResolver {
+      virtual ~IdentResolver();
       virtual const char *getValue(const char *sym, ExprValue &val) const = 0;
-      // Look up the variable reference, but we're not looking for values
-      // virtual const char *isVariable(const char *) = 0;
-      virtual ~IdentResolver(){};
     };
     
     // The core function that evaluates expressions

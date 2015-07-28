@@ -1,4 +1,3 @@
-#define __STDC_LIMIT_MACROS
 #include <stdint.h>
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
@@ -122,22 +121,28 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
   // Establish the NOC usage, if there is any.
   // An interconnect can be on any device worker, but for now it is on the config.
   UNocs uNocs;
+  Port *sdp = NULL;
+  unsigned *unoc = NULL;
   for (PortsIter pi = m_config.m_ports.begin(); pi != m_config.m_ports.end(); pi++) {
     Port &p = **pi;
     Port *slave = NULL;
-    if (p.master && p.type == NOCPort) {
+    if (p.master && (p.type == NOCPort || p.type == SDPPort)) {
       size_t len = p.m_name.length();
       // Find the slave port for this master just for error checking
       for (PortsIter si = m_config.m_ports.begin(); si != m_config.m_ports.end(); si++) {
 	Port &sp = **si;
-	if (!sp.master && sp.type == NOCPort && !strncasecmp(p.name(), sp.name(), len) &&
-	    !strcasecmp(sp.name() + len, "_slave")) {
+	if (!sp.master && (sp.type == NOCPort || sp.type == SDPPort) &&
+	    !strncasecmp(p.name(), sp.name(), len) && !strcasecmp(sp.name() + len, "_slave")) {
 	  slave = &sp;
 	  break;
 	}
       }
       ocpiAssert(slave);
       uNocs[p.name()] = 0;
+      if (p.type == SDPPort) {
+	unoc = &uNocs.at(p.name());
+	sdp = &p;
+      }
     }
   }
   // Establish connections, WHICH MAY ALSO IMPLICITLY CREATE DEVICE INSTANCES
@@ -244,26 +249,50 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 	return;
     emitSubdeviceConnections(assy, &m_config.m_devInstances);
   }
-  // Instance the scalable control plane
+  // Instance the scalable control plane and adapter to SDP if present.
   OU::formatAdd(assy,
 		"  <instance worker='ocscp'>\n"
 		"    <property name='nworkers' value='%zu'/>\n"
 		"    <property name='ocpi_endian' value='%s'/>\n"
 		"  </instance>\n", nWCIs,
 		endians[m_endian]);
-  // Connect it to the pf config's cpmaster
-  for (PortsIter ii = m_config.m_ports.begin(); ii != m_config.m_ports.end(); ii++) {
-    Port &i = **ii;
-    if (i.master && i.type == CPPort) {
-      OU::formatAdd(assy,
-		    "  <connection>\n"
-		    "    <port instance='pfconfig' name='%s'/>\n"
-		    "    <port instance='ocscp' name='cp'/>\n"
-		    "  </connection>\n",
-		    i.name());
-      break;
+  if (sdp) {
+    OU::formatAdd(assy,
+		  "  <instance name='%s_unoc%u' worker='sdp_node'>\n"
+		  "    <property name='sdp_width' value='%zu'/>\n"
+		  "  </instance>\n"
+		  "  <instance name='%s_sdp2cp' worker='sdp2cp'>\n"
+		  "    <property name='sdp_width' value='%zu'/>\n"
+		  "  </instance>\n"
+		  "  <connection>\n"
+		  "    <port instance='%s_unoc%u' name='up'/>\n"
+		  "    <port instance='pfconfig' name='sdp'/>\n"
+		  "  </connection>\n"
+		  "  <connection>\n"
+		  "    <port instance='%s_unoc%u' name='client'/>\n"
+		  "    <port instance='%s_sdp2cp' name='sdp'/>\n"
+		  "  </connection>\n"
+		  "  <connection>\n"
+		  "    <port instance='%s_sdp2cp' name='cp'/>\n"
+		  "    <port instance='ocscp' name='cp'/>\n"
+		  "  </connection>\n",
+		  sdp->name(), *unoc, m_config.sdpWidth(), sdp->name(), m_config.sdpWidth(),
+		  sdp->name(), *unoc, sdp->name(), *unoc, sdp->name(), sdp->name());
+    (*unoc)++;
+  } else
+    // Connect it to the pf config's cpmaster
+    for (PortsIter ii = m_config.m_ports.begin(); ii != m_config.m_ports.end(); ii++) {
+      Port &i = **ii;
+      if (i.master && i.type == CPPort) {
+	OU::formatAdd(assy,
+		      "  <connection>\n"
+		      "    <port instance='pfconfig' name='%s'/>\n"
+		      "    <port instance='ocscp' name='cp'/>\n"
+		      "  </connection>\n",
+		      i.name());
+	break;
+      }
     }
-  }
   // Terminate the uNocs
   for (UNocsIter ii = uNocs.begin(); ii != uNocs.end(); ii++) {
     std::string prevInstance, prevPort;
@@ -442,7 +471,8 @@ parseConnection(ezxml_t cx, ContConnect &c) {
 	break;
       }
     if (!c.interconnect ||
-	c.interconnect->type != NOCPort || !c.interconnect->master)
+	(c.interconnect->type != NOCPort && c.interconnect->type != SDPPort) ||
+	!c.interconnect->master)
       return OU::esprintf("Interconnect '%s' not found for platform '%s'", attr,
 			   m_config.platform().m_name.c_str());
   }
@@ -451,55 +481,134 @@ parseConnection(ezxml_t cx, ContConnect &c) {
 
 // Make a connection to an interconnect
 const char *HdlContainer::
+emitSDPConnection(std::string &assy, unsigned &unoc, size_t &index, const ContConnect &c) {
+  const char *iname = c.interconnect->name();
+  Port *port = c.external ? c.external : c.port;
+  // Create the two instances:
+  // 1. A sdp node to use the interconnect sdp
+  // 2. A sender or receiver DP/DMA module to stream to/from another place on the interconnect
+  OU::formatAdd(assy,
+		"  <instance name='%s_unoc%u' worker='sdp_node'>\n"
+		"    <property name='sdp_width' value='%zu'/>\n"
+		"  </instance>\n",
+		iname, unoc, m_config.sdpWidth());
+
+  const char *dir = port->isDataProducer() ? "send" : "receive";
+  // instantiate sdp send or receive, and connect its wci
+  OU::formatAdd(assy,
+		"  <instance name='%s_sdp_%s%u' worker='sdp_%s' interconnect='%s'>\n"
+		"    <property name='sdp_width' value='%zu'/>\n"
+		"  </instance>\n"
+		"  <connection>\n"
+		"    <port instance='%s_sdp_%s%u' name='ctl'/>\n"
+		"    <port instance='ocscp' name='wci' index='%zu'/>\n"
+		"  </connection>\n"
+		"  <connection>\n"
+		"    <port instance='%s_unoc%u' name='client'/>\n"
+		"    <port instance='%s_sdp_%s%u' name='client'/>\n"
+		"  </connection>\n",
+		iname, dir, unoc, dir, iname, m_config.sdpWidth(),
+		iname, dir, unoc, index,
+		iname, unoc, iname, dir, unoc); 
+  index++;
+  // Connect to the port
+  OU::formatAdd(assy,
+		"  <connection>\n"
+		"    <port instance='%s_sdp_%s%u' %s='%s'/>\n"
+		"    <port instance='%s' %s='%s'/>\n"
+		"  </connection>\n",
+		iname, dir, unoc,
+		port->isDataProducer() ? "to" : "from", port->isDataProducer() ? "in" : "out",
+		c.external ? m_appAssembly.m_implName : c.devInstance->name(),
+		port->isDataProducer() ? "from" : "to", port->name());
+  return NULL;
+}
+// Make a connection to an interconnect
+const char *HdlContainer::
 emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContConnect &c) {
     // Find uNoc
   const char *iname = c.interconnect->name();
   unsigned &unoc = uNocs.at(iname);
   Port *port = c.external ? c.external : c.port;
-  if (port->type != WSIPort || c.interconnect->type != NOCPort || !c.interconnect->master)
+  if (port->type != WSIPort ||
+      (c.interconnect->type != NOCPort && c.interconnect->type != SDPPort) ||
+      !c.interconnect->master)
     return OU::esprintf("unsupported container connection between "
 			"port %s of %s%s and interconnect %s",
 			port->name(), iname,
 			c.external ? "assembly" : "device",
 			c.external ? "" : c.devInstance->device.name());
-  // Create the three instances:
-  // 1. A unoc node to use the interconnect unoc
-  // 2. A DP/DMA module to stream to/from another place on the interconnect
-  // 3. An SMA to adapt the WMI on the DP to the WSI that is needed (for now).
-  OU::formatAdd(assy,
-		"  <instance name='%s_unoc%u' worker='unoc_node'>\n"
-		"    <property name='control' value='false'/>\n"
-		"    <property name='position' value='%u'/>\n"
-		"  </instance>\n",
-		iname, unoc, unoc);
-  // instantiate dp, and connect its wci
-  OU::formatAdd(assy,
-		"  <instance name='%s_ocdp%u' worker='ocdp' interconnect='%s' configure='%u'>\n"
-		"    <property name='includePull' value='%u'/>\n"
-		"    <property name='includePush' value='%u'/>\n"
-		"  </instance>\n"
-		"  <connection>\n"
-		"    <port instance='%s_ocdp%u' name='ctl'/>\n"
-		"    <port instance='ocscp' name='wci' index='%zu'/>\n"
-		"  </connection>\n",
-		iname, unoc, iname, unoc,
-		1, // port->u.wdi.isProducer ? 0 : 1,
-		1, // port->u.wdi.isProducer ? 1 : 0,
-		iname, unoc,
-		index);
-  index++;
-  // instantiate sma, and connect its wci
-  OU::formatAdd(assy,
-		"  <instance name='%s_sma%u' worker='sma' adapter='%s' configure='%u'/>\n"
-		"  <connection>\n"
-		"    <port instance='%s_sma%u' name='ctl'/>\n"
-		"    <port instance='ocscp' name='wci' index='%zu'/>\n"
-		"  </connection>\n",
-		iname, unoc, iname, 
-		port->isDataProducer() ? 2 : 1,
-		iname, unoc,
-		index);
-  index++;
+  const char *err;
+  if (c.interconnect->type == SDPPort) {
+    if ((err = emitSDPConnection(assy, unoc, index, c)))
+      return err;
+  } else {
+    // Create the three instances:
+    // 1. A unoc node to use the interconnect unoc
+    // 2. A DP/DMA module to stream to/from another place on the interconnect
+    // 3. An SMA to adapt the WMI on the DP to the WSI that is needed (for now).
+    OU::formatAdd(assy,
+		  "  <instance name='%s_unoc%u' worker='unoc_node'>\n"
+		  "    <property name='control' value='false'/>\n"
+		  "    <property name='position' value='%u'/>\n"
+		  "  </instance>\n",
+		  iname, unoc, unoc);
+    // instantiate dp, and connect its wci
+    OU::formatAdd(assy,
+		  "  <instance name='%s_ocdp%u' worker='ocdp' interconnect='%s' configure='%u'>\n"
+		  "    <property name='includePull' value='%u'/>\n"
+		  "    <property name='includePush' value='%u'/>\n"
+		  "  </instance>\n"
+		  "  <connection>\n"
+		  "    <port instance='%s_ocdp%u' name='ctl'/>\n"
+		  "    <port instance='ocscp' name='wci' index='%zu'/>\n"
+		  "  </connection>\n",
+		  iname, unoc, iname, unoc,
+		  1, // port->u.wdi.isProducer ? 0 : 1,
+		  1, // port->u.wdi.isProducer ? 1 : 0,
+		  iname, unoc,
+		  index);
+    index++;
+    // instantiate sma, and connect its wci
+    OU::formatAdd(assy,
+		  "  <instance name='%s_sma%u' worker='sma' adapter='%s' configure='%u'/>\n"
+		  "  <connection>\n"
+		  "    <port instance='%s_sma%u' name='ctl'/>\n"
+		  "    <port instance='ocscp' name='wci' index='%zu'/>\n"
+		  "  </connection>\n",
+		  iname, unoc, iname, 
+		  port->isDataProducer() ? 2 : 1,
+		  iname, unoc,
+		  index);
+    index++;
+    OU::formatAdd(assy,
+		  "  <connection>\n"
+		  "    <port instance='%s_unoc%u' name='client'/>\n"
+		  "    <port instance='%s_ocdp%u' name='client'/>\n"
+		  "  </connection>\n",
+		  iname, unoc, iname, unoc);
+    OU::formatAdd(assy,
+		  "  <connection>\n"
+		  "    <port instance='%s_ocdp%u' %s='data'/>\n"
+		  "    <port instance='%s_sma%u' %s='message'/>\n"
+		  "  </connection>\n",
+		  iname, unoc, port->isDataProducer() ? "to" : "from",
+		  iname, unoc, port->isDataProducer() ? "from" : "to");
+    OU::formatAdd(assy,
+		  "  <connection>\n"
+		  "    <port instance='%s_sma%u' %s='%s'/>\n"
+		  "    <port instance='%s' %s='%s'/>\n"
+		  "  </connection>\n",
+		  iname, unoc,
+		  port->isDataProducer() ? "to" : "from",
+		  port->isDataProducer() ? "in" : "out",
+		  c.external ? m_appAssembly.m_implName : c.devInstance->name(),
+		  port->isDataProducer() ? "from" : "to",
+		  port->name());
+    std::string tc;
+    OU::format(tc, "%s_ocdp%u", iname, unoc);
+    emitTimeClient(assy, tc.c_str(), "wti");
+  }
   // Connect the new unoc node to the unoc
   std::string prevInstance, prevPort;
   if (unoc == 0) {
@@ -515,32 +624,6 @@ emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContCon
 		"    <port instance='%s_unoc%u' name='up'/>\n"
 		"  </connection>\n",
 		prevInstance.c_str(), prevPort.c_str(), iname, unoc);
-  OU::formatAdd(assy,
-		"  <connection>\n"
-		"    <port instance='%s_unoc%u' name='client'/>\n"
-		"    <port instance='%s_ocdp%u' name='client'/>\n"
-		"  </connection>\n",
-		iname, unoc, iname, unoc);
-  OU::formatAdd(assy,
-		"  <connection>\n"
-		"    <port instance='%s_ocdp%u' %s='data'/>\n"
-		"    <port instance='%s_sma%u' %s='message'/>\n"
-		"  </connection>\n",
-		iname, unoc, port->isDataProducer() ? "to" : "from",
-		iname, unoc, port->isDataProducer() ? "from" : "to");
-  OU::formatAdd(assy,
-		"  <connection>\n"
-		"    <port instance='%s_sma%u' %s='%s'/>\n"
-		"    <port instance='%s' %s='%s'/>\n"
-		"  </connection>\n",
-		iname, unoc,
-		port->isDataProducer() ? "to" : "from",
-		port->isDataProducer() ? "in" : "out",
-		c.external ? m_appAssembly.m_implName : c.devInstance->name(),
-		port->isDataProducer() ? "from" : "to",
-		port->name());
-  OU::format(prevInstance, "%s_ocdp%u", iname, unoc);
-  emitTimeClient(assy, prevInstance.c_str(), "wti");
   unoc++;
   return NULL;
 }
@@ -716,7 +799,7 @@ emitContainerImplHDL(FILE *f) {
 	  "%s Interface definition signal names are defined with pattern rule: \"%s\"\n\n",
 	  comment, m_implName, comment, m_pattern);
   fprintf(f,
-	  "Library IEEE; use IEEE.std_logic_1164.all;\n"
+	  "Library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;\n"
 	  "Library ocpi; use ocpi.all, ocpi.types.all;\n"
           "use work.%s_defs.all;\n",
 	  m_implName);

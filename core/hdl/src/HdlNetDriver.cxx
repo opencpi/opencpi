@@ -41,10 +41,10 @@ namespace OCPI {
       };
       Device::
       Device(Driver &driver, OE::Interface &ifc, std::string &name, OS::Ether::Address &devAddr,
-	     bool discovery, const char *data_proto, unsigned delayms, std::string &error)
+	     bool discovery, const char *data_proto, unsigned delayms, uint64_t ep_size,
+	     uint64_t controlOffset, uint64_t dataOffset, std::string &error)
 	: OCPI::HDL::Device(name, data_proto),
-	  m_socket(NULL), m_devAddr(devAddr), m_discovery(discovery), m_delayms(delayms),
-	  m_failed(false) {
+	  m_socket(NULL), m_devAddr(devAddr), m_discovery(discovery), m_delayms(delayms) {
 	// We need to get a socket to talk to this device.
 	// If we are at the ethernet level AND we don't a driver,
 	// we must share the socket for all devices on the same interface
@@ -57,9 +57,9 @@ namespace OCPI {
 	EtherControlPacket *ecp =  (EtherControlPacket *)(m_request.payload);
 	ecp->header.tag = 0;
 	OU::formatString(m_endpointSpecific, "%s:%s", data_proto, name.c_str());
-	m_endpointSize = ((uint64_t)1) << 32;
-	cAccess().setAccess(NULL, this, OCPI_UTRUNCATE(RegisterOffset, m_endpointSize - sizeof(OccpSpace)));
-	dAccess().setAccess(NULL, this, 0);
+	m_endpointSize = ep_size;
+	cAccess().setAccess(NULL, this, OCPI_UTRUNCATE(RegisterOffset, controlOffset));
+	dAccess().setAccess(NULL, this, OCPI_UTRUNCATE(RegisterOffset, dataOffset));
 	init(error);
       }
       Device::
@@ -71,7 +71,7 @@ namespace OCPI {
       request(EtherControlMessageType type, RegisterOffset offset,
 	      size_t bytes, OS::Ether::Packet &recvFrame, uint32_t *status,
 	      size_t extra, unsigned delayms) {
-	if (m_failed)
+	if (m_isFailed)
 	  throw OU::Error("HDL::Net::Device::request after previous failure");
 	EtherControlHeader &ech_out =  *(EtherControlHeader *)(m_request.payload);
 	ocpiDebug("Net::Driver request: delay %u m_delay %u tag %u",
@@ -140,7 +140,7 @@ namespace OCPI {
 	      response == ERROR ? OCCP_STATUS_READ_ERROR :
 	      OCCP_STATUS_ACCESS_ERROR;
 	  else {
-	    m_failed = true;
+	    m_isFailed = true;
 	    throw OU::Error("HDL network %s error: %s",
 			    extra ? "command" : (type == OCCP_READ ? "read" :
 						 (type == OCCP_WRITE ? "write" : "nop")),
@@ -151,7 +151,7 @@ namespace OCPI {
 	}
       }
 
-	// Shared "get" that returns value, and *status if status != NULL
+      // Shared "get" that returns value, and *status if status != NULL
       uint32_t Device::
       get(RegisterOffset offset, size_t bytes, uint32_t *status) {
 	ocpiDebug("Accessor read for offset 0x%zx of %zu bytes", offset, bytes);
@@ -161,18 +161,21 @@ namespace OCPI {
 	OS::Ether::Packet recvFrame;
 	request(OCCP_READ, offset, bytes, recvFrame, status);
 	uint32_t data = ntohl(((EtherControlReadResponse *)(recvFrame.payload))->data);
-	ocpiDebug("Accessor read received 0x%x from offset %zx tag %u", data, offset, ecr.header.tag);
-	return data;
+	uint32_t r = bytes == 4 ? data : (data >> ((offset&3) * 8)) & ~(UINT32_MAX << (bytes*8));
+	ocpiDebug("Accessor read received 0x%x from offset %zx tag %u return %x",
+		  data, offset, ecr.header.tag, r);
+	return r;
       }
       void Device::
       set(RegisterOffset offset, size_t bytes, uint32_t data, uint32_t *status) {
-	  EtherControlWrite &ecw =  *(EtherControlWrite *)(m_request.payload);
-	  ecw.address = htonl((offset & 0xffffff) & ~3);
-	  ecw.data = htonl(data);
-	  ecw.header.length = htons(sizeof(ecw)-2);
-	  OS::Ether::Packet recvFrame;
-	  request(OCCP_WRITE, offset, bytes, recvFrame, status);
-	}
+	ocpiDebug("Accessor write for offset 0x%zx of %zu bytes", offset, bytes);
+	EtherControlWrite &ecw =  *(EtherControlWrite *)(m_request.payload);
+	ecw.address = htonl((offset & 0xffffff) & ~3);
+	ecw.data = htonl(data << ((offset & 3) * 8));
+	ecw.header.length = htons(sizeof(ecw)-2);
+	OS::Ether::Packet recvFrame;
+	request(OCCP_WRITE, offset, bytes, recvFrame, status);
+      }
       void Device::
       command(const char *cmd, size_t bytes, char *response, size_t rlen, unsigned delayms) {
 	EtherControlHeader &eh_out =  *(EtherControlHeader *)(m_request.payload);
@@ -199,7 +202,8 @@ namespace OCPI {
 	return u.u64;
       }
       void Device::
-      getBytes(RegisterOffset offset, uint8_t *buf, size_t length, uint32_t *status) {
+      getBytes(RegisterOffset offset, uint8_t *buf, size_t length, uint32_t *status,
+	       bool string) {
 	while (length) {
 	  size_t bytes = sizeof(uint32_t) - (offset & 3); // bytes in word
 	  if (bytes > length)
@@ -207,7 +211,10 @@ namespace OCPI {
 	  uint32_t val = get(offset, bytes, status);
 	  if (status && *status)
 	    return;
-	  memcpy(buf, (uint8_t*)&val + (offset & 3), bytes);
+	  uint8_t *data = (uint8_t*)&val + (offset & 3);
+	  memcpy(buf, data, bytes);
+	  if (string && strnlen((char *)data, bytes) < bytes)
+	    break;
 	  length -= bytes;
 	  buf += bytes;
 	  offset += bytes;

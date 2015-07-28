@@ -66,5 +66,5 @@
   <property name="timeDelta" type="ULongLong" volatile='true' writable='true'/>
   <!-- The number of ticks per second of the time service time base -->
   <property name="ticksPerSecond" volatile='true'/>
-
+  <property name='sdp_width' type='uchar' parameter='1' default='1'/>
 </ComponentSpec>

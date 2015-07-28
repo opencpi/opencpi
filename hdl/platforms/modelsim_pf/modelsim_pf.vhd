@@ -3,10 +3,10 @@
 -- YOU *ARE* EXPECTED TO EDIT IT
 -- This file initially contains the architecture skeleton for worker: modelsim_pf
 
-library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
-library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
-library platform; use platform.platform_pkg.all;
-library modelsim_pf;
+library IEEE, ocpi, platform, sdp;
+use IEEE.std_logic_1164.all, ieee.numeric_std.all, ocpi.types.all, platform.platform_pkg.all,
+  sdp.all;
+
 architecture rtl of modelsim_pf_worker is
   signal   ctl_clk          : std_logic;
   signal   ctl_reset        : std_logic;
@@ -48,15 +48,24 @@ begin
       time_service            => time_out
       );
 
-  -- The control plan connection for simulators
-  dcp : sim_dcp
-    port map(
-      clk                     => ctl_clk,
-      reset                   => ctl_reset,
-      cp_in                   => cp_in,
-      cp_out                  => cp_out
-      );
-    
+  sdp_sim_i : sdp.sdp.sdp_sim
+    generic map(ocpi_debug => ocpi_debug,
+                sdp_width  => sdp_width)
+    port map(clk => ctl_clk,
+             reset => ctl_reset,
+             sdp_in => sdp_in,
+             sdp_out => sdp_out,
+             sdp_in_data => sdp_in_data,
+             sdp_out_data => sdp_out_data);
+  sdp_term_i : sdp.sdp.sdp_term
+    generic map(ocpi_debug => ocpi_debug,
+                sdp_width => sdp_width)
+    port map(up_in => sdp_slave_in,
+             up_in_data => sdp_slave_in_data,
+             up_out => sdp_slave_out,
+             up_out_data => sdp_slave_out_data,
+             drop_count => props_out.sdpDropCount);
+
   props_out.platform          <= to_string("modelsim_pf", props_out.platform'length-1);
   props_out.dna               <= (others => '0');
   props_out.nSwitches         <= (others => '0');

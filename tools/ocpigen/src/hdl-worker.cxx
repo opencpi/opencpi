@@ -31,7 +31,6 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <assert.h>
 #include <cstdio>
@@ -94,7 +93,7 @@ rawBitWidth(const OU::ValueType &dt) {
   case OA::OCPI_Bool:
     return 1;
   case OA::OCPI_Enum:
-    return bitsForMax(dt.m_nEnums - 1);
+    return OU::bitsForMax(dt.m_nEnums - 1);
   case OA::OCPI_String:
     return (dt.m_stringLength+1) * 8;
   default:
@@ -317,7 +316,7 @@ vhdlConvert(const std::string &name, const OU::ValueType &dt, std::string &v, st
   } else if (dt.m_baseType == OA::OCPI_Enum) {
     if (toVerilog)
       OU::formatAdd(s, "std_logic_vector(to_unsigned(%s_t'pos(%s), %zu))",
-		    name.c_str(), v.c_str(), bitsForMax(dt.m_nEnums - 1));
+		    name.c_str(), v.c_str(), OU::bitsForMax(dt.m_nEnums - 1));
     else
       OU::formatAdd(s, "%s_t'val(to_integer(unsigned(%s)))",
 		    name.c_str(), v.c_str());
@@ -462,8 +461,8 @@ emitParameters(FILE *f, Language lang, bool useDefaults, bool convert) {
 		  pr.m_name.c_str(), (i64 != 0) & 1);
         else if (pr.m_baseType == OA::OCPI_Enum)
 	  fprintf(f, "  parameter [%zu:0] %s = %zu'd%zu;\n",
-		  bitsForMax(pr.m_nEnums - 1) - 1, pr.m_name.c_str(),
-		  bitsForMax(pr.m_nEnums - 1), (size_t)pr.m_default->m_ULong);
+		  OU::bitsForMax(pr.m_nEnums - 1) - 1, pr.m_name.c_str(),
+		  OU::bitsForMax(pr.m_nEnums - 1), (size_t)pr.m_default->m_ULong);
 	else
 	  fprintf(f, "  parameter [%zu:0] %s = %zu'h%llx;\n",
 		  pr.m_nBits - 1, pr.m_name.c_str(), pr.m_nBits, (long long)i64);
@@ -525,7 +524,7 @@ emitSignals(FILE *f, Language lang, bool useRecords, bool inPackage, bool inWork
     p->emitPortDescription(f, lang);
     // Some ports are basically an array of interfaces.
     if (useRecords && lang == VHDL)
-      p->emitRecordSignal(f, last, "", inWorker);
+      p->emitRecordSignal(f, last, "", true, inPackage, inWorker);
     else
       p->emitSignals(f, lang, last, inPackage, inWorker);
   }
@@ -854,6 +853,11 @@ emitDefsHDL(bool wrap) {
     }
     if ((err = emitVhdlRecordInterface(f)))
       return err;
+    if (m_outer) {
+      fprintf(f, "end package %s_defs;\n", m_implName);
+      fclose(f);
+      return NULL;
+    }
     fprintf(f,
 	    "\ncomponent %s is\n", m_implName);
     emitParameters(f, lang, true, true);
@@ -1464,8 +1468,14 @@ emitImplHDL(bool wrap) {
 	  fprintf(f,
 		  "  -- signals between the decoder and the readback mux\n"
 		  "  signal read_enables  : bool_array_t(0 to %u);\n"
+#if 1
 		  "  signal readback_data : wci.data_a_t(work.%s_worker_defs.properties'range);\n",
-		  nProps_1, m_implName);
+		  nProps_1, m_implName
+#else
+		  "  signal readback_data : wci.data_a_t(0 to %u);\n",
+		  nProps_1, m_ctl.nNonRawRunProperties-1
+#endif
+		    );
 	  fprintf(f,
 		  "  -- The output to SData from nonRaw properties\n"
 		  "  signal nonRaw_SData  : std_logic_vector(31 downto 0);\n");
@@ -1694,8 +1704,8 @@ emitImplHDL(bool wrap) {
 	    fprintf(f, "   value        => props_from_worker.%s,\n", name);
 	  else
 	    fprintf(f, "   value        => my_%s_value,\n", name);
-	  fprintf(f, "   is_big_endian=> my_big_endian,\n");
-	  fprintf(f,   "                data_out     => readback_data(%u)", n);
+	  fprintf(f, "                is_big_endian=> my_big_endian,\n");
+	  fprintf(f, "                data_out     => readback_data(%u)", n);
 	  if (pr.m_baseType == OA::OCPI_String)
 	    fprintf(f, ",\n"
 		    "                offset       => offsets(%u)(%zu downto 0)",
@@ -1728,7 +1738,7 @@ emitImplHDL(bool wrap) {
     }
     if (!m_outer)
       emitVhdlShell(f);
-    emitVhdlSignalWrapper(f);
+    emitVhdlSignalWrapper(f); // can we avoid this?
   }
   fclose(f);
   return 0;

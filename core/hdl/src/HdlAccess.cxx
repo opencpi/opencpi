@@ -20,7 +20,6 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include "OcpiOsAssert.h"
 #include "OcpiOsMisc.h"
@@ -73,14 +72,37 @@ namespace OCPI {
 			  m_base + offset, true);
     }
 
+    static inline bool null64(uint64_t v, bool string) {
+      if (string)
+	for (unsigned n = sizeof(v); n; n--, v >>= 8)
+	  if ((v & 0xff) == 0)
+	    return true;
+      return false;
+    }
+    static inline bool null32(uint32_t v, bool string) {
+      if (string)
+	for (unsigned n = sizeof(v); n; n--, v >>= 8)
+	  if ((v & 0xff) == 0)
+	    return true;
+      return false;
+    }
+    static inline bool null16(uint16_t v, bool string) {
+      if (string)
+	for (unsigned n = sizeof(v); n; n--, v >>= 8)
+	  if ((v & 0xff) == 0)
+	    return true;
+      return false;
+    }
+
     void Access::
-    getBytes(RegisterOffset offset, uint8_t *to8, size_t bytes) const {
+    getBytes(RegisterOffset offset, uint8_t *to8, size_t bytes, bool string) const {
       volatile uint8_t *from8 = m_registers + offset;
       if (bytes >= 8 && !(((intptr_t)to8 | offset) & 7)) {
 	uint64_t *to64 = (uint64_t *)to8;
 	volatile uint64_t *from64 = (uint64_t *)from8;
 	do
-	  *to64++ = *from64++;
+	  if (null64(*to64++ = *from64++, string))
+	    return;
 	while ((bytes -= 8) >= 8);
 	to8 = (uint8_t*)to64;
 	from8 = (uint8_t *)from64;
@@ -89,7 +111,8 @@ namespace OCPI {
 	uint32_t *to32 = (uint32_t *)to8;
 	volatile uint32_t *from32 = (uint32_t *)from8;
 	do
-	  *to32++ = *from32++;
+	  if (null32(*to32++ = *from32++, string))
+	    return;
 	while ((bytes -= 4) >= 4);
 	to8 = (uint8_t*)to32;
 	from8 = (uint8_t *)from32;
@@ -98,7 +121,8 @@ namespace OCPI {
 	uint16_t *to16 = (uint16_t *)to8;
 	volatile uint16_t *from16 = (uint16_t *)from8;
 	do
-	  *to16++ = *from16++;
+	  if (null16(*to16++ = *from16++, string))
+	    return;
 	while ((bytes -= 2) >= 2);
 	to8 = (uint8_t*)to16;
 	from8 = (uint8_t *)from16;

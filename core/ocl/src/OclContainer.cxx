@@ -949,7 +949,7 @@ namespace OCPI
       void setPropertyBytes(const OA::PropertyInfo &, size_t,
 			    const uint8_t *, size_t ) const {}
       void getPropertyBytes(const OA::PropertyInfo &, size_t,
-			    uint8_t *, size_t ) const {}
+			    uint8_t *, size_t, bool ) const {}
 
     }; // End: class Worker
 

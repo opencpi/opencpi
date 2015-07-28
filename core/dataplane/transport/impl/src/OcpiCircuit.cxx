@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -51,6 +50,7 @@
  *
  */
 
+#include <inttypes.h>
 #include <string.h>
 #include <DtTransferInternal.h>
 #include <DtHandshakeControl.h>
@@ -74,8 +74,6 @@
 #include <OcpiRDTInterface.h>
 #include <OcpiTimeEmit.h>
 #include <OcpiPullDataDriver.h>
-#define __STDC_FORMAT_MACROS
-#include <inttypes.h>
 #include <OcpiTimeEmitCategories.h>
 
 using namespace OCPI::DataTransport;
