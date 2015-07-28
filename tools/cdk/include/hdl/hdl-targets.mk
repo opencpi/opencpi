@@ -49,17 +49,19 @@ ifndef OCPI_HDL_PLATFORM_PATH
   OCPI_HDL_PLATFORM_PATH:=$(OCPI_BASE_DIR)/hdl/platforms
 endif
 define doPlatformsDir
-  HdlSavePlatforms:=$(HdlAllPlatforms)
+  HdlSavePlatforms:=$$(HdlAllPlatforms)
   include $1/$(notdir $1).mk
-  HdlNewPlatforms:=$(filter-out $(HdlSavePlatforms),$(HdlAllPlatforms))
-  $(foreach p,$(filter-out $(HdlSavePlatforms),$(HdlAllPlatforms)),
-    $(eval HdlPlatformDir_$p:=$1/$p))
+  HdlNewPlatforms:=$$(filter-out $$(HdlSavePlatforms),$$(HdlAllPlatforms))
+  $$(foreach p,$$(filter-out $$(HdlSavePlatforms),$$(HdlNewPlatforms)),\
+    $$(eval HdlPlatformDir_$$p:=$1/$$p)\
+    $$(eval HdlAllPlatforms+=$$p))
+
 endef
   
 $(foreach d,$(subst :, ,$(OCPI_HDL_PLATFORM_PATH)),\
   $(foreach p,$(notdir $d),\
-    $(eval -include $d/$(notdir $d).mk)\
-    $(if $(filter platforms,$p),$(eval $(call doPlatformsDir,$d)), \
+    $(if $(filter platforms,$p),$(eval $(call doPlatformsDir,$d)),\
+       $(eval -include $d/$(notdir $d).mk)\
        $(eval HdlAllPlatforms+=$p) \
        $(eval HdlPlatformDir_$p:=$d))))
 

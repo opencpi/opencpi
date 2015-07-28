@@ -489,7 +489,7 @@ define HdlPrepareAssembly
   HdlPreCore=$$(eval $$(HdlSetWorkers))$$(call HdlCollectCores,$$(HdlTarget),HdlPrepareAssembly)
 endef
 define HdlPreprocessTargets
-  OCPI_HDL_PLATFORM=ml605
+  OCPI_HDL_PLATFORM=zed
   ifeq ($$(origin HdlPlatforms),undefined)
     ifdef HdlPlatform
       ifneq ($$(words $$(HdlPlatform)),1)

@@ -72,6 +72,8 @@ ifneq ($(MAKECMDGOALS),clean)
       HdlContConfig:=$$(word 2,$$(HdlContPfConfig))
       $$(if $$(HdlContPlatform),,$$(error Could not get platform attribute for container $1))
       $$(if $$(HdlContConfig),,$$(error Could not get config attribute for container $1))
+      $$(if $$(HdlPart_$$(HdlContPlatform)),,\
+        $$(error Platform for container $1, $$(HdlContPlatform), is not defined))
       HdlMyTargets+=$$(call OcpiDbg,HdlPart_$$(HdlContPlatform) is $$(HdlPart_$$(HdlContPlatform)))$$(call HdlGetFamily,$$(HdlPart_$$(HdlContPlatform)))
       ContName:=$(Worker)_$$(HdlContPlatform)_$$(HdlContConfig)_$1
       HdlPlatform_$$(ContName):=$$(HdlContPlatform)
