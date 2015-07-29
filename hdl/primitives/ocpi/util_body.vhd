@@ -40,6 +40,11 @@ function slv0(n : natural) return std_logic_vector is
 begin
   return v;
 end slv0;
+function slv1(n : natural) return std_logic_vector is
+  variable v : std_logic_vector(n-1 downto 0) := (others => '1');
+begin
+  return v;
+end slv1;
 function slvn(n, width : natural) return std_logic_vector is
   variable v : unsigned(width-1 downto 0) := to_unsigned(n, width);
 begin

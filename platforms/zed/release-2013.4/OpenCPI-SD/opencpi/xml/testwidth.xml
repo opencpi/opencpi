@@ -1,0 +1,21 @@
+<application done='file_write' package='ocpi'>
+  <instance component='file_read' connect='wsi_width_adapter0'/>
+    <property name='filename' value='test.input'/>
+    <property name='granularity' value='4'/>
+    <property name='messageSize' value='16'/>
+  </instance>
+  <instance component='wsi_width_adapter' connect='bias_wide'>
+    <property name='width_in' value='32'/>
+    <property name='width_out' value='64'/>
+  </instance>
+  <instance worker='bias_wide' connect='wsi_width_adapter1'>
+    <property name='nWide' value='2'/>
+  </instance>
+  <instance worker='wsi_width_adapter' connect='file_write'>
+    <property name='width_in' value='64'/>
+    <property name='width_out' value='32'/>
+  </instance>
+  <instance component='file_write'>
+    <property name='filename' value='test.outputwrong'/>
+  </instance>
+</application>

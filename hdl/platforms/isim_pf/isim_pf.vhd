@@ -13,40 +13,13 @@ architecture rtl of isim_pf_worker is
   signal   ctl_rst_n        : std_logic;
 begin
   ctl_rst_n <= not ctl_reset; -- for those that need it
+  timebase_out.clk   <= ctl_clk;
+  timebase_out.reset <= ctl_reset;
+  timebase_out.ppsIn <= '0';
 
   -- generate a clock
   clock : sim_clk
     port map(clk => ctl_clk, reset => ctl_reset);
-
-  -- This piece of generic infrastructure in is instantiated here because
-  -- it localizes all these signals here in the platform worker, and thus
-  -- the platform worker simply produces clock, reset, and time, all in the
-  -- clock domain of the timekeepping clock.
-  ts : time_server
-    port map(
-      CLK                     => ctl_clk,
-      RST_N                   => ctl_rst_n,
-      timeCLK                 => ctl_clk,
-      timeRST_N               => ctl_rst_n,
-
-      timeControl             => props_in.timeControl,
-      timeControl_written     => props_in.timeControl_written,
-      timeStatus              => props_out.timeStatus,
-      timeNowIn               => props_in.timeNow,
-      timeNow_written         => props_in.timeNow_written,
-      timeNowOut              => props_out.timeNow,
-      timeDeltaIn             => props_in.timeDelta,
-      timeDelta_written       => props_in.timeDelta_written,
-      timeDeltaOut            => props_out.timeDelta,
-      ticksPerSecond          => props_out.ticksPerSecond,
-      
-      -- PPS interface
-      ppsIn                   => '0', -- we could actually generate this
-      ppsOut                  => open,
-
-      -- Time service output
-      time_service            => time_out
-      );
 
   sdp_sim_i : sdp.sdp.sdp_sim
     generic map(ocpi_debug => ocpi_debug,

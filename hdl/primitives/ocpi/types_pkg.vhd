@@ -106,6 +106,7 @@ constant float_max : float_t := x"7f7f_ffff"; -- 3.40282347e+38
 function to_float(r: real) return float_t;
 function from_float(f: float_t) return real;
 function from_float(f: float_t) return std_logic_vector;
+function from_float(f: float_t) return natural;
 --function slv(a: float_t) return std_logic_vector;
 function slv(a: float_array_t) return std_logic_vector;
 function to_slv(a: float_array_t) return std_logic_vector;

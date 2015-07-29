@@ -693,7 +693,7 @@ MKDEPENDFLAGS += \
 endif # End: ifeq ($(OCPI_CORBA_ORB),TAO)
 
 ifeq ($(OCPI_CORBA_ORB),OMNI)
-  IDL=$(OCPI_BASE_DIR)/do_omniidl.csh
+  IDL=$(OCPI_BASE_DIR)/scripts/run_omniidl.csh
   IDLOPTS=
   ALLDEFS += OCPI_USES_OMNI
   ORBINCDIRS = $(OCPI_OMNI_INCLUDE_DIR)
@@ -751,79 +751,79 @@ distcleanup:	cleanup
 #
 
 OCPI_EXTERNAL_EXPORTS = \
-	$(OCPI_BASE_DIR)/core/util/misc/include \
-	$(OCPI_BASE_DIR)/core/util/driver/include \
-	$(OCPI_BASE_DIR)/core/dataplane/rdma_drivers/pio/include \
-	$(OCPI_BASE_DIR)/core/dataplane/rdma_driver_interface/interfaces/include 
+	$(OCPI_BASE_DIR)/runtime/util/misc/include \
+	$(OCPI_BASE_DIR)/runtime/util/driver/include \
+	$(OCPI_BASE_DIR)/runtime/dataplane/rdma_drivers/pio/include \
+	$(OCPI_BASE_DIR)/runtime/dataplane/rdma_driver_interface/interfaces/include 
 
 
 
-OCPIOS_EXPORTS = $(OCPI_BASE_DIR)/adapt/os/ocpios/interfaces/include
-OCPIOS_LIBS = $(OCPI_BASE_DIR)/adapt/os/ocpios/ocpios
+OCPIOS_EXPORTS = $(OCPI_BASE_DIR)/os/interfaces/include
+OCPIOS_LIBS = $(OCPI_BASE_DIR)/os/os
 
 APPLICATION_EXPORTS = \
-	$(OCPI_BASE_DIR)/core/application/include
+	$(OCPI_BASE_DIR)/runtime/application/include
 
 LIBRARY_EXPORTS = \
-	$(OCPI_BASE_DIR)/core/library/include
+	$(OCPI_BASE_DIR)/runtime/library/include
 
 DATA_TRANSFER_EXPORTS = \
-	$(OCPI_BASE_DIR)/core/dataplane/rdma_driver_interface/interfaces/include \
-	$(OCPI_BASE_DIR)/core/dataplane/rdma_utils/utils/include \
-	$(OCPI_BASE_DIR)/core/dataplane/msg_driver_interface/include/
+	$(OCPI_BASE_DIR)/runtime/dataplane/rdma_driver_interface/interfaces/include \
+	$(OCPI_BASE_DIR)/runtime/dataplane/rdma_utils/utils/include \
+	$(OCPI_BASE_DIR)/runtime/dataplane/msg_driver_interface/include/
 
 DATA_TRANSFER_LIBS = \
-   $(OCPI_BASE_DIR)/core/dataplane/rdma_driver_interface/rdma_driver_interface \
-   $(OCPI_BASE_DIR)/core/dataplane/rdma_utils/rdma_utils \
-   $(OCPI_BASE_DIR)/core/dataplane/rdma_smb/rdma_smb \
+   $(OCPI_BASE_DIR)/runtime/dataplane/rdma_driver_interface/rdma_driver_interface \
+   $(OCPI_BASE_DIR)/runtime/dataplane/rdma_utils/rdma_utils \
+   $(OCPI_BASE_DIR)/runtime/dataplane/rdma_smb/rdma_smb \
 
-DATA_TRANSFER_DRIVER_LIBS = $(OCPI_BASE_DIR)/core/dataplane/rdma_drivers/rdma_drivers \
+DATA_TRANSFER_DRIVER_LIBS = $(OCPI_BASE_DIR)/runtime/dataplane/rdma_drivers/rdma_drivers \
 
-MSG_TRANSPORT_LIBS = $(OCPI_BASE_DIR)/core/dataplane/msg_driver_interface/msg_driver_interface
+MSG_TRANSPORT_LIBS = $(OCPI_BASE_DIR)/runtime/dataplane/msg_driver_interface/msg_driver_interface
 
-TX_DRIVER_SUPPORT_LIBS = $(OCPI_BASE_DIR)/core/dataplane/rdma_smb/rdma_smb
+TX_DRIVER_SUPPORT_LIBS = $(OCPI_BASE_DIR)/runtime/dataplane/rdma_smb/rdma_smb
 
 DATA_TRANSPORT_EXPORTS = \
-	$(OCPI_BASE_DIR)/core/dataplane/transport/interface/include \
-	$(OCPI_BASE_DIR)/core/dataplane/transport/client_server/include \
-	$(OCPI_BASE_DIR)/core/dataplane/transport/impl/include \
-	$(OCPI_BASE_DIR)/core/dataplane/transport/ddnp/include
+	$(OCPI_BASE_DIR)/runtime/dataplane/transport/interface/include \
+	$(OCPI_BASE_DIR)/runtime/dataplane/transport/client_server/include \
+	$(OCPI_BASE_DIR)/runtime/dataplane/transport/impl/include \
+	$(OCPI_BASE_DIR)/runtime/dataplane/transport/ddnp/include
 
-DATA_TRANSPORT_LIBS = $(OCPI_BASE_DIR)/core/dataplane/transport/transport
+DATA_TRANSPORT_LIBS = $(OCPI_BASE_DIR)/runtime/dataplane/transport/transport
 
 
 CONTAINER_EXPORTS = \
-	$(OCPI_BASE_DIR)/core/container/include \
-	$(OCPI_BASE_DIR)/core/ocl/include \
-	$(OCPI_BASE_DIR)/core/remote/include \
-	$(OCPI_BASE_DIR)/core/rcc/include
+	$(OCPI_BASE_DIR)/runtime/container/include \
+	$(OCPI_BASE_DIR)/runtime/ocl/include \
+	$(OCPI_BASE_DIR)/runtime/remote/include \
+	$(OCPI_BASE_DIR)/runtime/rcc/include
 
 HDL_CONTAINER_EXPORTS = \
-	$(OCPI_BASE_DIR)/core/hdl/include
+	$(OCPI_BASE_DIR)/runtime/hdl/include
 
 OCL_CONTAINER_EXPORTS = \
-	$(OCPI_BASE_DIR)/core/ocl/include
+	$(OCPI_BASE_DIR)/runtime/ocl/include
 
 CONTAINER_LIBS = \
-	$(OCPI_BASE_DIR)/core/container/container
+	$(OCPI_BASE_DIR)/runtime/container/container
 
 APPLICATION_LIBS = \
-	$(OCPI_BASE_DIR)/core/application/application
+	$(OCPI_BASE_DIR)/runtime/application/application
 
 LIBRARY_LIBS = \
-	$(OCPI_BASE_DIR)/core/library/library
+	$(OCPI_BASE_DIR)/runtime/library/library
 
 RCC_CONTAINER_LIBS = \
-	$(OCPI_BASE_DIR)/core/rcc/rcc
+	$(OCPI_BASE_DIR)/runtime/rcc/rcc
 
 HDL_CONTAINER_LIBS = \
-	$(OCPI_BASE_DIR)/core/hdl/hdl
+	$(OCPI_BASE_DIR)/runtime/hdl/hdl
 
 OCL_CONTAINER_LIBS = \
-	$(OCPI_BASE_DIR)/core/ocl/ocl
+	$(OCPI_BASE_DIR)/runtime/ocl/ocl
 
 REM_CONTAINER_LIBS = \
-	$(OCPI_BASE_DIR)/core/remote/remote
+	$(OCPI_BASE_DIR)/runtime/remote/remote
 
 ALL_CONTAINER_LIBS = \
         $(REM_CONTAINER_LIBS) \
@@ -834,71 +834,71 @@ ifeq ($(OCPI_HAVE_OPENCL),1)
 ALL_CONTAINER_LIBS += $(OCL_CONTAINER_LIBS)
 endif
 
-LOGGER_EXPORTS = $(OCPI_BASE_DIR)/core/util/logger/include
-#LOGGER_LIBS = $(OCPI_BASE_DIR)/core/local/logger/logger
+LOGGER_EXPORTS = $(OCPI_BASE_DIR)/runtime/util/logger/include
+#LOGGER_LIBS = $(OCPI_BASE_DIR)/runtime/local/logger/logger
 
 UTIL_EXPORTS = \
-	$(OCPI_BASE_DIR)/core/util/driver/include \
-	$(OCPI_BASE_DIR)/core/util/expressionP/include \
-	$(OCPI_BASE_DIR)/core/util/ezxml/include \
-	$(OCPI_BASE_DIR)/core/util/filefs/include \
-	$(OCPI_BASE_DIR)/core/util/http/include \
-	$(OCPI_BASE_DIR)/core/util/ior/include \
-	$(OCPI_BASE_DIR)/core/util/memfs/include \
-	$(OCPI_BASE_DIR)/core/util/misc/include \
-	$(OCPI_BASE_DIR)/core/util/parentChild/include \
-	$(OCPI_BASE_DIR)/core/util/property/include \
-	$(OCPI_BASE_DIR)/core/util/streamfs/include \
-	$(OCPI_BASE_DIR)/core/util/tcp/include \
-	$(OCPI_BASE_DIR)/core/util/timeEmit/include \
-	$(OCPI_BASE_DIR)/core/util/uuid/include \
-	$(OCPI_BASE_DIR)/core/util/vfs/include \
-	$(OCPI_BASE_DIR)/core/util/zipfs/include \
-	$(OCPI_BASE_DIR)/core/util/res/include \
-	$(OCPI_BASE_DIR)/core/util/list/include \
-	$(OCPI_BASE_DIR)/core/util/thread/include \
-	$(OCPI_BASE_DIR)/core/util/fasttime/include \
-	$(OCPI_BASE_DIR)/core/util/sockets/include \
-	$(OCPI_BASE_DIR)/core/util/assembly/include \
-	$(OCPI_BASE_DIR)/core/util/zlib/include \
-	$(OCPI_BASE_DIR)/core/util/logger/include \
-	$(OCPI_BASE_DIR)/core/include 
-UTIL_LIBS = $(OCPI_BASE_DIR)/core/util/util
+	$(OCPI_BASE_DIR)/runtime/util/driver/include \
+	$(OCPI_BASE_DIR)/runtime/util/expressionP/include \
+	$(OCPI_BASE_DIR)/runtime/util/ezxml/include \
+	$(OCPI_BASE_DIR)/runtime/util/filefs/include \
+	$(OCPI_BASE_DIR)/runtime/util/http/include \
+	$(OCPI_BASE_DIR)/runtime/util/ior/include \
+	$(OCPI_BASE_DIR)/runtime/util/memfs/include \
+	$(OCPI_BASE_DIR)/runtime/util/misc/include \
+	$(OCPI_BASE_DIR)/runtime/util/parentChild/include \
+	$(OCPI_BASE_DIR)/runtime/util/property/include \
+	$(OCPI_BASE_DIR)/runtime/util/streamfs/include \
+	$(OCPI_BASE_DIR)/runtime/util/tcp/include \
+	$(OCPI_BASE_DIR)/runtime/util/timeEmit/include \
+	$(OCPI_BASE_DIR)/runtime/util/uuid/include \
+	$(OCPI_BASE_DIR)/runtime/util/vfs/include \
+	$(OCPI_BASE_DIR)/runtime/util/zipfs/include \
+	$(OCPI_BASE_DIR)/runtime/util/res/include \
+	$(OCPI_BASE_DIR)/runtime/util/list/include \
+	$(OCPI_BASE_DIR)/runtime/util/thread/include \
+	$(OCPI_BASE_DIR)/runtime/util/fasttime/include \
+	$(OCPI_BASE_DIR)/runtime/util/sockets/include \
+	$(OCPI_BASE_DIR)/runtime/util/assembly/include \
+	$(OCPI_BASE_DIR)/runtime/util/zlib/include \
+	$(OCPI_BASE_DIR)/runtime/util/logger/include \
+	$(OCPI_BASE_DIR)/runtime/include 
+UTIL_LIBS = $(OCPI_BASE_DIR)/runtime/util/util
 
 CDKUTILS_EXPORTS = $(OCPI_BASE_DIR)/tools/cdkutils/include
 CDKUTILS_LIBS = $(OCPI_BASE_DIR)/tools/cdkutils/cdkutils
 
 ifeq ($(SCAVERSION),2.2)
-ORB_SERVICES_EXPORTS = $(OCPI_BASE_DIR)/core/corba/orb_services/cf22log/idl
+ORB_SERVICES_EXPORTS = $(OCPI_BASE_DIR)/runtime/corba/orb_services/cf22log/idl
 else
-ORB_SERVICES_EXPORTS = $(OCPI_BASE_DIR)/core/corba/orb_services/lwlog/idl
+ORB_SERVICES_EXPORTS = $(OCPI_BASE_DIR)/runtime/corba/orb_services/lwlog/idl
 endif
 
 ORB_SERVICES_EXPORTS += \
-	$(OCPI_BASE_DIR)/core/corba/orb_services/corba/include \
-	$(OCPI_BASE_DIR)/core/corba/orb_services/naming/idl \
-	$(OCPI_BASE_DIR)/core/corba/orb_services/event/idl
-ORB_SERVICES_LIBS = $(OCPI_BASE_DIR)/core/corba/orb_services/orb_services
+	$(OCPI_BASE_DIR)/runtime/corba/orb_services/corba/include \
+	$(OCPI_BASE_DIR)/runtime/corba/orb_services/naming/idl \
+	$(OCPI_BASE_DIR)/runtime/corba/orb_services/event/idl
+ORB_SERVICES_LIBS = $(OCPI_BASE_DIR)/runtime/corba/orb_services/orb_services
 
-CORBA_UTIL_EXPORTS = $(OCPI_BASE_DIR)/core/corba/corba_util/misc/include
-CORBA_UTIL_LIBS = $(OCPI_BASE_DIR)/core/corba/corba_util/corba_util
+CORBA_UTIL_EXPORTS = $(OCPI_BASE_DIR)/runtime/corba/corba_util/misc/include
+CORBA_UTIL_LIBS = $(OCPI_BASE_DIR)/runtime/corba/corba_util/corba_util
 
 ifeq ($(SCAVERSION),2.2)
-SCA_CF_EXPORTS = $(OCPI_BASE_DIR)/core/sca/cf/cf22/idl
+SCA_CF_EXPORTS = $(OCPI_BASE_DIR)/runtime/sca/cf/cf22/idl
 else
-SCA_CF_EXPORTS = $(OCPI_BASE_DIR)/core/sca/cf/cf222/idl
+SCA_CF_EXPORTS = $(OCPI_BASE_DIR)/runtime/sca/cf/cf222/idl
 endif
 
-SCA_CF_LIBS = $(OCPI_BASE_DIR)/core/sca/cf/cf
+SCA_CF_LIBS = $(OCPI_BASE_DIR)/runtime/sca/cf/cf
 
 CF_UTIL_EXPORTS = \
-	$(OCPI_BASE_DIR)/core/sca/cf_util/misc/include \
-	$(OCPI_BASE_DIR)/core/sca/cf_util/device_base/include \
-	$(OCPI_BASE_DIR)/core/sca/cf_util/vfs/include
-CF_UTIL_LIBS = $(OCPI_BASE_DIR)/core/sca/cf_util/cf_util
+	$(OCPI_BASE_DIR)/runtime/sca/cf_util/misc/include \
+	$(OCPI_BASE_DIR)/runtime/sca/cf_util/device_base/include \
+	$(OCPI_BASE_DIR)/runtime/sca/cf_util/vfs/include
+CF_UTIL_LIBS = $(OCPI_BASE_DIR)/runtime/sca/cf_util/cf_util
 
 
-#WCI_API_BASE = $(OCPI_BASE_DIR)/core/control/wci_api
+#WCI_API_BASE = $(OCPI_BASE_DIR)/runtime/control/wci_api
 #WCI_API_EXPORTS = $(WCI_API_BASE)/interface/include \
 #	$(WCI_API_BASE)/rpl/include \
 #	$(WCI_API_BASE)/api/include

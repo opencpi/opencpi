@@ -3,77 +3,58 @@
 -- YOU *ARE* EXPECTED TO EDIT IT
 -- This file initially contains the architecture skeleton for worker: lime_spi
 
-library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
-library ocpi; use ocpi.types.all, ocpi.util.all; -- remove this to avoid all ocpi name collisions
+library IEEE, ocpi;
+use IEEE.std_logic_1164.all, ieee.numeric_std.all;
+use ocpi.all, ocpi.types.all, ocpi.util.all;
 architecture rtl of lime_spi_worker is
-  -- Registers/state
-  signal who_has_it : std_logic;
+  constant rx_c         : natural := 0;         
+  constant tx_c         : natural := 1;         
+  constant addr_width_c : natural := 7;
   -- Internal signals
-  signal done       : bool_t;
-  signal busy       : bool_t;
-  signal renable    : bool_t;
-  signal wenable    : bool_t;
   signal rdata      : std_logic_vector(7 downto 0);
   signal wdata      : std_logic_vector(7 downto 0);
-  signal addr       : unsigned(6 downto 0);
+  signal addr       : unsigned(addr_width_c-1 downto 0);
   -- Convenience
-  signal idx        : natural range 0 to 1;
   signal lsb        : natural range 0 to 31;
+  signal raw_in     : wci.raw_prop_out_t;
+  signal raw_out    : wci.raw_prop_in_t;
 begin
-  -- Assert chip reset if system is reset or both clients are reset
-  RESET   <= wci_Reset or
-             ((not props_in(0).present or props_in(0).reset) and
-              (not props_in(1).present or props_in(1).reset));
-  idx     <= 0 when who_has_it = '1' else 0;
-  lsb     <= 8 * to_integer(props_in(idx).addr(1 downto 0));
+  -- Assert chip reset if system is reset or both clients are reset, chip reset as asserted low
+  RESET        <= not (wci_Reset or raw_in.reset);
+  lsb          <= 8 * to_integer(raw_in.raw.address(1 downto 0));
   -- These are temp signals because Xilinx isim can't put them as actuals
-  wdata   <= props_in(idx).data(lsb + 7 downto lsb);
-  addr    <= props_in(idx).addr(6 downto 0);
-  renable <= props_in(idx).renable;
-  wenable <= props_in(idx).wenable;
-  g0: for i in 0 to 1 generate
-    props_out(i).data <= rdata & rdata & rdata & rdata; -- replicate read data everywhere
-    props_out(i).present(2 to props_out(i).present'right) <= (others => '0');
-    props_out(i).done <= to_bool(idx = i and done);
-    g1: for k in 0 to 1 generate
-      props_out(i).present(k) <= props_in(k).present; -- replicate presence bits
-    end generate g1;
-    dev_out(i).rx_clk_in  <= rx_clk_in;
-    dev_out(i).tx_clk_in  <= tx_clk_in;
-    dev_out(i).rx_present <= props_in(0).present;
-    dev_out(i).tx_present <= props_in(1).present;
-  end generate g0;
-
+  wdata        <= raw_in.raw.data(lsb + 7 downto lsb);
+  addr         <= raw_in.raw.address(addr'range);
+  raw_out.raw.data  <= rdata & rdata & rdata & rdata;
+  -- Use the generic raw property arbiter between rx and tx
+  arb : wci.raw_arb
+    generic map(nusers => 2)
+    port map(
+      clk         => wci_clk,
+      reset       => wci_reset,
+      from_users  => rprops_in,
+      to_users    => rprops_out,
+      from_device => raw_out,
+      to_device   => raw_in);
+  -- Drive SPI from the arbitrated raw interface
   spi : entity work.spi
     generic map(
-      nusers => 2,
-      data_width => 8,
-      addr_width => 7,
+      data_width    => 8,
+      addr_width    => addr_width_c,
       clock_divisor => 16
       )
     port map(
       clk     => wci_clk,
       reset   => wci_reset,
-      renable => renable,
-      wenable => wenable,
+      renable => raw_in.raw.is_read,
+      wenable => raw_in.raw.is_write,
       addr    => addr,
       wdata   => wdata,
       rdata   => rdata,
-      done    => done,
-      busy    => busy,
+      done    => raw_out.raw.done,
       sdo     => sdo,
       sclk    => sclk,
       sen     => sen,
       sdio    => sdio
       );
-
-  arb : process(wci_Clk) is begin
-    if rising_edge(wci_Clk) then
-      if wci_Reset = '1' then
-        who_has_it <= props_in(1).present;
-      elsif not its(busy) and props_in(0).present and props_in(1).present then
-        who_has_it <= not who_has_it;
-      end if;
-    end if;
-  end process arb;
 end rtl;

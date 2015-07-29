@@ -1,6 +1,0 @@
-<OclImplementation>
-  <xi_include href="matrixMul_spec.xml"/>
-  <ControlInterface LocalWorkSize="16,16" GlobalWorkSize="80,160"/>
-</OclImplementation>
-
-

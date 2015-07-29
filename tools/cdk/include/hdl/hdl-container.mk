@@ -1,54 +1,75 @@
-# This is the makefile for container directories where the assembly is elsewhere.
+# This is the makefile for container directories where the assembly might be elsewhere.
 # If containers are built in subdirectories of assemblies, then the assembly one level
 # up (in ..)
-# One container will be built here, but it may be build for multiple build configurations.
+# One container will be built here, but it may be build for multiple platforms.
 # The HdlAssembly variable must be set to point to the relative or absolute path
 # to the assembly's directory, ending in the name of the assembly.
 HdlMode:=container
-$(infox MYCL:$(ComponentLibraries):$(XmlIncludeDirs):$(MdlAssembly))
+$(infox MYCL:$(ComponentLibraries):$(ComponentLibrariesInternal):$(XmlIncludeDirs):$(MdlAssembly))
+ifndef HdlPlatforms
+HdlPlatforms:=$(HdlPlatform)
+endif
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 # These next lines are similar to what worker.mk does
 override Workers:=$(CwdName:container-%=%)
 override Worker:=$(Workers)
 XmlName:=$(Worker).xml
+# XML file is either here or generated in the assembly or generated here
 Worker_$(Worker)_xml:=$(or $(wildcard $(XmlName)),\
-                           $(wildcard $(HdlAssembly)/$(XmlName)),\
+                           $(wildcard $(HdlAssembly)/gen/$(XmlName)),\
                            $(wildcard $(GeneratedDir)/$(XmlName)))
 Worker_xml:=$(Worker_$(Worker)_xml)
-Assembly:=$(HdlAssembly)
+Assembly:=$(notdir $(HdlAssembly))
+# Unless we are cleaning, figure out our platform, its dir, and the platform config
 ifneq ($(MAKECMDGOALS),clean)
   ifndef Worker_xml
-    $(error The XML for the container assembly, $(Worker).xml, is missing))
+    $(error The XML for the container assembly, $(Worker).xml, was not found)
   endif
+  ifeq ($(wildcard $(Worker_xml)),)
+    $(error Cannot find an XML file for container: $(Worker))
+  endif
+  $(and $(call DoShell,$(OcpiGen) -X $(Worker_xml),HdlContPfConfig),\
+     $(error Processing container XML $(Worker_xml): $(HdlContPfConfig)))
+  HdlContPf:=$(word 1,$(HdlContPfConfig))
+  ifdef HdlPlatforms
+   ifeq ($(filter $(HdlContPf),$(HdlPlatforms)),)
+     $(info Nothing built since container platform is $(HdlContPf), which is not in HdlPlatforms: $(HdlPlatforms))
+     HdlSkip:= 1
+   endif
+  endif
+  ifeq ($(filter $(HdlContPf),$(HdlAllPlatforms)),)
+    $(error The platform $(HdlContPfConfig) in $(Worker_xml) is unknown.)
+  endif
+  override HdlPlatform:=$(HdlContPf)
+  override HdlPlatforms:=$(HdlPlatform)
+  HdlPlatformDir:=$(HdlPlatformDir_$(HdlPlatform))
+  HdlPart:=$(call HdlGetPart,$(HdlPlatform))
+  override HdlTargets:=$(call HdlGetFamily,$(HdlPart))
+  override HdlTarget:=$(HdlTargets)
+  HdlConfig:=$(word 2,$(HdlContPfConfig))
+  Platform:=$(HdlPlatform)
+  PlatformDir:=$(HdlPlatformDir)
 endif
 OcpiLanguage:=vhdl
 override HdlLibraries+=sdp platform
 # ComponentLibraries and XmlIncludeDirs are already passed to us on the command line.
-#$(eval $(HdlSearchComponentLibraries))
-#$(infox XMLI:$(XmlIncludeDirs))
-#override XmlIncludeDirs+=$(HdlPlatformsDir) $(HdlPlatformsDir)/specs $(HdlAssembly)
-$(infox XMLI2:$(XmlIncludeDirs))
-AssemblyName=$(notdir $(HdlAssembly))
+# Note that the platform directory should be first XML dir since the config file name should be
+# scoped to the platform.
+override XmlIncludeDirsInternal:=\
+   $(call Unique,$(HdlPlatformDir) $(XmlIncludeDirs) \
+      $(HdlPlatformsDir)/specs $(HdlAssembly))
+override ComponentLibraries:=$(call Unique,\
+  $(ComponentLibraries) $(ComponentLibrariesInternal) \
+  $(HdlPlatformDir) $(HdlAssembly) \
+  components devices adapters cards)
+$(infox XMLI2:$(XmlIncludeDirsInternal):$(ComponentLibraries):$(HdlPlatform):$(HdlPlatformDir_$(HdlPlatform)))
+#AssemblyName=$(notdir $(HdlAssembly))
 override LibDir=$(HdlAssembly)/lib/hdl
 ifneq ($(MAKECMDGOALS),clean)
-  # Manipulate targets before this
-  $(and $(call DoShell,$(OcpiGen) -S $(AssemblyName) -x platform $(Worker_xml),HdlContPlatform),\
-    $(error Processing container XML $1: $(HdlContPlatform)))
-  $(and $(call DoShell,$(OcpiGen) -S $(AssemblyName) -x configuration $(Worker_xml),HdlContConfig),\
-    $(error Processing container XML $1: $(HdlContConfig)))
-  $(call OcpiDbgVar,HdlContPlatform)
-  $(call OcpiDbgVar,HdlContConfig)
-  $(if $(HdlContPlatform),,$(error Could not get HdlPlatform for container $1))
-  $(if $(HdlContConfig),,$(error Could not get HdlConfiguration for container $1))
-  override HdlPlatforms:=$(HdlContPlatform)
-  override HdlPart:=$(call HdlGetPart,$(HdlContPlatform))
-  override HdlTargets:=$(call HdlGetFamily,$(HdlPart))
-  override HdlPlatform:=$(HdlContPlatform)
-  override HdlTarget:=$(HdlTargets)
-  override HdlConfig:=$(HdlContConfig)
+  override Platform:=$(if $(filter 1,$(words $(HdlPlatforms))),$(HdlPlatforms))
+  $(eval $(HdlSearchComponentLibraries))
   include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
   ifndef HdlSkip
-    override ComponentLibraries+=$(HdlPlatformsDir)/$(HdlContPlatform) $(HdlAssembly) devices
     $(eval $(HdlPrepareAssembly))
     include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
     ifndef HdlSkip
@@ -59,7 +80,8 @@ ifneq ($(MAKECMDGOALS),clean)
       HdlContPreCompile=\
         echo Generating UUID, artifact xml file and metadata ROM file for container $(Worker) "($1)". && \
         (cd .. && \
-         $(OcpiGen) -D $(call WkrTargetDir,$(HdlTarget),$1) -A -S $(AssemblyName) -P $(HdlPlatform) -e $(HdlPart) $(ImplXmlFile) && \
+         $(OcpiGen) -D $(call WkrTargetDir,$(HdlTarget),$1) -A -S $(Assembly) -P $(HdlPlatform) \
+                    -e $(HdlPart) -F $(PlatformDir) $(ImplXmlFile) && \
          $(OcpiHdl) bram $(call ArtifactXmlName,$1) $(call MetadataRom,$1) \
         )
       # Now we need to make a bit file from every paramconfig for this worker
@@ -84,10 +106,12 @@ ifneq ($(MAKECMDGOALS),clean)
         all: $(call HdlContBitZName,$1) $(call HdlContBitZ,$1)
 
         # Invoke tool build: <target-dir>,<assy-name>,<core-file-name>,<config>,<platform>
-        $(eval $(call HdlToolDoPlatform_$(HdlToolSet_$(HdlTarget)),$(call WkrTargetDir,$(HdlTarget),$1),$(AssemblyName),$(Worker),$(HdlConfig),$(HdlPlatform),$1))
+        $(eval $(call HdlToolDoPlatform_$(HdlToolSet_$(HdlTarget)),$(call WkrTargetDir,$(HdlTarget),$1),$(Assembly),$(Worker),$(HdlConfig),$(HdlPlatform),$1))
       endef
       $(call OcpiDbgVar,ParamConfigurations)
       $(foreach c,$(ParamConfigurations),$(eval $(call ContDoConfig,$c)))
     endif # skip from hdl-worker.mk
   endif # skip from hdl-pre.mk
 endif # cleaning
+clean::
+	$(AT) rm -r -f target-* gen lib

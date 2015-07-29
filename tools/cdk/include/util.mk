@@ -38,6 +38,8 @@ __UTIL_MK__=x
 # ARRRRRRRRRRRRGH: the debian shell in make is /bin/sh and the SHELL env var is ignored by
 # make in Debian.
 override SHELL=/bin/bash
+export AT
+export OCPI_DEBUG_MAKE
 AT=@
 OCPI_DEBUG_MAKE=
 ifneq (,)
@@ -303,7 +305,7 @@ DYN_PREFIX=LD_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/$(OCPI_TOOL_HOST)
 endif
 #$(info OCDK $(OCPI_CDK_DIR))
 DYN_PREFIX=
-OcpiGenTool=$(ToolsDir)/ocpigen $(patsubst %,-I"%",$(call Unique,$(XmlIncludeDirs)))
+OcpiGenTool=$(ToolsDir)/ocpigen $(patsubst %,-I"%",$(call Unique,$(XmlIncludeDirsInternal)))
 OcpiGenArg=$(DYN_PREFIX) $(OcpiGenTool) $1 -M $(GeneratedDir)/$(@F).deps
 OcpiGen=$(call OcpiGenArg,)
 # Return stderr and the exit status as variables
@@ -364,5 +366,7 @@ Comma:=,
 ParamMsg=$(and $(ParamConfigurations), $(strip \
   '($(foreach n,$(WorkerParamNames),$n=$(ParamMsg_$(ParamConfig)_$n)$(eval o:=1)))'))
 
+RmRv=$(if $(filter %_rv,$1),$(patsubst %_rv,%,$1),$1)
 endif # ifndef __UTIL_MK__
 
+OcpiAdjustLibraries=$(foreach l,$1,$(if $(findstring /,$l),$(call AdjustRelative,$l),$l))

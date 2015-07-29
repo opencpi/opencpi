@@ -12,7 +12,7 @@ package platform_pkg is
 -- The client (interconnect) can treat this as asynchronous, with a returned tag,
 -- but the implementation -- is fully synchronous - one-at-a-time...
 -- A synchronous client can not bother generating the tag.
-subtype occp_address_t is std_logic_vector(21 downto 0);
+subtype occp_address_t is std_logic_vector(23 downto 0); -- 64MB of control space
 subtype occp_data_t    is std_logic_vector(31 downto 0);
 subtype occp_tag_t     is std_logic_vector(7  downto 0);
 subtype occp_byte_en_t is std_logic_vector(3  downto 0);
@@ -34,11 +34,11 @@ type occp_out_t is record
 end record occp_out_t;
 
 -- These are the number of bits of the DW address
-constant worker_control_bits : natural := 14;
-constant worker_config_bits  : natural := 18;
+constant worker_control_bits : natural := 12; -- 16KB control space per worker
+constant worker_config_bits  : natural := 18; -- 1MB config space per worker
 constant worker_control_size : natural := 2**worker_control_bits;
 constant worker_config_size  : natural := 2**worker_config_bits;
-constant worker_max_nworkers : natural := 15; -- for a 64 bit array of worker-present bits
+constant worker_max_nworkers : natural := 63; -- for a 64 bit array of worker-present bits
 constant worker_ncontrol_ops : natural := 8;
 -- ID is wide enough for a sentinel value of all ones.
 constant worker_id_bits      : natural := width_for_max(worker_max_nworkers);
@@ -55,7 +55,8 @@ type worker_response_t is (none_e,     -- no response yet
                            data_e,     -- success for something with data
                            error_e,    -- error
                            timedout_e, -- worker timed out
-                           reset_e);   -- worker was reset
+                           reset_e,    -- worker was reset
+                           busy_e);    -- worker was busy
 
 -- Internal interface to WCI master modules, driven to all workers in parallel
 type worker_in_t is record
@@ -100,38 +101,22 @@ end record metadata_out_t;
 -- Time service definitions
 --------------------------------------------------------------------------------
 
+-- Input from the platform worker to the time server.
+type time_base_out_t is record
+  clk     : std_logic;
+  reset   : std_logic; -- assert hi
+  ppsIn   : std_logic;
+end record time_base_out_t;
+type time_base_in_t is record
+  ppsOut   : std_logic;
+end record time_base_in_t;
+
 -- The time_server's (and platform worker's) output that is the time service.
 type time_service_t is record
   clk     : std_logic;
-  reset_n : std_logic;
+  reset   : std_logic;
   now     : ocpi.types.ulonglong_t;
 end record time_service_t;
-
--- The time server module that is generally instantiated in the platform worker.
-
-component time_server is
-  port (
-    CLK                 : in  std_logic;
-    RST_N               : in  std_logic;
-    timeCLK             : in  std_logic;
-    timeRST_N           : in  std_logic;
-    ppsIn               : in  std_logic;  -- ASYNC
-    -- Property interface
-    timeControl         : in  ulong_t;
-    timeControl_written : in  bool_t;
-    timeStatus          : out ulong_t;
-    timeNowIn           : in  ulonglong_t;
-    timeNow_written     : in  bool_t;
-    timeNowOut          : out ulonglong_t;
-    timeDeltaIn         : in  ulonglong_t;
-    timeDelta_written   : in  bool_t;
-    timeDeltaOut        : out ulonglong_t;
-    ticksPerSecond      : out ulong_t;
-    -- Outputs in tiock clock domain
-    ppsOut              : out std_logic;
-    time_service        : out time_service_t  -- time service clock domain
-    );
-end component time_server;
 
 --------------------------------------------------------------------------------
 -- uNoc definitions
@@ -300,35 +285,6 @@ type unoc_master_out_t is record
   valid   : bool_t;                     -- this data is valid, can be dequeued
   take    : bool_t;                     -- take data from the _in_t: perform dequeue
 end record unoc_master_out_t;
-
--- The raw property interface for shared I2C and SPIs from the perspective of the
--- device worker.
-constant raw_max_devices : natural := 4;
-
--- Output from device worker as master of the rawprop interface
-type raw_prop_out_t is record
-  present : bool_t;                       -- master is present - slave ties low
-  reset   : bool_t;                       -- master worker is in reset
-  renable : bool_t;                       -- a read is in progress
-  wenable : bool_t;                       -- a write is in progress
-  addr    : ushort_t;                     -- address space within slave
-  benable : std_logic_vector(3 downto 0); -- which bytes are being accessed
-  data    : word32_t;                     -- up to 32 bits of data
-end record raw_prop_out_t;
-constant raw_prop_out_zero : raw_prop_out_t
-  := ('0', '0', '0', '0', (others => '0'), (others => '0'), (others => '0'));
-type raw_prop_out_array_t is array(natural range <>) of raw_prop_out_t;
--- Input to device worker as master of the rawprop interface
--- These signals are "broadcast" back to all masters from the one slave
-type raw_prop_in_t is record
-  done    : bool_t;                       -- access is done
-  data    : word32_t;                     -- read data available when done
-  present : bool_array_t(0 to raw_max_devices-1); -- which of all devices are present
-end record raw_prop_in_t;
-constant raw_prop_in_zero : raw_prop_in_t
-  := ('0', (others => '0'), (others => '0'));
-
-type raw_prop_in_array_t is array(natural range <>) of raw_prop_in_t;
 
 component unoc_terminator is
   port(up_in      : in  unoc_master_out_t;

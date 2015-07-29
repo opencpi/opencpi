@@ -1,0 +1,5 @@
+<HdlWorker language="vhdl">
+  <componentspec name="nothing"/>
+  <property name='dummy' type='bool' readable='true'/>
+  <!-- Insert any other implementation-specific information here -->
+</HdlWorker>

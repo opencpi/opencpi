@@ -2,6 +2,7 @@
 #define HDL_CONTAINER_H
 #include <map>
 #include <list>
+#include <set>
 #include "hdl-config.h"
 
 // Container connections (user oriented high level)
@@ -29,11 +30,15 @@ typedef UNocs::iterator UNocsIter;
 // <connection external="foo" device="dev" [port="bar"]/>
 // <device foo>
 #define HDL_CONTAINER_ATTRS "platform", "config", "configuration", "assembly", "default"
-#define HDL_CONTAINER_ELEMS "connection"
+#define HDL_CONTAINER_ELEMS "connection", "device"
 class HdlAssembly;
 class HdlContainer : public Worker, public HdlHasDevInstances {
   HdlAssembly &m_appAssembly;
   HdlConfig   &m_config;
+  // This maps top level signals to the instance signal it is mapped from.
+  typedef std::map<Signal*,std::string> ConnectedSignals;
+  ConnectedSignals m_connectedSignals;
+  typedef ConnectedSignals::iterator ConnectedSignalsIter;
   const char *
   parseConnection(ezxml_t cx, ContConnect &c);
   const char *
@@ -55,6 +60,10 @@ public:
     *emitUuid(const OU::Uuid &uuid);
 
   void 
+    emitDeviceSignalMapping(FILE *f, std::string &last, Signal &s),
+    emitDeviceSignal(FILE *f, Language lang, std::string &last, Signal &s),
+    recordSignalConnection(Signal &s, const char *from),
+    emitTieoffSignals(FILE *f),
     emitXmlWorkers(FILE *f),
     emitXmlInstances(FILE *f),
     emitXmlConnections(FILE *f),

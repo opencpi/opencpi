@@ -1,14 +1,18 @@
-<HdlPlatform Language="VHDL" spec='platform_spec'>
-  <!-- The two ports every platform worker must have - should be in spec but not supported yet -->
-  <metadata master='true'/>
-  <timeservice master='true'/>
-  <property name="pciId" type='ushort' volatile='true'/>
-  <property name="unocDropCount" type='uchar' volatile='true'/>
+<HdlPlatform Language="VHDL" spec='platform-spec'>
+  <!-- All platform workers must provide these two ports -->
+  <metadata master='true'/> <!-- access to container metadata via the platform worker -->
+  <timebase master='true'/> <!-- providing a timebase for the time service -->
   <!-- This platform worker provides a control plane -->
   <cpmaster master='true'/>
+  <!-- Declare and parameterize the time_server device worker for this platform -->
+  <device worker='time_server'>
+    <property name='frequency' value='200e6'/>
+  </device>
   <!-- This platform worker provides a data plane called "pcie" -->
   <unoc name="pcie" master='true'/>
   <unoc name="pcie_slave"/>
+  <property name="pciId" type='ushort' volatile='true'/>
+  <property name="unocDropCount" type='uchar' volatile='true'/>
   <signal input="sys0_clk" differential='true'/>
   <signal input='sys1_clk' differential='true'/>
   <signal input='pci0_clk' differential='true'/>
@@ -18,10 +22,6 @@
   <signal output='led' width='13'/>
   <signal input='ppsExtIn'/>
   <signal output='ppsOut'/>
-  <device worker='flash'/>
-  <device worker='lime_tx'/>
-  <device worker='lime_spi'/>
-  <!-- <device worker='lime_tx'/> -->
   <!-- The FMC LPC slot.  We only mention signals that don't have the canonical signal name -->
   <slot name='FMC_LPC' type='fmc_lpc'>
    <signal slot='LA00_P_CC' platform='LA00_CC_P'/>
@@ -35,7 +35,6 @@
 
    <signal slot='LA18_P_CC' platform='LA18_CC_P'/>
    <signal slot='LA18_N_CC' platform='LA18_CC_N'/>
-
   </slot>
   <slot name='FMC_HPC' type='fmc_hpc'>
    <signal slot='LA00_P_CC' platform='LA00_CC_P'/>
@@ -71,5 +70,6 @@
    <signal slot='PG_M2C' platform='PG_M2C_LS'/> <!-- hardware level shifters on carrier -->
 
   </slot>
+  <device worker='flash'/>
 </HdlPlatform>
 

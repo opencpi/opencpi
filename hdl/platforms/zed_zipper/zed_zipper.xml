@@ -1,0 +1,68 @@
+<!-- A zed platform with a myriad zipper/lime permanently attached rather in a slot -->
+<HdlPlatform Language="VHDL" spec='platform-spec'>
+  <!-- All platform workers must provide these two ports -->
+  <metadata master='true'/> <!-- access to container metadata via the platform worker -->
+  <timebase master='true'/> <!-- providing a timebase for the time service -->
+  <!-- This platform worker provides a control plane -->
+  <cpmaster master='true'/>
+  <!-- Declare and parameterize the time_server device worker for this platform -->
+  <device worker='time_server'>
+    <property name='frequency' value='50e6'/>
+  </device>
+  <unoc name="zynq" master='true'/>
+  <unoc name="zynq_slave"/>
+  <property name="axi_error" type="bool" volatile='true'/>
+  <property name="unocDropCount" type='uchar' volatile='true'/>
+  <property name="unoc_headers_in" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
+  <property name="unoc_headers_in1" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
+  <property name="unoc_headers_out" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
+  <property name="unoc_headers_out1" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
+  <property name="unoc_out_status" arraylength='16' volatile='true' debug='true'/>
+  <property name="unoc_count_in" volatile='true' debug='true'/>
+  <property name="unoc_count_out" volatile='true' debug='true'/>
+  <property name="axi_racount" volatile='true' debug='true'/>
+  <property name="axi_raddr" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
+  <property name="axi_rdcount" volatile='true' debug='true'/>
+  <property name="axi_rdata" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
+  <property name="axi_wacount" volatile='true' debug='true'/>
+  <property name="axi_waddr" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
+  <property name="axi_wdcount" volatile='true' debug='true'/>
+  <property name="axi_wdata" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
+  <property name="debug_state" type="Ulonglong" volatile='true' debug='true'/>
+  <property name="debug_state1" type="Ulonglong" volatile='true' debug='true'/>
+  <signal  output='led' width='8'/>
+  <!-- Make believe these are directly attached rather than a card plugged into the FMC slot -->
+  <device worker='lime_adc'>
+    <property name='use_clk_in' value='1'/>
+    <property name='use_clk_out' value='0'/>
+    <property name='use_ctl_clk' value='0'/>
+    <signal name='rx_clk' platform=''/>
+    <signal name='rx_clk_out' platform=''/>
+  </device>
+  <device worker='lime_dac'>
+    <signal name='tx_clk' platform=''/>
+  </device>
+  <device worker='lime_spi'/>
+  <device worker='lime_rx'/>
+  <device worker='lime_tx'/>
+  <device worker='si5351'>
+    <!-- Input clock on Zipper is from the 30.72 MHz TXCO, via a CDCV304PW clock buffer -->
+    <property name='clkin_present' value='1'/>
+    <property name='clkin_freq' value='30.72e6'/>
+    <!-- Clock output channels on Zipper:
+	 0: (Normally Not Filled) to CLK_IN P75 on Myriad/RF connector and to PLLCLK
+	    CLK_IN is normally driven from the 30.72MHz TXCO on the Zipper.
+	 1: Not connected
+	 2: RXCLK to Lime RXCLK
+         3: RXCLK_C to FMC H07 to FPGA P17
+	 4: TXCLK to Lime TXCLK
+	 5: TXCLK_C to FMC H11 to FPGA M22
+	 6: Not connected
+	 7: Not connected
+    -->
+    <property name='outputs_present' value='1,0,1,1,1,1,0,0'/>
+    <signal name='intr' platform=''/>
+    <signal name='oeb' platform=''/>
+  </device>
+  <device worker='zipper_i2c'/>
+</HdlPlatform>

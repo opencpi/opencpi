@@ -1,1 +1,1 @@
-../../../../core/ocl/include/OCL_Worker.h
+../../../../runtime/ocl/include/OCL_Worker.h

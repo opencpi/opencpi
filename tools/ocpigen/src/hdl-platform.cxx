@@ -32,7 +32,7 @@ HdlPlatform(ezxml_t xml, const char *xfile, Worker *parent, const char *&err)
       (err = parseHdl("ocpi")) ||
       (err = OE::getBoolean(xml, "control", &m_control)))
     return;
-  if ((err = parseDevices(xml, NULL)))
+  if ((err = parseDevices(xml, NULL, xfile, this)))
     return;
   unsigned n = 0;
   for (ezxml_t xs = ezxml_cchild(xml, "slot"); xs; xs = ezxml_next(xs), n++) {

@@ -52,7 +52,7 @@ parseHdlAssy() {
     *topAttrs[] = {IMPL_ATTRS, HDL_TOP_ATTRS, HDL_IMPL_ATTRS, NULL},
     // FIXME: reduce to those that are hdl specific
     *instAttrs[] =  { INST_ATTRS },
-    *contInstAttrs[] = { "Index", "interconnect", "io", "adapter", "configure", NULL},
+    *contInstAttrs[] = { "Index", "interconnect", "io", "adapter", "configure", "emulated", NULL},
     *platInstAttrs[] = { "Index", "interconnect", "io", "adapter", "configure", NULL};
   // Do the generic assembly parsing, then to more specific to HDL
   if ((err = a->parseAssy(m_xml, topAttrs,
@@ -74,6 +74,8 @@ parseHdlAssy() {
       continue;
     if (m_type == Container || m_type == Configuration) {
       ezxml_t x = i->instance->xml();
+      if ((err = OE::getBoolean(x, "emulated", &i->m_emulated)))
+	return err;
       const char
         *ic = ezxml_cattr(x, "interconnect"), // which interconnect
 	*ad = ezxml_cattr(x, "adapter"),      // adapter to which interconnect or io
@@ -128,13 +130,13 @@ parseHdlAssy() {
 	    break;
 	  }
       }
-  } else {
+  } else if (a->m_nWCIs) {
     //    assert(m_ports.size() == 0);
     char *cp;
     asprintf(&cp, "<control name='wci' count='%zu'>", nControls);
     ezxml_t x = ezxml_parse_str(cp, strlen(cp));
     // Create the assy's wci slave port, at the beginning of the list
-    Port *wci = createPort<WciPort>(*this, x, NULL, -1, err);
+    wci = createPort<WciPort>(*this, x, NULL, -1, err);
     assert(wci);
     // Clocks: coalesce all WCI clock and clocks with same reqts, into one wci, all for the assy
     clk = addClock();
@@ -387,15 +389,13 @@ createConnectionSignals(FILE *f, Language lang) {
     
   // Input side: rare - generate signal when it aggregates members from others,
   // Like a WSI slave port array
-  if (m_attachments.size() && m_port->count > 1) {
-    if (maxCount < m_port->count || m_attachments.size() > 1) {
-      emitConnectionSignal(f, false, lang);
-      for (AttachmentsIter ai = m_attachments.begin(); ai != m_attachments.end(); ai++) {
-	Connection &c = (*ai)->m_connection;
-	std::string &cName = m_port->master ? c.m_slaveName : c.m_masterName;
-	assert(cName.empty());
-	cName = m_signalIn;
-	}
+  if (m_port->count > 1 && (maxCount < m_port->count || m_attachments.size() > 1)) {
+    emitConnectionSignal(f, false, lang);
+    for (AttachmentsIter ai = m_attachments.begin(); ai != m_attachments.end(); ai++) {
+      Connection &c = (*ai)->m_connection;
+      std::string &cName = m_port->master ? c.m_slaveName : c.m_masterName;
+      assert(cName.empty());
+      cName = m_signalIn;
     }
   }
   if (m_port->isData())
@@ -432,33 +432,40 @@ doPrev(FILE *f, std::string &last, std::string &comment, const char *myComment) 
 }
 
 static void
-mapOneSignal(FILE *f, Signal *s, unsigned n, bool isSingle, const char *mapped,
-	     const char *indent, const char *pattern) {
+mapOneSignal(FILE *f, Signal &s, unsigned n, bool isWhole, const char *mapped,
+	     const char *indent, const char *pattern, bool single) {
   std::string name, map;
-  OU::format(name, pattern, s->m_name.c_str());
+  OU::format(name, pattern, s.name());
   if (*mapped)
     OU::format(map, pattern, mapped);
-  
-  if (s->m_width && isSingle)
+  if (s.m_width && isWhole && !single)
     OU::formatAdd(name, "(%u)", n);
   fprintf(f, "%s%s => %s", indent, name.c_str(),
-	  *mapped ? map.c_str() : (s->m_direction == Signal::IN ?
-				   (isSingle || !s->m_width ? "'0'" : "(others => '0')") :
+	  *mapped ? map.c_str() : (s.m_direction == Signal::IN ?
+				   (isWhole || !s.m_width ? "'0'" : "(others => '0')") :
 				   "open"));
 }
 
 void Assembly::
 emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
-  // emit before parameters
+  // Before we emit the instantiation, we first emit any tieoff assignments related to
+  // unconnected parts (indices) of the intermiediate connection signal
+  InstancePort *ip = i->m_ports;
+  for (unsigned n = 0; n < i->worker->m_ports.size(); n++, ip++)
+    ip->emitTieoffAssignments(f);
   Language lang = m_assyWorker.m_language;
-  if (lang == Verilog) {
-    std::string suff;
-    if (i->worker->m_paramConfig && i->worker->m_paramConfig->nConfig)
-      OU::format(suff, "_c%zu", i->worker->m_paramConfig->nConfig);
+  std::string suff;
+  if (i->worker->m_paramConfig && i->worker->m_paramConfig->nConfig)
+    OU::format(suff, "_c%zu", i->worker->m_paramConfig->nConfig);
+  std::string pkg, tpkg;
+  if (lang == Verilog)
     fprintf(f, "%s%s", i->worker->m_implName, suff.c_str());
-  } else
-    fprintf(f, "  %s_i : component %s.%s_defs.%s_rv\n",
-	    i->name, i->worker->m_library, i->worker->m_implName, i->worker->m_implName);
+  else {
+    OU::format(pkg, "%s%s.%s_defs", i->worker->m_library, suff.c_str(), i->worker->m_implName);
+    OU::format(tpkg, "%s%s.%s_constants", i->worker->m_library, suff.c_str(), i->worker->m_implName);
+    fprintf(f, "  %s_i : component %s.%s_rv%s\n",
+	    i->name, pkg.c_str(), i->worker->m_implName, suff.c_str());
+  }
   bool any = false;
   if (i->properties.size()) {
     unsigned n = 0;
@@ -469,7 +476,10 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
 	std::string value;
 	if (lang == VHDL) {
 	  fprintf(f, any ? ",\n              "  : "  generic map(");
-	  fprintf(f, "%s => %s", pr->m_name.c_str(), vhdlValue(pr->m_name, pv->value, value));
+	  fprintf(f, "%s => %s", pr->m_name.c_str(),
+		  vhdlValue(!strcasecmp(pr->m_name.c_str(), "ocpi_endian") ?
+			    "ocpi.types" : tpkg.c_str(),
+			    pr->m_name, pv->value, value));
 	} else {
 	  fprintf(f, "%s", any ? ", " : " #(");
 #if 0
@@ -515,19 +525,24 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
 	if (c->m_reset.size())
 	  fprintf(f, ",\n  .%s(%s)", c->reset(),
 		  i->m_clocks[c->ordinal]->reset());
-      } else {
+      } else if (i->m_clocks[c->ordinal]) {
 	fprintf(f, "%s%s%s => %s", any ? ",\n" : "", any ? indent : "",
 		c->signal(), i->m_clocks[c->ordinal]->signal());
 	if (c->m_reset.size())
 	  fprintf(f, ",\n%s%s => %s", indent, c->reset(),
 		  i->m_clocks[c->ordinal]->reset());
+      } else {
+	fprintf(f, "%s%s%s => '0'", any ? ",\n" : "", any ? indent : "",
+		c->signal());
+	if (c->m_reset.size())
+	  fprintf(f, ",\n%s%s => '1'", indent, c->reset());
       }
       any = true;
     }
   }
   std::string last(any ? "," : "");
   std::string comment;
-  InstancePort *ip = i->m_ports;
+  ip = i->m_ports;
   for (unsigned n = 0; n < i->worker->m_ports.size(); n++, ip++) {
     // We can't do this since we need the opportunity of stubbing unconnected ports properly
     //    if (ip->m_attachments.empty())
@@ -536,55 +551,103 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
 				myComment(), ip->m_ocp); 
     any = true;
   } // end of port loop
-  // Signals are always mapped as external ports, but sometimes they are
-  // mapped to slot names etc.
+  // First we need to figure out whether this is an emulator worker or a worker that
+  // has a paired emulator worker.
+  Instance *emulated = NULL, *ii = m_instances;
+  if (i->worker->m_emulate)
+    for (unsigned n = 0; n < m_nInstances; n++, ii++)
+      if (!strcasecmp(ii->worker->m_implName, i->worker->m_emulate->m_implName)) {
+	emulated = ii;
+	break;
+      }
+  // Instance signals are connected to external ports unless they are connected to an emulator,
+  // and sometimes they are mapped to slot names, and sometimes they are mapped to nothing when
+  // the platform doesn't support the signal.  Also, if they are tristate, they may be
+  // connected to an internal signal that is attached to the tristate buffer instanced in the
+  // container.
+  std::string prefix;
+  if (i->worker->m_isDevice && i->worker->m_type != Worker::Platform) {
+    if (emulated)
+      prefix = emulated->name;
+    else
+      prefix = i->name;
+    prefix += "_";
+  }
   for (SignalsIter si = i->worker->m_signals.begin(); si != i->worker->m_signals.end(); si++) {
-    Signal *s = *si;
-    std::string prefix;
+    Signal &s = **si;
     bool anyMapped = false;
     std::string name;
-    for (unsigned n = 0; s->m_width ? n < s->m_width : n == 0; n++) {
+    // Allow for signals in a vector to be mapped individually (e.g. to slot signal).
+    for (unsigned n = 0; s.m_width ? n < s.m_width : n == 0; n++) {
       bool isSingle;
       const char *mappedExt = i->m_extmap.findSignal(s, n, isSingle);
       if (mappedExt) {
+	// mappedExt might actually be an empty string: ""
 	if (!anyMapped)
 	  assert(n == 0);
 	any = true;
 	anyMapped = true;
-	doPrev(f, last, comment, myComment());
 	const char *front = any ? indent : "";
-	if (s->m_differential) {
-	  mapOneSignal(f, s, n, isSingle, mappedExt, front, s->m_pos.c_str());
+	if (s.m_differential) {
 	  doPrev(f, last, comment, myComment());
-	  mapOneSignal(f, s, n, isSingle, mappedExt, front, s->m_neg.c_str());
-	} else
-	  mapOneSignal(f, s, n, isSingle, mappedExt, front, "%s");
+	  mapOneSignal(f, s, n, isSingle, mappedExt, front, s.m_pos.c_str(), false);
+	  doPrev(f, last, comment, myComment());
+	  mapOneSignal(f, s, n, isSingle, mappedExt, front, s.m_neg.c_str(), false);
+	} else if (s.m_direction == Signal::INOUT || s.m_direction == Signal::OUTIN) {
+	  // For inout, we only want to map the signals if they are NOT connected,
+	  if (!*mappedExt) {
+	    doPrev(f, last, comment, myComment());
+	    mapOneSignal(f, s, n, isSingle, mappedExt, front, s.m_in.c_str(), false);
+	    doPrev(f, last, comment, myComment());
+	    mapOneSignal(f, s, n, isSingle, mappedExt, front, s.m_out.c_str(), false);
+	    doPrev(f, last, comment, myComment());
+	    mapOneSignal(f, s, n, isSingle, mappedExt, front, s.m_oe.c_str(), true);
+	  }
+	} else {
+	  doPrev(f, last, comment, myComment());
+	  mapOneSignal(f, s, n, isSingle, mappedExt, front, "%s", false);
+	}
+	if (*mappedExt) {
+	  Signal *es = m_assyWorker.m_sigmap[mappedExt];
+	  assert(es);
+	  m_assyWorker.recordSignalConnection(*es, (prefix + s.m_name).c_str());
+	}
 	if (!isSingle)
 	  break;
       }	else
 	assert(!anyMapped);
     }
-    if (anyMapped)
+    if (anyMapped && (s.m_direction != Signal::INOUT && s.m_direction != Signal::OUTIN))
       continue;
     doPrev(f, last, comment, myComment());
-    if (i->worker->m_isDevice && i->worker->m_type != Worker::Platform) {
-      prefix = i->name;
-      prefix += + "_";
-    }
-    if (s->m_differential) {
-      OU::format(name, s->m_pos.c_str(), s->m_name.c_str());
+    if (s.m_differential) {
+      OU::format(name, s.m_pos.c_str(), s.name());
       if (lang == VHDL)
 	fprintf(f, "%s%s => %s%s,\n", any ? indent : "",
 		name.c_str(), prefix.c_str(), name.c_str());
-      OU::format(name, s->m_neg.c_str(), s->m_name.c_str());
+      OU::format(name, s.m_neg.c_str(), s.name());
       if (lang == VHDL)
 	fprintf(f, "%s%s => %s%s", any ? indent : "",
 		name.c_str(), prefix.c_str(), name.c_str());
+    } else if (s.m_direction == Signal::INOUT || s.m_direction == Signal::OUTIN) {
+      OU::format(name, s.m_in.c_str(), s.name());
+      fprintf(f, "%s%s => %s%s,\n", any ? indent : "",
+	      name.c_str(), prefix.c_str(), name.c_str());
+      OU::format(name, s.m_out.c_str(), s.name());
+      fprintf(f, "%s%s => %s%s,\n", any ? indent : "",
+	      name.c_str(), prefix.c_str(), name.c_str());
+      OU::format(name, s.m_oe.c_str(), s.name());
+      fprintf(f, "%s%s => %s%s", any ? indent : "",
+	      name.c_str(), prefix.c_str(), name.c_str());
     } else if (lang == VHDL)
       fprintf(f, "%s%s => %s%s", any ? indent : "",
-	      s->m_name.c_str(), prefix.c_str(), s->m_name.c_str());
+	      s.name(), prefix.c_str(), s.name());
+    if (!i->m_emulated && !i->worker->m_emulate && !anyMapped) {
+      Signal *es = m_assyWorker.m_sigmap[(prefix + s.m_name).c_str()];
+      assert(es);
+      m_assyWorker.recordSignalConnection(*es, (prefix + s.m_name).c_str());
+    }
   }
-
   fprintf(f, ");%s%s\n", comment.size() ? " // " : "", comment.c_str());
   // Now we must tie off any outputs that are generically expected, but are not
   // part of the worker's interface
@@ -626,7 +689,7 @@ assignExt(FILE *f, Connection &c, std::string &intName, bool in2ext) {
   p.emitExtAssignment(f, in2ext, extName, intName, extAt, intAt, c.m_count);
 }
 
- const char *Worker::
+const char *Worker::
 emitAssyHDL() {
   FILE *f;
   const char *err = openSkelHDL(ASSY, f);
@@ -645,7 +708,7 @@ emitAssyHDL() {
   } else {
     fprintf(f,
 	    "library ieee; use ieee.std_logic_1164.all; use ieee.numeric_std.all;\n"
-	    "library ocpi;\n");
+	    "library ocpi, util;\n");
     emitVhdlLibraries(f);
     fprintf(f,
 	    "architecture rtl of %s_rv is\n",
@@ -656,12 +719,16 @@ emitAssyHDL() {
     fprintf(f, "wire [255:0] nowhere; // for passing output ports\n");
   // Generate the intermediate signals for internal connections
   Instance *i = m_assembly->m_instances;
-  for (unsigned n = 0; n < m_assembly->m_nInstances; n++, i++)
+  for (unsigned n = 0; n < m_assembly->m_nInstances; n++, i++) {
     for (unsigned nn = 0; nn < i->worker->m_ports.size(); nn++) {
       InstancePort &ip = i->m_ports[nn];
+      assert(!ip.m_external);
       if (!ip.m_external && (err = ip.createConnectionSignals(f, m_language)))
 	return err;
     }
+    // Generate internal signal for emulation implicit connections
+    i->emitDeviceConnectionSignals(f, m_type == Container);
+  }
   if (m_language == VHDL)
     fprintf(f, "begin\n");
   // Set assign external signals where necessary
@@ -697,10 +764,10 @@ emitAssyHDL() {
     }
   }
   // Create the instances
-  //  unsigned nControlInstances = 0;
   i = m_assembly->m_instances;
   for (unsigned n = 0; n < m_assembly->m_nInstances; n++, i++)
     m_assembly->emitAssyInstance(f, i); //, nControlInstances);
+  emitTieoffSignals(f);
   if (m_language == Verilog)
     fprintf(f, "\n\nendmodule //%s\n",  m_implName);
   else
@@ -730,43 +797,70 @@ emitWorkersHDL(const char *outFile)
   fprintf(f, "# Workers in this %s: <implementation>:<instance>\n",
 	  m_type == Container ? "container" : "assembly");
   for (unsigned n = 0; n < m_assembly->m_nInstances; n++, i++) {
+#if 0
     std::string suff;
     if (i->worker->m_paramConfig && i->worker->m_paramConfig->nConfig)
       OU::format(suff, "_c%zu", i->worker->m_paramConfig->nConfig);
-    fprintf(f, "%s%s:%s\n", i->worker->m_implName, suff.c_str(), i->name);
+#endif
+    fprintf(f, "%s:%zu:%s\n", i->worker->m_implName,
+	    i->worker->m_paramConfig ? i->worker->m_paramConfig->nConfig : 0, i->name);
   }
   fprintf(f, "# end of instances\n");
   return NULL;
 }
 
-static void
-emitInstance(Instance *i, FILE *f, const char *prefix, size_t &index)
+void Instance::
+emitHdl(FILE *f, const char *prefix, size_t &index)
 {
-  assert(i->m_iType == Instance::Application ||
-	 i->m_iType == Instance::Interconnect ||
-	 i->m_iType == Instance::Device ||
-	 i->m_iType == Instance::Platform ||
-	 i->m_iType == Instance::Adapter);
-  assert(!i->worker->m_assembly);
+  assert(m_iType == Instance::Application ||
+	 m_iType == Instance::Interconnect ||
+	 m_iType == Instance::Device ||
+	 m_iType == Instance::Platform ||
+	 m_iType == Instance::Adapter);
+  assert(!worker->m_assembly);
   fprintf(f, "<%s name=\"%s%s%s\" worker=\"%s",
-	  i->m_iType == Instance::Application ? "instance" :
-	  i->m_iType == Instance::Interconnect ? "interconnect" :
-	  i->m_iType == Instance::Device ? "io" : "adapter",
-	  prefix ? prefix : "", prefix ? "/" : "", i->name, i->worker->m_implName);
+	  m_iType == Instance::Application ? "instance" :
+	  m_iType == Instance::Interconnect ? "interconnect" :
+	  (m_iType == Instance::Device ||
+	   m_iType == Instance::Platform) ? "io" : "adapter",
+	  prefix ? prefix : "", prefix ? "/" : "", name, worker->m_implName);
   // FIXME - share this param-named implname with emitWorker
-  if (i->worker->m_paramConfig && i->worker->m_paramConfig->nConfig)
-    fprintf(f, "-%zu", i->worker->m_paramConfig->nConfig);
+  if (worker->m_paramConfig && worker->m_paramConfig->nConfig)
+    fprintf(f, "-%zu", worker->m_paramConfig->nConfig);
   fprintf(f, "\"");
-  if (!i->worker->m_noControl)
+  if (!worker->m_noControl)
     fprintf(f, " occpIndex=\"%zu\"", index++);
-  if (i->attach)
-    fprintf(f, " attachment=\"%s\"", i->attach);
-  if (i->m_iType == Instance::Interconnect) {
-    if (i->hasConfig)
-      fprintf(f, " ocdpOffset='0x%zx'", i->config * 32 * 1024);
-  } else if (i->hasConfig)
-    fprintf(f, " configure=\"%#lx\"", (unsigned long)i->config);
+  if (attach)
+    fprintf(f, " attachment=\"%s\"", attach);
+  if (m_iType == Instance::Interconnect) {
+    if (hasConfig)
+      fprintf(f, " ocdpOffset='0x%zx'", config * 32 * 1024);
+  } else if (hasConfig)
+    fprintf(f, " configure=\"%#lx\"", (unsigned long)config);
   fprintf(f, "/>\n");
+}
+
+// Device connection signals are needed to connect signals within the container.
+// Most signals are used for connecting to external signal ports of the container,
+// and thus do not need these internal signals.
+// The two cases we need to handle are:
+// 1. Signals between device workers and their emulators.
+// 2. Signals to the tristate buffers generated in the container.
+void Instance::
+emitDeviceConnectionSignals(FILE *f, bool container) {
+  for (SignalsIter si = worker->m_signals.begin(); si != worker->m_signals.end(); si++) {
+    Signal &s = **si;
+    if (s.m_differential && m_emulated) {
+      s.emitConnectionSignal(f, name, s.m_pos.c_str(), false);
+      s.emitConnectionSignal(f, name, s.m_neg.c_str(), false);
+    } else if (s.m_direction == Signal::INOUT && container) {
+      const char *prefix = worker->m_type == Worker::Configuration ? NULL : name;
+      s.emitConnectionSignal(f, prefix, s.m_in.c_str(), false);
+      s.emitConnectionSignal(f, prefix, s.m_out.c_str(), false);
+      s.emitConnectionSignal(f, prefix, s.m_oe.c_str(), true);
+    } else if (m_emulated)
+      s.emitConnectionSignal(f, name, "%s", false);
+  }
 }
 
 void Worker::
@@ -774,7 +868,7 @@ emitInstances(FILE *f, const char *prefix, size_t &index) {
   Instance *i = m_assembly->m_instances;
   for (unsigned n = 0; n < m_assembly->m_nInstances; n++, i++)
     if (!i->worker->m_assembly)
-      emitInstance(i, f, prefix, index);
+      i->emitHdl(f, prefix, index);
 }
 
 void Worker::
@@ -830,6 +924,25 @@ attach(Attachment *a, size_t index) {
   }
   m_attachments.push_back(a);
   return NULL;
+}
+
+// Emit any tieoff assignments related to unconnected parts (indices) of the intermediate
+// connection signal
+void InstancePort::
+emitTieoffAssignments(FILE *f) {
+  // Tie off all indices with no connection
+  if (m_port->haveInputs() && m_port->count > 1)
+    for (unsigned i = 0; i < m_port->count; i++) {
+      bool connected = false;
+      // For all connections to this port
+      for (AttachmentsIter ai = m_attachments.begin();
+	   !connected && ai != m_attachments.end(); ai++)
+	if ((*ai)->m_index <= i && i < (*ai)->m_index + (*ai)->m_connection.m_count)
+	  connected = true;
+      if (!connected)
+	fprintf(f, "  %s(%u) <= %s;\n", m_signalIn.c_str(), i,
+		m_port->master ? m_port->slaveMissing() : m_port->masterMissing());
+    }
 }
 
 // Attach an instance port to a connection

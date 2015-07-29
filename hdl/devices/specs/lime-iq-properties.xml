@@ -1,0 +1,17 @@
+<!--
+    Non-Raw Properties Common to both sides of the Digital IQ interface (ADC/DAC)
+    Perhaps some of these can become generic to all ADC/DAC too, hence no "lime" in names
+ -->
+<properties>
+  <!-- Is the other side present? -->
+  <property name='other_present' type='bool' readable='true'/>
+  <!-- The common supported clocking options are 3 binary options and a divisor. -->
+  <!-- 1. Are we driving the lime's data clock? -->
+  <property name='drive_clk' type='bool' parameter='1' default='1'/>
+  <!-- 2. Should we use an externally generated lime clock? -->
+  <property name='use_clk_in' type='bool' parameter='1' default='0'/>
+  <!-- 3. If not using clock in, should we use the control clock? if not use "sample clock" -->
+  <property name='use_ctl_clk' type='bool' parameter='1' default='1'/>
+  <!-- When using the control clock, divide it by this amount -->
+  <property name='divisor' writable='1' default='1'/>
+</properties>

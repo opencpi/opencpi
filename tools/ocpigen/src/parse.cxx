@@ -30,7 +30,6 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -60,7 +59,7 @@ OCPI_PROPERTY_DATA_TYPES
 0};
 #undef OCPI_DATA_TYPE
 
-const char *container = 0, *platform = 0, *device = 0, *load = 0, *os = 0, *os_version = 0, *assembly = 0, *attribute;
+const char *platform = 0, *device = 0, *load = 0, *os = 0, *os_version = 0, *assembly = 0, *attribute, *platformDir;
 
 Clock *Worker::
 addClock() {
@@ -176,7 +175,7 @@ tryOneChildInclude(ezxml_t top, const std::string &parent, const char *element,
 }
 
 const char *Worker::
-addProperty(ezxml_t prop, bool includeImpl)
+addProperty(ezxml_t prop, bool includeImpl, bool anyIsBad)
 {
   OU::Property *p = new OU::Property;
   
@@ -186,6 +185,9 @@ addProperty(ezxml_t prop, bool includeImpl)
   // Override the default value of parameter properties
   // Skip debug properties if the debug parameter is not present.
   if (!err) {
+    if (!p->m_isParameter && anyIsBad)
+      return OU::esprintf("Property \"%s\" is not a parameter and so it invalid in this context",
+			  p->m_name.c_str());
     // Now allow overrides of values.
     if (!strcasecmp(p->m_name.c_str(), "ocpi_debug"))
       m_debugProp = p;
@@ -232,8 +234,8 @@ doMaybeProp(ezxml_t maybe, void *vpinfo) {
       (err = tryChildInclude(maybe, pinfo.parent, "Properties", &props, childFile, pinfo.top)))
     return err;
   if (props) {
-    if (pinfo.anyIsBad)
-      return "A Properties element is invalid in this context";
+    //    if (pinfo.anyIsBad)
+    // return "A Properties element is invalid in this context";
     bool save = pinfo.top;
     pinfo.top = false;
     const char *parent = pinfo.parent;
@@ -254,8 +256,8 @@ doMaybeProp(ezxml_t maybe, void *vpinfo) {
       return 0;
     else
       return OU::esprintf("Invalid child element '%s' of a 'Properties' element", eName);
-  if (pinfo.anyIsBad)
-    return "A Property or SpecProperty element are invalid in this context";
+  //  if (pinfo.anyIsBad)
+  //    return "A Property or SpecProperty element is invalid in this context";
   const char *name = ezxml_cattr(maybe, "Name");
   if (!name)
     return "Property or SpecProperty has no \"Name\" attribute";
@@ -269,17 +271,13 @@ doMaybeProp(ezxml_t maybe, void *vpinfo) {
     // FIXME mark a property as "impled" so we reject doing it more than once
     if (!p)
       return OU::esprintf("Existing property named \"%s\" not found", name);
-    const char *def = ezxml_cattr(maybe, "Default");
-    if (p->m_default && def)
-      return OU::esprintf("Implementation property named \"%s\" cannot override "
-			  "previous default value", name);
-    // So simply add impl info to the existing property
+    // So simply add impl info to the existing property.
     return p->parseImpl(maybe);
   } else if (p)
       return OU::esprintf("Property named \"%s\" conflicts with existing/previous property",
 			  name);
   // All the spec attributes plus the impl attributes
-  return w->addProperty(maybe, pinfo.isImpl);
+  return w->addProperty(maybe, pinfo.isImpl, pinfo.anyIsBad);
 }
 
 const char *Worker::
@@ -328,7 +326,7 @@ addProperty(const char *xml, bool includeImpl) {
   char *dprop = strdup(xml); // Make the contents persistent
   ezxml_t dpx = ezxml_parse_str(dprop, strlen(dprop));
   ocpiDebug("Adding ocpi_debug property xml %p", dpx);
-  const char *err = addProperty(dpx, includeImpl);
+  const char *err = addProperty(dpx, includeImpl, false);
   ezxml_free(dpx);
   return err;
 }
@@ -346,7 +344,7 @@ addBuiltinProperties() {
 }
 // Parse the generic implementation control aspects (for rcc and hdl and other)
 const char *Worker::
-parseImplControl(ezxml_t &xctl) {
+parseImplControl(ezxml_t &xctl, const char *firstRaw) {
   // Now we do the rest of the control interface
   const char *err;
   if ((xctl = ezxml_cchild(m_xml, "ControlInterface")) &&
@@ -372,9 +370,13 @@ parseImplControl(ezxml_t &xctl) {
   // Now that we have all information about properties and we can actually
   // do the offset calculations and summarize the access type counts and flags
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
-    if ((err = (**pi).offset(m_ctl.offset, m_ctl.sizeOfConfigSpace)))
+    OU::Property &p = **pi;
+    // Raw properties must start on a 4 byte boundary
+    if (firstRaw && !strcasecmp(p.m_name.c_str(), firstRaw))
+      m_ctl.offset = OU::roundUp(m_ctl.offset, 4);
+    if ((err = p.offset(m_ctl.offset, m_ctl.sizeOfConfigSpace, this)))
       return err;
-    m_ctl.summarizeAccess(**pi);
+    m_ctl.summarizeAccess(p);
   }
   // Allow overriding sizeof config space, giving priority to controlinterface
   uint64_t sizeOfConfigSpace;
@@ -543,32 +545,31 @@ parseSpec(const char *package) {
   if (specAttr) {
     if (spec)
       return "Can't have both ComponentSpec element (maybe xi:included) and a 'spec' attribute";
-    if ((err = parseFile(specAttr, m_file, "ComponentSpec", &spec, m_specFile, true)))
+    if ((err = parseFile(specAttr, m_file, "ComponentSpec", &spec, m_specFile, false)))
       return err;
   } else if (!spec)
     return "missing componentspec element or spec attribute";
 #if 0
-  if (!(m_specName = ezxml_cattr(spec, "Name")))
-    return "Missing Name attribute for ComponentSpec";
-#else
   if (m_specFile == m_file) {
     // If not in its own file, then it must have a name attr
     if (!(m_specName = ezxml_cattr(spec, "Name")))
       return "Missing Name attribute for ComponentSpec";
-  } else {
-    // If the spec is in its own file, we can default the name from the file
-    std::string name, fileName;
-    if ((err = getNames(spec, m_specFile.c_str(), "ComponentSpec", name, fileName)))
-      return err;
-    size_t len = strlen("-spec");
-    if (name.length() > len) {
-      const char *tail = name.c_str() + name.length() - len;
-      if (!strcasecmp(tail, "-spec") || !strcasecmp(tail, "_spec"))
-	name.resize(name.size() - len);
-    }
-    m_specName = strdup(name.c_str());
-  }
+  } else
 #endif
+   {
+     // default the specname from the file of the current file,
+     // which may in fact be the name of the worker file if the component spec is embedded
+     std::string name, fileName;
+     if ((err = getNames(spec, m_specFile.c_str(), "ComponentSpec", name, fileName)))
+       return err;
+     size_t len = strlen("-spec");
+     if (name.length() > len) {
+       const char *tail = name.c_str() + name.length() - len;
+       if (!strcasecmp(tail, "-spec") || !strcasecmp(tail, "_spec"))
+	 name.resize(name.size() - len);
+     }
+     m_specName = strdup(name.c_str());
+   }
   // Find the package even though the spec package might be specified already
   if ((err = findPackage(spec, package)))
     return err;
@@ -584,13 +585,11 @@ parseSpec(const char *package) {
   std::string dummy;
   if ((err = tryOneChildInclude(spec, m_file, "PropertySummary", &ps, dummy, true)))
     return err;
-  if ((err = doProperties(spec, m_file.c_str(), false, ps != NULL)))
+  if ((err = doProperties(spec, m_file.c_str(), false, ps != NULL || m_noControl)))
     return err;
   if (m_noControl) {
     if (ps)
       return "NoControl specified, PropertySummary cannot be specified";
-    if ((err = doProperties(spec, m_file.c_str(), false, true)))
-      return err;
   } else if ((err = parseSpecControl(ps)))
     return err;
   // Now parse the data aspects, allocating (data) ports.
@@ -644,31 +643,22 @@ initImplPorts(ezxml_t xml, const char *element, PortCreate &create) {
 const char *Worker::
 getNumber(ezxml_t x, const char *attr, size_t *np, bool *found,
 	  size_t defaultValue, bool setDefault) {
-  const char *a = ezxml_cattr(x, attr);
-  if (a && !isdigit(*a) && m_instancePVs) {
-    // FIXME: obviously a map would be good here..
-    OU::Assembly::Property *ap = &(*m_instancePVs)[0];
-    for (size_t n = m_instancePVs->size(); n; n--, ap++)
-      if (ap->m_hasValue && !strcasecmp(a, ap->m_name.c_str())) {
-	// The value of the numeric attribute matches the name of a provided property
-	// So we use that property value in place of this attribute's value
-	if (OE::getUNum(ap->m_value.c_str(), np))
-	  return OU::esprintf("Bad '%s' property value: '%s' for attribute '%s' in element '%s'",
-			      ap->m_name.c_str(), ap->m_value.c_str(), attr, x->name);
-	if (found)
-	  *found = true;
-	return NULL;
-      }    
-  }
-  return OE::getNumber(x, attr, np, found, defaultValue, setDefault);
+  assert(np);
+  const char *v = ezxml_cattr(x, attr);
+  const char *err = getExprNumber(x, attr, *np, found, NULL, this);
+  if (!err && !v && setDefault)
+    *np = defaultValue;
+  return err;
 }
 
+#if 0
 const char *Worker::
 getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly) {
   if (!m_instancePVs)
     return OE::getBoolean(x, name, b, trueOnly);
   return NULL;
 }
+#endif
 
 const char*
 extractExprValue(const OU::Property &p, const OU::Value &v, OU::ExprValue &val) {
@@ -698,8 +688,28 @@ extractExprValue(const OU::Property &p, const OU::Value &v, OU::ExprValue &val) 
 // This is a callback from the property parser used when some of the
 // property attributes (like array dimensions, sequence or string length),
 // are actually expressions in terms of other properties.
+// We first look for instance property values applied in the assembly,
+// and then look for parameter values directly
 const char *Worker::
 getValue(const char *sym, OU::ExprValue &val) const {
+  if (m_instancePVs) {
+    // FIXME: obviously a map would be good here..
+    OU::Assembly::Property *ap = &(*m_instancePVs)[0];
+    for (size_t n = m_instancePVs->size(); n; n--, ap++)
+      if (ap->m_hasValue && !strcasecmp(sym, ap->m_name.c_str())) {
+	// The value of the numeric attribute matches the name of a provided property
+	// So we use that property value in place of this attribute's value
+	// FIXME: why isn't this string value already parsed?
+	// FIXME: the instance has parsed property values but it not accessible here
+	size_t nval;
+	if (OE::getUNum(ap->m_value.c_str(), &nval))
+	  return OU::esprintf("Bad '%s' property value: '%s'",
+			      ap->m_name.c_str(), ap->m_value.c_str());
+	val.isNumber = true;
+	val.number = nval;
+	return NULL;
+      }    
+  }
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
     if (!strcasecmp((*pi)->m_name.c_str(), sym)) {
       OU::Property &p = **pi;
@@ -710,14 +720,15 @@ getValue(const char *sym, OU::ExprValue &val) const {
 	return OU::esprintf("the '%s' parameter property has no value", sym);
       return extractExprValue(p, *p.m_default, val);
     }
-  return OU::esprintf("there is no property named '%s'", sym);
+  return OU::esprintf("There is no property named '%s'", sym);
 }
 
 
 // Get the filename and the name as required.
 // Used when the name defaults from the filename
 const char *
-getNames(ezxml_t xml, const char *file, const char *tag, std::string &name, std::string &fileName) {
+getNames(ezxml_t xml, const char *file, const char *tag, std::string &name,
+	 std::string &fileName) {
   const char *xname = ezxml_name(xml);
   if (!xname)
     xname = "";
@@ -758,14 +769,15 @@ create(const char *file, const std::string &parentFile, const char *package, con
   if (!strcasecmp("HdlPlatform", name))
     w = HdlPlatform::create(xml, xfile, parent, err);
   else if (!strcasecmp("HdlConfig", name))
-    w = HdlConfig::create(xml, xfile, parent, err);
+    w = HdlConfig::create(xml, NULL, xfile, parent, err);
   else if (!strcasecmp("HdlContainer", name))
     w = HdlContainer::create(xml, xfile, err);
   else if (!strcasecmp("HdlAssembly", name))
     w = HdlAssembly::create(xml, xfile, parent, err);
-  else if (!strcasecmp("HdlDevice", name))
-    w = HdlDevice::create(xml, xfile, parent, err);
-  else if (!strcasecmp("RccAssembly", name))
+  else if (!strcasecmp("HdlDevice", name)) {
+    //w = HdlDevice::get(file, parentFile.c_str(), parent, err);
+    w = HdlDevice::create(xml, xfile, parent, instancePVs, err);
+  } else if (!strcasecmp("RccAssembly", name))
     w = RccAssembly::create(xml, xfile, err);
   else if ((w = new Worker(xml, xfile, parentFile, Worker::Application, parent, instancePVs, err))) {
     if (!strcasecmp("RccImplementation", name) || !strcasecmp("RccWorker", name))
@@ -916,9 +928,9 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
     m_specName(NULL), m_isThreaded(false), m_maxPortTypeName(0), m_wciClock(NULL),
     m_endian(NoEndian), m_needsEndian(false), m_pattern(NULL), m_portPattern(NULL),
     m_staticPattern(NULL), m_defaultDataWidth(-1), m_language(NoLanguage), m_assembly(NULL),
-    m_slave(NULL), m_library(NULL), m_outer(false), m_debugProp(NULL), m_instancePVs(ipvs),
-    m_mkFile(NULL), m_xmlFile(NULL), m_outDir(NULL), m_paramConfig(NULL), m_scalable(false),
-    m_parent(parent)
+    m_slave(NULL), m_emulate(NULL), m_library(NULL), m_outer(false), m_debugProp(NULL), 
+    m_instancePVs(ipvs), m_mkFile(NULL), m_xmlFile(NULL), m_outDir(NULL), m_paramConfig(NULL),
+    m_scalable(false), m_parent(parent)
 {
   const char *name = ezxml_name(xml);
   // FIXME: make HdlWorker and RccWorker classes  etc.
@@ -926,7 +938,7 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
     // Parse things that the base class should parse.
     const char *lang = ezxml_cattr(m_xml, "Language");
     if (!lang)
-      if (!strcasecmp("HdlContainer", name))
+      if (!strcasecmp("HdlContainer", name) || !strcasecmp("HdlConfig", name))
 	m_language = VHDL;
       else if (!strcasecmp("HdlAssembly", name))
 	m_language = Verilog;
@@ -946,7 +958,7 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
     else if (xfile && (m_library = findLibMap(xfile)))
       ocpiDebug("m_library set from map from file %s: %s", xfile, m_library);
     else if (m_parent && (m_library = m_implName))
-      ocpiDebug("m_library set from worker name: %s", m_implName);
+      ocpiDebug("m_library set from worker name: %s parent: %s", m_implName, parent->m_implName);
     else
       ocpiDebug("m_library not set");
     // Parse the optional endian attribute.
@@ -960,6 +972,16 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
 	}
     }
   }
+}
+
+// Base class has no worker level expressions, but does all the ports
+const char *Worker::
+resolveExpressions(OU::IdentResolver &ir) {
+  const char *err;
+  for (PortsIter pi = m_ports.begin(); pi != m_ports.end(); pi++)
+    if ((err = (**pi).resolveExpressions(ir)))
+      return err;
+  return NULL;
 }
 
 void Worker::
@@ -1015,7 +1037,7 @@ Parsed(ezxml_t xml,        // The xml for this entity
        const std::string &parent, // The file referencing this entity or file, possibly NULL
        const char *tag,    // The top level tag for this entity
        const char *&err)   // Errors detected during construction
-  : m_file(file ? file : ""), m_parent(parent), m_xml(xml) {
+  : m_file(file ? file : ""), m_parentFile(parent), m_xml(xml) {
   ocpiAssert(xml);
   err = getNames(xml, file, tag, m_name, m_fileName);
 }
@@ -1087,4 +1109,10 @@ findProperty(const char *name) const {
     if (!strcasecmp((*pi)->m_name.c_str(), name))
       return *pi;
   return NULL;
+}
+void Worker::
+recordSignalConnection(Signal &/*s*/, const char */*from*/) {
+}
+void Worker::
+emitTieoffSignals(FILE */*f*/) {
 }

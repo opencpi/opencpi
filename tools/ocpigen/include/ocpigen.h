@@ -55,15 +55,23 @@ typedef Signals::const_iterator SignalsIter;
 struct Signal {
   std::string m_name;
   // The NONE is used in contexts where you are saying do not deal with direction
-  enum Direction { IN, OUT, INOUT, BIDIRECTIONAL, NONE } m_direction;
+  // The OUTIN direction is for emulators on the opposite side of an INOUT,
+  // which, inside the FPGA is a triple if in/out/oe
+  enum Direction { IN, OUT, INOUT, BIDIRECTIONAL, OUTIN, NONE } m_direction;
   size_t m_width;
   bool m_differential;
   std::string m_pos; // pattern for positive if not %sp
   std::string m_neg; // pattern for negative if not %sn
+  std::string m_in;  // pattern for in of tristate if not %s_i
+  std::string m_out; // pattern for out of tristate if not %s_o
+  std::string m_oe;  // pattern for output enable of tristate if not %s_oe
   const char *m_type;
   Signal();
   const char * parse(ezxml_t);
   const char *name() const { return m_name.c_str(); }
+  Signal *reverse();
+  void emitConnectionSignal(FILE *f, const char *iname, const char *pattern, bool single);
+  static void emitConnectionSignals(FILE *f, const char *iname, Signals &signals);
   static const char *parseSignals(ezxml_t x, const std::string &parent, Signals &signals,
 				  SigMap &sigmap);
   static void deleteSignals(Signals &signals);
@@ -97,6 +105,7 @@ class SigMapIdx : public SigMapIdx_ {
 extern void
 emitSignal(const char *signal, FILE *f, Language lang, Signal::Direction dir,
 	   std::string &last, int width, unsigned n, const char *pref = "",
-	   const char *type = "std_logic", const char *value = NULL);
+	   const char *type = "std_logic", const char *value = NULL,
+	   const char *widthExpr = NULL);
 
 #endif

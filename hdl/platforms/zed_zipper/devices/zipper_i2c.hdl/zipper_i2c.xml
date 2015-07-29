@@ -1,0 +1,11 @@
+<HdlDevice language="vhdl">
+  <componentspec nocontrol='true'>
+    <property name='nusers' parameter='1' readable='1' default='1'/>
+  </componentspec>
+  <rawprop name='rprops' count='nusers' optional='true'/>
+  <supports worker='si5351'>
+    <connect port="rawprops" to="rprops" index='0'/>
+  </supports>
+  <Signal Inout='sda'/>
+  <Signal Inout='scl'/>
+</HdlDevice>

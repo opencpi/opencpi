@@ -8,6 +8,7 @@ all: $(AssyWorkersFile)
 $(AssyWorkersFile): $(Worker_xml) | $(GeneratedDir)
 	$(AT)$(OcpiGen) -D $(GeneratedDir)\
                         $(and $(Platform),-P $(Platform)) $(and $(Assembly),-S $(Assembly))\
-                        -W $(Worker) $< 
+			$(and $(PlatformDir),-F $(PlatformDir)) \
+                        -W $(Worker) $<
 
 

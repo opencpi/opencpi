@@ -1,8 +1,12 @@
-<HdlPlatform Language="VHDL">
-  <xi:include href="platform_spec"/>
+<HdlPlatform Language="VHDL" spec='platform-spec'>
   <property name='sdpDropCount' type='uchar' volatile='1'/>
-  <metadata master='true'/>
-  <timeservice master='true'/>
+  <!-- All platform workers must provide these two ports -->
+  <metadata master='true'/> <!-- access to container metadata via the platform worker -->
+  <timebase master='true'/> <!-- providing a timebase for the time service -->
   <sdp name='sdp' master='true'/>
   <sdp name='sdp_slave'/>
+  <!-- Declare and parameterize the time_server device worker for this platform -->
+  <device worker='time_server'>
+    <property name='frequency' value='100e6'/>
+  </device>
 </HdlPlatform>

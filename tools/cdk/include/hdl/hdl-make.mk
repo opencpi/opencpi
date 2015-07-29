@@ -9,8 +9,15 @@ Model:=hdl
 # i.e. a Makefile file that does other makefiles.
 # Note that targets are generally families except when a primitive core is actually part-specific.
 
+$(call OcpiDbgVar,HdlPlatforms)
+$(call OcpiDbgVar,HdlTargets)
+
 include $(OCPI_CDK_DIR)/include/util.mk
 include $(OCPI_CDK_DIR)/include/hdl/hdl-targets.mk
+
+# The libraries with names suitable for the library clause in VHDL, as passed to ocpigen
+HdlVhdlLibraries=\
+  $(and $(HdlMyLibraries),$(foreach l,$(HdlMyLibraries),-l $(notdir $l)))
 
 # This default is only overridden for testing the makefiles
 HdlError:=error
@@ -92,23 +99,28 @@ HdlXmlComponentLibraries=$(strip \
 #    The core for the worker will be _rv if the assembly file is VHDL
 # Note we are silent about workers that don't have cores.
 # FIXME: put in the error check here, but avoid building platform modules like "occp" etc.
+HdlInstanceWkr=$(word 1,$(subst :, ,$1))
+HdlInstanceCfg=$(word 2,$(subst :, ,$1))
+HdlInstanceName=$(word 3,$(subst :, ,$1))
+HdlInstanceWkrCfg=$(call HdlInstanceWkr,$1)$(and $(HdlToolRealCore),$(filter %.vhd,$(ImplFile)),_rv)$(foreach c,$(call HdlInstanceCfg,$1),$(if $(filter 0,$c),,_c$c))
+
 define HdlSetWorkers
   HdlInstances:=$$(and $$(AssyWorkersFile),$$(strip $$(foreach i,$$(shell grep -h -v '\\\#' $$(AssyWorkersFile)),\
-	               $$(if $$(filter $$(firstword $$(subst :, ,$$i)),$$(HdlPlatformWorkers)),,$$i))))
-  HdlWorkers:=$$(call Unique,$$(foreach i,$$(HdlInstances),$$(firstword $$(subst :, ,$$i))))
-  $$(infos HdlSetWorkers:Cores:$$(Cores):$$(HdlWorkers):$$(HdlInstances):$$(HdlTarget))
+	               $$(if $$(filter $$(call HdlInstanceWkr,$$i),$$(HdlPlatformWorkers)),,$$i))))
+  HdlWorkers:=$$(call Unique,$$(foreach i,$$(HdlInstances),$$(call HdlInstanceWkrCfg,$$i)))
+  $$(infox HdlSetWorkers:Cores:$$(Cores):$$(HdlWorkers):$$(HdlInstances):$$(HdlTarget))
   SubCores_$$(HdlTarget):=$$(call Unique,\
     $$(Cores) \
     $$(foreach w,$$(HdlWorkers),\
       $$(or $(strip\
         $$(foreach f,$$(strip\
           $$(firstword \
-            $$(foreach c,$$(ComponentLibraries),$$(infox CC:$$c:$$(ImplFile):)\
+            $$(foreach c,$$(ComponentLibraries),$$(infox CC:$$c:$$(ImplFile):$$w=)\
               $$(foreach d,$$(call HdlComponentLibraryDir,$$c,$$(HdlTarget)),$$(infox DD:$$d/$$w)\
-                $$(call HdlExists,$$d/$$w$$(and $$(HdlToolRealCore),$$(filter %.vhd,$$(ImplFile)),_rv)$$(HdlBin)))))),\
+                $$(call HdlExists,$$d/$$w$$(HdlBin)))))),\
           $$(call FindRelative,.,$$f)),\
 	),$$(info Warning: Worker $$w was not found in any of the component libraries))))
-   $$(infoss Cores is $$(origin SubCores_$$(HdlTarge)) $$(flavor SubCores_$$(HdlTarget)):$$(SubCores_$$(HdlTarget)))
+   $$(infox Cores is $$(origin SubCores_$$(HdlTarget)) $$(flavor SubCores_$$(HdlTarget)):$$(SubCores_$$(HdlTarget)))
 
 endef
 # Get the list of cores we depend on, returning the real files that make can depend on
@@ -120,7 +132,7 @@ HdlGetCores=$(infox HGC:$(Cores):$(HdlWorkers):$(HdlTarget))$(call Unique,\
         $(firstword \
           $(foreach c,$(ComponentLibraries),\
             $(foreach d,$(call HdlComponentLibraryDir,$c,$(HdlTarget)),\
-              $(call HdlExists,$d/$w$(and $(HdlToolRealCore),$(filter %.vhd,$(ImplFile)),_rv)$(HdlBin)))))),\
+              $(call HdlExists,$d/$w$(HdlBin)))))),\
         $(call FindRelative,.,$f))))
 
 
@@ -348,17 +360,16 @@ HdlGetTargetsForToolSet=$(call Unique,\
 $(call OcpiDbgVar,HdlPlatforms)
 $(call OcpiDbgVar,HdlTargets)
 
-
-# This function adjusts only things that have a slash
-HdlAdjustLibraries=$(foreach l,$1,$(if $(findstring /,$l),$(call AdjustRelative,$l),$l))
+#  $(foreach c,$(ComponentLibraries),\
+#    $(foreach o,$(ComponentLibraries),\
+#       $(if $(findstring $o,$c),,\
+#          $(and $(filter $(notdir $o),$(notdir $c)),
+#            $(error The component libraries "$(c)" and "$(o)" have the same base name, which is not allowed)))))
 
 define HdlSearchComponentLibraries
-  $(foreach c,$(ComponentLibraries),\
-    $(foreach o,$(ComponentLibraries),\
-       $(if $(findstring $o,$c),,\
-          $(and $(filter $(notdir $o),$(notdir $c)),
-            $(error The component libraries "$(c)" and "$(o)" have the same base name, which is not allowed)))))
-  override XmlIncludeDirs += $(call HdlXmlComponentLibraries,$(ComponentLibraries))
+
+  override XmlIncludeDirsInternal := $(call Unique,$(XmlIncludeDirsInternal) $(call HdlXmlComponentLibraries,$(ComponentLibraries)))
+
 endef
 HdlRmRv=$(if $(filter %_rv,$1),$(patsubst %_rv,%,$1),$1)
 
@@ -396,9 +407,6 @@ HdlShadowFiles=\
 	  $(wildcard $(call HdlGetTop,$(HdlTarget))/$f),\
           $f))
 
-HdlVHDLImplFiles=\
-  $(call WkrTargetDir,$1,$2)/$(Worker)-impl.vhd
-
 # This is the list of files that will be generated in the TARGET
 # directory.
 # The VHDL defs file must preceed the generics file
@@ -406,12 +414,14 @@ HdlVHDLImplFiles=\
 # FIXME: this has worker stuff in it - should it be elsewhere?
 # $(call HdlTargetSrcFiles,target-dir,paramconfig)
 HdlTargetSrcFiles=\
-  $(VHDLDefsFile) \
+  $(if $(and $2,$(filter-out 0,$2)),\
+    $(call HdlVHDLTargetDefs,$1,$2) $(call HdlVerilogTargetDefs,$1,$2), \
+    $(DefsFile) $(WDefsFile)) \
   $(and $(WorkerParamNames),$(strip \
      $(call WkrTargetDir,$1,$2)/generics$(HdlVHDLIncSuffix)\
      $(and $(filter .v,$(HdlSourceSuffix)),\
        $(call WkrTargetDir,$1,$2)/generics$(HdlVerilogIncSuffix))))\
-  $(if $(and $2,$(filter-out 0,$2)),$(call HdlVHDLImplFiles,$1,$2),$(ImplHeaderFiles))
+  $(if $(and $2,$(filter-out 0,$2)),$(call HdlVHDLTargetImpl,$1,$2),$(ImplHeaderFiles))
 
 #		$(and $(ParamVHDLtype_$(ParamConfig)_$n), \
 #		   echo '$(ParamVHDLtype_$(ParamConfig)_$n)' ;) \
@@ -421,10 +431,10 @@ $(OutDir)target-%/generics.vhd: | $(OutDir)target-%
 	$(AT)(\
 	     echo -- This file sets values for top level generics ;\
 	     echo library ocpi\; use ocpi.all, ocpi.types.all\; ;\
-	     echo package body $(Worker)_defs is ;\
+	     echo package body $(Worker)_constants is ;\
 	     $(foreach n,$(WorkerParamNames)$(infox WPN:$(WorkerParamNames):),\
 		echo '$(ParamVHDL_$(ParamConfig)_$n)'\; ;) \
-	     echo end $(Worker)_defs\; \
+	     echo end $(Worker)_constants\; \
 	) > $@
 
 $(OutDir)target-%/generics.vh: | $(OutDir)target-%
@@ -450,17 +460,20 @@ endif
 define HdlPrepareAssembly
 
   # 1. Scan component libraries to add to XmlIncludeDirs
-  $(HdlSearchComponentLibraries)
+  $$(eval $$(HdlSearchComponentLibraries))
   # 2. Generate (when needed) the workers file immediately to use for dependencies
   AssyWorkersFile:=$$(GeneratedDir)/$$(Worker).wks
   $$(if\
     $$(call DoShell,$$(MAKE) -f $$(OCPI_CDK_DIR)/include/hdl/hdl-get-workers.mk\
                     Platform=$(Platform) \
+                    PlatformDir=$(PlatformDir) \
                     Assembly=$(Assembly) \
+		    XmlIncludeDirsInternal="$$(XmlIncludeDirsInternal)" \
                     AssyWorkersFile=$$(AssyWorkersFile) \
-                    Worker=$$(Worker) Worker_xml=$$(Worker_xml) XmlIncludeDirs="$$(XmlIncludeDirs)",\
+                    Worker=$$(Worker) Worker_xml=$$(Worker_xml) \
+		    AT=$(AT), \
                    Output), \
-    $$(error Error deriving workers from file $$(Worker).xml. $$(Output)),\
+    $$(error Error deriving workers from file $$(Worker).xml: $$(Output)),\
    )
   # 3. Generated the assembly source file
   ImplFile:=$$(GeneratedDir)/$$(Worker)-assy$$(HdlSourceSuffix)
@@ -468,6 +481,7 @@ define HdlPrepareAssembly
 	$(AT)echo Generating the $$(HdlMode) source file: $@ from $$<
 	$(AT)$$(OcpiGen) -D $$(GeneratedDir) \
                          $(and $(Assembly),-S $(Assembly)) $(and $(Platform),-P $(Platform)) \
+			 $(and $(PlatformDir),-F $(PlatformDir)) \
                          -a $$<
   # 4. Make the generated assembly source file one of the files to compile
   WorkerSourceFiles=$$(ImplFile)
@@ -475,7 +489,7 @@ define HdlPrepareAssembly
   HdlPreCore=$$(eval $$(HdlSetWorkers))$$(call HdlCollectCores,$$(HdlTarget),HdlPrepareAssembly)
 endef
 define HdlPreprocessTargets
-  OCPI_HDL_PLATFORM=ml605
+  OCPI_HDL_PLATFORM=zed
   ifeq ($$(origin HdlPlatforms),undefined)
     ifdef HdlPlatform
       ifneq ($$(words $$(HdlPlatform)),1)
@@ -503,6 +517,4 @@ define HdlPreprocessTargets
     override HdlTargets:=$$(HdlAllFamilies)
   endif
 endef
-
-
 endif

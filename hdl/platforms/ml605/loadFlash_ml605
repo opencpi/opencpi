@@ -1,0 +1,3 @@
+#!/bin/sh --noprofile
+
+exec `dirname $0`/loadFlash_xilinx $1 $2 "-x xcf128x -data_width 16 -u 00000000"

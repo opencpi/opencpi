@@ -1,9 +1,47 @@
 -- This package defines constants relating to the WCI interface
-library ieee; use ieee.std_logic_1164.all; use ieee.numeric_std.all;
-library ocpi; use ocpi.types.all; use ocpi.ocp;
+library ieee, ocpi;
+use ieee.std_logic_1164.all, ieee.numeric_std.all, ocpi.types.all, ocpi.ocp;
 package wci is
+type raw_in_t is record
+  address     : ushort_t;
+  byte_enable : std_logic_vector(3 downto 0);
+  is_read     : bool_t;
+  is_write    : bool_t;
+  data        : word32_t;
+end record raw_in_t;
+constant raw_in_zero : raw_in_t
+  := ((others => '0'), (others => '0'), bfalse, bfalse, (others => '0'));
+type raw_out_t is record
+  done        : bool_t;
+  error       : bool_t;
+  data        : word32_t;
+end record raw_out_t;
+constant raw_out_zero : raw_out_t := (bfalse, bfalse, (others => '0'));
+-- The raw property interface for shared I2C and SPIs from the perspective of the
+-- device worker.
+constant raw_max_devices : natural := 6;
 
-TYPE control_op_t IS (INITIALIZE_e,
+-- Output from device worker as master of the rawprop interface
+type raw_prop_out_t is record
+  present : bool_t;                       -- master is present - slave ties low
+  reset   : bool_t;                       -- master worker is in reset
+  raw     : raw_in_t;
+end record raw_prop_out_t;
+constant raw_prop_out_zero : raw_prop_out_t
+  := ('0', '0', wci.raw_in_zero);
+type raw_prop_out_array_t is array(natural range <>) of raw_prop_out_t;
+-- Input to device worker as master of the rawprop interface
+-- These signals are "broadcast" back to all masters from the one slave
+type raw_prop_in_t is record
+  present : bool_array_t(0 to raw_max_devices-1); -- which of all devices are present
+  raw     : raw_out_t;
+end record raw_prop_in_t;
+constant raw_prop_in_zero : raw_prop_in_t
+  := ((others => '0'), raw_out_zero);
+
+type raw_prop_in_array_t is array(natural range <>) of raw_prop_in_t;
+
+type control_op_t IS (INITIALIZE_e,
                       START_e,     
                       STOP_e,
                       RELEASE_e,
@@ -12,6 +50,7 @@ TYPE control_op_t IS (INITIALIZE_e,
                       TEST_e,
                       NO_OP_e);
 subtype control_op_mask_t is std_logic_vector(control_op_t'pos(no_op_e) downto 0);
+function get_op_pos(input: control_op_t) return natural;
 
 type worker_t is record
   decode_width      : natural;
@@ -42,6 +81,7 @@ TYPE State_t IS (EXISTS_e,            -- 0
                  SUSPENDED_e,         -- 3
                  FINISHED_e,          -- 4
                  UNUSABLE_e);         -- 5
+function get_state_pos(input: state_t) return natural;
 
   type control_op_masks_t is array (natural range 0 to state_t'pos(unusable_e)) of control_op_mask_t;
 
@@ -126,9 +166,9 @@ type wci_s2m_array_t is array(natural range <>) of wci_s2m_t;
   component decoder
     generic(
       worker                 : worker_t;
-      properties             : properties_t;
       ocpi_debug             : bool_t;
-      endian                 : endian_t);
+      endian                 : endian_t;
+      properties             : properties_t);
     port(
       ocp_in                 : in  in_t;       
       done                   : in  bool_t := btrue;
@@ -141,26 +181,28 @@ type wci_s2m_array_t is array(natural range <>) of wci_s2m_t;
       is_operating           : out bool_t;  -- just a convenience for state = operating_e
       abort_control_op       : out bool_t;
       is_big_endian          : out bool_t;   -- for runtime dynamic endian
+      raw_in                 : in  raw_out_t;
+      raw_out                : out raw_in_t;
       barrier                : out bool_t;
       crew                   : out UChar_t;
       rank                   : out UChar_t;
-      -- From here down, only for properties
+      -- From here down, only for non-raw properties
       write_enables          : out bool_array_t(properties'range);
       read_enables           : out bool_array_t(properties'range);
       offsets                : out offset_a_t(properties'range);
       indices                : out offset_a_t(properties'range);
       hi32                   : out bool_t;
       nbytes_1               : out byte_offset_t;
-      data_outputs           : out data_a_t(properties'range);
-      is_read                : out bool_t;
-      is_write               : out bool_t;
-      raw_offset             : out unsigned (worker.decode_width -1 downto 0)
+      data_outputs           : out data_a_t(properties'range)
     );
   end component;
 
-  component control_decoder is
+  -- the wci convenience module used when there are no non-raw properties
+  component no_props_decoder is
     generic (
-      worker                 : worker_t);
+      worker                 : worker_t;
+      ocpi_debug             : bool_t;
+      endian                 : endian_t);
     port (
       ocp_in                 : in  in_t;       
       done                   : in  bool_t := btrue;
@@ -172,7 +214,12 @@ type wci_s2m_array_t is array(natural range <>) of wci_s2m_t;
       state                  : out state_t;
       is_operating           : out bool_t;  -- just a convenience for state = operating_e
       abort_control_op       : out bool_t;
-      is_big_endian          : out bool_t   -- for runtime dynamic endian
+      is_big_endian          : out bool_t;  -- for runtime dynamic endian
+      raw_in                 : in  raw_out_t;
+      raw_out                : out raw_in_t;
+      barrier                : out bool_t;
+      crew                   : out UChar_t;
+      rank                   : out UChar_t
       );
   end component;
          
@@ -203,5 +250,14 @@ type wci_s2m_array_t is array(natural range <>) of wci_s2m_t;
         index_out     : out unsigned(decode_width-1 downto 0); --
         data_out      : out std_logic_vector(31 downto 0)); --
   end component property_decoder;
+  component raw_arb is
+    generic (nusers      : positive := 1);
+    port    (clk         : in  std_logic;
+             reset       : in  bool_t;
+             from_users  : in  wci.raw_prop_out_array_t(0 to nusers-1);
+             to_users    : out wci.raw_prop_in_array_t(0 to nusers-1);
+             from_device : in  wci.raw_prop_in_t;
+             to_device   : out wci.raw_prop_out_t);
+  end component raw_arb;
 end package wci;
 

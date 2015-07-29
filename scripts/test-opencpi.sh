@@ -17,7 +17,7 @@ echo ======================= Loading the OpenCPI Linux Kernel driver. &&
 echo ======================= Running Unit Tests &&
 tests/target-$OCPI_TARGET_HOST/ocpitests &&
 echo ======================= Running Container Tests &&
-(cd core/ctests/target-$OCPI_TARGET_HOST && ../bin/src/run_tests.sh) &&
+(cd runtime/ctests/target-$OCPI_TARGET_HOST && ../bin/src/run_tests.sh) &&
 echo ======================= Running Datatype/protocol Tests &&
 tools/cdk/ocpidds/target-$OCPI_TARGET_HOST/ocpidds -t 10000 > /dev/null &&
 echo All tests passed.

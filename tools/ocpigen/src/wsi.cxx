@@ -156,13 +156,15 @@ emitVhdlShell(FILE *f, Port *wci) {
       fprintf(f, "  %s_opcode%s <= %s_opcode%s;\n",
 	      name(), slave ? "" : "_temp", name(), slave ? "_temp" : "");
 	
+  std::string width;
+  OU::format(width, "ocpi_port_%s_", name());
   fprintf(f,
 	  "  %s_port : component ocpi.wsi.%s%s\n"
 	  "    generic map(precise          => %s,\n"
-	  "                mdata_width      => %zu,\n"
-	  "                mdata_info_width => %zu,\n"
+	  "                mdata_width      => %s%s,\n"
+	  "                mdata_info_width => %s%s,\n"
 	  "                burst_width      => %zu,\n"
-	  "                n_bytes          => %zu,\n"
+	  "                n_bytes          => %s%s,\n"
 	  "                byte_width       => %zu,\n"
 	  "                opcode_width     => %zu,\n"
 	  "                own_clock        => %s,\n"
@@ -171,10 +173,13 @@ emitVhdlShell(FILE *f, Port *wci) {
 	  m_isPartitioned ? "part_" : "",
 	  slave ? "slave" : "master",
 	  BOOL(m_preciseBurst),
-	  ocp.MData.value ? ocp.MData.width : 1,
-	  ocp.MDataInfo.value ? ocp.MDataInfo.width : 1,
+	  ocp.MData.value ? width.c_str() : "",
+	  ocp.MData.value ? "MData_width" : "1",
+	  ocp.MDataInfo.value ? width.c_str() : "",
+	  ocp.MDataInfo.value ? "MDataInfo_width" : "1",
 	  ocp.MBurstLength.width,
-	  ocp.MByteEn.value ? ocp.MByteEn.width : 1,
+	  ocp.MByteEn.value ? width.c_str() : "",
+	  ocp.MByteEn.value ? "MByteEn_width" : "1",
 	  m_byteWidth,
 	  opcode_width,
 	  BOOL(myClock),
@@ -348,7 +353,9 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
       if (ocp.MReqInfo.value) {
 	if (cons.ocp.MReqInfo.width > ocp.MReqInfo.width) {
 	  oa = &consAdapt[OCP_MReqInfo];
-	  asprintf((char **)&oa->expr, "{%zu'b0,%%s}",
+	  asprintf((char **)&oa->expr,
+		   lang == Verilog ?
+		   "{%zu'b0,%%s}" : "std_logic_vector(to_unsigned(0,%zu)) & %%s",
 		   cons.ocp.MReqInfo.width - ocp.MReqInfo.width);
 	  oa->other = OCP_MReqInfo;
 	} else {
@@ -585,12 +592,12 @@ emitRecordInputs(FILE *f) {
 	    "                                         -- one or more of: som, eom, valid are true\n");
     if (m_dataWidth) {
       fprintf(f,
-	      "    data             : std_logic_vector(%zu downto 0);\n",
-	      m_dataWidth-1);	      
+	      "    data             : std_logic_vector(ocpi_port_%s_data_width-1 downto 0);\n",
+	      name());	      
       if (ocp.MByteEn.value)
 	fprintf(f,
-		"    byte_enable      : std_logic_vector(%zu downto 0);\n",
-		m_dataWidth/m_byteWidth-1);
+		"    byte_enable      : std_logic_vector(ocpi_port_%s_MByteEn_width-1 downto 0);\n",
+		name());
     }
     if (m_nOpcodes > 1)
       fprintf(f,
@@ -627,12 +634,12 @@ emitRecordOutputs(FILE *f) {
 	    "                                         -- can be asserted when ready is true\n");
     if (m_dataWidth) {
       fprintf(f,
-	      "    data             : std_logic_vector(%zu downto 0);\n",
-	      m_dataWidth-1);	      
+	      "    data             : std_logic_vector(ocpi_port_%s_data_width-1 downto 0);\n",
+	      name());
       if (ocp.MByteEn.value)
 	fprintf(f,
-		"    byte_enable      : std_logic_vector(%zu downto 0);\n",
-		m_dataWidth/m_byteWidth-1);
+		"    byte_enable      : std_logic_vector(ocpi_port_%s_MByteEn_width-1 downto 0);\n",
+		name());
     }
     if (m_nOpcodes > 1)
       fprintf(f,
@@ -648,4 +655,8 @@ emitRecordOutputs(FILE *f) {
 	      "    part_start       : Bool_t;\n"
 	      "    part_give        : Bool_t;\n");
   }
+}
+unsigned WsiPort::
+extraDataInfo() const {
+  return m_abortable ? 1 : 0;
 }

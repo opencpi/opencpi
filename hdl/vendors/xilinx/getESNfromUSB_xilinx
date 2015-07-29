@@ -1,0 +1,60 @@
+#!/bin/sh --noprofile
+# Internal script to get the ESN from a pod on a USB
+
+# arg 1 is impact binary
+# arg 2 is USB to look at
+temp=/tmp/ocpibitstream$$
+tlog=$temp.1
+tmp=$temp.2
+function good {
+  #rm -f $temp.*
+  exit 0
+}
+function bad {
+  rm -f $tmp
+  echo Look at $tlog.\* for details, then remove them.
+  exit 1
+}
+imp=$1
+p=$2
+echo setMode -bs/setCable -p $p | tr / \\n | $imp -batch 2> $tlog.$p 1>&2
+if test $? != 0; then
+  echo Failed to talk to USB port $p 1>&2 2> $tlog.$p
+  bad
+fi
+#cat $tlog.$p
+if ! grep -q '^Cable connection established.' $tlog.$p; then
+  echo USB Cable Connection on port $p verified, but actual port not connected 1>&2
+  bad
+fi
+ed $tlog.$p <<EOF > /dev/null 2>&1
+  /Usb Port -/
+  .=
+  s/^.*Usb Port - \(USB[^)]*\).*\$/\1/
+  .=
+  1,-d
+  2,\$d
+  w $tmp
+EOF
+myport=`cat $tmp`
+myportlc=`echo $myport | tr A-Z a-z`
+if grep -q 'ESN device is not available' $tlog.$p ; then
+  myesn=0123456789ABCD
+  echo USB Pod has no ESN, so we\'ll use $myesn. You can only have one of these. 1>&2
+else
+  ed $tlog.$p <<EOF  > /dev/null 2>&1
+    /ESN.*option:/
+    .=
+    s/^.*ESN.*option: *\(.*\).\$/\1/
+    1,-d
+    2,\$d
+    w $tmp
+EOF
+  myesn=`cat $tmp`
+fi
+if [[ $myport != USB* ]]; then
+  echo USB Cable Connection on port $p verified, but actual port not discovered \(port = $myport\?\) 1>&2
+  bad
+fi
+echo $myesn
+exit 0

@@ -81,9 +81,9 @@ paramValue(const OU::Member &param, OU::Value &v, std::string &value) {
   case HdlModel:
     return hdlValue(param.m_name.c_str(), v, value, true);
   case RccModel:
-    return rccValue(v, value, &param);
+    return rccValue(v, value, param);
   case OclModel:
-    return rccValue(v, value, &param);
+    return rccValue(v, value, param);
   default:
     assert("bad model" == 0);
   }
@@ -95,6 +95,10 @@ write(FILE *xf, FILE *mf) {
     fprintf(xf, "  <configuration id='%s'>\n", id.c_str());
   for (unsigned n = 0; n < params.size(); n++) {
     Param &p = params[n];
+    if (p.param == NULL) {
+      // This is a new parameter that was not in this (existing) param config.
+      continue;
+    }
     if (used) {
       // Put out the Makefile value lines
       std::string val;
@@ -178,7 +182,7 @@ parseConfigFile(const char *dir) {
   OU::format(fname, "%s/%s-params.xml", dir, m_implName);
   ezxml_t x;
   std::string empty;
-  if ((err = parseFile(fname.c_str(), empty, "build", &x, empty, true, false)))
+  if ((err = parseFile(fname.c_str(), empty, "build", &x, empty, true, false, true)))
     return err;
   for (ezxml_t cx = ezxml_cchild(x, "configuration"); cx; cx = ezxml_next(cx)) {
     ParamConfig *pc = new ParamConfig(*this);
@@ -313,7 +317,7 @@ const char *Worker::
 emitToolParameters() {
   ezxml_t x;
   const char *err;
-  if ((err = parseConfigFile(m_outDir)) ||
+  if (m_paramConfigs.size() == 0 && (err = parseConfigFile(m_outDir)) ||
       (err = parseRawParams(x)) ||
       (err = openOutput(m_fileName.c_str(), m_outDir, "", "-params", ".mk", NULL, m_mkFile)))
     return err;
@@ -333,8 +337,9 @@ emitToolParameters() {
       return err;
     if ((err = findParamProperty(name.c_str(), p, nParam)))
       fprintf(stderr,
-	      "Warning: parameter '%s' ignored due to: %s", name.c_str(), err);
-    addValues(*p, info.params[nParam].values, hasValues, ezxml_txt(px));
+	      "Warning: parameter '%s' ignored due to: %s\n", name.c_str(), err);
+    else
+      addValues(*p, info.params[nParam].values, hasValues, ezxml_txt(px));
   }
   // Fill in default values when there are no values specified for a given parameter.
   // i.e. for this parameter, make the single value for all configs the default value

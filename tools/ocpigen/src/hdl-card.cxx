@@ -10,7 +10,8 @@ Cards Card::s_cards;        // registry of card types
 // A slot may have a default mapping to the external platform's signals,
 // ie. <slot-name>_signal.
 Card::
-Card(ezxml_t xml, const char *name, SlotType &type, const char *&err)
+Card(ezxml_t xml, const char *name, SlotType &type, const char *parentFile, Worker *parent,
+     const char *&err)
   : Board(type.m_sigmap, type.m_signals), m_name(name), m_type(type)
 {
 #if 0
@@ -33,7 +34,7 @@ Card(ezxml_t xml, const char *name, SlotType &type, const char *&err)
   }
 #endif
   if (!err)
-    err = parseDevices(xml, &type);
+    err = parseDevices(xml, &type, parentFile, parent);
   if (err)
     err = OU::esprintf("Error for slot '%s': %s", m_name.c_str(), err);
 }
@@ -45,10 +46,10 @@ Card::
 // Cards are interned, and we want the type to be a reference.
 // Hence we check the type first.
 Card *Card::
-get(const char *file, const char *parent, const char *&err) {
+get(const char *file, const char *parentFile, Worker *parent, const char *&err) {
   ezxml_t xml;
   std::string xfile;
-  if ((err = parseFile(file, parent, NULL, &xml, xfile)))
+  if ((err = parseFile(file, parentFile, NULL, &xml, xfile)))
     return NULL;
   std::string name;
   OE::getOptionalString(xml, name, "name");
@@ -63,10 +64,10 @@ get(const char *file, const char *parent, const char *&err) {
   std::string type;
   if ((err = OE::getRequiredString(xml, type, "type")))
     return NULL;
-  SlotType *st = SlotType::get(type.c_str(), parent, err);
+  SlotType *st = SlotType::get(type.c_str(), parentFile, err);
   if (!st)
     return NULL;
-  c = new Card(xml, name.c_str(), *st, err);
+  c = new Card(xml, name.c_str(), *st, parentFile, parent, err);
   if (err) {
     delete c;
     return NULL;

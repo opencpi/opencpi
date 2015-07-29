@@ -1,0 +1,7 @@
+<application package='ocpi'>
+  <instance component='ocpi.devices.time_server'/>
+  <instance component='time_gen' connect='file_write'/>
+  <instance component='file_write'>
+    <property name='filename' value='time_test.out'/>
+  </instance>
+</application>

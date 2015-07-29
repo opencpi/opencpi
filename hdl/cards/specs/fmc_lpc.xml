@@ -59,7 +59,7 @@
   <signal bidirectional='LA33_N'/>      <!-- Pin G37 -->
 
 
-  <signal output='PG_C2M'/>             <!-- Pin D1 -->
+  <!-- irrelevant to carrier FPGA <signal output='PG_C2M'/>  Pin D1 -->
   <signal input='GBTCLK0_M2C_P'/>       <!-- Pin D4 -->
   <signal input='GBTCLK0_M2C_N'/>       <!-- Pin D5 -->
   <signal bidirectional='LA01_P_CC'/>   <!-- Pin D8 -->
@@ -91,7 +91,7 @@
   <signal bidirectional='LA18_N_CC'/>   <!-- Pin C23 -->
   <signal bidirectional='LA27_P'/>      <!-- Pin C26 -->
   <signal bidirectional='LA27_N'/>      <!-- Pin C27 -->
-  <signal output='SCL'/>                <!-- Pin C30 -->
+  <signal bidirectional='SCL'/>         <!-- Pin C30 Should be output, but it is used as general purpose sometimes-->
   <signal bidirectional='SDA'/>         <!-- Pin C31 -->
 </SlotType>
 

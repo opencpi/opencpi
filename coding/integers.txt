@@ -27,7 +27,7 @@ and its sized types, as well as intptr_t as needed.  But when there is
 a possibility that we might change our minds about the sizes or need
 to compile globally with different sizes we use a typedef.
 
-When we knowingly are truncating an integer type use
+When we knowingly are truncating an integer type we use
 OCPI_UTRUNCATE(to-type,val) or OCPI_STRUNCATE for signed types.
 This allows, in debug, a runtime check for these truncations.
 
@@ -41,7 +41,7 @@ region.
 
 sizeof(DtOsDataTypes::Offset) must be larger than sizeof(OCPI::Util::ResAddr).
 
-Since we use C-style printf/sprinftf/scanf patterns a lot, we
+Since we use C-style printf/sprintf/sscanf patterns a lot, we
 generally define macros for printing these types, based on the
 inttypes.h macros like PRIu32.  These macros are upper case with _ for
 :: in namespaces, and the suffix like "_PRIu".

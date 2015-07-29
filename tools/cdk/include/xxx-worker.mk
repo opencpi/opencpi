@@ -85,27 +85,40 @@ MakeRawParams:= \
      echo "</parameter>";) \
    echo "</parameters>")
 
-IncludeDirs:=$(OCPI_CDK_DIR)/include/$(Model) $(GeneratedDir) $(IncludeDirs)
-ifeq ($(origin XmlIncludeDirsInternal),undefined)
-  ifeq ($(origin XmlIncludeDirs),undefined)
-    ifneq ($(wildcard ../specs),)
-      XmlIncludeDirsInternal:=../specs
-    endif
-  endif
-endif
-#FIXME: why doesn't lib/components flow from component libraries?
-override XmlIncludeDirs:=$(XmlIncludeDirs) . $(XmlIncludeDirsInternal) \
-   $(OCPI_CDK_DIR)/lib/components $(OCPI_CDK_DIR)/lib/components/specs
+$(call OcpiDbgVar,XmlIncludeDirsInternal)
+# Here we add access to:
+# 0. The current directory
+# 1. The generated directory
+# 2. What is locally set in the worker's Makefile (perhaps to override specs/protocols)
+# 3. What was passed from the library Makefile above (perhaps to override specs/protocols)
+# 4. The library's specs directory
+# 5. The library's export directory to find other (slave or emulated) workers
+# 6. The standard component library for specs
+# 7. The standard component library's exports for proxy slaves
+override XmlIncludeDirsInternal:=\
+  $(call Unique,\
+    . $(GeneratedDir) \
+    $(IncludeDirs) $(XmlIncludeDirs) \
+    $(XmlIncludeDirsInternal) \
+    ../specs \
+    $(foreach m,$(Models),../lib/$m)\
+    $(OCPI_CDK_DIR)/lib/components \
+    $(foreach m,$(Models),$(OCPI_CDK_DIR)/lib/components/$m)\
+   )
+
+$(call OcpiDbgVar,XmlIncludeDirsInternal)
+
 -include $(GeneratedDir)/*.deps
 
-ParamShell:=(\
+ParamShell=(\
   mkdir -p $(GeneratedDir) &&\
   ($(MakeRawParams) |\
   $(OcpiGenTool) -D $(GeneratedDir) $(and $(Package),-p $(Package))\
     $(and $(Platform),-P $(Platform)) \
-    $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) \
-  $(and $(AssemblyName),-S $(AssemblyName)) \
-  -r $(Worker_$(Worker)_xml)) || echo 1\
+    $(and $(PlatformDir), -F $(PlatformDir)) \
+    $(HdlVhdlLibraries) \
+    $(and $(Assembly),-S $(Assembly)) \
+    -r $(Worker_$(Worker)_xml)) || echo 1\
   )
 
 ifeq ($(filter clean,$(MAKECMDGOALS)),)
@@ -132,9 +145,10 @@ $(call OcpiDbgVar,ImplHeaderFiles)
 $(ImplHeaderFiles): $(GeneratedDir)/%$(ImplSuffix) : $$(Worker_%_xml) | $(GeneratedDir)
 	$(AT)echo Generating the implementation header file: $@ from $< 
 	$(AT)$(OcpiGen) -D $(GeneratedDir) $(and $(Package),-p $(Package)) \
-        $(and $(AssemblyName),-S $(AssemblyName)) \
+        $(and $(Assembly),-S $(Assembly)) \
 	$(and $(HdlPlatform),-P $(HdlPlatform)) \
-	 $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) -i $< \
+	$(and $(PlatformDir),-F $(PlatformDir)) \
+	$(HdlVhdlLibraries) -i $<
 
 ifeq ($(origin SkelFiles),undefined)
   SkelFiles=$(foreach w,$(Workers),$(GeneratedDir)/$w$(SkelSuffix))
@@ -147,8 +161,9 @@ all: skeleton
 $(SkelFiles): $(GeneratedDir)/%$(SkelSuffix) : $$(Worker_%_xml) | $(GeneratedDir)
 	$(AT)echo Generating the implementation skeleton file: $@
 	$(AT)$(OcpiGen) -D $(GeneratedDir) \
-              $(and $(AssemblyName),-S $(AssemblyName)) \
+              $(and $(Assembly),-S $(Assembly)) \
 	      $(and $(Platform),-P $(Platform)) \
+              $(and $(PlatformDir),-F $(PlatformDir)) \
               $(and $(Package),-p $(Package)) -s $<
 endif
 
@@ -209,6 +224,7 @@ WkrObject=$(call WkrTargetDir,$2,$3)/$(basename $(notdir $1))$(call OBJ,$3)
 
 # Function to make an object from source: $(call WkrMakeObject,src,target,config)
 define WkrMakeObject
+
   # A line is needed here for the "define" to work (no extra eval)
   $(infox WkrMakeObject:$1:$2:$3:$(call WkrObject,$1,$2,$3))
   ObjectFiles_$2_$3 += $(call WkrObject,$1,$2,$3)
@@ -216,7 +232,8 @@ define WkrMakeObject
   $(call WkrObject,$1,$2,$3): \
      $1 $(ImplHeaderFiles)\
      | $(call WkrTargetDir,$2,$3)
-	$(Compile_$(subst .,,$(suffix $1)))
+	$(AT)echo Compiling $$< to create $$@
+	$(AT)$(Compile_$(subst .,,$(suffix $1)))
 
 endef
 
@@ -246,14 +263,14 @@ define WkrDoTargetConfig
   # Make them individually, and then link them together
   ifdef ToolSeparateObjects
     $$(call OcpiDbgVar,CompiledSourceFiles)
-    $(foreach s,$(CompiledSourceFiles),$(call WkrMakeObject,$s,$1,$2))
+    $$(foreach s,$$(CompiledSourceFiles),$$(eval $$(call WkrMakeObject,$$s,$1,$2)))
     $(call WkrBinary,$1,$2): $(CapModel)Target=$1
     # Note the use of ls -o -g -l below is to not be affected by
     # user and group names with spaces.
-    $(call WkrBinary,$1,$2): $$(ObjectFiles_$1_$2) $$(call ArtifactXmlFile,$1,$2) \
+    $(call WkrBinary,$1,$2): $$$$(ObjectFiles_$1_$2) $$(call ArtifactXmlFile,$1,$2) \
                             | $(call WkrTargetDir,$1,$2)
-	@echo Linking final artifact file $$@ and adding metadata to it.
-	$(LinkBinary) $$(ObjectFiles_$1_$2) $(OtherLibraries)
+	$(AT)echo Linking final artifact file \"$$@\" and adding metadata to it...
+	$(AT)$(LinkBinary) $$(ObjectFiles_$1_$2) $(OtherLibraries)
 	$(AT)if test -f "$(call ArtifactXmlFile,$1,$2)"; then \
 	  $(ToolsDir)/../../scripts/addmeta "$(call ArtifactXmlFile,$1,$2)" $$@; \
 	fi
@@ -274,8 +291,11 @@ define WkrDoTarget
 endef
 
 # Do all the targets
+ifneq ($(MAKECMDGOALS),skeleton)
+$(call OcpiDbgVar,HdlTargets)
+$(call OcpiDbgVar,HdlTarget)
 $(foreach t,$($(CapModel)Targets),$(eval $(call WkrDoTarget,$t)))
-
+endif
 ################################################################################
 # Export support - what we put into the (export) library above us
 
@@ -286,20 +306,18 @@ ifdef LibDir
 # The default for things in the target dir to export into the component library's
 # export directory for this target
 
-# $(call DoLink,<target>,<binary>,<linkname>,<confname>)
-MyBBLibFile=$(infox MBB:$1:$2:$3)$(call BBLibFile,$1,$(call HdlRmRv,$(basename $2))$(if $(filter 0,$3),,_c$3),$3,$1)
-
+# $(call DoLink,<target>,<binary>,<linkname>,<confname>,<rmrvname>)
+MyBBLibFile=$(infox MBB:$1:$2:$3)$(call BBLibFile,$1,$(call RmRv,$(basename $2))$(if $(filter 0,$3),,_c$3),$3,$1)
 define DoLink
-
-  $(infox DoLink:$1:$2:$3:$4)
-  $$(infox DoLink2:$1:$2:$3:$4)
+  $(infox DoLink:$1:$2:$3:$4:$5)
+  $$(infox DoLink2:$1:$2:$3:$4:$5)
   LibLinks+=$(LibDir)/$1/$3
   ifeq ($(Model),hdl)
     $(LibDir)/$1/$(basename $3)-generics.vhd: | $(LibDir)/$1
 	$(AT)$$(call MakeSymLink2,$(call WkrTargetDir,$1,$4)/generics.vhd,$(LibDir)/$1,$(basename $3)-generics.vhd)
-	$(AT)if test -f $(call WkrTargetDir,$1,$4)/$(call HdlRmRv,$(basename $2)).cores; then \
-               $$(call MakeSymLink,$(call WkrTargetDir,$1,$4)/$(call HdlRmRv,$(basename $2)).cores,$(LibDir)/$1);\
-              fi
+	$(AT)if test -f $(call WkrTargetDir,$1,$4)/$(call RmRv,$(basename $2)).cores; then \
+               $$(call MakeSymLink,$(call WkrTargetDir,$1,$4)/$(call RmRv,$(basename $2)).cores,$(LibDir)/$1);\
+             fi
   endif
   $(LibDir)/$1/$3: $(call WkrTargetDir,$1,$4)/$2 $(and $(filter hdl,$(Model)),$(LibDir)/$1/$(basename $3)-generics.vhd) | $(LibDir)/$1
 	$(AT)echo Creating link to export worker binary: $(LibDir)/$1/$3 '->' $(call WkrTargetDir,$1,$4)/$2
@@ -312,12 +330,12 @@ define DoLink
       $$(infox DLHTNB2:$1:$2:$3:$4==$$(call MyBBLibFile,$1,$2,$4))
     ifeq ($(and $(filter %_rv,$(basename $2)),$(filter 2,$(words $(HdlCores)))),)
       $$(infox DLHTNB:$1:$2:$3:$4==$$(call MyBBLibFile,$1,$2,$4))
-      LibLinks+=$(LibDir)/$1/$(call HdlRmRv,$(basename $3))
+      LibLinks+=$(LibDir)/$1/$5
       # This will actually be included/evaluated twice
-      $(LibDir)/$1/$(call HdlRmRv,$(basename $3)): $$$$(call MyBBLibFile,$1,$2,$4) | $(LibDir)/$1
-	$(AT)echo Creating link from $$@ -\> $(call WkrTargetDir,$1,$4)/bb/$(basename $3) to export the stub library.
-	$(AT)$$(call MakeSymLink2,$(call WkrTargetDir,$1,$4)/bb/$(call HdlRmRv,$(basename $3)),$(strip\
-                                  $(LibDir)/$1),$(call HdlRmRv,$(basename $3)))
+      $(LibDir)/$1/$5: | $$$$(call MyBBLibFile,$1,$2,$4) $(LibDir)/$1
+	$(AT)echo Creating link from $$@ -\> $$(patsubst %/,%,$$(dir $$(call MyBBLibFile,$1,$2,$4))) to export the stub library.
+	$(AT)$$(call MakeSymLink2,$$(patsubst %/,%,$$(dir $$(call MyBBLibFile,$1,$2,$4))),$(strip\
+                                  $(LibDir)/$1),$5)
     endif
   endif
 
@@ -330,14 +348,15 @@ define DoLinks
   $(LibDir)/$1: | $(LibDir)
   $(foreach c,$(ParamConfigurations),\
     $(foreach n,$(WkrExportNames),\
-      $(foreach l,$(basename $(notdir $n))$(if $(filter 0,$c),,_c$c),\
-        $(infox LLL:$n:$l:$1:$(HdlToolSet_$1))\
-        $(call DoLink,$1,$(strip\
-                           $(if $(or $(filter rcc ocl,$(Model)),\
-                                     $(HdlToolRealCore_$(HdlToolSet_$1))),\
-                             $(notdir $n),$(call HdlRmRv,$l))\
-                   ),$(if $(HdlToolRealCore_$(HdlToolSet_$1)),$l$(suffix $n),$(or $(call HdlRmRv,$l),$l)$(suffix $n)),$c))))
-
+     $(foreach b,$(basename $(notdir $n)),\
+       $(foreach r,$(call RmRv,$b)$(if $(filter 0,$c),,_c$c),
+         $(foreach l,$b$(if $(filter 0,$c),,_c$c),\
+           $(infox LLL:$c:$n:$b:$r:$l:$1:$(HdlToolSet_$1))\
+           $(call DoLink,$1,$(strip\
+                             $(if $(or $(filter rcc ocl,$(Model)),\
+                                       $(HdlToolRealCore_$(HdlToolSet_$1))),\
+                               $(notdir $n),$r)),$(strip\
+                     $(if $(HdlToolRealCore_$(HdlToolSet_$1)),$l,$r)$(suffix $n)),$c,$r))))))
   $$(call OcpiDbgVar,WkrExportNames,In Dolinks )
 
 endef

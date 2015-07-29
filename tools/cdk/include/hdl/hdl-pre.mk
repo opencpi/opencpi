@@ -97,27 +97,21 @@ endif
 $(call OcpiDbgVar,HdlSourceSuffix)
 
 # Add any inbound (internally via command line) libraries to what is specified in the makefile
-# FIXME: override should be unnecessary
-HdlLibraries := $(HdlLibrariesCommand) $(HdlLibraries)
+# This list is NOT target dependent
+HdlMyLibraries := $(HdlLibraries) $(Libraries) $(HdlLibrariesInternal) 
 
-ifdef Libraries
-override HdlLibraries += $(Libraries)
-# This is for the convenience of model-independent library handling
-endif
-override Libraries := $(HdlLibraries)
-
-$(infoxx HLU:$(HdlLibrariesCommand):$(HdlMode):$(HdlLibraries))
+$(infox HLU:$(MdlMyLibraries):$(HdlLibrariesInternal):$(HdlMode):$(HdlLibraries))
 
 ################################################################################
 # Add the default libraries
 # FIXME: when tools don't really elaborate or search, capture the needed libraries for later
 # FIXME: but that still means a flat library space...
 # Note this is evaluted in a context when HdlTarget is set, but can also just supply it as $1
-override HdlLibrariesInternal=$(infoxx HLI:$1:$(HdlLibraries))\
+override HdlLibrariesInternal=$(infox HLI:$1:$(HdlTarget):$(HdlLibraries))\
 $(foreach l,$(call Unique,\
-                $(HdlLibraries)\
+                $(HdlMyLibraries)\
                 $(if $(HdlNoLibraries),,\
-	          $(foreach f,$(call HdlGetFamily,$(or $1,$(HdlTarget))),\
+	          $(foreach f,$(call HdlGetFamily,$(or $(HdlTarget),$1)),\
 		    $(foreach v,$(call HdlGetTop,$f),\
 	                $(if $(findstring library,$(HdlMode))$(findstring clean,$(MAKECMDGOALS)),,\
 			$(foreach p,$(filter-out $(LibName),fixed_float ocpi util bsv),\
@@ -166,13 +160,18 @@ ifneq ($(xxfilter platform container,$(HdlMode)),)
   HdlExactPart:=$(HdlPart_$(HdlPlatform))
   override HdlTarget:=$(call HdlGetFamily,$(HdlPlatform))
   override HdlActualTargets:=$(HdlTarget)
-  HdlPlatformDir:=$(HdlPlatformsDir)/$(HdlPlatform)
 else # now for builds that accept platforms and targets as inputs
 
   # Make sure all the platforms are present
   $(foreach p,$(HdlPlatforms),\
-    $(if $(realpath $(HdlPlatformsDir)/$(p)),,\
-       $(error No $(p) platform found in $(HdlPlatformsDir))))
+    $(if $(filter $p,$(HdlAllPlatforms)),,$(error $p not in the HDL platforms list)) \
+    $(foreach y,\
+      $(foreach d,$(subst :, ,$(OCPI_HDL_PLATFORM_PATH)),$(infox DDD:$d)\
+        $(foreach n,$(notdir $d),$(infox NNN:$n)\
+          $(foreach x,$(if $(filter platforms,$n),$(notdir $(wildcard $d/*)),$n),$(infox XXX:$x)\
+           $(and $(filter $p,$x),$(if $(filter platforms,$n),$d/$p,$d))))),\
+      $(if $(realpath $y),,\
+       $(error No $p platform found))))
 
 # The general pattern is:
 # If Target is specified, build for that target.

@@ -56,7 +56,7 @@ addInclude(const char *inc) {
 // stdin is assumed.
 const char *
 parseFile(const char *file, const std::string &parent, const char *element,
-          ezxml_t *xp, std::string &xfile, bool optional, bool search) {
+          ezxml_t *xp, std::string &xfile, bool optional, bool search, bool nonExistentOK) {
   const char *err = NULL;
   char *myFile;
   const char *slash = strrchr(file, '/');
@@ -104,7 +104,7 @@ parseFile(const char *file, const std::string &parent, const char *element,
 	  OU::formatAdd(files, "%s %s", first ? "" : ",", *i);
 	  first = false;
 	}
-	if (optional) {
+	if (nonExistentOK) {
 	  *xp = 0;
 	  ocpiInfo("Optional file \"%s\" could not be opened for reading/parsing."
 		   "  Files tried: %s", file, files.c_str());

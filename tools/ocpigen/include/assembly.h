@@ -51,9 +51,9 @@ class ExtMap : public ExtMap_ {
       }
     return NULL;
   }
-  const char *findSignal(Signal *s, size_t n, bool &isSingle) const {
+  const char *findSignal(Signal &s, size_t n, bool &isSingle) const {
     for (ExtMap_::const_iterator i = begin(); i != end(); i++)
-      if ((*i).signal == s && (*i).index == n) {
+      if ((*i).signal == &s && (*i).index == n) {
 	isSingle = (*i).single;
 	return (*i).ext.c_str();
       }
@@ -63,7 +63,7 @@ class ExtMap : public ExtMap_ {
     ExtMap_::push_back(ExtTuple(s, n, e, single));
   }
 };
-struct Instance {
+struct Instance : public OU::IdentResolver {
   OCPI::Util::Assembly::Instance *instance; // instance in the underlying generic assembly
   const char *name;
   const char *wName;
@@ -86,12 +86,16 @@ struct Instance {
     Adapter,       // an adapter inserted by code generation
   } m_iType;
   const char *attach;  // external platform port this worker is attached to for io or interconnect
-  InstanceProperties properties;
   OCPI::Util::Assembly::Properties m_xmlProperties; // explicit unparsed values for the instance
+  InstanceProperties properties;                    // fully parsed w/ full knowledge of worker
   bool hasConfig;      // hack for adapter configuration FIXME make normal properties
   size_t config;       // hack ditto
   ExtMap m_extmap;     // map for externals. FIXME: have HdlInstance class...
+  bool   m_emulated;   // is this an instance of a device worker with an emulator?
   Instance();
+  void emitHdl(FILE *f, const char *prefix, size_t &index);
+  void emitDeviceConnectionSignals(FILE *f, bool container);
+  const char *getValue(const char *sym, OU::ExprValue &val) const;
 };
 // To represent an attachment of a connection to an instance port.
 // This is currently only used for indexed ports
@@ -99,7 +103,6 @@ struct Attachment {
   InstancePort           &m_instPort;   // which instance port
   Connection             &m_connection; // which connection
   size_t                  m_index;      // base of this attachment
-  //  size_t                  m_count;      // width of this attachment, or zero if all
   Attachment(InstancePort &ip, Connection &c, size_t index); // , size_t count);
 };
 
@@ -126,6 +129,7 @@ struct InstancePort {
     emitPortSignals(FILE *f, bool out, Language lang, const char *indent,
 		    bool &any, std::string &comment, std::string &last),
     emitConnectionSignal(FILE *f, bool output, Language lang),
+    emitTieoffAssignments(FILE *f),
     connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, OcpAdapt &oa,
 		     std::string &signal, std::string &thisComment, Language lang);
 };

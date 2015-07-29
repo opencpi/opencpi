@@ -1,0 +1,9 @@
+rm OcpiApplicationApi.h ; ln -s ../../../runtime/application/include/OcpiApplicationApi.h .
+rm OcpiContainerApi.h ; ln -s ../../../runtime/container/include/OcpiContainerApi.h .
+rm OcpiCorbaApi.h ; ln -s ../../../runtime/util/ior/include/OcpiCorbaApi.h .
+rm OcpiLibraryApi.h ; ln -s ../../../runtime/library/include/OcpiLibraryApi.h .
+rm OcpiOsDebug.h ; ln -s ../../../adapt/os/ocpios/interfaces/include/OcpiOsDebug.h .
+rm OcpiPValueApi.h ; ln -s ../../../runtime/util/property/include/OcpiPValueApi.h .
+rm OcpiUtilDataTypesApi.h ; ln -s ../../../runtime/util/property/include/OcpiUtilDataTypesApi.h .
+rm OcpiUtilExceptionApi.h ; ln -s ../../../runtime/util/misc/include/OcpiUtilExceptionApi.h .
+rm OcpiUtilPropertyApi.h ; ln -s ../../../runtime/util/property/include/OcpiUtilPropertyApi.h .

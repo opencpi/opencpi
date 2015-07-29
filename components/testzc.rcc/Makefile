@@ -1,4 +1,3 @@
-
 # #####
 #
 #  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
@@ -42,5 +41,5 @@ BinaryName=zcworkers
 OCPI_CDK_DIR=../../ocpi
 # Set this if some of the xml files are elsewhere, like a spec file that is being
 # shared with other implementers
-IncludeDirs=../../core/local/util/timeEmit/include
+IncludeDirs=../../runtime/local/util/timeEmit/include
 include $(OCPI_CDK_DIR)/include/worker.mk

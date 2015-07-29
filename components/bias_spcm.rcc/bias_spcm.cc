@@ -13,8 +13,8 @@ using namespace OCPI::RCC; // for easy access to RCC data types and constants
 
 class Bias_spcmWorker : public Bias_spcmWorkerBase {
   RCCResult run(bool /*timedout*/) {
-    const uint32_t *inData  = in.data().data;   // data arg of data message at "in" port
-    uint32_t *outData = out.data().data;  // same at "out" port
+    const uint32_t *inData  = in.data().data().data();   // data arg of data message at "in" port
+    uint32_t *outData = out.data().data().data();  // same at "out" port
 
     static int x = 0;
     if (!x) {
@@ -26,10 +26,14 @@ class Bias_spcmWorker : public Bias_spcmWorkerBase {
       x = 1;
     }
     out.checkLength(in.length());               // make sure input will fit in output buffer
-    for (unsigned n = in.data_length(); n; n--) // n is length in sequence elements of input
+    for (unsigned n = in.data().data().size(); n; n--) // n is length in sequence elements of input
       *outData++ = *inData++ + properties().biasValue;
     out.setInfo(in.opCode(), in.length());      // Set the metadata for the output message
     return in.length() ? RCC_ADVANCE : RCC_ADVANCE_DONE;
+  }
+  // notification that t1 property will be read
+  RCCResult t1_read() {
+    return RCC_OK;
   }
 };
 

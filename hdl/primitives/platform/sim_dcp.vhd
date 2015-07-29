@@ -42,7 +42,7 @@ architecture rtl of sim_dcp is
       RDY_host_response_get   : out std_logic;
 
       EN_client_request_get   : in  std_logic;
-      client_request_get      : out std_logic_vector(58 downto 0);
+      client_request_get      : out std_logic_vector(60 downto 0);
       RDY_client_request_get  : out std_logic;
     
       client_response_put     : in  std_logic_vector(39 downto 0);
@@ -63,7 +63,7 @@ architecture rtl of sim_dcp is
   signal dcp_RDY_client_response_put : std_logic; -- needed for local expression
   signal RST_N                       : std_logic;
   -- Our request and response bundles
-  signal request                     : std_logic_vector(58 downto 0);
+  signal request                     : std_logic_vector(60 downto 0);
   signal response                    : std_logic_vector(39 downto 0);
 begin
   RST_N <= not reset;
@@ -71,16 +71,10 @@ begin
   cp_out.clk                  <= clk;
   cp_out.reset                <= reset;
   cp_out.take                 <= dcp_EN_client_response_put; -- we take the response
-  cp_out.is_read              <= request(58);
-  cp_out.address              <= request(25 downto 4)
-                                 when request(58) = '1' else
-                                 request(57 downto 36);
-  cp_out.byte_en              <= request(3 downto 0)
-                                 when request(58) = '1' else
-                                 request(35 downto 32);
-  cp_out.data                 <= x"000000" & request(33 downto 26)
-                                 when request(58) = '1' else
-                                 request(31 downto 0);
+  cp_out.is_read              <= request(60);
+  cp_out.address              <= request(59 downto 36);
+  cp_out.byte_en              <= request(35 downto 32);
+  cp_out.data                 <= request(31 downto 0); -- lsb 8 bits is tag on read
   response                    <= cp_in.tag & cp_in.data;
 
   io_EN_host_request_get      <= dcp_RDY_host_request_put and io_RDY_host_request_get;

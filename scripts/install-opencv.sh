@@ -17,7 +17,7 @@ OPENCV_VERSION=$OPENCV_MAJOR$OPENCV_MINOR
 TarFile=opencv-$OPENCV_VERSION
 ZIPFile=$TarFile.zip
 if test ! -f $ZIPFile ; then
-  curl -O -L http://softlayer.dl.sourceforge.net/project/opencvlibrary/opencv-unix/$OPENCV_MAJOR/$ZIPFile
+  curl -O -L http://downloads.sourceforge.net/project/opencvlibrary/opencv-unix/$OPENCV_MAJOR/$ZIPFile
 #  if test ! -f $TarFile ; then
 #    echo You must download the source tar file: $BZFile from:
 #    echo     http://sourceforge.net/projects/opencvlibrary/files/opencv-unix/2.3.1/

@@ -1,3 +1,4 @@
+#include <strings.h>
 #include <stdint.h>
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
@@ -21,12 +22,14 @@ DevInstance(const Device &d, const Card *c, const Slot *s, bool control,
     m_name = d.name();
 }
 
-DevInstance *HdlHasDevInstances::
+const DevInstance *HdlHasDevInstances::
 findDevInstance(const Device &dev, const Card *card, const Slot *slot,
 		DevInstances *baseInstances, bool *inBase) {
+  if (inBase)
+    *inBase = false;
   if (baseInstances)
     for (DevInstancesIter dii = baseInstances->begin(); dii != baseInstances->end(); dii++) {
-      DevInstance &di = *dii;
+      const DevInstance &di = *dii;
       if (&di.device == &dev && di.slot == slot && di.card == card) {
 	if (inBase)
 	  *inBase = true;
@@ -34,7 +37,7 @@ findDevInstance(const Device &dev, const Card *card, const Slot *slot,
       }
     }
   for (DevInstancesIter dii = m_devInstances.begin(); dii != m_devInstances.end(); dii++) {
-    DevInstance &di = *dii;
+    const DevInstance &di = *dii;
     if (&di.device == &dev && di.slot == slot && di.card == card)
       return &di;
   }
@@ -52,23 +55,28 @@ addDevInstance(const Device &dev, const Card *card, const Slot *slot,
   if (slot && !m_plugged[slot->m_ordinal])
     m_plugged[slot->m_ordinal] = card;
   devInstance = &m_devInstances.back();
-  for (RequiredsIter ri = dev.m_deviceType.m_requireds.begin();
-       ri != dev.m_deviceType.m_requireds.end(); ri++) {
-    const Required &r = *ri;
-    const Device &rdev = dev.m_board.findRequired(r.m_type, dev.m_ordinal);
-    // Note that we only look in the current devinstance list.
-    // We can't share subdevices across the config-container boundary
-    const DevInstance *rdi = findDevInstance(rdev, card, slot, baseInstances, NULL);
-    if (!rdi &&
-	(err = addDevInstance(rdev, card, slot, control, devInstance, NULL, rdi)))
-      return err;
-  }      
+  // See which (sub)devices on the same board support this added device, 
+  // and make sure they are present.
+  const Board &bd =
+    card ? static_cast<const Board&>(*card) : static_cast<const Board&>(m_platform);
+  for (DevicesIter bi = bd.m_devices.begin(); bi != bd.m_devices.end(); bi++)
+    for (SupportsIter si = (*bi)->m_deviceType.m_supports.begin();
+	 si != (*bi)->m_deviceType.m_supports.end(); si++)
+      // FIXME: use the package name here...
+      //      if (&(*si).m_type == &dev.m_deviceType && // the sdev supports this TYPE of device
+      if (!strcasecmp((*si).m_type.m_implName, dev.m_deviceType.m_implName) &&
+	  (*bi)->m_ordinal == dev.m_ordinal) { // the ordinals match. FIXME allow mapping
+	const DevInstance *sdi = findDevInstance(**bi, card, slot, baseInstances, NULL);
+	if (!sdi && (err = addDevInstance(**bi, card, slot, control, devInstance, NULL, sdi)))
+	  return err;
+      }
   return NULL;
 }
 
 const char *HdlHasDevInstances::
-parseDevInstance(const char *device, ezxml_t x, const char *parent, bool control,
-		 DevInstances *baseInstances, const DevInstance **result, bool *inBase) {
+parseDevInstance(const char *device, ezxml_t x, const char *parentFile, Worker *parent,
+		 bool control, DevInstances *baseInstances, const DevInstance **result,
+		 bool *inBase) {
   const char *err;
   std::string s;
   const Slot *slot = NULL;
@@ -77,13 +85,13 @@ parseDevInstance(const char *device, ezxml_t x, const char *parent, bool control
     return err;
   const Card *card = NULL;
   if (OE::getOptionalString(x, s, "card") &&
-      !(card = Card::get(s.c_str(), parent, err)))
+      !(card = Card::get(s.c_str(), parentFile, parent, err)))
     return err;
   // Card and slots have been checked individually)
   if (slot) {
     const Card *plug = m_plugged[slot->m_ordinal];
     if (card) {
-      if (card != plug)
+      if (plug && card != plug)
 	return
 	  OU::esprintf("Conflicting cards (\"%s\" vs. \"%s\") specified in slot \"%s\"",
 		       plug->name(), card->name(), slot->name());
@@ -139,7 +147,7 @@ parseDevInstance(const char *device, ezxml_t x, const char *parent, bool control
 		     "already in the platform configuration",
 		     di->device.name(), di->card->name(), di->slot->name());
     else
-      return OU::esprintf("Platform Device '%s' is already in the platform configuration",
+      return OU::esprintf("Platform device '%s' is already in the platform configuration",
 			  di->device.name());
   }
   if ((err = addDevInstance(*dev, card, slot, control, NULL, baseInstances, di)))
@@ -153,7 +161,8 @@ parseDevInstance(const char *device, ezxml_t x, const char *parent, bool control
 // Used for platform configurations and containers
 // for EXPLICIT instantiation
 const char *HdlHasDevInstances::
-parseDevInstances(ezxml_t xml, const char *parent, DevInstances *baseInstances) {
+parseDevInstances(ezxml_t xml, const char *parentFile, Worker *parent,
+		  DevInstances *baseInstances) {
   // Now we have a platform to work from.  Here we parse the extra info needed to
   // generate this platform configuration.
   const char *err = NULL;
@@ -164,13 +173,18 @@ parseDevInstances(ezxml_t xml, const char *parent, DevInstances *baseInstances) 
 	(err = OE::getBoolean(xd, "control", &control)) ||
 	(err = OE::getRequiredString(xd, name, "name", "device")))
       return err;
+#if 0
+    // FIXME: Change the "control" to an attribute of the platform config which indicates
+    // which device is performing control
     if (control && baseInstances)
       return "It is invalid to specify a 'control' attribute to a device in a container";
     if (!strcasecmp(m_platform.name(), name.c_str())) {
       m_platform.setControl(control); // FIXME make the platform a device...
       continue;
     }
-    if ((err = parseDevInstance(name.c_str(), xd, parent, control, baseInstances, NULL, NULL)))
+#endif
+    if ((err = parseDevInstance(name.c_str(), xd, parentFile, parent, control, baseInstances,
+				NULL, NULL)))
       return err;
   }
   return NULL;
@@ -178,47 +192,60 @@ parseDevInstances(ezxml_t xml, const char *parent, DevInstances *baseInstances) 
 
 void HdlHasDevInstances::
 emitSubdeviceConnections(std::string &assy,  DevInstances *baseInstances) {
+  // Connect top down.  For any device that is supported, connect to the support modules
   for (DevInstancesIter dii = m_devInstances.begin(); dii != m_devInstances.end(); dii++) {
     const Device &d = (*dii).device;
-    // For each required (sub)device type
-    for (RequiredsIter ri = d.m_deviceType.m_requireds.begin();
-	 ri != d.m_deviceType.m_requireds.end(); ri++) {
+    // Search for other instances that support this device instances
+    for (DevInstancesIter sii = m_devInstances.begin(); sii != m_devInstances.end(); sii++) {
       bool inConfig;
-      DevInstance *rdi =
-	findDevInstance(d.m_board.findRequired((*ri).m_type, d.m_ordinal),
-			(*dii).card, (*dii).slot, baseInstances, &inConfig);
-      assert(rdi);
-      for (ReqConnectionsIter rci = (*ri).m_connections.begin();
-	   rci != (*ri).m_connections.end(); rci++) {
+      const Device &s = (*sii).device;
+      const DevInstance *sdi = NULL;
+      const Support *sup = NULL;
+      if (&*sii != &*dii)
+	for (SupportsIter si = s.m_deviceType.m_supports.begin();
+	     si != s.m_deviceType.m_supports.end(); si++)
+	  //	  if (&(*si).m_type == &d.m_deviceType && // the subdevice supports this TYPE of device
+	  if (!strcasecmp((*si).m_type.m_implName, d.m_deviceType.m_implName) &&
+	      s.m_ordinal == d.m_ordinal) {  // and the ordinals match. FIXME allow mapping
+	    // Find whether it is in the platform config or not.
+	    sdi = findDevInstance(s, (*dii).card, (*dii).slot, baseInstances, &inConfig);
+	    assert(sdi);
+	    sup = &*si;
+	    break;
+	  }
+      if (!sup)
+	continue; // this (sub)dev instance does not support this device;
+      for (SupportConnectionsIter sci = sup->m_connections.begin();
+	   sci != sup->m_connections.end(); sci++) {
 	// A port connection
 	OU::formatAdd(assy,
 		      "  <connection>\n"
 		      "    <port instance='%s' name='%s'/>\n"
 		      "    <port instance='%s' name='%s%s%s'",
-		      (*dii).name(), (*rci).m_port->name(),
-		      inConfig ? "pfconfig" : rdi->name(),
-		      inConfig ? rdi->name() : "", inConfig ? "_" : "",
-		      (*rci).m_rq_port->name());
-	if ((*rci).m_indexed) {
+		      (*dii).name(), (*sci).m_port->name(),
+		      inConfig ? "pfconfig" : sdi->name(),
+		      inConfig ? sdi->name() : "", inConfig ? "_" : "",
+		      (*sci).m_sup_port->name());
+	if ((*sci).m_indexed) {
 	  size_t
-	    rqOrdinal = (*rci).m_rq_port->m_ordinal,
-	    rqIndex = (*rci).m_index,
+	    supOrdinal = (*sci).m_sup_port->m_ordinal,
+	    supIndex = (*sci).m_index,
 	    unconnected = 0,
-	    index = rqIndex;
+	    index = supIndex;
 	  // If we are in a container and the subdevice is in the config,
 	  // we may need to index relative to what is NOT connected in the config,
 	  // and thus externalized.
 	  if (inConfig) {
-	    for (size_t i = 0; i < (*rci).m_rq_port->count; i++)
-	      if (rdi->m_connected[rqOrdinal] & (1 << i)) {
-		assert(i != rqIndex);
-		if (i < rqIndex)
+	    for (size_t i = 0; i < (*sci).m_sup_port->count; i++)
+	      if (sdi->m_connected[supOrdinal] & (1 << i)) {
+		assert(i != supIndex);
+		if (i < supIndex)
 		  index--;
 	      } else
 		unconnected++; // count how many were unconnected in the config
 	    assert(unconnected > 0 && index < unconnected);
 	  } else // the subdevice is where the device is, so record the connection
-	    rdi->m_connected[rqOrdinal] |= 1 << rqIndex;
+	    sdi->m_connected[supOrdinal] |= 1 << supIndex;
 	  OU::formatAdd(assy, " index='%zu'", index);
 	}
 	OU::formatAdd(assy,
@@ -230,7 +257,8 @@ emitSubdeviceConnections(std::string &assy,  DevInstances *baseInstances) {
 }
 
 HdlConfig *HdlConfig::
-create(ezxml_t xml, const char *xfile, Worker *parent, const char *&err) {
+create(ezxml_t xml, const char *knownPlatform, const char *xfile, Worker *parent,
+       const char *&err) {
   err = NULL;
   std::string myPlatform;
   OE::getOptionalString(xml, myPlatform, "platform");
@@ -239,8 +267,16 @@ create(ezxml_t xml, const char *xfile, Worker *parent, const char *&err) {
   // 1. The platform config might be remote from the platform.
   // 2. The platform config is parsed during container processing elsewhere.
   if (myPlatform.empty())
-    if (::platform)
-      OU::format(myPlatform, "%s/%s", ::platform, ::platform);
+    if (knownPlatform)
+      myPlatform = knownPlatform;
+    else if (::platform)
+      myPlatform = ::platform;
+    else {
+	err = "No platform specified in HdlConfig nor on command line";
+	return NULL;
+    }
+      
+#if 0
     else {
       const char *slash = xfile ? strrchr(xfile, '/') : NULL;
       if (slash) {
@@ -260,6 +296,7 @@ create(ezxml_t xml, const char *xfile, Worker *parent, const char *&err) {
 	return NULL;
       }
     }
+#endif
   std::string pfile;
   ezxml_t pxml;
   HdlPlatform *pf;
@@ -295,7 +332,9 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
   pf.setParent(this);
   //hdlAssy = true;
   m_plugged.resize(pf.m_slots.size());
-  if ((err = parseDevInstances(xml, xfile, NULL)))
+  ezxml_t tx = ezxml_add_child(xml, "device", 0);
+  ezxml_set_attr(tx, "name", "time_server");
+  if ((err = parseDevInstances(xml, xfile, this, NULL)))
     return;
   std::string assy;
   OU::format(assy, "<HdlPlatformAssembly name='%s'>\n", m_name.c_str());
@@ -310,8 +349,16 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
   // Add all the device instances
   for (DevInstancesIter dii = m_devInstances.begin(); dii != m_devInstances.end(); dii++) {
     const ::Device &d = (*dii).device;
-    OU::formatAdd(assy, "  <instance worker='%s' name='%s'/>\n",
-		  d.m_deviceType.name(), (*dii).name());
+    const DeviceType &dt = d.m_deviceType;
+    OU::formatAdd(assy, "  <instance worker='%s' name='%s'%s>\n",
+		  d.m_deviceType.name(), (*dii).name(), dt.m_instancePVs ? "" : "/");
+    if (dt.m_instancePVs) {
+      OU::Assembly::Property *ap = &(*dt.m_instancePVs)[0];
+      for (size_t n = dt.m_instancePVs->size(); n; n--, ap++)
+	OU::formatAdd(assy, "    <property name='%s' value='%s'/>\n",
+		      ap->m_name.c_str(), ap->m_value.c_str());
+      OU::formatAdd(assy, "  </instance>\n");
+    }
     // Add a time client instance as needed by device instances
     for (PortsIter pi = d.m_deviceType.ports().begin();
 	 pi != d.m_deviceType.ports().end(); pi++)
@@ -328,6 +375,13 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
   // So: 1. Add the internal connection from the platform and/or device workers to occp
   if ((err = addControlConnection(assy)))
     return;
+  // 2. Connect the time service to the platform worker
+  OU::formatAdd(assy,
+		"  <connection>\n"
+		"    <port instance='%s' name='timebase'/>\n"
+		"    <port instance='time_server' name='timebase'/>\n"
+		"  </connection>\n",
+		m_platform.m_name.c_str());
   // 3. To and from time clients
   unsigned tIndex = 0;
   for (DevInstancesIter dii = m_devInstances.begin(); dii != m_devInstances.end(); dii++) {
@@ -338,10 +392,10 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
 	// connection from platform worker's time service to the client
 	OU::formatAdd(assy,
 		      "  <connection>\n"
-		      "    <port instance='%s' name='time'/>\n"
+		      "    <port instance='time_server' name='time'/>\n"
 		      "    <port instance='time_client%u' name='time'/>\n"
 		      "  </connection>\n",
-		      m_platform.m_name.c_str(), tIndex);
+		      tIndex);
 	// connection from the time client to the device worker
 	OU::formatAdd(assy,
 		      "  <connection>\n"
@@ -361,11 +415,8 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
   //  4. Any data ports from device worker
   //  5. Any unocs from device workers
   OU::formatAdd(assy,
-		//		"  <external port='wci' count='%zu' role='slave'/>\n"
-		"  <external instance='%s' port='time'/>\n"
+		"  <external instance='time_server' port='time'/>\n"
 		"  <external instance='%s' port='metadata'/>\n",
-		//		nWCI,
-		m_platform.m_name.c_str(),
 		m_platform.m_name.c_str());
   for (DevInstancesIter dii = m_devInstances.begin(); dii != m_devInstances.end(); dii++) {
     const ::Device &d = (*dii).device;
@@ -430,7 +481,7 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
       m_sigmap[s->name()] = s;
     }
   }
-}  
+}
 
 HdlConfig::
 ~HdlConfig() {
@@ -457,8 +508,7 @@ addControlConnection(std::string &assy) {
     }
   for (DevInstancesIter dii = m_devInstances.begin(); dii != m_devInstances.end(); dii++) {
     const ::Device &d = (*dii).device;
-    for (PortsIter pi = d.m_deviceType.ports().begin();
-	 pi != d.m_deviceType.ports().end(); pi++)
+    for (PortsIter pi = d.m_deviceType.ports().begin(); pi != d.m_deviceType.ports().end(); pi++)
       if ((*pi)->type == CPPort) {
 	if (cpInstanceName)
 	  multiple = true;
@@ -495,8 +545,8 @@ emitConfigImplHDL(FILE *f) {
   fprintf(f,
 	  "Library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;\n"
 	  "Library ocpi; use ocpi.all, ocpi.types.all;\n"
-          "use work.%s_defs.all;\n",
-	  m_implName);
+          "use work.%s_defs.all, work.%s_constants.all;\n",
+	  m_implName, m_implName);
   emitVhdlLibraries(f);
   fprintf(f,
 	  "\nentity %s_rv is\n", m_implName);

@@ -1,32 +1,9 @@
-<!-- Lime Receive ADC worker.
-     This worker is receive only - to only use the receive logic
-     Properties are shared for now -->
-<HdlDevice language="vhdl" FirstRawProperty="dc_regval" spec='qadc-spec'>
-  <!-- This property will tell us which lime modules are present
-       Bit 0 is RX-present, Bit 1 is TX-present -->
-  <property name='Present' type='uchar' volatile='true'/>
-  <!-- This property will tell us which clock to use:
-       0: Use the rxClk input as the transmit clock
-       1: Use the txClk input as the transmit clock
-       2: Use control-clock with divisor as the transmit clock
-  -->
-  <property name='ClkMode' type='uchar' parameter='true' default='0'/>
+<HdlDevice language="vhdl" spec='rf_rx-spec' FirstRawProperty='dc_regval'>
+  <ControlInterface Timeout="1024"/>
+  <property name='other_present' type='bool' readable='1'/>
   <xi:include href='lime-properties.xml'/>
-  <StreamInterface Name="out" producer='true' DataWidth="32" optional='true'/>
+  <!-- shared SPI -->
   <rawprop name='rawprops' master='true'/>
-  <devsignals master='true' signals='lime-spi-signals'/>
-  <!-- This device needs a shared submodule for both raw properties and a shared
-       input signal. -->
-  <requires worker='lime_spi'>
-    <connect port="rawprops" to="props" index='0'/>
-    <connect port="dev" to='dev' index='0'/>
-  </requires>
-
-  <!-- Signals connected to the RX pins of the Lime chip
-       The rx_clk_out is NOT here since it is shared with the tx via the lime_spi module
-       Signal names from the data sheet -->
-  <Signal Output="rx_clk"/>
-  <Signal Output="rxen"/>             <!-- hard to find on the data sheet... -->
-  <Signal Input="rx_iq_sel"/>        <!-- High means I, Low means Q -->
-  <Signal Input="rxd" width="12"/>
+  <!-- other than the SPI, the only wired signal relevant to the RF RX is this enable -->
+  <signal output='rxen'/>
 </HdlDevice>

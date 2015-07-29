@@ -51,11 +51,6 @@ architecture rtl of property_decoder is
                   when its(my_decode(reset, offset_in))
                   else (others => '0');
   byte_offset  <= offset_in(1 downto 0);
-  write_enable <= to_bool(is_write and property.writable and my_decode(reset, offset_in));
-  read_enable  <= to_bool(is_read and property.readable and my_decode(reset, offset_in));
-  offset_out   <= my_offset;
-  -- never on strings so no non-power of 2 math needed.
-  index_out    <= my_offset/element_bytes(property);
   little       <= endian = little_e or (endian = dynamic_e and not its(is_big_endian));
   l32: if property.data_width >= 32 generate
    data_out <= data_in;
@@ -78,4 +73,9 @@ architecture rtl of property_decoder is
                              data_in(15 downto  8) when little and byte_offset = 1 else
                              data_in( 7 downto  0);
   end generate;
+  -- never on strings so no non-power of 2 math needed.
+  index_out    <= my_offset/element_bytes(property);
+  offset_out   <= my_offset;
+  write_enable <= to_bool(is_write and property.writable and my_decode(reset, offset_in));
+  read_enable  <= to_bool(is_read and property.readable and my_decode(reset, offset_in));
 end rtl;

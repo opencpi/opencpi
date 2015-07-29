@@ -6,7 +6,8 @@
 #include "hdl-slot.h"
 
 #define HDL_PLATFORM_ATTRS "dummy", "control"
-#define HDL_PLATFORM_ELEMS "cpmaster", "nocmaster", "device", "timeservice", "metadata", "slot"
+#define HDL_PLATFORM_ELEMS \
+  "cpmaster", "nocmaster", "device", "metadata", "slot", "timebase"
 
 
 class HdlConfig;
@@ -20,8 +21,8 @@ public:
   HdlPlatform(ezxml_t xml, const char *xfile, Worker *parent, const char *&err);
   virtual ~HdlPlatform();
 
-  const char *name() { return m_name.c_str(); }
-  Slots &slots() { return m_slots; }
+  const char *name() const { return m_name.c_str(); }
+  const Slots &slots() const { return m_slots; }
   void setControl(bool c) { m_control = c; }
   Slot *findSlot(const char *name, const char *&err) const;
 };

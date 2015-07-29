@@ -41,17 +41,10 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 ifndef HdlSkip
 # Add to the component libraries specified in the assembly Makefile,
 # and also include those passed down from the "assemblies" level
-# Note we also add libraries that are needed to parse containers (FIXME).
-override ComponentLibraries+= $(ComponentLibrariesInternal) components devices adapters cards
-$(infox XMLII:$(XmlIncludeDirs)--$(ComponentLibraries))
-
-# Add XML include dirs for parsing container XML, including "dot" for parsing
-# this assembly's XML from container XML that is not in this dir
-# and also include those passed down from the "assemblies" level - the internals
-# FIXME: we should avoid full parsing of container XML here
+override ComponentLibraries+= $(ComponentLibrariesInternal) components adapters
 # Override since they may be passed in from assemblies level
-override XmlIncludeDirs+=. $(HdlPlatformsDir) $(HdlPlatformsDir)/specs $(XmlIncludeDirsInternal)
-override HdlLibraries+=sdp platform
+override XmlIncludeDirsInternal:=$(XmlIncludeDirs) $(XmlIncludeDirsInternal)
+override HdlLibraries+=platform
 ifdef Container
   ifndef Containers
     Containers:=$(Container)
@@ -60,35 +53,69 @@ endif
 HdlContName=$(Worker)_$1_$2
 HdlContOutDir=$(OutDir)container-$1
 HdlContDir=$(call HdlContOutDir,$(call HdlContName,$1,$2))
+HdlStripXml=$(if $(filter .xml,$(suffix $1)),$(basename $1),$1)
 ifneq ($(MAKECMDGOALS),clean)
   $(eval $(HdlPrepareAssembly))
   # default the container names
   $(foreach c,$(Containers),$(eval HdlContXml_$c:=$c))
-  ## Extract the platforms and targets from the containers
+  ## Extract the platforms and targets from the containers that have their own xml
   ## Then we can filter the platforms and targets based on that
+  ifdef Containers
+    # This procedure is (simply) to extract platform, target, and configuration info from the
+    # xml for each explicit container. This allows us to build the list of targets necessary for all the
+    # platforms mentioned by all the containers.  This list then is the default targets when
+    # targets are not specified.
+    define doGetPlatform
+      $$(and $$(call DoShell,$(OcpiGen) -X $1,HdlContPfConfig),\
+          $$(error Processing container XML $1: $$(HdlContPfConfig)))
+      HdlContPlatform:=$$(word 1,$$(HdlContPfConfig))
+      HdlContConfig:=$$(word 2,$$(HdlContPfConfig))
+      $$(if $$(HdlContPlatform),,$$(error Could not get platform attribute for container $1))
+      $$(if $$(HdlContConfig),,$$(error Could not get config attribute for container $1))
+      $$(if $$(HdlPart_$$(HdlContPlatform)),,\
+        $$(error Platform for container $1, $$(HdlContPlatform), is not defined))
+      HdlMyTargets+=$$(call OcpiDbg,HdlPart_$$(HdlContPlatform) is $$(HdlPart_$$(HdlContPlatform)))$$(call HdlGetFamily,$$(HdlPart_$$(HdlContPlatform)))
+      ContName:=$(Worker)_$$(HdlContPlatform)_$$(HdlContConfig)_$1
+      HdlPlatform_$$(ContName):=$$(HdlContPlatform)
+      HdlTarget_$$(ContName):=$$(call HdlGetFamily,$$(HdlPart_$$(HdlContPlatform)))
+      HdlConfig_$$(ContName):=$$(HdlContConfig)
+      HdlContXml_$$(ContName):=$$(call HdlContOutDir,$$(ContName))/gen/$$(ContName).xml
+      $$(shell mkdir -p $$(call HdlContOutDir,$$(ContName))/gen; \
+               if ! test -e  $$(HdlContXml_$$(ContName)); then \
+                 ln -s ../../$1.xml $$(HdlContXml_$$(ContName)); \
+               fi)
+      HdlContainers:=$$(HdlContainers) $$(ContName)
+    endef
+    $(foreach c,$(Containers),$(eval $(call doGetPlatform,$(call HdlStripXml,$c))))
+  endif
   # Create the default container directories and files
   # $(call doDefaultContainer,<platform>,<config>)
-  HdlDefContXml=<HdlContainer platform='$1/$1_$2' default='true'/>
+  HdlDefContXml=<HdlContainer platform='$1/$2' default='true'/>
   define doDefaultContainer
     $(call OcpiDbg,In doDefaultContainer for $1/$2 and HdlPlatforms: $(HdlPlatforms))
     ifneq (,$(if $(HdlPlatforms),$(filter $1,$(HdlPlatforms)),yes))
       # Create this default container's directory and xml file
-      $(foreach c,$(call HdlContName,$1,$2),\
-        $(foreach d,$(call HdlContDir,$1,$2)/gen,\
-          $(foreach x,$d/$c.xml,\
-            $$(shell \
-                 mkdir -p $d; \
-                 if test ! -f $x || test "`cat $x`" != "$(call HdlDefContXml,$1,$2)"; then \
-                   echo "$(call HdlDefContXml,$1,$2)"> $x; \
-                 fi))))
-      Containers:=$(Containers) $(call HdlContName,$1,$2)
-      HdlContXml_$(Worker)_$1_$2:=$(call HdlContDir,$1,$2)/gen/$(call HdlContName,$1,$2).xml
+      ContName:=$(call HdlContName,$1,$2)
+      $(foreach d,$(call HdlContDir,$1,$2)/gen,\
+        $$(foreach x,$d/$$(ContName).xml,\
+          $$(shell \
+               mkdir -p $d; \
+               if test ! -f $$x || test "`cat $$x`" != "$(call HdlDefContXml,$1,$2)"; then \
+                 echo "$(call HdlDefContXml,$1,$2)"> $$x; \
+               fi)))
+      HdlPlatform_$$(ContName):=$1
+      HdlTarget_$$(ContName):=$(call HdlGetFamily,$(HdlPart_$1))
+      HdlConfig_$$(ContName):=$2
+      HdlContXml_$$(ContName):=$$(call HdlContOutDir,$$(ContName))/gen/$$(ContName).xml
+      HdlContainers:=$$(HdlContainers) $$(ContName)
     endif
-  endef  
+  endef
   ifeq ($(origin DefaultContainers),undefined)
     $(call OcpiDbg,No Default Containers: HdlPlatforms: $(HdlPlatforms))
-    # If undefined, we determine the default containers based on HdlPlatform
-    $(foreach p,$(filter $(or $(OnlyPlatforms),$(HdlAllPlatforms)),$(filter-out $(ExcludePlatforms),$(HdlPlatforms))),$(eval $(call doDefaultContainer,$p,base)))
+    # If undefined, we determine the default containers based on HdlPlatforms
+    $(foreach p,$(filter $(or $(OnlyPlatforms),$(HdlAllPlatforms)),\
+                 $(filter-out $(ExcludePlatforms),$(HdlPlatforms))),\
+                $(eval $(call doDefaultContainer,$p,base)))
     $(call OcpiDbg,No Default Containers: Containers: $(Containers))
   else
     $(foreach d,$(DefaultContainers),\
@@ -96,73 +123,34 @@ ifneq ($(MAKECMDGOALS),clean)
          $(eval \
            $(call doDefaultContainer $(word 1,$(subst /, ,$d)),$(word 2,$(subst /, ,$d)))),\
          $(if $(filter $d,$(filter $(or $(OnlyPlatforms),$(HdlAllPlatforms)),$(filter-out $(ExcludePlatforms),$(HdlAllPlatforms)))),\
-              $(eval $(call doDefaultContainer,$d,$d_base)),\
+              $(eval $(call doDefaultContainer,$d,base)),\
               $(error In DefaultContainers, $d is not a defined HDL platform.))))
   endif
   HdlContXml=$(or $($1_xml),$(if $(filter .xml,$(suffix $1)),$1,$1.xml))
-  HdlStripXml=$(if $(filter .xml, $(suffix $1)),$(basename $1),$1)
-  ifdef Containers
-    # This procedure is (simply) to extract platform, target, and configuration info from the
-    # xml for each container.. This allows us to build the list of targets necessary for all the
-    # platforms mentioned by all the containers.  THis list then is the default targets when
-    # targets are not specified.
-    define doGetPlatform
-      $(and $(call DoShell,$(OcpiGen) -S $(CwdName) -x platform $(HdlContXml_$1),HdlContPlatform),\
-          $(error Processing container XML $1: $(HdlContPlatform)))
-      $(and $(call DoShell,$(OcpiGen) -S $(CwdName) -x configuration $(HdlContXml_$1),HdlContConfig),\
-          $(error Processing container XML $1: $(HdlContConfig)))
-      $$(call OcpiDbgVar,HdlContPlatform)
-      $$(call OcpiDbgVar,HdlContConfig)
-      $(if $(HdlContPlatform),,$(error Could not get HdlPlatform for container $1))
-      $(if $(HdlContConfig),,$(error Could not get HdlConfiguration for container $1))
-      HdlMyPlatforms+=$(HdlContPlatform)
-      HdlMyTargets+=$(call OcpiDbg,HdlPart_$(HdlContPlatform) is $(HdlPart_$(HdlContPlatform)))$(call HdlGetFamily,$(HdlPart_$(HdlContPlatform)))
-      HdlPlatform_$1:=$(HdlContPlatform)
-      HdlTarget_$1:=$(call HdlGetFamily,$(HdlPart_$(HdlContPlatform)))
-      HdlConfig_$1:=$(HdlContConfig)
-      $$(call OcpiDbgVar,HdlPlatform_$1)
-      $$(call OcpiDbgVar,HdlMyPlatforms)
-      $$(call OcpiDbgVar,HdlMyTargets)
-    endef
-    $(foreach c,$(Containers),$(eval $(call doGetPlatform,$(call HdlStripXml,$c))))
-    #  $(info HdlMyPlatforms:$(HdlMyPlatforms) HdlMyTargets:=$(HdlMyTargets))
-    $(call OcpiDbgVar,HdlPlatforms)
-    $(call OcpiDbgVar,HdlTargets)
-    $(call OcpiDbgVar,HdlMyPlatforms)
-    $(call OcpiDbgVar,HdlMyTargets)
+  ifdef HdlContainers
+    HdlMyPlatforms:=$(foreach c,$(HdlContainers),$(HdlPlatform_$c))
     ifdef HdlPlatforms
       override HdlPlatforms:=$(call Unique,$(filter $(HdlMyPlatforms),$(HdlPlatforms)))
     else
       override HdlPlatforms:=$(call Unique,$(HdlMyPlatforms))
     endif
-    $(call OcpiDbgVar,ExcludePlatforms)
-    $(call OcpiDbgVar,HdlPlatforms)
-    $(call OcpiDbg,foo: $(filter-out $(ExcludePlatforms),$(HdlPlatforms)))
     override HdlPlatforms:=$(filter $(or $(OnlyPlatforms),$(HdlAllPlatforms)),$(filter-out $(ExcludePlatforms),$(HdlPlatforms)))
-    $(call OcpiDbgVar,ExcludePlatforms)
-    $(call OcpiDbgVar,HdlPlatforms)
     ifdef HdlTargets
       HdlTargets:=$(call Unique,$(filter $(HdlMyTargets),$(HdlTargets)))
     else
       HdlTargets:=$(call Unique,$(foreach p,$(HdlPlatforms),$(call HdlGetFamily,$(HdlPart_$p))))
     endif
-    $(call OcpiDbgVar,ExcludePlatforms)
-    $(call OcpiDbgVar,HdlPlatforms)
-    $(call OcpiDbgVar,HdlTargets)
   endif # for ifdef Containers
 else # for "clean" goal
   HdlTargets:=all
 endif
 # Due to our filtering, we might have no targets to build
-$(call OcpiDbgVar,HdlPlatforms)
-$(call OcpiDbgVar,HdlTargets)
-$(call OcpiDbgVar,OnlyPlatforms)
 ifeq ($(filter $(or $(OnlyPlatforms),$(HdlAllPlatforms)),$(filter-out $(ExcludePlatforms),$(HdlPlatforms))),)
   $(info No targets or platforms to build for this assembly)
 else
   include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
   ifndef HdlSkip
-    ifndef Containers
+    ifndef HdlContainers
       ifneq ($(MAKECMDGOALS),clean)
         $(info No containers will be built since none match the specified platforms.)
       endif
@@ -178,13 +166,11 @@ else
 	  $(AT)mkdir -p $(call HdlContOutDir,$1)
 	  $(AT)$(MAKE) -C $(call HdlContOutDir,$1) -f $(OCPI_CDK_DIR)/include/hdl/hdl-container.mk \
                HdlAssembly=../../$(CwdName) \
-	       ComponentLibrariesInternal=\
-               ComponentLibraries="$(call HdlAdjustLibraries,$(ComponentLibraries))" \
-	       HdlLibrariesCommand=\
-	       HdlLibraries="$(call HdlAdjustLibraries,$(HdlLibraries))" \
-               XmlIncludeDirs="$(call AdjustRelative,$(XmlIncludeDirs))"
+	       ComponentLibrariesInternal="$(call OcpiAdjustLibraries,$(ComponentLibraries))" \
+	       HdlLibrariesInternal="$(call OcpiAdjustLibraries,$(HdlMyLibraries))" \
+               XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirsInternal))"
       endef
-      $(foreach c,$(Containers),$(and $(filter $(HdlPlatform_$c),$(HdlPlatforms)),$(eval $(call doContainer,$c))))
+      $(foreach c,$(HdlContainers),$(and $(filter $(HdlPlatform_$c),$(HdlPlatforms)),$(eval $(call doContainer,$c))))
     endif # containers
   endif # of skip
 endif # check for no targets

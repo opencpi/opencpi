@@ -82,9 +82,12 @@ parseHdlImpl(const char *package) {
   bool dwFound;
   if (!strcasecmp(OE::ezxml_tag(m_xml),"hdldevice"))
     m_isDevice = true;
+  // This must be here so that when the properties are parsed,
+  // the first raw one is properly aligned.
+  const char *firstRaw = ezxml_cattr(m_xml, "FirstRawProperty");
   if ((err = parseSpec(package)) ||
-      (err = parseImplControl(xctl)) ||
-      (err = OE::getExprNumber(m_xml, "datawidth", dw, dwFound, NULL, this)) ||
+      (err = parseImplControl(xctl, firstRaw)) ||
+      (err = OE::getNumber(m_xml, "datawidth", &dw, &dwFound)) ||
       (err = OE::getBoolean(m_xml, "outer", &m_outer)))
     return err;
   if (dwFound)
@@ -92,7 +95,6 @@ parseHdlImpl(const char *package) {
   if (!m_noControl) {
     if (!createPort<WciPort>(*this, xctl, NULL, -1, err))
       return err;
-    const char *firstRaw = ezxml_cattr(m_xml, "FirstRawProperty");
     if ((err = OE::getBoolean(m_xml, "RawProperties", &m_ctl.rawProperties)))
       return err;
     if (firstRaw) {
@@ -102,7 +104,12 @@ parseHdlImpl(const char *package) {
       if (!m_ctl.firstRaw)
 	return OU::esprintf("FirstRawProperty: '%s' not found as a property", firstRaw);
       m_ctl.rawProperties = true;
-    }
+    } else if (m_ctl.rawProperties)
+      for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
+	if (!(*pi)->m_isParameter) {
+	  m_ctl.firstRaw = *pi;
+	  break;
+	}
     bool raw = false;
     for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
       OU::Property &p = **pi;
@@ -127,8 +134,7 @@ parseHdlImpl(const char *package) {
 	    m_ctl.nonRawVolatiles = true;
 	  if (p.m_isVolatile || p.m_isReadable && !p.m_isWritable)
 	    m_ctl.nonRawReadbacks = true;
-	  if (!p.m_isParameter || p.m_isReadable)
-	    m_ctl.nNonRawRunProperties++;
+	  m_ctl.nNonRawRunProperties++;
 	  if (p.m_isSub32)
 	    m_ctl.nonRawSub32Bits = true;
 	}
@@ -161,6 +167,7 @@ parseHdlImpl(const char *package) {
   if ((err = initImplPorts(m_xml, "MemoryInterface", createPort<WmemiPort>)) ||
       (err = initImplPorts(m_xml, "TimeInterface", createPort<WtiPort>)) ||
       (err = initImplPorts(m_xml, "timeservice", createPort<TimeServicePort>)) ||
+      (err = initImplPorts(m_xml, "timebase", createPort<TimeBasePort>)) ||
       (err = initImplPorts(m_xml, "CPMaster", createPort<CpPort>)) ||
       (err = initImplPorts(m_xml, "uNOC", createPort<NocPort>)) ||
       (err = initImplPorts(m_xml, "SDP", createPort<SdpPort>)) ||
@@ -192,8 +199,7 @@ parseHdlImpl(const char *package) {
   for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
     Clock *c = *ci;
     if (!c->port && c->m_signal.empty())
-      return OU::esprintf("Clock %s is owned by no port and has no signal name",
-			  c->name());
+      c->m_signal = c->m_name;
   }
   // now make sure clockPort references are sorted out
   for (unsigned i = 0; i < m_ports.size(); i++) {
@@ -203,8 +209,27 @@ parseHdlImpl(const char *package) {
     if (p->count == 0)
       p->count = 1;
   }
-  // process ad hoc signals: FIXME: this should be device only
-  if ((err = Signal::parseSignals(m_xml, m_file, m_signals, m_sigmap)))
+  const char *emulate = ezxml_cattr(m_xml, "emulate");
+  if (emulate) {
+    if (m_ports.size() > 1 || m_ports.size() == 1 && m_ports[0]->type != WCIPort)
+      return OU::esprintf("Device emulation workers can't have any ports");
+    addWciClockReset();
+    if (ezxml_cchild(m_xml, "signal") || ezxml_cchild(m_xml, "signals"))
+      return OU::esprintf("Can't have both \"emulate\" attributed and \"signal\" elements");
+    const char *dot = strrchr(emulate, '.');
+    if (!dot)
+      return OU::esprintf("'emulate' attribute: '%s' has no authoring model suffix", emulate);
+    std::string ew;
+    OU::format(ew, "../%s/%.*s.xml", emulate, (int)(dot - emulate), emulate);
+    if (!(m_emulate = HdlDevice::get(ew.c_str(), m_file.c_str(), this, err)))
+      return OU::esprintf("for emulated device worker %s: %s", emulate, err);
+    for (SignalsIter si = m_emulate->m_signals.begin();
+	 si != m_emulate->m_signals.end(); si++) {
+      Signal *s = (*si)->reverse();
+      m_signals.push_back(s);
+      m_sigmap[s->m_name.c_str()] = s;
+    }
+  } else if ((err = Signal::parseSignals(m_xml, m_file, m_signals, m_sigmap)))
     return err;
   // Finalize endian default
   if (m_endian == NoEndian)
@@ -216,7 +241,20 @@ parseHdlImpl(const char *package) {
 Signal::
 Signal()
   : m_direction(IN), m_width(0), m_differential(false), m_pos("%sp"), m_neg("%sn"),
-    m_type(NULL) {
+    m_in("%s_i"), m_out("%s_o"), m_oe("%s_oe"), m_type(NULL) {
+}
+
+Signal * Signal::
+reverse() {
+  Signal *s = new Signal(*this);
+  switch(m_direction) {
+  case IN: s->m_direction = OUT; break;
+  case OUT:s->m_direction = IN; break;
+  case INOUT:s->m_direction = OUTIN; break;
+  default:
+    break;
+  }
+  return s;
 }
 
 const char *Signal::
@@ -239,6 +277,8 @@ parse(ezxml_t x) {
   if ((err = OE::getNumber(x, "Width", &m_width, 0, 0)) ||
       (err = OE::getBoolean(x, "differential", &m_differential)))
     return err;
+  if (m_direction == INOUT && m_differential)
+    return OU::esprintf("Signals that are both \"inout\" and differential are not supported");
   m_type = ezxml_cattr(x, "type");
   m_name = name;
   return NULL;
@@ -295,3 +335,16 @@ findSignal(Signal *sig, size_t idx) const {
       return (*i).first;
   return NULL;
 }
+
+// emit one side of differential, or only side..
+void Signal::
+emitConnectionSignal(FILE *f, const char *iname, const char *pattern, bool single) {
+  std::string name;
+  OU::format(name, pattern, m_name.c_str());
+  fprintf(f, "  signal %s%s%s : std_logic", iname ? iname : "", iname ? "_" : "", name.c_str());
+  if (m_width && !single)
+    fprintf(f, "_vector(%zu downto 0)", m_width-1);
+  fprintf(f, ";\n");
+}
+
+

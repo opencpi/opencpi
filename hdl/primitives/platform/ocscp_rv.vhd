@@ -158,6 +158,8 @@ begin
     -- new ones for now
     attention(31 downto 0)                   when x"50",
     attention(63 downto 32)                  when x"54",
+    present(31 downto 0)                     when x"58",
+    present(63 downto 32)                    when x"5c",
     slv0(32)                                 when others;
 
   response <= response_r when response_r /= none_e else worker_in.response;
