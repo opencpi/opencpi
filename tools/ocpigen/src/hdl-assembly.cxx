@@ -639,6 +639,8 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
     for (unsigned n = 0; s.m_width ? n < s.m_width : n == 0; n++) {
       bool isSingle;
       const char *mappedExt = i->m_extmap.findSignal(s, n, isSingle);
+      ocpiDebug("Instance %s worker %s signal %s mapped to %s",
+		i->name, i->worker->m_implName, s.name(), mappedExt ? mappedExt : "<none>");
       if (mappedExt) {
 	// mappedExt might actually be an empty string: ""
 	if (!anyMapped)

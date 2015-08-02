@@ -10,7 +10,7 @@
     <property name='biasValue' value='1'/>
   </instance>
   <instance component='file_write'>
-    <property name='filename' value='test.outputwrong'/>
+    <property name='filename' value='test.output'/>
   </instance>
   <connection>
     <port instance='pattern' name='out'/>

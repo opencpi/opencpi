@@ -469,6 +469,7 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
 	OU::format(s->m_name, "%s_%s", i->name, (**si).m_name.c_str());
       m_signals.push_back(s);
       m_sigmap[s->name()] = s;
+      ocpiDebug("Externalizing device signal '%s' for device '%s'", s->name(), i->worker->m_implName);
     }
   }
 }

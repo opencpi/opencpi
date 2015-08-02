@@ -221,15 +221,17 @@ parse(ezxml_t xml, Board &b, SlotType *stype) {
 	// FIXME: check for using the same signal in the same device
 	// FIXME: specify mutex to allow same signal to be reused between mutex devices
 	if (!(boardSig = b.m_extmap.findSignal(board))) {
+	  ocpiDebug("Adding platform signal: %s", board);
 	  boardSig = new Signal();
 	  boardSig->m_name = board;
 	  boardSig->m_direction = devSig->m_direction;
 	  b.m_extmap[board] = boardSig;
 	  b.m_extsignals.push_back(boardSig);
-	}      
+	} else
+	  ocpiDebug("Mapping to existing platform signal: %s", board);
       }
     }
-    // Check compatibility between device and slot signal
+    // Check compatibility between device and slot/platform signal
     if (boardSig) {
       switch (boardSig->m_direction) {
       case Signal::IN: // input to board
@@ -296,7 +298,11 @@ parse(ezxml_t xml, Board &b, SlotType *stype) {
 
 Board::
 Board(SigMap &sigmap, Signals &signals)
+#if 0
   : m_extmap(sigmap), m_extsignals(signals) {
+#else
+  {
+#endif
 }
 
 const char *Board::

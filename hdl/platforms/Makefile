@@ -25,7 +25,7 @@
 
 # FIXME: create an hdl-platforms.mk template to share among platform developers.
 # This variable specifies the local list of platforms that are active here.
-HdlMyPlatforms=$(filter-out %.txt test Makefile common README README.txt lib specs old,$(wildcard *))
+HdlMyPlatforms=$(filter-out %.txt %.mk test Makefile common README README.txt lib specs old,$(wildcard *))
 ifndef HdlPlatforms
 ifndef HdlPlatform
 ifeq ($(MAKECMDGOALS),clean)
