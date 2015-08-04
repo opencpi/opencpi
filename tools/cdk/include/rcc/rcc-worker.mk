@@ -50,7 +50,7 @@ OBJ:=.o
 override RccIncludeDirsInternal+=../include gen $(OCPI_CDK_DIR)/include/rcc
 BF=$(BF_$(call RccOs,))
 ifneq ($(OCPI_DEBUG),0)
-eSharedLibLinkOptions=-g
+SharedLibLinkOptions=-g
 endif
 SharedLibLinkOptions+=\
   $(or $(SharedLibLinkOptions_$(HdlTarget)),$(SharedLibLinkOptions_$(call RccOs,)))

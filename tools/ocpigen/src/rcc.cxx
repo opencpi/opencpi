@@ -1184,7 +1184,7 @@ emitRccCppImpl(FILE *f) {
 	for (unsigned n = 0; n < o->nArgs(); n++, m++) {
 	  std::string s;
 	  camel(s, m->m_name.c_str() );	
-	  fprintf(f,"         %s_ARG\n",  s.c_str());	  
+	  fprintf(f,"         %s_ARG%s\n",  s.c_str(), n == o->nArgs() - 1 ? "" : ",");
 	}
 	fprintf(f, "       }; \n" );
 
