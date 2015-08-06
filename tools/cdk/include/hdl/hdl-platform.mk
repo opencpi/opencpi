@@ -158,8 +158,9 @@ endif # skip after hdl-pre.mk
 ifneq ($(wildcard devices),)
 .PHONY: devices
 devices:
-	$(AT)if test -d devices; then make -C devices; fi
+	$(AT)if test -d devices; then make -C devices XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirsInternal))"; fi
 all: devices
+configs: devices
 endif
 # If the platform has special files to export to the CDK, do it
 ifdef ExportFiles
