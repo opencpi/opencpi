@@ -446,13 +446,13 @@ $(OutDir)target-%/generics.vh: | $(OutDir)target-%
 
 # Establish where the platforms are
 ifndef HdlPlatformsDir
-  HdlPlatformsDir:=$(OCPI_CDK_DIR)/lib/hdl/platforms
-  ifeq ($(realpath $(HdlPlatformsDir)),)
-    HdlPlatformsDir:=$(OCPI_BASE_DIR)/hdl/platforms
+  HdlPlatformsDir:=$(OCPI_CDK_DIR)/lib/platforms
+#  ifeq ($(realpath $(HdlPlatformsDir)),)
+#    HdlPlatformsDir:=$(OCPI_BASE_DIR)/hdl/platforms
     ifeq ($(realpath $(HdlPlatformsDir)),)
       $(error No HDL platforms found. Looked in $(OCPI_CDK_DIR)/lib/hdl/platforms and $(OCPI_BASE_DIR)/hdl/platforms.)
     endif
-  endif
+#  endif
 endif
 
 # Do the stuff necessary when building an assembly

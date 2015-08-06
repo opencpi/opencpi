@@ -46,7 +46,7 @@ HdlToolSet_stratix5:=quartus
 # Make the initial definition as a simply-expanded variable
 HdlAllPlatforms:=
 ifndef OCPI_HDL_PLATFORM_PATH
-  OCPI_HDL_PLATFORM_PATH:=$(OCPI_BASE_DIR)/hdl/platforms
+  OCPI_HDL_PLATFORM_PATH:=$(OCPI_CDK_DIR)/lib/platforms
 endif
 define doPlatformsDir
   HdlSavePlatforms:=$$(HdlAllPlatforms)

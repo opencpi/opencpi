@@ -1,4 +1,3 @@
-#
 #  This file is part of OpenCPI (www.opencpi.org).
 #     ____                   __________   ____
 #    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
@@ -111,7 +110,8 @@ $(call OcpiDbgVar,HdlPlatforms)
   $(eval $(HdlSearchComponentLibraries))
   include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
   ifndef HdlSkip
-
+    exports:
+    .PHONY: exports
     ifneq ($(MAKECMDGOALS),clean)
       $(shell test -r $(GeneratedDir)/base.xml || echo '<HdlConfig/>' > $(GeneratedDir)/base.xml)
     endif
@@ -133,35 +133,50 @@ $(call OcpiDbgVar,HdlPlatforms)
       # We have containers to build locally.
       # We already build the directories for default containers, and we already
       # did a first pass parse of the container XML for these containers
+      .PHONY: configs
       define doConfig
-         .PHONY: $(call HdlConfOutDir,$1)
-         all: $(call HdlConfOutDir,$1)
-        $(call HdlConfOutDir,$1):
+        configs: $(call HdlConfOutDir,$1)
+#	       Cores="$(call OcpiAdjustLibraries,$(Cores))" \
+
+        $(call HdlConfOutDir,$1): exports
 	  $(AT)mkdir -p $$@
 	  $(AT)echo ======= Entering the \"$1\" configuration for the \"$(Worker)\" platform.
 	  $(AT)$(MAKE) -C $$@ -f $(OCPI_CDK_DIR)/include/hdl/hdl-config.mk \
                HdlPlatforms=$(Worker) \
                HdlPlatformWorker=../../$(Worker) \
 	       HdlLibrariesInternal="$(call OcpiAdjustLibraries,$(HdlLibraries))" \
-	       Cores="$(call HdlAdjustLlibraries,$(Cores))" \
                ComponentLibrariesInternal="../lib $(call OcpiAdjustLibraries,$(ComponentLibraries))" \
                XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirsInternal))"
 	  $(AT)echo ======= Exiting the \"$1\" configuration for the \"$(Worker)\" platform.
       endef
       $(foreach c,$(Configurations),$(eval $(call doConfig,$c)))
+      all: configs
     endif # have configurations
   endif # skip after hdl-workers.mk
 endif # skip after hdl-pre.mk
+# If there is a devices library specific to this platform, build it
+ifneq ($(wildcard devices),)
+.PHONY: devices
+devices:
+	$(AT)if test -d devices; then make -C devices; fi
+all: devices
+endif
+# If the platform has special files to export to the CDK, do it
+ifdef ExportFiles
+ExportLinks:=$(ExportFiles:%=lib/%)
+exports: $(ExportLinks)
+
+$(ExportLinks): | $(@:lib/%=%)
+	$(AT)mkdir -p lib
+	$(AT)ln -s ../$(@:lib/%=%) lib
+
+all: $(ExportLinks)
+endif
+
 endif # skip after platform check
+
 clean::
 	$(AT)if test -d devices; then make -C devices clean; fi
 	$(AT) rm -r -f config-* lib
 
-ifneq (,)
-all: devices
 
-.PHONY: devices
-
-devices:
-	$(AT)if test -d devices; then make -C devices; fi
-endif
