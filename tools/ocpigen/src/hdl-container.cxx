@@ -84,7 +84,7 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
     ocpiCheck(OE::ezxml_parse_str(xml, strlen(xml), x) == NULL);
     configFile = "base.xml"; // where is this really used?
   } else {
-    OU::format(configName, "%s/%s", ::platformDir, myConfig.c_str());
+    OU::format(configName, "%s/hdl/%s", ::platformDir, myConfig.c_str());
     if ((err = parseFile(configName.c_str(), xfile, "HdlConfig", &x, configFile))) {
       configName = myPlatform + "/gen/" + myConfig;
       if (parseFile(configName.c_str(), xfile, "HdlConfig", &x, configFile))
@@ -290,6 +290,11 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
       
 	nWCIs++;
       }
+      // Instance time clients for the assembly
+      const Ports &ports = (*di).device.deviceType().ports();
+      for (PortsIter pi = ports.begin(); pi != ports.end(); pi++)
+	if ((*pi)->type == WTIPort)
+	  emitTimeClient(assy, (*di).name(), (*pi)->name());
     }
     for (ContConnectsIter ci = connections.begin(); ci != connections.end(); ci++)
       if ((err = emitConnection(assy, uNocs, nWCIs, *ci)))

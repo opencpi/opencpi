@@ -54,10 +54,12 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  RCCPort *port = &self->ports[FILE_READ_OUT];
  File_readProperties *props = self->properties;
  MyState *s = self->memories[0];
- size_t n2read =  props->messageSize ? props->messageSize : port->current.maxLength;
+ size_t n2read = props->messageSize ? props->messageSize : port->current.maxLength;
  ssize_t n;
-
  (void)timedOut;(void)newRunCondition;
+
+ if (props->granularity)
+   n2read -= n2read % props->granularity;
  if (props->messagesInFile) {
    struct {
      uint32_t length;

@@ -54,6 +54,7 @@
 #include <functional>
 
 #include "OcpiOsAssert.h"
+#include "OcpiOsEther.h"
 
 #ifndef NDEBUG
   class Trace {
@@ -388,6 +389,7 @@ namespace OCPI {
 	  (((value) & 0xff) << 24) | (((value) & 0xff00) << 8) |
 	  (((value) & 0xff0000) >> 8) | (((value) >> 24));
       }
+      OCPI::OS::Ether::Address &getSystemAddr();
       const std::string &getSystemId();
   }
 }

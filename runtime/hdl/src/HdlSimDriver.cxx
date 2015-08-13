@@ -41,7 +41,7 @@ namespace OCPI {
 	       OE::Address addr, bool discovery, std::string &error)
 	  : Net::Device(driver, ifc, name, addr, discovery, "ocpi-udp-rdma", 10000, error) {
 	  // Send the "flush all state - I am a new master" command.
-	  if (error.empty())
+	  if (error.empty() && !discovery)
 	    command("F", 2, NULL, 0, 5000);
 	  init(error);
 	}
@@ -132,12 +132,16 @@ namespace OCPI {
       Driver::
       ~Driver() {
       }
-      Net::Device &Driver::
-      createDevice(OS::Ether::Interface &ifc, OS::Ether::Address &addr,
-		   bool discovery, std::string &error) {
+      Net::Device *Driver::
+      createDevice(OS::Ether::Interface &ifc, OS::Ether::Address &addr, bool discovery,
+		   std::string &error) {
 	std::string name("sim:");
 	name += addr.pretty();
-	return *new Device(*this, ifc, name, addr, discovery, error);
+	Device *d = new Device(*this, ifc, name, addr, discovery, error);
+	if (error.empty())
+	  return d;
+	delete d;
+	return NULL;
       }
     } // namespace Sim
   } // namespace HDL

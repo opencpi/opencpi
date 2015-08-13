@@ -53,9 +53,9 @@ begin
   file_name := cwd_join(cwd, name);
   file_open(status, thefile, file_name, mode);
   if status = open_ok then
-    report "Output file opened successfully for " & msg & ": " & file_name;
+    report "File opened successfully for " & msg & ": " & file_name;
   else
-    report "Output could not be opened for " & msg & ": " & file_name severity failure;
+    report "File could not be opened for " & msg & ": " & file_name severity failure;
   end if; 
 end open_file;
 

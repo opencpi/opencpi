@@ -203,11 +203,12 @@ namespace OCPI {
 	int m_xfd;                  // fd for writing local copy of executable
 	char *m_metadata;
 	ezxml_t m_xml;
+	bool m_public;
 	// End local state for executable file transfer
 	Sim(std::string &simDir, std::string &script, const std::string &platform,
 	    uint8_t spinCount, unsigned sleepUsecs, unsigned simTicks, bool verbose, bool dump,
 	    bool isPublic, std::string &error)
-	  : m_udp("udp", error),                       // the generic interface for udp broadcast receives
+	  : m_udp(isPublic ? "udp" : "udplocal", error),                       // the generic interface for udp broadcast receives
 	    m_disc(m_udp, ocpi_slave, NULL, 0, error), // the broadcast receiver
 	    //      m_ext(m_udp, ocpi_device, NULL, 0, error),
 	    m_req(simDir + "/request", false, "/tmp/OpenCPI0_Req", error),
@@ -221,7 +222,7 @@ namespace OCPI {
 	    m_dump(dump), m_spinning(false), m_sleepUsecs(sleepUsecs), m_simTicks(simTicks),
 	    m_spinCount(spinCount), m_cumTicks(0), m_xferSrvr(NULL), m_xferSckt(NULL),
 	    m_xferSize(0), m_xferCount(0), m_xferDone(false), m_xfd(-1), m_metadata(NULL),
-	    m_xml(NULL) {
+	    m_xml(NULL), m_public(isPublic) {
 	  if (error.length())
 	    return;
 	  FD_ZERO(&m_alwaysSet);
@@ -234,12 +235,14 @@ namespace OCPI {
 	  OE::Interface eif;
 	  OE::Address udp(true);
 	  while (ifs.getNext(eif, error, NULL) && error.empty()) {
-	    if (eif.up && eif.connected && (isPublic || eif.loopback)) {
+	    if (eif.up && eif.connected && !eif.ipAddr.empty() && (isPublic || eif.loopback)) {
 	      OE::Socket *s = new OE::Socket(eif, ocpi_device, &udp, 0, error);
 	      if (!error.empty()) {
 		delete s;
 		return;
 	      }
+	      ocpiInfo("Creating discovery interface for server: ifc %s addr %s",
+		       eif.name.c_str(), s->ifAddr().pretty());
 	      m_clients.push_back(s);
 	      addFd(s->fd(), true);
 	    }
@@ -679,6 +682,12 @@ namespace OCPI {
 	  return OCCP_ETHER_RESERVED(((HN::EtherControlHeader *)payload)->typeEtc) != 0;
 	}
 
+	bool
+	isNopCommand(uint8_t *payload) {
+	  HN::EtherControlPacket &pkt = *(HN::EtherControlPacket *)payload;
+	  return OCCP_ETHER_MESSAGE_TYPE(pkt.header.typeEtc) ==  HN::OCCP_NOP;
+	}
+
 	// This is essentially a separate channel with its own tags
 	bool
 	doServer(OE::Socket &ext, OE::Packet &rFrame, size_t &length, OE::Address &from,
@@ -859,13 +868,13 @@ namespace OCPI {
 	    break;
 	  case HN::OCCP_NOP:
 	    len = sizeof(HN::EtherControlNopResponse);
-	    ocpiAssert(ntohs(pkt.header.length) == sizeof(HN::EtherControlNopResponse) - 2);
+	    ocpiAssert(ntohs(pkt.header.length) == sizeof(HN::EtherControlNop) - 2);
 	    // Tag is the same
 	    pkt.header.typeEtc = OCCP_ETHER_TYPE_ETC(HN::OCCP_RESPONSE, HN::OK, uncache, 0);
 	    pkt.nopResponse.mbx40 = 0x40;
 	    pkt.nopResponse.mbz0 = 0;
-	    pkt.nopResponse.mbz1 = 0;
-	    pkt.nopResponse.maxCoalesced = 1;
+	    memcpy(pkt.nopResponse.mac, OU::getSystemAddr().addr(), OS::Ether::Address::s_size);
+	    pkt.nopResponse.pid = getpid();
 	  }
 	  pkt.header.length = htons(OCPI_UTRUNCATE(uint16_t, len - 2));
 	  length = len;
@@ -944,11 +953,16 @@ namespace OCPI {
 	  if (ext.receive(rFrame, length, 0, from, error, discovery ? &index : NULL)) {
 	    assert(from != m_udp.addr);
 	    ocpiDebug("Received request packet from %s, length %zu", from.pretty(), length);
+	    if (!m_public && from.addrInAddr() != m_udp.addr.addrInAddr()) {
+	      ocpiDebug("Discovery request received ignored since we are not public %s/%s/%s",
+			from.pretty(), m_udp.addr.pretty(), m_udp.ipAddr.pretty());
+	      return false;
+	    }
 	    if (isServerCommand(rFrame.payload)) {
 	      assert(!discovery);
 	      if (doServer(ext, rFrame, length, from, false, sizeof(rFrame.payload), error))
 		return true;
-	    } else if (s_pid) {
+	    } else if (s_pid && !isNopCommand(rFrame.payload)) {
 	      if (sendToSim(ext, rFrame.payload, length, from, index, error))
 		return true;
 	    } else if (doEmulate(rFrame.payload, length, error) ||

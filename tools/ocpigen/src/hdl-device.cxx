@@ -297,7 +297,7 @@ parse(ezxml_t xml, Board &b, SlotType *stype) {
 }
 
 Board::
-Board(SigMap &sigmap, Signals &signals)
+Board(SigMap &/*sigmap*/, Signals &/*signals*/)
 #if 0
   : m_extmap(sigmap), m_extsignals(signals) {
 #else

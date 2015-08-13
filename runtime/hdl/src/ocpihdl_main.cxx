@@ -560,8 +560,8 @@ static void emulate(const char **) {
 	      ech_in.typeEtc = OCCP_ETHER_TYPE_ETC(HE::OCCP_RESPONSE, HE::OK, uncache, 0);
 	      ecnr.mbx40 = 0x40;
 	      ecnr.mbz0 = 0;
-	      ecnr.mbz1 = 0;
-	      ecnr.maxCoalesced = 1;
+	      memcpy(ecnr.mac, OU::getSystemAddr().addr(), OS::Ether::Address::s_size);
+	      ecnr.pid = getpid();
 	      ocpiDebug("Sending nop response packet: length is sizeof %zu, htons %u, ntohs %u",
 			sizeof(HE::EtherControlNopResponse), ech_in.length, ntohs(ech_in.length));
 	    }

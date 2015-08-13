@@ -51,6 +51,7 @@ namespace OCPI {
   namespace OS {
     namespace Ether {
       const uint16_t c_udpPort = 18077;
+      const char c_multicastGroup[] = "224.0.0.1";
       typedef uint16_t Type;
       // Note this value includes the ethertype bytes
       const unsigned MaxPacketSize = (1518 - 4 - 12);
@@ -73,10 +74,12 @@ namespace OCPI {
 	bool m_error, m_broadcast;
       public:
 	inline bool isEther() const { return m_isEther; }
+	bool isLoopback() const;
 	bool setString(const char *x); // return true on error
 	void set(const void *x);
 	void set(uint16_t, uint32_t);
 	void set64(uint64_t a) { m_addr64 = a; }
+	bool empty() { return m_addr64 == 0; }
 	Address(bool isUdp, uint16_t port = 0);
 
 	inline explicit Address(const unsigned char *m = NULL) {

@@ -54,6 +54,12 @@ ifdef HdlPlatforms
   endif
 endif
 $(call OcpiDbgVar,HdlPlatforms)
+# We are building a platform that is not known in the core or in the environment
+ifeq (,$(filter $(Worker),$(HdlAllPlatforms)))
+  HdlAllPlatforms+=$(Worker)
+  include $(Worker).mk
+  export OCPI_HDL_PLATFORM_PATH+=:$(call OcpiAbsPath,.)
+endif
 override HdlPlatforms:=$(Worker)
 override HdlPlatform:=$(Worker)
 override HdlTargets:=$(call HdlGetFamily,$(Worker))
@@ -63,12 +69,6 @@ export HdlPlatform
 export HdlTargets
 export HdlTarget
 $(call OcpiDbgVar,HdlPlatforms)
-# We are building a platform that is not known in the core or in the environment
-ifeq (,$(filter $(Worker),$(HdlAllPlatforms)))
-  HdlAllPlatforms+=$(Worker)
-  include $(Worker).mk
-  export OCPI_HDL_PLATFORM_PATH+=:$(call OcpiAbsPath,.)
-endif
 XmlIncludeDirs+=$(HdlPlatformsDir)/specs
 $(call OcpiDbgVar,HdlPlatforms)
 ifndef HdlSkip

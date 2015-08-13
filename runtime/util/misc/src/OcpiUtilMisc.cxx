@@ -646,27 +646,37 @@ parseList(const char *list, const char * (*doit)(const char *tok, void *arg), vo
 const std::string &
 getSystemId() {
   static std::string *id = NULL;
+  if (!id)
+    id = new std::string(getSystemAddr().pretty());
+  return *id;
+}
+
+OCPI::OS::Ether::Address &
+getSystemAddr() {
+  static bool set = false;
+  static OCPI::OS::Ether::Address addr;
   // no static construction
-  if (!id) {
+  if (!set) {
     std::string error;
     OE::IfScanner ifs(error);
     if (error.empty()) {
       OE::Interface eif;
       while (ifs.getNext(eif, error))
 	if (eif.addr.isEther()) {
-	  id = new std::string(eif.addr.pretty());
+	  addr = eif.addr;
 	  ocpiDebug("Establishing system identify from interface '%s': %s",
-		    eif.name.c_str(), id->c_str());
+		    eif.name.c_str(), addr.pretty());
+	  set = true;
 	  break;
 	}
-      if (error.empty() && !id)
+      if (error.empty() && !set)
 	throw Error("No network interface found to establish a system identify from its MAC address");
     }
     if (error.length())
       throw Error("Error finding a network interface for establishing a system identify: %s",
 		  error.c_str());
   }  
-  return *id;
+  return addr;
 }
 
 

@@ -76,7 +76,7 @@ namespace OCPI {
 	m_isEther = !isUdp;
 	if (isUdp) {
 	  m_udp.port = port;
-	  m_udp.addr = INADDR_BROADCAST;
+	  m_udp.addr = inet_addr(c_multicastGroup);
 	} else
 	m_addr64 = s_broadcast.m_addr64;
 	m_pretty[0] = 0;
@@ -160,6 +160,9 @@ namespace OCPI {
 	}
 	return m_pretty;
       }
+      bool Address::isLoopback() const {
+	return !m_isEther && m_udp.addr == ntohl(INADDR_LOOPBACK);
+      }
 
       Address Address::
       s_broadcast("ff:ff:ff:ff:ff:ff");
@@ -211,6 +214,8 @@ namespace OCPI {
 	  m_type(role == ocpi_data ? OCDP_ETHER_TYPE : OCCP_ETHER_MTYPE),
 	  m_fd(-1), m_timeout(0), m_role(role)
       {
+	ocpiDebug("Socket for if '%s'(%u) role %u addr %s port %u",
+		  i.name.c_str(), i.index, role, remote ? remote->pretty() : "none", endpoint);
 	//	ocpiDebug("setting ethertype socket option on type 0x%x", m_type);
 	if (i.addr.isEther() && (!remote || remote->isEther())) {
 	  if (haveDriver()) {
@@ -327,13 +332,42 @@ namespace OCPI {
 		OS::setError(error, "enabling interface information");
 		break;
 	      }
-	      // fall into
+	      {
+		// Enable the slave to receive multicast
+		struct ip_mreq mreq;
+		bzero(&mreq, sizeof(mreq));
+		mreq.imr_multiaddr.s_addr = inet_addr("224.0.0.1");
+		mreq.imr_interface.s_addr = INADDR_ANY;
+		std::string
+		  ia(inet_ntoa(mreq.imr_interface)),
+		  na(inet_ntoa(mreq.imr_multiaddr));
+		ocpiDebug("Adding multicast iface %s group %s", ia.c_str(), na.c_str());
+		if (::setsockopt(m_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq))) {
+		  OS::setError(error, "adding multicast membership");
+		  break;
+		}
+		ia = inet_ntoa(mreq.imr_interface);
+		na = inet_ntoa(mreq.imr_multiaddr);
+		ocpiDebug("Slave has iface %s group %s", ia.c_str(), na.c_str());
+	      }
+	      break;
 	    case ocpi_discovery:
 	    case ocpi_master:
-	      if (::setsockopt(m_fd, SOL_SOCKET, SO_BROADCAST, &val, sizeof(val))) {
+	      if (::setsockopt(m_fd, SOL_SOCKET, SO_BROADCAST, &val, sizeof(val)))
 		OS::setError(error, "enabling broadcast option");
-		break;
+	      else {
+		struct in_addr ifaddr;
+		ifaddr.s_addr = i.ipAddr.addrInAddr();
+		if (::setsockopt(m_fd, IPPROTO_IP, IP_MULTICAST_IF, &ifaddr,
+				 sizeof(ifaddr)))
+		  OS::setError(error, "setting the multicast interface %s(%u) to ip %s (%s)",
+			       i.name.c_str(), i.index, i.ipAddr.pretty(), i.addr.pretty());
+		else
+		  ocpiDebug("Set the multicast interface %s(%u) to ip %s (%s) %x/%x",
+			    i.name.c_str(), i.index, i.ipAddr.pretty(), i.addr.pretty(),
+			    ifaddr.s_addr, INADDR_LOOPBACK);
 	      }
+	      break;
 	    default:;
 	    }
 	    if (!error.empty())
@@ -522,6 +556,8 @@ namespace OCPI {
       bool Socket::
       send(IOVec *iov, unsigned iovlen, Address &addr, unsigned /*timeoutms*/,
 	   Interface *ifc, std::string &error) {
+	ocpiDebug("Sending to ifs %s addr %s bcast %u",
+		  ifc ? ifc->name.c_str() : "none", addr.pretty(), addr.isBroadcast());
 	IOVec myiov[10];
 	ocpiAssert(iovlen < 10);
 	union {
@@ -542,7 +578,7 @@ namespace OCPI {
 	char cbuf[CMSG_SPACE(sizeof(struct in_pktinfo))]; // keep in scope in case it is used.
 
 	// FIXME: see if we really need this in raw sockets at all, since it is redundant 
-	if (m_ifAddr.isEther()) {
+	if (m_ifAddr.isEther() && addr.isEther()) {
 	  if (haveDriver()) {
 	    sa.ocpi.ocpi_family = PF_OPENCPI;
 	    sa.ocpi.ocpi_role = m_role;
@@ -596,7 +632,12 @@ namespace OCPI {
 	      error = "No interface specified for UDP broadcast";
 	      return false;
 	    }
+#if 1
+	    sa.in.sin_addr.s_addr = addr.addrInAddr();
+	    ocpiDebug("addr is %x, %s", sa.in.sin_addr.s_addr, inet_ntoa(sa.in.sin_addr));
+#else
 	    sa.in.sin_addr.s_addr = ifc->brdAddr.addrInAddr();
+#endif
 	    sa.in.sin_port = htons(addr.addrPort() ? addr.addrPort() : c_udpPort);
 	    // For broadcast, we specify the interface, otherwise IP routing does the right thing.
 	    memset(cbuf, 0, sizeof(cbuf));
@@ -621,9 +662,9 @@ namespace OCPI {
         msg.msg_iov = (iovec*)iov;
 	msg.msg_iovlen = iovlen;
 	ssize_t rlen = sendmsg(m_fd, &msg, 0);
-	ocpiDebug("Send packet length %zd, to %s via %u, port %u returned %zd errno %u fd %u",
-		  len, inet_ntoa(sa.in.sin_addr), ifc ? ifc->index : 0, ntohs(sa.in.sin_port),
-		  rlen, errno, m_fd);
+	ocpiDebug("Send packet length %zd, to %s/%s via %u, port %u returned %zd errno %u fd %u",
+		  len, inet_ntoa(sa.in.sin_addr), addr.pretty(), ifc ? ifc->index : 0,
+		  ntohs(sa.in.sin_port), rlen, errno, m_fd);
 	if (rlen != (ssize_t)len) {
 	  setError(error, "sendto of %u bytes failed, returning %d", len, rlen);
 	  return false;
@@ -847,9 +888,9 @@ namespace OCPI {
 	i.init();
 	Opaque &o = *(Opaque *)m_opaque;
 	if (m_index == 0) {
-	  if (only && !strcmp(only, "udp")) {
-	    // The udp "pseudo-interface"
-	    i.addr.set(0, INADDR_ANY); // let the (one) socket have its own address
+	  if (only && (!strcmp(only, "udp") || !strcmp(only, "udplocal"))) {
+	    // The udp "pseudo-interface", either public or local
+	    i.addr.set(0, ntohl(!strcmp(only, "udp") ? INADDR_ANY : INADDR_LOOPBACK));
 	    i.index = 0;
 	    i.name = "udp";
 	    i.up = true;
