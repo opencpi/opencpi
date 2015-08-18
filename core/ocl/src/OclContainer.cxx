@@ -69,8 +69,12 @@ namespace OCPI {
       const char *regexpr;
     } vendors[] = {{ "amd", "amd"},
 		   { "nvidia", "nvidia"},
+		   { "amd", "AMD" },
 		   { "intel", "intel" },
+		   {  "intel", "GenuineIntel" },
+		   { "amd", "Advanced Micro Devices" },
 		   { NULL, NULL}};
+
 
     // A family has binary compatibility
     struct OclFamily {
@@ -78,6 +82,9 @@ namespace OCPI {
       OclVendor *vendor;
     } families[] = {{ "cpu", &vendors[0]},
 		    { "cpu", &vendors[2]},
+		    { "cpu", &vendors[3]},
+		    //		    { "gpu", &vendors[4]},
+		    { "gpu", &vendors[0]},
 		    { "iris", &vendors[2]},
 		    { "wildfire", &vendors[0]},
 		    { "geforce", &vendors[1]},
@@ -89,6 +96,8 @@ namespace OCPI {
     } devices[] = {{ " i7-", &families[1] },
 		   { "Iris", &families[2] },
 		   { "GeForce", &families[4] },
+		   { "Xeon(R)", &families[2] },
+		   { "Bonaire", &families[3] },
 		   { NULL, NULL}};
 
     // Since they are retrieved as a vector, we'll leave them that way
@@ -282,9 +291,9 @@ namespace OCPI {
       cl_command_queue_properties properties;
       OCLDEV_VAR(TYPE, type);
       m_isCPU = type == CL_DEVICE_TYPE_CPU;
+
       OCLDEV_VAR(VENDOR_ID, vendorId);
       OCLDEV_VAR(MAX_COMPUTE_UNITS, m_nUnits);
-
 
       cl_device_partition_property_ext pp[] = {CL_DEVICE_PARTITION_EQUALLY_EXT, 1, 0 };
 
@@ -292,29 +301,28 @@ namespace OCPI {
       INIT_CL_EXT_FCN_PTR(clCreateSubDevicesEXT);                                           
       INIT_CL_EXT_FCN_PTR(clReleaseDeviceEXT);                                                 
                                                 
-      rc = pfn_clCreateSubDevicesEXT ( m_id,  pp, m_nUnits, m_outDevices,
-				&m_numSubDevices );
+      rc = pfn_clCreateSubDevicesEXT ( m_id,  pp, m_nUnits, m_outDevices, &m_numSubDevices );
 
-      printf("$$$$$$$$$$$$$   got %d partitioned subunits \n", m_numSubDevices );	
-
-
-
-      for ( int n=0; n<m_nUnits; n++ ) {
-	OCL_RC(m_cmdq[n], clCreateCommandQueue(m_context, m_outDevices[n], 0, &rc));
+      if ( m_numSubDevices < MAX_CMDQ_LEN  ) {
+	for ( int n=0; n<m_nUnits; n++ ) {
+	  OCL_RC(m_cmdq[n], clCreateCommandQueue(m_context, m_outDevices[n], 0, &rc));
+	}
       }
-      OCLDEV_VAR(MAX_WORK_ITEM_DIMENSIONS, nDimensions);
-      sizes = new size_t[nDimensions];
+      else {
+	printf("****** We have 1 sub device \n");
+	m_numSubDevices = 1;
+	m_nUnits = 1;
+	OCL_RC(m_cmdq[0], clCreateCommandQueue(m_context, did, 0, &rc));
+      }
 
-      printf("***  Dims  = %d\n", nDimensions );
-      printf("***  Max compute units  = %d\n", m_nUnits );
+
+      OCLDEV_VAR(MAX_WORK_ITEM_DIMENSIONS, nDimensions);
+
+      sizes = new size_t[nDimensions];
 
       OCLDEV(MAX_WORK_ITEM_SIZES, sizes, nDimensions * sizeof(size_t));
       OCLDEV_VAR(MAX_WORK_GROUP_SIZE, groupSize);
 
-
-
-
-      printf("Max work item size = %d\n", groupSize );
 
       OCLDEV_VAR(MAX_PARAMETER_SIZE, argSize);
       OCLDEV_VAR(AVAILABLE, available);
@@ -332,15 +340,19 @@ namespace OCPI {
       OCLDEV_STRING(VERSION, version);
       OCLDEV_STRING(OPENCL_C_VERSION, cVersion); // not on Apple?
       OCLDEV_STRING(EXTENSIONS, extensions);
+
       for (OclVendor *v = vendors; v->name; v++) {
+
 	regex_t rx;
 	if (regcomp(&rx, v->regexpr, REG_NOSUB|REG_ICASE))
 	  throw OU::Error("Invalid regular expression for OpenCL vendor: %s", v->regexpr);
+
 	if (!regexec(&rx, m_vendorName.c_str(), 0, NULL, 0)) {
 	  m_vendor = v;
 	  break;
 	}
       }
+
       for (OclDevice *d = devices; d->regexpr; d++) {
 	regex_t rx;
 	if (regcomp(&rx, d->regexpr, REG_NOSUB|REG_ICASE))
@@ -362,6 +374,7 @@ namespace OCPI {
 	  printf("    Family:     %s(%s)\n", m_family->name, m_family->vendor->name);
 	printExtensions("    ", extensions);
       }
+
     }
 
     Device::
@@ -391,6 +404,7 @@ namespace OCPI {
 		 name().c_str(), lart.uuid().c_str(), c.name().c_str());
 	cl_device_id &id = c.device().id();
 	cl_context &ctx = c.device().context();
+
 	int fd = ::open(name().c_str(), O_RDONLY);
 	try {
 	  off_t length;
@@ -402,8 +416,10 @@ namespace OCPI {
 			    name().c_str(), strerror(errno), errno);
 	  cl_int rc, rc1;
 	  size_t bytes = length - lart.metadataLength();
+
 	  const unsigned char *binary = (const unsigned char *)mapped;
 	  m_program = clCreateProgramWithBinary(ctx, 1, &id, &bytes, &binary, &rc, &rc1);
+
 	  switch (rc) {
 	  case CL_INVALID_BINARY:
 	    throw OU::Error("Artifact \"%s\" not valid for OpenCL device", name().c_str());
@@ -415,7 +431,9 @@ namespace OCPI {
 	  if (rc1 != CL_SUCCESS)
 	    throw OU::Error("clCreateProgramWithBinary error from \%s\": %s (%d)",
 			    name().c_str(), ocl_strerror(rc1), rc1);
-	  OCL(clBuildProgram(m_program, 1, &id, 0, 0, 0));
+
+	  OCL(clBuildProgram(m_program, 1, &id, "-g -cl-opt-disable", 0, 0));
+
 	  size_t n;
 	  OCL(clGetProgramBuildInfo(m_program, id, CL_PROGRAM_BUILD_LOG, 0, 0, &n));
 	  std::vector<char> log(n + 1, 0);
@@ -465,8 +483,15 @@ namespace OCPI {
 	m_device(device) {
       m_model = "ocl";
       m_os = "opencl";
-      m_osVersion = device.family()->vendor->name;
-      m_platform = device.family()->name;
+      if ( device.family() && device.family()->vendor ) {
+	m_osVersion = device.family()->vendor->name;
+	m_platform = device.family()->name;
+      }
+      else {
+	m_platform = m_osVersion = "unknown";
+      }
+	
+
     }
 
     Container::~Container() {
@@ -492,7 +517,9 @@ namespace OCPI {
     Device &Driver::
     find(const char *target) {
       Device *d = NULL;
+
       search(NULL, NULL, false, target, &d);
+      
       if (d)
 	return *d;
       throw OU::Error("No OpenCL device found for target: %s", target);
@@ -510,16 +537,22 @@ namespace OCPI {
 	if (dash) {
 	  vendorName.assign(type, dash - type);
 	  familyName = dash + 1;
-	} else
+	} else {
 	  familyName = type;
+	}
+
 	OclFamily *f;
 	for (f = families; f->name; f++) {
 	  ocpiDebug("Vendor: %s Family: %s, looking at %s (%s)",
 		    vendorName.c_str(), familyName.c_str(), f->name, f->vendor->name);
+	  //	  printf("****  Vendor: %s Family: %s, looking at %s (%s)\n",  vendorName.c_str(), familyName.c_str(), f->name, f->vendor->name);	  
 	  if (!strcasecmp(f->name, familyName.c_str())) {
+
 	    if (vendorName.size())
+
 	      if (!strcasecmp(f->vendor->name, vendorName.c_str())) {
 		family = f;
+
 		break;
 	      } else
 		continue;
@@ -540,6 +573,8 @@ namespace OCPI {
 	return 0;
       std::vector<cl_platform_id> pids(np);
       OCL(clGetPlatformIDs(np, &pids[0], 0));
+
+
       for (size_t p = 0; p < np; p++) {
 	std::string name, vendor, profile, version, extensions;
         char info[1024];
@@ -554,8 +589,12 @@ namespace OCPI {
         OCL(clGetPlatformInfo(pids[p], CL_PLATFORM_EXTENSIONS, sizeof(info), info, 0));
 	extensions = info;
         OCL(clGetDeviceIDs(pids[p], CL_DEVICE_TYPE_ALL, 0, 0, &nd));
-        std::vector<cl_device_id> dids(nd);
-        OCL(clGetDeviceIDs(pids[p], CL_DEVICE_TYPE_ALL, nd, &dids[0], 0));
+	std::vector<cl_device_id> dids(nd);
+
+	OCL(clGetDeviceIDs(pids[p], CL_DEVICE_TYPE_ALL, nd, &dids[0], 0));
+
+	verbose = true;
+
 	if (verbose) {
 	  printf("OpenCL Platform: %zu/%p \"%s\" vendor \"%s\" profile \"%s\" version \"%s\"\n",
 		 p, pids[p], name.c_str(), vendor.c_str(), profile.c_str(), version.c_str());
@@ -564,6 +603,7 @@ namespace OCPI {
 	for (size_t d = 0; d < nd; d++) {
 	  std::string dname;
 	  OU::format(dname, "ocl%zu.%zu", p, d);
+
 	  for (const char **ep = exclude; ep && *ep; ep++)
 	    if (!strcasecmp(*ep, dname.c_str()))
 	      goto cont2;
@@ -648,8 +688,6 @@ namespace OCPI {
 
 	int nq = static_cast<Container&>(container()).device().nextQOrd();
 
-	printf("Next Q ordinal = %d\n", nq );
-
 	return art.createWorker(*this, appInstName, impl, inst, member, crewSize, params, nq);
       }
 
@@ -722,6 +760,7 @@ namespace OCPI {
 	    OCPI::Time::Emit(&parent().parent(), "Worker", name), m_kernel(k),
 	    m_container(app.parent()), m_isEnabled(false), m_clKernel(NULL), m_que(que),
             m_running(false) {
+
 	assert(!(sizeof(OCLWorker) & 7));
 	assert(!(sizeof(OCLPort) & 7));
 	assert(!(sizeof(OCLReturned) & 7));
@@ -733,34 +772,25 @@ namespace OCPI {
 	for (size_t n = 0; n < nMemories; n++, m++)
 	  m_persistBytes += OU::roundUp(m->m_nBytes, 8);
 
-
-	//	printf("****** Persistbytes = %d\n", m_persistBytes);
-
-
 	OCL_RC(m_clPersistent,
 	       clCreateBuffer(m_container.device().context(),
 			      CL_MEM_READ_WRITE|CL_MEM_ALLOC_HOST_PTR, m_persistBytes,
 			      NULL, &rc));
+	
 	void *vp;
 	OCL_RC(vp, clEnqueueMapBuffer(m_container.device().cmdq(m_que), m_clPersistent,
 				      false, CL_MAP_READ|CL_MAP_WRITE, 0, m_persistBytes,
 				      0, 0, 0, &rc));
+
 	OCL(clFinish(m_container.device().cmdq(0)));
 
 	m_persistent = (uint8_t *)vp;
 	memset(m_persistent, 0, m_persistBytes);
 	m_returned = (OCLReturned *)m_persistent;
 
-
-	//	printf("((((((( Host sizeof returned = %d, self = %d, ports = %d", sizeof(OCLReturned), sizeof(OCLWorker), sizeof(OCLPort)*m_nPorts );
-
-
 	m_self = (OCLWorker *)(m_returned + 1);
-	//	m_properties = (uint8_t *)(m_self) + sizeof(OCLReturned) + m_nPorts * sizeof(OCLPort);
+	m_properties = (uint8_t *)(m_self) + sizeof(OCLReturned) + m_nPorts * sizeof(OCLPort);
 	m_properties = (uint8_t *)(m_self + 1) + m_nPorts * sizeof(OCLPort);
-	//	printf(" offset to props = %d\n", (uint8_t*)m_properties - (uint8_t*)m_returned);
-
-
 
 	m_memory = m_properties + OU::roundUp(totalPropertySize(), 8);
 	m_oclWorkerBytes = new uint8_t[m_oclWorkerSize];
@@ -805,53 +835,22 @@ namespace OCPI {
       }
 
       void kernelProlog(OCLOpCode opcode) {
-
-	//	printf("IN kernelProlog\n");
-
-
 	m_oclWorker->controlOp = opcode;
-	//uint32_t *p32 = (uint32_t*)m_oclWorkerBytes;
-	//ocpiDebug("self: %zu bytes %x %x %x %x %x %x\n", m_oclWorkerSize,
-	// p32[0], p32[1], p32[2], p32[3], p32[4], p32[5]);
-	//	OCL(clSetKernelArg(m_clKernel, 0, m_oclWorkerSize, m_oclWorkerBytes));
-
-
-
 	uint32_t prop = ((uint32_t*)(m_properties))[0];
-	//	printf("fffffffffffff BEFORE prop1 = %d\n", prop );
 	memcpy(m_self, m_oclWorkerBytes, m_oclWorkerSize);
-
 	prop = ((uint32_t*)(m_properties))[0];
-	//	printf("fffffffffffff AFTER prop1 = %d\n", prop );
-
 	OCL(clEnqueueUnmapMemObject(m_container.device().cmdq(m_que), m_clPersistent, m_persistent,
 				    0, 0, 0));
-
-
       }
 
       void kernelEpilog() {
-
-
-
-
-	//	OCL(clFinish(m_container.device().cmdq(m_que)));
-
-	//	uint32_t prop = ((uint32_t*)(m_properties))[0];
-	//	printf("fffffffffffff wa prop1 = %d\n", prop );
-
-
-
-
-	//	printf("IN kernelEpiLog\n");
-
-	//	memcpy(m_oclWorkerBytes, m_self, m_oclWorkerSize);
+	memcpy(m_oclWorkerBytes, m_self, m_oclWorkerSize);
       }
 
       // Defined below the port class since it needs it to be defined.
       void controlOperation(OU::Worker::ControlOperation op);
       void run(bool &anyone_run);
-      bool waitForCompletion();
+      bool chkForCompletion();
 
       public:
       void read ( size_t, size_t, void* ) {
@@ -879,10 +878,6 @@ namespace OCPI {
 	  readVaddr = (uint8_t*)m_properties + md.m_offset;
 	  writeVaddr = (uint8_t*)m_properties + md.m_offset;
 	}
-
-
-	//	printf("In prepareProperty\n");
-
 
       }
       
@@ -1064,11 +1059,16 @@ namespace OCPI {
       const char *kname = ezxml_cattr(impl, "name");
       assert(kname);
       std::string kstr(kname);
+
       kstr += "_kernel";
-      for (unsigned n = 0; n < m_kernels.size(); n++)
-	if (m_kernels[n].m_name == kstr)
-	  return *new Worker(app, *this, m_kernels[n], appInstName, impl, inst, member, crewSize,
+      for (unsigned n = 0; n < m_kernels.size(); n++) {
+	if (m_kernels[n].m_name == kstr) {
+	  Worker * w = 
+	    new Worker(app, *this, m_kernels[n], appInstName, impl, inst, member, crewSize,
 			     wParams, que);
+	  return *w;
+	}
+      }
       throw OU::Error("Could not find OCL worker(kernel) named \"%s\" in \"%s\"",
 		      kname, name().c_str());
     }
@@ -1205,10 +1205,7 @@ namespace OCPI {
       if ((getControlMask () & (1 << op))) {
 	kernelProlog((OCLOpCode)op);
 	cl_event event;
-
-	printf("**********   About to enque task on %d\n", m_que);
 	OCL(clEnqueueTask(m_container.device().cmdq(m_que), m_clKernel, 0, 0, &event));
-
 	kernelEpilog();
       } else
 	m_returned->result = OCL_OK;
@@ -1255,7 +1252,7 @@ namespace OCPI {
 
     bool
     Worker::
-    waitForCompletion() {
+    chkForCompletion() {
       if ( ! m_running ) {
 	return true;
       }
@@ -1264,22 +1261,26 @@ namespace OCPI {
       cl_int info,ret;
       ret = clGetEventInfo(m_taskEvent, CL_EVENT_COMMAND_EXECUTION_STATUS, sizeof(cl_int), (void *)&info, NULL);
       bool done = false;
+
       /* Checking the return values corresponding to CL_EVENT_COMMAND_EXECUTION_STATUS flag */
       if ( info == CL_SUBMITTED ){
-	printf("the command has been submitted successfully.\n");
+	// printf("the command has been submitted successfully.\n");
       } else if ( info == CL_QUEUED ){
-	printf("the command has been queued successfully.\n");
+	// printf("the command has been queued successfully.\n");
       } else if ( info == CL_RUNNING ){
-	printf("the command is running.\n");
+	// printf("the command is running.\n");
       } else if ( info < 0 ){
-	printf("the command was terminated abnormally.\n");
+	//	printf("the command was terminated abnormally.\n");
       } else if ( info == CL_COMPLETE ){
-	printf("the command has been completed successfully.\n");
+	//       	printf("the command has been completed successfully.\n");
 	done = true;
       }
 
       if ( !done )
 	return false;
+
+
+      kernelEpilog();
 
 
       OCLPort *op = m_oclPorts;
@@ -1298,9 +1299,8 @@ namespace OCPI {
 	  }
 	}
 
-      kernelEpilog();
-      m_running = false;
 
+      m_running = false;
 
 
       //      ocpiDebug("Execution of OCL worker %s completes, m_minReady %zu", name().c_str(), m_minReady);
@@ -1353,7 +1353,7 @@ namespace OCPI {
 	return;
 
       // If we are running in a Q, we need to wait for it to complete
-      if ( ! waitForCompletion() ) {
+      if ( ! chkForCompletion() ) {
 	return;
       }
 
@@ -1393,6 +1393,13 @@ namespace OCPI {
 	for (unsigned n = 0; n < m_nPorts; n++, op++)
 	  if (m_relevantMask & (1 << n)) {
 	    Port *p = m_myPorts[n];
+
+
+	    int count = 10;
+	    while(( p->checkReady() < m_minReady ) && count > 0 ) {
+	      usleep( 1000);
+	      count--;
+	    }
 	    ocpiAssert(p->checkReady() >= m_minReady);
 	    for (unsigned r = 0; r < m_minReady; r++) {
 	      OC::ExternalBuffer *b = p->isProvider() ? p->getFullBuffer() : p->getEmptyBuffer();
@@ -1410,10 +1417,6 @@ namespace OCPI {
       kernelProlog(OCPI_OCL_RUN);
       cl_event event;
       ocpiDebug("Enqueueing OCL worker kernel for %s, m_minReady %zu", name().c_str(), m_minReady);
-
-      printf("Enqueueing OCL worker kernel for %s, m_minReady %zu\n", name().c_str(), m_minReady);
-
-
       OCL(clEnqueueNDRangeKernel(m_container.device().cmdq(m_que),
 				 m_clKernel,
 				 m_kernel.m_nDims,
@@ -1429,10 +1432,7 @@ namespace OCPI {
 				    false, CL_MAP_READ|CL_MAP_WRITE, 0, m_persistBytes,
 				    0, 0, &m_taskEvent, &rc));
       assert(vp = m_persistent);
-
       m_running = true;
-
-
 
     }
 
