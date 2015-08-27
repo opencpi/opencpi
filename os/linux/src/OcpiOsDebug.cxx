@@ -32,7 +32,8 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
+#define __STDC_LIMIT_MACROS
+#include <stdint.h>
 #include <signal.h>
 #include <unistd.h>
 #include <sys/time.h>
@@ -45,6 +46,7 @@
 #include <cstring>
 #include <OcpiOsDebug.h>
 #include <OcpiOsMutex.h>
+
 
 namespace OCPI {
   namespace OS {

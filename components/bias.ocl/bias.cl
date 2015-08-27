@@ -11,7 +11,7 @@
 /*
  * Required work group size for worker bias run() function.
  */
-#define OCL_WG_X 1
+#define OCL_WG_X 2
 #define OCL_WG_Y 1
 #define OCL_WG_Z 1
 
@@ -24,6 +24,19 @@ OCLResult bias_run(BiasWorker *self, __global BiasProperties *properties) {
   __global const uint32_t* src = (__global uint32_t *)self->in.current.data;
   __global uint32_t* dst = (__global uint32_t *)self->out.current.data;
   size_t gid = get_global_id(0);
+
+  int n = get_global_id(0);
+
+
+  printf("In bias Global ID, local id = %d =  %d, size = %d x %d  ",n, get_local_id(0), get_global_size(0), get_global_size(1) );
+  printf("wgsize = %d x %d ",n, get_local_size(0), get_local_size(1) );
+  printf("bias value = %d\n",  properties->biasValue);
+  //printf("group id = %d, device id = %d\n", get_group_id(0), get_device_id() );
+
+
+//  properties->biasValue = 0123456;
+//  properties->biasValue2 = 1;
+
 
   if (self->logLevel >= 10)
     printf("src %p dst %p gid %d Got length: %d\n", src, dst, gid, n_elems);

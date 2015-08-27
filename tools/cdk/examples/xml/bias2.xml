@@ -4,11 +4,11 @@
     <property name='granularity' value='4'/>
     <property name='messageSize' value='16'/>
   </instance>
-  <instance component='bias' name='bias'>
-    <property name='biasValue' value='0x0ffff'/>
-  </instance>
-  <instance component='bias' name='bias1'>
-    <property name='biasValue' value='0x01020304'/>
+  <instance component='bias'>
+    <property name='biasValue' value='50'/>
+    <property name='biasValue1' value='1'/>
+    <property name='biasValue2' value='2'/>
+    <property name='biasValue3' value='3'/>
   </instance>
   <instance component='file_write'>
     <property name='filename' value='test.output'/>
@@ -18,11 +18,7 @@
     <port instance='bias' name='in'/>
   </connection>
   <connection>
-    <port instance='bias' name='out' xferrole='f1'/>
-    <port instance='bias1' name='in'/>
-  </connection>
-  <connection>
-    <port instance='bias1' name='out'/>
+    <port instance='bias' name='out'/>
     <port instance='file_write' name='in'/>
   </connection>
 </application>
