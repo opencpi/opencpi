@@ -1,4 +1,3 @@
-
 # #####
 #
 #  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
@@ -38,6 +37,6 @@ Workers=prod cons
 OCPI_CDK_DIR=../../ocpi
 # Set this if some of the xml files are elsewhere, like a spec file that is being
 # shared with other implementers
-IncludeDirs=../../core/local/util/timeEmit/include
+IncludeDirs=../../runtime/local/util/timeEmit/include
 # OocpiLibraries=util - not until we have an AEP
 include $(OCPI_CDK_DIR)/include/worker.mk

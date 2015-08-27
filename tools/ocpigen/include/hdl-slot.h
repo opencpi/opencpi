@@ -31,7 +31,7 @@ struct SlotType {
 // generic (standardized) signals.
 // It is a physical part of a platform.
 struct Slot;
-typedef std::map<const char *, Slot *> Slots;
+typedef std::map<const char *, Slot *, OCPI::Util::ConstCharCaseComp> Slots;
 typedef Slots::const_iterator SlotsIter;
 struct Slot {
   std::string                     m_name;

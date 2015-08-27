@@ -39,8 +39,8 @@ override Worker:=$(Workers)
 Worker_$(Worker)_xml:=$(Worker).xml
 OcpiLanguage:=vhdl
 HdlLibraries+=platform
-XmlIncludeDirs+=. ../specs
 ComponentLibraries+=devices cards
+XmlIncludeDirs+=. ../specs 
 LibDir=lib/hdl
 ifndef HdlPlatforms
   override HdlPlatforms:=$(HdlPlatform)
@@ -72,6 +72,17 @@ ifndef HdlSkip
     $(call OcpiDbgVar,HdlExactPart)
     $(call OcpiDbgVar,HdlTargets)
     $(eval $(HdlSearchComponentLibraries))
+    $(and $(shell \
+       if test -d devices; then \
+        ( \
+	 echo ======= Entering the \"devices\" library for the \"$(Worker)\" platform.; \
+         $(MAKE) -C devices \
+           ComponentLibraries=" $(call HdlAdjustLibraries,$(ComponentLibraries))" \
+           XmlIncludeDirs="$(call AdjustRelative,$(XmlIncludeDirs))" \
+	   HdlPlatform="$(HdlPlatform)" ; \
+	 echo ======= Exiting the \"devices\" library for th \"$(Worker)\" platform. \
+        ) 1>&2 ; \
+       fi),)
   endif
   ################################################################################
   # We are like a worker (and thus a core)
@@ -79,18 +90,22 @@ ifndef HdlSkip
   # which is the "app" without container or the platform
   # FIXME: we can't do this yet because the BB library name depends on there being both cores...
   #Tops:=$(Worker)_rv
-
+  ifneq ($(wildcard devices),)
+    ComponentLibraries+=./devices
+  endif
+  $(eval $(HdlSearchComponentLibraries))
   include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
   ifndef HdlSkip
 
+    ifneq ($(MAKECMDGOALS),clean)
+      $(shell test -r $(GeneratedDir)/base.xml || echo '<HdlConfig/>' > $(GeneratedDir)/base.xml)
+    endif
     ################################################################################
     # From here its about building the platform configuration cores
     ifndef Configurations
       ifneq ($(MAKECMDGOALS),clean)
         ifeq ($(origin Configurations),undefined)
-          Configurations:=$(Worker)_base
-          $(shell test -r $(GeneratedDir)/$(Worker)_base.xml || \
-                  echo '<HdlConfig Language="vhdl"/>' > $(GeneratedDir)/$(Worker)_base.xml)
+          Configurations:=base
         else
           $(info No platform configurations will be built since none are specified.)
         endif
@@ -108,6 +123,7 @@ ifndef HdlSkip
          all: $(call HdlConfOutDir,$1)
         $(call HdlConfOutDir,$1):
 	  $(AT)mkdir -p $$@
+	  $(AT)echo ======= Entering the \"$1\" configuration for the \"$(Worker)\" platform.
 	  $(AT)$(MAKE) -C $$@ -f $(OCPI_CDK_DIR)/include/hdl/hdl-config.mk \
                HdlPlatforms=$(Worker) \
                HdlPlatformWorker=../../$(Worker) \
@@ -117,6 +133,7 @@ ifndef HdlSkip
 	       ComponentLibrariesInternal=\
                ComponentLibraries="../lib $(call HdlAdjustLibraries,$(ComponentLibraries))" \
                XmlIncludeDirs="$(call AdjustRelative,$(XmlIncludeDirs))"
+	  $(AT)echo ======= Exiting the \"$1\" configuration for the \"$(Worker)\" platform.
       endef
       $(foreach c,$(Configurations),$(eval $(call doConfig,$c)))
     endif # have configurations
@@ -124,4 +141,14 @@ ifndef HdlSkip
 endif # skip after hdl-pre.mk
 endif # skip after platform check
 clean::
+	$(AT)if test -d devices; then make -C devices clean; fi
 	$(AT) rm -r -f config-* lib
+
+ifneq (,)
+all: devices
+
+.PHONY: devices
+
+devices:
+	$(AT)if test -d devices; then make -C devices; fi
+endif

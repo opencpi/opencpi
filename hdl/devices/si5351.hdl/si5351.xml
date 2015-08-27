@@ -1,0 +1,91 @@
+<!-- 
+ SI5351 Clock Generator I2C Device Worker OWD
+
+ File: si5351.xml
+ Company: Geon Technologies, LLC
+ Engineer: Brandon Luquette
+
+ Revision Log:
+
+ 05/22/15: BEL
+ File Created
+-->
+<HdlDevice language='vhdl' FirstRawProperty='dev_status'>
+  <ComponentSpec/>
+  <!-- I2C read/write transactions require additional time to complete -->
+  <ControlInterface Timeout='65536'/>
+  <!-- ==============================================================
+       Annotations of this device worker, settable by the platform, available to proxy
+       ============================================================== -->
+  <!-- Does this chip have an external clock as input? -->
+  <property name='clkin_present' type='bool' parameter='1' readable='1' default='0'/>
+  <property name='clkin_freq' type='float' parameter='1' readable='1' default='0'/>
+  <!-- Does this chip have a crystal oscillator as input? -->
+  <property name='xtal_present' type='bool' parameter='1' readable='1' default='0'/>
+  <property name='xtal_freq' type='float' parameter='1' readable='1' default='0'/>
+  <!-- Does this chip have a VCXO as input? -->
+  <property name='vc_present' type='bool' parameter='1' readable='1' default='0'/>
+  <property name='outputs_present' type='bool' arraylength='8' parameter='1' readable='1' default='0'/>
+  <property name='oeb_mode' type='enum' parameter='1' enums='low,high,connected' readable='1' default='low'/>
+  <property name='intr_connected' type='bool' parameter='1' readable='1' default='0'/>
+  <!-- ==============================================================
+       Hardware registers in this chip
+       ============================================================== -->
+  <!--Device Status -->
+  <property name='dev_status'    type='uchar' readable='true'/>  			               <!-- 0 -->
+  <!--Interrupt Status Sticky -->
+  <property name='int_sts_stcky' type='uchar' volatile='true' writable='true'/> 	               <!-- 1 -->
+  <!--Interrupt Status Mask -->
+  <property name='int_sts_mask'  type='uchar' readable='true'  writable='true'/>	               <!-- 2 -->
+  <!--Output enable control -->
+  <property name='out_en_ctl'    type='uchar' readable='true'  writable='true'/>    	               <!-- 3 -->
+  <!--Reserved -->
+  <property name='reserved00'	 type='uchar' padding='1'                      arraylength='5'/>       <!-- 4-8 -->
+  <!--OEB pin enable control mask -->
+  <property name='oeb_pin_en'    type='uchar' volatile='true'  writable='true'/>    	               <!-- 9 -->
+  <!--Reserved -->
+  <property name='reserved01'	 type='uchar' padding='1'                      arraylength='5'/>       <!-- 10-14 -->
+  <!--PLL Input Source -->
+  <property name='pll_in_src'    type='uchar' readable='true'  writable='true'/>    	               <!-- 15 -->
+  <!--Clock Control -->
+  <property name='clk_ctl'       type='uchar' readable='true'  writable='true' arraylength='8'/>       <!-- 16 - 23 -->
+  <!--Clock Disable State -->
+  <property name='clk30_dis_st'  type='uchar' volatile='true'  writable='true'/>    	               <!-- 24 -->
+  <property name='clk74_dis_st'  type='uchar' volatile='true'  writable='true'/>    	               <!-- 25 -->
+  <!-- Feedback Multisynth Divider Parameters (doc section 3.2) - one set per PLL (NOT per MS output) -->
+  <property name='ms_div_params' type='uchar' readable='true'  writable='true' arraydimensions='8,2'/> <!-- 26 - 41 -->
+  <!-- Output Multisynth Parameters (doc section 4.1) - one set of 8 regs per MS output for the first 6 -->
+  <property name='ms_0_5_params' type='uchar' readable='true'  writable='true' arraydimensions='8,6'/> <!-- 42 - 89 -->
+  <!-- Output Multisynth Parameters (doc section 4.1) - one register per MS output for the last 2 -->
+  <property name='ms_6_7_params' type='uchar' readable='true'  writable='true' arraylength='2'/>       <!-- 90 - 91 -->
+  <!--Clock 6-7 Output divider -->
+  <property name='clk67_div'     type='uchar' readable='true'  writable='true'/>    	               <!-- 92 -->
+  <!--Padding -->
+  <property name='pad0'          type='uchar' padding='true'                   arraylength='56'/>      <!-- 93 - 148 -->
+  <!--Spread Spectrum Parameters -->
+  <property name='ss_params'     type='uchar' readable='true'  writable='true' arraylength='13'/>      <!-- 149 - 161 -->
+  <!--VCXO Parameters -->
+  <property name='vcx' 	         type='uchar' readable='true'  writable='true' arraylength='3'/>       <!-- 162 - 164 -->
+  <!--Initial Phase Offsets -->
+  <property name='clk_phs_offs'  type='uchar' readable='true'  writable='true' arraylength='6'/>       <!-- 165 - 170 -->
+  <!--Reserved -->
+  <property name='reserved02'	 type='uchar' padding='true'                   arraylength='6'/>       <!-- 171 - 176-->
+  <!--PLL Reset -->
+  <property name='pll_reset' 	 type='uchar' readable='true'  writable='true'/>    	               <!-- 177 -->
+  <!--Reserved -->
+  <property name='reserved16'	 type='uchar' padding='true'                   arraylength='5'/>       <!-- 178-182 -->
+  <!--Crystal Internal Load Capacitance -->
+  <property name='xtal_cl'	 type='uchar' readable='true'  writable='true'/>                       <!-- 183 -->
+  <!--Reserved -->
+  <property name='reserved03'	 type='uchar' padding='true'                   arraylength='3'/>       <!-- 184-186 -->
+  <!--Fanout enable -->
+  <property name='fanout_en' 	 type='uchar' readable='true'  writable='true'/>    	               <!-- 187 -->
+  <!--Reserved -->
+  <property name='reserved04'	 type='uchar' padding='true'                   arraylength='68'/>      <!-- 188-255 -->
+  <!--Need these signals to control i2c_opencores -->
+  <rawprop name='rawprops' master='true'/>
+  <!-- Interrupt indication, when connected -->
+  <signal input='intr'/>
+ <!-- master output enable of all clock outputs, asserted LOW.  Disabled by reg 9 -->
+  <signal output='oeb'/>
+</HdlDevice>

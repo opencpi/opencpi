@@ -24,7 +24,8 @@ classes and methods in the OCPI::DataTransport namespace.....
 }
 }
 
-Need more rules for how the internal namespaces under OCPI correspond
-to the directory structure.
+[Need more rules for how the internal namespaces under OCPI correspond
+to the directory structure.]
+
 
 

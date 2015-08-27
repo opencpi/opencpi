@@ -5,6 +5,6 @@ Cores=pcie_4243_trn_v6_gtx_x4_250
 # We specify these to get the order we want
 SourceFiles= ml605_pkg.vhd ml605.vhd pci_ml605.v 
 #SourceFiles=chipscope_pkg.vhd ml605_pkg.vhd ml605.vhd pci_ml605.v 
-Configurations=ml605_base ml605_flash ml605_lime_tx
+Configurations=base ml605_flash ml605_lime_tx
 include $(OCPI_CDK_DIR)/include/hdl/hdl-platform.mk
 

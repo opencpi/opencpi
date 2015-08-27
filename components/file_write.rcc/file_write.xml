@@ -5,7 +5,7 @@
        all members, which signals them all to terminate properly. -->
   <port name='in' distribution='cyclic'/> <!-- this is really the default -->
   <port internal='eof' bufferCount='1' indistribution='all' outdistribution='random'>
-    <protocol>
+    <protocol name='eof'>
       <operation name='eof'>
 	<argument name='fileLength' type='ulonglong'/>
       </operation>

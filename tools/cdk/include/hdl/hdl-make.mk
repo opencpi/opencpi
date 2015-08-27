@@ -92,23 +92,28 @@ HdlXmlComponentLibraries=$(strip \
 #    The core for the worker will be _rv if the assembly file is VHDL
 # Note we are silent about workers that don't have cores.
 # FIXME: put in the error check here, but avoid building platform modules like "occp" etc.
+HdlInstanceWkr=$(word 1,$(subst :, ,$1))
+HdlInstanceCfg=$(word 2,$(subst :, ,$1))
+HdlInstanceName=$(word 3,$(subst :, ,$1))
+HdlInstanceWkrCfg=$(call HdlInstanceWkr,$1)$(and $(HdlToolRealCore),$(filter %.vhd,$(ImplFile)),_rv)$(foreach c,$(call HdlInstanceCfg,$1),$(if $(filter 0,$c),,_c$c))
+
 define HdlSetWorkers
   HdlInstances:=$$(and $$(AssyWorkersFile),$$(strip $$(foreach i,$$(shell grep -h -v '\\\#' $$(AssyWorkersFile)),\
-	               $$(if $$(filter $$(firstword $$(subst :, ,$$i)),$$(HdlPlatformWorkers)),,$$i))))
-  HdlWorkers:=$$(call Unique,$$(foreach i,$$(HdlInstances),$$(firstword $$(subst :, ,$$i))))
-  $$(infos HdlSetWorkers:Cores:$$(Cores):$$(HdlWorkers):$$(HdlInstances):$$(HdlTarget))
+	               $$(if $$(filter $$(call HdlInstanceWkr,$$i),$$(HdlPlatformWorkers)),,$$i))))
+  HdlWorkers:=$$(call Unique,$$(foreach i,$$(HdlInstances),$$(call HdlInstanceWkrCfg,$$i)))
+  $$(infox HdlSetWorkers:Cores:$$(Cores):$$(HdlWorkers):$$(HdlInstances):$$(HdlTarget))
   SubCores_$$(HdlTarget):=$$(call Unique,\
     $$(Cores) \
     $$(foreach w,$$(HdlWorkers),\
       $$(or $(strip\
         $$(foreach f,$$(strip\
           $$(firstword \
-            $$(foreach c,$$(ComponentLibraries),$$(infox CC:$$c:$$(ImplFile):)\
+            $$(foreach c,$$(ComponentLibraries),$$(infox CC:$$c:$$(ImplFile):$$w=)\
               $$(foreach d,$$(call HdlComponentLibraryDir,$$c,$$(HdlTarget)),$$(infox DD:$$d/$$w)\
-                $$(call HdlExists,$$d/$$w$$(and $$(HdlToolRealCore),$$(filter %.vhd,$$(ImplFile)),_rv)$$(HdlBin)))))),\
+                $$(call HdlExists,$$d/$$w$$(HdlBin)))))),\
           $$(call FindRelative,.,$$f)),\
 	),$$(info Warning: Worker $$w was not found in any of the component libraries))))
-   $$(infoss Cores is $$(origin SubCores_$$(HdlTarge)) $$(flavor SubCores_$$(HdlTarget)):$$(SubCores_$$(HdlTarget)))
+   $$(infox Cores is $$(origin SubCores_$$(HdlTarget)) $$(flavor SubCores_$$(HdlTarget)):$$(SubCores_$$(HdlTarget)))
 
 endef
 # Get the list of cores we depend on, returning the real files that make can depend on
@@ -120,7 +125,7 @@ HdlGetCores=$(infox HGC:$(Cores):$(HdlWorkers):$(HdlTarget))$(call Unique,\
         $(firstword \
           $(foreach c,$(ComponentLibraries),\
             $(foreach d,$(call HdlComponentLibraryDir,$c,$(HdlTarget)),\
-              $(call HdlExists,$d/$w$(and $(HdlToolRealCore),$(filter %.vhd,$(ImplFile)),_rv)$(HdlBin)))))),\
+              $(call HdlExists,$d/$w$(HdlBin)))))),\
         $(call FindRelative,.,$f))))
 
 
@@ -352,12 +357,13 @@ $(call OcpiDbgVar,HdlTargets)
 # This function adjusts only things that have a slash
 HdlAdjustLibraries=$(foreach l,$1,$(if $(findstring /,$l),$(call AdjustRelative,$l),$l))
 
+#  $(foreach c,$(ComponentLibraries),\
+#    $(foreach o,$(ComponentLibraries),\
+#       $(if $(findstring $o,$c),,\
+#          $(and $(filter $(notdir $o),$(notdir $c)),
+#            $(error The component libraries "$(c)" and "$(o)" have the same base name, which is not allowed)))))
+
 define HdlSearchComponentLibraries
-  $(foreach c,$(ComponentLibraries),\
-    $(foreach o,$(ComponentLibraries),\
-       $(if $(findstring $o,$c),,\
-          $(and $(filter $(notdir $o),$(notdir $c)),
-            $(error The component libraries "$(c)" and "$(o)" have the same base name, which is not allowed)))))
   override XmlIncludeDirs += $(call HdlXmlComponentLibraries,$(ComponentLibraries))
 endef
 HdlRmRv=$(if $(filter %_rv,$1),$(patsubst %_rv,%,$1),$1)
@@ -421,10 +427,10 @@ $(OutDir)target-%/generics.vhd: | $(OutDir)target-%
 	$(AT)(\
 	     echo -- This file sets values for top level generics ;\
 	     echo library ocpi\; use ocpi.all, ocpi.types.all\; ;\
-	     echo package body $(Worker)_defs is ;\
+	     echo package body $(Worker)_constants is ;\
 	     $(foreach n,$(WorkerParamNames)$(infox WPN:$(WorkerParamNames):),\
 		echo '$(ParamVHDL_$(ParamConfig)_$n)'\; ;) \
-	     echo end $(Worker)_defs\; \
+	     echo end $(Worker)_constants\; \
 	) > $@
 
 $(OutDir)target-%/generics.vh: | $(OutDir)target-%
@@ -458,9 +464,10 @@ define HdlPrepareAssembly
                     Platform=$(Platform) \
                     Assembly=$(Assembly) \
                     AssyWorkersFile=$$(AssyWorkersFile) \
-                    Worker=$$(Worker) Worker_xml=$$(Worker_xml) XmlIncludeDirs="$$(XmlIncludeDirs)",\
+                    Worker=$$(Worker) Worker_xml=$$(Worker_xml) XmlIncludeDirs="$$(XmlIncludeDirs)"\
+		    AT=$(AT), \
                    Output), \
-    $$(error Error deriving workers from file $$(Worker).xml. $$(Output)),\
+    $$(error Error deriving workers from file $$(Worker).xml: $$(Output)),\
    )
   # 3. Generated the assembly source file
   ImplFile:=$$(GeneratedDir)/$$(Worker)-assy$$(HdlSourceSuffix)

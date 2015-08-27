@@ -1,0 +1,4 @@
+<HdlDevice language="vhdl" emulate='lime_spi.hdl'>
+  <ComponentSpec nocontrol='1'/>
+  <!-- Insert any other implementation-specific information here -->
+</HdlDevice>

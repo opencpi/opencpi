@@ -68,7 +68,8 @@ ifdef HdlToolRealCore
     $(call WkrTargetDir,$1,$4)/$2$(HdlBin): TargetDir=$(call WkrTargetDir,$1,$4)
     $(call WkrTargetDir,$1,$4)/$2$(HdlBin): | $$$$(TargetDir)
     $(call WkrTargetDir,$1,$4)/$2$(HdlBin): Core=$2
-    $(call WkrTargetDir,$1,$4)/$2$(HdlBin): Top=$(or $(filter %_rv,$3),$3$(and $(WorkerParamNames),$(filter-out 0,$4),_c$4))
+#    $(call WkrTargetDir,$1,$4)/$2$(HdlBin): Top=$(or $(filter %_rv,$3),$3$(and $(WorkerParamNames),$(filter-out 0,$4),_c$4))
+    $(call WkrTargetDir,$1,$4)/$2$(HdlBin): Top=$3$(and $(filter-out 0,$4),_c$4)
     $(call WkrTargetDir,$1,$4)/$2$(HdlBin): ParamConfig=$4
     ifdef PreBuiltCore
       $(call WkrTargetDir,$1,$4)/$2$(HdlBin): $(PreBuiltCore)
@@ -110,6 +111,7 @@ ifdef HdlToolRealCore
   $(call OcpiDbgVar,HdlCores)
   #$(foreach t,$(HdlActualTargets),$(eval $(call DoCore,$(t),$(Core))))
   ifneq ($(MAKECMDGOALS),clean)
+   ifneq ($(MAKECMDGOALS),skeleton)
     $(foreach c,$(ParamConfigurations),\
       $(foreach t,$(HdlActualTargets),\
         $(eval $(call DoImplConfig,$t,$c)) \
@@ -117,6 +119,7 @@ ifdef HdlToolRealCore
           $(foreach core,$(word 1,$(subst :, ,$(both))),\
             $(foreach top,$(word 2,$(subst :, ,$(both))),\
               $(eval $(call DoCore,$t,$(core),$(top),$c)))))))
+   endif
   endif # end of not cleaning
   $(call OcpiDbgVar,CompiledSourceFiles,b3 )
 
@@ -190,12 +193,14 @@ $(call HdlVHDLTargetDefs,$1,$3): $(GeneratedDir)/$$$$(notdir $$$$@)
 
 endef
 
+ifneq ($(MAKECMDGOALS),skeleton)
 $(foreach c,$(ParamConfigurations),\
   $(foreach f,$(HdlActualTargets),\
     $(eval \
       $(call DoBBLibraryTarget,$f,$(strip\
         $(call HdlRmRv,$(word 1,$(HdlCores)))$(if $(filter 0,$c),,_c$c)),$c,$f,\
         $(call CoreBlackBoxFiles,$f,$c)))))
+endif
 
 cores: $(BBLibResults)
 

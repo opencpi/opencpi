@@ -90,7 +90,7 @@ module mkFlashWorker(wciS0_Clk,
   input  wciS0_Clk;
   input  wciS0_MReset_n;
 
-  inout  [15 : 0] flash_io_dq;
+//  inout  [15 : 0] flash_io_dq;
 
   // action method wciS0_mCmd
   input  [2 : 0] wciS0_MCmd;
@@ -519,6 +519,10 @@ module mkFlashWorker(wciS0_Clk,
        wci_wslv_reqF_i_notEmpty__4_AND_IF_wci_wslv_re_ETC___d428,
        wci_wslv_reqF_i_notEmpty__4_AND_wci_wslv_reqF__ETC___d406;
 
+  assign io_dq_oe = flashC_tsOE;
+  assign io_dq_o = flashC_tsWD;
+  assign flashC_tsd$0 = io_dq_i;
+  
   // value method wciS0_sResp
   assign wciS0_SResp = wci_wslv_respF_q_0[33:32] ;
 
@@ -580,15 +584,14 @@ module mkFlashWorker(wciS0_Clk,
   TriState #(.width(32'd16)) flashC_tsd(.I(flashC_tsWD),
 					.OE(flashC_tsOE),
 					.O(flashC_tsd$O),
-					.IO(io_dq));
-`else
+					.IO(io_dqz));
   genvar i;
   for (i = 0; i < 16; i=i+1) begin: a
     IOBUF #(.DRIVE(12),
   	    .IOSTANDARD("DEFAULT"),
 	    .SLEW("SLOW"))
     flash_io(.O(flashC_tsd$O[i]),
-	     .IO(io_dq[i]),
+	     .IO(io_dqz[i]),
 	     .I(flashC_tsWD[i]),
 	     .T(!flashC_tsOE));
   end

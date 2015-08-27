@@ -6,8 +6,10 @@
 // FIXME: move properties into the realm of WCI (big)
 
 WciPort::
-WciPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
-  : OcpPort(w, x, sp, ordinal, WCIPort, "ctl", err) {
+WciPort(Worker &w, ezxml_t x, int ordinal, const char *&err)
+  : OcpPort(w, x, NULL, ordinal, WCIPort, "ctl", err) {
+  if (err)
+    return;
   assert(master || !m_worker->m_wci);
   // WCI ports implicitly a clock to the worker in all cases, master or slave
   if (x && ezxml_cattr(x, "clock")) {
@@ -31,6 +33,8 @@ WciPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
   w.m_ctl.controlOps |= 1 << OU::Worker::OpStart;
   if (w.m_language == VHDL)
     w.m_ctl.controlOps |= 1 << OU::Worker::OpStop;
+  m_dataWidth = 32;
+  m_byteWidth = 8;
 }
 
 bool WciPort::
@@ -79,8 +83,8 @@ deriveOCP() {
   if (master) {
     ocp.MAddr.width = 32;
     ocp.MAddrSpace.value = s;
-    ocp.MByteEn.width = 4;
-    ocp.MData.width = 32;
+    ocp.MData.width = m_dataWidth;
+    ocp.MByteEn.width = m_dataWidth /m_byteWidth;
     ocp.SData.width = 32;
     ocp.MFlag.width = 19;
   } else {
@@ -110,7 +114,7 @@ emitImplAliases(FILE *f, unsigned n, Language lang) {
   const char *comment = hdlComment(lang);
   fprintf(f,
 	  "  %s Aliases for %s interface \"%s\"\n",
-	  comment, typeName(), name());
+	  comment, typeName(), cname());
   if (lang != VHDL) {
     fprintf(f,
 	    "  wire %sTerminate = %sMFlag[0];\n"
@@ -174,7 +178,7 @@ emitImplSignals(FILE *f) {
   fprintf(f,
 	  "  signal wci_is_big_endian    : Bool_t;\n"
 	  "  signal wci_control_op       : wci.control_op_t;\n"
-	  "  signal raw_offset           : unsigned(work.%s_worker_defs.worker.decode_width-1 downto 0);\n"
+	  //	  "  signal raw_offset           : unsigned(work.%s_worker_defs.worker.decode_width-1 downto 0);\n"
 	  "  signal wci_state            : wci.state_t;\n"
 	  "  -- wci information from worker\n"
 	  "  signal wci_attention        : Bool_t;\n"
@@ -182,8 +186,10 @@ emitImplSignals(FILE *f) {
 	  "  signal wci_done             : Bool_t;\n"
 	  "  signal wci_error            : Bool_t;\n"
 	  "  signal wci_finished         : Bool_t;\n"
-	  "  signal wci_is_read          : Bool_t;\n"
-	  "  signal wci_is_write         : Bool_t;\n", m_worker->m_implName);
+	  //	  "  signal wci_is_read          : Bool_t;\n"
+	  //"  signal wci_is_write         : Bool_t;\n"
+	  //, m_worker->m_implName
+	  );
   if (m_worker->m_scalable)
     fprintf(f,
 	    "  signal wci_crew             : UChar_t;\n"
@@ -315,24 +321,24 @@ emitVHDLShellPortMap(FILE *f, std::string &last) {
 	  "    %s_in.state => wci_state,\n"
 	  "    %s_in.is_operating => wci_is_operating,\n"
 	  "    %s_in.abort_control_op => wci_abort_control_op,\n",
-	  last.c_str(), name(), in.c_str(), name(), name(),
-	  name(), name(), name());
+	  last.c_str(), cname(), in.c_str(), cname(), cname(),
+	  cname(), cname(), cname());
   if (m_worker->m_scalable)
     fprintf(f,
 	    "    %s_in.barrier => wci_barrier,\n"
 	    "    %s_in.crew => wci_crew,\n"
-	    "    %s_in.rank => wci_rank,\n", name(), name(), name());
+	    "    %s_in.rank => wci_rank,\n", cname(), cname(), cname());
   fprintf(f,
 	  "    %s_in.is_big_endian => wci_is_big_endian,\n"
 	  "    %s_out.done => wci_done,\n"
 	  "    %s_out.error => wci_error,\n"
 	  "    %s_out.finished => wci_finished,\n"
 	  "    %s_out.attention => wci_attention",
-	  name(), name(), name(), name(), name());
+	  cname(), cname(), cname(), cname(), cname());
   if (m_worker->m_scalable)
     fprintf(f,
 	    ",\n"
-	    "    %s_out.waiting => wci_waiting", name());
+	    "    %s_out.waiting => wci_waiting", cname());
   last = ",\n";
 }
 

@@ -17,8 +17,9 @@ struct Card : public Board {
   std::string                      m_name;
   SlotType                        &m_type;
   static Cards                     s_cards;        // registry of card types
-  static Card *get(const char *file, const char *parent, const char *&err);
-  Card(ezxml_t xml, const char *name, SlotType &type, const char *&err);
+  static Card *get(const char *file, const char *parentFile, Worker *parent, const char *&err);
+  Card(ezxml_t xml, const char *name, SlotType &type, const char *parentFile, Worker *parent,
+       const char *&err);
   virtual ~Card();
 
   const char *name() const { return m_name.c_str(); }

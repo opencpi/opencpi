@@ -57,5 +57,8 @@
    <signal slot='CLK1_M2C_N' platform='CLK1_N'/>
    <signal slot='CLK1_M2C_P' platform='CLK1_P'/>
 
+   <signal slot='DP0_C2M_P' platform=''/>
+   <signal slot='DP0_C2M_N' platform=''/>
+
   </slot>
 </HdlPlatform>

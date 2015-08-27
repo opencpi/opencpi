@@ -1,0 +1,6 @@
+<HdlContainer platform='isim_pf'>
+  <device worker='zipper_i2c' floating='1'/>
+  <device worker='zipper_i2c_em' floating='1'/>
+  <device worker='si5351' floating='1'/>
+  <device worker='si5351_em' floating='1'/>
+</HdlContainer>

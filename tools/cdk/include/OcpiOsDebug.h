@@ -1,1 +1,1 @@
-../../../adapt/os/ocpios/interfaces/include/OcpiOsDebug.h
+../../../os/interfaces/include/OcpiOsDebug.h

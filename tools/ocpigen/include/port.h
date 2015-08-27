@@ -6,7 +6,7 @@
 #include <cassert>
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilAssembly.h"
-#include "OcpiUtilPort.h"
+#include "OcpiExprEvaluator.h"
 #include "ocpigen.h"
 
 // FIXME: this will not be needed when we fully migrate to classes...
@@ -22,6 +22,7 @@ enum WIPType {
   NOCPort,      // NOC port, ready to support CP and DP
   MetadataPort, // Metadata to/from platform worker
   TimePort,     // TimeService port
+  TimeBase,     // TimeBase port - basis for time service
   PropPort,     // raw property port for shared SPI/I2C
   RCCPort,      // An RCC port
   DevSigPort,   // a port between devices
@@ -40,14 +41,19 @@ typedef std::list<Attachment*> Attachments;
 typedef Attachments::const_iterator AttachmentsIter;
 
 // FIXME: have "implPort" class??
-class Port : public OCPI::Util::Port {
+class DataPort;
+class Port {
  protected:
   bool m_clone;
+  Worker *m_worker;    // spec: FIXME: name this a reference 
 public:
   // These members are for spec ports
-  Worker *m_worker;    // spec: FIXME: make this a reference 
+  std::string m_name;  // spec:
+  size_t m_ordinal;    // spec:
   size_t count;        // spec: FIXME: can this change in impl???
+  std::string m_countExpr;
   bool master;         // spec
+  ezxml_t m_xml;       // spec or impl
   WIPType type;        // spec with WDI, with limited types, then impl ports
   // These members are for impl ports
   std::string fullNameIn, fullNameOut; // used during HDL generation
@@ -58,7 +64,6 @@ public:
   Port *clockPort;     // impl: used temporarily until other port has clocks defined
   bool myClock;        // impl
   ezxml_t m_specXml;   // impl
-  bool m_implOnly;     // not in spec
   Port(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *defaultName,
        const char *&err);
   Port(const Port &other, Worker &w, std::string &name, size_t count, const char *&err);
@@ -66,11 +71,13 @@ public:
   virtual Port &clone(Worker &w, std::string &name, size_t count,
 		      OCPI::Util::Assembly::Role *role, const char *&err) const;
   virtual ~Port();
+  Worker &worker() const { return *m_worker; }
   virtual const char *parse();    // second pass parsing for ports referring to each other
+  virtual const char *resolveExpressions(OCPI::Util::IdentResolver &ir);
   virtual bool masterIn() const;  // Are master signals inputs at this port?
   void addMyClock();
   virtual const char *checkClock();
-  inline const char *name() const { return m_name.c_str(); }
+  inline const char *cname() const { return m_name.c_str(); }
   const char *doPattern(int n, unsigned wn, bool in, bool master, std::string &suff,
 			bool port = false);
   virtual void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker,
@@ -83,6 +90,7 @@ public:
   virtual const char *prefix() const = 0;
   virtual bool isOCP() const { return false; }
   virtual bool isData() const { return false; }
+  virtual DataPort *dataPort() { return NULL; }
   virtual bool isDataProducer() const { assert(isData()); return false; }
   virtual bool isDataOptional() const { assert(isData()); return false; }
   virtual bool isDataBidirectional() const { assert(isData()); return false; }
@@ -102,11 +110,13 @@ public:
   virtual void emitRecordInputs(FILE *f);
   virtual void emitRecordOutputs(FILE *f);
   virtual void emitRecordInterface(FILE *f, const char *implName);
+  virtual void emitRecordInterfaceConstants(FILE *f);
   virtual void emitRecordArray(FILE *f);
   //  virtual void emitWorkerEntitySignals(FILE *f, std::string &last, unsigned maxPropName);
   virtual void emitSignals(FILE *f, Language lang, std::string &last, bool inPackage,
-			   bool inWorker);
+			   bool inWorker, bool convert = false);
   virtual void emitVerilogSignals(FILE *f);
+  virtual void emitVerilogPortParameters(FILE *f);
   virtual void emitVHDLShellPortMap(FILE *f, std::string &last);
   virtual void emitVHDLSignalWrapperPortMap(FILE *f, std::string &last);
   virtual void emitVHDLRecordWrapperSignals(FILE *f);
@@ -125,6 +135,7 @@ public:
   virtual void emitRccCppImpl(FILE *f); 
   virtual void emitRccCImpl(FILE *f); 
   virtual void emitRccCImpl1(FILE *f); 
+  virtual void emitRccArgTypes(FILE *f, bool &first);
   virtual void emitExtAssignment(FILE *f, bool int2ext, const std::string &extName,
 				 const std::string &intName, const Attachment &extAt,
 				 const Attachment &intAt, size_t count) const;
@@ -133,10 +144,9 @@ public:
 };
 
 // Factory function template for port types
-template <typename ptype> Port *createPort(Worker &w, ezxml_t x, Port *sp, int ordinal,
-const char *&err) {
+template <typename ptype> Port *createPort(Worker &w, ezxml_t x, int ordinal, const char *&err) {
   err = NULL;
-  Port *p = new ptype(w, x, sp, ordinal, err);
+  Port *p = new ptype(w, x, ordinal, err);
   if (err) {
     delete p;
     return NULL;
@@ -144,6 +154,6 @@ const char *&err) {
   return p;
 }
 // A port creation function
-typedef Port *PortCreate(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
+typedef Port *PortCreate(Worker &w, ezxml_t x, int ordinal, const char *&err);
 
 #endif

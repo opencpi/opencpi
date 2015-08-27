@@ -1,0 +1,217 @@
+search(1): got a root request: 7 0xaef540 maxowned 61 index 0
+STM(1) req 0:  7f(7 to 0)(3 to 1)
+STM(1): source 0 tag 100, 1, first 7, outbound to 2 owners 2 msgs of 254
+MOUT(1) IS NOW 0xae4da8 (from NULL)
+PTM(1): 100, 1 first 7 ocount 2
+PTM(1) has owner count 2 tc 0
+PTM(1): sending 3 results 2 msg count
+target(1:100:1): owner 0/0 m_targetCount 0
+Sending(1) tag 101(100) to 0 tb 1, tag
+ 2 58 36 16 38 8 64
+target(1:100:2): owner 1/1 m_targetCount 0
+Sending(1) to self(102/100): 13 29 19
+MOUT(1) 0xae4da8/0 is ended
+MOUT(1) IS NOW (nil)
+STM(1) req 0:  13f 29f 19f(8 to 0)(6 to 1)
+STM(1): source 2 tag 102, 3, first 13, outbound to 2 owners 2 msgs of 254
+MOUT(1) IS NOW 0xae4da8 (from NULL)
+PTM(1): 102, 3 first 13 ocount 2
+PTM(1) has owner count 2 tc 0
+PTM(1): sending 5 results 2 msg count
+target(1:102:3): owner 0/0 m_targetCount 0
+Sending(1) tag 103(102) to 0 tb 1, tag
+ 24 2 14 38 16 18 8 42
+target(1:102:4): owner 1/1 m_targetCount 0
+Sending(1) to self(104/102): 25 37 27 7 51 9
+MOUT(1) 0xae4da8/0 is ended
+MOUT(1) IS NOW (nil)
+STM(1) req 0:  25f 37f 27f 7fv 51f 9f(16 to 0)(13 to 1)
+STM(1): source 2 tag 104, 6, first 25, outbound to 2 owners 2 msgs of 254
+MOUT(1) IS NOW 0xae4da8 (from NULL)
+collect: from 100 targets 2 results 1 now have 1 count 2 index 0
+PTM(1): 104, 6 first 25 ocount 2
+PTM(1) has owner count 2 tc 0
+PTM(1): sending 7 results 2 msg count
+target(1:104:5): owner 0/0 m_targetCount 0
+Sending(1) tag 105(104) to 0 tb 1, tag
+ 24 2 8 56 12 58 36 14 38 16 40 64 18 42 20 44
+target(1:104:6): owner 1/1 m_targetCount 0
+Sending(1) to self(106/104): 1 25 49 27 51 53 9 55 33 11 13 39 19
+MOUT(1) 0xae4da8/0 is ended
+MOUT(1) IS NOW (nil)
+STM(1) req 0:  1f 25fv 49f 27fv 51fv 53f 9fv 55f 33f 11f 13fv 39f 19fv(9 to 0)(3 to 1)
+STM(1): source 2 tag 106, 13, first 1, outbound to 2 owners 2 msgs of 254
+MOUT(1) IS NOW 0xae4da8 (from NULL)
+collect: from 102 targets 2 results 3 now have 4 count 3 index 0
+PTM(1): 106, 13 first 1 ocount 2
+PTM(1) has owner count 2 tc 0
+PTM(1): sending 9 results 2 msg count
+target(1:106:7): owner 0/0 m_targetCount 0
+Sending(1) tag 107(106) to 0 tb 1, tag
+ 44 56 2 24 58 16 38 8 64
+target(1:106:8): owner 1/1 m_targetCount 0
+Sending(1) to self(108/106): 27 51 9
+MOUT(1) 0xae4da8/0 is ended
+MOUT(1) IS NOW (nil)
+STM(1) req 0:  27fv 51fv 9fv
+STM(1): source 2 tag 108, 3, first 0, outbound to 0 owners 0 msgs of 254
+MOUT(1) IS NOW 0xae4da8 (from NULL)
+STM(0) req 0:  2f 58f 36f 16f 38f 8f 64f(19 to 0)(19 to 1)
+STM(0): source 1 tag 101, 7, first 2, outbound to 2 owners 2 msgs of 254
+MOUT(0) IS NOW 0x9a6828 (from NULL)
+collect: from 104 targets 2 results 5 now have 9 count 4 index 0
+PTM(1): 108, 3 first 0 ocount 0
+PTM(1) has owner count 0 tc 0
+MOUT(1) 0xae4da8/0 is ended
+MOUT(1) IS NOW (nil)
+PTM(1): sending 2 results 0 msg count
+PTM(0): 101, 7 first 2 ocount 2
+PTM(0) has owner count 2 tc 0
+PTM(0): sending 9 results 2 msg count
+target(0:101:0): owner 1/1 m_targetCount 0
+Sending(0) tag 0(101) to 1 tb 1, tag
+ 23 47 1 25 49 27 51 5 7 9 55 33 11 13 61 39 41 19 43
+target(0:101:1): owner 0/0 m_targetCount 0
+Sending(0) to self(1/101): 24 2 26 4 52 54 8 56 58 12 36 14 38 16 64 18 42 20 44
+MOUT(0) 0x9a6828/0 is ended
+MOUT(0) IS NOW (nil)
+STM(0) req 0:  24f 2fv 26f 4f 52f 54f 8fv 56f 58fv 12f 36fv 14f 38fv 16fv 64fv 18f 42f 20f 44f(17 to 0)(15 to 1)
+STM(0): source 2 tag 1, 19, first 24, outbound to 2 owners 2 msgs of 254
+MOUT(0) IS NOW 0x9a6828 (from NULL)
+STM(0) req 0:  24fv 2fv 14fv 38fv 16fv 18fv 8fv 42fv
+STM(0): source 1 tag 103, 8, first 0, outbound to 0 owners 0 msgs of 254
+collect: from 106 targets 2 results 7 now have 16 count 5 index 0
+STM(1) req 0:  23f 47f 1fv 25fv 49fv 27fv 51fv 5f 7fv 9fv 55fv 33fv 11fv 13fv 61f 39fv 41f 19fv 43f(7 to 0)(2 to 1)
+STM(1): source 1 tag 0, 19, first 23, outbound to 2 owners 2 msgs of 254
+MOUT(1) IS NOW 0xae4e20 (from NULL)
+PTM(0): 1, 19 first 24 ocount 2
+PTM(0) has owner count 2 tc 0
+PTM(0): sending 14 results 2 msg count
+target(0:1:2): owner 1/1 m_targetCount 0
+Sending(0) tag 2(1) to 1 tb 1, tag
+ 1 47 25 49 27 51 29 55 35 59 13 37 61 19 45
+target(0:1:3): owner 0/0 m_targetCount 0
+Sending(0) to self(3/1): 46 2 26 30 8 10 56 58 36 14 38 16 40 64 18 20 22
+MOUT(0) 0x9a6828/0 is ended
+MOUT(0) IS NOW 0x9a68a0
+STM(0) req 0:  46f 2fv 26fv 30f 8fv 10f 56fv 58fv 36fv 14fv 38fv 16fv 40f 64fv 18fv 20fv 22f(5 to 0)(2 to 1)
+STM(0): source 2 tag 3, 17, first 46, outbound to 2 owners 2 msgs of 254
+STM(0) req 0:  0 0 0 0 0 0 0 0
+STM(0): source 1 tag 103, 8, first 0, outbound to 0 owners 0 msgs of 254
+collect: from 101 targets 2 results 7 now have 23 count 6 index 0
+PTM(1): 0, 19 first 23 ocount 2
+PTM(1) has owner count 2 tc 0
+PTM(1): sending 8 results 2 msg count
+target(1:0:9): owner 0/0 m_targetCount 0
+Sending(1) tag 109(0) to 0 tb 1, tag
+ 24 58 16 38 52 30 8
+target(1:0:10): owner 1/1 m_targetCount 0
+Sending(1) to self(110/0): 47 41
+MOUT(1) 0xae4e20/1 is ended
+MOUT(1) IS NOW (nil)
+STM(1) req 0:  47fv 41fv
+STM(1): source 2 tag 110, 2, first 0, outbound to 0 owners 0 msgs of 254
+MOUT(1) IS NOW 0xae4e20 (from NULL)
+STM(1) req 0:  1fv 47fv 25fv 49fv 27fv 51fv 29fv 55fv 35f 59f 13fv 37fv 61fv 19fv 45f(4 to 0)
+STM(1): source 1 tag 2, 15, first 0, outbound to 1 owners 1 msgs of 254
+PTM(0): 3, 17 first 46 ocount 2
+PTM(0) has owner count 2 tc 0
+PTM(0): sending 7 results 2 msg count
+target(0:3:4): owner 1/1 m_targetCount 0
+Sending(0) tag 4(3) to 1 tb 1, tag
+ 27 5
+target(0:3:5): owner 0/0 m_targetCount 0
+Sending(0) to self(5/3): 44 14 26 18 42
+MOUT(0) 0x9a68a0/1 is ended
+MOUT(0) IS NOW 0x9a6828
+STM(0) req 0:  44fv 14fv 26fv 18fv 42fv
+STM(0): source 2 tag 5, 5, first 0, outbound to 0 owners 0 msgs of 254
+STM(0) req 0:  0 0 0 0 0 0 0 0
+STM(0): source 1 tag 103, 8, first 0, outbound to 0 owners 0 msgs of 254
+collect: from 108 targets 0 results 0 now have 23 count 5 index 0
+PTM(1): 110, 2 first 0 ocount 0
+PTM(1) has owner count 0 tc 0
+MOUT(1) 0xae4e20/1 is ended
+MOUT(1) IS NOW 0xae4da8
+PTM(1): sending 2 results 0 msg count
+PTM(1): 2, 15 first 0 ocount 1
+PTM(1) has owner count 1 tc 0
+PTM(1): sending 5 results 1 msg count
+target(1:2:11): owner 0/0 m_targetCount 0
+Sending(1) tag 111(2) to 0 tb 1, tag
+ 44 12 18 42
+MOUT(1) 0xae4da8/0 is ended
+MOUT(1) IS NOW (nil)
+STM(1) req 0:  27fv 5fv
+STM(1): source 1 tag 4, 2, first 0, outbound to 0 owners 0 msgs of 254
+MOUT(1) IS NOW 0xae4e20 (from NULL)
+PTM(0): 5, 5 first 0 ocount 0
+PTM(0) has owner count 0 tc 0
+MOUT(0) 0x9a6828/0 is ended
+MOUT(0) IS NOW 0x9a68a0
+PTM(0): sending 2 results 0 msg count
+STM(0) req 0:  0 0 0 0 0 0 0 0
+STM(0): source 1 tag 103, 8, first 0, outbound to 0 owners 0 msgs of 254
+collect: from 1 targets 2 results 12 now have 35 count 6 index 0
+STM(1) req 0:  0 0
+STM(1): source 1 tag 4, 2, first 0, outbound to 0 owners 0 msgs of 254
+PTM(0): 103, 8 first 0 ocount 0
+PTM(0) has owner count 0 tc 0
+MOUT(0) 0x9a68a0/1 is ended
+MOUT(0) IS NOW 0x9a6828
+PTM(0): sending 2 results 0 msg count
+STM(0) req 0:  24fv 2fv 8fv 56fv 12fv 58fv 36fv 14fv 38fv 16fv 40fv 64fv 18fv 42fv 20fv 44fv
+STM(0): source 1 tag 105, 16, first 0, outbound to 0 owners 0 msgs of 254
+collect: from 0 targets 2 results 6 now have 41 count 7 index 0
+PTM(1): 4, 2 first 0 ocount 0
+PTM(1) has owner count 0 tc 0
+MOUT(1) 0xae4e20/1 is ended
+MOUT(1) IS NOW 0xae4da8
+PTM(1): sending 2 results 0 msg count
+collect: from 3 targets 2 results 5 now have 46 count 8 index 0
+PTM(0): 103, 8 first 44 ocount 0
+PTM(0) has owner count 0 tc 0
+MOUT(0) 0x9a6828/0 is ended
+MOUT(0) IS NOW 0x9a68a0
+PTM(0): sending 10 results 0 msg count
+STM(0) req 0:  44fv 56fv 2fv 24fv 58fv 16fv 38fv 8fv 64fv
+STM(0): source 1 tag 107, 9, first 0, outbound to 0 owners 0 msgs of 254
+collect: from 110 targets 0 results 0 now have 46 count 7 index 0
+PTM(1): 4, 2 first 0 ocount 0
+PTM(1) has owner count 0 tc 0
+MOUT(1) 0xae4da8/0 is ended
+MOUT(1) IS NOW (nil)
+PTM(1): sending 2 results 0 msg count
+collect: from 5 targets 0 results 0 now have 46 count 6 index 0
+PTM(0): 105, 16 first 24 ocount 0
+PTM(0) has owner count 0 tc 0
+MOUT(0) 0x9a68a0/1 is ended
+MOUT(0) IS NOW 0x9a6828
+PTM(0): sending 9 results 0 msg count
+STM(0) req 0:  24fv 58fv 16fv 38fv 52fv 30fv 8fv
+STM(0): source 1 tag 109, 7, first 0, outbound to 0 owners 0 msgs of 254
+collect: from 2 targets 1 results 3 now have 49 count 6 index 0
+collect: from 103 targets 0 results 0 now have 49 count 5 index 0
+PTM(0): 107, 9 first 44 ocount 0
+PTM(0) has owner count 0 tc 0
+MOUT(0) 0x9a6828/0 is ended
+MOUT(0) IS NOW 0x9a68a0
+PTM(0): sending 6 results 0 msg count
+STM(0) req 0:  44fv 12fv 18fv 42fv
+STM(0): source 1 tag 111, 4, first 0, outbound to 0 owners 0 msgs of 254
+collect: from 4 targets 0 results 0 now have 49 count 4 index 0
+collect: from 103 targets 0 results 8 now have 57 count 3 index 0
+PTM(0): 109, 7 first 0 ocount 0
+PTM(0) has owner count 0 tc 0
+MOUT(0) 0x9a68a0/1 is ended
+MOUT(0) IS NOW 0x9a6828
+PTM(0): sending 2 results 0 msg count
+collect: from 4 targets 0 results 0 now have 57 count 2 index 0
+PTM(0): 111, 4 first 0 ocount 0
+PTM(0) has owner count 0 tc 0
+MOUT(0) 0x9a6828/0 is ended
+MOUT(0) IS NOW (nil)
+PTM(0): sending 2 results 0 msg count
+collect: from 105 targets 0 results 7 now have 64 count 1 index 0
+collect: from 107 targets 0 results 4 now have 68 count 0 index 0
+search(1): got a root request: 13 0xaef5a0 maxowned 61 index 1

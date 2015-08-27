@@ -8,6 +8,7 @@ function slv(v : unsigned) return std_logic_vector;
 function slv(v : signed) return std_logic_vector;
 function slv(s : string_t) return std_logic_vector;
 function slv0(n : natural) return std_logic_vector;
+function slv1(n : natural) return std_logic_vector;
 function slvn(n, width : natural) return std_logic_vector;
 function bit2unsigned(b : std_logic; len : natural := 1) return unsigned;
 function swap(d : dword_t) return dword_t;

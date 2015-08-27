@@ -1,0 +1,7 @@
+<HdlContainer platform='isim_pf'>
+   <!-- <device worker='lime_spi' floating='1'/> -->
+   <device worker='lime_spi_em' floating='1'/>
+   <device worker='lime_spi' floating='1'/>
+   <device worker='lime_tx' floating='1'/>
+   <device worker='lime_tx_em' floating='1'/>
+</HdlContainer>

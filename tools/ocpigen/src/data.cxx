@@ -2,39 +2,34 @@
 
 #include <assert.h>
 #include "wip.h"
+#include "data.h"
 #include "hdl.h"
 
-// Constructor when creating a derived impl port from a spec port
-// Based on an existing spec port (sp), unless impl-only
+// Constructor when creating a derived impl port either from a spec port
+// (based on an existing spec port (sp)), or just an impl-only data port
+// (e.g. an internal connection of a crew)
 DataPort::
-DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *&err)
-  : OcpPort(w, x, sp, ordinal, type, NULL, err) {
-  // assert(sp != NULL);
-  //  DataPort *dp = static_cast<DataPort*>(sp);
-  // Now we do data port initialization that will precede the initializations for specific port
-  // types (WSI, etc.)
-  // These are AFTER the protocol parsing is done
-  bool dwFound;
-  if ((err = parse()) ||
-      (err = OE::getNumber(m_xml, "DataWidth", &m_dataWidth, &dwFound)))
+DataPort(Worker &w, ezxml_t x, DataPort *sp, int ordinal, WIPType type, const char *&err)
+  : OcpPort(w, x, sp, ordinal, type, NULL, err),
+    OU::Port(sp, w, x, cname(), err) {
+  if (err)
     return;
-  if (!dwFound) {
+  // Now we do implementation-specific initialization that will precede the
+  // initializations for specific port types (WSI, etc.)
+  if ((err = OE::getNumber(x, "MaxMessageValues", &m_maxMessageValues, NULL, 0, false)) ||
+      (err = OE::getNumber(x, "DataValueWidth", &m_dataValueWidth, NULL, 0, false)) ||
+      (err = OE::getNumber(x, "DataValueGranularity", &m_dataValueGranularity, NULL, 0,
+			   false)) ||
+      (err = OE::getBoolean(x, "ZeroLengthMessages", &m_zeroLengthMessages, true)) ||
+      (err = OU::Port::parse()))
+    return;
+  // Note buffer sizes are all determined in the OU::Util::Port.  FIXME allow parameterized?
+  // Data width can be unspecified, specified explicitly, or specified with an expression
+  if (!m_dataWidthFound) {
     if (w.m_defaultDataWidth >= 0)
       m_dataWidth = (unsigned)w.m_defaultDataWidth;
     else
       m_dataWidth = m_dataValueWidth;  // or granularity?
-  } else if (!m_dataValueWidth && !nOperations())
-    m_dataValueWidth = m_dataWidth;
-  if (m_dataWidth >= m_dataValueWidth) {
-    if (m_dataWidth % m_dataValueWidth) {
-      err = OU::esprintf("DataWidth (%zu) on port '%s' not a multiple of DataValueWidth (%zu)",
-			 m_dataWidth, name(), m_dataValueWidth);
-      return;
-    }
-  } else if (m_dataValueWidth % m_dataWidth) {
-    err =  OU::esprintf("DataValueWidth (%zu) on port '%s' not a multiple of DataWidth (%zu)",
-			m_dataValueWidth, name(), m_dataWidth);
-    return;
   }
   if (!m_impreciseBurst && !m_preciseBurst)
     m_impreciseBurst = true;
@@ -42,19 +37,66 @@ DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *
   if (m_impreciseBurst && m_preciseBurst)
     return "Both ImpreciseBurst and PreciseBurst cannot be specified for WSI or WMI";
 #endif
-  //  pattern = ezxml_cattr(m_xml, "Pattern");
-  // After all this, if there is no default buffer size specified, but there is
-  // a maxMessageValues, set the default buffer size from it.
-  if (!m_defaultBufferSize && m_maxMessageValues)
-    m_defaultBufferSize =
-      (m_maxMessageValues * m_dataValueWidth + 7) / 8;
-  //  err = parseScaling();
 }
 
+// Constructor when this is the concrete derived class, when parsing spec ports
+// Note the "parse" method is called after all spec ports are created - second pass
+DataPort::
+DataPort(Worker &w, ezxml_t x, int ordinal, const char *&err)
+  : OcpPort(w, x, NULL, ordinal, WDIPort, NULL, err),
+    OU::Port(NULL, w, x, cname(), err) {
+  if (!err)
+    err = OE::checkAttrs(x, SPEC_DATA_PORT_ATTRS, (void*)0);
+}
+
+// Our special clone copy constructor
+DataPort::
+DataPort(const DataPort &other, Worker &w , std::string &name, size_t count,
+	 OCPI::Util::Assembly::Role *role, const char *&err)
+  : OcpPort(other, w, name, count, err),
+    OU::Port(other, w, cname(), err) {
+  if (err)
+    return;
+  if (role) {
+    if (!role->m_provider) {
+      if (!other.m_isProducer && !other.m_isBidirectional) {
+	err = OU::esprintf("external producer role incompatible " "with port %s of worker %s",
+			   other.cname(), other.worker().m_implName);
+	return;
+      }
+      m_isProducer = true;
+      m_isBidirectional = false;
+    } else if (role->m_bidirectional) {
+      if (!other.m_isBidirectional) {
+	  err = OU::esprintf("external bidirectional role incompatible "
+			     "with port %s of worker %s",
+			     other.cname(), other.worker().m_implName);
+      }
+    } else if (role->m_provider) {
+      if (other.m_isProducer) {
+	  err = OU::esprintf("external consumer role incompatible "
+			     "with port %s of worker %s",
+			     other.cname(), other.worker().m_implName);
+      }
+      m_isBidirectional = false;
+    }
+  }
+}
+
+::Port &DataPort::
+clone(Worker &, std::string &, size_t, OCPI::Util::Assembly::Role *, const char *&) const {
+  assert("Can't clone generic data port" == 0);
+}
+
+const char *DataPort::
+parse() {
+  return OU::Port::parse();
+}
 // Very poor man's virtual callback
 static const char *doProtocolChild(ezxml_t op, void *arg) {
   return ((DataPort *)arg)->parseProtocolChild(op);
 }
+
 // Called on each child element of the protocol
 const char *DataPort::
 parseProtocolChild(ezxml_t op) {
@@ -73,71 +115,6 @@ parseProtocolChild(ezxml_t op) {
   return OU::Protocol::parseChild(op);
 }
 
-static const char *checkSuffix(const char *str, const char *suff, const char *last) {
-  size_t nstr = last - str, nsuff = strlen(suff);
-  const char *start = str + nstr - nsuff;
-  return nstr > nsuff && !strncmp(suff, start, nsuff) ? start : last;
-}
-
-// Constructor when this is the concrete derived class, when parsing spec ports
-// Note the "parse" method is called after all spec ports are created - second pass
-// Note that the underlying OU::Port class calls parseProtocol
-DataPort::
-DataPort(Worker &w, ezxml_t x, int ordinal, const char *&err)
-  : OcpPort(w, x, NULL, ordinal, WDIPort, NULL, err) {
-  if (!err && type == WDIPort)
-    err = OE::checkAttrs(m_xml, SPEC_DATA_PORT_ATTRS, (void*)0);
-}
-
-// Our special clone copy constructor
-DataPort::
-DataPort(const DataPort &other, Worker &w , std::string &name, size_t count,
-	OCPI::Util::Assembly::Role *role, const char *&err)
-  : OcpPort(other, w, name, count, err) {
-  if (err)
-    return;
-  //  m_isProducer = other.m_isProducer;
-  //  m_isOptional = other.m_isOptional;
-  //  m_isBidirectional = other.m_isBidirectional;
-  //  m_nOpcodes = other.m_nOpcodes;
-  //  m_minBufferCount = other.m_minBufferCount;
-  //  m_bufferSize = other.m_bufferSize;
-  //  m_bufferSizePort = other.m_bufferSizePort;
-  //  m_isScalable = other.m_isScalable;
-  //  m_defaultDistribution = other.m_defaultDistribution;
-  //  m_opScaling = other.m_opScaling;
-  //  m_isPartitioned = other.m_isPartitioned;
-  if (role) {
-    if (!role->m_provider) {
-      if (!other.m_isProducer && !other.m_isBidirectional) {
-	err = OU::esprintf("external producer role incompatible " "with port %s of worker %s",
-			   other.name(), other.m_worker->m_implName);
-	return;
-      }
-      m_isProducer = true;
-      m_isBidirectional = false;
-    } else if (role->m_bidirectional) {
-      if (!other.m_isBidirectional) {
-	  err = OU::esprintf("external bidirectional role incompatible "
-			     "with port %s of worker %s",
-			     other.name(), other.m_worker->m_implName);
-      }
-    } else if (role->m_provider) {
-      if (other.m_isProducer) {
-	  err = OU::esprintf("external consumer role incompatible "
-			     "with port %s of worker %s",
-			     other.name(), other.m_worker->m_implName);
-      }
-      m_isBidirectional = false;
-    }
-  }
-}
-
-Port &DataPort::
-clone(Worker &, std::string &, size_t, OCPI::Util::Assembly::Role *, const char *&) const {
-  assert("Can't clone generic data port" == 0);
-}
-
 // This is basically a callback from the low level OU::Port parser
 // It needs the protocol to be parsed at this point.  From tools we allow file includes etc.
 // Thus it is entirely replacing the protocol parsing in OU::port
@@ -146,15 +123,16 @@ parseProtocol() {
   ezxml_t pSum;
   std::string protFile;
   const char *err;
-  if ((err = tryOneChildInclude(m_xml, m_worker->m_file, "ProtocolSummary", &pSum, protFile,
-				true)))
+  if ((err = tryOneChildInclude(::Port::m_xml, worker().m_file, "ProtocolSummary", &pSum,
+				protFile, true)))
     return err;
-  const char *protocolAttr = ezxml_cattr(m_xml, "protocol");
+  const char *protocolAttr = ezxml_cattr(::Port::m_xml, "protocol");
+  ezxml_t protocolElem = ezxml_cchild(::Port::m_xml, "Protocol");
   if (pSum) {
-    if (protocolAttr || ezxml_cchild(m_xml, "Protocol"))
+    if (protocolAttr || protocolElem)
       return "cannot have both Protocol and ProtocolSummary";
     if ((err = OE::checkAttrs(pSum, "DataValueWidth", "DataValueGranularity",
-			      "DiverDataSizes", "MaxMessageValues", "NumberOfOpcodes",
+			      "DiverseDataSizes", "MaxMessageValues", "NumberOfOpcodes",
 			      "VariableMessageLength", "ZeroLengthMessages",
 			      "MinMessageValues",  (void*)0)) ||
 	(err = OE::getNumber(pSum, "NumberOfOpcodes", &m_nOpcodes, NULL, 0, false)) ||
@@ -163,18 +141,21 @@ parseProtocol() {
     m_seenSummary = true;
   } else {
     ezxml_t protx = NULL;
-    if ((err = tryOneChildInclude(m_xml, m_worker->m_file, "Protocol", &protx, protFile, true)))
+    if ((err = tryOneChildInclude(::Port::m_xml, worker().m_file, "Protocol", &protx, protFile,
+				  true)))
       return err;
     if (protocolAttr) {
       if (protx)
 	return "can't have both 'protocol' element (maybe xi:included) and 'protocol' attribute";
-      if ((err = parseFile(protocolAttr, m_worker->m_file.c_str(), "protocol", &protx, protFile,
+      if ((err = parseFile(protocolAttr, worker().m_file.c_str(), "protocol", &protx, protFile,
 			   false)))
 	return err;
     }
     // The protx comes from an include, a child element, or the protocol attr file
     if (protx) {
-      if (protFile.length() && protFile != m_worker->m_file) {
+      std::string name;
+      const char *file = worker().m_file.c_str();
+      if (protFile.length() && protFile != worker().m_file) {
 	// If we are being parsed from a protocol file, default the name.
 	const char *file = protFile.c_str();
 	const char *start = strrchr(file, '/');
@@ -188,11 +169,12 @@ parseProtocol() {
 	last = checkSuffix(start, "_protocol", last);
 	last = checkSuffix(start, "_prot", last);
 	last = checkSuffix(start, "-prot", last);
-	std::string name(start, last - start);
-	err = OU::Protocol::parse(protx, name.c_str(), protFile.c_str(), doProtocolChild, this);
-      } else
-	err = OU::Protocol::parse(protx, NULL, m_worker->m_file.c_str(), doProtocolChild, this);
-      if (err)
+	name.assign(start, last - start);
+	file = protFile.c_str();
+      } else if (protocolElem)
+	// If we are being parsed from an immediate element, default the name from port name.
+	name = cname();
+      if ((err = OU::Protocol::parse(protx, name.c_str(), file, doProtocolChild, this)))
 	return err;
       m_nOpcodes = nOperations();
     } else if (m_nOperations == 0 && !m_seenSummary) { // if we have never parsed a protocol yet
@@ -209,28 +191,31 @@ parseProtocol() {
       m_nOpcodes = 256;
     }
     // Allow port level overrides for protocol
-    if ((err = parseSummary(m_xml)))
+    if ((err = parseSummary(::Port::m_xml)))
       return err;
   }
   return NULL;
 }
 
-// Second pass parsing of spec data ports when they might refer to each other.
-// FIXME: consider whether this should be done for impls also...
-const char *DataPort::
-parse() {
-  return OU::Port::parse();
-}
-
 // After the specific port types have parsed everything
+// and also *AGAIN* after all expressions are resolved when instanced in an assembly
 const char *DataPort::
 finalize() {
+  if (!m_dataValueWidth && !nOperations())
+    m_dataValueWidth = m_dataWidth;
+  if (m_dataWidth >= m_dataValueWidth) {
+    if (m_dataWidth % m_dataValueWidth)
+      return OU::esprintf("DataWidth (%zu) on port '%s' not a multiple of DataValueWidth (%zu)",
+			  m_dataWidth, cname(), m_dataValueWidth);
+  } else if (m_dataValueWidth % m_dataWidth)
+    return OU::esprintf("DataValueWidth (%zu) on port '%s' not a multiple of DataWidth (%zu)",
+			m_dataValueWidth, cname(), m_dataWidth);
   // If messages are always a multiple of datawidth and we don't have zlms, bytes are datawidth
   size_t granuleWidth =
     m_dataValueWidth * m_dataValueGranularity;
   // If messages are always a multiple of datawidth and we don't have zlms, bytes are datawidth
-  if (granuleWidth >= m_dataWidth &&
-      (m_dataWidth == 0 || (granuleWidth % m_dataWidth) == 0) && !m_zeroLengthMessages)
+  if (granuleWidth >= m_dataWidth && (m_dataWidth == 0 || (granuleWidth % m_dataWidth) == 0) &&
+      !m_zeroLengthMessages)
     m_byteWidth = m_dataWidth;
   else
     m_byteWidth = m_dataValueWidth;
@@ -239,7 +224,7 @@ finalize() {
   // Check if this port requires endianness
   // Either the granule is smaller than or not a multiple of data path width
   if (granuleWidth < m_dataWidth || m_dataWidth && granuleWidth % m_dataWidth)
-    m_worker->m_needsEndian = true;
+    worker().m_needsEndian = true;
   return NULL;
 }
 
@@ -249,7 +234,7 @@ emitPortDescription(FILE *f, Language lang) const {
   const char *comment = hdlComment(lang);
   fprintf(f, " %s  This interface is a data interface acting as %s\n",
 	  comment, m_isProducer ? "producer" : "consumer");
-  fprintf(f, "  %s   Protocol: \"%s\"\n", comment, OU::Protocol::name().c_str());
+  fprintf(f, "  %s   Protocol: \"%s\"\n", comment, cname());
   fprintf(f, "  %s   DataValueWidth: %zu\n", comment, m_dataValueWidth);
   fprintf(f, "  %s   DataValueGranularity: %zu\n", comment, m_dataValueGranularity);
   fprintf(f, "  %s   DiverseDataSizes: %s\n", comment, BOOL(m_diverseDataSizes));
@@ -266,20 +251,62 @@ emitPortDescription(FILE *f, Language lang) const {
 }
 
 void DataPort::
+emitRecordInterfaceConstants(FILE */*f*/) {
+  // Before emitting the record, define the constants for the data path width.
+#if 0
+  fprintf(f,
+	  "\n"
+	  "  -- Constant declarations related to data width for port \"%s\"\n"
+	  "  constant ocpi_port_%s_data_width : natural;\n"
+	  "  constant ocpi_port_%s_MData_width : natural;\n"
+	  "  constant ocpi_port_%s_MByteEn_width : natural;\n"
+	  "  constant ocpi_port_%s_MDataInfo_width : natural;\n",
+	  cname(), cname(), cname(), cname(), cname());
+#endif
+}
+
+#if 1
+void DataPort::
+emitRecordInterface(FILE *f, const char *implName) {
+
+  std::string width = m_dataWidthExpr;
+  if (m_dataWidthExpr.empty())
+    OU::format(width, "%zu", m_dataWidth);
+  else
+    OU::format(width, "to_integer(%s)", m_dataWidthExpr.c_str());
+  fprintf(f, "  constant ocpi_port_%s_data_width : natural := %s;\n", cname(), width.c_str());
+  vectorWidth(&ocpSignals[OCP_MData], width, VHDL, false, true);
+  fprintf(f, "  constant ocpi_port_%s_MData_width : natural := %s;\n", cname(), width.c_str());
+  vectorWidth(&ocpSignals[OCP_MByteEn], width, VHDL, false, true);
+  fprintf(f, "  constant ocpi_port_%s_MByteEn_width : natural := %s;\n", cname(), width.c_str());
+  vectorWidth(&ocpSignals[OCP_MDataInfo], width, VHDL, false, true);
+  std::string extra;
+  size_t n = extraDataInfo();
+  if (n)
+    OU::format(extra, "(%s)+%zu", width.c_str(), n);
+  else
+    extra = width;
+  fprintf(f, "  constant ocpi_port_%s_MDataInfo_width : natural := %s;\n",
+	  cname(), extra.c_str());
+  OcpPort::emitRecordInterface(f, implName);
+}
+#endif
+
+void DataPort::
 emitRecordDataTypes(FILE *f) {
   if (m_nOpcodes > 1) {
     if (operations()) {
       // See if this protocol has already been defined
       unsigned nn;
-      for (nn = 0; nn < m_ordinal; nn++)
-	if (m_worker->m_ports[nn]->isData()) {
-	  DataPort *dp = static_cast<DataPort*>(m_worker->m_ports[nn]);
+      for (nn = 0; nn < ::Port::m_ordinal; nn++)
+	if (worker().m_ports[nn]->isData()) {
+	  DataPort *dp = static_cast<DataPort*>(worker().m_ports[nn]);
 
 	  if (dp->operations() &&
 	      !strcasecmp(dp->OU::Protocol::m_name.c_str(), OU::Protocol::m_name.c_str()))
 	    break;
 	}
-      if (nn >= m_ordinal) {
+      if (nn >= ::Port::m_ordinal) {
 	fprintf(f,
 		"  -- This enumeration is for the opcodes for protocol %s (%s)\n"
 		"  type %s_OpCode_t is (\n",
@@ -296,10 +323,9 @@ emitRecordDataTypes(FILE *f) {
 	}
 	fprintf(f, ");\n");
       }
-    } else {
+    } else
       fprintf(f, "  subtype %s_OpCode_t is std_logic_vector(%zu downto 0); -- for %zu opcodes\n",
-	      name(), ceilLog2(m_nOpcodes) - 1, m_nOpcodes);
-    }
+	      cname(), ceilLog2(m_nOpcodes) - 1, m_nOpcodes);
   }
 }
 void DataPort::
@@ -320,63 +346,63 @@ emitVHDLShellPortMap(FILE *f, std::string &last) {
   fprintf(f,
 	  "%s    %s_in.reset => %s_reset,\n"
 	  "    %s_in.ready => %s_ready,\n",
-	  last.c_str(), name(), name(), name(), name());
+	  last.c_str(), cname(), cname(), cname(), cname());
   if (masterIn()) {
     if (m_dataWidth)
       fprintf(f,
 	      "    %s_in.data => %s_data,\n",
-	      name(), name());
+	      cname(), cname());
     if (ocp.MByteEn.value)
-      fprintf(f, "    %s_in.byte_enable => %s_byte_enable,\n", name(), name());
+      fprintf(f, "    %s_in.byte_enable => %s_byte_enable,\n", cname(), cname());
     if (m_nOpcodes > 1)
-      fprintf(f, "    %s_in.opcode => %s_opcode,\n", name(), name());
+      fprintf(f, "    %s_in.opcode => %s_opcode,\n", cname(), cname());
     fprintf(f,
 	    "    %s_in.som => %s_som,\n"
 	    "    %s_in.eom => %s_eom,\n",
-	    name(), name(), name(), name());
+	    cname(), cname(), cname(), cname());
     if (m_dataWidth)
       fprintf(f,
 	      "    %s_in.valid => %s_valid,\n",
-	      name(), name());
+	      cname(), cname());
     if (m_isPartitioned)
       fprintf(f,
 	      "    %s_in.part_size   => %s_part_size,\n"
 	      "    %s_in.part_offset => %s_part_offset,\n"
 	      "    %s_in.part_start  => %s_part_start,\n"
 	      "    %s_in.part_ready  => %s_part_ready,\n",
-	      name(), name(), name(), name(), name(),
-	      name(), name(), name());
+	      cname(), cname(), cname(), cname(), cname(),
+	      cname(), cname(), cname());
     fprintf(f,
 	    "    %s_out.take => %s_take",
-	    name(), name());
+	    cname(), cname());
     if (m_isPartitioned)
       fprintf(f,
 	      ",\n"
 	      "    %s_out.part_take  => %s_part_take",
-	      name(), name());
+	      cname(), cname());
     last = ",\n";
   } else {
     if (m_isPartitioned)
       fprintf(f,
-	      "    %s_in.part_ready   => %s_part_ready,\n", name(), name());
+	      "    %s_in.part_ready   => %s_part_ready,\n", cname(), cname());
     fprintf(f,
 	    "    %s_out.give => %s_give,\n",
-	    name(), name());
+	    cname(), cname());
     if (m_dataWidth)
       fprintf(f,
-	      "    %s_out.data => %s_data,\n", name(), name());
+	      "    %s_out.data => %s_data,\n", cname(), cname());
     if (ocp.MByteEn.value)
-      fprintf(f, "    %s_out.byte_enable => %s_byte_enable,\n", name(), name());
+      fprintf(f, "    %s_out.byte_enable => %s_byte_enable,\n", cname(), cname());
     if (ocp.MReqInfo.value)
-      fprintf(f, "    %s_out.opcode => %s_opcode,\n", name(), name());
+      fprintf(f, "    %s_out.opcode => %s_opcode,\n", cname(), cname());
     fprintf(f,
 	    "    %s_out.som => %s_som,\n"
 	    "    %s_out.eom => %s_eom,\n",
-	    name(), name(), name(), name());
+	    cname(), cname(), cname(), cname());
     if (m_dataWidth)
       fprintf(f,
 	      "    %s_out.valid => %s_valid",
-	      name(), name());
+	      cname(), cname());
     if (m_isPartitioned)
       fprintf(f,
 	      ",\n"
@@ -384,8 +410,8 @@ emitVHDLShellPortMap(FILE *f, std::string &last) {
 	      "    %s_out.part_offset => %s_part_offset,\n"
 	      "    %s_out.part_start  => %s_part_start,\n"
 	      "    %s_out.part_give   => %s_part_give",
-	      name(), name(), name(),
-	      name(), name(), name(), name(), name());
+	      cname(), cname(), cname(),
+	      cname(), cname(), cname(), cname(), cname());
     last = ",\n";
   }
 }
@@ -397,18 +423,17 @@ emitImplSignals(FILE *f) {
 	  "  signal %s_%s  : Bool_t;\n"
 	  "  signal %s_ready : Bool_t;\n"
 	  "  signal %s_reset : Bool_t; -- this port is being reset from the outside\n",
-	  name(), masterIn() ? "take" : "give", name(), name());
+	  cname(), masterIn() ? "take" : "give", cname(), cname());
   if (m_dataWidth)
     fprintf(f,
-	    "  signal %s_data  : std_logic_vector(%zu downto 0);\n",
-	    name(),
-	    m_dataWidth-1);
+	    "  signal %s_data  : std_logic_vector(ocpi_port_%s_data_width-1 downto 0);\n",
+	    cname(), cname());
   if (ocp.MByteEn.value)
-    fprintf(f, "  signal %s_byte_enable: std_logic_vector(%zu downto 0);\n",
-	    name(), m_dataWidth / m_byteWidth - 1);		    
+    fprintf(f, "  signal %s_byte_enable: std_logic_vector(ocpi_port_%s_MByteEn_width-1 downto 0);\n",
+	    cname(), cname());
   if (m_preciseBurst)
     fprintf(f, "  signal %s_burst_length: std_logic_vector(%zu downto 0);\n",
-	    name(), ocp.MBurstLength.width - 1);
+	    cname(), ocp.MBurstLength.width - 1);
   if (m_nOpcodes > 1) {
     fprintf(f,
 	    "  -- The strongly typed enumeration signal for the port\n"
@@ -416,16 +441,16 @@ emitImplSignals(FILE *f) {
 	    "  -- The weakly typed temporary signals\n"
 	    "  signal %s_opcode_temp : std_logic_vector(%zu downto 0);\n"
 	    "  signal %s_opcode_pos  : integer;\n",
-	    name(), operations() ?
-	    OU::Protocol::m_name.c_str() : name(), name(), ocp.MReqInfo.width - 1, name());
+	    cname(), operations() ?
+	    OU::Protocol::m_name.c_str() : cname(), cname(), ocp.MReqInfo.width - 1, cname());
   }
   fprintf(f,
 	  "  signal %s_som   : Bool_t;    -- valid eom\n"
 	  "  signal %s_eom   : Bool_t;    -- valid som\n",
-	  name(), name());
+	  cname(), cname());
   if (m_dataWidth)
     fprintf(f,
-	    "  signal %s_valid : Bool_t;   -- valid data\n", name());
+	    "  signal %s_valid : Bool_t;   -- valid data\n", cname());
   if (m_isPartitioned)
     fprintf(f,
 	    "  signal %s_part_size        : UShort_t;\n"
@@ -433,7 +458,7 @@ emitImplSignals(FILE *f) {
 	    "  signal %s_part_start       : Bool_t;\n"
 	    "  signal %s_part_ready       : Bool_t;\n"
 	    "  signal %s_part_%s        : Bool_t;\n",
-	    name(), name(), name(), name(), name(), masterIn() ? "take" : "give");
+	    cname(), cname(), cname(), cname(), cname(), masterIn() ? "take" : "give");
 }
 
 void DataPort::
@@ -444,8 +469,8 @@ emitXML(std::string &out) {
 // static method
 const char *DataPort::
 adjustConnection(const char *masterName,
-		 Port &prodPort, OcpAdapt *prodAdapt,
-		 Port &consPort, OcpAdapt *consAdapt,
+		 ::Port &prodPort, OcpAdapt *prodAdapt,
+		 ::Port &consPort, OcpAdapt *consAdapt,
 		 Language lang) {
   assert(prodPort.isData() && consPort.isData());
   DataPort &prod = *static_cast<DataPort*>(&prodPort);
@@ -460,10 +485,10 @@ adjustConnection(const char *masterName,
       return "dataValueGranularity incompatibility for connection";
     if (prod.m_maxMessageValues > cons.m_maxMessageValues)
       return "maxMessageValues incompatibility for connection";
-    if (prod.OU::Protocol::name().size() && cons.OU::Protocol::name().size() &&
-	prod.OU::Protocol::name() != cons.OU::Protocol::name())
+    if (prod.name().size() && cons.name().size() &&
+	prod.name() != cons.name())
       return OU::esprintf("protocol incompatibility: producer: %s vs. consumer: %s",
-			  prod.OU::Protocol::name().c_str(), cons.OU::Protocol::name().c_str());
+			  prod.name().c_str(), cons.name().c_str());
     if (prod.nOperations() && cons.nOperations() && 
 	prod.nOperations() != cons.nOperations())
       return "numberOfOpcodes incompatibility for connection";
@@ -491,20 +516,19 @@ finalizeHdlDataPort() {
     // Do it via XML so we aren't duplicating other code
     char *wsi;
     asprintf(&wsi, "<streaminterface name='%s' dataWidth='%zu' impreciseburst='true'/>",
-	     name(), 
-	     m_worker->m_defaultDataWidth >= 0 ?
-	     m_worker->m_defaultDataWidth : m_dataValueWidth);
+	     cname(), 
+	     worker().m_defaultDataWidth >= 0 ?
+	     worker().m_defaultDataWidth : m_dataValueWidth);
     ezxml_t wsix = ezxml_parse_str(wsi, strlen(wsi));
-    Port *p = createPort<WsiPort>(*m_worker, wsix, this, -1, err);
+    DataPort *p = createDataPort<WsiPort>(worker(), wsix, this, -1, err);
     if (!err)
       err = p->checkClock();
   }
   return err;
 }
-    
 
 const char *DataPort::
-adjustConnection(Port &, const char *, Language, OcpAdapt *, OcpAdapt *) {
+adjustConnection(::Port &, const char *, Language, OcpAdapt *, OcpAdapt *) {
   assert("Cannot adjust a generic data connection" == 0);
 }
 
@@ -513,8 +537,8 @@ emitOpcodes(FILE *f, const char *pName, Language lang) {
   if (nOperations()) {
     OU::Operation *op = operations();
     fprintf(f,
-	    "  %s Opcode/operation value declarations for protocol \"%s\" on interface \"%s\"\n",
-	    hdlComment(lang), OU::Protocol::m_name.c_str(), name());
+	    "  %s Opcode/operation value declarations for protocol \"%s\" on port \"%s\"\n",
+	    hdlComment(lang), OU::Protocol::m_name.c_str(), cname());
     for (unsigned n = 0; n < nOperations(); n++, op++)
       if (lang != VHDL)
 	fprintf(f, "  localparam [%sOpCodeWidth - 1 : 0] %s%s_Op = %u;\n",
@@ -528,13 +552,18 @@ fixDataConnectionRole(OU::Assembly::Role &role) {
     if (!m_isBidirectional &&
 	(role.m_bidirectional || m_isProducer == role.m_provider))
       return OU::esprintf("Role of port %s of worker %s in connection incompatible with port",
-			name(), m_worker->m_implName);
+			  cname(), worker().m_implName);
   } else {
     role.m_provider = !m_isProducer;
     role.m_bidirectional = m_isBidirectional;
     role.m_knownRole = true;
   }
   return NULL;
+}
+
+unsigned DataPort::
+extraDataInfo() const {
+  return 0;
 }
 
 void DataPort::
@@ -546,5 +575,41 @@ initRole(OCPI::Util::Assembly::Role &role) {
     role.m_provider = !m_isProducer;
 }
 
-#if 0
-#endif
+const char *DataPort::
+resolveExpressions(OCPI::Util::IdentResolver &ir) {
+  const char *err;
+  return (err = OcpPort::resolveExpressions(ir)) ? err : finalize();
+}
+
+void DataPort::
+emitVerilogPortParameters(FILE *f) {
+  std::string width = m_dataWidthExpr;
+  if (m_dataWidthExpr.empty()) {
+    if (m_dataWidth == 0)
+      return;
+    OU::format(width, "%zu", m_dataWidth);
+  } else
+    OU::format(width, "%s", m_dataWidthExpr.c_str());
+  // FIXME: Can we use some sort of global procedure or macro?
+  fprintf(f,
+	  "  localparam ocpi_port_%s_data_width = %s;\n"
+	  "  localparam ocpi_port_%s_MData_width = \n"
+	  "    ocpi_port_%s_data_width == 0 ? 0 :\n"
+	  "    ocpi_port_%s_data_width != %zu && %zu != 8 ?\n"
+	  "    (8 * ocpi_port_%s_data_width) / %zu :\n"
+	  "    ocpi_port_%s_data_width;\n",
+	  cname(), width.c_str(), cname(), cname(), cname(), m_byteWidth, m_byteWidth, cname(),
+	  m_byteWidth, cname());
+  if (ocp.MByteEn.value)
+    fprintf(f,
+	    "  localparam ocpi_port_%s_MByteEn_width = ocpi_port_%s_data_width / %zu;\n",
+	    cname(), cname(), m_byteWidth);
+  if (ocp.MDataInfo.value)
+    fprintf(f,
+	    "  localparam ocpi_port_%s_MDataInfo_width = \n"
+	    "    ocpi_port_%s_data_width != %zu && %zu != 8 ?\n"
+	    "    ocpi_port_%s_data_width - ((8 * ocpi_port_%s_data_width) / %zu) :\n"
+	    "    ocpi_port_%s_data_width;\n",
+	    cname(), cname(), m_byteWidth, m_byteWidth, cname(), cname(), m_byteWidth, cname());
+}
+

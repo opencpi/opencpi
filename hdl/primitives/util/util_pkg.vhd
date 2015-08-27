@@ -12,17 +12,34 @@ component ROM
 end component ROM;
 
 --- CWD support during simulation
-
 constant cwd_length : natural := 100;
+
 component cwd is
    generic(length     : natural := cwd_length);
    port   (cwd        : out ocpi.types.string_t(0 to length));
 end component cwd;
+
 -- The basic verilog function for getting at the "plusarg".
 component cwd_internal is
    generic(length : natural := cwd_length);
    port   (cwd    : out std_logic_vector(0 to length*8-1));
 end component cwd_internal;
+
+component TSINOUT_1 is
+  port    (I  : in    std_logic;  -- OUTPUT to PIN when OE = 1
+           OE : in    std_logic;                           -- output enable, 1 = enabled
+           O  : out   std_logic;  -- INPUT from pin, all the time
+           IO : inout std_logic); -- pin/pad
+end component TSINOUT_1;
+
+component TSINOUT_N is
+  generic (width : natural);
+  port    (I  : in    std_logic_vector(width-1 downto 0);  -- OUTPUT to PIN when OE = 1
+           OE : in    std_logic;                           -- output enable, 1 = enabled
+           O  : out   std_logic_vector(width-1 downto 0);  -- INPUT from pin, all the time
+           IO : inout std_logic_vector(width-1 downto 0)); -- pin/pad
+end component TSINOUT_N;
+
 -- A convenience function to join a CWD to a filename
 function cwd_join(cwd : string_t; name : string_t) return string;
 

@@ -44,7 +44,33 @@ HdlToolSet_stratix4:=quartus
 HdlToolSet_stratix5:=quartus
 
 # Platforms
-HdlAllPlatforms:=ml555 schist ml605 ocpiIsim alst4 alst4x wilda5 isim_pf xsim_pf n210 modelsim_pf iva1lpe zed wilda5 zzed sp6
+ifdef comment
+# Leave this out until we verify the basic function.
+ifndef OCPI_HDL_PLATFORM_PATH
+  # Default platform path is first a local platforms dir, then the OpenCPI one
+  OCPI_HDL_PLATFORM_PATH:=$(OCPI_BASE_DIR)/hdl/platforms
+  ifneq ($(wildcard ../../platforms),)
+    OCPI_HDL_PLATFORM_PATH:=$(call OcpiAbsPath,../../platforms):$(OCPI_HDL_PLATFORM_PATH)
+  endif
+endif  
+endif
+ifdef OCPI_HDL_PLATFORM_PATH
+define doPlatformDir
+  HdlPlatformsInDir:=$$(< $$1/lib/platforms)
+  ifndef HdlPlatformsInDir
+    $$(error The file $1/lib/platforms has no platform names in it.)
+  endif
+  $(foreach p,$(HdlPlatformsInDir),\
+    $(eval include $$1/$p/platform.mk)\
+    $(eval HdlPlatformDir_$p:=$$1/$p))
+endef
+# The platform path is only for built platforms
+$(foreach d,$(subst :, ,$(OCPI_HDL_PLATFORM_PATH)),\
+  $(or $(wildcard $d),\
+    $(error Platform directory %d not found.)) \
+  $(eval $(call doPlatformDir,$d)))
+else
+HdlAllPlatforms:=ml555 schist ml605 ocpiIsim alst4 alst4x wilda5 isim_pf xsim_pf n210 modelsim_pf iva1lpe zed wilda5 zzed sp6 zed_zipper
 # Parts as chip-speed-package
 HdlPart_ml555:=xc5vlx50t-1-ff1136
 HdlPart_schist:=xc5vsx95t-2-ff1136
@@ -58,5 +84,8 @@ HdlPart_xsim_pf:=xsim
 HdlPart_modelsim_pf:=modelsim
 HdlPart_wilda5:=ep5sgsmd8k2-c3-f40
 HdlPart_zed:=xc7z020-1-clg484
+HdlPart_zed_zipper:=xc7z020-1-clg484
 HdlPart_zzed:=xc7z020-1-clg484
+endif
+
 endif

@@ -1,0 +1,259 @@
+Targets:
+
+<os>-<version>-<machine>
+
+OS is ocl-1_2-x86_64
+
+Need some sort of mapping from the device name for compatibility.
+
+Information used by the worker
+
+A. Kernel-Readonly+const metadata in the worker (e.g. crewSize, crewRank)
+   Needs to be there all the time, but could be cached if DRAM accessed anyway
+   But also can "go for the ride" in kernel args
+
+B. Kernel-Readonly+host_volatile stuff for the run (timedout)
+   Needs to be communicated dynamically, best in kernel args, no back channel/writing
+
+C. Writable/changeable metadata: runCondition, newRunCondition, return value, port stuff?
+   Needs to be seen as result of running - Always written back.
+   The result.
+   The new runConditions.
+   Some port info (advanced, length, etc.)
+
+D. Volatile properties that the host needs to see:
+   -- Possibly only on demand - note that since control latency is per-call anyway
+      The "memory mapped" optimization is moot.
+      So a "read" of a volatile property has to read the last value received,
+      or specifically request a synchronization point.
+      Metadata can say:
+      -- always keep it fresh by copying back (makes sense is small and reading back anyway).
+      -- 
+
+
+D. Pointers to persistent stuff that is not readable or volatile
+   Initialized by host once (initial), but not readable
+   Can be in kernel args too.
+
+
+Biggest issue is to suppress whole copies.
+
+So there are four blocks:
+1. Kernel arg struct.
+   Sent each time.
+   Initial properties
+   Writableable/not readable properties?
+
+2. Const struct - both metadata and properties
+   Stuff the host might change, but readonly to kernel
+   
+
+3. Writable global, sent back to mother
+   Stuff that the host will read back frequently
+
+4. Writable global, private to worker
+   Stuff that just needs to persist between runs.
+
+
+Dynamics:
+
+Kernel args: sent each execution.
+
+
+Writable global: sent/unmapped to GPU each time, or somehow on demand.
+  So a state of "changed since return"
+  mapped as necessary between runs
+
+Initial global: send once but not again
+  Sent after initial properties, but not again.
+
+Volatile global: read back EACH TIME.
+
+
+
+Initial take:
+
+Assuming kernel args out, and one readback.
+
+Can we put properties in multiple places?
+-- Could be explicit in language mapping.
+-- Could use macros
+
+-- If all properties are in kernel args, and we copies it back?
+
+How about we have two impls:
+
+1. If props are small, put them in kernel args, and also, if volatile, at the start of the return struct.
+
+Then in the wrapper:
+
+1. Always copy from wrapper to return.
+2. Always copy from return to kernel args
+
+Then non-volatile properties:
+
+Put volatile in readback.
+
+When writable volatile is written
+     -- must be delayed until mapped (blocking?)
+     -- must be posted in ring
+
+When volatile is read back?
+     -- last copied value? - this is FAST for the control reading process.
+     -- block until mapped?
+     -- ordering between writing volatile and reading it back?
+
+This all suggests a COPYBACK of this - which is probably faster than mapping.
+
+If volatile reading is FAST, writing must be blocking since "resetting the peak" must work.
+But that can be SLOW since it is infrequent.
+
+Data plane:
+
+Create shim mode for all connections, and provide the allocation.
+But need async access to it, which implies that there must be a clBuffer per buffer..
+But current shim interleaves headers and buffers.
+But subbuffers may do the right thing.
+Alignment issues would require those headers to be larger...
+(128 bytes, 32 words).  Currently its 10 words.
+But that's ok.
+
+So first we need:
+
+1. Extract buffer availibility from shim and fill in the slots in the m_oclWorker.
+
+Ultimately we want multiple buffers, so that you would allow kernels to cycle through multiple buffers.
+So we send the mask.
+Should we maintain a mask?
+THe right way to do things is to do more work.
+But we could maintain counts too.
+
+Need map/unmap so CPU mode is great.
+
+But needs to be granular to allow CPU/GPU concurency.
+
+So we can enqueue unmaps for each buffer that is available,
+before the kernel run that need them.
+
+We need to rip through buffers without really holding on to them.
+To set them in-use.
+
+
+
+How do we keep open the dtbuffers?
+By improving the dt buffer interface...
+step 1: next2write
+step 2: next2put
+step 3: next2read
+step 4: next2release
+
+The ring is partitioned among:
+empty
+being filled
+full
+being emptied
+
+SHIM:
+
+When we forward2shim we need to ask both sides for an allocator.
+If both sides have one, that's bad, and we need a copy.
+For now we can assume only one side will have one.
+The allocator must have methods:
+1. alignment (default OU::DEFAULT)
+2. alloc (default new[])
+3. dealloc (default delete[])
+
+Then OpenCL can use the clCreateBuffer for the whole magilla, and the
+createSubBuffer per buffer.
+
+For to-OpenCL, we unmap the buffers to ship them.
+The sub-buffers are only the data, not the metadata.
+The kernel args must carry the state of the buffers.
+But how can we pipeline kernel executions?
+Need to think about this..
+buffer states are async, kernel executions should be pipelined,
+but kernel executions can process multiple buffers.
+the unmap/maps can be queued, but there is a dependency between
+what happens in a kernel (as far a buffers go), etc.
+So perhaps we DO need to queue up a "buffer metadata refresh,
+since the kernel args are copied when it is queued?  or not?
+If the kernel args are gathered???
+If not we can queue an update separate from execution?
+To properly pipeline the execution, we need to pipeline the buffer status updates.
+So: a kernel is spinning until there are no buffers.
+Basically we can queue a kernel when buffers indicate it, so maybe kernel args can work anyway.
+If the situation has changed (more messages), then queue a kernel async...
+That's ok because we can have delayed advance indications...
+
+But the kernel should tell us whether it will unconditionally process buffers,
+when we can assume outputs for inputs etc.
+
+The metadata is:
+
+(starting point is we know how many ready buffers are on all ports when we run
+kernels, and we tell that in kernel args).
+
+So we are predicting what will be advanced.
+
+Simple case, for each port, what is the condition of advancement:
+On input, output ready.
+On output, input ready.
+Relate to run condition.
+
+Given how many buffers are ready, what is the calculation for how many 
+advances will be done?
+One will be referral:
+Input will be referred to output.
+Output will have expression:  min (in1, in2, me).
+Or just a list of ports with this functionality.
+What are alternative common patterns that are not data dependent?
+How about for now its all just a boolean:
+Are all inputs and outputs used uniformly so that all outputs rely on all
+inputs are are 1-to-1?
+
+Work groups.
+
+You can set them in source code.
+You can retrieve (the source code ones) from a compiled kernel.
+You can set them when you execute a kernel.
+If they are set in source code, they must me specified and match..
+
+
+Port buffers.
+
+Each port has a buffer set in a clBuffer.
+Each buffer is in a clSubBuffer.
+The worker needs to know these pointers, but theoretically, they can't be
+in persistent storage, and they can't be inside a kernel argument.
+So we must pass them each time.
+We could conceivable put them into the global persistent memory,
+but we are trading off the two startup overheads:
+-- Adding 2 or 3 more kernel args in the launch. - we prefer this...
+-- Adding a global memory access (constant?) to each start.
+
+Stuff a worker might do variably, which would require a copy-back:
+- metadata length (but that could be in the buffer set)
+- opcode (ditto)
+- conditional advance.
+- not return RCC_ADVANCE (error, *DONE*, fatal).
+- default length
+- default opcode
+- volatile properties
+
+
+Buffer allocations:
+
+buffer allocator using clCreateBuffer can say what is access pattern.
+We should optimized this for readonly and writeonly.
+That's ok.
+Part of the buffer headers should be standard and visible
+to the GPU.
+Just like bffer stride, we can have buffer offset.
+If the data ptr is an offset, then we're ok.
+
+1. Change buffer scheme to use the new headers.
+2. Make allocations use:
+    CL_MEM_ALLOC_HOST_PTR, CL_MEM_READ_ONLY, CM_MEM_WRITE_ONLY
+    use const pointers for inputs.
+3. Make mappings use read, write-invalidate
+4. Don't need subbuffers for anything...

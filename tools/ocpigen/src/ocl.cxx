@@ -45,6 +45,7 @@
 #include "OcpiUtilMisc.h"
 #include "wip.h"
 #include "assembly.h"
+#include "rcc.h"
 
 namespace OU = OCPI::Util;
 // Generate the readonly implementation file.
@@ -53,6 +54,11 @@ namespace OU = OCPI::Util;
 #define OCLIMPL "-worker"
 #define SOURCE ".cl"
 #define OCLENTRYPOINT "_entry_point"
+
+class OclPort : public RccPort {
+public:
+  OclPort(Worker &w, ezxml_t x, DataPort *sp, int ordinal, const char *&err);
+};
 
 static const char *
 upperdup(const char *s) {
@@ -179,7 +185,7 @@ emitImplOCL() {
     last = "";
     for (unsigned n = 0; n < m_ports.size(); n++) {
       Port *port = m_ports[n];
-      fprintf(f, "%s  %s_%s", last, upper, upperdup(port->name()));
+      fprintf(f, "%s  %s_%s", last, upper, upperdup(port->cname()));
       // FIXME TWO WAY
       last = ",\n";
     }
@@ -216,8 +222,11 @@ emitImplOCL() {
     size_t offset = 0;
     bool isLastDummy = false;
     for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
-      if (!(*pi)->m_isParameter)
-	printRccMember(f, **pi, 2, offset, pad, m_implName, true, isLastDummy, false);
+      if (!(*pi)->m_isParameter) {
+	std::string type;
+	rccMember(type, **pi, 2, offset, pad, m_implName, true, isLastDummy, false, false);
+	fputs(type.c_str(), f);
+      }
     fprintf(f, "} %c%sProperties;\n\n", toupper(m_implName[0]), m_implName + 1);
   }
   fprintf(f,
@@ -228,7 +237,7 @@ emitImplOCL() {
 	  "  OCL_SELF\n",
 	  m_implName);
   for (unsigned n = 0; n < m_ports.size(); n++)
-    fprintf(f, "  OCLPort %s;\n", m_ports[n]->name() );
+    fprintf(f, "  OCLPort %s;\n", m_ports[n]->cname() );
   fprintf(f,
           "} %c%sWorker;\n",
           toupper(m_implName[0]), m_implName + 1);
@@ -461,14 +470,14 @@ parseOcl() {
     return OU::esprintf("For an OCL worker, language \"%s\" is invalid", lang);
   ezxml_t xctl;
   if ((err = parseSpec()) ||
-      (err = parseImplControl(xctl)) ||
+      (err = parseImplControl(xctl, NULL)) ||
       (xctl && (err = OE::checkAttrs(xctl, GENERIC_IMPL_CONTROL_ATTRS, (void *)0))) ||
       (err = parseImplLocalMemory()))
     return err;
   // Parse data port implementation metadata: maxlength, minbuffers.
-  Port *sp;
+  DataPort *sp;
   for (ezxml_t x = ezxml_cchild(m_xml, "Port"); x; x = ezxml_next(x))
-    if ((err = checkDataPort(x, sp)) || !createPort<OclPort>(*this, x, sp, -1, err))
+    if ((err = checkDataPort(x, sp)) || !createDataPort<OclPort>(*this, x, sp, -1, err))
       return err;
   for (unsigned i = 0; i < m_ports.size(); i++)
     m_ports[i]->finalizeOclDataPort();
@@ -498,7 +507,7 @@ parseOclAssy() {
 }
 
 OclPort::
-OclPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
+OclPort(Worker &w, ezxml_t x, DataPort *sp, int ordinal, const char *&err)
   : RccPort(w, x, sp, ordinal, err) {
 }
 
@@ -506,6 +515,6 @@ const char *DataPort::
 finalizeOclDataPort() {
   const char *err = NULL;
   if (type == WDIPort)
-    createPort<OclPort>(*m_worker, NULL, this, -1, err);
+    createDataPort<OclPort>(worker(), NULL, this, -1, err);
   return err;
 }

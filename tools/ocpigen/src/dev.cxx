@@ -2,8 +2,8 @@
 #include "hdl.h"
 
 DevSignalsPort::
-DevSignalsPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
-  : Port(w, x, sp, ordinal, DevSigPort, "dev", err),
+DevSignalsPort(Worker &w, ezxml_t x, int ordinal, const char *&err)
+  : Port(w, x, NULL, ordinal, DevSigPort, "dev", err),
     m_hasInputs(false), m_hasOutputs(false) {
   if ((err = Signal::parseSignals(x, w.m_file, m_signals, m_sigmap)))
     return;
@@ -55,14 +55,14 @@ emitRecordTypes(FILE *f) {
     fprintf(f,
 	    "  -- Record for DevSignals input signals for port \"%s\" of worker \"%s\"\n"
 	    "  alias worker_%s_in_t is work.%s_defs.%s_in_t;\n",
-	    name(), m_worker->m_implName, name(),
-	    m_worker->m_implName, name());
+	    cname(), m_worker->m_implName, cname(),
+	    m_worker->m_implName, cname());
   if (m_hasOutputs)
     fprintf(f,
 	    "  -- Record for DevSignals output signals for port \"%s\" of worker \"%s\"\n"
 	    "  alias worker_%s_out_t is work.%s_defs.%s_out_t;\n",
-	    name(), m_worker->m_implName, name(),
-	    m_worker->m_implName, name());
+	    cname(), m_worker->m_implName, cname(),
+	    worker().m_implName, cname());
 }
 
 void DevSignalsPort::
@@ -76,7 +76,7 @@ emitRecordInterface(FILE *f, const char *implName) {
 	    "\n"
 	    "  -- Record for the %s input signals for port \"%s\" of worker \"%s\"\n"
 	    "  type %s_t is record\n",
-	    master ? "master" : "slave", name(), implName, in.c_str());
+	    master ? "master" : "slave", cname(), implName, in.c_str());
     std::string last;
     for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
       Signal &s = **si;
@@ -93,7 +93,7 @@ emitRecordInterface(FILE *f, const char *implName) {
 	    "\n"
 	    "  -- Record for the %s output signals for port \"%s\" of worker \"%s\"\n"
 	    "  type %s_t is record\n",
-	    master ? "master" : "slave", name(), implName, out.c_str());
+	    master ? "master" : "slave", cname(), implName, out.c_str());
     std::string last;
     for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
       Signal &s = **si;

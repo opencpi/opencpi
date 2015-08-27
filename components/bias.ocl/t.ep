@@ -1,0 +1,56 @@
+#ifndef OCL_START_PORT
+#define OCL_START_PORT
+static void startPort(OCLPort *p, __global uint8_t *base) {
+  __global OCLHeader *h = (__global OCLHeader *)(base + p->readyOffset+8);
+  printf("base %p offset %u %x %x \n", base, p->readyOffset, ((__global uint32_t *)base)[0],((__global uint32_t *)base)[1]);
+  printf("p %p h %p data %p length %u opCode %u\n", p, h, h->m_data, h->m_length, h->m_opCode);
+
+  p->current.data = h->m_data ? (__global uint8_t*)h + h->m_data : 0;
+  p->current.length = h->m_length;
+  p->current.opCode = h->m_opCode;
+  p->current.end = h->m_eof;
+  p->current.header = h;
+  printf("end of startport\n");
+}
+#endif
+/*
+ * This generated kernel dispatches to the worker's methods
+ * This single kernel/function dispatches the run method and control operations.
+ */
+__kernel __attribute__((reqd_work_group_size(OCL_WG_X, OCL_WG_Y, OCL_WG_Z)))
+void bias_kernel(BiasWorker self, __global BiasPersist *persist,
+                      __global uint8_t *buffers0,
+                      __global uint8_t *buffers1) {
+  printf("OpenCL Kernel running np %d op: %d count: %d nd: %d %d %d %d\n", self.nPorts, self.controlOp, self.runCount, get_work_dim(), get_global_id(0), get_global_id(1), get_global_id(2));
+  switch (self.controlOp) {
+  case OCPI_OCL_RUN:
+    {
+      __global uint8_t *bases[2] = {buffers0, buffers1};
+      OCLPort *p = &self.in;
+      for (unsigned n = 0; n < self.nPorts; n++, p++)
+        startPort(p, bases[n]);
+      do {
+        persist->returned.result = bias_run(&self, &persist->properties);
+        if (--self.runCount) {
+          OCLPort *p = &self.in;
+          for (unsigned n = 0; n < self.nPorts; n++, p++) {
+            __global OCLHeader *h = p->current.header;
+            if (p->current.data == 0)
+              h->m_data = 0;
+            h->m_length = p->current.length;
+            h->m_opCode = p->current.opCode;
+            h->m_eof = p->current.end;
+	    printf("pp %p h %p data %p length %u opCode %u\n", p, h, h->m_data, h->m_length, h->m_opCode);
+            if ((p->readyOffset += p->bufferStride) >= p->endOffset)
+              p->readyOffset = 0;
+            startPort(p, bases[n]);
+          }
+        } else
+          break;
+      } while(1);
+    }
+    break;
+  default:;
+  }
+}
+

@@ -9,7 +9,7 @@
 // RDY_server_request_put         O     1 reg
 // server_response_get            O   153 reg
 // RDY_server_response_get        O     1 reg
-// client_request_get             O    59 reg
+// client_request_get             O    61 reg
 // RDY_client_request_get         O     1 reg
 // RDY_client_response_put        O     1 reg
 // pciDevice                      I    16
@@ -74,7 +74,7 @@ module mkTLPSerializer(pciDevice,
 
   // actionvalue method client_request_get
   input  EN_client_request_get;
-  output [58 : 0] client_request_get;
+  output [60 : 0] client_request_get;
   output RDY_client_request_get;
 
   // action method client_response_put
@@ -84,7 +84,7 @@ module mkTLPSerializer(pciDevice,
 
   // signals for module outputs
   wire [152 : 0] server_response_get;
-  wire [58 : 0] client_request_get;
+  wire [60 : 0] client_request_get;
   wire RDY_client_request_get,
        RDY_client_response_put,
        RDY_server_request_put,
@@ -152,7 +152,7 @@ module mkTLPSerializer(pciDevice,
   wire cmpF$CLR, cmpF$DEQ, cmpF$EMPTY_N, cmpF$ENQ, cmpF$FULL_N;
 
   // ports of submodule cpReqF
-  wire [58 : 0] cpReqF$D_IN, cpReqF$D_OUT;
+  wire [60 : 0] cpReqF$D_IN, cpReqF$D_OUT;
   wire cpReqF$CLR, cpReqF$DEQ, cpReqF$EMPTY_N, cpReqF$ENQ, cpReqF$FULL_N;
 
   // ports of submodule cpRespF
@@ -193,7 +193,7 @@ module mkTLPSerializer(pciDevice,
   reg [15 : 0] lastRema__h7245;
   reg [1 : 0] lowAddr10__h2074, x__h2304, x__h2327;
   wire [127 : 0] pkt__h4230, pw_data__h7278;
-  wire [57 : 0] IF_tlpReq_3_BIT_62_4_THEN_tlpDWAddr_8_BITS_21__ETC___d113;
+  wire [59 : 0] IF_tlpReq_3_BIT_62_4_THEN_tlpDWAddr_8_BITS_21__ETC___d113;
   wire [31 : 0] IF_tlpReq_3_BIT_62_4_AND_NOT_tlpFirst_6_4_5_TH_ETC___d102,
 		wreq_data__h3050;
   wire [15 : 0] pw_be__h7277;
@@ -229,7 +229,7 @@ module mkTLPSerializer(pciDevice,
 						.EMPTY_N(cmpF$EMPTY_N));
 
   // submodule cpReqF
-  FIFO2 #(.width(32'd59), .guarded(32'd1)) cpReqF(.RST(RST_N),
+  FIFO2 #(.width(32'd61), .guarded(32'd1)) cpReqF(.RST(RST_N),
 						  .CLK(CLK),
 						  .D_IN(cpReqF$D_IN),
 						  .ENQ(cpReqF$ENQ),
@@ -474,6 +474,7 @@ module mkTLPSerializer(pciDevice,
   // remaining internal signals
   assign IF_tlpReq_3_BIT_62_4_AND_NOT_tlpFirst_6_4_5_TH_ETC___d102 =
 	     (tlpReq[62] && !tlpFirst) ? v__h2549 : tlpDW ;
+`ifdef olf
   assign IF_tlpReq_3_BIT_62_4_THEN_tlpDWAddr_8_BITS_21__ETC___d113 =
 	     tlpReq[62] ?
 	       { tlpDWAddr[21:0],
@@ -483,6 +484,13 @@ module mkTLPSerializer(pciDevice,
 		 tlpReq[15:8],
 		 tlpDWAddr[21:0],
 		 _theResult_____2__h2491 } ;
+`else
+  assign IF_tlpReq_3_BIT_62_4_THEN_tlpDWAddr_8_BITS_21__ETC___d113 =
+             { tlpDWAddr[23:0],         // DW addr 24 bits, 64MB, 63 workers
+	       _theResult_____2__h2491, // byte enable
+	       tlpReq[62] ? wreq_data__h3050 : { 24'h000000, tlpReq[15:8]}
+	       };
+`endif
   assign _theResult_____2__h2491 =
 	     tlpFirst ?
 	       tlpReq[3:0] :

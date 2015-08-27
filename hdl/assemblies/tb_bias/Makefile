@@ -33,5 +33,5 @@
 #
 ########################################################################### #
 
-Containers= ml6_fl
+Containers=ml6_fl
 include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk

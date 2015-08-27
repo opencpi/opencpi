@@ -3,5 +3,7 @@ If there is no sentinel value expected or checked (e.g. NULL), leave it a refere
 There are fewer characters in the source code using references.
 (Scott Meyers has this preference too).
 
-Yes, there is a downside that the code does not explicitly show indirection.
+Yes, there is a downside that the code does not explicitly show indirection,
+and sometimes constructors are more complex.
+
 

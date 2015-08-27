@@ -1,4 +1,3 @@
-
 # #####
 #
 #  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
@@ -45,12 +44,13 @@ TypeFiles=$(TypeEntities:%=gen/%.vhd)
 
 # These need to be in order for most tools that aren't smart about figuring it out.
 SourceFiles=ocp_pkg.vhd types_pkg.vhd util_pkg.vhd wci_pkg.vhd wsi_pkg.vhd ocpi_worker.vhd \
-            util_body.vhd types_body.vhd wci_body.vhd \
-            property_decoder.vhd decoder.vhd readback.vhd control_decoder.vhd \
+            util_body.vhd types_body.vhd wci_body.vhd wsi_body.vhd \
+            property_decoder.vhd decoder.vhd readback.vhd no_props_decoder.vhd \
             gen/props_pkg.vhd \
 	    master.vhd slave.vhd  \
 	    part_master.vhd part_slave.vhd  \
 	    message_bounds.vhd clock_limiter.vhd \
+	    raw_arb.vhd \
 	    $(TypeFiles)
 
 include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk # we are a primitive library

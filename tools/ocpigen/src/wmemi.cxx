@@ -1,7 +1,7 @@
 #include "hdl.h"
 WmemiPort::
-WmemiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
-  : OcpPort(w, x, sp, ordinal, WMemIPort, "mem", err) {
+WmemiPort(Worker &w, ezxml_t x, int ordinal, const char *&err)
+  : OcpPort(w, x, NULL, ordinal, WMemIPort, "mem", err) {
   bool memFound = false;
   if ((err = OE::checkAttrs(x, "Name", "Clock", "DataWidth", "PreciseBurst", "ImpreciseBurst",
 			    "MemoryWords", "ByteWidth", "MaxBurstLength",

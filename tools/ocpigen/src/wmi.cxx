@@ -1,7 +1,8 @@
+#include "data.h"
 #include "hdl.h"
 
 WmiPort::
-WmiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
+WmiPort(Worker &w, ezxml_t x, DataPort *sp, int ordinal, const char *&err)
   : DataPort(w, x, sp, ordinal, WMIPort, err) {
     if (err ||
 	(err = OE::checkAttrs(x, "Name", "Clock", "MyClock", "DataWidth", "master",
@@ -11,7 +12,7 @@ WmiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
                               "NumberOfOpcodes", "MaxMessageValues",
 			      "datavaluewidth", "zerolengthmessages",
                               (void*)0)) ||
-	(err = OE::getBoolean(m_xml, "master", &master)) || // this is unique to WMI
+	(err = OE::getBoolean(x, "master", &master)) || // this is unique to WMI
         (err = OE::getBoolean(x, "TalkBack", &m_talkBack)) ||
         (err = OE::getBoolean(x, "Bidirectional", &m_isBidirectional)) ||
         (err = OE::getNumber(x, "MFlagWidth", &m_mflagWidth, 0, 0)))
@@ -105,7 +106,7 @@ deriveOCP() {
   return NULL;
 }
 const char *WmiPort::
-adjustConnection(Port &/*cons*/, const char */*masterName*/, Language /*lang*/,
+adjustConnection(::Port &/*cons*/, const char */*masterName*/, Language /*lang*/,
 		 OcpAdapt */*prodAdapt*/, OcpAdapt */*consAdapt*/) {
   return NULL;
 }
@@ -117,7 +118,7 @@ emitImplAliases(FILE *f, unsigned /*n*/, Language lang) {
   const char *pout = fullNameOut.c_str();
   bool mIn = masterIn();
   fprintf(f,
-	  "  %s Aliases for interface \"%s\"\n", comment, name());
+	  "  %s Aliases for interface \"%s\"\n", comment, cname());
   if (lang != VHDL) {
     if (master) // if we are app
       fprintf(f,
@@ -185,7 +186,7 @@ emitRecordInputs(FILE *f) {
     if (m_nOpcodes > 1)
       fprintf(f,
 	      "    opcode           : %s_OpCode_t;\n",
-	      operations() ? OU::Protocol::m_name.c_str() : name());
+	      operations() ? OU::Protocol::m_name.c_str() : cname());
     fprintf(f,
 	    m_dataWidth ?
 	    "    som, eom, valid  : Bool_t;           -- valid means data and byte_enable are present\n" :
@@ -215,7 +216,7 @@ emitRecordOutputs(FILE *f) {
     if (m_nOpcodes > 1)
       fprintf(f,
 	      "    opcode           : %s_OpCode_t;\n",
-	      operations() ? OU::Protocol::m_name.c_str() : name());
+	      operations() ? OU::Protocol::m_name.c_str() : cname());
     fprintf(f,
 	    "    som, eom, valid  : Bool_t;            -- one or more must be true when 'give' is asserted\n");
       }

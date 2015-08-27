@@ -364,5 +364,6 @@ Comma:=,
 ParamMsg=$(and $(ParamConfigurations), $(strip \
   '($(foreach n,$(WorkerParamNames),$n=$(ParamMsg_$(ParamConfig)_$n)$(eval o:=1)))'))
 
+RmRv=$(if $(filter %_rv,$1),$(patsubst %_rv,%,$1),$1)
 endif # ifndef __UTIL_MK__
 

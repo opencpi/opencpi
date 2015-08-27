@@ -1,0 +1,4 @@
+<ComponentSpec>
+  <property name='violation' type='bool' writable='1' volatile='1'/>
+  <!-- generic properties for clock generators? -->
+</ComponentSpec>

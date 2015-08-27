@@ -1,4 +1,3 @@
-
 # #####
 #
 #  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
@@ -45,21 +44,37 @@
 Package=ocpi.devices
 XmlIncludeDirs=../../components/specs
 HdlLibraries=platform
-Implementations = \
+# Remember that subdevices that support other devices must occur AFTER the devices they support
+# Similarly, emulators must occur after the devices they emulate
+Workers = \
 	ocdp.hdl \
 	dac.hdl \
 	adcx.hdl \
 	adc.rcc \
 	dac.rcc \
-	dram_v5.hdl \
-	dram_v6.hdl \
 	icap.hdl \
 	flash.hdl \
-        clkgen_ti_cdce72010.hdl \
 	gbe.hdl \
+        lime_dac.hdl \
+        lime_adc.hdl \
+	lime_adc_em.hdl \
+	lime_dac_em.hdl \
+	si5351_proxy.rcc \
+	si5351.hdl \
+	si5351_em.hdl \
+	lime_rx.hdl \
+	lime_rx_em.hdl \
+	lime_tx.hdl \
+	lime_tx_em.hdl \
+	lime_rx_proxy.rcc \
+	lime_tx_proxy.rcc \
         lime_spi.hdl \
-        lime_tx.hdl \
-        lime_rx.hdl
+	lime_spi_em.hdl \
 
+# These two require support for embedded IOBUFs which is currently turned off
+#	dram_v5.hdl \
+#	dram_v6.hdl \
+#
+#        clkgen_ti_cdce72010.hdl \
 
 include $(OCPI_CDK_DIR)/include/lib.mk

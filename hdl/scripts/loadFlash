@@ -1,0 +1,19 @@
+#!/bin/sh --noprofile
+# Load the user-bit-stream flash on a platform
+# This script loads the flash, and may also loads the same bitstream onto the FPGA in the process,
+# or (worse) may trash the currently loaded bitstream.
+if test $# != 3; then
+  echo "This script loads a bitstream file into the user-loadable boot flash memory on a HDL/FPGA platform/card."
+  echo "There must be three arguments, which are:"
+  echo "1. The name of the platform, e.g. ml605, alst4, alst4x, etc."
+  echo "2. The bitstream file to write into the flash of the card. Usually ending in .gz"
+  echo "3. The serial number of the JTAG pod/cable connected to the card."
+  exit 1
+fi
+dir=`dirname $0`
+if test ! -x $dir/loadFlash_$1; then
+  echo 'The "'$1'" platform does not appear to be supported for flash loading.  Misspelled?'
+  exit 1
+fi
+exec $dir/loadFlash_$1 $2 $3
+

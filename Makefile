@@ -72,34 +72,26 @@ endif
 # Basic packages.
 #
 
-PACKAGES += adapt/os/ocpios core/util
+PACKAGES += os runtime/util
 
 PACKAGES += \
-	 core/dataplane/rdma_utils \
-	 core/dataplane/rdma_driver_interface \
-	 core/dataplane/rdma_smb \
-	 core/dataplane/rdma_drivers \
-	 core/dataplane/transport \
-	 core/dataplane/msg_driver_interface \
-	 core/dataplane/msg_drivers \
-	 core/dataplane/rdma_tests \
-	 core/library \
-	 core/container \
-	 core/hdl \
-	 core/rcc \
-	 core/ocl \
-	 core/remote \
-	 core/ctests \
-         core/application
+	 runtime/dataplane/rdma_utils \
+	 runtime/dataplane/rdma_driver_interface \
+	 runtime/dataplane/rdma_smb \
+	 runtime/dataplane/rdma_drivers \
+	 runtime/dataplane/transport \
+	 runtime/dataplane/msg_driver_interface \
+	 runtime/dataplane/msg_drivers \
+	 runtime/dataplane/rdma_tests \
+	 runtime/library \
+	 runtime/container \
+	 runtime/hdl \
+	 runtime/rcc \
+	 runtime/ocl \
+	 runtime/remote \
+	 runtime/ctests \
+         runtime/application
 
-ifeq ($(OCPI_HAVE_CORBA),1)
-PACKAGES += core/corba/orb_services core/corba/corba_util
-PACKAGES += core/sca/cf core/sca/cf_util core/sca/sgac
-PACKAGES += core/sca/gpped
-PACKAGES += core/sca/srpl
-endif
-
-PACKAGES += tools/local/binder tools/local/tester
 PACKAGES += tools/cdkutils
 PACKAGES += tools/ocpigen
 PACKAGES += tools/cdk/ocpidds
@@ -112,8 +104,6 @@ PACKAGES += tools/astyle
 #PACKAGES += tools/cdk/ocpiocl
 #endif
 #endif
-PACKAGES += tools/cdk/ocpixm
-PACKAGES += test
 
 PACKAGES += tests
 
@@ -126,42 +116,33 @@ PACKAGES += tests
 # ----------------------------------------------------------------------
 #
 
-#	core/control/wci_api
+#	runtime/control/wci_api
 ALLPACKAGES = \
-	adapt/os/ocpios \
-	core/util \
-	core/corba/corba_util \
-	core/corba/orb_services \
-	core/dataplane/rdma_utils \
-	core/dataplane/rdma_driver_interface \
-	core/dataplane/rdma_smb \
-	core/dataplane/rdma_drivers \
-	core/dataplane/transport \
-	core/dataplane/msg_driver_interface \
-	core/dataplane/msg_drivers \
-	core/dataplane/rdma_tests \
-	core/library \
-	core/container \
-	core/hdl \
-	core/ocl \
-	core/rcc \
-	core/remote \
-	core/ctests \
-        core/application \
-	core/sca/cf \
-	core/sca/cf_util \
-	core/sca/gpped \
-	core/sca/sgac \
-	core/sca/srpl \
+	os \
+	runtime/util \
+	runtime/dataplane/rdma_utils \
+	runtime/dataplane/rdma_driver_interface \
+	runtime/dataplane/rdma_smb \
+	runtime/dataplane/rdma_drivers \
+	runtime/dataplane/transport \
+	runtime/dataplane/msg_driver_interface \
+	runtime/dataplane/msg_drivers \
+	runtime/dataplane/rdma_tests \
+	runtime/library \
+	runtime/container \
+	runtime/hdl \
+	runtime/ocl \
+	runtime/rcc \
+	runtime/remote \
+	runtime/ctests \
+        runtime/application \
 	tools/local/binder \
 	tools/local/tester \
 	tools/cdkutils \
 	tools/ocpigen \
 	tools/cdk/ocpidds \
-	tools/cdk/ocpixm \
 	tools/astyle \
 	tests \
-	test \
 
 #
 # ----------------------------------------------------------------------
@@ -201,14 +182,15 @@ ocl:
 cleanocl:
 	make -C components cleanocl
 
+.PHONY : examples
 examples:
-	make -C tools/cdk/examples
+	make -C examples
 
 cleanexamples:
-	make -C tools/cdk/examples clean
+	make -C examples clean
 
 runexamples:
-	make -C tools/cdk/examples run
+	make -C examples run
 
 runtests:
 	make -C tests run
@@ -217,17 +199,17 @@ cleancomponents:
 	make -C components clean
 
 .PHONY: prims
-hdlprims:
+hdlprimitives:
 	$(MAKE) -C hdl primitives
 
 driver:
-	$(MAKE) -C adapt/os/ocpios/$(OCPI_OS)/driver
+	$(MAKE) -C os/$(OCPI_OS)/driver
 
 cleandriver:
-	$(AT)$(and $(wildcard adapt/os/ocpios/$(OCPI_OS)/driver),$(MAKE) -C adapt/os/ocpios/$(OCPI_OS)/driver topclean)
+	$(AT)$(and $(wildcard os/$(OCPI_OS)/driver),$(MAKE) -C os/$(OCPI_OS)/driver topclean)
 
 cleandrivers:
-	for d in adapt/os/ocpios/*/driver; do $(MAKE) -C $$d topclean; done
+	for d in os/*/driver; do $(MAKE) -C $$d topclean; done
 
 .PHONY: packages tar diff diff.q test $(PACKAGES)
 
@@ -264,7 +246,7 @@ cleaneverything: distclean cleandrivers
 	-find . -depth -name 'timeData.raw' -exec rm -f '{}' ';'
 	-find . -depth -name 'target-*' -exec rm -r '{}' ';'
 	-find . -depth -name 'gen' -exec rm -r '{}' ';'
-	-find . -depth -name "lib" -a ! -path "*export*" -a -type d -a -exec rm -r "{}" ";"
+	-find . -depth -name "lib" -a ! -path "*export*" -a ! -path "*/platforms/*" -a -type d -a -exec rm -r "{}" ";"
 
 tar:
 	tar cvf ocpi.tar Makefile MakeVars.ocpi Makefile.ocpi.for-* scripts platforms $(ALLPACKAGES)
@@ -286,22 +268,9 @@ diff.q:
 # Shallow package dependencies.
 #
 
-#core/local/logger: adapt/os/ocpios
-#core/util: core/local/logger
-core/dataplane/tests: \
-	core/rcc core/dataplane/transport \
-	core/dataplane/rdma_driver_interface
-
-core/corba/corba_util: core/corba/orb_services core/util
-core/sca/cf_util: core/sca/cf core/corba/corba_util core/corba/orb_services \
-	core/util
-core/sca/sgac: core/sca/cf_util
-core/sca/gpped: core/sca/cf_util
-tools/local/binder: core/util
-tools/local/tester: \
-	core/rcc core/dataplane/transport \
-	core/dataplane/rdma_driver_interface
-test: tools/local/binder tools/local/tester
+runtime/dataplane/tests: \
+	runtime/rcc runtime/dataplane/transport \
+	runtime/dataplane/rdma_driver_interface
 
 export_cdk:
 	mydate=`date +%G%m%d%H%M%S`; \

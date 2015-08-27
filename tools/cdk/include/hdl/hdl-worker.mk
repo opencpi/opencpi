@@ -148,7 +148,7 @@ $(WDefsFile): $(Worker_$(Worker)_xml) | $(GeneratedDir)
 	$(AT)echo Generating the opposite language definition file: $@
 	$(AT)$(OcpiGen) -D $(GeneratedDir) $(and $(Package),-p $(Package))  \
 	  $(and $(HdlPlatform),-P $(HdlPlatform)) \
-          $(and $(AssemblyName),-S $(AssemblyName)) \
+          $(and $(Assembly),-S $(Assembly)) \
 	  $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) \
 	  -w -d $<
 
@@ -156,14 +156,14 @@ $(DefsFile): $(Worker_$(Worker)_xml) | $(GeneratedDir)
 	$(AT)echo Generating the definition file: $@
 	$(AT)$(OcpiGen) -D $(GeneratedDir) $(and $(Package),-p $(Package)) \
 	   $(if $(Libraries),$(foreach l,$(Libraries),-l $l)) \
-           $(and $(AssemblyName),-S $(AssemblyName)) \
+           $(and $(Assembly),-S $(Assembly)) \
 	   $(and $(HdlPlatform),-P $(HdlPlatform)) \
 	   -d $<
 
 $(HdlOtherImplSourceFile): $(WDefsFile) $$(Worker_$(Worker)_xml) | $(GeneratedDir)
 	$(AT)echo Generating the $(HdlOtherLanguage) implementation file: $@ from $(Worker_$(Worker)_xml)
 	$(AT)$(OcpiGen) -D $(GeneratedDir) $(and $(Package),-p $(Package)) \
-        $(and $(AssemblyName),-S $(AssemblyName)) \
+        $(and $(Assembly),-S $(Assembly)) \
 	$(and $(HdlPlatform),-P $(HdlPlatform)) \
 	$(if $(Libraries),$(foreach l,$(Libraries),-l $l)) -w -i $(Worker_$(Worker)_xml) \
 

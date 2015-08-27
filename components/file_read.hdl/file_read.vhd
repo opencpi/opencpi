@@ -142,7 +142,16 @@ begin
              valid_r    <= false;
              finished_r <= true;
            elsif endfile(data_file) then -- EOF mid-message, w/ no data: shouldn't happen
-             report "Unexpected EOF" severity failure;
+             if its(props_in.messagesInFile) then
+               report "Unexpected EOF mid-message" severity failure;
+             else
+               -- Can't use: finish("Short message at EOF");
+               eom        := true;
+               som_r      <= true;
+               valid_r    <= false;
+               finished_r <= true;
+               file_close(data_file);
+             end if;
            else -- we want data (message_length_r != 0), and there is data (not eof)
              data_r        <= read_ulong(to_integer(bytesLeft_r), false);
              byte_enable_r <= ulong_byte_enable;

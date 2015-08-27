@@ -26,7 +26,7 @@ export OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:$OCPI_BASE_DIR/hdl/assemblies/biasca
 export OCPI_SMB_SIZE=100000
 export OCPI_SUPPRESS_HDL_NETWORK_DISCOVERY=1
 # Get ready to run some test xml-based applications
-cd $OCPI_BASE_DIR/tools/cdk/examples/xml
+cd $OCPI_BASE_DIR/examples/xml
 # Shorten the default shell prompt
 PS1='% '
 # Print the available containers as a sanity check
@@ -34,3 +34,4 @@ echo Discovering available containers...
 ocpirun -C
 # Since we are sourcing this script we can't use "exit", do "done" is for "break"
 done
+trap - ERR
