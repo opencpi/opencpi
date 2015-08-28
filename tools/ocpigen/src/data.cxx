@@ -16,12 +16,13 @@ DataPort(Worker &w, ezxml_t x, DataPort *sp, int ordinal, WIPType type, const ch
     return;
   // Now we do implementation-specific initialization that will precede the
   // initializations for specific port types (WSI, etc.)
-  if ((err = OE::getNumber(x, "MaxMessageValues", &m_maxMessageValues, NULL, 0, false)) ||
-      (err = OE::getNumber(x, "DataValueWidth", &m_dataValueWidth, NULL, 0, false)) ||
-      (err = OE::getNumber(x, "DataValueGranularity", &m_dataValueGranularity, NULL, 0,
-			   false)) ||
-      (err = OE::getBoolean(x, "ZeroLengthMessages", &m_zeroLengthMessages, true)) ||
-      (err = OU::Port::parse()))
+  if (x &&
+      ((err = OE::getNumber(x, "MaxMessageValues", &m_maxMessageValues, NULL, 0, false)) ||
+       (err = OE::getNumber(x, "DataValueWidth", &m_dataValueWidth, NULL, 0, false)) ||
+       (err = OE::getNumber(x, "DataValueGranularity", &m_dataValueGranularity, NULL, 0,
+			    false)) ||
+       (err = OE::getBoolean(x, "ZeroLengthMessages", &m_zeroLengthMessages, true)) ||
+       (err = OU::Port::parse())))
     return;
   // Note buffer sizes are all determined in the OU::Util::Port.  FIXME allow parameterized?
   // Data width can be unspecified, specified explicitly, or specified with an expression

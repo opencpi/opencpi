@@ -1275,7 +1275,7 @@ emitRccCppImpl(FILE *f) {
 		      "         }\n",
 		      type.c_str());
 	  }
-	    if (m_opScaling[n] != NULL)
+	  if (!m_opScaling.empty() && m_opScaling[n] != NULL)
 	      fprintf(f,
 		      "          bool endOfWhole() const; \n"
 		      "          void partSize(%sOCPI::RCC::RCCPartInfo &part) const;\n",
@@ -1411,7 +1411,7 @@ emitRccCImpl1(FILE *f) {
 	worker().rccStruct(type, o->nArgs(), o->args(), 0, s.c_str(), false, isLast,
 			    o->isTopFixedSequence(), UINT_MAX-1);
 	fprintf(f, "%s} %s;\n", type.c_str(), s.c_str());
-	OpScaling *os = m_opScaling[nn];
+	OpScaling *os = m_opScaling.empty() ? NULL : m_opScaling[nn];
 	if (os && os->m_isPartitioned) {
 	  OU::Member *arg = o->m_args;
 	  fprintf(f,

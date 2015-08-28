@@ -444,9 +444,11 @@ namespace OCPI {
 				"datavaluewidth", "maxmessagevalues", "minmessagevalues",
 				"datavaluegranularity", "diversedatasizes", "unbounded",
 				"zerolengthmessages", (void*)0)) ||
-	  (err = OE::checkElements(prot, "operation", (void*)0)))
+	  (err = OE::checkElements(prot, "operation", "xi:include", (void*)0)) ||
+	  (err = OE::ezxml_children(prot, doChild ? doChild : doProtocolChild,
+				    arg ? arg : this)))
 	return err;
-      m_nOperations = OE::countChildren(prot, "operation");
+      //      m_nOperations = OE::countChildren(prot, "operation");
 #endif
       if (m_nOperations) {
 #if 0

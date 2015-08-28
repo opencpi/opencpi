@@ -497,7 +497,7 @@ namespace OCPI {
     emitScaling(std::string &out) const {
       Operation *op = m_operations;
       for (unsigned n = 0; n < m_nOperations; n++, op++)
-	if (m_opScaling[n])
+	if (!m_opScaling.empty() && m_opScaling[n])
 	  m_opScaling[n]->emit(out, *this, *op);
     }
 
