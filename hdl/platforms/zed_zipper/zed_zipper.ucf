@@ -20,14 +20,14 @@ NET "led(7)" LOC = U14 | IOSTANDARD = LVCMOS33;
 # Myriad Zipper Constraints                                                #
 ############################################################################
 # Pins of the lime_dac device
-NET "lime_dac_tx_clk_in"          LOC = "M22" | IOSTANDARD=LVCMOS25;    ## H11 on J63
-NET "lime_dac_tx_clk_in"          CLOCK_DEDICATED_ROUTE = FALSE;
+#NET "lime_dac_tx_clk_in"          LOC = "M22" | IOSTANDARD=LVCMOS25;    ## H11 on J63
+#NET "lime_dac_tx_clk_in"          CLOCK_DEDICATED_ROUTE = FALSE;
 NET "lime_tx_txen"                LOC = "C17" | IOSTANDARD=LVCMOS25;    ## G30 on J63
 NET "lime_dac_tx_iq_sel"          LOC = "C18" | IOSTANDARD=LVCMOS25;    ## G31 on J63
 
 # Timing Constraints...
-NET "lime_dac_tx_clk_in"      TNM_NET = "LIME_DAC_TX_CLK_IN";  # 30.72 MHz sys0 XO
-TIMESPEC "TS_LIME_DAC_TX_CLK_IN" = PERIOD "LIME_DAC_TX_CLK_IN" 50 MHz HIGH 50 % ;
+#NET "lime_dac_tx_clk_in"      TNM_NET = "LIME_DAC_TX_CLK_IN";  # 30.72 MHz sys0 XO
+#TIMESPEC "TS_LIME_DAC_TX_CLK_IN" = PERIOD "LIME_DAC_TX_CLK_IN" 50 MHz HIGH 50 % ;
 
 NET "lime_dac_txd[0]"             LOC = "C22" | IOSTANDARD=LVCMOS25;    ## G28 on J63
 NET "lime_dac_txd[1]"             LOC = "D22" | IOSTANDARD=LVCMOS25;    ## G27 on J63

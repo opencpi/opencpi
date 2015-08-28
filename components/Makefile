@@ -118,6 +118,7 @@ Workers = \
     testmulti.rcc \
     testmulti_cc.rcc \
     testzc.rcc \
+    time_gen.hdl \
     psd.hdl \
     ddc.hdl \
     fft1d.ocl \

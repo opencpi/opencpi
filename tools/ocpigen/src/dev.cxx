@@ -2,8 +2,8 @@
 #include "hdl.h"
 
 DevSignalsPort::
-DevSignalsPort(Worker &w, ezxml_t x, int ordinal, const char *&err)
-  : Port(w, x, NULL, ordinal, DevSigPort, "dev", err),
+DevSignalsPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
+  : Port(w, x, sp, ordinal, DevSigPort, "dev", err),
     m_hasInputs(false), m_hasOutputs(false) {
   if ((err = Signal::parseSignals(x, w.m_file, m_signals, m_sigmap)))
     return;

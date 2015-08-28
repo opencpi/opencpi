@@ -94,7 +94,7 @@ parseHdlImpl(const char *package) {
   if (dwFound)
     m_defaultDataWidth = (int)dw; // override the -1 default if set
   if (!m_noControl) {
-    if (!createPort<WciPort>(*this, xctl, -1, err))
+    if (!createPort<WciPort>(*this, xctl, NULL, -1, err))
       return err;
     if ((err = OE::getBoolean(m_xml, "RawProperties", &m_ctl.rawProperties)))
       return err;

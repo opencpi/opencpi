@@ -199,7 +199,10 @@ namespace OcpiUtilStreamFsReader {
       return static_cast<pos_type> (-1);
     }
 
-    m_stream->seekg (ptspos);
+    m_stream->seekg(ptspos);
+    if (!m_stream->good())
+      return static_cast<pos_type> (-1);
+
     m_pos = pos;
     return OCPI::Util::unsignedToStreamsize (pos);
   }
@@ -677,7 +680,10 @@ readTOC ()
   /*
    * Extract TOC position from the end of the file.
    */
+
   m_stream->seekg(-17, std::ios_base::end);
+  if (!m_stream->good())
+    throw std::string ("can not seek to end");
 
   std::string sTocPos;
 

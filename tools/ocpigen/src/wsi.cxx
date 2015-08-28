@@ -140,13 +140,11 @@ emitVhdlShell(FILE *f, ::Port *wci) {
 	for (nn = 0; nn < nOperations(); nn++, op++)
 	  fprintf(f, "    %u when %s_opcode = %s_%s_op_e else\n",
 		  nn, cname(), OU::Protocol::m_name.c_str(), op->name().c_str());
-	//			nn == m_nOpcodes - 1 ? "" : " else");
 	// If the protocol opcodes do not fill the space, fill it
-	if (nn < m_nOpcodes) {
+	if (nn < m_nOpcodes)
 	  for (unsigned o = 0; nn < m_nOpcodes; nn++, o++)
-	    fprintf(f, "    %u when %s_opcode = op%u_e else\n", nn, cname(), nn);
-	  //			  nn == m_nOpcodes - 1 ? "" : " else");
-	}
+	    fprintf(f, "    %u when %s_opcode = %s_opcode_t'val(%u) else\n",
+		    nn, cname(), OU::Protocol::m_name.c_str(), nn);
 	fprintf(f, "    0;\n");
 	fprintf(f,
 		"  %s_opcode_temp <= std_logic_vector(to_unsigned(%s_opcode_pos, %s_opcode_temp'length));\n",

@@ -78,6 +78,7 @@
   </device>
   <device worker='si5351'>
     <Signal name='intr'      slot=''/>           <!--  si5351 pin 3 not connected on zipper -->
+    <Signal name='oeb'       slot=''/>           <!--  si5351 pin 7 tied to ground on zipper -->
   </device>
   <device worker='zipper_i2c'>
     <!-- Note that the sda/scl signals are swapped and use the opposite slot signals -->

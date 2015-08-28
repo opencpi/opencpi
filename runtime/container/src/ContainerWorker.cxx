@@ -455,6 +455,7 @@ namespace OCPI {
     }
 
     WorkerControl::~WorkerControl(){}
+
   }
   namespace API {
     Worker::~Worker(){}

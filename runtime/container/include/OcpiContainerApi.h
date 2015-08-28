@@ -129,16 +129,16 @@ namespace OCPI {
 #undef OCPI_DATA_TYPE_S
       // generate the simple-type-specific getting methods
       // need a special item for strings
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		     \
-      virtual run get##pretty##Property(unsigned ordinal, unsigned idx) const = 0;	\
-      virtual unsigned get##pretty##SequenceProperty(const Property&, run *, \
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		           \
+      virtual run get##pretty##Property(unsigned ordinal, unsigned idx) const = 0; \
+      virtual unsigned get##pretty##SequenceProperty(const Property&, run *,       \
 						     size_t length) const = 0;
 
-#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)   \
-      virtual void get##pretty##Property(unsigned ordinal, char *, \
-					 size_t length, unsigned idx) const = 0; \
-      virtual unsigned get##pretty##SequenceProperty               \
-        (const Property &, char **, size_t length, char *buf,    \
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                  \
+      virtual void get##pretty##Property(unsigned ordinal, char *,                \
+					 size_t length, unsigned idx) const = 0;  \
+      virtual unsigned get##pretty##SequenceProperty                              \
+        (const Property &, char **, size_t length, char *buf,                     \
 	 size_t space) const = 0;
     OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
@@ -267,16 +267,18 @@ namespace OCPI {
       unsigned m_ordinal;
     private:
       bool m_readSync, m_writeSync;   // these exist to avoid exposing the innards of m_info.
+    public:
+      Property(Application &, const char *);
+      Property(Worker &, const char *);
+    private:
+      Property(Worker &, unsigned);
       void checkTypeAlways(BaseType ctype, size_t n, bool write) const;
       inline void checkType(BaseType ctype, size_t n, bool write) const {
 #if !defined(NDEBUG) || defined(OCPI_API_CHECK_PROPERTIES)
         checkTypeAlways(ctype, n, write);
 #endif
       }
-      Property(Worker &, unsigned);
     public:
-      Property(Application &, const char *);
-      Property(Worker &, const char *);
       inline bool readSync() const { return m_readSync; }
       inline bool writeSync() const { return m_writeSync; }
       // If it is a string property, how big a buffer should I allocate to retrieve the value?

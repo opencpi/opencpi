@@ -252,24 +252,21 @@ namespace OCPI {
 	throw OU::Error("Invalid container %u", n);
       return *Manager::s_containers[n];
     }
-
     Container &Container::baseContainer() {
       Container &c = Container::nthContainer(0);
       assert(!strncmp("rcc", c.name().c_str(), 3));
       return c;
-    }
-
-    static LocalLauncher local;
-    Launcher *Container::s_localLauncher = &local;
-    // This static instance doesn't really amount to much...
-    Launcher &Container::launcher() const {
-      return local;
     }
     void Container::registerBridgedPort(LocalPort &p) {
       m_bridgedPorts.insert(&p);
     }
     void Container::unregisterBridgedPort(LocalPort &p) {
       m_bridgedPorts.erase(&p);
+    }
+    Launcher &Container::launcher() const {
+      if (!Manager::s_localLauncher)
+	Manager::s_localLauncher = new LocalLauncher();
+      return *Manager::s_localLauncher;
     }
   }
   namespace API {

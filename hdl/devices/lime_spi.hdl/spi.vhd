@@ -36,7 +36,7 @@ begin
   done  <= done_r;
   rdata <= rdata_r;
   SEN   <= not busy_r;                       -- enable is asserted low here
-  SDIO  <= wenable when bit_count_r = 0 else
+  SDIO  <= wenable and busy_r when bit_count_r = 0 else
            -- Select the right bit from the 7 bit address
            addr(addr_width - to_integer(bit_count_r)) when bit_count_r <= addr_width else
            -- Select the right bit from the 32 bit data (little endian)

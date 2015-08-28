@@ -6,8 +6,8 @@
 // FIXME: move properties into the realm of WCI (big)
 
 WciPort::
-WciPort(Worker &w, ezxml_t x, int ordinal, const char *&err)
-  : OcpPort(w, x, NULL, ordinal, WCIPort, "ctl", err) {
+WciPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
+  : OcpPort(w, x, sp, ordinal, WCIPort, "ctl", err) {
   if (err)
     return;
   assert(master || !m_worker->m_wci);

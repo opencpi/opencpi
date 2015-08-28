@@ -165,6 +165,9 @@ hdl:
 hdlbase:
 	$(MAKE) -C hdl base
 
+hdlportable:
+	$(MAKE) -C hdl portable
+
 cleanhdl:
 	$(MAKE) -C hdl clean
 

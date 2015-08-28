@@ -362,8 +362,9 @@ typedef struct {
    inline bool hasBuffer() {
      return m_rccBuffer && (m_rccBuffer->data || (m_rccPort.containerPort && request()));
    }
-   size_t topLength(size_t elementLength);
    size_t connectedCrewSize() { return m_rccPort.connectedCrewSize; }
+   size_t
+     topLength(size_t elementLength);
    void
      checkLength(size_t length),
      setDefaultLength(size_t length),

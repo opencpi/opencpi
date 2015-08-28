@@ -636,7 +636,7 @@ initImplPorts(ezxml_t xml, const char *element, PortCreate &create) {
     ordinal = 0;
   // Clocks depend on port names, so get those names in first pass(non-control ports)
   for (ezxml_t x = ezxml_cchild(xml, element); x; x = ezxml_next(x), ordinal++)
-    if (!create(*this, x, nTotal == 1 ? -1 : ordinal, err))
+    if (!create(*this, x, NULL, nTotal == 1 ? -1 : ordinal, err))
       return err;
   return NULL;
 }
@@ -687,6 +687,7 @@ getValue(const char *sym, OU::ExprValue &val) const {
 	// The value of the numeric attribute matches the name of a provided property
 	// So we use that property value in place of this attribute's value
 	// FIXME: why isn't this string value already parsed?
+	// FIXME: the instance has parsed property values but it not accessible here
 	size_t nval;
 	if (OE::getUNum(ap->m_value.c_str(), &nval))
 	  return OU::esprintf("Bad '%s' property value: '%s'",

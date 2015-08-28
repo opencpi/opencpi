@@ -71,7 +71,7 @@ namespace OCPI {
 #if 1
     Property::Property(Worker &w, unsigned n)
       : m_worker(w), m_readVaddr(NULL), m_writeVaddr(NULL),
-	m_info(w.setupProperty(n, m_writeVaddr, m_readVaddr)),  m_ordinal(m_info.m_ordinal),
+	m_info(w.setupProperty(n, m_writeVaddr, m_readVaddr)), m_ordinal(m_info.m_ordinal),
 	m_readSync(m_info.m_readSync), m_writeSync(m_info.m_writeSync) {
     }
     size_t Property::stringBufferLength() const {

@@ -82,7 +82,6 @@ namespace OCPI {
 
     class Port :
       public OCPI::Container::PortBase<OCPI::RCC::Worker, OCPI::RCC::Port, OCPI::RCC::ExternalPort> {
-      //      OCPI::DataTransport::Port *           m_dtPort;
       Port *                                m_localOther; // a connected local (same container) port.
       //      const OCPI::Util::PValue *    m_params;     // Our initial properties
       //      ConnectionMode                m_mode;

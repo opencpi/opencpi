@@ -35,6 +35,7 @@
 #include <stdarg.h>
 #include <strings.h>
 #include <assert.h>
+#include <cstring>
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilDataTypes.h"
@@ -48,22 +49,17 @@ namespace OCPI {
   namespace API {
     PVULong PVEnd(0,0);
 
-    PValue::
-    PValue(const PValue &p) {
-      *this = p;
-    }
-    PValue &PValue::
-    operator=(const PValue & p ) {
+    PValue &PValue::operator=(const PValue &p) {
       name = p.name;
       type = p.type;
-      owned = p.owned;
-      if (owned)
-	value.vString = strdup(p.value.vString);
-      else
-	value = p.value;
-      return *this;
+      if (p.owned) {
+	value.vString = new char[strlen(p.value.vString) + 1];
+	strcpy((char*)value.vString, p.value.vString);
+	owned = true;
+      } else
+	value.vULongLong = p.value.vULongLong;
+      return  *this;
     }
-
     unsigned PValue::length() const {
       unsigned n = 0;
       assert(this);
@@ -260,7 +256,8 @@ namespace OCPI {
       if (err)
 	return err;
       if (p.type == OA::OCPI_String) {
-	p.value.vString = strdup(val.m_String);
+	p.value.vString = new char[strlen(val.m_String) + 1];
+	strcpy((char*)p.value.vString, val.m_String);
 	p.owned = true;
       } else
 	p.value.vULongLong = val.m_ULongLong; // FIXME: little endian assumption

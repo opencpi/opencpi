@@ -31,7 +31,6 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 /*
  *  John Miller -  12/2010
  *  Initial version

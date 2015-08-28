@@ -62,8 +62,8 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   MyState *s = self->memories[0];
   size_t n2read =  props->messageSize ? props->messageSize : port->current.maxLength;
   ssize_t n;
-
   (void)timedOut;(void)newRunCondition;
+
   // Initialize our seek position the first time we're here
   if (self->crewSize > 1 && self->firstRun && self->member &&
       lseek(s->fd, props->messageSize * self->member, SEEK_CUR) == -1)
@@ -91,19 +91,14 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
     return self->container.setError("message truncated in file. header said %zu file had %zu",
 				    n2read, n);
   }
+  // Truncate the message for the granularity
+  if (props->granularity)
+    n -= n % props->granularity;
   if (self->crewSize > 1 && n) {
     // Skip to the next place this member should read
     if (lseek(s->fd, props->messageSize - n + props->messageSize * (self->crewSize - 1), SEEK_CUR) == -1)
       return self->container.setError("error skipping data in scaled worker");
-#if 0
-    printf("Self %zu of %zu. Position at %zu\n",
-	   self->member, self->crewSize, (size_t)lseek(s->fd, 0, SEEK_CUR));
-#endif
   }
-  // Truncate the message for the granularity
-  if (props->granularity)
-    n -= n % props->granularity;
-  //printf("In file_read.c (me %zu) got %zu data = %x\n", self->member, n, *(uint32_t *)port->current.data);
   port->output.length = n;
   props->bytesRead += n;
   if (n) {
@@ -121,7 +116,6 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   close(s->fd);
   if (props->suppressEOF)
     return RCC_DONE;
-  //printf("file read DONE: me %zu last %zu END %zu\n", self->member, (size_t)last, (size_t)end);
   if (last - end >= props->messageSize)
     return RCC_DONE;
   props->messagesWritten++;

@@ -1,8 +1,8 @@
 #include "hdl.h"
 
 WtiPort::
-WtiPort(Worker &w, ezxml_t x, int ordinal, const char *&err)
-  : OcpPort(w, x, NULL, ordinal, WTIPort, "wti", err) {
+WtiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
+  : OcpPort(w, x, sp, ordinal, WTIPort, "wti", err) {
   if ((err = OE::checkAttrs(x, "Name", "Clock", "SecondsWidth", "FractionWidth",
 			    "AllowUnavailable", "Pattern", "master", "myclock", (void*)0)) ||
       (err = OE::getNumber(x, "SecondsWidth", &m_secondsWidth, 0, 32)) ||

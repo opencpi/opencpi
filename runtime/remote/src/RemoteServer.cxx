@@ -396,7 +396,7 @@ namespace OCPI {
       const char *err;
       size_t inst, n;
       bool get, set, op, wait, hex, getState = ezxml_cattr(m_rx, "getstate") != NULL;
-      
+
       if ((err = OX::getNumber(m_rx, "id",   &inst, NULL, 0, false, true)) ||
 	  (err = OX::getNumber(m_rx, "get",  &n,    &get, 0, false)) ||
 	  (err = OX::getNumber(m_rx, "set",  &n,    &set, 0, false)) ||

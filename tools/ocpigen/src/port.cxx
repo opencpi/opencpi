@@ -556,8 +556,8 @@ void Port::
 emitRccArgTypes(FILE *, bool &) {}
 
 RawPropPort::
-RawPropPort(Worker &w, ezxml_t x, int ordinal, const char *&err)
-  : Port(w, x, NULL, ordinal, PropPort, "rawProps", err) {
+RawPropPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
+  : Port(w, x, sp, ordinal, PropPort, "rawProps", err) {
 }
 
 // Our special copy constructor
@@ -636,8 +636,8 @@ slaveMissing() const {
 }
 
 CpPort::
-CpPort(Worker &w, ezxml_t x, int ordinal, const char *&err)
-  : Port(w, x, NULL, ordinal, CPPort, "cp", err) {
+CpPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
+  : Port(w, x, sp, ordinal, CPPort, "cp", err) {
 }
 
 // Our special copy constructor
@@ -685,8 +685,8 @@ emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signa
 }
 
 NocPort::
-NocPort(Worker &w, ezxml_t x, int ordinal, const char *&err)
-  : Port(w, x, NULL, ordinal, NOCPort, "unoc", err) {
+NocPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
+  : Port(w, x, sp, ordinal, NOCPort, "unoc", err) {
 }
 
 // Our special copy constructor
@@ -732,8 +732,8 @@ emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signa
 }
 
 TimeServicePort::
-TimeServicePort(Worker &w, ezxml_t x, int ordinal, const char *&err)
-  : Port(w, x, NULL, ordinal, TimePort, "time", err) {
+TimeServicePort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
+  : Port(w, x, sp, ordinal, TimePort, "time", err) {
 }
 // Our special copy constructor
 TimeServicePort::
@@ -828,8 +828,8 @@ emitConnectionSignal(FILE *f, bool /*output*/, Language /*lang*/, std::string &s
 }
 
 TimeBasePort::
-TimeBasePort(Worker &w, ezxml_t x, int ordinal, const char *&err)
-  : Port(w, x, NULL, ordinal, TimeBase, "timebase", err) {
+TimeBasePort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
+  : Port(w, x, sp, ordinal, TimeBase, "timebase", err) {
 }
 // Our special copy constructor
 TimeBasePort::
@@ -934,8 +934,8 @@ emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signa
 }
 
 MetaDataPort::
-MetaDataPort(Worker &w, ezxml_t x, int ordinal, const char *&err)
-  : Port(w, x, NULL, ordinal, MetadataPort, "metadata", err) {
+MetaDataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
+  : Port(w, x, sp, ordinal, MetadataPort, "metadata", err) {
 }
 
 // Our special copy constructor

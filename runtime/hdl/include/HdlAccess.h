@@ -28,12 +28,14 @@ namespace OCPI {
       virtual uint16_t get16(RegisterOffset, uint32_t *status = NULL) = 0;
       virtual uint8_t  get8(RegisterOffset,  uint32_t *status = NULL) = 0;
       // the rest return status
-      virtual void getBytes(RegisterOffset, uint8_t *, size_t, uint32_t *status = NULL) = 0;
+      virtual void getBytes(RegisterOffset, uint8_t *, size_t, size_t,
+			    uint32_t *status = NULL) = 0;
       virtual void set64(RegisterOffset, uint64_t, uint32_t *status = NULL) = 0;
       virtual void set32(RegisterOffset, uint32_t, uint32_t *status = NULL) = 0;
       virtual void set16(RegisterOffset, uint16_t, uint32_t *status = NULL) = 0;
       virtual void set8(RegisterOffset, uint8_t, uint32_t *status = NULL) = 0;
-      virtual void setBytes(RegisterOffset, const uint8_t *, size_t, uint32_t *status = NULL) = 0;
+      virtual void setBytes(RegisterOffset, const uint8_t *, size_t, size_t,
+			    uint32_t *status = NULL) = 0;
     };
     class Access {
       friend class WciControl;
@@ -65,9 +67,11 @@ namespace OCPI {
 	return m_base + OCPI_UTRUNCATE(DtOsDataTypes::Offset, offset);
       }
       // The optimization here is to reduce the number of memory references, hence no unrolling
-      void getBytes(RegisterOffset offset, uint8_t *to8, size_t bytes) const;
+      void getBytes(RegisterOffset offset, uint8_t *to8, size_t bytes,
+		    size_t elementBytes) const;
 
-      void setBytes(RegisterOffset offset, const uint8_t *from8, size_t bytes) const;
+      void setBytes(RegisterOffset offset, const uint8_t *from8, size_t bytes,
+		    size_t elementTypes) const;
       inline uint8_t get8RegisterOffset(size_t offset) const {
 	ocpiDebug("get8RegisterOffset %p %zx", m_registers, offset);
 	uint8_t val = m_registers ? *(volatile uint8_t *)(m_registers + offset) :
@@ -124,28 +128,32 @@ namespace OCPI {
 	else
 	  m_accessor->set64(m_base + offset, val);
       }
-      inline void getBytesRegisterOffset(size_t offset, uint8_t *bytes,  size_t size) const {
+      inline void getBytesRegisterOffset(size_t offset, uint8_t *bytes,  size_t size,
+					 size_t elementBytes) const {
 	ocpiDebug("getBytesRegisterOffset %p %zx sz %zx", m_registers, offset, size);
 	if (m_registers)
-	  getBytes(offset, bytes, size);
+	  getBytes(offset, bytes, size, elementBytes);
 	else
-	  m_accessor->getBytes(m_base + offset, bytes, size);
+	  m_accessor->getBytes(m_base + offset, bytes, size, elementBytes);
       }
-      inline void setBytesRegisterOffset(size_t offset, const uint8_t *bytes, size_t size) const {
+      inline void setBytesRegisterOffset(size_t offset, const uint8_t *bytes, size_t size,
+					 size_t elementBytes) const {
 	ocpiDebug("setBytesRegisterOffset %p %zx sz %zx", m_registers, offset, size);
 	if (m_registers)
-	  setBytes(offset, bytes, size);
+	  setBytes(offset, bytes, size, elementBytes);
 	else
-	  m_accessor->setBytes(m_base + offset, bytes, size);
+	  m_accessor->setBytes(m_base + offset, bytes, size, elementBytes);
       }
 #define get32Register(m, type) get32RegisterOffset(offsetof(type, m))
 #define get64Register(m, type) get64RegisterOffset(offsetof(type, m))
 #define set32Register(m, type, val) set32RegisterOffset(offsetof(type, m), (val))
 #define set64Register(m, type, val) set64RegisterOffset(offsetof(type, m), (val))
-#define getRegisterBytes(m, buf, type) \
-      getBytesRegisterOffset(offsetof(type, m), (uint8_t*)(buf), sizeof(((type*)0)->m))
-#define setRegisterBytes(m, buf, type) \
-      setBytesRegisterOffset(offsetof(type, m), (const uint8_t*)(buf), sizeof(((type*)0)->m))
+#define getRegisterBytes(m, buf, type, elementBytes)					\
+      getBytesRegisterOffset(offsetof(type, m), (uint8_t*)(buf), sizeof(((type*)0)->m), \
+			     elementBytes)
+#define setRegisterBytes(m, buf, type, elementBytes)					\
+      setBytesRegisterOffset(offsetof(type, m), (const uint8_t*)(buf), sizeof(((type*)0)->m), \
+			     elementBytes)
 #define offsetRegister(m, type) physOffset(offsetof(type, m))
 
     };

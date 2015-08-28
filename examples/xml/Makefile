@@ -43,3 +43,4 @@ scale:
 test:
 
 clean::
+	rm -f test.out test.output test.outputwrong time_test.out

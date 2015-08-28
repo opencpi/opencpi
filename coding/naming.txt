@@ -1,0 +1,61 @@
+There are (at least) these categories of names that have some degree of standardization.
+There is a distinciton between names visible to non-programmer "users", and coders.
+
+
+At least briefly, they are captured here.
+
+Source Code file names
+-- C++ 
+   The intention is to move to "*.cc" and "*.hh", but for now it is "*.cxx" and "*.h".
+   These will be shorter, like OmniOrb, and hh makes it clear that the editing mode for the file
+   should be C++, not c.
+
+   Generally camel-case to match classes, with the first word being the namespace
+   of the directory of source files, which usually matches the directory name
+   which will be lower case.
+   E.g. the file name ContainerPort.{cxx,cc,h,hh} would be in the directory named "container",
+   and in the namespace OCPI::Container
+
+   When file names do not match classes and namespaces they may just be categories of code,
+   and may be named more flexibly, and since they don't correspond to makes of things
+   in the source code, may use hyphens.
+
+-- main programs
+   <program_name>_main.cxx where program names are usually ocpi<program> in lower case.
+
+XML file names
+   The .xml suffix is used uniformly.
+   Some files use a suffix after a hyphen when the suffix is not part of the name of the 
+   thing being described in the file.  Two common ones are "-spec.xml" and "-protocol.xml".
+   Hyphens are used to make it clear that this is a type suffix, and not part of the name.
+
+worker/platform/configuration/container names (before prefix).
+   lower case with underscore worker separators.
+
+C++ Namespace names
+   All start in the OCPI namespace.
+   If it is an abbreviation (like HDL, etc.) it is all upper case. If not, camelcase.
+
+C++ type/class names
+   Capitalized camelcase.
+
+C++ names
+-- globals
+   g_ prefix
+-- statics (not in class)
+   no prefix, initial lower camelcase - i.e. not distinguished from member functions
+-- constants
+   c_ prefix for member data in a class.
+   All upper case for globals (like MACROS)
+-- Enumeration values
+   Usually all upper case.  Sometimes <UPPER_PREFIX>_<lower>.
+-- MACROS
+   All upper case.
+-- static member data
+   s_ prefix
+-- static member functions
+   initial-lower-camelcase - not distinguished from non-static member functions.
+-- member data
+   m_ prefix
+-- member functions
+   initial-lower-camelcase

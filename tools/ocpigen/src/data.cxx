@@ -12,6 +12,7 @@ DataPort::
 DataPort(Worker &w, ezxml_t x, DataPort *sp, int ordinal, WIPType type, const char *&err)
   : OcpPort(w, x, sp, ordinal, type, NULL, err),
     OU::Port(sp, w, x, cname(), err) {
+  assert(sp != NULL);
   if (err)
     return;
   // Now we do implementation-specific initialization that will precede the
@@ -298,30 +299,33 @@ emitRecordDataTypes(FILE *f) {
   if (m_nOpcodes > 1) {
     if (operations()) {
       // See if this protocol has already been defined
-      unsigned nn;
-      for (nn = 0; nn < ::Port::m_ordinal; nn++)
+      size_t maxOpcodes = 0;
+      unsigned first = 0;
+      for (unsigned nn = 0; nn < worker().m_ports.size(); nn++)
 	if (worker().m_ports[nn]->isData()) {
 	  DataPort *dp = static_cast<DataPort*>(worker().m_ports[nn]);
-
 	  if (dp->operations() &&
-	      !strcasecmp(dp->OU::Protocol::m_name.c_str(), OU::Protocol::m_name.c_str()))
-	    break;
+	      !strcasecmp(dp->OU::Protocol::m_name.c_str(), OU::Protocol::m_name.c_str())) {
+	    maxOpcodes = std::max(dp->m_nOpcodes, maxOpcodes);
+	    if (!first)
+	      first = nn;
+	  }
 	}
-      if (nn >= ::Port::m_ordinal) {
+      if (first >= ::Port::m_ordinal) {
 	fprintf(f,
 		"  -- This enumeration is for the opcodes for protocol %s (%s)\n"
 		"  type %s_OpCode_t is (\n",
 		OU::Protocol::m_name.c_str(), OU::Protocol::m_qualifiedName.c_str(),
 		OU::Protocol::m_name.c_str());
 	OU::Operation *op = operations();
+	unsigned nn;
 	for (nn = 0; nn < nOperations(); nn++, op++)
 	  fprintf(f, "%s    %s_%s_op_e", nn ? ",\n" : "",
 		  OU::Protocol::m_name.c_str(), op->name().c_str());
 	// If the protocol opcodes do not fill the space, fill it
-	if (nn < m_nOpcodes) {
+	if (nn < maxOpcodes)
 	  for (unsigned o = 0; nn < m_nOpcodes; nn++, o++)
 	    fprintf(f, ",%sop%u_e", (o % 10) == 0 ? "\n    " : " ", nn);
-	}
 	fprintf(f, ");\n");
       }
     } else
@@ -614,3 +618,50 @@ emitVerilogPortParameters(FILE *f) {
 	    cname(), cname(), m_byteWidth, m_byteWidth, cname(), cname(), m_byteWidth, cname());
 }
 
+#if 0
+Overlap::
+Overlap()
+  : m_left(0), m_right(0), m_padding(None) {
+}
+
+const char *Overlap::
+parse(ezxml_t x) {
+  static const char *pNames[] = {
+#define OCPI_PADDING(x) #x,
+OCPI_PADDINGS
+#undef OCPI_PADDING
+    NULL
+  };
+void DataPort::
+emitVerilogPortParameters(FILE *f) {
+  std::string width = m_dataWidthExpr;
+  if (m_dataWidthExpr.empty()) {
+    if (m_dataWidth == 0)
+      return;
+    OU::format(width, "%zu", m_dataWidth);
+  } else
+    OU::format(width, "%s", m_dataWidthExpr.c_str());
+  // FIXME: Can we use some sort of global procedure or macro?
+  fprintf(f,
+	  "  localparam ocpi_port_%s_data_width = %s;\n"
+	  "  localparam ocpi_port_%s_MData_width = \n"
+	  "    ocpi_port_%s_data_width == 0 ? 0 :\n"
+	  "    ocpi_port_%s_data_width != %zu && %zu != 8 ?\n"
+	  "    (8 * ocpi_port_%s_data_width) / %zu :\n"
+	  "    ocpi_port_%s_data_width;\n",
+	  cname(), width.c_str(), cname(), cname(), cname(), m_byteWidth, m_byteWidth, cname(),
+	  m_byteWidth, cname());
+  if (ocp.MByteEn.value)
+    fprintf(f,
+	    "  localparam ocpi_port_%s_MByteEn_width = ocpi_port_%s_data_width / %zu;\n",
+	    cname(), cname(), m_byteWidth);
+  if (ocp.MDataInfo.value)
+    fprintf(f,
+	    "  localparam ocpi_port_%s_MDataInfo_width = \n"
+	    "    ocpi_port_%s_data_width != %zu && %zu != 8 ?\n"
+	    "    ocpi_port_%s_data_width - ((8 * ocpi_port_%s_data_width) / %zu) :\n"
+	    "    ocpi_port_%s_data_width;\n",
+	    cname(), cname(), m_byteWidth, m_byteWidth, cname(), cname(), m_byteWidth, cname());
+}
+
+#endif

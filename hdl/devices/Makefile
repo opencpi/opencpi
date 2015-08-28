@@ -42,7 +42,6 @@
 # The names of the device workers are only qualified when we have more than
 # one -- until we have a good naming convension.
 Package=ocpi.devices
-XmlIncludeDirs=../../components/specs
 HdlLibraries=platform
 # Remember that subdevices that support other devices must occur AFTER the devices they support
 # Similarly, emulators must occur after the devices they emulate
@@ -70,6 +69,7 @@ Workers = \
 	lime_tx_proxy.rcc \
         lime_spi.hdl \
 	lime_spi_em.hdl \
+        time_server.hdl
 
 # These two require support for embedded IOBUFs which is currently turned off
 #	dram_v5.hdl \

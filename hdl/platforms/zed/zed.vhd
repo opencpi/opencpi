@@ -14,7 +14,6 @@ architecture rtl of zed_worker is
   signal ps_axi_gp_out : m_axi_gp_out_t;       -- m2s
   signal ps_axi_hp_in  : s_axi_hp_in_array_t(0 to C_S_AXI_HP_COUNT-1);  -- m2s
   signal ps_axi_hp_out : s_axi_hp_out_array_t(0 to C_S_AXI_HP_COUNT-1); -- s2m
-  signal my_cp_out     : occp_in_t;
   signal fclk          : std_logic_vector(3 downto 0);
   signal clk           : std_logic;
   signal raw_rst_n     : std_logic; -- FCLKRESET_Ns need synchronization
@@ -42,6 +41,10 @@ architecture rtl of zed_worker is
   signal dbg_state1    : ulonglong_t;
   signal dbg_state2    : ulonglong_t;
 begin
+  timebase_out.clk   <= clk;
+  timebase_out.reset <= reset;
+  timebase_out.ppsIn <= '0';
+
   g0: if its(ocpi_debug) generate
     -- If we don't assign the outputs, the "debug overhead" will disappear
     props_out.axi_waddr <= axi_waddr;
@@ -59,7 +62,7 @@ begin
     props_out.unoc_headers_out <= unoc_header_out;
     props_out.unoc_headers_out1 <= unoc_header_out1;
   end generate g0;
-  cp_out <= my_cp_out;
+
   clkbuf   : BUFG   port map(I => fclk(3),
                              O => clk);
   -- The FCLKRESET signals from the PS are documented as asynchronous with the
@@ -90,7 +93,7 @@ begin
       axi_in  => ps_axi_gp_out,
       axi_out => ps_axi_gp_in,
       cp_in   => cp_in,
-      cp_out  => my_cp_out
+      cp_out  => cp_out
       );
   zynq_out <= my_zynq_out;
   props_out.debug_state <= dbg_state;
@@ -138,35 +141,6 @@ begin
                 up_out     => zynq_slave_out,
                 drop_count => props_out.unocDropCount);
   
-  -- This piece of generic infrastructure in is instantiated here because
-  -- it localizes all these signals here in the platform worker, and thus
-  -- the platform worker simply produces clock, reset, and time, all in the
-  -- clock domain of the timekeepping clock.
-  ts : time_server
-    port map(
-      CLK                 => clk,
-      RST_N               => rst_n,
-      timeCLK             => clk,
-      timeRST_N           => rst_n,
-
-      timeControl         => props_in.timeControl,
-      timeControl_written => props_in.timeControl_written,
-      timeStatus          => props_out.timeStatus,
-      timeNowIn           => props_in.timeNow,
-      timeNow_written     => props_in.timeNow_written,
-      timeNowOut          => props_out.timeNow,
-      timeDeltaIn         => props_in.timeDelta,
-      timeDelta_written   => props_in.timeDelta_written,
-      timeDeltaOut        => props_out.timeDelta,
-      ticksPerSecond      => props_out.ticksPerSecond,
-      
-      -- PPS interface
-      ppsIn               => '0',
-      ppsOut              => open,
-
-      -- Time service output
-      time_service        => time_out
-      );
   -- Output/readable properties
   props_out.platform        <= to_string("zed", props_out.platform'length-1);
   props_out.dna             <= (others => '0');
@@ -187,7 +161,7 @@ begin
   metadata_out.romEn        <= props_in.romData_read;
   led(0) <= count(count'left);
   led(1) <= ps_axi_gp_out.ARVALID;
-  led(2) <= seen_burst; -- my_cp_out.is_read;
+  led(2) <= seen_burst;
   led(3) <= cp_in.take;
 
   led(4) <= cp_in.valid;

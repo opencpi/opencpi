@@ -12,6 +12,6 @@
   </instance>
   <instance component='file_write'>
     <property name='filename' value='test.output'/>
-    <!-- <property name='messagesinfile' value='true'/> -->
+    <property name='messagesinfile' value='false'/>
   </instance>
 </application>

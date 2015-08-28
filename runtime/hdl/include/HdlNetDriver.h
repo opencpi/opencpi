@@ -53,20 +53,26 @@ namespace OCPI {
 	typedef std::map<const std::string, OCPI::OS::Ether::Socket *> Sockets;
 	typedef Sockets::iterator SocketsIter;
 	typedef std::pair<std::string, OCPI::OS::Ether::Socket*> SocketPair;
+	typedef std::pair<OCPI::OS::Ether::Address,OCPI::OS::Ether::Interface *> MacPair;
+	// The string keys for a server are a string of mac-address/pid
+	typedef std::pair<std::string, MacPair> MacInsert;
+	typedef std::map<std::string, MacPair> Macs;
+	typedef Macs::iterator MacsIter;
 	Sockets m_sockets;
 	bool trySocket(OCPI::OS::Ether::Interface &ifc, OCPI::OS::Ether::Socket &s,
 		       OCPI::OS::Ether::Address &addr, bool discovery, const char **exclude,
-		       Device **dev, std::string &error);
+		       Macs *macs, Device **dev, std::string &error);
 	// Try to find one or more devices on this interface
 	// mac is NULL for broadcast
 	// discovery is false only if mac is true
 	unsigned 
 	tryIface(OCPI::OS::Ether::Interface &ifc, OCPI::OS::Ether::Address &devAddr,
-		 const char **exclude, Device **dev, bool discovery, std::string &error);
+		 const char **exclude, Device **dev, bool discovery, Macs *macs,
+		 std::string &error);
       protected:
 	virtual ~Driver();
 	// device constructor
-	virtual Device &createDevice(OS::Ether::Interface &ifc, OS::Ether::Address &addr,
+	virtual Device *createDevice(OS::Ether::Interface &ifc, OS::Ether::Address &addr,
 				     bool discovery, std::string &error) = 0;
       public:
 	// Find the discovery socket for this interface
@@ -100,6 +106,7 @@ namespace OCPI {
 	// Load a bitstream via jtag
 	//	virtual void load(const char *) = 0;
 	inline OS::Ether::Address &addr() { return m_devAddr; }
+	void setAddr(OS::Ether::Address &addr);
       protected:
 	// Tell me which socket to use (not to own)
 	//	inline void setSocket(OCPI::OS::Ether::Socket &socket) { m_socket = &socket; }
@@ -121,7 +128,8 @@ namespace OCPI {
 	inline uint8_t get8(RegisterOffset offset, uint32_t *status) {
 	  return (uint8_t)(get(offset, sizeof(uint8_t), status) >> ((offset&3)*8));
 	}
-	void getBytes(RegisterOffset offset, uint8_t *buf, size_t length, uint32_t *status);
+	void getBytes(RegisterOffset offset, uint8_t *buf, size_t length, size_t elementBytes,
+		      uint32_t *status);
 	void set64(RegisterOffset offset, uint64_t val, uint32_t *status);
 	inline void set32(RegisterOffset offset, uint32_t val, uint32_t *status) {
 	  set(offset, sizeof(uint32_t), val, status);
@@ -132,7 +140,8 @@ namespace OCPI {
 	inline void set8(RegisterOffset offset, uint8_t val, uint32_t *status) {
 	  set(offset, sizeof(uint8_t), val << ((offset & 3) * 8), status);
 	}
-	void setBytes(RegisterOffset offset, const uint8_t *buf, size_t length, uint32_t *status);
+	void setBytes(RegisterOffset offset, const uint8_t *buf, size_t length,
+		      size_t elementBytes, uint32_t *status);
       };
     }
   }

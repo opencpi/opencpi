@@ -144,9 +144,10 @@ public:
 };
 
 // Factory function template for port types
-template <typename ptype> Port *createPort(Worker &w, ezxml_t x, int ordinal, const char *&err) {
+template <typename ptype> Port *createPort(Worker &w, ezxml_t x, Port *sp, int ordinal,
+					   const char *&err) {
   err = NULL;
-  Port *p = new ptype(w, x, ordinal, err);
+  Port *p = new ptype(w, x, sp, ordinal, err);
   if (err) {
     delete p;
     return NULL;
@@ -154,6 +155,6 @@ template <typename ptype> Port *createPort(Worker &w, ezxml_t x, int ordinal, co
   return p;
 }
 // A port creation function
-typedef Port *PortCreate(Worker &w, ezxml_t x, int ordinal, const char *&err);
+typedef Port *PortCreate(Worker &w, ezxml_t x, Port *p, int ordinal, const char *&err);
 
 #endif

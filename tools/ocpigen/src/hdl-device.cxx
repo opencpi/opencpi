@@ -231,7 +231,7 @@ parse(ezxml_t xml, Board &b, SlotType *stype) {
 	  ocpiDebug("Mapping to existing platform signal: %s", board);
       }
     }
-    // Check compatibility between device and slot signal
+    // Check compatibility between device and slot/platform signal
     if (boardSig) {
       switch (boardSig->m_direction) {
       case Signal::IN: // input to board
@@ -297,8 +297,12 @@ parse(ezxml_t xml, Board &b, SlotType *stype) {
 }
 
 Board::
-Board(SigMap &sigmap, Signals &signals)
+Board(SigMap &/*sigmap*/, Signals &/*signals*/)
+#if 0
   : m_extmap(sigmap), m_extsignals(signals) {
+#else
+  {
+#endif
 }
 
 const char *Board::

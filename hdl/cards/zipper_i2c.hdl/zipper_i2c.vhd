@@ -92,6 +92,8 @@ begin
   scl_oe <= not scl_padoen;
   sda_oe <= not sda_padoen;
 
+  raw_out.raw.done <= done_sig;
+  raw_out.raw.error <= error_sig;
   byte_controller : i2c_master_byte_ctrl
     port map(
       clk      => wci_clk,
@@ -125,7 +127,7 @@ begin
 
    fsm_seq: process(wci_clk, wci_reset)
    begin
-      if (wci_clk = '1') then
+      if its(wci_reset) then
          cstate <= IDLE;
       elsif rising_edge(wci_clk) then
          cstate <= nstate;

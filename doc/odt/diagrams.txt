@@ -1,0 +1,33 @@
+This note defines how to use diagrams drawn in PowerPoint as diagrams in the OpenCPI
+LibreOffice ODT documents.
+
+Powerpoint export a slide as a PNG diagram into Libreoffice doc as a diagram.
+
+Make a pair of empty paragraphs: style Diagram over style Caption.
+
+1. In PPT: Save-as as PNG from PPT, should default to the current slide only, shift-%-S, select PNG
+2. In LO: *Open* PNG in libreoffice, opens and puts you in LO-Draw
+3. In LO-Draw: click to select drawing object to get green corners
+4. In LO-Draw: click crop button (has scissors-with-paper icon with orange handles - not scissors-alone with red handle - which is CUT)
+4. In LO-Draw: crop by dragging crop edges - tightly since we want doc styles to specify spacing, not white space in diagram.
+5. In LO-Draw: copy (%c), switch to doc window
+6. In LO-Writer: in document, put text cursor AND MOUSE CURSOR EXACTLY OVER TEXT CURSOR into (empty) diagram paragraph, paste (%v)
+6. In LO-Writer: click-right on pasted diagram (which should already be be selected with green corners), and under anchor menu, set "anchor *as* character"
+7. click on diagram to select it as a diagram - with green corners
+8. scale the diagram holding down shift key to scale in X and Y at the same time proportionally
+9. Insert text in caption paragraph: after "Diagram ", using insert->fields->other..., Click on: type: "number range", select: Diagram, insert, then finish diagram title
+
+When ou re-edit the power point, just do another saveas PNG, and just use the same file name (if the whole ppt file full of diagrams is abc123.ppt,
+Just continue to use abc123.png, since it is just a temp file anyway.
+
+Then since you have the diagrams open in LO-Draw anyway (don't close them after copy-paste into the real doc), you can just use file->reload to bring in the diagram and re-crop.
+
+Then copying the cropped diagram, you can paste over the selected diagram and not have to redo any of the other steps.  It even remembers the initial scaling.
+
+
+In a perfect world it would be:
+1. Select all in PPT diagram
+2. Copy
+3. At cursor in LO-Writer, paste
+4. Crop in place
+5. scale in place

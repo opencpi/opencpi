@@ -116,9 +116,10 @@ namespace OCPI {
 	work(Launcher::Members &members, Launcher::Connections &connections) = 0;
     };
     // Concrete class that will be a singleton
-    class LocalLauncher : public Launcher { //, public OCPI::Driver::Singleton<LocalLauncher> {
+    class LocalLauncher : public Launcher, public OCPI::Driver::Singleton<LocalLauncher> {
       void createWorker(Launcher::Member &i);
     public:
+      virtual ~LocalLauncher();
       bool launch(Launcher::Members &members, Launcher::Connections &connections);
       bool work(Launcher::Members &members, Launcher::Connections &connections);
     };

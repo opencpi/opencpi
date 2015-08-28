@@ -190,7 +190,6 @@ namespace OCPI {
 	m_runCondition = &rc;
 	m_runCondition->activate(m_runTimer);
       }
-
       // Our dispatch table
       RCCEntryTable   *m_entry;    // our entry in the entry table of the artifact
       RCCUserWorker   *m_user;     // for C++, the user's worker object

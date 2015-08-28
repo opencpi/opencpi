@@ -75,7 +75,7 @@ class WciPort : public OcpPort {
   size_t m_timeout;
   bool m_resetWhileSuspended;
  public:
-  WciPort(Worker &w, ezxml_t x, int ordinal, const char *&err);
+  WciPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
   inline const char *prefix() const { return "wci"; }
   inline const char *typeName() const { return "WCI"; }
   bool needsControlClock() const;
@@ -107,7 +107,7 @@ class WmemiPort : public OcpPort {
   uint64_t m_memoryWords;
   size_t m_maxBurstLength;
  public:
-  WmemiPort(Worker &w, ezxml_t x, int ordinal, const char *&err);
+  WmemiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
   Port &clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role *role,
 	      const char *&err)
     const;
@@ -121,7 +121,7 @@ class WtiPort : public OcpPort {
   bool m_allowUnavailable;
   WtiPort(const WtiPort &other, Worker &w, std::string &name, const char *&err);
  public:
-  WtiPort(Worker &w, ezxml_t x, int ordinal, const char *&err);
+  WtiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
   Port &clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role *role,
 	      const char *&err) const;
   inline const char *typeName() const { return "WTI"; }
@@ -139,7 +139,7 @@ class WtiPort : public OcpPort {
 class CpPort : public Port {
   CpPort(const CpPort &other, Worker &w , std::string &name, size_t count, const char *&err);
  public:
-  CpPort(Worker &w, ezxml_t x, int ordinal, const char *&err);
+  CpPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
   Port &clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role *role,
 	      const char *&err)
     const;
@@ -153,7 +153,7 @@ class NocPort : public Port {
   NocPort(const NocPort &other, Worker &w , std::string &name, size_t count,
 	  const char *&err);
  public:
-  NocPort(Worker &w, ezxml_t x, int ordinal, const char *&err);
+  NocPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
   Port &clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role *role,
 	      const char *&err) const;
   inline const char *prefix() const { return "noc"; }
@@ -166,7 +166,7 @@ class MetaDataPort : public Port {
   MetaDataPort(const MetaDataPort &other, Worker &w , std::string &name, size_t count,
 		  const char *&err);
  public:
-  MetaDataPort(Worker &w, ezxml_t x, int ordinal, const char *&err);
+  MetaDataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
   Port &clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role *role,
 	      const char *&err) const;
   inline const char *prefix() const { return "metadata"; }
@@ -179,7 +179,7 @@ class TimeServicePort : public Port {
   TimeServicePort(const TimeServicePort &other, Worker &w , std::string &name, size_t count,
 		  const char *&err);
  public:
-  TimeServicePort(Worker &w, ezxml_t x, int ordinal, const char *&err);
+  TimeServicePort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
   Port &clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role *role,
 	      const char *&err) const;
   inline const char *prefix() const { return "time"; }
@@ -199,7 +199,7 @@ class TimeBasePort : public Port {
   TimeBasePort(const TimeBasePort &other, Worker &w , std::string &name, size_t count,
 		  const char *&err);
  public:
-  TimeBasePort(Worker &w, ezxml_t x, int ordinal, const char *&err);
+  TimeBasePort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
   Port &clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role *role,
 	      const char *&err) const;
   inline const char *prefix() const { return "timebase"; }
@@ -219,7 +219,7 @@ class TimeBasePort : public Port {
 };
 class RawPropPort : public Port {
  public:
-  RawPropPort(Worker &w, ezxml_t x, int ordinal, const char *&err);
+  RawPropPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
   RawPropPort(const RawPropPort &other, Worker &w, std::string &name, size_t count,
 	      const char *&err);
   Port &clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role *role,
@@ -240,7 +240,7 @@ class DevSignalsPort : public Port {
   bool m_hasInputs;
   bool m_hasOutputs;
  public:
-  DevSignalsPort(Worker &w, ezxml_t x, int ordinal, const char *&err);
+  DevSignalsPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
   DevSignalsPort(const DevSignalsPort &other, Worker &w, std::string &name, size_t count,
 		 const char *&err);
   Port &clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role *role,
@@ -449,6 +449,7 @@ class Worker : public OU::Worker {
     *emitImplOCL(),
     *emitEntryPointOCL(),
     *paramValue(const OU::Member &param, OU::Value &v, std::string &value),
+    *rccBaseValue(OU::Value &v, std::string &value, const OU::Member *param = NULL),
     *rccValue(OU::Value &v, std::string &value, const OU::Member &param),
     *rccPropValue(OU::Property &p, std::string &value),
     *emitSkelRCC(),
@@ -490,16 +491,6 @@ class Worker : public OU::Worker {
     emitParameters(FILE *f, Language lang, bool useDefaults = true, bool convert = false),
     emitSignals(FILE *f, Language lang, bool records, bool inPackage, bool inWorker,
 		bool convert = false),
-#if 0
-    emitRccStruct(FILE *f, size_t nMembers, OU::Member *members, unsigned level,
-		  const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef),
-    printRccMember(FILE *f, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
-		   const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef),
-    printRccType(FILE *f, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
-		 const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef),
-    printRccBaseType(FILE *f, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
-		     const char *parent, bool isFixed, bool &isLast, unsigned predefine),
-#else
     rccStruct(std::string &type, size_t nMembers, OU::Member *members, unsigned level,
 	      const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef),
     rccMember(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
@@ -508,7 +499,6 @@ class Worker : public OU::Worker {
 	    const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef),
     rccBaseType(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
 		const char *parent, bool isFixed, bool &isLast, unsigned predefine),
-#endif
     emitDeviceSignals(FILE *f, Language lang, std::string &last);
 };
 
@@ -538,7 +528,6 @@ extern const char
 	     bool param = false),
   *verilogValue(const OU::Value &v, std::string &value),
   *rccValue(OU::Value &v, std::string &value),
-//  *container,
   *platform, *device, *load, *os, *os_version, **libraries, **mappedLibraries, *assembly,
   *attribute, *platformDir,
   *addLibMap(const char *),

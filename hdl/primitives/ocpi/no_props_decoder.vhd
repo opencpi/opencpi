@@ -110,6 +110,7 @@ begin
   raw_out.is_write    <= my_is_write and is_raw;
   my_data             <= ocp_in.MData when my_access_r = none_e else my_data_r;
   raw_out.address     <= resize(unsigned(ocp_in.MAddr), raw_out.address'length);
+  raw_out.data        <= my_data;
   -- clocked processing is for delayed completion and capturing requests
   reg: process(ocp_in.Clk) is
   begin

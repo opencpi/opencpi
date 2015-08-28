@@ -85,6 +85,6 @@ $(ArtifactXmlFile): $(OclAssemblyFile)
 	     -O $(call OclOs,$(OclTarget)) \
              -V $(call OclOsVersion,$(OclTarget)) \
              -P $(call OclArch,$(OclTarget)) \
-	     -D $(TargetDir) $(XmlIncludeDirs:%=-I%) -A $(OclAssemblyFile)
+	     -D $(TargetDir) $(XmlIncludeDirsInternal:%=-I%) -A $(OclAssemblyFile)
 
 endif

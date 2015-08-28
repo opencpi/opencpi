@@ -1,15 +1,18 @@
-<HdlPlatform Language="VHDL">
-  <xi:include href="platform_spec"/>
-  <!-- The two ports every platform worker must have - should be in spec but not supported yet -->
-  <metadata master='true'/>
-  <timeservice master='true'/>
-  <property name="pciId" type='ushort' volatile='true'/>
-  <property name="unocDropCount" type='uchar' volatile='true'/>
+<HdlPlatform Language="VHDL" spec='platform-spec'>
+  <!-- All platform workers must provide these two ports -->
+  <metadata master='true'/> <!-- access to container metadata via the platform worker -->
+  <timebase master='true'/> <!-- providing a timebase for the time service -->
   <!-- This platform worker provides a control plane -->
   <cpmaster master='true'/>
+  <!-- Declare and parameterize the time_server device worker for this platform -->
+  <device worker='time_server'>
+    <property name='frequency' value='100e6'/>
+  </device>
   <!-- This platform worker provides a data plane called "pcie" -->
   <unoc name="pcie" master='true'/>
   <unoc name="pcie_slave"/>
+  <property name="pciId" type='ushort' volatile='true'/>
+  <property name="unocDropCount" type='uchar' volatile='true'/>
   <signal input="sys0_clk"/>
   <signal input='sys0_rstn'/>
   <signal input='pcie_clk'/>

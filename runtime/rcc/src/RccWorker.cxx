@@ -615,18 +615,7 @@ run(bool &anyone_run) {
     m_context->firstRun = false;
     if (m_user)
       m_user->m_first = false;
-    char *err = m_context->errorString ? m_context->errorString : m_errorString;
-    if (err) {
-      std::string e;
-      OU::format(e, "Worker \"%s\" produced error during execution: %s",
-		 name().c_str(), err);
-      m_context->errorString = NULL;
-      if (m_errorString) {
-	free(m_errorString);
-	m_errorString = NULL;
-      }
-      throw OU::Error("%s", e.c_str());
-    }
+    checkError();
     if (newRunCondition) {
       if (m_runCondition->m_timeout)
 	m_runTimer.reset();

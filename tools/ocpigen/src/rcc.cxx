@@ -1253,6 +1253,7 @@ emitRccCppImpl(FILE *f) {
 		  // FIXME: CACHE THIS UNTIL DATA PTR CHANGES
 		  // "            return m_myptr ? m_myptr : (m_myptr = (%s*)getArgAddress(%s));\n"
 		  "            return m_myptr = (%s*)getArgAddress(%s);\n"
+		  //"            return m_myptr ? m_myptr : (m_myptr = (%s*)getArgAddress(%s));\n"
 		  "          }\n",
 		  s.c_str(), s.c_str(),
 		  m_isProducer ? "" : " const", type.c_str(), m_isProducer ? "" : "const ",

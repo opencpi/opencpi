@@ -1,0 +1,5 @@
+Unused argument warnings in C++ should be addressed by using /* */ commands around the
+argument names rather then inserting the C-style "(void)arg" syntax.
+Warnings that suggest extra parentheses for && vs. || are not accomodated,
+but are suppressed when we can.
+Warnings that suggest extra braces for if and else are similar not accomodated.

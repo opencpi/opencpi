@@ -126,14 +126,14 @@ QuartusMakeQsf=\
   echo set_global_assignment -name TOP_LEVEL_ENTITY $(or $(Top),$(Core)); \
   \
   $(and $(SubCores_$(HdlTarget)),echo '\#' Import QXP file for each core;) \
-  $(foreach c,$(SubCores_$(HdlTarget)),\
+  $(foreach c,$(SubCores_$(HdlTarget)),$(infox CCC$c)\
     echo set_global_assignment -name QXP_FILE \
       '\"'$(call FindRelative,$(TargetDir),$(call HdlCoreRef,$c,$(HdlTarget)))'\"';\
-    $(foreach w,$(call HdlRmRv,$(basename $(notdir $c))),$(infox WWW:$w)\
+    $(foreach w,$(subst _rv,,$(basename $(notdir $c))),$(infox WWW:$w)\
       $(foreach d,$(dir $c),$(infox DDD:$d)\
         $(foreach l,$(if $(filter vhdl,$(HdlLanguage)),vhd,v),$(infox LLLLL:$l)\
           $(foreach f,$(or $(xxcall HdlExists,$d../gen/$w-defs.$l),\
-                           $(call HdlExists,$d../$(shell echo $w | sed 's/_c[0-9][0-9]*$$//').$l)),$(infox FFFF:$f)\
+                           $(call HdlExists,$d$w.$l)),$(infox FFFF:$f)\
             echo set_global_assignment -name $(if $(filter vhdl,$(HdlLanguage)),VHDL,VERILOG)_FILE -library $w '\"'$(call FindRelative,$(TargetDir),$f)'\"';\
             $(and $(filter vhdl,$(HdlLanguage)),\
               $(foreach g,$(or $(call HdlExists,$d/generics.vhd),\
@@ -170,7 +170,7 @@ QuartusMakeQsf=\
     echo set_global_assignment -name SYNTHESIS_EFFORT fast;) \
   $(if $(findstring $(HdlMode),container),\
     echo '\#' Include the platform-related assignments. ;\
-    echo source $(HdlPlatformsDir)/$(HdlPlatform)/$(HdlPlatform).qsf;) \
+    echo source $(HdlPlatformDir_$(HdlPlatform))/$(HdlPlatform).qsf;) \
  ) > $(Core).qsf;
 
 # Be safe for now - remove all previous stuff
@@ -242,8 +242,8 @@ $1/$3.sof:
 	 echo set_global_assignment -name DEVICE $$(call QuartusMakeDevice,$5); \
 	 echo set_global_assignment -name TOP_LEVEL_ENTITY $3; \
 	 echo set_global_assignment -name QXP_FILE '"'$3.qxp'"'; \
-	 echo set_global_assignment -name SDC_FILE '"'$(HdlPlatformsDir)/$5/$5.sdc'"'; \
-	 echo source $(HdlPlatformsDir)/$5/$5.qsf \
+	 echo set_global_assignment -name SDC_FILE '"'$(HdlPlatformDir_$5)/$5.sdc'"'; \
+	 echo source $(HdlPlatformsDir_$5)/$5.qsf \
 	 ) > $4-top.qsf && \
 	cp $4-top.qsf $4-top.qsf.pre-fit && \
 	$(call DoAltera1,quartus_map,$4-top,$4-top,map) && \

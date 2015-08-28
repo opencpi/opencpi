@@ -12,9 +12,15 @@
 using namespace OCPI::RCC; // for easy access to RCC data types and constants
 
 class Bias_ccWorker : public Bias_ccWorkerBase {
+  RCCResult testws_read() {return RCC_OK;} // notification that testws property will be read
+  RCCResult testws_written() {
+    fprintf(stderr, "NOTIFIED: %s\n", isInitialized() ? "init" : "none");
+    return RCC_OK;
+  } // notification that testws property has been written
   RCCResult run(bool /*timedout*/) {
+    size_t length = in.data().data().size();
     const uint32_t *inData  = in.data().data().data();
-    uint32_t *outData = out.data().data().data();  // same at "out" port
+    uint32_t *outData = out.data().data().data();
 
 #if 0
     // just for testing app.getProperty
@@ -29,9 +35,10 @@ class Bias_ccWorker : public Bias_ccWorkerBase {
     }
 #endif
     out.checkLength(in.length());               // make sure input will fit in output buffer
-    for (unsigned n = in.data().data().size(); n; n--) // n is length in sequence elements of input
+    for (unsigned n = length; n; n--) // n is length in sequence elements of input
       *outData++ = *inData++ + properties().biasValue;
-    out.setInfo(in.opCode(), in.length());      // Set the metadata for the output message
+    out.data().data().resize(length);
+    out.setOpCode(in.opCode());      // Set the metadata for the output message
     return in.length() ? RCC_ADVANCE : RCC_ADVANCE_DONE;
   }
 };

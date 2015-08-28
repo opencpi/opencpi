@@ -80,6 +80,7 @@ namespace OCPI {
     public:
       typedef uint32_t CMap;
     protected:
+      //!< Dispatch thread return codes
       enum DispatchRetCode {
         MoreWorkNeeded,   // Dispatch returned, but there is more work needed
         Spin,             // Dispatch completed it current tasks
@@ -88,7 +89,6 @@ namespace OCPI {
       };
       typedef std::set<LocalPort *> BridgedPorts;
       typedef BridgedPorts::iterator BridgedPortsIter;
-
       static const unsigned maxContainer = sizeof(CMap) * 8;
       unsigned m_ordinal;
       // Start/Stop flag for this container
@@ -97,25 +97,18 @@ namespace OCPI {
       OCPI::OS::ThreadManager *m_thread;
       // This is not an embedded member to potentially control lifecycle better...
       OCPI::DataTransport::Transport &m_transport;
-    protected:
       // This vector will be filled in by derived classes
       Transports m_transports;  // terminology clash is unfortunate....
       BridgedPorts m_bridgedPorts;
-      // The singleton local launcher in this process: FIXME: use OU::Singleton
-      static Launcher *s_localLauncher;
-
-    protected:
       Container(const char *name, const ezxml_t config = NULL,
 		const OCPI::Util::PValue* params = NULL)
         throw (OCPI::Util::EmbeddedException);
     public:
       virtual ~Container();
-
+    private:
       bool runInternal(uint32_t usecs = 0, bool verbose = false);
     public:
       virtual Driver &driver() = 0;
-
-
       const std::string &platform() const { return m_platform; }
       const std::string &model() const { return m_model; }
       const std::string &os() const { return m_os; }

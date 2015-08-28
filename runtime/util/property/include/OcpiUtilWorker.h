@@ -137,7 +137,7 @@ namespace OCPI {
       size_t m_totalPropertySize;
       //      Test &findTest(unsigned int testId) const;
     public:
-      unsigned m_nProperties, m_nRunProperties;
+      unsigned m_nProperties; //, m_nRunProperties;
       Property *m_properties;
       Property *m_firstRaw;
       ezxml_t m_xml;
@@ -165,7 +165,7 @@ namespace OCPI {
       Property *getProperty(const char *id) const;
       const char *getValue(const char *sym, ExprValue &val) const;
       inline Property *properties() const { return m_properties; }
-      inline unsigned nRunProperties() const { return m_nRunProperties; }
+      //      inline unsigned nRunProperties() const { return m_nRunProperties; }
       inline unsigned nProperties() const { return m_nProperties; }
       inline Property *properties(unsigned &np) const {
         np = m_nProperties;

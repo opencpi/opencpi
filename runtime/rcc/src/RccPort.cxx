@@ -58,10 +58,19 @@ namespace OCPI {
 
     Port::
     Port(Worker& w, const OU::Port & pmd, const OU::PValue *params, RCCPort &rp)
+#if 1
       :  OC::PortBase<Worker, Port, OCPI::RCC::ExternalPort>(w, *this, pmd, params),
 	 m_localOther(NULL), m_rccPort(rp), m_buffer(NULL),
 	 // Internal ports for non-scaled crews don't get buffers
 	 m_wantsBuffer(pmd.m_isInternal && w.crewSize() <= 1 ? false : true)
+#else
+      : OC::PortBase< Worker, Port, ExternalPort>
+	(w, *this, pmd, pmd.m_provider,
+	 (1 << OCPI::RDT::ActiveFlowControl) | (1 << OCPI::RDT::ActiveMessage), params),
+	m_dtPort(NULL), m_localOther(NULL), //m_params(params),
+	m_mode(OC::Port::CON_TYPE_NONE), m_rccPort(rp), m_buffer(NULL), m_wantsBuffer(true)
+      // FIXME: deep copy params?
+#endif
     {
     }
 

@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -32,6 +31,7 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "ContainerManager.h"
+#include "ContainerLauncher.h"
 namespace OCPI {
   namespace Container {
     namespace OA = OCPI::API;
@@ -43,11 +43,13 @@ namespace OCPI {
     unsigned Manager::s_nContainers = 0;
     Container **Manager::s_containers;
     unsigned Manager::s_maxContainer;
+    LocalLauncher *Manager::s_localLauncher;
     Manager::Manager() : m_tpg_events(NULL), m_tpg_no_events(NULL) {
     }
 
     Manager::~Manager() {
       // Delete my children before the transportGlobals they depend on.
+      delete s_localLauncher;
       deleteChildren();
       if ( m_tpg_no_events ) delete m_tpg_no_events;
       if ( m_tpg_events ) delete m_tpg_events;
