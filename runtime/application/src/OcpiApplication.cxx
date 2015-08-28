@@ -814,7 +814,7 @@ namespace OCPI {
       // to.  We'll use a map.
       // Pass 1: figure out how many member connections we will have, and 
       // negotiate the buffer size.
-      unsigned nMemberConnections = 0;
+      size_t nMemberConnections = 0;
       for (OU::Assembly::ConnectionsIter ci = m_assembly.m_connections.begin();
 	   ci != m_assembly.m_connections.end(); ci++) {
 	Instance *iIn = NULL, *iOut = NULL;

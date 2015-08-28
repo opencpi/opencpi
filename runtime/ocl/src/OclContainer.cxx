@@ -297,7 +297,7 @@ namespace OCPI {
 
 
 
-      for ( int n=0; n<m_nUnits; n++ ) {
+      for (unsigned n=0; n<m_nUnits; n++ ) {
 	OCL_RC(m_cmdq[n], clCreateCommandQueue(m_context, m_outDevices[n], 0, &rc));
       }
       OCLDEV_VAR(MAX_WORK_ITEM_DIMENSIONS, nDimensions);
@@ -312,7 +312,7 @@ namespace OCPI {
 
 
 
-      printf("Max work item size = %d\n", groupSize );
+      printf("Max work item size = %zd\n", groupSize );
 
       OCLDEV_VAR(MAX_PARAMETER_SIZE, argSize);
       OCLDEV_VAR(AVAILABLE, available);

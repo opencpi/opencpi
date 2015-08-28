@@ -158,7 +158,7 @@ int server_connect(int port)
     struct sockaddr_in myaddr;
 
     myaddr.sin_family = AF_INET;
-    myaddr.sin_port = htons(port);
+    myaddr.sin_port = htons((uint16_t)port);
     inet_aton("192.168.100.101", (in_addr*)&myaddr.sin_addr.s_addr);
 
     sockfd  = socket(PF_INET, SOCK_STREAM, 0);

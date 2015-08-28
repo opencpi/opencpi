@@ -113,7 +113,7 @@ namespace OCPI {
       pthread_mutex_lock (&mine);
       if (logLevel == UINT8_MAX) {
 	const char *e = getenv("OCPI_LOG_LEVEL");
-	logLevel = e ? (uint8_t)atoi(e) : OCPI_LOG_WIERD;
+	logLevel = (uint8_t)(e ? atoi(e) : OCPI_LOG_WIERD);
       }
       if (n <= (unsigned)logLevel)  {
 	//	va_list ap;
