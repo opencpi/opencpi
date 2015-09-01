@@ -185,8 +185,6 @@ namespace OCPI {
       const char *err = v.parse(value);
       if (err)
         throw OU::ApiError("Error parsing property value:\"", value, "\"", NULL);
-      if (vt.m_baseType == OA::OCPI_Struct)
-	throw OU::ApiError("No support yet for setting struct properties", NULL);
       setPropertyValue(prop, v);
     }
     void Worker::
