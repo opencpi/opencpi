@@ -56,6 +56,7 @@
 namespace OE=OCPI::Util::EzXml;
 namespace OU=OCPI::Util;
 namespace OA=OCPI::API;
+namespace OS=OCPI::OS;
 
 class Port;
 
@@ -609,7 +610,8 @@ class Worker : public Parsed, public OU::IdentResolver {
     //    *preParseSpecDataPort(ezxml_t x),
     //    *parseSpecPort(Port *p),
     *parseHdlImpl(const char* package = NULL),
-    *parseConfigFile(const char *dir),
+    *parseBuildFile(bool optional),
+    *startBuildXml(FILE *&f),
     *doProperties(ezxml_t top, const char *parent, bool impl, bool anyIsBad),
     *doScaling(ezxml_t x),
     *parseHdlAssy(),
@@ -631,7 +633,9 @@ class Worker : public Parsed, public OU::IdentResolver {
     *emitVhdlWorkerPackage(FILE *f, unsigned maxPropName),
     *emitVhdlWorkerEntity(FILE *f),
     *emitVhdlPackageConstants(FILE *f),
+    *writeParamFiles(FILE *mkFile, FILE *xmlFile),
     *emitToolParameters(),
+    *emitMakefile(),
     *setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig),
     *deriveOCP(),
     *hdlValue(const std::string &name, const OU::Value &v, std::string &value,

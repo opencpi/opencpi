@@ -263,7 +263,7 @@ struct RCCPort {
 #ifdef WORKER_INTERNAL
   OCPI::RCC::Port *containerPort;
 #else
-  void* opaque;
+  void *containerPort;
 #endif
 };
 
@@ -285,6 +285,7 @@ struct RCCWorker {
   RCCRunCondition        * runCondition;
   RCCPortMask              connectedPorts;
   char                   * errorString;
+  RCCBoolean               firstRun;
   RCCPort                  ports[1];
 };
 
@@ -387,7 +388,12 @@ typedef struct {
    RCCUserPort();
    void *getArgAddress(RCCUserBuffer &buf, unsigned op, unsigned arg, size_t *length) const;
  public:
-   inline bool hasBuffer() const { return m_rccBuffer != NULL; }
+   // Test whether a buffer is available, and if not request one
+   // There is no buffer is there is no container port for the rcc port (not connected).
+   // FIXME: use connectedPorts rather than containerPort
+   inline bool hasBuffer() {
+     return m_rccBuffer && (m_rccBuffer->data || (m_rccPort.containerPort && request()));
+   }
    size_t
      topLength(size_t elementLength);
    void
@@ -472,7 +478,7 @@ typedef struct {
    // access the current run condition
    const RunCondition *getRunCondition() const;
    // Change the current run condition - if NULL, revert to the default run condition
-   void setRunCondition(const RunCondition *rc);
+   void setRunCondition(RunCondition *rc);
    virtual uint8_t *rawProperties(size_t &size) const;
    RCCResult setError(const char *fmt, ...);
    OCPI::API::Application &getApplication();

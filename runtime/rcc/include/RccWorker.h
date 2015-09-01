@@ -184,7 +184,7 @@ namespace OCPI {
     private:
       void initializeContext();
       void checkError() const;
-      inline void setRunCondition(const RunCondition &rc) {
+      inline void setRunCondition(RunCondition &rc) {
 	m_runCondition = &rc;
 	if (rc.m_timeout)
 	  m_runTimer.reset(rc.m_usecs / 1000000, (rc.m_usecs % 1000000) * 1000);

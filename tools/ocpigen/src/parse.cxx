@@ -59,7 +59,8 @@ OCPI_PROPERTY_DATA_TYPES
 0};
 #undef OCPI_DATA_TYPE
 
-const char *platform = 0, *device = 0, *load = 0, *os = 0, *os_version = 0, *assembly = 0, *attribute, *platformDir;
+const char *platform = 0, *device = 0, *load = 0, *os = 0, *os_version = 0, *assembly = 0,
+  *attribute, *platformDir;
 
 Clock *Worker::
 addClock() {

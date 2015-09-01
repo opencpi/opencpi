@@ -838,23 +838,21 @@ namespace OCPI {
 	      ocpiDebug("sockaddr_dl: addr %2u alen %2u %2u %2u %2u", n,
 			sdl->sdl_len, sdl->sdl_nlen, sdl->sdl_alen, sdl->sdl_slen);
 	      ocpiAssert(sdl->sdl_nlen);
-	      ocpiDebug("iface sock type %u if type %u name: '%.*s' only: %s",
-			sdl->sdl_type, ifm->ifm_data.ifi_type, sdl->sdl_nlen, sdl->sdl_data,
-			only ? only : "\"\"");
+	      ocpiDebug("iface sock type %u if type %u ifphys %u name: '%.*s' only: %s",
+			sdl->sdl_type, ifm->ifm_data.ifi_type, ifm->ifm_data.ifi_physical, sdl->sdl_nlen,
+			sdl->sdl_data, only ? only : "\"\"");
 	      if ((ifm->ifm_data.ifi_type == IFT_ETHER ||
 		   ifm->ifm_data.ifi_type == IFT_LOOP ||
 		   ifm->ifm_data.ifi_type == IFT_BRIDGE) &&
 		  (!only || 	    
 		   (sdl->sdl_nlen == strlen(only) &&
 		    !strncmp(sdl->sdl_data, only, sdl->sdl_nlen)))) {
-		// PF_INET/SOCK_DGRAM since it works without root privileges.
-		int s = socket(PF_INET, SOCK_DGRAM, 0);
-		ocpiAssert(s);
 		i.name.assign(sdl->sdl_data, sdl->sdl_nlen);
 		i.index = ifm->ifm_index;
 		i.up = (ifm->ifm_flags & IFF_UP) != 0;
 		if (ifm->ifm_data.ifi_type == IFT_LOOP) {
 		  i.connected = true;
+		  ocpiDebug("loopback: %s, up: %d connected: %d", i.addr.pretty(), i.up, i.connected);
 		  i.addr.set(0, 0);
 		  i.loopback = true;
 		  return true;
@@ -863,7 +861,11 @@ namespace OCPI {
 		memset(&ifmr, 0, sizeof(ifmr));
 		strncpy(ifmr.ifm_name, sdl->sdl_data, sdl->sdl_nlen);
 		ifmr.ifm_name[sdl->sdl_nlen] = 0;
+		// PF_INET/SOCK_DGRAM since it works without root privileges.
+		int s = socket(PF_INET, SOCK_DGRAM, 0);
+		ocpiAssert(s);
 		ocpiCheck(ioctl(s, SIOCGIFMEDIA, &ifmr) == 0);
+		::close(s);
 		ocpiDebug("IFMEDIA: 0x%x:", ifmr.ifm_status);
 		if (sdl->sdl_alen && sdl->sdl_type == IFT_ETHER &&
 		    sdl->sdl_alen == Address::s_size) {

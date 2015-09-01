@@ -100,26 +100,39 @@ override XmlIncludeDirsInternal:=\
     . $(GeneratedDir) \
     $(IncludeDirs) $(XmlIncludeDirs) \
     $(XmlIncludeDirsInternal) \
+    ../lib/$(Model)\
     ../specs \
-    $(foreach m,$(Models),../lib/$m)\
     $(OCPI_CDK_DIR)/lib/components \
-    $(foreach m,$(Models),$(OCPI_CDK_DIR)/lib/components/$m)\
+    $(OCPI_CDK_DIR)/lib/components/$(Model)\
    )
+
+#    $(foreach m,$(Models),../lib/$m)\
+#    $(foreach m,$(Models),$(OCPI_CDK_DIR)/lib/components/$m)\
 
 $(call OcpiDbgVar,XmlIncludeDirsInternal)
 
 -include $(GeneratedDir)/*.deps
 
-ParamShell=(\
-  mkdir -p $(GeneratedDir) &&\
-  ($(MakeRawParams) |\
-  $(OcpiGenTool) -D $(GeneratedDir) $(and $(Package),-p $(Package))\
-    $(and $(Platform),-P $(Platform)) \
-    $(and $(PlatformDir), -F $(PlatformDir)) \
-    $(HdlVhdlLibraries) \
-    $(and $(Assembly),-S $(Assembly)) \
-    -r $(Worker_$(Worker)_xml)) || echo 1\
-  )
+ParamShell=\
+  if test -r $(Worker).build; then \
+    (mkdir -p $(GeneratedDir) &&\
+    $(call MakeSymLink,$(Worker).build,$(GeneratedDir)); \
+    $(OcpiGenTool) -D $(GeneratedDir) $(and $(Package),-p $(Package))\
+      $(and $(Platform),-P $(Platform)) \
+      $(and $(PlatformDir), -F $(PlatformDir)) \
+      $(HdlVhdlLibraries) \
+      $(and $(Assembly),-S $(Assembly)) \
+      -b $(Worker_$(Worker)_xml)) || echo 1;\
+  else \
+    (mkdir -p $(GeneratedDir) &&\
+    $(MakeRawParams) |\
+    $(OcpiGenTool) -D $(GeneratedDir) $(and $(Package),-p $(Package))\
+      $(and $(Platform),-P $(Platform)) \
+      $(and $(PlatformDir), -F $(PlatformDir)) \
+      $(HdlVhdlLibraries) \
+      $(and $(Assembly),-S $(Assembly)) \
+      -r $(Worker_$(Worker)_xml)) || echo 1;\
+  fi
 
 ifeq ($(filter clean,$(MAKECMDGOALS)),)
   # This is the parameter configuration startup that must be run as the
@@ -366,9 +379,9 @@ ifndef HdlSkip
   $(call OcpiDbgVar,WkrExportNames)
   $(foreach t,$($(CapModel)Targets),$(infox $(call DoLinks,$t))$(eval $(call DoLinks,$t)))
 endif
-LibLinks+=$(LibDir)/$(Worker)-params.xml
-$(LibDir)/$(Worker)-params.xml: $(GeneratedDir)/$(Worker)-params.xml | $(LibDir)
-	$(AT)$(call MakeSymLink,$(GeneratedDir)/$(Worker)-params.xml,$(LibDir))
+LibLinks+=$(LibDir)/$(Worker).build
+$(LibDir)/$(Worker).build: $(GeneratedDir)/$(Worker).build | $(LibDir)
+	$(AT)$(call MakeSymLink,$(GeneratedDir)/$(Worker).build,$(LibDir))
 
 
 $(call OcpiDbgVar,LibLinks,Before all:)

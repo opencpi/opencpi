@@ -100,13 +100,14 @@ RccParams=\
 	     '-DPARAM_$n()=$(Param_$(ParamConfig)_$n)')
 Compile_c=\
   $$(Gc_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
-  $(CompilerWarnings_$$(RccTarget)) $(CompilerOptions_$$(RccTarget)) \
-  $(call SharedLibCompileOptions) $(ExtraCompilerOptions_$$(RccTarget)) \
+  $$(CompilerWarnings_$$(RccTarget)) $$(CompilerOptions_$$(RccTarget)) \
+  $(call SharedLibCompileOptions) $$(ExtraCompilerOptionsC_$$(RccTarget)) \
   $(RccIncludeDirsInternal:%=-I%) -o $$@ $$(RccParams) $$<
 Compile_cc=\
   $$(Gc++_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
-  $(CompilerWarnings_$$(RccTarget)) $(CompilerOptions_$$(RccTarget)) \
-  $(call SharedLibCompileOptions) $(ExtraCompilerOptions_$$(RccTarget)) \
+  $$(CompilerWarnings_$$(RccTarget)) $$(CompilerOptions_$$(RccTarget)) \
+  $(call SharedLibCompileOptions) \
+  $$(ExtraCompilerOptions_$$(RccTarget)) $$(ExtraCompilerOptionsCC_$$(RccTarget)) \
   $(RccIncludeDirsInternal:%=-I%) -o $$@ $$(RccParams) $$<
 
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk

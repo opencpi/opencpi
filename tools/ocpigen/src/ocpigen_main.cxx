@@ -78,8 +78,8 @@ add to tree.
   CMD_OPTION  (skel,      s,    Bool,   NULL, "Generate the implementation skeleton file (modified part)") \
   CMD_OPTION  (assy,      a,    Bool,   NULL, "Generate the assembly implementation file (readonly)") \
   CMD_OPTION  (parameters,r,    Bool,   NULL, "Process raw parameters on stdin") \
+  CMD_OPTION  (build,     b,    Bool,   NULL, "Generate gen/Makefile from <worker.build>") \
   CMD_OPTION  (xml,       A,    Bool,   NULL, "Generate the artifact XML file for embedding") \
-  CMD_OPTION  (bsv,       b,    Bool,   NULL, "Generate the BlueSpec interface file (broken)") \
   CMD_OPTION  (workers,   W,    Bool,   NULL, "Generate the makefile fragment for workers in the assembly") \
   CMD_OPTION  (attribute, x,    String, NULL, "Emit to standard output the value of an XML attribute") \
   CMD_OPTION  (alternate, w,    Bool,   NULL, "Use the alternate language (VHDL vs. Verilog) when generating defs and impl") \
@@ -106,7 +106,7 @@ main(int argc, const char **argv) {
   const char *outDir = NULL, *wksFile = NULL, *package = NULL;
   bool
     doDefs = false, doImpl = false, doSkel = false, doAssy = false, doWrap = false,
-    doBsv = false, doArt = false, doTop = false;
+    doArt = false, doTop = false;
   if (argc <= 1) {
     fprintf(stderr,
 	    "Usage is: ocpigen [options] <owd>.xml\n"
@@ -154,9 +154,6 @@ main(int argc, const char **argv) {
 	break;
       case 'A':
 	doArt = true;
-	break;
-      case 'b':
-	doBsv = true;
 	break;
       case 'w':
 	doWrap = true;
@@ -221,6 +218,8 @@ main(int argc, const char **argv) {
 	break;
       case 'r':
 	break;
+      case 'b':
+	break;
       case 'F':
 	platformDir = *++ap;
 	break;
@@ -277,9 +276,9 @@ main(int argc, const char **argv) {
 	  fprintf(stderr, "%s: Error generating assembly: %s\n", *ap, err);
 	else if (wksFile && (err = w->emitWorkersHDL(wksFile)))
 	  fprintf(stderr, "%s: Error generating assembly makefile: %s\n", *ap, err);
-	else if (doBsv && (err = w->emitBsvHDL()))
-	  fprintf(stderr, "%s: Error generating BSV import file: %s\n", *ap, err);
 	else if (options.parameters() && (err = w->emitToolParameters()))
+	  fprintf(stderr, "%s: Error generating parameter file for tools: %s\n", *ap, err);
+	else if (options.build() && (err = w->emitMakefile()))
 	  fprintf(stderr, "%s: Error generating parameter file for tools: %s\n", *ap, err);
 	else if (doArt)
 	  switch (w->m_model) {
