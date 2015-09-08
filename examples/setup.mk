@@ -21,5 +21,5 @@ $(PROG): $(APP).cxx | $(DIR)
 	$(AT)$(CXX) -g -Wall $(OCPI_EXPORT_DYNAMIC) -o $@ $(INCS) $^ $(OCPI_LD_FLAGS)
 
 clean::
-	rm -r -f lib target-* *.*~ timeData.raw output_image.jpg
+	rm -r -f lib target-* *.*~ timeData.raw output_image.jpg test.output
 

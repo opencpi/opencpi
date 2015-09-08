@@ -89,7 +89,7 @@ $(foreach l,$(RccLibrariesInternal) $(Libraries),\
        $(or $(wildcard $p$(AREXT_$(call RccOs,))),\
             $(and $(wildcard $p$(SOEXT_$(call RccOs,))),-L $(dir $l)$(RccTarget) -l $(notdir $l)),\
             $(error No RCC library found for $l, tried $p$(AREXT_$(call RccOs,)) and $p$(SOEXT_$(call RccOs,))))), \
-    -l ocpi_$l)) \
+    $(and $(filter 1,$(OCPI_BUILD_SHARED_LIBRARIES)),-l ocpi_$l))) \
   -L $(OCPI_CDK_DIR)/lib/$$(RccTarget)$(and $(OCPI_TARGET_MODE),/d$(if $(filter 1,$(OCPI_DEBUG)),d,o)) \
   $(and $(OCPI_TARGET_MODE),$(filter 0,$(OCPI_BUILD_SHARED_LIBRARIES)), \
      && $(PatchElf) $(foreach l,$(RccLibrariesInternal), \
