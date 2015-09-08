@@ -1,4 +1,3 @@
-#$(info start $(MAKECMDGOALS))
 APP=copy
 include ../setup.mk
 

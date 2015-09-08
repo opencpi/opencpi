@@ -153,6 +153,9 @@ namespace OCPI {
       void close ()
         throw (std::string);
 
+      static void *load(const char *fileName, bool global, std::string &error) throw ();
+      static const char *suffix() throw();
+
     private:
       OCPI::OS::uint64_t m_osOpaque[1];
 

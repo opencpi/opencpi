@@ -121,10 +121,6 @@ ifeq "$(VOBDIR)" ""
   VOBDIR = /view/jmiller_ocpi/vobs/ocpi
 endif
 
-ifeq "$(OCPI_OUT_DIR)" ""
-  OCPI_OUT_DIR = $(OCPI_OS)-$(OCPI_ARCH)-bin
-endif
-
 ifeq "$(DATAPLANE)" ""
 DATAPLANE=dataplane
 endif
@@ -357,4 +353,26 @@ DescendMake1=-C $(1) $(if $(filter /%,$(OCPI_BASE_DIR)),,OCPI_BASE_DIR=../$(OCPI
 DescendFile2=$(OCPI_BASE_DIR)/$(if $(filter /%,$(OCPI_BASE_DIR)),,../..)
 DescendFile1=$(OCPI_BASE_DIR)/$(if $(filter /%,$(OCPI_BASE_DIR)),,..)
 export AT=@
+# This is duplicated in ocpisetup.mk.  It is there for examples/executables.
+ifndef OCPI_TARGET_DIR
+ ifeq ($(origin OCPI_TARGET_MODE),undefined)
+   export OCPI_TARGET_MODE:=$(if $(filter 1,$(OCPI_BUILD_SHARED_LIBRARIES)),d,s)$(if $(filter 1,$(OCPI_DEBUG)),d,o)
+ endif
+ export OCPI_TARGET_DIR=$(OCPI_TARGET_HOST)$(and $(OCPI_TARGET_MODE),/$(OCPI_TARGET_MODE))
 endif
+# This extra variable OCPI_OUT_DIR is to eventually support out-of-tree building.
+export OCPI_OUT_DIR=target-$(OCPI_TARGET_DIR)
+#$(info OCPI_TARGET_DIR is $(OCPI_TARGET_DIR), OCPI_TARGET_MODE is $(OCPI_TARGET_MODE))
+endif
+
+# This macro is for subsidiary packages that must always be built dynamically.
+# It basically redefines OCPI_TARGET_DIR and OCPI_TARGET_MODE and OCPI_BUILD_SHARED_LIBRARIES
+define ForceDynamic
+#$$(info DYNAMIC OVERRIDE BEFORE: $$(OCPI_TARGET_MODE) $$(OCPI_TARGET_DIR) $$(OCPI_BUILD_SHARED_LIBRARIES))
+override OCPI_BUILD_SHARED_LIBRARIES:=1
+ifdef OCPI_TARGET_MODE
+ override OCPI_TARGET_MODE:=d$(if $(filter 1,$(OCPI_DEBUG)),d,o)
+endif
+override OCPI_TARGET_DIR:=$(OCPI_TARGET_HOST)$$(and $$(OCPI_TARGET_MODE),/$$(OCPI_TARGET_MODE))
+#$$(info DYNAMIC OVERRIDE AFTER: $$(OCPI_TARGET_MODE) $$(OCPI_TARGET_DIR) $$(OCPI_BUILD_SHARED_LIBRARIES))
+endef

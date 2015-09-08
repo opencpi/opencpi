@@ -46,7 +46,6 @@ namespace OU = OCPI::Util;
 namespace OE = OCPI::Util::EzXml;
 namespace OL = OCPI::Library;
 namespace OA = OCPI::API;
-namespace OT = DataTransport;
 namespace OCPI {
   namespace API {
     ApplicationI::ApplicationI(Application &app, const char *file, const PValue *params)
@@ -833,9 +832,10 @@ namespace OCPI {
     // FIXME:  avoid the double lookup since the first one gets us the ordinal
     Property::Property(Application &app, const char *aname)
       : m_worker(app.getPropertyWorker(aname)),
-	m_readSync(false), m_writeSync(false), m_writeVaddr(0), m_readVaddr(0),
+	m_readVaddr(0), m_writeVaddr(0),
 	m_info(m_worker.setupProperty(maybePeriod(aname), m_writeVaddr, m_readVaddr)),
-	m_ordinal(m_info.m_ordinal)
+	m_ordinal(m_info.m_ordinal),
+	m_readSync(false), m_writeSync(false)
     {
       m_readSync = m_info.m_readSync;
       m_writeSync = m_info.m_writeSync;

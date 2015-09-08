@@ -95,17 +95,38 @@ OCPI::OS::LoadableModule::open (const std::string & fileName, bool global)
   ocpiAssert (!o2vp (m_osOpaque));
 #endif
 
-  pthread_mutex_lock (&g_slMutex);
-  void *handle = dlopen (fileName.c_str(), RTLD_LAZY | (global ? RTLD_GLOBAL : RTLD_LOCAL));
+  std::string error;
+  void *handle = load(fileName.c_str(), global, error);
 
-  if (!(o2vp (m_osOpaque) = handle)) {
-    std::string reason = dlerror ();
-    pthread_mutex_unlock (&g_slMutex);
-    throw reason;
-  }
-
-  pthread_mutex_unlock (&g_slMutex);
+  if (!(o2vp (m_osOpaque) = handle))
+    throw error;
 }
+
+// Static: used with the class as well as usable standalone
+// Return handle.  Or null and set error
+void *
+OCPI::OS::LoadableModule::load(const char *fileName, bool global, std::string &error) throw () {
+  pthread_mutex_lock (&g_slMutex);
+  void *handle = dlopen (fileName, RTLD_LAZY | (global ? RTLD_GLOBAL : RTLD_LOCAL));
+  if (!handle) {
+    error = "error loading \"";
+    error += fileName;
+    error += "\": ";
+    error += dlerror();
+  }
+  pthread_mutex_unlock (&g_slMutex);
+  return handle;
+}
+
+const char *
+OCPI::OS::LoadableModule::suffix() throw() {
+#ifdef OCPI_OS_macos
+  return "dylib";
+#else
+  return "so";
+#endif
+}
+
 
 void *
 OCPI::OS::LoadableModule::getSymbol (const std::string & functionName)

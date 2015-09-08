@@ -32,6 +32,8 @@
  */
 #include "ContainerManager.h"
 #include "ContainerLauncher.h"
+#include "ContainerPort.h"               // just for linkage hooks
+#include "DtSharedMemoryInternal.h" // just for linkage hooks
 namespace OCPI {
   namespace Container {
     namespace OA = OCPI::API;
@@ -44,6 +46,7 @@ namespace OCPI {
     Container **Manager::s_containers;
     unsigned Manager::s_maxContainer;
     LocalLauncher *Manager::s_localLauncher;
+    static OCPI::Driver::Registration<Manager> cm;
     Manager::Manager() : m_tpg_events(NULL), m_tpg_no_events(NULL) {
     }
 
@@ -152,6 +155,13 @@ namespace OCPI {
 	&OCPI::Container::Container::nthContainer(n);
     }
   }
+  namespace Container {
+    // Hooks to ensure that if we are linking statically, everything is pulled in
+    // to support drivers and workers.
+    void dumb1(BasicPort &p) { p.applyConnectParams(NULL, NULL); }
+  }
 }
-
+namespace DataTransfer {
+  void dumb2(EndPoint &loc) { createHostSmemServices(loc); }
+}
 

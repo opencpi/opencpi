@@ -7,7 +7,8 @@
 #include "OcpiOsFileIterator.h"
 #include "OcpiUtilException.h"
 #include "OcpiLibraryManager.h"
-#include <OcpiOsAssert.h>
+#include "OcpiComponentLibrary.h"
+#include "OcpiOsAssert.h"
 
 // This file contains code common to all library drivers
 
@@ -20,8 +21,11 @@ namespace OCPI {
   namespace Library {
     const char *library = "library";
 
+    static const char **complib = &CompLib::component;
+    static OCPI::Driver::Registration<Manager> lm;
     // The Library Driver Manager class
     Manager::Manager() {
+      (void)complib;
     }
     void Manager::setPath(const char *path) {
       parent().configureOnce();

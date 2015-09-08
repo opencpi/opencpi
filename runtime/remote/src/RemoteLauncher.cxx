@@ -7,10 +7,11 @@
 #include <set>
 #include "OcpiOsSocket.h"
 #include "OcpiUtilValue.h"
+#include "OcpiUtilMisc.h"
 #include "Container.h"
 #include "ContainerApplication.h"
 #include "RemoteLauncher.h"
-
+#include "RemoteServer.h"
 namespace OA = OCPI::API;
 namespace OC = OCPI::Container;
 namespace OX = OCPI::Util::EzXml;
@@ -30,48 +31,12 @@ Launcher::
   ezxml_free(m_rx);
 }
 
-// static
-bool Launcher::
-receiveXml(int fd, ezxml_t &rx, std::vector<char> &buf, bool &eof, std::string &error) {
-  ezxml_free(rx);
-  rx = NULL;
-  uint32_t len;
-  eof = false;
-  ssize_t n = read(fd, (char *)&len, sizeof(len));
-  if (n != sizeof(len) || len > 64*1024) {
-    if (n == 0) {
-      eof = true;
-      error = "EOF on socket read";
-    } else
-      OU::format(error, "read error: %s (%zu, %zu)", strerror(errno), n, (size_t)len);
-    return true;
-  }
-  ssize_t total = len;
-  buf.resize(total);
-  for (char *cp = &buf[0]; total && (n = read(fd, cp, len)) > 0; total -= n, cp += n)
-    ;
-  if (n <= 0) {
-    OU::format(error, "message read error: %s (%zu)", strerror(errno), n);
-    return true;
-  }
-  ocpiDebug("Received XML===========================\n%s\nEND XML==========", &buf[0]);
-  const char *err;
-  if ((err = OX::ezxml_parse_str(&buf[0], len, rx))) {
-    OU::format(error, "xml parsing error: %s", err);
-    return true;
-  }
-  if ((err = ezxml_cattr(rx, "error"))) {
-    OU::format(error, "Container server error: %s", err);
-    return true;
-  }
-  return false;
-}
 
 void Launcher::
 receive() {
   std::string error;
   bool eof;
-  if (receiveXml(m_fd, m_rx, m_response, eof, error))
+  if (OX::receiveXml(m_fd, m_rx, m_response, eof, error))
     throw OU::Error("error reading from container server \"%s\": %s",
 		    m_name.c_str(), error.c_str());
 }
@@ -79,70 +44,13 @@ receive() {
 void Launcher::
 send() {
   std::string error;
-  if (sendXml(m_fd, m_request, "container server", error))
+  if (OX::sendXml(m_fd, m_request, "container server", error))
     throw OU::Error("%s", error.c_str());
   m_request.clear();
   m_sending = false;
 }
-// static
-bool Launcher::
-sendXml(int fd, std::string &request, const char *msg, std::string &error) {
-  assert(request.length());
-  const char *rb = strchr(request.c_str(), '>');
-  const char *sp = strchr(request.c_str(), ' ');
-  assert(rb || sp);
-  if (sp && sp < rb)
-    rb = sp;
-  OU::formatAdd(request, "</%.*s>\n", (int)(rb - (request.c_str()+1)), request.c_str() + 1);
-  uint32_t len = OCPI_UTRUNCATE(uint32_t, request.size() + 1);
-  struct iovec iov[2];
-  iov[0].iov_base = (char*)&len;
-  iov[0].iov_len = sizeof(uint32_t);
-  iov[1].iov_base = (void*)request.c_str();
-  iov[1].iov_len = request.length()+1;
-  ssize_t n, total = iov[0].iov_len + iov[1].iov_len;
-  ocpiDebug("Sending XML===========================\n%s\nEND XML==========", request.c_str());
-  do n = writev(fd, iov, 2); while (n > 0 && (total -= n));
-  return n > 0 ? false : OU::eformat(error, "Error writing to %s: %s", msg, strerror(errno));
-}
 
-// This scheme is ours so that it is somewhat readable, xml friendly, and handles NULLs
-void Launcher::
-encodeDescriptor(const std::string &s, std::string &out) {
-  OU::formatAdd(out, "%zu.", s.length());
-  OU::Unparser up;
-  const char *cp = s.data();
-  for (size_t n = s.length(); n; n--, cp++) {
-    if (*cp == '\'')
-      out += "&apos;";
-    else if (*cp == '&')
-      out += "&amp;";
-    else
-      up.unparseChar(out, *cp, true);
-  }
-}
-void Launcher::
-decodeDescriptor(const char *info, std::string &s) {
-  char *end;
-  errno = 0;
-  size_t infolen = strtoul(info, &end, 0);
-  do {
-    if (errno || infolen >= 1000 || *end++ != '.')
-      break;
-    s.resize(infolen);
-    const char *start = end;
-    end += strlen(start);
-    size_t n;
-    for (n = 0; n < infolen && *start; n++)
-      if (OU::parseOneChar(start, end, s[n]))
-	break;
-    if (*start || n != infolen)
-      break;
-    return;
-  } while (0);
-  throw OU::Error("Invalid Port Descriptor from Container Server in: \"%s\"",
-		  info);
-}
+
 void Launcher::
 emitContainer(const OCPI::Container::Container &cont) {
   const char *colon = strchr(cont.name().c_str(), ':');
@@ -251,7 +159,7 @@ emitConnectionUpdate(unsigned connN, const char *iname, std::string &sinfo) {
   OU::formatAdd(m_request, "  <connection id='%u' %s=\"",
 		m_connectionMap[connN], iname);
   // This encoding escapes double quotes and allows for embedded null characters
-  encodeDescriptor(sinfo, m_request);
+  OU::encodeDescriptor(sinfo, m_request);
   m_request += "\"/>\n";
   sinfo.clear();
 }
@@ -309,15 +217,15 @@ updateConnection(ezxml_t cx) {
   if (c.m_launchIn == this) {
     // The remote is an input, so we should be receiving provider info in the update
     if ((info = ezxml_cattr(cx, "ipi")))
-      decodeDescriptor(info, c.m_ipi);
+      OU::decodeDescriptor(info, c.m_ipi);
     else if ((info = ezxml_cattr(cx, "fpi")))
-      decodeDescriptor(info, c.m_fpi);
+      OU::decodeDescriptor(info, c.m_fpi);
   } else if (c.m_launchOut == this) {
     // The remote is an input, so we should be receiving user info in the update
     if ((info = ezxml_cattr(cx, "iui")))
-      decodeDescriptor(info, c.m_iui);
+      OU::decodeDescriptor(info, c.m_iui);
     else if ((info = ezxml_cattr(cx, "fui")))
-      decodeDescriptor(info, c.m_fui);
+      OU::decodeDescriptor(info, c.m_fui);
   }
 }
 

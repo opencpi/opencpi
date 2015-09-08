@@ -329,6 +329,8 @@ namespace OCPI {
        */
 
       void
+	encodeDescriptor(const std::string &s, std::string &out),
+	decodeDescriptor(const char *info, std::string &s),
 	formatString(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
 	format(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
 	formatAdd(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),

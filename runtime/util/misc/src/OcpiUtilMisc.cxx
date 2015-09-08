@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -31,7 +30,6 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #include <stdarg.h>
 #include <assert.h>
 #include <istream>
@@ -40,6 +38,7 @@
 #include <cerrno>
 #include <cctype>
 #include "OcpiOsEther.h"
+#include "OcpiUtilValue.h"
 #include "OcpiUtilException.h"
 #include "OcpiUtilMisc.h"
 
@@ -677,6 +676,42 @@ getSystemAddr() {
 		  error.c_str());
   }  
   return addr;
+}
+// This scheme is ours so that it is somewhat readable, xml friendly, and handles NULLs
+void
+encodeDescriptor(const std::string &s, std::string &out) {
+  formatAdd(out, "%zu.", s.length());
+  Unparser up;
+  const char *cp = s.data();
+  for (size_t n = s.length(); n; n--, cp++) {
+    if (*cp == '\'')
+      out += "&apos;";
+    else if (*cp == '&')
+      out += "&amp;";
+    else
+      up.unparseChar(out, *cp, true);
+  }
+}
+void
+decodeDescriptor(const char *info, std::string &s) {
+  char *end;
+  errno = 0;
+  size_t infolen = strtoul(info, &end, 0);
+  do {
+    if (errno || infolen >= 1000 || *end++ != '.')
+      break;
+    s.resize(infolen);
+    const char *start = end;
+    end += strlen(start);
+    size_t n;
+    for (n = 0; n < infolen && *start; n++)
+      if (parseOneChar(start, end, s[n]))
+	break;
+    if (*start || n != infolen)
+      break;
+    return;
+  } while (0);
+  throw Error("Invalid Port Descriptor from Container Server in: \"%s\"", info);
 }
 
 

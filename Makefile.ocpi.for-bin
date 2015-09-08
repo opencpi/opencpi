@@ -179,22 +179,12 @@ $(ORIGEXECUTABLES): $(OBJDIR)/%.exe: $(OBJDIR)/%.obj $(OTHEROBJS) $(wildcard $(L
 endif
 else
 ifneq ($(filter linux macos,$(OCPI_OS)),)
-ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
+
 $(EXECUTABLES): $(OBJDIR)/%: $(OBJDIR)/%_main.exe
-#$(info $(OBJDIR) ccc)
-#$(info $(ORIGEXECUTABLES) eee)
-#$(info $(LIBDIR) lll)
-#$(info $(wildcard $(LIBDIR)/lib*.$(SO)) xxx)
-#$(info DYNOBJS $(DYNOBJS))
-$(ORIGEXECUTABLES): $(OBJDIR)/%.exe: $(OBJDIR)/%.obj $(OTHEROBJS) $(wildcard $(LIBDIR)/lib*.$(SO)) \
-	$(join $(addsuffix $(OCPI_OUT_DIR)/,$(dir $(ALLLIBS))),$(patsubst %,libocpi_%.$(SO),$(notdir $(ALLLIBS)))) \
-        $(DYNOBJS)
-else
-$(EXECUTABLES): $(OBJDIR)/%: $(OBJDIR)/%_main.exe
-$(ORIGEXECUTABLES): $(OBJDIR)/%.exe: $(OBJDIR)/%.obj $(OTHEROBJS) $(wildcard $(LIBDIR)/lib*.a) \
-	$(join $(addsuffix $(OCPI_OUT_DIR)/,$(dir $(ALLLIBS))),$(patsubst %,libocpi_%.a,$(notdir $(ALLLIBS)))) \
-        $(DYNOBJS)
-endif
+$(ORIGEXECUTABLES): $(OBJDIR)/%.exe: $(OBJDIR)/%.obj $(OTHEROBJS) \
+                    $(wildcard $(LIBDIR)/lib*.$(LIBDEPSUFFIX)) \
+                    $(foreach l,$(ALLLIBS),$(call LIBDEP,$l)) \
+                    $(DYNOBJS)
 else
 ifeq ($(OCPI_OS),vxworksdkm)
 

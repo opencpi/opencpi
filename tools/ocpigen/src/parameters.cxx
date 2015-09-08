@@ -406,8 +406,8 @@ emitToolParameters() {
   if ((err = doParam(info, m_ctl.properties.begin(), 0, nConfig)))
     return err;
   // Force an empty build file
-  if (!m_xmlFile && (err = startBuildXml(m_xmlFile)))
-    return err;
+  //  if (!m_xmlFile && m_paramConfigs.size() == 0 && (err = startBuildXml(m_xmlFile)))
+  //    return err;
   err = writeParamFiles(mkFile, m_xmlFile);
   m_xmlFile = NULL;
   return err;
