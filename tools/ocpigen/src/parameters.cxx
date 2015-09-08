@@ -488,8 +488,9 @@ setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig) {
 		err = "value doesn't match default, and no other choices exist";
 	    }
 	    if (err)
-	      return OU::esprintf("Bad value \"%s\" for parameter \"%s\" for worker \"%s\": %s",
-				  ap->m_value.c_str(), p->m_name.c_str(), m_implName, err);
+	      return OU::esprintf("Bad value \"%s\" (default is \"%s\", new is \"%s\") for parameter \"%s\" for worker \"%s\": %s",
+				  ap->m_value.c_str(), defValue.c_str(), newValue.c_str(),
+				  p->m_name.c_str(), m_implName, err);
 	  }
 	}
     }

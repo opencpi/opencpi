@@ -26,14 +26,14 @@ cd $D/$T
 for t in \
    tools/astyle/astyle \
    tools/ocpigen/ocpigen \
-   runtime/hdl/nft \
-   runtime/hdl/ocfrp_check \
-   runtime/hdl/ocpihdl \
+   runtime/hdl-support/nft \
+   runtime/hdl-support/ocfrp_check \
+   runtime/hdl-support/ocpihdl \
    runtime/ocl/ocpiocl \
    runtime/application/ocpirun \
    application/ocpiserve \
-   runtime/hdl/testRpl \
-   runtime/hdl/ocpizynq \
+   runtime/hdl-support/testRpl \
+   runtime/hdl-support/ocpizynq \
    ; do
   b=$(basename $t)
   d=$(dirname $t)

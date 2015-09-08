@@ -729,9 +729,11 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
       std::string externalName, num;
       OU::format(num, "%zu", at->m_index);
       OU::format(externalName, ip->m_attachments.front()->m_connection.m_slaveName.c_str(), num.c_str());
-      fprintf(f, "assign %sSData = 32'b0;\n", externalName.c_str());
+      if (lang == Verilog)
+	fprintf(f, "assign %sSData = 32'b0;\n", externalName.c_str());
+      else
+	fprintf(f, "%s(%zu).SData <= (others => '0');\n", externalName.c_str(), at->m_index);
     }
-    //    nControlInstances++;
   }
 }
 

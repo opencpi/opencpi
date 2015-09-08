@@ -463,14 +463,14 @@ endif
 # -- drivers are always dynamic
 # -- they will be in the mode subdir if we are using modes
 LIBDEPSUFFIX=$(if $(filter 0,$(OCPI_BUILD_SHARED_LIBRARIES)),a,$(SO))
-LIBDEP=$(foreach l,$(notdir $1),\
-         $(foreach d,$(dir $1),\
-	   $(foreach s,$(if $(filter $l,$(OCPI_DRIVERS)),$(SO),$(LIBDEPSUFFIX)),\
+LIBDEP=$(foreach l,$(notdir $1),$(infox l is $l)\
+         $(foreach d,$(dir $1),$(infox d is $d)\
+	   $(foreach s,$(if $(filter $l,$(OCPI_DRIVERS)),$(SO),$(LIBDEPSUFFIX)),$(infox s is $s)\
 	     $(foreach x,$(if $(filter $l,$(OCPI_DRIVERS)),\
                              $(if $(OCPI_TARGET_MODE),\
                                 $(dir $(OCPI_OUT_DIR))/d$(if $(filter 1,$(OCPI_DEBUG)),d,o),\
-                                $(and $(OCPI_TARGET_MODE),/$(OCPI_TARGET_MODE))),\
-                             $(OCPI_OUT_DIR)),\
+                                $(OCPI_OUT_DIR)),\
+                             $(OCPI_OUT_DIR)),$(infox x is $x)\
                $(foreach z,$d$x/libocpi_$l.$s,$(infox ZZZ $l->$z:($(OCPI_OUT_DIR)))$z)))))
  
 LIBDEPDIR=$(strip \
