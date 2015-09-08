@@ -1032,10 +1032,11 @@ namespace OCPI {
 	  if (doEmulate(length, &sdp, error))
 	     return true;
 	  ocpiDebug("Processing UDP command: sdp %p", sdp);
-	  if (sdp)
+	  if (sdp) {
+	    Request r(ext, from, index, length, *sdp, m_response);
 	    // This request has created a pending read request.
-	    m_respQueue.emplace(ext, from, index, length, *sdp, m_response);
-	  else
+	    m_respQueue.push(r);
+	  } else
 	    sendToIfc(ext, index, length, from, error);
 	  return false;
 	}

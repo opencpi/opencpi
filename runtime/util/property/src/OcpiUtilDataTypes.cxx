@@ -263,7 +263,7 @@ namespace OCPI {
 	m_arrayDimensionsExprs.resize(v.m_nElements);
 	const char **p = v.m_pString;
 	for (unsigned n = 0; n < v.m_nElements; n++, p++) {
-	  if ((err = OE::parseExprNumber(*p, m_arrayDimensions[n], &m_arrayDimensionsExprs[n],
+	  if ((err = parseExprNumber(*p, m_arrayDimensions[n], &m_arrayDimensionsExprs[n],
 				     resolver)))
 	    return err;
 	  if (m_arrayDimensions[n] == 0)
@@ -272,18 +272,10 @@ namespace OCPI {
 	}
       }
 
-      // Deal with sequences after arrays (because arrays belong to declarators)
-<<<<<<< HEAD
-      if ((err = OE::getExprNumber(xm, "SequenceLength", m_sequenceLength, m_isSequence,
-			       &m_sequenceLengthExpr, resolver)) ||
-	  (!m_isSequence &&
-	   ((err = OE::getExprNumber(xm, "SequenceSize", m_sequenceLength, m_isSequence,
-=======
       if ((err = getExprNumber(xm, "SequenceLength", m_sequenceLength, &m_isSequence,
 			       &m_sequenceLengthExpr, resolver)) ||
 	  (!m_isSequence &&
 	   ((err = getExprNumber(xm, "SequenceSize", m_sequenceLength, &m_isSequence,
->>>>>>> d64ee365cbfa9c03b5be1cbf70553352385aee1d
 				 &m_sequenceLengthExpr, resolver)))))
 	return err;
       if (m_isSequence)
@@ -309,7 +301,7 @@ namespace OCPI {
 	m_nItems = 1;
 	for (unsigned i = 0; i < m_arrayRank; i++) {
 	  if (m_arrayDimensionsExprs[i].length() &&
-	      (err = OE::parseExprNumber(m_arrayDimensionsExprs[i].c_str(), m_arrayDimensions[i],
+	      (err = parseExprNumber(m_arrayDimensionsExprs[i].c_str(), m_arrayDimensions[i],
 				     NULL,  &resolver)))
 	    return err;
 	  // FIXME: this is redundant with the code in parse() - share it
@@ -320,7 +312,7 @@ namespace OCPI {
       }
       if (m_isSequence) {
 	if (m_sequenceLengthExpr.length() &&
-	    (err = OE::parseExprNumber(m_sequenceLengthExpr.c_str(), m_sequenceLength, NULL,
+	    (err = parseExprNumber(m_sequenceLengthExpr.c_str(), m_sequenceLength, NULL,
 				   &resolver)))
 	  return err;
 	if (isFixed && m_sequenceLength == 0)
@@ -328,7 +320,7 @@ namespace OCPI {
       }
       if (m_baseType == OA::OCPI_String) {
 	if (m_stringLengthExpr.length() &&
-	    (err = OE::parseExprNumber(m_stringLengthExpr.c_str(), m_stringLength, NULL, &resolver)))
+	    (err = parseExprNumber(m_stringLengthExpr.c_str(), m_stringLength, NULL, &resolver)))
 	  return err;
 	if (isFixed && m_stringLength == 0)
 	  return "StringLength cannot be zero";

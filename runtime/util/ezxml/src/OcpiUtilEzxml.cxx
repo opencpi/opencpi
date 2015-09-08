@@ -715,37 +715,6 @@ namespace OCPI {
 	  return OU::esprintf("Error parsing xml string': %s", ezxml_error(xml));
 	return NULL;
       }
-      // Evaluate the expression, using the resolver, and if the expression was variable,
-      // save the expression so it can be reevaluated again later when the values of
-      // variables are different.
-      const char *
-      parseExprNumber(const char *a, size_t &np, std::string *expr,
-		      const OU::IdentResolver *resolver) {
-	ExprValue v;
-	const char *err = OU::evalExpression(a, v, resolver);
-	if (!err) {
-	  if (!v.isNumber)
-	    err = esprintf("the expression \"%s\" does not evaluate to a number", a);
-	  np = v.number;
-	  if (expr && v.isVariable)
-	    *expr = a; // provide the expression to the caller in
-	}
-	return err;
-      }
-      // Parse an integer (size_t) attribute that might be an expression
-      // Only consider if we have an identifier resolver
-      // The string value of the expression is returned in expr.
-      const char *
-      getExprNumber(ezxml_t x, const char *attr, size_t &np, bool &found, std::string *expr,
-		    const IdentResolver *resolver) {
-	const char *a = ezxml_cattr(x, attr);
-	if (a) {
-	  found = true;
-	  return parseExprNumber(a, np, expr, resolver);
-	}
-	found = false;
-	return NULL;
-      }
     }
   }
 }

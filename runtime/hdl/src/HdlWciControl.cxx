@@ -260,13 +260,13 @@ namespace OCPI {
 	if (!info.m_readError ||
 	    !(status = (get32Register(status, OccpWorkerRegisters) &
 			OCCP_STATUS_READ_ERRORS))) {
-	  m_properties.getBytesRegisterOffset(offset, buf, nBytes, info.m_elementBytes);
+	  m_properties.getBytesRegisterOffset(offset, buf, nBytes, info.m_elementBytes, string);
 	  if (info.m_readError)
 	    status = get32Register(status, OccpWorkerRegisters) & OCCP_STATUS_READ_ERRORS;
 	}
       } else
 	m_properties.m_accessor->getBytes(m_properties.m_base + offset, buf, nBytes,
-					  info.m_elementBytes, &status);
+					  info.m_elementBytes, &status, string);
       if (status)
 	throwPropertyReadError(status, (uint32_t)offset, nBytes, 0);
     }
@@ -361,7 +361,7 @@ namespace OCPI {
     getStringProperty(unsigned ordinal, char *val, size_t length, unsigned idx) const {
       // ignore return value
       const OA::PropertyInfo &info = m_propInfo[ordinal];
-      getPropertyBytes(info, info.m_offset, (uint8_t*)val, length, idx);
+      getPropertyBytes(info, info.m_offset, (uint8_t*)val, length, idx, true);
     }
     unsigned WciControl::
     getStringSequenceProperty(const OA::Property &, char * *,

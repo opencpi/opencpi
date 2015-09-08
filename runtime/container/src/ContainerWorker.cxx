@@ -244,7 +244,7 @@ namespace OCPI {
 	v.m_stringSpace = new char[info.m_stringLength + 1];
 	v.m_String = v.m_stringSpace;
 	getPropertyBytes(info, info.m_offset, (uint8_t*)v.m_pString, info.m_stringLength + 1,
-			 true);
+			 0, true);
       } else switch (info.m_nBits) {
 	case 8:
 	  v.m_UChar = getProperty8(info); break;
