@@ -32,8 +32,9 @@
  */
 #include "ContainerManager.h"
 #include "ContainerLauncher.h"
-#include "ContainerPort.h"               // just for linkage hooks
+#include "ContainerPort.h"          // just for linkage hooks
 #include "DtSharedMemoryInternal.h" // just for linkage hooks
+#include "OcpiUuid.h"               // just for linkage hooks
 namespace OCPI {
   namespace Container {
     namespace OA = OCPI::API;
@@ -162,6 +163,11 @@ namespace OCPI {
   }
 }
 namespace DataTransfer {
-  void dumb2(EndPoint &loc) { createHostSmemServices(loc); }
+  void dumb2(EndPoint &loc) {
+    OCPI::Util::Uuid uuid;
+    OCPI::Util::UuidString us;
+    OCPI::Util::uuid2string(uuid, us);
+    createHostSmemServices(loc);
+  }
 }
 
