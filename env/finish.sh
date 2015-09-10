@@ -18,6 +18,9 @@ if test "$OCPI_TARGET_HOST" = "$OCPI_TOOL_HOST" -a "${OCPI_TOOL_MODE+UNSET}" = "
    *) echo "Invalid values for OCPI_BUILD_SHARED_LIBRARIES or OCPI_DEBUG"; return 1;;
  esac
 fi
+if test "$OCPI_PREREQUISITES_INSTALL_DIR" = ""; then
+  export OCPI_PREREQUISITES_INSTALL_DIR=/opt/opencpi/prerequisites
+fi
 # For now this script needs to know where it is, and on some circa 2002 bash versions,
 # it can't.  This sets up the CDK VARS
 source ocpi/ocpisetup.sh ocpi/ocpisetup.sh

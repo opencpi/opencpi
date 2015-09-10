@@ -1057,6 +1057,7 @@ parseRccAssy() {
   // Do the generic assembly parsing, then to more specific to RCC
   if ((err = a->parseAssy(m_xml, topAttrs, instAttrs, true, m_outDir)))
     return err;
+  m_dynamic = true;
   return NULL;
 }
 

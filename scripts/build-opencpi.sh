@@ -3,7 +3,7 @@ set -e
 if test "$OCPI_BASE_DIR" != ""; then
   echo Since OCPI_BASE_DIR is set, we will use the existing environment.
   if test "$1" != ""; then
-   if "$1" != "$OCPI_TARGET_PLATFORM"; then
+   if test "$1" != "$OCPI_TARGET_PLATFORM"; then
       echo Error: supplied platform $1 is different from the environment: $OCPI_TARGET_PLATFORM
       exit 1
    fi

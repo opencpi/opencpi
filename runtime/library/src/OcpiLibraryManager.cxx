@@ -410,6 +410,7 @@ namespace OCPI {
 	  toImpl->setConnection(*toP);
       }
     }
+    Capabilities::Capabilities() : m_dynamic(false) {}
   }
   namespace API {
     void LibraryManager::

@@ -28,7 +28,7 @@ namespace OCPI {
   namespace Remote {
 
 const uint16_t REMOTE_PORT = 17171;
-const uint16_t REMOTE_NARGS = 5; // fields int the discovery entries
+const uint16_t REMOTE_NARGS = 6; // fields in the discovery entries
 extern const char *remote;
 const unsigned RETRIES = 3;
 const unsigned DELAYMS = 500;
@@ -219,7 +219,7 @@ class Container
 public:
   Container(Client &client, const std::string &name,
 	    const char *model, const char *os, const char *osVersion, const char *platform,
-	    const OA::PValue* /*params*/)
+	    const char *dynamic, const OA::PValue* /*params*/)
     throw ( OU::EmbeddedException )
     : OC::ContainerBase<Driver,Container,Application,Artifact>(*this, name.c_str()),
       m_client(client) {
@@ -227,6 +227,7 @@ public:
     m_os = os;
     m_osVersion = osVersion;
     m_platform = platform;
+    OX::parseBool(dynamic, NULL, &m_dynamic);
   }
   virtual ~Container()
   throw () {
@@ -347,10 +348,10 @@ public:
 	client = new Client(*this, server, *sock);
 	taken = true;
       }
-      ocpiDebug("Creating remote container: \"%s\", model %s, os %s, version %s, platform %s",
-		cname.c_str(), args[1], args[2], args[3], args[4]);
+      ocpiDebug("Creating remote container: \"%s\", model %s, os %s, version %s, platform %s dynamic %s",
+		cname.c_str(), args[1], args[2], args[3], args[4], args[5]);
       Container &c = *new Container(*client, cname.c_str(), args[1], args[2], args[3], args[4],
-				  NULL);
+				    args[5], NULL);
       (void)&c;
     }
     sock = NULL;

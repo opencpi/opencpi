@@ -218,7 +218,11 @@ hdlprimitives:
 	$(MAKE) -C hdl primitives
 
 driver:
-	$(MAKE) -C os/$(OCPI_OS)/driver
+	$(AT)if test -d os/$(OCPI_OS)/driver; then \
+	  $(MAKE) -C os/$(OCPI_OS)/driver; \
+	else \
+	  echo No driver for the OS '"'$(OCPI_OS)'"', so none built. ; \
+	fi
 
 cleandriver:
 	$(AT)$(and $(wildcard os/$(OCPI_OS)/driver),$(MAKE) -C os/$(OCPI_OS)/driver topclean)

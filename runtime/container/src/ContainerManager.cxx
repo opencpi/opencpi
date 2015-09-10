@@ -129,7 +129,10 @@ namespace OCPI {
 	    cb.foundContainer(*c);
       return false;
     }
-
+    bool Manager::
+    dynamic() {
+      return OCPI_DYNAMIC;
+    }
     Driver::Driver(const char *name) 
       : OD::DriverType<Manager,Driver>(name, *this) {
     }

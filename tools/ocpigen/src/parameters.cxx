@@ -461,7 +461,7 @@ setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig) {
   else
     dir = "."; // FIXME: this needs to be in a search path or something?
 #endif
-  if ((err = parseBuildFile(!paramConfig)))
+  if ((err = parseBuildFile(paramConfig == 0)))
     return err;
   if (m_paramConfigs.size() == 0) {
     // FIXME: check whether it is ever possible to have no paramconfigs any more...

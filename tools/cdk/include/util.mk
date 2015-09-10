@@ -180,7 +180,7 @@ SymLinkContents= `X=(\`ls -l $(1)\`);echo $${X[$${\#X[*]}-1]}`
 #  First arg is local file to point to, second arg is dir to put link in.
 #  e.g. $(call MakeSymLink,foo,linkdir) makes a link: dir/$(notdir foo) link to foo
 # Funky because it might be executed in a loop
-MakeSymLink2=	$(infoxx MSL2:$1:$2:$3)SL=$(2)/$(3); SLC=$(call FindRelative,$2,$1); \
+MakeSymLink2=	$(infox MSL2:$1:$2:$3)SL=$(2)/$(3); SLC=$(call FindRelative,$2,$1); \
 		if test -L $$SL; then \
 		  OSLC="$(call SymLinkContents,$2/$3)"; \
 		else \

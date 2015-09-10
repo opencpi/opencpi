@@ -78,15 +78,19 @@ namespace OCPI {
     }
 
     bool Container::supportsImplementation(OU::Worker &i) {
-      ocpiDebug("supports: container: %u m %s o %s v %s p %s vs impl: %s m %s o %s v %s p %s",
-		m_ordinal, m_model.c_str(), m_os.c_str(), m_osVersion.c_str(),m_platform.c_str(),
+      ocpiInfo("Checking implementation %s model %s os %s version %s platform %s dynamic %u",
 		i.name().c_str(), i.model().c_str(), i.attributes().m_os.c_str(),
-		i.attributes().m_osVersion.c_str(), i.attributes().m_platform.c_str());
+		i.attributes().m_osVersion.c_str(), i.attributes().m_platform.c_str(),
+		i.attributes().m_dynamic);
+      ocpiInfo("against container %s (%u) has model %s os %s version %s platform %s dynamic %u",
+		name().c_str(), m_ordinal, m_model.c_str(), m_os.c_str(), m_osVersion.c_str(),
+		m_platform.c_str(), m_dynamic);
       return
 	m_model == i.model() &&
 	m_os == i.attributes().m_os &&
 	m_osVersion == i.attributes().m_osVersion &&
-	m_platform == i.attributes().m_platform;
+	m_platform == i.attributes().m_platform &&
+	m_dynamic == i.attributes().m_dynamic;
     }
 
     Artifact & Container::

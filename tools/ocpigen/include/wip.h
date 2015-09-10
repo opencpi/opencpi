@@ -577,6 +577,7 @@ class Worker : public Parsed, public OU::IdentResolver {
   std::map<std::string, Scaling> m_scalingParameters;
   Worker *m_parent;           // If this worker is part of an upper level assembly
   unsigned m_maxLevel;        // when data type processing
+  bool m_dynamic;
   Worker(ezxml_t xml, const char *xfile, const std::string &parentFile, WType type,
 	 Worker *parent, OU::Assembly::Properties *ipvs, const char *&err);
   virtual ~Worker();
