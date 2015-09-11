@@ -107,7 +107,7 @@ OCPI::OS::LoadableModule::open (const std::string & fileName, bool global)
 void *
 OCPI::OS::LoadableModule::load(const char *fileName, bool global, std::string &error) throw () {
   pthread_mutex_lock (&g_slMutex);
-  void *handle = dlopen (fileName, RTLD_LAZY | (global ? RTLD_GLOBAL : RTLD_LOCAL));
+  void *handle = dlopen (fileName, RTLD_NOW | (global ? RTLD_GLOBAL : RTLD_LOCAL));
   if (!handle) {
     error = "error loading \"";
     error += fileName;

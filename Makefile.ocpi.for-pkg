@@ -147,7 +147,7 @@ $(EXPORTLIB): $(UNIXLIB)
 	$(AT)cp -p $(UNIXLIB) "$@"
 
 # Note the "sort" below.  It gets rid of duplicates, but messes with the ordering.
-$(UNIXSHLIB): objects
+$(UNIXSHLIB): $(OBJECTS)
 	$(CXX) $(OCPI_SHARED_LIBRARIES_FLAGS) $(infox PPP $(OCPI_PREVIOUS_DYNAMIC))\
                $(if $(filter 0,$(OCPI_PREVIOUS_DYNAMIC)),$(SHARED_ALLOW_UNDEFINED),$(SHARED)) \
                -o "$@" $(call FILTEROBJS,$(OBJECTS),$(EXCLUDE_OBJECTS)) $(EXTRALIBOBJS) \
@@ -163,9 +163,15 @@ $(UNIXSHLIB): objects
 
 PatchElf=$(OCPI_PREREQUISITES_INSTALL_DIR)/patchelf/$(OCPI_TOOL_HOST)/bin/patchelf
 $(UNIXSHLIB_S): $(UNIXSHLIB)
-	$(AT)echo Creating $@ from $< for use with statically linked executables. $(OCPI_PREVIOUS_DYNAMIC)
+	$(AT)echo Creating $@ from $< for use with statically linked executables.
 	$(AT)cp $< $@
-	$(AT)$(PatchElf) $(foreach l,$(ALLLIBS), --remove-needed libocpi_$(notdir $l)$(SO)) $@
+	$(AT)$(PatchElf) \
+	    $(foreach l,$(ALLLIBS), --remove-needed libocpi_$(notdir $l).$(SO)) \
+	    $(foreach l,$(PREQLIBS), \
+	      $(foreach x,\
+	        $(wildcard $(OCPI_PREREQUISITES_INSTALL_DIR)/$l/$(OCPI_TOOL_HOST)/lib/lib$l.*), \
+	        --remove-needed $(notdir $x))) \
+	    $@
 		
 
 endif
