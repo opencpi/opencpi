@@ -389,15 +389,13 @@ ifneq ($(wildcard $(Worker).build),)
   $(LibDir)/$(Worker).build: $(Worker).build | $(LibDir)
 	$(AT)$(call MakeSymLink,$(Worker).build,$(LibDir))
 else
-  ifneq ($(wildcard $(GeneratedDir)/$(Worker).build),)
-    LibLinks+=$(LibDir)/$(Worker).build
-    $(LibDir)/$(Worker).build: $(GeneratedDir)/$(Worker).build | $(LibDir)
+  LibLinks+=$(LibDir)/$(Worker).build
+  $(LibDir)/$(Worker).build: $(GeneratedDir)/$(Worker).build | $(LibDir)
 	$(AT)$(call MakeSymLink,$(GeneratedDir)/$(Worker).build,$(LibDir))
-  endif
 endif
 
 $(call OcpiDbgVar,LibLinks,Before all:)
-links: $(LibLinks)
+links: $$(LibLinks)
 all: links
 $(LibDir) $(LibDirs):
 	$(AT)mkdir -p $@
