@@ -1,0 +1,8 @@
+<HdlDevice language="vhdl">
+  <componentspec nocontrol='1'/>
+  <!-- Insert any other implementation-specific information here -->
+  <signal input='observeadc' width='12'/>
+  <signal input='observedac' width='12'/>
+  <signal input='observeadcsel'/>
+  <signal output='dummy'/>
+</HdlDevice>

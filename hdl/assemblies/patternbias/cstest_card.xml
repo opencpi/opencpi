@@ -1,0 +1,19 @@
+<HdlContainer platform='zed'>
+<connection external='out' card='lime-zipper-fmc' device='lime_dac'/>
+<connection card='lime-zipper-fmc' device ='lime_adc' interconnect='zynq'/>
+<device worker='cstest' floating='1'>
+  <signal name='observeadc(0)' platform='FMC_LA26_N'/>
+  <signal name='observeadc(1)' platform='FMC_LA26_P'/>
+  <signal name='observeadc(2)' platform='FMC_LA23_N'/>
+  <signal name='observeadc(3)' platform='FMC_LA23_P'/>
+  <signal name='observeadc(4)' platform='FMC_LA17_CC_N'/>
+  <signal name='observeadc(5)' platform='FMC_LA17_CC_P'/>
+  <signal name='observeadc(6)' platform='FMC_LA13_N'/>
+  <signal name='observeadc(7)' platform='FMC_LA13_P'/>
+  <signal name='observeadc(8)' platform='FMC_LA09_N'/>
+  <signal name='observeadc(9)' platform='FMC_LA09_P'/>
+  <signal name='observeadc(10)' platform='FMC_LA05_N'/>
+  <signal name='observeadc(11)' platform='FMC_LA05_P'/>
+  <signal name='observeadcsel' platform='FMC_LA01_CC_P'/>
+</device>
+</HdlContainer>

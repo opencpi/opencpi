@@ -19,7 +19,7 @@ struct SlotType {
   SlotType(const char *file, const std::string &, const char *&err);
   virtual ~SlotType();
 
-  const char *name() const { return m_name.c_str(); }
+  const char *cname() const { return m_name.c_str(); }
   static SlotType *
   get(const char *name, const char *parent, const char *&err);
   static SlotType
@@ -49,7 +49,7 @@ struct Slot {
 	    unsigned typeTotal, unsigned ordinal, const char *&err),
     // Find an existing one.  It is expected to exist
     *find(const char *name, const Slots &slots, const char *&err);
-  const char *name() const { return m_name.c_str(); }
+  const char *cname() const { return m_name.c_str(); }
   const SlotType *type() const { return &m_type; }
 };
 

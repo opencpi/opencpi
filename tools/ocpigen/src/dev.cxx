@@ -197,7 +197,7 @@ emitExtAssignment(FILE *f, bool int2ext, const std::string &extName, const std::
     OU::formatAdd(theirs, "(%zu)", intAt.m_index + n);
     for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++)
       fprintf(f, "  %s.%s <= %s.%s;\n",
-	      int2ext ? ours.c_str() : theirs.c_str(), (*si)->name(),
-	      int2ext ? theirs.c_str() : ours.c_str(), (*si)->name());
+	      int2ext ? ours.c_str() : theirs.c_str(), (*si)->cname(),
+	      int2ext ? theirs.c_str() : ours.c_str(), (*si)->cname());
   }
 }

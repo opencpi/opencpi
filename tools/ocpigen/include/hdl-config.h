@@ -17,7 +17,7 @@ struct DevInstance {
   mutable std::vector<uint64_t> m_connected;
   DevInstance(const Device &d, const Card *c, const Slot *s, bool control,
 	      const DevInstance *parent);
-  const char *name() const { return m_name.c_str(); }
+  const char *cname() const { return m_name.c_str(); }
 };
 
 typedef std::list<DevInstance> DevInstances;
