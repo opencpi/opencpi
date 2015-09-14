@@ -56,13 +56,12 @@ override HdlLibraries+=sdp platform
 # Note that the platform directory should be first XML dir since the config file name should be
 # scoped to the platform.
 override XmlIncludeDirsInternal:=\
-   $(call Unique,$(HdlPlatformDir) $(XmlIncludeDirs) \
+   $(call Unique,$(HdlPlatformDir) $(HdlPlatformDir)/hdl $(XmlIncludeDirs) \
       $(HdlPlatformsDir)/specs $(HdlAssembly))
 override ComponentLibraries:=$(call Unique,\
   $(ComponentLibraries) $(ComponentLibrariesInternal) \
   $(HdlPlatformDir) $(HdlAssembly) \
   components devices adapters cards)
-$(infox XMLI2:$(XmlIncludeDirsInternal):$(ComponentLibraries):$(HdlPlatform):$(HdlPlatformDir_$(HdlPlatform)))
 #AssemblyName=$(notdir $(HdlAssembly))
 override LibDir=$(HdlAssembly)/lib/hdl
 ifneq ($(MAKECMDGOALS),clean)

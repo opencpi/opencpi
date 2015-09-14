@@ -40,6 +40,7 @@
     <signal name='rx_clk_out' platform=''/>
   </device>
   <device worker='lime_dac'>
+    <signal name='tx_clk_in' platform='lime_adc_rx_clk_in'/>
     <signal name='tx_clk' platform=''/>
   </device>
   <device worker='lime_spi'/>

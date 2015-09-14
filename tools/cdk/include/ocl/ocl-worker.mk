@@ -60,14 +60,14 @@ CompiledSourceFiles+=$(foreach w,$(Workers),\
                         $(GeneratedDir)/$(word 1,$(w))_entry_point$(OclSourceSuffix))
 ArtifactFile=$(BinaryFile)
 # Artifacts are target-specific since they contain things about the binary
-ArtifactXmlFile = $(TargetDir)/$(word 1,$(Workers))_assy_art.xml
+ArtifactXmlFile = $(TargetDir)/$(word 1,$(Workers))_assy-art.xml
 ToolSeparateObjects:=yes
 OcpiLibDir=$(OCPI_CDK_DIR)/lib/$(OclTarget)
 
 # OpenCL does not allow for individual objects to be assembled into one binary
 # So the link binary command becomes the "compile" command for OpenCL workers
-LinkBinary= $(ToolsDir)/ocpiocl $(ExtraCompilerOptions) $(foreach i,$(IncludeDirs),-I$(abspath $i)) -o $$@
-Compile_cl=(cat $$< )>$$@
+LinkBinary= $(ToolsDir)/ocpiocl $(ExtraCompilerOptions) $(foreach i,$(IncludeDirs),-I$(abspath $i)) -o $$@ -t $(OclTarget) compile 
+Compile_cl=echo '\#include "../'$$<'"'>$$@
 
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk
 # Even though the entry point files are generated, they must be compiled last,
@@ -82,6 +82,9 @@ $(OclAssemblyFile): | $(GeneratedDir)
 $(ArtifactXmlFile): $(OclAssemblyFile)
 	@echo Generating artifact/runtime xml file \($(ArtifactXmlFile)\) for all workers in one binary
 	$(AT)$(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(TargetDir)/$(@F).deps \
+	     -O $(call OclOs,$(OclTarget)) \
+             -V $(call OclOsVersion,$(OclTarget)) \
+             -P $(call OclArch,$(OclTarget)) \
 	     -D $(TargetDir) $(XmlIncludeDirsInternal:%=-I%) -A $(OclAssemblyFile)
 
 endif

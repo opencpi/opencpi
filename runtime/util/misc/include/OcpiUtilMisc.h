@@ -56,6 +56,7 @@
 #include <functional>
 
 #include "OcpiOsAssert.h"
+#include "OcpiOsEther.h"
 
 #ifndef NDEBUG
   class Trace {
@@ -330,6 +331,8 @@ namespace OCPI {
        */
 
       void
+	encodeDescriptor(const std::string &s, std::string &out),
+	decodeDescriptor(const char *info, std::string &s),
 	formatString(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
 	format(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
 	formatAdd(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
@@ -401,6 +404,7 @@ namespace OCPI {
       inline size_t bitsForMax(uint64_t n) {
 	return ceilLog2(n + 1);
       }
+      OCPI::OS::Ether::Address &getSystemAddr();
       const std::string &getSystemId();
   }
 }

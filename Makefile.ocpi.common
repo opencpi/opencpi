@@ -54,7 +54,7 @@ TARGET_CPPFLAGS=\
   -DOCPI_PLATFORM=$(OCPI_TARGET_ARCH) \
   -DOCPI_ARCH_$(OCPI_TARGET_ARCH) \
   -DOCPI_ARCH=$(OCPI_TARGET_ARCH) \
-
+  -DOCPI_DEBUG=$(OCPI_DEBUG)
 CFLAGS += $(TARGET_CPPFLAGS)
 CXXFLAGS += -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS $(TARGET_CPPFLAGS)
 
@@ -298,13 +298,23 @@ ifneq ($(filter linux macos,$(OCPI_OS)),)
 # Unix compile-time configuration
 #
 
+xxMAIN_DRIVERS=\
+  _ZN4OCPI3API12ExternalPortD0Ev \
+  _ZN12DataTransfer22createHostSmemServicesERNS_8EndPointE
+
+OCPI_DRIVERS=hdl rcc pio dma
+
+# When linking main programs, allow dynamic libraries to have undefined symbols since
+# we don't want to care about indirect depenedencies.
+# Those dynamic libraries check their undefines against other dynamic libraries when
+# they are created
 MAIN_LDFLAGS+=\
   -Xlinker -rpath -Xlinker "$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR)" \
   $(and $(OCPI_LZMA_DIR),-Xlinker -rpath -Xlinker $(OCPI_LZMA_DIR)/$(OCPI_TARGET_HOST)/lib) \
-  $(foreach o,$(MAIN_DRIVERS), $(call UNDEFINED_FLAG,$o))
+  $(foreach o,$(MAIN_DRIVERS), $(call UNDEFINED_FLAG,$o)) $(LD_ALLOW_UNDEFINED)
 ifeq ($(OCPI_OS),macos)
   SO=dylib
-  LD_ALLOW_UNDEFINED=-undefined dynamic_lookup
+  LD_ALLOW_UNDEFINED=-Xlinker -undefined -Xlinker dynamic_lookup
   SHARED_ALLOW_UNDEFINED=-dynamiclib $(LD_ALLOW_UNDEFINED) -install_name @rpath/$(notdir $@)
   #MACSTDLIB=-stdlib=libstdc++
   SHARED= $(MACSTDLIB) -dynamiclib -install_name @rpath/$(notdir $@)
@@ -332,8 +342,6 @@ else
     # This forces everything to be static, and some libraries aren't available (-ldl).
     #MAIN_LDFLAGS+=-static
     #MAIN_LDFLAGS+=-Xlinker --gc-sections
-    PRE_OCPI_LIBS=-dn
-    POST_OCPI_LIBS=-dy
   endif
   SO=so
 endif
@@ -450,16 +458,42 @@ ifneq (,)
 		$(MKDEPENDFLAGS) \
 		-o "$@"
 endif
+
+# what library should we be depending on
+# -- drivers are always dynamic
+# -- they will be in the mode subdir if we are using modes
+LIBDEPSUFFIX=$(if $(filter 0,$(OCPI_BUILD_SHARED_LIBRARIES)),a,$(SO))
+LIBDEP=$(foreach l,$(notdir $1),$(infox l is $l)\
+         $(foreach d,$(dir $1),$(infox d is $d)\
+	   $(foreach s,$(if $(filter $l,$(OCPI_DRIVERS)),$(SO),$(LIBDEPSUFFIX)),$(infox s is $s)\
+	     $(foreach x,$(if $(filter $l,$(OCPI_DRIVERS)),\
+                             $(if $(OCPI_TARGET_MODE),\
+                                $(dir $(OCPI_OUT_DIR))/d$(if $(filter 1,$(OCPI_DEBUG)),d,o),\
+                                $(OCPI_OUT_DIR)),\
+                             $(OCPI_OUT_DIR)),$(infox x is $x)\
+               $(foreach z,$d$x/libocpi_$l.$s,$(infox ZZZ $l->$z:($(OCPI_OUT_DIR)))$z)))))
+ 
+LIBDEPDIR=$(strip \
+            $(foreach l,$(notdir $1),$(infox l is $l)\
+              $(foreach d,$(dir $1),$(infox d is $d)\
+	        $(foreach x,$(if $(and $(filter $l,$(OCPI_DRIVERS)),$(OCPI_TARGET_MODE)),\
+                               $(dir $(OCPI_OUT_DIR))d$(if $(filter 1,$(OCPI_DEBUG)),d,o),\
+                               $(OCPI_OUT_DIR)),$(infox x is $x)\
+                  $(foreach z,$d$x,$(infox YYY $l->$z:($(OCPI_OUT_DIR)))$z)))))
+
 #$(info WE ARE HERE: $(OBJDIR) $(LDFLAGS))
 $(OBJDIR)/%.exe : $(OBJDIR)/%.obj $(DYNOBJS)
 	$(LD) $(MAIN_LDFLAGS) -o "$@"\
 		$(filter %.obj,$^) \
 		$(MAINOBJS) \
-		$(patsubst %,-L%$(OCPI_OUT_DIR),$(dir $(ALLLIBS))) \
+		$(foreach l,$(ALLLIBS),$(call LIBDEP,$l)) \
 		$(addprefix -L,$(call OcpiDir,$(SYSLIBS)) $(SYSLIBDIRS)) \
-		$(OCPI_LIBS) \
 		$(addprefix -l,$(notdir $(SYSLIBS))) \
 		$(BASICLIBS)
+
+#		$(foreach l,$(ALLLIBS),-L$(call LIBDEPDIR,$l)) \
+#		$(addprefix -L,$(call OcpiDir,$(SYSLIBS)) $(SYSLIBDIRS)) \
+#		$(OCPI_LIBS) \
 
 else
 ifeq ($(OCPI_OS),vxworksdkm)

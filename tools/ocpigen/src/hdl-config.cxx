@@ -342,10 +342,10 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
   // We make the worker name platform/platform so it is findable from the platforms
   // directory.
   OU::formatAdd(assy,
-		"  <instance worker='%s/%s'>\n"
+		"  <instance worker='%s'>\n"
 		"    <property name='sdp_width' value='%zu'/>\n"
 		"  </instance>\n",
-		m_platform.m_name.c_str(), m_platform.m_name.c_str(), m_sdpWidth);
+		m_platform.m_name.c_str(), m_sdpWidth);
   // Add all the device instances
   for (DevInstancesIter dii = m_devInstances.begin(); dii != m_devInstances.end(); dii++) {
     const ::Device &d = (*dii).device;
@@ -479,6 +479,7 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
 	OU::format(s->m_name, "%s_%s", i->name, (**si).m_name.c_str());
       m_signals.push_back(s);
       m_sigmap[s->name()] = s;
+      ocpiDebug("Externalizing device signal '%s' for device '%s'", s->name(), i->worker->m_implName);
     }
   }
 }

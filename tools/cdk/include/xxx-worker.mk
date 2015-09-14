@@ -100,26 +100,39 @@ override XmlIncludeDirsInternal:=\
     . $(GeneratedDir) \
     $(IncludeDirs) $(XmlIncludeDirs) \
     $(XmlIncludeDirsInternal) \
+    ../lib/$(Model)\
     ../specs \
-    $(foreach m,$(Models),../lib/$m)\
     $(OCPI_CDK_DIR)/lib/components \
-    $(foreach m,$(Models),$(OCPI_CDK_DIR)/lib/components/$m)\
+    $(OCPI_CDK_DIR)/lib/components/$(Model)\
    )
+
+#    $(foreach m,$(Models),../lib/$m)\
+#    $(foreach m,$(Models),$(OCPI_CDK_DIR)/lib/components/$m)\
 
 $(call OcpiDbgVar,XmlIncludeDirsInternal)
 
 -include $(GeneratedDir)/*.deps
 
-ParamShell=(\
-  mkdir -p $(GeneratedDir) &&\
-  ($(MakeRawParams) |\
-  $(OcpiGenTool) -D $(GeneratedDir) $(and $(Package),-p $(Package))\
-    $(and $(Platform),-P $(Platform)) \
-    $(and $(PlatformDir), -F $(PlatformDir)) \
-    $(HdlVhdlLibraries) \
-    $(and $(Assembly),-S $(Assembly)) \
-    -r $(Worker_$(Worker)_xml)) || echo 1\
-  )
+ParamShell=\
+  if test -r $(Worker).build; then \
+    (mkdir -p $(GeneratedDir) &&\
+    $(call MakeSymLink,$(Worker).build,$(GeneratedDir)); \
+    $(OcpiGenTool) -D $(GeneratedDir) $(and $(Package),-p $(Package))\
+      $(and $(Platform),-P $(Platform)) \
+      $(and $(PlatformDir), -F $(PlatformDir)) \
+      $(HdlVhdlLibraries) \
+      $(and $(Assembly),-S $(Assembly)) \
+      -b $(Worker_$(Worker)_xml)) || echo 1;\
+  else \
+    (mkdir -p $(GeneratedDir) &&\
+    $(MakeRawParams) |\
+    $(OcpiGenTool) -D $(GeneratedDir) $(and $(Package),-p $(Package))\
+      $(and $(Platform),-P $(Platform)) \
+      $(and $(PlatformDir), -F $(PlatformDir)) \
+      $(HdlVhdlLibraries) \
+      $(and $(Assembly),-S $(Assembly)) \
+      -r $(Worker_$(Worker)_xml)) || echo 1;\
+  fi
 
 ifeq ($(filter clean,$(MAKECMDGOALS)),)
   # This is the parameter configuration startup that must be run as the
@@ -270,9 +283,9 @@ define WkrDoTargetConfig
     $(call WkrBinary,$1,$2): $$$$(ObjectFiles_$1_$2) $$(call ArtifactXmlFile,$1,$2) \
                             | $(call WkrTargetDir,$1,$2)
 	$(AT)echo Linking final artifact file \"$$@\" and adding metadata to it...
-	$(AT)$(LinkBinary) $$(ObjectFiles_$1_$2) $(OtherLibraries)
+	$(AT)$(call LinkBinary,$$(ObjectFiles_$1_$2) $(OtherLibraries))
 	$(AT)if test -f "$(call ArtifactXmlFile,$1,$2)"; then \
-	  $(ToolsDir)/../../scripts/addmeta "$(call ArtifactXmlFile,$1,$2)" $$@; \
+	  $(OCPI_CDK_DIR)/scripts/addmeta "$(call ArtifactXmlFile,$1,$2)" $$@; \
 	fi
     # Make sure we actually make the final binary for this target
     $(call OcpiDbg,Before all: WkrBinary is "$(call WkrBinary,$1,$2)")
@@ -366,10 +379,20 @@ ifndef HdlSkip
   $(call OcpiDbgVar,WkrExportNames)
   $(foreach t,$($(CapModel)Targets),$(infox $(call DoLinks,$t))$(eval $(call DoLinks,$t)))
 endif
-LibLinks+=$(LibDir)/$(Worker)-params.xml
-$(LibDir)/$(Worker)-params.xml: $(GeneratedDir)/$(Worker)-params.xml | $(LibDir)
-	$(AT)$(call MakeSymLink,$(GeneratedDir)/$(Worker)-params.xml,$(LibDir))
 
+# The generated build file is done as the makefile is read, so we can use
+# a wildcard here, knowing that if it is not here it had no non-default values
+ifneq ($(wildcard $(Worker).build),)
+  LibLinks+=$(LibDir)/$(Worker).build
+  $(LibDir)/$(Worker).build: $(Worker).build | $(LibDir)
+	$(AT)$(call MakeSymLink,$(Worker).build,$(LibDir))
+else
+  ifneq ($(wildcard $(GeneratedDir)/$(Worker).build),)
+    LibLinks+=$(LibDir)/$(Worker).build
+    $(LibDir)/$(Worker).build: $(GeneratedDir)/$(Worker).build | $(LibDir)
+	$(AT)$(call MakeSymLink,$(GeneratedDir)/$(Worker).build,$(LibDir))
+  endif
+endif
 
 $(call OcpiDbgVar,LibLinks,Before all:)
 links: $(LibLinks)

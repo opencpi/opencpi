@@ -46,7 +46,7 @@ HdlToolSet_stratix5:=quartus
 # Make the initial definition as a simply-expanded variable
 HdlAllPlatforms:=
 ifndef OCPI_HDL_PLATFORM_PATH
-  OCPI_HDL_PLATFORM_PATH:=$(OCPI_BASE_DIR)/hdl/platforms
+  OCPI_HDL_PLATFORM_PATH:=$(OCPI_CDK_DIR)/lib/platforms
 endif
 define doPlatformsDir
   HdlSavePlatforms:=$$(HdlAllPlatforms)
@@ -61,9 +61,12 @@ endef
 $(foreach d,$(subst :, ,$(OCPI_HDL_PLATFORM_PATH)),\
   $(foreach p,$(notdir $d),\
     $(if $(filter platforms,$p),$(eval $(call doPlatformsDir,$d)),\
-       $(eval -include $d/$(notdir $d).mk)\
-       $(eval HdlAllPlatforms+=$p) \
-       $(eval HdlPlatformDir_$p:=$d))))
+       $(if $(wildcard $d),,$(error in OCPI_HDL_PLATFORM_PATH $d does not exist))\
+       $(foreach l,$(if $(wildcard $d/lib),$d/lib,$d),\
+	 $(if $(wildcard $l/hdl/$p.xml),,$(error no $p.xml file found in $l))\
+         $(eval -include $l/$p.mk)\
+         $(eval HdlAllPlatforms+=$p) \
+         $(eval HdlPlatformDir_$p:=$l)))))
 
 $(call OcpiDbgVar,HdlAllPlatforms)
 endif

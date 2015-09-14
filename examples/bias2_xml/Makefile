@@ -23,23 +23,23 @@ APP=biasFile
 include ../setup.mk
 
 good.output test.input: mkTestFile.cxx
-	g++ -Wall -o $(OCPI_TARGET_DIR)/a.out mkTestFile.cxx
-	$(OCPI_TARGET_DIR)/a.out $(FILE_SIZE) > test.input 2> good.output
+	g++ -Wall -o $(DIR)/a.out mkTestFile.cxx
+	$(DIR)/a.out $(FILE_SIZE) > test.input 2> good.output
 
 run: all test.input
-	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/rcc $(VG) $(PROG) $(ARGS) > /dev/null	
+	$(VG) $(PROG) $(ARGS) > /dev/null	
 	cmp test.output good.output
 
 runxml: all test.input
-	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/rcc $(VG) ocpirun -d -v $(ARGS) bias2.xml > /dev/null
+	$(VG) ocpirun -d -v $(ARGS) bias2.xml > /dev/null
 	cmp test.output good.output
 
 runhdl1: all test.input
-	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/rcc:$(OCPI_CDK_DIR)/lib/components/hdl sudo -E $(PROGS) $(ARGS)
+	$(PROGS) $(ARGS)
 	cmp test.output good.output
 
 runhdl2: all test.input
-	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/hdl:$(OCPI_CDK_DIR)/lib/components/rcc sudo -E $(PROGS) $(ARGS)
+	$(PROGS) $(ARGS)
 	cmp test.output good.output
 
 clean::

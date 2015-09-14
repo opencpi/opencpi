@@ -146,46 +146,46 @@
    return *slave();
  }
 
- Worker::
- ~Worker()
- {
-   // FIXME - this sort of thing should be generic and be reused in portError
-   try {
-     if (enabled) {
-       enabled = false;
-       controlOperation(OU::Worker::OpStop);
-     }
-     controlOperation(OU::Worker::OpRelease);
-   } catch(...) {
-   }
- #ifdef EM_PORT_COMPLETE
-     // If we have an event handler, we need to inform it about the timeout
-     if ( m_runCondition && m_runCondition->m_timeout ) {
-       if ( parent().m_transport->m_transportGlobal->getEventManager() ) {
-	 parent().m_transport->m_transportGlobal->getEventManager()->removeMinTimeout( w->workerId );
-       }
-     }
- #endif
-   delete m_user;
-   deleteChildren();
-   uint32_t m = 0;
-   while ( m_context->memories && m_context->memories[m] ) {
-     delete [] (char*)m_context->memories[m];
-     m++;
-   }
-   delete[] m_context->memories;
-   delete[] (char*)m_context->memory;
-   if (m_dispatch && m_context->properties)
-     delete[] (char*)m_context->properties;
-   delete[] m_context;
-   if (m_errorString)
-     free(m_errorString);
-   while (!m_testPmds.empty()) {
-     OU::Port *pmd = m_testPmds.front();
-     m_testPmds.pop_front();
-     delete pmd;
-   }
- }
+Worker::
+~Worker()
+{
+  // FIXME - this sort of thing should be generic and be reused in portError
+  try {
+    if (enabled) {
+      enabled = false;
+      controlOperation(OU::Worker::OpStop);
+    }
+    controlOperation(OU::Worker::OpRelease);
+  } catch(...) {
+  }
+#ifdef EM_PORT_COMPLETE
+  // If we have an event handler, we need to inform it about the timeout
+  if ( m_runCondition && m_runCondition->m_timeout ) {
+    if ( parent().m_transport->m_transportGlobal->getEventManager() ) {
+      parent().m_transport->m_transportGlobal->getEventManager()->removeMinTimeout( w->workerId );
+    }
+  }
+#endif
+  delete m_user;
+  deleteChildren();
+  uint32_t m = 0;
+  while ( m_context->memories && m_context->memories[m] ) {
+    delete [] (char*)m_context->memories[m];
+    m++;
+  }
+  delete[] m_context->memories;
+  delete[] (char*)m_context->memory;
+  if (m_dispatch && m_context->properties)
+    delete[] (char*)m_context->properties;
+  delete[] m_context;
+  if (m_errorString)
+    free(m_errorString);
+  while (!m_testPmds.empty()) {
+    OU::Port *pmd = m_testPmds.front();
+    m_testPmds.pop_front();
+    delete pmd;
+  }
+}
 
  static RCCResult
    rccSetError(const char *fmt, ...);
@@ -574,123 +574,126 @@ checkError() const {
   }
 }
 
- void Worker::
- run(bool &anyone_run) {
-   checkControl();
-   if (!enabled)
-     return;
-   OU::AutoMutex guard (mutex(), true);
-   // Before run condition processing happens, perform callbacks, and, if we did any,
-   // skip runcondition processing
-   // FIXME: have a bit mask of these
-   bool didCallBack = false;
-   RCCPort *rccPort = m_context->ports;
-   for (unsigned n = 0; n < m_nPorts; n++, rccPort++)
-     if (rccPort->callBack && m_context->connectedPorts & (1 << n) &&
-	 rccPort->containerPort->checkReady())
-       if (rccPort->callBack(m_context, rccPort, RCC_OK) == RCC_OK)
-	 didCallBack = true;
-       else {
-	 enabled = false;
-	 setControlState(OU::Worker::UNUSABLE);
-	 return;
-       }
-   if (didCallBack)
-     return;
-   // OCPI_EMIT_REGISTER_FULL_VAR( "Worker Evaluation", OCPI::Time::Emit::u, 1, OCPI::Time::Emit::State, were ); 
-   // OCPI_EMIT_STATE_CAT_NR_(were, 1, OCPI_EMIT_CAT_TUNING, OCPI_EMIT_CAT_TUNING_WC);
+void Worker::
+run(bool &anyone_run) {
+  checkControl();
+  if (!enabled)
+    return;
+  OU::AutoMutex guard (mutex(), true);
+  if (!enabled)
+    return;
+  // Before run condition processing happens, perform callbacks, and, if we did any,
+  // skip runcondition processing
+  // FIXME: have a bit mask of these
+  bool didCallBack = false;
+  RCCPort *rccPort = m_context->ports;
+  for (unsigned n = 0; n < m_nPorts; n++, rccPort++)
+    if (rccPort->callBack && m_context->connectedPorts & (1 << n) &&
+	rccPort->containerPort->checkReady())
+      if (rccPort->callBack(m_context, rccPort, RCC_OK) == RCC_OK)
+	didCallBack = true;
+      else {
+	enabled = false;
+	setControlState(OU::Worker::UNUSABLE);
+	return;
+      }
+  if (didCallBack)
+    return;
+  // OCPI_EMIT_REGISTER_FULL_VAR( "Worker Evaluation", OCPI::Time::Emit::u, 1, OCPI::Time::Emit::State, were ); 
+  // OCPI_EMIT_STATE_CAT_NR_(were, 1, OCPI_EMIT_CAT_TUNING, OCPI_EMIT_CAT_TUNING_WC);
 
-   // Run condition processing: we break if we're going to run, and return if not
-   ocpiAssert(m_runCondition);
-   bool timedOut = false;
-   do {
-     if (!m_runCondition->m_portMasks) // no port mask array means run all the time
-       break;
-     if (m_runCondition->m_timeout && m_runTimer.expired()) {
-       ocpiInfo("WORKER TIMED OUT, elapsed time = %u,%u", 
-		 m_runTimer.getElapsed().seconds(), m_runTimer.getElapsed().nanoseconds());
-       timedOut = true;
-       break;
-     }
-     // If no port masks, then we don't run except for timeouts, checked above
-     if (!m_runCondition->m_portMasks[0])
-       if (m_runCondition->m_timeout && !hasRun) {
-	 hasRun = true;
-	 break; // run if we're in period execution and haven't run at all yet
-       } else
-	 return;
-     // Start out assuming optional unconnected ports are "ready"
-     RCCPortMask readyMask = m_info.optionallyConnectedPorts & ~m_context->connectedPorts;
-     // Only examine connected ports that are in the run condition
-     RCCPortMask relevantMask = m_context->connectedPorts & m_runCondition->m_allMasks;
-     RCCPort *rccPort = m_context->ports;
-     RCCPortMask portBit = 1;
-     for (unsigned n = m_nPorts; n; n--, rccPort++, portBit <<= 1)
-       if ((portBit & relevantMask) && rccPort->containerPort->checkReady())
-	 readyMask |= portBit;
-     if (!readyMask)
-       return;
-     // See if any of our masks are satisfied
-     RCCPortMask *pmp;
-     for (pmp = m_runCondition->m_portMasks; *pmp; pmp++)
-       if ((*pmp & readyMask) == *pmp)
-	 break;
-     if (!*pmp)
-       return;
-   } while (0);
-   assert(enabled);
-   if (!m_dispatch || m_dispatch->run) {
-     anyone_run = true;
-     //      OCPI_EMIT_STATE_CAT_NR_(were, 0, OCPI_EMIT_CAT_TUNING, OCPI_EMIT_CAT_TUNING_WC);
-     RCCBoolean newRunCondition = false;
+  // Run condition processing: we break if we're going to run, and return if not
+  ocpiAssert(m_runCondition);
+  bool timedOut = false;
+  do {
+    if (!m_runCondition->m_portMasks) // no port mask array means run all the time
+      break;
+    if (m_runCondition->m_timeout && m_runTimer.expired()) {
+      ocpiInfo("WORKER TIMED OUT, elapsed time = %u,%u", 
+	       m_runTimer.getElapsed().seconds(), m_runTimer.getElapsed().nanoseconds());
+      timedOut = true;
+      break;
+    }
+    // If no port masks, then we don't run except for timeouts, checked above
+    if (!m_runCondition->m_portMasks[0])
+      if (m_runCondition->m_timeout && !hasRun) {
+	hasRun = true;
+	break; // run if we're in period execution and haven't run at all yet
+      } else
+	return;
+    // Start out assuming optional unconnected ports are "ready"
+    RCCPortMask readyMask = m_info.optionallyConnectedPorts & ~m_context->connectedPorts;
+    // Only examine connected ports that are in the run condition
+    RCCPortMask relevantMask = m_context->connectedPorts & m_runCondition->m_allMasks;
+    RCCPort *rccPort = m_context->ports;
+    RCCPortMask portBit = 1;
+    for (unsigned n = m_nPorts; n; n--, rccPort++, portBit <<= 1)
+      if ((portBit & relevantMask) && rccPort->containerPort->checkReady())
+	readyMask |= portBit;
+    if (!readyMask)
+      return;
+    // See if any of our masks are satisfied
+    RCCPortMask *pmp;
+    for (pmp = m_runCondition->m_portMasks; *pmp; pmp++)
+      if ((*pmp & readyMask) == *pmp)
+	break;
+    if (!*pmp)
+      return;
+  } while (0);
+  assert(enabled);
+  if (!m_dispatch || m_dispatch->run) {
+    anyone_run = true;
+    //      OCPI_EMIT_STATE_CAT_NR_(were, 0, OCPI_EMIT_CAT_TUNING, OCPI_EMIT_CAT_TUNING_WC);
+    RCCBoolean newRunCondition = false;
 
-     pthread_setspecific(Driver::s_threadKey, this);
-     if (m_runCondition->m_timeout)
-       m_runTimer.restart();
-     OCPI_EMIT_REGISTER_FULL_VAR( "Worker Run", OCPI::Time::Emit::u, 1, OCPI::Time::Emit::State, wre ); \
-     OCPI_EMIT_STATE_CAT_NR_(wre, 1, OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_CAT_WORKER_DEV_RUN_TIME);
-     RCCResult rc = m_dispatch ?
-       m_dispatch->run(m_context, timedOut, &newRunCondition) : m_user->run(timedOut);
-     OCPI_EMIT_STATE_CAT_NR_(wre, 0, OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_CAT_WORKER_DEV_RUN_TIME);
-     if (m_user)
-       m_user->m_first = false;
-     checkError();
-     if (newRunCondition) {
-       if (m_runCondition->m_timeout)
-	 m_runTimer.reset();
-       if (m_context->runCondition) {
-	 m_cRunCondition.setRunCondition(*m_context->runCondition);
-	 setRunCondition(m_cRunCondition);
-       } else
-	 setRunCondition(m_defaultRunCondition);
-       // FIXME: cache this silly calcation using OS::Time
-       if (m_runCondition->m_timeout)
-	 m_runTimer.restart(m_runCondition->m_usecs / 1000000,
-			  (m_runCondition->m_usecs % 1000000) * 1000);
-     }
-     // The state might have changed behind our back: e.g. in port exceptions
-     if (getState() != OU::Worker::UNUSABLE)
-       switch (rc) {
-       case RCC_ADVANCE:
-	 advanceAll();
-	 break;
-       case RCC_ADVANCE_DONE:
-	 advanceAll();
-       case RCC_DONE:
-	 // FIXME:  release all current buffers
-	 enabled = false;
-	 setControlState(OU::Worker::FINISHED);
-	 break;
-       case RCC_OK:
-	 break;
-       default:
-	 enabled = false;
-	 setControlState(OU::Worker::UNUSABLE);
-	 m_runTimer.reset();
-       }
-     worker_run_count++;
-   }
- }
+    pthread_setspecific(Driver::s_threadKey, this);
+    if (m_runCondition->m_timeout)
+      m_runTimer.restart();
+    OCPI_EMIT_REGISTER_FULL_VAR( "Worker Run", OCPI::Time::Emit::u, 1, OCPI::Time::Emit::State, wre ); \
+    OCPI_EMIT_STATE_CAT_NR_(wre, 1, OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_CAT_WORKER_DEV_RUN_TIME);
+    RCCResult rc = m_dispatch ?
+      m_dispatch->run(m_context, timedOut, &newRunCondition) : m_user->run(timedOut);
+    OCPI_EMIT_STATE_CAT_NR_(wre, 0, OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_CAT_WORKER_DEV_RUN_TIME);
+    m_context->firstRun = false;
+    if (m_user)
+      m_user->m_first = false;
+    checkError();
+    if (newRunCondition) {
+      if (m_runCondition->m_timeout)
+	m_runTimer.reset();
+      if (m_context->runCondition) {
+	m_cRunCondition.setRunCondition(*m_context->runCondition);
+	setRunCondition(m_cRunCondition);
+      } else
+	setRunCondition(m_defaultRunCondition);
+      // FIXME: cache this silly calcation using OS::Time
+      if (m_runCondition->m_timeout)
+	m_runTimer.restart(m_runCondition->m_usecs / 1000000,
+			   (m_runCondition->m_usecs % 1000000) * 1000);
+    }
+    // The state might have changed behind our back: e.g. in port exceptions
+    if (getState() != OU::Worker::UNUSABLE)
+      switch (rc) {
+      case RCC_ADVANCE:
+	advanceAll();
+	break;
+      case RCC_ADVANCE_DONE:
+	advanceAll();
+      case RCC_DONE:
+	// FIXME:  release all current buffers
+	enabled = false;
+	setControlState(OU::Worker::FINISHED);
+	break;
+      case RCC_OK:
+	break;
+      default:
+	enabled = false;
+	setControlState(OU::Worker::UNUSABLE);
+	m_runTimer.reset();
+      }
+    worker_run_count++;
+  }
+}
 
 void Worker::
 advanceAll() {
@@ -1046,7 +1049,7 @@ controlOperation(OU::Worker::ControlOperation op) {
        m_worker.m_runCondition == &m_worker.m_defaultRunCondition ?
        NULL : m_worker.m_runCondition;
    }
-   void RCCUserWorker::setRunCondition(const RunCondition *rc) {
+   void RCCUserWorker::setRunCondition(RunCondition *rc) {
      m_worker.setRunCondition(rc ? *rc : m_worker.m_defaultRunCondition);
    }
    OCPI::API::Application &RCCUserWorker::getApplication() {
@@ -1216,19 +1219,21 @@ controlOperation(OU::Worker::ControlOperation op) {
      va_start(ap, pm);
      unsigned n;
      RCCPortMask m;
-     for (n = 0; (m = va_arg(ap, RCCPortMask)); n++)
-       ;
-     if (n <= sizeof(m_myMasks)/sizeof(RCCPortMask))
-       m_portMasks = m_allocated = new RCCPortMask[n + 1];
+     for (n = 2; (m = va_arg(ap, RCCPortMask)); n++)
+	;
+     if (n < sizeof(m_myMasks)/sizeof(RCCPortMask))
+       m_portMasks = m_allocated = new RCCPortMask[n];
      else
        m_portMasks = m_myMasks;
      va_end(ap);
      va_start(ap, pm);
      RCCPortMask *pms = m_portMasks;
+     m = pm;
      do {
-       *pms++ = m = va_arg(ap, RCCPortMask);
-       m_allMasks |= m;
-     } while (m);
+	*pms++ = m;
+	m_allMasks |= m;
+      } while ((m = va_arg(ap, RCCPortMask)));
+      *pms++ = 0;
    }
    RunCondition::
    RunCondition(RCCPortMask *rpm, uint32_t usecs, bool timeout)

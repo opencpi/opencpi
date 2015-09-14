@@ -55,7 +55,7 @@ architecture rtl of sdp_send_worker is
 begin
   bram_addr        <= buffer_addr_r + buffer_offset_r;
   next_buffer_addr <= buffer_addr_r + props_in.bufferSize(addr_width_c - 1 + 2 downto 2);
-  prop_ram_addr    <= props_in.raw_address(addr_width_c - 1 + 2 downto 2);
+  prop_ram_addr    <= props_in.raw.address(addr_width_c - 1 + 2 downto 2);
   can_take         <= to_bool(local_avail_r /= 0 and operating_r);
   will_write       <= can_take and in_in.ready and in_in.valid and not overflow_r;
   max_offset       <= props_in.bufferSize(addr_width_c - 1 + 2 downto 2) - 1;
@@ -72,7 +72,7 @@ begin
   props_out.metadata        <= metadata_r;
   in_out.take               <= in_in.ready and (will_write or finishing_local or
                                          (in_in.som and not in_in.ready));
-  ctl_out.done              <= not props_in.raw_is_read or raw_read_r;
+  ctl_out.done              <= not props_in.raw.is_read or raw_read_r;
 
   -- Instance the BRAM and wire it up to the raw interface.
   -- Since the BRAM is single cycle, there is no handshake.
@@ -83,10 +83,10 @@ begin
                 MEMSIZE    => memory_depth_c)
     port map   (CLKA       => ctl_in.clk,
                 ENA        => '1',
-                WEA        => props_in.raw_is_write,
+                WEA        => props_in.raw.is_write,
                 ADDRA      => std_logic_vector(prop_ram_addr),
-                DIA        => props_in.raw_data,
-                DOA        => props_out.raw_data,
+                DIA        => props_in.raw.data,
+                DOA        => props_out.raw.data,
                 CLKB       => ctl_in.clk,
                 ENB        => '1',
                 WEB        => will_write,
@@ -114,14 +114,14 @@ begin
         last_nbytes_r   <= (others => '0');
         raw_read_r      <= bfalse;
       elsif not operating_r then
-        raw_read_r      <= props_in.raw_is_read;
+        raw_read_r      <= props_in.raw.is_read;
         -- initialization on first transition to operating.  poor man's "start".
         if its(ctl_in.is_operating) then
           operating_r   <= btrue;
           local_avail_r <= resize(props_in.bufferCount, buffer_count_t'length);
         end if;
       else
-        raw_read_r      <= props_in.raw_is_read;
+        raw_read_r      <= props_in.raw.is_read;
         if its(finishing_local) then
           if its(not finishing_remote) then
             local_avail_r <= local_avail_r - 1;

@@ -43,7 +43,7 @@ namespace OCPI {
 
     namespace OE = OCPI::Util::EzXml;
     Worker::Worker()
-      : m_attributes(NULL), m_ports(0), m_memories(0), m_nPorts(0), m_nMemories(0),
+      : m_attributes(NULL), m_ports(NULL), m_memories(NULL), m_nPorts(0), m_nMemories(0),
         m_totalPropertySize(0), m_nProperties(0), m_properties(NULL), m_firstRaw(NULL),
 	m_xml(NULL), m_ordinal(0) {
     }

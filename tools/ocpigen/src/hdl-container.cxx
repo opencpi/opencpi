@@ -84,7 +84,7 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
     ocpiCheck(OE::ezxml_parse_str(xml, strlen(xml), x) == NULL);
     configFile = "base.xml"; // where is this really used?
   } else {
-    OU::format(configName, "%s/%s", ::platformDir, myConfig.c_str());
+    OU::format(configName, "%s/hdl/%s", ::platformDir, myConfig.c_str());
     if ((err = parseFile(configName.c_str(), xfile, "HdlConfig", &x, configFile))) {
       configName = myPlatform + "/gen/" + myConfig;
       if (parseFile(configName.c_str(), xfile, "HdlConfig", &x, configFile))
@@ -203,10 +203,10 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 #if 0
     OU::formatAdd(assy, "    <signal name='%s' external='%s'/>\n",
 		  (*s)->name(), (*s)->name());
+#endif
     Signal *es = new Signal(**s);
     m_signals.push_back(es);
     m_sigmap[(*s)->name()] = es;
-#endif
   }
   OU::formatAdd(assy, "  </instance>\n");
   // Connect the platform configuration to the control plane
@@ -296,6 +296,11 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
       
 	nWCIs++;
       }
+      // Instance time clients for the assembly
+      const Ports &ports = (*di).device.deviceType().ports();
+      for (PortsIter pi = ports.begin(); pi != ports.end(); pi++)
+	if ((*pi)->type == WTIPort)
+	  emitTimeClient(assy, (*di).name(), (*pi)->name());
     }
     for (ContConnectsIter ci = connections.begin(); ci != connections.end(); ci++)
       if ((err = emitConnection(assy, uNocs, nWCIs, *ci)))
@@ -406,6 +411,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
     }
   }
   m_xml = x;
+#if 0 // try this below
   // During the parsing of the container assembly we KNOW what the platform is,
   // but the platform config XML that might be parsed might think it is defaulting
   // from the platform where it lives, so we temporarily set the global to the
@@ -415,6 +421,8 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
   if ((err = parseHdl()))
     return;
   platform = save;
+#endif
+#if 0 // this is now done in mapDevSignals
   // Make all device instances signals external that are not mapped already
   unsigned n = 0;
   for (Instance *i = m_assembly->m_instances; n < m_assembly->m_nInstances; i++, n++) {
@@ -449,6 +457,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
       }
     }
   }
+#endif
   // For platform devices that are not instanced:
   //    Make all device signals external, and cause the outputs to be tied to zero.
   //    EXCEPT for device signals that are explicitly mapped to NULL, meaning they are
@@ -462,7 +471,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 	Signal *cs = NULL; // The container signal we will create
 	if ((*di)->m_sigmap.findSignal((*si)->name(), bs)) {
 	  // There is a mapping, but it might be NULL if the signal is not on the platform
-	  if (bs) {
+	  if (bs && !m_platform.m_bd2dev.findSignal(bs->name())) {
 	    cs = new Signal(*bs); // clone the board signal for the container signal
 	    // If the board signal is bidirectional (can be anything), it should inherit
 	    // the direction of the device's signal
@@ -482,6 +491,17 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
       }
     }
   }
+#if 1
+  // During the parsing of the container assembly we KNOW what the platform is,
+  // but the platform config XML that might be parsed might think it is defaulting
+  // from the platform where it lives, so we temporarily set the global to the
+  // platform we know.
+  const char *save = platform;
+  platform = m_platform.m_name.c_str();
+  if ((err = parseHdl()))
+    return;
+  platform = save;
+#endif
 }
 
 HdlContainer::
@@ -845,6 +865,12 @@ mapDevSignals(std::string &assy, const DevInstance &di, bool inContainer) {
 		      di.slot && boardSig ? di.slot->name() : "",
 		      di.slot && boardSig ? "_" : "",
 		      boardName.c_str());
+      } else {
+	Signal *ns = new Signal(**s);
+	OU::format(ns->m_name, "%s_%s", di.device.name(), ns->name());
+	m_signals.push_back(ns);
+	m_sigmap[ns->m_name.c_str()] = ns;
+	break;
       }
     }
 }
@@ -899,7 +925,8 @@ emitContainerImplHDL(FILE *f) {
 
 void HdlContainer::
 recordSignalConnection(Signal &s, const char *from) {
-  assert(m_connectedSignals.find(&s) == m_connectedSignals.end());
+  // A signal may be connected more than once if it is an input
+  //  assert(m_connectedSignals.find(&s) == m_connectedSignals.end());
   m_connectedSignals[&s] = from;
   //  m_connectedSignals.insert(&s);
 }

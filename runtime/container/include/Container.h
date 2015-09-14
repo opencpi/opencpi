@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -66,32 +65,19 @@ namespace OCPI {
   namespace Container {
 
     class Driver;
-    class PortData;
-    class Application;
     class Artifact;
     class Launcher;
-    /**
-       @class Container
 
-       @brief
-       Container base class.
-
-       This class provides the interface definition for container implementations.
-
-       @sa OCPI::Container::Container
-
-       ********************************************************************** */
+    // Container base class.
     class Container
       : public OCPI::API::Container,
 	public OCPI::Library::Capabilities,
 	public OCPI::Time::Emit,
 	virtual public OCPI::Util::SelfMutex
     {
-
-      bool runInternal(uint32_t usecs = 0, bool verbose = false);
     public:
-      virtual Driver &driver() = 0;
-
+      typedef uint32_t CMap;
+    protected:
       //!< Dispatch thread return codes
       enum DispatchRetCode {
         MoreWorkNeeded,   // Dispatch returned, but there is more work needed
@@ -99,113 +85,73 @@ namespace OCPI {
         DispatchNoMore,   // No more dispatching required
         Stopped           // Container is stopped
       };
-
-      /**
-         @brief
-         Constructor
-
-         @param [ in ] properties
-         Container startup properties
-
-         @throw  OCPI::Util::EmbeddedException  If an error is detected during construction
-
-         ****************************************************************** */
-      Container(const char *name, const ezxml_t config = NULL, const OCPI::Util::PValue* props = NULL)
-        throw ( OCPI::Util::EmbeddedException );
-
-      ~Container();
-
-      const std::string &platform() const { return m_platform; }
-      const std::string &model() const { return m_model; }
-      const std::string &os() const { return m_os; }
-      const std::string &osVersion() const { return m_osVersion; }
-
-      virtual Container *nextContainer() = 0;
-      bool supportsImplementation(OCPI::Util::Worker &);
-      /**
-         @brief
-         createApplication
-
-         Creates an application  for all subsequent method calls.
-
-         @throw OCPI::Util::EmbeddedException  If an error is detected during the creation of the .
-
-         ****************************************************************** */        
-      virtual OCPI::API::ContainerApplication *
-	createApplication(const char *name = NULL, const OCPI::Util::PValue *props = NULL)
-        throw ( OCPI::Util::EmbeddedException ) = 0;
-
-      OCPI::Util::PValue *getProperties();
-      OCPI::Util::PValue *getProperty(const char *);
-
-      /**
-         @brief
-         dispatch
-
-         This is the method that gets called by the creator to provide thread time to the container.  If this method
-         returns "true" the caller must continue to call this method.  If the return is "false" the method no longer needs
-         to be called.
-
-         @param [ in ] event_manager
-         Event Manager object that is associated with this container.  This parameter can be NULL if the container is
-         being used in polled mode.
-
-         @throw OCPI::Util::EmbeddedException  If an error is detected during dispatch
-
-         ****************************************************************** */        
-      virtual DispatchRetCode dispatch(DataTransfer::EventManager*);
-      bool run(uint32_t usecs = 0, bool verbose = false);
-      void thread();
-      virtual bool needThread() = 0;
-
-      // Load from url
-      Artifact & loadArtifact(const char *url,
-			      const OCPI::Util::PValue *artifactParams = NULL);
-      // Load from library artifact
-      Artifact & loadArtifact(OCPI::Library::Artifact &art,
-			      const OCPI::Util::PValue *artifactParams = NULL);
-      
-      virtual Artifact *findLoadedArtifact(const char *url) = 0;
-      virtual Artifact *findLoadedArtifact(const OCPI::Library::Artifact &a) = 0;
-      virtual Artifact &createArtifact(OCPI::Library::Artifact &,
-				       const OCPI::API::PValue *props = NULL) = 0;
-     
-      //!< Start/Stop the container
-      virtual void start(DataTransfer::EventManager* event_manager)
-        throw();
-      virtual void stop(DataTransfer::EventManager* event_manager)
-        throw();
-
-      virtual void stop();
-      // FIXME: default start behavior is for software containers.
-      virtual void start();
-      //! get the event manager for this container
-      virtual DataTransfer::EventManager*  getEventManager(){return NULL;}
-
-      bool hasName(const char *name);
-
-      //      inline OCPI::OS::uint32_t getId(){return m_ourUID;}
-      inline unsigned ordinal() const { return m_ordinal; }
-      static Container &nthContainer(unsigned n);
-      typedef uint32_t CMap;
       static const unsigned maxContainer = sizeof(CMap) * 8;
-      // Launcher: default is to
-      virtual Launcher &launcher() const;
-      inline OCPI::DataTransport::Transport &getTransport() { return m_transport; }
-    protected:
-      void shutdown();
-      //      const std::string m_name;
-
-      //! This containers unique id
-      //      OCPI::OS::uint32_t m_ourUID;
       unsigned m_ordinal;
-
       // Start/Stop flag for this container
       bool m_enabled;
       bool m_ownThread;
       OCPI::OS::ThreadManager *m_thread;
       // This is not an embedded member to potentially control lifecycle better...
       OCPI::DataTransport::Transport &m_transport;
+      Container(const char *name, const ezxml_t config = NULL,
+		const OCPI::Util::PValue* params = NULL)
+        throw (OCPI::Util::EmbeddedException);
+    public:
+      virtual ~Container();
+    private:
+      bool runInternal(uint32_t usecs = 0, bool verbose = false);
+    public:
+      virtual Driver &driver() = 0;
+      const std::string &platform() const { return m_platform; }
+      const std::string &model() const { return m_model; }
+      const std::string &os() const { return m_os; }
+      const std::string &osVersion() const { return m_osVersion; }
+      virtual Container *nextContainer() = 0;
+      bool supportsImplementation(OCPI::Util::Worker &);
+      virtual OCPI::API::ContainerApplication *
+	createApplication(const char *name = NULL, const OCPI::Util::PValue *props = NULL)
+        throw ( OCPI::Util::EmbeddedException ) = 0;
+      OCPI::Util::PValue *getProperties();
+      OCPI::Util::PValue *getProperty(const char *);
+
+      /*
+	This is the method that gets called by the creator to provide thread time to the
+	container.  If this method returns "true" the caller must continue to call this
+	method.  If the return is "false" the method no longer needs to be called.
+	
+	@param [ in ] event_manager
+	Event Manager object that is associated with this container.  This parameter can be
+	NULL if the container is being used in polled mode.
+      */
+      virtual DispatchRetCode dispatch(DataTransfer::EventManager*);
+      bool run(uint32_t usecs = 0, bool verbose = false);
+      void thread();
+      virtual bool needThread() = 0;
+      // Load from url
+      Artifact & loadArtifact(const char *url,
+			      const OCPI::Util::PValue *artifactParams = NULL);
+      // Load from library artifact
+      Artifact & loadArtifact(OCPI::Library::Artifact &art,
+			      const OCPI::Util::PValue *artifactParams = NULL);
+      virtual Artifact *findLoadedArtifact(const char *url) = 0;
+      virtual Artifact *findLoadedArtifact(const OCPI::Library::Artifact &a) = 0;
+      virtual Artifact &createArtifact(OCPI::Library::Artifact &,
+				       const OCPI::API::PValue *props = NULL) = 0;
+      virtual void start(DataTransfer::EventManager* event_manager) throw();
+      virtual void stop(DataTransfer::EventManager* event_manager) throw();
+      virtual void stop();
+      // FIXME: default start behavior is for software containers.
+      virtual void start();
+      //! get the event manager for this container
+      virtual DataTransfer::EventManager*  getEventManager(){return NULL;}
+      bool hasName(const char *name);
+      inline unsigned ordinal() const { return m_ordinal; }
+      static Container &nthContainer(unsigned n);
+      // Launcher: default is to
+      virtual Launcher &launcher() const;
+      inline OCPI::DataTransport::Transport &getTransport() { return m_transport; }
+    protected:
+      void shutdown();
     };
   }
 }

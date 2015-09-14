@@ -8,7 +8,7 @@ package sdp is
 -- The address is in DWORDS.
 constant max_reads_outstanding  : natural := 8;
 constant max_message_kbytes     : natural := 16; -- jumbo frames +
-constant max_addressable_kbytes : natural := 16*1024; -- 16MB per node
+constant max_addressable_kbytes : natural := 64*1024; -- 64MB per node
 constant max_nodes              : natural := 8; -- always includes one for control
 constant datum_bits             : natural := 32; -- THIS IS ASSUMED BY VARIOUS CLIENTS
 
@@ -19,7 +19,7 @@ constant max_message_units      : natural := (max_message_kbytes * 1024 * 8) / d
 constant count_width            : natural := width_for_max(max_message_units-1);
 constant end_bytes_width        : natural := width_for_max(datum_bytes - 1);
 constant addr_width             : natural := width_for_max(1024-1) +
-                                             width_for_max(max_addressable_kbytes/datum_bytes);
+                                             width_for_max(max_addressable_kbytes/datum_bytes-1);
 type op_t is (read_e,
               write_e,
               response_e,

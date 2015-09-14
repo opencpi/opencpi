@@ -21,8 +21,6 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-
 #ifndef HDLSIMDRIVER_H
 #define HDLSIMDRIVER_H
 #include "HdlNetDriver.h"
@@ -39,8 +37,8 @@ namespace OCPI {
 	friend class Device;
       protected:
 	virtual ~Driver();
-	virtual Net::Device &createDevice(OS::Ether::Interface &ifc, OS::Ether::Address &addr,
-				     bool discovery, std::string &error);
+	virtual Net::Device *createDevice(OS::Ether::Interface &ifc, OS::Ether::Address &addr,
+					  bool discovery, std::string &error);
       };
     }
   }

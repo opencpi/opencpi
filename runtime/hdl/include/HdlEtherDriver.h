@@ -52,8 +52,8 @@ namespace OCPI {
       protected:
 	virtual ~Driver();
 	// constructor
-	virtual Net::Device &createDevice(OS::Ether::Interface &ifc, OS::Ether::Address &addr,
-				     bool discovery, std::string &error);
+	virtual Net::Device *createDevice(OS::Ether::Interface &ifc, OS::Ether::Address &addr,
+					  bool discovery, std::string &error);
       };
     }
   }

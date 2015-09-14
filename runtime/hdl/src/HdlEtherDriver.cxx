@@ -64,11 +64,15 @@ namespace OCPI {
       Driver::
       ~Driver() {
       }
-      Net::Device &Driver::
-      createDevice(OS::Ether::Interface &ifc, OS::Ether::Address &addr,
-		   bool discovery, std::string &error) {
+      Net::Device *Driver::
+      createDevice(OS::Ether::Interface &ifc, OS::Ether::Address &addr, bool discovery,
+		   std::string &error) {
 	std::string name("Ether:" + ifc.name + "/" + addr.pretty());
-	return *new Device(*this, ifc, name, addr, discovery, error);
+	Device *d = new Device(*this, ifc, name, addr, discovery, error);
+	if (error.empty())
+	  return d;
+	delete d;
+	return NULL;
       }
     } // namespace Ether
   } // namespace HDL

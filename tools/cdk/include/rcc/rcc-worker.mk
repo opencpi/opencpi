@@ -50,7 +50,7 @@ OBJ:=.o
 override RccIncludeDirsInternal+=../include gen $(OCPI_CDK_DIR)/include/rcc
 BF=$(BF_$(call RccOs,))
 ifneq ($(OCPI_DEBUG),0)
-eSharedLibLinkOptions=-g
+SharedLibLinkOptions=-g
 endif
 SharedLibLinkOptions+=\
   $(or $(SharedLibLinkOptions_$(HdlTarget)),$(SharedLibLinkOptions_$(call RccOs,)))
@@ -73,10 +73,15 @@ ArtifactFile=$(BinaryFile)
 # Artifacts are target-specific since they contain things about the binary
 ArtifactXmlFile=$(call WkrTargetDir,$1,$2)/$(word 1,$(Workers))_assy-art.xml
 ToolSeparateObjects:=yes
-OcpiLibDir=$(OCPI_CDK_DIR)/lib/$$(RccTarget)
+OcpiLibDir=$(OCPI_CDK_DIR)/lib/$$(RccTarget)$(and $(OCPI_TARGET_MODE),/$(OCPI_TARGET_MODE))
 # Add the libraries we know a worker might reference.
 override RccLibrariesInternal+=rcc application os
-LinkBinary=$$(G$(OcpiLanguage)_LINK_$$(RccTarget)) $(SharedLibLinkOptions) -o $$@ \
+
+ifeq ($(origin OCPI_TARGET_MODE),undefined)
+  export OCPI_TARGET_MODE:=$(if $(filter 1,$(OCPI_BUILD_SHARED_LIBRARIES)),d,s)$(if $(filter 1,$(OCPI_DEBUG)),d,o)
+endif
+PatchElf=$(or $(OCPI_PREREQUISITES_INSTALL_DIR),/opt/opencpi/prerequisites)/patchelf/$(OCPI_TOOL_HOST)/bin/patchelf
+LinkBinary=$$(G$(OcpiLanguage)_LINK_$$(RccTarget)) $(SharedLibLinkOptions) -o $$@ $1 \
 $(AEPLibraries) \
 $(foreach l,$(RccLibrariesInternal) $(Libraries),\
   $(if $(findstring /,$l),\
@@ -84,8 +89,11 @@ $(foreach l,$(RccLibrariesInternal) $(Libraries),\
        $(or $(wildcard $p$(AREXT_$(call RccOs,))),\
             $(and $(wildcard $p$(SOEXT_$(call RccOs,))),-L $(dir $l)$(RccTarget) -l $(notdir $l)),\
             $(error No RCC library found for $l, tried $p$(AREXT_$(call RccOs,)) and $p$(SOEXT_$(call RccOs,))))), \
-    -l ocpi_$l)) \
-  -L $(OcpiLibDir)
+    $(and $(filter 1,$(OCPI_BUILD_SHARED_LIBRARIES)),-l ocpi_$l))) \
+  -L $(OCPI_CDK_DIR)/lib/$$(RccTarget)$(and $(OCPI_TARGET_MODE),/d$(if $(filter 1,$(OCPI_DEBUG)),d,o)) \
+  $(and $(OCPI_TARGET_MODE),$(filter 0,$(OCPI_BUILD_SHARED_LIBRARIES)), \
+     && $(PatchElf) $(foreach l,$(RccLibrariesInternal), \
+                                --remove-needed libocpi_$l$(SOEXT_$(call RccOs,))) $$@)
 CompilerWarnings= -Wall -Wextra
 CompilerDebugFlags=-g
 CompilerOptimizeFlags=-O
@@ -100,13 +108,14 @@ RccParams=\
 	     '-DPARAM_$n()=$(Param_$(ParamConfig)_$n)')
 Compile_c=\
   $$(Gc_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
-  $(CompilerWarnings_$$(RccTarget)) $(CompilerOptions_$$(RccTarget)) \
-  $(call SharedLibCompileOptions) $(ExtraCompilerOptions_$$(RccTarget)) \
+  $$(CompilerWarnings_$$(RccTarget)) $$(CompilerOptions_$$(RccTarget)) \
+  $(call SharedLibCompileOptions) $$(ExtraCompilerOptionsC_$$(RccTarget)) \
   $(RccIncludeDirsInternal:%=-I%) -o $$@ $$(RccParams) $$<
 Compile_cc=\
   $$(Gc++_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
-  $(CompilerWarnings_$$(RccTarget)) $(CompilerOptions_$$(RccTarget)) \
-  $(call SharedLibCompileOptions) $(ExtraCompilerOptions_$$(RccTarget)) \
+  $$(CompilerWarnings_$$(RccTarget)) $$(CompilerOptions_$$(RccTarget)) \
+  $(call SharedLibCompileOptions) \
+  $$(ExtraCompilerOptions_$$(RccTarget)) $$(ExtraCompilerOptionsCC_$$(RccTarget)) \
   $(RccIncludeDirsInternal:%=-I%) -o $$@ $$(RccParams) $$<
 
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk

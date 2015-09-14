@@ -27,7 +27,7 @@ override HdlPart:=$(HdlPart_$(HdlPlatforms))
 override HdlTargets:=$(call HdlGetFamily,$(HdlPart))
 override HdlTarget:=$(HdlTargets)
 override Platform:=$(HdlPlatform)
-override XmlIncludeDirsInternal+=$(HdlPlatformDir_$(Platform))
+override XmlIncludeDirsInternal+=$(HdlPlatformDir_$(Platform)) $(HdlPlatformDir_$(Platform))/hdl
 # Platforms need all these.  We can also accept some from the platform if we are below it.
 # otherwise the config's makefile can supply more?
 override ComponentLibraries=\

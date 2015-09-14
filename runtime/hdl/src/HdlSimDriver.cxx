@@ -50,7 +50,7 @@ namespace OCPI {
 	    m_sdpConnected(false) {
 #if 0
 	  // Send the "flush all state - I am a new master" command.
-	  if (error.empty())
+	  if (error.empty() && !discovery)
 	    command("F", 2, NULL, 0, 5000);
 #endif
 	  init(error);
@@ -235,12 +235,16 @@ namespace OCPI {
 	  return data;
 	}
 	void
-	getBytes(RegisterOffset offset, uint8_t *buf, size_t length, uint32_t *status,
-		 bool string) {
+	getBytes(RegisterOffset offset, uint8_t *buf, size_t length, size_t elementBytes,
+		 uint32_t *status, bool string) {
 	  ocpiDebug("Accessor read %zu bytes for offset 0x%zx", length, offset);
 	  for (size_t bytes; length; length -= bytes, buf += bytes, offset += bytes) {
 	    bytes = offset & 7 || length < 8 ? (offset & 3 || length < 4 ?
 						(offset & 1 || length < 2 ? 1 : 2) : 4) : 8;
+	    if (bytes > elementBytes)
+	      bytes = elementBytes;
+	    if (offset & (elementBytes - 1))
+	      bytes = elementBytes - (offset & (elementBytes - 1));
 	    sdpRequest(true, offset, bytes, buf, status);
 	    if (string && strnlen((char *)buf, bytes) < bytes)
 	      break;
@@ -255,11 +259,16 @@ namespace OCPI {
 	  ocpiDebug("SDP Accessor write64 from offset %zx complete", offset);
 	}
 	void
-	setBytes(RegisterOffset offset, const uint8_t *buf, size_t length, uint32_t *status) {
+	setBytes(RegisterOffset offset, const uint8_t *buf, size_t length,
+		 size_t elementBytes, uint32_t *status) {
 	  ocpiDebug("SDP Accessor write %zu bytes to offset 0x%zx", length, offset);
 	  for (size_t bytes; length; length -= bytes, buf += bytes, offset += bytes) {
 	    bytes = offset & 7 || length < 8 ? (offset & 3 || length < 4 ?
 						(offset & 1 || length < 2 ? 1 : 2) : 4) : 8;
+	    if (bytes > elementBytes)
+	      bytes = elementBytes;
+	    if (offset & (elementBytes - 1))
+	      bytes = elementBytes - (offset & (elementBytes - 1));
 	    sdpRequest(false, offset, bytes, (uint8_t *)buf, status);
 	  }
 	  ocpiDebug("SDP Accessor write to offset %zx complete", offset);
@@ -273,12 +282,16 @@ namespace OCPI {
       Driver::
       ~Driver() {
       }
-      Net::Device &Driver::
-      createDevice(OS::Ether::Interface &ifc, OS::Ether::Address &addr,
-		   bool discovery, std::string &error) {
+      Net::Device *Driver::
+      createDevice(OS::Ether::Interface &ifc, OS::Ether::Address &addr, bool discovery,
+		   std::string &error) {
 	std::string name("sim:");
 	name += addr.pretty();
-	return *new Device(*this, ifc, name, addr, discovery, error);
+	Device *d = new Device(*this, ifc, name, addr, discovery, error);
+	if (error.empty())
+	  return d;
+	delete d;
+	return NULL;
       }
     } // namespace Sim
   } // namespace HDL

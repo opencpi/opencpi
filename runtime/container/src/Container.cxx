@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -76,10 +75,6 @@ namespace OCPI {
       m_os = OCPI_CPP_STRINGIFY(OCPI_OS) + strlen("OCPI");
       m_osVersion = OCPI_CPP_STRINGIFY(OCPI_OS_VERSION);
       m_platform = OCPI_CPP_STRINGIFY(OCPI_PLATFORM);
-#if 0
-      m_runtime = 0;
-      m_runtimeVersion = 0;
-#endif
     }
 
     bool Container::supportsImplementation(OU::Worker &i) {
@@ -187,7 +182,6 @@ namespace OCPI {
       case Stopped:
 	// Exit from dispatch thread, it will be restarted.
 	return false;
-	break;
 
       case Spin:
 	/*

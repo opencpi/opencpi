@@ -172,12 +172,18 @@ $(EXPORTLIB): $(UNIXLIB)
 
 # Note the "sort" below.  It gets rid of duplicates, but messes with the ordering.
 $(UNIXSHLIB): $(OBJECTS)
-	$(CXX) $(OCPI_SHARED_LIBRARIES_FLAGS) $(SHARED) -o "$@" $(call FILTEROBJS,$(OBJECTS),$(EXCLUDE_OBJECTS)) $(EXTRALIBOBJS) \
-	       	$(patsubst %,-L%$(OBJDIR),$(dir $(ALLLIBS))) \
+	$(CXX) $(OCPI_SHARED_LIBRARIES_FLAGS) $(infox PPP $(OCPI_PREVIOUS_DYNAMIC))\
+               $(if $(filter 0,$(OCPI_PREVIOUS_DYNAMIC)),$(SHARED_ALLOW_UNDEFINED),$(SHARED)) \
+               -o "$@" $(call FILTEROBJS,$(OBJECTS),$(EXCLUDE_OBJECTS)) $(EXTRALIBOBJS) \
+	        $(if $(filter 0,$(OCPI_PREVIOUS_DYNAMIC)),,$(foreach l,$(ALLLIBS),$(call LIBDEP,$l))) \
 		$(sort $(addprefix -L,$(call OcpiDir,$(SYSLIBS)))) \
-		$(OCPI_LIBS) \
                 $(addprefix -l,$(notdir $(SYSLIBS))) \
 		$(BASICLIBS)
+
+#	       	$(patsubst %,-L%$(OBJDIR),$(dir $(ALLLIBS))) \
+#		$(sort $(addprefix -L,$(call OcpiDir,$(SYSLIBS)))) \
+#		$(OCPI_LIBS) \
+
 endif
 
 ifeq ($(OCPI_OS),winnt)

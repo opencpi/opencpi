@@ -143,10 +143,14 @@ rccType(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsign
 	const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predefine) {
   int indent = level * 2;
   if (m.m_isSequence && !topSeq) {
-    OU::formatAdd(type,
-	    "%*sstruct {\n"
-	    "%*s  uint32_t length;\n",
-	    indent, "", indent, "");
+    OU::formatAdd(type, "%*sstruct {\n", indent, "");
+    if (m_language != C)
+      OU::formatAdd(type,
+		    "%*s  inline size_t capacity() const { return %zu; }\n"
+		    "%*s  inline void resize(size_t n) { assert(n <= %zu); length = n; }\n"
+		    "%*s  inline size_t size() { return length; }\n",
+		    indent, "", m.m_sequenceLength, indent, "", m.m_sequenceLength, indent, "");
+    OU::formatAdd(type, "%*s  uint32_t length;\n", indent, "");
     if (m.m_dataAlign > sizeof(uint32_t)) {
       size_t align = m.m_dataAlign - (unsigned)sizeof(uint32_t);
       OU::formatAdd(type, "%*s  char pad%u_[%zu];\n", indent, "", pad++, align);
@@ -1053,6 +1057,7 @@ parseRccAssy() {
   // Do the generic assembly parsing, then to more specific to RCC
   if ((err = a->parseAssy(m_xml, topAttrs, instAttrs, true, m_outDir)))
     return err;
+  m_dynamic = true;
   return NULL;
 }
 
@@ -1184,7 +1189,7 @@ emitRccCppImpl(FILE *f) {
 	for (unsigned n = 0; n < o->nArgs(); n++, m++) {
 	  std::string s;
 	  camel(s, m->m_name.c_str() );	
-	  fprintf(f,"         %s_ARG\n",  s.c_str());	  
+	  fprintf(f,"         %s_ARG%s\n",  s.c_str(), n == o->nArgs() - 1 ? "" : ",");
 	}
 	fprintf(f, "       }; \n" );
 
@@ -1215,7 +1220,10 @@ emitRccCppImpl(FILE *f) {
 		  "       public:\n"
 		  "          %sArg(RCCPortOperation &po) : RCCPortOperationArg(po, %s_ARG), m_myptr(NULL) {}\n"
 		  "          inline%s %s *data() %s{\n"
-		  "            return m_myptr ? m_myptr : (m_myptr = (%s*)getArgAddress(%s));\n"
+		  // FIXME: CACHE THIS UNTIL DATA PTR CHANGES
+		  // "            return m_myptr ? m_myptr : (m_myptr = (%s*)getArgAddress(%s));\n"
+		  "            return m_myptr = (%s*)getArgAddress(%s);\n"
+		  //"            return m_myptr ? m_myptr : (m_myptr = (%s*)getArgAddress(%s));\n"
 		  "          }\n",
 		  s.c_str(), s.c_str(),
 		  m_isProducer ? "" : " const", type.c_str(), m_isProducer ? "" : "const ",
@@ -1223,7 +1231,8 @@ emitRccCppImpl(FILE *f) {
 	  if (m->m_isSequence) {
 	    fprintf(f,
 		    "         inline size_t %s() %s{\n"
-		    "           if (!m_myptr)\n"
+		    // FIXME: CACHE THIS UNTIL DATA PTR CHANGES
+		    //		    "           if (!m_myptr)\n"
 		    "              m_myptr = (%s*)getArgAddress(&m_length);\n"
 		    "           return m_length;\n"
 		    "         }\n",
@@ -1237,7 +1246,7 @@ emitRccCppImpl(FILE *f) {
 		      "         }\n",
 		      type.c_str());
 	  }
-	    if (m_opScaling[n] != NULL)
+	  if (!m_opScaling.empty() && m_opScaling[n] != NULL)
 	      fprintf(f,
 		      "          bool endOfWhole() const; \n"
 		      "          void partSize(%sOCPI::RCC::RCCPartInfo &part) const;\n",
@@ -1291,12 +1300,12 @@ emitRccCppImpl(FILE *f) {
 	  first = false;
 	}
 	fprintf(f,
-		"    %s%sOp &%s() %s{\n"
+		"    %s%sOp &%s() {\n"
 		"      assert(hasBuffer() && opCode() == %s_OPERATION);\n"
 		"      return m_%sOp;\n"
 		"    }\n",
 		!m_isProducer ? "const " : "", s.c_str(), o->name().c_str(),
-		!m_isProducer ? "const " : "", prefix.c_str(), s.c_str());
+		prefix.c_str(), s.c_str());
       }
   }
   fprintf(f, "  } %s;\n", name());
@@ -1373,7 +1382,7 @@ emitRccCImpl1(FILE *f) {
 	m_worker->rccStruct(type, o->nArgs(), o->args(), 0, s.c_str(), false, isLast,
 			    o->isTopFixedSequence(), UINT_MAX-1);
 	fprintf(f, "%s} %s;\n", type.c_str(), s.c_str());
-	OpScaling *os = m_opScaling[nn];
+	OpScaling *os = m_opScaling.empty() ? NULL : m_opScaling[nn];
 	if (os && os->m_isPartitioned) {
 	  OU::Member *arg = o->m_args;
 	  fprintf(f,

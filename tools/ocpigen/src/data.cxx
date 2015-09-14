@@ -402,30 +402,33 @@ emitRecordDataTypes(FILE *f) {
     Protocol *prot = m_protocol;
     if (prot && prot->operations()) {
       // See if this protocol has already been defined
-      unsigned nn;
-      for (nn = 0; nn < m_ordinal; nn++)
+      size_t maxOpcodes = 0;
+      unsigned first = 0;
+      for (unsigned nn = 0; nn < m_worker->m_ports.size(); nn++)
 	if (m_worker->m_ports[nn]->isData()) {
 	  DataPort *dp = static_cast<DataPort*>(m_worker->m_ports[nn]);
-
 	  if (dp->m_protocol && dp->m_protocol->operations() &&
-	      !strcasecmp(dp->m_protocol->m_name.c_str(), m_protocol->m_name.c_str()))
-	    break;
+	      !strcasecmp(dp->m_protocol->m_name.c_str(), m_protocol->m_name.c_str())) {
+	    maxOpcodes = std::max(dp->m_nOpcodes, maxOpcodes);
+	    if (!first)
+	      first = nn;
+	  }
 	}
-      if (nn >= m_ordinal) {
+      if (first >= m_ordinal) {
 	fprintf(f,
 		"  -- This enumeration is for the opcodes for protocol %s (%s)\n"
 		"  type %s_OpCode_t is (\n",
 		prot->m_name.c_str(), prot->m_qualifiedName.c_str(),
 		prot->m_name.c_str());
 	OU::Operation *op = prot->operations();
+	unsigned nn;
 	for (nn = 0; nn < prot->nOperations(); nn++, op++)
 	  fprintf(f, "%s    %s_%s_op_e", nn ? ",\n" : "",
 		  prot->m_name.c_str(), op->name().c_str());
 	// If the protocol opcodes do not fill the space, fill it
-	if (nn < m_nOpcodes) {
+	if (nn < maxOpcodes)
 	  for (unsigned o = 0; nn < m_nOpcodes; nn++, o++)
 	    fprintf(f, ",%sop%u_e", (o % 10) == 0 ? "\n    " : " ", nn);
-	}
 	fprintf(f, ");\n");
       }
     } else {

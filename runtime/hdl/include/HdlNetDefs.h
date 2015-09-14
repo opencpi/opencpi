@@ -70,10 +70,10 @@ typedef struct {
 } EtherControlRead;
 typedef struct {
   EtherControlHeader header;
+  uint32_t pid;
+  uint8_t mac[6];
   uint8_t mbx40;
   uint8_t mbz0;
-  uint8_t mbz1;
-  uint8_t maxCoalesced;
 } EtherControlNopResponse;
 typedef struct {
   EtherControlHeader header;

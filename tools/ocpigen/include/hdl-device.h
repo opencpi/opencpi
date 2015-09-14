@@ -82,8 +82,13 @@ struct Device {
 struct Board {
   Devices     m_devices;   // physical devices on this type of board
   SigMapIdx   m_bd2dev;    // map from board/slot signal name to device signal + index
+#if 0
   SigMap      &m_extmap;   // map from board/slot signal name to board/slot signal
   Signals     &m_extsignals;  // board/slot signals
+#else
+  SigMap      m_extmap;   // map from board/slot signal name to board/slot signal
+  Signals     m_extsignals;  // board/slot signals
+#endif
   Board(SigMap &sigmap, Signals &signals);
   const Devices &devices() const { return m_devices; }
   const Device *findDevice(const char *name) const;

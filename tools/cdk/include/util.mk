@@ -296,12 +296,11 @@ LibraryRefFile=$(call $(CapModel)LibraryRefFile,$1,$2)
 
 ################################################################################
 # Tools for metadata and generated files
-#ToolsTarget=$(OCPI_TOOL_HOST)
-ToolsDir=$(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_HOST)
+ToolsDir=$(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_DIR)
 ifeq ($(HostSystem),darwin)
-DYN_PREFIX=DYLD_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/$(OCPI_TOOL_HOST)
+DYN_PREFIX=DYLD_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/$(OCPI_TOOL_DIR)
 else
-DYN_PREFIX=LD_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/$(OCPI_TOOL_HOST)
+DYN_PREFIX=LD_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/$(OCPI_TOOL_DIR)
 endif
 #$(info OCDK $(OCPI_CDK_DIR))
 DYN_PREFIX=
