@@ -91,6 +91,7 @@
   CMD_OPTION(art_lib_path,L,String, 0, "Specify/override OCPI_LIBRARY_PATH") \
   /**/
 #include "CmdOption.h"
+#include "RemoteServer.h"
 
 namespace OA = OCPI::API;
 namespace OU = OCPI::Util;

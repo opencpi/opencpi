@@ -5,14 +5,21 @@ endif
 
 include $(OCPI_CDK_DIR)/ocpisetup.mk
 
-PROG=$(OCPI_TARGET_DIR)/$(APP)
+DIR=target-$(OCPI_TARGET_DIR)
+PROG=$(DIR)/$(APP)
 OUT= > /dev/null
+
+INCS = -I$(OCPI_INC_DIR)
 
 all: $(PROG)
 
-$(PROG): $(APP).cxx | $(OCPI_TARGET_DIR)
-	@echo Building $@...; $(CXX) -g -Wall $(OCPI_EXPORT_DYNAMIC) -o $@ -I$(OCPI_INC_DIR) $^ $(OCPI_LD_FLAGS)
+$(DIR):
+	mkdir -p $(DIR)
+
+$(PROG): $(APP).cxx | $(DIR)
+	$(AT)echo Building $@...
+	$(AT)$(CXX) -g -Wall $(OCPI_EXPORT_DYNAMIC) -o $@ $(INCS) $^ $(OCPI_LD_FLAGS)
 
 clean::
-	rm -r -f lib target-* *.*~ timeData.raw output_image.jpg
+	rm -r -f lib target-* *.*~ timeData.raw output_image.jpg test.output
 

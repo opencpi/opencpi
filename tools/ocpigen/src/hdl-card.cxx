@@ -14,6 +14,23 @@ Card(ezxml_t xml, const char *name, SlotType &type, const char *parentFile, Work
      const char *&err)
   : Board(type.m_sigmap, type.m_signals), m_name(name), m_type(type)
 {
+  // Initialize a card's signals from the slot type, overriding those that are 
+  // mapped, and removing those that are not present on the card
+  for (SignalsIter si = type.m_signals.begin(); si != type.m_signals.end(); si++) {
+    std::string slot, card;
+    for (ezxml_t xs = ezxml_cchild(xml, "Signal"); xs; xs = ezxml_next(xs)) {
+      if ((err = OE::getRequiredString(xs, slot, "slot")) ||
+	  (err = OE::getRequiredString(xs, card, "card")))
+	return;
+      if (!strcasecmp(slot.c_str(), (*si)->cname()))
+	break;
+    }
+    if (!slot.empty() && card.empty())
+      continue; // slot signal does not exist on this card
+    // map from card's signal name to underlying slot type signal
+    m_extmap[card.empty() ? (*si)->cname() : card.c_str()] = *si;
+    m_extsignals.push_back(*si);
+  }
 #if 0
   // process non-default signals: slot=pfsig, platform=dddd
   for (ezxml_t xs = ezxml_cchild(xml, "Signal"); xs; xs = ezxml_next(xs)) {
@@ -26,7 +43,7 @@ Card(ezxml_t xml, const char *name, SlotType &type, const char *parentFile, Work
       err = OU::esprintf("Slot signal '%s' does not exist for slot type '%s'",
 			 slot.c_str(), m_type.m_name.c_str());
       break;
-    } else if (m_sigmap.find(s) != m_sigmap.end())
+    } else if (m_sigmap.find(s) != m_sigmap.end()) {
       err = OU::esprintf("Duplicate slot signal: %s", slot.c_str());
       break;
     } else
@@ -36,7 +53,7 @@ Card(ezxml_t xml, const char *name, SlotType &type, const char *parentFile, Work
   if (!err)
     err = parseDevices(xml, &type, parentFile, parent);
   if (err)
-    err = OU::esprintf("Error for slot '%s': %s", m_name.c_str(), err);
+    err = OU::esprintf("Error for card '%s': %s", m_name.c_str(), err);
 }
 
 Card::

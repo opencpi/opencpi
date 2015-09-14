@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -31,7 +30,6 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #include <stdarg.h>
 #include <assert.h>
 #include <istream>
@@ -40,6 +38,7 @@
 #include <cerrno>
 #include <cctype>
 #include "OcpiOsEther.h"
+#include "OcpiUtilValue.h"
 #include "OcpiUtilException.h"
 #include "OcpiUtilMisc.h"
 
@@ -646,27 +645,73 @@ parseList(const char *list, const char * (*doit)(const char *tok, void *arg), vo
 const std::string &
 getSystemId() {
   static std::string *id = NULL;
+  if (!id)
+    id = new std::string(getSystemAddr().pretty());
+  return *id;
+}
+
+OCPI::OS::Ether::Address &
+getSystemAddr() {
+  static bool set = false;
+  static OCPI::OS::Ether::Address addr;
   // no static construction
-  if (!id) {
+  if (!set) {
     std::string error;
     OE::IfScanner ifs(error);
     if (error.empty()) {
       OE::Interface eif;
       while (ifs.getNext(eif, error))
 	if (eif.addr.isEther()) {
-	  id = new std::string(eif.addr.pretty());
+	  addr = eif.addr;
 	  ocpiDebug("Establishing system identify from interface '%s': %s",
-		    eif.name.c_str(), id->c_str());
+		    eif.name.c_str(), addr.pretty());
+	  set = true;
 	  break;
 	}
-      if (error.empty() && !id)
+      if (error.empty() && !set)
 	throw Error("No network interface found to establish a system identify from its MAC address");
     }
     if (error.length())
       throw Error("Error finding a network interface for establishing a system identify: %s",
 		  error.c_str());
   }  
-  return *id;
+  return addr;
+}
+// This scheme is ours so that it is somewhat readable, xml friendly, and handles NULLs
+void
+encodeDescriptor(const std::string &s, std::string &out) {
+  formatAdd(out, "%zu.", s.length());
+  Unparser up;
+  const char *cp = s.data();
+  for (size_t n = s.length(); n; n--, cp++) {
+    if (*cp == '\'')
+      out += "&apos;";
+    else if (*cp == '&')
+      out += "&amp;";
+    else
+      up.unparseChar(out, *cp, true);
+  }
+}
+void
+decodeDescriptor(const char *info, std::string &s) {
+  char *end;
+  errno = 0;
+  size_t infolen = strtoul(info, &end, 0);
+  do {
+    if (errno || infolen >= 1000 || *end++ != '.')
+      break;
+    s.resize(infolen);
+    const char *start = end;
+    end += strlen(start);
+    size_t n;
+    for (n = 0; n < infolen && *start; n++)
+      if (parseOneChar(start, end, s[n]))
+	break;
+    if (*start || n != infolen)
+      break;
+    return;
+  } while (0);
+  throw Error("Invalid Port Descriptor from Container Server in: \"%s\"", info);
 }
 const char *
 baseName(const char *path, std::string &buf) {

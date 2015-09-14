@@ -175,6 +175,18 @@ namespace OCPI {
 	  break;
 	case '{':
 	  nBraces++; break;
+        case '"':
+	  // We have a double-quoted string to skip.
+	  // !!! There is a very similar loop in parseString
+	  while (unparsed < stop && *unparsed && *unparsed != '"') {
+	    char dummy;
+	    if (parseOneChar(unparsed, stop, dummy))
+	      return "bad double quoted string value";
+	  }
+	  if (unparsed >= stop || !*unparsed)
+	    return "unterminated double quoted string";
+	  unparsed++;
+	  break;
 	case '}':
 	  if (nBraces == 0)
 	    return esprintf("unbalanced braces - extra close brace for (%*s) (%zu)",
@@ -460,7 +472,7 @@ namespace OCPI {
 	quoted = true;
 	cp++;
       }
-	
+      // !!! There is a very similar loop in doElement
       for (unsigned len = 0; cp < end; len++)
 	if (quoted && *cp == '"') {
 	  if (cp + 1 != end)

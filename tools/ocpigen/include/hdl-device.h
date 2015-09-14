@@ -43,7 +43,7 @@ public:
   HdlDevice(ezxml_t xml, const char *file, const char *parentFile, Worker *parent,
 	    OU::Assembly::Properties *instancePVs, const char *&err);
   virtual ~HdlDevice() {}
-  const char *name() const;
+  const char *cname() const;
   const Ports &ports() const { return m_ports; }
 };
 typedef HdlDevice DeviceType;
@@ -54,7 +54,11 @@ struct Device {
   DeviceType &m_deviceType;
   std::string m_name;           // a platform-scoped device name - usually type<ordinal>
   unsigned m_ordinal;           // Ordinal of this device on this platform/card
+#if 0
   SigMap   m_sigmap;            // map from device type signals (WITH INDICES) to board signals
+#else
+  ExtMap   m_dev2bd;            // map from device type signals to board signals
+#endif
   //  Signals  m_signals;           // mapped board signals
   std::list<std::string> m_strings; // storage management since sigmaps don't hold strings
   // The map from the device's signal to the board's signal.
@@ -68,7 +72,7 @@ struct Device {
 	 unsigned ordinal, SlotType *stype, const char *&err);
   const char *parse(ezxml_t x, Board &b, SlotType *stype);
   const DeviceType &deviceType() const { return m_deviceType; }
-  const char *name() const { return m_name.c_str(); }
+  const char *cname() const { return m_name.c_str(); }
   static const Device *
   find(const char *name, const Devices &devices);
 #if 0
@@ -80,11 +84,12 @@ struct Device {
 // common behavior for platforms and cards
 
 struct Board {
-  Devices     m_devices;   // physical devices on this type of board
-  SigMapIdx   m_bd2dev;    // map from board/slot signal name to device signal + index
-  SigMap      &m_extmap;   // map from board/slot signal name to board/slot signal
-  Signals     &m_extsignals;  // board/slot signals
+  Devices     m_devices;     // physical devices on this type of board
+  SigMapIdx   m_bd2dev;      // map from board/slot signal name to device signal + index
+  SigMap      m_extmap;      // map from board signal name to platform/slot signal
+  Signals     m_extsignals;  // board/slot signals
   Board(SigMap &sigmap, Signals &signals);
+  virtual const char *cname() const = 0;
   const Devices &devices() const { return m_devices; }
   const Device *findDevice(const char *name) const;
   Devices &devices() { return m_devices; }

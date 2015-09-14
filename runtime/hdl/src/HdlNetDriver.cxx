@@ -20,6 +20,9 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
+// linux: (mac has this as default) sudo ifconfig lo multicast
+// mac: sudo route -v add -net -ifscope lo0 224.0.0.0 127.0.0.1 240.0.0.0 
+// linux: sudo route add -net 224.0.0.0 netmask 240.0.0.0 dev lo
 
 #include <assert.h>
 #include <arpa/inet.h>
@@ -252,17 +255,13 @@ namespace OCPI {
 	nop.header.typeEtc = OCCP_ETHER_TYPE_ETC(OCCP_NOP, 0xf, 1, 0);
 	nop.mbx80 = 0x80;
 	nop.mbz0 = 0;
-	nop.mbz1 = 0;
-	nop.maxCoalesced = 1;
       }
       static bool
       checkNopResponse(EtherControlNopResponse &response, std::string &error) {
 	if (response.header.length == htons(sizeof(response)-2) &&
 	    response.header.typeEtc == OCCP_ETHER_TYPE_ETC(OCCP_RESPONSE, OK, 1, 0) &&
 	    response.mbx40 == 0x40 &&
-	    response.mbz0 == 0 &&
-	    response.mbz1 == 0 &&
-	    response.maxCoalesced == 1)
+	    response.mbz0 == 0)
 	  return true;
 	ocpiBad("Bad network discovery response:");
 	for (unsigned i = 0; i < sizeof(response); i++)
@@ -295,8 +294,10 @@ namespace OCPI {
       // Try a discovery (send and receive) on a socket.
       bool Driver::
       trySocket(OE::Interface &ifc, OE::Socket &s, OE::Address &addr, bool discovery,
-		const char **exclude, Device **dev, std::string &error) {
-	// keep track of different macs discovered when we broadcast.
+		const char **exclude, Macs *argMacs, Device **dev, std::string &error) {
+	// keep track of different discovery source addresses discovered when we broadcast.
+	ocpiDebug("Trying socket on interface %s to address %s",
+		  ifc.name.c_str(), addr.pretty());
 	std::set<OE::Address,OE::Address::Compare> addrs;
 	OE::Packet sendFrame;
 	initNop(*(EtherControlNop *)(sendFrame.payload));
@@ -310,7 +311,6 @@ namespace OCPI {
 	  OE::Packet recvFrame;
 	  OE::Address devAddr;
 	  size_t length;
-
 	  OS::Timer timer(0, DELAYMS * 1000000);
 	  while (s.receive(recvFrame, length, DELAYMS, devAddr, error)) {
 	    if (exclude)
@@ -319,6 +319,7 @@ namespace OCPI {
 		  ocpiInfo("Net device %s specifically excluded/ignored", *ap);
 		  continue;
 		}
+	    EtherControlNopResponse &ecnr = *(EtherControlNopResponse *)(recvFrame.payload);
 	    if (length > recvLength)
 	      ocpiDebug("receive truncation for interface '%s': %zu > %zu",
 			ifc.name.c_str(), length, recvLength);
@@ -326,30 +327,51 @@ namespace OCPI {
 	      OS::setError(error, "probe return was short:  length was %d when %d was expected",
 			   length, recvLength);
 	    else if (addr.isBroadcast() && addrs.find(devAddr) != addrs.end()) {
-	      ocpiDebug("Received redundant ethernet discovery response");
+	      ocpiDebug("Received redundant ethernet discovery response from %s",
+			devAddr.pretty());
 	      continue;
-	    } else if (checkNopResponse(*(EtherControlNopResponse *)(recvFrame.payload), error)) {
+	    } else if (checkNopResponse(ecnr, error)) {
 	      if (addr.isBroadcast())
 		addrs.insert(devAddr);
 	      else if (devAddr != addr) {
 		ocpiInfo("Received ethernet discovery response from wrong address");
 		continue;
 	      }
+	      OS::Ether::Address mac((const unsigned char *)ecnr.mac);
 	      // We found one or THE one.
-	      Device &d = createDevice(ifc, devAddr, discovery, error);
 	      if (addr.isBroadcast()) {
-		if (found(d, error))
-		  delete &d;
-		else
-		  count++;
+		std::string server;
+		OU::format(server, "%s/%u", mac.pretty(), ecnr.pid);
+		Macs &macs = *argMacs;
+		MacsIter mi = macs.find(server);
+		if (mi == macs.end()) {
+		  ocpiInfo("Discovered MAC %s from address %s for the first time",
+			   server.c_str(), devAddr.pretty());
+		  macs.insert(MacInsert(server, MacPair(devAddr, &ifc)));
+		} else {
+		  ocpiInfo("Discovered server %s from address %s after seeing it before (from %s)",
+			   server.c_str(), devAddr.pretty(), mi->second.first.pretty());
+		  if (devAddr.isLoopback()) {
+		    ocpiInfo("New address %s is loopback, so deleting previous one %s",
+			     devAddr.pretty(), mi->second.first.pretty());
+		    macs.erase(mi);
+		    macs.insert(MacInsert(server, MacPair(devAddr, &ifc)));
+		  }
+		}
 	      } else {
-		assert(dev); // should be set if not broadcasting
-		*dev = &d;
-		return 1;
+		// We were probing a single address
+		Device *d;
+		if ((d = createDevice(ifc, devAddr, discovery, error))) {
+		  assert(dev); // should be set if not broadcasting
+		  *dev = d;
+		  return 1;
+		} else
+		  ocpiInfo("Net device discovery from %s had device creation error: %s",
+			   devAddr.pretty(), error.c_str());
 	      }
 	    }
 	    if (!timer.expired())
-	      OS::sleep(2);
+	      OS::sleep(1);
 	  }
 	}
 	if (error.size())
@@ -367,21 +389,25 @@ namespace OCPI {
       tryIface(OE::Interface &ifc, OE::Address &devAddr, const char **exclude,
 	       Device **dev,   // optional output arg to return the found device when mac != NULL
 	       bool discovery, // is this about discovery? (broadcast *OR* specific probing)
+	       Macs *macs,
 	       std::string &error) {
+	error.clear();
 	unsigned count = 0;
 	OE::Socket *s;
 	if (devAddr.isEther()) {
 	  if ((s = findSocket(ifc, discovery, error)))
-	    return trySocket(ifc, *s, devAddr, discovery, exclude, dev, error); 
+	    return trySocket(ifc, *s, devAddr, discovery, exclude, macs, dev, error); 
 	  // not "ocpiBad" due to needing sudo for bare sockets without a driver
 	  ocpiDebug("Could not open socket on interface '%s' to reach device at '%s: %s",
 		    ifc.name.c_str(), devAddr.pretty(), error.c_str());
 	} else {
-	  OE::Interface i("udp", error);
-	  if (error.length())
-	    ocpiInfo("Could not open udp interface for discovery: %s", error.c_str());
-	  else if ((s = findSocket(i, discovery, error))) {
-	    count = trySocket(ifc, *s, devAddr, discovery, exclude, dev, error);
+	  OE::Socket s(ifc, discovery ? ocpi_discovery : ocpi_master, &devAddr, 0, error);
+	  //	  OE::Interface i("udp", error);
+	  //	  if (error.length())
+	  //	    ocpiInfo("Could not open udp interface for discovery: %s", error.c_str());
+	  //	  else 
+	  if (error.empty()) {
+	    count = trySocket(ifc, s, devAddr, discovery, exclude, macs, dev, error);
 	    if (error.length())
 	      ocpiInfo("Error in discovery for udp interface: %s", error.c_str());
 	  } else
@@ -413,7 +439,7 @@ namespace OCPI {
 	    while (ifs.getNext(eif, error, iName.size() ? iName.c_str() : NULL))
 	      if (eif.up && eif.connected) {
 		Device *dev;
-		if (tryIface(eif, addr, NULL, &dev, discovery, error) == 1)
+		if (tryIface(eif, addr, NULL, &dev, discovery, NULL, error) == 1)
 		  return dev;
 		else
 		  break;
@@ -437,16 +463,16 @@ namespace OCPI {
 	const char *ifName = NULL;
 	OU::findString(props, "interface", ifName);
 	OE::Interface eif;
+	Macs macs;
 	while (ifs.getNext(eif, error, ifName)) {
 	  if (eif.name == "udp") // the udp pseudo interface is not used for discovery
 	    continue;
 	  ocpiDebug("NetDriver: Considering interface \"%s\", addr 0x%x",
 		    eif.name.c_str(), eif.ipAddr.addrInAddr());
 	  if (eif.up && eif.connected && (!udp || eif.ipAddr.addrInAddr())) {
-	    //	    Access cAccess, dAccess;
-	    //	    std::string name, endpoint;
 	    OE::Address bcast(udp);
-	    count += tryIface(eif, bcast, exclude, NULL, discoveryOnly, error);
+	    ocpiDebug("Sending to broadcast/multicast: %s udp %u", bcast.pretty(), udp);
+	    count += tryIface(eif, bcast, exclude, NULL, discoveryOnly, &macs, error);
 	    if (error.size()) {
 	      ocpiDebug("Error during network discovery on '%s': %s",
 		       eif.name.c_str(), error.c_str());
@@ -462,6 +488,19 @@ namespace OCPI {
 	if (error.size())
 	  ocpiInfo("Error during network discovery on '%s': %s",
 		   eif.name.c_str(), error.c_str());
+	for (MacsIter mi = macs.begin(); mi != macs.end(); mi++) {
+	  ocpiInfo("Processing discovery for %s from network address %s",
+		   mi->first.c_str(), mi->second.first.pretty());
+	  Device *d;
+	  if ((d = createDevice(*mi->second.second, mi->second.first, discoveryOnly, error)))
+	    if (found(*d, error))
+	      delete d;
+	    else
+	      count++;
+	  else
+	    ocpiInfo("error creating device for %s (MAC %s): %s", mi->second.first.pretty(),
+		     mi->first.c_str(), error.c_str());
+	}
 	return count;
       }
     } // namespace Net

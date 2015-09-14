@@ -32,6 +32,12 @@
  */
 #include "ContainerManager.h"
 #include "ContainerLauncher.h"
+#include "ContainerPort.h"          // just for linkage hooks
+#include "DtSharedMemoryInternal.h" // just for linkage hooks
+#include "OcpiUuid.h"               // just for linkage hooks
+#include "DtMsgDriver.h"            // just for linkage hooks
+#include "OcpiOsSocket.h"           // just for linkage hooks
+#include "lzma.h"                   // just for linkage hooks
 namespace OCPI {
   namespace Container {
     namespace OA = OCPI::API;
@@ -44,6 +50,7 @@ namespace OCPI {
     Container **Manager::s_containers;
     unsigned Manager::s_maxContainer;
     LocalLauncher *Manager::s_localLauncher;
+    static OCPI::Driver::Registration<Manager> cm;
     Manager::Manager() : m_tpg_events(NULL), m_tpg_no_events(NULL) {
     }
 
@@ -125,7 +132,10 @@ namespace OCPI {
 	    cb.foundContainer(*c);
       return false;
     }
-
+    bool Manager::
+    dynamic() {
+      return OCPI_DYNAMIC;
+    }
     Driver::Driver(const char *name) 
       : OD::DriverType<Manager,Driver>(name, *this) {
     }
@@ -152,6 +162,21 @@ namespace OCPI {
 	&OCPI::Container::Container::nthContainer(n);
     }
   }
+  namespace Container {
+    // Hooks to ensure that if we are linking statically, everything is pulled in
+    // to support drivers and workers.
+    void dumb1(BasicPort &p) { p.applyConnectParams(NULL, NULL); }
+  }
 }
-
+namespace DataTransfer {
+  intptr_t dumb2(EndPoint &loc) {
+    OCPI::Util::Uuid uuid;
+    OCPI::Util::UuidString us;
+    OCPI::Util::uuid2string(uuid, us);
+    createHostSmemServices(loc);
+    Msg::XferFactoryManager::getFactoryManager();
+    OCPI::OS::Socket s;
+    return (intptr_t)&lzma_stream_buffer_decode;
+  }
+}
 

@@ -8,6 +8,6 @@
     <property name='biasValue' value='0x01020304'/>
   </instance>
   <instance component='file_write'>
-    <property name='filename' value='test.outputwrong'/>
+    <property name='filename' value='test.output'/>
   </instance>
 </application>

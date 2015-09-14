@@ -36,7 +36,8 @@ namespace OCPI {
       // length argument is the actual buffer size, and it is decremented with what is
       // put into the buffer, NOT including the NULL termination that is also put in,
       // just like snprintf
-      static bool fillDiscoveryInfo(char *buf, size_t &length, std::string &error);
+      static bool
+	fillDiscoveryInfo(char *buf, size_t &length, std::string &error);
     private:
       const char *downloadFile(int wfd, uint64_t length);
       bool
@@ -48,5 +49,8 @@ namespace OCPI {
 	doConnection(ezxml_t cx, OCPI::Container::Launcher::Connection &c, std::string &error),
 	doLaunch(std::string &error);
     };
+    // This function is called without knowing whether the driver is available.
+    // Thus it is not in the driver.
+    bool useServer(const char *server, bool verbose, const char **exclude, std::string &error);
   }
 }

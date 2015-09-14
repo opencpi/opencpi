@@ -161,7 +161,7 @@ ifneq ($(xxfilter platform container,$(HdlMode)),)
   override HdlTarget:=$(call HdlGetFamily,$(HdlPlatform))
   override HdlActualTargets:=$(HdlTarget)
 else # now for builds that accept platforms and targets as inputs
-
+  ifneq ($(MAKECMDGOALS),clean)
   # Make sure all the platforms are present
   $(foreach p,$(HdlPlatforms),\
     $(if $(filter $p,$(HdlAllPlatforms)),,$(error $p not in the HDL platforms list)) \
@@ -171,8 +171,8 @@ else # now for builds that accept platforms and targets as inputs
           $(foreach x,$(if $(filter platforms,$n),$(notdir $(wildcard $d/*)),$n),$(infox XXX:$x)\
            $(and $(filter $p,$x),$(if $(filter platforms,$n),$d/$p,$d))))),\
       $(if $(realpath $y),,\
-       $(error No $p platform found))))
-
+       $(error No $p platform found ($y)))))
+  endif
 # The general pattern is:
 # If Target is specified, build for that target.
 # If Targets is specified, build for all, BUT, if they need

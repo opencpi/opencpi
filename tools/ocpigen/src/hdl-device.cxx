@@ -90,7 +90,7 @@ get(const char *name, const char *parentFile, Worker *parent, const char *&err) 
   return dt;
 }
 const char *DeviceType::
-name() const {
+cname() const {
   return m_implName;
 }
 
@@ -187,7 +187,7 @@ parse(ezxml_t xml, Board &b, SlotType *stype) {
     Signal *devSig = m_deviceType.m_sigmap.findSignal(base);
     if (!devSig)
       return OU::esprintf("Signal \"%s\" is not defined for device type \"%s\"",
-			  base.c_str(), m_deviceType.name());
+			  base.c_str(), m_deviceType.cname());
     if (hasIndex)
       if (devSig->m_width == 0)
 	return OU::esprintf("Device signal \"%s\" cannot be indexed", base.c_str());
@@ -195,67 +195,71 @@ parse(ezxml_t xml, Board &b, SlotType *stype) {
 	return OU::esprintf("Device signal \"%s\" has index higher than signal width (%zu)",
 			    name.c_str(), devSig->m_width);
     const char *plat = ezxml_cattr(xs, "platform");
-    const char *slot = ezxml_cattr(xs, "slot");
+    const char *card = ezxml_cattr(xs, "card"); // the slot 
+    if (!card)
+      card = ezxml_cattr(xs, "slot");
     const char *board;
     Signal *boardSig = NULL; // the signal we are mapping a device signal TO
     if (stype) {
-      board = slot;
+      board = card;
       if (plat)
         return OU::esprintf("The platform attribute cannot be specified for signals on cards");
-      else if (!slot)
+      else if (!card)
         return OU::esprintf("For signal \"%s\" for a device on a card, "
 			   "the slot attribute must be specified", name.c_str());
-      else if (*slot && !(boardSig = stype->m_sigmap.findSignal(slot)))
+      else if (*card && !(boardSig = b.m_extmap.findSignal(card)))
 	// The slot signal is not a signal for the slot type of this card
-	return OU::esprintf("For signal \"%s\", the slot signal \"%s\" is not defined "
-			    "for slot type \"%s\"", name.c_str(), slot, stype->name());
+	return OU::esprintf("For signal \"%s\", the card signal \"%s\" is not defined "
+			    "for slot type \"%s\"", name.c_str(), card, stype->cname());
     } else {
-      if (slot)
+      board = plat;
+      if (card)
 	return OU::esprintf("For signal \"%s\" for a platform device, "
 			    "the slot attribute cannot be specified", name.c_str());
       else if (!plat)
 	return OU::esprintf("For signal \"%s\", the platform attribute must be specified",
 			    name.c_str());
       else if (*plat) {
-	board = plat;
 	// FIXME: check for using the same signal in the same device
 	// FIXME: specify mutex to allow same signal to be reused between mutex devices
 	if (!(boardSig = b.m_extmap.findSignal(board))) {
+	  ocpiDebug("Adding platform signal: %s", board);
 	  boardSig = new Signal();
 	  boardSig->m_name = board;
 	  boardSig->m_direction = devSig->m_direction;
 	  b.m_extmap[board] = boardSig;
 	  b.m_extsignals.push_back(boardSig);
-	}      
+	} else
+	  ocpiDebug("Mapping to existing platform signal: %s", board);
       }
     }
-    // Check compatibility between device and slot signal
+    // Check compatibility between device and slot/platform signal
     if (boardSig) {
       switch (boardSig->m_direction) {
       case Signal::IN: // input to board
 	if (devSig->m_direction != Signal::IN)
 	  return OU::esprintf("Board signal \"%s\" is input to card/paltform, "
-			      "but \"%s\" is not input to device", boardSig->name(),
-			      devSig->name());
+			      "but \"%s\" is not input to device", boardSig->cname(),
+			      devSig->cname());
 	break;
       case Signal::OUT: // output from board
 	if (devSig->m_direction != Signal::OUT)
 	  return OU::esprintf("Slot signal \"%s\" is output from card/platform, "
-			      "but \"%s\" is not output from device", boardSig->name(),
-			      devSig->name());
+			      "but \"%s\" is not output from device", boardSig->cname(),
+			      devSig->cname());
 	break;
       case Signal::INOUT: // FIXME: is this really allowed for slots?
 	if (devSig->m_direction != Signal::INOUT)
 	  return OU::esprintf("Slot signal \"%s\" is inout to/from card/platform, "
-			      "but \"%s\" is not inout at device", boardSig->name(),
-			      devSig->name());
+			      "but \"%s\" is not inout at device", boardSig->cname(),
+			      devSig->cname());
 	break;
       case Signal::BIDIRECTIONAL:
 #if 0
 	if (devSig->m_direction == Signal::INOUT)
 	  return OU::esprintf("Slot signal \"%s\" is bidirectional to or from board, "
-			      "but \"%s\" is inout at device", boardSig->name(),
-			      devSig->name());
+			      "but \"%s\" is inout at device", boardSig->cname(),
+			      devSig->cname());
 #endif
 	break;
       case Signal::OUTIN:
@@ -285,18 +289,24 @@ parse(ezxml_t xml, Board &b, SlotType *stype) {
       }
     }
     // boardSig might be NULL here.
-    std::string devSigIndexed = devSig->name();
-    if (devSig->m_width)
+    std::string devSigIndexed = devSig->cname();
+    if (hasIndex) // devSig->m_width)
       OU::formatAdd(devSigIndexed, "(%zu)", index);
     m_strings.push_front(devSigIndexed);
-    m_sigmap[m_strings.front().c_str()] = boardSig;
+    ocpiDebug("Mapping device signal %s to board signal %s (indexed %d)",
+	      devSigIndexed.c_str(), boardSig ? boardSig->cname() : "<null>", hasIndex);
+    m_dev2bd.push_back(devSig, index, boardSig ? boardSig->cname() : "", hasIndex);
   }
   return NULL;
 }
 
 Board::
-Board(SigMap &sigmap, Signals &signals)
+Board(SigMap &/*sigmap*/, Signals &/*signals*/)
+#if 0
   : m_extmap(sigmap), m_extsignals(signals) {
+#else
+  {
+#endif
 }
 
 const char *Board::
@@ -305,7 +315,7 @@ addFloatingDevice(ezxml_t xs, const char *parentFile, Worker *parent, std::strin
   Device *dev = Device::create(*this, xs, parentFile, parent, true, 0, NULL, err);
   if (dev) {
     m_devices.push_back(dev);
-    name = dev->name();
+    name = dev->cname();
   }
   return err;
 }
@@ -365,7 +375,7 @@ const Device *Board::
 findDevice(const char *name) const {
   for (DevicesIter di = m_devices.begin(); di != m_devices.end(); di++) {
     Device &dev = **di;
-    if (!strcasecmp(name, dev.name()))
+    if (!strcasecmp(name, dev.cname()))
       return &dev;
   }
   return NULL;

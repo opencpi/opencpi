@@ -46,6 +46,7 @@
 namespace OCPI {
   namespace Container {
     class Port;
+    class Worker;
     class LocalLauncher;
   }
   namespace Remote {
@@ -247,24 +248,31 @@ namespace OCPI {
     // Note that the API for this has the user typically constructing this structure
     // on their stack so that access to members (in inline methods) has no indirection.
     class Property {
+      friend class OCPI::Container::Worker;
       Worker &m_worker;               // which worker do I belong to
+      const volatile void *m_readVaddr;
+      volatile void *m_writeVaddr;
+    public:
+      PropertyInfo &m_info;           // details about property, not defined in the API
+      unsigned m_ordinal;
+    private:
       bool m_readSync, m_writeSync;   // these exist to avoid exposing the innards of m_info.
     public:
+      Property(Application &, const char *);
+      Property(Worker &, const char *);
+    private:
+      Property(Worker &, unsigned);
       void checkTypeAlways(BaseType ctype, size_t n, bool write) const;
       inline void checkType(BaseType ctype, size_t n, bool write) const {
 #if !defined(NDEBUG) || defined(OCPI_API_CHECK_PROPERTIES)
         checkTypeAlways(ctype, n, write);
 #endif
       }
+    public:
       inline bool readSync() const { return m_readSync; }
       inline bool writeSync() const { return m_writeSync; }
-      volatile void *m_writeVaddr;
-      const volatile void *m_readVaddr;
-      PropertyInfo &m_info;           // details about property, not defined in the API
-      unsigned m_ordinal;
-      Property(Application &, const char *);
-      Property(Worker &, const char *);
-      Property(Worker &, unsigned);
+      // If it is a string property, how big a buffer should I allocate to retrieve the value?
+      size_t stringBufferLength() const;
       // We don't use scalar-type-based templates (sigh) so we can control which
       // types are supported explicitly.  C++ doesn't quite do the right thing.
       // The "m_writeVaddr/m_readVaddr" members are only non-zero if the 

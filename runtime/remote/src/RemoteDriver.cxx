@@ -4,6 +4,8 @@
 #include "OcpiUtilValue.h"
 #include "ContainerManager.h"
 #include "RemoteLauncher.h"
+#include "RemoteServer.h"
+#include "RemoteDriver.h"
 
 // This is the "driver" for remote containers, which finds them, constructs them, and 
 // in general manages them. It acts as the factory for Remote containers.
@@ -26,8 +28,7 @@ namespace OCPI {
   namespace Remote {
 
 const uint16_t REMOTE_PORT = 17171;
-const uint16_t REMOTE_NARGS = 5; // fields int the discovery entries
-bool g_suppressRemoteDiscovery = false;
+const uint16_t REMOTE_NARGS = 6; // fields in the discovery entries
 extern const char *remote;
 const unsigned RETRIES = 3;
 const unsigned DELAYMS = 500;
@@ -218,7 +219,7 @@ class Container
 public:
   Container(Client &client, const std::string &name,
 	    const char *model, const char *os, const char *osVersion, const char *platform,
-	    const OA::PValue* /*params*/)
+	    const char *dynamic, const OA::PValue* /*params*/)
     throw ( OU::EmbeddedException )
     : OC::ContainerBase<Driver,Container,Application,Artifact>(*this, name.c_str()),
       m_client(client) {
@@ -226,6 +227,7 @@ public:
     m_os = os;
     m_osVersion = osVersion;
     m_platform = platform;
+    OX::parseBool(dynamic, NULL, &m_dynamic);
   }
   virtual ~Container()
   throw () {
@@ -268,6 +270,7 @@ public:
   Driver() throw() {
     ocpiCheck(pthread_key_create(&s_threadKey, NULL) == 0);
     ocpiDebug("Registering the Remote Container driver");
+    g_probeServer = probeServer;
   }
   // Called either from UDP discovery or explicitly, e.g. from ocpirun
   // If the latter, the "containers" argument will be NULL
@@ -302,8 +305,8 @@ public:
       }
       std::string request("<discover>");
       bool eof;
-      if (Launcher::sendXml(sock->fd(), request, "TCP server for discovery", error) ||
-	  Launcher::receiveXml(sock->fd(), rx, rbuf, eof, error))
+      if (OX::sendXml(sock->fd(), request, "TCP server for discovery", error) ||
+	  OX::receiveXml(sock->fd(), rx, rbuf, eof, error))
 	goto out;
       if (strcmp(OX::ezxml_tag(rx), "discovery") || !(containers = OX::ezxml_content(rx)))
 	goto bad;
@@ -345,10 +348,10 @@ public:
 	client = new Client(*this, server, *sock);
 	taken = true;
       }
-      ocpiDebug("Creating remote container: \"%s\", model %s, os %s, version %s, platform %s",
-		cname.c_str(), args[1], args[2], args[3], args[4]);
+      ocpiDebug("Creating remote container: \"%s\", model %s, os %s, version %s, platform %s dynamic %s",
+		cname.c_str(), args[1], args[2], args[3], args[4], args[5]);
       Container &c = *new Container(*client, cname.c_str(), args[1], args[2], args[3], args[4],
-				  NULL);
+				    args[5], NULL);
       (void)&c;
     }
     sock = NULL;
@@ -498,12 +501,12 @@ public:
     //      if ( m_tpg_events ) delete m_tpg_events;
     ocpiCheck(pthread_key_delete(s_threadKey) == 0);
   }
-};
-bool
-useServer(const char *server, bool verbose, const char **exclude, std::string &error) {
-  return Driver::getSingleton().probeServer(server, verbose, exclude, NULL, error);
-}
+  static bool
+  probeServer(const char *server, bool verbose, const char **exclude, std::string &error) {
+    return Driver::getSingleton().probeServer(server, verbose, exclude, NULL, error);
+  }
 
+};
 
 pthread_key_t Driver::s_threadKey;
 // Register this driver

@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -47,10 +46,11 @@
  *                  Initial version.
  */
 
+#include <stdint.h>
 #include <iostream>
 #include <cstring>
-#include <stdint.h>
-#include <OcpiUtilVfs.h>
+#include <vector>
+#include "OcpiUtilVfs.h"
 #include "ezxml.h"
 
 namespace OCPI {
@@ -263,6 +263,8 @@ namespace OCPI {
 	countChildren(ezxml_t x, const char*cName),
 	countAttributes(ezxml_t x);
       extern bool
+	receiveXml(int fd, ezxml_t &rx, std::vector<char> &buf, bool &eof, std::string &error),
+	sendXml(int fd, std::string &buf, const char *msg, std::string &error),
 	inList(const char *item, const char *list),
 	hasAttrEq(ezxml_t x, const char *attrName, const char *val),
 	// FIXME: move to util:misc if they are not about xml

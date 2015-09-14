@@ -56,6 +56,7 @@
 namespace OE=OCPI::Util::EzXml;
 namespace OU=OCPI::Util;
 namespace OA=OCPI::API;
+namespace OS=OCPI::OS;
 
 class Port;
 
@@ -576,6 +577,7 @@ class Worker : public Parsed, public OU::IdentResolver {
   std::map<std::string, Scaling> m_scalingParameters;
   Worker *m_parent;           // If this worker is part of an upper level assembly
   unsigned m_maxLevel;        // when data type processing
+  bool m_dynamic;
   Worker(ezxml_t xml, const char *xfile, const std::string &parentFile, WType type,
 	 Worker *parent, OU::Assembly::Properties *ipvs, const char *&err);
   virtual ~Worker();
@@ -609,7 +611,8 @@ class Worker : public Parsed, public OU::IdentResolver {
     //    *preParseSpecDataPort(ezxml_t x),
     //    *parseSpecPort(Port *p),
     *parseHdlImpl(const char* package = NULL),
-    *parseConfigFile(const char *dir),
+    *parseBuildFile(bool optional),
+    *startBuildXml(FILE *&f),
     *doProperties(ezxml_t top, const char *parent, bool impl, bool anyIsBad),
     *doScaling(ezxml_t x),
     *parseHdlAssy(),
@@ -631,7 +634,9 @@ class Worker : public Parsed, public OU::IdentResolver {
     *emitVhdlWorkerPackage(FILE *f, unsigned maxPropName),
     *emitVhdlWorkerEntity(FILE *f),
     *emitVhdlPackageConstants(FILE *f),
+    *writeParamFiles(FILE *mkFile, FILE *xmlFile),
     *emitToolParameters(),
+    *emitMakefile(),
     *setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig),
     *deriveOCP(),
     *hdlValue(const std::string &name, const OU::Value &v, std::string &value,

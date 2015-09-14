@@ -71,22 +71,7 @@ Container(const char *name,
   : OC::ContainerBase<Driver,Container,Application,Artifact>(*this, name)
 {
   m_model = "rcc";
-  //temp  m_ourUID = g_unique_id;
-
-#if 0
-  // The underlying tranport system has some number of endpoints registered.  Lets make sure
-  // that their is at least 1 available or we will complain.
-  // Initialize the underlying transport system
-  try {
-    m_transport = new OCPI::DataTransport::Transport( tpg, false, this );
-  }
-  catch( std::bad_alloc ) {
-    throw OU::EmbeddedException( OU::NO_MORE_MEMORY, "new", OU::ContainerFatal);
-  }
-#endif
-  const char* monitorIPAddress = NULL;
-  OU::findString(props, "monitorIPAddress", monitorIPAddress);
-  //  start(NULL);
+  m_dynamic = OC::Manager::dynamic();
 }
 
 
@@ -232,6 +217,5 @@ stop(DataTransfer::EventManager* event_manager)
     // Ignore
   }
 }
-
   }
 }

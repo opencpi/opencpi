@@ -98,7 +98,8 @@ namespace OCPI {
         virtual ~Container()
           throw ();
 
-	OCPI::Container::Container::DispatchRetCode dispatch(DataTransfer::EventManager* event_manager=NULL);
+	OCPI::Container::Container::DispatchRetCode
+	dispatch(DataTransfer::EventManager* event_manager=NULL);
 
         OCPI::API::ContainerApplication*
 	createApplication(const char *name, const OCPI::Util::PValue *props)
@@ -106,12 +107,8 @@ namespace OCPI {
 
 	OCPI::Container::Artifact &createArtifact(OCPI::Library::Artifact &lart,
 						  const OCPI::API::PValue *artifactParams);
-      
-        //!< Start/Stop the container
-        void start(DataTransfer::EventManager* event_manager)
-          throw();
-        void stop(DataTransfer::EventManager* event_manager)
-          throw();
+        void start(DataTransfer::EventManager* event_manager) throw();
+        void stop(DataTransfer::EventManager* event_manager) throw();
 
         //! get the event manager for this container
         DataTransfer::EventManager*  getEventManager();

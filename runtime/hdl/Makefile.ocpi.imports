@@ -53,22 +53,26 @@ ALLLIBS += $(CONTAINER_LIBS) \
 	$(LOGGER_LIBS) \
 	$(OCPIOS_LIBS)
 
-SYSLIBS += $(OCPI_LZMA_DIR)/$(OCPI_TARGET_HOST)/lib/lzma
+$(eval $(ForceDynamic))
+
+PREQLIBS+=lzma
+#SYSLIBS += $(OCPI_LZMA_DIR)/$(OCPI_TARGET_HOST)/lib/lzma
+ifdef NEVER
 
 EXTRAOBJS += ../../linux-bin/HdlContainer.obj 
 
 ifeq ($(OCPI_OS),darwin)
 DYNOBJS += \
-../../../runtime/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramXfer.obj \
-../../../runtime/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramEtherDriver.obj
+../../../runtime/dataplane/rdma_drivers/datagram/$(OCPI_OUT_DIR)/DtDataGramXfer.obj \
+../../../runtime/dataplane/rdma_drivers/datagram/$(OCPI_OUT_DIR)/DtDataGramEtherDriver.obj
 
 else
 DYNOBJS += \
-	../../../runtime/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDmaXfer.obj \
-	../../../runtime/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPioXfer.obj \
+	../../../runtime/dataplane/rdma_drivers/dma/$(OCPI_OUT_DIR)/DtDmaXfer.obj \
+	../../../runtime/dataplane/rdma_drivers/pio/$(OCPI_OUT_DIR)/DtPioXfer.obj \
         ../../../runtime/library/$(OCPI_OUT_DIR)/OcpiComponentLibrary.obj \
-../../../runtime/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramXfer.obj \
-../../../runtime/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramEtherDriver.obj
+../../../runtime/dataplane/rdma_drivers/datagram/$(OCPI_OUT_DIR)/DtDataGramXfer.obj \
+../../../runtime/dataplane/rdma_drivers/datagram/$(OCPI_OUT_DIR)/DtDataGramEtherDriver.obj
 
 endif
 
@@ -83,3 +87,4 @@ BASICLIBS += -L$(OCPI_PPP_LIBRARY_DIR) -lrose
 endif
 
 SYSLIBS += dl lzma
+endif

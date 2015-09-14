@@ -39,8 +39,8 @@ clean:
 	$(AT)for i in primitives platforms; do \
 		$(call MyMake,$$i,,Cleaning) clean; \
 		done
-	$(AT)$(call MyMake,components,../,Cleaning) cleanhdl
-	$(AT)$(call MyMake,devices,,Cleaning) cleanhdl
-	$(AT)$(call MyMake,adapters,,Cleaning) cleanhdl
-	$(AT)$(call MyMake,cards,,Cleaning) cleanhdl
+	$(AT)$(call MyMake,components,../,Cleaning) clean
+	$(AT)$(call MyMake,devices,,Cleaning) clean
+	$(AT)$(call MyMake,adapters,,Cleaning) clean
+	$(AT)$(call MyMake,cards,,Cleaning) clean
 	$(AT)$(call MyMake,assemblies,,Cleaning) clean

@@ -119,5 +119,6 @@ int main(int argc, char **argv) {
   
   } catch (std::string &e) {
     fprintf(stderr, "Exception thrown: %s\n", e.c_str());
+    return 1;
   }
 }

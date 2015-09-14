@@ -33,6 +33,10 @@
 #
 ########################################################################### #
 
+ifndef OCPI_BASE_DIR
+  $(error The environment is not set up properly to run "make" here.  You must source an environment setup script)
+endif
+
 ifneq ($(OCPI_OS),)
 SYSTEMOPTION="OCPI_OS=$(OCPI_OS)"
 endif
@@ -72,13 +76,17 @@ endif
 # Basic packages.
 #
 
+RDMA_DRIVERS=datagram dma ofed pio sockets udp
+
+#	 runtime/dataplane/rdma_drivers \
+
 PACKAGES += os runtime/util
 
 PACKAGES += \
 	 runtime/dataplane/rdma_utils \
 	 runtime/dataplane/rdma_driver_interface \
 	 runtime/dataplane/rdma_smb \
-	 runtime/dataplane/rdma_drivers \
+	 $(foreach d,$(RDMA_DRIVERS),runtime/dataplane/rdma_drivers/$d) \
 	 runtime/dataplane/transport \
 	 runtime/dataplane/msg_driver_interface \
 	 runtime/dataplane/msg_drivers \
@@ -86,6 +94,7 @@ PACKAGES += \
 	 runtime/library \
 	 runtime/container \
 	 runtime/hdl \
+	 runtime/hdl-support \
 	 runtime/ocl \
 	 runtime/rcc \
 	 runtime/remote \
@@ -132,13 +141,12 @@ ALLPACKAGES = \
 	runtime/library \
 	runtime/container \
 	runtime/hdl \
+	runtime/hdl-support \
 	runtime/ocl \
 	runtime/rcc \
 	runtime/remote \
 	runtime/ctests \
         runtime/application \
-	tools/local/binder \
-	tools/local/tester \
 	tools/cdkutils \
 	tools/ocpigen \
 	tools/cdk/ocpidds \
@@ -151,7 +159,10 @@ ALLPACKAGES = \
 # ----------------------------------------------------------------------
 #
 
-all: packages
+all: packages links
+
+links:
+	./scripts/makeExportLinks $(OCPI_TARGET_DIR)
 
 .PHONY: hdl hdlcomps hdlapps hdlclean
 hdlcomps:
@@ -207,7 +218,11 @@ hdlprimitives:
 	$(MAKE) -C hdl primitives
 
 driver:
-	$(MAKE) -C os/$(OCPI_OS)/driver
+	$(AT)if test -d os/$(OCPI_OS)/driver; then \
+	  $(MAKE) -C os/$(OCPI_OS)/driver; \
+	else \
+	  echo No driver for the OS '"'$(OCPI_OS)'"', so none built. ; \
+	fi
 
 cleandriver:
 	$(AT)$(and $(wildcard os/$(OCPI_OS)/driver),$(MAKE) -C os/$(OCPI_OS)/driver topclean)
@@ -228,7 +243,7 @@ $(PACKAGES):
 		$(MAKE) $(call DescendMake,$@) $(SYSTEMOPTION) -f $(call AdjustRelative,$@,)/Makefile.ocpi.for-pkg ; \
 	fi
 
-clean: cleancomponents cleanexamples
+clean: cleancomponents cleanexamples cleanlinks
 	$(AT)rm -r -f lib
 	$(AT)$(foreach p,$(ALLPACKAGES),\
 		if test -f $p/Makefile.ocpi ; then \
@@ -237,6 +252,9 @@ clean: cleancomponents cleanexamples
 			$(MAKE) --no-print-directory $(call DescendMake,$p) -f $(call AdjustRelative,$p,)/Makefile.ocpi.for-pkg $@ ; \
 		fi ; \
 	)
+
+cleanlinks:
+	$(AT)rm -r -f tools/cdk/export/bin tools/cdk/export/lib/*-*-*
 
 distclean: clean
 	find . -name '*~' -exec rm {} \;

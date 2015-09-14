@@ -151,7 +151,6 @@ bool
 #define ocpiDebug3(fmt, ...) ((void)0)
 #define ocpiLog(n, ...) ((n) > OCPI_LOG_DEBUG_MIN ? 0 : (::OCPI::OS::logPrint(n, __VA_ARGS__),0))
 #else
-#define OCPI_DEBUG 1
 #define ocpiAssert(cond) ((::OCPI::OS::testAssertion ((cond) ? true : false)) || ::OCPI::OS::assertionFailed (#cond, __FILE__, __LINE__))
 #define ocpiCheck(cond) ocpiAssert(cond)
 #define ocpiDebug(...) ::OCPI::OS::logPrint(OCPI_LOG_DEBUG_MIN, __VA_ARGS__)

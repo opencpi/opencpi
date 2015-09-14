@@ -199,10 +199,10 @@ parse(FactoryConfig *parent, ezxml_t x) {
     const char *err;
     // Note we are not writing defaults here because they are set
     // in the constructor, and they need to be set even when there is no xml
-    if ((err = OX::checkAttrs(x, "SMBSize", "TxRetryCount", NULL)) ||
+    if ((err = OX::checkAttrs(x, "load", "SMBSize", "TxRetryCount", NULL)) ||
 	(err = OX::getNumber(x, "SMBSize", &m_SMBSize, NULL, 0, false)) ||
 	(err = OX::getNumber(x, "TxRetryCount", &m_retryCount, NULL, 0, false)))
-      throw err; // FIXME configuration api error exception class
+      throw std::string(err); // FIXME configuration api error exception class
   }
 }
 
@@ -214,12 +214,14 @@ configure( ezxml_t x)
 {
   if (!m_configured) {
     m_configured = true;
-    parse(NULL, x);
+    ocpiDebug("Before configuration, SMB size is %zu", m_SMBSize);
+    parse(NULL, x); // this is the actual local manager configuration
     // Allow the environment to override config files here
-    const char* env = getenv("OCPI_SMB_SIZE");
-    if ( env && OX::getUNum(env, &m_SMBSize))
-      throw "Invalid OCPI_SMB_SIZE value";
-
+    ocpiDebug("After configuration, SMB size is %zu", m_SMBSize);
+    const char *env = getenv("OCPI_SMB_SIZE");
+    if (env && OX::getUNum(env, &m_SMBSize))
+      throw OU::Error("Invalid OCPI_SMB_SIZE value: %s", env);
+    ocpiDebug("After environment, SMB size is %zu", m_SMBSize);
     // Now configure the drivers
     OD::Manager::configure(x);
     startup();
@@ -321,6 +323,7 @@ find( std::string& ep1, std::string& ep2 )
 
 
 const char *transfer = "transfer";
+static OCPI::Driver::Registration<XferFactoryManager> xfm;
 XferFactoryManager::
 XferFactoryManager()
   : m_refCount(0),m_init(false),m_mutex(true),

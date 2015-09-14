@@ -84,7 +84,7 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
     ocpiCheck(OE::ezxml_parse_str(xml, strlen(xml), x) == NULL);
     configFile = "base.xml"; // where is this really used?
   } else {
-    OU::format(configName, "%s/%s", ::platformDir, myConfig.c_str());
+    OU::format(configName, "%s/hdl/%s", ::platformDir, myConfig.c_str());
     if ((err = parseFile(configName.c_str(), xfile, "HdlConfig", &x, configFile))) {
       configName = myPlatform + "/gen/" + myConfig;
       if (parseFile(configName.c_str(), xfile, "HdlConfig", &x, configFile))
@@ -197,10 +197,10 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 #if 0
     OU::formatAdd(assy, "    <signal name='%s' external='%s'/>\n",
 		  (*s)->name(), (*s)->name());
+#endif
     Signal *es = new Signal(**s);
     m_signals.push_back(es);
-    m_sigmap[(*s)->name()] = es;
-#endif
+    m_sigmap[(*s)->cname()] = es;
   }
   OU::formatAdd(assy, "  </instance>\n");
   // Connect the platform configuration to the control plane
@@ -273,8 +273,8 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 	}
       // Instance the device and connect its wci
       OU::formatAdd(assy, "  <instance name='%s' worker='%s'%s>\n",
-		    (*di).name(),
-		    (*di).device.deviceType().name(),
+		    (*di).cname(),
+		    (*di).device.deviceType().cname(),
 		    emulator ? " emulated='1'" : "");
       if (!emulator && !(*di).device.deviceType().m_emulate)
 	mapDevSignals(assy, *di, true);
@@ -285,11 +285,16 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 		      "    <port instance='ocscp' name='wci' index='%zu'/>\n"
 		      "    <port instance='%s' name='%s'/>\n"
 		      "  </connection>\n",
-		      nWCIs, (*di).name(),
+		      nWCIs, (*di).cname(),
 		      (*di).device.deviceType().ports()[0]->name());
       
 	nWCIs++;
       }
+      // Instance time clients for the assembly
+      const Ports &ports = (*di).device.deviceType().ports();
+      for (PortsIter pi = ports.begin(); pi != ports.end(); pi++)
+	if ((*pi)->type == WTIPort)
+	  emitTimeClient(assy, (*di).cname(), (*pi)->name());
     }
     for (ContConnectsIter ci = connections.begin(); ci != connections.end(); ci++)
       if ((err = emitConnection(assy, uNocs, nWCIs, *ci)))
@@ -367,15 +372,17 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
       if (ssi != sl.m_signals.end() && ssi->second.empty())
 	continue;
       Signal &sig = *new Signal(**si);
-      sig.m_name = sl.m_name + "_" + (ssi == sl.m_signals.end() ? (*si)->name() :
+      sig.m_name = sl.m_name + "_" + (ssi == sl.m_signals.end() ? (*si)->cname() :
 				      ssi->second.c_str());
       if (!m_sigmap.findSignal(sig.m_name)) {
 	m_signals.push_back(&sig);
-	m_sigmap[sig.name()] = &sig;
+	m_sigmap[sig.cname()] = &sig;
+	ocpiDebug("Creating container signal from slot signal: %s", sig.cname());
       }
     }
   }
   m_xml = x;
+#if 0 // try this below
   // During the parsing of the container assembly we KNOW what the platform is,
   // but the platform config XML that might be parsed might think it is defaulting
   // from the platform where it lives, so we temporarily set the global to the
@@ -385,6 +392,8 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
   if ((err = parseHdl()))
     return;
   platform = save;
+#endif
+#if 0 // this is now done in mapDevSignals
   // Make all device instances signals external that are not mapped already
   unsigned n = 0;
   for (Instance *i = m_assembly->m_instances; n < m_assembly->m_nInstances; i++, n++) {
@@ -411,7 +420,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 	} else {
 	  Signal *ns = new Signal(s);
 	  if (!i->worker->m_assembly)
-	    OU::format(ns->m_name, "%s_%s", i->name, s.name());
+	    OU::format(ns->m_name, "%s_%s", i->name, s.cname());
 	  m_signals.push_back(ns);
 	  m_sigmap[ns->m_name.c_str()] = ns;
 	  break;
@@ -419,39 +428,66 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
       }
     }
   }
+#endif
   // For platform devices that are not instanced:
   //    Make all device signals external, and cause the outputs to be tied to zero.
   //    EXCEPT for device signals that are explicitly mapped to NULL, meaning they are
   //    not present in this platform
+  //    This is necessary here because external signals are normally just created
+  //    as a side effect of instances with signals.
   for (DevicesIter di = m_platform.devices().begin(); di != m_platform.devices().end(); di++) {
     if (!findDevInstance(**di, NULL, NULL, &m_config.devInstances(), NULL)) {
       const DeviceType &dt = (*di)->deviceType();
       // We have an uninstanced device
       for (SignalsIter si = dt.m_signals.begin(); si != dt.m_signals.end(); si++) {
-	Signal *bs;        // The board signal this device signal is mapped to
-	Signal *cs = NULL; // The container signal we will create
-	if ((*di)->m_sigmap.findSignal((*si)->name(), bs)) {
-	  // There is a mapping, but it might be NULL if the signal is not on the platform
-	  if (bs) {
-	    cs = new Signal(*bs); // clone the board signal for the container signal
-	    // If the board signal is bidirectional (can be anything), it should inherit
-	    // the direction of the device's signal
-	    if (bs->m_direction == Signal::BIDIRECTIONAL)
-	      bs->m_direction = (*si)->m_direction;
+	for (unsigned n = 0; (*si)->m_width ? n < (*si)->m_width : n == 0; n++) {
+	  Signal *cs = NULL; // The container signal we will create
+	  bool isSingle;
+	  const char *boardName;
+	  if ((boardName = (*di)->m_dev2bd.findSignal(**si, n, isSingle))) {
+	    // There is a mapping, but it might be NULL if the signal is not on the platform
+	    if (*boardName) {
+	      Signal *bs = (**di).m_board.m_extmap.findSignal(boardName);
+	      assert(bs);
+	      assert((**di).m_board.m_bd2dev.findSignal(boardName));
+	      if (m_sigmap.find(boardName) == m_sigmap.end()) {
+		cs = new Signal(*bs); // clone the board signal for the container signal
+		// If the board signal is bidirectional (can be anything), it should inherit
+		// the direction of the device's signal
+		if (bs->m_direction == Signal::BIDIRECTIONAL)
+		  cs->m_direction = (*si)->m_direction;
+	      }
+	    }
+	  } else {
+	    std::string name;
+	    OU::format(name, "%s_%s", (*di)->m_name.c_str(), (*si)->m_name.c_str());
+	    if (m_sigmap.find(name.c_str()) == m_sigmap.end()) {
+	      // No mapping - the device signal has the default mapping - clone the device signal
+	      cs = new Signal(**si);
+	      cs->m_name = name;
+	    }
 	  }
-	} else {
-	  // No mapping - the device signal has the default mapping - clone the device signal
-	  cs = new Signal(**si);
-	  OU::format(cs->m_name, "%s_%s", (*di)->m_name.c_str(), (*si)->m_name.c_str());
-	  // It is possible that, if an input, it is mapped to more than one device...
-	}
-	if (cs) {
-	  m_signals.push_back(cs);
-	  m_sigmap[cs->name()] = cs;
+	  if (cs) {
+	    m_signals.push_back(cs);
+	    m_sigmap[cs->cname()] = cs;
+	  }
+	  if (!isSingle)
+	    break;
 	}
       }
     }
   }
+#if 1
+  // During the parsing of the container assembly we KNOW what the platform is,
+  // but the platform config XML that might be parsed might think it is defaulting
+  // from the platform where it lives, so we temporarily set the global to the
+  // platform we know.
+  const char *save = platform;
+  platform = m_platform.m_name.c_str();
+  if ((err = parseHdl()))
+    return;
+  platform = save;
+#endif
 }
 
 HdlContainer::
@@ -500,9 +536,9 @@ parseConnection(ezxml_t cx, ContConnect &c) {
 	break;
       }
     if (!c.port)
-      return OU::esprintf("Port '%s' not found for device '%s'", attr, d.name());
+      return OU::esprintf("Port '%s' not found for device '%s'", attr, d.cname());
     if (!c.port->isData())
-      return OU::esprintf("Port '%s' for device '%s' is not a data port", attr, d.name());
+      return OU::esprintf("Port '%s' for device '%s' is not a data port", attr, d.cname());
   } else if (c.devInstance) {
     const ::Device &d = c.devInstance->device;
     // Find the one data port
@@ -511,11 +547,11 @@ parseConnection(ezxml_t cx, ContConnect &c) {
       if ((*pi)->isData()) {
 	if (c.port)
 	  return OU::esprintf("There are multiple data ports for device '%s'; you must specify one",
-			      d.name());
+			      d.cname());
 	c.port = *pi;
       }
     if (!c.port)
-      return OU::esprintf("There are no data ports for device '%s'", d.name());
+      return OU::esprintf("There are no data ports for device '%s'", d.cname());
   }
   if ((attr = ezxml_cattr(cx, "interconnect"))) {
     // An interconnect can be on any device worker, but for now it is on the config.
@@ -544,7 +580,7 @@ emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContCon
 			"port %s of %s%s and interconnect %s",
 			port->name(), iname,
 			c.external ? "assembly" : "device",
-			c.external ? "" : c.devInstance->device.name());
+			c.external ? "" : c.devInstance->device.cname());
   // Create the three instances:
   // 1. A unoc node to use the interconnect unoc
   // 2. A DP/DMA module to stream to/from another place on the interconnect
@@ -619,7 +655,7 @@ emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContCon
 		iname, unoc,
 		port->isDataProducer() ? "to" : "from",
 		port->isDataProducer() ? "in" : "out",
-		c.external ? m_appAssembly.m_implName : c.devInstance->name(),
+		c.external ? m_appAssembly.m_implName : c.devInstance->cname(),
 		port->isDataProducer() ? "from" : "to",
 		port->name());
   OU::format(prevInstance, "%s_ocdp%u", iname, unoc);
@@ -647,14 +683,14 @@ emitConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContConnect
     // We need to connect an external port to a port of a device instance.
     std::string devport;
     if (c.devInConfig)
-      OU::format(devport, "%s_%s", c.devInstance->name(), c.port->name());
+      OU::format(devport, "%s_%s", c.devInstance->cname(), c.port->name());
     OU::formatAdd(assy,
 		  "  <connection>\n"
 		  "    <port instance='%s' name='%s'/>\n"
 		  "    <port instance='%s' name='%s'/>\n"
 		  "  </connection>\n",
 		  m_appAssembly.m_implName, c.external->name(),
-		  c.devInConfig ? "pfconfig" : c.devInstance->name(),
+		  c.devInConfig ? "pfconfig" : c.devInstance->cname(),
 		  c.devInConfig ? devport.c_str() : c.port->name());
   } else
     return "unsupported container connection";
@@ -731,36 +767,49 @@ emitXmlConnections(FILE *f) {
   }
 }
 
+// inContainer means the device is instanced in the container as opposed to
+// in the platform configuration.  If in a platform configuration the device signals
+// are actually signals of the platform configuration worker.
 void HdlContainer::
 mapDevSignals(std::string &assy, const DevInstance &di, bool inContainer) {
   const Signals &devsigs = di.device.deviceType().m_signals;
   for (SignalsIter s = devsigs.begin(); s != devsigs.end(); s++)
     for (unsigned n = 0; (*s)->m_width ? n < (*s)->m_width : n == 0; n++) {
       // (Re)create the signal name of the pf_config signal
-      std::string devSig = (*s)->name();
-      if ((*s)->m_width)
-	OU::formatAdd(devSig, "(%u)", n);
-      Signal *boardSig;
-      if (di.device.m_sigmap.findSignal(devSig.c_str(), boardSig)) {
-	std::string boardName;
-	if (boardSig) {
-	  boardName = boardSig->name();
-	  if (di.slot) {
-	    Slot::SignalsIter si = di.slot->m_signals.find(boardSig);
-	    if (si != di.slot->m_signals.end())
-	      boardName = (*si).second;
-	  }
+      const char *boardName;
+      bool isSingle;
+      if ((boardName = di.device.m_dev2bd.findSignal(**s, n, isSingle))) {
+#if 0
+	if (*boardName) {
+	  Signal *boardSig = di.device.m_board.m_extmap.findSignal(boardName);
+	  assert(boardSig);
+	  assert(di.device.m_board.m_bd2dev.findSignal(boardName));
 	}
-	std::string sname;
+#endif
+	std::string devSig = (*s)->cname();
+	if ((*s)->m_width && isSingle)
+	  OU::formatAdd(devSig, "(%u)", n);
+	std::string dname, ename;
 	if (di.slot && !inContainer)
-	  OU::format(sname, "%s_%s_%s", di.slot->name(), di.device.name(), devSig.c_str());
+	  OU::format(dname, "%s_%s_%s", di.slot->cname(), di.device.cname(), devSig.c_str());
 	else
-	  sname = devSig.c_str();
-	OU::formatAdd(assy, "    <signal name='%s' external='%s%s%s'/>\n",
-		      sname.c_str(),
-		      di.slot && boardSig ? di.slot->name() : "",
-		      di.slot && boardSig ? "_" : "",
-		      boardName.c_str());
+	  dname = devSig.c_str();
+	if (*boardName && di.slot) {
+	  Signal *slotSig = di.device.m_board.m_extmap.findSignal(boardName);
+	  assert(slotSig);
+	  Slot::SignalsIter ssi = di.slot->m_signals.find(slotSig);
+	  OU::format(ename, "%s_%s", di.slot->cname(),
+		     ssi == di.slot->m_signals.end()  ? slotSig->cname() : ssi->second.c_str());
+	} else
+	  ename = boardName;
+	OU::formatAdd(assy, "    <signal name='%s' external='%s'/>\n",
+		      dname.c_str(), ename.c_str());
+      } else {
+	Signal *ns = new Signal(**s);
+	OU::format(ns->m_name, "%s_%s", di.device.cname(), ns->cname());
+	m_signals.push_back(ns);
+	m_sigmap[ns->m_name.c_str()] = ns;
+	break;
       }
     }
 }
@@ -815,7 +864,8 @@ emitContainerImplHDL(FILE *f) {
 
 void HdlContainer::
 recordSignalConnection(Signal &s, const char *from) {
-  assert(m_connectedSignals.find(&s) == m_connectedSignals.end());
+  // A signal may be connected more than once if it is an input
+  //  assert(m_connectedSignals.find(&s) == m_connectedSignals.end());
   m_connectedSignals[&s] = from;
   //  m_connectedSignals.insert(&s);
 }
@@ -848,18 +898,18 @@ emitTieoffSignals(FILE *f) {
       switch (s.m_direction) {
       case Signal::IN:
 	fprintf(f, "  -- Input signal \"%s\" is unused and unconnected in this module\n",
-		s.name());
+		s.cname());
 	break;
       case Signal::OUT:
 	fprintf(f,
-		"  -- Output signal \"%s\" is not connected to any instance.\n", s.name());
+		"  -- Output signal \"%s\" is not connected to any instance.\n", s.cname());
 	if (s.m_differential) {
-	  OU::format(name, s.m_pos.c_str(), s.name());
+	  OU::format(name, s.m_pos.c_str(), s.cname());
 	  fprintf(f, "  %s => %s,\n", name.c_str(), s.m_width ? "(others => '0')" : "'0'");
-	  OU::format(name, s.m_neg.c_str(), s.name());
+	  OU::format(name, s.m_neg.c_str(), s.cname());
 	  fprintf(f, "  %s => %s,\n", name.c_str(), s.m_width ? "(others => '0')" : "'0'");
 	} else
-	  fprintf(f, "  %s <= %s;\n", s.name(), s.m_width ? "(others => '0')" : "'0'");
+	  fprintf(f, "  %s <= %s;\n", s.cname(), s.m_width ? "(others => '0')" : "'0'");
 	break;
       case Signal::OUTIN:
 	assert("Emulated INOUT signals must be connected"==0);
@@ -869,7 +919,7 @@ emitTieoffSignals(FILE *f) {
 	fprintf(f,
 		"  -- Inout signal \"%s\" is not connected to any instance.\n"
 		"  %s_ts: util.util.TSINOUT_",
-		s.name(), s.name());
+		s.cname(), s.cname());
 	if (s.m_width)
 	  fprintf(f,
 		  "N\n"
@@ -879,7 +929,7 @@ emitTieoffSignals(FILE *f) {
 	  fprintf(f,
 		  "1\n"
 		  "    port map(I => '0'");
-	fprintf(f, ", IO => %s, O => open, OE => '0');\n", s.name());
+	fprintf(f, ", IO => %s, O => open, OE => '0');\n", s.cname());
 	break;
       case Signal::BIDIRECTIONAL: // not really supported properly
 	break;
@@ -895,14 +945,14 @@ emitTieoffSignals(FILE *f) {
       fprintf(f,
 	      "  -- Inout signal \"%s\" needs a tristate buffer.\n"
 		"  %s_ts: util.util.TSINOUT_",
-	      s.name(), s.name());
+	      s.cname(), s.cname());
       if (s.m_width)
 	fprintf(f, "N\n    generic map(width => %zu)\n", s.m_width);
       else
 	fprintf(f, "1\n");
       fprintf(f,
 	      "    port map(I => %s, IO => %s, O => %s, OE => %s);\n",
-	      out.c_str(), s.name(), in.c_str(), oe.c_str());
+	      out.c_str(), s.cname(), in.c_str(), oe.c_str());
     }
   }
 }

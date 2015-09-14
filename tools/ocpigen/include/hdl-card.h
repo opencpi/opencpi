@@ -22,7 +22,7 @@ struct Card : public Board {
        const char *&err);
   virtual ~Card();
 
-  const char *name() const { return m_name.c_str(); }
+  const char *cname() const { return m_name.c_str(); }
   const SlotType *type() const { return &m_type; }
   static Card *find(const char *name);
 };

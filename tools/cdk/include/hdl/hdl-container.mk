@@ -5,7 +5,7 @@
 # The HdlAssembly variable must be set to point to the relative or absolute path
 # to the assembly's directory, ending in the name of the assembly.
 HdlMode:=container
-$(infox MYCL:$(ComponentLibraries):$(XmlIncludeDirs):$(MdlAssembly))
+$(infox MYCL:$(ComponentLibraries):$(ComponentLibrariesInternal):$(XmlIncludeDirs):$(MdlAssembly))
 ifndef HdlPlatforms
 HdlPlatforms:=$(HdlPlatform)
 endif
@@ -56,11 +56,12 @@ override HdlLibraries+=platform
 # Note that the platform directory should be first XML dir since the config file name should be
 # scoped to the platform.
 override XmlIncludeDirsInternal:=\
-   $(call Unique,$(HdlPlatformDir) $(XmlIncludeDirs) \
+   $(call Unique,$(HdlPlatformDir) $(HdlPlatformDir)/hdl $(XmlIncludeDirs) \
       $(HdlPlatformsDir)/specs $(HdlAssembly))
-override ComponentLibraries:=$(call Unique,$(ComponentLibraries) $(HdlPlatformDir) $(HdlAssembly) \
-				components devices adapters cards)
-$(infox XMLI2:$(XmlIncludeDirs):$(ComponentLibraries):$(HdlPlatformDir_$(HdlPlatform)))
+override ComponentLibraries:=$(call Unique,\
+  $(ComponentLibraries) $(ComponentLibrariesInternal) \
+  $(HdlPlatformDir) $(HdlAssembly) \
+  components devices adapters cards)
 #AssemblyName=$(notdir $(HdlAssembly))
 override LibDir=$(HdlAssembly)/lib/hdl
 ifneq ($(MAKECMDGOALS),clean)

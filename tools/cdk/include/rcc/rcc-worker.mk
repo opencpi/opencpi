@@ -50,7 +50,7 @@ OBJ:=.o
 override RccIncludeDirsInternal+=../include gen $(OCPI_CDK_DIR)/include/rcc
 BF=$(BF_$(call RccOs,))
 ifneq ($(OCPI_DEBUG),0)
-eSharedLibLinkOptions=-g
+SharedLibLinkOptions=-g
 endif
 SharedLibLinkOptions+=\
   $(or $(SharedLibLinkOptions_$(HdlTarget)),$(SharedLibLinkOptions_$(call RccOs,)))
@@ -73,10 +73,15 @@ ArtifactFile=$(BinaryFile)
 # Artifacts are target-specific since they contain things about the binary
 ArtifactXmlFile=$(call WkrTargetDir,$1,$2)/$(word 1,$(Workers))_assy-art.xml
 ToolSeparateObjects:=yes
-OcpiLibDir=$(OCPI_CDK_DIR)/lib/$$(RccTarget)
+OcpiLibDir=$(OCPI_CDK_DIR)/lib/$$(RccTarget)$(and $(OCPI_TARGET_MODE),/$(OCPI_TARGET_MODE))
 # Add the libraries we know a worker might reference.
 override RccLibrariesInternal+=rcc application os
-LinkBinary=$$(G$(OcpiLanguage)_LINK_$$(RccTarget)) $(SharedLibLinkOptions) -o $$@ \
+
+ifeq ($(origin OCPI_TARGET_MODE),undefined)
+  export OCPI_TARGET_MODE:=$(if $(filter 1,$(OCPI_BUILD_SHARED_LIBRARIES)),d,s)$(if $(filter 1,$(OCPI_DEBUG)),d,o)
+endif
+PatchElf=$(or $(OCPI_PREREQUISITES_INSTALL_DIR),/opt/opencpi/prerequisites)/patchelf/$(OCPI_TOOL_HOST)/bin/patchelf
+LinkBinary=$$(G$(OcpiLanguage)_LINK_$$(RccTarget)) $(SharedLibLinkOptions) -o $$@ $1 \
 $(AEPLibraries) \
 $(foreach l,$(RccLibrariesInternal) $(Libraries),\
   $(if $(findstring /,$l),\
@@ -84,8 +89,34 @@ $(foreach l,$(RccLibrariesInternal) $(Libraries),\
        $(or $(wildcard $p$(AREXT_$(call RccOs,))),\
             $(and $(wildcard $p$(SOEXT_$(call RccOs,))),-L $(dir $l)$(RccTarget) -l $(notdir $l)),\
             $(error No RCC library found for $l, tried $p$(AREXT_$(call RccOs,)) and $p$(SOEXT_$(call RccOs,))))), \
-    -l ocpi_$l)) \
-  -L $(OcpiLibDir)
+    $(and $(filter 1,$(OCPI_BUILD_SHARED_LIBRARIES)),-l ocpi_$l))) \
+  -L $(OCPI_CDK_DIR)/lib/$$(RccTarget)$(and $(OCPI_TARGET_MODE),/d$(if $(filter 1,$(OCPI_DEBUG)),d,o))
+
+# $1 is target, $2 is configuration
+RccStaticName=$(WkrBinaryName)_s$(BF)
+RccStaticPath=$(call WkrTargetDir,$1,$2)/$(RccStaticName)
+define RccWkrBinary
+  $$(infox RccWkrBinary:$1:$2:$$(call RccOs,))
+  ifeq ($$(call RccOs,),linux)
+    $(call RccStaticPath,$1,$2): $(call WkrBinary,$1,$2)
+	$(AT)$(OCPI_CDK_DIR)/scripts/makeStaticWorker $$< \
+	  $$(foreach l,$$(RccLibrariesInternal),libocpi_$$l$$(BF))
+
+    all: $(call RccStaticPath,$1,$2)
+  endif
+endef
+
+define RccWkrBinaryLink
+  $$(infox RccWkrBinaryLink:$1:$2:$3:$4:$5 name:$$(call RccStaticName,$1,$4):$(LibDir)/$1/$5_s$(BF))
+  ifeq ($$(call RccOs,),linux)
+    $(LibDir)/$1/$5_s$(BF): $(call RccStaticPath,$1,$4) | $(LibDir)/$1
+	$(AT)echo Exporting worker binary for static executables: $$@ '->' $$<
+	$(AT)$$(call MakeSymLink2,$$<,$$(dir $$@),$$(notdir $$@))
+    LibLinks+=$(LibDir)/$1/$5_s$(BF)
+  endif
+endef
+
+
 CompilerWarnings= -Wall -Wextra
 CompilerDebugFlags=-g
 CompilerOptimizeFlags=-O
@@ -100,13 +131,14 @@ RccParams=\
 	     '-DPARAM_$n()=$(Param_$(ParamConfig)_$n)')
 Compile_c=\
   $$(Gc_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
-  $(CompilerWarnings_$$(RccTarget)) $(CompilerOptions_$$(RccTarget)) \
-  $(call SharedLibCompileOptions) $(ExtraCompilerOptions_$$(RccTarget)) \
+  $$(CompilerWarnings_$$(RccTarget)) $$(CompilerOptions_$$(RccTarget)) \
+  $(call SharedLibCompileOptions) $$(ExtraCompilerOptionsC_$$(RccTarget)) \
   $(RccIncludeDirsInternal:%=-I%) -o $$@ $$(RccParams) $$<
 Compile_cc=\
   $$(Gc++_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
-  $(CompilerWarnings_$$(RccTarget)) $(CompilerOptions_$$(RccTarget)) \
-  $(call SharedLibCompileOptions) $(ExtraCompilerOptions_$$(RccTarget)) \
+  $$(CompilerWarnings_$$(RccTarget)) $$(CompilerOptions_$$(RccTarget)) \
+  $(call SharedLibCompileOptions) \
+  $$(ExtraCompilerOptions_$$(RccTarget)) $$(ExtraCompilerOptionsCC_$$(RccTarget)) \
   $(RccIncludeDirsInternal:%=-I%) -o $$@ $$(RccParams) $$<
 
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk

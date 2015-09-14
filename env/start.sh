@@ -4,6 +4,9 @@ export OCPI_CXXFLAGS="-Wextra -Wall -Wfloat-equal -fno-strict-aliasing -Wconvers
 
 export OCPI_BASE_DIR=`pwd`
 export OCPI_CDK_DIR=$OCPI_BASE_DIR/ocpi
+# For backward compatibility, we default to explicit modelessness
+export OCPI_TOOL_MODE=
+export OCPI_TARGET_MODE=
 if test "$OCPI_TOOL_HOST" = ""; then
   vars=($(platforms/getPlatform.sh))
   if test $? != 0; then
@@ -15,16 +18,13 @@ if test "$OCPI_TOOL_HOST" = ""; then
   export OCPI_TOOL_ARCH=${vars[2]}
   export OCPI_TOOL_HOST=${vars[3]}
   export OCPI_TOOL_PLATFORM=${vars[4]}
+else
+  echo "Warning!!!!!!: "you are setting up the OpenCPI build environment when it is already set.
+  echo "Warning!!!!!!: "this is not guaranteed to work.  You should probably use a new shell.
 fi
-#default the target host to the tool host
-export OCPI_TARGET_OS=$OCPI_TOOL_OS
-export OCPI_TARGET_OS_VERSION=$OCPI_TOOL_OS_VERSION
-export OCPI_TARGET_ARCH=$OCPI_TOOL_ARCH
-export OCPI_TARGET_HOST=$OCPI_TOOL_HOST
-export OCPI_TARGET_PLATFORM=$OCPI_TOOL_PLATFORM
-
 export OCPI_GTEST_DIR=/opt/opencpi/prerequisites/gtest
 export OCPI_LZMA_DIR=/opt/opencpi/prerequisites/lzma
+export OCPI_PATCHELF_DIR=/opt/opencpi/prerequisites/patchelf
 export OCPI_DEBUG=1
 export OCPI_ASSERT=1
 export OCPI_SHARED_LIBRARIES_FLAGS=
@@ -43,8 +43,6 @@ export OCPI_OPENCL_INCLUDE_DIR=$OCPI_BASE_DIR/runtime/ocl/include
 export OCPI_OPENCL_OBJS=
 export OCPI_HAVE_OPENCL=
 
-
-export OCPI_LIBRARY_PATH=$OCPI_BASE_DIR/components/lib/rcc
 export OCPI_SMB_SIZE=100000000
 
 # #########  OpenCV 

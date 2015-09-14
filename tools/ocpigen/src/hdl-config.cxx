@@ -15,11 +15,11 @@ DevInstance(const Device &d, const Card *c, const Slot *s, bool control,
   : device(d), card(c), slot(s), control(control), parent(parent) {
   m_connected.resize(d.m_deviceType.m_ports.size(), 0);
   if (slot) {
-    m_name = slot->name();
+    m_name = slot->cname();
     m_name += "_";
-    m_name += d.name();
+    m_name += d.cname();
   } else
-    m_name = d.name();
+    m_name = d.cname();
 }
 
 const DevInstance *HdlHasDevInstances::
@@ -94,29 +94,29 @@ parseDevInstance(const char *device, ezxml_t x, const char *parentFile, Worker *
       if (plug && card != plug)
 	return
 	  OU::esprintf("Conflicting cards (\"%s\" vs. \"%s\") specified in slot \"%s\"",
-		       plug->name(), card->name(), slot->name());
+		       plug->cname(), card->cname(), slot->cname());
     } else if (plug)
       card = plug;
     else
-      OU::esprintf("No card specified for slot \"%s\"", slot->name());
+      OU::esprintf("No card specified for slot \"%s\"", slot->cname());
   } else if (card) {
     // Find a slot...
     switch (m_platform.slots().size()) {
     case 0:
       return OU::esprintf("Card \"%s\" specified when platform has no slots",
-			  card->name());
+			  card->cname());
     case 1:
       slot = m_platform.slots().begin()->second;
       if (slot->type() != card->type())
 	return OU::esprintf("Card \"%s\" has slot type \"%s\", which is not in the platform",
-			    card->name(), slot->type()->name());
+			    card->cname(), slot->type()->cname());
       break;
     default:
       for (SlotsIter si = m_platform.slots().begin(); si != m_platform.slots().end(); si++)
 	if ((*si).second->type() == card->type())
 	  if (slot)
 	    return OU::esprintf("Multiple slots are possible for card \"%s\"",
-				card->name());
+				card->cname());
 	  else
 	    slot = (*si).second;
     }
@@ -125,7 +125,7 @@ parseDevInstance(const char *device, ezxml_t x, const char *parentFile, Worker *
   if (card) {
     if (!(dev = card->findDevice(device)))
       return OU::esprintf("There is no device named \"%s\" on \"%s\" cards",
-			  device, card->name());
+			  device, card->cname());
   } else if (!(dev = m_platform.findDevice(device)))
     return OU::esprintf("There is no device named \"%s\" on this platform",
 			device);
@@ -134,7 +134,7 @@ parseDevInstance(const char *device, ezxml_t x, const char *parentFile, Worker *
   assert(card && slot || !card && !slot);
   if (control && !dev->m_deviceType.m_canControl)
     return OU::esprintf("Device '%s' cannot have control since its type (%s) cannot",
-			dev->name(), dev->deviceType().name());
+			dev->cname(), dev->deviceType().cname());
   if ((di = findDevInstance(*dev, card, slot, baseInstances, inBase))) {
     if (result) {
       *result = di;
@@ -145,10 +145,10 @@ parseDevInstance(const char *device, ezxml_t x, const char *parentFile, Worker *
       return
 	OU::esprintf("Device '%s' on card '%s' in slot '%s' is "
 		     "already in the platform configuration",
-		     di->device.name(), di->card->name(), di->slot->name());
+		     di->device.cname(), di->card->cname(), di->slot->cname());
     else
       return OU::esprintf("Platform device '%s' is already in the platform configuration",
-			  di->device.name());
+			  di->device.cname());
   }
   if ((err = addDevInstance(*dev, card, slot, control, NULL, baseInstances, di)))
     return err;
@@ -178,7 +178,7 @@ parseDevInstances(ezxml_t xml, const char *parentFile, Worker *parent,
     // which device is performing control
     if (control && baseInstances)
       return "It is invalid to specify a 'control' attribute to a device in a container";
-    if (!strcasecmp(m_platform.name(), name.c_str())) {
+    if (!strcasecmp(m_platform.cname(), name.c_str())) {
       m_platform.setControl(control); // FIXME make the platform a device...
       continue;
     }
@@ -222,9 +222,9 @@ emitSubdeviceConnections(std::string &assy,  DevInstances *baseInstances) {
 		      "  <connection>\n"
 		      "    <port instance='%s' name='%s'/>\n"
 		      "    <port instance='%s' name='%s%s%s'",
-		      (*dii).name(), (*sci).m_port->name(),
-		      inConfig ? "pfconfig" : sdi->name(),
-		      inConfig ? sdi->name() : "", inConfig ? "_" : "",
+		      (*dii).cname(), (*sci).m_port->name(),
+		      inConfig ? "pfconfig" : sdi->cname(),
+		      inConfig ? sdi->cname() : "", inConfig ? "_" : "",
 		      (*sci).m_sup_port->name());
 	if ((*sci).m_indexed) {
 	  size_t
@@ -341,7 +341,7 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
     const ::Device &d = (*dii).device;
     const DeviceType &dt = d.m_deviceType;
     OU::formatAdd(assy, "  <instance worker='%s' name='%s'%s>\n",
-		  d.m_deviceType.name(), (*dii).name(), dt.m_instancePVs ? "" : "/");
+		  d.m_deviceType.cname(), (*dii).cname(), dt.m_instancePVs ? "" : "/");
     if (dt.m_instancePVs) {
       OU::Assembly::Property *ap = &(*dt.m_instancePVs)[0];
       for (size_t n = dt.m_instancePVs->size(); n; n--, ap++)
@@ -354,7 +354,7 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
 	 pi != d.m_deviceType.ports().end(); pi++)
       if ((*pi)->type == WTIPort)
 	OU::formatAdd(assy, "  <instance worker='time_client' name='%s_time_client'/>\n",
-		      (*dii).name());
+		      (*dii).cname());
   }
   // Internal connections:
   // 1. Control plane master to OCCP
@@ -392,7 +392,7 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
 		      "    <port instance='time_client%u' name='wti'/>\n"
 		      "    <port instance='%s' name='%s'/>\n"
 		      "  </connection>\n",
-		      tIndex++, (*dii).name(), (*pi)->name());
+		      tIndex++, (*dii).cname(), (*pi)->name());
       }
   }
   // 4. To and from subdevices
@@ -426,8 +426,8 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
 	  OU::formatAdd(assy,
 			"  <external name='%s_%s' instance='%s' port='%s' "
 			"index='%zu' count='%zu'/>\n",
-			(*dii).name(), p.name(),
-			(*dii).name(), p.name(),
+			(*dii).cname(), p.name(),
+			(*dii).cname(), p.name(),
 			first, unconnected);
       }
     }
@@ -468,7 +468,8 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
       if (i->worker->m_type != Worker::Platform)
 	OU::format(s->m_name, "%s_%s", i->name, (**si).m_name.c_str());
       m_signals.push_back(s);
-      m_sigmap[s->name()] = s;
+      m_sigmap[s->cname()] = s;
+      ocpiDebug("Externalizing device signal '%s' for device '%s'", s->cname(), i->worker->m_implName);
     }
   }
 }

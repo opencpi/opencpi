@@ -45,7 +45,6 @@
 
 #ifndef OCPI_POSIX_FILEMAPPING_SERVICES_H_
 #define OCPI_POSIX_FILEMAPPING_SERVICES_H_
-
 #include <inttypes.h>
 #include <string>
 #include <cstdio>

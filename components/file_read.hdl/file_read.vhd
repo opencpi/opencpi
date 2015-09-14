@@ -35,7 +35,7 @@ architecture rtl of file_read_worker is
   -- combi indication that we are giving to output port in the current cycle
   signal giving            : boolean;
 begin
-   ctl_out.finished          <= to_bool(finished_r);
+   ctl_out.finished          <= to_bool(finished_r and not ready_r);
    props_out.cwd             <= cwd;
    props_out.bytesRead       <= bytesRead_r;
    props_out.messageswritten <= messagesWritten_r;
@@ -105,7 +105,7 @@ begin
          bad_r             <= false;
          messagesWritten_r <= (others => '0');
          bytesRead_r       <= (others => '0');
-       elsif its(ctl_in.is_operating) and not finished_r then    
+       elsif its(ctl_in.is_operating) and (not finished_r or ready_r) then
          if giving and eom_r then
            ready_r <= false;
          end if;
@@ -114,6 +114,7 @@ begin
            open_file(data_file, cwd, props_in.fileName, read_mode);
            opcode_r <= props_in.opcode;
            init_r <= true;
+         elsif finished_r then
          elsif bytesLeft_r = 0 and not som_next_r then
            -- between messages - see if we can start one
            if endfile(data_file) then

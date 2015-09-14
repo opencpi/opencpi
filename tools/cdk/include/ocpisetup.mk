@@ -21,9 +21,14 @@ ifneq ($(realpath $(OCPI_CDK_DIR)/ocpisetup.mk),$(realpath $(OcpiThisFile)))
 $(error Inconsistent usage of this file ($(OcpiThisFile)) vs. OCPI_CDK_DIR ($(OCPI_CDK_DIR)))
 endif
 endif
-#export OCPI_RUNTIME_SYSTEM:=$(shell $(OCPI_CDK_DIR)/scripts/showRuntimeHost)
-export OCPI_LIB_DIR:=$(OCPI_CDK_DIR)/lib/$(OCPI_TARGET_HOST)
-export OCPI_BIN_DIR:=$(OCPI_CDK_DIR)/bin/$(OCPI_TARGET_HOST)
+ifndef OCPI_TARGET_DIR
+ ifeq ($(origin OCPI_TARGET_MODE),undefined)
+   export OCPI_TARGET_MODE:=$(if $(filter 1,$(OCPI_BUILD_SHARED_LIBRARIES)),d,s)$(if $(filter 1,$(OCPI_DEBUG)),d,o)
+ endif
+ export OCPI_TARGET_DIR=$(OCPI_TARGET_HOST)$(and $(OCPI_TARGET_MODE),/$(OCPI_TARGET_MODE))
+endif
+export OCPI_LIB_DIR:=$(OCPI_CDK_DIR)/lib/$(OCPI_TARGET_DIR)
+export OCPI_BIN_DIR:=$(OCPI_CDK_DIR)/bin/$(OCPI_TARGET_DIR)
 export OCPI_INC_DIR:=$(OCPI_CDK_DIR)/include
 ifneq ($(findstring macos,$(OCPI_TARGET_OS)),)
 OcpiLibraryPathEnv=DYLD_LIBRARY_PATH
@@ -50,7 +55,7 @@ endif
 export OCPI_SET_LIB_PATH=$(OcpiLibraryPathEnv)=$$$(OcpiLibraryPathEnv):$(OCPI_LIB_DIR)
 #$(info export OCPI_SET_LIB_PATH=$(OCPI_SET_LIB_PATH))
 # Note most of these are just required for static linking
-export OCPI_API_LIBS=application rcc hdl container library transport rdma_driver_interface rdma_drivers rdma_utils rdma_smb util  msg_driver_interface os
+export OCPI_API_LIBS=application container library transport rdma_driver_interface rdma_utils rdma_smb util  msg_driver_interface os
 export OCPI_TRANSPORT_LIBS=rdma_drivers util  msg_driver_interface  msg_drivers
 #$(info export OCPI_API_LIBS=$(OCPI_API_LIBS))
 
@@ -75,8 +80,6 @@ endif
 ifeq ($(origin OCPI_SUDO),undefined)
 OCPI_SUDO=sudo -E
 endif
-OCPI_TARGET_DIR=target-$(OCPI_TARGET_HOST)
-
 ifeq ($(OCPI_CROSS_HOST),)
 CC = gcc
 CXX = c++
@@ -87,8 +90,11 @@ CXX = $(OCPI_CROSS_BUILD_BIN_DIR)/$(OCPI_CROSS_HOST)-c++
 LD = $(OCPI_CROSS_BUILD_BIN_DIR)/$(OCPI_CROSS_HOST)-c++
 AR = $(OCPI_CROSS_BUILD_BIN_DIR)/$(OCPI_CROSS_HOST)-ar
 endif
+ifndef OCPI_PREREQUISITES_INSTALL_DIR
+  export OCPI_PREREQUISITES_INSTALL_DIR:=/opt/opencpi/prerequisites
+endif
 
 all:
 $(OCPI_TARGET_DIR):
-	mkdir $@
+	mkdir -p $@
 

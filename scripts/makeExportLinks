@@ -1,0 +1,75 @@
+#!/bin/sh
+
+# This script makes the symlinks in a target bin directory and for a target
+# lib directory.
+
+if test $# != 1; then
+  echo This script creates symbolic links for a given target platform.
+  echo The first '(and only)' argument is the target string, like linux-c6-x86_64 or linux-zynq-arm
+  echo It replaces all existing links that it is '(re)'creating, but does not remove any others.
+  exit 1
+fi
+
+if test "$OCPI_BASE_DIR" = ""; then
+  echo The OCPI_BASE_DIR environment variable must be set to run this script
+  exit 1
+fi
+
+D=$OCPI_BASE_DIR/tools/cdk/export/bin
+T=${1/target-}
+# This extra "up" is when using target mode
+U=${OCPI_TARGET_MODE:+../}
+echo Creating links for target: $T in directory $D/$T
+mkdir -p $D/$T
+set -e
+cd $D/$T
+for t in \
+   tools/astyle/astyle \
+   tools/ocpigen/ocpigen \
+   runtime/hdl-support/nft \
+   runtime/hdl-support/ocfrp_check \
+   runtime/hdl-support/ocpihdl \
+   runtime/ocl/ocpiocl \
+   runtime/application/ocpirun \
+   application/ocpiserve \
+   runtime/hdl-support/testRpl \
+   runtime/hdl-support/ocpizynq \
+   ; do
+  b=$(basename $t)
+  d=$(dirname $t)
+  f=${U}../../../../../$d/target-$T/$b
+  # echo b=$b d=$d f=$f
+  if test -L $b; then
+    L=$(ls -l $b|sed 's/^.*-> *//')
+    # echo L=$L
+    if test "$L" = "$f"; then
+      echo symlink to $f already correct.
+      continue
+    else
+      echo symlink to $f wrong \(was $L\), deleting it.
+      rm $b
+    fi
+  fi
+  if test -x $f; then
+     ln -s -f -v $f
+  fi
+done
+
+D=$OCPI_BASE_DIR/tools/cdk/export/lib
+echo Creating links for target: $T in the export/lib directory.
+mkdir -p $D
+cd $D
+# Strip off the mode here
+T=${T/\/*}
+f=../../../../lib/target-$T
+if test -L $T; then
+  L=$(ls -l $T|sed 's/^.*-> *//')
+  if test "$L" = "$f"; then
+    echo symlink to $f already correct.
+    exit 0
+  else
+    echo symlink to $f wrong \(was $L\), deleting it.
+    rm $T
+  fi
+fi
+ln -s -f -v -n $f $T

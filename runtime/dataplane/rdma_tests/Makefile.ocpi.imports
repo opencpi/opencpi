@@ -42,12 +42,12 @@ TRANSFER_DRIVERS +=  $(TX_TRANSFER_LIBS)
 ALLINC += $(OCPIOS_EXPORTS) \
  $(UTIL_EXPORTS) \
  $(DATA_TRANSFER_EXPORTS) $(DATA_TRANSPORT_EXPORTS) \
- $(CONTAINER_EXPORTS) /opt/mercury/include/
+ $(CONTAINER_EXPORTS)
 
 DYNOBJS += \
-	../../../../../runtime/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPioXfer.obj \
-	../../../../../runtime/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDmaXfer.obj \
-	../../../../../runtime/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtSocketsXfer.obj 
+	../../../../../runtime/dataplane/rdma_drivers/pio/$(OCPI_OUT_DIR)/DtPioXfer.obj \
+	../../../../../runtime/dataplane/rdma_drivers/dma/$(OCPI_OUT_DIR)/DtDmaXfer.obj \
+	../../../../../runtime/dataplane/rdma_drivers/sockets/$(OCPI_OUT_DIR)/DtSocketsXfer.obj 
 
 ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
 	SYSLIBS += dl 
@@ -57,7 +57,7 @@ endif
 
 
 ifeq ($(OCPI_HAVE_IBVERBS),1)
-DYNOBJS += ../../../../../runtime/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtOfedXfer.obj 
+DYNOBJS += ../../../../../runtime/dataplane/rdma_drivers/ofed/$(OCPI_OUT_DIR)/DtOfedXfer.obj 
 SYSLIBS += ibverbs	
 endif
 
