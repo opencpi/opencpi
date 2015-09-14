@@ -410,8 +410,9 @@ namespace OCPI {
       for (unsigned n = 0; (ac = OA::ContainerManager::get(n)); n++) {
 	OC::Container &c = *static_cast<OC::Container *>(ac);
 	size_t inserted =
-	  snprintf(cp, length, "%s|%s|%s|%s|%s\n", c.name().c_str(), c.model().c_str(),
-		   c.os().c_str(), c.osVersion().c_str(), c.platform().c_str());
+	  snprintf(cp, length, "%s|%s|%s|%s|%s|%c\n", c.name().c_str(), c.model().c_str(),
+		   c.os().c_str(), c.osVersion().c_str(), c.platform().c_str(),
+		   c.dynamic() ? '1' : '0');
 	if (inserted >= length) {
 	  OU::format(error, "Too many containers, discovery buffer would overflow");
 	  return true;

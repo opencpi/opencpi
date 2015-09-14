@@ -931,7 +931,7 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
     m_staticPattern(NULL), m_defaultDataWidth(-1), m_language(NoLanguage), m_assembly(NULL),
     m_slave(NULL), m_emulate(NULL), m_library(NULL), m_outer(false), m_debugProp(NULL), 
     m_instancePVs(ipvs), m_mkFile(NULL), m_xmlFile(NULL), m_outDir(NULL), m_paramConfig(NULL),
-    m_scalable(false), m_parent(parent)
+  m_scalable(false), m_parent(parent), m_maxLevel(0), m_dynamic(false)
 {
   const char *name = ezxml_name(xml);
   // FIXME: make HdlWorker and RccWorker classes  etc.
@@ -1078,7 +1078,8 @@ emitArtXML(const char *wksFile) {
   if (os)         fprintf(f, " os=\"%s\"",        os);
   if (os_version) fprintf(f, " osVersion=\"%s\"", os_version);
   if (platform)   fprintf(f, " platform=\"%s\"",  platform);
-  if (device)     fprintf(f, " device=\"%s\"",    device);
+  if (device)     fprintf(f, " device=\"%s\"", device);
+  if (m_dynamic)  fprintf(f, " dynamic='1'");
   fprintf(f, ">\n");
   emitXmlWorkers(f);
   emitXmlInstances(f);

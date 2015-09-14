@@ -68,7 +68,7 @@ struct Signal {
   const char *m_type;
   Signal();
   const char * parse(ezxml_t);
-  const char *name() const { return m_name.c_str(); }
+  const char *cname() const { return m_name.c_str(); }
   Signal *reverse();
   void emitConnectionSignal(FILE *f, const char *iname, const char *pattern, bool single);
   static void emitConnectionSignals(FILE *f, const char *iname, Signals &signals);

@@ -55,7 +55,8 @@ ALLLIBS += $(CONTAINER_LIBS) \
 
 $(eval $(ForceDynamic))
 
-SYSLIBS += $(OCPI_LZMA_DIR)/$(OCPI_TARGET_HOST)/lib/lzma
+PREQLIBS+=lzma
+#SYSLIBS += $(OCPI_LZMA_DIR)/$(OCPI_TARGET_HOST)/lib/lzma
 ifdef NEVER
 
 EXTRAOBJS += ../../linux-bin/HdlContainer.obj 

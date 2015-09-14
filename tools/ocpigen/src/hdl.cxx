@@ -92,7 +92,11 @@ parseHdlImpl(const char *package) {
     return err;
   if (dwFound)
     m_defaultDataWidth = (int)dw; // override the -1 default if set
-  if (!m_noControl) {
+  if (m_noControl) {
+    // Devices always get wci reset/control
+    if (m_isDevice)
+      addWciClockReset();
+  } else {
     if (!createPort<WciPort>(*this, xctl, NULL, -1, err))
       return err;
     if ((err = OE::getBoolean(m_xml, "RawProperties", &m_ctl.rawProperties)))
@@ -213,7 +217,7 @@ parseHdlImpl(const char *package) {
   if (emulate) {
     if (m_ports.size() > 1 || m_ports.size() == 1 && m_ports[0]->type != WCIPort)
       return OU::esprintf("Device emulation workers can't have any ports");
-    addWciClockReset();
+    //    addWciClockReset();
     if (ezxml_cchild(m_xml, "signal") || ezxml_cchild(m_xml, "signals"))
       return OU::esprintf("Can't have both \"emulate\" attributed and \"signal\" elements");
     const char *dot = strrchr(emulate, '.');

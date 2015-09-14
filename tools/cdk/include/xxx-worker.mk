@@ -245,7 +245,7 @@ define WkrMakeObject
   $(call WkrObject,$1,$2,$3): \
      $1 $(ImplHeaderFiles)\
      | $(call WkrTargetDir,$2,$3)
-	$(AT)echo Compiling $$< to create $$@
+	$(AT)echo Compiling $$< for target $2, configuration $3
 	$(AT)$(Compile_$(subst .,,$(suffix $1)))
 
 endef
@@ -289,6 +289,7 @@ define WkrDoTargetConfig
 	fi
     # Make sure we actually make the final binary for this target
     $(call OcpiDbg,Before all: WkrBinary is "$(call WkrBinary,$1,$2)")
+    $(eval $(call $(CapModel)WkrBinary,$1,$2))
     all: $(call WkrBinary,$1,$2)
   endif
 
@@ -332,6 +333,7 @@ define DoLink
                $$(call MakeSymLink,$(call WkrTargetDir,$1,$4)/$(call RmRv,$(basename $2)).cores,$(LibDir)/$1);\
              fi
   endif
+  $(eval $(call $(CapModel)WkrBinaryLink,$1,$2,$3,$4,$5))
   $(LibDir)/$1/$3: $(call WkrTargetDir,$1,$4)/$2 $(and $(filter hdl,$(Model)),$(LibDir)/$1/$(basename $3)-generics.vhd) | $(LibDir)/$1
 	$(AT)echo Creating link to export worker binary: $(LibDir)/$1/$3 '->' $(call WkrTargetDir,$1,$4)/$2
 	$(AT)$$(call MakeSymLink2,$(call WkrTargetDir,$1,$4)/$2,$(LibDir)/$1,$3)
@@ -387,15 +389,13 @@ ifneq ($(wildcard $(Worker).build),)
   $(LibDir)/$(Worker).build: $(Worker).build | $(LibDir)
 	$(AT)$(call MakeSymLink,$(Worker).build,$(LibDir))
 else
-  ifneq ($(wildcard $(GeneratedDir)/$(Worker).build),)
-    LibLinks+=$(LibDir)/$(Worker).build
-    $(LibDir)/$(Worker).build: $(GeneratedDir)/$(Worker).build | $(LibDir)
+  LibLinks+=$(LibDir)/$(Worker).build
+  $(LibDir)/$(Worker).build: $(GeneratedDir)/$(Worker).build | $(LibDir)
 	$(AT)$(call MakeSymLink,$(GeneratedDir)/$(Worker).build,$(LibDir))
-  endif
 endif
 
 $(call OcpiDbgVar,LibLinks,Before all:)
-links: $(LibLinks)
+links: $$(LibLinks)
 all: links
 $(LibDir) $(LibDirs):
 	$(AT)mkdir -p $@

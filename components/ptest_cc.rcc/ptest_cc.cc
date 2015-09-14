@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * THIS FILE WAS ORIGINALLY GENERATED ON Tue Sep  8 16:59:19 2015 EDT
+=======
+ * THIS FILE WAS ORIGINALLY GENERATED ON Thu Sep 10 10:28:53 2015 EDT
+>>>>>>> 0355dbaccdd79aa08d0bd2d0594c84e9fc732b18
  * BASED ON THE FILE: ptest_cc.xml
  * YOU *ARE* EXPECTED TO EDIT IT
  *
@@ -13,7 +17,7 @@ using namespace Ptest_ccWorkerTypes;
 
 class Ptest_ccWorker : public Ptest_ccWorkerBase {
   RCCResult run(bool /*timedout*/) {
-    return RCC_ADVANCE;
+    return RCC_DONE;
   }
 };
 

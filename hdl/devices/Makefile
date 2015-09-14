@@ -54,6 +54,7 @@ Workers = \
 	adcx.hdl \
 	adc.rcc \
 	dac.rcc \
+        cstest.hdl \
 	icap.hdl \
 	flash.hdl \
 	gbe.hdl \

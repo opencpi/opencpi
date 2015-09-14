@@ -203,6 +203,7 @@ namespace OCPI {
       if ((cp = ezxml_cattr(x, "tool"))) m_tool = cp;
       if ((cp = ezxml_cattr(x, "toolVersion"))) m_toolVersion = cp;
       if ((cp = ezxml_cattr(x, "uuid"))) m_uuid = cp;
+      OE::getBoolean(x, "dynamic", &m_dynamic);
       validate();
     }
 

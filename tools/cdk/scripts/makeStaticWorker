@@ -1,0 +1,36 @@
+#!/bin/sh
+
+if test "$#" = 0; then
+  echo This script takes a dynamic RCC worker artifact as input and creates one
+  echo suitable for being dynamicly loaded into a statically linked executable.
+  echo Usage is:  makeStaticWorker infile [lib1...]
+  echo The first argument is the input file and the rest of the arguments are the names
+  echo of the needed ocpi libraries will not be required of the output. The output is a file
+  echo whose name is the same as the input with a _s suffix added BEFORE the file extension.
+  echo Typically this means:  foo.so as input creates foo_s.so
+  exit 1
+fi
+T1=/tmp/makeStaticWorker$$.1
+T2=/tmp/makeStaticWorker$$.2
+set -e
+OUT=`dirname $1`/`basename $1 .so`_s.so
+ocpixml get $1 > $T1
+ocpixml strip $1 $T2
+X=1
+if ! grep '<artifact.*dynamic=.1' $T1 > /dev/null; then
+  echo The file \"$1\" does not contain XML from an RCC worker.
+elif file $T2 | grep ELF > /dev/null; then
+  shift
+ for i in $*; do PARGS="$PARGS --remove-needed $i"; done
+ $OCPI_PREREQUISITES_INSTALL_DIR/patchelf/$OCPI_TOOL_HOST/bin/patchelf $PARGS $T2
+ sed "s/\(<artifact.*dynamic='\)./\10/" $T1 | ocpixml add $T2 -
+ cp $T2 $OUT
+ chmod a+x $OUT
+ X=0
+else
+ echo "Input file $1 is non-existent or not readable or not a suitable (ELF) file."
+fi
+rm -f $T1 $T2
+exit $X
+
+

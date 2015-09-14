@@ -66,7 +66,7 @@ endif
 
 .PHONY: executables
 
-all: executables
+#all: executables
 executables: generated objdir $(EXECUTABLES)
 clean:: cleanup
 	rm -f $(ALLEXECUTABLES)
@@ -90,24 +90,21 @@ endif
 endif
 
 ifeq ($(OCPI_OS),winnt)
-ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
-$(EXECUTABLES): $(OBJDIR)/%.exe: $(OBJDIR)/%_main.exe
-$(ORIGEXECUTABLES): $(OBJDIR)/%.exe: $(OBJDIR)/%.obj $(OTHEROBJS) $(wildcard $(LIBDIR)/*.dll) \
-	$(join $(addsuffix $(OCPI_OUT_DIR)/,$(dir $(ALLLIBS))),$(addsuffix .dll,$(notdir $(ALLLIBS))))
-else
-$(EXECUTABLES): $(OBJDIR)/%.exe: $(OBJDIR)/%_main.exe
-$(ORIGEXECUTABLES): $(OBJDIR)/%.exe: $(OBJDIR)/%.obj $(OTHEROBJS) $(wildcard $(LIBDIR)/*.lib) \
-	$(join $(addsuffix $(OCPI_OUT_DIR)/,$(dir $(ALLLIBS))),$(addsuffix .lib,$(notdir $(ALLLIBS))))
-endif
 else
 ifneq ($(filter linux macos,$(OCPI_OS)),)
 
+# $(OTHEROBJS) \
+
 $(EXECUTABLES): $(OBJDIR)/%: $(OBJDIR)/%_main.exe
-$(ORIGEXECUTABLES): $(OBJDIR)/%.exe: $(OBJDIR)/%.obj $(OTHEROBJS) \
-                    $(wildcard $(LIBDIR)/lib*.$(LIBDEPSUFFIX)) \
+$(infox ZZZZZZZZZ:$(EXPORTSHLIB))
+$(infox XYXYX:$(if $(filter 0,$(OCPI_BUILD_SHARED_LIBRARIES)),$(EXPORTLIB),$(EXPORTSHLIB)))
+$(ORIGEXECUTABLES): $(OBJDIR)/%.exe: $(OBJDIR)/%.obj \
+		    $(if $(filter 0,$(OCPI_BUILD_SHARED_LIBRARIES)),$(EXPORTLIB),$(EXPORTSHLIB)) \
                     $(foreach l,$(ALLLIBS),$(call LIBDEP,$l)) \
+		    $(foreach p,$(PREQLIBS),$(call PREQDEP,$p)) \
                     $(DYNOBJS)
 
+#                    $(wildcard $(LIBDIR)/lib*.$(LIBDEPSUFFIX)) \
 else
 ifeq ($(OCPI_OS),vxworksdkm)
 

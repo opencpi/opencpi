@@ -431,18 +431,20 @@ doPrev(FILE *f, std::string &last, std::string &comment, const char *myComment) 
   comment = "";
 }
 
+// single means that this is a signal that is not a vector at all.
+// isSingle means that the signal is mapped an individual part of a vector.
 static void
-mapOneSignal(FILE *f, Signal &s, unsigned n, bool isWhole, const char *mapped,
+mapOneSignal(FILE *f, Signal &s, unsigned n, bool isSingle, const char *mapped,
 	     const char *indent, const char *pattern, bool single) {
   std::string name, map;
-  OU::format(name, pattern, s.name());
+  OU::format(name, pattern, s.cname());
   if (*mapped)
     OU::format(map, pattern, mapped);
-  if (s.m_width && isWhole && !single)
+  if (s.m_width && isSingle && !single)
     OU::formatAdd(name, "(%u)", n);
   fprintf(f, "%s%s => %s", indent, name.c_str(),
 	  *mapped ? map.c_str() : (s.m_direction == Signal::IN ?
-				   (isWhole || !s.m_width ? "'0'" : "(others => '0')") :
+				   (isSingle || !s.m_width || single ? "'0'" : "(others => '0')") :
 				   "open"));
 }
 
@@ -581,8 +583,8 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
     for (unsigned n = 0; s.m_width ? n < s.m_width : n == 0; n++) {
       bool isSingle;
       const char *mappedExt = i->m_extmap.findSignal(s, n, isSingle);
-      ocpiDebug("Instance %s worker %s signal %s mapped to %s",
-		i->name, i->worker->m_implName, s.name(), mappedExt ? mappedExt : "<none>");
+      ocpiDebug("Instance %s worker %s signal %s(%u) mapped to %s single %d", i->name,
+		i->worker->m_implName, s.cname(), n, mappedExt ? mappedExt : "<none>", isSingle);
       if (mappedExt) {
 	// mappedExt might actually be an empty string: ""
 	if (!anyMapped)
@@ -612,7 +614,7 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
 	if (*mappedExt) {
 	  Signal *es = m_assyWorker.m_sigmap[mappedExt];
 	  assert(es);
-	  m_assyWorker.recordSignalConnection(*es, (prefix + s.m_name).c_str());
+	  m_assyWorker.recordSignalConnection(*es, (prefix + s.cname()).c_str());
 	}
 	if (!isSingle)
 	  break;
@@ -623,31 +625,31 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
       continue;
     doPrev(f, last, comment, myComment());
     if (s.m_differential) {
-      OU::format(name, s.m_pos.c_str(), s.name());
+      OU::format(name, s.m_pos.c_str(), s.cname());
       if (lang == VHDL)
 	fprintf(f, "%s%s => %s%s,\n", any ? indent : "",
 		name.c_str(), prefix.c_str(), name.c_str());
-      OU::format(name, s.m_neg.c_str(), s.name());
+      OU::format(name, s.m_neg.c_str(), s.cname());
       if (lang == VHDL)
 	fprintf(f, "%s%s => %s%s", any ? indent : "",
 		name.c_str(), prefix.c_str(), name.c_str());
     } else if (s.m_direction == Signal::INOUT || s.m_direction == Signal::OUTIN) {
-      OU::format(name, s.m_in.c_str(), s.name());
+      OU::format(name, s.m_in.c_str(), s.cname());
       fprintf(f, "%s%s => %s%s,\n", any ? indent : "",
 	      name.c_str(), prefix.c_str(), name.c_str());
-      OU::format(name, s.m_out.c_str(), s.name());
+      OU::format(name, s.m_out.c_str(), s.cname());
       fprintf(f, "%s%s => %s%s,\n", any ? indent : "",
 	      name.c_str(), prefix.c_str(), name.c_str());
-      OU::format(name, s.m_oe.c_str(), s.name());
+      OU::format(name, s.m_oe.c_str(), s.cname());
       fprintf(f, "%s%s => %s%s", any ? indent : "",
 	      name.c_str(), prefix.c_str(), name.c_str());
     } else if (lang == VHDL)
       fprintf(f, "%s%s => %s%s", any ? indent : "",
-	      s.name(), prefix.c_str(), s.name());
+	      s.cname(), prefix.c_str(), s.cname());
     if (!i->m_emulated && !i->worker->m_emulate && !anyMapped) {
-      Signal *es = m_assyWorker.m_sigmap[(prefix + s.m_name).c_str()];
+      Signal *es = m_assyWorker.m_sigmap[(prefix + s.cname()).c_str()];
       assert(es);
-      m_assyWorker.recordSignalConnection(*es, (prefix + s.m_name).c_str());
+      m_assyWorker.recordSignalConnection(*es, (prefix + s.cname()).c_str());
     }
   }
   fprintf(f, ");%s%s\n", comment.size() ? " // " : "", comment.c_str());

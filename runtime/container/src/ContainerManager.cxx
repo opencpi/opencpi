@@ -32,8 +32,12 @@
  */
 #include "ContainerManager.h"
 #include "ContainerLauncher.h"
-#include "ContainerPort.h"               // just for linkage hooks
+#include "ContainerPort.h"          // just for linkage hooks
 #include "DtSharedMemoryInternal.h" // just for linkage hooks
+#include "OcpiUuid.h"               // just for linkage hooks
+#include "DtMsgDriver.h"            // just for linkage hooks
+#include "OcpiOsSocket.h"           // just for linkage hooks
+#include "lzma.h"                   // just for linkage hooks
 namespace OCPI {
   namespace Container {
     namespace OA = OCPI::API;
@@ -128,7 +132,10 @@ namespace OCPI {
 	    cb.foundContainer(*c);
       return false;
     }
-
+    bool Manager::
+    dynamic() {
+      return OCPI_DYNAMIC;
+    }
     Driver::Driver(const char *name) 
       : OD::DriverType<Manager,Driver>(name, *this) {
     }
@@ -162,6 +169,14 @@ namespace OCPI {
   }
 }
 namespace DataTransfer {
-  void dumb2(EndPoint &loc) { createHostSmemServices(loc); }
+  intptr_t dumb2(EndPoint &loc) {
+    OCPI::Util::Uuid uuid;
+    OCPI::Util::UuidString us;
+    OCPI::Util::uuid2string(uuid, us);
+    createHostSmemServices(loc);
+    Msg::XferFactoryManager::getFactoryManager();
+    OCPI::OS::Socket s;
+    return (intptr_t)&lzma_stream_buffer_decode;
+  }
 }
 

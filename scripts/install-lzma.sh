@@ -39,7 +39,7 @@ echo Building lzma in `pwd` for $OCPI_TARGET_HOST
 if test "$OCPI_CROSS_HOST" != ""; then
  export PATH=$OCPI_CROSS_BUILD_BIN_DIR:$PATH
  crossConfig="CC=$OCPI_CROSS_HOST-gcc CXX=$OCPI_CROSS_HOST-g++ --host=$OCPI_CROSS_HOST"
- SHARED=no
+# SHARED=no
 fi
 ../configure  \
   $crossConfig \

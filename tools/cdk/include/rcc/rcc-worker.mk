@@ -90,10 +90,33 @@ $(foreach l,$(RccLibrariesInternal) $(Libraries),\
             $(and $(wildcard $p$(SOEXT_$(call RccOs,))),-L $(dir $l)$(RccTarget) -l $(notdir $l)),\
             $(error No RCC library found for $l, tried $p$(AREXT_$(call RccOs,)) and $p$(SOEXT_$(call RccOs,))))), \
     $(and $(filter 1,$(OCPI_BUILD_SHARED_LIBRARIES)),-l ocpi_$l))) \
-  -L $(OCPI_CDK_DIR)/lib/$$(RccTarget)$(and $(OCPI_TARGET_MODE),/d$(if $(filter 1,$(OCPI_DEBUG)),d,o)) \
-  $(and $(OCPI_TARGET_MODE),$(filter 0,$(OCPI_BUILD_SHARED_LIBRARIES)), \
-     && $(PatchElf) $(foreach l,$(RccLibrariesInternal), \
-                                --remove-needed libocpi_$l$(SOEXT_$(call RccOs,))) $$@)
+  -L $(OCPI_CDK_DIR)/lib/$$(RccTarget)$(and $(OCPI_TARGET_MODE),/d$(if $(filter 1,$(OCPI_DEBUG)),d,o))
+
+# $1 is target, $2 is configuration
+RccStaticName=$(WkrBinaryName)_s$(BF)
+RccStaticPath=$(call WkrTargetDir,$1,$2)/$(RccStaticName)
+define RccWkrBinary
+  $$(infox RccWkrBinary:$1:$2:$$(call RccOs,))
+  ifeq ($$(call RccOs,),linux)
+    $(call RccStaticPath,$1,$2): $(call WkrBinary,$1,$2)
+	$(AT)$(OCPI_CDK_DIR)/scripts/makeStaticWorker $$< \
+	  $$(foreach l,$$(RccLibrariesInternal),libocpi_$$l$$(BF))
+
+    all: $(call RccStaticPath,$1,$2)
+  endif
+endef
+
+define RccWkrBinaryLink
+  $$(infox RccWkrBinaryLink:$1:$2:$3:$4:$5 name:$$(call RccStaticName,$1,$4):$(LibDir)/$1/$5_s$(BF))
+  ifeq ($$(call RccOs,),linux)
+    $(LibDir)/$1/$5_s$(BF): $(call RccStaticPath,$1,$4) | $(LibDir)/$1
+	$(AT)echo Exporting worker binary for static executables: $$@ '->' $$<
+	$(AT)$$(call MakeSymLink2,$$<,$$(dir $$@),$$(notdir $$@))
+    LibLinks+=$(LibDir)/$1/$5_s$(BF)
+  endif
+endef
+
+
 CompilerWarnings= -Wall -Wextra
 CompilerDebugFlags=-g
 CompilerOptimizeFlags=-O

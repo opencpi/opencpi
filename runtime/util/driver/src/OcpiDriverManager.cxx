@@ -78,6 +78,14 @@ namespace OCPI {
     void ManagerManager::configure(const char *file) {
       getManagerManager()->configureOnce(file);
     }
+    static bool
+    checkLibPath(std::string &path, std::string &dir, const char *name, bool mode, bool debug) {
+      OU::format(path, "%s%s%s/libocpi_%s%s.%s", dir.c_str(),
+		 mode ? "/d" : "", mode ? (debug ? "d" : "o") : "",
+		 name, OCPI_DYNAMIC ? "" : "_s", OS::LoadableModule::suffix());
+      return OS::FileSystem::exists(path.c_str());
+    }
+
     // This is NOT a static method
     void ManagerManager::configureOnce(const char *file) {
       if (m_configured)
@@ -145,7 +153,7 @@ namespace OCPI {
 		       OCPI_CPP_STRINGIFY(OCPI_OS) + strlen("OCPI"),
 		       OCPI_CPP_STRINGIFY(OCPI_OS_VERSION), OCPI_CPP_STRINGIFY(OCPI_PLATFORM));
 	    if (!OS::FileSystem::exists(libDir)) {
-	      OU::format(err, "when loading the \"%s\" \"%s\" driver, \"%s\" does not exist",
+	      OU::format(err, "when loading the \"%s\" \"%s\" driver, directory \"%s\" does not exist",
 			 d->name, m->name().c_str(), libDir.c_str());
 	      break;
 	    }
@@ -154,20 +162,13 @@ namespace OCPI {
 	    // 2. The driver built with modes that is not the way we were built
 	    // 3. The driver built without modes
 	    std::string lib;
-	    OU::format(lib, "%s/d%c/libocpi_%s.%s", libDir.c_str(), OCPI_DEBUG ? 'd' : 'o',
-		       ezxml_name(d), OS::LoadableModule::suffix());
-	    if (!OS::FileSystem::exists(lib)) {
-	      OU::format(lib, "%s/d%c/libocpi_%s.%s", libDir.c_str(), OCPI_DEBUG ? 'o' : 'd',
-			 ezxml_name(d), OS::LoadableModule::suffix());
-	      if (!OS::FileSystem::exists(lib)) {
-		OU::format(lib, "%s/libocpi_%s.%s", libDir.c_str(), ezxml_name(d),
-			   OS::LoadableModule::suffix());
-		if (!OS::FileSystem::exists(lib)) {
-		  OU::format(err, "when loading the \"%s\" \"%s\" driver, \"%s\" does not exist",
-			     d->name, m->name().c_str(), lib.c_str());
-		  break;
-		}
-	      }
+	    if (!checkLibPath(lib, libDir, ezxml_name(d), true, OCPI_DEBUG) &&
+		!checkLibPath(lib, libDir, ezxml_name(d), true, !OCPI_DEBUG) &&
+		!checkLibPath(lib, libDir, ezxml_name(d), false, OCPI_DEBUG)) {
+	      OU::format(err,
+			 "could not find the \"%s\" \"%s\" driver in directory \"%s\", e.g.: %s",
+			 d->name, m->name().c_str(), libDir.c_str(), lib.c_str());
+	      break;
 	    }
 	    ocpiInfo("Loading the \"%s\" \"%s\" driver from \"%s\"",
 		     d->name, m->name().c_str(), lib.c_str());
