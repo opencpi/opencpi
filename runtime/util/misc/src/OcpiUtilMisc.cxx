@@ -720,5 +720,24 @@ decodeDescriptor(const char *info, std::string &s) {
   } while (0);
   throw Error("Invalid Port Descriptor from Container Server in: \"%s\"", info);
 }
+const char *
+baseName(const char *path, std::string &buf) {
+  buf.clear();
+  if (path) {
+    const char *end = path + strlen(path);
+    while (end > path && end[-1] == '/')
+      end--;
+    if (end == path)
+      return buf.c_str();
+    const char *slash = strrchr(path, '/');
+    slash = slash ? slash + 1 : path;
+    const char *dot = strrchr(slash, '.');
+    if (!dot)
+      dot = end;
+    buf.assign(slash, dot - slash);
+  } else
+    buf.clear();
+  return buf.c_str();
+}
 }
 }

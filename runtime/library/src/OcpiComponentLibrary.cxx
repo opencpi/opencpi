@@ -10,13 +10,13 @@
 #include "OcpiLibraryManager.h"
 #include "OcpiComponentLibrary.h"
 
-// This file is the (loadable) driver for ocpi component libraries.
+// This file is the (loadable) driver for ocpi component libraries, each of which is
+// rooted in a file system directory, which becomes its name
 
 namespace OL = OCPI::Library;
 namespace OA = OCPI::API;
 namespace OU = OCPI::Util;
 namespace OS = OCPI::OS;
-namespace OX = OCPI::Util::EzXml;
 namespace OCPI {
   namespace Library {
     namespace CompLib {
@@ -27,19 +27,14 @@ namespace OCPI {
       class Artifact
 	: public OL::ArtifactBase<Library, Artifact>, OU::EzXml::Doc {
 	friend class Library;
-	char *m_metadata;
       public:
 	Artifact(Library &lib, const char *name, const OA::PValue *);
-	~Artifact() {
-	  // NO!!!  The inherited class in fact takes responsibility for the
-	  // char * string passed to the "parse" method, and uses deletep[] on it!
-	  // delete [] m_metadata;
-	}
+	~Artifact() {}
       };
 	  
       class Driver;
 
-      Library *g_firstLibrary;
+      //      Library *g_firstLibrary;
       // Our concrete library class
       class Library : public OL::LibraryBase<Driver, Library, Artifact> {
 	std::set<OS::FileSystem::FileId> m_file_ids; // unordered set cxx11 is better
@@ -134,20 +129,8 @@ namespace OCPI {
       };
       Artifact::
       Artifact(Library &lib, const char *name, const OA::PValue *)
-	: ArtifactBase<Library,Artifact>(lib, *this, name),
-	  m_metadata(0) {
-	// The returned value must be deleted with delete[];
-	if (!(m_metadata = getMetadata(name, m_mtime, m_length)))
-	  throw OU::Error(OCPI_LOG_DEBUG, "Cannot open or retrieve metadata from file \"%s\"", name);
-	m_xml = OX::Doc::parse(m_metadata);
-	char *xname = ezxml_name(m_xml);
-	if (!xname || strcmp("artifact", xname))
-	  throw OU::Error("invalid metadata in binary/artifact file \"%s\": no <artifact/>", name);
-	const char *uuid = ezxml_cattr(m_xml, "uuid");
-	if (!uuid)
-	  throw OU::Error("no uuid in binary/artifact file \"%s\"", name);
-	lib.registerUuid(uuid, this);
-	ocpiDebug("Artifact file %s has artifact metadata", name);
+	: ArtifactBase<Library,Artifact>(lib, *this, name) {
+	getFileMetaData(name);
       }
       RegisterLibraryDriver<Driver> driver;
     }

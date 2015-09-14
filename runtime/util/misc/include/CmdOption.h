@@ -39,7 +39,7 @@ namespace OCPI {
       Member *m_options;
       bool *m_seen;
       const char **m_defaults;
-      //      Value *m_values;
+      std::vector<std::string> m_names; // names with underscore translated to hyphen
       unsigned m_nOptions;
       std::string m_error;
       const char *m_help;
@@ -47,7 +47,7 @@ namespace OCPI {
       const char *setError(const char *);
       const char *doValue(Member &m, const char *value, const char **&argv);
     public:
-      void usage();
+      int usage(); // will return 1 so caller can return usage()
       const char *setArgv(const char **argv);
       const char **argv() const { return m_argv; }
       std::string &error() { return m_error; }
@@ -91,7 +91,7 @@ namespace {
       assert(val_->m_vt);                                        \
       assert(val_->m_vt->m_isSequence);                          \
       num = val_->m_nElements;                                   \
-      return val_->m_p##t;                                       \
+      return num ? val_->m_p##t : NULL;				 \
     }
     OCPI_OPTIONS
 #undef CMD_OPTION

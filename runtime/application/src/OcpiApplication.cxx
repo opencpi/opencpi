@@ -56,6 +56,11 @@ namespace OCPI {
       : m_assembly(*new OL::Assembly(string, params)), m_apiApplication(app)  {
       init(params);
     }
+    ApplicationI::ApplicationI(Application &app, ezxml_t xml, const char *name,
+			       const PValue *params)
+      : m_assembly(*new OL::Assembly(xml, name, params)), m_apiApplication(app)  {
+      init(params);
+    }
     ApplicationI::ApplicationI(Application &app, OL::Assembly &assy, const PValue *params)
       : m_assembly(assy), m_apiApplication(app) {
       m_assembly++;
@@ -79,8 +84,10 @@ namespace OCPI {
       //      delete [] m_workers;
     }
     unsigned ApplicationI::
-    addContainer(unsigned container) {
-      ocpiAssert(!(m_allMap & (1 << container)));
+    addContainer(unsigned container, bool existOk) {
+      ocpiAssert(existOk || !(m_allMap & (1 << container)));
+      if ((m_allMap & (1 << container)))
+	return m_global2used[container];
       m_usedContainers[m_nContainers] = container;
       m_allMap |= 1 << container;
       m_global2used[container] = m_nContainers;
@@ -88,23 +95,22 @@ namespace OCPI {
     }
 
     /*
-    we made choices during the feasibility analysis, but here we want to add some policy.
+    We made choices during the feasibility analysis, but here we want to add some policy.
     the default allocation will bias toward collocation, so this is basically to 
     spread things out.
-    Since exclusive/bitstream allocations are not really adjustable, we just deal with the others.
-    we haven't remembered ALL deployments, just the "best".
-    we have preferred internally connected impls by scoring them up, which has inherently consolidated then.
+    Since exclusive/bitstream allocations are not really adjustable, we just deal with the
+    others.
+    We haven't remembered ALL deployments, just the "best".
+    We have preferred internally connected impls by scoring them up, which has inherently
+    consolidated then.
     (preferred collocation)
-    so somehow we need to keep the policy while keeping the fixed allocation...
+    So somehow we need to keep the policy while keeping the fixed allocation...
     perhaps we need to record some sort of exclusivity and collocation constraints
-    the def
     */
     // For dynamic instances only, distribute them according to policy
     void ApplicationI::
-    policyMap( Instance * i, CMap & bestMap)
-    {
-      // bestMap is a bitmap of the best availabe containers that the implementation can be mapped to
-      // alliMap is the bitmap of all suitable containers for the implementation
+    policyMap( Instance *i, CMap & bestMap) {
+      // bestMap is a bitmap of best available containers the implementation can be mapped to
       switch ( m_cMapPolicy ) {
 
       case MaxProcessors:
@@ -465,51 +471,14 @@ namespace OCPI {
       }
     }
 
+    // The algorithmic way to figure out a deployment.
     void ApplicationI::
-    init(const PValue * params) {
-      // In order from class definition except for instance-related
+    planDeployment(const PValue *params) {
       m_bookings = new Booking[OC::Manager::s_nContainers];
-      m_properties = NULL;
-      m_nProperties = 0;
-      m_curMap = 0;
-      m_curContainers = 0;
-      m_allMap = 0;
-      m_global2used = new unsigned[OC::Manager::s_nContainers];
-      m_nContainers = 0;
-      m_usedContainers = new unsigned[OC::Manager::s_nContainers];
-      m_containers = NULL;    // allocated when we know how many we are using
-      m_containerApps = NULL; // ditto
-      //      m_workers = NULL;
-      m_doneWorker = NULL;
-      //      m_externalPorts = NULL;
-      //      m_externalNames = NULL;
-      m_cMapPolicy = RoundRobin;
-      m_processors = 0;
-      m_currConn = OC::Manager::s_nContainers - 1;
-      m_launched = false;
-
       // Set the instance map policy
       setPolicy(params);
-
-      bool verbose = false;
-      OU::findBool(params, "verbose", verbose);
-      OU::findBool(params, "hex", m_hex);
-      // Initializations for externals may add instances to the assembly
-      initExternals(params);
-      // Now that we have added any extra instances for external connections, do
-      // instance-related initializations
-      m_nInstances = m_assembly.nInstances();
-      m_instances = new Instance[m_nInstances];
       m_deployments = new Deployment[m_nInstances];
       m_bestDeployments = new Deployment[m_nInstances];
-      // Check that params that reference instances are valid.
-      const char *err;
-      //      checkInstanceParams("property", params, true); done in OU::Assembly
-      //      checkInstanceParams("selection", params); done in OU::Assembly
-      // checkInstanceParams("model", params); done in OL::Assembly
-      // checkInstanceParams("platform", params); done in OL::Assembly
-      if ((err = m_assembly.checkInstanceParams("container", params, false)))
-	throw OU::Error("%s", err);
       // First pass - make sure there are some containers to support some candidate
       // and remember which containers can support which candidates
       Instance *i = m_instances;
@@ -532,7 +501,7 @@ namespace OCPI {
 	  sum |= m_curMap;
 	}
 	if (!sum) {
-	  if (verbose) {
+	  if (m_verbose) {
 	    fprintf(stderr, "No containers were found for deploying instance '%s' (spec '%s').\n"
 		    "The implementations found were:\n",
 		    ai.m_name.c_str(), ai.m_specName.c_str());
@@ -572,34 +541,129 @@ namespace OCPI {
       for (unsigned n = 0; n < m_nInstances; n++, i++, d++)
 	i->m_impl = m_assembly.instance(n).m_candidates[d->candidate].impl;
       
-      // This array is sized and initialized here since it is needed for property finalization
-      m_launchInstances.resize(m_nInstances);
-      // All the implementation selection is done, so now do the final check of properties
-      // since properties can be implementation specific
-      finalizeProperties(params);
-
       // Up to now we have just been "planning" and not doing things.
       // Now invoke the policy method to map the dynamic instances to containers
-      // First we do a pass that will only map the dynamic implementations
+      // and also add the containers for the static instances
       i = m_instances;
       d = m_bestDeployments;
-      for (unsigned n = 0; n < m_nInstances; n++, i++, d++) {
-	if (!i->m_impl->m_staticInstance)
-	  policyMap(i, i->m_feasibleContainers[d->candidate]);
-      }
-      // Now add the containers for the static instances
-      i = m_instances;
-      d = m_bestDeployments;
-      if (verbose)
-	fprintf(stderr, "Actual deployment is:\n");
       for (unsigned n = 0; n < m_nInstances; n++, i++, d++) {
 	const OL::Implementation &impl = *i->m_impl;
 	if (impl.m_staticInstance) {
 	  unsigned cNum = d->container;
-	  i->m_container = m_allMap & (1 << cNum) ? m_global2used[cNum] : addContainer(cNum);
+	  i->m_container = addContainer(cNum, true);
+	} else
+	  policyMap(i, i->m_feasibleContainers[d->candidate]);
+      }
+    }
+    // The explicit way to figure out a deployment from a file
+    void ApplicationI::
+    importDeployment(const char *file) {
+      ezxml_t xml;
+      const char *err = OE::ezxml_parse_file(file, xml);
+      if (err)
+	throw OU::Error("Error parsing deployment file: %s", err);
+      if (!ezxml_name(xml) || strcasecmp(ezxml_name(xml), "deployment"))
+	throw OU::Error("Invalid top level element \"%s\" in deployment file \"%s\"",
+			ezxml_name(xml) ? ezxml_name(xml) : "", file);
+      Instance *i = m_instances;
+      for (unsigned n = 0; n < m_nInstances; n++, i++) {
+	ezxml_t xi;
+	const char *iname = m_assembly.instance(n).name().c_str();
+	for (xi = ezxml_cchild(xml, "instance"); xi; xi = ezxml_next(xi)) {
+	  const char *name = ezxml_cattr(xi, "name");
+	  if (!name)
+	    throw OU::Error("Missing \"name\" attribute for instance in deployment file \"%s\"",
+			    file);
+	  if (!strcasecmp(name, iname))
+	    break;
 	}
-	OC::Container &c = OC::Container::nthContainer(m_usedContainers[i->m_container]);
-	if (verbose) {
+	if (!xi)
+	  throw
+	    OU::Error("Missing instance element for instance \"%s\" in deployment file", iname);
+	const char
+	  *spec = ezxml_cattr(xi, "spec"),
+	  *worker = ezxml_cattr(xi, "worker"),
+	  *model = ezxml_cattr(xi, "model"),
+	  *container = ezxml_cattr(xi, "container"),
+	  *artifact = ezxml_cattr(xi, "artifact"),
+	  *instance = ezxml_cattr(xi, "instance");
+	if (!spec || !worker || !model || !container || !artifact)
+	  throw
+	    OU::Error("Missing attributes for instance element \"%s\" in deployment file."
+		      "  All of spec/worker/model/container/artifact must be present.", iname);
+	/*
+	 * Importing a deployment means bypassing the library mechanism, or at least not
+	 * relying on it.  Basically we make our own library out of the specific artifacts
+	 * indicated in the deployment.
+	 */
+	OL::Artifact &art = OL::Manager::getArtifact(artifact, NULL);
+	OL::Implementation *impl = art.findImplementation(spec, instance);
+	if (!impl)
+	  throw OU::Error("For deployment instance \"%s\", worker for spec %s/%s not found "
+			  " in artifact \"%s\"", iname, spec, instance ? instance : "",
+			  artifact);
+	i->m_impl = impl;
+	if (!m_assembly.instance(n).resolveUtilPorts(*impl, m_assembly))
+	  throw OU::Error("Port mismatch for instance \"%s\" in artifact \"%s\"",
+			  iname, artifact);
+	OC::Container *c = OC::Manager::find(container);
+	if (!c)
+	  throw OU::Error("For deployment instance \"%s\", container \"%s\" was not found",
+			  iname, container);
+	i->m_container = addContainer(c->ordinal(), true);
+      }
+    }
+    void ApplicationI::
+    init(const PValue *params) {
+      // In order from class definition except for instance-related
+      m_bookings = NULL;
+      m_properties = NULL;
+      m_nProperties = 0;
+      m_curMap = 0;
+      m_curContainers = 0;
+      m_allMap = 0;
+      m_global2used = new unsigned[OC::Manager::s_nContainers];
+      m_nContainers = 0;
+      m_usedContainers = new unsigned[OC::Manager::s_nContainers];
+      m_containers = NULL;    // allocated when we know how many we are using
+      m_containerApps = NULL; // ditto
+      m_doneWorker = NULL;
+      m_cMapPolicy = RoundRobin;
+      m_processors = 0;
+      m_currConn = OC::Manager::s_nContainers - 1;
+      m_launched = false;
+      m_deployments = NULL;
+      m_bestDeployments = NULL;
+      m_verbose = false;
+      OU::findBool(params, "verbose", m_verbose);
+      OU::findBool(params, "hex", m_hex);
+      // Initializations for externals may add instances to the assembly
+      initExternals(params);
+      // Now that we have added any extra instances for external connections, do
+      // instance-related initializations
+      m_nInstances = m_assembly.nInstances();
+      m_instances = new Instance[m_nInstances];
+      // Check that params that reference instances are valid.
+      const char *err;
+      if ((err = m_assembly.checkInstanceParams("container", params, false)))
+	throw OU::Error("%s", err);
+      // This array is sized and initialized here since it is needed for property finalization
+      m_launchInstances.resize(m_nInstances);
+      // We are at the point where we need to either plan or import the deployment.
+      const char *dfile;
+      if (OU::findString(params, "deployment", dfile))
+	importDeployment(dfile);
+      else
+	planDeployment(params);
+      // All the implementation selection is done, so now do the final check of properties
+      // since properties can be implementation specific
+      finalizeProperties(params);
+      Instance *i = m_instances;
+      if (m_verbose) {
+	fprintf(stderr, "Actual deployment is:\n");
+	for (unsigned n = 0; n < m_nInstances; n++, i++) {
+	  const OL::Implementation &impl = *i->m_impl;
+	  OC::Container &c = OC::Container::nthContainer(m_usedContainers[i->m_container]);
 	  std::time_t bd = OS::FileSystem::lastModified(impl.m_artifact.name());
 	  char tbuf[30];
 	  ctime_r(&bd, tbuf);
@@ -614,22 +678,7 @@ namespace OCPI {
 		  impl.m_artifact.name().c_str(), tbuf);
 	}
       }
-      // To prepare for remote containers, we need to organize the containers we are
-      // using by their server.  Then we essentially synthesize an "app" for each server.
-      // so the interface to the server is a subset of the info here.
-      // There is the top side and the bottom side.
-      // THe bottom side is recogniing that you have "remote" connections.
-      // The top side is decomposing and merging etc.
-      // Assuming that we send the server an XML assembly, it means we need to express remote
-      // connections in that xml.
     }
-#if 0
-    ApplicationI::Connection::
-    Connection(OCPI::Util::Assembly::Connection &c)
-      : m_assyConnection(c), m_assyInput(NULL), m_assyOutput(NULL), m_external(NULL),
-	m_input(NULL), m_output(NULL), m_launchIn(NULL), m_launchOut(NULL) {
-    }
-#endif
     // Initialize our own database of connections from the OU::Assembly connections
     void ApplicationI::
     initConnections() {
@@ -895,6 +944,31 @@ namespace OCPI {
       m_launchInstances[p.m_instance].m_worker->setProperty(prop_name, value);
     }
 
+    void ApplicationI::
+    dumpDeployment(const char *appFile, const std::string &file) {
+      FILE *f = file == "-" ? stdout : fopen(file.c_str(), "w");
+      if (!f)
+	throw OU::Error("Can't open file \"%s\" for deployment output", file.c_str());
+      fprintf(f, "<deployment application='%s'>\n", appFile);
+      Instance *i = m_instances;
+      for (unsigned n = 0; n < m_nInstances; n++, i++) {
+	const OL::Implementation &impl = *i->m_impl;
+	OC::Container &c = OC::Container::nthContainer(m_usedContainers[i->m_container]);
+	fprintf(f,
+		"  <instance name='%s' spec='%s' worker='%s' model='%s' container='%s'\n"
+		"            artifact='%s'",
+		m_assembly.instance(n).name().c_str(), m_assembly.instance(n).specName().c_str(),
+		impl.m_metadataImpl.name().c_str(), c.m_model.c_str(), c.name().c_str(),
+		impl.m_artifact.name().c_str());
+	if (impl.m_staticInstance)
+	  fprintf(f, " instance='%s'", ezxml_cattr(impl.m_staticInstance, "name"));
+	fprintf(f, "/>\n");
+      }
+      fprintf(f, "</deployment>\n");
+      if (f != stdout && fclose(f))
+	throw OU::Error("Can't close output file \"%s\".  No space?", file.c_str());
+    }
+
     ApplicationI::Instance::Instance() :
       m_impl(NULL), m_container(0), m_feasibleContainers(NULL), m_nCandidates(0) {
     }
@@ -907,62 +981,100 @@ namespace OCPI {
     OCPI_EMIT_REGISTER_FULL_VAR( "Get Property", OCPI::Time::Emit::u, 1, OCPI::Time::Emit::State, pegp ); 
     OCPI_EMIT_REGISTER_FULL_VAR( "Set Property", OCPI::Time::Emit::u, 1, OCPI::Time::Emit::State, pesp ); 
 
-    Application::Application(const char *file, const PValue *params)
+    Application::
+    Application(const char *file, const PValue *params)
       : m_application(*new ApplicationI(*this, file, params)) {
     }
-    Application::Application(const std::string &string, const PValue *params)
+    Application::
+    Application(const std::string &string, const PValue *params)
       : m_application(*new ApplicationI(*this, string, params)) {
     }
-    Application::Application(Application & app,  const PValue *params)
+    Application::
+    Application(ApplicationI &i)
+      : m_application(i) {
+    }
+    ApplicationX::
+    ApplicationX(ezxml_t xml, const char *name,  const PValue *params)
+      : Application(*new ApplicationI(*this, xml, name, params)) {
+    }
+    Application::
+    Application(Application & app,  const PValue *params)
       : m_application(*new ApplicationI(*this, app.m_application.assembly(), params)) {
     }
-    Application::~Application() { delete &m_application; }
-    void Application::initialize() { m_application.initialize(); }
-    void Application::start() { m_application.start(); }
-    void Application::stop() { m_application.stop(); }
-    bool Application::wait( unsigned timeout_us ) {
+
+    Application::
+    ~Application() { delete &m_application; }
+
+    void Application::
+    initialize() { m_application.initialize(); }
+
+    void Application::
+    start() { m_application.start(); }
+
+    void Application::
+    stop() { m_application.stop(); }
+
+    bool Application::
+    wait( unsigned timeout_us ) {
       OS::Timer *timer = NULL;
       if (timeout_us) 
-	timer = new OS::Timer((uint32_t)(timeout_us/1000000ul), (uint32_t)((timeout_us%1000000) * 1000ull));
+	timer = new OS::Timer((uint32_t)(timeout_us/1000000ul),
+			      (uint32_t)((timeout_us%1000000) * 1000ull));
       bool r = m_application.wait(timer);
       delete timer;
       return r;
     }
-    void Application::finish() {
+
+    void Application::
+    finish() {
       m_application.finish();
     }
-    ExternalPort &Application::getPort(const char *name, const OA::PValue *params) {
+
+    ExternalPort &Application::
+    getPort(const char *name, const OA::PValue *params) {
       return m_application.getPort(name, params);
     }
-    bool Application::getProperty(unsigned ordinal, std::string &name, std::string &value,
-				  bool hex, bool *parp) {
+
+    bool Application::
+    getProperty(unsigned ordinal, std::string &name, std::string &value, bool hex, bool *parp) {
       return m_application.getProperty(ordinal, name, value, hex, parp);
     }
-    void Application::getProperty(const char* w, const char* p, std::string &value, bool hex) {
+
+    void Application::
+    getProperty(const char* w, const char* p, std::string &value, bool hex) {
       OCPI_EMIT_STATE_NR( pegp, 1 );
       m_application.getProperty(w, p, value, hex);
       OCPI_EMIT_STATE_NR( pegp, 0 );
 
     }
-    void Application::getProperty(const char* w, std::string &value, bool hex) {
+
+    void Application::
+    getProperty(const char* w, std::string &value, bool hex) {
       OCPI_EMIT_STATE_NR( pegp, 1 );
       m_application.getProperty(NULL, w, value, hex);
       OCPI_EMIT_STATE_NR( pegp, 0 );
 
     }
-    void Application::setProperty(const char* w, const char* p, const char *value) {
+
+    void Application::
+    setProperty(const char* w, const char* p, const char *value) {
       OCPI_EMIT_STATE_NR( pesp, 1 );
       m_application.setProperty(w, p, value);
       OCPI_EMIT_STATE_NR( pesp, 0 );
 
     }
-    void Application::setProperty(const char* p, const char *value) {
+    void Application::
+    setProperty(const char* p, const char *value) {
       OCPI_EMIT_STATE_NR( pesp, 1 );
       m_application.setProperty(NULL, p, value);
       OCPI_EMIT_STATE_NR( pesp, 0 );
 
     }
-    Worker &Application::getPropertyWorker(const char *name) { return m_application.getPropertyWorker(name); }
+    Worker &Application::
+    getPropertyWorker(const char *name) { return m_application.getPropertyWorker(name); }
 
+    void Application::
+    dumpDeployment(const char *appFile, const std::string &file) {
+      return m_application.dumpDeployment(appFile, file); }
   }
 }

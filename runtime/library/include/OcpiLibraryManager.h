@@ -74,6 +74,7 @@ namespace OCPI {
     typedef std::pair< const char*, Implementation *> WorkerMapPair;
     typedef WorkerMap::const_iterator WorkerIter;
     typedef std::pair<WorkerIter,WorkerIter> WorkerRange;
+    class Library;
     class Artifact : public OCPI::Util::Attributes {
     protected:
       std::time_t m_mtime; // modification time associated with when we read the metadata
@@ -87,9 +88,12 @@ namespace OCPI {
       WorkerMap m_workers;      // Map from spec name to implementations
       // A count of static instances added to the worker map (m_workers)
       unsigned m_nWorkers;
+      char    *m_metaData;   // used if needed by the artifact
       Artifact();
       virtual ~Artifact();
       Implementation *addImplementation(OCPI::Util::Worker &metaImpl, ezxml_t staticInstance);
+    protected:
+      void getFileMetaData(const char *name);
     public:
       void configure(ezxml_t x = NULL);
       // Can this artifact run on something with these capabilities?
@@ -107,6 +111,7 @@ namespace OCPI {
       std::time_t mtime() const { return m_mtime; }
       uint64_t length() const { return m_length; }
       virtual Artifact *nextArtifact() = 0;
+      virtual Library &library() const = 0;
       static char *getMetadata(const char *name, std::time_t &mtime, uint64_t &length);
     };
 
@@ -176,7 +181,6 @@ namespace OCPI {
       // Find one good implementation, return true one is found that satisfies the criteria
       bool findImplementation(const char *specName, const char *selectCriteria, const Implementation *&impl);
     };
-    class Library;
     // This is the base class for all library drivers
     class Driver : public OCPI::Driver::DriverType<Manager,Driver> {
       //      virtual Library *findLibrary(const char *url) = 0;
@@ -286,6 +290,9 @@ namespace OCPI {
       }
       inline const std::string &name() const {
 	return OCPI::Util::Child<Lib,Art>::name();
+      }
+      inline Library &library() const {
+	return OCPI::Util::Child<Lib,Art>::parent();
       }
     };
     template <class Dri>

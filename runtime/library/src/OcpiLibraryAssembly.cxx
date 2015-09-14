@@ -53,6 +53,10 @@ namespace OCPI {
       : OU::Assembly(string, assyAttrs, instAttrs, params), m_refCount(1) {
       findImplementations(params);
     }
+    Assembly::Assembly(ezxml_t xml, const char *name, const OCPI::Util::PValue *params)
+      : OU::Assembly(xml, name, assyAttrs, instAttrs, params), m_refCount(1) {
+      findImplementations(params);
+    }
     Assembly::~Assembly() {
       for (size_t n = 0; n < m_instances.size(); n++)
 	delete m_instances[n];
@@ -371,6 +375,9 @@ namespace OCPI {
       // Initialize our instances list from the Util assy, but we might add to it for slaves
       for (unsigned n = 0; n < nUtilInstances(); n++)
 	m_instances.push_back(new Instance(utilInstance(n)));
+      const char *deployment = NULL;
+      if (OU::findString(params, "deployment", deployment))
+	return;
       for (InstancesIter ii = m_instances.begin(); ii != m_instances.end(); ii++) {
 	m_tempInstance = *ii;
 	OU::Assembly::Instance &inst = m_tempInstance->m_utilInstance;
@@ -389,7 +396,8 @@ namespace OCPI {
       // Check for interface and connection compatibility.
       // We assume all implementations have the same protocol metadata
       //      unsigned nConns = m_connections.size();
-      for (OU::Assembly::ConnectionsIter ci = m_connections.begin(); ci != m_connections.end(); ci++) {
+      for (OU::Assembly::ConnectionsIter ci = m_connections.begin();
+	   ci != m_connections.end(); ci++) {
 	const OU::Assembly::Connection &c = *ci;
 	if (c.m_ports.size() == 2) {
 	  const OU::Worker // implementations on both sides of the connection
@@ -406,7 +414,7 @@ namespace OCPI {
 			    ap0->m_name.c_str(), ap1->m_name.c_str());
 	  // Protocol on both sides of the connection
 	  OU::Protocol &p0 = *ap0, &p1 = *ap1;
-	  if (p0.m_name.size()  && p1.m_name.size() && p0.m_name != p1.m_name)
+	  if (p0.m_name.size() && p1.m_name.size() && p0.m_name != p1.m_name)
 	    throw OU::Error("Protocols in connection are incompatible: "
 			    "port \"%s\" of instance \"%s\" has protocol \%s\" vs. "
 			    "port \"%s\" of instance \"%s\" has protocol \"%s\"",

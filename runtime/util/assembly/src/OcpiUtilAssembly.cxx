@@ -394,6 +394,7 @@ namespace OCPI {
       return NULL;
     }
 
+#if 0
     static void
     baseName(const char *path, std::string &out) {
       const char
@@ -408,7 +409,7 @@ namespace OCPI {
       else
 	out = slash;
     }
-
+#endif
     const char *Assembly::Instance::
     setProperty(const char *propAssign) {
       const char *eq = strchr(propAssign, '=');
