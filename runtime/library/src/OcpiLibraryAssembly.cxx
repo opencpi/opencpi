@@ -54,7 +54,7 @@ namespace OCPI {
       findImplementations(params);
     }
     Assembly::Assembly(ezxml_t xml, const char *name, const OCPI::Util::PValue *params)
-      : OU::Assembly(xml, name, assyAttrs, instAttrs, params), m_refCount(1) {
+      : OU::Assembly(xml, name, false, assyAttrs, instAttrs, params), m_refCount(1) {
       findImplementations(params);
     }
     Assembly::~Assembly() {

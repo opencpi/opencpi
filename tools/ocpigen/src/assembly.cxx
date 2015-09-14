@@ -246,7 +246,7 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
 	  const char *outDir) {
   (void)noWorkerOk; // FIXME: when containers are generated.
   try {
-    m_utilAssembly = new OU::Assembly(xml, m_assyWorker.m_implName, topAttrs, instAttrs);
+    m_utilAssembly = new OU::Assembly(xml, m_assyWorker.m_implName, true, topAttrs, instAttrs);
   } catch (std::string &e) {
     return OU::esprintf("%s", e.c_str());
   }

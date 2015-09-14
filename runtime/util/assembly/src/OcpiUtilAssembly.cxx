@@ -68,9 +68,10 @@ namespace OCPI {
 	throw Error("%s", err);
     }
     // FIXME:  we infer that this is an impl assy from this constructor.  Make it explicit?
-    Assembly::Assembly(const ezxml_t top, const char *defaultName, const char **extraTopAttrs,
-		       const char **extraInstAttrs, const PValue *params)
-      : m_xml(top), m_copy(NULL), m_xmlOnly(true), m_isImpl(true) {
+    Assembly::Assembly(const ezxml_t top, const char *defaultName, bool isImpl,
+		       const char **extraTopAttrs, const char **extraInstAttrs,
+		       const PValue *params)
+      : m_xml(top), m_copy(NULL), m_xmlOnly(true), m_isImpl(isImpl) {
       const char *err = parse(defaultName, extraTopAttrs, extraInstAttrs, params);
       if (err)
 	throw Error("Error parsing assembly xml string due to: %s", err);

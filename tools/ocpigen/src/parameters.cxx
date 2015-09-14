@@ -186,13 +186,13 @@ parseBuildFile(bool optional) {
   // We are only looking next to the OWD or "gen" below it
   // And it is optional in any case.
   std::string dir;
-  const char *slash = strrchr(m_fileName.c_str(), '/');
+  const char *slash = strrchr(m_file.c_str(), '/');
   if (slash)
-    dir.assign(m_fileName.c_str(), (slash + 1) - m_fileName.c_str());
+    dir.assign(m_file.c_str(), (slash + 1) - m_file.c_str());
   OU::format(fname, "%s%s.build", dir.c_str(), m_implName);
   if (!OS::FileSystem::exists(fname)) {
     std::string fname1;
-    OU::format(fname1, "%s/gen/%s.build", dir, m_implName);
+    OU::format(fname1, "%s/gen/%s.build", dir.c_str(), m_implName);
     if (OS::FileSystem::exists(fname1))
       fname = fname1;
     else if (optional)
