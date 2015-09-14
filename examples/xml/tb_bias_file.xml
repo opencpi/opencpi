@@ -3,7 +3,7 @@
     <property name='filename' value='tb_bias_file.xml' />
     <!-- <property name='filename' value='sig' /> -->
     <property name='messagesInFile' value='false' />
-    <property name='opcode' value='1' />
+    <property name='opcode' value='0' />
     <property name='messageSize' value='1024' /> <!-- 4096 -->
     <property name='granularity' value='4' />
   </instance>
