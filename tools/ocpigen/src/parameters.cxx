@@ -192,7 +192,7 @@ parseBuildFile(bool optional) {
   OU::format(fname, "%s%s.build", dir.c_str(), m_implName);
   if (!OS::FileSystem::exists(fname)) {
     std::string fname1;
-    OU::format(fname1, "%s/gen/%s.build", dir.c_str(), m_implName);
+    OU::format(fname1, "%sgen/%s.build", dir.c_str(), m_implName);
     if (OS::FileSystem::exists(fname1))
       fname = fname1;
     else if (optional)
