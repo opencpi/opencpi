@@ -15,5 +15,6 @@
   <signal name='observeadc(10)' platform='FMC_LA05_N'/>
   <signal name='observeadc(11)' platform='FMC_LA05_P'/>
   <signal name='observeadcsel' platform='FMC_LA01_CC_P'/>
+  <signal name='dummy' platform=''/>
 </device>
 </HdlContainer>
