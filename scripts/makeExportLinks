@@ -31,7 +31,7 @@ for t in \
    runtime/hdl-support/ocpihdl \
    runtime/ocl/ocpiocl \
    runtime/application/ocpirun \
-   application/ocpiserve \
+   runtime/application/ocpiserve \
    runtime/hdl-support/testRpl \
    runtime/hdl-support/ocpizynq \
    ; do
@@ -51,6 +51,7 @@ for t in \
     fi
   fi
   if test -x $f; then
+     /bin/echo -n Creating symlink:\ 
      ln -s -f -v $f
   fi
 done
@@ -72,4 +73,5 @@ if test -L $T; then
     rm $T
   fi
 fi
+/bin/echo -n Creating symlink:\ 
 ln -s -f -v -n $f $T

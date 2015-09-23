@@ -72,6 +72,11 @@ for b in run hdl zynq serve; do
 done
 # we use rdate for now... : cp ../ntpclient $sd/opencpi/bin
 cp ../libstdc++.so.6 $sd/opencpi/lib
+# copy driver libraries to the subdirectory so that OCPI_CDK_DIR will 
+# find them.
+mkdir $sd/opencpi/lib/linux-zynq-arm
+cp $OCPI_CDK_DIR/lib/linux-zynq-arm/*_s.so $sd/opencpi/lib/linux-zynq-arm
+
 cp $OCPI_CDK_DIR/scripts/ocpidriver $sd/opencpi/bin
 cp $OCPI_CDK_DIR/scripts/ocpi_linux_driver $sd/opencpi/bin
 cp $OCPI_CDK_DIR/examples/xml/{*.xml,test.input} $sd/opencpi/xml

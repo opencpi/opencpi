@@ -127,7 +127,7 @@ else
   UNDEFINED_FLAG=-Xlinker -u -Xlinker $1
   ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
     LD_ALLOW_UNDEFINED=-Xlinker --allow-shlib-undefined -Xlinker --warn-unresolved-symbols
-    SHARED_ALLOW_UNDEFINED=-shared
+    SHARED_ALLOW_UNDEFINED=-shared -Xlinker -soname=$(@F)
     SHARED=-shared -Xlinker --no-undefined -Xlinker -soname=$(@F)
     CFLAGS += -fPIC
     CXXFLAGS += -fPIC -Wall

@@ -37,7 +37,9 @@
 #include "OcpiUuid.h"               // just for linkage hooks
 #include "DtMsgDriver.h"            // just for linkage hooks
 #include "OcpiOsSocket.h"           // just for linkage hooks
+#include "OcpiOsSemaphore.h"        // just for linkage hooks
 #include "lzma.h"                   // just for linkage hooks
+#include "zlib.h"                   // just for linkage hooks
 namespace OCPI {
   namespace Container {
     namespace OA = OCPI::API;
@@ -97,13 +99,13 @@ namespace OCPI {
     unsigned Manager::cleanupPosition() { return 0; }
     // FIXME: allow the caller to get errors. Perhaps another overloaded version
     OCPI::API::Container *Manager::find(const char *model, const char *which,
-					const OA::PValue *props) {
+					const OA::PValue *params) {
       parent().configureOnce();
       for (Driver *d = firstChild(); d; d = d->nextChild()) {
 	if (!strcmp(model, d->name().c_str())) {
 	  OA::Container *c = d->findContainer(which);
 	  std::string error;
-	  return c ? c : d->probeContainer(which, error, props);
+	  return c ? c : d->probeContainer(which, error, params);
 	}
       }
       return NULL;
@@ -176,6 +178,8 @@ namespace DataTransfer {
     createHostSmemServices(loc);
     Msg::XferFactoryManager::getFactoryManager();
     OCPI::OS::Socket s;
+    OCPI::OS::Semaphore sem;
+    gzerror(NULL, (int*)0);
     return (intptr_t)&lzma_stream_buffer_decode;
   }
 }
