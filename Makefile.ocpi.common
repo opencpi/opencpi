@@ -35,7 +35,7 @@
 
 ifndef MAKEFILE_OCPI_COMMON
 MAKEFILE_OCPI_COMMON:=1
-# Someday include our "util.mk"
+include $(OCPI_CDK_DIR)/include/util.mk
 OcpiDir=$(foreach d,$1,$(patsubst %/,%,$(dir $1)))
 
 MAIN_LDFLAGS=$(LDFLAGS)
@@ -98,11 +98,25 @@ OCPI_DRIVERS=hdl rcc pio dma
 
 ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
   MAIN_LDFLAGS+= \
-    -Xlinker -rpath -Xlinker "$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR)" \
     $(foreach l,$(PREQLIBS), \
       -Xlinker -rpath -Xlinker $(OCPI_PREREQUISITES_INSTALL_DIR)/$l/$(OCPI_TARGET_HOST)/lib)
 endif
-MAIN_LDFLAGS+=$(foreach o,$(MAIN_DRIVERS), $(call UNDEFINED_FLAG,$o)) 
+
+# The library search for the executables have to deal with three different scenarios
+# Note that symbolic links are followed *BEFORE* ORIGIN is set.
+# 1. The development tree scenario, where the libraries might be in the same directory
+#    And also an easy way to override: drop it in the same bin directory
+# 2. The installation where multiple targets are present
+# 3. The installation where only one target is present (deployed)
+# 4. The development tree location via OCPI_CDK_DIR
+
+MAIN_LDFLAGS+= \
+  -Xlinker -rpath -Xlinker '$${ORIGIN}' \
+  -Xlinker -rpath -Xlinker '$${ORIGIN}/../../lib/$(OCPI_TARGET_HOST)' \
+  -Xlinker -rpath -Xlinker '$${ORIGIN}/lib' \
+  -Xlinker -rpath \
+  -Xlinker '$${ORIGIN}/$(call FindRelative,$(OBJDIR),$(OCPI_CDK_DIR))/lib/$(OCPI_TARGET_HOST)' \
+  $(foreach o,$(MAIN_DRIVERS), $(call UNDEFINED_FLAG,$o))
 
 #$(LD_ALLOW_UNDEFINED)
 
