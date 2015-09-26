@@ -192,8 +192,8 @@ namespace OCPI {
     bool Server::
     doLaunch(std::string &error) {
 
-      containers.resize(OX::countChildren(m_lx, "container"),0);
-      containerApps.resize(containers.size(),0);
+      m_containers.resize(OX::countChildren(m_lx, "container"), 0);
+      m_containerApps.resize(m_containers.size(), 0);
 
       unsigned n = 0;
       for (ezxml_t cx = ezxml_cchild(m_lx, "container"); cx; cx = ezxml_next(cx), n++) {
@@ -416,11 +416,8 @@ namespace OCPI {
 	    w.getPropertyValue(p, m_response, hex, true);
 	  else
 	    w.setPropertyValue(p, m_response);
-	} else if (op) {
-
-	  printf("******* &&&&&& Got a control op !!, op = %d\n", op );
+	} else if (op)
 	  w.controlOp((OU::Worker::ControlOperation)n);
-	}
 	else if (wait)
 	  if (n) {
 	    OS::Timer t(OCPI_UTRUNCATE(uint32_t, n), 0);

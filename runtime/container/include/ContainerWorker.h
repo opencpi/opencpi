@@ -132,8 +132,8 @@ namespace OCPI {
       size_t m_member, m_crewSize;
       PortMask m_connectedPorts, m_optionalPorts; // spcm?
       bool beforeStart();
-      void connectPort(OCPI::Util::PortOrdinal ordinal);
     protected:
+      void connectPort(OCPI::Util::PortOrdinal ordinal);
       PortMask &connectedPorts() { return m_connectedPorts; }
       PortMask &optionalPorts() { return m_optionalPorts; }
       virtual void portIsConnected(OCPI::Util::PortOrdinal /*ordinal*/) {};

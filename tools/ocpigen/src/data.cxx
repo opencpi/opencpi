@@ -12,7 +12,6 @@ DataPort::
 DataPort(Worker &w, ezxml_t x, DataPort *sp, int ordinal, WIPType type, const char *&err)
   : OcpPort(w, x, sp, ordinal, type, NULL, err),
     OU::Port(sp, w, x, cname(), err) {
-  assert(sp != NULL);
   if (err)
     return;
   // Now we do implementation-specific initialization that will precede the

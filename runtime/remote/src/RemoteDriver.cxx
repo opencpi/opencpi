@@ -287,6 +287,11 @@ Worker(Application & app, Artifact *art, const char *name, ezxml_t impl, ezxml_t
 				     OU::Worker::OpStart|
 				     OU::Worker::OpStop|
 				     OU::Worker::OpRelease));
+  // Fake the connections.  The error checking is on the remote side, but this allows
+  // the local (client-side) error checks about connectivity to succeed.
+  // FIXME: possible set this just based on what is actually in the layunch info
+  for (unsigned n = 0; n < m_nPorts; n++)
+    connectPort(n);
 }
 
 // The driver class owns the containers (like all container driver classes)
