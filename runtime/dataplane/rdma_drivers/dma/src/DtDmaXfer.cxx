@@ -108,7 +108,7 @@ namespace OCPI {
 	if ((m_dmaFd = ::open(OCPI_DRIVER_MEM, O_RDWR | O_SYNC)) >= 0)
 	  m_usingKernelDriver = true;
 	else if ((m_dmaFd = ::open("/dev/mem", O_RDWR|O_SYNC )) < 0)
-	  throw OU::Error("cant open /dev/mem for DMA (Use sudo or load the driver)");
+	  throw OU::Error("cannot open /dev/mem for DMA (Use sudo or load the driver)");
 	else {
 	  m_usingKernelDriver = false;
 	  const char *dma = getenv("OCPI_DMA_MEMORY");

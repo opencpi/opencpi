@@ -60,8 +60,8 @@ namespace OCPI {
       void emitCrew(const OCPI::Container::Launcher::Crew &crew);
       void emitMember(const char *name, unsigned contN, unsigned artN, unsigned crewN,
 		      const Launcher::Member &i, int slave);
-      void emitSide(const Launcher::Members &members, const Launcher::Port &p, const char *tag);
-      void emitConnection(const Launcher::Members &members, const Launcher::Connection &c);
+      void emitSide(const Launcher::Members &members, Launcher::Port &p, bool input);
+      void emitConnection(const Launcher::Members &members, Launcher::Connection &c);
       void emitConnectionUpdate(unsigned nConn, const char *iname, std::string &sinfo);
       void loadArtifact(ezxml_t ax); // Just push the bytes down the pipe, getting a response for each.
       void updateConnection(ezxml_t cx);
@@ -77,7 +77,7 @@ namespace OCPI {
 	getPropertyValue(unsigned remoteInstance, size_t propN, std::string &v, bool hex,
 			 bool add);
       static void
-	encodeDescriptor(const std::string &s, std::string &out),
+	encodeDescriptor(const char *iname, const std::string &s, std::string &out),
 	decodeDescriptor(const char *info, std::string &s);
 
       static bool

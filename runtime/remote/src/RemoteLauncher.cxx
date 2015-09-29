@@ -108,8 +108,8 @@ sendXml(int fd, std::string &request, const char *msg, std::string &error) {
 
 // This scheme is ours so that it is somewhat readable, xml friendly, and handles NULLs
 void Launcher::
-encodeDescriptor(const std::string &s, std::string &out) {
-  OU::formatAdd(out, "%zu.", s.length());
+encodeDescriptor(const char *iname, const std::string &s, std::string &out) {
+  OU::formatAdd(out, " %s=\"%zu.", iname, s.length());
   OU::Unparser up;
   const char *cp = s.data();
   for (size_t n = s.length(); n; n--, cp++) {
@@ -120,6 +120,7 @@ encodeDescriptor(const std::string &s, std::string &out) {
     else
       up.unparseChar(out, *cp, true);
   }
+  out += "\"";
 }
 void Launcher::
 decodeDescriptor(const char *info, std::string &s) {
@@ -219,49 +220,24 @@ unparseParams(const OU::PValue *params, std::string &out) {
   }
 }
 void Launcher::
-#if 1
-emitSide(const Launcher::Members &members, const Launcher::Port &p, const char *type) {
+emitSide(const Launcher::Members &members, Launcher::Port &p, bool input) {
+  const char *type = input ? "in" : "out";
   OU::formatAdd(m_request, "    <%s scale='%zu' index='%zu'", type, p.m_scale, p.m_index);
   if (p.m_name)
     OU::formatAdd(m_request, " name='%s'", p.m_name);
-  if (p.m_member)
+  if (p.m_member && p.m_launcher == this)
     OU::formatAdd(m_request, " member='%u'", m_instanceMap[p.m_member - &members[0]]);
   if (p.m_url)
     OU::formatAdd(m_request, " url='%s'", p.m_url);
+  if (p.m_initial.length()) {
+     encodeDescriptor(input ? "ipi" : "iui", p.m_initial, m_request);
+     p.m_initial.clear();
+  }
   if (p.m_params.list() || !p.m_url && p.m_launcher != this) {
     m_request += ">\n";
     if (p.m_params.list()) {
       m_request += "<params";
       unparseParams(p.m_params, m_request);
-#else
-emitConnection(const Launcher::Instances &instances, const Launcher::Connection &c) { 
-  OU::formatAdd(m_request, "  <connection");
-  if (c.m_launchIn == this)
-    OU::formatAdd(m_request, " instIn='%u' nameIn='%s'",
-		  m_instanceMap[c.m_instIn - &instances[0]], c.m_nameIn);
-  if (c.m_launchOut == this)
-    OU::formatAdd(m_request, " instOut='%u' nameOut='%s'",
-		  m_instanceMap[c.m_instOut - &instances[0]], c.m_nameOut);
-  if (c.m_url)
-    OU::formatAdd(m_request, "  url='%s'", c.m_url);
-  else {
-    // put out names for external ports
-    if (!c.m_instIn && c.m_nameIn)
-      OU::formatAdd(m_request, "  nameIn='%s'", c.m_nameIn);
-    if (!c.m_instOut && c.m_nameOut)
-      OU::formatAdd(m_request, "  nameOut='%s'", c.m_nameOut);
-  }
-  if (c.m_paramsIn.list() || c.m_paramsOut.list()) {
-    m_request +=">\n";
-    if (c.m_paramsIn.list()) {
-      m_request += "    <paramsin";
-      unparseParams(c.m_paramsIn, m_request);
-      m_request += "/>\n";
-    }
-    if (c.m_paramsOut.list()) {
-      m_request += "    <paramsout";
-      unparseParams(c.m_paramsOut, m_request);
-#endif
       m_request += "/>\n";
     }
     if (!p.m_url && p.m_launcher != this)
@@ -273,25 +249,25 @@ emitConnection(const Launcher::Instances &instances, const Launcher::Connection 
 
 // This connection is one of ours, either internal or external
 void Launcher::
-emitConnection(const Launcher::Members &members, const Launcher::Connection &c) { 
+emitConnection(const Launcher::Members &members, Launcher::Connection &c) { 
   OU::formatAdd(m_request,
 		"  <connection transport='%s' id='%s' roleIn='%u' roleOut='%u' "
 		"buffersize='%zu'>\n",
 		c.m_transport.transport.c_str(), c.m_transport.id.c_str(),
 		c.m_transport.roleIn, c.m_transport.roleOut, c.m_bufferSize);
-  emitSide(members, c.m_in, "in");
-  emitSide(members, c.m_out, "out");
+  emitSide(members, c.m_in, true);
+  emitSide(members, c.m_out, false);
   m_request += "  </connection>\n";
 }
 void Launcher::
 emitConnectionUpdate(unsigned connN, const char *iname, std::string &sinfo) {
   if (m_request.empty())
     m_request = "<update>\n";
-  OU::formatAdd(m_request, "  <connection id='%u' %s=\"",
+  OU::formatAdd(m_request, "  <connection id='%u'",
 		m_connectionMap[connN], iname);
   // This encoding escapes double quotes and allows for embedded null characters
-  encodeDescriptor(sinfo, m_request);
-  m_request += "\"/>\n";
+  encodeDescriptor(iname, sinfo, m_request);
+  m_request += "/>\n";
   sinfo.clear();
 }
 void Launcher::
@@ -429,14 +405,6 @@ launch(Launcher::Members &instances, Launcher::Connections &connections) {
   for (unsigned n = 0; n < connections.size(); n++, c++) {
     c->prepare(); // make sure transport parameters are on both sides
     if (c->m_in.m_launcher == this || c->m_out.m_launcher == this) {
-      if (c->m_in.m_launcher != c->m_out.m_launcher) {
-	// If the connection is off of the remote server and no
-	// transport is specified, force sockets on the input side
-	const char *endpoint = NULL, *transport = NULL;
-	if (!OU::findString(c->m_in.m_params, "endpoint", endpoint) &&
-	    !OU::findString(c->m_in.m_params, "transport", transport))
-	  c->m_in.m_params.add("transport", "socket");
-      }
       emitConnection(instances, *c);
       m_connectionMap[n] = nConnections;
       m_connections[nConnections++] = c;
@@ -472,6 +440,8 @@ work(Launcher::Members &instances, Launcher::Connections &connections) {
 	    emitConnectionUpdate(n, "iui", c->m_out.m_initial), m_more = true;
 	  else if (c->m_out.m_final.length())
 	    emitConnectionUpdate(n, "fui", c->m_out.m_final), m_more = true;
+	  c->m_out.m_initial.clear();
+	  c->m_out.m_final.clear();
 	}
       } else if (c->m_out.m_launcher == this && c->m_in.m_launcher &&
 		 c->m_in.m_launcher != this) {
@@ -480,6 +450,8 @@ work(Launcher::Members &instances, Launcher::Connections &connections) {
 	    emitConnectionUpdate(n, "ipi", c->m_in.m_initial), m_more = true;
 	  else if (c->m_in.m_final.length())
 	    emitConnectionUpdate(n, "fpi", c->m_in.m_final), m_more = true;
+	  c->m_in.m_initial.clear();
+	  c->m_in.m_final.clear();
       }
     if (m_more)
       send();

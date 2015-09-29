@@ -56,15 +56,8 @@ launch(Launcher::Members &instances, Launcher::Connections &connections) {
   for (unsigned n = 0; n < instances.size(); n++, i++)
     if (&i->m_container->launcher() == this && !i->m_hasMaster)
       createWorker(*i);
-#if 1
   for (unsigned n = 0; n < connections.size(); n++) {
     Launcher::Connection &c = connections[n];
-    ocpiDebug("Launching connection %2d: from %s/%s/%zu to %s/%s/%zu", n,
-	      c.m_out.m_member->m_worker->name().c_str(), c.m_out.m_name,
-	      c.m_out.m_member->m_member,
-	      c.m_in.m_member->m_worker->name().c_str(), c.m_in.m_name,
-	      c.m_in.m_member->m_member);
-
     c.prepare();
     // First create the local worker or external ports
     if (c.m_in.m_launcher == this) {
@@ -83,32 +76,9 @@ launch(Launcher::Members &instances, Launcher::Connections &connections) {
     }
     if (c.m_in.m_port) {
       if (c.m_in.m_port->initialConnect(c))
-#else
-  Launcher::Connection *c = &connections[0];
-  for (unsigned n = 0; n < connections.size(); n++, c++) {
-    c->prepare();
-    if (c->m_launchIn == this) {
-      OA::Worker &wIn = *c->m_instIn->m_worker;
-      c->m_input = &wIn.getPort(c->m_nameIn, c->m_paramsIn);
-      if (c->m_launchOut == this) {
-	// Both ports of the connection is under this launcher
-	OA::Worker &wOut = *c->m_instOut->m_worker;
-	c->m_output = &wOut.getPort(c->m_nameOut, c->m_paramsOut);
-	// Connection is entirely under the purview of this launcher.
-	c->m_input->connect(*c->m_output, c->m_paramsIn, c->m_paramsOut);
-      } else if (c->m_url) {
-	// Input that is connected to a URL.  We will do this locally
-	c->m_input->connectURL(c->m_url, c->m_paramsIn, c->m_paramsOut);
-      } else if (c->m_launchOut == NULL && c->m_nameOut && !c->m_instOut) {
-	// This is an external port
-      } else {
-	// We are the input side, some other launcher has the output
-	c->m_input->containerPort().getInitialProviderInfo(c->m_paramsIn, c->m_ipi);
-#endif
 	m_more = true;
-    } else if (c.m_out.m_port)
-      if (c.m_out.m_port->initialConnect(c))
-	m_more = true;
+    } else if (c.m_out.m_port && c.m_out.m_port->initialConnect(c))
+      m_more = true;
   }
   return m_more;
 }
@@ -119,12 +89,14 @@ work(Launcher::Members &, Launcher::Connections &connections) {
   for (unsigned n = 0; n < connections.size(); n++) {
     Launcher::Connection &c = connections[n];
     if (c.m_in.m_port && (c.m_out.m_initial.length() || c.m_out.m_final.length())) {
-      m_more = c.m_in.m_port->finalConnect(c);
+      if (c.m_in.m_port->finalConnect(c))
+	m_more = true;
       c.m_out.m_initial.clear();
       c.m_out.m_final.clear();
     }
     if (c.m_out.m_port && (c.m_in.m_initial.length() || c.m_in.m_final.length())) {
-      m_more = c.m_out.m_port->finalConnect(c);
+      if (c.m_out.m_port->finalConnect(c))
+	m_more = true;
       c.m_in.m_initial.clear();
       c.m_in.m_final.clear();
     }
@@ -144,7 +116,7 @@ Crew()
 Launcher::Port::
 Port()
   : m_launcher(NULL), m_containerApp(NULL), m_member(NULL), m_port(NULL), m_name(NULL),
-    m_metaPort(NULL), m_scale(1), m_index(0), m_url(NULL) {
+    m_metaPort(NULL), m_scale(1), m_index(0), m_url(NULL), m_started(false), m_done(false) {
 }
 
 Launcher::Connection::

@@ -237,6 +237,7 @@ finalize(const OCPI::RDT::Descriptors *other, OCPI::RDT::Descriptors &mine,
   const OCPI::RDT::Descriptors *result = &mine;
   Circuit &c = *getCircuit();
   Port *otherPort;
+  done = true;
   if (m_data->output) {
     ocpiAssert(mine.type == OCPI::RDT::ProducerDescT);
     switch (mine.role) {
@@ -280,6 +281,7 @@ finalize(const OCPI::RDT::Descriptors *other, OCPI::RDT::Descriptors &mine,
       XferServices * xfers =   
 	XferFactoryManager::getFactoryManager().getService( getEndpoint(), &otherEp);
       xfers->finalize( other->desc.oob.cookie );
+      result = NULL;  // There is nothing to tell the other side at this point.
     }
     otherPort = c.getOutputPortSet()->getPort(0);
   }

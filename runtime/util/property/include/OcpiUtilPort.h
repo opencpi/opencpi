@@ -63,7 +63,7 @@ namespace OCPI {
 	  m_default == s.m_default;
 	}
 	bool check(size_t scale, std::string &err);
-	const char *parse(ezxml_t x, Worker &w);
+	const char *parse(ezxml_t x, Worker *w);
 	void emit(std::string &out, const Scaling *def) const;
       };
 #define SCALING_ATTRS "min", "max", "modulo", "default"
@@ -92,7 +92,7 @@ namespace OCPI {
 	Overlap  m_overlap;
 	size_t   m_sourceDimension;
 	Partitioning();
-        const char *parse(ezxml_t x, Worker &w);
+        const char *parse(ezxml_t x, Worker *w);
 	void emit(std::string &out, const Partitioning *def) const;
       };
 

@@ -44,10 +44,8 @@ static clReleaseDeviceEXT_fn pfn_clReleaseDeviceEXT = NULL;
 #define INIT_CL_EXT_FCN_PTR(name) \
     if(!pfn_##name) { \
         pfn_##name = (name##_fn) clGetExtensionFunctionAddress(#name); \
-        if(!pfn_##name) { \
-            std::cout << "Cannot get pointer to ext. fcn. " #name << std::endl; \
-            throw "SDK_FAILURE";						\
-        } \
+        if(!pfn_##name) \
+          throw OU::Error("Cannot get pointer to OpenCL ext. fcn: ", name); \
     }
 
 
@@ -286,10 +284,6 @@ namespace OCPI {
 
       cl_device_partition_property_ext pp[] = {CL_DEVICE_PARTITION_EQUALLY_EXT, 1, 0 };
 
-      // Initialize clCreateSubDevicesEXT and clReleaseDeviceEXT function pointers             
-      INIT_CL_EXT_FCN_PTR(clCreateSubDevicesEXT);                                           
-      INIT_CL_EXT_FCN_PTR(clReleaseDeviceEXT);                                                 
-                                                
       rc = pfn_clCreateSubDevicesEXT ( m_id,  pp, m_nUnits, m_outDevices,
 				&m_numSubDevices );
 
@@ -532,7 +526,15 @@ namespace OCPI {
       bool printOnly = false, verbose = false;
       OU::findBool(params, "printOnly", printOnly);
       OU::findBool(params, "verbose", verbose);
-      OCL(clGetPlatformIDs(0, 0,&np));
+      try {
+	OCL(clGetPlatformIDs(0, 0, &np));
+	// Initialize clCreateSubDevicesEXT and clReleaseDeviceEXT function pointers             
+	INIT_CL_EXT_FCN_PTR(clCreateSubDevicesEXT);                                           
+	INIT_CL_EXT_FCN_PTR(clReleaseDeviceEXT);                                                 
+      } catch (...) {
+	ocpiInfo("Failure on first use of OpenCL libraries. No OCL containers.");
+	np = 0;
+      }	
       if (!np)
 	return 0;
       std::vector<cl_platform_id> pids(np);

@@ -288,14 +288,18 @@ namespace OCPI {
       : m_min(0), m_max(1), m_modulo(1), m_default(1) {
     }
 
+    static inline const char *getWkrNumber(Worker *w, ezxml_t x, const char *attr, size_t *np) {
+      return w ? w->getNumber(x, attr, np) : OE::getNumber(x, attr, np, NULL, 0, false);
+    }
+
     // A scaling 
     const char *Port::Scaling::
-    parse(ezxml_t x, Worker &w) {
+    parse(ezxml_t x, Worker *w) {
       const char *err;
-      if ((err = w.getNumber(x, "min", &m_min, NULL, 0, false)) ||
-	  (err = w.getNumber(x, "max", &m_max, NULL, 0, false)) ||
-	  (err = w.getNumber(x, "modulo", &m_modulo, NULL, 0, false)) ||
-	  (err = w.getNumber(x, "default", &m_default, NULL, 0, false)))
+      if ((err = getWkrNumber(w, x, "min", &m_min)) ||
+	  (err = getWkrNumber(w, x, "max", &m_max)) ||
+	  (err = getWkrNumber(w, x, "modulo", &m_modulo)) ||
+	  (err = getWkrNumber(w, x, "default", &m_default)))
 	return err;
       return NULL;
     }
@@ -327,9 +331,9 @@ namespace OCPI {
     }
 
     const char *Port::Partitioning::
-    parse(ezxml_t x, Worker &w) {
+    parse(ezxml_t x, Worker *w) {
       const char *err = m_scaling.parse(x, w);
-      if (!err && !(err = w.getNumber(x, "source", &m_sourceDimension)))
+      if (!err && !(err = getWkrNumber(w, x, "source", &m_sourceDimension)))
 	err = m_overlap.parse(x);
       return err;
     }
@@ -448,7 +452,7 @@ namespace OCPI {
       }
       // Here we parse defaults for operations and arguments.
       if ((err = parseDistribution(m_xml, m_defaultDistribution, m_defaultHashField)) ||
-	  (err = m_defaultPartitioning.parse(m_xml, *m_worker)) ||
+	  (err = m_defaultPartitioning.parse(m_xml, m_worker)) ||
 	  (err = parseOperations()))
 	return err;
       Operation *op = m_operations;
@@ -539,7 +543,7 @@ namespace OCPI {
     }
     const char *Port::OpScaling::
     parse(Port &dp, const Operation &op, ezxml_t x) {
-      Worker &w = *dp.m_worker;
+      Worker *w = dp.m_worker;
       const char *err;
       m_defaultPartitioning = dp.m_defaultPartitioning;
       m_distribution = dp.m_defaultDistribution;

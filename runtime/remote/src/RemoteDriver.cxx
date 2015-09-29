@@ -221,6 +221,8 @@ public:
     throw ( OU::EmbeddedException )
     : OC::ContainerBase<Driver,Container,Application,Artifact>(*this, name.c_str()),
       m_client(client) {
+    ocpiDebug("Construct remote container %s with transports: %s", name.c_str(),
+	      transports ? transports : "<none>");
     m_model = model;
     m_os = os;
     m_osVersion = osVersion;
@@ -234,10 +236,10 @@ public:
     char transport[strlen(transports)+1];
     char id[strlen(transports)+1];
     for (unsigned n = nTransports; n; n--, t++) {
-      int nChars;
-      if (sscanf(transports, "%s,%s,%u,%u,0x%x,0x%x|%n", transport, id, &t->roleIn, &t->roleOut,
-		 &t->optionsIn, &t->optionsOut, &nChars) != 6)
-	throw OU::Error("Bad transport string in container discovery: %s", transports);
+      int nChars, rv;
+      if ((rv = sscanf(transports, "%[^,],%[^,],%u,%u,0x%x,0x%x|%n", transport, id, &t->roleIn, &t->roleOut,
+		       &t->optionsIn, &t->optionsOut, &nChars)) != 6)
+	throw OU::Error("Bad transport string in container discovery: %s: %d", transports, rv);
       t->transport = transport;
       t->id = id;
       transports += nChars;

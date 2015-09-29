@@ -81,54 +81,6 @@ namespace OCPI {
       return false;
     }
 
-#if 0
-    // Note that transports, roles, and buffer sizes are already settled.
-    // Not much left, but we may extend this.
-    // Set parameters for a port, whether at creation/construction time or later at connect time
-    void PortData::setPortParams(const OU::Port &mPort, const OU::PValue *params) {
-      OA::ULong ul;
-
-      if (OU::findULong(params, "bufferCount", ul))
-	if (ul < mPort.m_minBufferCount)
-	  throw OU::Error("bufferCount is below worker's minimum");
-        else
-	  getData().data.desc.nBuffers = ul;
-      if (OU::findULong(params, "bufferSize", ul))
-	if (ul < mPort.m_minBufferSize)
-	  throw OU::Error("bufferSize %u is below worker's minimum: %zu",
-			  ul, mPort.m_minBufferSize);
-        else {
-	  m_bufferSize = ul;
-	  getData().data.desc.dataBufferSize = OCPI_UTRUNCATE(uint32_t, m_bufferSize);
-	  ocpiDebug("Portdata %s(%p): setting buffer size from parameter: %zu",
-		    mPort.m_name.c_str(), this, (size_t)ul);
-	}
-      
-      OR::PortRole role;
-      const char *s;
-      if (findRole(params, s, role)) {
-	if (!(getData().data.options & (1 << role)))
-	  throw OU::Error("xferRole of \"%s\" not supported by port \"%s\"",
-			  s, mPort.m_name.c_str());
-	getData().data.role = role;
-	getData().data.options |= (1 << OR::MandatedRole);
-      }
-      // deal with protocol and transport parameters
-      if (OU::findString(params, "endpoint", s)) {
-	if (!strchr(s, ':'))
-	  throw OU::Error("endpoint parameter must have leading transport and colon");
-	strncpy(getData().data.desc.oob.oep, s, sizeof(getData().data.desc.oob.oep));
-      } else if ((s = getenv("OCPI_DEFAULT_TRANSPORT")) ||
-		 OU::findString(params, "protocol", s) ||
-		 OU::findString(params, "transport", s)) {
-	ocpiDebug("Setting transport on port %s to %s", mPort.m_name.c_str(), s);
-	if (strchr(s, ':'))
-	  throw OU::Error("transport parameters cannot contain colons");
-	strncpy(getData().data.desc.oob.oep, s, sizeof(getData().data.desc.oob.oep));
-      }
-    }
-#endif
-
     ExternalBuffer::
     ExternalBuffer(BasicPort &port, ExternalBuffer *next, unsigned n)
       : m_port(port), m_full(false), m_position(n), m_next(next), m_zcFront(NULL),
@@ -189,76 +141,6 @@ namespace OCPI {
 		    name().c_str(), m_nBuffers);
 	}
     }
-
-#if 0
-    void BasicPort::
-    startConnect(const OR::Descriptors */*other*/, const OU::PValue *){} // default
-
-    // Convert PValues into descriptor values, with metadata constraint checking
-    void BasicPort::
-    setConnectParams(const OU::PValue *params) {
-      setPortParams(m_metaPort, params);
-      // There are no connection parameters (yet) other than those that can be provided
-      // to ports before connection.
-    }
-
-    // Do the work on this port when connection parameters are specified.
-    // This is still prior to receiving info from the other side, thus this is not necessarily
-    // the final info.
-    // FIXME: we should error check against bitstream-fixed parameters
-    void BasicPort::
-    applyConnectParams(const OR::Descriptors *other, const OU::PValue *params) {
-      setConnectParams(params);
-      startConnect(other, params);
-    }
-    // Establish the roles, which might happen earlier than the finalization of the connection
-    // Since roles can determine resource allocations
-    // This could be table-driven...
-    void BasicPort::
-    determineRoles(const char *name, OR::Descriptors &other) {
-      OR::Descriptors
-        &pDesc = isProvider() ? getData().data : other,
-        &uDesc = isProvider() ? other : getData().data;
-      ocpiInfo("Port %s of %s, a %s, has options 0x%x, initial role %s, buffers %u size %u",
-	       m_metaPort.m_name.c_str(), name,
-	       isProvider() ? "provider/consumer" : "user/producer",
-		getData().data.options, roleNames[getData().data.role],
-	       m_nBuffers, m_bufferSize);
-      ocpiInfo("  other has options 0x%x, initial role %s, buffers %u size %u",
-		other.options, roleNames[other.role], other.m_nBuffers,
-	       other.m_bufferSize);
-      OR::PortRole uRole = (OR::PortRole)uDesc.role, pRole = (OR::PortRole)pDesc.role;
-      const char *err = chooseRoles(uRole, uDesc.options, pRole, pDesc.options);
-      if (err)
-	throw OU::Error("Error negotiating transfer roles: %s", err);
-      uDesc.role = uRole;
-      pDesc.role = pRole;
-      ocpiInfo("  after negotiation, port %s, a %s, has role %s,"
-	       "  other has role %s",
-	       m_metaPort.m_name.c_str(), isProvider() ? "provider/consumer" : "user/producer",
-		roleNames[getData().data.role], roleNames[other.role]);
-      size_t maxSize = pDesc.desc.dataBufferSize;
-      if (uDesc.desc.dataBufferSize > pDesc.desc.dataBufferSize)
-	maxSize = uDesc.desc.dataBufferSize;
-      maxSize = OU::roundUp(maxSize, OU::BUFFER_ALIGNMENT);
-      if (maxSize > pDesc.desc.dataBufferSize) {
-	// Expanding the input size buffers
-	pDesc.desc.dataBufferSize = OCPI_UTRUNCATE(uint32_t, maxSize);
-      }
-      if (maxSize > uDesc.desc.dataBufferSize) {
-	// Expanding the output size buffer
-	uDesc.desc.dataBufferSize = OCPI_UTRUNCATE(uint32_t, maxSize);
-      }
-      // FIXME: update bufferSizePort relationships to ports that are changing their size
-      // But this depends on the order of the connections..
-      // but this should only happen with runtime-parameter buffer sizes
-      // perhaps make it an error
-      ocpiInfo("  after negotiation, buffer size is %zu", maxSize);
-      // We must make sure other side doesn't mess with roles anymore.
-      uDesc.options |= 1 << OR::MandatedRole;
-      pDesc.options |= 1 << OR::MandatedRole;
-    }
-#endif
 
     /*
      * ----------------------------------------------------------------------
@@ -547,27 +429,48 @@ namespace OCPI {
       // Giving priority to the input side in a tie, find the first transport that
       // both sides support that have compatible roles.
       static const char *roleNames[] = { OCPI_RDT_ROLE_NAMES };
-      const char
-	*err = NULL,
-	*transportIn = NULL,
-	*transportOut = NULL,
-	*transportConn = NULL;
       OR::PortRole roleIn = OR::NoRole, roleOut = OR::NoRole;
       const char *s;
       findRole(paramsIn, s, roleIn); // overrides per port for xfer role
       findRole(paramsOut, s, roleOut);
-      OU::findString(paramsIn, "transport", transportIn);
-      OU::findString(paramsOut, "transport", transportOut);
-      if (transportIn && transportOut && !strcasecmp(transportIn, transportOut))
-      OU::findString(paramsConn, "transport", transportConn);
+      const char *err = NULL, *tIn, *tOut, *tConn;
+      std::string sIn, sOut, sConn;
+      if (OU::findString(paramsConn, "transport", tConn)) {
+	if (!strchr(tConn, '-'))
+	  OU::format(sConn, "ocpi-%s-rdma", tConn);
+	else
+	  sConn = tConn;
+      }
+      if (OU::findString(paramsIn, "transport", tIn)) {
+	if (!strchr(tIn, '-'))
+	  OU::format(sIn, "ocpi-%s-rdma", tIn);
+	else
+	  sIn = tIn;
+      }
+      if (OU::findString(paramsOut, "transport", tOut)) {
+	if (!strchr(tOut, '-'))
+	  OU::format(sOut, "ocpi-%s-rdma", tOut);
+	else
+	  sOut = tOut;
+      }
+      if (sConn.length()) {
+	if (sIn.length() && strcasecmp(sIn.c_str(), sConn.c_str()) ||
+	    sOut.length() && strcasecmp(sOut.c_str(), sConn.c_str()))
+	  throw OU::Error("Inconsistent transports: connection \"%s\" out \"%s\" in \"%s\"",
+			  tConn, tIn, tOut);
+	sIn = sOut = sConn;
+      } else if (sIn.length()) {
+	if (sOut.length() && strcasecmp(sIn.c_str(), sOut.c_str()))
+	  throw OU::Error("Inconsistent transports: out \"%s\" in \"%s\"",
+			  tIn, tOut);
+	sConn = sIn;
+      } else
+	sConn = sOut;
       for (unsigned ni = 0; ni < in.size(); ni++) {
 	const Transport &it = in[ni];
-	if (transportIn && strcasecmp(transportIn, it.transport.c_str()))
-	  ocpiInfo("Rejecting input transport %s since %s was specified",
-		   it.transport.c_str(), transportIn);
-	else if (transportConn && strcasecmp(transportConn, it.transport.c_str()))
+	if (sConn.length() && strcasecmp(sConn.c_str(), it.transport.c_str()))
 	  ocpiInfo("Rejecting input transport %s since %s was specified for the connection",
-		   it.transport.c_str(), transportConn);
+		   it.transport.c_str(), sConn.c_str());
 	else if (roleIn != OR::NoRole && !((1 << roleIn) & it.optionsIn))
 	  ocpiInfo("Rejecting input role %s for transport %s: container doesn't support it",
 		   roleNames[roleIn], it.transport.c_str());
@@ -580,12 +483,9 @@ namespace OCPI {
 	    else if (strcasecmp(it.id.c_str(), ot.id.c_str()))
 	      ocpiInfo("Rejecting output transport %s since input id is %s but output id is %s",
 		       ot.transport.c_str(), it.id.c_str(), ot.id.c_str());
-	    else if (transportOut && strcasecmp(transportOut, ot.transport.c_str()))
-	      ocpiInfo("Rejecting output transport %s since %s was specified",
-		       ot.transport.c_str(), transportOut);
-	    else if (transportConn && strcasecmp(transportConn, ot.transport.c_str()))
-	      ocpiInfo("Rejecting input transport %s since %s was specified for the connection",
-		       ot.transport.c_str(), transportConn);
+	    else if (sConn.length() && strcasecmp(sConn.c_str(), ot.transport.c_str()))
+	      ocpiInfo("Rejecting out transport %s since %s was specified for the connection",
+		       ot.transport.c_str(), sConn.c_str());
 	    else if (roleOut != OR::NoRole && !((1 << roleOut) & ot.optionsOut))
 	      ocpiInfo("Rejecting input role %s for transport %s: container doesn't support it",
 		       roleNames[roleOut], ot.transport.c_str());
@@ -863,12 +763,14 @@ namespace OCPI {
       if (m_forward)
 	return m_forward->releaseBuffer();
       ExternalBuffer *b = m_next2release;
-      if (b->m_next) {
+      if (b) {
 	b->m_full = false;
 	m_nRead++;
 	m_next2release = b->m_next;
 	ocpiDebug("Release on %p of %p", this, b);
-      } else if (b->m_dtBuffer) {
+      } else {
+	b = &m_dtLastBuffer;
+	assert(m_lastInBuffer == b);
 	m_dtPort->releaseInputBuffer(b->m_dtBuffer);
 	b->m_dtBuffer = NULL;
       }
@@ -1003,36 +905,48 @@ namespace OCPI {
       assert(iDone && oDone && !result);
     }
 
-    // return if a result was produced.
+    // return true if we need more info, false if we're done.
+    // Even if we're done, we may have produced info for the other side,
+    // and placed it in m_initial.
     bool BasicPort::
     startRemote(Launcher::Connection &c) {
-      const OR::Descriptors *result;
-      bool done;
-      if (isProvider()) {
-	result = startConnect(NULL, done);
-	ocpiAssert(result && !done);
-      } else {
-	OR::Descriptors buf;
-	ocpiCheck(unpackPortDesc(c.m_in.m_initial, buf));
-	result = startConnect(&buf, done);
-	ocpiAssert(result || done);
+      Launcher::Port
+	&p = isProvider() ? c.m_in : c.m_out,
+	&other = isProvider() ? c.m_out : c.m_in;
+      assert(!p.m_done);
+      OR::Descriptors buf, *otherInfo = NULL;
+      if (other.m_initial.length()) {
+	ocpiCheck(unpackPortDesc(other.m_initial, buf));
+	otherInfo = &buf;
       }
-      if (result)
-	packPortDesc(*result, (isProvider() ? c.m_in : c.m_out).m_initial);
-      return result != NULL; // could be true for output
+      const OR::Descriptors *result = startConnect(otherInfo, p.m_done);
+      if (result) {
+	p.m_started = true;
+	packPortDesc(*result, p.m_initial);
+      }
+      return !p.m_done;
     }
 
+    // This is "try to finish remote".
+    // return true if more to do - we need more info
     bool BasicPort::
     finishRemote(Launcher::Connection &c) {
       OR::Descriptors buf, buf1;
       const OR::Descriptors *result;
-      bool done;
-      ocpiCheck(unpackPortDesc((isProvider() ? c.m_out : c.m_in).m_initial, buf));
-      result = finishConnect(&buf, buf1, done);
-      ocpiAssert(done);
-      if (result)
-	packPortDesc(*result, (isProvider() ? c.m_in : c.m_out).m_final);
-      return result != NULL; // could be true for output
+      Launcher::Port
+	&p = isProvider() ? c.m_in : c.m_out,
+	&other = isProvider() ? c.m_out : c.m_in;
+      assert(!p.m_done);
+      ocpiDebug("finishRemote: %p %s i %zu f %zu", this, isProvider() ? "in" : "out",
+		other.m_initial.length(), other.m_final.length());
+      ocpiCheck(unpackPortDesc(other.m_final.length() ? other.m_final : other.m_initial, buf));
+      result = finishConnect(&buf, buf1, p.m_done);
+      if (result) {
+	packPortDesc(*result, p.m_started ? p.m_final : p.m_initial);
+	p.m_started = true;
+      }
+      ocpiDebug("finishRemote: result %p done %u", result, p.m_done);
+      return !p.m_done;
     }
 
     // Default local behavior for basic ports that need to behave like external or bridge ports
@@ -1042,19 +956,32 @@ namespace OCPI {
 	m_dtPort = container().getTransport().createInputPort(getData().data);
       else if (other)
 	m_dtPort = container().getTransport().createOutputPort(getData().data, *other);
-      if (m_dtPort)
+      if (m_dtPort) {
 	// FIXME: put this in the constructor, and have better names
 	m_dtPort->setInstanceName(m_metaPort.m_name.c_str());
+	done = other != NULL;
+	return &getData().data;
+      }
       done = false;
-      return &getData().data;
+      return NULL; // we got nuthin
     }
 
     const OCPI::RDT::Descriptors *BasicPort::
     finishConnect(const OCPI::RDT::Descriptors *other, OCPI::RDT::Descriptors &feedback,
 		  bool &done) {
-      return m_dtPort->finalize(other, getData().data, &feedback, done);
+      ocpiDebug("finishConnect enter on '%s' other %p dtport %p",
+		name().c_str(), other, m_dtPort);
+      const OCPI::RDT::Descriptors *rv;
+      if (!m_dtPort) {
+	rv = startConnect(other, done);
+	if (done)
+	  rv = m_dtPort->finalize(other, getData().data, &feedback, done);
+      } else  
+	rv = m_dtPort->finalize(other, getData().data, &feedback, done);
       if (done)
 	portIsConnected();
+      ocpiDebug("finishConnect exit on '%s' rv %p done %u", name().c_str(), rv, done);
+      return rv;
     }
 
     unsigned BasicPort::fullCount() {

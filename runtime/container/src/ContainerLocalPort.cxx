@@ -336,7 +336,7 @@ namespace OCPI {
     }
 
     // Try to complete the connection on this worker member port.
-    // We may be called more than once.
+    // We expect to be called again if we return true
     bool LocalPort::
     finalConnect(Launcher::Connection &c) {
       OU::SelfAutoMutex guard(this);
@@ -349,57 +349,6 @@ namespace OCPI {
 	return m_bridgePorts[otherMember]->finishRemote(c);
       }
     }
-
-#if 0
-    // Connect this local port via a bridge acting as a shim.  We haven't been called
-    // to connect yet, so we do it all here.  We know that this is the other end of
-    // a bridged connection, and thus it is a member port of a scaled crew.
-    void LocalPort::
-    connectInProcess(BridgePort &shim, Launcher::Connection &c) {
-      assert(m_bridgePorts.size());
-      becomeShim();         // skinny set of buffers and flags between codec and worker
-      m_bridgePorts[(isProvider() ? c.m_out : c.m_in).m_member->m_member] = &shim;
-    }
-
-    // Start the connection process on this port.  Params are already applied.
-    // This is used in both the both-in-same-process case as well as the
-    // case where the other side is not in this process
-    // This is where we decide to create and connect bridge ports (or not).
-    // The return value is what needs to be given to the other side
-    // The done value is whether this port needs no more information for this connection
-    const OR::Descriptors *LocalPort::
-    initialConnect(const Launcher::Connection &c, const OR::Descriptors *other,
-		   OR::Descriptors &buf, bool &done) {
-      OU::SelfAutoMutex guard(this);
-      OR::Descriptors &d = getData().data;
-      size_t otherMember = (isProvider() ? c.m_out : c.m_in).m_member->m_member;
-      bool first = m_bridgePorts.empty() || otherMember == 0;
-      const OR::Descriptors *result = NULL;
-      if (first) {
-	// Initialize the descriptor for the local member port
-	d.type = isProvider() ? OR::ConsumerDescT : OR::ProducerDescT;
-	d.desc.dataBufferSize = OCPI_UTRUNCATE(uint32_t, c.m_bufferSize);
-	if (m_bridgePorts.empty()) {
-	  d.role = isProvider() ? c.m_transport.roleIn : c.m_transport.roleOut;
-	  d.options = isProvider() ? c.m_transport.optionsIn : c.m_transport.optionsOut;
-	  strcpy(d.desc.oob.oep, c.m_transport.transport.c_str());
-	  result = &d;
-	} else {
-	  strcpy(d.desc.oob.oep, "local");
-	  d.role = OR::Passive;
-	  d.options = 1 << OR::Passive;
-	}
-	result = startConnect(other, buf, done);
-	assert(m_bridgePorts.empty() || done);
-      }
-      if (m_bridgePorts.size()) {
-	m_bridgePorts[otherMember] = new BridgePort(*this, c, other, buf, result, done);
-	m_connectedBridgePorts++;
-	ocpiAssert(m_connectedBridgePorts <= m_bridgePorts.size());
-      }
-      return result;
-    }
-#endif
 
     // Make sure a local buffer is available and return true of there is one ready to go.
     // Also, for each new local buffer, initialize m_bridgeOp (and m_currentBuffer)

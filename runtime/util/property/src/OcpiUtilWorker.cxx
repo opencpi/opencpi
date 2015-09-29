@@ -152,7 +152,7 @@ namespace OCPI {
 	std::string name;
 	OE::getOptionalString(x, name, "name");
 	Port::Scaling s;
-	if ((err = s.parse(x, *this)))
+	if ((err = s.parse(x, this)))
 	  return err;
 	if (name.empty())
 	  m_scaling = s;

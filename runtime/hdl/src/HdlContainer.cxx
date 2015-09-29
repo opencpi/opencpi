@@ -84,7 +84,7 @@ namespace OCPI {
       m_platform = m_device.platform();
       m_transports.resize(1);
       m_transports[0].transport = "ocpi-dma-pio";
-      m_transports[0].id = ""; // someday this might be root node MAC address
+      m_transports[0].id = OU::getSystemId().c_str();
       m_transports[0].roleIn = OR::ActiveMessage;
       m_transports[0].roleOut = OR::ActiveMessage;
       m_transports[0].optionsIn =

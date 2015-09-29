@@ -80,8 +80,6 @@ namespace OCPI {
 	Member();
       };
       typedef std::vector<Member> Members;
-      // The instance object needed by the launcher
-      // FIXME: create a "Launcher::Port" here...
       struct Port {
 	Launcher *m_launcher;
 	Container *m_container;
@@ -94,6 +92,8 @@ namespace OCPI {
 	size_t m_scale, m_index;      // ditto
 	const char *m_url;
 	std::string m_initial, m_final;
+	bool m_started; // the connection has passed its initial phase and initial info has been sent
+	bool m_done;
 	Port();
       };
       struct Connection {

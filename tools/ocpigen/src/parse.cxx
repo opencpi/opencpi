@@ -399,7 +399,7 @@ parseImplControl(ezxml_t &xctl, const char *firstRaw) {
       return OU::esprintf("Scaling parameter \"%s\" conflicts with property name",
 			  name.c_str());
     OU::Port::Scaling s;
-    if ((err = s.parse(x, *this)))
+    if ((err = s.parse(x, this)))
       return err;
     if (name.empty())
       m_scaling = s;

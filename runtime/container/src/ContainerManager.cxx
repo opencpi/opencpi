@@ -115,14 +115,19 @@ namespace OCPI {
       deleteChildren();
     }
     bool Manager::findContainersX(Callback &cb, OU::Worker &i, const char *name) {
+      ocpiDebug("Finding containers for worker %s name %s",
+		i.name().c_str(), name);
       parent().configureOnce();
       for (Driver *d = firstChild(); d; d = d->nextChild())
-	for (Container *c = d->firstContainer(); c; c = c->nextContainer())
+	for (Container *c = d->firstContainer(); c; c = c->nextContainer()) {
+	  ocpiDebug("Trying container c->name: %s ord %u",
+		    c->name().c_str(), c->ordinal());
 	  if ((!name ||
 	       isdigit(*name) && (unsigned)atoi(name) == c->ordinal() ||
 	       !isdigit(*name) && name == c->name()) &&
 	      c->supportsImplementation(i))
 	    cb.foundContainer(*c);
+	}
       return false;
     }
 

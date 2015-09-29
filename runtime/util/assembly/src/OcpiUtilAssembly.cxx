@@ -237,8 +237,10 @@ namespace OCPI {
 	toP.m_connectedPort = &fromP;
 	fromP.m_connectedPort = &toP;
       }
-      if (transport)
-	c->m_parameters.add("transport", transport);
+      if (transport) {
+	const char *eq = strchr(transport, '=');
+	c->m_parameters.add("transport", eq ? eq + 1 : transport);
+      }
       return err;
     }
     // This is called to create an external connection either from the very short shortcut

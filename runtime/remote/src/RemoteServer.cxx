@@ -165,6 +165,22 @@ namespace OCPI {
       return NULL;
     }
 
+    static void
+    updateConnection(OC::Launcher::Connection &c, ezxml_t cx) {
+      const char *info;
+      if (c.m_out.m_launcher) {
+	if ((info = ezxml_cattr(cx, "ipi")))
+	  Launcher::decodeDescriptor(info, c.m_in.m_initial);
+	else if ((info = ezxml_cattr(cx, "fpi")))
+	  Launcher::decodeDescriptor(info, c.m_in.m_final);
+      } else if (c.m_in.m_launcher) {
+	if ((info = ezxml_cattr(cx, "iui")))
+	  Launcher::decodeDescriptor(info, c.m_out.m_initial);
+	else if ((info = ezxml_cattr(cx, "fui")))
+	  Launcher::decodeDescriptor(info, c.m_out.m_final);
+      }
+    }
+
     bool Server::
     doConnection(ezxml_t cx, OC::Launcher::Connection &c, std::string &error) {
       c.m_transport.transport = ezxml_cattr(cx, "transport");
@@ -179,11 +195,14 @@ namespace OCPI {
 	return OU::eformat(error, "Error processing connection values for launch: %s", err);
       c.m_transport.roleIn = OCPI_UTRUNCATE(OR::PortRole, roleIn);
       c.m_transport.roleOut = OCPI_UTRUNCATE(OR::PortRole, roleOut);
+      updateConnection(c, cx);
+#if 0
       ezxml_t px;
       if ((px = ezxml_cchild(cx, "paramsin")))
 	c.m_in.m_params.addXml(px);
       if ((px = ezxml_cchild(cx, "paramsout")))
 	c.m_out.m_params.addXml(px);
+#endif
       return false;
     }
 
@@ -288,15 +307,21 @@ namespace OCPI {
 	  return true;
       m_response
 	 = m_local->launch(m_members, m_connections) ? "<launching>" : "<launching done='1'>";
-      // We know that the only thing that can happen at launch time is to
-      // get initial provider info from input ports
+      // Whether we are done or not, we need to send any initial connection info to the other side.
       c = &m_connections[0];
-      for (unsigned n = 0; n < m_connections.size(); n++, c++)
-	if (c->m_in.m_launcher == m_local && c->m_out.m_launcher != m_local) {
-	  OU::formatAdd(m_response, "  <connection id='%u' ipi='", n);
-	  Launcher::encodeDescriptor(c->m_in.m_initial, m_response);
-	  m_response += "'/>\n";
+      for (unsigned n = 0; n < m_connections.size(); n++, c++) {
+	if (c->m_in.m_launcher == m_local && c->m_in.m_initial.length()) {
+	  OU::formatAdd(m_response, "  <connection id='%u'", n);
+	  Launcher::encodeDescriptor("ipi", c->m_in.m_initial, m_response);
+	  m_response += "/>\n";
 	}
+	// Output ports generally have no initial info here, but they may at some point
+	if (c->m_out.m_launcher == m_local && c->m_out.m_initial.length()) {
+	  OU::formatAdd(m_response, "  <connection id='%u'", n);
+	  Launcher::encodeDescriptor("iui", c->m_out.m_initial, m_response);
+	  m_response += "/>\n";
+	}
+      }
       return Launcher::sendXml(fd(), m_response, "responding from server after initial launch", error);
     }
 
@@ -344,21 +369,9 @@ namespace OCPI {
 	if ((err = OX::getNumber(cx, "id", &n, NULL, 0, false, true)) ||
 	    n >= m_connections.size())
 	  return OU::eformat(error, "Bad connection id: %s", err);
-	OC::Launcher::Connection &c = m_connections[n];
-	const char *info;
-	if (c.m_out.m_launcher) {
-	  if ((info = ezxml_cattr(cx, "ipi")))
-	    Launcher::decodeDescriptor(info, c.m_in.m_initial);
-	  else if ((info = ezxml_cattr(cx, "fpi")))
-	    Launcher::decodeDescriptor(info, c.m_in.m_final);
-	} else if (c.m_in.m_launcher) {
-	  if ((info = ezxml_cattr(cx, "iui")))
-	    Launcher::decodeDescriptor(info, c.m_out.m_initial);
-	  else if ((info = ezxml_cattr(cx, "fui")))
-	    Launcher::decodeDescriptor(info, c.m_out.m_final);
-	}
+	updateConnection(m_connections[n], cx);
       }
-      // 3. Give the local launcher a chance to deal with connection info and produce mode
+      // 3. Give the local launcher a chance to deal with connection info and produce more
       ocpiDebug("Connections processed.  Entering local launcher work function.");
       m_response =
 	m_local->work(m_members, m_connections) ? "<launching>" : "<launching done='1'>";
@@ -369,22 +382,22 @@ namespace OCPI {
 	if (c->m_in.m_launcher) {
 	  // local input remote output
 	  if (c->m_in.m_final.length()) {
-	    OU::formatAdd(m_response, "  <connection id='%u' fpi='", n);
-	    Launcher::encodeDescriptor(c->m_in.m_final, m_response);
-	    m_response += "'/>\n";
+	    OU::formatAdd(m_response, "  <connection id='%u'", n);
+	    Launcher::encodeDescriptor("fpi", c->m_in.m_final, m_response);
+	    m_response += "/>\n";
 	    c->m_in.m_final.clear();
 	  }
 	} else if (c->m_out.m_launcher) {
 	  // local input remote output
 	  if (c->m_out.m_initial.length()) {
-	    OU::formatAdd(m_response, "  <connection id='%u' iui='", n);
-	    Launcher::encodeDescriptor(c->m_out.m_initial, m_response);
-	    m_response += "'/>\n";
+	    OU::formatAdd(m_response, "  <connection id='%u'", n);
+	    Launcher::encodeDescriptor("iui", c->m_out.m_initial, m_response);
+	    m_response += "/>\n";
 	    c->m_out.m_initial.clear();
 	  } else if (c->m_out.m_final.length()) {
-	    OU::formatAdd(m_response, "  <connection id='%u' fui='", n);
-	    Launcher::encodeDescriptor(c->m_out.m_final, m_response);
-	    m_response += "'/>\n";
+	    OU::formatAdd(m_response, "  <connection id='%u'", n);
+	    Launcher::encodeDescriptor("fui", c->m_out.m_final, m_response);
+	    m_response += "/>\n";
 	    c->m_out.m_final.clear();
 	  }
 	}

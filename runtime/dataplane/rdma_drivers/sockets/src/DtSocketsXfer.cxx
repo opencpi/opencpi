@@ -132,7 +132,7 @@ private:
 };
 
 
-  class ServerSocketHandler : public OU::Thread
+class ServerSocketHandler : public OU::Thread
 {
 public:
   ServerSocketHandler( OS::ServerSocket & server, SocketStartupParams & sp  )

@@ -62,7 +62,7 @@ namespace OCPI {
     extern PValue allPVParams[];
 #define OCPI_DATA_TYPE(sca, corba, letter, bits, run, pretty, store) \
     void add##pretty(const PValue *&p, const char *name, run value); \
-    bool find##pretty(const PValue* p, const char* name, run &value);
+    bool find##pretty(const PValue *p, const char *name, run &value);
       OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
     bool

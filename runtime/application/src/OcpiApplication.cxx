@@ -761,7 +761,7 @@ namespace OCPI {
 		    "  Instance %2u %s (spec %s) on %s container %u: %s, using %s%s%s in %s dated %s", 
 		    n, m_assembly.instance(n).name().c_str(),
 		    m_assembly.instance(n).specName().c_str(),
-		    c.m_model.c_str(), i->m_bestDeployment.m_container, c.name().c_str(),
+		    c.m_model.c_str(), c.ordinal(), c.name().c_str(),
 		    impl.m_metadataImpl.name().c_str(),
 		    impl.m_staticInstance ? "/" : "",
 		    impl.m_staticInstance ? ezxml_cattr(impl.m_staticInstance, "name") : "",
@@ -824,7 +824,6 @@ namespace OCPI {
 	  assert(r.m_knownRole && !r.m_bidirectional);
 	  (r.m_provider ? iIn : iOut) = &m_instances[pi->m_instance];
 	}
-#if 1
 	nMemberConnections += (iIn ? iIn->m_crew.m_size : 1) * (iOut ? iOut->m_crew.m_size : 1);
       }
       // Pass 1a: count the connections required that are internal to an instance crew
@@ -860,16 +859,6 @@ namespace OCPI {
 	    iIn = i;
 	    pIn = p;
 	    inScale = i->m_crew.m_size;
-#else
-	for (OU::Assembly::ExternalsIter ei = (*ci).m_externals.begin();
-	     ei != (*ci).m_externals.end(); ei++) {
-	  assert(!lc->m_instIn || !lc->m_instOut);
-	  if (ei->m_url.length())
-	    lc->m_url = ei->m_url.c_str();
-	  if (lc->m_instIn) {
-	    lc->m_nameOut = ei->m_name.c_str();
-	    lc->m_paramsOut = ei->m_parameters;
-#endif
 	  } else {
 	    aOut = &*pi;
 	    iOut = i;
@@ -910,7 +899,7 @@ namespace OCPI {
 	    if (lc->m_in.m_container && lc->m_out.m_container &&
 		lc->m_in.m_container != lc->m_out.m_container &&
 		(!lc->m_in.m_container->portsInProcess() ||
-		 !lc->m_in.m_container->portsInProcess()))
+		 !lc->m_out.m_container->portsInProcess()))
 	      OC::BasicPort::
 		determineTransport(lc->m_in.m_container->transports(),
 				   lc->m_out.m_container->transports(),
@@ -1014,16 +1003,23 @@ namespace OCPI {
       typedef std::set<OC::Launcher *> Launchers;
       typedef Launchers::iterator LaunchersIter;
       Launchers launchers;
+      OC::Launcher &local = OC::LocalLauncher::getSingleton();
+      // First pass, record all the launchers, and do initial launch for the local containers.
+      // This allows initial connection processing locally to avoid unnecessary round-trips
+      // with remote launchers that have connections to local workers.
       for (unsigned n = 0; n < m_nContainers; n++)
-	if (launchers.insert(&m_containers[n]->launcher()).second)
+	if (launchers.insert(&m_containers[n]->launcher()).second &&
+	    &m_containers[n]->launcher() == &local)
 	  m_containers[n]->launcher().launch(m_launchMembers, m_launchConnections);
-      // Now we have interned our launchers
+      // Second pass, do initial launch on remote launchers
+      for (LaunchersIter li = launchers.begin(); li != launchers.end(); li++)
+	if (*li != &local)
+	  (*li)->launch(m_launchMembers, m_launchConnections);
       bool more;
       do {
 	more = false;
 	for (LaunchersIter li = launchers.begin(); li != launchers.end(); li++)
-	  if (//(*li)->notDone() &&
-	      (*li)->work(m_launchMembers, m_launchConnections))
+	  if ((*li)->work(m_launchMembers, m_launchConnections))
 	    more = true;
       } while (more);
       if (m_assembly.m_doneInstance != -1)
