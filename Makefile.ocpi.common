@@ -111,11 +111,11 @@ endif
 # 4. The development tree location via OCPI_CDK_DIR
 
 MAIN_LDFLAGS+= \
-  -Xlinker -rpath -Xlinker '$${ORIGIN}' \
-  -Xlinker -rpath -Xlinker '$${ORIGIN}/../../lib/$(OCPI_TARGET_HOST)' \
-  -Xlinker -rpath -Xlinker '$${ORIGIN}/lib' \
+  -Xlinker -rpath -Xlinker '$(RPATH_ORIGIN)' \
+  -Xlinker -rpath -Xlinker '$(RPATH_ORIGIN)/../../lib/$(OCPI_TARGET_HOST)' \
+  -Xlinker -rpath -Xlinker '$(RPATH_ORIGIN)/lib' \
   -Xlinker -rpath \
-  -Xlinker '$${ORIGIN}/$(call FindRelative,$(OBJDIR),$(OCPI_CDK_DIR))/lib/$(OCPI_TARGET_HOST)' \
+  -Xlinker '$(RPATH_ORIGIN)/$(call FindRelative,$(OBJDIR),$(OCPI_CDK_DIR))/lib/$(OCPI_TARGET_HOST)' \
   $(foreach o,$(MAIN_DRIVERS), $(call UNDEFINED_FLAG,$o))
 
 #$(LD_ALLOW_UNDEFINED)
@@ -124,6 +124,7 @@ ifeq ($(OCPI_OS),macos)
   SO=dylib
   LD_ALLOW_UNDEFINED=-Xlinker -undefined -Xlinker dynamic_lookup
   SHARED_ALLOW_UNDEFINED=-dynamiclib $(LD_ALLOW_UNDEFINED) -install_name @rpath/$(notdir $@)
+  RPATH_ORIGIN=@executable_path
   #MACSTDLIB=-stdlib=libstdc++
   SHARED= $(MACSTDLIB) -dynamiclib -install_name @rpath/$(notdir $@)
   UNDEFINED_FLAG=-Xlinker -u -Xlinker _$1
@@ -137,6 +138,7 @@ ifeq ($(OCPI_OS),macos)
   # CXXFLAGS += -mdynamic-no-pic ideally do this for main programs...
   EXTRA_LDFLAGS=$(MACSTDLIB)
 else
+  RPATH_ORIGIN=$${ORIGIN}
   MAIN_LDFLAGS+= -rdynamic
   UNDEFINED_FLAG=-Xlinker -u -Xlinker $1
   ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)

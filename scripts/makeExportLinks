@@ -34,6 +34,7 @@ for t in \
    runtime/application/ocpiserve \
    runtime/hdl-support/testRpl \
    runtime/hdl-support/ocpizynq \
+   tools/cdk/ocpidds/ocpidds \
    ; do
   b=$(basename $t)
   d=$(dirname $t)

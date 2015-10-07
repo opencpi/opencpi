@@ -31,81 +31,46 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "cdkutils.h"
 #include "ocpidds.h"
+
+#define OCPI_OPTIONS_HELP \
+  "Usage is: ocpidds [options] <input-files>\n"
+
+//          name      abbrev  type    value description
+#define OCPI_OPTIONS \
+ CMD_OPTION(protocol, p, Bool,   NULL, "Generate the protocol XML file from  DDS IDL files") \
+ CMD_OPTION(idl,      d, Bool,   NULL, "Generate the DDS IDL file from an XML protocol file") \
+ CMD_OPTION(structname, s, String, NULL,  "IDL struct name for DDS topic for -p. Default is IDL file name") \
+ CMD_OPTION(test,       t, String,  0,     "Internal data type test iteration count") \
+ CMD_OPTION(output,     O, String, NULL,  "the output directory for generated files") \
+ CMD_OPTION_S(define,   D, String, NULL,  "preprocessor definition for IDL") \
+ CMD_OPTION_S(undefine, U, String, NULL, "preprocessor undefinition for IDL") \
+ CMD_OPTION_S(include,  I, String, NULL, "an include search directory for IDL/XML processing") \
+ CMD_OPTION(depend,     M, String, NULL, "file to write makefile dependencies to\n") \
+
+#include "CmdOption.h"
 /*
  * Generate things related to DDS.
  * In particular, generate the OpenCPI protocol XML from DDS IDL
  */
-int
-main(int argc, char **argv) {
-  const char *outDir = 0, *structName = 0;
-  const char *doTest = NULL;
-  bool
-    doProto = false, doIDL = false;
-  if (argc <= 1) {
-    fprintf(stderr,
-	    "Usage is: ocpidds [options] <input-files> \n"
-	    " Code generation options that determine which files are created and used:\n"
-	    " -p            Generate the protocol XML file from  DDS IDL files.\n"
-	    " -d            Generate the DDS IDL file from an XML protocol file.\n"
-	    " -s            IDL struct name for DDS topic for -p option. Default is IDL file name\n"
-	    " -t <count>    Internal test\n"
-	    " Other options:\n"
-	    " -O <dir>      Specify the output directory for generated files\n"
-	    " -DSYM         Specify preprocessor definition for IDL\n"
-	    " -USYM         Specify preprocessor undefinition for IDL\n"
-	    " -I <dir>      Specify an include search directory for IDL/XML processing\n"
-	    " -M <file>     Specify the file to write makefile dependencies to\n"
-	    );
-    return 1;
-  }
+static int mymain(const char **ap) {
   const char *err = 0;
-  for (char **ap = argv+1; *ap; ap++)
-    if (ap[0][0] == '-')
-      switch (ap[0][1]) {
-      case 'd':
-	doIDL = true;
-	break;
-      case 'p':
-	doProto = true;
-	break;
-      case 's':
-	structName = *++ap;
-	break;
-      case 't':
-	doTest = *++ap;
-	break;
-      case 'M':
-	depFile = *++ap;
-	break;
-      case 'I':
-	addInclude(*ap);
-	if (!ap[0][2])
-	  addInclude(*++ap);
-	break;
-      case 'D':
-      case 'U':
-	addInclude(*ap);
-	break;
-      case 'O':
-	outDir = *++ap;
-	break;
-      default:
-	fprintf(stderr, "Unknown flag: %s\n", *ap);
-	return 1;
-      }
-    else {
-      if (doProto) {
-	if ((err = emitProtocol(outDir, *ap, structName)))
-	  fprintf(stderr, "Error generating OpenCPI protocol file from IDL: %s\n", err);
-      } else if (doIDL && (err = emitIDL(outDir, *ap)))
-	fprintf(stderr, "Error generating IDL file from OpenCPI protocol file \"%s\": %s\n", *ap, err);
-    }
-  if (doTest)
-    dataTypeTest(doTest);
+  if (options.protocol()) {
+    if ((err = emitProtocol(options.output(), *ap, options.structname())))
+      fprintf(stderr, "Error generating OpenCPI protocol file from IDL: %s\n", err);
+  } else if (options.idl() && (err = emitIDL(options.output(), *ap)))
+    fprintf(stderr, "Error generating IDL file from OpenCPI protocol file \"%s\": %s\n", *ap,
+	    err);
+  else if (options.test())
+    dataTypeTest(options.test());
   return err ? 1 : 0;
+}
+
+int
+main(int /*argc*/, const char **argv) {
+  return options.main(argv, mymain);
 }

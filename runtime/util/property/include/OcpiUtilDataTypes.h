@@ -147,7 +147,8 @@ namespace OCPI {
 	endStruct(const Member &m),
 	beginType(const Member &m),
 	endType(const Member &m),
-	readData(const Member &m, ReadDataPtr p, size_t nBytes, size_t nElements) = 0,
+	readData(const Member &m, ReadDataPtr p, size_t nBytes, size_t nElements,
+		 bool fake = false) = 0,
 	end();
     };
     // There are the data type attributes allowed for members
@@ -174,7 +175,8 @@ namespace OCPI {
       void printChildren(FILE *f, const char *tag, unsigned indent = 0);
       void printXML(FILE *f, const char *tag, unsigned indent);
       void write(Writer &writer, const uint8_t *&data, size_t &length, bool topSeq = false);
-      void read(Reader &reader, uint8_t *&data, size_t &length) const;
+      // Fake means don't actually touch the message.
+      void read(Reader &reader, uint8_t *&data, size_t &length, bool fake = false) const;
       void generate(const char *name, unsigned ordinal = 0, unsigned depth = 0);
       const std::string &name() const { return m_name; }
       const char

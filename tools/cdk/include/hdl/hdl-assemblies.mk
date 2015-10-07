@@ -47,7 +47,7 @@ all: $(Assemblies)
 $(Assemblies):
 	$(AT)echo =============Building assembly $@
 	$(AT)$(MAKE) -L -C $@ \
-               $(HdlPassTargets) $(if $(HdlPlatforms)$(HdlPlatform),,HdlPlatforms=ml605) \
+               $(HdlPassTargets) \
 	       LibDir=$(call AdjustRelative,$(LibDir)) \
 	       GenDir=$(call AdjustRelative,$(GenDir)) \
 	       ComponentLibrariesInternal="$(call OcpiAdjustLibraries,$(ComponentLibraries))" \

@@ -33,6 +33,8 @@ void dataTypeTest(const char *arg) {
     ppp = &pp;
     count = 1;
   }
+  size_t maxSize = 0;
+  std::vector<uint8_t> buf, buf1;
   for (unsigned n = 0; n < count; n++) {
     OU::Protocol genp;
     OU::Protocol &p = ppp ? *ppp : genp;
@@ -46,22 +48,28 @@ void dataTypeTest(const char *arg) {
     p.testOperation(stdout, opcode, v);
     printf("Min Buffer Size: %zu %zu %zu\n", p.m_minBufferSize, p.m_dataValueWidth, p.m_minMessageValues);
     fflush(stdout);
+    size_t len;
+    {
+      OU::ValueReader r((const OU::Value **)v);
+      len = p.read(r, NULL, SIZE_MAX, opcode);
+    }
+    maxSize = std::max(len, maxSize);
+    printf("Length is %zu\n", len);
+    if (!len)
+      continue;
+    buf.resize(len);
     OU::ValueReader r((const OU::Value **)v);
-    unsigned len = 1000000;
-    uint8_t *buf = new uint8_t[len];
-    memset(buf, 0, len);
-    size_t rlen = p.read(r, buf, len, opcode);
+    size_t rlen = p.read(r, &buf[0], len, opcode);
     printf("Length was %zu\n", rlen);
     size_t nArgs = p.m_operations[opcode].m_nArgs;
     OU::Value **v1 = new OU::Value *[nArgs];
     OU::ValueWriter w(v1, nArgs);
-    p.write(w, buf, len, opcode);
-    uint8_t *buf1 = new uint8_t[rlen];
-    memset(buf1, 0, rlen);
+    p.write(w, &buf[0], len, opcode);
+    buf1.resize(rlen, 0);
     OU::ValueReader r1((const OU::Value **)v1);
-    size_t rlen1 = p.read(r1, buf1, rlen, opcode);
+    size_t rlen1 = p.read(r1, &buf1[0], rlen, opcode);
     assert(rlen == rlen1);
-    int dif = memcmp(buf, buf1, rlen);
+    int dif = memcmp(&buf[0], &buf1[0], rlen);
     if (dif)
       for (unsigned n = 0; n < rlen; n++)
 	if (buf[n] != buf1[n]) {
@@ -75,8 +83,7 @@ void dataTypeTest(const char *arg) {
     }
     delete []v;
     delete []v1;
-    delete []buf;
-    delete []buf1;
   }
-  fprintf(stderr, "Data type test succeeded with %u randomly generated types and values.\n", count);
+  fprintf(stderr, "Data type test succeeded with %u randomly generated types and values."
+	  " Max buffer was %zu\n", count, maxSize);
 }

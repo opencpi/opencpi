@@ -231,7 +231,7 @@ TreeHash=`(if test -f $(1); then \
              cat $(1); \
            elif test -e $(1); then \
              cd $(1); \
-             find -L . -type f | xargs cat; \
+             find -L . -type f | sort | xargs cat; \
            fi) \
            | $(MD5)`
 ReplaceIfDifferent=\
