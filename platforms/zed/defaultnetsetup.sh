@@ -16,6 +16,8 @@ if test "$OCPI_BASE_DIR" = ""; then
   # Third argument is opencpi dir relative to mount point
   # Fourth argument is time server for the (old) time protocol used by the rdate command
   # Fifth arg is timezone spec - see "man timezone" for the format.
+  export OCPI_TOOL_MODE=
+  export OCPI_TARGET_MODE=
   source /mnt/card/opencpi/zednetsetup.sh $1 /Users/jek/Business ocpi/main/opencpi time.nist.gov EST5EDT,M3.2.0,M11.1.0
   break # this script will be rerun recursively by setup.sh
 fi

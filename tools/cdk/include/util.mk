@@ -231,7 +231,7 @@ TreeHash=`(if test -f $(1); then \
              cat $(1); \
            elif test -e $(1); then \
              cd $(1); \
-             find -L . -type f | xargs cat; \
+             find -L . -type f | sort | xargs cat; \
            fi) \
            | $(MD5)`
 ReplaceIfDifferent=\
@@ -303,7 +303,7 @@ else
 DYN_PREFIX=LD_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/$(OCPI_TOOL_DIR)
 endif
 #$(info OCDK $(OCPI_CDK_DIR))
-DYN_PREFIX=
+#DYN_PREFIX=
 OcpiGenTool=$(ToolsDir)/ocpigen $(patsubst %,-I"%",$(call Unique,$(XmlIncludeDirsInternal)))
 OcpiGenArg=$(DYN_PREFIX) $(OcpiGenTool) $1 -M $(GeneratedDir)/$(@F).deps
 OcpiGen=$(call OcpiGenArg,)
@@ -369,3 +369,6 @@ RmRv=$(if $(filter %_rv,$1),$(patsubst %_rv,%,$1),$1)
 endif # ifndef __UTIL_MK__
 
 OcpiAdjustLibraries=$(foreach l,$1,$(if $(findstring /,$l),$(call AdjustRelative,$l),$l))
+ifndef OCPI_PREREQUISITES_INSTALL_DIR
+  export OCPI_PREREQUISITES_INSTALL_DIR:=/opt/opencpi/prerequisites
+endif

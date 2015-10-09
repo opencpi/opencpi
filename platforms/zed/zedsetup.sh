@@ -8,6 +8,7 @@ if test $# != 2; then
   echo If the ntp-server is '"-"', no ntpclient will be started.
 else
   export OCPI_ROOT_DIR=/mnt/card/opencpi
+  export OCPI_CDK_DIR=/mnt/card/opencpi
   # In case dhcp failed on eth0, try it on eth1
   if test "$1" != -; then
     echo Attempting to set the time from time server: $1
@@ -27,8 +28,10 @@ else
   # Note the ocpidriver load command is innocuous if run redundantly
   cat <<EOF > $HOME/.profile
     export OCPI_ROOT_DIR=$OCPI_ROOT_DIR
+    export OCPI_CDK_DIR=$OCPI_CDK_DIR
     export PATH=$PATH:$OCPI_ROOT_DIR/bin
     export OCPI_LIBRARY_PATH=$OCPI_ROOT_DIR/artifacts
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$OCPI_CDK_DIR/lib/linux-zynq-arm
     ocpidriver load
     export TZ=$2
     echo OpenCPI ready for zed.

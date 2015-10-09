@@ -16,6 +16,6 @@
     <property name='width_out' value='32'/>
   </instance>
   <instance component='file_write'>
-    <property name='filename' value='test.outputwrong'/>
+    <property name='filename' value='test.output'/>
   </instance>
 </application>

@@ -29,6 +29,8 @@ else
   # Note the ocpidriver load command is innocuous if run redundantly
   export OCPI_BASE_DIR=/mnt/net/$3
   cat <<EOF > $HOME/.profile
+    export OCPI_TOOL_MODE=$OCPI_TOOL_MODE
+    export OCPI_TARGET_MODE=$OCPI_TARGET_MODE
     export OCPI_BASE_DIR=$OCPI_BASE_DIR
     source $OCPI_BASE_DIR/ocpi/ocpisetup.sh $OCPI_BASE_DIR/ocpi/ocpisetup.sh
     ocpidriver load
