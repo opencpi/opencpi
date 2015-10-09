@@ -185,7 +185,7 @@ namespace OCPI {
     }
     void BaseCommandOptions::
     exitbad(const char *e) {
-      fprintf(stderr, "Existing for exception: %s\n", e);
+      fprintf(stderr, "Exiting for exception: %s\n", e);
       exit(1);
     }
     void BaseCommandOptions::

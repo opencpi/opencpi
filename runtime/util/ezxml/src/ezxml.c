@@ -711,7 +711,7 @@ ezxml_t ezxml_parse_file(const char *file)
 
 // Encodes ampersand sequences appending the results to *dst, reallocating *dst
 // if length excedes max. a is non-zero for attribute encoding. Returns *dst
-char *ezxml_ampencode(const char *s, size_t len, char **dst, size_t *dlen,
+char *ezxml_ampencode(const char *s, ssize_t len, char **dst, size_t *dlen,
                       size_t *max, short a)
 {
     const char *e;
@@ -772,6 +772,20 @@ char *ezxml_toxml_r(ezxml_t xml, char **s, size_t *len, size_t *max,
         ezxml_ampencode(attr[i][j + 1], -1, s, len, max, 1);
         *len += sprintf(*s + *len, "\"");
     }
+#if 1 // optimize away the close tag when possible.
+    if (xml->child || (xml->txt  && xml->txt[0])) {
+      *len += (size_t)sprintf(*s + *len, ">");
+
+      *s = (xml->child) ? ezxml_toxml_r(xml->child, s, len, max, 0, attr) //child
+	                : ezxml_ampencode(xml->txt, -1, s, len, max, 0);  //data
+      
+      while (*len + strlen(xml->name) + 4 > *max) // reallocate s
+        *s = realloc(*s, *max += EZXML_BUFSIZE);
+      
+      *len += (size_t)sprintf(*s + *len, "</%s>", xml->name); // close tag
+    } else
+      *len += (size_t)sprintf(*s + *len, "/>");
+#else // original is below
     *len += sprintf(*s + *len, ">");
 
     *s = (xml->child) ? ezxml_toxml_r(xml->child, s, len, max, 0, attr) //child
@@ -781,7 +795,7 @@ char *ezxml_toxml_r(ezxml_t xml, char **s, size_t *len, size_t *max,
         *s = realloc(*s, *max += EZXML_BUFSIZE);
 
     *len += sprintf(*s + *len, "</%s>", xml->name); // close tag
-
+#endif
     while (txt[off] && off < xml->off) off++; // make sure off is within bounds
     return (xml->ordered) ? ezxml_toxml_r(xml->ordered, s, len, max, off, attr)
                           : ezxml_ampencode(txt + off, -1, s, len, max, 0);

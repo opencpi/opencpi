@@ -45,10 +45,11 @@
 
 namespace OCPI {
   namespace API {
-    class ApplicationI;
+    class ApplicationI; class ApplicationX;
     class Application {
-      ApplicationI &m_application;
+      friend class ApplicationX;
     protected:
+      ApplicationI &m_application;
       Application(ApplicationI &);
     public:
 

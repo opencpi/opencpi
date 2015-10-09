@@ -181,6 +181,7 @@ namespace OCPI {
     public:
       Instance &utilInstance(size_t n) { return m_instances[n]; }
       size_t nUtilInstances() { return m_instances.size(); }
+      const std::string &name() const { return m_name; }
       static unsigned s_count;
       std::string m_name;
       std::string m_package;
@@ -197,8 +198,9 @@ namespace OCPI {
       explicit Assembly(const std::string &string, const char **extraTopAttrs = NULL,
 			const char **extraInstAttrs = NULL, const OCPI::Util::PValue *params = NULL);
       // Provide XML directly containing the xml
-      explicit Assembly(const ezxml_t top, const char *defaultName, const char **topAttrs = NULL,
-			const char **instAttrs = NULL, const OCPI::Util::PValue *params = NULL);
+      explicit Assembly(const ezxml_t top, const char *defaultName, bool isImpl,
+			const char **topAttrs = NULL, const char **instAttrs = NULL,
+			const OCPI::Util::PValue *params = NULL);
       ~Assembly();
       const char
 	*checkInstanceParams(const char *pName, const PValue *params, bool checkMapped = false),

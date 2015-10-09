@@ -26,6 +26,7 @@ cd $D/$T
 for t in \
    tools/astyle/astyle \
    tools/ocpigen/ocpigen \
+   tools/ocpisca/ocpisca \
    runtime/hdl-support/nft \
    runtime/hdl-support/ocfrp_check \
    runtime/hdl-support/ocpihdl \

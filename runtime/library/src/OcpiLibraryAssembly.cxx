@@ -54,7 +54,7 @@ namespace OCPI {
       findImplementations(params);
     }
     Assembly::Assembly(ezxml_t xml, const char *name, const OCPI::Util::PValue *params)
-      : OU::Assembly(xml, name, assyAttrs, instAttrs, params), m_refCount(1) {
+      : OU::Assembly(xml, name, false, assyAttrs, instAttrs, params), m_refCount(1) {
       findImplementations(params);
     }
     Assembly::~Assembly() {
@@ -389,7 +389,8 @@ namespace OCPI {
 	  OE::getOptionalString(x, m_platform, "platform");
 	if (!Manager::findImplementations(*this, inst.m_specName.c_str()))
 	  throw OU::Error("No acceptable implementations found in any libraries "
-			  "for \"%s\"", inst.m_specName.c_str());
+			  "for \"%s\".  Use log level 8 for more detail.",
+			  inst.m_specName.c_str());
 	if (m_tempInstance->m_candidates.size() > m_maxCandidates)
 	  m_maxCandidates = (unsigned)m_tempInstance->m_candidates.size();
       }

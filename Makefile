@@ -104,6 +104,7 @@ PACKAGES += \
 
 PACKAGES += tools/cdkutils
 PACKAGES += tools/ocpigen
+PACKAGES += tools/ocpisca
 PACKAGES += tools/cdk/ocpidds
 PACKAGES += tools/astyle
 # if we don't have opencl and we are building statically, don't bother with this
@@ -149,6 +150,7 @@ ALLPACKAGES = \
         runtime/application \
 	tools/cdkutils \
 	tools/ocpigen \
+	tools/ocpisca \
 	tools/cdk/ocpidds \
 	tools/astyle \
 	tests \

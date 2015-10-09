@@ -179,11 +179,14 @@ namespace OCPI {
       void getProperty(const char * wname, const char * pname, std::string &value, bool hex);
       void setProperty(const char* worker_name, const char* prop_name, const char *value);
       void dumpDeployment(const char *appFile, const std::string &file);
+      void genScaPrf(const char *outDir);
     };
     // This is here to avoid exposing the ezxml_t stuff to the API
     class ApplicationX : public Application {
     public:
       ApplicationX(ezxml_t xml, const char *name, const OCPI::API::PValue *params = NULL);
+      // Tool classes not for runtime
+      inline void genScaPrf(const char *outDir) { m_application.genScaPrf(outDir); }
     };
   }
 }

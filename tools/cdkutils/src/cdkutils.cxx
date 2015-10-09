@@ -200,10 +200,12 @@ dumpDeps(const char *top) {
 
 const char *
 openOutput(const char *name, const char *outDir, const char *prefix, const char *suffix,
-	   const char *ext, const char *other, FILE *&f) {
+	   const char *ext, const char *other, FILE *&f, std::string *path) {
   char *file;
   asprintf(&file, "%s%s%s%s%s%s", outDir ? outDir : "", outDir ? "/" : "",
 	  prefix, name, suffix, ext);
+  if (path)
+    *path = file;
   if ((f = fopen(file, "w")) == NULL)
     return OU::esprintf("Can't not open file %s for writing (%s)\n",
 			file, strerror(errno));

@@ -40,6 +40,8 @@
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
 #include "RemoteDriver.h"
+#include "RemoteServer.h"
+
 #define OCPI_OPTIONS_HELP \
   "Usage is: ocpirun <options>... [<application-xml-file>]\n" \
 
@@ -91,7 +93,6 @@
   CMD_OPTION(art_lib_path,L,String, 0, "Specify/override OCPI_LIBRARY_PATH") \
   /**/
 #include "CmdOption.h"
-#include "RemoteServer.h"
 
 namespace OA = OCPI::API;
 namespace OU = OCPI::Util;

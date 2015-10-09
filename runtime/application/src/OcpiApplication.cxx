@@ -412,6 +412,7 @@ namespace OCPI {
 	    }
 	}
       }
+      assert((size_t)(p - m_properties) == m_nProperties);
     }
     void ApplicationI::
     dumpDeployment(unsigned score, Deployment *deployments) {
