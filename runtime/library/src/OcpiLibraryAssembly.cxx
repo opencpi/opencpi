@@ -390,7 +390,8 @@ namespace OCPI {
       // Check for interface and connection compatibility.
       // We assume all implementations have the same protocol metadata
       //      unsigned nConns = m_connections.size();
-      for (OU::Assembly::ConnectionsIter ci = m_connections.begin(); ci != m_connections.end(); ci++) {
+      for (OU::Assembly::ConnectionsIter ci = m_connections.begin();
+	   ci != m_connections.end(); ci++) {
 	const OU::Assembly::Connection &c = *ci;
 	if (c.m_ports.size() == 2) {
 	  const OU::Worker // implementations on both sides of the connection
@@ -407,7 +408,7 @@ namespace OCPI {
 			    ap0->m_name.c_str(), ap1->m_name.c_str());
 	  // Protocol on both sides of the connection
 	  OU::Protocol &p0 = *ap0, &p1 = *ap1;
-	  if (p0.m_name.size()  && p1.m_name.size() && p0.m_name != p1.m_name)
+	  if (p0.m_name.size() && p1.m_name.size() && p0.m_name != p1.m_name)
 	    throw OU::Error("Protocols in connection are incompatible: "
 			    "port \"%s\" of instance \"%s\" has protocol \%s\" vs. "
 			    "port \"%s\" of instance \"%s\" has protocol \"%s\"",

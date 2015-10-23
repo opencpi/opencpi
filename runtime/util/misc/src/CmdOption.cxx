@@ -25,6 +25,10 @@ namespace OCPI {
 	m_seen[n] = false;
       }
     }
+    BaseCommandOptions::
+    ~BaseCommandOptions() {
+      delete m_seen;
+    }
     const char *BaseCommandOptions::
     setError(const char *err) {
       m_error = err;
