@@ -74,4 +74,5 @@ if test -L $T; then
     rm $T
   fi
 fi
+/bin/echo -n Creating symlink:\ 
 ln -s -f -v -n $f $T

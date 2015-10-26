@@ -111,11 +111,11 @@ endif
 # 4. The development tree location via OCPI_CDK_DIR
 
 MAIN_LDFLAGS+= \
-  -Xlinker -rpath -Xlinker '$(RPATH_ORIGIN)' \
-  -Xlinker -rpath -Xlinker '$(RPATH_ORIGIN)/../../lib/$(OCPI_TARGET_HOST)' \
-  -Xlinker -rpath -Xlinker '$(RPATH_ORIGIN)/lib' \
+  -Xlinker -rpath -Xlinker '$${ORIGIN}' \
+  -Xlinker -rpath -Xlinker '$${ORIGIN}/../../lib/$(OCPI_TARGET_HOST)' \
+  -Xlinker -rpath -Xlinker '$${ORIGIN}/lib' \
   -Xlinker -rpath \
-  -Xlinker '$(RPATH_ORIGIN)/$(call FindRelative,$(OBJDIR),$(OCPI_CDK_DIR))/lib/$(OCPI_TARGET_HOST)' \
+  -Xlinker '$${ORIGIN}/$(call FindRelative,$(OBJDIR),$(OCPI_CDK_DIR))/lib/$(OCPI_TARGET_HOST)' \
   $(foreach o,$(MAIN_DRIVERS), $(call UNDEFINED_FLAG,$o))
 
 #$(LD_ALLOW_UNDEFINED)

@@ -5,8 +5,11 @@
 -->
 <opencpi>
   <container>
+    <rcc load='1'/>
+    <hdl load='1'/>
   </container>
   <transfer smbsize='128K'>
-    <pio smbsize='10M'/>
+    <pio load='1' smbsize='10M'/>
+    <dma load='1'/>
   </transfer>
 </opencpi>
