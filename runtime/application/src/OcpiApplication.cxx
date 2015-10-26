@@ -792,7 +792,6 @@ namespace OCPI {
 	m_doneWorker = m_launchInstances[m_assembly.m_doneInstance].m_worker;
     }
     void ApplicationI::start() {
-
       ocpiDebug("Using %d containers to support the application", m_nContainers );
       ocpiDebug("Starting master workers that are not slaves.");
       for (unsigned n = 0; n < m_nContainers; n++)
@@ -898,7 +897,7 @@ namespace OCPI {
       name = p.m_name;
       OC::Worker &w = *m_launchInstances[p.m_instance].m_worker;
       OU::Property &wp = w.property(p.m_property);
-      if (wp.m_isReadable) {
+      if (wp.m_isReadable || wp.m_isParameter) {
 	std::string dummy;
 	m_launchInstances[p.m_instance].m_worker->
 	  getProperty(p.m_property, dummy, value, NULL, hex);

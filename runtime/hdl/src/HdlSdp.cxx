@@ -12,9 +12,9 @@ namespace OCPI {
       unsigned Header::s_xid = 0;
       Header::
       Header(bool read, uint64_t address, size_t length)
-	: m_bits(0), m_xid(0), m_address(address), m_length(length) {
-	ocpiDebug("SDH Header construct: read %d address %" PRIx64 " length %zu", read, address,
-		  length);
+	: m_bits(0), m_xid(0), m_length(length) {
+	ocpiDebug("SDH Header %p construct: read %d address %" PRIx64 " length %zu", this, read,
+		  address, length);
 	assert(length <= max_message_bytes);
 	assert(header_ndws <= 2);
 	assert(length);
@@ -36,32 +36,37 @@ namespace OCPI {
       }
       Header::
       Header()
-	: m_xid(0), m_address(0), m_length(0) {
+	: m_xid(0), m_length(0) {
       }
       Header::~Header() {
       }
       // return true on error, otherwise read the amount requested
-      static bool
-      myRead(int fd, char *buf, size_t nRequested, std::string &error) {
+      bool
+      read(int fd, uint8_t *buf, size_t nRequested, std::string &error) {
 	ocpiDebug("SIM reading %zu from fd %d", nRequested, fd);
 	do {
-	  ssize_t nread = ::read(fd, buf, nRequested);
+	  ssize_t nread = ::read(fd, (char *)buf, nRequested);
 	  if (nread == 0)
 	    // shouldn't happen because we have it open for writing too
 	    error = "EOF on SDP channel, simulation server stopped";
 	  else if (nread > 0) {
 	    nRequested -= nread;
 	    buf += nread;
+	    ocpiDebug("SIM got %zu from fd %d", nread, fd);
 	  } else if (errno != EINTR)
 	    error = "error reading FIFO";
+	  else {
+	    write(2, "\nSDP Read interrupted2\n", 23);
+	    //	    ocpiDebug("SDP Read interrupted");
+	  }
 	} while (error.empty() && nRequested);
 	return !error.empty();
       }
 
       bool Header::
       startRequest(int sendFd, uint8_t *data, size_t &length, std::string &error) {
-	ocpiDebug("Start request is:    op %u count %zu xid %u node %u lead %u trail %u",
-		  get_op(), get_count(), get_xid(), get_node(), get_lead(), get_trail());
+	ocpiDebug("Start request %p is:    op %u count %zu xid %u node %u lead %u trail %u",
+		  this, get_op(), get_count(), get_xid(), get_node(), get_lead(), get_trail());
         if (OS::logGetLevel() >= OCPI_LOG_DEBUG) {
 	  fprintf(stderr, "Sending header: ");
 	  for (unsigned n = 0; n < header_ndws; n++)
@@ -93,23 +98,31 @@ namespace OCPI {
 			       r, nw, strerror(errno), errno);
 	  //	  s.send((char *)data, nw);
 	  if (OS::logGetLevel() >= OCPI_LOG_DEBUG) {
-	    fprintf(stderr, "Sending Data: ");
+	    fprintf(stderr, "Sending %p Data: ", this);
 	    for (unsigned n = 0; n < nw; n += 4)
 	      fprintf(stderr, " 0x%08x", data[n/4]);
 	    fprintf(stderr, "\n");
 	  }
 	}
+	ocpiDebug("Request %p sent %zu bytes", this, length);
 	return false;
       }
       bool Header::
-      endRequest(int recvFd, uint8_t *data, std::string &error) {
-	if (get_op() == WriteOp)
-	  return false;
-	assert(get_op() == ReadOp);
-	Header h;
+      getHeader(int recvFd, bool &request, size_t &length, std::string &error) {
+	ocpiDebug("Getting incoming SDP header");
 	size_t hlen = header_ndws * dword_bytes;
-	if (myRead(recvFd, (char *)h.m_header, hlen, error))
+	if (read(recvFd, (uint8_t *)m_header, hlen, error))
 	  return true;
+	ocpiDebug("Received header: op %u count %zu xid %u node %u lead %u trail %u addr 0x%"
+		  PRIx64, get_op(), get_count(), get_xid(), get_node(), get_lead(), get_trail(),
+		  get_addr());
+        length = (get_count() + 1) * dword_bytes;
+	request = get_op() == ReadOp || get_op() == WriteOp;
+	return false;
+      }
+      // Given a response that is in a header already, finish it
+      bool Header::
+      endRequest(Header &h, int recvFd, uint8_t *data, std::string &error) {
 	ocpiDebug("Received SDP header: %x %x", h.m_header[0], h.m_header[1]);
 	if (h.get_op() != ResponseOp ||
 	    h.get_count() != get_count() ||
@@ -128,15 +141,15 @@ namespace OCPI {
 	ocpiDebug("Request was:     op %u count %zu xid %u node %u lead %u trail %u",
 		  get_op(), get_count(), get_xid(), get_node(), get_lead(), get_trail());
 	std::string err;
-	char junk[dword_bytes];
+	uint8_t junk[dword_bytes];
 #if 1
 	size_t length = m_length;
-	if (get_lead() && myRead(recvFd, junk, get_lead(), err))
+	if (get_lead() && read(recvFd, junk, get_lead(), err))
 	  return OU::eformat(error, "Bad SDP response padding to read request: %s", err.c_str());
 #else
 	size_t length = m_length + get_lead() + get_trail();
 #endif
-	if (myRead(recvFd, (char*)data, length, err))
+	if (read(recvFd, data, length, err))
 	  return OU::eformat(error, "Bad SDP response data to read request: %s", err.c_str());
 	if (OS::logGetLevel() >= OCPI_LOG_DEBUG) {
 	  fprintf(stderr, "Received Data (%zu): ", length);
@@ -144,9 +157,20 @@ namespace OCPI {
 	    fprintf(stderr, " 0x%08x", ((uint32_t *)data)[n/4]);
 	  fprintf(stderr, "\n");
 	}
-	if (get_trail() && myRead(recvFd, junk, get_trail(), err))
+	if (get_trail() && read(recvFd, junk, get_trail(), err))
 	  return OU::eformat(error, "Bad SDP response padding to read request: %s", err.c_str());
 	return false;
+	
+      }
+      bool Header::
+      endRequest(int recvFd, uint8_t *data, std::string &error) {
+	if (get_op() == WriteOp)
+	  return false;
+	assert(get_op() == ReadOp);
+	Header h;
+	bool request;
+	size_t length;
+	return h.getHeader(recvFd, request, length, error) || endRequest(h, recvFd, data, error);
       }
     }
   }

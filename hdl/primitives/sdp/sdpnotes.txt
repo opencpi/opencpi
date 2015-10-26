@@ -79,7 +79,7 @@ Multiplexing:
   allows the bridge to match it up.  Of course responses have plenty of spare bits
   so they are used to convey who it is from (which node). 
 
-  This the responding node plus the request's XID are looked up in the bridges table
+  Thus the responding node plus the request's XID are looked up in the bridges table
   to get the PCI requester ID and original tag.
 
   E.g. if we have 8 nodes, and 8 XIDs per node, a response will have 6 bits of
@@ -255,3 +255,93 @@ Out outer loop can skip ones that are congested.
 So outer loop is just trying each one.
 Need segmentation too.
 Write in SW...
+
+SENDER/RECEIVER
+
+Metadata transfers.
+Why do they need to be in a memory address?
+
+OUTBOUND 2PCI etc. addressing:
+
+addr addresses 64MB per node, which is 26 byte-address bits.
+node is currently 3 bits, which provides 29 bits of address.
+xid width is 3 bits
+
+So the issue is how do we generate the high order address bits.
+
+Could the node send these high order address bits as another type of transaction?
+
+If we have a BRAM on the uplink, which holds nremotes*nnodes worth of high address bits...
+Or we have a different header structure that complicates the on-chip noc...
+
+If the uplink memory map has this, how does the lookup work?
+
+The outbound header would have to have a 'destination node' and a 'local source node'.
+
+Current header:
+count: 12 of DW count
+op      2
+xid     3
+lead    2
+trail   2
+node    3
+addr    24
+total 48
+
+So this implies, with node, total of 29 bits.
+To address 64GB (36 bits of byte address), we need 7 more extended address bits.
+So we can just expand the node field to accomodate the largest required outbound address.
+So a platform must define this parameter for each interconnect.
+The code gen must know this - essentially the platform configuration has the interconnects
+and their types and parameters.
+
+In our simple case we can index some SDP configurations?
+
+Data Path Width
+Node Width in Header to account for either lots of nodes or a large interconnect address space.
+
+If the interconnect adapter can perhaps offset the outbound address, then the requirements might be less
+
+ALIGNMENT:
+
+Terminology:
+xfer: a beat (one clock) of data.
+
+segment: a constrained variable length frame in the SDP
+
+message: an OpenCPI notion that requires one or more segments to convey the data.
+   The segments of a message (in the DMA sense) may be out of order and not "full".
+
+DWS are aligned in a segment, so the first xfer may have leading (LSB) DWS that are not valid.
+Of course the last xfer may have trailing (MSB) DWS that are not valid.
+The header words are stable/valid for the entire segment.
+Thus the producer of a segment must align the data. (e.g. sdp_send or sdp_sim).
+
+FLOW CONTROL:
+
+Each side's "ready" acknowledges the other side's "valid".
+
+Like AXI:  the "ready" can lead or depend on the "valid", 
+but the "valid", must not depend on "ready".
+
+The top level control signals are just valid, ready, and eom.
+The eom is essentially a convenience to avoid looking inside the header.
+There is no som since it doesn't provide much convenience (so far...).
+-- although there seem to be some places that work at deriving it..
+
+The nodes/switches for the SDP are "lean" for latency and low resource use,
+which means minimum buffering.  But transparent buffers/FIFOs can be
+interposed as required.
+
+For DMA messaging the high level flow control essentially means that
+segments will not be initiated if there is not BRAM to put them in.
+So inbound (from interconnect) segments are pretty much guaranteed not
+to congest.
+Outbound (to interconnect) can potentially congest on the interconnect itself.
+Although the on-chip arbitration should mean that one source of segments
+should not preempt the others.
+
+Is there any PCI or AXI QoS thing we should be driving?
+Also, if we assume out-of-order delivery, we must deal with the barrier
+before the flag...
+

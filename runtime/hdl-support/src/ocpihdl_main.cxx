@@ -244,7 +244,7 @@ static void setupDevice(bool discovery) {
   if (!device)
     bad("a device option is required with this command");
   driver = &OCPI::HDL::Driver::getSingleton();
-  if (!(dev = driver->open(device, discovery, false, error)))
+  if (!(dev = driver->open(device, discovery, false, NULL, error)))
     bad("error opening device %s", device);
   cAccess = &dev->cAccess();
   dAccess = &dev->dAccess();
@@ -2007,7 +2007,7 @@ load(const char **ap) {
   
   driver = &OCPI::HDL::Driver::getSingleton();
   std::string error;
-  if (!(dev = driver->open(device, false, true, error)))
+  if (!(dev = driver->open(device, false, true, NULL, error)))
     bad("error opening device %s", device);
   dev->load(ap[0]);
 }

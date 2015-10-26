@@ -189,7 +189,7 @@ recv(char *buffer, size_t amount, unsigned timeoutms, bool all) throw (std::stri
 	  break; // return what we read if we timed out trying to get it all...
 	return SIZE_MAX;
       } else
-	throw "Error sending to network: " + Posix::getErrorMessage (errno);
+	throw "Error receiving from network: " + Posix::getErrorMessage (errno);
     } else {
       nread += n;
       if (n == 0 || !all)

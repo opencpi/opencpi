@@ -301,6 +301,23 @@ vhdlInnerValue(const char *pkg, const OU::Value &v, std::string &s) {
     s += ")";
 }
 
+// Convert the vhdl constant value to a property readback value.
+static void
+vhdlConstant2Readback(const OU::Property &pr, const std::string &val, std::string &out) {
+  std::string decl, type;
+  vhdlType(pr, decl, type, false);
+  if (decl.length())
+    if (pr.m_baseType == OA::OCPI_Enum)
+      OU::format(out, "to_unsigned(%s_t'pos(%s),ulong_t'length)", pr.m_name.c_str(), val.c_str());
+    else if (pr.m_arrayDimensions)
+      OU::format(out, "%s_array_t(%s)", OU::baseTypeNames[pr.m_baseType], val.c_str());
+    else
+      out = val;
+  else
+    out = val;
+}
+
+
 // Convert a value in v for passing between vhdl _rv and verilog.
 // The "v" string might be a variable name.
 static const char*
@@ -654,7 +671,7 @@ emitVhdlPropMember(FILE *f, OU::Property &pr, unsigned maxPropName, bool in2work
       }
     }
     //    if (pr.m_isVolatile || pr.m_isReadable && !pr.m_isWritable)
-    if (pr.m_isReadable)
+    if (pr.m_isReadable && !pr.m_isParameter)
       fprintf(f, "    %s : Bool_t;\n", tempName(temp, maxPropName, "%s_read",
 						pr.m_name.c_str()));
     free(temp);
@@ -714,13 +731,15 @@ emitVhdlPackageConstants(FILE *f) {
     //	      "  constant properties : ocpi.wci.properties_t(1 to 0) := "
     //"(others => (0,x\"00000000\",0,0,0,false,false,false,false));\n");
   } else {
-    fprintf(f, "  constant properties : ocpi.wci.properties_t(0 to %u) := (\n",
+    fprintf(f,
+	    "  constant properties : ocpi.wci.properties_t(0 to %u) := (\n"
+	    "  --#   bits    offset bytes-1 slen elems write read    vol   debug\n" ,
 	    m_ctl.nNonRawRunProperties - 1);
     unsigned n = 0;
     const char *last = NULL;
     for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
       OU::Property *pr = *pi;
-      if (!pr->m_isParameter) {
+      if (!pr->m_isParameter || pr->m_isReadable) {
 	if (m_ctl.firstRaw && pr == m_ctl.firstRaw)
 	  break;
 	size_t nElements = 1;
@@ -772,7 +791,7 @@ emitVhdlWorkerPackage(FILE *f, unsigned maxPropName) {
 	    "  type worker_props_in_t is record\n", 
 	    m_implName);
     for (PropertiesIter pi = m_ctl.properties.begin(); nonRaw(pi); pi++)
-      if (!(*pi)->m_isParameter && ((*pi)->m_isWritable || (*pi)->m_isReadable))
+      if ((*pi)->m_isWritable || (*pi)->m_isReadable)
 	emitVhdlPropMember(f, **pi, maxPropName, true);
     if (m_ctl.rawProperties)
 #if 1
@@ -1623,7 +1642,8 @@ emitImplHDL(bool wrap) {
 	bool first = true;
 	for (PropertiesIter pi = m_ctl.properties.begin(); nonRaw(pi); pi++) {
 	  OU::Property &pr = **pi;
-	  if (!pr.m_isParameter && (pr.m_isWritable && pr.m_isReadable && !pr.m_isVolatile ||
+	  if (pr.m_isParameter && pr.m_isReadable ||
+	      !pr.m_isParameter && (pr.m_isWritable && pr.m_isReadable && !pr.m_isVolatile ||
 				    pr.m_baseType == OA::OCPI_Enum)) {
 	    if (first) {
 	      fprintf(f,
@@ -1782,9 +1802,15 @@ emitImplHDL(bool wrap) {
       for (PropertiesIter pi = m_ctl.properties.begin(); nonRaw(pi); pi++) {
 	OU::Property &pr = **pi;
 	const char *name = pr.m_name.c_str();
-	if (pr.m_isParameter)
-	  continue;
-	if (pr.m_isWritable) {
+	if (pr.m_isParameter) {
+	  if (pr.m_isReadable) {
+	    std::string constValue, val;
+	    OU::format(constValue, "work.%s_constants.%s", m_implName, name);
+	    vhdlConstant2Readback(pr, constValue, val);
+	    fprintf(f, "  my_%s_value <= %s;\n", name, val.c_str());
+	  } else
+	    continue;
+	} else if (pr.m_isWritable) {
 	  fprintf(f, 
 		  "  %s_property : component ocpi.props.%s%s_property\n"
 		  "    generic map(worker       => work.%s_worker_defs.worker,\n"
@@ -1862,10 +1888,12 @@ emitImplHDL(bool wrap) {
 		  "    generic map(worker       => work.%s_worker_defs.worker,\n"
 		  "                property     => work.%s_worker_defs.properties(%u))\n"
 		  "    port map(",
-		  pr.m_name.c_str(), OU::baseTypeNames[pr.m_baseType],
+		  pr.m_name.c_str(),
+		  OU::baseTypeNames[pr.m_baseType == OA::OCPI_Enum ?
+				    OA::OCPI_ULong : pr.m_baseType],
 		  pr.m_arrayRank || pr.m_isSequence ? "_array" : "",
 		  m_implName, m_implName, n);
-	  if (pr.m_isVolatile || pr.m_isReadable && !pr.m_isWritable)
+	  if (!pr.m_isParameter && (pr.m_isVolatile || pr.m_isReadable && !pr.m_isWritable))
 	    fprintf(f, "   value        => props_from_worker.%s,\n", name);
 	  else
 	    fprintf(f, "   value        => my_%s_value,\n", name);
@@ -1893,10 +1921,11 @@ emitImplHDL(bool wrap) {
 	    fprintf(f, ",\n                read_enable  => read_enables(%u));\n", n);
 	  else
 	    fprintf(f, ");\n");
-	  fprintf(f, "  props_to_worker.%s_read <= read_enables(%u);\n", pr.m_name.c_str(), n);
+	  if (!pr.m_isParameter)
+	    fprintf(f, "  props_to_worker.%s_read <= read_enables(%u);\n", pr.m_name.c_str(), n);
 	} else if (m_ctl.nonRawReadables)
 	  fprintf(f, "  readback_data(%u) <= (others => '0');\n", n);
-	n++; // only for non-parameters
+	n++;
       }
 #if 0
       // Tieoff all readback paths for raw properties

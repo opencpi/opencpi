@@ -250,6 +250,7 @@ namespace OCPI {
       for (WorkerIter wi = m_workers.begin(); wi != m_workers.end(); wi++)
 	delete (*wi).second;
       delete [] m_metaImplementations;
+      ezxml_free(m_xml);
       delete [] m_metaData;
     }
     // Get the metadata from the end of the file.
@@ -306,8 +307,7 @@ namespace OCPI {
     void Artifact::
     getFileMetaData(const char *name) {
       if (!(m_metaData = getMetadata(name, m_mtime, m_length)))
-	throw OU::Error(OCPI_LOG_DEBUG, "Cannot open or retrieve metadata from file \"%s\"",
-			name);
+	throw OU::Error(20, "Cannot open or retrieve metadata from file \"%s\"", name);
       const char *err = OE::ezxml_parse_str(m_metaData, strlen(m_metaData), m_xml);
       if (err)
 	throw OU::Error("Error parsing artifact metadata from \"%s\": %s",

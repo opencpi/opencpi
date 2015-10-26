@@ -174,8 +174,12 @@ namespace OCPI {
 	else
 	  m_accessor->setBytes(m_base + offset, bytes, size, elementBytes);
       }
+#define get8Register(m, type) get8RegisterOffset(offsetof(type, m))
+#define get16Register(m, type) get16RegisterOffset(offsetof(type, m))
 #define get32Register(m, type) get32RegisterOffset(offsetof(type, m))
 #define get64Register(m, type) get64RegisterOffset(offsetof(type, m))
+#define set8Register(m, type, val) set8RegisterOffset(offsetof(type, m), (val))
+#define set16Register(m, type, val) set16RegisterOffset(offsetof(type, m), (val))
 #define set32Register(m, type, val) set32RegisterOffset(offsetof(type, m), (val))
 #define set64Register(m, type, val) set64RegisterOffset(offsetof(type, m), (val))
 #define getRegisterBytes(m, buf, type, elementBytes, string)			\

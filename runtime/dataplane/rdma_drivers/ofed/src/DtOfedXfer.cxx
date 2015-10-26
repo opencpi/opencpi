@@ -195,9 +195,6 @@ namespace DataTransfer {
       // Sets smem location data based upon the specified endpoint
       OCPI::OS::int32_t parse( std::string& ep );
 
-      // Get the address from the endpoint
-      virtual const char* getAddress(){return m_addr.c_str();}
-
       // Finalize this endpoint
       void finalize();
 
@@ -349,7 +346,8 @@ namespace DataTransfer {
        *  an endpoint for an application running on "this"
        *  node.
        ***************************************/
-      std::string allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes);
+      std::string allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox,
+				   uint16_t maxMailBoxes, size_t size);
       void allocateEndpoints(std::vector<std::string> &l);
 
       // From driver base class
@@ -620,7 +618,8 @@ namespace DataTransfer {
 
     std::string 
     XferFactory::
-    allocateEndpoint(const OCPI::Util::PValue*props, uint16_t mailBox, uint16_t maxMailBoxes)
+    allocateEndpoint(const OCPI::Util::PValue*props, uint16_t mailBox, uint16_t maxMailBoxes,
+		     size_t size = 0)
     {
       OCPI::Util::SelfAutoMutex guard (this); 
       Device *d;
@@ -633,13 +632,12 @@ namespace DataTransfer {
 	throw DataTransfer::DataTransferEx( DEV_NOT_FOUND , "OFED" );
       // First get the entry point from the properties
       size_t port = d->m_port;
-      size_t size = d->m_SMBSize;
 
       // This will be the non-finalized version of the ep
       char buf[512];
       snprintf( buf, 512, "ocpi-ofed-rdma:%s:%zu:%lld.%lld:%d:%d:%d:%llu:%zu.%d.%d",
 		d->name().c_str(), port, (long long)0, (long long)0, 0, 0, 0,
-		(unsigned long long)0, size, mailBox, maxMailBoxes);
+		(unsigned long long)0, size ? size : d->m_SMBSize, mailBox, maxMailBoxes);
       std::string ep = buf;
       return ep;
     }

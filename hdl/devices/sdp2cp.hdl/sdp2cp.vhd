@@ -89,12 +89,14 @@ begin
   sdp_out.sdp.header.trail <= (others => '0');
   sdp_out.sdp.header.node  <= (others => '0'); -- CP is always node zero
   sdp_out.sdp.header.addr  <= (others => '0');
-  sdp_out.sdp.valid        <= to_bool((r_state_r = r_idle_e and its(cp_in.valid) and
-                                       not (tag_first_of_2(cp_in.tag) and sdp_width /= 1)) or
+  sdp_out.sdp.valid        <= to_bool(
+-- no zero-latency reads...             (r_state_r = r_idle_e and its(cp_in.valid) and
+--                                       not (tag_first_of_2(cp_in.tag) and sdp_width /= 1)) or
                                       r_state_r = r_first_valid_e or
                                       (r_state_r = r_last_wanted_e and its(cp_in.valid)) or
                                       r_state_r = r_last_valid_e);
-  sdp_out.sdp.eom    <= to_bool(r_state_r = r_last_wanted_e or r_state_r = r_last_valid_e);
+  sdp_out.sdp.eom    <= not tag_first_of_2(cp_in.tag);
+                        -- r_state_r = r_last_wanted_e or r_state_r = r_last_valid_e;
   sdp_out.sdp.ready  <= to_bool(sdp_in.sdp.valid and
                                 (a_state_r = a_idle_e or
                                  (a_state_r = a_first_e and cp_in.take) or
@@ -113,6 +115,7 @@ g0: for i in 0 to to_integer(sdp_width)-1 generate
         a_state_r      <= a_idle_e;
         r_state_r      <= r_idle_e;
         c2s_dword_r    <= (others => '0');
+        addr_r         <= (others => '0');
       else
         case a_state_r is
           when a_idle_e =>

@@ -261,6 +261,8 @@ namespace OCPI {
 	nop.header.typeEtc = OCCP_ETHER_TYPE_ETC(OCCP_NOP, 0xf, 1, 0);
 	nop.mbx80 = 0x80;
 	nop.mbz0 = 0;
+        nop.mbz1 = 1;
+	nop.maxCoalesced = 0;
       }
       static bool
       checkNopResponse(EtherControlNopResponse &response, std::string &error) {

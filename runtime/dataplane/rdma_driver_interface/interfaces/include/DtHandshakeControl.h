@@ -248,6 +248,7 @@ namespace DataTransfer {
   struct RplMetaData {
     uint32_t length;
     uint8_t opCode;
+    uint8_t end;
     uint64_t timestamp;
   };
 

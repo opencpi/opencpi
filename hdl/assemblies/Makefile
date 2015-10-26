@@ -34,5 +34,5 @@
 #
 ########################################################################### #
 
-Assemblies=testbias_file testbias tb_bias tb_bias_param patternbias biascapture tb_bias_vhdl testpsd testddc testbias2 testbias5 testbias_ver empty test_width time_test time_test_file
+Assemblies=testbias testbias_file testbias_file_read testbias_file_write tb_bias tb_bias_param patternbias biascapture tb_bias_vhdl testpsd testddc testbias2 testbias5 testbias_ver empty test_width time_test time_test_file
 include $(OCPI_CDK_DIR)/include/hdl/hdl-assemblies.mk

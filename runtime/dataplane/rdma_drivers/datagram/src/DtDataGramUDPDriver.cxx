@@ -109,7 +109,6 @@ namespace DataTransfer {
 	return *ss;
       }
     public:
-      virtual const char* getAddress(){return m_ipAddress.c_str();}
       uint16_t & getId() { return m_portNum;}
     private:
       std::string m_ipAddress;
@@ -202,7 +201,8 @@ namespace DataTransfer {
       const char* getProtocol(){return "ocpi-udp-rdma";}
 
       std::string 
-      allocateEndpoint( const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes)
+      allocateEndpoint( const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes,
+			size_t size)
       {
 	std::string ep;
 	char ip_addr[128];
@@ -231,7 +231,8 @@ namespace DataTransfer {
 	if ( mb ) {
 	  mailBox = (uint16_t)atoi(mb);
 	}
-	setEndpointString(ep, ip_addr, port, parent().getSMBSize(), mailBox, maxMailBoxes);
+	setEndpointString(ep, ip_addr, port, size ? size : parent().getSMBSize(), mailBox,
+			  maxMailBoxes);
 	return ep;
       }
       

@@ -1,15 +1,15 @@
 -- THIS FILE WAS ORIGINALLY GENERATED ON Thu Sep 26 15:32:12 2013 EDT
--- BASED ON THE FILE: isim_pf.xml
+-- BASED ON THE FILE: modelsim.xml
 -- YOU *ARE* EXPECTED TO EDIT IT
--- This file initially contains the architecture skeleton for worker: isim_pf
+-- This file initially contains the architecture skeleton for worker: modelsim
 
-library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
-library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
-library platform; use platform.platform_pkg.all;
-library isim_pf;
-architecture rtl of isim_pf_worker is
+library IEEE, ocpi, platform, sdp;
+use IEEE.std_logic_1164.all, ieee.numeric_std.all, ocpi.types.all, platform.platform_pkg.all,
+  sdp.all;
+
+architecture rtl of modelsim_worker is
   signal   ctl_clk          : std_logic;
-  signal   ctl_reset        : std_logic;
+  signal   ctl_reset        : std_logic := '0';
   signal   ctl_rst_n        : std_logic;
 begin
   ctl_rst_n <= not ctl_reset; -- for those that need it
@@ -20,6 +20,7 @@ begin
   -- generate a clock
   clock : sim_clk
     port map(clk => ctl_clk, reset => ctl_reset);
+
 
   sdp_sim_i : sdp.sdp.sdp_sim
     generic map(ocpi_debug => ocpi_debug,
@@ -38,8 +39,8 @@ begin
              up_out => sdp_slave_out,
              up_out_data => sdp_slave_out_data,
              drop_count => props_out.sdpDropCount);
-    
-  props_out.platform          <= to_string("isim_pf", props_out.platform'length-1);
+
+  props_out.platform          <= to_string("modelsim", props_out.platform'length-1);
   props_out.dna               <= (others => '0');
   props_out.nSwitches         <= (others => '0');
   props_out.switches          <= (others => '0');

@@ -3,6 +3,7 @@
 
 #include <string>
 #include "HdlSimDriver.h"
+#include "HdlLSimDriver.h"
 #include "HdlBusDriver.h"
 #include "HdlEtherDriver.h"
 #include "HdlPciDriver.h"
@@ -18,6 +19,7 @@ namespace OCPI {
 	OCPI::HDL::PCI::Driver,
 	OCPI::HDL::Ether::Driver,
 	OCPI::HDL::Sim::Driver,
+	OCPI::HDL::LSim::Driver,
 	OCPI::HDL::Zynq::Driver,
 	Access, // for temporary probing
 	virtual protected OCPI::Util::SelfMutex
@@ -35,8 +37,8 @@ namespace OCPI {
       // Probe a specific container
       OCPI::Container::Container *probeContainer(const char *which, std::string &error,
 						 const OCPI::API::PValue *props);
-      OCPI::HDL::Device *
-	open(const char *which, bool discovery, bool forLoad, std::string &err);
+      OCPI::HDL::Device * open(const char *which, bool discovery, bool forLoad,
+			       const OCPI::API::PValue *params, std::string &err);
       void close();
 
       // Create an actual container.

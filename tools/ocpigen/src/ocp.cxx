@@ -586,7 +586,10 @@ connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, OcpAdapt &oa,
     signal = temp + osd.name;
     OcpPort &other = *static_cast<OcpPort*>(otherIp->m_port);
     if (osd.vector && os.width != other.ocp.signals[osd.number].width) {
-      OU::formatAdd(signal, lang == Verilog ? "[%zu-1:0]" : "(%zu-1 downto 0)", os.width);
+      ocpiDebug("Narrowing of assignment to port %s of worker %s from %zu to %zu",
+		name(), m_worker->m_implName, other.ocp.signals[osd.number].width, os.width);
+      OU::formatAdd(signal, lang == Verilog ? "[%zu-1:0]" : "(%zu-1 downto 0)",
+		    os.width);
       thisComment = "worker is narrower than external, which is OK";
     }
   }

@@ -11,13 +11,14 @@ fi
 
 echo Filename: $1
 read assyname contname<<EOF
-`echo $1 | sed 's/^\(.*\)_modelsim_pf.*$/\1 &/'`
+`echo $1 | sed 's/^\(.*\)_modelsim.*$/\1 &/'`
 EOF
 echo Assembly: $assyname  Container: $contname
 shift
 export LM_LICENSE_FILE=$OCPI_MODELSIM_LICENSE_FILE
 for i in $*; do echo for $i; plusargs="$plusargs +$i"; done
 #echo plusargs are: $plusargs
+echo $OCPI_MODELSIM_DIR/bin/vsim -c -lib $contname -f vsim.args $plusargs $contname.$contname > FFF
 exec $OCPI_MODELSIM_DIR/bin/vsim -c -lib $contname -f vsim.args $plusargs $contname.$contname <<EOF
 #archive load vsim.dbar
 dataset list

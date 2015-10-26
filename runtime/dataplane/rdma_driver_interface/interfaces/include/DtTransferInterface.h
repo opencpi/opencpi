@@ -222,7 +222,9 @@ namespace DataTransfer {
      * Create tranfer request object
      */
     virtual XferRequest* createXferRequest() = 0;
-
+    
+    // Send to destination directly
+    virtual void send(DtOsDataTypes::Offset offset, uint8_t *data, size_t nbytes);
                  
     /*
      * Destructor - implementations are required to track all OcpiXferRequests that they
@@ -283,6 +285,8 @@ namespace DataTransfer {
      * cache locations and return the same location object for identical strings.
      ***************************************/
     virtual EndPoint* getEndPoint(const char *endpoint, bool local=false, bool cantExist = false );
+    // Find it or return NULL if you can't find it.  Remote or local.
+    EndPoint *findEndPoint(const char *endPoint);
     inline EndPoint* getEndPoint(const std::string &s, bool local=false) {
       return getEndPoint(s.c_str(), local);
     }
@@ -298,7 +302,8 @@ namespace DataTransfer {
      * it has been passed to finalizeEndpoint().
      ***************************************/
     virtual std::string allocateEndpoint(const OCPI::Util::PValue*,
-					 uint16_t mailBox, uint16_t maxMailBoxes) = 0;
+					 uint16_t mailBox, uint16_t maxMailBoxes,
+					 size_t size = 0) = 0;
     virtual std::string allocateCompatibleEndpoint(const OCPI::Util::PValue*params,
 						   const char *remote,
 						   uint16_t mailBox, uint16_t maxMailBoxes);

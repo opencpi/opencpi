@@ -381,7 +381,8 @@ namespace DataTransfer {
     ep = tep;
   }
   std::string UDPSocketXferFactory::
-  allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes)
+  allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes,
+		   size_t size = 0)
   {
     OCPI::Util::SelfAutoMutex guard (this);
 
@@ -416,7 +417,8 @@ namespace DataTransfer {
       mailBox = (uint16_t)atoi(mb);
     }
 
-    setEndpointString(ep, ip_addr, port, parent().getSMBSize(), mailBox, maxMailBoxes);
+    setEndpointString(ep, ip_addr, port, size ? size : parent().getSMBSize(), mailBox,
+		      maxMailBoxes);
     sep = ep;
     return ep;
   }
@@ -630,7 +632,8 @@ namespace DataTransfer {
     m_txTemplate = temp;
     m_adr.sin_family = 2;
     m_adr.sin_port = htons( m_txTemplate->dsmem->getEndPoint()->portNum  );
-    inet_aton( m_txTemplate->dsmem->getEndPoint()->getAddress() , &m_adr.sin_addr);
+    UDPEndPoint *dep = static_cast<UDPEndPoint *>(m_txTemplate->dsmem->getEndPoint());
+    inet_aton(dep->ipAddress.c_str(), &m_adr.sin_addr);
     m_init = true;
   }
   
@@ -638,12 +641,9 @@ namespace DataTransfer {
   UDPSocketXferRequest::TxPacket::
   add(UDPSocketXferRequest * parent,  uint8_t * src, DtOsDataTypes::Offset dst_offset, size_t length, size_t tx_total )
   {
-    //  std::string s = m_txTemplate->dsmem->getEndPoint()->getAddress();
-
     if ( m_nAcksTx>= m_acks.size() ) {
       m_acks.reserve( m_acks.size() + 10 );
     }
-
 
 #ifdef PKT_DEBUG
     struct sockaddr_in * in = (struct sockaddr_in *)&sad;

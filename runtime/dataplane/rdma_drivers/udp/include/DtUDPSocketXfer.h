@@ -91,9 +91,6 @@ namespace DataTransfer {
         // Sets smem location data based upon the specified endpoint
         OCPI::OS::int32_t parse( std::string& ep );
 
-        // Get the address from the endpoint
-        virtual const char* getAddress(){return ipAddress.c_str();}
-	
 	SmemServices &createSmemServices();
         std::string ipAddress;
         uint16_t  portNum;
@@ -147,7 +144,7 @@ namespace DataTransfer {
      *  an endpoint for an application running on "this"
      *  node.
      ***************************************/
-    std::string allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes);
+    std::string allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes, size_t size);
 
   protected:
     EndPoint* createEndPoint(std::string& endpoint, bool local = false);

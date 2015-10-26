@@ -1,0 +1,7 @@
+<HdlDevice language="vhdl" spec='sdp-spec'>
+  <sdp name='sdp'/>
+  <streaminterface implname='out' producer='1'
+		   datawidth='sdp_width*32' numberofopcodes='256' datavaluewidth='8'
+		   zerolengthmessages='true'/>
+<!-- when this is supported:  preciseburst='1'-->
+</HdlDevice>

@@ -39,11 +39,12 @@ namespace OCPI {
     const char *hdl = "hdl";
 
     OCPI::HDL::Device *Driver::
-    open(const char *which, bool discovery, bool forLoad, std::string &err) {
+    open(const char *which, bool discovery, bool forLoad, const OA::PValue *params,
+	 std::string &err) {
       parent().parent().configureOnce();
       lock();
       // FIXME: obviously this should be registered and dispatched nicely..
-      bool pci = false, ether = false, sim = false, bus = false;
+      bool pci = false, ether = false, sim = false, bus = false, lsim = false;
       if (!strncasecmp("PCI:", which, 4)) {
 	pci = true;
 	which += 4;
@@ -53,6 +54,9 @@ namespace OCPI {
       } else if (!strncasecmp("sim:", which, 4)) {
 	sim = true;
 	which += 4;
+      } else if (!strncasecmp("lsim:", which, 5)) {
+	lsim = true;
+	which += 5;
       } else if (!strncasecmp("Ether:", which, 6)) {
 	ether = true;
 	which += 6;
@@ -69,7 +73,8 @@ namespace OCPI {
 	pci ? PCI::Driver::open(which, err) : 
 	bus ? Zynq::Driver::open(which, forLoad, err) : 
 	ether ? Ether::Driver::open(which, discovery, err) :
-	sim ? Sim::Driver::open(which, discovery, err) : NULL;
+	sim ? Sim::Driver::open(which, discovery, err) : 
+	lsim ? LSim::Driver::open(which, discovery, params, err) : NULL;
       ezxml_t config;
       if (forLoad && bus)
 	return dev;
@@ -126,6 +131,11 @@ namespace OCPI {
 	ocpiBad("In HDL Container driver, got sim/udp search error: %s", error.c_str());
 	error.clear();
       }
+      count += LSim::Driver::search(params, exclude, discoveryOnly, error);
+      if (error.size()) {
+	ocpiBad("In HDL Container driver, got lsim/udp search error: %s", error.c_str());
+	error.clear();
+      }
       return count;
     }
     
@@ -133,7 +143,7 @@ namespace OCPI {
     probeContainer(const char *which, std::string &error, const OA::PValue *params) {
       Device *dev;
       ezxml_t config;
-      if ((dev = open(which, false, false, error)))
+      if ((dev = open(which, false, false, params, error)))
 	if (setup(*dev, config, error))
 	  delete dev;
 	else

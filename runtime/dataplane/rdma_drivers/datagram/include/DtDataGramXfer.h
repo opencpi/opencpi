@@ -165,7 +165,7 @@ namespace DataTransfer {
       throw ();
     virtual ~DatagramXferFactory();//      throw ();
     virtual EndPoint*  createEndPoint(std::string& endpoint, bool local) =0;
-    virtual  std::string allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes)=0;
+    virtual  std::string allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes, size_t size)=0;
     virtual const char* getProtocol()=0;
     virtual DatagramXferServices *createXferServices(DatagramSmemServices*source,
 						     DatagramSmemServices*target) = 0;

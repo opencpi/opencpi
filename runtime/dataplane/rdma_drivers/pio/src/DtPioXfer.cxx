@@ -107,12 +107,6 @@ namespace OCPI {
       return 0;
     }
 
-    // Get the address from the endpoint
-    const char* EndPoint::
-    getAddress() {
-      return m_smb_name.c_str();
-    }
-
     // This method is used to allocate a transfer compatible SMB
     DT::SmemServices& EndPoint::
     createSmemServices()
@@ -137,13 +131,13 @@ namespace OCPI {
      ***************************************/
     static int32_t smb_count = 0;
     std::string XferFactory::
-    allocateEndpoint(const OU::PValue*, uint16_t mailBox, uint16_t maxMailBoxes)
+    allocateEndpoint(const OU::PValue*, uint16_t mailBox, uint16_t maxMailBoxes, size_t size)
     {
       OU::SelfAutoMutex guard (this); 
       std::string ep;
 
       OU::formatString(ep, "ocpi-smb-pio:pioXfer%d%d;%zu.%" PRIu16 ".%" PRIu16,
-		       getpid(), smb_count++, m_SMBSize, mailBox, maxMailBoxes);
+		       getpid(), smb_count++, size ? size : m_SMBSize, mailBox, maxMailBoxes);
       return ep;
     }
 

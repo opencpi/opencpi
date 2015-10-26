@@ -167,7 +167,7 @@ namespace OCPI {
 	if (top > sizeofConfigSpace)
 	  sizeofConfigSpace = top;
 	m_offset = m_indirectAddr;
-      } else if (!m_isParameter) {
+      } else if (!m_isParameter || m_isReadable) {
 	cumOffset = roundUp(cumOffset, m_align);
 	m_offset = cumOffset;
 	cumOffset += m_nBytes;

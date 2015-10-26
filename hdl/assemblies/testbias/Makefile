@@ -34,7 +34,7 @@
 #
 ########################################################################### #
 
-ExcludePlatforms=isim_pf modelsim_pf
+#ExcludePlatforms=isim modelsim
 #ParamValues_ocpi_endian=little/big
 #ParamValues_ocpi_debug=false/true
 include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk

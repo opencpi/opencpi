@@ -153,7 +153,7 @@ emitImplAliases(FILE *f, unsigned n, Language lang) {
 	      "  localparam %sPropertyWidth = %zu;\n", pin, ocp.MAddr.width);
     for (PropertiesIter pi = m_worker->m_ctl.properties.begin();
 	 pi != m_worker->m_ctl.properties.end(); pi++)
-      if (!(*pi)->m_isParameter) {
+      if (!(*pi)->m_isParameter && !(*pi)->m_isReadable) {
 	OU::Property *pr = *pi;
 	if (lang != VHDL)
 	  fprintf(f, "  localparam [%zu:0] %sAddr = %zu'h%0*zx;\n",

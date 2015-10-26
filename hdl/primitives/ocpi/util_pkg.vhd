@@ -2,6 +2,7 @@ library ieee; use ieee.std_logic_1164.all, ieee.numeric_std.all;
 library ocpi; use ocpi.types.all;
 package util is
 function width_for_max (n : natural) return natural;
+function roundup_2_power_of_2(n : natural) return natural;
 function slv(b : std_logic) return std_logic_vector;
 function slv(v : std_logic_vector) return std_logic_vector;
 function slv(v : unsigned) return std_logic_vector;
@@ -13,7 +14,8 @@ function slv1(n : natural) return std_logic_vector;
 function slvn(n, width : natural) return std_logic_vector;
 function bit2unsigned(b : std_logic; len : natural := 1) return unsigned;
 function swap(d : dword_t) return dword_t;
-
+function max(l,r: unsigned) return unsigned;
+function min(l,r: unsigned) return unsigned;
 component message_bounds
   generic(width     : natural);
   port(Clk          : in  std_logic;

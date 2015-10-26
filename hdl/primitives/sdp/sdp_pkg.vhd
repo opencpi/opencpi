@@ -9,7 +9,8 @@ package sdp is
 constant max_reads_outstanding  : natural := 8;
 constant max_message_kbytes     : natural := 16; -- jumbo frames +
 constant max_addressable_kbytes : natural := 64*1024; -- 64MB per node
-constant max_nodes              : natural := 8; -- always includes one for control
+constant max_nodes              : natural := 1024; -- always includes one for control, implies
+                                                -- interconnect addr width
 constant datum_bits             : natural := 32; -- THIS IS ASSUMED BY VARIOUS CLIENTS
 
 constant xid_width              : natural := width_for_max(max_reads_outstanding-1);
@@ -20,6 +21,7 @@ constant count_width            : natural := width_for_max(max_message_units-1);
 constant end_bytes_width        : natural := width_for_max(datum_bytes - 1);
 constant addr_width             : natural := width_for_max(1024-1) +
                                              width_for_max(max_addressable_kbytes/datum_bytes-1);
+constant max_segment_dws        : natural := 32;
 type op_t is (read_e,
               write_e,
               response_e,
@@ -27,17 +29,19 @@ type op_t is (read_e,
 constant op_width : natural := width_for_max(op_t'pos(op_t'high));
 subtype id_t is unsigned(node_width-1 downto 0);
 subtype xid_t is unsigned(xid_width-1 downto 0);
+subtype count_t is unsigned(count_width-1 downto 0);
+subtype addr_t is unsigned(addr_width-1 downto 0);
 -- ASSUMPTION:  count fits in first DW...
 -- UPDATE dws2header and header2dws if this is changed.
 type header_t is record
   -- Note the count must be first.
-  count : unsigned(count_width-1 downto 0);     -- like AXI: 0 means 1 etc.
+  count : count_t;     -- like AXI: 0 means 1 etc.
   op    : op_t;
   xid   : xid_t;
   lead  : unsigned(end_bytes_width-1 downto 0); -- similar to AXI address LSB
   trail : unsigned(end_bytes_width-1 downto 0);
   node  : id_t; -- part of address for outbound requests
-  addr  : unsigned(addr_width-1 downto 0);
+  addr  : addr_t;
 end record header_t;
 constant sdp_header_width : natural := width_for_max(op_t'pos(op_t'high)) + xid_width + end_bytes_width*2 +
                                      count_width + node_width + addr_width;

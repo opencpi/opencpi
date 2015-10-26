@@ -50,9 +50,10 @@ namespace OCPI {
       throw ( OU::EmbeddedException )
       : //m_ourUID(mkUID()),
       OCPI::Time::Emit("Container", name ),
-      m_enabled(false), m_ownThread(true), m_thread(NULL),
+      m_enabled(false), m_ownThread(true), m_verbose(false), m_thread(NULL),
       m_transport(*new OCPI::DataTransport::Transport(&Manager::getTransportGlobal(params), false, this))
     {
+      OU::findBool(params, "verbose", m_verbose);
       OU::SelfAutoMutex guard (this);
       m_ordinal = Manager::s_nContainers++;
       if (m_ordinal >= Manager::s_maxContainer) {
@@ -160,16 +161,15 @@ namespace OCPI {
     {
       return Container::DispatchNoMore;
     }
-    bool Container::run(uint32_t usecs, bool verbose) {
-      (void)usecs; (void)verbose;
+    bool Container::run(uint32_t usecs) {
       if (m_ownThread)
 	throw OU::EmbeddedException( OU::CONTAINER_HAS_OWN_THREAD,
 				     "Can't use container->run when container has own thread",
 				     OU::ApplicationRecoverable);
-      return runInternal();
+      return runInternal(usecs);
     }
 
-    bool Container::runInternal(uint32_t usecs, bool verbose) {
+    bool Container::runInternal(uint32_t usecs) {
       if (!m_enabled)
 	return false;
       DataTransfer::EventManager *em = getEventManager();
@@ -195,8 +195,8 @@ namespace OCPI {
 	 * threads a chance to run.
 	 */
 	if (em &&
-	    em->waitForEvent(usecs) == DataTransfer::EventTimeout && verbose)
-	  printf("Timeout after %u usecs waiting for event\n", usecs);
+	    em->waitForEvent(usecs) == DataTransfer::EventTimeout && m_verbose)
+	  ocpiBad("Timeout after %u usecs waiting for event\n", usecs);
 	OCPI::OS::sleep (0);
       }
       return true;

@@ -72,14 +72,7 @@ namespace OCPI {
 		  this, ep.c_str(), address, size, m_holeOffset, m_holeEnd);
       };
       virtual ~EndPoint() {}
-
       DT::SmemServices & createSmemServices();
-
-      // Get the address from the endpoint
-      // FIXME: make this get address thing NOT generic...
-      virtual const char* getAddress() {
-	return 0;
-      }
     };
 
     const char *dma = "dma"; // name passed to inherited template class
@@ -189,11 +182,11 @@ namespace OCPI {
 
       // FIXME: provide ref to string as arg
       std::string 
-      allocateEndpoint(const OU::PValue*, uint16_t mailBox, uint16_t maxMailBoxes) {
+      allocateEndpoint(const OU::PValue*, uint16_t mailBox, uint16_t maxMailBoxes, size_t size) {
 	std::string ep;
 	
 	OCPI::Util::formatString(ep, EPNAME ":0.0.0;%zu.%" PRIu16 ".%" PRIu16,
-				 m_SMBSize, mailBox, maxMailBoxes);
+				 size ? size : m_SMBSize, mailBox, maxMailBoxes);
 	return ep;
       }
     };

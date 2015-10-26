@@ -35,7 +35,7 @@ namespace OCPI {
     // The derived class will set up accessors after this constructor is done
     // So we can't perform accesses until that time, which is the "init" call.
     Device::
-    Device(std::string &name, const char *protocol)
+    Device(const std::string &name, const char *protocol)
       : m_metadata(NULL), m_implXml(NULL), m_old(false), m_name(name), m_protocol(protocol),
 	m_isAlive(true), m_pfWorker(NULL), m_isFailed(false), m_timeCorrection(0) {
       memset((void*)&m_UUID, sizeof(m_UUID), 0);
@@ -292,6 +292,17 @@ namespace OCPI {
     releaseWorkerAccess(size_t /* index */,
 			Access & /* worker */,
 			Access & /* properties */) {
+    }
+    DataTransfer::EndPoint &Device::
+    getEndPoint() {
+      return
+	DataTransfer::getManager().
+	allocateProxyEndPoint(m_endpointSpecific.c_str(),
+			      OCPI_UTRUNCATE(size_t, m_endpointSize));
+    }
+    void Device::
+    connect(DataTransfer::EndPoint &/*ep*/, OCPI::RDT::Descriptors &/*mine*/,
+	    const OCPI::RDT::Descriptors &/*other*/) {
     }
   }
 }

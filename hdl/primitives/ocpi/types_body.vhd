@@ -4,6 +4,7 @@
 library ieee;
 use IEEE.std_logic_1164.all;
 use ieee.numeric_std.all;
+use std.TextIO.all;
 library fixed_float; use fixed_float.all;
 
 package body types is
@@ -16,11 +17,17 @@ begin
 end bit2vec;                                                                          
 -- THESE ARE DEFINITIONS WHEN Bool_t is std_logic
 function its(b : bool_t) return boolean is begin return b = '1'; end;
+--this is not here - use bool_t(..), since it can be ambiguous in many places.
 function To_bool(b : std_logic) return Bool_t is begin return b; end to_bool;
 function To_bool(b : std_logic_vector) return Bool_t is begin return b(0); end to_bool;
 function To_bool(b : boolean) return Bool_t is begin if b then return '1'; else return '0'; end if; end;
 function from_bool(b : bool_t) return std_logic_vector is begin
-if b = '1' then return std_logic_vector'(b"1"); else return std_logic_vector'(b"0"); end if;
+if b = '1' then
+  return std_logic_vector'(b"1");
+else
+  return std_logic_vector'(b"0");
+end if;
+return std_logic_vector'("U");
 end from_bool;                                                            
 function slv(a: bool_array_t) return std_logic_vector is
   variable v: std_logic_vector(a'length  - 1 downto 0);
@@ -87,9 +94,14 @@ function from_bool_array(ba : bool_array_t;
                          index, nbytes_1, byte_offset : unsigned;
                          is_big_endian : boolean) return dword_t is
   variable result: dword_t := (others => '0');
+  variable b : std_logic;
   variable i : natural := to_integer(index);
   variable o : natural := to_integer(byte_offset) * 8;
+  variable l : line;
 begin
+  if i >= ba'length then
+    i := 0;
+  end if;
   if is_big_endian then
     result(o + 24) := from_bool(ba(i))(0);
     if nbytes_1 > 0 then
@@ -102,13 +114,26 @@ begin
       end if;
     end if;
   else
-    result(o + 0) := from_bool(ba(i))(0);
+    if o + nbytes_1*8 > dword_t'length then
+      o := 0;
+    end if;
+    if its(ba(i)) then
+      result(o + 0) := '1';
+    else
+      result(o + 0) := '0';
+    end if;
+--  result(o + 0) := from_bool(ba(i))(0);  -- this crashes Isim 14.6
+    b := ba(i);
+    result(o+8) := b;
     if nbytes_1 > 0 then
-      result(o + 8) := from_bool(ba(i+1))(0);
+      b := ba(i+1);
+      result(o + 8) := b;
       if nbytes_1 > 1 then
-        result(o + 16) := from_bool(ba(i+2))(0);
+        b := ba(i+2);
+        result(o + 16) := b;
         if nbytes_1 = 3 then
-          result(o + 24) := from_bool(ba(i+3))(0);
+          b := ba(i+3);
+          result(o + 24) := b;
         end if; 
       end if;
     end if;

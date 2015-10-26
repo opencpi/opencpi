@@ -336,9 +336,9 @@ const char *Worker::
 addBuiltinProperties() {
   const char *err;
   if ((err = addProperty("<property name='ocpi_debug' type='bool' parameter='true' "
-			 "          default='false' readable='true'/>", true)) ||
+			 "          default='false'/>", true)) ||
       (err = addProperty("<property name='ocpi_endian' type='enum' parameter='true' "
-			 "          default='little' readable='true'"
+			 "          default='little'"
       			 "          enums='little,big,dynamic'/>", true)))
     return err;
   return NULL;
@@ -887,21 +887,22 @@ initAccess() {
 void Control::
 summarizeAccess(OU::Property &p) {
   // All the raw stuff is done in the HDL parser.
-  if (p.m_isParameter)
+  if (p.m_isParameter) {
     p.m_paramOrdinal = nParameters++;
-  else {
-    if (p.m_isReadable)
-      readables = true;
-    if (p.m_isWritable)
-      writables = true;
-    if (p.m_isSub32)
-      sub32Bits = true;
-    if (p.m_isVolatile)
-      volatiles = true;
-    if (p.m_isVolatile || p.m_isReadable && !p.m_isWritable)
-      readbacks = true;
-    nRunProperties++;
+    if (!p.m_isReadable)
+      return;
   }
+  if (p.m_isReadable)
+    readables = true;
+  if (p.m_isWritable)
+    writables = true;
+  if (p.m_isSub32)
+    sub32Bits = true;
+  if (p.m_isVolatile)
+    volatiles = true;
+  if (p.m_isVolatile || p.m_isReadable && !p.m_isWritable && !p.m_isParameter)
+    readbacks = true;
+  nRunProperties++;
 }
 
 // A minimum of zero means NO PARTITIONING

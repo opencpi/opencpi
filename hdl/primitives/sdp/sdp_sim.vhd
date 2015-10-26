@@ -51,7 +51,7 @@ begin
   ctl_name_i    : plusarg generic map(name => "ctl")    port map(val => ctl_name);
   ack_name_i    : plusarg generic map(name => "ack")    port map(val => ack_name);
   sw2sim_name_i : plusarg generic map(name => "sw2sim") port map(val => sw2sim_name);
-  sim2sw_name_i   : plusarg generic map(name => "sim2sw")   port map(val => sim2sw_name);
+  sim2sw_name_i : plusarg generic map(name => "sim2sw") port map(val => sim2sw_name);
 
   sdp_out.clk        <= clk;
   sdp_out.reset      <= reset;
@@ -82,7 +82,7 @@ begin
       end if;
       report "Reading a byte from " & msg;
       read(f, data);
-      report "Got a byte from " & msg;
+      report "Got a byte from " & msg & " value " & integer'image(character'pos(data));
       return character'pos(data);
     end read_byte;
     impure function read_short(file f : char_file_t) return natural is
@@ -122,10 +122,11 @@ begin
         credit := sw2sdp_credit_r;
         if spin_credit_r > 0 then
           if spin_credit_r = 3 then
+            report "ack";
             write(ack_file, '1');
           end if;
           spin_credit_r <= spin_credit_r - 1;
-        else
+        elsif not sdp_in.sdp.valid then
           case read_byte(ctl_file, "control") is
             when 0      => spin_credit_r <= read_byte(ctl_file, "spin");
             when 1      =>
@@ -171,6 +172,7 @@ begin
                 sw2sdp_length_r    <= ndws;
                 sw2sdp_index_r     <= start_dw(dws2header(header_dws(sw2sdp_dw)), sdp_width);
                 sw2sdp_in_header_r <= false;
+                sw2sdp_eom_r       <= ndws <= sdp_width;
               end if;
             else
               sw2sdp_index_r <= sw2sdp_index_r + 1;

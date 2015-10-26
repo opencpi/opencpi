@@ -1,8 +1,11 @@
-library ieee; use ieee.math_real.all;
+library ieee; use ieee.math_real.all, ieee.numeric_std.all;
 package body util is
 function width_for_max(n : natural) return natural is begin
   return natural(ceil(log2(real(n+1))));
 end width_for_max;
+function roundup_2_power_of_2(n : natural) return natural is begin
+  return natural(ceil(log2(real(n))));
+end roundup_2_power_of_2;
 function slv(v : std_logic_vector) return std_logic_vector is
 begin
   return v;
@@ -63,5 +66,32 @@ function swap(d : dword_t) return dword_t is
 begin
   return dword_t'(d(7 downto 0) & d(15 downto 8) & d(23 downto 16) & d(31 downto 24));
 end swap;
+-- internal function from ieee numeric...
+function MAX (LEFT, RIGHT: INTEGER) return INTEGER is
+  begin
+    if LEFT > RIGHT then return LEFT;
+    else return RIGHT;
+    end if;
+end MAX;
+function max(l,r: unsigned) return unsigned is
+  variable m : unsigned(max(l'length, r'length)-1 downto 0);
+begin
+  if l > r then
+    m := resize(l, m'length);
+  else
+    m := resize(r, m'length);
+  end if;
+  return m;
+end max;
+function min(l,r: unsigned) return unsigned is
+  variable m : unsigned(max(l'length, r'length)-1 downto 0);
+begin
+  if l < r then
+    m := resize(l, m'length);
+  else
+    m := resize(r, m'length);
+  end if;
+  return m;
+end min;
 end util;
 

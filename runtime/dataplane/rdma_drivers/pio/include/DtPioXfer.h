@@ -68,9 +68,6 @@ namespace OCPI {
       // Sets smem location data based upon the specified endpoint
       int32_t parse(std::string& ep);
 
-      // Get the address from the endpoint
-      virtual const char* getAddress();
-
     protected:
       DataTransfer::SmemServices &createSmemServices();
 
@@ -127,7 +124,7 @@ namespace OCPI {
        *  node.
        ***************************************/
       std::string allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox,
-				   uint16_t maxMailBoxes);
+				   uint16_t maxMailBoxes, size_t size);
     };
 
     /**********************************

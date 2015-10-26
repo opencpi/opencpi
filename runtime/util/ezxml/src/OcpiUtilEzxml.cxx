@@ -712,8 +712,12 @@ namespace OCPI {
       ezxml_parse_str(char *string, size_t len, ezxml_t &xml) {
 	if (!(xml = ::ezxml_parse_str(string, len)))
 	  return "Could not parse xml string";
-	else if (ezxml_error(xml)[0])
-	  return OU::esprintf("error parsing xml string': %s", ezxml_error(xml));
+	else if (ezxml_error(xml)[0]) {
+	  const char *err = OU::esprintf("error parsing xml string': %s", ezxml_error(xml));
+	  ::ezxml_free(xml);
+	  xml = NULL;
+	  return err;
+	}
 	return NULL;
       }
       bool

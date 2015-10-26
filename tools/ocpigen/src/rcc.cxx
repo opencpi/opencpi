@@ -412,7 +412,7 @@ emitCppTypesNamespace(FILE *f, std::string &nsName) {
   pad = 0;
   isLastDummy = false;
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
-    if (!(*pi)->m_isParameter) {
+    if (!(*pi)->m_isParameter || (*pi)->m_isReadable) {
       std::string type;
       rccMember(type, **pi, 2, offset, pad, NULL, true, isLastDummy, false, 0);
       fputs(type.c_str(), f);
@@ -799,7 +799,7 @@ emitImplRCC() {
       bool isLastDummy = false;
       std::string type;
       for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
-	if (!(*pi)->m_isParameter)
+	if (!(*pi)->m_isParameter || (*pi)->m_isReadable)
 	  rccMember(type, **pi, 0, offset, pad, m_implName, true, isLastDummy, false, UINT_MAX-1);
       fprintf(f, "%s} %c%sProperties;\n\n", type.c_str(),
 	      toupper(m_implName[0]), m_implName + 1);

@@ -76,7 +76,7 @@ endif
 # Basic packages.
 #
 
-RDMA_DRIVERS=datagram dma ofed pio sockets udp
+RDMA_DRIVERS=datagram dma ofed pio socket udp
 
 #	 runtime/dataplane/rdma_drivers \
 

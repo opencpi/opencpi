@@ -37,7 +37,10 @@
 #include "OcpiUuid.h"               // just for linkage hooks
 #include "DtMsgDriver.h"            // just for linkage hooks
 #include "OcpiOsSocket.h"           // just for linkage hooks
+#include "OcpiOsServerSocket.h"     // just for linkage hooks
+#include "OcpiOsSemaphore.h"        // just for linkage hooks
 #include "lzma.h"                   // just for linkage hooks
+#include "zlib.h"                   // just for linkage hooks
 namespace OCPI {
   namespace Container {
     namespace OA = OCPI::API;
@@ -176,6 +179,9 @@ namespace DataTransfer {
     createHostSmemServices(loc);
     Msg::XferFactoryManager::getFactoryManager();
     OCPI::OS::Socket s;
+    OCPI::OS::ServerSocket ss;
+    OCPI::OS::Semaphore sem;
+    gzerror(NULL, (int*)0);
     return (intptr_t)&lzma_stream_buffer_decode;
   }
 }

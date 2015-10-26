@@ -103,6 +103,26 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
   return p;
 }
 
+static void
+add2UNocConnection(unsigned &unoc, const char *iname, std::string &assy) {
+  // Connect the new unoc node to the unoc
+  std::string prevInstance, prevPort;
+  if (unoc == 0) {
+    prevInstance = "pfconfig";
+    prevPort = iname;
+  } else {
+    OU::format(prevInstance, "%s_unoc%u", iname, unoc - 1);
+    prevPort = "down";
+  }
+  OU::formatAdd(assy,
+		"  <connection>\n"
+		"    <port instance='%s' name='%s'/>\n"
+		"    <port instance='%s_unoc%u' name='up'/>\n"
+		"  </connection>\n",
+		prevInstance.c_str(), prevPort.c_str(), iname, unoc);
+  unoc++;
+}
+
 HdlContainer::
 HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const char *xfile,
 	     const char *&err)
@@ -236,6 +256,39 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
       nWCIs += p.count;
     }
   }
+  if (sdp) {
+    OU::formatAdd(assy,
+		  "  <instance name='%s_unoc%u' worker='sdp_node'>\n"
+		  "    <property name='sdp_width' value='%zu'/>\n"
+		  "  </instance>\n"
+		  "  <instance name='%s_sdp2cp' worker='sdp2cp'>\n"
+		  "    <property name='sdp_width' value='%zu'/>\n"
+		  "  </instance>\n"
+		  "  <connection>\n"
+		  "    <port instance='%s_unoc%u' name='client'/>\n"
+		  "    <port instance='%s_sdp2cp' name='sdp'/>\n"
+		  "  </connection>\n"
+		  "  <connection>\n"
+		  "    <port instance='%s_sdp2cp' name='cp'/>\n"
+		  "    <port instance='ocscp' name='cp'/>\n"
+		  "  </connection>\n",
+		  sdp->name(), *unoc, m_config.sdpWidth(), sdp->name(), m_config.sdpWidth(),
+		  sdp->name(), *unoc, sdp->name(), sdp->name());
+    add2UNocConnection(*unoc, sdp->name(), assy);
+  } else
+    // Connect it to the pf config's cpmaster
+    for (PortsIter ii = m_config.m_ports.begin(); ii != m_config.m_ports.end(); ii++) {
+      Port &i = **ii;
+      if (i.master && i.type == CPPort) {
+	OU::formatAdd(assy,
+		      "  <connection>\n"
+		      "    <port instance='pfconfig' name='%s'/>\n"
+		      "    <port instance='ocscp' name='cp'/>\n"
+		      "  </connection>\n",
+		      i.name());
+	break;
+      }
+    }
   if (doDefault) {
     if (ezxml_cchild(m_xml, "connection")) {
       err = "Connections are not allowed in default containers";
@@ -255,7 +308,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 	}
 	for (PortsIter ii = m_config.m_ports.begin(); ii != m_config.m_ports.end(); ii++) {
 	  Port &i = **ii;
-	  if (i.master && i.type == NOCPort) {
+	  if (i.master && (i.type == NOCPort || i.type == SDPPort)) {
 	    ContConnect c;
 	    c.external = *pi;
 	    c.interconnect = &i;
@@ -314,43 +367,6 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 		"    <property name='ocpi_endian' value='%s'/>\n"
 		"  </instance>\n", nWCIs,
 		endians[m_endian]);
-  if (sdp) {
-    OU::formatAdd(assy,
-		  "  <instance name='%s_unoc%u' worker='sdp_node'>\n"
-		  "    <property name='sdp_width' value='%zu'/>\n"
-		  "  </instance>\n"
-		  "  <instance name='%s_sdp2cp' worker='sdp2cp'>\n"
-		  "    <property name='sdp_width' value='%zu'/>\n"
-		  "  </instance>\n"
-		  "  <connection>\n"
-		  "    <port instance='%s_unoc%u' name='up'/>\n"
-		  "    <port instance='pfconfig' name='sdp'/>\n"
-		  "  </connection>\n"
-		  "  <connection>\n"
-		  "    <port instance='%s_unoc%u' name='client'/>\n"
-		  "    <port instance='%s_sdp2cp' name='sdp'/>\n"
-		  "  </connection>\n"
-		  "  <connection>\n"
-		  "    <port instance='%s_sdp2cp' name='cp'/>\n"
-		  "    <port instance='ocscp' name='cp'/>\n"
-		  "  </connection>\n",
-		  sdp->name(), *unoc, m_config.sdpWidth(), sdp->name(), m_config.sdpWidth(),
-		  sdp->name(), *unoc, sdp->name(), *unoc, sdp->name(), sdp->name());
-    (*unoc)++;
-  } else
-    // Connect it to the pf config's cpmaster
-    for (PortsIter ii = m_config.m_ports.begin(); ii != m_config.m_ports.end(); ii++) {
-      Port &i = **ii;
-      if (i.master && i.type == CPPort) {
-	OU::formatAdd(assy,
-		      "  <connection>\n"
-		      "    <port instance='pfconfig' name='%s'/>\n"
-		      "    <port instance='ocscp' name='cp'/>\n"
-		      "  </connection>\n",
-		      i.name());
-	break;
-      }
-    }
   // Terminate the uNocs
   for (UNocsIter ii = uNocs.begin(); ii != uNocs.end(); ii++) {
     std::string prevInstance, prevPort;
@@ -625,7 +641,7 @@ emitSDPConnection(std::string &assy, unsigned &unoc, size_t &index, const ContCo
 		"  </connection>\n"
 		"  <connection>\n"
 		"    <port instance='%s_unoc%u' name='client'/>\n"
-		"    <port instance='%s_sdp_%s%u' name='client'/>\n"
+		"    <port instance='%s_sdp_%s%u' name='sdp'/>\n"
 		"  </connection>\n",
 		iname, dir, unoc, dir, iname, m_config.sdpWidth(),
 		iname, dir, unoc, index,
@@ -729,22 +745,7 @@ emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContCon
     OU::format(tc, "%s_ocdp%u", iname, unoc);
     emitTimeClient(assy, tc.c_str(), "wti");
   }
-  // Connect the new unoc node to the unoc
-  std::string prevInstance, prevPort;
-  if (unoc == 0) {
-    prevInstance = "pfconfig";
-    prevPort = iname;
-  } else {
-    OU::format(prevInstance, "%s_unoc%u", iname, unoc - 1);
-    prevPort = "down";
-  }
-  OU::formatAdd(assy,
-		"  <connection>\n"
-		"    <port instance='%s' name='%s'/>\n"
-		"    <port instance='%s_unoc%u' name='up'/>\n"
-		"  </connection>\n",
-		prevInstance.c_str(), prevPort.c_str(), iname, unoc);
-  unoc++;
+  add2UNocConnection(unoc, iname, assy);
   return NULL;
 }
 

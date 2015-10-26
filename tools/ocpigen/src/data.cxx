@@ -39,21 +39,38 @@ parseDistribution(ezxml_t x, Distribution &d, std::string &hash) {
 // Based on an existing spec port (sp).
 DataPort::
 DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *&err)
-  : OcpPort(w, x, sp, ordinal, type, NULL, err) {
-  assert(sp != NULL);
+  : OcpPort(w, x, sp, ordinal, type, NULL, err),
+    m_protocol(NULL), m_isProducer(false), m_isOptional(false), m_isBidirectional(false),
+    m_nOpcodes(0), m_minBufferCount(0), m_bufferSize(0), m_bufferSizePort(NULL),
+    m_isScalable(false), m_defaultDistribution(All), m_isPartitioned(false) {
   if (err)
     return;
-  DataPort *dp = static_cast<DataPort*>(sp);
-  m_protocol = dp->m_protocol;
-  dp->m_protocol = NULL;
-  m_isProducer      = dp->m_isProducer;
-  m_isOptional      = dp->m_isOptional;
-  m_nOpcodes        = dp->m_nOpcodes;
-  // The rest are really impl-only
-  m_isBidirectional = dp->m_isBidirectional;
-  m_minBufferCount  = dp->m_minBufferCount; 
-  m_bufferSize      = dp->m_bufferSize;
-  m_bufferSizePort  = dp->m_bufferSizePort;
+  if (sp) {
+    DataPort *dp = static_cast<DataPort*>(sp);
+    m_protocol = dp->m_protocol;
+    dp->m_protocol = NULL;
+    m_isProducer      = dp->m_isProducer;
+    m_isOptional      = dp->m_isOptional;
+    m_nOpcodes        = dp->m_nOpcodes;
+    // The rest are really impl-only
+    m_isBidirectional = dp->m_isBidirectional;
+    m_minBufferCount  = dp->m_minBufferCount; 
+    m_bufferSize      = dp->m_bufferSize;
+    m_bufferSizePort  = dp->m_bufferSizePort;
+  } else {
+    // FIXME: not really, this stuff is just better in spcm2 branch so don't merge this
+    assert(!ezxml_cattr(x, "protocol") && !ezxml_child(x, "protocol") &&
+	   !ezxml_child(x, "protocolsummary"));
+    if ((err = OE::getBoolean(m_xml, "Producer", &m_isProducer)))
+      return;
+    m_protocol = new Protocol(*this);
+    m_protocol->m_diverseDataSizes = true;
+    m_protocol->m_variableMessageLength = true;
+    m_protocol->m_maxMessageValues = 64*1024;
+    m_protocol->m_zeroLengthMessages = true;
+    m_protocol->m_isUnbounded = true;
+    m_nOpcodes = 256;
+  }
   // Scalability all defaults since it is not a spec issue.  Initialize from protocol
   m_opScaling.resize(m_protocol->m_nOperations, NULL);
   // Now we do implementation-specific initialization that will precede the

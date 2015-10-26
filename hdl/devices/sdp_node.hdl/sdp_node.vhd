@@ -8,7 +8,7 @@ library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
 architecture rtl of sdp_node_rv is
   -- Combinatorial state for splitting downstream messages to "client" or "down"
-  signal down_for_client : bool_t; -- the message coming from up_in is for the client
+  signal for_client       : bool_t; -- the message coming from up_in is for the client
   -- State for joining upstream messsages from "client" or "down".
   signal up_starting      : bool_t;
   signal up_ending        : bool_t;
@@ -20,8 +20,8 @@ begin
   -- The first function is to route messages arriving on the up_in channel
   -- to either the client_out channel or the down_out channel.
   -- Since the header is stable for the length of the message, its easy.
-  -- The "ready" signal is routed back to the "up" channel from the receipient.
-  down_for_client <= to_bool(up_in.sdp.header.node = up_in.id);
+  -- The "ready" signal is routed back to the "up" channel from the recipient.
+  for_client <= to_bool(up_in.sdp.header.node = up_in.id);
   -- Copy the incoming upstream info to the client, qualifying the valid signal
   client_out.clk <= up_in.clk;
   client_out.reset <= up_in.reset;
@@ -29,7 +29,7 @@ begin
   client_out.sdp.header <= up_in.sdp.header;
   client_out.sdp.eom <= up_in.sdp.eom;
   client_out_data <= up_in_data;
-  client_out.sdp.valid <= up_in.sdp.valid and down_for_client;
+  client_out.sdp.valid <= up_in.sdp.valid and for_client;
   -- Copy the incoming upstream info downstream, qualifying the valie signal
   down_out.clk <= up_in.clk;
   down_out.reset <= up_in.reset;
@@ -37,9 +37,9 @@ begin
   down_out.sdp.header <= up_in.sdp.header;
   down_out.sdp.eom <= up_in.sdp.eom;
   down_out_data <= up_in_data;
-  down_out.sdp.valid <= up_in.sdp.valid and not down_for_client;
+  down_out.sdp.valid <= up_in.sdp.valid and not for_client;
   -- Accept the incoming frame from the recipient
-  up_out.sdp.ready <= client_in.sdp.ready when its(down_for_client) else up_in.sdp.ready;
+  up_out.sdp.ready <= client_in.sdp.ready when its(for_client) else down_in.sdp.ready;
 
   -------------------------------------------------------------------------  
   -- The "joining" function, from down and/or client to upstream
@@ -49,9 +49,9 @@ begin
   -- Are we starting an upstream message in THIS cycle?
   up_starting <= not up_active_r and (client_in.sdp.valid or down_in.sdp.valid);
   -- Are we ending a message in this cycle?
-  up_ending <= client_in.sdp.valid and client_in.sdp.eom
+  up_ending <= client_in.sdp.valid and client_in.sdp.eom and up_in.sdp.ready
                when its(up_from_client) else
-               down_in.sdp.valid and down_in.sdp.eom;
+               down_in.sdp.valid and down_in.sdp.eom and up_in.sdp.ready;
   -- Is the current (or starting) message from client?
   up_from_client <= up_from_client_r when its(up_active_r) else
                     client_in.sdp.valid and (not down_in.sdp.valid or not up_from_client_r);
@@ -69,10 +69,10 @@ begin
   begin
     if rising_edge(up_in.clk) then
       if its(up_in.reset) then
-        up_active_r <= bfalse;
+        up_active_r      <= bfalse;
         up_from_client_r <= bfalse;
       else
-        if its(up_starting) then
+        if up_starting and not its(up_ending) then
           up_from_client_r <= up_from_client; -- make this sticky through a message
           if not up_ending then
             up_active_r <= btrue;

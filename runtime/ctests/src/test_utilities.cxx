@@ -142,7 +142,7 @@ void OCPI::CONTAINER_TEST::connectWorkers(std::vector<CApp>& ca, std::vector<CWo
 void  OCPI::CONTAINER_TEST::testDispatch(OCPI::API::Container* rcc_container)
 {
 
-  rcc_container->run(100, true);
+  rcc_container->run(100);
 #if 0
   // Block here until we get a wakeup notification
   // We will get a notification for the following reasons
@@ -252,6 +252,7 @@ std::vector<CApp> OCPI::CONTAINER_TEST::createContainers( std::vector<ContainerD
 
   static OCPI::Util::PValue cprops[] = {
                                        OCPI::Util::PVBool("polling",1),
+                                       OCPI::Util::PVBool("verbose",true),
                                        OCPI::Util::PVEnd };
   // Create the container
   try { 

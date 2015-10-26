@@ -222,7 +222,7 @@ namespace OCPI {
       // Do some work for this container
       // Return true if there is more to do.
       // Argument is yield time for blocking
-      virtual bool run(uint32_t usecs = 0, bool verbose = false) = 0;
+      virtual bool run(uint32_t usecs = 0) = 0;
       // Perform the work of a separate thread, returning only when there is
       // nothing else to do.
       virtual void thread() = 0;

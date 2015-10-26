@@ -112,16 +112,7 @@ namespace OCPI {
 
         //! get the event manager for this container
         DataTransfer::EventManager*  getEventManager();
-
-	//	inline OCPI::DataTransport::Transport& getTransport() { return *m_transport; }
-
 	bool needThread() { return true; }
-	//      protected:
-
-        // Ocpi transport 
-	//        OCPI::DataTransport::Transport *m_transport;
-
-
       };
   }
 }

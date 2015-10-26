@@ -117,11 +117,10 @@ parseHdlImpl(const char *package) {
     bool raw = false;
     for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
       OU::Property &p = **pi;
-      if (!p.m_isParameter) {
+      if (!p.m_isParameter || p.m_isReadable) {
 	// Determine when the raw properties start
-	if (m_ctl.rawProperties &&
-	    (!m_ctl.firstRaw ||
-	     !strcasecmp(m_ctl.firstRaw->m_name.c_str(), p.m_name.c_str())))
+	if (m_ctl.rawProperties && !p.m_isParameter &&
+	    (!m_ctl.firstRaw || !strcasecmp(m_ctl.firstRaw->m_name.c_str(), p.m_name.c_str())))
 	  raw = true;
 	if (raw) {
 	  if (p.m_isWritable)

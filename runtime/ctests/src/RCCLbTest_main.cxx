@@ -396,7 +396,11 @@ int gpp_cont(int argc, char** argv)
   ( void ) argc;
   ( void ) argv; 
   //  DataTransfer::EventManager* gpp_event_manager;
-  static OCPI::Util::PValue container_props[] = {OCPI::Util::PVString("endpoint",""), OCPI::Util::PVEnd };
+  static OCPI::Util::PValue container_props[] = {
+    OCPI::Util::PVString("endpoint",""),
+    OCPI::Util::PVBool("verbose",true),
+    OCPI::Util::PVEnd
+  };
 
 #if 0
   gpp_container = static_cast<OCPI::Container::Interface*>(d);
@@ -471,7 +475,7 @@ int gpp_cont(int argc, char** argv)
 
     while( OCPI_RUN_TEST ) {
 
-      gpp_container->run(100, true);
+      gpp_container->run(100);
 #if 0
       if ( gpp_event_manager ) {
         do {

@@ -86,8 +86,8 @@
   CMD_OPTION(path,       ,  String, 0, "Search path for executable artifacts, overriding OCPI_LIBRARY_PATH environment") \
   CMD_OPTION(libraries,  ,  String, 0, "Search path for source libraries, implying to search for possible source workers")\
   CMD_OPTION(build,      ,  String, 0, "Build any source workers deployed")\
-  CMD_OPTION(sim_dir,    ,  String, "simtest", "Directory in which to run simulations")\
-  CMD_OPTION(simulator,  ,  String, 0, "Run this simulator for this execution")\
+  CMD_OPTION(sim_dir,    ,  String, "simulations", "Directory in which to run simulations")\
+  CMD_OPTION_S(simulator, H,  String, 0, "Run this HDL simulator for this execution")\
   CMD_OPTION(art_lib_path,L,String, 0, "Specify/override OCPI_LIBRARY_PATH") \
   /**/
 #include "CmdOption.h"
@@ -176,161 +176,182 @@ static int mymain(const char **ap) {
   
   std::string file;  // the file that the application XML came from
   ezxml_t xml = NULL;
-  if (*ap) {
-    if (options.artifacts()) {
-      fprintf(stderr, "Error: can't request artifact dump (-A) and specify an xml file (%s)\n",
-	      *ap);
-      return 1;
-    }
-    file =*ap;
-    if (!OS::FileSystem::exists(file)) {
-      file += ".xml";
-      if (!OS::FileSystem::exists(file)) {
-	fprintf(stderr, "Error: file %s (or %s.xml) does not exist\n", *ap, *ap);
-	return 1;
-      }
-    }
-    const char *err;
-    if ((err = OE::ezxml_parse_file(file.c_str(), xml))) {
-      fprintf(stderr, "Error parsing XML file %s: %s\n", file.c_str(), err);
-      return 1;
-    }
-    if (!strcasecmp(ezxml_name(xml), "deployment")) {
-      file.clear();
-      OE::getOptionalString(xml, file, "application");
-      ezxml_free(xml); // we only used it to grab the app attribute
-      if (file.empty()) {
-	fprintf(stderr, "Input file, \"%s\" is a deployment file with no application attribute",
+  char *err = NULL;
+  do { // break on error
+    const char *e;
+    if (*ap) {
+      if (options.artifacts()) {
+	asprintf(&err, "Error: can't request artifact dump (-A) and specify an xml file (%s)\n",
 		*ap);
-	return 1;
+	break;
       }
+      file =*ap;
       if (!OS::FileSystem::exists(file)) {
 	file += ".xml";
 	if (!OS::FileSystem::exists(file)) {
-	  fprintf(stderr, "Error: application file %s (or %s) does not exist\n", file.c_str(),
-		  file.c_str());
-	  return 1;
+	  asprintf(&err, "Error: file %s (or %s.xml) does not exist\n", *ap, *ap);
+	  break;
 	}
       }
-      if ((err = OE::ezxml_parse_file(file.c_str(), xml))) {
-	fprintf(stderr, "Error parsing XML file %s: %s\n", file.c_str(), err);
-	return 1;
+      if ((e = OE::ezxml_parse_file(file.c_str(), xml))) {
+	asprintf(&err, "Error parsing XML file %s: %s\n", file.c_str(), e);
+	break;
       }
-    } else if (strcasecmp(ezxml_name(xml), "application")) {
-      fprintf(stderr, "Error: file \"%s\" is a \"%s\" XML file.\n", file.c_str(),
-	      ezxml_name(xml));
-      return 1;
+      if (!strcasecmp(ezxml_name(xml), "deployment")) {
+	file.clear();
+	OE::getOptionalString(xml, file, "application");
+	if (file.empty()) {
+	  asprintf(&err, "Input file, \"%s\" is a deployment file with no application attribute",
+		  *ap);
+	  break;
+	}
+	if (!OS::FileSystem::exists(file)) {
+	  file += ".xml";
+	  if (!OS::FileSystem::exists(file)) {
+	    asprintf(&err, "Error: application file %s (or %s) does not exist\n", file.c_str(),
+		    file.c_str());
+	    break;
+	  }
+	}
+	if ((e = OE::ezxml_parse_file(file.c_str(), xml))) {
+	  asprintf(&err, "Error parsing XML file %s: %s\n", file.c_str(), e);
+	  break;
+	}
+      } else if (strcasecmp(ezxml_name(xml), "application")) {
+	asprintf(&err, "Error: file \"%s\" is a \"%s\" XML file.\n", file.c_str(),
+		ezxml_name(xml));
+	break;
+      }
+    } else if (options.artifacts()) {
+      // FIXME: no way to suppress all discovery EXCEPT one manager...
+      OCPI::Container::Manager::getSingleton().suppressDiscovery();
+      DataTransfer::XferFactoryManager::getSingleton().suppressDiscovery();
+      if ((e = OU::parseList(options.artifacts(), doTarget)))
+	asprintf(&err, "Error processing artifact target list (\"%s\"): %s\n",
+		options.artifacts(), e);
+      break;
     }
-  } else if (options.artifacts()) {
-    // FIXME: no way to suppress all discovery EXCEPT one manager...
-    OCPI::Container::Manager::getSingleton().suppressDiscovery();
-    DataTransfer::XferFactoryManager::getSingleton().suppressDiscovery();
-    const char *err;
-    if ((err = OU::parseList(options.artifacts(), doTarget))) {
-      fprintf(stderr, "Error processing artifact target list (\"%s\"): %s\n",
-	      options.artifacts(), err);
-      return 1;
-    }
-    return 0;
-  }
-  if (options.deployment())
-    OCPI::Library::Manager::getSingleton().suppressDiscovery();
+    if (options.deployment())
+      OCPI::Library::Manager::getSingleton().suppressDiscovery();
 
-  if (!options.remote())
-    OR::g_suppressRemoteDiscovery = true;
-  if (options.servers()) {
-    const char *err;
-    if ((err = OU::parseList(options.servers(), doServer))) {
-      fprintf(stderr, "Error processing server list (\"%s\"): %s\n",
-	      options.servers(), err);
-      return 1;
+    if (!options.remote())
+      OR::g_suppressRemoteDiscovery = true;
+    if (options.servers()) {
+      if ((e = OU::parseList(options.servers(), doServer))) {
+	asprintf(&err, "Error processing server list (\"%s\"): %s\n", options.servers(), e);
+	break;
+      }
     }
-  }
-  OA::Container *c;
-  if (options.processors())
-    for (unsigned n = 1; n < options.processors(); n++) {
-      std::string name;
-      OU::formatString(name, "rcc%d", n);
-      OA::ContainerManager::find("rcc", name.c_str());
-    }
-  if (options.list()) {
-    (void)OA::ContainerManager::get(0); // force config
-    printf("Available containers:\n"
-	   " #  Model Platform    OS     OS Version  Name\n");
-    for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)
-      printf("%2u  %-5s %-11s %-6s %-11s %s\n",
-	     n,  c->model().c_str(), c->platform().c_str(), c->os().c_str(),
-	     c->osVersion().c_str(), c->name().c_str());
-    fflush(stdout);
-  } else if (options.verbose()) {
-    for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)
-      fprintf(stderr, "%s%s [model: %s os: %s platform: %s]", n ? ", " : "Available containers are: ",
-	      c->name().c_str(), c->model().c_str(), c->os().c_str(), c->platform().c_str());
-    fprintf(stderr, "\n");
-  }
+    OA::Container *c;
+    if (options.processors())
+      for (unsigned n = 1; n < options.processors(); n++) {
+	std::string name;
+	OU::formatString(name, "rcc%d", n);
+	OA::ContainerManager::find("rcc", name.c_str());
+      }
     
-  if (!xml)
-    return 0;
-  std::string name;
-  OU::baseName(file.c_str(), name);
-  
-  OA::ApplicationX app(xml, name.c_str(), params.size() ? &params[0] : NULL);
-  if (options.verbose())
-    fprintf(stderr,
-	    "Application XML parsed and deployments (containers and implementations) chosen\n");
-  if (options.deploy_out()) {
-    std::string dfile;
-    if (*options.deploy_out())
-      dfile = options.deploy_out();
-    else {
-      OU::baseName(file.c_str(), dfile);
-      dfile += "-deploy.xml";
+    size_t nSims;
+    std::vector<OA::PValue> simParams;
+    if (options.sim_dir())
+      addParam("directory", options.sim_dir(), simParams);
+    if (options.verbose())
+      simParams.push_back(OA::PVBool("verbose", true));
+    if (options.dump())
+      simParams.push_back(OA::PVBool("dump", true));
+    if (simParams.size())
+      simParams.push_back(OA::PVEnd);
+    const char **sims = options.simulator(nSims);
+    for (unsigned n = 0; n < nSims; n++) {
+      std::string name;
+      OU::format(name, "lsim:%s%d", sims[n], n);
+      OA::ContainerManager::find("hdl", name.c_str(), simParams.size() ? &simParams[0] : NULL);
     }
-    app.dumpDeployment(file.c_str(), dfile);
-  }
-  if (options.no_execute())
-    return 0;
-  app.initialize();
-  if (options.verbose())
-    fprintf(stderr,
-	    "Application established: containers, workers, connections all created\n"
-	    "Communication with the application established\n");
-  if (options.dump()) {
-    std::string name, value;
-    bool isParameter;
+    if (options.list()) {
+      (void)OA::ContainerManager::get(0); // force config
+      printf("Available containers:\n"
+	     " #  Model Platform    OS     OS Version  Name\n");
+      for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)
+	printf("%2u  %-5s %-11s %-6s %-11s %s\n",
+	       n,  c->model().c_str(), c->platform().c_str(), c->os().c_str(),
+	       c->osVersion().c_str(), c->name().c_str());
+      fflush(stdout);
+    } else if (options.verbose()) {
+      for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)
+	fprintf(stderr, "%s%s [model: %s os: %s platform: %s]", n ? ", " : "Available containers are: ",
+		c->name().c_str(), c->model().c_str(), c->os().c_str(), c->platform().c_str());
+      fprintf(stderr, "\n");
+    }
+    
+    if (!xml)
+      break;
+    std::string name;
+    OU::baseName(file.c_str(), name);
+  
+    OA::ApplicationX app(xml, name.c_str(), params.size() ? &params[0] : NULL);
     if (options.verbose())
-      fprintf(stderr, "Dump of all initial property values:\n");
-    for (unsigned n = 0; app.getProperty(n, name, value, options.hex(), &isParameter); n++)
-      fprintf(stderr, "Property %2u: %s = \"%s\"%s\n", n, name.c_str(), value.c_str(),
-	      isParameter ? " (parameter)" : "");
-  }
-  app.start();
-  if (options.verbose())
-    fprintf(stderr, "Application started/running\n");
-  if (options.seconds()) {
+      fprintf(stderr,
+	      "Application XML parsed and deployments (containers and implementations) chosen\n");
+    if (options.deploy_out()) {
+      std::string dfile;
+      if (*options.deploy_out())
+	dfile = options.deploy_out();
+      else {
+	OU::baseName(file.c_str(), dfile);
+	dfile += "-deploy.xml";
+      }
+      app.dumpDeployment(file.c_str(), dfile);
+    }
+    if (options.no_execute())
+      break;
+    app.initialize();
     if (options.verbose())
-      fprintf(stderr, "Waiting %u seconds for application to complete\n", options.seconds());
-    sleep(options.seconds());
+      fprintf(stderr,
+	      "Application established: containers, workers, connections all created\n"
+	      "Communication with the application established\n");
+    if (options.dump()) {
+      std::string name, value;
+      bool isParameter;
+      if (options.verbose())
+	fprintf(stderr, "Dump of all initial property values:\n");
+      for (unsigned n = 0; app.getProperty(n, name, value, options.hex(), &isParameter); n++)
+	fprintf(stderr, "Property %2u: %s = \"%s\"%s\n", n, name.c_str(), value.c_str(),
+		isParameter ? " (parameter)" : "");
+    }
+    app.start();
     if (options.verbose())
-      fprintf(stderr, "After %u seconds, stopping application...\n", options.seconds());
-    app.stop();
-  } else {
-    if (options.verbose())
-      fprintf(stderr, "Waiting for application to be finished (no timeout)\n");
-    app.wait();
-    if (options.verbose())
-      fprintf(stderr, "Application finished\n");
-  }
-  // In case the application specifically defines things to do that aren't in the destructor
-  app.finish();
-  if (options.dump()) {
-    std::string name, value;
-    bool isParameter;
-    if (options.verbose())
-      fprintf(stderr, "Dump of all final property values:\n");
-    for (unsigned n = 0; app.getProperty(n, name, value, options.hex(), &isParameter); n++)
-      if (!isParameter)
-	fprintf(stderr, "Property %2u: %s = \"%s\"\n", n, name.c_str(), value.c_str());
+      fprintf(stderr, "Application started/running\n");
+    if (options.seconds()) {
+      if (options.verbose())
+	fprintf(stderr, "Waiting %u seconds for application to complete\n", options.seconds());
+      sleep(options.seconds());
+      if (options.verbose())
+	fprintf(stderr, "After %u seconds, stopping application...\n", options.seconds());
+      app.stop();
+    } else {
+      if (options.verbose())
+	fprintf(stderr, "Waiting for application to be finished (no timeout)\n");
+      app.wait();
+      if (options.verbose())
+	fprintf(stderr, "Application finished\n");
+    }
+    // In case the application specifically defines things to do that aren't in the destructor
+    app.finish();
+    if (options.dump()) {
+      std::string name, value;
+      bool isParameter;
+      if (options.verbose())
+	fprintf(stderr, "Dump of all final property values:\n");
+      for (unsigned n = 0; app.getProperty(n, name, value, options.hex(), &isParameter); n++)
+	if (!isParameter)
+	  fprintf(stderr, "Property %2u: %s = \"%s\"\n", n, name.c_str(), value.c_str());
+    }
+  } while(0);
+  if (xml)
+    ezxml_free(xml);
+  if (err) {
+    fprintf(stderr, "%s", err);
+    free(err);
+    return 1;
   }
   return 0;
 }

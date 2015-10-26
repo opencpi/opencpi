@@ -44,6 +44,7 @@ namespace OCPI {
 	createApplication(const char *name, const OCPI::Util::PValue *props)
 	throw ( OCPI::Util::EmbeddedException );
       bool needThread();
+      Container::DispatchRetCode dispatch(DataTransfer::EventManager*);
     };
   }
 }

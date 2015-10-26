@@ -303,7 +303,7 @@ else
 DYN_PREFIX=LD_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/$(OCPI_TOOL_DIR)
 endif
 #$(info OCDK $(OCPI_CDK_DIR))
-DYN_PREFIX=
+#DYN_PREFIX=
 OcpiGenTool=$(ToolsDir)/ocpigen $(patsubst %,-I"%",$(call Unique,$(XmlIncludeDirsInternal)))
 OcpiGenArg=$(DYN_PREFIX) $(OcpiGenTool) $1 -M $(GeneratedDir)/$(@F).deps
 OcpiGen=$(call OcpiGenArg,)

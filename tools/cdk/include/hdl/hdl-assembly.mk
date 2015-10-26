@@ -28,6 +28,7 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 
 # These next lines are similar to what worker.mk does
 ifneq ($(MAKECMDGOALS),clean)
+hdl: all # for convenience
 $(if $(wildcard $(CwdName).xml),,\
   $(error The XML for the assembly, $(CwdName).xml, is missing))
 endif

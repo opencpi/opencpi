@@ -73,7 +73,7 @@ DYNOBJS += \
 	../../../../runtime/dataplane/rdma_drivers/datagram/$(OCPI_OUT_DIR)/DtDataGramXfer.obj \
 	../../../../runtime/dataplane/rdma_drivers/pio/$(OCPI_OUT_DIR)/DtPioXfer.obj \
 	../../../../runtime/dataplane/rdma_drivers/dma/$(OCPI_OUT_DIR)/DtDmaXfer.obj \
-	../../../../runtime/dataplane/rdma_drivers/sockets/$(OCPI_OUT_DIR)/DtSocketsXfer.obj \
+	../../../../runtime/dataplane/rdma_drivers/socket/$(OCPI_OUT_DIR)/DtSocketsXfer.obj \
 	../../../../runtime/dataplane/rdma_drivers/datagram/$(OCPI_OUT_DIR)/DtDataGramEtherDriver.obj \
 
 ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)

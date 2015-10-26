@@ -7,6 +7,8 @@
 
 #include <climits>
 #include "OcpiUuid.h"
+#include "DtTransferInternal.h"
+#include "OcpiRDTInterface.h"
 #include "HdlWciControl.h"
 #include "HdlAccess.h"
 
@@ -42,7 +44,7 @@ namespace OCPI {
     public:
       uint32_t m_timeCorrection;
     protected:
-      Device(std::string &name, const char *protocol = "");
+      Device(const std::string &name, const char *protocol = "");
     public:
       virtual ~Device();
       bool init(std::string &error);
@@ -65,12 +67,19 @@ namespace OCPI {
       virtual void load(const char *name) = 0;
       virtual void connect() {}
       virtual void unload() = 0;
+      virtual bool needThread() const { return false; };
+      virtual bool run() { return true; }
       void getWorkerAccess(size_t index,
 			   Access &worker,
 			   Access &properties);
       void releaseWorkerAccess(size_t index,
 			       Access & worker,
 			       Access & properties);
+      // Methods when the container is making connections and the device needs to know about it,
+      // mostly for simulation.
+      virtual DataTransfer::EndPoint &getEndPoint();
+      virtual void connect(DataTransfer::EndPoint &ep, OCPI::RDT::Descriptors &mine,
+			   const OCPI::RDT::Descriptors &other);
       // This method has a required base class implementation.
       // If it is overridden, the base class method must be called from there.
       // (probably early, as it retrieves a variety of generic information from either the

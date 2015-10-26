@@ -107,10 +107,9 @@ release() {
 OCPI::OS::int32_t
 EndPoint::setEndpoint(std::string& ep)
 {
-  char buf[ep.length() + 1]; //::MAX_PROTOS_SIZE];
   end_point = ep;
   getProtocolFromString(ep.c_str(), protocol);
-  getResourceValuesFromString(ep.c_str(), buf, &mailbox, &maxCount, &size);
+  parseEndPointString(ep.c_str(), &mailbox, &maxCount, &size);
   return 0;
 }
 
@@ -124,18 +123,23 @@ getProtocolFromString( const char* ep, std::string &proto )
 }
 
 void EndPoint::
-getResourceValuesFromString( const char* ep, 
-			     char*, 
-			     uint16_t* mailBox, 
-			     uint16_t* maxMb, 
-			     size_t* size)
-{
+parseEndPointString(const char* ep, uint16_t* mailBox, uint16_t* maxMb, size_t* size) {
   const char *semi = strrchr(ep, ';');
-
-  if (!semi ||
-      sscanf(semi+1, "%zu.%" SCNu16 ".%" SCNu16,
-	     size, mailBox, maxMb) != 3)
+  if (!semi || sscanf(semi+1, "%zu.%" SCNu16 ".%" SCNu16, size, mailBox, maxMb) != 3)
     throw OU::Error("Invalid endpoint: %s", ep);
+}
+
+bool EndPoint::
+matchEndPointString(const char *ep) {
+  uint16_t argMailBox = 0, argMaxMb = 0;
+  size_t argSize;
+  parseEndPointString(ep, &argMailBox, &argMaxMb, &argSize);
+  if (mailbox == argMailBox) {
+    if (size != argSize || maxCount != argMaxMb)
+      throw OU::Error("Endpoint mismatch for %s: existing is %s", ep, end_point.c_str());
+    return true;
+  }
+  return false;
 }
 
 void EndPoint::
@@ -148,14 +152,12 @@ bool EndPoint::
 canSupport(const char *remoteEndpoint) {
   std::string remoteProtocol;
   EndPoint::getProtocolFromString(remoteEndpoint, remoteProtocol);
-  char *cs = strdup(remoteEndpoint);
   uint16_t mailBox, maxMb;
   size_t size;
-  getResourceValuesFromString(remoteEndpoint, cs, &mailBox, &maxMb, &size);
+  parseEndPointString(remoteEndpoint, &mailBox, &maxMb, &size);
   bool ret = 
     protocol == remoteProtocol &&
     maxMb == maxCount && mailBox != mailbox;
-  free(cs);
   return ret;
 }
 
@@ -163,6 +165,11 @@ SmemServices *EndPoint::
 getSmemServices() {
   return resources.sMemServices ?
     resources.sMemServices : (resources.sMemServices = &createSmemServices());
+}
+
+void EndPoint::
+setReceiver(Receiver &/*receiver*/) {
+  throw OU::Error("Endpoint \"%s\" can't support a receiver function", end_point.c_str());
 }
 
 class ResourceServicesImpl : public ResourceServices

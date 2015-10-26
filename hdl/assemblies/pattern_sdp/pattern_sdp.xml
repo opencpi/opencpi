@@ -1,6 +1,0 @@
-<HdlAssembly>
-  <Instance Worker='pattern' connect='sdp_send'/>
-  <Instance Worker='sdp_send'/>
-</HdlAssembly>
-
-   

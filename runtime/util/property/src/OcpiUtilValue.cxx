@@ -615,9 +615,15 @@ namespace OCPI {
 	m_length = m_nTotal * sizeof(run);	       \
 	if (m_vt->m_isSequence || m_vt->m_arrayRank) { \
 	  run *old = m_p##pretty;                      \
-	  m_p##pretty = new run[m_nTotal];	       \
-          /* FIXME: type-specific default value? */    \
-          memset(m_p##pretty, 0, m_length);            \
+	  if (m_vt->m_baseType == OA::OCPI_String) {   \
+            /* NULL terminate sequences of strings */  \
+	    m_pString = new OA::CharP[m_nTotal+1];     \
+            memset(m_pString, 0, m_length+sizeof(run));\
+          } else {                                     \
+	    m_p##pretty = new run[m_nTotal];	       \
+            /* FIXME: type-specific default value? */  \
+            memset(m_p##pretty, 0, m_length);          \
+          }                                            \
 	  if (add) {                                   \
 	    memcpy(m_p##pretty, old, oldLength);       \
 	    delete [] old;                             \
@@ -794,73 +800,6 @@ namespace OCPI {
       }
       return NULL;
     }
-#if 0
-      doElement
-      allocate(vt);
-      unsigned n;
-      for (n = 0; n < m_length && *unparsed; n++) {
-	// Skip initial white space
-	while (isspace(*unparsed))
-	  unparsed++;
-	if (!m_vector && !*unparsed)
-	  return "Empty scalar value";
-	// Find end
-	const char *start = unparsed;
-	while (*unparsed && *unparsed != ',') {
-	  if (*unparsed == '\\' && unparsed[1])
-	    unparsed++;
-	  unparsed++;
-	}
-	char *unparsedSingle = new char[unparsed - start + 1];
-	char *tmp = unparsedSingle;
-	char *lastSpace = 0;
-	for (tmp = unparsedSingle; *start && *start != ','; start++) {
-	  if (*start == '\\' && start[1]) {
-	    start++;
-	    lastSpace = 0;
-	  } else if (isspace(*start)) {
-	    if (!lastSpace)
-	      lastSpace = tmp;
-	  } else
-	    lastSpace = 0;
-	  *tmp++ = *start;
-	}
-	if (lastSpace)
-	  *lastSpace = 0;
-	else
-	  *tmp = 0;
-	if (!m_vector && *unparsed)
-	  err = "multiple values supplied for (single) scalar value";
-	else switch (vt.m_baseType) {
-#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)			\
-	    case OA::OCPI_##pretty:					\
-	      if (parse##pretty(unparsedSingle, vt.m_stringLength, \
-					    m_vector ? &m_p##pretty[n] : \
-					    &m_##pretty))		\
-		err = #pretty;						\
-	      break;
-	    OCPI_PROPERTY_DATA_TYPES
-#undef OCPI_DATA_TYPE
-	  default:
-	    err ="Unexpected illegal type in parsing value";
-	  }
-	if (err)
-	  asprintf((char **)&err, "Bad value \"%s\" for value of type \"%s\"",
-		   unparsedSingle, err);
-	delete [] unparsedSingle;
-	if (err)
-	  break;
-	if (*start)
-	  start++;
-      }
-      if (!err && *unparsed)
-	err = esprintf("Too many values (> %d) for value", vt.m_sequenceLength);
-      if (err)
-	clear();
-      else
-	m_length = n;
-      return err;
-#endif
 
 bool Unparser::
 dimensionUnparse(const Value &val, std::string &s, unsigned nseq, size_t dim, size_t offset,

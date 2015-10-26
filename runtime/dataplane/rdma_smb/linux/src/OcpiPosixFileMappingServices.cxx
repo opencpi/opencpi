@@ -55,13 +55,14 @@
 #include <sys/stat.h>
 #include "OcpiOsAssert.h"
 #include "OcpiHostFileMappingServices.h"
+#include "OcpiUtilMisc.h"
 
 #ifndef OCPI_OS_VERSION_zynq
 // This fails on zynq and we have not dug into it yet.
 #define REAL_SHM 1
 #endif
 namespace DataTransfer {
-
+  namespace OU = OCPI::Util;
   // OcpiPosixFileMappingServices implements basic file mapping support on Posix compliant platforms.
   class OcpiPosixFileMappingServices : public OcpiFileMappingServices
   {
@@ -203,9 +204,12 @@ namespace DataTransfer {
       // Convert access type to a Posix flag set.
       int iOpenFlags = MapAccessTypeToOpen (eAccess);
 
+      if (strMapName.empty()) {
+	static unsigned n = 0;
+	OU::format(strMapName, "/ocpi%u.%u", getpid(), n++);
+      }
       // A leading "/" is required.
       m_name = strMapName[0] == '/' ? strMapName : "/" + strMapName;
-      
       // Open a shared memory object
 #ifdef REAL_SHM
       m_fd = shm_open (m_name.c_str (), iOpenFlags | iFlags, 0666);
@@ -218,8 +222,8 @@ namespace DataTransfer {
       m_length = 0;
       if (m_fd == -1) {
 	  m_errno = errno;
-	  ocpiDebug("OcpiPosixFileMapping::InitMapping: shm_open of %s failed with errno %d\n",
-		  m_name.c_str (), m_errno);
+	  ocpiDebug("OcpiPosixFileMapping::InitMapping: shm_open of %s failed with errno %d: %s\n",
+		    m_name.c_str (), m_errno, strerror(m_errno));
 	  return m_errno;
 	}
       m_created = iFlags == O_CREAT;

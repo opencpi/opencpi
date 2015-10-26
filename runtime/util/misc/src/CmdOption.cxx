@@ -30,6 +30,10 @@ namespace OCPI {
 	    m_names[n][i] = '-';
       }
     }
+    BaseCommandOptions::
+    ~BaseCommandOptions() {
+      delete [] m_seen;
+    }
     const char *BaseCommandOptions::
     setError(const char *err) {
       m_error = err;
@@ -185,7 +189,7 @@ namespace OCPI {
     }
     void BaseCommandOptions::
     exitbad(const char *e) {
-      fprintf(stderr, "Existing for exception: %s\n", e);
+      fprintf(stderr, "Exiting for exception: %s\n", e);
       exit(1);
     }
     void BaseCommandOptions::

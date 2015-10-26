@@ -664,9 +664,9 @@ namespace OCPI {
 	    if (!ret) {
 	      *(HN::EtherControlPacket *)m_response.payload = request.packet;
 	      pkt.readResponse.data = htonl(data);
-	      ocpiDebug("writing response to client: len %zu tag %d to %s via index %u",
-			request.length, m_response.payload[RESP_TAG], request.from.pretty(),
-			request.index);
+	      ocpiBad("writing response %p to client: len %zu tag %d to %s via index %u",
+			&m_response, request.length, m_response.payload[RESP_TAG],
+			request.from.pretty(), request.index);
 	      ret = sendToIfc(request.sock, request.index, request.length, request.from, error);
 	    }
 	    m_respQueue.pop();
@@ -737,8 +737,9 @@ namespace OCPI {
 	      }
 	      Request &request = m_respQueue.back();
 	      printTime("after response full read");
-	      ocpiDebug("writing response to client: len %zu tag %d to %s via index %u", len,
-			m_response.payload[RESP_TAG], request.from.pretty(), request.index);
+	      ocpiBad("writing response %p to client: len %zu tag %d to %s via index %u", len,
+			&m_response, m_response.payload[RESP_TAG], request.from.pretty(),
+			request.index);
 	      bool bad = sendToIfc(request.sock, request.index, len + 2, request.from, error);
 	      m_respQueue.pop();
 	      if (m_respQueue.empty() && spin(error))
@@ -905,7 +906,8 @@ namespace OCPI {
 	bool
 	doEmulate(size_t &length, OH::SDP::Header **sdp, std::string &error) {
 	  HN::EtherControlPacket &pkt = *(HN::EtherControlPacket *)m_response.payload;
-	  // ocpiDebug("doEmulate: Got header.  Need %u header %u", n, sizeof(HN::EtherControlHeader));
+	  ocpiDebug("doEmulate: Got header.  Need %zu header %zu", length,
+		    sizeof(HN::EtherControlHeader));
 	  if (length - 2 != ntohs(pkt.header.length)) {
 	    OU::format(error, "bad client message length: %zu vs %u", length, ntohs(pkt.header.length));
 	    return true;
@@ -971,7 +973,7 @@ namespace OCPI {
 	      ocpiBad("Write offset out of range: 0x%zx", offset);
 	    break;
 	  case HN::OCCP_READ:
-	    ocpiDebug("Read command, offset 0x%zx", offset);
+	    ocpiDebug("Read command, offset 0x%zx sdp %p", offset, sdp);
 	    len = sizeof(HN::EtherControlReadResponse);
 	    if (sdp) {
 	      *sdp = new OH::SDP::Header(true, offset, blen);
@@ -1007,11 +1009,12 @@ namespace OCPI {
 		  pkt.readResponse.data = 0; // no errors
 		}
 	      }
-	    } else  {
+	    } else {
 	      ocpiBad("Read offset out of range3: 0x%zx", offset);
 	      pkt.readResponse.data = 0xa5a5a5a5;
 	    }
-	    ocpiDebug("Read command response: 0x%" PRIx32, ntohl(pkt.readResponse.data));
+	    ocpiDebug("Read command response: 0x%" PRIx32 " %p", ntohl(pkt.readResponse.data),
+		      &pkt.readResponse.data);
 	    break;
 	  case HN::OCCP_NOP:
 	    // We emulate this whether SDP is alive or not since the normal control plane
@@ -1110,6 +1113,7 @@ namespace OCPI {
 	      return true;
 	    }
 	  }
+	  ocpiBad("writing response %p: len %zu", &m_response, length);
 	  return !s->send(m_response, length, to, 0, NULL, error);
 	}
 	// A select call has indicated a socket ready to read.

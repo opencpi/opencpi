@@ -53,7 +53,7 @@ architecture rtl of decoder is
   signal my_done         : bool_t;
   signal my_big_endian   : bool_t;
   signal offset_in       : unsigned(worker.decode_width -1 downto 0);
-  signal my_offset_r     : unsigned(worker.decode_width -1 downto 0);
+  signal my_offset_r     : unsigned(worker.decode_width -1 downto 0) := (others => '0');
   -- State for write data
   signal my_data_r       : dword_t;
   signal my_is_read      : bool_t;
@@ -198,10 +198,14 @@ begin
         end if;
       elsif my_access_r = none_e then -- capture while idlng.  cycle starts when access_in != none
         my_access_r     <= access_in;
-        is_raw_r        <= to_bool(access_in /= control_e and
+        is_raw_r        <= to_bool((access_in = read_e or access_in = write_e) and
                                    resize(offset_in, worker.decode_width+1) >=
                                    worker.raw_property_base);
-        my_offset_r     <= offset_in;
+        -- work hard to not have my_offset_r be garbage since there are pure combinatorial
+        -- decoding paths from it.
+        if access_in /= none_e then
+          my_offset_r     <= offset_in;
+        end if;
         my_control_op_r <= control_op_in;
         my_data_r       <= ocp_in.MData;
         my_nbytes_1_r   <= num_bytes_1(ocp_in);

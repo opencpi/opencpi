@@ -364,15 +364,24 @@ void XferFactoryManager::shutdown()
 
 // We need to create an endpoint for some other (hardware) container.
 // The string should not include the last two fields.
+// If only a protocol, then its actually local...
   EndPoint& XferFactoryManager::
   allocateProxyEndPoint(const char *loc, size_t size) {
     XferFactory* tfactory = find(loc);
     if (!tfactory)
       throw OU::Error("No driver/factory for endpoint string: '%s'", loc);
     std::string complete;
-    OU::formatString(complete, "%s;%zu.%u.%u",
-		     loc, size, tfactory->getNextMailBox(), tfactory->getMaxMailBox());
-    return *tfactory->getEndPoint(complete.c_str(), false, true);
+    bool local;
+    if (strchr(loc, ':')) {
+      OU::formatString(complete, "%s;%zu.%u.%u",
+		       loc, size, tfactory->getNextMailBox(), tfactory->getMaxMailBox());
+      local = false;
+    } else {
+      local = true;
+      complete = tfactory->allocateEndpoint(NULL, tfactory->getNextMailBox(),
+					    tfactory->getMaxMailBox(), size);
+    }
+    return *tfactory->getEndPoint(complete.c_str(), local, true);
   }
 
 XferFactory::
@@ -424,14 +433,23 @@ removeEndPoint(EndPoint &ep) {
   m_endPoints.erase(&ep);
 }
 
+EndPoint* XferFactory::
+findEndPoint(const char *end_point) {
+  OU::SelfAutoMutex guard (this); 
+  for (EndPoints::iterator i = m_endPoints.begin(); i != m_endPoints.end(); i++)
+    if (*i && (*i)->matchEndPointString(end_point))
+      return *i;
+  return NULL;
+}
 // Get the location via the endpoint.  This is only called if the endpoint already
-// matches the factory.
+// matches the factory.  The "local" argument is not involved in the lookup,
+// only in the creation.
 EndPoint* XferFactory::
 getEndPoint(const char *end_point, bool local, bool cantExist)
 { 
   OU::SelfAutoMutex guard (this); 
   for (EndPoints::iterator i = m_endPoints.begin(); i != m_endPoints.end(); i++)
-    if (*i && (*i)->end_point == end_point) {
+    if (*i && (*i)->matchEndPointString(end_point)) {
       if (cantExist)
 	throw OU::Error("Local explicit endpoint already exists: '%s'", end_point);
       else {
@@ -818,6 +836,11 @@ XferServices* XferFactoryManager::getService( std::string& source_sname, std::st
   {
     OD::Device::configure(x); // give the base class a chance to do generic configuration
     parse(&driverBase(), x);
+  }
+
+  void XferServices::
+  send(DtOsDataTypes::Offset /*offset*/, uint8_t */*data*/, size_t /*nbytes*/) {
+    throw OU::Error("Direct send on endpoint that doesn't support it");
   }
 
 // Create a transfer request

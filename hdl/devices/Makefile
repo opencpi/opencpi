@@ -48,6 +48,7 @@ HdlLibraries=platform
 Workers = \
 	sdp_node.hdl \
 	sdp_send.hdl \
+	sdp_receive.hdl \
 	sdp2cp.hdl \
 	ocdp.hdl \
 	dac.hdl \

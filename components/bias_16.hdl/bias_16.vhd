@@ -18,6 +18,7 @@ begin
   out_out.som         <= in_in.som;
   out_out.eom         <= in_in.eom;
   out_out.valid       <= in_in.valid;
+  out_out.byte_enable <= in_in.byte_enable;
   --out_out.byte_enable(0) <= in_in.byte_enable(0) or in_in.byte_enable(1);
 --  out_out.byte_enable(1) <= in_in.byte_enable(2) or in_in.byte_enable(3); -- only necessary due to BSV protocol sharing
 --  out_out.opcode      <= in_in.opcode;
