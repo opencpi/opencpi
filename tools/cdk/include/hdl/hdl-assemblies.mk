@@ -21,7 +21,7 @@
 #  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
 #
 ########################################################################### #
-# This makefile is for building a set of assemblies, each in there own subdirectory
+# This makefile is for building a set of assemblies, each in their own subdirectory
 
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 
@@ -37,13 +37,19 @@ endif
 endif
 # We use the "internal" versions of variables to allow subsidiary makefiles to
 # simply set those variables again
-ifndef Assemblies
-Assemblies=$(shell for i in *; do if test -d $$i; then echo $$i; fi; done)
+ifeq ($(origin Assemblies),undefined)
+  $(warning No 'Assemblies' set - building ALL. Set 'Assemblies=' to disable.)
+  ifndef ExcludeAssemblies
+    $(warning No 'ExcludeAssemblies' set - building ALL. Set 'ExcludeAssemblies' to a list of assemblies NOT to build by default.)
+  endif
+  Assemblies:=$(shell for i in *; do if test -d $$i; then echo $$i; fi; done)
 endif
+override Assemblies:=$(filter-out $(ExcludeAssemblies),$(Assemblies))
 all: $(Assemblies)
 
 .PHONY: $(Assemblies) $(Platforms) $(Targets) clean
 
+ifdef Assemblies
 $(Assemblies):
 	$(AT)echo =============Building assembly $@
 	$(AT)$(MAKE) -L -C $@ \
@@ -54,6 +60,7 @@ $(Assemblies):
 	       HdlLibrariesInternal="$(call OcpiAdjustLibraries,$(HdlLibraries))" \
                XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirs))" \
 	       $(PassOutDir)
+endif
 
 clean:
 	$(AT)set -e;for a in $(Assemblies); do \

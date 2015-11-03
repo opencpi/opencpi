@@ -146,7 +146,7 @@ QuartusMakeQsf=\
   \
   $(and $(HdlLibrariesInternal),echo '\#' Assignments for adding libraries to search path;) \
   $(foreach l,$(HdlLibrariesInternal),\
-    $(foreach hlr,$(call HdlLibraryRefDir,$l,$(HdlTarget)),\
+    $(foreach hlr,$(call HdlLibraryRefDir,$l,$(HdlTarget),,qts),\
       $(if $(realpath $(hlr)),,$(error No altera library for $l at $(abspath $(hlr))))\
       echo set_global_assignment -name SEARCH_PATH '\"'$(call FindRelative,$(TargetDir),$(hlr))'\"'; \
       $(foreach f,$(wildcard $(hlr)/*_pkg.vhd),\

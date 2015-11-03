@@ -89,7 +89,7 @@ xxMAIN_DRIVERS=\
   _ZN4OCPI3API12ExternalPortD0Ev \
   _ZN12DataTransfer22createHostSmemServicesERNS_8EndPointE
 
-OCPI_DRIVERS=hdl rcc pio dma
+OCPI_DRIVERS=hdl rcc pio dma sockets
 
 # When linking main programs, allow dynamic libraries to have undefined symbols since
 # we don't want to care about indirect depenedencies.

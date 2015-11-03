@@ -98,34 +98,26 @@ $(call OcpiDbgVar,HdlSourceSuffix)
 
 # Add any inbound (internally via command line) libraries to what is specified in the makefile
 # This list is NOT target dependent
-HdlMyLibraries := $(HdlLibraries) $(Libraries) $(HdlLibrariesInternal) 
-
-$(infox HLU:$(MdlMyLibraries):$(HdlLibrariesInternal):$(HdlMode):$(HdlLibraries))
+HdlMyLibraries:=$(strip $(HdlLibraries) $(Libraries) $(HdlLibrariesInternal))
+$(infox HLU:$(HdlMyLibraries):$(HdlLibrariesInternal):$(HdlMode):$(HdlLibraries):$(Libraries))
 
 ################################################################################
 # Add the default libraries
 # FIXME: when tools don't really elaborate or search, capture the needed libraries for later
 # FIXME: but that still means a flat library space...
 # Note this is evaluted in a context when HdlTarget is set, but can also just supply it as $1
-override HdlLibrariesInternal=$(infox HLI:$1:$(HdlTarget):$(HdlLibraries))\
+override HdlLibrariesInternal=$(infox HLI:$1:$(HdlTarget):$(HdlLibraries):$(MAKECMDGOALS))\
+$(if $(findstring clean,$(MAKECMDGOALS)),,\
 $(foreach l,$(call Unique,\
-                $(HdlMyLibraries)\
-                $(if $(HdlNoLibraries),,\
+               $(HdlPrimitiveLibraries) \
+               $(if $(HdlNoLibraries),,\
 	          $(foreach f,$(call HdlGetFamily,$(or $(HdlTarget),$1)),\
-		    $(foreach v,$(call HdlGetTop,$f),\
-	                $(if $(findstring library,$(HdlMode))$(findstring clean,$(MAKECMDGOALS)),,\
-			$(foreach p,$(filter-out $(LibName),fixed_float ocpi util bsv),\
-			  $(if $(wildcard $(call HdlLibraryRefDir,$p,$f)),,\
-			     $(error Primitive library "$p" non-existent or not built for $f))))\
-		      $(if $(findstring library,$(HdlMode)),,\
-	                  $(foreach p,$(filter-out $(LibName),fixed_float ocpi util bsv vendor_$f vendor_$v),\
-	                    $(and $(wildcard $(call HdlLibraryRefDir,$p,$f)),$p))))))),$(strip \
-    $l))
-
-#		      $(if $(findstring library,$(HdlMode)),,\
-#	                  $(foreach p,$(filter-out $(LibName),ocpi util_$f util_$v util_default util bsv vendor_$f vendor_$v),\
-#	                    $(and $(wildcard $(call HdlLibraryRefDir,$p,$f)),$p))))))),$(strip \
-#    $l))
+		    $(foreach v,$(call HdlGetTop,$f),$(infox VVV:$v)\
+	              $(if $(filter library,$(HdlMode)),,\
+			$(foreach p,$(foreach x,$(filter-out $(LibName),fixed_float ocpi util bsv),$(infox XXX:$x)$(call HdlSearchPrimitivePath,$x,,HLI)),$(infox PPP:$p)\
+			  $(if $(wildcard $(call HdlLibraryRefDir,$p,$f,,HLI)),$p,\
+			    $(error Primitive library "$p" non-existent or not built for $f [$(call HdlLibraryRefDir,$p,$f,x,HLI2)])))))))),\
+    $(infox HLI:returning $l)$l))
 
 # For use by some tools
 define HdlSimNoLibraries
@@ -245,10 +237,9 @@ ifndef HdlSkip
 HdlFamilies=$(call HdlGetFamilies,$(HdlActualTargets))
 $(call OcpiDbgVar,HdlFamilies)
 
-HdlToolSets=$(call Unique,$(foreach t,$(HdlFamilies),$(call HdlGetToolSet,$(t))))
+HdlToolSets=$(call Unique,$(foreach t,$(HdlFamilies),$(call HdlGetToolSet,$t)))
 # We will already get an error if there are no toolsets.
 $(call OcpiDbgVar,HdlToolSets)
-
 ifneq ($(HdlMode),worker)
 # In all non-worker cases, if SourceFiles is not specified in the Makefile,
 # we look for any relevant
@@ -272,6 +263,9 @@ endif
 # Now we decide whether to recurse, and run a sub-make per toolset, or, if we
 # have only one toolset for all our targets, we just build for those targets in
 # this make process.
+######### This hack was to oversome some side effect, but I have reverted it
+######### So we find the root cause: which was bugs in getfamilies caching
+#ifneq ($(word 2,$(sort $(HdlToolSets) $(HdlToolSets))),)
 ifneq ($(word 2,$(HdlToolSets)),)
 ################################################################################
 # So here we recurse.  Note we are recursing for targets and NOT platforms.
@@ -313,7 +307,7 @@ else
 ################################################################################
 # Here we are NOT recursing, but simply build targets for one toolset in this 
 # make.
-$(call OcpiDbg,=============Performing for one tool set: $(HdlToolSets). $(HdlPlatforms))
+$(call OcpiDbg,=============Performing for one tool set: $(HdlToolSets).)
 HdlSkip=
 HdlToolSet=$(HdlToolSets)
 $(call OcpiDbgVar,HdlToolSet)

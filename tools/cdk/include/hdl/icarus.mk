@@ -90,14 +90,14 @@ Icarus=$(OCPI_ICARUS_DIR)/bin/iverilog
 # This is just a syntax check for now
 #Warnings=-Wall -Wno-STMTDLY
 MyLibs=\
- $(foreach l,$(SimLibraries),-y $(l)) \
+ $(foreach l,$(SimLibraries),-y $l) \
  $(foreach l,$(ComponentLibraries),\
    $(foreach w,$(wildcard $(l)/lib/hdl/icarus/*),\
-     -y $(call FindRelative,$(TargetDir),$(l)/lib/hdl/icarus/$(notdir $(w))))) \
- $(foreach l,$(HdlLibraries) $(Cores),\
-   $(foreach hlr,$(call HdlLibraryRefDir,$(l),icarus),\
+     -y $(call FindRelative,$(TargetDir),$l/lib/hdl/icarus/$(notdir $w)))) \
+ $(foreach l,$(HdlLibrariesInternal) $(Cores),\
+   $(foreach hlr,$(call HdlLibraryRefDir,$l,icarus,,icarus),\
      $(if $(realpath $(hlr)),,$(error No icarus library at $(abspath $(hlr))))\
-     -y $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$(l),icarus))))
+     -y $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$l,icarus,,icarus))))
 
 #MyTop=$(if $(findstring core,$(HdlMode)),-top $(Top))
 #MyTop=-s glbl

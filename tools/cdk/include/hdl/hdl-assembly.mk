@@ -37,14 +37,15 @@ Worker_$(Worker)_xml:=$(Worker).xml
 Worker_xml:=$(Worker).xml
 OcpiLanguage:=verilog
 override LibDir=lib/hdl
+override HdlLibraries+=platform
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 ifndef HdlSkip
 # Add to the component libraries specified in the assembly Makefile,
 # and also include those passed down from the "assemblies" level
+# THIS LIST IS FOR THE APPLICATION ASSEMBLY NOT FOR THE CONTAINER
 override ComponentLibraries+= $(ComponentLibrariesInternal) components adapters
 # Override since they may be passed in from assemblies level
 override XmlIncludeDirsInternal:=$(XmlIncludeDirs) $(XmlIncludeDirsInternal)
-override HdlLibraries+=platform
 ifdef Container
   ifndef Containers
     Containers:=$(Container)
@@ -92,7 +93,7 @@ ifneq ($(MAKECMDGOALS),clean)
   # $(call doDefaultContainer,<platform>,<config>)
   HdlDefContXml=<HdlContainer platform='$1/$2' default='true'/>
   define doDefaultContainer
-    $(call OcpiDbg,In doDefaultContainer for $1/$2 and HdlPlatforms: $(HdlPlatforms))
+    $(call OcpiDbg,In doDefaultContainer for $1/$2 and HdlPlatforms: $(HdlPlatforms) [filtered=$(filter $1,$(HdlPlatforms))])
     ifneq (,$(if $(HdlPlatforms),$(filter $1,$(HdlPlatforms)),yes))
       # Create this default container's directory and xml file
       ContName:=$(call HdlContName,$1,$2)
@@ -116,7 +117,7 @@ ifneq ($(MAKECMDGOALS),clean)
     $(foreach p,$(filter $(or $(OnlyPlatforms),$(HdlAllPlatforms)),\
                  $(filter-out $(ExcludePlatforms),$(HdlPlatforms))),\
                 $(eval $(call doDefaultContainer,$p,base)))
-    $(call OcpiDbg,No Default Containers: Containers: $(Containers))
+    $(call OcpiDbg,No Default Containers: Containers: $(Containers) (Container=$(Container)))
   else
     $(foreach d,$(DefaultContainers),\
        $(if $(findstring /,$d),\

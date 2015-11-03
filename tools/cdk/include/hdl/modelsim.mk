@@ -80,7 +80,7 @@ HdlToolCompile=\
    $(foreach l,$(HdlLibrariesInternal),\
       echo $(lastword $(subst -, ,$(notdir $l)))=$(strip \
         $(call FindRelative,$(TargetDir),$(strip \
-           $(call HdlLibraryRefDir,$l,$(HdlTarget)))));) \
+           $(call HdlLibraryRefDir,$l,$(HdlTarget),,modelsim))));) \
    $(foreach c,$(call HdlCollectCores,modelsim),\
       echo $(call HdlRmRv,$(notdir $(c)))=$(call FindRelative,$(TargetDir),$(strip \
           $(call HdlCoreRef,$(call HdlRmRv,$c),modelsim)));) \
