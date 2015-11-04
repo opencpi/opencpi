@@ -114,24 +114,24 @@ HdlSearchComponentPath=\
 # Normalize the list at the spec level
 # No arguments
 HdlComponentLibraries=$(strip\
-    $(foreach c,$(ComponentLibraries),$(info HCL:$c)\
+    $(foreach c,$(ComponentLibraries),$(infox HCL:$c)\
       $(if $(findstring /,$c),\
          $(or $(call HdlComponentLibraryExists,$c),\
               $(error Component library $c (from ComponentLibraries) not found.)),\
          $(call HdlSearchComponentPath,$c))))
 
 # Return list of target directories in all possible component libraries
-HdlTargetComponentLibraries=$(info HTCL:$1:$(HdlComponentLibraries):$(ComponentLibraries):$2)\
+HdlTargetComponentLibraries=$(infox HTCL:$1:$(HdlComponentLibraries):$(ComponentLibraries):$2)\
   $(or $(strip $(foreach f,$(call HdlGetFamily,$1),\
                   $(foreach d,$(HdlComponentLibraries),\
                      $(call HdlExists,$d/hdl/$f)))),\
       $(error No component libraries were found for target $1.  Perhaps not built yet?))
 
 # Return the list of XML search directories for component libraries
-HdlXmlComponentLibraries=$(info HXC)\
+HdlXmlComponentLibraries=$(infox HXC)\
   $(eval HdlTempDirs:= $(strip \
     $(foreach c,$(HdlComponentLibraries),$c $c/hdl))) \
-  $(info HdlXmlComponentLibraries returned: $(HdlTempDirs))\
+  $(infox HdlXmlComponentLibraries returned: $(HdlTempDirs))\
   $(HdlTempDirs)
 
 ################################################################################
@@ -164,20 +164,20 @@ endef
 # Search for a primitive library/core by name, independent of target
 # This is not used for primitive libraries/cores specified by location (with slashes)
 # $(call HdlSearchPrimitivePath,lib,non-existent-ok,from)
-HdlSearchPrimitivePath=$(info HSPP:$1:$2:$3)\
+HdlSearchPrimitivePath=$(infox HSPP:$1:$2:$3)\
   $(eval HdlTempPlaces:=$(strip\
        $(subst :, ,$(OCPI_HDL_PRIMITIVE_PATH)) \
        $(foreach d,$(subst :, ,$(OCPI_PROJECT_PATH)) $(OCPI_CDK_DIR),$d/lib/hdl)))\
   $(eval HdlTempDirs:=$(strip\
-    $(foreach p,$(HdlTempPlaces),$(info HTPS:$(HdlTempPlaces):$1)\
-       $(foreach d,$p/$1,$(info HTPSD:$d:$(call HdlExists,$d))$(call HdlExists,$d)))))\
+    $(foreach p,$(HdlTempPlaces),$(infox HTPS:$(HdlTempPlaces):$1)\
+       $(foreach d,$p/$1,$(infox HTPSD:$d:$(call HdlExists,$d))$(call HdlExists,$d)))))\
   $(or $(HdlTempDirs)$(infox HTD:$(HdlTempDirs)),\
     $(if $(filter clean,$(MAKECMDGOALS))$2,,$(error $(call HdlPrimitiveSearchError,$1,$(HdlTempPlaces)))))
 
 # Collect component libraries independent of targets.
 # Normalize the list at the spec level
 # No arguments
-HdlPrimitiveLibraries=$(info HPL:$(HdlMyLibraries))$(strip\
+HdlPrimitiveLibraries=$(infox HPL:$(HdlMyLibraries))$(strip\
     $(foreach p,$(HdlMyLibraries),\
       $(if $(findstring /,$p),\
          $(or $(call HdlExists,$p),\
@@ -185,9 +185,9 @@ HdlPrimitiveLibraries=$(info HPL:$(HdlMyLibraries))$(strip\
          $(call HdlSearchPrimitivePath,$p,,HPL))))
 
 # Return list of target directories in all possible primitive libraries
-HdlTargetPrimitiveLibraries=$(info HTPL:$1)\
-  $(or $(strip $(foreach f,$(call HdlGetFamily,$1),$(info F:$f)\
-                  $(foreach d,$(HdlPrimitiveLibraries),$(info D:$d)\
+HdlTargetPrimitiveLibraries=$(infox HTPL:$1)\
+  $(or $(strip $(foreach f,$(call HdlGetFamily,$1),$(infox F:$f)\
+                  $(foreach d,$(HdlPrimitiveLibraries),$(infox D:$d)\
                      $(or $(call HdlExists,$d/$f),$(call HdlExists,$d/target-$f/$(notdir $d)))))),\
       $(if $(HdlPrimitiveLibraries),\
        $(error No primitive libraries were found for target $1.  Perhaps not built yet?)))
@@ -225,7 +225,7 @@ HdlCoreRef1=$(strip \
 	  $(and $2,$(call HdlExists,$(call HdlCRF,$1,$(call HdlGetFamily,$2),$c$(infox HdlCoreRef1 returning '$c'for '$1' and '$2')))))))
 
 # Look everywhere (including component libraries in some modes), return an error if not found
-HdlCoreRef=$(info HCR:$1:$2:$(HdlMode))$(strip \
+HdlCoreRef=$(infox HCR:$1:$2:$(HdlMode))$(strip \
   $(or $(strip\
      $(if $(findstring /,$1),\
         $(call HdlCoreRef1,$1,$2),\
@@ -234,7 +234,7 @@ HdlCoreRef=$(info HCR:$1:$2:$(HdlMode))$(strip \
                 $(foreach l,$(call HdlTargetComponentLibraries,$2,HCR),\
                     $(call HdlCoreRef1,$l/$1,)))\
           $(and $(filter worker container platform,$(HdlMode)),\
-                $(foreach l,$(call HdlSearchPrimitivePath,$1,,HCR),$(info HCR.l:$l)\
+                $(foreach l,$(call HdlSearchPrimitivePath,$1,,HCR),$(infox HCR.l:$l)\
                     $(call HdlCoreRef1,$l,$2)))))),\
      $(error No core found for "$1" on target "$2"))\
 )
@@ -248,16 +248,16 @@ HdlCoreRef=$(info HCR:$1:$2:$(HdlMode))$(strip \
 # We rely on the underlying tool for the actual filename, if it is not just
 # the directory
 
-HdlLRF=$(info HdlLRF:$1:$2:$3)$(strip \
+HdlLRF=$(infox HdlLRF:$1:$2:$3)$(strip \
   $(foreach r,\
     $(if $(call HdlExists,$1/target-$2),\
        $1/target-$2/$(call HdlToolLibraryBuildFile,$(notdir $1)),\
        $(if $(findstring /hdl/$2/,$1),$1,\
          $1/$2/$(call HdlToolInstallFile,$(notdir $1),$t))),\
-       $(info LRF Result:$r)$r))
+       $(infox LRF Result:$r)$r))
 
 # Look everywhere (including component libraries in some modes), return an error if not found
-HdlLibraryRefDir=$(info HLRD:$1:$2:$4:$(HdlMode))$(strip \
+HdlLibraryRefDir=$(infox HLRD:$1:$2:$4:$(HdlMode))$(strip \
   $(or $(strip\
      $(if $(findstring /,$1),\
         $(call HdlLRF,$1,$2,slash),\
@@ -266,7 +266,7 @@ HdlLibraryRefDir=$(info HLRD:$1:$2:$4:$(HdlMode))$(strip \
                 $(foreach l,$(call HdlTargetComponentLibraries,$2,HLR),\
                     $(call HdlLRF,$l/$1,,assy)))\
           $(and $(filter worker container platform,$(HdlMode)),\
-                $(foreach l,$(call HdlSearchPrimitivePath,$1,x,LRF),$(info HLR.l:$l)\
+                $(foreach l,$(call HdlSearchPrimitivePath,$1,x,LRF),$(infox HLR.l:$l)\
                     $(call HdlLRF,$l,$2,wkr)))))),\
      $(if $3,,$(error No library found for "$1" on target "$2")))\
 )

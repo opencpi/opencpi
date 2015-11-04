@@ -378,6 +378,6 @@ endif
 # might come into existence during execution of make)
 # There are strange NFS mount use cases that might not return the real path,
 # so if that happens, drop to the older/slower Shell call.
-OcpiExists=$(info OEX:$1)$(foreach x,$(realpath $1),$(if $(filter /%,$x),$1,$(strip $(shell if test -e $1; then echo $1; fi))))
+OcpiExists=$(infox OEX:$1)$(foreach x,$(realpath $1),$(if $(filter /%,$x),$1,$(strip $(shell if test -e $1; then echo $1; fi))))
 
 endif # ifndef __UTIL_MK__
