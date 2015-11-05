@@ -58,10 +58,14 @@ override HdlLibraries+=sdp platform
 override XmlIncludeDirsInternal:=\
    $(call Unique,$(HdlPlatformDir) $(HdlPlatformDir)/hdl $(XmlIncludeDirs) \
       $(HdlPlatformsDir)/specs $(HdlAssembly))
+# We might be called from an assembly directory, in which case many of the
+# component libraries are passed through to us, but we might be standalone.
+# Thus we add "components" and "adapters" here again
 override ComponentLibraries:=$(call Unique,\
   $(ComponentLibraries) $(ComponentLibrariesInternal) \
   $(HdlPlatformDir) $(HdlAssembly) \
   components devices adapters cards)
+$(infox XMLI2:$(XmlIncludeDirsInternal):$(ComponentLibraries):$(HdlPlatform):$(HdlPlatformDir_$(HdlPlatform)))
 #AssemblyName=$(notdir $(HdlAssembly))
 override LibDir=$(HdlAssembly)/lib/hdl
 ifneq ($(MAKECMDGOALS),clean)

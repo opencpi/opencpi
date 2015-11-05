@@ -4,7 +4,7 @@
 # 2. OCPI_TARGET_HOST is set properly (our target scheme, not the gnu target scheme)
 # 3. OCPI_CROSS_TARGET is the gnu cross target
 set -e
-OCPI_LZMA_VERSION=5.0.5
+OCPI_LZMA_VERSION=5.0.8
 . ./scripts/setup-install.sh
 mkdir -p lzma
 cd lzma
@@ -15,7 +15,9 @@ if test -f $TARBALL; then
   echo Remove `pwd`/$TARBALL if you want to download it again.
 else
   echo Downloading the distribution file: $TARBALL
-  curl -O -L http://tukaani.org/xz/$TARBALL
+#  curl -O -L http://tukaani.org/xz/$TARBALL
+# https://github.com/xz-mirror/xz/releases/download/v5.0.8/xz-5.0.8.tar.gz
+   curl -O -L https://github.com/xz-mirror/xz/releases/download/v$OCPI_LZMA_VERSION/$TARBALL
   echo Download complete.  Removing any existing build directories.
   rm -r -f $SUBDIR
 fi

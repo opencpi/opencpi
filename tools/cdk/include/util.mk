@@ -231,7 +231,7 @@ TreeHash=`(if test -f $(1); then \
              cat $(1); \
            elif test -e $(1); then \
              cd $(1); \
-             find -L . -type f | xargs cat; \
+             find -L . -type f | sort | xargs cat; \
            fi) \
            | $(MD5)`
 ReplaceIfDifferent=\
@@ -288,8 +288,8 @@ ReplaceContentsIfDifferent=\
 # $(call Unique,words,already)
 # A utility function to remove duplicates without reordering
 # The second argument is just for recursion and should be blank on the call
-Unique=$(strip $(foreach x,$(call Unique2,$1,),$x))
-Unique2=$(if $1,$(call Unique2,$(wordlist 2,$(words $1),$1),$(strip\
+Unique=$(infox Unique:$1)$(strip $(foreach x,$(call Unique2,$1,),$x))
+Unique2=$(infox Unique2:$1:$2:)$(if $1,$(call Unique2,$(wordlist 2,$(words $1),$1),$(strip\
                                $(foreach w,$(firstword $1),$(if $(filter $w,$2),$2,$2 $w)))),$2)
 
 LibraryRefFile=$(call $(CapModel)LibraryRefFile,$1,$2)
@@ -366,9 +366,18 @@ ParamMsg=$(and $(ParamConfigurations), $(strip \
   '($(foreach n,$(WorkerParamNames),$n=$(ParamMsg_$(ParamConfig)_$n)$(eval o:=1)))'))
 
 RmRv=$(if $(filter %_rv,$1),$(patsubst %_rv,%,$1),$1)
-endif # ifndef __UTIL_MK__
 
 OcpiAdjustLibraries=$(foreach l,$1,$(if $(findstring /,$l),$(call AdjustRelative,$l),$l))
 ifndef OCPI_PREREQUISITES_INSTALL_DIR
   export OCPI_PREREQUISITES_INSTALL_DIR:=/opt/opencpi/prerequisites
 endif
+
+################################################################################
+# This works when wildcard doesn't.
+# (Note: make's wildcard function caches results so can't probe something that
+# might come into existence during execution of make)
+# There are strange NFS mount use cases that might not return the real path,
+# so if that happens, drop to the older/slower Shell call.
+OcpiExists=$(infox OEX:$1)$(foreach x,$(realpath $1),$(if $(filter /%,$x),$1,$(strip $(shell if test -e $1; then echo $1; fi))))
+
+endif # ifndef __UTIL_MK__

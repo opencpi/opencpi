@@ -98,7 +98,7 @@ XstLibRef=$(or $3,$(call HdlGetFamily,$2))
 ################################################################################
 # $(call XstLibraryFileTarget2(target,libname)
 # Return the actual file to depend on when it is built
-XstLibraryFileTarget=$(if $(filter virtex6 spartan6 zynq,$(call HdlGetFamily,$(xxxinfo x3:$1)$(1))),$(2).sdbl,hdllib.ref)
+XstLibraryFileTarget=$(if $(filter virtex6 spartan6 zynq,$(call HdlGetFamily,$(infox x3:$1)$(1))),$(2).sdbl,hdllib.ref)
 XstLibraryCleanTargets=$(strip \
   $(if $(filter virtex6 spartan6 zynq,$(call HdlFamily,$(1))),*.sdb?,hdllib.ref vlg??))
 # When making a library, xst still wants a "top" since we can't precompile 
@@ -268,9 +268,9 @@ XstNeedIni= $(strip $(XstLibraries)$(ComponentLibraries)$(CDKCompenentLibraries)
 XstCoreLibraryChoices=$(infox XCLT:$1:$2)$(strip \
   $(and $(filter target-%,$(subst /, ,$1)),$(dir $1)/bb/$(notdir $1)) \
   $(and $(filter target-%,$(subst /, ,$1)),$(dir $1)/bb/$(patsubst %_rv,%,$(notdir $1))) \
-  $(call HdlLibraryRefDir,$1_bb,$(if $(HdlTarget),$(call HdlGetFamily,$(HdlTarget)),NONE3)) \
-  $(call HdlLibraryRefDir,$1,$(or $(HdlTarget),$(info NONE4))) \
-  $(call HdlLibraryRefDir,$1_rv,$(or $(HdlTarget),$(info NONE4))) \
+  $(call HdlLibraryRefDir,$1_bb,$(if $(HdlTarget),$(call HdlGetFamily,$(HdlTarget)),NONE3),x,X1) \
+  $(call HdlLibraryRefDir,$1,$(or $(HdlTarget),$(info NONE4)),x,X2) \
+  $(call HdlLibraryRefDir,$1_rv,$(or $(HdlTarget),$(info NONE4)),x,X3) \
 )
 
 #   $(if $(PreBuiltCore)$(filter container assembly platform worker core,$(HdlMode)),,echo work;) $(if $(findstring work,$(LibName)),,echo $(LibName);) \
@@ -306,7 +306,7 @@ XstMakeIni=\
    $(foreach l,$(HdlLibrariesInternal),\
       echo $(lastword $(subst -, ,$(notdir $(l))))=$(strip \
         $(call FindRelative,$(TargetDir),$(strip \
-           $(call HdlLibraryRefDir,$(l),$(HdlTarget)))));) \
+           $(call HdlLibraryRefDir,$(l),$(HdlTarget),,X4))));) \
    $(foreach l,$(XstCores),$(infox XstCore:$l)\
       echo $(call XstLibFromCore,$l)=$(call FindRelative,$(TargetDir),$(strip \
           $(firstword $(foreach c,$(call XstCoreLibraryChoices,$(call XstPathFromCore,$l),a),$(infox CECEL:$c)$(call HdlExists,$c)))));) \
@@ -339,7 +339,7 @@ XstMakeScr=(echo set -xsthdpdir . $(and $(XstNeedIni),-xsthdpini $(XstIniFile));
 
 XstOptions +=\
  -ifn $(XstPrjFile) -ofn $(Core).ngc -work_lib $(WorkLib) -top $(Top) \
- -p $(or $(and $(HdlExactPart),$(foreach p,$(HdlExactPart),$(word 1,$(subst -, ,$p))$(word 3,$(subst -, ,$p))-$(word 2,$(subst -, ,$p)))),$(HdlTarget))\
+ -p $(or $(and $(HdlExactPart),$(foreach p,$(HdlExactPart),$(word 1,$(subst -, ,$p))-$(word 3,$(subst -, ,$p))-$(word 2,$(subst -, ,$p)))),$(HdlTarget))\
  $(and $(VerilogIncludeDirs),$(strip\
    -vlgincdir { \
      $(foreach d,$(VerilogIncludeDirs),$(call FindRelative,$(TargetDir),$(d))) \
@@ -352,12 +352,12 @@ XstOptions +=\
      $(foreach l,$(CDKDeviceLibraries),$(strip \
        $(call FindRelative,$(TargetDir),\
          $(l)/hdl/$(call XstLibRef,$(LibName),$(HdlTarget)))))\
-     $(foreach l,$(ComponentLibraries),$(strip \
-       $(call FindRelative,$(TargetDir),$(call HdlComponentLibraryDir,$l,$(HdlTarget))))) \
+     $(foreach l,$(call HdlTargetComponentLibraries,$(HdlTarget)),$(strip \
+       $(call FindRelative,$(TargetDir),$l))) \
      $(foreach l,$(DeviceLibraries),$(strip \
        $(call FindRelative,$(TargetDir),\
          $(l)/lib/hdl/$(call XstLibRef,$(LibName),$(HdlTarget)))))\
-     $(foreach c,$(XstCores),$(xxinfo XST:$c)$(call FindRelative,$(TargetDir),$(dir $(call HdlCoreRef,$c,$(HdlTarget)))))\
+     $(foreach c,$(XstCores),$(infox XST:$c)$(call FindRelative,$(TargetDir),$(dir $(call HdlCoreRef,$c,$(HdlTarget)))))\
      $(and $(findstring platform,$(HdlMode)),..) \
       ) })
 
@@ -380,13 +380,13 @@ endif
 
 HdlToolCompile=\
   $(foreach l,$(XstLibraries),\
-     $(if $(wildcard $(call HdlLibraryRefDir,$(l),$(HdlTarget))),,\
+     $(if $(wildcard $(call HdlLibraryRefDir,$(l),$(HdlTarget),,X5)),,\
           $(error Error: Specified library: "$l", in the "HdlLibraries" variable, was not found for $(call HdlGetFamily,$(HdlTarget)).))) \
-  $(foreach l,$(XstCores),$(xxxinfo AC:$l)\
+  $(foreach l,$(XstCores),$(infox AC:$l)\
     $(if $(foreach x,$(call XstCoreLibraryChoices,$l,b),$(call HdlExists,$x)),,\
 	$(info Error: Specified core library for "$l", in the "Cores" variable, was not found.) \
         $(error Error:   after looking in $(call HdlExists,$(call XstCoreLibraryChoices,$l,c))))) \
-  $(xxxinfo ALLCORE1) \
+  $(infox ALLCORE1) \
   echo '  'Creating $@ with top == $(Top)\; details in $(TargetDir)/xst-$(Core).out.;\
   rm -f $(notdir $@);\
   $(XstMakeGenerics)\

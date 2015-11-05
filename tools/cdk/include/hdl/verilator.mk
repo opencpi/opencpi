@@ -94,8 +94,8 @@ Verilator=PATH=$(OCPI_VERILATOR_DIR)/bin:$$PATH;$(OCPI_VERILATOR_DIR)/bin/verila
 VWarnings=-Wall -Wno-STMTDLY -Wno-DECLFILENAME -Wno-UNUSED --error-limit 100
 MyLibs=\
  $(foreach l,$(SimLibraries),-y $(l)) \
- $(foreach l,$(HdlLibraries),\
-     -y $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$(l),verilator)))
+ $(foreach l,$(HdlLibrariesInternal),\
+     -y $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$(l),verilator,,verilator)))
 #VWarnings=-Wall -debug -debugi 10
 MyIncs=$(foreach d,$(VerilogIncludeDirs),-I$(call FindRelative,$(TargetDir),$(d)))
 HdlToolCompile=\

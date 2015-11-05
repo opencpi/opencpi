@@ -146,10 +146,11 @@ namespace OCPI {
 	m_args[n].write(writer, data, length, isTopFixedSequence());
     }
 
-    size_t Operation::read(Reader &reader, uint8_t *&data, size_t maxLength) {
+    size_t Operation::read(Reader &reader, uint8_t *data, size_t maxLength) {
       size_t max = maxLength;
+      bool fake = data == NULL;
       for (unsigned n = 0; n < m_nArgs; n++)
-	m_args[n].read(reader, data, maxLength);
+	m_args[n].read(reader, data, maxLength, fake);
       return max - maxLength;
     }
 
@@ -464,7 +465,7 @@ namespace OCPI {
       fprintf(f, "%*s</protocol>\n", indent * 2, "");
     }
     // Send the data in the buffer to the writer
-    void Protocol::write(Writer &writer, const uint8_t *data, uint32_t length, uint8_t opcode) {
+    void Protocol::write(Writer &writer, const uint8_t *data, size_t length, uint8_t opcode) {
       assert(!((intptr_t)data & (maxDataTypeAlignment - 1)));
       if (!m_operations)
 	throw Error("No operations in protocol for writing");
@@ -480,10 +481,9 @@ namespace OCPI {
 	throw Error("No operations in protocol for writing");
       if (opcode >= m_nOperations)
 	throw Error("Invalid Opcode for protocol");
-      uint8_t *myData = data;
-      m_operations[opcode].read(reader, myData, maxLength);
+      size_t size = m_operations[opcode].read(reader, data, maxLength);
       reader.end();
-      return myData - data;
+      return size;
     }
 
   }

@@ -18,7 +18,7 @@ ifndef Worker_xml
   $(error The XML for the platform configuration, $(Worker).xml, is missing)
 endif
 OcpiLanguage:=vhdl
-HdlLibraries+=platform
+override HdlLibraries+=platform
 PlatformName=$(notdir $(HdlPlatformWorker))
 LibDir=$(HdlPlatformWorker)/lib/hdl
 override HdlPlatforms:=$(notdir $(HdlPlatformWorker))

@@ -17,7 +17,9 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-targets.mk
 
 # The libraries with names suitable for the library clause in VHDL, as passed to ocpigen
 HdlVhdlLibraries=\
-  $(and $(HdlMyLibraries),$(foreach l,$(HdlMyLibraries),-l $(notdir $l)))
+  $(infox HdlMyLibraries=$(HdlMyLibraries) HdlVhdlLibraries=$(and $(HdlMyLibraries),$(foreach l,$(sort $(HdlMyLibraries)),$(and $(notdir $l),-l $(notdir $l)))))\
+  $(and $(HdlMyLibraries),$(foreach l,$(call Unique,$(HdlMyLibraries)),$(strip\
+                             -l $(or $(notdir $l),$(error BROKEN)))))
 
 # This default is only overridden for testing the makefiles
 HdlError:=error
@@ -39,58 +41,6 @@ HdlAllFamilies:=$(call Unique,$(foreach t,$(HdlTopTargets),$(or $(HdlTargets_$(t
 $(call OcpiDbgVar,HdlAllFamilies)
 
 
-################################################################################
-# $(call HdlComponentLibraryDir,lib,target,stubs?)
-# Return the actual dir name (pointing to the target-specific dir) and check for existence
-# The "lib" argument is what the "user" typed
-#   If it contains "target-", then it is already target specific and is a fake name
-#   of the form ../target-foo/core
-# The "target" argument specifies the target for finding the target-specific dir
-# The "stubs" argument specifies that we're looking for the "bb" library
-#       $(foreach l,$(dir $1)$(and $3,bb/$(notdir $1)),$(info LLL:$l)\
-
-HdlComponentLibraryDir=$(xinfo HCLD:$1:$2:$3)$(strip \
-  $(foreach x,$(strip \
-    $(if $(filter target-%,$(subst /, ,$1)),\
-       $(foreach l,$(dir $1)$(and $3,bb),$(xinfo LLL:$l)\
-         $(or $(call HdlExists,$l),\
-           $(error Component library $1 not found/built at $(1$(and $3,bb/$3))))),\
-       $(foreach l,$(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/$1),\
-         $(foreach s,$(if $3,stubs/$(call HdlGetFamily,$2),$(call HdlGetFamily,$2)),\
-           $(or $(wildcard $l/hdl/$s),$(wildcard $l/lib/hdl/$s),\
-                $(error Component library '$1' for target '$2' not found/built at either $l/hdl/$s or $l/lib/hdl/$s)))))),\
-    $(infoxxx HdlComponentLibraryDir($1,$2,$3)->$x)$x))
-
-HdlComponentCore=$(strip \
-  $(foreach l,$(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/$1),\
-   $(foreach t,$(call Unique,$3 $(call HdlGetFamily,$3)),\
-    $(foreach c,hdl/$t/$2$(HdlBin),\
-    $(or $(wildcard $l/$c),$(wildcard $l/lib/$c))))))
-
-#      $(error Component core '$l' not found at either $l/hdl/$2 or $l/lib/hdl/$2))))
-
-################################################################################
-# $(call HdlFindWorkerCoreFile,worker)
-# use ComponentLibraries
-# Return the actual file name of the found core or error 
-HdlFindWorkerCoreFile=$(strip \
-  $(firstword \
-    $(or $(foreach c,$(ComponentLibraries),\
-            $(foreach d,$(call HdlComponentCore,$c,$1,$(HdlTarget)),$d)),\
-         $(error Worker $1 not found in any component library.))))
-
-# Return the generic directory where the spec files are exported
-HdlXmlComponentLibrary=$(strip \
-    $(foreach l,$(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/$1),\
-      $(foreach d,$(or $(wildcard $l/lib),$(wildcard $l),\
-	            $(error Component library '$1' not found at $l)),\
-	$d)))
-
-# Return the two levels of xml include dirs: generic (for spec xml) and hdl (for worker xml)
-HdlXmlComponentLibraries=$(strip \
-  $(foreach c,$1,\
-   $(foreach d,$(call HdlXmlComponentLibrary,$c),$d $d/hdl)))
-
 # Read the workers file and set things accordingly
 # 1. Set the instance list, which is a list of <worker-name>:<instance-name>
 # 2. The workers list, which is a list of worker names
@@ -108,19 +58,18 @@ define HdlSetWorkers
   HdlInstances:=$$(and $$(AssyWorkersFile),$$(strip $$(foreach i,$$(shell grep -h -v '\\\#' $$(AssyWorkersFile)),\
 	               $$(if $$(filter $$(call HdlInstanceWkr,$$i),$$(HdlPlatformWorkers)),,$$i))))
   HdlWorkers:=$$(call Unique,$$(foreach i,$$(HdlInstances),$$(call HdlInstanceWkrCfg,$$i)))
-  $$(infox HdlSetWorkers:Cores:$$(Cores):$$(HdlWorkers):$$(HdlInstances):$$(HdlTarget))
+  $$(infox HdlSetWorkers:Cores:'$$(Cores)':'$$(HdlWorkers)':'$$(HdlInstances)':'$$(HdlTarget)')
   SubCores_$$(HdlTarget):=$$(call Unique,\
     $$(Cores) \
     $$(foreach w,$$(HdlWorkers),\
       $$(or $(strip\
         $$(foreach f,$$(strip\
           $$(firstword \
-            $$(foreach c,$$(ComponentLibraries),$$(infox CC:$$c:$$(ImplFile):$$w=)\
-              $$(foreach d,$$(call HdlComponentLibraryDir,$$c,$$(HdlTarget)),$$(infox DD:$$d/$$w)\
-                $$(call HdlExists,$$d/$$w$$(HdlBin)))))),\
+            $$(foreach d,$$(call HdlTargetComponentLibraries,$$(HdlTarget),HSW),\
+               $$(call HdlExists,$$d/$$w$$(HdlBin))))),\
           $$(call FindRelative,.,$$f)),\
-	),$$(info Warning: Worker $$w was not found in any of the component libraries))))
-   $$(infox Cores is $$(origin SubCores_$$(HdlTarget)) $$(flavor SubCores_$$(HdlTarget)):$$(SubCores_$$(HdlTarget)))
+	),$$(warning Warning: Worker $$w was not found in any of the component libraries))))
+   $$(infox Cores SubCores_$$(HdlTarget) is $$(origin SubCores_$$(HdlTarget)) $$(flavor SubCores_$$(HdlTarget)):$$(SubCores_$$(HdlTarget)))
 
 endef
 # Get the list of cores we depend on, returning the real files that make can depend on
@@ -130,13 +79,9 @@ HdlGetCores=$(infox HGC:$(Cores):$(HdlWorkers):$(HdlTarget))$(call Unique,\
     $(foreach w,$(HdlWorkers),\
       $(foreach f,$(strip\
         $(firstword \
-          $(foreach c,$(ComponentLibraries),\
-            $(foreach d,$(call HdlComponentLibraryDir,$c,$(HdlTarget)),\
-              $(call HdlExists,$d/$w$(HdlBin)))))),\
+          $(foreach d,$(call HdlTargetComponentLibraries,$(HdlTarget),HGG),\
+            $(call HdlExists,$d/$w$(HdlBin))))),\
         $(call FindRelative,.,$f))))
-
-
-
 
 ################################################################################
 # $(call HdlGetTargetFromPart,hdl-part)
@@ -155,24 +100,31 @@ HdlGetTop=$(strip $(foreach v,$(HdlTopTargets),$(or $(filter $1,$v),$(and $(filt
 # If it is a top level target with no family, return itself
 # If it is a top level target with one family, return that family
 # Otherwise return the family of the supplied part
-# If the second argument is present,it is ok to return multiple families
-#HdlGetFamily=$(strip 
-HdlGetFamily=$(call OcpiDbg,Entering HdlGetFamily($1,$2))$(strip \
+# If the second argument is present, it is ok to return multiple families
+# (The second argument should not contain spaces)
+
+# StringEq=$(if $(subst x$1,,x$2)$(subst x$2,,x$1),,x)
+HdlGetFamily=$(eval m1=$(subst $(Space),___,$1))$(strip \
+  $(if $(HdlGetFamily_cached<$(m1)__$2>),,\
+    $(call OcpiDbg,HdlGetFamily($1,$2) cache miss)$(eval export HdlGetFamily_cached<$(m1)__$2>=$(call HdlGetFamily_core,$1,$2)))\
+  $(infox HdlGetFamily($1,$2)->$(HdlGetFamily_cached<$(m1)__$2>))$(HdlGetFamily_cached<$(m1)__$2>))
+
+HdlGetFamily_core=$(call OcpiDbg,Entering HdlGetFamily_core($1,$2))$(strip \
   $(foreach gf,\
      $(or $(findstring $(1),$(HdlAllFamilies)),$(strip \
           $(if $(findstring $(1),all), \
 	      $(if $(2),$(HdlAllFamilies),\
 		   $(call $(HdlError),$(strip \
-	                  HdlFamily is ambigous for '$(1)'))))),$(strip \
+	                  HdlFamily is ambiguous for '$(1)'))))),$(strip \
           $(and $(findstring $(1),$(HdlTopTargets)),$(strip \
 	        $(if $(and $(if $(2),,x),$(word 2,$(HdlTargets_$(1)))),\
                    $(call $(HdlError),$(strip \
-	             HdlFamily is ambigous for '$(1)'. Choices are '$(HdlTargets_$(1))')),\
+	             HdlFamily is ambiguous for '$(1)'. Choices are '$(HdlTargets_$(1))')),\
 	           $(or $(HdlTargets_$(1)),$(1)))))),$(strip \
 	  $(foreach f,$(HdlAllFamilies),\
 	     $(and $(findstring $(call HdlGetTargetFromPart,$1),$(HdlTargets_$f)),$f))),$(strip \
 	  $(and $(findstring $1,$(HdlAllPlatforms)), \
-	        $(call HdlGetFamily,$(call HdlGetTargetFromPart,$(HdlPart_$1))))),\
+	        $(call HdlGetFamily_core,$(call HdlGetTargetFromPart,$(HdlPart_$1))))),\
 	  $(call $(HdlError),$(strip \
 	     The build target '$1' is not a family or a part in any family))),\
      $(gf)))
@@ -184,12 +136,21 @@ HdlGetFamily=$(call OcpiDbg,Entering HdlGetFamily($1,$2))$(strip \
 # $(call HdlGetFamilies,hdl-target)
 # Return all the families for this target
 # HdlGetFamilies=$(call OcpiDbg,Entering HdlGetFamilies($1))$(strip 
+ifdef NEVER
+HdlGetFamilies=$(eval m1=$(subst $(Space),___,$1))$(strip \
+  $(if $(HdlGetFamilies_cached<$(m1)>),,\
+    $(call OcpiDbg,HdlGetFamilies($1) cache miss)$(eval export HdlGetFamilies_cached<$(m1)>:=$(strip $(call HdlGetFamilies_core,$1))))\
+  $(infox HdlGetFamilies($1)->$(HdlGetFamilies_cached<$(m1)>))$(HdlGetFamilies_cached<$(m1)>))
+
+endif
+#HdlGetFamilies_core=$(strip \
+
 HdlGetFamilies=$(strip \
   $(foreach fs,$(call Unique,$(foreach t,$1,\
                          $(if $(findstring $(t),all),\
                              $(HdlAllFamilies),\
                              $(call HdlGetFamily,$t,x)))),\
-     $(call OcpiDbg,HdlGetFamilies($1)->$(fs))$(fs)))
+     $(call OcpiDbg,HdlGetFamilies_core($1)->$(fs))$(fs)))
 
 ################################################################################
 # $(call HdlGetPart,platform)
@@ -207,10 +168,10 @@ HdlTime=$(HdlName)-$(HdlToolSet).time
 HdlCompile=\
   $(infox Compile0:$(HdlWorkers):$(Cores):$(ImplWorkersFile):$(ImplFile):to-$@) \
   $(infox Compile:$(HdlWorkers):$(Cores):$(ImplWorkersFile)) \
-  $(and $(SubCores_$(HdlTarget)),$(call HdlRecordCores,$(basename $@))$(infoxx DONERECORD:$(HdlTarget))) \
+  $(and $(SubCores_$(HdlTarget)),$(call HdlRecordCores,$(basename $@))$(infox DONERECORD:$(HdlTarget))) \
   $(infox SUBCORES:$(SubCores_$(HdlTarget))) \
   cd $(TargetDir) && \
-  $(infoxx PRECOMPILE:$(HdlPreCompile))$(and $(HdlPreCompile), $(HdlPreCompile) &&)\
+  $(infox PRECOMPILE:$(HdlPreCompile))$(and $(HdlPreCompile), $(HdlPreCompile) &&)\
   export HdlCommand="set -e; $(HdlToolCompile)"; \
   $(TIME) bash -c \
    '(/bin/echo Commands to execute tool:@"$$HdlCommand" | sed "s/\([^\\]\); */\1;@/g" | tr "@" "\n"; /bin/echo Output from executing commands above:;eval "$$HdlCommand") > $(HdlLog) 2>&1' \
@@ -252,82 +213,7 @@ HdlSimPost=\
     done; \
   fi;
 
-################################################################################
-# This works when wildcard doesn't.  FIXME: put into util.mk and use it more
-# (Note: the make wildcard function caches results so can't probe something that
-# might come into existence during execution of make)
-# Sad, as it slows things down.  Perhaps better to use realpath?
-HdlExists=$(infox HDLE:$1)$(strip $(shell if test -e $1; then echo $1; fi))
-
-################################################################################
-# $(call HdlLibraryRefDir,location-dir,target)
-# $(call HdlCoreRefDir,location-dir,target)
-# These functions take a user-specified (friendly, target-independent) library
-# or core location and a target name.  They return the actual directory of that
-# library/core that the tool wants to see for that target.
-# These are not for component libraries, but a primitive libraries and cores
-HdlLibraryRefDir=$(infoxx HLRD:$1:$2)$(foreach i,$(call HdlLibraryRefFile,$1,$2),$i)
-
-# The first attempt is:
-# If there is a suffix or there is a "target" path component or a component matches the target,
-# Then try the path itself with the suffix
-HdlCRF=$(strip \
-  $(foreach r,\
-    $(or $(and $(HdlBin),$(filter $(HdlBin),$(suffix $1)),$(call HdlExists,$1)),$(strip \
-         $(xxxinfo ff:$(filter $2 target-%,$(subst /, ,$1)):$1$(HdlBin))\
-         $(and $(or $(HdlBin),$(filter $2 target-%,$(subst /, ,$1))),$(call HdlExists,$1$(HdlBin)))),$(strip \
-         $(xxxinfo ff1:$(filter $2 target-%,$(subst /, ,$1)):$1$(HdlBin))\
-         $(call HdlExists,$1/target-$2/$3)),$(strip \
-         $(call HdlExists,$1/$3)),$(strip \
-         $(call HdlExists,$1/$2/$3)),\
-	 $1/$2),\
-     $(xxxinfo HCRF:$1,$2,$3->$r,bin:$(HdlBin),t:$(HdlTarget))$r))
-#     $r))
-
-
-# Check for given target or family target
-HdlCoreRef1=$(strip \
-   $(foreach c,$(notdir $1)$(HdlBin),\
-     $(or $(call HdlExists,$(call HdlCRF,$1,$2,$c)),\
-	  $(and $2,$(call HdlExists,$(call HdlCRF,$1,$(call HdlGetFamily,$2),$c))))))
-
-# Look everywhere (including component libraries), and return an error if not found
-HdlCoreRef=$(strip \
-  $(or $(strip \
-     $(if $(findstring /,$1),\
-         $(call HdlCoreRef1,$1,$2),\
-         $(or $(firstword \
-                 $(foreach l,$(ComponentLibraries),\
-                   $(call HdlCoreRef1,$(call HdlComponentLibraryDir,$l,$2)/$1,))), \
-              $(call HdlCoreRef1,$(OCPI_CDK_DIR)/lib/hdl/$1,$2)))),\
-     $(error No core found for "$1" on target "$2".))\
-)
-
-################################################################################
-# $(call HdlLibraryRefFile,location-dir,target)
-# This function takes a user-specified (friendly, target-independent) library
-# or core location and a target name.  They return the actual pathname of that
-# library/core file or directory for "make" dependencies.
-# We rely on the underlying tool for the actual filename, if it is not just
-# the directory
-#HdlLRF=$(info LRF:$(shell pwd):$1:$2:$1/target-$2:$(wildcard $1/target-$2/*))$(strip\
-#    $(if $(info D:$(shell pwd):$1:$2:$1/target-$2:$(call HdlWild,$1/target-$2))$(call HdlWild,$1/target-$2),\
-
-
-HdlLRF=$(infoxx HdlLRF:$1:$2)$(strip \
-  $(foreach r,\
-    $(if $(call HdlExists,$1/target-$2),\
-       $1/target-$2/$(call HdlToolLibraryBuildFile,$(notdir $1)),\
-       $(if $(findstring /hdl/$2/,$1),$1,\
-         $1/$2/$(call HdlToolInstallFile,$(notdir $1),$t))),\
-       $(infoxx LRF Result:$r)$r))
-
-HdlLibraryRefFile=$(infoxx HLRF:$1:$2)$(strip \
-  $(foreach r,$(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/hdl/$1),\
-    $(foreach f,$(call HdlGetFamily,$2),\
-       $(if $(filter $f,$2),\
-          $(call HdlLRF,$r,$2),\
-	  $(or $(call HdlExists,$(call HdlLRF,$r,$2)),$(call HdlLRF,$r,$f))))))
+HdlExists=$(call OcpiExists,$1)
 
 # Default for all tools: libraries are directories whose name is the library name itself
 # Return the name of the thing in the build directory (whose name is target-<target>)
@@ -341,13 +227,13 @@ HdlToolLibraryInstallFile=
 ################################################################################
 # $(call HdlGetToolSet,hdl-target)
 # Return the tool set for this target
-HdlGetToolSet=$(strip \
+HdlGetToolSet=$(infox HdlGetToolSet ($1) HdlTopTargets="$(HdlTopTargets)" HdlTargets_$(1)="$(HdlTargets_$(1))" HdlToolSet_$1="$(HdlToolSet_$1)" HdlToolSet_$(call HdlGetFamily,$(1))="$(HdlToolSet_$(call HdlGetFamily,$(1)))" HdlToolSet_$(HdlTargets_$(1))="$(HdlToolSet_$(HdlTargets_$(1)))"  )$(strip \
   $(or $(and $(findstring $(1),$(HdlTopTargets)),$(strip \
            $(or $(HdlToolSet_$(1)),$(strip \
                 $(if $(word 2,$(HdlTargets_$(1))),,\
                    $(HdlToolSet_$(HdlTargets_$(1)))))))),$(strip \
        $(HdlToolSet_$(call HdlGetFamily,$(1)))),$(strip \
-       $(call $(HdlError),Cannot infer tool set from '$(1)'))))
+       $(call $(HdlError),Cannot infer tool set from '$(1)' Family='$(call HdlGetFamily,$(1))'))))
 
 HdlGetBinSuffix=$(HdlBin_$(call HdlGetToolSet,$1))
 ################################################################################
@@ -357,6 +243,7 @@ HdlGetTargetsForToolSet=$(call Unique,\
     $(foreach t,$(2),\
        $(and $(findstring $(1),$(call HdlGetToolSet,$(t))),$(t))))
 
+$(call OcpiDbgVar,HdlPlatform)
 $(call OcpiDbgVar,HdlPlatforms)
 $(call OcpiDbgVar,HdlTargets)
 
@@ -368,7 +255,7 @@ $(call OcpiDbgVar,HdlTargets)
 
 define HdlSearchComponentLibraries
 
-  override XmlIncludeDirsInternal := $(call Unique,$(XmlIncludeDirsInternal) $(call HdlXmlComponentLibraries,$(ComponentLibraries)))
+  override XmlIncludeDirsInternal := $(call Unique,$(XmlIncludeDirsInternal) $(call HdlXmlComponentLibraries))
 
 endef
 HdlRmRv=$(if $(filter %_rv,$1),$(patsubst %_rv,%,$1),$1)
@@ -450,7 +337,7 @@ ifndef HdlPlatformsDir
 #  ifeq ($(realpath $(HdlPlatformsDir)),)
 #    HdlPlatformsDir:=$(OCPI_BASE_DIR)/hdl/platforms
     ifeq ($(realpath $(HdlPlatformsDir)),)
-      $(error No HDL platforms found. Looked in $(OCPI_CDK_DIR)/lib/hdl/platforms and $(OCPI_BASE_DIR)/hdl/platforms.)
+      $(error No HDL platforms found. Looked in $(OCPI_CDK_DIR)/lib/platforms)
     endif
 #  endif
 endif
@@ -468,11 +355,11 @@ define HdlPrepareAssembly
                     Platform=$(Platform) \
                     PlatformDir=$(PlatformDir) \
                     Assembly=$(Assembly) \
-		    XmlIncludeDirsInternal="$$(XmlIncludeDirsInternal)" \
+                    XmlIncludeDirsInternal="$$(XmlIncludeDirsInternal)" \
                     AssyWorkersFile=$$(AssyWorkersFile) \
                     Worker=$$(Worker) Worker_xml=$$(Worker_xml) \
-		    AT=$(AT), \
-                   Output), \
+                    AT=$(AT), \
+                    Output), \
     $$(error Error deriving workers from file $$(Worker).xml: $$(Output)),\
    )
   # 3. Generated the assembly source file
@@ -493,7 +380,7 @@ define HdlPreprocessTargets
   ifeq ($$(origin HdlPlatforms),undefined)
     ifdef HdlPlatform
       ifneq ($$(words $$(HdlPlatform)),1)
-        $$(error HdlPlatform variable must only have one platform.)
+        $$(error HdlPlatform variable must only have one platform)
       endif
       HdlPlatforms:=$$(HdlPlatform)
     else
@@ -517,4 +404,6 @@ define HdlPreprocessTargets
     override HdlTargets:=$$(HdlAllFamilies)
   endif
 endef
+
+include $(OCPI_CDK_DIR)/include/hdl/hdl-search.mk
 endif

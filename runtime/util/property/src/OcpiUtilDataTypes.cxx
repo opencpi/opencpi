@@ -482,7 +482,7 @@ namespace OCPI {
     }
 
     // Fill the linear buffer from a reader object
-    void Member::read(Reader &reader, uint8_t *&data, size_t &length) const {
+    void Member::read(Reader &reader, uint8_t *&data, size_t &length, bool fake) const {
       size_t nElements = 1;
       uint8_t *startData;
       size_t startLength;
@@ -493,7 +493,9 @@ namespace OCPI {
 	nElements = reader.beginSequence(*this);
 	if (m_sequenceLength != 0 && nElements > m_sequenceLength)
 	  throw Error("Sequence in being read exceeds max length (%zu)", m_sequenceLength);
-	if (!(*(uint32_t *)data = (uint32_t)nElements)) {
+	if (!fake)
+	  *(uint32_t *)data = (uint32_t)nElements;
+	if (!nElements) {
 	  // Sequence is empty. skip over header or whole thing if fixedLayout
 	  radvance(data, m_fixedLayout ? m_nBytes : m_align, length);
 	  return;
@@ -510,13 +512,13 @@ namespace OCPI {
 	reader.beginStruct(*this);
 	for (unsigned n = 0; n < nElements; n++)
 	  for (unsigned nn = 0; nn < m_nMembers; nn++)
-	    m_members[nn].read(reader, data, length);
+	    m_members[nn].read(reader, data, length, fake);
 	reader.endStruct(*this);
 	break;
       case OA::OCPI_Type:
 	reader.beginType(*this);
 	for (unsigned n = 0; n < nElements; n++)
-	  m_type->read(reader, data, length);
+	  m_type->read(reader, data, length, fake);
 	reader.endType(*this);
 	break;
       case OA::OCPI_String:
@@ -529,8 +531,10 @@ namespace OCPI {
 	  uint8_t *start = data;
 	  // Error check before copy
 	  radvance(data, m_fixedLayout ? (m_stringLength + 4) & ~3 : strLength + 1, length);
-	  memcpy(start, chars, strLength);
-	  start[strLength] = 0;
+	  if (!fake) {
+	    memcpy(start, chars, strLength);
+	    start[strLength] = 0;
+	  }
 	}
 	break;
       default:
@@ -539,7 +543,7 @@ namespace OCPI {
 	  ReadDataPtr p = {data};
 	  size_t nBytes = nElements * m_elementBytes;
 	  radvance(data, nBytes, length);
-	  reader.readData(*this, p, nBytes, nElements);
+	  reader.readData(*this, p, nBytes, nElements, fake);
 	  break;
 	}
       case OA::OCPI_none:

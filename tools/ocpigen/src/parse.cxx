@@ -462,6 +462,8 @@ parse(const char *file, ezxml_t prot)
       last = file + strlen(file);
     last = checkSuffix(start, "_protocol", last);
     last = checkSuffix(start, "_prot", last);
+    last = checkSuffix(start, "-protocol", last);
+    last = checkSuffix(start, "-prot", last);
     m_name.assign(start, last - start);
     std::string ofile = m_port.m_worker->m_file;
     m_port.m_worker->m_file = file;

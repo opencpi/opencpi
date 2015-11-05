@@ -112,7 +112,7 @@ parseFile(const char *file, const std::string &parent, const char *element,
 	  if (relative) {
 	    char *cwd = getcwd(NULL, 0);
 	    if (cwd)
-	      OU::formatAdd(files, " CWD is %s", cwd);
+	      OU::formatAdd(files, ". CWD is %s", cwd);
 	    free(cwd);
 	  }
 	  err =

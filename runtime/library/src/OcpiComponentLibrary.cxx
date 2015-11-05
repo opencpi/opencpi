@@ -48,8 +48,8 @@ namespace OCPI {
 	  bool isDir;
 	  OS::FileSystem::FileId file_id; 
 	  if (!OS::FileSystem::exists(libName, &isDir, NULL, NULL, &file_id))
-	    ocpiDebug("Component library path name in OCPI_LIBRARY_PATH, \"%s\", "
-		      "is nonexistent.  It will be ignored", libName.c_str());
+	    ocpiInfo("Component library path name in OCPI_LIBRARY_PATH, \"%s\", "
+		     "is nonexistent.  It will be ignored", libName.c_str());
 	  else if (m_file_ids.insert(file_id).second)
 	    // New id was inserted, and thus was not already there
 	    if (isDir) {
@@ -104,6 +104,7 @@ namespace OCPI {
 	    try {
 	      for (char *lp = strtok_r(cp, ":", &last); lp;
 		   lp = strtok_r(NULL, ":", &last)) {
+		ocpiInfo("Searching directory %s recursively, from OCPI_LIBRARY_PATH", lp);
 		// We have a library in the path.
 		(new Library(lp))->configure(NULL);
 		n++;
