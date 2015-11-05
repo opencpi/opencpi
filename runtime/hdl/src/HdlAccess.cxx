@@ -88,7 +88,7 @@ namespace OCPI {
     }
     static inline bool null16(uint16_t v, bool string) {
       if (string)
-	for (unsigned n = sizeof(v); n; n--, v >>= 8)
+	for (unsigned n = sizeof(v); n; n--, v = (uint16_t)(v >> 8))
 	  if ((v & 0xff) == 0)
 	    return true;
       return false;

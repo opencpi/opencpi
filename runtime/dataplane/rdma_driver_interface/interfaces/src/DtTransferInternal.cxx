@@ -472,10 +472,19 @@ allocateCompatibleEndpoint(const OU::PValue*params,
   return allocateEndpoint(params, mailBox, maxMailBoxes);
 }
 
+// The caller (transport session) doesn't have one, and wants one of its own,
+// even though this means there will be multiple "local" endpoints in the same
+// process
 EndPoint* XferFactory::
 addCompatibleLocalEndPoint(const char *remote, DDT::MailBox mailBox, DDT::MailBox maxMb)
 { 
   OU::SelfAutoMutex guard (this); 
+#if 0 // we dont share local endpoints among containers (yet)
+  if (!remote && !maxMb)
+    for (EndPoints::iterator i = m_endPoints.begin(); i != m_endPoints.end(); i++)
+      if (*i && (*i)->local)
+	return *i;
+#endif
   // Find an unused slot that is different from the remote one
   // mailbox might be zero so this will find the first free slot in any case
   DDT::MailBox myMax = getMaxMailBox();
@@ -486,7 +495,7 @@ addCompatibleLocalEndPoint(const char *remote, DDT::MailBox mailBox, DDT::MailBo
     n = getNextMailBox();
   else {
     for (n = 1; n < m_locations.size(); n++)
-      if (n != mailBox && m_locations[n])
+      if (n != mailBox && !m_locations[n]) // if the index is different and unused..
 	break;
     if (n == DDT::MAX_SYSTEM_SMBS || n > myMax)
       throw OU::Error("Mailboxes for endpoints for protocol %s are exhausted (all %u are used)",

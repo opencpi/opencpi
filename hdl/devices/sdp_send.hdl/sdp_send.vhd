@@ -295,7 +295,7 @@ begin
                                                                downto addr_shift_c);
   -- The BRAM address must be pipelined (early).
   bramb_addr          <= sdp_next_msg_addr when sdp_remote_phase_r /= data_e else
-                         sdp_msg_addr_r when its(sdp_last_in_segment) else
+--                       sdp_msg_addr_r when sdp_last_in_segment and sdp_msg_dws_left_r = 0 else
                          bramb_addr_r;
   -- Drive SDP outputs
   sdp_out.sdp.header.op    <= sdp.sdp.write_e;          -- we are only writing
@@ -446,6 +446,7 @@ g0: for i in 0 to sdp_width_c-1 generate
               case sdp_remote_phase_r is
                 when data_e =>
                   if sdp_msg_dws_left_r /= 0 then
+                    sdp_segment_addr_r <= sdp_segment_addr_r + sdp.sdp.max_segment_dws;
                     begin_segment(sdp_msg_dws_left_r);
                   else
                     begin_meta;
@@ -481,6 +482,12 @@ g0: for i in 0 to sdp_width_c-1 generate
                 when others => null;
               end case;
             end if; -- if/else end of segment
+          elsif sdp_remote_phase_r = data_e then -- we're reading from pipelined memory
+            if not sdp_out_valid_r then
+              sdp_out_valid_r <= btrue;
+              sdp_out_r       <= bramb_out;
+              bramb_addr_r <= bramb_addr_r + 1;
+            end if;
           end if; -- if/else idle
         end if; -- message available in fifo 
         -- Process doorbells

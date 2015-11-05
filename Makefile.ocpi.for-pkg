@@ -189,7 +189,7 @@ objects: generated
 	      OBJDIR=../$(OCPI_OUT_DIR) $(SYSTEMOPTION) all ; \
 	  fi; \
 	fi
-	$(AT)for facility in $(FACILITIES) ; do \
+	$(AT)set -e; for facility in $(FACILITIES) ; do \
 	  if test -d $$facility/src ; then \
 	    if test -f $$facility/src/Makefile.ocpi ; then \
 		$(MAKE) $(call DescendMake2,$$facility/src) -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \

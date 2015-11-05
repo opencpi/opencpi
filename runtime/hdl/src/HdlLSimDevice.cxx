@@ -259,11 +259,13 @@ protected:
 	OU::format(error, "Simulation subprocess for executable \"%s\" terminated with exit status %d",
 		   m_exec.c_str(), exitStatus);
       else
-	ocpiInfo("Simulation subprocess exited normally");
+	ocpiInfo("Simulation subprocess exited normally.  Hang %u", hang);
       if (hang) {
 	// If waiting for termination, its not our error
-	ocpiInfo("%s", error.c_str());
-	error.clear();
+	if (error.length()) {
+	  ocpiInfo("%s", error.c_str());
+	  error.clear();
+	}
       } else
 	return true;
     } else if (WIFSIGNALED(status)) {
@@ -379,7 +381,7 @@ protected:
       std::string error;
       msg[0] = TERMINATE;
       msg[1] = 0;
-      ocpiInfo("Telling the simulator process (%u) to exit", m_pid);
+      ocpiInfo("Telling the simulator process (%u) to stop", m_pid);
       ocpiCheck(write(m_ctl.m_wfd, msg, 2) == 2);
       ocpiInfo("Waiting for simulator process to exit");
       mywait(m_pid, true, error);
@@ -592,7 +594,7 @@ protected:
     uint8_t msg[2];
     msg[0] = TERMINATE;
     msg[1] = 0;
-    w2("Telling the simulator process (pid %u) to exit", m_pid);
+    w2("Telling the simulator process (pid %u) to exit.\n", m_pid);
     write(m_ctl.m_wfd, msg, 2);
   }
 
