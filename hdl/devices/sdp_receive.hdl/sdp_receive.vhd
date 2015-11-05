@@ -246,9 +246,12 @@ g0: for i in 0 to sdp_width_c-1 generate
   out_out.byte_enable <= (others => '0') when md_out.length = 0 else -- zlm
                          (others => '1') when not its(last_give) or -- full xfer
                                               md_out.length(addr_shift_c-1 downto 0) = 0 else
-                         (sdp_width_c*dword_bytes-1 downto
-                          to_integer(md_out.length(addr_shift_c-1 downto 0)) => '0',
-                          others => '1');
+                         slv(not (unsigned(slv1(sdp_width_c*dword_bytes)) sll
+                                  to_integer(md_out.length(addr_shift_c-1 downto 0))));
+--    not synthesizable (xst at least)
+--                         (sdp_width_c*dword_bytes-1 downto
+--                          to_integer(md_out.length(addr_shift_c-1 downto 0)) => '0',
+--                          others => '1');
   --------------------------------------------------------------------------------
   -- The process of reading messages from the metadata FIFO and BRAM and sending
   -- then to the WSI port named "out"

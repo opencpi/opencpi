@@ -6,7 +6,7 @@
   <xi:include href='lime-iq-properties.xml'/>
   <clock name='sample_clk'/>
   <!-- end of common elements for adc and dac -->
-  <StreamInterface Name="in" DataWidth="32" optional='1'/>
+  <StreamInterface Name="in" DataWidth="32" optional='1' zerolengthmessages='1'/>
 
   <!-- Signals connected to the TX pins of the Lime chip -->
   <!-- Signal names from the data sheet -->
