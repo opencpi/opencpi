@@ -82,8 +82,8 @@ MyTargetDir:=target-$(OCPI_TARGET_HOST)
 MyIncs= \
          -I$(realpath $(MyDir)/../../../runtime/hdl/include) \
          -I$(realpath $(MyDir)/../../interfaces/include)
-MyLib:=$(realpath $(MyDir)/../../../lib/$(MyTargetDir))
-$(info x:$(MyTargetDir) $(MyDir))
+MyLib:=$(realpath $(OCPI_CDK_DIR)/lib/$(OCPI_TARGET_HOST))
+$(infox x:$(MyTargetDir) $(MyDir))
 ifeq ($(strip $(MyLib)),)
   ifneq ($(MAKECMDGOALS),topclean)
     $(error OpenCPI libraries must be built before the driver is built)
@@ -98,9 +98,9 @@ URULESFILE=99-$(MODNAME).rules
 MRULESFILE=mdev-$(MODNAME).rules
 JUNK=Module.markers Module.symvers .opencpi* opencpi.mod.* opencpi.o .tmp*
 INSTALLED=$(MyLib)/$(MODFILE) $(MyLib)/$(URULESFILE) $(MyLib)/$(MRULESFILE)
-all:	$(INSTALLED)
+all:	installed
 
-$(MODFILE): opencpi.c
+$(MODFILE): opencpi.c $(shell echo $$(cd $(KERNELDIR); pwd -P))
 	$(AT)echo Building kernel module $(MODFILE)
 	$(and $(KERNELDIR),$(MAKE) -C $(KERNELDIR) M=$(PWD) modules)
 	$(AT)mkdir -p $(MyTargetDir)
@@ -109,12 +109,8 @@ $(MODFILE): opencpi.c
 
 modules: $(MODFILE)
 
-$(INSTALLED): $(MODFILE) $(URULESFILE) $(MRULESFILE)
-	$(AT)cp $(URULESFILE) $(MyLib)
-	$(AT)cp $(MRULESFILE) $(MyLib)
-	$(AT)cp $(MODFILE) $(MyLib)
-	$(AT)echo Linux driver built, and a copy placed in $(MyLib)
-
+installed: $(MODFILE) $(URULESFILE) $(MRULESFILE)
+	$(AT)echo Linux driver built, and available in $(MyLib)
 
 modules_install:
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules_install

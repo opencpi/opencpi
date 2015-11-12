@@ -1,5 +1,0 @@
-host=$1
-shift
-exec ssh -t $host "set -e; cd ~/mac/ocpi/opencpi; . jkvm6.sh; . ocpi/ocpisetup.sh; $*"
-
-

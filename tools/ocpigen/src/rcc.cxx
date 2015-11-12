@@ -527,8 +527,8 @@ emitImplRCC() {
   if (m_language == CC && m_slave)
     fprintf(f,
 	    "#include <inttypes.h>\n"
-	    "#include <../OcpiApi.h>\n"
-	    "#include <../OcpiOsDebug.h>\n");
+	    "#include <OcpiApi.hh>\n"
+	    "#include <OcpiOsDebugApi.hh>\n");
   const char *last;
   unsigned in = 0, out = 0;
   if (m_ports.size()) {

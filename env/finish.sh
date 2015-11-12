@@ -23,6 +23,12 @@ if test "$OCPI_PREREQUISITES_INSTALL_DIR" = ""; then
 fi
 # For now this script needs to know where it is, and on some circa 2002 bash versions,
 # it can't.  This sets up the CDK VARS
+if [ ! -d exports ]; then
+  # This is a bootstrapping issue.  The exports tree doesn't exist, but we need it
+  # to at least exist enough to know where the CDK will be.
+  echo No exports tree exists in this OpenCPI base directory.  Creating an initial one.
+  ./scripts/makeExportLinks.sh $OCPI_TOOL_HOST ocpi_
+fi
 source ocpi/ocpisetup.sh ocpi/ocpisetup.sh
 # compatibility
 export OCPI_OS=$OCPI_TARGET_OS

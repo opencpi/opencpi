@@ -29,8 +29,7 @@ elif test -f $_MYNAME; then
   echo Error: ocpisetup.sh can only be run from a different directory. 1>&2
   return 1
 fi
-export OCPI_CDK_DIR=`dirname $_MYPATH`
-export OCPI_CDK_DIR=`cd $OCPI_CDK_DIR; pwd`
+export OCPI_CDK_DIR=`cd $(dirname $_MYPATH); pwd`
 if test "$OCPI_TOOL_HOST" = ""; then
   vars=($($OCPI_CDK_DIR/platforms/getPlatform.sh))
   if test $? != 0; then

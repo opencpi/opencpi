@@ -1,2 +1,0 @@
-#!/bin/sh
-(cat $1 && sh -c 'echo X$2' `ls -o -g -l $1`) >> $2

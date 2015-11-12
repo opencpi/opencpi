@@ -1168,7 +1168,7 @@ namespace OCPI {
 	  return;
 	}
 	std::string script(xenv);
-	script += "/scripts/";
+	script += "/lib/platforms/";
 	std::string actualPlatform;
 	if (platform.empty()) {
 	  OS::FileIterator fi(script, "runSimExec.*");
@@ -1185,6 +1185,8 @@ namespace OCPI {
 	} else {
 	  size_t len = platform.length();
 	  actualPlatform.assign(platform.c_str(), !strcmp("_pf", platform.c_str() + len - 3) ? len - 3 : len);
+	  script += actualPlatform;
+	  script += "/";
 	  script += "runSimExec.";
 	  script += actualPlatform;
 	  if (!OS::FileSystem::exists(script)) {
