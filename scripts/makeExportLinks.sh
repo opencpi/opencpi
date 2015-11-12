@@ -109,7 +109,9 @@ for f in $facilities; do
     if [ ! -e $exe ]; then
       exe=target-$1/$m
       if [ ! -e $exe ]; then
-        echo Executable $m not found in $f/target-$1/$m nor target-$1/$m
+	if [ "$3" == "" ]; then
+          echo Executable $m not found in $f/target-$1/$m nor target-$1/$m
+        fi
         continue
       fi    
     fi
@@ -131,7 +133,9 @@ for f in $facilities; do
     make_filtered_link $libpath exports/lib/$1/$lib library
   done
   if [ "$foundlib" = "" ]; then
-    echo Library lib$2$(basename $f) not found in $f/target-$1/\* nor target-$1/\*
+     if [ "$3" == "" ]; then
+       echo Library lib$2$(basename $f) not found in $f/target-$1/\* nor target-$1/\*
+     fi
 #    exit 1
   fi
   # Make links to facility scripts
@@ -188,6 +192,8 @@ for a in $additions; do
     fi
     make_relative_link $src exports/${both[1]//<target>/$1}$after
   else
-    echo Warning: link source $src does not '(yet?)' exist.
+    if [ "$3" == "" ]; then
+      echo Warning: link source $src does not '(yet?)' exist.
+    fi
   fi
 done

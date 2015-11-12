@@ -40,8 +40,8 @@ endif
 ifeq ($(wildcard exports),)
   ifeq ($(filter clean%,$(MAKECMDGOALS)),)
     $(info Exports have never been set up for this tree  Doing it now.)
-    $(info $(shell ./scripts/makeExportLinks.sh $(OCPI_TARGET_HOST) $(ProjectPrefix)_))
   endif
+  $(info $(shell ./scripts/makeExportLinks.sh $(OCPI_TARGET_HOST) $(ProjectPrefix)_ xxx))
 endif
 ifneq ($(OCPI_OS),)
 SYSTEMOPTION="OCPI_OS=$(OCPI_OS)"
@@ -255,7 +255,7 @@ $(PACKAGES):
 		$(MAKE) $(call DescendMake,$@) $(SYSTEMOPTION) -f $(call AdjustRelative,$@,)/Makefile.ocpi.for-pkg ; \
 	fi
 
-clean: cleancomponents cleanexamples cleanexports
+clean: cleancomponents cleanexamples
 	$(AT)rm -r -f lib
 	$(AT)$(foreach p,$(ALLPACKAGES),\
 		if test -f $p/Makefile.ocpi ; then \
@@ -281,6 +281,7 @@ cleaneverything: distclean cleandrivers
 	-find . -depth -name 'target-*' -exec rm -r '{}' ';'
 	-find . -depth -name 'gen' -exec rm -r '{}' ';'
 	-find . -depth -name "lib" -a ! -path "*export*" -a ! -path "*/platforms/*" -a -type d -a -exec rm -r "{}" ";"
+	$(AT)rm -r -f exports
 
 tar:
 	tar cvf ocpi.tar Makefile MakeVars.ocpi Makefile.ocpi.for-* scripts platforms $(ALLPACKAGES)

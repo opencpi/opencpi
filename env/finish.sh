@@ -27,7 +27,7 @@ if [ ! -d exports ]; then
   # This is a bootstrapping issue.  The exports tree doesn't exist, but we need it
   # to at least exist enough to know where the CDK will be.
   echo No exports tree exists in this OpenCPI base directory.  Creating an initial one.
-  ./scripts/makeExportLinks.sh $OCPI_TOOL_HOST ocpi_
+  ./scripts/makeExportLinks.sh $OCPI_TOOL_HOST ocpi_ xxx
 fi
 source ocpi/ocpisetup.sh ocpi/ocpisetup.sh
 # compatibility
