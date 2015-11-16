@@ -75,7 +75,7 @@ Container(const char *name, const OA::PValue* /*params*/)
   const char *system = OU::getSystemId().c_str();
   m_model = "rcc";
   // FIXME: somehow this should default since RCC can pretty much support them all?
-  m_transports.resize(4);
+  m_transports.resize(3);
   m_transports[0].transport = "ocpi-dma-pio";
   m_transports[0].id = system;
   m_transports[0].roleIn = OR::ActiveMessage;
@@ -84,6 +84,8 @@ Container(const char *name, const OA::PValue* /*params*/)
     (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive);
   m_transports[0].optionsOut =
     (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive);
+
+
   m_transports[1].transport = "ocpi-smb-pio";
   m_transports[1].id = system;
   m_transports[1].roleIn = OR::ActiveMessage;
@@ -92,7 +94,9 @@ Container(const char *name, const OA::PValue* /*params*/)
     (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive);
   m_transports[1].optionsOut =
     (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive);
-  m_transports[2].transport = "ocpi-socket-rdma";
+
+
+  m_transports[2].transport = "ocpi-scif-dma";
   m_transports[2].id = "0";
   m_transports[2].roleIn = OR::ActiveMessage;
   m_transports[2].roleOut = OR::ActiveMessage;
@@ -100,14 +104,28 @@ Container(const char *name, const OA::PValue* /*params*/)
     (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive);
   m_transports[2].optionsOut =
     (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive);
-  m_transports[3].transport = "ocpi-udp-rdma";
-  m_transports[3].id = "0"; // someday this might be root node MAC address
+
+  /*
+  m_transports[3].transport = "ocpi-socket-rdma";
+  m_transports[3].id = "0";
   m_transports[3].roleIn = OR::ActiveMessage;
   m_transports[3].roleOut = OR::ActiveMessage;
   m_transports[3].optionsIn =
     (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive);
   m_transports[3].optionsOut =
     (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive);
+
+
+  m_transports[4].transport = "ocpi-udp-rdma";
+  m_transports[4].id = "0"; // someday this might be root node MAC address
+  m_transports[4].roleIn = OR::ActiveMessage;
+  m_transports[4].roleOut = OR::ActiveMessage;
+  m_transports[4].optionsIn =
+    (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive);
+  m_transports[3].optionsOut =
+    (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive);
+  */
+
 }
 
 void Container::

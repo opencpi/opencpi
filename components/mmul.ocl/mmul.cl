@@ -60,6 +60,8 @@ __kernel void matrixMul ( __global float* C,
 
   float Csub = 0;
 
+#ifdef NOT_VALID_OCL_CODE
+
   for ( int a = aBegin, b = bBegin; a <= aEnd; a += aStep, b += bStep )
   {
     // Declaration of the local memory array As
@@ -87,6 +89,9 @@ __kernel void matrixMul ( __global float* C,
       barrier ( CLK_LOCAL_MEM_FENCE );
     }
   }
+
+#endif
+
 
   // Write the block sub-matrix to device memory
   // each thread writes one element

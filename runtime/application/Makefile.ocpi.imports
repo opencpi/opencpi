@@ -56,11 +56,14 @@ ALLLIBS += \
 
 
 DYNOBJS += \
+	../../../runtime/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtScifXfer.obj \
 	../../../runtime/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtSocketsXfer.obj \
+
 
 #	../../../runtime/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtTileraDmaXfer.obj
 
 SYSLIBS += $(OCPI_LZMA_DIR)/$(OCPI_TARGET_HOST)/lib/lzma
+SYSLIBS += scif
 
 ifeq ($(OCPI_HAVE_PTWORKQUEUE),10)
 CXXFLAGS+= -DPTWORKQUEUE
@@ -81,8 +84,11 @@ MAIN_DRIVERS+= \
   _ZN4OCPI7Library7CompLib9componentE\
   _ZN4OCPI3HDL3hdlE\
   _ZN4OCPI3DMA3dmaE\
+  _ZN4OCPI3SCIF3scifE\
   _ZN4OCPI5Local5localE\
   _ZN4OCPI6Remote6remoteE\
+
+
 
 EXTRA_LDFLAGS=$(LD_ALLOW_UNDEFINED)
 ifeq ($(OCPI_HAVE_OPENCL),1)

@@ -45,7 +45,7 @@ static clReleaseDeviceEXT_fn pfn_clReleaseDeviceEXT = NULL;
     if(!pfn_##name) { \
         pfn_##name = (name##_fn) clGetExtensionFunctionAddress(#name); \
         if(!pfn_##name) \
-          throw OU::Error("Cannot get pointer to OpenCL ext. fcn: ", name); \
+          throw OU::Error("Cannot get pointer to OpenCL ext. fcn: ", #name); \
     }
 
 
@@ -59,14 +59,19 @@ namespace OCPI {
     namespace OR = OCPI::RDT;
     namespace OO = OCPI::OCL;
 
+
     // Data base of vendor, family, device
     struct OclVendor {
       const char *name;
       const char *regexpr;
     } vendors[] = {{ "amd", "amd"},
 		   { "nvidia", "nvidia"},
+		   { "amd", "AMD" },
 		   { "intel", "intel" },
+		   {  "intel", "GenuineIntel" },
+		   { "amd", "Advanced Micro Devices" },
 		   { NULL, NULL}};
+
 
     // A family has binary compatibility
     struct OclFamily {
@@ -74,18 +79,24 @@ namespace OCPI {
       OclVendor *vendor;
     } families[] = {{ "cpu", &vendors[0]},
 		    { "cpu", &vendors[2]},
+		    { "cpu", &vendors[3]},
+		    //    { "gpu", &vendors[4]},
+		    { "gpu", &vendors[0]},
 		    { "iris", &vendors[2]},
 		    { "wildfire", &vendors[0]},
 		    { "geforce", &vendors[1]},
 		    { NULL, NULL}};
-		    
+        
     struct OclDevice {
       const char *regexpr;
       OclFamily *family;
     } devices[] = {{ " i7-", &families[1] },
 		   { "Iris", &families[2] },
 		   { "GeForce", &families[4] },
+		   { "Xeon(R)", &families[2] },
+		   { "Bonaire", &families[3] },
 		   { NULL, NULL}};
+
 
     // Since they are retrieved as a vector, we'll leave them that way
     typedef std::vector<cl_kernel> ClKernels;
