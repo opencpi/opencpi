@@ -309,7 +309,7 @@ begin
     sdp_remotes(to_integer(sdp_remote_idx_r)).flag_addr when flag_e | idle_e | between_remotes_e;
   sdp_out.sdp.header.node  <= sdp_whole_addr(sdp_whole_addr_bits_c-1 downto sdp.sdp.addr_width);
   sdp_out.sdp.header.addr  <= sdp_whole_addr(sdp.sdp.addr_width-1 downto 0);
-  sdp_out.sdp.eom          <= sdp_last_in_segment;
+  sdp_out.sdp.eop          <= sdp_last_in_segment;
   sdp_out.sdp.valid        <= to_bool(sdp_remote_phase_r /= idle_e);
   sdp_out.sdp.ready        <= bfalse;     -- we are write-only, never accepting an inbound frame
 g0: for i in 0 to sdp_width_c-1 generate
@@ -332,8 +332,8 @@ g0: for i in 0 to sdp_width_c-1 generate
     procedure begin_segment(ndws_left : meta_dw_count_t) is
       variable ndws : unsigned(ndws_left'range);
     begin
-      if ndws_left > sdp.sdp.max_segment_dws then
-        ndws :=  to_unsigned(sdp.sdp.max_segment_dws, ndws'length);
+      if ndws_left > sdp.sdp.max_pkt_dws then
+        ndws :=  to_unsigned(sdp.sdp.max_pkt_dws, ndws'length);
       else
         ndws :=  ndws_left;
       end if;
@@ -446,7 +446,7 @@ g0: for i in 0 to sdp_width_c-1 generate
               case sdp_remote_phase_r is
                 when data_e =>
                   if sdp_msg_dws_left_r /= 0 then
-                    sdp_segment_addr_r <= sdp_segment_addr_r + sdp.sdp.max_segment_dws;
+                    sdp_segment_addr_r <= sdp_segment_addr_r + sdp.sdp.max_pkt_dws;
                     begin_segment(sdp_msg_dws_left_r);
                   else
                     begin_meta;

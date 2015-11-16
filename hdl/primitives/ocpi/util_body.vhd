@@ -66,13 +66,19 @@ function swap(d : dword_t) return dword_t is
 begin
   return dword_t'(d(7 downto 0) & d(15 downto 8) & d(23 downto 16) & d(31 downto 24));
 end swap;
--- internal function from ieee numeric...
-function MAX (LEFT, RIGHT: INTEGER) return INTEGER is
-  begin
-    if LEFT > RIGHT then return LEFT;
-    else return RIGHT;
-    end if;
-end MAX;
+---- internal functions from ieee numeric...
+--function MAX (LEFT, RIGHT: INTEGER) return INTEGER is
+--  begin
+--    if LEFT > RIGHT then return LEFT;
+--    else return RIGHT;
+--    end if;
+--end MAX;
+--function MIN (LEFT, RIGHT: INTEGER) return INTEGER is
+--  begin
+--    if LEFT < RIGHT then return LEFT;
+--    else return RIGHT;
+--    end if;
+--end MIN;
 function max(l,r: unsigned) return unsigned is
   variable m : unsigned(max(l'length, r'length)-1 downto 0);
 begin
@@ -93,5 +99,33 @@ begin
   end if;
   return m;
 end min;
+function max(l,r: natural) return natural is
+begin
+  if l > r then
+    return l;
+  end if;
+  return r;
+end max;
+function min(l,r: natural) return natural is
+begin
+  if l < r then
+    return l;
+  end if;
+  return r;
+end min;
+function min(l : unsigned; r: natural) return unsigned is
+begin
+  if l < r then
+    return l;
+  end if;
+  return to_unsigned(r, l'length);
+end min;
+function max(l : unsigned; r: natural) return unsigned is
+begin
+  if l > r then
+    return l;
+  end if;
+  return to_unsigned(r, l'length);
+end max;
 end util;
 

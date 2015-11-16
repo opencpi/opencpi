@@ -3,12 +3,12 @@ use IEEE.std_logic_1164.all, IEEE.numeric_std.all,
   ocpi.all, ocpi.types.all, ocpi.util.all,
   platform.all, work.sdp.all;
 entity sdp_term is
-  generic(ocpi_debug      :     bool_t;
-          sdp_width       :     uchar_t);
+  generic(ocpi_debug      :     bool_t := bfalse;
+          sdp_width       :     natural);
   port   (up_in           : in  m2s_t;
           up_out          : out s2m_t;
-          up_in_data      : in  dword_array_t(0 to to_integer(sdp_width)-1);
-          up_out_data     : out dword_array_t(0 to to_integer(sdp_width)-1);
+          up_in_data      : in  dword_array_t(0 to sdp_width-1);
+          up_out_data     : out dword_array_t(0 to sdp_width-1);
           drop_count      : out uchar_t);
 end entity;
 architecture rtl of sdp_term is
@@ -16,7 +16,7 @@ architecture rtl of sdp_term is
 begin
   up_out_data  <= (others => (others => '0'));
   up_out.sdp.valid  <= bfalse;
-  up_out.sdp.eom    <= bfalse;
+  up_out.sdp.eop    <= bfalse;
   up_out.sdp.ready  <= up_in.sdp.valid;
   up_out.sdp.header <= dws2header((others => (others => '0')));
   drop_count        <= count_r;

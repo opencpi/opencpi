@@ -32,7 +32,7 @@ begin
              sdp_out_data => sdp_out_data);
   sdp_term_i : sdp.sdp.sdp_term
     generic map(ocpi_debug => ocpi_debug,
-                sdp_width => sdp_width)
+                sdp_width => to_integer(sdp_width))
     port map(up_in => sdp_slave_in,
              up_in_data => sdp_slave_in_data,
              up_out => sdp_slave_out,

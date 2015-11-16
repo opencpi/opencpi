@@ -39,7 +39,7 @@ architecture rtl of sdp_sim is
   signal sw2sdp_length_r    : natural := 0;
   signal sw2sdp_in_header_r : boolean := true;
   signal sw2sdp_index_r     : natural := 0;
-  signal sw2sdp_eom_r       : boolean := false; -- frame is eom
+  signal sw2sdp_eop_r       : boolean := false; -- frame is eop
   signal sw2sdp_dw_r        : dword_t;
   -- State for SDP->SW flow
   signal sdp2sw_in_header_r : boolean := true;
@@ -58,7 +58,7 @@ begin
   sdp_out.id         <= (others => '0');  -- set in case directly wired to control plane
   sdp_out.sdp.header <= dws2header(sw2sdp_header_r);
   sdp_out.sdp.valid  <= to_bool(sw2sdp_complete_r);
-  sdp_out.sdp.eom    <= to_bool(sw2sdp_eom_r);
+  sdp_out.sdp.eop    <= to_bool(sw2sdp_eop_r);
   sdp_out.sdp.ready  <= to_bool(sdp_in.sdp.valid and
                                 ((sdp2sw_in_header_r and
                                   sdp2sw_index_r = sdp_header_ndws-1 and
@@ -167,12 +167,12 @@ begin
                 -- zero payload, we're done
                 sw2sdp_index_r     <= 0;
                 sw2sdp_complete_r  <= true;
-                sw2sdp_eom_r       <= true;
+                sw2sdp_eop_r       <= true;
               else
                 sw2sdp_length_r    <= ndws;
                 sw2sdp_index_r     <= start_dw(dws2header(header_dws(sw2sdp_dw)), sdp_width);
                 sw2sdp_in_header_r <= false;
-                sw2sdp_eom_r       <= ndws <= sdp_width;
+                sw2sdp_eop_r       <= ndws <= sdp_width;
               end if;
             else
               sw2sdp_index_r <= sw2sdp_index_r + 1;
@@ -184,7 +184,7 @@ begin
               sw2sdp_index_r     <= 0;
               sw2sdp_in_header_r <= true;
               sw2sdp_complete_r  <= true;
-              sw2sdp_eom_r       <= true;
+              sw2sdp_eop_r       <= true;
             elsif sw2sdp_index_r = sdp_width-1 then
               sw2sdp_index_r    <= 0;
               sw2sdp_complete_r <= true;

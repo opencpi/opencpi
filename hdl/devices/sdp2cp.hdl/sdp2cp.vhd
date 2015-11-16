@@ -95,7 +95,7 @@ begin
                                       r_state_r = r_first_valid_e or
                                       (r_state_r = r_last_wanted_e and its(cp_in.valid)) or
                                       r_state_r = r_last_valid_e);
-  sdp_out.sdp.eom    <= not tag_first_of_2(cp_in.tag);
+  sdp_out.sdp.eop    <= not tag_first_of_2(cp_in.tag);
                         -- r_state_r = r_last_wanted_e or r_state_r = r_last_valid_e;
   sdp_out.sdp.ready  <= to_bool(sdp_in.sdp.valid and
                                 (a_state_r = a_idle_e or

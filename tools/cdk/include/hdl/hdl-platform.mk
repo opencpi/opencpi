@@ -144,7 +144,7 @@ $(call OcpiDbgVar,HdlPlatforms)
 	  $(AT)$(MAKE) -C $$@ -f $(OCPI_CDK_DIR)/include/hdl/hdl-config.mk \
                HdlPlatforms=$(Worker) \
                HdlPlatformWorker=../../$(Worker) \
-               HdlLibrariesInternal="$(call OcpiAdjustLibraries,$(HdlLibraries))" \
+               HdlLibrariesInternal="$(call OcpiAdjustLibraries,$(HdlLibraries) $(Libraries))" \
                ComponentLibrariesInternal="$(call OcpiAdjustLibraries,$(ComponentLibraries))" \
                XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirsInternal))"
 	  $(AT)echo ======= Exiting the \"$1\" configuration for the \"$(Worker)\" platform.

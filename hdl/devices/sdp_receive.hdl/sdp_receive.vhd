@@ -99,12 +99,18 @@ architecture rtl of sdp_receive_worker is
   signal nbytes             : unsigned(nbytes_width_c-1 downto 0);
   signal buffer_consumed    : bool_t;         -- pulse for buffer consumption from wsi side
   signal buffers_consumed_r : buffer_count_t;
-  -- For arithmetic about the dws of a segment, including the total number (hdr field+1)
-  -- Currently the SDP protocol header allows large (16KB/4KDW) segments
-  subtype sdp_seg_dw_t is unsigned(count_width downto 0);
-  -- For arithmetic about the dws in a transfer, including sdp_width.
+  -- For arithmetic about the dws in a transfer, including the value sdp_width (not - 1)
   subtype sdp_xfr_dw_t is unsigned(width_for_max(sdp_width_c)-1 downto 0);
   constant xfer_width        : sdp_xfr_dw_t := to_unsigned(sdp_width_c, sdp_xfr_dw_t'length);
+  -- given the address, what is the offset in the first sdp xfr
+  function sdp_addr_dw_offset(addr : addr_t) return sdp_xfr_dw_t is
+  begin
+    if sdp_width = 1 then
+      return to_unsigned(0, sdp_xfr_dw_t'length);
+    else
+      return addr(ocpi.util.max(0, width_for_max(sdp_width_c-1)-1) downto 0);
+    end if;
+  end sdp_addr_dw_offset;
   signal flag_write          : bool_t;
   signal meta_write          : bool_t;
   signal flag_out            : bool_t;
@@ -112,7 +118,7 @@ architecture rtl of sdp_receive_worker is
   signal first_dw            : sdp_xfr_dw_t;
   signal dws_in_first_xfer   : sdp_xfr_dw_t;
   signal dws_in_xfer         : sdp_xfr_dw_t;
-  signal dws_in_segment      : sdp_seg_dw_t;
+  signal dws_in_packet       : pkt_ndw_t;
   signal bramb_addr          : bram_addr_t;
   signal bramb_addr_r        : bram_addr_t;
   signal bramb_in            : dword_array_t(0 to sdp_width_c-1);
@@ -122,8 +128,8 @@ architecture rtl of sdp_receive_worker is
   signal sdp_out_valid_r     : bool_t;
   signal sdp_addr            : addr_t;
   signal sdp_addr_r          : addr_t;
-  signal sdp_dws_left        : sdp_seg_dw_t;
-  signal sdp_dws_left_r      : sdp_seg_dw_t;
+  signal sdp_dws_left        : pkt_ndw_t;
+  signal sdp_dws_left_r      : pkt_ndw_t;
   signal sdp_starting_r      : bool_t;
   signal sdp_buffer_idx_r    : buffer_count_t;
   signal sdp_buffer_offset_r : bram_addr_t;    -- offset in current buffer
@@ -310,21 +316,21 @@ g0: for i in 0 to sdp_width_c-1 generate
   --------------------------------------------------------------------------------
   sdp_reset_n       <= not sdp_in.reset;
   max_offset        <= props_in.buffer_size(bram_addr_t'left + addr_shift_c
-                                              downto addr_shift_c) - 1;
+                                            downto addr_shift_c) - 1;
   bad_write         <= to_bool(sdp_buffer_offset_r > max_offset or
                                bramb_addr >= memory_depth_c - 1);
-  dws_in_segment         <= count_in_dws(sdp_in.sdp.header);
-  first_dw               <= sdp_in.sdp.header.addr(sdp_xfr_dw_t'range) when its(sdp_starting_r)
-                            else (others => '0');
-  dws_in_first_xfer      <= resize(ocpi.util.min(xfer_width -
-                                                 sdp_in.sdp.header.addr(sdp_xfr_dw_t'range),
-                                                 dws_in_segment), sdp_xfr_dw_t'length);
-  dws_in_xfer            <= dws_in_first_xfer when its(sdp_starting_r)
-                            else resize(ocpi.util.min(sdp_dws_left_r, sdp_width),
-                                        sdp_xfr_dw_t'length);
-  sdp_addr               <= sdp_in.sdp.header.addr when its(sdp_starting_r) else sdp_addr_r;
-  sdp_dws_left           <= dws_in_segment - dws_in_first_xfer when its(sdp_starting_r)
-                            else sdp_dws_left_r - dws_in_xfer;
+  dws_in_packet     <= count_in_dws(sdp_in.sdp.header);
+  first_dw          <= sdp_addr_dw_offset(sdp_in.sdp.header.addr) when its(sdp_starting_r)
+                       else (others => '0');
+  dws_in_first_xfer <= resize(ocpi.util.min(xfer_width -
+                                            sdp_addr_dw_offset(sdp_in.sdp.header.addr),
+                                            dws_in_packet), sdp_xfr_dw_t'length);
+  dws_in_xfer       <= dws_in_first_xfer when its(sdp_starting_r)
+                       else resize(ocpi.util.min(sdp_dws_left_r, sdp_width),
+                                   sdp_xfr_dw_t'length);
+  sdp_addr          <= sdp_in.sdp.header.addr when its(sdp_starting_r) else sdp_addr_r;
+  sdp_dws_left      <= dws_in_packet - dws_in_first_xfer when its(sdp_starting_r)
+                       else sdp_dws_left_r - dws_in_xfer;
 g1: for i in 0 to sdp_width_c-1 generate
   bramb_write(i)    <= bfalse when i < first_dw or i > first_dw + dws_in_xfer
                        else sdp_in.sdp.valid and not (flag_write or meta_write);
@@ -350,7 +356,7 @@ g1: for i in 0 to sdp_width_c-1 generate
   sdp_out.sdp.header.count <= (others => '0');  -- we always send exactly one DW
   sdp_out.sdp.header.node  <= sdp_whole_addr_r(sdp_whole_addr_bits_c-1 downto addr_width);
   sdp_out.sdp.header.addr  <= sdp_whole_addr_r(addr_width-1 downto 0);
-  sdp_out.sdp.eom          <= btrue;
+  sdp_out.sdp.eop          <= btrue;
   sdp_out.sdp.valid        <= flag_out;
   sdp_out_data(0)          <= slvn(1, dword_size);
 g2: for i in 1 to sdp_width_c-1 generate

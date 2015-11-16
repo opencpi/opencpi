@@ -270,8 +270,8 @@ struct RCCPort {
 typedef struct {
   void (*release)(RCCBuffer *);
   void (*send)(RCCPort *, RCCBuffer*, RCCOpCode op, size_t length);
-  RCCBoolean (*request)(RCCPort *port, size_t maxlength);
-  RCCBoolean (*advance)(RCCPort *port, size_t maxlength);
+  RCCBoolean (*request)(RCCPort *port, size_t minlength);
+  RCCBoolean (*advance)(RCCPort *port, size_t minlength);
   RCCBoolean (*wait)(RCCPort *, size_t max, unsigned usecs);
   void (*take)(RCCPort *,RCCBuffer *old_buffer, RCCBuffer *new_buffer);
   RCCResult (*setError)(const char *, ...);
@@ -403,8 +403,8 @@ typedef struct {
      send(RCCUserBuffer&);
    RCCUserBuffer &take(RCCUserBuffer *oldBuffer = NULL);
    bool
-    request(size_t maxlength = 0),
-    advance(size_t maxlength = 0),
+    request(size_t minlength = 0),
+    advance(size_t minlength = 0),
     isConnected(),
     wait(size_t max, unsigned usecs);
    RCCOrdinal ordinal() const;

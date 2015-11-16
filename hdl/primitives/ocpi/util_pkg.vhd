@@ -14,8 +14,12 @@ function slv1(n : natural) return std_logic_vector;
 function slvn(n, width : natural) return std_logic_vector;
 function bit2unsigned(b : std_logic; len : natural := 1) return unsigned;
 function swap(d : dword_t) return dword_t;
-function max(l,r: unsigned) return unsigned;
 function min(l,r: unsigned) return unsigned;
+function max(l,r: unsigned) return unsigned;
+function min(l,r: natural) return natural;
+function max(l,r: natural) return natural;
+function min(l: unsigned; r: natural) return unsigned;
+function max(l: unsigned; r: natural) return unsigned;
 component message_bounds
   generic(width     : natural);
   port(Clk          : in  std_logic;

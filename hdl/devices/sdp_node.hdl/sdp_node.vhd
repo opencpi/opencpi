@@ -27,7 +27,7 @@ begin
   client_out.reset <= up_in.reset;
   client_out.id <= up_in.id;
   client_out.sdp.header <= up_in.sdp.header;
-  client_out.sdp.eom <= up_in.sdp.eom;
+  client_out.sdp.eop <= up_in.sdp.eop;
   client_out_data <= up_in_data;
   client_out.sdp.valid <= up_in.sdp.valid and for_client;
   -- Copy the incoming upstream info downstream, qualifying the valie signal
@@ -35,7 +35,7 @@ begin
   down_out.reset <= up_in.reset;
   down_out.id <= up_in.id + 1;
   down_out.sdp.header <= up_in.sdp.header;
-  down_out.sdp.eom <= up_in.sdp.eom;
+  down_out.sdp.eop <= up_in.sdp.eop;
   down_out_data <= up_in_data;
   down_out.sdp.valid <= up_in.sdp.valid and not for_client;
   -- Accept the incoming frame from the recipient
@@ -49,15 +49,15 @@ begin
   -- Are we starting an upstream message in THIS cycle?
   up_starting <= not up_active_r and (client_in.sdp.valid or down_in.sdp.valid);
   -- Are we ending a message in this cycle?
-  up_ending <= client_in.sdp.valid and client_in.sdp.eom and up_in.sdp.ready
+  up_ending <= client_in.sdp.valid and client_in.sdp.eop and up_in.sdp.ready
                when its(up_from_client) else
-               down_in.sdp.valid and down_in.sdp.eom and up_in.sdp.ready;
+               down_in.sdp.valid and down_in.sdp.eop and up_in.sdp.ready;
   -- Is the current (or starting) message from client?
   up_from_client <= up_from_client_r when its(up_active_r) else
                     client_in.sdp.valid and (not down_in.sdp.valid or not up_from_client_r);
   -- mux into up_out channel
   up_out.sdp.header    <= client_in.sdp.header when its(up_from_client) else down_in.sdp.header;
-  up_out.sdp.eom       <= client_in.sdp.eom    when its(up_from_client) else down_in.sdp.eom;
+  up_out.sdp.eop       <= client_in.sdp.eop    when its(up_from_client) else down_in.sdp.eop;
   up_out.sdp.valid     <= client_in.sdp.valid  when its(up_from_client) else down_in.sdp.valid;
   up_out_data          <= client_in_data       when its(up_from_client) else down_in_data;
 

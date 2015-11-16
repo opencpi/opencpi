@@ -21,7 +21,7 @@ constant count_width            : natural := width_for_max(max_message_units-1);
 constant end_bytes_width        : natural := width_for_max(datum_bytes - 1);
 constant addr_width             : natural := width_for_max(1024-1) +
                                              width_for_max(max_addressable_kbytes/datum_bytes-1);
-constant max_segment_dws        : natural := 32;
+constant max_pkt_dws            : natural := 32;
 type op_t is (read_e,
               write_e,
               response_e,
@@ -31,6 +31,7 @@ subtype id_t is unsigned(node_width-1 downto 0);
 subtype xid_t is unsigned(xid_width-1 downto 0);
 subtype count_t is unsigned(count_width-1 downto 0);
 subtype addr_t is unsigned(addr_width-1 downto 0);
+subtype pkt_ndw_t is unsigned(count_width downto 0);
 -- ASSUMPTION:  count fits in first DW...
 -- UPDATE dws2header and header2dws if this is changed.
 type header_t is record
@@ -47,10 +48,13 @@ constant sdp_header_width : natural := width_for_max(op_t'pos(op_t'high)) + xid_
                                      count_width + node_width + addr_width;
 constant sdp_header_ndws  : natural := (sdp_header_width + (dword_t'length-1)) / dword_t'length;
 
+constant whole_addr_bits_c : integer := addr_width + node_width;
+subtype whole_addr_t is unsigned(whole_addr_bits_c-1 downto 0);
+
 -- The record in both directions
 type sdp_t is record
-  header  : header_t; -- will be stable from som to eom
-  eom     : bool_t;   -- just for convenience
+  header  : header_t; -- will be stable from sop to eop
+  eop     : bool_t;   -- end of packet
   valid   : bool_t;   -- data/header is valid - like AXI
   ready   : bool_t;   -- can accept/is accepting data from other side - like AXI
 end record sdp_t;
@@ -126,12 +130,12 @@ function header2be(h : header_t; word : unsigned) return std_logic_vector;
 --end record client2sdp_t;
 
 component sdp_term
-  generic(ocpi_debug      :     bool_t;
-          sdp_width       :     uchar_t);
+  generic(ocpi_debug      :     bool_t := bfalse;
+          sdp_width       :     natural);
   port(   up_in           : in  m2s_t;
           up_out          : out s2m_t;
-          up_in_data      : in  dword_array_t(0 to to_integer(sdp_width)-1);
-          up_out_data     : out dword_array_t(0 to to_integer(sdp_width)-1);
+          up_in_data      : in  dword_array_t(0 to sdp_width-1);
+          up_out_data     : out dword_array_t(0 to sdp_width-1);
           drop_count      : out uchar_t);
 end component sdp_term;
     

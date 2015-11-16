@@ -154,29 +154,29 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
   // Establish the NOC usage, if there is any.
   // An interconnect can be on any device worker, but for now it is on the config.
   UNocs uNocs;
-  Port *sdp = NULL;
-  unsigned *unoc = NULL;
+  Port
+    *icp = NULL, // the interconnect port on the platform config, if one exists
+    *cp = NULL;  // the CP master port on the platform config, if one exists
   for (PortsIter pi = m_config.m_ports.begin(); pi != m_config.m_ports.end(); pi++) {
     Port &p = **pi;
-    Port *slave = NULL;
-    if (p.master && (p.type == NOCPort || p.type == SDPPort)) {
-      size_t len = p.m_name.length();
-      // Find the slave port for this master just for error checking
-      for (PortsIter si = m_config.m_ports.begin(); si != m_config.m_ports.end(); si++) {
-	Port &sp = **si;
-	if (!sp.master && (sp.type == NOCPort || sp.type == SDPPort) &&
-	    !strncasecmp(p.name(), sp.name(), len) && !strcasecmp(sp.name() + len, "_slave")) {
-	  slave = &sp;
-	  break;
+    if (p.master)
+      if (p.type == CPPort)
+	cp = &p;
+      else if (p.type == SDPPort || p.type == NOCPort) {
+	icp = &p;
+	size_t len = p.m_name.length();
+	Port *slave = NULL;
+	for (PortsIter si = m_config.m_ports.begin(); si != m_config.m_ports.end(); si++) {
+	  Port &sp = **si;
+	  if (!sp.master && (sp.type == NOCPort || sp.type == SDPPort) &&
+	      !strncasecmp(p.name(), sp.name(), len) && !strcasecmp(sp.name() + len, "_slave")) {
+	    assert(!slave);
+	    slave = &sp;
+	  }
 	}
+	ocpiAssert(slave);
+	uNocs[p.name()] = 0;
       }
-      ocpiAssert(slave);
-      uNocs[p.name()] = 0;
-      if (p.type == SDPPort) {
-	unoc = &uNocs.at(p.name());
-	sdp = &p;
-      }
-    }
   }
   // Preinstall device instances.  These may be devices in the platform OR may be
   // random devices that are just standalone workers.
@@ -256,25 +256,41 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
       nWCIs += p.count;
     }
   }
-  if (sdp) {
-    OU::formatAdd(assy,
-		  "  <instance name='%s_unoc%u' worker='sdp_node'>\n"
-		  "    <property name='sdp_width' value='%zu'/>\n"
-		  "  </instance>\n"
-		  "  <instance name='%s_sdp2cp' worker='sdp2cp'>\n"
-		  "    <property name='sdp_width' value='%zu'/>\n"
-		  "  </instance>\n"
-		  "  <connection>\n"
-		  "    <port instance='%s_unoc%u' name='client'/>\n"
-		  "    <port instance='%s_sdp2cp' name='sdp'/>\n"
-		  "  </connection>\n"
-		  "  <connection>\n"
-		  "    <port instance='%s_sdp2cp' name='cp'/>\n"
-		  "    <port instance='ocscp' name='cp'/>\n"
-		  "  </connection>\n",
-		  sdp->name(), *unoc, m_config.sdpWidth(), sdp->name(), m_config.sdpWidth(),
-		  sdp->name(), *unoc, sdp->name(), sdp->name());
-    add2UNocConnection(*unoc, sdp->name(), assy);
+  if (icp && !cp) {
+    unsigned *unoc = &uNocs.at(icp->name());
+    if (icp->type == SDPPort)
+      OU::formatAdd(assy,
+		    "  <instance name='%s_unoc%u' worker='sdp_node'>\n"
+		    "    <property name='sdp_width' value='%zu'/>\n"
+		    "  </instance>\n"
+		    "  <instance name='%s_sdp2cp' worker='sdp2cp'>\n"
+		    "    <property name='sdp_width' value='%zu'/>\n"
+		    "  </instance>\n"
+		    "  <connection>\n"
+		    "    <port instance='%s_unoc%u' name='client'/>\n"
+		    "    <port instance='%s_sdp2cp' name='sdp'/>\n"
+		    "  </connection>\n"
+		    "  <connection>\n"
+		    "    <port instance='%s_sdp2cp' name='cp'/>\n"
+		    "    <port instance='ocscp' name='cp'/>\n"
+		    "  </connection>\n",
+		    icp->name(), *unoc, m_config.sdpWidth(), icp->name(), m_config.sdpWidth(),
+		    icp->name(), *unoc, icp->name(), icp->name());
+    else
+      OU::formatAdd(assy,
+		    "  <instance name='%s_unoc%u' worker='unoc_node'>\n"
+		    "  <instance name='%s_unoc2cp' worker='unoc_cp_adapter'/>\n"
+		    "  <connection>\n"
+		    "    <port instance='%s_unoc%u' name='client'/>\n"
+		    "    <port instance='%s_unoc2cp' name='unoc'/>\n"
+		    "  </connection>\n"
+		    "  <connection>\n"
+		    "    <port instance='%s_unoc2cp' name='cp'/>\n"
+		    "    <port instance='ocscp' name='cp'/>\n"
+		    "  </connection>\n",
+		    icp->name(), *unoc, icp->name(),
+		    icp->name(), *unoc, icp->name(), icp->name());
+    add2UNocConnection(*unoc, icp->name(), assy);
   } else
     // Connect it to the pf config's cpmaster
     for (PortsIter ii = m_config.m_ports.begin(); ii != m_config.m_ports.end(); ii++) {
@@ -360,7 +376,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 	return;
     emitSubdeviceConnections(assy, &m_config.m_devInstances);
   }
-  // Instance the scalable control plane and adapter to SDP if present.
+  // Instance the scalable control plane and adapter to SDP/uNoc if present.
   OU::formatAdd(assy,
 		"  <instance worker='ocscp'>\n"
 		"    <property name='nworkers' value='%zu'/>\n"
