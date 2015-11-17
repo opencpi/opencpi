@@ -12,7 +12,13 @@ architecture rtl of sdp_receive_worker is
   constant addr_width_c    : natural := width_for_max(memory_depth_c - 1);
   constant max_buffers_c   : natural := to_integer(max_buffers);
   constant addr_shift_c    : natural := width_for_max(sdp_width_c * 4 - 1);
-  constant dw_addr_shift_c : natural := width_for_max(sdp_width_c-1);
+  function dw_addr_shift_c return natural is
+  begin
+    if sdp_width_c = 1 then
+      return 0;
+    end if;
+    return width_for_max(ocpi.util.max(1,sdp_width_c-1));
+  end dw_addr_shift_c;
   constant count_width_c   : natural := width_for_max(max_buffers_c);
   constant nbytes_width_c  : natural := width_for_max(sdp_width_c * 4); -- nbytes in frame
   constant max_remotes_c   : natural := to_integer(max_remotes);
@@ -108,7 +114,7 @@ architecture rtl of sdp_receive_worker is
     if sdp_width = 1 then
       return to_unsigned(0, sdp_xfr_dw_t'length);
     else
-      return addr(ocpi.util.max(0, width_for_max(sdp_width_c-1)-1) downto 0);
+      return addr(width_for_max(ocpi.util.max(1, sdp_width_c-1))-1 downto 0);
     end if;
   end sdp_addr_dw_offset;
   signal flag_write          : bool_t;
