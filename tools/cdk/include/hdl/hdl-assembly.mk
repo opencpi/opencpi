@@ -39,6 +39,13 @@ Worker_xml:=$(Worker).xml
 OcpiLanguage:=verilog
 override LibDir=lib/hdl
 override HdlLibraries+=platform
+# If HdlPlatforms is explicitly defined to nothing, then don't build containers.
+ifeq ($(HdlPlatform)$(HdlPlatforms),)
+  ifneq ($(origin HdlPlatforms),undefined)
+    override Containers=
+    override DefaultContainers=
+  endif
+endif
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 ifndef HdlSkip
 # Add to the component libraries specified in the assembly Makefile,

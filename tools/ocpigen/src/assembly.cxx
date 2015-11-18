@@ -556,4 +556,5 @@ init(Instance *i, Port *p, OU::Assembly::External *ext) {
   m_external = ext;
   if (ext && ext->m_role.m_knownRole && !ext->m_role.m_bidirectional)
     m_role = ext->m_role;
+  m_hasExprs = false;
 }

@@ -345,11 +345,13 @@ emitVHDLShellPortMap(FILE *f, std::string &last) {
 void WciPort::
 emitPortSignals(FILE *f, Attachments &atts, Language lang, const char *indent,
 		bool &any, std::string &comment, std::string &last, const char *myComment,
-		OcpAdapt *adapt) {
+		OcpAdapt *adapt, std::string *signalIn, std::string &exprs) {
   if (master || m_worker->m_assembly)
-    Port::emitPortSignals(f, atts, lang, indent, any, comment, last, myComment, adapt);
+    Port::emitPortSignals(f, atts, lang, indent, any, comment, last, myComment, adapt, signalIn,
+			  exprs);
   else
-    OcpPort::emitPortSignals(f, atts, lang, indent, any, comment, last, myComment, adapt);
+    OcpPort::emitPortSignals(f, atts, lang, indent, any, comment, last, myComment, adapt,
+			     signalIn, exprs);
 }
 
 const char *WciPort::

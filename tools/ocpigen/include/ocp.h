@@ -126,7 +126,12 @@ class OcpPort : public Port {
 			  OcpAdapt *adapt, Attachments &atts);
   void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 		       const char *indent, bool &any, std::string &comment,
-		       std::string &last, const char *myComment, OcpAdapt *adapt);
+		       std::string &last, const char *myComment, OcpAdapt *adapt,
+		       std::string *signalIn, std::string &exprs);
+  InstancePort &ocpSignalPrefix(std::string &signal, bool master, Language lang,
+				Attachments &atts);
+  void emitExprAssignments(std::string &out, std::string &signalIn, OcpAdapt *adapt,
+			   Attachments &atts);
   void connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, OcpAdapt &oa,
 			std::string &signal, std::string &thisComment, Language lang,
 			Attachments &atts);
@@ -139,7 +144,9 @@ struct OcpAdapt {
   const char *expr;
   const char *comment;
   const char *signal;
+  bool  isExpr; // the "expr" member is a real expression (not "globally static" in VHDL)
   OcpSignalEnum other;
-  OcpAdapt() : expr(NULL), comment(NULL), signal(NULL), other(N_OCP_SIGNALS) {}
+  OcpAdapt() :
+    expr(NULL), comment(NULL), signal(NULL), isExpr(false), other(N_OCP_SIGNALS) {}
 };
 #endif

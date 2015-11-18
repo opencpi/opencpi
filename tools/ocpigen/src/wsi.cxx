@@ -288,6 +288,7 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
 	oa = &prodAdapt[OCP_MBurstLength];
 	oa->expr = lang == Verilog ? "" : "open";
 	oa->comment = "MBurstLength ignored for imprecise consumer";
+	oa->isExpr = true; // subtraction...
 	if (m_impreciseBurst) {
 	  oa = &prodAdapt[OCP_MBurstPrecise];
 	  oa->expr = lang == Verilog ? "" : "open";
@@ -342,6 +343,7 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
       oa->other = OCP_MCmd;
       oa->expr = "%s == OCPI_OCP_MCMD_WRITE ? 1b'1 : 1b'0";
       oa->comment = "Tell consumer data is valid when its(request) is MCMD_WRITE";
+      oa->isExpr = true;
     }
   } else if (m_earlyRequest)
     return "producer emits early requests, but consumer doesn't support them";
@@ -355,6 +357,7 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
 		   lang == Verilog ?
 		   "{%zu'b0,%%s}" : "std_logic_vector(to_unsigned(0,%zu)) & %%s",
 		   cons.ocp.MReqInfo.width - ocp.MReqInfo.width);
+	  oa->isExpr = true;
 	  oa->other = OCP_MReqInfo;
 	} else {
 	  // producer has more, we just connect the LSBs
@@ -398,6 +401,7 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
 			  masterName, --pw);
 	  expr += ")";
 	}
+	oa->isExpr = true;
       }
       oa->expr = strdup(expr.c_str());
       oa->comment = "inclusive-or more numerous producer byte enables for consumer";
@@ -415,6 +419,7 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
 			  masterName, ocp.MByteEn.width - n - 1);
 	expr += "}";
       } else {
+	oa->isExpr = true;
 	for (size_t n = 0; n < ocp.MByteEn.width; n++)
 	  for (size_t nn = 0; nn < nper; nn++)
 	    OU::formatAdd(expr, "%s%s.MByteEn(%zu)", n || nn ? "&" : "",
@@ -462,6 +467,7 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
 			masterName, n*8-1, (n-1)*8);
 	expr += "}";
       } else {
+	oa->isExpr = true;
 	for (size_t n = pbytes; n > 0; n--)
 	  OU::formatAdd(expr, "%s%s.MDataInfo(%zu downto %zu) & %s.MData(%zu downto %zu)",
 			n == pbytes ? "" : "&",
@@ -493,6 +499,7 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
 	dexpr += "}";
 	iexpr += "}";
       } else {
+	oa->isExpr = true;
 	for (size_t n = cbytes; n > 0; n--) {
 	  OU::formatAdd(dexpr, "%s%s.MData(%zu downto %zu)",
 			n == cbytes ? "" : "&",

@@ -462,7 +462,7 @@ emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal) {
   }	       
 }
 
-// Emit for one direction
+// Emit for one direction, into a string
 void OcpPort::
 emitPortSignalsDir(FILE *f, bool output, Language lang, const char *indent,
 		   bool &any, std::string &comment, std::string &last,
@@ -478,7 +478,6 @@ emitPortSignalsDir(FILE *f, bool output, Language lang, const char *indent,
     if (any)
       fputs(indent, f);
     any = true;
-    comment = "";
     fprintf(f, "%s => open", name.c_str());
     return;
   }
@@ -511,11 +510,86 @@ emitPortSignalsDir(FILE *f, bool output, Language lang, const char *indent,
 }
 
 void OcpPort::
+emitExprAssignments(std::string &out, std::string &signalIn, OcpAdapt *adapt, Attachments &atts) {
+  OU::formatAdd(out,
+		"\n"
+		"-- Temporary input signal assignments for port \"%s\",\n"
+		"-- since it has some signals with expression values that are not \"globally static\" in VHDL terms.\n",
+		name());
+  OcpSignalDesc *osd;
+  OcpSignal *os;
+  OcpAdapt *oa;
+  for (osd = ocpSignals, os = ocp.signals, oa = adapt; osd->name; os++, osd++, oa++)
+    if (os->value && os->master != master) {
+      std::string signal, thisComment;
+      connectOcpSignal(*osd, *os, *oa, signal, thisComment, VHDL, atts);
+      const char *comment = oa->comment ? oa->comment : thisComment.c_str();
+      OU::formatAdd(out, "  %s.%s <= %s;%s%s\n", signalIn.c_str(), osd->name,
+		    signal.c_str(), comment[0] ? "-- " : "", comment);
+    }
+}
+void OcpPort::
 emitPortSignals(FILE *f, Attachments &atts, Language lang,
 		const char *indent, bool &any, std::string &comment, std::string &last,
-		const char */*myComment*/, OcpAdapt *adapt) {
-  emitPortSignalsDir(f, false, lang, indent, any, comment, last, adapt, atts);
+		const char */*myComment*/, OcpAdapt *adapt, std::string *signalIn,
+		std::string &exprs) {
+  if (signalIn) {
+    std::string signal;
+    // ocpSignalPrefix(signal, !master, lang, atts);
+    doPrev(f, last, comment, hdlComment(lang));
+    if (any)
+      fputs(indent, f);
+    any = true;
+    fprintf(f, "%s => %s", typeNameIn.c_str(), signalIn->c_str());
+    emitExprAssignments(exprs, *signalIn, adapt, atts);
+  } else
+    emitPortSignalsDir(f, false, lang, indent, any, comment, last, adapt, atts);
   emitPortSignalsDir(f, true, lang, indent, any, comment, last, adapt, atts);
+}
+
+InstancePort  &OcpPort::
+ocpSignalPrefix(std::string &signal, bool master, Language lang, Attachments &atts) {
+  // Find the other end of the connection
+  assert(atts.size() == 1); // OCP connections are always point-to-point
+  Connection &c = atts.front()->m_connection;
+  assert(c.m_attachments.size() == 2);
+  InstancePort *otherIp = NULL;
+  Attachment *at;
+  for (AttachmentsIter ai = c.m_attachments.begin(); ai != c.m_attachments.end(); ai++)
+    if ((*ai)->m_instPort.m_port != this) {
+      at = *ai;
+      otherIp = &at->m_instPort;
+      break;
+    }
+  assert(otherIp);
+  // Decide on our indexing.  We need an index if our attachment is a subset of
+  // what we are connecting to, which is either another internal port or an external one.
+  // In either case
+  std::string &cName = master ? c.m_masterName : c.m_slaveName;
+  size_t index, top, count = 0; // count for indexing purpose
+  if (otherIp->m_port->count > c.m_count) {
+    // We're connecting to something bigger: indexing is needed in this port binding
+    count = c.m_count;
+    index = at->m_index;
+    top = index + count - 1;
+  }
+  if (count) {
+    std::string num, temp1;
+    if (lang == Verilog)
+      OU::format(num, "%zu", index);
+    OU::format(temp1, cName.c_str(), num.c_str());
+    if (count > 1) {
+      assert(lang == VHDL);
+      OU::format(signal, "%s(%zu to %zu)", temp1.c_str(), index, top);
+    } else {
+      if (lang == VHDL)
+	OU::format(signal, "%s(%zu)", temp1.c_str(), index);
+      else
+	signal = temp1;
+    }
+  } else
+    OU::format(signal, cName.c_str(), "");
+  return *otherIp;
 }
 
 void OcpPort::
@@ -534,47 +608,8 @@ connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, OcpAdapt &oa,
       signal = "open";
     return;
   }
-  // Find the other end of the connection
-  assert(atts.size() == 1); // OCP connections are always point-to-point
-  Connection &c = atts.front()->m_connection;
-  assert(c.m_attachments.size() == 2);
-  InstancePort *otherIp = NULL;
-  Attachment *at;
-  for (AttachmentsIter ai = c.m_attachments.begin(); ai != c.m_attachments.end(); ai++)
-    if ((*ai)->m_instPort.m_port != this) {
-      at = *ai;
-      otherIp = &at->m_instPort;
-      break;
-    }
-  assert(otherIp);
-  // Decide on our indexing.  We need an index if our attachment is a subset of
-  // what we are connecting to, which is either another internal port or an external one.
-  // In either case
-  std::string &cName = os.master ? c.m_masterName : c.m_slaveName;
-  size_t index, top, count = 0; // count for indexing purpose
-  if (otherIp->m_port->count > c.m_count) {
-    // We're connecting to something bigger: indexing is needed in this port binding
-    count = c.m_count;
-    index = at->m_index;
-    top = index + count - 1;
-  }
   std::string temp;
-  if (count) {
-    std::string num, temp1;
-    if (lang == Verilog)
-      OU::format(num, "%zu", index);
-    OU::format(temp1, cName.c_str(), num.c_str());
-    if (count > 1) {
-      assert(lang == VHDL);
-      OU::format(temp, "%s(%zu to %zu)", temp1.c_str(), index, top);
-    } else {
-      if (lang == VHDL)
-	OU::format(temp, "%s(%zu)", temp1.c_str(), index);
-      else
-	temp = temp1;
-    }
-  } else
-    OU::format(temp, cName.c_str(), "");
+  InstancePort &otherIp = ocpSignalPrefix(temp, os.master, lang, atts);
   if (lang == VHDL)
     temp += '.';
   if (oa.expr) {
@@ -584,7 +619,7 @@ connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, OcpAdapt &oa,
     OU::formatAdd(signal, oa.expr, temp.c_str());
   } else {
     signal = temp + osd.name;
-    OcpPort &other = *static_cast<OcpPort*>(otherIp->m_port);
+    OcpPort &other = *static_cast<OcpPort*>(otherIp.m_port);
     if (osd.vector && os.width != other.ocp.signals[osd.number].width) {
       ocpiDebug("Narrowing of assignment to port %s of worker %s from %zu to %zu",
 		name(), m_worker->m_implName, other.ocp.signals[osd.number].width, os.width);

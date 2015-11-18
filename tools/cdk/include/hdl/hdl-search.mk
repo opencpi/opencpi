@@ -84,10 +84,10 @@ The directories looked at where: $$(HdlTempDirs)))
 endef
 
 HdlCheckLinks=$(strip \
-  $(foreach d,$1,$1$(shell test -L $1 -a ! -e $1 && echo " (a link to non-existent/unbuilt?)")))
+  $(foreach d,$1,$d$(shell test -L $d -a ! -e $d && echo " (a link to non-existent/unbuilt?)")))
 
 define HdlComponentSearchError
-The component library "$1" was not found in any of these locations: $(call HdlCheckLinks,$2/$1)
+The component library "$1" was not found in any of these locations: $(call HdlCheckLinks,$2)
 OCPI_HDL_COMPONENT_LIBRARY_PATH is: $(OCPI_HDL_COMPONENT_LIBRARY_PATH)
 OCPI_PROJECT_PATH is: $(OCPI_PROJECT_PATH)
 OCPI_CDK_DIR is: $(OCPI_CDK_DIR)

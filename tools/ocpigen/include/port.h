@@ -125,7 +125,8 @@ public:
   virtual void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
   virtual void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 			       const char *indent, bool &any, std::string &comment,
-			       std::string &last, const char *myComment, OcpAdapt *adapt);
+			       std::string &last, const char *myComment, OcpAdapt *adapt,
+			       std::string *signalIn, std::string &exprs);
   virtual void emitPortSignal(FILE *f, bool any, const char *indent, std::string &sName,
 			      const char *name, std::string &index);
   virtual const char *fixDataConnectionRole(OCPI::Util::Assembly::Role &role);

@@ -88,6 +88,7 @@ struct InstancePort {
   Port *m_port;                        // The actual port of the instance's or assembly's worker
   OU::Assembly::Role m_role;           // Our role, combining info from the worker port and the assy
   OcpAdapt m_ocp[N_OCP_SIGNALS];       // Information for making the connection, perhaps tieoff etc.
+  bool     m_hasExprs;                 // any signal adaptations with expressions present?
   std::string m_signalIn, m_signalOut; // Internal signal bundle for connecting here, when appropriate
   InstancePort();
   InstancePort(Instance *i, Port *p, OU::Assembly::External *ext);
@@ -95,12 +96,8 @@ struct InstancePort {
   const char *createConnectionSignals(FILE *f, Language lang);
   void
     init(Instance *i, Port *p, OU::Assembly::External *ext),
-    emitPortSignals(FILE *f, bool out, Language lang, const char *indent,
-		    bool &any, std::string &comment, std::string &last),
     emitConnectionSignal(FILE *f, bool output, Language lang),
-    emitTieoffAssignments(FILE *f),
-    connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, OcpAdapt &oa,
-		     std::string &signal, std::string &thisComment, Language lang);
+    emitTieoffAssignments(FILE *f);
 };
 class Assembly {
  public:

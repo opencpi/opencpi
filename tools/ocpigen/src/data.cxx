@@ -610,8 +610,8 @@ emitXML(FILE *f) {
 // static method
 const char *DataPort::
 adjustConnection(const char *masterName,
-		 Port &prodPort, OcpAdapt *prodAdapt,
-		 Port &consPort, OcpAdapt *consAdapt,
+		 Port &prodPort, OcpAdapt *prodAdapt, bool &prodHasExpr,
+		 Port &consPort, OcpAdapt *consAdapt, bool &consHasExpr,
 		 Language lang) {
   assert(prodPort.isData() && consPort.isData());
   DataPort &prod = *static_cast<DataPort*>(&prodPort);
@@ -648,7 +648,19 @@ adjustConnection(const char *masterName,
   if (cons.m_continuous && !prod.m_continuous)
     return "producer is not continuous, but consumer requires it";
   // Profile-specific error checks and adaptations
-  return prod.adjustConnection(cons, masterName, lang, prodAdapt, consAdapt);
+  const char *err = prod.adjustConnection(cons, masterName, lang, prodAdapt, consAdapt);
+  if (err)
+    return err;
+  // Figure out if this instance port has signal adaptations that will require a temp
+  // signal bundle for the port.
+  if (lang == VHDL)
+    for (unsigned n = 0; n < N_OCP_SIGNALS; n++) {
+      if (prodAdapt[n].isExpr)
+	prodHasExpr = true;
+      if (consAdapt[n].isExpr)
+	consHasExpr = true;
+    }
+  return NULL;
 }
 const char *DataPort::
 finalizeHdlDataPort() {

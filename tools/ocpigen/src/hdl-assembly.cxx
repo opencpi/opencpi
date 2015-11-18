@@ -405,10 +405,10 @@ createConnectionSignals(FILE *f, Language lang) {
 	InstancePort &other = (*cai)->m_instPort;
 	if (&other != this) {
 	  err = m_port->isDataProducer() ?
-	    DataPort::adjustConnection(c.m_masterName.c_str(), *m_port, m_ocp,
-				       *other.m_port, other.m_ocp, lang) :
+	    DataPort::adjustConnection(c.m_masterName.c_str(), *m_port, m_ocp, m_hasExprs,
+				       *other.m_port, other.m_ocp, other.m_hasExprs, lang) :
 	    DataPort::adjustConnection(c.m_masterName.c_str(), *other.m_port, other.m_ocp,
-				       *m_port, m_ocp, lang);
+				       other.m_hasExprs, *m_port, m_ocp, m_hasExprs, lang);
 	  if (err)
 	    return OU::esprintf("For connection between %s/%s and %s/%s: %s",
 				m_port->m_worker->m_implName, m_port->name(),
@@ -416,6 +416,10 @@ createConnectionSignals(FILE *f, Language lang) {
 	}
       }
     }
+  if (m_hasExprs) {
+    assert(m_signalIn.empty());
+    emitConnectionSignal(f, false, lang);
+  }
   return NULL;
 }
 
@@ -461,11 +465,11 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
     OU::format(suff, "_c%zu", i->worker->m_paramConfig->nConfig);
   std::string pkg, tpkg;
   if (lang == Verilog)
-    fprintf(f, "%s%s", i->worker->m_implName, suff.c_str());
+    fprintf(f, "\n%s%s", i->worker->m_implName, suff.c_str());
   else {
     OU::format(pkg, "%s%s.%s_defs", i->worker->m_library, suff.c_str(), i->worker->m_implName);
     OU::format(tpkg, "%s%s.%s_constants", i->worker->m_library, suff.c_str(), i->worker->m_implName);
-    fprintf(f, "  %s_i : component %s.%s_rv%s\n",
+    fprintf(f, "\n  %s_i : component %s.%s_rv%s\n",
 	    i->name, pkg.c_str(), i->worker->m_implName, suff.c_str());
   }
   bool any = false;
@@ -544,13 +548,15 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
   }
   std::string last(any ? "," : "");
   std::string comment;
+  std::string exprs;
   ip = i->m_ports;
   for (unsigned n = 0; n < i->worker->m_ports.size(); n++, ip++) {
     // We can't do this since we need the opportunity of stubbing unconnected ports properly
     //    if (ip->m_attachments.empty())
     //      continue;
     ip->m_port->emitPortSignals(f, ip->m_attachments, lang, indent, any, comment, last,
-				myComment(), ip->m_ocp); 
+				myComment(), ip->m_ocp,
+				ip->m_hasExprs ? &ip->m_signalIn : NULL, exprs);
     any = true;
   } // end of port loop
   // First we need to figure out whether this is an emulator worker or a worker that
@@ -653,6 +659,8 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
     }
   }
   fprintf(f, ");%s%s\n", comment.size() ? " // " : "", comment.c_str());
+  // Emit any deferred temporary assigments for signals that have expressions.
+  fputs(exprs.c_str(), f);
   // Now we must tie off any outputs that are generically expected, but are not
   // part of the worker's interface
   if (i->worker->m_wci) {

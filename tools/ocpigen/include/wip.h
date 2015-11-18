@@ -195,8 +195,8 @@ class DataPort : public OcpPort {
   void emitRecordInterfaceConstants(FILE *f);
   void emitVerilogPortParameters(FILE *f);
   static const char *adjustConnection(const char *masterName,
-				      Port &prodPort, OcpAdapt *prodAdapt,
-				      Port &consPort, OcpAdapt *consAdapt,
+				      Port &prodPort, OcpAdapt *prodAdapt, bool &prodHasExpr,
+				      Port &consPort, OcpAdapt *consAdapt, bool &consHasExpr,
 				      Language lang);
   virtual const char *adjustConnection(Port &consumer, const char *masterName, Language lang,
 				       OcpAdapt *prodAdapt, OcpAdapt *consAdapt);
@@ -234,7 +234,8 @@ class WciPort : public OcpPort {
   void emitVHDLShellPortMap(FILE *f, std::string &last);
   void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 		       const char *indent, bool &any, std::string &comment,
-		       std::string &last, const char *myComment, OcpAdapt *adapt);
+		       std::string &last, const char *myComment, OcpAdapt *adapt,
+		       std::string *signalIn, std::string &exprs);
   const char *finalizeExternal(Worker &aw, Worker &iw, InstancePort &ip,
 			       bool &cantDataResetWhileSuspended);
 };
@@ -405,7 +406,8 @@ class TimeServicePort : public Port {
   void emitVHDLSignalWrapperPortMap(FILE *f, std::string &last);
   void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 		       const char *indent, bool &any, std::string &comment,
-		       std::string &last, const char *myComment, OcpAdapt *adapt);
+		       std::string &last, const char *myComment, OcpAdapt *adapt,
+		       std::string *signalIn, std::string &exprs);
   void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
 };
 class TimeBasePort : public Port {
@@ -426,7 +428,8 @@ class TimeBasePort : public Port {
 #if 0 
   void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 		       const char *indent, bool &any, std::string &comment,
-		       std::string &last, const char *myComment, OcpAdapt *adapt);
+		       std::string &last, const char *myComment, OcpAdapt *adapt,
+		       std::string *signalIn, std::string &exprs);
 #endif
   void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
 };
@@ -471,7 +474,8 @@ class DevSignalsPort : public Port {
 			  std::string &comment, std::string &last, Attachment *other);
   void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 		       const char *indent, bool &any, std::string &comment,
-		       std::string &last, const char *myComment, OcpAdapt *adapt);
+		       std::string &last, const char *myComment, OcpAdapt *adapt,
+		       std::string *signalIn, std::string &exprs);
   void emitExtAssignment(FILE *f, bool int2ext, const std::string &extName,
 			 const std::string &intName, const Attachment &extAt,
 			 const Attachment &intAt, size_t count) const;

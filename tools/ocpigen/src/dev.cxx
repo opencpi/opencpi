@@ -166,7 +166,7 @@ emitPortSignalsDir(FILE *f, bool output, const char *indent, bool &any, std::str
 void DevSignalsPort::
 emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *indent,
 		bool &any, std::string &comment, std::string &last, const char */*myComment*/,
-		OcpAdapt */*adapt*/) {
+		OcpAdapt */*adapt*/, std::string */*hasExprs*/, std::string &/*exprs*/) {
   Attachment *at = atts.front();
   Attachment *otherAt = NULL;
   if (at) {

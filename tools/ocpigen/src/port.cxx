@@ -499,7 +499,7 @@ emitConnectionSignal(FILE */*f*/, bool /*output*/, Language /*lang*/, std::strin
 void Port::
 emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *indent,
 		bool &any, std::string &comment, std::string &last, const char *myComment,
-		OcpAdapt */*adapt*/) {
+		OcpAdapt */*adapt*/, std::string */*hasExprs*/, std::string &/*exprs*/) {
   doPrev(f, last, comment, myComment);
   std::string in, out, index;
   OU::format(in, typeNameIn.c_str(), "");
@@ -823,7 +823,7 @@ emitVHDLSignalWrapperPortMap(FILE *f, std::string &last) {
 void TimeServicePort::
 emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *indent,
 		bool &any, std::string &comment, std::string &last, const char *myComment,
-		OcpAdapt */*adapt*/) {
+		OcpAdapt */*adapt*/, std::string */*hasExprs*/, std::string &/*exprs*/) {
   doPrev(f, last, comment, myComment);
   std::string in, out;
   OU::format(in, typeNameIn.c_str(), "");
