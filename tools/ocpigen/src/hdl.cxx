@@ -135,7 +135,7 @@ parseHdlImpl(const char *package) {
 	    m_ctl.nonRawWritables = true;
 	  if (p.m_isVolatile)
 	    m_ctl.nonRawVolatiles = true;
-	  if (p.m_isVolatile || p.m_isReadable && !p.m_isWritable)
+	  if (p.m_isVolatile || p.m_isReadable && !p.m_isWritable && !p.m_isParameter)
 	    m_ctl.nonRawReadbacks = true;
 	  m_ctl.nNonRawRunProperties++;
 	  if (p.m_isSub32)
