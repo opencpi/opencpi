@@ -45,9 +45,11 @@ HdlToolSet_stratix5:=quartus
 
 # Make the initial definition as a simply-expanded variable
 HdlAllPlatforms:=
-ifndef OCPI_HDL_PLATFORM_PATH
-  OCPI_HDL_PLATFORM_PATH:=$(OCPI_CDK_DIR)/lib/platforms
-endif
+
+override OCPI_HDL_PLATFORM_PATH:=$(call Unique,\
+  $(OCPI_HDL_PLATFORM_PATH) \
+  $(foreach p,$(subst :, ,$(OCPI_PROJECT_PATH)) $(OCPI_CDK_DIR),$(call OcpiExists,$p/lib/platforms)))
+
 define doPlatformsDir
   HdlSavePlatforms:=$$(HdlAllPlatforms)
   include $1/$(notdir $1).mk

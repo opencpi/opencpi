@@ -77,7 +77,7 @@ ModelsimArgs=-pedanticerrors -work $(WorkLib) -modelsimini modelsim.ini
 HdlToolCompile=\
   (echo '; This file is generated for building this '$(LibName)' library.';\
    echo '[library]' ; \
-   $(foreach l,$(HdlLibrariesInternal),\
+   $(foreach l,$(HdlLibrariesInternal),$(infox LLL:$l)\
       echo $(lastword $(subst -, ,$(notdir $l)))=$(strip \
         $(call FindRelative,$(TargetDir),$(strip \
            $(call HdlLibraryRefDir,$l,$(HdlTarget),,modelsim))));) \
@@ -108,7 +108,7 @@ define HdlToolDoPlatform_modelsim
 
 # Generate bitstream
 $1/$3.tar:
-	$(AT)echo Building modelsim simulation executable: "$$@" with details in $1/$3.out
+	$(AT)echo Building modelsim simulation executable: "$$@" with details in $1/$3-modelsim.out
 	$(AT)(set -e ; cd $1 && \
 	     echo -L $3 $$$$(grep = modelsim.ini | grep -v others= | sed 's/=.*//' | sed 's/^/-L /') > vsim.args && \
 	     export LM_LICENSE_FILE=$(OCPI_MODELSIM_LICENSE_FILE) && \

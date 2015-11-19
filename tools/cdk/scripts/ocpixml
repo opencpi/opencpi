@@ -54,7 +54,7 @@ case $1 in
    fi
    ;;
   (*)
-   echo Unknown command \"$1\".  Valid commands are: get, strip, add. >&2
+   echo ocpixml: Unknown command \"$1\".  Valid commands are: get, strip, add. >&2
    exit 1
    ;;
 esac

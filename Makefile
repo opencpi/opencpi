@@ -33,10 +33,16 @@
 #
 ########################################################################### #
 
+ProjectPrefix=ocpi
 ifndef OCPI_BASE_DIR
   $(error The environment is not set up properly to run "make" here.  You must source an environment setup script)
 endif
-
+ifeq ($(wildcard exports),)
+  ifeq ($(filter clean%,$(MAKECMDGOALS)),)
+    $(info Exports have never been set up for this tree  Doing it now.)
+  endif
+  $(info $(shell ./scripts/makeExportLinks.sh $(OCPI_TARGET_HOST) $(ProjectPrefix)_ xxx))
+endif
 ifneq ($(OCPI_OS),)
 SYSTEMOPTION="OCPI_OS=$(OCPI_OS)"
 endif
@@ -159,10 +165,14 @@ ALLPACKAGES = \
 # ----------------------------------------------------------------------
 #
 
-all: packages links
+all: packages exports
+.PHONY: exports
 
-links:
-	./scripts/makeExportLinks $(OCPI_TARGET_DIR)
+
+exports:
+	$(AT)./scripts/makeExportLinks.sh $(OCPI_TARGET_DIR) $(ProjectPrefix)_
+
+#	./scripts/makeExportLinks $(OCPI_TARGET_DIR)
 
 .PHONY: hdl hdlcomps hdlapps hdlclean
 hdlcomps:
@@ -185,6 +195,8 @@ cleanhdl:
 
 #	$(MAKE) -C components cleanhdl this happens in the hdl subdir (using ../components)
 
+rcc ocl hdl: exports
+
 rcc:
 	make -C components rcc
 
@@ -198,7 +210,7 @@ cleanocl:
 	make -C components cleanocl
 
 .PHONY : examples
-examples:
+examples: exports
 	make -C examples
 
 cleanexamples:
@@ -214,7 +226,7 @@ cleancomponents:
 	make -C components clean
 
 .PHONY: prims
-hdlprimitives:
+hdlprimitives: exports
 	$(MAKE) -C hdl primitives
 
 driver:
@@ -243,7 +255,7 @@ $(PACKAGES):
 		$(MAKE) $(call DescendMake,$@) $(SYSTEMOPTION) -f $(call AdjustRelative,$@,)/Makefile.ocpi.for-pkg ; \
 	fi
 
-clean: cleancomponents cleanexamples cleanlinks
+clean: cleancomponents cleanexamples
 	$(AT)rm -r -f lib
 	$(AT)$(foreach p,$(ALLPACKAGES),\
 		if test -f $p/Makefile.ocpi ; then \
@@ -253,8 +265,8 @@ clean: cleancomponents cleanexamples cleanlinks
 		fi ; \
 	)
 
-cleanlinks:
-	$(AT)rm -r -f tools/cdk/export/bin tools/cdk/export/lib/*-*-*
+cleanexports:
+	$(AT)rm -r -f exports
 
 distclean: clean
 	find . -name '*~' -exec rm {} \;
@@ -269,22 +281,11 @@ cleaneverything: distclean cleandrivers
 	-find . -depth -name 'target-*' -exec rm -r '{}' ';'
 	-find . -depth -name 'gen' -exec rm -r '{}' ';'
 	-find . -depth -name "lib" -a ! -path "*export*" -a ! -path "*/platforms/*" -a -type d -a -exec rm -r "{}" ";"
+	$(AT)rm -r -f exports
 
 tar:
 	tar cvf ocpi.tar Makefile MakeVars.ocpi Makefile.ocpi.for-* scripts platforms $(ALLPACKAGES)
 	gzip -9 ocpi.tar
-
-#
-# Note: the "sed" command does not work on Solaris; its sed does not
-# recognize "\t" as a tab. Works fine on Linux and Cygwin.
-#
-
-diff:
-	-diff -r -c $(VOBDIR) . > $@
-	-grep "^--- \./" diff | sed -e 's/^--- \(\.\/.*\)\t.*$$/\1/' > diff.q
-
-diff.q:
-	-grep "^--- \./" diff | sed -e 's/^--- \(\.\/.*\)\t.*$$/\1/' > diff.q
 
 #
 # Shallow package dependencies.
@@ -297,14 +298,14 @@ runtime/dataplane/tests: \
 export_cdk:
 	mydate=`date +%G%m%d%H%M%S`; \
 	file=opencpi-cdk-$$mydate.tgz; \
-	(cd tools/cdk/export; find . -follow -type l) > $$file.exclude; \
+	(cd exports; find . -follow -type l) > $$file.exclude; \
 	if [ -s $$file.exclude ] ; then \
 	  echo ==== These symlinks are broken for this export: ; \
 	  cat $$file.exclude ; \
 	  echo ==== End of broken symlinks; \
 	fi; \
 	echo Creating export file: $$file; \
-	tar -z -h -f $$file -c -X $$file.exclude -C tools/cdk/export .
+	tar -z -h -f $$file -c -X $$file.exclude -C exports .
 
 
 etags: 

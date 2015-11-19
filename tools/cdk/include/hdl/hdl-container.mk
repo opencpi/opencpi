@@ -71,9 +71,11 @@ override LibDir=$(HdlAssembly)/lib/hdl
 ifneq ($(MAKECMDGOALS),clean)
   override Platform:=$(if $(filter 1,$(words $(HdlPlatforms))),$(HdlPlatforms))
   $(eval $(HdlSearchComponentLibraries))
+  $(infox XMLI3:$(XmlIncludeDirsInternal):$(ComponentLibraries):$(HdlPlatform):$(HdlPlatformDir_$(HdlPlatform)))
   include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
   ifndef HdlSkip
     $(eval $(HdlPrepareAssembly))
+    $(infox XMLI4:$(XmlIncludeDirsInternal):$(ComponentLibraries):$(HdlPlatform):$(HdlPlatformDir_$(HdlPlatform)))
     include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
     ifndef HdlSkip
       HdlContName=$(Worker)$(if $(filter 0,$1),,_$1)
@@ -102,7 +104,7 @@ ifneq ($(MAKECMDGOALS),clean)
         $(call HdlContBitZName,$1): $(call HdlContBitName,$1)
 	   $(AT)echo Making compressed bit file: $$@ from $$< and $(call ArtifactXmlName,$1)
 	   $(AT)gzip -c $(call HdlContBitName,$1) > $$@
-	   $(AT)$(ToolsDir)/../../scripts/addmeta $(call ArtifactXmlName,$1) $$@
+	   $(AT)$(ToolsDir)/../../scripts/ocpixml add $$@ $(call ArtifactXmlName,$1)
 
         $(call HdlContBitZ,$1): | $(call HdlContBitZName,$1)
 	    $(AT)ln -s $(notdir $(call HdlContBitZName,$1)) $$@
