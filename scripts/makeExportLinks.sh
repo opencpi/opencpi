@@ -126,7 +126,10 @@ for f in $facilities; do
     if [ ! -e $libpath ]; then
       libpath=target-$1/$lib
       if [ ! -e $libpath ]; then
-        continue
+        libpath=target-$1/.libs/$lib
+        if [ ! -e $libpath ]; then
+          continue
+        fi
       fi
     fi
     foundlib=$libpath
@@ -134,7 +137,7 @@ for f in $facilities; do
   done
   if [ "$foundlib" = "" ]; then
      if [ "$3" == "" ]; then
-       echo Library lib$2$(basename $f) not found in $f/target-$1/\* nor target-$1/\*
+       echo Library lib$2$(basename $f) not found in $f/target-$1/\*, target-$1/\*, nor target-$1/.libs/\*
      fi
 #    exit 1
   fi

@@ -120,7 +120,7 @@ $1/$3.tar:
 	       $$(foreach i,$$(shell grep = $1/modelsim.ini | grep -v others=),\
                  $$(foreach l,$$(firstword $$(subst =, ,$$i)),\
                    $$(foreach p,$$(word 2,$$(subst =, ,$$i)),\
-		     --xform=s=$$(subst ../,,$$p)=$$l= $$p ))) $3 ) > $1/$3.out 2>&1
+		     --xform=s=$$(subst ../,,$$p)=$$l= $$p ))) $3 ) > $1/$3-modelsim.out 2>&1
 
 endef
 

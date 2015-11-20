@@ -97,7 +97,6 @@ MODFILE=$(MyTargetDir)/$(MODNAME).ko
 URULESFILE=99-$(MODNAME).rules
 MRULESFILE=mdev-$(MODNAME).rules
 JUNK=Module.markers Module.symvers .opencpi* opencpi.mod.* opencpi.o .tmp*
-INSTALLED=$(MyLib)/$(MODFILE) $(MyLib)/$(URULESFILE) $(MyLib)/$(MRULESFILE)
 all:	installed
 
 $(MODFILE): opencpi.c $(shell echo $$(cd $(KERNELDIR); pwd -P))

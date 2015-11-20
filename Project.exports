@@ -48,6 +48,7 @@ tests
 +tools/cdk/include/package.mk include/
 +tools/cdk/include/worker.mk include/
 +tools/cdk/include/xxx-worker.mk include/
++tools/cdk/include/ocpisetup.mk include/
 # CDK scripts we need
 +tools/cdk/scripts/makeStaticWorker scripts/
 +tools/cdk/scripts/ocpidriver scripts/
@@ -69,6 +70,8 @@ tests
 +tools/cdk/include/rcc/rcc-make.mk include/rcc/
 +tools/cdk/include/rcc/rcc-worker.mk include/rcc/
 +tools/cdk/include/rcc/default.mk include/rcc/
+# We export everything in tools/cdk/include/hdl, although we could be more careful...
++tools/cdk/include/hdl include/hdl
 # These should be in a common-to-zynq-platforms dir in "platforms"...
 +tools/cdk/include/rcc/linux-c6-x86_64=linux-zynq-arm.mk include/rcc/
 +tools/cdk/include/rcc/linux-c7-x86_64=linux-zynq-arm.mk include/rcc/
