@@ -13,7 +13,7 @@ architecture rtl of sdp_send_worker is
   constant count_width_c  : natural := width_for_max(max_buffers_c);
   constant nbytes_width_c : natural := width_for_max(sdp_width_c * 4); -- nbytes in frame
   constant max_remotes_c  : natural := to_integer(max_remotes);
-
+  constant max_seg_dws_c  : natural := 32;
   -- Metadata (internal) FIFO definitions
   constant meta_length_c  : natural := 0;
   constant meta_length_width_c : natural := 23;
@@ -332,8 +332,8 @@ g0: for i in 0 to sdp_width_c-1 generate
     procedure begin_segment(ndws_left : meta_dw_count_t) is
       variable ndws : unsigned(ndws_left'range);
     begin
-      if ndws_left > sdp.sdp.max_pkt_dws then
-        ndws :=  to_unsigned(sdp.sdp.max_pkt_dws, ndws'length);
+      if ndws_left > max_seg_dws_c then
+        ndws :=  to_unsigned(max_seg_dws_c, ndws'length);
       else
         ndws :=  ndws_left;
       end if;
@@ -446,7 +446,7 @@ g0: for i in 0 to sdp_width_c-1 generate
               case sdp_remote_phase_r is
                 when data_e =>
                   if sdp_msg_dws_left_r /= 0 then
-                    sdp_segment_addr_r <= sdp_segment_addr_r + sdp.sdp.max_pkt_dws;
+                    sdp_segment_addr_r <= sdp_segment_addr_r + max_seg_dws_c;
                     begin_segment(sdp_msg_dws_left_r);
                   else
                     begin_meta;

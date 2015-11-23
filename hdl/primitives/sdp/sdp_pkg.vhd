@@ -6,7 +6,7 @@ package sdp is
 -- We're in a DWORD (32-bit) world.  The data path is a mutiple of 32 bits.
 -- The start byte offset and end byte offset are for DWORDS
 -- The address is in DWORDS.
-constant max_reads_outstanding  : natural := 8;
+constant max_reads_outstanding  : natural := 8;  -- PER NODE, throttled down with properties
 constant max_message_kbytes     : natural := 16; -- jumbo frames +
 constant max_addressable_kbytes : natural := 64*1024; -- 64MB per node
 constant max_nodes              : natural := 1024; -- always includes one for control, implies
@@ -21,7 +21,7 @@ constant count_width            : natural := width_for_max(max_message_units-1);
 constant end_bytes_width        : natural := width_for_max(datum_bytes - 1);
 constant addr_width             : natural := width_for_max(1024-1) +
                                              width_for_max(max_addressable_kbytes/datum_bytes-1);
-constant max_pkt_dws            : natural := 32;
+constant max_pkt_dws            : natural := max_message_units;
 type op_t is (read_e,
               write_e,
               response_e,

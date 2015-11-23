@@ -1063,9 +1063,9 @@ createDevice(const std::string &name, const std::string &platform, uint8_t spinC
     return NULL;
   }
   script = xenv;
-  script += "/scripts/";
+  script += "/lib/platforms/";
   if (platform.empty()) {
-    OS::FileIterator fi(script, "runSimExec.*");
+    OS::FileIterator fi(script, "*/runSimExec.*");
     if (fi.end()) {
       OU::format(error, "There is no supported simulation platform (no %s/runSimExec.*)",
 		 script.c_str());
@@ -1080,7 +1080,8 @@ createDevice(const std::string &name, const std::string &platform, uint8_t spinC
     size_t len = platform.length();
     actualPlatform.assign(platform.c_str(),
 			  !strcmp("_pf", platform.c_str() + len - 3) ? len - 3 : len);
-    script += "runSimExec.";
+    script += actualPlatform;
+    script += "/runSimExec.";
     script += actualPlatform;
     if (!OS::FileSystem::exists(script)) {
       OU::format(error, "\"%s\" is not a supported simulation platform (no %s)",

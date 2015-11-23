@@ -1,15 +1,3 @@
-
-# #####
-#
-#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
-#
-#    Mercury Federal Systems, Incorporated
-#    1901 South Bell Street
-#    Suite 402
-#    Arlington, Virginia 22202
-#    United States of America
-#    Telephone 703-413-0781
-#    FAX 703-413-0784
 #
 #  This file is part of OpenCPI (www.opencpi.org).
 #     ____                   __________   ____
@@ -33,10 +21,6 @@
 #  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
 #
 ########################################################################### #
-
-OCPI_CDK_DIR=../../ocpi
-include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
-
 ImportCoreDirs=\
   $(OCPI_HDL_IMPORTS_DIR)/coregen/temac_v6 \
   $(OCPI_HDL_IMPORTS_DIR)/coregen/dram_v6_mig37 \
@@ -48,70 +32,10 @@ ImportCoreDirs=\
   $(OCPI_HDL_IMPORTS_DIR)/coregen/pcie_4243_hip_s4gx_gen2_x4_128 \
   $(OCPI_HDL_IMPORTS_DIR)/coregen/ddc_4243_4ch_v5
 
-include $(OCPI_CDK_DIR)/include/hdl/hdl-import-cores.mk
-
-# These libraries may be order sensitive if they depend on each other
-# bsv is "leaf".
 Libs=bsv fixed_float ocpi util platform sdp zynq stratix4 virtex5 virtex6 xilinx
+# All cores here are imported
+Cores=
 
-#LocalCores=xfft_v7_1 \
- temac_v6 \
- pcie_4243_axi_v6_gtx_x4_250 \
- pcie_4243_trn_s6_x1_125 \
- pcie_4243_trn_v5_gtp_x1_125 \
- pcie_4243_trn_v5_gtp_x8_125 \
- pcie_4243_trn_v5_gtx_x8_125 \
-
-# pcie_4243_trn_v6_gtx_x4_250 
-# pcie_4243_trn_v6es_gtx_x4_250 
-
-Cores=$(LocalCores) $(ImportCores)
-
-HdlInstallDir:=lib
-MyMake=$(MAKE) $(and $(HdlTargets),HdlTargets="$(HdlTargets)") --no-print-directory -C $1 \
-  OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) \
-  HdlInstallDir=$(call AdjustRelative,$(HdlInstallDir)) \
-
-all: $(Libs) $(Cores)
-hdl: all
-# enable cores to use libs
-$(LocalCores): $(Libs)
-
-clean: uninstall
-	$(AT)$(foreach l,$(Libs) $(Cores), $(call MyMake,$l) clean;)
-
-cleanimports:
-	$(AT)$(foreach l,$(Libs) $(LocalCores), $(call MyMake,$l) cleanimports;)
-
-diff: diff_cores diff_libs
-
-diff_libs:
-	$(AT)$(foreach l,$(Libs), $(call MyMake,$l) DIFF_IMPORTS=sdf diff;)
-
-install:
-	$(AT)set -e;$(foreach l,$(Libs) $(Cores),$(call MyMake,$l) install;)
-
-uninstall:
-	$(AT)echo Removing all installed HDL primitives and codes from: ./lib
-	$(AT)rm -r -f lib
-
-.PHONY: $(Libs) $(Cores)
-
-define MakeCoreOrLib
-	$(AT)$(call MyMake,$@)
-	$(AT)$(call MyMake,$@) install
-endef
-
-$(Libs):
-	$(AT)echo ============== For library $@:
-	$(MakeCoreOrLib)
-
-$(LocalCores):
-	$(AT)echo ============== For core $@:
-	$(MakeCoreOrLib)
-
-$(ImportCores):
-	$(AT)echo ============== For imported core $@:
-	$(MakeCoreOrLib)
+include $(OCPI_CDK_DIR)/include/hdl/hdl-primitives.mk
 
 

@@ -322,10 +322,13 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
            ezxml_t adwXml,  // the xml adapter/infrastructure worker attached to this port if any
            ezxml_t adXml,   // the xml adapter instance attached to this port if any
 	   bool argIsProvider) :
-        OC::PortBase<OCPI::HDL::Worker,Port,ExternalPort>(w, *this, mPort, argIsProvider,
-					       // (1 << OCPI::RDT::Passive) |
-					       (1 << OCPI::RDT::ActiveFlowControl) |
-					       (1 << OCPI::RDT::ActiveMessage), params),
+        OC::PortBase<OCPI::HDL::Worker,Port,ExternalPort>
+	(w, *this, mPort, argIsProvider,
+	 // bad initialization order: need info to figure out role but base class needs it now
+	 // (1 << OCPI::RDT::Passive) |
+	 (ezxml_cattr(icwXml, "name") && !strncasecmp(ezxml_cattr(icwXml, "name"), "sdp", 3) ?
+	  (1 << OCPI::RDT::ActiveFlowControl) : 0) |
+	 (1 << OCPI::RDT::ActiveMessage), params),
 	// The WCI will control the interconnect worker.
 	// If there is no such worker, usable will fail.
         WciControl(w.m_container.hdlDevice(), icwXml, icXml, NULL),

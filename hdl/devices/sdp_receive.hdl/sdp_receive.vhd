@@ -234,9 +234,9 @@ g0: for i in 0 to sdp_width_c-1 generate
                           wsi_buffer_addr_r +
                           props_in.buffer_size(bram_addr_t'left + addr_shift_c
                                                downto addr_shift_c);
-  brama_addr           <= wsi_next_buffer_addr when its(last_give)
-                          else brama_addr_r + 1 when its(will_give) 
-                          else brama_addr_r;
+  brama_addr           <= wsi_next_buffer_addr when last_give and will_give else
+                          brama_addr_r + 1 when its(will_give) else
+                          brama_addr_r;
   will_give            <= to_bool(operating_r and not its(overflow_r) and md_not_empty and
                                   out_in.ready);
   last_give            <= to_bool(wsi_dws_left = 0);
