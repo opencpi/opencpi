@@ -55,7 +55,7 @@ echo You should have already customized the mysetup.sh script for your environme
 if test -r ../mynetsetup.sh; then
   cp ../mynetsetup.sh $sd/opencpi
 fi
-if test -r ../mynetsetup.sh; then
+if test -r ../mysetup.sh; then
   cp ../mysetup.sh $sd/opencpi
 fi
 # After this is files for standalone operation
@@ -84,7 +84,7 @@ cp $OCPI_CDK_DIR/examples/xml/{*.xml,test.input} $sd/opencpi/xml
 cp ../system.xml $sd/opencpi
 n=0
 echo Adding artifacts found in OCPI_LIBRARY_PATH for linux-zynq-arm and zed targets.
-for i in $(ocpirun -A linux-zynq-arm,zed); do
+for i in $(ocpirun -A linux-zynq-arm,zed | sort); do
   cp $i $sd/opencpi/artifacts/$(printf %03d-%s $n $(basename $i))
   n=$(expr $n + 1)
 done

@@ -92,6 +92,19 @@ function make_filtered_link {
   make_relative_link $1 $2
 }
 
+if test "$*" = ""; then
+  echo "Usage is: makeExportLinks.sh <target> <prefix>"
+  echo "This script takes two arguments:"
+  echo "  <target> in the form of <os>-<version>-<machine>, e.g. linux-c6-x86_64"
+  echo "    It is commonly used with the value of the OCPI_TARGET_HOST environment variable."
+  echo "  <prefix> is the prefix for all libraries in this project."
+  echo '    For the CDK/core project, it is "ocpi_"'
+  echo '    It is typically the project prefix followed by underscore'
+  echo 'This script is typically used internally by "make exports"'
+  echo 'It is designed to be run repeatedly, making links to whatever exists.'
+  echo 'Thus it is run several times during the build process.'
+  exit 1
+fi
 os=$(echo $1 | sed 's/^\([^-]*\).*$/\1/')
 dylib=$(if [ $os = macos ]; then echo dylib; else echo so; fi)
 set -e

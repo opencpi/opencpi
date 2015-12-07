@@ -41,6 +41,14 @@ override SHELL=/bin/bash
 export AT
 export OCPI_DEBUG_MAKE
 AT=@
+ifndef OCPI_NATIVE_OSS
+# Import RPM-based settings
+ifneq ($(OCPI_CROSS_HOST),)
+include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_CROSS_HOST).mk
+else
+include $(OCPI_CDK_DIR)/include/autoconfig_import.mk
+endif
+endif
 OCPI_DEBUG_MAKE=
 ifneq (,)
 define OcpiDoInclude
@@ -116,7 +124,6 @@ ECHO=/bin/echo
 Empty=
 #default assumes all generated files go before all authored files
 CompiledSourceFiles=$(TargetSourceFiles) $(GeneratedSourceFiles) $(AuthoredSourceFiles)
-Space=$(Empty) $(Empty)
 # Just for history (thanks Andrew): this only works with tcsh, not traditional csh.  And csh isn't posix anywah
 #Capitalize=$(shell csh -f -c 'echo $${1:u}' $(1))
 #UnCapitalize=$(shell csh -f -c 'echo $${1:l}' $(1))
@@ -242,7 +249,7 @@ ReplaceIfDifferent=\
       NEWHASH=$(call TreeHash,$(1));\
       OLDHASH=$(call TreeHash,$$OLD);\
       if test "$$OLDHASH" = "$$NEWHASH"; then\
-        echo Installation suppressed for $(1). Destination is identical.; \
+        echo Installation suppressed for $(1) in $(2). Destination is identical.; \
         break; \
       fi; \
       if test -e $$OLD; then \
@@ -296,6 +303,7 @@ LibraryRefFile=$(call $(CapModel)LibraryRefFile,$1,$2)
 
 ################################################################################
 # Tools for metadata and generated files
+DateStamp := $(shell date +"%c")
 ToolsDir=$(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_DIR)
 ifeq ($(HostSystem),darwin)
 DYN_PREFIX=DYLD_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/$(OCPI_TOOL_DIR)
@@ -368,6 +376,7 @@ ParamMsg=$(and $(ParamConfigurations), $(strip \
 RmRv=$(if $(filter %_rv,$1),$(patsubst %_rv,%,$1),$1)
 
 OcpiAdjustLibraries=$(foreach l,$1,$(if $(findstring /,$l),$(call AdjustRelative,$l),$l))
+
 ifndef OCPI_PREREQUISITES_INSTALL_DIR
   export OCPI_PREREQUISITES_INSTALL_DIR:=/opt/opencpi/prerequisites
 endif
@@ -379,5 +388,55 @@ endif
 # There are strange NFS mount use cases that might not return the real path,
 # so if that happens, drop to the older/slower Shell call.
 OcpiExists=$(infox OEX:$1)$(foreach x,$(realpath $1),$(if $(filter /%,$x),$1,$(strip $(shell if test -e $1; then echo $1; fi))))
+
+OcpiCheckLinks=$(strip \
+  $(foreach d,$1,$d$(shell test -L $d -a ! -e $d && echo " (a link to non-existent/unbuilt?)")))
+
+define OcpiComponentSearchError
+The component library "$1" was not found in any of these locations: $(call OcpiCheckLinks,$2)
+OCPI_HDL_COMPONENT_LIBRARY_PATH is: $(OCPI_HDL_COMPONENT_LIBRARY_PATH)
+OCPI_COMPONENT_LIBRARY_PATH is: $(OCPI_COMPONENT_LIBRARY_PATH)
+OCPI_PROJECT_PATH is: $(OCPI_PROJECT_PATH)
+OCPI_CDK_DIR is: $(OCPI_CDK_DIR)
+endef
+
+# Given a location of a component library, return the relevant subdirectory
+# This normalizes between exported libraries and source libraries
+OcpiComponentLibraryExists=$(or $(call OcpiExists,$1/lib),$(call OcpiExists,$1))
+
+# Search for a component library by name, independent of target
+# This is not used for component libraries specified by location (with slashes)
+# $(call OcpiSearchComponentPath,lib)
+OcpiSearchComponentPath=\
+  $(eval OcpiTempPlaces:=$(strip\
+       $(subst :, ,$(OCPI_HDL_COMPONENT_LIBRARY_PATH)) \
+       $(subst :, ,$(OCPI_COMPONENT_LIBRARY_PATH)) \
+       $(foreach d,$(subst :, ,$(OCPI_PROJECT_PATH)) $(OCPI_CDK_DIR),$d/lib)))\
+  $(eval OcpiTempDirs:= $(strip \
+    $(foreach p,$(OcpiTempPlaces),\
+       $(foreach d,$p/$1,$(call OcpiComponentLibraryExists,$d)))))\
+  $(or $(OcpiTempDirs)$(infox HTD:$(OcpiTempDirs)),\
+    $(if $(filter clean,$(MAKECMDGOALS)),,$(error $(call OcpiComponentSearchError,$1,$(OcpiTempPlaces)))))
+
+
+
+# Collect component libraries independent of targets.
+# Normalize the list at the spec level
+# No arguments
+OcpiComponentLibraries=$(strip\
+    $(foreach c,$(call Unique,$(ComponentLibraries) $(ComponentLibrariesInternal)),$(infox HCL:$c)\
+      $(if $(findstring /,$c),\
+         $(or $(call OcpiComponentLibraryExists,$c),\
+              $(error Component library $c (from ComponentLibraries) not found.)),\
+         $(call OcpiSearchComponentPath,$c))))
+
+# Return the list of XML search directories for component libraries
+# This currently has a sort of HACK in that it searches the hdl subdir
+# since hdl workers need to be referenced by rcc workers.
+OcpiXmlComponentLibraries=$(infox HXC)\
+  $(eval OcpiTempDirs:= $(strip \
+    $(foreach c,$(OcpiComponentLibraries),$c/hdl $c/$(Model) $c))) \
+  $(infox OcpiXmlComponentLibraries returned: $(OcpiTempDirs))\
+  $(OcpiTempDirs)
 
 endif # ifndef __UTIL_MK__

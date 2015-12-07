@@ -1171,29 +1171,19 @@ namespace OCPI {
 	script += "/lib/platforms/";
 	std::string actualPlatform;
 	if (platform.empty()) {
-	  OS::FileIterator fi(script, "runSimExec.*");
-	  if (fi.end()) {
-	    OU::format(error, "There is no supported simulation platform (no %s/runSimExec.*)",
-		       script.c_str());
-	    return;
-	  }
-	  std::string cmd = fi.relativeName();
-	  const char *cp = strchr(cmd.c_str(), '.');
-	  assert(cp);
-	  actualPlatform = ++cp;
-	  script += cmd;
-	} else {
-	  size_t len = platform.length();
-	  actualPlatform.assign(platform.c_str(), !strcmp("_pf", platform.c_str() + len - 3) ? len - 3 : len);
-	  script += actualPlatform;
-	  script += "/";
-	  script += "runSimExec.";
-	  script += actualPlatform;
-	  if (!OS::FileSystem::exists(script)) {
-	    OU::format(error, "\"%s\" is not a supported simulation platform (no %s)",
-		       platform.c_str(), script.c_str());
-	    return;
-	  }
+	  OU::format(error, "You must specify a simulation platform (-p <sim_pf>");
+	  return;
+	}
+	size_t len = platform.length();
+	actualPlatform.assign(platform.c_str(), !strcmp("_pf", platform.c_str() + len - 3) ? len - 3 : len);
+	script += platform;
+	script += "/";
+	script += "runSimExec.";
+	script += platform;
+	if (!OS::FileSystem::exists(script)) {
+	  OU::format(error, "\"%s\" is not a supported simulation platform (no %s)",
+		     platform.c_str(), script.c_str());
+	  return;
 	}
 	pid_t pid = getpid();
 	OU::format(m_simDir, "%s/%s", OH::Sim::TMPDIR, OH::Sim::SIMDIR);
