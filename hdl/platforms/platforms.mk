@@ -1,4 +1,4 @@
-HdlAllPlatforms+=ml555 schist ml605 ocpiIsim alst4 alst4x wilda5 isim_pf xsim_pf n210 modelsim_pf iva1lpe zed wilda5 zzed sp6 zed_zipper
+HdlAllPlatforms+=ml555 schist ml605 alst4 alst4x wilda5 isim_pf xsim_pf n210 modelsim_pf iva1lpe zed wilda5 zzed sp6 zed_zipper
 # Parts as chip-speed-package
 HdlPart_ml555:=xc5vlx50t-1-ff1136
 HdlPart_schist:=xc5vsx95t-2-ff1136

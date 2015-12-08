@@ -57,8 +57,10 @@ $(call OcpiDbgVar,HdlPlatforms)
 # We are building a platform that is not known in the core or in the environment
 ifeq (,$(filter $(Worker),$(HdlAllPlatforms)))
   HdlAllPlatforms+=$(Worker)
+  HdlPlatformDir_$(Worker):=$(call OcpiAbsPath,.)
   include $(Worker).mk
-  export OCPI_HDL_PLATFORM_PATH+=:$(call OcpiAbsPath,.)
+  override OCPI_HDL_PLATFORM_PATH:=$(HdlPlatformDir_$(Worker))
+  export OCPI_HDL_PLATFORM_PATH
 endif
 override HdlPlatforms:=$(Worker)
 override HdlPlatform:=$(Worker)

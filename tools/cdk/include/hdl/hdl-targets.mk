@@ -55,11 +55,11 @@ define doPlatformsDir
   include $1/$(notdir $1).mk
   HdlNewPlatforms:=$$(filter-out $$(HdlSavePlatforms),$$(HdlAllPlatforms))
   $$(foreach p,$$(filter-out $$(HdlSavePlatforms),$$(HdlNewPlatforms)),\
-    $$(eval HdlPlatformDir_$$p:=$1/$$p)\
-    $$(eval HdlAllPlatforms+=$$p))
+    $$(eval HdlPlatformDir_$$p:=$1/$$p))\
 
 endef
   
+$(call OcpiDbgVar,HdlAllPlatforms)
 $(foreach d,$(subst :, ,$(OCPI_HDL_PLATFORM_PATH)),\
   $(foreach p,$(notdir $d),\
     $(if $(filter platforms,$p),$(eval $(call doPlatformsDir,$d)),\
