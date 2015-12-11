@@ -1,32 +1,31 @@
 #!/bin/sh
 set -e
-if test "$OCPI_BASE_DIR" != ""; then
-  echo Since OCPI_BASE_DIR is set, we will use the existing environment.
+if test "$OCPI_CDK_DIR" != ""; then
+  echo Since OCPI_CDK_DIR is set, we will use the existing environment.
   if test "$1" != ""; then
-   if test "$1" != "$OCPI_TARGET_PLATFORM"; then
+   if "$1" != "$OCPI_TARGET_PLATFORM"; then
       echo Error: supplied platform $1 is different from the environment: $OCPI_TARGET_PLATFORM
       exit 1
    fi
   fi
 else
-  # We're being run in an uninitialized environment
-  if test ! -d env -o ! -d platforms; then
+  # We're being run in an uninitialized environment.
+  if test ! -x ./scripts/makeExportLinks.sh; then
     echo It appears that this script is not being run at the top level of OpenCPI.
     exit 1
   fi
+  # Ensure a skeletal CDK
+  ./scripts/makeExportLinks.sh - x x
   if test "$1" != ""; then
     echo Supplied cross-platform is $1.
-    if test -d platforms/$1; then
-     source env/default-cross.sh $1
-     test $? = 0 || exit 1; 
-    else
-     echo Error: $1 is not a supported platform.
-     exit 1
+    if test "$OCPI_TARGET_PLATFORM" != ""; then
+      echo You cannot supply an argment '(target platform)' when OCPI_TARGET_PLATFORM is set.
+      exit 1
     fi
-  else
-    source env/default-env.sh
-    test $? = 0 || exit 1; 
-  fi
+    export OCPI_TARGET_PLATFORM=$1
+  fi 
+  # Initialize access to CDK
+  source exports/scripts/ocpisetup.sh exports/scripts/ocpisetup.sh
 fi
 echo ================================================================================
 echo We are running in `pwd` where the git clone of opencpi has been placed.

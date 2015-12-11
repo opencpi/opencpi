@@ -40,7 +40,7 @@ CXX = c++
 LD = c++
 ARSUFFIX=a
 
-ifeq ($(wildcard $(OCPI_CDK_DIR)/include/autoconfig_import.mk),)
+ifeq ($(wildcard $(OCPI_CDK_DIR)/include/autoconfig_import*),)
   # Native non-autotools/RPM CDK
   # Determine unset variables dynamically here, again with the goal of sane default
   # behavior with no environment requirements at all.
@@ -82,7 +82,7 @@ ifeq ($(wildcard $(OCPI_CDK_DIR)/include/autoconfig_import.mk),)
     export OCPI_TOOL_DIR:=$(OCPI_TOOL_HOST)
   endif
   p:=$(OCPI_CDK_DIR)/platforms/$(OCPI_TOOL_PLATFORM)
-  f:=$p/tool-setup.mk
+  f:=$p/$(OCPI_TOOL_PLATFORM)-tool.mk
   ifeq ($(wildcard $f),)
 #    $(warning There is no tool setup file ($f) for platform $(OCPI_TOOL_PLATFORM).  This may be ok.)
   else
@@ -120,7 +120,7 @@ endif
 # Run the target-specific make setup script
 p:=$(OCPI_CDK_DIR)/platforms/$(OCPI_TARGET_PLATFORM)
 # Note that this script has access to OCPI_TOOL_xxx if the settings vary by tool host
-f:=$p/target-setup.mk
+f:=$p/$(OCPI_TARGET_PLATFORM)-target.mk
 ifeq ($(wildcard $f),)
   $(error There is no target setup file ($f) for platform $(OCPI_TARGET_PLATFORM).)
 else
@@ -141,7 +141,6 @@ else
 endif
 export OCPI_BUILD_SHARED_LIBRARIES 
 export OCPI_DYNAMIC
-
 ifdef OCPI_TARGET_DIR
   $(warning OCPI_TARGET_DIR is unexpectedly set.)
 else

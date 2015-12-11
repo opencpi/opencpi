@@ -229,8 +229,9 @@ hdlprimitives: exports
 	$(MAKE) -C hdl primitives
 
 driver:
-	$(AT)if test -d os/$(OCPI_OS)/driver; then \
+	$(AT)set -e; if test -d os/$(OCPI_OS)/driver; then \
 	  $(MAKE) -C os/$(OCPI_OS)/driver; \
+	  $(MAKE) exports; \
 	else \
 	  echo No driver for the OS '"'$(OCPI_OS)'"', so none built. ; \
 	fi

@@ -57,6 +57,15 @@ if [ "$OCPI_CDK_DIR" = "" -o ! -d "$OCPI_CDK_DIR" ]; then # and any other sanity
     exit 1
   fi
 fi
+if test "$OCPI_DYNAMIC" = ""; then
+  if test "$OCPI_BUILD_SHARED_LIBRARIES" != ""; then
+    export OCPI_DYNAMIC=$OCPI_BUILD_SHARED_LIBRARIES
+  else
+    export OCPI_DYNAMIC=0
+  fi
+fi
+export OCPI_BUILD_SHARED_LIBRARIES=$OCPI_DYNAMIC
+
 if test "$OCPI_TOOL_HOST" = ""; then
   GETPLATFORM=$OCPI_CDK_DIR/platforms/getPlatform.sh
   vars=($(${GETPLATFORM}))
@@ -73,7 +82,7 @@ fi
 # Determine OCPI_TOOL_MODE if it is not set already
 # It can be set to null to suppress these modes, and just use whatever has been
 # built without modes.
-if test "${OCPI_TOOL_MODE+UNSET}" = ""; then
+if test "$OCPI_USE_TOOL_MODES" != ""; then
   # OCPI_TOOL_MODE not set at all, just look for one
   for i in sd so dd do; do
     if test -x "$OCPI_CDK_DIR/$OCPI_TOOL_HOST/$i/ocpirun"; then
