@@ -29,7 +29,7 @@
 # run this in the binary executables directory by doing: ../bin/src/run_tests.sh
 export OCPI_RCC_TARGET=$OCPI_TARGET_HOST
 export OCPI_SMB_SIZE=3000000
-export OCPI_LIBRARY_PATH=$OCPI_BASE_DIR/components/lib/rcc
+export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/lib/components
 if test "$OCPI_TARGET_OS" = macos; then
   export OCPI_RCC_SUFFIX=dylib
 else

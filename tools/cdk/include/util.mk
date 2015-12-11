@@ -41,8 +41,8 @@ override SHELL=/bin/bash
 export AT
 export OCPI_DEBUG_MAKE
 AT=@
-ifndef OCPI_NATIVE_OSS
-# Import RPM-based settings
+ifneq ($(wildcard $(OCPI_CDK_DIR)/include/autoconfig_import.mk),)
+# Import autotool/RPM-based settings
 ifneq ($(OCPI_CROSS_HOST),)
 include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_CROSS_HOST).mk
 else

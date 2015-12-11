@@ -263,10 +263,10 @@ LIBDEPDIR=$(strip \
 
 $(OBJDIR)/%.exe : $(OBJDIR)/%.obj $(DYNOBJS)
 	$(LD) $(MAIN_LDFLAGS) -o "$@"\
-	        $(infox DEPS:$^) $(infox MO:$(MAINOBJS)) $(infox DO: $(DYNOBJS)) \
+	        $(infox OS:$(OBJDIR):MO:$(MAINOBJS):UL:$(UNIXLIB):DEPS:$^) $(infox MO:$(MAINOBJS)) $(infox DO: $(DYNOBJS)) \
 		$(filter %.obj,$^) \
 		$(MAINOBJS) \
-	        $(if $(MAINOBJS),,$(if $(filter 0,$(OCPI_BUILD_SHARED_LIBRARIES)),$(EXPORTLIB),$(EXPORTSHLIB))) \
+	        $(if $(MAINOBJS),,$(OBJDIR)/$(notdir $(if $(filter 0,$(OCPI_BUILD_SHARED_LIBRARIES)),$(UNIXLIB),$(UNIXSHLIB)))) \
 		$(foreach l,$(ALLLIBS),$(call LIBDEP,$l)) \
 	 	$(foreach p,$(PREQLIBS),$(call PREQDEP,$p)) \
 		$(addprefix -L,$(call OcpiDir,$(SYSLIBS)) $(SYSLIBDIRS)) \

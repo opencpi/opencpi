@@ -106,7 +106,7 @@ if test "$*" = ""; then
   exit 1
 fi
 os=$(echo $1 | sed 's/^\([^-]*\).*$/\1/')
-dylib=$(if [ $os = macos ]; then echo dylib; else echo so; fi)
+dylib=$(if [ "$os" = macos ]; then echo dylib; else echo so; fi)
 set -e
 #rm -r -f exports
 mkdir -p exports
@@ -133,7 +133,8 @@ for f in $facilities; do
 
   # Make links to facility libraries
   foundlib=
-  for s in .$dylib _s.$dylib .a; do
+#  for s in .$dylib _s.$dylib .a; do
+  for s in  _s.$dylib .a; do
     lib=lib$2$(basename $f)$s
     libpath=$f/target-$1/$lib
     if [ ! -e $libpath ]; then

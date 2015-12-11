@@ -59,23 +59,25 @@ endif
 
 export PACKAGE = $(shell pwd|sed 's-.*/\([^/]*$$\)-\1-')
 #$(info PACKAGE $(PACKAGE))
-UNIXLIB = $(OBJDIR)/libocpi_$(PACKAGE).a
-UNIXSHLIB = $(OBJDIR)/libocpi_$(PACKAGE).$(SO)
-UNIXSHLIB_S = $(OBJDIR)/libocpi_$(PACKAGE)_s.$(SO)
-export EXPORTSHLIB=$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR)/$(notdir $(UNIXSHLIB))
-export EXPORTSHLIB_S=$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR)/$(notdir $(UNIXSHLIB_S))
-export EXPORTLIB=$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR)/$(notdir $(UNIXLIB))
+export UNIXLIB = $(OBJDIR)/libocpi_$(PACKAGE).a
+export UNIXSHLIB = $(OBJDIR)/libocpi_$(PACKAGE).$(SO)
+export UNIXSHLIB_S = $(OBJDIR)/libocpi_$(PACKAGE)_s.$(SO)
+#export EXPORTSHLIB=$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR)/$(notdir $(UNIXSHLIB))
+#export EXPORTSHLIB_S=$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR)/$(notdir $(UNIXSHLIB_S))
+#export EXPORTLIB=$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR)/$(notdir $(UNIXLIB))
 
+$(infox PACKAGE $(PACKAGE))
 ifneq ($(filter linux macos,$(OCPI_OS)),)
   EXCLUDE_FACILITIES += winnt vxworksdkm
   ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
     PACKAGELIB = \
-      $(EXPORTSHLIB) \
-      $(and $(filter 0,$(OCPI_PREVIOUS_DYNAMIC)),$(EXPORTSHLIB_S))
+      $(UNIXSHLIB) \
+      $(and $(filter 0,$(OCPI_PREVIOUS_DYNAMIC)),$(UNIXSHLIB_S))
   else
-    PACKAGELIB = $(EXPORTLIB)
+    PACKAGELIB = $(UNIXLIB)
   endif
 endif
+
 GENERATED = $(filter-out $(EXCLUDE_FACILITIES),$(patsubst %/idl,%,$(wildcard */idl)))
 FACILITIES = $(filter-out bin lib Makefile $(EXCLUDE_FACILITIES),$(patsubst %,%,$(wildcard *)))
 CSOURCES = $(filter-out $(addprefix %/,$(EXCLUDE_SOURCES)),\
@@ -163,14 +165,17 @@ PatchElf=$(OCPI_PREREQUISITES_INSTALL_DIR)/patchelf/$(OCPI_TOOL_HOST)/bin/patche
 $(UNIXSHLIB_S): $(UNIXSHLIB)
 	$(AT)echo Creating $@ for use with statically linked executables.
 	$(AT)$(DOSHLIB)
-	$(AT)$(PatchElf) \
-	    $(foreach l,$(ALLLIBS), --remove-needed libocpi_$(notdir $l).$(SO)) \
-	    $(foreach l,$(PREQLIBS), \
-	      $(foreach x,\
-	        $(wildcard $(OCPI_PREREQUISITES_INSTALL_DIR)/$l/$(OCPI_TOOL_HOST)/lib/lib$l.*), \
+	$(AT)if test "$(OCPI_TARGET_OS)" == macos; then \
+               cp $< $@; \
+             else \
+               $(PatchElf) \
+       	         $(foreach l,$(ALLLIBS), --remove-needed libocpi_$(notdir $l).$(SO)) \
+	         $(foreach l,$(PREQLIBS), \
+	         $(foreach x,\
+	           $(wildcard $(OCPI_PREREQUISITES_INSTALL_DIR)/$l/$(OCPI_TOOL_HOST)/lib/lib$l.*), \
 	        --remove-needed $(notdir $x))) \
-	    $@
-		
+	      $@; \
+            fi
 
 endif
 
@@ -189,7 +194,7 @@ objects: generated
 	      OBJDIR=../$(OCPI_OUT_DIR) $(SYSTEMOPTION) all ; \
 	  fi; \
 	fi
-	$(AT)for facility in $(FACILITIES) ; do \
+	$(AT)set -e; for facility in $(FACILITIES) ; do \
 	  if test -d $$facility/src ; then \
 	    if test -f $$facility/src/Makefile.ocpi ; then \
 		$(MAKE) $(call DescendMake2,$$facility/src) -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \

@@ -38,6 +38,7 @@
 #include <cerrno>
 #include <cctype>
 #include "OcpiOsEther.h"
+#include "OcpiOsFileSystem.h"
 #include "OcpiUtilValue.h"
 #include "OcpiUtilException.h"
 #include "OcpiUtilMisc.h"
@@ -732,5 +733,21 @@ baseName(const char *path, std::string &buf) {
     buf.clear();
   return buf.c_str();
 }
+// Search for the given name in a colon separated path
+// Set the full constructed path in "result".
+// Return true on error
+bool
+searchPath(const char *path, const char *item, std::string &result) {
+  char *cp = strdup(path), *last;
+  for (char *lp = strtok_r(cp, ":", &last); lp;
+       lp = strtok_r(NULL, ":", &last)) {
+    format(result, "%s/%s", lp, item);
+    bool isDir;
+    if (OS::FileSystem::exists(result, &isDir))
+      return false;
+  }
+  return true;
 }
+  }
+
 }

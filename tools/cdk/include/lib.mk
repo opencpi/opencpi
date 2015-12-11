@@ -102,9 +102,9 @@ ifneq ($(AssyImplementations),)
 build_targets += assy
 endif
 
-ifneq ($(TestImplementations),)
-build_targets += test
-endif
+#ifneq ($(TestImplementations),)
+#build_targets += test
+#endif
 
 $(call OcpiDbgVar,build_targets)
 # function to build the targets for an implemention.
