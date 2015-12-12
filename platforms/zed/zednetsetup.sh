@@ -29,10 +29,14 @@ else
   # Note the ocpidriver load command is innocuous if run redundantly
   export OCPI_CDK_DIR=/mnt/net/$3
   cat <<EOF > $HOME/.profile
-    export OCPI_TOOL_MODE=$OCPI_TOOL_MODE
-    export OCPI_TARGET_MODE=$OCPI_TARGET_MODE
+    echo Executing $HOME/.profile.
     export OCPI_CDK_DIR=$OCPI_CDK_DIR
-    source $OCPI_CDK_DIR/scripts/ocpisetup.sh $OCPI_CDK_DIR/scripts/ocpisetup.sh
+    export OCPI_TOOL_HOST=linux-zynq-arm
+    export OCPI_TOOL_DIR=\$OCPI_TOOL_HOST
+    export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/lib/components/rcc:\$OCPI_TOOL_DIR:$OCPI_CDK_DIR/lib/platforms/zed
+    export PATH=$OCPI_CDK_DIR/bin/\$OCPI_TOOL_DIR:$OCPI_CDK_DIR/scripts:\$PATH
+    # This is only for explicitly-linked driver libraries.  Fixed someday.
+    export LD_LIBRARY_PATH=$OCPI_CDK_DIR/lib/$OCPI_TOOL_DIR:\$LD_LIBRARY_PATH
     ocpidriver load
     export TZ=$5
     echo OpenCPI ready for zed.
@@ -42,6 +46,7 @@ else
        echo Error: enable to find /mnt/card/opencpi/mynetsetup.sh
     fi
 EOF
+  echo Running login script. OCPI_CDK_DIR is now $OCPI_CDK_DIR.
   source $HOME/.profile
 fi
 

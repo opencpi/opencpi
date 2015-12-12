@@ -17,6 +17,7 @@ if [ ! -r $DIR/ocpi_${OS}_driver ] ; then
   echo There is no driver loading/unloading support for this system \(${OS}\).
   exit 1
 fi
+source $DIR/ocpibootstrap.sh $DIR/ocpibootstrap.sh
 
 if [ $1 = load -o $1 = unload -o $1 = reload -o $1 = status ] ; then
   exec sh $DIR/ocpi_${OS}_driver $1

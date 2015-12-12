@@ -116,12 +116,12 @@ additions=$(test -f Project.exports && grep '^[ 	]*+' Project.exports | sed 's/^
 set +f
 facilities=$(test -f Project.exports &&  grep -v '^[ 	]*[-+#]' Project.exports) || true
 for f in $facilities; do
+  if [ ! -d $f/target-$1 ]; then
+    continue; # silently ignore unbuilt facilities
+  fi
   # Make links to main programs
   mains=$(find $f -name '*_main.c' -o -name '*_main.cxx' | sed 's-^.*/\([^/]*\)_main\..*$-\1-')
   for m in $mains; do
-    if [ ! -d $f/target-$1 ]; then
-      continue; # silently ignore unbuilt facilities
-    fi
     exe=$f/target-$1/$m
     if [ ! -e $exe ]; then
       exe=target-$1/$m

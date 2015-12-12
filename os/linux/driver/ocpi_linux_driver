@@ -6,7 +6,10 @@
 # Retrieve the reserved DMA memory value from the kernel command line
 # Note there might be multiple reservations, and we currently only support one (the first).
 
-source $OCPI_CDK_DIR/scripts/ocpisetup.sh $OCPI_CDK_DIR/scripts/ocpisetup.sh
+if test "$OCPI_CDK_DIR" = "" -o "$OCPI_TOOL_HOST" = ""; then
+  echo Error: this script "($0)" cannot be run without OCPI_CDK_DIR and OCPI_TOOL_HOST.
+fi
+
 MODNAME=opencpi
 SUDO=sudo
 MODFILE=$MODNAME.ko
@@ -30,22 +33,29 @@ fi
 if [ $# = 2 ] ; then # this is for the makefile
   DIR=.
 else
-  # if we are in a bin directory, we are in a standalone/embedded mode
-  DIR=`dirname $0`
-  DNAME=`basename $DIR`
-  if [ "$DNAME" = bin ] ; then
-    DIR="$DIR/../lib"
-  else
+#  There is no difference anymore to require this distinction
+#  For lots of reasons the standalone system still has the target subdir
+# if we are in a bin directory, we are in a standalone/embedded mode
+#  DIR=`dirname $0`
+#  DNAME=`basename $DIR`
+#  if [ "$DNAME" = bin ] ; then
+#    DIR="$DIR/../lib"
+#  else
     DIR=$OCPI_CDK_DIR/lib/$OCPI_TOOL_HOST
-    if test ! -e $DIR/$MODFILE; then
-      REL=`uname -r | sed 's/-dirty//'`
-      DIR2=$OCPI_CDK_DIR/driver/$REL/target-$OCPI_TOOL_HOST
-      if test ! -e $DIR2/$MODFILE; then
-        echo Error: cannot find driver/file $MODFILE in $DIR or $DIR2
-        exit 1
-      fi
-      DIR=$DIR2
-    fi
+#  fi
+  if test -f /etc/ocpi-release; then
+     LABEL=$(< /etc/ocpi-release)
+  else
+     LABEL=$(uname -r)
+  fi
+  if test -e $DIR/$MODNAME-$LABEL.ko; then
+    MODFILE=$MODNAME-$LABEL.ko
+  else
+    MODFILE=$MODNAME.ko
+  fi
+  if test ! -e $DIR/$MODFILE; then
+    echo Error: cannot find driver/file "$MODNAME*.ko" in $DIR
+    exit 1
   fi
 fi
 MODPATH=$DIR/$MODFILE

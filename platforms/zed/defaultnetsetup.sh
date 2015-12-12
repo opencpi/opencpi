@@ -5,7 +5,7 @@
 # 2. The core setup HAS been run and you are just setting up a shell or ssh session
 
 trap "trap - ERR; break" ERR; for i in 1; do
-if test "$OCPI_BASE_DIR" = ""; then
+if test "$OCPI_CDK_DIR" = ""; then
   if test "$1" = ""; then
      echo It appears that the environment is not set up yet.
      echo You must supply the IP address of the OpenCPI server machine as an argument to this script.
@@ -24,12 +24,12 @@ fi
 # Tell the ocpihdl utility to always assume the FPGA device is the zynq PL.
 export OCPI_DEFAULT_HDL_DEVICE=pl:0
 # Set my OCPI path to some bitstream directories I am working on.
-export OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:$OCPI_BASE_DIR/hdl/assemblies/biascapture:$OCPI_BASE_DIR/hdl/assemblies/testbias:$OCPI_BASE_DIR/hdl/assemblies/patternbias
+#export OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:$OCPI_BASE_DIR/hdl/assemblies/biascapture:$OCPI_BASE_DIR/hdl/assemblies/testbias:$OCPI_BASE_DIR/hdl/assemblies/patternbias
 # The system config file sets the default SMB size
 export OCPI_SYSTEM_CONFIG=/mnt/card/opencpi/system.xml
 export OCPI_SUPPRESS_HDL_NETWORK_DISCOVERY=1
 # Get ready to run some test xml-based applications
-cd $OCPI_BASE_DIR/examples/xml
+cd $OCPI_CDK_DIR/examples/xml
 # Shorten the default shell prompt
 PS1='% '
 # Print the available containers as a sanity check

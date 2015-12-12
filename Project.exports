@@ -55,6 +55,7 @@ tests
 +tools/cdk/scripts/ocpixml scripts/
 +tools/cdk/scripts/sudo_ocpi scripts/
 +tools/cdk/scripts/ocpisetup.sh scripts/
++tools/cdk/scripts/ocpibootstrap.sh scripts/
 # linux driver
 +os/linux/driver/99-opencpi.rules lib/<target>/
 +os/linux/driver/mdev-opencpi.rules lib/<target>/

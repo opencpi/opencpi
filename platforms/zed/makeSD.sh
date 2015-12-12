@@ -71,33 +71,36 @@ if test -r ../mysetup.sh; then
 fi
 
 # After this is files for standalone operation
-if test ! -e ${KERNEL_LIB_DIR}/opencpi.ko; then
-  echo The OpenCPI linux kernel driver for zed has not been built.
-  echo It is expected to be in: ${KERNEL_LIB_DIR}/opencpi.ko
+shopt -s nullglob
+drivers=(${KERNEL_LIB_DIR}/opencpi*.ko)
+shopt -u nullglob
+if test "${drivers[*]}" = ""; then
+  echo No OpenCPI linux kernel drivers for zed have been built.
+  echo It is expected to be in: "${KERNEL_LIB_DIR}/opencpi*.ko"
   exit 1
 fi
-cp ${KERNEL_LIB_DIR}/opencpi.ko $sd/opencpi/lib
-cp ${KERNEL_LIB_DIR}/mdev-opencpi.rules $sd/opencpi/lib
+mkdir $sd/opencpi/lib/linux-zynq-arm
+cp -L ${KERNEL_LIB_DIR}/opencpi*.ko $sd/opencpi/lib/linux-zynq-arm
+cp -L ${KERNEL_LIB_DIR}/mdev-opencpi.rules $sd/opencpi/lib/linux-zynq-arm
 for b in run hdl zynq serve; do
-  cp $BIN_DIR/ocpi$b $sd/opencpi/bin
+  cp -L $BIN_DIR/ocpi$b $sd/opencpi/bin
   test -z $RPM_BUILD_ROOT && $OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-strip $sd/opencpi/bin/ocpi$b
 done
 # we use rdate for now... : cp ../ntpclient $sd/opencpi/bin
 # cp ../libstdc++.so.6 $sd/opencpi/lib
 # copy driver libraries to the subdirectory so that OCPI_CDK_DIR will
 # find them.
-mkdir $sd/opencpi/lib/linux-zynq-arm
 cp -L ${RUNTIME_LIB_DIR}/*_s.so $sd/opencpi/lib/linux-zynq-arm
-
-cp $OCPI_CDK_DIR/scripts/ocpidriver $sd/opencpi/bin
-cp $OCPI_CDK_DIR/scripts/ocpi_linux_driver $sd/opencpi/bin
-cp ${EXAMPLES_ROOTDIR}/examples/xml/{*.xml,test.input} $sd/opencpi/xml
+cp -L $OCPI_CDK_DIR/scripts/ocpibootstrap.sh $sd/opencpi/bin
+cp -L $OCPI_CDK_DIR/scripts/ocpidriver $sd/opencpi/bin
+cp -L $OCPI_CDK_DIR/scripts/ocpi_linux_driver $sd/opencpi/bin
+cp -L ${EXAMPLES_ROOTDIR}/examples/xml/{*.xml,test.input} $sd/opencpi/xml
 # Add the default system.xml to the SD card.
 cp ../system.xml $sd/opencpi
 n=0
 echo Adding artifacts found in OCPI_LIBRARY_PATH for linux-zynq-arm and zed targets.
 for i in $($OCPIRUN_PATH/ocpirun -A linux-zynq-arm,zed | sort); do
-  cp $i $sd/opencpi/artifacts/$(printf %03d-%s $n $(basename $i))
+  cp -L $i $sd/opencpi/artifacts/$(printf %03d-%s $n $(basename $i))
   n=$(expr $n + 1)
 done
 echo Added $n artifacts to SD image.
