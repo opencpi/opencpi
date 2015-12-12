@@ -6,8 +6,10 @@
 # Retrieve the reserved DMA memory value from the kernel command line
 # Note there might be multiple reservations, and we currently only support one (the first).
 
+source $OCPI_CDK_DIR/scripts/ocpisetup.sh $OCPI_CDK_DIR/scripts/ocpisetup.sh
 MODNAME=opencpi
 SUDO=sudo
+MODFILE=$MODNAME.ko
 RULESFILE=99-$MODNAME.rules
 if [ -x /sbin/udevcontrol ] ; then
 RELOAD="/sbin/udevcontrol reload_rules"
@@ -21,6 +23,10 @@ else
  echo Error: None of /sbin/udevcontrol, /sbin/udevadm, or /sbin/mdev were found and executable.
  exit 1
 fi
+# Don't run sudo if already root
+if [ $(id -u) = 0 ]; then
+  SUDO=
+fi
 if [ $# = 2 ] ; then # this is for the makefile
   DIR=.
 else
@@ -31,21 +37,27 @@ else
     DIR="$DIR/../lib"
   else
     DIR=$OCPI_CDK_DIR/lib/$OCPI_TOOL_HOST
+    if test ! -e $DIR/$MODFILE; then
+      REL=`uname -r | sed 's/-dirty//'`
+      DIR2=$OCPI_CDK_DIR/driver/$REL/target-$OCPI_TOOL_HOST
+      if test ! -e $DIR2/$MODFILE; then
+        echo Error: cannot find driver/file $MODFILE in $DIR or $DIR2
+        exit 1
+      fi
+      DIR=$DIR2
+    fi
   fi
 fi
-
-RULESPATH=$DIR/$RULESFILE
-MODNAME=opencpi
-MODFILE=$MODNAME.ko
 MODPATH=$DIR/$MODFILE
+RULESPATH=$DIR/$RULESFILE
 
 rudev () {
   if [ "$RELOAD" = '' ] ; then
     sed '/ocpi=/d' < /etc/mdev.conf > /tmp/dmdev.conf
     mv /tmp/dmdev.conf /etc/mdev.conf
   else
-    sudo rm -f /etc/udev/rules.d/$RULESFILE
-    sudo $RELOAD
+    $SUDO rm -f /etc/udev/rules.d/$RULESFILE
+    $SUDO $RELOAD
   fi
 }
 
@@ -116,22 +128,21 @@ if [ "$RELOAD" = '' ] ; then
     cat $RULESPATH >> /etc/mdev.conf
   fi
 else
-  sudo cp $RULESPATH /etc/udev/rules.d &&
-  sudo $RELOAD
+  $SUDO cp $RULESPATH /etc/udev/rules.d &&
+  $SUDO $RELOAD
   if test $? != 0; then
     exit 1
   fi
 fi
 $SUDO /sbin/insmod $MODPATH $INSARG
+RES=$?
 #sudo /sbin/modprobe -v 
-if [ $? = 0 ] ; then
+if [ $RES = 0 ] ; then
   # check /dev?
   echo Driver loaded successfully.
+  exit 0
 else
   rudev
   echo Driver loading failed.
+  exit $RES
 fi
-  
-
-
-

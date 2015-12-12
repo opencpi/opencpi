@@ -19,7 +19,7 @@ else
   # Make $zed point to the zed platform directory in the OpenCPI dev tree
   zed=/mnt/net/$3/platforms/zed
   # Copy the (missing) C++ runtime environment library into the current RAM rootFS
-  cp $zed/libstdc++.so.6 /lib
+  # cp $zed/libstdc++.so.6 /lib
   # Make sure the hostname is in the host table
   myipaddr=`ifconfig | grep -v 127.0.0.1 | sed -n '/inet addr:/s/^.*inet addr: *\([^ ]*\).*$/\1/p'`
   myhostname=`hostname`

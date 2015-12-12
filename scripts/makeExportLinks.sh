@@ -110,10 +110,11 @@ dylib=$(if [ "$os" = macos ]; then echo dylib; else echo so; fi)
 set -e
 #rm -r -f exports
 mkdir -p exports
+set -f
 exclusions=$(test -f Project.exports && grep '^[ 	]*-' Project.exports | sed 's/^[ 	]*-[ 	]*\([^ 	#]*\)[ 	]*\([^ 	#]*\).*$/\1:\2/') || true
 additions=$(test -f Project.exports && grep '^[ 	]*+' Project.exports | sed 's/^[ 	]*+[ 	]*\([^ 	#]*\)[ 	]*\([^ 	#]*\).*$/\1:\2/') || true
+set +f
 facilities=$(test -f Project.exports &&  grep -v '^[ 	]*[-+#]' Project.exports) || true
-
 for f in $facilities; do
   # Make links to main programs
   mains=$(find $f -name '*_main.c' -o -name '*_main.cxx' | sed 's-^.*/\([^/]*\)_main\..*$-\1-')
@@ -202,13 +203,16 @@ if [ -d hdl/primitives -a -f hdl/primitives/Makefile ]; then
 fi
 
 # Add the ad-hoc export links
+set -f
 for a in $additions; do
   declare -a both=($(echo $a | tr : ' '))
-  src=${both[0]//<target>/$1}
+  rawsrc=${both[0]//<target>/$1}
+  set +f
+  for src in $rawsrc; do
   if [ -e $src ]; then
     after=
     if [[ ${both[1]} =~ /$ || ${both[1]} == "" ]]; then
-      after=$(basename ${both[0]})
+      after=$(basename $src)
     fi
     make_relative_link $src exports/${both[1]//<target>/$1}$after
   else
@@ -216,4 +220,6 @@ for a in $additions; do
       echo Warning: link source $src does not '(yet?)' exist.
     fi
   fi
+  done
+  set -f
 done

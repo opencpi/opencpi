@@ -58,7 +58,7 @@ tests
 # linux driver
 +os/linux/driver/99-opencpi.rules lib/<target>/
 +os/linux/driver/mdev-opencpi.rules lib/<target>/
-+os/linux/driver/target-<target>/opencpi.ko lib/<target>/
++os/linux/driver/target-<target>/opencpi*.ko lib/<target>/
 +os/linux/driver/ocpi_linux_driver scripts/
 ################################################################################
 # RCC related exclusions and additions

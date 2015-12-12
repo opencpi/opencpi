@@ -32,6 +32,9 @@
 #  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
 #
 ########################################################################### #
+ThisMake := $(lastword $(MAKEFILE_LIST))
+-include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_CROSS_HOST).mk
+-include $(OCPI_CDK_DIR)/include/autoconfig_import.mk
 
 # To build modules outside of the kernel tree, we run "make"
 # in the kernel source tree; the Makefile there then includes this
@@ -39,47 +42,49 @@
 # FIXME: add dependencies on the actual kernel stuff so when we update
 # a kernel the rebuild is automatic?  Perhaps via "deps"?
 
+AT?=@
 # This conditional selects whether we are being included from the
 # kernel Makefile or not. (this in-kernel building is not regularly tested)
 ifdef KERNELRELEASE
   # called from kernel build system: just declare what our modules are
   obj-m := opencpi.o
 else
-ifdef OCPI_KERNEL_DIR
-  KERNELDIR := $(OCPI_KERNEL_DIR)
+ifdef OCPI_TARGET_KERNEL_DIR
+  KERNELDIR := $(OCPI_TARGET_KERNEL_DIR)
   ifeq ($(wildcard $(KERNELDIR)),)
-    $(error OCPI_KERNEL_DIR indicates '$(OCPI_KERNEL_DIR)', which does not exist)
+    $(error OCPI_TARGET_KERNEL_DIR indicates '$(OCPI_TARGET_KERNEL_DIR)', which does not exist)
   endif
   ifdef OCPI_CROSS_BUILD_BIN_DIR
     override CROSS_COMPILE:=$(OCPI_CROSS_BUILD_BIN_DIR)/$(OCPI_CROSS_HOST)-
-    override ARCH:=$(OCPI_ARCH)
+    override ARCH:=$(OCPI_TARGET_ARCH)
     export CROSS_COMPILE
     export ARCH
   endif
-  $(info OCPI_KERNEL_DIR was specified, we are now using: KERNELDIR=$(KERNELDIR) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE))
+  $(info OCPI_TARGET_KERNEL_DIR was specified, we are now using: KERNELDIR=$(KERNELDIR) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE))
 else
   ifdef OCPI_CROSS_BUILD_BIN_DIR
-   $(error OCPI_CROSS_BUILD_BIN_DIR is set, but OCPI_KERNEL_DIR is not set, which is not supported.)
+   $(error OCPI_CROSS_BUILD_BIN_DIR is set, but OCPI_TARGET_KERNEL_DIR is not set, which is not supported.)
   endif
   # Assume the source tree is where the running kernel was built
   # You should set KERNELDIR in the environment if it's elsewhere
   ifeq ($(filter clean topclean,$(MAKECMDGOALS)),)
     KERNELDIR ?= /lib/modules/$(shell uname -r)/build
     ifeq ($(wildcard $(KERNELDIR)),)
-      $(error Cannot figure out where the KERNELDIR should be.)
+      $(error Cannot figure out where the KERNELDIR should be (tried $(KERNELDIR)).)
     endif
-    $(info No OCPI_KERNEL_DIR specified, so using: KERNELDIR=$(KERNELDIR))
+    $(info No OCPI_TARGET_KERNEL_DIR specified, so using: KERNELDIR=$(KERNELDIR))
   endif
 endif
+ocpi_release:=$(shell cat $(OCPI_TARGET_KERNEL_DIR)/ocpi-release)
 # The current directory is passed to sub-makes as argument
 PWD := $(shell pwd)
 
 MODNAME = opencpi
 
 .DELETE_ON_ERROR:
-MyDir:=$(dir $(realpath $(lastword $(MAKEFILE_LIST))))
-MyTargetDir:=target-$(OCPI_TARGET_HOST)
-MyIncs= \
+MyDir:=$(dir $(realpath $(ThisMake)))
+MyTargetDir?=target-$(OCPI_TARGET_HOST)
+MyIncs?= \
          -I$(realpath $(MyDir)/../../../runtime/hdl/include) \
          -I$(realpath $(MyDir)/../../interfaces/include)
 MyLib:=$(realpath $(OCPI_CDK_DIR)/lib/$(OCPI_TARGET_HOST))
@@ -93,7 +98,7 @@ endif
 export EXTRA_CFLAGS := $(MyIncs) -Wformat=2
 # This is what works with Centos6
 export KCPPFLAGS := $(MyIncs) -Wformat=2
-MODFILE=$(MyTargetDir)/$(MODNAME).ko
+MODFILE=$(MyTargetDir)/$(MODNAME)$(if $(ocpi_release),-$(ocpi_release)).ko
 URULESFILE=99-$(MODNAME).rules
 MRULESFILE=mdev-$(MODNAME).rules
 JUNK=Module.markers Module.symvers .opencpi* opencpi.mod.* opencpi.o .tmp*
@@ -106,6 +111,7 @@ $(MODFILE): opencpi.c $(shell echo $$(cd $(KERNELDIR); pwd -P))
 	$(AT)mv $(MODNAME).ko $(MODFILE)
 	$(AT)rm -rf	$(JUNK)
 
+.PHONY: installed modules modules_install load unload
 modules: $(MODFILE)
 
 installed: $(MODFILE) $(URULESFILE) $(MRULESFILE)
@@ -120,10 +126,14 @@ load:
 unload:
 	$(AT)./ocpi_linux_driver unload x
 
+.PHONY: all clean topclean distclean
 # This clean is target specific
 clean:	
 	$(and $(KERNELDIR),$(MAKE) -C $(KERNELDIR) M=$(PWD) clean)
-	rm -rf	$(MyTargetDir) $(JUNK) $(MODFILE) $(MODFILE).unsigned modules.order
+	rm -rf $(JUNK) $(MODFILE) $(MODFILE).unsigned modules.order
+ifneq ($(MyTargetDir),.)
+	rm -rf $(MyTargetDir)
+endif
 
 # This clean is target specific
 topclean: clean
@@ -133,6 +143,5 @@ topclean: clean
 distclean: clean
 	rm -r -f target-*
 
-.PHONY: all clean topclean distclean
 
 endif

@@ -142,7 +142,7 @@ endif
 export OCPI_BUILD_SHARED_LIBRARIES 
 export OCPI_DYNAMIC
 ifdef OCPI_TARGET_DIR
-  $(warning OCPI_TARGET_DIR is unexpectedly set.)
+  # $(warning OCPI_TARGET_DIR is unexpectedly set.)
 else
  ifdef OCPI_USE_TARGET_MODES
    export OCPI_TARGET_MODE:=$(if $(filter 1,$(OCPI_DYNAMIC)),d,s)$(if $(filter 1,$(OCPI_DEBUG)),d,o)

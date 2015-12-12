@@ -20,7 +20,7 @@ else
     fi
   fi
   # Copy the (missing) C++ runtime environment library into the current RAM rootFS
-  cp $OCPI_ROOT_DIR/lib/libstdc++.so.6 /lib
+  # cp $OCPI_ROOT_DIR/lib/libstdc++.so.6 /lib
   # Make sure the hostname is in the host table
   myhostname=`hostname`
   if ! grep -q $myhostname /etc/hosts; then echo 127.0.0.1 $myhostname >> /etc/hosts; fi

@@ -109,7 +109,37 @@ else
   export OCPI_TOOL_DIR=$OCPI_TOOL_HOST/$OCPI_TOOL_MODE    	  
 fi
 # The tool mode and dir are set now, and are needed to set PATH below.
-if test "$OCPI_TARGET_HOST" = ""; then
+
+if test "$OCPI_TARGET_PLATFORM" = ""; then
+  if test "$OCPI_TARGET_HOST" != ""; then
+    # For compatibility if  OCPI_TARGET_PLATFORM not set.
+    for i in $OCPI_CDK_DIR/platforms/*; do
+     if test -f $i/target -a "$(< $i/target)" = "$OCPI_TARGET_HOST"; then
+       export OCPI_TARGET_PLATFORM=$(basename $i)
+       break
+     fi
+    done
+    if test "$OCPI_TARGET_PLATFORM" = ""; then
+      echo The value of $OCPI_TARGET_HOST does not match any known platform.
+      exit 1
+    fi
+  fi
+fi
+if test "$OCPI_TARGET_PLATFORM" != ""; then
+  if test "$OCPI_TARGET_HOST" = ""; then
+    f=$OCPI_CDK_DIR/platforms/$OCPI_TARGET_PLATFORM/target
+    if test ! -f $f; then
+      echo OCPI_TARGET_PLATFORM is $OCPI_TARGET_PLATFORM.  File $f is missing.
+      exit 1
+    fi
+    t=$(< $f)
+    export OCPI_TARGET_HOST=$t
+    vars=(${OCPI_TARGET_HOST//-/ })
+    export OCPI_TARGET_OS=${vars[0]}
+    export OCPI_TARGET_OS_VERSION=${vars[1]}
+    export OCPI_TARGET_ARCH=${vars[2]}
+  fi
+else
   export OCPI_TARGET_OS=$OCPI_TOOL_OS
   export OCPI_TARGET_OS_VERSION=$OCPI_TOOL_OS_VERSION
   export OCPI_TARGET_ARCH=$OCPI_TOOL_ARCH
@@ -129,8 +159,17 @@ if test "$OCPI_TARGET_DIR" = ""; then
   fi
 fi
 
+f=$OCPI_CDK_DIR/platforms/$OCPI_TARGET_PLATFORM/$OCPI_TARGET_PLATFORM-target.sh
+if test ! -f $f; then
+  echo Error: there is no file: \"$f\" to setup the build environment for the \"$OCPI_TARGET_PLATFORM\" platform.
+  exit 1
+fi
+source $f
 #default the target host to the tool host
 export PATH=$OCPI_CDK_DIR/bin/$OCPI_TOOL_DIR:$OCPI_CDK_DIR/scripts:$PATH
-export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/lib/components
+if test "$OCPI_LIBRARY_PATH" = ""; then
+  # Default library path for RCC workers only
+  export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/lib/components:$OCPI_CDK_DIR/lib/platforms/$OCPI_TARGET_PLATFORM
+fi
 echo OCPI_CDK_DIR is $OCPI_CDK_DIR and OCPI_TOOL_HOST is $OCPI_TOOL_HOST
 
