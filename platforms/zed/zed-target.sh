@@ -11,10 +11,10 @@ export OCPI_TARGET_CFLAGS="-mfpu=neon-fp16 -mfloat-abi=softfp -march=armv7-a -mt
 export OCPI_TARGET_CXXFLAGS="-mfpu=neon-fp16 -mfloat-abi=softfp -march=armv7-a -mtune=cortex-a9 -Wall -Wfloat-equal -Wextra -fno-strict-aliasing -Wconversion -std=c++0x"
 export OCPI_LDFLAGS=
 export OCPI_SHARED_LIBRARIES_FLAGS=
-export CC=$OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-gcc
-export CXX=$OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-c++
-export LD=$OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-c++
-export AR=$OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-ar
+#export CC=$OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-gcc
+#export CXX=$OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-c++
+#export LD=$OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-c++
+#export AR=$OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-ar
 export OCPI_EXPORT_DYNAMIC=-rdynamic
 export OCPI_EXTRA_LIBS="rt dl pthread"
 if test "$OCPI_TARGET_KERNEL_DIR" = ""; then
