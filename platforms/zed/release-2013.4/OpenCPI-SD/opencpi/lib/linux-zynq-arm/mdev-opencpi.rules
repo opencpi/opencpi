@@ -1,0 +1,4 @@
+# ocpi= This must be kept in sync with the udev rules file
+ocpi=mem 0:0 0666 =ocpi/mem
+ocpi=p=(*) 0:0 0666 =ocpi/pci/%1
+ocpi=e=(..)(..)(..)(..)(..)(..) 0:0 0666 =ocpi/ether/%1:%2:%3:%4:%5:%6
