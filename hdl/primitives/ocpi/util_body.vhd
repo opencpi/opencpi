@@ -4,7 +4,7 @@ function width_for_max(n : natural) return natural is begin
   return natural(ceil(log2(real(n+1))));
 end width_for_max;
 function roundup_2_power_of_2(n : natural) return natural is begin
-  return natural(ceil(log2(real(n))));
+  return 2 ** natural(ceil(log2(real(n))));
 end roundup_2_power_of_2;
 function slv(v : std_logic_vector) return std_logic_vector is
 begin

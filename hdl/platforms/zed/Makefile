@@ -1,5 +1,5 @@
-Libraries=zynq
-Configurations=\
+Libraries=zynq sdp
+#Configurations=\
   base \
   zed_zipper_fmc_rx \
   zed_zipper_fmc_tx \

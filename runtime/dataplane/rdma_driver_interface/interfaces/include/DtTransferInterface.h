@@ -191,7 +191,7 @@ namespace DataTransfer {
   // inherits from XferRequest above).
   class XferServices
   {
-                
+    SmemServices &m_source;
   public:
                  
     /*
@@ -204,8 +204,8 @@ namespace DataTransfer {
      *        Errors:
      *                DataTransferEx for all exception conditions
      */
-    XferServices ( SmemServices * /* source */ , SmemServices * /* target */ ){};
-
+    XferServices ( SmemServices *source, SmemServices * /* target */ ) : m_source(*source) {}
+    SmemServices &source() { return m_source; }
     /*
      * If this service requires a cookie for the remote connection, this method will return it.
      */
@@ -223,9 +223,13 @@ namespace DataTransfer {
      */
     virtual XferRequest* createXferRequest() = 0;
     
-    // Send to destination directly
+    // Send the given data to destination directly - like  write(2)
     virtual void send(DtOsDataTypes::Offset offset, uint8_t *data, size_t nbytes);
-                 
+#if 0
+    // Send the data from the given offset in the source endpoint, to the destination
+    virtual void send(DtOsDataTypes::Offset src_offset, DtOsDataTypes::Offset dst_offset,
+		      size_t nbytes);
+#endif                 
     /*
      * Destructor - implementations are required to track all OcpiXferRequests that they
      * produce (via Copy, Copy2D, and Group) and dispose of them when destructed.

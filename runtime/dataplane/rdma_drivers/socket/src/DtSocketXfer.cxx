@@ -356,6 +356,11 @@ protected:
     m_socket.send((char*)&hdr, sizeof(DataHeader));
     m_socket.send((char *)data, nbytes);
   }
+#if 0
+  void send(DtOsDataTypes::Offset src_offset, DtOsDataTypes::Offset dst_offset, size_t nbytes) {
+    send(dst_offset, (uint8_t *)source().map(src_offset, nbytes), nbytes);
+  }
+#endif
 };
 
 DT::XferServices *XferFactory::

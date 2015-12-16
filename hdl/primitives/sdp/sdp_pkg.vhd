@@ -9,8 +9,7 @@ package sdp is
 constant max_reads_outstanding  : natural := 8;  -- PER NODE, throttled down with properties
 constant max_message_kbytes     : natural := 16; -- jumbo frames +
 constant max_addressable_kbytes : natural := 64*1024; -- 64MB per node
-constant max_nodes              : natural := 1024; -- always includes one for control, implies
-                                                -- interconnect addr width
+constant max_nodes              : natural := 16; -- always includes one for control
 constant datum_bits             : natural := 32; -- THIS IS ASSUMED BY VARIOUS CLIENTS
 
 constant xid_width              : natural := width_for_max(max_reads_outstanding-1);
@@ -21,6 +20,7 @@ constant count_width            : natural := width_for_max(max_message_units-1);
 constant end_bytes_width        : natural := width_for_max(datum_bytes - 1);
 constant addr_width             : natural := width_for_max(1024-1) +
                                              width_for_max(max_addressable_kbytes/datum_bytes-1);
+constant extaddr_width          : natural := 36 - addr_width - width_for_max(datum_bytes-1);
 constant max_pkt_dws            : natural := max_message_units;
 type op_t is (read_e,
               write_e,
@@ -31,24 +31,26 @@ subtype id_t is unsigned(node_width-1 downto 0);
 subtype xid_t is unsigned(xid_width-1 downto 0);
 subtype count_t is unsigned(count_width-1 downto 0);
 subtype addr_t is unsigned(addr_width-1 downto 0);
+subtype extaddr_t is unsigned(extaddr_width-1 downto 0);
 subtype pkt_ndw_t is unsigned(count_width downto 0);
 -- ASSUMPTION:  count fits in first DW...
 -- UPDATE dws2header and header2dws if this is changed.
 type header_t is record
   -- Note the count must be first.
-  count : count_t;     -- like AXI: 0 means 1 etc.
-  op    : op_t;
-  xid   : xid_t;
-  lead  : unsigned(end_bytes_width-1 downto 0); -- similar to AXI address LSB
-  trail : unsigned(end_bytes_width-1 downto 0);
-  node  : id_t; -- part of address for outbound requests
-  addr  : addr_t;
+  count   : count_t;     -- like AXI: 0 means 1 etc.
+  op      : op_t;
+  xid     : xid_t;
+  lead    : unsigned(end_bytes_width-1 downto 0); -- similar to AXI address LSB
+  trail   : unsigned(end_bytes_width-1 downto 0);
+  node    : id_t; -- part of address for outbound requests
+  addr    : addr_t;
+  extaddr : extaddr_t; 
 end record header_t;
 constant sdp_header_width : natural := width_for_max(op_t'pos(op_t'high)) + xid_width + end_bytes_width*2 +
                                      count_width + node_width + addr_width;
 constant sdp_header_ndws  : natural := (sdp_header_width + (dword_t'length-1)) / dword_t'length;
 
-constant whole_addr_bits_c : integer := addr_width + node_width;
+constant whole_addr_bits_c : integer := addr_width + extaddr_width;
 subtype whole_addr_t is unsigned(whole_addr_bits_c-1 downto 0);
 
 -- The record in both directions
@@ -80,54 +82,28 @@ function count_in_dws(dw : dword_t) return unsigned;
 function start_dw(header : header_t; sdp_width : uchar_t) return natural;
 -- A full byte enable for the indicated datum in the packet.
 function header2be(h : header_t; word : unsigned) return std_logic_vector;
---function enable2which(enable : std_logic_vector) return which_t;
---function which64(which : which_t) return bool_t;
---function which2addr(which : which_t) return unsigned;
---function which2enable32(which : which_t) return unsigned;
---function which2enable64(which : which_t) return unsigned;
---type sdp_short_t is record         -- bits cum
---  is_short : bool_t;                --  1    1
---  op       : op_t;                  --  2    3
---  xid      : unsigned(2 downto 0);  --  3    6
---  which    : which_t;               --  4   10
---  -- after this is addressing
---  node     : unsigned(2 downto 0);  --  3   13 zero is known to be control plane
---  worker   : unsigned(4 downto 0);  --  5   18 zero is the platform worker
---  qwaddr   : unsigned(13 downto 0); -- 14   32 quad word (128KB) address  
---end record sdp_short_t;
---function from_sdp_short(sdp_short : sdp_short_t) return std_logic_vector;
---function to_sdp_short(slv : dword_t) return sdp_short_t;
---function from_sdp_long(sdp_long : sdp_long_t) return std_logic_vector;
---function to_sdp_long(dw : dword_t) return sdp_long_t;
---function is_short(dw : dword_t) return boolean;
---function payload_length(dw : dword_t) return unsigned;
--- The record that is an output from a data producer
---type sdp_oob_out_t is record
---  eom     : bool_t;  -- when valid, the data beat is the last of a message
---  valid   : bool_t;  -- the data path is valid
---end record sdp_oob_out_t;
----- The record that is an input to a data producer
---type sdp_oob_in_t is record
---  ready   : bool_t;  -- dequeue from producer
---end record sdp_oob_in_t;
---constant max_num_ids : positive := 4;
---constant id_width : positive := width_for_max(max_num_ids - 1);
---subtype id_t is unsigned(id_width-1 downto 0);
---constant max_num_positions : positive := 15;
---constant position_width : positive := width_for_max(max_num_positions - 1);
---subtype position_t is unsigned(position_width-1 downto 0);
----- Signals from the sdp to a client of it.
---type sdp2client_t is record
---  clk            : std_logic;
---  reset          : std_logic;
---  id             : id_t;
---  oob_for_s2c    : sdp_oob_out_t;
---  oob_for_c2s    : sdp_oob_in_t;
---end record sdp2client_t;
---type client2sdp_t is record
---  oob_for_s2c    : sdp_oob_in_t;
---  oob_for_c2s    : sdp_oob_out_t;
---end record client2sdp_t;
+
+--------------------------------------------------------------------------------
+-- Definitions for the compressed metadata dword used for DMA
+-- Metadata (internal) definitions are consistent with DtHandshakeControl.h
+--------------------------------------------------------------------------------
+constant meta_length_width_c : natural := 22;
+constant meta_eof_c          : natural := meta_length_width_c;
+constant meta_one_c          : natural := meta_eof_c + 1;
+constant meta_opcode_c       : natural := meta_one_c + 1;
+constant meta_opcode_width_c : natural := 8;
+subtype metalength_t is unsigned(meta_length_width_c-1 downto 0);
+subtype metalength_dws_t is unsigned(meta_length_width_c-1-dword_shift downto 0);
+type metadata_t is record
+  length : metalength_t;
+  eof    : bool_t;
+  opcode : std_logic_vector(meta_opcode_width_c-1 downto 0);
+end record metadata_t;
+constant metawidth_c : integer := meta_length_width_c + 1 + 1 + meta_opcode_width_c;
+constant meta_ndws_c : integer := (metawidth_c + dword_size - 1) / dword_size;
+subtype meta_dw_count_t is unsigned(meta_length_width_c-3 downto 0);
+function meta2slv(meta : metadata_t) return std_logic_vector;
+function slv2meta(s : std_logic_vector(metawidth_c-1 downto 0)) return metadata_t;
 
 component sdp_term
   generic(ocpi_debug      :     bool_t := bfalse;

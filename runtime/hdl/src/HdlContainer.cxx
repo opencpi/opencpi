@@ -39,6 +39,7 @@
 #include "HdlSdp.h"
 #include "HdlDriver.h"
 #include "HdlContainer.h"
+#include "HdlDummyWorker.h"
 
 #define wmb()        asm volatile("sfence" ::: "memory"); usleep(0)
 #define clflush(p) asm volatile("clflush %0" : "+m" (*(char *)(p))) //(*(volatile char __force *)p))
@@ -50,6 +51,7 @@ namespace OU = OCPI::Util;
 namespace OE = OCPI::Util::EzXml;
 namespace OD = OCPI::DataTransport;
 namespace OT = OCPI::Time;
+namespace OL = OCPI::Library;
 namespace DDT = DtOsDataTypes;
 
 namespace OCPI {
@@ -151,6 +153,67 @@ namespace OCPI {
       }
       ~Artifact() {}
     };
+
+    static void doWorkers(Device &device, ezxml_t top, char letter, bool hex) {
+      for (ezxml_t x = OE::ezxml_firstChild(top); x; x = OE::ezxml_nextChild(x)) {
+	if ((!strcasecmp(x->name, "instance") ||
+	     !strcasecmp(x->name, "adapter") ||
+	     !strcasecmp(x->name, "io") ||
+	     !strcasecmp(x->name, "interconnect"))) {
+	  size_t iindex;
+	  bool ifound = false;
+	  const char *err;
+	  if ((err = OE::getNumber(x, "occpIndex", &iindex, &ifound)))
+	    throw OU::Error("Unexpected occpIndex error: %s", err);
+	  const char *iname = ezxml_cattr(x, "name");
+	  if (letter && iname && iname[0] == letter) {
+	    const char
+	      *name = ezxml_attr(x, "name"),
+	      *idx = ezxml_attr(x, "occpIndex"),
+	      *wkr = ezxml_attr(x, "worker");
+	    ezxml_t impl = OE::findChildWithAttr(top, "worker", "name", wkr);
+	    if (!impl)
+	      throw OU::Error("Can't find worker '%s' for instance '%s'", name, wkr);
+	    fprintf(stderr, "  Instance %s of %s worker %s (spec %s)",
+		    name, strcasecmp(x->name, "instance") ? x->name :
+		    idx && !strcmp(idx, "0") ? "platform" : "normal",
+		    wkr, wkr ? ezxml_cattr(impl, "specname") : "<none>");
+	    if (idx) {
+	      fprintf(stderr, " with index %s", idx);
+	      DummyWorker w(device, impl, x, idx);
+	      fprintf(stderr, " status %s\n", w.status());
+	      std::string pname, value;
+	      bool unreadable;
+	      for (unsigned i = 0; w.getProperty(i, pname, value, &unreadable, hex); i++)
+		fprintf(stderr, "%3u %20s: %s\n", i, pname.c_str(),
+			unreadable ? "<unreadable>" : value.c_str());
+	    } else
+	      fprintf(stderr, " with no control interface\n");
+	  }
+	}
+      }
+    }
+    void Container::
+    dump(bool before, bool hex) {
+      if (before)
+	fprintf(stderr,
+		"HDL Container \"%s\" on Device: \"%s\" is platform '%s' part '%s'.\n",
+		name().c_str(), m_device.name().c_str(), m_device.platform().c_str(),
+		m_device.part().c_str());
+      Artifact *a = OU::Parent<Artifact>::firstChild();
+      if (a) {
+	const OL::Artifact &lart = a->libArtifact();
+	fprintf(stderr, "Loaded artifact is: %s, with UUID %s\n", lart.name().c_str(), lart.uuid().c_str());
+	fprintf(stderr, "Platform configuration workers are:\n");
+	doWorkers(m_device, lart.xml(), 'p', hex);
+	fprintf(stderr, "Container/device workers are:\n");
+	doWorkers(m_device, lart.xml(), 'c', hex);
+	fprintf(stderr, "Application workers are:\n");
+	doWorkers(m_device, lart.xml(), 'a', hex);
+      } else
+	fprintf(stderr, "  No artifact loaded.\n");
+    }
+
     // We know we have not already loaded it, but it still might be loaded on the device.
     OC::Artifact & Container::
     createArtifact(OCPI::Library::Artifact &lart, const OA::PValue *artifactParams)
@@ -324,11 +387,7 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
 	   bool argIsProvider) :
         OC::PortBase<OCPI::HDL::Worker,Port,ExternalPort>
 	(w, *this, mPort, argIsProvider,
-	 // bad initialization order: need info to figure out role but base class needs it now
-	 // (1 << OCPI::RDT::Passive) |
-	 (ezxml_cattr(icwXml, "name") && !strncasecmp(ezxml_cattr(icwXml, "name"), "sdp", 3) ?
-	  (1 << OCPI::RDT::ActiveFlowControl) : 0) |
-	 (1 << OCPI::RDT::ActiveMessage), params),
+	 w.m_container.hdlDevice().dmaOptions(icwXml, icXml, argIsProvider), params),
 	// The WCI will control the interconnect worker.
 	// If there is no such worker, usable will fail.
         WciControl(w.m_container.hdlDevice(), icwXml, icXml, NULL),
@@ -383,15 +442,18 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
 	    (m_properties.get8Register(sdp_id, SDP::Properties) - 1) *
 	    (1 << m_properties.get8Register(window_log2, SDP::Properties));
 	  myDesc.metaDataPitch      = 0;
-	  myDesc.metaDataBaseAddr   = m_properties.physOffset(offsetof(SDP::Properties,
-								       metadata));
+	  myDesc.metaDataBaseAddr   = 0; //m_properties.physOffset(offsetof(SDP::Properties,
+	                                 //       metadata));
 	  if (isProvider()) {
 	    myDesc.fullFlagBaseAddr =
-	      device.dAccess().physOffset(myDataOffset) + SDP::c_flag_offset;
+	      m_properties.physOffset(offsetof(SDP::Properties, remote_doorbell));
+	    ocpiInfo("Input remote doorbell is %zu", offsetof(SDP::Properties, remote_doorbell));
+	    //	      device.dAccess().physOffset(myDataOffset) + SDP::Propertiesc_flag_offset;
 	    myDesc.metaDataBaseAddr =
-	      device.dAccess().physOffset(myDataOffset) + SDP::c_metadata_offset;
-	    myDesc.emptyFlagBaseAddr =
-	      m_properties.physOffset(offsetof(SDP::Properties, available_count));
+	      m_properties.physOffset(offsetof(SDP::Properties, remote_doorbell));
+	    //	      device.dAccess().physOffset(myDataOffset) + SDP::c_metadata_offset;
+	    myDesc.emptyFlagBaseAddr = 0;
+	    //	      m_properties.physOffset(offsetof(SDP::Properties, available_count));
 	  } else {
 	    // sdp sender.
 	    // ActiveMessage:     empty flag from other side says other side's buffer is empty
@@ -402,8 +464,8 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
 	    myDesc.emptyFlagBaseAddr =
 	      m_properties.physOffset(offsetof(SDP::Properties, remote_doorbell));
 	    // full indications
-	    myDesc.fullFlagBaseAddr = 
-	      m_properties.physOffset(offsetof(SDP::Properties, available_count));
+	    myDesc.fullFlagBaseAddr = 0;
+	    //	      m_properties.physOffset(offsetof(SDP::Properties, available_count));
 	  }
 	} else {
 	  if (m_properties.usable())
@@ -555,6 +617,7 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
 	    (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr);
 	  pitch = isProvider() ? other.desc.emptyFlagPitch : other.desc.fullFlagPitch;
 	  if (m_sdp) {
+	    m_properties.set32Register(role, SDP::Properties, OCDP_ACTIVE_FLOWCONTROL);
 	    m_properties.set64Register(remote_flag_addr, SDP::Properties, addr);
 	    m_properties.set32Register(remote_flag_pitch, SDP::Properties, pitch);
 	  } else {
@@ -573,6 +636,7 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
           } else if (other.desc.dataBufferSize < myDesc.dataBufferSize)
             throw OU::Error("At producer, remote buffer size smaller than mine");
 	  if (m_sdp) {
+	    m_properties.set32Register(role, SDP::Properties, OCDP_ACTIVE_MESSAGE);
 	    m_properties.set64Register(remote_data_addr, SDP::Properties,
 				       other.desc.oob.address + other.desc.dataBufferBaseAddr);
 	    m_properties.set64Register(remote_meta_addr, SDP::Properties,

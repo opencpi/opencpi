@@ -63,10 +63,12 @@ namespace OCPI {
           lead_shift             = xid_shift + xid_width,
           trail_width            = datum_addr_bits,
           trail_shift            = lead_shift + lead_width,
-	  node_width             = 10,
+	  node_width             = 4,
           node_shift             = trail_shift + trail_width,
           addr_width             = 24, // addressing datums, dwords, 64MB per node
           addr_shift             = node_shift + node_width,
+	  extaddr_width          = 36 - addr_width - dword_addr_bits,
+	  extaddr_shift          = addr_shift + addr_width,
           header_width           = addr_shift + addr_width,
 	  // derived max values
 	  max_message_bytes      = ((1 << count_width) * datum_bytes),
@@ -77,11 +79,12 @@ namespace OCPI {
 	static const uint64_t max_addressable_bytes = (uint64_t)max_addressable_kbytes << 10;
       private:
 	union {
-	  uint32_t m_header[2]; // Worst case scenario of a header size, asserted
 	  uint64_t m_bits;
+	  uint32_t m_header[2]; // Worst case scenario of a header size, asserted
+	  uint8_t  m_bytes[dword_bytes * header_ndws];
 	};
 	unsigned m_xid;
-	size_t   m_length;
+	size_t   m_actualByteLength;
 	static unsigned s_xid;
       public:
 	enum Op {
@@ -111,11 +114,16 @@ namespace OCPI {
 	SDP_FIELD(unsigned, lead)		\
 	SDP_FIELD(unsigned, trail)		\
 	SDP_FIELD(unsigned, node)		\
-	SDP_FIELD(uint64_t, addr)
+	SDP_FIELD(unsigned, addr)               \
+	SDP_FIELD(unsigned, extaddr)
 	SDP_FIELDS
         inline uint64_t getWholeByteAddress() {
 	  return
-	    (get_addr() << 2) | get_lead() | ((uint64_t)get_node() << (addr_width + lead_width));
+	    (get_addr() << 2) | get_lead() |
+	    ((uint64_t)get_extaddr() << (addr_width + lead_width));
+	}
+        inline size_t getLength() {
+	  return m_actualByteLength;
 	}
 	inline bool doRequest(OCPI::OS::Socket &s, uint8_t *data, std::string &error) {
 	  size_t length;
@@ -123,10 +131,11 @@ namespace OCPI {
 	    endRequest(s.fd(), data, error);
 	}
 	bool startRequest(int sendFd, uint8_t *data, size_t &length, std::string &error);
+	bool sendResponse(int sendFd, uint8_t *data, size_t &length, std::string &error);
 	bool endRequest(int recvFd, uint8_t *data, std::string &error);
-	bool getHeader(int recvFd, bool &request, size_t &length, std::string &error);
+	bool getHeader(int recvFd, bool &request, std::string &error);
 	bool endRequest(Header &h, int recvFd, uint8_t *data, std::string &error);
-
+        void respond();
       };
       bool read(int fd, uint8_t *buf, size_t nRequested, std::string &error);
       // The SDP data plane from an external point of view:
@@ -187,6 +196,8 @@ namespace OCPI {
 	uint16_t segment_size;
 	// Changed by the worker to indicate messages too large
 	volatile uint8_t  overflow;
+	uint8_t readsAllowed;
+	uint32_t role; // an enumeration 0:AM, 1:AFC, 2: passive
 	// Configured by software for remote side
 	uint64_t remote_data_addr[NREMOTES];
 	uint32_t remote_data_pitch[NREMOTES];
@@ -196,16 +207,17 @@ namespace OCPI {
 	uint32_t remote_flag_pitch[NREMOTES];
 	uint32_t remote_flag_value[NREMOTES];
 	uint8_t remote_buffer_count[NREMOTES], remote_flag_required[NREMOTES];
-	volatile uint8_t available_count[NREMOTES];
-	uint64_t metadata[NREMOTES];
+        uint8_t rem_idx, rem_bidx, rem_phase;
+        uint64_t rem_addr, rem_seg;
 	// Written by other side to indicate it processed a buffer
 	uint32_t remote_doorbell[NREMOTES];
       };
+#if 0
       // Atomic metadata that can serve as flag, but doesn't always.
       struct MetaData {
 	typedef uint32_t Data;
 	Data m_data;
-        static const unsigned c_opcode_bits = 7;
+        static const unsigned c_opcode_bits = 8;
 	static const uint8_t  c_eof_opcode = (1 << c_opcode_bits) - 1;
 	static const unsigned c_metadata_bits = sizeof(Data) * CHAR_BIT;
 	static const unsigned c_length_bits = sizeof(Data) * CHAR_BIT - 2 - c_opcode_bits;
@@ -238,6 +250,7 @@ namespace OCPI {
 	  return opcode == c_eof_opcode;
 	}
       };
+#endif
       // Constants for writing metadata and flags into the data space.
       static const uint32_t c_flag_offset = (Header::max_addressable_kbytes-4)*1024;
       static const uint32_t c_metadata_offset = (Header::max_addressable_kbytes-8)*1024;

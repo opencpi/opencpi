@@ -1615,7 +1615,8 @@ sendZcopyInputBuffer( Buffer* src_buf, size_t len, uint8_t op)
 {
   src_buf->getMetaData()->ocpiMetaDataWord.length = (uint32_t)len;
   src_buf->getMetaData()->ocpiMetaDataWord.opCode = op;
-  src_buf->getMetaData()->ocpiMetaDataWord.timestamp = 0x0123456789abcdefull;
+  src_buf->getMetaData()->ocpiMetaDataWord.timestamp = 0x01234567;
+  src_buf->getMetaData()->ocpiMetaDataWord.xferMetaData = packXferMetaData(len, op, false);
   Circuit *c = getCircuit();
   OU::SelfAutoMutex guard(c); // FIXME: refactor to make this a circuit method
   c->sendZcopyInputBuffer( this, src_buf, len );
@@ -1638,10 +1639,9 @@ sendOutputBuffer( BufferUserFacet* buf, size_t length, uint8_t opcode )
   // Put the actual opcode and data length in the meta-data
   b->getMetaData()->ocpiMetaDataWord.opCode = opcode;
   b->getMetaData()->ocpiMetaDataWord.length = OCPI_UTRUNCATE(uint32_t,length);
-  b->getMetaData()->ocpiMetaDataWord.timestamp = 0x0123456789abcdefull;
-
+  b->getMetaData()->ocpiMetaDataWord.timestamp = 0x01234567;
+  b->getMetaData()->ocpiMetaDataWord.xferMetaData = packXferMetaData(length, opcode, false);
   
-
   // If there were no available output buffers when the worker was last run on this port, then the
   // buffer can be NULL.  The user should not be advancing all in this case, but we need to protect against it.
   Circuit * c = getCircuit();

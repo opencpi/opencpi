@@ -2,7 +2,7 @@
   <property name='memory_bytes' parameter='1'              readable='1' default='64k'/>
   <property name='sdp_width'    parameter='1' type='uchar' readable='1' default='1'/>
   <property name='interconnect' parameter='1' type='uchar' readable='1' default='0'/>
-  <property name='window_log2'  parameter='1' type='uchar' readable='1' default='20'/>
+  <property name='window_log2'  parameter='1' type='uchar' readable='1' default='26'/>
   <property name='max_buffers'  parameter='1' type='uchar' readable='1' default='4'/>
   <property name='max_remotes'  parameter='1' type='uchar' readable='1' default='4'/>
   <property name='sdp_id' type='uchar' volatile='1'/>
@@ -11,7 +11,10 @@
   <property name='remote_count' initial='true' type='uchar' readable='true' default='1'/>
   <property name='segment_size' initial='true' type='ushort' readable='true' default='128'/>
   <!-- A buffer arrived that was larger than the buffersize setting, or some others -->
-  <property name='overflow' type='bool' volatile='true'/>
+  <property name='faults' type='uchar' volatile='true'/>
+  <property name='readsAllowed' type='uchar' initial='true' readable='1'/>
+  <!-- These values must be in the same order as in HdlOCDP.h -->
+  <property name='role' type='enum' enums='passive,activeMessage,activeFlowControl' readable='1' initial='1'/>
   <property name='remote_data_addr' initial='true' type='ulonglong' arraylength='max_remotes'
 	    readable='true'/>
   <property name='remote_data_pitch' initial='true' type='ulong' arraylength='max_remotes'
@@ -30,8 +33,11 @@
 	    readable='true'/>
   <property name='remote_flag_required' initial='true' type='bool' arraylength='max_remotes'
 	    readable='true'/>
-  <!-- in passive mode we can read these -->
-  <property name='available_count' volatile='true' type='uchar' arraylength='max_remotes'/>
-  <!-- metadata to read (passive) or write -->
-  <property name='metadata' volatile='true' writable='true' type='ulonglong' arraylength='max_remotes'/>
+  <property name='rem_idx'   type='uchar' volatile='1'/>
+  <property name='rem_bidx'  type='uchar' volatile='1'/>
+  <property name='rem_phase' type='uchar' volatile='1'/>
+  <property name='rem_addr'  type='ulonglong' volatile='1'/>
+  <property name='rem_seg'   type='ulonglong' volatile='1'/>
+  
+  <property name='remote_doorbell' writable='true' arraylength='max_remotes'/>
 </componentspec>

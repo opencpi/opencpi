@@ -8,27 +8,35 @@
   <device worker='time_server'>
     <property name='frequency' value='50e6'/>
   </device>
-  <unoc name="zynq" master='true'/>
-  <unoc name="zynq_slave"/>
+  <sdp name="zynq" master='true'/>
+  <sdp name="zynq_slave"/>
+  <property name='maxtrace' type='uchar' parameter='1' default='40'/>
   <property name="axi_error" type="bool" volatile='true'/>
-  <property name="unocDropCount" type='uchar' volatile='true'/>
-  <property name="unoc_headers_in" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
-  <property name="unoc_headers_in1" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
-  <property name="unoc_headers_out" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
-  <property name="unoc_headers_out1" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
-  <property name="unoc_out_status" arraylength='16' volatile='true' debug='true'/>
-  <property name="unoc_count_in" volatile='true' debug='true'/>
-  <property name="unoc_count_out" volatile='true' debug='true'/>
-  <property name="axi_racount" volatile='true' debug='true'/>
-  <property name="axi_raddr" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
-  <property name="axi_rdcount" volatile='true' debug='true'/>
-  <property name="axi_rdata" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
-  <property name="axi_wacount" volatile='true' debug='true'/>
-  <property name="axi_waddr" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
-  <property name="axi_wdcount" volatile='true' debug='true'/>
-  <property name="axi_wdata" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
-  <property name="debug_state" type="Ulonglong" volatile='true' debug='true'/>
-  <property name="debug_state1" type="Ulonglong" volatile='true' debug='true'/>
+  <property name="sdpDropCount" type='uchar' volatile='true'/>
+  <property name="sdp_headers_in" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="sdp_data_in" type="Ulong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="sdp_headers_out" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="sdp_data_out" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="sdp_out_status" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="sdp_header_count_in" volatile='true' debug='false'/>
+  <property name="sdp_header_count_out" volatile='true' debug='false'/>
+  <property name="sdp_count_in" volatile='true' writable='1' debug='false'/>
+  <property name="sdp_count_out" volatile='true' writable='1' debug='false'/>
+  <property name="axi_cacount" volatile='true' writable='1'  debug='false'/>
+  <property name="axi_cdcount" volatile='true' writable='1' debug='false'/>
+  <property name="axi_caddr" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="axi_cdata" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="axi_racount" volatile='true' writable='1' debug='false'/>
+  <property name="axi_raddr" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="axi_rdcount" volatile='true' writable='1' debug='false'/>
+  <property name="axi_rdata" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="axi_wacount" volatile='true' writable='1' debug='false'/>
+  <property name="axi_waddr" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="axi_wdcount" volatile='true' writable='1' debug='false'/>
+  <property name="axi_wdata" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="debug_state" type="Ulonglong" volatile='true' debug='false'/>
+  <property name="debug_state1" type="Ulonglong" volatile='true' debug='false'/>
+  <property name="debug_state2" type="Ulonglong" volatile='true' debug='false'/>
   <signal  output='led' width='8'/>
 
   <!-- The Zed FMC LPC slot.

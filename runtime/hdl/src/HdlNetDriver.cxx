@@ -70,6 +70,11 @@ namespace OCPI {
 	if (!m_devAddr.isEther() || OE::haveDriver())
 	  delete m_socket;
       }
+      // Networks only push.
+      uint32_t Device::
+      dmaOptions(ezxml_t /*icImplXml*/, ezxml_t /*icInstXml*/, bool isProvider) {
+	return 1 << (isProvider ? OCPI::RDT::ActiveFlowControl : OCPI::RDT::ActiveMessage);
+      }
       void Device::
       request(EtherControlMessageType type, RegisterOffset offset,
 	      size_t bytes, OS::Ether::Packet &recvFrame, uint32_t *status,

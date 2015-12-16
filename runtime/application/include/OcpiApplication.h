@@ -132,6 +132,8 @@ namespace OCPI {
       bool m_hex;
       bool m_launched;
       bool m_verbose;
+      bool m_dump;
+      bool m_dumpPlatforms;
       Application &m_apiApplication;
 
       void init(const OCPI::API::PValue *params);

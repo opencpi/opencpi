@@ -171,7 +171,9 @@ class Device
   std::queue<Request*, std::list<Request*> > m_respQueue;
   OS::Mutex m_sdpSendMutex; // mutex usage between control and data
   DT::EndPoint *m_endPoint;
-  std::vector<DT::XferServices *> m_xferServices;
+  typedef std::vector<DT::XferServices *> XferServices;
+  XferServices m_writeServices;
+  XferServices m_readServices;
   std::string m_exec; // simulation executable local relative path name
   bool m_verbose, m_dump, m_spinning;
   unsigned m_sleepUsecs, m_simTicks;
@@ -230,6 +232,13 @@ protected:
 						     OH::SDP::Header::max_addressable_bytes));
       init(error);
     }
+  }
+  // We assume all sim platforms use SDP
+  uint32_t
+  dmaOptions(ezxml_t /*icImplXml*/, ezxml_t /*icInstXml*/, bool isProvider) {
+    return isProvider ?
+      (1 << OCPI::RDT::ActiveFlowControl) | (1 << OCPI::RDT::ActiveMessage) |
+      (1 << OCPI::RDT::FlagIsMeta) : 1 << OCPI::RDT::ActiveMessage;
   }
   // Our added-value wait-for-process call.
   // If "hang", we wait for the process to end, and if it stops, we term+kill it.
@@ -355,6 +364,7 @@ protected:
     // Improve the odds of an immediate error giving a good error message by letting the sim run
     ocpiInfo("Waiting for simulator to start before issueing any more credits.");
     OS::sleep(100);
+    ocpiCheck(signal(SIGINT, sigint) != SIG_ERR);
     for (unsigned n = 0; n < 1; n++)
       if (spin(err) || mywait(m_pid, false, err) || ack(err))
 	return true;
@@ -423,7 +433,7 @@ protected:
       OU::format(error, "ack read from sim failed. r %zd c %u", r, c);
       return true;
     }
-    ocpiDebug("Sim sent ACK");
+    ocpiDebug("Sim sent ACK. Tick count at %" PRIu64, m_cumTicks);
     m_spinning = false;
     return false;
   }
@@ -512,23 +522,28 @@ protected:
     if (m_respLeft == 0) {
       OH::SDP::Header h;
       bool request;
-      size_t length;
-      if (h.getHeader(m_resp.m_rfd, request, length, error))
+      if (h.getHeader(m_resp.m_rfd, request, error))
 	return true;
       if (request) {
-	// A DMA write request, with "length" being the data payload
-	myassert(h.get_op() == OH::SDP::Header::WriteOp);
+	bool writing = h.get_op() == OH::SDP::Header::WriteOp;
+	XferServices &xfs = writing ? m_writeServices : m_readServices;
 	uint64_t whole_addr = h.getWholeByteAddress();
 	uint16_t mbox = OCPI_UTRUNCATE(uint16_t, whole_addr >> 32);
 	whole_addr &= ~(-(uint64_t)1 << 32);
-	myassert(mbox < m_xferServices.size() || m_xferServices[mbox]);
-	myassert(length <= SDP::Header::max_message_bytes);
-	if (SDP::read(m_resp.m_rfd, m_sdpDataBuf, length, error))
-	  return true;
-	myassert(mbox < m_xferServices.size());
-	myassert(m_xferServices[mbox]);
-	m_xferServices[mbox]->send(OCPI_UTRUNCATE(DtOsDataTypes::Offset, whole_addr),
-				   m_sdpDataBuf, length);
+	myassert(mbox < xfs.size() && xfs[mbox]);
+	if (writing) {
+	  myassert(h.getLength() <= sizeof(m_sdpDataBuf));
+	  if (h.endRequest(h, m_resp.m_rfd, m_sdpDataBuf, error))
+	    return true;
+	  xfs[mbox]->send(OCPI_UTRUNCATE(DtOsDataTypes::Offset, whole_addr),
+			  m_sdpDataBuf, h.getLength());
+	} else {
+	  // Active message read/pull DMA, which will only work with locally mapped endpoints
+	  uint8_t *data =
+	    (uint8_t *)xfs[mbox]->source().map(OCPI_UTRUNCATE(DtOsDataTypes::Offset, whole_addr),
+					       h.getLength());
+	  send2sdp(h, data, true, "DMA read response", error);
+	}
       } else {
 	myassert(!m_respQueue.empty());
 	Request &request = *m_respQueue.front();
@@ -644,9 +659,9 @@ public:
   // The container background thread calls this.  Return true when done
   bool run() {
     if (m_firstRun) {
-      ocpiCheck(signal(SIGINT, sigint) != SIG_ERR);
       assert(m_state == RUNNING);
       m_lastTicks = 0;
+      m_firstRun = false;
     }
     std::string error;
     if (!m_exited && !s_stopped && m_cumTicks < m_simTicks) {
@@ -654,7 +669,7 @@ public:
 	ocpiDebug("Spin credit at: %20" PRIu64, m_cumTicks);
 	m_lastTicks = m_cumTicks;
       }
-      if (!doit(error))
+      if (!doit(error) && m_cumTicks < m_simTicks)
 	return false;
     }
     ocpiDebug("exit simulator container thread x %d s %d ct %" PRIu64 " st %u e '%s'",
@@ -846,13 +861,16 @@ public:
     setState(RUNNING);   // Were loaded or loading
   }
   void
-  send2sdp(SDP::Header &h, uint8_t *data, const char *type, std::string &error) {
+  send2sdp(SDP::Header &h, uint8_t *data, bool response, const char *type, std::string &error) {
     size_t rlen;
     bool bad;
     {
       OU::AutoMutex m(m_sdpSendMutex);
-      bad = h.startRequest(m_req.m_wfd, data, rlen, error);
+      bad = response ?
+	h.sendResponse(m_req.m_wfd, data, rlen, error) :
+	h.startRequest(m_req.m_wfd, data, rlen, error);
     }
+    // FIXME: is this a dead lock?  should we send the credit first?
     if (bad || sendCredit(rlen, error)) {
       m_isFailed = true;
       throw OU::Error("HDL Sim SDP %s error: %s", type, error.c_str());
@@ -905,7 +923,7 @@ public:
     Request r(read, offset, length, data);
     if (read)
       m_respQueue.push(&r);
-    send2sdp(r.header, data, "control", r.error);
+    send2sdp(r.header, data, false, "control", r.error);
     if (read) {
       r.sem.wait();
       if (r.error.length()) {
@@ -990,7 +1008,7 @@ public:
   void receive(DtOsDataTypes::Offset offset, uint8_t *data, size_t count) {
     SDP::Header h(false, offset, count);
     std::string error;
-    send2sdp(h, data, "data", error);
+    send2sdp(h, data, false, "data", error);
   }
   DT::EndPoint &getEndPoint() {
     if (m_endPoint)
@@ -1004,7 +1022,8 @@ public:
     // This is the hook that allows us to receive data/metadata/flags pushed to this
     // endpoint from elsewhere - from multiple other endpoints.
     ep.setReceiver(*this);
-    m_xferServices.resize(ep.maxCount, 0);
+    m_readServices.resize(ep.maxCount, 0);
+    m_writeServices.resize(ep.maxCount, 0);
     m_endPoint = &ep;
     return ep;
   }
@@ -1015,11 +1034,16 @@ public:
     assert(&ep == m_endPoint);
     DT::EndPoint *otherEp = m_endPoint->factory->findEndPoint(other.desc.oob.oep);
     assert(otherEp);
-    assert(otherEp->mailbox < m_xferServices.size());
+    assert(otherEp->mailbox < m_writeServices.size());
     DT::XferServices *s = DT::XferFactoryManager::getSingleton().getService(m_endPoint, otherEp);
-    assert(m_xferServices[otherEp->mailbox] == NULL || m_xferServices[otherEp->mailbox] == s);
-    if (m_xferServices[otherEp->mailbox] == NULL)
-      m_xferServices[otherEp->mailbox] = s;
+    assert(m_writeServices[otherEp->mailbox] == NULL || m_writeServices[otherEp->mailbox] == s);
+    if (m_writeServices[otherEp->mailbox] == NULL)
+      m_writeServices[otherEp->mailbox] = s;
+    assert(otherEp->mailbox < m_readServices.size());
+    s = DT::XferFactoryManager::getSingleton().getService(otherEp, m_endPoint);
+    assert(m_readServices[otherEp->mailbox] == NULL || m_readServices[otherEp->mailbox] == s);
+    if (m_readServices[otherEp->mailbox] == NULL)
+      m_readServices[otherEp->mailbox] = s;
     OT::Transport::fillDescriptorFromEndPoint(ep, mine);
   }
 };
@@ -1049,7 +1073,9 @@ open(const char *name, bool discovery, const OA::PValue *params, std::string &er
   OU::findBool(params, "verbose", verbose);
   const char *dir = "simulations";
   OU::findString(params, "directory", dir);
-  return createDevice(name, platform, 20, 200000, 10000000, verbose, false, dir, err);
+  uint32_t simTicks = 10000000;
+  OU::findULong(params, "simTicks", simTicks);
+  return createDevice(name, platform, 20, 200000, simTicks, verbose, false, dir, err);
 }
 
 Device *Driver::

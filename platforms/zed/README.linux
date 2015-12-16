@@ -54,7 +54,7 @@ the platforms/zed directory in the OpenCPI tree.
    Use the getXilinxLinuxSources.sh script, providing the base release number as an argument,
    (e.g. 2013.4) to list the repo tags associated with that release, e.g.:
 
-   % ./getXilinxLinuxSource.sh
+   % ./getXilinxLinuxSource.sh x
    % ./showXilinxLinuxTags.sh | grep {release-name-to-match}
 
    Note we use the release name, rather than the explicit repo tag so that we might see

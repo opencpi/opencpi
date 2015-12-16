@@ -48,8 +48,9 @@ namespace OCPI {
 	  bool isDir;
 	  OS::FileSystem::FileId file_id; 
 	  if (!OS::FileSystem::exists(libName, &isDir, NULL, NULL, &file_id))
-	    ocpiInfo("Component library path name in OCPI_LIBRARY_PATH, \"%s\", "
-		     "is nonexistent.  It will be ignored", libName.c_str());
+	    ocpiInfo("Path name found in OCPI_LIBRARY_PATH, \"%s\", "
+		     "is nonexistent, not a normal file, or a broken link.  It will be ignored",
+		     libName.c_str());
 	  else if (m_file_ids.insert(file_id).second)
 	    // New id was inserted, and thus was not already there
 	    if (isDir) {

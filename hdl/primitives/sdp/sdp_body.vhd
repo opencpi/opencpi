@@ -12,13 +12,14 @@ begin
   for i in 0 to sdp_header_ndws-1 loop
     v(i*32+31 downto i*32) := dws(i);
   end loop;
-  h.count := unsigned(v(n+h.count'left downto n)); n := n + h.count'length;
-  h.op    := op_t'val(to_integer(unsigned(v(n+op_width-1 downto n))));   n := n + op_width;
-  h.xid   := unsigned(v(n+h.xid'left downto n));   n := n + h.xid'length;
-  h.lead  := unsigned(v(n+h.lead'left downto n));  n := n + h.lead'length;
-  h.trail := unsigned(v(n+h.trail'left downto n));  n := n + h.trail'length;
-  h.node  := unsigned(v(n+h.node'left downto n));  n := n + h.node'length;
-  h.addr  := unsigned(v(n+h.addr'left downto n));
+  h.count   := unsigned(v(n+h.count'left downto n)); n := n + h.count'length;
+  h.op      := op_t'val(to_integer(unsigned(v(n+op_width-1 downto n))));   n := n + op_width;
+  h.xid     := unsigned(v(n+h.xid'left downto n));   n := n + h.xid'length;
+  h.lead    := unsigned(v(n+h.lead'left downto n));  n := n + h.lead'length;
+  h.trail   := unsigned(v(n+h.trail'left downto n));  n := n + h.trail'length;
+  h.node    := unsigned(v(n+h.node'left downto n));  n := n + h.node'length;
+  h.addr    := unsigned(v(n+h.addr'left downto n)); n := n + h.addr'length;
+  h.extaddr := unsigned(v(n+h.extaddr'left downto n));
   return h;
 end dws2header;
 
@@ -33,7 +34,9 @@ begin
   v(n+h.lead'left downto n) := h.lead;  n := n + h.lead'length;
   v(n+h.trail'left downto n) := h.trail;  n := n + h.trail'length;
   v(n+h.node'left downto n) := h.node;  n := n + h.node'length;
-  v(n+h.addr'left downto n) := h.addr;
+  v(n+h.addr'left downto n) := h.addr; n := n + h.addr'length;
+  v(n+h.extaddr'left downto n) := h.extaddr; n := n + h.extaddr'length;
+  v(v'left downto n) := (others => '0');
   for i in 0 to sdp_header_ndws-1 loop
     dws(i) := slv(v(i*32+31 downto i*32));
   end loop;
@@ -89,9 +92,19 @@ begin
     return to_integer(header.addr(width_for_max(to_integer(sdp_width))-1 downto 0));
   end if;
 end start_dw;
+
+function meta2slv(meta : metadata_t) return std_logic_vector is
+begin
+  return meta.opcode & "1" & slv(meta.eof) & slv(meta.length);
+end meta2slv;
+function slv2meta(s : std_logic_vector(metawidth_c-1 downto 0)) return metadata_t is
+  variable m : metadata_t;
+begin
+  m.length := unsigned(s(meta_length_width_c-1 downto 0));
+  m.eof    := s(meta_length_width_c);
+  m.opcode := s(s'left downto s'length - meta_opcode_width_c);
+  return m;
+end slv2meta;
+
 end sdp;
---function header2dws(header : header_t) return dword_array_t;
---function dws2header(dws : dword_array_t) return header_t;
---function length_dws(header : header_t) return unsigned;
---function length_dws(dw : dword_t) return natural;
---function offset_dws(header : header_t) return unsigned;
+

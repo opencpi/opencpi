@@ -851,6 +851,13 @@ XferServices* XferFactoryManager::getService( std::string& source_sname, std::st
   send(DtOsDataTypes::Offset /*offset*/, uint8_t */*data*/, size_t /*nbytes*/) {
     throw OU::Error("Direct send on endpoint that doesn't support it");
   }
+#if 0
+  void XferServices::
+  send(DtOsDataTypes::Offset /*src_offset*/, DtOsDataTypes::Offset /*dst_offset*/,
+       size_t /*nbytes*/) {
+    throw OU::Error("Direct send on endpoint that doesn't support it");
+  }
+#endif
 
 // Create a transfer request
 XferRequest* XferRequest::copy (DtOsDataTypes::Offset srcoffs, 

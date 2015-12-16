@@ -44,16 +44,17 @@
  *    Revision Detail: Created
  */
 
+#include <cstddef>
+#include "OcpiOsAssert.h"
 #include "OcpiUtilMisc.h"
-#include <DtTransferInternal.h>
-#include <OcpiPortSet.h>
-#include <OcpiBuffer.h>
-#include <OcpiOutputBuffer.h>
-#include <OcpiInputBuffer.h>
-#include <OcpiTemplateGenerators.h>
-#include <OcpiTransferController.h>
-#include <OcpiIntDataDistribution.h>
-#include <OcpiOsAssert.h>
+#include "DtTransferInternal.h"
+#include "OcpiPortSet.h"
+#include "OcpiBuffer.h"
+#include "OcpiOutputBuffer.h"
+#include "OcpiInputBuffer.h"
+#include "OcpiTransferController.h"
+#include "OcpiIntDataDistribution.h"
+#include "OcpiTemplateGenerators.h"
 
 #define FORMAT_TRANSFER_EC_RETHROW( sep, tep )                                \
   char buf[512];                                                        \
@@ -645,6 +646,15 @@ void TransferTemplateGeneratorPattern1::createOutputTransfers( Port* s_port, Por
 			   output_offsets->bufferSize,
 			   XferRequest::DataTransfer );
 
+	  if (t_port->getMetaData()->m_descriptor.options & (1 << FlagIsMeta)) {
+	    ptransfer->copy(output_offsets->metaDataOffset +
+			    s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferMetaData) +
+			    offsetof(RplMetaData, xferMetaData),
+			    input_offsets->metaDataOffset +
+			    s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, uint32_t), 
+			    sizeof(OCPI::OS::uint32_t),
+			    XferRequest::FlagTransfer);
+	  } else {
           // Create the transfer that copys the output meta-data to the input meta-data
           ptransfer->copy (
 			   output_offsets->metaDataOffset + s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferMetaData),
@@ -661,6 +671,7 @@ void TransferTemplateGeneratorPattern1::createOutputTransfers( Port* s_port, Por
 			   sizeof(BufferState),
 			   XferRequest::FlagTransfer );
 
+	  }
         }
         catch( ... ) {
           FORMAT_TRANSFER_EC_RETHROW( s_port, t_port );
@@ -802,6 +813,15 @@ createOutputTransfers(OCPI::DataTransport::Port* s_port,
         // buffer is ready for the remote actor to pull data.
         try {
 
+	  if (t_port->getMetaData()->m_descriptor.options & (1 << FlagIsMeta)) {
+	    ptransfer->copy(output_offsets->metaDataOffset +
+			    s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferMetaData) +
+			    offsetof(RplMetaData, xferMetaData),
+			    input_offsets->metaDataOffset +
+			    s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, uint32_t), 
+			    sizeof(OCPI::OS::uint32_t),
+			    XferRequest::FlagTransfer);
+	  } else {
           // Create the transfer that copys the output state to the remote input state
           ptransfer->copy (
 			   output_offsets->localStateOffset + s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferState),
@@ -809,6 +829,7 @@ createOutputTransfers(OCPI::DataTransport::Port* s_port,
 			   sizeof(BufferState),
 			   XferRequest::FlagTransfer );
 
+	  }
         }
         catch( ... ) {
           FORMAT_TRANSFER_EC_RETHROW( s_port, t_port );

@@ -15,6 +15,7 @@ namespace OCPI {
       
       friend class Port;
       friend class Device;
+      friend class Container;
       const char *m_implName, *m_instName;
       mutable size_t m_window; // perfect use-case for mutable..
       bool m_hasControl;
@@ -26,8 +27,10 @@ namespace OCPI {
       size_t m_occpIndex;
       OCPI::Util::Property *m_propInfo; // the array of property descriptors
       WciControl(Device &device, const char *impl, const char *inst, unsigned index, bool hasControl);
+    public:
       WciControl(Device &device, ezxml_t implXml, ezxml_t instXml, OCPI::Util::Property *props, bool doInit = true);
       virtual ~WciControl();
+    protected:
       // This is shadowed by real application workers, but is used when this is 
       // standalone.
       //      const std::string &name() const { return m_wName; }

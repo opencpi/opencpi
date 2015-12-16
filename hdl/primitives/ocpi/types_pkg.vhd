@@ -3,8 +3,9 @@ package types is
 --
 -- Miscellaneous type declarations not related to OpenCPI data types
 --
-constant dword_size : natural := 32;
+constant dword_size  : natural := 32;
 constant dword_bytes : natural := 4;
+constant dword_shift : natural := 2;
 subtype dword_t   is std_logic_vector(31 downto 0);
 type    dword_array_t is array (natural range <>) of dword_t;
 subtype word8_t  is std_logic_vector(7 downto 0);

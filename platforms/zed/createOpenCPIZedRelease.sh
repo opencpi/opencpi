@@ -134,7 +134,8 @@ echo Patching the root file system.
 FROM=`pwd`
 SOURCE=`pwd`/SD-release/uramdisk.image.gz
 DEST=`pwd`/uramdisk.image.gz
-T=/tmp/ocpi-patch-SD-$$
+# T=/tmp/ocpi-patch-SD-$$
+T=uramdisk
 set -e
 mkdir $T
 cd $T

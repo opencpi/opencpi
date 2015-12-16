@@ -1,5 +1,4 @@
 <HdlDevice language="vhdl" firstrawproperty='remote_doorbell' spec='sdp-spec'>
-  <property name='remote_doorbell' type='ulong' arraylength='max_remotes' writable='true'/>
   <sdp name='sdp'/>
   <streaminterface implname='in'
 		   datawidth='sdp_width*32' numberofopcodes='256' datavaluewidth='8'

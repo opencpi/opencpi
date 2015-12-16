@@ -98,6 +98,16 @@ namespace OCPI {
 	  if (m_fd >= 0)
 	    ::close(m_fd);
 	}
+	uint32_t
+	dmaOptions(ezxml_t icImplXml, ezxml_t /*icInstXml*/, bool isProvider) {
+	  const char *icname = ezxml_cattr(icImplXml, "name");
+	  if (icname && !strncasecmp(icname, "sdp", 3))
+	    return isProvider ?
+	      (1 << OCPI::RDT::ActiveFlowControl) | (1 << OCPI::RDT::ActiveMessage) |
+	      (1 << OCPI::RDT::FlagIsMeta) :
+	      1 << OCPI::RDT::ActiveMessage;
+	  return (1 << OCPI::RDT::ActiveFlowControl) | (1 << OCPI::RDT::ActiveMessage);
+	}
 	static int compu32(const void *a, const void *b) { return *(int32_t*)a - *(int32_t*)b; }
     // Set up the FPGAs clock, assuming it has no GPS.
     // This does two things:

@@ -84,12 +84,13 @@ begin
   sdp_out.sdp.header.count(0) <= to_bool(its(tag_first_of_2(cp_in.tag)) or
                                          r_state_r = r_last_wanted_e or
                                          r_state_r = r_last_valid_e);
-  sdp_out.sdp.header.xid   <= tag_xid(cp_in.tag);
-  sdp_out.sdp.header.lead  <= (others => '0');
-  sdp_out.sdp.header.trail <= (others => '0');
-  sdp_out.sdp.header.node  <= (others => '0'); -- CP is always node zero
-  sdp_out.sdp.header.addr  <= (others => '0');
-  sdp_out.sdp.valid        <= to_bool(
+  sdp_out.sdp.header.xid      <= tag_xid(cp_in.tag);
+  sdp_out.sdp.header.lead     <= (others => '0');
+  sdp_out.sdp.header.trail    <= (others => '0');
+  sdp_out.sdp.header.node     <= (others => '0'); -- CP is always node zero
+  sdp_out.sdp.header.addr     <= (others => '0');
+  sdp_out.sdp.header.extaddr  <= (others => '0');
+  sdp_out.sdp.valid           <= to_bool(
 -- no zero-latency reads...             (r_state_r = r_idle_e and its(cp_in.valid) and
 --                                       not (tag_first_of_2(cp_in.tag) and sdp_width /= 1)) or
                                       r_state_r = r_first_valid_e or

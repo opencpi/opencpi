@@ -71,7 +71,7 @@
   CMD_OPTION(loglevel,   l, ULong,  0, "<log-level>\n" \
 	                               "set log level during execution, overriding OCPI_LOG_LEVEL")\
   CMD_OPTION(seconds,    t, ULong,  0, "<seconds>\n" \
-	                               "specify seconds of runtime") \
+	                               "specify seconds of time to wait for application to finish") \
   CMD_OPTION(list,       C, Bool,   0, "show available containers") \
   CMD_OPTION(servers,    S, String, 0, "comma-separated list of servers to explicitly contact (no UDP discovery)") \
   CMD_OPTION(remote,     R, Bool,   0, "discover/include/use remote containers") \
@@ -79,7 +79,7 @@
   CMD_OPTION_S(transport,T, String, 0, "<instance-name>=<port-name>=<transport-name>\n" \
 	                               "set transport of connection at a port\n" \
 	                               "if no port name, then the single output port") \
-  CMD_OPTION(artifacts,  A, String, 0, "Comma-separated list of targets to print artifacts in path on stdout") \
+  CMD_OPTION(artifacts,  A, String, 0, "comma-separated list of targets to print artifacts in path on stdout") \
   CMD_OPTION(deployment, ,  String, 0, "XML file to read deployment from, avoid automatic deployment") \
   CMD_OPTION(deploy_out, ,  String, 0, "XML file to write deployment to") \
   CMD_OPTION(no_execute, ,  Bool,   0, "Suppress execution, just determin deployment") \
@@ -87,8 +87,10 @@
   CMD_OPTION(libraries,  ,  String, 0, "Search path for source libraries, implying to search for possible source workers")\
   CMD_OPTION(build,      ,  String, 0, "Build any source workers deployed")\
   CMD_OPTION(sim_dir,    ,  String, "simulations", "Directory in which to run simulations")\
-  CMD_OPTION_S(simulator, H,  String, 0, "Run this HDL simulator for this execution")\
+  CMD_OPTION_S(simulator, H,String, 0, "Create a container with this HDL simulator")\
   CMD_OPTION(art_lib_path,L,String, 0, "Specify/override OCPI_LIBRARY_PATH") \
+  CMD_OPTION(dumpPlatforms,M,Bool,  0, "dump platform and device worker properties") \
+  CMD_OPTION(sim_ticks,  ,  ULong,  0, "simulator clock cycles to allow") \
   /**/
 #include "CmdOption.h"
 #include "RemoteServer.h"
@@ -158,6 +160,10 @@ static int mymain(const char **ap) {
     params.push_back(OA::PVBool("verbose", true));
   if (options.hex())
     params.push_back(OA::PVBool("hex", true));
+  if (options.dump())
+    params.push_back(OA::PVBool("dump", true));
+  if (options.dumpPlatforms())
+    params.push_back(OA::PVBool("dumpPlatforms", true));
   size_t n;
   addParams("worker", options.worker(n), params);
   addParams("selection", options.selection(n), params);
@@ -254,6 +260,9 @@ static int mymain(const char **ap) {
     std::vector<OA::PValue> simParams;
     if (options.sim_dir())
       addParam("directory", options.sim_dir(), simParams);
+    if (options.sim_ticks())
+      simParams.push_back(OA::PVULong("simTicks", options.sim_ticks()));
+      addParam("directory", options.sim_dir(), simParams);
     if (options.verbose())
       simParams.push_back(OA::PVBool("verbose", true));
     if (options.dump())
@@ -267,6 +276,10 @@ static int mymain(const char **ap) {
       OA::ContainerManager::find("hdl", name.c_str(), simParams.size() ? &simParams[0] : NULL);
     }
     if (options.list()) {
+      if (!xml) {
+	OCPI::Library::Manager::getSingleton().suppressDiscovery();
+	DataTransfer::XferFactoryManager::getSingleton().suppressDiscovery();
+      }
       (void)OA::ContainerManager::get(0); // force config
       printf("Available containers:\n"
 	     " #  Model Platform    OS     OS Version  Name\n");
@@ -308,6 +321,7 @@ static int mymain(const char **ap) {
       fprintf(stderr,
 	      "Application established: containers, workers, connections all created\n"
 	      "Communication with the application established\n");
+#if 0
     if (options.dump()) {
       std::string name, value;
       bool isParameter;
@@ -317,6 +331,7 @@ static int mymain(const char **ap) {
 	fprintf(stderr, "Property %2u: %s = \"%s\"%s\n", n, name.c_str(), value.c_str(),
 		isParameter ? " (parameter)" : "");
     }
+#endif
     app.start();
     if (options.verbose())
       fprintf(stderr, "Application started/running\n");
@@ -336,6 +351,7 @@ static int mymain(const char **ap) {
     }
     // In case the application specifically defines things to do that aren't in the destructor
     app.finish();
+#if 0
     if (options.dump()) {
       std::string name, value;
       bool isParameter;
@@ -345,6 +361,7 @@ static int mymain(const char **ap) {
 	if (!isParameter)
 	  fprintf(stderr, "Property %2u: %s = \"%s\"\n", n, name.c_str(), value.c_str());
     }
+#endif
   } while(0);
   if (xml)
     ezxml_free(xml);

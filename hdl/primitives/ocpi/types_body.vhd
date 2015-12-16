@@ -97,42 +97,52 @@ function from_bool_array(ba : bool_array_t;
   variable b : std_logic;
   variable i : natural := to_integer(index);
   variable o : natural := to_integer(byte_offset) * 8;
-  variable l : line;
+  variable n : natural := to_integer(nbytes_1);
 begin
-  if i >= ba'length then
+  if n >= 4 - byte_offset then
+    n := 0;
+  end if;
+  if i > ba'right then
     i := 0;
   end if;
   if is_big_endian then
     result(o + 24) := from_bool(ba(i))(0);
-    if nbytes_1 > 0 then
+    if n > 0 then
       result(o + 16) := from_bool(ba(i+1))(0);
-      if nbytes_1 > 1 then
+      if n > 1 then
         result(o + 8) := from_bool(ba(i+2))(0);
-        if nbytes_1 = 3 then
+        if n = 3 then
           result(o + 0) := from_bool(ba(i+3))(0);
         end if; 
       end if;
     end if;
   else
-    if o + nbytes_1*8 > dword_t'length then
+    report "from_bool1 i " & integer'image(i) & " o " & integer'image(o) & " nb1 " &
+      integer'image(n) & " bar " & integer'image(ba'right);
+    if o + n*8 > dword_t'length then
       o := 0;
     end if;
-    if its(ba(i)) then
-      result(o + 0) := '1';
-    else
-      result(o + 0) := '0';
-    end if;
+    report "from_bool2 i " & integer'image(i) & " o " & integer'image(o) & " nb1 " &
+      integer'image(n) & " bar " & integer'image(ba'right);
+--if its(ba(i)) then
+--  result(o + 0) := '1';
+--else
+--  result(o + 0) := '0';
+--end if;
 --  result(o + 0) := from_bool(ba(i))(0);  -- this crashes Isim 14.6
     b := ba(i);
-    result(o+8) := b;
-    if nbytes_1 > 0 then
-      b := ba(i+1);
+    result(o+0) := b;
+    if n > 0 and i < ba'right then
+      i := i + 1;
+      b := ba(i);
       result(o + 8) := b;
-      if nbytes_1 > 1 then
-        b := ba(i+2);
+      if n > 1 and i < ba'right then
+        i := i + 1;
+        b := ba(i);
         result(o + 16) := b;
-        if nbytes_1 = 3 then
-          b := ba(i+3);
+        if n = 3 and i < ba'right then
+          i := i + 1;
+          b := ba(i);
           result(o + 24) := b;
         end if; 
       end if;

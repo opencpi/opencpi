@@ -71,6 +71,7 @@ namespace OCPI {
     enum ProtocolOptions {
       FeedbackIsCount = MaxRole, // The doorbell indicating feedback is a count of buffers rather than a constant
       MandatedRole,              // Role is not a preference, but a mandate
+      FlagIsMeta,                // Flag is compressed metadata
       MaxOption
     };
 

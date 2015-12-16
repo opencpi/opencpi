@@ -113,6 +113,7 @@ namespace OCPI {
       virtual OCPI::API::ContainerApplication *
 	createApplication(const char *name = NULL, const OCPI::Util::PValue *props = NULL)
         throw ( OCPI::Util::EmbeddedException ) = 0;
+      virtual void dump(bool /*before*/, bool /*hex*/) {}
       OCPI::Util::PValue *getProperties();
       OCPI::Util::PValue *getProperty(const char *);
 

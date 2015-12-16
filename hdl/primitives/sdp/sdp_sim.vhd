@@ -62,7 +62,7 @@ begin
   sdp_out.sdp.ready  <= to_bool(sdp_in.sdp.valid and
                                 ((sdp2sw_in_header_r and
                                   sdp2sw_index_r = sdp_header_ndws-1 and
-                                  count_in_dws(sdp_in.sdp.header) = 0) or
+                                  payload_in_dws(sdp_in.sdp.header) = 0) or
                                  (not sdp2sw_in_header_r and sdp2sw_last_dw)));
   sdp_out_data       <= sw2sdp_data_r;
 
@@ -200,7 +200,7 @@ begin
             write_dw(sdp2sw_header_dws(sdp2sw_index_r));
             sdp2sw_length_r <= to_integer(payload_in_dws(sdp_in.sdp.header));
             if sdp2sw_index_r = sdp_header_ndws-1 then
-              if count_in_dws(sdp_in.sdp.header) /= 0 then
+              if payload_in_dws(sdp_in.sdp.header) /= 0 then
                 sdp2sw_in_header_r <= false;
                 sdp2sw_index_r <= start_dw(sdp_in.sdp.header, sdp_width);
               else

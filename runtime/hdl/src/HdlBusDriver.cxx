@@ -145,6 +145,18 @@
 		       "There is no bitstream loaded on this HDL device: %s", name().c_str());
 	  return true;
 	}
+	 // The zynq setup does not provide a slave interface to the DMA BRAM,
+	 // since the SDP is only attached as master to the S_AXI_HP ports.
+	 // Thus until/unless it is useful to hookup the SDP to the Zynq's M_AXI_GP1 also,
+	 // we only allow ActiveMessage.
+	 // (M_AXI_GP0 is dedicated to the control plane).
+	 uint32_t dmaOptions(ezxml_t icImplXml, ezxml_t icInstXml, bool isProvider) {
+	   const char *icname = ezxml_cattr(icImplXml, "name");
+	   return
+	     (1 << OCPI::RDT::ActiveMessage) |
+	     ((icname && !strncasecmp(icname, "sdp", 3)) ? 1 << OCPI::RDT::FlagIsMeta : 0);
+	 }
+
 	// Scan the buffer and identify the start of the sync pattern
 	static uint8_t *findsync(uint8_t *buf, size_t len) {
 	  static uint8_t startup[] = {

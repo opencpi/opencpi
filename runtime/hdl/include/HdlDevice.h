@@ -80,6 +80,7 @@ namespace OCPI {
       virtual DataTransfer::EndPoint &getEndPoint();
       virtual void connect(DataTransfer::EndPoint &ep, OCPI::RDT::Descriptors &mine,
 			   const OCPI::RDT::Descriptors &other);
+      virtual uint32_t dmaOptions(ezxml_t icImplXml, ezxml_t icInstXml, bool isProvider) = 0;
       // This method has a required base class implementation.
       // If it is overridden, the base class method must be called from there.
       // (probably early, as it retrieves a variety of generic information from either the

@@ -21,6 +21,6 @@ exec ./$appname.exe $plusargs <<EOF
 scope
 show child -r
 wave log -r /
-run 1 s
+run 1s
 quit
 EOF

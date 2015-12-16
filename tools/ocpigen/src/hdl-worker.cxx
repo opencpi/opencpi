@@ -1874,12 +1874,16 @@ emitImplHDL(bool wrap) {
 		    "                offset        => offsets(%u)(%zu downto 0)",
 		    n, decodeWidth-1);
 	  fprintf(f, ");\n");
-	  if (pr.m_baseType == OA::OCPI_Enum)
+	  if (pr.m_baseType == OA::OCPI_Enum) {
 	    fprintf(f,
-		    "  props_to_worker.%s <= "
-		    "work.%s_constants.%s_t'val(to_integer(my_%s_value));\n",
-		    name, m_implName, name, name);
-	  else if (pr.m_isReadable && !pr.m_isVolatile)
+		    "  -- work around isim 14.6 bug since this did not work:\n"
+		    "  -- work.%%s_constants.%%s_t'val(to_integer(my_%%s_value));\n"
+		    "  with to_integer(my_%s_value) select props_to_worker.%s <= \n",
+		    name, name);
+	    for (unsigned n = 0; n < pr.m_nEnums; n++)
+	      fprintf(f, "    %s_e when %u,\n", pr.m_enums[n], n);
+	    fprintf(f, "    %s_e when others;\n", pr.m_enums[0]);
+	  } else if (pr.m_isReadable && !pr.m_isVolatile)
 	    fprintf(f, "  props_to_worker.%s <= my_%s_value;\n", name, name);
 	}
 	if (pr.m_isReadable) {

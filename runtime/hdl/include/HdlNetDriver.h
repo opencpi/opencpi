@@ -107,6 +107,7 @@ namespace OCPI {
 	//	virtual void load(const char *) = 0;
 	inline OS::Ether::Address &addr() { return m_devAddr; }
 	void setAddr(OS::Ether::Address &addr);
+	uint32_t dmaOptions(ezxml_t icImplXml, ezxml_t icInstXml, bool isProvider);
       protected:
 	// Tell me which socket to use (not to own)
 	//	inline void setSocket(OCPI::OS::Ether::Socket &socket) { m_socket = &socket; }

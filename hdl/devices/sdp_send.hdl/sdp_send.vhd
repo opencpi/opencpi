@@ -2,7 +2,8 @@
 -- for someone to read it out and acknowledge that reading.
 
 library IEEE, ocpi, util, bsv, sdp;
-use IEEE.std_logic_1164.all, ieee.numeric_std.all, ocpi.types.all, ocpi.util.all, sdp.all;
+use IEEE.std_logic_1164.all, ieee.numeric_std.all;
+use ocpi.types.all, ocpi.util.all, sdp.all, sdp.sdp.all;
 architecture rtl of sdp_send_worker is
   -- Local worker constants
   constant sdp_width_c    : natural := to_integer(sdp_width);
@@ -14,31 +15,6 @@ architecture rtl of sdp_send_worker is
   constant nbytes_width_c : natural := width_for_max(sdp_width_c * 4); -- nbytes in frame
   constant max_remotes_c  : natural := to_integer(max_remotes);
   constant max_seg_dws_c  : natural := 32;
-  -- Metadata (internal) FIFO definitions
-  constant meta_length_c  : natural := 0;
-  constant meta_length_width_c : natural := 23;
-  constant meta_eof_c     : natural := meta_length_c + meta_length_width_c;
-  constant meta_opcode_c  : natural := meta_eof_c + 1;
-  constant meta_opcode_width_c  : natural := 8;
-  type metadata_t is record
-    length : unsigned(meta_length_width_c-1 downto 0); -- bytes
-    eof    : bool_t;
-    opcode : std_logic_vector(meta_opcode_width_c-1 downto 0);
-  end record metadata_t;
-  constant metawidth_c : integer := meta_length_width_c + 1 + meta_opcode_width_c;
-  constant meta_ndws_c : integer := (metawidth_c + dword_size - 1) / dword_size;
-  function meta2slv(meta : metadata_t) return std_logic_vector is
-  begin
-    return meta.opcode & slv(meta.eof) & slv(meta.length);
-  end meta2slv;
-  function slv2meta(s : std_logic_vector(metawidth_c-1 downto 0)) return metadata_t is
-    variable m : metadata_t;
-  begin
-    m.length := unsigned(s(meta_length_width_c-1 downto 0));
-    m.eof    := s(meta_length_c);
-    m.opcode := s(s'left downto meta_eof_c + 1);
-    return m;
-  end slv2meta;
 
   subtype remote_idx_t is unsigned(width_for_max(max_remotes_c - 1) - 1 downto 0);
 
@@ -58,16 +34,13 @@ architecture rtl of sdp_send_worker is
   subtype buffer_count_t is unsigned(count_width_c - 1 downto 0);
   subtype bram_addr_t is unsigned(addr_width_c-1 downto 0);
 
-  -- Definitions for remote accesses
-  constant sdp_whole_addr_bits_c : integer := sdp.sdp.addr_width + sdp.sdp.node_width;
-  subtype sdp_whole_addr_t is unsigned(sdp_whole_addr_bits_c-1 downto 0);
   -- Dynamic state of a remote destination (static state is in properties)
   type remote_t is record
     index     : buffer_count_t; -- which remote buffer are we sending to?
     empty     : buffer_count_t; -- how many remote buffers are empty?
-    data_addr : sdp_whole_addr_t;
-    meta_addr : sdp_whole_addr_t;
-    flag_addr : sdp_whole_addr_t;
+    data_addr : whole_addr_t;
+    meta_addr : whole_addr_t;
+    flag_addr : whole_addr_t;
   end record remote_t;
   type remote_array_t is array(0 to max_remotes_c-1) of remote_t;
   signal sdp_remotes : remote_array_t;
@@ -120,12 +93,12 @@ architecture rtl of sdp_send_worker is
   signal sdp_remote_idx_r       : remote_idx_t;
   signal sdp_last_remote        : remote_idx_t;
   -- State that changed for each segment
-  signal sdp_segment_addr_r     : sdp_whole_addr_t;
-  signal sdp_whole_addr         : sdp_whole_addr_t;
+  signal sdp_segment_addr_r     : whole_addr_t;
+  signal sdp_whole_addr         : whole_addr_t;
   signal sdp_segment_dws_left_r : meta_dw_count_t;
 
   ---- Global state
-  signal overflow_r        : bool_t; -- tried to write past the end of the buffer
+  signal faults_r           : uchar_t; -- tried to write past the end of the buffer
   signal operating_r       : bool_t; -- were we operating in the last cycle?
   signal ctl_reset_n       : std_logic;
   signal sdp_reset_n       : std_logic;
@@ -145,15 +118,16 @@ begin
   next_buffer_addr   <= buffer_addr_r +
                         props_in.buffer_size(bram_addr_t'left + addr_shift_c
                                              downto addr_shift_c);
-  can_take           <= to_bool(operating_r and not its(overflow_r) and md_not_full and buffer_avail_r /= 0);
+  can_take           <= to_bool(operating_r and faults_r = 0 and md_not_full and
+                                buffer_avail_r /= 0);
   will_write         <= can_take and in_in.ready and in_in.valid and not bad_write;
   max_offset         <= props_in.buffer_size(bram_addr_t'left + 2 downto 2) - 1;
   bad_write          <= to_bool((buffer_offset_r > max_offset) or
                                 (bram_addr >= memory_depth_c - 1));
   in_out.take        <= can_take and in_in.ready and
                         (will_write or md_enq or (in_in.som and not in_in.valid));
-  ctl_out.finished   <= overflow_r;
-  props_out.overflow <= overflow_r;
+  ctl_out.finished   <= to_bool(faults_r /= 0);
+  props_out.faults   <= faults_r;
   props_out.sdp_id   <= resize(sdp_in.id, props_out.sdp_id'length);
   props_out.raw.done <= btrue;
   nbytes <= be2bytes(in_in.byte_enable) when its(in_in.valid) else (others => '0');
@@ -182,6 +156,7 @@ begin
                 DIB        => slv0(sdp_width_c*32),
                 DOB        => bramb_out);
   
+  -- wsi to sdp, telling SDP to send next buffer with this metadata
   metafifo : component bsv.bsv.SyncFIFO
    generic map(dataWidth    => metawidth_c,
                depth        => roundup_2_power_of_2(max_buffers_c), -- must be power of 2
@@ -197,6 +172,7 @@ begin
                dEMPTY_N     => md_not_empty);
 
   -- A sync fifo to carry doorbells to the SDP clock domain
+  -- doorbell to SDP, telling SDP that a destination buffer has become empty/available
   flagfifo : component bsv.bsv.SyncFIFO
    generic map(dataWidth    => remote_idx_t'length,
                depth        => 2, -- must be power of 2
@@ -212,6 +188,7 @@ begin
                dEMPTY_N     => flag_not_empty);
 
   -- A sync pulse to carry buffer consumption events
+  -- The sdp telling WSI that a local buffer has become empty
   cpulse: component bsv.bsv.SyncPulse
     port map  (sCLK         => sdp_in.clk,
                sRST         => sdp_reset_n,
@@ -234,13 +211,13 @@ begin
         buffer_index_r  <= (others => '0');
         buffer_addr_r   <= (others => '0');
         operating_r     <= bfalse;
-        overflow_r      <= bfalse;
+        faults_r      <= (others => '0');
       elsif not operating_r then
         -- initialization on first transition to operating.  poor man's "start".
         if its(ctl_in.is_operating) then
           operating_r   <= btrue;
           if props_in.buffer_size > memory_bytes then
-            overflow_r <= btrue;
+            faults_r(0) <= '1';
           end if;
         end if;
         buffer_avail_r <= resize(props_in.buffer_count, buffer_avail_r'length);
@@ -254,12 +231,12 @@ begin
           buffer_avail_r <= buffer_avail_r + 1;
         end if;
         if props_in.raw.is_write and not flag_not_full = '1' then
-          overflow_r <= btrue; -- this is really a debug thing.  Should not happen.
+          faults_r(1) <= '1'; -- this is really a debug thing.  Should not happen.
         end if;
         if can_take and in_in.ready then
           if its(in_in.valid) then
             if its(bad_write) then
-              overflow_r <= btrue; -- this should be sticky
+              faults_r(2) <= '1';
             end if;
             buffer_offset_r <= buffer_offset_r + 1;
           end if;
@@ -302,22 +279,29 @@ begin
   sdp_out.sdp.header.xid   <= (others => '0');  -- since we are writing, no xid necessary
   sdp_out.sdp.header.lead  <= (others => '0');  -- we are always aligned on a DW
   sdp_out.sdp.header.trail <= (others => '0');  -- we always send whole DWs
+  sdp_out.sdp.header.node  <= (others => '0');
   sdp_out.sdp.header.count <= sdp_segment_count_r;
   with sdp_remote_phase_r select sdp_whole_addr <=
     sdp_segment_addr_r                                  when data_e,
     sdp_remotes(to_integer(sdp_remote_idx_r)).meta_addr when meta_e,
     sdp_remotes(to_integer(sdp_remote_idx_r)).flag_addr when flag_e | idle_e | between_remotes_e;
-  sdp_out.sdp.header.node  <= sdp_whole_addr(sdp_whole_addr_bits_c-1 downto sdp.sdp.addr_width);
-  sdp_out.sdp.header.addr  <= sdp_whole_addr(sdp.sdp.addr_width-1 downto 0);
-  sdp_out.sdp.eop          <= sdp_last_in_segment;
-  sdp_out.sdp.valid        <= to_bool(sdp_remote_phase_r /= idle_e);
-  sdp_out.sdp.ready        <= bfalse;     -- we are write-only, never accepting an inbound frame
+
+  sdp_out.sdp.header.addr    <= sdp_whole_addr(sdp.sdp.addr_width-1 downto 0);
+  sdp_out.sdp.header.extaddr <= sdp_whole_addr(whole_addr_bits_c-1 downto sdp.sdp.addr_width);
+  sdp_out.sdp.eop            <= sdp_last_in_segment;
+  sdp_out.sdp.valid          <= to_bool(sdp_remote_phase_r /= idle_e);
+  sdp_out.sdp.ready          <= bfalse;   -- we are write-only, never accepting an inbound frame
 g0: for i in 0 to sdp_width_c-1 generate
     sdp_out_data(i) <= sdp_out_r((i+1)*dword_size-1 downto i*dword_size)
                        when its(sdp_out_valid_r) else
                        bramb_out((i+1)*dword_size-1 downto i*dword_size);
   end generate g0;
 
+  props_out.rem_idx   <= resize(sdp_remote_idx_r, uchar_t'length);
+  props_out.rem_bidx  <= resize(sdp_remotes(0).index, uchar_t'length);
+  props_out.rem_phase <= to_unsigned(sdp_phase_t'pos(sdp_remote_phase_r),uchar_t'length);
+  props_out.rem_addr  <= resize(sdp_remotes(0).data_addr, ulonglong_t'length);
+  props_out.rem_seg   <= resize(sdp_segment_addr_r, ulonglong_t'length);
   -- The process that takes messages from BRAM and pushes them to the SDP,
   ---- trying to avoid any dead cycles except one at the start of the message
   ---- sending data(except for ZLM), metadata, flag transfers
@@ -358,9 +342,9 @@ g0: for i in 0 to sdp_width_c-1 generate
     end procedure begin_meta;
     -- initialization for sending the current message to the indicated remote
     procedure begin_remote is
-      variable data_addr : sdp_whole_addr_t;
-      variable meta_addr : sdp_whole_addr_t;
-      variable flag_addr : sdp_whole_addr_t;
+      variable data_addr : whole_addr_t;
+      variable meta_addr : whole_addr_t;
+      variable flag_addr : whole_addr_t;
     begin
       started_remote := true;
       sdp_remote_idx_r   <= to_unsigned(r, sdp_remote_idx_r'length);
@@ -371,13 +355,13 @@ g0: for i in 0 to sdp_width_c-1 generate
       else
         data_addr := sdp_remotes(r).data_addr +
                      resize(props_in.remote_data_pitch(r)(ulong_t'left downto 2),
-                            sdp_whole_addr_t'length);
+                            whole_addr_t'length);
         meta_addr := sdp_remotes(r).meta_addr +
                      resize(props_in.remote_meta_pitch(r)(ulong_t'left downto 2),
-                            sdp_whole_addr_t'length);
+                            whole_addr_t'length);
         flag_addr := sdp_remotes(r).flag_addr +
                      resize(props_in.remote_flag_pitch(r)(ulong_t'left downto 2),
-                            sdp_whole_addr_t'length);
+                            whole_addr_t'length);
       end if;
       sdp_remotes(r).data_addr <= data_addr;
       sdp_remotes(r).meta_addr <= meta_addr;
@@ -402,13 +386,18 @@ g0: for i in 0 to sdp_width_c-1 generate
     r              := to_integer(sdp_remote_idx_r);
     started_remote := false;
     if rising_edge(sdp_in.clk) then
-      if its(sdp_in.reset) then
+      -- FIXME deal properly with the potential of a separate CDP clk
+      -- THe control clock should reset this state, but it might not be the same as the SDP clk.
+      if its(ctl_in.reset) then
         -- Reset state for remotes
-        for r in 0 to max_remotes_c - 1 loop
-          sdp_remotes(r).index <= (others => '0');
+        for rr in 0 to max_remotes_c - 1 loop
+          sdp_remotes(rr).index <= (others => '0');
         end loop;
         sdp_remote_phase_r <= idle_e;
         sdp_remote_idx_r   <= (others => '0');
+        sdp_msg_addr_r     <= (others => '0');
+        bramb_addr_r       <= (others => '0');
+        sdp_out_valid_r    <= bfalse;
       elsif not operating_r then
         -- reset state that depends on properties
         for r in 0 to max_remotes_c - 1 loop
@@ -433,7 +422,7 @@ g0: for i in 0 to sdp_width_c-1 generate
               -- continue the segment
               case sdp_remote_phase_r is
                 when data_e =>
-                  bramb_addr_r <= bramb_addr + 1; -- this is irrelevant to meta and flag phases
+                  bramb_addr_r    <= bramb_addr + 1;
                   sdp_out_valid_r <= bfalse;
                 when meta_e => -- must be single word width
                   sdp_out_r <= std_logic_vector(resize(unsigned(md_out.opcode), sdp_out_r'length));
@@ -447,6 +436,8 @@ g0: for i in 0 to sdp_width_c-1 generate
                 when data_e =>
                   if sdp_msg_dws_left_r /= 0 then
                     sdp_segment_addr_r <= sdp_segment_addr_r + max_seg_dws_c;
+                    bramb_addr_r       <= bramb_addr + 1;
+                    sdp_out_valid_r    <= bfalse;
                     begin_segment(sdp_msg_dws_left_r);
                   else
                     begin_meta;
@@ -454,7 +445,7 @@ g0: for i in 0 to sdp_width_c-1 generate
                 when meta_e =>
                   sdp_segment_count_r <= (others => '0');
                   sdp_remote_phase_r  <= flag_e;
-                  sdp_out_r           <= std_logic_vector(to_unsigned(1, sdp_out_r'length));
+                  sdp_out_r           <= slv1(sdp_out_r'length);
                   -- Advance the buffer pointer here (not in flag_e) to pipeline the bram address
                   if r = sdp_last_remote then
                     if sdp_msg_idx_r = props_in.buffer_count - 1 then
@@ -486,7 +477,7 @@ g0: for i in 0 to sdp_width_c-1 generate
             if not sdp_out_valid_r then
               sdp_out_valid_r <= btrue;
               sdp_out_r       <= bramb_out;
-              bramb_addr_r <= bramb_addr_r + 1;
+--              bramb_addr_r <= bramb_addr_r + 1;
             end if;
           end if; -- if/else idle
         end if; -- message available in fifo 
