@@ -26,6 +26,7 @@
 # FIXME: create an hdl-platforms.mk template to share among platform developers.
 # This variable specifies the local list of platforms that are active here.
 HdlMyPlatforms=$(filter-out %.txt %.mk test Makefile common README README.txt lib specs old,$(wildcard *))
+include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 ifndef HdlPlatforms
 ifndef HdlPlatform
 ifeq ($(MAKECMDGOALS),clean)
@@ -37,7 +38,6 @@ else
 HdlPlatforms:=$(HdlPlatform)
 endif
 endif
-include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 $(foreach p,$(HdlPlatforms),$(if $(wildcard $p),,\
   $(warning Platform $p not present in this platforms directory, not building it here.)\
   $(eval override HdlPlatforms:=$(filter-out $p,$(HdlPlatforms)))))

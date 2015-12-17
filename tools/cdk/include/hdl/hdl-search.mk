@@ -156,7 +156,7 @@ HdlXmlComponentLibraries=$(infox HXC)\
 # the libraries and cores mentioned in the Libraries and Cores variable (those items without slashes).
 
 define HdlPrimitiveSearchError
-The primitive core/library "$1" was not found in any of these locations: $(call HdlCheckLinks,$2/$1)
+The primitive core/library "$1" was not found in any of these locations: $(call HdlCheckLinks,$2)
 OCPI_HDL_PRIMITIVE_PATH is: $(OCPI_HDL_PRIMITIVE_PATH)
 OCPI_PROJECT_PATH is: $(OCPI_PROJECT_PATH)
 OCPI_CDK_DIR is: $(OCPI_CDK_DIR)

@@ -1,6 +1,6 @@
 <HdlImplementation Name="bias_ver" Language="Verilog">
   <xi:include href="bias_spec.xml"/>
-  <specproperty name='biasvalue' readable='true'/>
+  <specproperty name='biasValue' readable='true'/>
   <StreamInterface Name="in" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" RegRequest="true" NumberOfOpcodes="256"/>
   <StreamInterface Name="out" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" RegRequest="true" NumberOfOpcodes="256"/>
 </HdlImplementation>

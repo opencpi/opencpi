@@ -92,16 +92,33 @@ function make_filtered_link {
   make_relative_link $1 $2
 }
 
+if test "$*" = ""; then
+  echo "Usage is: makeExportLinks.sh <target> <prefix>"
+  echo "This script takes two arguments:"
+  echo "  <target> in the form of <os>-<version>-<machine>, e.g. linux-c6-x86_64"
+  echo "    It is commonly used with the value of the OCPI_TARGET_HOST environment variable."
+  echo "  <prefix> is the prefix for all libraries in this project."
+  echo '    For the CDK/core project, it is "ocpi_"'
+  echo '    It is typically the project prefix followed by underscore'
+  echo 'This script is typically used internally by "make exports"'
+  echo 'It is designed to be run repeatedly, making links to whatever exists.'
+  echo 'Thus it is run several times during the build process.'
+  exit 1
+fi
 os=$(echo $1 | sed 's/^\([^-]*\).*$/\1/')
-dylib=$(if [ $os = macos ]; then echo dylib; else echo so; fi)
+dylib=$(if [ "$os" = macos ]; then echo dylib; else echo so; fi)
 set -e
 #rm -r -f exports
 mkdir -p exports
+set -f
 exclusions=$(test -f Project.exports && grep '^[ 	]*-' Project.exports | sed 's/^[ 	]*-[ 	]*\([^ 	#]*\)[ 	]*\([^ 	#]*\).*$/\1:\2/') || true
 additions=$(test -f Project.exports && grep '^[ 	]*+' Project.exports | sed 's/^[ 	]*+[ 	]*\([^ 	#]*\)[ 	]*\([^ 	#]*\).*$/\1:\2/') || true
+set +f
 facilities=$(test -f Project.exports &&  grep -v '^[ 	]*[-+#]' Project.exports) || true
-
 for f in $facilities; do
+  if [ ! -d $f/target-$1 ]; then
+    continue; # silently ignore unbuilt facilities
+  fi
   # Make links to main programs
   mains=$(find $f -name '*_main.c' -o -name '*_main.cxx' | sed 's-^.*/\([^/]*\)_main\..*$-\1-')
   for m in $mains; do
@@ -120,13 +137,17 @@ for f in $facilities; do
 
   # Make links to facility libraries
   foundlib=
-  for s in .$dylib _s.$dylib .a; do
+#  for s in .$dylib _s.$dylib .a; do
+  for s in  _s.$dylib .a; do
     lib=lib$2$(basename $f)$s
     libpath=$f/target-$1/$lib
     if [ ! -e $libpath ]; then
       libpath=target-$1/$lib
       if [ ! -e $libpath ]; then
-        continue
+        libpath=target-$1/.libs/$lib
+        if [ ! -e $libpath ]; then
+          continue
+        fi
       fi
     fi
     foundlib=$libpath
@@ -134,7 +155,7 @@ for f in $facilities; do
   done
   if [ "$foundlib" = "" ]; then
      if [ "$3" == "" ]; then
-       echo Library lib$2$(basename $f) not found in $f/target-$1/\* nor target-$1/\*
+       echo Library lib$2$(basename $f) not found in $f/target-$1/\*, target-$1/\*, nor target-$1/.libs/\*
      fi
 #    exit 1
   fi
@@ -182,13 +203,16 @@ if [ -d hdl/primitives -a -f hdl/primitives/Makefile ]; then
 fi
 
 # Add the ad-hoc export links
+set -f
 for a in $additions; do
   declare -a both=($(echo $a | tr : ' '))
-  src=${both[0]//<target>/$1}
+  rawsrc=${both[0]//<target>/$1}
+  set +f
+  for src in $rawsrc; do
   if [ -e $src ]; then
     after=
     if [[ ${both[1]} =~ /$ || ${both[1]} == "" ]]; then
-      after=$(basename ${both[0]})
+      after=$(basename $src)
     fi
     make_relative_link $src exports/${both[1]//<target>/$1}$after
   else
@@ -196,4 +220,6 @@ for a in $additions; do
       echo Warning: link source $src does not '(yet?)' exist.
     fi
   fi
+  done
+  set -f
 done

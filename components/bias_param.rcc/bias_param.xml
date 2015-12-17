@@ -1,4 +1,4 @@
 <RccWorker language="c" spec="bias_spec.xml">
   <!-- Insert any other implementation-specific information here -->
-  <specproperty name='biasvalue' parameter='1' default='0'/>
+  <specproperty name='biasValue' parameter='1' default='0'/>
 </RccWorker>

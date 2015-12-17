@@ -375,8 +375,10 @@ define HdlPrepareAssembly
   # 5. Define the variable used for dependencies when the worker is actually built
   HdlPreCore=$$(eval $$(HdlSetWorkers))$$(call HdlCollectCores,$$(HdlTarget),HdlPrepareAssembly)
 endef
+ifndef OCPI_HDL_PLATFORM
+OCPI_HDL_PLATFORM=zed
+endif
 define HdlPreprocessTargets
-  OCPI_HDL_PLATFORM=zed
   ifeq ($$(origin HdlPlatforms),undefined)
     ifdef HdlPlatform
       ifneq ($$(words $$(HdlPlatform)),1)

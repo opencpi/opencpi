@@ -410,6 +410,9 @@ namespace OCPI {
       // empty strings and "/" result in an empty string.
       // The return value is a convenience - the c_str() of the output buffer.
       const char *baseName(const char *path, std::string &buf);
+      // find item in colon-separated path, returning complete path in "result"
+      // return true on error
+      bool searchPath(const char *path, const char *item, std::string &result);
   }
 }
 

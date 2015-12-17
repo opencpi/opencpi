@@ -272,6 +272,9 @@ doMaybeProp(ezxml_t maybe, void *vpinfo) {
     // FIXME mark a property as "impled" so we reject doing it more than once
     if (!p)
       return OU::esprintf("Existing property named \"%s\" not found", name);
+    if (strcmp(p->m_name.c_str(), name))
+      return OU::esprintf("SpecProperty name (%s) and Property name (%s) differ in case",
+			  name, p->m_name.c_str());
     // So simply add impl info to the existing property.
     return p->parseImpl(maybe);
   } else if (p)

@@ -56,7 +56,9 @@ HdlInstallDir=lib
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 $(eval $(HdlPreprocessTargets))
 include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
-include $(OCPI_CDK_DIR)/include/ocl/ocl-make.mk
+ifeq ($(OCPI_HAVE_OPENCL),1)
+  include $(OCPI_CDK_DIR)/include/ocl/ocl-make.mk
+endif
 ifndef LibName
 LibName=$(CwdName)
 endif
@@ -71,11 +73,11 @@ HdlImplementations=$(filter %.hdl,$(Implementations))
 OclImplementations=$(filter %.ocl,$(Implementations))
 TestImplementations=$(filter %.test,$(Implementations))
 AssyImplementations=$(filter %.assy,$(Implementations))
-LibDir=$(OutDir)lib
-GenDir=$(OutDir)gen
+override LibDir=$(OutDir)lib
+override GenDir=$(OutDir)gen
 # In case this library is a subdirectory that might receive XmlIncludeDirs from the
 # parent (e.g. when a platform directory has a "devices" library as a subdirectory
-XmlIncludeDirs+=$(XmlIncludeDirsInternal)
+override XmlIncludeDirs+=$(XmlIncludeDirsInternal)
 # default is what we are running on
 
 build_targets := speclinks
@@ -100,9 +102,9 @@ ifneq ($(AssyImplementations),)
 build_targets += assy
 endif
 
-ifneq ($(TestImplementations),)
-build_targets += test
-endif
+#ifneq ($(TestImplementations),)
+#build_targets += test
+#endif
 
 $(call OcpiDbgVar,build_targets)
 # function to build the targets for an implemention.
@@ -130,6 +132,7 @@ BuildImplementation=$(infoxx BI:$1:$2:$(call HdlLibrariesCommand))\
 	       LibDir=$(call AdjustRelative,$(LibDir)/$(1)) \
 	       GenDir=$(call AdjustRelative,$(GenDir)/$(1)) \
 	       $(PassOutDir) \
+	       ComponentLibrariesInternal="$(call OcpiAdjustLibraries,$(ComponentLibraries))" \
 	       $(call Capitalize,$1)LibrariesInternal="$(call OcpiAdjustLibraries,$($(call Capitalize,$1)Libraries))" \
 	       $(call Capitalize,$1)IncludeDirsInternal="$(call AdjustRelative,$($(call Capitalize,$1)IncludeDirs))" \
                XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirs))";\
@@ -211,7 +214,11 @@ cleanocl:
 cleanhdl:
 	$(call CleanModel,hdl)
 
-clean:: cleanxm cleanrcc cleanocl cleanhdl cleantest
+ifeq ($(OCPI_HAVE_OPENCL),1)
+clean:: cleanocl
+endif
+
+clean:: cleanxm cleanrcc cleanhdl cleantest
 	$(AT)echo Cleaning \"$(CwdName)\" component library directory for all targets.
 	$(AT)find . -depth -name gen -exec rm -r -f "{}" ";"
 	$(AT)find . -depth -name "target-*" -exec rm -r -f "{}" ";"

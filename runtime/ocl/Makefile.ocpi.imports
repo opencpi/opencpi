@@ -42,7 +42,7 @@ ALLINC += \
 	$(UTIL_EXPORTS) \
 	$(LOGGER_EXPORTS) \
 	$(OCPIOS_EXPORTS) \
-	$(OPENCL_EXPORTS)
+	$(or $(OPENCL_EXPORTS),../include/cl)
 
 ALLLIBS += \
 	$(CONTAINER_LIBS) \

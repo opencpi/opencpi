@@ -33,6 +33,17 @@ else
     exit 1
   fi
 fi
+export OCPI_TARGET_PLATFORM=zed
+source ../../exports/scripts/ocpisetup.sh ../../exports/scripts/ocpisetup.sh
+  KERNEL_LIB_DIR=$OCPI_CDK_DIR/lib/linux-zynq-arm
+  BIN_DIR=$OCPI_CDK_DIR/bin/linux-zynq-arm
+  RUNTIME_LIB_DIR=$OCPI_CDK_DIR/lib/linux-zynq-arm
+  EXAMPLES_ROOTDIR=$OCPI_CDK_DIR
+  OCPIRUN_PATH=$OCPI_CDK_DIR/bin/$OCPI_TOOL_HOST
+  if test "$OCPI_LIBRARY_PATH" = ""; then
+    # Put all rcc components, and precanned bitstreams for the platform.
+    export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/lib/components:$OCPI_CDK_DIR/lib/platforms/zed
+  fi
 cd $REL
 sd=OpenCPI-SD
 rel=SD-release
@@ -55,39 +66,44 @@ echo You should have already customized the mysetup.sh script for your environme
 if test -r ../mynetsetup.sh; then
   cp ../mynetsetup.sh $sd/opencpi
 fi
-if test -r ../mynetsetup.sh; then
+if test -r ../mysetup.sh; then
   cp ../mysetup.sh $sd/opencpi
 fi
+
 # After this is files for standalone operation
-if test ! -e $OCPI_BASE_DIR/lib/target-linux-zynq-arm/opencpi.ko; then
-  echo The OpenCPI linux kernel driver for zed has not been built.
-  echo It is expected to be in: $OCPI_BASE_DIR/lib/target-linux-zynq-arm/opencpi.ko
+shopt -s nullglob
+drivers=(${KERNEL_LIB_DIR}/opencpi*.ko)
+shopt -u nullglob
+if test "${drivers[*]}" = ""; then
+  echo No OpenCPI linux kernel drivers for zed have been built.
+  echo It is expected to be in: "${KERNEL_LIB_DIR}/opencpi*.ko"
   exit 1
 fi
-cp $OCPI_BASE_DIR/lib/target-linux-zynq-arm/opencpi.ko $sd/opencpi/lib
-cp $OCPI_BASE_DIR/lib/target-linux-zynq-arm/mdev-opencpi.rules $sd/opencpi/lib
+mkdir $sd/opencpi/lib/linux-zynq-arm
+cp -L ${KERNEL_LIB_DIR}/opencpi*.ko $sd/opencpi/lib/linux-zynq-arm
+cp -L ${KERNEL_LIB_DIR}/mdev-opencpi.rules $sd/opencpi/lib/linux-zynq-arm
 for b in run hdl zynq serve; do
-  cp $OCPI_BASE_DIR/ocpi/bin/linux-zynq-arm/ocpi$b $sd/opencpi/bin
-  $OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-strip $sd/opencpi/bin/ocpi$b
+  cp -L $BIN_DIR/ocpi$b $sd/opencpi/bin
+  test -z $RPM_BUILD_ROOT && $OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-strip $sd/opencpi/bin/ocpi$b
 done
 # we use rdate for now... : cp ../ntpclient $sd/opencpi/bin
-cp ../libstdc++.so.6 $sd/opencpi/lib
-# copy driver libraries to the subdirectory so that OCPI_CDK_DIR will 
+# cp ../libstdc++.so.6 $sd/opencpi/lib
+# copy driver libraries to the subdirectory so that OCPI_CDK_DIR will
 # find them.
-mkdir $sd/opencpi/lib/linux-zynq-arm
-cp $OCPI_CDK_DIR/lib/linux-zynq-arm/*_s.so $sd/opencpi/lib/linux-zynq-arm
-
-cp $OCPI_CDK_DIR/scripts/ocpidriver $sd/opencpi/bin
-cp $OCPI_CDK_DIR/scripts/ocpi_linux_driver $sd/opencpi/bin
-cp $OCPI_CDK_DIR/examples/xml/{*.xml,test.input} $sd/opencpi/xml
+cp -L ${RUNTIME_LIB_DIR}/*_s.so $sd/opencpi/lib/linux-zynq-arm
+cp -L $OCPI_CDK_DIR/scripts/ocpibootstrap.sh $sd/opencpi/bin
+cp -L $OCPI_CDK_DIR/scripts/ocpidriver $sd/opencpi/bin
+cp -L $OCPI_CDK_DIR/scripts/ocpi_linux_driver $sd/opencpi/bin
+cp -L ${EXAMPLES_ROOTDIR}/examples/xml/{*.xml,test.input} $sd/opencpi/xml
 # Add the default system.xml to the SD card.
 cp ../system.xml $sd/opencpi
 n=0
 echo Adding artifacts found in OCPI_LIBRARY_PATH for linux-zynq-arm and zed targets.
-for i in $(ocpirun -A linux-zynq-arm,zed); do
-  cp $i $sd/opencpi/artifacts/$(printf %03d-%s $n $(basename $i))
+for i in $($OCPIRUN_PATH/ocpirun -A linux-zynq-arm,zed | sort); do
+  cp -L $i $sd/opencpi/artifacts/$(printf %03d-%s $n $(basename $i))
   n=$(expr $n + 1)
 done
+echo Added $n artifacts to SD image.
 cd ..
 echo New OpenCPI Release SD:
 du -k -s -h $REL/$sd/opencpi/artifacts
@@ -95,4 +111,3 @@ du -k -s -h $REL/$sd/opencpi/lib
 du -k -s -h $REL/$sd/opencpi/bin
 du -k -s -h $REL/$sd/opencpi
 du -k -s -h $REL/$sd
- 

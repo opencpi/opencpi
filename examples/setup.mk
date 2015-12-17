@@ -1,10 +1,10 @@
 ifndef OCPI_CDK_DIR
-# if not set, assume we are either in the development tree or in an exported cdk
-OCPI_CDK_DIR=$(or $(wildcard ../../export),../..)
+OCPI_CDK_DIR=$(realpath ../../exports)
 endif
 
-include $(OCPI_CDK_DIR)/ocpisetup.mk
-
+ifneq ($(filter clean%,$(MAKECMDGOALS)),)
+  include $(OCPI_CDK_DIR)/include/ocpisetup.mk
+endif
 DIR=target-$(OCPI_TARGET_DIR)
 PROG=$(DIR)/$(APP)
 OUT= > /dev/null
@@ -16,10 +16,12 @@ all: $(PROG)
 $(DIR):
 	mkdir -p $(DIR)
 
+ifdef APP
 $(PROG): $(APP).cxx | $(DIR)
 	$(AT)echo Building $@...
 	$(AT)$(CXX) -g -Wall $(OCPI_EXPORT_DYNAMIC) -o $@ $(INCS) $^ $(OCPI_LD_FLAGS)
+endif
 
 clean::
-	rm -r -f lib target-* *.*~ timeData.raw output_image.jpg test.output
+	$(AT)rm -r -f lib target-* *.*~ timeData.raw output_image.jpg test.output
 

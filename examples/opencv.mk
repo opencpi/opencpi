@@ -1,7 +1,9 @@
 # helpers for opencv makefiles
 ifndef OCPI_OPENCV_HOME
+ifeq ($(filter clean%,$(MAKECMDGOALS)),)
 $(info Set OCPI_OPENCV_HOME to the OpenCV install location to use this example (e.g. /usr/local))
 $(info OpenCV not available.)
+endif
 all:
 run:
 clean:

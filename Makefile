@@ -34,15 +34,16 @@
 ########################################################################### #
 
 ProjectPrefix=ocpi
-ifndef OCPI_BASE_DIR
-  $(error The environment is not set up properly to run "make" here.  You must source an environment setup script)
-endif
 ifeq ($(wildcard exports),)
   ifeq ($(filter clean%,$(MAKECMDGOALS)),)
     $(info Exports have never been set up for this tree  Doing it now.)
   endif
-  $(info $(shell ./scripts/makeExportLinks.sh $(OCPI_TARGET_HOST) $(ProjectPrefix)_ xxx))
+  $(info $(shell ./scripts/makeExportLinks.sh - $(ProjectPrefix)_ xxx))
 endif
+export OCPI_CFLAGS=-Wall -Wfloat-equal -Wextra  -fno-strict-aliasing -Wconversion -std=c99
+export OCPI_CXXFLAGS=-Wextra -Wall -Wfloat-equal -fno-strict-aliasing -Wconversion
+include exports/include/ocpisetup.mk
+export OCPI_OS=$(OCPI_TARGET_OS)
 ifneq ($(OCPI_OS),)
 SYSTEMOPTION="OCPI_OS=$(OCPI_OS)"
 endif
@@ -172,8 +173,6 @@ all: packages exports
 exports:
 	$(AT)./scripts/makeExportLinks.sh $(OCPI_TARGET_DIR) $(ProjectPrefix)_
 
-#	./scripts/makeExportLinks $(OCPI_TARGET_DIR)
-
 .PHONY: hdl hdlcomps hdlapps hdlclean
 hdlcomps:
 	$(MAKE) -C hdl components
@@ -230,8 +229,9 @@ hdlprimitives: exports
 	$(MAKE) -C hdl primitives
 
 driver:
-	$(AT)if test -d os/$(OCPI_OS)/driver; then \
+	$(AT)set -e; if test -d os/$(OCPI_OS)/driver; then \
 	  $(MAKE) -C os/$(OCPI_OS)/driver; \
+	  $(MAKE) exports; \
 	else \
 	  echo No driver for the OS '"'$(OCPI_OS)'"', so none built. ; \
 	fi

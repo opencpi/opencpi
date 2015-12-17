@@ -1,3 +1,4 @@
+#!/bin/bash
 # See the "usage" message below
 set -e
 if test "$1" = "" -o "$1" = "--help" -o "$1" = "-help" -o "$2" = ""; then
@@ -14,6 +15,10 @@ The result of this script is a release directory with everything that is needed 
 - Build the OpenCPI linux kernel driver.
 - Populate an OpenCPI SD card directory tree based on this Xilinx release.
 After running this script, OpenCPI, including its driver, can be built for zed.
+
+Usage is: createOpenCPIZedRelease.sh <release-name> <repo-tag>
+The release name can be the same as the tag, but it is usually the associated
+Xilinx tool release associated with the tag unless it is between releases etc.
 EOF
   exit 1
 fi
@@ -60,6 +65,8 @@ echo Building u-boot to get the mkimage command.
 make zynq_zed_config CROSS_COMPILE=$OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-
 make CROSS_COMPILE=$OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-
 echo ==============================================================================
+echo The u-boot build is complete.  Starting linux build.
+echo ==============================================================================
 echo Using the tag '"'$tag'"' for the Xilinx linux kernel source repository.
 cd ../linux-xlnx
 make clean
@@ -101,6 +108,7 @@ echo Building the Xilinx linux kernel for zynq to create the kernel-headers tree
 PATH="$PATH:`pwd`/../u-boot-xlnx/tools" \
    make ARCH=arm CROSS_COMPILE=$OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST- \
         UIMAGE_LOADADDR=0x8000 uImage dtbs
+ocpi_kernel_release=$(< include/config/kernel.release)-$(echo $tag | sed 's/^xilinx-//')
 echo ==============================================================================
 cd $RELDIR
 echo Capturing the built Linux uImage file and the zed device tree into our release directory.
@@ -127,6 +135,8 @@ mkdir kernel-headers-$tag
 rm -r -f kernel-headers/arch/arm/boot
 find kernel-headers -name "*.[csSo]" -exec rm {} \;
 rm kernel-headers/scripts/{basic,mod}/.gitignore
+# Record the kernel release AND the repo tag used.
+echo $ocpi_kernel_release > kernel-headers/ocpi-release
 echo ==============================================================================
 echo The kernel-headers-$tag directory has been populated and is ready to use for building drivers
 echo ==============================================================================
@@ -154,6 +164,10 @@ ed etc/network/interfaces<<EOF
 s/eth0/eth0 eth1/p
 wq
 EOF
+
+# Put the C++ runtime library on the system
+cp -P $OCPI_CROSS_BUILD_BIN_DIR/../$OCPI_CROSS_HOST/libc/usr/lib/libstdc++.so* lib
+echo $ocpi_kernel_release > etc/ocpi-release
 find . ! -name '\.' | fakeroot cpio -o -H newc | gzip > ../out.root.image.gz
 $FROM/../git/u-boot-xlnx/tools/mkimage \
   -A arm \

@@ -1460,34 +1460,31 @@ namespace OCPI {
 	  error = "The OCPI_CDK_DIR environment variable is not set";
 	  return;
 	}
-	std::string script(xenv);
-	script += "/lib/platforms/";
-	std::string actualPlatform;
-	if (platform.empty()) {
-	  OS::FileIterator fi(script, "runSimExec.*");
-	  if (fi.end()) {
-	    OU::format(error, "There is no supported simulation platform (no %s/runSimExec.*)",
-		       script.c_str());
-	    return;
-	  }
-	  std::string cmd = fi.relativeName();
-	  const char *cp = strchr(cmd.c_str(), '.');
-	  assert(cp);
-	  actualPlatform = ++cp;
-	  script += cmd;
-	} else {
-	  size_t len = platform.length();
-	  actualPlatform.assign(platform.c_str(), !strcmp("_pf", platform.c_str() + len - 3) ? len - 3 : len);
-	  script += actualPlatform;
-	  script += "/";
-	  script += "runSimExec.";
-	  script += actualPlatform;
-	  if (!OS::FileSystem::exists(script)) {
-	    OU::format(error, "\"%s\" is not a supported simulation platform (no %s)",
-		       platform.c_str(), script.c_str());
-	    return;
-	  }
+	std::string path, item, script, internalPlatform, actualPlatform;
+	const char *ppenv = getenv("OCPI_PROJECT_PATH");
+	if (ppenv) {
+	  path = ppenv;
+	  path += ":";
 	}
+	path += xenv;
+	if (platform.empty()) {
+	  OU::format(error, "You must specify a simulation platform (-p <sim_pf>");
+	  return;
+	}
+	internalPlatform = platform;
+	size_t len = platform.length();
+	if (strcmp("_pf", platform.c_str() + platform.length() - 3))
+	  internalPlatform += "_pf";
+	OU::format(item, "lib/platforms/%s/runSimExec.%s", internalPlatform.c_str(),
+		   internalPlatform.c_str());
+	if (OU::searchPath(path.c_str(), item.c_str(), script)) {
+	  OU::format(error,
+		     "\"%s\" not a supported or built simulation platform? could not find \"%s\" in OCPI_CDK_DIR or OCPI_PROJECT_PATH",
+		     internalPlatform.c_str(), item.c_str());
+	  return;
+	}
+	actualPlatform = platform;
+	actualPlatform.assign(platform.c_str(), !strcmp("_pf", platform.c_str() + len - 3) ? len - 3 : len);
 	pid_t pid = getpid();
 	OU::format(m_simDir, "%s/%s", OH::Sim::TMPDIR, OH::Sim::SIMDIR);
 	// We do not clean this up - it is created on demand.

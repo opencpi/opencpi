@@ -14,8 +14,8 @@ T1=/tmp/makeStaticWorker$$.1
 T2=/tmp/makeStaticWorker$$.2
 set -e
 OUT=`dirname $1`/`basename $1 .so`_s.so
-ocpixml get $1 > $T1
-ocpixml strip $1 $T2
+$OCPI_CDK_DIR/scripts/ocpixml get $1 > $T1
+$OCPI_CDK_DIR/scripts/ocpixml strip $1 $T2
 X=1
 if ! grep '<artifact.*dynamic=.1' $T1 > /dev/null; then
   echo The file \"$1\" does not contain XML from an RCC worker.
@@ -23,7 +23,7 @@ elif file $T2 | grep ELF > /dev/null; then
   shift
  for i in $*; do PARGS="$PARGS --remove-needed $i"; done
  $OCPI_PREREQUISITES_INSTALL_DIR/patchelf/$OCPI_TOOL_HOST/bin/patchelf $PARGS $T2
- sed "s/\(<artifact.*dynamic='\)./\10/" $T1 | ocpixml add $T2 -
+ sed "s/\(<artifact.*dynamic='\)./\10/" $T1 | $OCPI_CDK_DIR/scripts/ocpixml add $T2 -
  cp $T2 $OUT
  chmod a+x $OUT
  X=0

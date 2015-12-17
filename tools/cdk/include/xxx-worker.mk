@@ -91,8 +91,9 @@ $(call OcpiDbgVar,XmlIncludeDirsInternal)
 # 1. The generated directory
 # 2. What is locally set in the worker's Makefile (perhaps to override specs/protocols)
 # 3. What was passed from the library Makefile above (perhaps to override specs/protocols)
-# 4. The library's specs directory
-# 5. The library's export directory to find other (slave or emulated) workers
+# 4. The library's export directory to find other (slave or emulated) workers
+# 5. The library's specs directory
+# 6. Any other component library's XML dirs
 # 6. The standard component library for specs
 # 7. The standard component library's exports for proxy slaves
 override XmlIncludeDirsInternal:=\
@@ -102,8 +103,11 @@ override XmlIncludeDirsInternal:=\
     $(XmlIncludeDirsInternal) \
     ../lib/$(Model)\
     ../specs \
-    $(OCPI_CDK_DIR)/lib/components \
+    $(OcpiXmlComponentLibraries) \
+    $(OCPI_CDK_DIR)/lib/components/hdl\
     $(OCPI_CDK_DIR)/lib/components/$(Model)\
+    $(OCPI_CDK_DIR)/lib/components \
+    $(OCPI_CDK_DIR)/protocols \
    )
 
 #    $(foreach m,$(Models),../lib/$m)\

@@ -6,7 +6,7 @@
 set -e
 if test "$OCPI_CROSS_HOST" != ""; then
  echo We do not use patchelf in embedded environments.
- exit 1
+ exit 0
 fi
 OCPI_PATCHELF_VERSION=0.8
 . ./scripts/setup-install.sh

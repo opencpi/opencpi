@@ -24,7 +24,8 @@
 ############################################################################
 
 # This primitive library contains VHDL primitive modules for zynq platforms.
-OnlyTargets=zynq isim modelsim stratix4
+include $(OCPI_CDK_DIR)/include/hdl/xilinx.mk
+OnlyTargets=zynq isim modelsim
 HdlLibraries=fixed_float ocpi platform sdp
 
 XilinxZynqCore=processing_system7_v4_03_a
@@ -41,7 +42,9 @@ SourceFiles=\
   sdp2axi_rd.vhd sdp2axi_wd.vhd sdp2axi.vhd sdp2axi_rd.vhd
 #   sdp2axi.vhd sdp2axi_wd.vhd sdp2axi_rd.vhd
 
-ifneq ($(wildcard $(XilinxZynq)),)
+ifeq ($(wildcard $(XilinxZynq)),)
+  $(warning Xilinx Zynq IP files are unavailable.  Assemblies will not succeed.)
+else
   SourceFiles+=$(XilinxZynqPSFiles:%=$(XilinxZynq)/%.v) zynq_ps.vhd
 endif
 

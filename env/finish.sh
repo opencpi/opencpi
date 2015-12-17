@@ -29,7 +29,7 @@ if [ ! -d exports ]; then
   echo No exports tree exists in this OpenCPI base directory.  Creating an initial one.
   ./scripts/makeExportLinks.sh $OCPI_TOOL_HOST ocpi_ xxx
 fi
-source ocpi/ocpisetup.sh ocpi/ocpisetup.sh
+source exports/scripts/ocpisetup.sh exports/scripts/ocpisetup.sh
 # compatibility
 export OCPI_OS=$OCPI_TARGET_OS
 export OCPI_ARCH=$OCPI_TARGET_ARCH
