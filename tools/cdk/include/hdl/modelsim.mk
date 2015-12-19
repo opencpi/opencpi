@@ -69,7 +69,7 @@ $(call OcpiDbgVar,ModelsimFiles)
 ModelsimVlogLibs=
 
 ModelSimVlogIncs=\
-  $(foreach d,$(VerilogDefines),+define+$d) \
+  $(foreach d,$(VerilogDefines),+define+$d) +incdir+.. \
   $(foreach d,$(VerilogIncludeDirs),+incdir+$(call FindRelative,$(TargetDir),$d))
 
 ModelsimArgs=-pedanticerrors -work $(WorkLib) -modelsimini modelsim.ini

@@ -12,7 +12,8 @@ entity raw_arb is
     from_users    : in  wci.raw_prop_out_array_t(0 to nusers-1);
     to_users      : out wci.raw_prop_in_array_t(0 to nusers-1);
     from_device   : in  wci.raw_prop_in_t;
-    to_device     : out wci.raw_prop_out_t
+    to_device     : out wci.raw_prop_out_t;
+    index         : out integer range 0 to nusers-1
   );
 end entity raw_arb;
 architecture rtl of raw_arb is
@@ -61,6 +62,7 @@ architecture rtl of raw_arb is
   end all_reset;
 begin
   idx          <= to_integer(who_has_it_r);
+  index <= idx;
   g0: for i in 0 to nusers-1 generate
     present(i)          <= from_users(i).present;
     to_users(i).present(0 to present'right) <= present;
@@ -72,7 +74,7 @@ begin
     end generate g2;
     to_users(i).raw.data    <= from_device.raw.data; -- broadcast data to all
     to_users(i).raw.done    <= to_bool(from_device.raw.done and who_has_it_r = i);
-    to_users(i).raw.error   <= bfalse;
+    to_users(i).raw.error   <= to_bool(from_device.raw.error and who_has_it_r = i);
   end generate g0;
   to_device.present <= btrue;
   to_device.reset   <= all_reset;

@@ -1,21 +1,30 @@
-<!-- Lime Receive ADC worker.
-     This worker is receive only - to only use the receive logic -->
+<!-- Lime ADC worker -->
 <HdlDevice language="vhdl" spec='qadc-spec'>
-  <property name='source' type='enum' enums='adc,count,loopback' default='adc' initial='1'/>
-  <!-- Should we use the source synchronous lime clock output? (rx only) -->
-  <property name='use_clk_out' type='bool' parameter='1' default='1'/>
-  <!-- start of common elements for adc and dac -->
-  <ControlInterface Timeout="1024"/>
+  <!-- Other included XML -->
   <xi:include href='lime-iq-properties.xml'/>
-  <clock name='sample_clk'/>
-  <!-- end of common elements for adc and dac -->
-  <StreamInterface Name="out" producer='true' DataWidth="32"/>
-  <!-- Signals connected to the RX pins of the Lime chip (or associated clocks)
-       Signal names from the data sheet -->
-  <Signal Output="rx_clk"/>         <!-- FPGA->Lime, sometimes not connected -->
-  <Signal  Input="rx_clk_out"/>     <!-- lime->FPGA, syncd w/ data, maybe not connected -->
-  <Signal  Input="rx_iq_sel"/>      <!-- Low is I, high is Q (unless configured as opposite) -->
-  <Signal  Input="rxd" width="12"/> <!-- The data -->
-  <!-- Not strictly speaking from a lime pin, but a clock specifically for the lime IQ -->
-  <Signal  Input="rx_clk_in"/>      <!-- A copy of an rx_clk sent directly to line rx_clk -->
+
+  <!-- Parameters (build properties)-->
+  <Property name='USE_CLK_OUT_p' type='bool' parameter='1' default='1'/>   <!-- Should we use the source synchronous lime clock output? -->
+
+  <!-- Properties -->
+  <Property name='source' type='enum' enums='adc,count,loopback' default='adc' initial='1'/>
+  <Specproperty name='messageSize' default='2048'/>
+  <Specproperty name='overrun' default='0'/>
+
+  <!-- Ports -->
+  <StreamInterface Name="OUT" producer='true' DataWidth="32"/>
+
+  <!-- Clocks -->
+  <Clock name='sample_clk'/>
+
+  <!-- Timeout -->
+  <ControlInterface Timeout="16"/> <!-- Set to default. No raw properties -->
+
+  <!-- Signals --> 
+  <!--Signal names from the Lime data sheet -->
+  <Signal Output="RX_CLK"/>        <!-- FPGA->Lime, sometimes not connected -->
+  <Signal Input="RX_CLK_OUT"/>     <!-- Lime->FPGA, syncd w/ data, maybe not connected -->
+  <Signal Input="RX_IQ_SEL"/>      <!-- Low is I, high is Q (unless configured as opposite) -->
+  <Signal Input="RXD" width="12"/> <!-- ADC data -->
+  <Signal Input="RX_CLK_IN"/>      <!-- A copy of an RX_CLK sent directly to line RX_CLK -->
 </HdlDevice>

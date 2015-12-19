@@ -49,6 +49,7 @@ tests
 +tools/cdk/include/worker.mk include/
 +tools/cdk/include/xxx-worker.mk include/
 +tools/cdk/include/ocpisetup.mk include/
++tools/cdk/include/ocpisetup.mk
 # CDK scripts we need
 +tools/cdk/scripts/makeStaticWorker scripts/
 +tools/cdk/scripts/ocpidriver scripts/
@@ -78,6 +79,7 @@ tests
 # They are currently redundant with the top level include, but they are here so we can
 # Ultimately control visibility for workers
 +runtime/application/include/OcpiApi.h include/rcc/OcpiApi.hh
++runtime/application/include/OcpiApi.h include/rcc/OcpiApi.h
 +os/interfaces/include/OcpiOsDebugApi.h include/rcc/OcpiOsDebugApi.hh
 +runtime/application/include/OcpiApplicationApi.h include/rcc/
 +runtime/container/include/OcpiContainerApi.h include/rcc/

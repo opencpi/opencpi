@@ -89,16 +89,17 @@ $(call OcpiDbgVar,HdlPlatforms)
     $(eval $(HdlSearchComponentLibraries))
     $(call OcpiDbgVar,XmlIncludeDirsInternal)
     $(and $(shell \
+       RET=; \
        if test -d devices; then \
-        ( \
-	 echo ======= Entering the \"devices\" library for the \"$(Worker)\" platform.; \
+	 echo ======= Entering the \"devices\" library for the \"$(Worker)\" platform. 1>&2; \
          $(MAKE) -C devices \
            ComponentLibrariesInternal="$(call OcpiAdjustLibraries,$(ComponentLibraries))" \
            XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirsInternal))" \
-	   HdlPlatforms="$(HdlPlatforms)" HdlPlatform="$(HdlPlatform)"; \
-	 echo ======= Exiting the \"devices\" library for the \"$(Worker)\" platform. \
-        ) 1>&2 ; \
-       fi),)
+	   HdlPlatforms="$(HdlPlatforms)" HdlPlatform="$(HdlPlatform)" 1>&2||  \
+         RET=1; \
+	 echo ======= Exiting the \"devices\" library for the \"$(Worker)\" platform. 1>&2 ;\
+       fi; \
+       echo $$RET),$(error Devices failed))
   endif
   ################################################################################
   # We are like a worker (and thus a core)
