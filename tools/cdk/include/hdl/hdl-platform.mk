@@ -28,6 +28,22 @@
 $(call OcpiDbgVar,HdlPlatforms)
 HdlMode:=platform
 HdlLibraries+=platform
+include $(OCPI_CDK_DIR)/include/util.mk
+# Force the platform path to point to this directory.
+# This means we can build this platform without it being
+# defined globally anywhere, whether in OCPI_HDL_PLATFORM_PATH
+# or in the core hdl/platforms dir.
+# Note "export" must appear BEFORE override because once 
+# "override" is used, "export" doesn't apply.
+export OCPI_HDL_PLATFORM_PATH
+override OCPI_HDL_PLATFORM_PATH := $(call OcpiAbsPath,.)
+# If no platforms were specified, we obviously want to build this platform.
+# And not default to some global "default" one.
+ifeq ($(HdlPlatform)$(HdlPlatforms),)
+  HdlPlatform:=$(CwdName)
+  HdlPlatforms:=$(CwdName)
+endif
+# We defer this because of side effects, which is wrong: FIXME hdl-make should not do hdl-target.mk?
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 $(call OcpiDbgVar,HdlPlatforms)
 # Theses next lines are similar to what worker.mk does
@@ -40,143 +56,126 @@ override Workers:=$(CwdName)
 override Worker:=$(Workers)
 Worker_$(Worker)_xml:=$(Worker).xml
 OcpiLanguage:=vhdl
-ComponentLibraries+=devices cards
+# We need these libraries to parse the platform xml file.
+# 1. a local "devices" library if there is one.
+# 2. any other libraries defined for the platform
+# 3. the generic "devices" and "cards" in the project path
+ComponentLibraries+=\
+ $(wildcard ./devices)\
+ $(infox PCL:$(ComponentLibraries_$(Worker)):$(shell pwd))$(ComponentLibraries_$(Worker)) \
+ devices cards
 LibDir=lib/hdl
 $(call OcpiDbgVar,HdlPlatforms)
 ifndef HdlPlatforms
  override HdlPlatforms:=$(HdlPlatform)
 endif
-ifdef HdlPlatforms
-  ifeq ($(filter $(Worker),$(HdlPlatforms)),)
-    $(info Skipping platform ($(Worker)) since it is not in HdlPlatforms ($(HdlPlatforms)).)
-    HdlSkip := 1
-    skip:
+# Before we really do any "worker" or "config" stuff we must recurse into the device directory
+ifneq ($(MAKECMDGOALS),clean)
+  ifneq ($(wildcard devices),)
+    # We need to build the devices subdir before processing this file any further since the
+    # parsing of the platform worker's XML depends on having these devices built.
+    # Since we are NOT executing this in a recipe, exports are not happening automatically by make.
+    $(and $(shell \
+       RET=; \
+       echo ======= Entering the \"devices\" library for the \"$(Worker)\" platform. 1>&2; \
+       export OCPI_HDL_PLATFORM_PATH=$(CURDIR); \
+       $(MAKE) -C devices --no-print-directory \
+         ComponentLibrariesInternal="$(call OcpiAdjustLibraries,$(ComponentLibraries))" \
+         XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirsInternal))" \
+         HdlPlatforms="$(HdlPlatforms)" HdlPlatform="$(HdlPlatform)" \
+         HdlTargets="$(HdlTargets)" HdlTarget="$(HdlTarget)" $(MAKECMDGOALS) 1>&2 || RET=1; \
+       echo ======= Exiting the \"devices\" library for the \"$(Worker)\" platform. 1>&2; \
+       echo $$RET),$(error Error building devices library in $(CURDIR)))
   endif
 endif
-$(call OcpiDbgVar,HdlPlatforms)
-# We are building a platform that is not known in the core or in the environment
-ifeq (,$(filter $(Worker),$(HdlAllPlatforms)))
-  HdlAllPlatforms+=$(Worker)
-  HdlPlatformDir_$(Worker):=$(call OcpiAbsPath,.)
-  include $(Worker).mk
-  override OCPI_HDL_PLATFORM_PATH:=$(HdlPlatformDir_$(Worker))
-  export OCPI_HDL_PLATFORM_PATH
-endif
-override HdlPlatforms:=$(Worker)
-override HdlPlatform:=$(Worker)
-override HdlTargets:=$(call HdlGetFamily,$(Worker))
-override HdlTarget:=$(call HdlGetFamily,$(Worker))
-export HdlPlatforms
-export HdlPlatform
-export HdlTargets
-export HdlTarget
+$(call OcpiDbgVar,HdlExactPart)
+$(call OcpiDbgVar,HdlPlatform)
+HdlExactPart:=$(HdlPart_$(HdlPlatform))
+$(call OcpiDbgVar,HdlExactPart)
+$(call OcpiDbgVar,HdlTargets)
+$(eval $(HdlSearchComponentLibraries))
+$(call OcpiDbgVar,XmlIncludeDirsInternal)
+$(infox HP1:$(HdlPlatforms))
 $(call OcpiDbgVar,HdlPlatforms)
 XmlIncludeDirs+=$(HdlPlatformsDir)/specs
 $(call OcpiDbgVar,HdlPlatforms)
-ifndef HdlSkip
-$(call OcpiDbgVar,HdlPlatforms)
-SubCores_$(HdlTarget):=$(Cores)
+SubCores_$(call HdlGetFamily,$(Worker)):=$(Cores)
+OnlyPlatforms:=$(Worker)
+OnlyTargets:=$(call HdlGetFamily,$(Worker))
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
+# the target preprocessing may tell us there is nothing to do
+# some platforms may have been used for the devices subdir (tests, sims, .etc.)
 ifndef HdlSkip
-$(call OcpiDbgVar,HdlPlatforms)
-  # add xml search in component libraries
-  ifneq ($(MAKECMDGOALS),clean)
-    $(call OcpiDbgVar,HdlExactPart)
-    $(call OcpiDbgVar,HdlPlatform)
-    HdlExactPart:=$(HdlPart_$(HdlPlatform))
-    $(call OcpiDbgVar,HdlExactPart)
-    $(call OcpiDbgVar,HdlTargets)
-    $(eval $(HdlSearchComponentLibraries))
-    $(call OcpiDbgVar,XmlIncludeDirsInternal)
-    $(and $(shell \
-       if test -d devices; then \
-        ( \
-	 echo ======= Entering the \"devices\" library for the \"$(Worker)\" platform.; \
-         $(MAKE) -C devices \
-           ComponentLibrariesInternal="$(call OcpiAdjustLibraries,$(ComponentLibraries))" \
-           XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirsInternal))" \
-	   HdlPlatforms="$(HdlPlatforms)" HdlPlatform="$(HdlPlatform)"; \
-	 echo ======= Exiting the \"devices\" library for the \"$(Worker)\" platform. \
-        ) 1>&2 ; \
-       fi),)
-  endif
+  $(call OcpiDbgVar,HdlPlatforms)
   ################################################################################
   # We are like a worker (and thus a core)
   # But we're VHDL only, so we only need to build the rv core
   # which is the "app" without container or the platform
   # FIXME: we can't do this yet because the BB library name depends on there being both cores...
   #Tops:=$(Worker)_rv
-  ifneq ($(wildcard devices),)
-    ComponentLibraries+=./devices
-  endif
   $(eval $(HdlSearchComponentLibraries))
   include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
-  ifndef HdlSkip
-    exports:
-    .PHONY: exports
+  ifdef HdlSkip
+    $(error unexpected target/platform skip)
+  endif
+  exports:
+  .PHONY: exports
+  ifneq ($(MAKECMDGOALS),clean)
+    $(shell test -r $(GeneratedDir)/base.xml || echo '<HdlConfig/>' > $(GeneratedDir)/base.xml)
+  endif
+  ################################################################################
+  # From here its about building the platform configuration cores
+  ifndef Configurations
     ifneq ($(MAKECMDGOALS),clean)
-      $(shell test -r $(GeneratedDir)/base.xml || echo '<HdlConfig/>' > $(GeneratedDir)/base.xml)
-    endif
-    ################################################################################
-    # From here its about building the platform configuration cores
-    ifndef Configurations
-      ifneq ($(MAKECMDGOALS),clean)
-        ifeq ($(origin Configurations),undefined)
-          Configurations:=base
-        else
-          $(info No platform configurations will be built since none are specified.)
-        endif
+      ifeq ($(origin Configurations),undefined)
+        Configurations:=base
+      else
+        $(info No platform configurations will be built since none are specified.)
       endif
     endif
-    ifdef Configurations
-      HdlConfName=$(Worker)_$1
-      HdlConfOutDir=$(OutDir)config-$1
-      HdlConfDir=$(call HdlConfOutDir,$(call HdlConfName,$1))
-      # We have containers to build locally.
-      # We already build the directories for default containers, and we already
-      # did a first pass parse of the container XML for these containers
-      .PHONY: configs
-      define doConfig
-        configs: $(call HdlConfOutDir,$1)
-#	       Cores="$(call OcpiAdjustLibraries,$(Cores))" \
+  endif
+  ifdef Configurations
+    HdlConfName=$(Worker)_$1
+    HdlConfOutDir=$(OutDir)config-$1
+    HdlConfDir=$(call HdlConfOutDir,$(call HdlConfName,$1))
+    # We have containers to build locally.
+    # We already build the directories for default containers, and we already
+    # did a first pass parse of the container XML for these containers
+    .PHONY: configs
+    define doConfig
+      configs: $(call HdlConfOutDir,$1)
+#       Cores="$(call OcpiAdjustLibraries,$(Cores))" \
 
-        $(call HdlConfOutDir,$1): exports
-	  $(AT)mkdir -p $$@
-	  $(AT)echo ======= Entering the \"$1\" configuration for the \"$(Worker)\" platform.
-	  $(AT)$(MAKE) -C $$@ -f $(OCPI_CDK_DIR)/include/hdl/hdl-config.mk \
+      $(call HdlConfOutDir,$1): exports
+	$(AT)mkdir -p $$@
+	$(AT)echo ======= Entering the \"$1\" configuration for the \"$(Worker)\" platform.
+	$(AT)$(MAKE) -C $$@ -f $(OCPI_CDK_DIR)/include/hdl/hdl-config.mk --no-print-directory \
                HdlPlatforms=$(Worker) \
                HdlPlatformWorker=../../$(Worker) \
                HdlLibrariesInternal="$(call OcpiAdjustLibraries,$(HdlLibraries) $(Libraries))" \
                ComponentLibrariesInternal="$(call OcpiAdjustLibraries,$(ComponentLibraries))" \
-               XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirsInternal))"
-	  $(AT)echo ======= Exiting the \"$1\" configuration for the \"$(Worker)\" platform.
-      endef
-      $(foreach c,$(Configurations),$(eval $(call doConfig,$c)))
-      all: configs
-    endif # have configurations
-  endif # skip after hdl-workers.mk
-endif # skip after hdl-pre.mk
-# If there is a devices library specific to this platform, build it
-ifneq ($(wildcard devices),)
-.PHONY: devices
-devices:
-	$(AT)if test -d devices; then make -C devices XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirsInternal))"; fi
-all: devices
-configs: devices
-endif
-# If the platform has special files to export to the CDK, do it
-ifdef ExportFiles
-ExportLinks:=$(ExportFiles:%=lib/%)
-exports: $(ExportLinks)
+               XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirsInternal))" \
+	       $(MAKECMDGOALS)
+	$(AT)echo ======= Exiting the \"$1\" configuration for the \"$(Worker)\" platform.
+    endef
+    $(foreach c,$(Configurations),$(eval $(call doConfig,$c)))
+    all: configs
+  endif # have configurations
+  # If the platform has special files to export to the CDK, do it
+  # this is only done if we are building, so we don't export until we have actually built something
+  ifdef ExportFiles
+    ExportLinks:=$(ExportFiles:%=lib/%)
+    exports: $(ExportLinks)
 
-$(ExportLinks): | $(@:lib/%=%)
+    $(ExportLinks): | $(@:lib/%=%)
 	$(AT)mkdir -p lib
 	$(AT)ln -s ../$(@:lib/%=%) lib
 
-all: $(ExportLinks)
-endif
-
-endif # skip after platform check
+    all: $(ExportLinks)
+  endif
+endif # skip after hel-pre.mk
+# There is no test target here, but there might be in the devices subdir
+test:
 
 clean::
 	$(AT)if test -d devices; then make -C devices clean; fi

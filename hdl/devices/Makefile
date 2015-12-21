@@ -51,16 +51,9 @@ Workers = \
 	sdp_receive.hdl \
 	sdp2cp.hdl \
 	ocdp.hdl \
-	dac.hdl \
-	adcx.hdl \
-	adc.rcc \
-	dac.rcc \
-        cstest.hdl \
-	icap.hdl \
 	flash.hdl \
-	gbe.hdl \
-        lime_dac.hdl \
-        lime_adc.hdl \
+	lime_dac.hdl \
+	lime_adc.hdl \
 	lime_adc_em.hdl \
 	lime_dac_em.hdl \
 	si5351_proxy.rcc \
@@ -72,9 +65,20 @@ Workers = \
 	lime_tx_em.hdl \
 	lime_rx_proxy.rcc \
 	lime_tx_proxy.rcc \
-        lime_spi.hdl \
+	lime_spi.hdl \
 	lime_spi_em.hdl \
-        time_server.hdl
+	time_server.hdl
+
+ifeq (,$(OCPI_MINIMAL_BUILD))
+Workers += \
+	dac.hdl \
+	adcx.hdl \
+	adc.rcc \
+	dac.rcc \
+	cstest.hdl \
+	icap.hdl \
+	gbe.hdl
+endif # OCPI_MINIMAL_BUILD
 
 # These two require support for embedded IOBUFs which is currently turned off
 #	dram_v5.hdl \

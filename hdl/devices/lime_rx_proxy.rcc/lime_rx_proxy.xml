@@ -1,4 +1,4 @@
-<RccWorker language="c++" slave='lime_rx.hdl' spec='rf_rx_proxy-spec' controloperations='start,stop'>
+<RccWorker language="c++" slave='lime_rx.hdl' spec='rf_rx_proxy-spec' controloperations='stop,initialize'>
   <specproperty name='ninputs' value='3'/>
   <specproperty name='input_select' writesync='1'/>
   <specproperty name='input_gain_db' writesync='1'/>

@@ -22,7 +22,6 @@ namespace OE = OCPI::Util::EzXml;
 namespace OCPI {
   namespace Library {
     const char *library = "library";
-
     const char **complib = &CompLib::component;
     static OCPI::Driver::Registration<Manager> lm;
     // The Library Driver Manager class

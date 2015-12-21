@@ -50,7 +50,7 @@ endif
 
 include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk
 
-ifeq ($(HdlTarget),zynq)
+ifneq ($(filter zynq,$(HdlTargets)),)
   ifeq ($(wildcard $(XilinxZynq)),)
     $(error The Xilinx EDK is missing at $(XilinxZynq) when building for HdlTarget=zynq)
   endif

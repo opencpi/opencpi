@@ -27,21 +27,33 @@ class Lime_rx_proxyWorker : public Lime_rx_proxyWorkerBase {
   // notification that input_gain_db property has been written
   RCCResult input_gain_db_written() {
     uint8_t gain;
+    uint16_t old_value = slave.get_rxfe_cbe_lna() & 0x3f;
     switch (m_properties.input_gain_db) {
     case -6:
-      gain = 1;
+      //printf ("got a -6 command old value is: %x \n", old_value);
+      if ( (old_value & 0x30) == 0x30)
+      {
+        gain = 2;
+        //printf("true \n");
+      }
+      else
+      {
+        gain = 1;
+        //printf("false %x \n", old_value & 0x30);
+      }
       break;
     case 0:
       gain = 2;
       break;
     case +6:
-      gain = 3;
+        gain = 3;
       break;
     default:
       return setError("Input_gain_db (\"%d\") can only be -6, 0, or +6",
 		      m_properties.input_gain_db);
     }
-    slave.set_rxfe_cbe_lna((slave.get_rxfe_cbe_lna() & 0x3f) | (gain << 6));
+    //printf ("set gain to: %x \n", gain);
+    slave.set_rxfe_cbe_lna(old_value | (gain << 6));
     return RCC_OK;
   }
 
@@ -49,7 +61,7 @@ class Lime_rx_proxyWorker : public Lime_rx_proxyWorkerBase {
     return (*(Lime_rx_proxyWorker*)arg).slave.get_rx_vtune();
   }
   static void writeVcoCap(void *arg, uint8_t val) {
-    (*(Lime_rx_proxyWorker*)arg).slave.set_rx_vcocap(val);
+    (*(Lime_rx_proxyWorker*)arg).slave.set_rx_vcocap(((*(Lime_rx_proxyWorker*)arg).slave.get_rx_vcocap()&0xC0)|val);
   }
   // notification that center_freq_hz property has been written
   RCCResult center_freq_hz_written() {
@@ -101,7 +113,7 @@ class Lime_rx_proxyWorker : public Lime_rx_proxyWorkerBase {
     const char *err = getLpfBwValue(m_properties.lpf_bw_hz, val);
     if (err)
       return setError("Error setting LPF bandwidth of (%g Hz): %s", m_properties.lpf_bw_hz, err);
-    slave.set_rx_bwc_lpf((slave.get_rx_bwc_lpf()&0xC3)|val);
+    slave.set_rx_bwc_lpf((slave.get_rx_bwc_lpf()&0xC3)|(val<<2));
     slave.set_top_ctl2((slave.get_top_ctl2()&0xF0)|(val));
     return RCC_OK;
   }
@@ -135,7 +147,7 @@ class Lime_rx_proxyWorker : public Lime_rx_proxyWorkerBase {
     slave.set_rxfe_dcoff_q(m_properties.post_mixer_dc_offset_q | (1 << 7));
     return RCC_OK;
   }
-  RCCResult start() {
+  RCCResult initialize() {
     slave.set_top_ctl0(slave.get_top_ctl0() | (1 << 2));
     slave.set_clk_ctl(slave.get_clk_ctl() | (1 << 2));
     return RCC_OK;

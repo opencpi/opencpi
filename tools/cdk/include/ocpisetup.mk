@@ -201,6 +201,7 @@ export OCPI_LD_FLAGS=\
 all:
 $(OCPI_TARGET_DIR):
 	mkdir -p $@
+
 target-$(OCPI_TARGET_DIR):
 	mkdir -p $@
 

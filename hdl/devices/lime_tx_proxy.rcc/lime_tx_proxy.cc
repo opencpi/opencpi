@@ -46,7 +46,7 @@ class Lime_tx_proxyWorker : public Lime_tx_proxyWorkerBase {
     return (*(Lime_tx_proxyWorker*)arg).slave.get_tx_vtune();
   }
   static void writeVcoCap(void *arg, uint8_t val) {
-    (*(Lime_tx_proxyWorker*)arg).slave.set_tx_vcocap(val);
+    (*(Lime_tx_proxyWorker*)arg).slave.set_tx_vcocap(((*(Lime_tx_proxyWorker*)arg).slave.get_tx_vcocap()&0xC0)|val);
   }
   // notification that center_freq_hz property has been written
   RCCResult center_freq_hz_written() {
@@ -81,7 +81,7 @@ class Lime_tx_proxyWorker : public Lime_tx_proxyWorkerBase {
     slave.set_tx_pa_en((slave.get_tx_pa_en() & 0xE7) | (m_properties.output_select << 3));
     return RCC_OK;
   }
-  RCCResult start() {
+  RCCResult initialize() {
     slave.set_top_ctl0(slave.get_top_ctl0() | (1 << 3));
     slave.set_clk_ctl(slave.get_clk_ctl() | (1));
     return RCC_OK;

@@ -155,7 +155,7 @@ else # for "clean" goal
 endif
 # Due to our filtering, we might have no targets to build
 ifeq ($(filter $(or $(OnlyPlatforms),$(HdlAllPlatforms)),$(filter-out $(ExcludePlatforms),$(HdlPlatforms))),)
-  $(info No targets or platforms to build for this assembly)
+  $(info No targets or platforms to build for this "$(Worker)" assembly in "$(shell pwd)")
 else
   include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
   ifndef HdlSkip

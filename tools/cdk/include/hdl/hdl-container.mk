@@ -60,13 +60,19 @@ override XmlIncludeDirsInternal:=\
       $(HdlPlatformsDir)/specs $(HdlAssembly))
 # We might be called from an assembly directory, in which case many of the
 # component libraries are passed through to us, but we might be standalone.
-# Thus we add "components" and "adapters" here again
+# Thus we add "devices/adapters/cards" and the platforms own libraries.
+# Note we do not expect this Makefile to have any ComponentLibrary setting
 override ComponentLibraries:=$(call Unique,\
-  $(ComponentLibraries) $(ComponentLibrariesInternal) \
-  $(HdlPlatformDir) $(HdlAssembly) \
-  components devices adapters cards)
-$(infox XMLI2:$(XmlIncludeDirsInternal):$(ComponentLibraries):$(HdlPlatform):$(HdlPlatformDir_$(HdlPlatform)))
-#AssemblyName=$(notdir $(HdlAssembly))
+   $(HdlAssembly) \
+   $(ComponentLibrariesInternal) \
+   $(HdlPlatformDir_$(Platform)) \
+   $(wildcard $(HdlPlatformDir_$(Platform))/devices) \
+   $(and $(ComponentLibraries_$(Platform)),\
+     $(foreach d,$(HdlPlatformDir_$(Platform)),\
+       $(join $(if $(filter lib,$(notdir $d)),$(dir $d),$d/),\
+          $(ComponentLibraries_$(Platform)))))\
+   devices cards)
+$(info CONT:$(ComponentLibraries))
 override LibDir=$(HdlAssembly)/lib/hdl
 ifneq ($(MAKECMDGOALS),clean)
   override Platform:=$(if $(filter 1,$(words $(HdlPlatforms))),$(HdlPlatforms))

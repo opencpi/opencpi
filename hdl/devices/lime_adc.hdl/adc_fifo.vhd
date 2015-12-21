@@ -46,7 +46,7 @@ begin
   count: process(clk)
   begin
     if rising_edge(clk) then
-      if reset or samplesInMessage_r = messageSize-1 then
+      if reset or (samplesInMessage_r = messageSize-1 and fifo_d_deq) then
         samplesInMessage_r <= (others => '0');
       elsif fifo_d_deq = '1' then
         samplesInMessage_r <= samplesInMessage_r + 1;

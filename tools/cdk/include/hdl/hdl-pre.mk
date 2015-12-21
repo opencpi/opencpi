@@ -299,7 +299,7 @@ HdlSkip:=1
 else ifeq ($(HdlToolSets),)
 $(call OcpiDbg,=============No tool sets at all, skipping)
 ifneq ($(MAKECMDGOALS),clean)
-$(info Not building these filtered (only/excluded) targets: $(HdlPreExcludeTargets))
+$(info Not building $(HdlMode) for these filtered (only/excluded) targets: $(HdlPreExcludeTargets))
 endif
 HdlSkip:=1
 install:
