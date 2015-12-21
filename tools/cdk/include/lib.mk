@@ -55,6 +55,7 @@ unexport Workers
 HdlInstallDir=lib
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 $(eval $(HdlPreprocessTargets))
+$(infox HP2:$(HdlPlatform) HPs:$(HdlPlatforms) HT:$(HdlTarget) HTs:$(HdlTargets):$(CURDIR))
 include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
 ifeq ($(OCPI_HAVE_OPENCL),1)
   include $(OCPI_CDK_DIR)/include/ocl/ocl-make.mk
@@ -124,10 +125,11 @@ MyMake=$(MAKE) --no-print-directory
 
 HdlLibrariesCommand=$(call OcpiAdjustLibraries,$(HdlLibraries))
 RccLibrariesCommand=$(call OcpiAdjustLibraries,$(RccLibraries))
+TestTargets:=$(HdlPlatforms) $(HdlTargets) $(RccTargets)
 BuildImplementation=$(infoxx BI:$1:$2:$(call HdlLibrariesCommand))\
     set -e; \
     t="$(or $($(call Capitalize,$1)Target),$($(call Capitalize,$(1))Targets))"; \
-    $(ECHO) =============Building $(call ToUpper,$(1)) implementation $(2) for targets: $$t; \
+    $(ECHO) =============Building $(call ToUpper,$(1)) implementation $(2) for target'(s)': $$t; \
     $(MyMake) -C $(2) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) \
 	       LibDir=$(call AdjustRelative,$(LibDir)/$(1)) \
 	       GenDir=$(call AdjustRelative,$(GenDir)/$(1)) \

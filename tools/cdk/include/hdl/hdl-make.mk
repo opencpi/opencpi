@@ -58,7 +58,7 @@ define HdlSetWorkers
   HdlInstances:=$$(and $$(AssyWorkersFile),$$(strip $$(foreach i,$$(shell grep -h -v '\\\#' $$(AssyWorkersFile)),\
 	               $$(if $$(filter $$(call HdlInstanceWkr,$$i),$$(HdlPlatformWorkers)),,$$i))))
   HdlWorkers:=$$(call Unique,$$(foreach i,$$(HdlInstances),$$(call HdlInstanceWkrCfg,$$i)))
-  $$(infox HdlSetWorkers:Cores:'$$(Cores)':'$$(HdlWorkers)':'$$(HdlInstances)':'$$(HdlTarget)')
+  $$(info HdlSetWorkers:Cores:'$$(Cores)':'$$(HdlWorkers)':'$$(HdlInstances)':'$$(HdlTarget)')
   SubCores_$$(HdlTarget):=$$(call Unique,\
     $$(Cores) \
     $$(foreach w,$$(HdlWorkers),\
@@ -68,13 +68,13 @@ define HdlSetWorkers
             $$(foreach d,$$(call HdlTargetComponentLibraries,$$(HdlTarget),HSW),\
                $$(call HdlExists,$$d/$$w$$(HdlBin))))),\
           $$(call FindRelative,.,$$f)),\
-	),$$(warning Warning: Worker $$w was not found in any of the component libraries))))
-   $$(infox Cores SubCores_$$(HdlTarget) is $$(origin SubCores_$$(HdlTarget)) $$(flavor SubCores_$$(HdlTarget)):$$(SubCores_$$(HdlTarget)))
+	),$$(if $$(filter-out ocscp ocscp_rv metadata metadata_rv time_client time_client_rv unoc_node unoc_node_rv,$$w),$$(warning Warning: Worker $$w was not found in any of the component libraries)))))
+   $$(info Cores SubCores_$$(HdlTarget) is $$(origin SubCores_$$(HdlTarget)) $$(flavor SubCores_$$(HdlTarget)):$$(SubCores_$$(HdlTarget)))
 
 endef
 # Get the list of cores we depend on, returning the real files that make can depend on
 # With the deferred evaluation of target-specific items
-HdlGetCores=$(infox HGC:$(Cores):$(HdlWorkers):$(HdlTarget))$(call Unique,\
+HdlGetCores=$(info HGC:$(Cores):$(HdlWorkers):$(HdlTarget))$(call Unique,\
     $(foreach c,$(Cores),$(call HdlCoreRef1,$c,$(HdlTarget))) \
     $(foreach w,$(HdlWorkers),\
       $(foreach f,$(strip\
@@ -179,7 +179,7 @@ HdlCompile=\
   HdlExit=$$?; \
   (cat $(HdlTime) | tr -d "\n"; $(ECHO) -n " at "; date +%T) >> $(HdlLog); \
   grep -i error $(HdlLog)| grep -v Command: |\
-    grep -v '^WARNING:'|grep -v " 0 errors," | grep -i -v '[_a-z]error'; \
+    grep -v '^WARNING:'|grep -v " 0 errors," | grep -i -v -e '[_a-z]error' -e 'error[a-rt-z_]'; \
   if grep -q '^ERROR:' $(HdlLog); then HdlExit=1; fi; \
   $(HdlToolPost) \
   if test "$$OCPI_HDL_VERBOSE_OUTPUT" != ''; then \
@@ -392,14 +392,14 @@ define HdlPreprocessTargets
     override HdlPlatforms:=$$(HdlAllPlatforms)
   endif
 
-  ifeq ($$(origin HdlTargets),undefined)
+  ifndef HdlTargets
     ifdef HdlTarget
       HdlTargets:=$$(HdlTarget)
     else
       ifdef HdlPlatforms
-        HdlTargets:=$$(call Unique,$$(foreach p,$$(HdlPlatforms),$$(if $$(HdlPart_$$p),,$$(error Unknown platform: $$p))$$(call HdlGetFamily,$$(HdlPart_$$p))))
+        override HdlTargets:=$$(call Unique,$$(foreach p,$$(HdlPlatforms),$$(if $$(HdlPart_$$p),,$$(error Unknown platform: $$p))$$(call HdlGetFamily,$$(HdlPart_$$p))))
       else
-        HdlTargets:=$$(call HdlGetFamily,$$(OCPI_HDL_PLATFORM))
+        override HdlTargets:=$$(call HdlGetFamily,$$(OCPI_HDL_PLATFORM))
       endif
     endif
   else ifeq ($$(HdlTargets),all)

@@ -161,21 +161,23 @@ FindRelativeStep=\
 # helper function for FindRelative
 # arg1 is absolute-from arg2 is absolute-to arg3 is original from, arg4 is original to
 #$(info 1 $(1) 2 $(2) 3 $(3) 4 $(4))
-FindRelativeTop=\
+FindRelativeTop=$(infoxx FRT:$1:$2:$3:$4)$(strip\
+  $(foreach t,\
         $(if $(strip $1),\
             $(if $(strip $2),\
 	        $(if $(filter $(firstword $(strip $(subst /, ,$1))),$(firstword $(strip $(subst /, ,$2)))),\
                     $(call FindRelativeStep,$(strip $(subst /, ,$1)), $(strip $(subst /, ,$2))),\
 		    $2),\
                 $(error Invalid/non-existent path: to "$4" from "$3")),\
-             $(error Invalid/non-existent path: from "$3" to "$4"))
+             $(error Invalid/non-existent path: from "$3" to "$4")),\
+  $(infoxx FRTr:$t:$(CURDIR))$t))
 
 # Function: return the relative path to get from $(1) to $(2).  Useful for creating symlinks
 # Note return value must be nicely stripped
 #$(info findrel 1 $(1).$(abspath $1) 2 $(2).$(abspath $2))
 #$(info pwd:$(shell pwd) abs:$(abspath .) real:$(realpath .))
 #FindRelative=$(strip $(call FindRelativeTop,$(call OcpiAbsPath,$1),$(call OcpiAbsPath,$2),$1,$2))
-FindRelative=$(strip \
+FindRelative=$(strip $(infox FR:$1:$2)\
                $(foreach i,$(call FindRelativeTop,$(call OcpiAbsPath,$1),$(call OcpiAbsPath,$2),$(strip $1),$(strip $2)),$i))
 
 # Function: retrieve the contents of a symlink - is this ugly or what!

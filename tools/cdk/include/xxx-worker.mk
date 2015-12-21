@@ -337,7 +337,7 @@ define DoLink
                $$(call MakeSymLink,$(call WkrTargetDir,$1,$4)/$(call RmRv,$(basename $2)).cores,$(LibDir)/$1);\
              fi
   endif
-  $(eval $(call $(CapModel)WkrBinaryLink,$1,$2,$3,$4,$5))
+  $$(eval $$(call $(CapModel)WkrBinaryLink,$1,$2,$3,$4,$5))
   $(LibDir)/$1/$3: $(call WkrTargetDir,$1,$4)/$2 $(and $(filter hdl,$(Model)),$(LibDir)/$1/$(basename $3)-generics.vhd) | $(LibDir)/$1
 	$(AT)echo Creating link to export worker binary: $(LibDir)/$1/$3 '->' $(call WkrTargetDir,$1,$4)/$2
 	$(AT)$$(call MakeSymLink2,$(call WkrTargetDir,$1,$4)/$2,$(LibDir)/$1,$3)

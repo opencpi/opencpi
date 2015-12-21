@@ -95,7 +95,7 @@ endef
 
 # Given a location of a component library, return the relevant subdirectory
 # This normalizes between exported libraries and source libraries
-HdlComponentLibraryExists=$(or $(call HdlExists,$1/lib),$(call HdlExists,$1))
+HdlComponentLibraryExists=$(infox HCLE:$1)$(foreach x,$(or $(call HdlExists,$1/lib),$(call HdlExists,$1)),$(infox HCLEr:$x)$x)
 
 # Search for a component library by name, independent of target
 # This is not used for component libraries specified by location (with slashes)
@@ -123,7 +123,7 @@ HdlComponentLibraries=$(strip\
 # Return list of target directories in all possible component libraries
 HdlTargetComponentLibraries=$(infox HTCL:$1:$(HdlComponentLibraries):$(ComponentLibraries):$2)\
   $(or $(strip $(foreach f,$(call HdlGetFamily,$1),\
-                  $(foreach d,$(HdlComponentLibraries),\
+                  $(foreach d,$(HdlComponentLibraries),$(infox HTCL1:$d:$f)\
                      $(call HdlExists,$d/hdl/$f)))),\
       $(error No component libraries were found for target $1.  Perhaps not built yet?))
 
