@@ -163,6 +163,7 @@ ifndef HdlSkip
   endif # have configurations
   # If the platform has special files to export to the CDK, do it
   # this is only done if we are building, so we don't export until we have actually built something
+  ExportFiles:=$(call Unique $(ExportFiles) $(wildcard $(Worker).mk))
   ifdef ExportFiles
     ExportLinks:=$(ExportFiles:%=lib/%)
     exports: $(ExportLinks)
