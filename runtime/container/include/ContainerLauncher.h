@@ -72,6 +72,7 @@ namespace OCPI {
       std::string m_name;
       bool m_more;
       Launcher() : m_more(true) {}
+      virtual ~Launcher() {}
     public:
       bool notDone() const { return m_more; }
       virtual bool

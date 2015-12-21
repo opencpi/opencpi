@@ -182,7 +182,7 @@ namespace OCPI {
       // For SIM, we need an endpoint that is "active", with a hook to drive the simulated
       // SDP in SW.
       // For non-SIM, it just like 
-      const unsigned NREMOTES = 4;
+      const unsigned NREMOTES = 1;
       const unsigned BYTES_PER_DWORD = 4;
       struct Properties {
 	// Constant values available from the hardware
@@ -207,10 +207,10 @@ namespace OCPI {
 	uint32_t remote_flag_pitch[NREMOTES];
 	uint32_t remote_flag_value[NREMOTES];
 	uint8_t remote_buffer_count[NREMOTES], remote_flag_required[NREMOTES];
-        uint8_t rem_idx, rem_bidx, rem_phase;
-        uint64_t rem_addr, rem_seg;
 	// Written by other side to indicate it processed a buffer
 	uint32_t remote_doorbell[NREMOTES];
+        uint8_t rem_idx, rem_bidx, rem_phase;
+        uint64_t rem_addr, rem_seg;
       };
 #if 0
       // Atomic metadata that can serve as flag, but doesn't always.

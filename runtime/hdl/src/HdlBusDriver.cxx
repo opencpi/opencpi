@@ -150,7 +150,7 @@
 	 // Thus until/unless it is useful to hookup the SDP to the Zynq's M_AXI_GP1 also,
 	 // we only allow ActiveMessage.
 	 // (M_AXI_GP0 is dedicated to the control plane).
-	 uint32_t dmaOptions(ezxml_t icImplXml, ezxml_t icInstXml, bool isProvider) {
+	 uint32_t dmaOptions(ezxml_t icImplXml, ezxml_t /*icInstXml*/, bool /*isProvider*/) {
 	   const char *icname = ezxml_cattr(icImplXml, "name");
 	   return
 	     (1 << OCPI::RDT::ActiveMessage) |

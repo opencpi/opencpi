@@ -801,6 +801,10 @@ namespace OCPI {
       return NULL;
     }
 
+Unparser::
+~Unparser()
+{}
+
 bool Unparser::
 dimensionUnparse(const Value &val, std::string &s, unsigned nseq, size_t dim, size_t offset,
 		 size_t nItems, bool hex, char comma, const Unparser &up) const {

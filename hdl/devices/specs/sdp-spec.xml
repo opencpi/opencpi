@@ -4,7 +4,7 @@
   <property name='interconnect' parameter='1' type='uchar' readable='1' default='0'/>
   <property name='window_log2'  parameter='1' type='uchar' readable='1' default='26'/>
   <property name='max_buffers'  parameter='1' type='uchar' readable='1' default='4'/>
-  <property name='max_remotes'  parameter='1' type='uchar' readable='1' default='4'/>
+  <property name='max_remotes'  parameter='1' type='uchar' readable='1' default='1'/>
   <property name='sdp_id' type='uchar' volatile='1'/>
   <property name='buffer_size' initial='true' type='ulong' readable='true' default='32k'/>
   <property name='buffer_count' initial='true' type='uchar' readable='true' default='2'/>
@@ -33,11 +33,11 @@
 	    readable='true'/>
   <property name='remote_flag_required' initial='true' type='bool' arraylength='max_remotes'
 	    readable='true'/>
-  <property name='rem_idx'   type='uchar' volatile='1'/>
-  <property name='rem_bidx'  type='uchar' volatile='1'/>
-  <property name='rem_phase' type='uchar' volatile='1'/>
-  <property name='rem_addr'  type='ulonglong' volatile='1'/>
-  <property name='rem_seg'   type='ulonglong' volatile='1'/>
-  
   <property name='remote_doorbell' writable='true' arraylength='max_remotes'/>
+  <!-- <property name='rem_idx'   type='uchar' volatile='1' debug='1'/> -->
+  <!-- <property name='rem_bidx'  type='uchar' volatile='1' debug='1'/> -->
+  <!-- <property name='rem_phase' type='uchar' volatile='1' debug='1'/> -->
+  <!-- <property name='rem_addr'  type='ulonglong' volatile='1' debug='1'/> -->
+  <!-- <property name='rem_seg'   type='ulonglong' volatile='1' debug='1'/> -->
+  
 </componentspec>

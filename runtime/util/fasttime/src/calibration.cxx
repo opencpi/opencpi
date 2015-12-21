@@ -21,7 +21,6 @@
 #include <assert.h>
 #include <math.h>
 #include <unistd.h>
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include "fasttime_private.h"
 #include "calibration.h"

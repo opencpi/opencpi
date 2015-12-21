@@ -649,7 +649,7 @@ void TransferTemplateGeneratorPattern1::createOutputTransfers( Port* s_port, Por
 	  if (t_port->getMetaData()->m_descriptor.options & (1 << FlagIsMeta)) {
 	    ptransfer->copy(output_offsets->metaDataOffset +
 			    s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferMetaData) +
-			    offsetof(RplMetaData, xferMetaData),
+			    OCPI_OFFSETOF(DDT::Offset, RplMetaData, xferMetaData),
 			    input_offsets->metaDataOffset +
 			    s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, uint32_t), 
 			    sizeof(OCPI::OS::uint32_t),
@@ -816,7 +816,7 @@ createOutputTransfers(OCPI::DataTransport::Port* s_port,
 	  if (t_port->getMetaData()->m_descriptor.options & (1 << FlagIsMeta)) {
 	    ptransfer->copy(output_offsets->metaDataOffset +
 			    s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferMetaData) +
-			    offsetof(RplMetaData, xferMetaData),
+			    OCPI_OFFSETOF(DDT::Offset, RplMetaData, xferMetaData),
 			    input_offsets->metaDataOffset +
 			    s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, uint32_t), 
 			    sizeof(OCPI::OS::uint32_t),

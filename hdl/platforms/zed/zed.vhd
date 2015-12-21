@@ -67,7 +67,7 @@ begin
   timebase_out.reset <= reset;
   timebase_out.ppsIn <= '0';
 
-  g0: if its(btrue) generate
+  g0: if its(ocpi_debug) generate
     -- If we don't assign the outputs, the "debug overhead" will disappear
     props_out.axi_caddr <= axi_caddr;
     props_out.axi_waddr <= axi_waddr;

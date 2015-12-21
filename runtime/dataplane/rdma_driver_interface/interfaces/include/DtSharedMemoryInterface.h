@@ -84,6 +84,7 @@ namespace DataTransfer {
   struct EndPoint
   {
     struct Receiver {
+      virtual ~Receiver() {}
       virtual void receive(DtOsDataTypes::Offset offset, uint8_t *data, size_t count) = 0;
     };
     std::string          end_point;    // deep copy of the endpoint string
@@ -144,7 +145,7 @@ namespace DataTransfer {
      *                Returns 0 if success, platform dependent error otherwise
      *
      */
-    virtual OCPI::OS::int32_t attach(EndPoint* loc) = 0;
+    virtual OCPI::OS::int32_t attach(EndPoint* loc);
 
     /*
      * Detach from shared memory object
@@ -153,7 +154,7 @@ namespace DataTransfer {
      *                Returns 0 if success, platform dependent error otherwise
      *
      */
-    virtual OCPI::OS::int32_t detach() = 0;
+    virtual OCPI::OS::int32_t detach();
 
     /*
      * Map a view of the shared memory area at some offset/size and return the virtual address.
@@ -174,7 +175,7 @@ namespace DataTransfer {
      *                Returns 0 if success, platform dependent error otherwise
      *
      */
-    virtual int32_t unMap() = 0;
+    virtual int32_t unMap();
 
     /*
      *        GetEndPoint - Returns the endpoint of the shared memory area

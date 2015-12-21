@@ -82,6 +82,7 @@
 #define OCPI_UTRUNCATE(type, val) ((type)(val))
 #define OCPI_STRUNCATE(type, val) ((type)(val))
 #define OCPI_SIZEOF(utype, stype) ((utype)sizeof(stype))
+#define OCPI_OFFSETOF(utype, member, stype) ((utype)offsetof(stype,member))
 #else
 #define OCPI_UTRUNCATE(type, val) \
   ((type)OCPI::Util::utruncate((uint64_t)(val), sizeof(type)))
@@ -89,6 +90,8 @@
   ((type)OCPI::Util::struncate((int64_t)(val), sizeof(type)))
 #define OCPI_SIZEOF(utype, stype) \
   ((utype)OCPI::Util::utruncate((uint64_t)sizeof(stype), sizeof(utype)))
+#define OCPI_OFFSETOF(utype, stype, member)				\
+  ((utype)OCPI::Util::utruncate((uint64_t)offsetof(stype,member), sizeof(utype)))
 #endif
 
 namespace OCPI {

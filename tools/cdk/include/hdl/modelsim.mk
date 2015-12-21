@@ -68,8 +68,9 @@ $(call OcpiDbgVar,ModelsimFiles)
 
 ModelsimVlogLibs=
 
+# FIXME: make . in the include path for primitives as well as workers
 ModelSimVlogIncs=\
-  $(foreach d,$(VerilogDefines),+define+$d) \
+  $(foreach d,$(VerilogDefines),+define+$d) +incdir+.. \
   $(foreach d,$(VerilogIncludeDirs),+incdir+$(call FindRelative,$(TargetDir),$d))
 
 ModelsimArgs=-pedanticerrors -work $(WorkLib) -modelsimini modelsim.ini

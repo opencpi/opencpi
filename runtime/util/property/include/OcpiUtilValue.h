@@ -54,6 +54,7 @@ namespace OCPI {
     typedef uint32_t EnumValue;
 
     struct Unparser {
+      virtual ~Unparser();
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
       virtual bool unparse##pretty(std::string &s, run, bool hex) const;
 	OCPI_PROPERTY_DATA_TYPES

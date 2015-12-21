@@ -37,7 +37,8 @@ namespace OCPI {
     Device::
     Device(const std::string &name, const char *protocol)
       : m_metadata(NULL), m_implXml(NULL), m_old(false), m_name(name), m_protocol(protocol),
-	m_isAlive(true), m_pfWorker(NULL), m_isFailed(false), m_timeCorrection(0) {
+	m_isAlive(true), m_pfWorker(NULL), m_isFailed(false), m_timeCorrection(0),
+	m_endPoint(NULL) {
       memset((void*)&m_UUID, sizeof(m_UUID), 0);
     }
     Device::
@@ -295,10 +296,10 @@ namespace OCPI {
     }
     DataTransfer::EndPoint &Device::
     getEndPoint() {
-      return
-	DataTransfer::getManager().
-	allocateProxyEndPoint(m_endpointSpecific.c_str(),
-			      OCPI_UTRUNCATE(size_t, m_endpointSize));
+      return m_endPoint ? *m_endPoint :
+	*(m_endPoint = &DataTransfer::getManager().
+	  allocateProxyEndPoint(m_endpointSpecific.c_str(),
+				OCPI_UTRUNCATE(size_t, m_endpointSize)));
     }
     void Device::
     connect(DataTransfer::EndPoint &/*ep*/, OCPI::RDT::Descriptors &/*mine*/,

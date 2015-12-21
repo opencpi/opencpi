@@ -205,7 +205,7 @@ public:
 	    current_ptr += copy_len;
 	  } else {
 	    m_sep.m_receiver->receive(header.offset, bp, copy_len);
-	    header.offset += copy_len;
+	    header.offset += OCPI_UTRUNCATE(DtOsDataTypes::Offset, copy_len);
 	  }
 	  if (!(bytes_left -= copy_len))
 	    in_header = !in_header;

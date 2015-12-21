@@ -170,7 +170,6 @@ class Device
   };
   std::queue<Request*, std::list<Request*> > m_respQueue;
   OS::Mutex m_sdpSendMutex; // mutex usage between control and data
-  DT::EndPoint *m_endPoint;
   typedef std::vector<DT::XferServices *> XferServices;
   XferServices m_writeServices;
   XferServices m_readServices;
@@ -208,7 +207,7 @@ protected:
       m_ctl(simDir + "/control", false, NULL, error),
       m_ack(simDir + "/ack", false, NULL, error),
       m_maxFd(-1), m_pid(0), m_exited(false), m_dcp(0), m_respLeft(0), m_simDir(simDir),
-      m_platform(platform), m_script(script), m_endPoint(NULL), m_verbose(verbose), m_dump(dump),
+      m_platform(platform), m_script(script), m_verbose(verbose), m_dump(dump),
       m_spinning(false), m_sleepUsecs(sleepUsecs), m_simTicks(simTicks), m_spinCount(spinCount),
       m_cumTicks(0), m_metadata(NULL), m_xml(NULL), m_firstRun(true), m_lastTicks(0) {
     if (error.length())
@@ -1018,7 +1017,7 @@ public:
     // Size comes from the properties of the SDP worker.
     DT::EndPoint &ep =
       DT::getManager().allocateProxyEndPoint(m_endpointSpecific.c_str(),
-						       m_endpointSize);
+					     OCPI_UTRUNCATE(size_t, m_endpointSize));
     // This is the hook that allows us to receive data/metadata/flags pushed to this
     // endpoint from elsewhere - from multiple other endpoints.
     ep.setReceiver(*this);

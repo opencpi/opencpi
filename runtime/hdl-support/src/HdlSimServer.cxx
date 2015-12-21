@@ -920,13 +920,13 @@ namespace OCPI {
 	  unsigned blen;
 	  // convert the byte enables back to a byte offset
 	  switch (be) {
-	  case 0b1: blen = 1;break;
-	  case 0b10: offset += 1; blen = 1; break;
-	  case 0b100: offset += 2; blen = 1; break;
-	  case 0b1000: offset += 3; blen = 1; break;
-	  case 0b11: blen = 2; break;
-	  case 0b1100: offset += 2; blen = 2; break;
-	  case 0b1111: blen = 4; break;
+	  case 0x1: blen = 1;break;
+	  case 0x2: offset += 1; blen = 1; break;
+	  case 0x4: offset += 2; blen = 1; break;
+	  case 0x8: offset += 3; blen = 1; break;
+	  case 0x3: blen = 2; break;
+	  case 0xc: offset += 2; blen = 2; break;
+	  case 0xf: blen = 4; break;
 	  default: 
 	    ocpiBad("Byte enable unexpected: 0x%x", be);
 	  }

@@ -43,6 +43,7 @@ namespace OCPI {
       bool m_isFailed; // protection during shutdown
     public:
       uint32_t m_timeCorrection;
+      DataTransfer::EndPoint *m_endPoint;
     protected:
       Device(const std::string &name, const char *protocol = "");
     public:

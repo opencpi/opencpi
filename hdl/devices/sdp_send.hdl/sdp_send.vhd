@@ -16,7 +16,7 @@ architecture rtl of sdp_send_worker is
   constant max_remotes_c  : natural := to_integer(max_remotes);
   constant max_seg_dws_c  : natural := 32;
 
-  subtype remote_idx_t is unsigned(width_for_max(max_remotes_c - 1) - 1 downto 0);
+  subtype remote_idx_t is unsigned(width_for_max(ocpi.util.max(1,max_remotes_c - 1)) - 1 downto 0);
 
   -- Flag/doorbell Sync FIFO definitions
   signal flag_enq       : bool_t;
@@ -129,7 +129,7 @@ begin
   ctl_out.finished   <= to_bool(faults_r /= 0);
   props_out.faults   <= faults_r;
   props_out.sdp_id   <= resize(sdp_in.id, props_out.sdp_id'length);
-  props_out.raw.done <= btrue;
+--  props_out.raw.done <= btrue;
   nbytes <= be2bytes(in_in.byte_enable) when its(in_in.valid) else (others => '0');
   md_in.length <= (resize(buffer_offset_r, meta_length_width_c) sll addr_shift_c) + nbytes;
   md_in.eof    <= not in_in.eom and not in_in.som and not in_in.valid;
@@ -196,8 +196,9 @@ begin
                sEN          => md_deq,
                dPulse       => buffer_consumed);
   -- source side
-  flag_enq       <= props_in.raw.is_write; -- the only raw thing written
-  flag_in_remote <= props_in.raw.address(flag_in_remote'length-1+2 downto 2); -- ulongs/dws
+  flag_enq       <= props_in.remote_doorbell_any_written;
+--  flag_in_remote <= props_in.raw.address(flag_in_remote'length-1+2 downto 2); -- ulongs/dws
+  flag_in_remote <= (others => '0'); -- props_in.remote_doorbell(0);
   -- destination side
   flag_out       <= to_integer(remote_idx_t(flag_out_slv));
   flag_deq       <= flag_not_empty; -- output of FIFO always processed immediately
@@ -230,7 +231,8 @@ begin
         if buffer_consumed and not its(md_enq) then
           buffer_avail_r <= buffer_avail_r + 1;
         end if;
-        if props_in.raw.is_write and not flag_not_full = '1' then
+        if props_in.remote_doorbell_any_written and not flag_not_full = '1' then
+--        if props_in.raw.is_write and not flag_not_full = '1' then
           faults_r(1) <= '1'; -- this is really a debug thing.  Should not happen.
         end if;
         if can_take and in_in.ready then
@@ -297,11 +299,11 @@ g0: for i in 0 to sdp_width_c-1 generate
                        bramb_out((i+1)*dword_size-1 downto i*dword_size);
   end generate g0;
 
-  props_out.rem_idx   <= resize(sdp_remote_idx_r, uchar_t'length);
-  props_out.rem_bidx  <= resize(sdp_remotes(0).index, uchar_t'length);
-  props_out.rem_phase <= to_unsigned(sdp_phase_t'pos(sdp_remote_phase_r),uchar_t'length);
-  props_out.rem_addr  <= resize(sdp_remotes(0).data_addr, ulonglong_t'length);
-  props_out.rem_seg   <= resize(sdp_segment_addr_r, ulonglong_t'length);
+  --props_out.rem_idx   <= resize(sdp_remote_idx_r, uchar_t'length);
+  --props_out.rem_bidx  <= resize(sdp_remotes(0).index, uchar_t'length);
+  --props_out.rem_phase <= to_unsigned(sdp_phase_t'pos(sdp_remote_phase_r),uchar_t'length);
+  --props_out.rem_addr  <= resize(sdp_remotes(0).data_addr, ulonglong_t'length);
+  --props_out.rem_seg   <= resize(sdp_segment_addr_r, ulonglong_t'length);
   -- The process that takes messages from BRAM and pushes them to the SDP,
   ---- trying to avoid any dead cycles except one at the start of the message
   ---- sending data(except for ZLM), metadata, flag transfers

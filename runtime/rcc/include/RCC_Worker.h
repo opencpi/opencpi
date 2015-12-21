@@ -337,6 +337,7 @@ typedef struct {
 
  class RCCUserBufferInterface {
  protected:
+   virtual ~RCCUserBufferInterface() {}
    virtual void setRccBuffer(RCCBuffer *b) = 0;
    virtual RCCBuffer *getRccBuffer() const = 0;
  public:

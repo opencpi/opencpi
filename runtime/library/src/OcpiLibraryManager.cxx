@@ -23,11 +23,10 @@ namespace OCPI {
   namespace Library {
     const char *library = "library";
 
-    static const char **complib = &CompLib::component;
+    const char **complib = &CompLib::component;
     static OCPI::Driver::Registration<Manager> lm;
     // The Library Driver Manager class
     Manager::Manager() {
-      (void)complib;
     }
     void Manager::setPath(const char *path) {
       parent().configureOnce();
