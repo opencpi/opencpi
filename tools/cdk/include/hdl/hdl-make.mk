@@ -58,7 +58,7 @@ define HdlSetWorkers
   HdlInstances:=$$(and $$(AssyWorkersFile),$$(strip $$(foreach i,$$(shell grep -h -v '\\\#' $$(AssyWorkersFile)),\
 	               $$(if $$(filter $$(call HdlInstanceWkr,$$i),$$(HdlPlatformWorkers)),,$$i))))
   HdlWorkers:=$$(call Unique,$$(foreach i,$$(HdlInstances),$$(call HdlInstanceWkrCfg,$$i)))
-  $$(info HdlSetWorkers:Cores:'$$(Cores)':'$$(HdlWorkers)':'$$(HdlInstances)':'$$(HdlTarget)')
+  $$(infox HdlSetWorkers:Cores:'$$(Cores)':'$$(HdlWorkers)':'$$(HdlInstances)':'$$(HdlTarget)')
   SubCores_$$(HdlTarget):=$$(call Unique,\
     $$(Cores) \
     $$(foreach w,$$(HdlWorkers),\
@@ -69,12 +69,12 @@ define HdlSetWorkers
                $$(call HdlExists,$$d/$$w$$(HdlBin))))),\
           $$(call FindRelative,.,$$f)),\
 	),$$(if $$(filter-out ocscp ocscp_rv metadata metadata_rv time_client time_client_rv unoc_node unoc_node_rv,$$w),$$(warning Warning: Worker $$w was not found in any of the component libraries)))))
-   $$(info Cores SubCores_$$(HdlTarget) is $$(origin SubCores_$$(HdlTarget)) $$(flavor SubCores_$$(HdlTarget)):$$(SubCores_$$(HdlTarget)))
+   $$(infox Cores SubCores_$$(HdlTarget) is $$(origin SubCores_$$(HdlTarget)) $$(flavor SubCores_$$(HdlTarget)):$$(SubCores_$$(HdlTarget)))
 
 endef
 # Get the list of cores we depend on, returning the real files that make can depend on
 # With the deferred evaluation of target-specific items
-HdlGetCores=$(info HGC:$(Cores):$(HdlWorkers):$(HdlTarget))$(call Unique,\
+HdlGetCores=$(infox HGC:$(Cores):$(HdlWorkers):$(HdlTarget))$(call Unique,\
     $(foreach c,$(Cores),$(call HdlCoreRef1,$c,$(HdlTarget))) \
     $(foreach w,$(HdlWorkers),\
       $(foreach f,$(strip\
