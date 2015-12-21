@@ -33,9 +33,9 @@
   <signal  output='led' width='8'/>
   <!-- Make believe these are directly attached rather than a card plugged into the FMC slot -->
   <device worker='lime_adc'>
-    <property name='use_clk_in' value='1'/>
-    <property name='use_clk_out' value='0'/>
-    <property name='use_ctl_clk' value='0'/>
+    <property name='use_clk_in_p' value='1'/>
+    <property name='use_clk_out_p' value='0'/>
+    <property name='use_ctl_clk_p' value='0'/>
     <signal name='rx_clk' platform=''/>
     <signal name='rx_clk_out' platform=''/>
   </device>

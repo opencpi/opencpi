@@ -72,7 +72,7 @@ override ComponentLibraries:=$(call Unique,\
        $(join $(if $(filter lib,$(notdir $d)),$(dir $d),$d/),\
           $(ComponentLibraries_$(Platform)))))\
    devices cards)
-$(info CONT:$(ComponentLibraries))
+$(infox CONT:$(ComponentLibraries))
 override LibDir=$(HdlAssembly)/lib/hdl
 ifneq ($(MAKECMDGOALS),clean)
   override Platform:=$(if $(filter 1,$(words $(HdlPlatforms))),$(HdlPlatforms))
