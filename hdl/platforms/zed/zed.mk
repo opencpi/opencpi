@@ -1,4 +1,3 @@
-# This file is included in Makefiles when assemblies/bitstreams are built
-XstContainerExtraOptions:=
+HdlPart_zed=xc7z020-1-clg484
 
 

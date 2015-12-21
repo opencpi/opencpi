@@ -55,7 +55,7 @@ $(HdlMyPlatforms):
 	$(AT)$(MAKE) --no-print-directory -C $@
 
 clean::
-	$(AT)for p in $(HdlPlatforms); do \
+	$(AT)for p in $(HdlMyPlatforms); do \
 	      echo Cleaning platform $$p; \
 	      $(MAKE) --no-print-directory -C $$p clean; \
 	     done

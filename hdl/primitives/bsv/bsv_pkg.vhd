@@ -139,11 +139,4 @@ component TriState
            OE    : in    std_logic;
            I     : in    std_logic_vector(width-1 downto 0));
 end component TriState;
-component SyncPulse
-  port    (sCLK   : in    std_logic;
-           sRST   : in    std_logic;
-           dCLK   : in    std_logic;
-           sEN    : in    std_logic;
-           dPulse : out   std_logic);
-end component SyncPulse;
 end package bsv;

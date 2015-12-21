@@ -50,32 +50,48 @@ override OCPI_HDL_PLATFORM_PATH:=$(call Unique,\
   $(OCPI_HDL_PLATFORM_PATH) \
   $(foreach p,$(subst :, ,$(OCPI_PROJECT_PATH)) $(OCPI_CDK_DIR),$(call OcpiExists,$p/lib/platforms)))
 
-define doPlatformsDir
-  HdlSavePlatforms:=$$(HdlAllPlatforms)
-  include $1/$(notdir $1).mk
-  HdlNewPlatforms:=$$(filter-out $$(HdlSavePlatforms),$$(HdlAllPlatforms))
-  $$(foreach p,$$(filter-out $$(HdlSavePlatforms),$$(HdlNewPlatforms)),\
-    $$(eval HdlPlatformDir_$$p:=$1/$$p))\
+# Add a platform to the database.
+# Arg 1: The directory where the *.mk file is
+# Arg 2: The name of the platform
+# Arg 3: The actual platform directory for using the platform (which may not exist).
+HdlAddPlatform=\
+  $(eval include $1/$2.mk)\
+  $(eval HdlAllPlatforms+=$2) \
+  $(eval HdlPlatformDir_$2:=$3)
 
-endef
+# Call this with a directory that is a platform's directory, either source (with "lib" subdir 
+# if built) or exported. For the individual platform directories we need to deal with
+# the prebuilt, postbuilt, and exported scenarios.  Hence the complexity.
+# Both the *.xml and *.mk are generally needed, but the *.mk is more critical here,
+# so we key on that.
+# If we are pointing at a non-exported platform directory, we prefer its local export subdir 
+# ("lib"), if the hdl/*.mk is present.
+# (under hdl since it is in fact a worker in a library)
+HdlDoPlatform=\
+  $(foreach p,$(notdir $1),\
+    $(foreach d,$(if $(wildcard $1/lib/$p.mk),$1/lib,$1),\
+      $(if $(wildcard $d/hdl/$p.xml)$(wildcard $d/$p.xml),,$(error no $p.xml file found for platform under: $1))\
+      $(if $(wildcard $d/$p.mk),,$(error no $p.mk file found under $1. $p not built?))\
+      $(call HdlAddPlatform,$d,$p,$d)))
+
+# Handle a directory named "platforms", exported or not
+HdlDoPlatformsDir=\
+  $(if $(wildcard $1/mk),\
+    $(foreach d,$(wildcard $1/mk/*.mk),\
+      $(foreach p,$(basename $(notdir $d)),\
+        $(call HdlAddPlatform,$1/mk,$p,$1/$p))),\
+    \
+    $(foreach d,$(wildcard $1/*),\
+      $(foreach p,$(notdir $d),\
+        $(if $(wildcard $d/$p.xml)$(wildcard $d/lib/hdl/$p.xml)$(wildcard $d/hdl/$p.xml),\
+          $(call HdlDoPlatform,$d)))))
   
 $(call OcpiDbgVar,HdlAllPlatforms)
-# For the individual platform directories we need to deal with
-# the prebuilt, postbuilt, and exported scenarios.  Hence the complexity.
-# Both the *.xml and *.mk are needed, but the *.mk is more critical here,
-# so we key on that.
-# If we are pointing at a non-exported platform directory, we prefer its
-# local export subdir, it the *.mk is present.
 $(foreach d,$(subst :, ,$(OCPI_HDL_PLATFORM_PATH)),\
-  $(foreach p,$(notdir $d),\
-    $(if $(filter platforms,$p),$(eval $(call doPlatformsDir,$d)),\
-       $(if $(wildcard $d),,$(error in OCPI_HDL_PLATFORM_PATH $d does not exist))\
-       $(foreach l,$(if $(wildcard $d/lib/hdl/$p.xml),$d/lib,$d),\
-	 $(if $(wildcard $l/hdl/$p.xml)$(wildcard $l/$p.xml),,$(error no $p.xml file found in $l))\
-	 $(if $(wildcard $l/$p.mk),,$(warning no $p.mk file found in $l))\
-         $(eval -include $l/$p.mk)\
-         $(eval HdlAllPlatforms+=$p) \
-         $(eval HdlPlatformDir_$p:=$l)))))
+  $(if $(wildcard $d),,$(error in OCPI_HDL_PLATFORM_PATH "$d" does not exist))\
+  $(if $(filter platforms,$(notdir $d)),\
+    $(call HdlDoPlatformsDir,$d),\
+    $(call HdlDoPlatform,$d)))
 
 $(call OcpiDbgVar,HdlAllPlatforms)
 endif
