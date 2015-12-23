@@ -55,8 +55,9 @@ override OCPI_HDL_PLATFORM_PATH:=$(call Unique,\
 # Arg 2: The name of the platform
 # Arg 3: The actual platform directory for using the platform (which may not exist).
 HdlAddPlatform=\
+  $(call OcpiDbg,HdlAddPlatform($1,$2,$3))\
   $(eval include $1/$2.mk)\
-  $(eval HdlAllPlatforms+=$2) \
+  $(eval HdlAllPlatforms+=$2)\
   $(eval HdlPlatformDir_$2:=$3)
 
 # Call this with a directory that is a platform's directory, either source (with "lib" subdir 

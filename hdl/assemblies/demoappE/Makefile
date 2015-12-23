@@ -37,4 +37,4 @@
 # For which containers should the runtime xml be generated?
 Containers=psdEcv5
 # Target=xc5vsx95t-2-ff1136
-include $(OCPI_CDK_DIR)/include/hdl/hdl-assy.mk
+include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk
