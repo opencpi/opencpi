@@ -58,7 +58,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   MyState *s = self->memories[0];
   size_t n2read = props->messageSize ? props->messageSize : port->current.maxLength;
   ssize_t n;
-  RCCBoolean zlmIn = false;
+  RCCBoolean zlmIn = 0;
   (void)timedOut;(void)newRunCondition;
 
   if (props->messagesInFile) {
