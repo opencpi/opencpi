@@ -190,7 +190,7 @@ getExecFile(std::string &file) {
 #ifdef OCPI_OS_linux
   ssize_t n;
   while ((n = readlink("/proc/self/exe", buf, bufsize-1)) > 0 && n >= (ssize_t)bufsize - 1) {
-    delete buf;
+    delete [] buf;
     bufsize *= 2;
     buf = new char[bufsize];
   }

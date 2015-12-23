@@ -1,5 +1,4 @@
-#define __STDC_FORMAT_MACROS
-#define _GNU_SOURCE
+#define _POSIX_C_SOURCE 199309L // For clock_gettime et al.
 #include <stdint.h>
 #include <time.h>
 #include <unistd.h>
@@ -188,7 +187,7 @@ main(int argc, char *argv[])
 	    , name, name, nCpuBufs, nFpgaBufs);
     return 1;
   }
-  while (argv[1][0] == '-') {
+  while (argv[1] && argv[1][0] == '-') {
     switch (argv[1][1]) {
     case 'd':
       noData = 1;
@@ -230,6 +229,10 @@ main(int argc, char *argv[])
       return 1;
     }
     argv++;
+  }
+  if (!argv[1]) {
+    fprintf(stderr, "No PCI device given.\n");
+    return 1;
   }
   if (geteuid()) {
     fprintf(stderr, "You must run this program with \"sudo -E\", as in \"sudo -E %s pci-dev\"\n",

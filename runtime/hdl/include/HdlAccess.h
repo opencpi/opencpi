@@ -4,12 +4,8 @@
 #ifndef HDL_ACCESS_H
 #define HDL_ACCESS_H
 
-#ifndef __STDC_FORMAT_MACROS
-#define __STDC_FORMAT_MACROS
-#endif
 #include <inttypes.h>
 #include <cstddef>
-
 #include "OcpiUtilMisc.h"
 #include "DtOsDataTypes.h"
 

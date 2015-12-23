@@ -102,6 +102,13 @@ $(call OcpiDbgVar,HdlPlatforms)
 SubCores_$(call HdlGetFamily,$(Worker)):=$(Cores)
 OnlyPlatforms:=$(Worker)
 OnlyTargets:=$(call HdlGetFamily,$(Worker))
+# We might be building for multiple platforms (e.g. sim and this one)
+# But from here, if we are building this platform, we must force it
+# When the mode is platform and config, the underlying scripts depend
+# on HdlPlatform being the currrent platform.
+ifneq ($(filter $(Worker),$(HdlPlatforms)),)
+  override HdlPlatform:=$(Worker)
+endif
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 # the target preprocessing may tell us there is nothing to do
 # some platforms may have been used for the devices subdir (tests, sims, .etc.)

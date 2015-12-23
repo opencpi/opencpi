@@ -13,7 +13,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  * NOTE: This copyright and license does *not* cover user programs that use kernel
  * services in this driver via normal system calls - that is considered normal use
@@ -1090,7 +1090,7 @@ net_create(struct socket *sock, int protocol) {
   sock->ops = &opencpi_socket;
   // if we just use the minimal sockcommon, we might not need this ?
   sock_init_data(sock, sk); // this sets refcnt to 1
-  sock_reset_flag(sk, SOCK_ZAPPED); // wierd initialization
+  sock_reset_flag(sk, SOCK_ZAPPED); // weird initialization
   // other sk fields: sk_reuse, sk_bound_dev_if!!
   get_ocpi_sk(sk)->sockaddr.ocpi_family = PF_OPENCPI;
   return 0;

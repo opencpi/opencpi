@@ -60,7 +60,7 @@
 #ifndef __STDC_LIMIT_MACROS
 #define __STDC_LIMIT_MACROS
 #endif
-#include <stdint.h>
+#include <inttypes.h>
 #endif
 
 namespace OCPI {
@@ -156,18 +156,5 @@ namespace OCPI {
 
   }
 }
-
-#if 0
-#if defined ( __x86_64__ )
-  #define PRIsize_t "lu"
-  #define PRIssize_t "ld"
-#elif defined ( __i686__ ) || defined ( __i386__ )
-  #define PRIsize_t "u"
-  #define PRIssize_t "d"
-#elif defined ( __PPC__ )
-  #define PRIsize_t "u"
-  #define PRIssize_t "d"
-#endif
-#endif
 
 #endif

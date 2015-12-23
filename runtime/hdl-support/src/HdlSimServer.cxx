@@ -220,7 +220,7 @@ namespace OCPI {
 	    m_maxFd(-1), m_dcp(0), m_script(script), m_haveTag(false),
 	    m_respLeft(0), m_respPtr(NULL), m_platform(platform), m_verbose(verbose),
 	    m_dump(dump), m_spinning(false), m_sleepUsecs(sleepUsecs), m_simTicks(simTicks),
-	    m_spinCount(spinCount), m_cumTicks(0), m_xferSrvr(NULL), m_xferSckt(NULL),
+	    m_spinCount(spinCount), m_cumTicks(0), m_spinTimer(true), m_xferSrvr(NULL), m_xferSckt(NULL),
 	    m_xferSize(0), m_xferCount(0), m_xferDone(false), m_xfd(-1), m_metadata(NULL),
 	    m_xml(NULL), m_public(isPublic) {
 	  if (error.length())

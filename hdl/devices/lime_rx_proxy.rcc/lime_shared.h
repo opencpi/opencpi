@@ -7,7 +7,7 @@ namespace OCPI {
   struct Divider {
     uint8_t nint, nfrac_hi, nfrac_mid, nfrac_lo;
   };
-  void calcDividers(float pll_hz, float lo_hz, Divider &div);
+  void calcDividers(double pll_hz, double lo_hz, Divider &div);
   // Return a string error if there was one.  Otherwise NULL
   const char
     *setVcoCap(uint8_t (*readVtune)(void *arg), void (*writeVcoCap)(void *arg, uint8_t val),
