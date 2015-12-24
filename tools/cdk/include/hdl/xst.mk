@@ -497,8 +497,7 @@ $(call TrceName,$1,$3): $(call ParName,$1,$3)
 
 $(call BitName,$1,$3,$6): $(call ParName,$1,$3) $(call PcfName,$1,$3) $(call TrceName,$1,$3)
 	$(AT)echo -n For $2 on $5 using config $4: Generating Xilinx bitstream file $$@.
-	$(AT)$(info PF:$5,$(HdlPlatformDir_$5),$(shell ls -l $(HdlPlatformDir_$5); ls -lL $(HdlPlatformDir_$5))) \
-	    $(if $(wildcard $(HdlPlatformDir_$5)/$5.ut),,\
+	$(AT)$(if $(wildcard $(HdlPlatformDir_$5)/$5.ut),,\
                 $(error File $(HdlPlatformDir_$5)/$5.ut is required, but missing.))\
 	     $(call DoXilinxPat,bitgen,$1,\
 		-f $$(call FindRelative,$1,$(HdlPlatformDir_$5)/$5.ut) \
