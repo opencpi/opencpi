@@ -164,7 +164,7 @@ namespace OCPI {
 	    }
 	  // FIXME: should this externalization only apply to spec ports?
 	  if (!found) // Not mentioned in the assembly. Add an external.
-	    utilAssy.addExternalConnection(inst.m_ordinal, p->m_name.c_str(),
+	    utilAssy.addExternalConnection(inst.m_ordinal, p->m_name.c_str(), NULL,
 					   p->m_provider, false, true);
 	}	  
       }

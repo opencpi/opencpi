@@ -38,5 +38,5 @@
 #define OCPIAPI_H
 #include "OcpiContainerApi.h"
 #include "OcpiApplicationApi.h"
-#include "OcpiCorbaApi.h"
+// #include "OcpiCorbaApi.h"
 #endif

@@ -243,7 +243,7 @@ namespace OCPI {
 	    request.actual = OCPI_UTRUNCATE(ocpi_size_t, ep.size - ep.m_holeEnd);
 	    if (ioctl(m_dmaFd, OCPI_CMD_REQUEST, &request))
 	      throw OU::Error("Can't establish remote DMA memory size %zu at 0x%" PRIx64
-			      "for DMA memory", (size_t)request.actual, request.bus_addr);
+			      " for DMA memory", (size_t)request.actual, request.bus_addr);
 	  }
 	  
 	} else

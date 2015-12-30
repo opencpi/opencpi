@@ -124,7 +124,7 @@ static RCCResult UTGProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
   len = this_->ports[UTGProducerWorker_Data_Out_Port0].current.maxLength;
 
 #ifndef NDEBUG
-  printf("lenght = %zu\n", len);
+  printf("length = %zu\n", len);
 #endif
 
   b = (uint32_t*)out_buffer;

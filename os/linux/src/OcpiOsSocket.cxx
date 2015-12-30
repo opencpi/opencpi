@@ -172,7 +172,7 @@ recv(char *buffer, size_t amount, unsigned timeoutms, bool all) throw (std::stri
     struct timeval tv;
     tv.tv_sec = timeoutms/1000;
     tv.tv_usec = (timeoutms % 1000) * 1000;
-    ocpiDebug("Setting socket timeout to %u ms", timeoutms);
+    ocpiDebug("[Socket::recv] Setting socket timeout to %u ms", timeoutms);
     if (setsockopt(o2fd (m_osOpaque), SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) != 0)
       throw "Error setting timeout option for sending: " + Posix::getErrorMessage (errno);
     m_timeoutms = timeoutms;
@@ -210,7 +210,7 @@ recvfrom(char  *buf, size_t amount, int flags,
     struct timeval tv;
     tv.tv_sec = timeoutms/1000;
     tv.tv_usec = (timeoutms % 1000) * 1000;
-    ocpiDebug("Setting socket timeout to %u ms", timeoutms);
+    ocpiDebug("[Socket::recvfrom] Setting socket timeout to %u ms", timeoutms);
     if (setsockopt(o2fd (m_osOpaque), SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) != 0)
       throw Posix::getErrorMessage (errno);
     m_timeoutms = timeoutms;

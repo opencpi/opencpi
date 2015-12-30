@@ -77,8 +77,10 @@ OcpiLibDir=$(OCPI_CDK_DIR)/lib/$$(RccTarget)$(and $(OCPI_TARGET_MODE),/$(OCPI_TA
 # Add the libraries we know a worker might reference.
 override RccLibrariesInternal+=rcc application os
 
-ifeq ($(origin OCPI_TARGET_MODE),undefined)
-  export OCPI_TARGET_MODE:=$(if $(filter 1,$(OCPI_BUILD_SHARED_LIBRARIES)),d,s)$(if $(filter 1,$(OCPI_DEBUG)),d,o)
+ifdef OCPI_USE_TOOL_MODES
+  ifndef OCPI_TOOL_MODE
+    export OCPI_TARGET_MODE:=$(if $(filter 1,$(OCPI_BUILD_SHARED_LIBRARIES)),d,s)$(if $(filter 1,$(OCPI_DEBUG)),d,o)
+  endif
 endif
 PatchElf=$(or $(OCPI_PREREQUISITES_INSTALL_DIR),/opt/opencpi/prerequisites)/patchelf/$(OCPI_TOOL_HOST)/bin/patchelf
 LinkBinary=$$(G$(OcpiLanguage)_LINK_$$(RccTarget)) $(SharedLibLinkOptions) -o $$@ $1 \
@@ -187,7 +189,9 @@ $(call ArtifactXmlFile,$1,$2): $(call RccAssemblyFile,$1,$2) $$(ObjectFiles_$1_$
 	     -O $(call RccOs,$1) \
              -V $(call RccOsVersion,$1) \
              -P $(call RccArch,$1) \
-	     -D $(call WkrTargetDir,$1,$2) $(XmlIncludeDirsInternal:%=-I%) -A $(RccAssemblyFile)
+	     -D $(call WkrTargetDir,$1,$2) \
+             $(XmlIncludeDirsInternal:%=-I%) \
+             -A $(call RccAssemblyFile,$1,$2)
 
 endef
 

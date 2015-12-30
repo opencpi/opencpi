@@ -64,14 +64,14 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  h.opcode = port->input.u.operation;
  h.length = port->input.length;
  if ((n = write(s->fd, &h, sizeof(FileHeader) )) < 0)  {
-   self->container.setError( "error writing to file: %s", strerror(errno));
+   self->container.setError( "error writing header to file: %s", strerror(errno));
    return RCC_ERROR;
  }
  props->bytesWritten += n;
 
  if (port->input.length) {
    if ((n = write(s->fd, port->current.data, port->input.length)) < 0) {
-     self->container.setError( "error reading file: %s", strerror(errno));
+     self->container.setError( "error writing data to file: %s", strerror(errno));
      return RCC_ERROR;
    }
    props->bytesWritten += n;

@@ -171,7 +171,7 @@ QuartusMakeQsf=\
   $(if $(findstring $(HdlMode),container),\
     echo '\#' Include the platform-related assignments. ;\
     echo source $(HdlPlatformDir_$(HdlPlatform))/$(HdlPlatform).qsf;) \
- ) > $(Core).qsf;
+ ) > $(Core).qsf; echo fit_stratixii_disallow_slm=On > quartus.ini;
 
 # Be safe for now - remove all previous stuff
 HdlToolCompile=\
@@ -243,7 +243,7 @@ $1/$3.sof:
 	 echo set_global_assignment -name TOP_LEVEL_ENTITY $3; \
 	 echo set_global_assignment -name QXP_FILE '"'$3.qxp'"'; \
 	 echo set_global_assignment -name SDC_FILE '"'$(HdlPlatformDir_$5)/$5.sdc'"'; \
-	 echo source $(HdlPlatformsDir_$5)/$5.qsf \
+	 echo source $(HdlPlatformDir_$5)/$5.qsf \
 	 ) > $4-top.qsf && \
 	cp $4-top.qsf $4-top.qsf.pre-fit && \
 	$(call DoAltera1,quartus_map,$4-top,$4-top,map) && \

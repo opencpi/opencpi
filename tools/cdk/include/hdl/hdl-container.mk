@@ -66,11 +66,11 @@ override ComponentLibraries:=$(call Unique,\
    $(HdlAssembly) \
    $(ComponentLibrariesInternal) \
    $(HdlPlatformDir_$(Platform)) \
-   $(wildcard $(HdlPlatformDir_$(Platform))/devices) \
-   $(and $(ComponentLibraries_$(Platform)),\
-     $(foreach d,$(HdlPlatformDir_$(Platform)),\
-       $(join $(if $(filter lib,$(notdir $d)),$(dir $d),$d/),\
-          $(ComponentLibraries_$(Platform)))))\
+   $(foreach p,$(HdlPlatformDir_$(Platform)),\
+     $(foreach d,$(if $(filter lib,$(notdir $p)),$(dir $p),$p/),\
+       $(wildcard $ddevices) \
+       $(foreach l,$(ComponentLibraries_$(Platform)),\
+         $(if $(filter /%,$l),$l,$d$l))))\
    devices cards)
 $(infox CONT:$(ComponentLibraries))
 override LibDir=$(HdlAssembly)/lib/hdl

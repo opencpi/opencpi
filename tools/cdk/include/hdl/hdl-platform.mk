@@ -102,6 +102,17 @@ $(call OcpiDbgVar,HdlPlatforms)
 SubCores_$(call HdlGetFamily,$(Worker)):=$(Cores)
 OnlyPlatforms:=$(Worker)
 OnlyTargets:=$(call HdlGetFamily,$(Worker))
+# We might be building for multiple platforms (e.g. sim and this one)
+# But from here, if we are building this platform, we must force it
+# When the mode is platform and config, the underlying scripts depend
+# on HdlPlatform being the currrent platform.
+ifeq ($(filter $(Worker),$(HdlPlatforms)),)
+  HdlSkip := 1
+  $(info Skipping this platform ($(Worker)).  It is not in HdlPlatforms ($(HdlPlatforms)))
+else
+  override HdlPlatform:=$(Worker)
+  include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
+endif
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 # the target preprocessing may tell us there is nothing to do
 # some platforms may have been used for the devices subdir (tests, sims, .etc.)
@@ -163,7 +174,7 @@ ifndef HdlSkip
   endif # have configurations
   # If the platform has special files to export to the CDK, do it
   # this is only done if we are building, so we don't export until we have actually built something
-  ExportFiles:=$(call Unique $(ExportFiles) $(wildcard $(Worker).mk))
+  ExportFiles:=$(call Unique,$(ExportFiles) $(wildcard $(Worker).mk))
   ifdef ExportFiles
     ExportLinks:=$(ExportFiles:%=lib/%)
     exports: $(ExportLinks)

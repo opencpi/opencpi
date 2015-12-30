@@ -413,6 +413,45 @@
 	 }
        }
      }
+
+     // Find the value of a parameter for this port.  Return error.
+     // "value" is out arg - NULL if not found.
+     static const char *
+     findPortValue(const char *instName, const char *portName, const char *paramName,
+                   const PValue *params, OU::PValueList &pvlist) {
+       const char *val;
+       if (OU::findAssign(params, paramName, instName, val)) {
+	 const char *eq = strchr(val, '=');
+	 if (!eq)
+	   return OU::esprintf("Port parameter assignment '%s' is invalid. "
+			   "Format is: <port>=<parameter-value>", val);
+	 if (!strncasecmp(portName, val, eq - val))
+	   pvlist.add(paramName, eq + 1);
+       }
+       return NULL;
+     }
+
+     // Apply parameters to ports
+     const char *ApplicationI::
+     finalizePorts(const OU::PValue *params) {
+       Instance *i = m_instances;
+       for (unsigned n = 0; n < m_nInstances; n++, i++) {
+	 const char *iname = m_assembly.instance(n).name().c_str();
+	 OU::Assembly::Port **ap = m_assembly.instance(n).m_assyPorts;
+	 unsigned nPorts;
+	 OU::Port *p = m_instances[n].m_impl->m_metadataImpl.ports(nPorts);
+	 const char *err;
+	 for (unsigned nn = 0; nn < nPorts; nn++, p++) {
+	   const char *pname = p->m_name.c_str();
+	   assert(ap[nn]);
+	   OU::PValueList &pvl = ap[nn]->m_parameters;
+	   if ((err = findPortValue(iname, pname, "xferrole", params, pvl)) ||
+	       (err = findPortValue(iname, pname, "buffercount", params, pvl)))
+	     return err;
+	 }
+       }
+       return NULL;
+     }
      void ApplicationI::
      dumpDeployment(unsigned score, Deployment *deployments) {
 
@@ -659,8 +698,10 @@
 	 importDeployment(dfile);
        else
 	 planDeployment(params);
-       // All the implementation selection is done, so now do the final check of properties
-       // since properties can be implementation specific
+       // All the implementation selection is done, so now do the final check of ports
+       // and properties since they can be implementation specific
+       if ((err = finalizePorts(params)))
+	 throw OU::Error("Port parameter error: %s", err);
        finalizeProperties(params);
        Instance *i = m_instances;
        if (m_verbose) {

@@ -46,9 +46,9 @@
  *                  Initial version.
  */
 
-#include <stdint.h>
 #include <strings.h>
 #include <assert.h>
+#include <inttypes.h>
 #include <cstring>
 #include <cstdio>
 #include <string>

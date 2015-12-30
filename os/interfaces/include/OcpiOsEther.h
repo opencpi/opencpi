@@ -38,7 +38,7 @@
 #ifndef OCPIOSETHER_H__
 #define OCPIOSETHER_H__
 
-#include <stdint.h>
+#include <inttypes.h>
 #include <memory.h>
 #include <stdio.h>
 #include <string>
@@ -127,7 +127,7 @@ namespace OCPI {
 	uint8_t source[Address::s_size];
 	uint8_t payload[MaxPacketSize];
       };
-      // A socket that sends and receives L2 layer poackets.
+      // A socket that sends and receives L2 layer packets.
       // Note that receives are done into internal buffers and it is assumed that
       // the packet buffer can be reused on the next receive call.
       // This socket is for communicating to a simple adress,
@@ -179,7 +179,7 @@ namespace OCPI {
       class IfScanner {
 	uint64_t m_opaque[4];
 	bool     m_init;
-	unsigned m_index;
+	size_t   m_index;
       public:
 	// Initialize the scanner
 	// err is set if there is an error

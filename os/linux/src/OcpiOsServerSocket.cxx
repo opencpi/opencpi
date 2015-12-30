@@ -124,7 +124,7 @@ bind(uint16_t portNo, bool reuse, bool udp ) throw (std::string) {
   int reuseopt = reuse ? 1 : 0;
   if (::setsockopt(fileno, SOL_SOCKET, SO_REUSEADDR, (void *)&reuseopt, sizeof (int)) != 0 ||
       ::bind (fileno, (struct sockaddr *) &sin, sizeof (sin)) != 0 ||
-      !udp && ::listen (fileno, DEFAULT_LISTEN_BACKLOG) != 0) {
+      (!udp && ::listen (fileno, DEFAULT_LISTEN_BACKLOG) != 0)) {
     ::close (fileno);
     throw Posix::getErrorMessage(errno, "bind/setsockopt/listen");
   }
@@ -265,7 +265,7 @@ recvfrom(char  *buf, size_t amount, int flags,
     struct timeval tv;
     tv.tv_sec = timeoutms/1000;
     tv.tv_usec = (timeoutms % 1000) * 1000;
-    ocpiDebug("Setting socket timeout to %u ms", timeoutms);
+    ocpiDebug("[ServerSocket::recvfrom] Setting socket timeout to %u ms", timeoutms);
     if (setsockopt(o2fd (m_osOpaque), SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) != 0)
       throw Posix::getErrorMessage (errno);
     m_timeoutms = timeoutms;

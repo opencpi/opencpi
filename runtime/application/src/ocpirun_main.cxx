@@ -79,6 +79,12 @@
   CMD_OPTION_S(transport,T, String, 0, "<instance-name>=<port-name>=<transport-name>\n" \
 	                               "set transport of connection at a port\n" \
 	                               "if no port name, then the single output port") \
+  CMD_OPTION_S(xferrole, X, String, 0, "<instance-name>=<port-name>=<transport-role>\n" \
+	                               "set transport role at a port\n" \
+	                               "if no port name, then the single output port") \
+  CMD_OPTION_S(buffercount,B,String, 0, "<instance-name>=<port-name>=<buffercount>\n" \
+	                               "set buffercount at a port\n" \
+	                               "if no port name, then the single output port") \
   CMD_OPTION(artifacts,  A, String, 0, "comma-separated list of targets to print artifacts in path on stdout") \
   CMD_OPTION(deployment, ,  String, 0, "XML file to read deployment from, avoid automatic deployment") \
   CMD_OPTION(deploy_out, ,  String, 0, "XML file to write deployment to") \
@@ -175,6 +181,8 @@ static int mymain(const char **ap) {
   addParams("device", options.device(n), params);
   addParams("url", options.url(n), params);
   addParams("transport", options.transport(n), params);
+  addParams("xferrole", options.xferrole(n), params);
+  addParams("buffercount", options.buffercount(n), params);
   if (options.deployment())
     addParam("deployment", options.deployment(), params);
   if (params.size())

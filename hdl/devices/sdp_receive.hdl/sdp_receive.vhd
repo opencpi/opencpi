@@ -297,12 +297,13 @@ g0: for i in 0 to sdp_width_c-1 generate
                  operating        => operating_r,  -- wrong clock domain, but stable enough?
                  -- properties
                  buffer_ndws      => buffer_ndws,
-                 buffer_count     => buffer_count,
+                 lcl_buffer_count => buffer_count,
                  role             => props_in.role,
                  rem_flag_addr    => props_in.remote_flag_addr(0),
                  rem_flag_pitch   => props_in.remote_flag_pitch(0),
                  rem_data_addr    => props_in.remote_data_addr(0),
                  rem_data_pitch   => props_in.remote_data_pitch(0),
+                 rem_buffer_count => props_in.remote_buffer_count(0),
                  -- inputs from CTL/WSI side
                  length_not_empty => length_not_empty, -- a length (of next message) is available
                  length_out       => length_out,       -- length of next packet

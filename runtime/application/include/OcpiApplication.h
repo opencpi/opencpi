@@ -144,6 +144,7 @@ namespace OCPI {
       unsigned addContainer(unsigned container, bool existOk = false);
       bool connectionsOk(OCPI::Library::Candidate &c, unsigned instNum);
       void finalizeProperties(const OCPI::Util::PValue *params);
+      const char *finalizePorts(const OCPI::Util::PValue *params);
       bool bookingOk(Booking &b, OCPI::Library::Candidate &c, unsigned n);
       void policyMap( Instance * i, CMap & bestMap);
       void setPolicy(const OCPI::API::PValue *params);

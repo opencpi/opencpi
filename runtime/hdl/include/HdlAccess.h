@@ -6,7 +6,6 @@
 
 #include <inttypes.h>
 #include <cstddef>
-
 #include "OcpiUtilMisc.h"
 #include "DtOsDataTypes.h"
 
