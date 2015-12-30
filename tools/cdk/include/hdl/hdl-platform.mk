@@ -113,7 +113,6 @@ else
   override HdlPlatform:=$(Worker)
   include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 endif
-include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 # the target preprocessing may tell us there is nothing to do
 # some platforms may have been used for the devices subdir (tests, sims, .etc.)
 ifndef HdlSkip
