@@ -97,7 +97,7 @@ namespace OCPI {
 		   &m_portID.port ) != 2)
 	  throw OU::Error("Invalid format for SCIF DMA endpoint: %s", ep.c_str());
 
-	printf("******************* PORT = %d\n", m_portID.port  );
+	//	printf("******************* PORT = %d\n", m_portID.port  );
   
 	ocpiDebug("SCIF DMA ep %p %s: size = 0x%zx port = %d ",
 		  this, ep.c_str(), size, m_portID.port);
@@ -241,7 +241,7 @@ namespace OCPI {
 
 	next_ep_port +=2;
 
-	printf("&&&&& returning ep = %s\n", ep.c_str() );
+	//	printf("&&&&& returning ep = %s\n", ep.c_str() );
 	
 	return ep;
       }
@@ -285,12 +285,12 @@ namespace OCPI {
 
 	/* We can open the endpoint for this node early, only one per factory */
 	if ((m_epn[ACCEPT] = scif_open()) == SCIF_OPEN_FAILED) {
-	  snprintf(eb, EB_SIZE, "scif_open failed with error %d\n", errno);
+	  snprintf(eb, EB_SIZE, "scif_open failed with error %s\n",  strerror(errno));
 	  throw OU::Error(eb);
 	}
 	/* We can open the endpoint for this node early, only one per factory */
 	if ((m_epn[CONNECT] = scif_open()) == SCIF_OPEN_FAILED) {
-	  snprintf(eb, EB_SIZE, "scif_open failed with error %d\n", errno);
+	  snprintf(eb, EB_SIZE, "scif_open failed with error %s\n",  strerror(errno));
 	  throw OU::Error(eb);
 	}
 
@@ -333,26 +333,26 @@ namespace OCPI {
 
 	  int err = posix_memalign((void**)&m_vaddr, 0x1000, m_ep.size + SCIF_FLAG_MEM_SIZE );
 	  if (m_vaddr == NULL || err != 0 ) {
-	    snprintf(eb,EB_SIZE,"_aligned_malloc failed with error : %d\n", errno);
+	    snprintf(eb,EB_SIZE,"_aligned_malloc failed with error : %s\n",  strerror(errno));
 	    throw OU::Error(eb);
 	  }
 
 
-	  printf("TTTTTTTT About to bind using %d\n", m_ep.port() );
+	  //	  printf("TTTTTTTT About to bind using %d\n", m_ep.port() );
 
 	  /* bind end point to available port, generated dynamically */
 	  if ((m_conn_port = scif_bind(m_epn[ACCEPT], (uint16_t)m_ep.port())) < 0) {
-	    snprintf(eb,EB_SIZE, "scif_bind failed with error %d\n", errno);
+	    snprintf(eb,EB_SIZE, "scif_bind failed with error %s\n",  strerror(errno));
 	    throw OU::Error(eb);
 	  }
-	  printf("bind success to port %d\n", m_conn_port);
+	  //	  printf("bind success to port %d\n", m_conn_port);
 
 	  /* bind end point to available port, generated dynamically */
 	  if ((m_conn_port = scif_bind(m_epn[CONNECT], (uint16_t)m_ep.port()+20 )) < 0) {
-	    snprintf(eb,EB_SIZE, "scif_bind failed with error %d\n", errno);
+	    snprintf(eb,EB_SIZE, "scif_bind failed with error %s\n",  strerror(errno));
 	    throw OU::Error(eb);
 	  }
-	  printf("bind success to port %d\n", m_conn_port);
+	  //	  printf("bind success to port %d\n", m_conn_port);
 
 	  m_accepter.start();
 
@@ -415,7 +415,7 @@ namespace OCPI {
 	      continue;
 	    }
 	    else {
-	      printf("@@@@@@@@@@@@@  conect to node %d success\n", m_targetSmb->ep().m_portID.node);
+	      //	      printf("@@@@@@@@@@@@@  conect to node %d success\n", m_targetSmb->ep().m_portID.node);
 	      m_sourceSmb->m_connected_ep[0] = m_sourceSmb->m_epn[CONNECT];
 	      sleep(2);
 	      break;
@@ -450,10 +450,10 @@ namespace OCPI {
 	throw OU::Error(eb);
       }
 
-      printf("$$$$$$$$$$$$$$$$$$$$$$  scif_register!!  offset= 0x%lx, vaddr = %p, size = %ld\n",offset, m_sourceSmb->m_vaddr, size );
+      //      printf("$$$$$$$$$$$$$$$$$$$$$$  scif_register!!  offset= 0x%lx, vaddr = %p, size = %ld\n",offset, m_sourceSmb->m_vaddr, size );
 
 
-      printf("* &&&&&&&& SUCCESS  connecting\n");
+      //      printf("* &&&&&&&& SUCCESS  connecting\n");
     }
 
 
@@ -503,7 +503,7 @@ namespace OCPI {
        * SCIF_ACCEPT_SYNC blocks the call untill a connection is present
        */
       if (scif_listen(m_smb.m_epn[ACCEPT], BACKLOG) != 0) {
-	snprintf(eb,EB_SIZE, "scif_listen failed with error %d\n", errno);
+	snprintf(eb,EB_SIZE, "scif_listen failed with error %s\n",  strerror(errno));
 	throw OU::Error(eb);
       }
       
@@ -511,11 +511,11 @@ namespace OCPI {
       int i = 0;
       while( m_smb.accept() ) {
 
-	printf("****** &&&&&&&&&&&& ^^^^^^^^^^ About to scif accept on node %d, port %d!!\n", m_smb.ep().m_portID.node, m_smb.ep().m_portID.port  );
+	//	printf("****** &&&&&&&&&&&& ^^^^^^^^^^ About to scif accept on node %d, port %d!!\n", m_smb.ep().m_portID.node, m_smb.ep().m_portID.port  );
 
 	//	assert( m_smb.m_connected_ep == -1 );
 	if (scif_accept(m_smb.m_epn[ACCEPT], &m_smb.ep().m_portID, &m_smb.m_connected_ep[i], SCIF_ACCEPT_SYNC) != 0) {
-	  printf("scif_accept failed with error %d\n", errno );
+	  //	  printf("scif_accept failed with error %s\n",  strerror(errno) );
 	}
 	else {
 	  printf("@@@@@@@@@@@@@@@@@  accepted connection request from node:%d port:%d\n", m_smb.ep().m_portID.node, m_smb.ep().m_portID.port);
@@ -574,11 +574,11 @@ namespace OCPI {
     XferRequest(XferServices & parent, XF_template temp)
     : DT::TransferBase<XferServices,XferRequest>(parent, *this, temp )
     {
-      printf("****** &&&&& ^^^^^^ In XferRequest()\n");
+      //      printf("****** &&&&& ^^^^^^ In XferRequest()\n");
       if (  parent.m_sourceSmb->alloc( 4, 8, m_addr) < 0  ) {
 	throw OU::Error("SCIF::XferRequest: out of flag memory !!");
       }
-      printf("flag memory = %d\n", m_addr);
+      //      printf("flag memory = %d\n", m_addr);
     }
 
     XferRequest::
@@ -591,7 +591,7 @@ namespace OCPI {
     XferRequest::
     getStatus () {
 
-      printf("&&&&&&&&& ******* Status =%d\n", *((int*)parent().m_sourceSmb->map((DtOsDataTypes::Offset)m_addr,4)) );
+      //      printf("&&&&&&&&& ******* Status =%d\n", *((int*)parent().m_sourceSmb->map((DtOsDataTypes::Offset)m_addr,4)) );
       if (  *((int*)parent().m_sourceSmb->map((DtOsDataTypes::Offset)m_addr,4)) ) {
 	return DataTransfer::XferRequest::CompleteSuccess; 
       }
@@ -607,7 +607,7 @@ namespace OCPI {
     XferRequest::
     action_transfer(PIO_transfer transfer, bool last ) {
 
-      printf("****** &&&&& ^^^^^^ In action_transfer()\n");
+      //      printf("****** &&&&& ^^^^^^ In action_transfer()\n");
 
 #define TRACE_XFERS  
 #ifdef TRACE_XFERS
@@ -616,7 +616,7 @@ namespace OCPI {
 
       int ret;
       if ( last ) {
-	printf("***** LAST TX !!\n");	
+	//	printf("***** LAST TX !!\n");	
 	*((int*)parent().m_sourceSmb->map((DtOsDataTypes::Offset)m_addr,4)) = 0;
 	uint64_t v =  *((int*)parent().m_sourceSmb->map((DtOsDataTypes::Offset)transfer->src_off,4)) |
 	  *((int*)parent().m_sourceSmb->map((DtOsDataTypes::Offset)transfer->src_off,4)) << 31;

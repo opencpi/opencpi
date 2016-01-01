@@ -59,17 +59,20 @@ namespace OCPI {
     class EndPoint : public DT::EndPoint {
       friend class SmemServices;
     protected:
-      uint32_t m_holeOffset, m_holeEnd;
+
+      
     public:
+      uint32_t m_holeOffset, m_holeEnd;
+      uint64_t  m_busAddr;
       EndPoint( std::string& ep, bool local)
         : DT::EndPoint(ep, 0, local) {
 	if (sscanf(ep.c_str(), EPNAME ":%" SCNx64 ".%" SCNx32 ".%" SCNx32 ";",
-		   &address, &m_holeOffset, &m_holeEnd) != 3)
+		   &m_busAddr, &m_holeOffset, &m_holeEnd) != 3)
 	  throw OU::Error("Invalid format for DMA endpoint: %s", ep.c_str());
   
 	ocpiDebug("DMA ep %p %s: address = 0x%" PRIx64
 		  " size = 0x%zx hole 0x%" PRIx32 " end 0x%" PRIx32,
-		  this, ep.c_str(), address, size, m_holeOffset, m_holeEnd);
+		  this, ep.c_str(), m_busAddr, size, m_holeOffset, m_holeEnd);
       };
       virtual ~EndPoint() {}
 
@@ -156,8 +159,15 @@ namespace OCPI {
 	    throw OU::Error("not enough memory to accomodate all endpoints");
 	  request.actual = m_perMBox;
 	  request.address = m_dmaBase + m_perMBox * ep.mailbox;
+	  request.bus_addr = ep.m_busAddr;
 	}
+
+
+	//	printf("**** address = 0x%llx, bu addr = 0x%llx \n", request.address, request.bus_addr);
+	
+
 	ep.address = request.address;
+	ep.m_busAddr = request.bus_addr;
       }
 
       uint8_t *
@@ -201,8 +211,41 @@ namespace OCPI {
 
     DT::EndPoint* XferFactory::
     createEndPoint(std::string& endpoint, bool local) {
-      return new EndPoint(endpoint, local);
+      EndPoint &ep = *new EndPoint(endpoint, local);
+      if (!local) {
+	// This endpoint is remote: it means we have been told about it using the URL, which has
+	// a bus address. For us to map to it using mmap, we need to tell the kernel driver about
+	// this bus address region in case it could not discover it.
+	// It will tell us what local physical address to use for mmap offsets.
+	// (FIXME: security hole when not discovered properly in kernel mode)
+	// We'll use the ioctl request to the driver by setting the memory needed to zero
+	if (m_dmaFd < 0)
+	  initDma(ep.maxCount);
+	if (m_usingKernelDriver) {
+	  ocpi_request_t request;
+	  memset(&request, 0, sizeof(request));
+	  request.needed = 0; // signal to driver that we are doing bus2phys
+	  request.bus_addr = ep.m_busAddr;
+	  request.actual = OCPI_UTRUNCATE(ocpi_size_t, ep.size);
+	  request.how_cached = ocpi_uncached;
+	  // A request to enable mapping to this bus address/size and return the physaddr
+	  if (ioctl(m_dmaFd, OCPI_CMD_REQUEST, &request))
+	    throw OU::Error("Can't establish remote DMA memory size %zu at 0x%" PRIx64
+			    "for DMA memory", ep.size, ep.m_busAddr);
+	  ep.address = request.address;
+	} else
+	  // If we are not using a driver we must assume the bus address is indeed the
+	  // local phyisical address;
+	  ep.address = ep.m_busAddr;
+      }
+      ocpiDebug("DMA create %s/%s ep %p %s: address = 0x%" PRIx64 " busaddr = 0x%" PRIx64
+		" size = 0x%zx hole 0x%" PRIx32 " end 0x%" PRIx32,
+		ep.local ? "local" : "remote", local ? "local" : "remote",
+		&ep, ep.end_point.c_str(), ep.address, ep.m_busAddr, ep.size, ep.m_holeOffset,
+		ep.m_holeEnd);
+      return &ep;
     }
+
 
     class SmemServices : public DT::SmemServices {
       EndPoint &m_dmaEndPoint;
@@ -222,9 +265,11 @@ namespace OCPI {
 	  OU::formatString(ep.end_point,
 			   EPNAME ":0x%" PRIx64".0x%" PRIx32 ".0x%" PRIx32
 			   ";%zu.%" PRIu16 ".%" PRIu16,
-			   ep.address, ep.m_holeOffset, ep.m_holeEnd, ep.size,
+			   ep.m_busAddr, ep.m_holeOffset, ep.m_holeEnd, ep.size,
 			   ep.mailbox, ep.maxCount);
 	  ocpiDebug("Finalized DMA ep %p: %s", &ep, ep.end_point.c_str());
+
+	  printf("Finalized DMA ep %p: %s", &ep, ep.end_point.c_str());
 	}
       }
     public:

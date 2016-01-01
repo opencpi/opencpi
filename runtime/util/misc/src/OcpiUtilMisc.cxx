@@ -646,6 +646,8 @@ parseList(const char *list, const char * (*doit)(const char *tok, void *arg), vo
 const std::string &
 getSystemId() {
   static std::string *id = NULL;
+
+  return std::string("id");
   if (!id)
     id = new std::string(getSystemAddr().pretty());
   return *id;

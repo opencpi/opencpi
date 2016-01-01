@@ -72,10 +72,13 @@ Container(const char *name, const OA::PValue* /*params*/)
   throw ( OU::EmbeddedException )
   : OC::ContainerBase<Driver,Container,Application,Artifact>(*this, name)
 {
+
   const char *system = OU::getSystemId().c_str();
   m_model = "rcc";
   // FIXME: somehow this should default since RCC can pretty much support them all?
-  m_transports.resize(3);
+
+
+  m_transports.resize(5);
   m_transports[0].transport = "ocpi-dma-pio";
   m_transports[0].id = system;
   m_transports[0].roleIn = OR::ActiveMessage;
@@ -105,7 +108,7 @@ Container(const char *name, const OA::PValue* /*params*/)
   m_transports[2].optionsOut =
     (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive);
 
-  /*
+
   m_transports[3].transport = "ocpi-socket-rdma";
   m_transports[3].id = "0";
   m_transports[3].roleIn = OR::ActiveMessage;
@@ -124,7 +127,6 @@ Container(const char *name, const OA::PValue* /*params*/)
     (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive);
   m_transports[3].optionsOut =
     (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive);
-  */
 
 }
 
