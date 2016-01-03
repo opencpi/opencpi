@@ -647,9 +647,10 @@ const std::string &
 getSystemId() {
   static std::string *id = NULL;
 
-  return std::string("id");
+  
   if (!id)
-    id = new std::string(getSystemAddr().pretty());
+    id = new std::string("id");
+  //    id = new std::string(getSystemAddr().pretty());
   return *id;
 }
 

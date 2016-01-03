@@ -357,6 +357,7 @@ void InputBuffer::markBufferFull()
   else {
     // This flag is being set locally with the expectation that the other side will write back to it
     // to tell us it has become empty
+    ocpiDebug("empty value: %x", m_myShadowsRemoteStates[getPort()->getMailbox()]->bufferIsEmpty);
     ocpiAssert(m_myShadowsRemoteStates[getPort()->getMailbox()]->bufferIsEmpty == EF_EMPTY_VALUE ||
 	       m_myShadowsRemoteStates[getPort()->getMailbox()]->bufferIsEmpty == EF_FULL_VALUE);
     m_myShadowsRemoteStates[getPort()->getMailbox()]->bufferIsEmpty = EF_FULL_VALUE;

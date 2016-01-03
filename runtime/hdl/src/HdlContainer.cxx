@@ -88,7 +88,8 @@ namespace OCPI {
       m_transports[0].roleIn = OR::ActiveMessage;
       m_transports[0].roleOut = OR::ActiveMessage;
       m_transports[0].optionsIn =
-	(1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive);
+	1 << OR::ActiveMessage;
+      //	(1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive);
       m_transports[0].optionsOut =
 	(1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive);
       ocpiDebug("HDL Container for device %s constructed.  ESN: '%s' Platform/part is %s/%s.",
@@ -444,7 +445,7 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
       // buffer sizes etc.  If we are sharing a memory pool, this will not be the case,
       // and we would probably allocate the whole thing here.
       const OCPI::RDT::Descriptors *
-      startConnect(const OCPI::RDT::Descriptors */*other*/, bool &done) {
+      startConnect(const OCPI::RDT::Descriptors *other, OCPI::RDT::Descriptors &feedback, bool &done) {
         if (!m_canBeExternal)
 	  throw OU::Error("Port %s of this HDL worker is connected internally", name().c_str());
 
@@ -460,6 +461,8 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
         userMetadataBaseAddr = (OcdpMetadata *)(userDataBaseAddr +
                                                 (myDesc.metaDataBaseAddr -
                                                  myDesc.dataBufferBaseAddr));
+	if (other)
+	  return finishConnect(other, feedback, done);
 	done = false;
 	return &getData().data;
       }
@@ -480,6 +483,9 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
         OCPI::RDT::PortRole myRole = (OCPI::RDT::PortRole)getData().data.role;
 	
 	if (other) {
+	  const char *colon = strchr(other->desc.oob.oep, ':');
+	  assert(colon && !strncmp(other->desc.oob.oep, "ocpi-dma-pio:", 13));
+	  ocpiCheck(sscanf(colon+1, "%" SCNx64, &other->desc.oob.address) == 1);
 	  ocpiDebug("finishConnection: other = %" PRIx64 ", offset = %" DTOSDATATYPES_OFFSET_PRIx
 		    ", RFB = %" PRIx64 "",
 		    other->desc.oob.address,
@@ -558,6 +564,7 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
 	}
 	controlOperation(OU::Worker::OpStart);
 	done = true;
+	portIsConnected();
 	return isProvider() ? NULL : &getData().data;
       }
       OC::ExternalPort &createExternal(const char *extName, bool isProvider,
@@ -571,7 +578,8 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
 	&pport = static_cast<Port&>(in.isProvider() ? in : out),
 	&uport = static_cast<Port&>(out.isProvider() ? in : out);
       bool done;
-      pport.startConnect(NULL, done);
+      OCPI::RDT::Descriptors dummy;
+      pport.startConnect(NULL, dummy, done);
       // We're both in the same runtime artifact object, so we know the port class
       if (uport.m_connection != pport.m_connection)
 	throw OU::Error("Ports %s (instance %s) and %s (instance %s) are both local in "

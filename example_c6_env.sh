@@ -1,7 +1,7 @@
 trap "trap - ERR; break" ERR; for i in 1; do
 . ./env/start.sh
 
-export OCPI_XILINX_DIR=/home/jek/mac/Xilinx
+export OCPI_XILINX_DIR=/opt/Xilinx
 export OCPI_XILINX_VERSION=14.6
 export OCPI_XILINX_LICENSE_FILE=/home/jek/mac/Xilinx/Xilinx-License.lic
 . ./env/xilinx.sh

@@ -72,16 +72,16 @@ namespace OCPI {
       OU::formatAdd(m_name, ":%u", port);
       if (verbose) {
 	if (discoverable) {
-	  fprintf(stderr,
+	  fprintf(stdout,
 		  "Container server at %s\n  TCP: %s, discoverable at UDP %s)\n"
 		  "  Using UDP discovery response addresses:\n",
 		  m_name.c_str(), a.pretty(), m_disc->ifAddr().pretty());
 	  for (DiscSocketsIter ci = m_discSockets.begin(); ci != m_discSockets.end(); ci++)
-	    fprintf(stderr, "    %s\n", (*ci)->ifAddr().pretty());
+	    fprintf(stdout, "    %s\n", (*ci)->ifAddr().pretty());
 	} else
-	  fprintf(stderr, "Container server at %s (IP: %s)\n", m_name.c_str(), a.pretty());
+	  fprintf(stdout, "Container server at %s (IP: %s)\n", m_name.c_str(), a.pretty());
 	if (a.addrInAddr() == 0) {
-	  fprintf(stderr, "  Available TCP addresses are:\n");
+	  fprintf(stdout, "  Available TCP addresses are:\n");
 	  OE::IfScanner ifs(error);
 	  if (error.length())
 	    return;
@@ -95,23 +95,30 @@ namespace OCPI {
 	  for (unsigned n = 0; ifs.getNext(eif, error, NULL) && error.empty(); n++)
 	    if (eif.up && eif.connected && eif.ipAddr.addrInAddr()) {
 	      const char *pretty = eif.ipAddr.pretty();
-	      fprintf(stderr, "    On interface %s: %*s%.*s:%u\n", eif.name.c_str(),
+	      fprintf(stdout, "    On interface %s: %*s%.*s:%u\n", eif.name.c_str(),
 		      (int)(len - eif.name.length()), "",
 		      (int)(strchr(pretty, ':') - pretty), pretty, a.addrPort());
+	      const char *saddr = getenv("OCPI_SERVER_ADDRESS");
+	      if (saddr && !eif.loopback) {
+		FILE *f = fopen(saddr, "w");
+		fprintf(f, "%.*s:%u", (int)(strchr(pretty, ':') - pretty), pretty, a.addrPort());
+		fclose(f);
+	      }
+		
 	    }
 	}
-	fprintf(stderr,
+	fprintf(stdout,
 		"Artifacts stored/cached in the directory \"%s\"; which will be %s on exit.\n",
 		m_library.libName().c_str(), m_remove ? "removed" : "retained");
-	fprintf(stderr, "Containers offered to clients are:\n");
+	fprintf(stdout, "Containers offered to clients are:\n");
 	  OA::Container *ac;
 	  for (unsigned n = 0; (ac = OA::ContainerManager::get(n)); n++) {
 	    OC::Container &c = *static_cast<OC::Container *>(ac);
-	    fprintf(stderr, "  %2d: %s model %s os %s osVersion %s platform %s\n",
+	    fprintf(stdout, "  %2d: %s model %s os %s osVersion %s platform %s\n",
 		    n, c.name().c_str(), c.model().c_str(), c.os().c_str(),
 		    c.osVersion().c_str(), c.platform().c_str());
 	  }
-	fflush(stderr);
+	fflush(stdout);
       }
     }
     Server::~Server() {
@@ -168,9 +175,9 @@ namespace OCPI {
 	if (FD_ISSET((*ci)->fd(), fds) && (*ci)->receive(eof, error)) {
 	  if (m_verbose)
 	    if (eof)
-	      fprintf(stderr, "Client \"%s\" has disconnected.\n", (*ci)->client());
+	      fprintf(stdout, "Client \"%s\" has disconnected.\n", (*ci)->client());
 	    else
-	      fprintf(stderr, "Shutting down client \"%s\" due to error: %s\n",
+	      fprintf(stdout, "Shutting down client \"%s\" due to error: %s\n",
 		      (*ci)->client(), error.c_str());
 	  ocpiInfo("Shutting down client \"%s\" due to error: %s",
 		   (*ci)->client(), error.c_str());
@@ -238,7 +245,7 @@ namespace OCPI {
       m_clients.push_back(c);
       addFd(c->fd(), true);
       if (m_verbose)
-	fprintf(stderr, "New client is \"%s\".\n", c->client());
+	fprintf(stdout, "New client is \"%s\".\n", c->client());
       return false;
     }
   }

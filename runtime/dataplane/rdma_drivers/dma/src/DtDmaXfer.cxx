@@ -226,13 +226,20 @@ namespace OCPI {
 	  memset(&request, 0, sizeof(request));
 	  request.needed = 0; // signal to driver that we are doing bus2phys
 	  request.bus_addr = ep.m_busAddr;
-	  request.actual = OCPI_UTRUNCATE(ocpi_size_t, ep.size);
 	  request.how_cached = ocpi_uncached;
+	  request.actual = OCPI_UTRUNCATE(ocpi_size_t, ep.m_holeOffset ? ep.m_holeOffset : ep.size);
 	  // A request to enable mapping to this bus address/size and return the physaddr
 	  if (ioctl(m_dmaFd, OCPI_CMD_REQUEST, &request))
-	    throw OU::Error("Can't establish remote DMA memory size %zu at 0x%" PRIx64
-			    "for DMA memory", ep.size, ep.m_busAddr);
+	    throw OU::Error("Can't establish remote DMA memory size %" PRIu32 " at 0x%" PRIx64
+			    "for DMA memory", request.actual, ep.m_busAddr);
 	  ep.address = request.address;
+	  if (ep.m_holeOffset) {
+	    request.bus_addr = ep.m_busAddr + ep.m_holeEnd;
+	    request.actual = OCPI_UTRUNCATE(ocpi_size_t, ep.size - ep.m_holeEnd);
+	    if (ioctl(m_dmaFd, OCPI_CMD_REQUEST, &request))
+	      throw OU::Error("Can't establish second remote DMA memory size %" PRIu32 " at 0x%" PRIx64
+			      "for DMA memory", request.actual, request.bus_addr);
+	  }
 	} else
 	  // If we are not using a driver we must assume the bus address is indeed the
 	  // local phyisical address;
@@ -269,7 +276,7 @@ namespace OCPI {
 			   ep.mailbox, ep.maxCount);
 	  ocpiDebug("Finalized DMA ep %p: %s", &ep, ep.end_point.c_str());
 
-	  printf("Finalized DMA ep %p: %s", &ep, ep.end_point.c_str());
+	  printf("Finalized DMA ep %p: %s\n", &ep, ep.end_point.c_str());
 	}
       }
     public:

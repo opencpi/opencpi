@@ -813,7 +813,9 @@ namespace OCPI {
       OR::Descriptors &d = getData().data;
       d.role = isProvider() ? c.m_transport.roleIn : c.m_transport.roleOut;
       d.options = isProvider() ? c.m_transport.optionsIn : c.m_transport.optionsOut;
-      strcpy(d.desc.oob.oep, c.m_transport.transport.c_str());
+      if (!d.desc.oob.oep[0])
+	strcpy(d.desc.oob.oep, c.m_transport.transport.c_str());
+      assert(!strncmp(d.desc.oob.oep, c.m_transport.transport.c_str(), strlen(c.m_transport.transport.c_str())));
       setBufferSize(c.m_bufferSize);
     }
 
@@ -892,9 +894,9 @@ namespace OCPI {
 	&out = isProvider() ? *c.m_out.m_port : *this;
       bool iDone, oDone;
       OR::Descriptors buf, buf1;
-      const OR::Descriptors *result = in.startConnect(NULL, iDone);
+      const OR::Descriptors *result = in.startConnect(NULL, buf, iDone);
       assert(result);
-      result = out.startConnect(result, oDone);
+      result = out.startConnect(result, buf1, oDone);
       assert((result && !iDone) || (!result && iDone));
       if (result) {
 	result = in.finishConnect(result, buf, iDone);
@@ -914,12 +916,12 @@ namespace OCPI {
 	&p = isProvider() ? c.m_in : c.m_out,
 	&other = isProvider() ? c.m_out : c.m_in;
       assert(!p.m_done);
-      OR::Descriptors buf, *otherInfo = NULL;
+      OR::Descriptors buf, buf1, *otherInfo = NULL;
       if (other.m_initial.length()) {
 	ocpiCheck(unpackPortDesc(other.m_initial, buf));
 	otherInfo = &buf;
       }
-      const OR::Descriptors *result = startConnect(otherInfo, p.m_done);
+      const OR::Descriptors *result = startConnect(otherInfo, buf1, p.m_done);
       if (result) {
 	p.m_started = true;
 	packPortDesc(*result, p.m_initial);
@@ -951,7 +953,7 @@ namespace OCPI {
 
     // Default local behavior for basic ports that need to behave like external or bridge ports
     const OCPI::RDT::Descriptors *BasicPort::
-    startConnect(const OCPI::RDT::Descriptors *other, bool &done) {
+    startConnect(const OCPI::RDT::Descriptors *other, OCPI::RDT::Descriptors &feedback, bool &done) {
       if (isProvider())
 	m_dtPort = container().getTransport().createInputPort(getData().data);
       else if (other)
@@ -959,7 +961,9 @@ namespace OCPI {
       if (m_dtPort) {
 	// FIXME: put this in the constructor, and have better names
 	m_dtPort->setInstanceName(m_metaPort.m_name.c_str());
-	done = other != NULL;
+	if (other)
+	  return finishConnect(other, feedback, done);
+	done = false;
 	return &getData().data;
       }
       done = false;
@@ -973,9 +977,14 @@ namespace OCPI {
 		name().c_str(), other, m_dtPort);
       const OCPI::RDT::Descriptors *rv;
       if (!m_dtPort) {
-	rv = startConnect(other, done);
-	if (done)
-	  rv = m_dtPort->finalize(other, getData().data, &feedback, done);
+	assert(!isProvider());
+	assert(other);
+	rv = startConnect(other, feedback, done);
+	//	if (done) {
+	  //	  rv = m_dtPort->finalize(other, getData().data, &feedback, done);
+	  //	  assert(!rv);
+	//	  assert(done);
+	//	}
       } else  
 	rv = m_dtPort->finalize(other, getData().data, &feedback, done);
       if (done)
