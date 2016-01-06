@@ -38,6 +38,8 @@
 #ifndef OCPIOSDEBUG_H__
 #define OCPIOSDEBUG_H__
 
+#include  <cstdarg>
+
 /**
  * \file
  * \brief Operations related to debugging.

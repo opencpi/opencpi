@@ -74,6 +74,7 @@ Workers = \
     bias_cc.rcc \
     bias_param.rcc \
     bias.ocl \
+    biasFGM_cc.rcc \
     hello_world.rcc \
     hello_world_cc.rcc \
     replicate.rcc \

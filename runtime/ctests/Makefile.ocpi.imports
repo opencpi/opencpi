@@ -63,14 +63,20 @@ CXXFLAGS+= -DPTWORKQUEUE
 SYSLIBS += $(WORKQUEUE_LIB)/pthread_workqueue
 endif
 
-
-
 MAIN_DRIVERS+= \
   _ZN4OCPI3RCC3rccE\
   _ZN4OCPI7Library7CompLib9componentE\
   _ZN4OCPI3HDL3hdlE\
   _ZN4OCPI3DMA3dmaE\
   _ZN4OCPI6Remote6remoteE\
+
+
+ifeq ($(OCPI_HAVE_SCIF),1)
+MAIN_DRIVERS+= _ZN4OCPI4SCIF4scifE
+#DYNOBJS += ../../../../runtime/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtScifXfer.obj 
+SYSLIBS += scif
+endif
+
 
 ifneq (,)
 DYNOBJS += \
@@ -94,10 +100,12 @@ DYNOBJS += ../../../../runtime/dataplane/msg_drivers/$(OCPI_OUT_DIR)/OcpiDDSTran
 SYSLIBS += ddsdatabase dcpsgapi dcpssacpp ddsos ddsutil ddsserialization ddskernel ddsuser ddsconf ddsconfparser
 endif
 
+
 ifeq ($(OCPI_HAVE_IBVERBS),1)
 DYNOBJS += ../../../../runtime/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtOfedXfer.obj 
 SYSLIBS += ibverbs	
 endif
+
 
 ALLLIBS += $(RCC_CONTAINER_LIBS) $(CONTAINER_LIBS) $(DATA_TRANSPORT_LIBS) \
 	 $(LIBRARY_LIBS) $(MSG_TRANSPORT_LIBS) \

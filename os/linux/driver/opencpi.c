@@ -377,6 +377,7 @@ get_memory(ocpi_request_t *request, struct file *file, ocpi_block_t **sparep) {
   list_for_each_entry(block, &block_list, list)
     if (block->available && block->size >= request->actual) {
       request->address = block->start_phys;
+      request->bus_addr = block->bus_addr;
       if (block->size > request->actual) {
 	ocpi_block_t *split = *sparep;
 	*sparep = 0;
@@ -442,26 +443,27 @@ establish_remote(struct file *file, ocpi_request_t *request) {
   ocpi_address_t end_address = phys + request->actual;
   ocpi_block_t *block = NULL;
 
-  log_debug("Establishing remote from bus 0x%llx to phys 0x%llx size %x",
+  log_debug("Establishing remote from bus 0x%llx to phys 0x%llx size %x\n",
 	    request->bus_addr, phys, request->actual);
   if (!phys)
     return -EIO;
   // Since this is outer loop, a linear search is ok.  Maybe a hash table someday.
   spin_lock(&block_lock);
   list_for_each_entry(block, &block_list, list) {
-    if (phys >= block->start_phys && end_address <= block->end_phys)
+    if (phys >= block->start_phys && end_address <= block->end_phys) {
       found = true;
-    else if (phys >= block->start_phys && phys < block->end_phys ||
+      request->address = block->start_phys + (phys - block->start_phys);
+    } else if (phys >= block->start_phys && phys < block->end_phys ||
 	     end_address > block->start_phys && end_address <= block->end_phys)
       bad = true;
   }
   spin_unlock(&block_lock);
   if (found) {
-    log_debug("Establishing remote: bus address 0x%llx already registered. Phys is 0x%llx",
+    log_debug("Establishing remote: bus address 0x%llx already registered. Phys is 0x%llx\n",
 	      request->bus_addr, phys);
     return 0;
   } else if (bad) {
-    log_err("Establishing remote: bus region 0x%llx collides with existing. Phys is 0x%llx",
+    log_err("Establishing remote: bus region 0x%llx collides with existing. Phys is 0x%llx\n",
 	    request->bus_addr, phys);
     return -EEXIST;
   }    
@@ -489,7 +491,7 @@ request_memory(struct file *file, ocpi_request_t *request) {
     log_debug("couldn't get allocation in first pass\n");
     // No memory in the list, try a kernel allocation
     if (request->actual > OPENCPI_MAXIMUM_MEMORY_ALLOCATION) {
-      log_err("memory request exceeded driver's specified limit of %ld",
+      log_err("memory request exceeded driver's specified limit of %ld\n",
 	      OPENCPI_MAXIMUM_MEMORY_ALLOCATION);
       break;
     }
@@ -500,7 +502,8 @@ request_memory(struct file *file, ocpi_request_t *request) {
       struct page *kpages = alloc_pages(GFP_KERNEL | __GFP_HIGHMEM, order);
       ocpi_address_t phys_addr = (ocpi_address_t)page_to_pfn(kpages) << PAGE_SHIFT;
       if (kpages == NULL) {
-	log_err("memory request of %ld could not be satified by the kernel", (unsigned long)request->actual);
+	log_err("memory request of %ld could not be satified by the kernel\n",
+		(unsigned long)request->actual);
 	break;
       }
       if (make_block(phys_addr, phys2bus(phys_addr), PAGE_SIZE << order, ocpi_kernel, true, ++opencpi_kernel_alloc_id) == NULL) {
@@ -1624,11 +1627,11 @@ opencpi_init(void) {
     }
     opencpi_pci_registered = 1;
 #endif
-#ifdef CONFIG_ARCH_ZYNQ
+#ifdef CONFIG_ARCH_ZYNQ_NOT_NOW
     // Register the memory range of the control plane on the PL
     if (make_block(0x40000000, 0x40000000, sizeof(OccpSpace), ocpi_mmio, false, 0) == NULL)
       break;
-    log_debug("Control Plane physical address space for Zynq/PL/AXI GP0 slave reserved");
+    log_debug("Control Plane physical address space for Zynq/PL/AXI GP0 slave reserved\n");
    {
 #if 0
      int

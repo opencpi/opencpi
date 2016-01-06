@@ -330,8 +330,10 @@ namespace OCPI {
 	other->initialConnect(c); // do it all from the other side in this case.
       else if (isInProcess() && other->isInProcess())
 	connectInProcess(*other);
-      else
+      else {
+	other->applyConnection(c);
 	connectLocal(c); // both workers are in this process
+      }
       return more;
     }
 

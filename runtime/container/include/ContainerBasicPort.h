@@ -214,7 +214,8 @@ namespace OCPI {
       // Start/Finish this side of the connection, and return the right descriptor to return.
       // set "done" true if this side is done and can "operate" (e.g. send messages).
       virtual const OCPI::RDT::Descriptors *
-      startConnect(const OCPI::RDT::Descriptors *other, bool &done);
+      startConnect(const OCPI::RDT::Descriptors *other, OCPI::RDT::Descriptors &feedback,
+		   bool &done);
       virtual const OCPI::RDT::Descriptors *
       finishConnect(const OCPI::RDT::Descriptors *other, OCPI::RDT::Descriptors &feedback,
 		    bool &done);

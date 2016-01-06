@@ -63,8 +63,8 @@ class BiasFGM_ccWorker : public BiasFGM_ccWorkerBase {
   RCCResult run(bool /*timedout*/) {
 
 
-    const uint32_t *inData  = in.getdata().data;   // data arg of data message at "in" port
-    uint32_t *outData = out.getdata().data;  // same at "out" port
+    const uint32_t *inData  = in.data().data().data();   // data arg of data message at "in" port
+    uint32_t *outData = out.data().data().data();  // same at "out" port
     out.checkLength(in.length());               // make sure input will fit in output buffer
     if ( in.length() <= 1 ) {
       for (unsigned n = in.length(); n; n--) 

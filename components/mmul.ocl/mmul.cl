@@ -61,6 +61,8 @@ static void matrixMul (__global float* C,
 
   float Csub = 0;
 
+#ifdef NOT_VALID_OCL_CODE
+
   for ( int a = aBegin, b = bBegin; a <= aEnd; a += aStep, b += bStep )
   {
     // Load the matrices from global memory
@@ -82,6 +84,9 @@ static void matrixMul (__global float* C,
       barrier ( CLK_LOCAL_MEM_FENCE );
     }
   }
+
+#endif
+
 
   // Write the block sub-matrix to device memory
   // each thread writes one element

@@ -175,8 +175,8 @@ namespace DataTransfer {
     virtual XferRequest & group( XferRequest* lhs );
 
     // Perform a PIO transfer.  Default null implementation when no using default "post" method
-    virtual void action_transfer(PIO_transfer);
-    virtual void start_pio(PIO_transfer);
+    virtual void action_transfer(PIO_transfer, bool last=false);
+    virtual void start_pio(PIO_transfer, bool last=false);
     // Destructor - Note that invoking OcpiXferServices::Release is the preferred method.
     virtual ~XferRequest ();
   private:

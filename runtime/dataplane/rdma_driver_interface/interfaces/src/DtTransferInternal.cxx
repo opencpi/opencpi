@@ -344,6 +344,13 @@ startup()
 
   ocpiDebug("++++++++ In void XferFactoryManager::startup(), ref count = %d", m_refCount);
 
+
+  for (XferFactory* d = firstDriver(); d; d = d->nextDriver()) {
+    printf(" @@@@@@@@@@  protocol = %s\n", d->getProtocol() );
+  }
+
+
+
   m_refCount++;
 }
 
@@ -874,12 +881,12 @@ void XferRequest::modify( DtOsDataTypes::Offset new_offsets[], DtOsDataTypes::Of
     n++;
   }
 }
-void XferRequest::action_transfer(PIO_transfer pio_transfer) {
+void XferRequest::action_transfer(PIO_transfer pio_transfer, bool ) {
   xfer_pio_action_transfer(pio_transfer);
 }
-void XferRequest::start_pio(PIO_transfer pio_transfer) {
+void XferRequest::start_pio(PIO_transfer pio_transfer, bool last) {
   for (PIO_transfer transfer = pio_transfer; transfer; transfer = transfer->next)
-    action_transfer(transfer);
+    action_transfer(transfer, last);
 }
 void XferRequest::post() {
   
@@ -887,21 +894,24 @@ void XferRequest::post() {
   
   /* Process the first transfers */
 
+  int c=0;
   if (xf_transfer->first_pio_transfer) {
     start_pio(xf_transfer->first_pio_transfer);
+    c++;
   }
 
   /* Get the type of transfer */
   if (xf_transfer->pio_transfer) {
     /* Start the pio transfer */
     start_pio(xf_transfer->pio_transfer);
+    c++;
   }
 
   /* Process the last transfers */
   if (xf_transfer->last_pio_transfer) {
 
     /* Start the last pio transfer */
-    start_pio(xf_transfer->last_pio_transfer);
+    start_pio(xf_transfer->last_pio_transfer, c == 0 ? false : true);
   }
 }
 

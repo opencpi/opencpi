@@ -183,12 +183,15 @@ namespace OCPI {
     parse() {
       m_parsed = true;
       const char *err;
+      bool providerFound = false;
       // Initialize everything from the protocol, then other attributes can override the protocol
       if ((err = parseProtocol()) || // virtual call
 	  (err = OE::getBoolean(m_xml, "twoWay", &m_isTwoWay)) ||           // protocol override
 	  (err = OE::getBoolean(m_xml, "bidirectional", &m_isBidirectional)) ||
 	  // Don't use absence to set value
 	  (err = OE::getBoolean(m_xml, "producer", &m_isProducer, false, false)) ||
+	  (err = OE::getBoolean(m_xml, "provider", &m_provider, false, false,
+				&providerFound)) ||
 	  // Be sure we don't clobber a spec that has set optional,
 	  // but impls can have optional ports in devices...
 	  (err = OE::getBoolean(m_xml, "optional", &m_isOptional, true)) ||
@@ -201,7 +204,10 @@ namespace OCPI {
 	return err;
       // Kludgerama: in user xml, internal is a port name, in artificat xml it is boolean
       m_isInternal = ezxml_cattr(m_xml, "internal") != NULL;
-      m_provider = !m_isProducer;
+      if (providerFound)
+	m_isProducer = !m_provider;
+      else
+	m_provider = !m_isProducer;
       const char *bs = ezxml_cattr(m_xml, "bufferSize");
       if (bs && !isdigit(bs[0])) {
 	Port *bsp = m_worker->findMetaPort(bs);

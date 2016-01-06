@@ -251,7 +251,7 @@ finalize(const OCPI::RDT::Descriptors *other, OCPI::RDT::Descriptors &mine,
       ocpiAssert(flow);
       *flow = mine; // we are taking a snapshot of "mine" before modifications below
       // result = flow; why not this?
-      done = false;
+      // done = false;
       break;
     case OCPI::RDT::ActiveOnly:
       ocpiDebug("Found a Passive Consumer Port !!");

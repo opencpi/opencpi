@@ -47,20 +47,7 @@ static clReleaseDeviceEXT_fn pfn_clReleaseDeviceEXT = NULL;
         if(!pfn_##name) \
           throw OU::Error("Cannot get pointer to OpenCL ext. fcn: ", #name); \
     }
-#else
 #endif
-
-// Init extension function pointers
-#define INIT_CL_EXT_FCN_PTR(name) \
-    if(!pfn_##name) { \
-        pfn_##name = (name##_fn) clGetExtensionFunctionAddress(#name); \
-        if(!pfn_##name) { \
-            std::cout << "Cannot get pointer to ext. fcn. " #name << std::endl; \
-            throw "SDK_FAILURE";						\
-        } \
-    }
-
-
 
 namespace OCPI {
   namespace OCL {
@@ -72,10 +59,8 @@ namespace OCPI {
     namespace OO = OCPI::OCL;
     namespace OX = OCPI::Util::EzXml;
 
-    // Data base of vendor, family, device, etc.
-    // We need an OpenCPI "target" (of compilation) and "platform" (specific hardware type)
-    // "targets" and "platforms" are the UI for OpenCPI.
-    // "families" and "vendors" are internal here as the 2 parts of OCL targets
+
+    // Data base of vendor, family, device
     struct OclVendor {
       const char *name;
       const char *regexpr; // To match the "vendorname" device attribute

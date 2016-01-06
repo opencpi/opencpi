@@ -262,6 +262,12 @@ main(int /*argc*/, const char **argv) {
 	return 1;
       }
     }
+    char *saddr = getenv("OCPI_SERVER_ADDRESS");
+    if (saddr) {
+      std::string s;
+      OU::file2String(s, saddr);
+      OR::useServer(s.c_str(), verbose, NULL, error);
+    }
     OA::Container *c;
     if (nProcs)
       for (unsigned n = 1; n < nProcs; n++) {
