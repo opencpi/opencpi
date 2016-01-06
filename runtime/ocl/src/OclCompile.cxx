@@ -7,21 +7,24 @@ namespace OCPI {
   namespace OCL {
     
     // Compile the provided, in-memory source files.
-    void compile(size_t nSources, void **mapped_sources, off_t *sizes,
+    void compile(size_t nSources, const char **mapped_sources, off_t *sizes,
 		 const char **includes, const char **defines, const char *output,
 		 const char *target, bool /*verbose*/) {
+      ocpiDebug("OCL Compile %zu sources to target %s", nSources, target);
       Device &device = OCPI::OCL::Driver::getSingleton().find(target);
+      ocpiDebug("OCL Compile for device %s", device.name().c_str());
       cl_int rc;
       cl_program program;
       OCL_RC(program,
 	     clCreateProgramWithSource(device.context(), OCPI_UTRUNCATE(cl_uint, nSources),
-				       (const char **)mapped_sources, (size_t *)sizes, &rc));
+				       mapped_sources, (size_t *)sizes, &rc));
       std::string options;
       OU::format(options, "-g -D__STDCL__ -D__%s__", device.isCPU() ? "CPU" : "GPU");
       for (const char **ap = defines; ap && *ap; ap++)
 	OU::formatAdd(options, " -D%s", *ap);
       for (const char **ap = includes; ap && *ap; ap++)
 	OU::formatAdd(options, " -I%s", *ap);
+      ocpiDebug("Compiler options: %s\n", options.c_str());
       if ((rc = clBuildProgram(program, 1, &device.id(), options.c_str(), NULL, NULL)) &&
 	  rc != CL_BUILD_PROGRAM_FAILURE)
 	throwOclError(rc, "Compiling worker");

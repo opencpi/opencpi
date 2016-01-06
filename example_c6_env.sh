@@ -22,7 +22,7 @@ export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../license-20150407.txt
 export OCPI_OPENCV_HOME=/opt/opencpi/prerequisites/opencv/linux-c6-x86_64
 
 export OCPI_HAVE_OPENCL=1
-export OCPI_OPENCL_OBJS=/home/jek/mac/AMD/2.9.1/AMDAPPSDK-2.9-1/lib/x86_64/libOpenCL.so
+export OCPI_OPENCL_OBJS=/home/jek/AMDAPPSDK-3.0/lib/x86_64/libOpenCL.so
 
 . ./env/finish.sh
 done; trap - ERR

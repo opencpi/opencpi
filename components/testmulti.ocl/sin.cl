@@ -19,7 +19,8 @@
  * Methods to implement for worker sin, based on metadata.
  */
 
-OCLResult sin_run(SinWorker* self) {
+static OCLResult
+sin_run(SinWorker* self) {
   const size_t n_elems = self->in.current.length / sizeof(float);
   __global const float* src = (__global float *)self->in.current.data;
   __global float* dst = (__global float *)self->out.current.data;

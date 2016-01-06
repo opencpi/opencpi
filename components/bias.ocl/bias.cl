@@ -8,41 +8,25 @@
 
 #include "bias-worker.h"
 
-/*
- * Required work group size for worker bias run() function.
- */
-#define OCL_WG_X 2
-#define OCL_WG_Y 1
-#define OCL_WG_Z 1
+static OCLResult
+bias_run(BiasWorker *self, __global BiasProperties *properties) {
+  size_t nElems                = self->in.current.length / sizeof(uint32_t);
+  __global const uint32_t *src = (__global uint32_t *)self->in.current.data;
+  __global uint32_t* dst       = (__global uint32_t *)self->out.current.data;
 
-/*
- * Methods to implement for worker bias, based on metadata.
- */
-
-OCLResult bias_run(BiasWorker *self, __global BiasProperties *properties) {
-  const size_t n_elems = self->in.current.length / sizeof(float);
-  __global const uint32_t* src = (__global uint32_t *)self->in.current.data;
-  __global uint32_t* dst = (__global uint32_t *)self->out.current.data;
-  size_t gid = get_global_id(0);
-
-  int n = get_global_id(0);
-
-
-  printf("In bias Global ID, local id = %d =  %d, size = %d x %d  ",n, get_local_id(0), get_global_size(0), get_global_size(1) );
-  printf("wgsize = %d x %d ",n, get_local_size(0), get_local_size(1) );
-  printf("bias value = %d\n",  properties->biasValue);
-  //printf("group id = %d, device id = %d\n", get_group_id(0), get_device_id() );
-
-
-//  properties->biasValue = 0123456;
-//  properties->biasValue2 = 1;
-
-
+  // Do my part, given my global ID in the first dimension
+  unsigned
+    me = get_global_id(0),
+    nKernels = get_global_size(0),
+    nEach = (nElems + nKernels - 1) / nKernels,
+    myBase = nEach * me;
   if (self->logLevel >= 10)
-    printf("src %p dst %p gid %d Got length: %d\n", src, dst, gid, n_elems);
-  for (unsigned n = 0; n < n_elems; n++)
-    dst[n] = src[n] + properties->biasValue;
+    printf((__constant char *)"bias.cl: me %u nKernels %u nEach %u myBase %u nElems %u\n",
+	   me, nKernels, nEach, myBase, (unsigned)nElems);
+  for (unsigned n = nEach; myBase < nElems && n; n--, myBase++)
+    dst[myBase] = src[myBase] + properties->biasValue;
+  // From here on everyone does the same thing
   self->out.current.length = self->in.current.length;
   self->out.current.opCode = self->in.current.opCode;
-  return n_elems ? OCL_ADVANCE : OCL_ADVANCE_DONE;
+  return nElems ? OCL_ADVANCE : OCL_ADVANCE_DONE;
 }

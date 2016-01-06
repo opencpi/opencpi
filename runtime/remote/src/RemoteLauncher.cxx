@@ -263,8 +263,7 @@ void Launcher::
 emitConnectionUpdate(unsigned connN, const char *iname, std::string &sinfo) {
   if (m_request.empty())
     m_request = "<update>\n";
-  OU::formatAdd(m_request, "  <connection id='%u'",
-		m_connectionMap[connN], iname);
+  OU::formatAdd(m_request, "  <connection id='%u'", m_connectionMap[connN]);
   // This encoding escapes double quotes and allows for embedded null characters
   encodeDescriptor(iname, sinfo, m_request);
   m_request += "/>\n";

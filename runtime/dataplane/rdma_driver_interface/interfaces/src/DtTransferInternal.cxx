@@ -199,7 +199,7 @@ parse(FactoryConfig *parent, ezxml_t x) {
     const char *err;
     // Note we are not writing defaults here because they are set
     // in the constructor, and they need to be set even when there is no xml
-    if ((err = OX::checkAttrs(x, "SMBSize", "TxRetryCount", NULL)) ||
+    if ((err = OX::checkAttrs(x, "SMBSize", "TxRetryCount", "load", NULL)) ||
 	(err = OX::getNumber(x, "SMBSize", &m_SMBSize, NULL, 0, false)) ||
 	(err = OX::getNumber(x, "TxRetryCount", &m_retryCount, NULL, 0, false)))
       throw err; // FIXME configuration api error exception class

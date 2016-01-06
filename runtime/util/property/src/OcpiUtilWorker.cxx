@@ -208,6 +208,7 @@ namespace OCPI {
       const char *cp;
       if ((cp = ezxml_cattr(x, "os"))) m_os = cp;
       if ((cp = ezxml_cattr(x, "osVersion"))) m_osVersion = cp;
+      if ((cp = ezxml_cattr(x, "arch"))) m_arch = cp;
       if ((cp = ezxml_cattr(x, "platform"))) m_platform = cp;
       if ((cp = ezxml_cattr(x, "runtime"))) m_runtime = cp;
       if ((cp = ezxml_cattr(x, "runtimeVersion"))) m_runtimeVersion = cp;

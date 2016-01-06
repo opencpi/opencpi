@@ -469,8 +469,8 @@ namespace OCPI {
       for (unsigned n = 0; (ac = OA::ContainerManager::get(n)); n++) {
 	OC::Container &c = *static_cast<OC::Container *>(ac);
 	std::string info;
-	OU::format(info, "%s|%s|%s|%s|%s|", c.name().c_str(), c.model().c_str(), c.os().c_str(),
-		   c.osVersion().c_str(), c.platform().c_str());
+	OU::format(info, "%s|%s|%s|%s|%s|%s|", c.name().c_str(), c.model().c_str(), c.os().c_str(),
+		   c.osVersion().c_str(), c.arch().c_str(), c.platform().c_str());
 	for (unsigned n = 0;  n < c.transports().size(); n++) {
 	  const OC::Transport &t = c.transports()[n];
 	  OU::formatAdd(info, "%s,%s,%u,%u,0x%x,0x%x|",

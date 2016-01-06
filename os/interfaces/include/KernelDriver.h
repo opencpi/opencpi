@@ -39,8 +39,13 @@ typedef struct {
 typedef struct {
   ocpi_size_t	 needed;		// How much memory you need in this request
   ocpi_size_t	 actual;		// How much memory you will receive
-  ocpi_address_t address;	        // The physical address of this block
-  ocpi_cached_t  how_cached;		// How should this block be cached?
+  ocpi_address_t address;	        // The physical address of this block from the point
+                                        // of view of the local processor (and /dev/mem).
+                                        // In linux terminology a "phys" address
+  ocpi_address_t bus_addr;	        // The address usable from another bus master to
+                                        // see this local contiguous DMA memory
+                                        // In linux terminology a "bus" address
+  ocpi_cached_t  how_cached;		// How should this block be cached for local access?
 } ocpi_request_t;
 
 typedef struct {

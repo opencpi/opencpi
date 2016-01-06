@@ -1,13 +1,15 @@
 #ifndef _OCL_CONTAINER_H_
 #define _OCL_CONTAINER_H_
 #include <stdint.h>
+#include <set>
+#include <string>
 #include "ContainerManager.h"
 
 namespace OCPI {
   namespace OCL {
 
 
-    void compile(size_t nSources, void **mapped_sources, off_t *sizes,
+    void compile(size_t nSources, const char **mapped_sources, off_t *sizes,
 		 const char **includes, const char **defines, const char *output,
 		 const char *target, bool verbose);
 
@@ -32,6 +34,7 @@ namespace OCPI {
     public:
       ~Container();
 
+      bool supportsImplementation(OCPI::Util::Worker &i);
       OCPI::Container::Container::DispatchRetCode dispatch(DataTransfer::EventManager* event_manager)
         throw (OU::EmbeddedException);
 
@@ -61,7 +64,7 @@ namespace OCPI {
       unsigned search(const OCPI::API::PValue*, const char** exclude, bool discoveryOnly);
       // This is our special one that does some extra stuff...
       unsigned search(const OCPI::API::PValue*, const char **exclude, bool discoveryOnly,
-		      const char *type, Device **found);
+		      const char *type, Device **found, std::set<std::string> *targets);
       // Find a device of this type (for compilers)
       Device &find(const char *target);
       OCPI::Container::Container* probeContainer(const char* which, std::string &error,

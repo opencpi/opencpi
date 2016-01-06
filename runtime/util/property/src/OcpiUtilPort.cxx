@@ -196,8 +196,8 @@ namespace OCPI {
 	  (err = OE::getNumber(m_xml, "bufferCount", &m_defaultBufferCount, NULL, 0, false)) ||
 	  (err = OE::getNumber(m_xml, "minBuffers", &m_minBufferCount, 0, m_minBufferCount)) ||
 	  // Be careful not to clobber protocol-determined values (i.e. don't set default values)
-	  (err = OE::getNumber(m_xml, "NumberOfOpcodes", &m_nOpcodes, NULL, 0, false)) ||
-	  (err = parseScaling()))
+	  (err = OE::getNumber(m_xml, "NumberOfOpcodes", &m_nOpcodes, NULL, 0, false)))
+	// 	  (err = parseScaling())) - done in post parse
 	return err;
       // Kludgerama: in user xml, internal is a port name, in artificat xml it is boolean
       m_isInternal = ezxml_cattr(m_xml, "internal") != NULL;
@@ -595,7 +595,7 @@ namespace OCPI {
     }
     void Port::OpScaling::
     emit(std::string &out, const Port &port, const Operation &op) const {
-      formatAdd(out, "<operation name='%s'", op.m_name.c_str());
+      formatAdd(out, "    <operation name='%s'", op.m_name.c_str());
       if (m_distribution != port.m_defaultDistribution)
 	port.emitDistribution(out, m_distribution);
       if (m_hashField && m_hashField->m_name != port.m_defaultHashField)
@@ -607,7 +607,7 @@ namespace OCPI {
       Member *a = op.m_args;
       bool first = true;
       for (unsigned n = 0; n < op.m_nArgs; n++, a++)
-	if (m_partitioning[n]) {
+	if (m_partitioning[n] && m_partitioning[n] != &port.m_defaultPartitioning) {
 	  size_t nDims = a->m_isSequence ? 1 : a->m_arrayRank;
 	  Partitioning *p = m_partitioning[n];
 	  for (unsigned i = 0; i < nDims; i++, p++) {

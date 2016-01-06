@@ -93,7 +93,7 @@ namespace OCPI {
     public:
 	std::string
 	  m_uuid,
-	  m_os, m_osVersion,
+	  m_os, m_osVersion, m_arch,
 	  m_platform,
 	  m_tool, m_toolVersion,
 	  m_runtime, m_runtimeVersion;

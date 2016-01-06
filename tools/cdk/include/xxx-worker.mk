@@ -243,7 +243,7 @@ endef
 define WkrWorkerDep
 
   $(call WkrObject,$1,$2,$3): TargetDir=$(call WkrTargetDir,$2,$3)
-  $(call WkrObject,$1,$2,$3): $(CapModel)Target=$2
+  $(call WkrObject,$1,$2,$3): override $(CapModel)Target=$2
   $(call WkrObject,$1,$2,$3): Worker=$1
   $(call WkrObject,$1,$2,$3): \
      $(call ImplHeaderFile,$1) \
@@ -264,13 +264,13 @@ define WkrDoTargetConfig
   ifdef ToolSeparateObjects
     $$(call OcpiDbgVar,CompiledSourceFiles)
     $$(foreach s,$$(CompiledSourceFiles),$$(eval $$(call WkrMakeObject,$$s,$1,$2)))
-    $(call WkrBinary,$1,$2): $(CapModel)Target=$1
+    $(call WkrBinary,$1,$2): override $(CapModel)Target=$1
     # Note the use of ls -o -g -l below is to not be affected by
     # user and group names with spaces.
     $(call WkrBinary,$1,$2): $$$$(ObjectFiles_$1_$2) $$(call ArtifactXmlFile,$1,$2) \
                             | $(call WkrTargetDir,$1,$2)
 	$(AT)echo Linking final artifact file \"$$@\" and adding metadata to it...
-	$(AT)$(LinkBinary) $$(ObjectFiles_$1_$2) $(OtherLibraries)
+	$(AT)$(LinkBinary) $$(ObjectFiles_$1_$2) $$(OtherLibraries)
 	$(AT)if test -f "$(call ArtifactXmlFile,$1,$2)"; then \
 	  $(ToolsDir)/../../scripts/addmeta "$(call ArtifactXmlFile,$1,$2)" $$@; \
 	fi

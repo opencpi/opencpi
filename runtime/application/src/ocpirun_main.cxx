@@ -98,14 +98,20 @@ static const char *doTarget(const char *target, void *) {
   OL::Capabilities caps;
   const char *dash = strchr(target, '-');
   if (dash) {
-    caps.m_os.assign(target, dash - target);
-    target = ++dash;
-    dash = strchr(target, '-');
-    if (dash) {
-      caps.m_osVersion.assign(target, dash - target);
+    const char *dash1 = strchr(dash+1, '-');
+    if (dash1) {
+      caps.m_os.assign(target, dash - target);
       target = ++dash;
+      dash = strchr(target, '-');
+      if (dash) {
+	caps.m_osVersion.assign(target, dash - target);
+	target = ++dash;
+      }
+      caps.m_arch = target;
+    } else {
+      caps.m_osVersion.assign(target, dash - target);
+      caps.m_arch = ++dash;
     }
-    caps.m_platform = target;
   } else
     caps.m_platform = target;
   OL::Manager::printArtifacts(caps);
@@ -266,11 +272,11 @@ main(int /*argc*/, const char **argv) {
     if (containers) {
       (void)OA::ContainerManager::get(0); // force config
       printf("Available containers:\n"
-	     " #  Model Platform    OS     OS Version  Name\n");
+	     " #  Model Platform       OS     OS Version  Arch     Name\n");
       for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)
-	printf("%2u  %-5s %-11s %-6s %-11s %s\n",
+	printf("%2u  %-5s %-14s %-6s %-11s %-8s %s\n",
 	       n,  c->model().c_str(), c->platform().c_str(), c->os().c_str(),
-	       c->osVersion().c_str(), c->name().c_str());
+	       c->osVersion().c_str(), c->arch().c_str(), c->name().c_str());
       fflush(stdout);
     } else if (verbose) {
       for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)

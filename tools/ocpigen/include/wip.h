@@ -379,6 +379,8 @@ class Worker : public OU::Worker {
   ParamConfig  *m_paramConfig;      // the config for this Worker.
   Worker *m_parent;           // If this worker is part of an upper level assembly
   bool m_scalable;
+  size_t m_requiredWorkGroupSize;    // FIXME: belongs in OclWorker class!
+                                    // FIXME: derive from compiled code
   unsigned m_maxLevel;        // when data type processing
   Worker(ezxml_t xml, const char *xfile, const std::string &parentFile, WType type,
 	 Worker *parent, OU::Assembly::Properties *ipvs, const char *&err);
@@ -528,7 +530,7 @@ extern const char
 	     bool param = false),
   *verilogValue(const OU::Value &v, std::string &value),
   *rccValue(OU::Value &v, std::string &value),
-  *platform, *device, *load, *os, *os_version, **libraries, **mappedLibraries, *assembly,
+  *platform, *device, *load, *os, *os_version, *arch, **libraries, **mappedLibraries, *assembly,
   *attribute, *platformDir,
   *addLibMap(const char *),
   *findLibMap(const char *file), // returns mapped lib name from dir name of file or NULL

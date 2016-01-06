@@ -61,7 +61,7 @@ OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
 
 const char *platform = 0, *device = 0, *load = 0, *os = 0, *os_version = 0, *assembly = 0,
-  *attribute = 0, *platformDir = 0;
+  *attribute = 0, *platformDir = 0, *arch = 0;
 
 Clock *Worker::
 addClock() {
@@ -901,7 +901,7 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
     m_staticPattern(NULL), m_defaultDataWidth(-1), m_language(NoLanguage), m_assembly(NULL),
     m_slave(NULL), m_emulate(NULL), m_library(NULL), m_outer(false), m_debugProp(NULL), 
     m_instancePVs(ipvs), m_mkFile(NULL), m_xmlFile(NULL), m_outDir(NULL), m_paramConfig(NULL),
-    m_parent(parent), m_scalable(false)
+    m_parent(parent), m_scalable(false), m_requiredWorkGroupSize(0)
 {
   if ((err = getNames(xml, xfile, NULL, m_name, m_fileName)))
     return;
@@ -1052,6 +1052,7 @@ emitArtXML(const char *wksFile) {
   if (os)         fprintf(f, " os=\"%s\"",        os);
   if (os_version) fprintf(f, " osVersion=\"%s\"", os_version);
   if (platform)   fprintf(f, " platform=\"%s\"",  platform);
+  if (arch)       fprintf(f, " arch=\"%s\"",  arch);
   if (device)     fprintf(f, " device=\"%s\"",    device);
   fprintf(f, ">\n");
   emitXmlWorkers(f);

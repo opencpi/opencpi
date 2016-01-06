@@ -19,7 +19,8 @@
  * Methods to implement for worker vadd, based on metadata.
  */
 
-OCLResult vadd_run(VaddWorker* self, __global VaddProperties *properties) {
+static OCLResult
+vadd_run(VaddWorker* self, __global VaddProperties *properties) {
   const size_t n_elems = self->in0.current.length / sizeof ( float );
   __global const float
     *src0 = (__global float*)self->in0.current.data,

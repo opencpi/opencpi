@@ -81,6 +81,7 @@ namespace OCPI {
       m_model = "hdl";
       m_os = "";
       m_osVersion = "";
+      m_arch = "";
       m_platform = m_device.platform();
       m_transports.resize(1);
       m_transports[0].transport = "ocpi-dma-pio";
@@ -444,7 +445,7 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
       // buffer sizes etc.  If we are sharing a memory pool, this will not be the case,
       // and we would probably allocate the whole thing here.
       const OCPI::RDT::Descriptors *
-      startConnect(const OCPI::RDT::Descriptors */*other*/, bool &done) {
+      startConnect(const OCPI::RDT::Descriptors *other, bool &done) {
         if (!m_canBeExternal)
 	  throw OU::Error("Port %s of this HDL worker is connected internally", name().c_str());
 
@@ -460,6 +461,10 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
         userMetadataBaseAddr = (OcdpMetadata *)(userDataBaseAddr +
                                                 (myDesc.metaDataBaseAddr -
                                                  myDesc.dataBufferBaseAddr));
+	if (other) {
+	  OCPI::RDT::Descriptor dummy; // Our finish connect will never return this
+	  return finishConnect(other, dummy, done);
+	}
 	done = false;
 	return &getData().data;
       }

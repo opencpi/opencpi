@@ -1,5 +1,5 @@
 
-ifneq (OCPI_HAVE_OPENCL,1)
+ifneq ($(OCPI_HAVE_OPENCL),1)
 $(info The vsadd example requires OpenCL to be present, and it isn't)
 $(info It is usually found as an libOpenCL.so in the standard library path)
 all:

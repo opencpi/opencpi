@@ -74,19 +74,24 @@ namespace OCPI {
 	m_ownThread = false;
       m_os = OCPI_CPP_STRINGIFY(OCPI_OS) + strlen("OCPI");
       m_osVersion = OCPI_CPP_STRINGIFY(OCPI_OS_VERSION);
-      m_platform = OCPI_CPP_STRINGIFY(OCPI_PLATFORM);
+      m_arch = OCPI_CPP_STRINGIFY(OCPI_PLATFORM);
+      m_platform = m_arch;
     }
 
     bool Container::supportsImplementation(OU::Worker &i) {
-      ocpiDebug("supports: container: %u m %s o %s v %s p %s vs impl: %s m %s o %s v %s p %s",
-		m_ordinal, m_model.c_str(), m_os.c_str(), m_osVersion.c_str(),m_platform.c_str(),
-		i.name().c_str(), i.model().c_str(), i.attributes().m_os.c_str(),
-		i.attributes().m_osVersion.c_str(), i.attributes().m_platform.c_str());
+      ocpiDebug("supports: container: %u m %s o %s v %s a %s p %s vs impl: %s m %s o %s v %s a %s p %s",
+		m_ordinal, m_model.c_str(), m_os.c_str(), m_osVersion.c_str(), m_arch.c_str(),
+		m_platform.c_str(), i.name().c_str(), i.model().c_str(),
+		i.attributes().m_os.c_str(), i.attributes().m_osVersion.c_str(),
+		i.attributes().m_arch.c_str(), i.attributes().m_platform.c_str());
       return
 	m_model == i.model() &&
 	m_os == i.attributes().m_os &&
 	m_osVersion == i.attributes().m_osVersion &&
-	m_platform == i.attributes().m_platform;
+	((i.attributes().m_platform.length() &&
+	  m_platform == i.attributes().m_platform) ||
+	 (i.attributes().m_platform.empty() &&
+	  m_arch == i.attributes().m_arch));
     }
 
     Artifact & Container::

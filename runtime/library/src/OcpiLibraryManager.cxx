@@ -308,7 +308,9 @@ namespace OCPI {
     bool Artifact::
     meetsCapabilities(const Capabilities &caps) {
       return
-	m_os == caps.m_os && m_osVersion == caps.m_osVersion && m_platform == caps.m_platform;
+	(caps.m_os.empty() || m_os == caps.m_os) &&
+	m_osVersion == caps.m_osVersion && m_arch == caps.m_arch ||
+	m_platform.size() && m_platform == caps.m_platform;
     }
     bool Artifact::
     meetsRequirements (const Capabilities &caps,

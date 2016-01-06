@@ -38,18 +38,19 @@ ifndef OCL_MAKE_MK
 OCL_MAKE_MK:=xxx
 include $(OCPI_CDK_DIR)/include/util.mk
 
-ifdef OclTargets
-OclTarget:=$(OclTargets)
+ifndef OclTargets
+  OclTargets:=$(OclTarget)
+  ifndef OclTargets
+    OclTargets:=all
+  endif
 endif
-
-ifndef OclTarget
-OclTarget:=intel-cpu
+ifeq ($(OclTargets),all)
+  override OclTargets:=$(shell $(ToolsDir)/ocpiocl targets)
 endif
 
 $(call OcpiDbgVar,OclTarget)
-ifndef OclTargets
-OclTargets=$(OclTarget)
-endif
+$(call OcpiDbgVar,OclTargets)
+
 OclOs=opencl
 OclOsVersion=$(word 1,$(subst -, ,$1))
 OclArch=$(word 2,$(subst -, ,$1))

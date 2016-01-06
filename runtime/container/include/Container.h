@@ -113,9 +113,10 @@ namespace OCPI {
       const std::string &model() const { return m_model; }
       const std::string &os() const { return m_os; }
       const std::string &osVersion() const { return m_osVersion; }
+      const std::string &arch() const { return m_arch; }
       virtual bool portsInProcess() = 0;
       virtual Container *nextContainer() = 0;
-      bool supportsImplementation(OCPI::Util::Worker &);
+      virtual bool supportsImplementation(OCPI::Util::Worker &);
       virtual OCPI::API::ContainerApplication *
 	createApplication(const char *name = NULL, const OCPI::Util::PValue *props = NULL)
         throw ( OCPI::Util::EmbeddedException ) = 0;

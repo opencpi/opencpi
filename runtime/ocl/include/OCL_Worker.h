@@ -44,7 +44,9 @@
 #ifdef __OPENCL_VERSION__
   #define OCL_CONST const
   #define OCL_GLOBAL __global
-  #pragma OPENCL EXTENSION cl_khr_fp64: enable // this is part of the standard now
+//  #if __OPENCL_VERSION__ < CL_VERSION_1_2
+//  #pragma OPENCL EXTENSION cl_khr_fp64: enable
+//  #endif
   typedef char int8_t;
   typedef unsigned char uint8_t;
   typedef short int16_t;
@@ -66,7 +68,7 @@ namespace OCPI {
 
 typedef char OCLChar;
 typedef float OCLFloat;
-typedef double OCLDouble;
+//typedef double OCLDouble;
 typedef uint32_t OCLOrdinal;
 typedef uint8_t OCLBoolean;
 typedef uint8_t OCLOpCode;

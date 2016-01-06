@@ -21,13 +21,14 @@
   OpenCL Matrix Multiply from:
   http://gpgpu-computing4.blogspot.com/2009/10/matrix-multiplication-3-opencl.html
 */
-
-__kernel void matrixMul ( __global float* C,
-                          __global float* A,
-                          __global float* B,
-                          int wA,
-                          int wB )
-{
+//__kernel - when this is a standalone kernel
+static void matrixMul (__global float* C,
+		__global float* A,
+		__global float* B,
+		int wA,
+		int wB,
+		__local float (*As) [ BLOCK_SIZE ] [ BLOCK_SIZE ],
+		__local float (*Bs) [ BLOCK_SIZE ] [ BLOCK_SIZE ]) {
   // Block index
   int bx = get_group_id ( 0 );
   int by = get_group_id ( 1 );
@@ -62,17 +63,11 @@ __kernel void matrixMul ( __global float* C,
 
   for ( int a = aBegin, b = bBegin; a <= aEnd; a += aStep, b += bStep )
   {
-    // Declaration of the local memory array As
-    // used to store the sub-matrix of A
-    __local float As [ BLOCK_SIZE ] [ BLOCK_SIZE ];
-    // Declaration of the local memory array Bs
-    // used to store the sub-matrix of B
-    __local float Bs [ BLOCK_SIZE ] [ BLOCK_SIZE ];
     // Load the matrices from global memory
     // to local memory; each thread loads
     // one element of each matrix
-    As [ ty ] [ tx ] = A [ a + wA * ty + tx ];
-    Bs [ ty ] [ tx ] = B [ b + wB * ty + tx ];
+    (*As) [ ty ] [ tx ] = A [ a + wA * ty + tx ];
+    (*Bs) [ ty ] [ tx ] = B [ b + wB * ty + tx ];
     // Synchronize to make sure the matrices
     barrier(CLK_LOCAL_MEM_FENCE);
 
@@ -80,7 +75,7 @@ __kernel void matrixMul ( __global float* C,
     // each thread computes one element of the block sub-matrix
     for ( int k = 0; k < BLOCK_SIZE; ++k )
     {
-      Csub += As[ty][k] * Bs[k][tx];
+      Csub += (*As)[ty][k] * (*Bs)[k][tx];
       // Synchronize to make sure that the preceding
       // computation is done before loading two new
       // sub-matrices of A and B in the next iteration
@@ -98,12 +93,21 @@ __kernel void matrixMul ( __global float* C,
  * Methods to implement for worker mmul, based on metadata.
  */
 
-OCLResult mmul_run(MmulWorker* self, __global MmulProperties *properties) {
+// Declaration of the local memory array As
+// used to store the sub-matrix of A
+#define OCL_LOCALS \
+  OCL_L(As, float As[ BLOCK_SIZE ] [ BLOCK_SIZE ]) \
+  OCL_L(Bs, float Bs[ BLOCK_SIZE ] [ BLOCK_SIZE ]) \
+
+static OCLResult mmul_run(MmulWorker* self, __global MmulProperties *properties,
+			  __local float (*As) [ BLOCK_SIZE ] [ BLOCK_SIZE ],
+			  __local float (*Bs) [ BLOCK_SIZE ] [ BLOCK_SIZE ]) {
   matrixMul((__global float*) self->C.current.data,
             (__global float*) self->A.current.data,
 	    (__global float* ) self->B.current.data,
             properties->widthA,
-            properties->widthB);
+            properties->widthB,
+	    As, Bs);
   return OCL_ADVANCE;
 }
 

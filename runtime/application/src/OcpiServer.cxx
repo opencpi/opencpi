@@ -41,13 +41,16 @@ namespace OCPI {
 	  return;
 	addFd(m_disc->fd(), true);
 	OE::Interface eif;
+	std::string loopName;
 	OE::Address udp(true, 17171);
 	ocpiInfo("Listening on all network interfaces to be discovered as a container server");
 	while (ifs.getNext(eif, error, NULL) && error.empty()) {
 	  if (eif.up && eif.connected && eif.ipAddr.addrInAddr()) {
 	    ocpiDebug("Interface \"%s\" up and connected and has IP address.",
 		      eif.name.c_str());
-	    if (m_name.empty())
+	    if (eif.loopback)
+	      loopName = eif.ipAddr.prettyInAddr();
+	    else if (m_name.empty())
 	      m_name = eif.ipAddr.prettyInAddr();
 	    OE::Socket *s = new OE::Socket(eif, ocpi_device, &udp, 0, error);
 	    if (!error.empty()) {
@@ -60,6 +63,8 @@ namespace OCPI {
 	}
 	if (m_discSockets.empty())
 	  error = "no network interfaces found";
+	else if (m_name.empty())
+	  m_name = loopName;
       }
       if (!error.empty())
 	return;
@@ -68,7 +73,7 @@ namespace OCPI {
       OE::Address a;
       m_server.getAddr(a);
       addFd(m_server.fd(), true);
-      // Note that m_name has the IP address of hte FIRST interface we found...
+      // Note that m_name has the IP address of the FIRST interface we found...
       OU::formatAdd(m_name, ":%u", port);
       if (verbose) {
 	if (discoverable) {
@@ -192,8 +197,8 @@ namespace OCPI {
       OE::Address from;
       unsigned index = 0;
       if (m_disc->receive(rFrame, length, 0, from, error, &index)) {
-	ocpiDebug("Received container server discovery request from %s, length %zu",
-		  from.pretty(), length);
+	ocpiDebug("Received to %s container server discovery request from %s, length %zu, index %u",
+		  m_name.c_str(), from.pretty(), length, index);
 	if (index) {
 	  OE::Socket *s = NULL;
 	  for (DiscSocketsIter ci = m_discSockets.begin(); ci != m_discSockets.end(); ci++)

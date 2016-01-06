@@ -16,6 +16,7 @@ namespace OU =  OCPI::Util;
   "    search    - find available OpenCL devices\n" \
   "    probe     - test whether an OpenCL device exists\n" \
   "    compile   - act like a compiler, converting source (.cl) to object (.clo)\n" \
+  "    targets   - print all targets found on this system\n" \
   "    test      - test for the existence of an OpenCL environment\n"
 
 //           name      abbrev  type    value description
@@ -39,7 +40,7 @@ static int mymain(const char **ap) {
   const char *env = getenv("OCPI_OPENCL_OBJS");
   OCPI::OS::LoadableModule lm(env ? env : "libOpenCL.so", true);
 
-  if (!strcasecmp(*ap, "test"))
+  if (!*ap || !strcasecmp(*ap, "test"))
     return 0;
   if (!strcasecmp(*ap, "search")) {
     OA::PVarray vals(5);
@@ -69,20 +70,33 @@ static int mymain(const char **ap) {
       options.bad("No source files supplied after \"compile\" command.");
     std::vector<int> fds(numSources, -1);
     std::vector<off_t> sizes(numSources*2, 0);
-    std::vector<void *> mapped(numSources*2, NULL);
+    std::vector<const char *> mapped(numSources*2, NULL);
+    void *maddr;
     for (unsigned n = 0; n < numSources; n++) {
+      ocpiDebug("Compiling OCL input file %s", sources[n]);
       if ((fds[n] = open(sources[n], O_RDONLY)) < 0 ||
 	  (sizes[n*2+1] = lseek(fds[n], 0, SEEK_END)) == -1 ||
-	  (mapped[n*2+1] = mmap(NULL, sizes[n*2+1], PROT_READ, MAP_SHARED, fds[n], 0)) == MAP_FAILED)
-	options.bad("Can't open source file: %s", sources[n]);
+	  (maddr = mmap(NULL, sizes[n*2+1], PROT_READ, MAP_SHARED, fds[n], 0)) == MAP_FAILED)
+	options.bad("Can't open or map source file: %s", sources[n]);
+      mapped[n*2+1] = (const char *)maddr;
+      ocpiDebug("Mapped OCL input file %s has length %zu", sources[n], (size_t)sizes[n*2+1]);
       std::string line;
       OU::format(line, "# 1 \"%s\"\n", sources[n]);
-      mapped[n*2] = new char[line.size()];
-      memcpy(mapped[n*2], line.c_str(), line.size());
+      char *cp =  new char[line.size()+1];
+      strcpy(cp, line.c_str());
+      mapped[n*2] = cp;
       sizes[n*2] = line.size();
+      ocpiDebug("Mapped OCL input file has: '%s' has length %zu %d/%d", mapped[n*2],
+		(size_t)sizes[n*2], mapped[n*2][sizes[n*2]], mapped[n*2+1][sizes[n*2+1]]);
     }
     OCPI::OCL::compile(numSources*2, &mapped[0], &sizes[0], includes, defines,
 		       options.output(), options.target(), options.verbose());
+  } else if(!strcasecmp(*ap, "targets")) {
+    std::set<std::string> targets;
+    OCPI::OCL::Driver::getSingleton().search(NULL, NULL, false, NULL, NULL, &targets);
+    for (std::set<std::string>::const_iterator ti = targets.begin(); ti != targets.end(); ti++)
+      printf("%s%s", ti == targets.begin() ? "" : " ", (*ti).c_str());
+    printf("\n");
   }
   return 0;
 }

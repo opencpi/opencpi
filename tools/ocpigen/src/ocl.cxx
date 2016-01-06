@@ -266,6 +266,7 @@ emitImplOCL() {
           "} %c%sPersist;\n\n",
           toupper(m_implName[0]), m_implName + 1);
 
+#if 0
   fprintf(f,
 	  "\n"
 	  "OCLResult %s_run(%c%sWorker *self",
@@ -273,7 +274,7 @@ emitImplOCL() {
   if (m_ctl.nRunProperties)
     fprintf(f, ", __global %c%sProperties *properties", toupper(m_implName[0]), m_implName + 1);
   fprintf(f, ");\n");
-  
+#endif
   for (unsigned n = 0; n < m_ports.size(); n++)
     m_ports[n]->emitRccCImpl(f);
   for (unsigned n = 0; n < m_ports.size(); n++)
@@ -338,7 +339,8 @@ emitSkelOCL() {
     return err;
   fprintf(f,
 	  "\n"
-	  "OCLResult %s_run(%c%sWorker *self",
+	  "static OCLResult\n"
+	  "%s_run(%c%sWorker *self",
 	  m_implName, toupper(m_implName[0]), m_implName + 1);
   if (m_ctl.nRunProperties)
     fprintf(f, ", __global %c%sProperties *properties", toupper(m_implName[0]), m_implName + 1);
@@ -375,13 +377,29 @@ emitEntryPointOCL() {
 	  " * This generated kernel dispatches to the worker's methods\n"
 	  " * This single kernel/function dispatches the run method and control operations.\n"
 	  " */\n"
-	  "__kernel __attribute__((reqd_work_group_size(OCL_WG_X, OCL_WG_Y, OCL_WG_Z)))\n"
+	  "__kernel\n"
+	  "#ifdef OCL_WG_X\n"
+          "  #ifndef OCP_WG_Y\n"
+          "     #define OCL_WG_Y 1\n"
+          "  #endif\n"
+          "  #ifndef OCP_WG_Z\n"
+          "     #define OCL_WG_Z 1\n"
+          "  #endif\n"
+	  "  __attribute__((reqd_work_group_size(OCL_WG_X, OCL_WG_Y, OCL_WG_Z)))\n"
+          "#endif\n"
 	  "void %s_kernel(__global %c%sPersist *persist",
 	  m_implName, toupper(m_implName[0]), m_implName+1);
   for (unsigned n = 0; n < m_ports.size(); n++)
     fprintf(f, ",\n%*s__global uint8_t *buffers%u", pad, "", n);
   fprintf(f,
-	  ") {\n");
+	  ") {\n"
+	  "  // Declare any __local objects\n"
+	  "#ifdef OCL_LOCALS\n"
+	  "#undef OCL_L\n"
+	  "#define OCL_L(var,decl) __local decl;\n"
+	  "OCL_LOCALS\n"
+	  "#endif\n"
+	  );
   if (m_ports.size()) {
     fprintf(f,
 	    "  __global uint8_t *bases[%zu] = {", m_ports.size());
@@ -390,13 +408,33 @@ emitEntryPointOCL() {
     fprintf(f,
 	    "};\n");
   }
-  fprintf(f, "%c%sWorker self = persist->self;\n", toupper(m_implName[0]), m_implName+1);
+  fprintf(f, "  %c%sWorker self = persist->self;\n", toupper(m_implName[0]), m_implName+1);
   fprintf(f,
-	  "  if (self.logLevel >= 10)\n"
-	  "    printf(\"OpenCL Kernel running op: %%d count: %%d nd: %%d %%p %%p %%p\\n\",\n"
-	  "           self.controlOp, self.runCount, get_work_dim(), persist, buffers0, buffers1);\n"
+	  "  if (self.logLevel >= 10) {\n"
+	  //	  "    uint32_t *p32 = (uint32_t *)&self;\n"
+	  //	  "    ocpi_printf(\"%%08x %%08x %%08x %%08x %%08x\\n\", p32[0], p32[1], p32[2], p32[3], p32[4]);\n"
+	  //	  "    ocpi_printf(\"!%%u/%%u %%u/%%u %%u/%%u %%u/%%u %%u/%%u %%u/%%u %%u/%%u\\n\",\n"
+	  //	  "           (int)&((%c%sWorker*)0)->crew_size, (int)sizeof(self.crew_size),\n"
+	  //	  "           (int)&((%c%sWorker*)0)->member, (int)sizeof(self.member),\n"
+	  //	  "           (int)&((%c%sWorker*)0)->firstRun, (int)sizeof(self.firstRun),\n"
+	  //	  "           (int)&((%c%sWorker*)0)->timedOut, (int)sizeof(self.timedOut),\n"
+	  //	  "           (int)&((%c%sWorker*)0)->controlOp, (int)sizeof(self.controlOp),\n"
+	  //	  "           (int)&((%c%sWorker*)0)->connectedPorts, (int)sizeof(self.connectedPorts),\n"
+	  //	  "           (int)&((%c%sWorker*)0)->runCount, (int)sizeof(self.runCount));\n"
+	  "    printf((__constant char *)\"OpenCL Kernel(%%u) running op: %%d count: %%d nd: %%d %%p %%p %%p\\n\",\n"
+	  "           (int)get_global_id(0), (int)self.controlOp, (int)self.runCount, (int)get_work_dim(), persist, buffers0, buffers1);\n"
+          "  }\n"
 	  "  switch (self.controlOp) {\n"
-          "  case OCPI_OCL_RUN:\n");
+          "  case OCPI_OCL_RUN:\n"
+	  //,
+	  //	  toupper(m_implName[0]), m_implName+1,
+	  //	  toupper(m_implName[0]), m_implName+1,
+	  //	  toupper(m_implName[0]), m_implName+1,
+	  //	  toupper(m_implName[0]), m_implName+1,
+	  //	  toupper(m_implName[0]), m_implName+1,
+	  //	  toupper(m_implName[0]), m_implName+1,
+	  //	  toupper(m_implName[0]), m_implName+1
+	  );
   fprintf(f,
 	  "    while (self.runCount--) {\n");
   if (m_ports.size())
@@ -405,9 +443,17 @@ emitEntryPointOCL() {
 	    "      for (unsigned n = 0; n < self.nPorts; n++, p++)\n"
 	    "        startPort(p, bases[n]);\n",
 	    m_ports[0]->m_name.c_str());
-      fprintf(f,
-	      "      persist->returned.result = %s_run(&self%s);\n",
-	      m_implName, m_ctl.nRunProperties ? ", &persist->properties" : "");
+  fprintf(f,
+	  "      persist->returned.result = %s_run(&self%s",
+	  m_implName, m_ctl.nRunProperties ? ", &persist->properties" : "");
+  fprintf(f,
+	  "  // Declare any __local objects\n"
+	  "#ifdef OCL_LOCALS\n"
+	  "#undef OCL_L\n"
+	  "#define OCL_L(var,decl) , &var\n"
+	  "OCL_LOCALS\n"
+	  "#endif\n"
+          ");\n");
   if (m_ports.size())
     fprintf(f,
 	    "      p = &self.%s;\n"
@@ -462,8 +508,10 @@ emitEntryPointOCL() {
 const char * Worker::
 parseOcl() {
   const char *err;
-  if ((err = OE::checkAttrs(m_xml,  IMPL_ATTRS, "language", (void*)0)) ||
-      (err = OE::checkElements(m_xml, IMPL_ELEMS, "port", (void*)0)))
+  if ((err = OE::checkAttrs(m_xml,  IMPL_ATTRS, "language", "requiredWorkGroupSize",
+			    (void*)0)) ||
+      (err = OE::checkElements(m_xml, IMPL_ELEMS, "port", (void*)0)) ||
+      (err = OE::getNumber(m_xml, "requiredWorkGroupSize", &m_requiredWorkGroupSize)))
     return err;
   const char *lang = ezxml_cattr(m_xml, "Language");
   if (lang && strcasecmp(lang, "cl"))

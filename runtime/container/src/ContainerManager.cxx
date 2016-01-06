@@ -115,7 +115,7 @@ namespace OCPI {
       deleteChildren();
     }
     bool Manager::findContainersX(Callback &cb, OU::Worker &i, const char *name) {
-      ocpiDebug("Finding containers for worker %s name %s",
+      ocpiDebug("Finding containers for worker %s container name %s",
 		i.name().c_str(), name);
       parent().configureOnce();
       for (Driver *d = firstChild(); d; d = d->nextChild())

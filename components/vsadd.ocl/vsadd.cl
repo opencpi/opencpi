@@ -19,7 +19,8 @@
  * Methods to implement for worker vsadd, based on metadata.
  */
 
-OCLResult vsadd_run(VsaddWorker* self, __global VsaddProperties *properties) {
+static OCLResult
+vsadd_run(VsaddWorker* self, __global VsaddProperties *properties) {
   const size_t n_elems = self->in.current.length / sizeof(float);
   __global const float* src = (__global float *)self->in.current.data;
   __global float* dst = (__global float *)self->out.current.data;

@@ -27,7 +27,7 @@ namespace OCPI {
   namespace Remote {
 
 const uint16_t REMOTE_PORT = 17171;
-const uint16_t REMOTE_NARGS = 5; // fields in the discovery entries before transports
+const uint16_t REMOTE_NARGS = 6; // fields in the discovery entries before transports
 bool g_suppressRemoteDiscovery = false;
 extern const char *remote;
 const unsigned RETRIES = 3;
@@ -216,8 +216,8 @@ class Container
   Client &m_client;
 public:
   Container(Client &client, const std::string &name,
-	    const char *model, const char *os, const char *osVersion, const char *platform,
-	    const char *transports, const OA::PValue* /*params*/)
+	    const char *model, const char *os, const char *osVersion, const char *arch,
+	    const char *platform, const char *transports, const OA::PValue* /*params*/)
     throw ( OU::EmbeddedException )
     : OC::ContainerBase<Driver,Container,Application,Artifact>(*this, name.c_str()),
       m_client(client) {
@@ -226,6 +226,7 @@ public:
     m_model = model;
     m_os = os;
     m_osVersion = osVersion;
+    m_arch = arch;
     m_platform = platform;
     unsigned nTransports = 0;
     for (const char *p = transports; *p; p++)
@@ -237,9 +238,12 @@ public:
     char id[strlen(transports)+1];
     for (unsigned n = nTransports; n; n--, t++) {
       int nChars, rv;
-      if ((rv = sscanf(transports, "%[^,],%[^,],%u,%u,0x%x,0x%x|%n", transport, id, &t->roleIn, &t->roleOut,
+      unsigned roleIn, roleOut;
+      if ((rv = sscanf(transports, "%[^,],%[^,],%u,%u,0x%x,0x%x|%n", transport, id, &roleIn, &roleOut,
 		       &t->optionsIn, &t->optionsOut, &nChars)) != 6)
 	throw OU::Error("Bad transport string in container discovery: %s: %d", transports, rv);
+      t->roleIn = (OR::PortRole)roleIn;
+      t->roleOut = (OR::PortRole)roleOut;
       t->transport = transport;
       t->id = id;
       transports += nChars;
@@ -383,11 +387,11 @@ public:
 	client = new Client(*this, server, *sock);
 	taken = true;
       }
-      ocpiDebug("Creating remote container: \"%s\", model %s, os %s, version %s, platform %s",
-		cname.c_str(), args[1], args[2], args[3], args[4]);
+      ocpiDebug("Creating remote container: \"%s\", model %s, os %s, version %s, arch %s, platform %s",
+		cname.c_str(), args[1], args[2], args[3], args[4], args[5]);
       ocpiDebug("Transports are: '%s'", cp);
       Container &c = *new Container(*client, cname.c_str(), args[1], args[2], args[3], args[4],
-				   cp, NULL);
+				    args[5], cp, NULL);
       (void)&c;
     }
     sock = NULL;

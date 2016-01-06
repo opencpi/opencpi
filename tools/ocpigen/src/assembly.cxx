@@ -480,6 +480,8 @@ emitXmlWorker(FILE *f) {
     fprintf(f, " FirstRaw='%u'", m_ctl.firstRaw->m_ordinal);
   if (m_scalable)
     fprintf(f, " Scalable='1'");
+  if (m_requiredWorkGroupSize)
+    fprintf(f, " requiredWorkGroupSize='%zu'", m_requiredWorkGroupSize);
   fprintf(f, ">\n");
   if (m_scalable) {
     OU::Port::Scaling s;
