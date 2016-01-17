@@ -1,6 +1,4 @@
 # Default settings
-# This variable indicates that we are in the native OSS world
-export OCPI_NATIVE_OSS=1
 export OCPI_CFLAGS="-Wall -Wfloat-equal -Wextra  -fno-strict-aliasing -Wconversion -std=c99"
 export OCPI_CXXFLAGS="-Wextra -Wall -Wfloat-equal -fno-strict-aliasing -Wconversion"
 

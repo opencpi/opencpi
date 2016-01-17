@@ -18,6 +18,6 @@ clean::
 
 # These make the worker library for this application
 Implementations =
-include $(OCPI_INC_DIR)/lib.mk
+include $(OCPI_CDK_DIR)/include/lib.mk
 
 

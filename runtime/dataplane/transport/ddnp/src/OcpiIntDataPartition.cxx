@@ -60,7 +60,8 @@ DataPartition::BufferInfo::BufferInfo()
   output_offset = 0;
   input_offset = 0;
   length = 0;
-  next=last=0;
+  //  next=last=0;
+  next = NULL;
 }
 DataPartition::BufferInfo::~BufferInfo()
 {
@@ -72,6 +73,7 @@ DataPartition::BufferInfo::~BufferInfo()
   }
 }
 
+#if 0
 //Add another structure
 void DataPartition::BufferInfo::add( BufferInfo* bi )
 {
@@ -83,7 +85,7 @@ void DataPartition::BufferInfo::add( BufferInfo* bi )
     last = bi;
   }
 }
-
+#endif
 // Constructors
 DataPartitionMetaData::DataPartitionMetaData()
 {

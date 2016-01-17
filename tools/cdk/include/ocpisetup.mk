@@ -30,6 +30,7 @@ ifneq ($(realpath $(OCPI_CDK_DIR)/include/ocpisetup.mk),$(realpath $(OcpiThisFil
 endif
 $(info OCPI_CDK_DIR has been set to $(OCPI_CDK_DIR) and verified to be sane.)
 
+endif # The end of processing this file once - ifndef OCPISETUP_MK
 ################################################################################
 # OCPI_CDK_DIR has been established and verified.
 # Now complete the other aspects of environment setup.
@@ -210,4 +211,3 @@ ifeq ($(origin OCPI_SUDO),undefined)
 export OCPI_SUDO=sudo -E
 endif
 
-endif
