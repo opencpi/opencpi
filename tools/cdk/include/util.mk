@@ -413,7 +413,7 @@ OcpiSearchComponentPath=\
   $(eval OcpiTempPlaces:=$(strip\
        $(subst :, ,$(OCPI_HDL_COMPONENT_LIBRARY_PATH)) \
        $(subst :, ,$(OCPI_COMPONENT_LIBRARY_PATH)) \
-       $(foreach d,$(subst :, ,$(OCPI_PROJECT_PATH)) $(OCPI_CDK_DIR),$d/lib)))\
+       $(foreach d,$(OcpiGetProjectPath) $(OCPI_CDK_DIR),$d/lib)))\
   $(eval OcpiTempDirs:= $(strip \
     $(foreach p,$(OcpiTempPlaces),\
        $(foreach d,$p/$1,$(call OcpiComponentLibraryExists,$d)))))\
@@ -440,5 +440,25 @@ OcpiXmlComponentLibraries=$(infox HXC)\
     $(foreach c,$(OcpiComponentLibraries),$c/hdl $c/$(Model) $c))) \
   $(infox OcpiXmlComponentLibraries returned: $(OcpiTempDirs))\
   $(OcpiTempDirs)
+
+OcpiGetProjectPath=$(strip \
+                     $(foreach p,$(subst :, ,$(OCPI_PROJECT_PATH)),\
+                       $(or $(call OcpiExists,$p/exports),$(call OcpiExists,$p),\
+                         $(info Warning: The path $p in OCPI_PROJECT_PATH does not exist.))))
+
+# Recursive
+OcpiIncludeProjectX=$(infox OIPX:$1:$2)$(if $(wildcard $1/Project.mk),\
+                      $(eval include $1/Project.mk),\
+                      $(if $(foreach r,$(realpath $1/..),$(filter-out /,$r)),\
+                        $(call OcpiIncludeProjectX,$1/..,$2),\
+                        $(call $2,$2: no project.mk was found here or above here)))
+
+# One arg is what to do if not found: error, warning, nothing
+OcpiIncludeProject=$(call OcpiIncludeProjectX,.,$1)
+
+# Find the subdirectories that make a Makefile that includes something
+OcpiFindSubdirs=$(strip \
+  $(foreach a,$(wildcard */Makefile),\
+    $(shell grep -q '^[ 	]*include[ 	]*.*/include/$1.mk' $a && echo $(patsubst %/,%,$(dir $a)))))
 
 endif # ifndef __UTIL_MK__

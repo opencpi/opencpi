@@ -29,6 +29,7 @@ if test "$OCPI_CDK_DIR" = ""; then
   echo Error: environment variable OCPI_CDK_DIR is not set.
   exit 1
 fi
+source $OCPI_CDK_DIR/scripts/ocpibootstrap.sh
 if test "$OCPI_TOOL_HOST" = ""; then
   echo Error: environment variable OCPI_TOOL_HOST is not set.
   exit 1
@@ -41,8 +42,23 @@ if test ! -r $bitfile; then
   echo Trying to load bit file \"$bitfile\", which does not exist or is not readable.
   exit 1
 fi
-if test ! -x $dir/../lib/platforms/$platform/jtagSupport_$platform; then
-  echo Trying to load onto a \"$platform\", but there is no support for loading it \(no executable $dir/../lib/platforms/$platform/loadBitStream_$platform\).
+# This logic copies from util.mk OcpiGetProjectPath
+# FIXME:  this should be in some shell utilities file
+for proj in ${OCPI_PROJECT_PATH/:/ } ; do
+ if [ -d $proj/exports ]; then
+   projs+=" $proj/exports"
+ elif [ -d $proj ]; then
+   projs+=" $proj"
+ else
+   echo Warning: \"$proj\" from OCPI_PROJECT_PATH, does not exist  
+ fi
+done
+for p in $projs $OCPI_CDK_DIR; do
+  j=$p/lib/platforms/$platform/jtagSupport_$platform
+  [ -x $j ] && jtagSupport=$j && break;
+done
+if [ -z $jtagSupport ]; then
+  echo Trying to load onto a \"$platform\", but there is no support for loading it \(no executable lib/platforms/$platform/jtagSupport_$platform found in any project or CDK\)
   exit 1
 fi
 if test "$esn" = ""; then
@@ -79,7 +95,7 @@ fi
 # Now we do the platform-specific setup to find cables and serial numbers
 # Get cable info - a list of <cable>=<serial-number>
 ################################################################################
-cables=`$dir/../lib/platforms/$platform/jtagSupport_$platform cables $temp 2>$temp.cables`
+cables=`$jtagSupport cables $temp 2>$temp.cables`
 if test $? != 0; then
   echo JTAG cable setup for platform \"$platform\" failed. See \"$temp.cables\".
   exit 1
@@ -141,7 +157,7 @@ fi
 # to load is at the proper place in the jtag chain
 ################################################################################
 jtagpart=`echo $part | sed 's/\(^[^-]*\).*$/\1/'`
-pos=`$dir/../lib/platforms/$platform/jtagSupport_$platform part $temp "$cable" "$jtagpart"`
+pos=`$jtagSupport part $temp "$cable" "$jtagpart"`
 if test $? != 0; then
   echo Error: Could not find jtag position for part $part on JTAG cable \"$cable\".
   exit 1
@@ -186,7 +202,7 @@ fi
 # Now we do platform-specific loading.  The "device" arg is unlikely to be used.
 ################################################################################
 echo Loading bitstream into device \"$device\" via jtag cable \"$cable\", serial number \"$serial\", at position \"$position\"...
-$dir/../lib/platforms/$platform/jtagSupport_$platform load "$temp" "$cable" "$position" "$bitfile"
+$jtagSupport load "$temp" "$cable" "$position" "$bitfile"
 Err=$?
 rm -f $temp.$suffix
 if test $Err != 0; then

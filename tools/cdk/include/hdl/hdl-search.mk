@@ -103,7 +103,7 @@ HdlComponentLibraryExists=$(infox HCLE:$1)$(foreach x,$(or $(call HdlExists,$1/l
 HdlSearchComponentPath=\
   $(eval HdlTempPlaces:=$(strip\
        $(subst :, ,$(OCPI_HDL_COMPONENT_LIBRARY_PATH)) \
-       $(foreach d,$(subst :, ,$(OCPI_PROJECT_PATH)) $(OCPI_CDK_DIR),$d/lib)))\
+       $(foreach d,$(OcpiGetProjectPath) $(OCPI_CDK_DIR),$d/lib)))\
   $(eval HdlTempDirs:= $(strip \
     $(foreach p,$(HdlTempPlaces),\
        $(foreach d,$p/$1,$(call HdlComponentLibraryExists,$d)))))\
@@ -167,7 +167,7 @@ endef
 HdlSearchPrimitivePath=$(infox HSPP:$1:$2:$3)\
   $(eval HdlTempPlaces:=$(strip\
        $(subst :, ,$(OCPI_HDL_PRIMITIVE_PATH)) \
-       $(foreach d,$(subst :, ,$(OCPI_PROJECT_PATH)) $(OCPI_CDK_DIR),$d/lib/hdl)))\
+       $(foreach d,$(OcpiGetProjectPath) $(OCPI_CDK_DIR),$d/lib/hdl)))\
   $(eval HdlTempDirs:=$(strip\
     $(foreach p,$(HdlTempPlaces),$(infox HTPS:$(HdlTempPlaces):$1)\
        $(foreach d,$p/$1,$(infox HTPSD:$d:$(call HdlExists,$d))$(call HdlExists,$d)))))\

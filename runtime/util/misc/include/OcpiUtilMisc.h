@@ -399,7 +399,8 @@ namespace OCPI {
       const char *baseName(const char *path, std::string &buf);
       // find item in colon-separated path, returning complete path in "result"
       // return true on error
-      bool searchPath(const char *path, const char *item, std::string &result);
+      bool searchPath(const char *path, const char *item, std::string &result,
+		      const char *preferredSuffix = NULL);
   }
 }
 

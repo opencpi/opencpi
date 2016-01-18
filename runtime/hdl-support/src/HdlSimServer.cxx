@@ -1184,7 +1184,7 @@ namespace OCPI {
 	  internalPlatform += "_pf";
 	OU::format(item, "lib/platforms/%s/runSimExec.%s", internalPlatform.c_str(),
 		   internalPlatform.c_str());
-	if (OU::searchPath(path.c_str(), item.c_str(), script)) {
+	if (OU::searchPath(path.c_str(), item.c_str(), script, "exports")) {
 	  OU::format(error,
 		     "\"%s\" not a supported or built simulation platform? could not find \"%s\" in OCPI_CDK_DIR or OCPI_PROJECT_PATH",
 		     internalPlatform.c_str(), item.c_str());
