@@ -67,6 +67,7 @@ include $(OCPI_CDK_DIR)/include/package.mk
 ifeq ($(origin Implementations),undefined)
 Implementations=$(foreach m,$(Models),$(wildcard *.$m))
 endif
+ComponentLibraries+=components
 # we need to factor the model-specifics our of here...
 XmImplementations=$(filter %.xm,$(Implementations))
 RccImplementations=$(filter %.rcc,$(Implementations))

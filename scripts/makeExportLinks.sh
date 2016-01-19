@@ -223,6 +223,7 @@ fi
 set -f
 for a in $additions; do
   declare -a both=($(echo $a | tr : ' '))
+  [[ $a == *\<target\>* && $1 == - ]] && continue
   rawsrc=${both[0]//<target>/$1}
   set +f
   for src in $rawsrc; do

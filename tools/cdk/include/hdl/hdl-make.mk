@@ -397,7 +397,10 @@ define HdlPreprocessTargets
       HdlTargets:=$$(HdlTarget)
     else
       ifdef HdlPlatforms
-        override HdlTargets:=$$(call Unique,$$(foreach p,$$(HdlPlatforms),$$(if $$(HdlPart_$$p),,$$(error Unknown platform: $$p))$$(call HdlGetFamily,$$(HdlPart_$$p))))
+        override HdlTargets:=\
+          $$(call Unique,$$(foreach p,$$(HdlPlatforms),\
+            $$(if $$(HdlPart_$$p),$$(call HdlGetFamily,$$(HdlPart_$$p)),\
+               $$($$(if $$(filter clean%,$$(MAKECMDGOAL)),warning,error) Unknown platform: $$p))))
       else
         override HdlTargets:=$$(and $$(OCPI_HDL_PLATFORM),$$(call HdlGetFamily,$$(OCPI_HDL_PLATFORM)))
       endif
