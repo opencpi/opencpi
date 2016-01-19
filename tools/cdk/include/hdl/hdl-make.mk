@@ -331,6 +331,7 @@ $(OutDir)target-%/generics.vh: | $(OutDir)target-%
 		echo "$(ParamVerilog_$(ParamConfig)_$n)"\; ;) \
 	) > $@
 
+ifneq (,)
 # Establish where the platforms are
 ifndef HdlPlatformsDir
   HdlPlatformsDir:=$(OCPI_CDK_DIR)/lib/platforms
@@ -341,7 +342,7 @@ ifndef HdlPlatformsDir
     endif
 #  endif
 endif
-
+endif
 # Do the stuff necessary when building an assembly
 # This applies to platform configurations, application assemblies, and containers
 define HdlPrepareAssembly

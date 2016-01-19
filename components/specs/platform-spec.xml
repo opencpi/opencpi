@@ -1,0 +1,70 @@
+<!-- base specification for all platform workers
+     properties and signals are the ones that all platforms must support -->
+<ComponentSpec Name="platform" package='ocpi'>
+  <!-- UUID of this platform: MUST BE FIRST for bootstrapping purposes -->
+  <!-- **********MUST BE FIRST for bootstrapping purposes -->
+  <property name="UUID" arraylength='16' readable='true'/>
+  <!-- Current time of day, created by a combination of software setting, GPS, and PPS -->
+  <!-- **********MUST BE AFTER UUID for bootstrapping purposes -->
+  <property name="timeNow" type="ULongLong" volatile='true' writable='true'/>
+  <!-- This could be better if we had the option for array or sequence properties to
+       be individually raw or support addressible reads -->
+  <property name="romAddr" type='ushort' writable='true'/>
+  <property name="romData" volatile='true'/>
+  <!-- The memory regions that may be used by various other elements, which indicates
+       aliasing etc.
+       The values describing each region are:
+       Bit 31:28 - External bus/BAR connected to this memory (0 is none)
+       Bit 27:14 - Offset in bus/BAR of this memory (4KB units)
+       Bit  13:0 - Size of this memory (4KB units)
+   FIXME: this should be a sequence or parameterized-length array
+  -->
+  <property name="memories_length"  readable='true'/>
+  <property name="memories" arrayLength='4' readable='true'/>
+  <!-- Name of this platform -->
+  <property name="platform" type="string" stringlength="31" readable='true'/>
+  <!-- DNA (unique chip serial number) of this platform -->
+  <property name="dna" type="ULongLong" readable='true'/>
+  <!-- Number of switches -->
+  <property name="nSwitches" readable='true'/>
+  <!-- current value of any switches in the platform -->
+  <property name="switches" volatile='true'/>
+  <!-- Number of LEDs -->
+  <property name="nLEDs" readable='true'/>
+  <!-- setting of leds in the platform, with readback -->
+  <property name="LEDS" writable='true' readable='true'/>
+  <!-- Status of time service - readonly, volatile
+       Bit 31:   ppsLost    - An active PPS fell outside the +/- 0.1% (1000 PPM) window
+       Bit 30:   gpsIn      - At least one valid GPS time has updated timeNow
+       Bit 29:   ppsIn      - At least one valie PPS input has aligned timeNow
+       Bit 28:   timeSet    - timeNow has been set from the control plane
+       Bit 27:   ppsOK      - PPS fell within the valid window in the last second
+       Bit 26:   ppsLost    - PPS went missing from the valid window in the last second
+       Bit  7:0: ppsCount   - count of PPS events, rolling 8 bits
+  -->
+  <property name="timeStatus" volatile="true"/>
+  <!-- Control of time service - writable with readback
+       Bit 31:   clearSticky   - Clear the sticky status bits (ppsLost, gpsIn, ppsIn, timeset)
+       Bit  4:   disableServo  - Suppress discipline of local timebase by CP, PPS, or GPS
+       Bit  3:   disableGPS    - disable updates from GPS
+       Bit  2:   disablePPS    - disable processing PPS inputs
+       Bit  1:0  controlPPSOut - 0: output is timeserver-based PPS (1 HZ)
+                                 1: output is copy of input PPS (with some propagation delay)
+                                 2: output is local reference clock /2 (e.g. 100MHz for 200Mhz)
+				 3: output is disabled (0)
+  -->
+  <property name="timeControl" writable="true" readable="true"/>
+  <!-- Difference between last-written value and timeNow (now - written value),
+       computed and stored when this register was last written
+       Used to compute access round trip time, by software doing:
+       1. Read timeNow
+       2. Write timeDelta
+       3. Read timeDelta
+       The value is the time delta between when Step one occurred at the time service (t0),
+       and when step 2 occurred at the time service (t1).
+  -->
+  <property name="timeDelta" type="ULongLong" volatile='true' writable='true'/>
+  <!-- The number of ticks per second of the time service time base -->
+  <property name="ticksPerSecond" volatile='true'/>
+
+</ComponentSpec>
