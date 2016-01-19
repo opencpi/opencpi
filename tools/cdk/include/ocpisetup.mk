@@ -178,7 +178,9 @@ endif
 ################################################################################
 # Figure out if we should have OPENCL support
 ifeq ($(origin OCPI_HAVE_OPENCL),undefined)
-  OCPI_HAVE_OPENCL:=$(if $(realpath $(OCPI_BIN_DIR)/ocpiocl),$(shell $(OCPI_BIN_DIR)/ocpiocl test; if [ $$? = 0 ]; then echo 1; fi),)
+  ifeq ($(OCPI_TARGET_HOST),$(OCPI_TOOL_HOST))
+    OCPI_HAVE_OPENCL:=$(if $(realpath $(OCPI_BIN_DIR)/ocpiocl),$(shell $(OCPI_BIN_DIR)/ocpiocl test && echo 1),)
+  endif
 endif
 ################################################################################
 # From here down is specifically for user makefiles

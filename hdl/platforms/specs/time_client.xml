@@ -1,5 +1,0 @@
-<HdlWorker language='vhdl' library='platform'>
-  <ComponentSpec name='time_client' nocontrol='true'/>
-  <timeservice myclock='true'/>
-  <timeinterface master='true' myclock='true' fractionwidth='32'/>
-</HdlWorker>
