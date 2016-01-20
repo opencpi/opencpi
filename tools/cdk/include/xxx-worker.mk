@@ -107,7 +107,7 @@ override XmlIncludeDirsInternal:=\
     $(OCPI_CDK_DIR)/lib/components/hdl\
     $(OCPI_CDK_DIR)/lib/components/$(Model)\
     $(OCPI_CDK_DIR)/lib/components \
-    $(OCPI_CDK_DIR)/protocols \
+    $(OCPI_CDK_DIR)/specs \
    )
 
 #    $(foreach m,$(Models),../lib/$m)\

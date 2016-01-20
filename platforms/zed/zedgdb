@@ -1,7 +1,11 @@
 #!/bin/bash
+# 1. First on the target system run:  gdbserver host:1234 <command> <args>
+# 2. Run this script on the dev system with zed dev env: zedgdb <mainprogram> ip-addr-of-zed
+# 3. c
+
 main=$1
 shift
-addr=$2
+addr=$1
 shift
 exec $OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-gdb \
   $OCPI_CDK_DIR/bin/$OCPI_TARGET_HOST/$main \

@@ -392,7 +392,7 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
 	expr += "}";
       } else {
 	for (size_t n = 0; n < cons.ocp.MByteEn.width; n++) {
-	  expr += n ? "&(" : "(";
+	  expr += n ? "&ocpi.util.slv(" : "ocpi.util.slv(";
 	  for (size_t nn = 0; nn < nper; nn++)
 	    OU::formatAdd(expr, "%s%s.MByteEn(%zu)", nn ? " or " : "",
 			  masterName, --pw);

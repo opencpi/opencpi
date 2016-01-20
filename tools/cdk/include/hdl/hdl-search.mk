@@ -130,7 +130,7 @@ HdlTargetComponentLibraries=$(infox HTCL:$1:$(HdlComponentLibraries):$(Component
 # Return the list of XML search directories for component libraries
 HdlXmlComponentLibraries=$(infox HXC)\
   $(eval HdlTempDirs:= $(strip \
-    $(foreach c,$(HdlComponentLibraries),$c $c/hdl))) \
+    $(foreach c,$(HdlComponentLibraries),$c $c/hdl)) $(OCPI_CDK_DIR)/specs) \
   $(infox HdlXmlComponentLibraries returned: $(HdlTempDirs))\
   $(HdlTempDirs)
 

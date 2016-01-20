@@ -44,12 +44,17 @@ tests
 +platforms
 # generic make scripts
 +tools/cdk/include/lib.mk include/
++tools/cdk/include/library.mk include/
 +tools/cdk/include/util.mk include/
 +tools/cdk/include/package.mk include/
 +tools/cdk/include/worker.mk include/
 +tools/cdk/include/xxx-worker.mk include/
 +tools/cdk/include/ocpisetup.mk include/
 +tools/cdk/include/ocpisetup.mk
++tools/cdk/include/libraries.mk include/
++tools/cdk/include/project.mk include/
++tools/cdk/include/applications.mk include/
++tools/cdk/include/application.mk include/
 # CDK scripts we need
 +tools/cdk/scripts/makeStaticWorker scripts/
 +tools/cdk/scripts/ocpidriver scripts/
@@ -57,6 +62,10 @@ tests
 +tools/cdk/scripts/sudo_ocpi scripts/
 +tools/cdk/scripts/ocpisetup.sh scripts/
 +tools/cdk/scripts/ocpibootstrap.sh scripts/
++tools/cdk/scripts/ocpidev scripts/
+#+tools/cdk/scripts/makeExportLinks.sh scripts/
++scripts/makeExportLinks.sh scripts/
++tools/cdk/specs specs/
 # linux driver
 +os/linux/driver/99-opencpi.rules lib/<target>/
 +os/linux/driver/mdev-opencpi.rules lib/<target>/
@@ -80,15 +89,24 @@ tests
 # Ultimately control visibility for workers
 +runtime/application/include/OcpiApi.h include/rcc/OcpiApi.hh
 +runtime/application/include/OcpiApi.h include/rcc/OcpiApi.h
++runtime/application/include/OcpiApi.h include/aci/OcpiApi.hh
++runtime/application/include/OcpiApi.h include/aci/OcpiApi.h
 +os/interfaces/include/OcpiOsDebugApi.h include/rcc/OcpiOsDebugApi.hh
 +runtime/application/include/OcpiApplicationApi.h include/rcc/
++runtime/application/include/OcpiApplicationApi.h include/aci/
 +runtime/container/include/OcpiContainerApi.h include/rcc/
++runtime/container/include/OcpiContainerApi.h include/aci/
 +runtime/util/ior/include/OcpiCorbaApi.h include/rcc/
 +runtime/util/property/include/OcpiPValueApi.h include/rcc/
++runtime/util/property/include/OcpiPValueApi.h include/aci/
 +runtime/util/property/include/OcpiUtilDataTypesApi.h include/rcc/
++runtime/util/property/include/OcpiUtilDataTypesApi.h include/aci/
 +runtime/util/property/include/OcpiUtilPropertyApi.h include/rcc/
++runtime/util/property/include/OcpiUtilPropertyApi.h include/aci/
 +runtime/util/misc/include/OcpiUtilExceptionApi.h include/rcc/
++runtime/util/misc/include/OcpiUtilExceptionApi.h include/aci/
 +runtime/library/include/OcpiLibraryApi.h include/rcc/
++runtime/library/include/OcpiLibraryApi.h include/aci/
 ################################################################################
 # HDL related exclusions and additions
 # test executables to suppress
