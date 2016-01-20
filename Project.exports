@@ -65,7 +65,7 @@ tests
 +tools/cdk/scripts/ocpidev scripts/
 #+tools/cdk/scripts/makeExportLinks.sh scripts/
 +scripts/makeExportLinks.sh scripts/
-+tools/cdk/specs specs/
++tools/cdk/specs
 # linux driver
 +os/linux/driver/99-opencpi.rules lib/<target>/
 +os/linux/driver/mdev-opencpi.rules lib/<target>/
