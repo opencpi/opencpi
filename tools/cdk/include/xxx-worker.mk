@@ -104,6 +104,8 @@ override XmlIncludeDirsInternal:=\
     ../lib/$(Model)\
     ../specs \
     $(OcpiXmlComponentLibraries) \
+    $(foreach d,$(subst :, ,$(OCPI_XML_INCLUDE_PATH)),$(wildcard $d)) \
+    $(foreach d,$(OcpiGetProjectPath),$(wildcard $d/specs)) \
     $(OCPI_CDK_DIR)/lib/components/hdl\
     $(OCPI_CDK_DIR)/lib/components/$(Model)\
     $(OCPI_CDK_DIR)/lib/components \

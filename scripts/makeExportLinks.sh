@@ -92,11 +92,6 @@ function make_filtered_link {
   make_relative_link $1 $2
 }
 
-if [ -n "${RPM_BUILD_ROOT}" ]; then
-  echo This script is not used for RPM building.
-  exit 0
-fi
-
 if test "$*" = ""; then
   echo "Usage is: makeExportLinks.sh <target> <prefix>"
   echo "This script takes two arguments:"
@@ -122,6 +117,9 @@ additions=$(test -f Project.exports && grep '^[ 	]*+' Project.exports | sed 's/^
 set +f
 facilities=$(test -f Project.exports &&  grep -v '^[ 	]*[-+#]' Project.exports) || true
 for f in $facilities; do
+  if [ "$1" == "-" ]; then
+    continue; # silently ignore unset targets
+  fi
   if [ ! -d $f/target-$1 ]; then
     if [ ! -d .built_cdk ]; then
       continue; # silently ignore unbuilt facilities
@@ -145,8 +143,12 @@ for f in $facilities; do
 
   # Make links to facility libraries
   foundlib=
-#  for s in .$dylib _s.$dylib .a; do
-  for s in  _s.$dylib .a; do
+  if [ "$OCPI_DYNAMIC" == 1 ] ; then
+    suffixes=".$dylib"
+  else
+    suffixes="_s.$dylib .a"
+  fi
+  for s in $suffixes; do
     lib=lib$2$(basename $f)$s
     libpath=$f/target-$1/$lib
     if [ ! -e $libpath ]; then

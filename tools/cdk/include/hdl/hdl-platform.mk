@@ -97,8 +97,6 @@ $(eval $(HdlSearchComponentLibraries))
 $(call OcpiDbgVar,XmlIncludeDirsInternal)
 $(infox HP1:$(HdlPlatforms))
 $(call OcpiDbgVar,HdlPlatforms)
-XmlIncludeDirs+=$(HdlPlatformsDir)/specs
-$(call OcpiDbgVar,HdlPlatforms)
 SubCores_$(call HdlGetFamily,$(Worker)):=$(Cores)
 OnlyPlatforms:=$(Worker)
 OnlyTargets:=$(call HdlGetFamily,$(Worker))

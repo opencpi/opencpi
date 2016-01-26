@@ -26,7 +26,7 @@ ifeq ($(realpath $(OCPI_CDK_DIR)),)
   $(error The OCPI_CDK_DIR variable, "$(OCPI_CDK_DIR)", points to a nonexistent directory)
 endif
 ifneq ($(realpath $(OCPI_CDK_DIR)/include/ocpisetup.mk),$(realpath $(OcpiThisFile)))
-  $(error Inconsistent usage of this file ($(OcpiThisFile)) vs. OCPI_CDK_DIR ($(OCPI_CDK_DIR)))
+  $(error Inconsistent usage of this file ($(OcpiThisFile)->$(realpath $(OcpiThisFile))) vs. OCPI_CDK_DIR ($(realpath $(OCPI_CDK_DIR)/include/ocpisetup.mk)))
 endif
 $(info OCPI_CDK_DIR has been set to $(OCPI_CDK_DIR) and verified to be sane.)
 

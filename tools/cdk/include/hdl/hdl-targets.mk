@@ -48,8 +48,8 @@ HdlAllPlatforms:=
 
 override OCPI_HDL_PLATFORM_PATH:=$(call Unique,\
   $(OCPI_HDL_PLATFORM_PATH) \
-  $(foreach p,$(OcpiGetProjectPath) $(OCPI_CDK_DIR),$(call OcpiExists,$p/lib/platforms)))
-$(info OHPP:$(OCPI_HDL_PLATFORM_PATH))
+  $(foreach p,$(OcpiGetProjectPath),$(call OcpiExists,$p/lib/platforms)))
+$(infox OHPP:$(OCPI_HDL_PLATFORM_PATH))
 # Add a platform to the database.
 # Arg 1: The directory where the *.mk file is
 # Arg 2: The name of the platform

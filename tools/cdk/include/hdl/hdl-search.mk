@@ -74,15 +74,7 @@ __HDL_SEARCH_MK__=x
 #  be useful in very simple cases where there is no library - just a worker's directory by
 #  itself.
 
-define HdlFindError
-No component libraries were found for target $$(call HdlGetFamily,$1))
-They may not be built yet.
-The ComponentLibraries variable was: $$(ComponentLibraries))
-The OCPI_HDL_COMPONENT_LIBRARY_PATH was: $$(OCPI_HDL_COMPONENT_LIBRARY_PATH))
-The OCPI_CDK_DIR was: $$(OCPI_CDK_DIR))
-The directories looked at where: $$(HdlTempDirs)))
-endef
-
+ifneq (,)
 HdlCheckLinks=$(strip \
   $(foreach d,$1,$d$(shell test -L $d -a ! -e $d && echo " (a link to non-existent/unbuilt?)")))
 
@@ -100,10 +92,10 @@ HdlComponentLibraryExists=$(infox HCLE:$1)$(foreach x,$(or $(call HdlExists,$1/l
 # Search for a component library by name, independent of target
 # This is not used for component libraries specified by location (with slashes)
 # $(call HdlSearchComponentPath,lib)
-HdlSearchComponentPath=\
+HdlSearchComponentPath=$(infox HSCP:$1)\
   $(eval HdlTempPlaces:=$(strip\
        $(subst :, ,$(OCPI_HDL_COMPONENT_LIBRARY_PATH)) \
-       $(foreach d,$(OcpiGetProjectPath) $(OCPI_CDK_DIR),$d/lib)))\
+       $(foreach d,$(OcpiGetProjectPath),$d/lib)))\
   $(eval HdlTempDirs:= $(strip \
     $(foreach p,$(HdlTempPlaces),\
        $(foreach d,$p/$1,$(call HdlComponentLibraryExists,$d)))))\
@@ -120,17 +112,21 @@ HdlComponentLibraries=$(strip\
               $(error Component library $c (from ComponentLibraries) not found.)),\
          $(call HdlSearchComponentPath,$c))))
 
+endif
+
 # Return list of target directories in all possible component libraries
-HdlTargetComponentLibraries=$(infox HTCL:$1:$(HdlComponentLibraries):$(ComponentLibraries):$2)\
+HdlTargetComponentLibraries=$(infox HTCL:$1:$(OcpiComponentLibraries):$(ComponentLibraries):$2)\
   $(or $(strip $(foreach f,$(call HdlGetFamily,$1),\
-                  $(foreach d,$(HdlComponentLibraries),$(infox HTCL1:$d:$f)\
+                  $(foreach d,$(OcpiComponentLibraries),$(infox HTCL1:$d:$f)\
                      $(call HdlExists,$d/hdl/$f)))),\
       $(error No component libraries were found for target $1.  Perhaps not built yet?))
 
 # Return the list of XML search directories for component libraries
+# This also includes any top level specs directories in the project path,
+# since the search order must be project oriented.
 HdlXmlComponentLibraries=$(infox HXC)\
   $(eval HdlTempDirs:= $(strip \
-    $(foreach c,$(HdlComponentLibraries),$c $c/hdl)) $(OCPI_CDK_DIR)/specs) \
+    $(foreach c,$(OcpiComponentLibraries),$c $c/hdl)) $(OCPI_CDK_DIR)/specs) \
   $(infox HdlXmlComponentLibraries returned: $(HdlTempDirs))\
   $(HdlTempDirs)
 
@@ -156,7 +152,7 @@ HdlXmlComponentLibraries=$(infox HXC)\
 # the libraries and cores mentioned in the Libraries and Cores variable (those items without slashes).
 
 define HdlPrimitiveSearchError
-The primitive core/library "$1" was not found in any of these locations: $(call HdlCheckLinks,$2)
+The primitive core/library "$1" was not found in any of these locations: $(call OcpiCheckLinks,$2)
 OCPI_HDL_PRIMITIVE_PATH is: $(OCPI_HDL_PRIMITIVE_PATH)
 OCPI_PROJECT_PATH is: $(OCPI_PROJECT_PATH)
 OCPI_CDK_DIR is: $(OCPI_CDK_DIR)
@@ -167,7 +163,7 @@ endef
 HdlSearchPrimitivePath=$(infox HSPP:$1:$2:$3)\
   $(eval HdlTempPlaces:=$(strip\
        $(subst :, ,$(OCPI_HDL_PRIMITIVE_PATH)) \
-       $(foreach d,$(OcpiGetProjectPath) $(OCPI_CDK_DIR),$d/lib/hdl)))\
+       $(foreach d,$(OcpiGetProjectPath),$d/lib/hdl)))\
   $(eval HdlTempDirs:=$(strip\
     $(foreach p,$(HdlTempPlaces),$(infox HTPS:$(HdlTempPlaces):$1)\
        $(foreach d,$p/$1,$(infox HTPSD:$d:$(call HdlExists,$d))$(call HdlExists,$d)))))\
