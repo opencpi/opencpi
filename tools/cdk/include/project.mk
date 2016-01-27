@@ -14,9 +14,6 @@ ifeq ($(HdlPlatform)$(HdlPlatforms),)
   export HdlPlatforms=modelsim_pf isim_pf zed ml605 alst4
 endif
 
-ifndef ProjectExcludeSelfFromProjectPath
-  export OCPI_PROJECT_PATH:=$(CURDIR)$(and $(OCPI_PROJECT_PATH),:$(OCPI_PROJECT_PATH))
-endif
 ifeq ($(wildcard exports),)
   ifeq ($(filter clean%,$(MAKECMDGOALS)),)
     $(info Exports have never been set up for this project.  Doing it now.)

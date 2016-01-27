@@ -36,7 +36,7 @@ include $(OCPI_CDK_DIR)/include/util.mk
 # Note "export" must appear BEFORE override because once 
 # "override" is used, "export" doesn't apply.
 export OCPI_HDL_PLATFORM_PATH
-override OCPI_HDL_PLATFORM_PATH := $(call OcpiAbsPath,.)
+override OCPI_HDL_PLATFORM_PATH := $(call OcpiAbsDir,.)$(and $(OCPI_HDL_PLATFORM_PATH),:$(OCPI_HDL_PLATFORM_PATH))
 # If no platforms were specified, we obviously want to build this platform.
 # And not default to some global "default" one.
 ifeq ($(HdlPlatform)$(HdlPlatforms),)

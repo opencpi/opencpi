@@ -487,6 +487,8 @@ define OcpiSetProject
   # when looking for component libraries, look in this project
   $$(call OcpiPrependEnvPath,OCPI_COMPONENT_LIBRARY_PATH,$$(OcpiTempProjDir)$$(strip\
     $$(and $$(filter libraries,$$(call OcpiGetDirType,$$(OcpiTempProjDir)/components)),/components)))
+  # when looking for HDL component libraries, look in this project
+  $$(call OcpiPrependEnvPath,OCPI_HDL_COMPONENT_LIBRARY_PATH,$$(OcpiTempProjDir)/hdl)
 endef
 
 # Look into a directory in $1 and determine which type of directory it is by looking at the Makefile.
@@ -503,7 +505,7 @@ OcpiIncludeProjectX=$(infox OIPX:$1:$2:$3)\
   $(if $(wildcard $1/Project.mk),\
     $(if $(wildcard $1/Makefile),\
       $(if $(filter project,$(call OcpiGetDirType,$1)),\
-       $(info found project in $1)$(eval $(call OcpiSetProject,$1)),\
+       $(infox found project in $1)$(eval $(call OcpiSetProject,$1)),\
        $(error no proper Makefile found in the directory where Project.mk was found ($1))),\
       $(error no Makefile found in the directory where Project.mk was found ($1))),\
     $(if $(foreach r,$(realpath $1/..),$(filter-out /,$r)),\
