@@ -1,4 +1,6 @@
 # The makefile fragment for libraries, perhaps under a project, perhaps not.
+
+include $(OCPI_CDK_DIR)/include/util.mk
 # Include project settings for this library, IF it is in a project
 # These settings are are available for the project, libraries in the project, and workers
 $(OcpiIncludeProject)

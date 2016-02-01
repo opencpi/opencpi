@@ -116,6 +116,7 @@ EOF
 ProjectName=$1
 ProjectPrefix=$prefix
 ProjectPackage=$package
+ProjectDependencies=${dependencies/:/ }
 EOF
   cat <<EOF > Makefile
 $CheckCDK
@@ -142,6 +143,11 @@ function do_application {
   esac
   adir=$subdir$1
   if [ $verb == delete ]; then
+    if [ -f $adir.xml ] ; then
+      ask delete the application xml file \"$adir.xml\"
+      rm -f $adir.xml
+      return 0
+    fi
     [ -e $adir ] || bad the application at \"$adir\" does not exist    
     get_dirtype $adir
     [ "$dirtype" == application ] || bad the directory at $adir does not appear to be an application
@@ -149,10 +155,11 @@ function do_application {
     rm -r -f $adir
     exit 0
   fi
-  [ -e $subdir$1 ] && bad the directory \"$directory/$subdir$1\" already exists.
-  if [ $dirtype == project -a ! -e applications ]; then
-    mkdir applications
-    cat <<EOF > applications/Makefile
+  if [ -z $xmlapp ] ; then
+    [ -e $subdir$1 ] && bad the directory \"$directory/$subdir$1\" already exists.
+    if [ $dirtype == project -a ! -e applications ]; then
+      mkdir applications
+      cat <<EOF > applications/Makefile
 $CheckCDK
 # To restrict the applications that are built or run, you can set the Applications
 # variable to the specific list of which ones you want to build and run, e.g.:
@@ -160,10 +167,10 @@ $CheckCDK
 # Othersize all applications will be biult and run
 include \$(OCPI_CDK_DIR)/include/applications.mk
 EOF
-    [ -z $verbose ] || echo This is the first application in this project.  The \"applications\" directory has been created.
-  fi
-  mkdir $subdir$1
-  cat <<EOF > $subdir$1/Makefile
+      [ -z $verbose ] || echo This is the first application directory in this project.  The \"applications\" directory has been created.
+    fi
+    mkdir $subdir$1
+    cat <<EOF > $subdir$1/Makefile
 $CheckCDK
 # This is the application Makefile for the "$1" application
 # If there is a $1.cxx file, it will be assumed to be a C++ main program to build and run
@@ -171,7 +178,14 @@ $CheckCDK
 # The RunArgs variable can be set to a standard set of arguments to use when executing either.
 include \$(OCPI_CDK_DIR)/include/application.mk
 EOF
-[ -z $verbose ] || echo Application \"$1\" created in the directory \"$directory/$subdir$1\"
+    [ -z $verbose ] || echo Application \"$1\" created in the directory \"$directory/$subdir$1\"
+    subdir=$subdir$1
+  fi
+  cat <<EOF > $subdir$1.xml
+<!-- The \"$1\" application xml file -->
+<application>
+</application>
+EOF
 }
 
 # Major issue is in which library or top level.
@@ -299,7 +313,9 @@ function do_worker {
   if [ "$dirtype" == library ]; then
     [ -z $library ] || bad the -l option is not valid in a "library's" directory
     libdir=.
-    
+  elif [ -z "$libdir" ]; then
+    [ "$dirtype" == project ] || bad workers can only be created in project or library directories
+    libdir=components
   fi
   odirtype=$dirtype
   if [ $verb == delete ]; then
@@ -341,7 +357,8 @@ function do_worker {
     [ $2 = ${l/:*/} ] && suff=${l/*:/} langattr=" language='${l/:*/}'"
   done
   [ -z $langattr ] && bad invalid language \"$2\" for model \"$model\"
-  emuattr=
+  [ -n "$emulates" ] && emuattr=" emulate='$emulates'"
+  [ -n "$slave" ] && slaveattr=" slave='$slave'"
   elem=$(echo ${model:0:1} | tr a-z A-Z)${model:1}Worker
   mkdir $libdir/$1
   cat <<EOF >> $libdir/$1/Makefile
@@ -349,7 +366,7 @@ function do_worker {
 include \$(OCPI_CDK_DIR)/include/worker.mk
 EOF
   cat <<EOF >> $libdir/$1/$name.xml
-<$elem${langattr}${specattr}${emuattr}>
+<$elem${langattr}${specattr}${emuattr}${slaveattr}>
 </$elem>
 EOF
   [ -z $verbose ] || echo Running \"make skeleton\" to make initial skeleton for worker $1
@@ -475,29 +492,41 @@ echo foo
 function help {
   cat <<EOF >&2
 The ocpidev command performs developer functions on/in projects for OpenCPI.
-Usage is: ocpidev [options] <verb> <noun> [<arg> ...]
+Usage is: ocpidev [options] <verb> <noun> <name>
 Verbs are: create or delete
-Nouns are: project, application, protocol, spec, library, worker, proxy, or hdl <noun>
+Nouns are: project, application, protocol, spec, library, worker, or hdl <noun>
 After hdl, nouns are: card, slot, device, platform, primitive <noun>
 After hdl primitive, nouns are: library or core
-Options are:
-  -v               Be verbose, describing what is happening in more detail
-  -f               Force without asking, analogious to the "-f" option in the "rm" command
-                   The delete command may ask for confirmation without this.
-  -P               Put specs or protocols at the project level, not in a library's \"specs\" directory
-  -l <library>     The component library to add the asset to, when there is more than one.
-                   This applies to specs, protocols, workers and proxy workers.
-  -d <directory>   A directory in which to perform the function, e.g. used rather than changing
-                   into a project directory.
-  -p <platform>    The HDL platform for creating device workers or proxies when it is specific
-                   to that platform.
-  -x <prefix>      The project prefix when creating projects
-  -k <package>     The package name when creating projects or libraries
-  -s <spec>        The spec to use when it is not <worker>[-_]spec
-  -t <top-module>  For HDL primitive cores, the top level module name for the core when it is
-                   different from the name of the core.
-  -b               Indicates a prebuilt (not source code) core when creating an HDL primitive core.
-All the "remove" functions prompt for confirmation without the -f option (like rm).
+All commands have a <name> argument.  Some have more required or optional arguments.
+Options are: lower case for general options, upper case for creation options
+  -v                 Be verbose, describing what is happening in more detail
+  -f                 Force without asking, analogious to the "-f" option in the "rm" command
+                     The delete command may ask for confirmation without this.
+  -d <directory>     A directory in which to perform the function, e.g. used rather than changing
+                     into a project directory.
+ -- when creating or deleting specs or protocols --
+  -p                 Put specs or protocols at the project level, not in a library's \"specs\" directory
+ -- when creating or deleting specs, protocols, or workers
+  -l <library>       The component library to add the asset to, when there is more than one.
+                     This applies to specs, protocols, workers and proxy workers.
+ -- when creating projects --
+  -F <prefix>        The project prefix when creating projects, defaults to <name>_
+  -K <package>       The package name when creating projects or libraries
+  -D <dependencies>  A comma-separated list of dependencies
+ -- when creating workers --
+  -S <spec>          The spec to use when it is not <worker>[-_]spec
+  -P <platform>      The HDL platform for creating device workers or proxies when it is specific
+                     to that platform.
+  -L <language>      Specify the language when creating a worker
+  -V <slave>         Specify the slave worker when creating a proxy worker
+  -E <emulates>      Specify the device worker when creating an emulator worker
+ -- when creating primitives --
+  -M <top-module>    For HDL primitive cores, the top level module name for the core when it is
+                     different from the name of the core.
+  -B                 Indicates a prebuilt (not source) core when creating an HDL primitive core.
+ -- when creating applications --
+  -X                 Indicates that the application is simply an XML file, not a directory
+All the "delete" functions prompt for confirmation without the -f option (like rm).
 EOF
   exit 1
 }
@@ -511,6 +540,13 @@ while [[ $1 == -* ]] ; do
   [ -z $2 ] && bad missing argument after option: $1
   bool=
   case $1 in
+    (-v) verbose=1 bool=1;;
+    (-f) force=1 bool=1;;
+    (-d)
+      [ ! -d $2 ] && bad the directory \"$2\" is not a directory or does not exist
+      directory=$2
+      ;; 
+    (-p) project=1 bool=1;;
     (-l)
       # if a library is mentioned, it must exist.
       library=$2
@@ -520,19 +556,22 @@ while [[ $1 == -* ]] ; do
         libdir=components/$2
       fi
       ;;
-    (-f) force=1 bool=1;;
-    (-v) verbose=1 bool=1;;
-    (-P) project=1 bool=1;;
-    (-t) top=$2 ;;
-    (-p) platform=$2 ;;
-    (-x) prefix=$2 ;; #default is <project>
-    (-k) package=$2 ;; #default is local.<project>
-    (-s) spec=$2 ;; # default for worker is <worker-name>-spec.xml
-    (-b) prebuilt=1 bool=1;;
-    (-d)
-      [ ! -d $2 ] && bad the directory \"$2\" is not a directory or does not exist
-      directory=$2
-      ;; 
+    (-s) standalone=1 bool=1;;
+    # project options
+    (-F) prefix=$2 ;; #default is <project>
+    (-K) package=$2 ;; #default is local.<project>
+    (-D) dependencies=$2 ;;
+    # worker options
+    (-S) spec=$2 ;; # default for worker is <worker-name>-spec.xml
+    (-P) platform=$2 ;;
+    (-L) language=$2 ;;
+    (-V) slave=$2 ;;
+    (-E) emulates=$2 ;;
+    # hdl primitive options
+    (-M) module=$2 ;;
+    (-B) prebuilt=1 bool=1;;
+    # for apps
+    (-X) xmlapp=1 bool=1;;
     (*)
       bad unknown option: $1
       ;;
@@ -576,9 +615,6 @@ case $noun in
   (library) do_library $*;;
   (worker) do_worker $*;;
   (emulator) do_worker $* emu;;
-  (proxy)
-    [ -z $2 ] && bad a slave worker must be specified after the worker \"$1\" when creating a proxy
-    do_worker $*;;
   (card) do_card $*;;
   (slot) do_slot $*;;
   (device) do_device $*;;

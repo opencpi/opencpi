@@ -34,6 +34,9 @@ hdlassemblies applications: exports
 
 test:
 	$(call MaybeMake,components,test)
+	$(call MaybeMake,hdl/devices,test)
+	$(call MaybeMake,hdl/platforms,test)
+	$(call MaybeMake,hdl/assemblies,test)
 
 clean: cleanhdl
 	$(call MaybeMake,components,clean)

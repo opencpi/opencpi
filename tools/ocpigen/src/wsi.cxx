@@ -592,6 +592,8 @@ emitRecordInputs(FILE *f) {
       fprintf(f,
 	      "    data             : std_logic_vector(ocpi_port_%s_data_width-1 downto 0);\n",
 	      name());	      
+      // This shouldn't be here when the width is 1, but some workers have been written this way
+      // so we'll leave it, but it is redundant with valid when the width is 1
       if (ocp.MByteEn.value)
 	fprintf(f,
 		"    byte_enable      : std_logic_vector(ocpi_port_%s_MByteEn_width-1 downto 0);\n",
@@ -634,6 +636,9 @@ emitRecordOutputs(FILE *f) {
       fprintf(f,
 	      "    data             : std_logic_vector(ocpi_port_%s_data_width-1 downto 0);\n",
 	      name());
+      // This should not really be generated when the width is one, but some workers set this
+      // signal so we don't want to break them.  But it is ignored since "valid" is what is
+      // documented and specified.
       if (ocp.MByteEn.value)
 	fprintf(f,
 		"    byte_enable      : std_logic_vector(ocpi_port_%s_MByteEn_width-1 downto 0);\n",

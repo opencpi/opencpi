@@ -448,7 +448,7 @@ OcpiGetProjectPath=$(strip \
 
 # Add a directory to the front of a path in the environment
 # $(call OcpiPrependEnvPath,var-name,dir)
-OcpiPrependEnvPath=$(infox xxx:$1:$2: export $1:=$(subst $(Space),:,$(call Unique,$2 $(subst :, ,$($1)))))$(eval export $1:=$(subst $(Space),:,$(call Unique,$2 $(subst :, ,$($1)))))
+OcpiPrependEnvPath=$(and $(wildcard $2),$(eval export $1:=$(subst $(Space),:,$(call Unique,$2 $(subst :, ,$($1))))))
 
 ############ Project related functions
 
