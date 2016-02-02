@@ -79,7 +79,7 @@ function make_filtered_link {
   for e in $exclusions; do
     declare -a both=($(echo $e | tr : ' '))
     # echo EXBOTH=${both[0]}:${both[1]}:$3:$1:$2
-    [ "${both[1]}" != "" -a "${both[1]}" != $3 ] && continue
+    [ "${both[1]}" != "" -a "${both[1]}" != "$3" ] && continue
     # echo EXBOTH1=${both[0]}:${both[1]}:$3:$1:$2
     edirs=(${both[0]/\// })
     if [ ${edirs[0]} = exports ]; then
@@ -220,6 +220,9 @@ if [ -d hdl/primitives -a -f hdl/primitives/Makefile ]; then
     make_filtered_link hdl/primitives/lib/${name}_bb exports/lib/hdl/${name}_bb primitive
   done
 fi
+
+# Add the top level specs directory if it is there
+[ -d specs ] && make_filtered_link specs exports/specs
 
 # Add the ad-hoc export links
 set -f
