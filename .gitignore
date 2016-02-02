@@ -31,4 +31,4 @@ a.out*
 timeData.raw
 lib/
 !tools/cdk/export/lib
-
+!/platforms/zed/**/OpenCPI-SD/opencpi/lib/

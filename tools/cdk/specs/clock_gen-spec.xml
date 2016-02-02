@@ -4,7 +4,7 @@ mentioned here are common to device proxies for such workers.  Software device w
 might directly implement this as well as act as the device worker, whereas
 HDL device workers might need a proxy.
 -->
-<ComponentSpec>
+<ComponentSpec name='ocpi.devices.clock_gen'>
   <!-- capabilities of this device -->
   <property name='canDriveLow' parameter='1' readable='1' type='bool'/>
   <property name='canDriveHigh' parameter='1' readable='1' type='bool'/>
