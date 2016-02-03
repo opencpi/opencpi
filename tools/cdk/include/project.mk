@@ -15,10 +15,12 @@ ifeq ($(HdlPlatform)$(HdlPlatforms),)
 endif
 
 ifeq ($(wildcard exports),)
+  doexports=$(shell $(OCPI_CDK_DIR)/scripts/makeExportLinks.sh - $(ProjectPrefix)_ xxx)
   ifeq ($(filter clean%,$(MAKECMDGOALS)),)
-    $(info Exports have never been set up for this project.  Doing it now.)
+    $(info Exports are not set up for this project.  Doing it now. $(doexports))
+  else
+    $(nuthin $(doexports))
   endif
-  $(info $(shell $(OCPI_CDK_DIR)/scripts/makeExportLinks.sh - $(ProjectPrefix)_ xxx))
 endif
 
 include $(OCPI_CDK_DIR)/include/ocpisetup.mk
@@ -46,15 +48,15 @@ exports:
 
 components: hdlprimitives
 	$(call MaybeMake,components,rcc hdl HdlTargets="$(HdlTargets)" HdlPlatforms="$(HdlPlatforms)")
-	$(MAKE) exports
+	$(AT)$(MAKE) exports
 
 hdlprimitives:
 	$(call MaybeMake,hdl/primitives)
-	$(MAKE) exports
+	$(AT)$(MAKE) exports
 
 hdlcomponents: hdlprimitives
 	$(call MaybeMake,components,hdl)
-	$(MAKE) exports
+	$(AT)$(MAKE) exports
 
 hdldevices: hdlprimitives
 	$(call MaybeMake,hdl/devices)
@@ -67,7 +69,7 @@ hdlcards: hdlprimitives
 
 hdlplatforms: hdldevices hdlcards
 	$(call MaybeMake,hdl/platforms)
-	$(MAKE) exports
+	$(AT)$(MAKE) exports
 
 hdlassemblies: components hdlplatforms hdlcards hdladapters
 	$(call MaybeMake,hdl/assemblies)

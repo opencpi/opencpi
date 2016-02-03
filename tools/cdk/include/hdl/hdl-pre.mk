@@ -155,15 +155,14 @@ ifneq ($(xxfilter platform container,$(HdlMode)),)
 else # now for builds that accept platforms and targets as inputs
   ifneq ($(MAKECMDGOALS),clean)
   # Make sure all the platforms are present
-  $(foreach p,$(HdlPlatforms),\
-    $(if $(filter $p,$(HdlAllPlatforms)),,$(error $p not in the HDL platforms list)) \
-    $(foreach y,\
+  $(foreach p,$(HdlPlatforms) $(HdlPlatform),\
+    $(if $(filter $p,$(HdlAllPlatforms)),,$(error $p not an available HDL platform))\
+    $(if $(strip $(firstword \
       $(foreach d,$(subst :, ,$(OCPI_HDL_PLATFORM_PATH)),$(infox DDD:$d)\
         $(foreach n,$(notdir $d),$(infox NNN:$n)\
-          $(foreach x,$(if $(filter platforms,$n),$(notdir $(wildcard $d/*)),$n),$(infox XXX:$x)\
-           $(and $(filter $p,$x),$(if $(filter platforms,$n),$d/$p,$d))))),\
-      $(if $(realpath $y),,\
-       $(error No $p platform found ($y)))))
+          $(foreach x,$(if $(filter platforms,$n),$(notdir $(wildcard $d/*)),$n),$(infox XXX:$x:$p)\
+           $(and $(filter $p,$x),$(call OcpiExists,$(if $(filter platforms,$n),$d/$p,$d)))))))),,\
+      $(error No $p platform found (in $(OCPI_HDL_PLATFORM_PATH)))))
   endif
 # The general pattern is:
 # If Target is specified, build for that target.

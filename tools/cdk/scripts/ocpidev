@@ -2,6 +2,8 @@
 
 # This script performs operations on projects.
 
+[ ! -d $OCPI_CDK_DIR ] && echo Error: OCPI_CDK_DIR environment setting not valid. && exit 1
+
 # Database of models, languages and suffixes, redundant with util.mk
 Models=(rcc hdl ocl)
 Language_rcc=c
@@ -10,7 +12,7 @@ Language_hdl=vhdl
 Languages_hdl=(vhdl:vhd verilog:v)
 Language_ocl=cl
 
-CheckCDK='$(if $(realpath $(OCPI_CDK_DIR)),,
+CheckCDK='$(if $(realpath $(OCPI_CDK_DIR)),,\
   $(error The OCPI_CDK_DIR environment variable is not set correctly.))'
 # Print error message and exit
 function bad {
@@ -295,6 +297,15 @@ function do_library {
     return 0
   fi
   [ -e $subdir ] && bad the library \"$1\" \(directory $subdir/\) already exists
+  if [ "$subdir" != components -a ! -d components ] ; then
+    mkdir components
+    cat <<EOF > components/Makefile
+$CheckCDK
+# This is the makefile for the components directory when there are multiple
+# libraries in their own directories underneath this components directory
+include \$(OCPI_CDK_DIR)/include/libraries.mk
+EOF
+  fi
   mkdir -p $subdir
   cat <<EOF > $subdir/Makefile
 # This is the $1 library

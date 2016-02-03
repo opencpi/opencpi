@@ -164,9 +164,9 @@ HdlSearchPrimitivePath=$(infox HSPP:$1:$2:$3)\
   $(eval HdlTempPlaces:=$(strip\
        $(subst :, ,$(OCPI_HDL_PRIMITIVE_PATH)) \
        $(foreach d,$(OcpiGetProjectPath),$d/lib/hdl)))\
-  $(eval HdlTempDirs:=$(strip\
-    $(foreach p,$(HdlTempPlaces),$(infox HTPS:$(HdlTempPlaces):$1)\
-       $(foreach d,$p/$1,$(infox HTPSD:$d:$(call HdlExists,$d))$(call HdlExists,$d)))))\
+  $(eval HdlTempDirs:=$(firstword $(strip\
+    $(foreach p,$(HdlTempPlaces),$(infos HTPS:$(HdlTempPlaces):$1)\
+       $(foreach d,$p/$1,$(infox HTPSD:$d:$(call HdlExists,$d))$(call HdlExists,$d))))))\
   $(or $(HdlTempDirs)$(infox HTD:$(HdlTempDirs)),\
     $(if $(filter clean,$(MAKECMDGOALS))$2,,$(error $(call HdlPrimitiveSearchError,$1,$(HdlTempPlaces)))))
 

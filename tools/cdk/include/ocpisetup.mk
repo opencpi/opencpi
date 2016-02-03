@@ -189,7 +189,6 @@ endif
 export OCPI_LIB_DIR:=$(OCPI_CDK_DIR)/lib/$(OCPI_TARGET_DIR)
 export OCPI_BIN_DIR:=$(OCPI_CDK_DIR)/bin/$(OCPI_TARGET_DIR)
 export OCPI_INC_DIR:=$(OCPI_CDK_DIR)/include
-export OCPI_SET_LIB_PATH:=$(OcpiLibraryPathEnv)=$$$(OcpiLibraryPathEnv):$(OCPI_LIB_DIR)
 
 # Which libraries should be made available to user executables?
 export OCPI_API_LIBS=application container library transport rdma_driver_interface rdma_utils rdma_smb util  msg_driver_interface os
@@ -207,9 +206,4 @@ $(OCPI_TARGET_DIR):
 
 target-$(OCPI_TARGET_DIR):
 	mkdir -p $@
-
-
-ifeq ($(origin OCPI_SUDO),undefined)
-export OCPI_SUDO=sudo -E
-endif
 

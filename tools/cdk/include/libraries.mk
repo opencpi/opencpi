@@ -3,16 +3,15 @@
 include $(OCPI_CDK_DIR)/include/util.mk
 
 ifndef Libraries
-  Libraries=$(foreach d,$(shell find . -type d -depth 1),\
-              $(filter lib library,$(call OcpiGetDirType,$(notdir $d))))
+  Libraries=$(call OcpiFindSubdirs,library)
 endif
 
-DoLibGoal=$(AT)set -e; for l in $(Libraries); do $(MAKE) -C $$l $$@; done
+DoLibGoal=$(AT)set -e; for l in $(Libraries); do echo ====== Entering library $$l for goal: $(@); $(MAKE) -C $$l $(@); done
 
-.PHONY: all test clean $(Models)
+Goals=all test clean $(Models) $(Models:%=clean%)
 
-all:
-	$(call DoLibGoal,,$(MAKE))
+.PHONY: $(Goals)
 
-$(Models) test clean
-	$(call DoLibGoal,$@,$(MAKE))
+$(Goals):
+	$(call DoLibGoal,$(MAKE))
+
