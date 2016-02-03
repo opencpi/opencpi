@@ -116,7 +116,7 @@ EOF
 ProjectName=$1
 ProjectPrefix=$prefix
 ProjectPackage=$package
-ProjectDependencies=${dependencies/:/ }
+ProjectDependencies=${dependencies//:/ }
 EOF
   cat <<EOF > Makefile
 $CheckCDK
@@ -620,7 +620,7 @@ case $noun in
   (device) do_device $*;;
   (platform) do_platform $*;;
   (primitive) do_primitive $*;;
-  (*) bad the noun \"$noun\" is invalid adter \"verb\";;
+  (*) bad the noun \"$noun\" is invalid after the verb \"$verb\";;
 esac
 
 
