@@ -18,11 +18,11 @@ if test $# != 5; then
   echo "3. The serial number in hex, of the jtag cable".
   echo "4. The flash memory offset for the board."
   echo "5. The bit file to write into the flash."
-  echo "See alternatives in the $OCPI_ALTERA_KITS_DIR/kits directory (without the '_fpga' suffix)."
+  echo "See alternatives in the $OCPI_ALTERA_KITS_DIR directory (without the '_fpga' suffix)."
   exit 1
 fi
-if test ! -d "$OCPI_ALTERA_KITS_DIR/kits/"${1}_fpga; then
-  echo "There is no kit installed with the name $1 (no directory named $OCPI_ALTERA_KITS_DIR/kits/${1}_fpga)."
+if test ! -d "$OCPI_ALTERA_KITS_DIR/"${1}_fpga; then
+  echo "There is no kit installed with the name $1 (no directory named $OCPI_ALTERA_KITS_DIR/${1}_fpga)."
   exit 1
 fi
 
@@ -72,7 +72,7 @@ if test "$Found" = ""; then
   exit 1
 fi
 echo Using cable \"$Found\" with serial number $FSerial.
-FBS="$OCPI_ALTERA_KITS_DIR/kits/"${1}_fpga/factory_recovery/${2}_fpga_bup.sof
+FBS="$OCPI_ALTERA_KITS_DIR/"${1}_fpga/factory_recovery/${2}_fpga_bup.sof
 if test ! -r "$FBS"; then
   echo No readable factory bitstream. Looking for: \"$FBS\"
   exit 1

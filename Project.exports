@@ -63,6 +63,7 @@ tests
 +tools/cdk/scripts/ocpisetup.sh scripts/
 +tools/cdk/scripts/ocpibootstrap.sh scripts/
 +tools/cdk/scripts/ocpidev scripts/
++tools/cdk/scripts/util.sh scripts/
 #+tools/cdk/scripts/makeExportLinks.sh scripts/
 +scripts/makeExportLinks.sh scripts/
 +tools/cdk/specs
@@ -119,12 +120,12 @@ tests
 # All the HDL build scripts, no selectivity for now
 +tools/cdk/include/hdl include/
 # base vendor-specific scripts not in a platform and not in hdl-support
-+hdl/vendors/altera/loadFlash_altera scripts/
-+hdl/vendors/altera/probeJtag_altera scripts/
-+hdl/vendors/xilinx/loadFlash_xilinx scripts/
-+hdl/vendors/xilinx/probeJtag_xilinx scripts/
-+hdl/vendors/xilinx/findJtagByESN_xilinx scripts/
-+hdl/vendors/xilinx/getESNfromUSB_xilinx scripts/
++runtime/hdl-support/altera/loadFlash_altera scripts/
++runtime/hdl-support/altera/probeJtag_altera scripts/
++runtime/hdl-support/xilinx/loadFlash_xilinx scripts/
++runtime/hdl-support/xilinx/probeJtag_xilinx scripts/
++runtime/hdl-support/xilinx/findJtagByESN_xilinx scripts/
++runtime/hdl-support/xilinx/getESNfromUSB_xilinx scripts/
 ################################################################################
 # OCL related exclusions and additions
 +tools/cdk/include/ocl include/

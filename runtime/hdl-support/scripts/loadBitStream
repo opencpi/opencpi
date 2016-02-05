@@ -42,25 +42,11 @@ if test ! -r $bitfile; then
   echo Trying to load bit file \"$bitfile\", which does not exist or is not readable.
   exit 1
 fi
-# This logic copies from util.mk OcpiGetProjectPath
-# FIXME:  this should be in some shell utilities file
-for proj in ${OCPI_PROJECT_PATH/:/ } ; do
- if [ -d $proj/exports ]; then
-   projs+=" $proj/exports"
- elif [ -d $proj ]; then
-   projs+=" $proj"
- else
-   echo Warning: \"$proj\" from OCPI_PROJECT_PATH, does not exist  
- fi
-done
-for p in $projs $OCPI_CDK_DIR; do
-  j=$p/lib/platforms/$platform/jtagSupport_$platform
-  [ -x $j ] && jtagSupport=$j && break;
-done
-if [ -z $jtagSupport ]; then
+source $OCPI_CDK_DIR/scripts/util.sh
+findInProjectPath jtagSupport_$platform lib/platforms/$platform jtagSupport || {
   echo Trying to load onto a \"$platform\", but there is no support for loading it \(no executable lib/platforms/$platform/jtagSupport_$platform found in any project or CDK\)
   exit 1
-fi
+}
 if test "$esn" = ""; then
   # This is only allowed if there is a single jtag cable found...
   esn=any
@@ -68,7 +54,7 @@ fi
 # Here we have not checked the part or the position yet.
 # Do more generic work that does not depend on the platform-specifics
 echo Checking existing loaded bitstream on OpenCPI HDL device \"$device\"...
-ocf="$dir/sudo_ocpi $OCPI_CDK_DIR/bin/$OCPI_TOOL_HOST/ocfrp_check"
+ocf="$OCPI_CDK_DIR/scripts/sudo_ocpi $OCPI_CDK_DIR/bin/$OCPI_TOOL_HOST/ocfrp_check"
 $ocf $pciDevice
 if test $? != 0; then
    echo Existing loaded bitstream on device \"$device\" does not appear to be functional.

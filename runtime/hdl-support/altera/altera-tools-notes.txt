@@ -40,7 +40,7 @@ variable is only needed for the builtstream-building tools, not the runtime tool
 Here is an example:
 
 export OCPI_ALTERA_TOOLS_DIR=/home/jim/altera/13.1
-export OCPI_ALTERA_KITS_DIR=/home/jim/altera/11.1
+export OCPI_ALTERA_KITS_DIR=/home/jim/altera/11.1/kits
 export OCPI_ALTERA_LICENSE_FILE=/home/jim/mac/altera/1-9095JT_License.dat
 
 To make the linux USB drivers work properly with the "USB Blaster" cable on the Stratix4 dev board,
@@ -99,7 +99,7 @@ a board at a PCI device address with a jtag cable, in the file /opt/opencpi/syst
 The next (and last) step to the installation is to load an OpenCPI bitstream into the
 flash memory of the board.
 
-This is done with the loadFlash_XXXX script, where XXXX is the name of the platform.
+This is done with the loadFlash XXXX script, where XXXX is the name of the platform.
 Use "alst4" for the s4gx230-based board, and "alst4x" for the s4gx530-based board.
 This script relies on the OCPI_ALTERA_TOOLS_DIR and OCPI_ALTER_KITS_DIR environment
 variables being set up properly.
@@ -107,7 +107,7 @@ variables being set up properly.
 An example (from the environment script) is:
 
 export OCPI_ALTERA_TOOLS_DIR=/home/jim/altera/13.1
-export OCPI_ALTERA_KITS_DIR=/home/jim/altera/11.1
+export OCPI_ALTERA_KITS_DIR=/home/jim/altera/11.1/kits
 
 This indicates that the altera tools (at least the web edition for jtag/flash tools)
 is at version 13.1, but the kits are at version 11.1.
@@ -115,10 +115,10 @@ is at version 13.1, but the kits are at version 11.1.
 So, assuming a s4gx530 board, assuming you had already built an opencpi bitstream
 (like "tb_bias" or "testbias"), you would do:
 
-% loadFlash_alstx <OpenCPI Bitstream File> <JTAG_CABLE_SERIAL_NUMBER> 
+% loadFlash alstx <OpenCPI Bitstream File> <JTAG_CABLE_SERIAL_NUMBER> 
 
 The <JTAG_CABLE_SERIAL_NUMBER> can be "any" when there is only one cable.
-OpenCPI bitstream files for Altera normally end in ".sof.gz".
+OpenCPI bitstream files normally end in ".bitz".
 
 This script converts the file to the format appropriate for flash,
 loads a special factory bitstream via jtag that can help
@@ -147,7 +147,3 @@ This last comment should print something like:
 [jim@amd790 opencpi]$ ocpihdl search
 OpenCPI HDL device found: 'PCI:0000:05:00.0': bitstream date Tue Dec 10 21:36:03 2013, platform "ml605", part "xc6vlx240t", UUID fa8cae9e-620c-11e3-9bbc-37ac85396832
 OpenCPI HDL device found: 'PCI:0000:04:00.0': bitstream date Wed Dec 11 08:19:12 2013, platform "alst4x", part "ep4sgx530k", UUID d373720c-6266-11e3-8b4c-4399833db0a5
-
-
-
-
