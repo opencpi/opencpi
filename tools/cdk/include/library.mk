@@ -21,3 +21,9 @@ else
   Package:=$(ProjectPackage).$(CwdName)
 endif
 include $(OCPI_CDK_DIR)/include/lib.mk
+
+run: $(TestImplementations)
+	$(AT)set -e; for i in $(TestImplementations); do \
+	  $(MAKE) --no-print-directory -C $i run ; \
+	done
+

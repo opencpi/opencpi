@@ -12,25 +12,16 @@
 #include "signal_utils.h"
 #include "assert.h"
 
-typedef struct {
-  double deviation;
-} MyState;
-static size_t mysizes[] = {sizeof(MyState), 0};
-
-
 COMPARATOR_COMPLEX_METHOD_DECLARATIONS;
 RCCDispatch comparator_complex = {
   /* insert any custom initializations here */
   COMPARATOR_COMPLEX_DISPATCH
-  .memSizes = mysizes
 };
 
 
 static RCCResult
 start(RCCWorker *self) {
   Comparator_complexProperties *p = self->properties;
-  MyState *s = self->memories[0];
-  s->deviation = Uscale( p->deviation );
 
   // We do this since a single failure will turn this to a false but we still
   // want to run the entire test to generate the output files for debug and 
@@ -40,11 +31,10 @@ start(RCCWorker *self) {
   return RCC_OK;
 }
 
+static RCCResult
+run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
+  (void)timedOut;(void)newRunCondition;
 
-static void
-runComplexTest( RCCWorker * self ) 
-{
-  MyState *s = self->memories[0];
   Comparator_complexProperties *p = self->properties;
 
   printf("In comparator::runComplexTest\n");
@@ -71,35 +61,25 @@ runComplexTest( RCCWorker * self )
   }
   int len = byteLen2Complex( in_unit_test->input.length );
   int i;
+  if (real2bytes(len) > out_delta->current.maxLength)
+    return self->container.setError("Delta output buffer size %zu, but %zu is required",
+				    out_delta->current.maxLength, real2bytes(len));
   for ( i=0; i<len; i++ ) {
     double delta = fabs( scabs(inUTData->data[i].I, inUTData->data[i].Q) - 
 			 scabs(inEXData->data[i].I, inEXData->data[i].Q) );
 
     //    printf("Calculated delta = %f \n", delta );
-    if ( delta > s->deviation ) {
+    if ( delta > p->deviation ) {
       p->passed = 0;
     }
     outDeltaData[i] = Scale( delta );
   }
   out_delta->output.u.operation = 0;
-  out_delta->output.length = len;
+  out_delta->output.length = Complex2bytes(len);
 
   memcpy( outActualData, inUTData,  in_unit_test->input.length);
   out_actual->output.u.operation = in_unit_test->input.u.operation;
   out_actual->output.length = in_unit_test->input.length;
  
-}
-
-
-static RCCResult
-run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
-  (void)timedOut;(void)newRunCondition;
-
-  // MyState *s = self->memories[0];
-  //  Comparator_complexProperties *p = self->properties;
-
-  // We run when we have all buffers avail, no need to check
-  runComplexTest( self );
-
   return RCC_ADVANCE;
 }

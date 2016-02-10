@@ -8,7 +8,7 @@ endif
 
 DoLibGoal=$(AT)set -e; for l in $(Libraries); do echo ====== Entering library $$l for goal: $(@); $(MAKE) -C $$l $(@); done
 
-Goals=all test clean $(Models) $(Models:%=clean%)
+Goals=run all test clean $(Models) $(Models:%=clean%)
 
 .PHONY: $(Goals)
 

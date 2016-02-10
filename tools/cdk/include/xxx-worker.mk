@@ -226,7 +226,10 @@ ifndef WkrBinaryName
 ifdef BinaryName
 WkrBinaryName=$(BinaryName)
 else
-WkrBinaryName=$(word 1,$(Workers))
+#WkrBinaryName=$(word 1,$(Workers))
+# This cannot be the above since that would mean that this could conflict with
+# a single worker for the first of multiple workers in a multi-worker dir.
+WkrBinaryName=$(CwdName)
 endif
 endif
 $(call OcpiDbgVar,WkrBinaryName)

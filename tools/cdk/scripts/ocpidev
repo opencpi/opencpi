@@ -2,6 +2,9 @@
 
 # This script performs operations on projects.
 
+# FIXME: add option to copy "other" files when creating worker
+# FIXME: add primitive library option when creating worker
+
 [ ! -d $OCPI_CDK_DIR ] && echo Error: OCPI_CDK_DIR environment setting not valid. && exit 1
 
 # Database of models, languages and suffixes, redundant with util.mk
@@ -36,7 +39,7 @@ function libexist {
 }
 # make sure the components dir is a library we can use, from the project level
 function check_components {
-  [ -d components ] || bad the \"components\" library does not exist yet
+  [ -d components ] || bad the \"components\" library does not exist
   save=$dirtype
   get_dirtype components
   case "$dirtype" in
@@ -44,8 +47,11 @@ function check_components {
       ;;
     ("")
       [ "$(ls components)" == "" ] && bad the directory \"components\" is empty
-        bad there are component libraries under \"components/\" in this project, so the \"components\" library cannot be $1
+      bad there are component libraries under \"components/\" in this project, so the \"components\" library cannot be $1
       ;; 
+    (libraries)
+      bad must specify a library '(not "components")' when there are libraries under the \"components\" directory
+      ;;
     (*)
       bad the \"components\" directory appears to have the wrong type of Makefile $dirtype
       ;;
@@ -53,7 +59,7 @@ function check_components {
 }
 
 function needname {
-  [ -z "$1" ] && bad a name argument is required after the command: $2 $3
+  [ -z "$1" ] && bad a name argument is required after the command: $verb $hdl$noun
   [ "$1" == '*' ] && bad you can not use \* as a name
   return 0
 }
@@ -157,11 +163,10 @@ function do_application {
     rm -r -f $adir
     exit 0
   fi
-  if [ -z $xmlapp ] ; then
-    [ -e $subdir$1 ] && bad the directory \"$directory/$subdir$1\" already exists.
-    if [ $dirtype == project -a ! -e applications ]; then
-      mkdir applications
-      cat <<EOF > applications/Makefile
+  [ -z "$xmlapp" -a -e $subdir$1 ] && bad the application \"$1\" in directory \"$topdir$subdir$1\" already exists
+  if [ $dirtype == project -a ! -e applications ]; then
+    mkdir applications
+    cat <<EOF > applications/Makefile
 $CheckCDK
 # To restrict the applications that are built or run, you can set the Applications
 # variable to the specific list of which ones you want to build and run, e.g.:
@@ -169,25 +174,32 @@ $CheckCDK
 # Othersize all applications will be biult and run
 include \$(OCPI_CDK_DIR)/include/applications.mk
 EOF
-      [ -z $verbose ] || echo This is the first application directory in this project.  The \"applications\" directory has been created.
-    fi
+    [ -z $verbose ] || echo This is the first application in this project.  The \"applications\" directory has been created.
+  fi
+  if [ -z $xmlapp ] ; then
     mkdir $subdir$1
     cat <<EOF > $subdir$1/Makefile
 $CheckCDK
 # This is the application Makefile for the "$1" application
-# If there is a $1.cxx file, it will be assumed to be a C++ main program to build and run
+# If there is a $1.cc (or $1.cxx) file, it will be assumed to be a C++ main program to build and run
 # If there is a $1.xml file, it will be assumed to be an XML app that can be run with ocpirun.
 # The RunArgs variable can be set to a standard set of arguments to use when executing either.
 include \$(OCPI_CDK_DIR)/include/application.mk
 EOF
-    [ -z $verbose ] || echo Application \"$1\" created in the directory \"$directory/$subdir$1\"
-    subdir=$subdir$1
-  fi
-  cat <<EOF > $subdir$1.xml
+    [ -z $verbose ] || {
+      echo Application \"$1\" created in the directory \"$topdir$subdir$1\"
+      echo You must create either a $1.xml or $1.cc file in the $topdir$subdir$1 directory\"
+    }    
+  else
+    [ -e applications/$1.xml ] && bad the XML application \"$1\" already exists in ${topdir}applications/$1.xml
+    cat <<EOF > applications/$1.xml
 <!-- The \"$1\" application xml file -->
 <application>
+  <instance component='ocpi.nothing'/>
 </application>
 EOF
+    [ -z $verbose ] || echo The XML application \"$1\" has been created in ${topdir}applications/$1.xml
+  fi
 }
 
 # Major issue is in which library or top level.
@@ -214,15 +226,20 @@ function do_protocol_or_spec {
   case $1 in
     (*.xml)                    file=$1;;
     (*[-_]proto|*[-_]protocol)
-      [ $2 = spec ] && bad it is a bad idea to make a spec file with a protocol suffix
+      [ $noun == spec ] && bad it is a bad idea to make a spec file with a protocol suffix
       file=$1.xml
       ;;
     (*[-_]spec)
-      [ $2 = proto ] && bad it is a bad idea to make a protocol file with a spec suffix
+      [ $noun == protocol ] && bad it is a bad idea to make a protocol file with a spec suffix
       file=$1.xml
       ;;
     (*)
-      file=$1-$2.xml
+      if [ $noun == spec ] ; then
+        file=$1-spec.xml
+      else
+        file=$1-proto.xml
+      fi
+      ;;
   esac
   if [ $verb == delete ]; then
     [ -e $subdir/$file ] || bad the file \"$subdir/$file\" does not exist
@@ -240,7 +257,7 @@ function do_protocol_or_spec {
     fi
   fi
   mkdir -p $subdir
-  if [ $2 == protocol ]; then
+  if [ $noun == protocol ]; then
     name=protocol
     cat <<EOF > $subdir/$file
 <!-- This is the protocol spec file (OPS) for protocol: $1
@@ -258,7 +275,7 @@ EOF
      Add component spec attributes, like "protocol".
      Add property elements for spec properties.
      Add port elements for i/o ports -->
-<ComponentSpec >
+<ComponentSpec>
   <!-- Add property and port elements here -->
 </ComponentSpec>
 EOF
@@ -275,12 +292,18 @@ EOF
 
 function do_library {
   set -e
+  odirtype=$dirtype
   [ -z $library ] || bad The -l option is invalid when deleting or adding a library
-  [ "$dirtype" == project ] || bad this command can only be issued in a project directory
-  if [ $1 == components ] ; then
-    subdir=components
+  if [ "$dirtype" == project ] ; then
+    if [ $1 == components ] ; then
+      subdir=components
+    else
+      subdir=components/$1
+    fi
+  elif [ "$dirtype" == libraries ] ; then
+    subdir=$1
   else
-    subdir=components/$1
+    bad this command can only be issued in a project directory or a components directory
   fi
   if [ $verb == delete ]; then
     [ $subdir == components ] && check_components deleted
@@ -290,8 +313,8 @@ function do_library {
       bad the directory \"$subdir\" does not appear to be a library
     ask delete the library directory \"$subdir\"
     rm -r -f $subdir
-    if [ $subdir != components -a "$(ls components)" == "" ] ; then
-      rmdir components
+    if [ $odirtype == project -a $subdir != components -a "$(ls components)" == Makefile ] ; then
+      rm -r -f components
     fi
     [ -z $verbose ] || echo The library named \"$1\" \(directory \"$subdir/\"\) has been deleted.
     return 0
@@ -316,19 +339,55 @@ include \$(OCPI_CDK_DIR)/include/library.mk
 EOF
   make --no-print-directory -C $subdir || 
     echo You may want to do: ocpidev delete library $1
-  [ -z $verbose ] || echo A new library named \"$1\" \(directory \"$subdir/\"\) has been created.
+  [ -z $verbose ] || echo A new library named \"$1\" \(in directory \"$subdir/\"\) has been created.
   return 0
 }
 
+# Figure out what should be in the "spec" attribute
+# get_spec <name> <spec>
+# set "specelem" and "specattr" correctly
+function get_spec {
+  specelem= specattr= nameattr=
+  case $2 in
+    (none) s= ;;
+    ("") # must be local spec with the same name
+      if [ -e $libdir/specs/${1}-spec.xml -o \
+           "$odirtype" == project -a -e specs/${1}-spec.xml ]; then
+        s=${1}-spec
+      elif [ -e $libdir/specs/${1}_spec.xml -o \
+             "$odirtype" == project -a -e specs/${1}_spec.xml ]; then
+	s=${1}_spec
+      elif [ "$odirtype" == project ]; then
+        bad spec file not specified and ${1}'[-_]spec.xml' does not exist in library or project \"specs\" directory
+      else
+        bad spec file not specified and ${1}'[-_]spec.xml' does not exist in library \"specs\" directory
+      fi
+      ;;
+    (specs/*) s=${2/specs\//} ;; # make the XML clearer since this is unnecessary
+    (./*) s=${2/.\//} ;;
+    (*) s=$2 ;;
+  esac
+  if [ -z $s ] ; then
+    specelem="  <componentspec>
+  </componentspec>"
+  else
+    specattr=" spec='$s'"
+  fi
+  [ -z $3 ] || nameattr=" name='$3'"
+}
+
 function do_worker {
-  if [ "$dirtype" == library ]; then
-    [ -z $library ] || bad the -l option is not valid in a "library's" directory
+  odirtype=$dirtype
+  if [ -n "$standalone" ] ; then
+    libdir=.
+  elif [ "$dirtype" == library ]; then
+    [ -z $library ] || bad the -l "(library)" option is not valid in a "library's" directory
     libdir=.
   elif [ -z "$libdir" ]; then
     [ "$dirtype" == project ] || bad workers can only be created in project or library directories
+    check_components used
     libdir=components
   fi
-  odirtype=$dirtype
   if [ $verb == delete ]; then
     [ -d $libdir/$1 ] || bad no worker named \"$1\" exists in the library
     get_dirtype $libdir/$1
@@ -343,51 +402,89 @@ function do_worker {
   model=$(echo ${words[1]} | tr A-Z a-z)
   [ $model != ${words[1]} ] && bad the authoring model part of the name \"$1\" must be lower case
   [ -d $OCPI_CDK_DIR/include/$model ] || bad the authoring model \"$model\" is not valid
-  [ -z $2 ] && bad a langauge argument must follow the worker name
+  [ -n "$2" ] && {
+     [ -n "$language" ] && bad language option specified when language argument after name is specified.
+     language=$2
+  }
   noexist $libdir/$1
-  case $spec in
-    (none) spec= ;;
-    ("")
-      if [ -e $libdir/specs/${name}-spec.xml -o \
-           $odirtype == project -a -e specs/${name}-spec.xml ]; then
-        spec=$name-spec
-      elif [ -e $libdir/specs/${name}_spec.xml -o \
-             $odirtype == project -a -e specs/${name}_spec.xml ]; then
-        spec=$name_spec
-      elif [ $odirtype == project ]; then
-        bad spec file not specified and ${name}'[-_]spec.xml' does not exist in library or project \"specs\" directory
-      else
-        bad spec file not specified and ${name}'[-_]spec.xml' does not exist in library \"specs\" directory
-      fi
-      ;;
-    (specs/*) spec=${spec/specs\//} ;; # make the XML clearer since this is unnecessary
-    (./*) spec=${spec/.\//} ;;
-  esac
-  [ -z $spec ] || specattr=" spec='$spec'"
-  for l in $(eval echo \${Languages_$model[*]}); do
-    [ $2 = ${l/:*/} ] && suff=${l/*:/} langattr=" language='${l/:*/}'"
-  done
-  [ -z $langattr ] && bad invalid language \"$2\" for model \"$model\"
+  if [ -z $language ] ; then
+    language=$(eval echo \${Language_$model})
+    [ -z $verbose ] || echo Choosing default language \"$language\" for worker $1
+    # langattr=" language='$language'"
+  else
+    language=$(echo $language | tr A-Z a-z)
+    for l in $(eval echo \${Languages_$model[*]}); do
+      [ "$language" = ${l/:*/} ] && suff=${l/*:/} langattr=" language='${l/:*/}'"
+    done
+    [ -z $langattr ] && bad invalid language \"$2\" for model \"$model\"
+  fi
   [ -n "$emulates" ] && emuattr=" emulate='$emulates'"
   [ -n "$slave" ] && slaveattr=" slave='$slave'"
   elem=$(echo ${model:0:1} | tr a-z A-Z)${model:1}Worker
+  if [ -n "$workers" ] ; then
+    for w in ${!workers[@]}; do
+      IFS=: x=(${workers[$w]})
+      get_spec ${x[0]} ${x[1]} ${x[2]}
+      wnames[$w]=${x[0]}
+      specattrs[$w]="$specattr"
+      specelems[$w]="$specelem"
+      nameattrs[$w]="$nameattr"
+      specs[$w]=${x[1]}
+    done         
+#    for i in ${!wnames[@]}; do
+#     echo MULTI $i: name:${wnames[$i]} attr:${specattrs[$i]} elem:${specelems[$i]}
+#    done
+    wvar="Workers=${wnames[@]}"
+  else
+    get_spec "$name" "$spec" "$wname"
+    wnames=($name)
+    specattrs=("$specattr")
+    specelems=("$specelem")
+    nameattrs=("$nameattr")
+    specs=($spec)
+  fi
   mkdir $libdir/$1
-  cat <<EOF >> $libdir/$1/Makefile
+# Make one makefile, even if multi-worker
+  cat <<EOF | sed '/^ *$/d' >  $libdir/$1/Makefile
 # This is the Makefile for worker $1
+$wvar
+${includes:+IncludeDirs=}${includes[@]}
+${others:+SourceFiles=}${others[@]}
+${cores:+Cores=}${cores[@]}
+${targets:+OnlyTargets=}${targets[@]}
 include \$(OCPI_CDK_DIR)/include/worker.mk
 EOF
-  cat <<EOF >> $libdir/$1/$name.xml
-<$elem${langattr}${specattr}${emuattr}${slaveattr}>
+  for w in ${!wnames[@]}; do
+    # Make one OWD file per worker
+    cat <<EOF > $libdir/$1/${wnames[$w]}.xml
+<$elem${nameattrs[$w]}${langattr}${specattrs[$w]}${emuattr}${slaveattr}>
+${specelems[$w]}
 </$elem>
 EOF
+    specfile=${specs[$w]}
+    case $specfile in
+      (*.xml) ;;
+      (*-spec|*_spec) specfile=${specs[$w]}.xml ;;
+      (*)
+        if [ ! -e "$spec" -a -e ${specs[$w]}-spec.xml ] ; then
+          specfile=${specfile}-spec.xml
+        elif [ ! -e "$spec" -a -e ${specs[$w]}-spec.xml ] ; then
+          specfile=${specfile}_spec.xml
+        else
+          specfile=${specfile}.xml
+        fi
+    esac
+    [ -n "$verbose" -a "${specs[$w]}" != none -a ! -e "$specfile" ] && echo Warning:  spec file \"$specfile\" does not exist
+  done
   [ -z $verbose ] || echo Running \"make skeleton\" to make initial skeleton for worker $1
   # FIXME: how do we get the project's or library's xmlincludepath etc.
-  make --no-print-directory -C $libdir/$1 skeleton || 
-    echo You may want to do: ocpidev delete worker $1
+  make --no-print-directory -C $libdir/$1 skeleton || {
+    echo You may want to do: ocpidev ${standalone:+-s } delete worker $1
+    return 1
+  }
 }
 
-
-function new_platform {
+function do_platform {
   if [  -e hdl/platforms/$1 ] ; then
      echo "The HDL platform \"$1\" (hdl/platforms/$1) already exists." >&2
      exit 1
@@ -418,7 +515,7 @@ EOF
 EOF
 }
 
-function new_primitive {
+function do_primitive {
   if [ "$1" != "core" -a "$1" != "library" ] ; then
     echo 'The first argument to "new primitive" must be "core" or "library".' >&2
     exit 1
@@ -490,11 +587,12 @@ EOF
   fi
 }
 
-function new_assembly {
+function do_assembly {
   echo foo
 # -- any include/exclude?
 
 }
+
 function new_test {
 echo foo
 
@@ -542,96 +640,177 @@ EOF
   exit 1
 }
 
+function myshift {
+  unset argv[0]
+  argv=(${argv[@]})
+}
+function takeval {
+  [ -z ${argv[1]} ] && bad missing value after ${argv[0]} option for $1
+  [[ "${argv[1]}" == -* ]] && bad value after ${argv[0]} option: ${argv[1]}
+  eval $1=${argv[1]}
+  myshift
+}
+
 set -e
 [ "$#" == 0 -o "$1" == -help -o "$1" == --help -o "$1" == -h ] && help
 
 # Collect all flag arguments and do preliminary error checking that does not depend
 # on other potential flags.
-while [[ $1 == -* ]] ; do
-  [ -z $2 ] && bad missing argument after option: $1
-  bool=
-  case $1 in
-    (-v) verbose=1 bool=1;;
-    (-f) force=1 bool=1;;
-    (-d)
-      [ ! -d $2 ] && bad the directory \"$2\" is not a directory or does not exist
-      directory=$2
-      ;; 
-    (-p) project=1 bool=1;;
-    (-l)
-      # if a library is mentioned, it must exist.
-      library=$2
-      if [[ "$2" == components ]] ; then
-        libdir=components
-      else
-        libdir=components/$2
-      fi
-      ;;
-    (-s) standalone=1 bool=1;;
-    # project options
-    (-F) prefix=$2 ;; #default is <project>
-    (-K) package=$2 ;; #default is local.<project>
-    (-D) dependencies=$2 ;;
-    # worker options
-    (-S) spec=$2 ;; # default for worker is <worker-name>-spec.xml
-    (-P) platform=$2 ;;
-    (-L) language=$2 ;;
-    (-V) slave=$2 ;;
-    (-E) emulates=$2 ;;
-    # hdl primitive options
-    (-M) module=$2 ;;
-    (-B) prebuilt=1 bool=1;;
-    # for apps
-    (-X) xmlapp=1 bool=1;;
-    (*)
-      bad unknown option: $1
-      ;;
-  esac
-  shift
-  [ -z $bool ] && shift
-done;
-[ -n "$project" -a -n "$library" ] && bad the -l and -P options are mutually exclusive.
+argv=($*)
+while [[ "${argv[0]}" != "" ]] ; do
+  if [[ "${argv[0]}" == -* ]] ; then
+    case ${argv[0]} in
+      (-v) verbose=1;;
+      (-f) force=1;;
+      (-d)
+        takeval directory
+        [ ! -d $directory ] && bad the directory \"$directory\" is not a directory or does not exist
+        ;; 
+      (-p) project=1;;
+      (-l)
+        # if a library is mentioned, it must exist.
+	takeval library
+        if [[ "$library" == components ]] ; then
+          libdir=components
+        else
+          libdir=components/$library
+        fi
+        ;;
+      (-s) standalone=1;;
+      # project options
+      (-F) takeval prefix ;; #default is <project>
+      (-K) takeval package ;; #default is local.<project>
+      (-D) takeval dependencies ;;
+      # worker options
+      (-S) takeval spec ;; # default for worker is <worker-name>-spec.xml
+      (-P) takeval platform ;;
+      (-L) takeval language ;;
+      (-V) takeval slave ;;
+      (-E) takeval emulates ;;
+      (-W) takeval worker; workers=(${workers[@]} $worker) ;;
+      (-I) takeval include; includes=(${includes[@]} $include) ;;
+      (-O) takeval other; others=(${others[@]} $other) ;;
+      (-C) takeval core; cores=(${cores[@]} $core) ;;
+      (-T) takeval target; targets=(${targets[@]} $target) ;;
+      (-N) takeval wname ;;
+      # hdl primitive options
+      (-M) takeval module ;;
+      (-B) prebuilt=1;;
+      # for apps
+      (-X) xmlapp=1;;
+      (-help|--help)  help;;
+      (*)
+        bad unknown option: ${argv[0]}
+        ;;
+    esac
+  elif [ -z $verb ]; then
+    case ${argv[0]} in
+      (create) verb=create;;
+      (delete|rm) verb=delete;;
+      ("") bad missing command name;;
+      (*) bad there is no command named \"${argv[0]}\";;
+    esac
+  elif [ -z $noun ]; then
+    if [ -n "$hdl" ]; then
+      case ${argv[0]} in
+        (device|platform|assembly) noun=${argv[0]} ;;
+        (*) bad invalid noun after \"hdl\": ${argv[0]} ;;
+      esac
+    elif [ "${argv[0]}" == hdl -o "${argv[0]}" = HDL ]; then
+      hdl="hdl "
+    else
+      noun=${argv[0]}
+    fi
+  else
+    args=($args ${argv[0]})
+  fi
+  myshift
+done
+# option checking independent of noun and verb
+[ -n "$project" -a -n "$library" ] && bad the -l and -p options are mutually exclusive.
+[ -n "$standalone" -a -n "$library" ] && bad the -l and -p options are mutually exclusive.
 # Now error check the options when we have all the options
 if [ -n "$directory" ]; then
   cd $directory
+  topdir=$directory/
 else
   directory=$(pwd)
+  topdir=./
 fi
+[ -z $verb ] && bad missing verb, nothing to do
+[ -z $noun ] && bad the \"$verb\" command must be followed by the type of asset
+[ -z $args ] && bad there must be a name argument after: $verb $hdl$noun
+# option testing dependent on noun and verb
+# force
+[ -n "$force" -a $verb != delete ] &&
+  bad the -f '(force)' option is only valid when deleting an asset
+# project
+[ -n "$project" -a \( $noun != spec -a $noun != protocol \) ] &&
+  bad the -p '(project level)' option is only valid when creating a spec or a protocol
+# library
+[ -n "$library" -a \( $noun != worker -a $noun != spec -a $noun != protocol \) ] &&
+  bad the -l '(library within project)' option is only valid when creating a spec, a protocols or a worker
 if [ -n "$library" ] ; then
   [ -d $libdir ] || bad the specified library \"$library\" does not exist 
   [ "$libdir" == components ] && check_components used
 fi
-case $1 in
-  (create) verb=create;;
-  (delete|rm) verb=delete;;
-  ("") bad missing command name;;
-  (*) bad there is no command named \"$1\";;
-esac
-shift
-[ -z $1 ] && bad the \"$verb\" command must be followed by the type of asset
-noun=$1
-shift
+# standalone
+[ -n "$standalone" -a \( $noun != library -a $noun != worker \) ] &&
+  bad the -s '(standalone - outside a project)' option is only valid when creating a library or a worker
+# prefix
+[ -n "$prefix" -a \( $verb != create -o $noun != project \) ] &&
+  bad the -F '(prefix)' option is only valid when creating a project
+# package
+[ -n "$package" -a \( $verb != create -o $noun != project \) ] &&
+  bad the -K '(package)' option is only valid when creating a project
+# dependencies
+[ -n "$dependencies" -a \( $verb != create -o $noun != project \) ] &&
+  bad the -D '(dependencies)' option is only valid when creating a project
+# spec
+[ -n "$spec" -a \( $verb != create -o $noun != worker \) ] &&
+  bad the -S '(spec)' option is only valid when creating a worker
+# platform
+[ -n "$platform" -a \( $verb != create -o \( $noun != device -a -z "$slave" \) \) ] &&
+  bad the -P '(platform)' option is only valid when creating an HDL device worker or a proxy worker
+# language
+[ -n "$language" -a \( $verb != create -o \( $noun != device -a $noun != worker \) \) ] &&
+  bad the -L '(language)' option is only valid when creating a worker
+# slave
+[ -n "$slave" -a \( $verb != create -o $noun != worker \) ] &&
+  bad the -V '(slave worker)' option is only valid when creating a worker
+# workers
+[ -n "$workers" -a \( $verb != create -o $noun != worker \)  ] &&
+  bad the -W '(one of multiple workers)' option is only valid when creating a worker
+# emulate
+[ -n "$emulates" -a \( $verb != create -o $noun != device \) ] &&
+  bad the -E '(emulates)' option is only valid when creating an HDL device worker
+# module
+[ -n "$module" -a \( $verb != create -o $noun != primitive -a "${argv[0]}" != core \) ] &&
+  bad the -M '(module)' option is only valid when creating an HDL primitive core
+# prebuilt
+[ -n "$prebuilt" -a \( $verb != create -o \( $noun != primitive -o "${argv[0]}" != core \) \) ] &&
+  bad the -B '(prebuilt)' option is only valid when creating an HDL primitive core
+# xml app
+[ -n "$xmlapp" -a \( $verb != create -o $noun != application \) ] &&
+  bad the -X '(xml/simple)' option is only valid when creating an application
+
+# Get dir type unless creating something standalone
+#[ $noun != project -a -z "$standalone" ] && 
+needname ${argv[0]} $verb $noun
+get_dirtype .
+[ -z $verbose ] || echo Executing the \"$verb $hdl$noun\" command in a ${dirtype:-unknown type of} directory: $directory.
 case $noun in
-  (hdl|HDL) hdl=1 && noun=$1 && shift;;
-  (rcc|RCC) rcc=1 && noun=$1 && shift;;
-  (ocl|OCL) ocl=1 && noun=$1 && shift;;
-esac
-[ $noun == project ] || get_dirtype .
-needname "$1" $verb $noun
-case $noun in
-  (project) do_project $*;;
-  (application) do_application $*;;
-  (protocol) do_protocol_or_spec $* protocol;;
-  (spec) do_protocol_or_spec $* spec;;
-  (library) do_library $*;;
-  (worker) do_worker $*;;
-  (emulator) do_worker $* emu;;
-  (card) do_card $*;;
-  (slot) do_slot $*;;
-  (device) do_device $*;;
-  (platform) do_platform $*;;
-  (primitive) do_primitive $*;;
+  (project) do_project $args ;;
+  (application) do_application $args ;;
+  (protocol) do_protocol_or_spec $args ;;
+  (spec) do_protocol_or_spec $args ;;
+  (library) do_library $args ;;
+  (worker) do_worker $args ;;
+  (emulator) do_worker emu $args ;;
+  (card) do_card $args ;;
+  (slot) do_slot $args ;;
+  (device) do_device $args ;;
+  (platform) do_platform $args ;;
+  (primitive) do_primitive $args ;;
   (*) bad the noun \"$noun\" is invalid after the verb \"$verb\";;
 esac
-
-

@@ -13,7 +13,11 @@ usage () {
 if [ $# = 0 -o $# != 1 ] ; then
   usage
 fi
-if [ ! -r $DIR/ocpi_${OS}_driver ] ; then
+SCR=ocpi_${OS}_driver
+DVR=$DIR/$SCR
+[ ! -r $DVR ] && DVR=$DIR/../scripts/$SCR
+[ ! -r $DVR ] && DVR=$DIR/../../scripts/$SCR
+if [ ! -r $DVR ] ; then
   echo There is no driver loading/unloading support for this system \(${OS}\).
   exit 1
 fi

@@ -99,11 +99,15 @@ ocl:
 cleanocl:
 	$(call MaybeMake,components,cleanocl)
 
-cleancomponents:
-	$(call MaybeMake,components,clean)
-
 applications: components hdl
 	$(call MaybeMake,applications)
+
+run: all test
+	$(call MaybeMake,components,run)
+	$(call MaybeMake,applications,run)
+
+cleancomponents:
+	$(call MaybeMake,components,clean)
 
 cleanapplications:
 	$(call MaybeMake,applications,clean)

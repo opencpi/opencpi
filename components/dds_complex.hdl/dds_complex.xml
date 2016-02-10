@@ -1,10 +1,10 @@
-<HdlImplementation Name="dds_complex" Language="Verilog" Pattern="%w%M%0_">
+<HdlImplementation Name="dds_complex" Language="vhdl">
   <xi:include href="dds_complex_spec.xml"/>
-  <ControlInterface SizeOfConfigSpace="4g" Sub32BitConfigProperties="true" ControlOperations="initialize" Timeout="444">
+  <ControlInterface SizeOfConfigSpace="1g" Sub32BitConfigProperties="true" ControlOperations="initialize" Timeout="444">
     <Property Name="hasDebugLogic" Parameter="true" Type="Bool" Default="true"/>
   </ControlInterface>
   <StreamInterface Name="in" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"/>
   <StreamInterface Name="out" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"/>
-</ComponentImplementation>
+</HdlImplementation>
 
 

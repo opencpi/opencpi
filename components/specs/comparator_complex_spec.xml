@@ -2,7 +2,7 @@
 
   <Properties>
     <Property Name="passed" type="bool" Readable="true" Writable="true" />
-    <Property Name="deviation" type="ULong" Readable="true" Writable="true" />
+    <Property Name="deviation" type="double" Readable="true" Writable="true" />
     <Property Name="msgsProcessed" Readable="true" Writable="false"/>
     <Property Name="bytesProcessed" Readable="true" Writable="false"/>
   </Properties>
