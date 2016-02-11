@@ -66,6 +66,10 @@ tests
 +tools/cdk/scripts/util.sh scripts/
 #+tools/cdk/scripts/makeExportLinks.sh scripts/
 +scripts/makeExportLinks.sh scripts/
+# user level scripts made available in the bin directory
++tools/cdk/scripts/ocpixml bin/<target>/
++tools/cdk/scripts/ocpidev bin/<target>/
++tools/cdk/scripts/ocpidriver bin/<target>/
 +tools/cdk/specs
 # linux driver
 +os/linux/driver/99-opencpi.rules lib/<target>/
@@ -126,6 +130,9 @@ tests
 +runtime/hdl-support/xilinx/probeJtag_xilinx scripts/
 +runtime/hdl-support/xilinx/findJtagByESN_xilinx scripts/
 +runtime/hdl-support/xilinx/getESNfromUSB_xilinx scripts/
++runtime/hdl-support/scripts/loadFlash bin/<target>/
++runtime/hdl-support/scripts/probeJtag bin/<target>/
+
 ################################################################################
 # OCL related exclusions and additions
 +tools/cdk/include/ocl include/

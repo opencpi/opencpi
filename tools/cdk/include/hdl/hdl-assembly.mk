@@ -24,6 +24,8 @@
 # This makefile is for building assemblies and bitstreams.
 # The assemblies get built according to the standard build targets
 HdlMode:=assembly
+include $(OCPI_CDK_DIR)/include/util.mk
+$(OcpiIncludeProject)
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 
 # Theses next lines are similar to what worker.mk does

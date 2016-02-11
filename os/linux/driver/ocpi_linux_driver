@@ -44,7 +44,7 @@ else
     DIR=$OCPI_CDK_DIR/lib/$OCPI_TOOL_HOST
 #  fi
   if test -f /etc/ocpi-release; then
-     LABEL=$(< /etc/ocpi-release)
+     LABEL=$(cat /etc/ocpi-release)
   else
      LABEL=$(uname -r)
   fi

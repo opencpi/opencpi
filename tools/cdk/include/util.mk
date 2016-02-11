@@ -449,7 +449,10 @@ OcpiGetProjectPath=$(strip \
 
 # Add a directory to the front of a path in the environment
 # $(call OcpiPrependEnvPath,var-name,dir)
-OcpiPrependEnvPath=$(and $(wildcard $2),$(eval export $1:=$(subst $(Space),:,$(call Unique,$2 $(subst :, ,$($1))))))
+OcpiPrependEnvPath=\
+  $(eval tmp:=$(wildcard $2))\
+  $(infox PREPEND:$1:$2:$(tmp))\
+  $(and $(tmp),$(eval export $1:=$(subst $(Space),:,$(call Unique,$(tmp) $(subst :, ,$($1))))))
 
 ############ Project related functions
 
@@ -490,6 +493,13 @@ define OcpiSetProject
     $$(and $$(filter libraries,$$(call OcpiGetDirType,$$(OcpiTempProjDir)/components)),/components)))
   # when looking for HDL component libraries, look in this project
   $$(call OcpiPrependEnvPath,OCPI_HDL_COMPONENT_LIBRARY_PATH,$$(OcpiTempProjDir)/hdl)
+  # when executing applications, look in this project
+  $$(call OcpiPrependEnvPath,OCPI_LIBRARY_PATH,\
+     $$(OcpiTempProjDir)/components/lib/rcc \
+     $$(OcpiTempProjDir)/components/*.test/assemblies/*/container*/target-* \
+     $$(OcpiTempProjDir)/components/*/lib/rcc \
+     $$(OcpiTempProjDir)/components/*/*.test/assemblies/*/container*/target-* \
+     $$(OcpiTempProjDir)/hdl/assemblies/*/container*/target-*)
 endef
 
 # Look into a directory in $1 and determine which type of directory it is by looking at the Makefile.

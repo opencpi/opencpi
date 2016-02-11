@@ -34,11 +34,11 @@ all: hdlassemblies applications
 
 hdlassemblies applications: exports
 
+# Build tests where they might be found.
 test:
 	$(call MaybeMake,components,test)
 	$(call MaybeMake,hdl/devices,test)
 	$(call MaybeMake,hdl/platforms,test)
-	$(call MaybeMake,hdl/assemblies,test)
 
 clean: cleanhdl
 	$(call MaybeMake,components,clean)

@@ -70,6 +70,7 @@ function get_dirtype {
   [ ! -d $1 ] && bad $1 should be a directory and is not
   [ ! -f $1/Makefile ] && dirtype= && return 0
   dirtype=$(sed -n 's=^[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\).mk$=\1=p' $1/Makefile)
+  dirtype=${dirtype/#hdl\//}
 }
 
 # Look in a directory and determine the type of the Makefile, set dirtype
@@ -191,14 +192,15 @@ EOF
       echo You must create either a $1.xml or $1.cc file in the $topdir$subdir$1 directory\"
     }    
   else
-    [ -e applications/$1.xml ] && bad the XML application \"$1\" already exists in ${topdir}applications/$1.xml
-    cat <<EOF > applications/$1.xml
+    app=${1/%.xml/}
+    [ -e applications/$app.xml ] && bad the XML application \"$app\" already exists in ${topdir}applications/$app.xml
+    cat <<EOF > $subdir$app.xml
 <!-- The \"$1\" application xml file -->
 <application>
   <instance component='ocpi.nothing'/>
 </application>
 EOF
-    [ -z $verbose ] || echo The XML application \"$1\" has been created in ${topdir}applications/$1.xml
+    [ -z $verbose ] || echo The XML application \"$app\" has been created in ${topdir}applications/$app.xml
   fi
 }
 
@@ -410,7 +412,7 @@ function do_worker {
   if [ -z $language ] ; then
     language=$(eval echo \${Language_$model})
     [ -z $verbose ] || echo Choosing default language \"$language\" for worker $1
-    # langattr=" language='$language'"
+    langattr=" language='$language'"
   else
     language=$(echo $language | tr A-Z a-z)
     for l in $(eval echo \${Languages_$model[*]}); do
@@ -423,7 +425,9 @@ function do_worker {
   elem=$(echo ${model:0:1} | tr a-z A-Z)${model:1}Worker
   if [ -n "$workers" ] ; then
     for w in ${!workers[@]}; do
+      OFS="$IFS"
       IFS=: x=(${workers[$w]})
+      IFS="$OFS"
       get_spec ${x[0]} ${x[1]} ${x[2]}
       wnames[$w]=${x[0]}
       specattrs[$w]="$specattr"
@@ -587,10 +591,64 @@ EOF
   fi
 }
 
+# Create an hdl assembly
+# An assembly has its own xml file of the same name as its directory
+# It may have container XML files or not.
 function do_assembly {
-  echo foo
-# -- any include/exclude?
-
+  set -e
+  case "$dirtype" in
+    (project)subdir=hdl/assemblies/;;
+    (hdl-assemblies)subdir=./;;
+    (*) bad this command can only be issued in a project directory or an hdl/assemblies directory;;
+  esac
+  adir=$subdir$1
+  if [ $verb == delete ]; then
+    [ -e $adir ] || bad the HDL assembly at \"$adir\" does not exist    
+    get_dirtype $adir
+    [ "$dirtype" == hdl-assembly ] || bad the directory at $adir does not appear to be an HDL assembly
+    ask delete the HDL assembly in the \"$adir\" directory
+    rm -r -f $adir
+    exit 0
+  fi
+  [ -e $subdir$1 ] && bad the HDL assembly \"$1\" in directory \"$topdir$subdir$1\" already exists
+  if [ $dirtype == project -a ! -e hdl-assemblies ]; then
+    mkdir -p hdl/assemblies
+    cat <<EOF > hdl/assemblies/Makefile
+$CheckCDK
+# To restrict the HDL assemblies that are built, you can set the Assemblies
+# variable to the specific list of which ones you want to build, e.g.:
+# Assemblies=assy1 assy3
+# Othersize all assemblies will be built
+# Alternatively, you can set ExcludeAssemblies to list the ones you want to exclude
+include \$(OCPI_CDK_DIR)/include/hdl/hdl-assemblies.mk
+EOF
+    [ -z $verbose ] || echo This is the first HDL assembly in this project.  The \"hdl/assemblies\" directory has been created.
+  fi
+  mkdir $subdir$1
+  cat <<EOF > $subdir$1/Makefile
+$CheckCDK
+# This is the HDL assembly Makefile for the "$1" assembly
+# The file "$1.xml" defines the assembly.
+# The default container for all assemblies is one that connects all external ports to
+# the devices interconnect to communicate with software workers or other FPGAs. 
+# If you want to connect external ports of the assembly to local devices on the platform,
+# you must define container XML files, and mention them in a "Containers" variable here, e.g.:
+# Containers=take_input_from_local_ADC
+include \$(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk
+EOF
+  [ -z $verbose ] || {
+    echo HDL assembly \"$1\" created in the directory \"$topdir$subdir$1\"
+    echo For non-default containers, an xml file is required and must be mentioned in the Makefile
+  }    
+  assy=${1/%.xml/}
+  cat <<EOF > $subdir$1/$assy.xml
+<!-- The \"$1\" HDL assembly xml file -->
+<HdlAssembly>
+  <!-- Remove this instance and replace it with real ones -->
+  <instance worker='nothing'/>
+</HdlAssembly>
+EOF
+  [ -z $verbose ] || echo The HDL assembly \"$assy\" has been created in ${topdir}hdl/assemblies/$assy/$assy.xml
 }
 
 function new_test {
@@ -735,7 +793,7 @@ if [ -n "$directory" ]; then
   topdir=$directory/
 else
   directory=$(pwd)
-  topdir=./
+  topdir=
 fi
 [ -z $verb ] && bad missing verb, nothing to do
 [ -z $noun ] && bad the \"$verb\" command must be followed by the type of asset
@@ -806,6 +864,7 @@ case $noun in
   (spec) do_protocol_or_spec $args ;;
   (library) do_library $args ;;
   (worker) do_worker $args ;;
+  (assembly) do_assembly $args ;;
   (emulator) do_worker emu $args ;;
   (card) do_card $args ;;
   (slot) do_slot $args ;;
