@@ -123,3 +123,15 @@ cleaneverything: clean
 	find . -depth -name gen -exec rm -r -f {} \;
 	find . -depth -name 'target-*' -exec rm -r -f {} \;
 	find . -depth -name lib -exec rm -r -f {} \;
+
+# Package issue - if we have a top level specs directory, we must make the
+# associate package name available to anything that includes it, both within the
+# project and outside it (when this project is accessed via OCPI_PROJECT_PATH)
+
+ifneq ($(wildcard specs),)
+  ifeq ($(filter clean%,$(MAKECMDGOALS)),)
+    specs/package-name: Project.mk
+	$(AT)echo "$(ProjectPackage)" > specs/package-name
+    components: specs/package-name
+  endif
+endif

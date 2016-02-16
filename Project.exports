@@ -132,6 +132,7 @@ tests
 +runtime/hdl-support/xilinx/getESNfromUSB_xilinx scripts/
 +runtime/hdl-support/scripts/loadFlash bin/<target>/
 +runtime/hdl-support/scripts/probeJtag bin/<target>/
++runtime/hdl-support/scripts/ocpiview bin/<target>/
 
 ################################################################################
 # OCL related exclusions and additions

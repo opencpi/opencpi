@@ -131,12 +131,12 @@ RccParams=\
 	     '-DPARAM_$n()=$(Param_$(ParamConfig)_$n)')
 Compile_c=\
   $$(Gc_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
-  $$(CompilerWarnings_$$(RccTarget)) $$(CompilerOptions_$$(RccTarget)) \
+  $$(CompilerWarnings) $$(CompilerOptions) \
   $(call SharedLibCompileOptions) $$(ExtraCompilerOptionsC_$$(RccTarget)) \
   $(RccIncludeDirsInternal:%=-I%) -o $$@ $$(RccParams) $$<
 Compile_cc=\
   $$(Gc++_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
-  $$(CompilerWarnings_$$(RccTarget)) $$(CompilerOptions_$$(RccTarget)) \
+  $$(CompilerWarnings) $$(CompilerOptions) \
   $(call SharedLibCompileOptions) \
   $$(ExtraCompilerOptions_$$(RccTarget)) $$(ExtraCompilerOptionsCC_$$(RccTarget)) \
   $(RccIncludeDirsInternal:%=-I%) -o $$@ $$(RccParams) $$<
