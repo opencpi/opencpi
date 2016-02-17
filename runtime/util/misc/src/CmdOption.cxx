@@ -27,7 +27,7 @@ namespace OCPI {
     }
     BaseCommandOptions::
     ~BaseCommandOptions() {
-      delete m_seen;
+      delete [] m_seen;
     }
     const char *BaseCommandOptions::
     setError(const char *err) {

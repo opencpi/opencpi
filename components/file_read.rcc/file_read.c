@@ -73,7 +73,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
     }
     zlmIn = n && m.length == 0;
     n2read = n = n ? m.length : 0;
-    port->output.u.operation = (RCCOpCode)m.opcode;
+    port->output.u.operation = n ? (RCCOpCode)m.opcode : props->opcode;
   }
   if (n2read > port->current.maxLength)
     return self->container.setError("message size (%zu) too large for max buffer size (%u)",
