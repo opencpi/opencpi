@@ -7,8 +7,10 @@ Make a pair of empty paragraphs: style Diagram over style Caption.
 
 1. In PPT: Save-as as PNG from PPT, should default to the current slide only, shift-%-S, select PNG
 2. In LO: *Open* PNG in libreoffice, opens and puts you in LO-Draw
-3. In LO-Draw: click to select drawing object to get green corners
-4. In LO-Draw: click crop button (has scissors-with-paper icon with orange handles - not scissors-alone with red handle - which is CUT)
+3. In LO-Draw: click to select drawing object to get green or blue corners
+4. In LO-Draw: click crop button
+               (older LO: has scissors-with-paper icon with orange handles - not scissors-alone with red handle - which is CUT)
+               (newer LO:  has dashed rectangle with L angle inside, results in blue corners)
 4. In LO-Draw: crop by dragging crop edges - tightly since we want doc styles to specify spacing, not white space in diagram.
 5. In LO-Draw: copy (%c), switch to doc window
 6. In LO-Writer: in document, put text cursor AND MOUSE CURSOR EXACTLY OVER TEXT CURSOR into (empty) diagram paragraph, paste (%v)

@@ -492,7 +492,8 @@ define OcpiSetProject
   $$(call OcpiPrependEnvPath,OCPI_COMPONENT_LIBRARY_PATH,$$(OcpiTempProjDir)$$(strip\
     $$(and $$(filter libraries,$$(call OcpiGetDirType,$$(OcpiTempProjDir)/components)),/components)))
   # when looking for HDL component libraries, look in this project
-  $$(call OcpiPrependEnvPath,OCPI_HDL_COMPONENT_LIBRARY_PATH,$$(OcpiTempProjDir)/hdl)
+  # This variable is becoming obsolete - only used in legacy ocpiassets
+  #  $$(call OcpiPrependEnvPath,OCPI_HDL_COMPONENT_LIBRARY_PATH,$$(OcpiTempProjDir)/hdl)
   # when executing applications, look in this project
   $$(call OcpiPrependEnvPath,OCPI_LIBRARY_PATH,\
      $$(OcpiTempProjDir)/components/lib/rcc \

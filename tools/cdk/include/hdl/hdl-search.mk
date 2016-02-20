@@ -74,46 +74,6 @@ __HDL_SEARCH_MK__=x
 #  be useful in very simple cases where there is no library - just a worker's directory by
 #  itself.
 
-ifneq (,)
-HdlCheckLinks=$(strip \
-  $(foreach d,$1,$d$(shell test -L $d -a ! -e $d && echo " (a link to non-existent/unbuilt?)")))
-
-define HdlComponentSearchError
-The component library "$1" was not found in any of these locations: $(call HdlCheckLinks,$2)
-OCPI_HDL_COMPONENT_LIBRARY_PATH is: $(OCPI_HDL_COMPONENT_LIBRARY_PATH)
-OCPI_PROJECT_PATH is: $(OCPI_PROJECT_PATH)
-OCPI_CDK_DIR is: $(OCPI_CDK_DIR)
-endef
-
-# Given a location of a component library, return the relevant subdirectory
-# This normalizes between exported libraries and source libraries
-HdlComponentLibraryExists=$(infox HCLE:$1)$(foreach x,$(or $(call HdlExists,$1/lib),$(call HdlExists,$1)),$(infox HCLEr:$x)$x)
-
-# Search for a component library by name, independent of target
-# This is not used for component libraries specified by location (with slashes)
-# $(call HdlSearchComponentPath,lib)
-HdlSearchComponentPath=$(infox HSCP:$1)\
-  $(eval HdlTempPlaces:=$(strip\
-       $(subst :, ,$(OCPI_HDL_COMPONENT_LIBRARY_PATH)) \
-       $(foreach d,$(OcpiGetProjectPath),$d/lib)))\
-  $(eval HdlTempDirs:= $(strip \
-    $(foreach p,$(HdlTempPlaces),\
-       $(foreach d,$p/$1,$(call HdlComponentLibraryExists,$d)))))\
-  $(or $(HdlTempDirs)$(infox HTD:$(HdlTempDirs)),\
-    $(if $(filter clean,$(MAKECMDGOALS)),,$(error $(call HdlComponentSearchError,$1,$(HdlTempPlaces)))))
-
-# Collect component libraries independent of targets.
-# Normalize the list at the spec level
-# No arguments
-HdlComponentLibraries=$(strip\
-    $(foreach c,$(ComponentLibraries),$(infox HCL:$c)\
-      $(if $(findstring /,$c),\
-         $(or $(call HdlComponentLibraryExists,$c),\
-              $(error Component library $c (from ComponentLibraries) not found.)),\
-         $(call HdlSearchComponentPath,$c))))
-
-endif
-
 # Return list of target directories in all possible component libraries
 HdlTargetComponentLibraries=$(infox HTCL:$1:$(OcpiComponentLibraries):$(ComponentLibraries):$2)\
   $(or $(strip $(foreach f,$(call HdlGetFamily,$1),\
@@ -180,6 +140,7 @@ HdlPrimitiveLibraries=$(infox HPL:$(HdlMyLibraries))$(strip\
               $(error Primitive library $p (from HdlLibraries) not found.)),\
          $(call HdlSearchPrimitivePath,$p,,HPL))))
 
+ifneq (,)
 # Return list of target directories in all possible primitive libraries
 HdlTargetPrimitiveLibraries=$(infox HTPL:$1)\
   $(or $(strip $(foreach f,$(call HdlGetFamily,$1),$(infox F:$f)\
@@ -187,6 +148,7 @@ HdlTargetPrimitiveLibraries=$(infox HTPL:$1)\
                      $(or $(call HdlExists,$d/$f),$(call HdlExists,$d/target-$f/$(notdir $d)))))),\
       $(if $(HdlPrimitiveLibraries),\
        $(error No primitive libraries were found for target $1.  Perhaps not built yet?)))
+endif
 
 ################################################################################
 # $(call HdlLibraryRefDir,location-dir,target)
