@@ -172,7 +172,7 @@ $CheckCDK
 # To restrict the applications that are built or run, you can set the Applications
 # variable to the specific list of which ones you want to build and run, e.g.:
 # Applications=app1 app3
-# Othersize all applications will be biult and run
+# Otherwise all applications will be built and run
 include \$(OCPI_CDK_DIR)/include/applications.mk
 EOF
     [ -z $verbose ] || echo This is the first application in this project.  The \"applications\" directory has been created.
@@ -418,7 +418,7 @@ function do_worker {
     for l in $(eval echo \${Languages_$model[*]}); do
       [ "$language" = ${l/:*/} ] && suff=${l/*:/} langattr=" language='${l/:*/}'"
     done
-    [ -z $langattr ] && bad invalid language \"$2\" for model \"$model\"
+    [ -z $langattr ] && bad invalid language \"$language\" for model \"$model\"
   fi
   [ -n "$emulates" ] && emuattr=" emulate='$emulates'"
   [ -n "$slave" ] && slaveattr=" slave='$slave'"
@@ -662,7 +662,7 @@ The ocpidev command performs developer functions on/in projects for OpenCPI.
 Usage is: ocpidev [options] <verb> <noun> <name>
 Verbs are: create or delete
 Nouns are: project, application, protocol, spec, library, worker, or hdl <noun>
-After hdl, nouns are: card, slot, device, platform, primitive <noun>
+After hdl, nouns are: assembly, card, slot, device, platform, primitive <noun>
 After hdl primitive, nouns are: library or core
 All commands have a <name> argument.  Some have more required or optional arguments.
 Options are: lower case for general options, upper case for creation options
@@ -786,7 +786,7 @@ while [[ "${argv[0]}" != "" ]] ; do
 done
 # option checking independent of noun and verb
 [ -n "$project" -a -n "$library" ] && bad the -l and -p options are mutually exclusive.
-[ -n "$standalone" -a -n "$library" ] && bad the -l and -p options are mutually exclusive.
+[ -n "$standalone" -a -n "$library" ] && bad the -l and -s options are mutually exclusive.
 # Now error check the options when we have all the options
 if [ -n "$directory" ]; then
   cd $directory

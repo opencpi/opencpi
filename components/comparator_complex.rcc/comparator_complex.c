@@ -59,8 +59,8 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
     printf("This will cause the test to fail. The output of the UUT and the expected results data should be identical\n");
     p->passed = 0;
   }
-  int len = byteLen2Complex( in_unit_test->input.length );
-  int i;
+  size_t len = byteLen2Complex( in_unit_test->input.length );
+  size_t i;
   if (real2bytes(len) > out_delta->current.maxLength)
     return self->container.setError("Delta output buffer size %zu, but %zu is required",
 				    out_delta->current.maxLength, real2bytes(len));
