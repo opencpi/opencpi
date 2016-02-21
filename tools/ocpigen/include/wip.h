@@ -396,6 +396,7 @@ class Worker : public OU::Worker {
   Clock *addWciClockReset();
   OU::Property *findProperty(const char *name) const;
   OU::Port *findMetaPort(const char *id, const OU::Port *except) const;
+  virtual OU::Port &port(unsigned long which) const;
   const char
     *addBuiltinProperties(),
     *getPort(const char *name, Port *&p, Port *except = NULL) const,

@@ -888,10 +888,10 @@ namespace OCPI {
 	    OC::Launcher::Member *mOut =
 	      aOut ? &m_launchMembers[iOut->m_firstMember + nOut] : NULL;
 	    lc->m_bufferSize = bufferSize;
-	    setLaunchPort(lc->m_in, pIn, connParams, aIn->m_name, aIn->m_parameters,
-			  mIn, e, inScale, nIn);
-	    setLaunchPort(lc->m_out, pOut, connParams, aOut->m_name, aOut->m_parameters,
-			  mOut, e, outScale, nOut);
+	    setLaunchPort(lc->m_in, pIn, connParams, pIn->m_name,
+			  aIn ? aIn->m_parameters.list() : NULL, mIn, e, inScale, nIn);
+	    setLaunchPort(lc->m_out, pOut, connParams, pOut->m_name,
+			  aOut ? aOut->m_parameters.list() : NULL, mOut, e, outScale, nOut);
 	    // Now finalize the transport selection
 	    // FIXME: cache results for same inputs
 	    // Check for collocated ports

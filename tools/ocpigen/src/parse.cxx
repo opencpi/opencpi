@@ -990,6 +990,12 @@ getPort(const char *name, Port *&p, Port *except) const {
   return p ? NULL :
     OU::esprintf("No port named \"%s\" was found in worker \"%s\"", name, m_implName);
 }
+OU::Port &Worker::
+port(unsigned long which) const {
+  ocpiAssert(which < m_ports.size() && m_ports[which]->isData());
+  DataPort &dp = *static_cast<DataPort*>(m_ports[which]);
+  return dp;
+}
 
 Worker::~Worker() {
   deleteAssy();

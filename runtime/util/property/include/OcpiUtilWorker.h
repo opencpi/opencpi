@@ -179,9 +179,9 @@ namespace OCPI {
       }
       inline Port *findMetaPort(const std::string &id) const { return findMetaPort(id.c_str()); }
       virtual Port *findMetaPort(const char *name, const Port *except = NULL) const;
-      inline Port &port(unsigned long which) const
+      virtual Port &port(unsigned long which) const
       {
-        ocpiAssert(which < m_nPorts);
+        ocpiAssert(m_ports && which < m_nPorts);
         return m_ports[which];
       }
       inline Port* ports( unsigned int& n_ports ) const
