@@ -35,7 +35,7 @@
 
 ifndef MAKEFILE_OCPI_COMMON
 MAKEFILE_OCPI_COMMON:=1
-# Someday include our "util.mk"
+include $(OCPI_CDK_DIR)/include/util.mk
 OcpiDir=$(foreach d,$1,$(patsubst %/,%,$(dir $1)))
 
 MAIN_LDFLAGS=$(LDFLAGS)
@@ -54,7 +54,8 @@ TARGET_CPPFLAGS=\
   -DOCPI_PLATFORM=$(OCPI_TARGET_ARCH) \
   -DOCPI_ARCH_$(OCPI_TARGET_ARCH) \
   -DOCPI_ARCH=$(OCPI_TARGET_ARCH) \
-
+  -DOCPI_DEBUG=$(OCPI_DEBUG) \
+  -DOCPI_DYNAMIC=$(OCPI_BUILD_SHARED_LIBRARIES)
 CFLAGS += $(TARGET_CPPFLAGS)
 CXXFLAGS += -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS $(TARGET_CPPFLAGS)
 
@@ -79,233 +80,51 @@ MKDEPENDFLAGS += --pathtype mingw
 endif
 endif
 
-ifeq ($(OCPI_OS),winnt)
-
-#
-# Win32 compile-time configuration
-#
-
-ifeq ($(WINNT_TOOLCHAIN),mingw)
-
-#
-# Use MinGW
-#
-
-CC = gcc
-CXX = c++
-LD = c++
-AR = ar
-
-MKDEPENDFLAGS += --xpattern "MinGW"
-
-CFLAGS += -DWIN32 -D_WIN32_WINNT=0x0400
-CXXFLAGS += -DWIN32 -D_WIN32_WINNT=0x0400
-
-ifeq ($(OCPI_DEBUG),1)
-CFLAGS += -g
-CXXFLAGS += -g
-OCPI_SHARED_LIBRARIES_FLAGS+=-g
-else
-CFLAGS += -O2
-CXXFLAGS += -O2
-endif
-
-BASICLIBS = -lws2_32
-
-.SUFFIXES : .asm .cpp .cxx .c .obj .exe .lib .idl .d
-
-$(OBJDIR)/%.obj : %.asm
-	$(CC) -c -o "$@" $(ASMFLAGS) \
-		$(patsubst %,-D%=1,$(ALLDEFS)) \
-		$(addprefix -I,$(ALLINC)) \
-		"$<"
-
-$(OBJDIR)/%.obj : %.c
-	$(CC) -c -o "$@" $(CFLAGS) \
-		$(patsubst %,-D%=1,$(ALLDEFS)) \
-		$(addprefix -I,$(ALLINC)) \
-		"$<"
-
-$(OBJDIR)/%.obj : %.cxx
-	$(CXX) -c -o "$@" $(CXXFLAGS) \
-		$(patsubst %,-D%=1,$(ALLDEFS)) \
-		$(addprefix -I,$(ALLINC)) \
-		"$<"
-
-$(OBJDIR)/%.obj : %.cpp
-	$(CXX) -c -o "$@" $(CXXFLAGS) \
-		$(patsubst %,-D%=1,$(ALLDEFS)) \
-		$(addprefix -I,$(ALLINC)) \
-		"$<"
-
-%.d : %.c
-	$(CC) -E $(CFLAGS) \
-		$(patsubst %,-D%=1,$(ALLDEFS)) \
-		$(addprefix -I,$(ALLINC)) \
-		"$<" | \
-	$(MKDEPEND) \
-		--srcfile "$<" \
-		--target "$(patsubst %.c,\$$(OBJDIR)/%.obj,$<)" \
-		--target "$@" \
-		$(MKDEPENDFLAGS) \
-		-o "$@"
-
-%.d : %.cxx
-	$(CXX) -E $(CXXFLAGS) \
-		$(patsubst %,-D%=1,$(ALLDEFS)) \
-		$(addprefix -I,$(ALLINC)) \
-		"$<" | \
-	$(MKDEPEND) \
-		--srcfile "$<" \
-		--target "$(patsubst %.cxx,\$$(OBJDIR)/%.obj,$<)" \
-		--target "$@" \
-		$(MKDEPENDFLAGS) \
-		-o "$@"
-
-%.d : %.cpp
-	$(CXX) -E $(CXXFLAGS) \
-		$(patsubst %,-D%=1,$(ALLDEFS)) \
-		$(addprefix -I,$(ALLINC)) \
-		"$<" | \
-	$(MKDEPEND) \
-		--srcfile "$<" \
-		--target "$(patsubst %.cpp,\$$(OBJDIR)/%.obj,$<)" \
-		--target "$@" \
-		$(MKDEPENDFLAGS) \
-		-o "$@"
-
-$(OBJDIR)/%.exe : $(OBJDIR)/%.obj $$(DYNOBJS)
-	$(LD) $(MAIN_LDFLAGS) -o "$@" \
-		$(filter %.obj,$^) \
-		$(DYNOBJS) \
-		$(patsubst %,-L%$(OCPI_OUT_DIR),$(dir $(ALLLIBS))) \
-		$(OCPI_LIBS) \
-		$(addprefix -L,$(call OcpiDir,$(SYSLIBS))) \
-		$(addprefix -l,$(notdir $(SYSLIBS))) \
-		$(BASICLIBS)
-
-#		$(addprefix -locpi_,$(notdir $(ALLLIBS))) \
-
-else
-
-#
-# Use MSVC++
-#
-
-CC = cl
-CXX = cl
-LD = link
-CFLAGS += /nologo /W3 /DWIN32 /D_WIN32_WINNT=0x0400
-CXXFLAGS += /nologo /Zm400 /GR /GX /Zc:wchar_t /W3 /DWIN32 /D_WIN32_WINNT=0x0400 /wd4049 /wd4290
-LDFLAGS += /nologo
-BASICLIBS = ws2_32.lib
-
-MKDEPENDFLAGS += --xpattern "Microsoft Visual Studio"
-
-ifeq ($(OCPI_DEBUG),1)
-CFLAGS += /MDd /Zi
-CXXFLAGS += /MDd /Zi
-LDFLAGS += /OCPI_DEBUG
-BASICLIBS += msvcrtd.lib
-else
-CFLAGS += /MD /Ox
-CXXFLAGS += /MD /Ox
-BASICLIBS += msvcrt.lib
-endif
-
-.SUFFIXES:
-.SUFFIXES: .asm .cpp .cxx .c .obj .exe .lib .idl .d
-
-$(OBJDIR)/%.obj : %.asm
-	$(CC) /c /Fo"$@" /Fd"$(OBJDIR)/vc70.pdb" $(ASMFLAGS) \
-		$(patsubst %,-D%=1,$(ALLDEFS)) \
-		$(addprefix -I,$(ALLINC)) \
-		"$<"
-
-$(OBJDIR)/%.obj : %.c
-	$(CC) /c /Fo"$@" /Fd"$(OBJDIR)/vc70.pdb" $(CFLAGS) \
-		$(patsubst %,/D%=1,$(ALLDEFS)) \
-		$(addprefix /I,$(ALLINC)) \
-		"$<"
-
-$(OBJDIR)/%.obj : %.cxx
-	$(CXX) /c /Fo"$@" /Fd"$(OBJDIR)/vc70.pdb" $(CXXFLAGS) \
-		$(patsubst %,/D%=1,$(ALLDEFS)) \
-		$(addprefix /I,$(ALLINC)) \
-		"$<"
-
-$(OBJDIR)/%.obj : %.cpp
-	$(CXX) /c /Fo"$@" /Fd"$(OBJDIR)/vc70.pdb" $(CXXFLAGS) \
-		$(patsubst %,/D%=1,$(ALLDEFS)) \
-		$(addprefix /I,$(ALLINC)) \
-		"$<"
-
-%.d : %.c
-	$(CC) /E $(CFLAGS) \
-		$(patsubst %,/D%=1,$(ALLDEFS)) \
-		$(addprefix /I,$(ALLINC)) \
-		"$<" | \
-	$(MKDEPEND) \
-		--srcfile "$<" \
-		--target "$(patsubst %.c,\$$(OBJDIR)/%.obj,$<)" \
-		--target "$@" \
-		$(MKDEPENDFLAGS) \
-		-o "$@"
-
-%.d : %.cxx
-	$(CXX) /E $(CXXFLAGS) \
-		$(patsubst %,/D%=1,$(ALLDEFS)) \
-		$(addprefix /I,$(ALLINC)) \
-		"$<" | \
-	$(MKDEPEND) \
-		--srcfile "$<" \
-		--target "$(patsubst %.cxx,\$$(OBJDIR)/%.obj,$<)" \
-		--target "$@" \
-		$(MKDEPENDFLAGS) \
-		-o "$@"
-
-%.d : %.cpp
-	$(CXX) /E $(CXXFLAGS) \
-		$(patsubst %,/D%=1,$(ALLDEFS)) \
-		$(addprefix /I,$(ALLINC)) \
-		"$<" | \
-	$(MKDEPEND) \
-		--srcfile "$<" \
-		--target "$(patsubst %.cpp,\$$(OBJDIR)/%.obj,$<)" \
-		--target "$@" \
-		$(MKDEPENDFLAGS) \
-		-o "$@"
-
-$(OBJDIR)/%.exe : $(OBJDIR)/%.obj $$(DYNOBJS)
-	$(LD) $(MAIN_LDFLAGS) /OUT:"$@" \
-		$(filter %.obj,$^) \
-		$(DYNOBJS) \
-		$(patsubst %,/libpath:%$(OCPI_OUT_DIR),$(dir $(ALLLIBS))) \
-		$(addprefix /libpath:,$(call OcpiDir,$(SYSLIBS))) \
-		$(addsuffix .lib,$(notdir $(ALLLIBS) $(SYSLIBS))) \
-		$(BASICLIBS)
-
-endif
-
-ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),0)
-# See Makefile.fp.for-pkg
-$(error Building Windows shared libraries with msvc is not supported yet.)
-endif
-
-else
 ifneq ($(filter linux macos,$(OCPI_OS)),)
 #
 # Unix compile-time configuration
 #
 
-MAIN_LDFLAGS+=\
-  -Xlinker -rpath -Xlinker "$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR)" \
-  $(and $(OCPI_LZMA_DIR),-Xlinker -rpath -Xlinker $(OCPI_LZMA_DIR)/$(OCPI_TARGET_HOST)/lib) \
+xxMAIN_DRIVERS=\
+  _ZN4OCPI3API12ExternalPortD0Ev \
+  _ZN12DataTransfer22createHostSmemServicesERNS_8EndPointE
+
+OCPI_DRIVERS=hdl rcc pio dma sockets
+
+# When linking main programs, allow dynamic libraries to have undefined symbols since
+# we don't want to care about indirect depenedencies.
+# Those dynamic libraries check their undefines against other dynamic libraries when
+# they are created
+
+ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
+  MAIN_LDFLAGS+= \
+    $(foreach l,$(PREQLIBS), \
+      -Xlinker -rpath -Xlinker $(OCPI_PREREQUISITES_INSTALL_DIR)/$l/$(OCPI_TARGET_HOST)/lib)
+endif
+
+# The library search for the executables have to deal with three different scenarios
+# Note that symbolic links are followed *BEFORE* ORIGIN is set.
+# 1. The development tree scenario, where the libraries might be in the same directory
+#    And also an easy way to override: drop it in the same bin directory
+# 2. The installation where multiple targets are present
+# 3. The installation where only one target is present (deployed)
+# 4. The development tree location via OCPI_CDK_DIR
+
+MAIN_LDFLAGS+= \
+  -Xlinker -rpath -Xlinker '$(RPATH_ORIGIN)' \
+  -Xlinker -rpath -Xlinker '$(RPATH_ORIGIN)/../../lib/$(OCPI_TARGET_HOST)' \
+  -Xlinker -rpath -Xlinker '$(RPATH_ORIGIN)/lib' \
+  -Xlinker -rpath \
+  -Xlinker '$(RPATH_ORIGIN)/$(call FindRelative,$(OBJDIR),$(OCPI_CDK_DIR))/lib/$(OCPI_TARGET_HOST)' \
   $(foreach o,$(MAIN_DRIVERS), $(call UNDEFINED_FLAG,$o))
+
+#$(LD_ALLOW_UNDEFINED)
+
 ifeq ($(OCPI_OS),macos)
   SO=dylib
-  LD_ALLOW_UNDEFINED=-undefined dynamic_lookup
+  LD_ALLOW_UNDEFINED=-Xlinker -undefined -Xlinker dynamic_lookup
   SHARED_ALLOW_UNDEFINED=-dynamiclib $(LD_ALLOW_UNDEFINED) -install_name @rpath/$(notdir $@)
+  RPATH_ORIGIN=@executable_path
   #MACSTDLIB=-stdlib=libstdc++
   SHARED= $(MACSTDLIB) -dynamiclib -install_name @rpath/$(notdir $@)
   UNDEFINED_FLAG=-Xlinker -u -Xlinker _$1
@@ -319,12 +138,13 @@ ifeq ($(OCPI_OS),macos)
   # CXXFLAGS += -mdynamic-no-pic ideally do this for main programs...
   EXTRA_LDFLAGS=$(MACSTDLIB)
 else
+  RPATH_ORIGIN=$${ORIGIN}
   MAIN_LDFLAGS+= -rdynamic
   UNDEFINED_FLAG=-Xlinker -u -Xlinker $1
   ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
     LD_ALLOW_UNDEFINED=-Xlinker --allow-shlib-undefined -Xlinker --warn-unresolved-symbols
-    SHARED_ALLOW_UNDEFINED=-shared
-    SHARED=-shared -Xlinker --no-undefined
+    SHARED_ALLOW_UNDEFINED=-shared -Xlinker -soname=$(@F)
+    SHARED=-shared -Xlinker --no-undefined -Xlinker -soname=$(@F)
     CFLAGS += -fPIC
     CXXFLAGS += -fPIC -Wall
   else
@@ -335,8 +155,6 @@ else
     # This forces everything to be static, and some libraries aren't available (-ldl).
     #MAIN_LDFLAGS+=-static
     #MAIN_LDFLAGS+=-Xlinker --gc-sections
-    PRE_OCPI_LIBS=-dn
-    POST_OCPI_LIBS=-dy
   endif
   SO=so
 endif
@@ -416,222 +234,52 @@ $(OBJDIR)/%.obj : %.cpp
 		$(addprefix -I,$(ALLINC)) \
 		"$<"
 
-ifneq (,)
-%.d : %.c
-	$(CC) -E $(CFLAGS) \
-		$(patsubst %,-D%=1,$(ALLDEFS)) \
-		$(addprefix -I,$(ALLINC)) \
-		"$<" | \
-	$(MKDEPEND) \
-		--srcfile "$<" \
-		--target "$(patsubst %.c,\$$(OBJDIR)/%.obj,$<)" \
-		--target "$@" \
-		$(MKDEPENDFLAGS) \
-		-o "$@"
+# what library should we be depending on
+# -- drivers are always dynamic
+# -- they will be in the mode subdir if we are using modes
+LIBDEPSUFFIX=$(if $(filter 0,$(OCPI_BUILD_SHARED_LIBRARIES)),a,$(SO))
+LIBDEP=$(foreach l,$(notdir $1),$(infox l is $l)\
+         $(foreach n,$(if $(and $(filter $l,$(OCPI_DRIVERS)),\
+                                $(filter 0,$(OCPI_BUILD_SHARED_LIBRARIES))),\
+	                 $l_s,$l),$(infox n is $n)\
+           $(foreach d,$(dir $1),$(infox d is $d)\
+             $(foreach s,$(if $(filter $l,$(OCPI_DRIVERS)),\
+                           $(SO),$(LIBDEPSUFFIX)),$(infox s is $s)\
+	       $(foreach x,$(if $(filter $l,$(OCPI_DRIVERS)),\
+                             $(if $(OCPI_TARGET_MODE),\
+                               $(dir $(OCPI_OUT_DIR))/d$(if $(filter 1,$(OCPI_DEBUG)),d,o),\
+                               $(OCPI_OUT_DIR)),\
+                             $(OCPI_OUT_DIR)),$(infox x is $x)\
+                 $(foreach z,$d$x/libocpi_$n.$s,$(infox ZZZ $l->$z:($(OCPI_OUT_DIR)))$z))))))
 
-%.d : %.cxx
-	$(CXX) -E $(CXXFLAGS) \
-		$(patsubst %,-D%=1,$(ALLDEFS)) \
-		$(addprefix -I,$(ALLINC)) \
-		"$<" | \
-	$(MKDEPEND) \
-		--srcfile "$<" \
-		--target "$(patsubst %.cxx,\$$(OBJDIR)/%.obj,$<)" \
-		--target "$@" \
-		$(MKDEPENDFLAGS) \
-		-o "$@"
+PREQDEP=$(foreach d,$(OCPI_PREREQUISITES_INSTALL_DIR)/$1/$(OCPI_TARGET_HOST)/lib,$(infox d is $d)\
+	   $(foreach s,$(if $(filter 0,$(OCPI_BUILD_SHARED_LIBRARIES)),a,$(SO)),\
+	     $(foreach l,$d/lib$1.$s,$(infox PREQDEP: $1 -> $l)$l)))
+ 
+LIBDEPDIR=$(strip \
+            $(foreach l,$(notdir $1),$(infox l is $l)\
+              $(foreach d,$(dir $1),$(infox d is $d)\
+	        $(foreach x,$(if $(and $(filter $l,$(OCPI_DRIVERS)),$(OCPI_TARGET_MODE)),\
+                               $(dir $(OCPI_OUT_DIR))d$(if $(filter 1,$(OCPI_DEBUG)),d,o),\
+                               $(OCPI_OUT_DIR)),$(infox x is $x)\
+                  $(foreach z,$d$x,$(infox YYY $l->$z:($(OCPI_OUT_DIR)))$z)))))
 
-%.d : %.cpp
-	$(CXX) -E $(CXXFLAGS) \
-		$(patsubst %,-D%=1,$(ALLDEFS)) \
-		$(addprefix -I,$(ALLINC)) \
-		"$<" | \
-	$(MKDEPEND) \
-		--srcfile "$<" \
-		--target "$(patsubst %.cpp,\$$(OBJDIR)/%.obj,$<)" \
-		--target "$@" \
-		$(MKDEPENDFLAGS) \
-		-o "$@"
-endif
-#$(info WE ARE HERE: $(OBJDIR) $(LDFLAGS))
-$(OBJDIR)/%.exe : $(OBJDIR)/%.obj $(MAINOBJS)
+$(OBJDIR)/%.exe : $(OBJDIR)/%.obj $(DYNOBJS)
 	$(LD) $(MAIN_LDFLAGS) -o "$@"\
+	        $(infox OS:$(OBJDIR):MO:$(MAINOBJS):UL:$(UNIXLIB):DEPS:$^) $(infox MO:$(MAINOBJS)) $(infox DO: $(DYNOBJS)) \
 		$(filter %.obj,$^) \
 		$(MAINOBJS) \
-		$(patsubst %,-L%$(OCPI_OUT_DIR),$(dir $(ALLLIBS))) \
+	        $(if $(MAINOBJS),,$(OBJDIR)/$(notdir $(if $(filter 0,$(OCPI_BUILD_SHARED_LIBRARIES)),$(UNIXLIB),$(UNIXSHLIB)))) \
+		$(foreach l,$(ALLLIBS),$(call LIBDEP,$l)) \
+	 	$(foreach p,$(PREQLIBS),$(call PREQDEP,$p)) \
 		$(addprefix -L,$(call OcpiDir,$(SYSLIBS)) $(SYSLIBDIRS)) \
-		$(OCPI_LIBS) \
 		$(addprefix -l,$(notdir $(SYSLIBS))) \
 		$(BASICLIBS)
 
-else
-ifeq ($(OCPI_OS),vxworksdkm)
+#		$(foreach l,$(ALLLIBS),-L$(call LIBDEPDIR,$l)) \
+#		$(addprefix -L,$(call OcpiDir,$(SYSLIBS)) $(SYSLIBDIRS)) \
+#		$(OCPI_LIBS) \
 
-#
-# VxWorks (DKM) compile-time configuration
-#
-
-WIND_LIC_PROXY := $(WIND_HOME)/setup/$(WIND_HOST_TYPE)/bin
-WIND_FOUNDATION_PATH := $(wildcard $(WIND_WORKBENCH)/foundation/*)
-export WIND_HOME WIND_BASE WIND_LIC_PROXY
-
-CFLAGS += -Wall
-CXXFLAGS += -Wall
-LDFLAGS +=
-
-ifeq ($(WIND_BUILD_SPEC),PPC85XXgnu)
-CC = $(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/bin/ccppc
-CXX = $(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/bin/c++ppc
-LD = $(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/bin/c++ppc
-AR = $(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/bin/arppc
-NM = $(WIND_WORKBENCH)/$(WIND_HOST_TYPE)/bin/nmppc
-MUNCH = $(WIND_FOUNDATION_PATH)/$(WIND_HOST_TYPE)/bin/tclsh $(WIND_BASE)/host/resource/hutils/tcl/munch.tcl -c ppc
-CFLAGS += -mcpu=8540 -mabi=no-spe -msoft-float -mstrict-align -mregnames -mlongcall
-CXXFLAGS += -mcpu=8540 -mabi=no-spe -msoft-float -mstrict-align -mregnames -mlongcall
-LDFLAGS += -non-static -msoft-float -L$(WIND_BASE)/target/lib/ppc/PPC32/sfcommon
-else
-ifeq ($(WIND_BUILD_SPEC),SIMNTgnu)
-CC = $(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/bin/ccpentium
-CXX = $(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/bin/c++pentium
-LD = $(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/bin/c++pentium
-AR = $(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/bin/arpentium
-NM = $(WIND_WORKBENCH)/$(WIND_HOST_TYPE)/bin/nmpentium
-MUNCH = $(WIND_FOUNDATION_PATH)/$(WIND_HOST_TYPE)/bin/tclsh $(WIND_BASE)/host/resource/hutils/tcl/munch.tcl -c pentium
-CFLAGS += -mtune=i486 -march=i486 -DCPU=SIMNT -DTOOL_FAMILY=gnu -DTOOL=gnu
-CXXFLAGS += -mtune=i486 -march=i486 -DCPU=SIMNT -DTOOL_FAMILY=gnu -DTOOL=gnu
-LDFLAGS += -L$(WIND_BASE)/target/lib/simpc/SIMNT/sfcommon
-else
-$(error VxWorks DKM build for $(WIND_BUILD_SPEC) not implemented yet.)
-endif
-endif
-
-CFLAGS += -D_WRS_KERNEL
-CXXFLAGS += -D_WRS_KERNEL -fexceptions -frtti
-
-EXTRA_INCLUDES += $(WIND_BASE)/target/h $(WIND_BASE)/target/h/wrn/coreip
-
-ASMFLAGS += -xassembler-with-cpp  $(CLFAGS)
-MKDEPENDFLAGS += --xpattern WindRiver
-
-ifeq ($(OCPI_DEBUG),1)
-CFLAGS += -g
-CXXFLAGS += -g
-else
-CFLAGS += -O3
-CXXFLAGS += -O3
-endif
-
-BASICLIBS = # -lstdc++ # Built into the kernel
-
-.SUFFIXES :
-.SUFFIXES : .asm .cpp .cxx .c .obj .exe .lib .idl .out .d
-
-$(OBJDIR)/%.obj : %.asm
-	$(CC) -c -o "$@" $(ASMFLAGS) \
-		$(patsubst %,-D%=1,$(ALLDEFS)) \
-		$(addprefix -I,$(ALLINC)) \
-		"$<"
-
-$(OBJDIR)/%.obj : %.c
-	$(CC) -c -o "$@" $(CFLAGS) \
-		$(patsubst %,-D%=1,$(ALLDEFS)) \
-		$(addprefix -I,$(ALLINC)) \
-		"$<"
-
-$(OBJDIR)/%.obj : %.cxx
-	$(CXX) -c -o "$@" $(CXXFLAGS) \
-		$(patsubst %,-D%=1,$(ALLDEFS)) \
-		$(addprefix -I,$(ALLINC)) \
-		"$<"
-
-$(OBJDIR)/%.obj : %.cpp
-	$(CXX) -c -o "$@" $(CXXFLAGS) \
-		$(patsubst %,-D%=1,$(ALLDEFS)) \
-		$(addprefix -I,$(ALLINC)) \
-		"$<"
-
-%.d : %.c
-	$(CC) -E $(CFLAGS) \
-		$(patsubst %,-D%=1,$(ALLDEFS)) \
-		$(addprefix -I,$(ALLINC)) \
-		"$<" | \
-	$(MKDEPEND) \
-		--srcfile "$<" \
-		--target "$(patsubst %.c,\$$(OBJDIR)/%.obj,$<)" \
-		--target "$@" \
-		$(MKDEPENDFLAGS) \
-		-o "$@"
-
-%.d : %.cxx
-	$(CXX) -E $(CXXFLAGS) \
-		$(patsubst %,-D%=1,$(ALLDEFS)) \
-		$(addprefix -I,$(ALLINC)) \
-		"$<" | \
-	$(MKDEPEND) \
-		--srcfile "$<" \
-		--target "$(patsubst %.cxx,\$$(OBJDIR)/%.obj,$<)" \
-		--target "$@" \
-		$(MKDEPENDFLAGS) \
-		-o "$@"
-
-%.d : %.cpp
-	$(CXX) -E $(CXXFLAGS) \
-		$(patsubst %,-D%=1,$(ALLDEFS)) \
-		$(addprefix -I,$(ALLINC)) \
-		"$<" | \
-	$(MKDEPEND) \
-		--srcfile "$<" \
-		--target "$(patsubst %.cpp,\$$(OBJDIR)/%.obj,$<)" \
-		--target "$@" \
-		$(MKDEPENDFLAGS) \
-		-o "$@"
-
-#
-# The documentation tells us to "munch" the DKM, which creates a function
-# that calls C++ static constructors and destructors.  This function is
-# then compiled and linked using the C compiler.  Shouldn't the C++
-# compiler be smart enough to do all of that for us?  But this is the
-# way that Workbench does it, so let's emulate that for now.
-#
-
-ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
-
-#
-# When we build our own libraries as "shared" libraries, then we don't
-# need them to link our "executables".  Unfortunately, that means that
-# the linker will not complain about unresolved symbols.
-#
-
-$(OBJDIR)/%.exe : $(OBJDIR)/%.obj
-	$(NM) $(filter %.obj,$^) | $(MUNCH) \
-		> $(OBJDIR)/$(basename $(notdir $@))-vxdkm-ctdc.c
-	$(CC) $(CFLAGS) -fdollars-in-identifiers \
-		-o $(OBJDIR)/$(basename $(notdir $@))-vxdkm-ctdc.o \
-		$(OBJDIR)/$(basename $(notdir $@))-vxdkm-ctdc.c
-	$(CC) -o "$@" -r -nostdlib -Wl,-X \
-		-T $(WIND_BASE)/target/h/tool/gnu/ldscripts/link.OUT \
-		$(OBJDIR)/$(basename $(notdir $@))-vxdkm-ctdc.o \
-		$(filter %.obj,$^)
-else
-$(OBJDIR)/%.exe : $(OBJDIR)/%.obj
-	$(NM) $(filter %.obj,$^) $(filter %.a,$^) | $(MUNCH) \
-		> $(OBJDIR)/$(basename $(notdir $@))-vxdkm-ctdc.c
-	$(CC) $(CFLAGS) -fdollars-in-identifiers \
-		-o $(OBJDIR)/$(basename $(notdir $@))-vxdkm-ctdc.o \
-		$(OBJDIR)/$(basename $(notdir $@))-vxdkm-ctdc.c
-	$(CC) -o "$@" -r -nostdlib -Wl,-X \
-		-T $(WIND_BASE)/target/h/tool/gnu/ldscripts/link.OUT \
-		$(OBJDIR)/$(basename $(notdir $@))-vxdkm-ctdc.o \
-		$(filter %.obj,$^) \
-		$(patsubst %,-L%$(OCPI_OUT_DIR),$(dir $(ALLLIBS))) \
-		$(addprefix -L,$(call OcpiDir,$(SYSLIBS))) \
-		$(OCPI_LIBS) \
-		$(addprefix -l,$(notdir $(SYSLIBS))) \
-		$(BASICLIBS)
-endif
-
-endif
-endif
 endif
 
 #

@@ -10,4 +10,5 @@ begin
   -- the minimum logic to force XST to actually include this module in the
   -- worker synthesis. PITA
   props_out.dummy <= btrue when its(ctl_in.is_operating) else bfalse;
+  ctl_out.finished <= btrue;
 end rtl;

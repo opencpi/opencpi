@@ -198,18 +198,6 @@ namespace OCPI {
       XferFactory()
       //	: m_maxMBox(0)
       {
-	const char* env = getenv("OCPI_SCIF_NODE");
-	if ( ! env ) {
-	  throw OU::Error("OCPI_SCIF_NODE environment variable must be set");
-	}
-	m_node = (uint16_t)atoi(env);	
-	env = getenv("OCPI_SCIF_PORT");
-	if ( ! env ) {
-	  throw OU::Error("OCPI_SCIF_PORT environment variable must be set");
-	}
-	m_port = (uint16_t)atoi(env);	
-
-	//	printf("******** ^^^^^^^^^^^^^^ IN scif FACTORY node = %d, port = %d!!\n", m_node, m_port );
       }
 
       virtual
@@ -251,6 +239,18 @@ namespace OCPI {
 
     DT::EndPoint* XferFactory::
     createEndPoint(std::string& endpoint, bool local) {
+	const char* env = getenv("OCPI_SCIF_NODE");
+	if ( ! env ) {
+	  throw OU::Error("OCPI_SCIF_NODE environment variable must be set");
+	}
+	m_node = (uint16_t)atoi(env);	
+	env = getenv("OCPI_SCIF_PORT");
+	if ( ! env ) {
+	  throw OU::Error("OCPI_SCIF_PORT environment variable must be set");
+	}
+	m_port = (uint16_t)atoi(env);	
+
+	//	printf("******** ^^^^^^^^^^^^^^ IN scif FACTORY node = %d, port = %d!!\n", m_node, m_port );
       return new EndPoint(endpoint, local, m_node, m_port);
     }
 

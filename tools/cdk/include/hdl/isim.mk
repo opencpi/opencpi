@@ -84,8 +84,8 @@ IsimCoreLibraryChoices=$(strip \
 IsimLibs=\
     $(foreach l,\
       $(HdlLibrariesInternal),\
-      -lib $(notdir $(l))=$(strip \
-            $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$l,isim)))) \
+      -lib $(notdir $l)=$(strip \
+            $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$l,isim,,isim)))) \
     $(foreach c,$(call HdlCollectCores,isim),$(infox CCC:$c)\
       -lib $(call HdlRmRv,$(notdir $(c)))=$(infox fc:$c)$(call FindRelative,$(TargetDir),$(strip \
           $(firstword $(foreach l,$(call IsimCoreLibraryChoices,$c),$(call HdlExists,$l))))))
@@ -93,7 +93,7 @@ IsimLibs=\
 MyIncs=\
   $(foreach d,$(VerilogDefines),-d $d) \
   $(foreach d,$(VerilogIncludeDirs),-i $(call FindRelative,$(TargetDir),$(d))) \
-  $(foreach l,$(call HdlXmlComponentLibraries,$(ComponentLibraries)),-i $(call FindRelative,$(TargetDir),$l))
+  $(foreach l,$(HdlXmlComponentLibraries),-i $(call FindRelative,$(TargetDir),$l))
 
 IsimArgs=-v 2 -work $(call ToLower,$(WorkLib))=$(WorkLib) $(IsimLibs)
 
@@ -119,7 +119,7 @@ HdlToolCompile=\
 	-o $(Worker).exe -lib $(call ToLower,$(WorkLib))=$(WorkLib) $(IsimLibs)))
 
 # the "touch" below is because isim creates a bunch of files for the precompiled library
-# and no specific file.  So we touch	 the dir so dependencies on the library work even when
+# and no specific file.  So we touch the dir so dependencies on the library work even when
 # individual files get updated.
 # Since there is not a singular output, make's builtin deletion will not work
 HdlToolPost=\

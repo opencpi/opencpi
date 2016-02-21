@@ -140,7 +140,9 @@ getLocalCompatibleEndpoint(const char *remote, bool /* exclusive */) {
       rem += "-rdma";
     }
     if (!(tfactory = DT::XferFactoryManager::getFactoryManager().find(rem)))
-      throw UnsupportedEndpointEx(remote);
+      throw OU::Error("No driver found/loaded when looking for data transfer driver for %s/%s",
+		      remote, rem.c_str());
+    //      throw UnsupportedEndpointEx(remote);
   }
 #if 1
   uint16_t mailBox = 0, maxMb = 0;

@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -115,6 +114,7 @@ namespace OCPI {
       const std::string &osVersion() const { return m_osVersion; }
       const std::string &arch() const { return m_arch; }
       virtual bool portsInProcess() = 0;
+      bool dynamic() const { return m_dynamic; }
       virtual Container *nextContainer() = 0;
       virtual bool supportsImplementation(OCPI::Util::Worker &);
       virtual OCPI::API::ContainerApplication *

@@ -1,5 +1,4 @@
 -- Lime DAC worker
--- Lime side clock is determined by clkSelect parameter
 library IEEE, ocpi;
 use IEEE.std_logic_1164.all, ieee.numeric_std.all, ocpi.types.all, ocpi.util.all;
 architecture rtl of lime_dac_worker is
@@ -23,15 +22,15 @@ begin
   -- 2. We get a clock that *we* are supposed to drive to the lime TX_CLK, and use that.
   -- 4. We divide-down the control clock, use it, and drive TX_CLK
   -- 5. We use a container clock, use that, and drive TX_CLK
-  dac_clk <= tx_clk_in when its(use_clk_in) else
-             div_ctl_clk when its(use_ctl_clk) else
+  dac_clk <= TX_CLK_IN when its(USE_CLK_IN_p) else
+             ctl_in.clk when its(USE_CTL_CLK_p) else
              sample_clk;
-  tx_clk <= dac_clk when its(drive_clk) else '0';
+  TX_CLK <= dac_clk when its(DRIVE_CLK_p) else '0';
 
   -- Output/lime clock domain processing. 
   -- Mux I and Q onto TXD, consistent with the TX_IQ_SEL output to lime
-  tx_iq_sel <= sel_iq_r;
-  txd       <= dac_data(23 downto 12) when its(sel_iq_r) else dac_data(11 downto 0);
+  TX_IQ_SEL <= sel_iq_r;
+  TXD       <= dac_data(23 downto 12) when its(sel_iq_r) else dac_data(11 downto 0);
 
   output: process(dac_clk)
   begin
@@ -60,8 +59,4 @@ begin
                 dac_take  => dac_take,
                 dac_ready => dac_ready,
                 dac_data  => dac_data);
---  in_out.take <= '1';
---  props_out.underrun <= '1';
---  dac_ready <= '1';
---  dac_data <= (others => '0');
 end rtl;

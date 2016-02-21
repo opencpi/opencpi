@@ -45,6 +45,7 @@ namespace OCPI {
 
     LocalPort::
     ~LocalPort() {
+      container().unregisterBridgedPort(*this);
       for (unsigned n = 0; n < m_bridgePorts.size(); n++)
 	if (m_bridgePorts[n]) // maybe connections did not complete
 	  delete m_bridgePorts[n];
@@ -438,6 +439,8 @@ namespace OCPI {
 	  else
 	    bo.m_next = bo.m_next == bo.m_last ? bo.m_first : bo.m_next + 1;
 	} else {
+	  ocpiDebug("bridge got output %p mode %u next %zu last %zu",
+		    m_localBuffer, bo.m_mode, bo.m_next, bo.m_last);
 	  size_t next = bo.m_next;
 	  // Phase 1: figure out which bridge port and whether to discard the message.
 	  switch (bo.m_mode) {

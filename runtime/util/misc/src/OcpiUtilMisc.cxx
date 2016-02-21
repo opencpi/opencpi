@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -31,7 +30,6 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #include <stdarg.h>
 #include <assert.h>
 #include <istream>
@@ -40,6 +38,8 @@
 #include <cerrno>
 #include <cctype>
 #include "OcpiOsEther.h"
+#include "OcpiOsFileSystem.h"
+#include "OcpiUtilValue.h"
 #include "OcpiUtilException.h"
 #include "OcpiUtilMisc.h"
 
@@ -681,7 +681,85 @@ getSystemAddr() {
   }  
   return addr;
 }
-
-
+// This scheme is ours so that it is somewhat readable, xml friendly, and handles NULLs
+void
+encodeDescriptor(const char *iname, const std::string &s, std::string &out) {
+  formatAdd(out, " %s=\"%zu.", iname, s.length());
+  Unparser up;
+  const char *cp = s.data();
+  for (size_t n = s.length(); n; n--, cp++) {
+    if (*cp == '\'')
+      out += "&apos;";
+    else if (*cp == '&')
+      out += "&amp;";
+    else
+      up.unparseChar(out, *cp, true);
+  }
+  out += "\"";
 }
+void
+decodeDescriptor(const char *info, std::string &s) {
+  char *end;
+  errno = 0;
+  size_t infolen = strtoul(info, &end, 0);
+  do {
+    if (errno || infolen >= 1000 || *end++ != '.')
+      break;
+    s.resize(infolen);
+    const char *start = end;
+    end += strlen(start);
+    size_t n;
+    for (n = 0; n < infolen && *start; n++)
+      if (parseOneChar(start, end, s[n]))
+	break;
+    if (*start || n != infolen)
+      break;
+    return;
+  } while (0);
+  throw Error("Invalid Port Descriptor from Container Server in: \"%s\"", info);
+}
+const char *
+baseName(const char *path, std::string &buf) {
+  buf.clear();
+  if (path) {
+    const char *end = path + strlen(path);
+    while (end > path && end[-1] == '/')
+      end--;
+    if (end == path)
+      return buf.c_str();
+    const char *slash = strrchr(path, '/');
+    slash = slash ? slash + 1 : path;
+    const char *dot = strrchr(slash, '.');
+    if (!dot)
+      dot = end;
+    buf.assign(slash, dot - slash);
+  } else
+    buf.clear();
+  return buf.c_str();
+}
+// Search for the given name in a colon separated path
+// Set the full constructed path in "result".
+// Return true on error
+bool
+searchPath(const char *path, const char *item, std::string &result, const char *preferred) {
+  char *cp = strdup(path), *last;
+  for (char *lp = strtok_r(cp, ":", &last); lp;
+       lp = strtok_r(NULL, ":", &last)) {
+    format(result, "%s/", lp);
+    bool isDir;
+    if (preferred) {
+      size_t len = result.length();
+      formatAdd(result, "%s/%s", preferred, item);
+      if (OS::FileSystem::exists(result, &isDir))
+	return false;
+      result.resize(len);
+    }
+    result += item;
+    if (OS::FileSystem::exists(result, &isDir))
+      return false;
+  }
+  return true;
+}
+  }
+
 }

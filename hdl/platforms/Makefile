@@ -23,42 +23,4 @@
 #
 ########################################################################### #
 
-# FIXME: create an hdl-platforms.mk template to share among platform developers.
-# This variable specifies the local list of platforms that are active here.
-HdlMyPlatforms=$(filter-out %.txt %.mk test Makefile common README README.txt lib specs old,$(wildcard *))
-ifndef HdlPlatforms
-ifndef HdlPlatform
-ifeq ($(MAKECMDGOALS),clean)
-HdlPlatforms=$(HdlMyPlatforms)
-else
-HdlPlatforms:=$(OCPI_HDL_PLATFORM)
-endif
-else
-HdlPlatforms:=$(HdlPlatform)
-endif
-endif
-include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
-$(foreach p,$(HdlPlatforms),$(if $(wildcard $p),,\
-  $(warning Platform $p not present in this platforms directory, not building it here.)\
-  $(eval override HdlPlatforms:=$(filter-out $p,$(HdlPlatforms)))))
-
-Package=ocpi
-include $(OCPI_CDK_DIR)/include/package.mk
-
-.PHONY: $(HdlPlatforms)
-
-all: $(HdlPlatforms)
-
-$(HdlPlatforms):
-	$(AT)echo =============Building platform $@
-	$(AT)$(MAKE) --no-print-directory -C $@
-
-clean::
-	$(AT)for p in $(HdlPlatforms); do \
-	      echo Cleaning platform $$p; \
-	      $(MAKE) --no-print-directory -C $$p clean; \
-	     done
-cleanall:
-	$(AT)find . -depth -name gen -exec rm -r -f "{}" ";"
-	$(AT)find . -depth -name "target-*" -exec rm -r -f "{}" ";"
-	$(AT)rm -r -f lib
+include $(OCPI_CDK_DIR)/include/hdl/hdl-platforms.mk

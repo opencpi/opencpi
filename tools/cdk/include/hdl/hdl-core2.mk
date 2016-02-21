@@ -94,7 +94,7 @@ ifdef HdlToolRealCore
 
       $(infox TARGET:$(call WkrTargetDir,$1,$4)/$2$(HdlBin))
       $(call WkrTargetDir,$1,$4)/$2$(HdlBin): \
-        $$$$(foreach l,$$$$(HdlLibrariesInternal),$$$$(call HdlLibraryRefDir,$$$$l,$$$$(HdlTarget)))
+        $$$$(foreach l,$$$$(HdlLibrariesInternal),$$$$(call HdlLibraryRefDir,$$$$l,$$$$(HdlTarget),,DoCore1))
       $(call WkrTargetDir,$1,$4)/$2$(HdlBin): $$$$(HdlPreCore) \
         $$(filter-out $$(filter-out %.vhd,$$(CoreBlackBoxFiles)) $$(TargetSourceFiles),$$(CompiledSourceFiles)) 
 	$(AT)echo Building $(and $(filter-out core,$(HdlMode))) core \"$(2)\" for target \"$$(HdlTarget)\" $$(ParamConfig):$$(ParamMsg) $$@
@@ -178,7 +178,7 @@ $(call BBLibFile,$1,$2,$3,$4): TargetDir=$(call WkrTargetDir,$1,$3)/bb
 $(call BBLibFile,$1,$2,$3,$4): HdlSources=$5 $(OCPI_CDK_DIR)/include/hdl/onewire.v
 $(call BBLibFile,$1,$2,$3,$4): $5
 $(call BBLibFile,$1,$2,$3,$4): \
-  $$$$(foreach l,$$$$(HdlLibrariesInternal),$$$$(call HdlLibraryRefDir,$$$$l,$4))
+  $$$$(foreach l,$$$$(HdlLibrariesInternal),$$$$(call HdlLibraryRefDir,$$$$l,$4,,DoBBLib))
 
 $(call BBLibFile,$1,$2,$3,$4): $$$$(HdlSources) | $$$$(TargetDir)
 	$(AT)$(ECHO) -n Building stub/blackbox library \($$@\) for target' '

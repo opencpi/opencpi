@@ -70,6 +70,7 @@ beginStruct(const Member &m) {
     m_parent = new Value(m, m_parent);
   } else
     m_parent = m_v;
+  //   m_parent->m_next = 0;
 }
 void ValueReader::
 endStruct(const Member &) {
@@ -109,9 +110,11 @@ beginString(const Member &m, const char *&chars, bool start) {
 
 // Called on a leaf, with contiguous non-string data
 void ValueReader::
-readData(const Member &m, ReadDataPtr p, size_t nBytes, size_t nElements) {
+readData(const Member &m, ReadDataPtr p, size_t nBytes, size_t nElements, bool fake) {
   nextItem(m);
   (void)nElements;
+  if (fake)
+    return;
   if (!m_v)
     memset((void *)p.data, 0, nBytes);
   else

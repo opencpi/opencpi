@@ -33,9 +33,9 @@
 #
 ########################################################################### #
 
-
-
 all: objects
+
+executables:
 
 include $(OCPI_BASE_DIR)/MakeVars.ocpi
 ifneq ($(OCPI_OUT_DIR),)

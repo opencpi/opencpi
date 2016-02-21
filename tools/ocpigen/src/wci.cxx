@@ -7,7 +7,7 @@
 
 WciPort::
 WciPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
-  : OcpPort(w, x, sp, ordinal, WCIPort, "ctl", err) {
+  : OcpPort(w, x, sp, ordinal, WCIPort, "ctl", err), m_timeout(0), m_resetWhileSuspended(false) {
   if (err)
     return;
   assert(master || !m_worker->m_wci);

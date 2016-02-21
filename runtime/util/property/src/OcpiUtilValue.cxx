@@ -175,6 +175,18 @@ namespace OCPI {
 	  break;
 	case '{':
 	  nBraces++; break;
+        case '"':
+	  // We have a double-quoted string to skip.
+	  // !!! There is a very similar loop in parseString
+	  while (unparsed < stop && *unparsed && *unparsed != '"') {
+	    char dummy;
+	    if (parseOneChar(unparsed, stop, dummy))
+	      return "bad double quoted string value";
+	  }
+	  if (unparsed >= stop || !*unparsed)
+	    return "unterminated double quoted string";
+	  unparsed++;
+	  break;
 	case '}':
 	  if (nBraces == 0)
 	    return esprintf("unbalanced braces - extra close brace for (%*s) (%zu)",
@@ -460,7 +472,7 @@ namespace OCPI {
 	quoted = true;
 	cp++;
       }
-	
+      // !!! There is a very similar loop in doElement
       for (unsigned len = 0; cp < end; len++)
 	if (quoted && *cp == '"') {
 	  if (cp + 1 != end)
@@ -478,25 +490,35 @@ namespace OCPI {
     parseStruct(const char *unparsed, const char *stop, StructValue &sv) {
       sv = m_structNext;
       m_structNext += m_vt->m_nMembers;
+      size_t member = 0;
+      bool positional = unparsed != stop && *unparsed == '.';
+      if (positional)
+	unparsed++;
       while (unparsed < stop) {
 	const char *start, *end;
 	doElement(unparsed, stop, start, end);
 	if (start == end)
 	  return "empty member value in struct value";
 	size_t n, len;
-	for (n = 0; n < m_vt->m_nMembers; n++) {
-	  const char *mName = m_vt->m_members[n].m_name.c_str();
-	  len = strlen(mName);
-	  if (!strncmp(mName, start, len) && isspace(start[len]))
-	    break;
+	if (positional) {
+	  n = member++;
+	  if (n >= m_vt->m_nMembers)
+	    return "too many members in struct value";
+	} else {
+	  for (n = 0; n < m_vt->m_nMembers; n++) {
+	    const char *mName = m_vt->m_members[n].m_name.c_str();
+	    len = strlen(mName);
+	    if (!strncmp(mName, start, len) && isspace(start[len]))
+	      break;
+	  }
+	  if (n >= m_vt->m_nMembers)
+	    return "unknown member name in struct value";
+	  if (sv[n])
+	    return "duplicate member name in struct value";
+	  start += len;
 	}
-	if (n >= m_vt->m_nMembers)
-	  return "unknown member name in struct value";
-	if (sv[n])
-	  return "duplicate member name in struct value";
 	Value *v = sv[n] = new Value(m_vt->m_members[n], this);
 	const char *err;
-	start += len;
 	while (isspace(*start) && start < end)
 	  start++;
 	if (v->needsComma()) {
@@ -560,7 +582,8 @@ namespace OCPI {
 	delete [] m_types;
 	m_types = NULL;
       }
-      if (m_nTotal && (m_vt->m_isSequence || m_vt->m_arrayRank)) {
+      if (m_vt && (m_vt->m_isSequence || m_vt->m_arrayRank) &&
+	  (m_nTotal || m_vt->m_baseType == OA::OCPI_String)) {
 	switch(m_vt->m_baseType) {
 #define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)	 \
 	case OA::OCPI_##pretty:			         \
@@ -590,7 +613,8 @@ namespace OCPI {
     const char *
     Value::allocate(bool add) {
       if (m_vt->m_isSequence) {
-	if (m_nElements == 0)
+	// For string sequences we always need a "null ptr after the last one"
+	if (m_nElements == 0 && m_vt->m_baseType != OA::OCPI_String)
 	  return NULL;
 	if (m_vt->m_sequenceLength && m_nElements > m_vt->m_sequenceLength)
 	  return esprintf("Too many elements (%zu) in bounded sequence (%zu)",
@@ -605,7 +629,7 @@ namespace OCPI {
 	  run *old = m_p##pretty;                      \
 	  m_p##pretty = new run[m_nTotal+1];	       \
           /* FIXME: type-specific default value? */    \
-          memset(m_p##pretty, 0, m_length);            \
+	  memset(m_p##pretty, 0, m_length + sizeof(run));\
 	  if (add) {                                   \
 	    memcpy(m_p##pretty, old, oldLength);       \
 	    delete [] old;                             \
@@ -710,8 +734,10 @@ namespace OCPI {
 	      return err;
 	  }
 	// Null terminate 
-	if (m_vt->m_baseType == OA::OCPI_String && !m_vt->m_arrayRank)
+	if (m_vt->m_baseType == OA::OCPI_String && !m_vt->m_arrayRank) {
+	  assert(m_pString);
 	  m_pString[m_nElements] = NULL;
+	}
       } else if ((err = parseElement(unparsed, stop, 0)))
 	return err;
       m_parsed = true;

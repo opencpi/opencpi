@@ -39,6 +39,8 @@ namespace OCPI {
       std::string m_platform;
       std::string m_runtime;
       std::string m_runtimeVersion;
+      bool        m_dynamic;
+      Capabilities();
     };
 
     class Implementation;

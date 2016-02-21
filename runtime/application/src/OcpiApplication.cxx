@@ -46,7 +46,6 @@ namespace OU = OCPI::Util;
 namespace OE = OCPI::Util::EzXml;
 namespace OL = OCPI::Library;
 namespace OA = OCPI::API;
-namespace OT = DataTransport;
 namespace OCPI {
   namespace API {
     ApplicationI::ApplicationI(Application &app, const char *file, const PValue *params)

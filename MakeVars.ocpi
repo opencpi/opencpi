@@ -83,9 +83,6 @@ ifndef OCPI_OS
     OCPI_OS=$(shell uname -s | tr A-Z a-z)
   endif
 endif
-ifndef OCPI_ARCH
-  OCPI_ARCH := $(shell uname -m)
-endif
 endif
 
 ifeq ($(OCPI_OS),macos)
@@ -119,10 +116,6 @@ endif
 
 ifeq "$(VOBDIR)" ""
   VOBDIR = /view/jmiller_ocpi/vobs/ocpi
-endif
-
-ifeq "$(OCPI_OUT_DIR)" ""
-  OCPI_OUT_DIR = $(OCPI_OS)-$(OCPI_ARCH)-bin
 endif
 
 ifeq "$(DATAPLANE)" ""
@@ -258,7 +251,7 @@ WINNT_TOOLCHAIN = msvc
 #
 # ----------------------------------------------------------------------
 #
-
+ifeq ($(OCPI_HAVE_CORBA),1)
 ifeq "$(OCPI_CORBA_ORB)" ""
   OCPI_CORBA_ORB = OMNI
 endif
@@ -329,7 +322,7 @@ export OCPI_OMNI_BIN_DIR
 export OCPI_OMNI_IDL_DIR
 export OCPI_OMNI_INCLUDE_DIR
 endif
-
+endif # if OCPI_HAVE_CORBA
 # SCAVERSION: Can be either 2.2 or 2.2.2.
 
 #
@@ -357,4 +350,33 @@ DescendMake1=-C $(1) $(if $(filter /%,$(OCPI_BASE_DIR)),,OCPI_BASE_DIR=../$(OCPI
 DescendFile2=$(OCPI_BASE_DIR)/$(if $(filter /%,$(OCPI_BASE_DIR)),,../..)
 DescendFile1=$(OCPI_BASE_DIR)/$(if $(filter /%,$(OCPI_BASE_DIR)),,..)
 export AT=@
+# This is duplicated in ocpisetup.mk.  It is there for examples/executables.
+ifndef OCPI_TARGET_DIR
+ ifeq ($(origin OCPI_TARGET_MODE),undefined)
+   export OCPI_TARGET_MODE:=$(if $(filter 1,$(OCPI_BUILD_SHARED_LIBRARIES)),d,s)$(if $(filter 1,$(OCPI_DEBUG)),d,o)
+ endif
+ export OCPI_TARGET_DIR=$(OCPI_TARGET_HOST)$(and $(OCPI_TARGET_MODE),/$(OCPI_TARGET_MODE))
+endif
+# This extra variable OCPI_OUT_DIR is to eventually support out-of-tree building.
+export OCPI_OUT_DIR=target-$(OCPI_TARGET_DIR)
+#$(info OCPI_TARGET_DIR is $(OCPI_TARGET_DIR), OCPI_TARGET_MODE is $(OCPI_TARGET_MODE))
+endif
+
+# This macro is for subsidiary packages that must always be built dynamically.
+# It basically redefines OCPI_TARGET_DIR and OCPI_TARGET_MODE and OCPI_BUILD_SHARED_LIBRARIES
+define ForceDynamic
+$$(infox DYNAMIC OVERRIDE BEFORE: $$(OCPI_TARGET_MODE) $$(OCPI_TARGET_DIR) $$(OCPI_BUILD_SHARED_LIBRARIES))
+ifndef OCPI_PREVIOUS_DYNAMIC
+  override OCPI_PREVIOUS_DYNAMIC:=$$(OCPI_BUILD_SHARED_LIBRARIES)
+  override OCPI_BUILD_SHARED_LIBRARIES:=1
+  export OCPI_PREVIOUS_DYNAMIC
+  ifdef OCPI_TARGET_MODE
+    override OCPI_TARGET_MODE:=d$(if $(filter 1,$(OCPI_DEBUG)),d,o)
+  endif
+endif
+override OCPI_TARGET_DIR:=$(OCPI_TARGET_HOST)$$(and $$(OCPI_TARGET_MODE),/$$(OCPI_TARGET_MODE))
+$$(infox DYNAMIC OVERRIDE AFTER: $$(OCPI_TARGET_MODE) $$(OCPI_TARGET_DIR) $$(OCPI_BUILD_SHARED_LIBRARIES) $$(OCPI_PREVIOUS_DYNAMIC))
+endef
+ifndef OCPI_PREREQUISITES_INSTALL_DIR
+  export OCPI_PREREQUISITES_INSTALL_DIR:=/opt/opencpi/prerequisites
 endif

@@ -56,20 +56,31 @@ override HdlLibraries+=platform
 # Note that the platform directory should be first XML dir since the config file name should be
 # scoped to the platform.
 override XmlIncludeDirsInternal:=\
-   $(call Unique,$(HdlPlatformDir) $(HdlPlatformDir)/hdl $(XmlIncludeDirs) \
-      $(HdlPlatformsDir)/specs $(HdlAssembly))
+   $(call Unique,$(HdlPlatformDir) $(HdlPlatformDir)/hdl $(XmlIncludeDirs) $(XmlIncludeDirsInternal) $(HdlAssembly))
+# We might be called from an assembly directory, in which case many of the
+# component libraries are passed through to us, but we might be standalone.
+# Thus we add "devices/adapters/cards" and the platforms own libraries.
+# Note we do not expect this Makefile to have any ComponentLibrary setting
 override ComponentLibraries:=$(call Unique,\
-  $(ComponentLibraries) $(ComponentLibrariesInternal) \
-  $(HdlPlatformDir) $(HdlAssembly) \
-  components devices adapters cards)
-#AssemblyName=$(notdir $(HdlAssembly))
+   $(HdlAssembly) \
+   $(ComponentLibrariesInternal) \
+   $(HdlPlatformDir_$(Platform)) \
+   $(foreach p,$(HdlPlatformDir_$(Platform)),\
+     $(foreach d,$(if $(filter lib,$(notdir $p)),$(dir $p),$p/),\
+       $(wildcard $ddevices) \
+       $(foreach l,$(ComponentLibraries_$(Platform)),\
+         $(if $(filter /%,$l),$l,$d$l))))\
+   devices cards)
+$(infox CONT:$(ComponentLibraries))
 override LibDir=$(HdlAssembly)/lib/hdl
 ifneq ($(MAKECMDGOALS),clean)
   override Platform:=$(if $(filter 1,$(words $(HdlPlatforms))),$(HdlPlatforms))
   $(eval $(HdlSearchComponentLibraries))
+  $(infox XMLI3:$(XmlIncludeDirsInternal):$(ComponentLibraries):$(HdlPlatform):$(HdlPlatformDir_$(HdlPlatform)))
   include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
   ifndef HdlSkip
     $(eval $(HdlPrepareAssembly))
+    $(infox XMLI4:$(XmlIncludeDirsInternal):$(ComponentLibraries):$(HdlPlatform):$(HdlPlatformDir_$(HdlPlatform)))
     include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
     ifndef HdlSkip
       HdlContName=$(Worker)$(if $(filter 0,$1),,_$1)
@@ -98,7 +109,7 @@ ifneq ($(MAKECMDGOALS),clean)
         $(call HdlContBitZName,$1): $(call HdlContBitName,$1)
 	   $(AT)echo Making compressed bit file: $$@ from $$< and $(call ArtifactXmlName,$1)
 	   $(AT)gzip -c $(call HdlContBitName,$1) > $$@
-	   $(AT)$(ToolsDir)/../../scripts/addmeta $(call ArtifactXmlName,$1) $$@
+	   $(AT)$(ToolsDir)/../../scripts/ocpixml add $$@ $(call ArtifactXmlName,$1)
 
         $(call HdlContBitZ,$1): | $(call HdlContBitZName,$1)
 	    $(AT)ln -s $(notdir $(call HdlContBitZName,$1)) $$@

@@ -33,8 +33,6 @@
 #
 ########################################################################### #
 
-
-
 all: bin
 
 ifneq ($(OCPI_OS),)
@@ -59,55 +57,29 @@ ifndef IMPORTS_INCLUDED
   endif
 endif
 
-PACKAGE = $(shell pwd|sed 's-.*/\([^/]*$$\)-\1-')
+export PACKAGE = $(shell pwd|sed 's-.*/\([^/]*$$\)-\1-')
 #$(info PACKAGE $(PACKAGE))
-WINLIB = $(patsubst %,$(OBJDIR)/%.lib,$(PACKAGE))
-WINDLL = $(patsubst %,$(OBJDIR)/%.dll,$(PACKAGE))
-UNIXLIB = $(OBJDIR)/libocpi_$(PACKAGE).a
-UNIXSHLIB = $(OBJDIR)/libocpi_$(PACKAGE).$(SO)
-EXPORTSHLIB=$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR)/$(notdir $(UNIXSHLIB))
-EXPORTLIB=$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR)/$(notdir $(UNIXLIB))
-VXWORKSDKM = $(patsubst %,$(OBJDIR)/lib%.out,$(PACKAGE))
+export UNIXLIB = $(OBJDIR)/libocpi_$(PACKAGE).a
+export UNIXSHLIB = $(OBJDIR)/libocpi_$(PACKAGE).$(SO)
+export UNIXSHLIB_S = $(OBJDIR)/libocpi_$(PACKAGE)_s.$(SO)
+#export EXPORTSHLIB=$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR)/$(notdir $(UNIXSHLIB))
+#export EXPORTSHLIB_S=$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR)/$(notdir $(UNIXSHLIB_S))
+#export EXPORTLIB=$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR)/$(notdir $(UNIXLIB))
 
-ifeq ($(OCPI_OS),winnt)
-EXCLUDE_FACILITIES += linux vxworksdkm
-
-ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
-PACKAGELIB = $(WINDLL)
-else
-PACKAGELIB = $(WINLIB)
-endif
-
-else
+$(infox PACKAGE $(PACKAGE))
 ifneq ($(filter linux macos,$(OCPI_OS)),)
-
-EXCLUDE_FACILITIES += winnt vxworksdkm
-ifeq ($(OCPI_OS),macos)
-#EXCLUDE_FACILITIES += pci smb_pcig
-endif
-ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
-PACKAGELIB = $(EXPORTSHLIB)
-else
-PACKAGELIB = $(EXPORTLIB)
-endif
-
-else
-ifeq ($(OCPI_OS),vxworksdkm)
-
-EXCLUDE_FACILITIES += linux winnt
-ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
-PACKAGELIB = $(VXWORKSDKM)
-else
-PACKAGELIB = $(UNIXLIB)
-endif
-
-endif
-endif
+  EXCLUDE_FACILITIES += winnt vxworksdkm
+  ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
+    PACKAGELIB = \
+      $(UNIXSHLIB) \
+      $(and $(filter 0,$(OCPI_PREVIOUS_DYNAMIC)),$(UNIXSHLIB_S))
+  else
+    PACKAGELIB = $(UNIXLIB)
+  endif
 endif
 
 GENERATED = $(filter-out $(EXCLUDE_FACILITIES),$(patsubst %/idl,%,$(wildcard */idl)))
 FACILITIES = $(filter-out bin lib Makefile $(EXCLUDE_FACILITIES),$(patsubst %,%,$(wildcard *)))
-
 CSOURCES = $(filter-out $(addprefix %/,$(EXCLUDE_SOURCES)),\
                         $(wildcard src/*.c) $(wildcard $(patsubst %,%/src/*.c,$(FACILITIES))))
 CXXSOURCES = $(filter-out $(addprefix %/,$(EXCLUDE_SOURCES)),\
@@ -136,9 +108,9 @@ export PKGOBJECTS=$(call FILTEROBJS,$(OBJECTS),$(EXCLUDE_OBJECTS))
 .PHONY: bin lib objects depends generated clean distclean cleanup distcleanup
 
 ifeq ($(findstring bin,$(EXCLUDE_FACILITIES)),bin)
-bin: lib
+bin: lib subbin
 else
-bin: lib
+bin: lib subbin
 	$(AT)if test -d bin/src ; then \
 		if test -f bin/src/Makefile.ocpi ; then \
 			$(MAKE) $(call DescendMake2,bin/src) -f Makefile.ocpi $(SYSTEMOPTION) ; \
@@ -165,71 +137,46 @@ $(EXPORTSHLIB): $(UNIXSHLIB)
 	if ! test -d $(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR); then mkdir -p $(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR); fi
 	cp -p $(UNIXSHLIB) "$@"
 
+$(EXPORTSHLIB_S): $(UNIXSHLIB_S)
+	$(AT)if ! test -d $(OCPI_BASE_DIR)/lib; then mkdir -p $(OCPI_BASE_DIR)/lib; fi
+	$(AT)if ! test -d $(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR); then mkdir -p $(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR); fi
+	$(AT)cp -p $(UNIXSHLIB_S) "$@"
+
+
 $(EXPORTLIB): $(UNIXLIB)
-	if ! test -d $(OCPI_BASE_DIR)/lib; then mkdir -p $(OCPI_BASE_DIR)/lib; fi
-	if ! test -d $(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR); then mkdir -p $(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR); fi
-	cp -p $(UNIXLIB) "$@"
+	$(AT)if ! test -d $(OCPI_BASE_DIR)/lib; then mkdir -p $(OCPI_BASE_DIR)/lib; fi
+	$(AT)if ! test -d $(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR); then mkdir -p $(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR); fi
+	$(AT)cp -p $(UNIXLIB) "$@"
 
 # Note the "sort" below.  It gets rid of duplicates, but messes with the ordering.
-$(UNIXSHLIB): $(OBJECTS)
-	$(CXX) $(OCPI_SHARED_LIBRARIES_FLAGS) $(SHARED) -o "$@" $(call FILTEROBJS,$(OBJECTS),$(EXCLUDE_OBJECTS)) $(EXTRALIBOBJS) \
-	       	$(patsubst %,-L%$(OBJDIR),$(dir $(ALLLIBS))) \
+DOSHLIB= \
+	$(CXX) $(OCPI_SHARED_LIBRARIES_FLAGS) $(infox PPP $(OCPI_PREVIOUS_DYNAMIC))\
+               $(if $(filter 0,$(OCPI_PREVIOUS_DYNAMIC)),$(SHARED_ALLOW_UNDEFINED),$(SHARED)) \
+               -o "$@" $(call FILTEROBJS,$(OBJECTS),$(EXCLUDE_OBJECTS)) $(EXTRALIBOBJS) \
+	        $(if $(filter 0,$(OCPI_PREVIOUS_DYNAMIC)),,$(foreach l,$(ALLLIBS),$(call LIBDEP,$l))) \
+		$(foreach p,$(PREQLIBS),$(call PREQDEP,$p)) \
 		$(sort $(addprefix -L,$(call OcpiDir,$(SYSLIBS)))) \
-		$(OCPI_LIBS) \
                 $(addprefix -l,$(notdir $(SYSLIBS))) \
 		$(BASICLIBS)
-endif
+$(UNIXSHLIB): $(OBJECTS)
+	$(AT)$(DOSHLIB)
 
-ifeq ($(OCPI_OS),winnt)
-ifeq ($(WINNT_TOOLCHAIN),mingw)
-$(WINLIB): $(OBJECTS)
-	-rm -f $@
-	$(AR) r $@ $(OBJECTS)
+PatchElf=$(OCPI_PREREQUISITES_INSTALL_DIR)/patchelf/$(OCPI_TOOL_HOST)/bin/patchelf
+$(UNIXSHLIB_S): $(UNIXSHLIB)
+	$(AT)echo Creating $@ for use with statically linked executables.
+	$(AT)$(DOSHLIB)
+	$(AT)if test "$(OCPI_TARGET_OS)" == macos; then \
+               cp $< $@; \
+             else \
+               $(PatchElf) \
+       	         $(foreach l,$(ALLLIBS), --remove-needed libocpi_$(notdir $l).$(SO)) \
+	         $(foreach l,$(PREQLIBS), \
+	         $(foreach x,\
+	           $(wildcard $(OCPI_PREREQUISITES_INSTALL_DIR)/$l/$(OCPI_TOOL_HOST)/lib/lib$l.*), \
+	        --remove-needed $(notdir $x))) \
+	      $@; \
+            fi
 
-$(WINDLL): $(OBJECTS)
-	$(CXX) --shared -o $@ \
-		-Wl,--enable-runtime-pseudo-reloc \
-		$(OBJECTS) \
-		$(patsubst %,-L%$(OBJDIR),$(dir $(ALLLIBS))) \
-		$(addprefix -L,$(call OcpiDir,$(SYSLIBS))) \
-		$(OCPI_LIBS) \
-		$(addprefix -l,$(notdir $(SYSLIBS))) \
-		$(BASICLIBS)
-else
-
-$(WINLIB): $(OBJECTS)
-	lib /nologo /OUT:$@ $(OBJECTS)
-
-ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
-$(error Building Windows shared libraries with msvc is not supported yet.)
-endif
-
-$(WINDLL): $(OBJECTS)
-	echo "Not implemented yet."
-	exit 1
-
-endif
-endif
-
-ifeq ($(OCPI_OS),vxworksdkm)
-$(UNIXLIB): $(OBJECTS)
-	-rm -f $@
-	$(AR) r $@ $(OBJECTS)
-
-#
-# This is for building "shared" libraries for everything.
-#
-
-$(VXWORKSDKM): $(OBJECTS)
-	$(NM) $(OBJECTS) | $(MUNCH) \
-		> $(OBJDIR)/$(basename $(notdir $@))-vxdkm-ctdc.c
-	$(CC) $(CFLAGS) -fdollars-in-identifiers \
-		-o $(OBJDIR)/$(basename $(notdir $@))-vxdkm-ctdc.o \
-		$(OBJDIR)/$(basename $(notdir $@))-vxdkm-ctdc.c
-	$(CC) -o "$@" -r -nostdlib -Wl,-X \
-		-T $(WIND_BASE)/target/h/tool/gnu/ldscripts/link.OUT \
-		$(OBJDIR)/$(basename $(notdir $@))-vxdkm-ctdc.o \
-		$(OBJECTS)
 endif
 
 objects: generated
@@ -246,24 +193,16 @@ objects: generated
 	    $(MAKE) $(call DescendMake1,src) -f $(DescendFile1)/Makefile.ocpi.for-src \
 	      OBJDIR=../$(OCPI_OUT_DIR) $(SYSTEMOPTION) all ; \
 	  fi; \
-	else \
-	  for facility in $(FACILITIES) ; do \
-	    if test -d $$facility/idl ; then \
-	      if test -f $$facility/idl/Makefile.ocpi ; then \
-		$(MAKE) $(call DescendMake2,$$facility/idl) -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
-	      else \
-		$(MAKE) $(call DescendMake2,$$facility/idl) -f $(DescendFile2)/Makefile.ocpi.for-src $(SYSTEMOPTION) all ; \
-	      fi ; \
-	    fi; \
-	    if test -d $$facility/src ; then \
-	      if test -f $$facility/src/Makefile.ocpi ; then \
+	fi
+	$(AT)set -e; for facility in $(FACILITIES) ; do \
+	  if test -d $$facility/src ; then \
+	    if test -f $$facility/src/Makefile.ocpi ; then \
 		$(MAKE) $(call DescendMake2,$$facility/src) -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
 	      else \
 		$(MAKE) $(call DescendMake2,$$facility/src) -f $(DescendFile2)/Makefile.ocpi.for-src $(SYSTEMOPTION) all ; \
 	      fi ; \
 	    fi; \
-	   done; \
-	fi
+	   done
 
 generated:
 	$(AT)set -e; \
@@ -298,3 +237,16 @@ clean:
 distclean: clean
 	$(AT)echo Cleaning for distribution: `pwd`
 	$(AT)find . -name '*~' -exec rm {} \;
+
+subbin: lib
+	$(AT)set -e; \
+	if test -d src; then \
+	  $(MAKE) $(call DescendMake1,src) -f $(DescendFile1)/Makefile.ocpi.for-src \
+	      OBJDIR=../$(OCPI_OUT_DIR) $(SYSTEMOPTION) executables ; \
+	else \
+	  for facility in $(FACILITIES) ; do \
+	    if test -d $$facility/src ; then \
+	       $(MAKE) $(call DescendMake2,$$facility/src) -f $(DescendFile2)/Makefile.ocpi.for-src $(SYSTEMOPTION) executables ; \
+	    fi; \
+	   done; \
+	fi

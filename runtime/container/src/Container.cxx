@@ -79,11 +79,13 @@ namespace OCPI {
     }
 
     bool Container::supportsImplementation(OU::Worker &i) {
-      ocpiDebug("supports: container: %u m %s o %s v %s a %s p %s vs impl: %s m %s o %s v %s a %s p %s",
-		m_ordinal, m_model.c_str(), m_os.c_str(), m_osVersion.c_str(), m_arch.c_str(),
-		m_platform.c_str(), i.name().c_str(), i.model().c_str(),
-		i.attributes().m_os.c_str(), i.attributes().m_osVersion.c_str(),
-		i.attributes().m_arch.c_str(), i.attributes().m_platform.c_str());
+      ocpiInfo("Checking implementation %s model %s os %s version %s arch %s platform %s dynamic %u",
+		i.name().c_str(), i.model().c_str(), i.attributes().m_os.c_str(),
+		i.attributes().m_osVersion.c_str(), i.attributes().m_arch.c_str(),
+	        i.attributes().m_platform.c_str(), i.attributes().m_dynamic);
+      ocpiInfo("against container %s (%u) has model %s os %s version %s arch %s platform %s dynamic %u",
+		name().c_str(), m_ordinal, m_model.c_str(), m_os.c_str(), m_osVersion.c_str(),
+	        m_arch.c_str(), m_platform.c_str(), m_dynamic);
       return
 	m_model == i.model() &&
 	m_os == i.attributes().m_os &&
@@ -91,7 +93,8 @@ namespace OCPI {
 	((i.attributes().m_platform.length() &&
 	  m_platform == i.attributes().m_platform) ||
 	 (i.attributes().m_platform.empty() &&
-	  m_arch == i.attributes().m_arch));
+	  m_arch == i.attributes().m_arch)) &&
+	m_dynamic == i.attributes().m_dynamic;
     }
 
     Artifact & Container::
@@ -174,8 +177,11 @@ namespace OCPI {
       if (!m_enabled)
 	return false;
       OS::sleep(0);
-      for (BridgedPortsIter bpi = m_bridgedPorts.begin(); bpi != m_bridgedPorts.end(); bpi++)
-	(*bpi)->runBridge();
+      {
+	OU::SelfAutoMutex guard (this);
+	for (BridgedPortsIter bpi = m_bridgedPorts.begin(); bpi != m_bridgedPorts.end(); bpi++)
+	  (*bpi)->runBridge();
+      }
       DataTransfer::EventManager *em = getEventManager();
       switch (dispatch(em)) {
       case DispatchNoMore:
@@ -263,9 +269,11 @@ namespace OCPI {
       return c;
     }
     void Container::registerBridgedPort(LocalPort &p) {
+      OU::SelfAutoMutex guard (this);
       m_bridgedPorts.insert(&p);
     }
     void Container::unregisterBridgedPort(LocalPort &p) {
+      OU::SelfAutoMutex guard (this);
       m_bridgedPorts.erase(&p);
     }
     Launcher &Container::launcher() const {

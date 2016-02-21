@@ -36,6 +36,11 @@
 
 # Generic top level worker makefile
 include $(OCPI_CDK_DIR)/include/util.mk
+$(OcpiIncludeProject)
+$(call OcpiIncludeLibrary,..)
+ifndef Package
+  Package:= local
+endif
 ifndef Model
   $(error This directory named $(CwdName) does not end in any of: $(Models))
 endif

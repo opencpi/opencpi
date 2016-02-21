@@ -1,0 +1,10 @@
+<HdlContainer platform='zed_zipper'>
+<connection external='out' device='lime_dac'/>
+<connection device ='lime_adc' interconnect='zynq'/>
+<device worker='cstest' floating='1'>
+  <signal name='observeadc' platform='lime_adc_rxd'/>
+  <!-- <signal name='observedac' platform='lime_dac_txd'/> -->
+  <signal name='observeadcsel' platform='lime_adc_rx_iq_sel'/>
+  <signal name='dummy' platform=''/>
+</device>
+</HdlContainer>

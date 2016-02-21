@@ -74,30 +74,30 @@ printUsage (UnitTestConfigurator & config,
 int main ( int argc, char* argv [ ] )
 {
   int passed = 1;
-  const char * xml("<application>"
+  const char * xml("<application package='ocpi'>"
 		   " <policy mapping='MaxProcessors' processors='0'/>"
 
-		   "  <instance worker='dds_complex' name='unit_test' selection='model==\"%s\"'>"
+		   "  <instance component='dds_complex' name='unit_test' selection='model==\"%s\"'>"
 		   "    <property name='phaseIncrement' value='20000'/> "
 		   "  </instance> "
 
-		   "  <instance worker='comparator_complex' name='comparator'>"
+		   "  <instance component='comparator_complex' name='comparator'>"
 		   "    <property name='passed' value='false'/> "
 		   "    <property name='deviation' value='.003'/> "
 		   "  </instance> "
 
-		   "  <instance worker='file_write_msg' name='fw_test_gen_data' >"
+		   "  <instance component='file_write_msg' name='fw_test_gen_data' >"
 		   "    <property name='fileName' value='testDataOut.dat'/> "
 		   "  </instance> "
 
-		   "  <instance worker='file_read_msg' name='fr_expected_data'>"
+		   "  <instance component='file_read_msg' name='fr_expected_data'>"
 		   "    <property name='fileName' value='expectedDataIn.dat'/> "		      
 		   "    <property name='genTestFile' value='false'/> "		      
 		   "    <property name='stepThruMsg' value='false'/> "
 		   "    <property name='stepNow' value='true'/> "
 		   "  </instance> "
 
-		   "  <instance worker='file_write_msg' name='fw_delta_data' >"
+		   "  <instance component='file_write_msg' name='fw_delta_data' >"
 		   "    <property name='fileName' value='deltaDataOut.dat'/> "
 		   "  </instance> "
 

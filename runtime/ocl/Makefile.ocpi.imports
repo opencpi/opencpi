@@ -42,7 +42,7 @@ ALLINC += \
 	$(UTIL_EXPORTS) \
 	$(LOGGER_EXPORTS) \
 	$(OCPIOS_EXPORTS) \
-	$(OPENCL_EXPORTS) \
+	$(or $(OPENCL_EXPORTS),../include/CL) \
 	$(RCC_EXPORTS)
 
 ALLLIBS += \
@@ -58,12 +58,11 @@ ALLLIBS += \
 
 EXTRA_LDFLAGS=$(LD_ALLOW_UNDEFINED)
 ifeq ($(OCPI_HAVE_OPENCL),1)
-SYSLIBS += dl
 MAIN_LDFLAGS+=-Xlinker -rpath -Xlinker $(dir $(OCPI_OPENCL_OBJS))
-ifeq ($(OCPI_TARGET_OS),linux)
-SYSLIBS += $(dir $(OCPI_OPENCL_OBJS))/OpenCL
-else
+#ifeq ($(OCPI_TARGET_OS),linux)
+#SYSLIBS += $(dir $(OCPI_OPENCL_OBJS))/OpenCL
+#else
 BASICLIBS+=$(OCPI_OPENCL_OBJS)
-endif
+#endif
 endif
 #SHARED=$(SHARED_ALLOW_UNDEFINED)

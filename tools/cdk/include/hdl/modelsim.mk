@@ -69,7 +69,7 @@ $(call OcpiDbgVar,ModelsimFiles)
 ModelsimVlogLibs=
 
 ModelSimVlogIncs=\
-  $(foreach d,$(VerilogDefines),+define+$d) \
+  $(foreach d,$(VerilogDefines),+define+$d) +incdir+.. \
   $(foreach d,$(VerilogIncludeDirs),+incdir+$(call FindRelative,$(TargetDir),$d))
 
 ModelsimArgs=-pedanticerrors -work $(WorkLib) -modelsimini modelsim.ini
@@ -77,10 +77,10 @@ ModelsimArgs=-pedanticerrors -work $(WorkLib) -modelsimini modelsim.ini
 HdlToolCompile=\
   (echo '; This file is generated for building this '$(LibName)' library.';\
    echo '[library]' ; \
-   $(foreach l,$(HdlLibrariesInternal),\
+   $(foreach l,$(HdlLibrariesInternal),$(infox LLL:$l)\
       echo $(lastword $(subst -, ,$(notdir $l)))=$(strip \
         $(call FindRelative,$(TargetDir),$(strip \
-           $(call HdlLibraryRefDir,$l,$(HdlTarget)))));) \
+           $(call HdlLibraryRefDir,$l,$(HdlTarget),,modelsim))));) \
    $(foreach c,$(call HdlCollectCores,modelsim),\
       echo $(call HdlRmRv,$(notdir $(c)))=$(call FindRelative,$(TargetDir),$(strip \
           $(call HdlCoreRef,$(call HdlRmRv,$c),modelsim)));) \
@@ -108,7 +108,7 @@ define HdlToolDoPlatform_modelsim
 
 # Generate bitstream
 $1/$3.tar:
-	$(AT)echo Building modelsim simulation executable: "$$@" with details in $1/$3-fuse.out
+	$(AT)echo Building modelsim simulation executable: "$$@" with details in $1/$3-modelsim.out
 	$(AT)(set -e ; cd $1 && \
 	     echo -L $3 $$$$(grep = modelsim.ini | grep -v others= | sed 's/=.*//' | sed 's/^/-L /') > vsim.args && \
 	     export LM_LICENSE_FILE=$(OCPI_MODELSIM_LICENSE_FILE) && \
@@ -120,7 +120,7 @@ $1/$3.tar:
 	       $$(foreach i,$$(shell grep = $1/modelsim.ini | grep -v others=),\
                  $$(foreach l,$$(firstword $$(subst =, ,$$i)),\
                    $$(foreach p,$$(word 2,$$(subst =, ,$$i)),\
-		     --xform=s=$$(subst ../,,$$p)=$$l= $$p ))) $3 ) > $1/$3.out 2>&1
+                     --xform=s=$$(if $$(filter /%,$$p),$$(patsubst /%,%,$$p),$$(subst ../,,$$p))=$$l= $$p ))) $3 ) > $1/$3-modelsim.out 2>&1
 
 endef
 

@@ -31,81 +31,173 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <sys/uio.h>
+#include <vector>
+#include "cdkutils.h"
 #include "ocpidds.h"
+#include "OcpiUtilProtocol.h"
+#include "OcpiUtilMisc.h"
+#include "ValueReader.h"
+
+#define OCPI_OPTIONS_HELP \
+  "Usage is: ocpidds [options] <input-files>\n"
+
+//          name      abbrev  type    value description
+#define OCPI_OPTIONS \
+ CMD_OPTION(protocol,   p, Bool,   NULL, "Generate the protocol XML file from  DDS IDL files") \
+ CMD_OPTION(idl,        d, Bool,   NULL, "Generate the DDS IDL file from an XML protocol file") \
+ CMD_OPTION(structname, s, String, NULL, "IDL struct name for DDS topic for -p. Default is IDL file name") \
+ CMD_OPTION(test,       t, String,  0,   "Internal data type test iteration count") \
+ CMD_OPTION(output,     O, String, NULL, "the output directory for generated files") \
+ CMD_OPTION_S(define,   D, String, NULL, "preprocessor definition for IDL") \
+ CMD_OPTION_S(undefine, U, String, NULL, "preprocessor undefinition for IDL") \
+ CMD_OPTION_S(include,  I, String, NULL, "an include search directory for IDL/XML processing") \
+ CMD_OPTION(depend,     M, String, NULL, "file to write makefile dependencies to") \
+ CMD_OPTION(in,         i, String, NULL, "input file to read protocol data from") \
+ CMD_OPTION(out,        o, String, NULL, "output file to write protocol data to") \
+
+#include "CmdOption.h"
+
+namespace OU = OCPI::Util;
+namespace OA = OCPI::API;
+
+static const char *
+parseAndWrite(OU::Protocol &p, OU::Operation &op, uint8_t opcode, const char *text, int out) {
+  struct {
+    uint32_t length;
+    uint32_t opcode;
+  } msg;
+  msg.opcode = opcode;
+  msg.length = 0;
+  struct iovec iov[2];
+  iov[0].iov_base = &msg;
+  iov[0].iov_len = sizeof(msg);
+  std::vector<uint8_t> data;
+  const char *err;
+
+  if (op.nArgs()) {
+    std::vector<OU::Value *> values(op.nArgs(), NULL);
+    const OU::Value **v;
+    if (op.nArgs() == 1) {
+      values[0] = new OU::Value(*op.args());
+      values[0]->parse(text);
+      v = (const OU::Value **)&values[0];
+    } else {
+      size_t maxAlign = 1, minSize = 0, myOffset = 0;
+      bool diverseSizes, unBounded, isSub32;   // we are precluding unbounded in any case
+
+      // FIXME:  elide structures and operations
+      OU::Member m(op.name().c_str(), NULL, NULL, OA::OCPI_Struct, false, NULL);
+      m.m_members = op.args();
+      m.m_nMembers = op.nArgs();
+      if ((err = m.offset(maxAlign, myOffset, minSize, diverseSizes, isSub32, unBounded))) {
+	m.m_members = 0;
+	m.m_nMembers = 0;
+	return err;
+      }
+      OU::Value sv(m);
+      err = sv.parse(text);
+      m.m_members = 0;
+      m.m_nMembers = 0;
+      if (err)
+	return err;
+      v = (const OU::Value **)sv.m_struct;
+      size_t dataLen;
+      {
+	OU::ValueReader r(v);
+	dataLen = p.read(r, NULL, SIZE_MAX, opcode);
+      }      
+      data.resize(dataLen);
+      OU::ValueReader r(v);
+      ocpiCheck(dataLen == p.read(r, &data[0], dataLen, opcode));
+      iov[1].iov_base = &data[0];
+      iov[1].iov_len = dataLen;
+      msg.length = (uint32_t)dataLen;
+    }
+  }
+  if (writev(out, iov, msg.length ? 2 : 1) != (ssize_t)(iov[0].iov_len + iov[1].iov_len))
+    return OU::esprintf("error writing output file: %s", strerror(errno));
+  return NULL;
+}
+
+static const char *
+emitData(const char *protoFile, const char *input, const char *output) {
+  OU::Protocol p;
+  ezxml_t x;
+  std::string dummy;
+  const char *err = NULL;
+  if ((err = parseFile(protoFile, dummy, "protocol", &x, dummy, false)) ||
+      (err = p.parse(x, NULL, NULL, NULL, NULL)))
+    return err;
+  FILE *in;
+  int  out;
+  if (!strcmp(input, "-"))
+    in = stdin;
+  else if (!(in = fopen(input, "r")))
+    return OU::esprintf("input file \"%s\" cannot be opened", input);
+  if ((out = open(output, O_WRONLY|O_TRUNC|O_CREAT, 0666)) < 0)
+    return OU::esprintf("output file \"%s\" cannot be opened (%s)", output, strerror(errno));
+  size_t len = 0;
+  char *line = NULL;
+  ssize_t n;
+  for (size_t lines = 1; (n = getline(&line, &len, in)) > 0 && line[n-1] == '\n'; lines++) {
+    line[n-1] = '\0';
+    char *text = line;
+    OU::Operation *op;
+    if (n >= 4 && !strncmp("\\:", line, 2)) {
+      char *end = strchr(line + 2, ':');
+      if (end) {
+	err = OU::esprintf("invalid opcode at start of input line %zu", lines);
+	break;
+      }
+      text = end + 1;
+      *end = '\0';
+      op = p.findOperation(line+2);
+      if (!op) {
+	err = OU::esprintf("invalid or unknown opcode \"%s\" at start of input line %zu",
+			   line + 2, lines);
+	break;
+      }
+    } else
+      op = p.operations();
+    if ((err = parseAndWrite(p, *op, (uint8_t)(op - p.operations()), text, out)))
+      break;
+  }
+  if (!err && n > 0)
+    err = OU::esprintf("missing newline character at end of input");
+  fclose(in);
+  if (close(out))
+    err = OU::esprintf("error closing output file \"%s\": %s", output, strerror(errno));
+  if (line)
+    free(line);
+  return err;
+}
+
 /*
  * Generate things related to DDS.
  * In particular, generate the OpenCPI protocol XML from DDS IDL
  */
-int
-main(int argc, char **argv) {
-  const char *outDir = 0, *structName = 0;
-  const char *doTest = NULL;
-  bool
-    doProto = false, doIDL = false;
-  if (argc <= 1) {
-    fprintf(stderr,
-	    "Usage is: ocpidds [options] <input-files> \n"
-	    " Code generation options that determine which files are created and used:\n"
-	    " -p            Generate the protocol XML file from  DDS IDL files.\n"
-	    " -d            Generate the DDS IDL file from an XML protocol file.\n"
-	    " -s            IDL struct name for DDS topic for -p option. Default is IDL file name\n"
-	    " -t <count>    Internal test\n"
-	    " Other options:\n"
-	    " -O <dir>      Specify the output directory for generated files\n"
-	    " -DSYM         Specify preprocessor definition for IDL\n"
-	    " -USYM         Specify preprocessor undefinition for IDL\n"
-	    " -I <dir>      Specify an include search directory for IDL/XML processing\n"
-	    " -M <file>     Specify the file to write makefile dependencies to\n"
-	    );
-    return 1;
-  }
-  const char *err = 0;
-  for (char **ap = argv+1; *ap; ap++)
-    if (ap[0][0] == '-')
-      switch (ap[0][1]) {
-      case 'd':
-	doIDL = true;
-	break;
-      case 'p':
-	doProto = true;
-	break;
-      case 's':
-	structName = *++ap;
-	break;
-      case 't':
-	doTest = *++ap;
-	break;
-      case 'M':
-	depFile = *++ap;
-	break;
-      case 'I':
-	addInclude(*ap);
-	if (!ap[0][2])
-	  addInclude(*++ap);
-	break;
-      case 'D':
-      case 'U':
-	addInclude(*ap);
-	break;
-      case 'O':
-	outDir = *++ap;
-	break;
-      default:
-	fprintf(stderr, "Unknown flag: %s\n", *ap);
-	return 1;
-      }
-    else {
-      if (doProto) {
-	if ((err = emitProtocol(outDir, *ap, structName)))
-	  fprintf(stderr, "Error generating OpenCPI protocol file from IDL: %s\n", err);
-      } else if (doIDL && (err = emitIDL(outDir, *ap)))
-	fprintf(stderr, "Error generating IDL file from OpenCPI protocol file \"%s\": %s\n", *ap, err);
-    }
-  if (doTest)
-    dataTypeTest(doTest);
+static int mymain(const char **ap) {
+  const char *err = NULL;
+  if (options.protocol()) {
+    if ((err = emitProtocol(options.output(), *ap, options.structname())))
+      fprintf(stderr, "Error generating OpenCPI protocol file from IDL: %s\n", err);
+  } else if (options.idl() && (err = emitIDL(options.output(), *ap)))
+    fprintf(stderr, "Error generating IDL file from OpenCPI protocol file \"%s\": %s\n", *ap,
+	    err);
+  else if (options.test())
+    dataTypeTest(options.test());
+  else if (options.in() && (err = emitData(*ap, options.in(), options.out())))
+    fprintf(stderr, "Error generating data file from OpenCPI protocol file \"%s\": %s\n", *ap,
+	    err);
   return err ? 1 : 0;
+}
+
+int
+main(int /*argc*/, const char **argv) {
+  return options.main(argv, mymain);
 }

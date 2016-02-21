@@ -50,7 +50,6 @@ endif
 
 $(call OcpiDbgVar,OclTarget)
 $(call OcpiDbgVar,OclTargets)
-
 OclOs=opencl
 OclOsVersion=$(word 1,$(subst -, ,$1))
 OclArch=$(word 2,$(subst -, ,$1))

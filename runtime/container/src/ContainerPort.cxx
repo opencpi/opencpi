@@ -52,7 +52,6 @@ namespace OCPI {
     {
     }
     Port::~Port() {
-      container().unregisterBridgedPort(*this);
     }
 
     //    Container &Port::container() const { return m_container; }

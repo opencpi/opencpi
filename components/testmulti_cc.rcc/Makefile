@@ -23,5 +23,5 @@
 #
 ########################################################################### #
 
-Workers=cons prod
+Workers=cons_cc prod_cc
 include $(OCPI_CDK_DIR)/include/worker.mk

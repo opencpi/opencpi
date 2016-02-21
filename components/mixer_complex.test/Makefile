@@ -1,4 +1,4 @@
-include $(OCPI_CDK_DIR)/ocpisetup.mk
+include $(OCPI_CDK_DIR)/include/ocpisetup.mk
 
 all: mixerTest
 	rm -f utTime.sh; ln -s ../unit.test/utTime.sh .

@@ -29,7 +29,8 @@ public:
   // A leaf request
   size_t beginString(const Member &m, const char *&chars, bool start);
   // Called on a leaf, with contiguous non-string data
-  void readData(const Member &m, ReadDataPtr p, size_t nBytes, size_t nElements);
+  void readData(const Member &m, ReadDataPtr p, size_t nBytes, size_t nElements,
+		bool fake = false);
 };
   }
 }

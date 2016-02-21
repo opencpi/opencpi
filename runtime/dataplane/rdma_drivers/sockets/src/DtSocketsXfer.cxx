@@ -446,7 +446,7 @@ SocketSmemServices::
 }
 
 void SocketXferRequest::
-action_transfer(PIO_transfer transfer)
+action_transfer(PIO_transfer transfer, bool /*last*/)
 {
   //#define TRACE_PIO_XFERS  
 #ifdef TRACE_PIO_XFERS

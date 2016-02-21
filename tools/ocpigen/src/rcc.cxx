@@ -527,8 +527,8 @@ emitImplRCC() {
   if (m_language == CC && m_slave)
     fprintf(f,
 	    "#include <inttypes.h>\n"
-	    "#include <../OcpiApi.h>\n"
-	    "#include <../OcpiOsDebug.h>\n");
+	    "#include <OcpiApi.hh>\n"
+	    "#include <OcpiOsDebugApi.hh>\n");
   const char *last;
   unsigned in = 0, out = 0;
   if (m_ports.size()) {
@@ -1037,18 +1037,22 @@ parseRccImpl(const char *package) {
 	return
 	  OU::esprintf("Both \"inputname\" and \"outputname\" must be specified or neither");
       ezxml_set_attr(x, "optional", "1");
+      char *copy = ezxml_toxml(x); // snapshot a copy for the output port
       // Create the input port
       ezxml_set_attr(x, "producer", "0");
       ezxml_set_attr(x, "implname", input);
-      if (!dist)
+      if (!dist && inDist)
 	ezxml_set_attr(x, "distribution", inDist);
       if (!createDataPort<RccPort>(*this, x, NULL, -1, err))
 	return err;
-      if (!dist)
-	ezxml_set_attr(x, "distribution", outDist);
-      ezxml_set_attr(x, "producer", "1");
-      ezxml_set_attr(x, "implname", output);
-      if (!createDataPort<RccPort>(*this, x, NULL, -1, err))
+      // The original XML has been patched to become the input side XML.
+      // Now we need to clone it (NOT share it) to become the output side XML
+      ezxml_t ox = ezxml_parse_str(copy, strlen(copy));
+      ezxml_set_attr(ox, "producer", "1");
+      ezxml_set_attr(ox, "implname", output);
+      if (!dist && outDist)
+	ezxml_set_attr(ox, "distribution", outDist);
+      if (!createDataPort<RccPort>(*this, ox, NULL, -1, err))
 	return err;
     } else {
       DataPort *dp;
@@ -1088,6 +1092,7 @@ parseRccAssy() {
   // Do the generic assembly parsing, then to more specific to RCC
   if ((err = a->parseAssy(m_xml, topAttrs, instAttrs, true, m_outDir)))
     return err;
+  m_dynamic = true;
   return NULL;
 }
 
@@ -1446,8 +1451,8 @@ emitRccCImpl1(FILE *f) {
 
 const char *DataPort::
 finalizeRccDataPort() {
-  const char *err = NULL;
-  if (type == WDIPort)
+  const char *err;
+  if (!(err = postParse()) && type == WDIPort)
     createDataPort<RccPort>(worker(), NULL, this, -1, err);
   return err;
 }

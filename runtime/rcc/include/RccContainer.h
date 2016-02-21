@@ -62,9 +62,6 @@ namespace OCPI {
   }
 
   namespace RCC {
-
-
-
     class Port;
     class Component;     
     class RCCWorkerInterface;
@@ -99,33 +96,29 @@ namespace OCPI {
       friend class Application;
       friend class PortDelegator;
 
-      Container(const char *name, const OCPI::API::PValue* props)
+      Container(const char *name, const OCPI::API::PValue* params)
 	throw (OCPI::Util::EmbeddedException);
       virtual ~Container()
 	throw ();
       void initWorkQueues();
       bool portsInProcess() { return true; }
       OCPI::Container::Container::DispatchRetCode
-	dispatch(DataTransfer::EventManager* event_manager=NULL);
+      dispatch(DataTransfer::EventManager *event_manager = NULL);
       OCPI::API::ContainerApplication*
-	createApplication(const char *name, const OCPI::Util::PValue *props)
+      createApplication(const char *name, const OCPI::Util::PValue *params)
 	throw (OCPI::Util::EmbeddedException);
       OCPI::Container::Artifact &
-	createArtifact(OCPI::Library::Artifact &lart, const OCPI::API::PValue *artifactParams);
-
+      createArtifact(OCPI::Library::Artifact &lart, const OCPI::API::PValue *artifactParams);
 
       // worker task management
       void addTask( void (*workitem_func)(void *), void * args );
       void addTask( RCCUserTask * task );
       bool join( bool block, OCPI::OS::Semaphore & sem );
-      
 
       void start(DataTransfer::EventManager* event_manager) throw();
       void stop(DataTransfer::EventManager* event_manager) throw();
       DataTransfer::EventManager*  getEventManager();
       bool needThread() { return true; }
-
-
     };
   }
 }

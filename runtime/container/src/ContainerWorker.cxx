@@ -62,8 +62,8 @@ namespace OCPI {
 	   size_t member, size_t crewSize, const OA::PValue *) 
       : OU::Worker::Worker(),
 	m_artifact(art), m_xml(impl), m_instXml(inst), m_workerMutex(true),
-      m_slave(slave), m_hasMaster(hasMaster), m_member(member),
-      m_crewSize(crewSize), m_connectedPorts(0), m_optionalPorts(0) {
+	m_controlOpPending(false), m_slave(slave), m_hasMaster(hasMaster), m_member(member),
+        m_crewSize(crewSize), m_connectedPorts(0), m_optionalPorts(0) {
       if (impl) {
 	const char *err = parse(impl);
 	if (err)
@@ -207,8 +207,6 @@ namespace OCPI {
       const char *err = v.parse(value);
       if (err)
         throw OU::ApiError("Error parsing property value:\"", value, "\"", NULL);
-      if (vt.m_baseType == OA::OCPI_Struct)
-	throw OU::ApiError("No support yet for setting struct properties", NULL);
       setPropertyValue(prop, v);
     }
     void Worker::

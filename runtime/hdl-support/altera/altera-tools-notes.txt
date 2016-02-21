@@ -1,0 +1,149 @@
+The standard quartus "subscription edition" installation is necessary for building bitstreams.
+
+For runtime-only, you need the quartus web edition, NOT the "quartus programming tools".
+  The "quartus programming tools" does not include tools to program/write the flash memory
+  This web edition provides:
+  -- quartus_pgm for programming via jtag
+  -- sof2flash for converting bitstreams to flash format
+  -- nios2-flash-programmer for programming flash via a bitstream with flash-writing support
+
+For flash programming (at least), you need the dev kit software installation, which includes:
+  -- bitstream (.sof) and flash (.flash) files for factory default bitstreams.
+  -- bitstream for indirectly writing flash
+  -- the dev kits/boards come in different flavors for different Quartus versions
+  -- the dev kits/boards come in different flavors for the part on the board (230 vs 530)
+  -- the dev kits/boards are not available for the latest quartus versions
+  ---- But since you are only using bitstreams, flash images, and doc:
+  ---- its ok if the dev kit/board version is older than the tool version
+  -- the dev kits/boards come only with Windows installers (xxx.exe).
+  ---- Thus you must unpack on windows by running the xxx.exe file.
+  ---- Then move the dir into your altera directory under the correct version
+  ---- Not necessarily your latest quartus installation
+  ---- E.g. your kit might be under 11.1, while your quartus install is under 13.1
+  --- the result of installing a XXX kit for quartus version YYY is placed in:
+  ----- top-altera-dir/YYY/kits/XXX
+
+For installing the web edition for only this jtag and flash runtime support (in this case on RHEL5 anyway):
+  -- Download the tar file: Quartus-web-13.1.0.162.tar
+  -- Unpack the tar file: tar xf Quartus-web-13.1.0.162.tar
+  -- Run the install:  ./setup.sh
+  -- To save space you can avoid the modelsim and the devices parts (checkboxes unchecked).
+
+The enable OpenCPI to use all this, you need to set two environment variables in
+the OpenCPI startup script you use.  They are different since the kit(s) for the
+board you have are likely to be in a different place than the software due to
+the fact that the kits are not updated when the software is updated.
+The "TOOLS" dir, might only be the web edition if the system you are using
+is for runtime only (not building bitstreams).  The license file environment
+variable is only needed for the builtstream-building tools, not the runtime tools.
+
+Here is an example:
+
+export OCPI_ALTERA_TOOLS_DIR=/home/jim/altera/13.1
+export OCPI_ALTERA_KITS_DIR=/home/jim/altera/11.1/kits
+export OCPI_ALTERA_LICENSE_FILE=/home/jim/mac/altera/1-9095JT_License.dat
+
+To make the linux USB drivers work properly with the "USB Blaster" cable on the Stratix4 dev board,
+you must place the file named "51-usbblaster.rules" in the /etc/udev/rules.d directory.
+(You must use "sudo cp" to put it there).  The contents of this file are: (between =====)
+=====
+# USB-Blaster
+BUS=="usb", SYSFS{idVendor}=="09fb", SYSFS{idProduct}=="6001", MODE="0666"
+BUS=="usb", SYSFS{idVendor}=="09fb", SYSFS{idProduct}=="6002", MODE="0666"
+BUS=="usb", SYSFS{idVendor}=="09fb", SYSFS{idProduct}=="6003", MODE="0666"
+
+# USB-Blaster II
+
+BUS=="usb", SYSFS{idVendor}=="09fb", SYSFS{idProduct}=="6010", MODE="0666"
+BUS=="usb", SYSFS{idVendor}=="09fb", SYSFS{idProduct}=="6810", MODE="0666"
+=====
+
+If you put this in a file "xx", the command to copy it to the right place is:
+
+sudo cp xx /etc/udev/rules.d/51-usbblaster.rules
+
+Reboot linux after placing this "51-usbblaster.rules" file in /etc/udev/rules.d.
+(There might be a way of doing this without rebooting if you know how lots about udev).
+
+Setting up the (stratix 4) dev board:
+
+For the system that will run the board, you just need the "web edition" toos and the "dev kit" files.
+The environment variables should be set up as above, and the environment script should be sourced.
+(You do not need the subscription edition)
+
+Assuming the tools are installed, and the jtag-usb programming cable is installed between
+some USB port and the jtab usb port on the baord, use the following script to verify that
+the jtag cable is working:
+
+% probeJtag
+
+This will use Altera software to find what jtab/usb cables exist, and what their
+serial numbers are.  An example output is:
+
+[jim@amd790 opencpi]$ probeJtag
+==== Probing for Altera JTAG ports:
+Found cable "USB-Blaster [USB 6-1]" with serial number "91d28408"
+==== Probing for Xilinx JTAG ports:
+Discovered ports are: usb21
+Trying port usb21...USB Cable Connection verified on port usb21, ESN is 000013C1E1F401
+Part at position 1 on usb21 is xccace
+Part at position 2 on usb21 is xc6vlx240t
+
+This shows that we have discovered an Altera jtag port named "USB-Blaster [USB 6-1]"
+with a serial number of "91d28408".
+
+When there is only one board for each vendor, the serial number is not needed,
+but then there are more than one board, the serial number is used to uniquely associate
+a board at a PCI device address with a jtag cable, in the file /opt/opencpi/system.xml.
+
+The next (and last) step to the installation is to load an OpenCPI bitstream into the
+flash memory of the board.
+
+This is done with the loadFlash XXXX script, where XXXX is the name of the platform.
+Use "alst4" for the s4gx230-based board, and "alst4x" for the s4gx530-based board.
+This script relies on the OCPI_ALTERA_TOOLS_DIR and OCPI_ALTER_KITS_DIR environment
+variables being set up properly.
+
+An example (from the environment script) is:
+
+export OCPI_ALTERA_TOOLS_DIR=/home/jim/altera/13.1
+export OCPI_ALTERA_KITS_DIR=/home/jim/altera/11.1/kits
+
+This indicates that the altera tools (at least the web edition for jtag/flash tools)
+is at version 13.1, but the kits are at version 11.1.
+
+So, assuming a s4gx530 board, assuming you had already built an opencpi bitstream
+(like "tb_bias" or "testbias"), you would do:
+
+% loadFlash alstx <OpenCPI Bitstream File> <JTAG_CABLE_SERIAL_NUMBER> 
+
+The <JTAG_CABLE_SERIAL_NUMBER> can be "any" when there is only one cable.
+OpenCPI bitstream files normally end in ".bitz".
+
+This script converts the file to the format appropriate for flash,
+loads a special factory bitstream via jtag that can help
+(indirectly) write to flash, and then writes to flash.
+
+After successfully writing to flash, the system should be POWERED DOWN
+and then restarted. This is necessary to ensure that the bitstream
+written to the flash is being used when the system is restarted.
+When the system restarts:
+
+1. Set up your environment by sourcing your env script
+   (but using your script).
+
+   % source jkvm6.sh
+
+2. Load the OpenCPI linux kernel driver using "ocpidriver load".
+
+   % ocpidriver load
+
+3. Then using the OpenCPI command to find PCI devices running OpenCPI:
+
+   % ocpihdl search
+
+This last comment should print something like:
+
+[jim@amd790 opencpi]$ ocpihdl search
+OpenCPI HDL device found: 'PCI:0000:05:00.0': bitstream date Tue Dec 10 21:36:03 2013, platform "ml605", part "xc6vlx240t", UUID fa8cae9e-620c-11e3-9bbc-37ac85396832
+OpenCPI HDL device found: 'PCI:0000:04:00.0': bitstream date Wed Dec 11 08:19:12 2013, platform "alst4x", part "ep4sgx530k", UUID d373720c-6266-11e3-8b4c-4399833db0a5

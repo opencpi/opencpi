@@ -40,9 +40,6 @@
 
 #ifndef OCPI_UTIL_DATA_TYPES_API_H
 #define OCPI_UTIL_DATA_TYPES_API_H
-#ifndef __STDC_LIMIT_MACROS
-#define __STDC_LIMIT_MACROS // wierd standards goof up
-#endif
 #include <stdint.h>
 #include <limits>
 /*

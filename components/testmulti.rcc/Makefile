@@ -34,9 +34,7 @@
 ########################################################################### #
 
 Workers=prod cons
-OCPI_CDK_DIR=../../ocpi
 # Set this if some of the xml files are elsewhere, like a spec file that is being
 # shared with other implementers
 IncludeDirs=../../runtime/local/util/timeEmit/include
-# OocpiLibraries=util - not until we have an AEP
 include $(OCPI_CDK_DIR)/include/worker.mk

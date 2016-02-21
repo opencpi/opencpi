@@ -75,9 +75,8 @@ Container(const char *name, const OA::PValue* /*params*/)
 
   const char *system = OU::getSystemId().c_str();
   m_model = "rcc";
+
   // FIXME: somehow this should default since RCC can pretty much support them all?
-
-
   m_transports.resize(5);
   m_transports[0].transport = "ocpi-dma-pio";
   m_transports[0].id = system;
@@ -128,6 +127,7 @@ Container(const char *name, const OA::PValue* /*params*/)
   m_transports[3].optionsOut =
     (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive);
 
+  m_dynamic = OC::Manager::dynamic();
 }
 
 void Container::
@@ -160,10 +160,7 @@ initWorkQueues() {
 
      m_wqInit = true;
    }
-
 }
-
-
 
 OC::Artifact & Container::
 createArtifact(OCPI::Library::Artifact &lart, const OA::PValue *artifactParams) {
@@ -390,6 +387,5 @@ stop(DataTransfer::EventManager* event_manager)
     // Ignore
   }
 }
-
   }
 }

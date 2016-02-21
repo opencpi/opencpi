@@ -10,7 +10,7 @@ source platforms/zed/zed-env.sh
 # #### Location of the Modelsim tools ####################################### #
 
 export OCPI_MODELSIM_DIR=/home/jek/mac/Mentor/modelsim_dlx
-export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../license-20150407.txt
+export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../license-20151005.txt
 
 source env/finish.sh
 done; trap - ERR

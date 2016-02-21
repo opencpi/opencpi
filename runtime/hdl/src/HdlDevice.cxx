@@ -31,7 +31,6 @@ namespace OCPI {
   namespace HDL {
     namespace OE = OCPI::Util::EzXml;
     namespace OU = OCPI::Util;
-    namespace OR = OCPI::RDT;
 
     // The derived class will set up accessors after this constructor is done
     // So we can't perform accesses until that time, which is the "init" call.

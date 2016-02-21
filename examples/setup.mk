@@ -1,18 +1,26 @@
 ifndef OCPI_CDK_DIR
-# if not set, assume we are either in the development tree or in an exported cdk
-OCPI_CDK_DIR=$(or $(wildcard ../../export),../..)
+OCPI_CDK_DIR=$(realpath ../../exports)
 endif
 
-include $(OCPI_CDK_DIR)/ocpisetup.mk
+ifeq ($(filter clean%,$(MAKECMDGOALS)),)
+  include $(OCPI_CDK_DIR)/include/ocpisetup.mk
+  export PATH:=$(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_DIR):$(OCPI_CDK_DIR)/scripts:$(PATH)
+  export OCPI_LIBRARY_PATH=.:$(OCPI_CDK_DIR)/lib/components/rcc
+endif
 
-PROG=$(OCPI_TARGET_DIR)/$(APP)
+DIR=target-$(OCPI_TARGET_DIR)
+PROG=$(DIR)/$(APP)
 OUT= > /dev/null
 
-all: $(PROG)
+INCS = -I$(OCPI_INC_DIR)
 
-$(PROG): $(APP).cxx | $(OCPI_TARGET_DIR)
-	$(AT)echo Building $@...; $(CXX) -g -Wall $(OCPI_EXPORT_DYNAMIC) -o $@ -I$(OCPI_INC_DIR) $^ $(OCPI_LD_FLAGS)
+ifdef APP
+all: $(PROG)
+$(PROG): $(APP).cxx | $(DIR)
+	$(AT)echo Building $@...
+	$(AT)$(CXX) -g -Wall $(OCPI_EXPORT_DYNAMIC) -o $@ $(INCS) $^ $(OCPI_LD_FLAGS)
+endif
 
 clean::
-	rm -r -f lib target-* *.*~ timeData.raw output_image.jpg
+	$(AT)rm -r -f lib target-* *.*~ timeData.raw output_image.jpg test.output
 

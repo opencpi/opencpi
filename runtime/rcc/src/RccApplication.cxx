@@ -65,10 +65,11 @@ Artifact(Container &c, OCPI::Library::Artifact &lart, const OA::PValue *props)
   std::string err;
   const char* entryPoint = "ocpi_EntryTable";
   try {
+    ocpiInfo("Loading RCC worker artifact %s", url);
     m_loader.open(url);
     m_open = true;
     OU::findString(props, "DLLEntryPoint", entryPoint);
-    m_entryTable = (RCCEntryTable *)m_loader.getSymbol( entryPoint);
+    m_entryTable = (RCCEntryTable *)m_loader.getSymbol(entryPoint);
   } catch (std::string &error) {
     OU::format(err, "Could not open RCC worker file %s: %s", url, error.c_str());
     throw err;

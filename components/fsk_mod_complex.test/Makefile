@@ -1,4 +1,4 @@
-include $(OCPI_CDK_DIR)/ocpisetup.mk
+include $(OCPI_CDK_DIR)/include/ocpisetup.mk
 
 all: 
 	rm -f unitTest; ln -s ../unit.test/unitTest .

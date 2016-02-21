@@ -34,7 +34,7 @@
 #
 ########################################################################### #
 
-OCPI_CDK_DIR=../../ocpi
+OCPI_CDK_DIR?=../../ocpi
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 
 ImportCoreDirs=\
@@ -52,7 +52,7 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-import-cores.mk
 
 # These libraries may be order sensitive if they depend on each other
 # bsv is "leaf".
-Libs=bsv fixed_float ocpi util platform zynq stratix4 virtex5 virtex6 xilinx
+Libs=bsv fixed_float ocpi util platform zynq stratix4 virtex5 virtex6 xilinx i2c
 
 #LocalCores=xfft_v7_1 \
  temac_v6 \

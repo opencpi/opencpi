@@ -214,9 +214,9 @@ finalize() {
   // If messages are always a multiple of datawidth and we don't have zlms, bytes are datawidth
   size_t granuleWidth =
     m_dataValueWidth * m_dataValueGranularity;
-  // If messages are always a multiple of datawidth and we don't have zlms, bytes are datawidth
-  if (granuleWidth >= m_dataWidth && (m_dataWidth == 0 || (granuleWidth % m_dataWidth) == 0) &&
-      !m_zeroLengthMessages)
+  // If messages are always a multiple of datawidth, bytes are datawidth
+  if (granuleWidth >= m_dataWidth &&
+      (m_dataWidth == 0 || (granuleWidth % m_dataWidth) == 0))
     m_byteWidth = m_dataWidth;
   else
     m_byteWidth = m_dataValueWidth;

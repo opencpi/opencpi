@@ -43,6 +43,7 @@ namespace OCPI {
       std::string m_error;
       const char *m_help;
       BaseCommandOptions(Member *members, unsigned nMembers, const char *help, const char **defaults);
+      ~BaseCommandOptions();
       const char *setError(const char *);
       const char *doValue(Member &m, const char *value, const char **&argv);
     public:

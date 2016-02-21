@@ -257,7 +257,8 @@ type wci_s2m_array_t is array(natural range <>) of wci_s2m_t;
              from_users  : in  wci.raw_prop_out_array_t(0 to nusers-1);
              to_users    : out wci.raw_prop_in_array_t(0 to nusers-1);
              from_device : in  wci.raw_prop_in_t;
-             to_device   : out wci.raw_prop_out_t);
+             to_device   : out wci.raw_prop_out_t;
+             index       : out integer range 0 to nusers-1);
   end component raw_arb;
 end package wci;
 

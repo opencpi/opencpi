@@ -38,9 +38,17 @@ static int mymain(const char **ap) {
   OCPI::OS::logSetLevel(options.loglevel());
   OCPI::Driver::ManagerManager::suppressDiscovery();
   const char *env = getenv("OCPI_OPENCL_OBJS");
-  OCPI::OS::LoadableModule lm(env ? env : "libOpenCL.so", true);
-
-  if (!*ap || !strcasecmp(*ap, "test"))
+  const char *lib = env ? env : "libOpenCL.so";
+  if (*ap && !strcasecmp(*ap, "test")) {
+    try {
+      OCPI::OS::LoadableModule lm(lib, true);
+    } catch (...) {
+      return 1;
+    }
+    return 0;
+  }
+  OCPI::OS::LoadableModule lm(lib, true);
+  if (!*ap)
     return 0;
   if (!strcasecmp(*ap, "search")) {
     OA::PVarray vals(5);

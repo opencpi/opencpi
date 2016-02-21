@@ -32,6 +32,15 @@
  */
 #include "ContainerManager.h"
 #include "ContainerLauncher.h"
+#include "ContainerPort.h"          // just for linkage hooks
+#include "DtSharedMemoryInternal.h" // just for linkage hooks
+#include "OcpiUuid.h"               // just for linkage hooks
+#include "DtMsgDriver.h"            // just for linkage hooks
+#include "OcpiOsSocket.h"           // just for linkage hooks
+#include "OcpiOsSemaphore.h"        // just for linkage hooks
+#include "lzma.h"                   // just for linkage hooks
+#include "zlib.h"                   // just for linkage hooks
+#include "pthread_workqueue.h"      // just for linkage hooks
 namespace OCPI {
   namespace Container {
     namespace OA = OCPI::API;
@@ -44,6 +53,7 @@ namespace OCPI {
     Container **Manager::s_containers;
     unsigned Manager::s_maxContainer;
     LocalLauncher *Manager::s_localLauncher;
+    static OCPI::Driver::Registration<Manager> cm;
     Manager::Manager() : m_tpg_events(NULL), m_tpg_no_events(NULL) {
     }
 
@@ -90,13 +100,13 @@ namespace OCPI {
     unsigned Manager::cleanupPosition() { return 0; }
     // FIXME: allow the caller to get errors. Perhaps another overloaded version
     OCPI::API::Container *Manager::find(const char *model, const char *which,
-					const OA::PValue *props) {
+					const OA::PValue *params) {
       parent().configureOnce();
       for (Driver *d = firstChild(); d; d = d->nextChild()) {
 	if (!strcmp(model, d->name().c_str())) {
 	  OA::Container *c = d->findContainer(which);
 	  std::string error;
-	  return c ? c : d->probeContainer(which, error, props);
+	  return c ? c : d->probeContainer(which, error, params);
 	}
       }
       return NULL;
@@ -130,7 +140,10 @@ namespace OCPI {
 	}
       return false;
     }
-
+    bool Manager::
+    dynamic() {
+      return OCPI_DYNAMIC;
+    }
     Driver::Driver(const char *name) 
       : OD::DriverType<Manager,Driver>(name, *this) {
     }
@@ -157,6 +170,24 @@ namespace OCPI {
 	&OCPI::Container::Container::nthContainer(n);
     }
   }
+  namespace Container {
+    // Hooks to ensure that if we are linking statically, everything is pulled in
+    // to support drivers and workers.
+    // not in spcm branch    void dumb1(BasicPort &p) { p.applyConnectParams(NULL, NULL); }
+  }
 }
-
+namespace DataTransfer {
+  intptr_t dumb2(EndPoint &loc) {
+    OCPI::Util::Uuid uuid;
+    OCPI::Util::UuidString us;
+    OCPI::Util::uuid2string(uuid, us);
+    createHostSmemServices(loc);
+    Msg::XferFactoryManager::getFactoryManager();
+    OCPI::OS::Socket s;
+    OCPI::OS::Semaphore sem;
+    gzerror(NULL, (int*)0);
+    pthread_workqueue_create_np(NULL, NULL);
+    return (intptr_t)&lzma_stream_buffer_decode;
+  }
+}
 

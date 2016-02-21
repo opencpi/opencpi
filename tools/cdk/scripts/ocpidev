@@ -1,0 +1,875 @@
+#!/bin/sh
+
+# This script performs operations on projects.
+
+# FIXME: add option to copy "other" files when creating worker
+# FIXME: add primitive library option when creating worker
+
+[ ! -d $OCPI_CDK_DIR ] && echo Error: OCPI_CDK_DIR environment setting not valid. && exit 1
+
+# Database of models, languages and suffixes, redundant with util.mk
+Models=(rcc hdl ocl)
+Language_rcc=c
+Languages_rcc=(c:c c++:cc)
+Language_hdl=vhdl
+Languages_hdl=(vhdl:vhd verilog:v)
+Language_ocl=cl
+
+CheckCDK='$(if $(realpath $(OCPI_CDK_DIR)),,\
+  $(error The OCPI_CDK_DIR environment variable is not set correctly.))'
+# Print error message and exit
+function bad {
+  echo Error: $* >&2
+  exit 1
+}
+
+function noslash {
+  [ $(dirname $1) != . ] && bad no slashes allowed in \"$1\": perhaps use the -d option\?
+  return 0
+}
+function noexist {
+  [ -e $1 ] && bad the file/directory $directory/$1 already exists
+  return 0
+}
+function libexist {
+  if [ -n "$library" ] ; then
+    [ -d $libdir ] || bad the specified library \"$library\" does not exist
+  fi
+  return 0
+}
+# make sure the components dir is a library we can use, from the project level
+function check_components {
+  [ -d components ] || bad the \"components\" library does not exist
+  save=$dirtype
+  get_dirtype components
+  case "$dirtype" in
+    (library|lib)
+      ;;
+    ("")
+      [ "$(ls components)" == "" ] && bad the directory \"components\" is empty
+      bad there are component libraries under \"components/\" in this project, so the \"components\" library cannot be $1
+      ;; 
+    (libraries)
+      bad must specify a library '(not "components")' when there are libraries under the \"components\" directory
+      ;;
+    (*)
+      bad the \"components\" directory appears to have the wrong type of Makefile $dirtype
+      ;;
+  esac
+}
+
+function needname {
+  [ -z "$1" ] && bad a name argument is required after the command: $verb $hdl$noun
+  [ "$1" == '*' ] && bad you can not use \* as a name
+  return 0
+}
+# Look in a directory and determine the type of the Makefile, set dirtype
+# If there is no Makefile or no appropriate line in the makefile, dirtype is ""
+function get_dirtype {
+  [ ! -e $1 ] && bad $1 should exist and does not
+  [ ! -d $1 ] && bad $1 should be a directory and is not
+  [ ! -f $1/Makefile ] && dirtype= && return 0
+  dirtype=$(sed -n 's=^[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\).mk$=\1=p' $1/Makefile)
+  dirtype=${dirtype/#hdl\//}
+}
+
+# Look in a directory and determine the type of the Makefile, set dirtype
+function check_dirtype {
+  get_dirtype $1
+  [ -z $dirtype ] && bad $1/Makefile is not correctly formatted.  No \"include *.mk\" lines.
+  [ $dirtype != $2 ] && bad $1/Makefile has unexpected type \"$dirtype\", expected \"$2\".
+}
+
+function ask {
+  if [ -z $force ]; then
+    until [[ -n "$force" || "$ans" == [yY] || "$ans" == [nN] ]]; do
+      read -p "Are you sure you want to $* (y or n)?  " ans
+    done  
+    [[ "$ans" == [Nn] ]] && exit 0
+    return 0
+  fi
+}
+
+function do_project {
+  set -e
+  if [ $verb == delete ]; then
+    [ -e $1 ] || bad the project \"$1\" does not exist
+    [ -d $1 ] || bad the project \"$1\" does not appear to be a directory
+    get_dirtype $1
+    [ -z $dirtype ] && bad the directory \"$directory\", is not project directory, no correct Makefile found
+    [ $dirtype != project ] && bad the dierctory \"$directory\" appears to be a \"$dirtype\" rather than a project
+    ask delete the \"$1\" project in the directory \"$directory\"
+    rm -r -f $1
+    [ -z $verbose ] || echo The project \"$1\" in the directory \"$directory\" has been deleted.
+    return 0
+  fi
+  [ -n "$dirtype" ] &&
+     bad the directory \"$directory\", where the project directory would be created, has an OpenCPI Makefile of type \"$dirtype\"\?\?   
+  [ -n "$top" -o -n "$platform" -o -n "$prebuilt" -o -n "$library" ] &&
+    bad illegal options present for creating project
+  noslash $1
+  noexist $1
+  [ -z $prefix ] && prefix=${1}_
+  [ -z $package ] && package=local
+  mkdir $1
+  cd $1
+  cat <<EOF > Project.exports
+# This file specifies aspects of this project are made available to users,
+# by adding or subtracting from what is automatically exported based on the
+# documented rules.
+# Lines starting with + add to the exports
+# Lines starting with - subtract from the exports
+EOF
+  cat <<EOF > Project.mk
+# This Makefile fragment for the "$1" project created at `pwd`
+ProjectName=$1
+ProjectPrefix=$prefix
+ProjectPackage=$package
+ProjectDependencies=${dependencies//:/ }
+EOF
+  cat <<EOF > Makefile
+$CheckCDK
+# This is the Makefile for the "$1" project.
+include \$(OCPI_CDK_DIR)/include/project.mk
+EOF
+  [ -z $verbose ] || echo A new project named \"$1\" has been created in `pwd`, with prefix \"$prefix\" and package \"$package\".
+}
+
+# Create an application
+# An application in a project might have:
+# An xml file 
+# A c++ main program
+# Its own private components (and thus act like a library)
+# Its own private HDL assemblies
+# Some data files
+
+function do_application {
+  set -e
+  case "$dirtype" in
+    (project)subdir=applications/;;
+    (applications);;
+    (*) bad this command can only be issued in a project directory or an applications directory;;
+  esac
+  adir=$subdir$1
+  if [ $verb == delete ]; then
+    if [ -f $adir.xml ] ; then
+      ask delete the application xml file \"$adir.xml\"
+      rm -f $adir.xml
+      return 0
+    fi
+    [ -e $adir ] || bad the application at \"$adir\" does not exist    
+    get_dirtype $adir
+    [ "$dirtype" == application ] || bad the directory at $adir does not appear to be an application
+    ask delete the application project in the \"$adir\" directory
+    rm -r -f $adir
+    exit 0
+  fi
+  [ -z "$xmlapp" -a -e $subdir$1 ] && bad the application \"$1\" in directory \"$topdir$subdir$1\" already exists
+  if [ $dirtype == project -a ! -e applications ]; then
+    mkdir applications
+    cat <<EOF > applications/Makefile
+$CheckCDK
+# To restrict the applications that are built or run, you can set the Applications
+# variable to the specific list of which ones you want to build and run, e.g.:
+# Applications=app1 app3
+# Othersize all applications will be biult and run
+include \$(OCPI_CDK_DIR)/include/applications.mk
+EOF
+    [ -z $verbose ] || echo This is the first application in this project.  The \"applications\" directory has been created.
+  fi
+  if [ -z $xmlapp ] ; then
+    mkdir $subdir$1
+    cat <<EOF > $subdir$1/Makefile
+$CheckCDK
+# This is the application Makefile for the "$1" application
+# If there is a $1.cc (or $1.cxx) file, it will be assumed to be a C++ main program to build and run
+# If there is a $1.xml file, it will be assumed to be an XML app that can be run with ocpirun.
+# The RunArgs variable can be set to a standard set of arguments to use when executing either.
+include \$(OCPI_CDK_DIR)/include/application.mk
+EOF
+    [ -z $verbose ] || {
+      echo Application \"$1\" created in the directory \"$topdir$subdir$1\"
+      echo You must create either a $1.xml or $1.cc file in the $topdir$subdir$1 directory\"
+    }    
+  else
+    app=${1/%.xml/}
+    [ -e applications/$app.xml ] && bad the XML application \"$app\" already exists in ${topdir}applications/$app.xml
+    cat <<EOF > $subdir$app.xml
+<!-- The \"$1\" application xml file -->
+<application>
+  <instance component='ocpi.nothing'/>
+</application>
+EOF
+    [ -z $verbose ] || echo The XML application \"$app\" has been created in ${topdir}applications/$app.xml
+  fi
+}
+
+# Major issue is in which library or top level.
+function do_protocol_or_spec {
+  set -e
+  case "$dirtype" in
+    (project)
+      if [ -n "$project" ]; then
+        subdir=specs
+      elif [ -z "$library" ] ; then
+        check_components used
+        subdir=components/specs
+      else
+        subdir=$libdir/specs      
+      fi
+      ;;
+    (library)
+      [ -z $library ] || bad you cannot specify the -l option when you are in a library already
+      [ -z $project ] || bad you cannot add spec or protocol files to the project from inside a library
+      subdir=specs
+      ;;
+    (*) bad this command can only be issued in a project directory or a library directory;;
+  esac
+  case $1 in
+    (*.xml)                    file=$1;;
+    (*[-_]proto|*[-_]protocol)
+      [ $noun == spec ] && bad it is a bad idea to make a spec file with a protocol suffix
+      file=$1.xml
+      ;;
+    (*[-_]spec)
+      [ $noun == protocol ] && bad it is a bad idea to make a protocol file with a spec suffix
+      file=$1.xml
+      ;;
+    (*)
+      if [ $noun == spec ] ; then
+        file=$1-spec.xml
+      else
+        file=$1-proto.xml
+      fi
+      ;;
+  esac
+  if [ $verb == delete ]; then
+    [ -e $subdir/$file ] || bad the file \"$subdir/$file\" does not exist
+    ask delete the file \"$subdir/$file\"
+    rm $subdir/$file
+    [ -z $verbose ] || echo The $2 \"$1\" in file $subdir/$file has been deleted.
+    exit 0
+  fi
+  [ -e $subdir/$file ] && bad the file \"$subdir/$file\" already exists
+  if [ ! -d $subdir -a -n "$verbose" ] ; then
+    if [ $subdir == specs ] ; then
+      echo The \"specs\" directory does not exist yet and will be created.
+    else
+      echo The specs directory \"$subdir\" does not exist and will be created.
+    fi
+  fi
+  mkdir -p $subdir
+  if [ $noun == protocol ]; then
+    name=protocol
+    cat <<EOF > $subdir/$file
+<!-- This is the protocol spec file (OPS) for protocol: $1
+     Add <operation> elements for message types.
+     Add protocol summary attributes if necessary to override attributes
+     inferred from operations/messages -->
+<protocol <!-- add protocol summary attributes here if necessary --> >
+  <!-- Add operation elements here -->
+</protocol>
+EOF
+  else
+    name=spec
+    cat <<EOF > $subdir/$file
+<!-- This is the spec file (OCS) for: $1
+     Add component spec attributes, like "protocol".
+     Add property elements for spec properties.
+     Add port elements for i/o ports -->
+<ComponentSpec>
+  <!-- Add property and port elements here -->
+</ComponentSpec>
+EOF
+  fi
+  if [ -n "$verbose" ]; then
+    if [ -z $library ]; then
+      echo A new $2, \"$1\", has been created at the project level in $subdir/$file
+    else
+      echo A new $2, \"$1\", has been created in library \"$library\" in $subdir/$file
+    fi
+  fi
+  return 0
+}
+
+function do_library {
+  set -e
+  odirtype=$dirtype
+  [ -z $library ] || bad The -l option is invalid when deleting or adding a library
+  if [ "$dirtype" == project ] ; then
+    if [ $1 == components ] ; then
+      subdir=components
+    else
+      subdir=components/$1
+    fi
+  elif [ "$dirtype" == libraries ] ; then
+    subdir=$1
+  else
+    bad this command can only be issued in a project directory or a components directory
+  fi
+  if [ $verb == delete ]; then
+    [ $subdir == components ] && check_components deleted
+    [ -e $subdir ] || bad the library \(directory\) \"$subdir\" does not exist
+    get_dirtype $subdir
+    [ "$dirtype" == library -o "$dirtype" == lib ] ||
+      bad the directory \"$subdir\" does not appear to be a library
+    ask delete the library directory \"$subdir\"
+    rm -r -f $subdir
+    if [ $odirtype == project -a $subdir != components -a "$(ls components)" == Makefile ] ; then
+      rm -r -f components
+    fi
+    [ -z $verbose ] || echo The library named \"$1\" \(directory \"$subdir/\"\) has been deleted.
+    return 0
+  fi
+  [ -e $subdir ] && bad the library \"$1\" \(directory $subdir/\) already exists
+  if [ "$subdir" != components -a ! -d components ] ; then
+    mkdir components
+    cat <<EOF > components/Makefile
+$CheckCDK
+# This is the makefile for the components directory when there are multiple
+# libraries in their own directories underneath this components directory
+include \$(OCPI_CDK_DIR)/include/libraries.mk
+EOF
+  fi
+  mkdir -p $subdir
+  cat <<EOF > $subdir/Makefile
+# This is the $1 library
+
+# All workers created here will be built automatically
+# If you want to limit the workers that actually get built, set the Workers= variable
+include \$(OCPI_CDK_DIR)/include/library.mk
+EOF
+  make --no-print-directory -C $subdir || 
+    echo You may want to do: ocpidev delete library $1
+  [ -z $verbose ] || echo A new library named \"$1\" \(in directory \"$subdir/\"\) has been created.
+  return 0
+}
+
+# Figure out what should be in the "spec" attribute
+# get_spec <name> <spec>
+# set "specelem" and "specattr" correctly
+function get_spec {
+  specelem= specattr= nameattr=
+  case $2 in
+    (none) s= ;;
+    ("") # must be local spec with the same name
+      if [ -e $libdir/specs/${1}-spec.xml -o \
+           "$odirtype" == project -a -e specs/${1}-spec.xml ]; then
+        s=${1}-spec
+      elif [ -e $libdir/specs/${1}_spec.xml -o \
+             "$odirtype" == project -a -e specs/${1}_spec.xml ]; then
+	s=${1}_spec
+      elif [ "$odirtype" == project ]; then
+        bad spec file not specified and ${1}'[-_]spec.xml' does not exist in library or project \"specs\" directory
+      else
+        bad spec file not specified and ${1}'[-_]spec.xml' does not exist in library \"specs\" directory
+      fi
+      ;;
+    (specs/*) s=${2/specs\//} ;; # make the XML clearer since this is unnecessary
+    (./*) s=${2/.\//} ;;
+    (*) s=$2 ;;
+  esac
+  if [ -z $s ] ; then
+    specelem="  <componentspec>
+  </componentspec>"
+  else
+    specattr=" spec='$s'"
+  fi
+  [ -z $3 ] || nameattr=" name='$3'"
+}
+
+function do_worker {
+  odirtype=$dirtype
+  if [ -n "$standalone" ] ; then
+    libdir=.
+  elif [ "$dirtype" == library ]; then
+    [ -z $library ] || bad the -l "(library)" option is not valid in a "library's" directory
+    libdir=.
+  elif [ -z "$libdir" ]; then
+    [ "$dirtype" == project ] || bad workers can only be created in project or library directories
+    check_components used
+    libdir=components
+  fi
+  if [ $verb == delete ]; then
+    [ -d $libdir/$1 ] || bad no worker named \"$1\" exists in the library
+    get_dirtype $libdir/$1
+    [ "$dirtype" == worker ] || bad the directory \"$libdir/$1\" does not contain a worker
+    ask delete the worker named \"$1\" \(directory \"$libdir/$1\"\)
+    rm -r -f $libdir/$1
+    return 0
+  fi
+  words=(${1//./ })
+  [ ${#words[*]} == 2 ] || bad the worker name \"$1\" is invalid, it must be '<name>.<model>'
+  name=${words[0]}
+  model=$(echo ${words[1]} | tr A-Z a-z)
+  [ $model != ${words[1]} ] && bad the authoring model part of the name \"$1\" must be lower case
+  [ -d $OCPI_CDK_DIR/include/$model ] || bad the authoring model \"$model\" is not valid
+  [ -n "$2" ] && {
+     [ -n "$language" ] && bad language option specified when language argument after name is specified.
+     language=$2
+  }
+  noexist $libdir/$1
+  if [ -z $language ] ; then
+    language=$(eval echo \${Language_$model})
+    [ -z $verbose ] || echo Choosing default language \"$language\" for worker $1
+    langattr=" language='$language'"
+  else
+    language=$(echo $language | tr A-Z a-z)
+    for l in $(eval echo \${Languages_$model[*]}); do
+      [ "$language" = ${l/:*/} ] && suff=${l/*:/} langattr=" language='${l/:*/}'"
+    done
+    [ -z $langattr ] && bad invalid language \"$2\" for model \"$model\"
+  fi
+  [ -n "$emulates" ] && emuattr=" emulate='$emulates'"
+  [ -n "$slave" ] && slaveattr=" slave='$slave'"
+  elem=$(echo ${model:0:1} | tr a-z A-Z)${model:1}Worker
+  if [ -n "$workers" ] ; then
+    for w in ${!workers[@]}; do
+      OFS="$IFS"
+      IFS=: x=(${workers[$w]})
+      IFS="$OFS"
+      get_spec ${x[0]} ${x[1]} ${x[2]}
+      wnames[$w]=${x[0]}
+      specattrs[$w]="$specattr"
+      specelems[$w]="$specelem"
+      nameattrs[$w]="$nameattr"
+      specs[$w]=${x[1]}
+    done         
+#    for i in ${!wnames[@]}; do
+#     echo MULTI $i: name:${wnames[$i]} attr:${specattrs[$i]} elem:${specelems[$i]}
+#    done
+    wvar="Workers=${wnames[@]}"
+  else
+    get_spec "$name" "$spec" "$wname"
+    wnames=($name)
+    specattrs=("$specattr")
+    specelems=("$specelem")
+    nameattrs=("$nameattr")
+    specs=($spec)
+  fi
+  mkdir $libdir/$1
+# Make one makefile, even if multi-worker
+  cat <<EOF | sed '/^ *$/d' >  $libdir/$1/Makefile
+# This is the Makefile for worker $1
+$wvar
+${includes:+IncludeDirs=}${includes[@]}
+${others:+SourceFiles=}${others[@]}
+${cores:+Cores=}${cores[@]}
+${targets:+OnlyTargets=}${targets[@]}
+include \$(OCPI_CDK_DIR)/include/worker.mk
+EOF
+  for w in ${!wnames[@]}; do
+    # Make one OWD file per worker
+    cat <<EOF > $libdir/$1/${wnames[$w]}.xml
+<$elem${nameattrs[$w]}${langattr}${specattrs[$w]}${emuattr}${slaveattr}>
+${specelems[$w]}
+</$elem>
+EOF
+    specfile=${specs[$w]}
+    case $specfile in
+      (*.xml) ;;
+      (*-spec|*_spec) specfile=${specs[$w]}.xml ;;
+      (*)
+        if [ ! -e "$spec" -a -e ${specs[$w]}-spec.xml ] ; then
+          specfile=${specfile}-spec.xml
+        elif [ ! -e "$spec" -a -e ${specs[$w]}-spec.xml ] ; then
+          specfile=${specfile}_spec.xml
+        else
+          specfile=${specfile}.xml
+        fi
+    esac
+    [ -n "$verbose" -a "${specs[$w]}" != none -a ! -e "$specfile" ] && echo Warning:  spec file \"$specfile\" does not exist
+  done
+  [ -z $verbose ] || echo Running \"make skeleton\" to make initial skeleton for worker $1
+  # FIXME: how do we get the project's or library's xmlincludepath etc.
+  make --no-print-directory -C $libdir/$1 skeleton || {
+    echo You may want to do: ocpidev ${standalone:+-s } delete worker $1
+    return 1
+  }
+}
+
+function do_platform {
+  if [  -e hdl/platforms/$1 ] ; then
+     echo "The HDL platform \"$1\" (hdl/platforms/$1) already exists." >&2
+     exit 1
+  fi
+  mkdir -p hdl/platforms/$1
+  cat <<EOF >   mkdir -p hdl/platforms/$1/Makefile
+# This is an HDL platform
+
+include \$(OCPI_CDK_DIR)/include/hdl-platform.mk
+EOF
+  cat<<EOF > hdl/platforms/$1/$1.mk
+# Set this variable to the part (die-speed-package, e.g. xc7z020-1-clg484) for the platform
+HdlPart_$1=xyz
+# Set this variable to any other component libraries housing devices define in this platform
+ComponentLibraries_$1=
+EOF
+  cat<<EOF > hdl/platforms/$1/$1.xml
+<!-- This file defines the $1 HDL platform -->
+<HdlPlatform Language="VHDL" spec="platform-spec">
+  <!-- These next two lines must be present in all platforms -->
+  <metadata master="true"/>
+  <timebase master="true"/>
+  <!-- Put any additional platform-specific properties here using <Property> -->
+  <!-- Put any built-in (always present) devices here using <device> -->
+  <!-- Put any card slots here using <slot> -->
+  <!-- Put ad hoc signals here using <signal> -->
+</HdlPlatform>
+EOF
+}
+
+function do_primitive {
+  if [ "$1" != "core" -a "$1" != "library" ] ; then
+    echo 'The first argument to "new primitive" must be "core" or "library".' >&2
+    exit 1
+  fi
+  if [ "$2" = "" ] ; then      
+    echo 'The second argument to "new primitive" must be the name of the primitive.' >&2
+    exit 1
+  fi
+  if [ -e hdl/primitives/"$2" ] ; then
+    echo "The primitive hdl/primitives/$2 already exists." >&2
+    exit 1
+  fi
+  mkdir -p hdl/primitives/"$2"
+  if [ "$1" = "library" ] ; then 
+    cat <<EOF > hdl/primitives/$2/Makefile
+# This Makefile is for the primitive library: $2
+
+# Set this variable to any other primitive libraries that this $1 depends on.
+# If they are remote from this project, use slashes in the name (relative or absolute)
+#HdlLibraries=
+
+# Set this variable to the list of source files in dependency order
+# If it is not set, all .vhd and .v files will be compiled in wildcard/random order,
+# except that any *_pkg.vhd will be compiled first
+#SourceFiles=
+
+# Remember two rules for OpenCPI primitive libraries, in order to be usable with all tools:
+# 1. Any entity (VHDL) or module (verilog) must have a VHDL component declaration in ${2}_pkg.vhd
+# 2. Entities or modules to be used from outside the library must have the file name
+#    be the same as the entity/module name, and one entity/module per file.
+
+include \$(OCPI_CDK_DIR)/include/hdl/hdl-library.mk
+EOF
+    cat <<EOF > hdl/primitives/$2/$2_pkg.vhd
+-- This package is used so that VHDL code can instantiate all entities and modules in this library
+library ieee; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
+package $2 is
+-- put component declarations along with any related type definitions for the ports here
+end package $2;
+EOF
+  else
+    cat <<EOF > hdl/primitives/$2/Makefile
+# This Makefile is for the primitive core: $2
+
+# Set this variable to any other primitive libraries that this core depends on.
+# If they are remote from this project, use slashes in the name (relative or absolute)
+#HdlLibraries=
+
+# Set this variable to the list of source files in dependency order
+# If it is not set, all .vhd and .v files will be compiled in wildcard/random order,
+# except that any *_pkg.vhd will be compiled first, if present.
+#SourceFiles=
+
+# Set this variable if the top level module name for this core is different from the
+# core name.
+#Top=
+
+# Set this variable if this core is in fact a presynthesized/prebuilt core
+# and thus does not have source files except perhaps for simulation
+# The suffix is added for you (as appropriate for Xilinx or Altera etc.)
+#PreBuiltCore=
+
+# Remember that verilog cores must have a black box empty module definition
+# in a file named <top>_bb.v (where <top> is the of the core or the value of the Top 
+# variable).
+
+include \$(OCPI_CDK_DIR)/include/hdl/hdl-core.mk
+EOF
+  fi
+}
+
+# Create an hdl assembly
+# An assembly has its own xml file of the same name as its directory
+# It may have container XML files or not.
+function do_assembly {
+  set -e
+  case "$dirtype" in
+    (project)subdir=hdl/assemblies/;;
+    (hdl-assemblies)subdir=./;;
+    (*) bad this command can only be issued in a project directory or an hdl/assemblies directory;;
+  esac
+  adir=$subdir$1
+  if [ $verb == delete ]; then
+    [ -e $adir ] || bad the HDL assembly at \"$adir\" does not exist    
+    get_dirtype $adir
+    [ "$dirtype" == hdl-assembly ] || bad the directory at $adir does not appear to be an HDL assembly
+    ask delete the HDL assembly in the \"$adir\" directory
+    rm -r -f $adir
+    exit 0
+  fi
+  [ -e $subdir$1 ] && bad the HDL assembly \"$1\" in directory \"$topdir$subdir$1\" already exists
+  if [ $dirtype == project -a ! -e hdl-assemblies ]; then
+    mkdir -p hdl/assemblies
+    cat <<EOF > hdl/assemblies/Makefile
+$CheckCDK
+# To restrict the HDL assemblies that are built, you can set the Assemblies
+# variable to the specific list of which ones you want to build, e.g.:
+# Assemblies=assy1 assy3
+# Othersize all assemblies will be built
+# Alternatively, you can set ExcludeAssemblies to list the ones you want to exclude
+include \$(OCPI_CDK_DIR)/include/hdl/hdl-assemblies.mk
+EOF
+    [ -z $verbose ] || echo This is the first HDL assembly in this project.  The \"hdl/assemblies\" directory has been created.
+  fi
+  mkdir $subdir$1
+  cat <<EOF > $subdir$1/Makefile
+$CheckCDK
+# This is the HDL assembly Makefile for the "$1" assembly
+# The file "$1.xml" defines the assembly.
+# The default container for all assemblies is one that connects all external ports to
+# the devices interconnect to communicate with software workers or other FPGAs. 
+# If you want to connect external ports of the assembly to local devices on the platform,
+# you must define container XML files, and mention them in a "Containers" variable here, e.g.:
+# Containers=take_input_from_local_ADC
+include \$(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk
+EOF
+  [ -z $verbose ] || {
+    echo HDL assembly \"$1\" created in the directory \"$topdir$subdir$1\"
+    echo For non-default containers, an xml file is required and must be mentioned in the Makefile
+  }    
+  assy=${1/%.xml/}
+  cat <<EOF > $subdir$1/$assy.xml
+<!-- The \"$1\" HDL assembly xml file -->
+<HdlAssembly>
+  <!-- Remove this instance and replace it with real ones -->
+  <instance worker='nothing'/>
+</HdlAssembly>
+EOF
+  [ -z $verbose ] || echo The HDL assembly \"$assy\" has been created in ${topdir}hdl/assemblies/$assy/$assy.xml
+}
+
+function new_test {
+echo foo
+
+}
+
+function help {
+  cat <<EOF >&2
+The ocpidev command performs developer functions on/in projects for OpenCPI.
+Usage is: ocpidev [options] <verb> <noun> <name>
+Verbs are: create or delete
+Nouns are: project, application, protocol, spec, library, worker, or hdl <noun>
+After hdl, nouns are: card, slot, device, platform, primitive <noun>
+After hdl primitive, nouns are: library or core
+All commands have a <name> argument.  Some have more required or optional arguments.
+Options are: lower case for general options, upper case for creation options
+  -v                 Be verbose, describing what is happening in more detail
+  -f                 Force without asking, analogious to the "-f" option in the "rm" command
+                     The delete command may ask for confirmation without this.
+  -d <directory>     A directory in which to perform the function, e.g. used rather than changing
+                     into a project directory.
+ -- when creating or deleting specs or protocols --
+  -p                 Put specs or protocols at the project level, not in a library's \"specs\" directory
+ -- when creating or deleting specs, protocols, or workers
+  -l <library>       The component library to add the asset to, when there is more than one.
+                     This applies to specs, protocols, workers and proxy workers.
+ -- when creating projects --
+  -F <prefix>        The project prefix when creating projects, defaults to <name>_
+  -K <package>       The package name when creating projects or libraries
+  -D <dependencies>  A comma-separated list of dependencies
+ -- when creating workers --
+  -S <spec>          The spec to use when it is not <worker>[-_]spec
+  -P <platform>      The HDL platform for creating device workers or proxies when it is specific
+                     to that platform.
+  -L <language>      Specify the language when creating a worker
+  -V <slave>         Specify the slave worker when creating a proxy worker
+  -E <emulates>      Specify the device worker when creating an emulator worker
+ -- when creating primitives --
+  -M <top-module>    For HDL primitive cores, the top level module name for the core when it is
+                     different from the name of the core.
+  -B                 Indicates a prebuilt (not source) core when creating an HDL primitive core.
+ -- when creating applications --
+  -X                 Indicates that the application is simply an XML file, not a directory
+All the "delete" functions prompt for confirmation without the -f option (like rm).
+EOF
+  exit 1
+}
+
+function myshift {
+  unset argv[0]
+  argv=(${argv[@]})
+}
+function takeval {
+  [ -z ${argv[1]} ] && bad missing value after ${argv[0]} option for $1
+  [[ "${argv[1]}" == -* ]] && bad value after ${argv[0]} option: ${argv[1]}
+  eval $1=${argv[1]}
+  myshift
+}
+
+set -e
+[ "$#" == 0 -o "$1" == -help -o "$1" == --help -o "$1" == -h ] && help
+
+# Collect all flag arguments and do preliminary error checking that does not depend
+# on other potential flags.
+argv=($*)
+while [[ "${argv[0]}" != "" ]] ; do
+  if [[ "${argv[0]}" == -* ]] ; then
+    case ${argv[0]} in
+      (-v) verbose=1;;
+      (-f) force=1;;
+      (-d)
+        takeval directory
+        [ ! -d $directory ] && bad the directory \"$directory\" is not a directory or does not exist
+        ;; 
+      (-p) project=1;;
+      (-l)
+        # if a library is mentioned, it must exist.
+	takeval library
+        if [[ "$library" == components ]] ; then
+          libdir=components
+        else
+          libdir=components/$library
+        fi
+        ;;
+      (-s) standalone=1;;
+      # project options
+      (-F) takeval prefix ;; #default is <project>
+      (-K) takeval package ;; #default is local.<project>
+      (-D) takeval dependencies ;;
+      # worker options
+      (-S) takeval spec ;; # default for worker is <worker-name>-spec.xml
+      (-P) takeval platform ;;
+      (-L) takeval language ;;
+      (-V) takeval slave ;;
+      (-E) takeval emulates ;;
+      (-W) takeval worker; workers=(${workers[@]} $worker) ;;
+      (-I) takeval include; includes=(${includes[@]} $include) ;;
+      (-O) takeval other; others=(${others[@]} $other) ;;
+      (-C) takeval core; cores=(${cores[@]} $core) ;;
+      (-T) takeval target; targets=(${targets[@]} $target) ;;
+      (-N) takeval wname ;;
+      # hdl primitive options
+      (-M) takeval module ;;
+      (-B) prebuilt=1;;
+      # for apps
+      (-X) xmlapp=1;;
+      (-help|--help)  help;;
+      (*)
+        bad unknown option: ${argv[0]}
+        ;;
+    esac
+  elif [ -z $verb ]; then
+    case ${argv[0]} in
+      (create) verb=create;;
+      (delete|rm) verb=delete;;
+      ("") bad missing command name;;
+      (*) bad there is no command named \"${argv[0]}\";;
+    esac
+  elif [ -z $noun ]; then
+    if [ -n "$hdl" ]; then
+      case ${argv[0]} in
+        (device|platform|assembly) noun=${argv[0]} ;;
+        (*) bad invalid noun after \"hdl\": ${argv[0]} ;;
+      esac
+    elif [ "${argv[0]}" == hdl -o "${argv[0]}" = HDL ]; then
+      hdl="hdl "
+    else
+      noun=${argv[0]}
+    fi
+  else
+    args=($args ${argv[0]})
+  fi
+  myshift
+done
+# option checking independent of noun and verb
+[ -n "$project" -a -n "$library" ] && bad the -l and -p options are mutually exclusive.
+[ -n "$standalone" -a -n "$library" ] && bad the -l and -p options are mutually exclusive.
+# Now error check the options when we have all the options
+if [ -n "$directory" ]; then
+  cd $directory
+  topdir=$directory/
+else
+  directory=$(pwd)
+  topdir=
+fi
+[ -z $verb ] && bad missing verb, nothing to do
+[ -z $noun ] && bad the \"$verb\" command must be followed by the type of asset
+[ -z $args ] && bad there must be a name argument after: $verb $hdl$noun
+# option testing dependent on noun and verb
+# force
+[ -n "$force" -a $verb != delete ] &&
+  bad the -f '(force)' option is only valid when deleting an asset
+# project
+[ -n "$project" -a \( $noun != spec -a $noun != protocol \) ] &&
+  bad the -p '(project level)' option is only valid when creating a spec or a protocol
+# library
+[ -n "$library" -a \( $noun != worker -a $noun != spec -a $noun != protocol \) ] &&
+  bad the -l '(library within project)' option is only valid when creating a spec, a protocols or a worker
+if [ -n "$library" ] ; then
+  [ -d $libdir ] || bad the specified library \"$library\" does not exist 
+  [ "$libdir" == components ] && check_components used
+fi
+# standalone
+[ -n "$standalone" -a \( $noun != library -a $noun != worker \) ] &&
+  bad the -s '(standalone - outside a project)' option is only valid when creating a library or a worker
+# prefix
+[ -n "$prefix" -a \( $verb != create -o $noun != project \) ] &&
+  bad the -F '(prefix)' option is only valid when creating a project
+# package
+[ -n "$package" -a \( $verb != create -o $noun != project \) ] &&
+  bad the -K '(package)' option is only valid when creating a project
+# dependencies
+[ -n "$dependencies" -a \( $verb != create -o $noun != project \) ] &&
+  bad the -D '(dependencies)' option is only valid when creating a project
+# spec
+[ -n "$spec" -a \( $verb != create -o $noun != worker \) ] &&
+  bad the -S '(spec)' option is only valid when creating a worker
+# platform
+[ -n "$platform" -a \( $verb != create -o \( $noun != device -a -z "$slave" \) \) ] &&
+  bad the -P '(platform)' option is only valid when creating an HDL device worker or a proxy worker
+# language
+[ -n "$language" -a \( $verb != create -o \( $noun != device -a $noun != worker \) \) ] &&
+  bad the -L '(language)' option is only valid when creating a worker
+# slave
+[ -n "$slave" -a \( $verb != create -o $noun != worker \) ] &&
+  bad the -V '(slave worker)' option is only valid when creating a worker
+# workers
+[ -n "$workers" -a \( $verb != create -o $noun != worker \)  ] &&
+  bad the -W '(one of multiple workers)' option is only valid when creating a worker
+# emulate
+[ -n "$emulates" -a \( $verb != create -o $noun != device \) ] &&
+  bad the -E '(emulates)' option is only valid when creating an HDL device worker
+# module
+[ -n "$module" -a \( $verb != create -o $noun != primitive -a "${argv[0]}" != core \) ] &&
+  bad the -M '(module)' option is only valid when creating an HDL primitive core
+# prebuilt
+[ -n "$prebuilt" -a \( $verb != create -o \( $noun != primitive -o "${argv[0]}" != core \) \) ] &&
+  bad the -B '(prebuilt)' option is only valid when creating an HDL primitive core
+# xml app
+[ -n "$xmlapp" -a \( $verb != create -o $noun != application \) ] &&
+  bad the -X '(xml/simple)' option is only valid when creating an application
+
+# Get dir type unless creating something standalone
+#[ $noun != project -a -z "$standalone" ] && 
+needname ${argv[0]} $verb $noun
+get_dirtype .
+[ -z $verbose ] || echo Executing the \"$verb $hdl$noun\" command in a ${dirtype:-unknown type of} directory: $directory.
+case $noun in
+  (project) do_project $args ;;
+  (application) do_application $args ;;
+  (protocol) do_protocol_or_spec $args ;;
+  (spec) do_protocol_or_spec $args ;;
+  (library) do_library $args ;;
+  (worker) do_worker $args ;;
+  (assembly) do_assembly $args ;;
+  (emulator) do_worker emu $args ;;
+  (card) do_card $args ;;
+  (slot) do_slot $args ;;
+  (device) do_device $args ;;
+  (platform) do_platform $args ;;
+  (primitive) do_primitive $args ;;
+  (*) bad the noun \"$noun\" is invalid after the verb \"$verb\";;
+esac

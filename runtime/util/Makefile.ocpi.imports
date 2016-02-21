@@ -38,13 +38,13 @@ ifeq ($(OCPI_OS),vxworksdkm)
   EXCLUDE_SOURCES += OcpiUtilLoadableModule.cxx
 endif
 
-ifeq ($(OCPI_ARCH),ppc)
+ifeq ($(OCPI_TARGET_ARCH),ppc)
   ALLDEFS+=_CPU_POWERPC
 else
-  ifeq ($(OCPI_ARCH),x86_64)
+  ifeq ($(OCPI_TARGET_ARCH),x86_64)
     ALLDEFS+=_CPU_IA64
   else
-    ifeq ($(OCPI_ARCH),i686)
+    ifeq ($(OCPI_TARGET_ARCH),i686)
       ALLDEFS+=_CPU_IA32
     endif
   endif

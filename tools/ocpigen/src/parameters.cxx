@@ -1,6 +1,7 @@
 // Parameter processing
 #include <assert.h>
 #include <strings.h>
+#include "OcpiOsFileSystem.h"
 #include "wip.h"
 
 const char *Worker::
@@ -176,13 +177,36 @@ equal(ParamConfig &other) {
 }
 
 const char *Worker::
-parseConfigFile(const char *dir) {
+parseBuildFile(bool optional) {
   const char *err;
   std::string fname;
-  OU::format(fname, "%s/%s-params.xml", dir, m_implName);
+  if (m_paramConfigs.size())
+    return NULL;
+#if 1
+  // We are only looking next to the OWD or "gen" below it
+  // And it is optional in any case.
+  std::string dir;
+  const char *slash = strrchr(m_file.c_str(), '/');
+  if (slash)
+    dir.assign(m_file.c_str(), (slash + 1) - m_file.c_str());
+  OU::format(fname, "%s%s.build", dir.c_str(), m_implName);
+  if (!OS::FileSystem::exists(fname)) {
+    std::string fname1;
+    OU::format(fname1, "%sgen/%s.build", dir.c_str(), m_implName);
+    if (OS::FileSystem::exists(fname1))
+      fname = fname1;
+    else if (optional)
+      return NULL;
+    else
+      return OU::esprintf("Cannot find %s.build in worker directory or \"gen\" subdirectory",
+			m_implName);
+  }
+#else
+  OU::format(fname, "%s.build", m_implName);
+#endif
   ezxml_t x;
   std::string empty;
-  if ((err = parseFile(fname.c_str(), empty, "build", &x, empty, true, false, true)))
+  if ((err = parseFile(fname.c_str(), empty, "build", &x, empty, false, true, optional)))
     return err;
   for (ezxml_t cx = ezxml_cchild(x, "configuration"); cx; cx = ezxml_next(cx)) {
     ParamConfig *pc = new ParamConfig(*this);
@@ -190,6 +214,16 @@ parseConfigFile(const char *dir) {
       return err;
     m_paramConfigs.push_back(pc); // FIXME...emplace_back for C++11
   }
+  return NULL;
+}
+
+const char *Worker::
+startBuildXml(FILE *&f) {
+  const char *err;
+  if ((err = openOutput(m_fileName.c_str(), m_outDir, "", "", ".build", NULL,
+			f)))
+    return err;
+  fprintf(f, "<build>\n");
   return NULL;
 }
 
@@ -210,14 +244,9 @@ addConfig(ParamConfig &info, size_t &nConfig) {
   // The XML will contain old and unused, old and used, and new and used.
   // The Makefile will contain old-that-were-used and new
   // By opening the xf file we are indicating there is something new
-  if (!m_xmlFile) {
-    // First time for a new one.  Write out all the old ones
-    const char *err;
-    if ((err = openOutput(m_fileName.c_str(), m_outDir, "", "-params", ".xml", NULL,
-			  m_xmlFile)))
+  const char *err;
+  if (!m_xmlFile && (err = startBuildXml(m_xmlFile)))
       return err;
-    fprintf(m_xmlFile, "<build>\n");
-  }
   ParamConfig *newpc = new ParamConfig(info);
   newpc->used = true;
   m_paramConfigs.push_back(newpc);
@@ -303,6 +332,25 @@ parseRawParams(ezxml_t &x) {
   return NULL;
 }
 
+const char *Worker::
+writeParamFiles(FILE *mkFile, FILE *xmlFile) {
+  // Write the makefile as well as the xml file if anything was added
+  fprintf(mkFile, "ParamConfigurations:=");
+  for (size_t n = 0; n < m_paramConfigs.size(); n++)
+    if (m_paramConfigs[n]->used)
+      fprintf(mkFile, "%s%zu", n ? " " : "", n);
+  fprintf(mkFile, "\n");
+  for (size_t n = 0; n < m_paramConfigs.size(); n++)
+    m_paramConfigs[n]->write(xmlFile, mkFile);
+  if (xmlFile)
+    fprintf(xmlFile, "</build>\n");
+  ocpiDebug("xmlFile closing %p mkFile closing %p", xmlFile, mkFile);
+  if (xmlFile && fclose(xmlFile) || mkFile && fclose(mkFile))
+    return OU::esprintf("File close of parameter files failed.  Disk full?");
+  return NULL;
+}
+
+
 // Take as input the list of parameters that are set in the Makefile or the
 // environment (i.e. something a human wrote and might have errors).
 // Check against the actual properties of the worker, checking the values
@@ -317,9 +365,10 @@ const char *Worker::
 emitToolParameters() {
   ezxml_t x;
   const char *err;
-  if (m_paramConfigs.size() == 0 && (err = parseConfigFile(m_outDir)) ||
+  FILE *mkFile;
+  if (m_paramConfigs.size() == 0 && (err = parseBuildFile(true)) ||
       (err = parseRawParams(x)) ||
-      (err = openOutput(m_fileName.c_str(), m_outDir, "", "-params", ".mk", NULL, m_mkFile)))
+      (err = openOutput(m_fileName.c_str(), m_outDir, "", "-params", ".mk", NULL, mkFile)))
     return err;
   ParamConfig info(*this);                          // Current config for generating them
   size_t nConfig = m_paramConfigs.size();
@@ -362,21 +411,26 @@ emitToolParameters() {
   // in the same position.
   if ((err = doParam(info, m_ctl.properties.begin(), 0, nConfig)))
     return err;
-  // Write the makefile as well as the xml file if anything was added
-  fprintf(m_mkFile, "ParamConfigurations:=");
+  // Force an empty build file
+  //  if (!m_xmlFile && m_paramConfigs.size() == 0 && (err = startBuildXml(m_xmlFile)))
+  //    return err;
+  err = writeParamFiles(mkFile, m_xmlFile);
+  m_xmlFile = NULL;
+  return err;
+}
+
+// Based on worker xml, read the <worker>.build, and emit the
+// gen/<worker>.make
+const char *Worker::
+emitMakefile() {
+  const char *err;
+  FILE *mkFile;
+  if ((err = parseBuildFile(false)) ||
+      (err = openOutput(m_fileName.c_str(), m_outDir, "", "-params", ".mk", NULL, mkFile)))
+    return err;
   for (size_t n = 0; n < m_paramConfigs.size(); n++)
-    if (m_paramConfigs[n]->used)
-      fprintf(m_mkFile, "%s%zu", n ? " " : "", n);
-  fprintf(m_mkFile, "\n");
-  for (size_t n = 0; n < m_paramConfigs.size(); n++)
-    m_paramConfigs[n]->write(m_xmlFile, m_mkFile);
-  if (m_xmlFile)
-    fprintf(m_xmlFile, "</build>\n");
-  ocpiDebug("m_xmlFile closing %p m_mkFile closing %p", m_xmlFile, m_mkFile);
-  if (m_xmlFile && fclose(m_xmlFile) || m_mkFile && fclose(m_mkFile))
-    return OU::esprintf("File close of parameter files failed.  Disk full?");
-  m_xmlFile = m_mkFile = NULL;
-  return NULL;
+    m_paramConfigs[n]->used = true;
+  return writeParamFiles(mkFile, NULL);  
 }
 
 #if 0
@@ -405,13 +459,15 @@ setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig) {
   // So we have parameter configurations
   // FIXME: we could cache this parsing in one place, but workers can still be
   // parameterized by xml attribute values, so it can't simply be cached in a Worker object.
+#if 0
   const char *slash = strrchr(m_file.c_str(), '/');
   std::string dir;
   if (slash)
     dir.assign(m_file.c_str(), slash - m_file.c_str());
   else
-    dir = "gen"; // FIXME: this needs to be in a search path or something?
-  if ((err = parseConfigFile(dir.c_str())))
+    dir = "."; // FIXME: this needs to be in a search path or something?
+#endif
+  if ((err = parseBuildFile(paramConfig == 0)))
     return err;
   if (m_paramConfigs.size() == 0) {
     // FIXME: check whether it is ever possible to have no paramconfigs any more...
@@ -438,8 +494,9 @@ setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig) {
 		err = "value doesn't match default, and no other choices exist";
 	    }
 	    if (err)
-	      return OU::esprintf("Bad value \"%s\" for parameter \"%s\" for worker \"%s\": %s",
-				  ap->m_value.c_str(), p->m_name.c_str(), m_implName, err);
+	      return OU::esprintf("Bad value \"%s\" (default is \"%s\", new is \"%s\") for parameter \"%s\" for worker \"%s\": %s",
+				  ap->m_value.c_str(), defValue.c_str(), newValue.c_str(),
+				  p->m_name.c_str(), m_implName, err);
 	  }
 	}
     }

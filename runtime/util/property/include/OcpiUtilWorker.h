@@ -91,12 +91,13 @@ namespace OCPI {
     // Generally shared by all the implementations in an artifact
     class Attributes {
     public:
-	std::string
-	  m_uuid,
-	  m_os, m_osVersion, m_arch,
-	  m_platform,
-	  m_tool, m_toolVersion,
-	  m_runtime, m_runtimeVersion;
+      std::string
+	m_uuid,
+	m_os, m_osVersion, m_arch,
+	m_platform,
+	m_tool, m_toolVersion,
+	m_runtime, m_runtimeVersion;
+      bool m_dynamic;
       inline const std::string &uuid() const { return m_uuid; }
       inline const std::string &platform() const { return m_platform; }
     protected:

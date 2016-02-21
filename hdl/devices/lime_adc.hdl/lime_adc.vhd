@@ -1,6 +1,7 @@
 -- Lime ADC worker
 library IEEE, ocpi;
 use IEEE.std_logic_1164.all, ieee.numeric_std.all, ocpi.types.all;
+library unisim; use unisim.vcomponents.all;
 architecture rtl of lime_adc_worker is
   -- FIFO parameters
   constant fifo_width : natural := 24; -- the fifo is just wide enough to feed lime DAC
@@ -10,9 +11,13 @@ architecture rtl of lime_adc_worker is
   signal div_ctl_clk  : std_logic;     -- the divided control clock
   -- ADC clock domain
   signal adc_clk      : std_logic;
+  signal adc_clk_bufg : std_logic;
   signal adc_data     : std_logic_vector(23 downto 0);
   signal adc_give     : bool_t;
-  signal hold_i_r     : std_logic_vector(11 downto 0); -- hold I waiting for Q
+  signal rxd_r        : std_logic_vector(11 downto 0);
+  signal hold_i_r     : std_logic_vector(11 downto 0); -- hold I
+  signal hold_q_r     : std_logic_vector(11 downto 0); -- hold Q
+  signal rx_iq_sel_r  : std_logic;
 begin
   -- Take data out of the FIFO and sign extend each I/Q part
   out_out.data             <= (31 downto 28 => wsi_data(23)) & wsi_data(23 downto 12) &
@@ -25,26 +30,49 @@ begin
   -- 3. We get a clock that *we* are supposed to drive to the lime RX_CLK, and use that.
   -- 4. We divide-down the control clock, use it, and drive RX_CLK
   -- 5. We use a container clock, use that, and drive RX_CLK
-  adc_clk <= rx_clk_out when its(use_clk_out) else
-             rx_clk_in when its(use_clk_in) else
-             div_ctl_clk when its(use_ctl_clk) else
+  adc_clk <= rx_clk_out when its(USE_CLK_OUT_p) else
+             rx_clk_in when its(USE_CLK_IN_p) else
+             ctl_in.clk when its(USE_CTL_CLK_p) else
              sample_clk;
-  rx_clk <= adc_clk when its(drive_clk) else '0';
+  rx_clk <= adc_clk when its(DRIVE_CLK_p) else '0';
 
+  --Place ADC clock on global buffer for use in processing
+  bufg_adc : BUFG
+    port map(
+      I => not adc_clk,
+      O => adc_clk_bufg
+      );
+
+  --Register data and IQ select
+  adc_regs : process(adc_clk_bufg)
+  begin
+    if rising_edge(adc_clk_bufg) then
+      if ctl_in.reset = '1' then
+        rxd_r <= (others => '0');
+        rx_iq_sel_r <= '1';
+      else
+        rxd_r <= rxd;
+        rx_iq_sel_r <= rx_iq_sel;
+      end if;
+    end if;
+  end process;
+  
   -- ADC Clocked process: we just need to hold the I value until the corresponding Q value
   -- is available to clock them together into the FIFO.
-  input : process(adc_clk)
+  input : process(adc_clk_bufg)
   begin
-    if rising_edge(adc_clk) then
-      if rx_iq_sel = '0' then
-        hold_i_r <= rxd;
+    if rising_edge(adc_clk_bufg) then
+      if rx_iq_sel_r = '1' then
+        hold_i_r <= rxd_r;
+      else
+        hold_q_r <= rxd_r;
       end if;
     end if;
   end process;
 
   -- Temp signals necessary only because of older VHDL restrictions on "actuals".
-  adc_give             <= to_bool(rx_iq_sel = '1');
-  adc_data             <= rxd & hold_i_r;
+  adc_give             <= to_bool(rx_iq_sel_r = '1');
+  adc_data             <= hold_q_r & hold_i_r;
   fifo : entity work.adc_fifo
     generic map(width       => 24,
                 depth       => 64)
@@ -61,7 +89,7 @@ begin
                 overrun     => props_out.overrun,
                 messageSize => props_in.messageSize,
                 -- In ADC clock domain
-                adc_clk     => adc_clk,
+                adc_clk     => adc_clk_bufg,
                 adc_give    => adc_give,
                 adc_data    => adc_data);
 end rtl;

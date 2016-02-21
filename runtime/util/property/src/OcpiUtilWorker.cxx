@@ -44,8 +44,8 @@ namespace OCPI {
     namespace OE = OCPI::Util::EzXml;
     Worker::Worker()
       : m_attributes(NULL), m_ports(NULL), m_memories(NULL), m_nPorts(0), m_nMemories(0),
-        m_totalPropertySize(0), m_nProperties(0),/* m_nRunProperties(0),*/ m_properties(NULL),
-	m_firstRaw(NULL), m_xml(NULL), m_ordinal(0) {
+        m_totalPropertySize(0), m_nProperties(0), m_properties(NULL), m_firstRaw(NULL),
+	m_xml(NULL), m_ordinal(0) {
     }
 
     Worker::~Worker() {
@@ -215,6 +215,7 @@ namespace OCPI {
       if ((cp = ezxml_cattr(x, "tool"))) m_tool = cp;
       if ((cp = ezxml_cattr(x, "toolVersion"))) m_toolVersion = cp;
       if ((cp = ezxml_cattr(x, "uuid"))) m_uuid = cp;
+      OE::getBoolean(x, "dynamic", &m_dynamic);
       validate();
     }
 

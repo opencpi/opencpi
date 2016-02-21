@@ -32,5 +32,5 @@ clean::
 
 # These make the worker library for this application
 Implementations = hello.rcc
-include $(OCPI_INC_DIR)/lib.mk
+include $(OCPI_CDK_DIR)/include/lib.mk
 endif

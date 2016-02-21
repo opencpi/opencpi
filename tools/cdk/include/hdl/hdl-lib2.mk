@@ -52,9 +52,8 @@ $(call OutLibFile,$1,$2): override WorkLib:=$(WorkLib)$(and $(filter-out 0,$2),_
 $(call OutLibFile,$1,$2): $(call HdlTargetSrcFiles,$1,$2)
 $(call OutLibFile,$1,$2): \
   HdlSources= $(call HdlTargetSrcFiles,$1,$2) $$(HdlShadowFiles)
-
 $(call OutLibFile,$1,$2): \
-$$$$(foreach l,$$$$(HdlLibrariesInternal),$$$$(call HdlLibraryRefDir,$$$$l,$$$$(HdlTarget)))
+$$$$(foreach l,$$$$(HdlLibrariesInternal),$$$$(call HdlLibraryRefDir,$$$$l,$$$$(HdlTarget),,DLT))
 
 $(call OutLibFile,$1,$2): $$$$(HdlPreCore) $$$$(HdlSources) | $$$$(TargetDir)
 	$(AT)echo Building the $(LibName) $(HdlMode) for $$(HdlTarget) \($$@\) $$(ParamConfig):$$(ParamMsg)

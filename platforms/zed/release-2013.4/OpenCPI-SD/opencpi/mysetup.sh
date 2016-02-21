@@ -5,7 +5,7 @@
 # 2. The core setup HAS been run and you are just setting up a shell or ssh session
 
 trap "trap - ERR; break" ERR; for i in 1; do
-if test "$OCPI_ROOT_DIR" = ""; then
+if test "$OCPI_CDK_DIR" = ""; then
   # CUSTOMIZE THIS LINE FOR YOUR ENVIRONENT
   # First argument is time server for the (old) time protocol used by the rdate command
   # Second argument is timezone spec - see "man timezone" for the format.
@@ -18,7 +18,7 @@ export OCPI_DEFAULT_HDL_DEVICE=pl:0
 export OCPI_SYSTEM_CONFIG=/mnt/card/opencpi/system.xml
 export OCPI_SUPPRESS_HDL_NETWORK_DISCOVERY=1
 # Get ready to run some test xml-based applications
-cd $OCPI_ROOT_DIR/xml
+cd $OCPI_CDK_DIR/xml
 # Shorten the default shell prompt
 PS1='% '
 # Print the available containers as a sanity check

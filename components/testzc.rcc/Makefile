@@ -34,11 +34,7 @@
 ########################################################################### #
 
 Workers=zcprod zccons zcloop
-WorkerSourceFiles=
-SourceFiles=zcworkers.c
-# name the output shared library.  default is first worker
-BinaryName=zcworkers
-OCPI_CDK_DIR=../../ocpi
+WorkerSourceFiles=testzc.c
 # Set this if some of the xml files are elsewhere, like a spec file that is being
 # shared with other implementers
 IncludeDirs=../../runtime/local/util/timeEmit/include

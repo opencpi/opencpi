@@ -83,7 +83,7 @@ XsimLibs=\
   $(foreach l,\
     $(HdlLibrariesInternal) $(Cores),\
     -lib $(notdir $(l))=$(strip \
-          $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$l,xsim))))
+          $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$l,xsim,,xsim))))
 
 XsimVerilogIncs=\
   $(foreach d,$(VerilogDefines),-d $d) \
@@ -104,7 +104,7 @@ HdlToolCompile=\
    $(foreach l,$(HdlLibrariesInternal),\
       echo $(lastword $(subst -, ,$(notdir $l)))=$(strip \
         $(call FindRelative,$(TargetDir),$(strip \
-           $(call HdlLibraryRefDir,$l,$(HdlTarget)))));) \
+           $(call HdlLibraryRefDir,$l,$(HdlTarget),,xsim))));) \
    ) > xsim.ini ; \
    $(VivadoXilinx); \
    $(and $(filter %.vhd,$(XsimFiles)),\

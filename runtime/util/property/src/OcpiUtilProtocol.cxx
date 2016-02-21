@@ -143,10 +143,11 @@ namespace OCPI {
 	m_args[n].write(writer, data, length, isTopFixedSequence());
     }
 
-    size_t Operation::read(Reader &reader, uint8_t *&data, size_t maxLength) {
+    size_t Operation::read(Reader &reader, uint8_t *data, size_t maxLength) {
       size_t max = maxLength;
+      bool fake = data == NULL;
       for (unsigned n = 0; n < m_nArgs; n++)
-	m_args[n].read(reader, data, maxLength);
+	m_args[n].read(reader, data, maxLength, fake);
       return max - maxLength;
     }
 
@@ -310,6 +311,20 @@ namespace OCPI {
 	m_zeroLengthMessages = true;
       if (op.m_myOffset < m_minMessageValues)
 	m_minMessageValues = op.m_myOffset;
+      // Find smallest element for data granularity purposes
+      // When a more disruptive change is required, this could be done in 
+      // alignMembers and offset()
+      size_t smallest = SIZE_MAX;
+      for (unsigned n = 0; n < op.m_nArgs; n++)
+	if (op.m_args[n].m_elementBytes && op.m_args[n].m_elementBytes < smallest)
+	  smallest = op.m_args[n].m_elementBytes;
+      if (smallest != SIZE_MAX) {
+	smallest *= CHAR_BIT;
+	assert(smallest % m_dataValueWidth == 0);
+	smallest /= m_dataValueWidth;
+	if (smallest < m_dataValueGranularity)
+	  m_dataValueGranularity = smallest;
+      }
     }
 
     // Interface for C iterator in ezxml
@@ -461,10 +476,14 @@ namespace OCPI {
 #endif
 	m_operations = m_op = new Operation[m_nOperations];
 	// Now we call a second time t make them.
+	size_t save = m_dataValueGranularity;
+	m_dataValueGranularity = SIZE_MAX;
 	if ((err = OE::ezxml_children(prot, doChild ? doChild : doProtocolChild,
 				      arg ? arg : this)) ||
-	    (err = OE::getBoolean(prot, "ZeroLengthMessages", &m_zeroLengthMessages)))
+	    (err = OE::getBoolean(prot, "ZeroLengthMessages", &m_zeroLengthMessages, true)))
 	  return err;
+	if (m_dataValueGranularity == SIZE_MAX)
+	  m_dataValueGranularity = save;
 	// Allow dvw to be overridden to provide for future finer granularity 
 	// (e.g. force 8 when proto says 16)
 	size_t dvwattr;
@@ -536,7 +555,7 @@ namespace OCPI {
       }
     }
     // Send the data in the buffer to the writer
-    void Protocol::write(Writer &writer, const uint8_t *data, uint32_t length, uint8_t opcode) {
+    void Protocol::write(Writer &writer, const uint8_t *data, size_t length, uint8_t opcode) {
       assert(!((intptr_t)data & (maxDataTypeAlignment - 1)));
       if (!m_operations)
 	throw Error("No operations in protocol for writing");
@@ -552,10 +571,9 @@ namespace OCPI {
 	throw Error("No operations in protocol for writing");
       if (opcode >= m_nOperations)
 	throw Error("Invalid Opcode for protocol");
-      uint8_t *myData = data;
-      m_operations[opcode].read(reader, myData, maxLength);
+      size_t size = m_operations[opcode].read(reader, data, maxLength);
       reader.end();
-      return myData - data;
+      return size;
     }
 
   }

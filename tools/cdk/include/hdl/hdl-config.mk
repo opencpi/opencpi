@@ -18,7 +18,7 @@ ifndef Worker_xml
   $(error The XML for the platform configuration, $(Worker).xml, is missing)
 endif
 OcpiLanguage:=vhdl
-HdlLibraries+=platform
+override HdlLibraries+=platform
 PlatformName=$(notdir $(HdlPlatformWorker))
 LibDir=$(HdlPlatformWorker)/lib/hdl
 override HdlPlatforms:=$(notdir $(HdlPlatformWorker))
@@ -28,10 +28,21 @@ override HdlTargets:=$(call HdlGetFamily,$(HdlPart))
 override HdlTarget:=$(HdlTargets)
 override Platform:=$(HdlPlatform)
 override XmlIncludeDirsInternal+=$(HdlPlatformDir_$(Platform)) $(HdlPlatformDir_$(Platform))/hdl
-# Platforms need all these.  We can also accept some from the platform if we are below it.
-# otherwise the config's makefile can supply more?
-override ComponentLibraries=\
-  $(call Unique,devices cards $(HdlPlatformDir_$(Platform)) $(wildcard $(HdlPlatformDir_$(Platform))/devices) $(ComponentLibrariesInternal))
+# There are two cases for component libraries relevant to platform configurations
+# 1. We are called below/in the platform's directory (and ComponentLibrariesInternal is defined)
+# 2. We are remote from the platform's directory
+# In both cases we start with the platform directory itself acting as a component library, where
+# the platform is built.
+ifdef ComponentLibrariesInternal
+  ComponentLibraries=$(HdlPlatformDir_$(Platform)) $(ComponentLibrariesInternal)
+else
+  ComponentLibraries=$(HdlPlatformDir_$(Platform)) \
+   $(wildcard $(HdlPlatformDir_$(Platform))/devices) \
+   $(and $(ComponentLibraries_$(Platform)),\
+     $(join $(HdlPlatformDir_$(Platform)),$(ComponentLibraries_$(Platform))))\
+   devices cards
+endif
+
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 ifneq ($(MAKECMDGOALS),clean)
   ifndef HdlSkip

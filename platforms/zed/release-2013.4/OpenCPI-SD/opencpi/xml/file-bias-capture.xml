@@ -3,7 +3,7 @@
     <property name='filename' value='test.input' />
     <!-- <property name='filename' value='sig' /> -->
     <property name='messagesInFile' value='false' />
-    <property name='opcode' value='4' />
+    <property name='opcode' value='0' />
     <property name='messageSize' value='2048' /> <!-- 4096 -->
     <property name='granularity' value='4' />
   </instance>

@@ -26,6 +26,7 @@
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilException.h"
 #include "RemoteDriver.h"
+#include "RemoteServer.h"
 
 namespace OA = OCPI::API;
 namespace OU = OCPI::Util;

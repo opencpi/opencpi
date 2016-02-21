@@ -550,6 +550,8 @@ run(bool &anyone_run) {
   if (!enabled)
     return;
   OU::AutoMutex guard (mutex(), true);
+  if (!enabled)
+    return;
   // Before run condition processing happens, perform callbacks, and, if we did any,
   // skip runcondition processing
   // FIXME: have a bit mask of these
@@ -598,7 +600,8 @@ run(bool &anyone_run) {
     if (!(*pmp & relevantMask))
       return;
   } while (0);
-  if (enabled && (!m_dispatch || m_dispatch->run)) {
+  assert(enabled);
+  if (!m_dispatch || m_dispatch->run) {
     anyone_run = true;
     //      OCPI_EMIT_STATE_CAT_NR_(were, 0, OCPI_EMIT_CAT_TUNING, OCPI_EMIT_CAT_TUNING_WC);
     RCCBoolean newRunCondition = false;
@@ -1078,10 +1081,12 @@ controlOperation(OU::Worker::ControlOperation op) {
    RCCResult RCCUserWorker::beforeQuery() { return RCC_OK;}
    RCCResult RCCUserWorker::afterConfigure() { return RCC_OK;}
    uint8_t *RCCUserWorker::rawProperties(size_t &size) const { size = 0; return NULL; }
-    void RCCUserWorker::log(unsigned level, const char *fmt, ...) throw() {
+   void RCCUserWorker::log(unsigned level, const char *fmt, ...) throw() {
       va_list ap;
+      std::string myfmt;
+      OU::format(myfmt,"%s: %s", m_worker.name().c_str(), fmt);
       va_start(ap, fmt);
-      OS::logPrintV(level, fmt, ap);
+      OS::logPrintV(level, myfmt.c_str(), ap);
       va_end(ap);
    }
    RCCResult RCCUserWorker::setError(const char *fmt, ...) {
@@ -1221,57 +1226,57 @@ controlOperation(OU::Worker::ControlOperation op) {
    ~RCCUserSlave() {
    }
 #endif
-    RunCondition::
-    RunCondition()
-      : m_portMasks(m_myMasks), m_timeout(false), m_usecs(0), m_allocated(NULL), m_allMasks(0) {
-      m_myMasks[0] = 0;
-    }
-    RunCondition::
-    RunCondition(RCCPortMask pm, ...) :
-      m_timeout(false), m_usecs(0), m_allocated(NULL), m_allMasks(0) {
-      va_list ap;
-      va_start(ap, pm);
-      unsigned n;
-      RCCPortMask m;
-      for (n = 2; (m = va_arg(ap, RCCPortMask)); n++)
+   RunCondition::
+   RunCondition()
+     : m_portMasks(m_myMasks), m_timeout(false), m_usecs(0), m_allocated(NULL), m_allMasks(0) {
+     m_myMasks[0] = 0;
+   }
+   RunCondition::
+   RunCondition(RCCPortMask pm, ...) :
+     m_timeout(false), m_usecs(0), m_allocated(NULL), m_allMasks(0) {
+     va_list ap;
+     va_start(ap, pm);
+     unsigned n;
+     RCCPortMask m;
+     for (n = 2; (m = va_arg(ap, RCCPortMask)); n++)
 	;
-      if (n < sizeof(m_myMasks)/sizeof(RCCPortMask))
-	m_portMasks = m_allocated = new RCCPortMask[n];
-      else
-	m_portMasks = m_myMasks;
-      va_end(ap);
-      va_start(ap, pm);
-      RCCPortMask *pms = m_portMasks;
-      m = pm;
-      do {
-	*pms++ = m;
-	m_allMasks |= m;
-      } while ((m = va_arg(ap, RCCPortMask)));
-      *pms++ = 0;
-    }
-    RunCondition::
-    RunCondition(RCCPortMask *rpm, uint32_t usecs, bool timeout)
-      : m_portMasks(NULL), m_timeout(timeout), m_usecs(usecs), m_allocated(NULL), m_allMasks(0) {
-      if (rpm) {
-	unsigned n;
-	for (n = 0; rpm[n]; n++)
-	  ;
-	if (n <= sizeof(m_myMasks)/sizeof(RCCPortMask))
-	  m_portMasks = m_allocated = new RCCPortMask[n + 1];
-	else
-	  m_portMasks = m_myMasks;
-	RCCPortMask m;
-	RCCPortMask *pms = m_portMasks;
-	do {
-	  *pms++ = m = *rpm++;
-	  m_allMasks |= m;
-	} while (m);
-      }
-    }
-    RunCondition::
-    ~RunCondition() {
-      delete [] m_allocated;
-    }
+     if (n < sizeof(m_myMasks)/sizeof(RCCPortMask))
+       m_portMasks = m_allocated = new RCCPortMask[n];
+     else
+       m_portMasks = m_myMasks;
+     va_end(ap);
+     va_start(ap, pm);
+     RCCPortMask *pms = m_portMasks;
+     m = pm;
+     do {
+       *pms++ = m;
+       m_allMasks |= m;
+     } while ((m = va_arg(ap, RCCPortMask)));
+     *pms++ = 0;
+   }
+   RunCondition::
+   RunCondition(RCCPortMask *rpm, uint32_t usecs, bool timeout)
+     : m_portMasks(NULL), m_timeout(timeout), m_usecs(usecs), m_allocated(NULL), m_allMasks(0) {
+     if (rpm) {
+       unsigned n;
+       for (n = 0; rpm[n]; n++)
+	 ;
+       if (n <= sizeof(m_myMasks)/sizeof(RCCPortMask))
+	 m_portMasks = m_allocated = new RCCPortMask[n + 1];
+       else
+	 m_portMasks = m_myMasks;
+       RCCPortMask m;
+       RCCPortMask *pms = m_portMasks;
+       do {
+	 *pms++ = m = *rpm++;
+	 m_allMasks |= m;
+       } while (m);
+     }
+   }
+   RunCondition::
+   ~RunCondition() {
+     delete [] m_allocated;
+   }
     void RunCondition::
     activate(OCPI::OS::Timer &tmr) {
       if (m_timeout)

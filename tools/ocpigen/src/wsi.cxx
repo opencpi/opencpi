@@ -392,7 +392,7 @@ adjustConnection(::Port &consPort, const char *masterName, Language lang,
 	expr += "}";
       } else {
 	for (size_t n = 0; n < cons.ocp.MByteEn.width; n++) {
-	  expr += n ? "&(" : "(";
+	  expr += n ? "&ocpi.util.slv(" : "ocpi.util.slv(";
 	  for (size_t nn = 0; nn < nper; nn++)
 	    OU::formatAdd(expr, "%s%s.MByteEn(%zu)", nn ? " or " : "",
 			  masterName, --pw);
@@ -592,6 +592,8 @@ emitRecordInputs(FILE *f) {
       fprintf(f,
 	      "    data             : std_logic_vector(ocpi_port_%s_data_width-1 downto 0);\n",
 	      cname());	      
+      // This shouldn't be here when the width is 1, but some workers have been written this way
+      // so we'll leave it, but it is redundant with valid when the width is 1
       if (ocp.MByteEn.value)
 	fprintf(f,
 		"    byte_enable      : std_logic_vector(ocpi_port_%s_MByteEn_width-1 downto 0);\n",
@@ -633,6 +635,9 @@ emitRecordOutputs(FILE *f) {
       fprintf(f,
 	      "    data             : std_logic_vector(ocpi_port_%s_data_width-1 downto 0);\n",
 	      cname());
+      // This should not really be generated when the width is one, but some workers set this
+      // signal so we don't want to break them.  But it is ignored since "valid" is what is
+      // documented and specified.
       if (ocp.MByteEn.value)
 	fprintf(f,
 		"    byte_enable      : std_logic_vector(ocpi_port_%s_MByteEn_width-1 downto 0);\n",

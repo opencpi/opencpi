@@ -33,6 +33,17 @@
 #
 ########################################################################### #
 
+ProjectPrefix=ocpi
+ifeq ($(wildcard exports),)
+  ifeq ($(filter clean%,$(MAKECMDGOALS)),)
+    $(info Exports have never been set up for this tree  Doing it now.)
+  endif
+  $(info $(shell ./scripts/makeExportLinks.sh - $(ProjectPrefix)_ xxx))
+endif
+export OCPI_CFLAGS=-Wall -Wfloat-equal -Wextra  -fno-strict-aliasing -Wconversion -std=c99
+export OCPI_CXXFLAGS=-Wextra -Wall -Wfloat-equal -fno-strict-aliasing -Wconversion
+include exports/include/ocpisetup.mk
+export OCPI_OS=$(OCPI_TARGET_OS)
 ifneq ($(OCPI_OS),)
 SYSTEMOPTION="OCPI_OS=$(OCPI_OS)"
 endif
@@ -72,13 +83,17 @@ endif
 # Basic packages.
 #
 
+RDMA_DRIVERS=datagram dma ofed pio sockets udp
+
+#	 runtime/dataplane/rdma_drivers \
+
 PACKAGES += os runtime/util
 
 PACKAGES += \
 	 runtime/dataplane/rdma_utils \
 	 runtime/dataplane/rdma_driver_interface \
 	 runtime/dataplane/rdma_smb \
-	 runtime/dataplane/rdma_drivers \
+	 $(foreach d,$(RDMA_DRIVERS),runtime/dataplane/rdma_drivers/$d) \
 	 runtime/dataplane/transport \
 	 runtime/dataplane/msg_driver_interface \
 	 runtime/dataplane/msg_drivers \
@@ -86,11 +101,13 @@ PACKAGES += \
 	 runtime/library \
 	 runtime/container \
 	 runtime/hdl \
+	 runtime/hdl-support \
 	 runtime/rcc \
 	 runtime/ocl \
 	 runtime/remote \
 	 runtime/ctests \
          runtime/application
+
 
 PACKAGES += tools/cdkutils
 PACKAGES += tools/ocpigen
@@ -131,13 +148,12 @@ ALLPACKAGES = \
 	runtime/library \
 	runtime/container \
 	runtime/hdl \
+	runtime/hdl-support \
 	runtime/ocl \
 	runtime/rcc \
 	runtime/remote \
 	runtime/ctests \
         runtime/application \
-	tools/local/binder \
-	tools/local/tester \
 	tools/cdkutils \
 	tools/ocpigen \
 	tools/cdk/ocpidds \
@@ -150,7 +166,12 @@ ALLPACKAGES = \
 # ----------------------------------------------------------------------
 #
 
-all: packages
+all: packages exports
+.PHONY: exports
+
+
+exports:
+	$(AT)./scripts/makeExportLinks.sh $(OCPI_TARGET_DIR) $(ProjectPrefix)_
 
 .PHONY: hdl hdlcomps hdlapps hdlclean
 hdlcomps:
@@ -173,6 +194,8 @@ cleanhdl:
 
 #	$(MAKE) -C components cleanhdl this happens in the hdl subdir (using ../components)
 
+rcc ocl hdl: exports
+
 rcc:
 	make -C components rcc
 
@@ -186,7 +209,7 @@ cleanocl:
 	make -C components cleanocl
 
 .PHONY : examples
-examples:
+examples: exports
 	make -C examples
 
 cleanexamples:
@@ -202,11 +225,16 @@ cleancomponents:
 	make -C components clean
 
 .PHONY: prims
-hdlprimitives:
+hdlprimitives: exports
 	$(MAKE) -C hdl primitives
 
 driver:
-	$(MAKE) -C os/$(OCPI_OS)/driver
+	$(AT)set -e; if test -d os/$(OCPI_OS)/driver; then \
+	  $(MAKE) -C os/$(OCPI_OS)/driver; \
+	  $(MAKE) exports; \
+	else \
+	  echo No driver for the OS '"'$(OCPI_OS)'"', so none built. ; \
+	fi
 
 cleandriver:
 	$(AT)$(and $(wildcard os/$(OCPI_OS)/driver),$(MAKE) -C os/$(OCPI_OS)/driver topclean)
@@ -237,6 +265,9 @@ clean: cleancomponents cleanexamples
 		fi ; \
 	)
 
+cleanexports:
+	$(AT)rm -r -f exports
+
 distclean: clean
 	find . -name '*~' -exec rm {} \;
 	find . -depth -name '*.dSym' -exec rm -r {} \;
@@ -250,22 +281,11 @@ cleaneverything: distclean cleandrivers
 	-find . -depth -name 'target-*' -exec rm -r '{}' ';'
 	-find . -depth -name 'gen' -exec rm -r '{}' ';'
 	-find . -depth -name "lib" -a ! -path "*export*" -a ! -path "*/platforms/*" -a -type d -a -exec rm -r "{}" ";"
+	$(AT)rm -r -f exports
 
 tar:
 	tar cvf ocpi.tar Makefile MakeVars.ocpi Makefile.ocpi.for-* scripts platforms $(ALLPACKAGES)
 	gzip -9 ocpi.tar
-
-#
-# Note: the "sed" command does not work on Solaris; its sed does not
-# recognize "\t" as a tab. Works fine on Linux and Cygwin.
-#
-
-diff:
-	-diff -r -c $(VOBDIR) . > $@
-	-grep "^--- \./" diff | sed -e 's/^--- \(\.\/.*\)\t.*$$/\1/' > diff.q
-
-diff.q:
-	-grep "^--- \./" diff | sed -e 's/^--- \(\.\/.*\)\t.*$$/\1/' > diff.q
 
 #
 # Shallow package dependencies.
@@ -278,14 +298,14 @@ runtime/dataplane/tests: \
 export_cdk:
 	mydate=`date +%G%m%d%H%M%S`; \
 	file=opencpi-cdk-$$mydate.tgz; \
-	(cd tools/cdk/export; find . -follow -type l) > $$file.exclude; \
+	(cd exports; find . -follow -type l) > $$file.exclude; \
 	if [ -s $$file.exclude ] ; then \
 	  echo ==== These symlinks are broken for this export: ; \
 	  cat $$file.exclude ; \
 	  echo ==== End of broken symlinks; \
 	fi; \
 	echo Creating export file: $$file; \
-	tar -z -h -f $$file -c -X $$file.exclude -C tools/cdk/export .
+	tar -z -h -f $$file -c -X $$file.exclude -C exports .
 
 
 etags: 

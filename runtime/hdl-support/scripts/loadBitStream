@@ -1,0 +1,217 @@
+#!/bin/sh --noprofile
+if [[ $# < 5 ]]; then
+    echo Usage is: `basename $0` bit_file PCI_device platform part-name esn position
+    echo '  An example is (for an ML555) is:'
+    echo '    loadBitStream testbias-ml555.bit.gz 0000:02:00.0 ml555 xc5vlx50t 0123456789abcd 2'
+    echo '  To find the HDL devices (available containers), use the "ocpihdl search" command.'
+    echo '     With ocpihdl, OpenCPI boards with valid bitstreams look like:'
+    echo '     Found an OpenOCPI FPGA at PCI 0000:04:00.0 ...'
+    echo '  Use "searchJtag" to find jtag cablesm usb port names, JTAG Cable serial numbers, parts and jtag positions.'
+    exit 1
+fi
+#set -vx
+bitfile=$1
+device=$2
+platform=$3
+part=$4
+esn=$5
+position=$6
+dir=`dirname $0`
+if test "$position" = ""; then
+  position=any
+fi
+temp=/tmp/ocpibitstream$$
+tbar=$temp.1
+tunzip=$temp.2
+golden=/opt/opencpi/pci-config-snapshots/$device
+pciDevice=`echo $device|sed s/PCI://`
+if test "$OCPI_CDK_DIR" = ""; then
+  echo Error: environment variable OCPI_CDK_DIR is not set.
+  exit 1
+fi
+source $OCPI_CDK_DIR/scripts/ocpibootstrap.sh
+if test "$OCPI_TOOL_HOST" = ""; then
+  echo Error: environment variable OCPI_TOOL_HOST is not set.
+  exit 1
+fi
+if test ! -x /sys/bus/pci/devices/$pciDevice; then
+  echo Trying to load PCI device \"$device\" which does not exist.
+  exit 1
+fi
+if test ! -r $bitfile; then
+  echo Trying to load bit file \"$bitfile\", which does not exist or is not readable.
+  exit 1
+fi
+source $OCPI_CDK_DIR/scripts/util.sh
+findInProjectPath jtagSupport_$platform lib/platforms/$platform jtagSupport || {
+  echo Trying to load onto a \"$platform\", but there is no support for loading it \(no executable lib/platforms/$platform/jtagSupport_$platform found in any project or CDK\)
+  exit 1
+}
+if test "$esn" = ""; then
+  # This is only allowed if there is a single jtag cable found...
+  esn=any
+fi
+# Here we have not checked the part or the position yet.
+# Do more generic work that does not depend on the platform-specifics
+echo Checking existing loaded bitstream on OpenCPI HDL device \"$device\"...
+ocf="$OCPI_CDK_DIR/scripts/sudo_ocpi $OCPI_CDK_DIR/bin/$OCPI_TOOL_HOST/ocfrp_check"
+$ocf $pciDevice
+if test $? != 0; then
+   echo Existing loaded bitstream on device \"$device\" does not appear to be functional.
+   if test ! -f $golden; then
+     echo There is no PCI configuration snapshot in \"$golden\" to restore.  Cannot continue.
+     exit 1
+   fi
+   echo We will use the golden PCI configuration in $golden
+else
+   echo Existing loaded bitstream looks ok, proceeding to snapshot the PCI configuration \(into $tbar\).
+   # This ensures the file is not created under sudo   
+   echo > $tbar
+   sudo cp /sys/bus/pci/devices/$pciDevice/config $tbar
+   sudo chmod a+rw $tbar
+   if test $? != 0; then
+      echo Error: we could not snapshot the PCI configuration before loading.
+      rm $tbar
+      exit 1
+   fi
+#   echo PCI configuration for \"$device\" captured in \"$tbar\".
+   golden=$tbar
+fi
+################################################################################
+# Now we do the platform-specific setup to find cables and serial numbers
+# Get cable info - a list of <cable>=<serial-number>
+################################################################################
+cables=`$jtagSupport cables $temp 2>$temp.cables`
+if test $? != 0; then
+  echo JTAG cable setup for platform \"$platform\" failed. See \"$temp.cables\".
+  exit 1
+fi
+if test "$cables" = ""; then
+  echo No JTAG cables found for \"$platform\" platforms.  See \"$temp.cables\".
+  exit 1
+fi
+rm -f $temp.cables
+found=
+foundser=
+first=
+firstser=
+#echo Cables are \"$cables\".
+OFS="$IFS"
+IFS="~"
+for c in $cables; do
+  #echo Cable is =$c=
+  IFS="$OFS"
+  read port serial <<EOF
+`echo $c | tee yy |sed 's/ /\\\ /g' | tr '=' ' '|tee xx`
+EOF
+  #echo Found USB cable port: \"$port\" with serial number: \"$serial\".   Esn is \"$esn\".
+  if test "$esn" = any; then
+    if test "$first" != ""; then
+       echo No serial number specified for device \"$device\", but multiple JTAG cables found.
+       exit 1
+    fi
+    first=$port
+    firstser=$serial
+  elif test "$serial" = "$esn"; then
+    if test "$found" != ""; then
+       echo Multiple cables found for device \"$device\" with JTAB cable serial number \"$esn\".
+       exit 1
+    fi
+    found=$port
+    foundser=$serial
+  fi
+done
+if test "$esn" != any; then
+  if test "$found" = ""; then
+    echo No JTAG/USB cable found for device \"$device\" with serial number \"$esn\".
+    exit 1
+  fi
+  cable="$found"
+  serial=$foundser
+  echo Found cable \"$cable\" for device \"$device\" with configured cable serial number \"$esn\".
+elif test "$first" = ""; then
+  echo No JTAG/USB cable found to use for device \"$device\" \(no serial number specified\).
+  exit 1
+else
+  cable="$first"
+  serial=$firstser
+  echo Found cable \"$cable\" to use for device \"$device\" \(no serial number specified\).
+fi
+
+################################################################################
+# Now we do the platform-specific part search to check that the part we want
+# to load is at the proper place in the jtag chain
+################################################################################
+jtagpart=`echo $part | sed 's/\(^[^-]*\).*$/\1/'`
+pos=`$jtagSupport part $temp "$cable" "$jtagpart"`
+if test $? != 0; then
+  echo Error: Could not find jtag position for part $part on JTAG cable \"$cable\".
+  exit 1
+fi
+echo The JTAG position of part \"$part\" on JTAG cable \"$cable\" is $pos.
+if test "$position" == any; then
+  position=$pos
+elif test "$position" != "$pos"; then
+  echo The position of the part found \($pos\) does not match the configured value: $position.
+  exit 1
+fi
+
+suffix=
+case $bitfile in 
+  (*.gz)
+    # this might be an empty suffix
+    suffix=`basename $bitfile .gz | sed 's/^.*\.//'`
+    if test "$suffix" = ""; then
+      echo Bit file ending in .gz must have a file extension before the .gz suffix.
+      rm $tbar
+      exit 1
+    fi
+    ;;       
+  (*.bitz)
+    suffix=bit
+    ;;
+esac
+if test "$suffix" != ""; then
+  echo The bitstream file \"$bitfile\" is compressed.  Expanding to temp file \"$temp.$suffix\".
+  gunzip -q -c < $bitfile > $temp.$suffix 2> $tunzip
+  # Note that gunzip issues warnings and returns status == 2 when there is
+  # junk at the end of the file - which we use for artifact metadata of course.
+  if test $? != 0 -a $? != 2; then
+    echo Decompression failed: $(< $tunzip).
+    rm -f $tbar $temp.$suffix $tunzip
+    exit 1
+  fi
+  rm $tunzip
+  bitfile=$temp.$suffix
+fi
+################################################################################
+# Now we do platform-specific loading.  The "device" arg is unlikely to be used.
+################################################################################
+echo Loading bitstream into device \"$device\" via jtag cable \"$cable\", serial number \"$serial\", at position \"$position\"...
+$jtagSupport load "$temp" "$cable" "$position" "$bitfile"
+Err=$?
+rm -f $temp.$suffix
+if test $Err != 0; then
+  echo Bitstream loading failed. PCI device may be unusable and system unstable.
+  rm -f $tbar
+  exit 1
+fi
+echo Bitstream loaded successfully, proceeding to restore PCI config \(from $golden\).
+sleep 2
+sudo cp $golden /sys/bus/pci/devices/$pciDevice/config
+ex=$?
+rm -f $tbar
+if test $ex != 0; then
+  echo Error: Restoration of PCI config failed.
+  echo Error: May need to reset with post-reset PCI config snapshot
+else
+#  echo PCI Configuration restored, checking that new bitstream is ok.
+  $ocf $pciDevice
+  if  test $? = 0; then
+    echo New bitstream is responding.  The loading process was successful.
+  else
+    echo Error: New bitstream is not responding.
+    exit 1
+  fi
+fi
+exit 0

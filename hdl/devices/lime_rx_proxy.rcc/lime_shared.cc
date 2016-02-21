@@ -5,7 +5,7 @@
 namespace OCPI {
   namespace Lime {
     // This function is shared with the limx_tx_proxy
-    void calcDividers(float pll_hz, float lo_hz, Divider &div) {
+    void calcDividers(double pll_hz, double lo_hz, Divider &div) {
       int freqsel_2downto0;
       unsigned long nintInt, nfracInt;
       unsigned short nint0, nfrac22downto16, nfrac15downto8;
@@ -160,7 +160,7 @@ namespace OCPI {
     }
     const char *getFreqValue(float hz, uint8_t &regval) {
       if (hz < 0.2325e9 || hz > 3.72e9)
-	return "Invalid center freq. Frequencies must be between 0.2325 and 3.72 GHz";
+	return "Invalid center freq. Frequencies must be between 0.2325e9 and 3.72e9 Hz";
       static struct {
 	float max_hz;
 	uint8_t regval;

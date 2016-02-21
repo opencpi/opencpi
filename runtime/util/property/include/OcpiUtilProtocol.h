@@ -71,7 +71,7 @@ namespace OCPI  {
       inline bool isTopFixedSequence() const { return m_topFixedSequence; }
       void printXML(std::string &out, unsigned indent = 0) const;
       void write(Writer &writer, const uint8_t *data, size_t length);
-      size_t read(Reader &reader, uint8_t *&data, size_t maxLength);
+      size_t read(Reader &reader, uint8_t *data, size_t maxLength);
       // for testing
       void generate(const char *name, Protocol &p);
       void generateArgs(Value **&);
@@ -127,7 +127,7 @@ namespace OCPI  {
       const char *parseSummary(ezxml_t x);
       const char *finishParse();
       void printXML(std::string &out, unsigned indent = 0) const;
-      void write(Writer &writer, const uint8_t *data, uint32_t length, uint8_t opcode);
+      void write(Writer &writer, const uint8_t *data, size_t length, uint8_t opcode);
       size_t read(Reader &reader, uint8_t *data, size_t maxLength, uint8_t opcode);
       void generate(const char *name);
       void generateOperation(uint8_t &opcode, Value **&v);

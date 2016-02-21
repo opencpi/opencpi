@@ -7,7 +7,6 @@ export OCPI_TARGET_OS=linux
 export OCPI_TARGET_OS_VERSION=zynq
 export OCPI_TARGET_ARCH=arm
 export OCPI_TARGET_HOST=linux-zynq-arm
-export OCPI_ARCH=arm
 # export OCPI_CFLAGS=
 # export OCPI_CXXFLAGS=
 export OCPI_LDFLAGS=

@@ -24,6 +24,8 @@
 # This makefile is for building assemblies and bitstreams.
 # The assemblies get built according to the standard build targets
 HdlMode:=assembly
+include $(OCPI_CDK_DIR)/include/util.mk
+$(OcpiIncludeProject)
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 
 # Theses next lines are similar to what worker.mk does
@@ -37,14 +39,16 @@ Worker_$(Worker)_xml:=$(Worker).xml
 Worker_xml:=$(Worker).xml
 OcpiLanguage:=verilog
 override LibDir=lib/hdl
+override HdlLibraries+=platform
+#$(info -1.Only:$(OnlyPlatforms),All:$(HdlAllPlatforms),Ex:$(ExcludePlatforms),HP:$(HdlPlatforms))
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 ifndef HdlSkip
 # Add to the component libraries specified in the assembly Makefile,
 # and also include those passed down from the "assemblies" level
+# THIS LIST IS FOR THE APPLICATION ASSEMBLY NOT FOR THE CONTAINER
 override ComponentLibraries+= $(ComponentLibrariesInternal) components adapters
 # Override since they may be passed in from assemblies level
 override XmlIncludeDirsInternal:=$(XmlIncludeDirs) $(XmlIncludeDirsInternal)
-override HdlLibraries+=platform
 ifdef Container
   ifndef Containers
     Containers:=$(Container)
@@ -55,6 +59,7 @@ HdlContOutDir=$(OutDir)container-$1
 HdlContDir=$(call HdlContOutDir,$(call HdlContName,$1,$2))
 HdlStripXml=$(if $(filter .xml,$(suffix $1)),$(basename $1),$1)
 ifneq ($(MAKECMDGOALS),clean)
+#  $(info 0.Only:$(OnlyPlatforms),All:$(HdlAllPlatforms),Ex:$(ExcludePlatforms),HP:$(HdlPlatforms))
   $(eval $(HdlPrepareAssembly))
   # default the container names
   $(foreach c,$(Containers),$(eval HdlContXml_$c:=$c))
@@ -91,8 +96,9 @@ ifneq ($(MAKECMDGOALS),clean)
   # Create the default container directories and files
   # $(call doDefaultContainer,<platform>,<config>)
   HdlDefContXml=<HdlContainer platform='$1/$2' default='true'/>
+#  $(info 1.Only:$(OnlyPlatforms),All:$(HdlAllPlatforms),Ex:$(ExcludePlatforms),HP:$(HdlPlatforms))
   define doDefaultContainer
-    $(call OcpiDbg,In doDefaultContainer for $1/$2 and HdlPlatforms: $(HdlPlatforms))
+    $(call OcpiDbg,In doDefaultContainer for $1/$2 and HdlPlatforms: $(HdlPlatforms) [filtered=$(filter $1,$(HdlPlatforms))])
     ifneq (,$(if $(HdlPlatforms),$(filter $1,$(HdlPlatforms)),yes))
       # Create this default container's directory and xml file
       ContName:=$(call HdlContName,$1,$2)
@@ -116,7 +122,7 @@ ifneq ($(MAKECMDGOALS),clean)
     $(foreach p,$(filter $(or $(OnlyPlatforms),$(HdlAllPlatforms)),\
                  $(filter-out $(ExcludePlatforms),$(HdlPlatforms))),\
                 $(eval $(call doDefaultContainer,$p,base)))
-    $(call OcpiDbg,No Default Containers: Containers: $(Containers))
+    $(call OcpiDbg,No Default Containers: Containers: $(Containers) (Container=$(Container)))
   else
     $(foreach d,$(DefaultContainers),\
        $(if $(findstring /,$d),\
@@ -146,7 +152,9 @@ else # for "clean" goal
 endif
 # Due to our filtering, we might have no targets to build
 ifeq ($(filter $(or $(OnlyPlatforms),$(HdlAllPlatforms)),$(filter-out $(ExcludePlatforms),$(HdlPlatforms))),)
-  $(info No targets or platforms to build for this assembly)
+#  $(info 2.Only:$(OnlyPlatforms),All:$(HdlAllPlatforms),Ex:$(ExcludePlatforms),HP:$(HdlPlatforms))
+  $(info Not building assembly $(Worker) for platform(s): $(HdlPlatforms) in "$(shell pwd)")
+#  $(info No targets or platforms to build for this "$(Worker)" assembly in "$(shell pwd)")
 else
   include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
   ifndef HdlSkip

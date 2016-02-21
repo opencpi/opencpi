@@ -108,6 +108,7 @@ namespace OCPI {
       getTransportGlobal(const OCPI::Util::PValue *params = NULL) {
 	return getSingleton().getTransportGlobalInternal(params);
       }
+      static bool dynamic();
     private:
       // Globals dependant on polling
       OCPI::DataTransport::TransportGlobal *m_tpg_events, *m_tpg_no_events;

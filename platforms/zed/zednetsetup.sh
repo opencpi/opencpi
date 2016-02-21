@@ -19,7 +19,7 @@ else
   # Make $zed point to the zed platform directory in the OpenCPI dev tree
   zed=/mnt/net/$3/platforms/zed
   # Copy the (missing) C++ runtime environment library into the current RAM rootFS
-  cp $zed/libstdc++.so.6 /lib
+  # cp $zed/libstdc++.so.6 /lib
   # Make sure the hostname is in the host table
   myipaddr=`ifconfig | grep -v 127.0.0.1 | sed -n '/inet addr:/s/^.*inet addr: *\([^ ]*\).*$/\1/p'`
   myhostname=`hostname`
@@ -27,13 +27,18 @@ else
   if ! grep -q $myhostname /etc/hosts; then echo $myipaddr $myhostname >> /etc/hosts; fi
   # Run the generic script to setup the OpenCPI environment
   # Note the ocpidriver load command is innocuous if run redundantly
-  export OCPI_BASE_DIR=/mnt/net/$3
+  export OCPI_CDK_DIR=/mnt/net/$3
   cat <<EOF > $HOME/.profile
-    export OCPI_BASE_DIR=$OCPI_BASE_DIR
-    source $OCPI_BASE_DIR/ocpi/ocpisetup.sh $OCPI_BASE_DIR/ocpi/ocpisetup.sh
+    echo Executing $HOME/.profile.
+    export OCPI_CDK_DIR=$OCPI_CDK_DIR
+    export OCPI_TOOL_HOST=linux-zynq-arm
+    export OCPI_TOOL_DIR=\$OCPI_TOOL_HOST
+    export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/lib/components/rcc:\$OCPI_TOOL_DIR:$OCPI_CDK_DIR/lib/platforms/zed
+    export PATH=$OCPI_CDK_DIR/bin/\$OCPI_TOOL_DIR:$OCPI_CDK_DIR/scripts:\$PATH
+    # This is only for explicitly-linked driver libraries.  Fixed someday.
+    export LD_LIBRARY_PATH=$OCPI_CDK_DIR/lib/$OCPI_TOOL_DIR:\$LD_LIBRARY_PATH
     ocpidriver load
     export TZ=$5
-    export LD_LIBRARY_PATH+=$OCPI_BASE_DIR/ocpi/lib/linux-zynq-arm
     echo OpenCPI ready for zed.
     if test -r /mnt/card/opencpi/mynetsetup.sh; then
        source /mnt/card/opencpi/mynetsetup.sh
@@ -41,6 +46,7 @@ else
        echo Error: enable to find /mnt/card/opencpi/mynetsetup.sh
     fi
 EOF
+  echo Running login script. OCPI_CDK_DIR is now $OCPI_CDK_DIR.
   source $HOME/.profile
 fi
 

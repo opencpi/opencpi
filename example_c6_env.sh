@@ -17,9 +17,10 @@ export OCPI_BUILD_SHARED_LIBRARIES=0
 # #### Location of the Modelsim tools ####################################### #
 
 export OCPI_MODELSIM_DIR=/home/jek/mac/Mentor/modelsim_dlx
-export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../license-20150407.txt
+export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../license-20151005.txt
 
-export OCPI_OPENCV_HOME=/opt/opencpi/prerequisites/opencv/linux-c6-x86_64
+# Enable this if you want to, and have, installed OPENCV
+# export OCPI_OPENCV_HOME=/opt/opencpi/prerequisites/opencv/linux-c6-x86_64
 
 export OCPI_HAVE_OPENCL=1
 export OCPI_OPENCL_OBJS=/home/jek/AMDAPPSDK-3.0/lib/x86_64/libOpenCL.so

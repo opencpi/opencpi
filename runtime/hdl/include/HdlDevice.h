@@ -3,13 +3,13 @@
 
 #ifndef HDL_DEVICE_H
 #define HDL_DEVICE_H
-#include <stdint.h>
 
+#include <inttypes.h>
 #include <climits>
 #include "OcpiUuid.h"
-#include "OcpiRDTInterface.h"
-#include "HdlWciControl.h"
+//#include "OcpiRDTInterface.h"
 #include "HdlAccess.h"
+#include "HdlWciControl.h"
 
 namespace OCPI {
   namespace HDL {

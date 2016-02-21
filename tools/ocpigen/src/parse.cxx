@@ -284,6 +284,9 @@ doMaybeProp(ezxml_t maybe, void *vpinfo) {
     // FIXME mark a property as "impled" so we reject doing it more than once
     if (!p)
       return OU::esprintf("Existing property named \"%s\" not found", name);
+    if (strcmp(p->m_name.c_str(), name))
+      return OU::esprintf("SpecProperty name (%s) and Property name (%s) differ in case",
+			  name, p->m_name.c_str());
     // So simply add impl info to the existing property.
     return p->parseImpl(maybe);
   } else if (p)
@@ -473,6 +476,8 @@ parse(const char *file, ezxml_t prot)
       last = file + strlen(file);
     last = checkSuffix(start, "_protocol", last);
     last = checkSuffix(start, "_prot", last);
+    last = checkSuffix(start, "-protocol", last);
+    last = checkSuffix(start, "-prot", last);
     m_name.assign(start, last - start);
     std::string ofile = m_port.m_worker->m_file;
     m_port.m_worker->m_file = file;
@@ -901,7 +906,8 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
     m_staticPattern(NULL), m_defaultDataWidth(-1), m_language(NoLanguage), m_assembly(NULL),
     m_slave(NULL), m_emulate(NULL), m_library(NULL), m_outer(false), m_debugProp(NULL), 
     m_instancePVs(ipvs), m_mkFile(NULL), m_xmlFile(NULL), m_outDir(NULL), m_paramConfig(NULL),
-    m_parent(parent), m_scalable(false), m_requiredWorkGroupSize(0)
+    m_parent(parent), m_scalable(false), m_requiredWorkGroupSize(0), m_maxLevel(0),
+    m_dynamic(false)
 {
   if ((err = getNames(xml, xfile, NULL, m_name, m_fileName)))
     return;
@@ -1053,7 +1059,8 @@ emitArtXML(const char *wksFile) {
   if (os_version) fprintf(f, " osVersion=\"%s\"", os_version);
   if (platform)   fprintf(f, " platform=\"%s\"",  platform);
   if (arch)       fprintf(f, " arch=\"%s\"",  arch);
-  if (device)     fprintf(f, " device=\"%s\"",    device);
+  if (device)     fprintf(f, " device=\"%s\"", device);
+  if (m_dynamic)  fprintf(f, " dynamic='1'");
   fprintf(f, ">\n");
   emitXmlWorkers(f);
   emitXmlInstances(f);

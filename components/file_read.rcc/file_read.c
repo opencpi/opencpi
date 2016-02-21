@@ -60,8 +60,9 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   RCCPort *port = &self->ports[FILE_READ_OUT];
   File_readProperties *props = self->properties;
   MyState *s = self->memories[0];
-  size_t n2read =  props->messageSize ? props->messageSize : port->current.maxLength;
-  ssize_t n;
+  size_t n2read = props->messageSize ? props->messageSize : port->current.maxLength;
+  ssize_t n = 0; // needed only for warning suppression
+  RCCBoolean zlmIn = 0;
   (void)timedOut;(void)newRunCondition;
 
   // Initialize our seek position the first time we're here
@@ -73,22 +74,23 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
       uint32_t length;
       uint32_t opcode;
     } m;
-    if (read(s->fd, &m, sizeof(m)) != sizeof(m)) {
+    if ((n = read(s->fd, &m, sizeof(m))) != sizeof(m) && n) {
       props->badMessage = 1;
-      return self->container.setError("can't read message header from file: %s",
-				      strerror(errno));
+      return self->container.setError("can't read message header from file (%zd): %s",
+				      n, strerror(errno));
     }
-    n2read = m.length;
-    port->output.u.operation = (RCCOpCode)m.opcode;
+    zlmIn = n && m.length == 0;
+    n2read = n = n ? m.length : 0;
+    port->output.u.operation = n ? (RCCOpCode)m.opcode : props->opcode;
   }
   if (n2read > port->current.maxLength)
     return self->container.setError("message size (%zu) too large for max buffer size (%u)",
 				    n2read, port->current.maxLength);
-  if ((n = read(s->fd, port->current.data, n2read)) < 0)
+  if (n2read && (n = read(s->fd, port->current.data, n2read)) < 0)
     return self->container.setError("error reading file: %s", strerror(errno));
   if (props->messagesInFile && n != (ssize_t)n2read) {
     props->badMessage = 1;
-    return self->container.setError("message truncated in file. header said %zu file had %zu",
+    return self->container.setError("message truncated in file. header said %zu file had %zd",
 				    n2read, n);
   }
   // Truncate the message for the granularity
@@ -101,7 +103,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   }
   port->output.length = n;
   props->bytesRead += n;
-  if (n) {
+  if (n || zlmIn) { // MIF mode just passes ZLMs through with no special action
     props->messagesWritten++;
     return RCC_ADVANCE;
   }
@@ -114,9 +116,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
     last = lseek(s->fd, 0, SEEK_CUR),
     end = lseek(s->fd, 0, SEEK_END);
   close(s->fd);
-  if (props->suppressEOF)
-    return RCC_DONE;
-  if (last - end >= props->messageSize)
+  if (props->suppressEOF || last - end >= props->messageSize)
     return RCC_DONE;
   props->messagesWritten++;
   return RCC_ADVANCE_DONE;

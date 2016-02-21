@@ -35,13 +35,15 @@ RCCDispatch file_read_msg = {
 
 #define DATA_SIZE 2048*20
 #define SCALE_F 10000
-#define PI 3.14159265
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 #define S_SIZE (DATA_SIZE/40)
 RCCResult genTestFile( RCCWorker * self )
 {
   File_read_msgProperties *p = self->properties;
   unsigned int n;
-  double interval = 2.0*PI/S_SIZE;
+  const double interval = 2.0*M_PI/S_SIZE;
   FileHeader h;
   int fd;
   unsigned bc=0;
@@ -155,7 +157,7 @@ start(RCCWorker *self) {
     return RCC_ERROR;
   }
 
-  // A conveinience function to generates a simple sinwave file
+  // A convenience function to generate a simple sinwave file
   if ( p->genTestFile ) {
     genTestFile( self );
     p->genTestFile = 0;

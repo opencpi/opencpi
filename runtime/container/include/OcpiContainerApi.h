@@ -46,7 +46,6 @@
 namespace OCPI {
   namespace Container {
     class Port;
-    class Controllable;
     class Worker;
     class LocalLauncher;
   }

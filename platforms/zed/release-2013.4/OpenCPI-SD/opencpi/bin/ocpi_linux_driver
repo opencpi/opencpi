@@ -6,8 +6,13 @@
 # Retrieve the reserved DMA memory value from the kernel command line
 # Note there might be multiple reservations, and we currently only support one (the first).
 
+if test "$OCPI_CDK_DIR" = "" -o "$OCPI_TOOL_HOST" = ""; then
+  echo Error: this script "($0)" cannot be run without OCPI_CDK_DIR and OCPI_TOOL_HOST.
+fi
+
 MODNAME=opencpi
 SUDO=sudo
+MODFILE=$MODNAME.ko
 RULESFILE=99-$MODNAME.rules
 if [ -x /sbin/udevcontrol ] ; then
 RELOAD="/sbin/udevcontrol reload_rules"
@@ -21,31 +26,48 @@ else
  echo Error: None of /sbin/udevcontrol, /sbin/udevadm, or /sbin/mdev were found and executable.
  exit 1
 fi
+# Don't run sudo if already root
+if [ $(id -u) = 0 ]; then
+  SUDO=
+fi
 if [ $# = 2 ] ; then # this is for the makefile
   DIR=.
 else
-  # if we are in a bin directory, we are in a standalone/embedded mode
-  DIR=`dirname $0`
-  DNAME=`basename $DIR`
-  if [ "$DNAME" = bin ] ; then
-    DIR="$DIR/../lib"
-  else
+#  There is no difference anymore to require this distinction
+#  For lots of reasons the standalone system still has the target subdir
+# if we are in a bin directory, we are in a standalone/embedded mode
+#  DIR=`dirname $0`
+#  DNAME=`basename $DIR`
+#  if [ "$DNAME" = bin ] ; then
+#    DIR="$DIR/../lib"
+#  else
     DIR=$OCPI_CDK_DIR/lib/$OCPI_TOOL_HOST
+#  fi
+  if test -f /etc/ocpi-release; then
+     LABEL=$(< /etc/ocpi-release)
+  else
+     LABEL=$(uname -r)
+  fi
+  if test -e $DIR/$MODNAME-$LABEL.ko; then
+    MODFILE=$MODNAME-$LABEL.ko
+  else
+    MODFILE=$MODNAME.ko
+  fi
+  if test ! -e $DIR/$MODFILE; then
+    echo Error: cannot find driver/file "$MODNAME*.ko" in $DIR
+    exit 1
   fi
 fi
-
-RULESPATH=$DIR/$RULESFILE
-MODNAME=opencpi
-MODFILE=$MODNAME.ko
 MODPATH=$DIR/$MODFILE
+RULESPATH=$DIR/$RULESFILE
 
 rudev () {
   if [ "$RELOAD" = '' ] ; then
     sed '/ocpi=/d' < /etc/mdev.conf > /tmp/dmdev.conf
     mv /tmp/dmdev.conf /etc/mdev.conf
   else
-    sudo rm -f /etc/udev/rules.d/$RULESFILE
-    sudo $RELOAD
+    $SUDO rm -f /etc/udev/rules.d/$RULESFILE
+    $SUDO $RELOAD
   fi
 }
 
@@ -116,22 +138,21 @@ if [ "$RELOAD" = '' ] ; then
     cat $RULESPATH >> /etc/mdev.conf
   fi
 else
-  sudo cp $RULESPATH /etc/udev/rules.d &&
-  sudo $RELOAD
+  $SUDO cp $RULESPATH /etc/udev/rules.d &&
+  $SUDO $RELOAD
   if test $? != 0; then
     exit 1
   fi
 fi
 $SUDO /sbin/insmod $MODPATH $INSARG
+RES=$?
 #sudo /sbin/modprobe -v 
-if [ $? = 0 ] ; then
+if [ $RES = 0 ] ; then
   # check /dev?
   echo Driver loaded successfully.
+  exit 0
 else
   rudev
   echo Driver loading failed.
+  exit $RES
 fi
-  
-
-
-

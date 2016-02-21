@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -31,12 +30,14 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #define __STDC_LIMIT_MACROS 1
 #include <stdint.h>
-#include <iostream>
 #include <errno.h>
 #include <strings.h>
+#include <unistd.h>
+#include <sys/uio.h>
+#include <cassert>
+#include <iostream>
 
 #include "ezxml.h"
 #include "OcpiOsAssert.h"
@@ -714,9 +715,9 @@ namespace OCPI {
       const char *
       ezxml_parse_file(const char *file, ezxml_t &xml) {
 	if (!(xml = ::ezxml_parse_file(file)))
-	  return OU::esprintf("Could not parse xml file: '%s'", file);
+	  return OU::esprintf("could not parse xml file: '%s'", file);
 	else if (ezxml_error(xml)[0])
-	  return OU::esprintf("Error parsing xml file '%s': %s", file, ezxml_error(xml));
+	  return OU::esprintf("error parsing xml file '%s': %s", file, ezxml_error(xml));
 	return NULL;
       }
       const char *
@@ -724,8 +725,63 @@ namespace OCPI {
 	if (!(xml = ::ezxml_parse_str(string, len)))
 	  return "Could not parse xml string";
 	else if (ezxml_error(xml)[0])
-	  return OU::esprintf("Error parsing xml string': %s", ezxml_error(xml));
+	  return OU::esprintf("error parsing xml string': %s", ezxml_error(xml));
 	return NULL;
+      }
+      bool
+      receiveXml(int fd, ezxml_t &rx, std::vector<char> &buf, bool &eof, std::string &error) {
+	ezxml_free(rx);
+	rx = NULL;
+	uint32_t len;
+	eof = false;
+	ssize_t n = ::read(fd, (char *)&len, sizeof(len));
+	if (n != sizeof(len) || len > 64*1024) {
+	  if (n == 0) {
+	    eof = true;
+	    error = "EOF on socket read";
+	  } else
+	    OU::format(error, "read error: %s (%zu, %zu)", strerror(errno), n, (size_t)len);
+	  return true;
+	}
+	ssize_t total = len;
+	buf.resize(total);
+	for (char *cp = &buf[0]; total && (n = ::read(fd, cp, len)) > 0; total -= n, cp += n)
+	  ;
+	if (n <= 0) {
+	  OU::format(error, "message read error: %s (%zu)", strerror(errno), n);
+	  return true;
+	}
+	ocpiDebug("Received XML===========================\n%s\nEND XML==========", &buf[0]);
+	const char *err;
+	if ((err = ezxml_parse_str(&buf[0], len, rx))) {
+	  OU::format(error, "xml parsing error: %s", err);
+	  return true;
+	}
+	if ((err = ezxml_cattr(rx, "error"))) {
+	  OU::format(error, "Container server error: %s", err);
+	  return true;
+	}
+	return false;
+      }
+      bool
+      sendXml(int fd, std::string &request, const char *msg, std::string &error) {
+	assert(request.length());
+	const char *rb = strchr(request.c_str(), '>');
+	const char *sp = strchr(request.c_str(), ' ');
+	assert(rb || sp);
+	if (sp && sp < rb)
+	  rb = sp;
+	OU::formatAdd(request, "</%.*s>\n", (int)(rb - (request.c_str()+1)), request.c_str() + 1);
+	uint32_t len = OCPI_UTRUNCATE(uint32_t, request.size() + 1);
+	struct iovec iov[2];
+	iov[0].iov_base = (char*)&len;
+	iov[0].iov_len = sizeof(uint32_t);
+	iov[1].iov_base = (void*)request.c_str();
+	iov[1].iov_len = request.length()+1;
+	ssize_t n, total = iov[0].iov_len + iov[1].iov_len;
+	ocpiDebug("Sending XML===========================\n%s\nEND XML==========", request.c_str());
+	do n = ::writev(fd, iov, 2); while (n > 0 && (total -= n));
+	return n > 0 ? false : OU::eformat(error, "Error writing to %s: %s", msg, strerror(errno));
       }
     }
   }

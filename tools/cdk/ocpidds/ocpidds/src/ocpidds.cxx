@@ -59,6 +59,7 @@
 #include "OcpiUtilDataTypes.h"
 #include "OcpiUtilProtocol.h"
 #include "OcpiUtilMisc.h"
+#include "cdkutils.h"
 #include "ocpidds.h"
 
 namespace OS = OCPI::OS;

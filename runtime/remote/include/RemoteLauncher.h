@@ -76,13 +76,6 @@ namespace OCPI {
 	setPropertyValue(unsigned remoteInstance, size_t propN, std::string &v),
 	getPropertyValue(unsigned remoteInstance, size_t propN, std::string &v, bool hex,
 			 bool add);
-      static void
-	encodeDescriptor(const char *iname, const std::string &s, std::string &out),
-	decodeDescriptor(const char *info, std::string &s);
-
-      static bool
-	receiveXml(int fd, ezxml_t &rx, std::vector<char> &buf, bool &eof, std::string &error),
-	sendXml(int fd, std::string &buf, const char *msg, std::string &error);
     };
   }
 }

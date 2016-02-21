@@ -46,7 +46,7 @@
  *                  Initial version.
  */
 
-#include <stdint.h>
+#include <inttypes.h>
 #include <cstring>
 #include <cstdio>
 #include <string>
@@ -332,6 +332,8 @@ namespace OCPI {
        */
 
       void
+	encodeDescriptor(const char *iname, const std::string &s, std::string &out),
+	decodeDescriptor(const char *info, std::string &s),
 	formatString(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
 	format(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
 	formatAdd(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
@@ -394,6 +396,14 @@ namespace OCPI {
       }
       OCPI::OS::Ether::Address &getSystemAddr();
       const std::string &getSystemId();
+      // The posix.2 definition, meaning initial removal of trailing slashes.
+      // empty strings and "/" result in an empty string.
+      // The return value is a convenience - the c_str() of the output buffer.
+      const char *baseName(const char *path, std::string &buf);
+      // find item in colon-separated path, returning complete path in "result"
+      // return true on error
+      bool searchPath(const char *path, const char *item, std::string &result,
+		      const char *preferredSuffix = NULL);
   }
 }
 

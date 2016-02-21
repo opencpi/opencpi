@@ -203,7 +203,7 @@ namespace DataTransfer {
     // Data members accessible from this/derived class
   private:
     //    OCPI::OS::int32_t xfer_socket_starti(PIO_transfer pio_transfer, OCPI::OS::int32_t);
-    void action_transfer(PIO_transfer transfer);
+    void action_transfer(PIO_transfer transfer, bool last);
   protected:
     Flags                                     m_flags;                // Flags used during creation
     OCPI::OS::uint32_t                        m_srcoffset;        // The source memory offset

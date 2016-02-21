@@ -25,6 +25,10 @@ namespace OCPI {
 	m_seen[n] = false;
       }
     }
+    BaseCommandOptions::
+    ~BaseCommandOptions() {
+      delete [] m_seen;
+    }
     const char *BaseCommandOptions::
     setError(const char *err) {
       m_error = err;
@@ -153,9 +157,7 @@ namespace OCPI {
     int BaseCommandOptions::
     main(const char **initargv, int (*themain)(const char **a)) {
       try {
-	if (setArgv(initargv))
-	  return 1;
-	themain(argv());
+	return setArgv(initargv) ? 1 : themain(argv());
       } catch (std::string &e) {
 	exitbad(e.c_str());
       } catch (const char *e) {
