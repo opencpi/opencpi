@@ -162,6 +162,7 @@ function do_application {
     [ "$dirtype" == application ] || bad the directory at $adir does not appear to be an application
     ask delete the application project in the \"$adir\" directory
     rm -r -f $adir
+    [ -z $verbose ] || echo The application \"$1\" in the directory \"$adir\" has been deleted.
     exit 0
   fi
   [ -z "$xmlapp" -a -e $subdir$1 ] && bad the application \"$1\" in directory \"$topdir$subdir$1\" already exists
@@ -396,6 +397,7 @@ function do_worker {
     [ "$dirtype" == worker ] || bad the directory \"$libdir/$1\" does not contain a worker
     ask delete the worker named \"$1\" \(directory \"$libdir/$1\"\)
     rm -r -f $libdir/$1
+    [ -z $verbose ] || echo The worker \"$1\" in the directory \"$libdir/$1\" has been deleted.
     return 0
   fi
   words=(${1//./ })
@@ -520,30 +522,63 @@ EOF
 }
 
 function do_primitive {
-  if [ "$1" != "core" -a "$1" != "library" ] ; then
-    echo 'The first argument to "new primitive" must be "core" or "library".' >&2
-    exit 1
+  [ "$2" = "" ] &&
+    bad The argument after \"$verb hdl primitive $1\" must be the name of the primitive
+  odirtype=$dirtype
+  case "$dirtype" in
+    (hdl-primitives) dir="$2"; mydir="this";;
+    (project) dir=hdl/primitives/"$2"; mydir="the hdl/primitives";;
+    (*) bad this command can only be executed in a project or hdl/primitives directory;;
+  esac
+  if [ $verb == delete ]; then
+    [ -d $dir ] || bad no $1 named \"$2\" exists in $mydir directory
+    get_dirtype $dir
+    case $dirtype in
+      (hdl-library) [ $1 = library ] || bad the primitive in $dir is not a library;;
+      (hdl-core) [ $1 = core ] || bad the primitive in $dir is not a core;;
+      (*) bad there is no primitive in the $dir directory;;
+    esac
+    ask delete the HDL primitive $1 named \"$2\" \(directory \"$dir\"\)
+    rm -r -f $dir
+    [ -z $verbose ] || echo The HDL primitive $1 \"$2\" in the directory \"$dir\" has been deleted.
+    if [ $odirtype == project ] ; then
+      if [ "$(ls hdl/primitives)" == Makefile ] ; then
+        rm -r -f hdl/primitives
+        [ -z $verbose ] || echo The hdl/primitives directory is now empty.  It has been removed.
+      fi
+    fi
+    return 0
   fi
-  if [ "$2" = "" ] ; then      
-    echo 'The second argument to "new primitive" must be the name of the primitive.' >&2
-    exit 1
+  [ -e $dir ] &&
+    bad The primitive $2 already exists.
+  if [ $dirtype == project -a ! -e hdl/primitives ]; then
+    mkdir -p hdl/primitives
+    cat <<EOF > hdl/primitives/Makefile
+$CheckCDK
+# To restrict the primitives that are built or run, you can set the Libraries or Cores
+# variables to the specific list of which ones you want to build and run, e.g.:
+# PrimitiveLibraries=lib1 lib2
+# PrimitiveCores=core1 core2
+# Otherwise all primitives will be built
+include \$(OCPI_CDK_DIR)/include/hdl-primitives.mk
+EOF
+    [ -z $verbose ] || echo This is the first primitive in this project.  The \"hdl/primitives\" directory has been created.
   fi
-  if [ -e hdl/primitives/"$2" ] ; then
-    echo "The primitive hdl/primitives/$2 already exists." >&2
-    exit 1
-  fi
-  mkdir -p hdl/primitives/"$2"
+  mkdir -p $dir
   if [ "$1" = "library" ] ; then 
-    cat <<EOF > hdl/primitives/$2/Makefile
+    cat <<EOF > $dir/Makefile
 # This Makefile is for the primitive library: $2
 
 # Set this variable to any other primitive libraries that this $1 depends on.
 # If they are remote from this project, use slashes in the name (relative or absolute)
-#HdlLibraries=
+# If they are in this project, they must be compiled first, and this requires that the
+# PrimitiveLibraries variable be set in the hdl/primitives/Makefile such that the
+# libraries are in dependency order.
+#Libraries=
 
 # Set this variable to the list of source files in dependency order
 # If it is not set, all .vhd and .v files will be compiled in wildcard/random order,
-# except that any *_pkg.vhd will be compiled first
+# except that any *_pkg.vhd files will be compiled first
 #SourceFiles=
 
 # Remember two rules for OpenCPI primitive libraries, in order to be usable with all tools:
@@ -553,15 +588,15 @@ function do_primitive {
 
 include \$(OCPI_CDK_DIR)/include/hdl/hdl-library.mk
 EOF
-    cat <<EOF > hdl/primitives/$2/$2_pkg.vhd
--- This package is used so that VHDL code can instantiate all entities and modules in this library
+    cat <<EOF > $dir/$2_pkg.vhd
+-- This package enables VHDL code to instantiate all entities and modules in this library
 library ieee; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 package $2 is
--- put component declarations along with any related type definitions for the ports here
+-- put component declarations along with any related type definitions here
 end package $2;
 EOF
   else
-    cat <<EOF > hdl/primitives/$2/Makefile
+    cat <<EOF > $dir/Makefile
 # This Makefile is for the primitive core: $2
 
 # Set this variable to any other primitive libraries that this core depends on.
@@ -574,7 +609,7 @@ EOF
 #SourceFiles=
 
 # Set this variable if the top level module name for this core is different from the
-# core name.
+# core name: $2
 #Top=
 
 # Set this variable if this core is in fact a presynthesized/prebuilt core
@@ -608,6 +643,7 @@ function do_assembly {
     [ "$dirtype" == hdl-assembly ] || bad the directory at $adir does not appear to be an HDL assembly
     ask delete the HDL assembly in the \"$adir\" directory
     rm -r -f $adir
+    [ -z $verbose ] || echo The HDL assembly \"$1\" in the directory \"$adir\" has been deleted.
     exit 0
   fi
   [ -e $subdir$1 ] && bad the HDL assembly \"$1\" in directory \"$topdir$subdir$1\" already exists
@@ -772,6 +808,14 @@ while [[ "${argv[0]}" != "" ]] ; do
     if [ -n "$hdl" ]; then
       case ${argv[0]} in
         (device|platform|assembly) noun=${argv[0]} ;;
+        (primitive)
+          noun=${argv[0]}
+	  myshift
+	  case ${argv[0]} in
+            (core|library) args=($args ${argv[0]});;
+            (*) bad bad primitive type \"${argv[1]}\", must be \"library\" or \"core\";;
+          esac
+          ;;
         (*) bad invalid noun after \"hdl\": ${argv[0]} ;;
       esac
     elif [ "${argv[0]}" == hdl -o "${argv[0]}" = HDL ]; then
@@ -858,18 +902,18 @@ needname ${argv[0]} $verb $noun
 get_dirtype .
 [ -z $verbose ] || echo Executing the \"$verb $hdl$noun\" command in a ${dirtype:-unknown type of} directory: $directory.
 case $noun in
-  (project) do_project $args ;;
-  (application) do_application $args ;;
-  (protocol) do_protocol_or_spec $args ;;
-  (spec) do_protocol_or_spec $args ;;
-  (library) do_library $args ;;
-  (worker) do_worker $args ;;
-  (assembly) do_assembly $args ;;
-  (emulator) do_worker emu $args ;;
-  (card) do_card $args ;;
-  (slot) do_slot $args ;;
-  (device) do_device $args ;;
-  (platform) do_platform $args ;;
-  (primitive) do_primitive $args ;;
+  (project) do_project ${args[@]} ;;
+  (application) do_application ${args[@]} ;;
+  (protocol) do_protocol_or_spec ${args[@]} ;;
+  (spec) do_protocol_or_spec ${args[@]} ;;
+  (library) do_library ${args[@]} ;;
+  (worker) do_worker ${args[@]} ;;
+  (assembly) do_assembly ${args[@]} ;;
+  (emulator) do_worker emu ${args[@]} ;;
+  (card) do_card ${args[@]} ;;
+  (slot) do_slot ${args[@]} ;;
+  (device) do_device ${args[@]} ;;
+  (platform) do_platform ${args[@]} ;;
+  (primitive) do_primitive ${args[@]} ;;
   (*) bad the noun \"$noun\" is invalid after the verb \"$verb\";;
 esac

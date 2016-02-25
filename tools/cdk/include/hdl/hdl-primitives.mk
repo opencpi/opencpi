@@ -42,7 +42,13 @@ ifdef ImportCoreDirs
   # this will set ImportCores
   include $(OCPI_CDK_DIR)/include/hdl/hdl-import-cores.mk
 endif	
+ifdef PrimitiveCores
+Cores:=$(PrimitiveCores)
+endif
 MyCores=$(ImportCores) $(Cores)
+ifdef PrimitiveLibraries
+Libs:=$(PrimitiveLibraries)
+endif
 all: $(Libs) $(MyCores)
 hdl: all
 # enable cores to use libs

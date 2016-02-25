@@ -15,7 +15,7 @@ Make a pair of empty paragraphs: style Diagram over style Caption.
 5. In LO-Draw: copy (%c), switch to doc window
 6. In LO-Writer: in document, put text cursor AND MOUSE CURSOR EXACTLY OVER TEXT CURSOR into (empty) diagram paragraph, paste (%v)
 6. In LO-Writer: click-right on pasted diagram (which should already be be selected with green corners), and under anchor menu, set "anchor *as* character"
-7. click on diagram to select it as a diagram - with green corners
+7. click on diagram to select it as a diagram - with green/blue corners
 8. scale the diagram holding down shift key to scale in X and Y at the same time proportionally
 9. Insert text in caption paragraph: after "Diagram ", using insert->fields->other..., Click on: type: "number range", select: Diagram, insert, then finish diagram title
 

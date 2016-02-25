@@ -3,7 +3,7 @@
 
   <Operation Name="iq" >
     <!-- Variable size frames with packed 32 bit I/Q data values (16Q,16I).  Format:Qs0.15 -->
-      <Argument name="data" type="Struct" SequenceLength="4096" >
+      <Argument name="data" type="Struct" SequenceLength="2048" >
         <member name="I" type="Short"/>
         <member name="Q" type="Short"/>
       </Argument>

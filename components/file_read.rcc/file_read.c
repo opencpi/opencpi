@@ -57,7 +57,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   File_readProperties *props = self->properties;
   MyState *s = self->memories[0];
   size_t n2read = props->messageSize ? props->messageSize : port->current.maxLength;
-  ssize_t n;
+  ssize_t n = 0; // needed only for warning suppression
   RCCBoolean zlmIn = 0;
   (void)timedOut;(void)newRunCondition;
 
