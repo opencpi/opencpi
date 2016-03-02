@@ -65,4 +65,5 @@ MAIN_LDFLAGS+=-Xlinker -rpath -Xlinker $(dir $(OCPI_OPENCL_OBJS))
 BASICLIBS+=$(OCPI_OPENCL_OBJS)
 #endif
 endif
+$(eval $(ForceDynamic))
 #SHARED=$(SHARED_ALLOW_UNDEFINED)

@@ -73,7 +73,7 @@ LinkBinary= $(ToolsDir)/ocpiocl $(ExtraCompilerOptions) \
   -I$(CURDIR)/gen \
   -I$(OCPI_CDK_DIR)/include/ocl \
   $(foreach i,$(IncludeDirs),-I$i) \
-  -o $$@ -t $$(OclTarget) compile 
+  -o $$@ -t $$(OclTarget) compile $1
 Compile_cl=echo '\#include "'$$<'"'>$$@
 #Compile_cl=echo '\#include "../'$$<'"'>$$@
 

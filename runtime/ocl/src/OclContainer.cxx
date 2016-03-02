@@ -886,7 +886,7 @@ namespace OCPI {
 	m_oclWorker->firstRun = true;
 	m_oclWorker->timedOut = false;
 	m_oclWorker->nPorts = OCPI_UTRUNCATE(uint8_t, m_nPorts);
-	m_oclWorker->logLevel = OS::logGetLevel();
+	m_oclWorker->logLevel = OCPI_UTRUNCATE(uint8_t, OS::logGetLevel());
 	m_oclWorker->kernelLogLevel = Driver::s_logLevel;
 	ocpiDebug("Worker/kernel %s in %s has persistent size of %zu bytes, self %zu bytes",
 		  name, art.name().c_str(), m_persistBytes, m_oclWorkerSize);

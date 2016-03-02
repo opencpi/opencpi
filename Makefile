@@ -104,6 +104,7 @@ PACKAGES += \
 	 runtime/hdl-support \
 	 runtime/rcc \
 	 runtime/ocl \
+	 runtime/ocl-support \
 	 runtime/remote \
 	 runtime/ctests \
          runtime/application
@@ -149,8 +150,9 @@ ALLPACKAGES = \
 	runtime/container \
 	runtime/hdl \
 	runtime/hdl-support \
-	runtime/ocl \
 	runtime/rcc \
+	runtime/ocl \
+	runtime/ocl-support \
 	runtime/remote \
 	runtime/ctests \
         runtime/application \
@@ -244,7 +246,7 @@ cleandrivers:
 
 .PHONY: packages tar diff diff.q test $(PACKAGES)
 
-everything: packages rcc hdl
+everything: packages rcc hdl ocl
 compile build: $(PACKAGES)
 packages: $(PACKAGES)
 

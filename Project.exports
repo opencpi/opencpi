@@ -20,6 +20,7 @@ runtime/container
 runtime/hdl
 runtime/hdl-support
 runtime/ocl
+runtime/ocl-support
 runtime/rcc
 runtime/remote
 runtime/ctests

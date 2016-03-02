@@ -61,7 +61,7 @@ static void matrixMul (__global float* C,
 
   float Csub = 0;
 
-#ifdef NOT_VALID_OCL_CODE
+#if 1 // def NOT_VALID_OCL_CODE
 
   for ( int a = aBegin, b = bBegin; a <= aEnd; a += aStep, b += bStep )
   {
