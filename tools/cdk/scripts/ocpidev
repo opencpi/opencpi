@@ -491,15 +491,42 @@ EOF
 }
 
 function do_platform {
-  if [  -e hdl/platforms/$1 ] ; then
-     echo "The HDL platform \"$1\" (hdl/platforms/$1) already exists." >&2
-     exit 1
+  set -e
+  case "$dirtype" in
+    (project)subdir=hdl/platforms/;;
+    (hdl-platforms)subdir=./;;
+    (*) bad this command can only be issued in a project directory or an hdl/platforms directory;;
+  esac
+  pdir=$subdir$1
+  if [ $verb == delete ]; then
+    [ -e $pdir ] || bad the HDL platform at \"$pdir\" does not exist    
+    get_dirtype $pdir
+    [ "$dirtype" == hdl-platform ] || bad the directory at $pdir does not appear to be an HDL platform
+    ask delete the HDL platform in the \"$pdir\" directory
+    rm -r -f $pdir
+    [ -z $verbose ] || echo The HDL platform \"$1\" in the directory \"$pdir\" has been deleted.
+    exit 0
   fi
-  mkdir -p hdl/platforms/$1
-  cat <<EOF >   mkdir -p hdl/platforms/$1/Makefile
-# This is an HDL platform
+  [ -e $subdir$1 ] && bad the HDL platform \"$1\" in directory \"$topdir$subdir$1\" already exists
+  if [ $dirtype == project -a ! -e hdl/platforms ]; then
+    mkdir -p hdl/platforms
+    cat <<EOF > hdl/platforms/Makefile
+$CheckCDK
+# To restrict the HDL platforms that are built, you can set the Platforms
+# variable to the specific list of which ones you want to build, e.g.:
+# Platforms=pf1 pf3
+# Otherwise all platforms will be built
+# Alternatively, you can set ExcludePlatforms to list the ones you want to exclude
+include \$(OCPI_CDK_DIR)/include/hdl/hdl-platforms.mk
+EOF
+    [ -z $verbose ] || echo This is the first HDL platform in this project.  The \"hdl/platforms\" directory has been created.
+  fi
+  mkdir $subdir$1
+  cat <<EOF > $subdir$1/Makefile
+$CheckCDK
+# This is an HDL platform Makefile for the "$1" platform
 
-include \$(OCPI_CDK_DIR)/include/hdl-platform.mk
+include \$(OCPI_CDK_DIR)/include/hdl/hdl-platform.mk
 EOF
   cat<<EOF > hdl/platforms/$1/$1.mk
 # Set this variable to the part (die-speed-package, e.g. xc7z020-1-clg484) for the platform
@@ -519,6 +546,7 @@ EOF
   <!-- Put ad hoc signals here using <signal> -->
 </HdlPlatform>
 EOF
+  [ -z $verbose ] || echo The HDL platform \"$1\" has been created in ${topdir}hdl/platforms/$1
 }
 
 function do_primitive {
@@ -560,9 +588,9 @@ $CheckCDK
 # PrimitiveLibraries=lib1 lib2
 # PrimitiveCores=core1 core2
 # Otherwise all primitives will be built
-include \$(OCPI_CDK_DIR)/include/hdl-primitives.mk
+include \$(OCPI_CDK_DIR)/include/hdl/hdl-primitives.mk
 EOF
-    [ -z $verbose ] || echo This is the first primitive in this project.  The \"hdl/primitives\" directory has been created.
+    [ -z $verbose ] || echo This is the first HDL primitive in this project.  The \"hdl/primitives\" directory has been created.
   fi
   mkdir -p $dir
   if [ "$1" = "library" ] ; then 
@@ -647,14 +675,14 @@ function do_assembly {
     exit 0
   fi
   [ -e $subdir$1 ] && bad the HDL assembly \"$1\" in directory \"$topdir$subdir$1\" already exists
-  if [ $dirtype == project -a ! -e hdl-assemblies ]; then
+  if [ $dirtype == project -a ! -e hdl/assemblies ]; then
     mkdir -p hdl/assemblies
     cat <<EOF > hdl/assemblies/Makefile
 $CheckCDK
 # To restrict the HDL assemblies that are built, you can set the Assemblies
 # variable to the specific list of which ones you want to build, e.g.:
 # Assemblies=assy1 assy3
-# Othersize all assemblies will be built
+# Otherwise all assemblies will be built
 # Alternatively, you can set ExcludeAssemblies to list the ones you want to exclude
 include \$(OCPI_CDK_DIR)/include/hdl/hdl-assemblies.mk
 EOF
