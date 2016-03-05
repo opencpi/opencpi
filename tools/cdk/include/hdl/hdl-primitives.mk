@@ -29,6 +29,24 @@
 # Cores
 # ImportCoreDirs
 
+include $(OCPI_CDK_DIR)/include/util.mk
+$(OcpiIncludeProject)
+# Default the PrimitiveLibraries and PrimitiveCores variables
+ifeq ($(origin PrimitiveLibraries),undefined)
+  PrimitiveLibraries:=$(foreach d,$(wildcard */Makefile),$(infox d:$d)\
+                        $(foreach p,$(patsubst %/,%,$(dir $d)),$(infox p:$p)\
+                          $(foreach t,$(call OcpiGetDirType,$p),$(infox t:$t)\
+                            $(and $(filter hdl-library hdl-lib,$t),$p))))
+  $(infox FOUND PRIMITIVE LIBRARIES:$(PrimitiveLibraries))
+endif
+ifeq ($(origin PrimitiveCores),undefined)
+  PrimitiveCores:=$(foreach d,$(wildcard */Makefile),$(infox d:$d)\
+                    $(foreach p,$(patsubst %/,%,$(dir $d)),$(infox p:$p)\
+                      $(foreach t,$(call OcpiGetDirType,$p),$(infox t:$t)\
+                        $(and $(filter hdl-core,$t),$p))))
+  $(infox FOUND PRIMITIVE CORES:$(PrimitiveCores))
+endif
+
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 
 ifndef HdlInstallDir

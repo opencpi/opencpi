@@ -23,6 +23,8 @@
 ########################################################################### #
 # This makefile is for building a set of assemblies, each in their own subdirectory
 
+include $(OCPI_CDK_DIR)/include/util.mk
+$(OcpiIncludeProject)
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 
 # We make this sort of like building a component library because

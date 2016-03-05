@@ -27,8 +27,9 @@
 # get built elsewhere based on assemblies and configurations
 $(call OcpiDbgVar,HdlPlatforms)
 HdlMode:=platform
-HdlLibraries+=platform
 include $(OCPI_CDK_DIR)/include/util.mk
+$(OcpiIncludeProject)
+HdlLibraries+=platform
 # Force the platform path to point to this directory.
 # This means we can build this platform without it being
 # defined globally anywhere, whether in OCPI_HDL_PLATFORM_PATH
