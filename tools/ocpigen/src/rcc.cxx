@@ -1261,13 +1261,13 @@ emitRccCppImpl(FILE *f) {
 			      o->isTopFixedSequence(), 0);
 	    if (m->m_isSequence || m->m_arrayRank)
 	      fprintf(f,
-		      "      %s%sArg %s() %s{ return m_%sArg; }\n",
+		      "       %s%sArg %s() %s{ return m_%sArg; }\n",
 		      m_isProducer ? "" : "const ", s.c_str(),
 		      m->m_name.c_str(), m_isProducer ? "" : "const ",
 		      s.c_str());
 	    else
 	      fprintf(f,
-		      "      %s%s &%s() %s{ return *m_%sArg.data(); }\n",
+		      "       %s%s &%s() %s{ return *m_%sArg.data(); }\n",
 		      m_isProducer ? "" : "const ", type.c_str(), m->m_name.c_str(),
 		      m_isProducer ? "" : "const ", s.c_str());
 	}

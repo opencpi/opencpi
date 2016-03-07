@@ -1057,6 +1057,25 @@ Driver::
 unsigned Driver::
 search(const OU::PValue */*params*/, const char **/*exclude*/, bool /*discoveryOnly*/,
        std::string &/*error*/) {
+  const char *sims = getenv("OCPI_HDL_SIMULATORS");
+  if (!sims)
+    sims = getenv("OCPI_HDL_SIMULATOR");
+  if (sims) {
+    char
+      *mylist = strdup(sims),
+      *base = mylist,
+      *last = 0,
+      *tok;
+    for (unsigned n = 0; (tok = strtok_r(base, ", \t", &last)); base = NULL, n++) {
+      std::string name;
+      OU::format(name, "lsim:%s%d", tok, n);
+      // FIXME: parse options?
+      // very global:  always stick with colons in env vars or are commas ok too?
+      // Actually, use colons for PATHS, and commas for lists
+      OA::ContainerManager::find("hdl", name.c_str(), NULL);
+    }
+    free(mylist);
+  }
   return 0;
 }
 

@@ -201,36 +201,36 @@ dumpDeps(const char *top) {
 const char *
 openOutput(const char *name, const char *outDir, const char *prefix, const char *suffix,
 	   const char *ext, const char *other, FILE *&f) {
-  char *file;
-  asprintf(&file, "%s%s%s%s%s%s", outDir ? outDir : "", outDir ? "/" : "",
-	  prefix, name, suffix, ext);
-  if ((f = fopen(file, "w")) == NULL)
+  std::string file;
+  OU::format(file, "%s%s%s%s%s%s", outDir ? outDir : "", outDir ? "/" : "",
+	     prefix, name, suffix, ext);
+  if ((f = fopen(file.c_str(), "w")) == NULL)
     return OU::esprintf("Can't not open file %s for writing (%s)\n",
-			file, strerror(errno));
-  dumpDeps(file);
+			file.c_str(), strerror(errno));
+  dumpDeps(file.c_str());
   if (other && strcmp(other, name)) {
-    char *otherFile;
-    asprintf(&otherFile, "%s%s%s%s%s%s", outDir ? outDir : "", outDir ? "/" : "",
-	    prefix, other, suffix, ext);
+    std::string otherFile;
+    OU::format(otherFile, "%s%s%s%s%s%s", outDir ? outDir : "", outDir ? "/" : "",
+	       prefix, other, suffix, ext);
     // FIXME: Put all this junk in OcpiOs
     char dummy;
-    ssize_t length = readlink(otherFile, &dummy, 1);
+    ssize_t length = readlink(otherFile.c_str(), &dummy, 1);
     if (length != -1) {
       char *buf = (char*)malloc(length + 1);
-      if (readlink(otherFile, buf, length) != length)
+      if (readlink(otherFile.c_str(), buf, length) != length)
 	return "Unexpected system error reading symlink";
       buf[length] = '\0';
-      bool same = strcmp(otherFile, buf) == 0;
+      bool same = strcmp(otherFile.c_str(), buf) == 0;
       free(buf);
       if (same)
 	return 0;
-      if (unlink(otherFile))
+      if (unlink(otherFile.c_str()))
 	return "Cannot remove symlink to replace it";
     } else if (errno != ENOENT)
       return "Unexpected error reading symlink";
-    char *contents = strrchr(file, '/');
-    contents = contents ? contents + 1 : file;
-    if (symlink(contents, otherFile))
+    const char *contents = strrchr(file.c_str(), '/');
+    contents = contents ? contents + 1 : file.c_str();
+    if (symlink(contents, otherFile.c_str()))
       return "Cannot create symlink";
   }
   return 0;

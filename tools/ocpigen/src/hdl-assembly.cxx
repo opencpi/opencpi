@@ -292,6 +292,27 @@ parseHdlAssy() {
 	  }
 	}
     }
+#if 0
+  // Insert adapters
+  for (ConnectionsIter ci = m_assembly->m_connections.begin(); ci != m_assembly->m_connections.end(); ci++) {
+    Connection &c = **ci;
+    AttachmentsIter from = NULL, to = NULL;
+    for (AttachmentsIter ai = c.m_attachments.begin(); ai != c.m_attachments.end(); ai++) {
+      Attachment &at = **ai;
+      InstancePort &ip = at.m_instPort;
+      if (!ip.m_external && ip.m_port->isData())
+	if (ip.m_port->m_provider) {
+	  assert(to == NULL);
+	  to = &at;
+	} else {
+	  assert(from == NULL);
+	  from = &at;
+	}
+    }
+    if (from && to) {
+    }
+  }
+#endif
   // Now all clocks are done.  We process the non-data external ports.
   // Now all data ports that are connected have mapped clocks and
   // all ports with WCI clocks are connected.  All that's left is

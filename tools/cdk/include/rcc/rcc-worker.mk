@@ -50,24 +50,24 @@ OBJ:=.o
 override RccIncludeDirsInternal+=../include gen $(OCPI_CDK_DIR)/include/rcc
 BF=$(BF_$(call RccOs,))
 ifneq ($(OCPI_DEBUG),0)
-SharedLibLinkOptions=-g
+DynamicLinkOptions=-g
 endif
-SharedLibLinkOptions+=\
-  $(or $(SharedLibLinkOptions_$(HdlTarget)),$(SharedLibLinkOptions_$(call RccOs,)))
-SharedLibCompileOptions=\
-  $(or $(SharedLibCompileOptions_$(HdlTarget)),$(SharedLibCompileOptions_$(call RccOs,)))
+DynamicLinkOptions+=\
+  $(or $(DynamicLinkOptions_$(HdlTarget)),$(DynamicLinkOptions_$(call RccOs,)))
+DynamicCompilerOptions=\
+  $(or $(DynamicCompilerOptions_$(HdlTarget)),$(DynamicCompilerOptions_$(call RccOs,)))
 # Linux values
 BF_linux=.so
 SOEXT_linux=.so
 AREXT_linux=.a
-SharedLibLinkOptions_linux=-shared
-SharedLibCompileOptions_linux=-fPIC
+DynamicLinkOptions_linux=-shared
+DynamicCompilerOptions_linux=-fPIC
 # macos values
 BF_macos=.dylib
 SOEXT_macos=.dylib
 AREXT_macos=.a
-SharedLibLinkOptions_macos=-dynamiclib
-SharedLibCompileOptions_macos=
+DynamicLinkOptions_macos=-dynamiclib -Xlinker -undefined -Xlinker dynamic_lookup
+DynamicCompilerOptions_macos=
 DispatchSourceFile=$(call WkrTargetDir,$1,$2)/$(CwdName)_dispatch.c
 ArtifactFile=$(BinaryFile)
 # Artifacts are target-specific since they contain things about the binary
@@ -77,13 +77,11 @@ OcpiLibDir=$(OCPI_CDK_DIR)/lib/$$(RccTarget)$(and $(OCPI_TARGET_MODE),/$(OCPI_TA
 # Add the libraries we know a worker might reference.
 override RccLibrariesInternal+=rcc application os
 
-ifdef OCPI_USE_TOOL_MODES
-  ifndef OCPI_TOOL_MODE
-    export OCPI_TARGET_MODE:=$(if $(filter 1,$(OCPI_BUILD_SHARED_LIBRARIES)),d,s)$(if $(filter 1,$(OCPI_DEBUG)),d,o)
-  endif
+ifeq ($(origin OCPI_TARGET_MODE),undefined)
+  export OCPI_TARGET_MODE:=$(if $(filter 1,$(OCPI_BUILD_SHARED_LIBRARIES)),d,s)$(if $(filter 1,$(OCPI_DEBUG)),d,o)
 endif
 PatchElf=$(or $(OCPI_PREREQUISITES_INSTALL_DIR),/opt/opencpi/prerequisites)/patchelf/$(OCPI_TOOL_HOST)/bin/patchelf
-LinkBinary=$$(G$(OcpiLanguage)_LINK_$$(RccTarget)) $(SharedLibLinkOptions) -o $$@ $1 \
+LinkBinary=$$(G$(OcpiLanguage)_LINK_$$(RccTarget)) $$(call OcpiPrioritize,DynamicLinkOptions,$(OcpiLanguage),$$(RccTarget)) -o $$@ $1 \
 $(AEPLibraries) \
 $(foreach l,$(RccLibrariesInternal) $(Libraries),\
   $(if $(findstring /,$l),\
@@ -131,16 +129,40 @@ endif
 RccParams=\
   $(foreach n,$(WorkerParamNames),\
 	     '-DPARAM_$n()=$(Param_$(ParamConfig)_$n)')
+
+# Given flag name, target and langauge and flag name, prioritize the flags, as defined:
+# target and language
+# target
+# generic
+# E.g. $(call OcpiPrioritize,CompilerOptions,C,target)
+OcpiDefined=$(filter-out undefined,$(origin $1))
+RccPrioritize=\
+  $(if $(call OcpiDefined,Rcc$1$2_$3),\
+    $(Rcc$1$2_$3),\
+    $(if $(call OcpiDefined,Rcc$1_$3),\
+      $(Rcc$1_$3),\
+      $(if $(call OcpiDefined,Rcc$1$2_$(call RccOs,$3)),\
+        $(Rcc$1$2_$(call RccOs,$3)),\
+        $(if $(call OcpiDefined,Rcc$1_$(call RccOs,$3)),\
+          $(Rcc$1_$(call RccOs,$3)),\
+          $(if $(call OcpiDefined,Rcc$1$2),\
+            $(Rcc$1$2),\
+            $(Rcc$1))))))
+
+# RccCompilerOptions(language,target)
+RccCompilerOptions=\
+  $(call OcpiPrioritize,CompilerWarnings,$1,$2) \
+  $(call OcpiPrioritize,CompilerOptions,$1,$2) \
+  $(call OcpiPrioritize,ExtraCompilerOptions,$1,$2) \
+  $(call OcpiPrioritize,DynamicCompilerExtraCompilerOptions,$1,$2) \
+
 Compile_c=\
   $$(Gc_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
-  $$(CompilerWarnings_$$(RccTarget)) $$(CompilerOptions_$$(RccTarget)) \
-  $(call SharedLibCompileOptions) $$(ExtraCompilerOptionsC_$$(RccTarget)) \
+  $$(call RccCompilerOptions,C,$$(RccTarget)) \
   $(RccIncludeDirsInternal:%=-I%) -o $$@ $$(RccParams) $$<
 Compile_cc=\
   $$(Gc++_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
-  $$(CompilerWarnings_$$(RccTarget)) $$(CompilerOptions_$$(RccTarget)) \
-  $(call SharedLibCompileOptions) \
-  $$(ExtraCompilerOptions_$$(RccTarget)) $$(ExtraCompilerOptionsCC_$$(RccTarget)) \
+  $$(call RccCompilerOptions,CC,$$(RccTarget)) \
   $(RccIncludeDirsInternal:%=-I%) -o $$@ $$(RccParams) $$<
 
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk
@@ -189,9 +211,7 @@ $(call ArtifactXmlFile,$1,$2): $(call RccAssemblyFile,$1,$2) $$(ObjectFiles_$1_$
 	     -O $(call RccOs,$1) \
              -V $(call RccOsVersion,$1) \
              -P $(call RccArch,$1) \
-	     -D $(call WkrTargetDir,$1,$2) \
-             $(XmlIncludeDirsInternal:%=-I%) \
-             -A $(call RccAssemblyFile,$1,$2)
+	     -D $(call WkrTargetDir,$1,$2) $(XmlIncludeDirsInternal:%=-I%) -A $(RccAssemblyFile)
 
 endef
 

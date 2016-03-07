@@ -140,6 +140,15 @@ $(call OcpiDbgVar,HdlTargets)
 $(call OcpiDbgVar,HdlPlatform)
 $(call OcpiDbgVar,HdlPlatforms)
 
+override HdlTarget:=$(patsubst %_pf,%,$(HdlTarget))
+override HdlTargets:=$(patsubst %_pf,%,$(HdlTargets))
+override OnlyTargets:=$(patsubst %_pf,%,$(OnlyTargets))
+override ExcludeTargets:=$(patsubst %_pf,%,$(ExcludeTargets))
+override HdlPlatform:=$(patsubst %_pf,%,$(HdlPlatform))
+override HdlPlatforms:=$(patsubst %_pf,%,$(HdlPlatforms))
+override OnlyPlatforms:=$(patsubst %_pf,%,$(OnlyPlatforms))
+override ExcludePlatforms:=$(patsubst %_pf,%,$(ExcludePlatforms))
+
 ifneq ($(xxfilter platform container,$(HdlMode)),)
   HdlPlatform:=$(or $(HdlMyPlatform),$(CwdName))
   ifdef HdlPlatforms
