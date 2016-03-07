@@ -104,10 +104,12 @@ override XmlIncludeDirsInternal:=\
     ../lib/$(Model)\
     ../specs \
     $(OcpiXmlComponentLibraries) \
+    $(foreach d,$(subst :, ,$(OCPI_XML_INCLUDE_PATH)),$(wildcard $d)) \
+    $(foreach d,$(OcpiGetProjectPath),$(wildcard $d/specs)) \
     $(OCPI_CDK_DIR)/lib/components/hdl\
     $(OCPI_CDK_DIR)/lib/components/$(Model)\
     $(OCPI_CDK_DIR)/lib/components \
-    $(OCPI_CDK_DIR)/protocols \
+    $(OCPI_CDK_DIR)/specs \
    )
 
 #    $(foreach m,$(Models),../lib/$m)\
@@ -224,7 +226,10 @@ ifndef WkrBinaryName
 ifdef BinaryName
 WkrBinaryName=$(BinaryName)
 else
-WkrBinaryName=$(word 1,$(Workers))
+#WkrBinaryName=$(word 1,$(Workers))
+# This cannot be the above since that would mean that this could conflict with
+# a single worker for the first of multiple workers in a multi-worker dir.
+WkrBinaryName=$(CwdName)
 endif
 endif
 $(call OcpiDbgVar,WkrBinaryName)

@@ -27,8 +27,9 @@
 # get built elsewhere based on assemblies and configurations
 $(call OcpiDbgVar,HdlPlatforms)
 HdlMode:=platform
-HdlLibraries+=platform
 include $(OCPI_CDK_DIR)/include/util.mk
+$(OcpiIncludeProject)
+HdlLibraries+=platform
 # Force the platform path to point to this directory.
 # This means we can build this platform without it being
 # defined globally anywhere, whether in OCPI_HDL_PLATFORM_PATH
@@ -36,7 +37,7 @@ include $(OCPI_CDK_DIR)/include/util.mk
 # Note "export" must appear BEFORE override because once 
 # "override" is used, "export" doesn't apply.
 export OCPI_HDL_PLATFORM_PATH
-override OCPI_HDL_PLATFORM_PATH := $(call OcpiAbsPath,.)
+override OCPI_HDL_PLATFORM_PATH := $(call OcpiAbsDir,.)$(and $(OCPI_HDL_PLATFORM_PATH),:$(OCPI_HDL_PLATFORM_PATH))
 # If no platforms were specified, we obviously want to build this platform.
 # And not default to some global "default" one.
 ifeq ($(HdlPlatform)$(HdlPlatforms),)
@@ -63,7 +64,7 @@ OcpiLanguage:=vhdl
 ComponentLibraries+=\
  $(wildcard ./devices)\
  $(infox PCL:$(ComponentLibraries_$(Worker)):$(shell pwd))$(ComponentLibraries_$(Worker)) \
- devices cards
+ devices cards components
 LibDir=lib/hdl
 $(call OcpiDbgVar,HdlPlatforms)
 ifndef HdlPlatforms
@@ -96,8 +97,6 @@ $(call OcpiDbgVar,HdlTargets)
 $(eval $(HdlSearchComponentLibraries))
 $(call OcpiDbgVar,XmlIncludeDirsInternal)
 $(infox HP1:$(HdlPlatforms))
-$(call OcpiDbgVar,HdlPlatforms)
-XmlIncludeDirs+=$(HdlPlatformsDir)/specs
 $(call OcpiDbgVar,HdlPlatforms)
 SubCores_$(call HdlGetFamily,$(Worker)):=$(Cores)
 OnlyPlatforms:=$(Worker)

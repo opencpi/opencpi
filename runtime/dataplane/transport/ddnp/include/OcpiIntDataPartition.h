@@ -160,7 +160,7 @@ namespace OCPI {
         DtOsDataTypes::Offset input_offset;
         OCPI::OS::uint32_t length;
         BufferInfo* next;
-        BufferInfo* last;
+	//        BufferInfo* last;
 
         // Constructors/Destructors
         BufferInfo();

@@ -108,7 +108,10 @@ QuartusMakeDevices=$(infox QMD:$1:$2)\
   echo set_global_assignment -name DEVICE \
       $(strip $(if $(findstring $(HdlMode),platform config container),\
                   $(foreach x,$(call ToUpper,$(call QuartusMakePart,$(HdlPart_$2))),$(infox GOT:$x)$x),\
-		  $(infox GOTZ:AUTO:$(HdlMode))AUTO));
+$(if $(HdlExactPart),$(call ToUpper,$(call QuartusMakePart,$(HdlExactPart))),AUTO)));
+
+#		  $(infox GOTZ:AUTO:$(HdlMode))AUTO));
+
 
 # Make the settings file
 # Note that the local source files use notdir names and search paths while the

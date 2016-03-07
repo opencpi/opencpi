@@ -5,7 +5,8 @@
 # 1. The bitstream file to load to flash
 # 2. The serial number of the jtag pod to use
 
-dir=`dirname $0`
+dir=$OCPI_CDK_DIR/scripts
+[ ! -d $dir ] && echo Error: OCPI_CDK_DIR environment setting not valid. && exit 1
 if test ! -x $dir/loadFlash_altera; then
   echo Missing script: $dir/loadFlash_altera \(or not executable\).
   exit 1

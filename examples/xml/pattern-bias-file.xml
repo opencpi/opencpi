@@ -23,6 +23,6 @@
 
   <instance component="file_write">
     <property name="messagesInFile" value='true' />
-    <property name="fileName" value='test.out' />
+    <property name="fileName" value='test.output' />
   </instance>
 </application>

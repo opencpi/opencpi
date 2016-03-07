@@ -744,12 +744,20 @@ baseName(const char *path, std::string &buf) {
 // Set the full constructed path in "result".
 // Return true on error
 bool
-searchPath(const char *path, const char *item, std::string &result) {
+searchPath(const char *path, const char *item, std::string &result, const char *preferred) {
   char *cp = strdup(path), *last;
   for (char *lp = strtok_r(cp, ":", &last); lp;
        lp = strtok_r(NULL, ":", &last)) {
-    format(result, "%s/%s", lp, item);
+    format(result, "%s/", lp);
     bool isDir;
+    if (preferred) {
+      size_t len = result.length();
+      formatAdd(result, "%s/%s", preferred, item);
+      if (OS::FileSystem::exists(result, &isDir))
+	return false;
+      result.resize(len);
+    }
+    result += item;
     if (OS::FileSystem::exists(result, &isDir))
       return false;
   }

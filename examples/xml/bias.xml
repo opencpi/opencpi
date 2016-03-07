@@ -11,7 +11,7 @@
     <property name='filename' value='test.output'/>
   </instance>
   <connection>
-    <port instance='file_read' name='out' xferrole='flowcontrol'/>
+    <port instance='file_read' name='out'/>
     <port instance='bias' name='in'/>
   </connection>
   <connection>

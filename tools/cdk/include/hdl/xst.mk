@@ -352,8 +352,9 @@ XstOptions +=\
      $(foreach l,$(CDKDeviceLibraries),$(strip \
        $(call FindRelative,$(TargetDir),\
          $(l)/hdl/$(call XstLibRef,$(LibName),$(HdlTarget)))))\
-     $(foreach l,$(call HdlTargetComponentLibraries,$(HdlTarget)),$(strip \
-       $(call FindRelative,$(TargetDir),$l))) \
+     $(and $(filter $(HdlMode),assembly config container),\
+     $(foreach l,$(call HdlTargetComponentLibraries,$(HdlTarget),XST),$(strip \
+       $(call FindRelative,$(TargetDir),$l)))) \
      $(foreach l,$(DeviceLibraries),$(strip \
        $(call FindRelative,$(TargetDir),\
          $(l)/lib/hdl/$(call XstLibRef,$(LibName),$(HdlTarget)))))\

@@ -1,6 +1,7 @@
 #!/bin/sh
 
+[ ! -d $OCPI_CDK_DIR ] && echo Error: OCPI_CDK_DIR environment setting not valid. && exit 1
 echo ==== Probing for Altera JTAG ports:
-probeJtag_altera
+$OCPI_CDK_DIR/scripts/probeJtag_altera
 echo ==== Probing for Xilinx JTAG ports:
-probeJtag_xilinx all
+$OCPI_CDK_DIR/scripts/probeJtag_xilinx all

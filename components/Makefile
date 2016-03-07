@@ -54,6 +54,7 @@ Tests = \
 Workers = \
     sma.hdl \
     proxy.rcc \
+    nothing.rcc \
     nothing.hdl \
     file_read.hdl \
     file_write.hdl \
@@ -130,11 +131,6 @@ Workers = \
     ptest_cc.rcc \
     $(Tests)
 
-#	fir_prog.hdl \
-
-#	wbr.hdl 
-
-#HdlTargets=all
 
 ifndef RccTargets
 RccTargets=$(OCPI_TARGET_HOST)

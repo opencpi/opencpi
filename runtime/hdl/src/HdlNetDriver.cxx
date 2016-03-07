@@ -259,6 +259,7 @@ namespace OCPI {
       }
       static void
       initNop(EtherControlNop &nop) {
+	memset(&nop, 0, sizeof(nop));
 	nop.header.etherTypeOverlay = 0; // for valgrind
         nop.header.tag = 0;
 	nop.header.length = htons(sizeof(nop)-2);

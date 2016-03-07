@@ -80,8 +80,8 @@ OcpPort(const OcpPort &other, Worker &w , std::string &name, size_t count, const
   if (err)
     return;
   if (other.m_values) {
-    m_values = new uint8_t[m_nAlloc];
-    memcpy(m_values, other.m_values, m_nAlloc);
+    m_values = new uint8_t[other.m_nAlloc];
+    memcpy(m_values, other.m_values, other.m_nAlloc);
   } else
     m_values = NULL;
   m_nAlloc = other.m_nAlloc;
@@ -255,6 +255,7 @@ fixOCP() {
 	o->width = 1;
       m_nAlloc += o->width;
     }
+  // FIXME:  is m_values actually used for anything anymore???
   m_values = (uint8_t*)calloc(m_nAlloc, 1);
   uint8_t *v = m_values;
   o = ocp.signals;

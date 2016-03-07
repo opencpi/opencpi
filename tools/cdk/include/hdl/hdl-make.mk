@@ -331,6 +331,7 @@ $(OutDir)target-%/generics.vh: | $(OutDir)target-%
 		echo "$(ParamVerilog_$(ParamConfig)_$n)"\; ;) \
 	) > $@
 
+ifneq (,)
 # Establish where the platforms are
 ifndef HdlPlatformsDir
   HdlPlatformsDir:=$(OCPI_CDK_DIR)/lib/platforms
@@ -341,7 +342,7 @@ ifndef HdlPlatformsDir
     endif
 #  endif
 endif
-
+endif
 # Do the stuff necessary when building an assembly
 # This applies to platform configurations, application assemblies, and containers
 define HdlPrepareAssembly
@@ -375,9 +376,9 @@ define HdlPrepareAssembly
   # 5. Define the variable used for dependencies when the worker is actually built
   HdlPreCore=$$(eval $$(HdlSetWorkers))$$(call HdlCollectCores,$$(HdlTarget),HdlPrepareAssembly)
 endef
-ifndef OCPI_HDL_PLATFORM
-OCPI_HDL_PLATFORM=zed
-endif
+#ifndef OCPI_HDL_PLATFORM
+#OCPI_HDL_PLATFORM=zed
+#endif
 define HdlPreprocessTargets
   ifeq ($$(origin HdlPlatforms),undefined)
     ifdef HdlPlatform
@@ -391,15 +392,17 @@ define HdlPreprocessTargets
   else ifeq ($$(HdlPlatforms),all)
     override HdlPlatforms:=$$(HdlAllPlatforms)
   endif
-
   ifndef HdlTargets
     ifdef HdlTarget
       HdlTargets:=$$(HdlTarget)
     else
       ifdef HdlPlatforms
-        override HdlTargets:=$$(call Unique,$$(foreach p,$$(HdlPlatforms),$$(if $$(HdlPart_$$p),,$$(error Unknown platform: $$p))$$(call HdlGetFamily,$$(HdlPart_$$p))))
+        override HdlTargets:=\
+          $$(call Unique,$$(foreach p,$$(HdlPlatforms),\
+            $$(if $$(HdlPart_$$p),$$(call HdlGetFamily,$$(HdlPart_$$p)),\
+               $$($$(if $$(filter clean%,$$(MAKECMDGOAL)),warning,error) Unknown platform: $$p))))
       else
-        override HdlTargets:=$$(call HdlGetFamily,$$(OCPI_HDL_PLATFORM))
+        override HdlTargets:=$$(and $$(OCPI_HDL_PLATFORM),$$(call HdlGetFamily,$$(OCPI_HDL_PLATFORM)))
       endif
     endif
   else ifeq ($$(HdlTargets),all)

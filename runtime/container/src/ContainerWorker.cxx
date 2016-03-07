@@ -62,7 +62,7 @@ namespace OCPI {
 	   const OA::PValue *) 
       : OU::Worker::Worker(),
 	m_artifact(art), m_xml(impl), m_instXml(inst), m_workerMutex(true),
-	m_slave(slave), m_hasMaster(hasMaster) {
+	m_controlOpPending(false), m_slave(slave), m_hasMaster(hasMaster) {
       if (impl) {
 	const char *err = parse(impl);
 	if (err)

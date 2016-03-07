@@ -1,7 +1,7 @@
 <ComponentSpec Name="copy">
   <Properties>
-  <Property name="p1" type="float" sequenceLength="3"/>
-     <Property name="a1" sequenceLength="5" type="struct">
+  <Property name="p1" type="float" sequenceLength="3" initial='true' readable='1'/>
+     <Property name="a1" sequenceLength="5" type="struct" initial='true' readable='1'>
        <member name="m1" sequenceLength="4" type="type">
 	 <type sequencelength="7" type="string" stringLength="20"/>
        </member>

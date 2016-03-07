@@ -99,7 +99,7 @@ $(EXECUTABLES): $(OBJDIR)/%: $(OBJDIR)/%_main.exe
 $(infox ZZZZZZZZZ:$(EXPORTSHLIB))
 $(infox XYXYX:$(if $(filter 0,$(OCPI_BUILD_SHARED_LIBRARIES)),$(EXPORTLIB),$(EXPORTSHLIB)))
 $(ORIGEXECUTABLES): $(OBJDIR)/%.exe: $(OBJDIR)/%.obj \
-		    $(if $(filter 0,$(OCPI_BUILD_SHARED_LIBRARIES)),$(EXPORTLIB),$(EXPORTSHLIB)) \
+		    ../$(if $(filter 0,$(OCPI_BUILD_SHARED_LIBRARIES)),$(UNIXLIB),$(UNIXSHLIB)) \
                     $(foreach l,$(ALLLIBS),$(call LIBDEP,$l)) \
 		    $(foreach p,$(PREQLIBS),$(call PREQDEP,$p)) \
                     $(DYNOBJS)

@@ -532,7 +532,8 @@ emitXmlWorkers(FILE *f) {
   // Define all workers
   for (WorkersIter wi = m_assembly->m_workers.begin();
        wi != m_assembly->m_workers.end(); wi++)
-    (*wi)->emitXmlWorker(f);
+    if (!(*wi)->m_assembly)
+      (*wi)->emitXmlWorker(f);
 }
 
 InstancePort::

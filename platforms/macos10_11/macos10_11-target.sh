@@ -6,3 +6,4 @@ export OCPI_EXPORT_DYNAMIC=
 export OCPI_CXXFLAGS+=-Wno-sign-conversion
 export OCPI_HAVE_OPENCL=1
 export OCPI_OPENCL_OBJS=/System/Library/Frameworks/OpenCL.framework/Versions/A/OpenCL
+export OCPI_DYNAMIC=1

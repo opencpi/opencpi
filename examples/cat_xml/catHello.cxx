@@ -15,7 +15,8 @@ int main(int argc, char **argv) {
 		    "  </instance>"
 		    "</application>");
   try {
-    OA::Application app(hello);
+    OA::PValue pvs[] = { OA::PVBool("verbose", true), OA::PVEnd };
+    OA::Application app(hello, pvs);
     fprintf(stderr, "Application XML parsed and deployments (containers and implementations) chosen\n");
     app.initialize();
     fprintf(stderr, "Application established: containers, workers, connections all created\n");

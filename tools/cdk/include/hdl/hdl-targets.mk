@@ -7,12 +7,12 @@ _HDL_TARGETS_=here
 # All other targets are some level underneath these
 # The levels are: top, family, part, speed
 
-#Testing: HdlTopTargets=xilinx altera verilator test1
-HdlTopTargets:=xilinx altera icarus verilator modelsim # icarus altera # verilator # altera
+#Testing: HdlTopTargets=xilinx altera verilator icarus
+HdlTopTargets:=xilinx altera modelsim # icarus altera # verilator # altera
 
 # The first part in a family is the one used for core building
 # Usually it should be the largest
-HdlTargets_xilinx:=isim virtex5 virtex6 spartan3adsp xsim spartan6 zynq
+HdlTargets_xilinx:=isim virtex5 virtex6 spartan3adsp spartan6 zynq
 HdlTargets_virtex5:=xc5vtx240t xc5vlx50t xc5vsx95t xc5vlx330t xc5vlx110t
 HdlTargets_virtex6:=xc6vlx240t
 HdlTargets_spartan6:=xc6slx45
@@ -48,17 +48,18 @@ HdlAllPlatforms:=
 
 override OCPI_HDL_PLATFORM_PATH:=$(call Unique,\
   $(OCPI_HDL_PLATFORM_PATH) \
-  $(foreach p,$(subst :, ,$(OCPI_PROJECT_PATH)) $(OCPI_CDK_DIR),$(call OcpiExists,$p/lib/platforms)))
-
+  $(foreach p,$(OcpiGetProjectPath),$(call OcpiExists,$p/lib/platforms)))
+$(infox OHPP:$(OCPI_HDL_PLATFORM_PATH))
 # Add a platform to the database.
 # Arg 1: The directory where the *.mk file is
 # Arg 2: The name of the platform
 # Arg 3: The actual platform directory for using the platform (which may not exist).
 HdlAddPlatform=\
   $(call OcpiDbg,HdlAddPlatform($1,$2,$3))\
-  $(eval include $1/$2.mk)\
-  $(eval HdlAllPlatforms+=$2)\
-  $(eval HdlPlatformDir_$2:=$3)
+  $(if $(HdlPlatformDir_$2),,\
+    $(eval include $1/$2.mk)\
+    $(eval HdlAllPlatforms+=$2)\
+    $(eval HdlPlatformDir_$2:=$3))
 
 # Call this with a directory that is a platform's directory, either source (with "lib" subdir 
 # if built) or exported. For the individual platform directories we need to deal with

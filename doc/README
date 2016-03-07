@@ -1,4 +1,8 @@
 The documents at the top level of this directory are current and relevant for users.
+
+The pdf and html directories contain documents ready for viewing.
+The odt directory contains source documents in ODT format.
+
 The "internal" directory contains specifications and documents about the internals of OpenCPI.
 The "old" directory contains documents that are no longer current, but are available for historical reasons.
 

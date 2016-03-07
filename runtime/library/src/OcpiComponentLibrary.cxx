@@ -28,8 +28,13 @@ namespace OCPI {
 	: public OL::ArtifactBase<Library, Artifact>, OU::EzXml::Doc {
 	friend class Library;
       public:
-	Artifact(Library &lib, const char *name, const OA::PValue *);
-	~Artifact() {}
+	Artifact(Library &lib, const char *name, char *metadata, std::time_t mtime,
+		 uint64_t length, const OA::PValue *);
+	~Artifact() {
+	  // NO!!!  The inherited class in fact takes responsibility for the
+	  // char * string passed to the "parse" method, and uses deletep[] on it!
+	  // delete [] m_metadata;
+	}
       };
 	  
       class Driver;
@@ -43,6 +48,25 @@ namespace OCPI {
 	  : OL::LibraryBase<Driver,Library,Artifact>(*this, name) {
 	}
 
+	public:
+	// Do a recursive directory search for all files.
+	void configure(ezxml_t) {
+	  doPath(name());
+	}
+	OCPI::Library::Artifact *
+	addArtifact(const char *url, const OCPI::API::PValue *params) {
+	  std::time_t mtime;
+	  uint64_t length;
+	  char *metadata = OCPI::Library::Artifact::getMetadata(url, mtime, length);
+	  if (!metadata)
+	    throw OU::Error(OCPI_LOG_DEBUG,
+			    "Cannot open or retrieve metadata from file \"%s\"", url);
+	  Artifact *a = new Artifact(*this, url, metadata, mtime, length, params);
+	  a->configure(); // FIXME: there could be config info in the platform.xml
+	  // FIXME: return NULL if this doesn't look like an artifact we can support?
+	  return a;
+	}
+      private:
 	void doPath(const std::string &libName) {
 	  //	  ocpiDebug("Processing library path: %s", libName.c_str());
 	  bool isDir;
@@ -65,24 +89,12 @@ namespace OCPI {
 		// FIXME: supply library level xml for the artifact
 		// The log will show which files are not any good.
 		try {
-		  (new Artifact(*this, name, NULL))->configure();
+		  addArtifact(name, NULL);
 		} catch (...) {}
 	      }
 	    }
 	}
-	public:
-	  // Do a recursive directory search for all files.
-	  void configure(ezxml_t) {
-	    doPath(name());
-	  }
-	  OCPI::Library::Artifact *
-	    addArtifact(const char *url, const OCPI::API::PValue *props) {
-	    // return NULL if this doesn't look like an artifact we can support
-	    Artifact *a = new Artifact(*this, url, props);
-	    a->configure(); // FIXME: there could be config info in the platform.xml
-	    return a;
-	  }
-	};
+      };
 
       // Our concrete driver class
       const char *component = "component";
@@ -130,9 +142,21 @@ namespace OCPI {
 	}
       };
       Artifact::
-      Artifact(Library &lib, const char *name, const OA::PValue *)
-	: ArtifactBase<Library,Artifact>(lib, *this, name) {
-	getFileMetaData(name);
+      Artifact(Library &lib, const char *name, char *metadata, std::time_t mtime,
+	       uint64_t length, const OA::PValue *)
+	: ArtifactBase<Library,Artifact>(lib, *this, name),
+	  m_metadata(metadata) {
+	m_mtime = mtime;
+	m_length = length;
+	m_xml = OX::Doc::parse(m_metadata);
+	char *xname = ezxml_name(m_xml);
+	if (!xname || strcmp("artifact", xname))
+	  throw OU::Error("invalid metadata in binary/artifact file \"%s\": no <artifact/>", name);
+	const char *uuid = ezxml_cattr(m_xml, "uuid");
+	if (!uuid)
+	  throw OU::Error("no uuid in binary/artifact file \"%s\"", name);
+	lib.registerUuid(uuid, this);
+	ocpiDebug("Artifact file %s has artifact metadata", name);
       }
       RegisterLibraryDriver<Driver> driver;
     }

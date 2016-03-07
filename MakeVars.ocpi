@@ -83,9 +83,6 @@ ifndef OCPI_OS
     OCPI_OS=$(shell uname -s | tr A-Z a-z)
   endif
 endif
-ifndef OCPI_ARCH
-  OCPI_ARCH := $(shell uname -m)
-endif
 endif
 
 ifeq ($(OCPI_OS),macos)
@@ -254,7 +251,7 @@ WINNT_TOOLCHAIN = msvc
 #
 # ----------------------------------------------------------------------
 #
-
+ifeq ($(OCPI_HAVE_CORBA),1)
 ifeq "$(OCPI_CORBA_ORB)" ""
   OCPI_CORBA_ORB = OMNI
 endif
@@ -325,7 +322,7 @@ export OCPI_OMNI_BIN_DIR
 export OCPI_OMNI_IDL_DIR
 export OCPI_OMNI_INCLUDE_DIR
 endif
-
+endif # if OCPI_HAVE_CORBA
 # SCAVERSION: Can be either 2.2 or 2.2.2.
 
 #

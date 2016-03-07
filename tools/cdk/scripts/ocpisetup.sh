@@ -30,7 +30,8 @@ elif test -f $_MYNAME; then
   exit 1
 fi
 _MYDIR=$(dirname $_MYPATH)
-source $_MYDIR/ocpibootstrap.sh $_MYDIR/ocpibootstrap.sh
+case $_MYDIR in /*) ;; *) _MYDIR=`cd $_MYDIR; pwd`;; esac
+OCPI_BOOTSTRAP=$_MYDIR/ocpibootstrap.sh; . $OCPI_BOOTSTRAP
 
 if test "$OCPI_DYNAMIC" = ""; then
   if test "$OCPI_BUILD_SHARED_LIBRARIES" != ""; then

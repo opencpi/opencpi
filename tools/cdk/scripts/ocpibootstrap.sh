@@ -1,14 +1,17 @@
 #!/bin/sh
 
 # This script does a few things to help bootstrap the environment.
-# It is run by other scripts based on where they are, i.e. it is assumed to be
-# in the same directory that they are in.
+# It is sourced by other scripts with an explicit pathname, not via a path.
 # It does setup work useful for runtime, but not anything for development time.
 # It can be used in deployed environments.
 # I.e. it does not set up or default any OCPI_TARGET variables.
-# It must be called with its first argument being its own pathname.
-_MYPATH=$1
-_MYDIR=$(dirname $1)
+# It should not have any "bashisms"
+# It must be told its own location since $0 does not work for sourced scripts
+# In posix shells, source scripts cannot take arguments.
+# Hence the calling protocol is to set the OCPI_BOOTSTRAP variable to this
+# script's absolute pathname before calling it, like:
+# OCPI_BOOTSTRAP=$foo/ocpibootstrap.sh; . $OCPI_BOOTSTRAP
+
 # Determine OCPI_CDK_DIR:
 # If set and it is a directory, assume it is correct
 # If not set, and if this script lives in a "scripts" or "bin" directory,
@@ -19,15 +22,25 @@ _MYDIR=$(dirname $1)
 # even when executed in a cleaned core tree, it will be called after an initial
 # export tree is created.
 if [ "$OCPI_CDK_DIR" = "" -o ! -d "$OCPI_CDK_DIR" ]; then # and any other sanity checks?
+  [ -z "$OCPI_BOOTSTRAP" ] && echo Error:  ocpibootstrap.sh called without setting OCPI_BOOTSTRAP && exit 1
+  [ ! -r "$OCPI_BOOTSTRAP" ] && echo Error:  ocpibootstrap.sh called with unreadable OCPI_BOOTSTRAP: $OCPI_BOOTSTRAP && exit 1
+  case $OCPI_BOOTSTRAP in
+   /*) ;;
+   *) echo Error:  ocpibootstrap.sh called with OCPI_BOOTSTRAP not absolute: $OCPI_BOOTSTRAP && exit 1 ;;
+  esac
+  _MYDIR=$(dirname $OCPI_BOOTSTRAP)
   _MYBASE=$(basename $_MYDIR)
   if [ $_MYBASE = scripts -o $_MYBASE = bin ]; then
     # Be careful to maintain symbolic link names for UI clarity
     DIRDIR=$(dirname $_MYDIR)
-    if [[ $DIRDIR =~ /* ]]; then
+    case $DIRDIR in
+    /*)
       OCPI_CDK_DIR=$DIRDIR
-    else
+      ;;
+    *)
       OCPI_CDK_DIR=$(pwd)/$DIRDIR
-    fi
+      ;;
+    esac
   else
     OCPI_CDK_DIR=/opt/opencpi/cdk
   fi
@@ -44,16 +57,18 @@ if test "$OCPI_TOOL_HOST" = ""; then
     echo Error:  ocpibootstrap.sh cannot find getPlatforms.sh    
     exit 1
   fi
-  vars=($(${GETPLATFORM}))
+  read v0 v1 v2 v3 v4 <<EOF
+`${GETPLATFORM}`
+EOF
   if test $? != 0; then
     echo Failed to determine runtime platform.
     return 1
   fi
-  export OCPI_TOOL_OS=${vars[0]}
-  export OCPI_TOOL_OS_VERSION=${vars[1]}
-  export OCPI_TOOL_ARCH=${vars[2]}
-  export OCPI_TOOL_HOST=${vars[3]}
-  export OCPI_TOOL_PLATFORM=${vars[4]}
+  export OCPI_TOOL_OS=$v0
+  export OCPI_TOOL_OS_VERSION=$v1
+  export OCPI_TOOL_ARCH=$v2
+  export OCPI_TOOL_HOST=$v3
+  export OCPI_TOOL_PLATFORM=$v4
 fi
 # Determine OCPI_TOOL_MODE if it is not set already
 # It can be set to null to suppress these modes, and just use whatever has been

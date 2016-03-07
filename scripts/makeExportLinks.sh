@@ -79,7 +79,7 @@ function make_filtered_link {
   for e in $exclusions; do
     declare -a both=($(echo $e | tr : ' '))
     # echo EXBOTH=${both[0]}:${both[1]}:$3:$1:$2
-    [ "${both[1]}" != "" -a "${both[1]}" != $3 ] && continue
+    [ "${both[1]}" != "" -a "${both[1]}" != "$3" ] && continue
     # echo EXBOTH1=${both[0]}:${both[1]}:$3:$1:$2
     edirs=(${both[0]/\// })
     if [ ${edirs[0]} = exports ]; then
@@ -91,11 +91,6 @@ function make_filtered_link {
   # No exclusions matched.  Make the directory for the link
   make_relative_link $1 $2
 }
-
-if [ -n "${RPM_BUILD_ROOT}" ]; then
-  echo This script is not used for RPM building.
-  exit 0
-fi
 
 if test "$*" = ""; then
   echo "Usage is: makeExportLinks.sh <target> <prefix>"
@@ -122,8 +117,11 @@ additions=$(test -f Project.exports && grep '^[ 	]*+' Project.exports | sed 's/^
 set +f
 facilities=$(test -f Project.exports &&  grep -v '^[ 	]*[-+#]' Project.exports) || true
 for f in $facilities; do
+  if [ "$1" == "-" ]; then
+    continue; # silently ignore unset targets
+  fi
   if [ ! -d $f/target-$1 ]; then
-    if [ ! -d .built_cdk ]; then
+    if [ ! -d target-cdk-staging ]; then
       continue; # silently ignore unbuilt facilities
     fi
   fi
@@ -132,10 +130,10 @@ for f in $facilities; do
   for m in $mains; do
     exe=$f/target-$1/$m
     if [ ! -e $exe ]; then
-      exe=$(find .built_cdk/ -name $m 2>/dev/null | grep $1 || :)
+      exe=$(find target-cdk-staging/ -name $m 2>/dev/null | grep $1 || :)
       if [ -z "$exe" ]; then
         if [ "$3" == "" ]; then
-          echo Executable $m not found in $f/target-$1/$m nor .built_cdk/\*\*/$m
+          echo Executable $m not found in $f/target-$1/$m nor target-cdk-staging/\*\*/$m
         fi
         continue
       fi
@@ -145,12 +143,16 @@ for f in $facilities; do
 
   # Make links to facility libraries
   foundlib=
-#  for s in .$dylib _s.$dylib .a; do
-  for s in  _s.$dylib .a; do
+  if [ "$OCPI_DYNAMIC" == 1 ] ; then
+    suffixes=".$dylib"
+  else
+    suffixes="_s.$dylib .a"
+  fi
+  for s in $suffixes; do
     lib=lib$2$(basename $f)$s
     libpath=$f/target-$1/$lib
     if [ ! -e $libpath ]; then
-      libpath=.built_cdk/lib/$1/$lib
+      libpath=target-cdk-staging/lib/$1/$lib
       if [ ! -e $libpath ]; then
         continue
       fi
@@ -160,7 +162,7 @@ for f in $facilities; do
   done
   if [ "$foundlib" = "" ]; then
      if [ "$3" == "" ]; then
-       echo Library lib$2$(basename $f) not found in $f/target-$1/\* nor .built_cdk/lib/$1/\*
+       echo Library lib$2$(basename $f) not found in $f/target-$1/\* nor target-cdk-staging/lib/$1/\*
      fi
 #    exit 1
   fi
@@ -200,9 +202,9 @@ if [ -d hdl/platforms ]; then
 fi
 
 # Add component libraries at top level and under hdl
-for d in * hdl/*; do
+for d in components components/* hdl/*; do
   [ ! -d $d -o  ! -f $d/Makefile ] && continue
-  grep -q '^[ 	]*include[ 	]*.*/include/lib.mk' $d/Makefile || continue
+  egrep -q '^[ 	]*include[ 	]*.*/include/(lib|library).mk' $d/Makefile || continue
   make_filtered_link $d/lib exports/lib/$(basename $d) component
 done
 
@@ -219,10 +221,14 @@ if [ -d hdl/primitives -a -f hdl/primitives/Makefile ]; then
   done
 fi
 
+# Add the top level specs directory if it is there
+[ -d specs ] && make_filtered_link specs exports/specs
+
 # Add the ad-hoc export links
 set -f
 for a in $additions; do
   declare -a both=($(echo $a | tr : ' '))
+  [[ $a == *\<target\>* && $1 == - ]] && continue
   rawsrc=${both[0]//<target>/$1}
   set +f
   for src in $rawsrc; do
@@ -240,3 +246,17 @@ for a in $additions; do
   done
   set -f
 done
+
+# Move around the binaries to keep the main directory clean (only relevent in autotools mode)
+set +f
+if [ "x$1" != "x-" ]; then
+  for dir in ctests rdma_tests utils; do
+    if [ -d target-cdk-staging/bin/$1/${dir} ]; then
+      for file in target-cdk-staging/bin/$1/${dir}/*; do
+        rm -f exports/bin/$1/$(basename ${file})
+        mkdir -p exports/bin/$1/${dir}
+        make_relative_link ${file} exports/bin/$1/${dir}/$(basename ${file})
+      done
+    fi
+  done
+fi

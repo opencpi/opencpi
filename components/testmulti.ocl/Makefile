@@ -35,5 +35,4 @@
 ########################################################################### #
 
 Workers=sin cos
-OCPI_CDK_DIR=../../ocpi
 include $(OCPI_CDK_DIR)/include/worker.mk

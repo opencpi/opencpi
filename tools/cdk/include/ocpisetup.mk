@@ -26,10 +26,11 @@ ifeq ($(realpath $(OCPI_CDK_DIR)),)
   $(error The OCPI_CDK_DIR variable, "$(OCPI_CDK_DIR)", points to a nonexistent directory)
 endif
 ifneq ($(realpath $(OCPI_CDK_DIR)/include/ocpisetup.mk),$(realpath $(OcpiThisFile)))
-  $(error Inconsistent usage of this file ($(OcpiThisFile)) vs. OCPI_CDK_DIR ($(OCPI_CDK_DIR)))
+  $(error Inconsistent usage of this file ($(OcpiThisFile)->$(realpath $(OcpiThisFile))) vs. OCPI_CDK_DIR ($(realpath $(OCPI_CDK_DIR)/include/ocpisetup.mk)))
 endif
 $(info OCPI_CDK_DIR has been set to $(OCPI_CDK_DIR) and verified to be sane.)
 
+endif # The end of processing this file once - ifndef OCPISETUP_MK
 ################################################################################
 # OCPI_CDK_DIR has been established and verified.
 # Now complete the other aspects of environment setup.
@@ -177,7 +178,9 @@ endif
 ################################################################################
 # Figure out if we should have OPENCL support
 ifeq ($(origin OCPI_HAVE_OPENCL),undefined)
-  OCPI_HAVE_OPENCL:=$(if $(realpath $(OCPI_BIN_DIR)/ocpiocl),$(shell $(OCPI_BIN_DIR)/ocpiocl test; if [ $$? = 0 ]; then echo 1; fi),)
+  ifeq ($(OCPI_TARGET_HOST),$(OCPI_TOOL_HOST))
+    OCPI_HAVE_OPENCL:=$(if $(realpath $(OCPI_BIN_DIR)/ocpiocl),$(shell $(OCPI_BIN_DIR)/ocpiocl test && echo 1),)
+  endif
 endif
 ################################################################################
 # From here down is specifically for user makefiles
@@ -186,7 +189,6 @@ endif
 export OCPI_LIB_DIR:=$(OCPI_CDK_DIR)/lib/$(OCPI_TARGET_DIR)
 export OCPI_BIN_DIR:=$(OCPI_CDK_DIR)/bin/$(OCPI_TARGET_DIR)
 export OCPI_INC_DIR:=$(OCPI_CDK_DIR)/include
-export OCPI_SET_LIB_PATH:=$(OcpiLibraryPathEnv)=$$$(OcpiLibraryPathEnv):$(OCPI_LIB_DIR)
 
 # Which libraries should be made available to user executables?
 export OCPI_API_LIBS=application container library transport rdma_driver_interface rdma_utils rdma_smb util  msg_driver_interface os
@@ -205,9 +207,3 @@ $(OCPI_TARGET_DIR):
 target-$(OCPI_TARGET_DIR):
 	mkdir -p $@
 
-
-ifeq ($(origin OCPI_SUDO),undefined)
-export OCPI_SUDO=sudo -E
-endif
-
-endif
