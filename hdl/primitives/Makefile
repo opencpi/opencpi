@@ -21,8 +21,6 @@
 #  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
 #
 ########################################################################### #
-OCPI_CDK_DIR?=../../ocpi
-
 ImportCoreDirs=\
   $(OCPI_HDL_IMPORTS_DIR)/coregen/temac_v6 \
   $(OCPI_HDL_IMPORTS_DIR)/coregen/dram_v6_mig37 \
@@ -34,9 +32,10 @@ ImportCoreDirs=\
   $(OCPI_HDL_IMPORTS_DIR)/coregen/pcie_4243_hip_s4gx_gen2_x4_128 \
   $(OCPI_HDL_IMPORTS_DIR)/coregen/ddc_4243_4ch_v5
 
-Libs=bsv fixed_float ocpi util platform sdp zynq stratix4 virtex5 virtex6 xilinx i2c
+# These are order-sensitive
+PrimitiveLibraries=bsv fixed_float ocpi util platform sdp zynq stratix4 virtex5 virtex6 xilinx i2c
 # All cores here are imported
-Cores=
+PrimitiveCores=
 
 include $(OCPI_CDK_DIR)/include/hdl/hdl-primitives.mk
 

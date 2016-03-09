@@ -47,12 +47,29 @@ architecture rtl of sdp_sim is
   signal sdp2sw_index_r     : natural := 0; -- index into the frame or the header
   signal sdp2sw_last_dw     : boolean;
   signal sdp2sw_header_dws  : dword_array_t(0 to sdp_header_ndws - 1);
+  -- signals for writing to pipes
+  signal ack_valid_r        : bool_t := bfalse;
+  signal ack_flush_r        : bool_t := bfalse;
+  signal ack_close_r        : bool_t := bfalse;
+  signal sim2sw_valid_r     : bool_t := bfalse;
+  signal sim2sw_flush_r     : bool_t := bfalse;
+  signal sim2sw_close_r     : bool_t := bfalse;
+  signal sim2sw_data_r      : dword_t;
 begin
   ctl_name_i    : plusarg generic map(name => "ctl")    port map(val => ctl_name);
   ack_name_i    : plusarg generic map(name => "ack")    port map(val => ack_name);
   sw2sim_name_i : plusarg generic map(name => "sw2sim") port map(val => sw2sim_name);
   sim2sw_name_i : plusarg generic map(name => "sim2sw") port map(val => sim2sw_name);
-
+  ack_write_i:    flush_writer
+    generic map(nbytes => 1, namelength => util.util.plusarg_length)
+    port    map(clk => clk, reset => reset, name => ack_name,
+                valid => ack_valid_r, flush => ack_flush_r, close => ack_close_r,
+                data => from_char(to_char('1')));
+  sim2sw_write_i: flush_writer
+    generic map(nbytes => 4, namelength => util.util.plusarg_length)
+    port    map(clk => clk, reset => reset, name => sim2sw_name,
+                valid => sim2sw_valid_r, flush => sim2sw_flush_r, close => sim2sw_close_r,
+                data => sim2sw_data_r);
   sdp_out.clk        <= clk;
   sdp_out.reset      <= reset;
   sdp_out.id         <= (others => '0');  -- set in case directly wired to control plane
@@ -78,11 +95,11 @@ begin
       variable data : character;
     begin
       if endfile(f) then
-        report "Unexpected EOF on control pipe: " & msg severity failure;
+        report "Unexpected EOF on " & msg; -- this is benign - it just indicates pipe empty
       end if;
-      report "Reading a byte from " & msg;
+--      report "Reading a byte from " & msg;
       read(f, data);
-      report "Got a byte from " & msg & " value " & integer'image(character'pos(data));
+--      report "Got a byte from " & msg & " value " & integer'image(character'pos(data));
       return character'pos(data);
     end read_byte;
     impure function read_short(file f : char_file_t) return natural is
@@ -92,10 +109,12 @@ begin
     end read_short;
     procedure write_dw(dw : dword_t) is
     begin
-      for i in 0 to 3 loop
-        -- report "Writing byte";
-        write(sim2sw_file, to_character(char_t(dw(i*8+7 downto i*8))));
-      end loop;
+      sim2sw_valid_r <= btrue;
+      sim2sw_data_r <= dw;
+--      for i in 0 to 3 loop
+--        -- report "Writing byte";
+--        write(sim2sw_file, to_character(char_t(dw(i*8+7 downto i*8))));
+--      end loop;
     end write_dw;
     impure function header_dws(dw : dword_t) return dword_array_t is
       variable dws : dword_array_t(0 to sdp_header_ndws-1);
@@ -110,20 +129,28 @@ begin
     end header_dws;
   begin
     if rising_edge(clk) and not its(reset) then
+      ack_valid_r        <= bfalse;
+      ack_flush_r        <= bfalse;
+      ack_close_r        <= bfalse;
+      sim2sw_valid_r     <= bfalse;
+      sim2sw_flush_r     <= bfalse;
+      sim2sw_close_r     <= bfalse;
       if not init_r then
         -- We assume all these names are absolute and need no CWD
         open_file(ctl_file,    to_string("",0), ctl_name,    read_mode);
-        open_file(ack_file,    to_string("",0), ack_name,    write_mode);
+--      open_file(ack_file,    to_string("",0), ack_name,    write_mode);
         open_file(sw2sim_file, to_string("",0), sw2sim_name, read_mode);
-        open_file(sim2sw_file,   to_string("",0), sim2sw_name,   write_mode);
+--      open_file(sim2sw_file,   to_string("",0), sim2sw_name,   write_mode);
         init_r <= true;
       else
         -- Process the controls from the simulations server
         credit := sw2sdp_credit_r;
         if spin_credit_r > 0 then
           if spin_credit_r = 3 then
-            report "ack";
-            write(ack_file, '1');
+--            report "ack";
+--            write(ack_file, '1');
+            ack_valid_r <= btrue;
+            ack_flush_r <= btrue;
           end if;
           spin_credit_r <= spin_credit_r - 1;
         elsif not sdp_in.sdp.valid then
@@ -133,9 +160,11 @@ begin
               credit := credit + read_short(ctl_file);
             when 255    => 
               file_close(ctl_file);
-              file_close(ack_file);
+--            file_close(ack_file);
               file_close(sw2sim_file);
-              file_close(sim2sw_file);
+--            file_close(sim2sw_file);
+              ack_close_r    <= btrue;
+              sim2sw_close_r <= btrue;
               report "NONE. End of simulation." severity failure;
             -- std.env.finish(2); VHDL 2008...
             when others => report "unknown control byte" severity failure;
@@ -196,22 +225,27 @@ begin
         sw2sdp_credit_r <= credit;
         -- The processing from sdp to sw
         if its(sdp_in.sdp.valid) then -- we will write a word from the current frame
+          sim2sw_valid_r <= btrue;
           if sdp2sw_in_header_r then
-            write_dw(sdp2sw_header_dws(sdp2sw_index_r));
+            -- write_dw(sdp2sw_header_dws(sdp2sw_index_r));
+            sim2sw_data_r   <= sdp2sw_header_dws(sdp2sw_index_r);
             sdp2sw_length_r <= to_integer(payload_in_dws(sdp_in.sdp.header));
             if sdp2sw_index_r = sdp_header_ndws-1 then
               if payload_in_dws(sdp_in.sdp.header) /= 0 then
                 sdp2sw_in_header_r <= false;
                 sdp2sw_index_r <= start_dw(sdp_in.sdp.header, sdp_width);
               else
+                sim2sw_flush_r <= btrue;
                 sdp2sw_index_r <= 0;
               end if;
             else
               sdp2sw_index_r <= sdp2sw_index_r + 1;
             end if;
           else
-            write_dw(sdp_in_data(sdp2sw_index_r));
+            -- write_dw(sdp_in_data(sdp2sw_index_r));
+            sim2sw_data_r <= sdp_in_data(sdp2sw_index_r);
             if sdp2sw_last_dw then -- end of frame from sdp
+              sim2sw_flush_r <= btrue;
               sdp2sw_index_r <= 0;
               if sdp2sw_length_r = 1 then
                 sdp2sw_in_header_r <= true;

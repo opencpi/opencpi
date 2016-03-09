@@ -79,6 +79,7 @@ namespace OCPI {
 
     // The util::assembly only knows port names, not worker port ordinals
     // (because it has not been correlated with any implementations).
+    // It may not even know port names if connect shortcuts are used.
     // Here is where we process the matchup between the port names in the util::assembly
     // and the port names in implementations in the libraries
     bool Assembly::Instance::

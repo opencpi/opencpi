@@ -34,7 +34,7 @@
 #include "OcpiOsMisc.h"
 #include "OcpiTransport.h"
 #include "OcpiUtilAutoMutex.h"
-#include "OcpiLibraryManager.h"
+#include "LibrarySimple.h"
 #include "HdlSdp.h"
 #include "HdlLSimDriver.h"
 
@@ -180,8 +180,8 @@ class Device
   uint64_t m_cumTicks;
   OS::Timer m_spinTimer;
   OU::UuidString m_textUUID;
-  char *m_metadata;
-  ezxml_t m_xml;
+  //  char *m_metadata;
+  //  ezxml_t m_xml;
   bool m_firstRun; // First time running in the container thread.
   uint64_t m_lastTicks;
   uint8_t m_sdpDataBuf[SDP::Header::max_message_bytes];
@@ -209,7 +209,7 @@ protected:
       m_maxFd(-1), m_pid(0), m_exited(false), m_dcp(0), m_respLeft(0), m_simDir(simDir),
       m_platform(platform), m_script(script), m_verbose(verbose), m_dump(dump),
       m_spinning(false), m_sleepUsecs(sleepUsecs), m_simTicks(simTicks), m_spinCount(spinCount),
-      m_cumTicks(0), m_metadata(NULL), m_xml(NULL), m_firstRun(true), m_lastTicks(0) {
+      m_cumTicks(0), /* m_metadata(NULL), m_xml(NULL),*/ m_firstRun(true), m_lastTicks(0) {
     if (error.length())
       return;
     FD_ZERO(&m_alwaysSet);
@@ -803,6 +803,8 @@ public:
     if (mkdir(m_dir.c_str(), 0777) != 0 && errno != EEXIST)
       throwit("Can't create directory \"%s\" to run \"%s\" simulation from \"%s\" (%s)",
 	      m_dir.c_str(), m_platform.c_str(), m_exec.c_str(), strerror(errno));
+    OL::Artifact &art = *OL::Simple::getDriver().addArtifact(file);
+#if 0
     try {
       std::time_t mtime;
       uint64_t length;
@@ -816,8 +818,10 @@ public:
     char *xname = ezxml_name(m_xml);
     if (!xname || strcasecmp("artifact", xname))
       throwit("invalid metadata in binary/artifact file \"%s\": no <artifact/>", m_exec.c_str());
+#endif
     std::string platform;
-    if ((e = OX::getRequiredString(m_xml, platform, "platform", "artifact")))
+    const char *e;
+    if ((e = OX::getRequiredString(art.xml(), platform, "platform", "artifact")))
       throwit("invalid metadata in binary/artifact file \"%s\": %s", m_exec.c_str(), e);
     if (!strcmp("_pf", platform.c_str() + platform.length() - 3))
       platform.resize(platform.length() - 3);
@@ -825,7 +829,7 @@ public:
       throwit("simulator platform mismatch:  executable (%s) has '%s', we are '%s'",
 	      m_exec.c_str(), platform.c_str(), m_platform.c_str());
     std::string uuid;
-    e = OX::getRequiredString(m_xml, uuid, "uuid", "artifact");
+    e = OX::getRequiredString(art.xml(), uuid, "uuid", "artifact");
     if (e)
       throwit("invalid metadata in binary/artifact file \"%s\": %s", m_exec.c_str(), e);
     ocpiInfo("Bitstream %s has uuid %s", m_exec.c_str(), uuid.c_str());

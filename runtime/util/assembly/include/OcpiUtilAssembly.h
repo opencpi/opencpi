@@ -203,6 +203,7 @@ namespace OCPI {
 			const OCPI::Util::PValue *params = NULL);
       ~Assembly();
       const char
+	*findInstanceForParam(const char *pName, const char *&assign, unsigned &instn),
 	*checkInstanceParams(const char *pName, const PValue *params, bool checkMapped = false),
         *addConnection(const char *name, Connection *&c),
         *getInstance(const char *name, unsigned &),

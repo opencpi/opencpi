@@ -50,23 +50,19 @@ OBJ:=.o
 override RccIncludeDirsInternal+=../include gen $(OCPI_CDK_DIR)/include/rcc
 BF=$(BF_$(call RccOs,))
 ifneq ($(OCPI_DEBUG),0)
-DynamicLinkOptions=-g
+RccDynamicLinkOptions=-g
 endif
-DynamicLinkOptions+=\
-  $(or $(DynamicLinkOptions_$(HdlTarget)),$(DynamicLinkOptions_$(call RccOs,)))
-DynamicCompilerOptions=\
-  $(or $(DynamicCompilerOptions_$(HdlTarget)),$(DynamicCompilerOptions_$(call RccOs,)))
 # Linux values
 BF_linux=.so
 SOEXT_linux=.so
 AREXT_linux=.a
-DynamicLinkOptions_linux=-shared
-DynamicCompilerOptions_linux=-fPIC
+RccDynamicLinkOptions_linux=$(RccDynamicLinkOptions) -shared
+RccDynamicCompilerOptions_linux=-fPIC
 # macos values
 BF_macos=.dylib
 SOEXT_macos=.dylib
 AREXT_macos=.a
-DynamicLinkOptions_macos=-dynamiclib -Xlinker -undefined -Xlinker dynamic_lookup
+RccDynamicLinkOptions_macos=$(RccDynamicLinkOptions) -dynamiclib -Xlinker -undefined -Xlinker dynamic_lookup
 DynamicCompilerOptions_macos=
 DispatchSourceFile=$(call WkrTargetDir,$1,$2)/$(CwdName)_dispatch.c
 ArtifactFile=$(BinaryFile)
@@ -81,7 +77,7 @@ ifeq ($(origin OCPI_TARGET_MODE),undefined)
   export OCPI_TARGET_MODE:=$(if $(filter 1,$(OCPI_BUILD_SHARED_LIBRARIES)),d,s)$(if $(filter 1,$(OCPI_DEBUG)),d,o)
 endif
 PatchElf=$(or $(OCPI_PREREQUISITES_INSTALL_DIR),/opt/opencpi/prerequisites)/patchelf/$(OCPI_TOOL_HOST)/bin/patchelf
-LinkBinary=$$(G$(OcpiLanguage)_LINK_$$(RccTarget)) $$(call OcpiPrioritize,DynamicLinkOptions,$(OcpiLanguage),$$(RccTarget)) -o $$@ $1 \
+LinkBinary=$$(G$(OcpiLanguage)_LINK_$$(RccTarget)) $$(call RccPrioritize,DynamicLinkOptions,$(OcpiLanguage),$$(RccTarget)) -o $$@ $1 \
 $(AEPLibraries) \
 $(foreach l,$(RccLibrariesInternal) $(Libraries),\
   $(if $(findstring /,$l),\
@@ -121,9 +117,9 @@ CompilerWarnings= -Wall -Wextra
 CompilerDebugFlags=-g
 CompilerOptimizeFlags=-O
 ifeq ($(OCPI_DEBUG),1)
-CompilerOptions=$(CompilerDebugFlags)
+RccCompilerOptions=$(CompilerDebugFlags)
 else
-CompilerOptions=$(CompilerOptimizeFlags)
+RccCompilerOptions=$(CompilerOptimizeFlags)
 endif
 # Prepare the parameters for compile-command-line injection into the worker compilation
 RccParams=\
@@ -134,7 +130,7 @@ RccParams=\
 # target and language
 # target
 # generic
-# E.g. $(call OcpiPrioritize,CompilerOptions,C,target)
+# E.g. $(call RccPrioritize,CompilerOptions,C,target)
 OcpiDefined=$(filter-out undefined,$(origin $1))
 RccPrioritize=\
   $(if $(call OcpiDefined,Rcc$1$2_$3),\
@@ -150,19 +146,20 @@ RccPrioritize=\
             $(Rcc$1))))))
 
 # RccCompilerOptions(language,target)
-RccCompilerOptions=\
-  $(call OcpiPrioritize,CompilerWarnings,$1,$2) \
-  $(call OcpiPrioritize,CompilerOptions,$1,$2) \
-  $(call OcpiPrioritize,ExtraCompilerOptions,$1,$2) \
-  $(call OcpiPrioritize,DynamicCompilerExtraCompilerOptions,$1,$2) \
+RccFinalCompilerOptions=\
+  $(call RccPrioritize,CompilerWarnings,$1,$2) \
+  $(call RccPrioritize,CompilerOptions,$1,$2) \
+  $(call RccPrioritize,DynamicCompilerOptions,$1,$2) \
+  $(call RccPrioritize,ExtraCompilerOptions,$1,$2) \
+  $(call RccPrioritize,DynamicCompilerExtraCompilerOptions,$1,$2) \
 
 Compile_c=\
   $$(Gc_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
-  $$(call RccCompilerOptions,C,$$(RccTarget)) \
+  $$(call RccFinalCompilerOptions,C,$$(RccTarget)) \
   $(RccIncludeDirsInternal:%=-I%) -o $$@ $$(RccParams) $$<
 Compile_cc=\
   $$(Gc++_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
-  $$(call RccCompilerOptions,CC,$$(RccTarget)) \
+  $$(call RccFinalCompilerOptions,CC,$$(RccTarget)) \
   $(RccIncludeDirsInternal:%=-I%) -o $$@ $$(RccParams) $$<
 
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk

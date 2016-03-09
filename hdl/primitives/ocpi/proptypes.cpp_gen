@@ -267,26 +267,33 @@ ENTITY_RPROP_ARRAY(pretty,readback scalar 8 bit property)\
 $architecture rtl of pretty##_read_array_property is\
 $@@signal i : natural;\
 $@@signal word : dword_t;\
+$@@impure function val(i : natural) return pretty##_t is\
+$@@begin\
+$@@@@if i < property.nitems then\
+$@@@@@@return value(i);\
+$@@@@end if;\
+$@@@@return (others => '0');\
+$@@end;\
 $begin\
 $@@i <= to_integer(index);\
 $@@word <=\
-$@@@@x"000000" & std_logic_vector(value(i)) when nbytes_1 = 0 and not its(is_big_endian) else\
-$@@@@std_logic_vector(value(i)) & x"000000" when nbytes_1 = 0 and its(is_big_endian) else\
-$@@@@x"0000" & std_logic_vector(value(i+1)) & std_logic_vector(value(i))\
+$@@@@x"000000" & std_logic_vector(val(i)) when nbytes_1 = 0 and not its(is_big_endian) else\
+$@@@@std_logic_vector(val(i)) & x"000000" when nbytes_1 = 0 and its(is_big_endian) else\
+$@@@@x"0000" & std_logic_vector(val(i+1)) & std_logic_vector(val(i))\
 $@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@when nbytes_1 = 1 and not its(is_big_endian) else\
-$@@@@std_logic_vector(value(i)) & std_logic_vector(value(i+1)) & x"0000"\
+$@@@@std_logic_vector(val(i)) & std_logic_vector(val(i+1)) & x"0000"\
 $@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@when nbytes_1 = 1 and its(is_big_endian) else\
-$@@@@x"00" & std_logic_vector(value(i+2)) &\
-$@@@@std_logic_vector(value(i+1)) & std_logic_vector(value(i))\
+$@@@@x"00" & std_logic_vector(val(i+2)) &\
+$@@@@std_logic_vector(val(i+1)) & std_logic_vector(val(i))\
 $@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@when nbytes_1 = 2 and not its(is_big_endian) else\
-$@@@@std_logic_vector(value(i)) &\
-$@@@@std_logic_vector(value(i+1)) & std_logic_vector(value(i+2)) & x"00" \
+$@@@@std_logic_vector(val(i)) &\
+$@@@@std_logic_vector(val(i+1)) & std_logic_vector(val(i+2)) & x"00" \
 $@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@when nbytes_1 = 2 and its(is_big_endian) else\
-$@@@@std_logic_vector(value(i+3)) & std_logic_vector(value(i+2)) &\
-$@@@@std_logic_vector(value(i+1)) & std_logic_vector(value(i))\
+$@@@@std_logic_vector(val(i+3)) & std_logic_vector(val(i+2)) &\
+$@@@@std_logic_vector(val(i+1)) & std_logic_vector(val(i))\
 $@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@when nbytes_1 = 3 and not its(is_big_endian) else\
-$@@@@std_logic_vector(value(i)) & std_logic_vector(value(i+1)) &\
-$@@@@std_logic_vector(value(i+2)) & std_logic_vector(value(i+3));\
+$@@@@std_logic_vector(val(i)) & std_logic_vector(val(i+1)) &\
+$@@@@std_logic_vector(val(i+2)) & std_logic_vector(val(i+3));\
 $@@data_out <= dword_t(shift_left(unsigned(word),\
 $@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@to_integer((property.offset+to_integer(index)) rem 4) *8))\
 $@@@@@@@@@@@@@@@@when not is_big_endian else\

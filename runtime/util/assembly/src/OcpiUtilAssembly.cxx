@@ -181,6 +181,26 @@ namespace OCPI {
       return NULL;
     }
 
+    // Given a assignment value that is an instance assignment, find the instance and modify
+    // the parameter value to point past the = sign.  Two output args.
+    const char *Assembly::
+    findInstanceForParam(const char *pName, const char *&assign, unsigned &instn) {
+      const char *eq = strchr(assign, '=');
+      if (!eq)
+	return esprintf("Parameter assignment for \"%s\", \"%s\" is invalid. "
+			"Format is: <instance>=<parameter-value>", pName, assign);
+      size_t len = eq - assign;
+      for (unsigned nn = 0; assign && nn < m_instances.size(); nn++)
+	if (!strncasecmp(assign, m_instances[nn].m_name.c_str(), len) &&
+	    m_instances[nn].m_name.length() == len) {
+	  instn = nn;
+	  assign = eq + 1;
+	  return NULL;
+	}
+      return esprintf("No instance found for \"%s\" assignment for \"%s\" parameter",
+		      assign, pName);
+    }
+
     const char *Assembly::
     checkInstanceParams(const char *pName, const PValue *params, bool checkMapped) {
       // Error check instance assignment parameters for instances
@@ -599,6 +619,7 @@ namespace OCPI {
       return NULL;
     }
 
+#if 0
     // Find the value of a parameter for this port.  Return error.
     // "value" is out arg - NULL if not found.
     // FIXME: should this be nuked in favor of the implementation in 
@@ -617,17 +638,21 @@ namespace OCPI {
       }
       return NULL;
     }
-
+#endif
     const char *Assembly::Port::
     init(Assembly &a, const char *name, unsigned instance, bool isInput, bool bidir,
-	 bool isKnown, size_t index, const PValue *params) {
-      if (name) {
+	 bool isKnown, size_t index, const PValue */*params*/) {
+      if (name)
+	m_name = name;
+#if 0 // this is done at the application level since we don't know port names herea
+     {
 	const char *err, *iname = a.m_instances[instance].m_name.c_str();
 	if ((err = findPortValue(iname, name, "xferrole", params, m_parameters)) ||
 	    (err = findPortValue(iname, name, "buffercount", params, m_parameters)))
 	  return err;
 	m_name = name;
       }	
+#endif
       m_role.m_provider = isInput;
       m_role.m_bidirectional = bidir;
       m_role.m_knownRole = isKnown;

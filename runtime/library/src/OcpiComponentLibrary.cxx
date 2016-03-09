@@ -17,6 +17,7 @@ namespace OL = OCPI::Library;
 namespace OA = OCPI::API;
 namespace OU = OCPI::Util;
 namespace OS = OCPI::OS;
+namespace OX = OCPI::Util::EzXml;
 namespace OCPI {
   namespace Library {
     namespace CompLib {
@@ -25,21 +26,20 @@ namespace OCPI {
 
       // Our concrete artifact class
       class Artifact
-	: public OL::ArtifactBase<Library, Artifact>, OU::EzXml::Doc {
+	: public OL::ArtifactBase<Library, Artifact> {
 	friend class Library;
       public:
 	Artifact(Library &lib, const char *name, char *metadata, std::time_t mtime,
-		 uint64_t length, const OA::PValue *);
-	~Artifact() {
-	  // NO!!!  The inherited class in fact takes responsibility for the
-	  // char * string passed to the "parse" method, and uses deletep[] on it!
-	  // delete [] m_metadata;
+		 uint64_t length, const OA::PValue *)
+	  : ArtifactBase<Library,Artifact>(lib, *this, name) {
+	  const char *err = setFileMetadata(name, metadata, mtime, length);
+	  if (err)
+	    throw OU::Error("Error processing metadata from artifact file: %s: %s", name, err);
 	}
       };
 	  
       class Driver;
 
-      //      Library *g_firstLibrary;
       // Our concrete library class
       class Library : public OL::LibraryBase<Driver, Library, Artifact> {
 	std::set<OS::FileSystem::FileId> m_file_ids; // unordered set cxx11 is better
@@ -141,23 +141,6 @@ namespace OCPI {
 	  return l->addArtifact(url, props);
 	}
       };
-      Artifact::
-      Artifact(Library &lib, const char *name, char *metadata, std::time_t mtime,
-	       uint64_t length, const OA::PValue *)
-	: ArtifactBase<Library,Artifact>(lib, *this, name),
-	  m_metadata(metadata) {
-	m_mtime = mtime;
-	m_length = length;
-	m_xml = OX::Doc::parse(m_metadata);
-	char *xname = ezxml_name(m_xml);
-	if (!xname || strcmp("artifact", xname))
-	  throw OU::Error("invalid metadata in binary/artifact file \"%s\": no <artifact/>", name);
-	const char *uuid = ezxml_cattr(m_xml, "uuid");
-	if (!uuid)
-	  throw OU::Error("no uuid in binary/artifact file \"%s\"", name);
-	lib.registerUuid(uuid, this);
-	ocpiDebug("Artifact file %s has artifact metadata", name);
-      }
       RegisterLibraryDriver<Driver> driver;
     }
   }

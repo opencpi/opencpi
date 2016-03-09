@@ -94,4 +94,28 @@ procedure open_file(file thefile : char_file_t;
                          mode    : file_open_kind);
 procedure close_file(file thefile : char_file_t; name : string_t);
 
+-- A module that must be written in verilog to write files with flushing
+component flush_writer
+  generic(nbytes       : natural;
+          namelength   : natural);
+  port   (clk          : in std_logic;
+          reset        : in bool_t;
+          name         : in string_t(0 to namelength);
+          valid        : in bool_t;
+          flush        : in bool_t;
+          close        : in bool_t;
+          data         : in std_logic_vector(nbytes*8-1 downto 0));
+end component flush_writer;
+component flush_writer_internal
+  generic(nbytes       : natural;
+          namelength   : natural);
+  port   (clk          : in std_logic;
+          reset        : in std_logic;
+          name         : in std_logic_vector(0 to namelength*8-1);
+          valid        : in std_logic;
+          flush        : in std_logic;
+          close        : in std_logic;
+          data         : in std_logic_vector(nbytes*8-1 downto 0));
+end component flush_writer_internal;
+
 end package util;

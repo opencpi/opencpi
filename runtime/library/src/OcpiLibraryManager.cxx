@@ -171,6 +171,10 @@ namespace OCPI {
 	: m_artifact(art), m_metadataImpl(i), m_staticInstance(instance),
 	  m_externals(0), m_internals(0), m_connections(NULL), m_ordinal(ordinal)
     {}
+    Implementation::
+    ~Implementation() {
+      delete [] m_connections;
+    }
 
     void Implementation::
     setConnection(OU::Port &myPort, Implementation *otherImpl,
@@ -242,15 +246,16 @@ namespace OCPI {
     // The artifact base class
     Artifact::
     Artifact()
-      : m_xml(NULL), m_nImplementations(0), m_metaImplementations(NULL), m_nWorkers(0),
-	m_metaData(NULL) {}
+      : m_metadata(NULL), m_mtime(0), m_length(0), m_xml(NULL), m_nImplementations(0),
+	m_metaImplementations(NULL), m_nWorkers(0) {}
     Artifact::~Artifact() {
       for (WorkerIter wi = m_workers.begin(); wi != m_workers.end(); wi++)
 	delete (*wi).second;
       delete [] m_metaImplementations;
       ezxml_free(m_xml);
-      delete [] m_metaData;
+      delete [] m_metadata;
     }
+    // static utility function
     // Get the metadata from the end of the file.
     // The length of the appended file is appended on a line starting with X
     // i.e. (cat meta; sh -c 'echo X$4' `ls -l meta`) >> artifact
@@ -302,22 +307,37 @@ namespace OCPI {
 	  return data;
 	}
 
-    void Artifact::
-    getFileMetaData(const char *name) {
-      if (!(m_metaData = getMetadata(name, m_mtime, m_length)))
-	throw OU::Error(20, "Cannot open or retrieve metadata from file \"%s\"", name);
-      const char *err = OE::ezxml_parse_str(m_metaData, strlen(m_metaData), m_xml);
+    // Given metadata in string form, parse it up, shortly after construction
+    // The ownership of metadat is passed in here.
+    const char *Artifact::
+    setFileMetadata(const char *name, char *metadata, std::time_t mtime, uint64_t length) {
+      m_metadata = metadata; // take ownership in all cases
+      const char *err = OE::ezxml_parse_str(metadata, strlen(metadata), m_xml);
       if (err)
-	throw OU::Error("Error parsing artifact metadata from \"%s\": %s",
-			name, err);
+	return OU::esprintf("error parsing artifact metadata from \"%s\": %s", name, err);
       char *xname = ezxml_name(m_xml);
       if (!xname || strcasecmp("artifact", xname))
-	throw OU::Error("invalid metadata in binary/artifact file \"%s\": no <artifact>", name);
+	return OU::esprintf("invalid metadata in binary/artifact file \"%s\": no <artifact>",
+			    name);
       const char *uuid = ezxml_cattr(m_xml, "uuid");
       if (!uuid)
-	throw OU::Error("no uuid in binary/artifact file \"%s\"", name);
+	return OU::esprintf("no uuid in binary/artifact file \"%s\"", name);
+      m_mtime = mtime;
+      m_length = length;
       library().registerUuid(uuid, this);
       ocpiDebug("Artifact file %s has artifact metadata", name);
+      return NULL;
+    }
+    void Artifact::
+    getFileMetadata(const char *name) {
+      std::time_t mtime;
+      uint64_t length;
+      char *metadata = getMetadata(name, mtime, length);
+      if (!metadata)
+	throw OU::Error(20, "Cannot open or retrieve metadata from file \"%s\"", name);
+      const char *err = setFileMetadata(name, metadata, mtime, length);
+      if (err)
+	throw OU::Error("Error processing metadata from artifact file: %s: %s", name, err);
     }
 
     Implementation *Artifact::

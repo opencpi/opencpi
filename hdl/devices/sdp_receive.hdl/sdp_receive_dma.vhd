@@ -236,7 +236,7 @@ g1: for i in 0 to sdp_width-1 generate
   sdp_out.sdp.eop            <= btrue;
   sdp_out.sdp.valid          <= sending_flag or reading;
 g2: for i in 0 to sdp_width-1 generate
-    sdp_out_data(i) <= slv1(dword_size) when i = 0 else (others => '0');
+    sdp_out_data(i) <= slvn(1, dword_size) when i = 0 else (others => '0');
   end generate g2;
 
   --------------------------------------------------------------------------------
@@ -259,6 +259,8 @@ g2: for i in 0 to sdp_width-1 generate
         flags_to_send_r     <= (others => '0');
         rem_read_idx_r      <= (others => '0');
         lcl_response_addr_r <= (others => '0');
+        lcl_read_idx_r      <= (others => '0');
+        flags_to_send_r     <= (others => '0');
       elsif not operating then
         -- reset state that depends on properties
 --        rem_buffers_empty_r <= resize(rem_buffer_count, rem_buffers_empty_r'length);
@@ -273,8 +275,12 @@ g2: for i in 0 to sdp_width-1 generate
           faults_r(7) <= btrue;
         end if;
         -- Maintain remote flag addressing
+        -- Note remote flags are role-dependent:
+        --   when active message we are writing to flags per remote buffer
+        --   when active flow control we are writing to flags per local buffer
         if its(flag_accepted) then
-          if rem_buffer_idx_r = rem_last_buffer_idx then
+          if (role = activeflowcontrol_e and rem_buffer_idx_r = lcl_last_buffer_idx) or
+             (role = activemessage_e and rem_buffer_idx_r = rem_last_buffer_idx) then
             rem_buffer_idx_r <= (others => '0');
             rem_flag_addr_r  <= rem_flag_addr(rem_flag_addr_r'left+2 downto 2);
           else

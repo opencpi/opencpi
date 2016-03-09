@@ -39,7 +39,7 @@
 #include "OcpiOsMisc.h"
 #include "OcpiUuid.h"
 #include "OcpiUtilEzxml.h"
-#include "OcpiLibraryManager.h"
+#include "LibrarySimple.h"
 #include "HdlSimDriver.h"
 #include "HdlNetDriver.h"
 #include "HdlSimServer.h"
@@ -204,8 +204,8 @@ namespace OCPI {
 	OS::Socket *m_sdpSckt;         // Socket to simulator's SDP
 	char m_toSdpBuf[16 * 1024];
 	char m_fromSdpBuf[16 * 1024];
-	char *m_metadata;
-	ezxml_t m_xml;
+	//	char *m_metadata;
+	//	ezxml_t m_xml;
 	bool m_public;
 	// End local state for executable file transfer
 	Sim(std::string &simDir, std::string &script, const std::string &platform,
@@ -225,7 +225,7 @@ namespace OCPI {
 	    m_dump(dump), m_spinning(false), m_sleepUsecs(sleepUsecs), m_simTicks(simTicks),
 	    m_spinCount(spinCount), m_cumTicks(0), m_spinTimer(true), m_xferSrvr(NULL), m_xferSckt(NULL),
 	    m_xferSize(0), m_xferCount(0), m_xferDone(false), m_xfd(-1), m_sdpSrvr(NULL),
-	    m_sdpSckt(NULL), m_metadata(NULL), m_xml(NULL), m_public(isPublic) {
+	  m_sdpSckt(NULL), /*m_metadata(NULL), m_xml(NULL),*/ m_public(isPublic) {
 
 	  if (error.length())
 	    return;
@@ -280,10 +280,12 @@ namespace OCPI {
 	    m_clients.pop_front();
 	    delete s;
 	  }
+#if 0
 	  if (m_metadata)
 	    delete [] m_metadata;
 	  if (m_xml)
 	    ezxml_free(m_xml);
+#endif
 	}
 	const char *uuid() const {
 	  return m_textUUID;
@@ -396,6 +398,7 @@ namespace OCPI {
 	start(std::string &response, std::string &err) {
 	  response = "E";
 	  assert(!m_xferSrvr);
+#if 0
 	  try {
 	    std::time_t mtime;
 	    uint64_t length;
@@ -421,8 +424,12 @@ namespace OCPI {
 		       m_exec.c_str());
 	    return true;
 	  }
+#else
+	  OL::Artifact &art = *OL::Simple::getDriver().addArtifact(m_exec.c_str());
+#endif
 	  std::string platform;
-	  if ((e = OX::getRequiredString(m_xml, platform, "platform", "artifact"))) {
+	  const char *e;
+	  if ((e = OX::getRequiredString(art.xml(), platform, "platform", "artifact"))) {
 	    OU::format(err, "invalid metadata in binary/artifact file \"%s\": %s",
 		       m_exec.c_str(), e);
 	    return true;
@@ -435,7 +442,7 @@ namespace OCPI {
 	    return true;
 	  }
 	  std::string uuid;
-	  e = OX::getRequiredString(m_xml, uuid, "uuid", "artifact");
+	  e = OX::getRequiredString(art.xml(), uuid, "uuid", "artifact");
 	  if (e) {
 	    OU::format(err, "invalid metadata in binary/artifact file \"%s\": %s",
 		       m_exec.c_str(), e);

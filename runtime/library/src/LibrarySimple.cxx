@@ -18,10 +18,13 @@ namespace OCPI {
 
       // Our concrete artifact class
       class Artifact
-	: public OL::ArtifactBase<Library, Artifact>, OU::EzXml::Doc {
+	: public OL::ArtifactBase<Library, Artifact> {
 	friend class Library;
       public:
-	Artifact(Library &lib, const char *name, const OA::PValue *);
+	Artifact(Library &lib, const char *name, const OA::PValue *)
+	  : ArtifactBase<Library,Artifact>(lib, *this, name) {
+	  getFileMetadata(name);
+	}
 	~Artifact() {}
       };
 	  
@@ -57,11 +60,6 @@ namespace OCPI {
 	  return l->addArtifact(url, props);
 	}
       };
-      Artifact::
-      Artifact(Library &lib, const char *name, const OA::PValue *)
-	: ArtifactBase<Library,Artifact>(lib, *this, name) {
-	getFileMetaData(name);
-      }
       RegisterLibraryDriver<Driver> driver;
       OL::Driver &getDriver() { return OD::Singleton<Driver>::getSingleton(); }
     }

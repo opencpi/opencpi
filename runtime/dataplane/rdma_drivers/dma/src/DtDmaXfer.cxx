@@ -234,7 +234,7 @@ namespace OCPI {
 	  // A request to enable mapping to this bus address/size and return the physaddr
 	  if (ioctl(m_dmaFd, OCPI_CMD_REQUEST, &request))
 	    throw OU::Error("Can't establish remote DMA memory size %zu at 0x%" PRIx64
-			    "for DMA memory", (uint64_t)request.actual, ep.m_busAddr);
+			    "for DMA memory", (size_t)request.actual, ep.m_busAddr);
 	  ep.address = request.address;
 	  if (ep.m_holeOffset) {
 	    memset(&request, 0, sizeof(request));

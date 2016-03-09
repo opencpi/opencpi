@@ -67,15 +67,18 @@
        init(params);
      }
      ApplicationI::~ApplicationI() {
+       clear();
+     }
+     void ApplicationI::clear() {
        m_assembly--;
        delete [] m_instances;
        delete [] m_bookings;
        delete [] m_deployments;
        delete [] m_bestDeployments;
        delete [] m_properties;
-       delete [] m_global2used;
        delete [] m_usedContainers;
        delete [] m_containers;
+       delete [] m_global2used;
        if (m_containerApps) {
 	 for (unsigned n = 0; n < m_nContainers; n++)
 	   delete m_containerApps[n];
@@ -414,6 +417,7 @@
        }
      }
 
+#if 0
      // Find the value of a parameter for this port.  Return error.
      // "value" is out arg - NULL if not found.
      static const char *
@@ -430,27 +434,38 @@
        }
        return NULL;
      }
-
+#endif
      // Apply parameters to ports
      const char *ApplicationI::
-     finalizePorts(const OU::PValue *params) {
-       Instance *i = m_instances;
-       for (unsigned n = 0; n < m_nInstances; n++, i++) {
-	 const char *iname = m_assembly.instance(n).name().c_str();
-	 OU::Assembly::Port **ap = m_assembly.instance(n).m_assyPorts;
-	 unsigned nPorts;
-	 OU::Port *p = m_instances[n].m_impl->m_metadataImpl.ports(nPorts);
-	 const char *err;
-	 for (unsigned nn = 0; nn < nPorts; nn++, p++) {
-	   const char *pname = p->m_name.c_str();
-	   assert(ap[nn]);
-	   OU::PValueList &pvl = ap[nn]->m_parameters;
-	   if ((err = findPortValue(iname, pname, "xferrole", params, pvl)) ||
-	       (err = findPortValue(iname, pname, "buffercount", params, pvl)))
-	     return err;
-	 }
-       }
-       return NULL;
+     finalizePortParam(const OU::PValue *params, const char *pName) {
+      const char *assign;
+      for (unsigned n = 0; OU::findAssignNext(params, pName, NULL, assign, n); ) {
+	unsigned instn;
+	// assign now points to:  <instance>=<port>=<value>
+	const char *err, *iassign = assign;
+	if ((err = m_assembly.findInstanceForParam(pName, iassign, instn)))
+	  return err;
+	// iassign now points to:  <port>=<value>
+	const char *eq = strchr(iassign, '=');
+	if (!eq)
+	  return OU::esprintf("Parameter assignment for \"%s\", \"%s\" is invalid. "
+			  "Format is: <instance>=<parameter-value>", pName, assign);
+	
+	size_t len = eq - iassign;
+	unsigned nPorts;
+	OU::Port *p = m_instances[instn].m_impl->m_metadataImpl.ports(nPorts);
+	for (unsigned nn = 0; eq && nn < nPorts; nn++, p++)
+	  if (!strncasecmp(iassign, p->m_name.c_str(), len) && p->m_name.length() == len) {
+	    OU::Assembly::Port *assyPort = m_assembly.assyPort(instn, nn);
+	    assert(assyPort);
+	    assyPort->m_parameters.add(pName, eq + 1);
+	    eq = NULL;
+	  }
+	if (eq)
+	  return OU::esprintf("Port \"%.*s\" not found for instance in \"%s\" parameter assignment: %s",
+			      (int)len, iassign, pName, assign);
+      }
+      return NULL;
      }
      void ApplicationI::
      dumpDeployment(unsigned score, Deployment *deployments) {
@@ -654,74 +669,80 @@
      }
      void ApplicationI::
      init(const PValue *params) {
-       // In order from class definition except for instance-related
-       m_bookings = NULL;
-       m_properties = NULL;
-       m_nProperties = 0;
-       m_curMap = 0;
-       m_curContainers = 0;
-       m_allMap = 0;
-       m_global2used = new unsigned[OC::Manager::s_nContainers];
-       m_nContainers = 0;
-       m_usedContainers = new unsigned[OC::Manager::s_nContainers];
-       m_containers = NULL;    // allocated when we know how many we are using
-       m_containerApps = NULL; // ditto
-       m_doneWorker = NULL;
-       m_cMapPolicy = RoundRobin;
-       m_processors = 0;
-       m_currConn = OC::Manager::s_nContainers - 1;
-       m_launched = false;
-       m_deployments = NULL;
-       m_bestDeployments = NULL;
-       m_verbose = false;
-       m_dump = false;
-       m_dumpPlatforms = false;
-       OU::findBool(params, "verbose", m_verbose);
-       OU::findBool(params, "dump", m_dump);
-       OU::findBool(params, "dumpPlatforms", m_dumpPlatforms);
-       OU::findBool(params, "hex", m_hex);
-       // Initializations for externals may add instances to the assembly
-       initExternals(params);
-       // Now that we have added any extra instances for external connections, do
-       // instance-related initializations
-       m_nInstances = m_assembly.nInstances();
-       m_instances = new Instance[m_nInstances];
-       // Check that params that reference instances are valid.
-       const char *err;
-       if ((err = m_assembly.checkInstanceParams("container", params, false)))
-	 throw OU::Error("%s", err);
-       // This array is sized and initialized here since it is needed for property finalization
-       m_launchInstances.resize(m_nInstances);
-       // We are at the point where we need to either plan or import the deployment.
-       const char *dfile;
-       if (OU::findString(params, "deployment", dfile))
-	 importDeployment(dfile);
-       else
-	 planDeployment(params);
-       // All the implementation selection is done, so now do the final check of ports
-       // and properties since they can be implementation specific
-       if ((err = finalizePorts(params)))
-	 throw OU::Error("Port parameter error: %s", err);
-       finalizeProperties(params);
-       Instance *i = m_instances;
-       if (m_verbose) {
-	 fprintf(stderr, "Actual deployment is:\n");
-	 for (unsigned n = 0; n < m_nInstances; n++, i++) {
-	   const OL::Implementation &impl = *i->m_impl;
-	   OC::Container &c = OC::Container::nthContainer(m_usedContainers[i->m_container]);
-	   std::time_t bd = OS::FileSystem::lastModified(impl.m_artifact.name());
-	   char tbuf[30];
-	   ctime_r(&bd, tbuf);
-	   fprintf(stderr,
-		   " Instance %2u %s (spec %s) on %s container %s, using %s%s%s in %s dated %s", 
-		   n, m_assembly.instance(n).name().c_str(),
-		   m_assembly.instance(n).specName().c_str(),
-		   c.m_model.c_str(), c.name().c_str(),
-		   impl.m_metadataImpl.name().c_str(),
-		   impl.m_staticInstance ? "/" : "",
-		   impl.m_staticInstance ? ezxml_cattr(impl.m_staticInstance, "name") : "",
-		   impl.m_artifact.name().c_str(), tbuf);
+       try {
+	 // In order from class definition except for instance-related
+	 m_bookings = NULL;
+	 m_properties = NULL;
+	 m_nProperties = 0;
+	 m_curMap = 0;
+	 m_curContainers = 0;
+	 m_allMap = 0;
+	 m_global2used = new unsigned[OC::Manager::s_nContainers];
+	 m_nContainers = 0;
+	 m_usedContainers = new unsigned[OC::Manager::s_nContainers];
+	 m_containers = NULL;    // allocated when we know how many we are using
+	 m_containerApps = NULL; // ditto
+	 m_doneWorker = NULL;
+	 m_cMapPolicy = RoundRobin;
+	 m_processors = 0;
+	 m_currConn = OC::Manager::s_nContainers - 1;
+	 m_launched = false;
+	 m_deployments = NULL;
+	 m_bestDeployments = NULL;
+	 m_verbose = false;
+	 m_dump = false;
+	 m_dumpPlatforms = false;
+	 OU::findBool(params, "verbose", m_verbose);
+	 OU::findBool(params, "dump", m_dump);
+	 OU::findBool(params, "dumpPlatforms", m_dumpPlatforms);
+	 OU::findBool(params, "hex", m_hex);
+	 // Initializations for externals may add instances to the assembly
+	 initExternals(params);
+	 // Now that we have added any extra instances for external connections, do
+	 // instance-related initializations
+	 m_nInstances = m_assembly.nInstances();
+	 m_instances = new Instance[m_nInstances];
+	 // Check that params that reference instances are valid.
+	 const char *err;
+	 if ((err = m_assembly.checkInstanceParams("container", params, false)))
+	   throw OU::Error("%s", err);
+	 // This array is sized and initialized here since it is needed for property finalization
+	 m_launchInstances.resize(m_nInstances);
+	 // We are at the point where we need to either plan or import the deployment.
+	 const char *dfile;
+	 if (OU::findString(params, "deployment", dfile))
+	   importDeployment(dfile);
+	 else
+	   planDeployment(params);
+	 // All the implementation selection is done, so now do the final check of ports
+	 // and properties since they can be implementation specific
+	 if ((err = finalizePortParam(params, "buffercount")) ||
+	     (err = finalizePortParam(params, "xferrole")))
+	   throw OU::Error("Port parameter error: %s", err);
+	 finalizeProperties(params);
+	 Instance *i = m_instances;
+	 if (m_verbose) {
+	   fprintf(stderr, "Actual deployment is:\n");
+	   for (unsigned n = 0; n < m_nInstances; n++, i++) {
+	     const OL::Implementation &impl = *i->m_impl;
+	     OC::Container &c = OC::Container::nthContainer(m_usedContainers[i->m_container]);
+	     std::time_t bd = OS::FileSystem::lastModified(impl.m_artifact.name());
+	     char tbuf[30];
+	     ctime_r(&bd, tbuf);
+	     fprintf(stderr,
+		     " Instance %2u %s (spec %s) on %s container %s, using %s%s%s in %s dated %s", 
+		     n, m_assembly.instance(n).name().c_str(),
+		     m_assembly.instance(n).specName().c_str(),
+		     c.m_model.c_str(), c.name().c_str(),
+		     impl.m_metadataImpl.name().c_str(),
+		     impl.m_staticInstance ? "/" : "",
+		     impl.m_staticInstance ? ezxml_cattr(impl.m_staticInstance, "name") : "",
+		     impl.m_artifact.name().c_str(), tbuf);
+	   }
 	 }
+       } catch (...) {
+	 clear();
+	 throw;
        }
      }
      // Initialize our own database of connections from the OU::Assembly connections
