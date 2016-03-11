@@ -90,8 +90,8 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = $(CPIDIR)/adapt/os/cpios/interfaces \
-                         $(CPIDIR)/adapt/os/cpios/doc
+INPUT                  = $(CPIDIR)/os/interfaces \
+                         $(CPIDIR)/os/doc
 INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = *.c \
                          *.cc \

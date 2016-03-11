@@ -6,7 +6,7 @@ Requirements:
 * Source for your Linux Kernel
 * sudo
 
-OCPI_KERNEL_DIR can be set for where the linux kernel is to build the driver against.
+OCPI_TARGET_KERNEL_DIR can be set for where the linux kernel is to build the driver against.
 It is required for cross-compiling the driver
 Note that for cross-compiling the driver you need to set:
 OCPI_CROSS_BUILD_BIN_DIR and OCPI_CROSS_HOST and OCPI_TARGET_ARCH

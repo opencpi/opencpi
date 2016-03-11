@@ -496,7 +496,7 @@ request_memory(struct file *file, ocpi_request_t *request) {
       break;
     }
     // Try to make a kernel allocation and stick it in the list
-    // We can't use alloc_pages_exact for high mem in a 32 bit world   Ugh.
+    // can't use alloc_pages_exact for high mem in a 32 bit world
     {
       unsigned order = get_order(request->actual);
       struct page *kpages = alloc_pages(GFP_KERNEL | __GFP_HIGHMEM, order);

@@ -75,7 +75,7 @@ else
     $(info No OCPI_TARGET_KERNEL_DIR specified, so using: KERNELDIR=$(KERNELDIR))
   endif
 endif
-ocpi_release:=$(shell cat $(OCPI_TARGET_KERNEL_DIR)/ocpi-release)
+ocpi_release:=$(shell cat $(OCPI_TARGET_KERNEL_DIR)/ocpi-release 2>/dev/null)
 # The current directory is passed to sub-makes as argument
 PWD := $(shell pwd)
 
@@ -89,9 +89,12 @@ MyIncs?= \
          -I$(realpath $(MyDir)/../../interfaces/include)
 MyLib:=$(realpath $(OCPI_CDK_DIR)/lib/$(OCPI_TARGET_HOST))
 $(infox x:$(MyTargetDir) $(MyDir))
-ifeq ($(strip $(MyLib)),)
-  ifneq ($(MAKECMDGOALS),topclean)
+ifneq ($(MAKECMDGOALS),topclean)
+  ifeq ($(strip $(MyLib)),)
     $(error OpenCPI libraries must be built before the driver is built)
+  endif
+  ifeq ($(strip $(OCPI_TARGET_HOST)),)
+    $(error OCPI_TARGET_HOST not set. Have you built the OpenCPI libraries yet?)
   endif
 endif
 # This is what works with RHEL5
@@ -101,7 +104,7 @@ export KCPPFLAGS := $(MyIncs) -Wformat=2
 MODFILE=$(MyTargetDir)/$(MODNAME)$(if $(ocpi_release),-$(ocpi_release)).ko
 URULESFILE=99-$(MODNAME).rules
 MRULESFILE=mdev-$(MODNAME).rules
-JUNK=Module.markers Module.symvers .opencpi* opencpi.mod.* opencpi.o .tmp*
+TMP_FILES=Module.markers Module.symvers .opencpi* opencpi.mod.* opencpi.o .tmp* modules.order
 all:	installed
 
 $(MODFILE): opencpi.c $(shell echo $$(cd $(KERNELDIR); pwd -P))
@@ -109,13 +112,13 @@ $(MODFILE): opencpi.c $(shell echo $$(cd $(KERNELDIR); pwd -P))
 	$(and $(KERNELDIR),$(MAKE) -C $(KERNELDIR) M=$(PWD) modules)
 	$(AT)mkdir -p $(MyTargetDir)
 	$(AT)mv $(MODNAME).ko $(MODFILE)
-	$(AT)rm -rf	$(JUNK)
+	$(AT)rm -rf	$(TMP_FILES)
 
 .PHONY: installed modules modules_install load unload
 modules: $(MODFILE)
 
 installed: $(MODFILE) $(URULESFILE) $(MRULESFILE)
-	$(AT)echo Linux driver built, and available in $(MyLib)
+	$(AT)echo Linux driver built, and available in $(MyTargetDir)
 
 modules_install:
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules_install
@@ -130,7 +133,7 @@ unload:
 # This clean is target specific
 clean:	
 	$(and $(KERNELDIR),$(MAKE) -C $(KERNELDIR) M=$(PWD) clean)
-	rm -rf $(JUNK) $(MODFILE) $(MODFILE).unsigned modules.order
+	rm -rf $(TMP_FILES) $(MODFILE) $(MODFILE).unsigned modules.order
 ifneq ($(MyTargetDir),.)
 	rm -rf $(MyTargetDir)
 endif

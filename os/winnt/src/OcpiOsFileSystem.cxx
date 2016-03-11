@@ -523,7 +523,7 @@ OCPI::OS::FileSystem::cwd ()
   char buffer[1024];
 
   if (GetCurrentDirectory (1024, buffer) >= 1024) {
-    throw std::string ("wow, current directory is longer than 1024 chars");
+    throw std::string ("current directory is longer than 1024 chars");
   }
 
   return fromNativeName (buffer);

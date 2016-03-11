@@ -43,6 +43,8 @@
 #include <sys/sysctl.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <algorithm>
+#include <vector>
 #ifdef OCPI_OS_macos
 #include <arpa/inet.h>
 #include <net/ethernet.h>
@@ -409,7 +411,7 @@ namespace OCPI {
 	  struct timeval tv;
 	  tv.tv_sec = timeoutms/1000;
 	  tv.tv_usec = (timeoutms % 1000) * 1000;
-	  ocpiDebug("Setting socket timeout to %u ms", timeoutms);
+	  ocpiDebug("[Socket::receive (ether)] Setting socket timeout to %u ms", timeoutms);
 	  if (setsockopt(m_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) != 0) {
 	    setError(error, "setting receive timeout on socket");
 	    return false;
@@ -462,7 +464,7 @@ namespace OCPI {
 	mh.msg_control = &cmsg;
 	mh.msg_controllen = sizeof(cmsg);
 	ssize_t rlen;
-	do { // loop to filter our junk packets
+	do { // loop to filter out packets that arent used
 	  if ((rlen = recvmsg(m_fd, &mh, flags)) < 0 && errno == EINTR)
 	    continue;
 	  if (rlen <= 0)
@@ -528,13 +530,14 @@ namespace OCPI {
 	      break;
 	    }
 	}
-	if (indexp)
+	if (indexp) {
 	  if (ifindex)
 	    *indexp = ifindex;
 	  else {
 	    setError(error, "Cannot determine interface index");
 	    return false;
 	  }
+	}
 	ocpiDebug("Received packet length %zu address: sizeof %zu alen %u family %u index %u", 
 		  rlen, sizeof(sa), mh.msg_namelen, ((struct sockaddr *)&sa)->sa_family, ifindex);
 	return true;
@@ -678,8 +681,8 @@ namespace OCPI {
 	struct if_msghdr *ifm;
 #else
 #define NETIFDIR "/sys/class/net"
-	DIR *dfd;
-	long start;
+        typedef std::vector<std::pair<unsigned int, std::string> > ifnames_t;
+        ifnames_t *ifnames;
 #endif
       };
 
@@ -687,6 +690,11 @@ namespace OCPI {
 	: m_init(false), m_index(0) {
 	ocpiAssert((compileTimeSizeCheck<sizeof (m_opaque), sizeof (Opaque)> ()));
 	memset(m_opaque, 0, sizeof(m_opaque));
+#ifdef OCPI_OS_macos
+#else
+        Opaque *o = (Opaque *)m_opaque;
+        o->ifnames = new Opaque::ifnames_t();
+#endif
 	err.clear();
       }
       IfScanner::
@@ -695,8 +703,7 @@ namespace OCPI {
 #ifdef OCPI_OS_macos
 	delete [] o->buffer;
 #else
-	if (o->dfd)
-	  closedir(o->dfd);
+        delete o->ifnames;
 #endif
       }
 
@@ -707,7 +714,7 @@ namespace OCPI {
 #ifdef OCPI_OS_macos
 	o.ifm = (struct if_msghdr *)o.buffer;
 #else
-	rewinddir(o.dfd);
+        o.ifnames->clear();
 #endif
       }
       // Delayed initialization - done when we get to the real interfaces
@@ -746,20 +753,27 @@ namespace OCPI {
 	  else
 	    err = "sysctl failed after 10 retries";
 #else
-	if ((o.dfd = opendir(NETIFDIR)) == NULL)
-	  setError(err, "failed opening interface scanning socket (via %s", NETIFDIR);
-	if ((o.start = telldir(o.dfd)) < 0) {
-	  closedir(o.dfd);
-	  o.dfd = NULL;
-	  setError(err, "telldir failure on %s directory");
-	}
+        // Put together a list of possible interface names.
+        struct if_nameindex *if_ni, *i;
+        Opaque::ifnames_t &ifnames = *o.ifnames; // Alias
+        if_ni = if_nameindex();
+        if (if_ni == NULL) {
+            setError(err, "failed call to if_nameindex");
+        } else {
+          for (i = if_ni; !(i->if_index == 0 && i->if_name == NULL); ++i) {
+            ifnames.push_back(std::make_pair(i->if_index, i->if_name));
+            ocpiDebug("if_nameindex scan: %u = %s (%lu total)", i->if_index, i->if_name, ifnames.size());
+          }
+          if_freenameindex(if_ni);
+          std::sort(ifnames.begin(), ifnames.end());
+        }
 #endif
 	m_init = true;
 	return !err.empty();
       }
 
 #ifdef OCPI_OS_linux
-      // Return true if we got a valu
+      // Return true if we got a value from the named file (e.g. /sys/class/net/XXX/carrier)
       static bool
       getValue(std::string &file, const char *name, long *nresult, std::string *sresult = NULL) {
 	size_t s = file.size();
@@ -782,7 +796,8 @@ namespace OCPI {
 	  *nresult = strtol(buf, &end, 0);
 	  return *end == 0 || *end == '\n';
 	}
-	*sresult = buf;
+	if (sresult)
+          *sresult = buf;
 	return true;
       }
 #endif
@@ -882,7 +897,7 @@ namespace OCPI {
 	return false;
       }
 
-#endif
+#endif // MacOS Only
 
       bool IfScanner::
       getNext(Interface &i, std::string &err, const char *only) {
@@ -931,55 +946,57 @@ namespace OCPI {
 	  err = "the requested interface was not found";
 	return found;
 #else
-	// Somewhat ugly and unscalable.  We can use the driver if needed.
-	while (++m_index < 10) {
-	  seekdir(o.dfd, o.start);
-	  struct dirent ent, *entp;
-	  while (readdir_r(o.dfd, &ent, &entp) == 0 && entp)
-	    if (entp->d_name[0] != '.' && (!only || !strcmp(only, entp->d_name))) {
-	      std::string s(NETIFDIR), addr;
-	      s += '/';
-	      s += entp->d_name;
-	      long nval, carrier, index, flags;
-
-	      if (getValue(s, "type", &nval) && (nval == ARPHRD_ETHER || nval == ARPHRD_LOOPBACK) &&
-		  getValue(s, "address", NULL, &addr) &&
-		  getValue(s, "ifindex", &index) && (only || (unsigned)index == m_index) &&
-		  getValue(s, "carrier", &carrier) &&
-		  getValue(s, "flags", &flags)) {
-		if (nval == ARPHRD_ETHER)
-		  i.addr.setString(addr.c_str());
-		else {
-		  i.addr.set(0,0); // loop back is not an ether interface
-		  i.loopback = true;
-		}
-		if (!i.addr.hasError()) {
-		  int fd = socket(PF_INET, SOCK_DGRAM, 0);
-		  if (fd < 0) {
-		    err = "can't open socket for interface addresses";
-		    return false;
-		  }
-		  struct ifreq ifr;
-		  strncpy(ifr.ifr_name, entp->d_name, IFNAMSIZ);
-		  if (ioctl(fd, SIOCGIFADDR, &ifr) == 0) {
-		    i.ipAddr.set(0, ((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr);
-		    if (ioctl(fd, SIOCGIFBRDADDR, &ifr) == 0) {
-		      i.brdAddr.set(0, ((struct sockaddr_in *)&ifr.ifr_broadaddr)->sin_addr.s_addr);
-		      i.index = (unsigned)index;
-		      i.name = entp->d_name;
-		      i.up = (flags & IFF_UP) != 0;
-		      i.connected = carrier != 0;
-		      ocpiDebug("found ether interface '%s' which is %s, %s, at address %s",
-				entp->d_name, i.up ? "up" : "down",
-				i.connected ? "connected" : "disconnected", i.addr.pretty());
-		      ::close(fd);
-		      return true;
-		    }
-		  }
-		  ::close(fd);
-		}
+        Opaque::ifnames_t &ifnames = *o.ifnames; // Alias
+	while (m_index < ifnames.size()) {
+          const size_t v_index = m_index++;
+          if (!only or ifnames[v_index].second == only) {
+	    std::string s(NETIFDIR), addr;
+	    s += '/';
+	    s += ifnames[v_index].second;
+	    long nval, carrier, flags;
+	    if (getValue(s, "type", &nval) && (nval == ARPHRD_ETHER || nval == ARPHRD_LOOPBACK) &&
+		getValue(s, "address", NULL, &addr) &&
+		getValue(s, "carrier", &carrier) &&
+		getValue(s, "flags", &flags)) {
+	      if (nval == ARPHRD_ETHER) {
+		i.addr.setString(addr.c_str());
+	      } else {
+		i.addr.set(0,0); // loop back is not an ether interface
+		i.loopback = true;
 	      }
+	      if (!i.addr.hasError()) {
+		int fd = socket(PF_INET, SOCK_DGRAM, 0);
+		if (fd < 0) {
+		  err = "can't open socket for interface addresses";
+		  return false;
+		}
+		struct ifreq ifr;
+		strncpy(ifr.ifr_name, ifnames[v_index].second.c_str(), IFNAMSIZ);
+		if (ioctl(fd, SIOCGIFADDR, &ifr) == 0) {
+		  i.ipAddr.set(0, ((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr);
+		  if (ioctl(fd, SIOCGIFBRDADDR, &ifr) == 0) {
+		    i.brdAddr.set(0, ((struct sockaddr_in *)&ifr.ifr_broadaddr)->sin_addr.s_addr);
+		    i.name = ifnames[v_index].second;
+		    i.index = ifnames[v_index].first;
+		    i.up = (flags & IFF_UP) != 0;
+		    i.connected = carrier != 0;
+		    ocpiDebug("found ether interface '%s' which is %s, %s, at address %s",
+			      i.name.c_str(), i.up ? "up" : "down",
+			      i.connected ? "connected" : "disconnected", i.addr.pretty());
+		    ::close(fd);
+		    return true;
+		  }
+		} else {
+		  ocpiDebug("ioctl(%d, SIOCGIFADDR) call failed for '%s'", fd, ifr.ifr_name);
+		}
+		::close(fd);
+	      } else {
+		ocpiDebug("Unknown parsing error for '%s'", ifnames[v_index].second.c_str());
+	      }
+	    } else {
+	      ocpiDebug("Invalid type or failed parsing parameter file(s) for '%s'", s.c_str());
 	    }
+	  }
 	}
 	return false;
 #if 0 // old sudo-required way
