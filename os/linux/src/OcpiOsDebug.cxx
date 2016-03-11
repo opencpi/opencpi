@@ -110,7 +110,7 @@ namespace OCPI {
 	va_start(ap, fmt);
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	fprintf(stderr, "OCPI(%2d:%u.%03u): ", n, (unsigned)(tv.tv_sec%10), (unsigned)((tv.tv_usec+500)/1000));
+	fprintf(stderr, "OCPI(%2d:%u.%04u): ", n, (unsigned)(tv.tv_sec%1000), (unsigned)((tv.tv_usec+500)/1000));
 	vfprintf(stderr, fmt, ap);
 	va_end(ap);
 	if (fmt[strlen(fmt)-1] != '\n')

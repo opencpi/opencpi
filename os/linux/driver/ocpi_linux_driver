@@ -50,14 +50,21 @@ else
   fi
   if test -e $DIR/$MODNAME-$LABEL.ko; then
     MODFILE=$MODNAME-$LABEL.ko
-  else
-    MODFILE=$MODNAME.ko
+  fi
+  if test -d /opt/opencpi/driver/; then
+    # RPM-based install
+    DIR=/opt/opencpi/driver/$(uname -r)
   fi
   if test ! -e $DIR/$MODFILE; then
     echo Error: cannot find driver/file "$MODNAME*.ko" in $DIR
     exit 1
   fi
 fi
+
+if test -r /opt/opencpi/driver/$(uname -r)/${MODFILE}; then
+  DIR=/opt/opencpi/driver/$(uname -r)
+fi
+
 MODPATH=$DIR/$MODFILE
 RULESPATH=$DIR/$RULESFILE
 

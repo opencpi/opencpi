@@ -548,7 +548,7 @@ bool Dir::next(std::string &s, bool &isDir) throw(std::string) {
     if ((errnum = readdir_r(dfd, &entry, &result)))
       throw "Error reading diretory: " + OCPI::OS::Posix::getErrorMessage(errnum);
   while (result && entry.d_name[0] == '.' &&
-	 (!entry.d_name[1] || entry.d_name[1] == '.' && !entry.d_name[2]));
+	 (!entry.d_name[1] || (entry.d_name[1] == '.' && !entry.d_name[2])));
   if (result) {
     s = entry.d_name;
     // isDir = entry.d_type == DT_DIR; // for BSD...

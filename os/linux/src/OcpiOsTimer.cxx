@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -39,11 +38,19 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
+#include <stdio.h>
 #include <cstring>
 #include <cstdlib>
+#include <string>
+
+#ifdef OCPI_OS_linux
+#include <sched.h>
+#else
+#include <sys/time.h> // for gettimeofday
+typedef uint64_t cpu_set_t;
+#endif
 
 namespace OCPI {
   namespace OS {
@@ -56,7 +63,7 @@ Time Time::now() {
   t.set((uint32_t)tv.tv_sec, tv.tv_usec * 1000);
 #else
   struct timespec ts;
-  ocpiCheck(clock_gettime (CLOCK_MONOTONIC, &ts) == 0);
+  ocpiCheck(clock_gettime (CLOCK_MONOTONIC_RAW, &ts) == 0);
   t.set((uint32_t)ts.tv_sec, (uint32_t)ts.tv_nsec);
 #endif
   return t;
@@ -85,6 +92,9 @@ Time Time::now() {
  * identical for all.
  * ----------------------------------------------------------------------
  */
+#define cpuid(func,ax,bx,cx,dx)\
+        __asm__ __volatile__ ("cpuid":\
+        "=a" (ax), "=b" (bx), "=c" (cx), "=d" (dx) : "a" (func));
 
 namespace {
   class CounterFreq {
@@ -109,26 +119,27 @@ namespace {
 }
 
 CounterFreq::CounterFreq ()
-  : m_useHighResTimer (false)
+  : m_useHighResTimer(false), m_counterFreq(0)
 {
   int fd = open ("/proc/cpuinfo", O_RDONLY);
 
   if (fd < 0) {
     // Looks like /proc/cpuinfo doesn't exist
-    m_counterFreq = 0;
     return;
   }
-
-  // This ought to be enough
-  char tmp[2048];
+  char tmp[2048]; // Enough to read first core's info
+  memset(tmp, 0, 2048);
   ssize_t nread = read (fd, tmp, 2047);
   close (fd);
 
+  std::string valueread(tmp);
+
+  //std::cout << valueread << std::endl;
+
+
   if (nread < 0) {
-    m_counterFreq = 0;
     return;
   }
-
   tmp[nread] = 0;
 
   /*
@@ -206,57 +217,54 @@ CounterFreq::CounterFreq ()
 
 #if defined (__x86_64__) || defined (__i386__)
 
-  if ((ptr = std::strstr (tmp, "cpu cores"))) {
-    ptr += 9;
-    while (*ptr == ' ' || *ptr == '\t' || *ptr == ':') {
-      ptr++;
-    }
-    unsigned long ncores = strtoul (ptr, NULL, 10);
-    if (ncores != 1)
+  //parse cpuid for tsc_invariant
+  int ax,bx,cx,dx;
+  cpuid(0x80000007,ax,bx,cx,dx)
+  //if tsc_invariant not present return - present in edx 0x80000007 bit 8
+  if (!dx&0x8) {
       return;
   }
-  if ((ptr = std::strstr (tmp, "cpu MHz"))) {
-    unsigned long mhz, khz = 0;
-    char * endPtr;
+  size_t pointer;
+  // TODO: changed to find model name and TSC invariant clock speed extracted
+  if ((pointer = valueread.find("model name",0))) {
 
     // Position ptr at the beginning of the value
-    ptr += 7;
-    while (*ptr == ' ' || *ptr == '\t' || *ptr == ':') {
-      ptr++;
+    size_t start = valueread.find("@",pointer);
+
+    //go past the @ and the space
+    start+=2;
+    size_t end   = valueread.find("GHz",pointer);
+    float multi = 1e9;
+    if (end == std::string::npos){
+      end = valueread.find("MHz",pointer);
+      multi = 1e6;
+      if (end == std::string::npos)
+        return;
     }
 
-    mhz = strtoul (ptr, &endPtr, 10);
+    //find the substring that holds the speed bound by the @ sign and either
+    //GHz or MHz
+    std::string substring(valueread,start,end-(start));
 
-    if (*endPtr++ == '.') {
-      if (*endPtr >= '0' && *endPtr <= '9') {
-        khz = 100 * static_cast<int> (*endPtr++ - '0');
+    //convert the string to a float value
+    float speed=(float) std::atof(substring.c_str());
 
-        if (*endPtr >= '0' && *endPtr <= '9') {
-          khz += 10 * static_cast<int> (*endPtr++ - '0');
-
-          if (*endPtr >= '0' && *endPtr <= '9') {
-            khz += static_cast<int> (*endPtr - '0');
-          }
-        }
-      }
-    }
-
-    if (mhz) {
-      m_useHighResTimer = true;
-      m_counterFreq = 1000000ull * mhz + 1000ull * khz;
-      return;
-    }
+    //this is enables the high resolution timer
+    m_useHighResTimer = true;
+    //this sets the tsc_invariant clock speed
+    m_counterFreq = (uint64_t)(speed*multi);
+    return;
   }
 
 #endif
 
-  /*
+
+  /* this is only valid for the x86 cpu
    * Did not find anything useful in /proc/cpuinfo.  Tell the Timer
    * implementation to fall back to clock_gettime().
    */
 
   m_useHighResTimer = false;
-  m_counterFreq = 0;
 }
 
 inline
@@ -279,20 +287,37 @@ CounterFreq::operator uint64_t () const
  */
 
 #if defined ( __GNUC__ ) && defined ( _ARCH_PPC )
-
   #define TBU( t ) __asm volatile ( "mfspr %0,269" : "=r" ( t ) )
   #define TBL( t ) __asm volatile ( "mfspr %0,268" : "=r" ( t ) )
 
 #elif defined ( __x86_64__ ) || defined ( __i386__ )
 
-  #define TBU( t ) tb_upper_tmp = tb_upper;
-  #define TBL( t ) __asm__ __volatile__ ( "rdtsc" : "=a" ( tb_lower ), \
-                                                    "=d" ( tb_upper ) );
+  // unused in x86, but needed for loop constructs
+  #define TBU( t ) tb_upper_tmp = t;
+  // See Intel's "ia-32-ia-64-benchmark-code-execution-paper.pdf"
+  // How to Benchmark Code Execution Timers on Intel IA-32 and IA-64 Instruction Set
+  // Architectures White Paper
+  // or http://stackoverflow.com/a/14214220
+  #define TBL( t ) __asm__ __volatile__ ("CPUID\n\t" \
+                                         "RDTSC\n\t" \
+                                         "mov %%edx, %0\n\t" \
+                                         "mov %%eax, %1\n\t" \
+                                         : "=r"(tb_upper), "=r"(tb_lower) \
+                                         : \
+                                         : "%rax","%rbx","%rcx","%rdx");
+
+  #define eTBL( lo, hi, cpu ) __asm__ __volatile__ ("RDTSCP\n\t" \
+                                                    "mov %%edx, %0\n\t" \
+                                                    "mov %%eax, %1\n\t" \
+                                                    "mov %%ecx, %2\n\t" \
+                                                    "CPUID\n\t" \
+                                                    : "=r"(hi), "=r"(lo), "=r"(cpu) \
+                                                    : \
+                                                    : "%rax","%rbx","%rcx","%rdx");
 
 #elif defined (__vxWorks__) // vxWorks Diab and Green Hills inline assembler format
-
-#define TBU( t ) tm_move_from_tbr_upper ( t )
-#define TBL( t ) tm_move_from_tbr_lower ( t )
+  #define TBU( t ) tm_move_from_tbr_upper ( t )
+  #define TBL( t ) tm_move_from_tbr_lower ( t )
 
 void tm_move_from_tbr_upper ( unsigned int time_val );
 void tm_move_from_tbr_lower ( unsigned int time_val );
@@ -309,6 +334,8 @@ asm void tm_move_from_tbr_lower ( unsigned int time_val )
   mfspr time_val,268;
 }
 #else
+
+#warning Unknown platform for build. Cannot insert assembly code for timer. Various OS::Timer functions will abort if called.
 #define TBU( t ) abort()
 #define TBL( t ) abort()
 
@@ -339,38 +366,30 @@ namespace {
   };
 }
 
-#if 0
-inline
-TimerData &
-o2td (uint64_t * ptr)
-  throw ()
-{
-  return *reinterpret_cast<TimerData *> (ptr);
-}
-#endif
-
 Timer::
 Timer (bool start)
   throw ()
 {
+  ocpiAssert ((compileTimeSizeCheck<sizeof (m_opaque), sizeof (cpu_set_t)> ()));
+  ocpiAssert (sizeof (m_opaque) >= sizeof (cpu_set_t));
   init(start);
 }
 Timer::
-Timer(uint32_t seconds, uint32_t nanoseconds)  throw() 
+Timer(uint32_t seconds, uint32_t nanoseconds)  throw()
   : expiration(seconds, nanoseconds){
   init(true);
 }
 Timer::
-Timer(Time time)  throw() 
+Timer(Time time)  throw()
   : expiration(time) {
   init(time != 0);
 }
 void Timer::init(bool start) {
-  tti.accumulatedCounter = 0;
+  tti.accumulatedCounter = tti.upper = tti.lower = 0;
   tci.accumulatedTime.set(0);
-  if ((running = start)) {
+  if ((running = start)) { // Intentionally setting "running"
     if (useHighResTimer()) {
-      register unsigned int tb_lower, tb_upper = 0, tb_upper_tmp;
+      register volatile unsigned int tb_lower, tb_upper = 0, tb_upper_tmp;
 
       do {
         TBU( tb_upper );
@@ -378,12 +397,14 @@ void Timer::init(bool start) {
         TBU( tb_upper_tmp );
       }
       while ( tb_upper != tb_upper_tmp );
-      
+
       tti.lower = tb_lower;
       tti.upper = tb_upper;
     }
     else
+    {
       tci.startTime = Time::now();
+    }
   }
 }
 
@@ -397,12 +418,31 @@ void
 Timer::
 start ()
   throw ()
-{
+{ 
   ocpiAssert (!running);
+  
   running = true;
-
   if (useHighResTimer()) {
-    register unsigned int tb_lower, tb_upper = 0, tb_upper_tmp;
+#ifdef OCPI_OS_linux
+    cpu_set_t &org_mask = *(cpu_set_t *)m_opaque;
+    cpu_set_t mask;
+    const size_t len = sizeof(mask);
+
+    // Store off original affinity
+    pid_t pid_id = getpid();
+    if (sched_getaffinity(pid_id, len, &org_mask) < 0) {
+      perror("sched_getaffinity");
+      ocpiAssert (-1);
+    }
+
+    // Pin this process to the CPU we are currently on (AV-436)
+    const int cpu_id = sched_getcpu();
+    mask=org_mask;
+    CPU_ZERO(&mask);                     // clears the cpuset
+    CPU_SET(cpu_id, &mask);              // set only this CPU
+    sched_setaffinity(pid_id, len, &mask);
+#endif
+    register volatile unsigned int tb_lower, tb_upper = 0, tb_upper_tmp;
 
     do {
       TBU( tb_upper );
@@ -415,7 +455,9 @@ start ()
     tti.upper = tb_upper;
   }
   else
+  {
     tci.startTime = Time::now();
+  }
 }
 
 ElapsedTime
@@ -424,6 +466,13 @@ stop ()
   throw ()
 {
   ElapsedTime et = getElapsed();
+  if (useHighResTimer()) {
+#ifdef OCPI_OS_linux
+    // Reset CPU affinity
+    cpu_set_t &org_mask = *(cpu_set_t *)m_opaque;
+    sched_setaffinity(getpid(), sizeof(org_mask), &org_mask);
+#endif
+  }
   running = false;
   return et;
 }
@@ -433,12 +482,7 @@ Timer::
 reset ()
   throw ()
 {
-  running = false;
-
-  if (useHighResTimer())
-    tti.accumulatedCounter = 0;
-  else
-    tci.accumulatedTime.set(0);
+  init(false);
 }
 void
 Timer::
@@ -459,19 +503,24 @@ Timer::expired() {
 }
 ElapsedTime
 Timer::
-getElapsed () 
+getElapsed ()
   throw ()
 {
   if (running) {
     if (useHighResTimer()) {
-      register unsigned int tb_lower, tb_upper = 0, tb_upper_tmp;
-      
+      register volatile unsigned int tb_lower, tb_upper = 0, tb_upper_tmp, cpu;
+
+#if defined ( __x86_64__ ) || defined ( __i386__ )
+      (void) tb_upper_tmp; // Stop unused warnings
+      eTBL( tb_lower, tb_upper, cpu ); // Macro modifies tb_upper and tb_lower atomically
+#else
       do {
-	TBU( tb_upper );
-	TBL( tb_lower );
-	TBU( tb_upper_tmp );
-      }
+        TBU( tb_upper );
+        TBL( tb_lower );
+        TBU( tb_upper_tmp );
+        }
       while ( tb_upper != tb_upper_tmp );
+#endif
 
       unsigned long long t2 = (((unsigned long long) tb_upper)  << 32) | tb_lower;
       unsigned long long t1 = (((unsigned long long) tti.upper) << 32) | tti.lower;
@@ -481,11 +530,10 @@ getElapsed ()
       tti.lower = tb_lower;
       tti.upper = tb_upper;
       ocpiAssert (g_counterFreq != 0);
-      // FIXME: perhaps better accuracy deling with ocpi ticks directly
+      // FIXME: perhaps better accuracy dealing with ocpi ticks directly
       tci.accumulatedTime.set((uint32_t)(tti.accumulatedCounter / g_counterFreq),
-			      (uint32_t)(((tti.accumulatedCounter % g_counterFreq) *
-					  1000000000ull) / g_counterFreq));
-      
+                              (uint32_t)(((tti.accumulatedCounter % g_counterFreq) *
+                                          1000000000ull) / g_counterFreq));
     }
     else {
       Time stopTime = Time::now();
@@ -514,10 +562,10 @@ getValue (ElapsedTime & timer)
 
   if (useHighResTimer()) {
     ocpiAssert (g_counterFreq != 0);
-    // FIXME: perhaps better accuracy deling with ocpi ticks directly
+    // FIXME: perhaps better accuracy dealing with ocpi ticks directly
     timer.set((uint32_t)(tti.accumulatedCounter / g_counterFreq),
-	      (uint32_t)(((tti.accumulatedCounter % g_counterFreq) * 1000000000ull) /
-			 g_counterFreq));
+              (uint32_t)(((tti.accumulatedCounter % g_counterFreq) * 1000000000ull) /
+                         g_counterFreq));
   } else
     timer = tci.accumulatedTime;
 }
@@ -530,7 +578,7 @@ getPrecision (ElapsedTime & prec)
   if (useHighResTimer()) {
     ocpiAssert (g_counterFreq != 0);
 
-    
+
     Time::TimeVal r = (Time::ticksPerSecond + g_counterFreq/2)/g_counterFreq;
     prec.set(r ? r : 1);
   } else {

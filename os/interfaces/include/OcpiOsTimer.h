@@ -39,12 +39,13 @@
 #define OCPI_OS_TIMER_H__
 
 #include <OcpiOsDataTypes.h>
-
 /**
  * \file
  *
  * \brief Measure and accumulate elapsed wall clock time.
  * Revision History:
+ *     12/09/2015 - Added support for locking core execution of timer
+ *                  to a single core when using highpercision option
  *
  *     06/24/2009 - Frank Pilhofer
  *                  Bugfix in ElapsedTime operator> and operator<.
@@ -135,6 +136,7 @@ namespace OCPI {
 	
       bool running;
       void init(bool start);
+      uint64_t m_opaque[16];
     public:
       /**
        * Constructor.
@@ -239,6 +241,7 @@ namespace OCPI {
 
       static void getPrecision (ElapsedTime & prec)
         throw ();
+  
     };
 
 #if 0
