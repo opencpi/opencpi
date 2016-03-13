@@ -116,13 +116,23 @@ namespace OCPI {
       : PortData(metaData, NULL), m_lastInBuffer(NULL), m_lastOutBuffer(NULL),
 	m_dtLastBuffer(*this, NULL, 0), m_dtPort(NULL), m_allocation(NULL), m_bufferStride(0),
 	m_next2write(NULL), m_next2put(NULL), m_next2read(NULL), m_next2release(NULL),
-	m_forward(NULL), m_nRead(0), m_nWritten(0), myDesc(getData().data.desc),
+	m_forward(NULL), m_backward(NULL), m_nRead(0), m_nWritten(0), myDesc(getData().data.desc),
 	m_metaPort(metaData), m_container(c) {
       applyPortParams(params);
     }
 
     BasicPort::
     ~BasicPort(){
+      OU::SelfAutoMutex guard(this);
+      if (m_backward) {
+	// If we are being forwarded-to, we need to break this chain, while
+	// the other side is not in the middle of forwarding to us.
+	OU::SelfAutoMutex guard(m_backward);
+	m_backward->m_forward = NULL;
+      } else if (m_forward) {
+	OU::SelfAutoMutex guard(m_forward);
+	m_forward->m_backward = NULL;
+      }
       if (m_dtPort)
 	m_dtPort->reset();
       if (m_allocation && m_allocator == this)
@@ -534,7 +544,8 @@ namespace OCPI {
 	return NULL;
       }
       size_t length;
-      if ((m_dtLastBuffer.m_dtBuffer =
+      if (m_dtPort &&
+	  (m_dtLastBuffer.m_dtBuffer =
 	   m_dtPort->getNextEmptyOutputBuffer(m_dtLastBuffer.m_dtData, length))) {
 	m_dtLastBuffer.m_hdr.m_length = OCPI_UTRUNCATE(uint32_t, length);	
 	return &m_dtLastBuffer;
@@ -623,7 +634,7 @@ namespace OCPI {
 	m_port.m_nWritten++;
 	assert(this == m_port.m_next2put);
 	m_port.m_next2put = m_next;
-      } else {
+      } else if (m_port.m_dtPort) {
 	ocpiAssert(m_dtBuffer);
 	m_port.m_dtPort->sendOutputBuffer(m_dtBuffer, m_hdr.m_length, m_hdr.m_opCode);
 	m_dtBuffer = NULL;
@@ -680,7 +691,7 @@ namespace OCPI {
 	b.m_zcHost = m_next2write;
 	(m_next2write->m_zcFront ? m_next2write->m_zcBack->m_zcNext : m_next2write->m_zcFront) =
 	  m_next2write->m_zcBack = &b;
-      } else if (b.m_dtBuffer)
+      } else if (m_dtPort && b.m_dtBuffer)
 	m_dtPort->sendZcopyInputBuffer(*b.m_dtBuffer,
 				       b.m_hdr.m_length, b.m_hdr.m_opCode, b.m_hdr.m_eof);
       else
@@ -734,12 +745,13 @@ namespace OCPI {
 	}
 	return NULL;
       }
-      m_dtLastBuffer.m_hdr.m_eof = false;
       size_t length;
-      if ((m_dtLastBuffer.m_dtBuffer =
+      if (m_dtPort &&
+	  (m_dtLastBuffer.m_dtBuffer =
 	   m_dtPort->getNextFullInputBuffer(m_dtLastBuffer.m_dtData, length,
 					    m_dtLastBuffer.m_hdr.m_opCode))) {
 	m_dtLastBuffer.m_hdr.m_length = OCPI_UTRUNCATE(uint32_t, length);
+	m_dtLastBuffer.m_hdr.m_eof = false;
 	return &m_dtLastBuffer;
       }
       return NULL;
@@ -768,7 +780,7 @@ namespace OCPI {
 	m_nRead++;
 	m_next2release = b->m_next;
 	ocpiDebug("Release on %p of %p", this, b);
-      } else {
+      } else if (m_dtPort) {
 	b = &m_dtLastBuffer;
 	assert(m_lastInBuffer == b);
 	m_dtPort->releaseInputBuffer(b->m_dtBuffer);
@@ -880,6 +892,7 @@ namespace OCPI {
 
     void BasicPort::
     forward2shim(BasicPort &shim) {
+      shim.m_backward = this;
       m_forward = &shim;
       m_bufferSize = shim.m_bufferSize;
     }

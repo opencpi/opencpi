@@ -164,7 +164,8 @@ namespace OCPI {
       BasicPort *m_allocator;
       // end shim mode
     protected:
-      BasicPort *m_forward; // if set, forward worker-side to this other port
+      BasicPort *m_forward;  // if set, forward worker-side to this other port
+      BasicPort *m_backward; // if set, other is forwarded to here
       size_t m_nRead, m_nWritten;
       OCPI::RDT::Desc_t &myDesc; // convenience
       const OCPI::Util::Port &m_metaPort;

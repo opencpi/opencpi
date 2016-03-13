@@ -410,6 +410,7 @@ namespace OCPI {
     // The callback to do bridge port processing on a local port.
     void LocalPort::
     runBridge() {
+      OU::SelfAutoMutex guard(this);
       // Wait for all bridge connections to be made to this local port.
       if (m_connectedBridgePorts != m_bridgePorts.size())
 	return;
