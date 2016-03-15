@@ -255,6 +255,7 @@ main(int /*argc*/, const char **argv) {
 
     if (!remote)
       OR::g_suppressRemoteDiscovery = true;
+    (void)OA::ContainerManager::get(0); // force config
     if (servers) {
       const char *err;
       if ((err = OU::parseList(servers, doServer))) {
@@ -277,7 +278,6 @@ main(int /*argc*/, const char **argv) {
 	OA::ContainerManager::find("rcc", name.c_str());
       }
     if (containers) {
-      (void)OA::ContainerManager::get(0); // force config
       printf("Available containers:\n"
 	     " #  Model Platform       OS     OS Version  Arch     Name\n");
       for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)
