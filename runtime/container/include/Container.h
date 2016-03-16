@@ -163,6 +163,8 @@ namespace OCPI {
       inline OCPI::DataTransport::Transport &getTransport() { return m_transport; }
       void registerBridgedPort(LocalPort &p);
       void unregisterBridgedPort(LocalPort &p);
+      void addTransport(const char *name, const char *id, OCPI::RDT::PortRole roleIn,
+			OCPI::RDT::PortRole roleOut, uint32_t inOptions, uint32_t outOptions);
       const Transports &transports() const { return m_transports; }
       // Return false if internal connection was not made
       virtual bool connectInside(BasicPort &/*in*/, BasicPort &/*out*/) { return false; }

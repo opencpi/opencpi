@@ -126,6 +126,7 @@ DT::EndPoint &Transport::
 getLocalCompatibleEndpoint(const char *remote, bool /* exclusive */) {
   if (!remote || !remote[0])
     remote = getenv("OCPI_DEFAULT_TRANSPORT");
+  ocpiAssert(remote);
   if (!remote)
     remote = "ocpi-smb-pio";
   DT::XferFactory* tfactory = DT::XferFactoryManager::getFactoryManager().find(remote);

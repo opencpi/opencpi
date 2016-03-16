@@ -34,6 +34,7 @@
 #include <signal.h>
 #include "OcpiOsMisc.h"
 #include "OcpiUtilCppMacros.h"
+#include "DtTransferInternal.h"
 #include "ContainerManager.h"
 #include "ContainerLauncher.h"
 #include "Container.h"
@@ -42,6 +43,8 @@ namespace OA = OCPI::API;
 namespace OU = OCPI::Util;
 namespace OS = OCPI::OS;
 namespace OL = OCPI::Library;
+namespace OR = OCPI::RDT;
+namespace DT = DataTransfer;
 
 namespace OCPI {
   namespace Container {
@@ -280,6 +283,22 @@ namespace OCPI {
       if (!Manager::s_localLauncher)
 	Manager::s_localLauncher = new LocalLauncher();
       return *Manager::s_localLauncher;
+    }
+    void Container::
+    addTransport(const char *name, const char *id, OR::PortRole roleIn,  OR::PortRole roleOut,
+		 uint32_t inOptions, uint32_t outOptions) {
+      if (DT::XferFactoryManager::getFactoryManager().find(name)) {
+	Transport t;
+	t.transport = name;
+	t.id = id;
+	t.roleIn = roleIn;
+	t.roleOut = roleOut;
+	t.optionsIn = inOptions;
+	t.optionsOut = outOptions;
+	m_transports.push_back(t);
+      } else
+	ocpiInfo("Transport %s not supported in this process.  Not loaded/spec'd in system.xml?",
+		 name);
     }
   }
   namespace API {

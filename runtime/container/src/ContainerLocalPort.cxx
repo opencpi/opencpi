@@ -274,11 +274,11 @@ namespace OCPI {
     void LocalPort::
     setupBridging(Launcher::Connection &c) {
       LocalPort *other = (isProvider() ? c.m_out : c.m_in).m_port;
-      if (isInProcess()) {
-	assert(other);
+      //      if (isInProcess()) {
+      //	assert(other);
 	becomeShim(NULL);    // skinny set of buffers and flags between codec and worker
-      } else
-	insertExternal(c);     // insert external port between codec and worker port
+	//      } else
+	//	insertExternal(c);     // insert external port between codec and worker port
       assert(other || (isProvider() ? c.m_out : c.m_in).m_metaPort);
       const OU::Port &otherMeta =
 	other ? other->m_metaPort : *(isProvider() ? c.m_out : c.m_in).m_metaPort,

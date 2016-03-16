@@ -27,5 +27,13 @@ ALLINC += $(OCPIOS_EXPORTS) $(UTIL_EXPORTS) $(CONTAINER_EXPORTS) $(LIBRARY_EXPOR
 
 ALLLIBS += $(LIBRARY_LIBS) $(UTIL_LIBS) $(OCPIOS_LIBS) $(CONTAINER_LIBS)
 
+# this is what we do with driver facilities
 $(eval $(ForceDynamic))
+
+# these are global symbols that are accessed by the driver
+ifeq ($(OCPI_TARGET_OS),macos)
+  SHARED += -Xlinker -U -Xlinker __ZN4OCPI6Remote13g_probeServerE \
+            -Xlinker -U -Xlinker __ZN4OCPI6Remote25g_suppressRemoteDiscoveryE
+endif
+
 #SHARED=$(SHARED_ALLOW_UNDEFINED)

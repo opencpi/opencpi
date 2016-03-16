@@ -804,6 +804,23 @@ namespace OCPI {
 	p.m_launcher = &p.m_container->launcher();
     }
 
+    static void
+    setLaunchTransport(OC::Launcher::Connection &lc, const OU::PValue *inParams,
+		       const OU::PValue *outParams, const OU::PValue *cParams) {
+      // Now finalize the transport selection
+      // FIXME: cache results for same inputs
+      // Check for collocated ports
+      if (lc.m_in.m_container && lc.m_out.m_container &&
+	  lc.m_in.m_container != lc.m_out.m_container &&
+	  (!lc.m_in.m_container->portsInProcess() ||
+	   !lc.m_out.m_container->portsInProcess())) {
+	OC::BasicPort::
+	  determineTransport(lc.m_in.m_container->transports(),
+			     lc.m_out.m_container->transports(),
+			     inParams, outParams, cParams, lc.m_transport);
+	assert(lc.m_transport.transport.length());
+      }
+    }
     // Initialize the launcher database of connections from the OU::Assembly connections
     void ApplicationI::
     initLaunchConnections() {
@@ -893,19 +910,9 @@ namespace OCPI {
 			  aIn ? aIn->m_parameters.list() : NULL, mIn, e, inScale, nIn);
 	    setLaunchPort(lc->m_out, pOut, connParams, pOut->m_name,
 			  aOut ? aOut->m_parameters.list() : NULL, mOut, e, outScale, nOut);
-	    // Now finalize the transport selection
-	    // FIXME: cache results for same inputs
-	    // Check for collocated ports
-	    if (lc->m_in.m_container && lc->m_out.m_container &&
-		lc->m_in.m_container != lc->m_out.m_container &&
-		(!lc->m_in.m_container->portsInProcess() ||
-		 !lc->m_out.m_container->portsInProcess()))
-	      OC::BasicPort::
-		determineTransport(lc->m_in.m_container->transports(),
-				   lc->m_out.m_container->transports(),
-				   aIn ? (const OU::PValue *)aIn->m_parameters : eParams,
-				   aOut ? (const OU::PValue *)aOut->m_parameters : eParams,
-				   ci->m_parameters, lc->m_transport);
+	    setLaunchTransport(*lc, aIn ? (const OU::PValue *)aIn->m_parameters : eParams,
+			       aOut ? (const OU::PValue *)aOut->m_parameters : eParams,
+			       ci->m_parameters);
 	  }
 	}
       }
@@ -928,7 +935,9 @@ namespace OCPI {
 		  lc->m_bufferSize = bufferSize;
 		  setLaunchPort(lc->m_in, p, NULL, p->m_name, NULL, mIn, NULL, scale, nIn);
 		  setLaunchPort(lc->m_out, p+1, NULL, (p+1)->m_name, NULL, mOut, NULL, scale, nOut);
-		  ocpiDebug("Internal connection on %s/%s-%s %u/%u",
+
+		  setLaunchTransport(*lc, NULL, NULL, NULL);
+		  ocpiDebug("Internal connection %p on %s/%s-%s %u/%u", lc, 
 			    firstImpl.name().c_str(), p->name().c_str(), (p+1)->name().c_str(),
 			    nIn, nOut);
 		}	    
@@ -944,7 +953,7 @@ namespace OCPI {
     initLaunchMembers() {
       Instance *i = m_instances;
       unsigned nMembers = 0;
-      for (unsigned n = 0; n < m_nInstances; n++, nMembers += i->m_bestDeployment.m_scale, i++)
+      for (size_t n = 0; n < m_nInstances; n++, nMembers += i->m_bestDeployment.m_scale, i++)
 	i->m_firstMember = nMembers;
       m_launchMembers.resize(nMembers);
       i = m_instances;

@@ -107,7 +107,7 @@ work(Launcher::Members &, Launcher::Connections &connections) {
 Launcher::Member::
 Member()
   : m_containerApp(NULL), m_container(NULL), m_impl(NULL), m_hasMaster(false),
-    m_doneInstance(false), m_slave(NULL), m_worker(NULL), m_member(0) {
+    m_doneInstance(false), m_slave(NULL), m_worker(NULL), m_member(0), m_crew(NULL) {
 }
 Launcher::Crew::
 Crew()
@@ -115,8 +115,9 @@ Crew()
 }
 Launcher::Port::
 Port()
-  : m_launcher(NULL), m_containerApp(NULL), m_member(NULL), m_port(NULL), m_name(NULL),
-    m_metaPort(NULL), m_scale(1), m_index(0), m_url(NULL), m_started(false), m_done(false) {
+  : m_launcher(NULL), m_container(NULL), m_containerApp(NULL), m_member(NULL), m_port(NULL),
+    m_name(NULL), m_metaPort(NULL), m_scale(1), m_index(0), m_url(NULL), m_started(false),
+    m_done(false) {
 }
 
 Launcher::Connection::
