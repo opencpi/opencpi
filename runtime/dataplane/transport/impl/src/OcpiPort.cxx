@@ -202,6 +202,7 @@ OCPI::DataTransport::Port::Port( PortMetaData* data, PortSet* ps )
     m_buffers(new Buffer*[m_bufferCount]),
     m_zCopyBufferQ(0)
 {
+  assert(m_bufferCount <= MAX_BUFFERS);
   ocpiDebug("In OCPI::DataTransport::Port::Port()");
   memset(m_buffers, 0, sizeof(Buffer*) * m_bufferCount);
   m_data->rank = ps->getPortCount();
@@ -1697,4 +1698,10 @@ sendOutputBuffer( BufferUserFacet* buf, size_t length, uint8_t opcode, bool /*en
     c->queTransfer( b );
   }
 
+}
+OCPI::RDT::Descriptors::Descriptors()
+  : type(0), // this is illegal
+    role(NoRole),
+    options(0) {
+  memset(&desc, 0, sizeof(desc));
 }

@@ -267,9 +267,12 @@ namespace OCPI {
       return *Manager::s_containers[n];
     }
     Container &Container::baseContainer() {
-      Container &c = Container::nthContainer(0);
-      assert(!strncmp("rcc", c.name().c_str(), 3));
-      return c;
+      for (unsigned i = 0; i <= Manager::s_maxContainer; i++) {
+	Container &c = Container::nthContainer(i);
+	if (!strncmp("rcc", c.name().c_str(), 3))
+	  return c;
+      }
+      throw OU::Error("No RCC container found when looking for the base container");
     }
     void Container::registerBridgedPort(LocalPort &p) {
       OU::SelfAutoMutex guard (this);
@@ -280,9 +283,7 @@ namespace OCPI {
       m_bridgedPorts.erase(&p);
     }
     Launcher &Container::launcher() const {
-      if (!Manager::s_localLauncher)
-	Manager::s_localLauncher = new LocalLauncher();
-      return *Manager::s_localLauncher;
+      return LocalLauncher::getSingleton();
     }
     void Container::
     addTransport(const char *name, const char *id, OR::PortRole roleIn,  OR::PortRole roleOut,

@@ -157,6 +157,13 @@ namespace OCPI {
 	p.m_launcher = m_local;
 	p.m_member = &m_members[member];
       }
+      // note: this info is in the in/out element on launch, but in the connection element for
+      // updates
+      const char *info = ezxml_cattr(px, "ipi");
+      if (!info)
+	info = ezxml_cattr(px, "iui");
+      if (info)
+	OU::decodeDescriptor(info, p.m_initial);
       ezxml_t x;
       if ((x = ezxml_cchild(px, "params")) && (err = p.m_params.addXml(x)))
 	return err;
@@ -190,15 +197,20 @@ namespace OCPI {
       c.m_transport.transport = ezxml_cattr(cx, "transport");
       c.m_transport.id = ezxml_cattr(cx, "id");
       const char *err;
-      size_t roleIn, roleOut;
+      size_t roleIn, roleOut, optionsIn, optionsOut;
+      
       if ((err = OX::getNumber(cx, "roleIn", &roleIn, NULL, 0)) ||
 	  (err = OX::getNumber(cx, "roleOut", &roleOut, NULL, 0)) ||
+	  (err = OX::getNumber(cx, "optionsIn", &optionsIn, NULL, 0)) ||
+	  (err = OX::getNumber(cx, "optionsOut", &optionsOut, NULL, 0)) ||
 	  (err = OX::getNumber(cx, "bufferSize", &c.m_bufferSize, NULL, 0)) ||
 	  (err = doSide(cx, c.m_in, "in")) ||
 	  (err = doSide(cx, c.m_out, "out")))
 	return OU::eformat(error, "Error processing connection values for launch: %s", err);
       c.m_transport.roleIn = OCPI_UTRUNCATE(OR::PortRole, roleIn);
       c.m_transport.roleOut = OCPI_UTRUNCATE(OR::PortRole, roleOut);
+      c.m_transport.optionsIn = OCPI_UTRUNCATE(uint32_t, optionsIn);
+      c.m_transport.optionsOut = OCPI_UTRUNCATE(uint32_t, optionsOut);
       updateConnection(c, cx);
 #if 0
       ezxml_t px;
@@ -318,12 +330,14 @@ namespace OCPI {
 	  OU::formatAdd(m_response, "  <connection id='%u'", n);
 	  OU::encodeDescriptor("ipi", c->m_in.m_initial, m_response);
 	  m_response += "/>\n";
+	  c->m_in.m_initial.clear();
 	}
-	// Output ports generally have no initial info here, but they may at some point
+	// Output ports may have initial info if they received IPI in this launch.
 	if (c->m_out.m_launcher == m_local && c->m_out.m_initial.length()) {
 	  OU::formatAdd(m_response, "  <connection id='%u'", n);
 	  OU::encodeDescriptor("iui", c->m_out.m_initial, m_response);
 	  m_response += "/>\n";
+	  c->m_out.m_initial.clear();
 	}
       }
       return OX::sendXml(fd(), m_response, "responding from server after initial launch", error);
@@ -361,7 +375,7 @@ namespace OCPI {
       // 1. If we were downloading, then this "update" is just doing the real launch
       ocpiDebug("Launch update request.  %s", m_downloaded ? "We downloaded" : "We had no downloading to do");
       if (m_downloaded) {
-	m_downloaded = true;
+	m_downloaded = false;
 	return doLaunch(error);
       }
       // 2. We take any connection updates from the wire, and prepare then

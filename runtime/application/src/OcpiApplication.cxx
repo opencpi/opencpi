@@ -104,6 +104,12 @@ namespace OCPI {
     void ApplicationI::
     policyMap(Instance *i, CMap &bestMap)
     {
+      // Proxies can only operate in the base container.
+      // FIXME:  allow proxies to be in any container collocate with the base container.
+      if (i->m_bestDeployment.m_impls[0]->m_metadataImpl.slave().length()) {
+	i->m_usedContainer = getUsedContainer(OC::Container::baseContainer().ordinal());
+	return;
+      }
       // bestMap is bitmap of best available containers that the implementation can be mapped to
       // allMap is the bitmap of all suitable containers for the implementation
       switch ( m_cMapPolicy ) {
@@ -952,7 +958,7 @@ namespace OCPI {
     void ApplicationI::
     initLaunchMembers() {
       Instance *i = m_instances;
-      unsigned nMembers = 0;
+      size_t nMembers = 0;
       for (size_t n = 0; n < m_nInstances; n++, nMembers += i->m_bestDeployment.m_scale, i++)
 	i->m_firstMember = nMembers;
       m_launchMembers.resize(nMembers);

@@ -103,8 +103,6 @@ namespace OCPI {
 
     BridgePort::
     ~BridgePort() {
-      if (m_dtPort)
-	m_dtPort->reset();
     }
   }
 

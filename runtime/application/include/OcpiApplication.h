@@ -94,7 +94,7 @@ namespace OCPI {
 	// This array is of indices in the usedcontainer array, not global indices
 	unsigned m_usedContainer;       // when scale==1 this is it
 	unsigned *m_usedContainers;     // container for each crew member
-	unsigned m_firstMember;         // index of first member in launch members
+	size_t m_firstMember;           // index of first member in launch members
 	void collectCandidate(OCPI::Library::Candidate &c, unsigned n);
 	void finalizePortParam(OU::Assembly::Instance &ui, const OCPI::Util::PValue *params,
 			       const char *param);

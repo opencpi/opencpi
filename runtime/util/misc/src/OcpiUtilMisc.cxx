@@ -688,8 +688,8 @@ encodeDescriptor(const char *iname, const std::string &s, std::string &out) {
   Unparser up;
   const char *cp = s.data();
   for (size_t n = s.length(); n; n--, cp++) {
-    if (*cp == '\'')
-      out += "&apos;";
+    if (*cp == '\"')
+      out += "&quot;";
     else if (*cp == '&')
       out += "&amp;";
     else

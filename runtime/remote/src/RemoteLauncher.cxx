@@ -137,7 +137,7 @@ emitSide(const Launcher::Members &members, Launcher::Port &p, bool input) {
     OU::formatAdd(m_request, " url='%s'", p.m_url);
   if (p.m_initial.length()) {
     OU::encodeDescriptor(input ? "ipi" : "iui", p.m_initial, m_request);
-     p.m_initial.clear();
+    p.m_initial.clear();
   }
   if (p.m_params.list() || !p.m_url && p.m_launcher != this) {
     m_request += ">\n";
@@ -157,10 +157,12 @@ emitSide(const Launcher::Members &members, Launcher::Port &p, bool input) {
 void Launcher::
 emitConnection(const Launcher::Members &members, Launcher::Connection &c) { 
   OU::formatAdd(m_request,
-		"  <connection transport='%s' id='%s' roleIn='%u' roleOut='%u' "
-		"buffersize='%zu'>\n",
+		"  <connection transport='%s' id='%s' roleIn='%u' roleOut='%u'"
+		" optionsIn='%u' optionsOut='%u' buffersize='%zu'>\n",
 		c.m_transport.transport.c_str(), c.m_transport.id.c_str(),
-		c.m_transport.roleIn, c.m_transport.roleOut, c.m_bufferSize);
+		c.m_transport.roleIn, c.m_transport.roleOut,
+		c.m_transport.optionsIn, c.m_transport.optionsOut,
+		c.m_bufferSize);
   emitSide(members, c.m_in, true);
   emitSide(members, c.m_out, false);
   m_request += "  </connection>\n";
@@ -299,7 +301,8 @@ launch(Launcher::Members &instances, Launcher::Connections &connections) {
       if (crewi == crews.end())  {
 	emitCrew(c);
 	crews[&c] = crewN = nCrews++;
-      }
+      } else
+	crewN = (*crewi).second;
       emitMember(i->m_name.c_str(), contN, artN, crewN, *i,
 		 i->m_slave && &i->m_slave->m_container->launcher() == this ?
 		 m_instanceMap[i->m_slave - &instances[0]] : -1);

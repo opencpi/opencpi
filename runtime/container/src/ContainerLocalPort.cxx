@@ -300,9 +300,10 @@ namespace OCPI {
       LocalPort *other = (isProvider() ? c.m_out : c.m_in).m_port;
       if (m_bridgePorts.size()) {
 	size_t otherOrdinal = (isProvider() ? c.m_out : c.m_in).m_index;
-	if (otherOrdinal == 0)
+	if (m_connectedBridgePorts == 0)
 	  // When we are connecting the first "other", we do some one-time initialization.
 	  setupBridging(c);
+	assert(!m_bridgePorts[otherOrdinal]);
 	BridgePort &bp = *(m_bridgePorts[otherOrdinal] =
 			   new BridgePort(*this, (isProvider() ? c.m_in : c.m_out).m_params));
 	// we can't imply recurse here without creating a dummy connection.
@@ -314,11 +315,11 @@ namespace OCPI {
 	  BridgePort *otherBridge =
 	    other->m_bridgePorts[(isProvider() ? c.m_in : c.m_out).m_index];
 	  if (otherBridge)
-	    bp.connectInProcess(*otherBridge);
+	    bp.connectInProcess(c, *otherBridge);
 	  else
 	    other->initialConnect(c);
 	} else if (other->isInProcess())
-	  bp.connectInProcess(*other);
+	  bp.connectInProcess(c, *other);
 	else
 	  bp.connectLocal(c);
 	if (++m_connectedBridgePorts == m_bridgePorts.size()) {
@@ -330,7 +331,7 @@ namespace OCPI {
       else if (other->m_bridgePorts.size())
 	other->initialConnect(c); // do it all from the other side in this case.
       else if (isInProcess() && other->isInProcess())
-	connectInProcess(*other);
+	connectInProcess(c, *other);
       else {
 	other->applyConnection(c);
 	connectLocal(c); // both workers are in this process
@@ -347,7 +348,7 @@ namespace OCPI {
 	// We'll only be called in the remote case here.
 	return finishRemote(c);
       else {
-	size_t otherMember = (isProvider() ? c.m_out : c.m_in).m_member->m_member;
+	size_t otherMember = (isProvider() ? c.m_out : c.m_in).m_index;
 	ocpiAssert(m_bridgePorts[otherMember]);
 	return m_bridgePorts[otherMember]->finishRemote(c);
       }

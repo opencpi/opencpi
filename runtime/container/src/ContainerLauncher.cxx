@@ -55,7 +55,10 @@ launch(Launcher::Members &instances, Launcher::Connections &connections) {
   i = &instances[0];
   for (unsigned n = 0; n < instances.size(); n++, i++)
     if (&i->m_container->launcher() == this && !i->m_hasMaster)
-      createWorker(*i);
+      if (i->m_slave && !i->m_slave->m_worker)
+	m_more = true; // instance is local, but its slave is remote
+      else
+	createWorker(*i);
   for (unsigned n = 0; n < connections.size(); n++) {
     Launcher::Connection &c = connections[n];
     c.prepare();
@@ -74,18 +77,25 @@ launch(Launcher::Members &instances, Launcher::Connections &connections) {
       else if (c.m_out.m_name)
 	c.m_out.m_port = new ExternalPort(c, false);
     }
-    if (c.m_in.m_port) {
-      if (c.m_in.m_port->initialConnect(c))
-	m_more = true;
-    } else if (c.m_out.m_port && c.m_out.m_port->initialConnect(c))
+    if (c.m_in.m_launcher == this && c.m_in.m_port && c.m_in.m_port->initialConnect(c))
+      m_more = true;
+    if (c.m_out.m_launcher == this && c.m_out.m_port && !c.m_out.m_done &&
+	c.m_out.m_port->initialConnect(c))
       m_more = true;
   }
   return m_more;
 }
 
 bool LocalLauncher::
-work(Launcher::Members &, Launcher::Connections &connections) {
+work(Launcher::Members &instances, Launcher::Connections &connections) {
   m_more = false;
+  Launcher::Member *i = &instances[0];
+  for (unsigned n = 0; n < instances.size(); n++, i++)
+    if (&i->m_container->launcher() == this && !i->m_hasMaster && !i->m_worker)
+      if (i->m_slave && !i->m_slave->m_worker)
+	m_more = true; // instance is local, but its slave is remote
+      else
+	createWorker(*i);
   for (unsigned n = 0; n < connections.size(); n++) {
     Launcher::Connection &c = connections[n];
     if (c.m_in.m_port && (c.m_out.m_initial.length() || c.m_out.m_final.length())) {
@@ -142,7 +152,9 @@ prepare() {
       m_in.m_params.add("transport", transport.c_str());
   }
 }
-
-
+Transport::
+Transport()
+  : roleIn(OCPI::RDT::NoRole), roleOut(OCPI::RDT::NoRole), optionsIn(0), optionsOut(0) {
+}
   }
 }

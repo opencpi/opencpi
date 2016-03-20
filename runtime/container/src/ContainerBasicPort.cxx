@@ -231,6 +231,8 @@ namespace OCPI {
 
     void BasicPort::
     packPortDesc(const OR::Descriptors & desc, std::string &out) throw() {
+      ocpiDebug("Packing desc %p into %p %p %zu %zu",
+		&desc, &out, out.data(), out.length(), out.capacity());
       OU::CDR::Encoder packer;
       packer.putBoolean (OU::CDR::nativeByteorder());
       packer.putULong     (desc.type);
@@ -255,6 +257,8 @@ namespace OCPI {
       packer.putString    (d.oob.oep);
       packer.putULongLong (d.oob.cookie);
       out = packer.data();
+      ocpiDebug("Packed desc %p into %p %p %zu %zu",
+		&desc, &out, out.data(), out.length(), out.capacity());
     }
 
     bool BasicPort::
@@ -745,14 +749,17 @@ namespace OCPI {
 	}
 	return NULL;
       }
-      size_t length;
-      if (m_dtPort &&
-	  (m_dtLastBuffer.m_dtBuffer =
-	   m_dtPort->getNextFullInputBuffer(m_dtLastBuffer.m_dtData, length,
-					    m_dtLastBuffer.m_hdr.m_opCode))) {
-	m_dtLastBuffer.m_hdr.m_length = OCPI_UTRUNCATE(uint32_t, length);
-	m_dtLastBuffer.m_hdr.m_eof = false;
-	return &m_dtLastBuffer;
+      if (m_dtPort) {
+	size_t length;
+	if (!m_dtLastBuffer.m_dtBuffer &&
+	    (m_dtLastBuffer.m_dtBuffer =
+	     m_dtPort->getNextFullInputBuffer(m_dtLastBuffer.m_dtData, length,
+					      m_dtLastBuffer.m_hdr.m_opCode)))
+	  m_dtLastBuffer.m_hdr.m_length = OCPI_UTRUNCATE(uint32_t, length);
+	if (m_dtLastBuffer.m_dtBuffer) {
+	  m_dtLastBuffer.m_hdr.m_eof = false;
+	  return &m_dtLastBuffer;
+	}
       }
       return NULL;
     }
@@ -762,9 +769,22 @@ namespace OCPI {
     peekOpCode(uint8_t &op) {
       if (m_forward)
 	return m_forward->peekOpCode(op);
-      if (m_next2read && m_next2read->m_full) {
-	op = m_next2read->m_hdr.m_opCode;
-	return true;
+      if (m_next2read) { // if shim mode
+	if (m_next2read->m_full) {
+	  op = m_next2read->m_hdr.m_opCode;
+	  return true;
+	}
+      } else if (m_dtPort) {
+	size_t length;
+	if (!m_dtLastBuffer.m_dtBuffer &&
+	    (m_dtLastBuffer.m_dtBuffer =
+	     m_dtPort->getNextFullInputBuffer(m_dtLastBuffer.m_dtData, length,
+					      m_dtLastBuffer.m_hdr.m_opCode)))
+	  m_dtLastBuffer.m_hdr.m_length = OCPI_UTRUNCATE(uint32_t, length);
+	if (m_dtLastBuffer.m_dtBuffer) {
+	  op = m_dtLastBuffer.m_hdr.m_opCode;
+	  return true;
+	}
       }
       return false;
     }
@@ -782,7 +802,7 @@ namespace OCPI {
 	ocpiDebug("Release on %p of %p", this, b);
       } else if (m_dtPort) {
 	b = &m_dtLastBuffer;
-	assert(m_lastInBuffer == b);
+	assert(b->m_dtBuffer);
 	m_dtPort->releaseInputBuffer(b->m_dtBuffer);
 	b->m_dtBuffer = NULL;
       }
@@ -875,7 +895,7 @@ namespace OCPI {
 
     // Connect inside the same process
     void BasicPort::
-    connectInProcess(BasicPort &other) {
+    connectInProcess(Launcher::Connection &c, BasicPort &other) {
       if (&container() != &other.container() ||
 	  !container().connectInside(*this, other)) {
 	assert(m_bufferSize != SIZE_MAX);
@@ -884,6 +904,7 @@ namespace OCPI {
 	other.forward2shim(*this);
 	portIsConnected();
 	other.portIsConnected();
+	c.m_in.m_done = c.m_out.m_done = true;
       }
     }
 
@@ -905,19 +926,18 @@ namespace OCPI {
       BasicPort
 	&in = isProvider() ? *this : *c.m_in.m_port,
 	&out = isProvider() ? *c.m_out.m_port : *this;
-      bool iDone, oDone;
       OR::Descriptors buf, buf1;
-      const OR::Descriptors *result = in.startConnect(NULL, buf, iDone);
+      const OR::Descriptors *result = in.startConnect(NULL, buf, c.m_in.m_done);
       assert(result);
-      result = out.startConnect(result, buf1, oDone);
-      assert((result && !iDone) || (!result && iDone));
+      result = out.startConnect(result, buf1, c.m_out.m_done);
+      assert((result && !c.m_in.m_done) || (!result && c.m_in.m_done));
       if (result) {
-	result = in.finishConnect(result, buf, iDone);
-	assert((result && !oDone) || (!result && oDone));
+	result = in.finishConnect(result, buf, c.m_in.m_done);
+	assert((result && !c.m_out.m_done) || (!result && c.m_out.m_done));
 	if (result)
-	  result = out.finishConnect(result, buf1, oDone);
+	  result = out.finishConnect(result, buf1, c.m_out.m_done);
       }
-      assert(iDone && oDone && !result);
+      assert(c.m_in.m_done && c.m_out.m_done && !result);
     }
 
     // return true if we need more info, false if we're done.
@@ -930,14 +950,24 @@ namespace OCPI {
 	&other = isProvider() ? c.m_out : c.m_in;
       assert(!p.m_done);
       OR::Descriptors buf, buf1, *otherInfo = NULL;
+      ocpiDebug("StartRemote %p prov %u initial %p length %zu other %p %zu",
+		this, isProvider(), &p.m_initial, p.m_initial.length(),
+		&other.m_initial, other.m_initial.length());
       if (other.m_initial.length()) {
 	ocpiCheck(unpackPortDesc(other.m_initial, buf));
+	other.m_initial.clear();
 	otherInfo = &buf;
       }
       const OR::Descriptors *result = startConnect(otherInfo, buf1, p.m_done);
       if (result) {
 	p.m_started = true;
+	ocpiDebug("pack0 %p prov %u initial %p length %zu data %p",
+		  this, isProvider(), &p.m_initial, p.m_initial.length(), p.m_initial.data());
 	packPortDesc(*result, p.m_initial);
+	uint32_t *p32 = (uint32_t*)p.m_initial.data();
+	ocpiDebug("pack1 %p prov %u initial %p length %zu data %p %x %x %x %x",
+		  this, isProvider(), &p.m_initial, p.m_initial.length(),
+		  p.m_initial.data(), p32[0], p32[1], p32[2], p32[3]);
       }
       return !p.m_done;
     }
@@ -954,7 +984,9 @@ namespace OCPI {
       assert(!p.m_done);
       ocpiDebug("finishRemote: %p %s i %zu f %zu", this, isProvider() ? "in" : "out",
 		other.m_initial.length(), other.m_final.length());
-      ocpiCheck(unpackPortDesc(other.m_final.length() ? other.m_final : other.m_initial, buf));
+      std::string &otherInfo = other.m_final.length() ? other.m_final : other.m_initial;
+      ocpiCheck(unpackPortDesc(otherInfo, buf));
+      otherInfo.clear();
       result = finishConnect(&buf, buf1, p.m_done);
       if (result) {
 	packPortDesc(*result, p.m_started ? p.m_final : p.m_initial);

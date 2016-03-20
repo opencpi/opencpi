@@ -745,7 +745,7 @@ namespace OCPI {
 	}
 	ssize_t total = len;
 	buf.resize(total);
-	for (char *cp = &buf[0]; total && (n = ::read(fd, cp, len)) > 0; total -= n, cp += n)
+	for (char *cp = &buf[0]; total && (n = ::read(fd, cp, total)) > 0; total -= n, cp += n)
 	  ;
 	if (n <= 0) {
 	  OU::format(error, "message read error: %s (%zu)", strerror(errno), n);

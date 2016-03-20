@@ -54,6 +54,7 @@ namespace OCPI {
       OCPI::RDT::PortRole roleOut; // what is the preferred role for output
       uint32_t optionsIn;          // available options for input
       uint32_t optionsOut;         // available options for output
+      Transport();
     };
     typedef std::vector<Transport> Transports;
 

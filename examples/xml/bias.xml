@@ -4,10 +4,7 @@
     <property name='granularity' value='4'/>
     <property name='messageSize' value='16'/>
   </instance>
-  <instance component='bias' name='bias'>
-    <property name='biasValue' value='0x0ffff'/>
-  </instance>
-  <instance component='bias' name='bias1'>
+  <instance component='bias'>
     <property name='biasValue' value='0x01020304'/>
   </instance>
   <instance component='file_write'>
@@ -19,10 +16,6 @@
   </connection>
   <connection>
     <port instance='bias' name='out'/>
-    <port instance='bias1' name='in'/>
-  </connection>
-  <connection>
-    <port instance='bias1' name='out'/>
     <port instance='file_write' name='in'/>
   </connection>
 </application>

@@ -59,7 +59,7 @@ namespace OCPI {
 
     Manager::~Manager() {
       // Delete my children before the transportGlobals they depend on.
-      delete s_localLauncher;
+      delete LocalLauncher::singleton();
       deleteChildren();
       if ( m_tpg_no_events ) delete m_tpg_no_events;
       if ( m_tpg_events ) delete m_tpg_events;

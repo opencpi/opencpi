@@ -276,7 +276,10 @@ namespace OCPI {
     Device(const std::string &dname, cl_platform_id pid, cl_device_id did,
 	   const std::string &vendor, bool verbose, bool print)
       : m_name(dname), m_id(did), m_context(NULL), m_bufferAlignment(0), m_isCPU(false),
-	m_pid(pid), m_vendor(NULL), m_family(NULL), m_platform(NULL), m_nextQOrd(0) {
+	m_pid(pid), m_vendor(NULL), m_family(NULL), m_platform(NULL), m_nUnits(0),
+	m_nextQOrd(0), m_numSubDevices(0), m_maxGroupSize(0), m_maxComputeUnits(0) {
+      memset(m_cmdq, 0, sizeof(m_cmdq));
+      memset(m_outDevices, 0, sizeof(m_outDevices));
       cl_int rc;
       cl_device_type type;
       cl_uint vendorId, nDimensions;
@@ -336,6 +339,7 @@ namespace OCPI {
 #endif
       ocpiDebug("OCL %s: max dims %u, max groupsize %zu, max sizes %zu,%zu,%zu",
 		dname.c_str(), nDimensions, m_maxGroupSize, sizes[0], sizes[1], sizes[2]);
+      delete [] sizes;
 
       OCLDEV_VAR(MAX_PARAMETER_SIZE, argSize);
       OCLDEV_VAR(AVAILABLE, available);
@@ -358,7 +362,9 @@ namespace OCPI {
 	regex_t rx;
 	if (regcomp(&rx, v->regexpr, REG_NOSUB|REG_ICASE|REG_EXTENDED))
 	  throw OU::Error("Invalid regular expression for OpenCL vendor: %s", v->regexpr);
-	if (!regexec(&rx, m_vendorName.c_str(), 0, NULL, 0)) {
+	int r = regexec(&rx, m_vendorName.c_str(), 0, NULL, 0);
+	regfree(&rx);
+	if (!r) {
 	  m_vendor = v;
 	  break;
 	}
@@ -370,7 +376,9 @@ namespace OCPI {
 	regex_t rx;
 	if (regcomp(&rx, d->regexpr, REG_NOSUB|REG_ICASE|REG_EXTENDED))
 	  throw OU::Error("Invalid regular expression for OpenCL device: %s", d->regexpr);
-	if (!regexec(&rx, m_type.c_str(), 0, NULL, 0)) {
+	int r = regexec(&rx, m_type.c_str(), 0, NULL, 0);
+	regfree(&rx);
+	if (!r) {
 	  if (!strcasecmp(d->family->name, "cpu")) {
 	    for (OclFamily *f = families; f->name; f++)
 	      if (!strcasecmp(f->name, "cpu")) {
@@ -378,7 +386,9 @@ namespace OCPI {
 		if (regcomp(&rx, f->vendor->regexpr, REG_NOSUB|REG_ICASE|REG_EXTENDED))
 		  throw OU::Error("Invalid regular expression for OpenCL vendor: %s",
 				  f->vendor->regexpr);
-		if (!regexec(&rx, vendor.c_str(), 0, NULL, 0)) {
+		r = regexec(&rx, vendor.c_str(), 0, NULL, 0);
+		regfree(&rx);
+		if (!r) {
 		  m_vendor = f->vendor;
 		  m_family = f;
 		  break;
@@ -410,7 +420,11 @@ namespace OCPI {
     }
 
     Device::
-    ~Device() {}
+    ~Device() {
+      for (unsigned n = 0; n < m_nUnits; n++)
+	OCL(clReleaseCommandQueue(m_cmdq[n]));
+      OCL(clReleaseContext(m_context));
+    }
 
 
     class ExternalPort;

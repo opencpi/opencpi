@@ -66,23 +66,32 @@ namespace OCPI {
     using OCPI::Util::Parent;
     using OCPI::Util::PValue;
     // A convenience template for singletons possibly created at static construction
-    // time.
+    // time.  The static "members" are not really members to simplify the interface
+    // for users of this template - i.e. they don't need to initialize them.
     // FIXME: put this in some nice utility place since it is not just for drivers
     extern void debug_hook();
     template <class S> class Singleton {
-    public:
-      static S &getSingleton() {
+      static S *getSingletonPtr(bool test) {
 	debug_hook();
 	static S *theSingleton;
-	// FIXME: put this static mutex into OCPI:OS somehow
-	static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-	// This is hyper-conservative since static constructors are run in a single thread.
-	// But C++ doesn't actually say that...
-	ocpiCheck(pthread_mutex_lock(&mutex) == 0);
-	if (!theSingleton)
-	  theSingleton = new S;
-	ocpiCheck(pthread_mutex_unlock(&mutex) == 0);
-	return *theSingleton;
+	if (!test) {
+	  // FIXME: put this static mutex into OCPI:OS somehow
+	  static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+	  // This is hyper-conservative since static constructors are run in a single thread.
+	  // But C++ doesn't actually say that...
+	  ocpiCheck(pthread_mutex_lock(&mutex) == 0);
+	  if (!theSingleton)
+	    theSingleton = new S;
+	  ocpiCheck(pthread_mutex_unlock(&mutex) == 0);
+	}
+	return theSingleton;
+      }
+    public:
+      static S &getSingleton() {
+	return *getSingletonPtr(false);
+      }
+      static S *singleton() {
+	return getSingletonPtr(true);
       }
     };
     class Manager;

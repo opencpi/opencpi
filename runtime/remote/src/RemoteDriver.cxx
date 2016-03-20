@@ -400,7 +400,7 @@ public:
       (void)&c;
     }
     sock = NULL;
-    return false;
+    goto out;
   bad:
     OU::format(error, "Bad server container response from \"%s\"", server);
   out:

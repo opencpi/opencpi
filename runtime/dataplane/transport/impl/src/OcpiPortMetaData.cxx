@@ -168,11 +168,11 @@ PortMetaData( PortOrdinal pid,
   : CU::Child<PortSetMetaData,PortMetaData>(*psmd, *this),m_shadow(true),
     real_location_string(shadow_ep.end_point),
     shadow_location_string(ep.end_point),
-    remotePortId(OCPI_UTRUNCATE(PortOrdinal,pdd.desc.oob.port_id)),
+    remoteCircuitId(0), remotePortId(OCPI_UTRUNCATE(PortOrdinal,pdd.desc.oob.port_id)),
     id(pid),rank(0),output(false),user_data(NULL),
     m_portSetMd(psmd), m_init(false),
     m_real_location(&shadow_ep),  m_real_tfactory(shadow_ep.factory),
-    m_shadow_location(&ep),  m_shadow_tfactory(ep.factory),
+    m_shadow_location(&ep),  m_shadow_tfactory(ep.factory), m_localPortSetControl(0),
     m_bufferData(NULL)
 {
   memcpy(&m_externPortDependencyData,&pdd.desc,sizeof(OCPI::RDT::Descriptors) );

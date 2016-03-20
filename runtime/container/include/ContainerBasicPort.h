@@ -185,7 +185,7 @@ namespace OCPI {
       // The "other" is only for purposes of alignment and allocation if needed
       void becomeShim(BasicPort *other);
       void connectLocal(Launcher::Connection &c);
-      void connectInProcess(BasicPort &p);
+      void connectInProcess(Launcher::Connection &c, BasicPort &p);
       void forward2shim(BasicPort &shim);
       virtual size_t bufferAlignment() const;
       virtual bool isInProcess() const = 0;

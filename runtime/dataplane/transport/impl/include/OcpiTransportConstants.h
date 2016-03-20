@@ -55,7 +55,7 @@ namespace OCPI {
 namespace DataTransport {
 
     // Maximum endpoint size
-    const uint32_t MAX_ENDPOINT_SIZE = 160;
+  //    const uint32_t MAX_ENDPOINT_SIZE = 160;
 
     // maximum number of transport source contributers
     const uint32_t MAX_PCONTRIBS = DtOsDataTypes::MAX_SYSTEM_SMBS;
@@ -64,16 +64,16 @@ namespace DataTransport {
     // const uint32_t MAX_ENDPOINTS = 32;
 
     // Maximum number of ports per port set
-    const uint32_t MAX_PORTS_PER_SET = 16;
+    //    const uint32_t MAX_PORTS_PER_SET = 16;
 
     // Maximum number of circuits per connection
-    const uint32_t MAX_CIRCUITS_PER_CONNECTION = 2;
+    //    const uint32_t MAX_CIRCUITS_PER_CONNECTION = 2;
 
     // Maximum number of ports per connection
-    const uint32_t MAX_PORT_SETS_PER_CONNECTION = 4;
+    //    const uint32_t MAX_PORT_SETS_PER_CONNECTION = 4;
 
     // Invalid port id
-    const int32_t InvalidPortId = -1;
+    //    const int32_t InvalidPortId = -1;
 
     // Maximum number of buffer
     const uint32_t MAX_BUFFERS = 8;
@@ -85,13 +85,13 @@ namespace DataTransport {
     const uint32_t MAX_TRANSFERS_PER_BUFFER = 4;
 
     // maximum length for transport name
-    const uint32_t MAX_TRANSPORT_NAME_LEN = 80;
+    //    const uint32_t MAX_TRANSPORT_NAME_LEN = 80;
 
     // Maximum number of factories
-    const uint32_t MAX_FACTORY_LEN = 5;
+    //    const uint32_t MAX_FACTORY_LEN = 5;
 
     // Maximum number of allowed templates
-    const uint32_t MAX_TX_TEMPLATES = 10;
+    //    const uint32_t MAX_TX_TEMPLATES = 10;
 
 
   }

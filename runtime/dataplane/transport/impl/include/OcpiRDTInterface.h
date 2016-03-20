@@ -50,7 +50,7 @@ namespace OCPI {
     // These roles are not supported for all protocols, but those that need it
     // specify it.  Roughly, the order is the order of "goodness" when there is
     // no other basis for choosing a role
-    // !!!!****** Adjust the role name strings in OcpiContainerPort.cxx if you change this.
+    // !!!!****** Adjust the role name strings in ContainerPort.cxx if you change this.
     enum PortRole {
       ActiveMessage,     // Port will move data
                          // For a consumer, this means pulling data from the producer.
@@ -116,7 +116,7 @@ namespace OCPI {
       int32_t   role;    // signed to suppress compiler warnings vs. enums
       uint32_t  options; // bit fields based on role.
       Desc_t    desc;
-      Descriptors() : role(NoRole){}
+      Descriptors();
     };
     typedef Descriptors Descriptor;
     // Debug utils
