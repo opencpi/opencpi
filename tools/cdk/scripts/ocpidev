@@ -240,7 +240,7 @@ function do_protocol_or_spec {
       if [ $noun == spec ] ; then
         file=$1-spec.xml
       else
-        file=$1-proto.xml
+        file=$1-prot.xml
       fi
       ;;
   esac
@@ -267,7 +267,7 @@ function do_protocol_or_spec {
      Add <operation> elements for message types.
      Add protocol summary attributes if necessary to override attributes
      inferred from operations/messages -->
-<protocol <!-- add protocol summary attributes here if necessary --> >
+<protocol> <!-- add protocol summary attributes here if necessary -->
   <!-- Add operation elements here -->
 </protocol>
 EOF

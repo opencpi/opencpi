@@ -19,7 +19,8 @@ ifeq ($(wildcard exports),)
   ifeq ($(filter clean%,$(MAKECMDGOALS)),)
     $(info Exports are not set up for this project.  Doing it now. $(doexports))
   else
-    $(nuthin $(doexports))
+    # we are assuming that exports are not required for any clean goal.
+    # $(nuthin $(doexports))
   endif
 endif
 
