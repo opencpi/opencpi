@@ -63,7 +63,7 @@ namespace OS = OCPI::OS;
 namespace OU = OCPI::Util;
 namespace DDT = DtOsDataTypes;
 // Buffer allignment
-#define BUF_ALIGNMENT 7
+#define BUF_ALIGNMENT 8
 
 void OCPI::DataTransport::Port::reset()
 {

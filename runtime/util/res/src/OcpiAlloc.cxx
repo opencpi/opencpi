@@ -92,13 +92,10 @@ static void dumpList( std::list<OCPI::Util::Block>& list )
 #endif
 
 
-static OCPI::Util::ResAddrType ALIGN( OCPI::Util::ResAddrType addr, unsigned int alignment ) 
-{
-  if ( alignment == 0 ) {
-    return addr;
-  }
-  OCPI::Util::ResAddrType mask = alignment -1;
-  return (addr & ~mask);
+// Round the address UP to the next aligned boundary
+static OCPI::Util::ResAddrType 
+ALIGN(OCPI::Util::ResAddrType addr, unsigned int alignment) {
+  return alignment ? (addr + alignment - 1) & ~(alignment - 1) : addr;
 }
 
 
@@ -154,7 +151,7 @@ int OCPI::Util::MemBlockMgr::alloc(size_t nbytes, unsigned int alignment, OCPI::
   m_pool->free_list.sort();
   std::list<Block>::iterator it;
   int retry=2;
-  nbytes += alignment/8;
+  nbytes += alignment ? alignment - 1 : 0;  // ensure its large enough to allow alignment
 
   do {
     for ( it=m_pool->free_list.begin(); it !=m_pool->free_list.end(); it++ ) {
@@ -163,7 +160,7 @@ int OCPI::Util::MemBlockMgr::alloc(size_t nbytes, unsigned int alignment, OCPI::
         ResAddr taddr = (*it).addr;
         (*it).addr += OCPI_UTRUNCATE(ResAddr, nbytes);
         (*it).size -= nbytes;      
-        m_pool->alloc_list.push_back( Block(m_pool, nbytes, taddr, ALIGN(req_addr, alignment)) );
+        m_pool->alloc_list.push_back( Block(m_pool, nbytes, taddr, req_addr) );
         ocpiDebug("**** Alloc Returning address = %" OCPI_UTIL_RESADDR_PRIx ", %" OCPI_UTIL_RESADDR_PRIx "", 
                taddr, req_addr );
 	m_pool->used += nbytes;

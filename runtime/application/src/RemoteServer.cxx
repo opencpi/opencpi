@@ -169,7 +169,8 @@ namespace OCPI {
 	return err;
       if ((x = ezxml_cchild(px, "port"))) {
 	OU::Port *mp = new OU::Port(x);
-	if ((err = mp->parse()))
+	if ((err = mp->parse()) ||
+	    (err = mp->postParse()))
 	  return err;
 	p.m_metaPort = mp;
       }

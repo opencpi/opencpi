@@ -143,7 +143,7 @@ namespace OCPI {
 
     // This class has behavior common to worker, external, bridge, shim ports.
     class BasicPort : public PortData, public OCPI::API::ExternalPort,
-		      protected OCPI::Util::SelfMutex {
+		      virtual protected OCPI::Util::SelfMutex {
       friend class Worker;
       friend class Container;
       friend class BridgePort;
