@@ -134,6 +134,7 @@ manager_reinit(void)
 int
 manager_init(void)
 {
+    const char *wqmin = getenv("OCPI_WORK_QUEUE_INIT");
     wqlist_has_manager = 0;
     pthread_cond_init(&wqlist_has_work, NULL);
 
@@ -166,7 +167,8 @@ manager_init(void)
     scoreboard.sb_suspend = 0;
     
     /* Determine the initial thread pool constraints */
-    worker_min = 2; // we can start with a small amount, worker_idle_threshold will be used as new dynamic low watermark
+    worker_min = wqmin ? (unsigned)atoi(wqmin) : 2;
+    // we can start with a small amount, worker_idle_threshold will be used as new dynamic low watermark
     worker_idle_threshold = (PWQ_ACTIVE_CPU > 0) ? (PWQ_ACTIVE_CPU) : worker_idle_threshold_per_cpu();
 
 /* FIXME: should test for symbol instead of for Android */

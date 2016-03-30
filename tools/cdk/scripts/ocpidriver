@@ -16,6 +16,7 @@ SCR=ocpi_${OS}_driver
 SDIR=$DIR
 [ ! -r $SDIR/$SCR ] && SDIR=$DIR/../scripts
 [ ! -r $SDIR/$SCR ] && SDIR=$DIR/../../scripts
+[ ! -r $SDIR/$SCR ] && SDIR=$DIR/../../../scripts
 [ ! -r $SDIR/$SCR ] && {
   echo There is no driver loading/unloading support for this system \(${OS}\).
   exit 1

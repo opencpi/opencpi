@@ -347,12 +347,8 @@ startup()
 
   ocpiDebug("++++++++ In void XferFactoryManager::startup(), ref count = %d", m_refCount);
 
-
-  for (XferFactory* d = firstDriver(); d; d = d->nextDriver()) {
-    printf(" @@@@@@@@@@  protocol = %s\n", d->getProtocol() );
-  }
-
-
+  for (XferFactory* d = firstDriver(); d; d = d->nextDriver())
+    ocpiInfo("Supporting transport driver = %s", d->getProtocol());
 
   m_refCount++;
 }

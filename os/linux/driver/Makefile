@@ -83,7 +83,7 @@ MODNAME = opencpi
 
 .DELETE_ON_ERROR:
 MyDir:=$(dir $(realpath $(ThisMake)))
-MyTargetDir?=target-$(OCPI_TARGET_HOST)
+MyTargetDir?=target-$(OCPI_TARGET_DIR)
 MyIncs?= \
          -I$(realpath $(MyDir)/../../../runtime/hdl/include) \
          -I$(realpath $(MyDir)/../../interfaces/include)

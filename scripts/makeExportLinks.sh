@@ -229,20 +229,20 @@ set -f
 for a in $additions; do
   declare -a both=($(echo $a | tr : ' '))
   [[ $a == *\<target\>* && $1 == - ]] && continue
-  rawsrc=${both[0]//<target>/$1}
+  rawsrc="${both[0]//<target>/$1}"
   set +f
   for src in $rawsrc; do
-  if [ -e $src ]; then
-    after=
-    if [[ ${both[1]} =~ /$ || ${both[1]} == "" ]]; then
-      after=$(basename $src)
+    if [ -e $src ]; then
+      after=
+      if [[ ${both[1]} =~ /$ || ${both[1]} == "" ]]; then
+        after=$(basename $src)
+      fi
+      make_relative_link $src exports/${both[1]//<target>/$1}$after
+    else
+      if [ "$3" == "" ]; then
+        echo Warning: link source $src does not '(yet?)' exist.
+      fi
     fi
-    make_relative_link $src exports/${both[1]//<target>/$1}$after
-  else
-    if [ "$3" == "" ]; then
-      echo Warning: link source $src does not '(yet?)' exist.
-    fi
-  fi
   done
   set -f
 done

@@ -71,7 +71,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
     *eof_in = &self->ports[FILE_WRITE_EOF_IN];
   File_writeProperties *props = self->properties;
   MyState *s = self->memories[0];
-  uint64_t fileLength;
+  uint64_t fileLength = 0; // for warning
 
   (void)timedOut;(void)newRunCondition;
   if (eof_in->current.data) {
