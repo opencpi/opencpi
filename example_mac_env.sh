@@ -1,6 +1,9 @@
 trap "trap - ERR; break" ERR; for i in 1; do
 . ./env/start.sh
+export OCPI_USE_TARGET_MODES=1
+export OCPI_USE_TOOL_MODES=1
 export OCPI_DYNAMIC=1
+export OCPI_DEBUG=0
 export OCPI_EXCLUDE_TARGETS=xilinx
 export OCPI_CXXFLAGS+=" -Wno-sign-conversion"
 export OCPI_HAVE_OPENCL=1

@@ -35,6 +35,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <unistd.h>
 #include <sys/uio.h>
 #include <vector>
 #include "cdkutils.h"

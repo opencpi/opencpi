@@ -167,6 +167,7 @@ namespace OCPI {
       Port(const Port &other, Worker &w, const char *name, const char *&err);
       virtual ~Port();
       void init();
+      const std::string &name() const { return m_name; }
       const char *preParse(Worker &w, ezxml_t x, size_t ordinal, const char *defaultName = NULL);
       const char *parse();
       const char *postParse();

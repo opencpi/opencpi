@@ -4,9 +4,6 @@ export OCPI_CXXFLAGS="-Wextra -Wall -Wfloat-equal -fno-strict-aliasing -Wconvers
 
 export OCPI_BASE_DIR=`pwd`
 export OCPI_CDK_DIR=$OCPI_BASE_DIR/ocpi
-# For backward compatibility, we default to explicit modelessness
-export OCPI_TOOL_MODE=
-export OCPI_TARGET_MODE=
 if test "$OCPI_TOOL_HOST" = ""; then
   vars=($(platforms/getPlatform.sh))
   if test $? != 0; then

@@ -276,6 +276,8 @@ namespace OCPI {
       inline void checkType(BaseType ctype, size_t n, bool write) const {
 #if !defined(NDEBUG) || defined(OCPI_API_CHECK_PROPERTIES)
         checkTypeAlways(ctype, n, write);
+#else
+	(void)ctype;(void)n;(void)write;
 #endif
       }
     public:

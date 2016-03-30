@@ -64,7 +64,7 @@ $(call OcpiDbgVar,RccTargets)
 RccOs=$(word 1,$(subst -, ,$(or $1,$(RccTarget))))
 RccOsVersion=$(word 2,$(subst -, ,$1))
 RccArch=$(word 3,$(subst -, ,$1))
-
+OcpiTargetSubdir=$(and $(OCPI_TARGET_MODE),/$(OCPI_TARGET_MODE))
 # Read in all the tool sets indicated by the targets
 # 
 ifeq ($(filter clean cleanrcc,$(MAKECMDGOALS)),)

@@ -123,7 +123,8 @@ namespace OCPI {
 
     BasicPort::
     ~BasicPort(){
-      OU::SelfAutoMutex guard(this);
+      // Note the mode derived class must lock this explicitly
+      //OU::SelfAutoMutex guard(this);
       if (m_backward) {
 	// If we are being forwarded-to, we need to break this chain, while
 	// the other side is not in the middle of forwarding to us.

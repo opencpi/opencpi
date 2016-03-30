@@ -18,6 +18,6 @@ OCPI_LD_FLAGS+= \
 
 INCS += -I$(OCPI_OPENCV_HOME)/include/opencv -I$(OCPI_OPENCV_HOME)/include
 
-OPENCV_ENV= export $(OcpiLibraryPathEnv)=$(OPENCV_LIB_DIR)/lib;
+OPENCV_ENV:=export $(OcpiLibraryPathEnv)=$(OPENCV_LIB_DIR)/lib:$(OCPI_LIB_DIR)
 
 endif

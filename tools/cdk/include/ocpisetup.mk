@@ -176,19 +176,20 @@ ifndef OCPI_PATCHELF_DIR
   export OCPI_PATCHELF_DIR=$(OCPI_PREREQUISITES_DIR)/patchelf
 endif
 ################################################################################
-# Figure out if we should have OPENCL support
-ifeq ($(origin OCPI_HAVE_OPENCL),undefined)
-  ifeq ($(OCPI_TARGET_HOST),$(OCPI_TOOL_HOST))
-    OCPI_HAVE_OPENCL:=$(if $(realpath $(OCPI_BIN_DIR)/ocpiocl),$(shell $(OCPI_BIN_DIR)/ocpiocl test && echo 1),)
-  endif
-endif
-################################################################################
 # From here down is specifically for user makefiles
 ################################################################################
 # Set up directory pointers for user makefiles
 export OCPI_LIB_DIR:=$(OCPI_CDK_DIR)/lib/$(OCPI_TARGET_DIR)
 export OCPI_BIN_DIR:=$(OCPI_CDK_DIR)/bin/$(OCPI_TARGET_DIR)
 export OCPI_INC_DIR:=$(OCPI_CDK_DIR)/include
+
+################################################################################
+# Figure out if we should have OPENCL support
+ifeq ($(origin OCPI_HAVE_OPENCL),undefined)
+  ifeq ($(OCPI_TARGET_HOST),$(OCPI_TOOL_HOST))
+    OCPI_HAVE_OPENCL:=$(if $(realpath $(OCPI_BIN_DIR)/ocpiocl),$(shell $(OCPI_BIN_DIR)/ocpiocl test && echo 1),)
+  endif
+endif
 
 # Which libraries should be made available to user executables?
 export OCPI_API_LIBS=application container library transport rdma_driver_interface rdma_utils rdma_smb util  msg_driver_interface os
