@@ -58,6 +58,7 @@ namespace OCPI {
   namespace RCC {
 
     bool Container::m_wqInit = false;
+    pthread_workqueue_t Container::m_workqueues[2];
 
 DataTransfer::EventManager*  
 Container::
@@ -90,15 +91,17 @@ Container(const char *name, const OA::PValue* /*params*/)
 	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive),
 	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive));
   m_dynamic = OC::Manager::dynamic();
+  initWorkQueues();
 }
 
 void Container::
 initWorkQueues() {
+
   OU::SelfAutoMutex guard(this);
   if (m_wqInit == false ) {
+    m_wqInit = true;
 
      pthread_workqueue_attr_t attr;
-
      memset(&m_workqueues, 0, sizeof(m_workqueues));     
 
     // Create the worker queues
@@ -110,17 +113,21 @@ initWorkQueues() {
 
      if (pthread_workqueue_attr_setqueuepriority_np(&attr, WORKQ_HIGH_PRIOQUEUE) != 0) 
        throw  OU::Error("Worker static initialization: Could not set workqueue priorities");        
+
      if (pthread_workqueue_create_np(&m_workqueues[HIGH_PRI_Q], &attr) != 0)
        throw  OU::Error("Worker static initialization: Could not create workqueue ");
 
+#ifdef NEEDED
      if (pthread_workqueue_attr_init_np(&attr) != 0)
        throw  OU::Error("Worker static initialization: Could not init workqueue attributes");
+
      if (pthread_workqueue_attr_setqueuepriority_np(&attr, WORKQ_LOW_PRIOQUEUE) != 0) 
        throw  OU::Error("Worker static initialization: Could not set workqueue priorities");        
+
      if (pthread_workqueue_create_np(&m_workqueues[LOW_PRI_Q], &attr) != 0)
        throw  OU::Error("Worker static initialization: Could not create workqueue ");
+#endif
 
-     m_wqInit = true;
    }
 }
 

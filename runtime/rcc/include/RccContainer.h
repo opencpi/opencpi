@@ -87,7 +87,7 @@ namespace OCPI {
       static const int WORKQUEUE_COUNT = 2;
       static const int LOW_PRI_Q = 0;
       static const int HIGH_PRI_Q = 1;
-      pthread_workqueue_t m_workqueues[WORKQUEUE_COUNT]; 
+      static pthread_workqueue_t m_workqueues[WORKQUEUE_COUNT]; 
 
     public:
       friend class Port;
