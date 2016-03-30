@@ -89,7 +89,7 @@ xxMAIN_DRIVERS=\
   _ZN4OCPI3API12ExternalPortD0Ev \
   _ZN12DataTransfer22createHostSmemServicesERNS_8EndPointE
 
-OCPI_DRIVERS=hdl rcc ocl remote pio dma sockets remote
+OCPI_DRIVERS=hdl rcc ocl remote pio dma socket
 
 # When linking main programs, allow dynamic libraries to have undefined symbols since
 # we don't want to care about indirect depenedencies.
@@ -112,10 +112,12 @@ endif
 
 MAIN_LDFLAGS+= \
   -Xlinker -rpath -Xlinker '$(RPATH_ORIGIN)' \
-  -Xlinker -rpath -Xlinker '$(RPATH_ORIGIN)/../../lib/$(OCPI_TARGET_HOST)' \
+  -Xlinker -rpath -Xlinker '$(strip $(if $(OCPI_USE_TARGET_MODES),\
+                                      $(RPATH_ORIGIN)/../../../lib/$(OCPI_TARGET_DIR), \
+                                      $(RPATH_ORIGIN)/../../lib/$(OCPI_TARGET_HOST)))' \
   -Xlinker -rpath -Xlinker '$(RPATH_ORIGIN)/lib' \
   -Xlinker -rpath \
-  -Xlinker '$(RPATH_ORIGIN)/$(call FindRelative,$(OBJDIR),$(OCPI_CDK_DIR))/lib/$(OCPI_TARGET_HOST)' \
+  -Xlinker '$(RPATH_ORIGIN)/$(call FindRelative,$(OBJDIR),$(OCPI_CDK_DIR))/lib/$(OCPI_TARGET_DIR)' \
   $(foreach o,$(MAIN_DRIVERS), $(call UNDEFINED_FLAG,$o))
 
 #$(LD_ALLOW_UNDEFINED)
@@ -192,8 +194,10 @@ CXXFLAGS += -g
 LDFLAGS += -g
 OCPI_SHARED_LIBRARIES_FLAGS+=-g
 else
-CFLAGS += -O2
-CXXFLAGS += -O2
+CFLAGS += -O3 -g
+CXXFLAGS += -O3 -g
+LDFLAGS += -g
+OCPI_SHARED_LIBRARIES_FLAGS+=-g
 endif
 
 ifeq ($(OCPI_OS),linux)
@@ -237,6 +241,13 @@ $(OBJDIR)/%.obj : %.cpp
 # what library should we be depending on
 # -- drivers are always dynamic
 # -- they will be in the mode subdir if we are using modes
+
+#	       $(foreach x,$(if $(filter $l,$(OCPI_DRIVERS)),\
+#                             $(if $(OCPI_TARGET_MODE),\
+#                               $(dir $(OCPI_OUT_DIR))/d$(if $(filter 1,$(OCPI_DEBUG)),d,o),\
+#                               $(OCPI_OUT_DIR)),\
+#                             $(OCPI_OUT_DIR)),$(infox x is $x)\
+
 LIBDEPSUFFIX=$(if $(filter 0,$(OCPI_BUILD_SHARED_LIBRARIES)),a,$(SO))
 LIBDEP=$(foreach l,$(notdir $1),$(infox l is $l)\
          $(foreach n,$(if $(and $(filter $l,$(OCPI_DRIVERS)),\
@@ -245,11 +256,7 @@ LIBDEP=$(foreach l,$(notdir $1),$(infox l is $l)\
            $(foreach d,$(dir $1),$(infox d is $d)\
              $(foreach s,$(if $(filter $l,$(OCPI_DRIVERS)),\
                            $(SO),$(LIBDEPSUFFIX)),$(infox s is $s)\
-	       $(foreach x,$(if $(filter $l,$(OCPI_DRIVERS)),\
-                             $(if $(OCPI_TARGET_MODE),\
-                               $(dir $(OCPI_OUT_DIR))/d$(if $(filter 1,$(OCPI_DEBUG)),d,o),\
-                               $(OCPI_OUT_DIR)),\
-                             $(OCPI_OUT_DIR)),$(infox x is $x)\
+	       $(foreach x,$(OCPI_OUT_DIR),\
                  $(foreach z,$d$x/libocpi_$n.$s,$(infox ZZZ $l->$z:($(OCPI_OUT_DIR)))$z))))))
 
 PREQDEP=$(foreach d,$(OCPI_PREREQUISITES_INSTALL_DIR)/$1/$(OCPI_TARGET_HOST)/lib,$(infox d is $d)\

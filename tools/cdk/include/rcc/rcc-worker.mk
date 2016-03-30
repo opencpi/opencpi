@@ -77,7 +77,7 @@ OcpiLibDir=$(OCPI_CDK_DIR)/lib/$$(RccTarget)$(and $(OCPI_TARGET_MODE),/$(OCPI_TA
 # Add the libraries we know a worker might reference.
 override RccLibrariesInternal+=rcc application os
 
-ifdef OCPI_USE_TARGET_MODES
+ifeq ($(OCPI_USE_TARGET_MODES),1)
   export OCPI_TARGET_MODE:=$(if $(filter 1,$(OCPI_BUILD_SHARED_LIBRARIES)),d,s)$(if $(filter 1,$(OCPI_DEBUG)),d,o)
 endif
 PatchElf=$(or $(OCPI_PREREQUISITES_INSTALL_DIR),/opt/opencpi/prerequisites)/patchelf/$(OCPI_TOOL_HOST)/bin/patchelf
@@ -89,8 +89,8 @@ $(foreach l,$(RccLibrariesInternal) $(Libraries),\
        $(or $(wildcard $p$(AREXT_$(call RccOs,))),\
             $(and $(wildcard $p$(SOEXT_$(call RccOs,))),-L $(dir $l)$(RccTarget) -l $(notdir $l)),\
             $(error No RCC library found for $l, tried $p$(AREXT_$(call RccOs,)) and $p$(SOEXT_$(call RccOs,))))), \
-    $(and $(filter 1,$(OCPI_BUILD_SHARED_LIBRARIES)),-l ocpi_$l))) \
-  -L $(OCPI_CDK_DIR)/lib/$$(RccTarget)$(and $(OCPI_TARGET_MODE),/d$(if $(filter 1,$(OCPI_DEBUG)),d,o))
+    $(and $(filter 1,$(OCPI_DYNAMIC)),-l ocpi_$l))) \
+  -L $(OCPI_CDK_DIR)/lib/$$(RccTarget)$(and $(OCPI_TARGET_MODE),/$(OCPI_TARGET_MODE))
 
 # $1 is target, $2 is configuration
 RccStaticName=$(WkrBinaryName)_s$(BF)
@@ -119,7 +119,7 @@ endef
 
 CompilerWarnings= -Wall -Wextra
 CompilerDebugFlags=-g
-CompilerOptimizeFlags=-O
+CompilerOptimizeFlags=-O3 -g -DNDEBUG=1
 ifeq ($(OCPI_DEBUG),1)
 CompilerOptions=$(CompilerDebugFlags)
 else

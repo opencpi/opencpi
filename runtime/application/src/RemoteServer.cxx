@@ -509,9 +509,9 @@ namespace OCPI {
       length--; // account for the null char of the last line
       return false;
     }
-    bool g_suppressRemoteDiscovery = false;
-    bool (*g_probeServer)(const char *server, bool verbose, const char **exclude,
-			  std::string &error) = NULL;
+    //    bool g_suppressRemoteDiscovery = false;
+    //    bool (*g_probeServer)(const char *server, bool verbose, const char **exclude,
+    //			  std::string &error) = NULL;
     bool
     useServer(const char *server, bool verbose, const char **exclude, std::string &error) {
       if (g_probeServer)

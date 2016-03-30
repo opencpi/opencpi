@@ -43,11 +43,12 @@ ALLINC += $(OCPIOS_EXPORTS) \
  $(DATA_TRANSFER_EXPORTS) $(DATA_TRANSPORT_EXPORTS) \
  $(CONTAINER_EXPORTS)
 
+ifneq (,)
 DYNOBJS += \
 	../../../../../runtime/dataplane/rdma_drivers/pio/$(OCPI_OUT_DIR)/DtPioXfer.obj \
 	../../../../../runtime/dataplane/rdma_drivers/dma/$(OCPI_OUT_DIR)/DtDmaXfer.obj \
 	../../../../../runtime/dataplane/rdma_drivers/sockets/$(OCPI_OUT_DIR)/DtSocketsXfer.obj 
-
+endif
 ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
      SYSLIBS += dl
 endif

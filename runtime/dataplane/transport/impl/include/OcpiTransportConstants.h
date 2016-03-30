@@ -76,7 +76,7 @@ namespace DataTransport {
     //    const int32_t InvalidPortId = -1;
 
     // Maximum number of buffer
-    const uint32_t MAX_BUFFERS = 8;
+    const uint32_t MAX_BUFFERS = 16;
 
     // Maximum number of transfers
     const uint32_t MAX_TRANSFERS = 8;

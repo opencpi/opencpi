@@ -280,7 +280,7 @@ define WkrDoTargetConfig
   -include $(call WkrTargetDir,$1,$2)/*.deps
   # The target directory
   $(call WkrTargetDir,$1,$2): | $(OutDir) $(GeneratedDir)
-	$(AT)mkdir $$@
+	$(AT)mkdir -p $$@
   # If object files are separate from the final binary,
   # Make them individually, and then link them together
   ifdef ToolSeparateObjects

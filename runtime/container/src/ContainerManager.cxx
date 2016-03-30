@@ -175,6 +175,12 @@ namespace OCPI {
     // to support drivers and workers.
     // not in spcm branch    void dumb1(BasicPort &p) { p.applyConnectParams(NULL, NULL); }
   }
+  // When the remote container driver is loaded it needs to see this.
+  namespace Remote {
+    bool g_suppressRemoteDiscovery = false;
+    bool (*g_probeServer)(const char *server, bool verbose, const char **exclude,
+			  std::string &error) = NULL;
+  }
 }
 namespace DataTransfer {
   intptr_t dumb2(EndPoint &loc) {

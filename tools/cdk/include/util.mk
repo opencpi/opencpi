@@ -370,7 +370,7 @@ OcpiDefaultOWD=$(strip \
 
 # Function to generate target dir from target: $(call WkrTargetDir,target,config)
 # FIXME: shouldn't really be named "Wkr"
-WkrTargetDir=$(OutDir)target$(if $(filter 0,$2),,-$2)-$1
+WkrTargetDir=$(OutDir)target$(if $(filter 0,$2),,-$2)-$1$(OcpiTargetSubdir)
 
 Comma:=, 
 ParamMsg=$(and $(ParamConfigurations), $(strip \

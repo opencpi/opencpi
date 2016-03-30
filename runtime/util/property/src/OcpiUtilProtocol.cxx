@@ -447,33 +447,17 @@ namespace OCPI {
       if ((name = ezxml_cattr(prot, "qualifiedname")))
 	m_qualifiedName = name;
       m_dataValueWidth = 0;
-#if 0
-      // First time we call this it will just be for counting.
-      const char *err;
-      if ((err = OE::ezxml_children(prot, doChild ? doChild : doProtocolChild,
-				    arg ? arg : this)))
-	return err;
-#else
       const char *err;
       if ((err = OE::checkAttrs(prot, "Name", "QualifiedName", "defaultbuffersize",
 				"datavaluewidth", "maxmessagevalues", "minmessagevalues",
 				"datavaluegranularity", "diversedatasizes", "unbounded",
-				"zerolengthmessages", (void*)0)) ||
+				"zerolengthmessages", "variablemessagelength", (void*)0)) ||
 	  (err = OE::checkElements(prot, "operation", "xi:include", (void*)0)) ||
 	  (err = OE::ezxml_children(prot, doChild ? doChild : doProtocolChild,
 				    arg ? arg : this)))
 	return err;
       //      m_nOperations = OE::countChildren(prot, "operation");
-#endif
       if (m_nOperations) {
-#if 0
-	// If we are actually parsing the protocol, there is no default value width.
-	if ((err = OE::checkAttrs(prot, "Name", "QualifiedName", "defaultbuffersize",
-				  "datavaluewidth", "maxmessagevalues",
-				  "datavaluegranularity",
-				  "zerolengthmessages", (void*)0)))
-	  return err;
-#endif
 	m_operations = m_op = new Operation[m_nOperations];
 	// Now we call a second time t make them.
 	size_t save = m_dataValueGranularity;
@@ -527,32 +511,37 @@ namespace OCPI {
 	formatAdd(out, " name=\"%s\"", m_name.c_str());
       if (!m_qualifiedName.empty())
 	formatAdd(out, " qualifiedName=\"%s\"", m_qualifiedName.c_str());
+      if (m_defaultBufferSize != SIZE_MAX)
+	formatAdd(out, " defaultbuffersize=\"%zu\"", m_defaultBufferSize);
+      // We emit all the summary attributes that MIGHT have overridden the protocol
+      // If we kept track of what was overridden we could prune this...
+      formatAdd(out,
+		" dataValueWidth=\"%zu\""
+		" dataValueGranularity=\"%zu\""
+		" diverseDataSizes=\"%u\""
+		" minMessageValues=\"%zu\"",
+		m_dataValueWidth, m_dataValueGranularity, m_diverseDataSizes,
+		m_minMessageValues);
+      if (m_maxMessageValues != SIZE_MAX)
+	formatAdd(out, " maxMessageValues=\"%zu\"", m_maxMessageValues);
+      if (m_diverseDataSizes)
+	formatAdd(out, " diversedatasizes=\"true\"");
+      if (m_zeroLengthMessages)
+	formatAdd(out, " zeroLengthMessages=\"true\"");
+      if (m_variableMessageLength)
+	formatAdd(out, " variableMessageLength=\"true\"");
+      if (m_isTwoWay)
+	formatAdd(out, " twoWay=\"true\"");
+      if (m_isUnbounded)
+	formatAdd(out, " unBounded=\"true\"");
       if (m_operations) {
 	formatAdd(out, ">\n");
 	Operation *o = m_operations;
 	for (unsigned n = 0; n < m_nOperations; n++, o++)
 	  o->printXML(out, indent + 1);
 	formatAdd(out, "%*s</protocol>\n", indent * 2, "");
-      } else {
-	// We don't have operation details so we'll put out all the summary attributes
-	// We could prune this to what is needed by anyone
-	formatAdd(out,
-		" dataValueWidth=\"%zu\""
-		" dataValueGranularity=\"%zu\""
-		" diverseDataSizes=\"%u\""
-		  " minMessageValues=\"%zu\"",
-		m_dataValueWidth, m_dataValueGranularity, m_diverseDataSizes,
-		m_minMessageValues);
-	if (m_maxMessageValues != SIZE_MAX)
-	  formatAdd(out, " maxMessageValues=\"%zu\"", m_maxMessageValues);
-	if (m_zeroLengthMessages)
-	  formatAdd(out, " zeroLengthMessages=\"true\"");
-	if (m_isTwoWay)
-	  formatAdd(out, " twoWay=\"true\"");
-	if (m_isUnbounded)
-	  formatAdd(out, " unBounded=\"true\"");
+      } else
 	formatAdd(out, "/>\n");
-      }
     }
     // Send the data in the buffer to the writer
     void Protocol::write(Writer &writer, const uint8_t *data, size_t length, uint8_t opcode) {

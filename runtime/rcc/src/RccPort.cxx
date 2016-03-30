@@ -77,7 +77,9 @@ namespace OCPI {
     Port::
     ~Port()
     {
-      //      disconnect();
+      // As the most derived class, the mutex must be locked during destruction
+      // It will automatically be unlocked during deferred virtual destruction
+      lock();
     }
     void Port::
     error(std::string &e) {

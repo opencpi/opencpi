@@ -9,7 +9,7 @@ fi
 # we make the tool mode track the target mode, i.e. we execute what we are building.
 # FIXME: this transformation in the shell needs to be consistent with the one in
 # makefiles.
-if test "$OCPI_TARGET_HOST" = "$OCPI_TOOL_HOST" -a "${OCPI_TOOL_MODE+UNSET}" = ""; then
+if test "$OCPI_TARGET_HOST" = "$OCPI_TOOL_HOST" -a "$OCPI_USE_TARGET_MODES" = 1; then
  case $OCPI_BUILD_SHARED_LIBRARIES$OCPI_DEBUG in
    00) OCPI_TOOL_MODE=so;;
    01) OCPI_TOOL_MODE=sd;;
