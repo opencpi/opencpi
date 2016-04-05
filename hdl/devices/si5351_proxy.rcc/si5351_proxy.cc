@@ -91,7 +91,7 @@ class Si5351_proxyWorker : public Si5351_proxyWorkerBase {
   }
   // Configure how the output is driven when disabled
   void setDisabledMode(unsigned i) {
-    Channels &c = m_properties.channels[i];
+    const Channels &c = m_properties.channels[i];
     uint8_t dis = i < 4 ? slave.get_clk30_dis_st() : slave.get_clk74_dis_st();
     unsigned shift = (i & 3) * 2;
     dis &= ~(3 << shift); // default set to drive low when disabled

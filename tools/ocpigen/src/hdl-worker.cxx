@@ -1612,8 +1612,14 @@ emitImplHDL(bool wrap) {
 	bool first = true;
 	for (PropertiesIter pi = m_ctl.properties.begin(); nonRaw(pi); pi++) {
 	  OU::Property &pr = **pi;
-	  if (!pr.m_isParameter && (pr.m_isWritable && pr.m_isReadable && !pr.m_isVolatile ||
-				    pr.m_baseType == OA::OCPI_Enum)) {
+          if (pr.m_isParameter)
+	    continue;
+	  std::string type;
+	  prType(pr, type);
+	  char *temp = NULL;
+	  tempName(temp, maxPropName, "%s_value", pr.m_name.c_str());
+	  if (pr.m_isWritable && pr.m_isReadable && !pr.m_isVolatile ||
+	      pr.m_baseType == OA::OCPI_Enum) {
 	    if (first) {
 	      fprintf(f,
 		      "  -- internal signals between property registers and the readback mux\n"
@@ -1621,15 +1627,20 @@ emitImplHDL(bool wrap) {
 		      "  -- or enumerations\n");
 	      first = false;
 	    }
-	    std::string type;
-	    prType(pr, type);
-	    char *temp = NULL;
 	    fprintf(f,
-		    "  signal my_%s : %s;\n",
-		    tempName(temp, maxPropName, "%s_value", pr.m_name.c_str()),
+		    "  signal my_%s : %s;\n", temp,
 		    pr.m_baseType == OA::OCPI_Enum ? "ulong_t" : type.c_str());
-	    free(temp);
 	  }
+	  if (!pr.m_isParameter && pr.m_isVolatile && pr.m_baseType == OA::OCPI_Enum) {
+	    // We need a separate readback signal for volatile enumerations
+	    // This is the signal that will be decoded from the worker's enumeration
+	    // type to feed into the readback
+	    fprintf(f,
+		    "  -- signal for conveying the volatile enum value to readback mux\n"
+		    "  signal my_volatile_%s : ulong_t;\n", temp); //, type.c_str());
+	    
+	  }
+	  free(temp);
 	}
       }
 #if 0
@@ -1851,14 +1862,18 @@ emitImplHDL(bool wrap) {
 		  "    generic map(worker       => work.%s_worker_defs.worker,\n"
 		  "                property     => work.%s_worker_defs.properties(%u))\n"
 		  "    port map(",
-		  pr.m_name.c_str(), OU::baseTypeNames[pr.m_baseType],
+		  pr.m_name.c_str(),
+		  OU::baseTypeNames[pr.m_baseType == OA::OCPI_Enum ?
+				    OA::OCPI_ULong : pr.m_baseType],
 		  pr.m_arrayRank || pr.m_isSequence ? "_array" : "",
 		  m_implName, m_implName, n);
-	  if (pr.m_isVolatile || pr.m_isReadable && !pr.m_isWritable)
+	  if (pr.m_isVolatile && pr.m_baseType == OA::OCPI_Enum)
+	    fprintf(f, "   value        => my_volatile_%s_value,\n", name);
+	  else if (pr.m_isVolatile || pr.m_isReadable && !pr.m_isWritable)
 	    fprintf(f, "   value        => props_from_worker.%s,\n", name);
 	  else
 	    fprintf(f, "   value        => my_%s_value,\n", name);
-	  fprintf(f, "   is_big_endian=> my_big_endian,\n");
+	  fprintf(f,   "                is_big_endian=> my_big_endian,\n");
 	  fprintf(f,   "                data_out     => readback_data(%u)", n);
 	  if (pr.m_baseType == OA::OCPI_String)
 	    fprintf(f, ",\n"
@@ -1883,6 +1898,10 @@ emitImplHDL(bool wrap) {
 	  else
 	    fprintf(f, ");\n");
 	  fprintf(f, "  props_to_worker.%s_read <= read_enables(%u);\n", pr.m_name.c_str(), n);
+	  if (pr.m_baseType == OA::OCPI_Enum && pr.m_isVolatile)
+	    fprintf(f, "  my_volatile_%s_value    <= "
+		    "to_ulong(work.%s_constants.%s_t'pos(props_from_worker.%s));\n",
+		    name, m_implName, name, name);
 	} else if (m_ctl.nonRawReadables)
 	  fprintf(f, "  readback_data(%u) <= (others => '0');\n", n);
 	n++; // only for non-parameters

@@ -695,14 +695,13 @@ class Worker : public Parsed, public OU::IdentResolver {
     rccStruct(std::string &type, size_t nMembers, OU::Member *members, unsigned level,
 	      const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef),
     rccMember(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
-	      const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef),
+	      const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef, bool cnst = false),
     rccType(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
-	    const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef),
+	    const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef, bool cnst = false),
     rccBaseType(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
-		const char *parent, bool isFixed, bool &isLast, unsigned predefine),
+		const char *parent, bool isFixed, bool &isLast, unsigned predefine, bool cnst = false),
     emitDeviceSignals(FILE *f, Language lang, std::string &last);
 };
-
 #define SKEL "-skel"
 #define IMPL "-impl"
 #define DEFS "-defs"

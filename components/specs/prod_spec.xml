@@ -1,11 +1,11 @@
 <ComponentSpec Name="prod">
   <Properties>
-     <Property Name="p1" Type="Long" Readable="true" Writable="true"/>
-     <Property Name="p2" Type="Long" Readable="true" Writable="true"/>
-     <Property Name="p3" Type="ULong" Readable="true" Writable="true"/>
-     <Property Name="p4" Type="UChar" Readable="true" Writable="true"/>
-     <Property Name="p5" Type="Long" ArrayLength="5" Readable="true" Writable="true"/>
-     <Property Name="p6" Type="UShort" Readable="true" Writable="true"/>
+     <Property Name="p1" Type="Long" Volatile="true" Writable="true"/>
+     <Property Name="p2" Type="Long" Volatile="true" Writable="true"/>
+     <Property Name="p3" Type="ULong" Volatile="true" Writable="true"/>
+     <Property Name="p4" Type="UChar" Volatile="true" Writable="true"/>
+     <Property Name="p5" Type="Long" ArrayLength="5" Volatile="true" Writable="true"/>
+     <Property Name="p6" Type="UShort" Volatile="true" Writable="true"/>
   </Properties>
   <DataInterfaceSpec Name="Data_Out_Port" Producer="true"/>
 </ComponentSpec>

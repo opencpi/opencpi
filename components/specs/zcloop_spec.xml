@@ -1,6 +1,6 @@
 <ComponentSpec Name="zcloop">
   <Properties>
-    <Property Name="transferMode" Type="Long" Readable="true" Writable="true"/>
+    <Property Name="transferMode" Type="Long" Volatile="true" Writable="true"/>
   </Properties>
   <DataInterfaceSpec Name="In"/>
   <DataInterfaceSpec Name="Out" Producer="true"/>

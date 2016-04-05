@@ -84,29 +84,31 @@ rccArray(std::string &type, OU::Member &m, bool isFixed, bool &isLast, bool topS
 // Just print the data type, not the "member", with names or arrays etc.
 void Worker::
 rccBaseType(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
-		 const char *parent, bool isFixed, bool &isLast, unsigned predefine) {
+	    const char *parent, bool isFixed, bool &isLast, unsigned predefine, bool isCnst) {
   if (level > m_maxLevel)
     m_maxLevel = level;
   int indent = level * 2;
+  const char *cnst = isCnst ? "const " : "";
   if (m.m_baseType == OA::OCPI_Struct) {
     std::string s;
     camel(s, parent, m.m_name.c_str());
     if (level == predefine || predefine == UINT_MAX-1) {
-      OU::formatAdd(type, "%*sstruct %s {\n", indent, "", s.c_str());
+      OU::formatAdd(type, "%*s%sstruct %s {\n", indent, "", cnst, s.c_str());
       rccStruct(type, m.m_nMembers, m.m_members, level + 1, s.c_str(), isFixed, isLast,
 		    false, predefine);
       OU::formatAdd(type, "%*s}%s", indent, "", predefine == UINT_MAX-1 ? "" : ";\n");
     } else if (level > predefine)
-      OU::formatAdd(type, "%*sstruct %s", indent, "", s.c_str());
+      OU::formatAdd(type, "%*s%sstruct %s", indent, "", cnst, s.c_str());
     else
       rccStruct(type, m.m_nMembers, m.m_members, level + 1, s.c_str(), isFixed, isLast,
 		    false, predefine);
   } else if (m.m_baseType == OA::OCPI_Type)
-    rccType(type, *m.m_type, level + 1, offset, pad, parent, isFixed, isLast, false, predefine);
+    rccType(type, *m.m_type, level + 1, offset, pad, parent, isFixed, isLast, false, predefine,
+	    isCnst);
   else if (m.m_baseType == OA::OCPI_Enum) {
     if (strcasecmp("ocpi_endian", m.m_name.c_str()) &&
 	(level == predefine || predefine == UINT_MAX-1)) {
-      OU::formatAdd(type, "%*senum %c%s {\n", indent, "", toupper(*m.m_name.c_str()),
+      OU::formatAdd(type, "%*s%senum %c%s {\n", indent, "", cnst, toupper(*m.m_name.c_str()),
 		    m.m_name.c_str()+1);
       for (const char **ep = m.m_enums; *ep; ep++) {
 	std::string s;
@@ -119,17 +121,18 @@ rccBaseType(std::string &type, OU::Member &m, unsigned level, size_t &offset, un
 	      predefine == UINT_MAX-1 ? "" : ";\n");
     } else if (level > predefine || predefine == UINT_MAX-1)
       if (!strcasecmp("ocpi_endian", m.m_name.c_str()))
-	OU::formatAdd(type, "%*s%sRCCEndian", indent, "", m_language == CC ? "OCPI::RCC::" : "");
+	OU::formatAdd(type, "%*s%s%sRCCEndian", indent, "", cnst,
+		      m_language == CC ? "OCPI::RCC::" : "");
       else
-	OU::formatAdd(type, "%*senum %c%s", indent, "", toupper(*m.m_name.c_str()), m.m_name.c_str()+1);
+	OU::formatAdd(type, "%*s%senum %c%s", indent, "", cnst, toupper(*m.m_name.c_str()), m.m_name.c_str()+1);
   } else if (level > predefine || predefine == UINT_MAX-1) {
     const char *baseType = m_baseTypes[m.m_baseType];
     if (m_language == C)
-      OU::formatAdd(type, "%*s%-*s", indent, "", indent ? 13 : 0, baseType);
+      OU::formatAdd(type, "%*s%s%-*s", indent, "", cnst, indent ? 13 : 0, baseType);
     else {
       std::string mytype = !strncmp("RCC", baseType, 3) ? "OCPI::RCC::" : "";
       mytype += baseType;
-      OU::formatAdd(type, "%*s%-*s", indent, "", indent ? 24 : 0, mytype.c_str());
+      OU::formatAdd(type, "%*s%s%-*s", indent, "", cnst, indent ? 24 : 0, mytype.c_str());
     }
   }
 }
@@ -140,10 +143,11 @@ rccBaseType(std::string &type, OU::Member &m, unsigned level, size_t &offset, un
 // 2. When a type for a parameter is being defined in advance of its value being defined.
 void Worker::
 rccType(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
-	const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predefine) {
+	const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predefine,
+	bool cnst) {
   int indent = level * 2;
   if (m.m_isSequence && !topSeq) {
-    OU::formatAdd(type, "%*sstruct {\n", indent, "");
+    OU::formatAdd(type, "%*s%sstruct {\n", indent, "", cnst ? "const " : "");
     if (m_language != C)
       OU::formatAdd(type,
 		    "%*s  inline size_t capacity() const { return %zu; }\n"
@@ -155,7 +159,7 @@ rccType(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsign
       size_t align = m.m_dataAlign - (unsigned)sizeof(uint32_t);
       OU::formatAdd(type, "%*s  char pad%u_[%zu];\n", indent, "", pad++, align);
     }
-    rccBaseType(type, m, level + 1, offset, pad, parent, isFixed, isLast, predefine);
+    rccBaseType(type, m, level + 1, offset, pad, parent, isFixed, isLast, predefine, false);
     OU::formatAdd(type, " data");
     if (m.m_sequenceLength && isFixed)
       OU::formatAdd(type, "[%zu]", m.m_sequenceLength);
@@ -166,15 +170,15 @@ rccType(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsign
     rccArray(type, m, isFixed, isLast, false, true);
     OU::formatAdd(type, "%*s}", indent, "");
   } else
-    rccBaseType(type, m, level, offset, pad, parent, isFixed, isLast, predefine);
+    rccBaseType(type, m, level, offset, pad, parent, isFixed, isLast, predefine, cnst);
 }
 // FIXME: a tool-time member class should have this...OCPI::Tools::RCC::Member...
 // Returns true when something is variable length.
 // strings or sequences are like that unless then are bounded.
 void Worker::
 rccMember(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
-	       const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predefine)
-{
+	  const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predefine,
+	  bool cnst) {
   int indent = level * 2;
   if (level > predefine || predefine == UINT_MAX-1) {
     if (offset < m.m_offset) {
@@ -182,12 +186,12 @@ rccMember(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsi
 		    indent, "", pad++, m.m_offset - offset);
       offset = m.m_offset;
     }
-    rccType(type, m, level, offset, pad, parent, isFixed, isLast, topSeq, predefine);
+    rccType(type, m, level, offset, pad, parent, isFixed, isLast, topSeq, predefine, cnst);
     OU::formatAdd(type, " %s", m.m_name.c_str());
     rccArray(type, m, isFixed, isLast, topSeq, true);
     offset += m.m_nBytes;
   } else
-    rccType(type, m, level, offset, pad, parent, isFixed, isLast, topSeq, predefine);
+    rccType(type, m, level, offset, pad, parent, isFixed, isLast, topSeq, predefine, cnst);
 }
 
 const char *Worker::
@@ -407,14 +411,25 @@ emitCppTypesNamespace(FILE *f, std::string &nsName) {
 	  "   * Property structure for worker %s\n"
 	  "   */\n",
 	  m_implName);
-  fprintf(f, "  struct Properties {\n");
+  fprintf(f,
+	  "  struct Properties {\n"
+	  "    Properties() // constructor to value-initialize const members\n"
+	  "      ");
+  first = true;
+  for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
+    if (!(*pi)->m_isParameter && !(*pi)->m_isVolatile) {
+      fprintf(f, "%s%s()", first ? ": " : ", ", (*pi)->m_name.c_str());
+      first = false;
+    }
+  fprintf(f, "    {}\n");
   offset = 0;
   pad = 0;
   isLastDummy = false;
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
     if (!(*pi)->m_isParameter) {
       std::string type;
-      rccMember(type, **pi, 2, offset, pad, NULL, true, isLastDummy, false, 0);
+      rccMember(type, **pi, 2, offset, pad, NULL, true, isLastDummy, false, 0,
+		!(*pi)->m_isVolatile);
       fputs(type.c_str(), f);
     }
   fprintf(f, "  };\n");
@@ -800,7 +815,8 @@ emitImplRCC() {
       std::string type;
       for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
 	if (!(*pi)->m_isParameter)
-	  rccMember(type, **pi, 0, offset, pad, m_implName, true, isLastDummy, false, UINT_MAX-1);
+	  rccMember(type, **pi, 0, offset, pad, m_implName, true, isLastDummy, false, UINT_MAX-1,
+		    !(*pi)->m_isVolatile);
       fprintf(f, "%s} %c%sProperties;\n\n", type.c_str(),
 	      toupper(m_implName[0]), m_implName + 1);
     }

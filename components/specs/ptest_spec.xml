@@ -1,58 +1,59 @@
 <ComponentSpec Name="ptest">
   <Properties>
      <Property Name="p0" Type="Bool" Readable="true" Writable="true"/>
-     <Property Name="p1" Type="Char" Readable="true" Writable="true"/>
+     <Property Name="p1" Type="Char" Volatile="true" Writable="true"/>
      <Property Name="p2" Type="Double" Readable="true" Writable="true"/>
-     <Property Name="p3" Type="Float" Readable="true" Writable="true"/>
+     <Property Name="p3" Type="Float" Volatile="true" Writable="true"/>
      <Property Name="p4" Type="Short" Readable="true" Writable="true"/>
-     <Property Name="p5" Type="Long" Readable="true" Writable="true"/>
+     <Property Name="p5" Type="Long" Volatile="true" Writable="true"/>
      <Property Name="p6" Type="UChar" Readable="true" Writable="true"/>
-     <Property Name="p7" Type="ULong" Readable="true" Writable="true"/>
+     <Property Name="p7" Type="ULong" Volatile="true" Writable="true"/>
      <Property Name="p8" Type="UShort" Readable="true" Writable="true"/>
-     <Property Name="p9" Type="LongLong"  Readable="true" Writable="true"/>
+     <Property Name="p9" Type="LongLong"  Volatile="true" Writable="true"/>
      <Property Name="p10" Type="ULongLong" Readable="true" Writable="true"/>
-     <Property Name="p11" Type="String" StringLength="20" Readable="true" Writable="true"/>
+     <Property Name="p11" Type="String" StringLength="20" Volatile="true" Writable="true"/>
      <Property Name="sp0" Type="Bool" Readable="true" Writable="true" sequencelength="1"/>
-     <Property Name="sp1" Type="Char" Readable="true" Writable="true" sequencelength="2"/>
+     <Property Name="sp1" Type="Char" Volatile="true" Writable="true" sequencelength="2"/>
      <Property Name="sp2" Type="Double" Readable="true" Writable="true" sequencelength="3"/>
-     <Property Name="sp3" Type="Float" Readable="true" Writable="true" sequencelength="4"/>
+     <Property Name="sp3" Type="Float" Volatile="true" Writable="true" sequencelength="4"/>
      <Property Name="sp4" Type="Short" Readable="true" Writable="true" sequencelength="5"/>
-     <Property Name="sp5" Type="Long" Readable="true" Writable="true" sequencelength="6"/>
+     <Property Name="sp5" Type="Long" Volatile="true" Writable="true" sequencelength="6"/>
      <Property Name="sp6" Type="UChar" Readable="true" Writable="true" sequencelength="7"/>
-     <Property Name="sp7" Type="ULong" Readable="true" Writable="true" sequencelength="8"/>
+     <Property Name="sp7" Type="ULong" Volatile="true" Writable="true" sequencelength="8"/>
      <Property Name="sp8" Type="UShort" Readable="true" Writable="true" sequencelength="9"/>
-     <Property Name="sp9" Type="LongLong"  Readable="true" Writable="true" sequencelength="10"/>
+     <Property Name="sp9" Type="LongLong"  Volatile="true" Writable="true" sequencelength="10"/>
      <Property Name="sp10" Type="ULongLong" Readable="true" Writable="true" sequencelength="11"/>
-     <Property Name="sp11" Type="String" StringLength="20" Readable="true" Writable="true" sequencelength="12"/>
+     <Property Name="sp11" Type="String" StringLength="20" Volatile="true" Writable="true" sequencelength="12"/>
      <Property Name="ap0" Type="Bool" Readable="true" Writable="true" arraylength="1"/>
-     <Property Name="ap1" Type="Char" Readable="true" Writable="true" arraylength="2"/>
+     <Property Name="ap1" Type="Char" Volatile="true" Writable="true" arraylength="2"/>
      <Property Name="ap2" Type="Double" Readable="true" Writable="true" arraylength="3"/>
-     <Property Name="ap3" Type="Float" Readable="true" Writable="true" arraylength="4"/>
+     <Property Name="ap3" Type="Float" Volatile="true" Writable="true" arraylength="4"/>
      <Property Name="ap4" Type="Short" Readable="true" Writable="true" arraylength="5"/>
-     <Property Name="ap5" Type="Long" Readable="true" Writable="true" arraylength="6"/>
+     <Property Name="ap5" Type="Long" Volatile="true" Writable="true" arraylength="6"/>
      <Property Name="ap6" Type="UChar" Readable="true" Writable="true" arraylength="7"/>
-     <Property Name="ap7" Type="ULong" Readable="true" Writable="true" arraylength="8"/>
+     <Property Name="ap7" Type="ULong" Volatile="true" Writable="true" arraylength="8"/>
      <Property Name="ap8" Type="UShort" Readable="true" Writable="true" arraylength="9"/>
-     <Property Name="ap9" Type="LongLong"  Readable="true" Writable="true" arraylength="10"/>
+     <Property Name="ap9" Type="LongLong"  Volatile="true" Writable="true" arraylength="10"/>
      <Property Name="ap10" Type="ULongLong" Readable="true" Writable="true" arraylength="11"/>
-     <Property Name="ap11" Type="String" StringLength="20" Readable="true" Writable="true" arraylength="12"/>
+     <Property Name="ap11" Type="String" StringLength="20" Volatile="true" Writable="true" arraylength="12"/>
      <Property Name="sap0" Type="Bool" Readable="true" Writable="true" arraylength="1" sequenceLength="11"/>
-     <Property Name="sap1" Type="Char" Readable="true" Writable="true" arraylength="2" sequenceLength="10"/>
+     <Property Name="sap1" Type="Char" Volatile="true" Writable="true" arraylength="2" sequenceLength="10"/>
      <Property Name="sap2" Type="Double" Readable="true" Writable="true" arraylength="3" sequenceLength="9"/>
-     <Property Name="sap3" Type="Float" Readable="true" Writable="true" arraylength="4" sequenceLength="8"/>
+     <Property Name="sap3" Type="Float" Volatile="true" Writable="true" arraylength="4" sequenceLength="8"/>
      <Property Name="sap4" Type="Short" Readable="true" Writable="true" arraylength="5" sequenceLength="7"/>
-     <Property Name="sap5" Type="Long" Readable="true" Writable="true" arraylength="6" sequenceLength="6"/>
+     <Property Name="sap5" Type="Long" Volatile="true" Writable="true" arraylength="6" sequenceLength="6"/>
      <Property Name="sap6" Type="UChar" Readable="true" Writable="true" arraylength="7" sequenceLength="5"/>
-     <Property Name="sap7" Type="ULong" Readable="true" Writable="true" arraylength="8" sequenceLength="4"/>
+     <Property Name="sap7" Type="ULong" Volatile="true" Writable="true" arraylength="8" sequenceLength="4"/>
      <Property Name="sap8" Type="UShort" Readable="true" Writable="true" arraylength="9" sequenceLength="3"/>
-     <Property Name="sap9" Type="LongLong"  Readable="true" Writable="true" arraylength="10" sequenceLength="2"/>
+     <Property Name="sap9" Type="LongLong"  Volatile="true" Writable="true" arraylength="10" sequenceLength="2"/>
      <Property Name="sap10" Type="ULongLong" Readable="true" Writable="true" arraylength="11" sequenceLength="12"/>
-     <Property Name="sap11" Type="String" StringLength="4" Readable="true" Writable="true" arraylength="12" sequenceLength="3"/>
+     <Property Name="sap11" Type="String" StringLength="4" Volatile="true" Writable="true" arraylength="12" sequenceLength="3"/>
      <Property Name="pp0" Type="Bool" parameter='true' default='0'/>
      <Property Name="pp1" Type="Char" parameter='true' default='1'/>
      <Property Name="pp2" Type="Double" parameter='true' default='2'/>
      <Property Name="pp3" Type="Float" parameter='true' default='3'/>
      <property name='led' type='enum' enums="off,green,red,orange" readable='false' writable='true'/>
+     <property name='ledv' type='enum' enums="off,green,red,orange" volatile='1' writable='true'/>
      <property name='ledp' type='enum' enums="off,green,red,orange" parameter='1' readable='false' default='red'/>
   </Properties>
 </ComponentSpec>

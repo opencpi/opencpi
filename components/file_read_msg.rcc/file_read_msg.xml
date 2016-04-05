@@ -12,16 +12,16 @@ Properties:
     <DataInterfaceSpec Name="out" Producer="true"/>
 
     <property name='fileName' type='string' stringLength='1024' initial='true'/>
-    <property name='genTestFile' type='bool' readable='true' initial='true'/>
+    <property name='genTestFile' type='bool' volatile='true' initial='true'/>
     <property name='genReal' type='bool' readable='true'/>
     <property name='continuous' type='bool' readable='true' initial='true'/>
     <property name='stepThruMsg' type='bool' readable='true' writable='true'/>
-    <property name='stepNow' type='bool' readable='true' writable='true'/>
+    <property name='stepNow' type='bool' volatile='true' writable='true'/>
     <property name='messageSize' type='ulong' readable='true'/>
-    <property name='bytesRead' type='uLongLong' readable='true'/>
-    <property name='messagesWritten' type='uLongLong' readable='true'/>
+    <property name='bytesRead' type='uLongLong' volatile='true'/>
+    <property name='messagesWritten' type='uLongLong' volatile='true'/>
 
-    <property name='finished' type='bool' readable='true' writable='false'/>
+    <property name='finished' type='bool' volatile='true' writable='false'/>
 
 
     <property name='messagesInFile' type='bool' readable='true'/>

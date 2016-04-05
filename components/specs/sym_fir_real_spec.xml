@@ -16,7 +16,7 @@ being handled at the input must be passed to the output.
     <!-- tap values  Format: short[128]   -->
     <Property Name="taps" type="Short" ArrayLength="128" Readable="true" Writable="true"/>
     <!-- peakDetect  Format: Real Qs0.15 -->
-    <Property Name="peakDetect" type="Short" Readable="true" Writable="true"/>
+    <Property Name="peakDetect" type="Short" Volatile="true" Writable="true"/>
 
   </Properties>
 

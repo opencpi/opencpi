@@ -1,8 +1,8 @@
 <ComponentSpec Name="delay">
   <Properties>
-    <Property Name="dlyCtrl" Readable="true" Writable="true" Type="ULong"/>
-    <Property Name="dlyHoldoffBytes" Readable="true" Writable="true" Type="ULong"/>
-    <Property Name="dlyHoldoffCycles" Readable="true" Writable="true" Type="ULong"/>
+    <Property Name="dlyCtrl" Volatile="true" Writable="true" Type="ULong"/>
+    <Property Name="dlyHoldoffBytes" Volatile="true" Writable="true" Type="ULong"/>
+    <Property Name="dlyHoldoffCycles" Volatile="true" Writable="true" Type="ULong"/>
   </Properties>
   <DataInterfaceSpec Name="in" Producer="false">
     <ProtocolSummary DataValueWidth="8" MaxMessageValues="16380" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
