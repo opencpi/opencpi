@@ -159,13 +159,13 @@ $(call DispatchSourceFile,$1,$2): $$(ImplHeaderFiles) | $$(call WkrTargetDir,$1,
 	      echo "#include \"$$$${w}_map.h\"";\
 	  done; \
 	  for w in $(Workers); do \
-	      echo "extern RCCDispatch RCC_FILE_WORKER_$$$$w;";\
+	      echo "extern RCCDispatch RCC_FILE_WORKER_ENTRY_$$$$w;";\
 	  done; \
 	  echo "RCCEntryTable ocpi_EntryTable[] = {";\
 	  for w in $(Workers); do \
 	      echo "  {";\
 	      echo "    .name=STR(RCC_FILE_WORKER_$$$${w}$(and $(filter-out 0,$2),-$2)),";\
-	      echo "    .dispatch=&RCC_FILE_WORKER_$$$$w,";\
+	      echo "    .dispatch=&RCC_FILE_WORKER_ENTRY_$$$$w,";\
 	      echo "    .type=STR($(OcpiLanguage))";\
 	      echo "  },";\
 	  done; \

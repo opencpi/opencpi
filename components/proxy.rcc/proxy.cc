@@ -9,6 +9,7 @@
 #include "proxy-worker.hh"
 
 using namespace OCPI::RCC; // for easy access to RCC data types and constants
+using namespace ProxyWorkerTypes;
 
 class ProxyWorker : public ProxyWorkerBase {
   RCCResult start() {

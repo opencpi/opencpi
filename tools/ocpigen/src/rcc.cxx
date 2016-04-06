@@ -375,6 +375,20 @@ emitCppTypesNamespace(FILE *f, std::string &nsName) {
   std::string s;
   camel(nsName, m_implName, "WorkerTypes", NULL);
   fprintf(f, "\nnamespace %s {\n", nsName.c_str());
+  if (m_ports.size()) {
+    fprintf(f,
+	    "  // Enumeration of port ordinals for worker %s\n"
+	    "  enum %c%sPort {\n",
+	    m_implName, toupper(m_implName[0]), m_implName+1);
+    const char *last = "";
+    const char *upper = upperdup(m_implName);
+    for (unsigned n = 0; n < m_ports.size(); n++) {
+      Port *port = m_ports[n];
+      fprintf(f, "%s  %s_%s", last, upper, upperdup(port->name()));
+      last = ",\n";
+    }
+    fprintf(f, "\n  };\n");
+  }
   m_maxLevel = 0;
   unsigned pad = 0;
   size_t offset = 0;
@@ -437,7 +451,8 @@ emitCppTypesNamespace(FILE *f, std::string &nsName) {
   first = true;
   for (unsigned n = 0; n < m_ports.size(); n++)
     m_ports[n]->emitRccArgTypes(f, first);
-  fprintf(f, "}\n");
+  // deferred until worker base class is out
+  // fprintf(f, "}\n");
 }
 
 void DataPort::
@@ -532,8 +547,8 @@ emitImplRCC() {
   fprintf(f,
 	  " * This file contains the implementation declarations for the %s worker in %s\n"
 	  " */\n\n"
-	  "#ifndef RCC_WORKER_%s_H__\n"
-	  "#define RCC_WORKER_%s_H__\n"
+	  "#ifndef OCPI_RCC_WORKER_%s_H__\n"
+	  "#define OCPI_RCC_WORKER_%s_H__\n"
 	  "#include <assert.h>\n"
 	  "#include <RCC_Worker.h>\n",
 	  m_implName, m_language == C ? "C" : "C++", upper, upper);
@@ -545,31 +560,32 @@ emitImplRCC() {
 	    "#include <OcpiApi.hh>\n"
 	    "#include <OcpiOsDebugApi.hh>\n");
   const char *last;
-  unsigned in = 0, out = 0;
-  if (m_ports.size()) {
-    fprintf(f,
-	    "/*\n"
-	    " * Enumeration of port ordinals for worker %s\n"
-	    " */\n"
-	    "typedef enum {\n",
-	    m_implName);
-    last = "";
-    for (unsigned n = 0; n < m_ports.size(); n++) {
-      Port *port = m_ports[n];
-      fprintf(f, "%s  %s_%s", last, upper, upperdup(port->name()));
-      // FIXME TWO WAY
-      last = ",\n";
-      if (port->isDataProducer())
-	out++;
-      else
-	in++;
+  if (m_language == C) {
+    unsigned in = 0, out = 0;
+    if (m_ports.size()) {
+      fprintf(f,
+	      "/*\n"
+	      " * Enumeration of port ordinals for worker %s\n"
+	      " */\n"
+	      "typedef enum {\n",
+	      m_implName);
+      last = "";
+      for (unsigned n = 0; n < m_ports.size(); n++) {
+	Port *port = m_ports[n];
+	fprintf(f, "%s  %s_%s", last, upper, upperdup(port->name()));
+	// FIXME TWO WAY
+	last = ",\n";
+	if (port->isDataProducer())
+	  out++;
+	else
+	  in++;
+      }
+      fprintf(f, "\n} %c%sPort;\n", toupper(m_implName[0]), m_implName+1);
     }
-    fprintf(f, "\n} %c%sPort;\n", toupper(m_implName[0]), m_implName+1);
-  }
-  if (m_language == C)
     fprintf(f, "#define %s_N_INPUT_PORTS %u\n"
 	    "#define %s_N_OUTPUT_PORTS %u\n",
 	    upper, in, upper, out);
+  }
   if (m_ctl.nRunProperties < m_ctl.properties.size()) {
     fprintf(f,
 	    "/*\n"
@@ -604,9 +620,11 @@ emitImplRCC() {
   }
   if (m_language == CC) {
     std::string myTypes, slaveTypes;
-    emitCppTypesNamespace(f, myTypes);
-    if (m_slave)
+    if (m_slave) {
       m_slave->emitCppTypesNamespace(f, slaveTypes);
+      fprintf(f, "}\n");
+    }
+    emitCppTypesNamespace(f, myTypes);
     std::string s;
     camel(s, m_implName, "WorkerBase", NULL);
     fprintf(f,
@@ -757,25 +775,7 @@ emitImplRCC() {
     }
     for (unsigned n = 0; n < m_ports.size(); n++)
       m_ports[n]->emitRccCppImpl(f);
-    fprintf(f,
-	    "};\n\n"
-	    "#define %s_START_INFO \\\n"
-	    "  extern \"C\" {\\\n"
-	    "    OCPI::RCC::RCCConstruct %s;\\\n"
-	    "    OCPI::RCC::RCCUserWorker *\\\n"
-	    "    %s(void *place, OCPI::RCC::RCCWorkerInfo &info) {\\\n"
-	    "      info.size = sizeof(%c%sWorker);\\\n",
-	    upper, m_implName, m_implName,
-	    toupper(m_implName[0]), m_implName + 1);
-    fprintf(f,
-	    "\n"
-	    "#define %s_END_INFO \\\n"
-	    "      return place ? new /*((%c%sWorker *)place)*/ %c%sWorker : NULL;\\\n"
-	    "    }\\\n"
-	    "  }\\\n",
-	    upper,
-	    toupper(m_implName[0]), m_implName + 1,
-	    toupper(m_implName[0]), m_implName + 1);
+    fprintf(f, "}; // end of worker class\n");
     if (writeNotifiers) {
       fprintf(f, "  %s::Notification %s::s_write_notifiers[] = {\\\n", s.c_str(), s.c_str());
       for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
@@ -800,7 +800,25 @@ emitImplRCC() {
       }
       fprintf(f, "  };\\\n");
     }
-    fprintf(f, "\n");
+    fprintf(f,
+	    "}\n // end the namespace\n"
+	    "#define %s_START_INFO \\\n"
+	    "  extern \"C\" {\\\n"
+	    "    OCPI::RCC::RCCConstruct ocpi_%s;\\\n"
+	    "    OCPI::RCC::RCCUserWorker *\\\n"
+	    "    ocpi_%s(void *place, OCPI::RCC::RCCWorkerInfo &info) {\\\n"
+	    "      info.size = sizeof(%c%sWorker);\\\n",
+	    upper, m_implName, m_implName,
+	    toupper(m_implName[0]), m_implName + 1);
+    fprintf(f,
+	    "\n"
+	    "#define %s_END_INFO \\\n"
+	    "      return place ? new /*((%c%sWorker *)place)*/ %c%sWorker : NULL;\\\n"
+	    "    }\\\n"
+	    "  }\\\n\n",
+	    upper,
+	    toupper(m_implName[0]), m_implName + 1,
+	    toupper(m_implName[0]), m_implName + 1);
   } else {
     if (m_ctl.nRunProperties) {
       fprintf(f,
@@ -895,11 +913,13 @@ emitImplRCC() {
     for (unsigned n = 0; n < m_ports.size(); n++)
       m_ports[n]->emitRccCImpl1(f);
   }
-  fprintf(f, "#endif /* ifndef RCC_WORKER_%s_H__ */\n", upper);
+  fprintf(f, "#endif /* ifndef OCPI_RCC_WORKER_%s_H__ */\n", upper);
   fclose(f);
   if ((err = openOutput(m_fileName.c_str(), m_outDir, "", RCCMAP, RCC_C_HEADER, NULL, f)))
     return err;
   fprintf(f, "#define RCC_FILE_WORKER_%s %s\n", m_fileName.c_str(), m_implName);
+  fprintf(f, "#define RCC_FILE_WORKER_ENTRY_%s %s%s\n", m_fileName.c_str(),
+	  m_language == C ? "" : "ocpi_", m_implName);
   fclose(f);
   if (m_slave)
     m_slave->m_baseTypes = slaveBaseTypes;

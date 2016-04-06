@@ -10,6 +10,7 @@
 #include "bias_cc-worker.hh"
 
 using namespace OCPI::RCC; // for easy access to RCC data types and constants
+using namespace Bias_ccWorkerTypes;
 
 class Bias_ccWorker : public Bias_ccWorkerBase {
   RCCResult testws_read() {return RCC_OK;} // notification that testws property will be read
