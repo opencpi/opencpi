@@ -336,8 +336,10 @@ EOF
   cat <<EOF > $subdir/Makefile
 # This is the $1 library
 
-# All workers created here will be built automatically
-# If you want to limit the workers that actually get built, set the Workers= variable
+# All workers created here in *.<model> will be built automatically
+# All tests created here in *.test directories will be built/run automatically
+# To limit the workers that actually get built, set the Workers= variable
+# To limit the tests that actually get built/run, set the Tests= variable
 include \$(OCPI_CDK_DIR)/include/library.mk
 EOF
   make --no-print-directory -C $subdir || 
