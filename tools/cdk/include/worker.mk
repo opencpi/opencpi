@@ -67,7 +67,7 @@ ifeq ($(MAKECMDGOALS),clean)
 # Clean default OWD files when they are the default
 $(foreach w,$(Workers),\
   $(if $(wildcard $(Worker_$w_xml)),\
-    $(and $(shell if echo "$(call OcpiDefaultOWD,$w,$(Model))" | cmp -s - $(Worker_$w_xml); \
+    $(and $(call OcpiDefaultSpec,$w),$(shell if echo "$(call OcpiDefaultOWD,$w,$(Model))" | cmp -s - $(Worker_$w_xml); \
                   then echo hi; fi),\
 	$(info Removing $(Worker_$w_xml) since it has default contents.) \
         $(shell rm $(Worker_$w_xml)))))
@@ -76,8 +76,8 @@ else
 $(foreach w,$(Workers),\
      $(if $(wildcard $(Worker_$w_xml)),,\
 	 $(and \
-            $(shell echo Creating default OWD in $(Worker_$w_xml) since it "doesn't" exist.;\
-	            echo "$(call OcpiDefaultOWD,$w,$(Model))" > $(Worker_$w_xml)),\
+            $(info Creating a default OWD in $(Worker_$w_xml) since it doesn't exist.)\
+            $(shell echo "$(call OcpiDefaultOWD,$w,$(Model))" > $(Worker_$w_xml)),\
           )))
 endif
 

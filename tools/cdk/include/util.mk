@@ -361,12 +361,11 @@ endef
 
 # Generate the default XML contents for $1 a worker and $2 a model
 # Executed with CWD being the worker directory
-OcpiDefaultOWD=$(strip \
+OcpiDefaultSpec=$(or $(wildcard ../specs/$1_spec.xml),$(wildcard ../specs/$1-spec.xml))
+OcpiDefaultOWD=$(if $(call OcpiDefaultSpec,$1),,$(error No default spec found for worker $1))$(strip \
   <$(call Capitalize,$2)Worker name='$1' \
     language='$(Language_$(Model))' \
-    spec='$(notdir $(strip \
-      $(or $(wildcard ../specs/$1_spec.xml),\
-           $(wildcard ../specs/$1-spec.xml))))'/>)
+    spec='$(notdir $(call OcpiDefaultSpec,$1))'/>)
 
 # Function to generate target dir from target: $(call WkrTargetDir,target,config)
 # FIXME: shouldn't really be named "Wkr"
