@@ -114,14 +114,14 @@ function do_project {
   mkdir $1
   cd $1
   cat <<EOF > Project.exports
-# This file specifies aspects of this project are made available to users,
+# This file specifies aspects of this project that are made available to users,
 # by adding or subtracting from what is automatically exported based on the
 # documented rules.
 # Lines starting with + add to the exports
 # Lines starting with - subtract from the exports
 EOF
   cat <<EOF > Project.mk
-# This Makefile fragment for the "$1" project created at `pwd`
+# This Makefile fragment is for the "$1" project created at `pwd`
 ProjectName=$1
 ProjectPrefix=$prefix
 ProjectPackage=$package
@@ -196,7 +196,7 @@ EOF
     app=${1/%.xml/}
     [ -e applications/$app.xml ] && bad the XML application \"$app\" already exists in ${topdir}applications/$app.xml
     cat <<EOF > $subdir$app.xml
-<!-- The \"$1\" application xml file -->
+<!-- The $1 application xml file -->
 <application>
   <instance component='ocpi.nothing'/>
 </application>
@@ -706,7 +706,7 @@ EOF
   }    
   assy=${1/%.xml/}
   cat <<EOF > $subdir$1/$assy.xml
-<!-- The \"$1\" HDL assembly xml file -->
+<!-- The $1 HDL assembly xml file -->
 <HdlAssembly>
   <!-- Remove this instance and replace it with real ones -->
   <instance worker='nothing'/>
