@@ -499,7 +499,7 @@ namespace OCPI {
 
     // return true on error
     bool
-    getNum64(const char *s, const char *end, int64_t &val) {
+    getNum64(const char *s, const char *end, int64_t &val, unsigned bits) {
       while ((!end || s < end) && isspace(*s))
 	s++;
       do {
@@ -517,7 +517,16 @@ namespace OCPI {
 	uint64_t uval;
 	if (getUNum64(s, end, uval))
 	  break;
-	if (minus) {
+	// Allow hex values without a minus to include the sign bit
+	if (bits && !minus && s[0] == '0' && s[1] == 'x' && // if hex and not minus
+	    (uval & (1 << (bits-1)))) {                     //  if sign bit set
+	  if (bits == 64)
+	    val = (int64_t)uval;
+	  else if (uval & (~(uint64_t)0 << bits)) // if it has invalid high order bits
+	    break;
+	  else
+	    val = (int64_t)(uval | (~(uint64_t)0 << bits)); // signextend
+	} else if (minus) {
 	  if (uval > ((uint64_t)1) << 63)
 	    break;
 	  val = -(int64_t)uval;

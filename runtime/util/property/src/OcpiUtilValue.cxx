@@ -397,7 +397,7 @@ namespace OCPI {
     const char *Value::
     parseShort(const char*cp, const char *end, int16_t &vp) {
       int64_t n;
-      if (OE::getNum64(cp, end, n) || n > INT16_MAX || n < INT16_MIN)
+      if (OE::getNum64(cp, end, n, 16) || n > INT16_MAX || n < INT16_MIN)
 	return "bad Short value";
       vp = (int16_t)n;
       return NULL;
@@ -405,7 +405,7 @@ namespace OCPI {
     const char *Value::
     parseLong(const char*cp, const char *end, int32_t &vp) {
       int64_t n;
-      if (OE::getNum64(cp, end, n) || n > INT32_MAX || n < INT32_MIN)
+      if (OE::getNum64(cp, end, n, 32) || n > INT32_MAX || n < INT32_MIN)
 	return "bad Long value";
       vp = (int32_t)n;
       return NULL;
@@ -445,7 +445,7 @@ namespace OCPI {
     const char *Value::
     parseLongLong(const char*cp, const char *end, int64_t &vp) {
       int64_t n;
-      if (OE::getNum64(cp, end, n) || n > INT64_MAX || n < INT64_MIN)
+      if (OE::getNum64(cp, end, n, 64) || n > INT64_MAX || n < INT64_MIN)
 	return "bad LongLong value";
       vp = n;
       return NULL;
@@ -1068,12 +1068,12 @@ unparseFloat(std::string &s, float val, bool hex) const {
 }
 bool Unparser::
 unparseShort(std::string &s, int16_t val, bool hex) const {
-  doFormat(s, hex ? "0x%lx" : "%ld", (long)val);
+  doFormat(s, hex ? "0x%lx" : "%ld", (long)(hex ? val & 0xffff : val));
   return val == 0;
 }
 bool Unparser::
 unparseLong(std::string &s, int32_t val, bool hex) const {
-  doFormat(s, hex ? "0x%lx" : "%ld", (long)val);
+  doFormat(s, hex ? "0x%lx" : "%ld", (long)(hex ? val & 0xffffffffl : val));
   return val == 0;
 }
 bool Unparser::

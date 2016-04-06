@@ -270,7 +270,7 @@ namespace OCPI {
 	// FIXME: move to util:misc if they are not about xml
         getUNum(const char *s, size_t *valp),
         getUNum64(const char *s, const char *end, uint64_t &valp),
-        getNum64(const char *s, const char *end, int64_t &valp),
+        getNum64(const char *s, const char *end, int64_t &valp, unsigned bits = 0),
         parseBool(const char *a, const char *end, bool *b),
 	getOptionalString(ezxml_t x, std::string &s, const char *attr);
       extern void
