@@ -48,7 +48,7 @@ exports:
 	$(AT)$(OCPI_CDK_DIR)/scripts/makeExportLinks.sh $(OCPI_TARGET_DIR) $(ProjectPrefix)_
 
 components: hdlprimitives
-	$(call MaybeMake,components,rcc hdl HdlTargets="$(HdlTargets)" HdlPlatforms="$(HdlPlatforms)")
+	$(call MaybeMake,components,rcc hdl)
 	$(AT)$(MAKE) exports
 
 hdlprimitives:
