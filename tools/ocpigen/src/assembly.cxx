@@ -462,8 +462,7 @@ emitXmlWorker(FILE *f) {
   if (m_ctl.controlOps) {
     bool first = true;
     for (unsigned op = 0; op < OU::Worker::OpsLimit; op++)
-      if (op != OU::Worker::OpStart &&
-	  m_ctl.controlOps & (1 << op)) {
+      if (m_ctl.controlOps & (1 << op)) {
 	fprintf(f, "%s%s", first ? " controlOperations=\"" : ",",
 		OU::Worker::s_controlOpNames[op]);
 	first = false;

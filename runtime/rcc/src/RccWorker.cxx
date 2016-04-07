@@ -715,8 +715,14 @@ controlOperation(OU::Worker::ControlOperation op) {
   RCCResult rc = RCC_OK;
   OU::AutoMutex guard (mutex(), true);
   pthread_setspecific(Driver::s_threadKey, this);
-#define DISPATCH(op)							\
-  (m_dispatch ? (m_dispatch->op ? m_dispatch->op(m_context) : RCC_OK) : m_user->op())
+  enum {
+#define CONTROL_OP(x, c, t, s1, s2, s3, s4) My_##x = 1 << OU::Worker::Op##c,
+OCPI_CONTROL_OPS
+#undef CONTROL_OP
+  };
+#define DISPATCH(op) \
+  (!(getControlMask() & My_##op) ? RCC_OK : \
+   (m_dispatch ? (m_dispatch->op ? m_dispatch->op(m_context) : RCC_OK) : m_user->op()))
   switch (op) {
   case OU::Worker::OpInitialize:
     rc = DISPATCH(initialize);
