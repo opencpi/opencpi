@@ -100,7 +100,7 @@ if test ! -f $f; then
 fi
 source $f
 #default the target host to the tool host
-export PATH=$OCPI_CDK_DIR/bin/$OCPI_TOOL_DIR:$OCPI_CDK_DIR/scripts:$PATH
+export PATH=$OCPI_CDK_DIR/bin/$OCPI_TOOL_DIR:$PATH
 if test "$OCPI_LIBRARY_PATH" = ""; then
   # Default library path for RCC workers only
   export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/lib/components:$OCPI_CDK_DIR/lib/platforms/$OCPI_TARGET_PLATFORM
