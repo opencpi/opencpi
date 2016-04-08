@@ -77,9 +77,18 @@
      else
        // Get the info, without constructing the worker.
        ((RCCConstruct *)m_entry->dispatch)(NULL, m_info);
-   else
+   else {
      // Note the "hack" to use "name" as dispatch when artifact is not present
      m_dispatch = (RCCDispatch *)name;
+     uint32_t mask = 0;
+     // For these test workers, initialize the control mask from the dispatch table
+#define CONTROL_OP(x, c, t, s1, s2, s3, s4) \
+     if (m_dispatch->x)                     \
+	  mask |= 1 << OU::Worker::Op##c;
+     OCPI_CONTROL_OPS
+#undef CONTROL_OP
+     setControlMask(mask);
+   }
    if (m_dispatch) {
      m_info.memSize = m_dispatch->memSize;
      m_info.memSizes = m_dispatch->memSizes;
