@@ -35,11 +35,10 @@ class Bias_ccWorker : public Bias_ccWorkerBase {
       x = 1;
     }
 #endif
-    out.checkLength(in.length());               // make sure input will fit in output buffer
+    out.setOpCode(in.opCode());        // Set the metadata for the output message
+    out.data().data().resize(length);  // resize output array
     for (unsigned n = length; n; n--) // n is length in sequence elements of input
       *outData++ = *inData++ + properties().biasValue;
-    out.data().data().resize(length);
-    out.setOpCode(in.opCode());      // Set the metadata for the output message
     return in.length() ? RCC_ADVANCE : RCC_ADVANCE_DONE;
   }
 };

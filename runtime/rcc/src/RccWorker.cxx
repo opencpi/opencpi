@@ -75,7 +75,7 @@
      if (!strcasecmp(m_entry->type, "c"))
        m_dispatch = m_entry->dispatch;
      else
-       // Get the info, without constructing the worker.
+       // Get the info, constructing the worker.
        ((RCCConstruct *)m_entry->dispatch)(NULL, m_info);
    else {
      // Note the "hack" to use "name" as dispatch when artifact is not present
@@ -1162,8 +1162,9 @@ OCPI_CONTROL_OPS
      if (!hasBuffer())
        throw OU::Error("Port has no buffer.  The checkLength method is invalid.");
      if (length > maxLength())
-       throw OU::Error("Checked length %zu exceeds maximum buffer size: %zu",
-		       length, maxLength());
+       throw OU::Error("Checked length %zu on port \"%s\" of worker \"%s\" exceeds buffer size: %zu",
+		       length, m_rccPort.containerPort->name().c_str(),
+		       m_rccPort.containerPort->parent().name().c_str(), maxLength());
    }
    size_t RCCUserPort::
    topLength(size_t eLength) {
