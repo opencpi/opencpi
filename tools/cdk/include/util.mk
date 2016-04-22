@@ -487,9 +487,15 @@ define OcpiSetProject
   $$(call OcpiPrependEnvPath,OCPI_HDL_PLATFORM_PATH,$$(OcpiTempProjDir)/hdl/platforms)
   # when looking for XML specs and protocols, look in this project
   $$(call OcpiPrependEnvPath,OCPI_XML_INCLUDE_PATH,$$(OcpiTempProjDir)/specs)
-  # when looking for component libraries, look in this project
-  $$(call OcpiPrependEnvPath,OCPI_COMPONENT_LIBRARY_PATH,$$(OcpiTempProjDir)$$(strip\
-    $$(and $$(filter libraries,$$(call OcpiGetDirType,$$(OcpiTempProjDir)/components)),/components)))
+  # when looking for component libraries, look in this project, without depending on
+  # exports, and also include the hdl/devices library
+  $$(foreach l,$$(wildcard $$(OcpiTempProjDir)/hdl/devices) \
+    $$(if $$(filter libraries,$$(call OcpiGetDirType,$$(OcpiTempProjDir)/components)),\
+      $$(foreach m,$$(wildcard $$(OcpiTempProjDir)/components/*/Makefile),$$(infox MMM:$$m)\
+         $$(foreach d,$$(m:%/Makefile=%),$$(infox DDD:$$d)\
+            $$(and $$(filter library,$$(call OcpiGetDirType,$$d)),$$d))),\
+      $$(OcpiTempProjDir)/components),\
+    $$(call OcpiPrependEnvPath,OCPI_COMPONENT_LIBRARY_PATH,$$(patsubst %/,%,$$(dir $$l))))
   # when looking for HDL component libraries, look in this project
   # This variable is becoming obsolete - only used in legacy ocpiassets
   #  $$(call OcpiPrependEnvPath,OCPI_HDL_COMPONENT_LIBRARY_PATH,$$(OcpiTempProjDir)/hdl)
