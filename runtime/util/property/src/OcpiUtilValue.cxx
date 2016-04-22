@@ -478,8 +478,9 @@ namespace OCPI {
 	  if (cp + 1 != end)
 	    return "double quoted string with invalid characters after the closing quote";
 	  break;
-	} else if (m_vt->m_stringLength && len >= m_vt->m_stringLength ||
-		   parseOneChar(cp, end, *m_stringNext++))
+	} else if (m_vt->m_stringLength && len >= m_vt->m_stringLength)
+	  return "string too long";
+	else if (parseOneChar(cp, end, *m_stringNext++))
 	  return "bad String value";
       *m_stringNext++ = 0;
       vp = (const char *)start;
@@ -644,10 +645,13 @@ namespace OCPI {
 	Value::s_vt = m_vt->m_type;
 	Value::s_parent = this;
 	m_types = m_typeNext = new Value[m_nTotal];
+#if 0
+	// If not allocated its because the caller will do the right thing with strings
       } else if (m_vt->m_baseType == OA::OCPI_String && !m_stringSpace) {
 	assert(!add);
 	m_stringSpaceLength = m_nTotal * (testMaxStringLength + 1);
 	m_stringNext = m_stringSpace = new char[m_stringSpaceLength];
+#endif
       }
       return NULL;
     }
@@ -1189,7 +1193,10 @@ void Value::generate() {
     m_nElements = random() % (m_vt->m_sequenceLength ? m_vt->m_sequenceLength : 5);
     m_nTotal *= m_nElements;
   }
-  // string space?
+  if (m_vt->m_baseType == OA::OCPI_String) {
+    m_stringSpaceLength = m_nTotal * (testMaxStringLength + 1);
+    m_stringNext = m_stringSpace = new char[m_stringSpaceLength];
+  }
   ocpiCheck(allocate() == 0);
   if (m_vt->m_isSequence)
     // Now we have allocated the appropriate sequence array, so we can parse elements
