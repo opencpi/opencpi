@@ -360,7 +360,11 @@ namespace OCPI {
       if (m_default && !suppressDefault) {
 	std::string val;
 	m_default->unparse(val);
-	fprintf(f, " default=\"%s\"", val.c_str()); // FIXME: string value properties may have extra quotes
+	fprintf(f, " default='");
+	std::string xml;
+	encodeXmlAttrSingle(val, xml);
+	fputs(xml.c_str(), f);
+	fputc('\'', f);
       }
     }
     void Member::
