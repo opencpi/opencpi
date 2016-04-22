@@ -128,8 +128,11 @@ namespace OCPI {
 	if (info.m_baseType == OA::OCPI_String) {
 	  const char **sp = v.m_pString;
 	  for (unsigned n = 0; n < v.m_nTotal; n++) {
-	    size_t l = strlen(sp[n]);
-	    setPropertyBytes(info, offset, (uint8_t*)sp[n], l + 1);
+	    if (sp[n]) {
+	      size_t l = strlen(sp[n]);
+	      setPropertyBytes(info, offset, (uint8_t*)sp[n], l + 1);
+	    } else
+	      setProperty8(info, offset, 0);
 	    offset += OU::roundUp(info.m_stringLength + 1, 4);
 	  }	  
 	} else {
@@ -140,7 +143,7 @@ namespace OCPI {
 	    // We need to create a temporary linear value - explicitly align it
 	    size_t length = (nBytes + 7)/8;
 	    alloc = new uint64_t[length];
-	    length *= 8;
+	    length = nBytes;
 	    data = (uint8_t*)alloc;
 	    const OU::Value *vp = &v;
 	    OU::ValueReader reader(&vp);
