@@ -323,6 +323,17 @@ function do_library {
     return 0
   fi
   [ -e $subdir ] && bad the library \"$1\" \(directory $subdir/\) already exists
+  if [ -d components ] ; then
+    get_dirtype components
+    case "$dirtype" in
+      (library|lib)
+        bad this project already has a \"components\" library, you cannot create another library;;
+      (libraries)
+        ;;
+      (*)
+        bad unexpected contents of components directory \($dirtype\);;
+    esac
+  fi
   if [ "$subdir" != components -a ! -d components ] ; then
     mkdir components
     cat <<EOF > components/Makefile
