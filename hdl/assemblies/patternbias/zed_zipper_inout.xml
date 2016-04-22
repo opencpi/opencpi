@@ -1,4 +1,6 @@
 <HdlContainer platform='zed_zipper'>
-<connection external='out' device='lime_dac'/>
-<connection device ='lime_adc' interconnect='zynq'/>
+  <connection external='out' device='lime_dac'/>
+  <connection device ='lime_adc' interconnect='zynq'/>
+  <device name="lime_rx"/>
+  <device name="lime_tx"/>
 </HdlContainer>
