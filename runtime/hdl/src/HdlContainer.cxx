@@ -223,8 +223,7 @@ namespace OCPI {
       unsigned								    \
       get##pretty##SequenceProperty(const OA::Property &p, run *vals,	    \
 				    size_t length) const {		    \
-	return								    \
-      get##pretty##SequenceProperty(p, vals, length);		            \
+	return WciControl::get##pretty##SequenceProperty(p, vals, length);  \
       }
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)
 OCPI_DATA_TYPES
