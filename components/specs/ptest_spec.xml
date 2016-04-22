@@ -46,7 +46,7 @@
      <Property Name="sap8" Type="UShort" Readable="true" Writable="true" arraylength="9" sequenceLength="3"/>
      <Property Name="sap9" Type="LongLong"  Volatile="true" Writable="true" arraylength="10" sequenceLength="2"/>
      <Property Name="sap10" Type="ULongLong" Readable="true" Writable="true" arraylength="11" sequenceLength="12"/>
-     <Property Name="sap11" Type="String" StringLength="10" Volatile="true" Writable="true" arraylength="12" sequenceLength="3" default='{a,c,\"&amp;apos;,dd}'/>
+     <Property Name="sap11" Type="String" StringLength="10" Volatile="true" Writable="true" arraylength="12" sequenceLength="3"/>
      <Property Name="pp0" Type="Bool" parameter='true' default='0'/>
   <Properties>
      <Property Name="pp1" Type="Char" parameter='true' default='1'/>
@@ -56,9 +56,4 @@
      <property name='ledv' type='enum' enums="off,green,red,orange" volatile='1' writable='true'/>
      <property name='ledp' type='enum' enums="off,green,red,orange" parameter='1' readable='false' default='red'/>
   </Properties>
-  <Property name="outFile" type="Struct" readable="true" writable="true">
-    <Member name='prefix' type='string' stringLength='1024'/>
-    <Member name='digits' type='uChar' default='1'/>
-    <Member name='suffix' type='string' stringLength='1024' default='.bin'/>
-  </Property>
 </ComponentSpec>
