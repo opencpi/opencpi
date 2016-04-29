@@ -842,21 +842,20 @@ namespace OCPI {
     }
 
     bool ApplicationI::getProperty(unsigned ordinal, std::string &name, std::string &value,
-				   bool hex, bool *parp) {
+				   bool hex, bool *parp, bool *cachedp, bool uncached) {
       if (ordinal >= m_nProperties)
 	return false;
       Property &p = m_properties[ordinal];
       name = p.m_name;
       OC::Worker &w = *m_launchInstances[p.m_instance].m_worker;
-      OU::Property &wp = w.property(p.m_property);
-      if (wp.m_isReadable) {
-	std::string dummy;
-	m_launchInstances[p.m_instance].m_worker->
-	  getProperty(p.m_property, dummy, value, NULL, hex);
-      } else
+      bool unreadable;
+      std::string dummy;
+      m_launchInstances[p.m_instance].m_worker->
+	getProperty(p.m_property, dummy, value, &unreadable, hex, cachedp, uncached);
+      if (unreadable)
 	value = "<unreadable>";
       if (parp)
-	*parp = wp.m_isParameter;
+	*parp = w.property(p.m_property).m_isParameter;
       return true;
     }
 
@@ -935,8 +934,8 @@ namespace OCPI {
       return m_application.getPort(name, params);
     }
     bool Application::getProperty(unsigned ordinal, std::string &name, std::string &value,
-				  bool hex, bool *parp) {
-      return m_application.getProperty(ordinal, name, value, hex, parp);
+				  bool hex, bool *parp, bool *cachedp, bool uncached) {
+      return m_application.getProperty(ordinal, name, value, hex, parp, cachedp, uncached);
     }
     void Application::getProperty(const char* w, const char* p, std::string &value, bool hex) {
       OCPI_EMIT_STATE_NR( pegp, 1 );

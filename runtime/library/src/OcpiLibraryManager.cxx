@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <climits>
+#include <set>
 #include "OcpiOsFileIterator.h"
 #include "OcpiUtilException.h"
 #include "OcpiLibraryManager.h"
@@ -116,13 +117,18 @@ namespace OCPI {
       }
       return found;
     }
-    void Manager::printArtifactsX(const Capabilities &caps) {
+    void Manager::printArtifactsX(const Capabilities &caps, bool dospecs) {
       parent().configureOnce();
+      std::set<const char *, OCPI::Util::ConstCharComp> specs;
       for (Driver *d = firstDriver(); d; d = d->nextDriver())
 	for (Library *l = d->firstLibrary(); l; l = l->nextLibrary())
 	  for (Artifact *a = l->firstArtifact(); a; a = a->nextArtifact())
-	    if (a->meetsCapabilities(caps))
-	      printf("%s\n", a->name().c_str());
+	    if (a->meetsCapabilities(caps)) {
+	      if (dospecs)
+		a->printSpecs(specs);
+	      else
+		printf("%s\n", a->name().c_str());
+	    }
     }
     // Find one good implementation, return true if one is found that satisfies the criteria
     bool Manager::findImplementation(const char *specName, const char *selectCriteria,
@@ -409,6 +415,13 @@ namespace OCPI {
 	  toImpl->setConnection(*toP);
       }
     }
+    void Artifact::
+    printSpecs(std::set<const char *, OCPI::Util::ConstCharComp> &specs) const {
+      for (WorkerIter wi = m_workers.begin(); wi != m_workers.end(); wi++)
+	if (specs.insert((*wi).second->m_metadataImpl.specName().c_str()).second)
+	  printf("%s\n", (*wi).second->m_metadataImpl.specName().c_str());
+    }
+
     Capabilities::Capabilities() : m_dynamic(false) {}
   }
   namespace API {

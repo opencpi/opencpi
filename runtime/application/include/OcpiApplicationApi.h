@@ -70,7 +70,8 @@ namespace OCPI {
       void stop();
       ExternalPort &getPort(const char *, const OCPI::API::PValue *params = NULL);
       bool getProperty(unsigned ordinal, std::string &name, std::string &value,
-		       bool hex = false, bool *parameterp = NULL);
+		       bool hex = false, bool *parameterp = NULL, bool *cachedp = NULL,
+		       bool uncached = false);
       // Use top level names or instance:property
       void getProperty(const char* prop_name, std::string &value, bool hex = false);
       void setProperty(const char* prop_name, const char *value);

@@ -88,6 +88,7 @@ static const char *doServer(const char *server, void *) {
   static std::string error;
   return OR::useServer(server, verbose, NULL, error) ? error.c_str() : NULL;
 }
+static bool specs;
 static const char *doTarget(const char *target, void *) {
   static std::string error;
   OL::Capabilities caps;
@@ -103,7 +104,7 @@ static const char *doTarget(const char *target, void *) {
     caps.m_platform = target;
   } else
     caps.m_platform = target;
-  OL::Manager::printArtifacts(caps);
+  OL::Manager::printArtifacts(caps, specs);
   return NULL;
 }
 
@@ -117,7 +118,7 @@ static const char *arg(const char **&ap) {
 
 int
 main(int /*argc*/, const char **argv) {
-  bool dump = false, containers = false, hex = false, remote = false;
+  bool dump = false, containers = false, hex = false, remote = false, uncached = false;
   unsigned seconds = 0, nProcs = 0;
   const char *servers = NULL, *artifacts = NULL;
   const char *argv0 = strrchr(argv[0], '/');
@@ -186,6 +187,8 @@ main(int /*argc*/, const char **argv) {
       case 'C':
 	containers = true;
 	break;
+      case 'G':
+	specs = true;
       case 'A':
 	artifacts = arg(ap);
 	break;
@@ -194,6 +197,9 @@ main(int /*argc*/, const char **argv) {
 	break;
       case 'R':
 	remote = true;
+	break;
+      case 'U':
+	uncached = true;
 	break;
       default:
 	usage(argv0);
@@ -278,12 +284,13 @@ main(int /*argc*/, const char **argv) {
 	      "Communication with the application established\n");
     if (dump) {
       std::string name, value;
-      bool isParameter;
+      bool isParameter, isCached;
       if (verbose)
 	fprintf(stderr, "Dump of all initial property values:\n");
-      for (unsigned n = 0; app.getProperty(n, name, value, hex, &isParameter); n++)
+      for (unsigned n = 0; app.getProperty(n, name, value, hex, &isParameter, &isCached,
+					   uncached); n++)
 	fprintf(stderr, "Property %2u: %s = \"%s\"%s\n", n, name.c_str(), value.c_str(),
-		isParameter ? " (parameter)" : "");
+		isParameter ? " (parameter)" : (isCached ? " (cached)" : ""));
     }
     app.start();
     if (verbose)
@@ -306,11 +313,12 @@ main(int /*argc*/, const char **argv) {
     app.finish();
     if (dump) {
       std::string name, value;
-      bool isParameter;
+      bool isParameter, isCached;
       if (verbose)
 	fprintf(stderr, "Dump of all final property values:\n");
-      for (unsigned n = 0; app.getProperty(n, name, value, hex, &isParameter); n++)
-	if (!isParameter)
+      for (unsigned n = 0; app.getProperty(n, name, value, hex, &isParameter, &isCached,
+					   uncached); n++)
+	if (!isParameter && !isCached)
 	  fprintf(stderr, "Property %2u: %s = \"%s\"\n", n, name.c_str(), value.c_str());
     }
     return 0;
