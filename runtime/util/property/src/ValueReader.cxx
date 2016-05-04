@@ -27,7 +27,8 @@ nextItem(const Member &m, bool seq) {
     if (m_parent->m_struct) {
       StructValue sv = m_parent->m_vt->m_arrayRank || m_parent->m_vt->m_isSequence ?
 	m_parent->m_pStruct[m_parent->m_next] : m_parent->m_Struct;
-      m_v = sv[m.m_ordinal];
+      // elements of an array or sequence are allowed to be "empty"
+      m_v = sv ? sv[m.m_ordinal] : NULL;
     } else
       m_v = NULL;
     if (!m_v)
