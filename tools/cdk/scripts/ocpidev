@@ -544,7 +544,11 @@ EOF
   cat<<EOF > hdl/platforms/$1/$1.mk
 # Set this variable to the part (die-speed-package, e.g. xc7z020-1-clg484) for the platform
 HdlPart_$1=xyz
-# Set this variable to any other component libraries housing devices define in this platform
+# Set this variable to the names of any other component libraries with devices defined in this
+# platform. Do not use slashes.  If there is an hdl/devices library in this project, it will be
+# searched automatically, as will "devices" in any projects this project depends on.
+# An example might be something like "our_special_devices", which would exist in this or
+# other projects.
 ComponentLibraries_$1=
 EOF
   cat<<EOF > hdl/platforms/$1/$1.xml
@@ -756,7 +760,7 @@ Options are: lower case for general options, upper case for creation options
  -- when creating projects --
   -F <prefix>        The project prefix when creating projects, defaults to <name>_
   -K <package>       The package name when creating projects or libraries
-  -D <dependencies>  A comma-separated list of dependencies
+  -D <dependencies>  A colon-separated list of project directories
  -- when creating workers --
   -S <spec>          The spec to use when it is not <worker>[-_]spec
   -P <platform>      The HDL platform for creating device workers or proxies when it is specific

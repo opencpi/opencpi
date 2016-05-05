@@ -762,7 +762,7 @@ namespace OCPI {
         } else {
           for (i = if_ni; !(i->if_index == 0 && i->if_name == NULL); ++i) {
             ifnames.push_back(std::make_pair(i->if_index, i->if_name));
-            ocpiDebug("if_nameindex scan: %u = %s (%lu total)", i->if_index, i->if_name, ifnames.size());
+            ocpiDebug("if_nameindex scan: %u = %s (%zu total)", i->if_index, i->if_name, ifnames.size());
           }
           if_freenameindex(if_ni);
           std::sort(ifnames.begin(), ifnames.end());

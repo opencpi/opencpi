@@ -136,7 +136,7 @@ ifndef RccTargets
 RccTargets=$(OCPI_TARGET_HOST)
 endif
 
-include $(OCPI_CDK_DIR)/include/lib.mk
+include $(OCPI_CDK_DIR)/include/library.mk
 
 loc:
 	$(OCPI_CDK_DIR)/include/static_analyzer.sh ./components_sw_metrics.txt

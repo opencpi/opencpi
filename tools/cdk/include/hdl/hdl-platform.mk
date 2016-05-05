@@ -38,6 +38,7 @@ HdlLibraries+=platform
 # "override" is used, "export" doesn't apply.
 export OCPI_HDL_PLATFORM_PATH
 override OCPI_HDL_PLATFORM_PATH := $(call OcpiAbsDir,.)$(and $(OCPI_HDL_PLATFORM_PATH),:$(OCPI_HDL_PLATFORM_PATH))
+$(call OcpiDbgVar,OCPI_HDL_PLATFORM_PATH)
 # If no platforms were specified, we obviously want to build this platform.
 # And not default to some global "default" one.
 ifeq ($(HdlPlatform)$(HdlPlatforms),)
@@ -79,12 +80,14 @@ ifneq ($(MAKECMDGOALS),clean)
     $(and $(shell \
        RET=; \
        echo ======= Entering the \"devices\" library for the \"$(Worker)\" platform. 1>&2; \
-       export OCPI_HDL_PLATFORM_PATH=$(CURDIR); \
+       export OCPI_HDL_PLATFORM_PATH=$(CURDIR):$$OCPI_HDL_PLATFORM_PATH; \
        $(MAKE) -C devices --no-print-directory \
          ComponentLibrariesInternal="$(call OcpiAdjustLibraries,$(ComponentLibraries))" \
          XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirsInternal))" \
          HdlPlatforms="$(HdlPlatforms)" HdlPlatform="$(HdlPlatform)" \
-         HdlTargets="$(HdlTargets)" HdlTarget="$(HdlTarget)" $(MAKECMDGOALS) 1>&2 || RET=1; \
+         HdlTargets="$(HdlTargets)" HdlTarget="$(HdlTarget)" $(MAKECMDGOALS) 1>&2 && \
+         mkdir -p lib 1>&2 && rm -f lib/devices && ln -s ../devices/lib lib/devices 1>&2 || \
+	 RET=1; \
        echo ======= Exiting the \"devices\" library for the \"$(Worker)\" platform. 1>&2; \
        echo $$RET),$(error Error building devices library in $(CURDIR)))
   endif
