@@ -132,6 +132,7 @@ namespace OCPI {
       bool m_controlOpPending;
       Worker *m_slave;
       bool m_hasMaster;
+      std::vector<uint8_t *> m_cache; // cache for writable, non-volatile property values
       bool beforeStart();
     protected:
       void checkControl();
@@ -172,9 +173,10 @@ namespace OCPI {
       void setProperties(const char *props[][2]);
       void setProperties(const OCPI::API::PValue *props);
       virtual void getPropertyValue(const OCPI::Util::Property &p, std::string &value, bool hex,
-				    bool add = false);
+				    bool add = false, bool uncached = false);
       bool getProperty(unsigned ordinal, std::string &name, std::string &value,
-		       bool *unreadablep = NULL, bool hex = false);
+		       bool *unreadablep = NULL, bool hex = false, bool *cachedp = NULL,
+		       bool uncached = false);
       bool hasImplTag(const char *tag);
       bool hasInstTag(const char *tag);
       typedef unsigned Ordinal;

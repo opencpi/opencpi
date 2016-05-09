@@ -696,6 +696,7 @@
 	 OU::findBool(params, "dump", m_dump);
 	 OU::findBool(params, "dumpPlatforms", m_dumpPlatforms);
 	 OU::findBool(params, "hex", m_hex);
+	 OU::findBool(params, "uncached", m_uncached);
 	 // Initializations for externals may add instances to the assembly
 	 initExternals(params);
 	 // Now that we have added any extra instances for external connections, do
@@ -860,12 +861,12 @@
      void ApplicationI::start() {
        if (m_dump) {
 	 std::string name, value;
-	 bool isParameter;
+	 bool isParameter, isCached;
 	 if (m_verbose)
 	   fprintf(stderr, "Dump of all initial property values:\n");
-	 for (unsigned n = 0; getProperty(n, name, value, m_hex, &isParameter); n++)
+	 for (unsigned n = 0; getProperty(n, name, value, m_hex, &isParameter, &isCached, m_uncached); n++)
 	   fprintf(stderr, "Property %2u: %s = \"%s\"%s\n", n, name.c_str(), value.c_str(),
-		   isParameter ? " (parameter)" : "");
+		   isParameter ? " (parameter)" : (isCached ? " (cached)" : ""));
        }
        if (m_dumpPlatforms)
 	 for (unsigned n = 0; n < m_nContainers; n++)
@@ -925,12 +926,13 @@
 	}
       if (m_dump) {
 	std::string name, value;
-	bool isParameter;
+	bool isParameter, isCached;
 	if (m_verbose)
 	  fprintf(stderr, "Dump of all final property values:\n");
-	for (unsigned n = 0; getProperty(n, name, value, m_hex, &isParameter); n++)
-	  if (!isParameter)
-	    fprintf(stderr, "Property %2u: %s = \"%s\"\n", n, name.c_str(), value.c_str());
+	for (unsigned n = 0; getProperty(n, name, value, m_hex, &isParameter, &isCached,
+					 m_uncached); n++)
+	if (!isParameter && !isCached)
+	  fprintf(stderr, "Property %2u: %s = \"%s\"\n", n, name.c_str(), value.c_str());
       }
       if (m_dumpPlatforms)
 	 for (unsigned n = 0; n < m_nContainers; n++)
@@ -980,21 +982,20 @@
     }
 
     bool ApplicationI::getProperty(unsigned ordinal, std::string &name, std::string &value,
-				   bool hex, bool *parp) {
+				   bool hex, bool *parp, bool *cachedp, bool uncached) {
       if (ordinal >= m_nProperties)
 	return false;
       Property &p = m_properties[ordinal];
       name = p.m_name;
       OC::Worker &w = *m_launchInstances[p.m_instance].m_worker;
-      OU::Property &wp = w.property(p.m_property);
-      if (wp.m_isReadable || wp.m_isParameter) {
-	std::string dummy;
-	m_launchInstances[p.m_instance].m_worker->
-	  getProperty(p.m_property, dummy, value, NULL, hex);
-      } else
+      bool unreadable;
+      std::string dummy;
+      m_launchInstances[p.m_instance].m_worker->
+	getProperty(p.m_property, dummy, value, &unreadable, hex, cachedp, uncached);
+      if (unreadable)
 	value = "<unreadable>";
       if (parp)
-	*parp = wp.m_isParameter;
+	*parp = w.property(p.m_property).m_isParameter;
       return true;
     }
 
@@ -1124,9 +1125,9 @@
       return m_application.getPort(name, params);
     }
 
-    bool Application::
-    getProperty(unsigned ordinal, std::string &name, std::string &value, bool hex, bool *parp) {
-      return m_application.getProperty(ordinal, name, value, hex, parp);
+    bool Application::getProperty(unsigned ordinal, std::string &name, std::string &value,
+				  bool hex, bool *parp, bool *cachedp, bool uncached) {
+      return m_application.getProperty(ordinal, name, value, hex, parp, cachedp, uncached);
     }
 
     void Application::

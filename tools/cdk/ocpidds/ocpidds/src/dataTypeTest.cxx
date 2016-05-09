@@ -45,7 +45,8 @@ void dataTypeTest(const char *arg) {
     uint8_t opcode = 0;
     p.generateOperation(opcode, v);
     p.printOperation(stdout, opcode, v);
-    p.testOperation(stdout, opcode, v);
+    p.testOperation(stdout, opcode, v, false);
+    p.testOperation(stdout, opcode, v, true);
     printf("Min Buffer Size: %zu %zu %zu\n", p.m_minBufferSize, p.m_dataValueWidth, p.m_minMessageValues);
     fflush(stdout);
     size_t len;

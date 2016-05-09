@@ -75,11 +75,20 @@
      if (!strcasecmp(m_entry->type, "c"))
        m_dispatch = m_entry->dispatch;
      else
-       // Get the info, without constructing the worker.
+       // Get the info, constructing the worker.
        ((RCCConstruct *)m_entry->dispatch)(NULL, m_info);
-   else
+   else {
      // Note the "hack" to use "name" as dispatch when artifact is not present
      m_dispatch = (RCCDispatch *)name;
+     uint32_t mask = 0;
+     // For these test workers, initialize the control mask from the dispatch table
+#define CONTROL_OP(x, c, t, s1, s2, s3, s4) \
+     if (m_dispatch->x)                     \
+	  mask |= 1 << OU::Worker::Op##c;
+     OCPI_CONTROL_OPS
+#undef CONTROL_OP
+     setControlMask(mask);
+   }
    if (m_dispatch) {
      m_info.memSize = m_dispatch->memSize;
      m_info.memSizes = m_dispatch->memSizes;
@@ -715,8 +724,14 @@ controlOperation(OU::Worker::ControlOperation op) {
   RCCResult rc = RCC_OK;
   OU::AutoMutex guard (mutex(), true);
   pthread_setspecific(Driver::s_threadKey, this);
-#define DISPATCH(op)							\
-  (m_dispatch ? (m_dispatch->op ? m_dispatch->op(m_context) : RCC_OK) : m_user->op())
+  enum {
+#define CONTROL_OP(x, c, t, s1, s2, s3, s4) My_##x = 1 << OU::Worker::Op##c,
+OCPI_CONTROL_OPS
+#undef CONTROL_OP
+  };
+#define DISPATCH(op) \
+  (!(getControlMask() & My_##op) ? RCC_OK : \
+   (m_dispatch ? (m_dispatch->op ? m_dispatch->op(m_context) : RCC_OK) : m_user->op()))
   switch (op) {
   case OU::Worker::OpInitialize:
     rc = DISPATCH(initialize);
@@ -1153,8 +1168,9 @@ controlOperation(OU::Worker::ControlOperation op) {
      if (!hasBuffer())
        throw OU::Error("Port has no buffer.  The checkLength method is invalid.");
      if (length > maxLength())
-       throw OU::Error("Checked length %zu exceeds maximum buffer size: %zu",
-		       length, maxLength());
+       throw OU::Error("Checked length %zu on port \"%s\" of worker \"%s\" exceeds buffer size: %zu",
+		       length, m_rccPort.containerPort->name().c_str(),
+		       m_rccPort.containerPort->parent().name().c_str(), maxLength());
    }
    size_t RCCUserPort::
    topLength(size_t eLength) {

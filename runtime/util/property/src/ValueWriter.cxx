@@ -76,7 +76,24 @@ void ValueWriter::
 writeString(Member &m, WriteDataPtr p, size_t strLen, bool start, bool /*top*/) {
   if (start)
     newItem(m);
-  assert(m_v->m_stringNext + strLen + 1 <= m_v->m_stringSpace + m_v->m_stringSpaceLength);
+  // We are in charge of managing string space here, which is ugly
+  // FIXME: properly share this code with OCPI::Util::Value::parse()
+  //        this is slightly different from add-to-sequence etc.
+  // FIXME: consider using std::string for string space here if it simplifies things
+  char *old = m_v->m_stringSpace;
+  size_t oldLength = m_v->m_stringSpaceLength;
+  // the space required will never be larger than the input...
+  m_v->m_stringSpaceLength += strLen + 1;
+  m_v->m_stringNext = m_v->m_stringSpace = new char[m_v->m_stringSpaceLength];
+  if (old) {
+    assert(m.m_isSequence || m.m_arrayDimensions);
+    // Do the realloc of the string space, and adjust
+    m_v->m_stringNext += oldLength;
+    memcpy(m_v->m_stringSpace, old, oldLength);
+    // Relocate string pointers
+    for (unsigned n = 0; n < m_v->m_nElements; n++)
+      m_v->m_pString[n] = m_v->m_stringSpace + (m_v->m_pString[n] - old);
+  }
   (m.m_arrayRank || m.m_isSequence ? m_v->m_pString[m_v->m_next++] : m_v->m_String) = 
     m_v->m_stringNext;
   if (strLen)

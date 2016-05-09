@@ -14,7 +14,7 @@ HDL device workers might need a proxy.
   <!-- How many inputs to the programmable outputs are there? -->
   <property name='nsources' readable='1' parameter='1' default='1'/>
   <!-- What is the frequency of the sources to the clock generator -->
-  <property name='input_hz' readable='1' type='float' arraylength='nsources'/>
+  <property name='input_hz' volatile='1' type='float' arraylength='nsources'/>
   <!-- How many programmable outputs are there? -->
   <property name='nchannels' readable='1' parameter='1' default='1'/>
   <!-- To enable a channel with default other attributes, just set the output_hz -->

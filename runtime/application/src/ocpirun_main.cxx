@@ -86,6 +86,8 @@
 	                               "set buffercount at a port\n" \
 	                               "if no port name, then the single output port") \
   CMD_OPTION(artifacts,  A, String, 0, "comma-separated list of targets to print artifacts in path on stdout") \
+  CMD_OPTION(specs,      G, String, 0, "comma-separated list of targets to print specs in path on stdout") \
+  CMD_OPTION(uncached,   U, Bool,   0, "dump cached properties uncached, ignoring cache") \
   CMD_OPTION(deployment, ,  String, 0, "XML file to read deployment from, avoid automatic deployment") \
   CMD_OPTION(deploy_out, ,  String, 0, "XML file to write deployment to") \
   CMD_OPTION(no_execute, ,  Bool,   0, "Suppress execution, just determin deployment") \
@@ -121,6 +123,7 @@ static const char *doServer(const char *server, void *) {
   static std::string error;
   return OR::useServer(server, options.verbose(), NULL, error) ? error.c_str() : NULL;
 }
+static bool specs;
 static const char *doTarget(const char *target, void *) {
   static std::string error;
   OL::Capabilities caps;
@@ -136,7 +139,7 @@ static const char *doTarget(const char *target, void *) {
     caps.m_platform = target;
   } else
     caps.m_platform = target;
-  OL::Manager::printArtifacts(caps);
+  OL::Manager::printArtifacts(caps, specs);
   return NULL;
 }
 
@@ -164,6 +167,8 @@ static int mymain(const char **ap) {
     return options.usage();
   if (options.verbose())
     params.push_back(OA::PVBool("verbose", true));
+  if (options.uncached())
+    params.push_back(OA::PVBool("uncached", true));
   if (options.hex())
     params.push_back(OA::PVBool("hex", true));
   if (options.dump())
@@ -330,17 +335,6 @@ static int mymain(const char **ap) {
 	fprintf(stderr,
 		"Application established: containers, workers, connections all created\n"
 		"Communication with the application established\n");
-#if 0
-      if (options.dump()) {
-	std::string name, value;
-	bool isParameter;
-	if (options.verbose())
-	  fprintf(stderr, "Dump of all initial property values:\n");
-	for (unsigned n = 0; app.getProperty(n, name, value, options.hex(), &isParameter); n++)
-	  fprintf(stderr, "Property %2u: %s = \"%s\"%s\n", n, name.c_str(), value.c_str(),
-		  isParameter ? " (parameter)" : "");
-      }
-#endif
       app.start();
       if (options.verbose())
 	fprintf(stderr, "Application started/running\n");
@@ -360,17 +354,6 @@ static int mymain(const char **ap) {
       }
       // In case the application specifically defines things to do that aren't in the destructor
       app.finish();
-#if 0
-      if (options.dump()) {
-	std::string name, value;
-	bool isParameter;
-	if (options.verbose())
-	  fprintf(stderr, "Dump of all final property values:\n");
-	for (unsigned n = 0; app.getProperty(n, name, value, options.hex(), &isParameter); n++)
-	  if (!isParameter)
-	    fprintf(stderr, "Property %2u: %s = \"%s\"\n", n, name.c_str(), value.c_str());
-      }
-#endif
     } while(0);
   } catch (...) {
     ezxml_free(xml);

@@ -188,11 +188,11 @@ namespace OCPI {
 	fprintf(f, "  %u: %s\n", n, s.c_str());
       }
     }
-    void Operation::testPrintParse(FILE *f, Value **v) {
+    void Operation::testPrintParse(FILE *f, Value **v, bool hex) {
       for (unsigned n = 0; n < m_nArgs; n++) {
 	std::string s;
 	fprintf(f, "%s: ", m_args[n].m_name.c_str());
-	v[n]->unparse(s);
+	v[n]->unparse(s, NULL, false, hex);
 	Value tv(m_args[n]);
 	const char *err;
 	if ((err = tv.parse(s.c_str(), NULL))) {
@@ -201,7 +201,7 @@ namespace OCPI {
 	} else {
 	  fprintf(f, "ok\n");
 	  std::string s1;
-	  tv.unparse(s1);
+	  tv.unparse(s1, NULL, false, hex);
 	  if (s != s1)
 	    fprintf(f,
 		    "\n"
@@ -375,9 +375,9 @@ namespace OCPI {
       m_operations[opcode].print(f, v);
       fflush(f);
     }
-    void Protocol::testOperation(FILE *f, uint8_t opcode, Value **v) {
+    void Protocol::testOperation(FILE *f, uint8_t opcode, Value **v, bool hex) {
       fprintf(f, "testing %u:", opcode);
-      m_operations[opcode].testPrintParse(f, v);
+      m_operations[opcode].testPrintParse(f, v, hex);
     }
     const char *Protocol::parse(char *proto) {
       ezxml_t x;

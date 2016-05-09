@@ -9,6 +9,7 @@
 #include "hello_world_cc-worker.hh"
 
 using namespace OCPI::RCC; // for easy access to RCC data types and constants
+using namespace Hello_world_ccWorkerTypes;
 
 class Hello_world_ccWorker : public Hello_world_ccWorkerBase {
   RCCResult run(bool /*timedout*/) {

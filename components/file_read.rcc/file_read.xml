@@ -10,4 +10,5 @@ Properties:
   <xi:include href="file_read_spec.xml"/>
   <specproperty name="fileName" readable='true'/>
   <specproperty name="suppressEOF" readable='true'/>
+  <specproperty name="messageSize" volatile='true'/>
 </RccImplementation>

@@ -1,4 +1,11 @@
 <RccWorker language='c++' spec='ptest_spec.xml'>
 <property name="str" parameter='true' type='string' default='foo'/>
 <property name='error' type='bool' initial='true'/>
+<!-- these do not work for HDL yet -->
+<Property name="outFile" type="Struct" readable="true" writable="true">
+  <Member name='prefix' type='string' stringLength='1024'/>
+  <Member name='digits' type='uChar' default='1'/>
+  <Member name='suffix' type='string' stringLength='1024' default='.bin'/>
+</Property>
+<Property Name="sap12" Type="String" StringLength="10" Volatile="true" Writable="true" arraylength="12" sequenceLength="3" default='{a,c,\"&amp;apos;,dd}'/>
 </RccWorker>

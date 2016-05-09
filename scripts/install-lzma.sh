@@ -4,7 +4,7 @@
 # 2. OCPI_TARGET_HOST is set properly (our target scheme, not the gnu target scheme)
 # 3. OCPI_CROSS_TARGET is the gnu cross target
 set -e
-OCPI_LZMA_VERSION=5.0.8
+OCPI_LZMA_VERSION=5.2.2
 . ./scripts/setup-install.sh
 mkdir -p lzma
 cd lzma
@@ -47,7 +47,7 @@ fi
   $crossConfig \
   --prefix=$OCPI_PREREQUISITES_INSTALL_DIR/lzma \
   --exec-prefix=$OCPI_PREREQUISITES_INSTALL_DIR/lzma/$OCPI_TARGET_HOST \
-  --enable-shared=$SHARED --enable-static
+  --enable-shared=$SHARED --enable-static --disable-symbol-versions
   CFLAGS=-g CXXFLAGS=-g
 make
 make install

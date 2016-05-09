@@ -114,14 +114,14 @@ function do_project {
   mkdir $1
   cd $1
   cat <<EOF > Project.exports
-# This file specifies aspects of this project are made available to users,
+# This file specifies aspects of this project that are made available to users,
 # by adding or subtracting from what is automatically exported based on the
 # documented rules.
 # Lines starting with + add to the exports
 # Lines starting with - subtract from the exports
 EOF
   cat <<EOF > Project.mk
-# This Makefile fragment for the "$1" project created at `pwd`
+# This Makefile fragment is for the "$1" project created at `pwd`
 ProjectName=$1
 ProjectPrefix=$prefix
 ProjectPackage=$package
@@ -196,7 +196,7 @@ EOF
     app=${1/%.xml/}
     [ -e applications/$app.xml ] && bad the XML application \"$app\" already exists in ${topdir}applications/$app.xml
     cat <<EOF > $subdir$app.xml
-<!-- The \"$1\" application xml file -->
+<!-- The $1 application xml file -->
 <application>
   <instance component='ocpi.nothing'/>
 </application>
@@ -240,7 +240,7 @@ function do_protocol_or_spec {
       if [ $noun == spec ] ; then
         file=$1-spec.xml
       else
-        file=$1-proto.xml
+        file=$1-prot.xml
       fi
       ;;
   esac
@@ -267,7 +267,7 @@ function do_protocol_or_spec {
      Add <operation> elements for message types.
      Add protocol summary attributes if necessary to override attributes
      inferred from operations/messages -->
-<protocol <!-- add protocol summary attributes here if necessary --> >
+<protocol> <!-- add protocol summary attributes here if necessary -->
   <!-- Add operation elements here -->
 </protocol>
 EOF
@@ -323,6 +323,17 @@ function do_library {
     return 0
   fi
   [ -e $subdir ] && bad the library \"$1\" \(directory $subdir/\) already exists
+  if [ -d components ] ; then
+    get_dirtype components
+    case "$dirtype" in
+      (library|lib)
+        bad this project already has a \"components\" library, you cannot create another library;;
+      (libraries)
+        ;;
+      (*)
+        bad unexpected contents of components directory \($dirtype\);;
+    esac
+  fi
   if [ "$subdir" != components -a ! -d components ] ; then
     mkdir components
     cat <<EOF > components/Makefile
@@ -336,8 +347,10 @@ EOF
   cat <<EOF > $subdir/Makefile
 # This is the $1 library
 
-# All workers created here will be built automatically
-# If you want to limit the workers that actually get built, set the Workers= variable
+# All workers created here in *.<model> will be built automatically
+# All tests created here in *.test directories will be built/run automatically
+# To limit the workers that actually get built, set the Workers= variable
+# To limit the tests that actually get built/run, set the Tests= variable
 include \$(OCPI_CDK_DIR)/include/library.mk
 EOF
   make --no-print-directory -C $subdir || 
@@ -531,7 +544,11 @@ EOF
   cat<<EOF > hdl/platforms/$1/$1.mk
 # Set this variable to the part (die-speed-package, e.g. xc7z020-1-clg484) for the platform
 HdlPart_$1=xyz
-# Set this variable to any other component libraries housing devices define in this platform
+# Set this variable to the names of any other component libraries with devices defined in this
+# platform. Do not use slashes.  If there is an hdl/devices library in this project, it will be
+# searched automatically, as will "devices" in any projects this project depends on.
+# An example might be something like "our_special_devices", which would exist in this or
+# other projects.
 ComponentLibraries_$1=
 EOF
   cat<<EOF > hdl/platforms/$1/$1.xml
@@ -706,7 +723,7 @@ EOF
   }    
   assy=${1/%.xml/}
   cat <<EOF > $subdir$1/$assy.xml
-<!-- The \"$1\" HDL assembly xml file -->
+<!-- The $1 HDL assembly xml file -->
 <HdlAssembly>
   <!-- Remove this instance and replace it with real ones -->
   <instance worker='nothing'/>
@@ -743,7 +760,7 @@ Options are: lower case for general options, upper case for creation options
  -- when creating projects --
   -F <prefix>        The project prefix when creating projects, defaults to <name>_
   -K <package>       The package name when creating projects or libraries
-  -D <dependencies>  A comma-separated list of dependencies
+  -D <dependencies>  A colon-separated list of project directories
  -- when creating workers --
   -S <spec>          The spec to use when it is not <worker>[-_]spec
   -P <platform>      The HDL platform for creating device workers or proxies when it is specific

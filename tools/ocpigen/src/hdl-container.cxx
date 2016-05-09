@@ -336,37 +336,42 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
       }
   } else {
     for (DevInstancesIter di = m_devInstances.begin(); di != m_devInstances.end(); di++) {
+      const DeviceType &dt = (*di).device.deviceType();
       // Decide whether to map the signals or not, based on whether we are an emulator
       // or are paired with an emulator
       const DevInstance *emulator = NULL;
       for (DevInstancesIter edi = m_devInstances.begin(); edi != m_devInstances.end(); edi++)
 	if ((*edi).device.deviceType().m_emulate &&
-	    !strcasecmp((*edi).device.deviceType().m_emulate->m_implName,
-			(*di).device.deviceType().m_implName)) {
+	    !strcasecmp((*edi).device.deviceType().m_emulate->m_implName, dt.m_implName)) {
 	  emulator = &*edi;
 	  break;
 	}
       // Instance the device and connect its wci
       OU::formatAdd(assy, "  <instance name='%s' worker='%s'%s>\n",
-		    (*di).cname(),
-		    (*di).device.deviceType().cname(),
-		    emulator ? " emulated='1'" : "");
-      if (!emulator && !(*di).device.deviceType().m_emulate)
+		    (*di).cname(), dt.cname(), emulator ? " emulated='1'" : "");
+      if (dt.m_instancePVs) {
+	// FIXME this is copied from hdl-config - consolidate
+	OU::Assembly::Property *ap = &(*dt.m_instancePVs)[0];
+	for (size_t n = dt.m_instancePVs->size(); n; n--, ap++)
+	  OU::formatAdd(assy, "    <property name='%s' value='%s'/>\n",
+			ap->m_name.c_str(), ap->m_value.c_str());
+      }
+      if (!emulator && !dt.m_emulate)
 	mapDevSignals(assy, *di, true);
       assy += "  </instance>\n";
-      if (!(*di).device.deviceType().m_noControl) {
+      if (!dt.m_noControl) {
 	OU::formatAdd(assy,
 		      "  <connection>\n"
 		      "    <port instance='ocscp' name='wci' index='%zu'/>\n"
 		      "    <port instance='%s' name='%s'/>\n"
 		      "  </connection>\n",
 		      nWCIs, (*di).cname(),
-		      (*di).device.deviceType().ports()[0]->name());
+		      dt.ports()[0]->name());
       
 	nWCIs++;
       }
       // Instance time clients for the assembly
-      const Ports &ports = (*di).device.deviceType().ports();
+      const Ports &ports = dt.ports();
       for (PortsIter pi = ports.begin(); pi != ports.end(); pi++)
 	if ((*pi)->type == WTIPort)
 	  emitTimeClient(assy, (*di).cname(), (*pi)->name());
@@ -664,6 +669,11 @@ emitSDPConnection(std::string &assy, unsigned &unoc, size_t &index, const ContCo
 		iname, unoc, iname, dir, unoc); 
   index++;
   // Connect to the port
+  std::string other;
+  if (c.devInConfig)
+    OU::format(other, "%s_%s", c.devInstance->cname(), port->name());
+  else
+    other = port->name();
   OU::formatAdd(assy,
 		"  <connection>\n"
 		"    <port instance='%s_sdp_%s%u' %s='%s'/>\n"
@@ -671,8 +681,9 @@ emitSDPConnection(std::string &assy, unsigned &unoc, size_t &index, const ContCo
 		"  </connection>\n",
 		iname, dir, unoc,
 		port->isDataProducer() ? "to" : "from", port->isDataProducer() ? "in" : "out",
-		c.external ? m_appAssembly.m_implName : c.devInstance->cname(),
-		port->isDataProducer() ? "from" : "to", port->name());
+		c.external ? m_appAssembly.m_implName :
+		(c.devInConfig ? "pfconfig" : c.devInstance->cname()),
+		port->isDataProducer() ? "from" : "to", other.c_str());
   return NULL;
 }
 // Make a connection to an interconnect
@@ -746,6 +757,12 @@ emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContCon
 		  "  </connection>\n",
 		  iname, unoc, port->isDataProducer() ? "to" : "from",
 		  iname, unoc, port->isDataProducer() ? "from" : "to");
+    // Connect to the port
+    std::string other;
+    if (c.devInConfig)
+      OU::format(other, "%s_%s", c.devInstance->cname(), port->name());
+    else
+      other = port->name();
     OU::formatAdd(assy,
 		  "  <connection>\n"
 		  "    <port instance='%s_sma%u' %s='%s'/>\n"
@@ -754,9 +771,10 @@ emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContCon
 		  iname, unoc,
 		  port->isDataProducer() ? "to" : "from",
 		  port->isDataProducer() ? "in" : "out",
-		  c.external ? m_appAssembly.m_implName : c.devInstance->cname(),
+		  c.external ? m_appAssembly.m_implName :
+		  (c.devInConfig ? "pfconfig" : c.devInstance->cname()),
 		  port->isDataProducer() ? "from" : "to",
-		  port->name());
+		  other.c_str());
     std::string tc;
     OU::format(tc, "%s_ocdp%u", iname, unoc);
     emitTimeClient(assy, tc.c_str(), "wti");
@@ -893,8 +911,10 @@ mapDevSignals(std::string &assy, const DevInstance &di, bool inContainer) {
 	std::string dname, ename;
 	if (di.slot && !inContainer)
 	  OU::format(dname, "%s_%s_%s", di.slot->cname(), di.device.cname(), devSig.c_str());
-	else
+	else if (inContainer)
 	  dname = devSig.c_str();
+	else
+	  OU::format(dname, "%s_%s", di.device.cname(), devSig.c_str());
 	if (*boardName && di.slot) {
 	  Signal *slotSig = di.device.m_board.m_extmap.findSignal(boardName);
 	  assert(slotSig);

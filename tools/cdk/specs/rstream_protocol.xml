@@ -1,5 +1,5 @@
 <!-- A general real data protocol   -->
-<Protocol name="rstream_protocol" >
+<Protocol name="rstream" >
 
   <Operation Name="data" >
     <!-- Variable size frames with 16 bit real data values.  Format:Qs0.15 -->

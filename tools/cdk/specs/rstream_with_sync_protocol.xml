@@ -1,5 +1,5 @@
  <!-- A general real data protocol   -->
- <Protocol name="r16stream_data" >
+ <Protocol name="rstream_with_sync" >
 
   <xi:include href='rstream_protocol.xml'/>
   <!--  <\!-\- A general real data protocol   -\-> -->

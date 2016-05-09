@@ -130,6 +130,7 @@ namespace OCPI {
       unsigned m_currConn;
       unsigned m_bestScore;
       bool m_hex;
+      bool m_uncached;
       bool m_launched;
       bool m_verbose;
       bool m_dump;
@@ -179,7 +180,7 @@ namespace OCPI {
       friend struct Property;
       Worker &getPropertyWorker(const char *name);
       bool getProperty(unsigned ordinal, std::string &name, std::string &value, bool hex,
-		       bool *parp);
+		       bool *parp, bool *cachedp, bool uncached);
       void getProperty(const char * wname, const char * pname, std::string &value, bool hex);
       void setProperty(const char* worker_name, const char* prop_name, const char *value);
       void dumpDeployment(const char *appFile, const std::string &file);

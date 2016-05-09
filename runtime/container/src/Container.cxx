@@ -228,9 +228,9 @@ namespace OCPI {
       ocpiCheck(pthread_sigmask(SIG_BLOCK, &set, NULL) == 0);
       try {
 	((Container *)arg)->thread();
-      } catch (const std::string s) {
+      } catch (const std::string &s) {
 	std::cerr << "Container background thread exception: " << s << std::endl;
-	throw;
+	abort();
       } catch (...) {
 	std::cerr << "Container background thread unknown exception" << std::endl;
 	throw;

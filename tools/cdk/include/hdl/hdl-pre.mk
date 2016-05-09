@@ -309,7 +309,11 @@ HdlSkip:=1
 else ifeq ($(HdlToolSets),)
 $(call OcpiDbg,=============No tool sets at all, skipping)
 ifneq ($(MAKECMDGOALS),clean)
-$(info Not building $(HdlMode) for these filtered (only/excluded) targets: $(HdlPreExcludeTargets))
+  ifdef HdlPreExcludeTargets
+    $(info Not building $(HdlMode) for these filtered (only/excluded) HDL targets: $(HdlPreExcludeTargets))
+  else
+    $(info No HDL targets to build for.  Perhaps you want to set OCPI_HDL_PLATFORM for a default?)
+  endif
 endif
 HdlSkip:=1
 install:

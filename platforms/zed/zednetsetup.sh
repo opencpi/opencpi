@@ -33,8 +33,8 @@ else
     export OCPI_CDK_DIR=$OCPI_CDK_DIR
     export OCPI_TOOL_HOST=linux-zynq-arm
     export OCPI_TOOL_DIR=\$OCPI_TOOL_HOST
-    export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/lib/components/rcc/\$OCPI_TOOL_DIR:$OCPI_CDK_DIR/lib/platforms/zed
-    export PATH=$OCPI_CDK_DIR/bin/\$OCPI_TOOL_DIR:$OCPI_CDK_DIR/scripts:\$PATH
+    export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/lib/components/rcc\$OCPI_TOOL_DIR:$OCPI_CDK_DIR/lib/platforms/zed
+    export PATH=$OCPI_CDK_DIR/bin/\$OCPI_TOOL_DIR:\$PATH
     # This is only for explicitly-linked driver libraries.  Fixed someday.
     export LD_LIBRARY_PATH=$OCPI_CDK_DIR/lib/$OCPI_TOOL_DIR:\$LD_LIBRARY_PATH
     ocpidriver load

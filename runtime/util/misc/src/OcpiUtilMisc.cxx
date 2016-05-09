@@ -685,10 +685,9 @@ getSystemAddr() {
   }  
   return addr;
 }
-// This scheme is ours so that it is somewhat readable, xml friendly, and handles NULLs
+// Encode for embedding in single quotes, adding to the "out" argument.
 void
-encodeDescriptor(const std::string &s, std::string &out) {
-  formatAdd(out, "%zu.", s.length());
+encodeXmlAttrSingle(const std::string &s, std::string &out, bool raw) {
   Unparser up;
   const char *cp = s.data();
   for (size_t n = s.length(); n; n--, cp++) {
@@ -696,9 +695,18 @@ encodeDescriptor(const std::string &s, std::string &out) {
       out += "&apos;";
     else if (*cp == '&')
       out += "&amp;";
-    else
+    else if (raw)
       up.unparseChar(out, *cp, true);
+    else
+      out += *cp;
   }
+}
+
+// This scheme is ours so that it is somewhat readable, xml friendly, and handles NULLs
+void
+encodeDescriptor(const std::string &s, std::string &out) {
+  formatAdd(out, "%zu.", s.length());
+  encodeXmlAttrSingle(s, out, true);
 }
 void
 decodeDescriptor(const char *info, std::string &s) {

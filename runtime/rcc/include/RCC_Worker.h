@@ -430,7 +430,10 @@ typedef struct {
    inline size_t length() const { return m_buffer->length(); }
    inline RCCOpCode opCode() const  { return m_buffer->opCode(); };
    // For output buffers
-   inline void setLength(size_t length) { m_buffer->setLength(length); }
+   inline void setLength(size_t length) {
+     m_port.checkLength(length);
+     m_buffer->setLength(length);
+   }
    inline void setOpCode(RCCOpCode op) { m_buffer->setOpCode(op); }
    inline void setInfo(RCCOpCode op, size_t len) { m_buffer->setInfo(op, len); }
    inline void release() { m_buffer->release(); }

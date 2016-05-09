@@ -95,7 +95,8 @@ class Worker
   void checkControlState() {
     setControlState(m_launcher.getState(m_remoteInstance));
   }
-  void getPropertyValue(const OU::Property &p, std::string &v, bool hex, bool add) {
+  // FIXME: this should be at the lower level for just reading the bytes remotely to enable caching propertly
+  void getPropertyValue(const OU::Property &p, std::string &v, bool hex, bool add, bool /*uncached*/) {
     m_launcher.getPropertyValue(m_remoteInstance, &p - m_properties, v, hex, add);
   }
 

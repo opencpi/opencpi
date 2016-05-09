@@ -397,7 +397,7 @@ namespace OCPI {
     const char *Value::
     parseShort(const char*cp, const char *end, int16_t &vp) {
       int64_t n;
-      if (OE::getNum64(cp, end, n) || n > INT16_MAX || n < INT16_MIN)
+      if (OE::getNum64(cp, end, n, 16) || n > INT16_MAX || n < INT16_MIN)
 	return "bad Short value";
       vp = (int16_t)n;
       return NULL;
@@ -405,7 +405,7 @@ namespace OCPI {
     const char *Value::
     parseLong(const char*cp, const char *end, int32_t &vp) {
       int64_t n;
-      if (OE::getNum64(cp, end, n) || n > INT32_MAX || n < INT32_MIN)
+      if (OE::getNum64(cp, end, n, 32) || n > INT32_MAX || n < INT32_MIN)
 	return "bad Long value";
       vp = (int32_t)n;
       return NULL;
@@ -445,7 +445,7 @@ namespace OCPI {
     const char *Value::
     parseLongLong(const char*cp, const char *end, int64_t &vp) {
       int64_t n;
-      if (OE::getNum64(cp, end, n) || n > INT64_MAX || n < INT64_MIN)
+      if (OE::getNum64(cp, end, n, 64) || n > INT64_MAX || n < INT64_MIN)
 	return "bad LongLong value";
       vp = n;
       return NULL;
@@ -478,8 +478,9 @@ namespace OCPI {
 	  if (cp + 1 != end)
 	    return "double quoted string with invalid characters after the closing quote";
 	  break;
-	} else if (m_vt->m_stringLength && len >= m_vt->m_stringLength ||
-		   parseOneChar(cp, end, *m_stringNext++))
+	} else if (m_vt->m_stringLength && len >= m_vt->m_stringLength)
+	  return "string too long";
+	else if (parseOneChar(cp, end, *m_stringNext++))
 	  return "bad String value";
       *m_stringNext++ = 0;
       vp = (const char *)start;
@@ -650,10 +651,13 @@ namespace OCPI {
 	Value::s_vt = m_vt->m_type;
 	Value::s_parent = this;
 	m_types = m_typeNext = new Value[m_nTotal];
+#if 0
+	// If not allocated its because the caller will do the right thing with strings
       } else if (m_vt->m_baseType == OA::OCPI_String && !m_stringSpace) {
 	assert(!add);
 	m_stringSpaceLength = m_nTotal * (testMaxStringLength + 1);
 	m_stringNext = m_stringSpace = new char[m_stringSpaceLength];
+#endif
       }
       return NULL;
     }
@@ -1011,12 +1015,12 @@ unparseFloat(std::string &s, float val, bool hex) const {
 }
 bool Unparser::
 unparseShort(std::string &s, int16_t val, bool hex) const {
-  doFormat(s, hex ? "0x%lx" : "%ld", (long)val);
+  doFormat(s, hex ? "0x%lx" : "%ld", (long)(hex ? val & 0xffff : val));
   return val == 0;
 }
 bool Unparser::
 unparseLong(std::string &s, int32_t val, bool hex) const {
-  doFormat(s, hex ? "0x%lx" : "%ld", (long)val);
+  doFormat(s, hex ? "0x%lx" : "%ld", (long)(hex ? val & 0xffffffffl : val));
   return val == 0;
 }
 bool Unparser::
@@ -1132,7 +1136,10 @@ void Value::generate() {
     m_nElements = random() % (m_vt->m_sequenceLength ? m_vt->m_sequenceLength : 5);
     m_nTotal *= m_nElements;
   }
-  // string space?
+  if (m_vt->m_baseType == OA::OCPI_String) {
+    m_stringSpaceLength = m_nTotal * (testMaxStringLength + 1);
+    m_stringNext = m_stringSpace = new char[m_stringSpaceLength];
+  }
   ocpiCheck(allocate() == 0);
   if (m_vt->m_isSequence)
     // Now we have allocated the appropriate sequence array, so we can parse elements

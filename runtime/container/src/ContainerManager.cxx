@@ -168,7 +168,16 @@ namespace OCPI {
   namespace Container {
     // Hooks to ensure that if we are linking statically, everything is pulled in
     // to support drivers and workers.
-    void dumb1(BasicPort &p) { p.applyConnectParams(NULL, NULL); }
+    void dumb1(BasicPort &p) {
+      p.applyConnectParams(NULL, NULL);
+      ((OCPI::Container::Application*)0)->createWorker(NULL, NULL, NULL, NULL, NULL, NULL);
+    }
+  }
+  // When the remote container driver is loaded it needs to see this.
+  namespace Remote {
+    bool g_suppressRemoteDiscovery = false;
+    bool (*g_probeServer)(const char *server, bool verbose, const char **exclude,
+			  std::string &error) = NULL;
   }
 }
 namespace DataTransfer {

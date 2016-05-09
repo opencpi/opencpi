@@ -178,6 +178,7 @@ skeleton:  $(ImplHeaderFiles) $(SkelFiles)
 all: skeleton
 
 $(SkelFiles): $(GeneratedDir)/%$(SkelSuffix) : $$(Worker_%_xml) | $(GeneratedDir)
+	$(AT)$(OcpiRemoveSkeletons)
 	$(AT)echo Generating the implementation skeleton file: $@
 	$(AT)$(OcpiGen) -D $(GeneratedDir) \
               $(and $(Assembly),-S $(Assembly)) \
@@ -415,6 +416,9 @@ endif # LibDir to export into
 # Cleanup.  Tricky/careful removal of skeletons that were copied up into the 
 #           directory.
 cleanfirst::
+	$(AT)$(OcpiRemoveSkeletons)
+
+OcpiRemoveSkeletons=\
 	$(AT)for s in $(AuthoredSourceFiles); do \
 	   sk=$(GeneratedDir)/`echo $$s | sed s~$(SourceSuffix)$$~$(SkelSuffix)~`; \
 	   if test -e $$s -a -e $$sk; then \

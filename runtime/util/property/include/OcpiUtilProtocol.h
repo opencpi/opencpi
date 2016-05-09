@@ -76,7 +76,7 @@ namespace OCPI  {
       void generate(const char *name, Protocol &p);
       void generateArgs(Value **&);
       void print(FILE *, Value **v) const;
-      void testPrintParse(FILE *f, Value **v);
+      void testPrintParse(FILE *f, Value **v, bool hex);
     };
     class Protocol {
     public:
@@ -128,7 +128,7 @@ namespace OCPI  {
       void generateOperation(uint8_t &opcode, Value **&v);
       void freeOperation(uint8_t operation, Value **v);
       void printOperation(FILE *, uint8_t opcode, Value **v) const;
-      void testOperation(FILE *, uint8_t opcode, Value **v);
+      void testOperation(FILE *, uint8_t opcode, Value **v, bool hex);
     };
   }
 }

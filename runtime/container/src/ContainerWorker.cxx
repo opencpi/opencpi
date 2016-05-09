@@ -78,6 +78,8 @@ namespace OCPI {
     {
       if (m_artifact)
 	m_artifact->removeWorker(*this);
+      for (unsigned i = 0; i < m_cache.size(); i++)
+	delete [] m_cache[i];
     }
 
     OA::Port &Worker::
@@ -120,18 +122,32 @@ namespace OCPI {
     }
 
     // Internal used by others.
+    // FIXME:  would a copy-constructor of OU::Value be better for caching?
+    //         most callers are construcint an OU::Value already
+    //         m_cache would be a sparse OU::Value pointer vector?
     void Worker::setPropertyValue(const OU::Property &info, const OU::Value &v) {
       if (info.m_baseType == OA::OCPI_Type)
 	throw OU::Error("Typedef properties are not settable");
+      uint8_t *cache = NULL;
+      if (!info.m_isVolatile) {
+	if (m_cache.size() <= info.m_ordinal)
+	  m_cache.resize(info.m_ordinal + 10, NULL);
+	if (!m_cache[info.m_ordinal])
+	  m_cache[info.m_ordinal] = new uint8_t[info.m_nBytes];
+	cache = m_cache[info.m_ordinal];
+      }
       if (info.m_baseType == OA::OCPI_Struct || info.m_isSequence || info.m_arrayRank > 0) {
+	// FIXME should we use m_dataOffset here?
 	size_t offset = info.m_offset + (info.m_isSequence ? info.m_align : 0);
 	if (info.m_baseType == OA::OCPI_String) {
 	  const char **sp = v.m_pString;
 	  for (unsigned n = 0; n < v.m_nTotal; n++) {
-	    size_t l = strlen(sp[n]);
-	    setPropertyBytes(info, offset, (uint8_t*)sp[n], l + 1);
+	    size_t l = (sp[n] ? strlen(sp[n]) : 0) + 1;
+	    setPropertyBytes(info, offset, (uint8_t *)(sp[n] ? sp[n] : ""), l);
+	    if (cache)
+	      memcpy(cache + (offset - info.m_offset), sp[n] ? sp [n] : "", l);
 	    offset += OU::roundUp(info.m_stringLength + 1, 4);
-	  }	  
+	  }
 	} else {
 	  uint8_t *data;
 	  uint64_t *alloc = NULL;
@@ -140,7 +156,7 @@ namespace OCPI {
 	    // We need to create a temporary linear value - explicitly align it
 	    size_t length = (nBytes + 7)/8;
 	    alloc = new uint64_t[length];
-	    length *= 8;
+	    length = nBytes;
 	    data = (uint8_t*)alloc;
 	    const OU::Value *vp = &v;
 	    OU::ValueReader reader(&vp);
@@ -149,19 +165,28 @@ namespace OCPI {
 	    data = (uint8_t*)alloc;
 	  } else
 	    data = v.m_pUChar;
-	  if (nBytes)
+	  if (nBytes) {
 	    setPropertyBytes(info, offset, data, nBytes);
+	    if (cache)
+	      memcpy(cache + (offset - info.m_offset), data, nBytes);
+	  }
 	  delete [] alloc;
 	}
-	if (info.m_isSequence)
-	  setProperty32(info, (uint32_t)v.m_nElements);
+        if (info.m_isSequence) {
+	  setProperty32(info, OCPI_UTRUNCATE(uint32_t, v.m_nElements));
+	  if (cache)
+	    *(uint32_t*)(cache) = OCPI_UTRUNCATE(uint32_t, v.m_nElements);
+	}
       } else if (info.m_baseType == OA::OCPI_String) {
 	size_t l = strlen(v.m_String) + 1; // amount to actually copy
 	if (l > 4)
 	  setPropertyBytes(info, info.m_offset + 4,
 			   (uint8_t *)(v.m_String + 4), l - 4);
 	setProperty32(info, *(uint32_t *)v.m_String);
-      } else switch (info.m_nBits) {
+	if (cache)
+	  memcpy(cache, (uint8_t*)v.m_String, l);
+      } else {
+	switch (info.m_nBits) {
 	case 8:
 	  setProperty8(info, v.m_UChar); break;
 	case 16:
@@ -172,6 +197,9 @@ namespace OCPI {
 	  setProperty64(info, v.m_ULongLong); break;
 	default:;
 	}
+	if (cache)
+	  memcpy(cache, &v.m_UChar, info.m_nBytes);
+      }
       if (info.m_writeSync)
 	propertyWritten(info.m_ordinal);
     }
@@ -188,7 +216,7 @@ namespace OCPI {
       setPropertyValue(prop, v);
     }
     void Worker::
-    getPropertyValue(const OU::Property &p, std::string &value, bool hex, bool add) {
+    getPropertyValue(const OU::Property &p, std::string &value, bool hex, bool add, bool uncached) {
       OU::Value v(p);
       OA::Property a(*this, p.m_name.c_str()); // FIXME clumsy because get methods take API props
       OA::PropertyInfo &info = a.m_info;
@@ -196,10 +224,13 @@ namespace OCPI {
 	throw OU::Error("Typedef properties are unsupported");
       if (info.m_readSync)
 	propertyRead(info.m_ordinal);
+      uint8_t *cache = // use cache unless we are told not to and its readable
+	(!uncached || !p.m_isReadable) && m_cache.size() > p.m_ordinal ?
+	m_cache[p.m_ordinal] : NULL;
       if (info.m_baseType == OA::OCPI_Struct || info.m_isSequence || info.m_arrayRank > 0) {
 	v.m_nTotal = info.m_nItems;
 	if (info.m_isSequence) {
-	  v.m_nElements = getProperty32(info);
+	  v.m_nElements = cache ? *(uint32_t*)cache : getProperty32(info);
 	  if (v.m_nElements > info.m_sequenceLength)
 	    throw OU::Error("Worker's %s property has invalid sequence length: %zu",
 			    info.m_name.c_str(), v.m_nElements);
@@ -215,13 +246,19 @@ namespace OCPI {
 	  v.m_pString = (const char **)sp;
 	  for (unsigned n = 0; n < v.m_nTotal; n++) {
 	    sp[n] = v.m_stringNext;
-	    getPropertyBytes(info, offset, (uint8_t *)v.m_stringNext, length, true);
+	    if (cache)
+	      memcpy(v.m_stringNext, cache + (offset - info.m_offset), length);
+	    else
+	      getPropertyBytes(info, offset, (uint8_t *)v.m_stringNext, length);
 	    v.m_stringNext += length;
 	    offset += length;
 	  }	  
 	} else if (nBytes) {
 	  uint8_t *data = new uint8_t[nBytes];
-	  getPropertyBytes(info, offset, data, nBytes);
+	  if (cache)
+	    memcpy(data, cache, nBytes);
+	  else
+	    getPropertyBytes(info, offset, data, nBytes);
 	  if (info.m_baseType == OA::OCPI_Struct) {
 	    const uint8_t *tmp = data;
 	    size_t length = nBytes;
@@ -233,6 +270,7 @@ namespace OCPI {
 	    assert(length == 0);
 	    delete [] data;
 	    vp->unparse(value, NULL, add, hex);
+	    delete vp;
 	    return; // FIXME - see above
 	  } else
 	    v.m_pUChar = data;
@@ -241,9 +279,14 @@ namespace OCPI {
 	// FIXME: a gross modularity violation
 	v.m_stringSpace = new char[info.m_stringLength + 1];
 	v.m_String = v.m_stringSpace;
-	getPropertyBytes(info, info.m_offset, (uint8_t*)v.m_pString, info.m_stringLength + 1,
-			 0, true);
-      } else switch (info.m_nBits) {
+	if (cache)
+	  strcpy((char*)v.m_String, (char *)cache);
+	else
+	  getPropertyBytes(info, info.m_offset, (uint8_t*)v.m_String, info.m_stringLength + 1);
+      } else if (cache)
+	memcpy(&v.m_UChar, cache, info.m_nBytes);
+      else
+	switch (info.m_nBits) {
 	case 8:
 	  v.m_UChar = getProperty8(info); break;
 	case 16:
@@ -257,18 +300,26 @@ namespace OCPI {
       v.unparse(value, NULL, add, hex);
     }
     bool Worker::getProperty(unsigned ordinal, std::string &name, std::string &value,
-			     bool *unreadablep, bool hex) {
+			     bool *unreadablep, bool hex, bool *cachedp, bool uncached) {
       unsigned nProps;
       OU::Property *props = properties(nProps);
       if (ordinal >= nProps)
 	return false;
       OU::Property &p = props[ordinal];
       name = p.m_name;
-      if (p.m_isReadable || p.m_isParameter) {
+      if (p.m_isReadable || p.m_isParameter ||
+	  (p.m_isWritable && !p.m_isVolatile && m_cache.size() > p.m_ordinal &&
+	   m_cache[p.m_ordinal])) {
 	if (unreadablep)
 	  *unreadablep = false;
+	if (cachedp)
+	  *cachedp =
+	    m_cache.size() > p.m_ordinal && m_cache[p.m_ordinal] &&
+	    (!uncached || !p.m_isReadable);
       } else if (unreadablep) {
 	*unreadablep = true;
+	if (cachedp)
+	  *cachedp = false;
 	return true;
       } else
 	throw OU::Error("Property number %u '%s' is unreadable", ordinal, p.m_name.c_str());
@@ -276,7 +327,7 @@ namespace OCPI {
 	p.m_default->unparse(value, NULL, false, hex);
 	return true;
       }
-      getPropertyValue(p, value, hex);
+      getPropertyValue(p, value, hex, false, uncached);
       return true;
     }
     void Worker::setProperty(unsigned ordinal, OCPI::Util::Value &value) {
@@ -286,7 +337,6 @@ namespace OCPI {
 			prop.m_name.c_str(), name().c_str());
       setPropertyValue(prop, value);
     }
-
     // batch setting with lots of error checking - all or nothing
     void Worker::setProperties(const OA::PValue *props) {
       if (props)

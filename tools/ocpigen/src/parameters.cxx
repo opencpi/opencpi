@@ -151,13 +151,10 @@ write(FILE *xf, FILE *mf) {
       fputs("\n", mf);
     }
     if (xf) {
-      fprintf(xf, "    <parameter name='%s' value='",
-	      p.param->m_name.c_str());
-      for (const char *cp = p.uValue.c_str(); *cp; cp++)
-	if (*cp == '\'')
-	  fputs("&apos;", xf);
-	else
-	  fputc(*cp, xf);
+      fprintf(xf, "    <parameter name='%s' value='", p.param->m_name.c_str());
+      std::string xml;
+      OU::encodeXmlAttrSingle(p.uValue, xml);
+      fputs(xml.c_str(), xf);
       fputs("'/>\n", xf);
     }
   }

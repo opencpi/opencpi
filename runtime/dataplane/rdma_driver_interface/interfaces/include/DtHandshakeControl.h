@@ -261,7 +261,7 @@ namespace DataTransfer {
   }
   inline void unpackXferMetaData(uint32_t md, size_t &length, uint8_t &opcode, bool &eof) {
     assert(md & (1 << (lengthBits+1)));
-    length = md & ~(-1 << lengthBits);
+    length = md & ~(UINT32_MAX << lengthBits);
     opcode = (uint8_t)((md >> (32 - opCodeBits)) & ((1 << opCodeBits) - 1));
     eof = md & (1 << lengthBits) ? true : false;
   }

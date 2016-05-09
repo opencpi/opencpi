@@ -19,7 +19,8 @@ ifeq ($(wildcard exports),)
   ifeq ($(filter clean%,$(MAKECMDGOALS)),)
     $(info Exports are not set up for this project.  Doing it now. $(doexports))
   else
-    $(nuthin $(doexports))
+    # we are assuming that exports are not required for any clean goal.
+    # $(nuthin $(doexports))
   endif
 endif
 
@@ -47,7 +48,7 @@ exports:
 	$(AT)$(OCPI_CDK_DIR)/scripts/makeExportLinks.sh $(OCPI_TARGET_DIR) $(ProjectPrefix)_
 
 components: hdlprimitives
-	$(call MaybeMake,components,rcc hdl HdlTargets="$(HdlTargets)" HdlPlatforms="$(HdlPlatforms)")
+	$(call MaybeMake,components,rcc hdl)
 	$(AT)$(MAKE) exports
 
 hdlprimitives:

@@ -46,10 +46,11 @@ HdlToolSet_stratix5:=quartus
 # Make the initial definition as a simply-expanded variable
 HdlAllPlatforms:=
 
-override OCPI_HDL_PLATFORM_PATH:=$(call Unique,\
-  $(OCPI_HDL_PLATFORM_PATH) \
-  $(foreach p,$(OcpiGetProjectPath),$(call OcpiExists,$p/lib/platforms)))
-$(infox OHPP:$(OCPI_HDL_PLATFORM_PATH))
+override OCPI_HDL_PLATFORM_PATH:=$(subst $(Space),:,$(call Unique,\
+  $(subst :, ,$(OCPI_HDL_PLATFORM_PATH)) \
+  $(foreach p,$(OcpiGetProjectPath),$(call OcpiExists,$p/lib/platforms))))
+export OCPI_HDL_PLATFORM_PATH
+$(call OcpiDbgVar,OCPI_HDL_PLATFORM_PATH)
 # Add a platform to the database.
 # Arg 1: The directory where the *.mk file is
 # Arg 2: The name of the platform
@@ -89,6 +90,7 @@ HdlDoPlatformsDir=\
           $(call HdlDoPlatform,$d)))))
   
 $(call OcpiDbgVar,HdlAllPlatforms)
+$(call OcpiDbgVar,OCPI_HDL_PLATFORM_PATH)
 $(foreach d,$(subst :, ,$(OCPI_HDL_PLATFORM_PATH)),\
   $(if $(wildcard $d),,$(error in OCPI_HDL_PLATFORM_PATH "$d" does not exist))\
   $(if $(filter platforms,$(notdir $d)),\

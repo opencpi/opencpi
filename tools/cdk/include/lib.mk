@@ -74,6 +74,16 @@ HdlImplementations=$(filter %.hdl,$(Implementations))
 OclImplementations=$(filter %.ocl,$(Implementations))
 TestImplementations=$(filter %.test,$(Implementations))
 AssyImplementations=$(filter %.assy,$(Implementations))
+
+# if no tests are in the explicit workers list...
+# must eval here hence ifeq
+ifeq ($(TestImplementations),)
+  ifeq ($(origin Tests),undefined)
+    TestImplementations:=$(wildcard *.test)
+  else
+    TestImplementations:=$(Tests)
+  endif
+endif
 override LibDir=$(OutDir)lib
 override GenDir=$(OutDir)gen
 # In case this library is a subdirectory that might receive XmlIncludeDirs from the

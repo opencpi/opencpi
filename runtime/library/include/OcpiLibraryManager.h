@@ -7,6 +7,7 @@
  *
  */
 #include <map>
+#include <set>
 #include "ezxml.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
@@ -117,6 +118,7 @@ namespace OCPI {
       uint64_t length() const { return m_length; }
       virtual Artifact *nextArtifact() = 0;
       virtual Library &library() const = 0;
+      void printSpecs(std::set<const char *, OCPI::Util::ConstCharComp> &specs) const;
     };
 
     // This class is what is used when looking for implementations.
@@ -168,7 +170,7 @@ namespace OCPI {
 				    const char *selectCriteria, 
 				    const OCPI::API::Connection *conns,
 				    const char *&inst);
-      void printArtifactsX(const Capabilities &caps);
+      void printArtifactsX(const Capabilities &caps, bool specs);
       // Inform the manager about an implementation
       void addImplementation(Implementation &imp);
     private:
@@ -179,8 +181,8 @@ namespace OCPI {
       inline static bool findImplementations(ImplementationCallback &icb, const char *specName) {
 	return getSingleton().findImplementationsX(icb, specName);
       }
-      inline static void printArtifacts(const Capabilities &caps) {
-	getSingleton().printArtifactsX(caps);
+      inline static void printArtifacts(const Capabilities &caps, bool specs) {
+	getSingleton().printArtifactsX(caps, specs);
       }
       // Find one good implementation, return true one is found that satisfies the criteria
       bool findImplementation(const char *specName, const char *selectCriteria, const Implementation *&impl);

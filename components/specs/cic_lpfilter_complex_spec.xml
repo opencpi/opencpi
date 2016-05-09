@@ -18,7 +18,7 @@ This is a simple CIC half band lowpass filter.
     <!-- Gain factor   Format: Qs0.15 -->
     <Property Name="gain" type="Short" Readable="true" Writable="true"/>
     <!-- peakDetect  Format: IQ (16Q,16I) Qs0.15 -->
-    <Property Name="peakDetect" type="Short" Readable="true" Writable="true"/>
+    <Property Name="peakDetect" type="Short" Volatile="true" Writable="true"/>
   </Properties>
 
   <!-- Input data and control stream -->

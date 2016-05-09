@@ -45,7 +45,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   // We know that inPos, outPos, and repCount all start out zero
   while (s->inPos < in->input.length && s->outPos < out->current.maxLength) {
     outData[s->outPos++] = inData[s->inPos];
-    if (!++s->repCount >= p->factor) {
+    if (++s->repCount >= p->factor) {
       s->inPos++;
       s->repCount = 0;
     }

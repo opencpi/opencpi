@@ -23,7 +23,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   (void)timedOut;(void)newRunCondition;
   PatternProperties *p = self->properties;
   RCCPort *out = self->ports;
-  uint32_t *meta = p->metadata[p->nextMeta++];
+  const uint32_t *meta = p->metadata[p->nextMeta++];
   unsigned length = meta[0];
   uint8_t *data = (uint8_t*)p->data + p->nextData;
   unsigned left = sizeof(p->data) - p->nextData;

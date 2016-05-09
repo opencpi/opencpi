@@ -1,8 +1,8 @@
 <ComponentSpec Name="adc_unpack">
   <Properties>
-     <Property Name="sample_swap" Type="ULong" Readable="true" Writable="true"/>
-     <Property Name="n_buffers" Type="ULong" Readable="true" Writable="false"/>
-     <Property Name="n_bytes" Type="ULong" Readable="true" Writable="false"/>
+     <Property Name="sample_swap" Type="ULong" Volatile="true" Writable="true"/>
+     <Property Name="n_buffers" Type="ULong" Volatile="true" Writable="false"/>
+     <Property Name="n_bytes" Type="ULong" Volatile="true" Writable="false"/>
   </Properties>
 
   <DataInterfaceSpec Name="in" Producer="false">

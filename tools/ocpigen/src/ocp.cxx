@@ -452,9 +452,14 @@ emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal) {
     if (type == WCIPort && (master || w.m_assembly))
       OU::format(stype, "wci.wci_%s_%st", output ? "m2s" : "s2m",
 		 count > 1 ? "array_" : "");
-    else
-      OU::format(stype, "%s.%s_defs.%s%s_t", w.m_library, w.m_implName, tname.c_str(),
+    else {
+      std::string lib(w.m_library);
+      if (w.m_paramConfig && w.m_paramConfig->nConfig)
+	OU::formatAdd(lib, "_c%zu", w.m_paramConfig->nConfig);
+      
+      OU::format(stype, "%s.%s_defs.%s%s_t", lib.c_str(), w.m_implName, tname.c_str(),
 		 count > 1 ? "_array" : "");
+    }
     if (count > 1)
       OU::formatAdd(stype, "(0 to %zu)", count - 1);
     // Make master the canonical type?

@@ -112,10 +112,10 @@ endif
 
 MAIN_LDFLAGS+= \
   -Xlinker -rpath -Xlinker '$(RPATH_ORIGIN)' \
-  -Xlinker -rpath -Xlinker '$(RPATH_ORIGIN)/../../lib/$(OCPI_TARGET_HOST)' \
+  -Xlinker -rpath -Xlinker '$(RPATH_ORIGIN)/../../lib/$(OCPI_TARGET_DIR)' \
   -Xlinker -rpath -Xlinker '$(RPATH_ORIGIN)/lib' \
   -Xlinker -rpath \
-  -Xlinker '$(RPATH_ORIGIN)/$(call FindRelative,$(OBJDIR),$(OCPI_CDK_DIR))/lib/$(OCPI_TARGET_HOST)' \
+  -Xlinker '$(RPATH_ORIGIN)/$(call FindRelative,$(OBJDIR),$(OCPI_CDK_DIR))/lib/$(OCPI_TARGET_DIR)' \
   $(foreach o,$(MAIN_DRIVERS), $(call UNDEFINED_FLAG,$o))
 
 #$(LD_ALLOW_UNDEFINED)

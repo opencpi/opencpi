@@ -1,3 +1,5 @@
 <application>
-  <instance component='ocpi.ptest'/>
+  <instance component='ocpi.ptest'>
+    <!-- <property name='outFile' value='prefix odata/output_,digits 0,suffix .out0'/> -->
+  </instance>
 </application>
