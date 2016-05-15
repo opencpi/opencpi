@@ -175,7 +175,7 @@ for f in $facilities; do
 
   # Make links to API include files
   for i in $(find $f -name '*Api.h*'); do
-    make_filtered_link $i exports/include/$(basename $i) include
+    make_filtered_link $i exports/include/aci/$(basename $i) include
   done
 done
 # Add hdl platforms
