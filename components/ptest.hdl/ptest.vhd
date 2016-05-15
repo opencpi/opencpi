@@ -10,6 +10,7 @@ architecture rtl of ptest_worker is
   signal dout : std_logic_vector(31 downto 0);
 begin
   props_out.romData <= unsigned(dout);
+  props_out.ledv <= orange_e;
   rom : component  util.util.ROM
     generic map(INITFILE => "../metadatarom.dat",
                 WIDTH    => 32,
