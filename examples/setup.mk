@@ -18,7 +18,7 @@ ifdef APP
 all: $(PROG)
 $(PROG): $(APP).cxx | $(DIR)
 	$(AT)echo Building $@...
-	$(AT)$(CXX) -g -Wall $(OCPI_EXPORT_DYNAMIC) -o $@ $(INCS) $^ $(OCPI_LD_FLAGS)
+	$(AT)$(CXX) $(CXXFLAGS) $(OCPI_EXPORT_DYNAMIC) -o $@ $(INCS) $^ $(OCPI_LD_FLAGS)
 endif
 
 clean::
