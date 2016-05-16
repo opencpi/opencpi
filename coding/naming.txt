@@ -1,7 +1,6 @@
 There are (at least) these categories of names that have some degree of standardization.
 There is a distinciton between names visible to non-programmer "users", and coders.
 
-
 At least briefly, they are captured here.
 
 Source Code file names
@@ -20,16 +19,24 @@ Source Code file names
    and may be named more flexibly, and since they don't correspond to makes of things
    in the source code, may use hyphens.
 
+-- C++ header files
+   Similar to source code except for API headers.
+   API headers, which will be used by external development are distinguished two ways:
+   1. There must be a Ocpi prefix to the name reflecting the global namespace.
+   2. The end of the name before the suffix should be Api to unambiguously designate the file
+      as apropriate for export and for API use (and for documentation).
+   Note that OcpiApi.hh is the "master API file" that should generally include all others.
+
 -- main programs
    <program_name>_main.cxx where program names are usually ocpi<program> in lower case.
 
 XML file names
    The .xml suffix is used uniformly.
    Some files use a suffix after a hyphen when the suffix is not part of the name of the 
-   thing being described in the file.  Two common ones are "-spec.xml" and "-protocol.xml".
+   thing being described in the file.  Two common ones are "-spec.xml" and "-prot.xml".
    Hyphens are used to make it clear that this is a type suffix, and not part of the name.
 
-worker/platform/configuration/container names (before prefix).
+worker/platform/configuration/container names (before prefix) in xml
    lower case with underscore worker separators.
 
 C++ Namespace names
@@ -39,7 +46,7 @@ C++ Namespace names
 C++ type/class names
    Capitalized camelcase.
 
-C++ names
+C++ names: the theory/puspose being you know by looking what it is.
 -- globals
    g_ prefix
 -- statics (not in class)
