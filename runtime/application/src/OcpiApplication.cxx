@@ -321,7 +321,7 @@ namespace OCPI {
 	if (aProps[p].m_dumpFile.size()) {
 	  // findProperty throws on error if bad name
 	  OU::Property &uProp = impl.m_metadataImpl.findProperty(pName);
-	  if (!uProp.m_isReadable)
+	  if (!uProp.m_isReadable && !uProp.m_isParameter)
 	    throw OU::Error("Cannot dump property '%s' for instance '%s'. It is not readable.",
 			    pName, name);
 	}
@@ -486,6 +486,7 @@ namespace OCPI {
       m_cMapPolicy = RoundRobin;
       m_processors = 0;
       m_currConn = OC::Manager::s_nContainers - 1;
+      m_hex = false;
       m_launched = false;
 
       // Set the instance map policy
@@ -816,7 +817,18 @@ namespace OCPI {
       return *ext.m_external;
     }
 
+    // The name might have a dot in it to separate instance from property name
     Worker &ApplicationI::getPropertyWorker(const char *name) {
+      const char *dot = strchr(name, '.');
+      if (dot) {
+	size_t len = dot - name;
+	for (unsigned n = 0; n < m_nInstances; n++) {
+	  const char *wname = m_assembly.instance(n).name().c_str();
+	  if (!strncasecmp(name, wname, len) && !wname[len])
+	    return *m_launchInstances[n].m_worker;
+	}
+	throw OU::Error("Unknown instance name in: %s", name);
+      }
       Property *p = m_properties;
       for (unsigned n = 0; n < m_nProperties; n++, p++)
 	if (!strcasecmp(name, p->m_name.c_str()))
@@ -830,10 +842,11 @@ namespace OCPI {
     }
     // FIXME:  consolidate the constructors (others are in OcpiProperty.cxx) (have in internal class for init)
     // FIXME:  avoid the double lookup since the first one gets us the ordinal
-    Property::Property(Application &app, const char *aname)
+    Property::Property(Application &app, const char *aname, const char *pname)
       : m_worker(app.getPropertyWorker(aname)),
 	m_readVaddr(0), m_writeVaddr(0),
-	m_info(m_worker.setupProperty(maybePeriod(aname), m_writeVaddr, m_readVaddr)),
+	m_info(m_worker.setupProperty(pname ? pname : maybePeriod(aname), m_writeVaddr,
+				      m_readVaddr)),
 	m_ordinal(m_info.m_ordinal),
 	m_readSync(false), m_writeSync(false)
     {

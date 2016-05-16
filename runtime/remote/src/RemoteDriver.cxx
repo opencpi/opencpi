@@ -95,7 +95,8 @@ class Worker
   void checkControlState() {
     setControlState(m_launcher.getState(m_remoteInstance));
   }
-  void getPropertyValue(const OU::Property &p, std::string &v, bool hex, bool add) {
+  void getPropertyValue(const OU::Property &p, std::string &v, bool hex, bool add,
+			bool /*uncached*/) {
     m_launcher.getPropertyValue(m_remoteInstance, &p - m_properties, v, hex, add);
   }
 

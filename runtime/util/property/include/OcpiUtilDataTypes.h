@@ -176,7 +176,8 @@ namespace OCPI {
       void printXML(FILE *f, const char *tag, unsigned indent);
       void write(Writer &writer, const uint8_t *&data, size_t &length, bool topSeq = false);
       // Fake means don't actually touch the message.
-      void read(Reader &reader, uint8_t *&data, size_t &length, bool fake = false) const;
+      void read(Reader &reader, uint8_t *&data, size_t &length, bool fake = false,
+		bool top = false) const;
       void generate(const char *name, unsigned ordinal = 0, unsigned depth = 0);
       const std::string &name() const { return m_name; }
       const char

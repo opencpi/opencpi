@@ -280,12 +280,14 @@ namespace OCPI {
 	   ((err = getExprNumber(xm, "SequenceSize", m_sequenceLength, &m_isSequence,
 				 &m_sequenceLengthExpr, resolver)))))
 	return err;
-      if (m_isSequence)
+      if (m_isSequence) {
 	if (isFixed) {
 	  if (m_sequenceLength == 0)
 	    return "Sequence must have a bounded size";
-	} else
+	} else {
 	  m_fixedLayout = false;
+	}
+      }
       // Process default values
       if (hasDefault && (err = parseDefault(xm, hasDefault)))
 	return err;
@@ -389,9 +391,10 @@ namespace OCPI {
       printChildren(f, tag, indent);
     }
     inline void advance(const uint8_t *&p, size_t nBytes, size_t &length) {
-      if (nBytes > length)
+      if (nBytes > length) {
 	throw Error("Aligning data exceeds buffer when writing: length %zu advance %zu",
 		    length, nBytes);
+      }
       length -= nBytes;
       p += nBytes;
     }
@@ -412,7 +415,7 @@ namespace OCPI {
       const uint8_t *startData;
       size_t startLength;
       if (m_isSequence) {
-	if (topSeq) {
+	if (topSeq && !m_fixedLayout) {
 	  ocpiAssert(((intptr_t)data & ~(m_align - 1)) == 0);
 	  ocpiAssert(length % m_nBytes == 0);
 	  nElements = length / m_nBytes;
@@ -423,7 +426,8 @@ namespace OCPI {
 	startData = data;
 	startLength = length;
 	if (m_sequenceLength != 0 && nElements > m_sequenceLength)
-	  throw Error("Sequence in buffer exceeds max length (%zu)", m_sequenceLength);
+	  throw Error("Sequence in buffer (%zu) exceeds max length (%zu)", nElements,
+		      m_sequenceLength);
 	writer.beginSequence(*this, nElements);
 	if (!nElements) {
 	  advance(data, m_fixedLayout ? m_nBytes : m_align, length);
@@ -475,7 +479,7 @@ namespace OCPI {
 	writer.endArray(*this);
       if (m_isSequence) {
 	writer.endSequence(*this);
-	if (m_fixedLayout) {
+	if (m_fixedLayout && !topSeq) {
 	  // If fixed layout override the incremental data/length advance and 
 	  // advance over the whole thing, including the length prefix
 	  advance(startData, m_nBytes, startLength);
@@ -487,7 +491,7 @@ namespace OCPI {
     }
 
     // Fill the linear buffer from a reader object
-    void Member::read(Reader &reader, uint8_t *&data, size_t &length, bool fake) const {
+    void Member::read(Reader &reader, uint8_t *&data, size_t &length, bool fake, bool top) const {
       size_t nElements = 1;
       uint8_t *startData;
       size_t startLength;
@@ -497,7 +501,7 @@ namespace OCPI {
 	startLength = length;
 	nElements = reader.beginSequence(*this);
 	if (m_sequenceLength != 0 && nElements > m_sequenceLength)
-	  throw Error("Sequence in being read exceeds max length (%zu)", m_sequenceLength);
+	  throw Error("Sequence being read (%zu) exceeds max length (%zu)", nElements, m_sequenceLength);
 	if (!fake)
 	  *(uint32_t *)data = (uint32_t)nElements;
 	if (!nElements) {
@@ -559,9 +563,10 @@ namespace OCPI {
 	reader.endArray(*this);
       if (m_isSequence) {
 	reader.endSequence(*this);
-	if (m_fixedLayout) {
+	if (m_fixedLayout && !top) {
 	  // If fixed layout override the incremental data/length advance and 
 	  // advance over the whole thing, including the length prefix
+          ocpiDebug("radvance(<ptr>, %zu, %zu)", m_nBytes, startLength);
 	  radvance(startData, m_nBytes, startLength);
 	  assert(startData >= data && startLength <= length);
 	  data = startData;
