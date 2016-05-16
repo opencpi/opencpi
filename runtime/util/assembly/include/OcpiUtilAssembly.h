@@ -85,6 +85,7 @@ namespace OCPI {
 	bool m_hasValue; // since value might legitimately be an empty string
 	std::string m_value;
 	std::string m_dumpFile;
+        Property() : m_hasValue(false) {}
 	const char *parse(ezxml_t x);
 	const char *setValue(ezxml_t px);
       };

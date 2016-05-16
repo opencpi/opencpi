@@ -288,26 +288,35 @@ namespace OCPI {
 	c->m_count = e.m_count;
       return NULL;
     }
+    // Note that this may be called both from an application/mapped property as well as an
+    // instance property - we essentially merge the info from both, checking for inconsistencies
     const char *Assembly::Property::
     setValue(ezxml_t px) {
-      const char *cp, *err = NULL;
-      const char *df = ezxml_cattr(px, "dumpFile");
-      m_hasValue = false;
+      const char *cp, *err;
       if ((cp = ezxml_cattr(px, "value"))) {
 	if (ezxml_cattr(px, "valueFile"))
 	  return esprintf("For instance property \"%s\", having both \"value\" and \"valueFile\""
 			  " attributes is invalid", m_name.c_str());
+	if (m_hasValue)
+	  return esprintf("For instance property \"%s\", already has application value \"%s\"",
+			  m_name.c_str(), m_value.c_str());
 	m_hasValue = true;
 	m_value = cp;
       } else if ((cp = ezxml_cattr(px, "valueFile"))) {
+	if (m_hasValue)
+	  return esprintf("For instance property \"%s\", already has application value \"%s\"",
+			  m_name.c_str(), m_value.c_str());
+	if ((err = file2String(m_value, cp, ',')))
+	  return err;
 	m_hasValue = true;
-	err = file2String(m_value, cp, ',');
-      } else if (!df)
-	return esprintf("Missing value or valueFile or dumpFile attribute "
-			"for instance property: %s", m_name.c_str());
-      if (!err && df)
-	m_dumpFile = df;
-      return err;
+      }
+      if ((cp = ezxml_cattr(px, "dumpFile"))) {
+	if (cp && m_dumpFile.length())
+	  return esprintf("For instance property \"%s\", duplicate dumpFile attributes",
+			  m_name.c_str());
+	m_dumpFile = cp;
+      }
+      return NULL;
     }
 
     const char *Assembly::MappedProperty::
@@ -326,15 +335,14 @@ namespace OCPI {
 	  return esprintf("Duplicate mapped property: %s", m_name.c_str());
       const char *cp = ezxml_cattr(px, "property");
       m_instPropName = cp ? cp : m_name.c_str();
-      if (ezxml_cattr(px, "value") || ezxml_cattr(px, "valueFile") || ezxml_cattr(px, "dumpFile"))
-	a.m_instances[m_instance].addProperty(m_instPropName.c_str(), px);
+      //      if (ezxml_cattr(px, "value") || ezxml_cattr(px, "valueFile") || ezxml_cattr(px, "dumpFile"))
+      a.m_instances[m_instance].addProperty(m_instPropName.c_str(), px);
       return NULL;
     }
 
     const char *Assembly::Property::
     parse(ezxml_t px) {
       const char *err;
-
       if ((err = OE::checkAttrs(px, "name", "value", "valuefile", "dumpFile", NULL)) ||
 	  (err = OE::getRequiredString(px, m_name, "name", "property")))
 	return err;
