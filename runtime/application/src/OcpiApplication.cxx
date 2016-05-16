@@ -818,10 +818,10 @@ namespace OCPI {
     }
 
     // The name might have a dot in it to separate instance from property name
-    Worker &ApplicationI::getPropertyWorker(const char *name) {
-      const char *dot = strchr(name, '.');
-      if (dot) {
-	size_t len = dot - name;
+    Worker &ApplicationI::getPropertyWorker(const char *name, const char *&pname) {
+      const char *dot;
+      if (pname || (dot = strchr(name, '.'))) {
+	size_t len = pname ? strlen(name) : dot - name;
 	for (unsigned n = 0; n < m_nInstances; n++) {
 	  const char *wname = m_assembly.instance(n).name().c_str();
 	  if (!strncasecmp(name, wname, len) && !wname[len])
@@ -831,8 +831,10 @@ namespace OCPI {
       }
       Property *p = m_properties;
       for (unsigned n = 0; n < m_nProperties; n++, p++)
-	if (!strcasecmp(name, p->m_name.c_str()))
+	if (!strcasecmp(name, p->m_name.c_str())) {
+	  pname = m_assembly.instance(p->m_instance).properties()[p->m_property].m_name.c_str();
 	  return *m_launchInstances[p->m_instance].m_worker;
+	}
       throw OU::Error("Unknown application property: %s", name);
     }
 
@@ -843,7 +845,7 @@ namespace OCPI {
     // FIXME:  consolidate the constructors (others are in OcpiProperty.cxx) (have in internal class for init)
     // FIXME:  avoid the double lookup since the first one gets us the ordinal
     Property::Property(Application &app, const char *aname, const char *pname)
-      : m_worker(app.getPropertyWorker(aname)),
+      : m_worker(app.getPropertyWorker(aname, pname)),
 	m_readVaddr(0), m_writeVaddr(0),
 	m_info(m_worker.setupProperty(pname ? pname : maybePeriod(aname), m_writeVaddr,
 				      m_readVaddr)),
@@ -974,7 +976,8 @@ namespace OCPI {
       OCPI_EMIT_STATE_NR( pesp, 0 );
 
     }
-    Worker &Application::getPropertyWorker(const char *name) { return m_application.getPropertyWorker(name); }
-
+    Worker &Application::getPropertyWorker(const char *name, const char *&pname) { \
+      return m_application.getPropertyWorker(name, pname);
+    }
   }
 }

@@ -81,7 +81,7 @@ namespace OCPI {
       void setProperty(const char* instance_name, const char* prop_name, const char *value);
     private:
       friend class Property;
-      Worker &getPropertyWorker(const char *name);
+      Worker &getPropertyWorker(const char *name, const char *&pname);
     };
   }
 }
