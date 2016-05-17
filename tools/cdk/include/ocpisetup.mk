@@ -39,6 +39,7 @@ endif # The end of processing this file once - ifndef OCPISETUP_MK
 CC = gcc
 CXX = c++
 LD = c++
+CXXFLAGS=-g -Wall -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS
 ARSUFFIX=a
 
 ifeq ($(wildcard $(OCPI_CDK_DIR)/include/autoconfig_import*),)
@@ -188,17 +189,39 @@ endif
 # Set up directory pointers for user makefiles
 export OCPI_LIB_DIR:=$(OCPI_CDK_DIR)/lib/$(OCPI_TARGET_DIR)
 export OCPI_BIN_DIR:=$(OCPI_CDK_DIR)/bin/$(OCPI_TARGET_DIR)
-export OCPI_INC_DIR:=$(OCPI_CDK_DIR)/include
+export OCPI_INC_DIR:=$(OCPI_CDK_DIR)/include/aci
 
 # Which libraries should be made available to user executables?
 export OCPI_API_LIBS=application container library transport rdma_driver_interface rdma_utils rdma_smb util  msg_driver_interface os
 
 # This is appropriate for static linking.
 # It forces the use of the static prerequisites libraries even if there is a dynamic one also.
+ifneq ($(OCPI_DYNAMIC),1)
 export OCPI_LD_FLAGS=\
   -L"$(OCPI_LIB_DIR)" $(OCPI_API_LIBS:%=-locpi_%) $(OCPI_EXTRA_LIBS:%=-l%) \
   $(foreach l,$(OCPI_PREREQUISITES_LIBS),\
     $(OCPI_PREREQUISITES_DIR)/$l/$(OCPI_TARGET_HOST)/lib/lib$l.$(ARSUFFIX))
+else
+# This is appropriate for dynamic linking using dynamic libraries
+# It creates an executable that will execute in the developmen environment,
+# i.e., looking for dynamic libraries where they will be here.
+# For deployed environments the OCPI_TARGET_CDK_DIR can be overridden
+# A given application can prepend to the LD_FLAGS with other rpath/origin stuff
+ifndef OCPI_TARGET_CDK_DIR
+OCPI_TARGET_CDK_DIR=$(OCPI_CDK_DIR)
+endif
+ifndef OCPI_TARGET_PREREQUISITES_DIR
+OCPI_TARGET_PREREQUISITES_DIR=$(OCPI_PREREQUISITES_DIR)
+endif
+export OCPI_LD_FLAGS=\
+  -L"$(OCPI_LIB_DIR)" $(OCPI_API_LIBS:%=-locpi_%) $(OCPI_EXTRA_LIBS:%=-l%) \
+  $(foreach l,$(OCPI_PREREQUISITES_LIBS),\
+    $(OCPI_TARGET_PREREQUISITES_DIR)/$l/$(OCPI_TARGET_DIR)/lib/lib$l.$(OcpiDynamicSuffix) -l$l) \
+  -Xlinker -rpath -Xlinker $(OCPI_TARGET_CDK_DIR)/lib/$(OCPI_TARGET_DIR) \
+  -Xlinker -rpath -Xlinker $(OCPI_TARGET_PREREQUISITES_DIR)/lib/$(OCPI_TARGET_DIR) \
+
+endif
+
 
 all:
 $(OCPI_TARGET_DIR):

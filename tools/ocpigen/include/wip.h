@@ -668,6 +668,7 @@ class Worker : public Parsed, public OU::IdentResolver {
     *emitToolParameters(),
     *emitMakefile(),
     *setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig),
+    *finalizeProperties(),
     *deriveOCP(),
     *hdlValue(const std::string &name, const OU::Value &v, std::string &value,
 	      bool param = false, Language = NoLanguage),

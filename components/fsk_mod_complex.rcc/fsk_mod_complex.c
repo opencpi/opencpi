@@ -101,7 +101,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   Fsk_mod_complexOutIq  *outData = out->current.data;
 
   if ((in->input.length*2) > out->current.maxLength ) {
-    self->container.setError("output buffer too small");
+    self->container.setError("output buffer too small: need %zu have %zu", in->input.length*2, out->current.maxLength);
     return RCC_ERROR;
   }
 

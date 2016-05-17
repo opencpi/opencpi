@@ -178,7 +178,7 @@ namespace OCPI {
       void finish();
       ExternalPort &getPort(const char *, const OCPI::API::PValue *);
       friend struct Property;
-      Worker &getPropertyWorker(const char *name);
+      Worker &getPropertyWorker(const char *name, const char *&pname);
       bool getProperty(unsigned ordinal, std::string &name, std::string &value, bool hex,
 		       bool *parp, bool *cachedp, bool uncached);
       void getProperty(const char * wname, const char * pname, std::string &value, bool hex);

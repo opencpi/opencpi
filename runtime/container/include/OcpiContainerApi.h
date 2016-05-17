@@ -259,7 +259,7 @@ namespace OCPI {
     private:
       bool m_readSync, m_writeSync;   // these exist to avoid exposing the innards of m_info.
     public:
-      Property(Application &, const char *);
+      Property(Application &, const char *, const char * = NULL);
       Property(Worker &, const char *);
     private:
       Property(Worker &, unsigned);

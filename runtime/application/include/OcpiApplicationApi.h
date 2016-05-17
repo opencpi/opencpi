@@ -84,7 +84,7 @@ namespace OCPI {
       void dumpDeployment(const char *appFile, const std::string &file);
     private:
       friend class Property;
-      Worker &getPropertyWorker(const char *name);
+      Worker &getPropertyWorker(const char *name, const char *&pname);
     };
   }
 }

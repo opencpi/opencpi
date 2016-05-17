@@ -30,6 +30,7 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 #include "OcpiOsMisc.h"
 #include "OcpiUtilValue.h"
 #include "ValueReader.h"
@@ -152,6 +153,8 @@ namespace OCPI {
 	  uint8_t *data;
 	  uint64_t *alloc = NULL;
 	  size_t nBytes = v.m_nTotal * info.m_elementBytes;
+          if (info.m_isSequence)
+              nBytes += std::max(sizeof(uint32_t), info.m_dataAlign);
 	  if (info.m_baseType == OA::OCPI_Struct) {
 	    // We need to create a temporary linear value - explicitly align it
 	    size_t length = (nBytes + 7)/8;
@@ -160,12 +163,17 @@ namespace OCPI {
 	    data = (uint8_t*)alloc;
 	    const OU::Value *vp = &v;
 	    OU::ValueReader reader(&vp);
-	    info.read(reader, data, length);
+	    info.read(reader, data, length, false, true); // not fake, top level
 	    assert(length == 0);
 	    data = (uint8_t*)alloc;
 	  } else
 	    data = v.m_pUChar;
 	  if (nBytes) {
+	    if (info.m_isSequence) { // because we set the sequence length last below
+	      assert(*(uint32_t *)data == v.m_nElements);
+	      data += sizeof(uint32_t);
+	      nBytes -= sizeof(uint32_t);
+	    }
 	    setPropertyBytes(info, offset, data, nBytes);
 	    if (cache)
 	      memcpy(cache + (offset - info.m_offset), data, nBytes);
@@ -236,9 +244,11 @@ namespace OCPI {
 			    info.m_name.c_str(), v.m_nElements);
 	  v.m_nTotal *= v.m_nElements;
 	}
-	size_t offset = info.m_offset + (info.m_isSequence ? info.m_align : 0);
 	size_t nBytes = v.m_nTotal * info.m_elementBytes;
+        if (info.m_isSequence)
+            nBytes += std::max(sizeof(uint32_t), info.m_dataAlign);
 	if (info.m_baseType == OA::OCPI_String) {
+	  size_t offset = info.m_offset + (info.m_isSequence ? info.m_align : 0);
 	  size_t length = OU::roundUp(info.m_stringLength + 1, 4);
 	  v.m_stringSpaceLength = v.m_nTotal * length;
 	  v.m_stringNext = v.m_stringSpace = new char[v.m_stringSpaceLength];
@@ -254,11 +264,13 @@ namespace OCPI {
 	    offset += length;
 	  }	  
 	} else if (nBytes) {
-	  uint8_t *data = new uint8_t[nBytes];
+          if (info.m_isSequence)
+            nBytes += std::max(sizeof(uint32_t), info.m_dataAlign);
+          uint8_t *data = (uint8_t*) new uint64_t[(nBytes + 7)/8];
 	  if (cache)
 	    memcpy(data, cache, nBytes);
 	  else
-	    getPropertyBytes(info, offset, data, nBytes);
+	    getPropertyBytes(info, info.m_offset, data, nBytes); // include length field
 	  if (info.m_baseType == OA::OCPI_Struct) {
 	    const uint8_t *tmp = data;
 	    size_t length = nBytes;
@@ -266,7 +278,7 @@ namespace OCPI {
 	    // FIXME: use more ValueWriter functionality for this whole method
 	    OU::Value *vp = NULL;
 	    OU::ValueWriter writer(&vp, 1);
-	    info.write(writer, tmp, length, false);
+	    info.write(writer, tmp, length, true); // is top-level
 	    assert(length == 0);
 	    delete [] data;
 	    vp->unparse(value, NULL, add, hex);
@@ -276,7 +288,7 @@ namespace OCPI {
 	    v.m_pUChar = data;
 	}
       } else if (info.m_baseType == OA::OCPI_String) {
-	// FIXME: a gross modularity violation
+	// FIXME: modularity violation
 	v.m_stringSpace = new char[info.m_stringLength + 1];
 	v.m_String = v.m_stringSpace;
 	if (cache)
@@ -379,10 +391,10 @@ namespace OCPI {
 #undef CONTROL_OP
     };
 
-    // Begin hack due to the fact that sched_yield does not work with the default
+    // sched_yield does not work with the default
     // Linux scheduler: SCHED_OTHER, and it requires special permission/capability to use
     // the other "realtime" schedulers that actually implement sched_yield.  For many
-    // other reasons enabling realtime scheduling is worse that this hack for now.
+    // other reasons enabling realtime scheduling is worse that this for now.
     // (e.g. special permissions and capabilities are required).
     void Worker::checkControl() {
       if (m_controlOpPending) {
@@ -392,7 +404,7 @@ namespace OCPI {
     }	
 
     bool Worker::controlOp(OU::Worker::ControlOperation op) {
-      // Begin hack due to the fact that sched_yield does not work with the default
+      // sched_yield does not work with the default
       // Linux scheduler: SCHED_OTHER, and it requires special permission/capability to use
       // the other "realtime" schedulers that actually implement sched_yield.
       OU::AutoMutex ctl (m_controlMutex);

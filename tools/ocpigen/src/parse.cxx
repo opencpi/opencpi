@@ -348,7 +348,7 @@ addBuiltinProperties() {
 }
 // Parse the generic implementation control aspects (for rcc and hdl and other)
 const char *Worker::
-parseImplControl(ezxml_t &xctl, const char *firstRaw) {
+parseImplControl(ezxml_t &xctl, const char */*firstRaw*/) { // FIXME: nuke the second arg
   // Now we do the rest of the control interface
   const char *err;
   if ((xctl = ezxml_cchild(m_xml, "ControlInterface")) &&
@@ -375,11 +375,13 @@ parseImplControl(ezxml_t &xctl, const char *firstRaw) {
   // do the offset calculations and summarize the access type counts and flags
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
     OU::Property &p = **pi;
+#if 0 // deferred to finalizeProperties to be after setParamConfig
     // Raw properties must start on a 4 byte boundary
     if (firstRaw && !strcasecmp(p.m_name.c_str(), firstRaw))
       m_ctl.offset = OU::roundUp(m_ctl.offset, 4);
     if ((err = p.offset(m_ctl.offset, m_ctl.sizeOfConfigSpace, this)))
       return err;
+#endif
     m_ctl.summarizeAccess(p);
   }
   // Allow overriding sizeof config space, giving priority to controlinterface
@@ -405,6 +407,24 @@ parseImplControl(ezxml_t &xctl, const char *firstRaw) {
     return err;
   return 0;
 }
+
+const char *Worker::
+finalizeProperties() {
+  // Now that we have all information about properties and we can actually
+  // do the offset calculations and summarize the access type counts and flags
+  const char *firstRaw = ezxml_cattr(m_xml, "FirstRawProperty");
+  for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
+    OU::Property &p = **pi;
+    // Raw properties must start on a 4 byte boundary
+    if (firstRaw && !strcasecmp(p.m_name.c_str(), firstRaw))
+      m_ctl.offset = OU::roundUp(m_ctl.offset, 4);
+    const char *err;
+    if ((err = p.offset(m_ctl.offset, m_ctl.sizeOfConfigSpace, this)))
+      return err;
+  }
+  return NULL;
+}
+
 
 // Parse the generic implementation local memories (for rcc and ocl and other)
   const char *Worker::
@@ -724,7 +744,10 @@ getValue(const char *sym, OU::ExprValue &val) const {
 			    sym);
       if (!p.m_default)
 	return OU::esprintf("the '%s' parameter property has no value", sym);
-      return extractExprValue(p, *p.m_default, val);
+      return extractExprValue(p,
+			      *(m_paramConfig ? m_paramConfig->params[p.m_paramOrdinal].value :
+				p.m_default),
+			      val);
     }
   return OU::esprintf("There is no property named '%s'", sym);
 }
@@ -799,8 +822,8 @@ create(const char *file, const std::string &parentFile, const char *package, con
       err = w->parseOclAssy();
     else
       err = OU::esprintf("Unrecognized top level tag: \"%s\" in file \"%s\"", name, xfile);
-    if (!err)
-      err = w->setParamConfig(instancePVs, paramConfig);
+    if (!err && !(err = w->setParamConfig(instancePVs, paramConfig)))
+      err = w->finalizeProperties();
   }
   if (err) {
     delete w;

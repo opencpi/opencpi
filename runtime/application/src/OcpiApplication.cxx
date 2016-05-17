@@ -330,7 +330,7 @@
 	 if (aProps[p].m_dumpFile.size()) {
 	   // findProperty throws on error if bad name
 	   OU::Property &uProp = impl.m_metadataImpl.findProperty(pName);
-	   if (!uProp.m_isReadable)
+	   if (!uProp.m_isReadable && !uProp.m_isParameter)
 	     throw OU::Error("Cannot dump property '%s' for instance '%s'. It is not readable.",
 			     pName, name);
 	 }
@@ -672,6 +672,8 @@
        try {
 	 // In order from class definition except for instance-related
 	 m_bookings = NULL;
+	 m_deployments = NULL;
+	 m_bestDeployments = NULL;
 	 m_properties = NULL;
 	 m_nProperties = 0;
 	 m_curMap = 0;
@@ -686,9 +688,10 @@
 	 m_cMapPolicy = RoundRobin;
 	 m_processors = 0;
 	 m_currConn = OC::Manager::s_nContainers - 1;
+	 m_bestScore = 0;
+	 m_hex = false;
+	 m_uncached = false;
 	 m_launched = false;
-	 m_deployments = NULL;
-	 m_bestDeployments = NULL;
 	 m_verbose = false;
 	 m_dump = false;
 	 m_dumpPlatforms = false;
@@ -956,11 +959,24 @@
       return *ext.m_external;
     }
 
-    Worker &ApplicationI::getPropertyWorker(const char *name) {
+    // The name might have a dot in it to separate instance from property name
+    Worker &ApplicationI::getPropertyWorker(const char *name, const char *&pname) {
+      const char *dot;
+      if (pname || (dot = strchr(name, '.'))) {
+	size_t len = pname ? strlen(name) : dot - name;
+	for (unsigned n = 0; n < m_nInstances; n++) {
+	  const char *wname = m_assembly.instance(n).name().c_str();
+	  if (!strncasecmp(name, wname, len) && !wname[len])
+	    return *m_launchInstances[n].m_worker;
+	}
+	throw OU::Error("Unknown instance name in: %s", name);
+      }
       Property *p = m_properties;
       for (unsigned n = 0; n < m_nProperties; n++, p++)
-	if (!strcasecmp(name, p->m_name.c_str()))
+	if (!strcasecmp(name, p->m_name.c_str())) {
+	  pname = m_assembly.instance(p->m_instance).properties()[p->m_property].m_name.c_str();
 	  return *m_launchInstances[p->m_instance].m_worker;
+	}
       throw OU::Error("Unknown application property: %s", name);
     }
 
@@ -970,10 +986,11 @@
     }
     // FIXME:  consolidate the constructors (others are in OcpiProperty.cxx) (have in internal class for init)
     // FIXME:  avoid the double lookup since the first one gets us the ordinal
-    Property::Property(Application &app, const char *aname)
-      : m_worker(app.getPropertyWorker(aname)),
+    Property::Property(Application &app, const char *aname, const char *pname)
+      : m_worker(app.getPropertyWorker(aname, pname)),
 	m_readVaddr(0), m_writeVaddr(0),
-	m_info(m_worker.setupProperty(maybePeriod(aname), m_writeVaddr, m_readVaddr)),
+	m_info(m_worker.setupProperty(pname ? pname : maybePeriod(aname), m_writeVaddr,
+				      m_readVaddr)),
 	m_ordinal(m_info.m_ordinal),
 	m_readSync(false), m_writeSync(false)
     {
@@ -1161,7 +1178,9 @@
 
     }
     Worker &Application::
-    getPropertyWorker(const char *name) { return m_application.getPropertyWorker(name); }
+    getPropertyWorker(const char *name, const char *&pname) {	\
+      return m_application.getPropertyWorker(name, pname);
+    }
 
     void Application::
     dumpDeployment(const char *appFile, const std::string &file) {

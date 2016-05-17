@@ -62,6 +62,17 @@ parse(ezxml_t cx) {
 	(err = params[nParam].parse(px, p)))
       return err;
   }
+  // Fill in the default values that were not mentioned
+  size_t n = 0;
+  for (PropertiesIter pi = m_worker.m_ctl.properties.begin(); pi != m_worker.m_ctl.properties.end(); pi++)
+    if ((*pi)->m_isParameter) {
+      if (!params[n].param) {
+	params[n].param = *pi;
+	params[n].value = (*pi)->m_default;
+	(*pi)->m_default->unparse(params[n].uValue);
+      }
+      n++;
+    }
   return NULL;
 }
 

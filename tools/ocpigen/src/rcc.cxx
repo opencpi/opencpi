@@ -87,7 +87,7 @@ rccBaseType(std::string &type, OU::Member &m, unsigned level, size_t &offset, un
 	    const char *parent, bool isFixed, bool &isLast, unsigned predefine, bool isCnst) {
   if (level > m_maxLevel)
     m_maxLevel = level;
-  int indent = level * 2;
+  int indent = level * 2 + 2;
   const char *cnst = isCnst ? "const " : "";
   if (m.m_baseType == OA::OCPI_Struct) {
     std::string s;
@@ -141,34 +141,42 @@ rccBaseType(std::string &type, OU::Member &m, unsigned level, size_t &offset, un
 // 1. When a higher level structure is being defined (like Properties) and thus
 //    the type will be immediately and anonymously used as the type of a struct member
 // 2. When a type for a parameter is being defined in advance of its value being defined.
+// predefine is UINT_MAX when we are just traversing the type for determining max depth
+// otherwise the level of data structure with 0 being the lowest leaf, in order to
+// define structures/types from leaf to root.
+// predefine is 0 when the top level (like actual properties)
 void Worker::
 rccType(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
 	const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predefine,
 	bool cnst) {
-  int indent = level * 2;
+  int indent = level * 2 + 2;
   if (m.m_isSequence && !topSeq) {
-    OU::formatAdd(type, "%*s%sstruct {\n", indent, "", cnst ? "const " : "");
-    if (m_language != C)
-      OU::formatAdd(type,
-		    "%*s  inline size_t capacity() const { return %zu; }\n"
-		    "%*s  inline void resize(size_t n) { assert(n <= %zu); length = n; }\n"
-		    "%*s  inline size_t size() { return length; }\n",
-		    indent, "", m.m_sequenceLength, indent, "", m.m_sequenceLength, indent, "");
-    OU::formatAdd(type, "%*s  uint32_t length;\n", indent, "");
-    if (m.m_dataAlign > sizeof(uint32_t)) {
-      size_t align = m.m_dataAlign - (unsigned)sizeof(uint32_t);
-      OU::formatAdd(type, "%*s  char pad%u_[%zu];\n", indent, "", pad++, align);
+    if (level > predefine || predefine == UINT_MAX-1) {
+      OU::formatAdd(type, "%*s%sstruct {\n", indent, "", cnst ? "const " : "");
+      if (m_language != C)
+	OU::formatAdd(type,
+		      "%*s  inline size_t capacity() const { return %zu; }\n"
+		      "%*s  inline void resize(size_t n) { assert(n <= %zu); length = n; }\n"
+		      "%*s  inline size_t size() const { return length; }\n",
+		      indent, "", m.m_sequenceLength, indent, "", m.m_sequenceLength, indent, "");
+      OU::formatAdd(type, "%*s  uint32_t length;\n", indent, "");
+      if (m.m_dataAlign > sizeof(uint32_t)) {
+	size_t align = m.m_dataAlign - (unsigned)sizeof(uint32_t);
+	OU::formatAdd(type, "%*s  char pad%u_[%zu];\n", indent, "", pad++, align);
+      }
     }
-    rccBaseType(type, m, level + 1, offset, pad, parent, isFixed, isLast, predefine, false);
-    OU::formatAdd(type, " data");
-    if (m.m_sequenceLength && isFixed)
-      OU::formatAdd(type, "[%zu]", m.m_sequenceLength);
-    else {
-      type += "[]";
-      isLast = true;
+    rccBaseType(type, m, level, offset, pad, parent, isFixed, isLast, predefine, false);
+    if (level > predefine || predefine == UINT_MAX-1) {
+      OU::formatAdd(type, " data");
+      if (m.m_sequenceLength && isFixed)
+	OU::formatAdd(type, "[%zu]", m.m_sequenceLength);
+      else {
+	type += "[]";
+	isLast = true;
+      }
+      rccArray(type, m, isFixed, isLast, false, true);
+      OU::formatAdd(type, "%*s}", indent, "");
     }
-    rccArray(type, m, isFixed, isLast, false, true);
-    OU::formatAdd(type, "%*s}", indent, "");
   } else
     rccBaseType(type, m, level, offset, pad, parent, isFixed, isLast, predefine, cnst);
 }
@@ -179,7 +187,7 @@ void Worker::
 rccMember(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
 	  const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predefine,
 	  bool cnst) {
-  int indent = level * 2;
+  int indent = level * 2 + 2;
   if (level > predefine || predefine == UINT_MAX-1) {
     if (offset < m.m_offset) {
       OU::formatAdd(type, "%*schar pad%u_[%zu];\n",

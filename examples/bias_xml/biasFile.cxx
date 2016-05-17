@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <iostream>
 #include <cstdio>
 #include <cassert>
@@ -18,6 +19,7 @@ int main(int argc, char **argv) {
   }
   std::string hello =
     "<application done='file_write' package='ocpi'>"
+    "  <property name='top_bv' instance='bias' property='biasValue'/>"
     "  <instance component='file_read'>"
     "    <property name='filename' value='test.input'/>"
     "    <property name='granularity' value='4'/>"
@@ -59,6 +61,15 @@ int main(int argc, char **argv) {
     app.setProperty("file_write", "filename", "test.output");
     OA::Property p(app, "bias.testws");
     p.setULongValue(12);
+    OA::Property p1(app, "bias", "biasValue");
+    fprintf(stderr, "Reading property with split args: biasValue is %" PRIu32 "\n",
+	    p1.getULongValue());
+    OA::Property p2(app, "bias.biasValue");
+    fprintf(stderr, "Reading property with dotted args: biasValue is %" PRIu32 "\n",
+	    p2.getULongValue());
+    OA::Property p3(app, "top_bv");
+    fprintf(stderr, "Reading mapped property: biasValue is %" PRIu32 "\n",
+	    p3.getULongValue());
     app.start();
     fprintf(stderr, "Application started/running\n");
     app.wait();

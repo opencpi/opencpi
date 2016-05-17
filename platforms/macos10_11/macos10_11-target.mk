@@ -1,5 +1,7 @@
 # Settings when targeting this platform
 export OcpiLibraryPathEnv=DYLD_LIBRARY_PATH
+export OcpiRpathOrigin=@executable_path
+export OcpiDynamicSuffix=dylib
 export OCPI_OCL_LIBS=-locpi_ocl -framework OpenCL
 export OcpiAsNeeded=
 export OCPI_EXPORT_DYNAMIC=
