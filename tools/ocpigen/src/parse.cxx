@@ -807,9 +807,12 @@ create(const char *file, const std::string &parentFile, const char *package, con
       err = w->parseOclAssy();
     else
       err = OU::esprintf("Unrecognized top level tag: \"%s\" in file \"%s\"", name, xfile);
-    if (!err && !(err = w->setParamConfig(instancePVs, paramConfig)))
-      err = w->finalizeProperties();
   }
+  if (!err &&
+      !(err = w->setParamConfig(instancePVs, paramConfig)) &&
+      !(err = w->finalizeProperties()) &&
+      w->m_model == HdlModel)
+    err = w->finalizeHDL();
   if (err) {
     delete w;
     w = NULL;
