@@ -30,7 +30,18 @@ parseHdl(const char *package) {
       return OU::esprintf("in %s for %s: %s", m_xml->name, m_implName, err);
   } else
     return "file contains neither an HdlImplementation nor an HdlAssembly nor an HdlPlatform";
+  if (m_ports.size() > 32)
+    return "worker has more than 32 ports";
+  m_model = HdlModel;
+  m_modelString = "hdl";
+  return NULL;
+}
+// FIXME: get the basic HDL workers in their own class
+const char *Worker::
+finalizeHDL() {
+  // This depends on the final property processing based on parameters etc.
   // Whether a worker or an assembly, we derive the external OCP signals, etc.
+  const char *err;
   if ((err = deriveOCP()))
     return OU::esprintf("in %s for %s: %s", m_xml->name, m_implName, err);
   unsigned wipN[NWIPTypes][2] = {{0}};
@@ -40,13 +51,8 @@ parseHdl(const char *package) {
       return err;
     wipN[p->type][p->masterIn()]++;
   }
-  if (m_ports.size() > 32)
-    return "worker has more than 32 ports";
-  m_model = HdlModel;
-  m_modelString = "hdl";
-  return 0;
+  return NULL;
 }
-
 
 Clock *Worker::
 addWciClockReset() {
