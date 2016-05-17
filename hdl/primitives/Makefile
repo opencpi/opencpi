@@ -33,7 +33,7 @@ ImportCoreDirs=\
   $(OCPI_HDL_IMPORTS_DIR)/coregen/ddc_4243_4ch_v5
 
 # These are order-sensitive
-PrimitiveLibraries=bsv fixed_float ocpi util platform sdp zynq stratix4 virtex5 virtex6 xilinx i2c
+PrimitiveLibraries=bsv fixed_float ocpi util platform axi zynq sdp stratix4 virtex5 virtex6 xilinx i2c
 # All cores here are imported
 PrimitiveCores=
 

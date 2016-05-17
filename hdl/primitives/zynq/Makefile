@@ -26,7 +26,7 @@
 # This primitive library contains VHDL primitive modules for zynq platforms.
 include $(OCPI_CDK_DIR)/include/hdl/xilinx.mk
 OnlyTargets=zynq isim modelsim
-HdlLibraries=fixed_float ocpi platform sdp
+HdlLibraries=fixed_float ocpi platform axi
 
 XilinxZynqCore=processing_system7_v4_03_a
 ifndef OCPI_XILINX_EDK_DIR
@@ -37,9 +37,8 @@ XilinxZynq=$(OCPI_XILINX_EDK_DIR)/hw/XilinxProcessorIPLib/pcores/$(XilinxZynqCor
 #XilinxPS7=$(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/unisims/PS7.v
 XilinxZynqPSFiles=atc aw_atc b_atc processing_system7 trace_buffer w_atc
 
-SourceFiles=\
-  zynq_pkg.vhd unoc2axi_wd.vhd unoc2axi_rd.vhd unoc2axi.vhd axinull.vhd axi2cp.vhd\
-  sdp2axi_rd.vhd sdp2axi_wd.vhd sdp2axi.vhd sdp2axi_rd.vhd
+SourceFiles=zynq_pkg.vhd
+
 #   sdp2axi.vhd sdp2axi_wd.vhd sdp2axi_rd.vhd
 
 ifeq ($(wildcard $(XilinxZynq)),)

@@ -9,6 +9,15 @@ Model:=hdl
 # i.e. a Makefile file that does other makefiles.
 # Note that targets are generally families except when a primitive core is actually part-specific.
 
+override HdlTarget:=$(patsubst %_pf,%,$(HdlTarget))
+override HdlTargets:=$(patsubst %_pf,%,$(HdlTargets))
+override OnlyTargets:=$(patsubst %_pf,%,$(OnlyTargets))
+override ExcludeTargets:=$(patsubst %_pf,%,$(ExcludeTargets))
+override HdlPlatform:=$(patsubst %_pf,%,$(HdlPlatform))
+override HdlPlatforms:=$(patsubst %_pf,%,$(HdlPlatforms))
+override OnlyPlatforms:=$(patsubst %_pf,%,$(OnlyPlatforms))
+override ExcludePlatforms:=$(patsubst %_pf,%,$(ExcludePlatforms))
+
 $(call OcpiDbgVar,HdlPlatforms)
 $(call OcpiDbgVar,HdlTargets)
 

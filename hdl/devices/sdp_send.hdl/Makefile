@@ -1,3 +1,3 @@
 # Put Makefile customizations for worker sdp_send.hdl here:
-HdlLibraries = sdp platform
+Libraries=sdp platform axi
 include $(OCPI_CDK_DIR)/include/worker.mk

@@ -51,7 +51,7 @@ ifneq ($(MAKECMDGOALS),clean)
   PlatformDir:=$(HdlPlatformDir)
 endif
 OcpiLanguage:=vhdl
-override HdlLibraries+=sdp platform
+override HdlLibraries+=sdp axi platform
 # ComponentLibraries and XmlIncludeDirs are already passed to us on the command line.
 # Note that the platform directory should be first XML dir since the config file name should be
 # scoped to the platform.

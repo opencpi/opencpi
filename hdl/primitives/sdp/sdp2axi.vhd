@@ -46,7 +46,7 @@
 library IEEE; use IEEE.std_logic_1164.all, ieee.numeric_std.all;
 library platform; use platform.platform_pkg.all;
 library ocpi; use ocpi.types.all, ocpi.util.all;
-library zynq; use zynq.zynq_pkg.all;
+library axi; use axi.axi_pkg.all;
 library sdp; use sdp.sdp.all;
 
 entity sdp2axi is

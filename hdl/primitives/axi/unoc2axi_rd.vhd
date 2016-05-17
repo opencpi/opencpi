@@ -26,7 +26,7 @@
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 library platform; use platform.platform_pkg.all;
 library ocpi; use ocpi.types.all, ocpi.util.all;
-library zynq; use zynq.zynq_pkg.all;
+library work; use work.axi_pkg.all;
 
 entity unoc2axi_rd is
   generic(

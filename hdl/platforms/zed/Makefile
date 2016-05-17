@@ -1,4 +1,4 @@
-Libraries=zynq sdp
+Libraries=axi zynq sdp
 Configurations=\
   base \
   zed_zipper_fmc_rx \

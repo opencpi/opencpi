@@ -7,9 +7,10 @@ library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
 library platform; use platform.platform_pkg.all;
 library zynq; use zynq.zynq_pkg.all;
+library axi; use axi.axi_pkg.all;
 library unisim; use unisim.vcomponents.all;
 library bsv;
-library sdp; use sdp.sdp.all;
+library sdp; use sdp.sdp.all, sdp.sdp_axi.all;
 architecture rtl of zed_worker is
   constant ntrace : natural := to_integer(maxtrace);
   signal ps_axi_gp_in     : m_axi_gp_in_t;        -- s2m

@@ -3,7 +3,7 @@
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 library platform; use platform.all;
 library ocpi; use ocpi.types.all;
-library zynq; use zynq.zynq_pkg.all;
+library work; use work.axi_pkg.all;
 entity axi2cp is
   port(
     clk     : in std_logic;
