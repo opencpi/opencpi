@@ -232,6 +232,7 @@ namespace OCPI {
       m_next = 0;
       m_length = 0;
       m_ULongLong = 0;
+      m_pULongLong = NULL; // in case pointers are longer than 64 bits...
       m_parsed = false;
     }
 
@@ -381,7 +382,7 @@ namespace OCPI {
       char *endptr;
       errno = 0;
       vp = strtod(cp, &endptr);
-      if (endptr == cp || errno || end && endptr > end)
+      if (endptr == cp || errno || (end && endptr > end))
 	return "bad Double value";
       return NULL;
     }
@@ -390,7 +391,7 @@ namespace OCPI {
       char *endptr;
       errno = 0;
       vp = strtof(cp, &endptr);
-      if (endptr == cp || errno || end && endptr > end)
+      if (endptr == cp || errno || (end && endptr > end))
 	return "bad Float value";
       return NULL;
     }
@@ -573,7 +574,7 @@ namespace OCPI {
 	delete [] m_types;
 	m_types = NULL;
       }
-      if (m_nTotal && (m_vt->m_isSequence || m_vt->m_arrayRank)) {
+      if (m_vt && (m_vt->m_isSequence || m_vt->m_arrayRank)) {
 	switch(m_vt->m_baseType) {
 #define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)	 \
 	case OA::OCPI_##pretty:			         \
