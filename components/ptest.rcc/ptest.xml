@@ -14,4 +14,8 @@
   <member name='str' type='string' stringlength='10'/>
   <member name='seq' sequencelength='4'/>
 </property>
+<Property name="Pattern" type="Struct" readable="true" initial="true" sequenceLength="7">
+    <Member name='Opcode' type='uChar' default='0'/>
+    <Member name='Bytes' type='uChar' default='0' sequenceLength="2048"/>
+  </Property>
 </RccWorker>

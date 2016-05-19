@@ -246,8 +246,6 @@ namespace OCPI {
 	  v.m_nTotal *= v.m_nElements;
 	}
 	size_t nBytes = v.m_nTotal * info.m_elementBytes;
-        if (info.m_isSequence)
-            nBytes += std::max(sizeof(uint32_t), info.m_dataAlign);
 	if (info.m_baseType == OA::OCPI_String) {
 	  size_t offset = info.m_offset + (info.m_isSequence ? info.m_align : 0);
 	  size_t length = OU::roundUp(info.m_stringLength + 1, 4);

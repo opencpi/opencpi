@@ -430,7 +430,7 @@ namespace OCPI {
 		      m_sequenceLength);
 	writer.beginSequence(*this, nElements);
 	if (!nElements) {
-	  advance(data, m_fixedLayout ? m_nBytes : m_align, length);
+	  advance(data, m_fixedLayout && !topSeq ? m_nBytes : m_align, length);
 	  return;
 	}
 	advance(data, m_align, length);
@@ -506,7 +506,7 @@ namespace OCPI {
 	  *(uint32_t *)data = (uint32_t)nElements;
 	if (!nElements) {
 	  // Sequence is empty. skip over header or whole thing if fixedLayout
-	  radvance(data, m_fixedLayout ? m_nBytes : m_align, length);
+	  radvance(data, m_fixedLayout && !top ? m_nBytes : m_align, length);
 	  return;
 	}
 	// Non empty - skip over header for now
