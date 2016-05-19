@@ -7,7 +7,6 @@ export OCPI_TARGET_OS=linux
 export OCPI_TARGET_OS_VERSION=zynq
 export OCPI_TARGET_ARCH=arm
 export OCPI_TARGET_HOST=linux-zynq-arm
-# export OCPI_CFLAGS=
-# export OCPI_CXXFLAGS=
+# Previous definitions of OCPI_ARCH / OCPI_TARGET_CFLAGS / OCPI_TARGET_CXXFLAGS are now in platforms/XXX/XXX-target.sh
 export OCPI_LDFLAGS=
 export OCPI_SHARED_LIBRARIES_FLAGS=
