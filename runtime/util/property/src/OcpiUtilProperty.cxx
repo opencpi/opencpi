@@ -161,6 +161,11 @@ namespace OCPI {
       const char *err = NULL;
       if (resolver && (err = finalize(*resolver, !m_isParameter)))
 	return err;
+      // Now we evaluate offsets since some sizes may have changed
+      size_t maxAlign = 1, minSize = 0, myOffset = 0;
+      bool diverseSizes = false, unBounded, isSub32;
+      if ((err = Member::offset(maxAlign, myOffset, minSize, diverseSizes, isSub32, unBounded)))
+	return err;
       if (m_isIndirect) {
 	uint64_t top = m_indirectAddr;
 	top += m_nBytes;

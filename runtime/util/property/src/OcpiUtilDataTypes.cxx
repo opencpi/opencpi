@@ -301,6 +301,10 @@ namespace OCPI {
     const char *Member::
     finalize(const IdentResolver &resolver, bool isFixed) {
       const char *err;
+      // First we finalize any members, recursively
+      if (m_baseType == OA::OCPI_Struct)
+	for (unsigned n = 0; n < m_nMembers; n++)
+	  m_members[n].finalize(resolver, isFixed);
       if (m_arrayRank) {
 	m_nItems = 1;
 	for (unsigned i = 0; i < m_arrayRank; i++) {
