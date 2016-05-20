@@ -1,4 +1,5 @@
 #include <limits.h>
+#include <vector>
 #include "assembly.h"
 #include "rcc.h"
 
@@ -56,11 +57,38 @@ upperconstant(std::string &s, const char *s1, const char *s2 = NULL, const char 
   }
 }
 
+// Emit a constant expression either from a numeric field or from an expression of parameters
+void Worker::
+rccEmitDimension(size_t numeric, const std::string &expr, const char *surround,
+		 std::string &out) {
+  if (surround)
+    out += surround[0];
+  if (expr.length()) {
+    std::string prefix, cexpr;
+    upperconstant(prefix, m_language == CC ? m_implName : "PARAM", "");
+    OU::makeCexpression(expr.c_str(), prefix.c_str(), m_language == CC ? "" : "()",
+			m_language == CC, cexpr);
+    out += cexpr;
+  } else
+    OU::formatAdd(out, "%zu", numeric);
+  if (surround)
+    out += surround[1];
+}
+
 static void
+rccEnd(OU::Member &m, bool topSeq, std::string &type) {
+  // End of declarator.
+  OU::formatAdd(type, "; /* %8zxx", m.m_offset); 
+  if (topSeq)
+    type += " this is a top level sequence of fixed size elements";
+  type += " */\n";
+}
+
+void Worker::
 rccArray(std::string &type, OU::Member &m, bool isFixed, bool &isLast, bool topSeq, bool end) {
   if (m.m_arrayRank)
     for (unsigned n = 0; n < m.m_arrayRank; n++)
-      OU::formatAdd(type, "[%zu]", m.m_arrayDimensions[n]);
+      rccEmitDimension(m.m_arrayDimensions[n], m.m_arrayDimensionsExprs[n], "[]", type);
   if (topSeq) {
     if (m.m_sequenceLength)
       OU::formatAdd(type, "[%zu]", m.m_sequenceLength);
@@ -69,17 +97,15 @@ rccArray(std::string &type, OU::Member &m, bool isFixed, bool &isLast, bool topS
   }
   // We align strings on a 4 byte boundary, and implicitly pad them to a 4 byte boundary too
   if (m.m_baseType == OA::OCPI_String) {
-    OU::formatAdd(type, "[%zu]", isFixed ? (m.m_stringLength + 4) & ~3 : 4);
+    std::string expr = "(";
+    rccEmitDimension(m.m_stringLength, m.m_stringLengthExpr, "()", expr);
+    expr += " + 4) & ~3";
+    OU::formatAdd(type, "[%s]", isFixed ? expr.c_str() : "4");
     if (m.m_stringLength == 0)
       isLast = true;
   }
-  if (end) {
-    // End of declarator. If we're a sequence we close off the struct.
-    OU::formatAdd(type, "; /* %8zxx", m.m_offset); 
-    if (topSeq)
-      type += " this is a top level sequence of fixed size elements";
-    type += " */\n";
-  }
+  if (end)
+    rccEnd(m, topSeq, type);
 }
 // Just print the data type, not the "member", with names or arrays etc.
 void Worker::
@@ -165,11 +191,12 @@ rccType(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsign
 	OU::formatAdd(type, "%*s  char pad%u_[%zu];\n", indent, "", pad++, align);
       }
     }
+    type += "  ";
     rccBaseType(type, m, level, offset, pad, parent, isFixed, isLast, predefine, false);
     if (level > predefine || predefine == UINT_MAX-1) {
       OU::formatAdd(type, " data");
       if (m.m_sequenceLength && isFixed)
-	OU::formatAdd(type, "[%zu]", m.m_sequenceLength);
+	rccEmitDimension(m.m_sequenceLength, m.m_sequenceLengthExpr, "[]", type);
       else {
 	type += "[]";
 	isLast = true;
@@ -180,6 +207,7 @@ rccType(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsign
   } else
     rccBaseType(type, m, level, offset, pad, parent, isFixed, isLast, predefine, cnst);
 }
+
 // FIXME: a tool-time member class should have this...OCPI::Tools::RCC::Member...
 // Returns true when something is variable length.
 // strings or sequences are like that unless then are bounded.
@@ -196,7 +224,10 @@ rccMember(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsi
     }
     rccType(type, m, level, offset, pad, parent, isFixed, isLast, topSeq, predefine, cnst);
     OU::formatAdd(type, " %s", m.m_name.c_str());
-    rccArray(type, m, isFixed, isLast, topSeq, true);
+    if (m.m_isSequence && !topSeq) // sequences put the dimensions inside the length/data struct
+      rccEnd(m, topSeq, type);
+    else 
+      rccArray(type, m, isFixed, isLast, topSeq, true);
     offset += m.m_nBytes;
   } else
     rccType(type, m, level, offset, pad, parent, isFixed, isLast, topSeq, predefine, cnst);
@@ -681,13 +712,14 @@ emitImplRCC() {
 	  type = cctypes[p.m_baseType];
 	  pretty = ccpretty[p.m_baseType];
 	}
-	size_t *offsets = NULL;
+	std::vector<std::string> offsets(p.m_arrayRank);
 	if (p.m_arrayRank) {
-	  offsets = new size_t[p.m_arrayRank];
 	  size_t n = p.m_arrayRank - 1;
-	  offsets[n] = 1;
+	  offsets[n] = "1";
 	  while (n > 0) {
-	    offsets[n-1] = offsets[n] * p.m_arrayDimensions[n];
+	    std::string dimExpr;
+	    rccEmitDimension(p.m_arrayDimensions[n], p.m_arrayDimensionsExprs[n], "()", dimExpr);
+	    offsets[n-1] = offsets[n] + "*" + dimExpr;
 	    n--;
 	  }
 	}
@@ -699,7 +731,7 @@ emitImplRCC() {
 		  p.m_isParameter ? "Parameter" : "Property", p.m_ordinal);
 	  if (p.m_arrayRank)
 	    for (unsigned n = 0; n < p.m_arrayRank; n++)
-	      fprintf(f, "%sidx%u*%zu", n ? " + " : ", ", n, offsets[n]);
+	      fprintf(f, "%sidx%u*%s", n ? " + " : ", ", n, offsets[n].c_str());
 	  else
 	    fprintf(f, ", 0");
 	  fprintf(f,"); }\n");
@@ -712,7 +744,7 @@ emitImplRCC() {
 	  if (p.m_arrayRank) {
 	    fprintf(f, "      unsigned idx = ");
 	    for (unsigned n = 0; n < p.m_arrayRank; n++)
-	      fprintf(f, "%sidx%u*%zu", n ? " + " : "", n, offsets[n]);
+	      fprintf(f, "%sidx%u*%s", n ? " + " : "", n, offsets[n].c_str());
 	    fprintf(f,
 		    ";\n"
 		    "      m_worker.set%sProperty(%u, %sval, idx);\n",
@@ -735,7 +767,6 @@ emitImplRCC() {
 		  "#endif\n"
 		  "    }\n");
 	}
-	delete [] offsets;
       }
       fprintf(f,
 	      "  } slave;\n");

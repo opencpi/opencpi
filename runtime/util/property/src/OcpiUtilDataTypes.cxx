@@ -161,7 +161,8 @@ namespace OCPI {
       if (!strcasecmp(typeName, "struct")) {
 	m_baseType = OA::OCPI_Struct;
 	if ((err = OE::checkElements(xm, "member", (void*)0)) ||
-	    (err = parseMembers(xm, m_nMembers, m_members, isFixed, "member", hasDefault)))
+	    (err = parseMembers(xm, m_nMembers, m_members, isFixed, "member", hasDefault,
+				resolver)))
 	  return err;
 	if (m_nMembers == 0)
 	  return "No struct members under type == \"struct\"";
@@ -648,8 +649,9 @@ namespace OCPI {
     // This static method is shared between parsing members of a structure and parsing arguments
     // to an operation.
     const char *
-    Member::parseMembers(ezxml_t mems, size_t &nMembers, Member *&members,
-			 bool isFixed, const char *tag, const char *hasDefault) {
+    Member::parseMembers(ezxml_t mems, size_t &nMembers, Member *&members, bool isFixed,
+			 const char *tag, const char *hasDefault,
+			 const IdentResolver *resolver) {
       for (ezxml_t m = ezxml_cchild(mems, tag); m ; m = ezxml_next(m))
 	nMembers++;
       if (nMembers) {
@@ -660,7 +662,7 @@ namespace OCPI {
 	for (ezxml_t mx = ezxml_cchild(mems, tag); mx ; mx = ezxml_next(mx), m++) {
 	  if ((err = OE::checkAttrs(mx, OCPI_UTIL_MEMBER_ATTRS,
 				    hasDefault ? hasDefault : NULL, NULL)) ||
-	      (err = m->parse(mx, isFixed, true, hasDefault, (unsigned)(m - members))))
+	      (err = m->parse(mx, isFixed, true, hasDefault, (unsigned)(m - members), resolver)))
 	    return err;
 	  if (!names.insert(m->m_name.c_str()).second)
 	    return esprintf("Duplicate member name: %s", m->m_name.c_str());

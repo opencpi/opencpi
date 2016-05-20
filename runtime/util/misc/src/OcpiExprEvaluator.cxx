@@ -59,10 +59,8 @@ namespace {
 #define OP(n,s) Op##n,
   typedef enum { ALLOPS OpEnd, OpString, OpIdent, OpNumber, OpLimit } OpCode;
 
-
   static const char *
   lex(const char *&cp, const char *&start, const char *&end, OpCode &op) {
-
     op = OpLimit;
     while (isspace(*cp))
       cp++;
@@ -105,7 +103,7 @@ namespace {
 	if (*cp == opNames[n][0])
 	  if (opNames[n][1]) {
 	    if (opNames[n][1] == cp[1]) {
-	      cp ++;
+	      cp++;
 	      op = (OpCode)n;
 	      break;
 	    }
@@ -113,7 +111,7 @@ namespace {
 	    op = (OpCode)n;
       if (op == OpLimit)
 	return "illegal token";
-      cp++;
+      end = ++cp;
     } while (0);
     while (isspace(*cp))
       cp++;
@@ -331,7 +329,7 @@ namespace OCPI {
       ExprToken *tokens = 0;
       const char *err = parse(string, val, tokens, resolver);
       delete [] tokens;
-      return err;
+      return err ? esprintf("when parsing expression \"%s\": %s", string, err) : NULL;
     }
     // Evaluate the expression, using the resolver, and if the expression was variable,
     // save the expression so it can be reevaluated again later when the values of
@@ -366,9 +364,45 @@ namespace OCPI {
 	*found = false;
       return NULL;
     }
+    const char *makeCexpression(const char *cp, const char *prefix, const char *suffix,
+				bool toUpper, std::string &out) {
+      ExprToken t;
+      const char *err;
+      while (!(err = lex(cp, t.start, t.end, t.op)) && t.op != OpEnd) {
+	std::string before, after;
+	const char *end;
+	switch (t.op) {
+	case OpNumber:
+	  t.number = strtoll(t.start, (char **)&end, 0);
+	  if (end != t.end)
+	    return "bad number syntax";
+	  before = "(";
+	  switch (*t.end) {
+	  case 'k': case 'K': after = "*1024)"; cp++; break;
+	  case 'm': case 'M': after = "*1024*1024)"; cp++; break;
+	  case 'g': case 'G': after = "*1024ul*1024ul*1024ul)"; cp++; break;
+	  default:
+	    before = "";
+	  }
+	  break;
+	case OpIdent:
+	  before = prefix ? prefix : "";
+	  for (; t.start != t.end; t.start++)
+	    after += toUpper ? (char)toupper(*t.start) : *t.start;
+	  if (suffix)
+	    after += suffix;
+	  break;
+	default:;
+	}
+	out += before;
+	if (t.start != t.end)
+	  out.append(t.start, t.end - t.start);
+	out += after;
+      }
+      return err;
+    }
   }
 }
-
 #if TEST_EXPR_EVALUATOR
 namespace OU = OCPI::Util;
 int main(int argc, char **argv) {

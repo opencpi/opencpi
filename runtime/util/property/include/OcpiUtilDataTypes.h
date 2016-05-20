@@ -188,8 +188,8 @@ namespace OCPI {
 	*offset(size_t &maxAlign, size_t &argOffset, size_t &minSize, bool &diverseSizes,
 		bool &sub32, bool &unBounded, bool isTop = false);
       static const char *
-      parseMembers(ezxml_t prop, size_t &nMembers, Member *&members,
-		   bool isFixed, const char *tag, const char *vtag);
+      parseMembers(ezxml_t prop, size_t &nMembers, Member *&members, bool isFixed,
+		   const char *tag, const char *vtag, const IdentResolver *resolv = NULL);
       static const char *
       alignMembers(Member *m, size_t nMembers,
 		   size_t &maxAlign, size_t &myOffset,
