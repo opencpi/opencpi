@@ -11,7 +11,7 @@
     <meta content="" name="DC.subject" />
     <meta content="" name="DC.description" />
     <meta content="James Kulp" name="DC.creator" />
-    <meta content="2016-05-18T09:13:40.701635000" name="DC.date" />
+    <meta content="2016-05-19T12:55:06.594967000" name="DC.date" />
     <meta content="en" name="DC.language" />
     <style media="all" type="text/css">
       body {font-family:Calibri,serif;font-size:13.333334px}
@@ -313,7 +313,7 @@
       <p class="Contents1" dir="ltr"><span class="SectionNumber">15 </span><a href="#toc104">Environment Variables used in Component Development</a></p>
       <p class="Contents1" dir="ltr"><span class="SectionNumber">16 </span><a href="#toc105">Tools Used in Component Development</a></p>
     </div>
-    <h1 dir="ltr" id="toc0"><span class="SectionNumber">1 </span><a id="RefHeading53281790153948"></a><a id="Toc141318608"></a><a id="Toc141837257"></a><a id="Toc224890089"></a><a id="Toc245388431"></a>References</h1>
+    <h1 dir="ltr" id="toc0"><span class="SectionNumber">1 </span><a id="Toc245388431"></a><a id="Toc224890089"></a><a id="Toc141837257"></a><a id="Toc141318608"></a><a id="RefHeading53281790153948"></a>References</h1>
     <p class="Body" dir="ltr">This document also refers to concepts and definitions in other documents, but does not depend on them.</p>
     <p class="TableCaptionbefore" dir="ltr">Table 1:  References to Related Documents</p>
     <table cellspacing="0" dir="ltr" id="Table2table" style="margin-top:0;margin-bottom:0;margin-left:1.7376001px;margin-right:auto;width:621.4656px;border-collapse:separate;border-spacing:0;table-layout:fixed">
@@ -376,7 +376,7 @@
       </tbody>
     </table>
     <p class="Standard" dir="ltr"> </p>
-    <h1 dir="ltr" id="toc1"><span class="SectionNumber">2 </span><a id="Toc224890090"></a><a id="Toc245388432"></a><a id="RefHeading53301790153948"></a>Overview</h1>
+    <h1 dir="ltr" id="toc1"><span class="SectionNumber">2 </span><a id="RefHeading53301790153948"></a><a id="Toc245388432"></a><a id="Toc224890090"></a>Overview</h1>
     <p class="Body" dir="ltr">This document describes how to create OpenCPI component implementations (  <span style="font-style:italic">workers</span>) in a component library, so that they are available for OpenCPI application developers and users.  It introduces a kit of tools to specify and develop OpenCPI workers in any supported <span style="font-style:normal">authoring model</span><span style="font-style:italic"> </span><span style="font-style:normal">language and API</span>.  It also describes how to create, build, and manage libraries of heterogeneous components where the components may have multiple implementations.</p>
     <p class="Body" dir="ltr">This document describes tools and processes to development component libraries in general.  Other documents describe the process of developing workers for specific authoring models, which currently include Resource-Constrained C Language workers <span class="FirstEmphasis">RCC</span> (C and C++ workers for software targets), Hardware Description Lanaguage workers <span class="FirstEmphasis">HDL</span> (VHDL or Verilog workers for FPGAs), and OpenCL workers, <span class="FirstEmphasis">OCL</span> (OpenCL workers for GPUs).</p>
     <p class="Body" dir="ltr">References to the kit of tools, scripts, documents and libraries used for developing components and workers in libraries are part of the <span class="FirstEmphasis">OpenCPI Component Development Kit (CDK)</span>.  The CDK is not an integrated development environment (IDE),  but rather is a set of commands, <span style="font-weight:normal">make</span> and shell level tools, and scripts that support the development process.  The CDK relies on several conventional tools, including GNU Make, and other basic POSIX command-line tools.</p>
@@ -474,7 +474,7 @@
         <p class="ListBullet" dir="ltr">Each authoring model also specifies how a worker is built (compiled, synthesized, linked) and packaged, to be ready for execution in an application.</p>
       </li>
     </ul>
-    <h2 dir="ltr" id="toc5"><span class="SectionNumber">4.1 </span><a id="RefHeading87951790153948"></a><a id="Toc141231891"></a>Requirements for All Authoring Models</h2>
+    <h2 dir="ltr" id="toc5"><span class="SectionNumber">4.1 </span><a id="Toc141231891"></a><a id="RefHeading87951790153948"></a>Requirements for All Authoring Models</h2>
     <ul class="listlevel1WWNum32">
       <li>
         <p class="ListBullet" dir="ltr">Enable/support well-defined data plane interoperability with other authoring models</p>
@@ -615,157 +615,170 @@
     <p class="Standard" dir="ltr">Some authoring models define a flat/linear <span style="font-style:normal">configuration address space</span> where the configuration properties are accessed by accessing this memory space, roughly as a data structure or register file.</p>
     <p class="Standard" dir="ltr">The component specification for the worker contains the description of the configuration properties that are part of the component’s external behavior. These will exist in all implementations (workers) that reference the component specification.  However, each worker may also <span style="font-style:italic">add</span> to this set of configuration properties and define <span class="FirstEmphasis">implementation-specific</span> configuration properties.  These can be useful for implementation debugging and testing, or in some cases to allow applications to configure properties specific to a particular implementation.</p>
     <p class="Standard" dir="ltr">Each configuration property is defined with a name and data type from the data types listed in the table below.  Each configuration property may vary in length (i.e. be strings or sequences) but must specify a maximum length.  This enables components and workers to be compliant with a variety of component system standards, and enables authoring models for resource-limited embedded technologies.</p>
-    <p class="Standard" dir="ltr">The available data types for configuration properties are <span class="FirstEmphasis">scalar types, structures, multidimensional arrays</span> of those types, and <span class="FirstEmphasis">single dimension variable length sequences <span style="font-style:normal;font-weight:normal">of those types</span></span>.  A list of the allowable scalar data types is:</p>
-    <p class="TableCaptionbefore" dir="ltr">Table 3: Data Types for Properties</p>
+    <p class="Standard" dir="ltr">Data types for configuration properties are based on the <span class="FirstEmphasis">scalar types</span> listed in the following table.<span class="FirstEmphasis">  </span>A <span class="FirstEmphasis">property data type</span> can be one of the scalar types or<span class="FirstEmphasis"> </span>a <span class="FirstEmphasis">structure</span> with typed members that are <span class="FirstEmphasis">property data type</span>s.  A property data type may have array dimensions, and also (after any array dimensions are applied) be defined as a variable length, single dimension <span class="FirstEmphasis">sequence</span>.  This recursive definition allows for complex types such as:  <span style="font-style:italic">a sequence of a two dimensional arrays of structures containing members that are themselves arrays or sequences or structures</span>.</p>
+    <p class="TableCaptionbefore" dir="ltr">Table 3: Scalar Data Types for Properties</p>
     <table cellspacing="0" dir="ltr" id="DataTypesforProperitestable" style="margin-top:19.2px;margin-bottom:0;width:624.0px;border-collapse:separate;border-spacing:0;table-layout:fixed">
       <tbody>
         <tr>
-          <td style="border-top:1.0px solid #000000;border-bottom:2.6666667px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:87.598404px">
+          <td style="border-top:1.0px solid #000000;border-bottom:2.6666667px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:87.1952px">
             <p class="TableHeading" dir="ltr" style="text-align:center;font-weight:bold;font-size:14.666667px">Scalar Data</p>
             <p class="TableHeading" dir="ltr" style="text-align:center;font-weight:bold;font-size:14.666667px">Type</p>
           </td>
-          <td style="border-top:1.0px solid #000000;border-bottom:2.6666667px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:99.6656px">
-            <p class="TableHeading" dir="ltr" style="text-align:center;font-weight:bold;font-size:14.666667px">Support for Unsigned</p>
+          <td style="border-top:1.0px solid #000000;border-bottom:2.6666667px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:99.2624px">
+            <p class="TableHeading" dir="ltr" style="text-align:center;font-weight:bold;font-size:14.666667px">Support for Unsigned<br />Version</p>
           </td>
-          <td style="border-top:1.0px solid #000000;border-bottom:2.6666667px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:top;width:94.0688px">
+          <td style="border-top:1.0px solid #000000;border-bottom:2.6666667px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:top;width:93.665596px">
             <p class="TableHeading" dir="ltr" style="text-align:center;font-weight:bold;font-size:14.666667px">Data</p>
             <p class="TableHeading" dir="ltr" style="text-align:center;font-weight:bold;font-size:14.666667px">Size</p>
           </td>
-          <td style="border-top:1.0px solid #000000;border-bottom:2.6666667px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding:3.6671999px;vertical-align:top;width:308.3296px">
+          <td style="border-top:1.0px solid #000000;border-bottom:2.6666667px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:top;width:307.9264px">
             <p class="TableHeading" dir="ltr" style="font-weight:bold;font-size:14.666667px">Notes</p>
           </td>
         </tr>
         <tr>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:87.598404px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:87.1952px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-weight:bold"><span class="Code"><span style="font-size:14.666667px">bool</span></span></p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:99.6656px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:99.2624px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-size:14.666667px">N/A</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:94.0688px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:93.665596px">
             <p class="TableContents" dir="ltr" style="font-weight:normal;font-size:14.666667px">8 bits</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding:3.6671999px;vertical-align:middle;width:308.3296px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:307.9264px">
             <p style="margin:0;font-size:1px"> </p>
           </td>
         </tr>
         <tr>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:87.598404px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:87.1952px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-weight:bold"><span class="Code"><span style="font-size:14.666667px">char</span></span></p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:99.6656px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:99.2624px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-size:14.666667px">Yes</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:94.0688px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:93.665596px">
             <p class="TableContents" dir="ltr" style="font-weight:normal;font-size:14.666667px">8 bits</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding:3.6671999px;vertical-align:middle;width:308.3296px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:307.9264px">
             <p class="TableContents" dir="ltr" style="font-weight:normal;font-size:14.666667px">Unsigned version is <span class="Code"><span style="font-size:14.666667px">uchar</span></span>.</p>
           </td>
         </tr>
         <tr>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:87.598404px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:87.1952px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-weight:bold"><span class="Code"><span style="font-size:14.666667px">double</span></span></p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:99.6656px">
-            <p class="TableContents" dir="ltr" style="font-style:italic;font-size:14.666667px">Yes</p>
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:99.2624px">
+            <p class="TableContents" dir="ltr" style="font-style:italic;font-size:14.666667px">N/A</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:94.0688px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:93.665596px">
             <p class="TableContents" dir="ltr" style="font-weight:normal;font-size:14.666667px">64 bits </p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding:3.6671999px;vertical-align:middle;width:308.3296px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:307.9264px">
             <p class="Standard" dir="ltr" style="font-weight:normal;font-size:14.666667px">Consistent with IEEE floating-point types</p>
           </td>
         </tr>
         <tr>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:87.598404px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:87.1952px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-weight:bold"><span class="Code"><span style="font-size:14.666667px">enum</span></span></p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:99.6656px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:99.2624px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-size:14.666667px">N/A</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:94.0688px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:93.665596px">
             <p class="TableContents" dir="ltr" style="font-weight:normal;font-size:14.666667px">32 bits</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding:3.6671999px;vertical-align:middle;width:308.3296px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:307.9264px">
             <p class="Standard" dir="ltr" style="font-weight:normal;font-size:14.666667px">Types are represented by ulong values, but are associated with string names.</p>
           </td>
         </tr>
         <tr>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:87.598404px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:87.1952px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-weight:bold"><span class="Code"><span style="font-size:14.666667px">float</span></span></p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:99.6656px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:99.2624px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-size:14.666667px">N/A</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:94.0688px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:93.665596px">
             <p class="TableContents" dir="ltr" style="font-weight:normal;font-size:14.666667px">32 bits</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding:3.6671999px;vertical-align:middle;width:308.3296px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:307.9264px">
             <p class="Standard" dir="ltr" style="font-weight:normal;font-size:14.666667px">Consistent with IEEE floating-point types</p>
           </td>
         </tr>
         <tr>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:87.598404px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:87.1952px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-weight:bold"><span class="Code"><span style="font-size:14.666667px">long</span></span></p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:99.6656px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:99.2624px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-size:14.666667px">Yes</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:94.0688px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:93.665596px">
             <p class="TableContents" dir="ltr" style="font-weight:normal;font-size:14.666667px">32 bits</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding:3.6671999px;vertical-align:middle;width:308.3296px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:307.9264px">
             <p class="Standard" dir="ltr" style="font-weight:normal;font-size:14.666667px">Unsigned version is <span class="Code"><span style="font-size:14.666667px">ulong</span></span>.</p>
           </td>
         </tr>
         <tr>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:87.598404px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:87.1952px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-weight:bold"><span class="Code"><span style="font-size:14.666667px">longlong</span></span></p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:99.6656px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:99.2624px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-size:14.666667px">Yes</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:94.0688px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:93.665596px">
             <p class="TableContents" dir="ltr" style="font-weight:normal;font-size:14.666667px">64 bits</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding:3.6671999px;vertical-align:middle;width:308.3296px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:307.9264px">
             <p class="TableContents" dir="ltr" style="font-weight:normal;font-size:14.666667px">Unsigned version is <span class="Code"><span style="font-size:14.666667px">ulonglong</span></span></p>
           </td>
         </tr>
         <tr>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:87.598404px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:87.1952px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-weight:bold"><span class="Code"><span style="font-size:14.666667px">short</span></span></p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:99.6656px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:99.2624px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-size:14.666667px">Yes</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:94.0688px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:93.665596px">
             <p class="TableContents" dir="ltr" style="font-weight:normal;font-size:14.666667px">16 bits</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding:3.6671999px;vertical-align:middle;width:308.3296px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:307.9264px">
             <p class="TableContents" dir="ltr" style="font-weight:normal;font-size:14.666667px">Unsigned version is <span class="Code"><span style="font-size:14.666667px">ushort</span></span></p>
           </td>
         </tr>
         <tr>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:87.598404px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:87.1952px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-weight:bold"><span class="Code"><span style="font-size:14.666667px">string</span></span></p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:99.6656px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:99.2624px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-size:14.666667px">N/A</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:94.0688px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:93.665596px">
             <p class="TableContents" dir="ltr" style="font-weight:normal;font-size:14.666667px">fixed</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding:3.6671999px;vertical-align:middle;width:308.3296px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:307.9264px">
             <p class="Standard" dir="ltr" style="font-weight:normal;font-size:14.666667px">Null terminated with a defined max length</p>
           </td>
         </tr>
       </tbody>
     </table>
-    <p class="Body" dir="ltr">When a property's type is a multidimensional <span style="font-style:italic;font-weight:bold">array</span> of the above types, the number of dimensions is fixed, and the length in each dimension is fixed.  When a property's type is a variable length <span style="font-style:italic;font-weight:bold">sequence</span> of the above types (or arrays of above types), it has a current length (number of valid values present), but is still required to have a defined maximum possible length.</p>
-    <p class="Standard" dir="ltr">Beyond data type, the configuration properties also have <span class="FirstEmphasis">accessibility attributes</span> indicating whether the value can only be set at initialization time, set any time during execution, or a never set (read-only).  Similarly, a configuration property value can be described as volatile where the value may be changed by the worker during execution, or statically readable and will not change unless written by control software.  These accessibility types are described in detail in the <a class="Internet20link"><span class="FirstEmphasis">Accessibility Attributes</span></a> section.</p>
-    <p class="Standard" dir="ltr">An OWD file allows additional properties to be created unique to the worker, beyond those specified in the OCS.  Additionally, the OWD may add to the accessibility of a OCS property.  For debug purposes, the OWD may make a property readable that was not readable in the OCS.  The accessibility <span style="font-style:normal">added</span> by the OWD results in the implementation having a superset of what was described in (and required by) the OCS.</p>
+    <p class="Body" dir="ltr">When a property's type is a multidimensional <span style="font-style:italic;font-weight:bold">array</span> of the above types, the number of dimensions is fixed, and the length in each dimension is fixed.</p>
+    <p class="Body" dir="ltr">When a property's type is a variable length <span style="font-style:italic;font-weight:bold">sequence</span> of the above types (or arrays of above types), it has a current length (number of valid values present), but is still required to have a defined maximum possible length (capacity).  Sequences may have a current length of zero or any amount up to the specified maximum possible length.  E.g. if a sequence is defined with a maximum length of 4, it means that it may hold zero, 1, 2, 3 or 4 values.  Space is always reserved for the maximum number of values, but the current length is also recorded in the sequence and is set whenever a new value for the sequence is set.</p>
+    <p class="Standard" dir="ltr">Beyond data type, the configuration properties also have <span class="FirstEmphasis">accessibility attributes</span> indicating whether the value can only be:</p>
+    <ul class="listlevel1WWNum32">
+      <li>
+        <p class="ListBullet" dir="ltr">set at initialization time</p>
+      </li>
+      <li>
+        <p class="ListBullet" dir="ltr">set any time during execution</p>
+      </li>
+      <li>
+        <p class="ListBullet" dir="ltr">never set (read-only)</p>
+      </li>
+    </ul>
+    <p class="Standard" dir="ltr">Similarly, a configuration property value can be described as volatile where the value may be changed by the worker during execution, or statically readable and will not change unless written by control software.  These accessibility types are described in detail in the <a class="Internet20link"><span class="FirstEmphasis">Accessibility Attributes</span></a> section.</p>
+    <p class="Standard" dir="ltr">An OWD file allows additional properties to be defined unique to the worker, beyond those specified in the OCS.  Additionally, the OWD may <span style="font-style:italic">add</span> to the accessibility of an OCS property.  E.g., for debug purposes, the OWD may make a property readable that was not readable in the OCS.  The accessibility <span style="font-style:normal">added</span> by the OWD results in the implementation having a superset of what was described in (and required by) the OCS.</p>
     <h3 dir="ltr" id="toc10"><span class="SectionNumber">4.2.4 </span>Properties that are build-time parameters</h3>
     <p class="Standard" dir="ltr">While the OCS specifies properties and their initialization-time and run-time accessibility, an OWD can further declare that a property is a compile time parameter in this worker.  This is not allowed for properties declared as writable at runtime, either in the OCS or OWD.  When an OWD declares properties to be parameters, this means that the worker must be built compiled, synthesized, elaborated for specific values of such properties.  This has three implications:</p>
     <ul class="listlevel1WWNum32">
@@ -804,7 +817,7 @@
     </ul>
     <p class="Standard" dir="ltr">It then returns control to its container.  Workers never block.  The container conveys the messages in buffers between collocated workers as well as into and out of the container as required by the application assembly’s connections.</p>
     <p class="Standard" dir="ltr">The container determines when the worker should run, supplies it with buffers full of input messages, and buffers into which output messages may be placed.</p>
-    <h3 dir="ltr" id="toc12"><span class="SectionNumber">4.3.1 </span><a id="RefHeading10562140039662"></a><a id="Toc270018424"></a>Run Conditions</h3>
+    <h3 dir="ltr" id="toc12"><span class="SectionNumber">4.3.1 </span><a id="Toc270018424"></a><a id="RefHeading10562140039662"></a>Run Conditions</h3>
     <p class="Standard" dir="ltr"><span style="font-size:16.0px">Workers declare a run condition which tells the container </span><span style="font-style:normal;font-size:16.0px">under what conditions the worker should run</span><span style="font-size:16.0px">.  The container evaluates the run conditions of all workers and runs them as resources and priorities allow.</span></p>
     <p class="Standard" dir="ltr"><span style="font-size:16.0px">The run condition object contains two aspects:  </span><span style="font-style:italic;font-size:16.0px">port readiness</span><span style="font-size:16.0px"> and </span><span style="font-style:italic;font-size:16.0px">time</span><span style="font-size:16.0px">.  The worker is run when its port readiness requirements are satisfies, </span><span style="font-style:normal;font-weight:normal;font-size:16.0px">or </span><span style="font-size:16.0px">a specified amount of time has passed.  Either or both aspects can be specified.</span></p>
     <p class="Standard" dir="ltr"><span style="font-size:16.0px">While the worker is in the operating state, port readiness means that buffers are available at that port to be used by the worker.  Input ports have available buffers when there is message data present that has not yet been consumed by the worker.  Output ports are ready when buffers are available into which they may place new data.  I.e. input ports are ready when the worker has data to consume, and output ports are ready when the worker has room to produce new data into a buffer.  Workers may partially consume or partially produce messages in any given run.</span></p>
@@ -812,10 +825,10 @@
     <p class="Standard" dir="ltr"><span style="font-size:16.0px">The time aspect of run conditions, indicated by the worker, specifies the desired maximum time between invocations of the worker’s run method.  If no port readiness is also specified, this simply indicates periodic execution.  If the time aspect is specified </span><span style="font-style:italic;font-size:16.0px">with</span><span style="font-size:16.0px"> port readiness, it indicates that execution should take place when either the indicated port readiness conditions are satisfied </span><span style="font-style:italic;font-size:16.0px">–or–</span><span style="font-size:16.0px"> the indicated amount of time has passed since the worker's run method was last entered.</span></p>
     <p class="Standard" dir="ltr">The default time aspect of run conditions is:  no such maximum time at all.  In this case time passing does not affect worker execution, only port readiness.</p>
     <p class="Standard" dir="ltr">A worker may change its run condition at any time during the execution of its run method by passing a new run condition to the container, to be considered after the run method returns to the container.</p>
-    <p class="Standard" dir="ltr">In summary, run conditions specify a combination of data-driven and time-driven execution.  Most workers use one or the other, but both can be used together.  The defaults allow most workers to never have to indicate any run condition at all.<a id="Toc211783568"></a><a id="Toc211781782"></a><a id="Toc211781053"></a><a id="Toc211780982"></a><a id="Toc211780930"></a><a id="Toc270018425"></a></p>
-    <h3 dir="ltr" id="toc13"><span class="SectionNumber">4.3.2 </span><a id="RefHeading10566140039662"></a><a id="Toc270018426"></a>Sending or receiving messages via ports</h3>
+    <p class="Standard" dir="ltr">In summary, run conditions specify a combination of data-driven and time-driven execution.  Most workers use one or the other, but both can be used together.  The defaults allow most workers to never have to indicate any run condition at all.<a id="Toc270018425"></a><a id="Toc211780930"></a><a id="Toc211780982"></a><a id="Toc211781053"></a><a id="Toc211781782"></a><a id="Toc211783568"></a></p>
+    <h3 dir="ltr" id="toc13"><span class="SectionNumber">4.3.2 </span><a id="Toc270018426"></a><a id="RefHeading10566140039662"></a>Sending or receiving messages via ports</h3>
     <p class="Standard" dir="ltr">The worker indicates data flow to the container under two conditions. The first occurs  when the worker has consumed the message in an input buffer at a port. Notification of which allows that buffer to be released and reused. The second happens when the worker has finished placing a message in an output buffer at a port. This allows the message in the buffer to be sent on.</p>
-    <h3 dir="ltr" id="toc14"><span class="SectionNumber">4.3.3 </span><a id="Toc211780931"></a><a id="Toc211780983"></a><a id="Toc211781054"></a><a id="Toc211781783"></a><a id="Toc211783569"></a><a id="Toc270018427"></a><a id="RefHeading10568140039662"></a>Buffer management</h3>
+    <h3 dir="ltr" id="toc14"><span class="SectionNumber">4.3.3 </span><a id="RefHeading10568140039662"></a><a id="Toc270018427"></a><a id="Toc211783569"></a><a id="Toc211781783"></a><a id="Toc211781054"></a><a id="Toc211780983"></a><a id="Toc211780931"></a>Buffer management</h3>
     <p class="Standard" dir="ltr">The container provides and manages all buffers and provides references to buffers to the worker.  Input ports operate by the container providing buffers to the worker filled with incoming messages.  Output ports operate by the container providing buffers for the worker to fill with messages before being sent.  Output buffers are either:</p>
     <ul class="listlevel1WWNum32">
       <li>
@@ -1159,7 +1172,7 @@
     <h2 dir="ltr" id="toc61"><span class="SectionNumber">7.2 </span><a id="RefHeadingToc300211282573294"></a>Protocol Specification (OPS) Examples</h2>
     <p class="Body" dir="ltr">This protocol has one message type consisting of 1024 unsigned short values.</p>
     <p class="Code" dir="ltr">&lt;Protocol<br />  &lt;Operation Name=”mess1”&gt;<br />    &lt;Argument Name=”val” Type=”uShort” ArrayLength=”1k”&gt;<br />  &lt;/Operation&gt;<br />&lt;/Protocol&gt;</p>
-    <h1 dir="ltr" id="toc62"><span class="SectionNumber">8 </span><a id="RefHeadingToc96961944612760"></a>Worker Descriptions<a id="RefHeading70441790153948"></a> in OWD XML Files</h1>
+    <h1 dir="ltr" id="toc62"><span class="SectionNumber">8 </span><a id="RefHeadingToc329781944612760"></a>Worker Descriptions<a id="RefHeading70441790153948"></a> in OWD XML Files</h1>
     <p class="Standard" dir="ltr">Each worker directory contains an XML file describing the worker and references the spec file typically located in the component library's <span class="Code">specs</span> sub-directory.  This XML file is referred to as the <span style="font-weight:bold;text-decoration:none">O</span><span class="FirstEmphasis">penCPI <span style="text-decoration:none">W</span>orker <span style="text-decoration:none">D</span>escription (OWD</span>).  The generic, common across authoring models, aspects of these implementation description files are described <a class="Internet20link" href="https://github.com/opencpi/opencpi/raw/master/doc/OpenCPI_Generic_Authoring_Model.pdf">i</a>n this section. The OWD files are specific to different authoring models. These differences are described in the respective sections for each authoring model.  Some authoring models allow multiple workers to be implemented in one worker directory.  In these cases multiple OWDs may be in a single worker directory.</p>
     <p class="Standard" dir="ltr">The worker description file essentially adds non-default implementation information to the basic information found in the spec file.  Each authoring model defines what the workerspecific information might be.  An example would be the width of an FPGA data path for a port.  All OWDs have as the top-level XML element an XYZWorker element, where <span style="font-weight:bold">XYZ</span> is the authoring model of the worker.</p>
     <p class="Standard" dir="ltr">If the worker <span style="font-style:normal">has no</span> non-default behavior, there is no need for an edited OWD.  In this case the framework (<span class="Code">ocpidev</span>) will generate a default one. This default OWD simply contains a reference to the spec file and specifies the authoring model and language.  For example if an RCC worker based on the spec file <span class="Code">search-spec.xml</span> only had default implementation attributes, the OWD file would be:</p>
@@ -1310,7 +1323,7 @@
         <p class="ListBullet" dir="ltr">When a parameter property is initial, the binary worker is only considered usable for an application if the value supplied to the build process matches the value specified by the application.</p>
       </li>
     </ul>
-    <p class="Standard" dir="ltr">While the component spec defines properties and their initialization-time and run-time accessibility, a worker can further declare that a property is actually a compile time parameter of the implementation.  This is not allowed for properties that are writable at runtime.  When a worker has properties that are parameters, it means that the worker must be built for specific values of such properties.  This has three implications:</p>
+    <p class="Standard" dir="ltr">While the component spec defines properties and their initialization-time and run-time accessibility, a worker can further declare that a property is actually a compile time parameter of the implementation.  This is not allowed for properties that are dynamically writable at runtime.  When a worker has properties that are parameters, it means that the worker must be built for specific values of such properties.  This has three implications:</p>
     <ul class="listlevel1WWNum32">
       <li>
         <p class="ListBullet" dir="ltr">An application can only use the worker if it is built for a property value that matches what is requested as an “initial” property in the application.</p>
@@ -1354,12 +1367,12 @@
     <p class="Body" dir="ltr">However some authoring models, such as HDL, can support all three compilation modes.  The ability of a worker's code to support various endian modes is specified in the worker's <span class="Code">endian</span> attribute at the top level of its OWD.<span style="background-color:#ff3333"><!-- If this isnt currently implmented, which i think it might actually be, we should remove it.
 Unknown Author
 January 26, 2016 5:40 PM --></span></p>
-    <h2 dir="ltr" id="toc78"><span class="SectionNumber">8.4 </span><a id="Toc265171047"></a><a id="RefHeading144272003349228"></a>Port Elements of XYZWorker Elements</h2>
+    <h2 dir="ltr" id="toc78"><span class="SectionNumber">8.4 </span><a id="RefHeading144272003349228"></a><a id="Toc265171047"></a>Port Elements of XYZWorker Elements</h2>
     <p class="Standard" dir="ltr">Ports are how workers communicate with each other.  They define message-oriented, data-plane communication. Each authoring model defines how workers receive/consume and send/produce messages to or from other workers.  This is independent of collocation in the same device or executing elsewhere.</p>
     <p class="Standard" dir="ltr">Each authoring model has attributes and elements of this <span class="Code">Port</span> element specific to that authoring model, but there are a number of aspects common to all worker descriptions that are described here.  A <span class="Code">Port</span> element in a worker description matches the <span class="Code">Port</span> element in the component spec by name, and adds worker-specific information about how the worker implements the port.</p>
     <h3 dir="ltr" id="toc79"><span class="SectionNumber">8.4.1 </span>Name attribute of Port elements</h3>
     <p class="Standard" dir="ltr">This string attribute is required and must match one of the names of the port elements in the component spec. It indicates for which component port the worker is providing additional implementation-specific information.</p>
-    <h1 dir="ltr" id="toc80"><span class="SectionNumber">9 </span><a id="Toc245388437"></a><a id="RefHeading53401790153948"></a><a id="Toc224890095"></a>The Worker Makefile</h1>
+    <h1 dir="ltr" id="toc80"><span class="SectionNumber">9 </span><a id="Toc224890095"></a><a id="RefHeading53401790153948"></a><a id="Toc245388437"></a>The Worker Makefile</h1>
     <p class="Standard" dir="ltr">Each worker requires a makefile for building its binary <span class="FirstEmphasis">artifact</span>.  The default <span class="Code">Makefile</span> is simply:</p>
     <p class="Code" dir="ltr">include $(OCPI_CDK_DIR)/worker.mk</p>
     <p class="Standard" dir="ltr">This makefile line indicates to the framework that this directory is for building a worker whose name and authoring model are derived from the name of the worker's directory.  The directory will also contain a OWD and one or more source files for the worker's functional code.  These will be generated when the worker is created using the <span class="Code">ocpidev</span> tool described in the <a class="Internet20link">ocpidev</a> section.</p>
@@ -1512,7 +1525,7 @@ January 26, 2016 5:40 PM --></span></p>
     <p class="Code" dir="ltr">&lt;build&gt;<br />  &lt;parameter name='debug' value='true'/&gt;<br />  &lt;configuration id='1'&gt;<br />    &lt;parameter name='mode' value='lownoise'/&gt;<br />    &lt;parameter name='taps' valueFile='taps.txt'/&gt;<br />  &lt;/configuration&gt;<br />&lt;/build&gt;</p>
     <h3 dir="ltr" id="toc85"><span class="SectionNumber">9.2.2 </span>Configuration elements in the build.xml file</h3>
     <p class="Standard" dir="ltr">The <span class="Code">configuration</span> element has a numeric <span class="Code">id</span> attribute which will appear as the build configuration suffix in the name of the target directory for that configuration.  If the<span class="DefaultParagraphFont"> </span><span class="Code">id</span> attribute is zero, no suffix is added.  The configuration element also has <span class="Code">parameter</span> subelements indicating the specific parameter values for that configuration.</p>
-    <h1 dir="ltr" id="toc86"><span class="SectionNumber">10 </span><a id="Toc224890091"></a><a id="Toc245388433"></a><a id="RefHeading53321790153948"></a>Component Libraries</h1>
+    <h1 dir="ltr" id="toc86"><span class="SectionNumber">10 </span><a id="RefHeading53321790153948"></a><a id="Toc245388433"></a><a id="Toc224890091"></a>Component Libraries</h1>
     <p class="Standard" dir="ltr">OpenCPI components are developed in libraries.  OpenCPI component-based applications are defined as a composition of components, and the components are drawn from component libraries at execution time.  </p>
     <p class="Standard" dir="ltr">A component library is a directory that contains:</p>
     <ul class="listlevel1WWNum19">
@@ -1539,7 +1552,7 @@ January 26, 2016 5:40 PM --></span></p>
     <p class="Standard" dir="ltr" style="page-break-before:always">The basic directory structure of a component library is shows in the figure below.</p>
     <p class="Diagram" dir="ltr"><img alt="OpenCPI_Component_Development-img/OpenCPI_Component_Development-img002.png" id="nullgraphic" src="OpenCPI_Component_Development-img/OpenCPI_Component_Development-img002.png" style="padding-top:4.7232003px;padding-bottom:4.7232003px;padding-left:9.446401px;padding-right:9.446401px;width:605.0688px;height:421.19037px" /><a id="Toc224890092"></a></p>
     <p class="Caption" dir="ltr">Figure 1:  Component Library Directory Structure</p>
-    <h2 dir="ltr" id="toc87"><span class="SectionNumber">10.1 </span><a id="Toc245388440111"></a><a id="Toc224890098111"></a><a id="RefHeading49151248407284"></a>The Component Library Makefile</h2>
+    <h2 dir="ltr" id="toc87"><span class="SectionNumber">10.1 </span><a id="RefHeading49151248407284"></a><a id="Toc224890098111"></a><a id="Toc245388440111"></a>The Component Library Makefile</h2>
     <p class="Standard" dir="ltr">The makefile in the top-level directory of the component library is a list of implementations that should be built.  It also contains the target platforms that each authoring model should be built for.  The last line in the file establishes it as a <span style="font-family:Arial,serif;font-size:16.0px">makefile</span> for an OpenCPI component library and should be:</p>
     <p class="Code" dir="ltr">include $(OCPI_CDK_DIR)/lib.mk</p>
     <p class="Standard" dir="ltr">The OCPI_CDK_DIR variable must be set either in the environment or as a variable in the makefile to point to the CDK installation.  This must be set before the include line.   The most important variabls is <span class="Code">Workers</span>, which is a list of which worker subdirectories to be built for this component library.  When the <span class="Code">Workers</span> variable is not set at all, it indicates that all subdirectories of the component library that contain workers should be built.  For example:</p>
@@ -1555,7 +1568,7 @@ January 26, 2016 5:40 PM --></span></p>
     <p class="Standard" dir="ltr">If all subdirectories containing workers should indeed be built, and the desired build targets are the default ones (or specified on the command line), and the package name is the default, then the single “include” line above is sufficient to built a component library.</p>
     <p class="Standard" dir="ltr">Creating a new component library <span class="Code">mycl</span> is accomplished by using the ocpidev tool, using the “add library” command.  This tool is described in the <a class="Internet20link">ocpidev</a> section below.</p>
     <p class="Code" dir="ltr">ocpidev add library <span style="font-style:italic">&lt;name&gt;</span></p>
-    <h2 dir="ltr" id="toc88"><span class="SectionNumber">10.2 </span><a id="Toc224890100"></a><a id="Toc245388442"></a><a id="RefHeading51051248407284"></a>Library Exports</h2>
+    <h2 dir="ltr" id="toc88"><span class="SectionNumber">10.2 </span><a id="RefHeading51051248407284"></a><a id="Toc245388442"></a><a id="Toc224890100"></a>Library Exports</h2>
     <p class="Standard" dir="ltr">When a component library is built, all the workers are compiled and the binary artifacts (the final result of the worker building process) are created.  Different authoring models have many intermediate code and metadata files during the build process, but only a subset of these are required and essential for an application to <span style="font-style:italic;font-weight:normal">use</span> the component and its workers.  The build process for a library creates an <span class="FirstEmphasis">export</span> directory to be used by application developers.  The export subdirectory is the external view of the (built) library that could be sent to someone needing to <span style="font-style:italic">use</span> the library, but not to <span style="font-style:italic">build</span> or <span style="font-style:italic">modify</span> it.</p>
     <p class="Standard" dir="ltr">The export subdirectory (called <span class="Code">lib</span>), is actually a hierarchy filled with symbolic links to the actual files as built for the component implementations in the library.  To export it one might do:</p>
     <p class="Code" dir="ltr">tar czfLs ../mycl.tgz /lib/mycl lib</p>
@@ -1583,7 +1596,7 @@ January 26, 2016 5:40 PM --></span></p>
     <p class="Code" dir="ltr">ocpidev delete worker <span style="font-style:italic">&lt;name&gt;</span></p>
     <p class="Standard" dir="ltr">will remove the worker, and is essentially equivalent to</p>
     <p class="Code" dir="ltr">rm -r -f <span style="font-style:italic">&lt;name&gt;</span></p>
-    <p class="Standard" dir="ltr">When a worker is created, all the worker's XML, <span style="font-family:Arial,serif;font-size:16.0px">makefile</span> and source language files are initially automatically generated by <span class="Code">ocpidev.</span><span class="DefaultParagraphFont">  Several internal files (not for user editing) are also</span> placed in a <span class="Code">gen</span> subdirectory of the worker’s directory.  When source files are compiled, the resulting binary files are placed in subdirectories named: <span class="Code">target<span style="font-style:italic">-</span><span style="font-style:normal">&lt;target&gt;</span></span>, where <span class="Code"><span style="font-style:italic">&lt;target&gt;</span></span> is the hardware the compilation is targeting.  Cleaning (via <span class="Code">make clean</span>) a worker directory simply removes the <span class="Code">gen</span> and all <span class="Code">target-*</span> subdirectories.  In almost all cases, files in the <span class="Code">gen</span> subdirectory should be considered read-only and not edited.<a id="Toc2453884391"></a><a id="Toc2248900971"></a></p>
+    <p class="Standard" dir="ltr">When a worker is created, all the worker's XML, <span style="font-family:Arial,serif;font-size:16.0px">makefile</span> and source language files are initially automatically generated by <span class="Code">ocpidev.</span><span class="DefaultParagraphFont">  Several internal files (not for user editing) are also</span> placed in a <span class="Code">gen</span> subdirectory of the worker’s directory.  When source files are compiled, the resulting binary files are placed in subdirectories named: <span class="Code">target<span style="font-style:italic">-</span><span style="font-style:normal">&lt;target&gt;</span></span>, where <span class="Code"><span style="font-style:italic">&lt;target&gt;</span></span> is the hardware the compilation is targeting.  Cleaning (via <span class="Code">make clean</span>) a worker directory simply removes the <span class="Code">gen</span> and all <span class="Code">target-*</span> subdirectories.  In almost all cases, files in the <span class="Code">gen</span> subdirectory should be considered read-only and not edited.<a id="Toc2248900971"></a><a id="Toc2453884391"></a></p>
     <p class="Body" dir="ltr">Creating a new worker creates initial versions of three files in the worker's directory; </p>
     <ol class="listlevel1Numbering1">
       <li>
@@ -1610,7 +1623,7 @@ January 26, 2016 5:40 PM --></span></p>
     <p class="Code" dir="ltr">gen/<span style="font-style:italic">&lt;worker&gt;</span>-skel.<span style="font-style:italic">&lt;source-suffix&gt;</span></p>
     <p class="Standard" dir="ltr">The newly generated skeleton can be used as a guide when changes occur that might require changes in the edited worker source code.</p>
     <p class="Standard" dir="ltr">The authoring model documents also list common changes to the OCS, OPS, and OWD files, and the corresponding changes required in the source file.  An example is for VHDL workers using the HDL authoring model.  The skeleton lists the lower level primitive libraries that the worker depends on.  If such a primitive library is added to the worker <span style="font-family:Arial,serif;font-size:16.0px">makefile</span>, the library needs to be added to the list of libraries in the skeleton.</p>
-    <h1 dir="ltr" id="toc92"><span class="SectionNumber">12 </span><a id="RefHeading144292003349228"></a><a id="Toc245388438"></a><a id="Toc224890096"></a>The Worker Source Files</h1>
+    <h1 dir="ltr" id="toc92"><span class="SectionNumber">12 </span><a id="Toc224890096"></a><a id="Toc245388438"></a><a id="RefHeading144292003349228"></a>The Worker Source Files</h1>
     <p class="Standard" dir="ltr">The worker source files must be written according to the authoring model.  As a starting point OpenCPI provides the <span class="Code">ocpidev</span> tool to create an empty skeleton of a worker implementation that will in compile, build and execute, doing nothing. </p>
     <p class="Standard" dir="ltr">The file hierarchy of a component library <span class="Code">mycl</span> is outlined below.  The library contains a <span class="Code">search</span> component with RCC and HDL implementations, and a <span class="Code">transform </span>component with only an HDL implementation:</p>
     <p class="Code" dir="ltr">mycl/M<span style="font-family:&apos;Courier New&apos;,monospace;font-weight:bold;font-size:14.666667px">akefile</span><br />    /specs/search-spec.xml<br />          /transform-spec.xml<br />    /search.rcc/Makefile<br />               /search.xml<br />               /search.c     (RCC C source file)<br />    /search.hdl/Makefile<br />               /search.xml<br />               /search.vhd     (HDL VHDL source file)<br />    /transform.hdl/Makefile<br />                  /transform.xml<br />                  /transform.vhd</p>
@@ -1618,7 +1631,7 @@ January 26, 2016 5:40 PM --></span></p>
     <p class="Standard" dir="ltr">Parameter values are compile-time constants in all authoring models.  The precise way that parameters and their values appear in source code varies by authoring model and programming language.  In most cases, there are standard data types, see <a class="Internet20link" href="#DataTypesforProperitestable">Data Types for Properties</a>, for the OpenCPI properties, and constants are defined that specify these values.  Examples are:</p>
     <ul class="listlevel1WWNum32">
       <li>
-        <p class="ListBullet" dir="ltr">C and C++:  A  <span class="Code">static const</span> variable is defined which is initialized to the parameter value.  The name of the variable is the property name prefixed with <span class="Code">PARAM_</span>.</p>
+        <p class="ListBullet" dir="ltr">C and C++:  A <span class="Code">static const</span> variable is defined which is initialized to the parameter value.  The name of the variable is the property name prefixed with <span class="Code">PARAM_</span>.</p>
       </li>
       <li>
         <p class="ListBullet" dir="ltr">VHDL:  A generic with the parameter's name is set to the value.</p>
@@ -1643,7 +1656,7 @@ January 26, 2016 5:40 PM --></span></p>
       </li>
     </ul>
     <p class="Standard" dir="ltr">Workers can be built for multiple targets with one command.  This can be useful to check whether the source code is acceptable to all the different compilers.</p>
-    <p class="Standard" dir="ltr">The worker build process has the typical <span class="Code">make</span> dependencies such that rebuilds will only happen if any dependent files are changed, including the OCS/OPS/OWD XML files.<a id="Toc224890094"></a><a id="Toc245388436"></a></p>
+    <p class="Standard" dir="ltr">The worker build process has the typical <span class="Code">make</span> dependencies such that rebuilds will only happen if any dependent files are changed, including the OCS/OPS/OWD XML files.<a id="Toc245388436"></a><a id="Toc224890094"></a></p>
     <h1 dir="ltr" id="toc95"><span class="SectionNumber">13 </span><a id="RefHeadingToc300311282573294"></a>Developing OpenCPI Assets in <span style="font-style:italic">Projects</span></h1>
     <p class="Standard" dir="ltr">In OpenCPI a <span style="font-style:italic;font-weight:bold">project</span> represents a work area in which a variety of assets are created and developed.  Projects can contain all types of assets that are described fully either in this document or in others.  Project can contain:</p>
     <ul class="listlevel1WWNum32">
