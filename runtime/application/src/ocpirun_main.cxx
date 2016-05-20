@@ -37,7 +37,7 @@ static std::string error;
 static void
 usage(const char *name) {
   fprintf(stderr,
-	  "Usage is: %s <options>... <application-xml-file>]\n"
+	  "Usage is: %s <options> ... [<application-xml-file>]\n"
 	  "  Options: (values are either directly after the letter or in the next argument)\n"
 	  "    -d           # dump properties after execution\n"
 	  "    -v           # be verbose in describing what is happening\n"
@@ -65,7 +65,8 @@ usage(const char *name) {
 	  "    -l <log-level>\n"
 	  "                 # set log level during execution\n"
 	  "    -t <seconds>\n"
-	  "                 # specify seconds of runtime\n"
+	  "                 # specify (absolute) seconds of runtime\n"
+	  "                 # use negative values for \"up to\" timeout\n"
 	  "    -C           # show available containers\n"
 	  "    -S           # list of servers to explicitly contact (no UDP discovery)\n"
 	  "    -R           # discover/include/use remote containers\n"
@@ -119,7 +120,8 @@ static const char *arg(const char **&ap) {
 int
 main(int /*argc*/, const char **argv) {
   bool dump = false, containers = false, hex = false, remote = false, uncached = false;
-  unsigned seconds = 0, nProcs = 0;
+  int seconds = 0;
+  unsigned nProcs = 0;
   const char *servers = NULL, *artifacts = NULL;
   const char *argv0 = strrchr(argv[0], '/');
   if (argv0)
@@ -189,6 +191,7 @@ main(int /*argc*/, const char **argv) {
 	break;
       case 'G':
 	specs = true;
+        // Intentional fall-thru
       case 'A':
 	artifacts = arg(ap);
 	break;
@@ -296,11 +299,18 @@ main(int /*argc*/, const char **argv) {
     if (verbose)
       fprintf(stderr, "Application started/running\n");
     if (seconds) {
+      int remaining = -seconds;
       if (verbose)
-	fprintf(stderr, "Waiting %u seconds for application to complete\n", seconds);
-      sleep(seconds);
-      if (verbose)
-	fprintf(stderr, "After %u seconds, stopping application...\n", seconds);
+	fprintf(stderr, "Waiting %s%u seconds for application to complete\n",
+		(seconds < 0) ? "up to " : "", abs(seconds));
+      if (seconds < 0) { // "Negative" time is "up to"
+        bool cont = true;
+        while (remaining-- && cont)
+          cont = app.wait(1E6);
+      } else // Given a positive time
+        sleep(seconds);
+      if (verbose && (remaining <= 0)) // remaining would be negative if given positive seconds
+	fprintf(stderr, "After %d seconds, stopping application...\n", abs(seconds));
       app.stop();
     } else {
       if (verbose)
