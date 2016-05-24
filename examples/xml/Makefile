@@ -20,6 +20,7 @@ run:
 	$(VG) ocpirun -v -d -pbias=biasValue=0 $(OPTS) $(FR) $(FW) testbias $(CMP)
 	$(VG) ocpirun -v -d $(OPTS) $(FR) $(FW) testbias2
 	$(VG) ocpirun -v -d -pbias0=biasValue=0 -pbias1=biasValue=0 $(OPTS) $(FR) $(FW) testbias2 $(CMP)
+	$(VG) ocpirun -v -d ptest
 
 test:
 

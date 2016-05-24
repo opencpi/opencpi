@@ -11,7 +11,7 @@
     <meta content="" name="DC.subject" />
     <meta content="" name="DC.description" />
     <meta content="James Kulp" name="DC.creator" />
-    <meta content="2016-04-12T18:14:48.848045000" name="DC.date" />
+    <meta content="2016-05-19T12:55:06.594967000" name="DC.date" />
     <meta content="en" name="DC.language" />
     <style media="all" type="text/css">
       body {font-family:Calibri,serif;font-size:13.333334px}
@@ -242,6 +242,17 @@
           </td>
           <td style="border-top:none;border-bottom:1.0px solid #000001;border-left:1.0px solid #000001;border-right:1.0px solid #000001;padding-top:0;padding-bottom:0;padding-left:7.9968004px;padding-right:7.6703997px;vertical-align:top;width:60.8032px">
             <p class="Revision" dir="ltr">2016-04-12</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="border-top:none;border-bottom:1.0px solid #000001;border-left:1.0px solid #000001;border-right:1.0px solid #000001;padding-top:0;padding-bottom:0;padding-left:7.9968004px;padding-right:7.6703997px;vertical-align:top;width:49.868797px">
+            <p class="Revision" dir="ltr">2.0</p>
+          </td>
+          <td style="border-top:none;border-bottom:1.0px solid #000001;border-left:1.0px solid #000001;border-right:1.0px solid #000001;padding-top:0;padding-bottom:0;padding-left:7.9968004px;padding-right:7.6703997px;vertical-align:top;width:371.9968px">
+            <p class="Revision" dir="ltr">Clarify project dependencies in 13.5</p>
+          </td>
+          <td style="border-top:none;border-bottom:1.0px solid #000001;border-left:1.0px solid #000001;border-right:1.0px solid #000001;padding-top:0;padding-bottom:0;padding-left:7.9968004px;padding-right:7.6703997px;vertical-align:top;width:60.8032px">
+            <p class="Revision" dir="ltr">2016-05-18</p>
           </td>
         </tr>
       </tbody>
@@ -604,157 +615,170 @@
     <p class="Standard" dir="ltr">Some authoring models define a flat/linear <span style="font-style:normal">configuration address space</span> where the configuration properties are accessed by accessing this memory space, roughly as a data structure or register file.</p>
     <p class="Standard" dir="ltr">The component specification for the worker contains the description of the configuration properties that are part of the component’s external behavior. These will exist in all implementations (workers) that reference the component specification.  However, each worker may also <span style="font-style:italic">add</span> to this set of configuration properties and define <span class="FirstEmphasis">implementation-specific</span> configuration properties.  These can be useful for implementation debugging and testing, or in some cases to allow applications to configure properties specific to a particular implementation.</p>
     <p class="Standard" dir="ltr">Each configuration property is defined with a name and data type from the data types listed in the table below.  Each configuration property may vary in length (i.e. be strings or sequences) but must specify a maximum length.  This enables components and workers to be compliant with a variety of component system standards, and enables authoring models for resource-limited embedded technologies.</p>
-    <p class="Standard" dir="ltr">The available data types for configuration properties are <span class="FirstEmphasis">scalar types, structures, multidimensional arrays</span> of those types, and <span class="FirstEmphasis">single dimension variable length sequences <span style="font-style:normal;font-weight:normal">of those types</span></span>.  A list of the allowable scalar data types is:</p>
-    <p class="TableCaptionbefore" dir="ltr">Table 3: Data Types for Properties</p>
+    <p class="Standard" dir="ltr">Data types for configuration properties are based on the <span class="FirstEmphasis">scalar types</span> listed in the following table.<span class="FirstEmphasis">  </span>A <span class="FirstEmphasis">property data type</span> can be one of the scalar types or<span class="FirstEmphasis"> </span>a <span class="FirstEmphasis">structure</span> with typed members that are <span class="FirstEmphasis">property data type</span>s.  A property data type may have array dimensions, and also (after any array dimensions are applied) be defined as a variable length, single dimension <span class="FirstEmphasis">sequence</span>.  This recursive definition allows for complex types such as:  <span style="font-style:italic">a sequence of a two dimensional arrays of structures containing members that are themselves arrays or sequences or structures</span>.</p>
+    <p class="TableCaptionbefore" dir="ltr">Table 3: Scalar Data Types for Properties</p>
     <table cellspacing="0" dir="ltr" id="DataTypesforProperitestable" style="margin-top:19.2px;margin-bottom:0;width:624.0px;border-collapse:separate;border-spacing:0;table-layout:fixed">
       <tbody>
         <tr>
-          <td style="border-top:1.0px solid #000000;border-bottom:2.6666667px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:87.598404px">
+          <td style="border-top:1.0px solid #000000;border-bottom:2.6666667px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:87.1952px">
             <p class="TableHeading" dir="ltr" style="text-align:center;font-weight:bold;font-size:14.666667px">Scalar Data</p>
             <p class="TableHeading" dir="ltr" style="text-align:center;font-weight:bold;font-size:14.666667px">Type</p>
           </td>
-          <td style="border-top:1.0px solid #000000;border-bottom:2.6666667px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:99.6656px">
-            <p class="TableHeading" dir="ltr" style="text-align:center;font-weight:bold;font-size:14.666667px">Support for Unsigned</p>
+          <td style="border-top:1.0px solid #000000;border-bottom:2.6666667px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:99.2624px">
+            <p class="TableHeading" dir="ltr" style="text-align:center;font-weight:bold;font-size:14.666667px">Support for Unsigned<br />Version</p>
           </td>
-          <td style="border-top:1.0px solid #000000;border-bottom:2.6666667px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:top;width:94.0688px">
+          <td style="border-top:1.0px solid #000000;border-bottom:2.6666667px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:top;width:93.665596px">
             <p class="TableHeading" dir="ltr" style="text-align:center;font-weight:bold;font-size:14.666667px">Data</p>
             <p class="TableHeading" dir="ltr" style="text-align:center;font-weight:bold;font-size:14.666667px">Size</p>
           </td>
-          <td style="border-top:1.0px solid #000000;border-bottom:2.6666667px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding:3.6671999px;vertical-align:top;width:308.3296px">
+          <td style="border-top:1.0px solid #000000;border-bottom:2.6666667px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:top;width:307.9264px">
             <p class="TableHeading" dir="ltr" style="font-weight:bold;font-size:14.666667px">Notes</p>
           </td>
         </tr>
         <tr>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:87.598404px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:87.1952px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-weight:bold"><span class="Code"><span style="font-size:14.666667px">bool</span></span></p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:99.6656px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:99.2624px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-size:14.666667px">N/A</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:94.0688px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:93.665596px">
             <p class="TableContents" dir="ltr" style="font-weight:normal;font-size:14.666667px">8 bits</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding:3.6671999px;vertical-align:middle;width:308.3296px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:307.9264px">
             <p style="margin:0;font-size:1px"> </p>
           </td>
         </tr>
         <tr>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:87.598404px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:87.1952px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-weight:bold"><span class="Code"><span style="font-size:14.666667px">char</span></span></p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:99.6656px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:99.2624px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-size:14.666667px">Yes</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:94.0688px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:93.665596px">
             <p class="TableContents" dir="ltr" style="font-weight:normal;font-size:14.666667px">8 bits</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding:3.6671999px;vertical-align:middle;width:308.3296px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:307.9264px">
             <p class="TableContents" dir="ltr" style="font-weight:normal;font-size:14.666667px">Unsigned version is <span class="Code"><span style="font-size:14.666667px">uchar</span></span>.</p>
           </td>
         </tr>
         <tr>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:87.598404px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:87.1952px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-weight:bold"><span class="Code"><span style="font-size:14.666667px">double</span></span></p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:99.6656px">
-            <p class="TableContents" dir="ltr" style="font-style:italic;font-size:14.666667px">Yes</p>
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:99.2624px">
+            <p class="TableContents" dir="ltr" style="font-style:italic;font-size:14.666667px">N/A</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:94.0688px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:93.665596px">
             <p class="TableContents" dir="ltr" style="font-weight:normal;font-size:14.666667px">64 bits </p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding:3.6671999px;vertical-align:middle;width:308.3296px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:307.9264px">
             <p class="Standard" dir="ltr" style="font-weight:normal;font-size:14.666667px">Consistent with IEEE floating-point types</p>
           </td>
         </tr>
         <tr>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:87.598404px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:87.1952px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-weight:bold"><span class="Code"><span style="font-size:14.666667px">enum</span></span></p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:99.6656px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:99.2624px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-size:14.666667px">N/A</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:94.0688px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:93.665596px">
             <p class="TableContents" dir="ltr" style="font-weight:normal;font-size:14.666667px">32 bits</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding:3.6671999px;vertical-align:middle;width:308.3296px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:307.9264px">
             <p class="Standard" dir="ltr" style="font-weight:normal;font-size:14.666667px">Types are represented by ulong values, but are associated with string names.</p>
           </td>
         </tr>
         <tr>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:87.598404px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:87.1952px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-weight:bold"><span class="Code"><span style="font-size:14.666667px">float</span></span></p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:99.6656px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:99.2624px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-size:14.666667px">N/A</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:94.0688px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:93.665596px">
             <p class="TableContents" dir="ltr" style="font-weight:normal;font-size:14.666667px">32 bits</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding:3.6671999px;vertical-align:middle;width:308.3296px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:307.9264px">
             <p class="Standard" dir="ltr" style="font-weight:normal;font-size:14.666667px">Consistent with IEEE floating-point types</p>
           </td>
         </tr>
         <tr>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:87.598404px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:87.1952px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-weight:bold"><span class="Code"><span style="font-size:14.666667px">long</span></span></p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:99.6656px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:99.2624px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-size:14.666667px">Yes</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:94.0688px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:93.665596px">
             <p class="TableContents" dir="ltr" style="font-weight:normal;font-size:14.666667px">32 bits</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding:3.6671999px;vertical-align:middle;width:308.3296px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:307.9264px">
             <p class="Standard" dir="ltr" style="font-weight:normal;font-size:14.666667px">Unsigned version is <span class="Code"><span style="font-size:14.666667px">ulong</span></span>.</p>
           </td>
         </tr>
         <tr>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:87.598404px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:87.1952px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-weight:bold"><span class="Code"><span style="font-size:14.666667px">longlong</span></span></p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:99.6656px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:99.2624px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-size:14.666667px">Yes</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:94.0688px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:93.665596px">
             <p class="TableContents" dir="ltr" style="font-weight:normal;font-size:14.666667px">64 bits</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding:3.6671999px;vertical-align:middle;width:308.3296px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:307.9264px">
             <p class="TableContents" dir="ltr" style="font-weight:normal;font-size:14.666667px">Unsigned version is <span class="Code"><span style="font-size:14.666667px">ulonglong</span></span></p>
           </td>
         </tr>
         <tr>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:87.598404px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:87.1952px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-weight:bold"><span class="Code"><span style="font-size:14.666667px">short</span></span></p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:99.6656px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:99.2624px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-size:14.666667px">Yes</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:94.0688px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:93.665596px">
             <p class="TableContents" dir="ltr" style="font-weight:normal;font-size:14.666667px">16 bits</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding:3.6671999px;vertical-align:middle;width:308.3296px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:307.9264px">
             <p class="TableContents" dir="ltr" style="font-weight:normal;font-size:14.666667px">Unsigned version is <span class="Code"><span style="font-size:14.666667px">ushort</span></span></p>
           </td>
         </tr>
         <tr>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:87.598404px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:87.1952px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-weight:bold"><span class="Code"><span style="font-size:14.666667px">string</span></span></p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:99.6656px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:99.2624px">
             <p class="TableContents" dir="ltr" style="font-style:italic;font-size:14.666667px">N/A</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding:3.6671999px;vertical-align:middle;width:94.0688px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:none;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:93.665596px">
             <p class="TableContents" dir="ltr" style="font-weight:normal;font-size:14.666667px">fixed</p>
           </td>
-          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding:3.6671999px;vertical-align:middle;width:308.3296px">
+          <td style="border-top:none;border-bottom:1.0px solid #000000;border-left:1.0px solid #000000;border-right:1.0px solid #000000;padding-top:0;padding-bottom:0;padding-left:3.8688002px;padding-right:3.8688002px;vertical-align:middle;width:307.9264px">
             <p class="Standard" dir="ltr" style="font-weight:normal;font-size:14.666667px">Null terminated with a defined max length</p>
           </td>
         </tr>
       </tbody>
     </table>
-    <p class="Body" dir="ltr">When a property's type is a multidimensional <span style="font-style:italic;font-weight:bold">array</span> of the above types, the number of dimensions is fixed, and the length in each dimension is fixed.  When a property's type is a variable length <span style="font-style:italic;font-weight:bold">sequence</span> of the above types (or arrays of above types), it has a current length (number of valid values present), but is still required to have a defined maximum possible length.</p>
-    <p class="Standard" dir="ltr">Beyond data type, the configuration properties also have <span class="FirstEmphasis">accessibility attributes</span> indicating whether the value can only be set at initialization time, set any time during execution, or a never set (read-only).  Similarly, a configuration property value can be described as volatile where the value may be changed by the worker during execution, or statically readable and will not change unless written by control software.  These accessibility types are described in detail in the <a class="Internet20link"><span class="FirstEmphasis">Accessibility Attributes</span></a> section.</p>
-    <p class="Standard" dir="ltr">An OWD file allows additional properties to be created unique to the worker, beyond those specified in the OCS.  Additionally, the OWD may add to the accessibility of a OCS property.  For debug purposes, the OWD may make a property readable that was not readable in the OCS.  The accessibility <span style="font-style:normal">added</span> by the OWD results in the implementation having a superset of what was described in (and required by) the OCS.</p>
+    <p class="Body" dir="ltr">When a property's type is a multidimensional <span style="font-style:italic;font-weight:bold">array</span> of the above types, the number of dimensions is fixed, and the length in each dimension is fixed.</p>
+    <p class="Body" dir="ltr">When a property's type is a variable length <span style="font-style:italic;font-weight:bold">sequence</span> of the above types (or arrays of above types), it has a current length (number of valid values present), but is still required to have a defined maximum possible length (capacity).  Sequences may have a current length of zero or any amount up to the specified maximum possible length.  E.g. if a sequence is defined with a maximum length of 4, it means that it may hold zero, 1, 2, 3 or 4 values.  Space is always reserved for the maximum number of values, but the current length is also recorded in the sequence and is set whenever a new value for the sequence is set.</p>
+    <p class="Standard" dir="ltr">Beyond data type, the configuration properties also have <span class="FirstEmphasis">accessibility attributes</span> indicating whether the value can only be:</p>
+    <ul class="listlevel1WWNum32">
+      <li>
+        <p class="ListBullet" dir="ltr">set at initialization time</p>
+      </li>
+      <li>
+        <p class="ListBullet" dir="ltr">set any time during execution</p>
+      </li>
+      <li>
+        <p class="ListBullet" dir="ltr">never set (read-only)</p>
+      </li>
+    </ul>
+    <p class="Standard" dir="ltr">Similarly, a configuration property value can be described as volatile where the value may be changed by the worker during execution, or statically readable and will not change unless written by control software.  These accessibility types are described in detail in the <a class="Internet20link"><span class="FirstEmphasis">Accessibility Attributes</span></a> section.</p>
+    <p class="Standard" dir="ltr">An OWD file allows additional properties to be defined unique to the worker, beyond those specified in the OCS.  Additionally, the OWD may <span style="font-style:italic">add</span> to the accessibility of an OCS property.  E.g., for debug purposes, the OWD may make a property readable that was not readable in the OCS.  The accessibility <span style="font-style:normal">added</span> by the OWD results in the implementation having a superset of what was described in (and required by) the OCS.</p>
     <h3 dir="ltr" id="toc10"><span class="SectionNumber">4.2.4 </span>Properties that are build-time parameters</h3>
     <p class="Standard" dir="ltr">While the OCS specifies properties and their initialization-time and run-time accessibility, an OWD can further declare that a property is a compile time parameter in this worker.  This is not allowed for properties declared as writable at runtime, either in the OCS or OWD.  When an OWD declares properties to be parameters, this means that the worker must be built compiled, synthesized, elaborated for specific values of such properties.  This has three implications:</p>
     <ul class="listlevel1WWNum32">
@@ -977,7 +1001,7 @@
     <p class="Code" dir="ltr">&lt;ComponentSpec<br />   &lt;Property Name=”size” Type=”float” Initial='true'/&gt;<br />   &lt;Port Name="lvds_tx" Producer="true" Protocol='ushort_1K-proto'/&gt;<br />&lt;/ComponentSpec&gt;</p>
     <h1 dir="ltr" id="toc43"><span class="SectionNumber">6 </span><a id="RefHeadingToc299971282573294"></a>Property Value Syntax and Ranges</h1>
     <p class="Standard" dir="ltr">This section describes how property values are formatted to be appropriate for their data types.  Property values occur in the <span class="Code">default</span> attribute of property elements described above.  This syntax is also used when property values are specified in the worker Makefile described below.  The names presented are those acceptable to the <span class="Code">Type</span> attribute of the property element in the OCS file.</p>
-    <p class="Standard" dir="ltr">Remember that attributes values in XML syntax are in single or double quotes.  The syntax described here is used inside these quotes.  To have quotes inside attribute values the other type of quotes is used to delimit the attribute value.  In either case, the <span class="Code">&amp;</span> and <span class="Code">&lt;</span> characters must be escaped using the official XML notions:  <span class="Code"><span style="text-decoration:underline">&amp;amp;</span></span> for <span class="Code">&amp;</span>, <span class="Code"><span style="text-decoration:underline">&amp;lt;</span></span> for <span class="Code">&lt;</span>.  If <span style="font-style:italic">both</span> types of quotes must be in an attribute value, then the official XML escape sequences can be used: <span class="Code"><span style="text-decoration:underline">&amp;quot;</span></span> for double-quote, and <span class="Code"><span style="text-decoration:underline">&amp;apos;</span></span> for single quote.</p>
+    <p class="Standard" dir="ltr">Remember that attribute values in XML syntax are in single or double quotes.  The syntax described here is used inside these quotes.  To have quotes inside attribute values the other type of quotes is used to delimit the attribute value.  In either case, the <span class="Code">&amp;</span> and <span class="Code">&lt;</span> characters must be escaped using the official XML notions:  <span class="Code"><span style="text-decoration:underline">&amp;amp;</span></span> for <span class="Code">&amp;</span>, <span class="Code"><span style="text-decoration:underline">&amp;lt;</span></span> for <span class="Code">&lt;</span>.  If <span style="font-style:italic">both</span> types of quotes must be in an attribute value, then the official XML escape sequences can be used: <span class="Code"><span style="text-decoration:underline">&amp;quot;</span></span> for double-quote, and <span class="Code"><span style="text-decoration:underline">&amp;apos;</span></span> for single quote.</p>
     <p class="Standard" dir="ltr">Property values are also used when running applications.  That usage is described in the <span style="font-style:italic">Application Development Guide</span>, but the format is as described here.</p>
     <h2 dir="ltr" id="toc44"><span class="SectionNumber">6.1 </span><a id="RefHeading20180341134399"></a>Values of Unsigned Integer Types:  uchar, ushort, ulong, ulonglong</h2>
     <p class="Standard" dir="ltr">These numeric values can be entered in decimal, octal with leading zero, or hexadecimal with leading 0x.  The limits are the typical ranges for unsigned 8, 16, 32, or 64 bits respectively.</p>
@@ -993,7 +1017,7 @@
     <h2 dir="ltr" id="toc48"><span class="SectionNumber">6.5 </span><a id="RefHeadingToc300071282573294"></a>Values of the Type:  bool</h2>
     <p class="Standard" dir="ltr">These values represent the Boolean type, which is logical <span class="DefaultParagraphFont">true</span> or <span class="DefaultParagraphFont">false</span>.  The values can be case insensitive: <span class="Code">true</span> or <span class="Code">1</span> for a true value, and <span class="Code">false</span> or <span class="Code">0</span> for a false value.</p>
     <h2 dir="ltr" id="toc49"><span class="SectionNumber">6.6 </span><a id="RefHeadingToc300091282573294"></a>Values of the type:  string</h2>
-    <p class="Standard" dir="ltr">These values are simply character strings, but also can include all the escape sequences defined for the <span style="font-style:normal;font-weight:normal">char</span> type above.  Due to the requirements of the arrays and sequence values, the backslash can also escape commas and braces (<span class="Code">\,</span> and <span class="Code">\{</span> and <span class="Code">\}</span> ).</p>
+    <p class="Standard" dir="ltr">These values are simply character strings, but also can include all the escape sequences defined for the <span style="font-style:normal;font-weight:normal">char</span> type above.  Due to the requirements of the arrays and sequence values, the backslash can also escape commas and braces (<span class="Code">\,</span> and <span class="Code">\{</span> and <span class="Code">\}</span> ).  Double quotes may be used to surround strings, which protects commas, braces, and leading white space.  To be interpreted this way, the first character must be a double quote.</p>
     <h2 dir="ltr" id="toc50"><span class="SectionNumber">6.7 </span><a id="RefHeadingToc300111282573294"></a>Values in a Sequence Type</h2>
     <p class="Standard" dir="ltr">Values in a sequence type are comma-separated values.  When the type of a sequence is char or string, backslash escapes are used when the data values include commas.</p>
     <h2 dir="ltr" id="toc51"><span class="SectionNumber">6.8 </span><a id="RefHeadingToc300131282573294"></a>Values in an Array Type</h2>
@@ -1148,7 +1172,7 @@
     <h2 dir="ltr" id="toc61"><span class="SectionNumber">7.2 </span><a id="RefHeadingToc300211282573294"></a>Protocol Specification (OPS) Examples</h2>
     <p class="Body" dir="ltr">This protocol has one message type consisting of 1024 unsigned short values.</p>
     <p class="Code" dir="ltr">&lt;Protocol<br />  &lt;Operation Name=”mess1”&gt;<br />    &lt;Argument Name=”val” Type=”uShort” ArrayLength=”1k”&gt;<br />  &lt;/Operation&gt;<br />&lt;/Protocol&gt;</p>
-    <h1 dir="ltr" id="toc62"><span class="SectionNumber">8 </span><a id="RefHeadingToc550331826048042"></a>Worker Descriptions<a id="RefHeading70441790153948"></a> in OWD XML Files</h1>
+    <h1 dir="ltr" id="toc62"><span class="SectionNumber">8 </span><a id="RefHeadingToc329781944612760"></a>Worker Descriptions<a id="RefHeading70441790153948"></a> in OWD XML Files</h1>
     <p class="Standard" dir="ltr">Each worker directory contains an XML file describing the worker and references the spec file typically located in the component library's <span class="Code">specs</span> sub-directory.  This XML file is referred to as the <span style="font-weight:bold;text-decoration:none">O</span><span class="FirstEmphasis">penCPI <span style="text-decoration:none">W</span>orker <span style="text-decoration:none">D</span>escription (OWD</span>).  The generic, common across authoring models, aspects of these implementation description files are described <a class="Internet20link" href="https://github.com/opencpi/opencpi/raw/master/doc/OpenCPI_Generic_Authoring_Model.pdf">i</a>n this section. The OWD files are specific to different authoring models. These differences are described in the respective sections for each authoring model.  Some authoring models allow multiple workers to be implemented in one worker directory.  In these cases multiple OWDs may be in a single worker directory.</p>
     <p class="Standard" dir="ltr">The worker description file essentially adds non-default implementation information to the basic information found in the spec file.  Each authoring model defines what the workerspecific information might be.  An example would be the width of an FPGA data path for a port.  All OWDs have as the top-level XML element an XYZWorker element, where <span style="font-weight:bold">XYZ</span> is the authoring model of the worker.</p>
     <p class="Standard" dir="ltr">If the worker <span style="font-style:normal">has no</span> non-default behavior, there is no need for an edited OWD.  In this case the framework (<span class="Code">ocpidev</span>) will generate a default one. This default OWD simply contains a reference to the spec file and specifies the authoring model and language.  For example if an RCC worker based on the spec file <span class="Code">search-spec.xml</span> only had default implementation attributes, the OWD file would be:</p>
@@ -1299,7 +1323,7 @@
         <p class="ListBullet" dir="ltr">When a parameter property is initial, the binary worker is only considered usable for an application if the value supplied to the build process matches the value specified by the application.</p>
       </li>
     </ul>
-    <p class="Standard" dir="ltr">While the component spec defines properties and their initialization-time and run-time accessibility, a worker can further declare that a property is actually a compile time parameter of the implementation.  This is not allowed for properties that are writable at runtime.  When a worker has properties that are parameters, it means that the worker must be built for specific values of such properties.  This has three implications:</p>
+    <p class="Standard" dir="ltr">While the component spec defines properties and their initialization-time and run-time accessibility, a worker can further declare that a property is actually a compile time parameter of the implementation.  This is not allowed for properties that are dynamically writable at runtime.  When a worker has properties that are parameters, it means that the worker must be built for specific values of such properties.  This has three implications:</p>
     <ul class="listlevel1WWNum32">
       <li>
         <p class="ListBullet" dir="ltr">An application can only use the worker if it is built for a property value that matches what is requested as an “initial” property in the application.</p>
@@ -1607,7 +1631,7 @@ January 26, 2016 5:40 PM --></span></p>
     <p class="Standard" dir="ltr">Parameter values are compile-time constants in all authoring models.  The precise way that parameters and their values appear in source code varies by authoring model and programming language.  In most cases, there are standard data types, see <a class="Internet20link" href="#DataTypesforProperitestable">Data Types for Properties</a>, for the OpenCPI properties, and constants are defined that specify these values.  Examples are:</p>
     <ul class="listlevel1WWNum32">
       <li>
-        <p class="ListBullet" dir="ltr">C and C++:  A  <span class="Code">static const</span> variable is defined which is initialized to the parameter value.  The name of the variable is the property name prefixed with <span class="Code">PARAM_</span>.</p>
+        <p class="ListBullet" dir="ltr">C and C++:  A <span class="Code">static const</span> variable is defined which is initialized to the parameter value.  The name of the variable is the property name prefixed with <span class="Code">PARAM_</span>.</p>
       </li>
       <li>
         <p class="ListBullet" dir="ltr">VHDL:  A generic with the parameter's name is set to the value.</p>
@@ -1897,9 +1921,25 @@ January 26, 2016 5:40 PM --></span></p>
     <p class="Standard" dir="ltr">exports a secondary executable in the application.</p>
     <p class="Standard" dir="ltr">Subtraction lines start with a minus sign (<span class="Code">-</span>) have can have two fields.  As with addition lines, the first field is the pathname within the project, with possible wildcards and <span class="Code">&lt;target&gt;</span> strings.  The second field is a qualifier that limits the scope of the subtraction.  The possibly qualifiers are:  <span class="Code">main, library, script, include, platform, component, primitive</span><span class="DefaultParagraphFont">.  These indicate that the subtraction only applies to assets of the given type.</span></p>
     <h2 dir="ltr" id="toc102"><span class="SectionNumber">13.5 </span><a id="RefHeadingToc75266269149719"></a>Using Other Projects that Exist Outside the Project Being Developed</h2>
-    <p class="Standard" dir="ltr">The most convenient and recommended way to use a project (A) from another project (B) is to use the <span class="Code">ProjectDependencies</span> variable in the project B's <span class="Code">Project.mk</span> file.  This declares the dependency and does not depend on any environment settings.  When a more dynamic setting is needed, e.g. for temporarily using one version of a project or another, the <span class="Code">OCPI_PROJECT_PATH</span> environment variable can be used.</p>
-    <p class="Standard" dir="ltr">Like the space-separated list of projects in the <span class="Code">ProjectDependencies</span> variable in the <span class="Code">Project.mk</span> file, the <span class="Code">OCPI_PROJECT_PATH</span> environment variable specifies a colon-separated set of other projects to be searched in order, when various types of assets are being located during development.  These are searched <span style="font-style:italic">before</span> projects mentioned in the <span class="Code">ProjectDependencies</span> variable to allow the environment variable to temporarily override what is declared by the project.  Like most other “PATH” environment variables, it is a colon-separated list of project directories to be searched when looking for various asset types.  The actual directories searched within a project depends on the type of asset being sought.  E.g., if a component library is being sought, the search will look at the component libraries within the project.  When a project is examined based on being in <span class="Code">OCPI_PROJECT_PATH</span>, its <span class="Code">exports</span> tree is actually used if it exists.</p>
+    <p class="Standard" dir="ltr">The most convenient and recommended way to use a project (A) from another project (B) is to use the <span class="Code">ProjectDependencies</span> variable in the project B's <span class="Code">Project.mk</span> file.  This declares the dependency and does not depend on any environment settings.  When a more dynamic setting is needed, e.g. for temporarily using one version of a project vs. another, the <span class="Code">OCPI_PROJECT_PATH</span> environment variable can be used.</p>
+    <p class="Standard" dir="ltr">Like the space-separated list of projects in the <span class="Code">ProjectDependencies</span> variable in the <span class="Code">Project.mk</span> file, the <span class="Code">OCPI_PROJECT_PATH</span> environment variable specifies a colon-separated set of other projects to be searched in order, when various types of assets are being located during development.  These are searched <span style="font-style:italic">before</span> projects mentioned in the <span class="Code">ProjectDependencies</span> variable to allow the environment variable to temporarily override what is declared by the project.  Like most other “PATH” environment variables, it is a colon-separated list of project directories to be searched when looking for various asset types.</p>
+    <p class="Standard" dir="ltr">The actual directories searched within a project depends on the type of asset being sought.  E.g., if a component library is being sought, the search will look at the component libraries within the project.  When a project is examined based on being in <span class="Code">OCPI_PROJECT_PATH</span>, its <span class="Code">exports</span> tree is actually used if it exists.</p>
     <p class="Standard" dir="ltr">The OpenCPI CDK, located using the <span class="Code">OCPI_CDK_DIR</span> environment variable, is always searched last — as the <span style="font-style:italic">last project</span>.</p>
+    <p class="Standard" dir="ltr">To summarize searching at the project level, the order is:</p>
+    <ol class="listlevel1Numbering1">
+      <li>
+        <p class="ListNumber" dir="ltr">Use assets in projects in OCPI_PROJECT_PATH to override anything later in this list.</p>
+      </li>
+      <li>
+        <p class="ListNumber" dir="ltr">Use assets in the local project.</p>
+      </li>
+      <li>
+        <p class="ListNumber" dir="ltr">Use assets in ProjectDependencies, in the order given in that variable.</p>
+      </li>
+      <li>
+        <p class="ListNumber" dir="ltr">Use assets in the CDK,</p>
+      </li>
+    </ol>
     <p class="Standard" dir="ltr">In cases where a standalone component library or application is being developed outside the project structure, the <span class="Code">OCPI_PROJECT_PATH</span> variable can also be used when these non-project assets depend on projects other than the CDK.</p>
     <h1 dir="ltr" id="toc103"><span class="SectionNumber">14 </span><a id="RefHeadingToc75268269149719"></a>The ocpidev Tool for Managing Assets</h1>
     <p class="Standard" dir="ltr">The <span class="Code">ocpidev</span> command line tool is used to perform various development-related tasks, both inside projects as well as when projects are not being used.  When used in projects, it may be invoked at the top level of a project, or in lower level directories of the project as appropriate to the subcommand being used.</p>
@@ -2193,7 +2233,7 @@ January 26, 2016 5:40 PM --></span></p>
       </tbody>
     </table>
     <p class="Standard" dir="ltr">The ocpidev command can be used when not using projects.  When the <span class="Code">-s</span> option, for standalone operation, is specified, <span class="Code">ocpidev</span> does not require that it be run inside of a project.  This applies to everything <span style="font-style:italic">but</span> projects.</p>
-    <p class="Standard" dir="ltr">Specs, protocols and workers can be created or deleted from a library directory that is not part of a project.  Platforms can be created in a <span class="Code">platforms</span> directory, and applications can be created in an <span class="Code">applications</span> directory.  Libraries can be created by themselves.  Here is a list of all command, without options:</p>
+    <p class="Standard" dir="ltr">Specs, protocols and workers can be created or deleted from a library directory that is not part of a project.  Platforms can be created in a <span class="Code">platforms</span> directory, and applications can be created in an <span class="Code">applications</span> directory.  Libraries can be created by themselves.  Here is a list of all commands, without options:</p>
     <p class="Code" dir="ltr">ocpidev create project<br />ocpidev delete project<br />ocpidev create library<br />ocpidev delete library<br />ocpidev create spec<br />ocpidev delete spec<br />ocpidev create protocol<br />ocpidev delete protocol<br />ocpidev create worker<br />ocpidev delete worker<br />ocpidev create application<br />ocpidev delete application<br />ocpidev create hdl device<br />ocpidev delete hdl device<br />ocpidev create hdl platform<br />ocpidev delete hdl platform<br />ocpidev create hdl assembly<br />ocpidev delete hdl assembly<br />ocpidev create hdl primitive library<br />ocpidev delete hdl primitive library<br />ocpidev create hdl primitive core<br />ocpidev delete hdl primitive core</p>
     <p class="Standard" dir="ltr"> </p>
     <h1 dir="ltr" id="toc104"><span class="SectionNumber">15 </span><a id="RefHeadingToc300411282573294"></a>Environment Variables used in Component Development</h1>

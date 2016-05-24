@@ -8,4 +8,8 @@
   <Member name='suffix' type='string' stringLength='1024' default='.bin'/>
 </Property>
 <Property Name="sap12" Type="String" StringLength="10" Volatile="true" Writable="true" arraylength="12" sequenceLength="3" default='{a,c,\"&amp;apos;,dd}'/>
+<property name='param' parameter='1' default='2'/>
+<property name='x' type='struct' initial='1' sequenceLength='param*3-1'>
+  <member name='sss' type='string' stringlength='param+1' sequencelength='param &lt; 2 ? 3 : 5' arraydimensions='1,param+2,param==3 ? 4 : 5'/>
+</property>
 </RccWorker>

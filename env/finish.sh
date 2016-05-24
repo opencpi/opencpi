@@ -21,6 +21,7 @@ fi
 if test "$OCPI_PREREQUISITES_INSTALL_DIR" = ""; then
   export OCPI_PREREQUISITES_INSTALL_DIR=/opt/opencpi/prerequisites
 fi
+
 if [ ! -d exports ]; then
   # This is a bootstrapping issue.  The exports tree doesn't exist, but we need it
   # to at least exist enough to know where the CDK will be.

@@ -108,6 +108,9 @@ namespace OCPI {
     // The string value of the expression is returned in expr.
     const char *getExprNumber(ezxml_t x, const char *attr, size_t &np, bool *found,
 			      std::string *expr, const IdentResolver *resolver);
+    // Convert an expression to C/C++
+    const char *makeCexpression(const char *expr, const char *prefix, const char *suffix,
+				bool toUpper, std::string &out);
   }
 }
 

@@ -153,10 +153,11 @@ namespace OCPI {
 	  uint8_t *data;
 	  uint64_t *alloc = NULL;
 	  size_t nBytes = v.m_nTotal * info.m_elementBytes;
-          if (info.m_isSequence)
-              nBytes += std::max(sizeof(uint32_t), info.m_dataAlign);
 	  if (info.m_baseType == OA::OCPI_Struct) {
 	    // We need to create a temporary linear value - explicitly align it
+	    // This value is fully serialized, including sequence length
+	    if (info.m_isSequence)
+              nBytes += std::max(sizeof(uint32_t), info.m_dataAlign);
 	    size_t length = (nBytes + 7)/8;
 	    alloc = new uint64_t[length];
 	    length = nBytes;
@@ -166,19 +167,19 @@ namespace OCPI {
 	    info.read(reader, data, length, false, true); // not fake, top level
 	    assert(length == 0);
 	    data = (uint8_t*)alloc;
-	  } else
-	    data = v.m_pUChar;
-	  if (nBytes) {
 	    if (info.m_isSequence) { // because we set the sequence length last below
 	      assert(*(uint32_t *)data == v.m_nElements);
 	      data += sizeof(uint32_t);
 	      nBytes -= sizeof(uint32_t);
 	    }
+	  } else
+	    data = v.m_pUChar;
+	  if (nBytes) {
 	    setPropertyBytes(info, offset, data, nBytes);
 	    if (cache)
 	      memcpy(cache + (offset - info.m_offset), data, nBytes);
 	  }
-	  delete [] alloc;
+	  delete [] alloc; // may be null if not serialized (not struct)
 	}
         if (info.m_isSequence) {
 	  setProperty32(info, OCPI_UTRUNCATE(uint32_t, v.m_nElements));
@@ -245,8 +246,6 @@ namespace OCPI {
 	  v.m_nTotal *= v.m_nElements;
 	}
 	size_t nBytes = v.m_nTotal * info.m_elementBytes;
-        if (info.m_isSequence)
-            nBytes += std::max(sizeof(uint32_t), info.m_dataAlign);
 	if (info.m_baseType == OA::OCPI_String) {
 	  size_t offset = info.m_offset + (info.m_isSequence ? info.m_align : 0);
 	  size_t length = OU::roundUp(info.m_stringLength + 1, 4);
