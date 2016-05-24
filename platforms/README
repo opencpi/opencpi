@@ -3,11 +3,16 @@ platforms or embedded platforms.  The name of each subdirectory is a unique name
 for the platform.  The contents of each directory is a set of platform specific
 files and scripts, and is thus a home for platform specific "stuff".
 
-There are a few standard files that are expected to be in each platform subdirectory:
+There are a few standard files that are expected to be in *each platform subdirectory*:
 
-README: describes the platform
-target: contains the compilation target for the platform.  E.g. for centos6: linux-c6-x86_64.
-<platform>-env.sh: contains the default OpenCPI environment settings for the platform.
+README:                  describes the platform
+target:                  a one line text file containing the compilation target for the platform.
+                         E.g. for centos6: linux-c6-x86_64.
+<platform>-env.sh:       the default OpenCPI environment settings for the platform.
+<platform>-packages.sh:  a script to download and install packages from the
+                         standard repository for the OS.
+<platform>-target.mk:    settings for Makefiles for this platform
+<platform>-target.sh:    settings for shell scripts for this platform
 
 The other contents of this platforms directory are:
 
@@ -15,10 +20,13 @@ getPlatform.sh: a script to determine what platform we are running on, which sho
                 be enhanced when new platforms are added.
 
 Thus adding a platform requires at least:
+
 1. Adding a directory here with the files mentioned above.
 2. Enhancing the getPlatform.sh script to recognize when running on the new platform
 3. Ensuring that there is compilation (or cross-compilation) support for the target.
-4. Add the "target" and "<platform>-env.sh" script to the new directory.
+4. Add the "target" and "<platform>-env.sh" scripts to the new directory.
 5. Once getPlatform.sh works on the new platform (and doesn't break on other platforms),
-the "tools/cdk/scripts/makeTargetLinks.sh" script should be run with the new target string
-as the only argument.
+   the following scripts should execute (at the top level):
+     ./scripts/install-prerequisites.sh
+     ./scripts/build-opencpi.sh
+     ./scripts/test-opencpi.sh
