@@ -389,7 +389,7 @@ emitEntryPointOCL() {
 const char * Worker::
 parseOcl() {
   const char *err;
-  if ((err = OE::checkAttrs(m_xml,  IMPL_ATTRS, (void*)0)) ||
+  if ((err = OE::checkAttrs(m_xml,  IMPL_ATTRS, "language", (void*)0)) ||
       (err = OE::checkElements(m_xml, IMPL_ELEMS, "port", (void*)0)))
     return err;
   ezxml_t xctl;
