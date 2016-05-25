@@ -22,5 +22,5 @@
 #  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
 #
 ########################################################################### #
-OnlyPlatforms=isim modelsim
+OnlyPlatforms=isim modelsim xsim
 include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk
