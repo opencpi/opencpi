@@ -611,7 +611,7 @@ const char *DataPort::
 adjustConnection(const char *masterName,
 		 Port &prodPort, OcpAdapt *prodAdapt, bool &prodHasExpr,
 		 Port &consPort, OcpAdapt *consAdapt, bool &consHasExpr,
-		 Language lang) {
+		 Language lang, size_t &unused) {
   assert(prodPort.isData() && consPort.isData());
   DataPort &prod = *static_cast<DataPort*>(&prodPort);
   DataPort &cons = *static_cast<DataPort*>(&consPort);
@@ -647,7 +647,7 @@ adjustConnection(const char *masterName,
   if (cons.m_continuous && !prod.m_continuous)
     return "producer is not continuous, but consumer requires it";
   // Profile-specific error checks and adaptations
-  const char *err = prod.adjustConnection(cons, masterName, lang, prodAdapt, consAdapt);
+  const char *err = prod.adjustConnection(cons, masterName, lang, prodAdapt, consAdapt, unused);
   if (err)
     return err;
   // Figure out if this instance port has signal adaptations that will require a temp
@@ -680,7 +680,7 @@ finalizeHdlDataPort() {
 }
 
 const char *DataPort::
-adjustConnection(Port &, const char *, Language, OcpAdapt *, OcpAdapt *) {
+adjustConnection(Port &, const char *, Language, OcpAdapt *, OcpAdapt *, size_t &) {
   assert("Cannot adjust a generic data connection" == 0);
 }
 

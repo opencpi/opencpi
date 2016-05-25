@@ -106,7 +106,7 @@ deriveOCP() {
 }
 const char *WmiPort::
 adjustConnection(Port &/*cons*/, const char */*masterName*/, Language /*lang*/,
-		 OcpAdapt */*prodAdapt*/, OcpAdapt */*consAdapt*/) {
+		 OcpAdapt */*prodAdapt*/, OcpAdapt */*consAdapt*/, size_t &/*unused*/) {
   return NULL;
 }
 

@@ -174,6 +174,7 @@ ifeq ($(origin SkelFiles),undefined)
 endif
 
 # Making the skeleton may also make a default OWD
+.PHONY: skeleton
 skeleton:  $(ImplHeaderFiles) $(SkelFiles)
 all: skeleton
 

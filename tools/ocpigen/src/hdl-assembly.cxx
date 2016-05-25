@@ -379,7 +379,7 @@ emitConnectionSignal(FILE *f, bool output, Language lang) {
 // Signals are established for the input in some rare cases.
 // This function defines the internal signals, but doesn't bind to any yet.
 const char *InstancePort::
-createConnectionSignals(FILE *f, Language lang) {
+createConnectionSignals(FILE *f, Language lang, size_t &unused) {
   const char *err;
   // Find out the widest of all ports related to this instance port
   size_t maxCount = 0;
@@ -426,10 +426,12 @@ createConnectionSignals(FILE *f, Language lang) {
 	InstancePort &other = (*cai)->m_instPort;
 	if (&other != this) {
 	  err = m_port->isDataProducer() ?
-	    DataPort::adjustConnection(c.m_masterName.c_str(), *m_port, m_ocp, m_hasExprs,
-				       *other.m_port, other.m_ocp, other.m_hasExprs, lang) :
-	    DataPort::adjustConnection(c.m_masterName.c_str(), *other.m_port, other.m_ocp,
-				       other.m_hasExprs, *m_port, m_ocp, m_hasExprs, lang);
+	    DataPort::
+	    adjustConnection(c.m_masterName.c_str(), *m_port, m_ocp, m_hasExprs, *other.m_port,
+			     other.m_ocp, other.m_hasExprs, lang, unused) :
+	    DataPort::
+	    adjustConnection(c.m_masterName.c_str(), *other.m_port, other.m_ocp,
+			     other.m_hasExprs, *m_port, m_ocp, m_hasExprs, lang, unused);
 	  if (err)
 	    return OU::esprintf("For connection between %s/%s and %s/%s: %s",
 				m_port->m_worker->m_implName, m_port->name(),
@@ -754,16 +756,19 @@ emitAssyHDL() {
     fprintf(f, "wire [255:0] nowhere; // for passing output ports\n");
   // Generate the intermediate signals for internal connections
   Instance *i = m_assembly->m_instances;
+  size_t unused = 0;
   for (unsigned n = 0; n < m_assembly->m_nInstances; n++, i++) {
     for (unsigned nn = 0; nn < i->worker->m_ports.size(); nn++) {
       InstancePort &ip = i->m_ports[nn];
       assert(!ip.m_external);
-      if (!ip.m_external && (err = ip.createConnectionSignals(f, m_language)))
+      if (!ip.m_external && (err = ip.createConnectionSignals(f, m_language, unused)))
 	return err;
     }
     // Generate internal signal for emulation implicit connections
     i->emitDeviceConnectionSignals(f, m_type == Container);
   }
+  if (unused && m_language == VHDL)
+    fprintf(f, "  signal unused : std_logic_vector(0 to %zu);\n", unused - 1);
   if (m_language == VHDL)
     fprintf(f, "begin\n");
   // Set assign external signals where necessary

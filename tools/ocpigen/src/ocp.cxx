@@ -519,8 +519,8 @@ void OcpPort::
 emitExprAssignments(std::string &out, std::string &signalIn, OcpAdapt *adapt, Attachments &atts) {
   OU::formatAdd(out,
 		"\n"
-		"-- Temporary input signal assignments for port \"%s\",\n"
-		"-- since it has some signals with expression values that are not \"globally static\" in VHDL terms.\n",
+		"  -- Temporary input signal assignments for port \"%s\",\n"
+		"  -- since it has some signals with expression values that are not \"globally static\" in VHDL terms.\n",
 		name());
   OcpSignalDesc *osd;
   OcpSignal *os;
@@ -622,7 +622,15 @@ connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, OcpAdapt &oa,
     std::string other;
     if (oa.other != N_OCP_SIGNALS)
       temp += ocpSignals[oa.other].name;
-    OU::formatAdd(signal, oa.expr, temp.c_str());
+    if (!strcmp(oa.expr, "open")) {
+      static size_t unused; // can this really be processed scoped?
+      if (os.width > 1)
+	OU::formatAdd(signal, "unused(%zu to %zu)", unused, unused + os.width - 1);
+      else
+	OU::formatAdd(signal, "unused(%zu)", unused);
+      unused += os.width;
+    } else
+      OU::formatAdd(signal, oa.expr, temp.c_str());
   } else {
     signal = temp + osd.name;
     OcpPort &other = *static_cast<OcpPort*>(otherIp.m_port);

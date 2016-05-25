@@ -267,7 +267,7 @@ emitVhdlShell(FILE *f, Port *wci) {
 
 const char *WsiPort::
 adjustConnection(Port &consPort, const char *masterName, Language lang,
-		 OcpAdapt *prodAdapt, OcpAdapt *consAdapt) {
+		 OcpAdapt *prodAdapt, OcpAdapt *consAdapt, size_t &unused) {
   WsiPort &cons = *static_cast<WsiPort *>(&consPort);
   OcpAdapt *oa;
   // Bursting compatibility and adaptation
@@ -285,14 +285,16 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
 	  "std_logic_vector(to_unsigned(2,2) - unsigned(ocpi.types.bit2vec(%s,2)))";
 	oa->other = OCP_MReqLast;
 	oa->comment = "Convert precise to imprecise";
+	oa->isExpr = true; // subtraction
 	oa = &prodAdapt[OCP_MBurstLength];
 	oa->expr = lang == Verilog ? "" : "open";
+	unused += ocp.MBurstLength.width;
 	oa->comment = "MBurstLength ignored for imprecise consumer";
-	oa->isExpr = true; // subtraction...
 	if (m_impreciseBurst) {
 	  oa = &prodAdapt[OCP_MBurstPrecise];
 	  oa->expr = lang == Verilog ? "" : "open";
 	  oa->comment = "MBurstPrecise ignored for imprecise-only consumer";
+	  unused++;
 	}
       }
     } else { // consumer does both
@@ -311,6 +313,7 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
 		 lang == Verilog ? "{%zu'b0,%%s}" : "std_logic_vector(to_unsigned(0,%zu)) & %%s",
 		 cons.ocp.MBurstLength.width - 2);
 	oa->comment = "Consumer only needs imprecise burstlength (2 bits)";
+	oa->isExpr = true; // concatenation
       }
     }
   }

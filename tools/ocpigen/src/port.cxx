@@ -323,14 +323,6 @@ void Port::
 emitVhdlShell(FILE *, Port*) {
 }
 
-#if 0
-const char *Port::
-adjustConnection(Port &/*consumer*/, const char *, Language /*lang*/,
-		 OcpAdapt */*prodAdapt*/, OcpAdapt */*consAdapt*/) {
-  return "invalid data port type for connection";
-}
-#endif
-
 void Port::
 emitImplAliases(FILE */*f*/, unsigned /*n*/, Language /*lang*/) {
 }

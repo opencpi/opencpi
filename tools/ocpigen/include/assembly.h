@@ -93,7 +93,7 @@ struct InstancePort {
   InstancePort();
   InstancePort(Instance *i, Port *p, OU::Assembly::External *ext);
   const char *attach(Attachment *a, size_t index); //, size_t count);
-  const char *createConnectionSignals(FILE *f, Language lang);
+  const char *createConnectionSignals(FILE *f, Language lang, size_t &unused);
   void
     init(Instance *i, Port *p, OU::Assembly::External *ext),
     emitConnectionSignal(FILE *f, bool output, Language lang),

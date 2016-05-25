@@ -68,6 +68,8 @@ HdlOtherDefsSuffix=$(HdlDefs)$(HdlOtherIncSuffix)
 HdlImplSuffix=-impl$(HdlIncSuffix)
 HdlOtherImplSuffix=-impl$(HdlOtherIncSuffix)
 
+.PHONY: links
+
 ifndef Tops
   ifdef Top
     Tops:=$(Top)

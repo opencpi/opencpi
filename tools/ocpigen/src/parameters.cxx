@@ -192,22 +192,24 @@ parseBuildFile(bool optional) {
     return NULL;
 #if 1
   // We are only looking next to the OWD or "gen" below it
-  // And it is optional in any case.
+  // And it may be optional in any case.
   std::string dir;
   const char *slash = strrchr(m_file.c_str(), '/');
   if (slash)
     dir.assign(m_file.c_str(), (slash + 1) - m_file.c_str());
+  // First look for the build file next to the OWD
   OU::format(fname, "%s%s.build", dir.c_str(), m_implName);
   if (!OS::FileSystem::exists(fname)) {
-    std::string fname1;
-    OU::format(fname1, "%sgen/%s.build", dir.c_str(), m_implName);
-    if (OS::FileSystem::exists(fname1))
-      fname = fname1;
-    else if (optional)
-      return NULL;
-    else
-      return OU::esprintf("Cannot find %s.build in worker directory or \"gen\" subdirectory",
-			m_implName);
+    // Next look for it in the gen/ below the OWD
+    OU::format(fname, "%sgen/%s.build", dir.c_str(), m_implName);
+    if (!OS::FileSystem::exists(fname)) {
+      // Finally look in the local gen subdir
+      OU::format(fname, "gen/%s.build", m_implName);
+      if (!OS::FileSystem::exists(fname))
+	return optional ? NULL :
+	  OU::esprintf("Cannot find %s.build in worker directory or \"gen\" subdirectory",
+		       m_implName);
+    }
   }
 #else
   OU::format(fname, "%s.build", m_implName);
@@ -240,6 +242,7 @@ startBuildXml(FILE *&f) {
 const char *Worker::
 addConfig(ParamConfig &info, size_t &nConfig) {
   // Check that the configuration we have is not already in the existing file
+  ocpiDebug("Possibly adding parameter config. n=%zu size %zu", nConfig, m_paramConfigs.size());
   for (unsigned n = 0; n < m_paramConfigs.size(); n++)
     if (m_paramConfigs[n]->equal(info)) {
       // Mark the old config as used so it will be written to the Makefile
@@ -247,6 +250,7 @@ addConfig(ParamConfig &info, size_t &nConfig) {
       return NULL;
     }
   info.nConfig = nConfig++;
+  ocpiDebug("Actually adding parameter config %zu", nConfig);
   OU::format(info.id, "%zu", info.nConfig);
   // We have a new one, so we know we will be writing out the XML file
   // The XML will contain old and unused, old and used, and new and used.

@@ -197,9 +197,9 @@ class DataPort : public OcpPort {
   static const char *adjustConnection(const char *masterName,
 				      Port &prodPort, OcpAdapt *prodAdapt, bool &prodHasExpr,
 				      Port &consPort, OcpAdapt *consAdapt, bool &consHasExpr,
-				      Language lang);
+				      Language lang, size_t &unused);
   virtual const char *adjustConnection(Port &consumer, const char *masterName, Language lang,
-				       OcpAdapt *prodAdapt, OcpAdapt *consAdapt);
+				       OcpAdapt *prodAdapt, OcpAdapt *consAdapt, size_t &unused);
   virtual unsigned extraDataInfo() const;
   const char *finalizeHdlDataPort();
   const char *finalizeRccDataPort();
@@ -267,7 +267,7 @@ class WsiPort : public DataPort {
   const char *deriveOCP();
   void emitVhdlShell(FILE *f, Port *wci);
   const char *adjustConnection(Port &consumer, const char *masterName, Language lang,
-			       OcpAdapt *prodAdapt, OcpAdapt *consAdapt);
+			       OcpAdapt *prodAdapt, OcpAdapt *consAdapt, size_t &unused);
   void emitImplAliases(FILE *f, unsigned n, Language lang);
   void emitSkelSignals(FILE *f);
   void emitRecordInputs(FILE *f);
@@ -288,7 +288,7 @@ class WmiPort : public DataPort {
   const char *deriveOCP();
   void emitPortDescription(FILE *f, Language lang) const;
   const char *adjustConnection(Port &consumer, const char *masterName, Language lang,
-			       OcpAdapt *prodAdapt, OcpAdapt *consAdapt);
+			       OcpAdapt *prodAdapt, OcpAdapt *consAdapt, size_t &unused);
   void emitImplAliases(FILE *f, unsigned n, Language lang);
   void emitRecordInputs(FILE *f);
   void emitRecordOutputs(FILE *f);
