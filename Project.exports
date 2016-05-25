@@ -122,6 +122,9 @@ tests
 +runtime/hdl-support/xilinx/probeJtag_xilinx scripts/
 +runtime/hdl-support/xilinx/findJtagByESN_xilinx scripts/
 +runtime/hdl-support/xilinx/getESNfromUSB_xilinx scripts/
++runtime/hdl-support/xilinx/xilinx-ise.sh scripts/
++runtime/hdl-support/xilinx/xilinx-edk.sh scripts/
++runtime/hdl-support/xilinx/xilinx-vivado.sh scripts/
 +runtime/hdl-support/scripts/loadFlash bin/<target>/
 +runtime/hdl-support/scripts/probeJtag bin/<target>/
 +runtime/hdl-support/scripts/ocpiview bin/<target>/

@@ -1,11 +1,9 @@
 #!/bin/sh
-if [[ $OCPI_VIVADO_TOOLS_DIR == "" ]]; then
-   echo "The OCPI_VIVADO_TOOLS_DIR environment variable is not set, and is required for xsim executables."
-   exit 1
-fi
+OCPI_XILINX_VIVADO_TOOLS_DIR=$(source $OCPI_CDK_DIR/scripts/xilinx-vivado.sh)
+[ $? == 0 ] || exit 1
 set -e
 # Pass arguments to the settings script to override current args
-. $OCPI_VIVADO_TOOLS_DIR/.settings64.sh $OCPI_VIVADO_TOOLS_DIR
+. $OCPI_XILINX_VIVADO_TOOLS_DIR/settings64.sh $OCPI_XILINX_VIVADO_TOOLS_DIR
 export LM_LICENSE_FILE=$OCPI_XILINX_LICENSE_FILE
 set -vx
 appname=$1
@@ -13,7 +11,7 @@ shift
 for i in $*; do echo for $i; plusargs="$plusargs -testplusarg $i"; done
 echo plusargs are: $plusargs
 echo doing ./$appname-xsim_pf.exe $plusargs
-exec xsim  -tl $plusargs $appname-xsim_pf.exe <<EOF
+exec xsim  -tl $plusargs $appname <<EOF
 report_scopes
 report_objects
 log_wave -r /

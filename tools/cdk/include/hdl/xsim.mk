@@ -23,8 +23,7 @@
 ########################################################################### #
 
 # This file has the HDL tool details for vivado sim
-
-include $(OCPI_CDK_DIR)/include/hdl/xilinx.mk
+include $(OCPI_CDK_DIR)/include/hdl/xilinx-vivado.mk
 
 ################################################################################
 # $(call HdlToolLibraryFile,target,libname)
@@ -56,20 +55,23 @@ HdlToolRealCore=
 # Variable required by toolset: HdlToolNeedBB=yes
 # Set if the tool set requires a black-box library to access a core
 HdlToolNeedBB=
+
 ################################################################################
 # Function required by toolset: $(call HdlToolLibRef,libname)
 # This is the name after library name in a path
 # It might adjust (genericize?) the target
-HdlToolLibRef=xsim
+HdlToolCoreRef=$(call HdlRmRv,$1)
+HdlToolCoreRef_xsim=$(call HdlRmRv,$1)
 
 XsimFiles=\
   $(foreach f,$(HdlSources),\
      $(call FindRelative,$(TargetDir),$(dir $(f)))/$(notdir $(f)))
 $(call OcpiDbgVar,XsimFiles)
 
-#        -lib $(notdir $(l))_$(notdir $(w))=$(strip\
+XsimCoreLibraryChoices=$(strip \
+  $(foreach c,$(call HdlRmRv,$1),$(call HdlCoreRef,$c,xsim)))
 
-XsimLibraries=$(HdlLibrariesInternal)
+ifneq (,)
 XsimLibs=\
   $(and $(filter assembly container,$(HdlMode)),\
   $(eval $(HdlSetWorkers)) \
@@ -84,42 +86,62 @@ XsimLibs=\
     $(HdlLibrariesInternal) $(Cores),\
     -lib $(notdir $(l))=$(strip \
           $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$l,xsim,,xsim))))
+else
+XsimLibs=\
+    $(foreach l,\
+      $(HdlLibrariesInternal),\
+      -lib $(notdir $l)=$(strip \
+            $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$l,xsim,,xsim)))) \
+    $(foreach c,$(call HdlCollectCores,xsim),$(infox CCC:$c)\
+      -lib $(call HdlRmRv,$(notdir $(c)))=$(infox fc:$c)$(call FindRelative,$(TargetDir),$(strip \
+          $(firstword $(foreach l,$(call XsimCoreLibraryChoices,$c),$(call HdlExists,$l))))))
 
-XsimVerilogIncs=\
+endif
+ifneq (,)
+MyIncs=\
   $(foreach d,$(VerilogDefines),-d $d) \
   $(foreach d,$(VerilogIncludeDirs),-i $(call FindRelative,$(TargetDir),$(d))) \
   $(foreach l,$(call HdlXmlComponentLibraries,$(ComponentLibraries)),-i $(call FindRelative,$(TargetDir),$l))
+else
+XsimVerilogIncs=\
+  $(foreach d,$(VerilogDefines),-d $d) \
+  $(foreach d,$(VerilogIncludeDirs),-i $(call FindRelative,$(TargetDir),$(d))) \
+  $(foreach l,$(HdlXmlComponentLibraries),-i $(call FindRelative,$(TargetDir),$l))
+endif
 
 ifndef XsimTop
 XsimTop=$(Worker).$(Worker)
 endif
 
-XsimArgs=\
-  -initfile xsim.ini \
-  -v 2 \
-  -work $(call ToLower,$(LibName))=$(LibName) \
+# XsimArgs=-initfile xsim.ini -v 2 -work $(call ToLower,$(WorkLib))=$(WorkLib)
 
-HdlToolCompile=\
-  (echo '-- This file is generated for building this '$(LibName)' library.  Used for both VHDL and verilog';\
+XsimArgs= -v 2 -work $(call ToLower,$(WorkLib))=$(WorkLib)
+XsimXelabArgs= # -noieeewarnings
+#  (echo '-- This file is generated for building this '$(LibName)' library.  Used for both VHDL and verilog';\
    $(foreach l,$(HdlLibrariesInternal),\
       echo $(lastword $(subst -, ,$(notdir $l)))=$(strip \
         $(call FindRelative,$(TargetDir),$(strip \
            $(call HdlLibraryRefDir,$l,$(HdlTarget),,xsim))));) \
-   ) > xsim.ini ; \
-   $(VivadoXilinx); \
-   $(and $(filter %.vhd,$(XsimFiles)),\
-     xvhdl $(XsimArgs) $(filter %.vhd,$(XsimFiles)) ; ) \
-   $(and $(filter %.v,$(XsimFiles))$(findstring $(HdlMode),platform),\
-     xvlog $(XsimVerilogIncs) $(XsimArgs) $(filter %.v,$(XsimFiles)) \
-       $(and $(findstring $(HdlMode),platform),\
-         $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v) ;) \
-  $(if $(findstring $(HdlMode),worker),\
-    echo verilog work $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v \
+  ) > xsim.ini ; \
+
+HdlToolCompile=\
+  $(XilinxVivadoInit); \
+  $(and $(filter %.vhd,$(XsimFiles)),\
+    xvhdl $(XsimArgs) $(XsimLibs) $(filter %.vhd,$(XsimFiles)) ; ) \
+  $(and $(filter %.v,$(XsimFiles))$(findstring $(HdlMode),platform),\
+    xvlog $(XsimVerilogIncs) $(XsimArgs) $(XsimLibs) $(filter %.v,$(XsimFiles)) \
+      $(and $(findstring $(HdlMode),platform),\
+        $(OCPI_XILINX_VIVADO_TOOLS_DIR)/data/verilog/src/glbl.v) ;) \
+  $(if $(filter worker platform config assembly,$(HdlMode)),\
+    $(if $(HdlNoSimElaboration),, \
+      echo verilog work $(OCPI_XILINX_VIVADO_TOOLS_DIR)/data/verilog/src/glbl.v \
 	> $(Worker).prj; \
-    $(if $(HdlSkipSimElaboration),, \
-      xelab $(XsimTop) work.glbl -timescale 1ns/1ps -v 2 -prj $(Worker).prj -L unisims_ver \
-	-s $(Worker).exe -lib $(Worker)=$(Worker) $(XsimLibs);)) \
-  $(if $(findstring $(HdlMode),platform),\
+      xelab $(WorkLib).$(WorkLib)$(and $(filter config,$(HdlMode)),_rv) work.glbl -v 2 \
+             -prj $(Worker).prj -L unisims_ver -s $(Worker).exe -timescale 1ns/1ps \
+	     $(XsimXelabArgs) -lib $(WorkLib)=$(WorkLib) $(XsimLibs)))
+
+
+#  $(if $(findstring $(HdlMode),platform),\
     echo verilog work ../../../containers/mkOCApp_bb.v > $(Worker).prj ; \
     xelab $(XsimTop) $(Worker).glbl -timescale 1ns/1ps -v 2 -prj $(Worker).prj -L unisims_ver \
 	-s $(Worker).exe -lib work=work -lib $(call ToLower,$(Worker))=$(Worker) $(XsimLibs) ;)
@@ -127,11 +149,29 @@ HdlToolCompile=\
 # Since there is not a singular output, make's builtin deletion will not work
 HdlToolPost=\
   if test $$HdlExit != 0; then \
-    rm -r -f $(LibName); \
+    rm -r -f $(WorkLib); \
   else \
-    touch $(LibName);\
+    touch $(WorkLib); \
   fi;
 
+BitFile_xsim=$1.tar
+
+define HdlToolDoPlatform_xsim
+
+# Generate bitstream
+# xelab generates a "snapshot" underneath the xsim.dir directory.  So the results are all
+# in that directory.
+$1/$3.tar:
+	$(AT)echo Building xsim simulation executable: "$$@" with details in $1/$3-xelab.out
+	$(AT)echo verilog work $(OCPI_XILINX_VIVADO_TOOLS_DIR)/data/verilog/src/glbl.v >$1/$3.prj
+	$(AT)(set -e; cd $1; $(XilinxVivadoInit); \
+	      xelab $3.$3 work.glbl -v 2 -debug typical -prj $3.prj \
+              $(XsimXelabArgs) -lib $3=$3 $$(XsimLibs) -L unisims_ver -s $3;\
+	      tar cf $3.tar metadatarom.dat xsim.dir) > $1/$3-xelab.out 2>&1
+
+endef
+ifneq (,)
+ -s $3.exe ;\
 XsimPlatform:=xsim_pf
 XsimAppName=$(call AppName,$(XsimPlatform))
 ExeFile=$(XsimAppName).exe
@@ -157,3 +197,4 @@ $$(BitName): $(XsimPlatformDir)/target-xsim/$(XsimPlatform) $(XsimTargetDir)/mkO
 	$(AT)echo Building xsim simulation executable: $$(BitName).  Details in $$(XsimAppName)-xelab.out
 	$(AT)$$(HdlCompile)
 endef
+endif
