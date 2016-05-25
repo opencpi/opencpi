@@ -35,7 +35,7 @@
 
 # This file has the HDL tool details for xst
 
-include $(OCPI_CDK_DIR)/include/hdl/xilinx.mk
+include $(OCPI_CDK_DIR)/include/hdl/xilinx-ise.mk
 
 ################################################################################
 # $(call HdlToolLibraryFile,target,libname)

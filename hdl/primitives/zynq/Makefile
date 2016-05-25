@@ -24,14 +24,12 @@
 ############################################################################
 
 # This primitive library contains VHDL primitive modules for zynq platforms.
-include $(OCPI_CDK_DIR)/include/hdl/xilinx.mk
+$(and $(call DoShell,$(OCPI_CDK_DIR)/scripts/xilinx-edk.sh,OCPI_XILINX_EDK_DIR),\
+        $(error $(OCPI_XILINX_EDK_DIR)))
 OnlyTargets=zynq isim modelsim
 HdlLibraries=fixed_float ocpi platform axi
 
 XilinxZynqCore=processing_system7_v4_03_a
-ifndef OCPI_XILINX_EDK_DIR
-OCPI_XILINX_EDK_DIR=$(OCPI_XILINX_TOOLS_DIR)/EDK
-endif
 XilinxZynq=$(OCPI_XILINX_EDK_DIR)/hw/XilinxProcessorIPLib/pcores/$(XilinxZynqCore)/hdl/verilog
 # Since the wrapper file is verilog. we'll provide the verilog PS7
 #XilinxPS7=$(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/unisims/PS7.v

@@ -35,7 +35,7 @@
 
 # This file has the HDL tool details for isim
 
-include $(OCPI_CDK_DIR)/include/hdl/xilinx.mk
+include $(OCPI_CDK_DIR)/include/hdl/xilinx-ise.mk
 
 ################################################################################
 # $(call HdlToolLibraryFile,target,libname)
@@ -97,12 +97,6 @@ MyIncs=\
 
 IsimArgs=-v 2 -work $(call ToLower,$(WorkLib))=$(WorkLib) $(IsimLibs)
 
-# For verilog, we need to supply parameters at compile time since they might
-# result in conditional compilation, but they also might apply as parameters
-# for elaboration, like VHDL?
-# For VHDL
-
-
 HdlToolCompile=\
   $(call XilinxInit,);\
   $(call OcpiDbgVar,IsimFiles,htc) $(call OcpiDbgVar,SourceFiles,htc) $(call OcpiDbgVar,CompiledSourceFiles,htc)\
@@ -115,8 +109,9 @@ HdlToolCompile=\
     $(if $(HdlNoSimElaboration),, \
       echo verilog work $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v \
 	> $(Worker).prj; \
-      fuse $(WorkLib).$(WorkLib)$(and $(filter config,$(HdlMode)),_rv) work.glbl -v 2 -prj $(Worker).prj -L unisims_ver \
-	-o $(Worker).exe -lib $(call ToLower,$(WorkLib))=$(WorkLib) $(IsimLibs)))
+      fuse $(WorkLib).$(WorkLib)$(and $(filter config,$(HdlMode)),_rv) work.glbl -v 2 \
+           -prj $(Worker).prj -L unisims_ver -o $(Worker).exe \
+           -lib $(call ToLower,$(WorkLib))=$(WorkLib) $(IsimLibs)))
 
 # the "touch" below is because isim creates a bunch of files for the precompiled library
 # and no specific file.  So we touch the dir so dependencies on the library work even when

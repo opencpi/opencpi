@@ -1,4 +1,3 @@
-. ./env/xilinx.sh
 . ./env/zynq-cross.sh
 
 export OCPI_TARGET_PLATFORM=zed
