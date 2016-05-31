@@ -48,7 +48,7 @@ get(const char *name, const char *parent, const char *&err) {
       delete st;
       st = NULL;
     } else
-      s_slotTypes[name] = st;
+      s_slotTypes[st->m_name.c_str()] = st;
   }
   return st;
 }
