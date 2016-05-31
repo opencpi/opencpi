@@ -1,5 +1,5 @@
 # Definitions common to all zynq CROSS_COMPILATION platforms.
-. ./env/xilinx-edk.sh
+. $OCPI_CDK_DIR/scripts/xilinx-edk.sh
 #binary for the compiler 
 export OCPI_CROSS_BUILD_BIN_DIR=$OCPI_XILINX_EDK_DIR/gnu/arm/lin/bin
 export OCPI_CROSS_HOST=arm-xilinx-linux-gnueabi
