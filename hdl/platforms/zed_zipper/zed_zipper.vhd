@@ -7,62 +7,89 @@ library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
 library platform; use platform.platform_pkg.all;
 library zynq; use zynq.zynq_pkg.all;
+library axi; use axi.axi_pkg.all;
 library unisim; use unisim.vcomponents.all;
 library bsv;
+library sdp; use sdp.sdp.all, sdp.sdp_axi.all;
 architecture rtl of zed_zipper_worker is
-  signal ps_axi_gp_in  : m_axi_gp_in_t;        -- s2m
-  signal ps_axi_gp_out : m_axi_gp_out_t;       -- m2s
-  signal ps_axi_hp_in  : s_axi_hp_in_array_t(0 to C_S_AXI_HP_COUNT-1);  -- m2s
-  signal ps_axi_hp_out : s_axi_hp_out_array_t(0 to C_S_AXI_HP_COUNT-1); -- s2m
-  signal my_cp_out     : occp_in_t;
-  signal fclk          : std_logic_vector(3 downto 0);
-  signal clk           : std_logic;
-  signal raw_rst_n     : std_logic; -- FCLKRESET_Ns need synchronization
-  signal rst_n         : std_logic; -- the synchronized negative reset
-  signal reset         : std_logic; -- our positive reset
-  signal count         : unsigned(25 downto 0);
-  signal seen_burst    : std_logic;
-  signal unoc_count_in    : unsigned(3 downto 0);
-  signal unoc_header_in   : ulonglong_array_t(0 to 15);
-  signal unoc_header_in1  : ulonglong_array_t(0 to 15);
-  signal unoc_count_out    : unsigned(3 downto 0);
-  signal unoc_header_out   : ulonglong_array_t(0 to 15);
-  signal unoc_header_out1  : ulonglong_array_t(0 to 15);
-  signal unoc_out_status   : ulong_array_t(0 to 15);
-  signal axi_wdcount    : unsigned(3 downto 0);
-  signal axi_rdcount    : unsigned(3 downto 0);
-  signal axi_wacount    : unsigned(3 downto 0);
-  signal axi_racount    : unsigned(3 downto 0);
-  signal axi_rdata     : ulonglong_array_t(0 to 15);
-  signal axi_raddr     : ulonglong_array_t(0 to 15);
-  signal axi_wdata     : ulonglong_array_t(0 to 15);
-  signal axi_waddr     : ulonglong_array_t(0 to 15);
-  signal my_zynq_out   : platform.platform_pkg.unoc_master_out_t;
-  signal dbg_state     : ulonglong_t;
-  signal dbg_state1    : ulonglong_t;
-  signal dbg_state2    : ulonglong_t;
+  constant ntrace : natural := to_integer(maxtrace);
+  signal ps_axi_gp_in     : m_axi_gp_in_t;        -- s2m
+  signal ps_axi_gp_out    : m_axi_gp_out_t;       -- m2s
+  signal ps_axi_hp_in     : s_axi_hp_in_array_t(0 to C_S_AXI_HP_COUNT-1);  -- m2s
+  signal ps_axi_hp_out    : s_axi_hp_out_array_t(0 to C_S_AXI_HP_COUNT-1); -- s2m
+  signal fclk             : std_logic_vector(3 downto 0);
+  signal clk              : std_logic;
+  signal raw_rst_n        : std_logic; -- FCLKRESET_Ns need synchronization
+  signal rst_n            : std_logic; -- the synchronized negative reset
+  signal reset            : std_logic; -- our positive reset
+  signal count            : unsigned(25 downto 0);
+  signal zynq_in_seen     : std_logic;
+  signal zynq_out_seen    : std_logic;
+  signal sdp_starting_in  : bool_t;
+  signal sdp_starting_out : bool_t;
+  signal sdp_header_count_in : unsigned(5 downto 0);
+  signal sdp_count_in     : unsigned(5 downto 0);
+  signal sdp_header_in    : ulonglong_array_t(0 to ntrace-1);
+  signal sdp_data_in      : ulong_array_t(0 to ntrace-1);
+  signal sdp_header_count_out : unsigned(5 downto 0);
+  signal sdp_count_out     : unsigned(5 downto 0);
+  signal sdp_header_out   : ulonglong_array_t(0 to ntrace-1);
+  signal sdp_data_out     : ulonglong_array_t(0 to ntrace-1);
+  signal sdp_out_status   : ulong_array_t(0 to ntrace-1);
+  signal axi_cdcount      : unsigned(5 downto 0);
+  signal axi_cacount      : unsigned(5 downto 0);
+  signal axi_wdcount      : unsigned(5 downto 0);
+  signal axi_rdcount      : unsigned(5 downto 0);
+  signal axi_wacount      : unsigned(5 downto 0);
+  signal axi_racount      : unsigned(5 downto 0);
+  signal axi_cdata        : ulonglong_array_t(0 to ntrace-1);
+  signal axi_caddr        : ulonglong_array_t(0 to ntrace-1);
+  signal axi_rdata        : ulonglong_array_t(0 to ntrace-1);
+  signal axi_raddr        : ulonglong_array_t(0 to ntrace-1);
+  signal axi_wdata        : ulonglong_array_t(0 to ntrace-1);
+  signal axi_waddr        : ulonglong_array_t(0 to ntrace-1);
+  signal my_zynq_out      : sdp.sdp.m2s_t;
+  signal my_zynq_out_data : dword_array_t(0 to to_integer(sdp_width)-1);
+  signal dbg_state        : ulonglong_t;
+  signal dbg_state1       : ulonglong_t;
+  signal dbg_state2       : ulonglong_t;
+  signal dbg_state_r      : ulonglong_t;
+  signal dbg_state1_r     : ulonglong_t;
+  signal dbg_state2_r     : ulonglong_t;
+  signal sdp_seen_r       : bool_t;
+  function fyv(b : std_logic) return std_logic_vector is
+  variable v : std_logic_vector(0 downto 0);
+  begin
+    v(0) := b;
+    return v;
+  end fyv;
 begin
   timebase_out.clk   <= clk;
   timebase_out.reset <= reset;
   timebase_out.ppsIn <= '0';
+
   g0: if its(ocpi_debug) generate
     -- If we don't assign the outputs, the "debug overhead" will disappear
+    props_out.axi_caddr <= axi_caddr;
     props_out.axi_waddr <= axi_waddr;
     props_out.axi_raddr <= axi_raddr;
+    props_out.axi_cdata <= axi_cdata;
     props_out.axi_wdata <= axi_wdata;
     props_out.axi_rdata <= axi_rdata;
     props_out.axi_racount <= resize(axi_racount,32);
     props_out.axi_wacount <= resize(axi_wacount,32);
     props_out.axi_rdcount <= resize(axi_rdcount,32);
     props_out.axi_wdcount <= resize(axi_wdcount,32);
-    props_out.unoc_count_in <= resize(unoc_count_in,32);
-    props_out.unoc_headers_in <= unoc_header_in;
-    props_out.unoc_headers_in1 <= unoc_header_in1;
-    props_out.unoc_count_out <= resize(unoc_count_out,32);
-    props_out.unoc_headers_out <= unoc_header_out;
-    props_out.unoc_headers_out1 <= unoc_header_out1;
+    props_out.sdp_header_count_in <= resize(sdp_header_count_in,32);
+    props_out.sdp_count_in <= resize(sdp_count_in,32);
+    props_out.sdp_headers_in <= sdp_header_in;
+    props_out.sdp_data_in <= sdp_data_in;
+    props_out.sdp_header_count_out <= resize(sdp_header_count_out,32);
+    props_out.sdp_count_out <= resize(sdp_count_out,32);
+    props_out.sdp_headers_out <= sdp_header_out;
+    props_out.sdp_data_out <= sdp_data_out;
   end generate g0;
-  cp_out <= my_cp_out;
+
   clkbuf   : BUFG   port map(I => fclk(3),
                              O => clk);
   -- The FCLKRESET signals from the PS are documented as asynchronous with the
@@ -93,26 +120,31 @@ begin
       axi_in  => ps_axi_gp_out,
       axi_out => ps_axi_gp_in,
       cp_in   => cp_in,
-      cp_out  => my_cp_out
+      cp_out  => cp_out
       );
-  zynq_out <= my_zynq_out;
-  props_out.debug_state <= dbg_state;
-  props_out.debug_state1 <= dbg_state1;
-  dp0 : unoc2axi
+  zynq_out               <= my_zynq_out;
+  zynq_out_data          <= my_zynq_out_data;
+  props_out.debug_state  <= dbg_state_r;
+  props_out.debug_state1 <= dbg_state1_r;
+  props_out.debug_state2 <= dbg_state2_r;
+  dp0 : sdp2axi
     generic map(
-      ocpi_debug => true
-      )
+      ocpi_debug => true,
+      sdp_width  => to_integer(sdp_width),
+      axi_width  => ps_axi_hp_in(0).W.DATA'length/dword_size)
     port map(
-      clk       => clk,
-      reset     => reset,
-      unoc_in   => zynq_in,
-      unoc_out  => my_zynq_out,
-      axi_in    => ps_axi_hp_out(0),
-      axi_out   => ps_axi_hp_in(0),
-      axi_error => props_out.axi_error,
-      dbg_state => dbg_state,
-      dbg_state1 => dbg_state1,
-      dbg_state2 => dbg_state2
+      clk          => clk,
+      reset        => reset,
+      sdp_in       => zynq_in,
+      sdp_in_data  => zynq_in_data,
+      sdp_out      => my_zynq_out,
+      sdp_out_data => my_zynq_out_data,
+      axi_in       => ps_axi_hp_out(0),
+      axi_out      => ps_axi_hp_in(0),
+      axi_error    => props_out.axi_error,
+      dbg_state    => dbg_state,
+      dbg_state1   => dbg_state1,
+      dbg_state2   => dbg_state2
       );
   dp1 : axinull
     port map(
@@ -136,10 +168,13 @@ begin
       axi_out   => ps_axi_hp_in(3)
       );
 
-  term_unoc : unoc_terminator
-    port    map(up_in      => zynq_slave_in,
-                up_out     => zynq_slave_out,
-                drop_count => props_out.unocDropCount);
+  term_sdp : sdp.sdp.sdp_term
+    generic map(sdp_width   => to_integer(sdp_width))
+    port    map(up_in       => zynq_slave_in,
+                up_in_data  => zynq_slave_in_data,
+                up_out      => zynq_slave_out,
+                up_out_data => zynq_slave_out_data,
+                drop_count  => props_out.sdpDropCount);
   
   -- Output/readable properties
   props_out.platform        <= to_string("zed_zipper", props_out.platform'length-1);
@@ -160,11 +195,10 @@ begin
   metadata_out.romAddr      <= props_in.romAddr;
   metadata_out.romEn        <= props_in.romData_read;
   led(0) <= count(count'left);
-  led(1) <= ps_axi_gp_out.ARVALID;
-  led(2) <= seen_burst; -- my_cp_out.is_read;
-  led(3) <= cp_in.take;
-
-  led(4) <= cp_in.valid;
+  led(1) <= zynq_in_seen;
+  led(2) <= zynq_in.sdp.valid;
+  led(3) <= zynq_out_seen;
+  led(4) <= my_zynq_out.sdp.valid;
   led(5) <= ps_axi_gp_in.ARREADY;
   led(6) <= ps_axi_gp_in.RVALID;
   led(7) <= ps_axi_gp_out.RREADY;
@@ -173,8 +207,12 @@ begin
     if rising_edge(clk) then
       if reset = '1' then
         count <= (others => '0');
-        unoc_count_in <= (others => '0');
-        unoc_count_out <= (others => '0');
+        sdp_count_in <= (others => '0');
+        sdp_count_out <= (others => '0');
+        sdp_header_count_in <= (others => '0');
+        sdp_header_count_out <= (others => '0');
+        sdp_header_in  <= (others => (others => '0'));
+        sdp_header_out <= (others => (others => '0'));
         axi_raddr  <= (others => (others => '0'));
         axi_waddr  <= (others => (others => '0'));
         axi_rdata  <= (others => (others => '0'));
@@ -183,65 +221,145 @@ begin
         axi_rdcount <= (others => '0');
         axi_wacount <= (others => '0');
         axi_racount <= (others => '0');
-        seen_burst <= '0';
+        axi_cacount <= (others => '0');
+        axi_cdcount <= (others => '0');
+        zynq_in_seen <= '0';
+        zynq_out_seen <= '0';
+        sdp_starting_in <= btrue;
+        sdp_starting_out <= btrue;
+        sdp_seen_r <= bfalse;
       else
-        if its(my_zynq_out.valid) and zynq_in.take and
-          unoc_count_out /= 15 then
-          unoc_header_out(to_integer(unoc_count_out)) <=
-            to_ulonglong(my_zynq_out.data.payload(0) & my_zynq_out.data.payload(1));
-          unoc_header_out1(to_integer(unoc_count_out)) <=
-            to_ulonglong(my_zynq_out.data.payload(2) & my_zynq_out.data.payload(3));
-          unoc_out_status(to_integer(unoc_count_out)) <=
-            dbg_state2(31 downto 0);
-          unoc_count_out <= unoc_count_out + 1;
+        if its(props_in.sdp_count_in_written) then
+          sdp_count_in <= (others => '0');
+          sdp_count_out <= (others => '0');
+          sdp_header_count_in <= (others => '0');
+          sdp_header_count_out <= (others => '0');
+          axi_wdcount <= (others => '0');
+          axi_rdcount <= (others => '0');
+          axi_wacount <= (others => '0');
+          axi_racount <= (others => '0');
+          axi_cacount <= (others => '0');
+          axi_cdcount <= (others => '0');
+          sdp_seen_r <= bfalse;
         end if;
-        if its(zynq_in.valid) and my_zynq_out.take and
-          unoc_count_in /= 15 then
-          unoc_header_in(to_integer(unoc_count_in)) <=
-            to_ulonglong(zynq_in.data.payload(0) & zynq_in.data.payload(1));
-          unoc_header_in1(to_integer(unoc_count_in)) <=
-            to_ulonglong(zynq_in.data.payload(2) & zynq_in.data.payload(3));
-          unoc_count_in <= unoc_count_in + 1;
+        dbg_state_r <= dbg_state;
+        dbg_state1_r <= dbg_state1;
+        dbg_state2_r <= dbg_state2;
+        if its(my_zynq_out.sdp.valid) then
+          zynq_out_seen <= '1';
         end if;
-        if its(ps_axi_hp_out(0).R.VALID) and ps_axi_hp_in(0).R.READY and axi_rdcount /= 15 then
+        if its(zynq_in.sdp.valid) then
+          zynq_in_seen <= '1';
+        end if;
+        if its(my_zynq_out.sdp.valid) and zynq_in.sdp.ready then
+          sdp_starting_out <= my_zynq_out.sdp.eop;
+          if its(sdp_starting_out) then
+            if sdp_header_count_out /= ntrace-1 then
+              sdp_header_out(to_integer(sdp_header_count_out)) <=
+                to_ulonglong(std_logic_vector(count(15 downto 0)) &
+                             std_logic_vector(header2dws(my_zynq_out.sdp.header)(1)(14 downto 0)) & "0" &
+                             std_logic_vector(header2dws(my_zynq_out.sdp.header)(0))); 
+              sdp_header_count_out <= sdp_header_count_out + 1;
+            end if;
+          end if;
+          if sdp_count_out /= ntrace-1 then
+            sdp_data_out(to_integer(sdp_count_out)) <=
+              to_ulonglong(std_logic_vector(count(15 downto 0)) &
+                           std_logic_vector(dbg_state(15 downto 0)) &
+                           my_zynq_out_data(0));
+            sdp_count_out <= sdp_count_out + 1;
+          end if;
+        end if;
+        if its(zynq_in.sdp.valid) and my_zynq_out.sdp.ready then
+          sdp_starting_in <= zynq_in.sdp.eop;
+          if its(sdp_starting_in) then
+            sdp_seen_r <= btrue;
+            if sdp_header_count_in /= ntrace-1 then
+              sdp_header_in(to_integer(sdp_header_count_in)) <=
+                to_ulonglong(std_logic_vector(count(15 downto 0)) &
+                             std_logic_vector(header2dws(zynq_in.sdp.header)(1)(10 downto 0)) &
+                             std_logic_vector(header2dws(zynq_in.sdp.header)(0)(31 downto 25)) & "00" &
+                             fyv(zynq_in.sdp.eop) & -- 27
+                             "00" &
+                             std_logic_vector(header2dws(zynq_in.sdp.header)(0)(24 downto 0))); 
+              sdp_header_count_in <= sdp_header_count_in + 1;
+            end if;
+          end if;
+          if sdp_count_in /= ntrace-1 then
+            sdp_data_in(to_integer(sdp_count_in)) <= to_ulong(zynq_in_data(0));
+            sdp_count_in <= sdp_count_in + 1;
+          end if;
+        end if;
+        if its(ps_axi_hp_out(0).R.VALID) and ps_axi_hp_in(0).R.READY and axi_rdcount /= ntrace-1 then
           axi_rdata(to_integer(axi_rdcount)) <=
             to_ulonglong(ps_axi_hp_out(0).R.DATA(63 downto 0)); -- &
 --                         "00010010001101000101011001110000");
           axi_rdcount <= axi_rdcount + 1;
         end if;
-        if its(ps_axi_hp_in(0).AR.VALID and ps_axi_hp_out(0).AR.READY) and axi_racount /= 15 then
+        if its(ps_axi_hp_in(0).AR.VALID and ps_axi_hp_out(0).AR.READY) and axi_racount /= ntrace-1 then
           axi_raddr(to_integer(axi_racount)) <=
-            to_ulonglong(std_logic_vector(dbg_state1(60 downto 56)) & -- 5
-                         std_logic_vector(dbg_state(26 downto 4)) & -- 23
+            to_ulonglong(--std_logic_vector(count(15 downto 0)) & -- 16
+                         std_logic_vector(dbg_state(31 downto 0)) & -- 28
                          ps_axi_hp_in(0).AR.LEN & -- 4
-                         ps_axi_hp_in(0).AR.ADDR); -- 32
+                         ps_axi_hp_in(0).AR.ADDR(27 downto 0)); -- 28
           axi_racount <= axi_racount + 1;
         end if;
-        if its(ps_axi_hp_in(0).W.VALID) and ps_axi_hp_out(0).W.READY and axi_wdcount /= 15 then
+        if its(ps_axi_hp_in(0).W.VALID) and ps_axi_hp_out(0).W.READY and axi_wdcount /= ntrace-1 then
           axi_wdata(to_integer(axi_wdcount)) <=
             to_ulonglong(
-              "000000" & std_logic_vector(count) &
---                         std_logic_vector(dbg_state1(51 downto 32)) &
---                         "000" & ps_axi_hp_in(0).WLAST & -- 1
---                         ps_axi_hp_in(0).WSTRB & -- 8
-              ps_axi_hp_in(0).W.DATA(31 downto 0)); -- 32
---                         "00010010001101000101011001110000");
+              std_logic_vector(count(15 downto 0)) & -- 16
+              std_logic_vector(dbg_state1(15 downto 0)) &
+--               fyv(ps_axi_hp_in(0).W.LAST) & -- 1
+--              ps_axi_hp_in(0).W.STRB & -- 8
+--              std_logic_vector(dbg_state1(31 downto 0)));
+              ps_axi_hp_in(0).W.DATA(63 downto 56) & -- 8
+              ps_axi_hp_in(0).W.DATA(39 downto 32) & -- 8
+              ps_axi_hp_in(0).W.DATA(31 downto 24) & -- 8
+              ps_axi_hp_in(0).W.DATA(7 downto 0)); -- 8
           axi_wdcount <= axi_wdcount + 1;
         end if;
-        if its(ps_axi_hp_in(0).AW.VALID and ps_axi_hp_out(0).AW.READY) and axi_wacount /= 15 then
+        if its(ps_axi_hp_in(0).AW.VALID and ps_axi_hp_out(0).AW.READY) and axi_wacount /= ntrace-1 then
           axi_waddr(to_integer(axi_wacount)) <=
             to_ulonglong(
 --              std_logic_vector(dbg_state(27 downto 4)) & -- 24
 --                                          "0" & ps_axi_hp_in(0).AWSIZE & -- 4
 --                                          ps_axi_hp_in(0).AWLEN & -- 4
-              "000000" & std_logic_vector(count) &
+              std_logic_vector(count(15 downto 0)) & -- 16
+              "000000000000" &
+              ps_axi_hp_in(0).AW.LEN & -- 4
               ps_axi_hp_in(0).AW.ADDR); -- 32
           axi_wacount <= axi_wacount + 1;
         end if;
-        count <= count + 1;
-        if ps_axi_gp_out.ARVALID = '1' and ps_axi_gp_out.ARLEN = "0001" then
-          seen_burst <= '1';
+        if its(ps_axi_gp_out.WVALID) and ps_axi_gp_in.WREADY and axi_cdcount /= ntrace-1 and sdp_seen_r then
+          axi_cdata(to_integer(axi_cdcount)) <=
+            to_ulonglong(
+              std_logic_vector(count(15 downto 0)) & -- 16
+              std_logic_vector(dbg_state1(15 downto 5)) &
+              fyv(ps_axi_gp_out.WLAST) & -- 1
+              ps_axi_gp_out.WSTRB & -- 8
+              ps_axi_gp_out.WDATA);
+--   ps_axi_hp_in(0).W.DATA(63 downto 56) & -- 8
+--              ps_axi_hp_in(0).W.DATA(39 downto 32) & -- 8
+--              ps_axi_hp_in(0).W.DATA(31 downto 24) & -- 8
+--              ps_axi_hp_in(0).W.DATA(7 downto 0)); -- 8
+          axi_cdcount <= axi_cdcount + 1;
         end if;
+        if its(ps_axi_gp_out.AWVALID and ps_axi_gp_in.AWREADY) and axi_cacount /= ntrace-1 and sdp_seen_r then
+          axi_caddr(to_integer(axi_cacount)) <=
+            to_ulonglong(
+--              std_logic_vector(dbg_state(27 downto 4)) & -- 24
+--                                          "0" & ps_axi_hp_in(0).AWSIZE & -- 4
+--                                          ps_axi_hp_in(0).AWLEN & -- 4
+              std_logic_vector(count(15 downto 0)) & -- 16
+              "000000000000" &
+              ps_axi_gp_out.AWLEN & -- 4
+              ps_axi_gp_out.AWADDR); -- 32
+          axi_cacount <= axi_cacount + 1;
+        end if;
+        count <= count + 1;
+--        if ps_axi_gp_out.ARVALID = '1' and ps_axi_gp_out.ARLEN = "0001" then
+--          seen_burst <= '1';
+--        end if;
       end if;
     end if;
   end process;
