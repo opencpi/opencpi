@@ -5,7 +5,6 @@
 #include <sys/stat.h>
 #include <climits>
 #include <set>
-#include "OcpiOsFileIterator.h"
 #include "OcpiUtilException.h"
 #include "OcpiLibraryManager.h"
 #include "LibrarySimple.h"

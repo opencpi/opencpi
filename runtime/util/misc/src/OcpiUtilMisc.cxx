@@ -750,24 +750,33 @@ baseName(const char *path, std::string &buf) {
 }
 // Search for the given name in a colon separated path
 // Set the full constructed path in "result".
+// Use pattern matching (the file iterator) to enable the "item" to be wildcarded,
+// and return the first one found.
 // Return true on error
 bool
 searchPath(const char *path, const char *item, std::string &result, const char *preferred) {
-  char *cp = strdup(path), *last;
-  for (char *lp = strtok_r(cp, ":", &last); lp;
-       lp = strtok_r(NULL, ":", &last)) {
-    format(result, "%s/", lp);
+  std::string copy(path), pattern(item);
+  char *cp = &copy[0], *last;
+  for (char *lp = strtok_r(cp, ":", &last); lp; lp = strtok_r(NULL, ":", &last)) {
+    std::string dir(lp); // FIXME iterator should have constructor with char*
     bool isDir;
+    if (!OS::FileSystem::exists(dir, &isDir) || !isDir)
+      continue;
     if (preferred) {
-      size_t len = result.length();
-      formatAdd(result, "%s/%s", preferred, item);
-      if (OS::FileSystem::exists(result, &isDir))
-	return false;
-      result.resize(len);
+      std::string pdir(dir + "/" + preferred);
+      if (OS::FileSystem::exists(pdir, &isDir) || !isDir) {
+	OS::FileIterator fi(pdir, pattern);
+	if (!fi.end()) {
+	  result = fi.absoluteName();
+	  return false;
+	}
+      }
     }
-    result += item;
-    if (OS::FileSystem::exists(result, &isDir))
+    OS::FileIterator fi(dir, pattern);
+    if (!fi.end()) {
+      result = fi.absoluteName();
       return false;
+    }
   }
   return true;
 }

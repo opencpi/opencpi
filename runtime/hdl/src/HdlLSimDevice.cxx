@@ -1104,60 +1104,53 @@ Device *Driver::
 createDevice(const std::string &name, const std::string &platform, uint8_t spinCount,
 	     unsigned sleepUsecs, unsigned simTicks, bool verbose, bool dump,
 	     const char *dir, std::string &error) {
-  std::string actualPlatform, script;
-  const char *xenv = getenv("OCPI_CDK_DIR");
+  const char
+    *xenv = getenv("OCPI_CDK_DIR"),
+    *ppenv = getenv("OCPI_PROJECT_PATH");
   if (!xenv) {
     error = "The OCPI_CDK_DIR environment variable is not set";
     return NULL;
   }
-  script = xenv;
-  script += "/lib/platforms/";
+  std::string path, script, actualPlatform;
+  if (ppenv)
+    OU::format(path, "%s:", ppenv);
+  path += xenv;
   if (platform.empty()) {
-    OS::FileIterator fi(script, "*/runSimExec.*");
-    if (fi.end()) {
-      OU::format(error, "There is no supported simulation platform (no %s/runSimExec.*)",
-		 script.c_str());
+    // Find the first platform we can see.
+    // FIXME: somehow  skip those that aren't licensed or built? or is this implicit?
+    if (OU::searchPath(path.c_str(), "lib/platforms/*/runSimExec.*", script, "exports")) {
+      OU::format(error, "No simulation platforms found (no lib/platforms/*/runSimExec.*)");
       return NULL;
     }
-    std::string cmd = fi.relativeName();
-    const char *cp = strchr(cmd.c_str(), '.');
-    assert(cp);
-    actualPlatform = ++cp;
-    script += cmd;
+    actualPlatform = strrchr(script.c_str(), '.') + 1;
   } else {
     size_t len = platform.length();
     actualPlatform.assign(platform.c_str(),
 			  !strcmp("_pf", platform.c_str() + len - 3) ? len - 3 : len);
-    script += actualPlatform;
-    script += "/runSimExec.";
-    script += actualPlatform;
-    if (!OS::FileSystem::exists(script)) {
-      OU::format(error, "\"%s\" is not a supported simulation platform (no %s)",
-		 platform.c_str(), script.c_str());
+    std::string relScript;
+    OU::format(relScript, "lib/platforms/%s/runSimExec.%s", actualPlatform.c_str(),
+	       actualPlatform.c_str());
+    if (OU::searchPath(path.c_str(), relScript.c_str(), script, "exports")) {
+      OU::format(error, "No simulation platform found named %s (no %s)",
+		 platform.c_str(), relScript.c_str()); 
       return NULL;
     }
   }
-  std::string simDir;
-  pid_t pid = getpid();
   // We do not clean this up - it is created on demand.
-  // FIXME: do we need this at all?
   if (mkdir(dir, 0777) != 0 && errno != EEXIST) {
     OU::format(error, "Can't create directory for simulations: %s", dir);
     return NULL;
   }
-  std::string simName;
-  if (name.length())
-    simName = name;
-  else
-    OU::format(simName, "%s.%u", actualPlatform.c_str(), pid);
-  OU::format(simDir, "%s/%s.%u", dir, simName.c_str(), getpid());
+  std::string simDir;
+  static unsigned n;
+  OU::format(simDir, "%s/%s.%s.%u.%u", dir, actualPlatform.c_str(), name.c_str(), getpid(), n++);
   if (mkdir(simDir.c_str(), 0777) != 0) {
     if (errno == EEXIST)
       OU::format(error,
-		 "Directory for this simulator, \"%s\", already exists (/tmp not cleared?)",
+		 "Directory for this simulation, \"%s\", already exists",
 		 simDir.c_str());
     else
-      OU::format(error, "Can't create the new diretory for this simulator: %s",
+      OU::format(error, "Can't create the new directory for this simulation: %s",
 		 simDir.c_str());
     return NULL;
   }

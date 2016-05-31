@@ -24,6 +24,7 @@
 ############################################################################
 
 # This primitive library contains VHDL primitive modules for zynq platforms.
+include $(OCPI_CDK_DIR)/include/util.mk
 $(and $(call DoShell,$(OCPI_CDK_DIR)/scripts/xilinx-edk.sh,OCPI_XILINX_EDK_DIR),\
         $(error $(OCPI_XILINX_EDK_DIR)))
 OnlyTargets=zynq isim modelsim

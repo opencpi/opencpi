@@ -339,7 +339,7 @@ HdlTargetSrcFiles=\
 #		   echo '$(ParamVHDLtype_$(ParamConfig)_$n)' ;) \
 #
 
-$(OutDir)target-%/generics.vhd: | $(OutDir)target-%
+$(OutDir)target-%/generics.vhd: $$(VHDLDefsFile) | $(OutDir)target-%
 	$(AT)(\
 	     echo -- This file sets values for top level generics ;\
 	     echo library ocpi\; use ocpi.all, ocpi.types.all\; ;\

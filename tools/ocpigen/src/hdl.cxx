@@ -182,7 +182,7 @@ parseHdlImpl(const char *package) {
       (err = initImplPorts(m_xml, "SDP", createPort<SdpPort>)) ||
       (err = initImplPorts(m_xml, "Metadata", createPort<MetaDataPort>)) ||
       (err = initImplPorts(m_xml, "Control", createPort<WciPort>)) ||
-      (err = initImplPorts(m_xml, "DevSignals", createPort<DevSignalsPort>)) ||
+      (err = initImplPorts(m_xml, "DevSignal", createPort<DevSignalsPort>)) ||
       (err = initImplPorts(m_xml, "rawprop", createPort<RawPropPort>)))
     return err;
 

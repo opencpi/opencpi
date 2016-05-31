@@ -237,17 +237,16 @@ OCPI::OS::FileIterator::end ()
     std::string nativeDir = FileSystem::toNativeName (data.dir);
     data.active = true;
 
-    if (!(data.search = opendir (nativeDir.c_str()))) {
-      throw OCPI::OS::Posix::getErrorMessage (errno);
+    if (!(data.search = opendir (nativeDir.c_str())))
+      if (errno == ENOENT)
+	data.atend = true;
+      else
+	throw OCPI::OS::Posix::getErrorMessage (errno);
+    else {
+      data.atend = false;
+      // Skip to the first matching file if not at end
+      next ();
     }
-
-    data.atend = false;
-
-    /*
-     * Skip to the first matching file
-     */
-
-    next ();
   }
 
   return data.atend;
