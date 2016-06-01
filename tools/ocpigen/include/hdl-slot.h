@@ -9,7 +9,7 @@
 // A slot type is really just a set of signals
 // The direction is all from the perspective of the motherboard (a.k.a. carrier).
 struct SlotType;
-typedef std::map<const char *, SlotType *, OCPI::Util::ConstCharCaseEqual> SlotTypes;
+typedef std::map<const char *, SlotType *, OCPI::Util::ConstCharCaseComp> SlotTypes;
 typedef SlotTypes::iterator SlotTypesIter;
 struct SlotType {
   std::string      m_name;
