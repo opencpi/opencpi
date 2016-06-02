@@ -1,0 +1,24 @@
+<!-- AD9361 DAC worker -->
+<HdlDevice language="vhdl" spec='qdac-spec'>
+  <!-- Other included XML -->
+  <xi:include href='ad9361-iq-properties.xml'/>
+
+  <!-- Properties -->
+  <Specproperty name='underrun' default='0'/>
+
+  <!-- Ports -->
+  <StreamInterface Name="IN" DataWidth="32" optional='1' zerolengthmessages='1'/>
+
+  <!-- Clocks -->
+  <Clock name='sample_clk'/>
+
+  <!-- Timeout -->
+  <ControlInterface Timeout="16"/> <!-- Set to default. No raw properties -->
+
+  <!-- Signals -->
+  <!-- Signal names from the data sheet -->
+  <Signal Output="FB_CLK" differential='true'/> <!-- source sync transmit data clk -->
+  <Signal Output="TX_FRAME" differential='true'/> <!-- FPGA->ad9361, data-valid -->
+  <Signal Output="TX_D" differential='true' width="6"/>
+  <Signal Input="DATA_CLK" differential='true'/>
+</HdlDevice>

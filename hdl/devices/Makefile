@@ -46,6 +46,13 @@ HdlLibraries=platform
 # Remember that subdevices that support other devices must occur AFTER the devices they support
 # Similarly, emulators must occur after the devices they emulate
 Workers = \
+        ad9361_rx.hdl \
+        ad9361_tx.hdl \
+        ad9361_subdevice.hdl \
+        ad9361_rx_proxy.rcc \
+        ad9361_tx_proxy.rcc \
+        ad9361_adc.hdl \
+        ad9361_dac.hdl \
 	sdp_node.hdl \
 	sdp_send.hdl \
 	sdp_receive.hdl \

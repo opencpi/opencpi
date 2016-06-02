@@ -1,0 +1,29 @@
+<!-- Lime SPI module is a no-control, no-data module, supporting
+     two raw property ports, one for rx (always 0), and one for tx (always 1),
+     with a shared reset
+     -->
+<HdlDevice language="vhdl">
+  <ComponentSpec nocontrol='true'/>
+  <!-- We have two raw property masters, the rx and tx workers for the xcvr chip -->
+  <rawprop name='rprops' count='2' optional='true'/>
+  <devsignal name='dev' count='2' optional='true' signals='ad9361-subdevice-signals.xml'/>
+  <supports worker='ad9361_rx'>
+    <connect port="rawprops" to="rprops" index='0'/>
+    <connect port="dev" to="dev" index='0'/>
+  </supports>
+  <supports worker='ad9361_tx'>
+    <connect port="rawprops" to="rprops" index='1'/>
+    <connect port="dev" to="dev" index='1'/>
+  </supports>
+  <!-- Signal names from the data sheet, in data sheet order (Table 13, page 16, Rev. E)
+       We use the SPI in 4 pin mode, so SDIO is INPUT to the Lime, OUTPUT from the FPGA
+       Signals dedicated to rx or tx are directly used by the rx/tx device workers -->
+  <Signal Output="ENABLE"/>  <!-- Pin G6: Moves the device through various operational states -->
+  <Signal Output="TXNRX"/>   <!-- Pin H4: Control data port bus direction, low rx, high tx -->
+  <Signal Output="SYNC_in"/> <!-- Pin H5: Synchronize digital clocks between devices -->
+  <Signal Output="SPI_DI"/>  <!-- Pin J4: SPI data input -->
+  <Signal Output="SPI_CLK"/> <!-- Pin J5: SPI clock -->
+  <Signal Output="RESETB"/>  <!-- Pin K5: Chip reset, asserted LOW -->
+  <Signal Output="SPI_ENB"/> <!-- Pin K6: SPI enable, asserted LOW -->
+  <Signal  Input="SPI_DO"/>  <!-- Pin L6: SPI data output -->
+</HdlDevice>

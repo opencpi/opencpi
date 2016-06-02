@@ -1,0 +1,28 @@
+<!-- AD9361 ADC worker -->
+<HdlDevice language="vhdl" spec='qadc-spec'>
+  <!-- Other included XML -->
+  <xi:include href='ad9361-iq-properties.xml'/>
+
+  <!-- Properties -->
+  <Property name='source' type='enum' enums='adc,count,loopback' default='adc' initial='1'/>
+  <Specproperty name='messageSize' default='2048'/>
+  <Specproperty name='overrun' default='0'/>
+
+  <!-- Ports -->
+  <StreamInterface Name="OUT" producer='true' DataWidth="32"/>
+
+  <!-- Clocks -->
+  <Clock name='sample_clk'/>
+
+  <!-- Timeout -->
+  <ControlInterface Timeout="16"/> <!-- Set to default. No raw properties -->
+
+  <!-- Signals --> 
+  <!--Signal names from the ad9361 data sheet
+     P0 is 12 bit signel-ended, overlayed with TX 6 bit differential
+     P1 is 12 bit signel-ended, overlayed with RX 6 bit differential
+ -->
+  <Signal Input="DATA_CLK" differential='true'/>  <!-- ad9361->FPGA, syncd w/ rx data -->
+  <Signal Input="RX_FRAME" differential='true'/>  <!-- ad9361->FPGA, data-valid -->
+  <Signal Input="RX_D" width="6" differential='true'/> <!-- ADC data -->
+</HdlDevice>
