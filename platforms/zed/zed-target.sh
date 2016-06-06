@@ -1,5 +1,5 @@
 # Setup to build this target
-source $OCPI_CDK_DIR/platforms/zed/xilinx-target.sh
+OCPI_XILINX_EDK_DIR=$($OCPI_CDK_DIR/scripts/xilinx-edk.sh) || exit 1
 f=$OCPI_XILINX_EDK_DIR/gnu/arm/lin/bin
 if test ! -d $f; then
   echo Error: When setting up to build for zed, OCPI_XILINX_EDK_DIR is "$OCPI_XILINX_EDK_DIR". Cannot find $f. Perhaps the EDK was not installed when Xilinx tools were installed\?.

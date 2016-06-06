@@ -305,21 +305,23 @@ $end rtl;
 ENTITY_RPROP_ARRAY(pretty,readback scalar 16 bit property)\
 $architecture rtl of pretty##_read_array_property is\
 $@@signal i : natural;\
+$@@signal i_plus_1 : natural;\
 $@@signal odd : boolean;\
 $@@signal bits : std_logic_vector(3 downto 0);\
 $begin\
 $@@i <= to_integer(index);\
+$@@i_plus_1 <= i + 1 when nbytes_1(1) and i < (property.nitems - 1) else i;\
 $@@odd <= (i + property.offset/2) rem 2 = 1;\
 $@@bits <= util.slv(nbytes_1(1)) & util.slv(index(0)) &\
 $@@@@@@@@@ util.slv(property.offset(1)) & util.slv(is_big_endian);\
 $@@with bits select\
 $@@@@data_out(31 downto 16) <=\
 $@@@@@@std_logic_vector(value(i))@@ when x"1"|x"2"|x"4"|x"7"|x"9"|x"f",\
-$@@@@@@std_logic_vector(value(i+1)) when others;\
+$@@@@@@std_logic_vector(value(i_plus_1)) when others;\
 $@@with bits select\
 $@@@@data_out(15 downto 0) <=\
 $@@@@@@std_logic_vector(value(i))@@ when x"0"|x"3"|x"5"|x"6"|x"8"|x"e",\
-$@@@@@@std_logic_vector(value(i+1)) when others;\
+$@@@@@@std_logic_vector(value(i_plus_1)) when others;\
 $end rtl;
 
 #define RPROP_ARRAY_32(pretty,which,def,rng,lhs,rhs) \

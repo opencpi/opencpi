@@ -192,11 +192,11 @@ vhdlType(const OU::ValueType &dt, std::string &decl, std::string &type, bool con
   } else if (dt.m_arrayDimensions)
     vhdlArrayType(dt, dt.m_arrayRank, dt.m_arrayDimensions, decl, convert);
   else if (dt.m_isSequence) {
-#if 0
-    decl = "type %s_t is ";
-    vhdlArrayType(dt, 1, &dt.m_sequenceLength, decl, convert);
-X<    decl += "; type seq is record length : ulong_t; data : array : seqarray_t; end record;\n";
-#endif
+    std::vector<size_t> seqdims(dt.m_arrayRank + 1);
+    seqdims[0] = dt.m_sequenceLength;
+    for (unsigned n = 0; n < dt.m_arrayRank; n++)
+      seqdims[n+1] = dt.m_arrayDimensions[n];
+    vhdlArrayType(dt, dt.m_arrayRank+2, &seqdims[0], decl, convert);
   } else
     vhdlBaseType(dt, type, convert);
  }
@@ -254,6 +254,35 @@ static struct VhdlUnparser : public OU::Unparser {
   unparseBool(std::string &s, bool val, bool) const {
     s += val ? "btrue" : "bfalse";
     return !val;
+  }
+  bool 
+  unparseChar(std::string &s, char val, bool) const {
+    if (isprint(val)) {
+      s += '\'';
+      if (val == '\'')
+	s += '\'';
+      s += val;
+      s += '\'';
+    } else
+      OU::formatAdd(s, "character'val(%u)", val & 0xff);
+    return val == 0;
+  }
+  bool 
+  unparseString(std::string &s, const char *val, bool) const {
+    if (!val || !*val) {
+      s += "\"\"";
+      return true;
+    }
+    for (const char *cp = val; *cp; cp++)
+      if (isprint(*cp)) {
+	if (*cp == '"')
+	  s += '"';
+	s += *cp;
+      } else {
+	ocpiBad("Illegal string character converting to VHDL: 0x%x, replaced by space", *cp & 0xff);
+	s += ' ';
+      }	
+    return false;
   }
   bool 
   unparseFloat(std::string &s, float val, bool hex) const {
@@ -608,6 +637,15 @@ emitSignals(FILE *f, Language lang, bool useRecords, bool inPackage, bool inWork
 
 void Worker::
 prType(OU::Property &pr, std::string &type) {
+#if 1
+  if (pr.m_baseType == OA::OCPI_Enum || pr.m_isSequence || pr.m_arrayRank)
+    type = pr.m_name + "_t";
+  else {
+    OU::format(type, "%s_t", OU::baseTypeNames[pr.m_baseType]);
+    if (pr.m_baseType == OA::OCPI_String)
+      OU::formatAdd(type, "(0 to %zu)", pr.m_stringLength);
+  }
+#else
   size_t nElements = 1;
   if (pr.m_arrayRank)
     nElements *= pr.m_nItems;
@@ -628,6 +666,7 @@ prType(OU::Property &pr, std::string &type) {
 	       base.c_str(), nElements - 1);
   else
     OU::format(type, "%s_t", base.c_str());
+#endif
 }
 
 static char *
@@ -1647,18 +1686,22 @@ emitImplHDL(bool wrap) {
 	  char *temp = NULL;
 	  tempName(temp, maxPropName, "%s_value", pr.m_name.c_str());
 	  if (pr.m_isParameter && pr.m_isReadable ||
-	      !pr.m_isParameter && (pr.m_isWritable && pr.m_isReadable && !pr.m_isVolatile ||
-				    pr.m_baseType == OA::OCPI_Enum)) {
+	      !pr.m_isParameter &&
+	      (pr.m_isWritable && pr.m_isReadable && !pr.m_isVolatile ||
+	       pr.m_baseType == OA::OCPI_Enum ||
+	       pr.m_baseType == OA::OCPI_String && (pr.m_arrayRank || pr.m_isSequence))) {
 	    if (first) {
 	      fprintf(f,
 		      "  -- internal signals between property registers and the readback mux\n"
 		      "  -- for those that are writable, readable, and not volatile\n"
-		      "  -- or enumerations\n");
+		      "  -- or enumerations or string arrays/sequences\n");
 	      first = false;
 	    }
-	    fprintf(f,
-		    "  signal my_%s : %s;\n", temp,
-		    pr.m_baseType == OA::OCPI_Enum ? "ulong_t" : type.c_str());
+	    fprintf(f, "  signal my_%s : ", temp);
+	    //	    if (pr.m_baseType == OA::OCPI_String && (pr.m_arrayRank || pr.m_isSequence))
+	    //	      fprintf(f, "string_array_t(%s_t'range(0), ");
+	    //	    else
+	      fprintf(f, "%s;\n", pr.m_baseType == OA::OCPI_Enum ? "ulong_t" : type.c_str());
 	  }
 	  if (!pr.m_isParameter && pr.m_isVolatile && pr.m_baseType == OA::OCPI_Enum) {
 	    // We need a separate readback signal for volatile enumerations
@@ -1811,6 +1854,7 @@ emitImplHDL(bool wrap) {
       for (PropertiesIter pi = m_ctl.properties.begin(); nonRaw(pi); pi++) {
 	OU::Property &pr = **pi;
 	const char *name = pr.m_name.c_str();
+	bool isStringArray = pr.m_baseType == OA::OCPI_String && (pr.m_isSequence || pr.m_arrayRank);
 	if (pr.m_isParameter) {
 	  if (pr.m_isReadable) {
 	    std::string constValue, val;
@@ -1820,6 +1864,22 @@ emitImplHDL(bool wrap) {
 	  } else
 	    continue;
 	} else if (pr.m_isWritable) {
+	  if (isStringArray)
+	    fprintf(f,
+		    "  -- String arrays require wrapper to convert to the generic string_array_t\n"
+		    "  %s_property_write_wrapper : block\n"
+		    "    port(val : out %s_t);\n"
+                    "    port map(val => %s%s%s);\n"
+		    "    signal sa_temp : string_array_t(%s_t'range, 0 to %zu-1);\n"
+		    "  begin\n"
+		    "    -- convert stored string array value to the specific type\n"
+		    "    g0: for i in %s_t'range generate\n"
+		    "      g1: for j in val(0)'range generate\n"
+		    "        val(i)(j) <= sa_temp(i,j);\n"
+		    "      end generate g1;\n"
+		    "    end generate g0;\n",
+		    name, name, pr.m_isReadable ? "my_" : "props_to_worker.",
+		    name, pr.m_isReadable ? "_value" : "", name, OU::roundUp(pr.m_stringLength+4, 4), name);
 	  fprintf(f, 
 		  "  %s_property : component ocpi.props.%s%s_property\n"
 		  "    generic map(worker       => work.%s_worker_defs.worker,\n"
@@ -1850,12 +1910,18 @@ emitImplHDL(bool wrap) {
 		  n, n,
 		  pr.m_nBits >= 32 || pr.m_arrayRank || pr.m_isSequence ?
 		  31 : (pr.m_baseType == OA::OCPI_Bool ? 0 : pr.m_nBits-1));
-	  if (pr.m_isReadable && !pr.m_isVolatile || pr.m_baseType == OA::OCPI_Enum)
+	  if ((pr.m_isSequence || pr.m_arrayRank) && pr.m_baseType != OA::OCPI_String) 
 	    fprintf(f,
-		    "                value        => my_%s_value, -- for readback and worker\n", name);
+		    "                %s_t(value)    => ", pr.m_name.c_str());
 	  else
 	    fprintf(f,
-		    "                value        => props_to_worker.%s,\n", name);
+		    "                value        => ");
+	  if (isStringArray)
+	    fprintf(f, "sa_temp,\n");
+	  else if (pr.m_isReadable && !pr.m_isVolatile || pr.m_baseType == OA::OCPI_Enum)
+	    fprintf(f, "my_%s_value, -- for readback and worker\n", name);
+	  else
+	    fprintf(f, "props_to_worker.%s,\n", name);
 	  if (pr.m_isInitial)
 	    fprintf(f, "                written      => open");
 	  else
@@ -1883,6 +1949,9 @@ emitImplHDL(bool wrap) {
 		    "                offset        => offsets(%u)(%zu downto 0)",
 		    n, decodeWidth-1);
 	  fprintf(f, ");\n");
+	  if (isStringArray)
+	    // String arrays require a wrapper to convert to the generic string_array_t
+	    fprintf(f, "end block; -- end of wrapper for writable string_array conversion\n");
 	  if (pr.m_baseType == OA::OCPI_Enum) {
 	    fprintf(f,
 		    "  -- work around isim 14.6 bug since this did not work:\n"
@@ -1896,6 +1965,28 @@ emitImplHDL(bool wrap) {
 	    fprintf(f, "  props_to_worker.%s <= my_%s_value;\n", name, name);
 	}
 	if (pr.m_isReadable) {
+	  std::string var; // the value fed into the readback
+	  if (pr.m_isVolatile && pr.m_baseType == OA::OCPI_Enum)
+	    OU::format(var, "my_volatile_%s_value", name);
+	  else if (pr.m_isParameter || (!pr.m_isVolatile && pr.m_isWritable))
+	    OU::format(var, "my_%s_value", name);
+	  else if (pr.m_isVolatile || !pr.m_isWritable)
+	    OU::format(var, "props_from_worker.%s", name);
+	  if (isStringArray)
+	    fprintf(f,
+		    "  -- String arrays require wrapper to convert to the generic string_array_t\n"
+		    "  %s_property_read_wrapper : block\n"
+		    "    port(val : in %s_t);\n"
+                    "    port map(val => %s);\n"
+		    "    signal sa_temp : string_array_t(%s_t'range, 0 to %zu-1);\n"
+		    "  begin\n"
+		    "    -- convert stored string array value to the specific type\n"
+		    "    g0: for i in %s_t'range generate\n"
+		    "      g1: for j in val(0)'range generate\n"
+		    "        sa_temp(i,j) <= val(i)(j);\n"
+		    "      end generate g1;\n"
+		    "    end generate g0;\n",
+		    name, name, var.c_str(), name, OU::roundUp(pr.m_stringLength+1, 4), name);
 	  fprintf(f, 
 		  "  %s_readback : component ocpi.props.%s_read%s_property\n"
 		  "    generic map(worker       => work.%s_worker_defs.worker,\n"
@@ -1906,12 +1997,16 @@ emitImplHDL(bool wrap) {
 				    OA::OCPI_ULong : pr.m_baseType],
 		  pr.m_arrayRank || pr.m_isSequence ? "_array" : "",
 		  m_implName, m_implName, n);
-	  if (pr.m_isVolatile && pr.m_baseType == OA::OCPI_Enum)
-	    fprintf(f, "   value        => my_volatile_%s_value,\n", name);
-	  else if (pr.m_isParameter || !pr.m_isVolatile && pr.m_isWritable)
-	    fprintf(f, "   value        => my_%s_value,\n", name);
-	  else if (pr.m_isVolatile || !pr.m_isWritable)
-	    fprintf(f, "   value        => props_from_worker.%s,\n", name);
+	  fprintf(f, "   value        => ");
+	  if (isStringArray)
+	    fprintf(f, "sa_temp,\n");
+	  else if (pr.m_isSequence || pr.m_arrayRank)
+	    fprintf(f, "%s_array_t(%s),\n",
+		      OU::baseTypeNames[pr.m_baseType == OA::OCPI_Enum ?
+					OA::OCPI_ULong : pr.m_baseType],
+		    var.c_str());
+	  else
+	    fprintf(f, "%s,\n", var.c_str());
 	  fprintf(f,   "                is_big_endian=> my_big_endian,\n");
 	  fprintf(f,   "                data_out     => readback_data(%u)", n);
 	  if (pr.m_baseType == OA::OCPI_String)
@@ -1942,6 +2037,9 @@ emitImplHDL(bool wrap) {
 	    fprintf(f, "  my_volatile_%s_value    <= "
 		    "to_ulong(work.%s_constants.%s_t'pos(props_from_worker.%s));\n",
 		    name, m_implName, name, name);
+	  if (isStringArray)
+	    // String arrays require a wrapper to convert to the generic string_array_t
+	    fprintf(f, "end block; -- end of wrapper for readable string_array conversion\n");
 	} else if (m_ctl.nonRawReadables)
 	  fprintf(f, "  readback_data(%u) <= (others => '0');\n", n);
 	n++;
@@ -2010,6 +2108,8 @@ emitSkelHDL() {
 	      "architecture rtl of %s_worker is\n"
 	      "begin\n",
 	      m_implName);
+      for (unsigned i = 0; i < m_ports.size(); i++)
+	m_ports[i]->emitSkelSignals(f);
       if (m_emulate)
         fprintf(f, "  props_out.violation <= bfalse;\n");
       if (m_signals.size())

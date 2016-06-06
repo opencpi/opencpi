@@ -238,6 +238,7 @@ class WciPort : public OcpPort {
 		       std::string *signalIn, std::string &exprs);
   const char *finalizeExternal(Worker &aw, Worker &iw, InstancePort &ip,
 			       bool &cantDataResetWhileSuspended);
+  void emitSkelSignals(FILE *f);
 };
 
 class RccPort : public DataPort {

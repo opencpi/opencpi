@@ -924,7 +924,8 @@ unparseValue(std::string &s, unsigned nSeq, size_t nArray, bool hex, char comma,
 #define OCPI_DATA_TYPE(sca,c,u,b,run,pretty,storage)     		    \
   case OA::OCPI_##pretty:		        			    \
     return up.unparse##pretty(s,					    \
-			      m_vt->m_isSequence || m_vt->m_arrayRank ?	    \
+                              (m_vt->m_isSequence || m_vt->m_arrayRank) &&  \
+                              m_p##pretty ?                                 \
 			      m_p##pretty[nSeq * m_vt->m_nItems + nArray] : \
 			      m_##pretty, hex);				    \
       break;
@@ -933,12 +934,12 @@ unparseValue(std::string &s, unsigned nSeq, size_t nArray, bool hex, char comma,
 #undef OCPI_DATA_TYPE
   case OA::OCPI_Enum:
       return up.unparseEnum(s, 
-			    m_vt->m_isSequence || m_vt->m_arrayRank ?
+			    (m_vt->m_isSequence || m_vt->m_arrayRank) && m_pEnum ?
 			    m_pEnum[nSeq * m_vt->m_nItems + nArray] :
 			    m_Enum, m_vt->m_enums, hex);
   case OA::OCPI_Struct:
     return up.unparseStruct(s,
-			    m_vt->m_isSequence || m_vt->m_arrayRank ?
+			    (m_vt->m_isSequence || m_vt->m_arrayRank) && m_pStruct ?
 			    m_pStruct[nSeq * m_vt->m_nItems + nArray] :
 			    m_Struct, m_vt->m_members, m_vt->m_nMembers, hex, comma);
   case OA::OCPI_none: case OA::OCPI_scalar_type_limit:;

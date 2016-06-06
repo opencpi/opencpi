@@ -6,6 +6,7 @@ if test "$1" != ""; then
 fi
 
 if test -f isim.wdb; then
+  OCPI_XILINX_TOOLS_DIR=$($OCPI_CDK_DIR/scripts/xilinx-ise.sh) || exit 1
   set -e 
   . $OCPI_XILINX_TOOLS_DIR/settings64.sh > /dev/null
   export LM_LICENSE_FILE=$OCPI_XILINX_LICENSE_FILE
@@ -17,6 +18,9 @@ else
   files=(`shopt -s nullglob; echo *.*sim.20*[0-9]`)
   nfiles=${#files[@]}
   if test $nfiles == 0; then
+    if [ -d simulations ]; then
+      exec sh $0 simulations
+    fi
     echo No simulation files \(isim.wdb or vsim.wlf\) nor simulation directories \(*.*sim.\<date\>\) found.
     exit 1
   fi

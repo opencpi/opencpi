@@ -354,6 +354,33 @@ emitPortSignals(FILE *f, Attachments &atts, Language lang, const char *indent,
 			     signalIn, exprs);
 }
 
+void WciPort::
+emitSkelSignals(FILE *f) {
+  // A skeleton should set every volatile property
+  if (m_worker->m_ctl.nonRawVolatiles) {
+    fprintf(f,
+	    "  %s Skeleton assignments for %s's volatile properties\n",
+	    hdlComment(m_worker->m_language), m_worker->m_implName);
+    if (m_worker->m_language != VHDL)
+      return;
+    for (PropertiesIter pi = m_worker->m_ctl.properties.begin();
+	 pi != m_worker->m_ctl.properties.end(); pi++)
+      if ((*pi)->m_isVolatile) {
+	const OU::Property &pr = **pi;
+	if (pr.m_isSequence)
+	  fprintf(f,
+		  "  -- zero length sequence output, data values are not driven here yet\n"
+		  "  props_out.%s_length <= (others => '0');\n", pr.m_name.c_str());
+	else {
+	  std::string value;
+	  OU::Value v(pr); // This constructor creates a zero value
+	  vhdlValue(NULL, pr.m_name.c_str(), v, value, false);
+	  fprintf(f, "  props_out.%s <= %s;\n", pr.m_name.c_str(), value.c_str());
+	}
+      }
+  }
+}
+
 const char *WciPort::
 finalizeExternal(Worker &aw, Worker &iw, InstancePort &/*ip*/,
 		 bool &cantDataResetWhileSuspended) {
