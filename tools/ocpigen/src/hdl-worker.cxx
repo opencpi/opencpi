@@ -335,13 +335,12 @@ static void
 vhdlConstant2Readback(const OU::Property &pr, const std::string &val, std::string &out) {
   std::string decl, type;
   vhdlType(pr, decl, type, false);
-  if (decl.length())
-    if (pr.m_baseType == OA::OCPI_Enum)
+  if (decl.length() && pr.m_baseType == OA::OCPI_Enum)
       OU::format(out, "to_unsigned(%s_t'pos(%s),ulong_t'length)", pr.m_name.c_str(), val.c_str());
-    else if (pr.m_arrayDimensions)
-      OU::format(out, "%s_array_t(%s)", OU::baseTypeNames[pr.m_baseType], val.c_str());
-    else
-      out = val;
+  //    else if (pr.m_arrayDimensions)
+  //    OU::format(out, "%s_array_t(%s)", OU::baseTypeNames[pr.m_baseType], val.c_str());
+  //    else
+  //      out = val;
   else
     out = val;
 }
@@ -753,7 +752,7 @@ emitVhdlLibraries(FILE *f) {
 
 const char *Worker::
 emitVhdlPackageConstants(FILE *f) {
-  size_t decodeWidth = 0, rawBase = 0, firstRaw = 0;
+  size_t decodeWidth = 0, rawBase = 0; //, firstRaw = 0;
   char ops[OU::Worker::OpsLimit + 1 + 1];
   for (unsigned op = 0; op <= OU::Worker::OpsLimit; op++)
     ops[OU::Worker::OpsLimit - op] = '0';
@@ -763,7 +762,8 @@ emitVhdlPackageConstants(FILE *f) {
     for (unsigned op = 0; op <= OU::Worker::OpsLimit; op++)
       ops[OU::Worker::OpsLimit - op] = m_ctl.controlOps & (1 << op) ? '1' : '0';
     rawBase = m_ctl.rawProperties ?
-      (m_ctl.firstRaw ? m_ctl.firstRaw->m_offset : 0) : m_ctl.sizeOfConfigSpace; 
+      (m_ctl.firstRaw ? m_ctl.firstRaw->m_offset : 0) :
+      OCPI_UTRUNCATE(size_t, m_ctl.sizeOfConfigSpace); 
   }
   if (!m_ctl.nNonRawRunProperties) {
     fprintf(f, "-- no properties for this worker\n");
@@ -801,8 +801,8 @@ emitVhdlPackageConstants(FILE *f) {
 	n++;
       }
     }    
-    if (!m_ctl.firstRaw)
-      firstRaw = n;
+    //    if (!m_ctl.firstRaw)
+    //      firstRaw = n;
     fprintf(f, "  -- %s\n  );\n", last);
   }
   if (!m_noControl)

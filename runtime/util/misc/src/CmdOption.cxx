@@ -61,7 +61,7 @@ namespace OCPI {
 	  argv++;
 	}
 	const char *err;
-	if ((err = v.parse(argValue, NULL, seen)))
+	if ((err = v.parse(argValue, NULL, m.m_isSequence))) // seen)))
 	  return setError(esprintf("When parsing option '%s', value '%s' invalid: %s",
 				   *argv, argValue, err));
       }

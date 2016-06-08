@@ -951,7 +951,7 @@ public:
   void 
   set(RegisterOffset offset, size_t bytes, uint32_t data, uint32_t *status) {
     ocpiDebug("SDP Accessor write 0x%x (%d) for offset 0x%zx of %zu bytes", data, data, offset, bytes);
-    sdpRequest(false, offset, bytes, (uint8_t *)&data, status);
+    sdpRequest(false, offset, bytes, (uint8_t *)&data + (offset & 3), status);
     ocpiDebug("SDP Accessor write from offset %zx complete", offset);
   }
   uint64_t
