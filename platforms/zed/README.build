@@ -85,14 +85,14 @@ First, to build OpenCPI for mode zynq/arm code, you need to establish
 the build environment for zynq cross-compilation.  OpenCPI user and
 kernel code is built using the Xilinx-EDK-supplied ARM/Zynq
 cross-build tools.  There is nothing specific to the Zed board about
-about these Zynq tools.  The ocpized.sh file in the $OCPI_BASE_DIR is
+about these Zynq tools.  The example_zed_env.sh file in the $OCPI_BASE_DIR is
 an example you should *copy* and customize for your own environment.
-It refers to the subsidiary file $OCPI_BASE_DIR/env/zynq.sh which you
+It refers to the subsidiary file zed-env.sh here which you
 should not need to modify.  Assuming you have already built OpenCPI
 for CentOS6, you need to source this customized environment script in
 a new shell/window, in $OCPI_BASE_DIR e.g.:
 
-  % cp ocpized.sh myzed.sh
+  % cp example_zed_env.sh myzed.sh
   { customize myzed.sh, especially to point to your Xilinx tools/license}
   % source myzed.sh
 
@@ -315,7 +315,7 @@ From the top level directory of an OpenCPI installation a.k.a. OCPI_BASE_DIR,
 that is already functional for the CentOS6 system, with a Xilinx ISE+EDK installation,
 in a fresh/new shell/window, do these steps:
 
- % cp ocpized.sh myzed.sh
+ % cp example_zed_env.sh myzed.sh
  { customize myzed.sh for your build environment, e.g. where Xilinx tools are }
  { customize the Xilinx Linux release if needed - see README.linux if you need to}
  % source myzed.sh

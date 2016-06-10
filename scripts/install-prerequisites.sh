@@ -29,13 +29,6 @@ else
   # Initialize access to CDK
   source exports/scripts/ocpisetup.sh exports/scripts/ocpisetup.sh
 fi
-if test $OCPI_TOOL_HOST = $OCPI_TARGET_HOST; then
-  echo ================================================================================
-  echo Installing the standard packages for $OCPI_TOOL_PLATFORM.
-   platforms/$OCPI_TOOL_PLATFORM/$OCPI_TOOL_PLATFORM-packages.sh
-  echo ================================================================================
-  echo All basic prerequisites are installed in the system.
-fi
 if test -d /opt/opencpi/prerequisites; then
   echo The /opt/opencpi directory is already created.
 else
@@ -43,6 +36,16 @@ else
   sudo mkdir -p /opt/opencpi
   sudo chmod a+rwx /opt/opencpi
   mkdir -p /opt/opencpi/prerequisites
+fi
+if test $OCPI_TOOL_HOST = $OCPI_TARGET_HOST; then
+  echo ================================================================================
+  echo Installing the standard packages for $OCPI_TOOL_PLATFORM.
+   platforms/$OCPI_TOOL_PLATFORM/$OCPI_TOOL_PLATFORM-packages.sh
+  echo ================================================================================
+  echo All basic prerequisites are installed in the system.
+  echo ================================================================================
+  echo Installing the patchelf utility  under /opt/opencpi/prerequisites
+  scripts/install-patchelf.sh
 fi
 echo ================================================================================
 echo We are running in `pwd` where the git clone of opencpi has been placed.
@@ -53,8 +56,5 @@ scripts/install-gtest.sh
 echo ================================================================================
 echo Installing the LZMA compression library '(lzma)' under /opt/opencpi/prerequisites
 scripts/install-lzma.sh
-echo ================================================================================
-echo Installing the patchelf utility  under /opt/opencpi/prerequisites
-scripts/install-patchelf.sh
 echo ================================================================================
 echo All OpenCPI prerequisites have been installed.

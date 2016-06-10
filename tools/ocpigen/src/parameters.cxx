@@ -192,22 +192,24 @@ parseBuildFile(bool optional) {
     return NULL;
 #if 1
   // We are only looking next to the OWD or "gen" below it
-  // And it is optional in any case.
+  // And it may be optional in any case.
   std::string dir;
   const char *slash = strrchr(m_file.c_str(), '/');
   if (slash)
     dir.assign(m_file.c_str(), (slash + 1) - m_file.c_str());
+  // First look for the build file next to the OWD
   OU::format(fname, "%s%s.build", dir.c_str(), m_implName);
   if (!OS::FileSystem::exists(fname)) {
-    std::string fname1;
-    OU::format(fname1, "%sgen/%s.build", dir.c_str(), m_implName);
-    if (OS::FileSystem::exists(fname1))
-      fname = fname1;
-    else if (optional)
-      return NULL;
-    else
-      return OU::esprintf("Cannot find %s.build in worker directory or \"gen\" subdirectory",
-			m_implName);
+    // Next look for it in the gen/ below the OWD
+    OU::format(fname, "%sgen/%s.build", dir.c_str(), m_implName);
+    if (!OS::FileSystem::exists(fname)) {
+      // Finally look in the local gen subdir
+      OU::format(fname, "gen/%s.build", m_implName);
+      if (!OS::FileSystem::exists(fname))
+	return optional ? NULL :
+	  OU::esprintf("Cannot find %s.build in worker directory or \"gen\" subdirectory",
+		       m_implName);
+    }
   }
 #else
   OU::format(fname, "%s.build", m_implName);
