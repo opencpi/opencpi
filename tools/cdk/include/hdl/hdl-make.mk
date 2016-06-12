@@ -338,16 +338,21 @@ HdlTargetSrcFiles=\
 #		$(and $(ParamVHDLtype_$(ParamConfig)_$n), \
 #		   echo '$(ParamVHDLtype_$(ParamConfig)_$n)' ;) \
 #
+# $(AT)(\
+#      echo -- This file sets values for top level generics ;\
+#      echo library ocpi\; use ocpi.all, ocpi.types.all\; ;\
+#      echo package body $(Worker)_constants is ;\
+#      $(foreach n,$(WorkerParamNames)$(infox WPN:$(WorkerParamNames):),\
+# 	echo '$(ParamVHDL_$(ParamConfig)_$n)'\; ;) \
+#      echo end $(Worker)_constants\; \
+# ) > $@
 
 $(OutDir)target-%/generics.vhd: $$(VHDLDefsFile) | $(OutDir)target-%
-	$(AT)(\
-	     echo -- This file sets values for top level generics ;\
-	     echo library ocpi\; use ocpi.all, ocpi.types.all\; ;\
-	     echo package body $(Worker)_constants is ;\
-	     $(foreach n,$(WorkerParamNames)$(infox WPN:$(WorkerParamNames):),\
-		echo '$(ParamVHDL_$(ParamConfig)_$n)'\; ;) \
-	     echo end $(Worker)_constants\; \
-	) > $@
+	$(AT)echo Generating the VHDL constants file for config $(ParamConfig): $@
+	$(AT)$(OcpiGen) -D $(dir $@) \
+	                $(and $(Assembly),-S $(Assembly)) $(and $(Platform),-P $(Platform)) \
+	                $(and $(PlatformDir),-F $(PlatformDir)) \
+	                -g$(ParamConfig) $(ImplXmlFile)
 
 $(OutDir)target-%/generics.vh: | $(OutDir)target-%
 	$(AT)(\

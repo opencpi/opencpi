@@ -1048,8 +1048,15 @@ ezxml_t ezxml_cut(ezxml_t xml)
 ezxml_t ezxml_cchild(ezxml_t xml, const char *name)
 {
     xml = (xml) ? xml->child : NULL;
-    while (xml && strcasecmp(name, xml->name)) xml = xml->sibling;
+    while (xml && strcasecmp(name, xml->name)) xml = xml->ordered;
     return xml;
+}
+// returns the next child tag with the same name CASE INSENSITIVE
+ezxml_t ezxml_cnext(ezxml_t xml)
+{
+  const char *name = xml->name;
+  while (xml->ordered && strcasecmp(name, xml->ordered->name)) xml = xml->ordered;
+  return xml->ordered;
 }
 // returns the value of the requested tag attribute or NULL if not found
 // CASE INSENSTIVE: this code just copied from ezxml_attr

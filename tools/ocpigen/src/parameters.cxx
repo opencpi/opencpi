@@ -116,16 +116,16 @@ write(FILE *xf, FILE *mf) {
       std::string val;
       if (m_worker.m_model == HdlModel) {
 	std::string typeDecl, type;
-	vhdlType(*p.value->m_vt, typeDecl, type);
+	vhdlType(*p.param, typeDecl, type);
 	//	if (typeDecl.length())
 	//	  fprintf(mf, "ParamVHDLtype_%zu_%s:=type %s_t is %s;\n",
 	//		  nConfig, p.param->m_name.c_str(), p.param->m_name.c_str(), typeDecl.c_str());
 	fprintf(mf, "ParamVHDL_%zu_%s:=constant %s : ",
 		nConfig, p.param->m_name.c_str(), p.param->m_name.c_str());
-	if (typeDecl.length())
-	  fprintf(mf, "%s_t", p.param->m_name.c_str());
-	else
-	  fprintf(mf, "%s", type.c_str());
+	//	if (typeDecl.length())
+	//	  fprintf(mf, "%s_t", p.param->m_name.c_str());
+	//	else
+	fprintf(mf, "%s", type.c_str());
 	fprintf(mf, " := ");
 	for (const char *cp = m_worker.hdlValue(p.param->m_name, *p.value, val, false, VHDL);
 	     *cp; cp++) {
@@ -171,6 +171,53 @@ write(FILE *xf, FILE *mf) {
   }
   if (xf)
     fputs("  </configuration>\n", xf);
+}
+
+void ParamConfig::
+writeVhdlConstants(FILE *gf) {
+  fprintf(gf,
+	  "-- This file sets values for top level generics\n"
+	  "library ocpi; use ocpi.all, ocpi.types.all;\n"
+	  "package body %s_constants is\n"
+	  "  -- Parameter property values as constants\n",
+	  m_worker.m_implName);
+  for (unsigned n = 0; n < params.size(); n++) {
+    Param &p = params[n];
+    if (p.param == NULL)
+      continue;
+    const OU::Property &pr = *p.param;
+    std::string typeDecl, type, val;
+    vhdlType(pr, typeDecl, type);
+    m_worker.hdlValue(pr.m_name, *p.value, val, false, VHDL);
+    fprintf(gf, "  constant %s : %s := %s;\n",
+	    p.param->m_name.c_str(), type.c_str(), val.c_str());
+  }
+  bool first = true;
+  for (PropertiesIter pi = m_worker.m_ctl.properties.begin();
+       pi != m_worker.m_ctl.properties.end(); pi++) {
+    OU::Property &pr = **pi;
+    if (first &&
+	(pr.m_stringLengthExpr.length() ||
+	 pr.m_sequenceLengthExpr.length() ||
+	 pr.m_arrayRank && pr.m_arrayDimensionsExprs[0].length())) {
+      fprintf(gf, "  -- Attributes of properties determined by parameter expressions\n");
+      first = false;
+    }
+    if (pr.m_baseType == OA::OCPI_String && pr.m_stringLengthExpr.length())
+      fprintf(gf, "  constant %s_string_length : positive := %zu;\n",
+	      pr.m_name.c_str(), pr.m_stringLength);
+    if (pr.m_isSequence && pr.m_sequenceLengthExpr.length())
+      fprintf(gf, "  constant %s_sequence_length : positive := %zu;\n",
+	      pr.m_name.c_str(), pr.m_sequenceLength);
+    if (pr.m_arrayRank && pr.m_arrayDimensionsExprs[0].length()) {
+      fprintf(gf, "  constant %s_array_dimensions : dimensions_t(0 to %zu) := (",
+	      pr.m_name.c_str(), pr.m_arrayRank - 1);
+      for (unsigned n = 0; n < pr.m_arrayRank; n++)
+	fprintf(gf, "%s%u => %zu", n ? ", " : "", n, pr.m_arrayDimensions[n]);
+      fprintf(gf, ");\n");
+    }
+  }
+  fprintf(gf, "end %s_constants;\n", m_worker.m_implName);
 }
 
 // Is the given configuration the same as this one?
@@ -432,7 +479,7 @@ emitToolParameters() {
 }
 
 // Based on worker xml, read the <worker>.build, and emit the
-// gen/<worker>.make
+// gen/<worker>-params.mk
 const char *Worker::
 emitMakefile() {
   const char *err;
@@ -443,6 +490,20 @@ emitMakefile() {
   for (size_t n = 0; n < m_paramConfigs.size(); n++)
     m_paramConfigs[n]->used = true;
   return writeParamFiles(mkFile, NULL);  
+}
+// Based on worker xml, read the <worker>.build, and emit the generics file
+const char *Worker::
+emitVhdlConstants(size_t config) {
+  const char *err;
+  FILE *genFile;
+  if ((err = parseBuildFile(false)) ||
+      (err = openOutput("generics", m_outDir, "", "", ".vhd", NULL, genFile)))
+    return err;
+  if (config >= m_paramConfigs.size() || m_paramConfigs[config] == NULL)
+    return OU::esprintf("Invalid parameter configuration for VHDL generics: %zu", config);
+  m_paramConfigs[config]->writeVhdlConstants(genFile);
+  return fclose(genFile) ?
+    OU::esprintf("File close of VHDL generics file failed.  Disk full?") : NULL;
 }
 
 #if 0

@@ -114,7 +114,7 @@ rawValueBytes(const OU::ValueType &dt) {
   case OA::OCPI_Enum:
     return sizeof(uint32_t);
   case OA::OCPI_String:
-    return 0; // this must be special cased in the caller anyway
+    return dt.m_stringLength+1; // this must be special cased in the caller anyway
   default:
     return dt.m_nBits / CHAR_BIT;
   }
@@ -126,7 +126,7 @@ vhdlBaseType(const OU::ValueType &dt, std::string &s, bool convert) {
   if (convert)
     OU::formatAdd(s, "std_logic_vector(%zu downto 0)", rawBitWidth(dt)-1);
   else if (dt.m_baseType == OA::OCPI_String)
-      OU::formatAdd(s, "string_t(0 to %zu)", dt.m_stringLength);
+    OU::formatAdd(s, "string_t(0 to %zu)", dt.m_stringLength);
   else {
     for (const char *cp = OU::baseTypeNames[dt.m_baseType]; *cp; cp++)
       s += (char)tolower(*cp);
@@ -134,12 +134,20 @@ vhdlBaseType(const OU::ValueType &dt, std::string &s, bool convert) {
   }
 }
 static void
-vhdlArrayType(const OU::ValueType &dt, size_t rank, const size_t */*dims*/, std::string &s,
-	      bool convert) {
+vhdlArrayType(const OU::Property &dt, size_t rank, const size_t */*dims*/, std::string &decl,
+	      std::string &type, bool convert) {
   if (convert) {
-    OU::formatAdd(s, "std_logic_vector(%zu downto 0)", dt.m_nItems * rawBitWidth(dt) - 1);
+    OU::format(type, "std_logic_vector(%zu downto 0)", dt.m_nItems * rawBitWidth(dt) - 1);
     return;
   }
+  // Single dimensional arrays when type is neither enum nor string us built-in array types
+  if (rank == 1 && dt.m_baseType != OA::OCPI_String && dt.m_baseType != OA::OCPI_Enum) {
+    for (const char *cp = OU::baseTypeNames[dt.m_baseType]; *cp; cp++)
+      type += (char)tolower(*cp);
+    type += "_array_t";
+    return;
+  }
+  type = dt.m_name + "_array_t";
   //  else if (dt.m_baseType == OA::OCPI_String) {
   //    OU::formatAdd(s,
   //		  "type %%s_t is array(0 to natural range <>) of string_t(0 to %zu)",
@@ -148,14 +156,13 @@ vhdlArrayType(const OU::ValueType &dt, size_t rank, const size_t */*dims*/, std:
   //		  //  		  dims[0] - 1, dt.m_stringLength);
   //    else {
   rank = dt.m_arrayRank + (dt.m_isSequence ? 1 : 0);
-  s += "type %s_t is array (";
+  OU::format(decl, "type %s_array_t is array (", dt.m_name.c_str());
   for (unsigned i = 0; i < rank; i++) {
     std::string asize;
     size_t dim = i >= dt.m_arrayRank ? dt.m_sequenceLength : dt.m_arrayDimensions[i];
     static std::string null;
     std::string expr =
-      i >= dt.m_arrayRank ? dt.m_sequenceLengthExpr :
-      (i < dt.m_arrayDimensionsExprs.size() ? dt.m_arrayDimensionsExprs[i] : null);
+      i >= dt.m_arrayRank ? dt.m_sequenceLengthExpr : dt.m_arrayDimensionsExprs[i];
     if (expr.empty())
       OU::format(asize, "0 to %zu", dim-1);
     else
@@ -164,40 +171,40 @@ vhdlArrayType(const OU::ValueType &dt, size_t rank, const size_t */*dims*/, std:
       //      asize = expr; // for now simply expressions should work;
     // allow parameter values to determine the size of the array
     //      OU::formatAdd(s, "%s0 to %zu", i ? ", " : "", dims[i] - 1);
-    OU::formatAdd(s, "%s%s", i ? ", " : "", asize.c_str());
+    OU::formatAdd(decl, "%s%s", i ? ", " : "", asize.c_str());
   }
-  s += ") of ";
+  decl += ") of ";
   if (dt.m_baseType == OA::OCPI_String) {
-    s += "string_t(0 to ";
+    decl += "string_t(0 to ";
     if (dt.m_stringLengthExpr.empty())
-      OU::formatAdd(s, "%zu", dt.m_stringLength);
+      OU::formatAdd(decl, "%zu", dt.m_stringLength);
     else {
-      fprintf(stderr, "strlenexp:%s\n", dt.m_stringLengthExpr.c_str());
+      //      fprintf(stderr, "strlenexp:%s\n", dt.m_stringLengthExpr.c_str());
       ocpiCheck("arrays of strings must have fixed stringlength"==0);
     }
     //      s += dt.m_stringLengthExpr; // for now simply expressions should work;
-    s += ")";
+    decl += ")";
   } else
-    vhdlBaseType(dt, s, convert);
+    vhdlBaseType(dt, decl, convert);
 }
-// Only put out types that have parameters, otherwise the
-// built-in types are used.
+// Custom types are for enumerations or string arrays - otherwise built-in types are used.
 void
-vhdlType(const OU::ValueType &dt, std::string &decl, std::string &type, bool convert) {
+vhdlType(const OU::Property &dt, std::string &decl, std::string &type, bool convert) {
   if (!convert && dt.m_baseType == OA::OCPI_Enum) {
-    decl = "type %s_t is (";
+    OU::format(decl, "type %s_t is (", dt.m_name.c_str());
     for (const char **ap = dt.m_enums; *ap; ap++)
       OU::formatAdd(decl, "%s%s_e", ap == dt.m_enums ? "" : ", ", *ap);
     decl += ")";
-  } else if (dt.m_arrayDimensions)
-    vhdlArrayType(dt, dt.m_arrayRank, dt.m_arrayDimensions, decl, convert);
-  else if (dt.m_isSequence) {
+    type = dt.m_name + "_t";
+  } else if (dt.m_isSequence) {
     std::vector<size_t> seqdims(dt.m_arrayRank + 1);
     seqdims[0] = dt.m_sequenceLength;
     for (unsigned n = 0; n < dt.m_arrayRank; n++)
       seqdims[n+1] = dt.m_arrayDimensions[n];
-    vhdlArrayType(dt, dt.m_arrayRank+2, &seqdims[0], decl, convert);
-  } else
+    vhdlArrayType(dt, dt.m_arrayRank+2, &seqdims[0], decl, type, convert);
+  } else if (dt.m_arrayDimensions)
+    vhdlArrayType(dt, dt.m_arrayRank, dt.m_arrayDimensions, decl, type, convert);
+  else
     vhdlBaseType(dt, type, convert);
  }
 static struct VhdlUnparser : public OU::Unparser {
@@ -331,6 +338,9 @@ vhdlInnerValue(const char *pkg, const OU::Value &v, std::string &s) {
 }
 
 // Convert the vhdl constant value to a property readback value.
+// The constant value is what is provided in the generic
+// The readback value is what is fed to the readback module for muxing
+// into the control plane output datapath
 static void
 vhdlConstant2Readback(const OU::Property &pr, const std::string &val, std::string &out) {
   std::string decl, type;
@@ -378,10 +388,10 @@ vhdlConvert(const std::string &name, const OU::ValueType &dt, std::string &v, st
 	  OU::formatAdd(s, "ocpi.types.slv(%s_array_t'%s)", OU::baseTypeNames[dt.m_baseType],
 			v.c_str());
     } else if (dt.m_baseType == OA::OCPI_String)
-      OU::formatAdd(s, "%s_t(to_%s_t(%s,%zu))", name.c_str(),
+      OU::formatAdd(s, "%s_array_t(to_%s_t(%s,%zu))", name.c_str(),
 		    name.c_str(), v.c_str(), dt.m_stringLength);
     else
-      OU::formatAdd(s, "%s_t(ocpi.types.to_%s_array(%s))", name.c_str(),
+      OU::formatAdd(s, "ocpi.types.to_%s_array(%s)",
 		    OU::baseTypeNames[dt.m_baseType], v.c_str());
   } else if (dt.m_baseType == OA::OCPI_Enum) {
     if (toVerilog)
@@ -423,6 +433,7 @@ vhdlValue(const char *pkg, const std::string &name, const OU::Value &v, std::str
 const char*
 verilogValue(const OU::Value &v, std::string &s) {
   const OU::ValueType &dt = *v.m_vt;
+#if 0
   if (dt.m_baseType == OA::OCPI_String) {
     bool indirect = dt.m_arrayRank || dt.m_isSequence;
     s = "\"";
@@ -450,25 +461,38 @@ verilogValue(const OU::Value &v, std::string &s) {
       }
     }
     s += "\"";
-  } else {
+  } else
+#endif
+   {
     // Everything else is linear in memory
     // How many bits in the std_logic_vector
     size_t bits = rawBitWidth(dt); // bits in verilog constant
     // How many bytes per scalar value
     size_t bytes = rawValueBytes(dt);
-    const uint8_t *data = dt.m_arrayRank || dt.m_isSequence ? v.m_pUChar : &v.m_UChar;
+    const uint8_t *data = dt.m_arrayRank || dt.m_isSequence || dt.m_baseType == OA::OCPI_String ?
+      v.m_pUChar : &v.m_UChar;
     OU::format(s, "%zu'%c", bits * dt.m_nItems, (bits & 3) ? 'b' : 'h');
-    for (size_t n = 0; n < dt.m_nItems; n++) {
-      uint64_t v = 0;
+    for (size_t n = 0; n < dt.m_nItems; n++, data += bytes) {
+      if (dt.m_baseType == OA::OCPI_String && (dt.m_arrayRank || dt.m_isSequence))
+	data = (uint8_t*)(v.m_pString && v.m_pString[n] ? v.m_pString[n] : "");
+      bool null = false;
       for (size_t i = 0; i < bytes; i++) {
-	v |= *data++ << (i*CHAR_BIT);
-      }
-      if (bits & 3) { // binary
-	for (uint64_t mask = 1 << (bits - 1); mask; mask >>= 1)
-	  s += v & mask ? '1' : '0';
-      } else { // hex
-	for (size_t i = bits; i; i -= 4)
-	  s += "0123456789abcdef"[(v >> (i - 4)) & 0xf];
+	uint8_t d = data[bytes-1-i];
+	if (bits & 3) // binary
+	  for (int n = (i == 0 ? (int)bits & 7 : 8) - 1; n >= 0; n--)
+	    s += d & (1 << n) ? '1' : '0';
+	else {
+	  if (dt.m_baseType == OA::OCPI_String) {
+	    d = data[i];
+	    if (null)
+	      d = 0;
+	    else if (!d)
+	      null = true;
+	  }
+	  if (i != 0 || !(bits & 4))
+	    s += "0123456789abcdef"[d >> 4];
+	  s += "0123456789abcdef"[d & 0xf];
+	}
       }
     }
   }
@@ -498,11 +522,8 @@ emitParameters(FILE *f, Language lang, bool useDefaults, bool convert) {
       if (lang == VHDL) {
 	std::string value, decl, type;
 	vhdlType(pr, decl, type, convert);
-	if (decl.length())
-	  if (convert)
-	    type = decl;
-	  else
-	    OU::format(type, "%s_t", pr.m_name.c_str());
+	if (decl.length() && convert)
+	  type = decl;
 	if (useDefaults) {
 	  if (pr.m_default)
 	    vhdlValue(NULL, pr.m_name.c_str(), *pr.m_default, value, convert);
@@ -517,12 +538,13 @@ emitParameters(FILE *f, Language lang, bool useDefaults, bool convert) {
 	emitSignal(pr.m_name.c_str(), f, lang, Signal::IN, last, -1, 0, "  ", type.c_str(),
 		   value.empty() ? NULL : value.c_str());
       } else {
+#if 0
 	  int64_t i64 = 0;
 	  if (pr.m_default)
 	    switch (pr.m_baseType) {
 #define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)			\
 	    case OA::OCPI_##pretty:					\
-	      i64 = (int64_t)pr.m_default->m_##pretty; break;
+	      i64 = *(int64_t*)&pr.m_default->m_##pretty; break;
 	    OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
 	    default:;
@@ -537,6 +559,14 @@ emitParameters(FILE *f, Language lang, bool useDefaults, bool convert) {
 	else
 	  fprintf(f, "  parameter [%zu:0] %s = %zu'h%llx;\n",
 		  pr.m_nBits - 1, pr.m_name.c_str(), pr.m_nBits, (long long)i64);
+#else
+	std::string value;
+	if (useDefaults && pr.m_default)
+	  verilogValue(*pr.m_default, value);
+	// If there is no default value, then parameters must be specified when instantiated
+	fprintf(f, "  parameter [%zu:0] %s%s%s;\n", rawBitWidth(pr)-1, pr.m_name.c_str(),
+		value.empty() ? "" : " = ", value.c_str());
+#endif
       }
     }
   }
@@ -634,38 +664,62 @@ emitSignals(FILE *f, Language lang, bool useRecords, bool inPackage, bool inWork
     fprintf(f, ");\n");
 }
 
+// produce the type for a signal or record member declaration
+// The cases are:
+// Basic type uses the base type name, except:
+// -- enum types have a generated enum type
+// -- generated enum types are <pname>_t
+// Sequence or array types uses the base/builtin array type except
+// -- arrays of enum types have a generated array type of the generated enum type
+// -- string arrays have a generated array type
+// -- generated array types are <pname>_array_t
 void Worker::
 prType(OU::Property &pr, std::string &type) {
-#if 1
-  if (pr.m_baseType == OA::OCPI_Enum || pr.m_isSequence || pr.m_arrayRank)
-    type = pr.m_name + "_t";
-  else {
-    OU::format(type, "%s_t", OU::baseTypeNames[pr.m_baseType]);
-    if (pr.m_baseType == OA::OCPI_String)
-      OU::formatAdd(type, "(0 to %zu)", pr.m_stringLength);
-  }
-#else
-  size_t nElements = 1;
-  if (pr.m_arrayRank)
-    nElements *= pr.m_nItems;
-  if (pr.m_isSequence)
-    nElements *= pr.m_sequenceLength; // can't be zero
-  std::string base = OU::baseTypeNames[pr.m_baseType];
-  if (pr.m_baseType == OA::OCPI_Enum)
-    OU::format(base, "work.%s_constants.%s", m_implName, pr.m_name.c_str());
-  if (pr.m_baseType == OA::OCPI_String)
-    if (pr.m_arrayRank || pr.m_isSequence)
-      OU::format(type,
-		 "String_array_t(0 to %zu, 0 to %zu)",
-		 nElements-1, (pr.m_stringLength+4)/4*4-1);
+  // Now we will be using built-in base types or built-in array types
+  std::string prefix;
+  OU::format(prefix, "work.%s_constants.%s", m_implName, pr.m_name.c_str());
+  if (!pr.m_arrayRank && !pr.m_isSequence) {
+    if (pr.m_baseType == OA::OCPI_Enum)
+      type = prefix;
     else
-      OU::format(type, "String_t(0 to %zu)", pr.m_stringLength);
-  else if (pr.m_arrayRank || pr.m_isSequence)
-    OU::format(type, "%s_array_t(0 to %zu)",
-	       base.c_str(), nElements - 1);
-  else
-    OU::format(type, "%s_t", base.c_str());
-#endif
+      type = OU::baseTypeNames[pr.m_baseType];
+    type += "_t";
+    if (pr.m_baseType == OA::OCPI_String) {
+      std::string len;
+      if (pr.m_stringLengthExpr.length())
+	OU::format(len, "%s_string_length", prefix.c_str());
+      else
+	OU::format(len, "%zu", pr.m_stringLength);
+      OU::formatAdd(type, "(0 to %s)", len.c_str());
+    }
+    return;
+  }
+  type =
+    pr.m_baseType == OA::OCPI_Enum || pr.m_baseType == OA::OCPI_String ? prefix.c_str() :
+    OU::baseTypeNames[pr.m_baseType];
+  type += "_array_t";
+  if (!(pr.m_baseType == OA::OCPI_Enum || pr.m_baseType == OA::OCPI_String) ||
+      pr.m_isSequence && pr.m_sequenceLengthExpr.length() ||
+      pr.m_arrayRank && pr.m_arrayDimensionsExprs[0].length()) {
+    type += "(0 to ";
+    if (pr.m_isSequence) {
+      if (pr.m_sequenceLengthExpr.length())
+	type += prefix + "_sequence_length";
+      else
+	OU::formatAdd(type, "%zu", pr.m_sequenceLength);
+      if (pr.m_arrayRank)
+	type += "*";
+    }
+    for (unsigned n = 0; n < pr.m_arrayRank; n++) {
+      if (n)
+	type += "*";
+      if (pr.m_arrayDimensionsExprs[0].length())
+	OU::formatAdd(type, "%s_array_dimensions(%u)", prefix.c_str(), n);
+      else
+	OU::formatAdd(type, "%zu", pr.m_arrayDimensions[n]);
+    }
+    type += "-1)";
+  }
 }
 
 static char *
@@ -947,6 +1001,14 @@ emitDefsHDL(bool wrap) {
     for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
       OU::Property &p = **pi;
       std::string decl, type;
+      // Introduce a constant for string/sequence/array lengths that are parameterized
+      if (p.m_baseType == OA::OCPI_String && p.m_stringLengthExpr.length())
+	fprintf(f, "  constant %s_string_length : positive;\n", p.m_name.c_str());
+      if (p.m_isSequence && p.m_sequenceLengthExpr.length())
+	fprintf(f, "  constant %s_sequence_length : positive;\n", p.m_name.c_str());
+      if (p.m_arrayRank && p.m_arrayDimensionsExprs[0].length())
+	fprintf(f, "  constant %s_array_dimensions : dimensions_t(0 to %zu);\n",
+		p.m_name.c_str(), p.m_arrayRank-1);
       vhdlType(p, decl, type, false);
       if (decl.length() || p.m_isParameter) {
 	if (first) {
@@ -964,18 +1026,14 @@ emitDefsHDL(bool wrap) {
 #if 0
 		    "  alias little_e is ocpi.types.little_e[return ocpi_endian_t];\n"
 		    "  alias big_e is ocpi.types.big_e[return ocpi_endian_t];\n"
-		    "  alias dynamic_e is ocpi.types.dynamic_e[return ocpi_endian_t]");
+		    "  alias dynamic_e is ocpi.types.dynamic_e[return ocpi_endian_t]"
 #endif
 	  } else
-	    fprintf(f, decl.c_str(),
-		    p.m_name.c_str(), p.m_name.c_str(), p.m_name.c_str(),
-		    p.m_name.c_str(), p.m_name.c_str(), p.m_name.c_str());
+	    fputs(decl.c_str(), f);
 	  fprintf(f, ";\n");
 	}
 	if (p.m_isParameter)
-	  fprintf(f, "  constant %s : %s%s;\n", p.m_name.c_str(),
-		  decl.length() ? p.m_name.c_str() : type.c_str(),
-		  decl.length() ? "_t" : "");
+	  fprintf(f, "  constant %s : %s;\n", p.m_name.c_str(), type.c_str());
       }
     }
     for (unsigned i = 0; i < m_ports.size(); i++)
@@ -1275,8 +1333,8 @@ emitVhdlSignalWrapper(FILE *f, const char *topinst) {
 	else
 	  OU::format(alen, "%zu-1", (*pi)->m_arrayDimensions[0]);
 	fprintf(f,
-		  "  function to_%s_t(v: std_logic_vector; length : natural) return %s_t is\n"
-		  "    variable a : %s_t(0 to %s);\n"
+		  "  function to_%s_t(v: std_logic_vector; length : natural) return %s_array_t is\n"
+		  "    variable a : %s_array_t(0 to %s);\n"
 		  "  begin\n"
 		  "    for i in 0 to a'right loop\n"
 		  "      for j in 0 to length loop\n"
@@ -1868,12 +1926,12 @@ emitImplHDL(bool wrap) {
 	    fprintf(f,
 		    "  -- String arrays require wrapper to convert to the generic string_array_t\n"
 		    "  %s_property_write_wrapper : block\n"
-		    "    port(val : out %s_t);\n"
+		    "    port(val : out %s_array_t);\n"
                     "    port map(val => %s%s%s);\n"
-		    "    signal sa_temp : string_array_t(%s_t'range, 0 to %zu-1);\n"
+		    "    signal sa_temp : string_array_t(%s_array_t'range, 0 to %zu-1);\n"
 		    "  begin\n"
 		    "    -- convert stored string array value to the specific type\n"
-		    "    g0: for i in %s_t'range generate\n"
+		    "    g0: for i in %s_array_t'range generate\n"
 		    "      g1: for j in val(0)'range generate\n"
 		    "        val(i)(j) <= sa_temp(i,j);\n"
 		    "      end generate g1;\n"
@@ -1910,10 +1968,10 @@ emitImplHDL(bool wrap) {
 		  n, n,
 		  pr.m_nBits >= 32 || pr.m_arrayRank || pr.m_isSequence ?
 		  31 : (pr.m_baseType == OA::OCPI_Bool ? 0 : pr.m_nBits-1));
-	  if ((pr.m_isSequence || pr.m_arrayRank) && pr.m_baseType != OA::OCPI_String) 
-	    fprintf(f,
-		    "                %s_t(value)    => ", pr.m_name.c_str());
-	  else
+	  //	  if ((pr.m_isSequence || pr.m_arrayRank) && pr.m_baseType != OA::OCPI_String) 
+	  //	    fprintf(f,
+	  //		    "                %s_t(value)    => ", pr.m_name.c_str());
+	  //	  else
 	    fprintf(f,
 		    "                value        => ");
 	  if (isStringArray)
@@ -1976,12 +2034,12 @@ emitImplHDL(bool wrap) {
 	    fprintf(f,
 		    "  -- String arrays require wrapper to convert to the generic string_array_t\n"
 		    "  %s_property_read_wrapper : block\n"
-		    "    port(val : in %s_t);\n"
+		    "    port(val : in %s_array_t);\n"
                     "    port map(val => %s);\n"
-		    "    signal sa_temp : string_array_t(%s_t'range, 0 to %zu-1);\n"
+		    "    signal sa_temp : string_array_t(%s_array_t'range, 0 to %zu-1);\n"
 		    "  begin\n"
 		    "    -- convert stored string array value to the specific type\n"
-		    "    g0: for i in %s_t'range generate\n"
+		    "    g0: for i in %s_array_t'range generate\n"
 		    "      g1: for j in val(0)'range generate\n"
 		    "        sa_temp(i,j) <= val(i)(j);\n"
 		    "      end generate g1;\n"

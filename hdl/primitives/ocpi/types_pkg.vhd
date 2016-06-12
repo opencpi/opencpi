@@ -15,7 +15,8 @@ subtype word64_t is std_logic_vector(63 downto 0);
 subtype byte_offset_t is unsigned(1 downto 0);
 subtype bit_offset_t is natural range 0 to 31; -- bit within word
 type    endian_t is (little_e, big_e, dynamic_e);
-
+-- A type for holding array property dimensions
+type dimensions_t is array (natural range <>) of positive;
 
 
 function bit2vec(b : std_logic; n : natural) return std_logic_vector;

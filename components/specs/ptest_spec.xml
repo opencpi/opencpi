@@ -1,6 +1,7 @@
 <ComponentSpec>
      <Property Name="p0" Type="Bool" Readable="true" Writable="true"/>
      <Property Name="p1" Type="Char" Volatile="true" Writable="true"/>
+     <Property Name="p1a" Type="Char" Readable="true" Writable="true"/>
      <Property Name="p2" Type="Double" Readable="true" Writable="true"/>
      <Property Name="p3" Type="Float" Volatile="true" Writable="true"/>
      <Property Name="p4" Type="Short" Readable="true" Writable="true"/>

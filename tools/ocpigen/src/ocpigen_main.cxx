@@ -81,6 +81,7 @@ add to tree.
   CMD_OPTION  (build,     b,    Bool,   NULL, "Generate gen/Makefile from <worker.build>") \
   CMD_OPTION  (xml,       A,    Bool,   NULL, "Generate the artifact XML file for embedding") \
   CMD_OPTION  (workers,   W,    Bool,   NULL, "Generate the makefile fragment for workers in the assembly") \
+  CMD_OPTION  (generics,  g,    Short,  "-1", "Generate the generics file a worker configuration") \
   CMD_OPTION  (attribute, x,    String, NULL, "Emit to standard output the value of an XML attribute") \
   CMD_OPTION  (alternate, w,    Bool,   NULL, "Use the alternate language (VHDL vs. Verilog) when generating defs and impl") \
   CMD_OPTION  (dependency,M,    String, NULL, "Specify the name of the dependency file when processing XML") \
@@ -107,6 +108,7 @@ main(int argc, const char **argv) {
   bool
     doDefs = false, doImpl = false, doSkel = false, doAssy = false, doWrap = false,
     doArt = false, doTop = false;
+  int doGenerics = -1;
   if (argc <= 1) {
     fprintf(stderr,
 	    "Usage is: ocpigen [options] <owd>.xml\n"
@@ -160,6 +162,9 @@ main(int argc, const char **argv) {
 	break;
       case 'X':
 	doTop = true;
+	break;
+      case 'g':
+	doGenerics = atoi(&ap[0][2]);
 	break;
       case 'W':
 	wksFile =*++ap;
@@ -257,7 +262,8 @@ main(int argc, const char **argv) {
 	  }
 	  return 0;
 	}
-	Worker *w = Worker::create(*ap, parent, package, outDir, NULL, NULL, 0, err);
+	Worker *w = Worker::create(*ap, parent, package, outDir, NULL, NULL,
+				   doGenerics >= 0 ? doGenerics : 0, err);
 	if (err)
 	  fprintf(stderr, "For file %s: %s\n", *ap, err);
 	else if (attribute && (err = w->emitAttribute(attribute)))
@@ -276,6 +282,10 @@ main(int argc, const char **argv) {
 	  fprintf(stderr, "%s: Error generating assembly: %s\n", *ap, err);
 	else if (wksFile && (err = w->emitWorkersHDL(wksFile)))
 	  fprintf(stderr, "%s: Error generating assembly makefile: %s\n", *ap, err);
+	else if (doGenerics >= 0 && (err = w->emitVhdlConstants((unsigned)doGenerics)))
+	  fprintf(stderr,
+		  "%s: Error generating VHDL generics for parameter configuration %u: %s\n",
+		  *ap, doGenerics, err);
 	else if (options.parameters() && (err = w->emitToolParameters()))
 	  fprintf(stderr, "%s: Error generating parameter file for tools: %s\n", *ap, err);
 	else if (options.build() && (err = w->emitMakefile()))

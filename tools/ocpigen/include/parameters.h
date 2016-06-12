@@ -37,6 +37,7 @@ class ParamConfig : public OCPI::Util::IdentResolver {
   ParamConfig &operator=(const ParamConfig * p);
   const char * parse(ezxml_t cx);
   void write(FILE *xf, FILE *mf);
+  void writeVhdlConstants(FILE *gf);
   // Is the given configuration the same as this one?
   bool equal(ParamConfig &other);
   // The callback when evaluating expressions for data types (e.g. array length).

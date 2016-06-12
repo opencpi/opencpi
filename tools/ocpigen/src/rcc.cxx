@@ -469,8 +469,11 @@ emitCppTypesNamespace(FILE *f, std::string &nsName) {
 	  "    Properties() // constructor to value-initialize const members\n"
 	  "      ");
   first = true;
+  // These initializers are required for const properties
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
-    if (!(*pi)->m_isVolatile && !((*pi)->m_isParameter && !(*pi)->m_isReadable)) {
+    if ((*pi)->m_isParameter && !(*pi)->m_isReadable)
+      continue; // these are not in the property structure at all
+    else if (!(*pi)->m_isVolatile && ((*pi)->m_isWritable || (*pi)->m_isReadable)) {
       fprintf(f, "%s%s()", first ? ": " : ", ", (*pi)->m_name.c_str());
       first = false;
     }
@@ -479,10 +482,12 @@ emitCppTypesNamespace(FILE *f, std::string &nsName) {
   pad = 0;
   isLastDummy = false;
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
-    if (!(*pi)->m_isParameter || (*pi)->m_isReadable) {
+    if ((*pi)->m_isParameter && !(*pi)->m_isReadable)
+      continue; // these are not in the property structure at all
+    else {
       std::string type;
       rccMember(type, **pi, 2, offset, pad, NULL, true, isLastDummy, false, 0,
-		!(*pi)->m_isVolatile);
+		!(*pi)->m_isVolatile && ((*pi)->m_isWritable || (*pi)->m_isReadable));
       fputs(type.c_str(), f);
     }
   fprintf(f, "  };\n");

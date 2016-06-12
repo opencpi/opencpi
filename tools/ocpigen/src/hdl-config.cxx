@@ -166,7 +166,7 @@ parseDevInstances(ezxml_t xml, const char *parentFile, Worker *parent,
   // Now we have a platform to work from.  Here we parse the extra info needed to
   // generate this platform configuration.
   const char *err = NULL;
-  for (ezxml_t xd = ezxml_cchild(xml, "Device"); !err && xd; xd = ezxml_next(xd)) {
+  for (ezxml_t xd = ezxml_cchild(xml, "Device"); !err && xd; xd = ezxml_cnext(xd)) {
     std::string name;
     bool control = false;
     if ((err = OE::checkAttrs(xd, "name", "control", "slot", "card", (void*)0)) ||

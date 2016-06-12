@@ -668,6 +668,7 @@ class Worker : public Parsed, public OU::IdentResolver {
     *writeParamFiles(FILE *mkFile, FILE *xmlFile),
     *emitToolParameters(),
     *emitMakefile(),
+    *emitVhdlConstants(size_t config),
     *setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig),
     *finalizeProperties(),
     *finalizeHDL(),
@@ -773,7 +774,7 @@ extern const char
 
 extern void
   doPrev(FILE *f, std::string &last, std::string &comment, const char *myComment),
-  vhdlType(const OU::ValueType &dt, std::string &typeDecl, std::string &type,
+  vhdlType(const OU::Property &dt, std::string &typeDecl, std::string &type,
 	   bool convert = false),
   emitVhdlLibraries(FILE *f),
   addLibrary(const char *lib),

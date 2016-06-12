@@ -99,6 +99,7 @@ int main ( int argc, char* argv [ ] )
 		      "    <property name='stepThruMsg' value='%s'/> "
 		      "    <property name='stepNow' value='%s'/> "
 		      "    <property name='continuous' value='%s'/> "
+		      "    <property name='messageSize' value='4096'/>"
 		      "  </instance> "
 
 		      "  <instance component='sym_fir_real' name='tx_fir_r' >"
