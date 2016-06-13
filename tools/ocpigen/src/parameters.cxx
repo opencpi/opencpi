@@ -2,7 +2,10 @@
 #include <assert.h>
 #include <strings.h>
 #include "OcpiOsFileSystem.h"
+#include "parameters.h"
 #include "wip.h"
+#include "hdl.h"
+namespace OU=OCPI::Util;
 
 const char *Worker::
 findParamProperty(const char *name, OU::Property *&prop, size_t &nParam) {
@@ -174,50 +177,37 @@ write(FILE *xf, FILE *mf) {
 }
 
 void ParamConfig::
-writeVhdlConstants(FILE *gf) {
+writeConstants(FILE *gf, Language lang) {
   fprintf(gf,
-	  "-- This file sets values for top level generics\n"
-	  "library ocpi; use ocpi.all, ocpi.types.all;\n"
-	  "package body %s_constants is\n"
-	  "  -- Parameter property values as constants\n",
-	  m_worker.m_implName);
+	  "%s This file sets values for constants that may be affected by parameter values\n",
+	  hdlComment(lang));
+  if (lang == VHDL) {
+    fprintf(gf,
+	    "library ocpi; use ocpi.all, ocpi.types.all;\n"
+	    "package body %s_constants is\n"
+	    "  -- Parameter property values as constants\n",
+	    m_worker.m_implName);
+  }
   for (unsigned n = 0; n < params.size(); n++) {
     Param &p = params[n];
     if (p.param == NULL)
       continue;
     const OU::Property &pr = *p.param;
-    std::string typeDecl, type, val;
-    vhdlType(pr, typeDecl, type);
-    m_worker.hdlValue(pr.m_name, *p.value, val, false, VHDL);
-    fprintf(gf, "  constant %s : %s := %s;\n",
-	    p.param->m_name.c_str(), type.c_str(), val.c_str());
+    std::string value;
+    if (lang == VHDL) {
+      std::string typeDecl, type, value;
+      vhdlType(pr, typeDecl, type);
+      m_worker.hdlValue(pr.m_name, *p.value, value, false, VHDL);
+      fprintf(gf, "  constant %s : %s := %s;\n",
+	      p.param->m_name.c_str(), type.c_str(), value.c_str());
+    } else
+      fprintf(gf, "  parameter [%zu:0] %s  = %s;\n", rawBitWidth(pr)-1, pr.m_name.c_str(),
+	      verilogValue(*p.value, value));
   }
-  bool first = true;
-  for (PropertiesIter pi = m_worker.m_ctl.properties.begin();
-       pi != m_worker.m_ctl.properties.end(); pi++) {
-    OU::Property &pr = **pi;
-    if (first &&
-	(pr.m_stringLengthExpr.length() ||
-	 pr.m_sequenceLengthExpr.length() ||
-	 pr.m_arrayRank && pr.m_arrayDimensionsExprs[0].length())) {
-      fprintf(gf, "  -- Attributes of properties determined by parameter expressions\n");
-      first = false;
-    }
-    if (pr.m_baseType == OA::OCPI_String && pr.m_stringLengthExpr.length())
-      fprintf(gf, "  constant %s_string_length : positive := %zu;\n",
-	      pr.m_name.c_str(), pr.m_stringLength);
-    if (pr.m_isSequence && pr.m_sequenceLengthExpr.length())
-      fprintf(gf, "  constant %s_sequence_length : positive := %zu;\n",
-	      pr.m_name.c_str(), pr.m_sequenceLength);
-    if (pr.m_arrayRank && pr.m_arrayDimensionsExprs[0].length()) {
-      fprintf(gf, "  constant %s_array_dimensions : dimensions_t(0 to %zu) := (",
-	      pr.m_name.c_str(), pr.m_arrayRank - 1);
-      for (unsigned n = 0; n < pr.m_arrayRank; n++)
-	fprintf(gf, "%s%u => %zu", n ? ", " : "", n, pr.m_arrayDimensions[n]);
-      fprintf(gf, ");\n");
-    }
-  }
-  fprintf(gf, "end %s_constants;\n", m_worker.m_implName);
+  for (unsigned i = 0; i < m_worker.m_ports.size(); i++)
+    m_worker.m_ports[i]->emitInterfaceConstants(gf, lang);
+  if (lang == VHDL)
+    fprintf(gf, "end %s_constants;\n", m_worker.m_implName);
 }
 
 // Is the given configuration the same as this one?
@@ -493,16 +483,17 @@ emitMakefile() {
 }
 // Based on worker xml, read the <worker>.build, and emit the generics file
 const char *Worker::
-emitVhdlConstants(size_t config) {
+emitHDLConstants(size_t config, bool other) {
   const char *err;
-  FILE *genFile;
+  FILE *f;
+  Language lang = other ? (m_language == VHDL ? Verilog : VHDL) : m_language;
   if ((err = parseBuildFile(false)) ||
-      (err = openOutput("generics", m_outDir, "", "", ".vhd", NULL, genFile)))
+      (err = openOutput("generics", m_outDir, "", "", lang == VHDL ? VHD : ".vh", NULL, f)))
     return err;
   if (config >= m_paramConfigs.size() || m_paramConfigs[config] == NULL)
     return OU::esprintf("Invalid parameter configuration for VHDL generics: %zu", config);
-  m_paramConfigs[config]->writeVhdlConstants(genFile);
-  return fclose(genFile) ?
+  m_paramConfigs[config]->writeConstants(f, lang);
+  return fclose(f) ?
     OU::esprintf("File close of VHDL generics file failed.  Disk full?") : NULL;
 }
 

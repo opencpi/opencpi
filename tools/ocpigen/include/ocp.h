@@ -91,7 +91,7 @@ class OcpPort : public Port {
   bool m_impreciseBurst;
   bool m_preciseBurst;
   size_t m_dataWidth;
-  std::string m_dataWidthExpr;
+  std::string m_dataWidthExpr, m_addrWidthExpr;
   bool m_dataWidthFound; // it was specified in XML
   size_t m_byteWidth;
   bool m_bwFound;

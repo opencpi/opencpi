@@ -193,6 +193,7 @@ class DataPort : public OcpPort {
   void emitRccArgTypes(FILE *f, bool &first);
   void emitRecordInterface(FILE *f, const char *implName);
   void emitRecordInterfaceConstants(FILE *f);
+  void emitInterfaceConstants(FILE *f, Language lang);
   void emitVerilogPortParameters(FILE *f);
   static const char *adjustConnection(const char *masterName,
 				      Port &prodPort, OcpAdapt *prodAdapt, bool &prodHasExpr,
@@ -226,6 +227,9 @@ class WciPort : public OcpPort {
   void emitRecordInputs(FILE *f);
   void emitRecordOutputs(FILE *f);
   void emitRecordInterface(FILE *f, const char *implName);
+  void emitRecordInterfaceConstants(FILE *f);
+  void emitInterfaceConstants(FILE *f, Language lang);
+  void emitVerilogPortParameters(FILE *f);
   //  void emitWorkerEntitySignals(FILE *f, std::string &last, unsigned maxPropName);
   void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord,
 			bool inPackage, bool inWorker, const char *defaultIn,
@@ -668,7 +672,7 @@ class Worker : public Parsed, public OU::IdentResolver {
     *writeParamFiles(FILE *mkFile, FILE *xmlFile),
     *emitToolParameters(),
     *emitMakefile(),
-    *emitVhdlConstants(size_t config),
+    *emitHDLConstants(size_t config, bool other),
     *setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig),
     *finalizeProperties(),
     *finalizeHDL(),

@@ -4,6 +4,7 @@
 #include <string>
 #include "OcpiUtilValue.h"
 #include "OcpiUtilProperty.h"
+#include "ocpigen.h"
 
 // These structures capture what is in or will be put in
 // the build configuration file.
@@ -37,7 +38,7 @@ class ParamConfig : public OCPI::Util::IdentResolver {
   ParamConfig &operator=(const ParamConfig * p);
   const char * parse(ezxml_t cx);
   void write(FILE *xf, FILE *mf);
-  void writeVhdlConstants(FILE *gf);
+  void writeConstants(FILE *gf, Language lang);
   // Is the given configuration the same as this one?
   bool equal(ParamConfig &other);
   // The callback when evaluating expressions for data types (e.g. array length).

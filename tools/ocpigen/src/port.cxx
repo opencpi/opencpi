@@ -376,6 +376,8 @@ void Port::
 emitRecordInterface(FILE */*f*/, const char */*implName*/) {}
 void Port::
 emitRecordInterfaceConstants(FILE */*f*/) {}
+void Port::
+emitInterfaceConstants(FILE */*f*/, Language /*lang*/) {}
 
 void Port::
 emitRecordArray(FILE *f) {

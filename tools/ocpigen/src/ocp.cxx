@@ -133,6 +133,10 @@ emitRecordSignal(FILE *f, std::string &last, const char */*prefix*/, bool /*useR
 void OcpPort::
 vectorWidth(const OcpSignalDesc *osd, std::string &out, Language lang, bool /*convert*/,
 	    bool value) {
+  if (osd->number == OCP_MAddr && m_addrWidthExpr.length()) {
+    out = m_addrWidthExpr;
+    return;
+  }
   if (m_dataWidthExpr.length()) {
     if (osd->number == OCP_MData)
       if (value && lang == VHDL)

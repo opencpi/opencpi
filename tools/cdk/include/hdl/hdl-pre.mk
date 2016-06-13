@@ -86,13 +86,13 @@ HdlSourceSuffix:=$(HdlVerilogSuffix)
 HdlIncSuffix:=$(HdlVerilogIncSuffix)
 HdlOtherSourceSuffix:=$(HdlVHDLSuffix)
 HdlOtherIncSuffix:=$(HdlVHDLIncSuffix)
-HdlOtherLanguage:=VHDL
+HdlOtherLanguage:=vhdl
 else
 HdlSourceSuffix:=$(HdlVHDLSuffix)
 HdlIncSuffix:=$(HdlVHDLIncSuffix)
 HdlOtherSourceSuffix:=$(HdlVerilogSuffix)
 HdlOtherIncSuffix:=$(HdlVerilogIncSuffix)
-HdlOtherLanguage:=Verilog
+HdlOtherLanguage:=verilog
 endif
 $(call OcpiDbgVar,HdlSourceSuffix)
 

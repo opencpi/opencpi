@@ -9,6 +9,7 @@ WciPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
   : OcpPort(w, x, sp, ordinal, WCIPort, "ctl", err), m_timeout(0), m_resetWhileSuspended(false) {
   if (err)
     return;
+  OU::format(m_addrWidthExpr, "ocpi_port_%s_addr_width", name());
   assert(master || !m_worker->m_wci);
   // WCI ports implicitly a clock to the worker in all cases, master or slave
   if (x && ezxml_cattr(x, "clock")) {
@@ -165,6 +166,13 @@ emitImplAliases(FILE *f, unsigned n, Language lang) {
 }
 
 void WciPort::
+emitVerilogPortParameters(FILE *f) {
+  // FIXME: This will not work with Verilog workers with multiple configurations with differing
+  // property space sizes.
+  fprintf(f, "  localparam ocpi_port_%s_addr_width = %zu;\n", name(), ocp.MAddr.width);
+}
+
+void WciPort::
 emitImplSignals(FILE *f) {
   Control &ctl = m_worker->m_ctl;
   // Record for property-related inputs to the worker - writable values and strobes, readable strobes
@@ -259,6 +267,57 @@ emitRecordInterface(FILE *f, const char *implName) {
   if (!master && !m_worker->m_assembly)
     OcpPort::emitRecordInterface(f, implName);
 }
+void WciPort::
+emitRecordInterfaceConstants(FILE *f) {
+  fprintf(f,
+	  "\n"
+	  "  -- Constant declarations for the WCI port\n"
+	  "  constant ocpi_port_%s_addr_width : positive;\n",
+	  name());
+}
+
+static void
+emitConstant(FILE *f, const std::string &prefix, const char *name, size_t val, Language lang) {
+  if (lang == VHDL)
+    fprintf(f, "  constant %s_%s : positive := %zu;\n", prefix.c_str(), name, val);
+  else
+    fprintf(f, "  localparam %s_%s = %zu;\n", prefix.c_str(), name, val);
+}
+
+void WciPort::
+emitInterfaceConstants(FILE *f, Language lang) {
+  bool first = true;
+  for (PropertiesIter pi = m_worker->m_ctl.properties.begin();
+       pi != m_worker->m_ctl.properties.end(); pi++) {
+    OU::Property &pr = **pi;
+    if (first &&
+	(pr.m_stringLengthExpr.length() ||
+	 pr.m_sequenceLengthExpr.length() ||
+	 pr.m_arrayRank && pr.m_arrayDimensionsExprs[0].length())) {
+      fprintf(f, "  %s Attributes of properties determined by parameter expressions\n",
+	      hdlComment(lang));
+      first = false;
+    }
+    if (pr.m_baseType == OA::OCPI_String && pr.m_stringLengthExpr.length())
+      emitConstant(f, pr.m_name, "string_length", pr.m_stringLength, lang);
+    if (pr.m_isSequence && pr.m_sequenceLengthExpr.length())
+      emitConstant(f, pr.m_name, "sequence_length", pr.m_sequenceLength, lang);
+    if (pr.m_arrayRank && pr.m_arrayDimensionsExprs[0].length())
+      if (lang == VHDL) {
+	fprintf(f, "  constant %s_array_dimensions : dimensions_t(0 to %zu) := (",
+	      pr.m_name.c_str(), pr.m_arrayRank - 1);
+	for (unsigned n = 0; n < pr.m_arrayRank; n++)
+	  fprintf(f, "%s%u => %zu", n ? ", " : "", n, pr.m_arrayDimensions[n]);
+	fprintf(f, ");\n");
+      } else
+	for (unsigned n = 0; n < pr.m_arrayRank; n++)
+	  fprintf(f, "  localparam %s_array_dimension_%u = %zu;\n", pr.m_name.c_str(), n,
+		  pr.m_arrayDimensions[n]);
+  }
+  std::string pref("ocpi_port_" + m_name);
+  emitConstant(f, pref, "addr_width", ocp.MAddr.width, lang);
+}
+
 void WciPort::
 emitRecordArray(FILE *f) {
   if (!master && !m_worker->m_assembly)

@@ -111,6 +111,7 @@ public:
   virtual void emitRecordOutputs(FILE *f);
   virtual void emitRecordInterface(FILE *f, const char *implName);
   virtual void emitRecordInterfaceConstants(FILE *f);
+  virtual void emitInterfaceConstants(FILE *f, Language lang);
   virtual void emitRecordArray(FILE *f);
   //  virtual void emitWorkerEntitySignals(FILE *f, std::string &last, unsigned maxPropName);
   virtual void emitSignals(FILE *f, Language lang, std::string &last, bool inPackage,

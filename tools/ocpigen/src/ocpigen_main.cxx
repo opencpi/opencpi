@@ -282,9 +282,9 @@ main(int argc, const char **argv) {
 	  fprintf(stderr, "%s: Error generating assembly: %s\n", *ap, err);
 	else if (wksFile && (err = w->emitWorkersHDL(wksFile)))
 	  fprintf(stderr, "%s: Error generating assembly makefile: %s\n", *ap, err);
-	else if (doGenerics >= 0 && (err = w->emitVhdlConstants((unsigned)doGenerics)))
+	else if (doGenerics >= 0 && (err = w->emitHDLConstants((unsigned)doGenerics, doWrap)))
 	  fprintf(stderr,
-		  "%s: Error generating VHDL generics for parameter configuration %u: %s\n",
+		  "%s: Error generating constants for parameter configuration %u: %s\n",
 		  *ap, doGenerics, err);
 	else if (options.parameters() && (err = w->emitToolParameters()))
 	  fprintf(stderr, "%s: Error generating parameter file for tools: %s\n", *ap, err);

@@ -1056,7 +1056,7 @@ emitDefsHDL(bool wrap) {
       return NULL;
     }
     fprintf(f,
-	    "\ncomponent %s is\n", m_implName);
+	    "\ncomponent %s--__\n is\n", m_implName);
     emitParameters(f, lang, true, true);
   } else
     fprintf(f,
@@ -1069,14 +1069,17 @@ emitDefsHDL(bool wrap) {
   emitSignals(f, lang, false, true, false, true);
   if (lang == VHDL) {
     fprintf(f,
-	    "end component %s;\n\n",
+	    "end component %s--__\n;\n",
 	    m_implName);
     fprintf(f, "end package %s_defs;\n", m_implName);
   } else {
+    fprintf(f, "`include \"generics.vh\"\n");
+#if 0
     // Now we emit parameters in the body.
     emitParameters(f, lang);
     for (unsigned i = 0; i < m_ports.size(); i++)
       m_ports[i]->emitVerilogPortParameters(f);
+#endif
     // Now we emit the declarations (input, output, width) for each module port
     for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
       Clock *c = *ci;

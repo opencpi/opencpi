@@ -142,7 +142,8 @@ CoreBlackBoxFiles=$(foreach d,$(DefsFile) \
                               $(if $(filter $(HdlMode),container config),,$(WDefsFile)),\
                               $(infoxx CBBF:$d)\
                      $(if $(filter 0,$2),$d,$(call WkrTargetDir,$1,$2)/$(notdir $d)))\
-                     $(call WkrTargetDir,$1,$2)/generics.vhd
+                     $(call WkrTargetDir,$1,$2)/generics.vhd \
+                     $(call WkrTargetDir,$1,$2)/generics.vh
 
 OcpiHdl=$(DYN_PREFIX) $(ToolsDir)/ocpihdl 
 

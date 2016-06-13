@@ -384,7 +384,9 @@ emitRecordInterfaceConstants(FILE */*f*/) {
 	  name(), name(), name(), name(), name());
 #endif
 }
-
+void DataPort::
+emitInterfaceConstants(FILE */*f*/, Language /*lang*/) {
+}
 #if 1
 void DataPort::
 emitRecordInterface(FILE *f, const char *implName) {

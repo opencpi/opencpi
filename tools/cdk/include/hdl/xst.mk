@@ -109,9 +109,17 @@ ifeq ($(Core),)
 Core=onewire
 Top=onewire
 endif
+endif
+#################################################################################
+# NOTE:  XST only makes the verilog primitive libraries available if there are verilog sources
+# in the project.  This means that, during elaboration, it will fail to elaborate lower level
+# verilog modules in libraries if there are no verilog sources in the project file.
+# Sooo, we ALWAYS stick the "onewire" verilog in all projects.
+# If we are building a library, this serves as the "top" of the library, otherwise
+# it is simply stuck in to the compilation to cause XST to make the verilog primitives available
 CompiledSourceFiles+= $(OCPI_CDK_DIR)/include/hdl/onewire.v 
 WorkLibrarySources+= $(OCPI_CDK_DIR)/include/hdl/onewire.v
-endif
+
 XstInternalOptions=$(and $(wildcard $(TargetDir)/$(HdlPlatform).xcf),-uc ../$(HdlPlatform).xcf)
 XstDefaultExtraOptions=
 #XstDefaultContainerExtraOptions=-iobuf yes -bufg 32 -iob auto
@@ -247,17 +255,6 @@ XstLsoFile=$(Core).lso
 XstIniFile=$(Core).ini
 
 XstLibraries=$(HdlLibrariesInternal)
-ifneq (,)
-XstMakeGenerics=$(and $(WorkerParamNames),\
-   ( \
-     echo -- This file sets values for top level generics ;\
-     echo library ocpi\; use ocpi.all, ocpi.types.all\; ;\
-     echo package generics is ;\
-     $(foreach n,$(WorkerParamNames),\
-	echo constant $n : \"$(Param_$(ParamConfig)_$n)\"\; ;) \
-     echo end package generics\; \
-   ) > generics.vhd;)
-endif
 
 XstNeedIni= $(strip $(XstLibraries)$(ComponentLibraries)$(CDKCompenentLibraries)$(CDKDeviceLibraries)$(Cores))
 #   $(and $(findstring worker,$(HdlMode)),echo $(call ToLower,$(Worker))=$(call ToLower,$(Worker));) 
@@ -425,7 +422,7 @@ HdlToolPost=\
 # obsolete InitXilinx=. $(OCPI_XILINX_TOOLS_DIR)/settings64.sh > /dev/null
 XilinxAfter=set +e;grep -i error $1.out|grep -v '^WARNING:'|grep -i -v '[_a-z]error'; \
 	     if grep -q $2 $1.out; then \
-	       echo Time: `cat $1.time`; \
+	       echo Time: `cat $1.time` at `date +%T`; \
 	       exit 0; \
 	     else \
 	       exit 1; \
@@ -437,7 +434,7 @@ DoXilinxPat=\
 	echo " "Details in $1.out; cd $2; $(call XilinxInit,$1.out);\
 	echo Command: $1 $3 >> $1.out; \
 	/usr/bin/time -f %E -o $1.time bash -c "$1 $3; RC=\$$$$?; $(ECHO) Exit status: \$$$$RC; $(ECHO) \$$$$RC > $1.status" >> $1.out 2>&1;\
-	(echo -n Time:; cat $1.time) >> $1.out; \
+	(echo -n Time:; tr -d '\n' <$1.time; echo -n ' at '; date +%T) >> $1.out; \
 	$(call XilinxAfter,$1,$4)
 #AppBaseName=$(PlatformDir)/$(Worker)-$(HdlPlatform)
 PromName=$1/$2.mcs

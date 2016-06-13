@@ -313,8 +313,8 @@ HdlPassTargets=$(and $(HdlTargets),HdlTargets="$(HdlTargets)") \
 
 # Do target-specific file shadowing
 HdlShadowFiles=\
-  $(foreach f,$(filter-out $(filter-out %.vhd,$(CoreBlackBoxFiles)),\
-                  $(CompiledSourceFiles)),\
+  $(foreach f,$(filter-out $(filter-out %.vhd,$(call CoreBlackBoxFiles,$1,$2)),\
+              $(CompiledSourceFiles)),\
      $(or $(wildcard $(HdlTarget)/$f),\
 	  $(wildcard $(call HdlGetTop,$(HdlTarget))/$f),\
           $f))
@@ -331,35 +331,22 @@ HdlTargetSrcFiles=\
     $(DefsFile) $(WDefsFile)) \
   $(and $(WorkerParamNames),$(strip \
      $(call WkrTargetDir,$1,$2)/generics$(HdlVHDLIncSuffix)\
-     $(and $(filter .v,$(HdlSourceSuffix)),\
-       $(call WkrTargetDir,$1,$2)/generics$(HdlVerilogIncSuffix))))\
+     $(call WkrTargetDir,$1,$2)/generics$(HdlVerilogIncSuffix))) \
   $(if $(and $2,$(filter-out 0,$2)),$(call HdlVHDLTargetImpl,$1,$2),$(ImplHeaderFiles))
 
-#		$(and $(ParamVHDLtype_$(ParamConfig)_$n), \
-#		   echo '$(ParamVHDLtype_$(ParamConfig)_$n)' ;) \
-#
-# $(AT)(\
-#      echo -- This file sets values for top level generics ;\
-#      echo library ocpi\; use ocpi.all, ocpi.types.all\; ;\
-#      echo package body $(Worker)_constants is ;\
-#      $(foreach n,$(WorkerParamNames)$(infox WPN:$(WorkerParamNames):),\
-# 	echo '$(ParamVHDL_$(ParamConfig)_$n)'\; ;) \
-#      echo end $(Worker)_constants\; \
-# ) > $@
-
-$(OutDir)target-%/generics.vhd: $$(VHDLDefsFile) | $(OutDir)target-%
+$(OutDir)target-%/generics.vhd: $$(ImplXmlFile) | $(OutDir)target-%
 	$(AT)echo Generating the VHDL constants file for config $(ParamConfig): $@
 	$(AT)$(OcpiGen) -D $(dir $@) \
 	                $(and $(Assembly),-S $(Assembly)) $(and $(Platform),-P $(Platform)) \
 	                $(and $(PlatformDir),-F $(PlatformDir)) \
-	                -g$(ParamConfig) $(ImplXmlFile)
+	                -g$(ParamConfig) $(and $(filter verilog,$(HdlLanguage)),-w) $(ImplXmlFile)
 
-$(OutDir)target-%/generics.vh: | $(OutDir)target-%
-	$(AT)(\
-	     echo // This file sets values for top level parameters ;\
-	     $(foreach n,$(WorkerParamNames),\
-		echo "$(ParamVerilog_$(ParamConfig)_$n)"\; ;) \
-	) > $@
+$(OutDir)target-%/generics.vh: $$(ImplXmlFile) | $(OutDir)target-%
+	$(AT)echo Generating the Verilog constants file for config $(ParamConfig): $@
+	$(AT)$(OcpiGen) -D $(dir $@) \
+	                $(and $(Assembly),-S $(Assembly)) $(and $(Platform),-P $(Platform)) \
+	                $(and $(PlatformDir),-F $(PlatformDir)) \
+	                -g$(ParamConfig) $(and $(filter vhdl,$(HdlLanguage)),-w) $(ImplXmlFile)
 
 ifneq (,)
 # Establish where the platforms are
