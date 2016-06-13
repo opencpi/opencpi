@@ -126,6 +126,8 @@ ImplXmlFile=$(firstword $(ImplXmlFiles))
 DefsFile=$(Worker:%=$(GeneratedDir)/%$(HdlDefsSuffix))
 WDefsFile=$(Worker:%=$(GeneratedDir)/%$(HdlOtherDefsSuffix))
 VHDLDefsFile=$(Worker:%=$(GeneratedDir)/%$(HdlDefs)$(HdlVHDLSuffix))
+VHDLImplFile=$(Worker:%=$(GeneratedDir)/%$(HdlImpl)$(HdlVHDLSuffix))
+VerilogDefsFile=$(Worker:%=$(GeneratedDir)/%$(HdlDefs)$(HdlVerilogSuffix))
 HdlOtherImplSourceFile=$(GeneratedDir)/$(Worker)$(HdlOtherImplSuffix)
 # What source files should be put into the BB library?
 # There are four cases:
@@ -226,16 +228,16 @@ $(LibDir)/$(notdir $(ImplXmlFile)): | $(LibDir)
 
 $(call OcpiDbgVar,DefsFile)
 # Macro to generate a links for a target $1 and a configuration $2
-HdlDefsDir=$(if $(filter $2,0),$(GeneratedDir),$(call WkrTargetDir,$1,$2))
+HdlDefsDir=$(if $(and $(filter $2,0),$(filter vhdl,$3)),$(GeneratedDir),$(call WkrTargetDir,$1,$2))
 define DoDefsLinks
 
 $(LibDir)/$1/$(Worker)$3$(HdlSourceSuffix): \
-                 $(call HdlDefsDir,$1,$2)/$(notdir $(DefsFile)) | $(LibDir)/$1
+                 $(call HdlDefsDir,$1,$2,$(HdlLanguage))/$(notdir $(DefsFile)) | $(LibDir)/$1
 	$(AT)echo Creating link from $$@ -\> $$< to expose the definition of worker "$(Worker)$3".
 	$(AT)$$(call MakeSymLink2,$$<,$$(dir $$@),$$(notdir $$@))
 
 $(LibDir)/$1/$(Worker)$3$(HdlOtherSourceSuffix): \
-                 $(call HdlDefsDir,$1,$2)/$(notdir $(WDefsFile)) | $(LibDir)
+                 $(call HdlDefsDir,$1,$2,$(HdlOtherLanguage))/$(notdir $(WDefsFile)) | $(LibDir)
 	$(AT)echo Creating link from $$@ -\> $$< to expose the other-language stub for worker "$(Worker)$3".
 	$(AT)$$(call MakeSymLink2,$$<,$$(dir $$@),$$(notdir $$@))
 

@@ -65,7 +65,8 @@ HdlToolCoreRef_xsim=$(call HdlRmRv,$1)
 
 XsimFiles=\
   $(foreach f,$(HdlSources),\
-     $(call FindRelative,$(TargetDir),$(dir $(f)))/$(notdir $(f)))
+     $(foreach x,$(call FindRelative,$(TargetDir),$(dir $(f)))/$(notdir $(f)),\
+       $(infox XSF:$x)$x))
 $(call OcpiDbgVar,XsimFiles)
 
 XsimCoreLibraryChoices=$(strip \

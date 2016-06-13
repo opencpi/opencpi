@@ -56,9 +56,14 @@ define DoImplConfig
   ifneq ($2,0)
     $(call HdlVHDLTargetImpl,$1,$2) $(call HdlVHDLTargetDefs,$1,$2): $(call WkrTargetDir,$1,$2)/%: $(GeneratedDir)/% | $(call WkrTargetDir,$1,$2)
 	$(AT)sed s/--__/_c$2/ $$< > $$@
-    $(call HdlVerilogTargetDefs,$1,$2):  $(call WkrTargetDir,$1,$2)/% : $(GeneratedDir)/% | $(call WkrTargetDir,$1,$2)
-	$(AT)sed s-//__-_c$2- $$< > $$@
   endif
+  # For Verilog we must insert the constants file into the defs file so that we don't
+  # need to export the "include" file.
+  $(call HdlVerilogTargetDefs,$1,$2):  $(call WkrTargetDir,$1,$2)/% : $(GeneratedDir)/% $(call WkrTargetDir,$1,$2)/generics.vh
+	$(AT)sed $(and $2,$(filter-out 0,$2),-e s-//__-_c$2-) \
+                 -e '/`include.*"generics.vh"/r $(call WkrTargetDir,$1,$2)/generics.vh' \
+                 -e '/`include.*"generics.vh"/d' \
+                 $$< > $$@
 
 endef
 
@@ -91,7 +96,7 @@ ifdef HdlToolRealCore
 
       $(call WkrTargetDir,$1,$4)/$2$(HdlBin): $$(call HdlTargetSrcFiles,$1,$4)
       $(call WkrTargetDir,$1,$4)/$2$(HdlBin): \
-      HdlSources=$$(filter-out %.vh,$$(call HdlTargetSrcFiles,$1,$4) $$(call HdlShadowFiles,$1,$4))
+      HdlSources=$$(call Unique,$$(filter-out %.vh,$$(call HdlTargetSrcFiles,$1,$4) $$(call HdlShadowFiles,$1,$4)))
 
       $(infox TARGET:$(call WkrTargetDir,$1,$4)/$2$(HdlBin))
       $(call WkrTargetDir,$1,$4)/$2$(HdlBin): \

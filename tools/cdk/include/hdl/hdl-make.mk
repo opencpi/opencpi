@@ -327,12 +327,13 @@ HdlShadowFiles=\
 # $(call HdlTargetSrcFiles,target-dir,paramconfig)
 HdlTargetSrcFiles=\
   $(if $(and $2,$(filter-out 0,$2)),\
-    $(call HdlVHDLTargetDefs,$1,$2) $(call HdlVerilogTargetDefs,$1,$2), \
-    $(DefsFile) $(WDefsFile)) \
-  $(and $(WorkerParamNames),$(strip \
-     $(call WkrTargetDir,$1,$2)/generics$(HdlVHDLIncSuffix)\
-     $(call WkrTargetDir,$1,$2)/generics$(HdlVerilogIncSuffix))) \
-  $(if $(and $2,$(filter-out 0,$2)),$(call HdlVHDLTargetImpl,$1,$2),$(ImplHeaderFiles))
+    $(call HdlVHDLTargetDefs,$1,$2),\
+    $(VHDLDefsFile)) \
+  $(call HdlVerilogTargetDefs,$1,$2) \
+  $(call WkrTargetDir,$1,$2)/generics$(HdlVHDLIncSuffix)\
+  $(call WkrTargetDir,$1,$2)/generics$(HdlVerilogIncSuffix) \
+  $(if $(and $2,$(filter-out 0,$2)),$(call HdlVHDLTargetImpl,$1,$2),$(VHDLImplFile))\
+  $(ImplFile)
 
 $(OutDir)target-%/generics.vhd: $$(ImplXmlFile) | $(OutDir)target-%
 	$(AT)echo Generating the VHDL constants file for config $(ParamConfig): $@
