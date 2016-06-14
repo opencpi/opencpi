@@ -325,7 +325,7 @@ HdlShadowFiles=\
 # Return nothing if no parameters
 # FIXME: this has worker stuff in it - should it be elsewhere?
 # $(call HdlTargetSrcFiles,target-dir,paramconfig)
-HdlTargetSrcFiles=\
+HdlTargetSrcFiles=$(and $(filter-out library core,$(HdlMode)),\
   $(if $(and $2,$(filter-out 0,$2)),\
     $(call HdlVHDLTargetDefs,$1,$2),\
     $(VHDLDefsFile)) \
@@ -333,7 +333,7 @@ HdlTargetSrcFiles=\
   $(call WkrTargetDir,$1,$2)/generics$(HdlVHDLIncSuffix)\
   $(call WkrTargetDir,$1,$2)/generics$(HdlVerilogIncSuffix) \
   $(if $(and $2,$(filter-out 0,$2)),$(call HdlVHDLTargetImpl,$1,$2),$(VHDLImplFile))\
-  $(ImplFile)
+  $(ImplFile))
 
 $(OutDir)target-%/generics.vhd: $$(ImplXmlFile) | $(OutDir)target-%
 	$(AT)echo Generating the VHDL constants file for config $(ParamConfig): $@

@@ -140,12 +140,18 @@ HdlVerilogTargetDefs=$(call WkrTargetDir,$1,$2)/$(Worker)$(HdlDefs)$(HdlVerilogI
 HdlVHDLTargetDefs=$(call WkrTargetDir,$1,$2)/$(Worker)$(HdlDefs)$(HdlVHDLSuffix)
 HdlVHDLTargetImpl=$(call WkrTargetDir,$1,$2)/$(Worker)$(HdlImpl)$(HdlVHDLSuffix)
 
-CoreBlackBoxFiles=$(foreach d,$(DefsFile) \
-                              $(if $(filter $(HdlMode),container config),,$(WDefsFile)),\
-                              $(infoxx CBBF:$d)\
-                     $(if $(filter 0,$2),$d,$(call WkrTargetDir,$1,$2)/$(notdir $d)))\
-                     $(call WkrTargetDir,$1,$2)/generics.vhd \
-                     $(call WkrTargetDir,$1,$2)/generics.vh
+# CoreBlackBoxFiles=$(foreach d,$(DefsFile) \
+#                               $(if $(filter $(HdlMode),container config),,$(WDefsFile)),\
+#                               $(infoxx CBBF:$d)\
+#                      $(if $(filter 0,$2),$d,$(call WkrTargetDir,$1,$2)/$(notdir $d)))\
+#                      $(call WkrTargetDir,$1,$2)/generics.vhd \
+#                      $(call WkrTargetDir,$1,$2)/generics.vh
+CoreBlackBoxFiles=$(and $(filter-out library core,$(HdlMode)),\
+  $(if $(and $2,$(filter-out 0,$2)),\
+    $(call HdlVHDLTargetDefs,$1,$2),\
+    $(VHDLDefsFile)) \
+  $(call HdlVerilogTargetDefs,$1,$2) \
+  $(call WkrTargetDir,$1,$2)/generics$(HdlVHDLIncSuffix))\
 
 OcpiHdl=$(DYN_PREFIX) $(ToolsDir)/ocpihdl 
 

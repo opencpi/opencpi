@@ -385,7 +385,9 @@ emitRecordInterfaceConstants(FILE */*f*/) {
 #endif
 }
 void DataPort::
-emitInterfaceConstants(FILE */*f*/, Language /*lang*/) {
+emitInterfaceConstants(FILE *f, Language lang) {
+  if (lang == Verilog)
+    emitVerilogPortParameters(f);
 }
 #if 1
 void DataPort::
