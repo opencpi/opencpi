@@ -476,8 +476,9 @@ verilogValue(const OU::Value &v, std::string &s) {
       if (dt.m_baseType == OA::OCPI_String && (dt.m_arrayRank || dt.m_isSequence))
 	data = (uint8_t*)(v.m_pString && v.m_pString[n] ? v.m_pString[n] : "");
       bool null = false;
-      for (size_t i = 0; i < bytes && i * 8 < bits; i++) {
-	uint8_t d = data[bytes-1-i];
+      size_t vbytes = OU::roundUp(bits, 8)/8; // use only the byte we need
+      for (size_t i = 0; i < vbytes && i * 8 < bits; i++) {
+	uint8_t d = data[vbytes-1-i];
 	if (bits & 3) // binary
 	  for (int n = (i == 0 ? (int)bits & 7 : 8) - 1; n >= 0; n--)
 	    s += d & (1 << n) ? '1' : '0';
