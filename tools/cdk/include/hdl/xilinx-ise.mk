@@ -20,7 +20,7 @@ ifeq ($(filter clean%,$(MAKECMDGOALS)),)
    endif
    export OCPI_XILINX_LICENSE_FILE:=$(OCPI_XILINX_DIR)/Xilinx-License.lic
   endif
-  ifeq ($(call OcpiExists,$(OCPI_XILINX_LICENSE_FILE)),)
+  ifeq ($(or $(findstring @,$(OCPI_XILINX_LICENSE_FILE)),$(findstring :,$(OCPI_XILINX_LICENSE_FILE)),$(call OcpiExists,$(OCPI_XILINX_LICENSE_FILE))),)
    $(error Xilinx license file not found at $(OCPI_XILINX_LICENSE_FILE))
   endif
 endif
