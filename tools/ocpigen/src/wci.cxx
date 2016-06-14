@@ -286,9 +286,15 @@ emitConstant(FILE *f, const std::string &prefix, const char *name, size_t val, L
 
 void WciPort::
 emitInterfaceConstants(FILE *f, Language lang) {
+  std::string pref("ocpi_port_" + m_name);
+  emitConstant(f, pref, "addr_width", ocp.MAddr.width, lang);
+}
+// This cannot be a port method since it is needed when there are parameters
+// with NO CONTROL INTERFACE
+void Worker::
+emitPropertyAttributeConstants(FILE *f, Language lang) {
   bool first = true;
-  for (PropertiesIter pi = m_worker->m_ctl.properties.begin();
-       pi != m_worker->m_ctl.properties.end(); pi++) {
+  for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
     OU::Property &pr = **pi;
     if (first &&
 	(pr.m_stringLengthExpr.length() ||
@@ -314,8 +320,6 @@ emitInterfaceConstants(FILE *f, Language lang) {
 	  fprintf(f, "  localparam %s_array_dimension_%u = %zu;\n", pr.m_name.c_str(), n,
 		  pr.m_arrayDimensions[n]);
   }
-  std::string pref("ocpi_port_" + m_name);
-  emitConstant(f, pref, "addr_width", ocp.MAddr.width, lang);
 }
 
 void WciPort::

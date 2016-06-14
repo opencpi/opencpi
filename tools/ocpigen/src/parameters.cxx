@@ -204,6 +204,9 @@ writeConstants(FILE *gf, Language lang) {
       fprintf(gf, "  parameter [%zu:0] %s  = %s;\n", rawBitWidth(pr)-1, pr.m_name.c_str(),
 	      verilogValue(*p.value, value));
   }
+  // This is static (not a port method) since it is needed when there are parameters with
+  // no control interface.
+  m_worker.emitPropertyAttributeConstants(gf, lang);
   for (unsigned i = 0; i < m_worker.m_ports.size(); i++)
     m_worker.m_ports[i]->emitInterfaceConstants(gf, lang);
   if (lang == VHDL)

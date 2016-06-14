@@ -228,7 +228,6 @@ class WciPort : public OcpPort {
   void emitRecordOutputs(FILE *f);
   void emitRecordInterface(FILE *f, const char *implName);
   void emitRecordInterfaceConstants(FILE *f);
-  void emitInterfaceConstants(FILE *f, Language lang);
   void emitVerilogPortParameters(FILE *f);
   //  void emitWorkerEntitySignals(FILE *f, std::string &last, unsigned maxPropName);
   void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord,
@@ -240,6 +239,7 @@ class WciPort : public OcpPort {
 		       const char *indent, bool &any, std::string &comment,
 		       std::string &last, const char *myComment, OcpAdapt *adapt,
 		       std::string *signalIn, std::string &exprs);
+  void emitInterfaceConstants(FILE *f, Language lang);
   const char *finalizeExternal(Worker &aw, Worker &iw, InstancePort &ip,
 			       bool &cantDataResetWhileSuspended);
   void emitSkelSignals(FILE *f);
@@ -741,6 +741,7 @@ class Worker : public Parsed, public OU::IdentResolver {
 	    const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef, bool cnst = false),
     rccBaseType(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
 		const char *parent, bool isFixed, bool &isLast, unsigned predefine, bool cnst = false),
+    emitPropertyAttributeConstants(FILE *f, Language lang),
     emitDeviceSignals(FILE *f, Language lang, std::string &last);
 };
 #define SKEL "-skel"

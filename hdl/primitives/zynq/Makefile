@@ -25,8 +25,11 @@
 
 # This primitive library contains VHDL primitive modules for zynq platforms.
 include $(OCPI_CDK_DIR)/include/util.mk
-$(and $(call DoShell,$(OCPI_CDK_DIR)/scripts/xilinx-edk.sh,OCPI_XILINX_EDK_DIR),\
-        $(error $(OCPI_XILINX_EDK_DIR)))
+ifneq ($(call DoShell,$(OCPI_CDK_DIR)/scripts/xilinx-edk.sh,OCPI_XILINX_EDK_DIR),)
+   $(warning When trying to access the Xilinx EDK: $(OCPI_XILINX_EDK_DIR)))
+   OCPI_XILINX_EDK_DIR=
+endif
+
 OnlyTargets=zynq isim modelsim
 HdlLibraries=fixed_float ocpi platform axi
 
