@@ -68,7 +68,7 @@ ComponentLibraries+=\
  devices cards components
 LibDir=lib/hdl
 $(call OcpiDbgVar,HdlPlatforms)
-ifndef HdlPlatforms
+ifeq ($(origin HdlPlatforms),undefined)
  override HdlPlatforms:=$(HdlPlatform)
 endif
 # Before we really do any "worker" or "config" stuff we must recurse into the device directory
