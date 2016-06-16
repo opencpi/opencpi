@@ -23,6 +23,12 @@
 ########################################################################### #
 # This makefile is for building a set of assemblies, each in their own subdirectory
 
+# Capture whatever is in the current file, allowing more to be reset in the project file
+override ComponentLibrariesInternal:=$(ComponentLibrariesInternal) $(ComponentLibraries)
+override HdlLibrariesInternal:=$(HdlLibrariesInternal) $(HdlLibraries) $(Libraries)
+ComponentLibraries=
+HdlLibraries=
+Libraries=
 include $(OCPI_CDK_DIR)/include/util.mk
 $(OcpiIncludeProject)
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
@@ -52,14 +58,16 @@ all: $(Assemblies)
 .PHONY: $(Assemblies) $(Platforms) $(Targets) clean
 
 ifdef Assemblies
+ComponentLibrariesInternal+=$(ComponentLibraries)
+HdlLibrariesInternal+=$(HdlLibraries) $(Libraries)
 $(Assemblies):
 	$(AT)echo =============Building assembly $@
 	$(AT)$(MAKE) -L -C $@ \
                $(HdlPassTargets) \
 	       LibDir=$(call AdjustRelative,$(LibDir)) \
 	       GenDir=$(call AdjustRelative,$(GenDir)) \
-	       ComponentLibrariesInternal="$(call OcpiAdjustLibraries,$(ComponentLibraries))" \
-	       HdlLibrariesInternal="$(call OcpiAdjustLibraries,$(HdlLibraries))" \
+	       ComponentLibrariesInternal="$(call OcpiAdjustLibraries,$(ComponentLibrariesInternal))" \
+	       HdlLibrariesInternal="$(call OcpiAdjustLibraries,$(HdlLibrariesInternal))" \
                XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirs))" \
 	       $(PassOutDir)
 endif

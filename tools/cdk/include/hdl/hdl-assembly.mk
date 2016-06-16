@@ -80,7 +80,7 @@ ifneq ($(MAKECMDGOALS),clean)
     define doGetPlatform
       $$(and $$(call DoShell,$(OcpiGen) -X $1,HdlContPfConfig),\
           $$(error Processing container XML $1: $$(HdlContPfConfig)))
-      HdlContPlatform:=$$(word 1,$$(HdlContPfConfig))
+      HdlContPlatform:=$$(patsubst %_pf,%,$$(word 1,$$(HdlContPfConfig)))
       HdlContConfig:=$$(word 2,$$(HdlContPfConfig))
       $$(if $$(HdlContPlatform),,$$(error Could not get platform attribute for container $1))
       $$(if $$(HdlContConfig),,$$(error Could not get config attribute for container $1))

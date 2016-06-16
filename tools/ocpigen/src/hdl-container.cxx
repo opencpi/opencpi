@@ -64,6 +64,8 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
     } else
       myConfig = "base";
   }
+  if (!strcmp(myPlatform.c_str() + myPlatform.length() - 3, "_pf"))
+    myPlatform.resize(myPlatform.length() - 3);
   OE::getOptionalString(xml, myAssy, "assembly");
   if (myAssy.empty())
     if (assembly)

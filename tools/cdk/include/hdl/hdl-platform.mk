@@ -108,7 +108,7 @@ OnlyTargets:=$(call HdlGetFamily,$(Worker))
 # But from here, if we are building this platform, we must force it
 # When the mode is platform and config, the underlying scripts depend
 # on HdlPlatform being the currrent platform.
-ifeq ($(filter $(Worker),$(HdlPlatforms)),)
+ifeq ($(filter $(Worker),$(HdlPlatforms))$(filter clean,$(MAKECMDGOALS)),)
   HdlSkip := 1
   $(info Skipping this platform ($(Worker)).  It is not in HdlPlatforms ($(HdlPlatforms)))
 else

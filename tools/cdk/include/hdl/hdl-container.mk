@@ -30,7 +30,7 @@ ifneq ($(MAKECMDGOALS),clean)
   endif
   $(and $(call DoShell,$(OcpiGen) -X $(Worker_xml),HdlContPfConfig),\
      $(error Processing container XML $(Worker_xml): $(HdlContPfConfig)))
-  HdlContPf:=$(word 1,$(HdlContPfConfig))
+  HdlContPf:=$(patsubst %_pf,%,$(word 1,$(HdlContPfConfig)))
   ifdef HdlPlatforms
    ifeq ($(filter $(HdlContPf),$(HdlPlatforms)),)
      $(info Nothing built since container platform is $(HdlContPf), which is not in HdlPlatforms: $(HdlPlatforms))
