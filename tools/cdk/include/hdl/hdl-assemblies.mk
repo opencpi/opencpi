@@ -58,7 +58,7 @@ $(Assemblies):
                $(HdlPassTargets) \
 	       LibDir=$(call AdjustRelative,$(LibDir)) \
 	       GenDir=$(call AdjustRelative,$(GenDir)) \
-	       ComponentLibrariesInternal="$(call OcpiAdjustLibraries,$(ComponentLibraries))" \
+	       ComponentLibrariesInternal="$(call OcpiAdjustLibraries,$(ComponentLibraries) $(ComponentLibrariesInternal))" \
 	       HdlLibrariesInternal="$(call OcpiAdjustLibraries,$(HdlLibraries))" \
                XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirs))" \
 	       $(PassOutDir)

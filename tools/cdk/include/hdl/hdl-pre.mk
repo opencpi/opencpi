@@ -297,7 +297,7 @@ HdlSkip:=1
 
 ################################################################################
 # Here is where we ended up with nothing to do due to filtering
-else ifeq ($(HdlToolSets),)
+else ifeq ($(HdlToolSets)$(filter skeleton,$(MAKECMDGOALS)),)
 $(call OcpiDbg,=============No tool sets at all, skipping)
 ifneq ($(MAKECMDGOALS),clean)
   ifdef HdlPreExcludeTargets
