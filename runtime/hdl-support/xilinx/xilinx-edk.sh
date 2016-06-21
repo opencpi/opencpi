@@ -9,4 +9,6 @@ function XilinxBad {
   OCPI_XILINX_EDK_DIR=$OCPI_XILINX_TOOLS_DIR/EDK
 }
 [ ! -d $OCPI_XILINX_EDK_DIR ] && XilinxBad no EDK directory under $OCPI_XILINX_TOOLS_DIR
+# Note that this script is sourced, so this variable is set in the caller,
+# but if the caller does not source it, the stdout is the variable value.
 echo $OCPI_XILINX_EDK_DIR

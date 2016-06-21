@@ -11,7 +11,7 @@ if test -f /etc/redhat-release; then
   # redhat/centos is just based on the major release number,
   # with minor releases assumed to be binary compatible.
   read v0 v1 <<EOF
-`sed < /etc/redhat-release 's/^\(.\).*release \([0-9]\)\..*/\1 \2/' | tr A-Z a-z`
+`sed < /etc/redhat-release 's/^\(.\).*release \([0-9][0-9]*\).*/\1 \2/' | tr A-Z a-z`
 EOF
 #  rhr=(`sed < /etc/redhat-release 's/^\(.\).*release \([0-9]\)\..*/\1 \2/' | tr A-Z a-z`)
 # echo info: 1"${rhr}"x 2"${rhr[*]}"x 3"${#rhr[*]}"x 1>&2

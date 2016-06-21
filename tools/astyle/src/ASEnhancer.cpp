@@ -645,10 +645,10 @@ size_t ASEnhancer::processSwitchBlock(string &line, size_t index)
 		sw.switchBracketCount++;
 		if (lookingForCaseBracket)                      // if 1st after case statement
 		{
-#if 0  // JEK suppress unindenting blocks in cases
+#if 0  // OCPI suppress unindenting blocks in cases
 			sw.unindentCase = true;                     // unindenting this case
 			sw.unindentDepth++;
-#endif //  end JEK
+#endif //  end OCPI
 			lookingForCaseBracket = false;              // not looking now
 		}
 		return i;

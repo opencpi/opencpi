@@ -106,13 +106,17 @@ namespace OCPI {
       } else
 	configFile = file;
       std::string err;
-      ocpiInfo("Processing XML system configuration file: \"%s\"", configFile.c_str());
-      if (OS::FileSystem::exists(configFile)) {
-	const char *e = OX::ezxml_parse_file(configFile.c_str(), m_xml);
-	if (e)
-	  err = e;
-      } else
-	err = "file does not exist";
+      if (configFile.empty())
+	ocpiInfo("Skipping XML system configuration due to explicitly empty config file name");
+      else {	
+	ocpiInfo("Processing XML system configuration file: \"%s\"", configFile.c_str());
+	if (OS::FileSystem::exists(configFile)) {
+	  const char *e = OX::ezxml_parse_file(configFile.c_str(), m_xml);
+	  if (e)
+	    err = e;
+	} else
+	  err = "file does not exist";
+      }
       if (err.empty() && m_xml) {
 	for (Manager *m = firstChild(); m; m = m->nextChild())
 	  ocpiDebug("Found a \"%s\" manager", m->name().c_str());

@@ -119,7 +119,7 @@ echo Preparing the kernel-headers tree based on the built kernel.
 rm -r -f kernel-headers-$tag kernel-headers
 ln -s kernel-headers-$tag kernel-headers
 mkdir kernel-headers-$tag
-# Ugly copy that avoids errors when caseinsensitive file systems are used (MacOS...)
+# copy that avoids errors when caseinsensitive file systems are used (MacOS...)
 #cp -R ../git/linux-xlnx/{Makefile,Module.symvers,include,scripts,arch} kernel-headers-$tag
 (cd ../git/linux-xlnx; for f in Makefile Module.symvers include scripts arch; do
   find $f -type d -exec mkdir -p $RELDIR/kernel-headers/{} \;
@@ -144,8 +144,7 @@ echo Patching the root file system.
 FROM=`pwd`
 SOURCE=`pwd`/SD-release/uramdisk.image.gz
 DEST=`pwd`/uramdisk.image.gz
-# T=/tmp/ocpi-patch-SD-$$
-T=uramdisk
+T=/tmp/ocpi-patch-SD-$$
 set -e
 rm -r -f $T
 mkdir $T

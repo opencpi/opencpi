@@ -10,7 +10,6 @@ runtime/dataplane/rdma_drivers/dma
 runtime/dataplane/rdma_drivers/ofed
 runtime/dataplane/rdma_drivers/pio
 runtime/dataplane/rdma_drivers/socket
-runtime/dataplane/rdma_drivers/udp
 runtime/dataplane/transport
 runtime/dataplane/msg_driver_interface
 runtime/dataplane/msg_drivers
@@ -27,14 +26,14 @@ runtime/application
 tools/cdkutils
 tools/ocpigen
 tools/cdk/ocpidds
-tools/astyle
+# tools/astyle
 tests
 ################################################################################
 # exclusions, sometimes only applying to categories
 -runtime/util main
 -runtime/dataplane main
 -runtime/ctests
--tools/astyle
+# -tools/astyle
 ################################################################################
 # inclusions that are not automatically derived from facilities
 +tools/cdk/default-system.xml

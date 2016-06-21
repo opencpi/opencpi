@@ -3,7 +3,7 @@ if test "$OCPI_XILINX_DIR" = ""; then
   export OCPI_XILINX_DIR=/opt/Xilinx
 fi
 if test "$OCPI_XILINX_VERSION" = ""; then
- export OCPI_XILINX_VERSION=14.6
+ export OCPI_XILINX_VERSION=14.7
 fi
 if test "$OCPI_XILINX_LICENSE_FILE" = ""; then
  export OCPI_XILINX_LICENSE_FILE=$OCPI_XILINX_DIR/Xilinx-License.lic

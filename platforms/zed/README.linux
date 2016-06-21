@@ -51,13 +51,13 @@ the platforms/zed directory in the OpenCPI tree.
    
 4. Retrieve the Xilinx linux source release, into a local "git/linux-xlnx" subdirectory, which
    will be used temporarily and could be removed later.  It is not placed into the OpenCPI repo.
-   Use the getXilinxLinuxSources.sh script, providing the base release number as an argument,
-   (e.g. 2013.4) to list the repo tags associated with that release, e.g.:
+   Use the getXilinxLinuxSources.sh script, providing an argument to suppress the help message.
+   E.g.: this obtains the sources in a local clone and shows the available tags
 
-   % ./getXilinxLinuxSource.sh x
+   % ./getXilinxLinuxSources.sh x
    % ./showXilinxLinuxTags.sh | grep {release-name-to-match}
 
-   Note we use the release name, rather than the explicit repo tag so that we might see
+   Note we grep for the release name, rather than the explicit repo tag so that we might see
    multiple repo tags that might include some patches since the official release came out.
    You can try a few different things to match against or provide no argument to list
    all tags in chronological order.
@@ -87,7 +87,7 @@ the platforms/zed directory in the OpenCPI tree.
    git commit -m "establish Xilinx Zynq release 2013.4 with kernel headers and patches"
    git push
 
-In the Zynq build environment, the OCPI_KERNEL_DIR environment variable usually points to
+In the Zynq build environment, the OCPI_TARGET_KERNEL_DIR environment variable usually points to
 $(OCPI_BASE_DIR)/platforms/zynq/release/kernel-headers.  Both the "release" and the
 "kernel-headers" are symbolic links to actual releases and source repo tags.
 

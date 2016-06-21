@@ -1,7 +1,7 @@
 <!-- THIS FILE WAS GENERATED ON Thu Oct 13 18:05:02 2011 EDT -->
 <!-- BASED ON THE FILE: test.idl -->
 <!-- YOU PROBABLY SHOULD NOT EDIT IT -->
-<protocol name="EmbMsg">
+<protocol>
   <operation name="EmbMsg">
     <argument name="value" type="Long"/>
     <argument name="sdbl" type="Double" sequenceLength="0"/>

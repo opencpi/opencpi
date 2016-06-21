@@ -3,7 +3,7 @@ ifndef OCPI_XILINX_DIR
   export OCPI_XILINX_DIR:=/opt/Xilinx
 endif
 ifndef OCPI_XILINX_VERSION
- export OCPI_XILINX_VERSION:=14.6
+ export OCPI_XILINX_VERSION:=14.7
 endif
 ifndef OCPI_XILINX_LICENSE_FILE
   export OCPI_XILINX_LICENSE_FILE=$(OCPI_XILINX_DIR)/Xilinx-License.lic

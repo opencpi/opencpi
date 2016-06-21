@@ -429,7 +429,7 @@ OcpiComponentLibraries=$(strip\
     $(foreach c,$(call Unique,$(ComponentLibraries) $(ComponentLibrariesInternal)),$(infox HCL:$c)\
       $(if $(findstring /,$c),\
          $(or $(call OcpiComponentLibraryExists,$c),\
-              $(error Component library $c (from ComponentLibraries) not found.)),\
+              $(error Component library $c (from ComponentLibraries, in $(CURDIR)) not found.)),\
          $(call OcpiSearchComponentPath,$c))))
 
 # Return the list of XML search directories for component libraries

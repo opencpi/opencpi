@@ -18,7 +18,7 @@ if test "$OCPI_CDK_DIR" = ""; then
   # Fifth arg is timezone spec - see "man timezone" for the format.
   export OCPI_TOOL_MODE=
   export OCPI_TARGET_MODE=
-  source /mnt/card/opencpi/zednetsetup.sh $1 /Users/jek/Business ocpi/main/opencpi/ocpi time.nist.gov EST5EDT,M3.2.0,M11.1.0
+  source /mnt/card/opencpi/zednetsetup.sh $1 /exports/user/opencpi ocpi/main/opencpi/ocpi time.nist.gov EST5EDT,M3.2.0,M11.1.0
   break # this script will be rerun recursively by setup.sh
 fi
 # Tell the ocpihdl utility to always assume the FPGA device is the zynq PL.
@@ -29,8 +29,6 @@ export OCPI_DEFAULT_HDL_DEVICE=pl:0
 export OCPI_SYSTEM_CONFIG=/mnt/card/opencpi/system.xml
 export OCPI_SUPPRESS_HDL_NETWORK_DISCOVERY=1
 # Get ready to run some test xml-based applications
-cd $OCPI_CDK_DIR/examples/xml
-# Shorten the default shell prompt
 PS1='% '
 # Print the available containers as a sanity check
 echo Discovering available containers...

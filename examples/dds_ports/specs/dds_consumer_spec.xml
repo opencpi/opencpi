@@ -1,4 +1,4 @@
-<ComponentSpec Name="dds_consumer">
+<ComponentSpec>
   <Properties>
     <Property Name="ocpi_msgs" readable="true" writable="true"/>
     <Property Name="ocpi_good_msgs" readable="true" writable="true"/>

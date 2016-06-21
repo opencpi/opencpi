@@ -101,10 +101,11 @@ ifneq ($(RccImplementations),)
 build_targets += rcc
 endif
 
+ifeq ($(OCPI_HAVE_OPENCL),1)
 ifneq ($(OclImplementations),)
 build_targets += ocl
 endif
-
+endif
 ifneq ($(HdlImplementations),)
 build_targets += hdl
 endif

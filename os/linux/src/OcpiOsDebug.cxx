@@ -73,10 +73,10 @@ namespace OCPI {
       int bts = backtrace (bt, 40);
       char ** btsyms = backtrace_symbols (bt, bts);
 
-      for (int i=0; i<bts; i++) {
-	write(2, btsyms[i], strlen(btsyms[i]));
-	write(2,"\n", 1);
-      }
+      for (int i=0; i<bts; i++)
+	if (write(2, btsyms[i], strlen(btsyms[i])) < 0 ||
+	    write(2,"\n", 1) < 0)
+	  break;
 
       free (btsyms);
     }

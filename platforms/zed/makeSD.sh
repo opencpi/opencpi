@@ -20,7 +20,7 @@ EOF
 fi
 if test $1 = -; then
   echo Using the current Xilinx kernel release:
-  if test ! -L release; then 
+  if test ! -d release; then
     echo Error: the '"release"' symlink is missing.  It should point to the current release.
     exit 1
   fi
@@ -33,17 +33,28 @@ else
     exit 1
   fi
 fi
+
 export OCPI_TARGET_PLATFORM=zed
-source ../../exports/scripts/ocpisetup.sh ../../exports/scripts/ocpisetup.sh
-  KERNEL_LIB_DIR=$OCPI_CDK_DIR/lib/linux-zynq-arm
-  BIN_DIR=$OCPI_CDK_DIR/bin/linux-zynq-arm
-  RUNTIME_LIB_DIR=$OCPI_CDK_DIR/lib/linux-zynq-arm
+if test -z $RPM_BUILD_ROOT; then
+  source ../../exports/scripts/ocpisetup.sh ../../exports/scripts/ocpisetup.sh
   EXAMPLES_ROOTDIR=$OCPI_CDK_DIR
-  OCPIRUN_PATH=$OCPI_CDK_DIR/bin/$OCPI_TOOL_HOST
+  OCPIRUN_PATH=$OCPI_CDK_DIR/bin/$OCPI_TOOL_HOST/
   if test "$OCPI_LIBRARY_PATH" = ""; then
     # Put all rcc components, and precanned bitstreams for the platform.
     export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/lib/components:$OCPI_CDK_DIR/lib/platforms/zed
   fi
+else
+  echo RPM Build detected - faking directory structure
+  OCPI_CDK_DIR=${RPM_BUILD_ROOT}/opt/opencpi/cdk
+  # Cannot just use CDK/lib and CDK/bin because the driver stuff isn't pushed there
+  EXAMPLES_ROOTDIR=${RPM_BUILD_ROOT}/opt/opencpi/base_project_source
+  OCPIRUN_PATH=${RPM_BUILD_ROOT}/opt/opencpi/cdk/bin/$OCPI_TOOL_HOST/
+  export OCPI_LIBRARY_PATH=${OCPI_CDK_DIR}/components/:${OCPI_HDL_PLATFORM_PATH}/${OCPI_TARGET_PLATFORM}/
+fi
+BIN_DIR=${OCPI_CDK_DIR}/bin/linux-zynq-arm
+KERNEL_LIB_DIR=$OCPI_CDK_DIR/lib/linux-zynq-arm
+RUNTIME_LIB_DIR=${OCPI_CDK_DIR}/lib/linux-zynq-arm
+
 cd $REL
 sd=OpenCPI-SD
 rel=SD-release
@@ -95,12 +106,14 @@ cp -L $OCPI_CDK_DIR/scripts/ocpibootstrap.sh $sd/opencpi/bin
 cp -L $OCPI_CDK_DIR/scripts/ocpidriver $sd/opencpi/bin
 cp -L $OCPI_CDK_DIR/scripts/ocpi_linux_driver $sd/opencpi/bin
 cp -L ${EXAMPLES_ROOTDIR}/examples/xml/{*.xml,test.input} $sd/opencpi/xml
+
 # Add the default system.xml to the SD card.
 cp ../system.xml $sd/opencpi
 n=0
 echo Adding artifacts found in OCPI_LIBRARY_PATH for linux-zynq-arm and zed targets.
-for i in $($OCPIRUN_PATH/ocpirun -A linux-zynq-arm,zed | sort); do
-  cp -L $i $sd/opencpi/artifacts/$(printf %03d-%s $n $(basename $i))
+export OCPI_SYSTEM_CONFIG=
+for i in $(${OCPIRUN_PATH}ocpirun -A linux-zynq-arm,zed | sort); do
+  cp $i $sd/opencpi/artifacts/$(printf %03d-%s $n $(basename $i))
   n=$(expr $n + 1)
 done
 echo Added $n artifacts to SD image.

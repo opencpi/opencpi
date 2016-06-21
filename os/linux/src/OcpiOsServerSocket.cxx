@@ -67,12 +67,12 @@ int ServerSocket::fd() throw() {
 }
 
 void ServerSocket::getAddr(Ether::Address &addr) {
-  int fd = o2fd(m_osOpaque);
-  ocpiAssert (fd >= 0);
+  int fd_tmp = o2fd(m_osOpaque);
+  ocpiAssert (fd_tmp >= 0);
 
   struct sockaddr_in sin;
   socklen_t len = sizeof(sin);
-  if (getsockname(fd, (struct sockaddr *)&sin, &len))
+  if (getsockname(fd_tmp, (struct sockaddr *)&sin, &len))
     throw Posix::getErrorMessage (errno, "getsockname");
   ocpiAssert(sin.sin_family == AF_INET);
   addr.set(ntohs(sin.sin_port), ntohl(sin.sin_addr.s_addr));
@@ -168,7 +168,7 @@ ServerSocket::wait (unsigned long msecs)
   struct timeval timeout;
   fd_set readfds;
 
-  int fd = o2fd (m_osOpaque);
+  int pfd = o2fd (m_osOpaque);
 
   /*
    * We want to wake up if the socket is closed in another thread.
@@ -181,7 +181,7 @@ ServerSocket::wait (unsigned long msecs)
 
  again:
   FD_ZERO (&readfds);
-  FD_SET (fd, &readfds);
+  FD_SET (pfd, &readfds);
 
   if (msecs != static_cast<unsigned long> (-1)) {
     timeout.tv_sec = (msecs >= 1000) ? 1 : 0;
@@ -192,7 +192,7 @@ ServerSocket::wait (unsigned long msecs)
     timeout.tv_usec = 0;
   }
 
-  int res = ::select (fd+1, &readfds, 0, 0, &timeout);
+  int res = ::select (pfd+1, &readfds, 0, 0, &timeout);
 
   if (res < 0) {
     throw Posix::getErrorMessage (errno);

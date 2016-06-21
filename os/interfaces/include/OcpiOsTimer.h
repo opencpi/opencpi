@@ -39,6 +39,7 @@
 #define OCPI_OS_TIMER_H__
 
 #include <OcpiOsDataTypes.h>
+
 /**
  * \file
  *
@@ -89,15 +90,15 @@ namespace OCPI {
 	  (uint32_t)
 	  (((m_time & 0xffffffffll) * nsPerSecond + ticksPerSecond/2) / ticksPerSecond);
       }
-      inline Time(uint32_t seconds, uint32_t nanoseconds) {
-	m_time = (((uint64_t)nanoseconds << 32) + nsPerSecond / 2) / nsPerSecond +
-	  ((uint64_t)seconds << 32);
+      inline Time(uint32_t seconds_in, uint32_t nanoseconds_in) {
+	m_time = (((uint64_t)nanoseconds_in << 32) + nsPerSecond / 2) / nsPerSecond +
+	  ((uint64_t)seconds_in << 32);
       }
       inline Time() {}
       inline Time(TimeVal t) { m_time = t;}
-      inline void set(uint32_t seconds, uint32_t nanoseconds) {
-	m_time = (((uint64_t)nanoseconds << 32) + nsPerSecond / 2) / nsPerSecond +
-	  ((uint64_t)seconds << 32);
+      inline void set(uint32_t seconds_in, uint32_t nanoseconds_in) {
+	m_time = (((uint64_t)nanoseconds_in << 32) + nsPerSecond / 2) / nsPerSecond +
+	  ((uint64_t)seconds_in << 32);
       }
       inline void set(TimeVal t) { m_time = t;}
       inline bool operator> (const Time &r) const { return m_time > r.m_time; }
@@ -135,21 +136,21 @@ namespace OCPI {
       Time expiration;
 	
       bool running;
-      void init(bool start);
+      void init(bool start_now);
       uint64_t m_opaque[16];
     public:
       /**
        * Constructor.
        *
-       * \param[in] start Whether the timer should be started right away.
+       * \param[in] start_now Whether the timer should be started right away.
        *                  If false, start() needs to be called separately.
        *
        * \post The accumulated elapsed time is initialized to zero.
        */
 
-      Timer (bool start = false)
+      Timer (bool start_now = false)
         throw ();
-      Timer (uint32_t seconds, uint32_t nanoseconds)
+      Timer (uint32_t seconds_in, uint32_t nanoseconds_in)
 	throw ();
       Timer (Time)
 	throw ();
@@ -171,7 +172,6 @@ namespace OCPI {
 
       void start ()
         throw ();
-
       /**
        * Stop the timer.
        *
@@ -182,7 +182,6 @@ namespace OCPI {
 
       ElapsedTime stop ()
         throw ();
-
       /**
        * Reset the timer.
        *

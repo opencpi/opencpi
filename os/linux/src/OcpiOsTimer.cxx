@@ -40,8 +40,8 @@
 #include <fcntl.h>
 #include <time.h>
 #include <unistd.h>
-#include <stdio.h>
 #include <cstring>
+#include <cstdio>
 #include <cstdlib>
 #include <string>
 
@@ -52,6 +52,13 @@
 typedef uint64_t cpu_set_t;
 #endif
 
+#ifndef OCPI_CLOCK_TYPE
+  #ifdef CLOCK_MONOTONIC_RAW
+    #define OCPI_CLOCK_TYPE CLOCK_MONOTONIC_RAW
+  #else
+    #define OCPI_CLOCK_TYPE CLOCK_MONOTONIC
+  #endif
+#endif
 namespace OCPI {
   namespace OS {
 
@@ -63,7 +70,7 @@ Time Time::now() {
   t.set((uint32_t)tv.tv_sec, tv.tv_usec * 1000);
 #else
   struct timespec ts;
-  ocpiCheck(clock_gettime (CLOCK_MONOTONIC_RAW, &ts) == 0);
+  ocpiCheck(clock_gettime (OCPI_CLOCK_TYPE, &ts) == 0);
   t.set((uint32_t)ts.tv_sec, (uint32_t)ts.tv_nsec);
 #endif
   return t;
@@ -221,7 +228,7 @@ CounterFreq::CounterFreq ()
   int ax,bx,cx,dx;
   cpuid(0x80000007,ax,bx,cx,dx)
   //if tsc_invariant not present return - present in edx 0x80000007 bit 8
-  if (!dx&0x8) {
+  if (!(dx&0x8)) {
       return;
   }
   size_t pointer;
@@ -357,26 +364,26 @@ namespace {
     uint32_t lower, upper;
     uint16_t accumulatedCounter;
   };
-
+/* Unused...?
   struct TimerData {
     bool running;
 
     TimerClockInfo tci;
     TimerTickInfo tti;
-  };
+  }; */
 }
 
 Timer::
-Timer (bool start)
+Timer (bool start_now)
   throw ()
 {
   ocpiAssert ((compileTimeSizeCheck<sizeof (m_opaque), sizeof (cpu_set_t)> ()));
   ocpiAssert (sizeof (m_opaque) >= sizeof (cpu_set_t));
-  init(start);
+  init(start_now);
 }
 Timer::
-Timer(uint32_t seconds, uint32_t nanoseconds)  throw()
-  : expiration(seconds, nanoseconds){
+Timer(uint32_t seconds_in, uint32_t nanoseconds_in)  throw()
+  : expiration(seconds_in, nanoseconds_in){
   init(true);
 }
 Timer::
@@ -384,10 +391,10 @@ Timer(Time time)  throw()
   : expiration(time) {
   init(time != 0);
 }
-void Timer::init(bool start) {
+void Timer::init(bool start_now) {
   tti.accumulatedCounter = tti.upper = tti.lower = 0;
   tci.accumulatedTime.set(0);
-  if ((running = start)) { // Intentionally setting "running"
+  if ((running = start_now)) { // Intentionally setting "running"
     if (useHighResTimer()) {
       register volatile unsigned int tb_lower, tb_upper = 0, tb_upper_tmp;
 
@@ -466,13 +473,13 @@ stop ()
   throw ()
 {
   ElapsedTime et = getElapsed();
-  if (useHighResTimer()) {
 #ifdef OCPI_OS_linux
+  if (useHighResTimer()) {
     // Reset CPU affinity
     cpu_set_t &org_mask = *(cpu_set_t *)m_opaque;
     sched_setaffinity(getpid(), sizeof(org_mask), &org_mask);
-#endif
   }
+#endif
   running = false;
   return et;
 }
@@ -586,7 +593,7 @@ getPrecision (ElapsedTime & prec)
     prec.set(0, 10000000); // 10ms - hah!
 #else
     struct timespec res;
-    ocpiCheck(clock_getres (CLOCK_MONOTONIC, &res) == 0);
+    ocpiCheck(clock_getres (OCPI_CLOCK_TYPE, &res) == 0);
     prec.set((uint32_t)res.tv_sec, (uint32_t)res.tv_nsec);
 #endif
   }

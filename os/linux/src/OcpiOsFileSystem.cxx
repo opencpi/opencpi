@@ -432,7 +432,7 @@ exists(const std::string & name, bool * isDir, uint64_t *size, std::time_t *mtim
        FileId *id)
   throw ()
 {
-  std::string nativeName = toNativeName (name);
+  std::string nativeName = toNativeName (name); // Error: Exception thrown in function declared not to throw exceptions.
 
   struct stat info;
   if (stat (nativeName.c_str(), &info))
