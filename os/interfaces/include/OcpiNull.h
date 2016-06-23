@@ -22,7 +22,8 @@ Note: This is only needed in the non-autoconf tree. The autoconf tree autodetect
 */
 
 #ifndef HAVE_NULLPTR
-namespace ocpi
+#if __cplusplus <= 199711
+namespace OCPI
 {
     //based on SC22/WG21/N2431 = J16/07-0301
     struct nullptr_t
@@ -59,5 +60,6 @@ private:
 static const nullptr_t __nullptr = {};
 }
 
-#define nullptr ocpi::__nullptr
+#define nullptr OCPI::__nullptr
+#endif
 #endif
