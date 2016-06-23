@@ -11,7 +11,7 @@ export OCPISETUP_MK:=1
 OcpiThisFile=$(lastword $(MAKEFILE_LIST))
 
 ################################################################################
-# Set and verify OCPI_CDK_DIR
+# Set and verify OCPI_CDK_DIR (unless RPM building where all bets are off)
 ifndef OCPI_CDK_DIR
   # Remember to use abs path here, not real path, to preserve links for UI
   export OCPI_CDK_DIR:= $(abspath $(dir $(abspath $(OcpiThisFile)))/..)
@@ -20,6 +20,7 @@ else
   export OCPI_CDK_DIR
 endif
 
+ifndef RPM_BUILD_ROOT
 # We run the OCPI_CDK_DIR through the shell to handle ~ (at least).
 OCPI_CDK_DIR:=$(shell echo $(OCPI_CDK_DIR))
 ifeq ($(realpath $(OCPI_CDK_DIR)),)
@@ -29,6 +30,7 @@ ifneq ($(realpath $(OCPI_CDK_DIR)/include/ocpisetup.mk),$(realpath $(OcpiThisFil
   $(error Inconsistent usage of this file ($(OcpiThisFile)->$(realpath $(OcpiThisFile))) vs. OCPI_CDK_DIR ($(realpath $(OCPI_CDK_DIR)/include/ocpisetup.mk)))
 endif
 $(info OCPI_CDK_DIR has been set to $(OCPI_CDK_DIR) and verified to be sane.)
+endif
 
 endif # The end of processing this file once - ifndef OCPISETUP_MK
 ################################################################################
@@ -111,6 +113,14 @@ ifeq ($(wildcard $(OCPI_CDK_DIR)/include/autoconfig_import*),)
   endif
 else
   # Import and/or default RPM-based settings
+  # AV-815 temporary fix until AV-816
+  ifneq ($(origin OCPI_TARGET_PLATFORM),undefined)
+    ifeq ($(OCPI_TARGET_PLATFORM),zed)
+      ifeq ($(OCPI_CROSS_HOST),)
+        OCPI_CROSS_HOST=arm-xilinx-linux-gnueabi
+      endif
+    endif
+  endif
   ifneq ($(OCPI_CROSS_HOST),)
     include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_CROSS_HOST).mk
   else
@@ -120,13 +130,18 @@ endif
 
 ################################################################################
 # Run the target-specific make setup script
-p:=$(OCPI_CDK_DIR)/platforms/$(OCPI_TARGET_PLATFORM)
+ifndef RPM_BUILD_ROOT
+  p:=$(OCPI_CDK_DIR)/platforms/$(OCPI_TARGET_PLATFORM)
+else
+  p:=exports/platforms/$(OCPI_TARGET_PLATFORM)
+endif
 # Note that this script has access to OCPI_TOOL_xxx if the settings vary by tool host
 f:=$p/$(OCPI_TARGET_PLATFORM)-target.mk
 ifeq ($(wildcard $f),)
   $(error There is no target setup file ($f) for platform $(OCPI_TARGET_PLATFORM).)
 else
  include $f
+ $(warning File $f included for the target platform. OCPI_TARGET_CXXFLAGS: $(OCPI_TARGET_CXXFLAGS))
 endif
 
 ################################################################################

@@ -50,7 +50,7 @@ addDevInstance(const Device &dev, const Card *card, const Slot *slot,
 	       const DevInstance *&devInstance) {
   const char *err;
   m_devInstances.push_back(DevInstance(dev, card, slot, control, parent));
-  assert(card && slot || !card && !slot);
+  assert((card && slot) || (!card && !slot));
   assert(!slot || !m_plugged[slot->m_ordinal] || card == m_plugged[slot->m_ordinal]);
   if (slot && !m_plugged[slot->m_ordinal])
     m_plugged[slot->m_ordinal] = card;
@@ -113,12 +113,13 @@ parseDevInstance(const char *device, ezxml_t x, const char *parentFile, Worker *
       break;
     default:
       for (SlotsIter si = m_platform.slots().begin(); si != m_platform.slots().end(); si++)
-	if ((*si).second->type() == card->type())
+	if ((*si).second->type() == card->type()) {
 	  if (slot)
 	    return OU::esprintf("Multiple slots are possible for card \"%s\"",
 				card->cname());
 	  else
 	    slot = (*si).second;
+	}
     }
   }
   const Device *dev;
@@ -131,7 +132,7 @@ parseDevInstance(const char *device, ezxml_t x, const char *parentFile, Worker *
 			device);
       
   const DevInstance *di;
-  assert(card && slot || !card && !slot);
+  assert((card && slot) || (!card && !slot));
   if (control && !dev->m_deviceType.m_canControl)
     return OU::esprintf("Device '%s' cannot have control since its type (%s) cannot",
 			dev->cname(), dev->deviceType().cname());
@@ -266,7 +267,7 @@ create(ezxml_t xml, const char *knownPlatform, const char *xfile, Worker *parent
   // in the hdl/platforms directory since:
   // 1. The platform config might be remote from the platform.
   // 2. The platform config is parsed during container processing elsewhere.
-  if (myPlatform.empty())
+  if (myPlatform.empty()) {
     if (knownPlatform)
       myPlatform = knownPlatform;
     else if (::platform)
@@ -275,7 +276,7 @@ create(ezxml_t xml, const char *knownPlatform, const char *xfile, Worker *parent
 	err = "No platform specified in HdlConfig nor on command line";
 	return NULL;
     }
-      
+  }
 #if 0
     else {
       const char *slash = xfile ? strrchr(xfile, '/') : NULL;
@@ -459,7 +460,7 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
 	     "%s"
 	     "=======End generated platform configuration assembly=======\n",
 	     assy.c_str());
-  // Now we hack the (inherited) worker to have the xml for the assembly we just generated.
+  // Now we update the (inherited) worker to have the xml for the assembly we just generated.
   char *copy = strdup(assy.c_str());
   ezxml_t x;
   if ((err = OE::ezxml_parse_str(copy, strlen(copy), x)))

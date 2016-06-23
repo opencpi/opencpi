@@ -160,7 +160,7 @@ ifeq ($(origin ImplHeaderFiles),undefined)
 ImplHeaderFiles=$(foreach w,$(Workers),$(call ImplHeaderFile,$w))
 ImplHeaderFile=$(GeneratedDir)/$1$(ImplSuffix)
 $(call OcpiDbgVar,ImplHeaderFiles)
-# FIXME: HdlPlatform is bogus here
+# FIXME: HdlPlatform is incorrect here
 $(ImplHeaderFiles): $(GeneratedDir)/%$(ImplSuffix) : $$(Worker_%_xml) | $(GeneratedDir)
 	$(AT)echo Generating the implementation header file: $@ from $< 
 	$(AT)$(OcpiGen) -D $(GeneratedDir) $(and $(Package),-p $(Package)) \

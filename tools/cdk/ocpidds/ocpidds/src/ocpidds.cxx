@@ -55,6 +55,8 @@
 #include <assert.h>
 #include <vector>
 #include <list>
+
+#include "OcpiNull.h"
 #include "OcpiOsFileSystem.h"
 #include "OcpiUtilDataTypes.h"
 #include "OcpiUtilProtocol.h"
@@ -284,8 +286,9 @@ static void appendQuoteEscape(char *base, const char *append) {
   *cp = 0;
 }
 
-// A small hack to make the tmp directory portable
+// to make the tmp directory portable
 // Sort of like asprintf.  Outputs must be freed
+// If return is < 0, then outputs are not set.
 static int
 mymkstemp(char **result, char **dir, const char *prefix, const char *suffix) {
   char *tmp = getenv("TMPDIR");
@@ -301,8 +304,8 @@ mymkstemp(char **result, char **dir, const char *prefix, const char *suffix) {
   char *cp = tmp + strlen(tmp) - 1;
   if (cp != tmp && strchr(OS::FileSystem::slashes, *cp))
     *cp = '\0';
-  asprintf(&cp, "%s%c%sXXXXXX%s%s", tmp, OS::FileSystem::slashes[0], prefix,
-	   suffix ? "." : "", suffix ? suffix : "");
+  ocpiCheck(asprintf(&cp, "%s%c%sXXXXXX%s%s", tmp, OS::FileSystem::slashes[0], prefix,
+		     suffix ? "." : "", suffix ? suffix : "") > 0);
   fd = OURmkstemps(cp, suffix ? strlen(suffix)+1 : 0);
   if (fd >= 0) {
     if (dir)
@@ -332,7 +335,7 @@ run(const char *command, char *&out)
       err = "internal error running idl parser 2";
       break;
     }
-    asprintf(&myCommand, "%s 1> %s 2> %s", command, outFile, errFile);
+    ocpiCheck(asprintf(&myCommand, "%s 1> %s 2> %s", command, outFile, errFile) > 0);
     //printf("IDLFront:%s\n", myCommand);
     // Windows requires the files be closed and then reopened...
     close(ofd); ofd = -1;
@@ -359,9 +362,10 @@ run(const char *command, char *&out)
 	}
 	switch ((oSize = lseek(ofd, 0, SEEK_END))) {
 	case 0:
-	  if (systemResult) {
-	    asprintf((char **)&err, "No error output when IDL parser failed on: %s", myCommand);
-	  } else
+	  if (systemResult)
+	    ocpiCheck(asprintf((char **)&err, "No error output when IDL parser failed on: %s",
+			       myCommand) > 0);
+	  else
 	    err = "No interfaces found in IDL file(s)";
 	  break;
 	case -1:
@@ -440,12 +444,13 @@ idl2ifr(const char *const *argv, char *&repo)
       size += strlen(*ap) * 2 + 3; // all escaped, quoted, spaced
       if (ap[0][0] == '-') {
 	if (strchr("DUI", ap[0][1])) {
-	  if (ap[0][2] == '\0')
+	  if (ap[0][2] == '\0') {
 	    if (!*++ap) {
 	      err = "expected one more argumnent after -D, -I, or -U";
 	      break;
 	    } else
 	      size += strlen(*ap) * 2 + 3;
+	  }
 	} else {
 	  err = "invalid flag argument - not D, U, or I";
 	  break;
@@ -467,7 +472,7 @@ idl2ifr(const char *const *argv, char *&repo)
 	break;
     }
     char *omni;
-    asprintf(&omni, "/usr/local/bin/omniidl -p%s -b%s", beDir, beName);
+    ocpiCheck(asprintf(&omni, "/usr/local/bin/omniidl -p%s -b%s", beDir, beName) > 0);
     free(beCopy);
     char *cp = (char *)malloc(strlen(omni) + size + 1);
     strcpy(cp, omni);
@@ -483,7 +488,7 @@ idl2ifr(const char *const *argv, char *&repo)
   } while(0);
   unlink(beTemp); // remove the .py file we created and wrote
   char *dupc;
-  asprintf(&dupc, "%sc", beTemp);
+  ocpiCheck(asprintf(&dupc, "%sc", beTemp) > 0);
   free(beTemp);
   unlink(dupc); // remove the .pyc file that might have been created
   free(dupc);
@@ -724,7 +729,8 @@ doStruct(OU::Protocol &p, const char *&cp) {
   return NULL;
 }
 const char *
-emitProtocol(const char *outDir, const char *file, const char *structName) {
+emitProtocol(const char *const *argv, const char *outDir, const char *file,
+	     const char *structName) {
   const char *err = 0;
   std::string s;
   if (!structName) {
@@ -744,7 +750,7 @@ emitProtocol(const char *outDir, const char *file, const char *structName) {
   }
   char *repo;
   addInclude(file);
-  if ((err = idl2ifr(includes, repo)))
+  if ((err = idl2ifr(argv, repo)))
     return err;
   const char *cp = repo;
   std::string l1, l2;

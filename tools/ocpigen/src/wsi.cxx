@@ -122,8 +122,8 @@ emitVhdlShell(FILE *f, Port *wci) {
 	  "  --\n"
 	  "  -- The WSI interface helper component instance for port \"%s\"\n",
 	  name());
-  if (ocp.MReqInfo.value)
-    if (m_protocol && m_protocol->nOperations())
+  if (ocp.MReqInfo.value) {
+    if (m_protocol && m_protocol->nOperations()) {
       if (slave)
 	fprintf(f,
 		"  %s_opcode <= %s_opcode_t'val(to_integer(unsigned(%s_opcode_temp)));\n",
@@ -150,10 +150,10 @@ emitVhdlShell(FILE *f, Port *wci) {
 		"  %s_opcode_temp <= std_logic_vector(to_unsigned(%s_opcode_pos, %s_opcode_temp'length));\n",
 		name(), name(), name());
       }
-    else 
+    } else 
       fprintf(f, "  %s_opcode%s <= %s_opcode%s;\n",
 	      name(), slave ? "" : "_temp", name(), slave ? "_temp" : "");
-	
+  }	
   std::string width;
   OU::format(width, "ocpi_port_%s_", name());
   fprintf(f,
@@ -309,9 +309,10 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
 	oa->comment = "Tell consumer all bursts are imprecise";
 	oa = &consAdapt[OCP_MBurstLength];
 	oa->other = OCP_MBurstLength;
-	asprintf((char **)&oa->expr,
-		 lang == Verilog ? "{%zu'b0,%%s}" : "std_logic_vector(to_unsigned(0,%zu)) & %%s",
-		 cons.ocp.MBurstLength.width - 2);
+	ocpiCheck(asprintf((char **)&oa->expr,
+			   lang == Verilog ?
+			   "{%zu'b0,%%s}" : "std_logic_vector(to_unsigned(0,%zu)) & %%s",
+			   cons.ocp.MBurstLength.width - 2) > 0);
 	oa->comment = "Consumer only needs imprecise burstlength (2 bits)";
 	oa->isExpr = true; // concatenation
       }
@@ -320,9 +321,9 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
   if (m_preciseBurst && cons.m_preciseBurst &&
       ocp.MBurstLength.width < cons.ocp.MBurstLength.width) {
     oa = &consAdapt[OCP_MBurstLength];
-    asprintf((char **)&oa->expr,
-	     lang == Verilog ? "{%zu'b0,%%s}" : "to_unsigned(0,%zu) & %%s",
-	     cons.ocp.MBurstLength.width - ocp.MBurstLength.width);
+    ocpiCheck(asprintf((char **)&oa->expr,
+		       lang == Verilog ? "{%zu'b0,%%s}" : "to_unsigned(0,%zu) & %%s",
+		       cons.ocp.MBurstLength.width - ocp.MBurstLength.width) > 0);
     oa->comment = "Consumer takes bigger bursts than producer creates";
     oa->other = OCP_MBurstLength;
   }
@@ -351,15 +352,15 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
   } else if (m_earlyRequest)
     return "producer emits early requests, but consumer doesn't support them";
   // Opcode compatibility
-  if (cons.m_nOpcodes != m_nOpcodes)
+  if (cons.m_nOpcodes != m_nOpcodes) {
     if (cons.ocp.MReqInfo.value) {
       if (ocp.MReqInfo.value) {
 	if (cons.ocp.MReqInfo.width > ocp.MReqInfo.width) {
 	  oa = &consAdapt[OCP_MReqInfo];
-	  asprintf((char **)&oa->expr,
-		   lang == Verilog ?
-		   "{%zu'b0,%%s}" : "std_logic_vector(to_unsigned(0,%zu)) & %%s",
-		   cons.ocp.MReqInfo.width - ocp.MReqInfo.width);
+	  ocpiCheck(asprintf((char **)&oa->expr,
+			     lang == Verilog ?
+			     "{%zu'b0,%%s}" : "std_logic_vector(to_unsigned(0,%zu)) & %%s",
+			     cons.ocp.MReqInfo.width - ocp.MReqInfo.width) > 0);
 	  oa->isExpr = true;
 	  oa->other = OCP_MReqInfo;
 	} else {
@@ -368,9 +369,9 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
       } else {
 	// producer has none, consumer has some
 	oa = &consAdapt[OCP_MReqInfo];
-	asprintf((char **)&oa->expr,
-		 lang == Verilog ? "%zu'b0" : "std_logic_vector(to_unsigned(0,%zu))",
-		 cons.ocp.MReqInfo.width);
+	ocpiCheck(asprintf((char **)&oa->expr,
+			   lang == Verilog ? "%zu'b0" : "std_logic_vector(to_unsigned(0,%zu))",
+			   cons.ocp.MReqInfo.width) > 0);
       }
     } else {
       // consumer has none
@@ -378,6 +379,7 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
       oa->expr = lang == Verilog ? "" : "open";
       oa->comment = "Consumer doesn't have opcodes (or has exactly one)";
     }
+  }
   // Byte enable compatibility
   oa = &consAdapt[OCP_MByteEn];
   if (cons.ocp.MByteEn.value && ocp.MByteEn.value) {
@@ -436,7 +438,7 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
     if (lang == VHDL)
       oa->expr = strdup("(others => '1')");
     else
-      asprintf((char **)&oa->expr, "{%zu{1'b1}}", cons.ocp.MByteEn.width);
+      ocpiCheck(asprintf((char **)&oa->expr, "{%zu{1'b1}}", cons.ocp.MByteEn.width) > 0);
   } else if (ocp.MByteEn.value) {
     // only producer has byte enables
     oa = &prodAdapt[OCP_MByteEn];

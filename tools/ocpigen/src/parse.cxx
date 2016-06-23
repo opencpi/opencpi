@@ -143,7 +143,7 @@ tryOneChildInclude(ezxml_t top, const std::string &parent, const char *element,
   const char *err = 0;
   for (ezxml_t x = OE::ezxml_firstChild(top); x; x = OE::ezxml_nextChild(x)) {
     const char *eName = ezxml_name(x);
-    if (eName)
+    if (eName) {
       if (!strcasecmp(eName, element))
 	if (*parsed)
 	  return OU::esprintf("found duplicate %s element where only one was expected",
@@ -168,6 +168,7 @@ tryOneChildInclude(ezxml_t top, const std::string &parent, const char *element,
 	  }
 	}
       }
+    }
   }
   if (!*parsed && !optional)
     return OU::esprintf("no %s element found under %s, whether included via xi:include or not",
@@ -252,11 +253,12 @@ doMaybeProp(ezxml_t maybe, void *vpinfo) {
   bool isSpec = !strcasecmp(eName, "SpecProperty");
   if (isSpec && !pinfo.isImpl)
     return "SpecProperty elements not allowed in component specification";
-  if (!isSpec && strcasecmp(eName, "Property"))
+  if (!isSpec && strcasecmp(eName, "Property")) {
     if (pinfo.top)
       return 0;
     else
       return OU::esprintf("Invalid child element '%s' of a 'Properties' element", eName);
+  }
   //  if (pinfo.anyIsBad)
   //    return "A Property or SpecProperty element is invalid in this context";
   const char *name = ezxml_cattr(maybe, "Name");
@@ -358,14 +360,14 @@ parseImplControl(ezxml_t &xctl, const char */*firstRaw*/) { // FIXME: nuke the s
   bool sub32;
   // either can set to true
   if ((err = OE::getBoolean(m_xml, "Sub32BitConfigProperties", &sub32)) ||
-      !sub32 && xctl && (err = OE::getBoolean(xctl, "Sub32BitConfigProperties", &sub32)))
+      (!sub32 && xctl && (err = OE::getBoolean(xctl, "Sub32BitConfigProperties", &sub32))))
     return err;
   if (sub32)
     m_ctl.sub32Bits = true;
   // We take ops from either place as true
   if ((err = OU::parseList(ezxml_cattr(m_xml, "ControlOperations"), parseControlOp, this)) ||
-      xctl &&
-      (err = OU::parseList(ezxml_cattr(xctl, "ControlOperations"), parseControlOp, this)))
+      (xctl &&
+       (err = OU::parseList(ezxml_cattr(xctl, "ControlOperations"), parseControlOp, this))))
     return err;
   // Add the built-in properties
   if ((err = addBuiltinProperties()) ||
@@ -602,7 +604,7 @@ parseSpec(const char *package) {
   if (strchr(m_specName, '.'))
     m_specName = strdup(m_specName);
   else
-    asprintf((char **)&m_specName, "%s.%s", m_package.c_str(), m_specName);
+    ocpiCheck(asprintf((char **)&m_specName, "%s.%s", m_package.c_str(), m_specName) > 0);
   if ((err = OE::checkAttrs(spec, "Name", "NoControl", "package", (void*)0)) ||
       (err = OE::getBoolean(spec, "NoControl", &m_noControl)))
     return err;
@@ -843,17 +845,22 @@ create(const char *file, const std::string &parentFile, const char *package, con
   return w;
 }
 
+// TODO: Move to vector
 static unsigned nLibraries;
 const char **libraries;
-void
+const char *
 addLibrary(const char *lib) {
   for (const char **lp = libraries; lp && *lp; lp++) {
     if (!strcasecmp(lib, *lp))
-      return;
+      return NULL;
   }
+  // Verify sane name
+  if (lib[0] == '-')
+    return OU::esprintf("Invalid library name: %s", lib);
   libraries = (const char **)realloc(libraries, (nLibraries + 2) * sizeof(char *));
   libraries[nLibraries++] = lib;
   libraries[nLibraries] = 0;
+  return NULL;
 }
 
 // FIXME: use std::map
@@ -871,20 +878,22 @@ addLibMap(const char *map) {
   for (const char **mp = mappedLibraries; mp && *mp; mp++)
     if (!strcasecmp(newLib, *mp)) {
       const char **dir = &mappedDirs[mp - mappedLibraries];
-      if (cp) // if a new dir is associated with this library
+      if (cp) { // if a new dir is associated with this library
 	if ((*dir)[0]) { // if there is an existing dir for this library
 	  if (strcmp(cp, *dir))
 	    return OU::esprintf("Inconsistent library mapping for %s: %s vs. %s",
 				newLib, cp, *dir);
 	} else
 	  *dir = cp;
+      }
+      ocpiDebug("addLibMap: %s: already have '%s'", map, *dir);
       return NULL;
     }
   mappedLibraries = (const char **)realloc(mappedLibraries, (nMaps + 2) * sizeof(char *));
   mappedDirs = (const char **)realloc(mappedDirs, (nMaps + 2) * sizeof(char *));
   mappedLibraries[nMaps] = newLib;
   mappedDirs[nMaps] = cp ? cp : "";
-  ocpiDebug("addLibMap: lib is %s dir is %s", newLib, mappedDirs[nMaps]);
+  ocpiDebug("addLibMap: lib is '%s' dir is '%s'", newLib, mappedDirs[nMaps]);
   mappedLibraries[++nMaps] = 0;
   mappedDirs[nMaps] = 0;
   return NULL;
@@ -931,7 +940,7 @@ summarizeAccess(OU::Property &p) {
     sub32Bits = true;
   if (p.m_isVolatile)
     volatiles = true;
-  if (p.m_isVolatile || p.m_isReadable && !p.m_isWritable && !p.m_isParameter)
+  if (p.m_isVolatile || (p.m_isReadable && !p.m_isWritable && !p.m_isParameter))
     readbacks = true;
   nRunProperties++;
 }

@@ -161,15 +161,6 @@ HdlGetFamily_core=$(call OcpiDbg,Entering HdlGetFamily_core($1,$2))$(strip \
 # $(call HdlGetFamilies,hdl-target)
 # Return all the families for this target
 # HdlGetFamilies=$(call OcpiDbg,Entering HdlGetFamilies($1))$(strip 
-ifdef NEVER
-HdlGetFamilies=$(eval m1=$(subst $(Space),___,$1))$(strip \
-  $(if $(HdlGetFamilies_cached<$(m1)>),,\
-    $(call OcpiDbg,HdlGetFamilies($1) cache miss)$(eval export HdlGetFamilies_cached<$(m1)>:=$(strip $(call HdlGetFamilies_core,$1))))\
-  $(infox HdlGetFamilies($1)->$(HdlGetFamilies_cached<$(m1)>))$(HdlGetFamilies_cached<$(m1)>))
-
-endif
-#HdlGetFamilies_core=$(strip \
-
 HdlGetFamilies=$(strip \
   $(foreach fs,$(call Unique,$(foreach t,$1,\
                          $(if $(findstring $(t),all),\

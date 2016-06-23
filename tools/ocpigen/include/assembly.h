@@ -57,8 +57,8 @@ struct Instance : public OU::IdentResolver {
   const char *attach;  // external platform port this worker is attached to for io or interconnect
   OCPI::Util::Assembly::Properties m_xmlProperties; // explicit unparsed values for the instance
   InstanceProperties properties;                    // fully parsed w/ full knowledge of worker
-  bool hasConfig;      // hack for adapter configuration FIXME make normal properties
-  size_t config;       // hack ditto
+  bool hasConfig;      // for adapter configuration FIXME make normal properties
+  size_t config;
   ExtMap m_extmap;     // map for externals. FIXME: have HdlInstance class...
   bool   m_emulated;   // is this an instance of a device worker with an emulator?
   Instance();

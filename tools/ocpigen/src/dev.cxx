@@ -110,8 +110,8 @@ emitRecordInterface(FILE *f, const char *implName) {
 
 void DevSignalsPort::
 emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signal) {
-  if (output && !haveOutputs() ||
-      !output && !haveInputs())
+  if ((output && !haveOutputs()) ||
+      (!output && !haveInputs()))
     return;
   std::string tname;
   OU::format(tname, output ? typeNameOut.c_str() : typeNameIn.c_str(), "");
@@ -139,15 +139,15 @@ emitPortSignalsDir(FILE *f, bool output, const char *indent, bool &any, std::str
   if (!master)
     output = !output; // signals that are included are not relevant
   for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++)
-    if ((*si)->m_direction == Signal::IN && !output ||
-	(*si)->m_direction == Signal::OUT && output)
+    if (((*si)->m_direction == Signal::IN && !output) ||
+	((*si)->m_direction == Signal::OUT && output))
       for (size_t n = 0; n < count; n++) {
 	std::string myindex;
 	if (count > 1)
 	  OU::format(myindex, "(%zu)", n);
 	std::string otherName = conn;
 	if (other) {
-	  if (other && other->m_instPort.m_port->count > count || count > 1)
+	  if ((other && other->m_instPort.m_port->count > count) || count > 1)
 	    OU::formatAdd(otherName, "(%zu)", n + other->m_index);
 	  OU::formatAdd(otherName, ".%s", (*si)->m_name.c_str());
 	} else

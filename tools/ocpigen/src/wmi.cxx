@@ -165,7 +165,7 @@ emitImplAliases(FILE *f, unsigned /*n*/, Language lang) {
   }
 }
 
-// HACK: just a copy of the WSI interface
+// FIXME: just a copy of the WSI interface - need to implement WMI here.
 void WmiPort::
 emitRecordInputs(FILE *f) {
   DataPort::emitRecordInputs(f);

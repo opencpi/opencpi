@@ -141,7 +141,7 @@ parseHdlImpl(const char *package) {
 	    m_ctl.nonRawWritables = true;
 	  if (p.m_isVolatile)
 	    m_ctl.nonRawVolatiles = true;
-	  if (p.m_isVolatile || p.m_isReadable && !p.m_isWritable && !p.m_isParameter)
+	  if (p.m_isVolatile || (p.m_isReadable && !p.m_isWritable && !p.m_isParameter))
 	    m_ctl.nonRawReadbacks = true;
 	  m_ctl.nNonRawRunProperties++;
 	  if (p.m_isSub32)
@@ -220,7 +220,7 @@ parseHdlImpl(const char *package) {
   }
   const char *emulate = ezxml_cattr(m_xml, "emulate");
   if (emulate) {
-    if (m_ports.size() > 1 || m_ports.size() == 1 && m_ports[0]->type != WCIPort)
+    if (m_ports.size() > 1 || (m_ports.size() == 1 && m_ports[0]->type != WCIPort))
       return OU::esprintf("Device emulation workers can't have any ports");
     //    addWciClockReset();
     if (ezxml_cchild(m_xml, "signal") || ezxml_cchild(m_xml, "signals"))
@@ -307,7 +307,7 @@ parseSignals(ezxml_t xml, const std::string &parent, Signals &signals, SigMap &s
   // process ad hoc signals
   for (ezxml_t xs = ezxml_cchild(xml, "Signal"); !err && xs; xs = ezxml_next(xs)) {
     Signal *s = new Signal;
-    if (!(err = s->parse(xs)))
+    if (!(err = s->parse(xs))) {
       if (sigmap.find(s->m_name.c_str()) == sigmap.end()) {
 	signals.push_back(s);
 	sigmap[s->m_name.c_str()] = s;
@@ -315,6 +315,7 @@ parseSignals(ezxml_t xml, const std::string &parent, Signals &signals, SigMap &s
 	err = OU::esprintf("Duplicate signal: '%s'", s->m_name.c_str());
 	delete s;
       }
+    }
   }
   return err;
 }

@@ -64,7 +64,7 @@ function needname {
   return 0
 }
 # Look in a directory and determine the type of the Makefile, set dirtype
-# If there is no Makefile or no appropriate line in the makefile, dirtype is ""
+# If there is no Makefile or no appropriate line in the Makefile, dirtype is ""
 function get_dirtype {
   [ ! -e $1 ] && bad $1 should exist and does not
   [ ! -d $1 ] && bad $1 should be a directory and is not
@@ -97,7 +97,7 @@ function do_project {
     [ -d $1 ] || bad the project \"$1\" does not appear to be a directory
     get_dirtype $1
     [ -z $dirtype ] && bad the directory \"$directory\", is not project directory, no correct Makefile found
-    [ $dirtype != project ] && bad the dierctory \"$directory\" appears to be a \"$dirtype\" rather than a project
+    [ $dirtype != project ] && bad the directory \"$directory\" appears to be a \"$dirtype\" rather than a project
     ask delete the \"$1\" project in the directory \"$directory\"
     rm -r -f $1
     [ -z $verbose ] || echo The project \"$1\" in the directory \"$directory\" has been deleted.
@@ -338,7 +338,7 @@ function do_library {
     mkdir components
     cat <<EOF > components/Makefile
 $CheckCDK
-# This is the makefile for the components directory when there are multiple
+# This is the Makefile for the components directory when there are multiple
 # libraries in their own directories underneath this components directory
 include \$(OCPI_CDK_DIR)/include/libraries.mk
 EOF
@@ -463,7 +463,7 @@ function do_worker {
     specs=($spec)
   fi
   mkdir $libdir/$1
-# Make one makefile, even if multi-worker
+# Make one Makefile, even if multi-worker
   cat <<EOF | sed '/^ *$/d' >  $libdir/$1/Makefile
 # This is the Makefile for worker $1
 $wvar

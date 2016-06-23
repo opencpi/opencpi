@@ -34,6 +34,8 @@
 #include <assert.h>
 #include <cstdio>
 #include <climits>
+
+#include "OcpiNull.h"
 #include "OcpiUtilMisc.h"
 #include "hdl.h"
 #include "assembly.h"
@@ -48,7 +50,7 @@ emitSignal(const char *signal, FILE *f, Language lang, Signal::Direction dir,
   char *name;
   std::string num;
   OU::format(num, "%u", n);
-  asprintf(&name, signal, num.c_str());
+  ocpiCheck(asprintf(&name, signal, num.c_str()) > 0);
   if (lang == VHDL) {
     const char *io =
       dir == Signal::NONE ? "" :
@@ -637,7 +639,7 @@ emitSignals(FILE *f, Language lang, bool useRecords, bool inPackage, bool inWork
 		  "    %s Clock(s) not associated with one specific port:\n", comment);
 	emitSignal(c->signal(), f, lang, Signal::IN, last, -1, 0);
 	if (c->m_reset.size())
-	  // FIXME: TOTAL HACK FOR THE INNER WORKER TO HAVE A POSITIVE RESET
+	  // FIXME: FOR THE INNER WORKER TO HAVE A POSITIVE RESET
 	  emitSignal(inWorker && !strcasecmp(c->reset(), "wci_reset_n") ?
 		     "wci_reset" : c->reset(),
 		     f, lang, Signal::IN, last, -1, 0);
@@ -700,8 +702,8 @@ prType(OU::Property &pr, std::string &type) {
     OU::baseTypeNames[pr.m_baseType];
   type += "_array_t";
   if (!(pr.m_baseType == OA::OCPI_Enum || pr.m_baseType == OA::OCPI_String) ||
-      pr.m_isSequence && pr.m_sequenceLengthExpr.length() ||
-      pr.m_arrayRank && pr.m_arrayDimensionsExprs[0].length()) {
+      (pr.m_isSequence && pr.m_sequenceLengthExpr.length()) ||
+      (pr.m_arrayRank && pr.m_arrayDimensionsExprs[0].length())) {
     type += "(0 to ";
     if (pr.m_isSequence) {
       if (pr.m_sequenceLengthExpr.length())
@@ -728,11 +730,12 @@ tempName(char *&temp, unsigned len, const char *fmt, ...) {
   va_list ap;
   if (temp)
     free(temp);
+  temp = nullptr; // suppress compiler warning
   char *mytemp;
   va_start(ap, fmt);
-  vasprintf(&mytemp, fmt, ap);
+  ocpiCheck(vasprintf(&mytemp, fmt, ap) >= 0);
   va_end(ap);
-  asprintf(&temp, "%-*s", len, mytemp);
+  ocpiCheck(asprintf(&temp, "%-*s", len, mytemp) > 0);
   free(mytemp);
   return temp;
 }
@@ -768,7 +771,7 @@ emitVhdlPropMember(FILE *f, OU::Property &pr, unsigned maxPropName, bool in2work
       fprintf(f, "    %s : Bool_t;\n", tempName(temp, maxPropName, "%s_read",
 						pr.m_name.c_str()));
     free(temp);
-  } else if (pr.m_isVolatile || pr.m_isReadable && !pr.m_isWritable)
+  } else if (pr.m_isVolatile || (pr.m_isReadable && !pr.m_isWritable))
     emitVhdlPropMemberData(f, pr, maxPropName);
 }
 
@@ -782,9 +785,9 @@ nonRaw(PropertiesIter pi) {
 
 void
 emitVhdlLibraries(FILE *f) {
-  if (libraries && libraries[0]
+  if ((libraries && libraries[0])
 #if 1
- || mappedLibraries && mappedLibraries[0]
+      || (mappedLibraries && mappedLibraries[0])
 #endif
 ) {
     bool first = true;
@@ -807,7 +810,7 @@ emitVhdlLibraries(FILE *f) {
 
 const char *Worker::
 emitVhdlPackageConstants(FILE *f) {
-  size_t decodeWidth = 0, rawBase = 0; //, firstRaw = 0;
+  size_t decodeWidth = 0, rawBase = 0;
   char ops[OU::Worker::OpsLimit + 1 + 1];
   for (unsigned op = 0; op <= OU::Worker::OpsLimit; op++)
     ops[OU::Worker::OpsLimit - op] = '0';
@@ -856,8 +859,6 @@ emitVhdlPackageConstants(FILE *f) {
 	n++;
       }
     }    
-    //    if (!m_ctl.firstRaw)
-    //      firstRaw = n;
     fprintf(f, "  -- %s\n  );\n", last);
   }
   if (!m_noControl)
@@ -913,7 +914,7 @@ emitVhdlWorkerPackage(FILE *f, unsigned maxPropName) {
 	    m_implName);
     for (PropertiesIter pi = m_ctl.properties.begin(); nonRaw(pi); pi++)
       if (!(*pi)->m_isParameter &&
-	  ((*pi)->m_isVolatile || (*pi)->m_isReadable && !(*pi)->m_isWritable))
+	  ((*pi)->m_isVolatile || ((*pi)->m_isReadable && !(*pi)->m_isWritable)))
 	emitVhdlPropMember(f, **pi, maxPropName, false);
     if (m_ctl.rawProperties)
 #if 1
@@ -1249,7 +1250,7 @@ emitVhdlShell(FILE *f) {
 	fprintf(f, "%s    %s => %s", last.c_str(), c->signal(), c->signal());
 	last = ",\n";
 	if (c->m_reset.size()) {
-	  // FIXME: HACK FOR EXPOSING POSITIVE RESET TO INNER WORKER
+	  // FIXME: FOR EXPOSING POSITIVE RESET TO INNER WORKER
 	  const char *reset = !strcasecmp(c->reset(), "wci_reset_n") ? "wci_reset" :
 	    c->reset();
 	  fprintf(f, "%s    %s => %s", last.c_str(), reset, reset);
@@ -1457,7 +1458,7 @@ emitVhdlRecordWrapper(FILE *f) {
       }
     if (!first)
       fprintf(f, ")");
-    if (m_clocks.size() && m_type != Container || m_ports.size() || m_signals.size()) {
+    if ((m_clocks.size() && m_type != Container) || m_ports.size() || m_signals.size()) {
       fprintf(f, "\n    port map(\n");
       std::string last;
       if (m_type != Container)
@@ -1747,11 +1748,11 @@ emitImplHDL(bool wrap) {
 	  prType(pr, type);
 	  char *temp = NULL;
 	  tempName(temp, maxPropName, "%s_value", pr.m_name.c_str());
-	  if (pr.m_isParameter && pr.m_isReadable ||
-	      !pr.m_isParameter &&
-	      (pr.m_isWritable && pr.m_isReadable && !pr.m_isVolatile ||
-	       pr.m_baseType == OA::OCPI_Enum ||
-	       pr.m_baseType == OA::OCPI_String && (pr.m_arrayRank || pr.m_isSequence))) {
+	  if ((pr.m_isParameter && pr.m_isReadable) ||
+	      (!pr.m_isParameter &&
+	       ((pr.m_isWritable && pr.m_isReadable && !pr.m_isVolatile) ||
+		pr.m_baseType == OA::OCPI_Enum ||
+		(pr.m_baseType == OA::OCPI_String && (pr.m_arrayRank || pr.m_isSequence))))) {
 	    if (first) {
 	      fprintf(f,
 		      "  -- internal signals between property registers and the readback mux\n"
@@ -1980,7 +1981,7 @@ emitImplHDL(bool wrap) {
 		    "                value        => ");
 	  if (isStringArray)
 	    fprintf(f, "sa_temp,\n");
-	  else if (pr.m_isReadable && !pr.m_isVolatile || pr.m_baseType == OA::OCPI_Enum)
+	  else if ((pr.m_isReadable && !pr.m_isVolatile) || pr.m_baseType == OA::OCPI_Enum)
 	    fprintf(f, "my_%s_value, -- for readback and worker\n", name);
 	  else
 	    fprintf(f, "props_to_worker.%s,\n", name);

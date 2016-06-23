@@ -188,12 +188,13 @@ parse(ezxml_t xml, Board &b, SlotType *stype) {
     if (!devSig)
       return OU::esprintf("Signal \"%s\" is not defined for device type \"%s\"",
 			  base.c_str(), m_deviceType.cname());
-    if (hasIndex)
+    if (hasIndex) {
       if (devSig->m_width == 0)
 	return OU::esprintf("Device signal \"%s\" cannot be indexed", base.c_str());
       else if (index >= devSig->m_width)
 	return OU::esprintf("Device signal \"%s\" has index higher than signal width (%zu)",
 			    name.c_str(), devSig->m_width);
+    }
     const char *plat = ezxml_cattr(xs, "platform");
     const char *card = ezxml_cattr(xs, "card"); // the slot 
     if (!card)

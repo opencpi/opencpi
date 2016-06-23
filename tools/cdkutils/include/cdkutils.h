@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
  *
@@ -34,18 +33,20 @@
 
 #ifndef CDKUTILS_H
 #define CDKUTILS_H
-#include <stdio.h>
+#include <cstdio>
 #include <string>
+#include <vector>
 #include "ezxml.h"
 
 extern void
-  addInclude(const char *),
+  setDep(const char *file),
+  addInclude(const char *inc),
   addDep(const char *dep, bool child),
   printgen(FILE *f, const char *comment, const char *file, bool orig = false,
 	   const char *endComment = "");  
 
 extern const char
-  **includes, *depFile,
+  *closeDep(),
   // Optional allows the element type might not match
   // NonExistentOK allows the file to not exist at all.
   *parseFile(const char *file, const std::string &parent, const char *element,

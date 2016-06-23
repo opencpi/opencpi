@@ -138,8 +138,14 @@ main(int argc, const char **argv) {
 	    );
     return 1;
   }
+#if !defined(NDEBUG)
+  std::string params;
+  for (int i = 0; i < argc; ++i)
+    params.append(argv[i]).append(" ");
+  ocpiDebug("ocpigen command line: '%s'\n", params.c_str());
+#endif
   const char *err = 0;
-  for (const char **ap = argv+1; *ap; ap++)
+  for (const char **ap = argv+1; !err && *ap; ap++) {
     if (ap[0][0] == '-')
       switch (ap[0][1]) {
       case 'd':
@@ -170,13 +176,10 @@ main(int argc, const char **argv) {
 	wksFile =*++ap;
 	break;
       case 'M':
-	depFile = *++ap;
+	setDep(*++ap);
 	break;
       case 'l':
-	if (ap[0][2])
-	  addLibrary(&ap[0][2]);
-	else
-	  addLibrary(*++ap);
+	err = addLibrary(ap[0][2] ? &ap[0][2] : *++ap);
 	break;
       case 'I':
 	if (ap[0][2])
@@ -191,17 +194,8 @@ main(int argc, const char **argv) {
 	assembly = *++ap;
 	break;
       case 'L':
-#if 0
-	load = *++ap;
-#endif
-	if (ap[0][2])
-	  err = addLibMap(&ap[0][2]);
-	else
-	  err = addLibMap(*++ap);
-	if (err) {
-	  fprintf(stderr, "Error processing -L (library map) option: %s\n", err);
-	  return 1;
-	}
+	if ((err = addLibMap(ap[0][2] ? &ap[0][2] : *++ap)))
+	  err = OU::esprintf("Error processing -L (library map) option: %s", err);
 	break;
       case 'e':
 	device = *++ap;
@@ -229,14 +223,13 @@ main(int argc, const char **argv) {
 	platformDir = *++ap;
 	break;
       default:
-	fprintf(stderr, "Unknown flag: %s\n", *ap);
-	return 1;
+	err = OU::esprintf("Unknown flag: %s\n", *ap);
       }
     else
       try {
 	std::string parent;
 	if (doTop) {
-	  // This little hack is to help the container build scripts extract the platform
+	  // This is to help the container build scripts extract the platform
 	  // and platform configuration from a container XML file without fully parsing it.
 	  // I.e. the only error checks done are the simple lexical check on this XML file,
 	  // and the correct top level element and attributes.  Any other errors in this file
@@ -328,5 +321,10 @@ main(int argc, const char **argv) {
 	fprintf(stderr, "Unexpected/unknown exception thrown\n");
 	return 1;
       }
-  return err ? 1 : 0;
+  }
+  if (!err)
+    err = closeDep();
+  if (err)
+    fprintf(stderr, "%s\n", err);
+ return err ? 1 : 0;
 }

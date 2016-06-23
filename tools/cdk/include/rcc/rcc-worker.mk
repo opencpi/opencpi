@@ -63,7 +63,6 @@ BF_macos=.dylib
 SOEXT_macos=.dylib
 AREXT_macos=.a
 RccDynamicLinkOptions_macos=$(RccDynamicLinkOptions) -dynamiclib -Xlinker -undefined -Xlinker dynamic_lookup
-DynamicCompilerOptions_macos=
 DispatchSourceFile=$(call WkrTargetDir,$1,$2)/$(CwdName)_dispatch.c
 ArtifactFile=$(BinaryFile)
 # Artifacts are target-specific since they contain things about the binary
@@ -173,7 +172,8 @@ $(call WkrMakeObject,$(call DispatchSourceFile,$1,$2),$1,$2)
 
 $(call DispatchSourceFile,$1,$2): $$(ImplHeaderFiles) | $$(call WkrTargetDir,$1,$2)
 	$(AT)echo Generating dispatch file: $$@
-	$(AT)(echo "#include <RCC_Worker.h>";\
+	$(AT)(echo "/* Auto generated OpenCPI framework file - DO NOT EDIT - created by rcc-worker.mk $(OcpiDateStamp) */";\
+	  echo "#include <RCC_Worker.h>";\
 	  echo "#define STR(foo) _STR(foo)";\
 	  echo "#define _STR(foo) #foo";\
 	  for w in $(Workers); do \

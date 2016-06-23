@@ -89,6 +89,32 @@ override GenDir=$(OutDir)gen
 # In case this library is a subdirectory that might receive XmlIncludeDirs from the
 # parent (e.g. when a platform directory has a "devices" library as a subdirectory
 override XmlIncludeDirs+=$(XmlIncludeDirsInternal)
+
+# Utility to show what WOULD be built (e.g. for packaging)
+.PHONY:  showxm showrcc showhdl showocl showtest showassy showall
+.SILENT: showxm showrcc showhdl showocl showtest showassy showall
+showxm:
+	echo $(XmImplementations)
+
+showrcc:
+	echo $(RccImplementations)
+
+showhdl:
+	echo $(HdlImplementations)
+
+showocl:
+	echo $(OclImplementations)
+
+showtest:
+	echo $(TestImplementations)
+
+showassy:
+	echo $(AssyImplementations)
+
+# Do NOT sort these or proxies may be out-of-order:
+showall:
+	echo $(XmImplementations) $(RccImplementations) $(HdlImplementations) $(OclImplementations) $(TestImplementations) $(AssyImplementations)
+
 # default is what we are running on
 
 build_targets := speclinks

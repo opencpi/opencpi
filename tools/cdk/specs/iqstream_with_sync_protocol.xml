@@ -1,5 +1,5 @@
  <!-- A general complex data protocol   -->
- <Protocol name="iqstream_with_sync" >
+ <Protocol>
 
   <Operation Name="iq" >
     <!-- Variable size frames with packed 32 bit I/Q data values (16Q,16I).  Format:Qs0.15 -->

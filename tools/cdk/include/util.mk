@@ -43,6 +43,14 @@ export OCPI_DEBUG_MAKE
 AT=@
 ifneq ($(wildcard $(OCPI_CDK_DIR)/include/autoconfig_import*),)
 # Import autotool/RPM-based settings
+# AV-815 temporary fix until AV-816
+ifneq ($(origin OCPI_TARGET_PLATFORM),undefined)
+  ifeq ($(OCPI_TARGET_PLATFORM),zed)
+    ifeq ($(OCPI_CROSS_HOST),)
+      OCPI_CROSS_HOST=arm-xilinx-linux-gnueabi
+    endif
+  endif
+endif
 ifneq ($(OCPI_CROSS_HOST),)
 include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_CROSS_HOST).mk
 else
@@ -181,7 +189,7 @@ FindRelativeTop=$(infoxx FRT:$1:$2:$3:$4)$(strip\
 FindRelative=$(strip $(infox FR:$1:$2)\
                $(foreach i,$(call FindRelativeTop,$(call OcpiAbsPath,$1),$(call OcpiAbsPath,$2),$(strip $1),$(strip $2)),$i))
 
-# Function: retrieve the contents of a symlink - is this ugly or what!
+# Function: retrieve the contents of a symlink
 # It would be easier using csh
 SymLinkContents= `X=(\`ls -l $(1)\`);echo $${X[$${\#X[*]}-1]}`
 
@@ -433,7 +441,7 @@ OcpiComponentLibraries=$(strip\
          $(call OcpiSearchComponentPath,$c))))
 
 # Return the list of XML search directories for component libraries
-# This currently has a sort of HACK in that it searches the hdl subdir
+# it searches the hdl subdir
 # since hdl workers need to be referenced by rcc workers.
 OcpiXmlComponentLibraries=$(infox HXC)\
   $(eval OcpiTempDirs:= $(strip \

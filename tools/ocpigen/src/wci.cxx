@@ -299,7 +299,7 @@ emitPropertyAttributeConstants(FILE *f, Language lang) {
     if (first &&
 	(pr.m_stringLengthExpr.length() ||
 	 pr.m_sequenceLengthExpr.length() ||
-	 pr.m_arrayRank && pr.m_arrayDimensionsExprs[0].length())) {
+	 (pr.m_arrayRank && pr.m_arrayDimensionsExprs[0].length()))) {
       fprintf(f, "  %s Attributes of properties determined by parameter expressions\n",
 	      hdlComment(lang));
       first = false;
@@ -308,7 +308,7 @@ emitPropertyAttributeConstants(FILE *f, Language lang) {
       emitConstant(f, pr.m_name, "string_length", pr.m_stringLength, lang);
     if (pr.m_isSequence && pr.m_sequenceLengthExpr.length())
       emitConstant(f, pr.m_name, "sequence_length", pr.m_sequenceLength, lang);
-    if (pr.m_arrayRank && pr.m_arrayDimensionsExprs[0].length())
+    if (pr.m_arrayRank && pr.m_arrayDimensionsExprs[0].length()) {
       if (lang == VHDL) {
 	fprintf(f, "  constant %s_array_dimensions : dimensions_t(0 to %zu) := (",
 	      pr.m_name.c_str(), pr.m_arrayRank - 1);
@@ -319,6 +319,7 @@ emitPropertyAttributeConstants(FILE *f, Language lang) {
 	for (unsigned n = 0; n < pr.m_arrayRank; n++)
 	  fprintf(f, "  localparam %s_array_dimension_%u = %zu;\n", pr.m_name.c_str(), n,
 		  pr.m_arrayDimensions[n]);
+    }
   }
 }
 

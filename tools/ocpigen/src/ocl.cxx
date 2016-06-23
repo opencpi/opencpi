@@ -359,17 +359,16 @@ emitEntryPointOCL() {
   unsigned op = 0;
   const char* mName;
   for (const char** cp = OU::Worker::s_controlOpNames; *cp; cp++, op++)
-    if (m_ctl.controlOps & (1 << op ))
+    if (m_ctl.controlOps & (1 << op )) {
       if ((err = rccMethodName (*cp, mName)))
         return err;
-      else {
-	const char* mUname = upperdup(mName);
-	fprintf(f,
-		"    case OCPI_OCL_%s:\n"
-		"      self.rc = %s_%s(&self);\n"
-		"      break;\n",
-		mUname, m_implName, mName);
-      }
+      const char* mUname = upperdup(mName);
+      fprintf(f,
+	      "    case OCPI_OCL_%s:\n"
+	      "      self.rc = %s_%s(&self);\n"
+	      "      break;\n",
+	      mUname, m_implName, mName);
+    }
   fprintf(f,
 	  "   default:;\n  }\n\n"
 	  "  barrier ( CLK_LOCAL_MEM_FENCE );\n"

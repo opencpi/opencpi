@@ -82,8 +82,7 @@ hdl: hdlassemblies
 
 cleanhdl:
 	$(call MaybeMake,components,cleanhdl)
-	$(AT) for d in primitives devices adapters cards platforms assemblies platforms; do \
-	       echo CLEANING $$d =========================; \
+	$(AT) for d in primitives devices adapters cards platforms assemblies; do \
 		[ ! -d hdl/$$d ] || $(MAKE) -C hdl/$$d clean; \
 	      done
 

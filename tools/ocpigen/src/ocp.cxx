@@ -292,17 +292,17 @@ doPatterns(unsigned nWip, size_t &maxPortTypeName) {
     // ordinal == -2 means suppress ordinal
     if ((err = doPattern(count > 1 ? 0 : -2, nWip, true, !masterIn(), sin)))
       return err;
-    asprintf(&ocp.Clk.signal, "%s%s", sin.c_str(), "Clk");
+    ocpiCheck(asprintf(&ocp.Clk.signal, "%s%s", sin.c_str(), "Clk") > 0);
     clock->m_signal = ocp.Clk.signal;
   }
   OcpSignalDesc *osd = ocpSignals;
   for (OcpSignal *os = ocp.signals; osd->name; os++, osd++)
     if (os->master == masterIn() && os->value)
-      asprintf(&os->signal, "%s%s", fullNameIn.c_str(), osd->name);
+      ocpiCheck(asprintf(&os->signal, "%s%s", fullNameIn.c_str(), osd->name) > 0);
   osd = ocpSignals;
   for (OcpSignal *os = ocp.signals; osd->name; os++, osd++)
     if (os->master != masterIn() && os->value)
-      asprintf(&os->signal, "%s%s", fullNameOut.c_str(), osd->name);
+      ocpiCheck(asprintf(&os->signal, "%s%s", fullNameOut.c_str(), osd->name) > 0);
   return NULL;
 }
 
@@ -437,7 +437,7 @@ emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal) {
     // Generate signals when both sides has the signal configured.
     OcpSignalDesc *osd;
     OcpSignal *os;
-    bool wantMaster = master && output || !master && !output;
+    bool wantMaster = (master && output) || (!master && !output);
     for (osd = ocpSignals, os = ocp.signals; osd->name; os++, osd++)
       if (os->master == wantMaster && os->value) {
 	fprintf(f, "wire ");

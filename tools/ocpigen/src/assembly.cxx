@@ -35,12 +35,13 @@ findPort(OU::Assembly::Port &ap, InstancePort *&found) {
     Port &p = **pi;
     if (ap.m_name.empty()) {
 	// Unknown ports can be found for data ports that have matching known roles
-      if (ap.m_role.m_knownRole && p.matchesDataProducer(!ap.m_role.m_provider))
+      if (ap.m_role.m_knownRole && p.matchesDataProducer(!ap.m_role.m_provider)) {
 	if (found)
 	  return OU::esprintf("Ambiguous connection to unnamed %s port on %s:%s",
 			      ap.m_role.m_provider ? "input" : "output", i.wName, i.name);
 	else
 	  found = &i.m_ports[nn];
+      }
     } else if (!strcasecmp(p.name(), ap.m_name.c_str()))
       found = &i.m_ports[nn];;
   }
@@ -361,7 +362,7 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
   }
   // All parsing is done.
   // Now we fill in the top-level worker stuff.
-  asprintf((char**)&m_assyWorker.m_specName, "local.%s", m_assyWorker.m_implName);
+  ocpiCheck(asprintf((char**)&m_assyWorker.m_specName, "local.%s", m_assyWorker.m_implName) > 0);
   // Properties:  we only set the canonical hasDebugLogic property, which is a parameter.
   if ((err = m_assyWorker.doProperties(xml, m_assyWorker.m_file.c_str(), true, false)))
     return err;

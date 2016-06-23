@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
  *
@@ -32,23 +31,35 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <errno.h>
+#include <cerrno>
 #include <unistd.h>
-#include <time.h>
-#include <stdlib.h>
-#include <string.h>
+#include <ctime>
+#include <cstdlib>
+#include <cstring>
+#include <vector>
+#include <string>
 #include <list>
+#include <memory>
+#include <fstream>
+
 #include "OcpiUtilMisc.h"
 #include "cdkutils.h"
 
 namespace OU = OCPI::Util;
-const char **includes;
-static unsigned nIncludes;
+
+static std::vector<std::string> includes; // our included files
+// For anybody who used the old "includes" (only ocpidds that I am aware of)
+// provide a close equivalent...
+std::vector<const char *> compat_includes() {
+  std::vector<const char *> vec(includes.size());
+  for (auto iter = includes.begin(); iter != includes.end(); ++iter)
+    vec.push_back(iter->c_str());
+  return vec;
+}
+
 void
 addInclude(const char *inc) {
-  includes = (const char **)realloc(includes, (nIncludes + 2) * sizeof(char *));
-  includes[nIncludes++] = inc;
-  includes[nIncludes] = 0;
+  includes.push_back(inc);
 }
 
 // The "optional" argument says the file may not exist at all, or it
@@ -61,13 +72,14 @@ parseFile(const char *file, const std::string &parent, const char *element,
   char *myFile;
   const char *slash = strrchr(file, '/');
   const char *dot = strrchr(file, '.');
-  if (!dot || slash && slash > dot)
-    asprintf(&myFile, "%s.xml", file);
+  if (!dot || (slash && slash > dot))
+    ocpiCheck(asprintf(&myFile, "%s.xml", file) > 0);
   else
     myFile = strdup(file);
   const char *cp = strrchr(parent.c_str(), '/');
   if (myFile[0] != '/' && cp)
-    asprintf((char**)&cp, "%.*s%s", (int)(cp - parent.c_str() + 1), parent.c_str(), myFile);
+    ocpiCheck(asprintf((char**)&cp, "%.*s%s", (int)(cp - parent.c_str() + 1), parent.c_str(),
+		       myFile) > 0);
   else
     cp = strdup(myFile);
   std::list<const char *> tries;
@@ -81,12 +93,13 @@ parseFile(const char *file, const std::string &parent, const char *element,
     if (fd < 0) {
       // file was not where parent file was, and not local.
       // Try the include paths
-      if (myFile[0] != '/' && includes && search) {
-	for (const char **ap = includes; *ap; ap++) {
-	  if (!(*ap)[0] || !strcmp(*ap, "."))
+      if (myFile[0] != '/' && !includes.empty() && search) {
+        for (auto iter = includes.begin(); iter != includes.end(); ++iter) {
+          const char *ptr = iter->c_str();
+	  if (!ptr[0] || !strcmp(ptr, "."))
 	    cp = strdup(myFile);
 	  else
-	    asprintf((char **)&cp, "%s/%s", *ap, myFile);
+	    ocpiCheck(asprintf((char **)&cp, "%s/%s", /**ap*/ptr, myFile) > 0);
 	  if (*cp != '/')
 	    relative = true;
 	  tries.push_back(cp);
@@ -96,12 +109,12 @@ parseFile(const char *file, const std::string &parent, const char *element,
 	    break;
 	}
       }
+
       if (fd < 0) {
 	std::string files;
 	bool first = true;
-	for (std::list<const char *>::const_iterator i = tries.begin();
-	     i != tries.end(); i++) {
-	  OU::formatAdd(files, "%s %s", first ? "" : ",", *i);
+	for (std::list<const char *>::const_iterator i = tries.begin(); i != tries.end(); ++i) {
+	  OU::formatAdd(files, "%s%s", first ? "" : ", ", *i);
 	  first = false;
 	}
 	if (nonExistentOK) {
@@ -110,10 +123,11 @@ parseFile(const char *file, const std::string &parent, const char *element,
 		   "  Files tried: %s", file, files.c_str());
 	} else {
 	  if (relative) {
-	    char *cwd = getcwd(NULL, 0);
-	    if (cwd)
+	    char *cwd = getcwd(NULL, 0); // NOTE: Linux extension, NOT POSIX. OSX supports as well.
+	    if (cwd) {
 	      OU::formatAdd(files, ". CWD is %s", cwd);
-	    free(cwd);
+	      free(cwd);
+            }
 	  }
 	  err =
 	    OU::esprintf("File \"%s\" could not be opened for reading/parsing."
@@ -152,88 +166,117 @@ parseFile(const char *file, const std::string &parent, const char *element,
   }
   return err;
 }
+                           // pair = dep,child
+static std::vector<std::pair<std::string,bool> > depList;
+static std::ofstream depOut; // our dependency output file stream
+static const char *depFile;
 
-static const char **deps;
-static bool *depChild;
-static unsigned nDeps;
-const char *depFile;
+void
+setDep(const char *dep) {
+  assert(dep);
+  depFile = dep;
+}
+
 
 void
 addDep(const char *dep, bool child) {
-  for (unsigned n = 0; n < nDeps; n++)
-    if (!strcmp(dep, deps[n])) {
+  // Update "child" flag if we already have
+  for (auto it = depList.begin(); it != depList.end(); ++it)
+    if (!strcmp(dep, it->first.c_str())) {
       if (child)
-        depChild[n] = child;
+	it->second = child;
       return;
     }
-  deps = (const char **)realloc(deps, (nDeps + 2) * sizeof(char *));
-  depChild = (bool *)realloc(depChild, (nDeps + 2) * sizeof(bool));
-  depChild[nDeps] = child;
-  deps[nDeps++] = strdup(dep);
-  depChild[nDeps] = 0;
-  deps[nDeps] = 0;
+  depList.push_back(std::make_pair(dep, child));
+}
+// Called to close the file and determine any errors
+const char *
+closeDep() {
+  if (depOut.is_open()) {
+    depOut.close();
+    if (!depOut.good())
+      return OU::esprintf("Closing and flushing dependency file \"%s\" failed", depFile);
+  }
+  return NULL;
 }
 
 static const char *
 dumpDeps(const char *top) {
   if (!depFile)
-    return 0;
-  static FILE *out = NULL;
-  if (out == NULL) {
-    out = fopen(depFile, "w");
-    if (out == NULL)
-      return OU::esprintf("Cannot open dependency file \"%s\" for writing", top);
+    return nullptr;
+  if (!depOut.is_open()) {
+    depOut.open(depFile);
+    if (!depOut.good())
+      return OU::esprintf("Cannot open dependency file \"%s\" for writing", depFile);
   }
-  fprintf(out, "%s:", top);
-  for (unsigned n = 0; n < nDeps; n++)
-    if (strcmp(top, deps[n]))
-      fprintf(out, " %s", deps[n]);
-  fprintf(out, "\n");
-  for (unsigned n = 0; n < nDeps; n++)
-    if (strcmp(top, deps[n]) && depChild[n])
-      fprintf(out, "\n%s:\n", deps[n]);
-  fflush(out);
-  //  fclose(out);
-  //  depFile = 0;
-  return 0;
+  depOut << top << ":";
+  for (auto it = depList.begin(); it != depList.end(); ++it)
+    if (strcmp(top, it->first.c_str()))
+      depOut << " " << it->first;
+  depOut << std::endl;
+  for (auto it = depList.begin(); it != depList.end(); ++it)
+     if (it->second && strcmp(top, it->first.c_str()))
+       depOut << "\n" << it->first << ":\n";
+  if (!depOut.flush().good())
+    return OU::esprintf("Error writing to dependency file \"%s\".", depFile);
+  return nullptr;
 }
 
+// TODO: Make an iostream version of this call to move away from C-style FILE handles
 const char *
 openOutput(const char *name, const char *outDir, const char *prefix, const char *suffix,
 	   const char *ext, const char *other, FILE *&f) {
   std::string file;
-  OU::format(file, "%s%s%s%s%s%s", outDir ? outDir : "", outDir ? "/" : "",
-	     prefix, name, suffix, ext);
-  if ((f = fopen(file.c_str(), "w")) == NULL)
-    return OU::esprintf("Can't not open file %s for writing (%s)\n",
-			file.c_str(), strerror(errno));
-  dumpDeps(file.c_str());
-  if (other && strcmp(other, name)) {
-    std::string otherFile;
-    OU::format(otherFile, "%s%s%s%s%s%s", outDir ? outDir : "", outDir ? "/" : "",
-	       prefix, other, suffix, ext);
-    // FIXME: Put all this junk in OcpiOs
-    char dummy;
-    ssize_t length = readlink(otherFile.c_str(), &dummy, 1);
-    if (length != -1) {
-      char *buf = (char*)malloc(length + 1);
-      if (readlink(otherFile.c_str(), buf, length) != length)
-	return "Unexpected system error reading symlink";
-      buf[length] = '\0';
-      bool same = strcmp(otherFile.c_str(), buf) == 0;
-      free(buf);
-      if (same)
-	return 0;
-      if (unlink(otherFile.c_str()))
-	return "Cannot remove symlink to replace it";
-    } else if (errno != ENOENT)
-      return "Unexpected error reading symlink";
-    const char *contents = strrchr(file.c_str(), '/');
-    contents = contents ? contents + 1 : file.c_str();
-    if (symlink(contents, otherFile.c_str()))
-      return "Cannot create symlink";
-  }
-  return 0;
+  OU::format(file, "%s%s%s%s%s%s", outDir ? outDir : "", outDir ? "/" : "", prefix, name, suffix,
+	     ext);
+  ocpiDebug("openOutput attempting to write to %s", file.c_str());
+  const char *err = NULL;
+  f = NULL;
+  do { // break on error
+    if ((f = fopen(file.c_str(), "w")) == NULL) {
+      err = OU::esprintf("Can't not open file %s for writing (%s)\n", file.c_str(),
+			 strerror(errno));
+      break;
+    }
+    if ((err = dumpDeps(file.c_str())))
+      break;
+    if (other && strcmp(other, name)) {
+      std::string otherFile;
+      OU::format(otherFile, "%s%s%s%s%s%s", outDir ? outDir : "", outDir ? "/" : "", prefix,
+		 other,
+		 suffix, ext);
+      // FIXME: Put all this into OcpiOs
+      // FIXME: "man 2 readlink" implies this will set length to "1" no matter the real length of the answer
+      char dummy;
+      ssize_t length = readlink(otherFile.c_str(), &dummy, 1);
+      if (length != -1) {
+	char *buf = (char*)malloc(length + 1);
+	if (readlink(otherFile.c_str(), buf, length) != length) {
+	  free(buf);
+	  err = "Unexpected system error reading symlink";
+	  break;
+	}
+	buf[length] = '\0';
+	bool same = strcmp(otherFile.c_str(), buf) == 0;
+	free(buf);
+	if (same)
+	  return 0;
+	if (unlink(otherFile.c_str())) {
+	  err = "Cannot remove symlink to replace it";
+	  break;
+	}
+      } else if (errno != ENOENT) {
+	err = "Unexpected error reading symlink";
+	break;
+      }
+      const char *contents = strrchr(file.c_str(), '/');
+      if (symlink(contents ? contents + 1 : file.c_str(), otherFile.c_str()))
+	err = "Cannot create symlink";
+    }
+  } while (0);
+  if (err)
+    fclose(f);
+  return err;
 }
 
 void

@@ -1,7 +1,4 @@
 # Default settings
-export OCPI_CFLAGS="-Wall -Wfloat-equal -Wextra  -fno-strict-aliasing -Wconversion -std=c99"
-export OCPI_CXXFLAGS="-Wextra -Wall -Wfloat-equal -fno-strict-aliasing -Wconversion"
-
 export OCPI_BASE_DIR=`pwd`
 export OCPI_CDK_DIR=$OCPI_BASE_DIR/exports
 # For backward compatibility, we default to explicit modelessness
@@ -24,7 +21,7 @@ else
   echo You can also \"source env/clean-env.sh\" to start over.
 fi
 export OCPI_TARGET_CFLAGS="-Wall -Wfloat-equal -Wextra  -fno-strict-aliasing -Wconversion -std=c99"
-export OCPI_TARGET_CXXFLAGS="-Wextra -Wall -Wfloat-equal -fno-strict-aliasing -Wconversion"
+export OCPI_TARGET_CXXFLAGS="-Wall -Wfloat-equal -Wextra -fno-strict-aliasing -Winit-self -Wshadow -Wconversion -Wwrite-strings -Wsign-conversion -Wabi"
 export OCPI_GTEST_DIR=/opt/opencpi/prerequisites/gtest
 export OCPI_LZMA_DIR=/opt/opencpi/prerequisites/lzma
 export OCPI_DEBUG=1

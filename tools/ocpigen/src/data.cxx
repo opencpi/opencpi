@@ -194,9 +194,9 @@ DataPort(Worker &w, ezxml_t x, int ordinal, const char *&err)
     return;
   // Spec initialization
   if (type == WDIPort &&
-      (err = OE::checkAttrs(m_xml, SPEC_DATA_PORT_ATTRS, (void*)0)) ||
-      (err = OE::getBoolean(m_xml, "Producer", &m_isProducer)) ||
-      (err = OE::getBoolean(m_xml, "Optional", &m_isOptional)))
+      ((err = OE::checkAttrs(m_xml, SPEC_DATA_PORT_ATTRS, (void*)0)) ||
+       (err = OE::getBoolean(m_xml, "Producer", &m_isProducer)) ||
+       (err = OE::getBoolean(m_xml, "Optional", &m_isOptional))))
     return;
   const char *protocolAttr = ezxml_cattr(m_xml, "protocol");
   ezxml_t pSum;
@@ -343,7 +343,7 @@ finalize() {
     return "Specified ByteWidth does not divide evenly into specified DataWidth";
   // Check if this port requires endianness
   // Either the granule is smaller than or not a multiple of data path width
-  if (granuleWidth < m_dataWidth || m_dataWidth && granuleWidth % m_dataWidth)
+  if (granuleWidth < m_dataWidth || (m_dataWidth && granuleWidth % m_dataWidth))
     m_worker->m_needsEndian = true;
   return NULL;
 }
@@ -671,10 +671,11 @@ finalizeHdlDataPort() {
   if (type == WDIPort) {
     // Do it via XML so we aren't duplicating other code
     char *wsi;
-    asprintf(&wsi, "<streaminterface name='%s' dataWidth='%zu' impreciseburst='true'/>",
-	     name(), 
-	     m_worker->m_defaultDataWidth >= 0 ?
-	     m_worker->m_defaultDataWidth : m_protocol->m_dataValueWidth);
+    ocpiCheck(asprintf(&wsi,
+		       "<streaminterface name='%s' dataWidth='%zu' impreciseburst='true'/>",
+		       name(), 
+		       m_worker->m_defaultDataWidth >= 0 ?
+		       m_worker->m_defaultDataWidth : m_protocol->m_dataValueWidth) > 0);
     ezxml_t wsix = ezxml_parse_str(wsi, strlen(wsi));
     Port *p = createPort<WsiPort>(*m_worker, wsix, this, -1, err);
     if (!err)

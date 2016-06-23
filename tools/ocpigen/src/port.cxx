@@ -50,8 +50,8 @@ Port(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *defa
   if (sp)
     w.m_ports[m_ordinal] = this;
   else if (type == WCIPort && !master) {
-    // UGLY:  we manage the port list here, and a slave control port must be
-    // the first, which means we need to hack ordinals when we add a control port
+    // we manage the port list here, and a slave control port must be
+    // the first, which means we need to update ordinals when we add a control port
     // after other ports are established
     for (PortsIter pi = w.m_ports.begin(); pi != w.m_ports.end(); pi++)
       (*pi)->m_ordinal++;
@@ -280,11 +280,12 @@ void Port::
 emitPortDescription(FILE *f, Language lang) const {
   const char *comment = hdlComment(lang);
   std::string nbuf;
-  if (count > 1 || m_countExpr.length())
+  if (count > 1 || m_countExpr.length()) {
     if (m_countExpr.length())
       nbuf = m_countExpr;
     else
       OU::format(nbuf, " %zu", count);
+  }
   fprintf(f,
 	  "\n  %s The%s %s interface%s named \"%s\", with \"%s\" acting as %s%s:\n",
 	  comment, nbuf.c_str(), typeName(),
@@ -511,11 +512,12 @@ emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *inden
       }
     assert(otherAt);
     // Indexing is necessary only when we are smaller than the other
-    if (count < otherAt->m_instPort.m_port->count)
+    if (count < otherAt->m_instPort.m_port->count) {
       if (c.m_count > 1)
 	OU::format(index, "(%zu to %zu)", otherAt->m_index, otherAt->m_index + c.m_count - 1);
       else
 	OU::format(index, "(%zu)", otherAt->m_index);
+    }
     mName = c.m_masterName.c_str();
     sName = c.m_slaveName.c_str();
   } else
@@ -996,7 +998,7 @@ emitRecordInterface(FILE *f, const char *implName) {
 void MetaDataPort::
 emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signal) {
   fprintf(f, "  signal %s : platform.platform_pkg.metadata_%s_t;\n",
-	  signal.c_str(), output && master || !output && !master ? "out" : "in");
+	  signal.c_str(), (output && master) || (!output && !master) ? "out" : "in");
 }
 
 const char *Port::

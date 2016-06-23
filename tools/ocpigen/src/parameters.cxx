@@ -132,7 +132,7 @@ write(FILE *xf, FILE *mf) {
 	fprintf(mf, " := ");
 	for (const char *cp = m_worker.hdlValue(p.param->m_name, *p.value, val, false, VHDL);
 	     *cp; cp++) {
-	  if (*cp == '#' || *cp == '\\' && !cp[1])
+	  if (*cp == '#' || (*cp == '\\' && !cp[1]))
 	    fputc('\\', mf);
 	  fputc(*cp, mf);
 	}
@@ -142,7 +142,7 @@ write(FILE *xf, FILE *mf) {
 		p.param->m_name.c_str());
 	for (const char *cp = m_worker.hdlValue(p.param->m_name, *p.value, val, true, Verilog);
 	     *cp; cp++) {
-	  if (*cp == '#' || *cp == '\\' && !cp[1])
+	  if (*cp == '#' || (*cp == '\\' && !cp[1]))
 	    fputc('\\', mf);
 	  fputc(*cp, mf);
 	}
@@ -150,7 +150,7 @@ write(FILE *xf, FILE *mf) {
       } else {
 	fprintf(mf, "Param_%zu_%s:=", nConfig, p.param->m_name.c_str());
 	for (const char *cp = m_worker.paramValue(*p.param, *p.value, val); *cp; cp++) {
-	  if (*cp == '#' || *cp == '\\' && !cp[1])
+	  if (*cp == '#' || (*cp == '\\' && !cp[1]))
 	    fputc('\\', mf);
 	  fputc(*cp, mf);
 	}
@@ -158,7 +158,7 @@ write(FILE *xf, FILE *mf) {
       }
       fprintf(mf, "ParamMsg_%zu_%s:=", nConfig, p.param->m_name.c_str());
       for (const char *cp = p.uValue.c_str(); *cp; cp++) {
-	if (*cp == '#' || *cp == '\\' && !cp[1])
+	if (*cp == '#' || (*cp == '\\' && !cp[1]))
 	  fputc('\\', mf);
 	fputc(*cp, mf);
       }
@@ -397,7 +397,7 @@ writeParamFiles(FILE *mkFile, FILE *xmlFile) {
   if (xmlFile)
     fprintf(xmlFile, "</build>\n");
   ocpiDebug("xmlFile closing %p mkFile closing %p", xmlFile, mkFile);
-  if (xmlFile && fclose(xmlFile) || mkFile && fclose(mkFile))
+  if ((xmlFile && fclose(xmlFile)) || (mkFile && fclose(mkFile)))
     return OU::esprintf("File close of parameter files failed.  Disk full?");
   return NULL;
 }
@@ -418,7 +418,7 @@ emitToolParameters() {
   ezxml_t x;
   const char *err;
   FILE *mkFile;
-  if (m_paramConfigs.size() == 0 && (err = parseBuildFile(true)) ||
+  if ((m_paramConfigs.size() == 0 && (err = parseBuildFile(true))) ||
       (err = parseRawParams(x)) ||
       (err = openOutput(m_fileName.c_str(), m_outDir, "", "-params", ".mk", NULL, mkFile)))
     return err;
