@@ -254,11 +254,12 @@ send(const char * data, size_t amount) throw (std::string) {
        data += nsent, n2send -= nsent)
     if (nsent == 0)
       throw std::string("Error sending to network: got EOF");
-    else if (nsent < 0)
+    else if (nsent < 0) {
       if (errno == EINTR)
 	nsent = 0;
       else
 	throw "Error sending to network: " + Posix::getErrorMessage(errno);
+    }
   return amount;
 }
 
