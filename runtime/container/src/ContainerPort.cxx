@@ -71,12 +71,13 @@ namespace OCPI {
     void PortData::setPortParams(const OU::Port &mPort, const OU::PValue *params) {
       OA::ULong ul;
 
-      if (OU::findULong(params, "bufferCount", ul))
+      if (OU::findULong(params, "bufferCount", ul)) {
 	if (ul < mPort.m_minBufferCount)
 	  throw OU::Error("bufferCount is below worker's minimum");
         else
 	  getData().data.desc.nBuffers = ul;
-      if (OU::findULong(params, "bufferSize", ul))
+      }
+      if (OU::findULong(params, "bufferSize", ul)) {
 	if (ul < mPort.m_minBufferSize)
 	  throw OU::Error("bufferSize %u is below worker's minimum: %zu",
 			  ul, mPort.m_minBufferSize);
@@ -85,7 +86,7 @@ namespace OCPI {
 	  ocpiDebug("Portdata %s(%p): setting buffer size from parameter: %zu",
 		    mPort.m_name.c_str(), this, (size_t)ul);
 	}
-      
+      }
       const char *s;
       if (OU::findString(params, "xferRole", s)) {
 	PortRole role;

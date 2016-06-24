@@ -564,9 +564,9 @@ namespace OCPI {
       parseBool(const char *a, const char *end, bool *b)
       {
 	size_t n = end ? end - a : strlen(a);
-	if (n == 4 && !strncasecmp(a, "true", 4) || n == 1 && !strncmp(a, "1", 1))
+	if ((n == 4 && !strncasecmp(a, "true", 4)) || (n == 1 && !strncmp(a, "1", 1)))
 	  *b = true;
-	else if (n == 5 && !strncasecmp(a, "false", 5)  || n == 1 && !strncmp(a, "0", 1))
+	else if ((n == 5 && !strncasecmp(a, "false", 5))  || (n == 1 && !strncmp(a, "0", 1)))
 	  *b =  false;
 	else
 	  return true;

@@ -104,7 +104,7 @@ struct Fifo {
 	      m_name.c_str());
     while (ioctl(m_rfd, FIONREAD, &n) >= 0 && n > 0 &&
 	   ((r = read(m_rfd, buf, sizeof(buf))) > 0 ||
-	    r < 0 && errno == EINTR))
+	    (r < 0 && errno == EINTR)))
       ;
     ocpiDebug("Ending flush of any state from previous simulation run");
   }

@@ -396,7 +396,7 @@ namespace OCPI {
       if ((e = ezxml_cattr(ix, "external")) &&
 	  (err = a.addExternalConnection(m_ordinal, e, params)))
 	return err;
-      if ((s = ezxml_cattr(ix, "slave")))
+      if ((s = ezxml_cattr(ix, "slave"))) {
 	if ((err = a.getInstance(s, m_slave)))
 	  return err;
 	else {
@@ -410,6 +410,7 @@ namespace OCPI {
 	    slave.m_master = m_ordinal;
 	  }
 	}
+      }
       return NULL;
     }
 

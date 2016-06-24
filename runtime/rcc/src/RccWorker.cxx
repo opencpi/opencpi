@@ -598,7 +598,7 @@ run(bool &anyone_run) {
   RCCPort *rccPort = m_context->ports;
   for (unsigned n = 0; n < m_nPorts; n++, rccPort++)
     if (rccPort->callBack && m_context->connectedPorts & (1 << n) &&
-	rccPort->containerPort->checkReady())
+	rccPort->containerPort->checkReady()) {
       if (rccPort->callBack(m_context, rccPort, RCC_OK) == RCC_OK)
 	didCallBack = true;
       else {
@@ -606,6 +606,7 @@ run(bool &anyone_run) {
 	setControlState(OU::Worker::UNUSABLE);
 	return;
       }
+    }
   if (didCallBack)
     return;
   // OCPI_EMIT_REGISTER_FULL_VAR( "Worker Evaluation", OCPI::Time::Emit::u, 1, OCPI::Time::Emit::State, were ); 
@@ -624,12 +625,13 @@ run(bool &anyone_run) {
       break;
     }
     // If no port masks, then we don't run except for timeouts, checked above
-    if (!m_runCondition->m_portMasks[0])
+    if (!m_runCondition->m_portMasks[0]) {
       if (m_runCondition->m_timeout && !hasRun) {
 	hasRun = true;
 	break; // run if we're in period execution and haven't run at all yet
       } else
 	return;
+    }
     // Start out assuming optional unconnected ports are "ready"
     RCCPortMask readyMask = m_info.optionallyConnectedPorts & ~m_context->connectedPorts;
     // Only examine connected ports that are in the run condition
@@ -710,11 +712,12 @@ advanceAll() {
   OCPI_EMIT_STATE_CAT_NR_(aare, 1, OCPI_EMIT_CAT_TUNING, OCPI_EMIT_CAT_TUNING_WC);
   RCCPort *rccPort = m_context->ports;
   for (unsigned n = 0; n < m_nPorts; n++, rccPort++)
-    if (rccPort->current.data)
+    if (rccPort->current.data) {
       if (m_dispatch)
 	cAdvance(rccPort, 0);
       else
 	rccAdvance(rccPort, 0);
+    }
   OCPI_EMIT_STATE_CAT_NR_(aare, 0, OCPI_EMIT_CAT_TUNING, OCPI_EMIT_CAT_TUNING_WC);
 }
 
@@ -1120,7 +1123,7 @@ OCPI_CONTROL_OPS
      OU::Operation &o = m_rccPort.containerPort->metaPort().m_operations[op];
      OU::Member &m = o.m_args[arg];
      uint8_t *p = (uint8_t *)buf.m_rccBuffer->data + m.m_offset;
-     if (length && m.m_isSequence)
+     if (length && m.m_isSequence) {
        if (o.m_nArgs == 1) {
 	 assert(buf.m_rccBuffer->length_ % m.m_elementBytes == 0);
 	 *length = buf.m_rccBuffer->length_ / m.m_elementBytes;
@@ -1129,6 +1132,7 @@ OCPI_CONTROL_OPS
 	 assert(!m.m_sequenceLength || *length <= m.m_sequenceLength);
 	 return p + m.m_align;
        }
+     }
      return p;
    }
    void RCCUserPort::

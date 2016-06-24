@@ -453,8 +453,8 @@ namespace OCPI {
 	Implementation
 	  *fromImpl = fromI == instances.end() ? NULL : fromI->second,
 	  *toImpl = toI == instances.end() ? NULL : toI->second;
-	if (fromImpl && !(fromP = fromImpl->m_metadataImpl.findMetaPort(out)) ||
-	    toImpl && !(toP = toImpl->m_metadataImpl.findMetaPort(in)))
+	if ((fromImpl && !(fromP = fromImpl->m_metadataImpl.findMetaPort(out))) ||
+	    (toImpl && !(toP = toImpl->m_metadataImpl.findMetaPort(in))))
 	  throw OU::Error("Invalid artifact XML: \"to\" or \"from\" port not found for connection");
 	if (fromImpl) {
 	  fromImpl->setConnection(*fromP, toImpl, toP);

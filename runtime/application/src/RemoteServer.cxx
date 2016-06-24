@@ -358,7 +358,7 @@ namespace OCPI {
 	  (err = OX::getNumber(m_rx, "wait", &n,    &wait,  0, false)) ||
 	  (err = OX::getBoolean(m_rx, "hex", &hex)) ||
 	  inst >= m_instances.size() || !m_instances[inst].m_worker ||
-	  (get || set) && n >= m_instances[inst].m_worker->m_nProperties)
+	  ((get || set) && n >= m_instances[inst].m_worker->m_nProperties))
 	return OU::eformat(error, "Control message error: %s", err);
       m_response = "<control>";
       OC::Worker &w = *m_instances[inst].m_worker;

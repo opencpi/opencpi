@@ -114,8 +114,8 @@ namespace OCPI {
 	  // Resolve empty port names to be unambiguous if possible
 	  p = ports;
 	  for (unsigned n = 0; n < m_nPorts; n++, p++)
-	    if ((*pi)->m_role.m_provider && p->m_provider ||
-		!(*pi)->m_role.m_provider && !p->m_provider) {
+	    if (((*pi)->m_role.m_provider && p->m_provider) ||
+		(!(*pi)->m_role.m_provider && !p->m_provider)) {
 	      if (found) {
 		  ocpiInfo("Rejected: the '%s' connection at instance '%s' is ambiguous: "
 			   " port name must be specified.",

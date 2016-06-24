@@ -186,7 +186,7 @@ public:
 	  continue; // allow timeout so m_run can go away and shut us down
 	size_t copy_len;
 	for (uint8_t *bp = buf; n; n -= copy_len, bp += copy_len) {
-	  if (bytes_left == 0) //starting the header or starting the payload
+	  if (bytes_left == 0) { //starting the header or starting the payload
 	    if (in_header) {
 	      current_ptr = (uint8_t*)&header;
 	      bytes_left = sizeof(header);
@@ -197,6 +197,7 @@ public:
 	      current_ptr =
 		m_sep.m_receiver ? NULL : (uint8_t *)m_smem.map(header.offset, header.length);
 	    }
+	  }
 	  copy_len = std::min(n, bytes_left);
 	  ocpiDebug("Copying socket data to %p, size = %zu, in header %d, left %zu, first %lx",
 		    current_ptr, copy_len, in_header, bytes_left, *(unsigned long*)bp);

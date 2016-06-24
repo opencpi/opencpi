@@ -108,19 +108,21 @@ namespace OCPI {
     // If not master, then we ignore slave, so there are three cases
     void Application::
     startMasterSlave(bool isMaster, bool isSlave) {
-      for (Worker *w = firstWorker(); w; w = w->nextWorker())
-	if (w->getState() != OU::Worker::EXISTS &&
-	    (isMaster && w->slave() &&
-	     (isSlave && w->hasMaster() || !isSlave && !w->hasMaster())) ||
+      for (Worker *w = firstWorker(); w; w = w->nextWorker()) {
+	// FIXME: what is the issue with EXISTS? and why doesn't it apply to all cases?
+	assert(w->getState() == OU::Worker::INITIALIZED);
+	if ((w->getState() != OU::Worker::EXISTS && isMaster && w->slave() &&
+	     ((isSlave && w->hasMaster()) || (!isSlave && !w->hasMaster()))) ||
 	    (!isMaster && !w->slave()))
 	  w->start();
+      }
     }
     // If not master, then we ignore slave, so there are three cases
     void Application::
     stop(bool isMaster, bool isSlave) {
       for (Worker *w = firstWorker(); w; w = w->nextWorker())
 	if ((isMaster && w->slave() &&
-	     (isSlave && w->hasMaster() || !isSlave && !w->hasMaster())) ||
+	     ((isSlave && w->hasMaster()) || (!isSlave && !w->hasMaster()))) ||
 	    (!isMaster && !w->slave()))
 	w->stop();
     }
@@ -129,7 +131,7 @@ namespace OCPI {
     release(bool isMaster, bool isSlave) {
       for (Worker *w = firstWorker(); w; w = w->nextWorker())
 	if ((isMaster && w->slave() &&
-	     (isSlave && w->hasMaster() || !isSlave && !w->hasMaster())) ||
+	     ((isSlave && w->hasMaster()) || (!isSlave && !w->hasMaster()))) ||
 	    (!isMaster && !w->slave()))
 	w->release();
     }

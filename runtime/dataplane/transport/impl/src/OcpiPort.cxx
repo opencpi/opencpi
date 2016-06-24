@@ -347,14 +347,14 @@ getPortDescriptor(OCPI::RDT::Descriptors& desc, const OCPI::RDT::Descriptors *ot
   }
 
 
-  desc.desc.metaDataPitch = sizeof(BufferMetaData) * MAX_PCONTRIBS;
+  desc.desc.metaDataPitch = OCPI_UTRUNCATE(uint32_t, sizeof(BufferMetaData) * MAX_PCONTRIBS);
   desc.desc.dataBufferSize = desc.desc.dataBufferPitch = this->getPortSet()->getBufferLength();
   ocpiDebug("getPortDescriptor %p: setting %s buffer size to %zu",
 	    this, isOutput() ? "output" : "input", (size_t)desc.desc.dataBufferSize);
   desc.desc.fullFlagSize = sizeof(BufferState);
-  desc.desc.fullFlagPitch = sizeof(BufferState) * MAX_PCONTRIBS * 2;
+  desc.desc.fullFlagPitch = OCPI_UTRUNCATE(uint32_t, sizeof(BufferState) * MAX_PCONTRIBS * 2);
   desc.desc.emptyFlagSize = sizeof(BufferState);
-  desc.desc.emptyFlagPitch = sizeof(BufferState) * MAX_PCONTRIBS * 2;
+  desc.desc.emptyFlagPitch = OCPI_UTRUNCATE(uint32_t, sizeof(BufferState) * MAX_PCONTRIBS * 2);
 
   desc.desc.oob.port_id = getPortId();
   strcpy(desc.desc.oob.oep, m_realSMemResources->sMemServices->endpoint()->end_point.c_str());

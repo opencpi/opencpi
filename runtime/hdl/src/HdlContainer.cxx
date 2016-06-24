@@ -771,8 +771,8 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
           for (ad = ezxml_cchild(myXml()->parent, "adapter"); ad; ad = ezxml_next(ad)) {
             const char *adName = ezxml_cattr(ad, "name");
             if (adName &&
-                (iAmTo && !strcasecmp(adName, from) ||
-                 !iAmTo && !strcasecmp(adName, to))) {
+                ((iAmTo && !strcasecmp(adName, from)) ||
+                 (!iAmTo && !strcasecmp(adName, to)))) {
               // We have a connection on this port to an adapter instance.  Find the worker
 	      const char *adwName = ezxml_cattr(ad, "worker");
 	      if (adwName)
@@ -795,8 +795,8 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
 		    const char
 		      *from = ezxml_cattr(c,"from"), // instance with user port
 		      *to = ezxml_cattr(c,"to");     // instance with provider port
-		    if (!strcasecmp(from, iciName) && !strcasecmp(to, adName) ||
-			!strcasecmp(to, iciName) && !strcasecmp(from, adName))
+		    if ((!strcasecmp(from, iciName) && !strcasecmp(to, adName)) ||
+			(!strcasecmp(to, iciName) && !strcasecmp(from, adName)))
 		      break;
 		  }
 		  if (c)
@@ -814,8 +814,8 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
 	    for (ic = ezxml_child(myXml()->parent, "interconnect"); ic; ic = ezxml_next(ic)) {
 	      const char *icName = ezxml_attr(ic, "name");
 	      if (icName &&
-		  (iAmTo && !strcmp(icName, from) ||
-		   !iAmTo && !strcmp(icName, to)))
+		  ((iAmTo && !strcmp(icName, from)) ||
+		   (!iAmTo && !strcmp(icName, to))))
 		break;
 	    }
 	  if (ic) {

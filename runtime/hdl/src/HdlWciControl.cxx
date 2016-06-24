@@ -280,13 +280,14 @@ namespace OCPI {
 	if (!p.m_writeError ||
 	    !(status =
 	      get32Register(status, OccpWorkerRegisters) &
-	      OCCP_STATUS_WRITE_ERRORS))
+	      OCCP_STATUS_WRITE_ERRORS)) {
 	  if (p.m_isSequence) {
 	    m_properties.setBytesRegisterOffset(offset + p.m_align,
 						val, nBytes, p.m_elementBytes);
 	    m_properties.set32RegisterOffset(offset, (uint32_t)nItems);
 	  } else
 	    m_properties.setBytesRegisterOffset(offset, val, nBytes, p.m_elementBytes);
+	}
 	if (p.m_writeError && !status)
 	  status =
 	    get32Register(status, OccpWorkerRegisters) &

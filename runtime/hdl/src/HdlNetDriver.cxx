@@ -167,7 +167,7 @@ namespace OCPI {
 	ocpiDebug("Accessor read for offset 0x%zx of %zu bytes", offset, bytes);
 	EtherControlRead &ecr =  *(EtherControlRead *)(m_request.payload);
 	ecr.address = htonl((offset & 0xffffff) & ~3);
-	ecr.header.length = htons(sizeof(ecr)-2);
+	ecr.header.length = htons((short)(sizeof(ecr)-2));
 	OS::Ether::Packet recvFrame;
 	request(OCCP_READ, offset, bytes, recvFrame, status);
 	uint32_t data = ntohl(((EtherControlReadResponse *)(recvFrame.payload))->data);
@@ -182,14 +182,14 @@ namespace OCPI {
 	EtherControlWrite &ecw =  *(EtherControlWrite *)(m_request.payload);
 	ecw.address = htonl((offset & 0xffffff) & ~3);
 	ecw.data = htonl(data << ((offset & 3) * 8));
-	ecw.header.length = htons(sizeof(ecw)-2);
+	ecw.header.length = htons((short)(sizeof(ecw)-2));
 	OS::Ether::Packet recvFrame;
 	request(OCCP_WRITE, offset, bytes, recvFrame, status);
       }
       void Device::
       command(const char *cmd, size_t bytes, char *response, size_t rlen, unsigned delayms) {
 	EtherControlHeader &eh_out =  *(EtherControlHeader *)(m_request.payload);
-	eh_out.length = htons(OCPI_UTRUNCATE(uint16_t, sizeof(eh_out)-2 + bytes));
+	eh_out.length = htons((short)(sizeof(eh_out)-2 + bytes));
 	if (cmd && bytes)
 	  memcpy((void*)(&eh_out+1), cmd, bytes);
 	OS::Ether::Packet recvFrame;
@@ -262,7 +262,7 @@ namespace OCPI {
 	memset(&nop, 0, sizeof(nop));
 	nop.header.etherTypeOverlay = 0; // for valgrind
         nop.header.tag = 0;
-	nop.header.length = htons(sizeof(nop)-2);
+	nop.header.length = htons((short)(sizeof(nop)-2));
 	nop.header.pad = 0;
 	nop.header.typeEtc = OCCP_ETHER_TYPE_ETC(OCCP_NOP, 0xf, 1, 0);
 	nop.mbx80 = 0x80;
@@ -272,7 +272,7 @@ namespace OCPI {
       }
       static bool
       checkNopResponse(EtherControlNopResponse &response, std::string &error) {
-	if (response.header.length == htons(sizeof(response)-2) &&
+	if (response.header.length == htons((short)(sizeof(response)-2)) &&
 	    response.header.typeEtc == OCCP_ETHER_TYPE_ETC(OCCP_RESPONSE, OK, 1, 0) &&
 	    response.mbx40 == 0x40 &&
 	    response.mbz0 == 0)

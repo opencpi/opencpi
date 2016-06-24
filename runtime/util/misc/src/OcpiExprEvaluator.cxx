@@ -100,7 +100,7 @@ namespace {
 	break;
       }
       for (unsigned n = 0; n < OpEnd; n++)
-	if (*cp == opNames[n][0])
+	if (*cp == opNames[n][0]) {
 	  if (opNames[n][1]) {
 	    if (opNames[n][1] == cp[1]) {
 	      cp++;
@@ -109,6 +109,7 @@ namespace {
 	    }
 	  } else
 	    op = (OpCode)n;
+	}
       if (op == OpLimit)
 	return "illegal token";
       end = ++cp;

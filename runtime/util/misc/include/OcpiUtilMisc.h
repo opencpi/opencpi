@@ -85,9 +85,9 @@
 #define OCPI_OFFSETOF(utype, member, stype) ((utype)offsetof(stype,member))
 #else
 #define OCPI_UTRUNCATE(type, val) \
-  ((type)OCPI::Util::utruncate((uint64_t)(val), sizeof(type)))
+  (static_cast<type>(OCPI::Util::utruncate((uint64_t)(val), sizeof(type))))
 #define OCPI_STRUNCATE(type, val) \
-  ((type)OCPI::Util::struncate((int64_t)(val), sizeof(type)))
+  (static_cast<type>(OCPI::Util::struncate((int64_t)(val), sizeof(type))))
 #define OCPI_SIZEOF(utype, stype) \
   ((utype)OCPI::Util::utruncate((uint64_t)sizeof(stype), sizeof(utype)))
 #define OCPI_OFFSETOF(utype, stype, member)				\
@@ -100,12 +100,12 @@ namespace OCPI {
     /**
      * \brief Miscellaneous utilities.
      */
-    inline uint64_t utruncate(uint64_t val, unsigned bytes) {
+    inline uint64_t utruncate(uint64_t val, size_t bytes) {
       ocpiAssert(bytes == sizeof(val) ||
 		 val <= ~((uint64_t)-1 << (bytes*8)));
       return val;
     }
-    inline int64_t struncate(int64_t val, unsigned bytes) {
+    inline int64_t struncate(int64_t val, size_t bytes) {
       ocpiAssert(bytes == sizeof(val) ||
 		 (val < 0 ?
 		  val >= (int64_t)-1 << (bytes*8-1) :

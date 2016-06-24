@@ -1016,7 +1016,7 @@ class OCPI::Util::ZipFs::Dir : public OCPI::Util::Vfs::Dir  {
       while (m_iterator != m_zfs.m_contents.end()) {
 	const std::string & absFileName = (*m_iterator++).first;
 	if (m_length == 0 ||
-	    m_name.compare(0, m_length, absFileName) == 0 && absFileName[m_length] == '/') {
+	    (m_name.compare(0, m_length, absFileName) == 0 && absFileName[m_length] == '/')) {
 	  std::size_t
 	    start = m_length ? m_length + 1 : 0,
 	    slash = absFileName.find('/', start);

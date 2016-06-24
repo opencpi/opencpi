@@ -336,7 +336,7 @@ main(int argc, const char **argv)
     if (!argv[0])
       bad("Missing command name");
     for (Command *c = commands; c->name; c++)
-      if (!strncmp(argv[0], c->name, strlen(argv[0])))
+      if (!strncmp(argv[0], c->name, strlen(argv[0]))) {
 	if (!strcmp(argv[0], c->name)) {
 	  exact = c;
 	  break;
@@ -344,13 +344,15 @@ main(int argc, const char **argv)
 	  ambiguous = true;
 	else
 	  found = c;
-    if (!exact)
+      }
+    if (!exact) {
       if (!found)
 	bad("unknown command: %s", argv[0]);
       else if (ambiguous)
 	bad("ambiguous command: %s", argv[0]);
       else
 	exact = found;
+    }
     argv++;
     doFlags(argv);
     if (log != -1)
@@ -500,7 +502,7 @@ static void emulate(const char **) {
 			   woffset == offsetof(OH::OccpWorkerRegisters, lastConfig) ? "lastConfig" :
 			   "unknown");
 		}
-		echp->length = htons(sizeof(ecrr)-2);
+		echp->length = htons((short)(sizeof(ecrr)-2));
 	      } else {
 		HE::EtherControlWrite &ecw =  *(HE::EtherControlWrite *)(rFrame.payload);
 		ocpiAssert(ntohs(ech_in.length) == sizeof(ecw)-2);
@@ -532,7 +534,7 @@ static void emulate(const char **) {
 		} else
 		  *(uint32_t *)&cadmin[offset] = data;
 		HE::EtherControlWriteResponse &ecwr =  *(HE::EtherControlWriteResponse *)(echp);
-		echp->length = htons(sizeof(ecwr)-2);
+		echp->length = htons((short)(sizeof(ecwr)-2));
 	      }
 	      // Modify the outgoing packet last since we might be doing it in the
 	      // received buffer (for uncached mode).
@@ -546,7 +548,7 @@ static void emulate(const char **) {
 	    if (OCCP_ETHER_RESERVED(ech_in.typeEtc)) {
 	      ocpiInfo("Received reserved command with lenth: %zu",
 		       ntohs(ech_in.length) - sizeof(HE::EtherControlHeader));
-	      ech_in.length = htons(sizeof(HE::EtherControlHeader)-2);
+	      ech_in.length = htons((short)(sizeof(HE::EtherControlHeader)-2));
 	      ech_in.typeEtc = OCCP_ETHER_TYPE_ETC(HE::OCCP_RESPONSE, HE::OK, 1, 0);
 	    } else {
 	      HE::EtherControlNop &ecn =  *(HE::EtherControlNop *)(rFrame.payload);
@@ -556,7 +558,7 @@ static void emulate(const char **) {
 	      ocpiAssert(ntohs(ech_in.length) == sizeof(ecn)-2);
 	      HE::EtherControlNopResponse &ecnr =  *(HE::EtherControlNopResponse *)(rFrame.payload);
 	      // Tag is the same
-	      ech_in.length = htons(sizeof(ecnr)-2);
+	      ech_in.length = htons((short)(sizeof(ecnr)-2));
 	      ech_in.typeEtc = OCCP_ETHER_TYPE_ETC(HE::OCCP_RESPONSE, HE::OK, uncache, 0);
 	      ecnr.mbx40 = 0x40;
 	      ecnr.mbz0 = 0;
@@ -1904,9 +1906,9 @@ struct Arg {
       if ((err = OX::getNumber(x, "occpIndex", &iindex, &ifound)))
 	return err;
       const char *iname = ezxml_cattr(x, "name");
-      if (letter && iname && iname[0] == letter ||
-	  name && iname && !strcasecmp(name, iname) ||
-	  !letter && !name && ifound && index == iindex)
+      if ((letter && iname && iname[0] == letter) ||
+	  (name && iname && !strcasecmp(name, iname)) ||
+	  (!letter && !name && ifound && index == iindex))
 	doWorker(x);
       else if (name && iname && !strcasecmp(name, ezxml_cattr(x, "worker"))) {
 	// Check for a duplicate, among all children

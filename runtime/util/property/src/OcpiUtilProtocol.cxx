@@ -101,8 +101,8 @@ namespace OCPI {
 	p.m_isTwoWay = true;
       if (!(err = Member::parseMembers(op, m_nArgs, m_args, false, "argument", NULL))) {
 	if (m_nArgs == 1 &&
-	    (m_args[0].isSequence() && m_args[0].isFixed() ||
-	     !m_args[0].isSequence() && m_args[0].m_baseType == OA::OCPI_String))
+	    ((m_args[0].isSequence() && m_args[0].isFixed()) ||
+	     (!m_args[0].isSequence() && m_args[0].m_baseType == OA::OCPI_String)))
 	  m_topFixedSequence = true;
 	err = Member::alignMembers(m_args, m_nArgs, maxAlignDummy, m_myOffset,
 				   p.m_dataValueWidth, p.m_diverseDataSizes,
@@ -271,7 +271,7 @@ namespace OCPI {
     void Protocol::
     finishOperation(const Operation &op) {
       if (m_isUnbounded ||
-	  m_maxMessageValues && m_maxMessageValues != op.m_myOffset)
+	  (m_maxMessageValues && m_maxMessageValues != op.m_myOffset))
 	m_variableMessageLength = true;
       if (op.m_myOffset > m_maxMessageValues)
 	m_maxMessageValues = op.m_myOffset; // still in bytes until later

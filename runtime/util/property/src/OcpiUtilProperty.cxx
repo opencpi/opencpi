@@ -133,7 +133,7 @@ namespace OCPI {
       if ((err = includeImpl ?
 	   OE::checkAttrs(prop, "Name", PROPERTY_ATTRIBUTES, IMPL_ATTRIBUTES, NULL) :
 	   OE::checkAttrs(prop, "Name", PROPERTY_ATTRIBUTES, NULL)) ||
-	  includeImpl && (err = parseImplAlso(prop)) ||
+	  (includeImpl && (err = parseImplAlso(prop))) ||
 	  (err = parseAccess(prop, false)) ||
 	  (err = Member::parse(prop, !m_isParameter, true, "default", ordinal, resolv)))
 	return err;

@@ -305,7 +305,7 @@ namespace OCPI {
 	}
 	size_t top = offset + size;
 	if (top <= ep.size) {
-	  if (ep.m_holeOffset == 0 || offset < ep.m_holeOffset && top <= ep.m_holeOffset)
+	  if (ep.m_holeOffset == 0 || (offset < ep.m_holeOffset && top <= ep.m_holeOffset))
 	    vaddr = m_vaddr + offset;
 	  else if (ep.m_holeOffset && offset >= ep.m_holeEnd)
 	    vaddr = m_vaddr1 + (offset - ep.m_holeEnd);

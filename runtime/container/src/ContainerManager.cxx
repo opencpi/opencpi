@@ -129,8 +129,8 @@ namespace OCPI {
       for (Driver *d = firstChild(); d; d = d->nextChild())
 	for (Container *c = d->firstContainer(); c; c = c->nextContainer())
 	  if ((!name ||
-	       isdigit(*name) && (unsigned)atoi(name) == c->ordinal() ||
-	       !isdigit(*name) && name == c->name()) &&
+	       (isdigit(*name) && (unsigned)atoi(name) == c->ordinal()) ||
+	       (!isdigit(*name) && name == c->name())) &&
 	      c->supportsImplementation(i))
 	    cb.foundContainer(*c);
       return false;

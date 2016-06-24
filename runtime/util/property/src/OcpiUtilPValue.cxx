@@ -160,7 +160,7 @@ namespace OCPI {
 	    if (p->type == OA::OCPI_String) {
 	      size_t len = p->vString[0] == '=' ? 0 : strlen(var);
 	      if (len == 0 ||
-		  !strncasecmp(var, p->vString, len) && p->vString[len] == '=') {
+		  (!strncasecmp(var, p->vString, len) && p->vString[len] == '=')) {
 		val = p->vString + len + 1;
 		return true;
 	      }
@@ -184,7 +184,7 @@ namespace OCPI {
 	      } else {
 		size_t len = p->vString[0] == '=' ? 0 : strlen(var);
 		if (len == 0 ||
-		    !strncasecmp(var, p->vString, len) && p->vString[len] == '=') {
+		    (!strncasecmp(var, p->vString, len) && p->vString[len] == '=')) {
 		  val = p->vString + len + 1;
 		  next = n + 1;
 		  return true;

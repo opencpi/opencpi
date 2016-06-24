@@ -20,11 +20,11 @@ namespace OCPI {
     typedef uint32_t RomWord;
     static const unsigned
       ROM_NBYTES = 8*1024,
-      ROM_WIDTH  = sizeof(RomWord)*CHAR_BIT,
+      ROM_WIDTH  = (unsigned)sizeof(RomWord)*CHAR_BIT,
       ROM_WIDTH_BYTES = sizeof(RomWord),
       ROM_NWORDS = (ROM_NBYTES + ROM_WIDTH_BYTES-1) / ROM_WIDTH_BYTES,
       ROM_HEADER_WORDS = 4,
-      ROM_HEADER_BYTES = ROM_HEADER_WORDS * sizeof(RomWord);
+      ROM_HEADER_BYTES = ROM_HEADER_WORDS * (unsigned)sizeof(RomWord);
     class Device {
       HdlUUID m_UUID;
       OCPI::Util::Uuid m_loadedUUID;

@@ -101,7 +101,7 @@ namespace OCPI {
 		    m_name.c_str());
 	  while (ioctl(m_rfd, FIONREAD, &n) >= 0 && n > 0 &&
 		 ((r = read(m_rfd, buf, sizeof(buf))) > 0 ||
-		  r < 0 && errno == EINTR))
+		  (r < 0 && errno == EINTR)))
 	    ;
 	  ocpiDebug("Ending flush of any state from previous simulation run");
 	}
@@ -689,7 +689,7 @@ namespace OCPI {
 	      OU::format(error, "SDP channel from simulator got EOF");
 	      return true;
 	    }
-	    if (n < 0)
+	    if (n < 0) {
 	      if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK)
 		n = 0;
 	      else {
@@ -697,6 +697,7 @@ namespace OCPI {
 			   strerror(errno), n, errno);
 		return true;
 	      }
+	    }
 	    nread += n;
 	    cp += n;
 	    room -= n;
@@ -1351,8 +1352,8 @@ namespace OCPI {
 	  // Next priority is to process messages from clients.
 	  // Especially, if they are CP requests, we want to send DCP credits
 	  // before spin credits, so that the CP info is read before spin credits
-	  if (FD_ISSET(m_resp.m_rfd, fds) && doResponse(error) ||
-	      FD_ISSET(m_disc.fd(), fds) && receiveExt(m_disc, true, error))
+	  if ((FD_ISSET(m_resp.m_rfd, fds) && doResponse(error)) ||
+	      (FD_ISSET(m_disc.fd(), fds) && receiveExt(m_disc, true, error)))
 	    return true;
 	  for (ClientsIter ci = m_clients.begin(); ci != m_clients.end(); ci++)
 	    if (FD_ISSET((*ci)->fd(), fds) && receiveExt(**ci, false, error))
