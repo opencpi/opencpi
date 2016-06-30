@@ -1,0 +1,6 @@
+<HdlDevice language='vhdl' outer='1'>
+  <ComponentSpec name='sdp_term'/>
+  <property name='sdp_width' parameter='true' type='uchar' default='1'/>
+  <property name='dropCount' type='uchar' volatile='1'/>
+  <sdp name="up"/>
+</HdlDevice>
