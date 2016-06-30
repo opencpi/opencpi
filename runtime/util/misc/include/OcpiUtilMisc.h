@@ -378,14 +378,14 @@ namespace OCPI {
       struct ConstCharHash {
 	inline size_t operator() (const char *s) const {
 	  size_t h = 0;
-	  while (*s) h += *s++;
+	  while (*s) h += (unsigned char)*s++;
 	  return h;
 	}
       };
       struct ConstCharCaseHash {
 	inline size_t operator() (const char *s) const {
 	  size_t h = 0;
-	  while (*s) h += tolower(*s++);
+	  while (*s) h += (unsigned char)tolower(*s++);
 	  return h;
 	}
       };

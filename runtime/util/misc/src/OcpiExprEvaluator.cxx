@@ -344,9 +344,17 @@ namespace OCPI {
       if (!err) {
 	if (!v.isNumber)
 	  err = esprintf("the expression \"%s\" does not evaluate to a number", a);
-	np = v.number;
-	if (expr && v.isVariable)
-	  *expr = a; // provide the expression to the caller in a string
+	else {
+	  np = v.number;
+	  if (expr) {
+	    expr->clear();
+	    if (v.isVariable) {
+	      ocpiDebug("Found an expression: '%s' that was based on variables. prev:'%s'",
+			a, expr->c_str());
+	      *expr = a; // provide the expression to the caller in a string
+	    }
+	  }
+	}
       }
       return err;
     }
