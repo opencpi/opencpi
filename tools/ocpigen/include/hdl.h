@@ -15,8 +15,8 @@ struct ExtTuple {
   size_t index;
   std::string ext;
   bool single; // mapping is for a single signal in a vector
-ExtTuple(Signal *signal, size_t index, const std::string &ext, bool single)
-: signal(signal), index(index), ext(ext), single(single) {
+ExtTuple(Signal *arg_signal, size_t arg_index, const std::string &arg_ext, bool arg_single)
+: signal(arg_signal), index(arg_index), ext(arg_ext), single(arg_single) {
   }
 };
 typedef std::list<ExtTuple> ExtMap_;

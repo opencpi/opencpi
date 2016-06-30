@@ -372,13 +372,16 @@ class SdpPort : public Port {
   inline const char *typeName() const { return "SDP"; }
   void emitRecordTypes(FILE *f);
   void emitRecordInterface(FILE *f, const char *implName);
+  void emitRecordInterfaceConstants(FILE *f);
+  void emitInterfaceConstants(FILE *f, Language lang);
   void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
   void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord,
 			bool inPackage, bool inWorker, const char *defaultIn,
 			const char *defaultOut);
   void emitVHDLShellPortMap(FILE *f, std::string &last);
-  void emitPortSignal(FILE *f, bool any, const char *indent, std::string &sName,
-		      const char *name, std::string &index);
+  void emitPortSignal(FILE *f, bool any, const char *indent, const std::string &fName,
+		      const std::string &aname, const std::string &index, bool output,
+		      const Port *signalPort, bool external);
 };
 class MetaDataPort : public Port {
   MetaDataPort(const MetaDataPort &other, Worker &w , std::string &name, size_t count,
@@ -768,7 +771,7 @@ extern const char
 	     bool param = false),
   *verilogValue(const OU::Value &v, std::string &value),
   *rccValue(OU::Value &v, std::string &value),
-  *platform, *device, *load, *os, *os_version, **libraries, **mappedLibraries, *assembly,
+  *g_platform, *g_device, *load, *g_os, *g_os_version, **libraries, **mappedLibraries, *assembly,
   *attribute, *platformDir,
   *addLibMap(const char *),
   *findLibMap(const char *file), // returns mapped lib name from dir name of file or NULL
@@ -782,6 +785,7 @@ extern void
   doPrev(FILE *f, std::string &last, std::string &comment, const char *myComment),
   vhdlType(const OU::Property &dt, std::string &typeDecl, std::string &type,
 	   bool convert = false),
+  emitConstant(FILE *f, const std::string &prefix, const char *name, size_t val, Language lang),
   emitVhdlLibraries(FILE *f),
   emitLastSignal(FILE *f, std::string &last, Language lang, bool end);
 

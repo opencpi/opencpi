@@ -49,13 +49,14 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
     // one or the other
     if (myConfig.length())
       myPlatform = myConfig;
-    else if (myPlatform.empty())
-      if (platform)
-	myPlatform = platform;
+    else if (myPlatform.empty()) {
+      if (g_platform)
+	myPlatform = g_platform;
       else {
 	err = "No platform or platform configuration specified in HdlContainer";
 	return NULL;
       }
+    }
     // assume only platform is specified
     const char *slash = strchr(myPlatform.c_str(), '/');
     if (slash) {
@@ -67,13 +68,14 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
   if (!strcmp(myPlatform.c_str() + myPlatform.length() - 3, "_pf"))
     myPlatform.resize(myPlatform.length() - 3);
   OE::getOptionalString(xml, myAssy, "assembly");
-  if (myAssy.empty())
+  if (myAssy.empty()) {
     if (assembly)
       myAssy = assembly;
     else {
       err = OU::esprintf("No assembly specified for container specified in %s", xfile);
       return NULL;
     }
+  }
   std::string configFile, assyFile, configName;
   HdlConfig *config;
   HdlAssembly *appAssembly;
@@ -81,10 +83,10 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
   // base configurations are by definition empty.
   // This is done by hand here, and there is also a base.xml file in platforms/specs
   if (myConfig == "base") {
-    char *xml = strdup("<HdlConfig/>");
+    char *basexml = strdup("<HdlConfig/>");
     // Base config has not been generated...
-    ocpiCheck(OE::ezxml_parse_str(xml, strlen(xml), x) == NULL);
-    configFile = "base.xml"; // where is this really used?
+    ocpiCheck(OE::ezxml_parse_str(basexml, strlen(basexml), x) == NULL);
+    configFile = "base.xml";
   } else {
     OU::format(configName, "%s/hdl/%s", ::platformDir, myConfig.c_str());
     if ((err = parseFile(configName.c_str(), xfile, "HdlConfig", &x, configFile))) {
@@ -105,25 +107,131 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
   return p;
 }
 
-static void
-add2UNocConnection(unsigned &unoc, const char *iname, std::string &assy) {
-  // Connect the new unoc node to the unoc
-  std::string prevInstance, prevPort;
-  if (unoc == 0) {
-    prevInstance = "pfconfig";
-    prevPort = iname;
-  } else {
-    OU::format(prevInstance, "%s_unoc%u", iname, unoc - 1);
-    prevPort = "down";
+// When we add a client, we delay instantiating the split/join until it is actually needed.
+// So this method actually is providing the split/join for the previous client if there is one
+// If the current client is NULL, the current channel is terminated.
+void UNoc::
+addClient(std::string &assy, bool control, const char *client, const char *port) {
+  UNocChannel &unc = m_channels[m_currentChannel];
+  std::string prevInstance, prevPort, node;
+  if (unc.m_currentNode) {
+    // If the channel we are using has a previous node then instance its split/join node
+    // and connect it.
+    unsigned pos = unc.m_currentNode - 1;
+    OU::format(node,  "%s_unoc%u_%u", m_name, m_currentChannel, pos);
+    if (m_type == SDPPort)
+      OU::formatAdd(assy,
+		    "  <instance name='%s' worker='sdp_node'>\n"
+		    "    <property name='sdp_width' value='%zu'/>\n"
+		    "  </instance>\n",
+		    node.c_str(), m_width);
+    else
+      OU::formatAdd(assy,
+		    "  <instance name='%s' worker='unoc_node'>\n"
+		    "    <property name='control' value='%s'/>\n"
+		    "    <property name='position' value='%u'/>\n"
+		    "  </instance>\n",
+		    node.c_str(), unc.m_control ? "true" : "false", pos);
+    // Connect the new unoc node to the unoc
+    if (pos) {
+      OU::format(prevInstance, "%s_unoc%u_%u", m_name, m_currentChannel, pos - 1);
+      prevPort = "name='down'";
+    } else {
+      prevInstance = "pfconfig";
+      OU::format(prevPort, "name='%s' index='%u'", m_name, m_currentChannel);
+    }
+    // Connect the inserted node to its upstream master and its client.
+    OU::formatAdd(assy,
+		  "  <connection>\n"
+		  "    <port instance='%s' %s/>\n"
+		  "    <port instance='%s' name='up'/>\n"
+		  "  </connection>\n"
+		  "  <connection>\n"
+		  "    <port instance='%s' name='client'/>\n"
+		  "    <port instance='%s' name='%s'/>\n"
+		  "  </connection>\n",
+		  prevInstance.c_str(), prevPort.c_str(), node.c_str(),
+		  node.c_str(), unc.m_client.c_str(), unc.m_port.c_str());
   }
-  OU::formatAdd(assy,
-		"  <connection>\n"
-		"    <port instance='%s' name='%s'/>\n"
-		"    <port instance='%s_unoc%u' name='up'/>\n"
-		"  </connection>\n",
-		prevInstance.c_str(), prevPort.c_str(), iname, unoc);
-  unoc++;
+  // if !client then terminate the channel
+  if (client) {
+    unc.m_control = control;
+    unc.m_client = client;
+    unc.m_port = port;
+    unc.m_currentNode++;
+    m_currentChannel = (m_currentChannel + 1) % (unsigned)m_channels.size();
+  } else {
+    prevInstance = unc.m_currentNode == 0 ? "pfconfig" : node.c_str();
+    if (unc.m_currentNode)
+      prevPort = "name='down'";
+    else
+      OU::format(prevPort, "name='%s'", m_name);
+    if (m_type == SDPPort) {
+      if (!unc.m_currentNode)
+	OU::formatAdd(prevPort, " index='%u'", m_currentChannel);
+      std::string term;
+      OU::format(term, "unoc_term%u_%u",  m_currentChannel, unc.m_currentNode);
+      OU::formatAdd(assy,
+		    "  <instance worker='%s' name='%s'/>\n"
+		    "  <connection>\n"
+		    "    <port instance='%s' %s/>\n"
+		    "    <port instance='%s' name='up'/>\n"
+		    "  </connection>\n",
+		    "sdp_term", term.c_str(), prevInstance.c_str(), prevPort.c_str(),
+		    term.c_str());
+    } else
+      OU::formatAdd(assy,
+		    "  <connection>\n"
+		    "    <port instance='%s' %s/>\n"
+		    "    <port instance='pfconfig' name='%s_slave'/>\n"
+		    "  </connection>\n",
+		    prevInstance.c_str(), prevPort.c_str(), m_name);
+  }
 }
+
+void UNoc::
+terminate(std::string &assy) {
+  for (unsigned c = 0; c < m_channels.size(); c++) {
+    UNocChannel &unc = m_channels[c];
+#if 0
+    switch (unc.m_currentNode) {
+    case 1:
+      // Exactly one client.  We can avoid the node and no termination
+      // We assume the client redundantly ignores id mismatches
+      OU::formatAdd(assy,
+		    "  <connection>\n"
+		    "    <port instance='pfconfig' name='%s' index='%u'/>\n"
+		    "    <port instance='%s' %s/>\n"
+		    "  </connection>\n",
+		    m_name, c, unc.m_client.c_str(), unc.m_port.c_str());
+      break;
+    case 0:
+      // No clients, just loop back to the pf worker
+      OU::formatAdd(assy,
+		    "  <connection>\n"
+		    "    <port instance='pfconfig' name='%s' index='%u'/>\n"
+		    "    <port instance='pfconfig' name='%s_slave; index='%u'/>\n"
+		    "  </connection>\n",
+		    m_name, c, m_name, c);
+      break;
+    default:
+      // Multiple clients - provide a node to the last one
+#endif
+      m_currentChannel = c;
+      addClient(assy, false, NULL, NULL);
+#if 0
+      if (m_type != SDPPort)
+	OU::formatAdd(assy,
+		      "  <connection>\n"
+		      "    <port instance='%s_unoc%u_%u' name='down'/>\n"
+		      "    <port instance='pfconfig' name='%s_slave' index='%u'/>\n"
+		      "  </connection>\n",
+		      m_name, c, unc.m_currentNode - 1, m_name, c);
+#endif
+  }
+}
+
+
 
 HdlContainer::
 HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const char *xfile,
@@ -133,8 +241,8 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
     m_appAssembly(appAssembly), m_config(config) {
   appAssembly.setParent(this);
   config.setParent(this);
-  if (!platform)
-    platform = m_config.platform().m_name.c_str();
+  if (!g_platform)
+    g_platform = m_config.platform().m_name.c_str();
   bool doDefault = false;
   if ((err = OE::getBoolean(xml, "default", &doDefault)))
     return;
@@ -161,24 +269,26 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
     *cp = NULL;  // the CP master port on the platform config, if one exists
   for (PortsIter pi = m_config.m_ports.begin(); pi != m_config.m_ports.end(); pi++) {
     Port &p = **pi;
-    if (p.master)
-      if (p.type == CPPort)
+    if (p.master) {
+      if (p.m_type == CPPort)
 	cp = &p;
-      else if (p.type == SDPPort || p.type == NOCPort) {
+      else if (p.m_type == SDPPort || p.m_type == NOCPort) {
 	icp = &p;
 	size_t len = p.m_name.length();
 	Port *slave = NULL;
 	for (PortsIter si = m_config.m_ports.begin(); si != m_config.m_ports.end(); si++) {
 	  Port &sp = **si;
-	  if (!sp.master && (sp.type == NOCPort || sp.type == SDPPort) &&
-	      !strncasecmp(p.name(), sp.name(), len) && !strcasecmp(sp.name() + len, "_slave")) {
+	  if (!sp.master && (sp.m_type == NOCPort || sp.m_type == SDPPort) &&
+	      !strncasecmp(p.cname(), sp.cname(), len) && !strcasecmp(sp.cname() + len, "_slave")) {
 	    assert(!slave);
 	    slave = &sp;
 	  }
 	}
-	ocpiAssert(slave);
-	uNocs[p.name()] = 0;
+	ocpiAssert(p.m_type == SDPPort || slave);
+	uNocs.insert(std::make_pair(p.cname(),
+				    UNoc(p.cname(), p.m_type, m_config.sdpWidth(), p.m_count)));
       }
+    }
   }
   // Preinstall device instances.  These may be devices in the platform OR may be
   // random devices that are just standalone workers.
@@ -189,7 +299,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
     std::string name;
     if (floating) {
       // This device is not part of the platform.
-      // FIXME:  Apologies for this gross unconsting, but its the least of various evils
+      // FIXME:  bad coding practice
       // Fixing would involve allowing containers to own devices...
       HdlPlatform &pf = *(HdlPlatform *)&m_platform;
       err = pf.addFloatingDevice(dx, xfile, this, name);
@@ -224,7 +334,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
        s != m_config.m_platform.Worker::m_signals.end(); s++) {
 #if 0
     OU::formatAdd(assy, "    <signal name='%s' external='%s'/>\n",
-		  (*s)->name(), (*s)->name());
+		  (*s)->cname(), (*s)->cname());
 #endif
     Signal *es = new Signal(**s);
     m_signals.push_back(es);
@@ -239,8 +349,8 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 		  "    <port instance='ocscp' name='wci'/>\n"
 		  "    <port instance='pfconfig' name='%s'/>\n"
 		  "  </connection>\n",
-		  p.count, p.name());
-    nWCIs += p.count;
+		  p.m_count, p.cname());
+    nWCIs += p.m_count;
   }
   if (m_appAssembly.m_assembly && m_appAssembly.m_assembly->m_nInstances != 0) {
     // Instance the assembly and connect its wci
@@ -253,57 +363,46 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 		    "    <port instance='ocscp' name='wci' index='%zu'/>\n"
 		    "    <port instance='%s' name='%s'/>\n"
 		    "  </connection>\n",
-		    p.count, nWCIs,
-		    m_appAssembly.m_implName, p.name());
-      nWCIs += p.count;
+		    p.m_count, nWCIs,
+		    m_appAssembly.m_implName, p.cname());
+      nWCIs += p.m_count;
     }
   }
   if (icp && !cp) {
-    unsigned *unoc = &uNocs.at(icp->name());
-    if (icp->type == SDPPort)
+    UNoc &unoc = uNocs.at(icp->cname());
+    std::string client;
+    const char *port;
+    OU::format(client, "%s_unoc2cp", icp->cname());
+    if (icp->m_type == SDPPort) {
       OU::formatAdd(assy,
-		    "  <instance name='%s_unoc%u' worker='sdp_node'>\n"
+		    "  <instance name='%s' worker='sdp2cp'>\n"
 		    "    <property name='sdp_width' value='%zu'/>\n"
-		    "  </instance>\n"
-		    "  <instance name='%s_sdp2cp' worker='sdp2cp'>\n"
-		    "    <property name='sdp_width' value='%zu'/>\n"
-		    "  </instance>\n"
-		    "  <connection>\n"
-		    "    <port instance='%s_unoc%u' name='client'/>\n"
-		    "    <port instance='%s_sdp2cp' name='sdp'/>\n"
-		    "  </connection>\n"
-		    "  <connection>\n"
-		    "    <port instance='%s_sdp2cp' name='cp'/>\n"
-		    "    <port instance='ocscp' name='cp'/>\n"
-		    "  </connection>\n",
-		    icp->name(), *unoc, m_config.sdpWidth(), icp->name(), m_config.sdpWidth(),
-		    icp->name(), *unoc, icp->name(), icp->name());
-    else
-      OU::formatAdd(assy,
-		    "  <instance name='%s_unoc%u' worker='unoc_node'>\n"
-		    "  <instance name='%s_unoc2cp' worker='unoc_cp_adapter'/>\n"
-		    "  <connection>\n"
-		    "    <port instance='%s_unoc%u' name='client'/>\n"
-		    "    <port instance='%s_unoc2cp' name='unoc'/>\n"
-		    "  </connection>\n"
-		    "  <connection>\n"
-		    "    <port instance='%s_unoc2cp' name='cp'/>\n"
-		    "    <port instance='ocscp' name='cp'/>\n"
-		    "  </connection>\n",
-		    icp->name(), *unoc, icp->name(),
-		    icp->name(), *unoc, icp->name(), icp->name());
-    add2UNocConnection(*unoc, icp->name(), assy);
+		    "  </instance>\n",
+		    client.c_str(), m_config.sdpWidth());
+
+      port = "sdp";
+    } else {
+      OU::formatAdd(assy, "  <instance name='%s' worker='unoc2cp'/>\n", client.c_str());
+      port = "client";
+    }
+    OU::formatAdd(assy,
+		  "  <connection>\n"
+		  "    <port instance='%s' name='cp'/>\n"
+		  "    <port instance='ocscp' name='cp'/>\n"
+		  "  </connection>\n",
+		  client.c_str());
+    unoc.addClient(assy, true, client.c_str(), port);
   } else
     // Connect it to the pf config's cpmaster
     for (PortsIter ii = m_config.m_ports.begin(); ii != m_config.m_ports.end(); ii++) {
       Port &i = **ii;
-      if (i.master && i.type == CPPort) {
+      if (i.master && i.m_type == CPPort) {
 	OU::formatAdd(assy,
 		      "  <connection>\n"
 		      "    <port instance='pfconfig' name='%s'/>\n"
 		      "    <port instance='ocscp' name='cp'/>\n"
 		      "  </connection>\n",
-		      i.name());
+		      i.cname());
 	break;
       }
     }
@@ -321,12 +420,12 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 	if (uNocs.empty() || uNocs.size() > 1) {
 	  if (!attribute)
 	    err = OU::esprintf("No single interconnect in platform configuration for assembly port %s",
-			       (*pi)->name());
+			       (*pi)->cname());
 	  return;
 	}
 	for (PortsIter ii = m_config.m_ports.begin(); ii != m_config.m_ports.end(); ii++) {
 	  Port &i = **ii;
-	  if (i.master && (i.type == NOCPort || i.type == SDPPort)) {
+	  if (i.master && (i.m_type == NOCPort || i.m_type == SDPPort)) {
 	    ContConnect c;
 	    c.external = *pi;
 	    c.interconnect = &i;
@@ -368,15 +467,15 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 		      "    <port instance='%s' name='%s'/>\n"
 		      "  </connection>\n",
 		      nWCIs, (*di).cname(),
-		      dt.ports()[0]->name());
+		      dt.ports()[0]->cname());
       
 	nWCIs++;
       }
       // Instance time clients for the assembly
       const Ports &ports = dt.ports();
       for (PortsIter pi = ports.begin(); pi != ports.end(); pi++)
-	if ((*pi)->type == WTIPort)
-	  emitTimeClient(assy, (*di).cname(), (*pi)->name());
+	if ((*pi)->m_type == WTIPort)
+	  emitTimeClient(assy, (*di).cname(), (*pi)->cname());
     }
     for (ContConnectsIter ci = connections.begin(); ci != connections.end(); ci++)
       if ((err = emitConnection(assy, uNocs, nWCIs, *ci)))
@@ -391,26 +490,12 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 		"  </instance>\n", nWCIs,
 		endians[m_endian]);
   // Terminate the uNocs
-  for (UNocsIter ii = uNocs.begin(); ii != uNocs.end(); ii++) {
-    std::string prevInstance, prevPort;
-    if (ii->second == 0) {
-      prevInstance = "pfconfig";
-      prevPort = ii->first;
-    } else {
-      OU::format(prevInstance, "%s_unoc%u", ii->first, ii->second - 1);
-      prevPort = "down";
-    }
-    OU::formatAdd(assy,
-		  "  <connection>\n"
-		  "    <port instance='%s' name='%s'/>\n"
-		  "    <port instance='pfconfig' name='%s_slave'/>\n"
-		  "  </connection>\n",
-		  prevInstance.c_str(), prevPort.c_str(), ii->first);
-  }
+  for (UNocsIter ii = uNocs.begin(); ii != uNocs.end(); ii++)
+    ii->second.terminate(assy);
   // Instance time clients for the assembly
   for (PortsIter pi = m_appAssembly.m_ports.begin(); pi != m_appAssembly.m_ports.end(); pi++)
-    if ((*pi)->type == WTIPort)
-      emitTimeClient(assy, m_appAssembly.m_implName, (*pi)->name());
+    if ((*pi)->m_type == WTIPort)
+      emitTimeClient(assy, m_appAssembly.m_implName, (*pi)->cname());
   OU::formatAdd(assy,
 		"  <instance worker='metadata'/>\n"
 		"    <connection>\n"
@@ -424,7 +509,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 	   "%s"
 	   "=======End generated container assembly=======\n",
 	   assy.c_str());
-  // Now we hack the (inherited) worker to have the xml for the assembly we just generated.
+  // The (inherited) worker is updated to have the xml for the assembly we just generated.
   char *copy = strdup(assy.c_str());
   ezxml_t x;
   if ((err = OE::ezxml_parse_str(copy, strlen(copy), x))) {
@@ -511,7 +596,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
       for (SignalsIter si = dt.m_signals.begin(); si != dt.m_signals.end(); si++) {
 	for (unsigned n = 0; (*si)->m_width ? n < (*si)->m_width : n == 0; n++) {
 	  Signal *cs = NULL; // The container signal we will create
-	  bool isSingle;
+	  bool isSingle = false; // slow down to suppress warning
 	  const char *boardName;
 	  if ((boardName = (*di)->m_dev2bd.findSignal(**si, n, isSingle))) {
 	    // There is a mapping, but it might be NULL if the signal is not on the platform
@@ -551,11 +636,11 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
   // but the platform config XML that might be parsed might think it is defaulting
   // from the platform where it lives, so we temporarily set the global to the
   // platform we know.
-  const char *save = platform;
-  platform = m_platform.m_name.c_str();
+  const char *save = g_platform;
+  g_platform = m_platform.m_name.c_str();
   if ((err = parseHdl()))
     return;
-  platform = save;
+  g_platform = save;
 #endif
 }
 
@@ -576,7 +661,7 @@ parseConnection(ezxml_t cx, ContConnect &c) {
   if ((attr = ezxml_cattr(cx, "external"))) {
     // Instance time clients for the assembly
     for (PortsIter pi = m_appAssembly.m_ports.begin(); pi != m_appAssembly.m_ports.end(); pi++)
-      if (!strcasecmp((*pi)->name(), attr)) {
+      if (!strcasecmp((*pi)->cname(), attr)) {
 	c.external = *pi;
 	break;
       }
@@ -600,7 +685,7 @@ parseConnection(ezxml_t cx, ContConnect &c) {
     const ::Device &d = c.devInstance->device;
     for (PortsIter pi = d.deviceType().ports().begin();
 	 pi != d.deviceType().ports().end(); pi++)
-      if (!strcasecmp((*pi)->name(), attr)) {
+      if (!strcasecmp((*pi)->cname(), attr)) {
 	c.port = *pi;
 	break;
       }
@@ -625,12 +710,12 @@ parseConnection(ezxml_t cx, ContConnect &c) {
   if ((attr = ezxml_cattr(cx, "interconnect"))) {
     // An interconnect can be on any device worker, but for now it is on the config.
     for (PortsIter pi = m_config.m_ports.begin(); pi != m_config.m_ports.end(); pi++)
-      if (!strcasecmp((*pi)->name(), attr)) {
+      if (!strcasecmp((*pi)->cname(), attr)) {
 	c.interconnect = *pi;
 	break;
       }
     if (!c.interconnect ||
-	(c.interconnect->type != NOCPort && c.interconnect->type != SDPPort) ||
+	(c.interconnect->m_type != NOCPort && c.interconnect->m_type != SDPPort) ||
 	!c.interconnect->master)
       return OU::esprintf("Interconnect '%s' not found for platform '%s'", attr,
 			   m_config.platform().m_name.c_str());
@@ -638,26 +723,14 @@ parseConnection(ezxml_t cx, ContConnect &c) {
   return NULL;
 }
 
+#if 0
 // Make a connection to an interconnect
 const char *HdlContainer::
 emitSDPConnection(std::string &assy, unsigned &unoc, size_t &index, const ContConnect &c) {
-  const char *iname = c.interconnect->name();
+  const char *iname = c.interconnect->cname();
   Port *port = c.external ? c.external : c.port;
-  // Create the two instances:
-  // 1. A sdp node to use the interconnect sdp
-  // 2. A sender or receiver DP/DMA module to stream to/from another place on the interconnect
-  OU::formatAdd(assy,
-		"  <instance name='%s_unoc%u' worker='sdp_node'>\n"
-		"    <property name='sdp_width' value='%zu'/>\n"
-		"  </instance>\n",
-		iname, unoc, m_config.sdpWidth());
-
   const char *dir = port->isDataProducer() ? "send" : "receive";
   // instantiate sdp send or receive, and connect its wci
-  OU::formatAdd(assy,
-		"  <instance name='%s_sdp_%s%u' worker='sdp_%s' interconnect='%s'>\n"
-		"    <property name='sdp_width' value='%zu'/>\n"
-		"  </instance>\n"
 		"  <connection>\n"
 		"    <port instance='%s_sdp_%s%u' name='ctl'/>\n"
 		"    <port instance='ocscp' name='wci' index='%zu'/>\n"
@@ -673,9 +746,9 @@ emitSDPConnection(std::string &assy, unsigned &unoc, size_t &index, const ContCo
   // Connect to the port
   std::string other;
   if (c.devInConfig)
-    OU::format(other, "%s_%s", c.devInstance->cname(), port->name());
+    OU::format(other, "%s_%s", c.devInstance->cname(), port->cname());
   else
-    other = port->name();
+    other = port->cname();
   OU::formatAdd(assy,
 		"  <connection>\n"
 		"    <port instance='%s_sdp_%s%u' %s='%s'/>\n"
@@ -688,100 +761,100 @@ emitSDPConnection(std::string &assy, unsigned &unoc, size_t &index, const ContCo
 		port->isDataProducer() ? "from" : "to", other.c_str());
   return NULL;
 }
+#endif
 // Make a connection to an interconnect
 const char *HdlContainer::
 emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContConnect &c) {
     // Find uNoc
-  const char *iname = c.interconnect->name();
-  unsigned &unoc = uNocs.at(iname);
+  const char *iname = c.interconnect->cname();
+  UNoc &unoc = uNocs.at(iname);
+  UNocChannel &unc = unoc.m_channels[unoc.m_currentChannel];
   Port *port = c.external ? c.external : c.port;
-  if (port->type != WSIPort ||
-      (c.interconnect->type != NOCPort && c.interconnect->type != SDPPort) ||
+  if (port->m_type != WSIPort ||
+      (c.interconnect->m_type != NOCPort && c.interconnect->m_type != SDPPort) ||
       !c.interconnect->master)
     return OU::esprintf("unsupported container connection between "
 			"port %s of %s%s and interconnect %s",
-			port->name(), iname,
+			port->cname(), iname,
 			c.external ? "assembly" : "device",
 			c.external ? "" : c.devInstance->device.cname());
-  const char *err;
-  if (c.interconnect->type == SDPPort) {
-    if ((err = emitSDPConnection(assy, unoc, index, c)))
-      return err;
+  std::string dma, sma;
+  const char *unocPort;
+  if (c.interconnect->m_type == SDPPort) {
+    unocPort = "sdp";
+    OU::format(dma, "%s_sdp_%s%u_%u", iname, port->isDataProducer() ? "send" : "receive",
+	       unoc.m_currentChannel, unc.m_currentNode);
+    sma = dma;
+    // Create the two instances:
+    // 1. A sdp node to attach to the interconnect sdp
+    // 2. A sender or receiver DP/DMA module to stream to/from another place on the interconnect
+    OU::formatAdd(assy,
+		  "  <instance name='%s' worker='sdp_%s' interconnect='%s'>\n"
+		  "    <property name='sdp_width' value='%zu'/>\n"
+		  "  </instance>\n",
+		  dma.c_str(), port->isDataProducer() ? "send" : "receive", iname,
+		  m_config.sdpWidth());
   } else {
+    OU::format(dma, "%s_ocdp%u_%u", iname, unoc.m_currentChannel, unc.m_currentNode);
+    OU::format(sma, "%s_sma%u_%u",  iname, unoc.m_currentChannel, unc.m_currentNode);
+    unocPort = "client";
     // Create the three instances:
-    // 1. A unoc node to use the interconnect unoc
+    // 1. A unoc node to use the interconnect's unoc
     // 2. A DP/DMA module to stream to/from another place on the interconnect
     // 3. An SMA to adapt the WMI on the DP to the WSI that is needed (for now).
     OU::formatAdd(assy,
-		  "  <instance name='%s_unoc%u' worker='unoc_node'>\n"
-		  "    <property name='control' value='false'/>\n"
-		  "    <property name='position' value='%u'/>\n"
-		  "  </instance>\n",
-		  iname, unoc, unoc);
-    // instantiate dp, and connect its wci
-    OU::formatAdd(assy,
-		  "  <instance name='%s_ocdp%u' worker='ocdp' interconnect='%s' configure='%u'>\n"
+		  "  <instance name='%s' worker='ocdp' interconnect='%s' configure='%u'>\n"
 		  "    <property name='includePull' value='%u'/>\n"
 		  "    <property name='includePush' value='%u'/>\n"
 		  "  </instance>\n"
-		  "  <connection>\n"
-		  "    <port instance='%s_ocdp%u' name='ctl'/>\n"
-		  "    <port instance='ocscp' name='wci' index='%zu'/>\n"
-		  "  </connection>\n",
-		  iname, unoc, iname, unoc,
+		  "  <instance name='%s' worker='sma' adapter='%s' configure='%u'/>\n",
+		  dma.c_str(), iname, unc.m_currentNode,
 		  1, // port->u.wdi.isProducer ? 0 : 1,
 		  1, // port->u.wdi.isProducer ? 1 : 0,
-		  iname, unoc,
-		  index);
-    index++;
-    // instantiate sma, and connect its wci
+		  sma.c_str(), iname,
+		  port->isDataProducer() ? 2 : 1);
+    // connect the SMA to the WCI and connect the DP to the SMA, increment WCI count
     OU::formatAdd(assy,
-		  "  <instance name='%s_sma%u' worker='sma' adapter='%s' configure='%u'/>\n"
 		  "  <connection>\n"
-		  "    <port instance='%s_sma%u' name='ctl'/>\n"
+		  "    <port instance='%s' name='ctl'/>\n"
 		  "    <port instance='ocscp' name='wci' index='%zu'/>\n"
-		  "  </connection>\n",
-		  iname, unoc, iname, 
-		  port->isDataProducer() ? 2 : 1,
-		  iname, unoc,
-		  index);
-    index++;
-    OU::formatAdd(assy,
+		  "  </connection>\n"
 		  "  <connection>\n"
-		  "    <port instance='%s_unoc%u' name='client'/>\n"
-		  "    <port instance='%s_ocdp%u' name='client'/>\n"
+		  "    <port instance='%s' %s='data'/>\n"
+		  "    <port instance='%s' %s='message'/>\n"
 		  "  </connection>\n",
-		  iname, unoc, iname, unoc);
-    OU::formatAdd(assy,
-		  "  <connection>\n"
-		  "    <port instance='%s_ocdp%u' %s='data'/>\n"
-		  "    <port instance='%s_sma%u' %s='message'/>\n"
-		  "  </connection>\n",
-		  iname, unoc, port->isDataProducer() ? "to" : "from",
-		  iname, unoc, port->isDataProducer() ? "from" : "to");
-    // Connect to the port
-    std::string other;
-    if (c.devInConfig)
-      OU::format(other, "%s_%s", c.devInstance->cname(), port->name());
-    else
-      other = port->name();
-    OU::formatAdd(assy,
-		  "  <connection>\n"
-		  "    <port instance='%s_sma%u' %s='%s'/>\n"
-		  "    <port instance='%s' %s='%s'/>\n"
-		  "  </connection>\n",
-		  iname, unoc,
-		  port->isDataProducer() ? "to" : "from",
-		  port->isDataProducer() ? "in" : "out",
-		  c.external ? m_appAssembly.m_implName :
-		  (c.devInConfig ? "pfconfig" : c.devInstance->cname()),
-		  port->isDataProducer() ? "from" : "to",
-		  other.c_str());
-    std::string tc;
-    OU::format(tc, "%s_ocdp%u", iname, unoc);
-    emitTimeClient(assy, tc.c_str(), "wti");
+		  sma.c_str(), index++,
+		  dma.c_str(), port->isDataProducer() ? "to" : "from",
+		  sma.c_str(), port->isDataProducer() ? "from" : "to");
+    // Add time client to OCDP
+    emitTimeClient(assy, dma.c_str(), "wti");
   }
-  add2UNocConnection(unoc, iname, assy);
+  // Connect the dma to the wci, incrementing the WCI count
+  OU::formatAdd(assy,
+		"  <connection>\n"
+		"    <port instance='%s' name='ctl'/>\n"
+		"    <port instance='ocscp' name='wci' index='%zu'/>\n"
+		"  </connection>\n",
+		dma.c_str(), index++);
+  // Connect to the port
+  std::string other;
+  if (c.devInConfig)
+    OU::format(other, "%s_%s", c.devInstance->cname(), port->cname());
+  else
+    other = port->cname();
+  OU::formatAdd(assy,
+		"  <connection>\n"
+		"    <port instance='%s' %s='%s'/>\n"
+		"    <port instance='%s' %s='%s'/>\n"
+		"  </connection>\n",
+		sma.c_str(),
+		port->isDataProducer() ? "to" : "from",
+		port->isDataProducer() ? "in" : "out",
+		c.external ? m_appAssembly.m_implName :
+		(c.devInConfig ? "pfconfig" : c.devInstance->cname()),
+		port->isDataProducer() ? "from" : "to",
+		other.c_str());
+  unoc.addClient(assy, false, dma.c_str(), unocPort);
   return NULL;
 }
 
@@ -804,15 +877,15 @@ emitConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContConnect
     // We need to connect an external port to a port of a device instance.
     std::string devport;
     if (c.devInConfig)
-      OU::format(devport, "%s_%s", c.devInstance->cname(), c.port->name());
+      OU::format(devport, "%s_%s", c.devInstance->cname(), c.port->cname());
     OU::formatAdd(assy,
 		  "  <connection>\n"
 		  "    <port instance='%s' name='%s'/>\n"
 		  "    <port instance='%s' name='%s'/>\n"
 		  "  </connection>\n",
-		  m_appAssembly.m_implName, c.external->name(),
+		  m_appAssembly.m_implName, c.external->cname(),
 		  c.devInConfig ? "pfconfig" : c.devInstance->cname(),
-		  c.devInConfig ? devport.c_str() : c.port->name());
+		  c.devInConfig ? devport.c_str() : c.port->cname());
   } else
     return "unsupported container connection";
   return NULL;
@@ -872,8 +945,8 @@ emitXmlConnections(FILE *f) {
 	continue; // internal connection already dealt with
       // find the corresponding instport inside each side.
       InstancePort
-	*aap = ap ? m_appAssembly.m_assembly->findInstancePort(ap->m_port->name()) : NULL,
-        *ppp = pp ? m_config.m_assembly->findInstancePort(pp->m_port->name()) : NULL,
+	*aap = ap ? m_appAssembly.m_assembly->findInstancePort(ap->m_port->cname()) : NULL,
+        *ppp = pp ? m_config.m_assembly->findInstancePort(pp->m_port->cname()) : NULL,
 	*producer = (aap && aap->m_port->isDataProducer() ? aap :
 		     ppp && ppp->m_port->isDataProducer() ? ppp : ip),
 	*consumer = (aap && !aap->m_port->isDataProducer() ? aap :
@@ -881,9 +954,9 @@ emitXmlConnections(FILE *f) {
       // Application is producing to an external consumer
       fprintf(f, "<connection from=\"%s/%s\" out=\"%s\" to=\"%s/%s\" in=\"%s\"/>\n",
 	      producer == ip ? "c" : producer == aap ? "a" : "p",
-	      producer->m_instance->name, producer->m_port->name(),
+	      producer->m_instance->name, producer->m_port->cname(),
 	      consumer == ip ? "c" : consumer == aap ? "a" : "p",
-	      consumer->m_instance->name, consumer->m_port->name());
+	      consumer->m_instance->name, consumer->m_port->cname());
     }
   }
 }
@@ -948,8 +1021,8 @@ emitUuid(const OU::Uuid &uuid) {
   OCPI::HDL::HdlUUID uuidRegs;
   memcpy(uuidRegs.uuid, uuid, sizeof(uuidRegs.uuid));
   uuidRegs.birthday = (uint32_t)time(0);
-  strncpy(uuidRegs.platform, platform, sizeof(uuidRegs.platform));
-  strncpy(uuidRegs.device, device, sizeof(uuidRegs.device));
+  strncpy(uuidRegs.platform, g_platform, sizeof(uuidRegs.platform));
+  strncpy(uuidRegs.device, g_device, sizeof(uuidRegs.device));
   strncpy(uuidRegs.load, load ? load : "", sizeof(uuidRegs.load));
   assert(sizeof(uuidRegs) * 8 == 512);
   fprintf(f,

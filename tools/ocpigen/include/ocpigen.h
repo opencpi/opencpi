@@ -27,7 +27,7 @@ struct Clock {
   bool assembly; // This clock is at the assembly level
   size_t ordinal; // within the worker
   Clock();
-  const char *name() const { return m_name.c_str(); }
+  const char *cname() const { return m_name.c_str(); }
   const char *signal() const { return m_signal.c_str(); }
   const char *reset() const { return m_reset.c_str(); }
 };

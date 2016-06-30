@@ -16,7 +16,7 @@
 typedef std::vector<std::string> Values;
 
 struct Param {
-  OCPI::Util::Value *value;    // the specific value for the current configuration, perhaps the default
+  OCPI::Util::Value *m_value;    // the specific value for the current configuration, perhaps the default
   OCPI::Util::Value *newValue;  // non-default value
   std::string uValue;  // unparsed value - the canonical value for comparison
   Values values;       // the values for all configurations

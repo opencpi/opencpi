@@ -432,7 +432,7 @@ emitCppTypesNamespace(FILE *f, std::string &nsName) {
     const char *upper = upperdup(m_implName);
     for (unsigned n = 0; n < m_ports.size(); n++) {
       Port *port = m_ports[n];
-      fprintf(f, "%s  %s_%s", last, upper, upperdup(port->name()));
+      fprintf(f, "%s  %s_%s", last, upper, upperdup(port->cname()));
       last = ",\n";
     }
     fprintf(f, "\n  };\n");
@@ -526,17 +526,17 @@ emitRccArgTypes(FILE *f, bool &first) {
 	      "   */\n");
     first = false;
     OU::Operation *o = m_protocol->operations();
-    std::string prefix;
+    std::string aprefix;
     if (m_protocol->nOperations()) {
-      camel(prefix, m_protocol->name().c_str());
+      camel(aprefix, m_protocol->name().c_str());
       fprintf(f,
 	      "  // Enumeration constants for the operations of protocol \"%s\"\n"
 	      "  enum %sOpCodes { \n",
-	      m_protocol->name().c_str(), prefix.c_str());
+	      m_protocol->name().c_str(), aprefix.c_str());
       for (unsigned nn = 0; nn < m_protocol->nOperations(); o++) {
 	std::string s;
 	camel(s, o->name().c_str());	
-	fprintf(f,"    %s%s_OPERATION%s\n", prefix.c_str(), s.c_str(),
+	fprintf(f,"    %s%s_OPERATION%s\n", aprefix.c_str(), s.c_str(),
 		++nn == m_protocol->nOperations() ? "" : ",");
       }
       fprintf(f, "  }; \n" );
@@ -559,7 +559,7 @@ emitRccArgTypes(FILE *f, bool &first) {
 		    "  /* Argument data types for the \"%s\" operation of the \"%s\" protocol */\n",
 		    o->name().c_str(), m_protocol->name().c_str());
 	  pfirst = ofirst = false;
-	  camel(prefix, m_protocol->name().c_str(), o->name().c_str(), NULL);
+	  camel(aprefix, m_protocol->name().c_str(), o->name().c_str(), NULL);
 
 	  m_worker->m_maxLevel = 0;
 	  unsigned pad = 0;
@@ -571,8 +571,8 @@ emitRccArgTypes(FILE *f, bool &first) {
 			    nn == 0 && o->nArgs() == 1, UINT_MAX);
 	  // Second pass, define types bottom up
 	  for (unsigned l = m_worker->m_maxLevel+1; l--; ) {
-	    std::string type;
-	    m_worker->rccType(type, *m, 0, offset, pad, prefix.c_str(), true, isLastDummy,
+	    type.clear();
+	    m_worker->rccType(type, *m, 0, offset, pad, aprefix.c_str(), true, isLastDummy,
 			      nn == 0 && o->nArgs() == 1, l);
 	    fputs(type.c_str(), f);
 	  }
@@ -626,7 +626,7 @@ emitImplRCC() {
       last = "";
       for (unsigned n = 0; n < m_ports.size(); n++) {
 	Port *port = m_ports[n];
-	fprintf(f, "%s  %s_%s", last, upper, upperdup(port->name()));
+	fprintf(f, "%s  %s_%s", last, upper, upperdup(port->cname()));
 	// FIXME TWO WAY
 	last = ",\n";
 	if (port->isDataProducer())
@@ -1225,17 +1225,17 @@ emitRccCppImpl(FILE *f) {
   // Define the union of structures for messages for operations
   fprintf(f,
 	  "  class %c%sPort : public OCPI::RCC::RCCUserPort {\n",
-	  toupper(name()[0]), name()+1);
+	  toupper(cname()[0]), cname()+1);
   // Now emit structs for messages
   OU::Operation *o = m_protocol->operations();
   if (o) {
     std::string ops;
-    OU::format(ops, "%c%sOperations", toupper(name()[0]), name()+1);
+    OU::format(ops, "%c%sOperations", toupper(cname()[0]), cname()+1);
     // Constructor
     fprintf(f,
 	    "  public:\n"
 	    "    %c%sPort()",
-	    toupper(name()[0]), &name()[1]);
+	    toupper(cname()[0]), &cname()[1]);
     o = m_protocol->operations();
     bool first = true;
     for (unsigned nn = 0; nn < m_protocol->nOperations(); nn++, o++)
@@ -1267,21 +1267,21 @@ emitRccCppImpl(FILE *f) {
 		s.c_str(), s.c_str(), op.c_str());
 	OU::Member *m = o->args();
 	for (unsigned n = 0; n < o->nArgs(); m++) {
-	  std::string s;
-	  camel(s, m->m_name.c_str());	
-	  fprintf(f, "           m_%sArg(*this)%s", s.c_str(), ++n == o->nArgs() ? "" : ", ");
+	  std::string a;
+	  camel(a, m->m_name.c_str());	
+	  fprintf(f, "           m_%sArg(*this)%s", a.c_str(), ++n == o->nArgs() ? "" : ", ");
 	}
 	fprintf(f,
 		" {\n"
 		"         }\n"
 		"       %sOp(RCCUserPort &p, const %sOp &rhs)\n"
 		"         : OCPI::RCC::RCCPortOperation(p, %s_%s),\n",
-		s.c_str(), s.c_str(), upperdup(m_worker->m_implName), upperdup(name()));
+		s.c_str(), s.c_str(), upperdup(m_worker->m_implName), upperdup(cname()));
 	m = o->args();
 	for (unsigned n = 0; n < o->nArgs(); m++) {
-	  std::string s;
-	  camel(s, m->m_name.c_str());	
-	  fprintf(f, "           m_%sArg(*this)%s", s.c_str(), ++n == o->nArgs() ? "" : ", ");
+	  std::string a;
+	  camel(a, m->m_name.c_str());	
+	  fprintf(f, "           m_%sArg(*this)%s", a.c_str(), ++n == o->nArgs() ? "" : ", ");
 	}
 	fprintf(f,
 		" {\n"
@@ -1296,19 +1296,19 @@ emitRccCppImpl(FILE *f) {
 	m = o->args();
 	fprintf(f, "       enum { \n" );
 	for (unsigned n = 0; n < o->nArgs(); n++, m++) {
-	  std::string s;
-	  camel(s, m->m_name.c_str() );	
-	  fprintf(f,"         %s_ARG%s\n",  s.c_str(), n == o->nArgs() - 1 ? "" : ",");
+	  std::string a;
+	  camel(a, m->m_name.c_str() );	
+	  fprintf(f,"         %s_ARG%s\n",  a.c_str(), n == o->nArgs() - 1 ? "" : ",");
 	}
 	fprintf(f, "       }; \n" );
 
 	// And a class for each arg in the operation
 	m = o->args();
 	for (unsigned n = 0; n < o->nArgs(); n++, m++) { // TODO: Why void * when we know the type?
-	  std::string s;
-	  camel(s, m->m_name.c_str() );	
+	  std::string a;
+	  camel(a, m->m_name.c_str() );	
 	  std::string p;
-	  camel(p, name() );	
+	  camel(p, cname() );	
 	  std::string on;
 	  camel(on, m_worker->m_implName, "WorkerTypes::", m_protocol->name().c_str(),
 		o->name().c_str());
@@ -1322,7 +1322,7 @@ emitRccCppImpl(FILE *f) {
 		  "       class %sArg : public OCPI::RCC::RCCPortOperationArg { \n"
 		  "       private:\n"
 		  "          mutable %s *m_myptr;\n",
-		  s.c_str(), type.c_str());
+		  a.c_str(), type.c_str());
 	  if (m->m_isSequence)
 	    fprintf(f, "          mutable size_t m_length;\n");
 	  fprintf(f,
@@ -1334,7 +1334,7 @@ emitRccCppImpl(FILE *f) {
 		  "            return m_myptr = (%s*)getArgAddress(%s);\n"
 		  //"            return m_myptr ? m_myptr : (m_myptr = (%s*)getArgAddress(%s));\n"
 		  "          }\n",
-		  s.c_str(), s.c_str(),
+		  a.c_str(), a.c_str(),
 		  m_isProducer ? "" : " const", type.c_str(), m_isProducer ? "" : "const ",
 		  type.c_str(), m->m_isSequence ? "&m_length" : "NULL");
 	  if (m->m_isSequence) {
@@ -1363,7 +1363,7 @@ emitRccCppImpl(FILE *f) {
 
 	    fprintf(f,
 		    "       } m_%sArg;\n",
-		    s.c_str());
+		    a.c_str());
 	    // Add an accessor for each argument in case they are variable length.
 	    type.clear();
 	    m_worker->rccType(type, *m, 1, offset, pad, on.c_str(), false, isLast,
@@ -1371,14 +1371,14 @@ emitRccCppImpl(FILE *f) {
 	    if (m->m_isSequence || m->m_arrayRank)
 	      fprintf(f,
 		      "      %s%sArg %s() %s{ return m_%sArg; }\n",
-		      m_isProducer ? "" : "const ", s.c_str(),
+		      m_isProducer ? "" : "const ", a.c_str(),
 		      m->m_name.c_str(), m_isProducer ? "" : "const ",
-		      s.c_str());
+		      a.c_str());
 	    else
 	      fprintf(f,
 		      "      %s%s &%s() %s{ return *m_%sArg.data(); }\n",
 		      m_isProducer ? "" : "const ", type.c_str(), m->m_name.c_str(),
-		      m_isProducer ? "" : "const ", s.c_str());
+		      m_isProducer ? "" : "const ", a.c_str());
 	}
 	// End args
 	fprintf(f, 
@@ -1399,10 +1399,10 @@ emitRccCppImpl(FILE *f) {
     o = m_protocol->operations();
     for (unsigned nn = 0; nn < m_protocol->nOperations(); nn++, o++)
       if (o->nArgs()) {
-	std::string s, prot, prefix;
+	std::string s, prot, aprefix;
 	camel(s, o->name().c_str());
 	camel(prot, m_protocol->m_name.c_str());
-	camel(prefix, m_worker->m_implName, "WorkerTypes::", prot.c_str(),
+	camel(aprefix, m_worker->m_implName, "WorkerTypes::", prot.c_str(),
 	      o->name().c_str());
 	if (first) {
 	  fprintf(f, "  public:\n");
@@ -1414,10 +1414,10 @@ emitRccCppImpl(FILE *f) {
 		"      return m_%sOp;\n"
 		"    }\n",
 		!m_isProducer ? "const " : "", s.c_str(), o->name().c_str(),
-		prefix.c_str(), s.c_str());
+		aprefix.c_str(), s.c_str());
       }
   }
-  fprintf(f, "  } %s;\n", name());
+  fprintf(f, "  } %s;\n", cname());
 }
 void DataPort::
 emitRccCImpl(FILE *f) {
@@ -1462,9 +1462,9 @@ emitRccCImpl1(FILE *f) {
 	    " * Enumeration of operations on port %s of worker %s\n"
 	    " */\n"
 	    "typedef enum {\n",
-	    name(), m_worker->m_implName);
+	    cname(), m_worker->m_implName);
     OU::Operation *o = m_protocol->operations();
-    char *puName = upperdup(name());
+    char *puName = upperdup(cname());
     for (unsigned nn = 0; nn < m_protocol->nOperations(); nn++, o++) {
       char *ouName = upperdup(o->name().c_str());
       fprintf(f, "  %s_%s_%s,\n", upper, puName, ouName);
@@ -1474,7 +1474,7 @@ emitRccCImpl1(FILE *f) {
     free(upper);
     fprintf(f, "} %c%s%c%sOperation;\n",
 	    toupper(m_worker->m_implName[0]), m_worker->m_implName+1,
-	    toupper(name()[0]), name()+1);
+	    toupper(cname()[0]), cname()+1);
     // Now emit structs for messages
     o = m_protocol->operations();
     for (unsigned nn = 0; nn < m_protocol->nOperations(); nn++, o++)
@@ -1484,9 +1484,9 @@ emitRccCImpl1(FILE *f) {
 		" * Structure for the \"%s\" operation on port \"%s\"\n"
 		" */\n"
 		"typedef struct __attribute__ ((__packed__)) {\n",
-		o->name().c_str(), name());
+		o->name().c_str(), cname());
 	std::string s;
-	camel(s, m_worker->m_implName, name(), o->name().c_str());
+	camel(s, m_worker->m_implName, cname(), o->name().c_str());
 	bool isLast = false;
 	std::string type;
 	m_worker->rccStruct(type, o->nArgs(), o->args(), 0, s.c_str(), false, isLast,
@@ -1500,7 +1500,7 @@ emitRccCImpl1(FILE *f) {
 		  " * PartInfo Structure for the %s operation on port %s\n"
 		  " */\n"
 		  "typedef struct __attribute__ ((__packed__)) {\n",
-		  o->name().c_str(), name());
+		  o->name().c_str(), cname());
 	  for (unsigned a = 0; a < o->m_nArgs; a++, arg++) {
 	    Partitioning *ap = os->m_partitioning[a];
 	    if (ap && ap->m_scaling.m_min) {
@@ -1530,7 +1530,7 @@ emitRccCImpl1(FILE *f) {
 const char *DataPort::
 finalizeRccDataPort() {
   const char *err = NULL;
-  if (type == WDIPort)
+  if (m_type == WDIPort)
     createPort<RccPort>(*m_worker, NULL, this, -1, err);
   return err;
 }

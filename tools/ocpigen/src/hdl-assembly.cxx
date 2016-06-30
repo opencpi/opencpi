@@ -69,7 +69,7 @@ parseHdlAssy() {
   for (unsigned n = 0; n < a->m_nInstances; n++, i++) {
     // Count nWCIs - this should work for workers and subassemblies
     if (!i->worker->m_noControl)
-      a->m_nWCIs += i->worker->m_ports[0]->count;
+      a->m_nWCIs += i->worker->m_ports[0]->m_count;
     if (i->worker->m_assembly)
       continue;
     if (m_type == Container || m_type == Configuration) {
@@ -101,8 +101,8 @@ parseHdlAssy() {
     // Allocate the instance-clock-to-assembly-clock map
     if (i->worker->m_clocks.size()) {
       i->m_clocks = new Clock*[i->worker->m_clocks.size()];
-      for (unsigned n = 0; n < i->worker->m_clocks.size(); n++)
-	i->m_clocks[n] = NULL;
+      for (unsigned nn = 0; nn < i->worker->m_clocks.size(); nn++)
+	i->m_clocks[nn] = NULL;
     }
     if (!i->worker->m_noControl)
       nControls++;
@@ -117,13 +117,13 @@ parseHdlAssy() {
       if (i->worker) {
 	unsigned nn = 0;
 	for (InstancePort *ip = i->m_ports; nn < i->worker->m_ports.size(); nn++, ip++) 
-	  if (ip->m_port->type == WCIPort && ip->m_port->master) {
+	  if (ip->m_port->m_type == WCIPort && ip->m_port->master) {
 	    // Found the instance that is mastering the control plane
 	    wciClk = addClock();
 	    // FIXME:  this should access the 0th clock more specifically for VHDL
 	    wciClk->m_name = "wciClk";
-	    OU::format(wciClk->m_signal, "%s_%s_out_i(0).Clk", i->name, ip->m_port->name());
-	    OU::format(wciClk->m_reset, "%s_%s_out_i(0).MReset_n", i->name, ip->m_port->name());
+	    OU::format(wciClk->m_signal, "%s_%s_out_i(0).Clk", i->name, ip->m_port->cname());
+	    OU::format(wciClk->m_reset, "%s_%s_out_i(0).MReset_n", i->name, ip->m_port->cname());
 	    wciClk->assembly = true;
 	    if (i->m_clocks)
 	      i->m_clocks[ip->m_port->clock->ordinal] = wciClk;
@@ -159,7 +159,7 @@ parseHdlAssy() {
     InstancePort &ip = *new InstancePort(NULL, wci, ext);
     unsigned nControl = 0;
     for (n = 0, i = a->m_instances; n < a->m_nInstances; n++, i++)
-      if (i->worker && i->worker->m_ports[0]->type == WCIPort && !i->worker->m_noControl) {
+      if (i->worker && i->worker->m_ports[0]->m_type == WCIPort && !i->worker->m_noControl) {
 	std::string name;
 	OU::format(name, "wci%u", nControl);
 	Connection &c = *new Connection(NULL, name.c_str());
@@ -178,7 +178,7 @@ parseHdlAssy() {
     if (i->worker && i->worker->m_wciClock && !i->worker->m_assembly)
       i->m_clocks[i->worker->m_wciClock->ordinal] = wciClk;
 #if 0
-    if (i->worker && i->worker->m_ports[0]->type == WCIPort &&
+    if (i->worker && i->worker->m_ports[0]->m_type == WCIPort &&
 	!i->worker->m_ports[0]->master && !i->worker->m_assembly)
       i->m_clocks[i->worker->m_ports[0]->clock->ordinal] = wciClk;
 #endif
@@ -190,17 +190,16 @@ parseHdlAssy() {
       Connection &c = **ci;
       Attachment *at = NULL;
       for (AttachmentsIter ai = c.m_attachments.begin(); ai != c.m_attachments.end(); ai++) {
-	Attachment &a = **ai;
-	InstancePort &ip = a.m_instPort;
+	InstancePort &ip = (**ai).m_instPort;
 	if (!ip.m_external && 
-	    (ip.m_port->type == WCIPort ||
+	    (ip.m_port->m_type == WCIPort ||
 	     // FIXME: how can we really know this is not an independent clock??
 	     (ip.m_port->m_worker->m_noControl && ip.m_port->clock && ip.m_port->clock->port == 0) ||
-	     (ip.m_instance->worker->m_ports[0]->type == WCIPort &&
+	     (ip.m_instance->worker->m_ports[0]->m_type == WCIPort &&
 	      !ip.m_instance->worker->m_ports[0]->master &&
 	      // If this (data) port on the worker uses the worker's wci clock
 	      ip.m_port->clock == ip.m_instance->worker->m_ports[0]->clock))) {
-	  at = &a;
+	  at = *ai;
 	  break;
 	}
       }
@@ -213,9 +212,8 @@ parseHdlAssy() {
 	// And force the clock for each connected port to BE the wci clock
 	// This will potentialy connect an independent clock on a worker to the wci clock
 	for (AttachmentsIter ai = c.m_attachments.begin(); ai != c.m_attachments.end(); ai++) {
-	  Attachment &a = **ai;
-	  if (!a.m_instPort.m_external) {
-	    InstancePort &ip = a.m_instPort;
+	  if (!(**ai).m_instPort.m_external) {
+	    InstancePort &ip = (**ai).m_instPort;
 	    // FIXME: check for compatible clock constraints? insert synchronizer?
 	    if (ip.m_instance->m_clocks)
 	      ip.m_instance->m_clocks[ip.m_port->clock->ordinal] = wciClk;
@@ -264,7 +262,7 @@ parseHdlAssy() {
           // This port already has a mapped clock
           if (ip.m_instance->m_clocks[nc] != c.m_clock)
             return OU::esprintf("Connection %s at interface %s of instance %s has clock conflict",
-				c.m_name.c_str(), ip.m_port->name(), ip.m_instance->name);
+				c.m_name.c_str(), ip.m_port->cname(), ip.m_instance->name);
         } else {
           // FIXME CHECK COMPATIBILITY OF c->clock with ip->port->clock
           ip.m_instance->m_clocks[nc] = c.m_clock;
@@ -280,12 +278,12 @@ parseHdlAssy() {
 	if (ip->m_port->isData()) {
 	  size_t nc = ip->m_port->clock->ordinal;
 	  if (!i->m_clocks[nc]) {
-	    if (ip->m_port->type == WSIPort || ip->m_port->type == WMIPort)
+	    if (ip->m_port->m_type == WSIPort || ip->m_port->m_type == WMIPort)
 	      return OU::esprintf("Unconnected data interface %s of instance %s has its own clock",
-				  ip->m_port->name(), i->name);
+				  ip->m_port->cname(), i->name);
 	    Clock *clk = addClock();
 	    i->m_clocks[nc] = clk;
-	    OU::format(clk->m_name, "%s_%s", i->name, ip->m_port->clock->name());
+	    OU::format(clk->m_name, "%s_%s", i->name, ip->m_port->clock->cname());
 	    if (ip->m_port->clock->m_signal.size())
 	      OU::format(clk->m_signal, "%s_%s", i->name, ip->m_port->clock->signal());
 	    clk->assembly = true;
@@ -386,8 +384,8 @@ createConnectionSignals(FILE *f, Language lang, size_t &unused) {
   for (AttachmentsIter ai = m_attachments.begin(); ai != m_attachments.end(); ai++) {
     Connection &c = (*ai)->m_connection;
     for (AttachmentsIter cai = c.m_attachments.begin(); cai != c.m_attachments.end(); cai++)
-      if (&(*cai)->m_instPort != this && (*cai)->m_instPort.m_port->count > maxCount)
-	maxCount = (*cai)->m_instPort.m_port->count;
+      if (&(*cai)->m_instPort != this && (*cai)->m_instPort.m_port->m_count > maxCount)
+	maxCount = (*cai)->m_instPort.m_port->m_count;
   }
   // Output side: generate signal except when external or connected only to external
   // Or when there is a wider one
@@ -395,8 +393,8 @@ createConnectionSignals(FILE *f, Language lang, size_t &unused) {
       !(m_attachments.size() == 1 &&
 	m_attachments.front()->m_connection.m_attachments.size() == 2 &&
 	m_attachments.front()->m_connection.m_external) &&
-      maxCount <= m_port->count &&
-      (m_port->type != TimePort || m_port->master))
+      maxCount <= m_port->m_count &&
+      (m_port->m_type != TimePort || m_port->master))
     {
     emitConnectionSignal(f, true, lang);
     // All connections should use this as their signal
@@ -410,7 +408,7 @@ createConnectionSignals(FILE *f, Language lang, size_t &unused) {
     
   // Input side: rare - generate signal when it aggregates members from others,
   // Like a WSI slave port array
-  if (m_port->count > 1 && (maxCount < m_port->count || m_attachments.size() > 1)) {
+  if (m_port->m_count > 1 && (maxCount < m_port->m_count || m_attachments.size() > 1)) {
     emitConnectionSignal(f, false, lang);
     for (AttachmentsIter ai = m_attachments.begin(); ai != m_attachments.end(); ai++) {
       Connection &c = (*ai)->m_connection;
@@ -434,8 +432,8 @@ createConnectionSignals(FILE *f, Language lang, size_t &unused) {
 			     other.m_hasExprs, *m_port, m_ocp, m_hasExprs, lang, unused);
 	  if (err)
 	    return OU::esprintf("For connection between %s/%s and %s/%s: %s",
-				m_port->m_worker->m_implName, m_port->name(),
-				other.m_port->m_worker->m_implName, other.m_port->name(), err);
+				m_port->m_worker->m_implName, m_port->cname(),
+				other.m_port->m_worker->m_implName, other.m_port->cname(), err);
 	}
       }
     }
@@ -943,8 +941,8 @@ emitInternalConnections(FILE *f, const char *prefix) {
       assert(from && to);
       if (!from->m_port->m_worker->m_assembly && !to->m_port->m_worker->m_assembly)
 	fprintf(f, "<connection from=\"%s/%s\" out=\"%s\" to=\"%s/%s\" in=\"%s\"/>\n",
-		prefix, from->m_instance->name, from->m_port->name(),
-		prefix, to->m_instance->name, to->m_port->name());
+		prefix, from->m_instance->name, from->m_port->cname(),
+		prefix, to->m_instance->name, to->m_port->cname());
     }
   }
 }
@@ -957,9 +955,9 @@ attach(Attachment *a, size_t index) {
   //    count = m_port->count - index;
   for (size_t n = index; n < count; n++) {
     if (m_connected[n])
-      if (!(m_port->type == TimePort && m_port->master))
-	return OU::esprintf("Multiple connections not allowed for port '%s' on worker '%s'",
-			    m_port->name(), m_port->m_worker->m_name.c_str());
+      if (!(m_port->m_type == TimePort && m_port->master))
+	return OU::esprintf("Multiple connections not allowed for port '%s' on instance '%s' of worker '%s'",
+			    m_port->cname(), m_instance->name, m_port->m_worker->m_name.c_str());
     m_connected[n] = true;
   }
   m_attachments.push_back(a);
@@ -971,8 +969,8 @@ attach(Attachment *a, size_t index) {
 void InstancePort::
 emitTieoffAssignments(FILE *f) {
   // Tie off all indices with no connection
-  if (m_port->haveInputs() && m_port->count > 1)
-    for (unsigned i = 0; i < m_port->count; i++) {
+  if (m_port->haveInputs() && m_port->m_count > 1)
+    for (unsigned i = 0; i < m_port->m_count; i++) {
       bool connected = false;
       // For all connections to this port
       for (AttachmentsIter ai = m_attachments.begin();

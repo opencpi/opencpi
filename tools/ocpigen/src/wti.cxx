@@ -12,7 +12,7 @@ WtiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
     return;
   for (unsigned i = 0; i < w.m_ports.size(); i++) {
     Port *p = w.m_ports[i];
-    if (p->type == WTIPort && p != this) {
+    if (p->m_type == WTIPort && p != this) {
       err = "More than one WTI specified, which is not permitted";
       return;
     }
@@ -124,9 +124,9 @@ emitVHDLShellPortMap(FILE *f, std::string &last) {
   OU::format(out, typeNameOut.c_str(), "");
   fprintf(f,
 	  "%s    %s_in => worker_%s",
-	  last.c_str(), name(), in.c_str());
+	  last.c_str(), cname(), in.c_str());
   if (m_allowUnavailable || clock != m_worker->m_wciClock)
-    fprintf(f, ",\n    %s_out => worker_%s", name(), out.c_str());
+    fprintf(f, ",\n    %s_out => worker_%s", cname(), out.c_str());
   last = ",\n";
 }
 
@@ -156,7 +156,7 @@ emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord, 
 		 bool inWorker) {
   ocpiAssert(!master);
   fprintf(f, "%s    -- Signals for %s %s port named \"%s\".  See record type(s) above.\n",
-	  last.c_str(), typeName(), masterIn() ? "slave" : "master", name());
+	  last.c_str(), typeName(), masterIn() ? "slave" : "master", cname());
 
   fprintf(f,
 	  "    %-*s : in  worker_%s_t",

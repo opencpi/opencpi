@@ -23,7 +23,7 @@ findParamProperty(const char *name, OU::Property *&prop, size_t &nParam) {
   return OU::esprintf("Parameter property not found: '%s'", name);
 }
 
-Param::Param() : value(NULL), newValue(NULL), param(NULL) {}
+Param::Param() : m_value(NULL), newValue(NULL), param(NULL) {}
 
 const char *Param::
 parse(ezxml_t px, const OU::Property *argParam) {
@@ -34,7 +34,7 @@ parse(ezxml_t px, const OU::Property *argParam) {
       (err = argParam->parseValue(xValue.c_str(), *newValue)))
     return err;
   newValue->unparse(uValue);
-  value = newValue;
+  m_value = newValue;
   param = argParam;
   return NULL;
 }
@@ -71,7 +71,7 @@ parse(ezxml_t cx) {
     if ((*pi)->m_isParameter) {
       if (!params[n].param) {
 	params[n].param = *pi;
-	params[n].value = (*pi)->m_default;
+	params[n].m_value = (*pi)->m_default;
 	(*pi)->m_default->unparse(params[n].uValue);
       }
       n++;
@@ -85,7 +85,7 @@ getValue(const char *sym, OU::ExprValue &val) const {
   size_t nParam; // FIXME not needed since properties have m_paramOrdinal?
   const char *err;
   if ((err = m_worker.findParamProperty(sym, prop, nParam)) ||
-      (err = extractExprValue(*prop, *params[nParam].value, val)))
+      (err = extractExprValue(*prop, *params[nParam].m_value, val)))
     return err;
   return NULL;
 }
@@ -130,7 +130,7 @@ write(FILE *xf, FILE *mf) {
 	//	else
 	fprintf(mf, "%s", type.c_str());
 	fprintf(mf, " := ");
-	for (const char *cp = m_worker.hdlValue(p.param->m_name, *p.value, val, false, VHDL);
+	for (const char *cp = m_worker.hdlValue(p.param->m_name, *p.m_value, val, false, VHDL);
 	     *cp; cp++) {
 	  if (*cp == '#' || (*cp == '\\' && !cp[1]))
 	    fputc('\\', mf);
@@ -140,7 +140,7 @@ write(FILE *xf, FILE *mf) {
 	fprintf(mf, "ParamVerilog_%zu_%s:=parameter [%zu:0] %s = ",
 		nConfig, p.param->m_name.c_str(), rawBitWidth(*p.param) - 1,
 		p.param->m_name.c_str());
-	for (const char *cp = m_worker.hdlValue(p.param->m_name, *p.value, val, true, Verilog);
+	for (const char *cp = m_worker.hdlValue(p.param->m_name, *p.m_value, val, true, Verilog);
 	     *cp; cp++) {
 	  if (*cp == '#' || (*cp == '\\' && !cp[1]))
 	    fputc('\\', mf);
@@ -149,7 +149,7 @@ write(FILE *xf, FILE *mf) {
 	fputs("\n", mf);
       } else {
 	fprintf(mf, "Param_%zu_%s:=", nConfig, p.param->m_name.c_str());
-	for (const char *cp = m_worker.paramValue(*p.param, *p.value, val); *cp; cp++) {
+	for (const char *cp = m_worker.paramValue(*p.param, *p.m_value, val); *cp; cp++) {
 	  if (*cp == '#' || (*cp == '\\' && !cp[1]))
 	    fputc('\\', mf);
 	  fputc(*cp, mf);
@@ -197,12 +197,12 @@ writeConstants(FILE *gf, Language lang) {
     if (lang == VHDL) {
       std::string typeDecl, type, value;
       vhdlType(pr, typeDecl, type);
-      m_worker.hdlValue(pr.m_name, *p.value, value, false, VHDL);
+      m_worker.hdlValue(pr.m_name, *p.m_value, value, false, VHDL);
       fprintf(gf, "  constant %s : %s := %s;\n",
 	      p.param->m_name.c_str(), type.c_str(), value.c_str());
     } else
       fprintf(gf, "  parameter [%zu:0] %s  = %s;\n", rawBitWidth(pr)-1, pr.m_name.c_str(),
-	      verilogValue(*p.value, value));
+	      verilogValue(*p.m_value, value));
   }
   // This is static (not a port method) since it is needed when there are parameters with
   // no control interface.
@@ -318,11 +318,11 @@ doParam(ParamConfig &info, PropertiesIter pi, unsigned nParam, size_t &nConfig) 
     nParam++;
     for (unsigned n = 0; n < p.values.size(); n++) {
       const char *err;
-      p.value = new OU::Value(prop);
+      p.m_value = new OU::Value(prop);
       if ((err = prop.finalize(info, false)) ||
-	  (err = prop.parseValue(p.values[n].c_str(), *p.value)))
+	  (err = prop.parseValue(p.values[n].c_str(), *p.m_value)))
 	return err;
-      p.value->unparse(p.uValue); // make the canonical value
+      p.m_value->unparse(p.uValue); // make the canonical value
       if ((err = doParam(info, pi, nParam, nConfig)))
 	return err;
     }

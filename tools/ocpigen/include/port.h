@@ -51,11 +51,11 @@ public:
   Worker *m_worker;    // spec: FIXME: name this a reference 
   std::string m_name;  // spec:
   size_t m_ordinal;    // spec:
-  size_t count;        // spec: FIXME: can this change in impl???
+  size_t m_count;      // spec: FIXME: can this change in impl???
   std::string m_countExpr;
   bool master;         // spec
   ezxml_t m_xml;       // spec or impl
-  WIPType type;        // spec with WDI, with limited types, then impl ports
+  WIPType m_type;      // spec with WDI, with limited types, then impl ports
   // These members are for impl ports
   std::string fullNameIn, fullNameOut; // used during HDL generation
   std::string typeNameIn, typeNameOut; // impl: used during HDL generation
@@ -77,7 +77,7 @@ public:
   virtual bool masterIn() const;  // Are master signals inputs at this port?
   void addMyClock();
   virtual const char *checkClock();
-  inline const char *name() const { return m_name.c_str(); }
+  inline const char *cname() const { return m_name.c_str(); }
   const char *doPattern(int n, unsigned wn, bool in, bool master, std::string &suff,
 			bool port = false);
   virtual void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord,
@@ -128,8 +128,9 @@ public:
 			       const char *indent, bool &any, std::string &comment,
 			       std::string &last, const char *myComment, OcpAdapt *adapt,
 			       std::string *signalIn, std::string &exprs);
-  virtual void emitPortSignal(FILE *f, bool any, const char *indent, std::string &sName,
-			      const char *name, std::string &index);
+  virtual void emitPortSignal(FILE *f, bool any, const char *indent, const std::string &fName,
+			      const std::string &aName, const std::string &index, bool output,
+			      const Port *signalPort, bool external);
   virtual const char *fixDataConnectionRole(OCPI::Util::Assembly::Role &role);
   virtual const char *doPatterns(unsigned nWip, size_t &maxPortTypeName);
   virtual void emitXML(FILE *f);

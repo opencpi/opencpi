@@ -8,9 +8,9 @@ SdpPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
 
 // Our special copy constructor
 SdpPort::
-SdpPort(const SdpPort &other, Worker &w , std::string &name, size_t count,
+SdpPort(const SdpPort &other, Worker &w , std::string &arg_name, size_t count,
 		const char *&err)
-  : Port(other, w, name, count, err) {
+  : Port(other, w, arg_name, count, err) {
   if (err)
     return;
 }
@@ -18,11 +18,22 @@ SdpPort(const SdpPort &other, Worker &w , std::string &name, size_t count,
 // Virtual constructor: the concrete instantiated classes must have a clone method,
 // which calls the corresponding specialized copy constructor
 Port &SdpPort::
-clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role */*role*/,
+clone(Worker &w, std::string &arg_name, size_t count, OCPI::Util::Assembly::Role */*role*/,
       const char *&err) const {
-  return *new SdpPort(*this, w, name, count, err);
+  return *new SdpPort(*this, w, arg_name, count, err);
 }
 
+void SdpPort::
+emitRecordInterfaceConstants(FILE *f) {
+  Port::emitRecordInterfaceConstants(f); // for our "arrayness"
+}
+void SdpPort::
+emitInterfaceConstants(FILE *f, Language lang) {
+  Port::emitInterfaceConstants(f, lang);
+}
+
+// This is basically a clone of the RawPropPort - a platform port type with fixed type,
+// that may be an array.  FIXME: have a base class for this behavior
 void SdpPort::
 emitRecordInterface(FILE *f, const char *implName) {
   std::string in, out;
@@ -34,8 +45,54 @@ emitRecordInterface(FILE *f, const char *implName) {
 	  "  alias %s_t is sdp.sdp.%s_t;\n"
 	  "  -- Record for the %s output signals for port \"%s\" of worker \"%s\"\n"
 	  "  alias %s_t is sdp.sdp.%s_t;\n",
-	  typeName(), name(), implName, in.c_str(), master ? "s2m" : "m2s",
-	  typeName(), name(), implName, out.c_str(), master ? "m2s" : "s2m");
+	  typeName(), cname(), implName,
+	  in.c_str(), master ? "s2m" : "m2s",
+	  typeName(), cname(), implName,
+	  out.c_str(), master ? "m2s" : "s2m");
+  emitRecordArray(f);
+  fprintf(f,
+	  "  subtype %s_data_t is dword_array_t(0 to to_integer(sdp_width)-1);\n"
+	  "  subtype %s_data_t is dword_array_t(0 to to_integer(sdp_width)-1);\n",
+	  in.c_str(), out.c_str());
+  // When we have a count, we define the data array type
+  if (m_count > 1 || m_countExpr.length())
+      fprintf(f,
+	      "  type %s_data_array_t is array(0 to ocpi_port_%s_count-1) of %s_data_t;\n"
+	      "  type %s_data_array_t is array(0 to ocpi_port_%s_count-1) of %s_data_t;\n",
+	      in.c_str(), cname(), in.c_str(), out.c_str(), cname(), out.c_str());
+#if 0
+      fprintf(f,
+	      "  type %s_data_array_t is array(0 to ocpi_port_%s_count-1) of "
+	      "dword_array_t(0 to to_integer(sdp_width)-1);\n"
+	      "  type %s_data_array_t is array(0 to ocpi_port_%s_count-1) of "
+	      "dword_array_t(0 to to_integer(sdp_width)-1);\n",
+	      in.c_str(), cname(), out.c_str(), cname());
+  std::string in, out;
+  OU::format(in, typeNameIn.c_str(), "");
+  OU::format(out, typeNameOut.c_str(), "");
+  fprintf(f,
+	  "\n"
+	  "  -- Record for the %s input signals for port \"%s\" of worker \"%s\"\n"
+	  "  alias %s_t is sdp.sdp.%s_t;\n"
+	  "  -- Record for the %s output signals for port \"%s\" of worker \"%s\"\n"
+	  "  alias %s_t is sdp.sdp.%s_t;\n",
+	  typeName(), cname(), implName, in.c_str(), master ? "s2m" : "m2s",
+	  typeName(), cname(), implName, out.c_str(), master ? "m2s" : "s2m");
+  emitRecordArray(f);
+  fprintf(f, "  subtype %s_data_t is dword_array_t(0 to integer(sdp_width)-1);\n", cname());
+  if (m_count > 1 || m_countExpr.length()) {
+    std::string scount;
+    if (m_countExpr.length())
+      OU::format(scount, "ocpi_port_%s_count", cname());
+    else
+      OU::format(scount, "%zu", m_count);
+    fprintf(f,
+	    "  type %s_data_array_t is array(0 to %s-1) of %s_data_t;\n"
+	    "  type %s_data_array_t is array(0 to %s-1) of %s_data_t;\n",
+	    in.c_str(), scount.c_str(), cname(),
+	    out.c_str(), scount.c_str(), cname());
+  }
+#endif
 }
 
 void SdpPort::
@@ -44,27 +101,64 @@ emitRecordTypes(FILE */*f*/) {
 
 void SdpPort::
 emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signal) {
-  fprintf(f,
-	  "  signal %s : sdp.sdp.%s_t;\n"
-	  "  signal %s_data : dword_array_t(0 to to_integer(sdp_width)-1);\n",
-	  signal.c_str(), master == output ? "m2s" : "s2m", signal.c_str());
+  std::string in, out;
+  OU::format(in, typeNameIn.c_str(), "");
+  OU::format(out, typeNameOut.c_str(), "");
+  fprintf(f, "  signal %s : %s.%s_defs.%s%s_t;\n",
+	  signal.c_str(), m_worker->m_implName, m_worker->m_implName,
+	  output ? out.c_str() : in.c_str(),
+	  m_count > 1 || m_countExpr.length() ? "_array" : "");
+  //  if (m_count > 1 || m_countExpr.length())
+  //    fprintf(f, "(0 to %s.%s_constants.ocpi_port_%s_count-1)", m_worker->m_implName,
+  //	    m_worker->m_implName, cname());
+  //  fprintf(f, ";\n");
+  fprintf(f, "  signal %s_data : %s.%s_defs.%s_data%s_t;\n", signal.c_str(),
+	  m_worker->m_implName, m_worker->m_implName,
+	  output ? out.c_str() : in.c_str(),
+	  m_count > 1 || m_countExpr.length() ? "_array" : "");
+#if 0
+  if (m_count > 1 || m_countExpr.length())
+      fprintf(f,
+	      "  signal %s : %s_%s_array_t;\n"
+	      "  signal %s_data : %s_%s_data_array_t;\n",
+	      signal.c_str(), cname(), output ? "out" : "in",
+	      signal.c_str(), cname(), output ? "out" : "in"); 
+  else
+    fprintf(f,
+	    "  signal %s : %s_%s_t;\n"
+	    "  signal %s_data : dword_array_t(0 to to_integer(sdp_width)-1);\n",
+	    signal.c_str(), cname(), output ? "_out" : "_in",
+	    signal.c_str());
+#endif
 }
 
 void SdpPort::
-emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord, bool inPackage,
+emitRecordSignal(FILE *f, std::string &last, const char *aprefix, bool inRecord, bool inPackage,
 		 bool inWorker, const char *defaultIn, const char *defaultOut) {
-  Port::emitRecordSignal(f, last, prefix, inRecord, inPackage, inWorker, defaultIn, defaultOut);
+  Port::emitRecordSignal(f, last, aprefix, inRecord, inPackage, inWorker, defaultIn, defaultOut);
   fprintf(f, last.c_str(), ";\n");
   std::string in, out;
-  OU::format(in, "%s_in_data", name());
-  OU::format(out, "%s_out_data", name());
-  OU::format(last,
-	     "  %-*s : in  dword_array_t(0 to to_integer(%s)-1);\n"
-	     "  %-*s : out dword_array_t(0 to to_integer(%s)-1)%%s",
-	     (int)m_worker->m_maxPortTypeName, in.c_str(),
-	     inRecord ? "sdp_width" : "unsigned(sdp_width)",
-	     (int)m_worker->m_maxPortTypeName, out.c_str(),
-	     inRecord ? "sdp_width" : "unsigned(sdp_width)");
+  OU::format(in, "%s_in_data", cname());
+  OU::format(out, "%s_out_data", cname());
+  if (m_count > 1 || m_countExpr.length()) {
+    std::string scount;
+    if (m_countExpr.length())
+      OU::format(scount, "ocpi_port_%s_count", cname());
+    else
+      OU::format(scount, "%zu", m_count);
+    OU::format(last,
+	       "  %-*s : in  %s_array_t;\n"
+	       "  %-*s : out %s_array_t;\n",
+	       (int)m_worker->m_maxPortTypeName, in.c_str(), in.c_str(),
+	       (int)m_worker->m_maxPortTypeName, out.c_str(), out.c_str());
+  } else
+    OU::format(last,
+	       "  %-*s : in  dword_array_t(0 to to_integer(%s)-1);\n"
+	       "  %-*s : out dword_array_t(0 to to_integer(%s)-1)%%s",
+	       (int)m_worker->m_maxPortTypeName, in.c_str(),
+	       inRecord ? "sdp_width" : "unsigned(sdp_width)",
+	       (int)m_worker->m_maxPortTypeName, out.c_str(),
+	       inRecord ? "sdp_width" : "unsigned(sdp_width)");
 }
 
 void SdpPort::
@@ -76,17 +170,52 @@ emitVHDLShellPortMap(FILE *f, std::string &last) {
 	  "%s"
 	  "    %s_in_data => %s_in_data,\n"
 	  "    %s_out_data => %s_out_data\n",
-	  last.c_str(), name(), name(), name(), name());
+	  last.c_str(), cname(), cname(), cname(), cname());
 }
 
 void SdpPort::
-emitPortSignal(FILE *f, bool any, const char *indent, std::string &sName,
-	       const char *name, std::string &index) {
-  Port::emitPortSignal(f, any, indent, sName, name, index);
-  any = true;
-  std::string dsName = sName, dName = name;
-  dsName += "_data";
-  dName += "_data";
+emitPortSignal(FILE *f, bool any, const char *indent, const std::string &fName,
+	       const std::string &aName, const std::string &index, bool output,
+	       const Port *signalPort, bool external) {
+  std::string
+    formal(fName), formal_data(fName + "_data"),
+    actual(aName + index), actual_data(aName + "_data" + index),
+    empty;
+  if (signalPort) {
+    if (output) {
+      if (aName == "open") {
+	actual = "open";
+	actual_data = "open";
+      } else {
+	OU::format(formal, "%s.%s_defs.%s%s",
+		   external ? "work" : signalPort->m_worker->m_implName,
+		   signalPort->m_worker->m_implName, signalPort->cname(),
+		   external ? "_out" : "_in");
+	formal_data = formal + "_data";
+	if (index.empty() && (signalPort->m_count > 1 || signalPort->m_countExpr.length())) {
+	  formal += "_array";
+	  formal_data += "_array";
+	}	  
+	OU::formatAdd(formal, "_t(%s)", fName.c_str());
+	OU::formatAdd(formal_data, "_t(%s_data)", fName.c_str());
+      }
+    } else {
+      if (aName.empty()) {
+	actual = master ? slaveMissing() : masterMissing();
+	actual_data = "(others => (others => '0'))";
+      } else {
+	OU::format(actual, "%s.%s_defs.%s%s_t(%s%s)",
+		   m_worker->m_implName, m_worker->m_implName,
+		   fName.c_str(), m_count > 1 || m_countExpr.length() ? "_array" : "",
+		   aName.c_str(), index.c_str());
+	OU::format(actual_data, "%s.%s_defs.%s_data%s_t(%s_data%s)", m_worker->m_implName,
+		   m_worker->m_implName, fName.c_str(),
+		   m_count > 1 || m_countExpr.length() ? "_array" : "", aName.c_str(),
+		   index.c_str());
+      }
+    }    
+  }
+  Port::emitPortSignal(f, any, indent, formal, actual, empty, output, NULL, false);
   fprintf(f, ",\n");
-  Port::emitPortSignal(f, any, indent, dsName, dName.c_str(), index);
+  Port::emitPortSignal(f, true, indent, formal_data, actual_data, empty, output, NULL, false);
 }

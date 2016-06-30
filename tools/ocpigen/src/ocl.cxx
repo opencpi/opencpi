@@ -177,7 +177,7 @@ emitImplOCL() {
     last = "";
     for (unsigned n = 0; n < m_ports.size(); n++) {
       Port *port = m_ports[n];
-      fprintf(f, "%s  %s_%s", last, upper, upperdup(port->name()));
+      fprintf(f, "%s  %s_%s", last, upper, upperdup(port->cname()));
       // FIXME TWO WAY
       last = ",\n";
     }
@@ -241,7 +241,7 @@ emitImplOCL() {
     }
   }
   for (unsigned n = 0; n < m_ports.size(); n++)
-    fprintf(f, "  OCLPort %s;\n", m_ports[n]->name() );
+    fprintf(f, "  OCLPort %s;\n", m_ports[n]->cname() );
   if (m_ctl.properties.size())
     fprintf(f,"  __global %c%sProperties* properties;\n",
             toupper(m_implName[0]), m_implName + 1);
@@ -437,7 +437,7 @@ OclPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
 const char *DataPort::
 finalizeOclDataPort() {
   const char *err = NULL;
-  if (type == WDIPort)
+  if (m_type == WDIPort)
     createPort<OclPort>(*m_worker, NULL, this, -1, err);
   return err;
 }

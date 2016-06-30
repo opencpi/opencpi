@@ -68,7 +68,7 @@ OcpPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *d
     return;
   if (myClock && (clockName = ezxml_cattr(x, "clock")))
     err = OU::esprintf("port \"%s\" refers to clock \"%s\", and also has MyClock=true, "
-		       "which is invalid", name(), clockName);
+		       "which is invalid", cname(), clockName);
   // We can't create clocks at this point based on myclock, since
   // it might depend on what happens with other ports.
 }
@@ -109,7 +109,7 @@ emitRecordSignal(FILE *f, std::string &last, const char */*prefix*/, bool /*useR
   OU::format(temp,
 	     "    -- Signals for %s %s port named \"%s\".  See record types above.\n"
 	     "    %-*s : in  %s%s_t%s%s",
-	     typeName(), masterIn() ? "input" : "output", name(),
+	     typeName(), masterIn() ? "input" : "output", cname(),
 	     (int)m_worker->m_maxPortTypeName, typeNameIn.c_str(), inWorker ? "worker_" : "",
 	     typeNameIn.c_str(), defaultIn ? " := " : "", defaultIn ? defaultIn : "");
   if (inWorker ? haveWorkerOutputs() : haveOutputs())
@@ -143,19 +143,19 @@ vectorWidth(const OcpSignalDesc *osd, std::string &out, Language lang, bool /*co
 	OU::format(out, "wsi.MData_width(to_integer(%s), %zu)",
 		   m_dataWidthExpr.c_str(), m_byteWidth);
       else
-	OU::format(out, "ocpi_port_%s_MData_width", name());
+	OU::format(out, "ocpi_port_%s_MData_width", cname());
     else if (osd->number == OCP_MByteEn)
       if (value && lang == VHDL)
 	OU::format(out, "wsi.MByteEn_width(to_integer(%s), %zu)",
 		   m_dataWidthExpr.c_str(), m_byteWidth);
       else
-	OU::format(out, "ocpi_port_%s_MByteEn_width", name());
+	OU::format(out, "ocpi_port_%s_MByteEn_width", cname());
     else if (osd->number == OCP_MDataInfo)
       if (value && lang == VHDL)
 	OU::format(out, "wsi.MDataInfo_width(to_integer(%s), %zu)",
 		   m_dataWidthExpr.c_str(), m_byteWidth);
       else
-	OU::format(out, "ocpi_port_%s_MDataInfo_width", name());
+	OU::format(out, "ocpi_port_%s_MDataInfo_width", cname());
     else
       OU::format(out, "%zu", ocp.signals[osd->number].width);
   } else
@@ -168,11 +168,11 @@ emitSignals(FILE *f, Language lang, std::string &last, bool /*inPackage*/, bool 
   const char *comment = hdlComment(lang);
   bool mIn = masterIn();
   OcpSignalDesc *osd;
-  for (unsigned n = 0; n < count; n++) {
+  for (unsigned n = 0; n < m_count; n++) {
     if (!myClock)
       fprintf(f,
 	      "  %s No Clk signal here. The \"%s\" interface uses \"%s\" as clock\n",
-	      comment, name(), clock->signal());
+	      comment, cname(), clock->signal());
     osd = ocpSignals;
     std::string ws;
     for (OcpSignal *os = ocp.signals; osd->name; os++, osd++)
@@ -205,7 +205,7 @@ void OcpPort::
 emitDirection(FILE *f,  const char *implName, bool mIn, std::string &dir) {
   fprintf(f,
 	  "\n  -- Record for the %s input (OCP %s) signals for port \"%s\" of worker \"%s\"\n",
-	  typeName(), mIn ? "master" : "slave", name(), implName);
+	  typeName(), mIn ? "master" : "slave", cname(), implName);
   fprintf(f, "  type %s_t is record\n", dir.c_str());
   OcpSignalDesc *osd = ocpSignals;
   for (OcpSignal *os = ocp.signals; osd->name; os++, osd++)
@@ -230,13 +230,13 @@ emitRecordInterface(FILE *f, const char *implName) {
   fprintf(f, "\n"
 	  "  -- These 2 records correspond to the input and output sides of the OCP bundle\n"
 	  "  -- for the \"%s\" worker's \"%s\" profile interface named \"%s\"\n",
-	  implName, typeName(), name());
+	  implName, typeName(), cname());
   std::string in, out;
   OU::format(in, typeNameIn.c_str(), "");
   OU::format(out, typeNameOut.c_str(), "");
   emitDirection(f, implName, mIn, in);
   emitDirection(f, implName, !mIn, out);
-  if (count > 1)
+  if (m_count > 1)
     emitRecordArray(f);
 }
 
@@ -290,7 +290,7 @@ doPatterns(unsigned nWip, size_t &maxPortTypeName) {
   if (clock && clock->port == this && clock->m_signal.empty()) {
     std::string sin;
     // ordinal == -2 means suppress ordinal
-    if ((err = doPattern(count > 1 ? 0 : -2, nWip, true, !masterIn(), sin)))
+    if ((err = doPattern(m_count > 1 ? 0 : -2, nWip, true, !masterIn(), sin)))
       return err;
     ocpiCheck(asprintf(&ocp.Clk.signal, "%s%s", sin.c_str(), "Clk") > 0);
     clock->m_signal = ocp.Clk.signal;
@@ -308,7 +308,7 @@ doPatterns(unsigned nWip, size_t &maxPortTypeName) {
 
 void OcpPort::
 emitVerilogSignals(FILE *f) {
-  for (unsigned n = 0; n < count; n++) {
+  for (unsigned n = 0; n < m_count; n++) {
     OcpSignalDesc *osd = ocpSignals;
     std::string num;
     OU::format(num, "%u", n);
@@ -359,7 +359,7 @@ emitVHDLSignalWrapperPortMap(FILE *f, std::string &last) {
 
 void OcpPort::
 emitVHDLRecordWrapperSignals(FILE *f) {
-  for (unsigned n = 0; n < count; n++) {
+  for (unsigned n = 0; n < m_count; n++) {
     std::string num;
     OU::format(num, "%u", n);
     std::string in, out;
@@ -384,7 +384,7 @@ emitVHDLRecordWrapperSignals(FILE *f) {
 }
 void OcpPort::
 emitVHDLRecordWrapperAssignments(FILE *f) {
-  for (unsigned n = 0; n < count; n++) {
+  for (unsigned n = 0; n < m_count; n++) {
     std::string num;
     OU::format(num, "%u", n);
     std::string in, out;
@@ -397,7 +397,7 @@ emitVHDLRecordWrapperAssignments(FILE *f) {
 	OU::format(name, os->signal, num.c_str());
 	if (os->value) {
 	  std::string rec;
-	  if (count > 1)
+	  if (m_count > 1)
 	    OU::format(rec, "%s(%u).%s", os->master == masterIn() ? in.c_str() : out.c_str(),
 		       n, osd->name);
 	  else
@@ -412,7 +412,7 @@ emitVHDLRecordWrapperAssignments(FILE *f) {
 }
 void OcpPort::
 emitVHDLRecordWrapperPortMap(FILE *f, std::string &last) {
-  for (unsigned n = 0; n < count; n++) {
+  for (unsigned n = 0; n < m_count; n++) {
     std::string num;
     OU::format(num, "%u", n);
     std::string in, out;
@@ -453,19 +453,19 @@ emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal) {
     std::string stype;
     Worker &w = *m_worker;
     // WCI ports on assemblies are always generic generic
-    if (type == WCIPort && (master || w.m_assembly))
+    if (m_type == WCIPort && (master || w.m_assembly))
       OU::format(stype, "wci.wci_%s_%st", output ? "m2s" : "s2m",
-		 count > 1 ? "array_" : "");
+		 m_count > 1 ? "array_" : "");
     else {
       std::string lib(w.m_library);
       if (w.m_paramConfig && w.m_paramConfig->nConfig)
 	OU::formatAdd(lib, "_c%zu", w.m_paramConfig->nConfig);
       
       OU::format(stype, "%s.%s_defs.%s%s_t", lib.c_str(), w.m_implName, tname.c_str(),
-		 count > 1 ? "_array" : "");
+		 m_count > 1 ? "_array" : "");
     }
-    if (count > 1)
-      OU::formatAdd(stype, "(0 to %zu)", count - 1);
+    if (m_count > 1)
+      OU::formatAdd(stype, "(0 to %zu)", m_count - 1);
     // Make master the canonical type?
     fprintf(f,
 	    "  signal %s : %s;\n", signal.c_str(), stype.c_str());
@@ -525,7 +525,7 @@ emitExprAssignments(std::string &out, std::string &signalIn, OcpAdapt *adapt, At
 		"\n"
 		"  -- Temporary input signal assignments for port \"%s\",\n"
 		"  -- since it has some signals with expression values that are not \"globally static\" in VHDL terms.\n",
-		name());
+		cname());
   OcpSignalDesc *osd;
   OcpSignal *os;
   OcpAdapt *oa;
@@ -577,7 +577,7 @@ ocpSignalPrefix(std::string &signal, bool master, Language lang, Attachments &at
   // In either case
   std::string &cName = master ? c.m_masterName : c.m_slaveName;
   size_t index, top, count = 0; // count for indexing purpose
-  if (otherIp->m_port->count > c.m_count) {
+  if (otherIp->m_port->m_count > c.m_count) {
     // We're connecting to something bigger: indexing is needed in this port binding
     count = c.m_count;
     index = at->m_index;
@@ -640,7 +640,7 @@ connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, OcpAdapt &oa,
     OcpPort &other = *static_cast<OcpPort*>(otherIp.m_port);
     if (osd.vector && os.width != other.ocp.signals[osd.number].width) {
       ocpiDebug("Narrowing of assignment to port %s of worker %s from %zu to %zu",
-		name(), m_worker->m_implName, other.ocp.signals[osd.number].width, os.width);
+		cname(), m_worker->m_implName, other.ocp.signals[osd.number].width, os.width);
       OU::formatAdd(signal, lang == Verilog ? "[%zu-1:0]" : "(%zu-1 downto 0)",
 		    os.width);
       thisComment = "worker is narrower than external, which is OK";

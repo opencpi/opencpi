@@ -42,7 +42,7 @@ findPort(OU::Assembly::Port &ap, InstancePort *&found) {
 	else
 	  found = &i.m_ports[nn];
       }
-    } else if (!strcasecmp(p.name(), ap.m_name.c_str()))
+    } else if (!strcasecmp(p.cname(), ap.m_name.c_str()))
       found = &i.m_ports[nn];;
   }
   if (!found)
@@ -68,14 +68,14 @@ parseConnection(OU::Assembly::Connection &aConn) {
     OU::Assembly::Port &ap = *api;
     if ((err = findPort(ap, found)))
       return err;
-    if (ap.m_index + (c.m_count ? c.m_count : 1) > found->m_port->count)
+    if (ap.m_index + (c.m_count ? c.m_count : 1) > found->m_port->m_count)
       return OU::esprintf("invalid index/count (%zu/%zu) for connection %s, port %s of "
 			  "instance %s has count %zu",
 			  ap.m_index, c.m_count ? c.m_count : 1, c.m_name.c_str(),
 			  ap.m_name.empty() ? "<unknown>" : ap.m_name.c_str(),
 			  m_instances[ap.m_instance].worker->m_name.c_str(),
-			  found->m_port->count);
-    size_t count = found->m_port->count - ap.m_index;
+			  found->m_port->m_count);
+    size_t count = found->m_port->m_count - ap.m_index;
     if (count < minCount)
       minCount = count;
   }
@@ -108,23 +108,23 @@ parseConnection(OU::Assembly::Connection &aConn) {
     assert(c.m_attachments.size() == 1);
     InstancePort &intPort = c.m_attachments.front()->m_instPort; // intPort corresponds to ap
     assert(intPort.m_port);
-    if (ext.m_index + ext.m_count > intPort.m_port->count)
+    if (ext.m_index + ext.m_count > intPort.m_port->m_count)
       return OU::esprintf("External port '%s' can't have index/count %zu/%zu "
 			  "when internal port has count: %zu",
-			  ext.m_name.c_str(), ext.m_index, ext.m_count, intPort.m_port->count);
+			  ext.m_name.c_str(), ext.m_index, ext.m_count, intPort.m_port->m_count);
     // Create the external port of this assembly
     // Start with a copy of the port, then patch it
     ocpiDebug("Clone of port %s of instance %s of worker %s for assembly worker %s: %s/%zu/%zu",
-	      intPort.m_port->name(), intPort.m_instance->name,
+	      intPort.m_port->cname(), intPort.m_instance->name,
 	      intPort.m_port->m_worker->m_implName, m_assyWorker.m_implName,
-	      intPort.m_port->m_countExpr.c_str(), intPort.m_port->count,
+	      intPort.m_port->m_countExpr.c_str(), intPort.m_port->m_count,
 	      ext.m_count ? ext.m_count : c.m_count);
     Port &p = intPort.m_port->clone(m_assyWorker, ext.m_name,
 				    ext.m_count ? ext.m_count : c.m_count,
 				    &ext.m_role, err);
     if (err)
       return OU::esprintf("External connection %s for port %s of instance %s error: %s",
-			  c.m_name.c_str(), intPort.m_port->name(), intPort.m_instance->name,
+			  c.m_name.c_str(), intPort.m_port->cname(), intPort.m_instance->name,
 			  err);
     InstancePort *ip = new InstancePort;
     ip->init(NULL, &p, &ext);
@@ -165,7 +165,7 @@ addAssemblyParameters(OU::Assembly::Properties &aiprops) {
       assert(m_assyWorker.m_paramConfig);
       Param *p = &m_assyWorker.m_paramConfig->params[0];
       for (unsigned nn = 0; nn < m_assyWorker.m_paramConfig->params.size(); nn++, p++)
-	if (&ap == p->param && p->value != ap.m_default) {
+	if (&ap == p->param && p->m_value != ap.m_default) {
 	  // We have a non-default-value parameter value in this assy wkr's configuration
 	  OU::Assembly::Property *aip = &aiprops[0];
 	  size_t n;
@@ -235,7 +235,7 @@ addParamConfigParameters(const ParamConfig &pc, const OU::Assembly::Properties &
     if (n == 0) {
       // a setting in the param config is not mentioned explicitly
       ipv->property = p->param;
-      ipv->value = *p->value;
+      ipv->value = *p->m_value;
       ipv++;
     }
   }
@@ -327,8 +327,8 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
     i->properties.resize(ipv - &i->properties[0]);
     // Initialize the instance ports
     InstancePort *ip = i->m_ports = new InstancePort[i->worker->m_ports.size()];
-    for (unsigned n = 0; n < i->worker->m_ports.size(); n++, ip++) {
-      ip->init(i, i->worker->m_ports[n], NULL);
+    for (unsigned nn = 0; nn < i->worker->m_ports.size(); nn++, ip++) {
+      ip->init(i, i->worker->m_ports[nn], NULL);
       // If the instance in the OU::Assembly has "m_externals=true",
       // and this instance port has no connections in the OU::Assembly
       // then we add an external connection for the instance port. Prior to this,
@@ -344,12 +344,12 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
 	    if (!findPort(**pi, found))
 	      if (ip == found)
 		p = ip->m_port;
-	  } else if (!strcasecmp((*pi)->m_name.c_str(), ip->m_port->name())) {
+	  } else if (!strcasecmp((*pi)->m_name.c_str(), ip->m_port->cname())) {
 	    p = ip->m_port;
 	    break;
 	  } 
 	if (!p)
-	  m_utilAssembly->addExternalConnection(i->instance->m_ordinal, ip->m_port->name());
+	  m_utilAssembly->addExternalConnection(i->instance->m_ordinal, ip->m_port->cname());
       }
     }
     // Parse type-specific aspects of the instance.
@@ -381,7 +381,7 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
 	if (ip->m_attachments.empty() && pp->isData() && !pp->isOptional())
 	  return OU::esprintf("Port %s of instance %s of worker %s"
 			      " is not connected and not optional",
-			      pp->name(), i->name, i->worker->m_implName);
+			      pp->cname(), i->name, i->worker->m_implName);
       }
     }
   return 0;
@@ -399,14 +399,14 @@ externalizePort(InstancePort &ip, const char *name, size_t &ordinal) {
   std::string extName;
   OU::format(extName, "%s%zu", name, ordinal++);
   Connection &c = *new Connection(NULL, extName.c_str());
-  c.m_count = p.count;
+  c.m_count = p.m_count;
   m_connections.push_back(&c);
   const char *err;
   ocpiDebug("Clone of port %s of instance %s of worker %s for assembly worker %s: %s/%zu",
-	    ip.m_port->name(), ip.m_instance->name,
+	    ip.m_port->cname(), ip.m_instance->name,
 	    ip.m_port->m_worker->m_implName, m_assyWorker.m_implName,
-	    ip.m_port->m_countExpr.c_str(), ip.m_port->count);
-  Port &extPort = p.clone(m_assyWorker, extName, p.count, NULL, err);
+	    ip.m_port->m_countExpr.c_str(), ip.m_port->m_count);
+  Port &extPort = p.clone(m_assyWorker, extName, p.m_count, NULL, err);
   if (err)
     return err;
   // If the port has its own clock, use it.
@@ -431,7 +431,7 @@ findInstancePort(const char *name) {
   // First, find the external
   for (ConnectionsIter cci = m_connections.begin(); cci != m_connections.end(); cci++) {
     Connection &cc = **cci;
-    if (cc.m_external && !strcasecmp(cc.m_external->m_instPort.m_port->name(), name))
+    if (cc.m_external && !strcasecmp(cc.m_external->m_instPort.m_port->cname(), name))
       // We found the external port, now find the internal connected port
       for (AttachmentsIter ai = cc.m_attachments.begin(); ai != cc.m_attachments.end(); ai++)
 	if (cc.m_external != *ai)
@@ -507,8 +507,8 @@ emitXmlWorker(FILE *f) {
       fprintf(f, " parameter='1'");
       OU::Value *v = 
 	m_paramConfig && prop->m_paramOrdinal < m_paramConfig->params.size() &&
-	m_paramConfig->params[prop->m_paramOrdinal].value ?
-	m_paramConfig->params[prop->m_paramOrdinal].value : prop->m_default;
+	m_paramConfig->params[prop->m_paramOrdinal].m_value ?
+	m_paramConfig->params[prop->m_paramOrdinal].m_value : prop->m_default;
       if (v) {
 	std::string value;
 	v->unparse(value);
@@ -555,7 +555,7 @@ void InstancePort::
 init(Instance *i, Port *p, OU::Assembly::External *ext) {
   m_instance = i;
   m_port = p;
-  m_connected.assign(p ? p->count : 1, false);
+  m_connected.assign(p ? p->m_count : 1, false);
   if (p)
     p->initRole(m_role);
   // If the external port tells us the direction and we're bidirectional, capture it.

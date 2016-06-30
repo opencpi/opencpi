@@ -55,14 +55,14 @@ emitRecordTypes(FILE *f) {
     fprintf(f,
 	    "  -- Record for DevSignals input signals for port \"%s\" of worker \"%s\"\n"
 	    "  alias worker_%s_in_t is work.%s_defs.%s_in_t;\n",
-	    name(), m_worker->m_implName, name(),
-	    m_worker->m_implName, name());
+	    cname(), m_worker->m_implName, cname(),
+	    m_worker->m_implName, cname());
   if (m_hasOutputs)
     fprintf(f,
 	    "  -- Record for DevSignals output signals for port \"%s\" of worker \"%s\"\n"
 	    "  alias worker_%s_out_t is work.%s_defs.%s_out_t;\n",
-	    name(), m_worker->m_implName, name(),
-	    m_worker->m_implName, name());
+	    cname(), m_worker->m_implName, cname(),
+	    m_worker->m_implName, cname());
 }
 
 void DevSignalsPort::
@@ -76,7 +76,7 @@ emitRecordInterface(FILE *f, const char *implName) {
 	    "\n"
 	    "  -- Record for the %s input signals for port \"%s\" of worker \"%s\"\n"
 	    "  type %s_t is record\n",
-	    master ? "master" : "slave", name(), implName, in.c_str());
+	    master ? "master" : "slave", cname(), implName, in.c_str());
     std::string last;
     for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
       Signal &s = **si;
@@ -93,7 +93,7 @@ emitRecordInterface(FILE *f, const char *implName) {
 	    "\n"
 	    "  -- Record for the %s output signals for port \"%s\" of worker \"%s\"\n"
 	    "  type %s_t is record\n",
-	    master ? "master" : "slave", name(), implName, out.c_str());
+	    master ? "master" : "slave", cname(), implName, out.c_str());
     std::string last;
     for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
       Signal &s = **si;
@@ -118,7 +118,7 @@ emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signa
   std::string stype;
   OU::format(stype, "%s.%s_defs.%s%s_t", m_worker->m_library, m_worker->m_implName,
 	     tname.c_str(),
-	     count > 1 ? "_array" : "");
+	     m_count > 1 ? "_array" : "");
   //  if (count > 1)
   //    OU::formatAdd(stype, "(0 to %zu)", count - 1);
   fprintf(f,
@@ -141,13 +141,13 @@ emitPortSignalsDir(FILE *f, bool output, const char *indent, bool &any, std::str
   for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++)
     if (((*si)->m_direction == Signal::IN && !output) ||
 	((*si)->m_direction == Signal::OUT && output))
-      for (size_t n = 0; n < count; n++) {
+      for (size_t n = 0; n < m_count; n++) {
 	std::string myindex;
-	if (count > 1)
+	if (m_count > 1)
 	  OU::format(myindex, "(%zu)", n);
 	std::string otherName = conn;
 	if (other) {
-	  if ((other && other->m_instPort.m_port->count > count) || count > 1)
+	  if ((other && other->m_instPort.m_port->m_count > m_count) || m_count > 1)
 	    OU::formatAdd(otherName, "(%zu)", n + other->m_index);
 	  OU::formatAdd(otherName, ".%s", (*si)->m_name.c_str());
 	} else
@@ -191,7 +191,7 @@ emitExtAssignment(FILE *f, bool int2ext, const std::string &extName, const std::
   // We can't assume record type compatibility so we must assign individual signals.
   for (size_t n = 0; n < connCount; n++) {
     std::string ours = extName;
-    if (count > 1)
+    if (m_count > 1)
       OU::formatAdd(ours, "(%zu)", extAt.m_index + n);
     std::string theirs = intName;
     OU::formatAdd(theirs, "(%zu)", intAt.m_index + n);

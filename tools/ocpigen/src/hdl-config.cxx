@@ -12,7 +12,7 @@ namespace OE = OCPI::Util::EzXml;
 DevInstance::
 DevInstance(const Device &d, const Card *c, const Slot *s, bool control,
 	    const DevInstance *parent)
-  : device(d), card(c), slot(s), control(control), parent(parent) {
+  : device(d), card(c), slot(s), m_control(control), m_parent(parent) {
   m_connected.resize(d.m_deviceType.m_ports.size(), 0);
   if (slot) {
     m_name = slot->cname();
@@ -223,10 +223,10 @@ emitSubdeviceConnections(std::string &assy,  DevInstances *baseInstances) {
 		      "  <connection>\n"
 		      "    <port instance='%s' name='%s'/>\n"
 		      "    <port instance='%s' name='%s%s%s'",
-		      (*dii).cname(), (*sci).m_port->name(),
+		      (*dii).cname(), (*sci).m_port->cname(),
 		      inConfig ? "pfconfig" : sdi->cname(),
 		      inConfig ? sdi->cname() : "", inConfig ? "_" : "",
-		      (*sci).m_sup_port->name());
+		      (*sci).m_sup_port->cname());
 	if ((*sci).m_indexed) {
 	  size_t
 	    supOrdinal = (*sci).m_sup_port->m_ordinal,
@@ -237,7 +237,7 @@ emitSubdeviceConnections(std::string &assy,  DevInstances *baseInstances) {
 	  // we may need to index relative to what is NOT connected in the config,
 	  // and thus externalized.
 	  if (inConfig) {
-	    for (size_t i = 0; i < (*sci).m_sup_port->count; i++)
+	    for (size_t i = 0; i < (*sci).m_sup_port->m_count; i++)
 	      if (sdi->m_connected[supOrdinal] & (1 << i)) {
 		assert(i != supIndex);
 		if (i < supIndex)
@@ -270,8 +270,8 @@ create(ezxml_t xml, const char *knownPlatform, const char *xfile, Worker *parent
   if (myPlatform.empty()) {
     if (knownPlatform)
       myPlatform = knownPlatform;
-    else if (::platform)
-      myPlatform = ::platform;
+    else if (::g_platform)
+      myPlatform = ::g_platform;
     else {
 	err = "No platform specified in HdlConfig nor on command line";
 	return NULL;
@@ -363,7 +363,7 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
     // Add a time client instance as needed by device instances
     for (PortsIter pi = d.m_deviceType.ports().begin();
 	 pi != d.m_deviceType.ports().end(); pi++)
-      if ((*pi)->type == WTIPort)
+      if ((*pi)->m_type == WTIPort)
 	OU::formatAdd(assy, "  <instance worker='time_client' name='%s_time_client'/>\n",
 		      (*dii).cname());
   }
@@ -389,7 +389,7 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
     const ::Device &d = (*dii).device;
     for (PortsIter pi = d.deviceType().ports().begin();
 	 pi != d.deviceType().ports().end(); pi++)
-      if ((*pi)->type == WTIPort) {
+      if ((*pi)->m_type == WTIPort) {
 	// connection from platform worker's time service to the client
 	OU::formatAdd(assy,
 		      "  <connection>\n"
@@ -403,7 +403,7 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
 		      "    <port instance='time_client%u' name='wti'/>\n"
 		      "    <port instance='%s' name='%s'/>\n"
 		      "  </connection>\n",
-		      tIndex++, (*dii).cname(), (*pi)->name());
+		      tIndex++, (*dii).cname(), (*pi)->cname());
       }
   }
   // 4. To and from subdevices
@@ -423,10 +423,10 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
     const ::Device &d = (*dii).device;
     for (PortsIter pi = d.deviceType().ports().begin(); pi != d.deviceType().ports().end(); pi++) {
       Port &p = **pi;
-      if (p.isData() || p.type == NOCPort || p.type == SDPPort ||
-	  (!p.master && (p.type == PropPort || p.type == DevSigPort))) {
+      if (p.isData() || p.m_type == NOCPort || p.m_type == SDPPort ||
+	  (!p.master && (p.m_type == PropPort || p.m_type == DevSigPort))) {
 	size_t unconnected = 0, first = 0;
-	for (size_t i = 0; i < p.count; i++)
+	for (size_t i = 0; i < p.m_count; i++)
 	  if (!((*dii).m_connected[p.m_ordinal] & (1 << i))) {
 	    if (!unconnected++)
 	      first = i;
@@ -437,19 +437,19 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
 	  OU::formatAdd(assy,
 			"  <external name='%s_%s' instance='%s' port='%s' "
 			"index='%zu' count='%zu'/>\n",
-			(*dii).cname(), p.name(),
-			(*dii).cname(), p.name(),
+			(*dii).cname(), p.cname(),
+			(*dii).cname(), p.cname(),
 			first, unconnected);
       }
     }
   }
   for (PortsIter pi = m_platform.m_ports.begin(); pi != m_platform.m_ports.end(); pi++) {
       Port &p = **pi;
-      if (p.type == NOCPort || p.type == SDPPort) {
+      if (p.m_type == NOCPort || p.m_type == SDPPort) {
 	// Port names of noc ports are interconnect names on the platform
 	OU::formatAdd(assy,
-		      "  <external name='%s' instance='%s' port='%s'/>\n",
-		      p.name(), m_platform.m_name.c_str(), p.name());
+		      "  <external name='%s' instance='%s' port='%s' count='%zu'/>\n",
+		      p.cname(), m_platform.m_name.c_str(), p.cname(), p.m_count);
       }
   }
   
@@ -501,9 +501,9 @@ addControlConnection(std::string &assy) {
   unsigned nCpPorts = 0;
   bool multiple = false;
   for (PortsIter pi = m_platform.m_ports.begin(); pi != m_platform.m_ports.end(); pi++)
-    if ((*pi)->type == CPPort) {
+    if ((*pi)->m_type == CPPort) {
       cpInstanceName = m_platform.m_name.c_str();
-      cpPortName = (*pi)->name();
+      cpPortName = (*pi)->cname();
       if (m_platform.m_control)
 	nCpPorts++;
       break;
@@ -511,14 +511,14 @@ addControlConnection(std::string &assy) {
   for (DevInstancesIter dii = m_devInstances.begin(); dii != m_devInstances.end(); dii++) {
     const ::Device &d = (*dii).device;
     for (PortsIter pi = d.m_deviceType.ports().begin(); pi != d.m_deviceType.ports().end(); pi++)
-      if ((*pi)->type == CPPort) {
+      if ((*pi)->m_type == CPPort) {
 	if (cpInstanceName)
 	  multiple = true;
 	else {
 	  cpInstanceName = d.m_name.c_str();
-	  cpPortName = (*pi)->name();
+	  cpPortName = (*pi)->cname();
 	}
-	if ((*dii).control)
+	if ((*dii).m_control)
 	  nCpPorts++;
       }  
   }

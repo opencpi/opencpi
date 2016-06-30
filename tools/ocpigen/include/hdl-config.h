@@ -11,8 +11,8 @@ struct DevInstance {
   const Device &device;
   const Card *card;
   const Slot *slot;
-  bool control;
-  const DevInstance *parent;
+  bool m_control;
+  const DevInstance *m_parent;
   std::string m_name;
   mutable std::vector<uint64_t> m_connected;
   DevInstance(const Device &d, const Card *c, const Slot *s, bool control,

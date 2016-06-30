@@ -59,7 +59,7 @@ OCPI_PROPERTY_DATA_TYPES
 0};
 #undef OCPI_DATA_TYPE
 
-const char *platform = 0, *device = 0, *load = 0, *os = 0, *os_version = 0, *assembly = 0,
+const char *g_platform = 0, *g_device = 0, *load = 0, *g_os = 0, *g_os_version = 0, *assembly = 0,
   *attribute, *platformDir;
 
 Clock *Worker::
@@ -85,7 +85,7 @@ checkDataPort(ezxml_t impl, Port *&sp) {
     if (!sp->isData())
       return OU::esprintf("Name attribute of Stream/MessageInterface \"%s\" "
 			  "matches a non-data spec port", name);
-    if (sp->type != WDIPort)
+    if (sp->m_type != WDIPort)
       return OU::esprintf("Name attribute of Stream/MessageInterface \"%s\" "
 			  "matches an implementation port, not a spec data port", name);
   } else if (!portImplName)
@@ -203,13 +203,13 @@ addProperty(ezxml_t prop, bool includeImpl, bool anyIsBad)
 }
 
 struct PropInfo {
-  Worker *worker;
-  bool isImpl; // Are we in an implementation context?
-  bool anyIsBad;
-  bool top;    // Are we in a top layer mixed with other elements?
-  const char *parent;
+  Worker *m_worker;
+  bool m_isImpl; // Are we in an implementation context?
+  bool m_anyIsBad;
+  bool m_top;    // Are we in a top layer mixed with other elements?
+  const char *m_parent;
   PropInfo(Worker *worker, bool isImpl, bool anyIsBad, const char *parent)
-    : worker(worker), isImpl(isImpl), anyIsBad(anyIsBad), top(true), parent(parent) {}
+    : m_worker(worker), m_isImpl(isImpl), m_anyIsBad(anyIsBad), m_top(true), m_parent(parent) {}
 };
 
 // process something that might be a property, either at spec time or at impl time
@@ -217,44 +217,44 @@ struct PropInfo {
 static const char *
 doMaybeProp(ezxml_t maybe, void *vpinfo) {
   PropInfo &pinfo = *(PropInfo*)vpinfo;
-  Worker *w = pinfo.worker;
+  Worker *w = pinfo.m_worker;
   ezxml_t props = 0;
   std::string childFile;
   const char *err;
-  if (pinfo.top) {
-    if ((err = tryChildInclude(maybe, pinfo.parent, "ControlInterface", &props, childFile, true)))
+  if (pinfo.m_top) {
+    if ((err = tryChildInclude(maybe, pinfo.m_parent, "ControlInterface", &props, childFile, true)))
       return err;
     if (props) {
-      const char *parent = pinfo.parent;
-      pinfo.parent = childFile.c_str();
+      const char *parent = pinfo.m_parent;
+      pinfo.m_parent = childFile.c_str();
       err = OE::ezxml_children(props, doMaybeProp, &pinfo);
-      pinfo.parent = parent;
+      pinfo.m_parent = parent;
       return err;
     }
   }
   if (!props &&
-      (err = tryChildInclude(maybe, pinfo.parent, "Properties", &props, childFile, pinfo.top)))
+      (err = tryChildInclude(maybe, pinfo.m_parent, "Properties", &props, childFile, pinfo.m_top)))
     return err;
   if (props) {
     //    if (pinfo.anyIsBad)
     // return "A Properties element is invalid in this context";
-    bool save = pinfo.top;
-    pinfo.top = false;
-    const char *parent = pinfo.parent;
-    pinfo.parent = childFile.c_str();
+    bool save = pinfo.m_top;
+    pinfo.m_top = false;
+    const char *parent = pinfo.m_parent;
+    pinfo.m_parent = childFile.c_str();
     err = OE::ezxml_children(props, doMaybeProp, &pinfo);
-    pinfo.parent = parent;
-    pinfo.top = save;
+    pinfo.m_parent = parent;
+    pinfo.m_top = save;
     return err;
   }
   const char *eName = ezxml_name(maybe);
   if (!eName)
     return 0;
   bool isSpec = !strcasecmp(eName, "SpecProperty");
-  if (isSpec && !pinfo.isImpl)
+  if (isSpec && !pinfo.m_isImpl)
     return "SpecProperty elements not allowed in component specification";
   if (!isSpec && strcasecmp(eName, "Property")) {
-    if (pinfo.top)
+    if (pinfo.m_top)
       return 0;
     else
       return OU::esprintf("Invalid child element '%s' of a 'Properties' element", eName);
@@ -283,7 +283,7 @@ doMaybeProp(ezxml_t maybe, void *vpinfo) {
       return OU::esprintf("Property named \"%s\" conflicts with existing/previous property",
 			  name);
   // All the spec attributes plus the impl attributes
-  return w->addProperty(maybe, pinfo.isImpl, pinfo.anyIsBad);
+  return w->addProperty(maybe, pinfo.m_isImpl, pinfo.m_anyIsBad);
 }
 
 const char *Worker::
@@ -645,7 +645,7 @@ parseSpec(const char *package) {
 
 // Called for each non-data impl port type
 const char *Worker::
-initImplPorts(ezxml_t xml, const char *element, PortCreate &create) {
+initImplPorts(ezxml_t xml, const char *element, PortCreate &acreate) {
   const char *err;
   unsigned
     nTotal = OE::countChildren(xml, element),
@@ -661,7 +661,7 @@ initImplPorts(ezxml_t xml, const char *element, PortCreate &create) {
       ezxml_set_attr_d(xml, "name", name.c_str());
     }
 #endif
-    if (!create(*this, x, NULL, nTotal == 1 ? -1 : ordinal, err))
+    if (!acreate(*this, x, NULL, nTotal == 1 ? -1 : ordinal, err))
       return err;
   }
   return NULL;
@@ -747,7 +747,7 @@ getValue(const char *sym, OU::ExprValue &val) const {
       if (!p.m_default)
 	return OU::esprintf("the '%s' parameter property has no value", sym);
       return extractExprValue(p,
-			      *(m_paramConfig ? m_paramConfig->params[p.m_paramOrdinal].value :
+			      *(m_paramConfig ? m_paramConfig->params[p.m_paramOrdinal].m_value :
 				p.m_default),
 			      val);
     }
@@ -1041,7 +1041,7 @@ Port *Worker::
 findPort(const char *name, Port *except) const {
   for (unsigned i = 0; i < m_ports.size(); i++) {
     Port *dp = m_ports[i];
-    if (dp && dp->m_name.length() && !strcasecmp(dp->name(), name) && (!except || dp != except))
+    if (dp && dp->m_name.length() && !strcasecmp(dp->cname(), name) && (!except || dp != except))
       return dp;
   }
   return NULL;
@@ -1116,10 +1116,10 @@ emitArtXML(const char *wksFile) {
   OU::uuid2string(uuid, uuid_string);
   fprintf(f,
 	  "<artifact uuid=\"%s\"", uuid_string);
-  if (os)         fprintf(f, " os=\"%s\"",        os);
-  if (os_version) fprintf(f, " osVersion=\"%s\"", os_version);
-  if (platform)   fprintf(f, " platform=\"%s\"",  platform);
-  if (device)     fprintf(f, " device=\"%s\"", device);
+  if (g_os)         fprintf(f, " os=\"%s\"",        g_os);
+  if (g_os_version) fprintf(f, " osVersion=\"%s\"", g_os_version);
+  if (g_platform)   fprintf(f, " platform=\"%s\"",  g_platform);
+  if (g_device)     fprintf(f, " device=\"%s\"", g_device);
   if (m_dynamic)  fprintf(f, " dynamic='1'");
   fprintf(f, ">\n");
   emitXmlWorkers(f);

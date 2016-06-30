@@ -117,7 +117,7 @@ emitImplAliases(FILE *f, unsigned /*n*/, Language lang) {
   const char *pout = fullNameOut.c_str();
   bool mIn = masterIn();
   fprintf(f,
-	  "  %s Aliases for interface \"%s\"\n", comment, name());
+	  "  %s Aliases for interface \"%s\"\n", comment, cname());
   if (lang != VHDL) {
     if (master) // if we are app
       fprintf(f,
@@ -186,7 +186,7 @@ emitRecordInputs(FILE *f) {
       fprintf(f,
 	      "    opcode           : %s_OpCode_t;\n",
 	      m_protocol && m_protocol->operations() ?
-	      m_protocol->m_name.c_str() : name());
+	      m_protocol->m_name.c_str() : cname());
     fprintf(f,
 	    m_dataWidth ?
 	    "    som, eom, valid  : Bool_t;           -- valid means data and byte_enable are present\n" :
@@ -217,7 +217,7 @@ emitRecordOutputs(FILE *f) {
       fprintf(f,
 	      "    opcode           : %s_OpCode_t;\n",
 	      m_protocol && m_protocol->operations() ?
-	      m_protocol->m_name.c_str() : name());
+	      m_protocol->m_name.c_str() : cname());
     fprintf(f,
 	    "    som, eom, valid  : Bool_t;            -- one or more must be true when 'give' is asserted\n");
       }

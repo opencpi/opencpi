@@ -47,9 +47,9 @@ finalizeHDL() {
   unsigned wipN[NWIPTypes][2] = {{0}};
   for (unsigned i = 0; i < m_ports.size(); i++) {
     Port *p = m_ports[i];
-    if ((err = p->doPatterns(wipN[p->type][p->masterIn()], m_maxPortTypeName)))
+    if ((err = p->doPatterns(wipN[p->m_type][p->masterIn()], m_maxPortTypeName)))
       return err;
-    wipN[p->type][p->masterIn()]++;
+    wipN[p->m_type][p->masterIn()]++;
   }
   return NULL;
 }
@@ -58,7 +58,7 @@ Clock *Worker::
 addWciClockReset() {
   // If there is no control port, then we synthesize the clock as wci_clk
   for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++)
-    if (!strcasecmp("wci_Clk", (*ci)->name()))
+    if (!strcasecmp("wci_Clk", (*ci)->cname()))
       return *ci;
   Clock *clock = addClock();
   clock->m_name = "wci_Clk";
@@ -72,7 +72,7 @@ Clock *Worker::
 findClock(const char *name) const {
   for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
     Clock *c = *ci;
-    if (!strcasecmp(name, c->name()))
+    if (!strcasecmp(name, c->cname()))
       return c;
   }
   return NULL;
@@ -149,8 +149,8 @@ parseHdlImpl(const char *package) {
 	}
       }
     }
-    if (!m_wci->count)
-      m_wci->count = 1;
+    if (!m_wci->m_count)
+      m_wci->m_count = 1;
     // clock processing depends on the name so it must be defaulted here
     if (m_ctl.sub32Bits)
       m_needsEndian = true;
@@ -215,12 +215,12 @@ parseHdlImpl(const char *package) {
     Port *p = m_ports[i];
     if (p->clockPort)
       p->clock = p->clockPort->clock;
-    if (p->count == 0)
-      p->count = 1;
+    if (p->m_count == 0)
+      p->m_count = 1;
   }
   const char *emulate = ezxml_cattr(m_xml, "emulate");
   if (emulate) {
-    if (m_ports.size() > 1 || (m_ports.size() == 1 && m_ports[0]->type != WCIPort))
+    if (m_ports.size() > 1 || (m_ports.size() == 1 && m_ports[0]->m_type != WCIPort))
       return OU::esprintf("Device emulation workers can't have any ports");
     //    addWciClockReset();
     if (ezxml_cchild(m_xml, "signal") || ezxml_cchild(m_xml, "signals"))

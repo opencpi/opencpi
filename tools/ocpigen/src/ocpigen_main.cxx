@@ -198,16 +198,16 @@ main(int argc, const char **argv) {
 	  err = OU::esprintf("Error processing -L (library map) option: %s", err);
 	break;
       case 'e':
-	device = *++ap;
+	g_device = *++ap;
 	break;
       case 'P':
-	platform = *++ap;
+	g_platform = *++ap;
 	break;
       case 'O':
-	os = *++ap;
+	g_os = *++ap;
 	break;
       case 'V':
-	os_version = *++ap;
+	g_os_version = *++ap;
 	break;
       case 'p':
 	package = *++ap;
@@ -286,7 +286,7 @@ main(int argc, const char **argv) {
 	else if (doArt)
 	  switch (w->m_model) {
 	  case HdlModel:
-	    if (!platform || !device) {
+	    if (!g_platform || !g_device) {
 	      fprintf(stderr,
 		      "%s: Missing container/platform/device options for HDL artifact descriptor", *ap);
 	      return 1;
@@ -296,7 +296,7 @@ main(int argc, const char **argv) {
 		      *ap, err);
 	    break;
 	  case RccModel:
-	    if (!os || !os_version || !platform) {
+	    if (!g_os || !g_os_version || !g_platform) {
 	      fprintf(stderr,
 		      "%s: Missing os/os_version/platform options for RCC artifact descriptor", *ap);
 	      return 1;

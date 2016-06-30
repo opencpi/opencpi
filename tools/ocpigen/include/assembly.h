@@ -34,12 +34,12 @@ typedef std::vector<InstanceProperty> InstanceProperties;
 
 struct Instance : public OU::IdentResolver {
   OCPI::Util::Assembly::Instance *instance; // instance in the underlying generic assembly
-  const char *name;
-  const char *wName;
-  Worker *worker;
-  Clock **m_clocks;      // mapping of instance's clocks to assembly clocks
+  const char   *name;
+  const char   *wName;
+  Worker       *worker;
+  Clock       **m_clocks; // mapping of instance's clocks to assembly clocks
   InstancePort *m_ports;
-  size_t index;      // index within container
+  size_t        m_index;  // index within container
   // These types are roles of the instance rather than some hard attribute of the worker
   // They are also conveyed to the runtime in the artifact XML
   // They are more elaborated than worker types since they are only established as
