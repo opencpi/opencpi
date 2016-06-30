@@ -66,9 +66,11 @@ type m2s_t is record
   id    : id_t;
   sdp   : sdp_t;
 end record m2s_t;
+type m2s_array_t is array(natural range <>) of m2s_t;
 type s2m_t is record
   sdp   : sdp_t;
 end record s2m_t;
+type s2m_array_t is array(natural range <>) of s2m_t;
 
 function dword2header(dw : dword_t) return header_t;
 function payload_in_dws(hdr : header_t) return unsigned;
@@ -176,48 +178,78 @@ end package sdp;
 --end component sdp_node;
 --end package sdp_node_defs;
 
-library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;
-library ocpi; use ocpi.all, ocpi.types.all;
-use work.sdp.all;
-package sdp_node_defs is
-  -- Record for the SDP input signals for port "up" of worker "sdp_node"
-  alias up_in_t is work.sdp.m2s_t;
-  -- Record for the SDP output signals for port "up" of worker "sdp_node"
-  alias up_out_t is work.sdp.s2m_t;
+--library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;
+--library ocpi; use ocpi.all, ocpi.types.all;
+--use work.sdp.all;
+--package sdp_node_defs is
+--  -- Record for the SDP input signals for port "up" of worker "sdp_node"
+--  alias up_in_t is work.sdp.m2s_t;
+--  -- Record for the SDP output signals for port "up" of worker "sdp_node"
+--  alias up_out_t is work.sdp.s2m_t;
 
-  -- Record for the SDP input signals for port "client" of worker "sdp_node"
-  alias client_in_t is work.sdp.s2m_t;
-  -- Record for the SDP output signals for port "client" of worker "sdp_node"
-  alias client_out_t is work.sdp.m2s_t;
+--  -- Record for the SDP input signals for port "client" of worker "sdp_node"
+--  alias client_in_t is work.sdp.s2m_t;
+--  -- Record for the SDP output signals for port "client" of worker "sdp_node"
+--  alias client_out_t is work.sdp.m2s_t;
 
-  -- Record for the SDP input signals for port "down" of worker "sdp_node"
-  alias down_in_t is work.sdp.s2m_t;
-  -- Record for the SDP output signals for port "down" of worker "sdp_node"
-  alias down_out_t is work.sdp.m2s_t;
+--  -- Record for the SDP input signals for port "down" of worker "sdp_node"
+--  alias down_in_t is work.sdp.s2m_t;
+--  -- Record for the SDP output signals for port "down" of worker "sdp_node"
+--  alias down_out_t is work.sdp.m2s_t;
 
-alias ocpi_endian_t is ocpi.types.endian_t;
-component sdp_node_rv is
-  generic (
-      ocpi_debug            : in   bool_t := bfalse;
-      ocpi_endian           : in   ocpi_endian_t := little_e;
-      sdp_width             : in   uchar_t := to_uchar(1)
-  );
-  port (
+--alias ocpi_endian_t is ocpi.types.endian_t;
+--component sdp_node_rv is
+--  generic (
+--      ocpi_debug            : in   bool_t := bfalse;
+--      ocpi_endian           : in   ocpi_endian_t := little_e;
+--      sdp_width             : in   uchar_t := to_uchar(1)
+--  );
+--  port (
 
-  -- The SDP interface named "up", with "sdp_node" acting as slave:
-  up_in      : in  up_in_t;
-  up_out     : out up_out_t;
-  up_in_data : in  dword_array_t(0 to to_integer(sdp_width)-1);
-  up_out_data : out dword_array_t(0 to to_integer(sdp_width)-1);
-  -- The SDP interface named "client", with "sdp_node" acting as master:
-  client_in  : in  client_in_t;
-  client_out : out client_out_t;
-  client_in_data : in  dword_array_t(0 to to_integer(sdp_width)-1);
-  client_out_data : out dword_array_t(0 to to_integer(sdp_width)-1);
-  -- The SDP interface named "down", with "sdp_node" acting as master:
-  down_in    : in  down_in_t;
-  down_out   : out down_out_t;
-  down_in_data : in  dword_array_t(0 to to_integer(sdp_width)-1);
-  down_out_data : out dword_array_t(0 to to_integer(sdp_width)-1));
-end component sdp_node_rv;
-end package sdp_node_defs;
+--  -- The SDP interface named "up", with "sdp_node" acting as slave:
+--  up_in      : in  up_in_t;
+--  up_out     : out up_out_t;
+--  up_in_data : in  dword_array_t(0 to to_integer(sdp_width)-1);
+--  up_out_data : out dword_array_t(0 to to_integer(sdp_width)-1);
+--  -- The SDP interface named "client", with "sdp_node" acting as master:
+--  client_in  : in  client_in_t;
+--  client_out : out client_out_t;
+--  client_in_data : in  dword_array_t(0 to to_integer(sdp_width)-1);
+--  client_out_data : out dword_array_t(0 to to_integer(sdp_width)-1);
+--  -- The SDP interface named "down", with "sdp_node" acting as master:
+--  down_in    : in  down_in_t;
+--  down_out   : out down_out_t;
+--  down_in_data : in  dword_array_t(0 to to_integer(sdp_width)-1);
+--  down_out_data : out dword_array_t(0 to to_integer(sdp_width)-1));
+--end component sdp_node_rv;
+--end package sdp_node_defs;
+
+--library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;
+--library ocpi; use ocpi.all, ocpi.types.all;
+--use work.sdp.all;
+--package sdp_pipeline_defs is
+--component sdp_pipeline_rv is
+--  generic (
+--      ocpi_debug            : in   bool_t := bfalse;
+--      ocpi_endian           : in   ocpi_endian_t := little_e;
+--      sdp_width             : in   uchar_t := to_uchar(1)
+--  );
+--  port (
+
+--  -- The SDP interface named "up", with "sdp_node" acting as slave:
+--  up_in      : in  up_in_t;
+--  up_out     : out up_out_t;
+--  up_in_data : in  dword_array_t(0 to to_integer(sdp_width)-1);
+--  up_out_data : out dword_array_t(0 to to_integer(sdp_width)-1);
+--  -- The SDP interface named "client", with "sdp_node" acting as master:
+--  client_in  : in  client_in_t;
+--  client_out : out client_out_t;
+--  client_in_data : in  dword_array_t(0 to to_integer(sdp_width)-1);
+--  client_out_data : out dword_array_t(0 to to_integer(sdp_width)-1);
+--  -- The SDP interface named "down", with "sdp_node" acting as master:
+--  down_in    : in  down_in_t;
+--  down_out   : out down_out_t;
+--  down_in_data : in  dword_array_t(0 to to_integer(sdp_width)-1);
+--  down_out_data : out dword_array_t(0 to to_integer(sdp_width)-1));
+--end component sdp_pipeline_rv;
+--end package sdp_pipeline_defs;

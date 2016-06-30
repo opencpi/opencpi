@@ -10,6 +10,57 @@ package axi_pkg is
 
 constant C_AXI_ADDR_WIDTH      : natural := 32; -- pinned at 32 in the AXI spec.
 constant C_M_AXI_GP_ID_WIDTH   : natural := 12;
+constant C_S_AXI_GP_ID_WIDTH   : natural := 6;
+constant C_S_AXI_GP_COUNT      : natural := 2;
+constant C_M_AXI_GP_COUNT      : natural := 2;
+-- Inputs to the s_axi_gp port of the PS
+type s_axi_gp_in_t is record
+  ACLK    : std_logic;
+  ARVALID : std_logic;
+  AWVALID : std_logic;
+  BREADY  : std_logic;
+  RREADY  : std_logic;
+  WLAST   : std_logic;
+  WVALID  : std_logic;
+  ARBURST : std_logic_vector(1 downto 0);
+  ARLOCK  : std_logic_vector(1 downto 0);
+  ARSIZE  : std_logic_vector(2 downto 0);
+  AWBURST : std_logic_vector(1 downto 0);
+  AWLOCK  : std_logic_vector(1 downto 0);
+  AWSIZE  : std_logic_vector(2 downto 0);
+  ARPROT  : std_logic_vector(2 downto 0);
+  AWPROT  : std_logic_vector(2 downto 0);
+  ARADDR  : std_logic_vector(C_AXI_ADDR_WIDTH-1 downto 0);
+  AWADDR  : std_logic_vector(C_AXI_ADDR_WIDTH-1 downto 0);
+  WDATA   : std_logic_vector(31 downto 0);
+  ARCACHE : std_logic_vector(3 downto 0);
+  ARLEN   : std_logic_vector(3 downto 0);
+  ARQOS   : std_logic_vector(3 downto 0);
+  AWCACHE : std_logic_vector(3 downto 0);
+  AWLEN   : std_logic_vector(3 downto 0);
+  AWQOS   : std_logic_vector(3 downto 0);
+  WSTRB   : std_logic_vector(3 downto 0);
+  ARID    : std_logic_vector(C_S_AXI_GP_ID_WIDTH-1 downto 0);
+  AWID    : std_logic_vector(C_S_AXI_GP_ID_WIDTH-1 downto 0);
+  WID     : std_logic_vector(C_S_AXI_GP_ID_WIDTH-1 downto 0);
+end record s_axi_gp_in_t;
+type s_axi_gp_in_array_t is array (natural range <>) of s_axi_gp_in_t;
+-- Outputs from the s_axi_gp port of the PS
+type s_axi_gp_out_t is record
+  ARESETN : std_logic;
+  ARREADY : std_logic;
+  AWREADY : std_logic;
+  BVALID  : std_logic;
+  RLAST   : std_logic;
+  RVALID  : std_logic;
+  WREADY  : std_logic;
+  BRESP   : std_logic_vector(1 downto 0);
+  RRESP   : std_logic_vector(1 downto 0);
+  RDATA   : std_logic_vector(31 downto 0);
+  BID     : std_logic_vector(C_S_AXI_GP_ID_WIDTH-1 downto 0);
+  RID     : std_logic_vector(C_S_AXI_GP_ID_WIDTH-1 downto 0);
+end record s_axi_gp_out_t;
+type s_axi_gp_out_array_t is array (natural range <>) of s_axi_gp_out_t;
 -- Inputs to the m_axi_gp port of the PS
 type m_axi_gp_in_t is record
   ACLK    : std_logic;
@@ -25,6 +76,7 @@ type m_axi_gp_in_t is record
   RRESP   : std_logic_vector(1 downto 0);
   RDATA   : std_logic_vector(31 downto 0);
 end record m_axi_gp_in_t;
+type m_axi_gp_in_array_t is array (natural range <>) of m_axi_gp_in_t;
 -- Outputs from the m_axi_gp port of the PS into the PL
 type m_axi_gp_out_t is record
   ARESETN : std_logic;
@@ -56,6 +108,7 @@ type m_axi_gp_out_t is record
   AWQOS   : std_logic_vector(3 downto 0);
   WSTRB   : std_logic_vector(3 downto 0);
 end record m_axi_gp_out_t;
+type m_axi_gp_out_array_t is array (natural range <>) of m_axi_gp_out_t;
 
 -- These definitions currently just match the AXI_HP on zync,
 -- the intention is to make them fairly generic at some point

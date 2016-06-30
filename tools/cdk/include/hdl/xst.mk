@@ -450,6 +450,7 @@ ChipScopeName=$1/$2-csi.ngc
 PcfName=$1/$2.pcf
 #TopNgcName=$(HdlPlatformsDir)/$1/target-$(call HdlGetPart,$1)/$1.ngc
 
+OcpiXstTrceOptions=-v 20 -fastpaths
 # $(call HdlToolDoPlatform,1:<target-dir>,2:<app-name>,3:<app-core-name>,4:<pfconfig>,5:<platform-name>,6: paramconfig)
 define HdlToolDoPlatform_xst
 
@@ -483,10 +484,9 @@ $(call ParName,$1,$3): $(call MapName,$1,$3) $(call PcfName,$1,$3)
 	$(AT)$(call DoXilinx,par,$1,-mt 4 -w -xe n $(notdir $(call MapName,$1,$3)) \
 		$(notdir $(call ParName,$1,$3)) $(notdir $(call PcfName,$1,$3)))
 
-OcpiXstTrceOptions=-v 20 -fastpaths -xml
 $(call TrceName,$1,$3): $(call ParName,$1,$3)
 	$(AT)echo -n Generating timing report '(TWR)' for $2 on $5 using $4 using '"trce"'.
-	$(AT)-$(call DoXilinx,trce,$1,$(OcpiXstTrceOptions) fpgaTop.twx \
+	$(AT)-$(call DoXilinx,trce,$1,$(OcpiXstTrceOptions) -xml fpgaTop.twx \
 		-o $$(notdir $$@) \
 		$(notdir $(call ParName,$1,$3)) $(notdir $(call PcfName,$1,$3)))
 

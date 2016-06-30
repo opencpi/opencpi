@@ -3,7 +3,7 @@
 -- YOU *ARE* EXPECTED TO EDIT IT
 -- This file initially contains the architecture skeleton for worker: lime_spi
 
-library IEEE, ocpi;
+library IEEE, ocpi, util;
 use IEEE.std_logic_1164.all, ieee.numeric_std.all;
 use ocpi.all, ocpi.types.all, ocpi.util.all;
 architecture rtl of lime_spi_worker is
@@ -37,7 +37,7 @@ begin
       from_device => raw_out,
       to_device   => raw_in);
   -- Drive SPI from the arbitrated raw interface
-  spi : entity work.spi
+  spi : util.util.spi
     generic map(
       data_width    => 8,
       addr_width    => addr_width_c,

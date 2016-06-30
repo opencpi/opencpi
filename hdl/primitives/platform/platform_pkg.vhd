@@ -43,6 +43,8 @@ constant worker_ncontrol_ops : natural := 8;
 -- ID is wide enough for a sentinel value of all ones.
 constant worker_id_bits      : natural := width_for_max(worker_max_nworkers);
 subtype worker_timeout_t is unsigned(4 downto 0);
+-- A log2 value
+constant default_timeout_c   : positive := 4;
 type worker_operation_t is (none_e,
                             control_op_e,
                             control_read_e,
@@ -79,6 +81,7 @@ type worker_out_t is record
   response  : worker_response_t;             -- worker responds
   attention : bool_t;                        -- to allow them to be consolidated
   present   : bool_t;
+  timeout   : worker_timeout_t;
 end record worker_out_t;
 
 
@@ -286,17 +289,22 @@ type unoc_master_out_t is record
   take    : bool_t;                     -- take data from the _in_t: perform dequeue
 end record unoc_master_out_t;
 
+
 component unoc_terminator is
-  port(up_in      : in  unoc_master_out_t;
-       up_out     : out unoc_master_in_t;
-       drop_count : out uchar_t);
+  port(
+    up_in      : in  unoc_master_out_t;
+    up_out     : out unoc_master_in_t;
+    drop_count : out unsigned(7 downto 0)
+    );
 end component unoc_terminator;
 
 component unoc_cp_adapter is
-  port(client_in  : in  unoc_master_out_t;
-       client_out : out unoc_master_in_t;
-       cp_in      : in  occp_out_t;
-       cp_out     : out occp_in_t);
+  port(
+    client_in  : in  unoc_master_out_t;
+    client_out : out unoc_master_in_t;
+    cp_in      : in  occp_out_t;
+    cp_out     : out occp_in_t
+    );
 end component unoc_cp_adapter;
 
 -- Component to drive the OCCP in a simulator
@@ -331,29 +339,6 @@ end package platform_pkg;
 
 -- modules instantiated as workers must have the component definition in their
 -- own package.
-
-library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;
-library ocpi; use ocpi.all, ocpi.types.all;
-use work.platform_pkg.all;
-package occp_defs is
-  ---- Record for the WCI input signals for port "wci" of worker "ml605_flash"
-  --alias wci_out_t is wci_m2s_t;
-  ---- Record for the WCI output signals for port "wci" of worker "ml605_flash"
-  --alias wci_in_t is wci_s2m_t;
-  --type wci_in_array_t is array(0 to 14) of wci_in_t;
-  --type wci_out_array_t is array(0 to 14) of wci_out_t;
-component occp_rv is
---  generic(
---    nWCIs      : natural := 15
---    );
-  port(
-    cp_in    : in  occp_in_t;
-    cp_out   : out occp_out_t;
-    wci_out  : out wci.wci_m2s_array_t(0 to 14); -- (0 to nWCIs-1);
-    wci_in   : in  wci.wci_s2m_array_t(0 to 14) --(0 to nWCIs-1)
-    );
-end component occp_rv;
-end package occp_defs;
 
 library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;
 library ocpi; use ocpi.all, ocpi.types.all;

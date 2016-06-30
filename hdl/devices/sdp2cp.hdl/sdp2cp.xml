@@ -1,6 +1,6 @@
-<HdlWorker language='vhdl' outer='true'>
+<HdlDevice language='vhdl' outer='true'>
   <ComponentSpec name='sdp2cp' nocontrol='true'/>
   <property name='sdp_width' parameter='true' type='uchar' default='1'/>
   <sdp name="sdp"/>
   <cpmaster master='true'/>
-</HdlWorker>
+</HdlDevice>

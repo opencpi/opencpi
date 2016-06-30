@@ -118,4 +118,24 @@ component flush_writer_internal
           data         : in std_logic_vector(nbytes*8-1 downto 0));
 end component flush_writer_internal;
 
+component spi
+  generic(data_width    : positive := 8;
+          addr_width    : positive := 7;
+          clock_divisor : positive := 16;
+          clock_invert  : boolean := false);
+  port   (clk           : in  std_logic;
+          reset         : in  bool_t;
+          renable       : in  bool_t;
+          wenable       : in  bool_t;
+          addr          : in  unsigned(addr_width-1 downto 0);
+          wdata         : in  std_logic_vector(data_width-1 downto 0);
+          rdata         : out std_logic_vector(data_width-1 downto 0);
+          done          : out bool_t;
+          -- The SPI signals - a 4 wire interface
+          sdo           : in  std_logic;
+          sclk          : out std_logic;
+          sen           : out std_logic;
+          sdio          : out std_logic);
+end component spi;
+
 end package util;

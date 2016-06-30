@@ -54,9 +54,12 @@ Workers = \
         ad9361_adc.hdl \
         ad9361_dac.hdl \
 	sdp_node.hdl \
+	sdp_pipeline.hdl \
 	sdp_send.hdl \
 	sdp_receive.hdl \
 	sdp2cp.hdl \
+	sdp_term.hdl \
+        unoc2cp.hdl \
 	ocdp.hdl \
 	flash.hdl \
 	lime_dac.hdl \

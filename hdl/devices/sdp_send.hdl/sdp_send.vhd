@@ -98,11 +98,11 @@ architecture rtl of sdp_send_worker is
   signal sdp_segment_dws_left_r : meta_dw_count_t;
 
   ---- Global state
-  signal faults_r           : uchar_t; -- tried to write past the end of the buffer
-  signal operating_r       : bool_t; -- were we operating in the last cycle?
-  signal ctl_reset_n       : std_logic;
-  signal sdp_reset_n       : std_logic;
-  function be2bytes (be    : std_logic_vector) return unsigned is
+  signal faults_r       : uchar_t; -- tried to write past the end of the buffer
+  signal operating_r    : bool_t; -- were we operating in the last cycle?
+  signal ctl_reset_n    : std_logic;
+  signal sdp_reset_n    : std_logic;
+  function be2bytes (be : std_logic_vector) return unsigned is
   begin
     for i in 0 to be'length-1 loop
       if be(i) = '0' then
@@ -129,13 +129,12 @@ begin
   ctl_out.finished   <= to_bool(faults_r /= 0);
   props_out.faults   <= faults_r;
   props_out.sdp_id   <= resize(sdp_in.id, props_out.sdp_id'length);
---  props_out.raw.done <= btrue;
-  nbytes <= be2bytes(in_in.byte_enable) when its(in_in.valid) else (others => '0');
-  md_in.length <= (resize(buffer_offset_r, meta_length_width_c) sll addr_shift_c) + nbytes;
-  md_in.eof    <= not in_in.eom and not in_in.som and not in_in.valid;
-  md_in.opcode <= in_in.opcode;
-  md_enq <= to_bool(its(can_take) and in_in.ready and in_in.eom and
-                          its((not in_in.valid) or not bad_write));
+  nbytes             <= be2bytes(in_in.byte_enable) when its(in_in.valid) else (others => '0');
+  md_in.length       <= (resize(buffer_offset_r, meta_length_width_c) sll addr_shift_c) + nbytes;
+  md_in.eof          <= not in_in.eom and not in_in.som and not in_in.valid;
+  md_in.opcode       <= in_in.opcode;
+  md_enq             <= to_bool(its(can_take) and in_in.ready and in_in.eom and
+                                its((not in_in.valid) or not bad_write));
   -- Instance the message data BRAM
   -- Since the BRAM is single cycle, there is no handshake.
   bram : component util.util.BRAM2
