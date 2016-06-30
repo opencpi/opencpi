@@ -30,16 +30,7 @@ begin
              sdp_out => sdp_out,
              sdp_in_data => sdp_in_data,
              sdp_out_data => sdp_out_data);
-  sdp_term_i : sdp.sdp.sdp_term
-    generic map(ocpi_debug => ocpi_debug,
-                sdp_width => to_integer(sdp_width))
-    port map(up_in => sdp_slave_in,
-             up_in_data => sdp_slave_in_data,
-             up_out => sdp_slave_out,
-             up_out_data => sdp_slave_out_data,
-             drop_count => props_out.sdpDropCount);
     
-  props_out.platform          <= to_string("isim", props_out.platform'length-1);
   props_out.dna               <= (others => '0');
   props_out.nSwitches         <= (others => '0');
   props_out.switches          <= (others => '0');

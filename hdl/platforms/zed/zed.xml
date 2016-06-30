@@ -1,4 +1,5 @@
 <HdlPlatform Language="VHDL" spec='platform-spec'>
+  <specproperty name='platform' value='zed'/>
   <!-- All platform workers must provide these two ports -->
   <metadata master='true'/> <!-- access to container metadata via the platform worker -->
   <timebase master='true'/> <!-- providing a timebase for the time service -->
@@ -8,10 +9,10 @@
   <device worker='time_server'>
     <property name='frequency' value='50e6'/>
   </device>
-  <sdp name="zynq" master='true'/>
-  <sdp name="zynq_slave"/>
+  <sdp name="zynq" master='true' count='4'/>
+  <!-- <sdp name="zynq_slave" count='4'/> -->
   <property name='maxtrace' type='uchar' parameter='1' default='40'/>
-  <property name="axi_error" type="bool" volatile='true'/>
+  <property name="axi_error" type="bool" arraylength='4' volatile='true'/>
   <property name="sdpDropCount" type='uchar' volatile='true'/>
   <property name="sdp_headers_in" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
   <property name="sdp_data_in" type="Ulong" arraylength='maxtrace' volatile='true' debug='false'/>
@@ -34,9 +35,9 @@
   <property name="axi_waddr" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
   <property name="axi_wdcount" volatile='true' writable='1' debug='false'/>
   <property name="axi_wdata" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
-  <property name="debug_state" type="Ulonglong" volatile='true' debug='false'/>
-  <property name="debug_state1" type="Ulonglong" volatile='true' debug='false'/>
-  <property name="debug_state2" type="Ulonglong" volatile='true' debug='false'/>
+  <property name="debug_state" type="Ulonglong" arraylength='4' volatile='true' debug='false'/>
+  <property name="debug_state1" type="Ulonglong" arraylength='4' volatile='true' debug='false'/>
+  <property name="debug_state2" type="Ulonglong" arraylength='4' volatile='true' debug='false'/>
   <signal  output='led' width='8'/>
 
   <!-- The Zed FMC LPC slot.

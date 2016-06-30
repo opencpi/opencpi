@@ -39,7 +39,6 @@ begin
              up_out_data => sdp_slave_out_data,
              drop_count => props_out.sdpDropCount);
     
-  props_out.platform          <= to_string("xsim", props_out.platform'length-1);
   props_out.dna               <= (others => '0');
   props_out.nSwitches         <= (others => '0');
   props_out.switches          <= (others => '0');

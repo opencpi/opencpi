@@ -13,15 +13,11 @@ library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
 library platform; use platform.platform_pkg.all;
 library bsv;
-library alst4;
 architecture rtl of alst4_worker is
-  signal ctl_clk                : std_logic;        -- clock we produce and use for the control plane
-  signal ctl_rst_n              : std_logic;        -- reset associated with control plane clock
-  signal pci_id                 : std_logic_vector(15 downto 0);
-  -- unoc internal connections
-  signal pci2unoc, unoc2cp : unoc_master_out_t;
-  signal unoc2pci, cp2unoc : unoc_master_in_t;
-  signal unoc_out_data     : std_logic_vector (152 downto 0);
+  signal ctl_clk            : std_logic;        -- clock we produce and use for the control plane
+  signal ctl_rst_n          : std_logic;        -- reset associated with control plane clock
+  signal pci_id             : std_logic_vector(15 downto 0);
+  signal unoc_out_data      : std_logic_vector (152 downto 0);
   component pci_alst4 is
   port(
     sys0_clk                : in  std_logic;
@@ -70,43 +66,24 @@ begin
              pci_device     => pci_id,
              -- unoc links
              unoc_out_data  => unoc_out_data,
-             unoc_out_valid => pci2unoc.valid,
-             unoc_out_take  => pci2unoc.take,
-             unoc_in_data   => to_slv(unoc2pci.data),
-             unoc_in_valid  => unoc2pci.valid,
-             unoc_in_take   => unoc2pci.take);
+             unoc_out_valid => pcie_out.valid,
+             unoc_out_take  => pcie_out.take,
+             unoc_in_data   => to_slv(pcie_in.data),
+             unoc_in_valid  => pcie_in.valid,
+             unoc_in_take   => pcie_in.take);
   
   -- Complete the master unoc record
-  pci2unoc.clk     <= ctl_clk;
-  pci2unoc.reset_n <= ctl_rst_n;
-  pci2unoc.id      <= pci_id;
-  pci2unoc.data    <= to_unoc(unoc_out_data);
-
-  cp_unoc : platform.unoc_node_defs.unoc_node_rv
-    generic map(control    => btrue)
-    port    map(up_in      => pci2unoc,
-                up_out     => unoc2pci,
-                client_in  => cp2unoc,
-                client_out => unoc2cp,
-                down_in    => pcie_in,
-                down_out   => pcie_out);
+  pcie_out.clk     <= ctl_clk;
+  pcie_out.reset_n <= ctl_rst_n;
+  pcie_out.id      <= pci_id;
+  pcie_out.data    <= to_unoc(unoc_out_data);
 
   term_unoc : unoc_terminator
     port    map(up_in      => pcie_slave_in,
                 up_out     => pcie_slave_out,
                 drop_count => props_out.unocDropCount);
 
-
-  -- Here we need to adapt the unoc protocol to the occp protocol
-
-  cp_adapt : unoc_cp_adapter
-    port    map(client_in  => unoc2cp,
-                client_out => cp2unoc,
-                cp_in    => cp_in,
-                cp_out   => cp_out);
-
   -- Output/readable properties
-  props_out.platform        <= to_string("alst4", props_out.platform'length-1);
   props_out.dna             <= (others => '0');
   props_out.nSwitches       <= (others => '0');
   props_out.switches        <= (others => '0');

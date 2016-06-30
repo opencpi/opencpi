@@ -13,10 +13,12 @@ library bsv;
 library sdp; use sdp.sdp.all, sdp.sdp_axi.all;
 architecture rtl of zed_zipper_worker is
   constant ntrace : natural := to_integer(maxtrace);
-  signal ps_axi_gp_in     : m_axi_gp_in_t;        -- s2m
-  signal ps_axi_gp_out    : m_axi_gp_out_t;       -- m2s
-  signal ps_axi_hp_in     : s_axi_hp_in_array_t(0 to C_S_AXI_HP_COUNT-1);  -- m2s
-  signal ps_axi_hp_out    : s_axi_hp_out_array_t(0 to C_S_AXI_HP_COUNT-1); -- s2m
+  signal ps_m_axi_gp_in  : m_axi_gp_in_array_t(0 to C_M_AXI_GP_COUNT-1);  -- s2m
+  signal ps_m_axi_gp_out : m_axi_gp_out_array_t(0 to C_M_AXI_GP_COUNT-1); -- m2s
+  signal ps_s_axi_gp_in  : s_axi_gp_in_array_t(0 to C_S_AXI_GP_COUNT-1);  -- m2s
+  signal ps_s_axi_gp_out : s_axi_gp_out_array_t(0 to C_S_AXI_GP_COUNT-1); -- s2m
+  signal ps_axi_hp_in  : s_axi_hp_in_array_t(0 to C_S_AXI_HP_COUNT-1);    -- m2s
+  signal ps_axi_hp_out : s_axi_hp_out_array_t(0 to C_S_AXI_HP_COUNT-1);   -- s2m
   signal fclk             : std_logic_vector(3 downto 0);
   signal clk              : std_logic;
   signal raw_rst_n        : std_logic; -- FCLKRESET_Ns need synchronization
@@ -48,14 +50,14 @@ architecture rtl of zed_zipper_worker is
   signal axi_raddr        : ulonglong_array_t(0 to ntrace-1);
   signal axi_wdata        : ulonglong_array_t(0 to ntrace-1);
   signal axi_waddr        : ulonglong_array_t(0 to ntrace-1);
-  signal my_zynq_out      : sdp.sdp.m2s_t;
-  signal my_zynq_out_data : dword_array_t(0 to to_integer(sdp_width)-1);
-  signal dbg_state        : ulonglong_t;
-  signal dbg_state1       : ulonglong_t;
-  signal dbg_state2       : ulonglong_t;
-  signal dbg_state_r      : ulonglong_t;
-  signal dbg_state1_r     : ulonglong_t;
-  signal dbg_state2_r     : ulonglong_t;
+  signal my_zynq_out      : zynq_out_array_t;
+  signal my_zynq_out_data : zynq_out_data_array_t;
+  signal dbg_state        : ulonglong_array_t(0 to 3);
+  signal dbg_state1       : ulonglong_array_t(0 to 3);
+  signal dbg_state2       : ulonglong_array_t(0 to 3);
+  signal dbg_state_r      : ulonglong_array_t(0 to 3);
+  signal dbg_state1_r     : ulonglong_array_t(0 to 3);
+  signal dbg_state2_r     : ulonglong_array_t(0 to 3);
   signal sdp_seen_r       : bool_t;
   function fyv(b : std_logic) return std_logic_vector is
   variable v : std_logic_vector(0 downto 0);
@@ -107,8 +109,10 @@ begin
       -- Signals from the PS used in the PL
       ps_out.FCLK           => fclk,
       ps_out.FCLKRESET_N    => raw_rst_n,
-      m_axi_gp_in           => ps_axi_gp_in,
-      m_axi_gp_out          => ps_axi_gp_out,
+      m_axi_gp_in           => ps_m_axi_gp_in,
+      m_axi_gp_out          => ps_m_axi_gp_out,
+      s_axi_gp_in           => ps_s_axi_gp_in,
+      s_axi_gp_out          => ps_s_axi_gp_out,
       s_axi_hp_in           => ps_axi_hp_in,
       s_axi_hp_out          => ps_axi_hp_out
       );
@@ -117,8 +121,8 @@ begin
     port map(
       clk     => clk,
       reset   => reset,
-      axi_in  => ps_axi_gp_out,
-      axi_out => ps_axi_gp_in,
+      axi_in  => ps_m_axi_gp_out(0),
+      axi_out => ps_m_axi_gp_in(0),
       cp_in   => cp_in,
       cp_out  => cp_out
       );
@@ -127,57 +131,56 @@ begin
   props_out.debug_state  <= dbg_state_r;
   props_out.debug_state1 <= dbg_state1_r;
   props_out.debug_state2 <= dbg_state2_r;
-  dp0 : sdp2axi
-    generic map(
-      ocpi_debug => true,
-      sdp_width  => to_integer(sdp_width),
-      axi_width  => ps_axi_hp_in(0).W.DATA'length/dword_size)
-    port map(
-      clk          => clk,
-      reset        => reset,
-      sdp_in       => zynq_in,
-      sdp_in_data  => zynq_in_data,
-      sdp_out      => my_zynq_out,
-      sdp_out_data => my_zynq_out_data,
-      axi_in       => ps_axi_hp_out(0),
-      axi_out      => ps_axi_hp_in(0),
-      axi_error    => props_out.axi_error,
-      dbg_state    => dbg_state,
-      dbg_state1   => dbg_state1,
-      dbg_state2   => dbg_state2
-      );
-  dp1 : axinull
-    port map(
-      clk       => clk,
-      reset     => reset,
-      axi_in    => ps_axi_hp_out(1),
-      axi_out   => ps_axi_hp_in(1)
-      );
-  dp2 : axinull
-    port map(
-      clk       => clk,
-      reset     => reset,
-      axi_in    => ps_axi_hp_out(2),
-      axi_out   => ps_axi_hp_in(2)
-      );
-  dp3 : axinull
-    port map(
-      clk       => clk,
-      reset     => reset,
-      axi_in    => ps_axi_hp_out(3),
-      axi_out   => ps_axi_hp_in(3)
-      );
+  g : for i in 0 to 3 generate
+    dp : sdp2axi
+      generic map(ocpi_debug => true,
+                  sdp_width  => to_integer(sdp_width),
+                  axi_width  => ps_axi_hp_in(0).W.DATA'length/dword_size)
+      port map(   clk          => clk,
+                  reset        => reset,
+                  sdp_in       => zynq_in(i),
+                  sdp_in_data  => zynq_in_data(i),
+                  sdp_out      => my_zynq_out(i),
+                  sdp_out_data => my_zynq_out_data(i),
+                  axi_in       => ps_axi_hp_out(i),
+                  axi_out      => ps_axi_hp_in(i),
+                  axi_error    => props_out.axi_error(i),
+                  dbg_state    => dbg_state(i),
+                  dbg_state1   => dbg_state1(i),
+                  dbg_state2   => dbg_state2(i));
+  end generate;
+  --dp1 : axinull
+  --  port map(
+  --    clk       => clk,
+  --    reset     => reset,
+  --    axi_in    => ps_axi_hp_out(1),
+  --    axi_out   => ps_axi_hp_in(1)
+  --    );
+  --dp2 : axinull
+  --  port map(
+  --    clk       => clk,
+  --    reset     => reset,
+  --    axi_in    => ps_axi_hp_out(2),
+  --    axi_out   => ps_axi_hp_in(2)
+  --    );
+  --dp3 : axinull
+  --  port map(
+  --    clk       => clk,
+  --    reset     => reset,
+  --    axi_in    => ps_axi_hp_out(3),
+  --    axi_out   => ps_axi_hp_in(3)
+  --    );
 
-  term_sdp : sdp.sdp.sdp_term
-    generic map(sdp_width   => to_integer(sdp_width))
-    port    map(up_in       => zynq_slave_in,
-                up_in_data  => zynq_slave_in_data,
-                up_out      => zynq_slave_out,
-                up_out_data => zynq_slave_out_data,
-                drop_count  => props_out.sdpDropCount);
+  --term_sdp : sdp.sdp.sdp_term
+  --  generic map(sdp_width   => to_integer(sdp_width))
+  --  port    map(up_in       => zynq_slave_in,
+  --              up_in_data  => zynq_slave_in_data,
+  --              up_out      => zynq_slave_out,
+  --              up_out_data => zynq_slave_out_data,
+  --              drop_count  => props_out.sdpDropCount);
   
   -- Output/readable properties
-  props_out.platform        <= to_string("zed_zipper", props_out.platform'length-1);
+--  props_out.platform        <= to_string("zed", props_out.platform'length-1);
   props_out.dna             <= (others => '0');
   props_out.nSwitches       <= (others => '0');
   props_out.switches        <= (others => '0');
@@ -196,12 +199,12 @@ begin
   metadata_out.romEn        <= props_in.romData_read;
   led(0) <= count(count'left);
   led(1) <= zynq_in_seen;
-  led(2) <= zynq_in.sdp.valid;
+  led(2) <= zynq_in(0).sdp.valid;
   led(3) <= zynq_out_seen;
-  led(4) <= my_zynq_out.sdp.valid;
-  led(5) <= ps_axi_gp_in.ARREADY;
-  led(6) <= ps_axi_gp_in.RVALID;
-  led(7) <= ps_axi_gp_out.RREADY;
+  led(4) <= my_zynq_out(0).sdp.valid;
+  led(5) <= ps_m_axi_gp_in(0).ARREADY;
+  led(6) <= ps_m_axi_gp_in(0).RVALID;
+  led(7) <= ps_m_axi_gp_out(0).RREADY;
   work : process(clk)
   begin
     if rising_edge(clk) then
@@ -245,48 +248,48 @@ begin
         dbg_state_r <= dbg_state;
         dbg_state1_r <= dbg_state1;
         dbg_state2_r <= dbg_state2;
-        if its(my_zynq_out.sdp.valid) then
+        if its(my_zynq_out(0).sdp.valid) then
           zynq_out_seen <= '1';
         end if;
-        if its(zynq_in.sdp.valid) then
+        if its(zynq_in(0).sdp.valid) then
           zynq_in_seen <= '1';
         end if;
-        if its(my_zynq_out.sdp.valid) and zynq_in.sdp.ready then
-          sdp_starting_out <= my_zynq_out.sdp.eop;
+        if its(my_zynq_out(0).sdp.valid) and zynq_in(0).sdp.ready then
+          sdp_starting_out <= my_zynq_out(0).sdp.eop;
           if its(sdp_starting_out) then
             if sdp_header_count_out /= ntrace-1 then
               sdp_header_out(to_integer(sdp_header_count_out)) <=
                 to_ulonglong(std_logic_vector(count(15 downto 0)) &
-                             std_logic_vector(header2dws(my_zynq_out.sdp.header)(1)(14 downto 0)) & "0" &
-                             std_logic_vector(header2dws(my_zynq_out.sdp.header)(0))); 
+                             std_logic_vector(header2dws(my_zynq_out(0).sdp.header)(1)(14 downto 0)) & "0" &
+                             std_logic_vector(header2dws(my_zynq_out(0).sdp.header)(0))); 
               sdp_header_count_out <= sdp_header_count_out + 1;
             end if;
           end if;
           if sdp_count_out /= ntrace-1 then
             sdp_data_out(to_integer(sdp_count_out)) <=
               to_ulonglong(std_logic_vector(count(15 downto 0)) &
-                           std_logic_vector(dbg_state(15 downto 0)) &
-                           my_zynq_out_data(0));
+                           std_logic_vector(dbg_state(0)(15 downto 0)) &
+                           my_zynq_out_data(0)(0));
             sdp_count_out <= sdp_count_out + 1;
           end if;
         end if;
-        if its(zynq_in.sdp.valid) and my_zynq_out.sdp.ready then
-          sdp_starting_in <= zynq_in.sdp.eop;
+        if its(zynq_in(0).sdp.valid) and my_zynq_out(0).sdp.ready then
+          sdp_starting_in <= zynq_in(0).sdp.eop;
           if its(sdp_starting_in) then
             sdp_seen_r <= btrue;
             if sdp_header_count_in /= ntrace-1 then
               sdp_header_in(to_integer(sdp_header_count_in)) <=
                 to_ulonglong(std_logic_vector(count(15 downto 0)) &
-                             std_logic_vector(header2dws(zynq_in.sdp.header)(1)(10 downto 0)) &
-                             std_logic_vector(header2dws(zynq_in.sdp.header)(0)(31 downto 25)) & "00" &
-                             fyv(zynq_in.sdp.eop) & -- 27
+                             std_logic_vector(header2dws(zynq_in(0).sdp.header)(1)(10 downto 0)) &
+                             std_logic_vector(header2dws(zynq_in(0).sdp.header)(0)(31 downto 25)) & "00" &
+                             fyv(zynq_in(0).sdp.eop) & -- 27
                              "00" &
-                             std_logic_vector(header2dws(zynq_in.sdp.header)(0)(24 downto 0))); 
+                             std_logic_vector(header2dws(zynq_in(0).sdp.header)(0)(24 downto 0))); 
               sdp_header_count_in <= sdp_header_count_in + 1;
             end if;
           end if;
           if sdp_count_in /= ntrace-1 then
-            sdp_data_in(to_integer(sdp_count_in)) <= to_ulong(zynq_in_data(0));
+            sdp_data_in(to_integer(sdp_count_in)) <= to_ulong(zynq_in_data(0)(0));
             sdp_count_in <= sdp_count_in + 1;
           end if;
         end if;
@@ -299,7 +302,7 @@ begin
         if its(ps_axi_hp_in(0).AR.VALID and ps_axi_hp_out(0).AR.READY) and axi_racount /= ntrace-1 then
           axi_raddr(to_integer(axi_racount)) <=
             to_ulonglong(--std_logic_vector(count(15 downto 0)) & -- 16
-                         std_logic_vector(dbg_state(31 downto 0)) & -- 28
+                         std_logic_vector(dbg_state(0)(31 downto 0)) & -- 28
                          ps_axi_hp_in(0).AR.LEN & -- 4
                          ps_axi_hp_in(0).AR.ADDR(27 downto 0)); -- 28
           axi_racount <= axi_racount + 1;
@@ -308,7 +311,7 @@ begin
           axi_wdata(to_integer(axi_wdcount)) <=
             to_ulonglong(
               std_logic_vector(count(15 downto 0)) & -- 16
-              std_logic_vector(dbg_state1(15 downto 0)) &
+              std_logic_vector(dbg_state1(0)(15 downto 0)) &
 --               fyv(ps_axi_hp_in(0).W.LAST) & -- 1
 --              ps_axi_hp_in(0).W.STRB & -- 8
 --              std_logic_vector(dbg_state1(31 downto 0)));
@@ -330,21 +333,21 @@ begin
               ps_axi_hp_in(0).AW.ADDR); -- 32
           axi_wacount <= axi_wacount + 1;
         end if;
-        if its(ps_axi_gp_out.WVALID) and ps_axi_gp_in.WREADY and axi_cdcount /= ntrace-1 and sdp_seen_r then
+        if its(ps_m_axi_gp_out(0).WVALID) and ps_m_axi_gp_in(0).WREADY and axi_cdcount /= ntrace-1 and sdp_seen_r then
           axi_cdata(to_integer(axi_cdcount)) <=
             to_ulonglong(
               std_logic_vector(count(15 downto 0)) & -- 16
-              std_logic_vector(dbg_state1(15 downto 5)) &
-              fyv(ps_axi_gp_out.WLAST) & -- 1
-              ps_axi_gp_out.WSTRB & -- 8
-              ps_axi_gp_out.WDATA);
+              std_logic_vector(dbg_state1(0)(15 downto 5)) &
+              fyv(ps_m_axi_gp_out(0).WLAST) & -- 1
+              ps_m_axi_gp_out(0).WSTRB & -- 8
+              ps_m_axi_gp_out(0).WDATA);
 --   ps_axi_hp_in(0).W.DATA(63 downto 56) & -- 8
 --              ps_axi_hp_in(0).W.DATA(39 downto 32) & -- 8
 --              ps_axi_hp_in(0).W.DATA(31 downto 24) & -- 8
 --              ps_axi_hp_in(0).W.DATA(7 downto 0)); -- 8
           axi_cdcount <= axi_cdcount + 1;
         end if;
-        if its(ps_axi_gp_out.AWVALID and ps_axi_gp_in.AWREADY) and axi_cacount /= ntrace-1 and sdp_seen_r then
+        if its(ps_m_axi_gp_out(0).AWVALID and ps_m_axi_gp_in(0).AWREADY) and axi_cacount /= ntrace-1 and sdp_seen_r then
           axi_caddr(to_integer(axi_cacount)) <=
             to_ulonglong(
 --              std_logic_vector(dbg_state(27 downto 4)) & -- 24
@@ -352,12 +355,12 @@ begin
 --                                          ps_axi_hp_in(0).AWLEN & -- 4
               std_logic_vector(count(15 downto 0)) & -- 16
               "000000000000" &
-              ps_axi_gp_out.AWLEN & -- 4
-              ps_axi_gp_out.AWADDR); -- 32
+              ps_m_axi_gp_out(0).AWLEN & -- 4
+              ps_m_axi_gp_out(0).AWADDR); -- 32
           axi_cacount <= axi_cacount + 1;
         end if;
         count <= count + 1;
---        if ps_axi_gp_out.ARVALID = '1' and ps_axi_gp_out.ARLEN = "0001" then
+--        if ps_m_axi_gp_out(0).ARVALID = '1' and ps_m_axi_gp_out(0).ARLEN = "0001" then
 --          seen_burst <= '1';
 --        end if;
       end if;
