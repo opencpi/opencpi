@@ -11,7 +11,7 @@ WmiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
                               "NumberOfOpcodes", "MaxMessageValues",
 			      "datavaluewidth", "zerolengthmessages",
                               (void*)0)) ||
-	(err = OE::getBoolean(m_xml, "master", &master)) || // this is unique to WMI
+	(err = OE::getBoolean(m_xml, "master", &m_master)) || // this is unique to WMI
         (err = OE::getBoolean(x, "TalkBack", &m_talkBack)) ||
         (err = OE::getBoolean(x, "Bidirectional", &m_isBidirectional)) ||
         (err = OE::getNumber(x, "MFlagWidth", &m_mflagWidth, 0, 0)))
@@ -119,7 +119,7 @@ emitImplAliases(FILE *f, unsigned /*n*/, Language lang) {
   fprintf(f,
 	  "  %s Aliases for interface \"%s\"\n", comment, cname());
   if (lang != VHDL) {
-    if (master) // if we are app
+    if (m_master) // if we are app
       fprintf(f,
 	      "  wire %sNodata; assign %sMAddrSpace[0] = %sNodata;\n"
 	      "  wire %sDone;   assign %sMReqInfo[0] = %sDone;\n",
@@ -135,11 +135,11 @@ emitImplAliases(FILE *f, unsigned /*n*/, Language lang) {
       if (m_isProducer) // opcode is an output
 	fprintf(f,
 		"  wire [7:0] %sOpcode; assign %s%cFlag[7:0] = %sOpcode;\n",
-		pout, pout, master ? 'M' : 'S', pout);
+		pout, pout, m_master ? 'M' : 'S', pout);
       else
 	fprintf(f,
 		"  wire [7:0] %sOpcode = %s%cFlag[7:0];\n",
-		pin, pin, master ? 'S' : 'M');
+		pin, pin, m_master ? 'S' : 'M');
       fprintf(f,
 	      "  localparam %sOpCodeWidth = 7;\n",
 	      mIn ? pin : pout);
@@ -150,16 +150,16 @@ emitImplAliases(FILE *f, unsigned /*n*/, Language lang) {
     if (lang != VHDL) {
       if (m_isProducer) { // length is an output
 	size_t width =
-	  (master ? ocp.MFlag.width : ocp.SFlag.width) - 8;
+	  (m_master ? ocp.MFlag.width : ocp.SFlag.width) - 8;
 	fprintf(f,
 		"  wire [%zu:0] %sLength; assign %s%cFlag[%zu:8] = %sLength;\n",
-		width - 1, pout, pout, master ? 'M' : 'S', width + 7, pout);
+		width - 1, pout, pout, m_master ? 'M' : 'S', width + 7, pout);
       } else {
 	size_t width =
-	  (master ? ocp.SFlag.width : ocp.MFlag.width) - 8;
+	  (m_master ? ocp.SFlag.width : ocp.MFlag.width) - 8;
 	fprintf(f,
 		"  wire [%zu:0] %sLength = %s%cFlag[%zu:8];\n",
-		width - 1, pin, pin, master ? 'S' : 'M', width + 7);
+		width - 1, pin, pin, m_master ? 'S' : 'M', width + 7);
       }
     }
   }

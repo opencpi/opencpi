@@ -161,8 +161,6 @@ main(int argc, char *argv[])
   pthread_t readThread;
   struct timeval tv0, tv1, tv2;
   Bar bars[MAXBARS];
-  unsigned nbars;
-  const char *err;
   const char *name;
   char *cp = strrchr(argv[0], '/');
   name = cp ? cp + 1 : argv[0];
@@ -242,9 +240,15 @@ main(int argc, char *argv[])
 #ifdef OCPI_ARCH_arm
   bars[0].address = GP0_PADDR;
 #else
-  if ((err = getOpenCPI(argv[1], bars, &nbars, verbose)) || nbars != 2) {
-    fprintf(stderr, "Couldn't get PCI information about PCI device %s.  Try ocfrp_check.\n", argv[1]);
-    return 1;
+  {
+    unsigned nbars;
+    const char *err;
+    
+    if ((err = getOpenCPI(argv[1], bars, &nbars, verbose)) || nbars != 2) {
+      fprintf(stderr, "Couldn't get PCI information about PCI device %s.  Try ocfrp_check.\n",
+	      argv[1]);
+      return 1;
+    }
   }
 #endif
   fprintf(stderr, "BufSize=%d, CpuBufs %d FpgaBufs %d Ramp %d\n", bufSize, nCpuBufs, nFpgaBufs, ramp);
@@ -272,7 +276,7 @@ main(int argc, char *argv[])
     }
 
     assert(sscanf(dmaEnv, "%uM$0x%" PRIx64, &dmaMeg, &dmaBase) == 2);
-    assert((cpuBase = (uint8_t*)mmap(NULL, (unsigned long long)dmaMeg * 1024 * 1024,
+    assert((cpuBase = (uint8_t*)mmap(NULL, (size_t)dmaMeg * 1024 * 1024,
 				     PROT_READ|PROT_WRITE, MAP_SHARED, fd, (off_t)dmaBase)) !=
 	   MAP_FAILED);
   }

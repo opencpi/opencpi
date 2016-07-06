@@ -101,7 +101,7 @@ const char *WmemiPort::
 finalizeExternal(Worker &aw, Worker &/*iw*/, InstancePort &ip,
 		 bool &/*cantDataResetWhileSuspended*/) {
   const char *err;
-  if (master && ip.m_attachments.empty() &&
+  if (m_master && ip.m_attachments.empty() &&
       (err = aw.m_assembly->externalizePort(ip, "wmemi", aw.m_assembly->m_nWmemi)))
     return err;
   return NULL;

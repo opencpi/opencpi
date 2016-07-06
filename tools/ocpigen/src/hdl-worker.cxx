@@ -1177,7 +1177,7 @@ emitVhdlShell(FILE *f) {
       if (p->isData()) {
 	fprintf(f, " or not %s.%s",
 		p->typeNameIn.c_str(),
-		ocpSignals[p->master ? OCP_SReset_n : OCP_MReset_n].name);
+		ocpSignals[p->m_master ? OCP_SReset_n : OCP_MReset_n].name);
       }
     }
     fprintf(f,
@@ -2292,7 +2292,7 @@ emitBsvHDL() {
 	break;
       case WSIPort:
 	fprintf(f, "typedef Wsi_E%c#(%zu,%zu,%zu,%zu,%zu) ",
-		p->master ? 'm' : 's',
+		p->m_master ? 'm' : 's',
 		p->ocp.MBurstLength.width, p->dataWidth, p->ocp.MByteEn.width,
 		p->ocp.MReqInfo.width, p->ocp.MDataInfo.width);
 	break;
@@ -2346,8 +2346,8 @@ emitBsvHDL() {
   // Now we must enumerate the various reset inputs as parameters
   for (n = 0; n < m_ports.size(); n++) {
     Port *p = m_ports[n];
-    if (p->m_type == WCIPort && (p->master && p->ocp.SReset_n.value ||
-			       !p->master && p->ocp.MReset_n.value)) {
+    if (p->m_type == WCIPort && (p->m_master && p->ocp.SReset_n.value ||
+			       !p->m_master && p->ocp.MReset_n.value)) {
       if (p->count > 1)
 	fprintf(f, "%sVector#(%zu,Reset) i_%sRst", last.c_str(), p->count, p->cname());
       else
@@ -2377,11 +2377,11 @@ emitBsvHDL() {
     for (nn = 0; nn < p->count; nn++) {
       if (p->count > 1)
 	asprintf((char **)&num, "%u", nn);
-      if (p->m_type == WCIPort && (p->master && p->ocp.SReset_n.value ||
-				 !p->master && p->ocp.MReset_n.value)) {
+      if (p->m_type == WCIPort && (p->m_master && p->ocp.SReset_n.value ||
+				 !p->m_master && p->ocp.MReset_n.value)) {
 	const char *signal;
 	asprintf((char **)&signal,
-		 p->master ? p->ocp.SReset_n.signal : p->ocp.MReset_n.signal, nn);
+		 p->m_master ? p->ocp.SReset_n.signal : p->ocp.MReset_n.signal, nn);
 	if (p->count > 1)
 	  fprintf(f, "  input_reset  i_%s%sRst(%s) = i_%sRst[%u];\n",
 		  p->cname(), num, signal, p->cname(), nn);
@@ -2403,8 +2403,8 @@ emitBsvHDL() {
       OcpSignal *os;
       unsigned o;
       const char *reset;
-      if (p->m_type == WCIPort && (p->master && p->ocp.SReset_n.value ||
-				 !p->master && p->ocp.MReset_n.value)) {
+      if (p->m_type == WCIPort && (p->m_master && p->ocp.SReset_n.value ||
+				 !p->m_master && p->ocp.MReset_n.value)) {
 	asprintf((char **)&reset, "i_%s%sRst", p->cname(), num);
       } else
 	reset = "no_reset";
@@ -2414,7 +2414,7 @@ emitBsvHDL() {
 	  asprintf(&signal, os->signal, nn);
 
 	  // Inputs
-	  if (p->master != os->master && o != OCP_Clk &&
+	  if (p->m_master != os->m_master && o != OCP_Clk &&
 	      (p->m_type != WCIPort || o != OCP_MReset_n && o != OCP_SReset_n)) {
 	    OcpSignalEnum special[] = {OCP_SThreadBusy,
 				       OCP_SReset_n,
@@ -2441,7 +2441,7 @@ emitBsvHDL() {
 		      tolower(osd->name[0]), osd->name + 1, signal, en++,
 		      p->clock->port->cname(), reset);
 	  }
-	  if (p->master == os->master)
+	  if (p->m_master == os->m_master)
 	    fprintf(f, "  method %s %c%s clocked_by(i_%sClk) reset_by(%s);\n",
 		    signal, tolower(osd->name[0]), osd->name + 1,
 		    p->clock->port->cname(), reset);
@@ -2464,7 +2464,7 @@ emitBsvHDL() {
       for (o = 0, os = p->ocp.signals, osd = ocpSignals; osd->name; osd++, os++, o++)
 	if (os->value && o != OCP_Clk &&
 	    (p->m_type != WCIPort ||
-	     !(o == OCP_MReset_n && !p->master || o == OCP_SReset_n && p->master))) {
+	     !(o == OCP_MReset_n && !p->m_master || o == OCP_SReset_n && p->m_master))) {
 	  fprintf(f, "%si_%s%s_%c%s", last.c_str(), p->cname(), num, tolower(osd->name[0]), osd->name+1);
 	  last = ", ";
 	}
@@ -2484,7 +2484,7 @@ emitBsvHDL() {
       for (o = 0, os = p->ocp.signals, osd = ocpSignals; osd->name; osd++, os++, o++)
 	if (os->value && o != OCP_Clk &&
 	    (p->m_type != WCIPort ||
-	     !(o == OCP_MReset_n && !p->master || o == OCP_SReset_n && p->master))) {
+	     !(o == OCP_MReset_n && !p->m_master || o == OCP_SReset_n && p->m_master))) {
 	  fprintf(f, "%si_%s%s_%c%s", last.c_str(), p->cname(), num, tolower(osd->name[0]), osd->name+1);
 	  last = ", ";
 	}
@@ -2509,8 +2509,8 @@ emitBsvHDL() {
   // Now we must enumerate the various reset inputs as parameters
   for (n = 0; n < m_ports.size(); n++) {
     Port *p = m_ports[n];
-    if (p->m_type == WCIPort && (p->master && p->ocp.SReset_n.value ||
-			       !p->master && p->ocp.MReset_n.value)) {
+    if (p->m_type == WCIPort && (p->m_master && p->ocp.SReset_n.value ||
+			       !p->m_master && p->ocp.MReset_n.value)) {
       if (p->count > 1)
 	fprintf(f, "%sVector#(%zu,Reset) i_%sRst", last.c_str(), p->count, p->cname());
       else
@@ -2532,8 +2532,8 @@ emitBsvHDL() {
   }
   for (n = 0; n < m_ports.size(); n++) {
     Port *p = m_ports[n];
-    if (p->m_type == WCIPort && (p->master && p->ocp.SReset_n.value ||
-			       !p->master && p->ocp.MReset_n.value)) {
+    if (p->m_type == WCIPort && (p->m_master && p->ocp.SReset_n.value ||
+			       !p->m_master && p->ocp.MReset_n.value)) {
       fprintf(f, "%si_%sRst", last.c_str(), p->cname());
       last = ", ";
     }

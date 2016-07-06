@@ -46,9 +46,9 @@ emitRecordInterface(FILE *f, const char *implName) {
 	  "  -- Record for the %s output signals for port \"%s\" of worker \"%s\"\n"
 	  "  alias %s_t is sdp.sdp.%s_t;\n",
 	  typeName(), cname(), implName,
-	  in.c_str(), master ? "s2m" : "m2s",
+	  in.c_str(), m_master ? "s2m" : "m2s",
 	  typeName(), cname(), implName,
-	  out.c_str(), master ? "m2s" : "s2m");
+	  out.c_str(), m_master ? "m2s" : "s2m");
   emitRecordArray(f);
   fprintf(f,
 	  "  subtype %s_data_t is dword_array_t(0 to to_integer(sdp_width)-1);\n"
@@ -76,8 +76,8 @@ emitRecordInterface(FILE *f, const char *implName) {
 	  "  alias %s_t is sdp.sdp.%s_t;\n"
 	  "  -- Record for the %s output signals for port \"%s\" of worker \"%s\"\n"
 	  "  alias %s_t is sdp.sdp.%s_t;\n",
-	  typeName(), cname(), implName, in.c_str(), master ? "s2m" : "m2s",
-	  typeName(), cname(), implName, out.c_str(), master ? "m2s" : "s2m");
+	  typeName(), cname(), implName, in.c_str(), m_master ? "s2m" : "m2s",
+	  typeName(), cname(), implName, out.c_str(), m_master ? "m2s" : "s2m");
   emitRecordArray(f);
   fprintf(f, "  subtype %s_data_t is dword_array_t(0 to integer(sdp_width)-1);\n", cname());
   if (m_count > 1 || m_countExpr.length()) {
@@ -201,7 +201,7 @@ emitPortSignal(FILE *f, bool any, const char *indent, const std::string &fName,
       }
     } else {
       if (aName.empty()) {
-	actual = master ? slaveMissing() : masterMissing();
+	actual = m_master ? slaveMissing() : masterMissing();
 	actual_data = "(others => (others => '0'))";
       } else {
 	OU::format(actual, "%s.%s_defs.%s%s_t(%s%s)",

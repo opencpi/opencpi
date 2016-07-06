@@ -401,7 +401,7 @@ parse(ezxml_t cx, Worker &w, Support &r) {
     return err;
   if (m_sup_port->m_type != m_port->m_type)
     return OU::esprintf("Supported worker port \"%s\" is not the same type", to.c_str());
-  if (m_sup_port->master == m_port->master)
+  if (m_sup_port->m_master == m_port->m_master)
     return OU::esprintf("Supported worker port \"%s\" has same role (master) as port \"%s\"",
 			to.c_str(), port.c_str());
   if (m_sup_port->m_count > 1) {

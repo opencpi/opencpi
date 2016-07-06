@@ -5,7 +5,7 @@
 Port::
 Port(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *defaultName,
      const char *&err)
-  : m_clone(false), m_worker(&w), m_ordinal(0), m_count(0), master(false), m_xml(x),
+  : m_clone(false), m_worker(&w), m_ordinal(0), m_count(0), m_master(false), m_xml(x),
     m_type(type), pattern(NULL), clock(0), clockPort(0), myClock(false), m_specXml(x) {
   if (sp) {
     // A sort of copy constructor from a spec port to an impl port
@@ -13,7 +13,7 @@ Port(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *defa
     m_ordinal = sp->m_ordinal;
     m_count = sp->m_count; // may be overridden?
     m_countExpr = sp->m_countExpr;
-    master = sp->master;
+    m_master = sp->m_master;
     m_specXml = sp->m_xml;
   } else {
     const char *name = ezxml_cattr(x, "Name");
@@ -41,7 +41,7 @@ Port(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *defa
 			 m_name.c_str());
       return;
     }
-    if ((err = OE::getBoolean(m_xml, "master", &master)) ||
+    if ((err = OE::getBoolean(m_xml, "master", &m_master)) ||
 	(err = getExprNumber(m_xml, "count", m_count, NULL, &m_countExpr, &w)))
       return;
     m_ordinal = w.m_ports.size();
@@ -49,7 +49,7 @@ Port(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *defa
   pattern = ezxml_cattr(m_xml, "Pattern");
   if (sp)
     w.m_ports[m_ordinal] = this;
-  else if (m_type == WCIPort && !master) {
+  else if (m_type == WCIPort && !m_master) {
     // we manage the port list here, and a slave control port must be
     // the first, which means we need to update ordinals when we add a control port
     // after other ports are established
@@ -67,7 +67,7 @@ Port(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *defa
 Port::
 Port(const Port &other, Worker &w, std::string &name, size_t count, const char *&err)
   : m_clone(true), m_worker(&w), m_name(name), m_ordinal(w.m_ports.size()), m_count(count),
-    master(other.master), m_xml(other.m_xml), m_type(other.m_type), pattern(NULL),
+    m_master(other.m_master), m_xml(other.m_xml), m_type(other.m_type), pattern(NULL),
     clock(NULL), clockPort(NULL), myClock(false), m_specXml(other.m_specXml)
 {
   err = NULL; // this is the base class for everything
@@ -103,7 +103,7 @@ needsControlClock() const {
 // Default
 bool Port::
 masterIn() const {
-  return !master;
+  return !m_master;
 }
 
 static const char *wipNames[] =
@@ -113,7 +113,7 @@ const char *Port::
 typeName() const { return wipNames[m_type]; }
 
 const char *Port::
-doPattern(int n, unsigned wn, bool in, bool amaster, std::string &suff, bool port) {
+doPattern(int n, unsigned wn, bool in, bool master, std::string &suff, bool port) {
   const char *pat = port ? m_worker->m_portPattern : (pattern ? pattern : m_worker->m_pattern);
   const char *holdPat = pat;
   if (!pat) {
@@ -130,10 +130,10 @@ doPattern(int n, unsigned wn, bool in, bool amaster, std::string &suff, bool por
     else if (!*pat)
       *s++ = '%';
     else {
-      bool myMaster = amaster;
+      bool myMaster = master;
       //      bool noOrdinal = false;
       if (*pat == '!') {
-	myMaster = !amaster;
+	myMaster = !master;
 	pat++;
       }
       if (*pat == '*') {
@@ -536,7 +536,7 @@ emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *inden
   // input, then output
   if (haveInputs()) {
     other = at && at->m_instPort.m_signalIn.empty() ? &otherAt->m_instPort : NULL;
-    emitPortSignal(f, any, indent, in, master ? (at ? sName : empty) : (at ? mName : empty),
+    emitPortSignal(f, any, indent, in, m_master ? (at ? sName : empty) : (at ? mName : empty),
 		   index, false, other ? other->m_port : NULL, other && other->m_external);
     any = true;
   }
@@ -544,7 +544,7 @@ emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *inden
     if (haveInputs())
       fprintf(f, ",\n");
     other = at && at->m_instPort.m_signalOut.empty() ? &otherAt->m_instPort : NULL;
-    emitPortSignal(f, any, indent, out, master ? mName : sName, index, true,
+    emitPortSignal(f, any, indent, out, m_master ? mName : sName, index, true,
 		   other ? other->m_port : NULL, other && other->m_external);
   }
 }
@@ -554,7 +554,7 @@ emitPortSignal(FILE *f, bool any, const char *indent, const std::string &fName,
 	       const std::string &aName, const std::string &index, bool /*output*/,
 	       const Port */*signalPort*/, bool /*external*/) {
   fprintf(f, "%s%s => %s%s", any ? indent : "", fName.c_str(),
-	  aName.empty() ? (master ? slaveMissing() : masterMissing()) : aName.c_str(),
+	  aName.empty() ? (m_master ? slaveMissing() : masterMissing()) : aName.c_str(),
 	  index.c_str());
 }
 
@@ -607,8 +607,8 @@ emitRecordTypes(FILE *f) {
 	  "  alias worker_%s_in_t is wci.raw_prop_%s_t;\n"
 	  "  -- Record for the RawProp  output signals for port \"%s\" of worker \"%s\"\n"
 	  "  alias worker_%s_out_t is wci.raw_prop_%s_t;\n",
-	  cname(), m_worker->m_implName, cname(), master ? "in" : "out",
-	  cname(), m_worker->m_implName, cname(), master ? "out" : "in");
+	  cname(), m_worker->m_implName, cname(), m_master ? "in" : "out",
+	  cname(), m_worker->m_implName, cname(), m_master ? "out" : "in");
 }
 
 void RawPropPort::
@@ -629,21 +629,21 @@ emitRecordInterface(FILE *f, const char *implName) {
 	  "  -- Record for the %s output signals for port \"%s\" of worker \"%s\"\n"
 	  "  alias %s_t is wci.raw_prop_%s_t;\n",
 	  typeName(), cname(), implName,
-	  in.c_str(), master ? "in" : "out",
+	  in.c_str(), m_master ? "in" : "out",
 	  typeName(), cname(), implName,
-	  out.c_str(), master ? "out" : "in");
+	  out.c_str(), m_master ? "out" : "in");
   if (m_count > 1 || m_countExpr.length())
       fprintf(f,
 	      "  subtype %s_array_t is wci.raw_prop_%s_array_t(0 to ocpi_port_%s_count-1);\n"
 	      "  subtype %s_array_t is wci.raw_prop_%s_array_t(0 to ocpi_port_%s_count-1);\n",
-	      in.c_str(), master ? "in" : "out", cname(),
-	      out.c_str(), master ? "out" : "in", cname());
+	      in.c_str(), m_master ? "in" : "out", cname(),
+	      out.c_str(), m_master ? "out" : "in", cname());
 }
 
 void RawPropPort::
 emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signal) {
   fprintf(f, "  signal %s : wci.raw_prop_%s%s_t",
-	  signal.c_str(), master == output ? "out" : "in",
+	  signal.c_str(), m_master == output ? "out" : "in",
 	  m_count > 1 || m_countExpr.length() ? "_array" : "");
   if (m_count > 1 || m_countExpr.length())
     fprintf(f, "(0 to %s.%s_defs.ocpi_port_%s_count-1)", m_worker->m_implName, m_worker->m_implName, cname());
@@ -708,7 +708,7 @@ emitRecordInterface(FILE *f, const char *implName) {
 void CpPort::
 emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signal) {
   fprintf(f, "  signal %s : platform.platform_pkg.occp_%s_t;\n",
-	  signal.c_str(), master == output ? "in" : "out");
+	  signal.c_str(), m_master == output ? "in" : "out");
 }
 
 NocPort::
@@ -744,8 +744,8 @@ emitRecordInterface(FILE *f, const char *implName) {
 	  "  alias %s_t is platform.platform_pkg.unoc_master_%s_t;\n"
 	  "  -- Record for the %s output signals for port \"%s\" of worker \"%s\"\n"
 	  "  alias %s_t is platform.platform_pkg.unoc_master_%s_t;\n",
-	  typeName(), cname(), implName, in.c_str(), master ? "in" : "out",
-	  typeName(), cname(), implName, out.c_str(), master ? "out" : "in");
+	  typeName(), cname(), implName, in.c_str(), m_master ? "in" : "out",
+	  typeName(), cname(), implName, out.c_str(), m_master ? "out" : "in");
 }
 
 void NocPort::
@@ -755,7 +755,7 @@ emitRecordTypes(FILE */*f*/) {
 void NocPort::
 emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signal) {
   fprintf(f, "  signal %s : platform.platform_pkg.unoc_master_%s_t;\n",
-	  signal.c_str(), master == output ? "out" : "in" );
+	  signal.c_str(), m_master == output ? "out" : "in" );
 }
 
 
@@ -798,9 +798,9 @@ emitRecordSignal(FILE *f, std::string &last, const char *aprefix, bool /*useReco
   OU::format(last,
 	     "  %-*s : %s  %s%s_t%%s",
 	     (int)m_worker->m_maxPortTypeName, 
-	     master ? out.c_str() : in.c_str(),
-	     master ? "out" : "in", aprefix,
-	     master ? out.c_str() : in.c_str());
+	     m_master ? out.c_str() : in.c_str(),
+	     m_master ? "out" : "in", aprefix,
+	     m_master ? out.c_str() : in.c_str());
 }
 
 void TimeServicePort::
@@ -812,7 +812,7 @@ emitRecordInterface(FILE *f, const char *implName) {
 	  "\n"
 	  "  -- Record for the %s input signals for port \"%s\" of worker \"%s\"\n"
 	  "  alias %s_t is platform.platform_pkg.time_service_t;\n",
-	  typeName(), cname(), implName, master ? out.c_str() : in.c_str());
+	  typeName(), cname(), implName, m_master ? out.c_str() : in.c_str());
 }
 
 void TimeServicePort::
@@ -823,8 +823,8 @@ emitVHDLShellPortMap(FILE *f, std::string &last) {
   fprintf(f,
 	  "%s    %s => %s",
 	  last.c_str(),
-	  master ? out.c_str() : in.c_str(),
-	  master ? out.c_str() : in.c_str());
+	  m_master ? out.c_str() : in.c_str(),
+	  m_master ? out.c_str() : in.c_str());
 }
 
 void TimeServicePort::
@@ -843,7 +843,7 @@ emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *inden
   // Only one direction - master outputs to slave
   fprintf(f, "%s%s => ",
 	  any ? indent : "",
-	  master ? out.c_str() : in.c_str());
+	  m_master ? out.c_str() : in.c_str());
   //	fputs(p.master ? c.m_masterName.c_str() : c.m_slaveName.c_str(), f);
   Attachment *at = atts.front();
   Connection *c = at ? &at->m_connection : NULL;
@@ -882,8 +882,8 @@ emitRecordTypes(FILE *f) {
 	  "  alias worker_%s_out_t is platform.platform_pkg.time_base_%s_t;\n"
 	  "  alias worker_%s_in_t is platform.platform_pkg.time_base_%s_t;\n",
 	  cname(), m_worker->m_implName,
-	  cname(), master ? "out" : "in",
-	  cname(), master ? "in" : "out");
+	  cname(), m_master ? "out" : "in",
+	  cname(), m_master ? "in" : "out");
 }
 
 #if 0
@@ -898,9 +898,9 @@ emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool /*inWorker
   OU::format(last,
 	     "  %-*s : %s  %s%s_t%%s",
 	     (int)m_worker->m_maxPortTypeName, 
-	     master ? out.c_str() : in.c_str(),
-	     master ? "out" : "in", prefix,
-	     master ? out.c_str() : in.c_str());
+	     m_master ? out.c_str() : in.c_str(),
+	     m_master ? "out" : "in", prefix,
+	     m_master ? out.c_str() : in.c_str());
 }
 #endif
 void TimeBasePort::
@@ -914,8 +914,8 @@ emitRecordInterface(FILE *f, const char *implName) {
 	  "  alias %s_t is platform.platform_pkg.time_base_%s_t;\n"
 	  "  alias %s_t is platform.platform_pkg.time_base_%s_t;\n",
 	  typeName(), cname(), implName,
-	  in.c_str(), master ? "in" : "out",
-	  out.c_str(), master ? "out" : "in");
+	  in.c_str(), m_master ? "in" : "out",
+	  out.c_str(), m_master ? "out" : "in");
 }
 
 #if 0
@@ -927,8 +927,8 @@ emitVHDLShellPortMap(FILE *f, std::string &last) {
   fprintf(f,
 	  "%s    %s => %s",
 	  last.c_str(),
-	  master ? out.c_str() : in.c_str(),
-	  master ? out.c_str() : in.c_str());
+	  m_master ? out.c_str() : in.c_str(),
+	  m_master ? out.c_str() : in.c_str());
 }
 #endif
 void TimeBasePort::
@@ -948,7 +948,7 @@ emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *inden
   // Only one direction - master outputs to slave
   fprintf(f, "%s%s => ",
 	  any ? indent : "",
-	  master ? out.c_str() : in.c_str());
+	  m_master ? out.c_str() : in.c_str());
   //	fputs(p.master ? c.m_masterName.c_str() : c.m_slaveName.c_str(), f);
   Attachment *at = atts.front();
   Connection *c = at ? &at->m_connection : NULL;
@@ -958,7 +958,8 @@ emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *inden
 
 void TimeBasePort::
 emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signal) {
-  fprintf(f, "  signal %s : platform.platform_pkg.time_base_%s_t;\n", signal.c_str(), master == output ? "out" : "in");
+  fprintf(f, "  signal %s : platform.platform_pkg.time_base_%s_t;\n", signal.c_str(),
+	  m_master == output ? "out" : "in");
 }
 
 MetaDataPort::
@@ -1006,15 +1007,15 @@ emitRecordInterface(FILE *f, const char *implName) {
 	  "  -- Record for the %s output signals for port \"%s\" of worker \"%s\"\n"
 	  "  alias %s_t is platform.platform_pkg.metadata_%s_t;\n",
 	  typeName(), cname(), implName,
-	  in.c_str(), master ? "in" : "out",
+	  in.c_str(), m_master ? "in" : "out",
 	  typeName(), cname(), implName,
-	  out.c_str(), master ? "out" : "in");
+	  out.c_str(), m_master ? "out" : "in");
 }
 
 void MetaDataPort::
 emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signal) {
   fprintf(f, "  signal %s : platform.platform_pkg.metadata_%s_t;\n",
-	  signal.c_str(), (output && master) || (!output && !master) ? "out" : "in");
+	  signal.c_str(), (output && m_master) || (!output && !m_master) ? "out" : "in");
 }
 
 const char *Port::
@@ -1023,7 +1024,7 @@ fixDataConnectionRole(OU::Assembly::Role &role) {
     return OU::esprintf("Role of port %s of worker %s in connection is incompatible with a port"
 			" of type \"%s\"",
 			cname(), m_worker->m_implName, typeName());
-  role.m_provider = !master;
+  role.m_provider = !m_master;
   role.m_bidirectional = false;
   role.m_knownRole = true;
   return NULL;

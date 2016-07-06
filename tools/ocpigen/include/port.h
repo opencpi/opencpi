@@ -53,7 +53,7 @@ public:
   size_t m_ordinal;    // spec:
   size_t m_count;      // spec: FIXME: can this change in impl???
   std::string m_countExpr;
-  bool master;         // spec
+  bool m_master;       // spec
   ezxml_t m_xml;       // spec or impl
   WIPType m_type;      // spec with WDI, with limited types, then impl ports
   // These members are for impl ports

@@ -11,13 +11,13 @@ DevSignalsPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
     Signal &s = **si;
     switch (s.m_direction) {
     case Signal::IN:
-      if (master)
+      if (m_master)
 	m_hasInputs = true;
       else
 	m_hasOutputs = true;
       break;
     case Signal::OUT:
-      if (master)
+      if (m_master)
 	m_hasOutputs = true;
       else
 	m_hasInputs = true;
@@ -76,11 +76,11 @@ emitRecordInterface(FILE *f, const char *implName) {
 	    "\n"
 	    "  -- Record for the %s input signals for port \"%s\" of worker \"%s\"\n"
 	    "  type %s_t is record\n",
-	    master ? "master" : "slave", cname(), implName, in.c_str());
+	    m_master ? "master" : "slave", cname(), implName, in.c_str());
     std::string last;
     for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
       Signal &s = **si;
-      if (s.m_direction == (master ? Signal::IN : Signal::OUT))
+      if (s.m_direction == (m_master ? Signal::IN : Signal::OUT))
 	emitSignal(s.m_name.c_str(), f, VHDL, Signal::NONE, last,
 		   s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
     }
@@ -93,11 +93,11 @@ emitRecordInterface(FILE *f, const char *implName) {
 	    "\n"
 	    "  -- Record for the %s output signals for port \"%s\" of worker \"%s\"\n"
 	    "  type %s_t is record\n",
-	    master ? "master" : "slave", cname(), implName, out.c_str());
+	    m_master ? "master" : "slave", cname(), implName, out.c_str());
     std::string last;
     for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
       Signal &s = **si;
-      if (s.m_direction == (master ? Signal::OUT : Signal::IN))
+      if (s.m_direction == (m_master ? Signal::OUT : Signal::IN))
 	emitSignal(s.m_name.c_str(), f, VHDL, Signal::NONE, last,
 		   s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
     }
@@ -133,10 +133,10 @@ emitPortSignalsDir(FILE *f, bool output, const char *indent, bool &any, std::str
   OU::format(port, output ? typeNameOut.c_str() : typeNameIn.c_str(), "");
   std::string conn;
   if (other)
-    conn = master != output ?
+    conn = m_master != output ?
       other->m_connection.m_slaveName.c_str() : other->m_connection.m_masterName.c_str();
 
-  if (!master)
+  if (!m_master)
     output = !output; // signals that are included are not relevant
   for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++)
     if (((*si)->m_direction == Signal::IN && !output) ||
@@ -152,7 +152,7 @@ emitPortSignalsDir(FILE *f, bool output, const char *indent, bool &any, std::str
 	  OU::formatAdd(otherName, ".%s", (*si)->m_name.c_str());
 	} else
 	  otherName =
-	    master == ((*si)->m_direction == Signal::IN) ?
+	    m_master == ((*si)->m_direction == Signal::IN) ?
 	    ((*si)->m_width ? "(others => '0')" : "'0'") : "open";
 	doPrev(f, last, comment, hdlComment(VHDL));
 	fprintf(f, "%s%s%s.%s => %s",

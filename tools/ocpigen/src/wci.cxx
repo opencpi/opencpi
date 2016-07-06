@@ -10,7 +10,7 @@ WciPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
   if (err)
     return;
   OU::format(m_addrWidthExpr, "ocpi_port_%s_addr_width", cname());
-  assert(master || !m_worker->m_wci);
+  assert(m_master || !m_worker->m_wci);
   // WCI ports implicitly a clock to the worker in all cases, master or slave
   if (x && ezxml_cattr(x, "clock")) {
     err = "A control interface can not specify a separate clock";
@@ -18,7 +18,7 @@ WciPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
   }
   myClock = true;
   addMyClock();
-  if (!master) {
+  if (!m_master) {
     m_worker->m_wci = this;
     m_worker->m_wciClock = clock;
   }
@@ -39,7 +39,7 @@ WciPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
 
 bool WciPort::
 needsControlClock() const {
-  return !master;
+  return !m_master;
 }
 
 void WciPort::
@@ -80,7 +80,7 @@ deriveOCP() {
   ocp.SResp.value = s;
   ocp.SThreadBusy.value = s;
   // From here down things are dependent on properties
-  if (master) {
+  if (m_master) {
     ocp.MAddr.width = 32;
     ocp.MAddrSpace.value = s;
     ocp.MData.width = m_dataWidth;
@@ -235,7 +235,7 @@ emitRecordOutputs(FILE *f) {
 #if 0
 void WciPort::
 emitWorkerEntitySignals(FILE *f, std::string &last, unsigned maxPropName) {
-  if (master)
+  if (m_master)
     return;
   Worker &w = *m_worker;
   fprintf(f,
@@ -264,7 +264,7 @@ emitWorkerEntitySignals(FILE *f, std::string &last, unsigned maxPropName) {
 
 void WciPort::
 emitRecordInterface(FILE *f, const char *implName) {
-  if (!master && !m_worker->m_assembly)
+  if (!m_master && !m_worker->m_assembly)
     OcpPort::emitRecordInterface(f, implName);
 }
 void WciPort::
@@ -322,7 +322,7 @@ emitPropertyAttributeConstants(FILE *f, Language lang) {
 
 void WciPort::
 emitRecordArray(FILE *f) {
-  if (!master && !m_worker->m_assembly)
+  if (!m_master && !m_worker->m_assembly)
     OcpPort::emitRecordArray(f);
 }
 
@@ -331,7 +331,7 @@ emitRecordSignal(FILE *f, std::string &last, const char *aprefix, bool inRecord,
 		 bool inPackage, bool inWorker,
 		 const char */*defaultIn*/, const char */*defaultOut*/) {
   Worker &w = *m_worker;
-  if (master || m_worker->m_assembly) {
+  if (m_master || m_worker->m_assembly) {
     if (last.size())
       fprintf(f, last.c_str(), ";");
     std::string in, out;
@@ -343,9 +343,9 @@ emitRecordSignal(FILE *f, std::string &last, const char *aprefix, bool inRecord,
     OU::format(last,
 	       "  %-*s : in  wci.wci_%s%s_t%s;\n"
 	       "  %-*s : out wci.wci_%s%s_t%s%%s",
-	       (int)w.m_maxPortTypeName, in.c_str(), master ? "s2m" : "m2s",
+	       (int)w.m_maxPortTypeName, in.c_str(), m_master ? "s2m" : "m2s",
 	       m_count > 1 ? "_array" : "", index.c_str(),
-	       (int)w.m_maxPortTypeName, out.c_str(), master ? "m2s" : "s2m",
+	       (int)w.m_maxPortTypeName, out.c_str(), m_master ? "m2s" : "s2m",
 	       m_count > 1 ? "_array" : "", index.c_str());
   } else {
     OcpPort::emitRecordSignal(f, last, aprefix, inRecord, inPackage, inWorker, NULL,
@@ -407,7 +407,7 @@ void WciPort::
 emitPortSignals(FILE *f, Attachments &atts, Language lang, const char *indent,
 		bool &any, std::string &comment, std::string &last, const char *myComment,
 		OcpAdapt *adapt, std::string *signalIn, std::string &exprs) {
-  if (master || m_worker->m_assembly)
+  if (m_master || m_worker->m_assembly)
     Port::emitPortSignals(f, atts, lang, indent, any, comment, last, myComment, adapt, signalIn,
 			  exprs);
   else
@@ -446,8 +446,8 @@ const char *WciPort::
 finalizeExternal(Worker &aw, Worker &iw, InstancePort &/*ip*/,
 		 bool &cantDataResetWhileSuspended) {
   // slave ports that are connected are ok as is.
-  assert(master || this == m_worker->m_wci);
-  if (!master && !aw.m_noControl) {
+  assert(m_master || this == m_worker->m_wci);
+  if (!m_master && !aw.m_noControl) {
     // Make assembly WCI the union of all inside, with a replication count
     // We make it easier for CTOP, hoping that wires dissolve appropriately
     // FIXME: when we generate containers, these might be customized, but not now

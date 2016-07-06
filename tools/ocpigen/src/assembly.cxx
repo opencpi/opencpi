@@ -416,7 +416,7 @@ externalizePort(InstancePort &ip, const char *name, size_t &ordinal) {
   assert(extPort.clock);
   OU::Assembly::External *ext = new OU::Assembly::External;
   ext->m_name = extPort.m_name;
-  ext->m_role.m_provider = !p.master; // provisional
+  ext->m_role.m_provider = !p.m_master; // provisional
   ext->m_role.m_bidirectional = false;
   ext->m_role.m_knownRole = true;
   InstancePort &extIp = *new InstancePort(NULL, &extPort, ext);

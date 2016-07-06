@@ -117,7 +117,7 @@ parseHdlAssy() {
       if (i->worker) {
 	unsigned nn = 0;
 	for (InstancePort *ip = i->m_ports; nn < i->worker->m_ports.size(); nn++, ip++) 
-	  if (ip->m_port->m_type == WCIPort && ip->m_port->master) {
+	  if (ip->m_port->m_type == WCIPort && ip->m_port->m_master) {
 	    // Found the instance that is mastering the control plane
 	    wciClk = addClock();
 	    // FIXME:  this should access the 0th clock more specifically for VHDL
@@ -179,7 +179,7 @@ parseHdlAssy() {
       i->m_clocks[i->worker->m_wciClock->ordinal] = wciClk;
 #if 0
     if (i->worker && i->worker->m_ports[0]->m_type == WCIPort &&
-	!i->worker->m_ports[0]->master && !i->worker->m_assembly)
+	!i->worker->m_ports[0]->m_master && !i->worker->m_assembly)
       i->m_clocks[i->worker->m_ports[0]->clock->ordinal] = wciClk;
 #endif
 
@@ -196,7 +196,7 @@ parseHdlAssy() {
 	     // FIXME: how can we really know this is not an independent clock??
 	     (ip.m_port->m_worker->m_noControl && ip.m_port->clock && ip.m_port->clock->port == 0) ||
 	     (ip.m_instance->worker->m_ports[0]->m_type == WCIPort &&
-	      !ip.m_instance->worker->m_ports[0]->master &&
+	      !ip.m_instance->worker->m_ports[0]->m_master &&
 	      // If this (data) port on the worker uses the worker's wci clock
 	      ip.m_port->clock == ip.m_instance->worker->m_ports[0]->clock))) {
 	  at = *ai;
@@ -394,13 +394,13 @@ createConnectionSignals(FILE *f, Language lang, size_t &unused) {
 	m_attachments.front()->m_connection.m_attachments.size() == 2 &&
 	m_attachments.front()->m_connection.m_external) &&
       maxCount <= m_port->m_count &&
-      (m_port->m_type != TimePort || m_port->master))
+      (m_port->m_type != TimePort || m_port->m_master))
     {
     emitConnectionSignal(f, true, lang);
     // All connections should use this as their signal
     for (AttachmentsIter ai = m_attachments.begin(); ai != m_attachments.end(); ai++) {
       Connection &c = (*ai)->m_connection;
-      std::string &cName = m_port->master ? c.m_masterName : c.m_slaveName;
+      std::string &cName = m_port->m_master ? c.m_masterName : c.m_slaveName;
       assert(cName.empty());
       cName = m_signalOut;
     }
@@ -412,7 +412,7 @@ createConnectionSignals(FILE *f, Language lang, size_t &unused) {
     emitConnectionSignal(f, false, lang);
     for (AttachmentsIter ai = m_attachments.begin(); ai != m_attachments.end(); ai++) {
       Connection &c = (*ai)->m_connection;
-      std::string &cName = m_port->master ? c.m_slaveName : c.m_masterName;
+      std::string &cName = m_port->m_master ? c.m_slaveName : c.m_masterName;
       assert(cName.empty());
       cName = m_signalIn;
     }
@@ -775,10 +775,10 @@ emitAssyHDL() {
     Connection &c = **ci;
     if (c.m_external) {
       Port &p = *c.m_external->m_instPort.m_port;
-      std::string &nameExt = p.master ? c.m_slaveName : c.m_masterName;
+      std::string &nameExt = p.m_master ? c.m_slaveName : c.m_masterName;
       if (nameExt.size() && p.haveInputs())
 	assignExt(f, c, nameExt, false);
-      nameExt = p.master ? c.m_masterName : c.m_slaveName;
+      nameExt = p.m_master ? c.m_masterName : c.m_slaveName;
       if (nameExt.size() && p.haveOutputs())
 	assignExt(f, c, nameExt, true);
     }
@@ -790,12 +790,12 @@ emitAssyHDL() {
     if (c.m_external) {
       Port &p = *c.m_external->m_instPort.m_port;
       if (c.m_masterName.empty()) {
-	c.m_masterName = p.master ?
+	c.m_masterName = p.m_master ?
 	  (m_language == VHDL ? p.typeNameOut.c_str() : p.fullNameOut.c_str()) :
 	  (m_language == VHDL ? p.typeNameIn.c_str() : p.fullNameIn.c_str());
       }
       if (c.m_slaveName.empty()) {
-	c.m_slaveName = p.master ?
+	c.m_slaveName = p.m_master ?
 	  (m_language == VHDL ? p.typeNameIn.c_str() : p.fullNameIn.c_str()) :
 	  (m_language == VHDL ? p.typeNameOut.c_str() : p.fullNameOut.c_str());
       }
@@ -955,7 +955,7 @@ attach(Attachment *a, size_t index) {
   //    count = m_port->count - index;
   for (size_t n = index; n < count; n++) {
     if (m_connected[n])
-      if (!(m_port->m_type == TimePort && m_port->master))
+      if (!(m_port->m_type == TimePort && m_port->m_master))
 	return OU::esprintf("Multiple connections not allowed for port '%s' on instance '%s' of worker '%s'",
 			    m_port->cname(), m_instance->name, m_port->m_worker->m_name.c_str());
     m_connected[n] = true;
@@ -979,7 +979,7 @@ emitTieoffAssignments(FILE *f) {
 	  connected = true;
       if (!connected)
 	fprintf(f, "  %s(%u) <= %s;\n", m_signalIn.c_str(), i,
-		m_port->master ? m_port->slaveMissing() : m_port->masterMissing());
+		m_port->m_master ? m_port->slaveMissing() : m_port->masterMissing());
     }
 }
 

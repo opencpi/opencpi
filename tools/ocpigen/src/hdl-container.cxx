@@ -269,7 +269,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
     *cp = NULL;  // the CP master port on the platform config, if one exists
   for (PortsIter pi = m_config.m_ports.begin(); pi != m_config.m_ports.end(); pi++) {
     Port &p = **pi;
-    if (p.master) {
+    if (p.m_master) {
       if (p.m_type == CPPort)
 	cp = &p;
       else if (p.m_type == SDPPort || p.m_type == NOCPort) {
@@ -278,7 +278,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 	Port *slave = NULL;
 	for (PortsIter si = m_config.m_ports.begin(); si != m_config.m_ports.end(); si++) {
 	  Port &sp = **si;
-	  if (!sp.master && (sp.m_type == NOCPort || sp.m_type == SDPPort) &&
+	  if (!sp.m_master && (sp.m_type == NOCPort || sp.m_type == SDPPort) &&
 	      !strncasecmp(p.cname(), sp.cname(), len) && !strcasecmp(sp.cname() + len, "_slave")) {
 	    assert(!slave);
 	    slave = &sp;
@@ -396,7 +396,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
     // Connect it to the pf config's cpmaster
     for (PortsIter ii = m_config.m_ports.begin(); ii != m_config.m_ports.end(); ii++) {
       Port &i = **ii;
-      if (i.master && i.m_type == CPPort) {
+      if (i.m_master && i.m_type == CPPort) {
 	OU::formatAdd(assy,
 		      "  <connection>\n"
 		      "    <port instance='pfconfig' name='%s'/>\n"
@@ -425,7 +425,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 	}
 	for (PortsIter ii = m_config.m_ports.begin(); ii != m_config.m_ports.end(); ii++) {
 	  Port &i = **ii;
-	  if (i.master && (i.m_type == NOCPort || i.m_type == SDPPort)) {
+	  if (i.m_master && (i.m_type == NOCPort || i.m_type == SDPPort)) {
 	    ContConnect c;
 	    c.external = *pi;
 	    c.interconnect = &i;
@@ -716,7 +716,7 @@ parseConnection(ezxml_t cx, ContConnect &c) {
       }
     if (!c.interconnect ||
 	(c.interconnect->m_type != NOCPort && c.interconnect->m_type != SDPPort) ||
-	!c.interconnect->master)
+	!c.interconnect->m_master)
       return OU::esprintf("Interconnect '%s' not found for platform '%s'", attr,
 			   m_config.platform().m_name.c_str());
   }
@@ -772,7 +772,7 @@ emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContCon
   Port *port = c.external ? c.external : c.port;
   if (port->m_type != WSIPort ||
       (c.interconnect->m_type != NOCPort && c.interconnect->m_type != SDPPort) ||
-      !c.interconnect->master)
+      !c.interconnect->m_master)
     return OU::esprintf("unsupported container connection between "
 			"port %s of %s%s and interconnect %s",
 			port->cname(), iname,

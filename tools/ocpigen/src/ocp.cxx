@@ -437,7 +437,7 @@ emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal) {
     // Generate signals when both sides has the signal configured.
     OcpSignalDesc *osd;
     OcpSignal *os;
-    bool wantMaster = (master && output) || (!master && !output);
+    bool wantMaster = (m_master && output) || (!m_master && !output);
     for (osd = ocpSignals, os = ocp.signals; osd->name; os++, osd++)
       if (os->master == wantMaster && os->value) {
 	fprintf(f, "wire ");
@@ -453,7 +453,7 @@ emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal) {
     std::string stype;
     Worker &w = *m_worker;
     // WCI ports on assemblies are always generic generic
-    if (m_type == WCIPort && (master || w.m_assembly))
+    if (m_type == WCIPort && (m_master || w.m_assembly))
       OU::format(stype, "wci.wci_%s_%st", output ? "m2s" : "s2m",
 		 m_count > 1 ? "array_" : "");
     else {
@@ -493,9 +493,9 @@ emitPortSignalsDir(FILE *f, bool output, Language lang, const char *indent,
   }
   for (osd = ocpSignals, os = ocp.signals, oa = adapt; osd->name; os++, osd++, oa++) {
     ocpiDebug("Perhaps connecting OCP signal %s value %p master %u os->master %u atts %zu",
-	      osd->name, os->value, master, os->master, atts.size());
+	      osd->name, os->value, m_master, os->master, atts.size());
     // If the signal is in the interface
-    if (os->value && (output ? os->master == master : os->master != master)) {
+    if (os->value && (output ? os->master == m_master : os->master != m_master)) {
       std::string signal, thisComment;
       connectOcpSignal(*osd, *os, *oa, signal, thisComment, lang, atts);
       /* if (signal.length()) */ {
@@ -530,7 +530,7 @@ emitExprAssignments(std::string &out, std::string &signalIn, OcpAdapt *adapt, At
   OcpSignal *os;
   OcpAdapt *oa;
   for (osd = ocpSignals, os = ocp.signals, oa = adapt; osd->name; os++, osd++, oa++)
-    if (os->value && os->master != master) {
+    if (os->value && os->master != m_master) {
       std::string signal, thisComment;
       connectOcpSignal(*osd, *os, *oa, signal, thisComment, VHDL, atts);
       const char *comment = oa->comment ? oa->comment : thisComment.c_str();
@@ -609,7 +609,7 @@ connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, OcpAdapt &oa,
   if (atts.empty()) {
     // A truly unconnected port.  All we want is a tieoff if it is an input
     // We can always use zero since that will assert reset
-    if (os.master != master)
+    if (os.master != m_master)
       if (lang == VHDL)
 	signal = osd.vector ? "(others => '0')" : "'0'";
       else

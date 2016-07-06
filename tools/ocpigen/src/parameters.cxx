@@ -195,7 +195,7 @@ writeConstants(FILE *gf, Language lang) {
     const OU::Property &pr = *p.param;
     std::string value;
     if (lang == VHDL) {
-      std::string typeDecl, type, value;
+      std::string typeDecl, type;
       vhdlType(pr, typeDecl, type);
       m_worker.hdlValue(pr.m_name, *p.m_value, value, false, VHDL);
       fprintf(gf, "  constant %s : %s := %s;\n",
@@ -589,7 +589,7 @@ setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig) {
     for (unsigned nn = 0; nn < instancePVs->size(); nn++, ap++)
       if (ap->m_hasValue) {
 	Param *p = &pc->params[0];
-	for (unsigned nn = 0; nn < pc->params.size(); nn++, p++)
+	for (unsigned nnn = 0; nnn < pc->params.size(); nnn++, p++)
 	  if (!strcasecmp(ap->m_name.c_str(), p->param->m_name.c_str())) {
 	    OU::Value apValue;
 	    if ((err = p->param->parseValue(ap->m_value.c_str(), apValue)))

@@ -18,7 +18,7 @@ WsiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
       (err = OE::getBoolean(x, "RegRequest", &m_regRequest)) ||
       (err = OE::getBoolean(x, "EarlyRequest", &m_earlyRequest)))
     return;
-  master = m_isProducer;
+  m_master = m_isProducer;
   finalize();
 }
 

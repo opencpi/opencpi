@@ -424,7 +424,7 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
     for (PortsIter pi = d.deviceType().ports().begin(); pi != d.deviceType().ports().end(); pi++) {
       Port &p = **pi;
       if (p.isData() || p.m_type == NOCPort || p.m_type == SDPPort ||
-	  (!p.master && (p.m_type == PropPort || p.m_type == DevSigPort))) {
+	  (!p.m_master && (p.m_type == PropPort || p.m_type == DevSigPort))) {
 	size_t unconnected = 0, first = 0;
 	for (size_t i = 0; i < p.m_count; i++)
 	  if (!((*dii).m_connected[p.m_ordinal] & (1 << i))) {

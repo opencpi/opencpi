@@ -154,7 +154,7 @@ emitRecordOutputs(FILE *f) {
 void WtiPort::
 emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord, bool inPackage,
 		 bool inWorker) {
-  ocpiAssert(!master);
+  ocpiAssert(!m_master);
   fprintf(f, "%s    -- Signals for %s %s port named \"%s\".  See record type(s) above.\n",
 	  last.c_str(), typeName(), masterIn() ? "slave" : "master", cname());
 
@@ -176,7 +176,7 @@ finalizeExternal(Worker &aw, Worker &/*iw*/, InstancePort &ip,
   // We could have an option to use wires instead to make things smaller
   // and less accurate...
   const char *err;
-  if (!master && ip.m_attachments.empty() &&
+  if (!m_master && ip.m_attachments.empty() &&
       (err = aw.m_assembly->externalizePort(ip, "wti", aw.m_assembly->m_nWti)))
     return err;
   return NULL;
