@@ -124,12 +124,12 @@ namespace OCPI {
 	     err.empty() && x; x = OX::ezxml_nextChild(x)) {
 	  ocpiDebug("Processing \"%s\" element in system config file", ezxml_name(x));
 	  if (!strcasecmp(ezxml_name(x), "load")) {
-	    const char *file = ezxml_cattr(x, "file");
-	    if (!file)
+	    const char *load = ezxml_cattr(x, "file");
+	    if (!load)
 	      err = "missing \"file\" attribute in \"load\" element";
 	    else {
-	      ocpiInfo("Loading module requested in system config file: \"%s\"", file);
-	      OS::LoadableModule::load(file, true, err);
+	      ocpiInfo("Loading module requested in system config file: \"%s\"", load);
+	      OS::LoadableModule::load(load, true, err);
 	    }
 	    continue;
 	  }
@@ -242,7 +242,7 @@ namespace OCPI {
 	  exitbad("Unexpected exception");
 	}
       }
-    } x;
+    } staticCleanup;
     Driver::Driver() : m_config(NULL) {}
     // Default implementation for a driver is to configure devices that exist
     // at configuration time.

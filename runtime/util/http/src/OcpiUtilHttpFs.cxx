@@ -237,7 +237,7 @@ OCPI::Util::Vfs::Dir &OCPI::Util::Http::HttpFsBase::openDir(const std::string &)
 OCPI::Util::Http::ClientStream *
 OCPI::Util::Http::HttpFsBase::
 hgpr (const std::string & fileName,
-      bool head, bool get, bool post, bool remove)
+      bool head, bool get, bool post, bool a_remove)
   throw (std::string)
 {
   testFilenameForValidity (fileName);
@@ -261,7 +261,7 @@ hgpr (const std::string & fileName,
     else if (post) {
       conn->post (uri);
     }
-    else if (remove) {
+    else if (a_remove) {
       conn->remove (uri);
     }
     else {

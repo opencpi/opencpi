@@ -48,9 +48,9 @@ namespace OCPI {
     namespace OA = OCPI::API;
     namespace OE = OCPI::Util::EzXml;
 
-    ValueType::ValueType(OA::BaseType bt, bool isSequence)
+    ValueType::ValueType(OA::BaseType bt, bool a_isSequence)
       : m_baseType(bt), m_arrayRank(0), m_nMembers(0), m_dataAlign(0), m_align(1), m_nBits(0),
-	m_elementBytes(0), m_isSequence(isSequence), m_nBytes(0), m_arrayDimensions(NULL),
+	m_elementBytes(0), m_isSequence(a_isSequence), m_nBytes(0), m_arrayDimensions(NULL),
 	m_stringLength(0), m_sequenceLength(0), m_members(NULL), m_type(NULL), m_enums(NULL),
 	m_nEnums(0), m_nItems(1), m_fixedLayout(true)
     {}
@@ -114,8 +114,8 @@ namespace OCPI {
     // Constructor when you are not parsing, and doing static initialization
     Member::
     Member(const char *name, const char *abbrev, const char *description, OA::BaseType type,
-	   bool isSequence, const char *defaultValue)
-      : ValueType(type, isSequence), m_name(name), m_abbrev(abbrev ? abbrev : ""),
+	   bool a_isSequence, const char *defaultValue)
+      : ValueType(type, a_isSequence), m_name(name), m_abbrev(abbrev ? abbrev : ""),
 	m_description(description ? description : ""),
 	m_offset(0), m_isIn(false), m_isOut(false), m_isKey(false), m_default(NULL) {
       if (defaultValue) {
@@ -140,7 +140,7 @@ namespace OCPI {
       return NULL;
     }
     const char *
-    Member::parse(ezxml_t xm, bool isFixed, bool hasName, const char *hasDefault,
+    Member::parse(ezxml_t xm, bool a_isFixed, bool hasName, const char *hasDefault,
 		  unsigned ordinal, const IdentResolver *resolver) {
       bool found;
       const char *err;
@@ -161,7 +161,7 @@ namespace OCPI {
       if (!strcasecmp(typeName, "struct")) {
 	m_baseType = OA::OCPI_Struct;
 	if ((err = OE::checkElements(xm, "member", (void*)0)) ||
-	    (err = parseMembers(xm, m_nMembers, m_members, isFixed, "member", hasDefault,
+	    (err = parseMembers(xm, m_nMembers, m_members, a_isFixed, "member", hasDefault,
 				resolver)))
 	  return err;
 	if (m_nMembers == 0)
@@ -178,7 +178,7 @@ namespace OCPI {
 	  return "missing \"type\" child element under data type with type=\"type\"";
 	if ((err = OE::checkAttrs(xt, OCPI_UTIL_MEMBER_ATTRS, NULL)) ||
 	    (err = OE::checkElements(xm, "type", (void*)0)) ||
-	    (err = m_type->parse(xt, isFixed, false, NULL, 0)))
+	    (err = m_type->parse(xt, a_isFixed, false, NULL, 0)))
 	  return err;
 	if (!m_type->m_isSequence)
 	  return "recursive \"type\" element must be a sequence";
@@ -222,7 +222,7 @@ namespace OCPI {
 	       (err = getExprNumber(xm, "size", m_stringLength, &found, &m_stringLengthExpr,
 				    resolver))))
 	    return err;
-	  if (isFixed) {
+	  if (a_isFixed) {
 	    if (!found)
 	      return "Missing StringLength attribute for string type that must be bounded";
 	    if (m_stringLength == 0)
@@ -281,7 +281,7 @@ namespace OCPI {
 				 &m_sequenceLengthExpr, resolver)))))
 	return err;
       if (m_isSequence) {
-	if (isFixed) {
+	if (a_isFixed) {
 	  if (m_sequenceLength == 0)
 	    return "Sequence must have a bounded size";
 	} else {
@@ -299,12 +299,12 @@ namespace OCPI {
     // Finalize the data types by recomputing all the attributes that might be
     // based on parameters whose values were set later.
     const char *Member::
-    finalize(const IdentResolver &resolver, bool isFixed) {
+    finalize(const IdentResolver &resolver, bool a_isFixed) {
       const char *err;
       // First we finalize any members, recursively
       if (m_baseType == OA::OCPI_Struct)
 	for (unsigned n = 0; n < m_nMembers; n++)
-	  m_members[n].finalize(resolver, isFixed);
+	  m_members[n].finalize(resolver, a_isFixed);
       if (m_arrayRank) {
 	m_nItems = 1;
 	for (unsigned i = 0; i < m_arrayRank; i++) {
@@ -323,14 +323,14 @@ namespace OCPI {
 	    (err = parseExprNumber(m_sequenceLengthExpr.c_str(), m_sequenceLength, NULL,
 				   &resolver)))
 	  return err;
-	if (isFixed && m_sequenceLength == 0)
+	if (a_isFixed && m_sequenceLength == 0)
 	  return "Sequence must have a bounded size";
       }
       if (m_baseType == OA::OCPI_String) {
 	if (m_stringLengthExpr.length() &&
 	    (err = parseExprNumber(m_stringLengthExpr.c_str(), m_stringLength, NULL, &resolver)))
 	  return err;
-	if (isFixed && m_stringLength == 0)
+	if (a_isFixed && m_stringLength == 0)
 	  return "StringLength cannot be zero";
       }
       return NULL;
@@ -648,7 +648,7 @@ namespace OCPI {
     // This static method is shared between parsing members of a structure and parsing arguments
     // to an operation.
     const char *
-    Member::parseMembers(ezxml_t mems, size_t &nMembers, Member *&members, bool isFixed,
+    Member::parseMembers(ezxml_t mems, size_t &nMembers, Member *&members, bool a_isFixed,
 			 const char *tag, const char *hasDefault,
 			 const IdentResolver *resolver) {
       for (ezxml_t m = ezxml_cchild(mems, tag); m ; m = ezxml_next(m))
@@ -661,7 +661,8 @@ namespace OCPI {
 	for (ezxml_t mx = ezxml_cchild(mems, tag); mx ; mx = ezxml_next(mx), m++) {
 	  if ((err = OE::checkAttrs(mx, OCPI_UTIL_MEMBER_ATTRS,
 				    hasDefault ? hasDefault : NULL, NULL)) ||
-	      (err = m->parse(mx, isFixed, true, hasDefault, (unsigned)(m - members), resolver)))
+	      (err = m->parse(mx, a_isFixed, true, hasDefault, (unsigned)(m - members),
+			      resolver)))
 	    return err;
 	  if (!names.insert(m->m_name.c_str()).second)
 	    return esprintf("Duplicate member name: %s", m->m_name.c_str());

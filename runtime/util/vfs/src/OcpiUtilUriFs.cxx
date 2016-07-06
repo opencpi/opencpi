@@ -92,11 +92,10 @@ OCPI::Util::Vfs::UriFs::mount (OCPI::Util::Vfs::Vfs * fs, bool adopt)
   throw (std::string)
 {
   OCPI::Util::AutoWRLock lock (m_lock);
-  std::string baseURI = fs->baseURI ();
 
   MountPoint mp;
   mp.adopted = adopt;
-  mp.baseURI = baseURI;
+  mp.baseURI = fs->baseURI();
   mp.fs = fs;
   m_mountPoints.push_back (mp);
 }
@@ -107,8 +106,7 @@ OCPI::Util::Vfs::UriFs::unmount (OCPI::Util::Vfs::Vfs * fs)
 {
   OCPI::Util::AutoWRLock lock (m_lock);
 
-  std::string baseURI = fs->baseURI ();
-  std::string mountPoint = URIToName (baseURI);
+  std::string mountPoint = URIToName (fs->baseURI());
 
   MountPoints::iterator it;
 

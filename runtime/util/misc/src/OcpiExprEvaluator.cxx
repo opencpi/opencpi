@@ -226,7 +226,7 @@ namespace {
     const char *cp, *dummy, *end;
     const char *err;
   
-    for (const char *cp = buf; !(err = lex(cp, dummy, dummy, op)) && op != OpEnd; nTokens++)
+    for (cp = buf; !(err = lex(cp, dummy, dummy, op)) && op != OpEnd; nTokens++)
       ;
     if (err)
       return err;

@@ -691,7 +691,7 @@ namespace OCPI {
 	    std::vector<TimeLineData> tldv;
 	    std::vector<XMLReader::Event>::iterator it;
 	    for ( it=m_xml_reader.getEvents().begin(); it!=m_xml_reader.getEvents().end(); it++) {
-	      XMLReader::Owner& owner = m_xml_reader.getOwner((*it).hdr.owner);
+	      XMLReader::Owner& xowner = m_xml_reader.getOwner((*it).hdr.owner);
 	      if ( start_time == 0 ) {
 		start_time = (*it).hdr.time_ticks;
 	      }
@@ -716,17 +716,17 @@ namespace OCPI {
 
 	      case OCPI::Time::Emit::Transient:
 		{
-		  tld.values += "1" + varsyms[(*it).hdr.eid] + owner.postfix.c_str() + "\n";
+		  tld.values += "1" + varsyms[(*it).hdr.eid] + xowner.postfix.c_str() + "\n";
 		  snprintf(tbuf,256,"#%lld\n",(long long)(ctime+1));
 		  tld.values += tbuf;
-		  tld.values += "0" + varsyms[(*it).hdr.eid] + owner.postfix.c_str() + "\n";
+		  tld.values += "0" + varsyms[(*it).hdr.eid] + xowner.postfix.c_str() + "\n";
 		}
 		break;
 	      case OCPI::Time::Emit::State:
 		{
 		  snprintf(tbuf,256,"%d",((*it).v.uvalue == 0) ? 0 : 1);
 		  tld.values += tbuf;
-		    tld.values += varsyms[(*it).hdr.eid] + owner.postfix.c_str() + "\n";
+		    tld.values += varsyms[(*it).hdr.eid] + xowner.postfix.c_str() + "\n";
 		}
 		break;
 	      case OCPI::Time::Emit::Value:
@@ -748,7 +748,7 @@ namespace OCPI {
 			ui--;
 		      }
 		      tld.values += " ";
-		      tld.values +=  varsyms[(*it).hdr.eid] + owner.postfix.c_str() + "\n";
+		      tld.values +=  varsyms[(*it).hdr.eid] + xowner.postfix.c_str() + "\n";
 		    }
 		  case OCPI::Time::Emit::c:  // Not handled in GTKwave
 		    break;

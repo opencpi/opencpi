@@ -1270,12 +1270,12 @@ put (const OCPI::Util::Uri & uri,
 void
 OCPI::Util::Http::ClientStream::
 put (const OCPI::Util::Uri & uri,
-     const std::string & contentType,
-     unsigned long long contentLength,
+     const std::string & a_contentType,
+     unsigned long long a_contentLength,
      std::ios_base::openmode mode)
   throw (std::string, Redirection, ClientError, ServerError)
 {
-  putOrPost (ClientBuf::REQUEST_PUT, uri, contentType, contentLength, mode);
+  putOrPost (ClientBuf::REQUEST_PUT, uri, a_contentType, a_contentLength, mode);
 }
 
 void
@@ -1290,33 +1290,33 @@ post (const OCPI::Util::Uri & uri,
 void
 OCPI::Util::Http::ClientStream::
 post (const OCPI::Util::Uri & uri,
-      const std::string & contentType,
-      unsigned long long contentLength,
+      const std::string & a_contentType,
+      unsigned long long a_contentLength,
       std::ios_base::openmode mode)
   throw (std::string, Redirection, ClientError, ServerError)
 {
-  putOrPost (ClientBuf::REQUEST_PUT, uri, contentType, contentLength, mode);
+  putOrPost (ClientBuf::REQUEST_PUT, uri, a_contentType, a_contentLength, mode);
 }
 
 void
 OCPI::Util::Http::ClientStream::
 putOrPost (int requestType,
            const OCPI::Util::Uri & uri,
-           const std::string & contentType,
-           unsigned long long contentLength,
+           const std::string & a_contentType,
+           unsigned long long a_contentLength,
            std::ios_base::openmode mode)
   throw (std::string, Redirection, ClientError, ServerError)
 {
   m_mode = mode | std::ios_base::out;
   Headers headers;
 
-  if (contentType.length()) {
-    headers["Content-Type"] = contentType;
+  if (a_contentType.length()) {
+    headers["Content-Type"] = a_contentType;
   }
 
-  if (contentLength != static_cast<unsigned long long> (-1)) {
+  if (a_contentLength != static_cast<unsigned long long> (-1)) {
     headers["Content-Length"] =
-      OCPI::Util::unsignedToString (contentLength);
+      OCPI::Util::unsignedToString (a_contentLength);
   }
 
   connect (uri);

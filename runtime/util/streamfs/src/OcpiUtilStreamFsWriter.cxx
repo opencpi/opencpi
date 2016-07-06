@@ -350,7 +350,7 @@ dumpTOC ()
   for (TOC::iterator it=m_toc.begin(); it!=m_toc.end() && m_stream->good(); it++) {
     std::string pos =
       OCPI::Util::unsignedToString ((*it).second.pos);
-    std::string size =
+    std::string sizeStr =
       OCPI::Util::unsignedToString ((*it).second.size);
     std::string lm =
       OCPI::Util::unsignedToString (static_cast<unsigned long long> ((*it).second.lastModified));
@@ -360,7 +360,7 @@ dumpTOC ()
     m_stream->put ('\n');
     m_stream->write (pos.data(), pos.length());
     m_stream->put ('\n');
-    m_stream->write (size.data(), size.length());
+    m_stream->write (sizeStr.data(), sizeStr.length());
     m_stream->put ('\n');
     m_stream->write (lm.data(), lm.length());
   }

@@ -136,7 +136,7 @@ namespace OCPI {
         if ((err = p->parse(x)))
           return esprintf("Invalid xml port description: %s", err);
       p = m_ports;
-      for (unsigned n = 0; n < m_nPorts; n++, p++)
+      for (unsigned nn = 0; nn < m_nPorts; nn++, p++)
 	if ((err = p->postParse()))
           return esprintf("Invalid xml port description: %s", err);
       Memory* m = m_memories;

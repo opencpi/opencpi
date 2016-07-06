@@ -571,9 +571,8 @@ namespace OCPI {
       AUTO_MUTEX(Emit::getGMutex());
 
       // Now do the timed events
-      std::vector<Emit::EventQ*>::iterator it;
-      for( it=Emit::getHeader().eventQ.begin();
-	   it!=Emit::getHeader().eventQ.end(); it++ ) {
+      for (std::vector<Emit::EventQ*>::iterator it = Emit::getHeader().eventQ.begin();
+	   it != Emit::getHeader().eventQ.end(); it++ ) {
 	Emit::EventQEntry* qe = (*it)->full ? (*it)->current : (*it)->start;
 	Emit::EventQEntry* begin = qe;
 	do {
@@ -617,8 +616,8 @@ namespace OCPI {
       out << "<EventData>" << std::endl;
       {
 	out << "  <Descriptors>" << std::endl;
-	std::vector<Emit::EventMap>::iterator it;
-	for ( it=Emit::getHeader().eventMap.begin(); it!=Emit::getHeader().eventMap.end();  it++ ) {
+	for (std::vector<Emit::EventMap>::iterator it = Emit::getHeader().eventMap.begin();
+	     it != Emit::getHeader().eventMap.end(); it++) {
 	  std::string tn((*it).eventName);
 	  std::replace(tn.begin(),tn.end(),' ','_');
 	  std::string owner;

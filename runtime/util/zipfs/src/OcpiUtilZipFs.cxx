@@ -1285,9 +1285,9 @@ OCPI::Util::ZipFs::ZipFs::openWriteonly (const std::string & fileName,
   }
 
   if (m_unzFile) {
-    unzFile zf = static_cast<unzFile> (m_unzFile);
+    unzFile uzf = static_cast<unzFile> (m_unzFile);
     m_unzFile = 0;
-    if (unzClose (zf) != UNZ_OK) {
+    if (unzClose (uzf) != UNZ_OK) {
       throw std::string ("error closing ZIP file from previous read");
     }
   }

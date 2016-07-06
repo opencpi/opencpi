@@ -68,10 +68,10 @@ namespace OCPI {
 	throw Error("%s", err);
     }
     // FIXME:  we infer that this is an impl assy from this constructor.  Make it explicit?
-    Assembly::Assembly(const ezxml_t top, const char *defaultName, bool isImpl,
+    Assembly::Assembly(const ezxml_t top, const char *defaultName, bool a_isImpl,
 		       const char **extraTopAttrs, const char **extraInstAttrs,
 		       const PValue *params)
-      : m_xml(top), m_copy(NULL), m_xmlOnly(true), m_isImpl(isImpl) {
+      : m_xml(top), m_copy(NULL), m_xmlOnly(true), m_isImpl(a_isImpl) {
       const char *err = parse(defaultName, extraTopAttrs, extraInstAttrs, params);
       if (err)
 	throw Error("Error parsing assembly xml string due to: %s", err);
@@ -111,9 +111,9 @@ namespace OCPI {
 	m_cMapPolicy = RoundRobin;
       else
 	m_cMapPolicy = RoundRobin;
-      ezxml_t px = ezxml_cchild(ax, "policy");
-      if (px) {
-	const char * tmp = ezxml_attr(px, "mapping" );
+      ezxml_t plx = ezxml_cchild(ax, "policy");
+      if (plx) {
+	const char * tmp = ezxml_attr(plx, "mapping" );
 	if ( tmp ) {
 	  if (!strcasecmp(tmp, "maxprocessors"))
 	    m_cMapPolicy = MaxProcessors;
@@ -124,7 +124,7 @@ namespace OCPI {
 	  else
 	    return esprintf("Invalid policy mapping option: %s", tmp);
 	}
-	tmp  = ezxml_attr(px, "processors");	
+	tmp  = ezxml_attr(plx, "processors");	
 	if (tmp) {
 	  m_processors = atoi(tmp);
 	}
@@ -282,13 +282,13 @@ namespace OCPI {
     }
 
     const char *Assembly::
-    addExternalConnection(ezxml_t xml, const PValue *params) {
+    addExternalConnection(ezxml_t a_xml, const PValue *params) {
       const char *err;
       // What is the name for this connection?
       std::string name, port;
       // We preparse some attributes of the external to get the connection name
-      OE::getOptionalString(xml, name, "name");
-      if ((err = OE::getRequiredString(xml, port, "port", "external")))
+      OE::getOptionalString(a_xml, name, "name");
+      if ((err = OE::getRequiredString(a_xml, port, "port", "external")))
 	return err;
       if (name.empty())
 	name = port;
@@ -298,13 +298,13 @@ namespace OCPI {
       External &e = c->addExternal();
       unsigned dummy = 0;
       // These names default from the port name, and
-      if ((err = e.parse(xml, name.c_str(), dummy, c->m_parameters)))
+      if ((err = e.parse(a_xml, name.c_str(), dummy, c->m_parameters)))
 	  return err;
       // Now attach an internal port to this connection
       std::string iName;
       unsigned instance;
       Port *p;
-      if ((err = OE::getRequiredString(xml, iName, "instance", "external")) ||
+      if ((err = OE::getRequiredString(a_xml, iName, "instance", "external")) ||
 	  (err = getInstance(iName.c_str(), instance)) ||
 	  (err = c->addPort(*this, instance, port.c_str(), false, false, false, e.m_index,
 			    params, p)))

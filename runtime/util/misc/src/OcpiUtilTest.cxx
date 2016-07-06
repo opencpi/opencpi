@@ -41,9 +41,9 @@
 
 /* ---- Implementation of the test class --------------------------------- */
 
-OCPI::Util::Test::Test::Test ( const char * name, std::ostream* stream )
+OCPI::Util::Test::Test::Test ( const char * name, std::ostream* a_stream )
   : d_name ( name ) ,
-    d_stream ( stream ),
+    d_stream ( a_stream ),
     d_n_passed ( 0 ),
     d_n_failed ( 0 )
 {
@@ -101,9 +101,9 @@ const std::ostream* OCPI::Util::Test::Test::stream ( ) const
   return d_stream;
 }
 
-void OCPI::Util::Test::Test::stream ( std::ostream* stream )
+void OCPI::Util::Test::Test::stream ( std::ostream* a_stream )
 {
-  d_stream = stream;
+  d_stream = a_stream;
 }
 
 void OCPI::Util::Test::Test::do_pass ( )
@@ -187,10 +187,10 @@ void OCPI::Util::Test::Test::do_fail ( const std::string& message,
 /* ---- Implementation of the suite class -------------------------------- */
 
 
-OCPI::Util::Test::Suite::Suite ( const std::string& name,
-                                std::ostream* stream )
-  : d_name ( name ),
-    d_stream ( stream )
+OCPI::Util::Test::Suite::Suite ( const std::string& a_name,
+                                std::ostream* a_stream )
+  : d_name ( a_name ),
+    d_stream ( a_stream )
 {
   // Empty
 }
@@ -237,9 +237,9 @@ const std::ostream* OCPI::Util::Test::Suite::stream ( ) const
 }
 
 
-void OCPI::Util::Test::Suite::stream ( std::ostream* stream )
+void OCPI::Util::Test::Suite::stream ( std::ostream* a_stream )
 {
-  d_stream = stream;
+  d_stream = a_stream;
 }
 
 

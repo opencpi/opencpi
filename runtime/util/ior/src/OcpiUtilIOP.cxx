@@ -249,16 +249,16 @@ decode (const std::string & data)
 
     cd.getString (m_type_id);
 
-    OCPI::OS::uint32_t numProfiles;
-    cd.getULong (numProfiles);
+    OCPI::OS::uint32_t numProfs;
+    cd.getULong (numProfs);
 
-    if (numProfiles*8 > cd.remainingData()) {
+    if (numProfs*8 > cd.remainingData()) {
       throw OCPI::Util::CDR::Decoder::InvalidData();
     }
 
-    m_profiles.resize (numProfiles);
+    m_profiles.resize (numProfs);
 
-    for (OCPI::OS::uint32_t pi=0; pi<numProfiles; pi++) {
+    for (OCPI::OS::uint32_t pi=0; pi<numProfs; pi++) {
       cd.getULong (m_profiles[pi].tag);
       cd.getOctetSeq (m_profiles[pi].profile_data);
     }
@@ -282,10 +282,10 @@ encode () const
 
   ce.putString (m_type_id);
 
-  size_t numProfiles = m_profiles.size ();
-  ce.putULong ((uint32_t)numProfiles);
+  size_t numProfs = m_profiles.size ();
+  ce.putULong ((uint32_t)numProfs);
 
-  for (unsigned long pi=0; pi<numProfiles; pi++) {
+  for (unsigned long pi=0; pi<numProfs; pi++) {
     ce.putULong (m_profiles[pi].tag);
     ce.putOctetSeq (m_profiles[pi].profile_data);
   }
@@ -314,10 +314,10 @@ IOR::
 addProfile (ProfileId tag, const void * data, unsigned long len)
   throw ()
 {
-  unsigned long numProfiles = m_profiles.size ();
-  m_profiles.resize (numProfiles+1);
-  m_profiles[numProfiles].tag = tag;
-  m_profiles[numProfiles].profile_data.assign (reinterpret_cast<const char *> (data), len);
+  unsigned long numProfs = m_profiles.size ();
+  m_profiles.resize (numProfs+1);
+  m_profiles[numProfs].tag = tag;
+  m_profiles[numProfs].profile_data.assign (reinterpret_cast<const char *> (data), len);
 }
 
 void
@@ -333,9 +333,9 @@ IOR::
 hasProfile (ProfileId tag)
   throw ()
 {
-  unsigned long numProfiles = m_profiles.size ();
+  unsigned long numProfs = m_profiles.size ();
 
-  for (unsigned long pi=0; pi<numProfiles; pi++) {
+  for (unsigned long pi=0; pi<numProfs; pi++) {
     if (m_profiles[pi].tag == tag) {
       return true;
     }
@@ -349,16 +349,16 @@ IOR::
 profileData (ProfileId tag)
   throw (std::string)
 {
-  unsigned long numProfiles = m_profiles.size ();
+  unsigned long numProfs = m_profiles.size ();
   unsigned long pi;
 
-  for (pi=0; pi<numProfiles; pi++) {
+  for (pi=0; pi<numProfs; pi++) {
     if (m_profiles[pi].tag == tag) {
       break;
     }
   }
 
-  if (pi >= numProfiles) {
+  if (pi >= numProfs) {
     throw std::string ("tag not found");
   }
 
@@ -370,16 +370,16 @@ IOR::
 profileData (ProfileId tag) const
   throw (std::string)
 {
-  unsigned long numProfiles = m_profiles.size ();
+  unsigned long numProfs = m_profiles.size ();
   unsigned long pi;
 
-  for (pi=0; pi<numProfiles; pi++) {
+  for (pi=0; pi<numProfs; pi++) {
     if (m_profiles[pi].tag == tag) {
       break;
     }
   }
 
-  if (pi >= numProfiles) {
+  if (pi >= numProfs) {
     throw std::string ("tag not found");
   }
 
@@ -639,16 +639,16 @@ decode (const std::string & data)
     cd.getBoolean (bo);
     cd.byteorder (bo);
 
-    OCPI::OS::uint32_t numComponents;
-    cd.getULong (numComponents);
+    OCPI::OS::uint32_t numComps;
+    cd.getULong (numComps);
 
-    if (numComponents*8 > cd.remainingData()) {
+    if (numComps*8 > cd.remainingData()) {
       throw OCPI::Util::CDR::Decoder::InvalidData();
     }
 
-    m_components.resize (numComponents);
+    m_components.resize (numComps);
 
-    for (OCPI::OS::uint32_t pi=0; pi<numComponents; pi++) {
+    for (OCPI::OS::uint32_t pi=0; pi<numComps; pi++) {
       cd.getULong (m_components[pi].tag);
       cd.getOctetSeq (m_components[pi].component_data);
     }
@@ -669,10 +669,10 @@ encode () const
   bool bo = OCPI::Util::CDR::nativeByteorder ();
   ce.putBoolean (bo);
 
-  size_t numComponents = m_components.size ();
-  ce.putULong ((uint32_t)numComponents);
+  size_t numComps = m_components.size ();
+  ce.putULong ((uint32_t)numComps);
 
-  for (unsigned long pi=0; pi<numComponents; pi++) {
+  for (unsigned long pi=0; pi<numComps; pi++) {
     ce.putULong (m_components[pi].tag);
     ce.putOctetSeq (m_components[pi].component_data);
   }
@@ -685,10 +685,10 @@ MultipleComponentProfile::
 addComponent (ComponentId tag, const void * data, unsigned long len)
   throw ()
 {
-  unsigned long numComponents = m_components.size ();
-  m_components.resize (numComponents+1);
-  m_components[numComponents].tag = tag;
-  m_components[numComponents].component_data.assign (reinterpret_cast<const char *> (data), len);
+  unsigned long numComps = m_components.size ();
+  m_components.resize (numComps+1);
+  m_components[numComps].tag = tag;
+  m_components[numComps].component_data.assign (reinterpret_cast<const char *> (data), len);
 }
 
 void
@@ -704,9 +704,9 @@ MultipleComponentProfile::
 hasComponent (ComponentId tag)
   throw ()
 {
-  unsigned long numComponents = m_components.size ();
+  unsigned long numComps = m_components.size ();
 
-  for (unsigned long pi=0; pi<numComponents; pi++) {
+  for (unsigned long pi=0; pi<numComps; pi++) {
     if (m_components[pi].tag == tag) {
       return true;
     }
@@ -720,16 +720,16 @@ MultipleComponentProfile::
 componentData (ComponentId tag)
   throw (std::string)
 {
-  unsigned long numComponents = m_components.size ();
+  unsigned long numComps = m_components.size ();
   unsigned long pi;
 
-  for (pi=0; pi<numComponents; pi++) {
+  for (pi=0; pi<numComps; pi++) {
     if (m_components[pi].tag == tag) {
       break;
     }
   }
 
-  if (pi >= numComponents) {
+  if (pi >= numComps) {
     throw std::string ("tag not found");
   }
 
@@ -741,16 +741,16 @@ MultipleComponentProfile::
 componentData (ComponentId tag) const
   throw (std::string)
 {
-  unsigned long numComponents = m_components.size ();
+  unsigned long numComps = m_components.size ();
   unsigned long pi;
 
-  for (pi=0; pi<numComponents; pi++) {
+  for (pi=0; pi<numComps; pi++) {
     if (m_components[pi].tag == tag) {
       break;
     }
   }
 
-  if (pi >= numComponents) {
+  if (pi >= numComps) {
     throw std::string ("tag not found");
   }
 

@@ -203,8 +203,8 @@ namespace OCPI {
     template <class DriMgr, class DriBase>
     class DriverType : public Child<DriMgr,DriBase>, public Driver {
     protected:
-      DriverType(const char *name, DriBase &d)
-	: Child<DriMgr,DriBase>(DriMgr::getSingleton(), d, name)
+      DriverType(const char *a_name, DriBase &d)
+	: Child<DriMgr,DriBase>(DriMgr::getSingleton(), d, a_name)
       {}
     public:
       // Configure from system configuration XML

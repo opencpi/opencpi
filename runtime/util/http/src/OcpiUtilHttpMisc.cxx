@@ -172,9 +172,9 @@ OCPI::Util::Http::parseHttpDate (const std::string & httpDate)
         throw std::string ("asctime date string should be length 6");
       }
 
-      std::string month = date.substr (0, 3);
-      std::string day = date.substr (4);
-      std::string year = tail;
+      month = date.substr (0, 3);
+      day = date.substr (4);
+      year = tail;
     }
     break;
   }

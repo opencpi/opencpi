@@ -406,11 +406,11 @@ MemIStream::~MemIStream ()
 
 OCPI::Util::MemFs::StaticMemFile::
 StaticMemFile (const char * ptr,
-               unsigned long long size,
-               std::time_t lastModified)
+               unsigned long long a_size,
+               std::time_t a_lastModified)
   throw ()
-  : m_size (size),
-    m_lastModified (lastModified),
+  : m_size (a_size),
+    m_lastModified (a_lastModified),
     m_ptr (ptr),
     m_chunks (0)
 {
@@ -418,9 +418,9 @@ StaticMemFile (const char * ptr,
 
 OCPI::Util::MemFs::StaticMemFile::
 StaticMemFile (const OCPI::Util::MemFs::MemFileChunk * chunks,
-               std::time_t lastModified)
+               std::time_t a_lastModified)
   throw ()
-  : m_lastModified (lastModified),
+  : m_lastModified (a_lastModified),
     m_ptr (0),
     m_chunks (chunks)
 {

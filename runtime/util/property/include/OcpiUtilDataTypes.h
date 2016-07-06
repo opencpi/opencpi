@@ -179,7 +179,8 @@ namespace OCPI {
       void read(Reader &reader, uint8_t *&data, size_t &length, bool fake = false,
 		bool top = false) const;
       void generate(const char *name, unsigned ordinal = 0, unsigned depth = 0);
-      const std::string &name() const { return m_name; }
+      //      const std::string &name() const { return m_name; }
+      const char *cname() const { return m_name.c_str(); }
       const char
         *finalize(const IdentResolver &resolv, bool isFixed),
 	*parseDefault(ezxml_t x, const char *hasDefault),

@@ -67,7 +67,7 @@ namespace OCPI  {
       inline bool isTwoWay() const { return m_isTwoWay; }
       inline Member *args() const { return m_args; }
       inline size_t nArgs() const { return m_nArgs; }
-      inline const std::string &name() const { return m_name; }
+      inline const char *cname() const { return m_name.c_str(); }
       inline bool isTopFixedSequence() const { return m_topFixedSequence; }
       void printXML(FILE *f, unsigned indent = 0) const;
       void write(Writer &writer, const uint8_t *data, size_t length);
@@ -115,7 +115,7 @@ namespace OCPI  {
       inline bool isTwoWay() { return m_isTwoWay; }
       inline size_t &nOperations() { return m_nOperations; }
       inline Operation *operations() { return m_operations; }
-      inline const std::string &name() const { return m_name; }
+      inline const char *cname() const { return m_name.c_str(); }
       const char *parse(ezxml_t x, bool top = true);
       // Note this is NOT const char array and must be modifiable in place
       const char *parse(char *proto);

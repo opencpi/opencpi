@@ -41,7 +41,7 @@ namespace OCPI {
       return err;
     }
     const char *BaseCommandOptions::
-    doValue(Member &m, const char *argValue, const char **&argv) {
+    doValue(Member &m, const char *argValue, const char **&a_argv) {
       Value &v = *m.m_default;
       size_t ordinal = &m - m_options;
       bool seen = m_seen[ordinal];
@@ -51,19 +51,19 @@ namespace OCPI {
       m_seen[ordinal] = true;
       if (!m.m_isSequence && m.m_baseType == OA::OCPI_Bool) {
 	if (argValue)
-	  return setError(esprintf("Extraneous value found in option: '%s'", *argv));
+	  return setError(esprintf("Extraneous value found in option: '%s'", *a_argv));
 	v.m_Bool = m.m_default ? !m.m_default->m_Bool : true;
       } else {
 	if (!argValue) {
-	  if (!argv[1])
-	    return setError(esprintf("Missing value for option: '%s'", *argv));
-	  argValue = argv[1];
-	  argv++;
+	  if (!a_argv[1])
+	    return setError(esprintf("Missing value for option: '%s'", *a_argv));
+	  argValue = a_argv[1];
+	  a_argv++;
 	}
 	const char *err;
 	if ((err = v.parse(argValue, NULL, m.m_isSequence))) // seen)))
 	  return setError(esprintf("When parsing option '%s', value '%s' invalid: %s",
-				   *argv, argValue, err));
+				   *a_argv, argValue, err));
       }
       return NULL;
     }

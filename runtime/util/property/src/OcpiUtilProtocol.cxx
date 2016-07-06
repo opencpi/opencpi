@@ -159,10 +159,10 @@ namespace OCPI {
       m_nArgs = random() % 10;
       Member *m = m_args = m_nArgs ? new Member[m_nArgs] : NULL;
       for (unsigned n = 0; n < m_nArgs; n++, m++) {
-	char *name;
-	asprintf(&name, "arg%d", n);
-	m->generate(name);
-	free(name);
+	char *aname;
+	asprintf(&aname, "arg%d", n);
+	m->generate(aname);
+	free(aname);
       }
       const char *err;
       bool sub32dummy = false;
@@ -356,10 +356,10 @@ namespace OCPI {
       m_nOperations = random() % 10 + 1;
       Operation *o = m_operations = new Operation[m_nOperations];
       for (unsigned n = 0; n < m_nOperations; n++, o++) {
-	char *name;
-	asprintf(&name, "op%d", n);
-	o->generate(name, *this);
-	free(name);
+	char *opName;
+	asprintf(&opName, "op%d", n);
+	o->generate(opName, *this);
+	free(opName);
 	finishOperation(*o);
       }
       finishParse();

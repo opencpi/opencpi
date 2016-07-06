@@ -279,8 +279,8 @@ namespace OCPI {
 	return NULL;
       }
       PValue *p = m_list = new PValue[n + 1];
-      for (unsigned n = 0; n < nPvl; n++)
-	*p++ = pvl[n];
+      for (unsigned nn = 0; nn < nPvl; nn++)
+	*p++ = pvl[nn];
       const char *name, *value;
       EZXML_FOR_ALL_ATTRIBUTES(x, name, value) {
 	const char *attr;
