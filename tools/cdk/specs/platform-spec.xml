@@ -1,14 +1,11 @@
 <!-- base specification for all platform workers
      properties and signals are the ones that all platforms must support -->
 <ComponentSpec package='ocpi'>
-  <!-- Name of this platform -->
-  <property name='platform' type='string' parameter='1' readable='1' stringlength="31"/>
   <!-- UUID of this platform: MUST BE FIRST for bootstrapping purposes -->
   <!-- **********MUST BE FIRST for bootstrapping purposes -->
   <property name="UUID" arraylength='16' readable='true'/>
-  <!-- Current time of day, created by a combination of software setting, GPS, and PPS -->
-  <!-- **********MUST BE AFTER UUID for bootstrapping purposes -->
-  <property name="timeNow" type="ULongLong" volatile='true' writable='true'/>
+  <!-- Name of this platform -->
+  <property name='platform' type='string' parameter='1' readable='1' stringlength="31"/>
   <!-- This could be better if we had the option for array or sequence properties to
        be individually raw or support addressible reads -->
   <property name="romAddr" type='ushort' writable='true'/>

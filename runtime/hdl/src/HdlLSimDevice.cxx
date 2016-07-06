@@ -886,21 +886,28 @@ public:
       throw OU::Error("HDL::Sim::Device::request after previous failure");
     if (m_state == EMULATING) {
       uint8_t *eaddr;
+      static uint32_t success = OCCP_SUCCESS_RESULT;
+      static uint64_t zero = 0, junk;
       if (offset <= sizeof(m_admin))
 	eaddr = &m_admin[offset];
       else if (offset >= offsetof(OccpSpace, config))
-	if ((offset - offsetof(OccpSpace, config)) >= sizeof(m_uuid) + sizeof(uint64_t))
+	if ((offset - offsetof(OccpSpace, config)) >=
+	    OCCP_WORKER_CONFIG_SIZE + 2*sizeof(uint64_t))
 	  throwit("Read/write offset out of range1: 0x%" PRIx64, offset);
 	else {
 	  offset -= offsetof(OccpSpace, config);
-	  eaddr = (uint8_t*)&m_uuid + offset;
+	  if (offset >= OCCP_WORKER_CONFIG_SIZE)
+	    eaddr = (uint8_t*)&zero;
+	  else
+	    eaddr = (uint8_t*)&m_uuid + offset;
 	}
       else if (offset >= offsetof(OccpSpace, worker)) {
-	if ((offset - offsetof(OccpSpace, worker)) >= sizeof(OccpWorker))
+	if ((offset - offsetof(OccpSpace, worker)) >= sizeof(OccpWorker) * 2)
 	  throwit("Read/write offset out of range2: 0x%" PRIx64, offset);
 	else {
 	  offset -= offsetof(OccpSpace, worker);
-	  static uint32_t success = OCCP_SUCCESS_RESULT, zero = 0, junk;
+	  if (offset >= offsetof(OccpSpace, worker))
+	    offset -= offsetof(OccpSpace, worker);
 	  switch (offset) {
 	  case offsetof(OccpWorkerRegisters, initialize):
 	  case offsetof(OccpWorkerRegisters, start):

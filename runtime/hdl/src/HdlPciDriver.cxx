@@ -150,15 +150,17 @@ namespace OCPI {
 	  unsigned n;
 	  uint32_t delta[100];
 	  uint32_t sum = 0;
+	  Access *ts = timeServer();
   
+	  if (!ts)
+	    return;
 	  // Take a hundred samples of round trip time, and sort
 	  for (n = 0; n < 100; n++) {
 	    // Read the FPGA's time, and set its delta register
-	    m_cAccess.set64Register(admin.timeDelta, OccpSpace,
-				    m_cAccess.get64Register(admin.time, OccpSpace));
+	    ts->set64RegisterOffset(sizeof(uint64_t), ts->get64RegisterOffset(0));
 	    // occp->admin.timeDelta = occp->admin.time;
 	    // Read the (incorrect endian) delta register
-	    delta[n] = (int32_t)swap32(m_cAccess.get64Register(admin.timeDelta, OccpSpace));
+	    delta[n] = (int32_t)swap32(ts->get64RegisterOffset(sizeof(uint64_t)));
 	  }
 	  qsort(delta, 100, sizeof(uint32_t), compu32);
   
@@ -175,17 +177,17 @@ namespace OCPI {
 	  uint64_t nw1 = now();
 	  uint64_t nw1a = nw1 + sum;
 	  uint64_t nw1as = swap32(nw1a);
-	  m_cAccess.set64Register(admin.time, OccpSpace, nw1as);
+	  ts->set64RegisterOffset(0, nw1as);
 	  // set32Register(admin.scratch20, OccpSpace, nw1as>>32);
 	  // set32Register(admin.scratch24, OccpSpace, (nw1as&0xffffffff));
 	  //uint64_t nw1b = 0; // get64Register(admin.time, OccpSpace);
 	  //      uint64_t nw1bs = swap32(nw1b);
 	  uint64_t nw2 = 0; // now();
 	  uint64_t nw2s = swap32(nw2);
-	  m_cAccess.set64Register(admin.timeDelta, OccpSpace, nw1as);
-	  uint64_t nw1b = m_cAccess.get64Register(admin.time, OccpSpace);
+	  ts->set64RegisterOffset(sizeof(uint64_t), nw1as);
+	  uint64_t nw1b = ts->get64RegisterOffset(0);
 	  uint64_t nw1bs = swap32(nw1b);
-	  int64_t dt = m_cAccess.get64Register(admin.timeDelta, OccpSpace);
+	  int64_t dt = ts->get64RegisterOffset(sizeof(uint64_t));
 	  ocpiDebug("Now delta is: %" PRIi64 "ns "
 		    "(dt 0x%" PRIx64 " dtsw 0x%" PRIx64 " nw1 0x%" PRIx64 " nw1a 0x%" PRIx64 " nw1as 0x%" PRIx64
 		    " nw1b 0x%" PRIx64 " nw1bs 0x%" PRIx64 " nw2 0x%" PRIx64 " nw2s 0x%" PRIx64 " t 0x%lx)",

@@ -228,6 +228,9 @@ begin
           -- at least OCCP_RESET_CLOCKS
           reset_count_r <= to_unsigned(OCCP_RESET_CLOCKS, reset_count_r'length);
         end if;
+        if is_admin then
+          data_r     <= admin_data;
+        end if;
         -- Set the timeout counter (which is already zero), to 2^worker_timeout
         timeout_r(to_integer(worker_in_timeout)) <= '1';
       elsif its(active_r) then
@@ -238,22 +241,22 @@ begin
 --        elsif timeout_r /= 1 then
         timeout_r <= timeout_r - 1;
 --        end if;
-        if is_admin and not its(reading_r) then
-          -- Writable admin registers
-          case admin_address is
-            when x"20" => scratch20_r <= cp_in.data;
-            when x"24" => scratch24_r <= cp_in.data;
-            when x"28" =>
-              reset_r      <= cp_in.data(0);
-              big_endian_r <= cp_in.data(1);
-            when others => null;
-          end case;
-        end if;
         if is_admin then
-          data_r     <= admin_data;
+          if not reading_r then
+            -- Writable admin registers
+            case admin_address is
+              when x"20" => scratch20_r <= cp_in.data;
+              when x"24" => scratch24_r <= cp_in.data;
+              when x"28" =>
+                reset_r      <= cp_in.data(0);
+                big_endian_r <= cp_in.data(1);
+              when others => null;
+            end case;
+          end if;
         elsif worker_in.response /= none_e then
-          response_r <= worker_in.response;
-          data_r     <= worker_data;
+          response_r       <= worker_in.response;
+          data_r           <= worker_data;
+          workers_out_r.id <= (others => '1');
         end if;
         if (is_admin or response_r /= none_e) and
            reset_count_r = 0 and (not its(reading_r) or cp_in.take) then

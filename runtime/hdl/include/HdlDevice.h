@@ -39,7 +39,7 @@ namespace OCPI {
       Access m_dAccess;
       uint64_t m_endpointSize;
       bool m_isAlive;
-      WciControl *m_pfWorker;
+      WciControl *m_pfWorker, *m_tsWorker;
       bool m_isFailed; // protection during shutdown
     public:
       uint32_t m_timeCorrection;
@@ -50,6 +50,9 @@ namespace OCPI {
       virtual ~Device();
       bool init(std::string &error);
       inline Access &properties() const { return m_pfWorker->m_properties; }
+      inline Access *timeServer() const {
+	return m_tsWorker ? &m_tsWorker->m_properties : NULL;
+      }
       inline const char *protocol() const { return m_protocol.c_str(); }
       inline const std::string &name() const { return m_name; }
       inline const std::string &platform() const { return m_platform; }

@@ -85,19 +85,63 @@ fi
 dir=../no-OS/ad9361/sw
 # We are not depending on their IP
 DEFS=-DAXI_ADC_NOT_PRESENT
-SRCNAMES=(ad9361 ad9361_api ad9361_conv)
+SRCNAMES=(ad9361 ad9361_api ad9361_conv util)
 SRCS=(${SRCNAMES[@]/%/.c})
-INCS=(ad9361_api)
+INCS=(ad9361_api ad9361)
 # They use "malloc.h" which is non-standard.
 echo '#include <stdlib.h>' > malloc.h
 ################################################################################
-# 3. Patch their API header so it actuall acts like an API header
+# 3. Patch their API headers so they actuall act like  API headers
+#    I.e. the patched version doesn't pollute the caller's namespace
 ################################################################################
-# The API header has terrible namespace pollution
 ed $dir/ad9361_api.h <<EOF
 /#include.*"util.h"/c
 #include <stdint.h>
+#include <ad9361.h>
 .
+w
+EOF
+# Similarly for the low level API header
+ed $dir/ad9361.h <<EOF
+/#include.*"common.h"/c
+#ifndef COMMON_H_
+#define COMMON_H_
+#include <stdint.h>
+#include <errno.h>
+#ifndef __cplusplus
+#if defined (__STDC__) && (__STDC_VERSION__ >= 199901L)
+#include <stdbool.h>
+#else
+typedef enum { false, true } bool;
+#endif
+#endif
+struct clk {
+	const char	*name;
+	uint32_t	rate;
+};
+
+struct clk_onecell_data {
+	struct clk		**clks;
+	uint32_t		clk_num;
+};
+struct device {
+   void *slave;
+};
+// This is pulled from util.h
+struct spi_device {
+   struct device dev;
+   uint8_t id_no;
+};
+#endif
+.
+w
+EOF
+ed $dir/util.h <<EOF
+/struct device {/
+.,.+1d
+1
+/struct spi_device {/
+.,.+3d
 w
 EOF
 $CC -fPIC -I. -I$dir/platform_generic -I$dir $DEFS -c ${SRCS[@]/#/$dir\/}

@@ -44,8 +44,8 @@ namespace OCPI {
       // return true on error, otherwise read the amount requested
       bool
       read(int fd, uint8_t *buf, size_t nRequested, std::string &error) {
-	ocpiDebug("SIM reading %zu from fd %d", nRequested, fd);
 	do {
+	  ocpiDebug("SIM reading %zu from fd %d", nRequested, fd);
 	  ssize_t nread = ::read(fd, (char *)buf, nRequested);
 	  if (nread == 0)
 	    // shouldn't happen because we have it open for writing too

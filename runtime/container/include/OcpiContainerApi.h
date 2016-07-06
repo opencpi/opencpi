@@ -174,6 +174,8 @@ namespace OCPI {
 #undef OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
+      virtual void getRawPropertyBytes(size_t offset, uint8_t *buf, size_t count) = 0;
+      virtual void setRawPropertyBytes(size_t offset, const uint8_t *buf, size_t count) = 0;
     };
 
     // This class is used when the application is being constructed using

@@ -37,13 +37,14 @@ namespace OCPI {
     Device::
     Device(const std::string &name, const char *protocol)
       : m_metadata(NULL), m_implXml(NULL), m_old(false), m_name(name), m_protocol(protocol),
-	m_isAlive(true), m_pfWorker(NULL), m_isFailed(false), m_timeCorrection(0),
-	m_endPoint(NULL) {
+	m_isAlive(true), m_pfWorker(NULL), m_tsWorker(NULL), m_isFailed(false),
+	m_timeCorrection(0), m_endPoint(NULL) {
       memset((void*)&m_UUID, sizeof(m_UUID), 0);
     }
     Device::
     ~Device() {
       delete m_pfWorker;
+      delete m_tsWorker;
       if (m_implXml)
 	ezxml_free(m_implXml);
       if (m_metadata)
@@ -85,11 +86,16 @@ namespace OCPI {
       if (m_pfWorker) {
 	m_old = false;
 	m_pfWorker->init(true, true);
-      } else
+	m_tsWorker->init(true, true);
+      } else {
 	m_pfWorker = new WciControl(*this, "platform", "pf_i", 0, true);
+	m_tsWorker = new WciControl(*this, "time_server", "ts_i", 1, true);
+      }
       // Need to conditionalize this
       if ((m_pfWorker->controlOperation(OU::Worker::OpInitialize, err)) ||
-	  (m_pfWorker->controlOperation(OU::Worker::OpStart, err))) {
+	  (m_tsWorker->controlOperation(OU::Worker::OpInitialize, err)) ||
+	  (m_pfWorker->controlOperation(OU::Worker::OpStart, err)) ||
+	  (m_tsWorker->controlOperation(OU::Worker::OpStart, err))) {
 	// Compatibility hack
 	m_old = true;
 	err.clear();

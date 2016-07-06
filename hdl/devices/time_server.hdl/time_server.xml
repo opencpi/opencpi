@@ -1,10 +1,11 @@
 <HdlDevice language="vhdl">
   <componentspec/>
+  <!-- These two properties must be first -->
+  <property name='timeNow' type='ulonglong' writable='1' volatile='1'/>
+  <property name='delta' type='ulonglong' writable='1' volatile='1'/>
   <property name='frequency' type='float' parameter='1' readable='1' default='1e6'/>
   <property name='control' writable='1' readable='1'/>
   <property name='status' volatile='1'/>
-  <property name='timeNow' type='ulonglong' writable='1' volatile='1'/>
-  <property name='delta' type='ulonglong' writable='1' volatile='1'/>
   <property name='tickspersecond' volatile='1'/>
   <timebase/>
   <timeservice master='true'/>

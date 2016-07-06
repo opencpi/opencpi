@@ -110,11 +110,13 @@ namespace OCPI {
     startMasterSlave(bool isMaster, bool isSlave) {
       for (Worker *w = firstWorker(); w; w = w->nextWorker()) {
 	// FIXME: what is the issue with EXISTS? and why doesn't it apply to all cases?
-	assert(w->getState() == OU::Worker::INITIALIZED);
+	assert(w->getState() != OU::Worker::EXISTS);
 	if ((w->getState() != OU::Worker::EXISTS && isMaster && w->slave() &&
 	     ((isSlave && w->hasMaster()) || (!isSlave && !w->hasMaster()))) ||
-	    (!isMaster && !w->slave()))
+	    (!isMaster && !w->slave())) {
+	  assert(w->getState() == OU::Worker::INITIALIZED);
 	  w->start();
+	}
       }
     }
     // If not master, then we ignore slave, so there are three cases

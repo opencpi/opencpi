@@ -1,7 +1,4 @@
-<!-- Lime SPI module is a no-control, no-data module, supporting
-     two raw property ports, one for rx (always 0), and one for tx (always 1),
-     with a shared reset
-     -->
+<!-- AD9361 subdevice multiplexes the SPI and reset, and supports half-duplex control. -->
 <HdlDevice language="vhdl">
   <ComponentSpec nocontrol='true'/>
   <!-- We have two raw property masters, the rx and tx workers for the xcvr chip -->

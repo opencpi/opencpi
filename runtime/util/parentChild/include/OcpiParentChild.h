@@ -228,8 +228,8 @@ namespace OCPI {
     public:
       // These are public because you can't use "friend class TChild"
       // Let's not put in a null string name so that any usage is more obvious
-      Child<TParent,TChild,prefix> (TParent & p, TChild &c, const char *name = "unknown")
-      : ChildOnly<TParent, TChild,prefix>(p, name)
+      Child<TParent,TChild,prefix> (TParent & p, TChild &c, const char *aname = "unknown")
+      : ChildOnly<TParent, TChild,prefix>(p, aname)
       {
 	p.Parent<TChild>::addChild(c, &c);
       }

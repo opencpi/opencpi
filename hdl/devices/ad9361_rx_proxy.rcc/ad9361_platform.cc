@@ -2,14 +2,37 @@
  * We don't use the header "platform.h" to declare these functions because that header
  * is very unclean and introduces all manner of naming collisions.
  */
-extern "C" {
+#include <assert.h>
 #include <stdint.h>
 #include <unistd.h>
 #include <errno.h>
+extern "C" {
+#include "ad9361.h"
+}
+#include "RCC_Worker.h"
 
+extern "C" {
+// This function accesses the property space of the worker.
+// We figure out the worker object from thread private data to avoid
+// any re-entrancy issues (e.g. when there are more than one ad9361s).
 int
 spi_write_then_read(struct spi_device *spi, const unsigned char *txbuf, unsigned n_tx,
 		    unsigned char *rxbuf, unsigned n_rx) {
+  uint16_t
+    cmd = txbuf[0] << 8 | txbuf[1],
+    addr = AD_ADDR(cmd),
+    count = (cmd >> 12) + 1;
+  bool isRead = cmd & AD_READ;
+  // This is actually a call that either writes data or reads data
+  // The n_tx is 2 bytes of "command" followed by write data if it is a write.
+  assert(n_rx && n_tx == 2 || !n_rx && n_tx > 2);
+  assert(n_rx == 0 || n_rx == count);
+  assert(n_tx == 2 || n_tx-2 == count);
+  OCPI::RCC::RCCUserSlave *s = (OCPI::RCC::RCCUserSlave*)(spi->dev.slave);
+  if (isRead)
+    s->getRawPropertyBytes(addr, rxbuf, count);
+  else
+    s->setRawPropertyBytes(addr, txbuf+2, count);
   return -ENODEV;
 }
 
@@ -79,6 +102,16 @@ mdelay(unsigned long msecs) {
   usleep(msecs * 1000);
 }
 
+#if 0
+clk_get_rate
+clk_prepare_enable
+clk_set_rate
+do_div
+ERR_PTR
+find_first_bit
+ilog2
+int_sqrt
+#endif
   //_ad9361_dig_tune
   //_ad9361_hdl_loopback
 

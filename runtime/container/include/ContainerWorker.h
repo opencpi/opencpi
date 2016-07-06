@@ -214,6 +214,13 @@ namespace OCPI {
 #undef OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
+      inline void getRawPropertyBytes(size_t offset, uint8_t *buf, size_t count) {
+	getPropertyBytes(*m_firstRaw, m_firstRaw->m_offset + offset, buf, count, 0, false);
+      }
+      inline void setRawPropertyBytes(size_t offset, const uint8_t *buf, size_t count) {
+	setPropertyBytes(*m_firstRaw, m_firstRaw->m_offset + offset, buf,count, 0);
+      }
+
     };
   }
 }

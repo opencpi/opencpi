@@ -153,7 +153,7 @@ begin
             ack_flush_r <= btrue;
           end if;
           spin_credit_r <= spin_credit_r - 1;
-        elsif not sdp_in.sdp.valid then
+        elsif not its(sdp_in.sdp.valid) and not its(sim2sw_valid_r) then
           case read_byte(ctl_file, "control") is
             when 0      => spin_credit_r <= read_byte(ctl_file, "spin");
             when 1      =>

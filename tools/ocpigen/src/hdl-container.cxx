@@ -192,8 +192,8 @@ addClient(std::string &assy, bool control, const char *client, const char *port)
 void UNoc::
 terminate(std::string &assy) {
   for (unsigned c = 0; c < m_channels.size(); c++) {
-    UNocChannel &unc = m_channels[c];
 #if 0
+    UNocChannel &unc = m_channels[c];
     switch (unc.m_currentNode) {
     case 1:
       // Exactly one client.  We can avoid the node and no termination

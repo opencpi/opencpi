@@ -1,1 +1,1 @@
-export OCPI_TARGET_CXXFLAGS+=" -std=c++11 -Wno-sign-conversion"
+export OCPI_TARGET_CXXFLAGS="$OCPI_TARGET_CXXFLAGS -std=c++11"
