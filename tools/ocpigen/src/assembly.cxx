@@ -144,7 +144,7 @@ const char *Instance::
 getValue(const char *sym, OU::ExprValue &val) const {
   const InstanceProperty *ipv = &properties[0];
   for (unsigned n = 0; n < properties.size(); n++, ipv++)
-    if (!strcasecmp(ipv->property->name().c_str(), sym))
+    if (!strcasecmp(ipv->property->cname(), sym))
       return extractExprValue(*ipv->property, ipv->value, val);
   return worker->getValue(sym, val);
 }

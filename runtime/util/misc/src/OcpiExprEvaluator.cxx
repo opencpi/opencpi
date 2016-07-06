@@ -345,7 +345,7 @@ namespace OCPI {
 	if (!v.isNumber)
 	  err = esprintf("the expression \"%s\" does not evaluate to a number", a);
 	else {
-	  np = v.number;
+	  np = OCPI_UTRUNCATE(size_t, v.number);
 	  if (expr) {
 	    expr->clear();
 	    if (v.isVariable) {

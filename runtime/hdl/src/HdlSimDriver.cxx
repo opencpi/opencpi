@@ -158,8 +158,9 @@ namespace OCPI {
 	  assert(*err == 'O');
 	}
 	void
-	sdpRequest(bool read, uint64_t address, size_t length, uint8_t *data,
+	sdpRequest(bool read, uint64_t a_address, size_t length, uint8_t *data,
 		   uint32_t *status) {
+	  RegisterOffset address = OCPI_UTRUNCATE(RegisterOffset, a_address);
 	  if (m_sdpConnected) {
 	    if (m_isFailed)
 	      throw OU::Error("HDL::Sim::Device::request after previous failure");

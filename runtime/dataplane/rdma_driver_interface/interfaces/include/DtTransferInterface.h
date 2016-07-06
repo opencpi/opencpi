@@ -204,7 +204,7 @@ namespace DataTransfer {
      *        Errors:
      *                DataTransferEx for all exception conditions
      */
-    XferServices ( SmemServices *source, SmemServices * /* target */ ) : m_source(*source) {}
+    XferServices ( SmemServices *a_source, SmemServices * /* target */ ) : m_source(*a_source) {}
     SmemServices &source() { return m_source; }
     /*
      * If this service requires a cookie for the remote connection, this method will return it.

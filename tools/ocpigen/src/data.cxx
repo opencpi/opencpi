@@ -354,7 +354,7 @@ emitPortDescription(FILE *f, Language lang) const {
   const char *comment = hdlComment(lang);
   fprintf(f, " %s  This interface is a data interface acting as %s\n",
 	  comment, m_isProducer ? "producer" : "consumer");
-  fprintf(f, "  %s   Protocol: \"%s\"\n", comment, m_protocol->name().c_str());
+  fprintf(f, "  %s   Protocol: \"%s\"\n", comment, m_protocol->cname());
   fprintf(f, "  %s   DataValueWidth: %zu\n", comment, m_protocol->m_dataValueWidth);
   fprintf(f, "  %s   DataValueGranularity: %zu\n", comment, m_protocol->m_dataValueGranularity);
   fprintf(f, "  %s   DiverseDataSizes: %s\n", comment, BOOL(m_protocol->m_diverseDataSizes));
@@ -444,7 +444,7 @@ emitRecordDataTypes(FILE *f) {
 	unsigned nn;
 	for (nn = 0; nn < prot->nOperations(); nn++, op++)
 	  fprintf(f, "%s    %s_%s_op_e", nn ? ",\n" : "",
-		  prot->m_name.c_str(), op->name().c_str());
+		  prot->m_name.c_str(), op->cname());
 	// If the protocol opcodes do not fill the space, fill it
 	if (nn < maxOpcodes)
 	  for (unsigned o = 0; nn < m_nOpcodes; nn++, o++)
@@ -629,10 +629,10 @@ adjustConnection(const char *masterName,
       return "dataValueGranularity incompatibility for connection";
     if (prod.m_protocol->m_maxMessageValues > cons.m_protocol->m_maxMessageValues)
       return "maxMessageValues incompatibility for connection";
-    if (prod.m_protocol->name().size() && cons.m_protocol->name().size() &&
-	prod.m_protocol->name() != cons.m_protocol->name())
+    if (prod.m_protocol->cname()[0] && cons.m_protocol->cname()[0] &&
+	strcasecmp(prod.m_protocol->cname(), cons.m_protocol->cname()))
       return OU::esprintf("protocol incompatibility: producer: %s vs. consumer: %s",
-			  prod.m_protocol->name().c_str(), cons.m_protocol->name().c_str());
+			  prod.m_protocol->cname(), cons.m_protocol->cname());
     if (prod.m_protocol->nOperations() && cons.m_protocol->nOperations() && 
 	prod.m_protocol->nOperations() != cons.m_protocol->nOperations())
       return "numberOfOpcodes incompatibility for connection";
@@ -700,7 +700,7 @@ emitOpcodes(FILE *f, const char *pName, Language lang) {
     for (unsigned n = 0; n < prot->nOperations(); n++, op++)
       if (lang != VHDL)
 	fprintf(f, "  localparam [%sOpCodeWidth - 1 : 0] %s%s_Op = %u;\n",
-		pName, pName, op->name().c_str(), n);
+		pName, pName, op->cname(), n);
   }
 }
 
