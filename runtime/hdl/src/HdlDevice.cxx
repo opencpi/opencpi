@@ -35,8 +35,8 @@ namespace OCPI {
     // The derived class will set up accessors after this constructor is done
     // So we can't perform accesses until that time, which is the "init" call.
     Device::
-    Device(const std::string &name, const char *protocol)
-      : m_metadata(NULL), m_implXml(NULL), m_old(false), m_name(name), m_protocol(protocol),
+    Device(const std::string &a_name, const char *a_protocol)
+      : m_metadata(NULL), m_implXml(NULL), m_old(false), m_name(a_name), m_protocol(a_protocol),
 	m_isAlive(true), m_pfWorker(NULL), m_tsWorker(NULL), m_isFailed(false),
 	m_timeCorrection(0), m_endPoint(NULL) {
       memset((void*)&m_UUID, sizeof(m_UUID), 0);
@@ -243,12 +243,12 @@ namespace OCPI {
 	// part type to look for artifacts
 	// esn for checking/asserting that
 	OE::getOptionalString(config, m_esn, "esn");
-	std::string platform, device;
-	OE::getOptionalString(config, platform, "platform");
-	OE::getOptionalString(config, platform, "device");
-	if (!platform.empty() && platform != m_platform) {
+	std::string myPlatform, device;
+	OE::getOptionalString(config, myPlatform, "platform");
+	OE::getOptionalString(config, myPlatform, "device");
+	if (!myPlatform.empty() && myPlatform != m_platform) {
 	  OU::formatString(error, "Discovered platform (%s) doesn't match configured platform (%s)",
-		  m_platform.c_str(), platform.c_str());
+		  m_platform.c_str(), myPlatform.c_str());
 	  return true;
 	}
 	if (!device.empty() && device != m_part) {
@@ -288,12 +288,12 @@ namespace OCPI {
     void Device::
     getWorkerAccess(size_t index,
 		    Access &worker,
-		    Access &properties) {
+		    Access &a_properties) {
       if (index >= OCCP_MAX_WORKERS)
 	throw OU::Error("Invalid occpIndex property");
       // FIXME:  check runtime for connected worker
       m_cAccess.offsetRegisters(worker, (intptr_t)(&((OccpSpace*)0)->worker[index]));
-      m_cAccess.offsetRegisters(properties,(intptr_t)(&((OccpSpace*)0)->config[index]));
+      m_cAccess.offsetRegisters(a_properties,(intptr_t)(&((OccpSpace*)0)->config[index]));
     }
     void Device::
     releaseWorkerAccess(size_t /* index */,

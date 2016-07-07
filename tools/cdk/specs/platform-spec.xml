@@ -4,12 +4,14 @@
   <!-- UUID of this platform: MUST BE FIRST for bootstrapping purposes -->
   <!-- **********MUST BE FIRST for bootstrapping purposes -->
   <property name="UUID" arraylength='16' readable='true'/>
-  <!-- Name of this platform -->
-  <property name='platform' type='string' parameter='1' readable='1' stringlength="31"/>
   <!-- This could be better if we had the option for array or sequence properties to
        be individually raw or support addressible reads -->
+  <!-- **********MUST BE SECOND for bootstrapping purposes -->
+  <property name="timeNow" type="ULongLong" readable='true' writable='true'/>
   <property name="romAddr" type='ushort' writable='true'/>
   <property name="romData" volatile='true'/>
+  <!-- Name of this platform -->
+  <property name='platform' type='string' parameter='1' readable='1' stringlength="31"/>
   <!-- The memory regions that may be used by various other elements, which indicates
        aliasing etc.
        The values describing each region are:

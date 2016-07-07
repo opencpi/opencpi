@@ -60,9 +60,10 @@ namespace OCPI {
 	OCPI_PROPERTY_DATA_TYPES
         OCPI_DATA_TYPE(sca,corba,letter,bits,TypeValue,Type,store)
 #undef OCPI_DATA_TYPE
-      virtual bool unparseEnum(std::string &s, EnumValue val, const char **enums, bool) const;
-      virtual bool unparseStruct(std::string &fs, StructValue val, Member *members, size_t nMembers,
-			      bool hex, char comma) const;
+      virtual bool unparseEnum(std::string &s, EnumValue val, const char **enums, size_t nEnums,
+			       bool) const;
+      virtual bool unparseStruct(std::string &fs, StructValue val, Member *members,
+				 size_t nMembers, bool hex, char comma) const;
       void doFormat(std::string &, const char *fmt, ...) const;
       virtual void
       elementUnparse(const Value &v, std::string &s, unsigned nSeq, bool hex, char comma,

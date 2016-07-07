@@ -324,7 +324,10 @@ struct C_Unparser : public OU::Unparser {
     return !val;
   }
   bool
-  unparseEnum(std::string &s, OU::EnumValue val, const char **enums, bool /*hex*/) const {
+  unparseEnum(std::string &s, OU::EnumValue val, const char **enums, size_t nEnums,
+	      bool /*hex*/) const {
+    if (val >= nEnums)
+      throw OU::Error("Invalid enumberation value: 0x%x", val);
     if (!strcasecmp("ocpi_endian", m_member.m_name.c_str()))
       upperconstant(s, "RCC", enums[val]);
     else
@@ -350,13 +353,14 @@ struct CC_Unparser : public C_Unparser {
     return !val;
   }
   bool
-  unparseEnum(std::string &s, OU::EnumValue val, const char **enums, bool hex) const {
+  unparseEnum(std::string &s, OU::EnumValue val, const char **enums, size_t nEnums, bool hex)
+    const {
     if (!strcasecmp("ocpi_endian", m_member.m_name.c_str())) {
       s = "OCPI::RCC::";
       upperconstant(s, "RCC", enums[val]);
       return val == 0;
     }
-    return C_Unparser::unparseEnum(s, val, enums, hex);
+    return C_Unparser::unparseEnum(s, val, enums, nEnums, hex);
   }
 };
 

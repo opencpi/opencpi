@@ -936,7 +936,7 @@ unparseValue(std::string &s, unsigned nSeq, size_t nArray, bool hex, char comma,
       return up.unparseEnum(s, 
 			    (m_vt->m_isSequence || m_vt->m_arrayRank) && m_pEnum ?
 			    m_pEnum[nSeq * m_vt->m_nItems + nArray] :
-			    m_Enum, m_vt->m_enums, hex);
+			    m_Enum, m_vt->m_enums, m_vt->m_nEnums, hex);
   case OA::OCPI_Struct:
     return up.unparseStruct(s,
 			    (m_vt->m_isSequence || m_vt->m_arrayRank) && m_pStruct ?
@@ -1104,8 +1104,11 @@ unparseType(std::string &s, TypeValue val, bool hex) const {
   return false;
 }
 bool Unparser::
-unparseEnum(std::string &s, EnumValue val, const char **enums, bool) const {
-  s += enums[val];
+unparseEnum(std::string &s, EnumValue val, const char **enums, size_t nEnums, bool) const {
+  if (val < nEnums)
+    s += enums[val];
+  else
+    formatAdd(s, "<invalid enum 0x%x>", val);
   return val == 0;
 }
 void Value::
