@@ -19,13 +19,13 @@ namespace OCPI {
     // We're creating two things and have to resource-manage them during construction.
     // Getting our endpoint might end up creating a new one, and if so we want to nuke it
     MessageEndpoint::
-    MessageEndpoint(const char *endpoint)
+    MessageEndpoint(const char *a_endpoint)
       : m_transportGlobal(*new TransportGlobal(0, (char**)0)),
 	m_transport(NULL), m_endpoint(NULL) {
       try {
 	m_transport = new Transport(&m_transportGlobal, true);
 	m_transport->setNewCircuitRequestListener(this);
-	m_endpoint = &m_transport->getLocalCompatibleEndpoint(endpoint, true);
+	m_endpoint = &m_transport->getLocalCompatibleEndpoint(a_endpoint, true);
       } catch (...) {
 	if (m_transport)
 	  delete m_transport;
@@ -114,8 +114,8 @@ namespace OCPI {
     MessageEndpoint::MessageEndpoints MessageEndpoint::
     s_messageEndpoints;
   
-    bool MessageEndpoint::canSupport(const char *endpoint) const {
-      return m_endpoint->canSupport(endpoint);
+    bool MessageEndpoint::canSupport(const char *a_endpoint) const {
+      return m_endpoint->canSupport(a_endpoint);
     }
 
     // the internal, non-static method, with same args as the static one, hence "To".

@@ -124,12 +124,12 @@
 
 #define OCPI_EMIT_HERE                \
 do { \
-  OCPI_EMIT_REGISTER_FULL( __FILE__ "_line_"  TOSTRING(__LINE__), OCPI::Time::Emit::u, 1, OCPI::Time::Emit::Transient); \
+  OCPI_EMIT_REGISTER_FULL( __FILE__ "_line_"  TOSTRING(__LINE__), OCPI::Time::Emit::DT_u, 1, OCPI::Time::Emit::Transient); \
   OCPI::Time::Emit::getSEmit().emit(re);                        \
  } while(0)
 #define OCPI_EMIT_HERE_                \
 do { \
-  OCPI_EMIT_REGISTER_FULL( __FILE__ "_line_"  TOSTRING(__LINE__), OCPI::Time::Emit::u, 1, OCPI::Time::Emit::Transient); \
+  OCPI_EMIT_REGISTER_FULL( __FILE__ "_line_"  TOSTRING(__LINE__), OCPI::Time::Emit::DT_u, 1, OCPI::Time::Emit::Transient); \
   this->emit(re);                \
  } while(0)
 
@@ -144,36 +144,36 @@ do { \
 
 #define OCPI_EMIT( name ) \
 do { \
-  OCPI_EMIT_REGISTER_FULL( name, OCPI::Time::Emit::u, 1, OCPI::Time::Emit::Transient); \
+  OCPI_EMIT_REGISTER_FULL( name, OCPI::Time::Emit::DT_u, 1, OCPI::Time::Emit::Transient); \
   OCPI::Time::Emit::getSEmit().emit(re);                        \
 } while(0)
 
 #define OCPI_EMIT_( name ) \
 do { \
-  OCPI_EMIT_REGISTER_FULL( name, OCPI::Time::Emit::u, 1, OCPI::Time::Emit::Transient); \
+  OCPI_EMIT_REGISTER_FULL( name, OCPI::Time::Emit::DT_u, 1, OCPI::Time::Emit::Transient); \
   this->emit(re);           \
  } while(0)
 
 #define OCPI_EMIT__( name, c )			\
 do { \
-  OCPI_EMIT_REGISTER_FULL( name, OCPI::Time::Emit::u, 1, OCPI::Time::Emit::Transient); \
+  OCPI_EMIT_REGISTER_FULL( name, OCPI::Time::Emit::DT_u, 1, OCPI::Time::Emit::Transient); \
   c->emit(re);								\
  } while(0)
 
 
 #define OCPI_EMIT_STATE( name, state )                        \
 do { \
-  OCPI_EMIT_REGISTER_FULL( name, OCPI::Time::Emit::u, 1, OCPI::Time::Emit::Value); \
+  OCPI_EMIT_REGISTER_FULL( name, OCPI::Time::Emit::DT_u, 1, OCPI::Time::Emit::Value); \
   OCPI::Time::Emit::getSEmit().emit(re,static_cast<OCPI::OS::uint64_t>(state)); \
 } while(0)
 #define OCPI_EMIT_STATE_( name, state )                \
 do { \
-  OCPI_EMIT_REGISTER_FULL( name, OCPI::Time::Emit::u, 1, OCPI::Time::Emit::Value); \
+  OCPI_EMIT_REGISTER_FULL( name, OCPI::Time::Emit::DT_u, 1, OCPI::Time::Emit::Value); \
   this->emit(re,static_cast<OCPI::OS::uint64_t>(state)); \
  } while(0)
 #define OCPI_EMIT_STATE__( name, state, c )	\
 do { \
-  OCPI_EMIT_REGISTER_FULL( name, OCPI::Time::Emit::u, 1, OCPI::Time::Emit::Value); \
+  OCPI_EMIT_REGISTER_FULL( name, OCPI::Time::Emit::DT_u, 1, OCPI::Time::Emit::Value); \
   c->emit(re,static_cast<OCPI::OS::uint64_t>(state));		\
  } while(0)
 
@@ -205,42 +205,42 @@ do { \
 
 #define OCPI_EMIT_UINT64_( name, value ) \
 do { \
-  OCPI_EMIT_REGISTER_FULL(name,OCPI::Time::Emit::u,64,OCPI::Time::Emit::Value); \
+  OCPI_EMIT_REGISTER_FULL(name,OCPI::Time::Emit::DT_u,64,OCPI::Time::Emit::Value); \
   this->emit(re,static_cast<OCPI::OS::uint64_t>(value));                        \
 } while(0)
 #define OCPI_EMIT_UINT64( name, value ) \
 do { \
-  OCPI_EMIT_REGISTER_FULL(name,OCPI::Time::Emit::u,64,OCPI::Time::Emit::Value); \
+  OCPI_EMIT_REGISTER_FULL(name,OCPI::Time::Emit::DT_u,64,OCPI::Time::Emit::Value); \
   OCPI::Time::Emit::getSEmit().emit(re,static_cast<OCPI::OS::uint64_t>(value));                        \
 } while(0)
 #define OCPI_EMIT_UINT32_( name, value ) \
 do { \
-  OCPI_EMIT_REGISTER_FULL(name,OCPI::Time::Emit::u,32,OCPI::Time::Emit::Value); \
+  OCPI_EMIT_REGISTER_FULL(name,OCPI::Time::Emit::DT_u,32,OCPI::Time::Emit::Value); \
   this->emit(re,static_cast<OCPI::OS::uint64_t>(value));                        \
 } while(0)
 #define OCPI_EMIT_UINT32( name, value ) \
 do { \
-  OCPI_EMIT_REGISTER_FULL(name,OCPI::Time::Emit::u,32,OCPI::Time::Emit::Value); \
+  OCPI_EMIT_REGISTER_FULL(name,OCPI::Time::Emit::DT_u,32,OCPI::Time::Emit::Value); \
   OCPI::Time::Emit::getSEmit().emit(re,static_cast<OCPI::OS::uint64_t>(value));                        \
 } while(0)
 #define OCPI_EMIT_UINT16_( name, value ) \
 do { \
-  OCPI_EMIT_REGISTER_FULL(name,OCPI::Time::Emit::u,16,OCPI::Time::Emit::Value); \
+  OCPI_EMIT_REGISTER_FULL(name,OCPI::Time::Emit::DT_u,16,OCPI::Time::Emit::Value); \
   this->emit(re,static_cast<OCPI::OS::uint64_t>(value));                        \
 } while(0)
 #define OCPI_EMIT_UINT16( name, value ) \
 do { \
-  OCPI_EMIT_REGISTER_FULL(name,OCPI::Time::Emit::u,16,OCPI::Time::Emit::Value); \
+  OCPI_EMIT_REGISTER_FULL(name,OCPI::Time::Emit::DT_u,16,OCPI::Time::Emit::Value); \
   OCPI::Time::Emit::getSEmit().emit(re,static_cast<OCPI::OS::uint64_t>(value));                        \
 } while(0)
 #define OCPI_EMIT_UINT8_( name, value ) \
 do { \
-  OCPI_EMIT_REGISTER_FULL(name,OCPI::Time::Emit::u,8,OCPI::Time::Emit::Value); \
+  OCPI_EMIT_REGISTER_FULL(name,OCPI::Time::Emit::DT_u,8,OCPI::Time::Emit::Value); \
   this->emit(re,static_cast<OCPI::OS::uint64_t>(value));                        \
 } while(0)
 #define OCPI_EMIT_UINT8( name, value ) \
 do { \
-  OCPI_EMIT_REGISTER_FULL(name,OCPI::Time::Emit::u,8,OCPI::Time::Emit::Value); \
+  OCPI_EMIT_REGISTER_FULL(name,OCPI::Time::Emit::DT_u,8,OCPI::Time::Emit::Value); \
   OCPI::Time::Emit::getSEmit().emit(re,static_cast<OCPI::OS::uint64_t>(value));                        \
 } while(0)
 
@@ -300,10 +300,10 @@ namespace OCPI {
       // These types are used by the formatter class to determine how to 
       // display the event values.
       enum DataType {
-        u,   // unsigned
-        i,   // signed
-        d,   // double
-        c    // character
+        DT_u,   // unsigned
+        DT_i,   // signed
+        DT_d,   // double
+        DT_c    // character
       };
 
       struct QConfig {
@@ -351,13 +351,13 @@ namespace OCPI {
         RegisterEvent( const char* event_name,
                        int width=1, 
                        EventType type=OCPI::Time::Emit::Transient,
-                       DataType dt=OCPI::Time::Emit::u
+                       DataType dt=OCPI::Time::Emit::DT_u
                        );
         RegisterEvent( OCPI::API::PValue& pvstr );
         static Emit::EventId registerEvent( const char* event_name,
 					    int width=1, 
 					    EventType type=OCPI::Time::Emit::Transient,
-					    DataType dt=OCPI::Time::Emit::u
+					    DataType dt=OCPI::Time::Emit::DT_u
 					    );
 
         operator EventId () const {return m_eid;}

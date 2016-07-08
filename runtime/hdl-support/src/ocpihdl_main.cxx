@@ -152,7 +152,7 @@ struct Command {
 };
 
 static int
-usage(const char *name) {
+usage(const char *cmd) {
   fprintf(stderr,
 	  "Usage is: %s <command> [<options>...] [<command args>...]\n"
           "  Major commands/modes:\n"
@@ -219,7 +219,7 @@ usage(const char *name) {
 	  "                      a0:00:b0:34:55:67            # ethernet MAC address on first up+connected interface\n"
 	  "                      eth0/a0:00:b0:34:55:67       # ethernet address on a specific interface\n"
 	  "                      Ether:eth1/a0:00:b0:34:55:67 # fully specified Ethernet-based device\n",
-	  name);
+	  cmd);
   return 1;
 }
 
@@ -482,20 +482,21 @@ static void emulate(const char **) {
 		  ecrr.data = 0;
 		} else if (offset >= offsetof(OH::OccpSpace, config)) {
 		  size_t
-		    worker = (offset - offsetof(OH::OccpSpace, config)) / OCCP_WORKER_CONFIG_SIZE,
+		    wkr = (offset - offsetof(OH::OccpSpace, config)) / OCCP_WORKER_CONFIG_SIZE,
 		    woffset = (offset - offsetof(OH::OccpSpace, config)) % OCCP_WORKER_CONFIG_SIZE;
-		  printf("Worker %2zd config read 0x%zx\n", worker, woffset);
-		  if (worker == 13 && woffset == 0x4c)
+		  printf("Worker %2zd config read 0x%zx\n", wkr, woffset);
+		  if (wkr == 13 && woffset == 0x4c)
 		    ecrr.data = htonl(0x8000);
 		} else if (offset >= offsetof(OH::OccpSpace, worker)) {
 		  size_t
-		    worker = (offset - offsetof(OH::OccpSpace, worker)) / sizeof(OH::OccpWorker),
+		    wkr = (offset - offsetof(OH::OccpSpace, worker)) / sizeof(OH::OccpWorker),
 		    woffset = (offset - offsetof(OH::OccpSpace, worker)) % sizeof(OH::OccpWorker);
 		  if (woffset < offsetof(OH::OccpWorkerRegisters, control)) {
-		    printf("Worker %2zd control operation read: %s\n", worker, ops[woffset/sizeof(uint32_t)]);
+		    printf("Worker %2zd control operation read: %s\n", wkr,
+			   ops[woffset/sizeof(uint32_t)]);
 		    ecrr.data = htonl(OCCP_SUCCESS_RESULT);
 		  } else
-		    printf("Worker %2zd register read: %s\n", worker, 
+		    printf("Worker %2zd register read: %s\n", wkr, 
 			   woffset == offsetof(OH::OccpWorkerRegisters, control) ? "control" :
 			   woffset == offsetof(OH::OccpWorkerRegisters, window) ? "window" :
 			   woffset == offsetof(OH::OccpWorkerRegisters, clearError) ? "clearError" :
@@ -504,26 +505,26 @@ static void emulate(const char **) {
 		}
 		echp->length = htons((short)(sizeof(ecrr)-2));
 	      } else {
-		HE::EtherControlWrite &ecw =  *(HE::EtherControlWrite *)(rFrame.payload);
-		ocpiAssert(ntohs(ech_in.length) == sizeof(ecw)-2);
-		uint32_t data = ntohl(ecw.data);
+		HE::EtherControlWrite &ew =  *(HE::EtherControlWrite *)(rFrame.payload);
+		ocpiAssert(ntohs(ech_in.length) == sizeof(ew)-2);
+		uint32_t data = ntohl(ew.data);
 		if (offset > sizeof(cadmin)) {
 		  ocpiDebug("Write offset out of range: 0x%" PRIx32 "\n", offset);
 		} else if (offset > offsetof(OH::OccpSpace, config)) {
 		  size_t
-		    worker = (offset - offsetof(OH::OccpSpace, config)) / OCCP_WORKER_CONFIG_SIZE,
+		    wkr = (offset - offsetof(OH::OccpSpace, config)) / OCCP_WORKER_CONFIG_SIZE,
 		    woffset = (offset - offsetof(OH::OccpSpace, config)) % OCCP_WORKER_CONFIG_SIZE;
-		  printf("Worker %2zd config write 0x%zx: 0x%" PRIx32 "\n", worker, woffset, data);
+		  printf("Worker %2zd config write 0x%zx: 0x%" PRIx32 "\n", wkr, woffset, data);
 		  *(uint32_t *)&cadmin[offset] = data;
 		} else if (offset > offsetof(OH::OccpSpace, worker)) {
 		  size_t
-		    worker = (offset - offsetof(OH::OccpSpace, worker)) / sizeof(OH::OccpWorker),
+		    wkr = (offset - offsetof(OH::OccpSpace, worker)) / sizeof(OH::OccpWorker),
 		    woffset = (offset - offsetof(OH::OccpSpace, worker)) % sizeof(OH::OccpWorker);
 		  if (woffset < offsetof(OH::OccpWorkerRegisters, control)) {
 		    printf("Worker %2zd control operation write???: %s\n",
-			   worker, ops[woffset/sizeof(uint32_t)]);
+			   wkr, ops[woffset/sizeof(uint32_t)]);
 		  } else {
-		    printf("Worker %2zd register write of 0x%" PRIx32 " to %s\n", worker, data,
+		    printf("Worker %2zd register write of 0x%" PRIx32 " to %s\n", wkr, data,
 			   woffset == offsetof(OH::OccpWorkerRegisters, control) ? "control" :
 			   woffset == offsetof(OH::OccpWorkerRegisters, window) ? "window" :
 			   woffset == offsetof(OH::OccpWorkerRegisters, clearError) ? "clearError" :
@@ -1147,9 +1148,9 @@ wdump(const char **) {
     printf(" addrValid");
   if (i & OCCP_STATUS_CONFIG_BE_VALID)
     printf(" beValid:0x%x", (i & OCCP_STATUS_CONFIG_BE) >> 20);
-  static const char *ops[] = { "init", "start", "stop", "release", "test", "bQuery", "aConfig", "rsvd7"};
+  static const char *l_ops[] = { "init", "start", "stop", "release", "test", "bQuery", "aConfig", "rsvd7"};
   if (i & OCCP_STATUS_CONFIG_OP_VALID)
-    printf(" opValid:0x%x:%s", (i & OCCP_STATUS_CONFIG_OP) >> 24, ops[ (i & OCCP_STATUS_CONFIG_OP) >> 24]);
+    printf(" opValid:0x%x:%s", (i & OCCP_STATUS_CONFIG_OP) >> 24, l_ops[ (i & OCCP_STATUS_CONFIG_OP) >> 24]);
   if (i & OCCP_STATUS_CONFIG_WRITE_VALID)
     printf(" wrtValid:%d", (i & OCCP_STATUS_CONFIG_WRITE) ? 1 : 0);
   printf("\n");
@@ -1251,7 +1252,7 @@ wread(const char **ap) {
     printf("Worker %zu on device %s: read config offset 0x%x size %u count %u\n",
 	   worker, device, off, size, n);
 
-  for (unsigned n = *ap ? (unsigned)atoi_any(*ap, 0) : 1; n--; off += size) {
+  for (; n--; off += size) {
     uint64_t i = 0;
     switch (size) {
     case 1:
@@ -1714,20 +1715,20 @@ public:
     worker = atoi(idx);
     cAccess->offsetRegisters(wAccess, (intptr_t)(&((OH::OccpSpace*)0)->worker[worker]));
     uint32_t
-      control = wAccess.get32Register(control, OH::OccpWorkerRegisters),
-      status =  wAccess.get32Register(status, OH::OccpWorkerRegisters);
+      l_control = wAccess.get32Register(control, OH::OccpWorkerRegisters),
+      l_status =  wAccess.get32Register(status, OH::OccpWorkerRegisters);
     OU::Worker::ControlState cs;
     OU::Worker::ControlOperation lastOp =
-      (OU::Worker::ControlOperation)OCCP_STATUS_LAST_OP(status);
-    if (!(control & OCCP_WORKER_CONTROL_ENABLE))
+      (OU::Worker::ControlOperation)OCCP_STATUS_LAST_OP(l_status);
+    if (!(l_control & OCCP_WORKER_CONTROL_ENABLE))
       cs = OU::Worker::EXISTS; // there is no specific reset state since it isn't hetero
-    else if (!(status & OCCP_STATUS_CONFIG_OP_VALID) || lastOp == 4)
+    else if (!(l_status & OCCP_STATUS_CONFIG_OP_VALID) || lastOp == 4)
       cs = OU::Worker::EXISTS; // no control op since reset
-    else if (status & OCCP_STATUS_CONTROL_ERRORS)
+    else if (l_status & OCCP_STATUS_CONTROL_ERRORS)
       cs = OU::Worker::UNUSABLE;
     else if (lastOp == OU::Worker::OpRelease)
       cs = OU::Worker::UNUSABLE;
-    else if (status & OCCP_STATUS_FINISHED)
+    else if (l_status & OCCP_STATUS_FINISHED)
       cs = OU::Worker::FINISHED;
     else
       switch(lastOp) {
@@ -1829,8 +1830,8 @@ struct Arg {
   bool control, status;
   const char **args;
   unsigned count;
-  Arg(const char **args)
-    : index(999), letter(0), name(NULL), control(false), status(false), args(args), count(0) {
+  Arg(const char **a_args)
+    : index(999), letter(0), name(NULL), control(false), status(false), args(a_args), count(0) {
     top = getmeta();
     prop = args[0] ? args[1] : NULL;
     value = args[0] && args[1] ? args[2] : NULL;
@@ -1847,12 +1848,12 @@ struct Arg {
   doWorker(ezxml_t inst) {
     count++;
     const char
-      *name = ezxml_attr(inst, "name"),
+      *iname = ezxml_attr(inst, "name"),
       *idx = ezxml_attr(inst, "occpIndex"),
       *wkr = ezxml_attr(inst, "worker");
     ezxml_t impl = OX::findChildWithAttr(top, "worker", "name", wkr);
     if (!impl)
-      bad("Can't find worker '%s' for instance '%s'", name, wkr);
+      bad("Can't find worker '%s' for instance '%s'", iname, wkr);
     Worker *w = NULL;
     if (!idx) {
       if (control || status || value || prop)
@@ -1867,29 +1868,29 @@ struct Arg {
 	// Setting a property
 	w->setProperty(prop, value);
 	printf("Setting the %s property to '%s' on instance '%s'\n",
-	       prop, value, name);
+	       prop, value, iname);
 	fflush(stdout);
       }
     }
     printf("  Instance %s of %s worker %s (spec %s)",
-	   name, strcasecmp(inst->name, "instance") ? inst->name :
+	   iname, strcasecmp(inst->name, "instance") ? inst->name :
 	   idx && !strcmp(idx, "0") ? "platform" : "normal",
 	   wkr, wkr ? ezxml_cattr(impl, "specname") : "<none>");
     if (idx)
       printf(" with index %s", idx);
     printf("\n");
     fflush(stdout);
-    std::string pname, value;
+    std::string pname, val;
     bool unreadable;
     if (prop) {
       unsigned i = w->whichProperty(prop);
-      w->getProperty(i, pname, value, &unreadable, hex);
+      w->getProperty(i, pname, val, &unreadable, hex);
       printf("%3u %20s: %s\n", i, pname.c_str(),
-	     unreadable ? "<unreadable>" : value.c_str());
+	     unreadable ? "<unreadable>" : val.c_str());
     } else if (verbose && w) {
-      for (unsigned i = 0; w->getProperty(i, pname, value, &unreadable, hex); i++)
+      for (unsigned i = 0; w->getProperty(i, pname, val, &unreadable, hex); i++)
 	printf("%3u %20s: %s\n", i, pname.c_str(),
-	       unreadable ? "<unreadable>" : value.c_str());
+	       unreadable ? "<unreadable>" : val.c_str());
     }
     fflush(stdout);
   }
@@ -2008,7 +2009,6 @@ load(const char **ap) {
     bad("No input filename specified for loading");
   
   driver = &OCPI::HDL::Driver::getSingleton();
-  std::string error;
   if (!(dev = driver->open(device, false, true, NULL, error)))
     bad("error opening device %s", device);
   dev->load(ap[0]);

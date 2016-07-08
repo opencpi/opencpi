@@ -124,13 +124,13 @@ namespace OCPI {
     void Manager::shutdown() {
       deleteChildren();
     }
-    bool Manager::findContainersX(Callback &cb, OU::Worker &i, const char *name) {
+    bool Manager::findContainersX(Callback &cb, OU::Worker &i, const char *a_name) {
       parent().configureOnce();
       for (Driver *d = firstChild(); d; d = d->nextChild())
 	for (Container *c = d->firstContainer(); c; c = c->nextContainer())
-	  if ((!name ||
-	       (isdigit(*name) && (unsigned)atoi(name) == c->ordinal()) ||
-	       (!isdigit(*name) && name == c->name())) &&
+	  if ((!a_name ||
+	       (isdigit(*a_name) && (unsigned)atoi(a_name) == c->ordinal()) ||
+	       (!isdigit(*a_name) && a_name == c->name())) &&
 	      c->supportsImplementation(i))
 	    cb.foundContainer(*c);
       return false;
@@ -139,8 +139,8 @@ namespace OCPI {
     dynamic() {
       return OCPI_DYNAMIC;
     }
-    Driver::Driver(const char *name) 
-      : OD::DriverType<Manager,Driver>(name, *this) {
+    Driver::Driver(const char *a_name) 
+      : OD::DriverType<Manager,Driver>(a_name, *this) {
     }
     const char
       *application = "application",

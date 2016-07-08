@@ -277,11 +277,8 @@ createOutputBroadcastTemplates( Port* s_port, PortSet* input,
     // We need a transfer template to allow a transfer to each input buffer
     for ( int t_buffers=0; t_buffers<n_t_buffers; t_buffers++ ) {
 
-      // Get the input port
-      Port* t_port = input->getPort(0);
-
       // input buffer
-      InputBuffer* t_buf = static_cast<InputBuffer*>(t_port->getInputBuffer(t_buffers));
+      InputBuffer* t_buf = static_cast<InputBuffer*>(input->getPort(0)->getInputBuffer(t_buffers));
       t_tid = t_buf->getTid();
 
       // Create a template
@@ -579,11 +576,8 @@ void TransferTemplateGeneratorPattern1::createOutputTransfers( Port* s_port, Por
     // We need a transfer template to allow a transfer to each input buffer
     for ( int t_buffers=0; t_buffers<n_t_buffers; t_buffers++ ) {
 
-      // Get the input port
-      Port* t_port = input->getPort(0);
-
       // input buffer
-      InputBuffer* t_buf = t_port->getInputBuffer(t_buffers);
+      InputBuffer* t_buf = input->getPort(0)->getInputBuffer(t_buffers);
       int t_tid = t_buf->getTid();
 
       // Create a template
@@ -753,11 +747,8 @@ createOutputTransfers(OCPI::DataTransport::Port* s_port,
     // We need a transfer template to allow a transfer to each input buffer
     for ( int t_buffers=0; t_buffers<n_t_buffers; t_buffers++ ) {
 
-      // Get the input port
-      Port* t_port = input->getPort(0);
-
       // input buffer
-      InputBuffer* t_buf = t_port->getInputBuffer(t_buffers);
+      InputBuffer* t_buf = input->getPort(0)->getInputBuffer(t_buffers);
       int t_tid = t_buf->getTid();
 
       // Create a template
@@ -950,11 +941,8 @@ void TransferTemplateGeneratorPattern1AFCShadow::createOutputTransfers( Port* s_
     // We need a transfer template to allow a transfer to each input buffer
     for ( int t_buffers=0; t_buffers<n_t_buffers; t_buffers++ ) {
 
-      // Get the input port
-      Port* t_port = input->getPort(0);
-
       // input buffer
-      InputBuffer* t_buf = t_port->getInputBuffer(t_buffers);
+      InputBuffer* t_buf = input->getPort(0)->getInputBuffer(t_buffers);
       int t_tid = t_buf->getTid();
 
       // Create a template
@@ -1455,8 +1443,8 @@ createOutputTransfers(Port* s_port,
             transfer_count++, sequence++ ) {
 
         // Get the input port
-        Port* t_port = input->getPort(0);
-        InputBuffer* t_buf = t_port->getInputBuffer(t_buffers);
+        Port* in_port = input->getPort(0);
+        InputBuffer* t_buf = in_port->getInputBuffer(t_buffers);
         int t_tid = t_buf->getTid();
 
         // We need to be capable of transfering the gated transfers to all input buffers
@@ -1573,7 +1561,7 @@ createOutputTransfers(Port* s_port,
 
           } // end for each input port
 
-          t_buf = t_port->getInputBuffer(t_gated_buffer%n_t_buffers);
+          t_buf = in_port->getInputBuffer(t_gated_buffer%n_t_buffers);
           t_tid = t_buf->getTid();
 
         } // for each gated buffer

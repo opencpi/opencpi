@@ -27,19 +27,19 @@ DummyWorker(Device &device, ezxml_t impl, ezxml_t inst, const char *idx)
   device.cAccess().offsetRegisters(m_wAccess, (intptr_t)(&((OccpSpace*)0)->worker[worker]));
   uint32_t
     control = m_wAccess.get32Register(control, OccpWorkerRegisters),
-    status =  m_wAccess.get32Register(status, OccpWorkerRegisters);
+    l_status =  m_wAccess.get32Register(status, OccpWorkerRegisters);
   OU::Worker::ControlState cs;
   OU::Worker::ControlOperation lastOp =
-    (OU::Worker::ControlOperation)OCCP_STATUS_LAST_OP(status);
+    (OU::Worker::ControlOperation)OCCP_STATUS_LAST_OP(l_status);
   if (!(control & OCCP_WORKER_CONTROL_ENABLE))
     cs = OU::Worker::EXISTS; // there is no specific reset state since it isn't hetero
-  else if (!(status & OCCP_STATUS_CONFIG_OP_VALID) || lastOp == 4)
+  else if (!(l_status & OCCP_STATUS_CONFIG_OP_VALID) || lastOp == 4)
     cs = OU::Worker::EXISTS; // no control op since reset
-  else if (status & OCCP_STATUS_CONTROL_ERRORS)
+  else if (l_status & OCCP_STATUS_CONTROL_ERRORS)
     cs = OU::Worker::UNUSABLE;
   else if (lastOp == OU::Worker::OpRelease)
     cs = OU::Worker::UNUSABLE;
-  else if (status & OCCP_STATUS_FINISHED)
+  else if (l_status & OCCP_STATUS_FINISHED)
     cs = OU::Worker::FINISHED;
   else
     switch(lastOp) {

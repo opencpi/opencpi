@@ -406,11 +406,11 @@
 	   // Record dump file for this property if there is one.
 	   const OU::Assembly::Properties &aProps = m_assembly.instance(n).properties();
 	   p->m_dumpFile = NULL;
-	   for (unsigned nn = 0; nn < aProps.size(); nn++)
-	     if (aProps[nn].m_dumpFile.size() &&
-		 !strcasecmp(aProps[nn].m_name.c_str(),
+	   for (unsigned nnn = 0; nnn < aProps.size(); nnn++)
+	     if (aProps[nnn].m_dumpFile.size() &&
+		 !strcasecmp(aProps[nnn].m_name.c_str(),
 			     meta->m_name.c_str())) {
-	       p->m_dumpFile = aProps[nn].m_dumpFile.c_str();
+	       p->m_dumpFile = aProps[nnn].m_dumpFile.c_str();
 	       break;
 	     }
 	 }
@@ -1085,8 +1085,8 @@
 
   }
   namespace API {
-    OCPI_EMIT_REGISTER_FULL_VAR( "Get Property", OCPI::Time::Emit::u, 1, OCPI::Time::Emit::State, pegp ); 
-    OCPI_EMIT_REGISTER_FULL_VAR( "Set Property", OCPI::Time::Emit::u, 1, OCPI::Time::Emit::State, pesp ); 
+    OCPI_EMIT_REGISTER_FULL_VAR( "Get Property", OCPI::Time::Emit::DT_u, 1, OCPI::Time::Emit::State, pegp ); 
+    OCPI_EMIT_REGISTER_FULL_VAR( "Set Property", OCPI::Time::Emit::DT_u, 1, OCPI::Time::Emit::State, pesp ); 
 
     Application::
     Application(const char *file, const PValue *params)

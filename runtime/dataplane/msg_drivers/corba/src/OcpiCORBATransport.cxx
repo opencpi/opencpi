@@ -185,11 +185,11 @@ namespace OCPI {
 	XferServices ( const OCPI::Util::Protocol & protocol , const char  * other_url, 
 		       const OCPI::Util::PValue *our_props=0,
 		       const OCPI::Util::PValue *other_props=0 );
-	MsgChannel* getMsgChannel( const char  * url,
+	MsgChannel* getMsgChannel( const char  * a_url,
 				   const OCPI::Util::PValue *ourParams,
 				   const OCPI::Util::PValue *otherParams)
 	{
-	  return new MsgChannel( *this, m_protocol, url, ourParams, otherParams);
+	  return new MsgChannel( *this, m_protocol, a_url, ourParams, otherParams);
 	}
 	virtual ~XferServices ()
 	{
@@ -200,8 +200,8 @@ namespace OCPI {
 	: public DataTransfer::Msg::DeviceBase<XferFactory,Device>
       {
       public:
-	Device(const char* name)
-	  : DataTransfer::Msg::DeviceBase<XferFactory,Device>(name, *this)
+	Device(const char *a_name)
+	  : DataTransfer::Msg::DeviceBase<XferFactory,Device>(a_name, *this)
 	{
 
 	}
@@ -249,12 +249,12 @@ namespace OCPI {
 
 	
       XferServices::
-      XferServices ( const OCPI::Util::Protocol & protocol , const char  * other_url,
+      XferServices ( const OCPI::Util::Protocol &a_protocol , const char  * other_url,
 		     const OCPI::Util::PValue *ourParams,
 		     const OCPI::Util::PValue *otherParams)
 	: DataTransfer::Msg::ConnectionBase<XferFactory,XferServices,MsgChannel>
-	  (*this, protocol, other_url, ourParams, otherParams),
-	  m_protocol(protocol)
+	  (*this, a_protocol, other_url, ourParams, otherParams),
+	  m_protocol(a_protocol)
       {
       }
 

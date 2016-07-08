@@ -250,7 +250,7 @@ namespace OCPI {
       // We know that the only thing that can happen at launch time is to
       // get initial provider info from input ports
       c = &m_connections[0];
-      for (unsigned n = 0; n < m_connections.size(); n++, c++)
+      for (n = 0; n < m_connections.size(); n++, c++)
 	if (c->m_launchIn == m_local && c->m_launchOut != m_local) {
 	  OU::formatAdd(m_response, "  <connection id='%u' ipi='", n);
 	  OU::encodeDescriptor(c->m_ipi, m_response);

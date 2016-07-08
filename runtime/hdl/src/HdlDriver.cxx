@@ -158,10 +158,10 @@ namespace OCPI {
     bool Driver::
     setup(Device &dev, ezxml_t &config, std::string &err) {
       // Get any specific configuration information for this device
-      const char *name = dev.name().c_str();
-      config = getDeviceConfig(name);
-      if (!config && !strncmp("PCI:", name, 4)) // compatibility
-	config = getDeviceConfig(name+4);
+      const char *l_name = dev.name().c_str();
+      config = getDeviceConfig(l_name);
+      if (!config && !strncmp("PCI:", l_name, 4)) // compatibility
+	config = getDeviceConfig(l_name + 4);
       // Configure the device
       return dev.configure(config, err);
     }

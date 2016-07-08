@@ -21,9 +21,9 @@ namespace OCPI {
 	: public OL::ArtifactBase<Library, Artifact> {
 	friend class Library;
       public:
-	Artifact(Library &lib, const char *name, const OA::PValue *)
-	  : ArtifactBase<Library,Artifact>(lib, *this, name) {
-	  getFileMetadata(name);
+	Artifact(Library &lib, const char *a_name, const OA::PValue *)
+	  : ArtifactBase<Library,Artifact>(lib, *this, a_name) {
+	  getFileMetadata(a_name);
 	}
 	~Artifact() {}
       };

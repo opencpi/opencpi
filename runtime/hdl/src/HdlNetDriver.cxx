@@ -43,10 +43,11 @@ namespace OCPI {
 	sizeof(EtherControlRead), sizeof(EtherControlResponse)
       };
       Device::
-      Device(Driver &driver, OE::Interface &ifc, std::string &name, OS::Ether::Address &devAddr,
-	     bool discovery, const char *data_proto, unsigned delayms, uint64_t ep_size,
-	     uint64_t controlOffset, uint64_t dataOffset, std::string &error)
-	: OCPI::HDL::Device(name, data_proto),
+      Device(Driver &driver, OE::Interface &ifc, std::string &a_name,
+	     OS::Ether::Address &devAddr, bool discovery, const char *data_proto,
+	     unsigned delayms, uint64_t ep_size, uint64_t controlOffset, uint64_t dataOffset,
+	     std::string &error)
+	: OCPI::HDL::Device(a_name, data_proto),
 	  m_socket(NULL), m_devAddr(devAddr), m_discovery(discovery), m_delayms(delayms) {
 	// We need to get a socket to talk to this device.
 	// If we are at the ethernet level AND we don't a driver,
@@ -59,7 +60,7 @@ namespace OCPI {
 	  return;
 	EtherControlPacket *ecp =  (EtherControlPacket *)(m_request.payload);
 	ecp->header.tag = 0;
-	OU::formatString(m_endpointSpecific, "%s:%s", data_proto, name.c_str());
+	OU::formatString(m_endpointSpecific, "%s:%s", data_proto, a_name.c_str());
 	m_endpointSize = ep_size;
 	cAccess().setAccess(NULL, this, OCPI_UTRUNCATE(RegisterOffset, controlOffset));
 	dAccess().setAccess(NULL, this, OCPI_UTRUNCATE(RegisterOffset, dataOffset));
@@ -101,32 +102,32 @@ namespace OCPI {
 	     n < RETRIES &&
 	       m_socket->send(m_request, ntohs(ech_out.length)+2, m_devAddr, 0, NULL, m_error); n++) {
 	  size_t length;
-	  OS::Ether::Address addr;
+	  OS::Ether::Address l_addr;
 	  uint64_t ns = delayms * (uint64_t)1000000;
 	  OS::Timer timer((uint32_t)(ns / 1000000), (uint32_t)(ns % 1000000));
 	  // FIXME: use shared receive socket
 	  ocpiDebug("Sent request type %u tag %u offset %u delay %u",
 		    OCCP_ETHER_MESSAGE_TYPE(ech_out.typeEtc), ech_out.tag,
 		    ntohl(((EtherControlRead *)m_request.payload)->address), delayms);
-	  while (m_socket->receive(recvFrame, length, delayms, addr, m_error)) {
+	  while (m_socket->receive(recvFrame, length, delayms, l_addr, m_error)) {
 	    EtherControlHeader &ech_in =  *(EtherControlHeader *)(recvFrame.payload);
 	    if (length < (unsigned)(ntohs(ech_in.length)) + 2)
 	      ocpiBad("Ethernet control packet too short: got %zu, while expecting at least %u",
 		      length, ntohs(ech_in.length) + 2);
 	    ocpiDebug("response received from %s %x %x tag %u",
-		      addr.pretty(), ech_in.length, ech_in.typeEtc, ech_in.tag);
+		      l_addr.pretty(), ech_in.length, ech_in.typeEtc, ech_in.tag);
 	    if (OCCP_ETHER_MESSAGE_TYPE(ech_in.typeEtc) != OCCP_RESPONSE)
 	      ocpiBad("Ethernet control packet from %s not a response, ignored: typeEtc 0x%x",
-		      addr.pretty(), ech_in.typeEtc);
+		      l_addr.pretty(), ech_in.typeEtc);
 	    else if (ech_in.tag != ech_out.tag)
 	      ocpiInfo("Ethernet control packet from %s has extraneous tag %u, expecting %u, ignored",
-		       addr.pretty(),
+		       l_addr.pretty(),
 		       ech_in.tag, ech_out.tag);
 	    else if ((response = OCCP_ETHER_RESPONSE(ech_in.typeEtc)) == OK)
 	      return;
 	    else {
 	      ocpiInfo("Ethernet control packet from %s got non-OK response: %u",
-		       addr.pretty(), response);
+		       l_addr.pretty(), response);
 	      break;
 	    }
 	    if (!timer.expired())
@@ -407,8 +408,8 @@ namespace OCPI {
 	       std::string &error) {
 	error.clear();
 	unsigned count = 0;
-	OE::Socket *s;
 	if (devAddr.isEther()) {
+	  OE::Socket *s;
 	  if ((s = findSocket(ifc, discovery, error)))
 	    return trySocket(ifc, *s, devAddr, discovery, exclude, macs, dev, error); 
 	  // not "ocpiBad" due to needing sudo for bare sockets without a driver

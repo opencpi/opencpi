@@ -35,9 +35,10 @@ namespace OCPI {
     static const unsigned DEFAULT_TIMEOUT = 16;
 
     WciControl::
-    WciControl(Device &device, const char *impl, const char *inst, unsigned index, bool hasControl)
+    WciControl(Device &device, const char *impl, const char *inst, unsigned a_index,
+	       bool hasControl)
       : m_implName(impl), m_instName(inst), m_hasControl(hasControl), m_timeout(DEFAULT_TIMEOUT),
-	m_device(device), m_occpIndex(index)
+	m_device(device), m_occpIndex(a_index)
     {
       init(false, true);
     }

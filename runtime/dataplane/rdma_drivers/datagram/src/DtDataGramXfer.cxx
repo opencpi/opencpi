@@ -58,19 +58,19 @@ namespace DataTransfer {
   static const unsigned MAX_FRAME_HISTORY = 0xff; 
 
   DatagramXferServices::
-  DatagramXferServices(SmemServices* source, SmemServices* target)
-    : XferServices(source, target),
+  DatagramXferServices(SmemServices *a_source, SmemServices *a_target)
+    : XferServices(a_source, a_target),
       m_freeFrames(FRAME_SEQ_MASK+1),m_frameSeq(1),m_frameSeqRecord(MAX_FRAME_HISTORY+1),
       m_msgTransactionRecord(MAX_TRANSACTION_HISTORY)
   {
-    createTemplate(static_cast<DatagramSmemServices *>(source),
-		   static_cast<DatagramSmemServices *>(target));
+    createTemplate(static_cast<DatagramSmemServices *>(a_source),
+		   static_cast<DatagramSmemServices *>(a_target));
     m_last_ack_send = fasttime_getticks(); // thanks valgrind...
   }
 
-  DatagramXferFactory::DatagramXferFactory(const char *name)
+  DatagramXferFactory::DatagramXferFactory(const char *a_name)
     throw ()
-    : XferFactory(name)
+    : XferFactory(a_name)
   {
     ocpiDebug("In DatagramXferFactory::DatagramXferFactory()");
   }

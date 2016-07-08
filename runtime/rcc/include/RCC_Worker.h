@@ -371,7 +371,7 @@ typedef struct {
    inline size_t length() const { return m_rccBuffer->length_; }
    RCCOpCode opCode() const { return m_rccBuffer->opCode_; }
    // For output buffers
-   void setLength(size_t length) { m_rccBuffer->length_ = length; }
+   void setLength(size_t a_length) { m_rccBuffer->length_ = a_length; }
    void setOpCode(RCCOpCode op) {m_rccBuffer->opCode_ = op; }
    void setInfo(RCCOpCode op, size_t len) {
      setOpCode(op);
@@ -420,8 +420,8 @@ typedef struct {
    RCCPortOperation(RCCUserPort &p, unsigned op) : m_port(p), m_op(op), m_buffer(&p) {}
    inline void setRccBuffer(RCCBuffer *b) { m_buffer->setRccBuffer(b); };
    inline RCCBuffer *getRccBuffer() const { return m_buffer->getRccBuffer(); }
-   inline void *getArgAddress(unsigned arg, size_t *length) const {
-     return m_port.getArgAddress(*m_buffer, m_op, arg, length);
+   inline void *getArgAddress(unsigned arg, size_t *a_length) const {
+     return m_port.getArgAddress(*m_buffer, m_op, arg, a_length);
    }
  public:
    inline void * data() const { return m_buffer->data(); }
@@ -430,9 +430,9 @@ typedef struct {
    inline size_t length() const { return m_buffer->length(); }
    inline RCCOpCode opCode() const  { return m_buffer->opCode(); };
    // For output buffers
-   inline void setLength(size_t length) {
-     m_port.checkLength(length);
-     m_buffer->setLength(length);
+   inline void setLength(size_t a_length) {
+     m_port.checkLength(a_length);
+     m_buffer->setLength(a_length);
    }
    inline void setOpCode(RCCOpCode op) { m_buffer->setOpCode(op); }
    inline void setInfo(RCCOpCode op, size_t len) { m_buffer->setInfo(op, len); }

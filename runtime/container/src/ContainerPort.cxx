@@ -45,12 +45,12 @@ namespace OCPI {
     namespace OD = OCPI::DataTransport;
     using namespace OCPI::RDT;
 
-    PortData::PortData(const OU::Port &mPort, bool isProvider, unsigned xferOptions,
+    PortData::PortData(const OU::Port &mPort, bool a_isProvider, unsigned xferOptions,
 		       const OU::PValue *params, PortConnectionDesc *desc)
-      : m_ordinal(mPort.m_ordinal), m_isProvider(isProvider), m_connectionData(desc)
+      : m_ordinal(mPort.m_ordinal), m_isProvider(a_isProvider), m_connectionData(desc)
     {
       Descriptors &d = getData().data;
-      d.type = isProvider ? ConsumerDescT : ProducerDescT;
+      d.type = m_isProvider ? ConsumerDescT : ProducerDescT;
       d.role = NoRole;
       d.options = xferOptions;
       bzero((void *)&d.desc, sizeof(d.desc));
@@ -110,9 +110,9 @@ namespace OCPI {
       }
     }
 
-    BasicPort::BasicPort(const OU::Port & metaData, bool isProvider, unsigned options,
+    BasicPort::BasicPort(const OU::Port & metaData, bool a_isProvider, unsigned options,
 			 OS::Mutex &mutex, const OU::PValue *params, PortConnectionDesc *desc)
-      : PortData(metaData, isProvider, options, params, desc), OU::SelfRefMutex(mutex),
+      : PortData(metaData, a_isProvider, options, params, desc), OU::SelfRefMutex(mutex),
 	myDesc(getData().data.desc), m_metaPort(metaData)
     {
     }
@@ -138,10 +138,10 @@ namespace OCPI {
 
     // This base class constructor for generic initialization
     // FIXME: parse buffer count here at least? (check that others don't do it).
-    Port::Port(Container &container, const OU::Port &mPort, bool isProvider,
+    Port::Port(Container &a_container, const OU::Port &mPort, bool a_isProvider,
 	       unsigned xferOptions, const OU::PValue *params, PortConnectionDesc *desc) :
-      BasicPort(mPort, isProvider, xferOptions, container, params, desc),
-      m_container(container), m_canBeExternal(true)
+      BasicPort(mPort, a_isProvider, xferOptions, a_container, params, desc),
+      m_container(a_container), m_canBeExternal(true)
     {
     }
 
@@ -149,8 +149,8 @@ namespace OCPI {
 
     void Port::loopback(OA::Port &) {}
 
-    bool Port::hasName(const char *name) {
-      return (name == m_metaPort.m_name );
+    bool Port::hasName(const char *a_name) {
+      return (a_name == m_metaPort.m_name );
     }
 
     // The default behavior is that there is nothing special to do between
@@ -702,52 +702,53 @@ namespace OCPI {
     }
     // Producer or consumer
     ExternalPort::
-    ExternalPort(Port &port, bool isProvider, const OU::PValue *extParams, 
+    ExternalPort(Port &workerPort, bool a_isProvider, const OU::PValue *extParams, 
 		 const OU::PValue *portParams)
       // FIXME: push the xfer options down to the lower layers
-      : BasicPort(port.metaPort(), isProvider,
+      : BasicPort(workerPort.metaPort(), a_isProvider,
 		  (1 << OCPI::RDT::ActiveFlowControl) |
-		  (1 << OCPI::RDT::ActiveMessage), port, extParams),
+		  (1 << OCPI::RDT::ActiveMessage), workerPort, extParams),
 	m_dtPort(NULL)
     {
-      const char *preferred = port.getPreferredProtocol();
+      const char *preferred = workerPort.getPreferredProtocol();
       OU::PValue *newExtParams, *newPortParams;
       // Grab any connection parameters from both param lists to both lists.
       // I.e. ensure that any connection parameters are on both lists.
       mergeConnectParams(portParams, preferred, extParams, newExtParams);
       mergeConnectParams(extParams, preferred, portParams, newPortParams);
-      if (isProvider) {
+      if (a_isProvider) {
 	// Create the DT input port which is the basis for this external port
 	// Apply our params to the basic port
 	applyConnectParams(NULL, extParams);
 	// Create the DT port using our merged params
-	m_dtPort = port.container().getTransport().createInputPort(getData().data, extParams);
+	m_dtPort = workerPort.container().getTransport().createInputPort(getData().data, extParams);
 	// Start the connection process on the worker port
-	if (port.isLocal()) {
-	  port.applyConnectParams(NULL, portParams); 
-	  port.determineRoles(getData().data);
-	  port.localConnect(*m_dtPort);
+	if (workerPort.isLocal()) {
+	  workerPort.applyConnectParams(NULL, portParams); 
+	  workerPort.determineRoles(getData().data);
+	  workerPort.localConnect(*m_dtPort);
 	} else {
-	  port.applyConnectParams(&getData().data, portParams);
-	  port.determineRoles(getData().data);
+	  workerPort.applyConnectParams(&getData().data, portParams);
+	  workerPort.determineRoles(getData().data);
 	}
 	// Finalize the worker's output port, getting back the flow control descriptor
 	Descriptors feedback;
-	const Descriptors *outDesc = port.finishConnect(getData().data, feedback);
+	const Descriptors *outDesc = workerPort.finishConnect(getData().data, feedback);
 	if (outDesc)
 	  m_dtPort->finalize(*outDesc, getData().data);
       } else {
-	port.applyConnectParams(NULL, portParams);
-	if (port.isLocal())
-	  m_dtPort = port.container().getTransport().
-	    createOutputPort(getData().data, port.dtPort());
+	workerPort.applyConnectParams(NULL, portParams);
+	if (workerPort.isLocal())
+	  m_dtPort = workerPort.container().getTransport().
+	    createOutputPort(getData().data, workerPort.dtPort());
 	else
-	  m_dtPort = port.container().getTransport().
-	    createOutputPort(getData().data, port.getData().data);
-	port.determineRoles(getData().data);
+	  m_dtPort = workerPort.container().getTransport().
+	    createOutputPort(getData().data, workerPort.getData().data);
+	workerPort.determineRoles(getData().data);
 	Descriptors localShadowPort, feedback;
-	const Descriptors *outDesc = m_dtPort->finalize(port.getData().data, getData().data, &localShadowPort);
-	ocpiCheck(!port.finishConnect(*outDesc, feedback));
+	const Descriptors *outDesc = m_dtPort->finalize(workerPort.getData().data,
+							getData().data, &localShadowPort);
+	ocpiCheck(!workerPort.finishConnect(*outDesc, feedback));
       }
       m_lastBuffer.m_dtPort = m_dtPort;
       delete [] newExtParams;

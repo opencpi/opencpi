@@ -164,8 +164,8 @@ class Device
     uint8_t *data;             // data pointer associated with request
     OS::Semaphore sem;         // handshake with requester
     std::string error;
-    Request(bool read, uint64_t address, size_t length, uint8_t *data)
-      : header(read, address, length), data(data), sem(0) {
+    Request(bool read, uint64_t address, size_t length, uint8_t *a_data)
+      : header(read, address, length), data(a_data), sem(0) {
     }
   };
   std::queue<Request*, std::list<Request*> > m_respQueue;
@@ -197,17 +197,17 @@ protected:
   /*
     Server:
   */
-  Device(const std::string &name, const std::string &simDir, const std::string &platform,
+  Device(const std::string &a_name, const std::string &simDir, const std::string &a_platform,
 	 const std::string &script, uint8_t spinCount, unsigned sleepUsecs,
 	 unsigned simTicks, bool verbose, bool dump, std::string &error)
-    : OH::Device("lsim:" + name, "ocpi-socket-rdma"),
+    : OH::Device("lsim:" + a_name, "ocpi-socket-rdma"),
       m_state(EMULATING),
       m_req(simDir + "/request", false, NULL, error),
       m_resp(simDir + "/response", true, NULL, error),
       m_ctl(simDir + "/control", false, NULL, error),
       m_ack(simDir + "/ack", false, NULL, error),
       m_maxFd(-1), m_pid(0), m_exited(false), m_dcp(0), m_respLeft(0), m_simDir(simDir),
-      m_platform(platform), m_script(script), m_verbose(verbose), m_dump(dump),
+      m_platform(a_platform), m_script(script), m_verbose(verbose), m_dump(dump),
       m_spinning(false), m_sleepUsecs(sleepUsecs), m_simTicks(simTicks), m_spinCount(spinCount),
       m_cumTicks(0), /* m_metadata(NULL), m_xml(NULL),*/ m_firstRun(true), m_lastTicks(0) {
     if (error.length())
@@ -545,10 +545,10 @@ protected:
 	}
       } else {
 	myassert(!m_respQueue.empty());
-	Request &request = *m_respQueue.front();
-	if (request.header.endRequest(h, m_resp.m_rfd, request.data, error))
+	Request &r = *m_respQueue.front();
+	if (r.header.endRequest(h, m_resp.m_rfd, r.data, error))
 	  return true;
-	request.sem.post();
+	r.sem.post();
 	m_respQueue.pop();
       }
       return false;
@@ -704,7 +704,7 @@ private:
       FD_SET(fd, &m_alwaysSet);
   }
   void
-  initAdmin(OH::OccpAdminRegisters &admin, const char *platform, HdlUUID &hdlUuid,
+  initAdmin(OH::OccpAdminRegisters &admin, const char *a_platform, HdlUUID &hdlUuid,
 	    OU::UuidString *uuidString) {
     memset(&admin, 0, sizeof(admin));
 #define unconst32(a) (*(uint32_t *)&(a))
@@ -728,16 +728,16 @@ private:
     unconst64(admin.attention) = 1;
     unconst32(admin.numRegions) = 1;
     unconst32(admin.regions[0]) = 0;
-    OU::Uuid uuid;
-    OU::generateUuid(uuid);
+    OU::Uuid l_uuid;
+    OU::generateUuid(l_uuid);
     if (uuidString) {
-      OU::uuid2string(uuid, *uuidString);
+      OU::uuid2string(l_uuid, *uuidString);
       ocpiDebug("Emulator UUID: %s", *uuidString);
     }
     OH::HdlUUID temp;
     temp.birthday = OCPI_UTRUNCATE(uint32_t, time(0) + 1);
-    memcpy(temp.uuid, uuid, sizeof(uuid));
-    strcpy(temp.platform, platform);
+    memcpy(temp.uuid, l_uuid, sizeof(l_uuid));
+    strcpy(temp.platform, a_platform);
     strcpy(temp.device, "devemu");
     strcpy(temp.load, "ld");
     strcpy(temp.dna, "\001\002\003\004\005\006\007");
@@ -819,20 +819,20 @@ public:
     if (!xname || strcasecmp("artifact", xname))
       throwit("invalid metadata in binary/artifact file \"%s\": no <artifact/>", m_exec.c_str());
 #endif
-    std::string platform;
+    std::string l_platform;
     const char *e;
-    if ((e = OX::getRequiredString(art.xml(), platform, "platform", "artifact")))
+    if ((e = OX::getRequiredString(art.xml(), l_platform, "platform", "artifact")))
       throwit("invalid metadata in binary/artifact file \"%s\": %s", m_exec.c_str(), e);
-    if (!strcmp("_pf", platform.c_str() + platform.length() - 3))
-      platform.resize(platform.length() - 3);
-    if (platform != m_platform)
+    if (!strcmp("_pf", l_platform.c_str() + l_platform.length() - 3))
+      l_platform.resize(l_platform.length() - 3);
+    if (l_platform != m_platform)
       throwit("simulator platform mismatch:  executable (%s) has '%s', we are '%s'",
-	      m_exec.c_str(), platform.c_str(), m_platform.c_str());
-    std::string uuid;
-    e = OX::getRequiredString(art.xml(), uuid, "uuid", "artifact");
+	      m_exec.c_str(), l_platform.c_str(), m_platform.c_str());
+    std::string l_uuid;
+    e = OX::getRequiredString(art.xml(), l_uuid, "uuid", "artifact");
     if (e)
       throwit("invalid metadata in binary/artifact file \"%s\": %s", m_exec.c_str(), e);
-    ocpiInfo("Bitstream %s has uuid %s", m_exec.c_str(), uuid.c_str());
+    ocpiInfo("Bitstream %s has uuid %s", m_exec.c_str(), l_uuid.c_str());
     std::string untar;
     OU::format(untar,
 	       "set -e; file=%s; "

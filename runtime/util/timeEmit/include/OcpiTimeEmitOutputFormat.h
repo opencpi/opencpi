@@ -93,16 +93,16 @@ namespace OCPI {
 		e.svalue = buf;
 		
 		switch (type ) {
-		case OCPI::Time::Emit::u:
+		case OCPI::Time::Emit::DT_u:
 		  e.v.uvalue = strtoul( e.svalue.c_str(), NULL,0 );
 		  break;
-		case OCPI::Time::Emit::i:
+		case OCPI::Time::Emit::DT_i:
 		  e.v.ivalue = strtol( e.svalue.c_str(),NULL,0 );
 		  break;
-		case OCPI::Time::Emit::c:
+		case OCPI::Time::Emit::DT_c:
 		  e.v.cvalue = (char*)e.svalue.c_str();
 		  break;
-		case OCPI::Time::Emit::d:
+		case OCPI::Time::Emit::DT_d:
 		  e.v.dvalue = strtod( e.svalue.c_str(),NULL );
 		  break;
 		}
@@ -734,9 +734,9 @@ namespace OCPI {
 		  tld.values += "b";
 		  XMLReader::Description & emap = m_xml_reader.getDescription( (*it).hdr.eid ) ;
 		  switch ( emap.dtype ) {
-		  case OCPI::Time::Emit::u:
-		  case OCPI::Time::Emit::i:
-		  case OCPI::Time::Emit::d:
+		  case OCPI::Time::Emit::DT_u:
+		  case OCPI::Time::Emit::DT_i:
+		  case OCPI::Time::Emit::DT_d:
 		    {
 		      uint32_t* ui = reinterpret_cast<uint32_t*>(&(*it).v.uvalue);
 		      ui++;
@@ -750,7 +750,7 @@ namespace OCPI {
 		      tld.values += " ";
 		      tld.values +=  varsyms[(*it).hdr.eid] + xowner.postfix.c_str() + "\n";
 		    }
-		  case OCPI::Time::Emit::c:  // Not handled in GTKwave
+		  case OCPI::Time::Emit::DT_c:  // Not handled in GTKwave
 		    break;
 		  }
 		}

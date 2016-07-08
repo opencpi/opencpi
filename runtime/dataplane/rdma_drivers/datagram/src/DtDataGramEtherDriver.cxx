@@ -67,8 +67,8 @@ namespace DataTransfer {
       friend class DatagramSocket;
       friend class DatagramXferFactory;
     protected:
-      DatagramEndPoint( std::string& endpoint, bool local, uint32_t size=0)
-	: EndPoint(endpoint, size, local) { 
+      DatagramEndPoint( std::string& endpoint, bool a_local, uint32_t a_size=0)
+	: EndPoint(endpoint, a_size, a_local) { 
 	const char *error = NULL;
 	size_t len = strlen(OCPI_ETHER_RDMA);
 	const char *ep = endpoint.c_str();

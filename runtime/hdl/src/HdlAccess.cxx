@@ -31,10 +31,10 @@ namespace OCPI {
     namespace OU = OCPI::Util;
 
     Access::
-    Access(volatile uint8_t *registers,  Accessor *accessor, RegisterOffset base)
+    Access(volatile uint8_t *a_registers,  Accessor *accessor, RegisterOffset base)
     //,  volatile uint8_t *buffers)
       : m_accessor(NULL), m_child(false) {
-      setAccess(registers, accessor, base); //, buffers);
+      setAccess(a_registers, accessor, base); //, buffers);
     }
     // Take the content and ownership away from the other access structure
     Access::
@@ -48,12 +48,12 @@ namespace OCPI {
     }
 
     void Access::
-    setAccess(volatile uint8_t *registers,  Accessor *accessor,
+    setAccess(volatile uint8_t *a_registers,  Accessor *accessor,
 	      RegisterOffset base, bool child) {
       if (!m_child)
 	delete m_accessor;
       m_child = child;
-      m_registers = registers;
+      m_registers = a_registers;
       m_accessor = accessor;
       m_base = OCPI_UTRUNCATE(DtOsDataTypes::Offset, base);
       //      m_buffers = buffers;

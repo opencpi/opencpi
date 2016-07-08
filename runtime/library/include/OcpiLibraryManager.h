@@ -288,8 +288,8 @@ namespace OCPI {
       public Artifact
     {
     protected:
-      ArtifactBase<Lib, Art>(Lib &lib, Art &art, const char *name)
-      : OCPI::Util::Child<Lib,Art>(lib, art, name)
+      ArtifactBase<Lib, Art>(Lib &lib, Art &art, const char *a_name)
+      : OCPI::Util::Child<Lib,Art>(lib, art, a_name)
       {}
     public:
       inline Artifact *nextArtifact() {

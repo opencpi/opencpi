@@ -223,8 +223,8 @@ namespace OCPI {
 
     class Application : public OC::ApplicationBase<Container, Application, Worker> {
       friend class Container;
-      Application(Container &con, const char *name, const OA::PValue *props) 
-	: OC::ApplicationBase<Container, Application, Worker>(con, *this, name, props)
+      Application(Container &con, const char *a_name, const OA::PValue *props) 
+	: OC::ApplicationBase<Container, Application, Worker>(con, *this, a_name, props)
       {}
       OC::Worker & createWorker(OC::Artifact *art, const char *appInstName, ezxml_t impl,
 				ezxml_t inst, OC::Worker *slave, bool hasMaster,
@@ -232,9 +232,9 @@ namespace OCPI {
     };
 
     OA::ContainerApplication *Container::
-    createApplication(const char *name, const OCPI::Util::PValue *props)
+    createApplication(const char *a_name, const OCPI::Util::PValue *props)
       throw ( OCPI::Util::EmbeddedException ) {
-      return new Application(*this, name, props);
+      return new Application(*this, a_name, props);
     };
     class Port;
     class Worker : public OC::WorkerBase<Application, Worker, Port>, public WciControl {
@@ -242,10 +242,11 @@ namespace OCPI {
       friend class Port;
       friend class ExternalPort;
       Container &m_container;
-      Worker(Application &app, OC::Artifact *art, const char *name, ezxml_t implXml,
-	     ezxml_t instXml, OC::Worker *slave, bool hasMaster, const OA::PValue* execParams) :
-        OC::WorkerBase<Application, Worker, Port>(app, *this, art, name, implXml, instXml, slave,
-						  hasMaster, execParams),
+      Worker(Application &app, OC::Artifact *art, const char *a_name, ezxml_t implXml,
+	     ezxml_t instXml, OC::Worker *a_slave, bool a_hasMaster,
+	     const OA::PValue* execParams) :
+        OC::WorkerBase<Application, Worker, Port>(app, *this, art, a_name, implXml, instXml,
+						  a_slave, a_hasMaster, execParams),
         WciControl(app.parent().hdlDevice(), implXml, instXml, properties()),
         m_container(app.parent())
       {
@@ -793,10 +794,10 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
 		  ezxml_t c;
 		  for (c = ezxml_cchild(myXml()->parent, "connection"); c; c = ezxml_next(c)) {
 		    const char
-		      *from = ezxml_cattr(c,"from"), // instance with user port
-		      *to = ezxml_cattr(c,"to");     // instance with provider port
-		    if ((!strcasecmp(from, iciName) && !strcasecmp(to, adName)) ||
-			(!strcasecmp(to, iciName) && !strcasecmp(from, adName)))
+		      *cfrom = ezxml_cattr(c,"from"), // instance with user port
+		      *cto = ezxml_cattr(c,"to");     // instance with provider port
+		    if ((!strcasecmp(cfrom, iciName) && !strcasecmp(cto, adName)) ||
+			(!strcasecmp(cto, iciName) && !strcasecmp(cfrom, adName)))
 		      break;
 		  }
 		  if (c)
@@ -857,16 +858,17 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
     class ExternalPort : public OC::ExternalPortBase<Port,ExternalPort> {
       friend class Port;
     protected:
-      ExternalPort(Port &port, const char *name, bool isProvider,
+      ExternalPort(Port &port, const char *a_name, bool a_isProvider,
 		   const OA::PValue *extParams, const OA::PValue *connParams) :
-        OC::ExternalPortBase<Port,ExternalPort>(port, *this, name, extParams, connParams, isProvider) {
+        OC::ExternalPortBase<Port,ExternalPort>(port, *this, a_name, extParams, connParams,
+						a_isProvider) {
       }
     public:
       virtual ~ExternalPort() {}
     };
-    OC::ExternalPort &Port::createExternal(const char *extName, bool isProvider,
+    OC::ExternalPort &Port::createExternal(const char *extName, bool a_isProvider,
 					       const OU::PValue *extParams, const OU::PValue *connParams) {
-      return *new ExternalPort(*this, extName, isProvider, extParams, connParams);
+      return *new ExternalPort(*this, extName, a_isProvider, extParams, connParams);
     }
   }
 }

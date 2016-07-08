@@ -22,9 +22,9 @@ namespace OCPI {
   namespace Application {
 
     Server::
-    Server(bool verbose, bool discoverable, OCPI::Library::Library &library, uint16_t port,
+    Server(bool verbose, bool discoverable, OCPI::Library::Library &a_library, uint16_t port,
 	   bool remove, std::string &error)
-      : m_library(library), m_verbose(verbose), m_remove(remove), m_disc(NULL),
+      : m_library(a_library), m_verbose(verbose), m_remove(remove), m_disc(NULL),
 	m_maxFd(-1), m_sleepUsecs(1000000) {
       if (!error.empty())
 	return;

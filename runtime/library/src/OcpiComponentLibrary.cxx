@@ -29,12 +29,12 @@ namespace OCPI {
 	: public OL::ArtifactBase<Library, Artifact> {
 	friend class Library;
       public:
-	Artifact(Library &lib, const char *name, char *metadata, std::time_t mtime,
-		 uint64_t length, const OA::PValue *)
-	  : ArtifactBase<Library,Artifact>(lib, *this, name) {
-	  const char *err = setFileMetadata(name, metadata, mtime, length);
+	Artifact(Library &lib, const char *a_name, char *metadata, std::time_t a_mtime,
+		 uint64_t a_length, const OA::PValue *)
+	  : ArtifactBase<Library,Artifact>(lib, *this, a_name) {
+	  const char *err = setFileMetadata(a_name, metadata, a_mtime, a_length);
 	  if (err)
-	    throw OU::Error("Error processing metadata from artifact file: %s: %s", name, err);
+	    throw OU::Error("Error processing metadata from artifact file: %s: %s", a_name, err);
 	}
       };
 	  
@@ -44,8 +44,8 @@ namespace OCPI {
       class Library : public OL::LibraryBase<Driver, Library, Artifact> {
 	std::set<OS::FileSystem::FileId> m_file_ids; // unordered set cxx11 is better
 	friend class Driver;
-	Library(const char *name)
-	  : OL::LibraryBase<Driver,Library,Artifact>(*this, name) {
+	Library(const char *a_name)
+	  : OL::LibraryBase<Driver,Library,Artifact>(*this, a_name) {
 	}
 
 	public:
@@ -67,29 +67,29 @@ namespace OCPI {
 	  return a;
 	}
       private:
-	void doPath(const std::string &libName) {
+	void doPath(const std::string &a_libName) {
 	  //	  ocpiDebug("Processing library path: %s", libName.c_str());
 	  bool isDir;
 	  OS::FileSystem::FileId file_id; 
-	  if (!OS::FileSystem::exists(libName, &isDir, NULL, NULL, &file_id))
+	  if (!OS::FileSystem::exists(a_libName, &isDir, NULL, NULL, &file_id))
 	    ocpiInfo("Path name found in OCPI_LIBRARY_PATH, \"%s\", "
 		     "is nonexistent, not a normal file, or a broken link.  It will be ignored",
-		     libName.c_str());
+		     a_libName.c_str());
 	  else if (m_file_ids.insert(file_id).second) {
 	    // New id was inserted, and thus was not already there
 	    if (isDir) {
-	      OS::FileIterator dir(libName, "*");
+	      OS::FileIterator dir(a_libName, "*");
 	      for (; !dir.end(); dir.next())
-		doPath(OS::FileSystem::joinNames(libName, dir.relativeName()));
+		doPath(OS::FileSystem::joinNames(a_libName, dir.relativeName()));
 	    } else {
-	      const char *name = libName.c_str();
-	      size_t len = strlen(name), xlen = strlen(".xml");
+	      const char *l_name = a_libName.c_str();
+	      size_t len = strlen(l_name), xlen = strlen(".xml");
 	  
-	      if (len < xlen || strcasecmp(name + len - xlen, ".xml")) {
+	      if (len < xlen || strcasecmp(l_name + len - xlen, ".xml")) {
 		// FIXME: supply library level xml for the artifact
 		// The log will show which files are not any good.
 		try {
-		  addArtifact(name, NULL);
+		  addArtifact(l_name, NULL);
 		} catch (...) {}
 	      }
 	    }

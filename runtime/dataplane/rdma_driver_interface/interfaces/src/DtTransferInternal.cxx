@@ -385,8 +385,8 @@ void XferFactoryManager::shutdown()
   }
 
 XferFactory::
-XferFactory(const char *name)
-  : OD::DriverType<XferFactoryManager,XferFactory>(name, *this)
+XferFactory(const char *a_name)
+  : OD::DriverType<XferFactoryManager,XferFactory>(a_name, *this)
 {
 }
 
@@ -920,8 +920,8 @@ void XferRequest::action_transfer(PIO_transfer pio_transfer) {
   xfer_pio_action_transfer(pio_transfer);
 }
 void XferRequest::start_pio(PIO_transfer pio_transfer) {
-  for (PIO_transfer transfer = pio_transfer; transfer; transfer = transfer->next)
-    action_transfer(transfer);
+  for (PIO_transfer t = pio_transfer; t; t = t->next)
+    action_transfer(t);
 }
 void XferRequest::post() {
   

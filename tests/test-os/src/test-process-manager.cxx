@@ -252,7 +252,7 @@ namespace
 
   void TestOcpiOsProcessManager::SetUp ( )
   {
-    std::string d_argv0 ( "testProcessManagerInt" );
+    d_argv0 = "testProcessManagerInt";
     d_perform_test = false;
   }
 

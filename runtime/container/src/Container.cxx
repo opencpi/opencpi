@@ -46,10 +46,11 @@ namespace OL = OCPI::Library;
 namespace OCPI {
   namespace Container {
 
-    Container::Container(const char *name, const ezxml_t config, const OCPI::Util::PValue *params)
+    Container::Container(const char *a_name, const ezxml_t config,
+			 const OCPI::Util::PValue *params)
       throw ( OU::EmbeddedException )
       : //m_ourUID(mkUID()),
-      OCPI::Time::Emit("Container", name ),
+      OCPI::Time::Emit("Container", a_name ),
       m_enabled(false), m_ownThread(true), m_verbose(false), m_thread(NULL),
       m_transport(*new OCPI::DataTransport::Transport(&Manager::getTransportGlobal(params), false, this))
     {

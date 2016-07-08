@@ -59,8 +59,8 @@ namespace OCPI {
     MessageCircuit::
     MessageCircuit(Transport &transport,
 		   //		   OS::Mutex &mutex,
-		   const char *localEndpoint,
-		   const char *remoteEndpoint,
+		   const char *a_localEndpoint,
+		   const char *a_remoteEndpoint,
 		   uint32_t bufferSize,
 		   const char *protocol,
 		   OS::Timer *timer)
@@ -68,8 +68,8 @@ namespace OCPI {
 	m_rcv_port(NULL), m_send_port(NULL)
     {
       DataTransfer::EndPoint
-	&local = transport.getLocalEndpoint(localEndpoint),
-	&remote = transport.addRemoteEndPoint(remoteEndpoint);
+	&local = transport.getLocalEndpoint(a_localEndpoint),
+	&remote = transport.addRemoteEndPoint(a_remoteEndpoint);
 
       Circuit &send = makeCircuit(local, remote, true, protocol, timer);
       try {

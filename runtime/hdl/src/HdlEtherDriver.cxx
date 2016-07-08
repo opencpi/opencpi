@@ -44,9 +44,9 @@ namespace OCPI {
 	: public OCPI::HDL::Net::Device {
 	friend class Driver;
       protected:
-	Device(Driver &driver, OS::Ether::Interface &ifc, std::string &name,
-	       OE::Address &addr, bool discovery, std::string &error)
-	  : Net::Device(driver, ifc, name, addr, discovery, "ocpi-ether-rdma", 0,
+	Device(Driver &driver, OS::Ether::Interface &ifc, std::string &a_name,
+	       OE::Address &a_addr, bool discovery, std::string &error)
+	  : Net::Device(driver, ifc, a_name, a_addr, discovery, "ocpi-ether-rdma", 0,
 			(uint64_t)1 << 32, ((uint64_t)1 << 32) - sizeof(OccpSpace), 0, error) {
 	}
       public:

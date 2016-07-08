@@ -182,8 +182,8 @@ namespace DataTransfer {
     struct  EndPoint : public DataTransfer::EndPoint 
     {
       // Constructors
-      EndPoint( std::string & ep, bool local )
-	: DataTransfer::EndPoint( ep, 0, local ),m_port(1)
+      EndPoint( std::string & ep, bool a_local )
+	: DataTransfer::EndPoint( ep, 0, a_local ),m_port(1)
       {
 	parse(ep);
 	m_psn = mailbox;
@@ -370,19 +370,19 @@ namespace DataTransfer {
       ibv_device       * m_dev;     
       ibv_device_attr    m_device_attribute;
       
-      Device(const char* name)
-	: DataTransfer::DeviceBase<XferFactory,Device>(name, *this)
+      Device(const char *a_name)
+	: DataTransfer::DeviceBase<XferFactory,Device>(a_name, *this)
       {
-	m_dev = find( name );
+	m_dev = find( a_name );
 	if ( ! m_dev ) {
-	  fprintf(stderr, "OFED::Device ERROR: OFED device not found (%s)\n", name );
-	  throw DataTransfer::DataTransferEx( DEV_NOT_FOUND, name );
+	  fprintf(stderr, "OFED::Device ERROR: OFED device not found (%s)\n", a_name );
+	  throw DataTransfer::DataTransferEx( DEV_NOT_FOUND, a_name );
 	}
 	m_context = ibv_open_device(m_dev);
 	if (!m_context) {
 	  fprintf(stderr, "OFED::Device ERROR: Couldn't get context for %s\n",
 		  ibv_get_device_name(m_dev));
-	  throw DataTransfer::DataTransferEx( COULD_NOT_OPEN_DEVICE, name );
+	  throw DataTransfer::DataTransferEx( COULD_NOT_OPEN_DEVICE, a_name );
 	}
 	m_pd = ibv_alloc_pd(m_context);
 	if (! m_pd ) {
@@ -1083,11 +1083,12 @@ namespace DataTransfer {
     }
 
     XferServices::
-    XferServices(DataTransfer::SmemServices* source, DataTransfer::SmemServices* target)
-      : DataTransfer::ConnectionBase<XferFactory,XferServices,XferRequest>(*this, source,target),
+    XferServices(DataTransfer::SmemServices *a_source, DataTransfer::SmemServices *a_target)
+      : DataTransfer::ConnectionBase<XferFactory,XferServices,XferRequest>(*this, a_source,
+									   a_target),
 	m_finalized(false), m_post_count(0),m_cq_count(0)
     {
-      createTemplate( source, target);
+      createTemplate(a_source, a_target);
     }
 
     DataTransfer::XferRequest* 

@@ -51,8 +51,8 @@ namespace OCPI {
 
     class XferFactory;
     class Device : public DT::DeviceBase<XferFactory,Device> {
-      Device(const char *name)
-	: DataTransfer::DeviceBase<XferFactory,Device>(name, *this) {}
+      Device(const char *a_name)
+	: DataTransfer::DeviceBase<XferFactory,Device>(a_name, *this) {}
     };
 
     class SmemServices;
@@ -64,8 +64,8 @@ namespace OCPI {
       uint64_t m_busAddr;
       uint64_t m_topPhys; // physical address of region after the hole
     public:
-      EndPoint( std::string& ep, bool local)
-        : DT::EndPoint(ep, 0, local) {
+      EndPoint( std::string& ep, bool a_local)
+        : DT::EndPoint(ep, 0, a_local) {
 	if (sscanf(ep.c_str(), EPNAME ":%" SCNx64 ".%" SCNx32 ".%" SCNx32 ";",
 		   &m_busAddr, &m_holeOffset, &m_holeEnd) != 3)
 	  throw OU::Error("Invalid format for DMA endpoint: %s", ep.c_str());
@@ -112,14 +112,14 @@ namespace OCPI {
 	  throw OU::Error("cannot open /dev/mem for DMA (Use sudo or load the driver)");
 	else {
 	  m_usingKernelDriver = false;
-	  const char *dma = getenv("OCPI_DMA_MEMORY");
-	  if (!dma)
+	  const char *dmaMemory = getenv("OCPI_DMA_MEMORY");
+	  if (!dmaMemory)
 	    throw OU::Error("OCPI_DMA_MEMORY environment variable not set");
 	  unsigned sizeM, pagesize = getpagesize();
 	  uint64_t top;
-	  if (sscanf(dma, "%uM$0x%" SCNx64, &sizeM, &m_dmaBase) != 2)
+	  if (sscanf(dmaMemory, "%uM$0x%" SCNx64, &sizeM, &m_dmaBase) != 2)
 	    throw OU::Error("Bad format for OCPI_DMA_MEMORY environment variable: '%s'",
-			    dma);
+			    dmaMemory);
 	  ocpiDebug("DMA Memory:  %uM at 0x%" PRIx64, sizeM, m_dmaBase);
 	  unsigned dmaSize = sizeM * 1024 * 1024;
 	  top = m_dmaBase + dmaSize;

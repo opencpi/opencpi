@@ -171,8 +171,8 @@ class Worker
 class Application
   : public OC::ApplicationBase<Container,Application,Worker> {
   friend class Container;
-  Application(Container &c, const char *name, const OU::PValue *params)
-    : OC::ApplicationBase<Container,Application,Worker>(c, *this, name, params) {
+  Application(Container &c, const char *a_name, const OU::PValue *params)
+    : OC::ApplicationBase<Container,Application,Worker>(c, *this, a_name, params) {
   }
   virtual ~Application() {
   }
@@ -202,8 +202,8 @@ class Client
 protected:
   OS::Socket &m_socket;
   // Take ownership of the provided socket
-  Client(Driver &d, const char *name, OS::Socket &socket)
-    : OU::Child<Driver,Client,remote>(d, *this, name),
+  Client(Driver &d, const char *a_name, OS::Socket &socket)
+    : OU::Child<Driver,Client,remote>(d, *this, a_name),
       Launcher(socket),
       m_socket(socket)
   {
@@ -221,17 +221,17 @@ class Container
   : public OC::ContainerBase<Driver,Container,Application,Artifact> {
   Client &m_client;
 public:
-  Container(Client &client, const std::string &name,
-	    const char *model, const char *os, const char *osVersion, const char *platform,
-	    const char *dynamic, const OA::PValue* /*params*/)
+  Container(Client &client, const std::string &a_name,
+	    const char *a_model, const char *a_os, const char *a_osVersion,
+	    const char *a_platform, const char *a_dynamic, const OA::PValue* /*params*/)
     throw ( OU::EmbeddedException )
-    : OC::ContainerBase<Driver,Container,Application,Artifact>(*this, name.c_str()),
+    : OC::ContainerBase<Driver,Container,Application,Artifact>(*this, a_name.c_str()),
       m_client(client) {
-    m_model = model;
-    m_os = os;
-    m_osVersion = osVersion;
-    m_platform = platform;
-    OX::parseBool(dynamic, NULL, &m_dynamic);
+    m_model = a_model;
+    m_os = a_os;
+    m_osVersion = a_osVersion;
+    m_platform = a_platform;
+    OX::parseBool(a_dynamic, NULL, &m_dynamic);
   }
   virtual ~Container()
   throw () {
@@ -240,9 +240,9 @@ public:
     return m_client;
   }
   OA::ContainerApplication*
-  createApplication(const char *name, const OU::PValue *props)
+  createApplication(const char *a_name, const OU::PValue *props)
     throw (OU::EmbeddedException) {
-    return new Application(*this, name, props);
+    return new Application(*this, a_name, props);
   }
   bool needThread() { return false; }
   OC::Artifact &
@@ -252,11 +252,10 @@ public:
 };
 
 Worker::
-Worker(Application & app, Artifact *art, const char *name,
-       ezxml_t impl, ezxml_t inst, OC::Worker *slave, bool hasMaster, const OU::PValue *wParams,
-       unsigned remoteInstance)
-  : OC::WorkerBase<Application,Worker,Port>(app, *this, art, name, impl, inst, slave, hasMaster,
-					    wParams),
+Worker(Application & app, Artifact *art, const char *a_name, ezxml_t impl, ezxml_t inst,
+       OC::Worker *a_slave, bool a_hasMaster, const OU::PValue *wParams, unsigned remoteInstance)
+  : OC::WorkerBase<Application,Worker,Port>(app, *this, art, a_name, impl, inst, a_slave,
+					    a_hasMaster, wParams),
     m_remoteInstance(remoteInstance),
     m_launcher(*static_cast<Launcher *>(&app.parent().launcher())) {
   setControlMask(getControlMask() | (OU::Worker::OpInitialize|

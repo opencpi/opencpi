@@ -286,11 +286,11 @@ namespace OCPI {
 	public OCPI::Util::Parent<Ext>,
         public Port {
     protected:
-      PortBase<Wrk,Prt,Ext>(Wrk &worker, Prt &prt, const OCPI::Util::Port &mport,
-			    bool isProvider, unsigned xferOptions,
+      PortBase<Wrk,Prt,Ext>(Wrk &a_worker, Prt &prt, const OCPI::Util::Port &mport,
+			    bool a_isProvider, unsigned xferOptions,
 			    const OCPI::Util::PValue *params, PortConnectionDesc *desc = NULL)
-      : OCPI::Util::Child<Wrk,Prt,port>(worker, prt, mport.m_name.c_str()),
-	Port(worker.parent().container(), mport, isProvider, xferOptions, params, desc) {}
+      : OCPI::Util::Child<Wrk,Prt,port>(a_worker, prt, mport.m_name.c_str()),
+	Port(a_worker.parent().container(), mport, a_isProvider, xferOptions, params, desc) {}
       inline Worker &worker() const { return OCPI::Util::Child<Wrk,Prt,port>::parent(); }
     public:
       const std::string &name() const { return OCPI::Util::Child<Wrk,Prt,port>::name(); }
@@ -327,12 +327,12 @@ namespace OCPI {
       : public OCPI::Util::Child<Prt,Ext,externalPort>,
         public ExternalPort {
     protected:
-      ExternalPortBase<Prt,Ext>(Prt &port, Ext &ext, const char *name,
+      ExternalPortBase<Prt,Ext>(Prt &a_port, Ext &ext, const char *a_name,
 				const OCPI::Util::PValue *extParams,
 				const OCPI::Util::PValue *connParams,
-				bool isProvider)
-      : OCPI::Util::Child<Prt,Ext,externalPort>(port, ext, name),
-	ExternalPort(port, isProvider, extParams, connParams) {}
+				bool a_isProvider)
+      : OCPI::Util::Child<Prt,Ext,externalPort>(a_port, ext, a_name),
+	ExternalPort(a_port, a_isProvider, extParams, connParams) {}
     public:
       const std::string &name() const { return OCPI::Util::Child<Prt,Ext,externalPort>::name(); }
     };

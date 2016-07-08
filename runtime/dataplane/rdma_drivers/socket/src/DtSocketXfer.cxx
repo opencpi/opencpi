@@ -123,8 +123,8 @@ protected:
   uint16_t    m_portNum;
   Receiver    *m_receiver;
 public:
-  EndPoint( std::string& ep, bool local, uint32_t size = 0)
-    : DT::EndPoint(ep, size, local),
+  EndPoint( std::string& ep, bool a_local, uint32_t a_size = 0)
+    : DT::EndPoint(ep, a_size, a_local),
       m_portNum(0), m_receiver(NULL)
   {
     // Note that IPv6 addresses may have colons, even though colons are commonly used to
@@ -330,11 +330,11 @@ class XferServices
   XF_template        m_xftemplate;
   OS::Socket         m_socket;
 public:
-  XferServices(DT::SmemServices* source, DT::SmemServices* target)
+  XferServices(DT::SmemServices *a_source, DT::SmemServices *a_target)
     : ConnectionBase<XferFactory,XferServices,XferRequest>
-      (*this, source, target) {
-    xfer_create (source, target, 0, &m_xftemplate);
-    EndPoint *rsep = static_cast<EndPoint *>(target->endpoint());
+      (*this, a_source, a_target) {
+    xfer_create (a_source, a_target, 0, &m_xftemplate);
+    EndPoint *rsep = static_cast<EndPoint *>(a_target->endpoint());
     m_socket.connect(rsep->m_ipAddress, rsep->m_portNum);
     m_socket.linger(false);
   }
@@ -373,8 +373,8 @@ getXferServices(DT::SmemServices* source, DT::SmemServices* target)
 class XferRequest : public TransferBase<XferServices,XferRequest> {
   XF_transfer m_thandle;                // Transfer handle returned by xfer_xxx etal
 public:
-  XferRequest(XferServices &parent, XF_template temp)
-    : TransferBase<XferServices,XferRequest>(parent, *this, temp) {
+  XferRequest(XferServices &a_parent, XF_template temp)
+    : TransferBase<XferServices,XferRequest>(a_parent, *this, temp) {
   }
 
   // Get Information about a Data Transfer Request
@@ -401,8 +401,8 @@ createXferRequest() {
 }
 
 class Device : public DT::DeviceBase<XferFactory,Device> {
-  Device(const char *name)
-    : DT::DeviceBase<XferFactory,Device>(name, *this) {}
+  Device(const char *a_name)
+    : DT::DeviceBase<XferFactory,Device>(a_name, *this) {}
 };
 
 // Used to register with the data transfer system;

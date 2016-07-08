@@ -57,7 +57,7 @@
  * Generate things related to DDS.
  * In particular, generate the OpenCPI protocol XML from DDS IDL
  */
-static int mymain(const char **ap) {
+static int mymain(const char **argv) {
   const char *err = 0;
   if (options.protocol()) {
     size_t n;
@@ -69,10 +69,10 @@ static int mymain(const char **ap) {
     for (const char **ap = options.include(n); *ap; ++ap)
       args.push_back(*ap);
     args.push_back(NULL);
-    if ((err = emitProtocol(&args[0], options.output(), *ap, options.structname())))
+    if ((err = emitProtocol(&args[0], options.output(), *argv, options.structname())))
       fprintf(stderr, "Error generating OpenCPI protocol file from IDL: %s\n", err);
-  } else if (options.idl() && (err = emitIDL(options.output(), *ap)))
-    fprintf(stderr, "Error generating IDL file from OpenCPI protocol file \"%s\": %s\n", *ap,
+  } else if (options.idl() && (err = emitIDL(options.output(), *argv)))
+    fprintf(stderr, "Error generating IDL file from OpenCPI protocol file \"%s\": %s\n", *argv,
 	    err);
   else if (options.test())
     dataTypeTest(options.test());

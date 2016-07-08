@@ -63,9 +63,9 @@ namespace OCPI {
 	uint32_t m_bar0size, m_bar1size;
 	int m_fd;
 	friend class Driver;
-	Device(std::string &name, int fd, ocpi_pci_t &pci, void *bar0, void *bar1,
+	Device(std::string &a_name, int fd, ocpi_pci_t &pci, void *bar0, void *bar1,
 	       std::string &err)
-	  : OCPI::HDL::Device(name, "ocpi-dma-pio"), m_bar0(bar0), m_bar1(bar1),
+	  : OCPI::HDL::Device(a_name, "ocpi-dma-pio"), m_bar0(bar0), m_bar1(bar1),
 	    m_bar0size(pci.size0), m_bar1size(pci.size1), m_fd(fd) {
 	  uint64_t endpointPaddr, controlOffset, bufferOffset, holeStartOffset, holeEndOffset;
 	  if (pci.bar0 < pci.bar1) {
@@ -195,9 +195,9 @@ namespace OCPI {
 		    nw1b, nw1bs, nw2, nw2s, time(0));
 #ifndef __APPLE__
 	  {
-	    struct timespec ts;
-	    clock_getres(CLOCK_REALTIME, &ts);
-	    ocpiInfo("res: %ld", ts.tv_nsec);
+	    struct timespec tspec;
+	    clock_getres(CLOCK_REALTIME, &tspec);
+	    ocpiInfo("res: %ld", tspec.tv_nsec);
 	  }
 #endif
 	}

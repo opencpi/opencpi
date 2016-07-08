@@ -697,9 +697,9 @@ bool OCPI::DataTransport::Port::ready()
           if ( getCircuit()->m_transport->isLocalEndpoint( 
                                      output_port->getMetaData()->m_real_location->end_point.c_str() ) ) {
 
-            for ( OCPI::OS::uint32_t n=0; n<getPortSet()->getBufferCount(); n++ )  {
-              m_portDependencyData.offsets[n].inputOffsets.myShadowsRemoteStateOffsets[getMailbox()] =
-                m_portDependencyData.offsets[n].inputOffsets.localStateOffset;
+            for ( OCPI::OS::uint32_t nn=0; nn<getPortSet()->getBufferCount(); nn++ )  {
+              m_portDependencyData.offsets[nn].inputOffsets.myShadowsRemoteStateOffsets[getMailbox()] =
+                m_portDependencyData.offsets[nn].inputOffsets.localStateOffset;
             }
             continue;
           }
@@ -1474,7 +1474,7 @@ getNextFullInputBuffer(void *&data, size_t &length, uint8_t &opcode)
     length = buf->getDataLength();
     OCPI_EMIT_CAT__("Data Buffer Received" , OCPI_EMIT_CAT_WORKER_DEV,OCPI_EMIT_CAT_WORKER_DEV_BUFFER_FLOW, buf);
 
-    OCPI_EMIT_REGISTER_FULL_VAR( "Data Buffer Opcode and length", OCPI::Time::Emit::u, 64, OCPI::Time::Emit::Value, dbre ); 
+    OCPI_EMIT_REGISTER_FULL_VAR( "Data Buffer Opcode and length", OCPI::Time::Emit::DT_u, 64, OCPI::Time::Emit::Value, dbre ); 
     OCPI_EMIT_VALUE_CAT_NR__(dbre, (uint64_t)(opcode | (uint64_t)length<<16) , OCPI_EMIT_CAT_WORKER_DEV,OCPI_EMIT_CAT_WORKER_DEV_BUFFER_VALUES, buf);
     ocpiDebug("Getting buffer %p on port %p on circuit %p on transport %p data %p op %u len %zu",
 	      buf, this, c, &c->parent(), data, opcode, length);

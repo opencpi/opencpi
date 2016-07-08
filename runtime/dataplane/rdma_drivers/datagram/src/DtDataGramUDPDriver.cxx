@@ -71,8 +71,8 @@ namespace DataTransfer {
       friend class DatagramSocket;
       friend class DatagramXferFactory;
     public:
-      DatagramEndPoint( std::string& ep, bool local, uint32_t size=0)
-	: EndPoint(ep, size, local) { 
+      DatagramEndPoint( std::string& ep, bool a_local, uint32_t a_size=0)
+	: EndPoint(ep, a_size, a_local) { 
 	char ipaddr[80];
 	int rv = sscanf(ep.c_str(), "ocpi-udp-rdma:%[^;];%" SCNu16 ";", ipaddr, &m_portNum);
 	if (rv != 2) {

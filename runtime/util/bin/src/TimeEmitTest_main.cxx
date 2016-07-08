@@ -392,7 +392,7 @@ public:
     : Emit( "QLengthTestClass", instance_name, &qc1 ){}
   void events( int n ) {
     for ( int nn=0; nn<n; nn++ ) {
-      OCPI_EMIT_UINT32_( "uint64", i );
+      OCPI_EMIT_UINT32_( "uint64", DT_i );
     }
   }
 };
@@ -422,7 +422,7 @@ public:
     : Emit( "QLengthTestClass", instance_name, &qc2 ){}
   void events( int n ) {
     for ( int nn=0; nn<n; nn++ ) {
-      OCPI_EMIT_UINT32_( "uint64", i );
+      OCPI_EMIT_UINT32_( "uint64", DT_i );
     }
   }
 };

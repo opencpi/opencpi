@@ -76,9 +76,9 @@ find(const std::string &type, const char *&err) {
 // A slot may have a default mapping to the external platform's signals,
 // ie. <slot-name>_signal.
 Slot::
-Slot(ezxml_t xml, const char */*parent*/, const std::string &name, const SlotType &type,
+Slot(ezxml_t xml, const char */*parent*/, const std::string &name, const SlotType &a_type,
      unsigned ordinal, const char *&err)
-  : m_name(name), m_type(type), m_ordinal(ordinal)
+  : m_name(name), m_type(a_type), m_ordinal(ordinal)
 {
   err = NULL;
   // process non-default signals: slot=pfsig, platform=dddd

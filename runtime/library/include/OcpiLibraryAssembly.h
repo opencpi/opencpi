@@ -54,7 +54,8 @@ namespace OCPI {
       // The impl is not a reference since std::vector must copy it :-(
       const Implementation *impl;
       unsigned score;
-      inline Candidate(const Implementation &impl, unsigned score) : impl(&impl), score(score) {}
+      inline Candidate(const Implementation &a_impl, unsigned a_score)
+	: impl(&a_impl), score(a_score) {}
     };
     typedef std::vector<Candidate> Candidates;   // a set of candidates for an instance
 

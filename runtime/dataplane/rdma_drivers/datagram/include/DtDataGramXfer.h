@@ -131,7 +131,7 @@ namespace DataTransfer {
   DatagramSocket( DatagramSmemServices*  lsmem)
     :m_lsmem(lsmem),m_error(false),m_run(true),m_joined(false) {}
 
-      bool error(){return m_error;}
+    //      bool error(){return m_error;}
       virtual ~DatagramSocket();
       virtual void send(Frame &frame) = 0;
       // return bytes read and offset in buffer to use.  Returning zero is timeout

@@ -54,8 +54,8 @@ namespace OCPI {
   namespace PIO {  
 
     Device::
-    Device(const char *name)
-      : DT::DeviceBase<XferFactory, Device>(name, *this) {
+    Device(const char *a_name)
+      : DT::DeviceBase<XferFactory, Device>(a_name, *this) {
     }
 
     const char *pio = "pio"; // name passed to inherited template class
@@ -84,8 +84,8 @@ namespace OCPI {
 
     // Constructor
     EndPoint::
-    EndPoint( std::string& ep, bool local)
-      : DT::EndPoint(ep, 0, local) {
+    EndPoint( std::string& ep, bool a_local)
+      : DT::EndPoint(ep, 0, a_local) {
       parse(ep);
     }
 
@@ -143,8 +143,8 @@ namespace OCPI {
 
 
     XferRequest::
-    XferRequest(XferServices & parent, XF_template temp)
-      : DT::TransferBase<XferServices, XferRequest>(parent, *this, temp) {
+    XferRequest(XferServices &a_parent, XF_template temp)
+      : DT::TransferBase<XferServices, XferRequest>(a_parent, *this, temp) {
     }
 
     // PIOXferRequest destructor implementation
@@ -154,9 +154,9 @@ namespace OCPI {
 
 
     XferServices::
-    XferServices(DT::SmemServices* source, DT::SmemServices* target)
-      : DT::ConnectionBase<XferFactory, XferServices, XferRequest>(*this, source, target) {
-      createTemplate( source, target);
+    XferServices(DT::SmemServices *a_source, DT::SmemServices *a_target)
+      : DT::ConnectionBase<XferFactory, XferServices, XferRequest>(*this, a_source, a_target) {
+      createTemplate(a_source, a_target);
     }
 
     // Create tranfer services template

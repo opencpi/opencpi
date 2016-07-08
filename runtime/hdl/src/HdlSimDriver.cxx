@@ -42,9 +42,9 @@ namespace OCPI {
 	OS::Socket m_sdpSocket;
 	bool m_sdpConnected;
       protected:
-	Device(Driver &driver, OS::Ether::Interface &ifc, std::string &name,
-	       OE::Address addr, bool discovery, std::string &error)
-	  : Net::Device(driver, ifc, name, addr, discovery, "ocpi-udp-rdma", 10000,
+	Device(Driver &driver, OS::Ether::Interface &ifc, std::string &a_name,
+	       OE::Address a_addr, bool discovery, std::string &error)
+	  : Net::Device(driver, ifc, a_name, a_addr, discovery, "ocpi-udp-rdma", 10000,
 			OH::SDP::Header::max_addressable_bytes * OH::SDP::Header::max_nodes,
 			0, OH::SDP::Header::max_addressable_bytes, error),
 	    m_sdpConnected(false) {
@@ -69,9 +69,9 @@ namespace OCPI {
 	void
 	doConnect(const char *portString) {
 	  uint16_t port = OCPI_UTRUNCATE(uint16_t, atoi(portString));
-	  std::string addr = this->addr().pretty(); // this will have a colon and port...
-	  addr.resize(addr.find_first_of(':'));
-	  m_sdpSocket.connect(addr, port);
+	  std::string l_addr = this->addr().pretty(); // this will have a colon and port...
+	  l_addr.resize(l_addr.find_first_of(':'));
+	  m_sdpSocket.connect(l_addr, port);
 	  m_sdpConnected = true;
 	}
       public:
@@ -87,38 +87,38 @@ namespace OCPI {
 	}
 
 	// Load a bitstream via jtag
-	void load(const char *name) {
+	void load(const char *a_name) {
 	  char err[1000];
 	  err[0] = 0;
-	  std::string cmd(name);
+	  std::string cmd(a_name);
 	  bool isDir;
 	  uint64_t length;
 	  if (!OS::FileSystem::exists(cmd, &isDir, &length) || isDir)
-	    throwit("New sim executable file '%s' is non-existent or a directory", name);
+	    throwit("New sim executable file '%s' is non-existent or a directory", a_name);
 	  std::string cwd_str = OS::FileSystem::cwd();
-	  OU::format(cmd, "L%" PRIu64 " %s %s", length, name, cwd_str.c_str());
+	  OU::format(cmd, "L%" PRIu64 " %s %s", length, a_name, cwd_str.c_str());
 	  command(cmd.c_str(), cmd.length()+1, err, sizeof(err), 5000);
 	  ocpiDebug("load response: '%s'", err);
 	  err[sizeof(err)-1] = 0;
 	  switch (*err) {
 	  case 'E': // we have an error
-	    throwit("Loading new executable %s failed: %s", name, err + 1);
+	    throwit("Loading new executable %s failed: %s", a_name, err + 1);
 	  case 'O': // OK its loaded and running - presumbably since it was cached?
-	    ocpiInfo("Successfully loaded new sim executable: %s", name);
+	    ocpiInfo("Successfully loaded new sim executable: %s", a_name);
 	    break;
 	  case 'X': // The file needs to be transferred
 	    {
 	      uint16_t port = OCPI_UTRUNCATE(uint16_t, atoi(err + 1));
-	      std::string addr = this->addr().pretty(); // this will have a colon and port...
-	      addr.resize(addr.find_first_of(':'));
+	      std::string l_addr = this->addr().pretty(); // this will have a colon and port...
+	      l_addr.resize(l_addr.find_first_of(':'));
 	      
 	      OS::Socket wskt;
-	      wskt.connect(addr, port);
+	      wskt.connect(l_addr, port);
 	      wskt.linger(true); //  wait on close for far side ack of all data
 	      int rfd;
 	      try { // socket I/O can throw
-		if ((rfd = open(name, O_RDONLY)) < 0)
-		  throwit("Can't open executable: %s", name);
+		if ((rfd = open(a_name, O_RDONLY)) < 0)
+		  throwit("Can't open executable: %s", a_name);
 		char buf[64*1024];
 		ssize_t n;
 		while ((n = read(rfd, buf, sizeof(buf))) > 0) {
@@ -129,7 +129,7 @@ namespace OCPI {
 		  }
 		}
 		if (n < 0)
-		  throwit("Error reading executable file: %s", name);
+		  throwit("Error reading executable file: %s", a_name);
 		wskt.shutdown(true);
 		char c;
 		// Wait for the other end to shutdown its writing side to give us the EOF
@@ -149,10 +149,10 @@ namespace OCPI {
 	      cmd = "S";
 	      command(cmd.c_str(), cmd.length()+1, err, sizeof(err), 5000);
 	      if (*err == 'O') {
-		ocpiInfo("Successfully started new sim executable: %s", name);
+		ocpiInfo("Successfully started new sim executable: %s", a_name);
 		doConnect(err + 1);
 	      } else
-		throwit("Running new executable %s failed: %s", name, err + 1);
+		throwit("Running new executable %s failed: %s", a_name, err + 1);
 	    }
 	  }
 	  assert(*err == 'O');

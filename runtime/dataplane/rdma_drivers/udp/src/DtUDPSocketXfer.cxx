@@ -121,12 +121,14 @@ namespace DataTransfer {
 
 
   UDPSocketXferServices::
-  UDPSocketXferServices(SmemServices* source, SmemServices* target)
-    : ConnectionBase<UDPSocketXferFactory,UDPSocketXferServices,UDPSocketXferRequest>(*this, source,target)
+  UDPSocketXferServices(SmemServices *a_source, SmemServices *a_target)
+    : ConnectionBase<UDPSocketXferFactory,UDPSocketXferServices,UDPSocketXferRequest>(*this,
+										      a_source,
+										      a_target)
   {
     m_dpMonitor = new DropPktMonitor(this);
     m_dpMonitor->start();
-    createTemplate( source, target);
+    createTemplate(a_source, a_target);
   }
 
 

@@ -118,8 +118,8 @@ hasUrl(const char *url)
  * Constructor
  *********************************/  
 Application::
-Application(Container &c, const char *name, const OU::PValue *props)
-  : OC::ApplicationBase<Container,Application,Worker>(c, *this, name, props)
+Application(Container &c, const char *a_name, const OU::PValue *props)
+  : OC::ApplicationBase<Container,Application,Worker>(c, *this, a_name, props)
 {
   // Empty
 }

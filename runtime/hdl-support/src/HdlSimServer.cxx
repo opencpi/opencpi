@@ -173,9 +173,9 @@ namespace OCPI {
 	  size_t length;
 	  OH::SDP::Header &header;    // storage owned here
 	  HN::EtherControlPacket packet;  // not initialized - we copy on top of this.
-	  Request(OE::Socket &sock, OE::Address addr, unsigned index, size_t length,
-		  OH::SDP::Header &header, OE::Packet &pkt)
-	    : sock(sock), from(addr), index(index), length(length), header(header) {
+	  Request(OE::Socket &a_sock, OE::Address addr, unsigned a_index, size_t a_length,
+		  OH::SDP::Header &a_header, OE::Packet &pkt)
+	    : sock(a_sock), from(addr), index(a_index), length(a_length), header(a_header) {
 	    packet = *(HN::EtherControlPacket*)pkt.payload;
 	  }
 	  ~Request() { delete &header; }
@@ -441,14 +441,14 @@ namespace OCPI {
 		       m_exec.c_str(), platform.c_str(), m_platform.c_str());
 	    return true;
 	  }
-	  std::string uuid;
-	  e = OX::getRequiredString(art.xml(), uuid, "uuid", "artifact");
+	  std::string l_uuid;
+	  e = OX::getRequiredString(art.xml(), l_uuid, "uuid", "artifact");
 	  if (e) {
 	    OU::format(err, "invalid metadata in binary/artifact file \"%s\": %s",
 		       m_exec.c_str(), e);
 	    return true;
 	  }
-	  ocpiInfo("Bitstream %s has uuid %s", m_exec.c_str(), uuid.c_str());
+	  ocpiInfo("Bitstream %s has uuid %s", m_exec.c_str(), l_uuid.c_str());
 	  std::string untar;
 	  OU::format(untar,
 		     "set -e; file=%s; "
@@ -498,19 +498,19 @@ namespace OCPI {
 	  case 0:
 	    if (chdir(m_dir.c_str()) != 0) {
 	      std::string x("Cannot change to simulation subdirectory: ");
-	      int e = errno;
+	      int en = errno;
 	      x += m_dir;
 	      x += "\n";
 	      write(2, x.c_str(), x.length());
-	      _exit(10 + e);
+	      _exit(10 + en);
 	    }
 	    {
 	      int fd = creat("sim.out", 0666);
 	      if (fd < 0) {
 		std::string x("Error: Cannot create sim.out file for simulation output.\n");
-		int e = errno;
+		int en = errno;
 		write(2, x.c_str(), x.length());
-		_exit(10 + e);
+		_exit(10 + en);
 	      }
 	      if (dup2(fd, 1) < 0 ||
 		  dup2(fd, 2) < 0)
@@ -952,9 +952,9 @@ namespace OCPI {
 	    if (sdp) {
 	      OH::SDP::Header h(false, offset, blen);
 	      uint32_t data = ntohl(pkt.write.data);
-	      size_t length;
-	      if (h.startRequest(m_req.m_wfd, (uint8_t*)&data, length, error) ||
-		  sendCredit(length, error))
+	      size_t l;
+	      if (h.startRequest(m_req.m_wfd, (uint8_t*)&data, l, error) ||
+		  sendCredit(l, error))
 		return true;
 	    } else if (offset <= sizeof(m_admin))
 	      *(uint32_t *)(&((char *)&m_admin) [offset]) = ntohl(pkt.write.data);
@@ -986,9 +986,9 @@ namespace OCPI {
 	    len = sizeof(HN::EtherControlReadResponse);
 	    if (sdp) {
 	      *sdp = new OH::SDP::Header(true, offset, blen);
-	      size_t length;
-	      if ((*sdp)->startRequest(m_req.m_wfd, NULL, length, error) ||
-		  sendCredit(length, error)) {
+	      size_t l;
+	      if ((*sdp)->startRequest(m_req.m_wfd, NULL, l, error) ||
+		  sendCredit(l, error)) {
 		delete *sdp;
 		*sdp = NULL;
 		return true;

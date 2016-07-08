@@ -175,6 +175,7 @@ static int mymain(const char **ap) {
     params.push_back(OA::PVBool("dump", true));
   if (options.dumpPlatforms())
     params.push_back(OA::PVBool("dumpPlatforms", true));
+  {
   size_t n;
   addParams("worker", options.worker(n), params);
   addParams("selection", options.selection(n), params);
@@ -188,6 +189,7 @@ static int mymain(const char **ap) {
   addParams("transport", options.transport(n), params);
   addParams("xferrole", options.xferrole(n), params);
   addParams("buffercount", options.buffercount(n), params);
+  }
   if (options.deployment())
     addParam("deployment", options.deployment(), params);
   if (params.size())

@@ -46,8 +46,8 @@
 	 Driver    &m_driver;
 	 uint8_t  *m_vaddr;
 	 friend class Driver;
-	 Device(Driver &driver, std::string &name, bool forLoad, std::string &err)
-	   : OCPI::HDL::Device(name, "ocpi-dma-pio"),
+	 Device(Driver &driver, std::string &a_name, bool forLoad, std::string &err)
+	   : OCPI::HDL::Device(a_name, "ocpi-dma-pio"),
 	     m_driver(driver), m_vaddr(NULL) {
 	   m_isAlive = false;
 	   m_endpointSize = sizeof(OccpSpace);
@@ -60,7 +60,7 @@
 		 err.clear();
 	     }
 	   } else if (err.empty())
-	       ocpiInfo("There is no bitstream loaded on this HDL device: %s", name.c_str());
+	       ocpiInfo("There is no bitstream loaded on this HDL device: %s", a_name.c_str());
 	 }
 	 ~Device() {
 	   if (m_vaddr)
@@ -200,15 +200,15 @@
 	      if (bfd >= 0) ::close(bfd);
 	      if (gz) gzclose(gz);
 	    }
-	    Xld(const char *fileName) : xfd(-1), bfd(-1), gz(NULL) {
+	    Xld(const char *file) : xfd(-1), bfd(-1), gz(NULL) {
 	      try {
 		// Open the device LAST since just opening it will do bad things
-		if ((bfd = ::open(fileName, O_RDONLY)) < 0)
+		if ((bfd = ::open(file, O_RDONLY)) < 0)
 		  throw OU::Error("Can't open bitstream file '%s' for reading: %s(%d)",
-				  fileName, strerror(errno), errno);
+				  file, strerror(errno), errno);
 		if ((gz = ::gzdopen(bfd, "rb")) == NULL)
 		  throw OU::Error("Can't open compressed bitstream file '%s' for : %s(%u)",
-				  fileName, strerror(errno), errno);
+				  file, strerror(errno), errno);
 		bfd = -1; // gzclose closes the fd
 		// Read up to the sync pattern before byte swapping
 		if ((n = ::gzread(gz, buf, sizeof(buf))) <= 0)

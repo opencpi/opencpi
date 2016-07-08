@@ -88,13 +88,13 @@ int32_t SmemServices::
 unMap() { return 0; }
 
 EndPoint::
-EndPoint( std::string& end_point, size_t psize, bool l )
+EndPoint( std::string &ep, size_t psize, bool l )
   :mailbox(0),maxCount(0),size(psize),address(0),local(l),factory(NULL),refCount(0)
 {
   if ( ! size ) {
     size = XferFactoryManager::getFactoryManager().getSMBSize();
   }
-  setEndpoint( end_point);
+  setEndpoint(ep);
 }
 
 EndPoint::
@@ -162,8 +162,8 @@ canSupport(const char *remoteEndpoint) {
   std::string remoteProtocol;
   EndPoint::getProtocolFromString(remoteEndpoint, remoteProtocol);
   uint16_t mailBox, maxMb;
-  size_t size;
-  parseEndPointString(remoteEndpoint, &mailBox, &maxMb, &size);
+  size_t unused;
+  parseEndPointString(remoteEndpoint, &mailBox, &maxMb, &unused);
   bool ret = 
     protocol == remoteProtocol &&
     maxMb == maxCount && mailBox != mailbox;

@@ -142,8 +142,8 @@ namespace OCPI {
       struct mine : public ImplementationCallback {
 	const Implementation *&m_impl;
 	const char *m_selection;
-	mine(const Implementation *&impl, const char *selection)
-	  : m_impl(impl), m_selection(selection) {}
+	mine(const Implementation *&a_impl, const char *selection)
+	  : m_impl(a_impl), m_selection(selection) {}
 	bool foundImplementation(const Implementation &i, bool &accepted) {
 	  if (m_selection && !satisfiesSelection(m_selection, NULL, i.m_metadataImpl))
 	    return false;
@@ -194,8 +194,8 @@ namespace OCPI {
       }
     }
     Driver::
-    Driver(const char *name)
-      : OD::DriverType<Manager,Driver>(name, *this) {
+    Driver(const char *a_name)
+      : OD::DriverType<Manager,Driver>(a_name, *this) {
     }
     Artifact *Driver::
     findArtifact(const Capabilities &caps,
@@ -314,34 +314,34 @@ namespace OCPI {
     // Given metadata in string form, parse it up, shortly after construction
     // The ownership of metadat is passed in here.
     const char *Artifact::
-    setFileMetadata(const char *name, char *metadata, std::time_t mtime, uint64_t length) {
+    setFileMetadata(const char *a_name, char *metadata, std::time_t a_mtime, uint64_t a_length) {
       m_metadata = metadata; // take ownership in all cases
       const char *err = OE::ezxml_parse_str(metadata, strlen(metadata), m_xml);
       if (err)
-	return OU::esprintf("error parsing artifact metadata from \"%s\": %s", name, err);
+	return OU::esprintf("error parsing artifact metadata from \"%s\": %s", a_name, err);
       char *xname = ezxml_name(m_xml);
       if (!xname || strcasecmp("artifact", xname))
 	return OU::esprintf("invalid metadata in binary/artifact file \"%s\": no <artifact>",
-			    name);
-      const char *uuid = ezxml_cattr(m_xml, "uuid");
-      if (!uuid)
-	return OU::esprintf("no uuid in binary/artifact file \"%s\"", name);
-      m_mtime = mtime;
-      m_length = length;
-      library().registerUuid(uuid, this);
-      ocpiDebug("Artifact file %s has artifact metadata", name);
+			    a_name);
+      const char *l_uuid = ezxml_cattr(m_xml, "uuid");
+      if (!l_uuid)
+	return OU::esprintf("no uuid in binary/artifact file \"%s\"", a_name);
+      m_mtime = a_mtime;
+      m_length = a_length;
+      library().registerUuid(l_uuid, this);
+      ocpiDebug("Artifact file %s has artifact metadata", a_name);
       return NULL;
     }
     void Artifact::
-    getFileMetadata(const char *name) {
-      std::time_t mtime;
-      uint64_t length;
-      char *metadata = getMetadata(name, mtime, length);
+    getFileMetadata(const char *a_name) {
+      std::time_t l_mtime;
+      uint64_t l_length;
+      char *metadata = getMetadata(a_name, l_mtime, l_length);
       if (!metadata)
-	throw OU::Error(20, "Cannot open or retrieve metadata from file \"%s\"", name);
-      const char *err = setFileMetadata(name, metadata, mtime, length);
+	throw OU::Error(20, "Cannot open or retrieve metadata from file \"%s\"", a_name);
+      const char *err = setFileMetadata(a_name, metadata, l_mtime, l_length);
       if (err)
-	throw OU::Error("Error processing metadata from artifact file: %s: %s", name, err);
+	throw OU::Error("Error processing metadata from artifact file: %s: %s", a_name, err);
     }
 
     Implementation *Artifact::
@@ -351,8 +351,8 @@ namespace OCPI {
 	Implementation &impl = *wi->second;
 	if (impl.m_staticInstance) {
 	  if (staticInstance) {
-	    const char *name = ezxml_cattr(impl.m_staticInstance, "name");
-	    if (name && !strcasecmp(name, staticInstance))
+	    const char *l_name = ezxml_cattr(impl.m_staticInstance, "name");
+	    if (l_name && !strcasecmp(l_name, staticInstance))
 	      return &impl;
 	  }
 	} else if (!staticInstance)

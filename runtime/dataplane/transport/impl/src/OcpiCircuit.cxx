@@ -335,7 +335,7 @@ OCPI::DataTransport::Circuit::
 
 
 void OCPI::DataTransport::Circuit::
-updateInputs( DataTransfer::ContainerComms::RequestUpdateCircuit*update)
+updateInputs( DataTransfer::ContainerComms::RequestUpdateCircuit *a_update)
 {
   m_updated = true;
   // This is a request coming from the primary output port (ordinal 0).  It is telling us
@@ -343,10 +343,10 @@ updateInputs( DataTransfer::ContainerComms::RequestUpdateCircuit*update)
   // we can let it know when we have consumed a buffer that it sent to us.
 
   // Port set ordinal 0 is always the output set, we need to update ours 
-  static_cast<PortSetMetaData*>(m_metaData->m_portSetMd[0])->getPortInfo(0)->real_location_string = update->output_end_point;
+  static_cast<PortSetMetaData*>(m_metaData->m_portSetMd[0])->getPortInfo(0)->real_location_string = a_update->output_end_point;
 
   this->getOutputPortSet()->getPort(0)->m_data->m_bufferData->outputOffsets.portSetControlOffset=
-    OCPI_UTRUNCATE(OCPI::Util::ResAddr, update->senderOutputControlOffset);
+    OCPI_UTRUNCATE(OCPI::Util::ResAddr, a_update->senderOutputControlOffset);
   this->getOutputPortSet()->getPort(0)->initialize();
 
   // Now update the input port set with all of the real information associated with the circuit
@@ -354,10 +354,10 @@ updateInputs( DataTransfer::ContainerComms::RequestUpdateCircuit*update)
 
   // For DRI we need placeholders for all of the inputs
   unsigned int n;
-  for (n=input_ps->m_portMd.size(); n<update->tPortCount; n++ ) {
+  for (n=input_ps->m_portMd.size(); n<a_update->tPortCount; n++ ) {
 
     OCPI::RDT::Descriptors tdesc;
-    strcpy(tdesc.desc.oob.oep,update->output_end_point);
+    strcpy(tdesc.desc.oob.oep,a_update->output_end_point);
     PortMetaData* sp = new PortMetaData( n,false, NULL, tdesc,input_ps);
 
     input_ps->m_portMd.push_back( sp );
@@ -365,10 +365,10 @@ updateInputs( DataTransfer::ContainerComms::RequestUpdateCircuit*update)
 
   OCPI::DataTransport::Port* port = 
     static_cast<OCPI::DataTransport::Port*>
-    (this->getInputPortSet(0)->getPortFromOrdinal((PortOrdinal)update->receiverPortId));
+    (this->getInputPortSet(0)->getPortFromOrdinal((PortOrdinal)a_update->receiverPortId));
 
-  port->m_data->remoteCircuitId = update->senderCircuitId;
-  port->m_data->remotePortId    = update->senderPortId;
+  port->m_data->remoteCircuitId = a_update->senderCircuitId;
+  port->m_data->remotePortId    = a_update->senderPortId;
   port->m_externalState = DataTransport::Port::WaitingForShadowBuffer;
 
 
