@@ -38,7 +38,7 @@ struct Instance : public OU::IdentResolver {
   const char   *wName;
   Worker       *worker;
   Clock       **m_clocks; // mapping of instance's clocks to assembly clocks
-  InstancePort *m_ports;
+  std::vector<InstancePort> m_ports;
   size_t        m_index;  // index within container
   // These types are roles of the instance rather than some hard attribute of the worker
   // They are also conveyed to the runtime in the artifact XML
@@ -107,9 +107,8 @@ class Assembly {
   //  bool          m_isContainer; // FIXME: use class hierarchy to inherit
   //  bool          m_isPlatform;  // FIXME: use class hierarchy to inherit
   Workers       m_workers;
-  size_t        m_nInstances;
   size_t        m_nWCIs;
-  Instance     *m_instances;
+  std::vector<Instance>m_instances;
   Connections   m_connections;
   OU::Assembly *m_utilAssembly;
   Language      m_language;

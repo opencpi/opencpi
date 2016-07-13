@@ -1,0 +1,13 @@
+<!-- The I2C bus support for the fmcomms3 board, allowing either device to be used without the oither -->
+<HdlDevice language="vhdl">
+  <componentspec nocontrol='true'/>
+  <Rawprop name="rprops" count="2" optional="true"/>
+  <Supports worker="ad7291">
+    <Connect port="rawprops" to="rprops" index="0"/>
+  </Supports>
+  <Supports worker="stm_mc24c02">
+    <Connect port="rawprops" to="rprops" index="1"/>
+  </Supports>
+  <Signal Inout="SDA"/>
+  <Signal Inout="SCL"/>
+</HdlDevice>

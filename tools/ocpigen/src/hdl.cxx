@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <ctype.h>
 #include "hdl.h"
 #include "hdl-device.h"
 
@@ -249,8 +250,7 @@ parseHdlImpl(const char *package) {
 
 Signal::
 Signal()
-  : m_direction(IN), m_width(0), m_differential(false), m_pos("%sp"), m_neg("%sn"),
-    m_in("%s_i"), m_out("%s_o"), m_oe("%s_oe"), m_type(NULL) {
+  : m_direction(IN), m_width(0), m_differential(false), m_type(NULL) {
 }
 
 Signal * Signal::
@@ -266,11 +266,18 @@ reverse() {
   return s;
 }
 
+static void ucase(std::string &s) {
+  for (unsigned n = 0; n < s.length(); ++n)
+    if (s[n] == '%')
+      ++n;
+    else if (islower(s[n]))
+      s[n] = (char)toupper(s[n]);
+}
 const char *Signal::
 parse(ezxml_t x) {
   const char *err;
-  if ((err = OE::checkAttrs(x, "input", "inout", "bidirectional", "output",
-			    "width", "differential", "type", (void*)0)))
+  if ((err = OE::checkAttrs(x, "input", "inout", "bidirectional", "output", "width",
+			    "differential", "type", "pos", "neg", "in", "out", "oe", (void*)0)))
     return err;
   const char *name;
   if ((name = ezxml_cattr(x, "Input")))
@@ -290,6 +297,23 @@ parse(ezxml_t x) {
     return OU::esprintf("Signals that are both \"inout\" and differential are not supported");
   m_type = ezxml_cattr(x, "type");
   m_name = name;
+  OE::getOptionalString(x, m_pos, "pos", "%sp");
+  OE::getOptionalString(x, m_neg, "neg", "%sn");
+  OE::getOptionalString(x, m_in, "in", "%s_i");
+  OE::getOptionalString(x, m_out, "out", "%s_o");
+  OE::getOptionalString(x, m_oe, "oe", "%s_oe");
+  bool anyLower = false;
+  for (const char *cp = name; *cp; ++cp)
+    if (islower(*cp))
+      anyLower = true;
+
+  if (!anyLower) {
+    ucase(m_pos);
+    ucase(m_neg);
+    ucase(m_in);
+    ucase(m_out);
+    ucase(m_oe);
+  }
   return NULL;
 }
 
@@ -331,6 +355,43 @@ deleteSignals(Signals &signals) {
   for (SignalsIter si = signals.begin(); si != signals.end(); si++)
     delete *si;
 }
+
+Signal *SigMap::
+findSignal(const char *name, std::string *suffixed) const {
+  SigMap_::const_iterator i = find(name);
+  if (suffixed)
+    suffixed->clear();
+  if (i != end())
+    return i->second;
+  // No match, perhaps a suffixed match, look the slow way
+  if (!suffixed)
+    return NULL;
+  for (i = begin(); i != end(); i++) {
+    Signal &s = *i->second;
+    if (s.m_differential) {
+      OU::format(*suffixed, s.m_pos.c_str(), s.m_name.c_str());
+      if (!strcasecmp(name, suffixed->c_str()))
+	return &s;
+      OU::format(*suffixed, s.m_neg.c_str(), s.m_name.c_str());
+      if (!strcasecmp(name, suffixed->c_str()))
+	return &s;
+    } else if (s.m_direction == Signal::INOUT || s.m_direction == Signal::OUTIN) {
+      OU::format(*suffixed, s.m_in.c_str(), s.m_name.c_str());
+      if (!strcasecmp(name, suffixed->c_str()))
+	return &s;
+      OU::format(*suffixed, s.m_out.c_str(), s.m_name.c_str());
+      if (!strcasecmp(name, suffixed->c_str()))
+	return &s;
+      OU::format(*suffixed, s.m_oe.c_str(), s.m_name.c_str());
+      if (!strcasecmp(name, suffixed->c_str()))
+	return &s;
+    } else
+      continue;
+  }
+  suffixed->clear();
+  return NULL;
+}
+
 const char *SigMap::
 findSignal(Signal *s) {
   for (SigMap_::const_iterator si = begin(); si != end(); si++)
@@ -338,6 +399,7 @@ findSignal(Signal *s) {
       return (*si).first;
   return NULL;
 }
+
 const char *SigMapIdx::
 findSignal(Signal *sig, size_t idx) const {
   for (SigMapIdxIter i = begin(); i != end(); i++)

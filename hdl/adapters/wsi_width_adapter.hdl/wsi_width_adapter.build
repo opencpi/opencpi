@@ -1,0 +1,22 @@
+<build>
+  <configuration id='0'>
+    <parameter name='width_in' value='16'/>
+    <parameter name='width_out' value='32'/>
+  </configuration>
+  <configuration id='1'>
+    <parameter name='width_in' value='32'/>
+    <parameter name='width_out' value='16'/>
+  </configuration>
+  <configuration id='2'>
+    <parameter name='width_in' value='32'/>
+    <parameter name='width_out' value='64'/>
+  </configuration>
+  <configuration id='3'>
+    <parameter name='width_in' value='64'/>
+    <parameter name='width_out' value='128'/>
+  </configuration>
+  <configuration id='4'>
+    <parameter name='width_in' value='128'/>
+    <parameter name='width_out' value='32'/>
+  </configuration>
+</build>

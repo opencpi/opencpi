@@ -7,8 +7,8 @@ namespace OA = OCPI::API;
 
 Assembly::
 Assembly(Worker &w)
-  : m_assyWorker(w), m_nInstances(0), m_nWCIs(0), m_instances(NULL), m_utilAssembly(NULL),
-    m_language(w.m_language), m_nWti(0), m_nWmemi(0) {
+  : m_assyWorker(w), m_nWCIs(0), m_utilAssembly(NULL), m_language(w.m_language), m_nWti(0),
+    m_nWmemi(0) {
 }
 
 Assembly::
@@ -136,7 +136,7 @@ parseConnection(OU::Assembly::Connection &aConn) {
 
 Instance::
 Instance()
-  : instance(NULL), name(NULL), wName(NULL), worker(NULL), m_clocks(NULL), m_ports(NULL),
+  : instance(NULL), name(NULL), wName(NULL), worker(NULL), m_clocks(NULL),
     m_iType(Application), attach(NULL), hasConfig(false), config(0), m_emulated(false) {
 }
 
@@ -251,11 +251,10 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
   } catch (std::string &e) {
     return OU::esprintf("%s", e.c_str());
   }
-  m_nInstances = m_utilAssembly->nUtilInstances();
-  //   m_nConnections = m_utilAssembly->m_connections.size();
   const char *err;
  
-  Instance *i = m_instances = new Instance[m_utilAssembly->nUtilInstances()];
+  m_instances.resize(m_utilAssembly->nUtilInstances());
+  Instance *i = &m_instances[0];
   // Initialize our instances based on the generic assembly instances
   for (unsigned n = 0; n < m_utilAssembly->nUtilInstances(); n++, i++) {
     OU::Assembly::Instance *ai = &m_utilAssembly->utilInstance(n);
@@ -266,7 +265,7 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
     Worker *w = NULL;
     if (!i->wName)
       return OU::esprintf("instance %s has no worker", i->name);
-    for (Instance *ii = m_instances; ii < i; ii++)
+    for (Instance *ii = &m_instances[0]; ii < i; ii++)
       if (ii->wName && !strcmp(i->wName, ii->wName))
 	w = ii->worker;
     // There are two instance attributes that we use when considering workers
@@ -326,7 +325,8 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
       addParamConfigParameters(*w->m_paramConfig, ai->m_properties, ipv);
     i->properties.resize(ipv - &i->properties[0]);
     // Initialize the instance ports
-    InstancePort *ip = i->m_ports = new InstancePort[i->worker->m_ports.size()];
+    i->m_ports.resize(i->worker->m_ports.size());
+    InstancePort *ip = &i->m_ports[0];
     for (unsigned nn = 0; nn < i->worker->m_ports.size(); nn++, ip++) {
       ip->init(i, i->worker->m_ports[nn], NULL);
       // If the instance in the OU::Assembly has "m_externals=true",
@@ -372,10 +372,10 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
     if ((err = parseConnection(*ci)))
       return err;
   // Check for unconnected non-optional data ports
-  i = m_instances;
-  for (unsigned n = 0; n < m_nInstances; n++, i++)
+  i = &m_instances[0];
+  for (unsigned n = 0; n < m_instances.size(); n++, i++)
     if (i->worker && !i->worker->m_reusable) {
-      InstancePort *ip = i->m_ports;
+      InstancePort *ip = &i->m_ports[0];
       for (unsigned nn = 0; nn < i->worker->m_ports.size(); nn++, ip++) {
 	Port *pp = ip->m_port;
 	if (ip->m_attachments.empty() && pp->isData() && !pp->isOptional())

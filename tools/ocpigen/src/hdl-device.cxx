@@ -184,7 +184,9 @@ parse(ezxml_t xml, Board &b, SlotType *stype) {
     if ((err = OE::getRequiredString(xs, name, "name")) ||
 	(err = decodeSignal(name, base, index, hasIndex)))
       return err;
-    Signal *devSig = m_deviceType.m_sigmap.findSignal(base);
+    std::string suffixed;
+    // suffixed will be non-empty if we matched a suffixed signal, from diff or inout
+    Signal *devSig = m_deviceType.m_sigmap.findSignal(base, &suffixed);
     if (!devSig)
       return OU::esprintf("Signal \"%s\" is not defined for device type \"%s\"",
 			  base.c_str(), m_deviceType.cname());
@@ -290,7 +292,7 @@ parse(ezxml_t xml, Board &b, SlotType *stype) {
       }
     }
     // boardSig might be NULL here.
-    std::string devSigIndexed = devSig->cname();
+    std::string devSigIndexed = suffixed.empty() ? devSig->cname() : suffixed.c_str();
     if (hasIndex) // devSig->m_width)
       OU::formatAdd(devSigIndexed, "(%zu)", index);
     m_strings.push_front(devSigIndexed);
@@ -474,6 +476,8 @@ parseInstance(Worker &parent, Instance &i, ezxml_t x) {
       if (ps->m_direction == Signal::BIDIRECTIONAL)
 	ps->m_direction = s->m_direction;
     }
+    ocpiDebug("Instance '%s' signal '%s' index '%zu' mapped to '%s'",
+	      i.name, s->cname(), index, external.c_str());
     i.m_extmap.push_back(s, index, external, hasIndex);
   }
   return NULL;

@@ -26,6 +26,11 @@ struct Param {
 };
 
 class Worker;
+class ParamConfig;
+// This must be pointers since it has a reference member which can't be copied,
+// and we're not using c++11 yet, with "emplace".
+typedef std::vector<ParamConfig*> ParamConfigs;
+
 class ParamConfig : public OCPI::Util::IdentResolver {
   Worker &m_worker;
  public:
@@ -36,7 +41,7 @@ class ParamConfig : public OCPI::Util::IdentResolver {
   ParamConfig(Worker &w);
   ParamConfig(const ParamConfig &);
   ParamConfig &operator=(const ParamConfig * p);
-  const char * parse(ezxml_t cx);
+  const char * parse(ezxml_t cx, const ParamConfigs &configs);
   void write(FILE *xf, FILE *mf);
   void writeConstants(FILE *gf, Language lang);
   // Is the given configuration the same as this one?
@@ -44,9 +49,4 @@ class ParamConfig : public OCPI::Util::IdentResolver {
   // The callback when evaluating expressions for data types (e.g. array length).
   const char *getValue(const char *sym, OCPI::Util::ExprValue &val) const;
 };
-
-// This must be pointers since it has a reference member which can't be copied,
-// and we're not using c++11 yet, with "emplace".
-typedef std::vector<ParamConfig*> ParamConfigs;
-
 #endif

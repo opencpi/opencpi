@@ -1,0 +1,578 @@
+<properties>
+  <property name='spi_conf' type='uchar'  readable='1' initial='1' description='SPI Configuration'/>
+  <property name='multichip_sync_and_tx_mon_ctrl' type='uchar'  readable='1' initial='1' description='Multi-Chip Sync and Tx Mon Control'/>
+  <property name='tx_enable_filter_ctrl' type='uchar'  readable='1' initial='1' description='Tx Enable & Filter Control'/>
+  <property name='rx_enable_filter_ctrl' type='uchar'  readable='1' initial='1' description='Rx Enable & Filter  Control'/>
+  <property name='input_select' type='uchar'  readable='1' initial='1' description='Input Select'/>
+  <property name='rfpll_dividers' type='uchar'  readable='1' initial='1' description='RFPLL Dividers'/>
+  <property name='rx_clock_data_delay' type='uchar'  readable='1' initial='1' description='Rx Clock & Data  Delay'/>
+  <property name='tx_clock_data_delay' type='uchar'  readable='1' initial='1' description='Tx Clock & Data Delay'/>
+  <property name='ocpi_pad_008' type='uchar' padding='1' arraylength='1'/>
+  <property name='clock_enable' type='uchar'  readable='1' initial='1' description='Clock Enable'/>
+  <property name='bbpll' type='uchar'  readable='1' initial='1' description='BBPLL'/>
+  <property name='temp_offset' type='uchar'  readable='1' initial='1' description='Offset'/>
+  <property name='start_temp_reading' type='uchar'  readable='1' initial='1' description='Start Temp Reading'/>
+  <property name='temp_sense2' type='uchar'  readable='1' initial='1' description='Temp Sense2'/>
+  <property name='temperature' type='uchar'  volatile='1' description='Temperature'/>
+  <property name='temp_sensor_config' type='uchar'  readable='1' initial='1' description='Temp Sensor Config'/>
+  <property name='parallel_port_conf_1' type='uchar'  readable='1' initial='1' description='Parallel Port Configuration 1'/>
+  <property name='parallel_port_conf_2' type='uchar'  readable='1' initial='1' description='Parallel Port Configuration 2'/>
+  <property name='parallel_port_conf_3' type='uchar'  readable='1' initial='1' description='Parallel Port Configuration 3'/>
+  <property name='ensm_mode' type='uchar'  readable='1' initial='1' description='ENSM Mode'/>
+  <property name='ensm_config_1' type='uchar'  readable='1' initial='1' description='ENSM Config 1'/>
+  <property name='ensm_config_2' type='uchar'  readable='1' initial='1' description='ENSM Config 2'/>
+  <property name='calibration_ctrl' type='uchar'  readable='1' initial='1' description='Calibration Control'/>
+  <property name='state' type='uchar'  volatile='1' description='State'/>
+  <property name='auxdac_1_word' type='uchar'  readable='1' initial='1' description='AuxDAC 1 Word'/>
+  <property name='auxdac_2_word' type='uchar'  readable='1' initial='1' description='AuxDAC 2 Word'/>
+  <property name='auxdac_1_config' type='uchar'  readable='1' initial='1' description='AuxDAC 1 Config'/>
+  <property name='auxdac_2_config' type='uchar'  readable='1' initial='1' description='AuxDAC 2 Config'/>
+  <property name='auxadc_clock_divider' type='uchar'  readable='1' initial='1' description='AuxADC Clock Divider'/>
+  <property name='auxadc_config' type='uchar'  readable='1' initial='1' description='Aux ADC Config'/>
+  <property name='auxadc_word_msb' type='uchar'  volatile='1' description='AuxADC Word MSB'/>
+  <property name='auxadc_lsb' type='uchar'  volatile='1' description='AuxADC LSB'/>
+  <property name='auto_gpo' type='uchar'  readable='1' initial='1' description='Auto GPO'/>
+  <property name='agc_gain_lock_delay' type='uchar'  readable='1' initial='1' description='AGC Gain Lock Delay'/>
+  <property name='agc_attack_delay' type='uchar'  readable='1' initial='1' description='AGC Attack Delay'/>
+  <property name='auxdac_enable_ctrl' type='uchar'  readable='1' initial='1' description='AuxDAC Enable Control'/>
+  <property name='rx_load_synth_delay' type='uchar'  readable='1' initial='1' description='RX Load Synth Delay'/>
+  <property name='tx_load_synth_delay' type='uchar'  readable='1' initial='1' description='TX Load Synth Delay'/>
+  <property name='external_lna_ctrl' type='uchar'  readable='1' initial='1' description='External LNA control'/>
+  <property name='gpo_force_and_init' type='uchar'  readable='1' initial='1' description='GPO Force and Init'/>
+  <property name='gpo0_rx_delay' type='uchar'  readable='1' initial='1' description='GPO0 Rx delay'/>
+  <property name='gpo1_rx_delay' type='uchar'  readable='1' initial='1' description='GPO1 Rx delay'/>
+  <property name='gpo2_rx_delay' type='uchar'  readable='1' initial='1' description='GPO2 Rx delay'/>
+  <property name='gpo3_rx_delay' type='uchar'  readable='1' initial='1' description='GPO3 Rx delay'/>
+  <property name='gpo0_tx_delay' type='uchar'  readable='1' initial='1' description='GPO0 Tx Delay'/>
+  <property name='gpo1_tx_delay' type='uchar'  readable='1' initial='1' description='GPO1 Tx Delay'/>
+  <property name='gpo2_tx_delay' type='uchar'  readable='1' initial='1' description='GPO2 Tx Delay'/>
+  <property name='gpo3_tx_delay' type='uchar'  readable='1' initial='1' description='GPO3 Tx Delay'/>
+  <property name='auxdac1_rx_delay' type='uchar'  readable='1' initial='1' description='AuxDAC1 Rx Delay'/>
+  <property name='auxdac1_tx_delay' type='uchar'  readable='1' initial='1' description='AuxDAC1 Tx Delay'/>
+  <property name='auxdac2_rx_delay' type='uchar'  readable='1' initial='1' description='AuxDAC2 Rx Delay'/>
+  <property name='auxdac2_tx_delay' type='uchar'  readable='1' initial='1' description='AuxDAC2 Tx Delay'/>
+  <property name='ocpi_pad_034' type='uchar' padding='1' arraylength='1'/>
+  <property name='ctrl_output_pointer' type='uchar'  readable='1' initial='1' description='Control Output Pointer'/>
+  <property name='ctrl_output_enable' type='uchar'  readable='1' initial='1' description='Control Output Enable'/>
+  <property name='product_id' type='uchar'  volatile='1' description='Product ID'/>
+  <property name='ocpi_pad_038' type='uchar' padding='1' arraylength='2'/>
+  <property name='reference_clock_cycles' type='uchar'  readable='1' initial='1' description='Reference Clock Cycles'/>
+  <property name='digital_io_ctrl' type='uchar'  readable='1' initial='1' description='Digital I/O Control'/>
+  <property name='lvds_bias_ctrl' type='uchar'  readable='1' initial='1' description='LVDS Bias control'/>
+  <property name='lvds_invert_ctrl1' type='uchar'  readable='1' initial='1' description='LVDS Invert control1'/>
+  <property name='lvds_invert_ctrl2' type='uchar'  readable='1' initial='1' description='LVDS Invert control2'/>
+  <property name='sdm_ctrl_1' type='uchar'  readable='1' initial='1' description='SDM Control 1'/>
+  <property name='ocpi_pad_040' type='uchar' padding='1' arraylength='1'/>
+  <property name='fract_bb_freq_word_1' type='uchar'  readable='1' initial='1' description='Fractional BB Freq Word 1'/>
+  <property name='fract_bb_freq_word_2' type='uchar'  readable='1' initial='1' description='Fractional BB Freq Word 2'/>
+  <property name='fract_bb_freq_word_3' type='uchar'  readable='1' initial='1' description='Fractional BB Freq Word 3'/>
+  <property name='integer_bb_freq_word' type='uchar'  readable='1' initial='1' description='Integer BB Freq Word'/>
+  <property name='clock_ctrl' type='uchar'  readable='1' initial='1' description='Clock Control'/>
+  <property name='cp_current' type='uchar'  readable='1' initial='1' description='CP Current'/>
+  <property name='cp_bleed_current' type='uchar'  readable='1' initial='1' description='CP Bleed Current'/>
+  <property name='loop_filter_1' type='uchar'  readable='1' initial='1' description='Loop Filter 1'/>
+  <property name='loop_filter_2' type='uchar'  readable='1' initial='1' description='Loop Filter 2'/>
+  <property name='loop_filter_3' type='uchar'  readable='1' initial='1' description='Loop Filter 3'/>
+  <property name='vco_ctrl' type='uchar'  readable='1' initial='1' description='VCO Control'/>
+  <property name='ocpi_pad_04c' type='uchar' padding='1' arraylength='2'/>
+  <property name='sdm_ctrl' type='uchar'  readable='1' initial='1' description='SDM Control'/>
+  <property name='ocpi_pad_04f' type='uchar' padding='1' arraylength='1'/>
+  <property name='rx_synth_power_down_override' type='uchar'  readable='1' initial='1' description='Rx Synth Power Down Override'/>
+  <property name='tx_synth_power_down_override' type='uchar'  readable='1' initial='1' description='TX Synth Power Down Override'/>
+  <property name='rx_analog_power_down_override_1' type='uchar'  readable='1' initial='1' description='Rx Analog Power Down Override 1'/>
+  <property name='rx_analog_power_down_override_2' type='uchar'  readable='1' initial='1' description='Rx Analog Power Down Override 2'/>
+  <property name='rx1_adc_power_down_override' type='uchar'  readable='1' initial='1' description='Rx1 ADC Power Down Override'/>
+  <property name='rx2_adc_power_down_override' type='uchar'  readable='1' initial='1' description='Rx2 ADC Power Down Override'/>
+  <property name='tx_analog_power_down_override_1' type='uchar'  readable='1' initial='1' description='Tx Analog Power Down Override 1'/>
+  <property name='analog_power_down_override' type='uchar'  readable='1' initial='1' description='Analog Power Down Override'/>
+  <property name='misc_power_down_override' type='uchar'  readable='1' initial='1' description='Misc Power Down Override'/>
+  <property name='ocpi_pad_059' type='uchar' padding='1' arraylength='5'/>
+  <property name='ch_1_overflow' type='uchar'  volatile='1' description='CH 1 Overflow'/>
+  <property name='ch_2_overflow' type='uchar'  volatile='1' description='CH 2 Overflow'/>
+  <property name='tx_filter_coef_addr' type='uchar'  readable='1' initial='1' description='TX Filter Coefficient Address'/>
+  <property name='tx_filter_coef_write_data_1' type='uchar'  readable='1' initial='1' description='TX Filter Coefficient Write Data 1'/>
+  <property name='tx_filter_coef_write_data_2' type='uchar'  readable='1' initial='1' description='TX Filter Coefficient Write Data 2'/>
+  <property name='tx_filter_coef_read_data_1' type='uchar'  volatile='1' description='TX Filter Coefficient Read Data 1'/>
+  <property name='tx_filter_coef_read_data_2' type='uchar'  volatile='1' description='TX Filter Coefficient Read Data 2'/>
+  <property name='tx_filter_conf' type='uchar'  readable='1' initial='1' description='TX Filter Configuration'/>
+  <property name='ocpi_pad_066' type='uchar' padding='1' arraylength='1'/>
+  <property name='tx_mon_low_gain' type='uchar'  readable='1' initial='1' description='Tx Mon Low Gain'/>
+  <property name='tx_mon_high_gain' type='uchar'  readable='1' initial='1' description='Tx Mon High Gain'/>
+  <property name='tx_mon_delay' type='uchar'  readable='1' initial='1' description='Tx Mon Delay'/>
+  <property name='tx_level_thresh' type='uchar'  readable='1' initial='1' description='Tx Level Threshold'/>
+  <property name='tx_rssi1' type='uchar'  volatile='1' description='TX RSSI1'/>
+  <property name='tx_rssi2' type='uchar'  volatile='1' description='TX RSSI2'/>
+  <property name='tx_rssi_lsb' type='uchar'  volatile='1' description='TX RSSI LSB'/>
+  <property name='tpm_mode_enable' type='uchar'  readable='1' initial='1' description='TPM Mode Enable'/>
+  <property name='tx_mon_temp_gain_coef' type='uchar'  readable='1' initial='1' description='Temp Gain Coefficient'/>
+  <property name='tx_mon_1_config' type='uchar'  readable='1' initial='1' description='Tx Mon 1 Config'/>
+  <property name='tx_mon_2_config' type='uchar'  readable='1' initial='1' description='Tx Mon 2 Config'/>
+  <property name='ocpi_pad_072' type='uchar' padding='1' arraylength='1'/>
+  <property name='tx1_atten_0' type='uchar'  readable='1' initial='1' description='Tx1 Atten 0'/>
+  <property name='tx1_atten_1' type='uchar'  readable='1' initial='1' description='Tx1 Atten 1'/>
+  <property name='tx2_atten_0' type='uchar'  readable='1' initial='1' description='Tx2 Atten 0'/>
+  <property name='tx2_atten_1' type='uchar'  readable='1' initial='1' description='Tx2 Atten 1'/>
+  <property name='tx_atten_offset' type='uchar'  readable='1' initial='1' description='Tx Atten Offset'/>
+  <property name='tx_atten_thresh' type='uchar'  readable='1' initial='1' description='Tx Atten Threshold'/>
+  <property name='tx1_dig_atten' type='uchar'  readable='1' initial='1' description='Tx1 Dig Attenuation'/>
+  <property name='ocpi_pad_07a' type='uchar' padding='1' arraylength='2'/>
+  <property name='tx2_dig_atten' type='uchar'  readable='1' initial='1' description='Tx2 Dig Attenuation'/>
+  <property name='ocpi_pad_07d' type='uchar' padding='1' arraylength='2'/>
+  <property name='tx1_symbol_atten' type='uchar'  readable='1' initial='1' description='TX1 Symbol Attenuation'/>
+  <property name='tx2_symbol_atten' type='uchar'  readable='1' initial='1' description='TX2 Symbol Attenuation'/>
+  <property name='tx_symbol_atten_config' type='uchar'  readable='1' initial='1' description='TX Symbol Atten Config'/>
+  <property name='ocpi_pad_082' type='uchar' padding='1' arraylength='12'/>
+  <property name='tx1_out_1_phase_corr' type='uchar'  readable='1' initial='1' description='Tx1 Out 1 Phase Corr'/>
+  <property name='tx1_out_1_gain_corr' type='uchar'  readable='1' initial='1' description='Tx1 Out 1 Gain Corr'/>
+  <property name='tx2_out_1_phase_corr' type='uchar'  readable='1' initial='1' description='Tx2 Out 1 Phase Corr'/>
+  <property name='tx2_out_1_gain_corr' type='uchar'  readable='1' initial='1' description='Tx2 Out 1 Gain Corr'/>
+  <property name='tx1_out_1_offset_i' type='uchar'  readable='1' initial='1' description='Tx1 Out 1 Offset I'/>
+  <property name='tx1_out_1_offset_q' type='uchar'  readable='1' initial='1' description='Tx1 Out 1 Offset Q'/>
+  <property name='tx2_out_1_offset_i' type='uchar'  readable='1' initial='1' description='Tx2 Out 1 Offset I'/>
+  <property name='tx2_out_1_offset_q' type='uchar'  readable='1' initial='1' description='Tx2 Out 1 Offset Q'/>
+  <property name='tx1_out_2_phase_corr' type='uchar'  readable='1' initial='1' description='Tx1 Out 2 Phase Corr'/>
+  <property name='tx1_out_2_gain_corr' type='uchar'  readable='1' initial='1' description='Tx1 Out 2 Gain Corr'/>
+  <property name='tx2_out_2_phase_corr' type='uchar'  readable='1' initial='1' description='Tx2 Out 2 Phase Corr'/>
+  <property name='tx2_out_2_gain_corr' type='uchar'  readable='1' initial='1' description='Tx2 Out 2 Gain Corr'/>
+  <property name='tx1_out_2_offset_i' type='uchar'  readable='1' initial='1' description='Tx1 Out 2 Offset I'/>
+  <property name='tx1_out_2_offset_q' type='uchar'  readable='1' initial='1' description='Tx1 Out 2 Offset Q'/>
+  <property name='tx2_out_2_offset_i' type='uchar'  readable='1' initial='1' description='Tx2 Out 2 Offset I'/>
+  <property name='tx2_out_2_offset_q' type='uchar'  readable='1' initial='1' description='Tx2 Out 2 Offset Q'/>
+  <property name='ocpi_pad_09e' type='uchar' padding='1' arraylength='1'/>
+  <property name='tx_force_bits' type='uchar'  readable='1' initial='1' description='Force Bits'/>
+  <property name='quad_cal_nco_freq_phase_offset' type='uchar'  readable='1' initial='1' description='Quad Cal NCO Freq & Phase Offset'/>
+  <property name='quad_cal_ctrl' type='uchar'  readable='1' initial='1' description='Quad Cal Control'/>
+  <property name='kexp_1' type='uchar'  readable='1' initial='1' description='Kexp 1'/>
+  <property name='kexp_2' type='uchar'  readable='1' initial='1' description='Kexp 2'/>
+  <property name='quad_settle_count' type='uchar'  readable='1' initial='1' description='QUAD Settle count'/>
+  <property name='mag_ftest_thresh' type='uchar'  readable='1' initial='1' description='Mag. Ftest Thresh'/>
+  <property name='mag_ftest_thresh_2' type='uchar'  readable='1' initial='1' description='Mag. Ftest Thresh 2'/>
+  <property name='quad_cal_status_tx1' type='uchar'  volatile='1' description='Quad cal status Tx1'/>
+  <property name='quad_cal_status_tx2' type='uchar'  volatile='1' description='Quad cal status Tx2'/>
+  <property name='quad_cal_count' type='uchar'  readable='1' initial='1' description='Quad cal Count'/>
+  <property name='tx_quad_full_lmt_gain' type='uchar'  readable='1' initial='1' description='Tx Quad Full/LMT Gain'/>
+  <property name='squarer_config' type='uchar'  readable='1' initial='1' description='Squarer Config'/>
+  <property name='tx_quad_cal_atten' type='uchar'  readable='1' initial='1' description='TX Quad Cal Atten'/>
+  <property name='thresh_accum' type='uchar'  readable='1' initial='1' description='Thresh Accum'/>
+  <property name='tx_quad_lpf_gain' type='uchar'  readable='1' initial='1' description='Tx Quad LPF Gain'/>
+  <property name='ocpi_pad_0af' type='uchar' padding='1' arraylength='1'/>
+  <property name='txdac_vds_i' type='uchar'  readable='1' initial='1' description='TxDAC Vds I'/>
+  <property name='txdac_vds_q' type='uchar'  readable='1' initial='1' description='TxDAC Vds Q'/>
+  <property name='txdac_gn_i' type='uchar'  readable='1' initial='1' description='TxDAC gn I'/>
+  <property name='txdac_gn_q' type='uchar'  readable='1' initial='1' description='TxDAC gn Q'/>
+  <property name='ocpi_pad_0b4' type='uchar' padding='1' arraylength='12'/>
+  <property name='txbbf_opamp_a' type='uchar'  readable='1' initial='1' description='TxBBF OpAmp A'/>
+  <property name='txbbf_opamp_b' type='uchar'  readable='1' initial='1' description='TxBBF OpAmp B'/>
+  <property name='tx_bbf_r1' type='uchar'  readable='1' initial='1' description='Tx BBF R1'/>
+  <property name='tx_bbf_r2' type='uchar'  readable='1' initial='1' description='Tx BBF R2'/>
+  <property name='tx_bbf_r3' type='uchar'  readable='1' initial='1' description='Tx BBF R3'/>
+  <property name='tx_bbf_r4' type='uchar'  readable='1' initial='1' description='Tx BBF R4'/>
+  <property name='tx_bbf_rp' type='uchar'  readable='1' initial='1' description='Tx BBF RP'/>
+  <property name='tx_bbf_c1' type='uchar'  readable='1' initial='1' description='Tx BBF C1'/>
+  <property name='tx_bbf_c2' type='uchar'  readable='1' initial='1' description='Tx BBF C2'/>
+  <property name='tx_bbf_cp' type='uchar'  readable='1' initial='1' description='Tx BBF Cp'/>
+  <property name='tx_tune_ctrl' type='uchar'  readable='1' initial='1' description='Tx Tune Control'/>
+  <property name='tx_bbf_r2b' type='uchar'  readable='1' initial='1' description='Tx BBF R2b'/>
+  <property name='tx_bbf_tune' type='uchar'  readable='1' initial='1' description='Tx BBF Tune'/>
+  <property name='ocpi_pad_0cd' type='uchar' padding='1' arraylength='3'/>
+  <property name='config0' type='uchar'  readable='1' initial='1' description='Config0'/>
+  <property name='resistor' type='uchar'  readable='1' initial='1' description='Resistor'/>
+  <property name='capacitor' type='uchar'  readable='1' initial='1' description='Capacitor'/>
+  <property name='lo_cm' type='uchar'  readable='1' initial='1' description='LO CM'/>
+  <property name='ocpi_pad_0d4' type='uchar' padding='1' arraylength='2'/>
+  <property name='tx_bbf_tune_divider' type='uchar'  readable='1' initial='1' description='TX BBF Tune Divider'/>
+  <property name='tx_bbf_tune_mode' type='uchar'  readable='1' initial='1' description='TX BBF Tune Mode'/>
+  <property name='ocpi_pad_0d8' type='uchar' padding='1' arraylength='24'/>
+  <property name='rx_filter_coef_addr' type='uchar'  readable='1' initial='1' description='Rx Filter Coeff Addr'/>
+  <property name='rx_filter_coef_data_1' type='uchar'  readable='1' initial='1' description='Rx Filter Coeff Data 1'/>
+  <property name='rx_filter_coef_data_2' type='uchar'  readable='1' initial='1' description='Rx Filter Coeff Data 2'/>
+  <property name='rx_filter_coef_read_data_1' type='uchar'  volatile='1' description='Rx Filter Coeff Read Data 1'/>
+  <property name='rx_filter_coef_read_data_2' type='uchar'  volatile='1' description='Rx Filter Coeff Read Data 2'/>
+  <property name='rx_filter_config' type='uchar'  readable='1' initial='1' description='Rx Filter Config'/>
+  <property name='rx_filter_gain' type='uchar'  readable='1' initial='1' description='Rx Filter Gain'/>
+  <property name='ocpi_pad_0f7' type='uchar' padding='1' arraylength='3'/>
+  <property name='agc_config_1' type='uchar'  readable='1' initial='1' description='AGC Config1'/>
+  <property name='agc_config_2' type='uchar'  readable='1' initial='1' description='AGC config2'/>
+  <property name='agc_config_3' type='uchar'  readable='1' initial='1' description='AGC Config3'/>
+  <property name='max_lmt_full_gain' type='uchar'  readable='1' initial='1' description='Max LMT/Full Gain'/>
+  <property name='peak_wait_time' type='uchar'  readable='1' initial='1' description='Peak Wait Time'/>
+  <property name='ocpi_pad_0ff' type='uchar' padding='1' arraylength='1'/>
+  <property name='digital_gain' type='uchar'  readable='1' initial='1' description='Digital Gain'/>
+  <property name='agc_lock_level' type='uchar'  readable='1' initial='1' description='AGC Lock Level'/>
+  <property name='adc_noise_correction_factor' type='uchar'  readable='1' initial='1' description='ADC noise Correction Factor'/>
+  <property name='gain_stp_config1' type='uchar'  readable='1' initial='1' description='Gain Step Config1'/>
+  <property name='adc_small_overload_thresh' type='uchar'  readable='1' initial='1' description='ADC Small Overload Threshold'/>
+  <property name='adc_large_overload_thresh' type='uchar'  readable='1' initial='1' description='ADC Large Overload Threshold'/>
+  <property name='gain_stp_config_2' type='uchar'  readable='1' initial='1' description='Gain Step Config 2'/>
+  <property name='small_lmt_overload_thresh' type='uchar'  readable='1' initial='1' description='Small LMT Overload Threshold'/>
+  <property name='large_lmt_overload_thresh' type='uchar'  readable='1' initial='1' description='Large LMT Overload Threshold'/>
+  <property name='rx1_manual_lmt_full_gain' type='uchar'  readable='1' initial='1' description='Rx1 Manual LMT/Full Gain'/>
+  <property name='rx1_manual_lpf_gain' type='uchar'  readable='1' initial='1' description='Rx1 Manual LPF gain'/>
+  <property name='rx1_manual_digitalforced_gain' type='uchar'  readable='1' initial='1' description='Rx1 Manual Digital/Forced Gain'/>
+  <property name='rx2_manual_lmt_full_gain' type='uchar'  readable='1' initial='1' description='Rx2 Manual LMT/Full Gain'/>
+  <property name='rx2_manual_lpf_gain' type='uchar'  readable='1' initial='1' description='Rx2 Manual LPF Gain'/>
+  <property name='rx2_manual_digitalforced_gain' type='uchar'  readable='1' initial='1' description='Rx2 Manual Digital/Forced Gain'/>
+  <property name='ocpi_pad_10f' type='uchar' padding='1' arraylength='1'/>
+  <property name='fast_config_1' type='uchar'  readable='1' initial='1' description='Config 1'/>
+  <property name='fast_config_2_settling_delay' type='uchar'  readable='1' initial='1' description='Config 2 & Settling Delay'/>
+  <property name='fast_energy_lost_thresh' type='uchar'  readable='1' initial='1' description='Energy Lost Threshold'/>
+  <property name='fast_stronger_signal_thresh' type='uchar'  readable='1' initial='1' description='Stronger Signal Threshold'/>
+  <property name='fast_low_power_thresh' type='uchar'  readable='1' initial='1' description='Low Power Threshold'/>
+  <property name='fast_strong_signal_freeze' type='uchar'  readable='1' initial='1' description='Strong Signal Freeze'/>
+  <property name='fast_final_over_range_and_opt_gain' type='uchar'  readable='1' initial='1' description='Final Over Range and Opt Gain'/>
+  <property name='fast_energy_detect_count' type='uchar'  readable='1' initial='1' description='Energy Detect Count'/>
+  <property name='fast_agcll_upper_limit' type='uchar'  readable='1' initial='1' description='AGCLL Upper Limit'/>
+  <property name='fast_gain_lock_exit_count' type='uchar'  readable='1' initial='1' description='Gain Lock Exit Count'/>
+  <property name='fast_initial_lmt_gain_limit' type='uchar'  readable='1' initial='1' description='Initial LMT Gain Limit'/>
+  <property name='fast_increment_time' type='uchar'  readable='1' initial='1' description='Increment Time'/>
+  <property name='ocpi_pad_11c' type='uchar' padding='1' arraylength='4'/>
+  <property name='agc_inner_low_thresh' type='uchar'  readable='1' initial='1' description='AGC Inner Low Threshold'/>
+  <property name='lmt_overload_counters' type='uchar'  readable='1' initial='1' description='LMT Overload Counters'/>
+  <property name='adc_overload_counters' type='uchar'  readable='1' initial='1' description='ADC Overload Counters'/>
+  <property name='gain_stp1' type='uchar'  readable='1' initial='1' description='Gain Step1'/>
+  <property name='gain_update_counter1' type='uchar'  volatile='1' description='Gain Update Counter1'/>
+  <property name='gain_update_counter2' type='uchar'  volatile='1' description='Gain Update Counter2'/>
+  <property name='ocpi_pad_126' type='uchar' padding='1' arraylength='2'/>
+  <property name='digital_sat_counter' type='uchar'  readable='1' initial='1' description='Digital Sat Counter'/>
+  <property name='outer_power_threshs' type='uchar'  readable='1' initial='1' description='Outer Power Thresholds'/>
+  <property name='gain_stp_2' type='uchar'  readable='1' initial='1' description='Gain Step 2'/>
+  <property name='ocpi_pad_12b' type='uchar' padding='1' arraylength='1'/>
+  <property name='ext_lna_high_gain' type='uchar'  readable='1' initial='1' description='Ext LNA High Gain'/>
+  <property name='ext_lna_low_gain' type='uchar'  readable='1' initial='1' description='Ext LNA Low Gain'/>
+  <property name='ocpi_pad_12e' type='uchar' padding='1' arraylength='2'/>
+  <property name='gain_table_address' type='uchar'  readable='1' initial='1' description='Gain Table Address'/>
+  <property name='gain_table_write_data1' type='uchar'  readable='1' initial='1' description='Gain Table Write Data1'/>
+  <property name='gain_table_write_data2' type='uchar'  readable='1' initial='1' description='Gain Table Write Data2'/>
+  <property name='gain_table_write_data3' type='uchar'  readable='1' initial='1' description='Gain Table Write Data 3'/>
+  <property name='gain_table_read_data1' type='uchar'  volatile='1' description='Gain Table Read Data 1'/>
+  <property name='gain_table_read_data2' type='uchar'  volatile='1' description='Gain Table Read Data 2'/>
+  <property name='gain_table_read_data3' type='uchar'  volatile='1' description='Gain Table Read Data 3'/>
+  <property name='gain_table_config' type='uchar'  readable='1' initial='1' description='Gain Table Config'/>
+  <property name='gm_sub_table_address' type='uchar'  readable='1' initial='1' description='Gm Sub Table Address'/>
+  <property name='gm_sub_table_gain_write' type='uchar'  readable='1' initial='1' description='Gm Sub Table Gain Word Write'/>
+  <property name='gm_sub_table_bias_write' type='uchar'  readable='1' initial='1' description='Gm Sub Table Bias Word Write'/>
+  <property name='gm_sub_table_ctrl_write' type='uchar'  readable='1' initial='1' description='Gm Sub Table Control Word Write'/>
+  <property name='gm_sub_table_gain_read' type='uchar'  volatile='1' description='Gm Sub Table Gain Word Read'/>
+  <property name='gm_sub_table_bias_read' type='uchar'  volatile='1' description='Gm Sub Table Bias Word Read'/>
+  <property name='gm_sub_table_ctrl_read' type='uchar'  readable='1' initial='1' description='Gm Sub Table Control Word Read'/>
+  <property name='gm_sub_table_config' type='uchar'  readable='1' initial='1' description='Gm Sub Table Config'/>
+  <property name='word_address' type='uchar'  readable='1' initial='1' description='Word Address'/>
+  <property name='gain_diff_worderror_write' type='uchar'  readable='1' initial='1' description='Gain Diff Word/Error Write'/>
+  <property name='gain_error_read' type='uchar'  volatile='1' description='Gain Error Read'/>
+  <property name='config' type='uchar'  readable='1' initial='1' description='Config'/>
+  <property name='lna_gain_diff_read_back' type='uchar'  volatile='1' description='LNA Gain Diff Read Back'/>
+  <property name='max_mixer_calibration_gain_index' type='uchar'  readable='1' initial='1' description='Max Mixer Calibration Gain Index'/>
+  <property name='temp_gain_coef' type='uchar'  readable='1' initial='1' description='Temp Gain Coefficient'/>
+  <property name='settle_time' type='uchar'  readable='1' initial='1' description='Settle Time'/>
+  <property name='measure_duration' type='uchar'  readable='1' initial='1' description='Measure Duration'/>
+  <property name='cal_temp_sensor_word' type='uchar'  readable='1' initial='1' description='Cal Temp sensor word'/>
+  <property name='ocpi_pad_14a' type='uchar' padding='1' arraylength='6'/>
+  <property name='measure_duration_01' type='uchar'  readable='1' initial='1' description='Measure Duration 0&1'/>
+  <property name='measure_duration_23' type='uchar'  readable='1' initial='1' description='Measure Duration 2&3'/>
+  <property name='rssi_weight_0' type='uchar'  readable='1' initial='1' description='RSSI Weight 0'/>
+  <property name='rssi_weight_1' type='uchar'  readable='1' initial='1' description='RSSI Weight 1'/>
+  <property name='rssi_weight_2' type='uchar'  readable='1' initial='1' description='RSSI Weight 2'/>
+  <property name='rssi_weight_3' type='uchar'  readable='1' initial='1' description='RSSI Weight 3'/>
+  <property name='rssi_delay' type='uchar'  readable='1' initial='1' description='RSSI delay'/>
+  <property name='rssi_wait_time' type='uchar'  readable='1' initial='1' description='RSSI wait time'/>
+  <property name='rssi_config' type='uchar'  readable='1' initial='1' description='RSSI Config'/>
+  <property name='adc_measure_duration_01' type='uchar'  readable='1' initial='1' description='ADC Measure Duration 0&1'/>
+  <property name='adc_weight_0' type='uchar'  readable='1' initial='1' description='ADC Weight 0'/>
+  <property name='adc_weight_1' type='uchar'  readable='1' initial='1' description='ADC Weight 1'/>
+  <property name='dec_power_measure_duration_0' type='uchar'  readable='1' initial='1' description='Dec Power Measure Duration 0'/>
+  <property name='lna_gain' type='uchar'  readable='1' initial='1' description='LNA Gain'/>
+  <property name='ocpi_pad_15e' type='uchar' padding='1' arraylength='2'/>
+  <property name='ch1_adc_power' type='uchar'  readable='1' initial='1' description='CH1 ADC Power'/>
+  <property name='ch1_rx_filter_power' type='uchar'  volatile='1' description='CH1 Rx filter Power'/>
+  <property name='ch2_adc_power' type='uchar'  readable='1' initial='1' description='CH2 ADC Power'/>
+  <property name='ch2_rx_filter_power' type='uchar'  volatile='1' description='CH2 Rx filter Power'/>
+  <property name='ocpi_pad_164' type='uchar' padding='1' arraylength='4'/>
+  <property name='rx_quad_cal_level' type='uchar'  readable='1' initial='1' description='Rx Quad Cal Level'/>
+  <property name='calibration_config_1' type='uchar'  readable='1' initial='1' description='Calibration Config 1'/>
+  <property name='calibration_config_2' type='uchar'  readable='1' initial='1' description='Calibration config2'/>
+  <property name='calibration_config_3' type='uchar'  readable='1' initial='1' description='Calibration config3'/>
+  <property name='calib_count' type='uchar'  readable='1' initial='1' description='Calib count'/>
+  <property name='settle_count' type='uchar'  readable='1' initial='1' description='Settle count'/>
+  <property name='rx_quad_gain1' type='uchar'  readable='1' initial='1' description='Rx Quad gain1'/>
+  <property name='rx_quad_gain2' type='uchar'  readable='1' initial='1' description='Rx Quad gain2'/>
+  <property name='rx1_input_a_phase_corr' type='uchar'  readable='1' initial='1' description='Rx1 Input A Phase Corr'/>
+  <property name='rx1_input_a_gain_corr' type='uchar'  readable='1' initial='1' description='Rx1 Input A Gain Corr'/>
+  <property name='rx2_input_a_phase_corr' type='uchar'  readable='1' initial='1' description='Rx2 Input A Phase Corr'/>
+  <property name='rx2_input_a_gain_corr' type='uchar'  readable='1' initial='1' description='Rx2 Input A Gain Corr'/>
+  <property name='rx1_input_a_q_offset' type='uchar'  readable='1' initial='1' description='Rx1 Input A Q" Offset'/>
+  <property name='rx1_input_a_offsets' type='uchar'  readable='1' initial='1' description='Rx1 Input A Offsets'/>
+  <property name='input_a_offsets_1' type='uchar'  readable='1' initial='1' description='Input A Offsets 1'/>
+  <property name='rx2_input_a_offsets' type='uchar'  readable='1' initial='1' description='Rx2 Input A Offsets'/>
+  <property name='rx2_input_a_i_offset' type='uchar'  readable='1' initial='1' description='Rx2 Input A "I" Offset'/>
+  <property name='rx1_input_bc_phase_corr' type='uchar'  readable='1' initial='1' description='Rx1 Input B&C Phase Corr'/>
+  <property name='rx1_input_bc_gain_corr' type='uchar'  readable='1' initial='1' description='Rx1 Input B&C Gain Corr'/>
+  <property name='rx2_input_bc_phase_corr' type='uchar'  readable='1' initial='1' description='Rx2 Input B&C Phase Corr'/>
+  <property name='rx2_input_bc_gain_corr' type='uchar'  readable='1' initial='1' description='Rx2 Input B&C Gain Corr'/>
+  <property name='rx1_input_bc_q_offset' type='uchar'  readable='1' initial='1' description='Rx1 Input B&C "Q" Offset'/>
+  <property name='rx1_input_bc_offsets' type='uchar'  readable='1' initial='1' description='Rx1 Input B&C Offsets'/>
+  <property name='input_bc_offsets_1' type='uchar'  readable='1' initial='1' description='Input B&C Offsets 1'/>
+  <property name='rx2_input_bc_offsets' type='uchar'  readable='1' initial='1' description='Rx2 Input B&C Offsets'/>
+  <property name='rx2_input_bc_i_offset' type='uchar'  readable='1' initial='1' description='Rx2 Input B&C "I" Offset'/>
+  <property name='force_bits' type='uchar'  readable='1' initial='1' description='Force Bits'/>
+  <property name='ocpi_pad_183' type='uchar' padding='1' arraylength='2'/>
+  <property name='wait_count' type='uchar'  readable='1' initial='1' description='Wait Count'/>
+  <property name='rf_dc_offset_count' type='uchar'  readable='1' initial='1' description='RF DC Offset Count'/>
+  <property name='rf_dc_offset_config_1' type='uchar'  readable='1' initial='1' description='RF DC Offset Config1'/>
+  <property name='rf_dc_offset_atten' type='uchar'  readable='1' initial='1' description='RF DC Offset Attenuation'/>
+  <property name='invert_bits' type='uchar'  readable='1' initial='1' description='Invert Bits'/>
+  <property name='ocpi_pad_18a' type='uchar' padding='1' arraylength='1'/>
+  <property name='dc_offset_config2' type='uchar'  readable='1' initial='1' description='DC Offset Config2'/>
+  <property name='rf_cal_gain_index' type='uchar'  readable='1' initial='1' description='RF Cal Gain Index'/>
+  <property name='soi_thresh' type='uchar'  readable='1' initial='1' description='SOI Threshold'/>
+  <property name='ocpi_pad_18e' type='uchar' padding='1' arraylength='2'/>
+  <property name='bb_dc_offset_shift' type='uchar'  readable='1' initial='1' description='BB DC Offset Shift'/>
+  <property name='bb_dc_offset_fast_settle_shift' type='uchar'  readable='1' initial='1' description='BB DC Offset Fast Settle Shift'/>
+  <property name='bb_fast_settle_dur' type='uchar'  readable='1' initial='1' description='BB Fast Settle Dur'/>
+  <property name='bb_dc_offset_count' type='uchar'  readable='1' initial='1' description='BB DC Offset Count'/>
+  <property name='bb_dc_offset_atten' type='uchar'  readable='1' initial='1' description='BB DC Offset Attenuation'/>
+  <property name='ocpi_pad_195' type='uchar' padding='1' arraylength='5'/>
+  <property name='rx1_bb_dc_word_i_msb' type='uchar'  volatile='1' description='RX1 BB DC word I MSB'/>
+  <property name='rx1_bb_dc_word_i_lsb' type='uchar'  volatile='1' description='RX1 BB DC word I LSB'/>
+  <property name='rx1_bb_dc_word_q_msb' type='uchar'  volatile='1' description='RX1 BB DC word Q MSB'/>
+  <property name='rx1_bb_dc_word_q_lsb' type='uchar'  volatile='1' description='RX1 BB DC word Q LSB'/>
+  <property name='rx2_bb_dc_word_i_msb' type='uchar'  volatile='1' description='RX2 BB DC word I MSB'/>
+  <property name='rx2_bb_dc_word_i_lsb' type='uchar'  volatile='1' description='RX2 BB DC word I LSB'/>
+  <property name='rx2_bb_dc_word_q_msb' type='uchar'  volatile='1' description='RX2 BB DC word Q MSB'/>
+  <property name='rx2_bb_dc_word_q_lsb' type='uchar'  volatile='1' description='RX2 BB DC word Q LSB'/>
+  <property name='bb_track_corr_word_i_msb' type='uchar'  volatile='1' description='BB Track corr word I MSB'/>
+  <property name='bb_track_corr_word_i_lsb' type='uchar'  volatile='1' description='BB Track corr word I LSB'/>
+  <property name='bb_track_corr_word_q_msb' type='uchar'  volatile='1' description='BB Track corr word Q MSB'/>
+  <property name='bb_track_corr_word_q_lsb' type='uchar'  volatile='1' description='BB Track corr word Q LSB'/>
+  <property name='ocpi_pad_1a6' type='uchar' padding='1' arraylength='1'/>
+  <property name='rx1_rssi_symbol' type='uchar'  volatile='1' description='Rx1 RSSI Symbol'/>
+  <property name='rx1_rssi_preamble' type='uchar'  volatile='1' description='Rx1 RSSI preamble'/>
+  <property name='rx2_rssi_symbol' type='uchar'  volatile='1' description='Rx2 RSSI symbol'/>
+  <property name='rx2_rssi_preamble' type='uchar'  volatile='1' description='Rx2 RSSI preamble'/>
+  <property name='symbol_lsb' type='uchar'  volatile='1' description='Symbol LSB'/>
+  <property name='preamble_lsb' type='uchar'  volatile='1' description='Preamble LSB'/>
+  <property name='rx_path_gain_msb' type='uchar'  readable='1' initial='1' description='Rx Path Gain'/>
+  <property name='rx_path_gain_lsb' type='uchar'  readable='1' initial='1' description='Rx Path Gain'/>
+  <property name='ocpi_pad_1af' type='uchar' padding='1' arraylength='1'/>
+  <property name='rx_diff_lna_force' type='uchar'  readable='1' initial='1' description='Rx Diff LNA Force'/>
+  <property name='rx_lna_bias_coarse' type='uchar'  readable='1' initial='1' description='Rx LNA Bias Coarse'/>
+  <property name='rx_lna_bias_fine_0' type='uchar'  readable='1' initial='1' description='Rx LNA Bias Fine 0'/>
+  <property name='rx_lna_bias_fine_1' type='uchar'  readable='1' initial='1' description='Rx LNA Bias Fine 1'/>
+  <property name='ocpi_pad_1b4' type='uchar' padding='1' arraylength='12'/>
+  <property name='rx_mix_gm_config' type='uchar'  readable='1' initial='1' description='Rx Mix Gm Config'/>
+  <property name='rx1_mix_gm_force' type='uchar'  readable='1' initial='1' description='Rx1 Mix Gm Force'/>
+  <property name='rx1_mix_gm_bias_force' type='uchar'  readable='1' initial='1' description='Rx1 Mix Gm Bias (Force)'/>
+  <property name='rx2_mix_gm_force' type='uchar'  readable='1' initial='1' description='Rx2 Mix Gm Force'/>
+  <property name='rx2_mix_gm_bias_force' type='uchar'  readable='1' initial='1' description='Rx2 Mix Gm Bias (Force)'/>
+  <property name='ocpi_pad_1c5' type='uchar' padding='1' arraylength='3'/>
+  <property name='input_a_msbs' type='uchar'  readable='1' initial='1' description='Input A MSBs'/>
+  <property name='input_a_rx1_i' type='uchar'  readable='1' initial='1' description='Input A RX1 I'/>
+  <property name='input_a_rx1_q' type='uchar'  readable='1' initial='1' description='Input A RX1 Q'/>
+  <property name='input_a_rx2_i' type='uchar'  readable='1' initial='1' description='Input A RX2 I'/>
+  <property name='input_a_rx2_q' type='uchar'  readable='1' initial='1' description='Input A RX2 Q'/>
+  <property name='inputs_bc_rx1_i' type='uchar'  readable='1' initial='1' description='Inputs B&C RX1 I'/>
+  <property name='band1_rx1_q' type='uchar'  readable='1' initial='1' description='Band1 RX1 Q'/>
+  <property name='inputs_bc_rx2_i' type='uchar'  readable='1' initial='1' description='Inputs B&C RX2 I'/>
+  <property name='inputs_bc_rx2_q' type='uchar'  readable='1' initial='1' description='Inputs B&C RX2 Q'/>
+  <property name='inputs_bc_msbs' type='uchar'  readable='1' initial='1' description='Inputs B&C MSBs'/>
+  <property name='force_os_dac' type='uchar'  readable='1' initial='1' description='Force OS DAC'/>
+  <property name='ocpi_pad_1d3' type='uchar' padding='1' arraylength='2'/>
+  <property name='rx_mix_lo_cm' type='uchar'  readable='1' initial='1' description='Rx Mix LO CM'/>
+  <property name='rx_cgb_seg_enable' type='uchar'  readable='1' initial='1' description='Rx CGB Seg Enable'/>
+  <property name='rx_mix_inputbias' type='uchar'  readable='1' initial='1' description='Rx Mix Input/Bias'/>
+  <property name='ocpi_pad_1d8' type='uchar' padding='1' arraylength='3'/>
+  <property name='rx_tia_config' type='uchar'  readable='1' initial='1' description='Rx TIA Config'/>
+  <property name='tia1_c_lsb' type='uchar'  readable='1' initial='1' description='TIA1 C LSB'/>
+  <property name='tia1_c_msb' type='uchar'  readable='1' initial='1' description='TIA1 C MSB'/>
+  <property name='tia2_c_lsb' type='uchar'  readable='1' initial='1' description='TIA2 C LSB'/>
+  <property name='tia2_c_msb' type='uchar'  readable='1' initial='1' description='TIA2 C MSB'/>
+  <property name='rx1_bbf_r1a' type='uchar'  readable='1' initial='1' description='Rx1 BBF R1A'/>
+  <property name='rx2_bbf_r1a' type='uchar'  readable='1' initial='1' description='Rx2 BBF R1A'/>
+  <property name='rx1_tune_ctrl' type='uchar'  readable='1' initial='1' description='Rx1 Tune Control'/>
+  <property name='rx2_tune_ctrl' type='uchar'  readable='1' initial='1' description='Rx2 Tune Control'/>
+  <property name='rx1_bbf_r5' type='uchar'  readable='1' initial='1' description='Rx1 BBF R5'/>
+  <property name='rx2_bbf_r5' type='uchar'  readable='1' initial='1' description='Rx2 BBF R5'/>
+  <property name='rx_bbf_r2346' type='uchar'  readable='1' initial='1' description='Rx BBF R2346'/>
+  <property name='rx_bbf_c1_msb' type='uchar'  readable='1' initial='1' description='Rx BBF C1 MSB'/>
+  <property name='rx_bbf_c1_lsb' type='uchar'  readable='1' initial='1' description='Rx BBF C1 LSB'/>
+  <property name='rx_bbf_c2_msb' type='uchar'  readable='1' initial='1' description='Rx BBF C2 MSB'/>
+  <property name='rx_bbf_c2_lsb' type='uchar'  readable='1' initial='1' description='Rx BBF C2 LSB'/>
+  <property name='rx_bbf_c3_msb' type='uchar'  readable='1' initial='1' description='Rx BBF C3 MSB'/>
+  <property name='rx_bbf_c3_lsb' type='uchar'  readable='1' initial='1' description='Rx BBF C3 LSB'/>
+  <property name='rx_bbf_cc1_ctr' type='uchar'  readable='1' initial='1' description='Rx BBF CC1 Ctr'/>
+  <property name='rx_bbf_pow_rz_byte0' type='uchar'  readable='1' initial='1' description='Rx BBF Pow Rz Byte0'/>
+  <property name='rx_bbf_cc2_ctr' type='uchar'  readable='1' initial='1' description='Rx BBF CC2 Ctr'/>
+  <property name='rx_bbf_pow_rz_byte1' type='uchar'  readable='1' initial='1' description='Rx BBF Pow Rz Byte1'/>
+  <property name='rx_bbf_cc3_ctr' type='uchar'  readable='1' initial='1' description='Rx BBF CC3 Ctr'/>
+  <property name='rx_bbf_r5_tune' type='uchar'  readable='1' initial='1' description='Rx BBF R5 Tune'/>
+  <property name='rx_bbf_tune' type='uchar'  readable='1' initial='1' description='Rx BBF Tune'/>
+  <property name='rx1_bbf_man_gain' type='uchar'  readable='1' initial='1' description='Rx1 BBF Man Gain'/>
+  <property name='rx2_bbf_man_gain' type='uchar'  readable='1' initial='1' description='Rx2 BBF Man Gain'/>
+  <property name='ocpi_pad_1f6' type='uchar' padding='1' arraylength='2'/>
+  <property name='rx_bbf_tune_divide' type='uchar'  readable='1' initial='1' description='RX BBF Tune Divide'/>
+  <property name='rx_bbf_tune_config' type='uchar'  readable='1' initial='1' description='RX BBF Tune Config'/>
+  <property name='pole_gain' type='uchar'  readable='1' initial='1' description='Pole gain'/>
+  <property name='rx_bbbw_mhz' type='uchar'  readable='1' initial='1' description='Rx BBBW MHz'/>
+  <property name='rx_bbbw_khz' type='uchar'  readable='1' initial='1' description='Rx BBBW kHz'/>
+  <property name='ocpi_pad_1fd' type='uchar' padding='1' arraylength='4'/>
+  <property name='fb_dac_clk_delay1' type='uchar'  readable='1' initial='1' description='FB DAC Clk Delay1'/>
+  <property name='fb_dac_clk_delay2' type='uchar'  readable='1' initial='1' description='FB DAC Clk Delay2'/>
+  <property name='flash_sample_clk_delay_3p' type='uchar'  readable='1' initial='1' description='Flash Sample Clk Delay 3p'/>
+  <property name='flash_sample_clk_delay_3n' type='uchar'  readable='1' initial='1' description='Flash Sample Clk Delay 3n'/>
+  <property name='test_mux_2i' type='uchar'  readable='1' initial='1' description='Test MUX 2i'/>
+  <property name='test_mux_2q' type='uchar'  readable='1' initial='1' description='Test MUX 2q'/>
+  <property name='integrator_1_resistance' type='uchar'  readable='1' initial='1' description='Integrator 1 Resistance'/>
+  <property name='integrator_1_capacitance' type='uchar'  readable='1' initial='1' description='Integrator 1 Capacitance'/>
+  <property name='integrator_23_resistance' type='uchar'  readable='1' initial='1' description='Integrator 23 Resistance'/>
+  <property name='integrator_2_resistance' type='uchar'  readable='1' initial='1' description='Integrator 2 Resistance'/>
+  <property name='integrator_2_capacitance' type='uchar'  readable='1' initial='1' description='Integrator 2 Capacitance'/>
+  <property name='integrator_3_resistance' type='uchar'  readable='1' initial='1' description='Integrator 3 Resistance'/>
+  <property name='integrator_3_capacitance' type='uchar'  readable='1' initial='1' description='Integrator 3 Capacitance'/>
+  <property name='integrator_amp_cc' type='uchar'  readable='1' initial='1' description='Integrator Amp Cc'/>
+  <property name='int_1_fb_dac_nmos_current_source' type='uchar'  readable='1' initial='1' description='Int 1 FB DAC NMOS Current Source'/>
+  <property name='int_1_fb_dac_nmos_casoade_bias_current' type='uchar'  readable='1' initial='1' description='Int 1 FB DAC NMOS Casoade Bias Current'/>
+  <property name='int_1_fb_dac_pmos_current_source' type='uchar'  readable='1' initial='1' description='Int 1 FB DAC PMOS Current Source'/>
+  <property name='int_2_fb_dac_nmos_current_source' type='uchar'  readable='1' initial='1' description='Int 2 FB DAC NMOS Current Source'/>
+  <property name='int_2_fb_dac_nmos_cascode_bias_current' type='uchar'  readable='1' initial='1' description='Int 2 FB DAC NMOS Cascode Bias Current'/>
+  <property name='int_2_fb_dac_pmos_current_source' type='uchar'  readable='1' initial='1' description='Int 2 FB DAC PMOS Current Source'/>
+  <property name='int_3_fb_dac_nmos_current_source' type='uchar'  readable='1' initial='1' description='Int 3 FB DAC NMOS Current Source'/>
+  <property name='int_3_fb_dac_nmos_cascode_bias_current' type='uchar'  readable='1' initial='1' description='Int 3 FB DAC NMOS Cascode Bias Current'/>
+  <property name='int_3_fb_dac_pmos_current_source' type='uchar'  readable='1' initial='1' description='Int 3 FB DAC PMOS Current Source'/>
+  <property name='fb_dac_bias_current' type='uchar'  readable='1' initial='1' description='FB DAC Bias Current'/>
+  <property name='int_1_1st_stage_current' type='uchar'  readable='1' initial='1' description='Int 1 1st Stage Current'/>
+  <property name='int_1_1st_stage_cascode_current' type='uchar'  readable='1' initial='1' description='Int 1 1st Stage Cascode Current'/>
+  <property name='int_1_2nd_stage_current' type='uchar'  readable='1' initial='1' description='Int 1 2nd Stage Current'/>
+  <property name='integrator_2_1st_stage_current' type='uchar'  readable='1' initial='1' description='Integrator 2 1st Stage Current'/>
+  <property name='int_2_1st_stage_cascode_current' type='uchar'  readable='1' initial='1' description='Int 2 1st Stage Cascode Current'/>
+  <property name='int_2_2nd_stage_current' type='uchar'  readable='1' initial='1' description='Int 2 2nd Stage Current'/>
+  <property name='int_3_1st_stage_current' type='uchar'  readable='1' initial='1' description='Int 3 1st Stage Current'/>
+  <property name='int_3_1st_stage_cascode_current' type='uchar'  readable='1' initial='1' description='Int 3 1st Stage Cascode Current'/>
+  <property name='int_3_2nd_stage_current' type='uchar'  readable='1' initial='1' description='Int 3 2nd Stage Current'/>
+  <property name='flash_bias_current' type='uchar'  readable='1' initial='1' description='Flash Bias Current'/>
+  <property name='flash_ladder_bias' type='uchar'  readable='1' initial='1' description='Flash Ladder Bias'/>
+  <property name='flash_ladder_cascode_current' type='uchar'  readable='1' initial='1' description='Flash Ladder Cascode Current'/>
+  <property name='flash_ladder_bias2' type='uchar'  readable='1' initial='1' description='Flash Ladder Bias2'/>
+  <property name='reset' type='uchar'  readable='1' initial='1' description='Reset'/>
+  <property name='ocpi_pad_227' type='uchar' padding='1' arraylength='9'/>
+  <property name='rx_pfd_config' type='uchar'  readable='1' initial='1' description='RX PFD Config'/>
+  <property name='rx_integer_byte_0' type='uchar'  readable='1' initial='1' description='RX Integer Byte 0'/>
+  <property name='rx_integer_byte_1' type='uchar'  readable='1' initial='1' description='RX Integer Byte 1'/>
+  <property name='rx_fract_byte_0' type='uchar'  readable='1' initial='1' description='RX Fractional Byte 0'/>
+  <property name='rx_fract_byte_1' type='uchar'  readable='1' initial='1' description='RX Fractional Byte 1'/>
+  <property name='rx_fract_byte_2' type='uchar'  readable='1' initial='1' description='RX Fractional Byte 2'/>
+  <property name='rx_force_alc' type='uchar'  readable='1' initial='1' description='RX Force ALC'/>
+  <property name='rx_force_vco_tune_0' type='uchar'  readable='1' initial='1' description='RX Force VCO Tune 0'/>
+  <property name='rx_force_vco_tune_1' type='uchar'  readable='1' initial='1' description='RX Force VCO Tune 1'/>
+  <property name='rx_alc_varactor' type='uchar'  readable='1' initial='1' description='RX ALC/Varactor'/>
+  <property name='rx_vco_output' type='uchar'  readable='1' initial='1' description='RX VCO Output'/>
+  <property name='rx_cp_current' type='uchar'  readable='1' initial='1' description='RX CP Current'/>
+  <property name='rx_cp_offset' type='uchar'  readable='1' initial='1' description='RX CP Offset'/>
+  <property name='rx_cp_config' type='uchar'  readable='1' initial='1' description='RX CP Config'/>
+  <property name='rx_loop_filter_1' type='uchar'  readable='1' initial='1' description='RX Loop Filter 1'/>
+  <property name='rx_loop_filter_2' type='uchar'  readable='1' initial='1' description='RX Loop Filter 2'/>
+  <property name='rx_loop_filter_3' type='uchar'  readable='1' initial='1' description='RX Loop Filter 3'/>
+  <property name='rx_dithercp_cal' type='uchar'  readable='1' initial='1' description='RX Dither/CP Cal'/>
+  <property name='rx_vco_bias_1' type='uchar'  readable='1' initial='1' description='RX VCO Bias 1'/>
+  <property name='ocpi_pad_243' type='uchar' padding='1' arraylength='1'/>
+  <property name='rx_cal_status' type='uchar'  volatile='1' description='RX Cal Status'/>
+  <property name='rx_vco_cal_ref' type='uchar'  readable='1' initial='1' description='RX VCO Cal Ref'/>
+  <property name='rx_vco_pd_overrides' type='uchar'  readable='1' initial='1' description='RX VCO Pd Overrides'/>
+  <property name='rx_cp_overrange_vco_lock' type='uchar'  volatile='1' description='RX CP Over Range/VCO Lock'/>
+  <property name='rx_vco_ldo' type='uchar'  readable='1' initial='1' description='RX VCO LDO'/>
+  <property name='rx_vco_cal' type='uchar'  readable='1' initial='1' description='RX VCO Cal'/>
+  <property name='rx_lock_detect_config' type='uchar'  readable='1' initial='1' description='RX Lock Detect Config'/>
+  <property name='rx_cp_level_detect' type='uchar'  readable='1' initial='1' description='RX CP Level Detect'/>
+  <property name='rx_dsm_setup_0' type='uchar'  readable='1' initial='1' description='RX DSM Setup 0'/>
+  <property name='rx_dsm_setup_1' type='uchar'  readable='1' initial='1' description='RX DSM Setup 1'/>
+  <property name='rx_correction_word0' type='uchar'  readable='1' initial='1' description='RX Correction Word0'/>
+  <property name='rx_correction_word1' type='uchar'  readable='1' initial='1' description='RX Correction Word1'/>
+  <property name='rx_vco_varactor_ctrl_0' type='uchar'  readable='1' initial='1' description='RX VCO Varactor Control 0'/>
+  <property name='rx_vco_varactor_ctrl_1' type='uchar'  readable='1' initial='1' description='RX VCO Varactor Control 1'/>
+  <property name='ocpi_pad_252' type='uchar' padding='1' arraylength='8'/>
+  <property name='rx_fast_lock_setup' type='uchar'  readable='1' initial='1' description='Rx Fast Lock Setup'/>
+  <property name='rx_fast_lock_setup_init_delay' type='uchar'  readable='1' initial='1' description='Rx Fast Lock Setup Init Delay'/>
+  <property name='rx_fast_lock_program_addr' type='uchar'  readable='1' initial='1' description='Rx Fast Lock Program Addr'/>
+  <property name='rx_fast_lock_program_data' type='uchar'  readable='1' initial='1' description='Rx Fast Lock Program Data'/>
+  <property name='rx_fast_lock_program_read' type='uchar'  volatile='1' description='Rx Fast Lock Program Read'/>
+  <property name='rx_fast_lock_program_ctrl' type='uchar'  readable='1' initial='1' description='Rx Fast Lock Program Control'/>
+  <property name='ocpi_pad_260' type='uchar' padding='1' arraylength='1'/>
+  <property name='rx_lo_gen_power_mode' type='uchar'  readable='1' initial='1' description='Rx LO Gen Power Mode'/>
+  <property name='ocpi_pad_262' type='uchar' padding='1' arraylength='14'/>
+  <property name='tx_pfd_config' type='uchar'  readable='1' initial='1' description='TX PFD Config'/>
+  <property name='tx_integer_byte_0' type='uchar'  readable='1' initial='1' description='TX Integer Byte 0'/>
+  <property name='tx_integer_byte_1' type='uchar'  readable='1' initial='1' description='TX Integer Byte 1'/>
+  <property name='tx_fract_byte_0' type='uchar'  readable='1' initial='1' description='TX Fractional Byte 0'/>
+  <property name='tx_fract_byte_1' type='uchar'  readable='1' initial='1' description='TX Fractional Byte 1'/>
+  <property name='tx_fract_byte_2' type='uchar'  readable='1' initial='1' description='TX Fractional Byte 2'/>
+  <property name='tx_force_alc' type='uchar'  readable='1' initial='1' description='TX Force ALC'/>
+  <property name='tx_force_vco_tune_0' type='uchar'  readable='1' initial='1' description='TX Force VCO Tune 0'/>
+  <property name='tx_force_vco_tune_1' type='uchar'  readable='1' initial='1' description='TX Force VCO Tune 1'/>
+  <property name='tx_alcvaract_or' type='uchar'  readable='1' initial='1' description='TX ALC/Varact or'/>
+  <property name='tx_vco_output' type='uchar'  readable='1' initial='1' description='TX VCO Output'/>
+  <property name='tx_cp_current' type='uchar'  readable='1' initial='1' description='TX CP Current'/>
+  <property name='tx_cp_offset' type='uchar'  readable='1' initial='1' description='TX CP Offset'/>
+  <property name='tx_cp_config' type='uchar'  readable='1' initial='1' description='TX CP Config'/>
+  <property name='tx_loop_filter_1' type='uchar'  readable='1' initial='1' description='TX Loop Filter 1'/>
+  <property name='tx_loop_filter_2' type='uchar'  readable='1' initial='1' description='TX Loop Filter 2'/>
+  <property name='tx_loop_filter_3' type='uchar'  readable='1' initial='1' description='TX Loop Filter 3'/>
+  <property name='tx_dithercp_cal' type='uchar'  readable='1' initial='1' description='TX Dither/CP Cal'/>
+  <property name='tx_vco_bias_1' type='uchar'  readable='1' initial='1' description='TX VCO Bias 1'/>
+  <property name='tx_vco_bias_2' type='uchar'  readable='1' initial='1' description='TX VCO Bias 2'/>
+  <property name='tx_cal_status' type='uchar'  volatile='1' description='TX Cal Status'/>
+  <property name='tx_vco_cal_ref' type='uchar'  readable='1' initial='1' description='TX VCO Cal Ref'/>
+  <property name='tx_vco_pd_overrides' type='uchar'  readable='1' initial='1' description='TX VCO Pd Overrides'/>
+  <property name='tx_cp_overrange_vco_lock' type='uchar'  volatile='1' description='TX CP Over Range/VCO Lock'/>
+  <property name='tx_vco_ldo' type='uchar'  readable='1' initial='1' description='TX VCO LDO'/>
+  <property name='tx_vco_cal' type='uchar'  readable='1' initial='1' description='TX VCO Cal'/>
+  <property name='tx_lock_detect_config' type='uchar'  readable='1' initial='1' description='TX Lock Detect Config'/>
+  <property name='tx_cp_level_detect' type='uchar'  readable='1' initial='1' description='TX CP Level Detect'/>
+  <property name='tx_dsm_setup_0' type='uchar'  readable='1' initial='1' description='TX DSM Setup 0'/>
+  <property name='tx_dsm_setup_1' type='uchar'  readable='1' initial='1' description='TX DSM Setup 1'/>
+  <property name='tx_correction_word0' type='uchar'  readable='1' initial='1' description='TX Correction Word0'/>
+  <property name='tx_correction_word1' type='uchar'  readable='1' initial='1' description='TX Correction Word1'/>
+  <property name='tx_vco_varactor_ctrl_0' type='uchar'  readable='1' initial='1' description='TX VCO Varactor Control 0'/>
+  <property name='tx_vco_varactor_ctrl_1' type='uchar'  readable='1' initial='1' description='TX VCO Varactor Control 1'/>
+  <property name='dcxo_coarse_tune' type='uchar'  readable='1' initial='1' description='DCXO Coarse Tune'/>
+  <property name='dcxo_fine_tune_high' type='uchar'  readable='1' initial='1' description='DCXO Fine Tune2'/>
+  <property name='dcxo_fine_tune_low' type='uchar'  readable='1' initial='1' description='DCXO Fine Tune1'/>
+  <property name='dcxo_config' type='uchar'  readable='1' initial='1' description='DCXO Config'/>
+  <property name='dcxo_tempco_write' type='uchar'  readable='1' initial='1' description='DCXO Tempco Write'/>
+  <property name='dcxo_tempco_read' type='uchar'  readable='1' initial='1' description='DCXO Tempco Read'/>
+  <property name='dcxo_tempco_addr' type='uchar'  readable='1' initial='1' description='DCXO Tempco Addr'/>
+  <property name='delta_t_read' type='uchar'  readable='1' initial='1' description='Delta T Read'/>
+  <property name='tx_fast_lock_setup' type='uchar'  readable='1' initial='1' description='Tx Fast Lock Setup'/>
+  <property name='tx_fast_lock_setup_init_delay' type='uchar'  readable='1' initial='1' description='Tx Fast Lock Setup Init Delay'/>
+  <property name='tx_fast_lock_program_addr' type='uchar'  readable='1' initial='1' description='Tx Fast Lock Program Addr'/>
+  <property name='tx_fast_lock_program_data' type='uchar'  readable='1' initial='1' description='Tx Fast Lock Program Data'/>
+  <property name='tx_fast_lock_program_read' type='uchar'  volatile='1' description='Tx Fast Lock Program Read'/>
+  <property name='tx_fast_lock_program_ctrl' type='uchar'  readable='1' initial='1' description='Tx Fast Lock Program Ctrl'/>
+  <property name='ocpi_pad_2a0' type='uchar' padding='1' arraylength='1'/>
+  <property name='tx_lo_gen_power_mode' type='uchar'  readable='1' initial='1' description='Tx LO Gen Power Mode'/>
+  <property name='ocpi_pad_2a2' type='uchar' padding='1' arraylength='4'/>
+  <property name='bandgap_config0' type='uchar'  readable='1' initial='1' description='Bandgap Config0'/>
+  <property name='ocpi_pad_2a7' type='uchar' padding='1' arraylength='1'/>
+  <property name='bandgap_config1' type='uchar'  readable='1' initial='1' description='Bandgap Config1'/>
+  <property name='ocpi_pad_2a9' type='uchar' padding='1' arraylength='2'/>
+  <property name='ref_divide_config_1' type='uchar'  readable='1' initial='1' description='Ref Divide Config 1'/>
+  <property name='ref_divide_config_2' type='uchar'  readable='1' initial='1' description='Ref Divide Config 2'/>
+  <property name='ocpi_pad_2ad' type='uchar' padding='1' arraylength='3'/>
+  <property name='gain_rx1' type='uchar'  volatile='1' description='Gain Rx1'/>
+  <property name='lpf_gain_rx1' type='uchar'  volatile='1' description='LPF Gain Rx1'/>
+  <property name='dig_gain_rx1' type='uchar'  volatile='1' description='Dig gain Rx1'/>
+  <property name='fast_attack_state' type='uchar'  volatile='1' description='Fast Attack State'/>
+  <property name='slow_loop_state' type='uchar'  volatile='1' description='Slow Loop State'/>
+  <property name='gain_rx2' type='uchar'  volatile='1' description='Gain Rx2'/>
+  <property name='lpf_gain_rx2' type='uchar'  volatile='1' description='LPF Gain Rx2'/>
+  <property name='dig_gain_rx2' type='uchar'  volatile='1' description='Dig Gain Rx2'/>
+  <property name='ovrg_sigs_rx1' type='uchar'  volatile='1' description='Ovrg Sigs Rx1'/>
+  <property name='ovrg_sigs_rx2' type='uchar'  volatile='1' description='Ovrg Sigs Rx2'/>
+  <property name='ocpi_pad_2ba' type='uchar' padding='1' arraylength='293'/>
+  <property name='ctrl' type='uchar'  readable='1' initial='1' description='Control'/>
+  <property name='ocpi_pad_3e0' type='uchar' padding='1' arraylength='20'/>
+  <property name='bist_config' type='uchar'  readable='1' initial='1' description='BIST Config'/>
+  <property name='observe_config' type='uchar'  readable='1' initial='1' description='Observe Config'/>
+  <property name='bist_and_data_port_test_config' type='uchar'  readable='1' initial='1' description='BIST and Data Port Test Config'/>
+  <property name='ocpi_pad_3f7' type='uchar' padding='1' arraylength='5'/>
+  <property name='dac_test_0' type='uchar'  readable='1' initial='1' description='DAC Test 0'/>
+  <property name='dac_test_1' type='uchar'  readable='1' initial='1' description='DAC Test 1'/>
+  <property name='dac_test_2' type='uchar'  readable='1' initial='1' description='DAC Test 2'/>
+</properties>

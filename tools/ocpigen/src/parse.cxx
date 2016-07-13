@@ -645,7 +645,7 @@ parseSpec(const char *package) {
 
 // Called for each non-data impl port type
 const char *Worker::
-initImplPorts(ezxml_t xml, const char *element, PortCreate &acreate) {
+initImplPorts(ezxml_t xml, const char *element, PortCreate &a_create) {
   const char *err;
   unsigned
     nTotal = OE::countChildren(xml, element),
@@ -661,7 +661,7 @@ initImplPorts(ezxml_t xml, const char *element, PortCreate &acreate) {
       ezxml_set_attr_d(xml, "name", name.c_str());
     }
 #endif
-    if (!acreate(*this, x, NULL, nTotal == 1 ? -1 : ordinal, err))
+    if (!a_create(*this, x, NULL, nTotal == 1 ? -1 : ordinal, err))
       return err;
   }
   return NULL;

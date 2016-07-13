@@ -352,7 +352,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 		  p.m_count, p.cname());
     nWCIs += p.m_count;
   }
-  if (m_appAssembly.m_assembly && m_appAssembly.m_assembly->m_nInstances != 0) {
+  if (m_appAssembly.m_assembly && m_appAssembly.m_assembly->m_instances.size() != 0) {
     // Instance the assembly and connect its wci
     OU::formatAdd(assy, "  <instance worker='%s'/>\n", m_appAssembly.m_implName);
     // Connect the assembly to the control plane
@@ -550,7 +550,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 #if 0 // this is now done in mapDevSignals
   // Make all device instances signals external that are not mapped already
   unsigned n = 0;
-  for (Instance *i = m_assembly->m_instances; n < m_assembly->m_nInstances; i++, n++) {
+  for (Instance *i = &m_assembly->m_instances[0]; n < m_assembly->m_instances.size(); i++, n++) {
 #if 0
     Instance *emulator = NULL, *ii = m_assembly->m_instances;
     for (unsigned nn = 0; nn < m_assembly->m_nInstances; nn++, ii++)
@@ -994,12 +994,18 @@ mapDevSignals(std::string &assy, const DevInstance &di, bool inContainer) {
 	  Signal *slotSig = di.device.m_board.m_extmap.findSignal(boardName);
 	  assert(slotSig);
 	  Slot::SignalsIter ssi = di.slot->m_signals.find(slotSig);
-	  OU::format(ename, "%s_%s", di.slot->cname(),
-		     ssi == di.slot->m_signals.end()  ? slotSig->cname() : ssi->second.c_str());
+	  // Only set ename if this slot's signal is available on the platform.
+	  // I.e. that pin of the slot might not be connected to a signal available to the FPGA
+	  // in which case the device worker's signal will be unconnected.
+	  if (ssi == di.slot->m_signals.end() || ssi->second.c_str()[0])
+	    OU::format(ename, "%s_%s", di.slot->cname(),
+		       ssi == di.slot->m_signals.end()  ?
+		       slotSig->cname() : ssi->second.c_str());
 	} else
 	  ename = boardName;
-	OU::formatAdd(assy, "    <signal name='%s' external='%s'/>\n",
-		      dname.c_str(), ename.c_str());
+	//	if (ename.length())
+	  OU::formatAdd(assy, "    <signal name='%s' external='%s'/>\n",
+			dname.c_str(), ename.c_str());
       } else {
 	Signal *ns = new Signal(**s);
 	OU::format(ns->m_name, "%s_%s", di.device.cname(), ns->cname());

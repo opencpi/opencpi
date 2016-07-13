@@ -473,7 +473,7 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
     return;
   // Externalize all the device signals.
   unsigned n = 0;
-  for (Instance *i = m_assembly->m_instances; n < m_assembly->m_nInstances; i++, n++) {
+  for (Instance *i = &m_assembly->m_instances[0]; n < m_assembly->m_instances.size(); i++, n++) {
     for (SignalsIter si = i->worker->m_signals.begin(); si != i->worker->m_signals.end(); si++) {
       Signal *s = new Signal(**si);
       if (i->worker->m_type != Worker::Platform)

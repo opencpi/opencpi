@@ -49,10 +49,13 @@ ParamConfig(const ParamConfig &other)
 }
 
 const char *ParamConfig::
-parse(ezxml_t cx) {
+parse(ezxml_t cx, const ParamConfigs &configs) {
   const char *err;
   if ((err = OE::getNumber(cx, "id", &nConfig, NULL, 0, false, true)))
     return err;
+  for (unsigned n = 0; n < configs.size(); n++)
+    if (configs[n]->nConfig == nConfig)
+      return OU::esprintf("Duplicate configuration id %zu in build file", nConfig);
   OU::format(id, "%zu", nConfig);
   params.resize(m_worker.m_ctl.nParameters);
   for (ezxml_t px = ezxml_cchild(cx, "parameter"); px; px = ezxml_next(px)) {
@@ -260,7 +263,7 @@ parseBuildFile(bool optional) {
     return err;
   for (ezxml_t cx = ezxml_cchild(x, "configuration"); cx; cx = ezxml_next(cx)) {
     ParamConfig *pc = new ParamConfig(*this);
-    if ((err = pc->parse(cx)))
+    if ((err = pc->parse(cx, m_paramConfigs)))
       return err;
     m_paramConfigs.push_back(pc); // FIXME...emplace_back for C++11
   }
