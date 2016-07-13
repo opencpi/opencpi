@@ -272,7 +272,6 @@ static int mymain(const char **ap) {
 	  OA::ContainerManager::find("rcc", name.c_str());
 	}
     
-      size_t nSims;
       std::vector<OA::PValue> simParams;
       if (options.sim_dir())
 	addParam("directory", options.sim_dir(), simParams);
@@ -285,12 +284,35 @@ static int mymain(const char **ap) {
 	simParams.push_back(OA::PVBool("dump", true));
       if (simParams.size())
 	simParams.push_back(OA::PVEnd);
+      size_t nSims;
       const char **sims = options.simulator(nSims);
-      for (unsigned n = 0; n < nSims; n++) {
-	std::string name;
-	OU::format(name, "lsim:%s%d", sims[n], n);
-	OA::ContainerManager::find("hdl", name.c_str(), simParams.size() ? &simParams[0] : NULL);
-      }
+      if (!nSims) {
+	// If simulators are not mentioned explicitly (with -H), but are mentioned as
+	// platforms for some or all instances, create the container.
+	// Also, since simulators are not really registered yet, we just look for the
+	// trailing "sim" in the name.
+	typedef std::set<const char *, OU::ConstCharComp> Plats;
+	Plats plats;
+	for (const char **plat = options.platform(nSims); plat && *plat; plat++) {
+	  const char *eq = strrchr(*plat, '=');
+	  eq = eq ? eq + 1 : *plat;
+	  size_t len = strlen(eq);
+	  if (len > 3 && !strcmp(eq + len - 3, "sim"))
+	    plats.insert(eq);
+	}
+	for (Plats::const_iterator it = plats.begin(); it != plats.end(); it++) {
+	  std::string name;
+	  OU::format(name, "lsim:%s0", *it);
+	  OA::ContainerManager::find("hdl", name.c_str(),
+				     simParams.size() ? &simParams[0] : NULL);
+	}	    
+      } else
+	for (unsigned n = 0; n < nSims; n++) {
+	  std::string name;
+	  OU::format(name, "lsim:%s%d", sims[n], n);
+	  OA::ContainerManager::find("hdl", name.c_str(),
+				     simParams.size() ? &simParams[0] : NULL);
+	}
       if (options.list()) {
 	if (!xml) {
 	  OCPI::Library::Manager::getSingleton().suppressDiscovery();

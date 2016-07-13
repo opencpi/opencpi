@@ -101,42 +101,20 @@
 	  }
 	  return !err.empty();
 	}
-	enum AmbaDone { NoDir, Done, NotDone, Error};
-	static AmbaDone
-        tryAmba(std::string &dir, std::string &error) {
-	  bool isDir;
-	  ocpiDebug("tryAmba: trying dir %s", dir.c_str());
-	  if (OS::FileSystem::exists(dir, &isDir) && isDir) {
-	    std::string name(dir), val;
-	    name +="/f8007000.ps7-dev-cfg/prog_done";
-	    const char *e = OU::file2String(val, name.c_str(), 0);
-	    ocpiDebug("tryamba: from %s got %s%s", name.c_str(), e ? "error: " : "",
-		      e ? e : (val.c_str()[0] == '1' ? "done" : "not done"));
-	    if (e) {
-	      error = e;
-	      return Error;
-	    }
-	    return val.c_str()[0] == '1' ? Done : NotDone;
-	  }
-	  return NoDir;
-	}
-	// return true if programmed, false if not programmed
-	// when false, err may be set or not
-	bool
-	isProgrammed(std::string &err) {
-	  std::string base = "/sys/devices/amba";
-	  AmbaDone done = tryAmba(base, err);
-	  for (unsigned n = 0; done == NoDir && n < 10; n++) {
-	    std::string dir;
-	    OU::format(dir, "%s.%u", base.c_str(), n);
-	    done = tryAmba(dir, err);
-	  }
-	  if (done == Done)
-	    return true;
-	  if (done == NoDir)
-	    err = "No /sys/devices/amba*/f8007000.ps7-dev-cfg/prog_done was found.";
-	  return false;
-	}
+        // return true if programmed, false if not programmed
+        // when false, err may be set or not
+        bool
+        isProgrammed(std::string &err) {
+          std::string val;
+          const char *e = OU::file2String(val, "/sys/class/xdevcfg/xdevcfg/device/prog_done", '|');
+          ocpiDebug("OCPI::HDL::Zynq::Device::isProgrammed: got %s%s (%s)", e ? "error: " : "",
+            e ? e : (val.c_str()[0] == '1' ? "done" : "not done"), val.c_str());
+          if (e) {
+            err = e;
+            return false;
+          }
+          return (val.c_str()[0] == '1');
+        }
 	bool getMetadata(std::vector<char> &xml, std::string &err) {
 	  if (isProgrammed(err))
 	    return OCPI::HDL::Device::getMetadata(xml, err);

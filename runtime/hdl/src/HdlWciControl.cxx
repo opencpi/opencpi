@@ -40,7 +40,7 @@ namespace OCPI {
       : m_implName(impl), m_instName(inst), m_hasControl(hasControl), m_timeout(DEFAULT_TIMEOUT),
 	m_device(device), m_occpIndex(a_index)
     {
-      init(false, true);
+      init(false, false);
     }
 
     WciControl::

@@ -627,9 +627,9 @@ namespace OCPI {
       }
       // Note that this sets the output string to empty if it is not found
       bool
-      getOptionalString(ezxml_t x, std::string &s, const char *attr) {
+      getOptionalString(ezxml_t x, std::string &s, const char *attr, const char *def) {
 	const char *cp = ezxml_cattr(x, attr);
-	s = cp ? cp : "";
+	s = cp ? cp : def;
 	return cp != NULL;
       }
       bool

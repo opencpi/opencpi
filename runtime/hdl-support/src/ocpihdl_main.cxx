@@ -93,6 +93,7 @@ static const char
 *interface = NULL, *device = NULL, *part = NULL;
 static bool simDump = true;
 static unsigned
+  timeout = 0,
   sleepUsecs = 200000,  // how much time between quota injections
   spinCount = 20,      // how much quote per timeout AND per control message
   simTicks = 10000000;   // how much quota to run
@@ -298,6 +299,9 @@ doFlags(const char **&ap) {
       break;
     case 'T':
       simTicks = atoi(next(ap));
+      break;
+    case 'O':
+      timeout = atoi(next(ap));
       break;
     case 'D':
       simDump = false;
@@ -1753,9 +1757,17 @@ public:
       } else
 	ignored = true;
     } else if (!strcasecmp(op, "unreset")) {
-      if (OCCP_WORKER_CONTROL_ENABLE & c)
+      if (OCCP_WORKER_CONTROL_ENABLE & c && !timeout)
 	ignored = true;
       else {
+	if (timeout) {
+	  c &= ~0x1f;
+	  unsigned logTimeout = 31;
+	  for (size_t u = 1 << logTimeout; !(u & timeout);
+	       u >>= 1, logTimeout--)
+	    ;
+	  c |= logTimeout;
+	}
 	wAccess.set32Register(control, OH::OccpWorkerRegisters, c |= OCCP_WORKER_CONTROL_ENABLE);
 	wAccess.get32Register(test, OH::OccpWorkerRegisters);
 	wAccess.set32Register(control, OH::OccpWorkerRegisters,
@@ -1857,7 +1869,7 @@ struct Arg {
     Worker *w = NULL;
     if (!idx) {
       if (control || status || value || prop)
-	bad("Can't to control/status/get/put on workers with no control interface");
+	bad("Can't do control/status/get/put on workers with no control interface");
     } else {
       w = new Worker(impl, inst, idx);
       if (control)
@@ -1871,6 +1883,8 @@ struct Arg {
 	       prop, value, iname);
 	fflush(stdout);
       }
+      if (control || status || value)
+	return;
     }
     printf("  Instance %s of %s worker %s (spec %s)",
 	   iname, strcasecmp(inst->name, "instance") ? inst->name :
