@@ -118,8 +118,10 @@ namespace OCPI {
 	  char buf[256];
 	  ocpiDebug("Starting to flush any state from previous simulation run");
 	  while (ioctl(m_rfd, FIONREAD, &n) >= 0 && n > 0 &&
-		 ((r = read(m_rfd, buf, sizeof(buf))) > 0 ||
-		  r < 0 && errno == EINTR))
+		 (
+                   (r = read(m_rfd, buf, sizeof(buf))) > 0 || (r < 0 && errno == EINTR)
+                 )
+                )
 	    ;
 	  ocpiDebug("Ending flush of any state from previous simulation run");
 	}
@@ -485,7 +487,8 @@ namespace OCPI {
 	      int e = errno;
 	      x += m_dir;
 	      x += "\n";
-	      write(2, x.c_str(), x.length());
+	      ssize_t wlen = write(2, x.c_str(), x.length());
+              ocpiAssert(wlen == static_cast<ssize_t>(x.length()));
 	      _exit(10 + e);
 	    }
 	    {
@@ -493,7 +496,8 @@ namespace OCPI {
 	      if (fd < 0) {
 		std::string x("Error: Cannot create sim.out file for simulation output.\n");
 		int e = errno;
-		write(2, x.c_str(), x.length());
+		ssize_t wlen = write(2, x.c_str(), x.length());
+                ocpiAssert(wlen == static_cast<ssize_t>(x.length()));
 		_exit(10 + e);
 	      }
 	      if (dup2(fd, 1) < 0 ||
@@ -508,7 +512,7 @@ namespace OCPI {
 	    OU::format(err, "Could not create simulator sub-process for: %s", m_exec.c_str());
 	    return true;
 	  default:
-	    ocpiInfo("Simluator subprocess has pid: %u.", s_pid);
+	    ocpiInfo("Simulator subprocess has pid: %u.", s_pid);
 	  }
 	  if (m_verbose)
 	    fprintf(stderr, "Simulator process (process id %u) started, with its output in %s/sim.out\n",
@@ -518,7 +522,7 @@ namespace OCPI {
 	  msg[1] = 0;
 	  ocpiCheck(write(m_ctl.m_wfd, msg, 2) == 2);
 	  // Improve the odds of an immediate error giving a good error message by letting the sim run
-	  ocpiInfo("Waiting for simulator to start before issueing any more credits.");
+	  ocpiInfo("Waiting for simulator to start before issuing any more credits.");
 	  OS::sleep(100);
 	  for (unsigned n = 0; n < 1; n++)
 	    if (spin(err) || mywait(s_pid, false, err) || ack(err))
@@ -1070,8 +1074,8 @@ namespace OCPI {
 	  // Next priority is to process messages from clients.
 	  // Especially, if they are CP requests, we want to send DCP credits
 	  // before spin credits, so that the CP info is read before spin credits
-	  if (FD_ISSET(m_resp.m_rfd, fds) && doResponse(error) ||
-	      FD_ISSET(m_disc.fd(), fds) && receiveExt(m_disc, true, error))
+	  if ((FD_ISSET(m_resp.m_rfd, fds) && doResponse(error)) ||
+	      (FD_ISSET(m_disc.fd(), fds) && receiveExt(m_disc, true, error)))
 	    return true;
 	  for (ClientsIter ci = m_clients.begin(); ci != m_clients.end(); ci++)
 	    if (FD_ISSET((*ci)->fd(), fds) && receiveExt(**ci, false, error))

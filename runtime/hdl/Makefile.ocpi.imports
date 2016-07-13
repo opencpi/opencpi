@@ -1,3 +1,4 @@
+# This file is not used by RPM-based builds. It is for legacy support only. Please keep edits to a minimum.
 # #####
 #
 #  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
@@ -61,7 +62,7 @@ ifdef NEVER
 
 EXTRAOBJS += ../../linux-bin/HdlContainer.obj 
 
-ifeq ($(OCPI_OS),darwin)
+ifeq ($(OCPI_TARGET_OS),darwin)
 DYNOBJS += \
 ../../../runtime/dataplane/rdma_drivers/datagram/$(OCPI_OUT_DIR)/DtDataGramXfer.obj \
 ../../../runtime/dataplane/rdma_drivers/datagram/$(OCPI_OUT_DIR)/DtDataGramEtherDriver.obj

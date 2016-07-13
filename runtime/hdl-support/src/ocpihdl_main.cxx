@@ -37,8 +37,10 @@
 #include <stdlib.h>
 #include <sys/mman.h>
 #include <arpa/inet.h>
+
 #include "lzma.h"
 #include "zlib.h"
+#include "OcpiNull.h"
 #include "OcpiOsMisc.h"
 #include "OcpiUuid.h"
 #include "OcpiUtilMisc.h"
@@ -228,6 +230,7 @@ static void exitbad(const char *e) {
   exit(1);
 }
 
+OCPI_NORETURN
 static void
 bad(const char *fmt, ...) {
   va_list ap;
@@ -335,8 +338,8 @@ main(int argc, const char **argv)
     bool ambiguous = false;
     if (!argv[0])
       bad("Missing command name");
-    for (Command *c = commands; c->name; c++)
-      if (!strncmp(argv[0], c->name, strlen(argv[0])))
+    for (Command *c = commands; c->name; c++) {
+      if (!strncmp(argv[0], c->name, strlen(argv[0]))) {
 	if (!strcmp(argv[0], c->name)) {
 	  exact = c;
 	  break;
@@ -344,13 +347,16 @@ main(int argc, const char **argv)
 	  ambiguous = true;
 	else
 	  found = c;
-    if (!exact)
+      }
+    }
+    if (!exact) {
       if (!found)
 	bad("unknown command: %s", argv[0]);
       else if (ambiguous)
 	bad("ambiguous command: %s", argv[0]);
       else
 	exact = found;
+    }
     argv++;
     doFlags(argv);
     if (log != -1)
@@ -828,12 +834,12 @@ unbram(const char **ap) {
   if (!ofp)
     bad("Cannot open output file: \"%s\"", ap[1]);
   size_t
-    adler,
+    adler = 0,
     olength = 16*OH::ROM_NBYTES, // worst case output size
     inWords = OH::ROM_NWORDS,
     inBytes = inWords * sizeof(OH::RomWord);
-  OH::RomWord *in, *u32p;
-  unsigned char *out;
+  OH::RomWord *in = nullptr, *u32p = nullptr;
+  unsigned char *out = nullptr;
   for (unsigned n = 0; n < inWords; n++) {
     char line[34];
     line[32] = 0;
@@ -916,6 +922,7 @@ unbram(const char **ap) {
   }
   printf("Wrote unbram file '%s' (%zu bytes) from file '%s' (%zu bytes)\n",
 	 ap[1], total, ap[0], inBytes);
+  fclose(ifp);
 }
 
 static void
@@ -1294,6 +1301,7 @@ static OE::Socket *getSock() {
   OE::Socket *s = new OE::Socket(i, ocpi_data, NULL, 123, error);
   if (error.size()) {
     delete s;
+    s = nullptr;
     bad("opening ethernet socket for data");
   }
   return s;
@@ -1785,17 +1793,20 @@ public:
   const std::string &name() const { return m_name; }
   void prepareProperty(OU::Property &, volatile void *&, const volatile void *&) {}
   OC::Port &createPort(const OU::Port &, const OU::PValue *) {
+    ocpiAssert("This method is not expected to ever be called" == 0);
     return *(OC::Port*)NULL;
   }
   OC::Port &createOutputPort(OU::PortOrdinal, size_t, size_t, 
 			     const OU::PValue*)
     throw (OU::EmbeddedException)
   {
+    ocpiAssert("This method is not expected to ever be called" == 0);
     return *(OC::Port*)NULL;
   }
   OC::Port & createInputPort(OU::PortOrdinal, size_t, size_t, const OU::PValue*)
     throw (OU::EmbeddedException)
   {
+    ocpiAssert("This method is not expected to ever be called" == 0);
     return *(OC::Port*)NULL;
   }
   OC::Application *application() { return NULL;}
@@ -1903,9 +1914,9 @@ struct Arg {
       if ((err = OX::getNumber(x, "occpIndex", &iindex, &ifound)))
 	return err;
       const char *iname = ezxml_cattr(x, "name");
-      if (letter && iname && iname[0] == letter ||
-	  name && iname && !strcasecmp(name, iname) ||
-	  !letter && !name && ifound && index == iindex)
+      if ((letter && iname && iname[0] == letter) ||
+	  (name && iname && !strcasecmp(name, iname)) ||
+	  (!letter && !name && ifound && index == iindex))
 	doWorker(x);
       else if (name && iname && !strcasecmp(name, ezxml_cattr(x, "worker"))) {
 	// Check for a duplicate, among all children

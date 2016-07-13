@@ -276,19 +276,16 @@ namespace OCPI {
       uint32_t status = 0;
       if (m_properties.m_registers) {
 	if (!p.m_writeError ||
-	    !(status =
-	      get32Register(status, OccpWorkerRegisters) &
-	      OCCP_STATUS_WRITE_ERRORS))
+	    !(status = get32Register(status, OccpWorkerRegisters) & OCCP_STATUS_WRITE_ERRORS)) {
 	  if (p.m_isSequence) {
 	    m_properties.setBytesRegisterOffset(offset + p.m_align,
 						val, nBytes, p.m_elementBytes);
 	    m_properties.set32RegisterOffset(offset, (uint32_t)nItems);
 	  } else
 	    m_properties.setBytesRegisterOffset(offset, val, nBytes, p.m_elementBytes);
+        }
 	if (p.m_writeError && !status)
-	  status =
-	    get32Register(status, OccpWorkerRegisters) &
-	    OCCP_STATUS_WRITE_ERRORS;
+	  status = get32Register(status, OccpWorkerRegisters) & OCCP_STATUS_WRITE_ERRORS;
       } else if (p.m_isSequence) {
 	m_properties.m_accessor->setBytes(m_properties.m_base + offset + p.m_align,
 					  val, nBytes, p.m_elementBytes, &status);

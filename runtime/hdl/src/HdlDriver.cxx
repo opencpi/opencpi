@@ -133,11 +133,12 @@ namespace OCPI {
     probeContainer(const char *which, std::string &error, const OA::PValue *params) {
       Device *dev;
       ezxml_t config;
-      if ((dev = open(which, false, false, error)))
+      if ((dev = open(which, false, false, error))) {
 	if (setup(*dev, config, error))
 	  delete dev;
 	else
 	  return createContainer(*dev, config, params);
+      }
       if (error.size())
 	ocpiBad("While probing %s: %s", which, error.c_str());
       return NULL;

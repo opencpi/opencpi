@@ -39,7 +39,7 @@ namespace OCPI {
       DtOsDataTypes::Offset m_base;  // the base of the "registers" in their physical address space
       Accessor *m_accessor;          // when no virtual pointer access, the object that does the access
       bool      m_child;             // If I am derived from another access
-      //      volatile uint8_t *m_buffers;   // sort of a hack for the data plane until enet dp is available
+      //      volatile uint8_t *m_buffers;   // for the data plane until enet dp is available
 
     public:
       Access(Access &other);

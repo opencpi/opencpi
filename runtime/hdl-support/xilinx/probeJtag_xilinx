@@ -28,7 +28,7 @@ function good {
 }
 function bad {
   rm -f $tmp
-  echo Look at $tlog.\* for details.
+  echo Look at $tlog\* for details.
   exit 1
 }
 dir=`dirname $0`
