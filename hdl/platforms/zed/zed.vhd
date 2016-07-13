@@ -10,10 +10,12 @@ library zynq; use zynq.zynq_pkg.all;
 library unisim; use unisim.vcomponents.all;
 library bsv;
 architecture rtl of zed_worker is
-  signal ps_axi_gp_in  : m_axi_gp_in_t;        -- s2m
-  signal ps_axi_gp_out : m_axi_gp_out_t;       -- m2s
-  signal ps_axi_hp_in  : s_axi_hp_in_array_t(0 to C_S_AXI_HP_COUNT-1);  -- m2s
-  signal ps_axi_hp_out : s_axi_hp_out_array_t(0 to C_S_AXI_HP_COUNT-1); -- s2m
+  signal ps_m_axi_gp_in  : m_axi_gp_in_array_t(0 to C_M_AXI_GP_COUNT-1);  -- s2m
+  signal ps_m_axi_gp_out : m_axi_gp_out_array_t(0 to C_M_AXI_GP_COUNT-1); -- m2s
+  signal ps_s_axi_gp_in  : s_axi_gp_in_array_t(0 to C_S_AXI_GP_COUNT-1);  -- m2s
+  signal ps_s_axi_gp_out : s_axi_gp_out_array_t(0 to C_S_AXI_GP_COUNT-1); -- s2m
+  signal ps_axi_hp_in  : s_axi_hp_in_array_t(0 to C_S_AXI_HP_COUNT-1);    -- m2s
+  signal ps_axi_hp_out : s_axi_hp_out_array_t(0 to C_S_AXI_HP_COUNT-1);   -- s2m
   signal fclk          : std_logic_vector(3 downto 0);
   signal clk           : std_logic;
   signal raw_rst_n     : std_logic; -- FCLKRESET_Ns need synchronization
@@ -80,8 +82,10 @@ begin
       -- Signals from the PS used in the PL
       ps_out.FCLK           => fclk,
       ps_out.FCLKRESET_N    => raw_rst_n,
-      m_axi_gp_in           => ps_axi_gp_in,
-      m_axi_gp_out          => ps_axi_gp_out,
+      m_axi_gp_in           => ps_m_axi_gp_in,
+      m_axi_gp_out          => ps_m_axi_gp_out,
+      s_axi_gp_in           => ps_s_axi_gp_in,
+      s_axi_gp_out          => ps_s_axi_gp_out,
       s_axi_hp_in           => ps_axi_hp_in,
       s_axi_hp_out          => ps_axi_hp_out
       );
@@ -90,8 +94,8 @@ begin
     port map(
       clk     => clk,
       reset   => reset,
-      axi_in  => ps_axi_gp_out,
-      axi_out => ps_axi_gp_in,
+      axi_in  => ps_m_axi_gp_out(0),
+      axi_out => ps_m_axi_gp_in(0),
       cp_in   => cp_in,
       cp_out  => cp_out
       );
@@ -160,14 +164,14 @@ begin
   metadata_out.romAddr      <= props_in.romAddr;
   metadata_out.romEn        <= props_in.romData_read;
   led(0) <= count(count'left);
-  led(1) <= ps_axi_gp_out.ARVALID;
+  led(1) <= ps_m_axi_gp_out(0).ARVALID;
   led(2) <= seen_burst;
   led(3) <= cp_in.take;
 
   led(4) <= cp_in.valid;
-  led(5) <= ps_axi_gp_in.ARREADY;
-  led(6) <= ps_axi_gp_in.RVALID;
-  led(7) <= ps_axi_gp_out.RREADY;
+  led(5) <= ps_m_axi_gp_in(0).ARREADY;
+  led(6) <= ps_m_axi_gp_in(0).RVALID;
+  led(7) <= ps_m_axi_gp_out(0).RREADY;
   work : process(clk)
   begin
     if rising_edge(clk) then
@@ -239,7 +243,7 @@ begin
           axi_wacount <= axi_wacount + 1;
         end if;
         count <= count + 1;
-        if ps_axi_gp_out.ARVALID = '1' and ps_axi_gp_out.ARLEN = "0001" then
+        if ps_m_axi_gp_out(0).ARVALID = '1' and ps_m_axi_gp_out(0).ARLEN = "0001" then
           seen_burst <= '1';
         end if;
       end if;
