@@ -272,7 +272,6 @@ $(call OcpiDbgVar,HdlTargets)
 define HdlSearchComponentLibraries
 
   override XmlIncludeDirsInternal := $(call Unique,$(XmlIncludeDirsInternal) $(call HdlXmlComponentLibraries))
-
 endef
 HdlRmRv=$(if $(filter %_rv,$1),$(patsubst %_rv,%,$1),$1)
 
@@ -328,7 +327,7 @@ HdlTargetSrcFiles=$(and $(filter-out library core,$(HdlMode)),\
 
 $(OutDir)target-%/generics.vhd: $$(ImplXmlFile) | $(OutDir)target-%
 	$(AT)echo Generating the VHDL constants file for config $(ParamConfig): $@
-	$(AT)$(OcpiGen) -D $(dir $@) \
+	$(AT)$(OcpiGen) -D $(@D) \
 	                $(and $(Assembly),-S $(Assembly)) $(and $(Platform),-P $(Platform)) \
 	                $(and $(PlatformDir),-F $(PlatformDir)) \
 	                -g$(ParamConfig) $(and $(filter verilog,$(HdlLanguage)),-w) $(ImplXmlFile)

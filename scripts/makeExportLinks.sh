@@ -107,7 +107,7 @@ if test "$*" = ""; then
 fi
 if [ "$1" == "-v" ]; then
   verbose=yes
-  [ -n $verbose ] && echo Setting verbose mode.    
+  [ -n "$verbose" ] && echo Setting verbose mode.    
   shift
 fi
 os=$(echo $1 | sed 's/^\([^-]*\).*$/\1/')
@@ -116,12 +116,12 @@ set -e
 #rm -r -f exports
 mkdir -p exports
 set -f
-[ -n $verbose ] && echo Collecting exclusions
+[ -n "$verbose" ] && echo Collecting exclusions
 exclusions=$(test -f Project.exports && grep '^[ 	]*-' Project.exports | sed 's/^[ 	]*-[ 	]*\([^ 	#]*\)[ 	]*\([^ 	#]*\).*$/\1:\2/') || true
-[ -n $verbose ] && echo Collecting additions
+[ -n "$verbose" ] && echo Collecting additions
 additions=$(test -f Project.exports && grep '^[ 	]*+' Project.exports | sed 's/^[ 	]*+[ 	]*\([^ 	#]*\)[ 	]*\([^ 	#]*\).*$/\1:\2/') || true
 set +f
-[ -n $verbose ] && echo Collecting facilities
+[ -n "$verbose" ] && echo Collecting facilities
 facilities=$(test -f Project.exports &&  grep -v '^[ 	]*[-+#]' Project.exports) || true
 for f in $facilities; do
   if [ "$1" == "-" ]; then
@@ -132,7 +132,7 @@ for f in $facilities; do
       continue; # silently ignore unbuilt facilities
     fi
   fi
-  [ -n $verbose ] && echo Processing the $f facility
+  [ -n "$verbose" ] && echo Processing the $f facility
   # Make links to main programs
   mains=$(find $f -name '*_main.c' -o -name '*_main.cxx' | sed 's-^.*/\([^/]*\)_main\..*$-\1-')
   for m in $mains; do
@@ -187,7 +187,7 @@ for f in $facilities; do
   done
 done
 # Add hdl platforms
-[ -n $verbose ] && echo Processing hdl platforms
+[ -n "$verbose" ] && echo Processing hdl platforms
 for p in hdl/platforms/*; do
   name=$(basename $p)
   if [ -d $p -a -f $p/Makefile -a -f $p/$(basename $p).xml ]; then
@@ -211,14 +211,14 @@ if [ -d hdl/platforms ]; then
 fi
 
 # Add component libraries at top level and under hdl
-[ -n $verbose ] && echo Processing component libraries
+[ -n "$verbose" ] && echo Processing component libraries
 for d in components components/* hdl/*; do
   [ ! -d $d -o  ! -f $d/Makefile ] && continue
   egrep -q '^[ 	]*include[ 	]*.*/include/(lib|library).mk' $d/Makefile || continue
   make_filtered_link $d/lib exports/lib/$(basename $d) component
 done
 
-[ -n $verbose ] && echo Processing hdl primitives
+[ -n "$verbose" ] && echo Processing hdl primitives
 # Add hdl primitives: they must be there before they are built
 # since they depend on each other
 if [ -d hdl/primitives -a -f hdl/primitives/Makefile ]; then
@@ -237,7 +237,7 @@ fi
 
 # Add the ad-hoc export links
 set -f
-[ -n $verbose ] && echo Processing additions
+[ -n "$verbose" ] && echo Processing additions
 for a in $additions; do
   declare -a both=($(echo $a | tr : ' '))
   [[ $a == *\<target\>* && $1 == - ]] && continue
