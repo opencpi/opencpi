@@ -230,7 +230,7 @@ static void exitbad(const char *e) {
   exit(1);
 }
 
-OCPI_NORETURN
+//OCPI_NORETURN
 static void
 bad(const char *fmt, ...) {
   va_list ap;

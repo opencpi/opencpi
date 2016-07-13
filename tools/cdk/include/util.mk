@@ -110,7 +110,7 @@ Suffix_xm:=xm
 CapModels=$(foreach m,$(Models),$(call Capitalize,$m))
 UCModel=$(call ToUpper,$(Model))
 CapModel=$(call Capitalize,$(Model))
-HostSystem=$(shell uname -s | tr A-Z a-z)
+HostSystem:=$(shell uname -s | tr A-Z a-z)
 AT=@
 RM=rm
 ifneq ($(HostSystem),darwin)
@@ -135,7 +135,7 @@ ToLower=$(shell echo $(1)|tr A-Z a-z)
 # function to add a ../ to pathnames, avoiding changing absolute ones
 AdjustRelative2=$(foreach i,$(1),$(if $(filter /%,$(i)),$(i),../../$(patsubst ./%,%,$(filter-out .,$(i)))))
 AdjustRelative=$(foreach i,$(1),$(if $(filter /%,$(i)),$(i),..$(patsubst %,/%,$(patsubst ./%,%,$(filter-out .,$(i))))))
-HostProcessor=$(shell uname -m | tr A-Z a-z)
+HostProcessor:=$(shell uname -m | tr A-Z a-z)
 # Patch darwin's notion of x86 to linux's.  Assumes 64 bit machine...
 ifeq ($(HostProcessor),i386)
 HostProcessor=x86_64

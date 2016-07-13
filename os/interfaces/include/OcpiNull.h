@@ -2,6 +2,9 @@
 // For older C++ that does not support nullptr
 #pragma once
 
+#ifndef HAVE_NULLPTR
+#ifndef __APPLE__
+#if __cplusplus <= 199711
 namespace std
 {
     //based on SC22/WG21/N2431 = J16/07-0301
@@ -41,4 +44,7 @@ static const nullptr_t __nullptr = {};
 
 #ifndef nullptr
 #define nullptr std::__nullptr
+#endif
+#endif
+#endif
 #endif
