@@ -1,1 +1,1 @@
-export OCPI_CXXFLAGS+=" -Wno-sign-conversion"
+#export OCPI_TARGET_CXXFLAGS+=" -Wno-sign-conversion"

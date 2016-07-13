@@ -175,8 +175,8 @@ endif
 #
 
 LDFLAGS = $(OCPI_LDFLAGS) $(EXTRA_LDFLAGS)
-CFLAGS := $(OCPI_CFLAGS)
-CXXFLAGS := $(OCPI_CXXFLAGS)
+CFLAGS := $(OCPI_TARGET_CFLAGS)
+CXXFLAGS := $(OCPI_TARGET_CXXFLAGS)
 
 #
 # ----------------------------------------------------------------------
