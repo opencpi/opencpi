@@ -1,0 +1,58 @@
+<!-- AD9361 subdevice
+ The clients are all four modules: 0: rx, 1: tx, 3: adc, 4: dac
+ This subdevice does not support TDD/half duplex or multi-chip sync
+ The signals that are shared among modules are:
+ 1. Chip reset RESETB
+    Asserted when master reset or ALL present clients are reset
+ 2. ENABLE: switched between TDD/RX/TX/FDD/WAIT/ALERT
+    Currently just taken from rx for FDD mode
+ 3. TXNRX: qualifies "ENABLE" in TDD mode, is a TX enable in FDD more.
+    Currently just taken from tx for FDD mode
+ 4. SYNC_IN: allow anyone syncing all devices...
+    Currently not used since this requires a subdevice to support multiple chips
+ 5. CLK_REF: clock source for SYNC_IN    
+    Currently not used since this subdevice does not support multiple chips
+ 5. DATA_CLK: the source-synchronous RX CLK frequently used to create the DAC TX CLK.
+    Feed to adc for its normal source-synchronous data clock
+    Feed to dac as a good basis for the TX clock
+ 6. The 4 SPI signals
+-->
+<HdlDevice language="vhdl">
+  <ComponentSpec nocontrol='false'/>
+  <property name='lastClient' type='uchar' volatile='1'/>
+  <property name='lastAddr' type='ushort' volatile='1'/>
+  <property name='lastData' type='uchar' volatile='1'/>
+  <property name='resetting' type='bool' volatile='1'/>
+
+  <!-- We have two raw property masters, the rx and tx workers for the xcvr chip -->
+  <rawprop name='rprops' count='4' optional='true'/>
+  <devsignal name='dev' count='4' optional='true' signals='ad9361-subdevice-signals.xml'/>
+  <supports worker='ad9361_rx'>
+    <connect port="rawprops" to="rprops" index='0'/>
+    <connect port="dev" to="dev" index='0'/>
+  </supports>
+  <supports worker='ad9361_tx'>
+    <connect port="rawprops" to="rprops" index='1'/>
+    <connect port="dev" to="dev" index='1'/>
+  </supports>
+  <supports worker='ad9361_adc'>
+    <connect port="dev" to="dev" index='2'/>
+  </supports>
+  <supports worker='ad9361_dac'>
+    <connect port="dev" to="dev" index='3'/>
+  </supports>
+  <!-- Signal names from the data sheet, in data sheet order (Table 13, page 16, Rev. E)
+       We use the SPI in 4 pin mode, so SDIO is INPUT to the Lime, OUTPUT from the FPGA
+       Signals dedicated to rx or tx are directly used by the rx/tx device workers -->
+  <Signal Output="ENABLE"/>    <!-- Pin G6: Moves the device through various operational states -->
+  <Signal Output="TXNRX"/>     <!-- Pin H4:  Control data port bus direction, low rx, high tx -->
+  <Signal Output="SYNC_IN"/>   <!-- Pin H5:  Synchronize digital clocks between devices -->
+  <Signal Output="SPI_DI"/>    <!-- Pin J4:  SPI data input -->
+  <Signal Output="SPI_CLK"/>   <!-- Pin J5:  SPI clock -->
+  <Signal Output="RESETB"/>    <!-- Pin K5:  Chip reset, asserted LOW -->
+  <Signal Output="SPI_ENB"/>   <!-- Pin K6:  SPI enable, asserted LOW -->
+  <Signal  Input="SPI_DO"/>    <!-- Pin L6:  SPI data output -->
+  <Signal Input="DATA_CLK_P"/> <!-- Pin G11: RX Clock output -->
+  <Signal Input="DATA_CLK_N"/> <!-- Pin H11: RX Clock output -->
+  <Signal Input='REF_CLK'/>    <!-- Pin M12: XTALN when not a crystal, in MIMO mode -->
+</HdlDevice>

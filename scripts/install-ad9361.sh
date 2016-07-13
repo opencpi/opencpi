@@ -33,7 +33,7 @@ grep -s '`' $in && {
   exit 1
 }
 # Extract the into from their header file
-sed < no-OS/ad9361/sw/ad9361.h -n 's=^#define REG_\([_a-zA-Z]*\)[	 ]*\(0x[0-9ABCDEF]*\)[ 	]*/\* *\(.*\) \*/ *$=\2`\1`\3`rw`1=p' > $T
+sed < no-OS/ad9361/sw/ad9361.h -n 's=^#define REG_\([_a-zA-Z0-9]*\)[	 ]*\(0x[0-9ABCDEF]*\)[ 	]*/\* *\(.*\) \*/ *$=\2`\1`\3`rw`1=p' > $T
 grep -s "'" $T && {
   echo unexpected single quote character
   exit 1
@@ -56,13 +56,13 @@ awk < $T -F '`' -v nxt=0 "
     if (\$1 ~ volatile) { r=\" volatile='1'\"; w=\"\"}
     if (\$1 ~ writable) w=\" writable='1'\"
     if (n != nxt)
-      printf \"  <property name='ocpi_pad_%03x' padding='1' arraylength='%u'/>\n\", nxt, n - nxt
+      printf \"  <property name='ocpi_pad_%03x' type='uchar' padding='1' arraylength='%u'/>\n\", nxt, n - nxt
     nxt = n + 1
-    printf \"  <property name='%s'%s%s%s description='%s'/>\n\", a, r, w, v, \$3
+    printf \"  <property name='%s' type='uchar' %s%s%s description='%s'/>\n\", a, r, w, v, \$3
   }
   END { printf \"</properties>\n\" }
   " > include/ad9361-properties.xml
-rm $T
+# rm $T
 
 ################################################################################
 # 3. Compile code into the library

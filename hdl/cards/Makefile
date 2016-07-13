@@ -31,8 +31,8 @@
 Package=ocpi.devices
 XmlIncludeDirs=../../components/specs ../devices/lib/hdl ../devices/specs
 Workers = zipper_i2c.hdl \
-          zipper_i2c_em.hdl
-#	limeSPI.hdl \
-#        limeTx.hdl
+          zipper_i2c_em.hdl \
+          fmcomms3_i2c.hdl \
+
 include $(OCPI_CDK_DIR)/include/lib.mk
 all: hdl

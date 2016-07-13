@@ -17,12 +17,16 @@
   <!-- Timeout -->
   <ControlInterface Timeout="16"/> <!-- Set to default. No raw properties -->
 
+  <!-- the subdevice provides for sharing other non-property functionality -->
+  <devsignal name='dev' signals='ad9361-subdevice-signals.xml' master='true'/>
+
   <!-- Signals --> 
   <!--Signal names from the ad9361 data sheet
      P0 is 12 bit signel-ended, overlayed with TX 6 bit differential
      P1 is 12 bit signel-ended, overlayed with RX 6 bit differential
  -->
-  <Signal Input="DATA_CLK" differential='true'/>  <!-- ad9361->FPGA, syncd w/ rx data -->
-  <Signal Input="RX_FRAME" differential='true'/>  <!-- ad9361->FPGA, data-valid -->
-  <Signal Input="RX_D" width="6" differential='true'/> <!-- ADC data -->
+  <Signal Input="RX_FRAME_P"/>  <!-- ad9361->FPGA, data-valid -->
+  <Signal Input="RX_FRAME_N"/>  <!-- ad9361->FPGA, data-valid -->
+  <Signal Input="RX_D_P" width="6"/> <!-- ADC data -->
+  <Signal Input="RX_D_N" width="6"/> <!-- ADC data -->
 </HdlDevice>

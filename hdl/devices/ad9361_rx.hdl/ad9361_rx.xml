@@ -7,7 +7,7 @@
   <!-- the subdevice provides SPI multiplexing between RF RX and RF TX -->
   <rawprop name='rawprops' master='true'/>
   <!-- the subdevice provides for sharing other non-property functionality -->
-  <devsignal signals='ad9361-subdevice-signals.xml' master='true'/>
+  <devsignal name='dev' signals='ad9361-subdevice-signals.xml' master='true'/>
   <!-- the CTRL_IN signals are multifunction, are used for various gain-control-related modes -->
   <signal output='CTRL_IN' width='4'/>
   <signal output='EN_AGC'/>

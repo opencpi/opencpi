@@ -3,9 +3,6 @@
   <!-- Other included XML -->
   <xi:include href='lime-iq-properties.xml'/>
 
-  <!-- Properties -->
-  <Specproperty name='underrun' default='0'/>
-
   <!-- Ports -->
   <StreamInterface Name="IN" DataWidth="32" optional='1' zerolengthmessages='1'/>
 

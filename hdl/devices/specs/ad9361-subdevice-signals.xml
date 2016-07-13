@@ -14,6 +14,8 @@
      but perhaps multiple subdevice implementations.
 -->
 <signals>
+  <signal Input="DATA_CLK_P"/>
+  <signal Input="DATA_CLK_N"/>
   <signal output='SYNC_IN'/>
   <signal output='ENABLE'/>
 </signals>

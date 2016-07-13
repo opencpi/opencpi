@@ -48,11 +48,13 @@ HdlLibraries=platform
 Workers = \
         ad9361_rx.hdl \
         ad9361_tx.hdl \
-        ad9361_subdevice.hdl \
+        ad9361_sub.hdl \
         ad9361_rx_proxy.rcc \
         ad9361_tx_proxy.rcc \
         ad9361_adc.hdl \
         ad9361_dac.hdl \
+        ad7291.hdl \
+        stm_mc24c02.hdl \
 	sdp_node.hdl \
 	sdp_pipeline.hdl \
 	sdp_send.hdl \

@@ -31,7 +31,7 @@ begin
   ---- Mux I and Q onto TXD, consistent with the TX_IQ_SEL output to lime
   --TX_IQ_SEL <= sel_iq_r;
   --TXD       <= dac_data(23 downto 12) when its(sel_iq_r) else dac_data(11 downto 0);
-  dac_clk <= data_clkp;
+  dac_clk <= dev_in.data_clk_p;
   output: process(dac_clk)
   begin
     if rising_edge(dac_clk) then

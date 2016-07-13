@@ -4,5 +4,4 @@
 <properties>
   <!-- Is the other side present? -->
   <property name='other_present' type='bool' readable='true'/>
-  <property name='divisor' writable='1' default='1'/>
 </properties>

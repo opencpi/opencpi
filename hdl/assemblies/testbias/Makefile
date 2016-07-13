@@ -37,4 +37,5 @@
 #ExcludePlatforms=isim modelsim
 #ParamValues_ocpi_endian=little/big
 #ParamValues_ocpi_debug=false/true
+Containers=fmcomms3_zed
 include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk
