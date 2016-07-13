@@ -6,7 +6,7 @@ entity spi is
   generic(data_width    : positive := 8;
           addr_width    : positive := 7;
           clock_divisor : positive := 16;
-          clock_invert  : boolean  := false);
+          capture_fall  : boolean  := true);
   port   (clk           : in  std_logic;
           reset         : in  bool_t;
           renable       : in  bool_t;
@@ -22,57 +22,55 @@ entity spi is
           sdio          : out std_logic);
 end entity spi;
 architecture rtl of spi is
-  constant clk_invert : std_logic := to_bool(clock_invert);
-  -- Registers/state
-  signal busy_r       : bool_t;
-  signal done_r       : bool_t; -- for one pulse
-  signal rdata_r      : std_logic_vector(data_width-1 downto 0) := (others => '0');
+  type   state_t is (idle_e, starting_e, busy_e, done_e);
+  signal state_r      : state_t := idle_e;
   signal clk_count_r  : unsigned(width_for_max(clock_divisor-1)-1 downto 0) := (others => '0');
   signal bit_count_r  : unsigned(width_for_max(addr_width + data_width + 1)-1 downto 0);
 begin
-  done  <= done_r;
-  rdata <= rdata_r;
-  SEN   <= not busy_r;                       -- enable is asserted low here
-  SDIO  <= wenable and busy_r when bit_count_r = 0 else
+  done  <= to_bool(state_r = done_e);
+  SEN   <= '0' when state_r = starting_e or state_r = busy_e else '1'; -- enable asserted low
+  SDIO  <= '1' when wenable and state_r = busy_e and bit_count_r = 0 else
+           '0' when state_r = busy_e and bit_count_r = 0 else
            -- Select the right bit from the 7 bit address
            addr(addr_width - to_integer(bit_count_r)) when bit_count_r <= addr_width else
-           -- Select the right bit from the 32 bit data (little endian)
+           -- Select the right bit from the data
            wdata(data_width - to_integer(bit_count_r - addr_width));
   p : process(clk) is begin
     if rising_edge(clk) then
       if its(reset) then
-        busy_r      <= bfalse;
-        done_r      <= bfalse;
-        sclk        <= '0';
-        bit_count_r <= (others => '0');
-        clk_count_r <= (others => '0');
-        -- no need to set counters since they get initialized when a cycle starts
-      elsif its(busy_r) then -- We are doing an access
-        clk_count_r <= clk_count_r + 1;
-        if clk_count_r = clock_divisor/2 - 1 then
-          sclk <= not clk_invert;
-        elsif clk_count_r = clock_divisor - 1 then
-          clk_count_r <= (others => '0');
-          if bit_count_r = (data_width + addr_width) then
-            busy_r      <= bfalse;
-            done_r      <= btrue;
-            bit_count_r <= (others => '0');
-            sclk        <= '0';
-          else
-            if bit_count_r > addr_width then
-              rdata_r(data_width - to_integer(bit_count_r - addr_width)) <= SDO;
+        state_r <= idle_e;
+        sclk    <= '0';
+      else
+        case state_r is
+          when busy_e =>
+            if clk_count_r = clock_divisor - 1 then -- end of bit cycle
+              clk_count_r <= (others => '0');
+              if bit_count_r = (data_width + addr_width) then -- end of access
+                sclk        <= '0';
+                state_r     <= done_e;
+              else
+                sclk        <= to_bool(capture_fall);
+                bit_count_r <= bit_count_r + 1;
+              end if;
+            else
+              clk_count_r <= clk_count_r + 1;
+              if clk_count_r = clock_divisor/2 - 1 then -- mid-cycle, read data is captured
+                sclk <= not to_bool(capture_fall);
+                rdata(data_width - to_integer(bit_count_r - addr_width)) <= SDO;
+              end if;
             end if;
-            bit_count_r <= bit_count_r + 1;
-            sclk        <= clk_invert;
-          end if;
-        end if;
-      elsif its(done_r) then
-        done_r <= bfalse;
-        sclk <= '0';
-      elsif renable or wenable then
-        -- starting an access after busy_r has been down for a cycle
-        busy_r <= btrue;
-        sclk   <= clk_invert; -- initial clock after enable
+          when done_e =>
+            state_r <= idle_e;
+          when starting_e =>
+            state_r     <= busy_e;
+            sclk        <= to_bool(capture_fall);
+            bit_count_r <= (others => '0');
+            clk_count_r <= (others => '0');
+          when idle_e =>
+            if renable or wenable then
+              state_r <= starting_e;
+            end if;
+        end case;
       end if;
     end if;
   end process p;
