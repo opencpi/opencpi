@@ -6,7 +6,7 @@ entity spi is
   generic(data_width    : positive := 8;
           addr_width    : positive := 7;
           clock_divisor : positive := 16;
-          capture_fall  : boolean  := true);
+          capture_fall  : boolean  := false);
   port   (clk           : in  std_logic;
           reset         : in  bool_t;
           renable       : in  bool_t;

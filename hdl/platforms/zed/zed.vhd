@@ -199,7 +199,7 @@ begin
   metadata_out.romEn        <= props_in.romData_read;
   led(0) <= count(count'left);
   led(1) <= ps_m_axi_gp_out(0).ARVALID;
-  led(2) <= seen_burst;
+  led(2) <= '0';
   led(3) <= cp_in.take;
   led(4) <= cp_in.valid;
   led(5) <= ps_m_axi_gp_in(0).ARREADY;

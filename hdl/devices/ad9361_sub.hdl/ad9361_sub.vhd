@@ -86,8 +86,8 @@ begin
     generic map(
       data_width    => 8,
       addr_width    => addr_width_c,
-      clock_divisor => 16
-      )
+      clock_divisor => 16,
+      capture_fall  => true)
     port map(
       clk     => ctl_in.clk,
       reset   => ctl_in.reset,
@@ -100,6 +100,5 @@ begin
       sdo     => spi_do,
       sclk    => spi_clk,
       sen     => spi_enb,
-      sdio    => spi_di
-      );
+      sdio    => spi_di);
 end rtl;
