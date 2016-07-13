@@ -40,8 +40,6 @@ ifeq ($(wildcard exports),)
   endif
   $(info $(shell ./scripts/makeExportLinks.sh - $(ProjectPrefix)_ xxx))
 endif
-export OCPI_CFLAGS=-Wall -Wfloat-equal -Wextra  -fno-strict-aliasing -Wconversion -std=c99
-export OCPI_CXXFLAGS=-Wextra -Wall -Wfloat-equal -fno-strict-aliasing -Wconversion
 include exports/include/ocpisetup.mk
 export OCPI_OS=$(OCPI_TARGET_OS)
 ifneq ($(OCPI_OS),)

@@ -39,7 +39,7 @@ namespace OCPI {
       : m_metadata(NULL), m_implXml(NULL), m_old(false), m_name(a_name), m_protocol(a_protocol),
 	m_isAlive(true), m_pfWorker(NULL), m_tsWorker(NULL), m_isFailed(false),
 	m_timeCorrection(0), m_endPoint(NULL) {
-      memset((void*)&m_UUID, sizeof(m_UUID), 0);
+      memset((void*)&m_UUID, 0, sizeof(m_UUID));
     }
     Device::
     ~Device() {
@@ -57,8 +57,8 @@ namespace OCPI {
     // Also called after bitstream loading.
     bool Device::
     init(std::string &err) {
-      uint64_t magic;
       sig_t old = signal(SIGBUS, catchBusError); // FIXME: we could make this thread safe
+      uint64_t magic = 0x0BAD1BADDEADBEEF;
       try {
 	if (sigsetjmp(jmpbuf, 1) == 0) {
 	  magic = m_cAccess.get64Register(magic, OccpAdminRegisters);
@@ -96,7 +96,7 @@ namespace OCPI {
 	  (m_tsWorker->controlOperation(OU::Worker::OpInitialize, err)) ||
 	  (m_pfWorker->controlOperation(OU::Worker::OpStart, err)) ||
 	  (m_tsWorker->controlOperation(OU::Worker::OpStart, err))) {
-	// Compatibility hack
+	// For Compatibility
 	m_old = true;
 	err.clear();
 	ocpiInfo("For HDL Device '%s' no platform worker responds.  Assuming old-style bitstream.",

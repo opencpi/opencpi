@@ -1,4 +1,7 @@
 # Default settings
+export OCPI_TARGET_CFLAGS="-Wall -Wfloat-equal -Wextra  -fno-strict-aliasing -Wconversion -std=c99"
+export OCPI_TARGET_CXXFLAGS="-Wextra -Wall -Wfloat-equal -fno-strict-aliasing -Wconversion -Wwrite-strings -Wno-sign-conversion"
+
 export OCPI_BASE_DIR=`pwd`
 export OCPI_CDK_DIR=$OCPI_BASE_DIR/exports
 # For backward compatibility, we default to explicit modelessness

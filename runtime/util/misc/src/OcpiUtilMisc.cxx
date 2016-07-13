@@ -542,6 +542,9 @@ formatAdd(std::string &out, const char *fmt, ...) {
 }
 
 // FIXME: Use vanilla C file I/O
+// In converting the contents of the file to a string:
+// 1. Leading whitespace is trimmed
+// 2. If "replaceNewLine" is non-zero, newlines are replaced with it, except the last one
 const char *
 file2String(std::string &out, const char *file, char replaceNewLine) {
   FILE *f = fopen(file, "r");
@@ -565,7 +568,7 @@ file2String(std::string &out, const char *file, char replaceNewLine) {
       char *cp = buf;
       if (initial) {
 	// Trim initial white space
-	for (; n && isspace(*cp); n--, cp++)
+	for (; n && isspace(*cp) && *cp != '\n'; n--, cp++)
 	  ;
 	if (n)
 	  initial = false;

@@ -81,6 +81,7 @@ fi
 # Now we do the platform-specific setup to find cables and serial numbers
 # Get cable info - a list of <cable>=<serial-number>
 ################################################################################
+echo Scanning for JTAG cables...
 cables=`$jtagSupport cables $temp 2>$temp.cables`
 if test $? != 0; then
   echo JTAG cable setup for platform \"$platform\" failed. See \"$temp.cables\".
@@ -175,7 +176,7 @@ if test "$suffix" != ""; then
   echo The bitstream file \"$bitfile\" is compressed.  Expanding to temp file \"$temp.$suffix\".
   gunzip -q -c < $bitfile > $temp.$suffix 2> $tunzip
   # Note that gunzip issues warnings and returns status == 2 when there is
-  # junk at the end of the file - which we use for artifact metadata of course.
+  # artifact metadata at the end of the file
   if test $? != 0 -a $? != 2; then
     echo Decompression failed: $(< $tunzip).
     rm -f $tbar $temp.$suffix $tunzip

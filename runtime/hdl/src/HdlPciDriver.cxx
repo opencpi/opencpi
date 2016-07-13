@@ -207,10 +207,11 @@ namespace OCPI {
 	  char *command, *base = getenv("OCPI_CDK_DIR");
 	  if (!base)
 	    throw OU::Error("OCPI_CDK_DIR environment variable not set");
-	  asprintf(&command,
+	  int aslen = asprintf(&command,
 		   "%s/scripts/loadBitStream \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
 		   base, fileName, name().c_str(), m_platform.c_str(), m_part.c_str(),
 		   m_esn.c_str(), m_position.c_str());
+          ocpiAssert(aslen > 0);
 	  ocpiInfo("Executing command to load bit stream for device %s: \"%s\"\n",
 		   fileName, command);
 	  int rc = system(command);

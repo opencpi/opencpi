@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
             "-u\t\tUse unit test bitstream configuration\n"
 	    "-x <xfile>\tUse the <xfile> for xml bitstream file\n"
 	    "-y\t\tSet delay hold off byte count, enable delay, start DRAM\n"
-	    "-z\t\tDon't touch data at all, just send and receive junk\n"
+	    "-z\t\tDon't touch data at all, just send and receive\n"
             "-D <shmname>\tSpecify emulated hardware buffer shm\n"
             "-I <msgsize>\tSpecify size of messages (default == 16 bytes)\n"
 	    "-M\t\tStore  metadata as well as data when writing an output file\n"
@@ -592,7 +592,7 @@ int main(int argc, char *argv[])
     int ifd = -1, cfd = -1, ofd = -1;
     off_t bytes;
     static int16_t cosineBuf[4096];
-    uint8_t *cbuf = (uint8_t*)malloc(ioSize);
+    std::unique_ptr<uint8_t> cbuf((uint8_t*) malloc(ioSize));
     if (file) {
       if ((ifd = open(file, O_RDONLY)) < 0 ||
 	  (cfd = open(file, O_RDONLY)) < 0 ||
@@ -698,12 +698,12 @@ int main(int argc, char *argv[])
 	  }
 	}
 	if (file && !ofile) {
-	  if ((n = read(cfd, cbuf, nWant)) != (size_t)nWant) {
+	  if ((n = read(cfd, cbuf.get(), nWant)) != (size_t)nWant) {
 	    fprintf(stderr, "Error reading input file for compare: wanted %zu, got %zd, errno %d\n",
 		    nWant, n, errno);
 	    return 1;
 	  }
-	  if (memcmp(cbuf, data, nWant))
+	  if (memcmp(cbuf.get(), data, nWant))
 	    oops = "Data mismatch on file data";
 	} else if (ofile) {
 	  struct {

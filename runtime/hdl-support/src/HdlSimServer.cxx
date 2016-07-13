@@ -100,8 +100,7 @@ namespace OCPI {
 	  ocpiDebug("Starting to flush any state from previous simulation run for %s",
 		    m_name.c_str());
 	  while (ioctl(m_rfd, FIONREAD, &n) >= 0 && n > 0 &&
-		 ((r = read(m_rfd, buf, sizeof(buf))) > 0 ||
-		  (r < 0 && errno == EINTR)))
+		 ((r = read(m_rfd, buf, sizeof(buf))) > 0 || (r < 0 && errno == EINTR)))
 	    ;
 	  ocpiDebug("Ending flush of any state from previous simulation run");
 	}
@@ -501,7 +500,7 @@ namespace OCPI {
 	      int en = errno;
 	      x += m_dir;
 	      x += "\n";
-	      write(2, x.c_str(), x.length());
+	      ocpiCheck(write(2, x.c_str(), x.length()) == x.length());
 	      _exit(10 + en);
 	    }
 	    {
@@ -509,7 +508,7 @@ namespace OCPI {
 	      if (fd < 0) {
 		std::string x("Error: Cannot create sim.out file for simulation output.\n");
 		int en = errno;
-		write(2, x.c_str(), x.length());
+		ocpiCheck(write(2, x.c_str(), x.length()) == x.length());
 		_exit(10 + en);
 	      }
 	      if (dup2(fd, 1) < 0 ||
@@ -525,7 +524,7 @@ namespace OCPI {
 	    OU::format(err, "Could not create simulator sub-process for: %s", m_exec.c_str());
 	    return true;
 	  default:
-	    ocpiInfo("Simluator subprocess has pid: %u.", s_pid);
+	    ocpiInfo("Simulator subprocess has pid: %u.", s_pid);
 	  }
 	  if (m_verbose)
 	    fprintf(stderr, "Simulator process (process id %u) started, with its output in %s/sim.out\n",
@@ -537,7 +536,7 @@ namespace OCPI {
 	  ocpiCheck(write(m_ctl.m_wfd, msg, 2) == 2);
 #endif
 	  // Improve the odds of an immediate error giving a good error message by letting the sim run
-	  ocpiInfo("Waiting for simulator to start before issueing any more credits.");
+	  ocpiInfo("Waiting for simulator to start before issuing any more credits.");
 	  OS::sleep(100);
 	  for (unsigned n = 0; n < 1; n++)
 	    if (spin(err) || mywait(s_pid, false, err) || ack(err))

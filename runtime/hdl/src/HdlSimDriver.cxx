@@ -115,7 +115,7 @@ namespace OCPI {
 	      OS::Socket wskt;
 	      wskt.connect(l_addr, port);
 	      wskt.linger(true); //  wait on close for far side ack of all data
-	      int rfd;
+	      int rfd = -1;
 	      try { // socket I/O can throw
 		if ((rfd = open(a_name, O_RDONLY)) < 0)
 		  throwit("Can't open executable: %s", a_name);

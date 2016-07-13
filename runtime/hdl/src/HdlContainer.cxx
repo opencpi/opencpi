@@ -30,7 +30,6 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <inttypes.h>
 #include <unistd.h>
 #include "OcpiOsAssert.h"
 #include "OcpiUtilMisc.h"
@@ -773,7 +772,7 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
             const char *adName = ezxml_cattr(ad, "name");
             if (adName &&
                 ((iAmTo && !strcasecmp(adName, from)) ||
-                 (!iAmTo && !strcasecmp(adName, to)))) {
+                 (!iAmTo && !strcasecmp(adName, to))) ) {
               // We have a connection on this port to an adapter instance.  Find the worker
 	      const char *adwName = ezxml_cattr(ad, "worker");
 	      if (adwName)
@@ -843,6 +842,7 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
                      size_t bufferSize,
                      const OA::PValue* props) throw() {
       (void)portId; (void)bufferCount; (void)bufferSize;(void)props;
+      ocpiAssert("This method is not expected to ever be called" == 0);
       return *(Port *)0;//return *new Port(*this);
     }
     OC::Port &Worker::
@@ -851,6 +851,7 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
                     size_t bufferSize,
                     const OA::PValue* props) throw() {
       (void)portId; (void)bufferCount; (void)bufferSize;(void)props;
+      ocpiAssert("This method is not expected to ever be called" == 0);
       return *(Port *)0;//      return *new Port(*this);
     }
 

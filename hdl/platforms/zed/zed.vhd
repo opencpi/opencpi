@@ -198,10 +198,10 @@ begin
   metadata_out.romAddr      <= props_in.romAddr;
   metadata_out.romEn        <= props_in.romData_read;
   led(0) <= count(count'left);
-  led(1) <= zynq_in_seen;
-  led(2) <= zynq_in(0).sdp.valid;
-  led(3) <= zynq_out_seen;
-  led(4) <= my_zynq_out(0).sdp.valid;
+  led(1) <= ps_m_axi_gp_out(0).ARVALID;
+  led(2) <= seen_burst;
+  led(3) <= cp_in.take;
+  led(4) <= cp_in.valid;
   led(5) <= ps_m_axi_gp_in(0).ARREADY;
   led(6) <= ps_m_axi_gp_in(0).RVALID;
   led(7) <= ps_m_axi_gp_out(0).RREADY;

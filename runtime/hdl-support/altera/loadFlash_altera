@@ -87,7 +87,7 @@ case $5 in
     echo The bitstream file \"$5\" is compressed.  Expanding it.
     gunzip -q -c < $5 > $temp.sof 2> $temp.1
     # Note that gunzip issues warnings and returns status == 2 when there is
-    # junk at the end of the file - which we use for artifact metadata of course.
+    # artifact metadata at end of file
     if test $? != 0 -a $? != 2; then
       echo Decompression failed. Log is in $temp.1; exit 1
       exit 1
