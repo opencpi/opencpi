@@ -46,8 +46,8 @@
 	 Driver    &m_driver;
 	 uint8_t  *m_vaddr;
 	 friend class Driver;
-	 Device(Driver &driver, std::string &name, bool forLoad, std::string &err)
-	   : OCPI::HDL::Device(name, "ocpi-dma-pio"),
+	 Device(Driver &driver, std::string &a_name, bool forLoad, std::string &err)
+	   : OCPI::HDL::Device(a_name, "ocpi-dma-pio"),
 	     m_driver(driver), m_vaddr(NULL) {
 	   m_isAlive = false;
 	   m_endpointSize = sizeof(OccpSpace);
@@ -60,7 +60,7 @@
 		 err.clear();
 	     }
 	   } else if (err.empty())
-	       ocpiInfo("There is no bitstream loaded on this HDL device: %s", name.c_str());
+	       ocpiInfo("There is no bitstream loaded on this HDL device: %s", a_name.c_str());
 	 }
 	 ~Device() {
 	   if (m_vaddr)
@@ -75,7 +75,8 @@
 	     if (!slcr)
 	       return true;
 	     // We're not loaded, but fake as much stuff as possible.
-	     m_platform = "zed"; // FIXME: we don't know the part yet
+	     const char *p = ezxml_cattr(config, "platform");
+	     m_platform = p ? p : "zed"; // FIXME: is there any other automatic way for this?
 	     switch ((slcr->pss_idcode >> 12) & 0x1f) {
 	     case 0x02: m_part = "xc7z010"; break;
 	     case 0x07: m_part = "xc7z020"; break;
@@ -166,15 +167,15 @@
 	      if (bfd >= 0) ::close(bfd);
 	      if (gz) gzclose(gz);
 	    }
-	    Xld(const char *fileName) : xfd(-1), bfd(-1), gz(NULL) {
+	    Xld(const char *file) : xfd(-1), bfd(-1), gz(NULL) {
 	      try {
 		// Open the device LAST since just opening it will do bad things
-		if ((bfd = ::open(fileName, O_RDONLY)) < 0)
+		if ((bfd = ::open(file, O_RDONLY)) < 0)
 		  throw OU::Error("Can't open bitstream file '%s' for reading: %s(%d)",
-				  fileName, strerror(errno), errno);
+				  file, strerror(errno), errno);
 		if ((gz = ::gzdopen(bfd, "rb")) == NULL)
 		  throw OU::Error("Can't open compressed bitstream file '%s' for : %s(%u)",
-				  fileName, strerror(errno), errno);
+				  file, strerror(errno), errno);
 		bfd = -1; // gzclose closes the fd
 		// Read up to the sync pattern before byte swapping
 		if ((n = ::gzread(gz, buf, sizeof(buf))) <= 0)
@@ -324,22 +325,6 @@
 	  return (uint8_t*)vaddr;
 	return NULL;
       }
-#if 0
-      void *Driver::
-      map(uint32_t size, uint64_t &phys, std::string &error) {
-	// FIXME: mutex
-	(void)size;(void)phys;
-	if (m_memFd == -1) {
-	  m_memFd = ::open("/dev/mem", O_RDWR | O_SYNC);
-	  if (m_memFd < 0) {
-	    OU::format(error,
-		       "Can't open /dev/mem for DMA memory.  Forgot sudo or missing driver?");
-	    return NULL;
-	  }
-	}
-	return NULL;
-      }
-#endif
     } // namespace BUS
   } // namespace HDL
 } // namespace OCPI
