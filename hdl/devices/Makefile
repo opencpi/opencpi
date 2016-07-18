@@ -43,16 +43,18 @@
 # one -- until we have a good naming convension.
 Package=ocpi.devices
 HdlLibraries=platform
+include $(OCPI_CDK_DIR)/include/util.mk
 # Remember that subdevices that support other devices must occur AFTER the devices they support
 # Similarly, emulators must occur after the devices they emulate
 Workers = \
-        ad9361_rx.hdl \
-        ad9361_tx.hdl \
-        ad9361_sub.hdl \
-        ad9361_rx_proxy.rcc \
-        ad9361_tx_proxy.rcc \
-        ad9361_adc.hdl \
-        ad9361_dac.hdl \
+        $(and $(call OcpiHavePrereq,ad9361), \
+          ad9361_rx.hdl \
+          ad9361_tx.hdl \
+          ad9361_rx_proxy.rcc \
+          ad9361_tx_proxy.rcc \
+          ad9361_adc.hdl \
+          ad9361_dac.hdl \
+          ad9361_sub.hdl $(Comment this must be last since it supports the above)) \
         ad7291.hdl \
         stm_mc24c02.hdl \
 	sdp_node.hdl \

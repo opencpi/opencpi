@@ -1,18 +1,24 @@
 /*
- * THIS FILE WAS ORIGINALLY GENERATED ON Sun Jun 26 21:23:12 2016 EDT
+ * THIS FILE WAS ORIGINALLY GENERATED ON Mon Jul 18 08:01:18 2016 EDT
  * BASED ON THE FILE: ad9361_tx_proxy.xml
  * YOU *ARE* EXPECTED TO EDIT IT
  *
  * This file contains the implementation skeleton for the ad9361_tx_proxy worker in C++
  */
 
+extern "C" {
+#include "ad9361_api.h"
+}
 #include "ad9361_tx_proxy-worker.hh"
 
 using namespace OCPI::RCC; // for easy access to RCC data types and constants
 using namespace Ad9361_tx_proxyWorkerTypes;
 
 class Ad9361_tx_proxyWorker : public Ad9361_tx_proxyWorkerBase {
+  struct ad9361_rf_phy *m_ad9361_phy;
   RCCResult initialize() {
+    AD9361_InitParam p;
+    ad9361_init(&m_ad9361_phy, &p);
     return RCC_OK;
   }
   RCCResult stop() {
