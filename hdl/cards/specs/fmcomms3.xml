@@ -104,7 +104,7 @@
     <Signal name='ALERT' slot=''/>
     <Signal name='PD_RST_N' slot=''/>
   </device>
-  <device worker='stm_mc24C02'/>
+  <device worker='stm_mc24c02'/>
   <device worker='fmcomms3_i2c'>
     <Signal name='SCL'        slot='SCL'/>        <!--  C30 -->
     <Signal name='SDA'        slot='SDA'/>        <!--  C31 -->
