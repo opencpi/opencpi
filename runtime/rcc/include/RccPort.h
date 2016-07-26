@@ -184,6 +184,7 @@ namespace OCPI {
 	}
 	if (m_buffer) {
 	  m_rccPort.current.containerBuffer = m_buffer;
+	  m_rccPort.current.isNew_ = true; // flag usable by higher levels for one-time init
 	  m_buffer->m_ud = this;
 	  m_wantsBuffer = false;
 	  return true;

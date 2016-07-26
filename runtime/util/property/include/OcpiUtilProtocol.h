@@ -113,8 +113,8 @@ namespace OCPI  {
       Operation *findOperation(const char *name);
       void finishOperation(const Operation &op);
       inline bool isTwoWay() { return m_isTwoWay; }
-      inline size_t &nOperations() { return m_nOperations; }
-      inline Operation *operations() { return m_operations; }
+      inline const size_t &nOperations() const { return m_nOperations; }
+      inline Operation *operations() const { return m_operations; }
       inline const std::string &name() const { return m_name; }
       const char *parse(ezxml_t x, bool top = true);
       // Note this is NOT const char array and must be modifiable in place

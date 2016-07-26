@@ -107,7 +107,11 @@
 #endif
 
 #ifdef WORKER_INTERNAL
-namespace OCPI { namespace RCC { class Port; } namespace DataTransport { class BufferUserFacet;}}
+namespace OCPI {
+  namespace RCC { class Port; }
+  namespace DataTransport { class BufferUserFacet; }
+  namespace Util { class Member; }
+}
 #define RCC_CONST
 #else
 #define RCC_CONST const
@@ -128,6 +132,7 @@ typedef enum {
   RCC_DYNAMIC
 } RCCEndian;
 #ifdef __cplusplus
+class RCCUserPort;
 typedef bool RCCBoolean;
 
 #else
@@ -229,6 +234,7 @@ typedef struct {
   /* private member for container use */
   size_t length_;
   RCCOpCode opCode_;
+  RCCBoolean isNew_; // hook for upper level initializations
 #ifdef WORKER_INTERNAL
   OCPI::DataTransport::BufferUserFacet *containerBuffer;
 #else
@@ -262,8 +268,10 @@ struct RCCPort {
   RCCOpCode defaultOpCode_;
 #ifdef WORKER_INTERNAL
   OCPI::RCC::Port *containerPort;
+  RCCUserPort *userPort;
+  OCPI::Util::Member *sequence;
 #else
-  void *containerPort;
+  void *containerPort, *userPort, *sequence;
 #endif
 };
 
@@ -333,34 +341,17 @@ typedef struct {
 // maximum commonality between C and C++ workers. FIXME
  class RCCUserWorker;
  typedef RCCUserWorker *RCCConstruct(void *place, RCCWorkerInfo &info);
- class RCCUserPort;
-
- class RCCUserBufferInterface {
- protected:
-   virtual void setRccBuffer(RCCBuffer *b) = 0;
-   virtual RCCBuffer *getRccBuffer() const = 0;
- public:
-   virtual void * data() const = 0;
-   virtual size_t maxLength() const = 0;
-   // For input buffers
-   virtual size_t length() const = 0;
-   virtual RCCOpCode opCode() const = 0;
-   // For output buffers
-   virtual void setLength(size_t length) = 0;
-   virtual void setOpCode(RCCOpCode op) = 0;
-   virtual void setInfo(RCCOpCode op, size_t len) = 0;
-   virtual void release() = 0;
-
- };
 
  class RCCUserBuffer { // : public RCCUserBufferInterface {
    RCCBuffer *m_rccBuffer;
    RCCBuffer  m_taken;
+   bool m_opCodeSet, m_lengthSet, m_resized;
    friend class RCCUserPort;
    friend class RCCPortOperation;
  protected:
    RCCUserBuffer();
    virtual ~RCCUserBuffer();
+   void initBuffer();
    void setRccBuffer(RCCBuffer *b);
    inline RCCBuffer *getRccBuffer() const { return m_rccBuffer; }
  public:
@@ -370,8 +361,13 @@ typedef struct {
    inline size_t length() const { return m_rccBuffer->length_; }
    RCCOpCode opCode() const { return m_rccBuffer->opCode_; }
    // For output buffers
-   void setLength(size_t length) { m_rccBuffer->length_ = length; }
-   void setOpCode(RCCOpCode op) {m_rccBuffer->opCode_ = op; }
+   void setLength(size_t length) {
+     if (m_rccBuffer->isNew_)
+       initBuffer();
+     m_rccBuffer->length_ = length;
+     m_lengthSet = true;
+   }
+   void setOpCode(RCCOpCode op);
    void setInfo(RCCOpCode op, size_t len) {
      setOpCode(op);
      setLength(len);
@@ -386,7 +382,12 @@ typedef struct {
    friend class RCCPortOperation;
  protected:
    RCCUserPort();
-   void *getArgAddress(RCCUserBuffer &buf, unsigned op, unsigned arg, size_t *length) const;
+   // Note length is capacity for output buffers.
+   void *getArgAddress(RCCUserBuffer &buf, unsigned op, unsigned arg, size_t *length,
+		       size_t *capacity) const;
+   void setArgSize(RCCUserBuffer &buf, unsigned op, unsigned arg, size_t length) const;
+ private:
+   void checkOpCode(RCCUserBuffer &buf, unsigned op) const;
  public:
    // Test whether a buffer is available, and if not request one
    // There is no buffer is there is no container port for the rcc port (not connected).
@@ -419,8 +420,11 @@ typedef struct {
    RCCPortOperation(RCCUserPort &p, unsigned op) : m_port(p), m_op(op), m_buffer(&p) {}
    inline void setRccBuffer(RCCBuffer *b) { m_buffer->setRccBuffer(b); };
    inline RCCBuffer *getRccBuffer() const { return m_buffer->getRccBuffer(); }
-   inline void *getArgAddress(unsigned arg, size_t *length) const {
-     return m_port.getArgAddress(*m_buffer, m_op, arg, length);
+   inline void *getArgAddress(unsigned arg, size_t *length, size_t *capacity) const {
+     return m_port.getArgAddress(*m_buffer, m_op, arg, length, capacity);
+   }
+   inline void setArgSize(unsigned arg, size_t length) const {
+     m_port.setArgSize(*m_buffer, m_op, arg, length);
    }
  public:
    inline void * data() const { return m_buffer->data(); }
@@ -451,8 +455,11 @@ typedef struct {
  protected:
    RCCPortOperation &m_op;
    RCCPortOperationArg(RCCPortOperation &, unsigned arg);
-   inline void *getArgAddress(size_t *length) const {
-     return m_op.getArgAddress(m_arg, length);
+   inline void *getArgAddress(size_t *length, size_t *capacity) const {
+     return m_op.getArgAddress(m_arg, length, capacity);
+   }
+   inline void setArgSize(size_t length) const {
+     return m_op.setArgSize(m_arg, length);
    }
  };
 
@@ -461,7 +468,6 @@ typedef struct {
  class RCCUserWorker {
    friend class Worker;
    Worker &m_worker;
-   RCCUserPort *m_ports; // array of C++ port objects
  protected:
    bool m_first;
    RCCWorker &m_rcc;
@@ -471,7 +477,6 @@ typedef struct {
    // These are called by the worker.
    virtual void propertyWritten(unsigned /*ordinal*/) {}
    virtual void propertyRead(unsigned /*ordinal*/) {}
-   RCCUserPort &getPort(unsigned n) const { return m_ports[n]; }
    inline bool firstRun() const { return m_first; };
    bool isInitialized() const;
    bool isOperating() const;

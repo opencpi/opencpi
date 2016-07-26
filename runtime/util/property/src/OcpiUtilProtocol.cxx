@@ -275,10 +275,19 @@ namespace OCPI {
 	m_variableMessageLength = true;
       if (op.m_myOffset > m_maxMessageValues)
 	m_maxMessageValues = op.m_myOffset; // still in bytes until later
-      if (!op.m_nArgs)
+      size_t minLength; // smallest message possible for this operation
+      if (op.m_nArgs) {
+	Member &m = op.m_args[op.m_nArgs - 1];
+	minLength =
+	  m.m_isSequence ? (op.m_nArgs == 1 ? 0 : m.m_offset + sizeof(uint32_t)) : op.m_myOffset;
+      } else
+	  minLength = 0;
+      if (minLength > m_minBufferSize)
+	m_minBufferSize = minLength; // the maximum of the smallest per operation
+      if (minLength < m_minMessageValues)
+	m_minMessageValues = minLength; // the minimum of the smallest per operation
+      if (minLength == 0)
 	m_zeroLengthMessages = true;
-      if (op.m_myOffset < m_minMessageValues)
-	m_minMessageValues = op.m_myOffset;
       // Find smallest element for data granularity purposes
       // When a more disruptive change is required, this could be done in 
       // alignMembers and offset()
@@ -343,7 +352,7 @@ namespace OCPI {
     }
 
     const char *Protocol::finishParse() {
-      m_minBufferSize = (m_dataValueWidth * m_minMessageValues + 7) / 8;
+      // Anything to do after all parsing is done
       return NULL;
     }
 

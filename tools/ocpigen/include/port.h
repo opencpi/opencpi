@@ -129,7 +129,7 @@ public:
   virtual const char *finalizeRccDataPort();
   virtual const char *finalizeHdlDataPort();
   virtual const char *finalizeOclDataPort();
-  virtual void emitRccCppImpl(FILE *f); 
+  virtual const char *emitRccCppImpl(FILE *f); 
   virtual void emitRccCImpl(FILE *f); 
   virtual void emitRccCImpl1(FILE *f); 
   virtual void emitRccArgTypes(FILE *f, bool &first);
