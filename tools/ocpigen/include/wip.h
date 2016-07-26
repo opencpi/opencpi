@@ -187,7 +187,7 @@ class DataPort : public OcpPort {
   void emitVHDLShellPortMap(FILE *f, std::string &last);
   void emitImplSignals(FILE *f);
   void emitXML(FILE *f);
-  void emitRccCppImpl(FILE *f);
+  const char *emitRccCppImpl(FILE *f);
   void emitRccCImpl(FILE *f);
   void emitRccCImpl1(FILE *f);
   void emitRccArgTypes(FILE *f, bool &first);

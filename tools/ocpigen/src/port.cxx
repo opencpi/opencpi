@@ -542,8 +542,10 @@ emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *inden
 void Port::
 emitXML(FILE *) {}
 
-void Port::
-emitRccCppImpl(FILE *) {}
+const char *Port::
+emitRccCppImpl(FILE *) {
+  return NULL;
+}
 void Port::
 emitRccCImpl(FILE *) {}
 void Port::
