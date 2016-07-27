@@ -440,9 +440,10 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
 	// (at one end or the other).
 	if (unconnected)
 	  OU::formatAdd(assy,
-			"  <external name='%s_%s' instance='%s' port='%s' "
+			"  <external name='%s%s%s' instance='%s' port='%s' "
 			"index='%zu' count='%zu'/>\n",
-			(*dii).cname(), p.name(),
+			p.type != NOCPort ? (*dii).cname() : "",
+			p.type != NOCPort ? "_" : "", p.name(),
 			(*dii).cname(), p.name(),
 			first, unconnected);
       }
