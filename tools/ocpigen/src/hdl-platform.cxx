@@ -22,17 +22,15 @@ create(ezxml_t xml, const char *xfile, Worker *parent, const char *&err) {
 
 HdlPlatform::
 HdlPlatform(ezxml_t xml, const char *xfile, Worker *parent, const char *&err)
-  : Worker(xml, xfile, "", Worker::Platform, parent, NULL, err), Board(m_sigmap, m_signals),
+  : HdlDevice(xml, xfile, "", parent, Worker::Platform, NULL, err), Board(m_sigmap, m_signals),
+    ::Device(*this, *this, cname(), NULL, true, 0, NULL, err),
     m_control(false) {
   m_isDevice = true;
   if (err ||
       (err = OE::checkAttrs(xml, IMPL_ATTRS, GENERIC_IMPL_CONTROL_ATTRS, HDL_TOP_ATTRS,
 			    HDL_IMPL_ATTRS, HDL_PLATFORM_ATTRS, (void*)0)) ||
       (err = OE::checkElements(xml, IMPL_ELEMS, HDL_IMPL_ELEMS, HDL_PLATFORM_ELEMS, (void*)0)) ||
-      (err = parseHdl("ocpi")) ||
-      (err = OE::getBoolean(xml, "control", &m_control)))
-    return;
-  if ((err = parseDevices(xml, NULL, xfile, this)))
+      (err = parseDevices(xml, NULL, xfile, this)))
     return;
   unsigned n = 0;
   for (ezxml_t xs = ezxml_cchild(xml, "slot"); xs; xs = ezxml_next(xs), n++) {

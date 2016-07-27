@@ -67,7 +67,7 @@ addDevInstance(const Device &dev, const Card *card, const Slot *slot,
       if (!strcasecmp((*si).m_type.m_implName, dev.m_deviceType.m_implName) &&
 	  (*bi)->m_ordinal == dev.m_ordinal) { // the ordinals match. FIXME allow mapping
 	const DevInstance *sdi = findDevInstance(**bi, card, slot, baseInstances, NULL);
-	if (!sdi && (err = addDevInstance(**bi, card, slot, control, devInstance, NULL, sdi)))
+	if (!sdi && (err = addDevInstance(**bi, card, slot, control/* why? */, devInstance, NULL, sdi)))
 	  return err;
       }
   return NULL;
@@ -323,6 +323,20 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
       (err = OE::checkElements(xml, HDL_CONFIG_ELEMS, (void*)0)))
     return;
   pf.setParent(this);
+  // Determine whether this platform worker has a control plane master port
+  bool control = false;
+  for (PortsIter ii = pf.m_ports.begin(); ii != pf.m_ports.end(); ii++) {
+    Port &i = **ii;
+    if (i.master && i.type == CPPort) {
+      control = true;
+      break;
+    }
+  }
+  // Add the platform worker as a device instance
+  const DevInstance *pfdi;
+  const HdlPlatform &cpf = pf;
+  if ((err = addDevInstance(cpf, NULL, NULL, control, NULL, NULL, pfdi)))
+    return;
   //hdlAssy = true;
   m_plugged.resize(pf.m_slots.size());
   ezxml_t tx = ezxml_add_child(xml, "device", 0);
@@ -331,11 +345,13 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
     return;
   std::string assy;
   OU::format(assy, "<HdlPlatformAssembly name='%s'>\n", m_name.c_str());
+#if 0 // platform worker is not just a device
   // Add the platform instance
   // We make the worker name platform/platform so it is findable from the platforms
   // directory.
   OU::formatAdd(assy, "  <instance worker='%s'/>\n", // index='%zu'/>\n",
-		m_platform.m_name.c_str()); //, index++);
+		m_platform.cname()); //, index++);
+#endif
   // Add all the device instances
   for (DevInstancesIter dii = m_devInstances.begin(); dii != m_devInstances.end(); dii++) {
     const ::Device &d = (*dii).device;
@@ -362,7 +378,7 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
   // 3. To and from time clients
   // 4. Between devices and required subdevices
 
-  // So: 1. Add the internal connection from the platform and/or device workers to occp
+  // So: 1. Externalize the internal control port to the container
   if ((err = addControlConnection(assy)))
     return;
   // 2. Connect the time service to the platform worker
@@ -371,7 +387,7 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
 		"    <port instance='%s' name='timebase'/>\n"
 		"    <port instance='time_server' name='timebase'/>\n"
 		"  </connection>\n",
-		m_platform.m_name.c_str());
+		m_platform.cname());
   // 3. To and from time clients
   unsigned tIndex = 0;
   for (DevInstancesIter dii = m_devInstances.begin(); dii != m_devInstances.end(); dii++) {
@@ -407,7 +423,7 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
   OU::formatAdd(assy,
 		"  <external instance='time_server' port='time'/>\n"
 		"  <external instance='%s' port='metadata'/>\n",
-		m_platform.m_name.c_str());
+		m_platform.cname());
   for (DevInstancesIter dii = m_devInstances.begin(); dii != m_devInstances.end(); dii++) {
     const ::Device &d = (*dii).device;
     for (PortsIter pi = d.deviceType().ports().begin(); pi != d.deviceType().ports().end(); pi++) {
@@ -431,15 +447,6 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
 			first, unconnected);
       }
     }
-  }
-  for (PortsIter pi = m_platform.m_ports.begin(); pi != m_platform.m_ports.end(); pi++) {
-      Port &p = **pi;
-      if (p.type == NOCPort) {
-	// Port names of noc ports are interconnect names on the platform
-	OU::formatAdd(assy,
-		      "  <external name='%s' instance='%s' port='%s'/>\n",
-		      p.name(), m_platform.m_name.c_str(), p.name());
-      }
   }
   
   OU::formatAdd(assy, "</HdlPlatformAssembly>\n");
@@ -489,14 +496,16 @@ addControlConnection(std::string &assy) {
   const char *cpInstanceName = NULL, *cpPortName = NULL;
   unsigned nCpPorts = 0;
   bool multiple = false;
+#if 0 // platform is not just a device
   for (PortsIter pi = m_platform.m_ports.begin(); pi != m_platform.m_ports.end(); pi++)
     if ((*pi)->type == CPPort) {
-      cpInstanceName = m_platform.m_name.c_str();
+      cpInstanceName = m_platform.cname();
       cpPortName = (*pi)->name();
       if (m_platform.m_control)
 	nCpPorts++;
       break;
     }
+#endif
   for (DevInstancesIter dii = m_devInstances.begin(); dii != m_devInstances.end(); dii++) {
     const ::Device &d = (*dii).device;
     for (PortsIter pi = d.m_deviceType.ports().begin(); pi != d.m_deviceType.ports().end(); pi++)
