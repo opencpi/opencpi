@@ -1470,8 +1470,10 @@ getNextFullInputBuffer(void *&data, size_t &length, uint8_t &opcode)
       c->m_status = Circuit::Disconnecting;
 
     data = (void*)buf->getBuffer(); // cast off the volatile
-    opcode = (uint8_t)buf->getMetaData()->ocpiMetaDataWord.opCode;
+    opcode = buf->getMetaData()->ocpiMetaDataWord.opCode;
     length = buf->getDataLength();
+    if (buf->getMetaData()->ocpiMetaDataWord.truncate)
+      ocpiBad("Message was truncated to %zu bytes", length);
     OCPI_EMIT_CAT__("Data Buffer Received" , OCPI_EMIT_CAT_WORKER_DEV,OCPI_EMIT_CAT_WORKER_DEV_BUFFER_FLOW, buf);
 
     OCPI_EMIT_REGISTER_FULL_VAR( "Data Buffer Opcode and length", OCPI::Time::Emit::DT_u, 64, OCPI::Time::Emit::Value, dbre ); 

@@ -95,14 +95,15 @@ end start_dw;
 
 function meta2slv(meta : metadata_t) return std_logic_vector is
 begin
-  return meta.opcode & "1" & slv(meta.eof) & slv(meta.length);
+  return meta.opcode & slv(meta.truncate) & "1" & slv(meta.eof) & slv(meta.length);
 end meta2slv;
 function slv2meta(s : std_logic_vector(metawidth_c-1 downto 0)) return metadata_t is
   variable m : metadata_t;
 begin
-  m.length := unsigned(s(meta_length_width_c-1 downto 0));
-  m.eof    := s(meta_length_width_c);
-  m.opcode := s(s'left downto s'length - meta_opcode_width_c);
+  m.length   := unsigned(s(meta_length_width_c-1 downto 0));
+  m.truncate := s(meta_truncate_c);
+  m.eof      := s(meta_eof_c);
+  m.opcode   := s(s'left downto s'length - meta_opcode_width_c);
   return m;
 end slv2meta;
 

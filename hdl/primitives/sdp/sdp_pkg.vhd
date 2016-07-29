@@ -89,19 +89,21 @@ function header2be(h : header_t; word : unsigned) return std_logic_vector;
 -- Definitions for the compressed metadata dword used for DMA
 -- Metadata (internal) definitions are consistent with DtHandshakeControl.h
 --------------------------------------------------------------------------------
-constant meta_length_width_c : natural := 22;
+constant meta_length_width_c : natural := 21;
 constant meta_eof_c          : natural := meta_length_width_c;
 constant meta_one_c          : natural := meta_eof_c + 1;
-constant meta_opcode_c       : natural := meta_one_c + 1;
+constant meta_truncate_c     : natural := meta_one_c + 1;
+constant meta_opcode_c       : natural := meta_truncate_c + 1;
 constant meta_opcode_width_c : natural := 8;
 subtype metalength_t is unsigned(meta_length_width_c-1 downto 0);
 subtype metalength_dws_t is unsigned(meta_length_width_c-1-dword_shift downto 0);
 type metadata_t is record
-  length : metalength_t;
-  eof    : bool_t;
-  opcode : std_logic_vector(meta_opcode_width_c-1 downto 0);
+  length   : metalength_t;
+  eof      : bool_t;
+  truncate : bool_t;
+  opcode   : std_logic_vector(meta_opcode_width_c-1 downto 0);
 end record metadata_t;
-constant metawidth_c : integer := meta_length_width_c + 1 + 1 + meta_opcode_width_c;
+constant metawidth_c : integer := meta_length_width_c + 1 + 1 + 1 + meta_opcode_width_c;
 constant meta_ndws_c : integer := (metawidth_c + dword_size - 1) / dword_size;
 subtype meta_dw_count_t is unsigned(meta_length_width_c-3 downto 0);
 function meta2slv(meta : metadata_t) return std_logic_vector;

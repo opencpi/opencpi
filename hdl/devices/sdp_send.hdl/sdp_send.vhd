@@ -52,11 +52,11 @@ architecture rtl of sdp_send_worker is
   signal next_buffer_addr  : bram_addr_t;
   signal bram_addr         : bram_addr_t;
   signal bram_addr_actual  : bram_addr_t;
-  signal bad_write         : bool_t;
   signal nbytes            : unsigned(nbytes_width_c-1 downto 0);
   -- Registered signals
   ---- WSI buffer filling pointers
   signal buffer_offset_r   : bram_addr_t;    -- offset in current buffer
+  signal buffer_maxed_r    : bool_t;         -- last buffer offset addressed last word in buffer
   signal buffer_index_r    : buffer_count_t;
   signal buffer_addr_r     : bram_addr_t;    -- base of current buffer
   signal buffer_avail_r    : buffer_count_t; -- how local many buffers are empty?
@@ -98,10 +98,12 @@ architecture rtl of sdp_send_worker is
   signal sdp_segment_dws_left_r : meta_dw_count_t;
 
   ---- Global state
-  signal faults_r       : uchar_t; -- tried to write past the end of the buffer
-  signal operating_r    : bool_t; -- were we operating in the last cycle?
-  signal ctl_reset_n    : std_logic;
-  signal sdp_reset_n    : std_logic;
+  signal buffer_size_fault_r : bool_t;
+  signal doorbell_fault_r    : bool_t;
+  signal truncation_fault_r  : bool_t;
+  signal operating_r         : bool_t; -- were we operating in the last cycle?
+  signal ctl_reset_n         : std_logic;
+  signal sdp_reset_n         : std_logic;
   function be2bytes (be : std_logic_vector) return unsigned is
   begin
     for i in 0 to be'length-1 loop
@@ -118,23 +120,24 @@ begin
   next_buffer_addr   <= buffer_addr_r +
                         props_in.buffer_size(bram_addr_t'left + addr_shift_c
                                              downto addr_shift_c);
-  can_take           <= to_bool(operating_r and faults_r = 0 and md_not_full and
+  can_take           <= to_bool(operating_r and its(not buffer_size_fault_r) and
+                                its(not doorbell_fault_r) and md_not_full and
                                 buffer_avail_r /= 0);
-  will_write         <= can_take and in_in.ready and in_in.valid and not bad_write;
+  will_write         <= can_take and in_in.ready and in_in.valid and not buffer_maxed_r;
   max_offset         <= props_in.buffer_size(bram_addr_t'left + 2 downto 2) - 1;
-  bad_write          <= to_bool((buffer_offset_r > max_offset) or
-                                (bram_addr >= memory_depth_c - 1));
+  -- Take even if bad write to send the truncation error in the metadata
   in_out.take        <= can_take and in_in.ready and
-                        (will_write or md_enq or (in_in.som and not in_in.valid));
-  ctl_out.finished   <= to_bool(faults_r /= 0);
-  props_out.faults   <= faults_r;
+                        (in_in.valid or md_enq or (in_in.som and not in_in.valid));
+  ctl_out.finished   <= buffer_size_fault_r or doorbell_fault_r;
+  props_out.faults   <= resize(buffer_size_fault_r & doorbell_fault_r & truncation_fault_r,
+                               uchar_t'length);
   props_out.sdp_id   <= resize(sdp_in.id, props_out.sdp_id'length);
   nbytes             <= be2bytes(in_in.byte_enable) when its(in_in.valid) else (others => '0');
   md_in.length       <= (resize(buffer_offset_r, meta_length_width_c) sll addr_shift_c) + nbytes;
   md_in.eof          <= not in_in.eom and not in_in.som and not in_in.valid;
+  md_in.truncate     <= (in_in.valid and buffer_maxed_r) or truncation_fault_r;
   md_in.opcode       <= in_in.opcode;
-  md_enq             <= to_bool(its(can_take) and in_in.ready and in_in.eom and
-                                its((not in_in.valid) or not bad_write));
+  md_enq             <= to_bool(its(can_take) and in_in.ready and in_in.eom);
   -- Instance the message data BRAM
   -- Since the BRAM is single cycle, there is no handshake.
   bram : component util.util.BRAM2
@@ -207,17 +210,20 @@ begin
   begin
     if rising_edge(ctl_in.clk) then
       if ctl_in.reset = '1' then
-        buffer_offset_r <= (others => '0');
-        buffer_index_r  <= (others => '0');
-        buffer_addr_r   <= (others => '0');
-        operating_r     <= bfalse;
-        faults_r      <= (others => '0');
+        buffer_offset_r     <= (others => '0');
+        buffer_maxed_r      <= bfalse;
+        buffer_index_r      <= (others => '0');
+        buffer_addr_r       <= (others => '0');
+        operating_r         <= bfalse;
+        buffer_size_fault_r <= bfalse;
+        doorbell_fault_r    <= bfalse;
+        truncation_fault_r  <= bfalse;
       elsif not operating_r then
         -- initialization on first transition to operating.  poor man's "start".
         if its(ctl_in.is_operating) then
           operating_r   <= btrue;
           if props_in.buffer_size > memory_bytes then
-            faults_r(0) <= '1';
+            buffer_size_fault_r <= btrue;
           end if;
         end if;
         buffer_avail_r <= resize(props_in.buffer_count, buffer_avail_r'length);
@@ -231,18 +237,21 @@ begin
           buffer_avail_r <= buffer_avail_r + 1;
         end if;
         if props_in.remote_doorbell_any_written and not flag_not_full = '1' then
---        if props_in.raw.is_write and not flag_not_full = '1' then
-          faults_r(1) <= '1'; -- this is really a debug thing.  Should not happen.
+          doorbell_fault_r <= '1'; -- this is really a debug thing.  Should not happen.
         end if;
         if can_take and in_in.ready then
           if its(in_in.valid) then
-            if its(bad_write) then
-              faults_r(2) <= '1';
+            if its(buffer_maxed_r) then
+              truncation_fault_r <= '1';
+            elsif buffer_offset_r = max_offset then
+              buffer_maxed_r <= btrue;
+            else
+              buffer_offset_r <= buffer_offset_r + 1;
             end if;
-            buffer_offset_r <= buffer_offset_r + 1;
           end if;
           if in_in.eom or its(not in_in.eom and not in_in.som and not in_in.valid) then
             buffer_offset_r   <= (others => '0');
+            buffer_maxed_r    <= bfalse;
             if buffer_index_r = props_in.buffer_count - 1 then
               buffer_index_r  <= (others => '0');
               buffer_addr_r   <= (others => '0');
@@ -333,8 +342,9 @@ g0: for i in 0 to sdp_width_c-1 generate
     -- Start a segment, given how many DWs are left in the message,
     -- and set the left-in-segment, left-in-message, and segment header count
     procedure begin_meta is
-      variable meta :std_logic_vector(39 downto 0)
-        := md_out.opcode & std_logic_vector(resize(md_out.length, 32));
+      variable meta :std_logic_vector(55 downto 0)
+        := slv(slv(md_out.truncate),8) & slv(slv(md_out.eof),8) & md_out.opcode &
+        std_logic_vector(resize(md_out.length, 32));
     begin
       sdp_out_r <= std_logic_vector(meta(sdp_out_r'range));
       sdp_remote_phase_r <= meta_e;
@@ -426,7 +436,8 @@ g0: for i in 0 to sdp_width_c-1 generate
                   bramb_addr_r    <= bramb_addr + 1;
                   sdp_out_valid_r <= bfalse;
                 when meta_e => -- must be single word width
-                  sdp_out_r <= std_logic_vector(resize(unsigned(md_out.opcode), sdp_out_r'length));
+                  sdp_out_r <= "00000000" & slv(slv(md_out.truncate), 8) &
+                               slv(slv(md_out.eof), 8) & md_out.opcode;
                   sdp_out_valid_r <= btrue;
                 when others => null;
               end case;
