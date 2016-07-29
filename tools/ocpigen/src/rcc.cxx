@@ -832,7 +832,8 @@ emitImplRCC() {
 	}
     }
     for (unsigned n = 0; n < m_ports.size(); n++)
-      m_ports[n]->emitRccCppImpl(f);
+      if ((err = m_ports[n]->emitRccCppImpl(f)))
+	return err;
     fprintf(f, "}; // end of worker class\n");
     if (writeNotifiers) {
       fprintf(f, "  %s::Notification %s::s_write_notifiers[] = {\\\n", s.c_str(), s.c_str());
@@ -1224,7 +1225,7 @@ RccAssembly::
 ~RccAssembly() {
 }
 
-void DataPort::
+const char * DataPort::
 emitRccCppImpl(FILE *f) {
   // Define the union of structures for messages for operations
   fprintf(f,
@@ -1320,44 +1321,53 @@ emitRccCppImpl(FILE *f) {
 	  size_t offset;
 	  unsigned pad;
 	  bool isLast;
-	  m_worker->rccType(type, *m, 1, offset, pad, on.c_str(), false, isLast,
-			    n == 0 && o->nArgs() == 1, 0);
+	  //	  m_worker->rccType(type, *m, 1, offset, pad, on.c_str(), false, isLast,
+	  m_worker->rccBaseType(type, *m, 1, offset, pad, on.c_str(), false, isLast, 0);
 	  fprintf(f,
 		  "       class %sArg : public OCPI::RCC::RCCPortOperationArg { \n"
 		  "       private:\n"
 		  "          mutable %s *m_myptr;\n",
-		  a.c_str(), type.c_str());
+		  s.c_str(), type.c_str());
+	  std::string get;
+	  // FIXME: CACHE THIS UNTIL BUFFER CHANGES...
+	  OU::format(get, "m_myptr = (%s *)getArgAddress(%s, %s);\n",
+		     type.c_str(), m->m_isSequence ? "&m_size" : "NULL",
+		     m->m_isSequence ? "&m_capacity" : "NULL");
 	  if (m->m_isSequence)
-	    fprintf(f, "          mutable size_t m_length;\n");
+	    fprintf(f, "          mutable size_t m_size, m_capacity;\n");
 	  fprintf(f,
 		  "       public:\n"
 		  "          %sArg(RCCPortOperation &po) : RCCPortOperationArg(po, %s_ARG), m_myptr(NULL) {}\n"
 		  "          inline%s %s *data() %s{\n"
-		  // FIXME: CACHE THIS UNTIL DATA PTR CHANGES
-		  // "            return m_myptr ? m_myptr : (m_myptr = (%s*)getArgAddress(%s));\n"
-		  "            return m_myptr = (%s*)getArgAddress(%s);\n"
-		  //"            return m_myptr ? m_myptr : (m_myptr = (%s*)getArgAddress(%s));\n"
+		  "            %s"
+		  "            return m_myptr;\n"
 		  "          }\n",
 		  a.c_str(), a.c_str(),
 		  m_isProducer ? "" : " const", type.c_str(), m_isProducer ? "" : "const ",
-		  type.c_str(), m->m_isSequence ? "&m_length" : "NULL");
+		  get.c_str());
 	  if (m->m_isSequence) {
 	    fprintf(f,
-		    "         inline size_t %s() %s{\n"
-		    // FIXME: CACHE THIS UNTIL DATA PTR CHANGES
-		    //		    "           if (!m_myptr)\n"
-		    "              m_myptr = (%s*)getArgAddress(&m_length);\n"
-		    "           return m_length;\n"
+		    "         inline size_t size() %s{\n"
+		    "           %s"
+		    "           return m_size;\n"
+		    "         }\n"
+		    "         inline size_t capacity() %s{\n"
+		    "           %s"
+		    "           return m_capacity;\n"
 		    "         }\n",
-		    m_isProducer ? "capacity" : "size",
-		    m_isProducer ? "" : "const ",
-		    type.c_str());
-	    if (m_isProducer && o->isTopFixedSequence())
+		    m_isProducer ? "" : "const ", get.c_str(),
+		    m_isProducer ? "" : "const ", get.c_str());
+	    if (m_isProducer) {
+	      if (n != o->nArgs() - 1)
+		return OU::esprintf("for protocol \"%s\" operation \"%s\" argument \"%s\": "
+				    "sequences can only be last argument in operation",
+				    m_protocol->m_name.c_str(), o->cname(),
+				    m->cname());
 	      fprintf(f,
-		      "         inline void resize(size_t length) {\n"
-		      "           m_op.setLength(length*sizeof(%s));\n"
-		      "         }\n",
-		      type.c_str());
+		      "         inline void resize(size_t size) {\n"
+		      "           setArgSize(size);\n"
+		      "         }\n");
+	    }
 	  }
 	  if (!m_opScaling.empty() && m_opScaling[n] != NULL)
 	      fprintf(f,
@@ -1414,14 +1424,14 @@ emitRccCppImpl(FILE *f) {
 	}
 	fprintf(f,
 		"    %s%sOp &%s() {\n"
-		"      assert(hasBuffer() && opCode() == %s_OPERATION);\n"
+		"      assert(hasBuffer());\n"
 		"      return m_%sOp;\n"
 		"    }\n",
-		!m_isProducer ? "const " : "", s.c_str(), o->cname(),
-		aprefix.c_str(), s.c_str());
+		!m_isProducer ? "const " : "", s.c_str(), o->cname(), s.c_str());
       }
   }
   fprintf(f, "  } %s;\n", cname());
+  return NULL;
 }
 void DataPort::
 emitRccCImpl(FILE *f) {

@@ -75,7 +75,8 @@
 	     if (!slcr)
 	       return true;
 	     // We're not loaded, but fake as much stuff as possible.
-	     m_platform = "zed"; // FIXME: we don't know the part yet
+	     const char *p = ezxml_cattr(config, "platform");
+	     m_platform = p ? p : "zed"; // FIXME: is there any other automatic way for this?
 	     switch ((slcr->pss_idcode >> 12) & 0x1f) {
 	     case 0x02: m_part = "xc7z010"; break;
 	     case 0x07: m_part = "xc7z020"; break;
@@ -336,22 +337,6 @@
 	  return (uint8_t*)vaddr;
 	return NULL;
       }
-#if 0
-      void *Driver::
-      map(uint32_t size, uint64_t &phys, std::string &error) {
-	// FIXME: mutex
-	(void)size;(void)phys;
-	if (m_memFd == -1) {
-	  m_memFd = ::open("/dev/mem", O_RDWR | O_SYNC);
-	  if (m_memFd < 0) {
-	    OU::format(error,
-		       "Can't open /dev/mem for DMA memory.  Forgot sudo or missing driver?");
-	    return NULL;
-	  }
-	}
-	return NULL;
-      }
-#endif
     } // namespace BUS
   } // namespace HDL
 } // namespace OCPI

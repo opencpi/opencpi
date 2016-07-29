@@ -10,8 +10,12 @@
 Worker *HdlDevice::
 create(ezxml_t xml, const char *xfile, Worker *parent,
        OU::Assembly::Properties *instancePVs, const char *&err) {
-  HdlDevice *hd = new HdlDevice(xml, xfile, "", parent, instancePVs, err);
+  HdlDevice *hd = new HdlDevice(xml, xfile, "", parent, Worker::Device, instancePVs, err);
   if (err ||
+      (err = OE::checkTag(xml, "HdlDevice", "Expected 'HdlDevice' as tag in '%s'", xfile)) ||
+      (err = OE::checkAttrs(xml, PARSED_ATTRS, IMPL_ATTRS, HDL_TOP_ATTRS, HDL_IMPL_ATTRS,
+			    "interconnect", "control", (void*)0)) ||
+      (err = OE::checkElements(xml, IMPL_ELEMS, HDL_IMPL_ELEMS, (void*)0)) ||
       (err = hd->setParamConfig(instancePVs, 0))) {
     delete hd;
     hd = NULL;
@@ -20,18 +24,13 @@ create(ezxml_t xml, const char *xfile, Worker *parent,
 }
 HdlDevice::
 HdlDevice(ezxml_t xml, const char *file, const char *parentFile, Worker *parent,
-	  OU::Assembly::Properties *instancePVs, const char *&err)
-  : Worker(xml, file, parentFile, Worker::Device, parent, instancePVs, err) {
+	  Worker::WType type, OU::Assembly::Properties *instancePVs, const char *&err)
+  : Worker(xml, file, parentFile, type, parent, instancePVs, err) {
   m_isDevice = true;
   if (err ||
-      (err = OE::checkTag(xml, "HdlDevice", "Expected 'HdlDevice' as tag in '%s'", file)) ||
-      (err = OE::checkAttrs(xml, PARSED_ATTRS, IMPL_ATTRS, HDL_TOP_ATTRS, HDL_IMPL_ATTRS,
-			    "interconnect", "control", (void*)0)) ||
-      (err = OE::checkElements(xml, IMPL_ELEMS, HDL_IMPL_ELEMS, (void*)0)) ||
       (err = OE::getBoolean(xml, "interconnect", &m_interconnect)) ||
-      (err = OE::getBoolean(xml, "control", &m_canControl)))
-    return;
-  if ((err = parseHdl()))
+      (err = OE::getBoolean(xml, "control", &m_canControl)) ||
+      (err = parseHdl()))
     return;
   // Parse submodule support for users - note that this information is only used
   // for platform configurations and containers, but we do a bit of error checking here
@@ -81,7 +80,7 @@ get(const char *name, const char *parentFile, Worker *parent, const char *&err) 
   std::string xfile;
   DeviceType *dt = NULL;
   if (!(err = parseFile(name, parentFile, NULL, &xml, xfile))) {
-    dt = new DeviceType(xml, xfile.c_str(), parentFile, parent, NULL, err);
+    dt = new DeviceType(xml, xfile.c_str(), parentFile, parent, Worker::Device, NULL, err);
     if (err) {
       delete dt;
       dt = NULL;
@@ -118,12 +117,10 @@ decodeSignal(std::string &name, std::string &base, size_t &index, bool &hasIndex
 // A device is not in its own file.
 // It is an instance of a device type on a board
 Device::
-Device(Board &b, DeviceType &dt, ezxml_t xml, bool single, unsigned ordinal,
-       SlotType *stype, const char *&err)
+Device(Board &b, DeviceType &dt, const std::string &a_wname, ezxml_t xml, bool single,
+       unsigned ordinal, SlotType *stype, const char *&err)
   : m_board(b), m_deviceType(dt), m_ordinal(ordinal) {
-  std::string wname;
-  if ((err = OE::getRequiredString(xml, wname, "worker")))
-    return;
+  std::string wname(a_wname);
   const char *cp = strchr(wname.c_str(), '.');
   if (cp)
     wname.resize(cp - wname.c_str());
@@ -133,7 +130,8 @@ Device(Board &b, DeviceType &dt, ezxml_t xml, bool single, unsigned ordinal,
     wname += "%u";
     OE::getNameWithDefault(xml, m_name, wname.c_str(), ordinal);
   }
-  err = parse(xml, b, stype);
+  if (!err)
+    err = parse(xml, b, stype);
 }
 
 Device *Device::
@@ -144,7 +142,7 @@ create(Board &b, ezxml_t xml, const char *parentFile, Worker *parent, bool singl
   if ((err = OE::getRequiredString(xml, wname, "worker")) ||
       !(dt = DeviceType::get(wname.c_str(), parentFile, parent, err)))
     return NULL;
-  Device *d = new Device(b, *dt, xml, single, ordinal, stype, err);
+  Device *d = new Device(b, *dt, wname, xml, single, ordinal, stype, err);
   if (err) {
     delete d;
     d = NULL;

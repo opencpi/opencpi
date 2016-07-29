@@ -41,7 +41,7 @@ public:
   static Worker *create(ezxml_t xml, const char *parentFile, Worker *parent,
 			OU::Assembly::Properties *instancePVs, const char *&err);
   HdlDevice(ezxml_t xml, const char *file, const char *parentFile, Worker *parent,
-	    OU::Assembly::Properties *instancePVs, const char *&err);
+	    Worker::WType type, OU::Assembly::Properties *instancePVs, const char *&err);
   virtual ~HdlDevice() {}
   const char *cname() const;
   const Ports &ports() const { return m_ports; }
@@ -65,7 +65,7 @@ struct Device {
   //  std::map<Signal *, Signal *> m_dev2bd;
   // Constructor for defining new devices.
   // If on a card, the stype will be supplied
-  Device(Board &b, DeviceType &dt, ezxml_t xml, bool single,
+  Device(Board &b, DeviceType &dt, const std::string &wname, ezxml_t xml, bool single,
 	 unsigned ordinal, SlotType *stype, const char *&err);
   static Device *
   create(Board &b, ezxml_t xml, const char *parentFile, Worker *parent, bool single,

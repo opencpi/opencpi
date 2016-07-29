@@ -50,13 +50,13 @@
 #include "RccPort.h"
 #include "RccWorker.h"
 
- namespace OC = OCPI::Container;
- namespace OS = OCPI::OS;
- namespace OU = OCPI::Util;
- namespace OA = OCPI::API;
+namespace OC = OCPI::Container;
+namespace OS = OCPI::OS;
+namespace OU = OCPI::Util;
+namespace OA = OCPI::API;
 
- namespace OCPI {
-   namespace RCC {
+namespace OCPI {
+  namespace RCC {
 
  Worker::
  Worker(Application & app, Artifact *art, const char *a_name, ezxml_t impl, ezxml_t inst,
@@ -362,13 +362,15 @@ Worker::
    m_context->container = rccContainer;
    m_context->runCondition = wd ? wd->runCondition : NULL;
 
-   // We initialize in one of these structures for all of the ports that are defined in the
-   // worker. However, the actual data ports may be optional at runtime.
+   // We initialize one of these structures for all of the ports that are defined in the
+   // worker. However, the actual data ports may be optional at runtime and not be created.
    for (unsigned n=0;  n< m_nPorts; n++) {
      m_context->ports[n].containerPort = NULL;
      m_context->ports[n].current.data = NULL;
      m_context->ports[n].current.maxLength = 0;
      m_context->ports[n].callBack = 0;
+     m_context->ports[n].userPort = NULL;
+     m_context->ports[n].sequence = NULL;
    }
 
    // Create our memory spaces
@@ -716,7 +718,7 @@ advanceAll() {
       if (m_dispatch)
 	cAdvance(rccPort, 0);
       else
-	rccAdvance(rccPort, 0);
+	rccPort->userPort->advance();
     }
   OCPI_EMIT_STATE_CAT_NR_(aare, 0, OCPI_EMIT_CAT_TUNING, OCPI_EMIT_CAT_TUNING_WC);
 }
@@ -1055,12 +1057,11 @@ OCPI_CONTROL_OPS
        return ((uint64_t *)(getPropertyVaddr() + info.m_offset))[idx];
       }
 
-     RCCUserWorker::RCCUserWorker()
-     : m_worker(*(Worker *)pthread_getspecific(Driver::s_threadKey)), m_ports(NULL),
-       m_first(true), m_rcc(m_worker.context()) {
+   RCCUserWorker::RCCUserWorker()
+     : m_worker(*(Worker *)pthread_getspecific(Driver::s_threadKey)), m_first(true),
+       m_rcc(m_worker.context()) {
    }
    RCCUserWorker::~RCCUserWorker() {
-     delete [] m_ports;
    }
    const RunCondition *RCCUserWorker::getRunCondition() const {
      return
@@ -1115,25 +1116,93 @@ OCPI_CONTROL_OPS
    }
    RCCUserPort::
    RCCUserPort()
-     : m_rccPort((*(Worker *)pthread_getspecific(Driver::s_threadKey)).portInit()) {
-     setRccBuffer(&m_rccPort.current);
+     : m_rccPort(((Worker *)pthread_getspecific(Driver::s_threadKey))->portInit()) {
+     m_rccBuffer = &m_rccPort.current;
+     m_rccPort.userPort = this;
    };
+   // C++ specific buffer initialization.  When C is better integrated, can be common.
+   // Opcode is initialized so we can both detect mismatches (opcode vs opcode-specific
+   // accessors) and automatically infer opcodes from the use of opcode-specific accessors
+   void RCCUserBuffer::
+   initBuffer() {
+     m_opCodeSet = false;
+     m_lengthSet = false;
+     m_resized = false;
+     m_rccBuffer->isNew_ = false;
+   }
+   void RCCUserPort::
+   checkOpCode(RCCUserBuffer &buf, unsigned op) const {
+     assert(m_rccPort.containerPort);
+     assert(op < m_rccPort.containerPort->metaPort().m_nOperations);
+     if (buf.m_opCodeSet && op != buf.m_rccBuffer->opCode_)
+       throw OU::Error("opcode accessor for %u used when port opcode set to %u",
+		       op, buf.m_rccBuffer->opCode_);
+     buf.m_opCodeSet = true;
+     buf.m_rccBuffer->opCode_ = OCPI_UTRUNCATE(uint8_t, op);
+   }
    void *RCCUserPort::
-   getArgAddress(RCCUserBuffer &buf, unsigned op, unsigned arg, size_t *a_length) const {
+   getArgAddress(RCCUserBuffer &buf, unsigned op, unsigned arg, size_t *length,
+		 size_t *capacity) const {
+     if (buf.m_rccBuffer->isNew_)
+       buf.initBuffer();
+     checkOpCode(buf, op);
      OU::Operation &o = m_rccPort.containerPort->metaPort().m_operations[op];
      OU::Member &m = o.m_args[arg];
      uint8_t *p = (uint8_t *)buf.m_rccBuffer->data + m.m_offset;
-     if (a_length && m.m_isSequence) {
+     if (m.m_isSequence) {
+       assert(length);
        if (o.m_nArgs == 1) {
 	 assert(buf.m_rccBuffer->length_ % m.m_elementBytes == 0);
-	 *a_length = buf.m_rccBuffer->length_ / m.m_elementBytes;
+	 if (!buf.m_lengthSet && !m_rccPort.useDefaultLength_ && !buf.m_resized) {
+	   buf.m_rccBuffer->length_ = 0;
+	   buf.m_resized = true;
+	 }
+	 *length = buf.m_rccBuffer->length_ / m.m_elementBytes;
+	 if (capacity)
+	   *capacity = buf.m_rccBuffer->maxLength / m.m_elementBytes;
        } else {
-	 *a_length = *(uint32_t *)p;
-	 assert(!m.m_sequenceLength || *a_length <= m.m_sequenceLength);
+	 uint32_t *p32 = (uint32_t *)p;
+	 if (!buf.m_lengthSet && !m_rccPort.useDefaultLength_ && !buf.m_resized) {
+	   *p32 = 0;
+	   buf.m_rccBuffer->length_ = m.m_offset + m.m_align;
+	   buf.m_resized = true;
+	 }
+	 *length = *p32;
+	 assert(!m.m_sequenceLength || *length <= m.m_sequenceLength);
+	 if (capacity)
+	   *capacity = (buf.m_rccBuffer->maxLength - m.m_offset) / m.m_elementBytes;
 	 return p + m.m_align;
        }
      }
      return p;
+   }
+   void RCCUserPort::
+   setArgSize(RCCUserBuffer &buf, unsigned op, unsigned arg, size_t size) const {
+     assert(m_rccPort.containerPort);
+     checkOpCode(buf, op);
+     OU::Operation &o = m_rccPort.containerPort->metaPort().m_operations[op];
+     OU::Member &m = o.m_args[arg];
+     assert(m.m_isSequence);
+     assert(!m.m_sequenceLength || size <= m.m_sequenceLength);
+     size_t
+       nBytes = size * m.m_elementBytes,
+       limit = buf.m_rccBuffer->maxLength - (o.m_nArgs == 1 ? 0 : m.m_offset + m.m_align);
+     if (buf.m_lengthSet)
+       throw OU::Error("resize of %zu specified after length set to %zu bytes", size, 
+		       buf.m_rccBuffer->length_);
+     if (nBytes > limit)
+       throw OU::Error("for protocol \"%s\" operation \"%s\" argument \"%s\": "
+		       "sequence size %zu (%zu bytes) exceeds remaining buffer size (%zu)",
+		       m_rccPort.containerPort->metaPort().OU::Protocol::m_name.c_str(),
+		       o.cname(), m.cname(), size, nBytes, limit);
+     if (o.m_nArgs == 1)
+       buf.m_rccBuffer->length_ = nBytes;
+     else {
+       *(uint32_t *)((uint8_t*)buf.m_rccBuffer->data + m.m_offset) =
+	 OCPI_UTRUNCATE(uint32_t, size);
+       buf.m_rccBuffer->length_ = m.m_offset + m.m_align + nBytes;
+     }     
+     buf.m_resized = true;
    }
    void RCCUserPort::
    send(RCCUserBuffer&buf) {
@@ -1152,6 +1221,28 @@ OCPI_CONTROL_OPS
    }
    bool RCCUserPort::
    advance(size_t maxlength) {
+     assert(m_rccPort.containerPort);
+     if (m_rccPort.containerPort->isOutput()) {
+       if (!m_opCodeSet && !m_rccPort.useDefaultOpCode_)
+	 throw
+	   OU::Error("port \"%s\" advanced without setting opcode or setting default opcode",
+		     m_rccPort.containerPort->name().c_str());
+       if (!m_lengthSet && !m_resized) {
+	 if (!m_rccPort.useDefaultLength_)
+	   throw OU::Error("port \"%s\" advanced without setting length or resizing sequence",
+			   m_rccPort.containerPort->name().c_str());
+	 // If we are allowed to default the length due to there being only one operation
+	 // and the last argument is a sequence that is not the first argument, make sure
+	 // to set the embedded sequence length to maintain the integrity of the message
+	 if (m_rccPort.sequence) {
+	   OU::Member &m = *m_rccPort.sequence;
+	   *(uint32_t *)((uint8_t*)m_rccPort.current.data + m.m_offset) =
+	     OCPI_UTRUNCATE(uint32_t,
+			    m_rccPort.current.length_ - (m.m_offset + m.m_align)) /
+	     m.m_elementBytes;
+	 }
+       }
+     }
      return rccAdvance(&m_rccPort, maxlength);
    }
    // FIXME: the connectivity indication should be cached somewhere better...
@@ -1204,7 +1295,7 @@ OCPI_CONTROL_OPS
    }
 
    RCCUserBuffer::
-   RCCUserBuffer() : m_rccBuffer(&m_taken) {
+   RCCUserBuffer() : m_rccBuffer(&m_taken), m_opCodeSet(false), m_lengthSet(false) {
    }
    RCCUserBuffer::
    ~RCCUserBuffer() {}
@@ -1217,6 +1308,17 @@ OCPI_CONTROL_OPS
      rccRelease(m_rccBuffer);
      delete this; // this will go away when we integrate C and C++ better
    }
+   void RCCUserBuffer::
+   setOpCode(RCCOpCode op) {
+     if (m_rccBuffer->isNew_)
+       initBuffer();
+     if (m_opCodeSet && op != m_rccBuffer->opCode_)
+       throw OU::Error("opcodes cannot be changed after being set, exlicitly or implicitly");
+     m_rccBuffer->opCode_ = op;
+     m_opCodeSet = true;
+   }
+
+
    RCCUserSlave::
    RCCUserSlave()
      : m_worker(((OCPI::RCC::Worker *)pthread_getspecific(Driver::s_threadKey))->getSlave())

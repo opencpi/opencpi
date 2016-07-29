@@ -242,7 +242,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
   appAssembly.setParent(this);
   config.setParent(this);
   if (!g_platform)
-    g_platform = m_config.platform().m_name.c_str();
+    g_platform = m_config.platform().cname();
   bool doDefault = false;
   if ((err = OE::getBoolean(xml, "default", &doDefault)))
     return;
@@ -328,6 +328,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
   for (DevInstancesIter di = m_config.m_devInstances.begin();
        di != m_config.m_devInstances.end(); di++)
     mapDevSignals(assy, *di, false);
+#if 0
   // We must force platform signals to be mapped to themselves.
   // FIXME: when platforms are devices, we could remap those signals too.
   for (SignalsIter s = m_config.m_platform.Worker::m_signals.begin();
@@ -340,6 +341,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
     m_signals.push_back(es);
     m_sigmap[(*s)->cname()] = es;
   }
+#endif
   OU::formatAdd(assy, "  </instance>\n");
   // Connect the platform configuration to the control plane
   if (!m_config.m_noControl) {
@@ -542,7 +544,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
   // from the platform where it lives, so we temporarily set the global to the
   // platform we know.
   const char *save = platform;
-  platform = m_platform.m_name.c_str();
+  platform = m_platform.cname();
   if ((err = parseHdl()))
     return;
   platform = save;
@@ -637,7 +639,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
   // from the platform where it lives, so we temporarily set the global to the
   // platform we know.
   const char *save = g_platform;
-  g_platform = m_platform.m_name.c_str();
+  g_platform = m_platform.cname();
   if ((err = parseHdl()))
     return;
   g_platform = save;
@@ -718,7 +720,7 @@ parseConnection(ezxml_t cx, ContConnect &c) {
 	(c.interconnect->m_type != NOCPort && c.interconnect->m_type != SDPPort) ||
 	!c.interconnect->m_master)
       return OU::esprintf("Interconnect '%s' not found for platform '%s'", attr,
-			   m_config.platform().m_name.c_str());
+			   m_config.platform().cname());
   }
   return NULL;
 }
@@ -1008,7 +1010,8 @@ mapDevSignals(std::string &assy, const DevInstance &di, bool inContainer) {
 			dname.c_str(), ename.c_str());
       } else {
 	Signal *ns = new Signal(**s);
-	OU::format(ns->m_name, "%s_%s", di.device.cname(), ns->cname());
+	if (di.device.deviceType().m_type != Worker::Platform)
+	  OU::format(ns->m_name, "%s_%s", di.device.cname(), ns->cname());
 	m_signals.push_back(ns);
 	m_sigmap[ns->m_name.c_str()] = ns;
 	break;

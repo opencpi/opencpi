@@ -63,6 +63,22 @@ namespace OCPI {
 	m_dtPort(NULL), m_localOther(NULL), //m_params(params),
 	m_mode(OC::Port::CON_TYPE_NONE), m_rccPort(rp), m_buffer(NULL), m_wantsBuffer(true) {
       // FIXME: deep copy params?
+      // Initialize rccPort with aspects based on metadata
+      if (pmd.nOperations() <= 1) {
+	m_rccPort.useDefaultOpCode_ = true;
+	if (pmd.nOperations() == 1) {
+	  m_rccPort.useDefaultLength_ = true;
+	  OU::Operation &o = pmd.operations()[0];
+	  if (o.nArgs()) {
+	    m_rccPort.defaultLength_ = pmd.m_minBufferSize;
+	    if (o.nArgs() > 1) {
+	      OU::Member &m = o.args()[o.nArgs() - 1];
+	      if (m.isSequence())
+		m_rccPort.sequence = &m;
+	    }
+	  }
+	}
+      }
     }
 
     Port::
