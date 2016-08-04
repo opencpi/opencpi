@@ -14,6 +14,7 @@ library zynq; use zynq.zynq_pkg.all;
 library axi; use axi.axi_pkg.all;
 entity zynq_ps is
   port(
+    ps_in        : in    pl2ps_t;
     ps_out       : out   ps2pl_t;
     m_axi_gp_in  : in    m_axi_gp_in_array_t(0 to C_M_AXI_GP_COUNT-1);
     m_axi_gp_out : out   m_axi_gp_out_array_t(0 to C_M_AXI_GP_COUNT-1);
@@ -668,7 +669,7 @@ begin
       FTMD_TRACEIN_ATID => (others => '0'),
       FTMT_F2P_TRIG => (others => '0'),
       FTMT_F2P_TRIGACK => open,
-      FTMT_F2P_DEBUG => (others => '0'),
+      FTMT_F2P_DEBUG => ps_in.debug, -- (others => '0'),
       FTMT_P2F_TRIGACK => (others => '0'),
       FTMT_P2F_TRIG => open,
       FTMT_P2F_DEBUG => open,

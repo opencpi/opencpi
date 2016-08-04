@@ -1,3 +1,4 @@
+#Param_useGP1=true
 Libraries=axi zynq sdp
 Configurations=\
   base \

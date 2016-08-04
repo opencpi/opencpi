@@ -1,4 +1,4 @@
-<componentspec name="sdp">
+<componentspec>
   <property name='memory_bytes' parameter='1'              readable='1' default='64k'/>
   <property name='sdp_width'    parameter='1' type='uchar' readable='1' default='1'/>
   <property name='interconnect' parameter='1' type='uchar' readable='1' default='0'/>
@@ -10,7 +10,6 @@
   <property name='buffer_count' initial='true' type='uchar' readable='true' default='2'/>
   <property name='remote_count' initial='true' type='uchar' readable='true' default='1'/>
   <property name='segment_size' initial='true' type='ushort' readable='true' default='128'/>
-  <!-- A buffer arrived that was larger than the buffersize setting, or some others -->
   <property name='faults' type='uchar' volatile='true'/>
   <property name='readsAllowed' type='uchar' initial='true' readable='1'/>
   <!-- These values must be in the same order as in HdlOCDP.h -->

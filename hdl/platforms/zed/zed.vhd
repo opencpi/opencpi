@@ -12,7 +12,8 @@ library unisim; use unisim.vcomponents.all;
 library bsv;
 library sdp; use sdp.sdp.all, sdp.sdp_axi.all;
 architecture rtl of zed_worker is
-  constant ntrace : natural := to_integer(maxtrace);
+  constant ntrace  : natural := to_integer(maxtrace);
+  constant whichGP : natural := to_integer(unsigned(from_bool(useGP1)));
   signal ps_m_axi_gp_in  : m_axi_gp_in_array_t(0 to C_M_AXI_GP_COUNT-1);  -- s2m
   signal ps_m_axi_gp_out : m_axi_gp_out_array_t(0 to C_M_AXI_GP_COUNT-1); -- m2s
   signal ps_s_axi_gp_in  : s_axi_gp_in_array_t(0 to C_S_AXI_GP_COUNT-1);  -- m2s
@@ -107,6 +108,8 @@ begin
   ps : zynq_ps
     port map(
       -- Signals from the PS used in the PL
+      ps_in.debug           => (31 => useGP1,
+                                others => '0'),
       ps_out.FCLK           => fclk,
       ps_out.FCLKRESET_N    => raw_rst_n,
       m_axi_gp_in           => ps_m_axi_gp_in,
@@ -121,8 +124,8 @@ begin
     port map(
       clk     => clk,
       reset   => reset,
-      axi_in  => ps_m_axi_gp_out(0),
-      axi_out => ps_m_axi_gp_in(0),
+      axi_in  => ps_m_axi_gp_out(whichGP),
+      axi_out => ps_m_axi_gp_in(whichGP),
       cp_in   => cp_in,
       cp_out  => cp_out
       );
@@ -198,13 +201,13 @@ begin
   metadata_out.romAddr      <= props_in.romAddr;
   metadata_out.romEn        <= props_in.romData_read;
   led(0) <= count(count'left);
-  led(1) <= ps_m_axi_gp_out(0).ARVALID;
+  led(1) <= ps_m_axi_gp_out(whichGP).ARVALID;
   led(2) <= '0';
   led(3) <= cp_in.take;
   led(4) <= cp_in.valid;
-  led(5) <= ps_m_axi_gp_in(0).ARREADY;
-  led(6) <= ps_m_axi_gp_in(0).RVALID;
-  led(7) <= ps_m_axi_gp_out(0).RREADY;
+  led(5) <= ps_m_axi_gp_in(whichGP).ARREADY;
+  led(6) <= ps_m_axi_gp_in(whichGP).RVALID;
+  led(7) <= ps_m_axi_gp_out(whichGP).RREADY;
   work : process(clk)
   begin
     if rising_edge(clk) then
@@ -333,21 +336,21 @@ begin
               ps_axi_hp_in(0).AW.ADDR); -- 32
           axi_wacount <= axi_wacount + 1;
         end if;
-        if its(ps_m_axi_gp_out(0).WVALID) and ps_m_axi_gp_in(0).WREADY and axi_cdcount /= ntrace-1 and sdp_seen_r then
+        if its(ps_m_axi_gp_out(whichGP).WVALID) and ps_m_axi_gp_in(whichGP).WREADY and axi_cdcount /= ntrace-1 and sdp_seen_r then
           axi_cdata(to_integer(axi_cdcount)) <=
             to_ulonglong(
               std_logic_vector(count(15 downto 0)) & -- 16
               std_logic_vector(dbg_state1(0)(15 downto 5)) &
-              fyv(ps_m_axi_gp_out(0).WLAST) & -- 1
-              ps_m_axi_gp_out(0).WSTRB & -- 8
-              ps_m_axi_gp_out(0).WDATA);
+              fyv(ps_m_axi_gp_out(whichGP).WLAST) & -- 1
+              ps_m_axi_gp_out(whichGP).WSTRB & -- 8
+              ps_m_axi_gp_out(whichGP).WDATA);
 --   ps_axi_hp_in(0).W.DATA(63 downto 56) & -- 8
 --              ps_axi_hp_in(0).W.DATA(39 downto 32) & -- 8
 --              ps_axi_hp_in(0).W.DATA(31 downto 24) & -- 8
 --              ps_axi_hp_in(0).W.DATA(7 downto 0)); -- 8
           axi_cdcount <= axi_cdcount + 1;
         end if;
-        if its(ps_m_axi_gp_out(0).AWVALID and ps_m_axi_gp_in(0).AWREADY) and axi_cacount /= ntrace-1 and sdp_seen_r then
+        if its(ps_m_axi_gp_out(whichGP).AWVALID and ps_m_axi_gp_in(whichGP).AWREADY) and axi_cacount /= ntrace-1 and sdp_seen_r then
           axi_caddr(to_integer(axi_cacount)) <=
             to_ulonglong(
 --              std_logic_vector(dbg_state(27 downto 4)) & -- 24
@@ -355,12 +358,12 @@ begin
 --                                          ps_axi_hp_in(0).AWLEN & -- 4
               std_logic_vector(count(15 downto 0)) & -- 16
               "000000000000" &
-              ps_m_axi_gp_out(0).AWLEN & -- 4
-              ps_m_axi_gp_out(0).AWADDR); -- 32
+              ps_m_axi_gp_out(whichGP).AWLEN & -- 4
+              ps_m_axi_gp_out(whichGP).AWADDR); -- 32
           axi_cacount <= axi_cacount + 1;
         end if;
         count <= count + 1;
---        if ps_m_axi_gp_out(0).ARVALID = '1' and ps_m_axi_gp_out(0).ARLEN = "0001" then
+--        if ps_m_axi_gp_out(whichGP).ARVALID = '1' and ps_m_axi_gp_out(whichGP).ARLEN = "0001" then
 --          seen_burst <= '1';
 --        end if;
       end if;

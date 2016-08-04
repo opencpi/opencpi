@@ -12,6 +12,10 @@ type ps2pl_t is record
   FCLK         : std_logic_vector(3 downto 0);
   FCLKRESET_N  : std_logic;
 end record ps2pl_t;
+-- Signals from the PL for use by the PS
+type pl2ps_t is record
+  DEBUG        : std_logic_vector(31 downto 0); --     FTMT_F2P_DEBUG
+end record pl2ps_t;
 
   -- Consistent with EDK/hw/XilinxProcessorIPLib/pcores/
   --                 processing_system7_v4_03_a/hdl/verilog/processing_system7.v
@@ -780,6 +784,7 @@ component processing_system7 is
 
 component zynq_ps is
   port(
+    ps_in        : in    pl2ps_t;
     ps_out       : out   ps2pl_t;
     m_axi_gp_in  : in    m_axi_gp_in_array_t(0 to C_M_AXI_GP_COUNT-1);
     m_axi_gp_out : out   m_axi_gp_out_array_t(0 to C_M_AXI_GP_COUNT-1);
