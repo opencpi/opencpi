@@ -160,7 +160,7 @@ namespace OCPI {
       Member *m = m_args = m_nArgs ? new Member[m_nArgs] : NULL;
       for (unsigned n = 0; n < m_nArgs; n++, m++) {
 	char *aname;
-	asprintf(&aname, "arg%d", n);
+	ocpiCheck(asprintf(&aname, "arg%d", n) > 0);
 	m->generate(aname);
 	free(aname);
       }
@@ -309,7 +309,7 @@ namespace OCPI {
       const char *name = ezxml_name(op);
       // FIXME:  support xi:included protocols
       if (!name || strcasecmp(name, "Operation"))
-	return "Element under Protocol is neither Operation, Protocol or or xi:include";
+	return "Element under Protocol is neither Operation, Protocol or xi:include";
       // If this is NULL we're just counting properties.
       if (!m_operations) {
 	m_nOperations++;
@@ -366,7 +366,7 @@ namespace OCPI {
       Operation *o = m_operations = new Operation[m_nOperations];
       for (unsigned n = 0; n < m_nOperations; n++, o++) {
 	char *opName;
-	asprintf(&opName, "op%d", n);
+	ocpiCheck(asprintf(&opName, "op%d", n) > 0);
 	o->generate(opName, *this);
 	free(opName);
 	finishOperation(*o);
@@ -505,7 +505,7 @@ namespace OCPI {
     size_t Protocol::read(Reader &reader, uint8_t *data, size_t maxLength, uint8_t opcode) {
       assert(!((intptr_t)data & (maxDataTypeAlignment - 1)));
       if (!m_operations)
-	throw Error("No operations in protocol for writing");
+	throw Error("No operations in protocol for reading");
       if (opcode >= m_nOperations)
 	throw Error("Invalid Opcode for protocol");
       size_t size = m_operations[opcode].read(reader, data, maxLength);

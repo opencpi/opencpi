@@ -211,7 +211,7 @@ list (const std::string &, const std::string &)
   throw (std::string)
 {
   throw std::string ("cannot list files via HTTP");
-  return 0; // silence some stupid compilers
+  return 0; // silence some compilers
 }
 
 void
@@ -225,7 +225,7 @@ closeIterator (OCPI::Util::Vfs::Iterator *)
 
 OCPI::Util::Vfs::Dir &OCPI::Util::Http::HttpFsBase::openDir(const std::string &) throw(std::string) {
   throw std::string ("cannot list files via HTTP");
-  return *(OCPI::Util::Vfs::Dir*)0; // silence some stupid compilers
+  return *(OCPI::Util::Vfs::Dir*)0; // silence some compilers
 }
 
 /*

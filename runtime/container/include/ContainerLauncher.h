@@ -29,9 +29,10 @@
 #define CONTAINER_LAUNCHER_H
 #include <string>
 
-#include "OcpiContainerApi.h"
+#include "OcpiUtilMisc.h" // Singleton
 #include "OcpiUtilValue.h"
 #include "OcpiLibraryManager.h"
+#include "OcpiContainerApi.h"
 
 namespace OCPI {
   namespace Container {
@@ -80,7 +81,7 @@ namespace OCPI {
 	work(Launcher::Instances &instances, Launcher::Connections &connections) = 0;
     };
     // Concrete class that will be a singleton
-    class LocalLauncher : public Launcher, public OCPI::Driver::Singleton<LocalLauncher> {
+    class LocalLauncher : public Launcher, public OCPI::Util::Singleton<LocalLauncher> {
       void createWorker(Launcher::Instance &i);
     public:
       virtual ~LocalLauncher();

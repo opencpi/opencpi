@@ -56,6 +56,7 @@
 #include "OcpiParentChild.h"
 #include "OcpiPValue.h"
 #include "OcpiOsAssert.h"
+#include "OcpiUtilMisc.h" // Singleton
 #include "ezxml.h"
 
 namespace OCPI {
@@ -65,26 +66,6 @@ namespace OCPI {
     using OCPI::Util::Sibling;
     using OCPI::Util::Parent;
     using OCPI::Util::PValue;
-    // A convenience template for singletons possibly created at static construction
-    // time.
-    // FIXME: put this in some nice utility place since it is not just for drivers
-    extern void debug_hook();
-    template <class S> class Singleton {
-    public:
-      static S &getSingleton() {
-	debug_hook();
-	static S *theSingleton;
-	// FIXME: put this static mutex into OCPI:OS somehow
-	static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-	// This is hyper-conservative since static constructors are run in a single thread.
-	// But C++ doesn't actually say that...
-	ocpiCheck(pthread_mutex_lock(&mutex) == 0);
-	if (!theSingleton)
-	  theSingleton = new S;
-	ocpiCheck(pthread_mutex_unlock(&mutex) == 0);
-	return *theSingleton;
-      }
-    };
     class Manager;
     // The concrete owner of all driver managers, not inherited.
     // Created on demand when the first manager is created
@@ -123,7 +104,7 @@ namespace OCPI {
     protected:
       Manager(const char *mname)
 	: Child<ManagerManager,Manager>
-	  (Singleton<ManagerManager>::getSingleton(), *this, mname),
+	  (OCPI::Util::Singleton<ManagerManager>::getSingleton(), *this, mname),
 	  m_doNotDiscover(false)
       {}
       // Configure the manager. X is the node whose name is the name of the manager
@@ -162,7 +143,7 @@ namespace OCPI {
     template <class Mgr, class DerivedDriver, const char *&mname>
       class ManagerBase
       : public Parent<DerivedDriver>,  // This manager manages these drivers, generically
-        public Singleton<Mgr>,
+        public OCPI::Util::Singleton<Mgr>,
         public Manager
     {
     protected:
@@ -246,12 +227,12 @@ namespace OCPI {
     template <class Man, class DriBase, class ConcDri, class Dev, const char *&name>
     class DriverBase
       : public Parent<Dev>,
-        public Singleton<ConcDri>,
+        public OCPI::Util::Singleton<ConcDri>,
 	public DriBase { // destroy this class BEFORE children 
     public:
       // to access a specific driver
       inline static ConcDri &getDriver() {
-	return Singleton<ConcDri>::getSingleton();
+	return OCPI::Util::Singleton<ConcDri>::getSingleton();
       }
       // The language does not allow this to be protected with "friend class Man".
       // inline DriBase *nextDriver() { return *Sibling<DriBase>::nextChildP();}
@@ -273,13 +254,14 @@ namespace OCPI {
     // static OCPI::Util::Driver::Registration<concrete-driver> x;
 
     // FIXME: this is actually generic and could be elsewhere in some utility
+    extern void Registration_debug_hook();
     template <class D> class Registration {
     public:
       // This constructor will run at static construction time,
       // the driver object itself will be dynamically constructed at that time
       // and implicitly registered with its parent, so there is nothing to do
       // at static destruction time.
-      Registration<D>() { debug_hook(); Singleton<D>::getSingleton();}
+      Registration<D>() { Registration_debug_hook(); OCPI::Util::Singleton<D>::getSingleton();}
     };
     // This device template takes the concrete driver and concrete device class
     // as template arguments, and also obtains its parent from the known driver
@@ -297,7 +279,7 @@ namespace OCPI {
       }
     protected:
       DeviceBase<Dri, Dev>(const char *childName, Dev &dev)
-      : Child<Dri, Dev, device>(Singleton<Dri>::getSingleton(), dev, childName)
+      : Child<Dri, Dev, device>(OCPI::Util::Singleton<Dri>::getSingleton(), dev, childName)
       {}
     };
   }

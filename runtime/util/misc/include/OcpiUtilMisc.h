@@ -354,7 +354,7 @@ namespace OCPI {
 	*evsprintf(const char *fmt, va_list ap),
 	*esprintf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 
-      // This is a comparison object for use in STL classes
+      // These are comparison object for use in STL classes
       struct ConstCharComp {
 	inline bool operator() (const char *lhs, const char *rhs) const {
 	  return strcmp(lhs, rhs) < 0;
@@ -365,6 +365,7 @@ namespace OCPI {
 	  return strcasecmp(lhs, rhs) < 0;
 	}
       };
+      // These Equal operators are for using std::unordered_set/map 
       struct ConstCharEqual {
 	inline bool operator() (const char *lhs, const char *rhs) const {
 	  return strcmp(lhs, rhs) == 0;
@@ -375,6 +376,18 @@ namespace OCPI {
 	  return strcasecmp(lhs, rhs) == 0;
 	}
       };
+      struct ConstStringComp {
+        inline bool operator() (const std::string &lhs, const std::string &rhs) const {
+          return strcmp(lhs.c_str(), rhs.c_str()) < 0;
+        }
+      };
+      struct ConstStringCaseComp {
+        inline bool operator() (const std::string &lhs, const std::string &rhs) const {
+          return strcasecmp(lhs.c_str(), rhs.c_str()) < 0;
+        }
+      };
+#if 0
+      // FIXME: replace because they are poorly implemented ("abc" == "cba"):
       struct ConstCharHash {
 	inline size_t operator() (const char *s) const {
 	  size_t h = 0;
@@ -389,6 +402,7 @@ namespace OCPI {
 	  return h;
 	}
       };
+#endif
       inline size_t roundUp (size_t value, size_t align) {
 	return ((value + (align - 1)) / align) * align;
       }
@@ -418,6 +432,29 @@ namespace OCPI {
       // return true on error
       bool searchPath(const char *path, const char *item, std::string &result,
 		      const char *preferredSuffix = NULL);
+      // A convenience template for singletons possibly created at static construction
+      // time (moved from OcpiDriverManager)
+      template <class S> class Singleton {
+      public:
+        static S &getSingleton() {
+          static S *theSingleton;
+          // FIXME: put this static mutex into OCPI:OS somehow
+          static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+          // This is hyper-conservative since static constructors are run in a single thread.
+          // But C++ doesn't actually say that...
+          ocpiCheck(pthread_mutex_lock(&mutex) == 0);
+          if (!theSingleton)
+            theSingleton = new S;
+          ocpiCheck(pthread_mutex_unlock(&mutex) == 0);
+          return *theSingleton;
+        }
+      protected:
+        Singleton() {};                   // Empty constructor
+      private:
+        // [Virtual] destructor to clean up memory?
+        Singleton(Singleton const&);      // Don't implement
+        void operator=(Singleton const&); // Don't implement
+      };
   }
 }
 

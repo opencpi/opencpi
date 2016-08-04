@@ -843,7 +843,7 @@
        bool more;
        do {
 	 more = false;
-	 for (LaunchersIter li = launchers.begin(); li != launchers.end(); li++)
+	 for (LaunchersIter li = launchers.begin(); li != launchers.end(); ++li)
 	   if (//(*li)->notDone() &&
 	       (*li)->work(m_launchInstances, m_launchConnections))
 	     more = true;
@@ -861,16 +861,23 @@
        if (m_assembly.m_doneInstance != -1)
 	 m_doneWorker = m_launchInstances[m_assembly.m_doneInstance].m_worker;
      }
-     void ApplicationI::start() {
-       if (m_dump) {
-	 std::string name, value;
-	 bool isParameter, isCached;
-	 if (m_verbose)
-	   fprintf(stderr, "Dump of all initial property values:\n");
-	 for (unsigned n = 0; getProperty(n, name, value, m_hex, &isParameter, &isCached, m_uncached); n++)
+     void ApplicationI::
+     dumpProperties(bool printParameters, bool printCached, const char *context) const {
+       std::string name, value;
+       bool isParameter, isCached;
+       if (m_verbose)
+	 fprintf(stderr, "Dump of all %s%sinitial property values:\n",
+		 context ? context : "", context ? " " : "");
+       for (unsigned n = 0;
+	    getProperty(n, name, value, m_hex, &isParameter, &isCached, m_uncached); n++)
+	 if ((printParameters || !isParameter) &&
+	     (printCached || !isCached))
 	   fprintf(stderr, "Property %2u: %s = \"%s\"%s\n", n, name.c_str(), value.c_str(),
 		   isParameter ? " (parameter)" : (isCached ? " (cached)" : ""));
-       }
+     }
+     void ApplicationI::start() {
+       if (m_dump)
+	 dumpProperties(true, true, "initial");
        if (m_dumpPlatforms)
 	 for (unsigned n = 0; n < m_nContainers; n++)
 	   m_containers[n]->dump(true, m_hex);
@@ -927,19 +934,11 @@
 	  if (err)
 	    throw OU::Error("Error writing '%s' property to file: %s", name.c_str(), err);
 	}
-      if (m_dump) {
-	std::string name, value;
-	bool isParameter, isCached;
-	if (m_verbose)
-	  fprintf(stderr, "Dump of all final property values:\n");
-	for (unsigned n = 0; getProperty(n, name, value, m_hex, &isParameter, &isCached,
-					 m_uncached); n++)
-	if (!isParameter && !isCached)
-	  fprintf(stderr, "Property %2u: %s = \"%s\"\n", n, name.c_str(), value.c_str());
-      }
+      if (m_dump)
+	dumpProperties(false, false, "final");
       if (m_dumpPlatforms)
-	 for (unsigned n = 0; n < m_nContainers; n++)
-	   m_containers[n]->dump(false, m_hex);
+	for (unsigned n = 0; n < m_nContainers; n++)
+	  m_containers[n]->dump(false, m_hex);
     }
 
     ExternalPort &ApplicationI::getPort(const char *name, const OA::PValue *params) {
@@ -999,7 +998,7 @@
     }
 
     bool ApplicationI::getProperty(unsigned ordinal, std::string &name, std::string &value,
-				   bool hex, bool *parp, bool *cachedp, bool uncached) {
+				   bool hex, bool *parp, bool *cachedp, bool uncached) const {
       if (ordinal >= m_nProperties)
 	return false;
       Property &p = m_properties[ordinal];
@@ -1184,6 +1183,12 @@
 
     void Application::
     dumpDeployment(const char *appFile, const std::string &file) {
-      return m_application.dumpDeployment(appFile, file); }
+      return m_application.dumpDeployment(appFile, file);
+    }
+
+    void Application::
+    dumpProperties(bool printParameters, bool printCached, const char *context) const {
+      return m_application.dumpProperties(printParameters, printCached, context);
+    }
   }
 }

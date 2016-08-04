@@ -82,6 +82,8 @@ namespace OCPI {
 		       bool hex = false);
       void setProperty(const char* instance_name, const char* prop_name, const char *value);
       void dumpDeployment(const char *appFile, const std::string &file);
+      void dumpProperties(bool printParameters = true, bool printCached = true,
+			  const char *context = NULL) const;
     private:
       friend class Property;
       Worker &getPropertyWorker(const char *name, const char *&pname);

@@ -416,8 +416,8 @@ namespace OCPI {
     // Push the data in the linear buffer into a writer object
     void Member::write(Writer &writer, const uint8_t *&data, size_t &length, bool topSeq) {
       size_t nElements = 1;
-      const uint8_t *startData;
-      size_t startLength;
+      const uint8_t *startData = NULL; // quiet warning
+      size_t startLength = 0; // quiet warning
       if (m_isSequence) {
 	if (topSeq && !m_fixedLayout) {
 	  ocpiAssert(((intptr_t)data & ~(m_align - 1)) == 0);
@@ -497,8 +497,8 @@ namespace OCPI {
     // Fill the linear buffer from a reader object
     void Member::read(Reader &reader, uint8_t *&data, size_t &length, bool fake, bool top) const {
       size_t nElements = 1;
-      uint8_t *startData;
-      size_t startLength;
+      uint8_t *startData = NULL; // quiet warning
+      size_t startLength = 0; // quiet warning
       if (m_isSequence) {
 	ralign(data, m_align, length);
 	startData = data;
@@ -612,7 +612,7 @@ namespace OCPI {
 	m_enums = new const char *[m_nEnums];
 	for (unsigned n = 0; n < m_nEnums; n++) {
 	  char *e;
-	  asprintf(&e, "enum%u", n);
+	  ocpiCheck(asprintf(&e, "enum%u", n) > 0);
 	  m_enums[n] = new char[strlen(e) + 1];
 	  strcpy((char *)m_enums[n], e);
 	  free(e);
@@ -634,7 +634,7 @@ namespace OCPI {
 	m_members = new Member[m_nMembers];
 	for (unsigned n = 0; n < m_nMembers; n++) {
 	  char *e;
-	  asprintf(&e, "member%u", n);
+	  ocpiCheck(asprintf(&e, "member%u", n) > 0);
 	  m_members[n].generate(e, n, depth);
 	  free(e);
 	  if (!m_members[n].m_fixedLayout)

@@ -997,7 +997,7 @@ unparseChar(std::string &s, char argVal, bool hex) const {
 bool Unparser::
 unparseDouble(std::string &s, double val, bool) const {
   char *cp;
-  asprintf(&cp, "%g", val);
+  ocpiCheck(asprintf(&cp, "%g", val) > 0);
   for (char *p = cp; *p; p++)
     if (*p == 'e' || *p == 'E') {
       while (p > cp && p[-1] == '0') {

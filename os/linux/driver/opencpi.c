@@ -453,8 +453,8 @@ establish_remote(struct file *file, ocpi_request_t *request) {
     if (phys >= block->start_phys && end_address <= block->end_phys) {
       found = true;
       request->address = block->start_phys + (phys - block->start_phys);
-    } else if (phys >= block->start_phys && phys < block->end_phys ||
-	     end_address > block->start_phys && end_address <= block->end_phys)
+    } else if ((phys >= block->start_phys && phys < block->end_phys) ||
+	       (end_address > block->start_phys && end_address <= block->end_phys))
       bad = true;
   }
   spin_unlock(&block_lock);

@@ -128,7 +128,7 @@ namespace OCPI {
       std::string m_implTag, m_instTag;
       // Our thread safe mutex for the worker itself
       OCPI::OS::Mutex m_workerMutex;
-      OCPI::OS::Mutex m_controlMutex; // HACK since sched_yield is busted with SCHED_OTHER
+      OCPI::OS::Mutex m_controlMutex; // since sched_yield is incompatible with SCHED_OTHER
       bool m_controlOpPending;
       Worker *m_slave;
       bool m_hasMaster;

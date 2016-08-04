@@ -1142,6 +1142,19 @@ namespace OCPI {
 
       static const int CB_COUNT=50;  
       static OCPI::Msg::DDS::Topic * g_t[CB_COUNT];
+/* cppcheck errors found in the next three macros (all three get the same parameters):
+[runtime/dataplane/msg_drivers/dds/src/OcpiDDSTransport.cxx:1148]: (error) Array 'g_t[50]' accessed at index 57, which is out of bounds.
+[runtime/dataplane/msg_drivers/dds/src/OcpiDDSTransport.cxx:1148]: (error) Array 'g_t[50]' accessed at index 58, which is out of bounds.
+[runtime/dataplane/msg_drivers/dds/src/OcpiDDSTransport.cxx:1148]: (error) Array 'g_t[50]' accessed at index 171, which is out of bounds.
+[runtime/dataplane/msg_drivers/dds/src/OcpiDDSTransport.cxx:1148]: (error) Array 'g_t[50]' accessed at index 172, which is out of bounds.
+[runtime/dataplane/msg_drivers/dds/src/OcpiDDSTransport.cxx:1148]: (error) Array 'g_t[50]' accessed at index 271, which is out of bounds.
+[runtime/dataplane/msg_drivers/dds/src/OcpiDDSTransport.cxx:1148]: (error) Array 'g_t[50]' accessed at index 272, which is out of bounds.
+[runtime/dataplane/msg_drivers/dds/src/OcpiDDSTransport.cxx:1148]: (error) Array 'g_t[50]' accessed at index 371, which is out of bounds.
+[runtime/dataplane/msg_drivers/dds/src/OcpiDDSTransport.cxx:1148]: (error) Array 'g_t[50]' accessed at index 372, which is out of bounds.
+[runtime/dataplane/msg_drivers/dds/src/OcpiDDSTransport.cxx:1148]: (error) Array 'g_t[50]' accessed at index 471, which is out of bounds.
+[runtime/dataplane/msg_drivers/dds/src/OcpiDDSTransport.cxx:1148]: (error) Array 'g_t[50]' accessed at index 472, which is out of bounds.
+*/
+
 #define C(v) static void co##v ( void * a1, void * a2 ){g_t[v]->copyOut(a1,a2);}
 #define S(a,b,c,d,e,f,g,h,i,j)C(a)C(b)C(c)C(d)C(e)C(f)C(g)C(h) C(i) C(j)
 #define M(a) S(a##0,a##1,a##2,a##3,a##4,a##5,a##6, a##7, a##71, a##72 )

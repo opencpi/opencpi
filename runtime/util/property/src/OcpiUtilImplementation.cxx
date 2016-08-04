@@ -181,7 +181,8 @@ namespace OCPI {
 #endif
     void parse3(char *s, std::string &s1, std::string &s2,
 		std::string &s3) {
-      char *temp = strdup(s);
+      char *orig = strdup(s), *temp = orig;
+
       if ((s = strsep(&temp, "-"))) {
 	s1 = s;
 	if ((s = strsep(&temp, "-"))) {
@@ -190,7 +191,7 @@ namespace OCPI {
 	    s3 = s;
 	}
       }
-      free(temp);
+      free(orig);
     }
 
     void Attributes::parse(ezxml_t x) {
@@ -208,17 +209,17 @@ namespace OCPI {
     }
 
     void Attributes::parse(const char *pString) {
-      std::string junk;
+      std::string unused;
       char *p = strdup(pString), *temp = p, *val;
       
       if ((val = strsep(&temp, "="))) {
-	parse3(val, m_os, m_osVersion, junk);
+	parse3(val, m_os, m_osVersion, unused);
 	if ((val = strsep(&temp, "="))) {
-	  parse3(val, m_platform, junk, junk);
+	  parse3(val, m_platform, unused, unused);
 	  if ((val = strsep(&temp, "="))) {
-	    parse3(val, m_tool, m_toolVersion, junk);
+	    parse3(val, m_tool, m_toolVersion, unused);
 	    if ((val = strsep(&temp, "=")))
-	      parse3(val, m_runtime, m_runtimeVersion, junk);
+	      parse3(val, m_runtime, m_runtimeVersion, unused);
 	  }
 	}
       }

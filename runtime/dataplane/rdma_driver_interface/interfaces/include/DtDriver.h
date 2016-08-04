@@ -44,7 +44,7 @@ namespace DataTransfer {
   protected:
     ConnectionBase<ConcDri, ConcConn, ConcXfer, Base>(ConcConn &cc, SmemServices *a_source,
 						      SmemServices *a_target)
-    : OCPI::Util::Child<ConcDri,ConcConn> (OCPI::Driver::Singleton<ConcDri>::
+    : OCPI::Util::Child<ConcDri,ConcConn> (OCPI::Util::Singleton<ConcDri>::
 					   getSingleton(), cc),
       Base(a_source, a_target)
     {}

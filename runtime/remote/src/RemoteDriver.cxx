@@ -64,6 +64,7 @@ class Worker
 	 const OU::PValue *wParams, unsigned remoteInstance);
   virtual ~Worker() {}
   OC::Port &createPort(const OU::Port&, const OU::PValue */*params*/) {
+    ocpiAssert("This method is not expected to ever be called" == 0);
     return *(OC::Port*)NULL;
   }
   OC::Port &createInputPort(OU::PortOrdinal /*portId*/,      
@@ -71,6 +72,7 @@ class Worker
 			    size_t /*bufferSize*/, 
 			    const OU::PValue */*params*/ = NULL)
     throw (OU::EmbeddedException) {
+    ocpiAssert("This method is not expected to ever be called" == 0);
     return *(OC::Port*)NULL;
   }
   OC::Port &createOutputPort(OU::PortOrdinal /*portId*/,
@@ -78,6 +80,7 @@ class Worker
 			     size_t /*bufferSize*/, 
 			     const OU::PValue */*props*/ = NULL)
     throw ( OU::EmbeddedException ) {
+    ocpiAssert("This method is not expected to ever be called" == 0);
     return *(OC::Port*)NULL;
   }
   void controlOperation(OU::Worker::ControlOperation op) {

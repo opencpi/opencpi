@@ -180,10 +180,11 @@ namespace OCPI {
       friend struct Property;
       Worker &getPropertyWorker(const char *name, const char *&pname);
       bool getProperty(unsigned ordinal, std::string &name, std::string &value, bool hex,
-		       bool *parp, bool *cachedp, bool uncached);
+		       bool *parp, bool *cachedp, bool uncached) const;
       void getProperty(const char * wname, const char * pname, std::string &value, bool hex);
       void setProperty(const char* worker_name, const char* prop_name, const char *value);
       void dumpDeployment(const char *appFile, const std::string &file);
+      void dumpProperties(bool printParameters, bool printCached, const char *context) const;
     };
     // This is here to avoid exposing the ezxml_t stuff to the API
     class ApplicationX : public Application {

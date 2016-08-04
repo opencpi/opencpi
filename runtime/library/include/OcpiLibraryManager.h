@@ -71,7 +71,6 @@ namespace OCPI {
     };
 
     // Note due to xml persistence we don't need strings in the map
-    // but this multimap stuff is pretty ugly
     typedef std::multimap<const char *, Implementation *, OCPI::Util::ConstCharComp > WorkerMap;
     typedef std::pair< const char*, Implementation *> WorkerMapPair;
     typedef WorkerMap::const_iterator WorkerIter;
@@ -277,7 +276,7 @@ namespace OCPI {
     protected:
       LibraryBase<Dri, Lib, Art>(Lib &lib, const char *childName)
       : OCPI::Driver::DeviceBase<Dri, Lib>(childName, lib),
-      // ugh: the base class needs to know the name too...
+      // pass the name to the base class
 	Library(OCPI::Driver::DeviceBase<Dri, Lib>::name()) {}
     };
 

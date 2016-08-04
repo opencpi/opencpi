@@ -194,7 +194,7 @@ struct RunCondition {
     m_portMasks = nPorts ? m_myMasks : NULL;
     m_allMasks = m_myMasks[0];
   }
-  // Compatibility hack to support older C-langage run conditions
+  // Support older C-langage run conditions
   inline void setRunCondition(const RCCRunCondition &crc) {
     m_portMasks = crc.portMasks;
     m_timeout = crc.timeout;
@@ -359,12 +359,14 @@ typedef struct {
    inline size_t maxLength() const { return m_rccBuffer->maxLength; }
    // For input buffers
    inline size_t length() const { return m_rccBuffer->length_; }
-   RCCOpCode opCode() const { return m_rccBuffer->opCode_; }
+   inline size_t getLength() const { return m_rccBuffer->length_; } // same as STL-style length() but complements setLength
+   inline RCCOpCode opCode() const { return m_rccBuffer->opCode_; }
+   inline RCCOpCode getOpCode() const { return m_rccBuffer->opCode_; } // same as opCode() but complements setOpCode
    // For output buffers
-   void setLength(size_t length) {
+   void setLength(size_t a_length) {
      if (m_rccBuffer->isNew_)
        initBuffer();
-     m_rccBuffer->length_ = length;
+     m_rccBuffer->length_ = a_length;
      m_lengthSet = true;
    }
    void setOpCode(RCCOpCode op);
@@ -420,11 +422,11 @@ typedef struct {
    RCCPortOperation(RCCUserPort &p, unsigned op) : m_port(p), m_op(op), m_buffer(&p) {}
    inline void setRccBuffer(RCCBuffer *b) { m_buffer->setRccBuffer(b); };
    inline RCCBuffer *getRccBuffer() const { return m_buffer->getRccBuffer(); }
-   inline void *getArgAddress(unsigned arg, size_t *length, size_t *capacity) const {
-     return m_port.getArgAddress(*m_buffer, m_op, arg, length, capacity);
+   inline void *getArgAddress(unsigned arg, size_t *a_length, size_t *capacity) const {
+     return m_port.getArgAddress(*m_buffer, m_op, arg, a_length, capacity);
    }
-   inline void setArgSize(unsigned arg, size_t length) const {
-     m_port.setArgSize(*m_buffer, m_op, arg, length);
+   inline void setArgSize(unsigned arg, size_t a_length) const {
+     m_port.setArgSize(*m_buffer, m_op, arg, a_length);
    }
  public:
    inline void * data() const { return m_buffer->data(); }

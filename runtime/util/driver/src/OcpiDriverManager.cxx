@@ -44,7 +44,7 @@ namespace OCPI {
   namespace Driver {
     namespace OU = OCPI::Util;
     namespace OX = OCPI::Util::EzXml;
-    void debug_hook() {} // easier static constructor debug
+    void Registration_debug_hook() {} // easier static constructor debug
     Manager::~Manager(){}
     // If a manager has no configuration method, this is the default implementation.
     // The argument is the element for this manager.
@@ -66,7 +66,7 @@ namespace OCPI {
     unsigned Manager::cleanupPosition() { return 1; }
     // Get the singleton ManagerManager, possibly constructing it.
     ManagerManager *ManagerManager::getManagerManager() {
-      return &Singleton<ManagerManager>::getSingleton();
+      return &OU::Singleton<ManagerManager>::getSingleton();
     }
     ManagerManager::ManagerManager()
       : m_configured(false), m_doNotDiscover(false), m_xml(NULL)
@@ -124,12 +124,12 @@ namespace OCPI {
 	     err.empty() && x; x = OX::ezxml_nextChild(x)) {
 	  ocpiDebug("Processing \"%s\" element in system config file", ezxml_name(x));
 	  if (!strcasecmp(ezxml_name(x), "load")) {
-	    const char *load = ezxml_cattr(x, "file");
-	    if (!load)
+	    const char *file_attr = ezxml_cattr(x, "file");
+	    if (!file_attr)
 	      err = "missing \"file\" attribute in \"load\" element";
 	    else {
-	      ocpiInfo("Loading module requested in system config file: \"%s\"", load);
-	      OS::LoadableModule::load(load, true, err);
+	      ocpiInfo("Loading module requested in system config file: \"%s\"", file_attr);
+	      OS::LoadableModule::load(file_attr, true, err);
 	    }
 	    continue;
 	  }
@@ -209,7 +209,7 @@ namespace OCPI {
     bool ManagerManager::s_exiting = false;
     void ManagerManager::cleanup() {
       s_exiting = true;
-      ManagerManager *mm = &Singleton<ManagerManager>::getSingleton();
+      ManagerManager *mm = &OU::Singleton<ManagerManager>::getSingleton();
       // Before simply deleting the managermanager, we delete the
       // managers in order of their "cleanupPosition()"
       for (unsigned i = 0; i < 10; i++)
@@ -246,10 +246,10 @@ namespace OCPI {
     Driver::Driver() : m_config(NULL) {}
     // Default implementation for a driver is to configure devices that exist
     // at configuration time.
-    void Driver::configure(ezxml_t x) {
-      if (x) {
-	m_config = x;
-	for (ezxml_t dx = ezxml_cchild(x, "device"); dx; dx = ezxml_next(dx))
+    void Driver::configure(ezxml_t xml) {
+      if (xml) {
+	m_config = xml;
+	for (ezxml_t dx = ezxml_cchild(xml, "device"); dx; dx = ezxml_next(dx))
 	  for (Device *d = firstDeviceBase(); d; d = d->nextDeviceBase())
 	    if (d->name() == ezxml_name(dx))
 	      d->configure(dx);
@@ -266,7 +266,7 @@ namespace OCPI {
     }
     Driver::~Driver(){}
     const char *device = "device"; // template argument
-    void Device::configure(ezxml_t x) { (void)x;}
+    void Device::configure(ezxml_t xml) { (void)xml;}
     Device::~Device(){}
   }
   namespace API {

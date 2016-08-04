@@ -310,7 +310,7 @@ namespace DataTransfer {
 						    const char* other_url,
 						    const OCPI::Util::PValue *our_props=0,
 						    const OCPI::Util::PValue *other_props=0 )
-	  : OCPI::Util::Child<ConcDri,ConcConn> (OCPI::Driver::Singleton<ConcDri>::
+	  : OCPI::Util::Child<ConcDri,ConcConn> (OCPI::Util::Singleton<ConcDri>::
 						 getSingleton(), conn),
 	  XferServices(a_protocol,other_url,our_props,other_props)
 	    {}

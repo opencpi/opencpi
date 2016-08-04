@@ -274,6 +274,7 @@ namespace OCPI {
     public:
       inline bool readSync() const { return m_readSync; }
       inline bool writeSync() const { return m_writeSync; }
+      BaseType baseType() const;
       // If it is a string property, how big a buffer should I allocate to retrieve the value?
       size_t stringBufferLength() const;
       // We don't use scalar-type-based templates (sigh) so we can control which

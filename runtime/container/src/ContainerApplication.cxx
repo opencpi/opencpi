@@ -66,7 +66,7 @@ namespace OCPI {
 	return container().loadArtifact(url, aParams).createWorker(*this, instName,
 								   implName, preInstName,
 								   wProps, wParams);
-      // This is the special hack for passing in a dispatch table for RCC workers.
+      // This is for passing in a dispatch table for RCC workers.
       else {
 	Worker &w =
 	  createWorker(NULL, instName, (ezxml_t)NULL, (ezxml_t)NULL, NULL, false, aParams);

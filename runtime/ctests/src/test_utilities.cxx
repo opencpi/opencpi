@@ -116,7 +116,7 @@ void OCPI::CONTAINER_TEST::connectWorkers(std::vector<CApp>& ca, std::vector<CWo
   std::string localShadowPort;
 
   std::vector<CWorker*>::iterator wit;
-  for ( wit=workers.begin(); wit!=workers.end(); wit++ ) {
+  for ( wit=workers.begin(); wit!=workers.end(); ++wit ) {
     for ( int n=0; n<(*wit)->tPortCount+(*wit)->sPortCount; n++ ) {
       if ( (*wit)->pdata[n].input ){
         continue;
@@ -184,7 +184,7 @@ namespace {
     void run() {
       while(m_dtd->run) {
         std::vector<CApp>::iterator it;
-        for ( it=m_dtd->containers.begin(); it != m_dtd->containers.end(); it++ ) {
+        for ( it=m_dtd->containers.begin(); it != m_dtd->containers.end(); ++it ) {
           OCPI::CONTAINER_TEST::testDispatch( (*it).container );
         }
         OCPI::OS::sleep(0);
@@ -206,7 +206,7 @@ void OCPI::CONTAINER_TEST::createPorts( std::vector<CApp>& ca, std::vector<CWork
 
   std::vector<CWorker*>::iterator wit;
   int n;
-  for ( wit=workers.begin(); wit!=workers.end(); wit++ ) {
+  for ( wit=workers.begin(); wit!=workers.end(); ++wit ) {
     TUPRINTF( "Worker target port count = %d\n", (*wit)->tPortCount );
 
     for ( n=0; n<(*wit)->tPortCount; n++ ) {
@@ -315,7 +315,7 @@ void OCPI::CONTAINER_TEST::disconnectPorts( std::vector<CApp>& ca, std::vector<C
   ( void ) ca;
   std::vector<CWorker*>::iterator wit;
 
-  for ( wit=workers.begin(); wit!=workers.end(); wit++ ) {
+  for ( wit=workers.begin(); wit!=workers.end(); ++wit ) {
     for ( int n=0; n<((*wit)->sPortCount+(*wit)->tPortCount); n++ ) {
       if ( (*wit)->pdata[n].port ) {
         (*wit)->pdata[n].port->disconnect();
@@ -329,7 +329,7 @@ void OCPI::CONTAINER_TEST::destroyWorkers( std::vector<CApp>& ca, std::vector<CW
   ( void ) workers;
   // Destroy the app contexts
   std::vector<CApp>::iterator cait;
-  for ( cait=ca.begin(); cait!= ca.end(); cait++ ) {
+  for ( cait=ca.begin(); cait!= ca.end(); ++cait ) {
     if ( cait->container ) {
       delete cait->app;
       cait->app = NULL;
@@ -337,7 +337,7 @@ void OCPI::CONTAINER_TEST::destroyWorkers( std::vector<CApp>& ca, std::vector<CW
     }
   }
   std::vector<CWorker*>::iterator it;
-  for ( it = workers.begin(); it != workers.end(); it++ ) {
+  for ( it = workers.begin(); it != workers.end(); ++it ) {
     (*it)->worker = NULL;
   }
 }
@@ -350,7 +350,7 @@ void OCPI::CONTAINER_TEST::destroyContainers( std::vector<CApp>& ca, std::vector
   ( void ) workers;
   // Destroy the app contexts
   std::vector<CApp>::iterator cait;
-  for ( cait=ca.begin(); cait!= ca.end(); cait++ ) {
+  for ( cait=ca.begin(); cait!= ca.end(); ++cait ) {
     if ( cait->container ) {
       if (cait->app) {
 	delete cait->app;
@@ -367,7 +367,7 @@ void OCPI::CONTAINER_TEST::enableWorkers( std::vector<CApp>& ca, std::vector<CWo
 {
   ( void ) ca;
   std::vector<CWorker*>::iterator it;
-  for ( it = workers.begin(); it != workers.end(); it++ ) {
+  for ( it = workers.begin(); it != workers.end(); ++it ) {
     (*it)->worker->start();
   }
 }
@@ -377,7 +377,7 @@ void OCPI::CONTAINER_TEST::disableWorkers( std::vector<CApp>& ca, std::vector<CW
 {
   ( void ) ca;
   std::vector<CWorker*>::iterator it;
-  for ( it = workers.begin(); it != workers.end(); it++ ) {
+  for ( it = workers.begin(); it != workers.end(); ++it ) {
     (*it)->worker->stop();
   }
 }

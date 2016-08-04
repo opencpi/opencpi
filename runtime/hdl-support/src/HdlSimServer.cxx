@@ -500,7 +500,7 @@ namespace OCPI {
 	      int en = errno;
 	      x += m_dir;
 	      x += "\n";
-	      ocpiCheck(write(2, x.c_str(), x.length()) == x.length());
+	      ocpiCheck(write(2, x.c_str(), x.length()) == (ssize_t)x.length());
 	      _exit(10 + en);
 	    }
 	    {
@@ -508,7 +508,7 @@ namespace OCPI {
 	      if (fd < 0) {
 		std::string x("Error: Cannot create sim.out file for simulation output.\n");
 		int en = errno;
-		ocpiCheck(write(2, x.c_str(), x.length()) == x.length());
+		ocpiCheck(write(2, x.c_str(), x.length()) == (ssize_t)x.length());
 		_exit(10 + en);
 	      }
 	      if (dup2(fd, 1) < 0 ||

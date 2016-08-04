@@ -441,7 +441,7 @@ namespace OCPI {
       ocpiAssert (d.desc.p.emptyFlagValue == 42);
       ocpiAssert (std::strcmp (d.desc.p.oob.oep, "Hello World") == 0);
 
-      data[0] = ((data[0] == '\0') ? '\1' : '\0'); // Hack: flip byteorder
+      data[0] = ((data[0] == '\0') ? '\1' : '\0'); // flip byteorder
       good = unpackDescriptor (data, d);
       ocpiAssert (!good);
 

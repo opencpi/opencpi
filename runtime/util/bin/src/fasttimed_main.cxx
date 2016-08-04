@@ -43,6 +43,7 @@
 
 #include "fasttime_private.h"
 #include "calibration.h"
+#include "OcpiOsAssert.h"
 
 static fasttime_buffers_t *ft_storage;
 static volatile int shutdown_flag;
@@ -182,7 +183,7 @@ int main(int argc, char **argv)
             "fasttimed process is running?\n");
         return EXIT_FAILURE;
     }
-    ftruncate(shmid, sizeof *ft_storage);
+    ocpiCheck(ftruncate(shmid, sizeof *ft_storage) == 0);
     ft_storage = (fasttime_buffers_t*) mmap(NULL, sizeof *ft_storage, PROT_READ | PROT_WRITE, 
                       MAP_SHARED, shmid, 0);
     if (ft_storage == NULL)

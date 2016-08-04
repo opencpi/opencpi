@@ -502,7 +502,7 @@ isXMLDocument (std::istream * istr)
 void 
 formatAddV(std::string &out, const char *fmt, va_list ap) {
   char *cp;
-  vasprintf(&cp, fmt, ap);
+  ocpiCheck(vasprintf(&cp, fmt, ap) >= 0);
   assert(cp); // or better generic memory exception
   out += cp;
   free(cp);
@@ -623,7 +623,7 @@ esprintf(const char *fmt, ...) {
 const char *
 evsprintf(const char *fmt, va_list ap) {
   char *buf;
-  vasprintf(&buf, fmt, ap);
+  ocpiCheck(vasprintf(&buf, fmt, ap) >= 0);
   return buf;
 }
 

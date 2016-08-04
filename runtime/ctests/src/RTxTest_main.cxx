@@ -599,14 +599,14 @@ int main( int argc, char** argv)
   }
   std::vector<std::string>::iterator epit;
   ocpiDebug("List of supported transfer driver id's:");
-  for ( epit=protolist.begin(); epit!=protolist.end(); epit++ ){
+  for ( epit=protolist.begin(); epit!=protolist.end(); ++epit ){
     ocpiDebug("  %s", (*epit).c_str() );
   }
 
   // Print out the available endpoints
   std::vector<std::string>  eplist  = fm.getListOfSupportedEndpoints();
   ocpiDebug("List of supported endpoints:");
-  for ( epit=eplist.begin(); epit!=eplist.end(); epit++ ){
+  for ( epit=eplist.begin(); epit!=eplist.end(); ++epit ){
     ocpiDebug("  %s", (*epit).c_str() );
   }
   if ( config.show_drivers ) {
@@ -621,7 +621,7 @@ int main( int argc, char** argv)
     config.protocol = p;
     std::vector<std::string>::iterator it;
     int n=0;
-    for ( it=eplist.begin(); it!=eplist.end(); it++ ) {      
+    for ( it=eplist.begin(); it!=eplist.end(); ++it ) {      
       if ( strncmp( p.c_str(), (*it).c_str(),p.size()) == 0 ) {
 	config.endpoint_index = n;
 	break;

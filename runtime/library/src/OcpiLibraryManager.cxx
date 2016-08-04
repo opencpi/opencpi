@@ -277,22 +277,23 @@ namespace OCPI {
 	  mtime = info.st_mtime;
 	  length = info.st_size;
 	  char buf[64/3+4]; // octal + \r + \n + null
+	  const size_t bufsize = sizeof(buf)-1; // Ensure trailing null character
+	  buf[bufsize] = '\0';
 	  off_t fileLength, second, third;
-	  if (fd >= 0 &&
-	      (fileLength = lseek(fd, 0, SEEK_END)) != -1 &&
+	  if ((fileLength = lseek(fd, 0, SEEK_END)) != -1 &&
 	      // I have no idea why the off_t caste below is required,
 	      // but without it, the small negative number is not sign extended...
 	      // on MACOS gcc v4.0.1 with 64 bit off_t
-	      (second = lseek(fd, -(off_t)sizeof(buf), SEEK_CUR)) != -1 &&
-	      (third = read(fd, buf, sizeof(buf))) == sizeof(buf)) {
-	    for (char *cp = &buf[sizeof(buf)-2]; cp >= buf; cp--)
+	      (second = lseek(fd, -(off_t)bufsize, SEEK_CUR)) != -1 &&
+	      (third = read(fd, buf, bufsize)) == bufsize) {
+	    for (char *cp = &buf[bufsize-1]; cp >= buf; cp--)
 	      if (*cp == 'X' && isdigit(cp[1])) {
 		char *end;
 		long l = strtol(cp + 1, &end, 10);
 		off_t n = (off_t)l;
 		// strtoll error reporting is truly bizarre
 		if (l != LONG_MAX && l > 0 && cp[1] && isspace(*end)) {
-		  off_t metaStart = fileLength - sizeof(buf) + (cp - buf) - n;
+		  off_t metaStart = fileLength - bufsize + (cp - buf) - n;
 		  if (lseek(fd, metaStart, SEEK_SET) != -1) {
 		    data = new char[n + 1];
 		    if (read(fd, data, n) == n)
@@ -306,8 +307,7 @@ namespace OCPI {
 		break;
 	      }
 	  }
-	  if (fd >= 0)
-	    (void)close(fd);
+	  (void) close(fd);
 	  return data;
 	}
 
@@ -446,7 +446,7 @@ namespace OCPI {
           *in = ezxml_attr(conn, "in");    // provider port name
         if (!fromX || !toX || !out || !in)
 	  throw OU::Error("Invalid artifact XML: connection has bad attributes");
-	OU::Port *fromP, *toP;
+	OU::Port *fromP = NULL, *toP = NULL; // quiet warnings
 	InstanceIter
 	  fromI = instances.find(fromX),
 	  toI = instances.find(toX);

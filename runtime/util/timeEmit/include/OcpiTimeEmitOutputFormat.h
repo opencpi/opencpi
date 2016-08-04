@@ -332,7 +332,7 @@ namespace OCPI {
 	    int count=0;
 	    uint64_t t,
 	      maxt=0,
-	      mint;
+	      mint = UINT64_MAX;
 
 	    for ( it=m_xml_reader.getEvents().begin(); it!=m_xml_reader.getEvents().end(); it++ ) {
 	      // If only a selected id has been chosen
@@ -384,7 +384,7 @@ namespace OCPI {
 	    int count=0;
 	    uint64_t t,
 	      maxt=0,
-	      mint;
+	      mint = UINT64_MAX;
 
 	    for ( it=m_xml_reader.getEvents().begin(); it!=m_xml_reader.getEvents().end(); it++ ) {
 	      // If only a selected id has been chosen

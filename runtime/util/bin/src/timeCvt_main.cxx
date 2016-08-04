@@ -144,7 +144,7 @@ int main( int argc, char** argv )
     return 1;
   }
 
-  std::ostream * out;
+  std::ostream * out = NULL;
   if ( ! config.outfilename.empty() ) {
     try {
       std::ofstream * fout = new std::ofstream;

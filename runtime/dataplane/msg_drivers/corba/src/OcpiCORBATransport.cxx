@@ -113,7 +113,7 @@ namespace OCPI {
 
 	  // Now must encode the procotol info in a string, with the key being the first line
 	  // Until the protocol printing stuff uses strings or string streams, we need to use a temp
-	  // file. Ugh.
+	  // file.
 	  char *temp = strdup("/tmp/tmpXXXXXXX");
 	  int tempfd = mkstemp(temp);
 	  free(temp);
@@ -129,12 +129,16 @@ namespace OCPI {
 	  char *info = new char[size];
 	  fseeko(f, 0, SEEK_SET);
 	  fread(info, size, 1, f);
+	  if (fread(info, size, 1, f) != static_cast<size_t>(size)) {
+            delete[] info;
+            throw OU::Error("Error reading back from temp file for protocol processing");
+          }
 	  fclose(f);
 	  // End of kludge that can be fixed when XML printing is to a stream...
 
 	  // Here we try all endpoints in turn.
 	  for (RdmaEndpoints::const_iterator i = m_rdmaEndpoints.begin();
-	       i != m_rdmaEndpoints.end(); i++)
+	       i != m_rdmaEndpoints.end(); ++i)
 	    try {
 	      m_circuit = &OT::MessageEndpoint::connect(i->c_str(), 4096, info, NULL);
 	    } catch (...) {

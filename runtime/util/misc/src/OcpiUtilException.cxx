@@ -54,6 +54,7 @@ namespace OCPI {
       setConcatenateV(err, ap);
       m_auxInfo = *this; // backward compatibility...
       ocpiInfo("ApiError Exception: %s", this->c_str());
+      va_end(ap);
     }
     ApiError::~ApiError(){}
     Error::Error(){}
@@ -94,13 +95,14 @@ namespace OCPI {
     }
     void Error::setFormatV(const char *err, va_list ap) {
       char *s;
-      vasprintf(&s, err, ap);
+      ocpiCheck(vasprintf(&s, err, ap) >= 0);
       if (OCPI::Driver::ManagerManager::exiting()) {
+	// We are in a very primitive mode here. No error checking.
 	static const char pre[] = "\n***Exception during shutdown: ";
 	static const char post[] = "***\n";
-	write(2, pre, strlen(pre));
-	write(2, s, strlen(s));
-	write(2, post, strlen(post));
+	(void)write(2, pre, strlen(pre));
+	(void)write(2, s, strlen(s));
+	(void)write(2, post, strlen(post));
 	OCPI::OS::dumpStack();
       }
       append(s);

@@ -190,7 +190,7 @@ INLINE_ELAPSED(__inline__)
 #if _MSC_VER >= 1200 && _M_IX86 >= 500 && !defined(HAVE_TICK_COUNTER)
 #include <windows.h>
 typedef LARGE_INTEGER ticks;
-#define RDTSC __asm __emit 0fh __asm __emit 031h /* hack for VC++ 5.0 */
+#define RDTSC __asm __emit 0fh __asm __emit 031h /* for VC++ 5.0 */
 
 static __inline ticks getticks(void)
 {

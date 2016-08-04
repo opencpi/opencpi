@@ -453,7 +453,7 @@ int  main( int argc, char** argv)
     test_rc = 0;
   }
   catch ( std::string& str ) {
-    printf(" failed with an exception %s\n",
+    printf(" failed with an exception: '%s'\n",
            str.c_str() );
     test_rc = 0;
   }

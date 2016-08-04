@@ -144,14 +144,15 @@ namespace OCPI {
      free(m_errorString);
      m_errorString = NULL;
    }
-   vasprintf(&m_errorString, fmt, ap);
+   if (vasprintf(&m_errorString, fmt, ap) <= 0)
+     throw OU::Error("Worker provided invalid arguments to setError");
    return RCC_ERROR;
  }
 
  OC::Worker &Worker::
  getSlave() {
    if (!slave())
-     throw OU::Error("No slave has been set for this worker");
+     throw OU::Error("No slave has been set for worker '%s'", name().c_str());
    return *slave();
  }
 
@@ -526,6 +527,7 @@ Worker::
  Worker::
  portIsConnected( unsigned ordinal )
  {
+   ocpiDebug("Worker '%s', port %u is connected", name().c_str(), ordinal);
    m_context->connectedPorts |= (1<<ordinal);
  }
 
@@ -748,6 +750,7 @@ OCPI_CONTROL_OPS
       // FIXME - this should be in generic code, not RCC
       if ((mandatory & m_context->connectedPorts) != mandatory) {
 	const char *inst = instTag().c_str();
+	ocpiDebug("NOT CONNECTED ERROR: %x", m_info.optionallyConnectedPorts);
 	throw OU::Error("A port of%s%s%s worker '%s' is not connected",
 			inst[0] ? " instance '" : "", inst, inst[0] ? "'" : "",
 			implTag().c_str());
@@ -1141,7 +1144,7 @@ OCPI_CONTROL_OPS
      buf.m_rccBuffer->opCode_ = OCPI_UTRUNCATE(uint8_t, op);
    }
    void *RCCUserPort::
-   getArgAddress(RCCUserBuffer &buf, unsigned op, unsigned arg, size_t *length,
+   getArgAddress(RCCUserBuffer &buf, unsigned op, unsigned arg, size_t *a_length,
 		 size_t *capacity) const {
      if (buf.m_rccBuffer->isNew_)
        buf.initBuffer();
@@ -1150,14 +1153,14 @@ OCPI_CONTROL_OPS
      OU::Member &m = o.m_args[arg];
      uint8_t *p = (uint8_t *)buf.m_rccBuffer->data + m.m_offset;
      if (m.m_isSequence) {
-       assert(length);
+       assert(a_length);
        if (o.m_nArgs == 1) {
 	 assert(buf.m_rccBuffer->length_ % m.m_elementBytes == 0);
 	 if (!buf.m_lengthSet && !m_rccPort.useDefaultLength_ && !buf.m_resized) {
 	   buf.m_rccBuffer->length_ = 0;
 	   buf.m_resized = true;
 	 }
-	 *length = buf.m_rccBuffer->length_ / m.m_elementBytes;
+	 *a_length = buf.m_rccBuffer->length_ / m.m_elementBytes;
 	 if (capacity)
 	   *capacity = buf.m_rccBuffer->maxLength / m.m_elementBytes;
        } else {
@@ -1167,8 +1170,8 @@ OCPI_CONTROL_OPS
 	   buf.m_rccBuffer->length_ = m.m_offset + m.m_align;
 	   buf.m_resized = true;
 	 }
-	 *length = *p32;
-	 assert(!m.m_sequenceLength || *length <= m.m_sequenceLength);
+	 *a_length = *p32;
+	 assert(!m.m_sequenceLength || *a_length <= m.m_sequenceLength);
 	 if (capacity)
 	   *capacity = (buf.m_rccBuffer->maxLength - m.m_offset) / m.m_elementBytes;
 	 return p + m.m_align;
@@ -1238,8 +1241,8 @@ OCPI_CONTROL_OPS
 	   OU::Member &m = *m_rccPort.sequence;
 	   *(uint32_t *)((uint8_t*)m_rccPort.current.data + m.m_offset) =
 	     OCPI_UTRUNCATE(uint32_t,
-			    m_rccPort.current.length_ - (m.m_offset + m.m_align)) /
-	     m.m_elementBytes;
+			    m_rccPort.current.length_ - (m.m_offset + m.m_align) /
+			    m.m_elementBytes);
 	 }
        }
      }
@@ -1248,8 +1251,9 @@ OCPI_CONTROL_OPS
    // FIXME: the connectivity indication should be cached somewhere better...
    bool RCCUserPort::
    isConnected() {
-     return m_rccPort.containerPort->parent().m_context->connectedPorts &
-       (1 << m_rccPort.containerPort->ordinal());
+     return m_rccPort.containerPort &&
+       (m_rccPort.containerPort->parent().m_context->connectedPorts &
+	(1 << m_rccPort.containerPort->ordinal())) != 0;
    }
    RCCOrdinal RCCUserPort::
    ordinal() const { return (RCCOrdinal)m_rccPort.containerPort->ordinal(); }
@@ -1352,10 +1356,11 @@ OCPI_CONTROL_OPS
      RCCPortMask *pms = m_portMasks;
      m = pm;
      do {
-	*pms++ = m;
-	m_allMasks |= m;
-      } while ((m = va_arg(ap, RCCPortMask)));
-      *pms++ = 0;
+       *pms++ = m;
+       m_allMasks |= m;
+     } while ((m = va_arg(ap, RCCPortMask)));
+     *pms++ = 0;
+     va_end(ap);
    }
    RunCondition::
    RunCondition(RCCPortMask *rpm, uint32_t usecs, bool timeout)

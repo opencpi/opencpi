@@ -34,7 +34,7 @@
 #
 ########################################################################### #
 
-ifeq ($(OCPI_OS),vxworksdkm)
+ifeq ($(OCPI_TARGET_OS),vxworksdkm)
   EXCLUDE_SOURCES += OcpiUtilLoadableModule.cxx
 endif
 

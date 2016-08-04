@@ -61,7 +61,7 @@ namespace OCPI {
 	}
       };
       RegisterLibraryDriver<Driver> driver;
-      OL::Driver &getDriver() { return OD::Singleton<Driver>::getSingleton(); }
+      OL::Driver &getDriver() { return OU::Singleton<Driver>::getSingleton(); }
     }
   }
 }
