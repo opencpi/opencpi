@@ -2034,9 +2034,11 @@ load(const char **ap) {
   driver = &OCPI::HDL::Driver::getSingleton();
   if (!(dev = driver->open(device, false, true, NULL, error)))
     bad("error opening device %s", device);
-  dev->load(ap[0]);
+  if (dev->load(ap[0], error))
+    bad("error loading device %s", device);
 }
 static void
 unload(const char **) {
-  dev->unload();
+  if (dev->unload(error))
+    bad("error unloading device %s after load", device);
 }

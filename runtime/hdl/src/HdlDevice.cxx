@@ -57,6 +57,8 @@ namespace OCPI {
     // Also called after bitstream loading.
     bool Device::
     init(std::string &err) {
+      ocpiDebug("Probing Zynq PL device %p", this);
+      m_isAlive = false;
       sig_t old = signal(SIGBUS, catchBusError); // FIXME: we could make this thread safe
       uint64_t magic = 0x0BAD1BADDEADBEEF;
       try {
@@ -83,26 +85,25 @@ namespace OCPI {
 	err = "Magic numbers in admin space do not match";
 	return true;
       }
-      if (m_pfWorker) {
-	m_old = false;
-	m_pfWorker->init(true, true);
-	m_tsWorker->init(true, true);
-      } else {
+      if (!m_pfWorker) {
+	ocpiDebug("HDL::Device::init: platform worker does not exist, first access in process");
 	m_pfWorker = new WciControl(*this, "platform", "pf_i", 0, true);
 	m_tsWorker = new WciControl(*this, "time_server", "ts_i", 1, true);
       }
-      // Need to conditionalize this
-      if ((m_pfWorker->controlOperation(OU::Worker::OpInitialize, err)) ||
-	  (m_tsWorker->controlOperation(OU::Worker::OpInitialize, err)) ||
-	  (m_pfWorker->controlOperation(OU::Worker::OpStart, err)) ||
-	  (m_tsWorker->controlOperation(OU::Worker::OpStart, err))) {
-	// For Compatibility
-	m_old = true;
-	err.clear();
-	ocpiInfo("For HDL Device '%s' no platform worker responds.  Assuming old-style bitstream.",
-		 m_name.c_str());
-	return false;
+      if (m_pfWorker->isReset()) {
+	ocpiDebug("Platform worker is in reset, initializing it (unreset, initialize, start)");
+	m_old = false;
+	m_pfWorker->init(true, true);
+	m_tsWorker->init(true, true);
+	if ((m_pfWorker->controlOperation(OU::Worker::OpInitialize, err)) ||
+	    (m_tsWorker->controlOperation(OU::Worker::OpInitialize, err)) ||
+	    (m_pfWorker->controlOperation(OU::Worker::OpStart, err)) ||
+	    (m_tsWorker->controlOperation(OU::Worker::OpStart, err)))
+	  return true;
       }
+      m_isAlive = true;
+      if (configure(NULL, err))
+	return true;
       return false;
     }
     void Device::

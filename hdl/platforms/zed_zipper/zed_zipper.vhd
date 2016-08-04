@@ -107,6 +107,7 @@ begin
   ps : zynq_ps
     port map(
       -- Signals from the PS used in the PL
+      ps_in.debug           => (others => '0'),
       ps_out.FCLK           => fclk,
       ps_out.FCLKRESET_N    => raw_rst_n,
       m_axi_gp_in           => ps_m_axi_gp_in,

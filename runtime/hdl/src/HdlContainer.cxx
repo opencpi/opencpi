@@ -135,15 +135,12 @@ namespace OCPI {
 	} else {
 	  ocpiInfo("Loading bitstream %s on HDL container %s\n",
 		   name().c_str(), c.name().c_str());
-	  c.hdlDevice().load(name().c_str());
 	  // If the device needs a container background thread, make sure its started.
 	  c.start();
-	  // Now the bitstream is loaded, but that doesn't mean we have touched the device
-	  std::string err;
-	  if (c.hdlDevice().init(err) ||
-	      c.hdlDevice().configure(NULL, err))
-	    throw OU::Error("After loading %s on HDL device %s: %s",
-			    name().c_str(), c.name().c_str(), err.c_str());
+	  std::string error;
+	  if (c.hdlDevice().load(name().c_str(), error))
+	    throw OU::Error("loading %s on HDL device %s: %s",
+			    name().c_str(), c.name().c_str(), error.c_str());
 	  if (!c.hdlDevice().isLoadedUUID(lart.uuid()))
 	    throw OU::Error("After loading %s on HDL device %s, uuid is wrong.  Wanted: %s",
 			    name().c_str(), c.name().c_str(),

@@ -87,14 +87,16 @@ namespace OCPI {
 	}
 
 	// Load a bitstream via jtag
-	void load(const char *a_name) {
+	bool load(const char *a_name, std::string &error) {
 	  char err[1000];
 	  err[0] = 0;
 	  std::string cmd(a_name);
 	  bool isDir;
 	  uint64_t length;
 	  if (!OS::FileSystem::exists(cmd, &isDir, &length) || isDir)
-	    throwit("New sim executable file '%s' is non-existent or a directory", a_name);
+	    return OU::eformat(error,
+			       "New sim executable file '%s' is non-existent or a directory",
+			       a_name);
 	  std::string cwd_str = OS::FileSystem::cwd();
 	  OU::format(cmd, "L%" PRIu64 " %s %s", length, a_name, cwd_str.c_str());
 	  command(cmd.c_str(), cmd.length()+1, err, sizeof(err), 5000);
@@ -102,7 +104,7 @@ namespace OCPI {
 	  err[sizeof(err)-1] = 0;
 	  switch (*err) {
 	  case 'E': // we have an error
-	    throwit("Loading new executable %s failed: %s", a_name, err + 1);
+	    return OU::eformat(error, "Loading new executable %s failed: %s", a_name, err + 1);
 	  case 'O': // OK its loaded and running - presumbably since it was cached?
 	    ocpiInfo("Successfully loaded new sim executable: %s", a_name);
 	    break;
@@ -116,9 +118,9 @@ namespace OCPI {
 	      wskt.connect(l_addr, port);
 	      wskt.linger(true); //  wait on close for far side ack of all data
 	      int rfd = -1;
-	      try { // socket I/O can throw
-		if ((rfd = open(a_name, O_RDONLY)) < 0)
-		  throwit("Can't open executable: %s", a_name);
+	      if ((rfd = open(a_name, O_RDONLY)) < 0)
+		OU::format(error, "Can't open executable: %s", a_name);
+	      else {
 		char buf[64*1024];
 		ssize_t n;
 		while ((n = read(rfd, buf, sizeof(buf))) > 0) {
@@ -129,33 +131,28 @@ namespace OCPI {
 		  }
 		}
 		if (n < 0)
-		  throwit("Error reading executable file: %s", a_name);
-		wskt.shutdown(true);
-		char c;
-		// Wait for the other end to shutdown its writing side to give us the EOF
-		wskt.recv(&c, 1, 0);
-		wskt.close();
+		  OU::format(error, "Error reading executable file: %s", a_name);
+		else {
+		  wskt.shutdown(true);
+		  char c;
+		  // Wait for the other end to shutdown its writing side to give us the EOF
+		  wskt.recv(&c, 1, 0);
+		}
 		close(rfd);
-	      } catch(...) {
-		try {
-		  wskt.close();
-		} catch(...) {};
-		if (rfd > 0)
-		  close(rfd);
-		throw;
 	      }
-	      if (rfd > 0)
-		close(rfd);
-	      cmd = "S";
-	      command(cmd.c_str(), cmd.length()+1, err, sizeof(err), 5000);
-	      if (*err == 'O') {
-		ocpiInfo("Successfully started new sim executable: %s", a_name);
-		doConnect(err + 1);
-	      } else
-		throwit("Running new executable %s failed: %s", a_name, err + 1);
+	      wskt.close();
+	      if (error.empty()) {
+		cmd = "S";
+		command(cmd.c_str(), cmd.length()+1, err, sizeof(err), 5000);
+		if (*err == 'O') {
+		  ocpiInfo("Successfully started new sim executable: %s", a_name);
+		  doConnect(err + 1);
+		} else
+		  OU::format(error, "Running new executable %s failed: %s", a_name, err + 1);
+	      }
 	    }
 	  }
-	  assert(*err == 'O');
+	  return error.empty() ? init(error) : false;
 	}
 	void
 	sdpRequest(bool read, uint64_t a_address, size_t length, uint8_t *data,
@@ -274,9 +271,9 @@ namespace OCPI {
 	  }
 	  ocpiDebug("SDP Accessor write to offset %zx complete", offset);
 	}
-	void
-	unload() {
-	  throw "Can't unload bitstreams for simulated devices yet";
+	bool
+	unload(std::string &error) {
+	  return OU::eformat(error, "Can't unload bitstreams for simulated devices yet");
 	}
       };
 

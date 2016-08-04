@@ -35,6 +35,7 @@ namespace OCPI {
       // standalone.
       //      const std::string &name() const { return m_wName; }
       void init(bool redo, bool doInit);
+      bool isReset() const;
       inline size_t index() const { return m_occpIndex; }
       void propertyWritten(unsigned ordinal) const;
       void propertyRead(unsigned ordinal) const;

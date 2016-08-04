@@ -68,9 +68,9 @@ namespace OCPI {
       void getUUID();
       RomWord getRomWord(uint16_t n);
       virtual bool getMetadata(std::vector<char> &xml, std::string &err);
-      virtual void load(const char *name) = 0;
+      virtual bool load(const char *name, std::string &err) = 0;
+      virtual bool unload(std::string &err) = 0;
       virtual void connect() {}
-      virtual void unload() = 0;
       virtual bool needThread() const { return false; };
       virtual bool run() { return true; }
       void getWorkerAccess(size_t index,

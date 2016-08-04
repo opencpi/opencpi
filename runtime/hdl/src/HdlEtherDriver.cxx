@@ -53,12 +53,11 @@ namespace OCPI {
 	~Device() {
 	}
 	// Load a bitstream via jtag
-	void load(const char *) {
-	  throw "Can't load bitstreams for ethernet devices yet";
+	bool load(const char *, std::string &error) {
+	  return OU::eformat(error, "Can't load bitstreams for ethernet devices yet");
 	}
-	void
-	unload() {
-	  throw "Can't unload bitstreams for ethernet devices yet";
+	bool unload(std::string &error) {
+	  return OU::eformat(error, "Can't unload bitstreams for ethernet devices yet");
 	}
       };
       Driver::

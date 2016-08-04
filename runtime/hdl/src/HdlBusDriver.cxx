@@ -94,7 +94,7 @@
 	}
 	bool
 	setup(std::string &err) {
-	  ocpiDebug("Setting up the Zynq PL"); sleep(1);
+	  ocpiDebug("Setting up the Zynq PL");
 	  volatile FTM *ftm = (volatile FTM *)m_driver.map(sizeof(FTM), FTM_ADDR, err);
 	  if (!ftm)
 	    return true;
@@ -114,7 +114,7 @@
 		     "ocpi-dma-pio:0x%" PRIx32 ".0x%" PRIx32 ".0x%" PRIx32,
 		     gpAddr, 0, 0);
 	  dAccess().setAccess(NULL, NULL, 0); // the data space will never be accessed by CPU
-	  return true;
+	  return false;
 	}
         // return true if programmed, false if not programmed
         // when false, err may be set or not
@@ -178,8 +178,8 @@
 	}
 
 	// Load a bitstream
-	void
-	load(const char *fileName) {
+	bool
+	load(const char *fileName, std::string &error) {
 	  struct Xld { // struct allocated on the stack for easy cleanup
 	    int xfd, bfd;
 	    gzFile gz;
@@ -192,46 +192,46 @@
 	      if (bfd >= 0) ::close(bfd);
 	      if (gz) gzclose(gz);
 	    }
-	    Xld(const char *file) : xfd(-1), bfd(-1), gz(NULL) {
-	      try {
-		// Open the device LAST since just opening it will do bad things
-		if ((bfd = ::open(file, O_RDONLY)) < 0)
-		  throw OU::Error("Can't open bitstream file '%s' for reading: %s(%d)",
-				  file, strerror(errno), errno);
-		if ((gz = ::gzdopen(bfd, "rb")) == NULL)
-		  throw OU::Error("Can't open compressed bitstream file '%s' for : %s(%u)",
-				  file, strerror(errno), errno);
-		bfd = -1; // gzclose closes the fd
-		// Read up to the sync pattern before byte swapping
-		if ((n = ::gzread(gz, buf, sizeof(buf))) <= 0)
-		  throw OU::Error("Error reading initial bitstream buffer: %s(%u/%d)",
-				  gzerror(gz, &zerror), errno, n);
-		uint8_t *p8 = findsync(buf, sizeof(buf));
-		if (!p8)
-		  throw OU::Error("Can't find sync pattern in compressed bit file");
+	    Xld(const char *file, std::string &a_error) : xfd(-1), bfd(-1), gz(NULL) {
+	      // Open the device LAST since just opening it will do bad things
+	      uint8_t *p8;
+	      if ((bfd = ::open(file, O_RDONLY)) < 0)
+		OU::format(a_error, "Can't open bitstream file '%s' for reading: %s(%d)",
+			   file, strerror(errno), errno);
+	      else if ((gz = ::gzdopen(bfd, "rb")) == NULL)
+		OU::format(a_error, "Can't open compressed bitstream file '%s' for : %s(%u)",
+			   file, strerror(errno), errno);
+	      // Read up to the sync pattern before byte swapping
+	      else if ((n = ::gzread(gz, buf, sizeof(buf))) <= 0)
+		OU::format(a_error, "Error reading initial bitstream buffer: %s(%u/%d)",
+			   gzerror(gz, &zerror), errno, n);
+	      else if (!(p8 = findsync(buf, sizeof(buf))))
+		OU::format(a_error, "Can't find sync pattern in compressed bit file");
+	      else {
 		len = buf + sizeof(buf) - p8;
 		if (p8 != buf)
 		  memcpy(buf, p8, len);
 		// We've done as much as we can before opening the device, which
-		// does bad things...
+		// does bad things to the Zynq PL
 		if ((xfd = ::open("/dev/xdevcfg", O_RDWR)) < 0)
-		  throw OU::Error("Can't open /dev/xdevcfg for bitstream loading: %s(%d)",
-				  strerror(errno), errno);
-	      } catch (...) {
-		cleanup();
-		throw;
+		  OU::format(a_error, "Can't open /dev/xdevcfg for bitstream loading: %s(%d)",
+			     strerror(errno), errno);
 	      }
 	    }
 	    ~Xld() {
-	      cleanup();
+	      if (xfd >= 0) ::close(xfd);
+	      if (bfd >= 0) ::close(bfd);
+	      if (gz) gzclose(gz);
 	    }
-	    int gzread(uint8_t *&argBuf) {
+	    int gzread(uint8_t *&argBuf, std::string &a_error) {
 	      if ((n = ::gzread(gz, buf + len, (unsigned)(sizeof(buf) - len))) < 0)
-		throw OU::Error("Error reading compressed bitstream: %s(%u/%d)",
-				gzerror(gz, &zerror), errno, n);
-	      n += OCPI_UTRUNCATE(int, len);
-	      len = 0;
-	      argBuf = buf; 
+		OU::format(a_error, "Error reading compressed bitstream: %s(%u/%d)",
+			   gzerror(gz, &zerror), errno, n);
+	      else {
+		n += OCPI_UTRUNCATE(int, len);
+		len = 0;
+		argBuf = buf; 
+	      }
 	      return n;
 	    }
 	    uint32_t readConfigReg(unsigned /*reg*/) {
@@ -240,30 +240,32 @@
 	      return 0;
 	    }
 	  };
-	  Xld xld(fileName);
+	  Xld xld(fileName, error);
+	  if (!error.empty())
+	    return true;
 	  do {
 	    uint8_t *buf;
-	    int n = xld.gzread(buf);
+	    int n = xld.gzread(buf, error);
+	    if (n < 0)
+	      return true;
 	    if (n & 3)
-	      throw OU::Error("Bitstream data in is '%s' not a multiple of 4 bytes",
-			      fileName);
+	      return OU::eformat(error, "Bitstream data in is '%s' not a multiple of 4 bytes",
+				 fileName);
 	    if (n == 0)
 	      break;
 	    uint32_t *p32 = (uint32_t*)buf;
 	    for (unsigned nn = n; nn; nn -= 4, p32++)
 	      *p32 = OU::swap32(*p32);
 	    if (write(xld.xfd, buf, n) <= 0)
-	      throw OU::Error("Error writing to /dev/xdevcfg for bitstream loading: %s(%u/%d)",
-			      strerror(errno), errno, n);
-	  } while(1);
+	      return OU::eformat(error,
+				 "Error writing to /dev/xdevcfg for bitstream loading: %s(%u/%d)",
+				 strerror(errno), errno, n);
+	  } while (1);
 	  if (::close(xld.xfd))
-	    throw OU::Error("Error closing /dev/xdevcfg: %s(%u)", strerror(errno), errno);
+	    return OU::eformat(error, "Error closing /dev/xdevcfg: %s(%u)",
+			       strerror(errno), errno);
 	  xld.xfd = -1;
-	  std::string err;
-	  if (isProgrammed(err))
-	    setup(err);
-	  if (!err.empty())
-	    throw OU::Error("Error after loading bitstream: %s", err.c_str());
+	  return isProgrammed(error) ? setup(error) : true;
 #if 0
 	  // We have written all the data from the file to the device.
 	  // Now we can retrieve status registers
@@ -285,13 +287,14 @@
 			    axss, c_opencpi);
 #endif
 	}
-	void
-	unload() {
+	bool
+	unload(std::string &error) {
 	  int xfd;
 	  if ((xfd = ::open("/dev/xdevcfg", O_WRONLY)) < 0)
-	    throw OU::Error("Can't open /dev/xdevcfg for bitstream unloading: %s(%d)",
-			    strerror(errno), errno);
+	    return OU::eformat(error, "Can't open /dev/xdevcfg for bitstream unloading: %s(%d)",
+			       strerror(errno), errno);
 	  close(xfd);
+	  return false;
 	}
       };
 
@@ -342,18 +345,22 @@
       map(size_t size, uint32_t offset, std::string &error) {
 	void *vaddr;
 	off64_t off64 = offset;
-	ocpiDebug("Zynq map of offset %" PRIx32 " off64 %" PRIx64, offset, off64);
+	ocpiDebug("Zynq map of offset %" PRIx32 " off64 %" PRIx64 " size %zu",
+		  offset, off64, size);
 	if (m_memFd < 0 && (m_memFd = ::open("/dev/mem", O_RDWR|O_SYNC)) < 0)
 	  error = "Can't open /dev/mem, forgot to load the driver? sudo?";
 	else if ((vaddr = mmap64(NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED, m_memFd,
 				 off64)) == MAP_FAILED)
 	  error = "can't mmap /dev/mem for control space";
-	else
+	else {
+	  ocpiDebug("Zynq map returns %p", vaddr);
 	  return (uint8_t*)vaddr;
+	}
 	return NULL;
       }
        bool Driver::
        unmap(uint8_t *addr, size_t size, std::string &error) {
+	 ocpiDebug("Zynq unmap %p %zu", addr, size);
 	 if (m_memFd < 0)
 	   error = "Memory device not open for unmap";
 	 else if (munmap(static_cast<void*>(addr), size) != 0)

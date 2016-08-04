@@ -113,6 +113,11 @@ namespace OCPI {
       m_device.releaseWorkerAccess(m_occpIndex, *this, m_properties);
     }
 
+    bool WciControl::
+    isReset() const {
+      return (get32Register(control, OccpWorkerRegisters) & OCCP_WORKER_CONTROL_ENABLE) == 0;
+    }
+
     // Add the hardware considerations to the property object that supports
     // fast memory-mapped property access directly to users
     // the key members are "readVaddr" and "writeVaddr"

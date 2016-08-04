@@ -202,11 +202,12 @@ namespace OCPI {
 #endif
 	}
 	// Load a bitstream via jtag
-	void load(const char *fileName) {
+	bool load(const char *fileName, std::string &error) {
+	  error.clear();
 	  // FIXME: there should be a utility to run a script in this way
 	  char *command, *base = getenv("OCPI_CDK_DIR");
 	  if (!base)
-	    throw OU::Error("OCPI_CDK_DIR environment variable not set");
+	    return OU::eformat(error, "OCPI_CDK_DIR environment variable not set");
 	  int aslen = asprintf(&command,
 		   "%s/scripts/loadBitStream \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
 		   base, fileName, name().c_str(), m_platform.c_str(), m_part.c_str(),
@@ -215,33 +216,32 @@ namespace OCPI {
 	  ocpiInfo("Executing command to load bit stream for device %s: \"%s\"\n",
 		   fileName, command);
 	  int rc = system(command);
-	  const char *err = 0;
 	  switch (rc) {
 	  case 127:
-	    err = "Couldn't execute bitstream loading command.  Bad OCPI_CDK_DIR environment variable?";
+	    error = "Couldn't execute bitstream loading command.  Bad OCPI_CDK_DIR environment variable?";
 	    break;
 	  case -1:
-	    err = OU::esprintf("Unknown system error (errno %d) while executing bitstream loading command: %s",
-			       errno, command);
+	    OU::format(error,
+		       "Unknown system error (errno %d) while executing bitstream loading command: %s",
+		       errno, command);
 	    break;
 	  case 0:
 	    ocpiInfo("Successfully loaded bitstream file: \"%s\" on HDL device \"%s\"\n",
 		     fileName, name().c_str());
 	    break;
 	  default:
-	    err = OU::esprintf("Bitstream loading error (%s%s: %d) loading \"%s\" on HDL device"
-			       " \"%s\" with command: %s",
-			       WIFEXITED(rc) ? "exit code" : "signal ",
-			       WIFEXITED(rc) ? "" : strsignal(WTERMSIG(rc)),
-			       WIFEXITED(rc) ? WEXITSTATUS(rc) : WTERMSIG(rc),
-			       fileName, name().c_str(), command);
+	    OU::format(error, "Bitstream loading error (%s%s: %d) loading \"%s\" on HDL device"
+		       " \"%s\" with command: %s",
+		       WIFEXITED(rc) ? "exit code" : "signal ",
+		       WIFEXITED(rc) ? "" : strsignal(WTERMSIG(rc)),
+		       WIFEXITED(rc) ? WEXITSTATUS(rc) : WTERMSIG(rc),
+		       fileName, name().c_str(), command);
 	  }
-	  if (err)
-	    throw OU::Error("%s", err);
+	  return error.empty() ? init(error) : true;
 	}
-	void
-	unload() {
-	  throw "Can't unload bitstreams for PCI/JTAG devices yet";
+	bool
+	unload(std::string &error) {
+	  return OU::eformat(error, "Can't unload bitstreams for PCI/JTAG devices yet");
 	}
       };
 

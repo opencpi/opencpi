@@ -11,6 +11,7 @@
   </device>
   <sdp name="zynq" master='true' count='4'/>
   <!-- <sdp name="zynq_slave" count='4'/> -->
+  <property name='useGP1' type='bool' parameter='1' default='false'/>
   <property name='maxtrace' type='uchar' parameter='1' default='40'/>
   <property name="axi_error" type="bool" arraylength='4' volatile='true'/>
   <property name="sdpDropCount" type='uchar' volatile='true'/>

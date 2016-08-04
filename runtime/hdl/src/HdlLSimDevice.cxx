@@ -658,7 +658,10 @@ public:
   // The container background thread calls this.  Return true when done
   bool run() {
     if (m_firstRun) {
-      assert(m_state == RUNNING);
+      if (m_state != RUNNING) {
+	OS::sleep(100);
+	return false;
+      }
       m_lastTicks = 0;
       m_firstRun = false;
     }
@@ -766,7 +769,7 @@ public:
 	      m_platform.c_str(), m_exec.c_str(), err.c_str());
   }
 
-  void load(const char *file) {
+  bool load(const char *file, std::string &error) {
     assert(m_state != LOADING || m_state != SERVING);
     if (m_state != EMULATING) {
       ocpiInfo("Shutting down previous simulation before (re)loading");
@@ -782,10 +785,10 @@ public:
     const char *suff = strstr(slash, m_platform.c_str());
     if (suff) {
       if (*--suff != '_' && *suff != '-')
-	throwit("simulator file name %s is not formatted properly", file);
+	return OU::eformat(error, "simulator file name %s is not formatted properly", file);
       const char *dot = strchr(suff + 1, '.');
       if (!dot)
-	throwit("simulator file name %s is not formatted properly", file);
+	return OU::eformat(error, "simulator file name %s is not formatted properly", file);
       m_file.assign(slash, dot - slash);
       m_app.assign(slash, suff - slash);
     } else
@@ -801,37 +804,25 @@ public:
     ocpiDebug("Sim executable is %s(%s), assy is %s, platform is %s dir is %s",
 	      file, m_file.c_str(), m_app.c_str(), m_platform.c_str(), m_dir.c_str());
     if (mkdir(m_dir.c_str(), 0777) != 0 && errno != EEXIST)
-      throwit("Can't create directory \"%s\" to run \"%s\" simulation from \"%s\" (%s)",
-	      m_dir.c_str(), m_platform.c_str(), m_exec.c_str(), strerror(errno));
+      return OU::eformat(error,
+			 "Can't create directory \"%s\" to run \"%s\" simulation from \"%s\" (%s)",
+			 m_dir.c_str(), m_platform.c_str(), m_exec.c_str(), strerror(errno));
     OL::Artifact &art = *OL::Simple::getDriver().addArtifact(file);
-#if 0
-    try {
-      std::time_t mtime;
-      uint64_t length;
-      m_metadata = OL::Artifact::getMetadata(m_exec.c_str(), mtime, length);
-    } catch (std::string &s) {
-      throwit("When processing simulation executable file '%s': %s", m_exec.c_str(), s.c_str());
-    }
-    const char *e = OX::ezxml_parse_str(m_metadata, strlen(m_metadata), m_xml);
-    if (e)
-      throwit("invalid metadata in binary/artifact file \"%s\": %s", m_exec.c_str(), e);
-    char *xname = ezxml_name(m_xml);
-    if (!xname || strcasecmp("artifact", xname))
-      throwit("invalid metadata in binary/artifact file \"%s\": no <artifact/>", m_exec.c_str());
-#endif
     std::string l_platform;
     const char *e;
     if ((e = OX::getRequiredString(art.xml(), l_platform, "platform", "artifact")))
-      throwit("invalid metadata in binary/artifact file \"%s\": %s", m_exec.c_str(), e);
+      return OU::eformat(error, "invalid metadata in binary/artifact file \"%s\": %s",
+			 m_exec.c_str(), e);
     if (!strcmp("_pf", l_platform.c_str() + l_platform.length() - 3))
       l_platform.resize(l_platform.length() - 3);
     if (l_platform != m_platform)
-      throwit("simulator platform mismatch:  executable (%s) has '%s', we are '%s'",
-	      m_exec.c_str(), l_platform.c_str(), m_platform.c_str());
+      return OU::eformat(error,
+			 "simulator platform mismatch:  executable (%s) has '%s', we are '%s'",
+			 m_exec.c_str(), l_platform.c_str(), m_platform.c_str());
     std::string l_uuid;
-    e = OX::getRequiredString(art.xml(), l_uuid, "uuid", "artifact");
-    if (e)
-      throwit("invalid metadata in binary/artifact file \"%s\": %s", m_exec.c_str(), e);
+    if ((e = OX::getRequiredString(art.xml(), l_uuid, "uuid", "artifact")))
+      return OU::eformat(error, "invalid metadata in binary/artifact file \"%s\": %s",
+			 m_exec.c_str(), e);
     ocpiInfo("Bitstream %s has uuid %s", m_exec.c_str(), l_uuid.c_str());
     std::string untar;
     OU::format(untar,
@@ -844,12 +835,13 @@ public:
     int rc = system(untar.c_str());
     switch (rc) {
     case 127:
-      throwit("Couldn't start execution of command: %s", untar.c_str());
+      return OU::eformat(error, "Couldn't start execution of command: %s", untar.c_str());
     case -1:
-      throwit("System error (%s, errno %d) while executing bitstream loading command",
-	      strerror(errno), errno);
+      return OU::eformat(error,
+			 "System error (%s, errno %d) while executing bitstream loading command",
+			 strerror(errno), errno);
     default:
-      throwit("Error return %u while executing bitstream loading command", rc);
+      return OU::eformat(error, "Error return %u while executing bitstream loading command", rc);
     case 0:
       if (m_verbose)
 	fprintf(stderr, "Executable/bitstream is installed and ready, in directory %s.\n",
@@ -857,11 +849,11 @@ public:
       ocpiInfo("Successfully loaded bitstream file: \"%s\" for simulation", m_exec.c_str());
     }
     setState(SERVING);   // Were loaded or loading
-    std::string err;
-    if (start(err))
-      throwit("Can't start \"%s\" simulator from \"%s\": %s",
-	      m_platform.c_str(), m_exec.c_str(), err.c_str());
+    if (start(error))
+      return OU::eformat(error, "Can't start \"%s\" simulator from \"%s\": %s",
+			 m_platform.c_str(), m_exec.c_str(), error.c_str());
     setState(RUNNING);   // Were loaded or loading
+    return init(error);
   }
   void
   send2sdp(SDP::Header &h, uint8_t *data, bool response, const char *type, std::string &error) {
@@ -1011,9 +1003,9 @@ public:
     }
     ocpiDebug("SDP Accessor write to offset %zx complete", offset);
   }
-  void
-  unload() {
-    throw "Can't unload bitstreams for simulated devices yet";
+  bool
+  unload(std::string &error) {
+    return OU::eformat(error, "Can't unload bitstreams for simulated devices yet");
   }
   void receive(DtOsDataTypes::Offset offset, uint8_t *data, size_t count) {
     SDP::Header h(false, offset, count);
