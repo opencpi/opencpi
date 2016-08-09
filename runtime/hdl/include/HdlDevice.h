@@ -42,7 +42,7 @@ namespace OCPI {
     public:
       uint32_t m_timeCorrection;
       virtual ~Device();
-      bool init(std::string &error);
+      virtual bool init(std::string &error);
       inline Access &properties() const { return m_pfWorker->m_properties; }
       inline const char *protocol() const { return m_protocol.c_str(); }
       inline const std::string &name() const { return m_name; }

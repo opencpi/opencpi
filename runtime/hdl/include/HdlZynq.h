@@ -6,6 +6,7 @@ namespace OCPI {
     namespace Zynq {
 #endif
       const uint32_t GP0_PADDR = 0x40000000;
+      const uint32_t GP1_PADDR = 0x80000000;
       const uint32_t FTM_ADDR = 0xF880B000;
       struct FTM {
 	uint32_t

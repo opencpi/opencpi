@@ -3,7 +3,7 @@
 # Clock constraints                                                        #
 ############################################################################
 NET "*pfconfig_cp_out*_clk" TNM_NET = clk_fpga_0;
-TIMESPEC TS_clk_fpga_0 = PERIOD "clk_fpga_0" 50000 KHz;
+TIMESPEC TS_clk_fpga_0 = PERIOD "clk_fpga_0" 100000 KHz;
 
 ############################################################################
 # I/O STANDARDS and Location Constraints                                   #

@@ -10,6 +10,7 @@ library zynq; use zynq.zynq_pkg.all;
 library unisim; use unisim.vcomponents.all;
 library bsv;
 architecture rtl of zed_worker is
+  constant whichGP : natural := to_integer(unsigned(from_bool(useGP1)));
   signal ps_m_axi_gp_in  : m_axi_gp_in_array_t(0 to C_M_AXI_GP_COUNT-1);  -- s2m
   signal ps_m_axi_gp_out : m_axi_gp_out_array_t(0 to C_M_AXI_GP_COUNT-1); -- m2s
   signal ps_s_axi_gp_in  : s_axi_gp_in_array_t(0 to C_S_AXI_GP_COUNT-1);  -- m2s
@@ -65,7 +66,7 @@ begin
     props_out.unoc_headers_out1 <= unoc_header_out1;
   end generate g0;
 
-  clkbuf   : BUFG   port map(I => fclk(3),
+  clkbuf   : BUFG   port map(I => fclk(0),
                              O => clk);
   -- The FCLKRESET signals from the PS are documented as asynchronous with the
   -- associated FCLK for whatever reason.  Here we make a synchronized reset from it.
@@ -80,6 +81,8 @@ begin
   ps : zynq_ps
     port map(
       -- Signals from the PS used in the PL
+      ps_in.debug           => (31 => useGP1,
+                                others => '0'),
       ps_out.FCLK           => fclk,
       ps_out.FCLKRESET_N    => raw_rst_n,
       m_axi_gp_in           => ps_m_axi_gp_in,
@@ -94,8 +97,8 @@ begin
     port map(
       clk     => clk,
       reset   => reset,
-      axi_in  => ps_m_axi_gp_out(0),
-      axi_out => ps_m_axi_gp_in(0),
+      axi_in  => ps_m_axi_gp_out(whichGP),
+      axi_out => ps_m_axi_gp_in(whichGP),
       cp_in   => cp_in,
       cp_out  => cp_out
       );
@@ -164,14 +167,14 @@ begin
   metadata_out.romAddr      <= props_in.romAddr;
   metadata_out.romEn        <= props_in.romData_read;
   led(0) <= count(count'left);
-  led(1) <= ps_m_axi_gp_out(0).ARVALID;
+  led(1) <= ps_m_axi_gp_out(whichGP).ARVALID;
   led(2) <= seen_burst;
   led(3) <= cp_in.take;
 
   led(4) <= cp_in.valid;
-  led(5) <= ps_m_axi_gp_in(0).ARREADY;
-  led(6) <= ps_m_axi_gp_in(0).RVALID;
-  led(7) <= ps_m_axi_gp_out(0).RREADY;
+  led(5) <= ps_m_axi_gp_in(whichGP).ARREADY;
+  led(6) <= ps_m_axi_gp_in(whichGP).RVALID;
+  led(7) <= ps_m_axi_gp_out(whichGP).RREADY;
   work : process(clk)
   begin
     if rising_edge(clk) then
@@ -243,7 +246,7 @@ begin
           axi_wacount <= axi_wacount + 1;
         end if;
         count <= count + 1;
-        if ps_m_axi_gp_out(0).ARVALID = '1' and ps_m_axi_gp_out(0).ARLEN = "0001" then
+        if ps_m_axi_gp_out(whichGP).ARVALID = '1' and ps_m_axi_gp_out(whichGP).ARLEN = "0001" then
           seen_burst <= '1';
         end if;
       end if;

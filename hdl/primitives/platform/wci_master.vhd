@@ -99,10 +99,6 @@ begin
              sticky_r;                   --  8:0
 
   worker_out.data    <=
-    -- Give the master our timeout value when we are idle
-    -- so they can grab it when we start something
-    std_logic_vector(resize(timeout_r, worker_out.data'length))
-                when not active_r else
     status      when is_master and worker_in.address(5 downto 2) = slvn(8,4) else
     control     when is_master and worker_in.address(5 downto 2) = slvn(9,4) else
     slv0(worker_out.data'length - last_addr_r'length) &
@@ -123,15 +119,16 @@ begin
   worker_out.response   <= response when its(active_r) else none_e;
   worker_out.attention  <= wci_in.SFlag(0);
   worker_out.present    <= '1';
+  worker_out.timeout    <= timeout_r;
   work : process(worker_in.clk)
   begin
     if rising_edge(worker_in.clk) then
-      if worker_in.reset = '1' then
+      if its(worker_in.reset) then
         -- Core state
         reset_n_r            <= '0';
         window_r             <= (others => '0');
         attention_r          <= '0';
-        timeout_r            <= (others => '0');
+        timeout_r            <= to_unsigned(default_timeout_c, timeout_r'length);
         ready_r              <= '0';
         active_r             <= bfalse;
         abort_r              <= '0';

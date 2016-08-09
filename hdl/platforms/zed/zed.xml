@@ -10,6 +10,7 @@
   </device>
   <unoc name="zynq" master='true'/>
   <unoc name="zynq_slave"/>
+  <property name='useGP1' type='bool' parameter='1' default='false'/>
   <property name="axi_error" type="bool" volatile='true'/>
   <property name="unocDropCount" type='uchar' volatile='true'/>
   <property name="unoc_headers_in" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>

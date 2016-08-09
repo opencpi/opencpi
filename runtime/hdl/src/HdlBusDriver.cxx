@@ -22,8 +22,8 @@
   */
  /*
   * This file contains support for the HDL device in the PL on the Xilinx Zynq platform.
-  * On Zynq, the control plane is implemented using the AXI_GP0 port, which
-  * is located at physical address 0x4000000.
+  * On Zynq, the control plane is implemented using the M_AXI_GP0 or M_AXI_GP1 port, which
+  * is located at physical address 0x4000000 or 0x80000000.
   * The data plane is implemented with the AXI_HP0-3 and other ports, acting
   * as bus masters only.
   */
@@ -35,6 +35,10 @@
 #include "OcpiOsFileSystem.h"
 #include "HdlZynq.h"
 #include "HdlBusDriver.h"
+#ifdef OCPI_OS_macos
+#define mmap64 mmap
+#define off64_t off_t
+#endif
 
  namespace OCPI {
    namespace HDL {
@@ -51,11 +55,13 @@
 	     m_driver(driver), m_vaddr(NULL) {
 	   m_isAlive = false;
 	   m_endpointSize = sizeof(OccpSpace);
+#if 0 // not here since it depends on which GP
 	   OU::format(m_endpointSpecific,
 		      "ocpi-dma-pio:0x%" PRIx32 ".0x%" PRIx32 ".0x%" PRIx32,
 		      GP0_PADDR, 0, 0);
+#endif
 	   if (isProgrammed(err)) {
-	     if (setup(err)) {
+	     if (init(err)) {
 	       if (forLoad)
 		 err.clear();
 	     }
@@ -63,8 +69,9 @@
 	       ocpiInfo("There is no bitstream loaded on this HDL device: %s", a_name.c_str());
 	 }
 	 ~Device() {
+	   std::string ignore;
 	   if (m_vaddr)
-	     munmap((void*)m_vaddr, sizeof(OccpSpace));
+	     m_driver.unmap(m_vaddr, sizeof(OccpSpace), ignore);
 	 }
 
 	 bool
@@ -86,21 +93,34 @@
 	       m_part = "xc7zXXX";
 	     }
 	     ocpiDebug("Zynq SLCR PSS_IDCODE: 0x%x", slcr->pss_idcode);
-	     return false;
+	     return m_driver.unmap((uint8_t *)slcr, sizeof(SLCR), err);
 	   }
 	  return OCPI::HDL::Device::configure(config, err);
 	}
 	bool
-	setup(std::string &err) {
-	  if ((m_vaddr = m_driver.map(sizeof(OccpSpace), OCPI_STRUNCATE(off_t, GP0_PADDR),
-				      err))) {
-	    cAccess().setAccess(m_vaddr, NULL, OCPI_UTRUNCATE(RegisterOffset, 0));
-	    dAccess().setAccess(NULL, NULL, 0); // the data space will never be accessed by CPU
-	    init(err);
-	    if (err.empty())
-	      m_isAlive = true;
-	  }
-	  return !err.empty();
+	init(std::string &err) {
+	  ocpiDebug("Setting up the Zynq PL");
+	  volatile FTM *ftm = (volatile FTM *)m_driver.map(sizeof(FTM), FTM_ADDR, err);
+	  if (!ftm)
+	    return true;
+	  ocpiDebug("Debug register 3 from Zynq FTM is 0x%x", ftm->f2pdbg3);
+	  // Find out whether the OpenCPI control plane is available at GP0 or GP1, GP0 first
+	  bool useGP1 = (ftm->f2pdbg3 & 0x80) != 0;
+	  uint32_t gpAddr = useGP1 ? GP1_PADDR : GP0_PADDR;
+	  if (m_driver.unmap((uint8_t *)ftm, sizeof(FTM), err) ||
+	      (m_vaddr && m_driver.unmap((uint8_t *)m_vaddr, sizeof(OccpSpace), err)) ||
+	      !(m_vaddr = m_driver.map(sizeof(OccpSpace), gpAddr, err)))
+	    return true;
+	  ocpiDebug("Mapping for GP%c at %p", useGP1 ? '1' : '0', m_vaddr);
+	  cAccess().setAccess(m_vaddr, NULL, OCPI_UTRUNCATE(RegisterOffset, 0));
+	  if (OCPI::HDL::Device::init(err))
+	    return true;
+	  OU::format(m_endpointSpecific,
+		     "ocpi-dma-pio:0x%" PRIx32 ".0x%" PRIx32 ".0x%" PRIx32,
+		     gpAddr, 0, 0);
+	  dAccess().setAccess(NULL, NULL, 0); // the data space will never be accessed by CPU
+	  m_isAlive = true;
+	  return false;
 	}
         // return true if programmed, false if not programmed
         // when false, err may be set or not
@@ -235,9 +255,7 @@
 	    throw OU::Error("Error closing /dev/xdevcfg: %s(%u)", strerror(errno), errno);
 	  xld.xfd = -1;
 	  std::string err;
-	  if (isProgrammed(err))
-	    setup(err);
-	  if (!err.empty())
+	  if (!isProgrammed(err) && !err.empty())
 	    throw OU::Error("Error after loading bitstream: %s", err.c_str());
 #if 0
 	  // We have written all the data from the file to the device.
@@ -314,17 +332,31 @@
 	return NULL;
       }
       uint8_t *Driver::
-      map(size_t size, off_t offset, std::string &error) {
+      map(size_t size, uint32_t offset, std::string &error) {
 	void *vaddr;
+	off64_t off64 = offset;
+	ocpiDebug("Zynq map of offset %" PRIx32 " off64 %" PRIx64 " size %zu",
+		  offset, off64, size);
 	if (m_memFd < 0 && (m_memFd = ::open("/dev/mem", O_RDWR|O_SYNC)) < 0)
 	  error = "Can't open /dev/mem, forgot to load the driver? sudo?";
-	else if ((vaddr = mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED, m_memFd,
-			       offset)) == MAP_FAILED)
+	else if ((vaddr = mmap64(NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED, m_memFd,
+				 off64)) == MAP_FAILED)
 	  error = "can't mmap /dev/mem for control space";
 	else
 	  return (uint8_t*)vaddr;
 	return NULL;
       }
+       bool Driver::
+       unmap(uint8_t *addr, size_t size, std::string &error) {
+	 ocpiDebug("Zynq unmap %p %zu", addr, size);
+	 if (m_memFd < 0)
+	   error = "Memory device not open for unmap";
+	 else if (munmap(static_cast<void*>(addr), size) != 0)
+	   OU::format(error, "unmap failure, %s", strerror(errno));
+	 else
+	   return false;
+	 return true;
+       }
     } // namespace BUS
   } // namespace HDL
 } // namespace OCPI

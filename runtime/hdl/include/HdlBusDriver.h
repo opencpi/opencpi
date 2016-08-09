@@ -44,9 +44,8 @@ namespace OCPI {
       protected:
 	Driver();
 	virtual ~Driver();
-	//	void *
-	//	map(uint32_t size, uint64_t &base, std::string &error);
-	uint8_t *map(size_t size, off_t offset, std::string &error);
+	uint8_t *map(size_t size, uint32_t offset, std::string &error);
+	bool unmap(uint8_t *addr, size_t size, std::string &error);
       public:
 	unsigned
 	search(const OCPI::Util::PValue *props, const char **exclude, bool discoveryOnly,

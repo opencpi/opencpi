@@ -1,3 +1,4 @@
+#Param_useGP1=true
 Libraries=zynq
 Configurations=\
   base \
