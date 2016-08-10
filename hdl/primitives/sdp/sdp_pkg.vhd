@@ -68,7 +68,8 @@ type m2s_t is record
 end record m2s_t;
 type m2s_array_t is array(natural range <>) of m2s_t;
 type s2m_t is record
-  sdp   : sdp_t;
+  sdp       : sdp_t;
+  dropCount : uchar_t;
 end record s2m_t;
 type s2m_array_t is array(natural range <>) of s2m_t;
 

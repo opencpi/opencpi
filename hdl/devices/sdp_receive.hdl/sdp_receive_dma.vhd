@@ -235,6 +235,7 @@ g1: for i in 0 to sdp_width-1 generate
                                 rem_flag_addr_r(whole_addr_bits_c-1 downto addr_width);
   sdp_out.sdp.eop            <= btrue;
   sdp_out.sdp.valid          <= sending_flag or reading;
+  sdp_out.dropCount          <= (others => '0');
 g2: for i in 0 to sdp_width-1 generate
     sdp_out_data(i) <= slvn(1, dword_size) when i = 0 else (others => '0');
   end generate g2;
@@ -261,6 +262,8 @@ g2: for i in 0 to sdp_width-1 generate
         lcl_response_addr_r <= (others => '0');
         lcl_read_idx_r      <= (others => '0');
         flags_to_send_r     <= (others => '0');
+        sdp_am_addr_r       <= (others => (others => '0')); --for cleaner sim
+        sdp_am_last_r       <= (others => (others => '0')); --for cleaner sim
       elsif not operating then
         -- reset state that depends on properties
 --        rem_buffers_empty_r <= resize(rem_buffer_count, rem_buffers_empty_r'length);

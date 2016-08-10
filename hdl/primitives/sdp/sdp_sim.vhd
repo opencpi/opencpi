@@ -94,9 +94,9 @@ begin
     impure function read_byte(file f : char_file_t; msg : string) return natural is
       variable data : character;
     begin
-      if endfile(f) then
-        report "Unexpected EOF on " & msg; -- this is benign - it just indicates pipe empty
-      end if;
+--      if endfile(f) then
+--        report "Unexpected EOF on " & msg; -- this is benign - it just indicates pipe empty
+--      end if;
 --      report "Reading a byte from " & msg;
       read(f, data);
 --      report "Got a byte from " & msg & " value " & integer'image(character'pos(data));

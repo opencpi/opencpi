@@ -301,6 +301,7 @@ begin
   sdp_out.sdp.eop            <= sdp_last_in_segment;
   sdp_out.sdp.valid          <= to_bool(sdp_remote_phase_r /= idle_e);
   sdp_out.sdp.ready          <= bfalse;   -- we are write-only, never accepting an inbound frame
+  sdp_out.dropCount          <= (others => '0');
 g0: for i in 0 to sdp_width_c-1 generate
     sdp_out_data(i) <= sdp_out_r((i+1)*dword_size-1 downto i*dword_size)
                        when its(sdp_out_valid_r) else

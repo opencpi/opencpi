@@ -99,7 +99,7 @@ function from_bool_array(ba : bool_array_t;
   variable o : natural := to_integer(byte_offset) * 8;
   variable n : natural := to_integer(nbytes_1);
 begin
-  if n >= 4 - byte_offset then
+  if n >= to_unsigned(4,3) - byte_offset then
     n := 0;
   end if;
   if i > ba'right then
@@ -117,13 +117,13 @@ begin
       end if;
     end if;
   else
-    report "from_bool1 i " & integer'image(i) & " o " & integer'image(o) & " nb1 " &
-      integer'image(n) & " bar " & integer'image(ba'right);
+--    report "from_bool1 i " & integer'image(i) & " o " & integer'image(o) & " nb1 " &
+--      integer'image(n) & " bar " & integer'image(ba'right);
     if o + n*8 > dword_t'length then
       o := 0;
     end if;
-    report "from_bool2 i " & integer'image(i) & " o " & integer'image(o) & " nb1 " &
-      integer'image(n) & " bar " & integer'image(ba'right);
+--    report "from_bool2 i " & integer'image(i) & " o " & integer'image(o) & " nb1 " &
+--      integer'image(n) & " bar " & integer'image(ba'right);
 --if its(ba(i)) then
 --  result(o + 0) := '1';
 --else

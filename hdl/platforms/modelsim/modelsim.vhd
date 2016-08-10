@@ -40,6 +40,7 @@ begin
   props_out.nLEDs             <= (others => '0');
   props_out.UUID              <= metadata_in.UUID;
   props_out.romData           <= metadata_in.romData;
+  props_out.sdpDropCount      <= sdp_in.dropCount;
   metadata_out.clk            <= ctl_clk;
   metadata_out.romAddr        <= props_in.romAddr;
   metadata_out.romEn          <= props_in.romData_read;

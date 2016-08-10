@@ -24,7 +24,7 @@ architecture rtl of wci_master is
   signal is_master            : bool_t; -- shorthand for operation = control_read|write_e
   signal response             : worker_response_t;               -- our response when active
   -- Our state - minimized for scalability
-  signal reset_n_r            : std_logic;                     -- are we reset? (_n)
+  signal reset_n_r            : std_logic := '0';              -- are we reset? (_n)
   signal window_r             : std_logic_vector(11 downto 0); -- high address bits
   signal attention_r          : std_logic;                     -- sticky version of SFlag(0)
   signal timeout_r            : worker_timeout_t;              -- our log2 of timeout ticks

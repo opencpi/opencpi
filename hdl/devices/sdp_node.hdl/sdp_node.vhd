@@ -40,7 +40,7 @@ begin
   down_out.sdp.valid <= up_in.sdp.valid and not for_client;
   -- Accept the incoming frame from the recipient
   up_out.sdp.ready <= client_in.sdp.ready when its(for_client) else down_in.sdp.ready;
-
+  up_out.dropCount <= down_in.dropCount;
   -------------------------------------------------------------------------  
   -- The "joining" function, from down and/or client to upstream
   -- This needs memory to implement fairness (LRU) so it has some state
