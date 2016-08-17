@@ -93,7 +93,7 @@ begin
     props_out.sdp_data_out <= sdp_data_out;
   end generate g0;
 
-  clkbuf   : BUFG   port map(I => fclk(3),
+  clkbuf   : BUFG   port map(I => fclk(0),
                              O => clk);
   -- The FCLKRESET signals from the PS are documented as asynchronous with the
   -- associated FCLK for whatever reason.  Here we make a synchronized reset from it.

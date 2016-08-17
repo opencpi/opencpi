@@ -22,6 +22,7 @@ begin
   -- Take data out of the FIFO and sign extend each I/Q part
   out_out.data             <= (31 downto 28 => wsi_data(23)) & wsi_data(23 downto 12) &
                               (15 downto 12 => wsi_data(11)) & wsi_data(11 downto 0);
+  out_out.byte_enable <= (others => '1');
   --------------------------------------------------------------------------------
   -- ADC Sample Clock choices
   --------------------------------------------------------------------------------
@@ -75,7 +76,7 @@ begin
   adc_data             <= hold_q_r & hold_i_r;
   fifo : entity work.adc_fifo
     generic map(width       => 24,
-                depth       => 64)
+                depth       => 8096)
     port map   (clk         => ctl_in.clk,
                 reset       => ctl_in.reset,
                 operating   => ctl_in.is_operating,

@@ -56,7 +56,7 @@
 	   m_isAlive = false;
 	   m_endpointSize = sizeof(OccpSpace);
 	   if (isProgrammed(err)) {
-	     if (setup(err)) {
+	     if (init(err)) {
 	       if (forLoad)
 		 err.clear();
 	     }
@@ -93,7 +93,7 @@
 	  return OCPI::HDL::Device::configure(config, err);
 	}
 	bool
-	setup(std::string &err) {
+	init(std::string &err) {
 	  ocpiDebug("Setting up the Zynq PL");
 	  volatile FTM *ftm = (volatile FTM *)m_driver.map(sizeof(FTM), FTM_ADDR, err);
 	  if (!ftm)
@@ -108,12 +108,13 @@
 	    return true;
 	  ocpiDebug("Mapping for GP%c at %p", useGP1 ? '1' : '0', m_vaddr);
 	  cAccess().setAccess(m_vaddr, NULL, OCPI_UTRUNCATE(RegisterOffset, 0));
-	  if (init(err))
+	  if (OCPI::HDL::Device::init(err))
 	    return true;
 	  OU::format(m_endpointSpecific,
 		     "ocpi-dma-pio:0x%" PRIx32 ".0x%" PRIx32 ".0x%" PRIx32,
 		     gpAddr, 0, 0);
 	  dAccess().setAccess(NULL, NULL, 0); // the data space will never be accessed by CPU
+	  m_isAlive = true;
 	  return false;
 	}
         // return true if programmed, false if not programmed
@@ -265,7 +266,7 @@
 	    return OU::eformat(error, "Error closing /dev/xdevcfg: %s(%u)",
 			       strerror(errno), errno);
 	  xld.xfd = -1;
-	  return isProgrammed(error) ? setup(error) : true;
+	  return isProgrammed(error) ? init(error) : true;
 #if 0
 	  // We have written all the data from the file to the device.
 	  // Now we can retrieve status registers

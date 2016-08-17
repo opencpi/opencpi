@@ -48,7 +48,7 @@ namespace OCPI {
       Device(const std::string &name, const char *protocol = "");
     public:
       virtual ~Device();
-      bool init(std::string &error);
+      virtual bool init(std::string &error);
       inline Access &properties() const { return m_pfWorker->m_properties; }
       inline Access *timeServer() const {
 	return m_tsWorker ? &m_tsWorker->m_properties : NULL;

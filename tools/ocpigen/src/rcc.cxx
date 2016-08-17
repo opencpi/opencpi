@@ -1426,8 +1426,10 @@ emitRccCppImpl(FILE *f) {
 		"    %s%sOp &%s() {\n"
 		"      assert(hasBuffer());\n"
 		"      return m_%sOp;\n"
-		"    }\n",
-		!m_isProducer ? "const " : "", s.c_str(), o->cname(), s.c_str());
+		"    }\n"
+		"    inline %s%sOp &%s_op() { return %s(); }\n",
+		!m_isProducer ? "const " : "", s.c_str(), o->cname(), s.c_str(),
+		!m_isProducer ? "const " : "", s.c_str(), o->cname(), o->cname());
       }
   }
   fprintf(f, "  } %s;\n", cname());

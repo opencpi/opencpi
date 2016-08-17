@@ -160,6 +160,8 @@ Compile_cc=\
   $$(Gc++_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
   $$(call RccFinalCompilerOptions,CC,$$(RccTarget)) \
   $(RccIncludeDirsInternal:%=-I%) -o $$@ $$(RccParams) $$<
+Compile_cpp=$(Compile_cc)
+Compile_cxx=$(Compile_cc)
 
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk
 
@@ -219,6 +221,8 @@ $(foreach t,$(RccTargets),$(foreach c,$(ParamConfigurations),$(eval $(call DoRcc
 #disable builtin suffix rules
 %.o : %.c
 %.o : %.cc
+%.o : %.cpp
+%.o : %.cxx
 
 
 
