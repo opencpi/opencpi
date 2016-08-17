@@ -45,9 +45,9 @@ architecture rtl of sdp_receive_worker is
   signal brama_addr           : bram_addr_t;
   -- state
   signal brama_addr_r         : bram_addr_t;
-  signal faults_r              : uchar_t; -- some sticky error bits;
-  signal faults                : uchar_t;
-  signal dma_faults            : uchar_t;
+  signal faults_r             : uchar_t; -- some sticky error bits;
+  signal faults               : uchar_t;
+  signal dma_faults           : uchar_t;
   signal operating_r          : bool_t;  -- were we operating in the last cycle?
   signal wsi_starting_r       : bool_t;
   signal wsi_buffer_index_r   : buffer_count_t;
@@ -73,7 +73,7 @@ architecture rtl of sdp_receive_worker is
   signal avail_not_full  : std_logic;
 
   -- consume indication from WSI to SDP, to trigger "local buffer is now empty" flag
-  signal buffer_consumed    : bool_t;         -- pulse for buffer consumption from wsi side
+  signal buffer_consumed : bool_t;         -- pulse for buffer consumption from wsi side
 
   --------------------------------------------------------------------------------
   -- Signals and definitions for talking to the SDP side
@@ -90,8 +90,33 @@ architecture rtl of sdp_receive_worker is
   signal md_enq          : bool_t;
 
   ---- Global state
-  signal sdp_reset_n       : std_logic;
+  signal sdp_reset_n     : std_logic;
+  ---- Trace buffer/debug
+  --signal trace_value : std_logic_vector(ulong_t'range);
+  --signal trace_give  : bool_t;
+  --signal status      : ulong_t;
+  --signal status_dma  : ulong_t;
 begin
+  --props_out.status_dma <= status_dma;
+  --trace : component util.util.trace_buffer_ulong
+  --  generic map(depth => traceLength)
+  --  port map(clk => ctl_in.clk,
+  --           reset => ctl_in.reset,
+  --           input => trace_value,
+  --           give  => trace_give,
+  --           rawin => props_in.raw,
+  --           rawout => props_out.raw);
+  --trace_give  <= sdp_in.sdp.valid and status_dma(3);
+  --trace_value <= from_ulong(status_dma);
+  --props_out.status <= to_ulong(
+  --                             slv(md_out.length(15 downto 0)) & -- 16
+  --                             std_logic_vector(status(7 downto 0)) & -- 8
+  --                             slv0(3) &
+  --                             slv(out_in.ready) &
+  --                             slv(avail_not_empty) &
+  --                             avail_out_slv &
+  --                             slv(md_not_empty) &
+  --                             from_bool(to_bool(wsi_dws_left = 0)));
   --------------------------------------------------------------------------------
   -- modules instantiated for synchronization between the SDP and the WSI
   --------------------------------------------------------------------------------
@@ -245,8 +270,9 @@ g0: for i in 0 to sdp_width_c-1 generate
         wsi_buffer_index_r <= (others => '0');
         wsi_buffer_addr_r  <= (others => '0');
         operating_r        <= bfalse;
-        faults_r            <= (others => '0');
+        faults_r           <= (others => '0');
         wsi_starting_r     <= btrue;
+--        status             <= (others => '0');
       elsif not operating_r then
         -- initialization on first transition to operating.  poor man's "start".
         if its(ctl_in.is_operating) then
@@ -259,6 +285,9 @@ g0: for i in 0 to sdp_width_c-1 generate
       elsif not ctl_in.is_operating then
         operating_r <= bfalse;
       else
+        --if its(buffer_consumed) then
+        --  status <= status + 1;
+        --end if;
         if md_enq and not its(md_not_full) then
           faults_r(2) <= btrue;
         elsif length_enq and not its(length_not_full) then
@@ -316,6 +345,7 @@ g0: for i in 0 to sdp_width_c-1 generate
                  bramb_in         => bramb_in,
                  bramb_write      => bramb_write,
                  bramb_addr       => bramb_addr,
+--                 status           => status_dma,
                  -- inputs from SDP
                  sdp_in           => sdp_in,
                  sdp_in_data      => sdp_in_data,

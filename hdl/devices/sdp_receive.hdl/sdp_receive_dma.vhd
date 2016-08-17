@@ -54,6 +54,7 @@ entity sdp_receive_dma is
            bramb_in         : out dword_array_t(0 to sdp_width-1);
            bramb_write      : out bool_array_t(0 to sdp_width-1);
            bramb_addr       : out unsigned(width_for_max(memory_depth - 1)-1 downto 0);
+--           status           : out ulong_t;
            -- inputs from SDP
            sdp_in          : in  m2s_t;
            sdp_in_data     : in  dword_array_t(0 to sdp_width-1);
@@ -131,14 +132,35 @@ architecture rtl of sdp_receive_dma is
   signal faults_r            : uchar_t;
   subtype buffer_idx_t is unsigned(count_width_c-2 downto 0);
   signal sdp_am_buffer_idx   : buffer_idx_t;
-  signal read_complete       : bool_t;
-  signal read_accepted       : bool_t;
+  signal read_starting       : bool_t; -- next cycle will be a read request
+  signal reading_r           : bool_t; -- a read is being issued waiting to be accepted
+  signal read_accepted       : bool_t; -- last cycle of a read request
+  signal read_complete       : bool_t; -- cycle when the last data for a read has arrived
+  signal flag_needed         : bool_t; -- a flag cycle is needed
+  signal flagging            : bool_t; -- a flag cycle is in progress
+  signal flagging_r          : bool_t; -- a flag write is being issues waiting to be accepted
+  signal flag_accepted       : bool_t; -- a flag request is being accepted
   signal taking              : bool_t;
-  signal reading             : bool_t;
-  signal flag_accepted       : bool_t;
   signal rem_last_buffer_idx : uchar_t;
   signal lcl_last_buffer_idx : buffer_count_t;
+  --signal status1_r            : uchar_t;
+  --signal status2_r            : uchar_t;
+  --signal status3_r            : uchar_t;
+  --signal status4_r            : uchar_t;
+  procedure incdec(signal s: inout unsigned; inc : bool_t; dec : bool_t) is begin
+    if inc and not its(dec) then
+      s <= s + 1;
+    end if;
+    if dec and not its(inc) then
+      s <= s - 1;
+    end if;
+  end incdec;
 begin
+  --status <= to_ulong(std_logic_vector(sdp_am_addr (11 downto 0)) & -- 12
+  --                   std_logic_vector(sdp_am_last_r(to_integer(sdp_am_buffer_idx))(11 downto 0)) & -- 12
+  --                   std_logic_vector(sdp_am_buffer_idx) & "0" &  -- 2
+  --                   slv(sdp_in.sdp.eop) &
+  --                   slv(taking) & slv(read_complete) & slv(sending_flag) & slv(flag_accepted));
   --------------------------------------------------------------------------------
   -- Bookkeeping for buffers
   --------------------------------------------------------------------------------
@@ -184,22 +206,24 @@ begin
                        read_complete;
   faults            <= faults_r;
   --------------------------------------------------------------------------------
-  -- Mastering the SDP to issue requests
+  -- Mastering the SDP to issue requests - either read requests or flag writes
   --------------------------------------------------------------------------------
-  -- One of these two signals are true when we are issuing/mastering an SDP request
-  sending_flag      <= to_bool(flags_to_send_r /= 0 or buffer_consumed)
-                       when role = activeflowcontrol_e else
-                       to_bool(flags_to_send_r /= 0 or read_complete);
-  reading           <= to_bool(role = activemessage_e and length_not_empty and
-                               lcl_buffers_empty_r /= 0);
-  -- One of these are true when a request has been accepted.
-  read_accepted     <= reading and sdp_in.sdp.ready;
-  flag_accepted     <= to_bool(its(sending_flag) and sdp_in.sdp.ready);
+  -- Note there will be one cycle between reads to allow the length-dequeue to happen
+  -- Note also that the length will be non-zero.  ZLMs are optimized at the upper level
+  read_starting <= to_bool(role = activemessage_e and
+                           length_not_empty and lcl_buffers_empty_r /= 0 and
+                           not its(reading_r) and not its(flagging_r));
+  read_accepted <= reading_r and sdp_in.sdp.ready;
+  -- Flags are different than reads - they can happen in one cycle, and don't need idles
+  -- Reads take precedence over flags
+  flag_needed   <= to_bool(flags_to_send_r /= 0 or read_complete);
+  flagging      <= to_bool(flagging_r or (flag_needed and not its(read_starting or reading_r)));
+  flag_accepted <= flagging and sdp_in.sdp.ready;
   --------------------------------------------------------------------------------
   -- Slave (or read responses) handling
   --------------------------------------------------------------------------------
   -- The current xfer of the current read response is the last in the entire message
-  read_complete     <= to_bool(taking and
+  read_complete     <= to_bool(taking and role = activemessage_e and
                                sdp_am_addr = sdp_am_last_r(to_integer(sdp_am_buffer_idx)));
   -- We are taking a xfer from the SDP
   taking            <= sdp_in.sdp.valid and can_take;
@@ -220,21 +244,21 @@ g1: for i in 0 to sdp_width-1 generate
   -- For data arriving on sdp_in: 
   sdp_out.sdp.ready          <= taking;
   -- For flag writes and data reads leaving on sdp_out:
-  sdp_out.sdp.header.op      <= read_e when its(reading) else write_e;
+  sdp_out.sdp.header.op      <= read_e when its(reading_r) else write_e;
   sdp_out.sdp.header.xid     <= lcl_read_idx_r;   -- ignored for writes
   sdp_out.sdp.header.lead    <= (others => '0');  -- we are always aligned on a DW
   sdp_out.sdp.header.trail   <= (others => '0');  -- we always send whole DWs
-  sdp_out.sdp.header.count   <= (others => '0') when its(sending_flag) else
+  sdp_out.sdp.header.count   <= (others => '0') when its(flagging) else
                                 resize(length_out - 1, count_t'length);
   sdp_out.sdp.header.node    <= sdp_in.id;
   sdp_out.sdp.header.addr    <= rem_read_addr_r(addr_width-1 downto 0)
-                                when its(reading) else
+                                when its(reading_r) else
                                 rem_flag_addr_r(addr_width-1 downto 0);
   sdp_out.sdp.header.extaddr <= rem_read_addr_r(whole_addr_bits_c-1 downto addr_width)
-                                when its(reading) else
+                                when its(reading_r) else
                                 rem_flag_addr_r(whole_addr_bits_c-1 downto addr_width);
   sdp_out.sdp.eop            <= btrue;
-  sdp_out.sdp.valid          <= sending_flag or reading;
+  sdp_out.sdp.valid          <= flagging or reading_r;
   sdp_out.dropCount          <= (others => '0');
 g2: for i in 0 to sdp_width-1 generate
     sdp_out_data(i) <= slvn(1, dword_size) when i = 0 else (others => '0');
@@ -264,6 +288,12 @@ g2: for i in 0 to sdp_width-1 generate
         flags_to_send_r     <= (others => '0');
         sdp_am_addr_r       <= (others => (others => '0')); --for cleaner sim
         sdp_am_last_r       <= (others => (others => '0')); --for cleaner sim
+        flagging_r          <= bfalse;
+        reading_r           <= bfalse;
+        --status1_r           <= (others => '0');
+        --status2_r           <= (others => '0');
+        --status3_r           <= (others => '0');
+        --status4_r           <= (others => '0');
       elsif not operating then
         -- reset state that depends on properties
 --        rem_buffers_empty_r <= resize(rem_buffer_count, rem_buffers_empty_r'length);
@@ -277,25 +307,15 @@ g2: for i in 0 to sdp_width-1 generate
         if length_not_empty and not its(avail_not_full) then
           faults_r(7) <= btrue;
         end if;
-        -- Maintain remote flag addressing
-        -- Note remote flags are role-dependent:
-        --   when active message we are writing to flags per remote buffer
-        --   when active flow control we are writing to flags per local buffer
-        if its(flag_accepted) then
-          if (role = activeflowcontrol_e and rem_buffer_idx_r = lcl_last_buffer_idx) or
-             (role = activemessage_e and rem_buffer_idx_r = rem_last_buffer_idx) then
-            rem_buffer_idx_r <= (others => '0');
-            rem_flag_addr_r  <= rem_flag_addr(rem_flag_addr_r'left+2 downto 2);
-          else
-            rem_buffer_idx_r <= rem_buffer_idx_r + 1;
-            rem_flag_addr_r  <= rem_flag_addr_r + rem_flag_pitch(31 downto 2);
-          end if;
-        end if;
-        -- Maintain read addressing for ActiveMessage mode
-        if its(read_accepted) then
+        -- Active Message processing for reads
+        if its(read_starting) then
+          reading_r <= btrue;
           sdp_am_addr_r(to_integer(lcl_read_idx_r)) <= lcl_response_addr_r;
           sdp_am_last_r(to_integer(lcl_read_idx_r)) <=
             resize(lcl_response_addr_r + length_out - 1, sdp_addr_t'length);
+        end if;
+        if its(read_accepted) then
+          reading_r <= bfalse; -- yes, there will be a dead cycle between reads
           -- Local side bookkeepping
           if lcl_read_idx_r = lcl_last_buffer_idx then
             lcl_read_idx_r      <= (others => '0');
@@ -313,35 +333,55 @@ g2: for i in 0 to sdp_width-1 generate
             rem_read_addr_r     <= rem_read_addr_r + rem_data_pitch(31 downto 2);
           end if;
         end if;
+        -- Maintain remote flag addressing
+        -- Note remote flags are role-dependent:
+        --   when active message we are writing to flags per remote buffer
+        --   when active flow control we are writing to flags per local buffer
+        if its(flag_accepted) then
+          flagging_r <= bfalse;
+--          status1_r <= status1_r + 1;
+          if (role = activeflowcontrol_e and rem_buffer_idx_r = lcl_last_buffer_idx) or
+             (role = activemessage_e and rem_buffer_idx_r = rem_last_buffer_idx) then
+            rem_buffer_idx_r <= (others => '0');
+            rem_flag_addr_r  <= rem_flag_addr(rem_flag_addr_r'left+2 downto 2);
+          else
+            rem_buffer_idx_r <= rem_buffer_idx_r + 1;
+            rem_flag_addr_r  <= rem_flag_addr_r + rem_flag_pitch(31 downto 2);
+          end if;
+        elsif its(flagging) then
+          flagging_r <= btrue;
+        end if;
         -- Maintain buffer empty count and queued consumption events (AFC only)
         case role is
           when activeflowcontrol_e|passive_e =>                            
-            if its(buffer_consumed) then
-              if not flag_accepted then
-                flags_to_send_r <= flags_to_send_r + 1;
-              end if;
-              if not length_not_empty then
-                lcl_buffers_empty_r <= lcl_buffers_empty_r + 1;
-              end if;
-            else
-              if its(flag_accepted) then
-                flags_to_send_r <= flags_to_send_r - 1;
-              end if;
-              if its(length_not_empty) then
-                lcl_buffers_empty_r <= lcl_buffers_empty_r - 1;
-              end if;
-            end if;
+            incdec(flags_to_send_r, buffer_consumed, flag_accepted);
+            incdec(lcl_buffers_empty_r, buffer_consumed, length_not_empty);
+            --if its(buffer_consumed) then
+            --  if not flag_accepted then
+            --    flags_to_send_r <= flags_to_send_r + 1;
+            --  end if;
+            --  if not length_not_empty then
+            --    lcl_buffers_empty_r <= lcl_buffers_empty_r + 1;
+            --  end if;
+            --else
+            --  if its(flag_accepted) then
+            --    flags_to_send_r <= flags_to_send_r - 1;
+            --  end if;
+            --  if its(length_not_empty) then
+            --    lcl_buffers_empty_r <= lcl_buffers_empty_r - 1;
+            --  end if;
+            --end if;
           when activemessage_e =>
-            if its(buffer_consumed) then
-              if not(read_complete) then
-                lcl_buffers_empty_r <= lcl_buffers_empty_r + 1;
-              end if;
-            elsif its(read_accepted) then
-              lcl_buffers_empty_r <= lcl_buffers_empty_r - 1;
-            end if;                
-            if flag_accepted and flags_to_send_r /= 0 then
-              flags_to_send_r <= flags_to_send_r - 1;
-            end if;
+            incdec(lcl_buffers_empty_r, buffer_consumed, read_accepted);
+            incdec(flags_to_send_r, read_complete, flag_accepted);
+            --if buffer_consumed and not its(read_accepted) then
+            --    lcl_buffers_empty_r <= lcl_buffers_empty_r + 1;
+            --elsif not its(buffer_consumed) and read_accepted then
+            --    lcl_buffers_empty_r <= lcl_buffers_empty_r - 1;
+            --end if;
+            --if flag_accepted and not its(read_complete) and flags_to_send_r /= 0 then
+            --  flags_to_send_r <= flags_to_send_r - 1;
+            --end if;
         end case;
         -- Deal with incoming writes or read responses
         if its(taking) then
@@ -350,14 +390,20 @@ g2: for i in 0 to sdp_width-1 generate
           else
             sdp_dws_left_r <= sdp_dws_left_r - dws_in_xfer;
           end if;
---          if sdp_dws_left = 0 then -- not accurate or valid on responses
+          --if its(read_complete) then
+          --  if its(sdp_in.sdp.eop) then
+          --    status2_r <= status2_r + 1;
+          --  else
+          --    status3_r <= status3_r + 1;
+          --  end if;
+          --end if;
           if its(sdp_in.sdp.eop) then
             sdp_starting_r <= btrue;
             if role = activemessage_e then
-              if sdp_addr = sdp_am_last_r(to_integer(sdp_am_buffer_idx)) then
-                -- end of read responses for a message.
-                -- need to: inform WSI avail_enq and inform producer its buffer is empty
+              if its(read_complete) then -- last read response for a message
+                -- If the flag transfer for this read completion is not immediate, queue it up
                 if not flag_accepted then
+--                  status4_r <= status4_r + 1;
                   flags_to_send_r <= flags_to_send_r + 1;
                 end if;
               end if;

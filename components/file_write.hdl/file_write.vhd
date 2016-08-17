@@ -80,7 +80,7 @@ begin
                 write(data_file, char(to_ulong(new_msg_length),i));
               end loop;
               for i in 0 to 3 loop
-                write(data_file, char(to_ulong(in_in.opcode), i));
+                write(data_file, char(ulong_t(resize(unsigned(std_logic_vector(in_in.opcode)), ulong_t'length)), i));
               end loop;
               for i in 0 to new_msg_length-1 loop
                 write(data_file, msg_buffer(i));   

@@ -508,8 +508,10 @@ end from_string;
 function from_string(s : string_t) return string is
   variable v: string(1 to s'length-1);
 begin
+--  report "from_string " & integer'image(s'length);
   for i in 0 to s'right-1 loop
-    v(i+1) := character'val(to_integer(s(i)));
+--    report "from_string1 " & integer'image(i) & " " & integer'image(to_integer(s(i)));
+    v(i+1) := character'val(to_integer(unsigned(from_char(s(i)))));
   end loop;
   return v;
 end from_string;

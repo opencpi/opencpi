@@ -28,8 +28,19 @@ component BRAM2
            DIB        : in  std_logic_vector(DATA_WIDTH-1 downto 0);
            DOB        : out std_logic_vector(DATA_WIDTH-1 downto 0));
 end component BRAM2;
+-- 32 bit wide trace buffer.
+component trace_buffer_ulong
+  generic (depth : ulong_t);      -- expect parameter value
+  port  (clk : in std_logic;
+         reset : in bool_t;
+         input : in std_logic_vector(ulong_t'range);  -- input values
+         give  : in bool_t;       -- worker is giving new value this clock cycle
+         rawin : in ocpi.wci.raw_in_t;  -- wire to raw interface
+         rawout : out ocpi.wci.raw_out_t); -- wire to raw interface
+end component trace_buffer_ulong;
+    
 --- CWD support during simulation
-constant cwd_length : natural := 100;
+constant cwd_length : natural := 256;
 
 component cwd is
    generic(length     : natural := cwd_length);

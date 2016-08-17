@@ -1,7 +1,11 @@
-<HdlDevice language="vhdl" spec='sdp-spec'>
+<HdlDevice language="vhdl" spec='sdp-spec'>  <!-- firstRawProperty='trace'> -->
   <sdp name='sdp'/>
   <streaminterface implname='out' producer='1'
 		   datawidth='sdp_width*32' numberofopcodes='256' datavaluewidth='8'
 		   zerolengthmessages='true'/>
 <!-- when this is supported:  preciseburst='1'-->
+  <!-- <property name='status' volatile='1'/> -->
+  <!-- <property name='status_dma' volatile='1'/> -->
+  <!-- <property name='traceLength' parameter='1' default='2k'/> -->
+  <!-- <property name='trace' type='ulong' volatile='1' sequencelength='tracelength'/> -->
 </HdlDevice>

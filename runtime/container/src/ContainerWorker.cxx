@@ -270,7 +270,8 @@ namespace OCPI {
 	    memcpy(data, cache, nBytes);
 	  else
 	    getPropertyBytes(info, info.m_offset, data, nBytes); // include length field
-	  if (info.m_baseType == OA::OCPI_Struct) {
+	  //	  if (info.m_baseType == OA::OCPI_Struct)
+	  {
 	    const uint8_t *tmp = data;
 	    size_t length = nBytes;
 	    // The writer creates its own value objects...
@@ -283,8 +284,9 @@ namespace OCPI {
 	    vp->unparse(value, NULL, add, hex);
 	    delete vp;
 	    return; // FIXME - see above
-	  } else
-	    v.m_pUChar = data;
+	  }
+	  // else
+	  //v.m_pUChar = data + (info.m_isSequence ? info.m_dataAlign : 0);
 	}
       } else if (info.m_baseType == OA::OCPI_String) {
 	// FIXME: modularity violation
