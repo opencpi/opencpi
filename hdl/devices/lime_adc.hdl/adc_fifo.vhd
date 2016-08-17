@@ -6,7 +6,7 @@ library IEEE, ocpi, bsv;
 use IEEE.std_logic_1164.all, ieee.numeric_std.all, ocpi.types.all, ocpi.util.all;
 entity adc_fifo is
   generic (width : positive := 32;
-           depth : positive := 64);
+           depth : positive := 8096);
   port (-- WSI side signals for WSI input, in its clk domain
         clk         : in  std_logic;
         reset       : in  bool_t;
@@ -57,7 +57,7 @@ begin
 
   -- Synchronizing FIFO from the WSI input clock domain to the ADC clock domain
   fifo_s_reset_n <= not adc_reset;
-  fifo_s_enq     <= fifo_s_not_full and adc_give;
+  fifo_s_enq     <= fifo_s_not_full and adc_give and operating;
   fifo : bsv.bsv.SyncFIFO
     generic map (dataWidth => width,
                  depth     => depth,

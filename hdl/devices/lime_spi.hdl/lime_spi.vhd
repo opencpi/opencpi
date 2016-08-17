@@ -20,7 +20,7 @@ architecture rtl of lime_spi_worker is
   signal raw_out    : wci.raw_prop_in_t;
 begin
   -- Assert chip reset if system is reset or both clients are reset, chip reset as asserted low
-  RESET        <= not (wci_Reset or raw_in.reset);
+  RESET        <= not (raw_in.reset);
   lsb          <= 8 * to_integer(raw_in.raw.address(1 downto 0));
   -- These are temp signals because Xilinx isim can't put them as actuals
   wdata        <= raw_in.raw.data(lsb + 7 downto lsb);
