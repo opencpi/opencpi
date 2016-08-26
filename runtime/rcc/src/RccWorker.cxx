@@ -337,10 +337,8 @@ Worker::
      throw OU::EmbeddedException( OU::PORT_COUNT_MISMATCH,
 				  "optional port mask is invalid",
 				  OU::ApplicationRecoverable);
-
-   // Set up the default run condition, used when the user specifies none, either initially
-   // in the RCCDispatch, or dynamically in the RCCContext
-   m_defaultRunCondition.initDefault(m_nPorts);
+   // Note here that the default constructor for m_defaultRunCondition makes it the default
+   // run condition
    if (wd && wd->runCondition) {
      for (RCCPortMask *pm = wd->runCondition->portMasks; pm && *pm; pm++)
        if (~ourMask & *pm)
@@ -626,7 +624,7 @@ run(bool &anyone_run) {
       break;
     }
     // If no port masks, then we don't run except for timeouts, checked above
-    if (!m_runCondition->m_portMasks[0])
+    if (m_runCondition->m_portMasks[0] == RCC_NO_PORTS)
       if (m_runCondition->m_timeout && !hasRun) {
 	hasRun = true;
 	break; // run if we're in period execution and haven't run at all yet
@@ -644,11 +642,11 @@ run(bool &anyone_run) {
     if (!readyMask)
       return;
     // See if any of our masks are satisfied
-    RCCPortMask *pmp;
-    for (pmp = m_runCondition->m_portMasks; *pmp; pmp++)
-      if ((*pmp & readyMask) == *pmp)
+    RCCPortMask *pmp, pm = 0;
+    for (pmp = m_runCondition->m_portMasks; (pm = *pmp); pmp++)
+      if ((pm & readyMask) == (pm & ~(RCC_ALL_PORTS << m_nPorts)))
 	break;
-    if (!*pmp)
+    if (!pm)
       return;
   } while (0);
   assert(enabled);
@@ -1304,7 +1302,8 @@ OCPI_CONTROL_OPS
      if (m_rccBuffer->isNew_)
        initBuffer();
      if (m_opCodeSet && op != m_rccBuffer->opCode_)
-       throw OU::Error("opcodes cannot be changed after being set, exlicitly or implicitly");
+       throw OU::Error("opcodes cannot be changed after being set, explicitly or implicitly "
+		       "(was %d, requested %d)", m_rccBuffer->opCode_, op);
      m_rccBuffer->opCode_ = op;
      m_opCodeSet = true;
    }
@@ -1320,16 +1319,38 @@ OCPI_CONTROL_OPS
    ~RCCUserSlave() {
    }
 #endif
+#ifndef NBBY
+#define NBBY 8
+#endif
    RunCondition::
    RunCondition()
      : m_portMasks(m_myMasks), m_timeout(false), m_usecs(0), m_allocated(NULL), m_allMasks(0) {
-     m_myMasks[0] = 0;
+     m_myMasks[0] = RCC_ALL_PORTS; // all connected ports must be ready
+     m_myMasks[1] = 0;
+     m_allMasks = m_myMasks[0];
    }
    RunCondition::
    RunCondition(RCCPortMask pm, ...) :
      m_timeout(false), m_usecs(0), m_allocated(NULL), m_allMasks(0) {
      va_list ap;
      va_start(ap, pm);
+     initMasks(ap);
+     va_end(ap);
+     va_start(ap, pm);
+     setMasks(pm, ap);
+     va_end(ap);
+   }
+   RunCondition::
+   RunCondition(RCCPortMask *rpm, uint32_t usecs, bool timeout)
+     : m_portMasks(NULL), m_timeout(timeout), m_usecs(usecs), m_allocated(NULL), m_allMasks(0) {
+     setPortMasks(rpm);
+   }
+   RunCondition::
+   ~RunCondition() {
+     delete [] m_allocated;
+   }
+   void RunCondition::
+   initMasks(va_list ap) {
      unsigned n;
      RCCPortMask m;
      for (n = 2; (m = va_arg(ap, RCCPortMask)); n++)
@@ -1338,24 +1359,42 @@ OCPI_CONTROL_OPS
        m_portMasks = m_allocated = new RCCPortMask[n];
      else
        m_portMasks = m_myMasks;
+   }
+   void RunCondition::
+   setMasks(RCCPortMask first, va_list ap) {
+     RCCPortMask
+       *pms = m_portMasks,
+       m = first;
+     do {
+       *pms++ = m;
+       m_allMasks |= m;
+     } while ((m = va_arg(ap, RCCPortMask)));
+     *pms++ = 0;
+   }
+   void RunCondition::
+   setPortMasks(RCCPortMask pm, ...) {
+     delete [] m_allocated;
+     m_allocated = NULL;
+     m_allMasks = 0;
+     va_list ap;
+     va_start(ap, pm);
+     initMasks(ap);
      va_end(ap);
      va_start(ap, pm);
-     RCCPortMask *pms = m_portMasks;
-     m = pm;
-     do {
-	*pms++ = m;
-	m_allMasks |= m;
-      } while ((m = va_arg(ap, RCCPortMask)));
-      *pms++ = 0;
+     setMasks(pm, ap);
+     va_end(ap);
    }
-   RunCondition::
-   RunCondition(RCCPortMask *rpm, uint32_t usecs, bool timeout)
-     : m_portMasks(NULL), m_timeout(timeout), m_usecs(usecs), m_allocated(NULL), m_allMasks(0) {
+   void RunCondition::
+   setPortMasks(RCCPortMask *rpm) {
+     delete [] m_allocated;
+     m_allocated = NULL;
+     m_allMasks = 0;
+     m_portMasks = NULL;
      if (rpm) {
        unsigned n;
        for (n = 0; rpm[n]; n++)
 	 ;
-       if (n <= sizeof(m_myMasks)/sizeof(RCCPortMask))
+       if (n >= sizeof(m_myMasks)/sizeof(RCCPortMask))
 	 m_portMasks = m_allocated = new RCCPortMask[n + 1];
        else
 	 m_portMasks = m_myMasks;
@@ -1366,10 +1405,6 @@ OCPI_CONTROL_OPS
 	 m_allMasks |= m;
        } while (m);
      }
-   }
-   RunCondition::
-   ~RunCondition() {
-     delete [] m_allocated;
    }
   }
 }

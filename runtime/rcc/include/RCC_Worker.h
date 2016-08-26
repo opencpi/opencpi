@@ -122,6 +122,7 @@ namespace OCPI {
     class Application;
   }
   namespace RCC {
+    class Worker;
 #endif
 
 typedef uint16_t  RCCOrdinal;
@@ -149,6 +150,8 @@ typedef uint64_t  RCCTime;
 #define RCC_NO_EXCEPTION (0)
 #define RCC_SYSTEM_EXCEPTION (1)
 #define RCC_NO_ORDINAL ((RCCOrdinal)(-1))
+#define RCC_ALL_PORTS (~(RCCPortMask)0)
+#define RCC_NO_PORTS ((RCCPortMask)0)
 
 typedef enum {
   RCC_OK,
@@ -170,13 +173,18 @@ typedef struct {
 } RCCRunCondition;
 
 #ifdef __cplusplus
-struct RunCondition {
+class RunCondition {
+  friend class OCPI::RCC::Worker;
+ public:
   RCCPortMask *m_portMasks;  // the masks used for checking
-  RCCPortMask  m_myMasks[3]; // non-allocated masks used almost all the time
   RCCBoolean   m_timeout;    // is timeout enabled?
   uint32_t     m_usecs;      // usecs of timeout, zero is valid
+ private:
+  RCCPortMask  m_myMasks[3]; // non-allocated masks used almost all the time
   RCCPortMask *m_allocated;  // NULL or allocated
+ protected:
   RCCPortMask  m_allMasks;   // summary of all masks in the list
+ public:
   // Constructors
   // Default constructor: no timeout, all ports must be ready
   RunCondition();
@@ -186,14 +194,6 @@ struct RunCondition {
   // This allows the specification of a mask array (which can be nullptr) and a timeout.
   RunCondition(RCCPortMask*, uint32_t usecs = 0, bool timeout = false);
   ~RunCondition();
-  // initialize the default run condition, given how many ports there are
-  // assume default contructor has already been run
-  inline void initDefault(unsigned nPorts) {
-    m_myMasks[0] = ~(-1 << nPorts);
-    m_myMasks[1] = 0;
-    m_portMasks = nPorts ? m_myMasks : NULL;
-    m_allMasks = m_myMasks[0];
-  }
   // Compatibility hack to support older C-langage run conditions
   inline void setRunCondition(const RCCRunCondition &crc) {
     m_portMasks = crc.portMasks;
@@ -210,6 +210,11 @@ struct RunCondition {
   // Enable the tinmeout, without changing its value
   inline void enableTimeout() { m_timeout = true; }
   inline void setTimeout(uint32_t usecs) { m_usecs = usecs; }
+  void setPortMasks(RCCPortMask first, ...);
+  void setPortMasks(RCCPortMask *);
+ private:
+  void initMasks(va_list ap);
+  void setMasks(RCCPortMask first, va_list ap);
 };
 #endif
 typedef RCCResult RCCMethod(RCCWorker *_this);
