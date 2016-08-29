@@ -519,7 +519,7 @@ namespace OCPI {
 	  break;
 	// Allow hex values without a minus to include the sign bit
 	if (bits && !minus && s[0] == '0' && s[1] == 'x' && // if hex and not minus
-	    (uval & (1 << (bits-1)))) {                     //  if sign bit set
+	    (uval & ((uint64_t)1 << (bits-1)))) {                     //  if sign bit set
 	  if (bits == 64)
 	    val = (int64_t)uval;
 	  else if (uval & (~(uint64_t)0 << bits)) // if it has invalid high order bits

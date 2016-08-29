@@ -17,7 +17,7 @@ Properties:
     <property name='continuous' type='bool' readable='true' initial='true'/>
     <property name='stepThruMsg' type='bool' readable='true' writable='true'/>
     <property name='stepNow' type='bool' volatile='true' writable='true'/>
-    <property name='messageSize' type='ulong' readable='true'/>
+    <property name='messageSize' type='ulong' readable='true' initial='true'/>
     <property name='bytesRead' type='uLongLong' volatile='true'/>
     <property name='messagesWritten' type='uLongLong' volatile='true'/>
 

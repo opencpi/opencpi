@@ -3,7 +3,7 @@ export OCPI_TARGET_CFLAGS="-Wall -Wfloat-equal -Wextra  -fno-strict-aliasing -Wc
 export OCPI_TARGET_CXXFLAGS="-Wextra -Wall -Wfloat-equal -fno-strict-aliasing -Wconversion -Wwrite-strings -Wno-sign-conversion"
 
 export OCPI_BASE_DIR=`pwd`
-export OCPI_CDK_DIR=$OCPI_BASE_DIR/ocpi
+export OCPI_CDK_DIR=$OCPI_BASE_DIR/exports
 # For backward compatibility, we default to explicit modelessness
 export OCPI_TOOL_MODE=
 export OCPI_TARGET_MODE=

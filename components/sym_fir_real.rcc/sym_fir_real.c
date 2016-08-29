@@ -107,7 +107,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
 	self->container.send( out, &in->current, in->input.u.operation, in->input.length);
 	return RCC_OK;
       }
-      else {
+      else if (in->input.length) {
 	unsigned i;
 	double gain = Gain( p->gain);
 	unsigned len = byteLen2Real(in->input.length) - UnRoll;
