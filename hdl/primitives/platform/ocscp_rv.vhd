@@ -58,6 +58,7 @@ architecture rtl of ocscp_rv is
   signal   response_r          : worker_response_t; -- captured response
   signal   data_r              : dword_t;           -- captured data
   signal   timeout_r           : unsigned(2**worker_timeout_t'length - 1 downto 0);
+  signal   timedout_r          : bool_t;
   signal   scratch20_r         : dword_t;
   signal   scratch24_r         : dword_t;
   signal   reset_r             : bool_t; -- master reset
@@ -123,7 +124,7 @@ begin
   workers_out.clk           <= cp_in.clk;
   workers_out.reset         <= cp_in.reset or reset_r;
   -- We don't allow the log timeout value to be 0, so 1 is always the timedout value
-  workers_out.timedout      <= to_bool(timeout_r = 1);
+  workers_out.timedout      <= timedout_r;
   workers_out.is_big_endian <= big_endian_r;
   -- Drive the reset from the pipeline register
   workers_out.cmd           <= workers_out_r.cmd;
@@ -201,6 +202,7 @@ begin
 --        first_r          <= '0';
         reading_r        <= '0';
         timeout_r        <= (others => '0');
+        timedout_r       <= bfalse;
         response_r       <= none_e;
         reset_r          <= '0'; -- master reset for all workers defaults OFF
         big_endian_r     <= '0';
@@ -240,7 +242,9 @@ begin
 --          timeout_r(to_integer(unsigned(worker_in.timeout))) <= '1';
 --        elsif timeout_r /= 1 then
         timeout_r <= timeout_r - 1;
---        end if;
+        if timeout_r = 1 then
+          timedout_r <= btrue;
+        end if;
         if is_admin then
           if not reading_r then
             -- Writable admin registers
@@ -263,6 +267,7 @@ begin
           active_r         <= '0';
           reading_r        <= '0';
           timeout_r        <= (others => '0');
+          timedout_r       <= '0';
           workers_out_r.id <= (others => '1');
         end if;
         if reset_count_r /= 0 then

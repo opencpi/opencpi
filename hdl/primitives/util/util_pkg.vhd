@@ -12,7 +12,7 @@ component ROM
 end component ROM;
 
 --- CWD support during simulation
-constant cwd_length : natural := 100;
+constant cwd_length : natural := 256;
 
 component cwd is
    generic(length     : natural := cwd_length);
