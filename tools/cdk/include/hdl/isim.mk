@@ -106,11 +106,11 @@ IsimArgs=-v 2 -work $(call ToLower,$(WorkLib))=$(WorkLib) $(IsimLibs)
 HdlToolCompile=\
   $(call XilinxInit,);\
   $(call OcpiDbgVar,IsimFiles,htc) $(call OcpiDbgVar,SourceFiles,htc) $(call OcpiDbgVar,CompiledSourceFiles,htc)\
-  $(and $(filter %.vhd,$(IsimFiles)),\
-    vhpcomp $(IsimArgs) $(filter %.vhd,$(IsimFiles)) ;)\
   $(and $(filter %.v,$(IsimFiles))$(findstring $(HdlMode),platform),\
     vlogcomp $(MyIncs) $(IsimArgs) $(filter %.v,$(IsimFiles)) \
        $(and $(findstring $(HdlMode),platform), $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v) ;) \
+  $(and $(filter %.vhd,$(IsimFiles)),\
+    vhpcomp $(IsimArgs) $(filter %.vhd,$(IsimFiles)) ;)\
   $(if $(filter worker platform config assembly,$(HdlMode)),\
     $(if $(HdlNoSimElaboration),, \
       echo verilog work $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v \

@@ -51,8 +51,8 @@ architecture rtl of ocscp_rv is
   signal   attention           : word64_t;
   signal   admin_control       : dword_t;
   -- Our state
+  signal   is_admin_r          : boolean; -- pipelined for timing
   signal   active_r            : bool_t; -- pipelined "cp_in.valid"
---  signal   first_r             : bool_t; -- first active cycle
   signal   reading_r           : bool_t;
   signal   workers_out_r       : worker_in_t;
   signal   response_r          : worker_response_t; -- captured response
@@ -72,6 +72,7 @@ architecture rtl of ocscp_rv is
   signal   magic1              : dword_t;
   signal   operation           : worker_operation_t; -- what op is in progress or starting
   signal   cmd                 : ocp.MCmd_t;
+  signal   worker_data_source  : worker_data_source_t;
 begin
   magic0 <= OCCP_MAGIC_0
             when ocpi_endian = little_e or (ocpi_endian = dynamic_e and not its(big_endian_r))
@@ -90,6 +91,18 @@ begin
                 address(address'left downto worker_config_bits) = "0";
   is_config  <= not is_admin and not is_control and
                 (address(cp_in.address'left downto worker_config_bits) <= nWorkers);
+  -- pre-decode which data source inside the worker
+  worker_data_source <=
+    status_e
+      when operation = control_read_e and cp_in.address(3 downto 0) = slvn(8,4) else
+    control_e
+      when operation = control_read_e and cp_in.address(3 downto 0) = slvn(9,4) else
+    last_addr_e
+      when operation = control_read_e and cp_in.address(3 downto 0) = slvn(10,4) else
+    window_e
+      when operation = control_read_e and cp_in.address(3 downto 0) = slvn(12,4) else
+    sdata_e;
+
   -- Low order address bit determination
   with byte_en select
     lowbits <= "01" when "0010",
@@ -129,6 +142,7 @@ begin
   -- Drive the reset from the pipeline register
   workers_out.cmd           <= workers_out_r.cmd;
   workers_out.address       <= workers_out_r.address;
+  workers_out.source        <= workers_out_r.source;
   workers_out.id            <= workers_out_r.id;
   workers_out.is_config     <= workers_out_r.is_config;
   workers_out.byte_en       <= workers_out_r.byte_en;
@@ -169,9 +183,9 @@ begin
     OCCP_SUCCESS_RESULT when worker_in.response = ok_e and workers_out.operation = control_op_e else
     worker_in.data;
   cp_out.take  <= to_bool(active_r and reset_count_r = 0 and
-                          (is_admin or response_r /= none_e) and
+                          (is_admin_r or response_r /= none_e) and
                           (not its(reading_r) or cp_in.take));
-  cp_out.valid <= to_bool(reading_r and (is_admin or response_r /= none_e));
+  cp_out.valid <= to_bool(reading_r and (is_admin_r or response_r /= none_e));
   cp_out.tag   <= cp_in.data(cp_out.tag'left downto 0);
 
   gen0: for i in 0 to nWkrs - 1 generate
@@ -199,7 +213,6 @@ begin
       if its(cp_in.reset) then
         -- Core state
         active_r         <= '0';
---        first_r          <= '0';
         reading_r        <= '0';
         timeout_r        <= (others => '0');
         timedout_r       <= bfalse;
@@ -212,11 +225,12 @@ begin
         workers_out_r.id <= (others => '1');
       elsif not its(active_r) and cp_in.valid = '1' then
         active_r                    <= btrue;
---        first_r                     <= btrue; -- qualified by active-r
+        is_admin_r                  <= is_admin;
         response_r                  <= none_e;
         reading_r                   <= cp_in.is_read;
         workers_out_r.cmd           <= cmd;
         workers_out_r.address       <= cp_in.address(worker_config_bits-1 downto 0) & lowbits;
+        workers_out_r.source        <= worker_data_source;
         -- This is interesting:  no sign extension, but that's ok since max id will never match anything
         workers_out_r.id            <= resize(id, workers_out_r.id'length);
         workers_out_r.is_config     <= to_bool(is_config);
@@ -236,16 +250,11 @@ begin
         -- Set the timeout counter (which is already zero), to 2^worker_timeout
         timeout_r(to_integer(worker_in_timeout)) <= '1';
       elsif its(active_r) then
---        first_r <= bfalse;
---        if its(first_r) then
---          -- 1 << timeout value
---          timeout_r(to_integer(unsigned(worker_in.timeout))) <= '1';
---        elsif timeout_r /= 1 then
         timeout_r <= timeout_r - 1;
         if timeout_r = 1 then
           timedout_r <= btrue;
         end if;
-        if is_admin then
+        if is_admin_r then
           if not reading_r then
             -- Writable admin registers
             case admin_address is
@@ -262,7 +271,7 @@ begin
           data_r           <= worker_data;
           workers_out_r.id <= (others => '1');
         end if;
-        if (is_admin or response_r /= none_e) and
+        if (is_admin_r or response_r /= none_e) and
            reset_count_r = 0 and (not its(reading_r) or cp_in.take) then
           active_r         <= '0';
           reading_r        <= '0';

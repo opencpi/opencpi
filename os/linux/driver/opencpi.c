@@ -1534,10 +1534,11 @@ opencpi_init(void) {
     opencpi_pci_registered = 1;
 #endif
 #ifdef CONFIG_ARCH_ZYNQ
-    // Register the memory range of the control plane on the PL
-    if (make_block(0x40000000, sizeof(OccpSpace), ocpi_mmio, false, 0) == NULL)
+    // Register the memory range of the control plane GP0 or GP1 on the PL
+    if (make_block(0x40000000, sizeof(OccpSpace), ocpi_mmio, false, 0) == NULL ||
+        make_block(0x80000000, sizeof(OccpSpace), ocpi_mmio, false, 0) == NULL)
       break;
-    log_debug("Control Plane physical address space for Zynq/PL/AXI GP0 slave reserved");
+    log_debug("Control Plane physical address space for Zynq/PL/AXI GP0 and GP1 slave reserved");
    {
 #if 0
      int
