@@ -194,6 +194,8 @@ class RunCondition {
   // This allows the specification of a mask array (which can be nullptr) and a timeout.
   RunCondition(RCCPortMask*, uint32_t usecs = 0, bool timeout = false);
   ~RunCondition();
+  // backward compatibility for undocumented method
+  inline void initDefault(unsigned /*nPorts*/) {}
   // Compatibility hack to support older C-langage run conditions
   inline void setRunCondition(const RCCRunCondition &crc) {
     m_portMasks = crc.portMasks;

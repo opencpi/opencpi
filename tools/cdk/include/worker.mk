@@ -50,7 +50,7 @@ ifdef Worker
   else
     override Workers:=$(Worker)
   endif
-else ifdef Workers
+else ifeq ($(origin Workers),file)
   override Worker:=$(firstword $(Workers))
 else
   override Worker:=$(CwdName)

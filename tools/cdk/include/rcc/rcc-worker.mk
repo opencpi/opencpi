@@ -81,7 +81,7 @@ ifeq ($(origin OCPI_TARGET_MODE),undefined)
   export OCPI_TARGET_MODE:=$(if $(filter 1,$(OCPI_BUILD_SHARED_LIBRARIES)),d,s)$(if $(filter 1,$(OCPI_DEBUG)),d,o)
 endif
 PatchElf=$(or $(OCPI_PREREQUISITES_INSTALL_DIR),/opt/opencpi/prerequisites)/patchelf/$(OCPI_TOOL_HOST)/bin/patchelf
-LinkBinary=$$(G$(OcpiLanguage)_LINK_$$(RccTarget)) $(SharedLibLinkOptions) -o $$@ $1 \
+LinkBinary=$$(G$(OcpiLanguage)_LINK_$$(RccTarget)) $$(SharedLibLinkOptions) -o $$@ $1 \
 $(AEPLibraries) \
 $(foreach l,$(RccLibrariesInternal) $(Libraries),\
   $(if $(findstring /,$l),\
@@ -132,12 +132,12 @@ RccParams=\
 Compile_c=\
   $$(Gc_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
   $$(CompilerWarnings) $$(CompilerOptions) \
-  $(call SharedLibCompileOptions) $$(ExtraCompilerOptionsC_$$(RccTarget)) \
+  $$(SharedLibCompileOptions) $$(ExtraCompilerOptionsC_$$(RccTarget)) \
   $(RccIncludeDirsInternal:%=-I%) -o $$@ $$(RccParams) $$<
 Compile_cc=\
   $$(Gc++_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
   $$(CompilerWarnings) $$(CompilerOptions) \
-  $(call SharedLibCompileOptions) \
+  $$(SharedLibCompileOptions) \
   $$(ExtraCompilerOptions_$$(RccTarget)) $$(ExtraCompilerOptionsCC_$$(RccTarget)) \
   $(RccIncludeDirsInternal:%=-I%) -o $$@ $$(RccParams) $$<
 Compile_cpp=$(Compile_cc)
