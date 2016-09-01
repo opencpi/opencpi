@@ -114,7 +114,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
       if ( p->bypass ) {
 	memcpy(inData,outData,in->input.length);
       }
-      else {
+      else if (in->input.length) {
 	unsigned n;
 	unsigned len = byteLen2Complex(in->input.length) - UnRoll;
 	double gain = Gain( p->gain);

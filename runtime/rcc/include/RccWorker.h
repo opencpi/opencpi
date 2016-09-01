@@ -186,6 +186,12 @@ namespace OCPI {
 	m_runCondition = &rc;
 	if (rc.m_timeout)
 	  m_runTimer.reset(rc.m_usecs / 1000000, (rc.m_usecs % 1000000) * 1000);
+	// fix up default run condition when there are no ports at all
+	if (m_nPorts == 0 && rc.m_portMasks && rc.m_portMasks[0] == RCC_ALL_PORTS)
+	  if (rc.m_timeout)
+	    rc.m_portMasks[0] = RCC_NO_PORTS;
+	  else
+	    rc.m_portMasks = NULL;
       }
 
       // Our dispatch table

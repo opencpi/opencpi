@@ -98,14 +98,13 @@ begin
              slv(attention_r) &          --  9
              sticky_r;                   --  8:0
 
-  worker_out.data    <=
-    status      when is_master and worker_in.address(5 downto 2) = slvn(8,4) else
-    control     when is_master and worker_in.address(5 downto 2) = slvn(9,4) else
-    slv0(worker_out.data'length - last_addr_r'length) &
-    last_addr_r when is_master and worker_in.address(5 downto 2) = slvn(10,4) else
-    slv0(worker_out.data'length - window_r'length) &
-    window_r    when is_master and worker_in.address(5 downto 2) = slvn(12,4) else
-    wci_in.SData;
+  -- use predecoded source from ocscp
+  with worker_in.source select worker_out.data <=
+    status                                                          when status_e,
+    control                                                         when control_e,
+    slv0(occp_data_t'length - last_addr_r'length) & last_addr_r     when last_addr_e,
+    slv0(occp_data_t'length - window_r'length) & window_r           when window_e,
+    wci_in.SData                                                    when others;
   -- Note that our response is not qualified by our being requested since
   -- the responses are selected from the proper worker in the master anyway
   response <=  ok_e       when its(is_master) else

@@ -1,3 +1,0 @@
-v 3
-file . "gen/bias_vhdl1_defs.vhd" "20120927001813.000" "20120926201816.944":
-  package bias_vhdl1_defs at 8( 363) + 0 on 11 body;

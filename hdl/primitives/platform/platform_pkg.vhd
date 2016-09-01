@@ -61,15 +61,18 @@ type worker_response_t is (none_e,     -- no response yet
                            busy_e);    -- worker was busy
 
 -- Internal interface to WCI master modules, driven to all workers in parallel
+type worker_data_source_t is (status_e, control_e, last_addr_e, window_e, sdata_e);
 type worker_in_t is record
   clk           : std_logic;
   reset         : bool_t;
   cmd           : ocp.MCmd_t;                    -- cmd per WCI
   address       : std_logic_vector(worker_config_bits-1+2 downto 0); -- Byte Addr
+  source        : worker_data_source_t;
   id            : unsigned(worker_id_bits-1 downto 0);
+  
   is_config     : bool_t;                        -- same as WCI MAddrSpace;
   byte_en       : std_logic_vector(3 downto 0);  -- byte enable for read or write
-  data          : std_logic_vector(31 downto 0); -- write data
+  data          : occp_data_t;                   -- write data
   operation     : worker_operation_t;            -- what op is in progress or starting
   timedout      : bool_t;                        -- operation has timed out
   is_big_endian : bool_t;
@@ -77,7 +80,7 @@ end record worker_in_t;
 
 -- Internal interface from WCI master modules, each drives its own version
 type worker_out_t is record
-  data      : std_logic_vector(31 downto 0); -- worker's timeout value or data
+  data      : occp_data_t; -- worker's timeout value or data
   response  : worker_response_t;             -- worker responds
   attention : bool_t;                        -- to allow them to be consolidated
   present   : bool_t;

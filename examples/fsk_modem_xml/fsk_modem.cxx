@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include <stdio.h>
+#include <cstdlib>
 #include <iostream>
 #include <typeinfo>
 #include "OcpiApi.h"
@@ -79,11 +80,15 @@ printUsage (UnitTestConfigurator & config,
 }
 
 static  OCPI::API::PValue minp_policy[] = {
+  OCPI::API::PVBool("verbose",true),
+  OCPI::API::PVBool("dump",true),
   OCPI::API::PVULong("MinProcessors",0),
   OCPI::API::PVEnd
 };
 
 static OCPI::API::PValue maxp_policy[] = {
+  OCPI::API::PVBool("verbose",true),
+  OCPI::API::PVBool("dump",true),
   OCPI::API::PVULong("MaxProcessors",0),
   OCPI::API::PVEnd
 };
@@ -91,15 +96,15 @@ static OCPI::API::PValue maxp_policy[] = {
 
 int main ( int argc, char* argv [ ] )
 {
-  const char * axml("<application package='ocpi'>"
+  const char * axml("<application package='ocpi' done='file_write'>"
 
-		      "  <instance component='file_read_msg' >"
+		      "  <instance component='file_read' >"
 		      "    <property name='fileName' value='dataIn.dat'/> "		      
-		      "    <property name='genTestFile' value='false'/> "		      
-		      "    <property name='stepThruMsg' value='%s'/> "
-		      "    <property name='stepNow' value='%s'/> "
-		      "    <property name='continuous' value='%s'/> "
-		      "    <property name='messageSize' value='4096'/>"
+		    //		      "    <property name='genTestFile' value='false'/> "		      
+		    //		      "    <property name='stepThruMsg' value='%s'/> "
+		    //		      "    <property name='stepNow' value='%s'/> "
+		    //		      "    <property name='continuous' value='%s'/> "
+		      "    <property name='messageSize' value='1024'/> "
 		      "  </instance> "
 
 		      "  <instance component='sym_fir_real' name='tx_fir_r' >"
@@ -156,12 +161,12 @@ int main ( int argc, char* argv [ ] )
 		      "    <property name='taps' valuefile='fir_real_coefs.xml'/> "
 		      "  </instance> "
 
-		      "  <instance component='file_write_msg' >"
+		      "  <instance component='file_write' >"
 		      "    <property name='fileName' value='dataOut.dat'/> "		      
 		      "  </instance> "
 
 		      "  <connection>"
-		      "    <port instance='file_read_msg' name='out'/>"
+		      "    <port instance='file_read' name='out'/>"
 		      "    <port instance='tx_fir_r' name='in'/>"
 		      "  </connection>"
 
@@ -241,7 +246,7 @@ int main ( int argc, char* argv [ ] )
 
 		      "  <connection>"
 		      "    <port instance='rx_fir_r' name='out'/>"
-		      "    <port instance='file_write_msg' name='in'/>"
+		      "    <port instance='file_write' name='in'/>"
 		      "  </connection>"			 
 
 		      "</application>");
@@ -267,13 +272,14 @@ int main ( int argc, char* argv [ ] )
 	(void)OA::ContainerManager::find("rcc",buf);
       }
 
-      const int xmlbsize = 10*1024;
-      char as_xml[xmlbsize];
-      snprintf( as_xml, xmlbsize, axml, config.step  ? "true" : "false", config.step ? "true" : "false",
-		config.cont ? "true" : "false",
-		config.M, config.M
+      //      const int xmlbsize = 10*1024;
+      char *as_xml;
+      asprintf(&as_xml,
+	       axml,// config.step  ? "true" : "false", config.step ? "true" : "false", config.cont ? "true" : "false",
+	       config.M, config.M
 		);
       std::string app_xml(as_xml);
+      free(as_xml);
 
       OCPI::API::PValue * policy;
       if ( config.policy == "max" ) {
