@@ -1,0 +1,17 @@
+<RccWorker language='c' spec='ptest_spec.xml'>
+<property name="str" parameter='true' type='string' default='fred'/>
+<property name='error' type='bool' initial='true'/>
+<property name='stest' type='struct' initial='1' readable='1'>
+  <member name='flt' type='float'/>
+  <member name='boola' type='bool'/>
+  <member name='str' type='string' stringlength='10'/>
+  <member name='seq'/>
+</property>
+<property name='nchannels' parameter='1' default='3' readable='1'/>
+<property name='stestp' type='struct' initial='1' readable='1' arraylength='nchannels'>
+  <member name='flt' type='float'/>
+  <member name='boola' type='bool'/>
+  <member name='str' type='string' stringlength='10'/>
+  <member name='seq'/>
+</property>
+</RccWorker>

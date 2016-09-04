@@ -71,6 +71,7 @@ namespace OCPI {
       void finish();
       // Suspension, that can be resumed with "start".
       void stop();
+      const std::string &name() const;
       ExternalPort &getPort(const char *, const OCPI::API::PValue *params = NULL);
       bool getProperty(unsigned ordinal, std::string &name, std::string &value,
 		       bool hex = false, bool *parameterp = NULL);

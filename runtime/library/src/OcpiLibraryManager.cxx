@@ -308,7 +308,7 @@ namespace OCPI {
       if (!(m_metaData = getMetadata(name, m_mtime, m_length)))
 	throw OU::Error(OCPI_LOG_DEBUG, "Cannot open or retrieve metadata from file \"%s\"",
 			name);
-      const char *err = OE::ezxml_parse_str(m_metaData, m_length, m_xml);
+      const char *err = OE::ezxml_parse_str(m_metaData, strlen(m_metaData), m_xml);
       if (err)
 	throw OU::Error("Error parsing artifact metadata from \"%s\": %s",
 			name, err);

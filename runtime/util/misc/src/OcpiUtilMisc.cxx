@@ -498,13 +498,14 @@ isXMLDocument (std::istream * istr)
   return result;
 }
 
-void 
+const char * 
 formatAddV(std::string &out, const char *fmt, va_list ap) {
   char *cp;
   vasprintf(&cp, fmt, ap);
   assert(cp); // or better generic memory exception
   out += cp;
   free(cp);
+  return out.c_str();
 }
 // FIXME remove this when all callers are fixed.
 void 
@@ -515,13 +516,14 @@ formatString(std::string &out, const char *fmt, ...) {
   formatAddV(out, fmt, ap);
   va_end(ap);
 }
-void 
+const char * 
 format(std::string &out, const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   out.clear();
   formatAddV(out, fmt, ap);
   va_end(ap);
+  return out.c_str();
 }
 bool 
 eformat(std::string &out, const char *fmt, ...) {
@@ -532,12 +534,13 @@ eformat(std::string &out, const char *fmt, ...) {
   va_end(ap);
   return true;
 }
-void 
+const char *
 formatAdd(std::string &out, const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   formatAddV(out, fmt, ap);
   va_end(ap);
+  return out.c_str();
 }
 
 // FIXME: Use vanilla C file I/O

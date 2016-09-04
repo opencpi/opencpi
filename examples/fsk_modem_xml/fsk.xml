@@ -1,0 +1,60 @@
+<application package='ocpi'>
+  <instance component='file_read_msg' connect='tx_fir_r' >
+    <property name='fileName' value='dataIn.dat'/>		      
+    <property name='genTestFile' value='false'/>		      
+    <property name='stepThruMsg' value='false'/>
+    <property name='stepNow' value='false'/>
+    <property name='continuous' value='false'/>
+  </instance>
+  <instance component='sym_fir_real' name='tx_fir_r' connect='fsk_mod'>
+    <property name='bypass' value='false'/>
+    <property name='gain' value='1'/>
+    <property name='taps' valuefile='fir_real_coefs.xml'/>
+  </instance>
+  <instance component='fsk_mod_complex' name='fsk_mod' connect='tx_fir_c'/>
+  <instance component='sym_fir_complex' name='tx_fir_c' connect='tx_cic'>
+    <property name='bypass' value='false'/>
+    <property name='gain' value='1'/>
+    <property name='taps' valuefile='fir_complex_coefs.xml'/>
+  </instance>
+  <instance component='cic_hpfilter_complex' name='tx_cic' connect='noise_gen_complex'>
+    <property name='M' value='0'/>
+  </instance>
+  <instance component='noise_gen_complex' connect='loopback'>
+    <property name='mask' value='0'/>
+  </instance>
+  <instance component='loopback' connect='ddc_mixer' to='in_if'/>
+  <instance component='mixer_complex' name='ddc_mixer' connect='rx_cic' from='out'/>
+  <instance component='dds_complex' name='ddc_dds' >
+    <property name='phaseIncrement' value='12345678'/>
+    <property name='syncPhase' value='0'/>
+  </instance>
+  <instance component='cic_lpfilter_complex' name='rx_cic' connect='rx_fir_c'>
+    <property name='M' value='0'/>
+  </instance>
+  <instance component='sym_fir_complex' name='rx_fir_c' connect='fm_demod'>
+    <property name='bypass' value='false'/>
+    <property name='gain' value='1'/>
+    <property name='taps' valuefile='fir_complex_coefs.xml'/>
+  </instance>
+  <instance component='fm_demod_complex' name='fm_demod' connect='rx_fir_r'>
+  </instance>
+  <instance component='sym_fir_real' name='rx_fir_r' connect='file_write_msg'>
+    <property name='bypass' value='false'/>
+    <property name='gain' value='1'/>
+    <property name='taps' valuefile='fir_real_coefs.xml'/>
+  </instance>
+  <instance component='file_write_msg' >
+    <property name='fileName' value='dataOut.dat'/>
+  </instance>
+
+  <connection>
+    <port instance='ddc_mixer' name='out_sync_only'/>
+    <port instance='ddc_dds' name='in'/>
+  </connection>
+  <connection>
+    <port instance='ddc_mixer' name='in_dds'/>
+    <port instance='ddc_dds' name='out'/>
+  </connection>
+</application>
+

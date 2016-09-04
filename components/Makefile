@@ -128,6 +128,7 @@ Workers = \
     ptest.hdl \
     ptest.rcc \
     ptest_cc.rcc \
+    rhptest.rcc \
     $(Tests)
 
 #	fir_prog.hdl \

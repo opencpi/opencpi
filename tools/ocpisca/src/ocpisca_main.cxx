@@ -1,5 +1,5 @@
 #include "OcpiOsFileSystem.h"
-//#include "OcpiDriverManager.h"
+#include "OcpiDriverManager.h"
 #include "OcpiUtilEzxml.h"
 #include "OcpiApplication.h"
 
@@ -15,15 +15,16 @@ namespace OX = OCPI::Util::EzXml;
 
 #define OCPI_OPTIONS \
   CMD_OPTION(verbose,    v, Bool,   0, "be verbose in describing what is happening")\
-  CMD_OPTION(persona,    p, Bool,   0, "create REDHAWK persona for an OpenCPI application\n" \
+  CMD_OPTION(xml,        x, Bool,   0, "create SCA/REDHAWK XML files for an OpenCPI application\n" \
                                        "  (input file is application or deployment file)") \
-  CMD_OPTION(deployment, ,  String, 0, "separate XML file to read deployment from for the app") \
-  CMD_OPTION  (directory, D,    String, NULL, "Specify the directory in which to put output generated files") \
+  CMD_OPTION(deployment, d, String, 0, "separate XML file to read deployment from for the app") \
+  CMD_OPTION(package,    P, Bool,   0, "copy application and deployment XML, and artifacts too") \
+  CMD_OPTION(directory,  D, String, 0, "the directory where output files are placed") \
 
 #include "CmdOption.h"
 
 static int mymain(const char **ap) {
-  //  OCPI::Driver::ManagerManager::suppressDiscovery();
+  OCPI::Driver::ManagerManager::suppressDiscovery();
   std::string file;  // the file that the application XML came from
   ezxml_t xml = NULL;
   if (*ap) {
@@ -66,11 +67,14 @@ static int mymain(const char **ap) {
       depFile = options.deployment();
     std::vector<OA::PValue> params;
     params.push_back(OA::PVString("deployment", depFile.c_str()));
+    params.push_back(OA::PVBool("execution", false));
     params.push_back(OA::PVEnd);
     std::string name;
     OU::baseName(file.c_str(), name);
     OA::ApplicationX app(xml, name.c_str(), &params[0]);
     app.genScaPrf(options.directory());
+    app.genScaScd(options.directory());
+    app.genScaSpd(options.directory());
   } else
     options.bad("Missing filename for command");
   return 0;

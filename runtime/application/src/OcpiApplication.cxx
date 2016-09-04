@@ -48,21 +48,50 @@ namespace OL = OCPI::Library;
 namespace OA = OCPI::API;
 namespace OCPI {
   namespace API {
+    // Deal with a deployment file referencing an app file
+    static OL::Assembly &
+    createLibraryAssembly(const char *file, ezxml_t &deployment, const PValue *params) {
+      std::string appFile(file);
+      deployment = NULL;
+      ezxml_t xml = NULL;
+      do {
+	if (!OS::FileSystem::exists(appFile)) {
+	  appFile += ".xml";
+	  if (!OS::FileSystem::exists(appFile))
+	    throw OU::Error("Error: application file %s (or %s) does not exist\n", file,
+			    appFile.c_str());
+	}
+	const char *err = OE::ezxml_parse_file(appFile.c_str(), xml);
+	if (err)
+	  throw OU::Error("Can't parse application XML file \"%s\": %s", appFile.c_str(), err);
+	if (!strcasecmp(ezxml_name(xml), "deployment")) {
+	  if ((err = OE::getRequiredString(xml, appFile, "application")))
+	    throw OU::Error("For deployment XML file \"%s\": %s", file, err);
+	  deployment = xml;
+	}
+      } while (deployment == xml);
+      std::string name;
+      OU::baseName(appFile.c_str(), name);
+      return *new OL::Assembly(xml, name.c_str(), params);
+    }
+
     ApplicationI::ApplicationI(Application &app, const char *file, const PValue *params)
-      : m_assembly(*new OL::Assembly(file, params)), m_apiApplication(app) {
+      : m_assembly(createLibraryAssembly(file, m_deployment, params)), m_apiApplication(app) {
       init(params);
     }
     ApplicationI::ApplicationI(Application &app, const std::string &string, const PValue *params)
-      : m_assembly(*new OL::Assembly(string, params)), m_apiApplication(app)  {
+      : m_deployment(NULL), m_assembly(*new OL::Assembly(string, params)),
+	m_apiApplication(app)  {
       init(params);
     }
     ApplicationI::ApplicationI(Application &app, ezxml_t xml, const char *name,
 			       const PValue *params)
-      : m_assembly(*new OL::Assembly(xml, name, params)), m_apiApplication(app)  {
+      : m_deployment(NULL), m_assembly(*new OL::Assembly(xml, name, params)),
+	m_apiApplication(app)  {
       init(params);
     }
     ApplicationI::ApplicationI(Application &app, OL::Assembly &assy, const PValue *params)
-      : m_assembly(assy), m_apiApplication(app) {
+      : m_deployment(NULL), m_assembly(assy), m_apiApplication(app) {
       m_assembly++;
       init(params);
     }
@@ -558,11 +587,12 @@ namespace OCPI {
     }
     // The explicit way to figure out a deployment from a file
     void ApplicationI::
-    importDeployment(const char *file) {
-      ezxml_t xml;
-      const char *err = OE::ezxml_parse_file(file, xml);
-      if (err)
-	throw OU::Error("Error parsing deployment file: %s", err);
+    importDeployment(const char *file, ezxml_t xml, const PValue *params) {
+      if (!xml) {
+	const char *err = OE::ezxml_parse_file(file, xml);
+	if (err)
+	  throw OU::Error("Error parsing deployment file: %s", err);
+      }
       if (!ezxml_name(xml) || strcasecmp(ezxml_name(xml), "deployment"))
 	throw OU::Error("Invalid top level element \"%s\" in deployment file \"%s\"",
 			ezxml_name(xml) ? ezxml_name(xml) : "", file);
@@ -585,10 +615,10 @@ namespace OCPI {
 	  *spec = ezxml_cattr(xi, "spec"),
 	  *worker = ezxml_cattr(xi, "worker"),
 	  *model = ezxml_cattr(xi, "model"),
-	  *container = ezxml_cattr(xi, "container"),
 	  *artifact = ezxml_cattr(xi, "artifact"),
 	  *instance = ezxml_cattr(xi, "instance");
-	if (!spec || !worker || !model || !container || !artifact)
+	i->m_containerName = ezxml_cattr(xi, "container");
+	if (!spec || !worker || !model || !i->m_containerName || !artifact)
 	  throw
 	    OU::Error("Missing attributes for instance element \"%s\" in deployment file."
 		      "  All of spec/worker/model/container/artifact must be present.", iname);
@@ -607,10 +637,13 @@ namespace OCPI {
 	if (!m_assembly.instance(n).resolveUtilPorts(*impl, m_assembly))
 	  throw OU::Error("Port mismatch for instance \"%s\" in artifact \"%s\"",
 			  iname, artifact);
-	OC::Container *c = OC::Manager::find(container);
+	bool execution;
+	if (OU::findBool(params, "execution", execution) && !execution)
+	  continue;
+	OC::Container *c = OC::Manager::find(i->m_containerName);
 	if (!c)
 	  throw OU::Error("For deployment instance \"%s\", container \"%s\" was not found",
-			  iname, container);
+			  iname, i->m_containerName);
 	i->m_container = addContainer(c->ordinal(), true);
       }
     }
@@ -651,9 +684,9 @@ namespace OCPI {
       // This array is sized and initialized here since it is needed for property finalization
       m_launchInstances.resize(m_nInstances);
       // We are at the point where we need to either plan or import the deployment.
-      const char *dfile;
-      if (OU::findString(params, "deployment", dfile))
-	importDeployment(dfile);
+      const char *dfile = NULL;
+      if (m_deployment || OU::findString(params, "deployment", dfile))
+	importDeployment(dfile, m_deployment, params);
       else
 	planDeployment(params);
       // All the implementation selection is done, so now do the final check of properties
@@ -1031,6 +1064,9 @@ namespace OCPI {
       m_application.finish();
     }
 
+    const std::string &Application::name() const {
+      return m_application.name();
+    }
     ExternalPort &Application::
     getPort(const char *name, const OA::PValue *params) {
       return m_application.getPort(name, params);

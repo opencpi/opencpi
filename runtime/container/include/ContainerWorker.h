@@ -181,6 +181,7 @@ namespace OCPI {
 
       virtual ~Worker();
       OCPI::API::Port &getPort(const char *name, const OCPI::API::PValue *props = NULL);
+      Port &getContainerPort(const char *name, const OCPI::API::PValue *props = NULL);
 
       virtual Port & createOutputPort(OCPI::Util::PortOrdinal portId,
 				      size_t bufferCount,

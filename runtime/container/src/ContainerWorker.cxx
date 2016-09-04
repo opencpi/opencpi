@@ -82,6 +82,11 @@ namespace OCPI {
 
     OA::Port &Worker::
     getPort(const char *name, const OA::PValue *params ) {
+      return getContainerPort(name, params);
+    }
+    
+    Port &Worker::
+    getContainerPort(const char *name, const OA::PValue *params ) {
       Port *p = findPort(name);
       if (p)
         return *p;
