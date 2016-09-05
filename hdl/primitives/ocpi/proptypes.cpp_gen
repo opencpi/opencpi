@@ -130,11 +130,9 @@ $end entity;
 #define WPROP_STRING(pretty,which,def,rng,lhs,rhs) \
 ENTITY_STRING(pretty,which,def,rng) \
 $architecture rtl of pretty##_property is \
-$@@signal base : natural range 0 to property.string_length;\
 $@@signal temp : string_t(0 to property.string_length + 3);\
 $begin\
 $@@value <= temp(0 to property.string_length);\
-$@@base <= to_integer(offset);\
 $@@reg: process(Clk) is\
 $@@begin\
 $@@@@if rising_edge(clk) then\
@@ -142,7 +140,7 @@ $@@@@@@if its(reset) then\
 $@@@@@@@ temp <= (others => to_signed(0,char_t~length));\
 $@@@@@@@ written <= bfalse;\
 $@@@@@@elsif its(write_enable) then\
-$@@@@@@@@temp(base to base + 3) <= to_string_dw(data);\
+$@@@@@@@@temp(to_integer(offset) to to_integer(offset + 3)) <= to_string_dw(data);\
 $@@@@@@@@written <= btrue;\
 $@@@@@@else\
 $@@@@@@@@written <= bfalse;\
@@ -161,7 +159,7 @@ $@@@@@@@@offset      : in unsigned(worker.decode_width-1 downto 0);\
 $@@@@@@@@read_enable : in bool_t);\
 $end entity;\
 $architecture rtl of pretty##_read_property is begin\
-$@@data_out <= from_string(value, offset, is_big_endian) when read_enable and offset <= value~right\
+$@@data_out <= from_string(value, offset, is_big_endian) when its(read_enable)\
 $@@@@@@@@@@@@@@else (others => '0');\
 $end rtl;
 
@@ -267,26 +265,33 @@ ENTITY_RPROP_ARRAY(pretty,readback scalar 8 bit property)\
 $architecture rtl of pretty##_read_array_property is\
 $@@signal i : natural;\
 $@@signal word : dword_t;\
+$@@impure function val(i : natural) return pretty##_t is\
+$@@begin\
+$@@@@if i < property.nitems then\
+$@@@@@@return value(i);\
+$@@@@end if;\
+$@@@@return (others => '0');\
+$@@end;\
 $begin\
 $@@i <= to_integer(index);\
 $@@word <=\
-$@@@@x"000000" & std_logic_vector(value(i)) when nbytes_1 = 0 and not its(is_big_endian) else\
-$@@@@std_logic_vector(value(i)) & x"000000" when nbytes_1 = 0 and its(is_big_endian) else\
-$@@@@x"0000" & std_logic_vector(value(i+1)) & std_logic_vector(value(i))\
+$@@@@x"000000" & std_logic_vector(val(i)) when nbytes_1 = 0 and not its(is_big_endian) else\
+$@@@@std_logic_vector(val(i)) & x"000000" when nbytes_1 = 0 and its(is_big_endian) else\
+$@@@@x"0000" & std_logic_vector(val(i+1)) & std_logic_vector(val(i))\
 $@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@when nbytes_1 = 1 and not its(is_big_endian) else\
-$@@@@std_logic_vector(value(i)) & std_logic_vector(value(i+1)) & x"0000"\
+$@@@@std_logic_vector(val(i)) & std_logic_vector(val(i+1)) & x"0000"\
 $@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@when nbytes_1 = 1 and its(is_big_endian) else\
-$@@@@x"00" & std_logic_vector(value(i+2)) &\
-$@@@@std_logic_vector(value(i+1)) & std_logic_vector(value(i))\
+$@@@@x"00" & std_logic_vector(val(i+2)) &\
+$@@@@std_logic_vector(val(i+1)) & std_logic_vector(val(i))\
 $@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@when nbytes_1 = 2 and not its(is_big_endian) else\
-$@@@@std_logic_vector(value(i)) &\
-$@@@@std_logic_vector(value(i+1)) & std_logic_vector(value(i+2)) & x"00" \
+$@@@@std_logic_vector(val(i)) &\
+$@@@@std_logic_vector(val(i+1)) & std_logic_vector(val(i+2)) & x"00" \
 $@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@when nbytes_1 = 2 and its(is_big_endian) else\
-$@@@@std_logic_vector(value(i+3)) & std_logic_vector(value(i+2)) &\
-$@@@@std_logic_vector(value(i+1)) & std_logic_vector(value(i))\
+$@@@@std_logic_vector(val(i+3)) & std_logic_vector(val(i+2)) &\
+$@@@@std_logic_vector(val(i+1)) & std_logic_vector(val(i))\
 $@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@when nbytes_1 = 3 and not its(is_big_endian) else\
-$@@@@std_logic_vector(value(i)) & std_logic_vector(value(i+1)) &\
-$@@@@std_logic_vector(value(i+2)) & std_logic_vector(value(i+3));\
+$@@@@std_logic_vector(val(i)) & std_logic_vector(val(i+1)) &\
+$@@@@std_logic_vector(val(i+2)) & std_logic_vector(val(i+3));\
 $@@data_out <= dword_t(shift_left(unsigned(word),\
 $@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@to_integer((property.offset+to_integer(index)) rem 4) *8))\
 $@@@@@@@@@@@@@@@@when not is_big_endian else\
@@ -298,21 +303,23 @@ $end rtl;
 ENTITY_RPROP_ARRAY(pretty,readback scalar 16 bit property)\
 $architecture rtl of pretty##_read_array_property is\
 $@@signal i : natural;\
+$@@signal i_plus_1 : natural;\
 $@@signal odd : boolean;\
 $@@signal bits : std_logic_vector(3 downto 0);\
 $begin\
 $@@i <= to_integer(index);\
+$@@i_plus_1 <= i + 1 when nbytes_1(1) and i < (property.nitems - 1) else i;\
 $@@odd <= (i + property.offset/2) rem 2 = 1;\
 $@@bits <= util.slv(nbytes_1(1)) & util.slv(index(0)) &\
 $@@@@@@@@@ util.slv(property.offset(1)) & util.slv(is_big_endian);\
 $@@with bits select\
 $@@@@data_out(31 downto 16) <=\
 $@@@@@@std_logic_vector(value(i))@@ when x"1"|x"2"|x"4"|x"7"|x"9"|x"f",\
-$@@@@@@std_logic_vector(value(i+1)) when others;\
+$@@@@@@std_logic_vector(value(i_plus_1)) when others;\
 $@@with bits select\
 $@@@@data_out(15 downto 0) <=\
 $@@@@@@std_logic_vector(value(i))@@ when x"0"|x"3"|x"5"|x"6"|x"8"|x"e",\
-$@@@@@@std_logic_vector(value(i+1)) when others;\
+$@@@@@@std_logic_vector(value(i_plus_1)) when others;\
 $end rtl;
 
 #define RPROP_ARRAY_32(pretty,which,def,rng,lhs,rhs) \

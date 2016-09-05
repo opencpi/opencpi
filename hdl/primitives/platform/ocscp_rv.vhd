@@ -51,6 +51,7 @@ architecture rtl of ocscp_rv is
   signal   attention           : word64_t;
   signal   admin_control       : dword_t;
   -- Our state
+  signal   id_for_mux_r        : unsigned(id_width-1 downto 0);
   signal   is_admin_r          : boolean; -- pipelined for timing
   signal   active_r            : bool_t; -- pipelined "cp_in.valid"
   signal   reading_r           : bool_t;
@@ -130,9 +131,9 @@ begin
                            slvn(endian_t'pos(ocpi_endian), 2) &
                            slv(big_endian_r) &
                            slv(reset_r);
-  worker_in_timeout     <= (others => '0') when id = worker_max_id else workers_in(to_integer(id)).timeout;
-  worker_in             <= workers_in(0) when resize(workers_out_r.id, id_width) = worker_max_id
-                           else workers_in(to_integer(resize(workers_out_r.id, id_width)));
+  worker_in_timeout     <= (others => '0') when id = worker_max_id
+                           else workers_in(to_integer(id)).timeout;
+  worker_in             <= workers_in(to_integer(id_for_mux_r));
   -- Assign workers_out from the pipelined version, except for clock, reset, and timedout
   workers_out.clk           <= cp_in.clk;
   workers_out.reset         <= cp_in.reset or reset_r;
@@ -237,6 +238,9 @@ begin
         workers_out_r.byte_en       <= cp_in.byte_en;
         workers_out_r.data          <= cp_in.data;
         workers_out_r.operation     <= operation;
+        if id /= worker_max_id then
+          id_for_mux_r              <= id;
+        end if;
         if is_control and not its(cp_in.is_read) and
           cp_in.address(3 downto 0) = slvn(9,4) and
           cp_in.data(31) = '0' then
@@ -278,6 +282,7 @@ begin
           timeout_r        <= (others => '0');
           timedout_r       <= '0';
           workers_out_r.id <= (others => '1');
+          id_for_mux_r     <= (others => '0');
         end if;
         if reset_count_r /= 0 then
           reset_count_r <= reset_count_r - 1;

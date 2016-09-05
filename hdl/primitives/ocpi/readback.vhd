@@ -15,18 +15,17 @@ entity readback is
 end entity readback;
 
 architecture rtl of readback is
-  impure function some_true return std_logic_vector is
-    variable idx :
-      unsigned(width_for_max(properties'right)-1 downto 0) := (others => '0');
+  function some_true(re : bool_array_t(properties'range)) return natural is
+    variable x : natural := 0;
   begin
    for i in 0 to properties'right loop
-      if (ocpi_debug or not properties(i).debug) and properties(i).readable and
-          read_enables(i) then
-        idx := idx or to_unsigned(i, idx'length);
+      if (ocpi_debug or not properties(i).debug) and properties(i).readable and re(i) then
+        -- report "setting X to " & integer'image(i);
+        x := i;
       end if;
     end loop;
-    return data_inputs(to_integer(idx));
+    return x;
   end some_true;
 begin
-  data_output <= some_true;
+  data_output <= data_inputs(some_true(read_enables));
 end rtl;

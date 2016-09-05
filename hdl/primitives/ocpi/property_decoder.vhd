@@ -29,27 +29,22 @@ architecture rtl of property_decoder is
   signal my_offset : decode_t;
   signal byte_offset : byte_offset_t;
   signal little : boolean;
+  signal my_decode : bool_t;
   function element_bytes(property : property_t) return decode_t is
     variable bytes : natural;
   begin
     if property.string_length /= 0 then
       bytes := ((property.string_length + 4)/4) * 4;
     else
-      bytes :=  (property.data_width+7)/8;
+      bytes := (property.data_width+7)/8;
     end if;
     return to_unsigned(bytes, decode_t'length);
   end element_bytes;
-  -- This is a function rather than a signal to avoid simulation issues
-  -- when the combinatorial offset calculation is fed as an array reference
-  function my_decode(reset : bool_t; offset : decode_t) return bool_t is
   begin
-    return to_bool(not its(reset) and offset >= property.offset and
-                   offset <= property.offset(decode_t'range) + property.bytes_1);
-  end my_decode;
-  begin
-  my_offset    <= offset_in - property.offset(decode_width-1 downto 0)
-                  when its(my_decode(reset, offset_in))
-                  else (others => '0');
+  my_decode    <= to_bool(offset_in >= property.offset and
+                          offset_in <= property.offset(decode_t'range) + property.bytes_1);
+  my_offset    <= offset_in - property.offset(decode_width-1 downto 0);
+--                  when its(my_decode) else (others => '0');
   byte_offset  <= offset_in(1 downto 0);
   little       <= endian = little_e or (endian = dynamic_e and not its(is_big_endian));
   l32: if property.data_width >= 32 generate
@@ -74,8 +69,8 @@ architecture rtl of property_decoder is
                              data_in( 7 downto  0);
   end generate;
   -- never on strings so no non-power of 2 math needed.
-  index_out    <= my_offset/element_bytes(property);
+  index_out    <= my_offset/element_bytes(property) when its(my_decode) else (others => '0');
   offset_out   <= my_offset;
-  write_enable <= to_bool(is_write and property.writable and my_decode(reset, offset_in));
-  read_enable  <= to_bool(is_read and property.readable and my_decode(reset, offset_in));
+  write_enable <= to_bool(is_write and property.writable and my_decode);
+  read_enable  <= to_bool(is_read and property.readable and my_decode);
 end rtl;

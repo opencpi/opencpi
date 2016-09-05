@@ -53,11 +53,12 @@ architecture rtl of decoder is
   signal my_done         : bool_t;
   signal my_big_endian   : bool_t;
   signal offset_in       : unsigned(worker.decode_width -1 downto 0);
-  signal my_offset_r     : unsigned(worker.decode_width -1 downto 0);
+  signal my_offset_r     : unsigned(worker.decode_width -1 downto 0) := (others => '0');
   -- State for write data
   signal my_data_r       : dword_t;
-  signal my_is_read      : bool_t;
-  signal my_is_write     : bool_t;
+  signal my_is_read_r    : bool_t;
+  signal reading_r       : bool_t;
+  signal my_is_write_r   : bool_t;
   --------------------------------------------------------------------------------
   -- From here down, only for non-raw properties
   --------------------------------------------------------------------------------
@@ -66,6 +67,7 @@ architecture rtl of decoder is
   signal my_nbytes_1_r   : byte_offset_t;
   signal my_hi32_r       : bool_t;
   signal my_write_enables, my_read_enables : bool_array_t(properties'range);
+  signal my_read_enables_r : bool_array_t(properties'range);
   type my_offset_a_t is array(properties'range) of unsigned (worker.decode_width -1 downto 0);
   signal my_offsets      : my_offset_a_t;
   signal high_dw         : bool_t;
@@ -153,11 +155,9 @@ begin
   op_pos              <= get_op_pos(my_control_op_r);
   next_op             <= next_ops(state_pos)(op_pos);
   ok_op               <= worker.allowed_ops(op_pos);
-  my_is_read          <= to_bool(my_access_r = read_e);
-  my_is_write         <= to_bool(my_access_r = write_e);
   raw_out.byte_enable <= ocp_in.MByteEn;
-  raw_out.is_read     <= my_is_read and is_raw_r;
-  raw_out.is_write    <= my_is_write and is_raw_r;
+  raw_out.is_read     <= my_is_read_r and is_raw_r;
+  raw_out.is_write    <= my_is_write_r and is_raw_r;
   raw_out.data        <= my_data_r;
   --------------------------------------------------------------------------------
   -- Combi signals and outputs for properties
@@ -175,10 +175,10 @@ begin
 --                              not any_true(my_write_enables)));
   raw_out.address <= resize(my_offset_r - worker.raw_property_base, raw_out.address'length)
                      when my_offset_r >= worker.raw_property_base and
-                          its(my_is_read or my_is_write) else
+                          its(my_is_read_r or my_is_write_r) else
                      (others => '0');
   write_enables   <= my_write_enables;
-  read_enables    <= my_read_enables;
+  read_enables    <= my_read_enables_r;
   nbytes_1        <= my_nbytes_1;
   hi32            <= my_hi32_r;
 
@@ -191,6 +191,9 @@ begin
         my_access_r     <= None_e;
         is_raw_r        <= bfalse;
         my_offset_r     <= (others => '0');
+        my_is_read_r    <= bfalse;
+        my_is_write_r   <= bfalse;
+        reading_r       <= bfalse;
         if worker.allowed_ops(control_op_t'pos(initialize_e)) = '1' then
           my_state_r <= exists_e;
         else
@@ -198,10 +201,17 @@ begin
         end if;
       elsif my_access_r = none_e then -- capture while idlng.  cycle starts when access_in != none
         my_access_r     <= access_in;
-        is_raw_r        <= to_bool(access_in /= control_e and
+        my_is_read_r    <= to_bool(access_in = read_e);
+        reading_r       <= to_bool(access_in = read_e);
+        my_is_write_r   <= to_bool(access_in = write_e);
+        is_raw_r        <= to_bool((access_in = read_e or access_in = write_e) and
                                    resize(offset_in, worker.decode_width+1) >=
                                    worker.raw_property_base);
-        my_offset_r     <= offset_in;
+        -- work hard to not have my_offset_r be garbage since there are pure combinatorial
+        -- decoding paths from it.
+        if access_in /= none_e then
+          my_offset_r     <= offset_in;
+        end if;
         my_control_op_r <= control_op_in;
         my_data_r       <= ocp_in.MData;
         my_nbytes_1_r   <= num_bytes_1(ocp_in);
@@ -210,9 +220,14 @@ begin
         if my_state_r /= unusable_e and finished then
           my_state_r <= finished_e;
         end if;
+      elsif its(reading_r) then -- pipeline the decoding for read enables
+        reading_r <= bfalse;
+        my_read_enables_r <= my_read_enables;
       elsif (its(my_done) or my_error) then
         -- the last cycle of the request when we're done or have an error
         my_access_r     <= none_e;
+        my_is_read_r    <= bfalse;
+        my_is_write_r   <= bfalse;
         my_control_op_r <= no_op_e;
         is_raw_r        <= bfalse;
         if my_access_r = control_e and (its(done) and not its(my_error)) then
@@ -248,8 +263,8 @@ begin
                        -- inputs describing property access
                        offset_in     => my_offset_r,
                        nbytes_1      => my_nbytes_1,
-                       is_write      => my_is_write,
-                       is_read       => my_is_read,
+                       is_write      => my_is_write_r,
+                       is_read       => my_is_read_r,
                        data_in       => my_data_r,
                        is_big_endian => my_big_endian,
                        -- outputs from the decoding process
