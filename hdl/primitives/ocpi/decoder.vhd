@@ -134,7 +134,7 @@ begin
                             ((its(is_raw_r) and raw_in.error) or
                              (not its(is_raw_r) and error) or
                              my_config_error)));
-  my_done       <= raw_in.done when its(is_raw_r) else done;
+  my_done       <= raw_in.done when its(is_raw_r) else done and not reading_r;
   busy          <= to_bool(access_in /= none_e or my_access_r /= none_e);
   my_big_endian <= to_bool(endian = big_e or (endian = dynamic_e and ocp_in.MFlag(1) = '1'));
   is_big_endian <= my_big_endian;
@@ -194,6 +194,7 @@ begin
         my_is_read_r    <= bfalse;
         my_is_write_r   <= bfalse;
         reading_r       <= bfalse;
+        my_read_enables_r <= (others => '0');
         if worker.allowed_ops(control_op_t'pos(initialize_e)) = '1' then
           my_state_r <= exists_e;
         else
@@ -225,6 +226,7 @@ begin
         my_read_enables_r <= my_read_enables;
       elsif (its(my_done) or my_error) then
         -- the last cycle of the request when we're done or have an error
+        my_read_enables_r <= (others => '0');
         my_access_r     <= none_e;
         my_is_read_r    <= bfalse;
         my_is_write_r   <= bfalse;
