@@ -85,6 +85,9 @@
   CMD_OPTION_S(buffercount,B,String, 0, "<instance-name>=<port-name>=<buffercount>\n" \
 	                               "set buffercount at a port\n" \
 	                               "if no port name, then the single output port") \
+  CMD_OPTION_S(buffersize, Z, String,0, "<instance-name>=<port-name>=<buffersize>\n" \
+	                               "set buffer size at a port\n" \
+	                               "if no port name, then the single output port") \
   CMD_OPTION(artifacts,  A, String, 0, "comma-separated list of targets to print artifacts in path on stdout") \
   CMD_OPTION(specs,      G, String, 0, "comma-separated list of targets to print specs in path on stdout") \
   CMD_OPTION(uncached,   U, Bool,   0, "dump cached properties uncached, ignoring cache") \
@@ -189,6 +192,7 @@ static int mymain(const char **ap) {
   addParams("transport", options.transport(n), params);
   addParams("xferrole", options.xferrole(n), params);
   addParams("buffercount", options.buffercount(n), params);
+  addParams("buffersize", options.buffersize(n), params);
   }
   if (options.deployment())
     addParam("deployment", options.deployment(), params);

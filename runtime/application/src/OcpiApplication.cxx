@@ -721,6 +721,8 @@
 	 // All the implementation selection is done, so now do the final check of ports
 	 // and properties since they can be implementation specific
 	 if ((err = finalizePortParam(params, "buffercount")) ||
+	     (err = finalizePortParam(params, "buffersize")) ||
+	     (err = finalizePortParam(params, "transport")) ||
 	     (err = finalizePortParam(params, "xferrole")))
 	   throw OU::Error("Port parameter error: %s", err);
 	 finalizeProperties(params);

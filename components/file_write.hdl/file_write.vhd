@@ -64,9 +64,11 @@ begin
                 if its(props_in.messagesInFile) then 
                   if new_msg_length >= msg_buffer'length then
                     report "The messagesInFile property is true so messages are being buffered";
-                    report "A message is too large for the message buffer" severity failure;
+                    report "A message is too large for the message buffer";
+                    report "new_msg_length is " & integer'image(new_msg_length) severity failure;
+                  else
+                    msg_buffer(new_msg_length+1) := c;
                   end if;
-                  msg_buffer(new_msg_length) := c;
                 else
                   write(data_file, c);
                 end if;
@@ -83,7 +85,7 @@ begin
                 write(data_file, char(ulong_t(resize(unsigned(std_logic_vector(in_in.opcode)), ulong_t'length)), i));
               end loop;
               for i in 0 to new_msg_length-1 loop
-                write(data_file, msg_buffer(i));   
+                write(data_file, msg_buffer(i+1));   
               end loop;            
             end if;
             if new_msg_length = 0 and its(props_in.stopOnEOF) then

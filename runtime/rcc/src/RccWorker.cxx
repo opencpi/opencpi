@@ -627,7 +627,7 @@ run(bool &anyone_run) {
       break;
     }
     // If no port masks, then we don't run except for timeouts, checked above
-    if (m_runCondition->m_portMasks[0] == RCC_NO_PORTS)
+    if (m_runCondition->m_portMasks[0] == RCC_NO_PORTS) {
       if (m_runCondition->m_timeout && !hasRun) {
 	hasRun = true;
 	break; // run if we're in period execution and haven't run at all yet

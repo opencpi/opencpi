@@ -1729,9 +1729,10 @@ emitImplHDL(bool wrap) {
 	  fprintf(f,
 		  "  -- signals between the decoder and the readback mux\n"
 		  "  signal read_enables  : bool_array_t(0 to %u);\n"
+		  "  signal read_index    : unsigned(ocpi.util.width_for_max(%u)-1 downto 0);\n"
 #if 1
 		  "  signal readback_data : wci.data_a_t(work.%s_worker_defs.properties'range);\n",
-		  nProps_1, m_implName
+		  nProps_1, nProps_1, m_implName
 #else
 		  "  signal readback_data : wci.data_a_t(0 to %u);\n",
 		  nProps_1, m_ctl.nNonRawRunProperties-1
@@ -1893,16 +1894,18 @@ emitImplHDL(bool wrap) {
 		"                  indices              => indices,\n"
 		"                  hi32                 => hi32,\n"
 		"                  nbytes_1             => nbytes_1,\n"
-		"                  data_outputs         => %s",
+		"                  data_outputs         => %s,\n"
+		"                  read_index           => %s",
 		m_ctl.nonRawWritables ? "write_enables" : "open",
 		m_ctl.nonRawReadables ? "read_enables" : "open",
-		m_ctl.nonRawWritables ? "data" : "open");
+		m_ctl.nonRawWritables ? "data" : "open",
+		m_ctl.nonRawReadables ? "read_index" : "open");
       fprintf(f, ");\n");
       if (m_ctl.nonRawReadables)
 	fprintf(f,
 		"  readback : component wci.readback\n"
 		"    generic map(work.%s_worker_defs.properties, ocpi_debug)\n"
-		"    port map(   read_enables => read_enables,\n"
+		"    port map(   read_index   => read_index,\n"
 		"                data_inputs  => readback_data,\n"
 		"                data_output  => nonRaw_SData);\n",
 		m_implName);

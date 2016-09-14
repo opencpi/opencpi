@@ -245,11 +245,17 @@ for a in $additions; do
   set +f
   for src in $rawsrc; do
   if [ -e $src ]; then
+    dir=exports/${both[1]//<target>/$1}
+    base=$(basename $src)
     after=
     if [[ ${both[1]} =~ /$ || ${both[1]} == "" ]]; then
-      after=$(basename $src)
+      after=$base
+    else
+      # export link has a file name, perhaps replace the suffix
+      suff=$(echo $base | sed -n '/\./s/.*\(\.[^.]*\)$/\1/p')
+      dir=${dir//<suffix>/$suff}
     fi
-    make_relative_link $src exports/${both[1]//<target>/$1}$after
+    make_relative_link $src $dir$after
   else
     if [ "$3" == "" ]; then
       echo Warning: link source $src does not '(yet?)' exist.

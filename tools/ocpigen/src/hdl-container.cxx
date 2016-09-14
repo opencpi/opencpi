@@ -114,44 +114,62 @@ void UNoc::
 addClient(std::string &assy, bool control, const char *client, const char *port) {
   UNocChannel &unc = m_channels[m_currentChannel];
   std::string prevInstance, prevPort, node;
+  // The choices are:
+  // 1. Is there a "previous client" (unc.m_currentNode != 0), remembered from a previous call?
+  // 2. Are we adding a node (client != NULL) or just terminating (client == NULL).
   if (unc.m_currentNode) {
-    // If the channel we are using has a previous node then instance its split/join node
-    // and connect it.
+    // Deal with the previously added client now that we know everything we need to know,
+    // namely whether it will be the last client or not (which SDP optimizes).
     unsigned pos = unc.m_currentNode - 1;
-    OU::format(node,  "%s_unoc%u_%u", m_name, m_currentChannel, pos);
-    if (m_type == SDPPort)
-      OU::formatAdd(assy,
-		    "  <instance name='%s' worker='sdp_node'>\n"
-		    "    <property name='sdp_width' value='%zu'/>\n"
-		    "  </instance>\n",
-		    node.c_str(), m_width);
-    else
-      OU::formatAdd(assy,
-		    "  <instance name='%s' worker='unoc_node'>\n"
-		    "    <property name='control' value='%s'/>\n"
-		    "    <property name='position' value='%u'/>\n"
-		    "  </instance>\n",
-		    node.c_str(), unc.m_control ? "true" : "false", pos);
-    // Connect the new unoc node to the unoc
-    if (pos) {
-      OU::format(prevInstance, "%s_unoc%u_%u", m_name, m_currentChannel, pos - 1);
-      prevPort = "name='down'";
-    } else {
+    if (pos == 0) { // the previous client is the first one so it attaches to the pfconfig
       prevInstance = "pfconfig";
       OU::format(prevPort, "name='%s' index='%u'", m_name, m_currentChannel);
+    } else {
+      OU::format(prevInstance, "%s_unoc%u_%u", m_name, m_currentChannel, pos - 1);
+      prevPort = "name='down'";
     }
-    // Connect the inserted node to its upstream master and its client.
-    OU::formatAdd(assy,
-		  "  <connection>\n"
-		  "    <port instance='%s' %s/>\n"
-		  "    <port instance='%s' name='up'/>\n"
-		  "  </connection>\n"
-		  "  <connection>\n"
-		  "    <port instance='%s' name='client'/>\n"
-		  "    <port instance='%s' name='%s'/>\n"
-		  "  </connection>\n",
+    if (client || m_type != SDPPort) {
+      // If the channel we are using has a previous node or we are not SDP, then
+      // instance its split/join node, and connect it upstream
+      OU::format(node,  "%s_unoc%u_%u", m_name, m_currentChannel, pos);
+      if (m_type == SDPPort)
+	OU::formatAdd(assy,
+		      "  <instance name='%s' worker='sdp_node'>\n"
+		      "    <property name='sdp_width' value='%zu'/>\n"
+		      "  </instance>\n",
+		      node.c_str(), m_width);
+      else
+	OU::formatAdd(assy,
+		      "  <instance name='%s' worker='unoc_node'>\n"
+		      "    <property name='control' value='%s'/>\n"
+		      "    <property name='position' value='%u'/>\n"
+		      "  </instance>\n",
+		      node.c_str(), unc.m_control ? "true" : "false", pos);
+      // Connect the inserted node to its upstream master and its client.
+      OU::formatAdd(assy,
+		    "  <connection>\n"
+		    "    <port instance='%s' %s/>\n"
+		    "    <port instance='%s' name='up'/>\n"
+		    "  </connection>\n"
+		    "  <connection>\n"
+		    "    <port instance='%s' name='client'/>\n"
+		    "    <port instance='%s' name='%s'/>\n"
+		    "  </connection>\n",
 		  prevInstance.c_str(), prevPort.c_str(), node.c_str(),
 		  node.c_str(), unc.m_client.c_str(), unc.m_port.c_str());
+    } else {
+      // The previous client is the last client, and we are SDP.
+      // Terminate the SDP channel by using the last client as the termination.
+      // Connect the inserted node to its upstream master and its client.
+      // FIXME:  set a parameter on the last client indicating its role as terminator
+      OU::formatAdd(assy,
+		    "  <connection>\n"
+		    "    <port instance='%s' %s/>\n"
+		    "    <port instance='%s' name='%s'/>\n"
+		    "  </connection>\n",
+		    prevInstance.c_str(), prevPort.c_str(), unc.m_client.c_str(),
+		    unc.m_port.c_str());
+    }
   }
   // if !client then terminate the channel
   if (client) {
@@ -160,32 +178,25 @@ addClient(std::string &assy, bool control, const char *client, const char *port)
     unc.m_port = port;
     unc.m_currentNode++;
     m_currentChannel = (m_currentChannel + 1) % (unsigned)m_channels.size();
-  } else {
+  } else if (m_type != SDPPort || unc.m_currentNode == 0) {
+    // Terminate a unoc channel or an empty SDP channel
     prevInstance = unc.m_currentNode == 0 ? "pfconfig" : node.c_str();
     if (unc.m_currentNode)
       prevPort = "name='down'";
     else
       OU::format(prevPort, "name='%s'", m_name);
-    if (m_type == SDPPort) {
-      if (!unc.m_currentNode)
-	OU::formatAdd(prevPort, " index='%u'", m_currentChannel);
-      std::string term;
-      OU::format(term, "unoc_term%u_%u",  m_currentChannel, unc.m_currentNode);
-      OU::formatAdd(assy,
-		    "  <instance worker='%s' name='%s'/>\n"
-		    "  <connection>\n"
-		    "    <port instance='%s' %s/>\n"
-		    "    <port instance='%s' name='up'/>\n"
-		    "  </connection>\n",
-		    "sdp_term", term.c_str(), prevInstance.c_str(), prevPort.c_str(),
-		    term.c_str());
-    } else
-      OU::formatAdd(assy,
-		    "  <connection>\n"
-		    "    <port instance='%s' %s/>\n"
-		    "    <port instance='pfconfig' name='%s_slave'/>\n"
-		    "  </connection>\n",
-		    prevInstance.c_str(), prevPort.c_str(), m_name);
+    if (m_type == SDPPort && unc.m_currentNode == 0)
+      OU::formatAdd(prevPort, " index='%u'", m_currentChannel);
+    std::string term;
+    OU::format(term, "unoc_term%u_%u",  m_currentChannel, unc.m_currentNode);
+    OU::formatAdd(assy,
+		  "  <instance worker='%s_term' name='%s'/>\n"
+		  "  <connection>\n"
+		  "    <port instance='%s' %s/>\n"
+		  "    <port instance='%s' name='up'/>\n"
+		  "  </connection>\n",
+		  m_type == SDPPort ? "sdp" : "unoc", term.c_str(), prevInstance.c_str(),
+		  prevPort.c_str(), term.c_str());
   }
 }
 
@@ -780,22 +791,38 @@ emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContCon
 			port->cname(), iname,
 			c.external ? "assembly" : "device",
 			c.external ? "" : c.devInstance->device.cname());
-  std::string dma, sma;
+  std::string dma, sma, ctl;
   const char *unocPort;
   if (c.interconnect->m_type == SDPPort) {
     unocPort = "sdp";
     OU::format(dma, "%s_sdp_%s%u_%u", iname, port->isDataProducer() ? "send" : "receive",
 	       unoc.m_currentChannel, unc.m_currentNode);
     sma = dma;
-    // Create the two instances:
-    // 1. A sdp node to attach to the interconnect sdp
-    // 2. A sender or receiver DP/DMA module to stream to/from another place on the interconnect
+    ctl = dma;
+    // Create a sender or receiver DP/DMA module to stream to/from another place on the
+    // interconnect.
     OU::formatAdd(assy,
 		  "  <instance name='%s' worker='sdp_%s' interconnect='%s'>\n"
 		  "    <property name='sdp_width' value='%zu'/>\n"
 		  "  </instance>\n",
 		  dma.c_str(), port->isDataProducer() ? "send" : "receive", iname,
 		  m_config.sdpWidth());
+    // Instance a pipeline node upstream and connect it to the dma module
+    // FIXME make this conditional
+    std::string pipeline;
+    OU::format(pipeline, "%s_sdp_pipeline%u_%u",
+	       iname, unoc.m_currentChannel, unc.m_currentNode);
+    unocPort = "up";
+    OU::formatAdd(assy,
+		  "  <instance name='%s' worker='sdp_pipeline'>\n"
+		  "    <property name='sdp_width' value='%zu'/>\n"
+		  "  </instance>\n"
+		  "  <connection>\n"
+		  "    <port instance='%s' name='down'/>\n"
+		  "    <port instance='%s' name='sdp'/>\n"
+		  "  </connection>\n",
+		  pipeline.c_str(), m_config.sdpWidth(), pipeline.c_str(), dma.c_str());
+    dma = pipeline;
   } else {
     OU::format(dma, "%s_ocdp%u_%u", iname, unoc.m_currentChannel, unc.m_currentNode);
     OU::format(sma, "%s_sma%u_%u",  iname, unoc.m_currentChannel, unc.m_currentNode);
@@ -830,6 +857,7 @@ emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContCon
 		  sma.c_str(), port->isDataProducer() ? "from" : "to");
     // Add time client to OCDP
     emitTimeClient(assy, dma.c_str(), "wti");
+    ctl = dma;
   }
   // Connect the dma to the wci, incrementing the WCI count
   OU::formatAdd(assy,
@@ -837,7 +865,7 @@ emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContCon
 		"    <port instance='%s' name='ctl'/>\n"
 		"    <port instance='ocscp' name='wci' index='%zu'/>\n"
 		"  </connection>\n",
-		dma.c_str(), index++);
+		ctl.c_str(), index++);
   // Connect to the port
   std::string other;
   if (c.devInConfig)
