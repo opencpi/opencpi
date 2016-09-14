@@ -1,13 +1,5 @@
 -- The SDP receiver, to take data from the SDP port, and put it out on a WSI port,
--- buffering messages in BRAM.
--- This should/will be split into two smaller modules...
-
--- The readsAllowed property indicates how many remote reads can be outstanding
--- Thus we can issue reads for all buffers up to this amount.
--- todo
---   split into low modules.
---   allow doorbells over control interface so no slave when active message
---   support active message mode.
+-- buffering messages in BRAM.  The WSI width is the SDP width.
 
 library IEEE, ocpi, util, bsv, sdp;
 use IEEE.std_logic_1164.all, ieee.numeric_std.all;
@@ -20,17 +12,46 @@ architecture rtl of sdp_receive_worker is
   constant max_buffers_c   : natural := to_integer(max_buffers);
   constant addr_shift_c    : natural := width_for_max(sdp_width_c * 4 - 1);
   --------------------------------------------------------------------------------
+  -- Our flavor of the system-level metadata for our own fifo of message info
+  -- with precomputed lengths and byte enables
+  --------------------------------------------------------------------------------
+  type msginfo_t is record
+    ndws_left : metalength_dws_t; -- left AFTER FIRST WSI XFER
+    zlm       : bool_t;           -- this is a zlm
+    eof       : bool_t;           -- this is an EOF
+    last_be   : std_logic_vector(dword_bytes * sdp_width_c-1 downto 0);    
+    opcode    : std_logic_vector(meta_opcode_width_c-1 downto 0);
+  end record msginfo_t;
+  constant msginfo_width_c : natural :=
+    metalength_dws_t'length + 2 + dword_bytes * sdp_width_c + meta_opcode_width_c;
+  function slv2msginfo(s : std_logic_vector) return msginfo_t is
+    variable mi : msginfo_t;
+  begin
+    mi.ndws_left := unsigned(s(s'left downto s'left - mi.ndws_left'length + 1));
+    mi.zlm       := s(mi.opcode'length + mi.last_be'length + 1);
+    mi.eof       := s(mi.opcode'length + mi.last_be'length);
+    mi.last_be   := s(mi.opcode'left + mi.last_be'length downto mi.opcode'length);
+    mi.opcode    := s(mi.opcode'left downto 0);
+    return mi;
+  end slv2msginfo;
+  function msginfo2slv(mi : msginfo_t) return std_logic_vector is
+  begin
+    return std_logic_vector(mi.ndws_left) & slv(mi.zlm) & slv(mi.eof) & mi.last_be & mi.opcode;
+  end msginfo2slv;
+  --------------------------------------------------------------------------------
   -- Signals and definitions for communication from doorbell to the WSI output
   -- "md" here is the metadata flowing from the doorbell to WSI
+  -- It is reformatted for our internal FIFO for better timing and clarity
   --------------------------------------------------------------------------------
-  signal md_in             : metadata_t;
-  signal md_out            : metadata_t;
-  signal md_out_slv        : std_logic_vector(metawidth_c-1 downto 0);
-  signal md_deq            : std_logic;
-  signal md_not_empty      : std_logic;
-  -- ndws is rounded up so needs ONE fewer bits, not TWO
-  signal md_out_ndws       : meta_dw_count_t;
-
+  signal md_in_raw       : metadata_t; -- before changing to our msginfo
+  signal md_in           : msginfo_t;
+  signal md_in_slv       : std_logic_vector(msginfo_width_c-1 downto 0);
+  signal md_out          : msginfo_t;
+  signal md_out_slv      : std_logic_vector(msginfo_width_c-1 downto 0);
+  signal md_deq          : std_logic;
+  signal md_not_empty    : std_logic;
+  signal md_in_dws_bits  : metalength_dws_t;
+  signal md_in_byte_bits : unsigned(dword_shift-1 downto 0);
   -- Convenience data types
   subtype bram_addr_t is unsigned(addr_width_c-1 downto 0);
   subtype buffer_count_t is unsigned(width_for_max(max_buffers_c) - 1 downto 0);
@@ -52,8 +73,8 @@ architecture rtl of sdp_receive_worker is
   signal wsi_starting_r       : bool_t;
   signal wsi_buffer_index_r   : buffer_count_t;
   signal wsi_buffer_addr_r    : bram_addr_t;    -- base of current buffer
-  signal wsi_dws_left         : meta_dw_count_t;
-  signal wsi_dws_left_r       : meta_dw_count_t;
+  signal wsi_dws_left         : metalength_dws_t;
+  signal wsi_dws_left_r       : metalength_dws_t;
 
   -- Length Sync FIFO definitions, conveying length from CTL to SDP for PULL
   signal length_enq       : bool_t;
@@ -68,7 +89,6 @@ architecture rtl of sdp_receive_worker is
   signal avail_enq       : bool_t;
   signal avail_deq       : bool_t;
   signal avail_out_slv   : std_logic_vector(0 downto 0);
-  signal avail_out       : natural;
   signal avail_not_empty : std_logic;
   signal avail_not_full  : std_logic;
 
@@ -147,22 +167,23 @@ g0: for i in 0 to sdp_width_c-1 generate
   -- (until ctl clock is different from wsi clock.)
   -- CTL -> WSI
   metafifo : component bsv.bsv.SizedFIFO
-   generic map(p1width      => metawidth_c,
+   generic map(p1width      => msginfo_width_c,
                p2depth      => roundup_2_power_of_2(max_buffers_c), -- must be power of 2
                p3cntr_width => width_for_max(roundup_2_power_of_2(max_buffers_c)-1))
    port map   (CLK          => ctl_in.clk, -- maybe syncfifo later
                RST          => ctl_reset_n,
-               D_IN         => slv(props_in.remote_doorbell(0)),
+               D_IN         => md_in_slv,
                ENQ          => std_logic(md_enq),
                FULL_N       => md_not_full,
                D_OUT        => md_out_slv,
                DEQ          => md_deq,
                EMPTY_N      => md_not_empty,
                CLR          => '0');
-  md_out      <= slv2meta(md_out_slv);
-  md_out_ndws <= resize((md_out.length + dword_bytes - 1) srl 2, md_out_ndws'length);
+  md_in_slv   <= msginfo2slv(md_in);
+  md_out      <= slv2msginfo(md_out_slv);
   md_enq      <= props_in.remote_doorbell_any_written;
   md_deq      <= will_give and last_give;
+  md_in_raw   <= slv2meta(slv(props_in.remote_doorbell(0)));
   avail_deq   <= md_deq;
   -- Length fifo enqueued from doorbell for active message/pull mode, dequeued on the SDP side
   -- Telling the SDP (when actively PULLING data) to read this much data
@@ -180,13 +201,36 @@ g0: for i in 0 to sdp_width_c-1 generate
                dDEQ         => length_deq,
                dD_OUT       => length_out_slv,
                dEMPTY_N     => length_not_empty);
-  md_in <= slv2meta(slv(props_in.remote_doorbell(0)));
-  length_in  <= resize((md_in.length + dword_bytes-1)/dword_bytes, length_in'length);
+  -- The length we put into the fifo is converted to NDWs and residue in last dw
+  md_in.eof       <= md_in_raw.eof;
+  -- md_in.truncate <= md_in_raw.truncate;
+  md_in.opcode    <= md_in_raw.opcode;
+  md_in.zlm       <= to_bool(md_in_raw.length = 0);
+  -- Compute ndws AFTER the first wsi dw.  This is overridden by zlm so we don't care about
+  -- the zero case becoming a bad number
+  md_in_dws_bits  <= md_in_raw.length(md_in_raw.length'left downto dword_shift);
+  md_in_byte_bits <= md_in_raw.length(dword_shift-1 downto 0);
+  md_in.ndws_left <=
+    md_in_dws_bits - sdp_width
+    when md_in_byte_bits = 0 and md_in_dws_bits >= sdp_width else
+    md_in_dws_bits - (sdp_width - 1)
+    when md_in_byte_bits /= 0 and md_in_dws_bits >= sdp_width - 1 else
+    (others => '0');   
+  md_in.last_be <= slv(not (unsigned(slv1(sdp_width_c*dword_bytes)) sll
+                            to_integer(md_in_raw.length(addr_shift_c-1 downto 0))));
+--    not synthesizable (xst at least)
+--                         (sdp_width_c*dword_bytes-1 downto
+--                          to_integer(md_out.length(addr_shift_c-1 downto 0)) => '0',
+--                          others => '1');
+  length_in <= -- the number of dws (whole or partial) indicated, for SDP/DMA
+    md_in_raw.length(md_in_raw.length'left downto dword_shift)
+    when md_in_raw.length(dword_shift-1 downto 0) = 0 else
+    md_in_raw.length(md_in_raw.length'left downto dword_shift) + 1;
   --  FYI:  this expression crashes isim 14.67 with a SIGSEGV
   --  length_in  <= resize((slv2meta(slv(props_in.remote_doorbell(0))).length +
   --                       dword_bytes-1)/dword_bytes, length_in'length);
   length_out <= unsigned(length_out_slv);
-  length_enq <= to_bool(props_in.remote_doorbell_any_written and md_in.length /= 0);
+  length_enq <= to_bool(props_in.remote_doorbell_any_written and length_in /= 0);
 
   -- A sync fifo to indicate message arrival events from SDP to WSI
   -- I.e. when the SDP side is done PULLING data, it indicates the buffer is full,
@@ -229,12 +273,10 @@ g0: for i in 0 to sdp_width_c-1 generate
                           brama_addr_r + 1 when its(will_give) else
                           brama_addr_r;
   will_give            <= to_bool(operating_r and faults = 0 and
-                                  (its(avail_not_empty and avail_out_slv(0)) or
-                                   (md_not_empty and md_out.length = 0)) and out_in.ready);
+                                  (avail_not_empty or
+                                   its(md_not_empty and md_out.zlm)) and out_in.ready);
   last_give            <= to_bool(wsi_dws_left = 0);
-  wsi_dws_left         <= md_out_ndws - ocpi.util.min(md_out_ndws,
-                                                      resize(sdp_width, meta_dw_count_t'length))
-                          when its(wsi_starting_r) else wsi_dws_left_r;
+  wsi_dws_left         <= md_out.ndws_left when its(wsi_starting_r) else wsi_dws_left_r;
   buffer_ndws          <= props_in.buffer_size(bram_addr_t'left + addr_shift_c
                                                downto addr_shift_c);
   faults                <= faults_r or dma_faults;
@@ -247,13 +289,11 @@ g0: for i in 0 to sdp_width_c-1 generate
   out_out.give        <= will_give;
   out_out.som         <= wsi_starting_r and not md_out.eof;
   out_out.eom         <= last_give and not md_out.eof;
-  out_out.valid       <= to_bool(md_not_empty and md_out.length /= 0);
+  out_out.valid       <= to_bool(md_not_empty and not its(md_out.zlm));
   out_out.opcode      <= md_out.opcode;
-  out_out.byte_enable <= (others => '0') when md_out.length = 0 else -- zlm
-                         (others => '1') when not its(last_give) or -- full xfer
-                                              md_out.length(addr_shift_c-1 downto 0) = 0 else
-                         slv(not (unsigned(slv1(sdp_width_c*dword_bytes)) sll
-                                  to_integer(md_out.length(addr_shift_c-1 downto 0))));
+  out_out.byte_enable <= (others => '0') when its(md_out.zlm) else -- zlm
+                         md_out.last_be when its(last_give) else
+                         (others => '1');
 --    not synthesizable (xst at least)
 --                         (sdp_width_c*dword_bytes-1 downto
 --                          to_integer(md_out.length(addr_shift_c-1 downto 0)) => '0',
@@ -297,11 +337,11 @@ g0: for i in 0 to sdp_width_c-1 generate
           if its(last_give) then
             wsi_starting_r       <= btrue;
             wsi_buffer_addr_r    <= wsi_next_buffer_addr;
-            if md_out_ndws >= sdp_width_c then
-              wsi_dws_left_r     <= md_out_ndws - sdp_width_c;
-            else
-              wsi_dws_left_r     <= md_out_ndws;
-            end if;
+            --if md_out_ndws >= sdp_width_c then
+            --  wsi_dws_left_r     <= md_out_ndws - sdp_width_c;
+            --else
+            --  wsi_dws_left_r     <= md_out_ndws;
+            --end if;
             if wsi_buffer_index_r = props_in.buffer_count - 1 then
               wsi_buffer_index_r <= (others => '0');
             else

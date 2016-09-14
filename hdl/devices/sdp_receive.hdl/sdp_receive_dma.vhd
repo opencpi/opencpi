@@ -137,7 +137,7 @@ architecture rtl of sdp_receive_dma is
   signal read_accepted       : bool_t; -- last cycle of a read request
   signal read_complete       : bool_t; -- cycle when the last data for a read has arrived
   signal flag_needed         : bool_t; -- a flag cycle is needed
-  signal flagging            : bool_t; -- a flag cycle is in progress
+--  signal flagging            : bool_t; -- a flag cycle is in progress
   signal flagging_r          : bool_t; -- a flag write is being issues waiting to be accepted
   signal flag_accepted       : bool_t; -- a flag request is being accepted
   signal taking              : bool_t;
@@ -217,8 +217,8 @@ begin
   -- Flags are different than reads - they can happen in one cycle, and don't need idles
   -- Reads take precedence over flags
   flag_needed   <= to_bool(flags_to_send_r /= 0 or read_complete);
-  flagging      <= to_bool(flagging_r or (flag_needed and not its(read_starting or reading_r)));
-  flag_accepted <= flagging and sdp_in.sdp.ready;
+--  flagging      <= to_bool(flagging_r or (flag_needed and not its(read_starting or reading_r)));
+  flag_accepted <= flagging_r and sdp_in.sdp.ready;
   --------------------------------------------------------------------------------
   -- Slave (or read responses) handling
   --------------------------------------------------------------------------------
@@ -248,7 +248,7 @@ g1: for i in 0 to sdp_width-1 generate
   sdp_out.sdp.header.xid     <= lcl_read_idx_r;   -- ignored for writes
   sdp_out.sdp.header.lead    <= (others => '0');  -- we are always aligned on a DW
   sdp_out.sdp.header.trail   <= (others => '0');  -- we always send whole DWs
-  sdp_out.sdp.header.count   <= (others => '0') when its(flagging) else
+  sdp_out.sdp.header.count   <= (others => '0') when its(flagging_r) else
                                 resize(length_out - 1, count_t'length);
   sdp_out.sdp.header.node    <= sdp_in.id;
   sdp_out.sdp.header.addr    <= rem_read_addr_r(addr_width-1 downto 0)
@@ -258,7 +258,7 @@ g1: for i in 0 to sdp_width-1 generate
                                 when its(reading_r) else
                                 rem_flag_addr_r(whole_addr_bits_c-1 downto addr_width);
   sdp_out.sdp.eop            <= btrue;
-  sdp_out.sdp.valid          <= flagging or reading_r;
+  sdp_out.sdp.valid          <= flagging_r or reading_r;
   sdp_out.dropCount          <= (others => '0');
 g2: for i in 0 to sdp_width-1 generate
     sdp_out_data(i) <= slvn(1, dword_size) when i = 0 else (others => '0');
@@ -348,7 +348,7 @@ g2: for i in 0 to sdp_width-1 generate
             rem_buffer_idx_r <= rem_buffer_idx_r + 1;
             rem_flag_addr_r  <= rem_flag_addr_r + rem_flag_pitch(31 downto 2);
           end if;
-        elsif its(flagging) then
+        elsif flag_needed and not its(read_starting or reading_r) then
           flagging_r <= btrue;
         end if;
         -- Maintain buffer empty count and queued consumption events (AFC only)

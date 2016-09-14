@@ -149,4 +149,17 @@ component spi
           sdio          : out std_logic);
 end component spi;
 
+component srl_fifo
+  generic(width    : positive;
+          depth    : positive := 16);
+  port   (clk      : in  std_logic;
+          reset    : in  bool_t;
+          clear    : in  bool_t := bfalse;
+          enq      : in  bool_t;
+          deq      : in  bool_t;
+          input    : in  std_logic_vector(width-1 downto 0);
+          full     : out bool_t;
+          empty    : out bool_t;
+          output   : out std_logic_vector(width-1 downto 0));
+end component srl_fifo;
 end package util;

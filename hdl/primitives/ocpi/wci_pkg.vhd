@@ -1,6 +1,6 @@
 -- This package defines constants relating to the WCI interface
 library ieee, ocpi;
-use ieee.std_logic_1164.all, ieee.numeric_std.all, ocpi.types.all, ocpi.ocp;
+use ieee.std_logic_1164.all, ieee.numeric_std.all, ocpi.types.all, ocpi.util.all, ocpi.ocp;
 package wci is
 type raw_in_t is record
   address     : ushort_t;
@@ -193,7 +193,8 @@ type wci_s2m_array_t is array(natural range <>) of wci_s2m_t;
       indices                : out offset_a_t(properties'range);
       hi32                   : out bool_t;
       nbytes_1               : out byte_offset_t;
-      data_outputs           : out data_a_t(properties'range)
+      data_outputs           : out data_a_t(properties'range);
+      read_index             : out unsigned(width_for_max(properties'right)-1 downto 0)
     );
   end component;
 
@@ -226,7 +227,7 @@ type wci_s2m_array_t is array(natural range <>) of wci_s2m_t;
   component readback
     generic(properties : properties_t; ocpi_debug : bool_t);
     port(
-      read_enables : in bool_array_t(properties'range);
+      read_index  : in unsigned(width_for_max(properties'right)-1 downto 0);
       data_inputs  : in data_a_t(properties'range);
       data_output  : out std_logic_vector(31 downto 0)
       );

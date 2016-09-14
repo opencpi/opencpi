@@ -36,8 +36,10 @@ entity sdp2axi_wd is
   port(   clk             : in  std_logic;
           reset           : in  bool_t;
           addressing_done : in  bool_t;           -- addressing is done in/before this cycle
+          pipeline        : in  bool_t;           -- our pipeline state is full
           sdp             : in  sdp_t;
           sdp_in_data     : in  dword_array_t(0 to sdp_width-1);
+          sdp_p           : in  sdp_t;
           axi_in          : in  s_axi_hp_out_w_t; -- write data channel in to here
           axi_out         : out s_axi_hp_in_w_t;  -- write data channel out from here
           taking_data     : out bool_t;           -- indicate data is being used.
@@ -60,13 +62,14 @@ architecture rtl of sdp2axi_wd is
   subtype ndws_in_axf_t           is unsigned(width_for_max(axi_width)-1 downto 0);
   subtype pkt_naxf_t              is unsigned(width_for_max(max_pkt_dws/axi_width + 1)-1 downto 0);
   signal pkt_starting             : bool_t;
-  signal pkt_ndws                 : pkt_ndw_t; -- count of dws in an SDP pkt
+  signal pkt_ndws_0               : pkt_ndw_t; -- count of dws in an SDP pkt
   signal ndws_this_axf            : ndws_in_axf_t;
-  signal pkt_ndws_in_last_axf     : ndws_in_axf_t;
   signal pkt_first_axf_dw_offset  : dw_idx_in_axf_t;
+  signal pkt_first_axf_dw_offset_0 : dw_idx_in_axf_t;
   signal pkt_first_sxf_dw_offset  : dw_idx_in_axf_t;
   signal pkt_first_axf_sxf_offset : dw_idx_in_axf_t;
-  signal pkt_first_axf_ndws       : ndws_in_axf_t;
+  signal pkt_last_axf_dw_offset_0 : dw_idx_in_axf_t;
+  signal pkt_first_axf_ndws_0     : ndws_in_axf_t;
   signal pkt_first_sxf_ndws       : ndws_in_axf_t;
   signal pkt_is_first_axf         : bool_t;
   signal pkt_is_first_axf_r       : bool_t;
@@ -103,11 +106,11 @@ architecture rtl of sdp2axi_wd is
   begin
     if its(first) then
       start := shift_left(resize(first_dw_offset, axi_bytes_t'length), dword_shift) +
-               sdp.header.lead;
-      nbytes := nbytes - sdp.header.lead;
+               sdp_p.header.lead;
+      nbytes := nbytes - sdp_p.header.lead;
     end if;
     if its(last) then
-      nbytes := nbytes - sdp.header.trail;
+      nbytes := nbytes - sdp_p.header.trail;
     end if;
     r := (others => '1');
     r := not shift_left(r, to_integer(nbytes));
@@ -123,69 +126,73 @@ architecture rtl of sdp2axi_wd is
     v(0) := b;
     return v;
   end fyv;
+  -- pipeline versions of combinatorial values (sdp_p is fed to us).
+  signal sdp_data_p : dword_array_t(0 to sdp_width-1);
+  signal pkt_ndws_p : pkt_ndw_t;
+  signal pkt_first_axf_ndws_p : ndws_in_axf_t;
+  signal pkt_last_axf_dw_offset_p : dw_idx_in_axf_t;
 begin
   ---------------------------------------------------------------------------------------
   -- Route the sdp data to the axi data, allowing the last sxf needed to pass through
   ---------------------------------------------------------------------------------------
-  sdp_valid_write          <= to_bool(sdp.valid and sdp.header.op = write_e);
+  sdp_valid_write          <= to_bool(sdp_p.valid and sdp_p.header.op = write_e);
   -- Packet calculations
-  pkt_starting             <= to_bool(write_state_r = sop_next_e and sdp.valid);
-  pkt_ndws                 <= count_in_dws(sdp.header);
-  pkt_first_axf_dw_offset  <= sdp.header.addr(width_for_max(axi_width-1)-1 downto 0);
-  pkt_first_sxf_dw_offset  <= sdp.header.addr(width_for_max(ocpi.util.max(1,sdp_width-1))-1
-                                              downto 0);
-  pkt_first_axf_sxf_offset <= sdp.header.addr(width_for_max(axi_width-1)-1 downto 0) and
-                              not to_unsigned(sdp_width - 1, width_for_max(axi_width-1));
-  pkt_first_axf_ndws       <= resize(ocpi.util.min(axi_width_u - pkt_first_axf_dw_offset,
-                                                   pkt_ndws),
-                                     pkt_first_axf_ndws'length);
+  pkt_starting             <= to_bool(write_state_r = sop_next_e and sdp_p.valid);
+  pkt_ndws_0               <= count_in_dws(sdp.header);
+  pkt_first_axf_dw_offset_0 <= sdp.header.addr(width_for_max(axi_width-1)-1 downto 0);
+  pkt_first_axf_dw_offset  <= sdp_p.header.addr(width_for_max(axi_width-1)-1 downto 0);
+  pkt_first_sxf_dw_offset  <= sdp_p.header.addr(width_for_max(ocpi.util.max(1,sdp_width-1))-1
+                                                downto 0);
+  pkt_first_axf_sxf_offset <= sdp_p.header.addr(width_for_max(axi_width-1)-1 downto 0) and
+                               not to_unsigned(sdp_width - 1, width_for_max(axi_width-1));
+  pkt_first_axf_ndws_0     <= resize(ocpi.util.min(axi_width_u - pkt_first_axf_dw_offset_0,
+                                                   pkt_ndws_0),
+                                     pkt_first_axf_ndws_0'length);
   pkt_first_sxf_ndws       <= resize(ocpi.util.min(sdp_width_u - pkt_first_sxf_dw_offset,
-                                                   pkt_ndws),
+                                                   pkt_ndws_p),
                                      pkt_first_sxf_ndws'length);
-  pkt_ndws_in_last_axf     <= resize(((pkt_ndws + pkt_first_axf_dw_offset - 1) and
-                                      to_unsigned(axi_width-1, pkt_ndws_in_last_axf'length))
-                                     + 1, pkt_ndws_in_last_axf'length);
+  pkt_last_axf_dw_offset_0 <= resize(((pkt_ndws_0 + pkt_first_axf_dw_offset_0 - 1) and
+                                      to_unsigned(axi_width-1, pkt_last_axf_dw_offset_0'length)),
+                                      pkt_last_axf_dw_offset_0'length);
   pkt_is_first_axf         <= pkt_starting or pkt_is_first_axf_r;
-  pkt_ndws_left            <= pkt_ndws when its(pkt_is_first_axf) else pkt_ndws_left_r;
-  axf_ndws                 <= pkt_first_axf_ndws when its(pkt_is_first_axf) else
+  pkt_ndws_left            <= pkt_ndws_p when its(pkt_is_first_axf) else pkt_ndws_left_r;
+  axf_ndws                 <= pkt_first_axf_ndws_p when its(pkt_is_first_axf) else
                               resize(ocpi.util.min(pkt_ndws_left, axi_width), axf_ndws'length);
   pkt_ndws_left_after      <= pkt_ndws_left - axf_ndws;
   pkt_is_last_axf          <= to_bool(pkt_ndws_left <= axi_width);
   -- Current axf calculations
   -- Do we capture the first sxf for a wider axf?
-  capturing_first          <= to_bool(axi_width > sdp_width and not its(sdp.eop) and
-                                      pkt_first_axf_dw_offset < axi_width - sdp_width);
+  capturing_first           <= to_bool(axi_width > sdp_width and not its(sdp_p.eop) and
+                                       pkt_first_axf_dw_offset < axi_width - sdp_width);
   -- The current axf is being accepted, should the next sxf be captured?
-  capturing_next_axf       <= to_bool(axi_width > sdp_width and not its(sdp.eop) and
-                                      pkt_ndws_left_after > sdp_width);
+  capturing_next_axf        <= to_bool(axi_width > sdp_width and not its(sdp_p.eop) and
+                                       pkt_ndws_left_after > sdp_width);
   -- The current sxf is being captured, should the next sxf also be captured?
-  capturing_next_sxf       <= to_bool(axi_width > sdp_width and 
-                                      (axi_width_u - (axi_data_idx_r + sdp_width_u)) > sdp_width_u);
-  axf_first_dw             <= pkt_first_axf_dw_offset when its(pkt_is_first_axf) else (others => '0');
-  axf_last_dw              <= resize(axf_first_dw + axf_ndws - 1, axf_last_dw'length);
-  last_sxf_offset_in_axf   <= axf_last_dw and not to_unsigned(sdp_width - 1, axf_last_dw'length);
+  capturing_next_sxf        <= to_bool(axi_width > sdp_width and 
+                                       (axi_width_u - (axi_data_idx_r + sdp_width_u)) > sdp_width_u);
+  axf_first_dw              <= pkt_first_axf_dw_offset when its(pkt_is_first_axf)
+                               else (others => '0');
+  axf_last_dw               <= resize(axf_first_dw + axf_ndws - 1, axf_last_dw'length);
+  last_sxf_offset_in_axf    <= axf_last_dw and not to_unsigned(sdp_width - 1, axf_last_dw'length);
   g0: if axi_width > sdp_width generate
     g1: for i in 0 to (axi_width-sdp_width)-1 generate -- for all but the last ones
       axi_data(i) <=
         axi_data_r(i)                            -- buffered
         when i < last_sxf_offset_in_axf else
-        sdp_in_data(to_integer(i - last_sxf_offset_in_axf)); -- pass through
+        sdp_data_p(to_integer(i - last_sxf_offset_in_axf)); -- pass through
     end generate;
-    axi_data(axi_width - sdp_width to (axi_width - sdp_width) + (sdp_width - 1)) <=
-      sdp_in_data;
+    axi_data(axi_width - sdp_width to (axi_width - sdp_width) + (sdp_width - 1)) <= sdp_data_p;
   end generate;
   -- When they are the same size, its all pass-through
   g2: if axi_width = sdp_width generate
-    axi_data <= sdp_in_data;
+    axi_data <= sdp_data_p;
   end generate;
-  axi_strobe     <= strobe(pkt_is_first_axf, pkt_is_last_axf,
-                           pkt_first_axf_dw_offset,
-                           resize(pkt_ndws_in_last_axf - 1, dw_idx_in_axf_t'length),
-                           axf_ndws);
+  axi_strobe     <= strobe(pkt_is_first_axf, pkt_is_last_axf, pkt_first_axf_dw_offset,
+                           pkt_last_axf_dw_offset_p, axf_ndws);
   with write_state_r select
-    axi_valid <= bfalse                                  when capture_e | waiting_e,
+    axi_valid <= bfalse                                    when capture_e | waiting_e,
                  sdp_valid_write and not capturing_first when sop_next_e,
-                 btrue                                   when offer_e;
+                 btrue                                     when offer_e;
   axi_accepting_data <= axi_in.READY and axi_valid;
   -- when are we ready to take the SDP data if it is available? (if sdp.valid)
   with write_state_r select
@@ -199,12 +206,12 @@ begin
   -- Since SDP may be narrower than AXI, this process is a combination of
   -- building up the axf, and feeding the write data channel
   --------------------------------------------------------------------------------
-  writing_done <= to_bool(write_state_r = waiting_e or its(axi_accepting_data and sdp.eop));
+  writing_done <= to_bool(write_state_r = waiting_e or its(axi_accepting_data and sdp_p.eop));
   doclk : process(clk)
    procedure check_eop is
    begin
      pkt_is_first_axf_r <= bfalse;
-     if its(sdp.eop) then
+     if its(sdp_p.eop) then
        if its(addressing_done) then
          write_state_r <= sop_next_e;
        else
@@ -233,14 +240,14 @@ begin
         case write_state_r is
           when sop_next_e =>
             pkt_is_first_axf_r <= btrue;
-            pkt_ndws_left_r    <= pkt_ndws - axf_ndws;
+            pkt_ndws_left_r    <= pkt_ndws_p - axf_ndws;
             axi_data_idx_r     <= pkt_first_axf_sxf_offset;
             -- capture when aw > sw and more to come and not high sw in aw
 --            axi_data_r(to_integer(pkt_first_axf_sxf_offset) to
 --                       to_integer(pkt_first_axf_sxf_offset + (sdp_width - 1)))
-            axi_data_r <= sdp_in_data; -- FIXME - the indexing above does not synthesize ?
+            axi_data_r <= sdp_data_p; -- FIXME - the indexing above does not synthesize ?
             if its(capturing_first) then
-              if pkt_first_axf_ndws - pkt_first_sxf_ndws > sdp_width then
+              if pkt_first_axf_ndws_p - pkt_first_sxf_ndws > sdp_width then
                 write_state_r <= capture_e;
               else
                 write_state_r <= offer_e;
@@ -253,7 +260,7 @@ begin
           when capture_e =>
 --            axi_data_r(to_integer(axi_data_idx_r) to
 --                     to_integer(axi_data_idx_r + (sdp_width - 1))) <= sdp_in_data;
-            axi_data_r <= sdp_in_data;
+            axi_data_r <= sdp_data_p;
             axi_data_idx_r <= axi_data_idx_r + sdp_width_u;
             if not capturing_next_sxf then
               write_state_r <= offer_e;
@@ -266,6 +273,25 @@ begin
         end case;
       end if; -- end of valid write
     end if; -- end of rising edge
+  end process;
+
+  -----------------------------------------------------------------
+  -- Process added for pipelining/fmax
+  -----------------------------------------------------------------
+  dopipe : process(clk)
+  begin
+    if rising_edge(clk) then
+      if its(reset) then
+        pkt_ndws_p                <= (others => '0');
+        pkt_first_axf_ndws_p      <= (others => '0');
+        pkt_last_axf_dw_offset_p  <= (others => '0');
+      elsif its(pipeline) then
+        pkt_ndws_p                <= pkt_ndws_0;
+        pkt_first_axf_ndws_p      <= pkt_first_axf_ndws_0;
+        pkt_last_axf_dw_offset_p  <= pkt_last_axf_dw_offset_0;
+        sdp_data_p                <= sdp_in_data;
+       end if; 
+    end if;
   end process;
 
   -----------------------------------------------------------------
@@ -286,40 +312,41 @@ begin
   -----------------------------------------------------------------
   -- Debug status output - just wires here.
   -----------------------------------------------------------------
-  debug <= to_ulonglong(
-  "000" &
-  slv(pkt_ndws_left) &
-  "000" &
-  slv(pkt_ndws) &
--- nibble 7
-  slv(pkt_first_axf_sxf_offset) & -- 1
-  slv(last_sxf_offset_in_axf) & -- 1
-  slv(pkt_first_axf_ndws) & -- 2
--- nibble 6
-slv(axf_ndws) &
-slv(pkt_ndws_in_last_axf) &
--- nibble 4+5
-slv(axi_strobe) & -- 8
--- nibble 3
-slv(to_unsigned(write_state_t'pos(write_state_r),2)) & --2
-slv(axi_data_idx_r) & --1
-"0" & --1
--- nibble 2
-slv(capturing_next_sxf) & --1
-slv(axf_last_dw) & --1
-slv(axf_ndws) & -- 2
---slv(pkt_first_sxf_dw_offset) & -- 1
---slv(pkt_first_axf_dw_offset) &  -- 1
--- nibble 1
-fyv(sdp_valid_write) & -- 1
-fyv(pkt_starting) & -- 1
-fyv(pkt_is_first_axf) & -- 1
-fyv(pkt_is_last_axf) & -- 1
--- nibble 0
-fyv(capturing_first) & -- 1
-fyv(capturing_next_axf) & -- 1
-slv(pkt_first_axf_sxf_offset) & -- 1
-fyv(axi_accepting_data) -- 1
-);
+  debug <= (others => '0');
+--  debug <= to_ulonglong(
+--  "000" &
+--  slv(pkt_ndws_left) &
+--  "000" &
+--  slv(pkt_ndws) &
+---- nibble 7
+--  slv(pkt_first_axf_sxf_offset) & -- 1
+--  slv(last_sxf_offset_in_axf) & -- 1
+--  slv(pkt_first_axf_ndws) & -- 2
+---- nibble 6
+--slv(axf_ndws) &
+--slv(pkt_last_axf_dw_offset) & "0" &
+---- nibble 4+5
+--slv(axi_strobe) & -- 8
+---- nibble 3
+--slv(to_unsigned(write_state_t'pos(write_state_r),2)) & --2
+--slv(axi_data_idx_r) & --1
+--"0" & --1
+---- nibble 2
+--slv(capturing_next_sxf) & --1
+--slv(axf_last_dw) & --1
+--slv(axf_ndws) & -- 2
+----slv(pkt_first_sxf_dw_offset) & -- 1
+----slv(pkt_first_axf_dw_offset) &  -- 1
+---- nibble 1
+--fyv(sdp_valid_write) & -- 1
+--fyv(pkt_starting) & -- 1
+--fyv(pkt_is_first_axf) & -- 1
+--fyv(pkt_is_last_axf) & -- 1
+---- nibble 0
+--fyv(capturing_first) & -- 1
+--fyv(capturing_next_axf) & -- 1
+--slv(pkt_first_axf_sxf_offset) & -- 1
+--fyv(axi_accepting_data) -- 1
+--);
 
 end rtl;

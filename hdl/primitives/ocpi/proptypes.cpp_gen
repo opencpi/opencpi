@@ -130,11 +130,9 @@ $end entity;
 #define WPROP_STRING(pretty,which,def,rng,lhs,rhs) \
 ENTITY_STRING(pretty,which,def,rng) \
 $architecture rtl of pretty##_property is \
-$@@signal base : natural range 0 to property.string_length;\
 $@@signal temp : string_t(0 to property.string_length + 3);\
 $begin\
 $@@value <= temp(0 to property.string_length);\
-$@@base <= to_integer(offset);\
 $@@reg: process(Clk) is\
 $@@begin\
 $@@@@if rising_edge(clk) then\
@@ -142,7 +140,7 @@ $@@@@@@if its(reset) then\
 $@@@@@@@ temp <= (others => to_signed(0,char_t~length));\
 $@@@@@@@ written <= bfalse;\
 $@@@@@@elsif its(write_enable) then\
-$@@@@@@@@temp(base to base + 3) <= to_string_dw(data);\
+$@@@@@@@@temp(to_integer(offset) to to_integer(offset + 3)) <= to_string_dw(data);\
 $@@@@@@@@written <= btrue;\
 $@@@@@@else\
 $@@@@@@@@written <= bfalse;\
@@ -161,7 +159,7 @@ $@@@@@@@@offset      : in unsigned(worker.decode_width-1 downto 0);\
 $@@@@@@@@read_enable : in bool_t);\
 $end entity;\
 $architecture rtl of pretty##_read_property is begin\
-$@@data_out <= from_string(value, offset, is_big_endian) when read_enable and offset <= value~right\
+$@@data_out <= from_string(value, offset, is_big_endian) when its(read_enable)\
 $@@@@@@@@@@@@@@else (others => '0');\
 $end rtl;
 

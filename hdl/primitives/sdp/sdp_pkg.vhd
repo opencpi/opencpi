@@ -106,7 +106,7 @@ type metadata_t is record
 end record metadata_t;
 constant metawidth_c : integer := meta_length_width_c + 1 + 1 + 1 + meta_opcode_width_c;
 constant meta_ndws_c : integer := (metawidth_c + dword_size - 1) / dword_size;
-subtype meta_dw_count_t is unsigned(meta_length_width_c-3 downto 0);
+--subtype meta_dw_count_t is unsigned(meta_length_width_c-3 downto 0);
 function meta2slv(meta : metadata_t) return std_logic_vector;
 function slv2meta(s : std_logic_vector(metawidth_c-1 downto 0)) return metadata_t;
 
