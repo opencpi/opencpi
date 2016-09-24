@@ -165,7 +165,7 @@ namespace OCPI {
 	    const OU::Value *vp = &v;
 	    OU::ValueReader reader(&vp);
 	    info.read(reader, data, length, false, true); // not fake, top level
-	    assert(length == 0);
+	    assert(length < info.m_dataAlign); // padding at end may not be written
 	    data = (uint8_t*)alloc;
 	    if (info.m_isSequence) { // because we set the sequence length last below
 	      assert(*(uint32_t *)data == v.m_nElements);
@@ -278,7 +278,7 @@ namespace OCPI {
 	    OU::Value *vp = NULL;
 	    OU::ValueWriter writer(&vp, 1);
 	    info.write(writer, tmp, length, true); // is top-level
-	    assert(length == 0);
+	    assert(length < info.m_dataAlign); // padding at end may not be taken
 	    delete [] data;
 	    vp->unparse(value, NULL, add, hex);
 	    delete vp;
