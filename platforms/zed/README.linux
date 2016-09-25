@@ -87,7 +87,7 @@ the platforms/zed directory in the OpenCPI tree.
    git commit -m "establish Xilinx Zynq release 2013.4 with kernel headers and patches"
    git push
 
-In the Zynq build environment, the OCPI_KERNEL_DIR environment variable usually points to
+In the Zynq build environment, the OCPI_TARGET_KERNEL_DIR environment variable usually points to
 $(OCPI_BASE_DIR)/platforms/zynq/release/kernel-headers.  Both the "release" and the
 "kernel-headers" are symbolic links to actual releases and source repo tags.
 

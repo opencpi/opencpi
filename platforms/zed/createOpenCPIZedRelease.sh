@@ -24,7 +24,7 @@ EOF
 fi
 if test \
   "$OCPI_XILINX_EDK_DIR" = "" -o \
-  "$OCPI_KERNEL_DIR" = "" -o \
+  "$OCPI_TARGET_KERNEL_DIR" = "" -o \
   "$OCPI_XILINX_DIR" = "" -o \
   "$OCPI_XILINX_VERSION" = "" -o \
   ! -d "$OCPI_XILINX_EDK_DIR" -o \
