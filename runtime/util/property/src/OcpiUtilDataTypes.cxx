@@ -720,7 +720,6 @@ namespace OCPI {
       m_elementBytes = m_nBits/CHAR_BIT;
       if (m_arrayRank || m_isSequence)
 	m_elementBytes = roundUp((uint32_t)m_elementBytes, m_align);
-
       // Calculate the number of bytes in each element of an array/sequence
       if (nBytes > UINT32_MAX)
 	return "Total member size in bytes is too large (> 4G)";
