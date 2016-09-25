@@ -51,7 +51,7 @@ extern const char *endians[];
 #define HDL_TOP_ATTRS "Pattern", "PortPattern", "DataWidth", "Language", "library"
 // These are for implementaitons that you write (e.g. not generated assemblies)
 #define HDL_IMPL_ATTRS GENERIC_IMPL_CONTROL_ATTRS, "RawProperties", "FirstRawProperty", "outer", "endian","emulate"
-#define HDL_IMPL_ELEMS "timeinterface", "memoryinterface", "streaminterface", "messageinterface", "signal", "cpmaster", "time_service", "control", "metadata", "devsignal", "rawprop", "supports", "clock", "timebase"
+#define HDL_IMPL_ELEMS "timeinterface", "memoryinterface", "streaminterface", "messageinterface", "signal", "cpmaster", "time_service", "control", "metadata", "devsignal", "rawprop", "supports", "clock", "timebase", "devsignals"
 #define HDL_ASSEMBLY_ATTRS "platform", "config", "configuration"
 #define HDL_ASSEMBLY_ELEMS "connection"
 class HdlAssembly : public Worker {

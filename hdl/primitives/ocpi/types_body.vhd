@@ -91,64 +91,50 @@ function btrue return bool_t is begin return to_bool(true); end;
 function bfalse return bool_t is begin return to_bool(false); end;
 function To_boolean(b : bool_t) return boolean is begin return its(b); end to_boolean;
 function from_bool_array(ba : bool_array_t;
-                         index, nbytes_1, byte_offset : unsigned;
+                         offset, nbytes_1, byte_offset : unsigned;
                          is_big_endian : boolean) return dword_t is
-  variable result: dword_t := (others => '0');
-  variable b : std_logic;
-  variable i : natural := to_integer(index);
-  variable o : natural := to_integer(byte_offset) * 8;
-  variable n : natural := to_integer(nbytes_1);
+  variable my_offset : unsigned(offset'range) := offset;
+  variable my_byte_offset : unsigned(byte_offset'range) := byte_offset;
+  variable my_nbytes_1 : unsigned(nbytes_1'range) := nbytes_1;
+  variable last_index  : unsigned(offset'range);
+  variable last_offset : unsigned(byte_offset'range);
+  variable v : std_logic_vector(0 to 3) := (others => '0');
 begin
-  if n >= to_unsigned(4,3) - byte_offset then
-    n := 0;
+  if my_offset >= ba'right then
+    my_offset := (others => '0');
   end if;
-  if i > ba'right then
-    i := 0;
+  if my_nbytes_1 >= ba'right then
+    my_nbytes_1 := (others => '0');
   end if;
-  if is_big_endian then
-    result(o + 24) := from_bool(ba(i))(0);
-    if n > 0 then
-      result(o + 16) := from_bool(ba(i+1))(0);
-      if n > 1 then
-        result(o + 8) := from_bool(ba(i+2))(0);
-        if n = 3 then
-          result(o + 0) := from_bool(ba(i+3))(0);
-        end if; 
-      end if;
-    end if;
-  else
---    report "from_bool1 i " & integer'image(i) & " o " & integer'image(o) & " nb1 " &
---      integer'image(n) & " bar " & integer'image(ba'right);
-    if o + n*8 > dword_t'length then
-      o := 0;
-    end if;
---    report "from_bool2 i " & integer'image(i) & " o " & integer'image(o) & " nb1 " &
---      integer'image(n) & " bar " & integer'image(ba'right);
---if its(ba(i)) then
---  result(o + 0) := '1';
---else
---  result(o + 0) := '0';
---end if;
---  result(o + 0) := from_bool(ba(i))(0);  -- this crashes Isim 14.6
-    b := ba(i);
-    result(o+0) := b;
-    if n > 0 and i < ba'right then
-      i := i + 1;
-      b := ba(i);
-      result(o + 8) := b;
-      if n > 1 and i < ba'right then
-        i := i + 1;
-        b := ba(i);
-        result(o + 16) := b;
-        if n = 3 and i < ba'right then
-          i := i + 1;
-          b := ba(i);
-          result(o + 24) := b;
-        end if; 
-      end if;
-    end if;
+  if my_nbytes_1 > (3 - byte_offset)  then
+    my_nbytes_1 := (others => '0');
   end if;
-  return result;
+--  report "from_bool1" &
+--    " offset " & integer'image(to_integer(offset)) &
+--    " nbytes_1 " & integer'image(to_integer(nbytes_1)) &
+--    " byte_offset " & integer'image(to_integer(byte_offset));
+  last_index  := resize(my_offset + my_nbytes_1, offset'length);
+--  report "from_bool2" &
+--    " last_index " & integer'image(to_integer(last_index));
+  if last_index > ba'right then
+    last_index := (others => '0');
+  end if;
+  last_offset := resize(my_byte_offset + (last_index - my_offset), last_offset'length);
+--  report "from_bool3" &
+--    " last_index " & integer'image(to_integer(last_index)) &
+--    " last_offset " & integer'image(to_integer(last_offset));
+  for i in 0 to 3 loop
+--    report "from_bool4 " & integer'image(i);
+    if i >= my_byte_offset and i <= last_offset then
+      v(i) := ba(to_integer(my_offset + (i - my_byte_offset)));
+    end if;
+  end loop;
+  return (0 => v(0),
+          8 => v(1),
+          16 => v(2),
+          24 => v(3),
+          others => '0');
+--  return result;
 end from_bool_array;
 
 -- char

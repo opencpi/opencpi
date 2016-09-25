@@ -2,7 +2,7 @@
 -- result is write_enable, offset-in-array, and aligned data output
 -- output data has full 32 bits when sub32 arrays are being written
 library ieee; use ieee.std_logic_1164.all; use ieee.numeric_std.all;
-library ocpi; use ocpi.all; use ocpi.types.all; use ocpi.wci.all;
+library ocpi; use ocpi.all, ocpi.types.all, ocpi.wci.all, ocpi.util.all;
 
 entity property_decoder is
   generic (
@@ -19,8 +19,8 @@ entity property_decoder is
         is_big_endian : in bool_t;
         write_enable  : out bool_t;                            -- active-high write pulse
         read_enable   : out bool_t;                            -- active-high read pulse
-        offset_out    : out unsigned(decode_width-1 downto 0); -- 
-        index_out     : out unsigned(decode_width-1 downto 0); --
+        offset_out    : out unsigned(width_for_max(property.bytes_1)-1 downto 0);
+--        index_out     : out unsigned(decode_width-1 downto 0);
         data_out      : out std_logic_vector(31 downto 0));
 end entity property_decoder;
 
@@ -69,8 +69,9 @@ architecture rtl of property_decoder is
                              data_in( 7 downto  0);
   end generate;
   -- never on strings so no non-power of 2 math needed.
-  index_out    <= my_offset/element_bytes(property) when its(my_decode) else (others => '0');
-  offset_out   <= my_offset;
+--  index_out    <= my_offset/element_bytes(property) when its(my_decode) else (others => '0');
+--  index_out    <= my_offset srl width_for_max(property.data_width-1);
+  offset_out   <= my_offset(offset_out'range);
   write_enable <= to_bool(is_write and property.writable and my_decode);
   read_enable  <= to_bool(is_read and property.readable and my_decode);
 end rtl;

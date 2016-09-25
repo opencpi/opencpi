@@ -90,7 +90,8 @@ DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *
       (err = OE::getNumber(m_xml, "MinBuffers", &m_minBufferCount, 0, 0)) || // backward compat
       (err = OE::getNumber(m_xml, "MinBufferCount", &m_minBufferCount, 0, m_minBufferCount)) ||
       (err = OE::getNumber(m_xml, "Buffersize", &m_bufferSize, 0,
-			   m_protocol ? m_protocol->m_defaultBufferSize : 0)))
+			   m_bufferSize ? m_bufferSize :
+			   (m_protocol ? m_protocol->m_defaultBufferSize : 0))))
     return;
   // Data width can be unspecified, specified explicitly, or specified with an expression
   if (!m_dataWidthFound) {
@@ -210,7 +211,7 @@ DataPort(Worker &w, ezxml_t x, int ordinal, const char *&err)
       err = "cannot have both Protocol and ProtocolSummary";
       return;
     }
-    if ((err = OE::checkAttrs(pSum, OCPI_PROTOCOL_SUMMARY_ATTRS, "NumberOfOpcodes",
+    if ((err = OE::checkAttrs(pSum, OCPI_PROTOCOL_SUMMARY_ATTRS, "NumberOfOpcodes", "buffersize",
 			      (void*)0)) ||
 	(err = OE::getNumber(pSum, "NumberOfOpcodes", &m_nOpcodes, 0, 1)) ||
 	(err = m_protocol->parseSummary(pSum)))

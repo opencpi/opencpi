@@ -49,46 +49,35 @@ architecture rtl of wsi_16_to_32_worker is
 
   signal data_r        : std_logic_vector(15 downto 0):= (others => '0');
   signal byte_enable_r : std_logic_vector(1 downto 0):= "00";
-  signal som_r, eom_r  : bool_t:= bfalse;
-  signal valid_r       : bool_t:= bfalse;
-  signal word_ready    : bool_t:= bfalse;
-  signal ready_r       : bool_t:= bfalse;
-
+  signal som_r         : bool_t:= bfalse;
+  signal captured_r    : bool_t:= bfalse;
+  signal capture       : bool_t;
+  signal giving        : bool_t;
 begin
---  hi_absent           <= to_bool(in_in.byte_enable(3) = '0' and in_in.byte_enable(2) = '0');
-  in_out.take         <= in_in.ready and out_in.ready; -- and
-                         --(hi16_r or not in_in.valid or hi_absent);
-
-  out_out.give        <= (in_in.ready or (ready_r and not valid_r)) and out_in.ready and word_ready;
-  out_out.data        <= in_in.data & (data_r);
-  out_out.byte_enable <= in_in.byte_enable & byte_enable_r;
+  capture <= in_in.ready and not captured_r and in_in.valid and not in_in.eom;
+  giving  <= out_in.ready and in_in.ready and not capture;
+  in_out.take         <= in_in.ready and (out_in.ready or capture);
+  out_out.give        <= giving;
+  out_out.data        <= in_in.data & data_r when its(captured_r)
+                         else (in_in.data'range => '0') & in_in.data;
+  out_out.byte_enable <= in_in.byte_enable & byte_enable_r when its(captured_r)
+                         else (in_in.byte_enable'range => '0') & in_in.byte_enable;
   out_out.som         <= in_in.som or som_r;
-  out_out.eom         <= in_in.eom or eom_r;
-  out_out.valid       <= in_in.valid or valid_r;
+  out_out.eom         <= in_in.eom;
+  out_out.valid       <= in_in.valid or captured_r;
 
   process (wci_clk) is
   begin
     if rising_edge(wci_clk) then
-
-      ready_r <= in_in.ready;
-
-      if in_in.reset or out_in.reset then
-
-      elsif in_in.ready and out_in.ready then
-        word_ready    <= not word_ready;
+      if its(wci_reset) then
+        captured_r    <= bfalse;
+      elsif its(capture) then
         data_r        <= in_in.data;
         byte_enable_r <= in_in.byte_enable;
         som_r         <= in_in.som;
-        eom_r         <= in_in.eom;
-        valid_r       <= in_in.valid;
-
-      elsif word_ready and ready_r then
-        if not valid_r then --zlm
-          word_ready <= bfalse;
-          som_r      <= bfalse;
-          eom_r      <= bfalse;
-        end if;
-
+        captured_r    <= btrue;
+      elsif its(giving) then
+        captured_r    <= bfalse;
       end if;
     end if;
   end process;

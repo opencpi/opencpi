@@ -1327,7 +1327,7 @@ emitRccCppImpl(FILE *f) {
 		  "       class %sArg : public OCPI::RCC::RCCPortOperationArg { \n"
 		  "       private:\n"
 		  "          mutable %s *m_myptr;\n",
-		  s.c_str(), type.c_str());
+		  a.c_str(), type.c_str());
 	  std::string get;
 	  // FIXME: CACHE THIS UNTIL BUFFER CHANGES...
 	  OU::format(get, "m_myptr = (%s *)getArgAddress(%s, %s);\n",

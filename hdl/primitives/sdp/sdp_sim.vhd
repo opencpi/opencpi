@@ -41,6 +41,7 @@ architecture rtl of sdp_sim is
   signal sw2sdp_index_r     : natural := 0;
   signal sw2sdp_eop_r       : boolean := false; -- frame is eop
   signal sw2sdp_dw_r        : dword_t;
+  signal sw2sdp_read_dws_r  : ushort_t := (others => '0'); -- how many reads dws not returned
   -- State for SDP->SW flow
   signal sdp2sw_in_header_r : boolean := true;
   signal sdp2sw_length_r    : natural := 0; -- payload length, decremented
@@ -87,10 +88,11 @@ begin
   sdp2sw_header_dws  <= header2dws(sdp_in.sdp.header);
 
   process (clk) is
-    variable sw2sdp_dw : dword_t;
-    variable sdp2sw_dw : dword_t;
-    variable ndws      : natural;
-    variable credit    : integer;
+    variable sw2sdp_dw    : dword_t;
+    variable sdp2sw_dw    : dword_t;
+    variable payload_ndws : natural;
+    variable count_ndws   : natural;
+    variable credit       : integer;
     impure function read_byte(file f : char_file_t; msg : string) return natural is
       variable data : character;
     begin
@@ -153,7 +155,8 @@ begin
             ack_flush_r <= btrue;
           end if;
           spin_credit_r <= spin_credit_r - 1;
-        elsif not its(sdp_in.sdp.valid) and not its(sim2sw_valid_r) then
+        elsif not its(sdp_in.sdp.valid) and not its(sim2sw_valid_r) and sw2sdp_read_dws_r = 0 then
+          -- Only do a control read (which blocks the simulator) if there is no read outstanding
           case read_byte(ctl_file, "control") is
             when 0      => spin_credit_r <= read_byte(ctl_file, "spin");
             when 1      =>
@@ -188,20 +191,23 @@ begin
             if sw2sdp_index_r = sdp_header_ndws-1 then
               -- we're done with the header
               if sw2sdp_index_r = 0 then
-                ndws := to_integer(payload_in_dws(sw2sdp_dw));
+                payload_ndws := to_integer(payload_in_dws(sw2sdp_dw));
+                count_ndws   := to_integer(count_in_dws(sw2sdp_dw));
               else
-                ndws := to_integer(payload_in_dws(sw2sdp_header_r(0)));
+                payload_ndws := to_integer(payload_in_dws(sw2sdp_header_r(0)));
+                count_ndws   := to_integer(count_in_dws(sw2sdp_header_r(0)));
               end if;
-              if ndws = 0 then
-                -- zero payload, we're done
+              if payload_ndws = 0 then
+                -- zero payload, we're done, it is a read
                 sw2sdp_index_r     <= 0;
                 sw2sdp_complete_r  <= true;
                 sw2sdp_eop_r       <= true;
+                sw2sdp_read_dws_r  <= sw2sdp_read_dws_r + count_ndws; -- check dec?
               else
-                sw2sdp_length_r    <= ndws;
+                sw2sdp_length_r    <= payload_ndws;
                 sw2sdp_index_r     <= start_dw(dws2header(header_dws(sw2sdp_dw)), sdp_width);
                 sw2sdp_in_header_r <= false;
-                sw2sdp_eop_r       <= ndws <= sdp_width;
+                sw2sdp_eop_r       <= payload_ndws <= sdp_width;
               end if;
             else
               sw2sdp_index_r <= sw2sdp_index_r + 1;
@@ -244,6 +250,9 @@ begin
           else
             -- write_dw(sdp_in_data(sdp2sw_index_r));
             sim2sw_data_r <= sdp_in_data(sdp2sw_index_r);
+            if sdp_in.sdp.header.op = response_e then
+               sw2sdp_read_dws_r <= sw2sdp_read_dws_r - 1;
+            end if;
             if sdp2sw_last_dw then -- end of frame from sdp
               sim2sw_flush_r <= btrue;
               sdp2sw_index_r <= 0;

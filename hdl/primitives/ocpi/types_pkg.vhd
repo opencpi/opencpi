@@ -227,7 +227,7 @@ function to_slv(a: string_array_t) return std_logic_vector;
 function to_string_array(a: std_logic_vector; length : natural) return string_array_t;
 
 function from_bool_array(ba : bool_array_t;
-                         index, nbytes_1, byte_offset : unsigned;
+                         offset, nbytes_1, byte_offset : unsigned;
                          is_big_endian : boolean) return dword_t;
 
 end package types;

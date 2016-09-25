@@ -32,7 +32,7 @@ architecture rtl of sdp_pipeline_rv is
       v(i*32+31 downto i*32) := dws(i);
     end loop;
     for i in 0 to sdp_header_ndws-1 loop
-      v((i+sdp_width_c)*32+31 downto (i+sdp_width_c)*32) := header2dws(sdp.header)(0);
+      v((i+sdp_width_c)*32+31 downto (i+sdp_width_c)*32) := header2dws(sdp.header)(i);
     end loop;
     v(v'left) := sdp.eop;
     return v;
@@ -66,7 +66,7 @@ begin
 
   down_data_in  <= sdp2slv(up_in_data, up_in.sdp);
   down_out_data <= slv2sdp_data(down_data_out);
-  down_out.sdp  <= slv2sdp(down_data_out, down_empty, down_enq);
+  down_out.sdp  <= slv2sdp(down_data_out, down_empty, up_enq);
 
   -- the unfortunate part of this is that we can't assign whole records because
   -- the take/ready signals are in the opposite directions for other reasons

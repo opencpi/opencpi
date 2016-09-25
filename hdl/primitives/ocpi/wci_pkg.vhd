@@ -190,7 +190,7 @@ type wci_s2m_array_t is array(natural range <>) of wci_s2m_t;
       write_enables          : out bool_array_t(properties'range);
       read_enables           : out bool_array_t(properties'range);
       offsets                : out offset_a_t(properties'range);
-      indices                : out offset_a_t(properties'range);
+--      indices                : out offset_a_t(properties'range);
       hi32                   : out bool_t;
       nbytes_1               : out byte_offset_t;
       data_outputs           : out data_a_t(properties'range);
@@ -247,8 +247,8 @@ type wci_s2m_array_t is array(natural range <>) of wci_s2m_t;
         is_big_endian : in bool_t;
         write_enable  : out bool_t;                            -- active-high write pulse
         read_enable   : out bool_t;                            -- active-high read pulse
-        offset_out    : out unsigned(decode_width-1 downto 0); -- 
-        index_out     : out unsigned(decode_width-1 downto 0); --
+        offset_out    : out unsigned(width_for_max(property.bytes_1)-1 downto 0); -- 
+--        index_out     : out unsigned(decode_width-1 downto 0); --
         data_out      : out std_logic_vector(31 downto 0)); --
   end component property_decoder;
   component raw_arb is

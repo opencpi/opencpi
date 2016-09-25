@@ -216,8 +216,10 @@ g0: for i in 0 to sdp_width_c-1 generate
     md_in_dws_bits - (sdp_width - 1)
     when md_in_byte_bits /= 0 and md_in_dws_bits >= sdp_width - 1 else
     (others => '0');   
-  md_in.last_be <= slv(not (unsigned(slv1(sdp_width_c*dword_bytes)) sll
-                            to_integer(md_in_raw.length(addr_shift_c-1 downto 0))));
+  md_in.last_be <=
+    (others => '1') when md_in_raw.length(addr_shift_c-1 downto 0) = 0 else
+    slv(not (unsigned(slv1(sdp_width_c*dword_bytes)) sll
+             to_integer(md_in_raw.length(addr_shift_c-1 downto 0))));
 --    not synthesizable (xst at least)
 --                         (sdp_width_c*dword_bytes-1 downto
 --                          to_integer(md_out.length(addr_shift_c-1 downto 0)) => '0',

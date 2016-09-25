@@ -1174,7 +1174,10 @@ emitVhdlShell(FILE *f) {
     // For each data interface we aggregate a peer reset.
     for (unsigned i = 0; i < m_ports.size(); i++) {
       Port *p = m_ports[i];
-      if (p->isData()) {
+      // We are reset if the control is reset OR any output ports are reset.
+      // Input ports may be in reset and that doesn't reset us since we won't see any data
+      // anyway.  This asymmetry is necessary to prevent reset deadlock.
+      if (p->isData() and p->isDataProducer()) {
 	fprintf(f, " or not %s.%s",
 		p->typeNameIn.c_str(),
 		ocpSignals[p->m_master ? OCP_SReset_n : OCP_MReset_n].name);
@@ -1637,7 +1640,7 @@ emitImplHDL(bool wrap) {
 	      "-- Here we define and implement the WCI interface module for this worker,\n"
 	      "-- which can be used by the worker implementer to avoid all the OCP/WCI issues\n"
 	      "library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;\n"
-	      "library ocpi; use ocpi.all, ocpi.types.all;\n"
+	      "library ocpi; use ocpi.all, ocpi.types.all, ocpi.util.all;\n"
 	      "use work.%s_worker_defs.all, work.%s_constants.all, work.%s_defs.all;\n"
 	      "entity %s_wci is\n"
 	      "  generic(ocpi_debug : bool_t; endian : endian_t);\n"
@@ -1710,13 +1713,13 @@ emitImplHDL(bool wrap) {
 		"  -- signals for property reads and writes\n"
 		"  signal offsets       : "
 		"wci.offset_a_t(0 to %u);  -- offsets within each property\n"
-		"  signal indices       : "
-		"wci.offset_a_t(0 to %u);  -- array index for array properties\n"
+		//		"  signal indices       : "
+		//		"wci.offset_a_t(0 to %u);  -- array index for array properties\n"
 		"  signal hi32          : "
 		"bool_t;                 -- high word of 64 bit value\n"
 		"  signal nbytes_1      : "
 		"types.byte_offset_t;       -- # bytes minus one being read/written\n",
-		nProps_1, nProps_1);
+		nProps_1);
 	if (m_ctl.nonRawWritables)
 	  fprintf(f,
 		  "  -- signals between the decoder and the writable property registers\n"
@@ -1891,7 +1894,7 @@ emitImplHDL(bool wrap) {
 		"                  write_enables        => %s,\n"
 		"                  read_enables         => %s,\n"
 		"                  offsets              => offsets,\n"
-		"                  indices              => indices,\n"
+		//		"                  indices              => indices,\n"
 		"                  hi32                 => hi32,\n"
 		"                  nbytes_1             => nbytes_1,\n"
 		"                  data_outputs         => %s,\n"
@@ -1992,15 +1995,21 @@ emitImplHDL(bool wrap) {
 	    fprintf(f, "                written      => open");
 	  else
 	    fprintf(f, "                written      => props_to_worker.%s_written", name);
-	  if (pr.m_arrayRank || pr.m_isSequence) {
+	  if (pr.m_arrayRank || pr.m_isSequence || pr.m_baseType == OA::OCPI_String)
 	    fprintf(f, ",\n"
+		    "                offset        => offsets(%u)(width_for_max(work.%s_worker_defs.properties(%u).bytes_1)-1 downto 0)",
+		    n, m_implName, n);
+	  if (pr.m_arrayRank || pr.m_isSequence) {
+#if 0
+	    fprintf(f,
 		    "                index        => indices(%u)(%zu downto 0),\n",
 		    n, decodeWidth-1);
+#endif
 	    if (pr.m_isInitial)
-	      fprintf(f,
+	      fprintf(f, ",\n"
 		      "                any_written  => open");
 	    else
-	      fprintf(f,
+	      fprintf(f, ",\n"
 		      "                any_written  => props_to_worker.%s_any_written", name);
 	    if (pr.m_baseType != OA::OCPI_String &&
 		pr.m_nBits != 64)
@@ -2010,10 +2019,12 @@ emitImplHDL(bool wrap) {
 	  if (pr.m_nBits == 64)
 	    fprintf(f, ",\n"
 		    "                hi32         => hi32");
+#if 0
 	  if (pr.m_baseType == OA::OCPI_String)
 	    fprintf(f, ",\n"
 		    "                offset        => offsets(%u)(%zu downto 0)",
 		    n, decodeWidth-1);
+#endif
 	  fprintf(f, ");\n");
 	  if (isStringArray)
 	    // String arrays require a wrapper to convert to the generic string_array_t
@@ -2075,23 +2086,16 @@ emitImplHDL(bool wrap) {
 	    fprintf(f, "%s,\n", var.c_str());
 	  fprintf(f,   "                is_big_endian=> my_big_endian,\n");
 	  fprintf(f,   "                data_out     => readback_data(%u)", n);
-	  if (pr.m_baseType == OA::OCPI_String)
+	  if (pr.m_arrayRank || pr.m_isSequence || pr.m_baseType == OA::OCPI_String)
 	    fprintf(f, ",\n"
-		    "                offset       => offsets(%u)(%zu downto 0)",
-		    n, decodeWidth-1);
-	  else {
-	    if (pr.m_arrayRank || pr.m_isSequence) {
-	      fprintf(f, ",\n"
-		      "                index        => indices(%u)(%zu downto 0)",
-		      n, decodeWidth-1);
-	      if (pr.m_nBits != 64)
-		fprintf(f, ",\n"
-			"                nbytes_1     => nbytes_1");
-	    }
-	    if (pr.m_nBits == 64)
-	      fprintf(f, ",\n"
-		      "                hi32       => hi32");
-	  }
+		    "                offset        => offsets(%u)(width_for_max(work.%s_worker_defs.properties(%u).bytes_1)-1 downto 0)",
+		      n, m_implName, n);
+	  if (pr.m_nBits == 64)
+	    fprintf(f, ",\n"
+		    "                hi32       => hi32");
+	  else if ((pr.m_arrayRank || pr.m_isSequence) && pr.m_baseType != OA::OCPI_String)
+	    fprintf(f, ",\n"
+		    "                nbytes_1     => nbytes_1");
 	  // provide read enable to suppress out-of-bound reads
 	  if (pr.m_baseType == OA::OCPI_String)
 	    fprintf(f, ",\n                read_enable  => read_enables(%u));\n", n);

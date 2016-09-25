@@ -28,7 +28,7 @@ entity decoder is
       write_enables          : out bool_array_t(properties'range);
       read_enables           : out bool_array_t(properties'range);
       offsets                : out offset_a_t(properties'range);
-      indices                : out offset_a_t(properties'range);
+--      indices                : out offset_a_t(properties'range);
       hi32                   : out bool_t;
       nbytes_1               : out byte_offset_t;
       data_outputs           : out data_a_t(properties'range);
@@ -289,10 +289,11 @@ begin
                        -- outputs from the decoding process
                        write_enable  => my_write_enables(i),
                        read_enable   => my_read_enables(i),
-                       offset_out    => my_offsets(i),
-                       index_out     => indices(i)(worker.decode_width-1 downto 0),
+                       offset_out    => my_offsets(i)
+                                        (width_for_max(properties(i).bytes_1)-1 downto 0),
+--                       index_out     => indices(i)(worker.decode_width-1 downto 0),
                        data_out      => data_outputs(i));
-            indices(i)(indices(i)'left downto worker.decode_width) <= (others => '0');
+--            indices(i)(indices(i)'left downto worker.decode_width) <= (others => '0');
             offsets(i) <= resize(my_offsets(i),offsets(i)'length);
       end generate g2;
     end generate g1;

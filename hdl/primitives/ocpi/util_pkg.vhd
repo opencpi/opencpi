@@ -1,7 +1,7 @@
 library ieee; use ieee.std_logic_1164.all, ieee.numeric_std.all;
 library ocpi; use ocpi.types.all;
 package util is
-function width_for_max (n : natural) return natural;
+function width_for_max(n : natural) return natural;
 function roundup_2_power_of_2(n : natural) return natural;
 function slv(b : std_logic) return std_logic_vector;
 function slv(v : std_logic_vector) return std_logic_vector;

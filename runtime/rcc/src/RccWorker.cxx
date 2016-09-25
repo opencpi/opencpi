@@ -1192,8 +1192,10 @@ OCPI_CONTROL_OPS
        throw OU::Error("resize of %zu specified after length set to %zu bytes", size, 
 		       buf.m_rccBuffer->length_);
      if (nBytes > limit)
-       throw OU::Error("for protocol \"%s\" operation \"%s\" argument \"%s\": "
+       throw OU::Error("for worker \"%s\" port \"%s\" protocol \"%s\" operation \"%s\" argument \"%s\": "
 		       "sequence size %zu (%zu bytes) exceeds remaining buffer size (%zu)",
+		       m_rccPort.containerPort->parent().name().c_str(),
+		       m_rccPort.containerPort->name().c_str(),
 		       m_rccPort.containerPort->metaPort().OU::Protocol::m_name.c_str(),
 		       o.cname(), m.cname(), size, nBytes, limit);
      if (o.m_nArgs == 1)

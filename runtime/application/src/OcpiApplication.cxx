@@ -868,7 +868,7 @@
        std::string name, value;
        bool isParameter, isCached;
        if (m_verbose)
-	 fprintf(stderr, "Dump of all %s%sinitial property values:\n",
+	 fprintf(stderr, "Dump of all %s%s property values:\n",
 		 context ? context : "", context ? " " : "");
        for (unsigned n = 0;
 	    getProperty(n, name, value, m_hex, &isParameter, &isCached, m_uncached); n++)

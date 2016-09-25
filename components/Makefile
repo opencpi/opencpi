@@ -54,6 +54,7 @@ Tests = \
 Workers = \
     sma.hdl \
     proxy.rcc \
+    proxy_hdl.rcc \
     nothing.rcc \
     nothing.hdl \
     file_read.hdl \

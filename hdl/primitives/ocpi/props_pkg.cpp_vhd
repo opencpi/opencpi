@@ -5,7 +5,7 @@
 library ieee; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 --library std;
 --use std.all;
-library ocpi; use ocpi.types.all; use ocpi.wci.all;
+library ocpi; use ocpi.types.all, ocpi.wci.all, ocpi.util.all;
 package props is
 --
 -- Property storage entities to attach to a wci.decoder
@@ -51,7 +51,7 @@ $@@@@@@@@write_enable : in bool_t;\
 $@@@@@@@@data         : in std_logic_vector(rng);\
 $@@@@@@@@value        : out pretty##_t(0 to property.string_length);\
 $@@@@@@@@written      : out bool_t;\
-$@@@@@@@@offset       : in unsigned(worker.decode_width-1 downto 0));\
+$@@@@@@@@offset       : in unsigned(width_for_max(property.bytes_1)-1 downto 0));\
 $end component;
 
 #define RPROP_STRING(pretty,which,def,rng,io)\
@@ -63,7 +63,7 @@ $@@generic (worker : worker_t; property : property_t);\
 $@@port (value       : in pretty##_t;\
 $@@@@@@@@is_big_endian: in bool_t;\
 $@@@@@@@@data_out    : out std_logic_vector(31 downto 0);\
-$@@@@@@@@offset      : in unsigned(worker.decode_width-1 downto 0);\
+$@@@@@@@@offset      : in unsigned(width_for_max(property.bytes_1)-1 downto 0);\
 $@@@@@@@@read_enable : in bool_t);\
 $end component;
 
@@ -108,7 +108,7 @@ $@@@@@@@@write_enable : in bool_t;\
 $@@@@@@@@data         : in std_logic_vector(31 downto 0);\
 $@@@@@@@@value        : out pretty##_array_t(0 to property.nitems-1);\
 $@@@@@@@@written      : out bool_t;\
-$@@@@@@@@index        : in unsigned(worker.decode_width-1 downto 0);\
+$@@@@@@@@offset       : in unsigned(width_for_max(property.bytes_1)-1 downto 0);\
 $@@@@@@@@any_written  : out bool_t;\
 $@@@@@@@@nbytes_1     : in byte_offset_t);\
 $end component;
@@ -122,7 +122,7 @@ $@@generic (worker : worker_t; property : property_t);\
 $@@port (value       : in pretty##_array_t(0 to property.nitems-1);\
 $@@@@@@@@is_big_endian: in bool_t;\
 $@@@@@@@@data_out    : out std_logic_vector(31 downto 0);\
-$@@@@@@@@index       : in unsigned(worker.decode_width-1 downto 0);\
+$@@@@@@@@offset      : in unsigned(width_for_max(property.bytes_1)-1 downto 0);\
 $@@@@@@@@nbytes_1    : in byte_offset_t);\
 $end component;
 
@@ -139,7 +139,7 @@ $@@@@@@@@write_enable : in bool_t;\
 $@@@@@@@@data         : in std_logic_vector(31 downto 0);\
 $@@@@@@@@value        : out pretty##_array_t(0 to property.nitems-1);\
 $@@@@@@@@written      : out bool_t;\
-$@@@@@@@@index        : in unsigned(worker.decode_width-1 downto 0);\
+$@@@@@@@@offset       : in unsigned(width_for_max(property.bytes_1)-1 downto 0);\
 $@@@@@@@@any_written  : out bool_t;\
 $@@@@@@@@hi32         : in bool_t);\
 $end component;
@@ -153,7 +153,7 @@ $@@generic (worker : worker_t; property : property_t);\
 $@@port (value       : in pretty##_array_t(0 to property.nitems-1);\
 $@@@@@@@@is_big_endian: in bool_t;\
 $@@@@@@@@data_out    : out std_logic_vector(31 downto 0);\
-$@@@@@@@@index       : in unsigned(worker.decode_width-1 downto 0);\
+$@@@@@@@@offset      : in unsigned(width_for_max(property.bytes_1)-1 downto 0);\
 $@@@@@@@@hi32        : in bool_t);\
 $end component;
 
@@ -171,9 +171,8 @@ $@@@@@@@@data         : in std_logic_vector(31 downto 0);\
 $@@@@@@@@value        : out pretty##_array_t(0 to property.nitems-1,\
 $@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0 to (property.string_length+4)/4*4-1);\
 $@@@@@@@@written      : out bool_t;\
-$@@@@@@@@index        : in unsigned(worker.decode_width-1 downto 0);\
 $@@@@@@@@any_written  : out bool_t;\
-$@@@@@@@@offset       : in unsigned(worker.decode_width-1 downto 0));\
+$@@@@@@@@offset       : in unsigned(width_for_max(property.bytes_1)-1 downto 0));\
 $end component;
 
 #define RPROP_STRING_ARRAY(pretty,which,def,io)\
@@ -186,7 +185,7 @@ $@@port@@@ (value@@@ : in@ pretty##_array_t(0 to property.nitems-1,\
 $@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@0 to (property.string_length+4)/4*4-1);\
 $@@@@@@@@@@@is_big_endian: in bool_t;\
 $@@@@@@@@@@@data_out : out std_logic_vector(31 downto 0);\
-$@@@@@@@@@@@offset@@ : in@ unsigned(worker.decode_width-1 downto 0);\
+$@@@@@@@@@@@offset@@ : in@ unsigned(width_for_max(property.bytes_1)-1 downto 0);\
 $@@@@@@@@@@@read_enable@@ : in@ bool_t);\
 $end component;
 

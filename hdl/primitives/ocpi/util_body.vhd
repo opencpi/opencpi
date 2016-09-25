@@ -1,7 +1,12 @@
 library ieee; use ieee.math_real.all, ieee.numeric_std.all;
 package body util is
-function width_for_max(n : natural) return natural is begin
-  return natural(ceil(log2(real(n+1))));
+function width_for_max(n : natural) return natural is
+  variable r : natural := natural(ceil(log2(real(n+1))));
+begin
+  if r = 0 then
+    r := 1;
+  end if;
+  return r;
 end width_for_max;
 function roundup_2_power_of_2(n : natural) return natural is begin
   return 2 ** natural(ceil(log2(real(n))));
