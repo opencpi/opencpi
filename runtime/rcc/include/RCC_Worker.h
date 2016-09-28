@@ -358,7 +358,7 @@ typedef struct {
  protected:
    RCCUserBuffer();
    virtual ~RCCUserBuffer();
-   void initBuffer();
+   void initBuffer(bool output = true);
    void setRccBuffer(RCCBuffer *b);
    inline RCCBuffer *getRccBuffer() const { return m_rccBuffer; }
  public:

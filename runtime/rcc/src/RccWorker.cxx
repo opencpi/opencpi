@@ -1113,10 +1113,10 @@ OCPI_CONTROL_OPS
    // Opcode is initialized so we can both detect mismatches (opcode vs opcode-specific
    // accessors) and automatically infer opcodes from the use of opcode-specific accessors
    void RCCUserBuffer::
-   initBuffer() {
-     m_opCodeSet = false;
-     m_lengthSet = false;
-     m_resized = false;
+   initBuffer(bool output) {
+     m_opCodeSet = !output;
+     m_lengthSet = !output;
+     m_resized = !output;
      m_rccBuffer->isNew_ = false;
    }
    void RCCUserPort::
@@ -1133,7 +1133,7 @@ OCPI_CONTROL_OPS
    getArgAddress(RCCUserBuffer &buf, unsigned op, unsigned arg, size_t *length,
 		 size_t *capacity) const {
      if (buf.m_rccBuffer->isNew_)
-       buf.initBuffer();
+       buf.initBuffer(m_rccPort.containerPort->isOutput());
      checkOpCode(buf, op);
      OU::Operation &o = m_rccPort.containerPort->metaPort().m_operations[op];
      OU::Member &m = o.m_args[arg];
