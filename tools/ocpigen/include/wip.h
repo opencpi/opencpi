@@ -565,7 +565,7 @@ class Worker : public Parsed, public OU::IdentResolver {
   const char *m_library;            // the component library name where the xml was found
   bool m_outer;                     // only generate the outer skeleton, not the inner one
   OU::Property *m_debugProp;
-  OU::Assembly::Properties *m_instancePVs;
+  OU::Assembly::Properties m_instancePVs;
   FILE *m_mkFile, *m_xmlFile;       // state during parameter processing
   const char *m_outDir;             // state during parameter processing
   ParamConfigs m_paramConfigs;      // the parsed file of all configs

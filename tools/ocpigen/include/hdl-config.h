@@ -15,6 +15,7 @@ struct DevInstance {
   const DevInstance *parent;
   std::string m_name;
   mutable std::vector<uint64_t> m_connected;
+  OCPI::Util::Assembly::Properties m_instancePVs; // parameters beyond those spec'd in platform
   DevInstance(const Device &d, const Card *c, const Slot *s, bool control,
 	      const DevInstance *parent);
   const char *cname() const { return m_name.c_str(); }
@@ -24,7 +25,7 @@ typedef std::list<DevInstance> DevInstances;
 typedef DevInstances::const_iterator DevInstancesIter;
 
 #define HDL_CONFIG_ATTRS "platform"
-#define HDL_CONFIG_ELEMS "cpmaster", "nocmaster", "device"
+#define HDL_CONFIG_ELEMS "cpmaster", "nocmaster", "device", "property"
 
 typedef std::vector<const Card*> Plugged;
 
@@ -53,7 +54,7 @@ protected:
   const char *
   addDevInstance(const Device &dev, const Card *, const Slot *slot, bool control,
 		 const DevInstance *parent, DevInstances *baseInstances,
-		 const DevInstance *&devInstance);
+		 ezxml_t xml, const DevInstance *&devInstance);
   void emitSubdeviceConnections(std::string &assy, DevInstances *baseInstances);
 };
 

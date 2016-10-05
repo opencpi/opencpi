@@ -680,7 +680,7 @@ getNumber(ezxml_t x, const char *attr, size_t *np, bool *found,
 #if 0
 const char *Worker::
 getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly) {
-  if (!m_instancePVs)
+  if (!m_instancePVs.size())
     return OE::getBoolean(x, name, b, trueOnly);
   return NULL;
 }
@@ -703,10 +703,10 @@ extractExprValue(const OU::Property &p, const OU::Value &v, OU::ExprValue &val) 
 // and then look for parameter values directly
 const char *Worker::
 getValue(const char *sym, OU::ExprValue &val) const {
-  if (m_instancePVs) {
+  if (m_instancePVs.size()) {
     // FIXME: obviously a map would be good here..
-    OU::Assembly::Property *ap = &(*m_instancePVs)[0];
-    for (size_t n = m_instancePVs->size(); n; n--, ap++)
+    const OU::Assembly::Property *ap = &m_instancePVs[0];
+    for (size_t n = m_instancePVs.size(); n; n--, ap++)
       if (ap->m_hasValue && !strcasecmp(sym, ap->m_name.c_str())) {
 	// The value of the numeric attribute matches the name of a provided property
 	// So we use that property value in place of this attribute's value
@@ -946,9 +946,11 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
     m_endian(NoEndian), m_needsEndian(false), m_pattern(NULL), m_portPattern(NULL),
     m_staticPattern(NULL), m_defaultDataWidth(-1), m_language(NoLanguage), m_assembly(NULL),
     m_slave(NULL), m_emulate(NULL), m_library(NULL), m_outer(false), m_debugProp(NULL), 
-    m_instancePVs(ipvs), m_mkFile(NULL), m_xmlFile(NULL), m_outDir(NULL), m_paramConfig(NULL),
-  m_scalable(false), m_parent(parent), m_maxLevel(0), m_dynamic(false)
+    m_mkFile(NULL), m_xmlFile(NULL), m_outDir(NULL), m_paramConfig(NULL),
+    m_scalable(false), m_parent(parent), m_maxLevel(0), m_dynamic(false)
 {
+  if (ipvs)
+    m_instancePVs = *ipvs;
   const char *name = ezxml_name(xml);
   // FIXME: make HdlWorker and RccWorker classes  etc.
   if (!err && name && !strncasecmp("hdl", name, 3)) {

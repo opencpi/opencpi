@@ -1,7 +1,9 @@
 #Param_useGP1=true
 Libraries=zynq
+ParamValues_useGP1=0/1
 Configurations=\
   base \
+  gp1 \
   zed_zipper_fmc_rx \
   zed_zipper_fmc_tx \
   zed_zipper_fmc_rx_tx

@@ -154,6 +154,10 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
   }
   // Preinstall device instances.  These may be devices in the platform OR may be
   // random devices that are just standalone workers.
+#if 1
+  if ((err = parseDevInstances(m_xml, xfile, this, &m_config.devInstances())))
+    return;
+#else
   for (ezxml_t dx = ezxml_cchild(m_xml, "device"); dx; dx = ezxml_next(dx)) {
     bool floating = false;
     if ((err = OE::getBoolean(dx, "floating", &floating)))
@@ -172,6 +176,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 				       &m_config.devInstances(), NULL, NULL)))
       return;
   }
+#endif
   // Establish connections, WHICH MAY ALSO IMPLICITLY CREATE DEVICE INSTANCES
   ContConnects connections;
   for (ezxml_t cx = ezxml_cchild(m_xml, "connection"); cx; cx = ezxml_next(cx)) {
@@ -262,8 +267,9 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 	}
       }
   } else {
-    for (DevInstancesIter di = m_devInstances.begin(); di != m_devInstances.end(); di++) {
-      const DeviceType &dt = (*di).device.deviceType();
+    for (DevInstancesIter dii = m_devInstances.begin(); dii != m_devInstances.end(); dii++) {
+      const DevInstance &di = *dii;
+      const DeviceType &dt = di.device.deviceType();
       // Decide whether to map the signals or not, based on whether we are an emulator
       // or are paired with an emulator
       const DevInstance *emulator = NULL;
@@ -274,17 +280,17 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 	  break;
 	}
       // Instance the device and connect its wci
+      // FIXME this is copied from hdl-config - consolidate
       OU::formatAdd(assy, "  <instance name='%s' worker='%s'%s>\n",
-		    (*di).cname(), dt.cname(), emulator ? " emulated='1'" : "");
-      if (dt.m_instancePVs) {
-	// FIXME this is copied from hdl-config - consolidate
-	OU::Assembly::Property *ap = &(*dt.m_instancePVs)[0];
-	for (size_t n = dt.m_instancePVs->size(); n; n--, ap++)
+		    di.cname(), dt.cname(), emulator ? " emulated='1'" : "");
+      if (di.m_instancePVs.size()) {
+	const OU::Assembly::Property *ap = &di.m_instancePVs[0];
+	for (size_t n = di.m_instancePVs.size(); n; n--, ap++)
 	  OU::formatAdd(assy, "    <property name='%s' value='%s'/>\n",
 			ap->m_name.c_str(), ap->m_value.c_str());
       }
       if (!emulator && !dt.m_emulate)
-	mapDevSignals(assy, *di, true);
+	mapDevSignals(assy, di, true);
       assy += "  </instance>\n";
       if (!dt.m_noControl) {
 	OU::formatAdd(assy,
@@ -292,7 +298,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 		      "    <port instance='ocscp' name='wci' index='%zu'/>\n"
 		      "    <port instance='%s' name='%s'/>\n"
 		      "  </connection>\n",
-		      nWCIs, (*di).cname(),
+		      nWCIs, di.cname(),
 		      dt.ports()[0]->name());
       
 	nWCIs++;
@@ -301,7 +307,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
       const Ports &ports = dt.ports();
       for (PortsIter pi = ports.begin(); pi != ports.end(); pi++)
 	if ((*pi)->type == WTIPort)
-	  emitTimeClient(assy, (*di).cname(), (*pi)->name());
+	  emitTimeClient(assy, di.cname(), (*pi)->name());
     }
     for (ContConnectsIter ci = connections.begin(); ci != connections.end(); ci++)
       if ((err = emitConnection(assy, uNocs, nWCIs, *ci)))

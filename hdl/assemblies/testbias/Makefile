@@ -37,4 +37,5 @@
 ExcludePlatforms=isim_pf modelsim_pf
 #ParamValues_ocpi_endian=little/big
 #ParamValues_ocpi_debug=false/true
+Containers=use_gp1
 include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk
