@@ -7,7 +7,7 @@ This will run the application but does not allow the user to specify any argumen
 
 To have more control type the following.
 
-export OCPI_LIBRARY_PATH=$(OCPI_BASE_DIR)/components/lib
+export OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components
 ./fsk_modem
 
 This will run the application and will also allow you to specify command line arguments.  The command line arguments that are available

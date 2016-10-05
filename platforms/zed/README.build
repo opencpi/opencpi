@@ -62,7 +62,7 @@ repository, placed it in a directory on a development system
 development host system.  Instructions for this are in the README
 files for the development system platform (e.g. CentOS6).  When an
 OpenCPI environment is established on the development system, the root
-of the OpenCPI distribution will be in the OCPI_BASE_DIR environment
+of the OpenCPI source distribution will be in the OCPI_BASE_DIR environment
 variable.
 
 The OpenCPI installation includes certain artifacts that are derived
@@ -75,7 +75,7 @@ README.linux file.
 
 In summary, the prerequisites are:
 1. A Xilinx ISE+EDK installation at $XROOT/$XRN, something like /opt/Xilinx/14.6
-2. A built/working OpenCPI installation on CentOS6 at $OCPI_BASE_DIR
+2. A built/working OpenCPI source installation on CentOS6 at $OCPI_BASE_DIR
 
 ================================================================================
 Step 1. Customize and establish your build environment.
@@ -90,7 +90,7 @@ an example you should *copy* and customize for your own environment.
 It refers to the subsidiary file zed-env.sh here which you
 should not need to modify.  Assuming you have already built OpenCPI
 for CentOS6, you need to source this customized environment script in
-a new shell/window, in $OCPI_BASE_DIR e.g.:
+a new shell/window, in the OpenCPI top level source directory e.g.:
 
   % cp example_zed_env.sh myzed.sh
   { customize myzed.sh, especially to point to your Xilinx tools/license}

@@ -20,5 +20,5 @@ fi
 ./getXilinxLinuxSources.sh - && \
 ./showXilinxLinuxTags.sh $1 && \
 ./createOpenCPIZedRelease.sh $1 $2 &&
-(cd $OCPI_BASE_DIR; make; make rcc; make cleandriver; make driver) &&
-OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:$OCPI_BASE_DIR/hdl/assemblies ./makeSD.sh $1
+(cd ../..; make; make rcc; make cleandriver; make driver) &&
+OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:$OCPI_CDK_DIR/lib/hdl/assemblies ./makeSD.sh $1

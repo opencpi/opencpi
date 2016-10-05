@@ -335,8 +335,6 @@ ifneq (,)
 # Establish where the platforms are
 ifndef HdlPlatformsDir
   HdlPlatformsDir:=$(OCPI_CDK_DIR)/lib/platforms
-#  ifeq ($(realpath $(HdlPlatformsDir)),)
-#    HdlPlatformsDir:=$(OCPI_BASE_DIR)/hdl/platforms
     ifeq ($(realpath $(HdlPlatformsDir)),)
       $(error No HDL platforms found. Looked in $(OCPI_CDK_DIR)/lib/platforms)
     endif

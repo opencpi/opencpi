@@ -125,7 +125,7 @@ tests
 +runtime/hdl-support/scripts/loadFlash bin/<target>/
 +runtime/hdl-support/scripts/probeJtag bin/<target>/
 +runtime/hdl-support/scripts/ocpiview bin/<target>/
-
++hdl/assemblies/*/container-*/target-*/*.bitz lib/hdl/assemblies/
 ################################################################################
 # OCL related exclusions and additions
 +tools/cdk/include/ocl include/

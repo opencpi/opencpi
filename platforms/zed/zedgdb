@@ -1,7 +1,8 @@
 #!/bin/bash
 # 1. First on the target system run:  gdbserver host:1234 <command> <args>
 # 2. Run this script on the dev system with zed dev env: zedgdb <mainprogram> ip-addr-of-zed
-# 3. c
+# 3. Use the "set directories" command to point to source directories
+# 4. c
 
 main=$1
 shift
@@ -12,5 +13,4 @@ exec $OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-gdb \
   -iex "set sysroot $OCPI_CDK_DIR/platforms/zed/release/uramdisk/root" \
   -iex "set solib-search-path  $OCPI_CDK_DIR/platforms/zed:$OCPI_CDK_DIR/lib/$OCPI_TARGET_HOST:$OCPI_CDK_DIR/lib/components/rcc/$OCPI_TARGET_HOST" \
   -iex "target remote ${addr}:1234" \
-  -iex "set directories $OCPI_BASE_DIR/runtime/hdl/src" \
   $*
