@@ -114,13 +114,34 @@ elif [ $1 = unload ] ; then
     echo The driver module is not loaded.  No action was taken.
     exit 0
 fi
-MEMMAP=`tr ' ' '\n' < /proc/cmdline | grep -m 1 '^memmap='`
-if [ "$MEMMAP" = "" ] ; then
-  echo No reserved DMA memory found on the linux boot command line.
-  INSARG=
+# AV-1715 - look for opencpi_memmap explicitly first
+MEMMAP=`tr ' ' '\n' < /proc/cmdline | grep -m 1 '^opencpi_memmap='`
+if [ "$MEMMAP" != "" ] ; then
+  echo Found reserved DMA memory on the linux boot command line: [$MEMMAP]
+  INSARG=$MEMMAP
+fi
+if [ "$INSARG" = "" ]; then
+  MEMMAP=`tr ' ' '\n' < /proc/cmdline | grep -m 1 '^memmap='`
+  if [ "$MEMMAP" = "" ] ; then
+    echo No reserved DMA memory found on the linux boot command line.
+    INSARG=
+  else
+    echo Found generic reserved DMA memory on the linux boot command line and assuming it is for OpenCPI: [$MEMMAP]
+    INSARG=opencpi_$MEMMAP
+  fi
 else
-  echo Found reserved DMA memory on the linux boot command line: =$MEMMAP=.
-  INSARG=opencpi_$MEMMAP
+  # Check that there's a matching kernel parameter (while preventing empty strings)
+  MEMPARAM=`echo $INSARG | cut -f2- -d=`
+  if [ "$MEMPARAM" = "" ]; then
+    echo [$MEMMAP] seems to have empty value. Ignoring.
+    INSARG=
+  else
+    MEMMAP=`tr ' ' '\n' < /proc/cmdline | grep -m 1 "^memmap=$MEMPARAM"`
+    if [ "$MEMMAP" = "" ]; then
+      echo Reserved OpenCPI memory [$MEMPARAM] not found in standard memmap parameter. Not using memory space.
+      INSARG=
+    fi
+  fi
 fi
 if [ ! -r $MODPATH ] ; then
   echo The driver file: \"$MODPATH\" is missing or was never built.
