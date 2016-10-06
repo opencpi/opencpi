@@ -33,6 +33,7 @@
  */
 #include <assert.h>
 #include <sys/time.h>
+#include <strings.h>
 #include <climits>
 #include "OcpiUtilException.h"
 #include "OcpiUtilProtocol.h"
@@ -89,6 +90,10 @@ namespace OCPI {
       const char *name = ezxml_cattr(op, "Name");
       if (!name)
 	return "Missing \"Name\" attribute for operation";
+      for (Operation *o = p.m_operations; o < this; o++)
+	if (!strcasecmp(name, o->m_name.c_str()))
+	  return esprintf("Duplicate operation name \"%s\" in protocol \"%s\"",
+			  name, p.m_name.c_str());
       m_name = name;
       name = ezxml_cattr(op, "qualifiedname");
       if (name)

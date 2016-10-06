@@ -110,7 +110,7 @@
 namespace OCPI {
   namespace RCC { class Port; }
   namespace DataTransport { class BufferUserFacet; }
-  namespace Util { class Member; }
+  namespace Util { class Member; class Port;}
 }
 #define RCC_CONST
 #else
@@ -277,8 +277,9 @@ struct RCCPort {
   OCPI::RCC::Port *containerPort;
   RCCUserPort *userPort;
   OCPI::Util::Member *sequence;
+  OCPI::Util::Port *metaPort;
 #else
-  void *containerPort, *userPort, *sequence;
+  void *containerPort, *userPort, *sequence, *metaPort;
 #endif
 };
 
@@ -395,6 +396,7 @@ typedef struct {
    void setArgSize(RCCUserBuffer &buf, unsigned op, unsigned arg, size_t length) const;
  private:
    void checkOpCode(RCCUserBuffer &buf, unsigned op) const;
+   void shouldBeOutput() const;
  public:
    // Test whether a buffer is available, and if not request one
    // There is no buffer is there is no container port for the rcc port (not connected).

@@ -369,6 +369,7 @@ Worker::
      m_context->ports[n].callBack = 0;
      m_context->ports[n].userPort = NULL;
      m_context->ports[n].sequence = NULL;
+     m_context->ports[n].metaPort = &ports[n];
    }
 
    // Create our memory spaces
@@ -407,10 +408,10 @@ Worker::
        m_user = ((RCCConstruct *)m_entry->dispatch)(m_entry, m_info);
        m_context->properties = m_user->rawProperties(m_info.propertySize);
      } catch (std::string &e) {
-       throw OU::Error("Worker C++ constructor failed with an unknown exception: %s",
+       throw OU::Error("RCC Worker C++ constructor failed with an unknown exception: %s",
 		       e.c_str());
      } catch (...) {
-       throw OU::Error("Worker C++ constructor failed with an unknown exception");
+       throw OU::Error("RCC Worker C++ constructor failed with an unknown exception");
      }
    if (m_context->properties)
      memset(m_context->properties, 0, sizeof(char)*m_info.propertySize);
@@ -1266,16 +1267,50 @@ OCPI_CONTROL_OPS
      return length()/eLength;
    }
    void RCCUserPort::
+   shouldBeOutput() const {
+     if (m_rccPort.metaPort->m_provider)
+       throw OU::Error("Port \"%s\" is an input port, opcode or length cannot be set", 
+		       m_rccPort.metaPort->m_name.c_str());
+   }
+   void RCCUserPort::
    setDefaultLength(size_t length) {
-     // FIXME check for input port
+     shouldBeOutput();
      m_rccPort.defaultLength_ = length;
      m_rccPort.useDefaultLength_ = true;
    }
+   static size_t
+   defaultLength(OU::Operation &op) {
+     size_t length = op.m_myOffset;
+     if (op.args()) {
+       OU::Member &m = op.args()[op.nArgs()-1];
+       if (m.m_isSequence)
+	 if (op.nArgs() == 1)
+	   length = 0;
+	 else
+	   length = m.m_offset + m.m_align;
+       else if (!m.m_arrayRank && m.m_baseType == OA::OCPI_String)
+	 length = m.m_offset + 1;
+     }
+     return length;
+   }
+
    void RCCUserPort::
-   setDefaultOpCode(RCCOpCode op) {
-     // FIXME check for input port
-     m_rccPort.defaultOpCode_ = op;
+   setDefaultOpCode(RCCOpCode opCode) {
+     shouldBeOutput();
+     if (opCode >= m_rccPort.metaPort->nOperations() && m_rccPort.metaPort->operations())
+       throw OU::Error("Opcode %u is not allowed for port %s: maximum is %zu",
+		       opCode, m_rccPort.metaPort->m_name.c_str(),
+		       m_rccPort.metaPort->nOperations() - 1);
+     m_rccPort.defaultOpCode_ = opCode;
      m_rccPort.useDefaultOpCode_ = true;
+     // If there is a protocol, setting the default opcode sets the default size,
+     // including any sequence being zero length.
+     if (m_rccPort.metaPort->operations()) {
+       OU::Operation &op = m_rccPort.metaPort->operations()[opCode];
+       ocpiDebug("Default length for op %u is %zu", opCode, defaultLength(op));
+       if (!m_rccPort.useDefaultLength_)
+	 setDefaultLength(defaultLength(op));
+     }
    }
 
    RCCPortOperationArg::
