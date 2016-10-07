@@ -335,6 +335,9 @@ main(int /*argc*/, const char **argv) {
   } catch (std::string &e) {
     fprintf(stderr, "Exception thrown: %s\n", e.c_str());
     return 1;
+  } catch (const char *e) {
+    fprintf(stderr, "Exception thrown: %s\n", e);
+    return 1;
   } catch (...) {
     fprintf(stderr, "Unexpected/unknown exception thrown\n");
     return 1;

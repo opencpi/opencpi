@@ -51,16 +51,25 @@ int main(int argc, char **argv) {
     app.initialize();
     fprintf(stderr, "Application established: containers, workers, connections all created\n");
     fprintf(stderr, "Communication with the application established\n");
-#if 0
+#if 1
     OA::Property p(app, "file_write.filename");
     p.setStringValue("test.output");
+#if 0
     OA::Property p1(app, "file_read.test");
     short s[] = {-1,-2, 0, -32768, 32767};
     p1.setShortSequenceValue(s, 4);
+#endif
 #else
     app.setProperty("file_write", "filename", "test.output");
 #endif
     app.start();
+#if 0 // generate an error
+#if 0
+    p.setStringValue("test.output");
+#else
+    app.setProperty("file_write", "filename", "test.output");
+#endif
+#endif
     fprintf(stderr, "Application started/running\n");
     app.wait();
     fprintf(stderr, "Application finished\n");
@@ -70,6 +79,8 @@ int main(int argc, char **argv) {
     return 0;
   } catch (std::string &e) {
     fprintf(stderr, "Exception thrown: %s\n", e.c_str());
+  } catch (const char *e) {
+    fprintf(stderr, "Exception thrown: %s\n", e);
   }
   return 1;
 }
