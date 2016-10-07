@@ -418,6 +418,7 @@ typedef struct {
     isConnected(),
     wait(size_t max, unsigned usecs);
    RCCOrdinal ordinal() const;
+   void setOpCode(RCCOpCode op);
  };
 
  class RCCPortOperation { // : public RCCUserBufferInterface {

@@ -123,6 +123,21 @@ namespace OCPI {
       return NULL;
     }
 
+    size_t Operation::
+    defaultLength() const {
+      size_t length = m_myOffset;
+      if (args()) {
+	Member &m = args()[nArgs()-1];
+	if (m.m_isSequence)
+	  if (nArgs() == 1)
+	    length = 0;
+	  else
+	    length = m.m_offset + m.m_align;
+	else if (!m.m_arrayRank && m.m_baseType == OA::OCPI_String)
+	  length = m.m_offset + 1;
+      }
+      return length;
+    }
     Operation *Protocol::findOperation(const char *name) {
       Operation *o = m_operations;
       for (unsigned n = 0; n < m_nOperations; n++, o++)
