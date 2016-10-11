@@ -9,21 +9,8 @@ if test "$OCPI_CDK_DIR" != ""; then
    fi
   fi
 else
-  # We're being run in an uninitialized environment.
-  if test ! -x ./scripts/makeExportLinks.sh; then
-    echo It appears that this script is not being run at the top level of OpenCPI.
-    exit 1
-  fi
-  # Ensure a skeletal CDK
-  ./scripts/makeExportLinks.sh - x x
-  if test "$1" != ""; then
-    echo Supplied cross-platform is $1.
-    if test "$OCPI_TARGET_PLATFORM" != ""; then
-      echo You cannot supply an argment '(target platform)' when OCPI_TARGET_PLATFORM is set.
-      exit 1
-    fi
-    export OCPI_TARGET_PLATFORM=$1
-  fi 
+  # Initialize access to the core tree's export directory
+  source scripts/core-init.sh
   # Initialize access to CDK
   source exports/scripts/ocpisetup.sh exports/scripts/ocpisetup.sh
 fi

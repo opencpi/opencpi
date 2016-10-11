@@ -1,8 +1,8 @@
 #!/bin/sh
 
 # This script does a few things to help bootstrap the environment.
-# It is sourced by other scripts with an explicit pathname, not via a path.
-# It does setup work useful for runtime, but not anything for development time.
+# It is sourced by other scripts with an explicit pathname, not via a search path.
+# It does setup work useful for runtime, but not everything for development time.
 # It can be used in deployed environments.
 # I.e. it does not set up or default any OCPI_TARGET variables.
 # It should not have any "bashisms"

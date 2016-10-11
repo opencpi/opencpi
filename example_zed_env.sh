@@ -7,7 +7,7 @@ export OCPI_XILINX_DIR= #/opt/Xilinx
 export OCPI_XILINX_VERSION= #14.7
 export OCPI_XILINX_LICENSE_FILE= #$OCPI_XILINX_DIR/OCPI_XILINX_VERSION/License.lic
 
-source platforms/zed/zed-env.sh
+OCPI_TARGET_PLATFORM=zed
 
 # #### Location of the Modelsim tools ####################################### #
 

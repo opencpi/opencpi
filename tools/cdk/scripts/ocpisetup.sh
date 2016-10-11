@@ -2,7 +2,8 @@
 # It is ALSO called during native environment setup when building the core tree.
 # In this case the CDK is skeletal, but still usable
 # This script should be sourced to set the OpenCPI CDK environment variables
-# Since the (at least) the iVeia bash does not have extdebug/BASH_ARGV support, there is no
+# This script does not prepare for execution (except our own tools).
+# If the bash does not have extdebug/BASH_ARGV support, there is no
 # way for this script to know where it lives.  Hence it requires its first arg to be that.
 _MYNAME=ocpisetup.sh
 if test $# == 0; then
@@ -31,7 +32,15 @@ elif test -f $_MYNAME; then
 fi
 _MYDIR=$(dirname $_MYPATH)
 case $_MYDIR in /*) ;; *) _MYDIR=`cd $_MYDIR; pwd`;; esac
-OCPI_BOOTSTRAP=$_MYDIR/ocpibootstrap.sh; . $OCPI_BOOTSTRAP
+OCPI_BOOTSTRAP=$_MYDIR/ocpibootstrap.sh; source $OCPI_BOOTSTRAP
+
+if test "$OCPI_DEBUG" = ""; then
+  export OCPI_DEBUG=1
+fi
+
+if test "$OCPI_ASSERT" = ""; then
+  export OCPI_ASSERT=1
+fi
 
 if test "$OCPI_DYNAMIC" = ""; then
   if test "$OCPI_BUILD_SHARED_LIBRARIES" != ""; then
@@ -98,6 +107,13 @@ if test ! -f $f; then
   echo Error: there is no file: \"$f\" to setup the build environment for the \"$OCPI_TARGET_PLATFORM\" platform.
   exit 1
 fi
+# initialize the baseline values for all targets before the specific target file is sourced
+# these flags should be common to all compilers in use.  As more compilers are added this
+# list may in fact be reduced.
+[ -z "$OCPI_TARGET_CFLAGS" ] &&
+  export OCPI_TARGET_CFLAGS="-Wall -Wfloat-equal -Wextra  -fno-strict-aliasing -Wconversion -std=c99"
+[ -z "$OCPI_TARGET_CXXFLAGS" ] &&
+  export OCPI_TARGET_CXXFLAGS="-Wextra -Wall -Wfloat-equal -fno-strict-aliasing -Wconversion"
 source $f
 #default the target host to the tool host
 export PATH=$OCPI_CDK_DIR/bin/$OCPI_TOOL_DIR:$PATH
