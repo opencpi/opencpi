@@ -362,6 +362,10 @@ typedef struct {
    void initBuffer(bool output = true);
    void setRccBuffer(RCCBuffer *b);
    inline RCCBuffer *getRccBuffer() const { return m_rccBuffer; }
+   inline void resize(size_t size) {
+     m_rccBuffer->length_ = size;
+     m_resized = true;
+   }
  public:
    inline void * data() const { return m_rccBuffer->data; }
    inline size_t maxLength() const { return m_rccBuffer->maxLength; }
@@ -395,7 +399,7 @@ typedef struct {
 		       size_t *capacity) const;
    void setArgSize(RCCUserBuffer &buf, unsigned op, unsigned arg, size_t length) const;
  private:
-   void checkOpCode(RCCUserBuffer &buf, unsigned op) const;
+   void checkOpCode(RCCUserBuffer &buf, unsigned op, bool setting = true) const;
    void shouldBeOutput() const;
  public:
    // Test whether a buffer is available, and if not request one
