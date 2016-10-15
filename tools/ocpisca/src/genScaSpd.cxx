@@ -40,6 +40,11 @@ genScaSpd(const char *outDir) {
   OU::format(s, "artifacts/%s.xml", m_assembly.name().c_str());
   SCA::addChild(cx, "entrypoint", 3, s.c_str());
   SCA::addChild(x, "os", 2, NULL, "name", "Linux");
+  ezxml_t c = 
+    SCA::addChild(x, "compiler", 2, NULL, "name", "/usr/bin/gcc");
+  ezxml_set_attr(c, "version", "4.4.7");
+  SCA::addChild(x, "programminglanguage", 2, NULL, "name", "C++");
+
   SCA::addChild(x, "processor", 2, NULL, "name", "x86_64");
   const char *xml = ezxml_toxml(root);
   if (fputs("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"

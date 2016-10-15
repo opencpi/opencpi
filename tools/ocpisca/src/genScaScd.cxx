@@ -25,10 +25,10 @@ genScaScd(const char *outDir) {
   std::string s;
   ezxml_t root = ezxml_new("softwarecomponent");
   SCA::addChild(root, "corbaversion", 1, "2.2");
-  SCA::addChild(root, "componentrepid", 1, NULL, "repid", repid(s, "Device"));
-  SCA::addChild(root, "componenttype", 1, "device");
+  SCA::addChild(root, "componentrepid", 1, NULL, "repid", repid(s, "Resource"));
+  SCA::addChild(root, "componenttype", 1, "resource");
   const char *supports[] =
-    { "Device", "Resource", "LifeCycle", "PortSupplier", "PropertySet", "TestableObject", NULL};
+    { "Resource", "LifeCycle", "PortSupplier", "PortSet", "PropertySet", "TestableObject", NULL};
   ezxml_t cfx = SCA::addChild(root, "componentfeatures", 1);
   for (const char **p = supports; *p; p++)
     SCA::addChild(cfx, "supportsinterface", 2, NULL, "repid", repid(s, *p), "supportsname", *p);

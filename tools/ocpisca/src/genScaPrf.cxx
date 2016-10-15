@@ -45,7 +45,7 @@ namespace OCPI {
 	//	ocpiBad("Warning: OpenCPI longlong property \"%s\" truncated to long for REDHAWK", name);
 	break;
       case OCPI_ULongLong:
-	type = "ulongulong";
+	type = "ulonglong";
 	//	ocpiBad("Warning: OpenCPI ulonglong property \"%s\" truncated to ulong for REDHAWK", name);
 	break;
       case OCPI_String: type = "string"; break;

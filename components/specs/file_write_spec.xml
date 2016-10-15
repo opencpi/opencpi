@@ -6,7 +6,7 @@
     <property name='fileName' type='string' stringLength='1024' initial='true'/>
     <!-- Does the file contain messages with opcodes and lengths? -->
     <property name='messagesInFile' type='bool' readable='true' initial='true' default='false'/>
-    <property name='bytesWritten' type='uLongLong' volatile='true'/>
-    <property name='messagesWritten' type='uLongLong' volatile='true'/>
+    <property name='bytesWritten' type='ulonglong' volatile='true'/>
+    <property name='messagesWritten' type='ulonglong' volatile='true'/>
     <property name='stopOnEOF' type='bool' initial='true' default='true'/>
   </ComponentSpec>
