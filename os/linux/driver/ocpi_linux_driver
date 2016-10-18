@@ -8,6 +8,11 @@
 
 if test "$OCPI_CDK_DIR" = "" -o "$OCPI_TOOL_HOST" = ""; then
   echo Error: this script "($0)" cannot be run without OCPI_CDK_DIR and OCPI_TOOL_HOST.
+  exit 1
+fi
+if [ $# = 0 ]; then
+  echo Error: this script "($0)" needs a command: load, unload, reload, status
+  exit 1
 fi
 
 MODNAME=opencpi
@@ -92,7 +97,7 @@ rmd () {
 
 if [ -d /sys/module/opencpi ] ; then
    case $1 in
-     (reload) 
+     (reload)
        echo The driver module is already loaded.  It will be unloaded.
        rmd
        ;;
@@ -159,6 +164,8 @@ if [ $1 = status ] ; then
   exit 0
 fi
 if [ "$RELOAD" = '' ] ; then
+  # This next line is missing on some mdev platforms and should already be set on other platforms
+  echo /sbin/mdev > /proc/sys/kernel/hotplug
   if grep -s ocpi= /etc/mdev.conf; then
     echo The mdev config already has OpenCPI rules.
   else
@@ -174,7 +181,7 @@ else
 fi
 $SUDO /sbin/insmod $MODPATH $INSARG
 RES=$?
-#sudo /sbin/modprobe -v 
+#sudo /sbin/modprobe -v
 if [ $RES = 0 ] ; then
   # check /dev?
   echo Driver loaded successfully.

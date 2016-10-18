@@ -231,10 +231,9 @@ dump_memory_map(char * label) {
 static ocpi_block_t *
 make_block(ocpi_address_t phys_addr, ocpi_size_t size, ocpi_type_t type,
 	   bool available, u64 kernel_alloc_id) {
-  if (!phys_addr) // Guard against allocating to 0x00
-    return NULL;
-  ocpi_block_t *block = kzalloc(sizeof(ocpi_block_t), GFP_KERNEL);
-  if (block == NULL || IS_ERR(block))
+  ocpi_block_t *block;
+  if (!phys_addr || // Guard against allocating to 0x00
+      !(block = kzalloc(sizeof(ocpi_block_t), GFP_KERNEL)) || IS_ERR(block))
     return NULL;
   block->start_phys = phys_addr;
   block->end_phys = phys_addr + size;

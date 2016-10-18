@@ -105,6 +105,7 @@ MODFILE=$(MyTargetDir)/$(MODNAME)$(if $(ocpi_release),-$(ocpi_release)).ko
 URULESFILE=99-$(MODNAME).rules
 MRULESFILE=mdev-$(MODNAME).rules
 TMP_FILES=Module.markers Module.symvers .opencpi* opencpi.mod.* opencpi.o .tmp* modules.order
+.PHONY: all
 all:	installed
 
 $(MODFILE): opencpi.c $(shell echo $$(cd $(KERNELDIR); pwd -P))
@@ -112,7 +113,7 @@ $(MODFILE): opencpi.c $(shell echo $$(cd $(KERNELDIR); pwd -P))
 	$(and $(KERNELDIR),$(MAKE) -C $(KERNELDIR) M=$(PWD) modules)
 	$(AT)mkdir -p $(MyTargetDir)
 	$(AT)mv $(MODNAME).ko $(MODFILE)
-	$(AT)rm -rf	$(TMP_FILES)
+	$(AT)rm -rf $(TMP_FILES)
 
 .PHONY: installed modules modules_install load unload
 modules: $(MODFILE)
@@ -133,7 +134,7 @@ unload:
 # This clean is target specific
 clean:	
 	$(and $(KERNELDIR),$(MAKE) -C $(KERNELDIR) M=$(PWD) clean)
-	rm -rf $(TMP_FILES) $(MODFILE) $(MODFILE).unsigned modules.order
+	rm -rf $(TMP_FILES) $(MODFILE) $(MODFILE).unsigned
 ifneq ($(MyTargetDir),.)
 	rm -rf $(MyTargetDir)
 endif

@@ -17,6 +17,40 @@ $ make
 
 $ make load
 
+******** MORE INFO ON KERNEL HEADER CREATION FOR A NEW VENDOR KERNEL ********
+When using alternate kernels provided by hardware vendors, a full build of the kernel
+is required when certain files such as Module.symvers are not provided.  To deal with
+this:
+
+First, on the running system, extract the ".config" used by the vendor to build the
+kernel on the device:
+
+# zcat /proc/config.gz > .config
+(copy file to local kernel source location)
+
+Then, the following are performed:
+
+ make clean
+ make oldconfig
+ make prepare
+ make
+ make modules
+
+It is important to have the proper cross-compiling flags set in the environment.
+To automate this, you can add the above lines to /os/linux/driver/Makefile
+in the $(MODFILE) rule (with "cd $(KERNELDIR)").
+
+After that, pare down the tree as much as possible before checking in. Some
+low-hanging fruit include:
+ - every subdir except arch, include, scripts
+ - *.o *.c *.cmd .tmp*
+ - Any other binaries EXCEPT those found in scripts/
+  - find . -type f | xargs file | grep ELF
+ - arch/arm/boot
+
+The idea is to approproximate the "kernel headers" package normally distributed
+by linux distributions.
+
 ********THE FOLLOWING MEMMAP FEATURE IS FOR X86 ARCHITECTURES ONLY******
 
 If you want to use more then 128KB of RAM, then you will need to reserve a 
