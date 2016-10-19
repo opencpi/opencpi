@@ -114,6 +114,7 @@ struct CWorker {
   struct ConData {
     CWorker*     worker;
     int          pid;
+    ConData() : worker(NULL), pid(0) {}
   };
   struct Pdata {
     OCPI::Util::PValue            *props;
@@ -121,7 +122,7 @@ struct CWorker {
     size_t                        bufferCount;
     OCPI::Container::Port *        port;
     ConData                       down_stream_connection;
-    Pdata():props(NULL),bufferCount(2),port(NULL),down_stream_connection({NULL,0}) {};
+    Pdata():props(NULL),bufferCount(2),port(NULL) {}
   };
   int sPortCount;
   int tPortCount;

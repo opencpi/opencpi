@@ -127,21 +127,21 @@ namespace OCPI {
       if (m_default)
 	delete m_default;
     }
-    const char *
-    Member::parseDefault(ezxml_t xm, const char *hasDefault) {
-      const char *defValue = ezxml_cattr(xm, hasDefault);
+    const char * Member::
+    parseDefault(const char *defValue, const char *tag, const IdentResolver *resolv) {
       if (defValue) {
 	delete m_default;
 	m_default = new Value(*this);
-	const char *err = m_default->parse(defValue);
+	const char *err = m_default->parse(defValue, NULL, false, resolv);
 	if (err)
-	  return esprintf("for member %s: %s", m_name.c_str(), err);
+	  return esprintf("for %s %s: %s", tag, m_name.c_str(), err);
       }
+      // FIXME: if any children (struct or type) have defaults, build a sparse default here
       return NULL;
     }
     const char *
     Member::parse(ezxml_t xm, bool a_isFixed, bool hasName, const char *hasDefault,
-		  unsigned ordinal, const IdentResolver *resolver) {
+		  const char *tag, unsigned ordinal, const IdentResolver *resolver) {
       bool found;
       const char *err;
       const char *name = ezxml_cattr(xm, "Name");
@@ -178,7 +178,7 @@ namespace OCPI {
 	  return "missing \"type\" child element under data type with type=\"type\"";
 	if ((err = OE::checkAttrs(xt, OCPI_UTIL_MEMBER_ATTRS, NULL)) ||
 	    (err = OE::checkElements(xm, "type", (void*)0)) ||
-	    (err = m_type->parse(xt, a_isFixed, false, NULL, 0)))
+	    (err = m_type->parse(xt, a_isFixed, false, NULL, NULL, 0)))
 	  return err;
 	if (!m_type->m_isSequence)
 	  return "recursive \"type\" element must be a sequence";
@@ -289,7 +289,7 @@ namespace OCPI {
 	}
       }
       // Process default values
-      if (hasDefault && (err = parseDefault(xm, hasDefault)))
+      if (hasDefault && (err = parseDefault(ezxml_cattr(xm, hasDefault), tag, resolver)))
 	return err;
       if (m_format.size() && !strchr(m_format.c_str(), '%'))
 	return esprintf("invalid format string '%s' for '%s'", m_format.c_str(), m_name.c_str());
@@ -299,12 +299,12 @@ namespace OCPI {
     // Finalize the data types by recomputing all the attributes that might be
     // based on parameters whose values were set later.
     const char *Member::
-    finalize(const IdentResolver &resolver, bool a_isFixed) {
+    finalize(const IdentResolver &resolver, const char *tag, bool a_isFixed) {
       const char *err;
       // First we finalize any members, recursively
       if (m_baseType == OA::OCPI_Struct)
 	for (unsigned n = 0; n < m_nMembers; n++)
-	  m_members[n].finalize(resolver, a_isFixed);
+	  m_members[n].finalize(resolver, "member", a_isFixed);
       if (m_arrayRank) {
 	m_nItems = 1;
 	for (unsigned i = 0; i < m_arrayRank; i++) {
@@ -333,7 +333,7 @@ namespace OCPI {
 	if (a_isFixed && m_stringLength == 0)
 	  return "StringLength cannot be zero";
       }
-      return NULL;
+      return m_defaultExpr.length() ? parseDefault(m_defaultExpr.c_str(), tag, &resolver) : NULL;
     }
 
     void Member::
@@ -661,7 +661,7 @@ namespace OCPI {
 	for (ezxml_t mx = ezxml_cchild(mems, tag); mx ; mx = ezxml_next(mx), m++) {
 	  if ((err = OE::checkAttrs(mx, OCPI_UTIL_MEMBER_ATTRS,
 				    hasDefault ? hasDefault : NULL, NULL)) ||
-	      (err = m->parse(mx, a_isFixed, true, hasDefault, (unsigned)(m - members),
+	      (err = m->parse(mx, a_isFixed, true, hasDefault, "member", (unsigned)(m - members),
 			      resolver)))
 	    return err;
 	  if (!names.insert(m->m_name.c_str()).second)

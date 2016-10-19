@@ -199,15 +199,17 @@ namespace OCPI {
 	  fprintf(f, "error: %s (%s)\n", err, s.c_str());
 	  exit(1);
 	} else {
-	  fprintf(f, "ok\n");
+	  fprintf(f, "parse ok\n");
 	  std::string s1;
 	  tv.unparse(s1, NULL, false, hex);
-	  if (s != s1)
+	  if (s != s1) {
 	    fprintf(f,
 		    "\n"
 		    "error: mismatch0: ***%s***\n"
 		    "error: mismatch1: ***%s***\n",
 		    s.c_str(), s1.c_str());
+	    exit(1);
+	  }
 	}
       }
       fprintf(f, "\n");

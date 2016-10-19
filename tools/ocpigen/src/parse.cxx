@@ -278,7 +278,7 @@ doMaybeProp(ezxml_t maybe, void *vpinfo) {
       return OU::esprintf("SpecProperty name (%s) and Property name (%s) differ in case",
 			  name, p->m_name.c_str());
     // So simply add impl info to the existing property.
-    return p->parseImpl(maybe);
+    return p->parseImpl(maybe, w);
   } else if (p)
       return OU::esprintf("Property named \"%s\" conflicts with existing/previous property",
 			  name);
@@ -690,26 +690,13 @@ getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly) {
 
 const char*
 extractExprValue(const OU::Property &p, const OU::Value &v, OU::ExprValue &val) {
-  switch (p.m_baseType) {
-  case OA::OCPI_Bool: val.number = v.m_Bool ? 1 : 0; break;
-  case OA::OCPI_UChar: val.number = v.m_UChar; break;
-  case OA::OCPI_UShort: val.number = v.m_UShort; break;
-  case OA::OCPI_ULong: val.number = v.m_ULong; break;
-  case OA::OCPI_Char: val.number = v.m_Char; break;
-  case OA::OCPI_Short: val.number = v.m_Short; break;
-  case OA::OCPI_Long: val.number = v.m_Long; break;
-  case OA::OCPI_LongLong: val.number = v.m_LongLong; break;
-  case OA::OCPI_ULongLong:
-    if (v.m_ULongLong > INT64_MAX)
-      return OU::esprintf("the \"%s\" parameter property value is too large.  Max is: %" PRIu64
-			  ", value is %" PRIu64, p.m_name.c_str(), INT64_MAX, v.m_ULongLong);
-    val.number = (int64_t)v.m_ULongLong;
-    break;
-  default:
-    return OU::esprintf("the \"%s\" parameter property is of an unsupported type", 
+  const char *err = val.setFromTypedValue(v);
+  if (err)
+    return OU::esprintf("the '%s' parameter property expression is invalid: %s",
+			p.m_name.c_str(), err);
+  if (!val.isNumber())
+    return OU::esprintf("the '%s' parameter property is not numeric, so is invalid here",
 			p.m_name.c_str());
-  }
-  val.isNumber = true;
   return NULL;
 }
 
@@ -720,27 +707,25 @@ extractExprValue(const OU::Property &p, const OU::Value &v, OU::ExprValue &val) 
 // and then look for parameter values directly
 const char *Worker::
 getValue(const char *sym, OU::ExprValue &val) const {
-  if (m_instancePVs) {
-    // FIXME: obviously a map would be good here..
-    OU::Assembly::Property *ap = &(*m_instancePVs)[0];
-    for (size_t n = m_instancePVs->size(); n; n--, ap++)
-      if (ap->m_hasValue && !strcasecmp(sym, ap->m_name.c_str())) {
-	// The value of the numeric attribute matches the name of a provided property
-	// So we use that property value in place of this attribute's value
-	// FIXME: why isn't this string value already parsed?
-	// FIXME: the instance has parsed property values but it not accessible here
-	size_t nval;
-	if (OE::getUNum(ap->m_value.c_str(), &nval))
-	  return OU::esprintf("Bad '%s' property value: '%s'",
-			      ap->m_name.c_str(), ap->m_value.c_str());
-	val.isNumber = true;
-	val.number = nval;
-	return NULL;
-      }    
-  }
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
     if (!strcasecmp((*pi)->m_name.c_str(), sym)) {
       OU::Property &p = **pi;
+      if (m_instancePVs) {
+	// FIXME: obviously a map would be nice here..
+	OU::Assembly::Property *ap = &(*m_instancePVs)[0];
+	for (size_t n = m_instancePVs->size(); n; n--, ap++)
+	  if (ap->m_hasValue && !strcasecmp(sym, ap->m_name.c_str())) {
+	    // The value of the expression identifier matches the name of a provided instance
+	    // property value so we use that value for this identifier's value
+	    // FIXME: why isn't this IPV value already parsed?
+	    // FIXME: the instance has parsed property values but it not accessible here
+	    OU::Value v(p);
+	    const char *err;
+	    if ((err = v.parse(ap->m_value.c_str())))
+	      return err;
+	    return val.setFromTypedValue(v);
+	  }
+      }
       if (!p.m_isParameter)
 	return OU::esprintf("the '%s' property is invalid here since it is not a parameter",
 			    sym);

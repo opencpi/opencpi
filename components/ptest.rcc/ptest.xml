@@ -42,7 +42,7 @@
     <Member name='Opcode' type='uChar' default='0'/>
     <Member name='Bytes' type='uChar' default='0' sequenceLength="2048"/>
   </Property>
-  <property name='param' parameter='1' default='2'/>
+  <property name='param' parameter='1' default='2+3'/>
   <property name='x' type='struct' initial='1' sequenceLength='param*3-1'>
     <member name='sss' type='string' stringlength='param+1' sequencelength='param &lt; 2 ? 3 : 5' arraydimensions='1,param+2,param==3 ? 4 : 5'/>
   </property>

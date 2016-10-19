@@ -49,11 +49,12 @@
 namespace OU = OCPI::Util;
 
 static std::vector<std::string> includes; // our included files
+typedef std::vector<std::string>::const_iterator IncludesIter;
 // For anybody who used the old "includes" (only ocpidds that I am aware of)
 // provide a close equivalent...
 std::vector<const char *> compat_includes() {
   std::vector<const char *> vec(includes.size());
-  for (auto iter = includes.begin(); iter != includes.end(); ++iter)
+  for (IncludesIter iter = includes.begin(); iter != includes.end(); ++iter)
     vec.push_back(iter->c_str());
   return vec;
 }
@@ -95,7 +96,7 @@ parseFile(const char *file, const std::string &parent, const char *element,
       // file was not where parent file was, and not local.
       // Try the include paths
       if (myFile[0] != '/' && !includes.empty() && search) {
-        for (auto iter = includes.begin(); iter != includes.end(); ++iter) {
+        for (IncludesIter iter = includes.begin(); iter != includes.end(); ++iter) {
           const char *ptr = iter->c_str();
 	  if (!ptr[0] || !strcmp(ptr, "."))
 	    cp = strdup(myFile);
@@ -169,6 +170,7 @@ parseFile(const char *file, const std::string &parent, const char *element,
 }
                            // pair = dep,child
 static std::vector<std::pair<std::string,bool> > depList;
+typedef std::vector<std::pair<std::string,bool> >::iterator DepListIter;
 static std::ofstream depOut; // our dependency output file stream
 static const char *depFile;
 
@@ -182,7 +184,7 @@ setDep(const char *dep) {
 void
 addDep(const char *dep, bool child) {
   // Update "child" flag if we already have
-  for (auto it = depList.begin(); it != depList.end(); ++it)
+  for (DepListIter it = depList.begin(); it != depList.end(); ++it)
     if (!strcmp(dep, it->first.c_str())) {
       if (child)
 	it->second = child;
@@ -211,11 +213,11 @@ dumpDeps(const char *top) {
       return OU::esprintf("Cannot open dependency file \"%s\" for writing", depFile);
   }
   depOut << top << ":";
-  for (auto it = depList.begin(); it != depList.end(); ++it)
+  for (DepListIter it = depList.begin(); it != depList.end(); ++it)
     if (strcmp(top, it->first.c_str()))
       depOut << " " << it->first;
   depOut << std::endl;
-  for (auto it = depList.begin(); it != depList.end(); ++it)
+  for (DepListIter it = depList.begin(); it != depList.end(); ++it)
      if (it->second && strcmp(top, it->first.c_str()))
        depOut << "\n" << it->first << ":\n";
   if (!depOut.flush().good())

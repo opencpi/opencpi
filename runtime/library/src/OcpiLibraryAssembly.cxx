@@ -222,18 +222,21 @@ namespace OCPI {
 	score = 1;
       else {
 	OU::ExprValue val;
-	const char *err = OU::evalExpression(m_utilInstance.m_selection.c_str(), val, &i.m_metadataImpl);
-	if (!err && !val.isNumber)
+	const char *err =
+	  OU::evalExpression(m_utilInstance.m_selection.c_str(), val, &i.m_metadataImpl);
+	if (!err && !val.isNumber())
 	  err = "selection expression has string value";
 	if (err)
-	  throw OU::Error("Error for instance \"%s\" with selection expression \"%s\": %s",
-			  m_utilInstance.m_name.c_str(), m_utilInstance.m_selection.c_str(), err);
-	if (val.number <= 0) {
+	  throw
+	    OU::Error("Error for instance \"%s\" with selection expression \"%s\": %s",
+		      m_utilInstance.m_name.c_str(), m_utilInstance.m_selection.c_str(), err);
+	int64_t n = val.getNumber();
+	if (n <= 0) {
 	  ocpiInfo("Rejected: selection expression \"%s\" has value: %" PRIi64,
-		   m_utilInstance.m_selection.c_str(), val.number);
+		   m_utilInstance.m_selection.c_str(), n);
 	  return false;
 	}
-	score = (unsigned)(val.number < 0 ? 0 : val.number);
+	score = (unsigned)(n < 0 ? 0 : n);
       }
       // To this point all the checking has applied to the worker we are looking at.
       // From this point some of the checking may actually apply to the slave if there is one
@@ -432,9 +435,9 @@ namespace OCPI {
 	}
       }
     }
-    // A port is connected in the assembly, and the port it is connected to is on an instance with
-    // an already chosen implementation. Now we can check whether this impl conflicts with that one
-    // or not
+    // A port is connected in the assembly, and the port it is connected to is on an instance
+    // with an already chosen implementation. Now we can check whether this impl conflicts with
+    // that one or not
     bool Assembly::
     badConnection(const Implementation &impl, const Implementation &otherImpl,
 		  const OU::Assembly::Port &ap, unsigned port) {
@@ -442,18 +445,25 @@ namespace OCPI {
 	&p = impl.m_metadataImpl.port(port),
 	&other = *otherImpl.m_metadataImpl.findMetaPort(ap.m_connectedPort->m_name);
       if (impl.m_internals & (1 << port)) {
-	// This port is preconnected and the other port is not preconnected to us: we're incompatible
 	if (!(otherImpl.m_internals & (1 << other.m_ordinal)) ||
 	    otherImpl.m_connections[other.m_ordinal].impl != &impl ||
 	    otherImpl.m_connections[other.m_ordinal].port != &p) {
-	ocpiDebug("other %p %u %s  m_internals %x, other internals %x", &other, other.m_ordinal, other.m_name.c_str(),
-		  impl.m_internals, otherImpl.m_internals);
-	ocpiDebug("me %p %u %s", &p, p.m_ordinal, p.m_name.c_str());
-	return true;
+	  ocpiInfo("This port is preconnected and the other port is not preconnected to us: "
+		   "we're incompatible");
+	  ocpiInfo("other %p %u %s  m_internals %x, other internals %x", &other,
+		   other.m_ordinal, other.m_name.c_str(), impl.m_internals,
+		   otherImpl.m_internals);
+	  ocpiInfo("me %p port ordinal %u port %s", &p, p.m_ordinal, p.m_name.c_str());
+	  return true;
 	}
-      } else if (otherImpl.m_internals & (1 << other.m_ordinal))
-	// This port is external.  If the other port is connected, we're incompatible
+      } else if (otherImpl.m_internals & (1 << other.m_ordinal)) {
+	ocpiInfo("Port %s of %s is external; the other port is connected: we're incompatible",
+		 p.m_name.c_str(), impl.m_metadataImpl.name().c_str());
+	ocpiInfo("other %p %u %s  m_internals %x, other internals %x", &other, other.m_ordinal,
+		 other.m_name.c_str(), impl.m_internals, otherImpl.m_internals);
+	ocpiInfo("me %p port ordinal %u port %s", &p, p.m_ordinal, p.m_name.c_str());
 	return true;
+      }
       return false;
     }
     Assembly::Instance::

@@ -56,8 +56,8 @@ namespace OCPI {
       for (Driver *d = firstDriver(); d; d = d->nextDriver())
 	if ((a = d->findArtifact(caps, specName, params, selectCriteria, conns, artInst)))
 	  return *a;
-      throw OU::Error("No usable artifact found in any library in OCPI_LIBRARY_PATH, "
-		      "for worker implementing \"%s\"", specName);
+      throw OU::Error("No usable artifact found in any library in OCPI_LIBRARY_PATH (%s), "
+		      "for worker implementing \"%s\"", getenv("OCPI_LIBRARY_PATH"), specName);
     }
 
     Artifact &Manager::getArtifact(const char *url, const OA::PValue *params) {
@@ -102,12 +102,12 @@ namespace OCPI {
       const char *err = OU::evalExpression(selection, val, &impl);
       if (err)
 	throw OU::Error("Error parsing selection expression: %s", err);
-      if (!val.isNumber)
+      if (!val.isNumber())
 	throw OU::Error("selection expression has string value");
       if (score)
 	// FIXME test if overflow
-	*score = (unsigned)(val.number < 0 ? 0: val.number); // force non-negative
-      return val.number > 0;
+	*score = (unsigned)(val.getNumber() < 0 ? 0: val.getNumber()); // force non-negative
+      return val.getNumber() > 0;
     }
 
     // Find (and callback with) implementations for specName and selectCriteria
@@ -183,6 +183,10 @@ namespace OCPI {
     void Implementation::
     setConnection(OU::Port &myPort, Implementation *otherImpl,
 		  OU::Port *otherPort) {
+      ocpiInfo("Setting connection in %s on %s port %s with other %s port %s",
+	       m_artifact.name().c_str(), m_metadataImpl.name().c_str(), myPort.m_name.c_str(),
+	       otherImpl ? otherImpl->m_metadataImpl.name().c_str() : "none",
+	       otherPort ? otherPort->m_name.c_str() : "none");
       if (otherImpl) {
 	m_internals |= 1 << myPort.m_ordinal;
 	if (!m_connections)

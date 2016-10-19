@@ -59,7 +59,7 @@ TARGET_CPPFLAGS=\
 CFLAGS += $(TARGET_CPPFLAGS)
 CXXFLAGS += -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS $(TARGET_CPPFLAGS)
 
-
+PREQLIBS=gmp lzma
 #
 # ----------------------------------------------------------------------
 # The rest should work.

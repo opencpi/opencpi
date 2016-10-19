@@ -84,10 +84,11 @@ namespace OCPI {
     // parse a value for this property, which may be a struct
     // instance property values in an assembly.
     const char *
-    Property::parseValue(const char *unparsed, Value &value, const char *end) const {
+    Property::parseValue(const char *unparsed, Value &value, const char *end,
+			 const IdentResolver *resolv) const {
       if (!value.m_vt)
 	value.setType(*this);
-      return value.parse(unparsed, end);
+      return value.parse(unparsed, end, false, resolv);
     }
 
     // FIXME find the caller and nuke this one
@@ -135,7 +136,8 @@ namespace OCPI {
 	   OE::checkAttrs(prop, "Name", PROPERTY_ATTRIBUTES, NULL)) ||
 	  (includeImpl && (err = parseImplAlso(prop))) ||
 	  (err = parseAccess(prop, false)) ||
-	  (err = Member::parse(prop, !m_isParameter, true, "default", ordinal, resolv)))
+	  (err = Member::parse(prop, !m_isParameter, true, "default", "property", ordinal,
+			       resolv)))
 	return err;
       // This call is solely used for sub32 determination.  The rest are ignored here.
       // FIXME: move this determination into the parse to avoid all this...
@@ -159,7 +161,7 @@ namespace OCPI {
     const char *Property::
     offset(size_t &cumOffset, uint64_t &sizeofConfigSpace, const IdentResolver *resolver) {
       const char *err = NULL;
-      if (resolver && (err = finalize(*resolver, !m_isParameter)))
+      if (resolver && (err = finalize(*resolver, "property", !m_isParameter)))
 	return err;
       // Now we evaluate offsets since some sizes may have changed
       size_t maxAlign = 1, minSize = 0, myOffset = 0;
@@ -233,7 +235,7 @@ namespace OCPI {
 
     // This parses something that is adding impl attributes to an existing property
     const char *Property::
-    parseImpl(ezxml_t x) {
+    parseImpl(ezxml_t x, const IdentResolver *resolv) {
       const char *err;
       if ((err = OE::checkAttrs(x, "Name", IMPL_ATTRIBUTES, "default", "value", NULL)) ||
 	  (err = parseAccess(x, true)) ||
@@ -250,10 +252,10 @@ namespace OCPI {
 	if (m_hasValue)
 	  return esprintf("Property \"%s\" already has a non-default value which cannot be "
 			  "overridden", m_name.c_str());
-	if ((err = parseDefault(x, "value")))
+	if ((err = parseDefault(v, "propoerty", resolv)))
 	  return err;
 	m_hasValue = true;
-      } else if (d && (err = parseDefault(x, "default")))
+      } else if (d && (err = parseDefault(d, "property", resolv)))
 	return err;
       return parseCheck();
     }

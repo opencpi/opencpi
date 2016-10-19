@@ -458,7 +458,7 @@ namespace OCPI {
 
       // Return true on error. "end" can be NULL
       bool
-      getUNum64(const char *s, const char *end, uint64_t &val) {
+      getUNum64(const char *s, const char *end, uint64_t &val, const char **endp) {
 	char *endptr;
 	errno = 0;
 	val = strtoull(s, &endptr, 0);
@@ -491,6 +491,8 @@ namespace OCPI {
 	    if ((end && endptr < end) || (!end && *endptr))
 	      break;
 	  }
+	  if (endp)
+	    *endp = endptr;
 	  return false;
 	} while(0);
 	return true;

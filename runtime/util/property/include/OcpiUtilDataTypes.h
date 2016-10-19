@@ -166,6 +166,7 @@ namespace OCPI {
       size_t m_offset;              // in group
       bool m_isIn, m_isOut, m_isKey;  // for arguments (could use another class, but not worth it)
       Value *m_default;               // A default value, if one is appropriate and there is one
+      std::string m_defaultExpr;
       unsigned m_ordinal;             // ordinal within group
       Member();
       Member(const char *name, const char *abbrev, const char *description,
@@ -182,9 +183,9 @@ namespace OCPI {
       //      const std::string &name() const { return m_name; }
       const char *cname() const { return m_name.c_str(); }
       const char
-        *finalize(const IdentResolver &resolv, bool isFixed),
-	*parseDefault(ezxml_t x, const char *hasDefault),
-	*parse(ezxml_t x, bool isFixed, bool hasName, const char *hasDefault,
+        *finalize(const IdentResolver &resolv, const char *tag, bool isFixed),
+	*parseDefault(const char *value, const char *tag, const IdentResolver *resolv = NULL),
+	*parse(ezxml_t x, bool isFixed, bool hasName, const char *hasDefault, const char *tag,
 	       unsigned ordinal, const IdentResolver *resolv = NULL),
 	*offset(size_t &maxAlign, size_t &argOffset, size_t &minSize, bool &diverseSizes,
 		bool &sub32, bool &unBounded, bool isTop = false);

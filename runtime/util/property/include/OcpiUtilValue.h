@@ -37,12 +37,12 @@
 #ifndef OCPI_UTIL_VALUE_H
 #define OCPI_UTIL_VALUE_H
 
-#include "ezxml.h"
 #include <stdarg.h>
 #include <string>
+#include <cassert>
+#include "ezxml.h"
 #include "OcpiUtilAutoMutex.h"
 #include "OcpiUtilDataTypes.h"
-#include "OcpiExprEvaluator.h"
 
 namespace OCPI {
   namespace Util {
@@ -65,7 +65,7 @@ namespace OCPI {
       virtual bool unparseStruct(std::string &fs, StructValue val, Member *members,
 				 size_t nMembers, bool hex, char comma) const;
       void doFormat(std::string &, const char *fmt, ...) const;
-      virtual void
+      virtual bool
       elementUnparse(const Value &v, std::string &s, unsigned nSeq, bool hex, char comma,
 		     bool wrap, const Unparser &up) const;
       virtual bool
@@ -76,6 +76,7 @@ namespace OCPI {
 			 size_t nItems, bool hex, char comma, const Unparser &up) const;
     };
     extern bool parseOneChar(const char *&cp, const char *end, char &vp);
+    struct IdentResolver;
     // A typed value
     class Value : public Unparser {
       static const ValueType *s_vt;
@@ -130,17 +131,27 @@ namespace OCPI {
 #undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE
-      const char *parse(const char *unparsed, const char *stop = NULL, bool add = false);
+	  const char *parse(const char *unparsed, const char *stop = NULL, bool add = false,
+			    const IdentResolver *resolv = NULL);
       const char *allocate(bool add = false);
+      char &nextStringChar() {
+	assert(m_stringNext && (size_t)(m_stringNext - m_stringSpace) < m_stringSpaceLength);
+	return *m_stringNext++;
+      }
+      char setNextStringChar(char c) {
+	nextStringChar() = c;
+	return c;
+      }
       bool needsComma() const;
       bool needsCommaDimension() const;
       bool needsCommaElement() const;
       void
+        reserveStringSpace(size_t len, bool add),
 	generate(),
 	generateElement(unsigned nSeq),
 	generateDimension(unsigned nseq, size_t dim, size_t offset, size_t nItems),
 	generateValue(unsigned nSeq, size_t nArray);
-      const char *getValue(ExprValue &val);
+      const char *getValue(ExprValue &val) const;
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
       run generate##pretty();
 	OCPI_PROPERTY_DATA_TYPES
@@ -148,7 +159,7 @@ namespace OCPI {
         OCPI_DATA_TYPE(sca,corba,letter,bits,TypeValue,Type,store)
         OCPI_DATA_TYPE(sca,corba,letter,bits,EnumValue,Enum,store)
 #undef OCPI_DATA_TYPE
-      void
+      bool
 	  unparse(std::string &s, const Unparser *up = NULL, bool append = false,
 		  bool hex = false, char comma = ',') const,
 	  unparseElement(std::string &s, unsigned nSeq, bool hex, char comma,
@@ -167,6 +178,7 @@ namespace OCPI {
 #endif
     private:
       const char
+	*parseExpressionValue(const char *start, const char *end, size_t nSeq, size_t nArray),
 	*parseValue(const char *unparsed, const char *stop, size_t nSeq, size_t nArray),
 	*parseElement(const char *start, const char *end, size_t nSeq),
 	*parseDimension(const char *unparsed, const char *stop,

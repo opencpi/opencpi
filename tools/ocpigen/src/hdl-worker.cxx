@@ -210,13 +210,13 @@ vhdlType(const OU::Property &dt, std::string &decl, std::string &type, bool conv
     vhdlBaseType(dt, type, convert);
  }
 static struct VhdlUnparser : public OU::Unparser {
-  void
+  bool
   elementUnparse(const OU::Value &v, std::string &s, unsigned nSeq, bool hex, char comma,
 		 bool wrap, const Unparser &up) const {
     if (wrap) s+= '(';
-    Unparser::elementUnparse(v, s, nSeq, hex, comma, false, up);
+    bool r = Unparser::elementUnparse(v, s, nSeq, hex, comma, false, up);
     if (wrap) s+= ')';
-    
+    return r;
   }
   bool
   dimensionUnparse(const OU::Value &v, std::string &s, unsigned nseq, size_t dim,

@@ -65,7 +65,7 @@ namespace OCPI {
       // Does this implementation satify the selection criteria?  and if so, what is the score?
       //      bool satisfiesSelection(const char *selection, unsigned &score);
       ~Implementation();
-      bool getValue(const char *symbol, OCPI::Util::ExprValue &val) const;
+      //      bool getValue(const char *symbol, OCPI::Util::ExprValue &val) const;
       void setConnection(OCPI::Util::Port &myPort, Implementation *otherImpl = NULL,
 			 OCPI::Util::Port *otherPort = NULL);
     };

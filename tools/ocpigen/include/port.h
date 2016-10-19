@@ -6,7 +6,6 @@
 #include <cassert>
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilAssembly.h"
-#include "OcpiExprEvaluator.h"
 #include "ocpigen.h"
 
 // FIXME: this will not be needed when we fully migrate to classes...

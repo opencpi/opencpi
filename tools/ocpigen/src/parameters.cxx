@@ -64,7 +64,7 @@ parse(ezxml_t cx, const ParamConfigs &configs) {
     OU::Property *p;
     if ((err = OE::getRequiredString(px, name, "name")) ||
 	(err = m_worker.findParamProperty(name.c_str(), p, nParam)) ||
-	(err = p->finalize(*this, false)) ||
+	(err = p->finalize(*this, "property", false)) ||
 	(err = params[nParam].parse(px, p)))
       return err;
   }
@@ -322,8 +322,8 @@ doParam(ParamConfig &info, PropertiesIter pi, unsigned nParam, size_t &nConfig) 
     for (unsigned n = 0; n < p.values.size(); n++) {
       const char *err;
       p.m_value = new OU::Value(prop);
-      if ((err = prop.finalize(info, false)) ||
-	  (err = prop.parseValue(p.values[n].c_str(), *p.m_value)))
+      if ((err = prop.finalize(info, "property", false)) ||
+	  (err = prop.parseValue(p.values[n].c_str(), *p.m_value, NULL, &info)))
 	return err;
       p.m_value->unparse(p.uValue); // make the canonical value
       if ((err = doParam(info, pi, nParam, nConfig)))

@@ -37,18 +37,36 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#include <pthread.h>
 #include "OcpiOsAssert.h"
+#include "OcpiExprEvaluator.h"
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilAutoMutex.h"
 #include "OcpiUtilValue.h"
 #include "OcpiUtilDataTypes.h"
 
+// Prefix for interpreting string and char types as expressions
+#define EXPR_PREFIX "\\:"
+#define EXPR_PREFIX_LEN (sizeof(EXPR_PREFIX)-1)
+// Prefix for interpreting structure values as positional rather than sparse/named
+#define POSITIONAL_PREFIX ":"
+#define POSITIONAL_PREFIX_LEN (sizeof(POSITIONAL_PREFIX)-1)
+
 namespace OA = OCPI::API;
 namespace OE = OCPI::Util::EzXml;
 namespace OCPI {
   namespace Util {
 
+    static pthread_once_t s_resolverOnce = PTHREAD_ONCE_INIT;
+    static pthread_key_t s_resolverKey;
+    static void makeResolverKey() {
+      pthread_key_create(&s_resolverKey, NULL);
+    }
+    static void setResolver(const IdentResolver *r) {
+      pthread_once(&s_resolverOnce, makeResolverKey);
+      pthread_setspecific(s_resolverKey, (void*)r);
+    }
     static inline long myRandom() { return random() * (random() & 1 ? -1 : 1); }
 #if 0
     // Return true on error
@@ -416,9 +434,16 @@ namespace OCPI {
       while (isspace(*cp))
 	cp++;
       if (*cp == '\'') {
-	if (*++cp == '\\')
-	  cp++;
-	vp = *cp;
+	cp++;
+	while (end && end > cp+1 && isspace(end[-1]))
+	  end--;
+	if (end < cp+1 || end[-1] != '\'')
+	  return "bad unsigned char value in single quotes";
+	char c;
+	const char *err = parseChar(cp, end, c);
+	if (err)
+	  return err;
+	vp = (uint8_t)c;
       } else {
 	uint64_t n;
 	if (OE::getUNum64(cp, end, n) || n > UINT8_MAX)
@@ -481,9 +506,9 @@ namespace OCPI {
 	  break;
 	} else if (m_vt->m_stringLength && len >= m_vt->m_stringLength)
 	  return "string too long";
-	else if (parseOneChar(cp, end, *m_stringNext++))
+	else if (parseOneChar(cp, end, nextStringChar()))
 	  return "bad String value";
-      *m_stringNext++ = 0;
+      setNextStringChar(0);
       vp = (const char *)start;
       return NULL;
     }
@@ -492,25 +517,37 @@ namespace OCPI {
     parseStruct(const char *unparsed, const char *stop, StructValue &sv) {
       sv = m_structNext;
       m_structNext += m_vt->m_nMembers;
+      size_t member = 0;
+      bool positional =
+	(size_t)(stop - unparsed) > POSITIONAL_PREFIX_LEN &&
+	!strncmp(unparsed, POSITIONAL_PREFIX, POSITIONAL_PREFIX_LEN);
+      if (positional)
+	unparsed += POSITIONAL_PREFIX_LEN;
       while (unparsed < stop) {
 	const char *start, *end;
 	doElement(unparsed, stop, start, end);
 	if (start == end)
 	  return "empty member value in struct value";
 	size_t n, len;
-	for (n = 0; n < m_vt->m_nMembers; n++) {
-	  const char *mName = m_vt->m_members[n].m_name.c_str();
-	  len = strlen(mName);
-	  if (!strncmp(mName, start, len) && isspace(start[len]))
-	    break;
+	if (positional) {
+	  n = member++;
+	  if (n >= m_vt->m_nMembers)
+	    return "too many members in struct value";
+	} else {
+	  for (n = 0; n < m_vt->m_nMembers; n++) {
+	    const char *mName = m_vt->m_members[n].m_name.c_str();
+	    len = strlen(mName);
+	    if (!strncmp(mName, start, len) && isspace(start[len]))
+	      break;
+	  }
+	  if (n >= m_vt->m_nMembers)
+	    return "unknown member name in struct value";
+	  if (sv[n])
+	    return "duplicate member name in struct value";
+	  start += len;
 	}
-	if (n >= m_vt->m_nMembers)
-	  return "unknown member name in struct value";
-	if (sv[n])
-	  return "duplicate member name in struct value";
 	Value *v = sv[n] = new Value(m_vt->m_members[n], this);
 	const char *err;
-	start += len;
 	while (isspace(*start) && start < end)
 	  start++;
 	if (v->needsComma()) {
@@ -663,31 +700,38 @@ namespace OCPI {
       return NULL;
     }
 
+    void Value::
+    reserveStringSpace(size_t len, bool add) {
+      char *old = m_stringSpace;
+      size_t oldLength = m_stringSpaceLength;
+      // the space required will never be larger than the input...
+      m_stringSpaceLength = len + 1 + (add ? m_stringSpaceLength : 0);
+      m_stringNext = m_stringSpace = new char[m_stringSpaceLength];
+      if (add) {
+	assert(m_vt->m_isSequence || m_vt->m_arrayRank);
+	// Do the realloc of the string space, and adjust
+	m_stringNext += oldLength;
+	memcpy(m_stringSpace, old, oldLength);
+	// Relocate string pointers
+	for (unsigned n = 0; n < m_nElements; n++)
+	  if (m_pString[n])
+	    m_pString[n] = m_stringSpace + (m_pString[n] - old);
+      }
+      delete [] old;
+    }
+
     // Overloaded with the base case (parsing a whole value),
     // and adding an element to a sequence value
     const char *Value::
-    parse(const char *unparsed, const char *stop, bool add) {
+    parse(const char *unparsed, const char *stop, bool add, const IdentResolver *resolver) {
+      setResolver(resolver);
       const char *err = NULL;
       if (!stop)
 	stop = unparsed + strlen(unparsed);
       if (!add)
 	clear();
-      if (m_vt->m_baseType == OA::OCPI_String) {
-	char *old = m_stringSpace;
-	size_t oldLength = m_stringSpaceLength;
-	// the space required will never be larger than the input...
-	m_stringSpaceLength += stop - unparsed + 1; // note += for 'add' case
-	m_stringNext = m_stringSpace = new char[m_stringSpaceLength];
-	if (add) {
-	  assert(m_vt->m_isSequence);
-	  // Do the realloc of the string space, and adjust
-	  m_stringNext += oldLength;
-	  memcpy(m_stringSpace, old, oldLength);
-	  // Relocate string pointers
-	  for (unsigned n = 0; n < m_nElements; n++)
-	    m_pString[n] = m_stringSpace + (m_pString[n] - old);
-	}
-      }
+      if (m_vt->m_baseType == OA::OCPI_String)
+	reserveStringSpace(stop - unparsed, add);
       if (add)
 	m_nElements++;
       else {
@@ -782,18 +826,58 @@ namespace OCPI {
 	parseDimension(start, end, nSeq, 0, 0, m_vt->m_nItems) :
 	parseValue(start, end, nSeq, 0);
     }
-    // A single value
+    const char *Value::
+    parseExpressionValue(const char *start, const char *end, size_t nSeq, size_t nArray) {
+      ExprValue ev;
+      const IdentResolver *r = (const IdentResolver *)pthread_getspecific(s_resolverKey);
+      struct Intercept : public IdentResolver {
+	Value &value;
+	const IdentResolver *resolver;
+	Intercept(Value &v, const IdentResolver *a_r) : value(v), resolver(a_r) {}
+	const char *getValue(const char *sym, ExprValue &val) const {
+	  if (value.m_vt->m_baseType == OA::OCPI_Enum)
+	    for (size_t n = 0; n < value.m_vt->m_nEnums; n++)
+	      if (!strcasecmp(value.m_vt->m_enums[n], sym)) {
+		val.setNumber(n);
+		return NULL;
+	      }
+	  return resolver ? resolver->getValue(sym, val) :
+	    "no symbols available for identifier in expression";
+	}
+      } mine(*this, r);
+      const char *err = evalExpression(start, ev, &mine, end);
+      return err ? err : ev.getTypedValue(*this, nSeq * m_vt->m_nItems + nArray);
+    }
+
+    // A single value - not sequence or array
     const char *Value::
     parseValue(const char *start, const char *end, size_t nSeq, size_t nArray) {
-      const char *err;
+      // here we decide whether to use the expression parser or just the value parser.
+      // For all numeric types and boolean, we can always use the expression parser.
       switch (m_vt->m_baseType) {
-#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)			        \
-	case OA::OCPI_##pretty:						        \
-	  if ((err = parse##pretty(start, end,					\
-				   m_vt->m_isSequence || m_vt->m_arrayRank ?      \
-				   m_p##pretty[nSeq * m_vt->m_nItems + nArray] : \
-				   m_##pretty)))			        \
-	    return esprintf("in value \"%.*s\" (%zu): %s", (int)(end-start), start, end-start, err); \
+      case OA::OCPI_Struct:
+      case OA::OCPI_Type:
+	break;
+	// Strings are ambiguous as to whether they are a value or an expression.
+	// The need for expressions in string and char values is rare, so we need an indication
+	// at the start of the value that says we have a string.
+      case OA::OCPI_String:
+      case OA::OCPI_Char:
+	if ((size_t)(end - start) <= EXPR_PREFIX_LEN ||
+	    strncmp(start, EXPR_PREFIX, EXPR_PREFIX_LEN))
+	  break;
+	start += EXPR_PREFIX_LEN;
+      default:;
+	return parseExpressionValue(start, end, nSeq, nArray);
+      }	  
+      // Parse a value, not an expresion
+      const char *err;
+      bool items = m_vt->m_isSequence || m_vt->m_arrayRank;
+      size_t index = nSeq * m_vt->m_nItems + nArray;
+      switch (m_vt->m_baseType) {
+#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)			            \
+	case OA::OCPI_##pretty:						            \
+	  err = parse##pretty(start, end, items ? m_p##pretty[index] : m_##pretty); \
 	  break;
 	OCPI_PROPERTY_DATA_TYPES
 	OCPI_DATA_TYPE(sca,corba,letter,bits,StructValue,Struct,store)
@@ -801,9 +885,10 @@ namespace OCPI {
         OCPI_DATA_TYPE(sca,corba,letter,bits,EnumValue,Enum,store)
 #undef OCPI_DATA_TYPE
       default:
-	return "Unexpected illegal type in parsing value";
+	err = "Unexpected illegal type in parsing value";
       }
-      return NULL;
+      return err ?
+	esprintf("in value \"%.*s\" (%zu): %s", (int)(end-start), start, end-start, err) : NULL;
     }
 
 Unparser::
@@ -856,19 +941,19 @@ dimensionUnparse(const Value &val, std::string &s, unsigned nseq, size_t dim, si
   return allNull;
 }
 
-void Unparser::
+bool Unparser::
 elementUnparse(const Value &v, std::string &s, unsigned nSeq, bool hex, char comma,
 	       bool wrap, const Unparser &up) const {
   if (wrap) s += '{';
-  v.unparseElement(s, nSeq, hex, comma, up);
+  bool r = v.unparseElement(s, nSeq, hex, comma, up);
   if (wrap) s += '}';
+  return r;
 }
 
-void Value::
+bool Value::
 unparseElement(std::string &s, unsigned nSeq, bool hex, char comma, const Unparser &up) const {
-  if (m_vt->m_arrayRank)
-    up.dimensionUnparse(*this, s, nSeq, 0, 0, m_vt->m_nItems, hex, comma, up);
-  else
+  return m_vt->m_arrayRank ?
+    up.dimensionUnparse(*this, s, nSeq, 0, 0, m_vt->m_nItems, hex, comma, up) :
     up.valueUnparse(*this, s, nSeq, 0, hex, comma, false, up);
 }
 
@@ -882,30 +967,24 @@ doFormat(std::string &s, const char *fmt, ...) const {
   va_end(ap);
 }
 
-void Value::
+bool Value::
 unparse(std::string &s, const Unparser *up, bool append, bool hex, char comma) const {
   if (!up)
     up = this;
   if (!append)
     s.clear();
   if (m_vt->m_isSequence) {
+    if (!m_nElements)
+      return true;
     // Now we have allocated the appropriate sequence array, so we can parse elements
     for (unsigned n = 0; n < m_nElements; n++) {
       if (n)
 	s += comma;
-#if 0
-      if (needsCommaElement()) {
-	s += '{';
-	unparseElement(s, n, hex, comma, *up);
-	s += '}';
-      } else
-	unparseElement(s, n, hex, comma, *up);
-#else
       up->elementUnparse(*this, s, n, hex, comma, needsCommaElement(), *up);
-#endif
     }
+    return false; // a sequence with non-zero elements is never considered "empty".
   } else
-    up->elementUnparse(*this, s, 0, hex, comma, false, *up);
+    return up->elementUnparse(*this, s, 0, hex, comma, false, *up);
 }
 
 bool Unparser::
@@ -1017,12 +1096,24 @@ unparseFloat(std::string &s, float val, bool hex) const {
 }
 bool Unparser::
 unparseShort(std::string &s, int16_t val, bool hex) const {
-  doFormat(s, hex ? "0x%lx" : "%ld", (long)(hex ? val & 0xffff : val));
+  uint16_t u;
+  if (val < 0) {
+    u = (uint16_t)(~val + 1);
+    s += '-';
+  } else
+    u = (uint16_t)val;
+  doFormat(s, hex ? "0x%" PRIx16 : "%" PRIu16, u);
   return val == 0;
 }
 bool Unparser::
 unparseLong(std::string &s, int32_t val, bool hex) const {
-  doFormat(s, hex ? "0x%lx" : "%ld", (long)(hex ? val & 0xffffffffl : val));
+  uint32_t u;
+  if (val < 0) {
+    u = (uint32_t)~val + 1;
+    s += '-';
+  } else
+    u = (uint32_t)val;
+  doFormat(s, hex ? "0x%" PRIx32 : "%" PRIu32, u);
   return val == 0;
 }
 bool Unparser::
@@ -1042,12 +1133,18 @@ unparseUShort(std::string &s, uint16_t val, bool hex) const {
 }
 bool Unparser::
 unparseLongLong(std::string &s, int64_t val, bool hex) const {
-  doFormat(s, hex ? "0x%llx" : "%lld", (long long)val);
+  uint64_t u;
+  if (val < 0) {
+    u = (uint64_t)~val + 1;
+    s += '-';
+  } else
+    u = (uint64_t)val;
+  doFormat(s, hex ? "0x%" PRIx64 : "%" PRIu64, u);
   return val == 0;
 }
 bool Unparser::
 unparseULongLong(std::string &s, uint64_t val, bool hex) const {
-  doFormat(s, hex ? "0x%llx" : "%llu", (unsigned long long)val);
+  doFormat(s, hex ? "0x%" PRIx64 : "%" PRIu64, val);
   return val == 0;
 }
 bool Unparser::
@@ -1073,7 +1170,7 @@ bool Value::needsCommaElement() const {
 bool Unparser::
 unparseStruct(std::string &s, StructValue val, Member *members, size_t nMembers, bool hex,
 	      char comma) const {
-  bool seenOne = false;
+  bool seenOne = false, empty = true;
   
   for (unsigned n = 0; val && n < nMembers; n++) {
     Value *v = *val++;
@@ -1082,16 +1179,19 @@ unparseStruct(std::string &s, StructValue val, Member *members, size_t nMembers,
 	s += comma;
       s += members[n].m_name;
       s += ' ';
+      bool r;
       if (v->needsComma()) {
 	s += '{';
-	v->unparse(s, NULL, true, hex);
+	r = v->unparse(s, NULL, true, hex);
 	s += '}';
       } else
-	v->unparse(s, NULL, true, hex);
+	r = v->unparse(s, NULL, true, hex);
+      if (!r)
+	empty = false;
       seenOne = true;
     }
   }
-  return !seenOne;
+  return empty;
 }
 bool Unparser::
 unparseType(std::string &s, TypeValue val, bool hex) const {
@@ -1141,10 +1241,8 @@ void Value::generate() {
     m_nElements = random() % (m_vt->m_sequenceLength ? m_vt->m_sequenceLength : 5);
     m_nTotal *= m_nElements;
   }
-  if (m_vt->m_baseType == OA::OCPI_String) {
-    m_stringSpaceLength = m_nTotal * (testMaxStringLength + 1);
-    m_stringNext = m_stringSpace = new char[m_stringSpaceLength];
-  }
+  if (m_vt->m_baseType == OA::OCPI_String)
+    reserveStringSpace(m_nTotal * (testMaxStringLength + 1), false);
   ocpiCheck(allocate() == 0);
   if (m_vt->m_isSequence)
     // Now we have allocated the appropriate sequence array, so we can parse elements
@@ -1221,8 +1319,8 @@ generateString() {
   char *cp = m_stringNext;
   for (size_t len = random() % (m_vt->m_stringLength ? m_vt->m_stringLength + 1 : testMaxStringLength);
        len; len--)
-    *m_stringNext++ = (char)(random() % (0177 - 036) + 036);
-  *m_stringNext++ = 0;
+    setNextStringChar((char)(random() % (0177 - 036) + 036));
+  setNextStringChar(0);
   return cp;
 }
 StructValue Value::
@@ -1246,7 +1344,10 @@ EnumValue Value::
 generateEnum() {
   return (EnumValue)(random() % m_vt->m_nEnums);
 }
-const char *Value::getValue(ExprValue &val) {
+const char *Value::
+getValue(ExprValue &val) const {
+  return val.setFromTypedValue(*this);
+#if 0
   val.isNumber = true;
   switch (m_vt->m_baseType) {
   case OA::OCPI_Bool: val.number = m_Bool; break;
@@ -1266,6 +1367,7 @@ const char *Value::getValue(ExprValue &val) {
     return "bad data type for property";
   }
   return NULL;
+#endif
 }
 }
 }

@@ -78,6 +78,10 @@ namespace OCPI {
       bool help = false, debug = false;
       for (;ap[0] && ap[0][0] == '-'; ap++) {
 	if (ap[0][1] == '-') {
+	  if (ap[0][2] == '\0') {
+	    ap++;
+	    break;
+	  }
 	  // Long option
 	  const char *arg = &ap[0][2];
 	  if (!strcasecmp(arg, "help")) {

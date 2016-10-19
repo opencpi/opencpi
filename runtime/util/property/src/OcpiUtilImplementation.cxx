@@ -153,16 +153,13 @@ namespace OCPI {
     const char *Worker::getValue(const char *sym, ExprValue &val) const {
       // Our builtin symbols take precendence, but can be overridden with $
       if (!strcasecmp(sym, "model")) {
-	val.isNumber = false;
-	val.string = m_model;
+	val.setString(m_model);
 	return NULL;
       } else if (!strcasecmp(sym, "platform") && m_attributes) {
-	val.isNumber = false;
-	val.string = m_attributes->m_platform;
+	val.setString(m_attributes->m_platform);
 	return NULL;
       } else if (!strcasecmp(sym, "os") && m_attributes) {
-	val.isNumber = false;
-	val.string = m_attributes->m_os;
+	val.setString(m_attributes->m_os);
 	return NULL;
       }
       Property *p = m_properties;

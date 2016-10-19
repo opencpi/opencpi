@@ -81,13 +81,30 @@
 namespace OCPI {
   namespace Util {
     // The value returned from parsing an expression and also returned as the value of an identifier
-    struct ExprValue {
-      std::string string;
-      int64_t number;
-      bool isNumber;
-      bool isVariable; // a variable was used to compute the result
+    class Value;
+    class ExprValue {
+      mutable int64_t m_number;
+      mutable bool m_numberSet;
+    public:
+      class Internal;
+      friend class Internal;
+      ExprValue();
+      ~ExprValue();
+    protected:
+      Internal *m_internal;
+    public:
+      void setString(const char *s);
+      void setString(const std::string &s) { setString(s.c_str()); }
+      void setNumber(int64_t);
+      // Set this expression value based on an OU::Value, which already has a data type.
+      const char *getTypedValue(Value &v, size_t index = 0) const; // value ref has a type
+      // Convert this expression value in to an OU::Value, which already has a data type.
+      const char *setFromTypedValue(const Value &v);
+      bool isNumber() const;
+      bool isVariable() const;
+      int64_t getNumber() const;
+      const char *getString(std::string &) const;
     };
-
     // The class provideed by the caller that can provide the value of identifiers
     // in the expression
     struct IdentResolver {
@@ -97,7 +114,7 @@ namespace OCPI {
     
     // The core function that evaluates expressions
     const char *evalExpression(const char *string, ExprValue &val, const
-			       IdentResolver *resolve = NULL);
+			       IdentResolver *resolve = NULL, const char *end = NULL);
     // Evaluate the expression, using the resolver, and if the expression was variable,
     // save the expression so it can be reevaluated again later when the values of
     // variables are different.

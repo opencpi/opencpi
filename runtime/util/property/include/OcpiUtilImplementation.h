@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
  *
@@ -46,7 +45,6 @@
  This file defines the binary (non-string) format of SCA component properties,
  as well as the functions to encode (binary to string) and decode 
  (string to binary).
-
  
 */
 
@@ -62,7 +60,6 @@
 #include "OcpiUtilProtocol.h"
 #include "OcpiUtilPort.h"
 #include "OcpiUtilMemory.h"
-#include "OcpiExprEvaluator.h"
 
 #define CONTROL_OP_I CONTROL_OP
 #define OCPI_CONTROL_OPS                                                        \

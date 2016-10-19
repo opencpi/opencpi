@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -32,7 +31,6 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 /*
 
  Definitions for worker metadata encoding,decoding.
@@ -47,7 +45,6 @@
  This file defines the binary (non-string) format of SCA component properties,
  as well as the functions to encode (binary to string) and decode 
  (string to binary).
-
  
 */
 #ifndef OCPI_METADATA_PROPERTY_H
@@ -56,7 +53,6 @@
 #include "ezxml.h"
 #include "OcpiUtilDataTypes.h"
 #include "OcpiUtilPropertyApi.h"
-#include "OcpiExprEvaluator.h"
 
 namespace OCPI {
   namespace API {
@@ -116,9 +112,10 @@ namespace OCPI {
       const char
 	*parse(ezxml_t x, bool includeImpl, unsigned ordinal,
 	       const IdentResolver *resolv = NULL),
-	*parseImpl(ezxml_t x),
+	*parseImpl(ezxml_t x, const IdentResolver *resolv = NULL),
 	*parse(ezxml_t x, unsigned ordinal),
-	*parseValue(const char *unparsed, Value &value, const char *end = NULL) const,
+	*parseValue(const char *unparsed, Value &value, const char *end = NULL,
+		    const IdentResolver *resolv = NULL) const,
         *checkType(OCPI::API::BaseType ctype, unsigned n, bool write),
 	*getValue(ExprValue &val),
 	*offset(size_t &cumOffset, uint64_t &sizeofConfigSpace,
