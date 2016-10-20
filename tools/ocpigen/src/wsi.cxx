@@ -124,12 +124,31 @@ emitVhdlShell(FILE *f, Port *wci) {
 	  name());
   if (ocp.MReqInfo.value)
     if (m_protocol && m_protocol->nOperations())
-      if (slave)
+      if (slave) {
+#if 0
 	fprintf(f,
 		"  %s_opcode <= %s_opcode_t'val(to_integer(unsigned(%s_opcode_temp)));\n",
 		name(), m_protocol && m_protocol->operations() ?
 		m_protocol->m_name.c_str() : name(), name());
-      else {
+#else
+	fprintf(f,
+		"  -- Xilinx/ISE 14.6 synthesis doesn't do the t'val(x) function properly\n"
+		"  -- Hence this workaround\n");
+	fprintf(f,
+		"  %s_opcode <=\n", name());
+	OU::Operation *op = m_protocol->operations();
+	unsigned nn;
+	for (nn = 0; nn < m_protocol->nOperations(); nn++, op++)
+	  fprintf(f, "%s    %s_%s_op_e when to_integer(unsigned(%s_opcode_temp)) = %u",
+		  nn ? " else\n" : "", m_protocol->m_name.c_str(), op->name().c_str(), name(), nn);
+	// If the protocol opcodes do not fill the space, fill it
+	if (nn < m_nOpcodes)
+	  for (unsigned o = 0; nn < m_nOpcodes; nn++, o++)
+	    fprintf(f, " else\n    op%u_e when to_integer(unsigned(%s_opcode_temp)) = %u",
+		    nn, name(), nn);
+	fprintf(f, ";\n");
+#endif
+      } else {
 	fprintf(f,
 		"  -- Xilinx/ISE 14.6 synthesis doesn't do the t'pos(x) function properly\n"
 		"  -- Hence this workaround\n");
