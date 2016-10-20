@@ -18,21 +18,8 @@ if test "$OCPI_TARGET_HOST" = "$OCPI_TOOL_HOST" -a "${OCPI_TOOL_MODE+UNSET}" = "
    *) echo "Invalid values for OCPI_BUILD_SHARED_LIBRARIES or OCPI_DEBUG"; return 1;;
  esac
 fi
-if test "$OCPI_PREREQUISITES_INSTALL_DIR" = ""; then
-  export OCPI_PREREQUISITES_INSTALL_DIR=/opt/opencpi/prerequisites
-fi
-
-if [ ! -d exports ]; then
-  # This is a bootstrapping issue.  The exports tree doesn't exist, but we need it
-  # to at least exist enough to know where the CDK will be.
-  echo No exports tree exists in this OpenCPI base directory.  Creating an initial one.
-  ./scripts/makeExportLinks.sh $OCPI_TOOL_HOST ocpi_ xxx
-fi
 # For now this script needs to know where it is, and on some circa 2002 bash versions,
 # it can't.  This sets up the CDK VARS
 source exports/scripts/ocpisetup.sh exports/scripts/ocpisetup.sh
-if test "$OPENCL_EXPORTS" = ""; then
-  export OPENCL_EXPORTS="$OCPI_OPENCL_INCLUDE_DIR $OCPI_OPENCL_INCLUDE_DIR/CL"
-fi
 echo ""; echo " *** OpenCPI Environment settings"; echo ""
 env | grep OCPI_ | sort

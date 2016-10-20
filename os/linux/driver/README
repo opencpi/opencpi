@@ -17,6 +17,40 @@ $ make
 
 $ make load
 
+******** MORE INFO ON KERNEL HEADER CREATION FOR A NEW VENDOR KERNEL ********
+When using alternate kernels provided by hardware vendors, a full build of the kernel
+is required when certain files such as Module.symvers are not provided.  To deal with
+this:
+
+First, on the running system, extract the ".config" used by the vendor to build the
+kernel on the device:
+
+# zcat /proc/config.gz > .config
+(copy file to local kernel source location)
+
+Then, the following are performed:
+
+ make clean
+ make oldconfig
+ make prepare
+ make
+ make modules
+
+It is important to have the proper cross-compiling flags set in the environment.
+To automate this, you can add the above lines to /os/linux/driver/Makefile
+in the $(MODFILE) rule (with "cd $(KERNELDIR)").
+
+After that, pare down the tree as much as possible before checking in. Some
+low-hanging fruit include:
+ - every subdir except arch, include, scripts
+ - *.o *.c *.cmd .tmp*
+ - Any other binaries EXCEPT those found in scripts/
+  - find . -type f | xargs file | grep ELF
+ - arch/arm/boot
+
+The idea is to approproximate the "kernel headers" package normally distributed
+by linux distributions.
+
 ********THE FOLLOWING MEMMAP FEATURE IS FOR X86 ARCHITECTURES ONLY******
 
 If you want to use more then 128KB of RAM, then you will need to reserve a 
@@ -64,27 +98,42 @@ result in the following memmap parameter:
 	memmap=128M$0x57EF0000
 
 Once you've calculated your memmap parameter, you will need to add it to the
-kernel command line in your boot loader.  If you're using GRUB, you will need
-to edit the GRUB configuration file (on RHEL /boot/grub/grub.conf).  A sample
-boot configuration would look like this:
+kernel command line in your boot loader.
 
-title Red Hat Enterprise Linux Server (2.6.18-128.el5)
-        root (hd0,0)crashkernel=128M@16M
-        kernel /vmlinuz-2.6.18-128.el5 ro root=/dev/VolGroup00/LogVol00 rhgb quiet
-        initrd /initrd-2.6.18-128.el5.img
+For CentOS 6 and 7, you can use the utility "grubby".
 
-You’ll need to edit the ‘kernel’ line to add the memmap parameter; make a copy 
-first, and then change the title line to distinguish it.  It should look like
-this:
+This will add the parameter to all kernels in the startup menu. The single
+quotes are REQUIRED or your shell will interpret the $0:
 
-title Red Hat Enterprise Linux Server (2.6.18-128.el5) Memmap Example
-        root (hd0,0)
-        kernel /vmlinuz-2.6.18-128.el5 ro root=/dev/VolGroup00/LogVol00 rhgb quiet memmap=128M$0x57EF0000
-        initrd /initrd-2.6.18-128.el5.img
+sudo grubby --update-kernel=ALL --args=memmap='128M$0x57EF0000'
 
-Save the file, and then reboot the system, making certain to boot from your new
-configuration.  Once that's done, if you run 'dmesg' you should see something
-like this:
+CentOS 7 uses grub2, which requires a double backslash to not interpret it:
+
+sudo grubby --update-kernel=ALL --args=memmap='128M\\$0x57EF0000'
+
+To verify the current kernel has the argument set:
+sudo -v
+sudo grubby --info $(sudo grubby --default-kernel)
+
+CentOS 7 users should see a SINGLE backslash before the $.
+
+To remove the parameter:
+sudo grubby --update-kernel=ALL --remove-args=memmap
+
+More information concerning grubby can be found at:
+https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/System_Administrators_Guide/sec-Making_Persistent_Changes_to_a_GRUB_2_Menu_Using_the_grubby_Tool.html
+
+... the memmap parameter:
+https://www.kernel.org/doc/Documentation/kernel-parameters.txt
+
+Note: If you have other memmap parameters, e.g. for non-OpenCPI PCI cards,
+then grubby usage will be different. The OpenCPI driver will use the first
+memmap parameter on the command line OR the parameter "opencpi_memmap" if it
+is explicitly given. If this parameter is given, the standard memmap command
+with the same parameters must ALSO be passed to the kernel.
+
+Reboot the system, making certain to boot from your new configuration.
+Once that's done, if you run 'dmesg' you should see something like this:
 
 $dmesg | more
 Linux version 2.6.18-128.el5 (mockbuild@hs20-bc1-7.build.redhat.com) (gcc version 4.1.2 20080704 (Red Hat 4.1.2-44)) #1 SMP Wed Dec 17 11:41:38 EST 2008
@@ -110,7 +159,7 @@ user-defined physical RAM map:
  user: 00000000000dc000 - 00000000000e4000 (reserved)
  user: 00000000000e8000 - 0000000000100000 (reserved)
  user: 0000000000100000 - 0000000057ef0000 (usable)
- user: 0000000057ef0000 - 000000005fef0000 (reserved)
+ user: 0000000057ef0000 - 000000005fef0000 (reserved)  <== New
  user: 000000005fef0000 - 000000005feff000 (ACPI data)
  user: 000000005feff000 - 000000005ff00000 (ACPI NVS)
  user: 000000005ff00000 - 0000000060000000 (usable)

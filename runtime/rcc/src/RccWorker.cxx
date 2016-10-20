@@ -31,19 +31,6 @@
   *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
   */
 
-
- /*
-  * Abstact:
-  *   Container application context class.
-  *
-  * Revision History: 
-  * 
-  *    Author: John F. Miller
-  *    Date: 3/2005
-  *    Revision Detail: Created
-  *
-  */
-
 #include <climits>
 #include "OcpiTimeEmitCategories.h"
 #include "RccApplication.h"
@@ -370,6 +357,7 @@ Worker::
      m_context->ports[n].callBack = 0;
      m_context->ports[n].userPort = NULL;
      m_context->ports[n].sequence = NULL;
+     m_context->ports[n].metaPort = &l_ports[n];
    }
 
    // Create our memory spaces
@@ -408,10 +396,10 @@ Worker::
        m_user = ((RCCConstruct *)m_entry->dispatch)(m_entry, m_info);
        m_context->properties = m_user->rawProperties(m_info.propertySize);
      } catch (std::string &e) {
-       throw OU::Error("Worker C++ constructor failed with an unknown exception: %s",
+       throw OU::Error("RCC Worker C++ constructor failed with an unknown exception: %s",
 		       e.c_str());
      } catch (...) {
-       throw OU::Error("Worker C++ constructor failed with an unknown exception");
+       throw OU::Error("RCC Worker C++ constructor failed with an unknown exception");
      }
    if (m_context->properties)
      memset(m_context->properties, 0, sizeof(char)*m_info.propertySize);
@@ -930,7 +918,7 @@ OCPI_CONTROL_OPS
 	  uint32_t u32[bits/32];                                            \
         } u;								    \
         if (bits > 32)							    \
-          u.u32[1] = pp[1];						    \
+          u.u32[bits/32-1] = pp[bits/32-1];				    \
         u.u32[0] = pp[0];						    \
         if (info.m_readError )				        	    \
           throw; /*"worker has errors after read */			    \
@@ -1125,66 +1113,78 @@ OCPI_CONTROL_OPS
    // Opcode is initialized so we can both detect mismatches (opcode vs opcode-specific
    // accessors) and automatically infer opcodes from the use of opcode-specific accessors
    void RCCUserBuffer::
-   initBuffer() {
-     m_opCodeSet = false;
-     m_lengthSet = false;
-     m_resized = false;
+   initBuffer(bool output) {
+     m_opCodeSet = !output;
+     m_lengthSet = !output;
+     m_resized = !output;
      m_rccBuffer->isNew_ = false;
    }
    void RCCUserPort::
-   checkOpCode(RCCUserBuffer &buf, unsigned op) const {
-     assert(m_rccPort.containerPort);
-     assert(op < m_rccPort.containerPort->metaPort().m_nOperations);
-     if (buf.m_opCodeSet && op != buf.m_rccBuffer->opCode_)
+   checkOpCode(RCCUserBuffer &buf, unsigned opCode, bool setting) const {
+     if (m_rccPort.metaPort->operations() && opCode >= m_rccPort.metaPort->m_nOperations)
+       throw OU::Error("invalid to access opcode %u on port \"%s\"", opCode,
+		       m_rccPort.metaPort->m_name.c_str());
+     if (m_rccPort.metaPort->m_provider && setting)
+       throw OU::Error("invalid to modify opcode (to %u) on input port \"%s\"", opCode,
+		       m_rccPort.metaPort->m_name.c_str());
+     if (buf.m_rccBuffer->isNew_) {
+       buf.initBuffer(!m_rccPort.metaPort->m_provider);
+       if (!m_rccPort.metaPort->m_provider && m_rccPort.metaPort->operations()) {
+	 OU::Operation &op = m_rccPort.metaPort->operations()[opCode];
+	 ocpiDebug("Implicit length for op %u set to %zu", opCode, op.defaultLength());
+	 size_t length = op.defaultLength(); // Could be using a non-zero default length
+	 if (op.m_nArgs > 1) {
+	   OU::Member &m = op.m_args[op.m_nArgs - 1];
+	   if (m.m_isSequence) // make sure any sequence is initially zero length
+	     *(uint32_t *)((uint8_t *)buf.m_rccBuffer->data + m.m_offset) = 
+	       (uint32_t)((length - (m.m_offset + m.m_align)) / m.m_elementBytes);
+	 }
+	 buf.resize(length);
+       }
+     } else if (buf.m_opCodeSet && opCode != buf.m_rccBuffer->opCode_)
        throw OU::Error("opcode accessor for %u used when port opcode set to %u",
-		       op, buf.m_rccBuffer->opCode_);
-     buf.m_opCodeSet = true;
-     buf.m_rccBuffer->opCode_ = OCPI_UTRUNCATE(uint8_t, op);
+		       opCode, buf.m_rccBuffer->opCode_);
+     if (!m_rccPort.metaPort->m_provider) {
+       buf.m_opCodeSet = true;
+       buf.m_rccBuffer->opCode_ = OCPI_UTRUNCATE(uint8_t, opCode);
+     }
    }
+   void RCCUserPort::
+   setOpCode(RCCOpCode op) {
+     checkOpCode(*this, op);
+   }
+   // access an argument, input or output, returning length and capacity for sequences
    void *RCCUserPort::
    getArgAddress(RCCUserBuffer &buf, unsigned op, unsigned arg, size_t *a_length,
 		 size_t *capacity) const {
-     if (buf.m_rccBuffer->isNew_)
-       buf.initBuffer();
-     checkOpCode(buf, op);
+     checkOpCode(buf, op, false);
      OU::Operation &o = m_rccPort.containerPort->metaPort().m_operations[op];
      OU::Member &m = o.m_args[arg];
      uint8_t *p = (uint8_t *)buf.m_rccBuffer->data + m.m_offset;
      if (m.m_isSequence) {
        assert(a_length);
+       assert(op == o.m_nArgs - 1);
+       size_t maxLength = buf.m_rccBuffer->maxLength;
        if (o.m_nArgs == 1) {
 	 assert(buf.m_rccBuffer->length_ % m.m_elementBytes == 0);
-	 if (!buf.m_lengthSet && !m_rccPort.useDefaultLength_ && !buf.m_resized) {
-	   buf.m_rccBuffer->length_ = 0;
-	   buf.m_resized = true;
-	 }
 	 *a_length = buf.m_rccBuffer->length_ / m.m_elementBytes;
-	 if (capacity)
-	   *capacity = buf.m_rccBuffer->maxLength / m.m_elementBytes;
        } else {
-	 uint32_t *p32 = (uint32_t *)p;
-	 if (!buf.m_lengthSet && !m_rccPort.useDefaultLength_ && !buf.m_resized) {
-	   *p32 = 0;
-	   buf.m_rccBuffer->length_ = m.m_offset + m.m_align;
-	   buf.m_resized = true;
-	 }
-	 *a_length = *p32;
-	 assert(!m.m_sequenceLength || *a_length <= m.m_sequenceLength);
-	 if (capacity)
-	   *capacity = (buf.m_rccBuffer->maxLength - m.m_offset) / m.m_elementBytes;
-	 return p + m.m_align;
+	 *a_length = *(uint32_t *)p;
+	 maxLength -= m.m_offset + m.m_align;
+	 p += m.m_align;
        }
+       assert(!m.m_sequenceLength || *a_length <= m.m_sequenceLength);
+       if (capacity)
+	 *capacity = maxLength / m.m_elementBytes;
      }
      return p;
    }
    void RCCUserPort::
    setArgSize(RCCUserBuffer &buf, unsigned op, unsigned arg, size_t size) const {
-     assert(m_rccPort.containerPort);
      checkOpCode(buf, op);
      OU::Operation &o = m_rccPort.containerPort->metaPort().m_operations[op];
      OU::Member &m = o.m_args[arg];
      assert(m.m_isSequence);
-     assert(!m.m_sequenceLength || size <= m.m_sequenceLength);
      size_t
        nBytes = size * m.m_elementBytes,
        limit = buf.m_rccBuffer->maxLength - (o.m_nArgs == 1 ? 0 : m.m_offset + m.m_align);
@@ -1198,14 +1198,12 @@ OCPI_CONTROL_OPS
 		       m_rccPort.containerPort->name().c_str(),
 		       m_rccPort.containerPort->metaPort().OU::Protocol::m_name.c_str(),
 		       o.cname(), m.cname(), size, nBytes, limit);
-     if (o.m_nArgs == 1)
-       buf.m_rccBuffer->length_ = nBytes;
-     else {
+     if (o.m_nArgs > 1) {
        *(uint32_t *)((uint8_t*)buf.m_rccBuffer->data + m.m_offset) =
 	 OCPI_UTRUNCATE(uint32_t, size);
-       buf.m_rccBuffer->length_ = m.m_offset + m.m_align + nBytes;
+       nBytes += m.m_offset + m.m_align;
      }     
-     buf.m_resized = true;
+     buf.resize(nBytes);
    }
    void RCCUserPort::
    send(RCCUserBuffer&buf) {
@@ -1241,7 +1239,7 @@ OCPI_CONTROL_OPS
 	   OU::Member &m = *m_rccPort.sequence;
 	   *(uint32_t *)((uint8_t*)m_rccPort.current.data + m.m_offset) =
 	     OCPI_UTRUNCATE(uint32_t,
-			    m_rccPort.current.length_ - (m.m_offset + m.m_align) /
+			    (m_rccPort.current.length_ - (m.m_offset + m.m_align)) /
 			    m.m_elementBytes);
 	 }
        }
@@ -1252,11 +1250,11 @@ OCPI_CONTROL_OPS
    bool RCCUserPort::
    isConnected() {
      return m_rccPort.containerPort &&
-       (m_rccPort.containerPort->parent().m_context->connectedPorts &
-	(1 << m_rccPort.containerPort->ordinal())) != 0;
+       m_rccPort.containerPort->parent().m_context->connectedPorts &
+       (1 << m_rccPort.metaPort->m_ordinal);
    }
    RCCOrdinal RCCUserPort::
-   ordinal() const { return (RCCOrdinal)m_rccPort.containerPort->ordinal(); }
+   ordinal() const { return (RCCOrdinal)m_rccPort.metaPort->m_ordinal; }
 
    bool RCCUserPort::
    wait(size_t max, unsigned usecs) {
@@ -1281,16 +1279,35 @@ OCPI_CONTROL_OPS
      return length()/eLength;
    }
    void RCCUserPort::
-   setDefaultLength(size_t a_length) {
-     // FIXME check for input port
-     m_rccPort.defaultLength_ = a_length;
-     m_rccPort.useDefaultLength_ = true;
+   shouldBeOutput() const {
+     if (m_rccPort.metaPort->m_provider)
+       throw OU::Error("Port \"%s\" is an input port, opcode or length cannot be set", 
+		       m_rccPort.metaPort->m_name.c_str());
    }
    void RCCUserPort::
-   setDefaultOpCode(RCCOpCode op) {
-     // FIXME check for input port
-     m_rccPort.defaultOpCode_ = op;
+   setDefaultLength(size_t length) {
+     shouldBeOutput();
+     m_rccPort.defaultLength_ = length;
+     m_rccPort.useDefaultLength_ = true;
+   }
+
+   void RCCUserPort::
+   setDefaultOpCode(RCCOpCode opCode) {
+     shouldBeOutput();
+     if (opCode >= m_rccPort.metaPort->nOperations() && m_rccPort.metaPort->operations())
+       throw OU::Error("Opcode %u is not allowed for port %s: maximum is %zu",
+		       opCode, m_rccPort.metaPort->m_name.c_str(),
+		       m_rccPort.metaPort->nOperations() - 1);
+     m_rccPort.defaultOpCode_ = opCode;
      m_rccPort.useDefaultOpCode_ = true;
+     // If there is a protocol, setting the default opcode sets the default size,
+     // including any sequence being zero length.
+     if (m_rccPort.metaPort->operations()) {
+       OU::Operation &op = m_rccPort.metaPort->operations()[opCode];
+       ocpiDebug("Default length for op %u is %zu", opCode, op.defaultLength());
+       if (!m_rccPort.useDefaultLength_)
+	 setDefaultLength(op.defaultLength());
+     }
    }
 
    RCCPortOperationArg::

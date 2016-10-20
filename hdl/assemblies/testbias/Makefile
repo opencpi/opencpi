@@ -38,7 +38,8 @@
 #ParamValues_ocpi_endian=little/big
 #ParamValues_ocpi_debug=false/true
 include $(OCPI_CDK_DIR)/include/util.mk
+Containers=use_gp1
 ifneq ($(call OcpiHavePrereq,ad9361),)
-Containers=fmcomms3_zed
+Containers+= fmcomms3_zed
 endif
 include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk

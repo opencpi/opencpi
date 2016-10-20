@@ -39,8 +39,10 @@ namespace OCPI {
   namespace API {
     PropertyAccess::~PropertyAccess(){}
     void Property::checkTypeAlways(BaseType ctype, size_t n, bool write) const {
-      if (write && !m_info.m_isWritable && !m_worker.beforeStart())
+      if (write && !m_info.m_isWritable)
 	throw "trying to write a non-writable property";
+      if (write && !m_worker.beforeStart() && m_info.m_isInitial)
+	throw "trying to write a an initial property after worker is started";
       if (!write && !m_info.m_isReadable)
 	throw "trying to read a non-readable property";
       if (m_info.m_baseType == OCPI_Struct)

@@ -245,8 +245,9 @@ dump_memory_map(char * label) {
 static ocpi_block_t *
 make_block(ocpi_address_t phys_addr, ocpi_address_t bus_addr, ocpi_size_t size, ocpi_type_t type,
 	   bool available, u64 kernel_alloc_id) {
-  ocpi_block_t *block = kzalloc(sizeof(ocpi_block_t), GFP_KERNEL);
-  if (block == NULL || IS_ERR(block))
+  ocpi_block_t *block;
+  if (!phys_addr || // Guard against allocating to 0x00
+      !(block = kzalloc(sizeof(ocpi_block_t), GFP_KERNEL)) || IS_ERR(block))
     return NULL;
   block->start_phys = phys_addr;
   block->bus_addr = bus_addr;
@@ -1645,15 +1646,14 @@ opencpi_init(void) {
     }
 #endif
     // Allocate initial memory space: sets virtual/physical/opencpi_size: set opencpi_allocation
-    // TODO: Automatically detect 'memmap' on the Kernel commandline
-
-    log_debug("parameters (opencpi_size = %ld, opencpi_memmap = %s)\n", opencpi_size, opencpi_memmap );
-
+    // TODO: Automatically detect 'opencpi_memmap'/'memmap' on the Kernel commandline (currently handled by ocpi_linux_driver script)
+    log_debug("parameters (opencpi_size = %ld (0x%lx), opencpi_memmap = %s)\n", opencpi_size, opencpi_size, opencpi_memmap );
     if (opencpi_memmap) { // If there is already a reserved block of memory, use it
       char *p = NULL;
       opencpi_size = memparse(opencpi_memmap, &p);
       if (*p++ == '$') {
-	physical = simple_strtoull(p, NULL, 0);
+	physical = memparse(p, &p); // Handle K/M/G etc for address as well. (AV-1710)
+        // Don't care about return pointer, but kernel made return optional between 2.4 and 3.10.
 #if 0
 	if (!page_is_ram(physical >> PAGE_SHIFT)) {
 	  log_err("reserved memory: %s, not a valid ram address\n", opencpi_memmap);
@@ -1665,6 +1665,7 @@ opencpi_init(void) {
       }
       if (make_block(physical, physical, opencpi_size, ocpi_reserved, true, 0) == NULL)
 	break;
+      // log_debug("parameters after parsing (opencpi_memmap = %s => opencpi_size = %ld (0x%lx) @ physical = 0x%lx)\n", opencpi_memmap, opencpi_size, opencpi_size, physical);
       log_debug("Using reserved memory %lx @ %llx\n", opencpi_size, physical);
     } else { // Otherwise allocate what we can from the kernel, and use that to start.
       ocpi_request_t request;

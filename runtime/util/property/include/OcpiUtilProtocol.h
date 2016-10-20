@@ -69,6 +69,7 @@ namespace OCPI  {
       inline size_t nArgs() const { return m_nArgs; }
       inline const char *cname() const { return m_name.c_str(); }
       inline bool isTopFixedSequence() const { return m_topFixedSequence; }
+      size_t defaultLength() const;
       void printXML(FILE *f, unsigned indent = 0) const;
       void write(Writer &writer, const uint8_t *data, size_t length);
       size_t read(Reader &reader, uint8_t *data, size_t maxLength);

@@ -70,8 +70,9 @@
 	                               "connect external port to a URL")\
   CMD_OPTION(loglevel,   l, ULong,  0, "<log-level>\n" \
 	                               "set log level during execution, overriding OCPI_LOG_LEVEL")\
-  CMD_OPTION(seconds,    t, ULong,  0, "<seconds>\n" \
-	                               "specify seconds of time to wait for application to finish") \
+  CMD_OPTION(seconds,    t, Long,   0, "<seconds>\n" \
+	                               "specify seconds to wait for application to finish\n" \
+                                       "if negative, wait up to that number of seconds\n")\
   CMD_OPTION(list,       C, Bool,   0, "show available containers") \
   CMD_OPTION(servers,    S, String, 0, "comma-separated list of servers to explicitly contact (no UDP discovery)") \
   CMD_OPTION(remote,     R, Bool,   0, "discover/include/use remote containers") \
@@ -336,7 +337,6 @@ static int mymain(const char **ap) {
 		  c->name().c_str(), c->model().c_str(), c->os().c_str(), c->platform().c_str());
 	fprintf(stderr, "\n");
       }
-    
       if (!xml)
 	break;
       std::string name;
@@ -367,11 +367,18 @@ static int mymain(const char **ap) {
       if (options.verbose())
 	fprintf(stderr, "Application started/running\n");
       if (options.seconds()) {
+	int remaining = -options.seconds();
 	if (options.verbose())
-	  fprintf(stderr, "Waiting %u seconds for application to complete\n", options.seconds());
-	sleep(options.seconds());
-	if (options.verbose())
-	  fprintf(stderr, "After %u seconds, stopping application...\n", options.seconds());
+	  fprintf(stderr, "Waiting %s%u seconds for application to complete\n",
+		  (options.seconds() < 0) ? "up to " : "", abs(options.seconds()));
+	if (options.seconds() < 0) { // "Negative" time is "up to"
+	  bool cont = true;
+	  while (remaining-- && cont)
+	    cont = app.wait(1E6);
+	} else // Given a positive time
+	  sleep(options.seconds());
+	if (options.verbose() && remaining <= 0) // remaining would be negative if given positive seconds
+	  fprintf(stderr, "After %d seconds, stopping application...\n", abs(options.seconds()));
 	app.stop();
       } else {
 	if (options.verbose())

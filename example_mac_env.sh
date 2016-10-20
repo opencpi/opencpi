@@ -1,8 +1,7 @@
 trap "trap - ERR; break" ERR; for i in 1; do
+export OCPI_EXPORTS_VERBOSE=1
 . ./env/start.sh
 
-. ./platforms/macos10_11/macos10_11-env.sh
-export OCPI_DYNAMIC=1
 export OCPI_EXCLUDE_TARGETS=xilinx
 export OCPI_HAVE_OPENCL=1
 export OCPI_OPENCL_OBJS=/System/Library/Frameworks/OpenCL.framework/Versions/A/OpenCL

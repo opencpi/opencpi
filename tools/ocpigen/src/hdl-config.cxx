@@ -47,14 +47,14 @@ findDevInstance(const Device &dev, const Card *card, const Slot *slot,
 const char *HdlHasDevInstances::
 addDevInstance(const Device &dev, const Card *card, const Slot *slot,
 	       bool control, const DevInstance *parent, DevInstances *baseInstances,
-	       const DevInstance *&devInstance) {
+	       ezxml_t xml, const DevInstance *&devInstance) {
   const char *err;
   m_devInstances.push_back(DevInstance(dev, card, slot, control, parent));
   assert((card && slot) || (!card && !slot));
   assert(!slot || !m_plugged[slot->m_ordinal] || card == m_plugged[slot->m_ordinal]);
   if (slot && !m_plugged[slot->m_ordinal])
     m_plugged[slot->m_ordinal] = card;
-  devInstance = &m_devInstances.back();
+  DevInstance &di = m_devInstances.back();
   // See which (sub)devices on the same board support this added device, 
   // and make sure they are present.
   const Board &bd =
@@ -67,10 +67,12 @@ addDevInstance(const Device &dev, const Card *card, const Slot *slot,
       if (!strcasecmp((*si).m_type.m_implName, dev.m_deviceType.m_implName) &&
 	  (*bi)->m_ordinal == dev.m_ordinal) { // the ordinals match. FIXME allow mapping
 	const DevInstance *sdi = findDevInstance(**bi, card, slot, baseInstances, NULL);
-	if (!sdi && (err = addDevInstance(**bi, card, slot, control/* why? */, devInstance, NULL, sdi)))
+	if (!sdi && (err = addDevInstance(**bi, card, slot, control/* why? */, &di, NULL,
+					  NULL, sdi)))
 	  return err;
       }
-  return NULL;
+  devInstance = &di;
+  return dev.m_deviceType.parseDeviceProperties(xml, di.m_instancePVs);
 }
 
 const char *HdlHasDevInstances::
@@ -151,10 +153,63 @@ parseDevInstance(const char *device, ezxml_t x, const char *parentFile, Worker *
       return OU::esprintf("Platform device '%s' is already in the platform configuration",
 			  di->device.cname());
   }
-  if ((err = addDevInstance(*dev, card, slot, control, NULL, baseInstances, di)))
+  if ((err = addDevInstance(*dev, card, slot, control, NULL, baseInstances, x, di)))
     return err;
   if (result)
     *result = di;
+  return NULL;
+}
+
+// Parse the properties (parameters) that should be applied to this instance.
+// This is used both for specifying a device's properties on the board (platform or card),
+// as well as additional properties for a device instance.  The properties from the base
+// device are copied to the instance so they are all in one place, but an instance cannot
+// override the parameters of the device as defined for the board.
+const char *DeviceType::
+parseDeviceProperties(ezxml_t x, OU::Assembly::Properties &iPVs) {
+  const char *err;
+  // First pass for error checking
+  for (ezxml_t px = ezxml_cchild(x, "Property"); px; px = ezxml_cnext(px)) {
+    std::string name;
+    if ((err = OE::checkAttrs(px, "name", "value", "valuefile", NULL)) ||
+	(err = OE::getRequiredString(px, name, "name", "property")))
+      return err;
+    OU::Property *p = findProperty(name.c_str());
+    if (!p)
+      return OU::esprintf("\"%s\" is not a property of device \"%s\"",
+			  name.c_str(), m_implName);
+    if (!p->m_isParameter)
+      return OU::esprintf("\"%s\" is not a parameter property of device \"%s\"",
+			  name.c_str(), m_implName);
+  }
+  assert(!iPVs.size());
+  iPVs.resize(m_ctl.nParameters);
+  unsigned nPVs = 0;
+  for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
+    if ((*pi)->m_isParameter) {
+      OU::Property &p = **pi;
+      for (ezxml_t px = ezxml_cchild(x, "Property"); px; px = ezxml_cnext(px))
+	if (!strcasecmp(p.m_name.c_str(), ezxml_cattr(px, "name"))) {
+	  for (unsigned i = 0; i < m_instancePVs.size(); i++)
+	    if (!strcasecmp(p.m_name.c_str(), m_instancePVs[i].m_name.c_str()))
+	      return OU::esprintf("device instance of device type \"%s\" cannot "
+				  "override the parameter \"%s\" that is already specified "
+				  "for the platform or card",
+				  m_implName, p.m_name.c_str());
+	  // This parameter not specified for the board so we can use it
+	  iPVs[nPVs++].parse(px);
+	  goto nextParam;
+	}
+      // For this parameter, nothing is specified in the instance.  If it is specified for
+      // for the device, copy it to the instance.
+      for (unsigned i = 0; i < m_instancePVs.size(); i++)
+	if (!strcasecmp(p.m_name.c_str(), m_instancePVs[i].m_name.c_str())) {
+	  iPVs[nPVs++] = m_instancePVs[i];
+	  break;
+	}
+    nextParam:;
+    }
+  iPVs.resize(nPVs);
   return NULL;
 }
 
@@ -170,25 +225,32 @@ parseDevInstances(ezxml_t xml, const char *parentFile, Worker *parent,
   for (ezxml_t xd = ezxml_cchild(xml, "Device"); !err && xd; xd = ezxml_cnext(xd)) {
     std::string name;
     bool control = false;
-    if ((err = OE::checkAttrs(xd, "name", "control", "slot", "card", (void*)0)) ||
+    bool floating = false;
+    // FIXME: valid attributes/elements depend on "floating"
+    if ((err = OE::checkAttrs(xd, "name", "control", "slot", "card", "floating", "worker",
+			      (void*)0)) ||
+	(err = OE::checkElements(xd, "property", "signal", (void*)0)) ||
 	(err = OE::getBoolean(xd, "control", &control)) ||
-	(err = OE::getRequiredString(xd, name, "name", "device")))
+	(err = OE::getBoolean(xd, "floating", &floating)))
       return err;
-#if 0
-    // FIXME: Change the "control" to an attribute of the platform config which indicates
-    // which device is performing control
-    if (control && baseInstances)
-      return "It is invalid to specify a 'control' attribute to a device in a container";
-    if (!strcasecmp(m_platform.cname(), name.c_str())) {
-      m_platform.setControl(control); // FIXME make the platform a device...
-      continue;
-    }
-#endif
-    if ((err = parseDevInstance(name.c_str(), xd, parentFile, parent, control, baseInstances,
-				NULL, NULL)))
-      return err;
+    if (floating) {
+      if (!baseInstances)
+	return "floating devices (not part of platform) not allowed in platform configurations";
+      // FIXME:  Apologies for this gross unconsting, but its the least of various evils
+      // Fixing would involve allowing containers to own devices...
+      HdlPlatform &pf = *(HdlPlatform *)&m_platform;
+      if (!(err = OE::checkAttrs(xd, "floating", "worker", (void*)0)) &&
+	  !(err = OE::checkElements(xd, "property", "signal", (void*)0)))
+	err = pf.addFloatingDevice(xd, parentFile, parent, name);
+    } else if (!(err = OE::checkAttrs(xd, "name", "control", "slot", "card", "floating",
+				      (void*)0)) &&
+	       !(err = OE::checkElements(xd, "property", (void*)0)))
+      err = OE::getRequiredString(xd, name, "name", "device");
+    if (!err)
+      err = parseDevInstance(name.c_str(), xd, parentFile, parent, control, baseInstances, NULL,
+			     NULL);
   }
-  return NULL;
+  return err;
 }
 
 void HdlHasDevInstances::
@@ -343,32 +405,34 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
   // Add the platform worker as a device instance
   const DevInstance *pfdi;
   const HdlPlatform &cpf = pf;
-  if ((err = addDevInstance(cpf, NULL, NULL, control, NULL, NULL, pfdi)))
+  if ((err = addDevInstance(cpf, NULL, NULL, control, NULL, NULL, xml, pfdi)))
     return;
   //hdlAssy = true;
   m_plugged.resize(pf.m_slots.size());
-  ezxml_t tx = ezxml_add_child(xml, "device", 0);
-  ezxml_set_attr(tx, "name", "time_server");
+  if (!OE::findChildWithAttr(xml, "device", "name", "time_server")) {
+    ezxml_t tx = ezxml_add_child(xml, "device", 0);
+    ezxml_set_attr(tx, "name", "time_server");
+  }
   if ((err = parseDevInstances(xml, xfile, this, NULL)))
     return;
   std::string assy;
   OU::format(assy, "<HdlPlatformAssembly name='%s'>\n", m_name.c_str());
   // Add all the device instances
   for (DevInstancesIter dii = m_devInstances.begin(); dii != m_devInstances.end(); dii++) {
-    const ::Device &d = (*dii).device;
-    const DeviceType &dt = d.m_deviceType;
+    const DevInstance &di = *dii;
+    const DeviceType &dt = di.device.m_deviceType;
     OU::formatAdd(assy, "  <instance worker='%s' name='%s'%s>\n",
-		  d.m_deviceType.cname(), (*dii).cname(), dt.m_instancePVs ? "" : "/");
-    if (dt.m_instancePVs) {
-      OU::Assembly::Property *ap = &(*dt.m_instancePVs)[0];
-      for (size_t n = dt.m_instancePVs->size(); n; n--, ap++)
+		  dt.cname(), di.cname(), di.m_instancePVs.size() ? "" : "/");
+    if (di.m_instancePVs.size()) {
+      const OU::Assembly::Property *ap = &di.m_instancePVs[0];
+      for (size_t n = di.m_instancePVs.size(); n; n--, ap++)
 	OU::formatAdd(assy, "    <property name='%s' value='%s'/>\n",
 		      ap->m_name.c_str(), ap->m_value.c_str());
       OU::formatAdd(assy, "  </instance>\n");
     }
     // Add a time client instance as needed by device instances
-    for (PortsIter pi = d.m_deviceType.ports().begin();
-	 pi != d.m_deviceType.ports().end(); pi++)
+    for (PortsIter pi = dt.ports().begin();
+	 pi != dt.ports().end(); pi++)
       if ((*pi)->m_type == WTIPort)
 	OU::formatAdd(assy, "  <instance worker='time_client' name='%s_time_client'/>\n",
 		      (*dii).cname());

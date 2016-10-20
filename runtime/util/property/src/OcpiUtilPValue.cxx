@@ -62,7 +62,8 @@ namespace OCPI {
     }
     unsigned PValue::length() const {
       unsigned n = 0;
-      if (this) // FIXME - this is really not kosher.
+      assert(this);
+      //      if (this) // FIXME - this is really not kosher.
 	for (const PValue *p = this; p->name; p++, n++)
 	  ;
       return n;

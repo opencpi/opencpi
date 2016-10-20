@@ -159,20 +159,22 @@ parse(ezxml_t xml, Board &b, SlotType *stype) {
   // Here we parse the configuration settings for this device on this platform.
   // These settings are similar to instance property values in an assembly, but are
   // applied wherever the device is instanced.
-  assert(!m_deviceType.m_instancePVs);
-  m_deviceType.m_instancePVs = new OU::Assembly::Properties(OE::countChildren(xml, "Property"));
-  OU::Assembly::Property *pv = &(*m_deviceType.m_instancePVs)[0];
-  for (ezxml_t px = ezxml_cchild(xml, "Property"); px; px = ezxml_next(px), pv++) {
-    std::string value;
-    if ((err = OE::checkAttrs(px, "name", "value", "valuefile", NULL)) ||
-	(err = OE::getRequiredString(px, pv->m_name, "name", "property")))
-      return err;
-    OU::Property *p = m_deviceType.findProperty(pv->m_name.c_str());
-    if (!p)
-      return OU::esprintf("There is no \"%s\" property for device type \"%s\"",
-			  pv->m_name.c_str(), m_deviceType.m_implName);
-    if ((err = pv->setValue(px)))
-      return err;
+  assert(!m_deviceType.m_instancePVs.size());
+  m_deviceType.m_instancePVs.resize(OE::countChildren(xml, "Property"));
+  if (m_deviceType.m_instancePVs.size()) {
+    OU::Assembly::Property *pv = &m_deviceType.m_instancePVs[0];
+    for (ezxml_t px = ezxml_cchild(xml, "Property"); px; px = ezxml_next(px), pv++) {
+      std::string value;
+      if ((err = OE::checkAttrs(px, "name", "value", "valuefile", NULL)) ||
+	  (err = OE::getRequiredString(px, pv->m_name, "name", "property")))
+	return err;
+      OU::Property *p = m_deviceType.findProperty(pv->m_name.c_str());
+      if (!p)
+	return OU::esprintf("There is no \"%s\" property for device type \"%s\"",
+			    pv->m_name.c_str(), m_deviceType.m_implName);
+      if ((err = pv->setValue(px)))
+	return err;
+    }
   }
   // Now we parse the mapping between device-type signals and board signals
   for (ezxml_t xs = ezxml_cchild(xml, "Signal"); xs; xs = ezxml_next(xs)) {

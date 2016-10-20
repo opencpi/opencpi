@@ -45,6 +45,7 @@ public:
   virtual ~HdlDevice() {}
   const char *cname() const;
   const Ports &ports() const { return m_ports; }
+  const char * parseDeviceProperties(ezxml_t x, OU::Assembly::Properties &iPVs);
 };
 typedef HdlDevice DeviceType;
 struct Board;

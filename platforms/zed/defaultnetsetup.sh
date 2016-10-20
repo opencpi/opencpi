@@ -23,8 +23,6 @@ if test "$OCPI_CDK_DIR" = ""; then
 fi
 # Tell the ocpihdl utility to always assume the FPGA device is the zynq PL.
 export OCPI_DEFAULT_HDL_DEVICE=pl:0
-# Set my OCPI path to some bitstream directories I am working on.
-#export OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:$OCPI_BASE_DIR/hdl/assemblies/biascapture:$OCPI_BASE_DIR/hdl/assemblies/testbias:$OCPI_BASE_DIR/hdl/assemblies/patternbias
 # The system config file sets the default SMB size
 export OCPI_SYSTEM_CONFIG=/mnt/card/opencpi/system.xml
 export OCPI_SUPPRESS_HDL_NETWORK_DISCOVERY=1

@@ -127,6 +127,12 @@ namespace OCPI {
     //         most callers are construcint an OU::Value already
     //         m_cache would be a sparse OU::Value pointer vector?
     void Worker::setPropertyValue(const OU::Property &info, const OU::Value &v) {
+      if (!info.m_isWritable)
+	throw OU::Error("The '%s' property of worker '%s' is not writable",
+			info.m_name.c_str(), name().c_str());
+      if (info.m_isInitial && !beforeStart())
+	throw OU::Error("The '%s' property of worker '%s' is initial, and cannot be written after start",
+			info.m_name.c_str(), name().c_str());
       if (info.m_baseType == OA::OCPI_Type)
 	throw OU::Error("Typedef properties are not settable");
       uint8_t *cache = NULL;
@@ -214,9 +220,6 @@ namespace OCPI {
     }
     void Worker::setProperty(const char *pname, const char *value) {
       OU::Property &prop = findProperty(pname);
-      if (!prop.m_isWritable)
-	throw OU::Error("The '%s' property of worker '%s' is not writable",
-			pname, name().c_str());
       OU::ValueType &vt = prop;
       OU::Value v(vt); // FIXME storage when not scalar
       const char *err = v.parse(value);
@@ -345,9 +348,6 @@ namespace OCPI {
     }
     void Worker::setProperty(unsigned ordinal, OCPI::Util::Value &value) {
       OU::Property &prop(property(ordinal));
-      if (!prop.m_isWritable)
-	throw OU::Error("The '%s' property of worker '%s' is not writable",
-			prop.m_name.c_str(), name().c_str());
       setPropertyValue(prop, value);
     }
     // batch setting with lots of error checking - all or nothing
