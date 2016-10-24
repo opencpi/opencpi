@@ -104,16 +104,18 @@ emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signa
   std::string in, out;
   OU::format(in, typeNameIn.c_str(), "");
   OU::format(out, typeNameOut.c_str(), "");
-  fprintf(f, "  signal %s : %s.%s_defs.%s%s_t;\n",
-	  signal.c_str(), m_worker->m_implName, m_worker->m_implName,
+  std::string suff;
+  m_worker->addParamConfigSuffix(suff);
+  fprintf(f, "  signal %s : %s%s.%s_defs.%s%s_t;\n",
+	  signal.c_str(), m_worker->m_implName, suff.c_str(), m_worker->m_implName,
 	  output ? out.c_str() : in.c_str(),
 	  m_count > 1 || m_countExpr.length() ? "_array" : "");
   //  if (m_count > 1 || m_countExpr.length())
   //    fprintf(f, "(0 to %s.%s_constants.ocpi_port_%s_count-1)", m_worker->m_implName,
   //	    m_worker->m_implName, cname());
   //  fprintf(f, ";\n");
-  fprintf(f, "  signal %s_data : %s.%s_defs.%s_data%s_t;\n", signal.c_str(),
-	  m_worker->m_implName, m_worker->m_implName,
+  fprintf(f, "  signal %s_data : %s%s.%s_defs.%s_data%s_t;\n", signal.c_str(),
+	  m_worker->m_implName, suff.c_str(), m_worker->m_implName,
 	  output ? out.c_str() : in.c_str(),
 	  m_count > 1 || m_countExpr.length() ? "_array" : "");
 #if 0
@@ -182,13 +184,16 @@ emitPortSignal(FILE *f, bool any, const char *indent, const std::string &fName,
     actual(aName + index), actual_data(aName + "_data" + index),
     empty;
   if (signalPort) {
+    std::string suff;
+    m_worker->addParamConfigSuffix(suff);
     if (output) {
       if (aName == "open") {
 	actual = "open";
 	actual_data = "open";
       } else {
-	OU::format(formal, "%s.%s_defs.%s%s",
+	OU::format(formal, "%s%s.%s_defs.%s%s",
 		   external ? "work" : signalPort->m_worker->m_implName,
+		   external ? "" : suff.c_str(),
 		   signalPort->m_worker->m_implName, signalPort->cname(),
 		   external ? "_out" : "_in");
 	formal_data = formal + "_data";
@@ -204,12 +209,12 @@ emitPortSignal(FILE *f, bool any, const char *indent, const std::string &fName,
 	actual = m_master ? slaveMissing() : masterMissing();
 	actual_data = "(others => (others => '0'))";
       } else {
-	OU::format(actual, "%s.%s_defs.%s%s_t(%s%s)",
-		   m_worker->m_implName, m_worker->m_implName,
+	OU::format(actual, "%s%s.%s_defs.%s%s_t(%s%s)",
+		   m_worker->m_implName, suff.c_str(), m_worker->m_implName,
 		   fName.c_str(), m_count > 1 || m_countExpr.length() ? "_array" : "",
 		   aName.c_str(), index.c_str());
-	OU::format(actual_data, "%s.%s_defs.%s_data%s_t(%s_data%s)", m_worker->m_implName,
-		   m_worker->m_implName, fName.c_str(),
+	OU::format(actual_data, "%s%s.%s_defs.%s_data%s_t(%s_data%s)", m_worker->m_implName,
+		   suff.c_str(), m_worker->m_implName, fName.c_str(),
 		   m_count > 1 || m_countExpr.length() ? "_array" : "", aName.c_str(),
 		   index.c_str());
       }

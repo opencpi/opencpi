@@ -115,6 +115,8 @@ class OcpPort : public Port {
 		   bool convert);
   void emitDirection(FILE *f, const char *implName, bool mIn, std::string &dir);
   void emitRecordInterface(FILE *f, const char *implName);
+  void emitRecordInterfaceConstants(FILE *f);
+  void emitInterfaceConstants(FILE *f, Language lang);
   void emitVerilogSignals(FILE *f);
   void emitVHDLSignalWrapperPortMap(FILE *f, std::string &last);
   void emitVHDLRecordWrapperSignals(FILE *f);

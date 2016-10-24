@@ -160,6 +160,7 @@ parseFile(const char *file, const std::string &parent, const char *element,
     xfile = cp;
     addDep(cp, !parent.empty());
   } while (0);
+  close(fd);
   free(myFile);
   while (!tries.empty()) {
     cp = tries.front();

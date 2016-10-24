@@ -276,8 +276,10 @@ namespace OCPI {
 	  if (fd < 0)
 	    throw OU::Error("Cannot open file: \"%s\"", name);
 	  struct stat info;
-	  if (fstat(fd, &info))
+	  if (fstat(fd, &info)) {
+	    close(fd);
 	    throw OU::Error("Cannot get modification time: \"%s\" (%d)", name, errno);
+	  }
 	  mtime = info.st_mtime;
 	  length = info.st_size;
 	  char buf[64/3+4]; // octal + \r + \n + null

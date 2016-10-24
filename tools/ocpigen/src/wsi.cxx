@@ -673,7 +673,9 @@ emitRecordOutputs(FILE *f) {
 	      "    part_give        : Bool_t;\n");
   }
 }
+#if 0
 unsigned WsiPort::
 extraDataInfo() const {
   return m_abortable ? 1 : 0;
 }
+#endif

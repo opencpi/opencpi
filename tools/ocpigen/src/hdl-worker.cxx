@@ -1005,9 +1005,9 @@ emitDefsHDL(bool wrap) {
       std::string decl, type;
       // Introduce a constant for string/sequence/array lengths that are parameterized
       if (p.m_baseType == OA::OCPI_String && p.m_stringLengthExpr.length())
-	fprintf(f, "  constant %s_string_length : positive;\n", p.m_name.c_str());
+	fprintf(f, "  constant %s_string_length : natural;\n", p.m_name.c_str());
       if (p.m_isSequence && p.m_sequenceLengthExpr.length())
-	fprintf(f, "  constant %s_sequence_length : positive;\n", p.m_name.c_str());
+	fprintf(f, "  constant %s_sequence_length : natural;\n", p.m_name.c_str());
       if (p.m_arrayRank && p.m_arrayDimensionsExprs[0].length())
 	fprintf(f, "  constant %s_array_dimensions : dimensions_t(0 to %zu);\n",
 		p.m_name.c_str(), p.m_arrayRank-1);

@@ -123,43 +123,51 @@ emitRecordSignal(FILE *f, std::string &last, const char */*prefix*/, bool /*useR
     OU::format(last, "%s%%s", temp.c_str());
 }
 
-// Determine the expression for the width of an OCP vector signal in the data path
-// The output string should be suitable for a "natural" expression, that may be zero.
-// There are several contexts for this, including the initial declaration of the 
-// constants.
-// Note the "m_dataWidthExpr" is written assuming typical C expression syntax, which may not
-// be acceptable to the VHDL parser.  FIXME: translate the C expression into a
-// VHDL expression with a function call for the ?: operator, etc.
 void OcpPort::
-vectorWidth(const OcpSignalDesc *osd, std::string &out, Language lang, bool /*convert*/,
-	    bool value) {
-  if (osd->number == OCP_MAddr && m_addrWidthExpr.length()) {
-    out = m_addrWidthExpr;
-    return;
-  }
-  if (m_dataWidthExpr.length()) {
-    if (osd->number == OCP_MData)
-      if (value && lang == VHDL)
-	OU::format(out, "wsi.MData_width(to_integer(%s), %zu)",
-		   m_dataWidthExpr.c_str(), m_byteWidth);
-      else
-	OU::format(out, "ocpi_port_%s_MData_width", cname());
-    else if (osd->number == OCP_MByteEn)
-      if (value && lang == VHDL)
-	OU::format(out, "wsi.MByteEn_width(to_integer(%s), %zu)",
-		   m_dataWidthExpr.c_str(), m_byteWidth);
-      else
-	OU::format(out, "ocpi_port_%s_MByteEn_width", cname());
-    else if (osd->number == OCP_MDataInfo)
-      if (value && lang == VHDL)
-	OU::format(out, "wsi.MDataInfo_width(to_integer(%s), %zu)",
-		   m_dataWidthExpr.c_str(), m_byteWidth);
-      else
-	OU::format(out, "ocpi_port_%s_MDataInfo_width", cname());
-    else
-      OU::format(out, "%zu", ocp.signals[osd->number].width);
-  } else
+emitRecordInterfaceConstants(FILE *f) {
+  // Before emitting the record, define the constants for the data path width.
+  fprintf(f,
+	  "\n"
+	  "  -- Constant declarations for parameterized signal widths for port \"%s\"\n", 
+	  cname());
+  if (ocp.MAddr.value)
+    fprintf(f, "  constant ocpi_port_%s_MAddr_width : natural;\n", cname());
+  if (ocp.MData.value)
+    fprintf(f, "  constant ocpi_port_%s_MData_width : natural;\n", cname());
+  if (ocp.MByteEn.value)
+    fprintf(f, "  constant ocpi_port_%s_MByteEn_width : natural;\n", cname());
+  if (ocp.MDataInfo.value)
+    fprintf(f, "  constant ocpi_port_%s_MDataInfo_width : natural;\n", cname());
+}
+
+// Determine the expression for the width of an OCP vector signal in the data path
+void OcpPort::
+vectorWidth(const OcpSignalDesc *osd, std::string &out, Language /*lang*/, bool /*convert*/,
+	    bool /*value*/) {
+  switch (osd->number) {
+  case OCP_MAddr:
+    OU::format(out, "ocpi_port_%s_MAddr_width", cname()); break;
+  case OCP_MData:
+    OU::format(out, "ocpi_port_%s_MData_width", cname()); break;
+  case OCP_MByteEn:
+    OU::format(out, "ocpi_port_%s_MByteEn_width", cname()); break;
+  case OCP_MDataInfo:
+    OU::format(out, "ocpi_port_%s_MDataInfo_width", cname()); break;
+  default:
     OU::format(out, "%zu", ocp.signals[osd->number].width);
+  }
+}
+
+void OcpPort::
+emitInterfaceConstants(FILE *f, Language lang) {
+  if (ocp.MAddr.value)
+    emitConstant(f, "ocpi_port_%s_MAddr_width", lang, ocp.MAddr.width);
+  if (ocp.MData.value)
+    emitConstant(f, "ocpi_port_%s_MData_width", lang, ocp.MData.width);
+  if (ocp.MByteEn.value)
+    emitConstant(f, "ocpi_port_%s_MByteEn_width", lang, ocp.MByteEn.width);
+  if (ocp.MDataInfo.value)
+    emitConstant(f, "ocpi_port_%s_MDataInfo_width", lang, ocp.MDataInfo.width);
 }
 
 void OcpPort::
@@ -458,9 +466,7 @@ emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal) {
 		 m_count > 1 ? "array_" : "");
     else {
       std::string lib(w.m_library);
-      if (w.m_paramConfig && w.m_paramConfig->nConfig)
-	OU::formatAdd(lib, "_c%zu", w.m_paramConfig->nConfig);
-      
+      w.addParamConfigSuffix(lib);
       OU::format(stype, "%s.%s_defs.%s%s_t", lib.c_str(), w.m_implName, tname.c_str(),
 		 m_count > 1 ? "_array" : "");
     }

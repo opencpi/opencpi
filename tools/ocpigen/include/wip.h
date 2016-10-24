@@ -194,7 +194,7 @@ class DataPort : public OcpPort {
   void emitRecordInterface(FILE *f, const char *implName);
   void emitRecordInterfaceConstants(FILE *f);
   void emitInterfaceConstants(FILE *f, Language lang);
-  void emitVerilogPortParameters(FILE *f);
+  //  void emitVerilogPortParameters(FILE *f);
   static const char *adjustConnection(const char *masterName,
 				      Port &prodPort, OcpAdapt *prodAdapt, bool &prodHasExpr,
 				      Port &consPort, OcpAdapt *consAdapt, bool &consHasExpr,
@@ -205,6 +205,8 @@ class DataPort : public OcpPort {
   const char *finalizeHdlDataPort();
   const char *finalizeRccDataPort();
   const char *finalizeOclDataPort();
+  const char *finalizeExternal(Worker &aw, Worker &iw, InstancePort &ip,
+			       bool &cantDataResetWhileSuspended);
 };
 class WciPort : public OcpPort {
   size_t m_timeout;
@@ -227,8 +229,8 @@ class WciPort : public OcpPort {
   void emitRecordInputs(FILE *f);
   void emitRecordOutputs(FILE *f);
   void emitRecordInterface(FILE *f, const char *implName);
-  void emitRecordInterfaceConstants(FILE *f);
-  void emitVerilogPortParameters(FILE *f);
+  //  void emitRecordInterfaceConstants(FILE *f);
+  //  void emitVerilogPortParameters(FILE *f);
   //  void emitWorkerEntitySignals(FILE *f, std::string &last, unsigned maxPropName);
   void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord,
 			bool inPackage, bool inWorker, const char *defaultIn,
@@ -239,7 +241,7 @@ class WciPort : public OcpPort {
 		       const char *indent, bool &any, std::string &comment,
 		       std::string &last, const char *myComment, OcpAdapt *adapt,
 		       std::string *signalIn, std::string &exprs);
-  void emitInterfaceConstants(FILE *f, Language lang);
+  // void emitInterfaceConstants(FILE *f, Language lang);
   const char *finalizeExternal(Worker &aw, Worker &iw, InstancePort &ip,
 			       bool &cantDataResetWhileSuspended);
   void emitSkelSignals(FILE *f);
@@ -277,7 +279,7 @@ class WsiPort : public DataPort {
   void emitSkelSignals(FILE *f);
   void emitRecordInputs(FILE *f);
   void emitRecordOutputs(FILE *f);
-  unsigned extraDataInfo() const;
+  //  unsigned extraDataInfo() const;
 };
 class WmiPort : public DataPort {
   bool m_talkBack;
@@ -545,6 +547,7 @@ struct Parsed {
 	 const std::string &parent, // The file referencing this file
 	 const char *tag,
 	 const char *&err);
+  inline const char *cname() const { return m_name.c_str(); }
 };
 
 enum Model {
@@ -685,6 +688,7 @@ class Worker : public Parsed, public OU::IdentResolver {
     *findParamProperty(const char *name, OU::Property *&prop, size_t &nParam),
     *addConfig(ParamConfig &info, size_t &nConfig),
     *doParam(ParamConfig &info, PropertiesIter pi, unsigned nParam, size_t &nConfig),
+    *addParamConfigSuffix(std::string &s),
     //    *getParamConfig(const char *id, const ParamConfig *&config),
     *emitImplRCC(),
     *rccMethodName(const char *method, const char *&mName),
@@ -698,7 +702,7 @@ class Worker : public Parsed, public OU::IdentResolver {
     *emitSkelOCL(),
     *emitAssyHDL();
   virtual const char
-    *resolveExpressions(OU::IdentResolver &ir),
+    *resolveExpressions(),
     *parseInstance(Worker &parent, Instance &inst, ezxml_t x), // FIXME: should be HdlInstance...
     *emitArtXML(const char *wksFile),
     *emitWorkersHDL(const char *file),

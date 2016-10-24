@@ -132,7 +132,7 @@ namespace OCPI {
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE
 	  const char *parse(const char *unparsed, const char *stop = NULL, bool add = false,
-			    const IdentResolver *resolv = NULL);
+			    const IdentResolver *resolv = NULL, bool *isVariable = NULL);
       const char *allocate(bool add = false);
       char &nextStringChar() {
 	assert(m_stringNext && (size_t)(m_stringNext - m_stringSpace) < m_stringSpaceLength);

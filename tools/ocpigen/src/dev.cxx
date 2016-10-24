@@ -110,17 +110,13 @@ emitRecordInterface(FILE *f, const char *implName) {
 
 void DevSignalsPort::
 emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signal) {
-  if ((output && !haveOutputs()) ||
-      (!output && !haveInputs()))
+  if ((output && !haveOutputs()) || (!output && !haveInputs()))
     return;
-  std::string tname;
+  std::string tname, suff, stype;
+  m_worker->addParamConfigSuffix(suff);
   OU::format(tname, output ? typeNameOut.c_str() : typeNameIn.c_str(), "");
-  std::string stype;
-  OU::format(stype, "%s.%s_defs.%s%s_t", m_worker->m_library, m_worker->m_implName,
-	     tname.c_str(),
-	     m_count > 1 ? "_array" : "");
-  //  if (count > 1)
-  //    OU::formatAdd(stype, "(0 to %zu)", count - 1);
+  OU::format(stype, "%s%s.%s_defs.%s%s_t", m_worker->m_library, suff.c_str(),
+	     m_worker->m_implName, tname.c_str(), m_count > 1 ? "_array" : "");
   fprintf(f,
 	  "  signal %s : %s;\n", signal.c_str(), stype.c_str());
 }

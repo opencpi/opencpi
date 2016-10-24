@@ -58,166 +58,90 @@ namespace OE = OCPI::Util::EzXml;
 namespace OCPI {
   namespace Util {
 
-    static pthread_once_t s_resolverOnce = PTHREAD_ONCE_INIT;
-    static pthread_key_t s_resolverKey;
-    static void makeResolverKey() {
-      pthread_key_create(&s_resolverKey, NULL);
-    }
-    static void setResolver(const IdentResolver *r) {
-      pthread_once(&s_resolverOnce, makeResolverKey);
-      pthread_setspecific(s_resolverKey, (void*)r);
-    }
-    static inline long myRandom() { return random() * (random() & 1 ? -1 : 1); }
-#if 0
-    // Return true on error
-    bool
-    getUNum64(const char *s, uint64_t *valp) {
-      char *endptr;
-      errno = 0;
-      uint64_t val =  strtoull(s, &endptr, 0);
-      if (errno == 0) {
-	if (*endptr == 'K' || *endptr == 'k') {
-	  endptr++;
-	  val *= 1024;
-	} else if (*endptr == 'M' || *endptr == 'm') {
-	  endptr++;
-	  val *= 1024*1024;
-	} else if (*endptr == 'G' || *endptr == 'g') {
-	  endptr++;
-	  val *= 1024ull*1024ull*1024ull;
-	}
-	while (isspace(*endptr))
-	  endptr++;
-	if (*endptr == '-') {
-	  endptr++;
-	  while (isspace(*endptr))
-	    endptr++;
-	  if (*endptr++ == '1') {
-	    while (isspace(*endptr))
-	      endptr++;
-	    if (!*endptr)
-	      val--;
-	  }
-	}
-	if (*endptr)
-	  return true;
-	*valp = val;
-	return false;
+    namespace {
+      pthread_once_t s_resolverOnce = PTHREAD_ONCE_INIT;
+      pthread_key_t s_resolverKey;
+      void makeResolverKey() {
+	pthread_key_create(&s_resolverKey, NULL);
       }
-      return true;
-    }
-#endif
-#if 0
-    // return true on error
-    static bool
-    getNum64(const char *s, const char *end, int64_t &valp) {
-      while ((!end || s < end) && isspace(*s))
-	s++;
-      do {
-	if (end && s >= end)
-	  break;
-	bool minus = false;
-	if (*s == '-') {
-	  minus = true;
-	  s++;
-	  while ((!end || s < end) && isspace(*s))
-	    s++;
-	  if (end && s >= end)
-	    break;
+      // thread-private data to communicate arbitrarily deep in a value parsing stack
+      struct Resolver {
+	const IdentResolver *resolver;
+	bool *isVariable;
+	Resolver(const IdentResolver *r, bool *iv) : resolver(r), isVariable(iv) {
+	  if (isVariable)
+	    *isVariable = false;
+	  pthread_once(&s_resolverOnce, makeResolverKey);
+	  pthread_setspecific(s_resolverKey, (void*)this);
 	}
-	uint64_t uval;
-	if (OE::getUNum64(s, end, uval))
-	  break;
-	if (minus) {
-	  if (uval > ((uint64_t)1) << 63)
-	    break;
-	} else if (uval > INT64_MIN)
-	  break;
-	val = (int64_t)uval;
-	return false;
-      } while (0);
-      char *endptr;
-      errno = 0;
-      int64_t val =  strtoll(s, &endptr, 0);
-      if (errno == 0) {
-	if (*endptr == 'K' || *endptr == 'k') {
-	  endptr++;
-	  val *= 1024;
-	} else if (*endptr == 'M' || *endptr == 'm') {
-	  endptr++;
-	  val *= 1024*1024;
-	} else if (*endptr == 'G' || *endptr == 'g') {
-	  endptr++;
-	  val *= 1024ll*1024ll*1024ll;
-	}
-	*valp = val;
-	return false;
+      };
+      Resolver *getResolver() {
+	return (Resolver *)pthread_getspecific(s_resolverKey);
       }
-      return true;
-    }
-#endif
+      inline long myRandom() { return random() * (random() & 1 ? -1 : 1); }
 
-    // Find an element, which might be empty, trimming whitespace
-    // Return true if there is more
-    // "unparsed" is advanced past the found element.
-    // "start" and "end" is the element found
-    // The fundamental delimiter of elements is comma,
-    // but braces must be counted since they can have commas within
-    // The "comma" argument indicates whether the comma must be present.
-    // If false, a top level close brace can also terminate the element.
-    static const char *
-    doElement(const char *&unparsed, const char *stop, const char *&start, const char *&end,
-	      bool comma = true) {
-      // Skip initial white space
-      const char *tmp = unparsed;
-      while (unparsed != stop && isspace(*unparsed))
-	unparsed++;
-      start = unparsed;
-      end = stop;
-      unsigned nBraces = 0;
-      const char *last = start;
-      while (unparsed < stop && *unparsed)
-	switch (*unparsed++) {
-	case ',':
-	  if (nBraces == 0) {
-	    if (!comma)
-	      return "unexpected comma when parsing arrays";
-	    end = unparsed - 1;
-	    goto break2;
-	  }
-	  break;
-	case '\\':
-	  if (unparsed < stop)
-	    unparsed++;
-	  last = unparsed; // remember last white space to protect
-	  break;
-	case '{':
-	  nBraces++; break;
-        case '"':
-	  // We have a double-quoted string to skip.
-	  // !!! There is a very similar loop in parseString
-	  while (unparsed < stop && *unparsed && *unparsed != '"') {
-	    char dummy;
-	    if (parseOneChar(unparsed, stop, dummy))
-	      return "bad double quoted string value";
-	  }
-	  if (unparsed >= stop || !*unparsed)
-	    return "unterminated double quoted string";
+      // Find an element, which might be empty, trimming whitespace
+      // Return true if there is more
+      // "unparsed" is advanced past the found element.
+      // "start" and "end" is the element found
+      // The fundamental delimiter of elements is comma,
+      // but braces must be counted since they can have commas within
+      // The "comma" argument indicates whether the comma must be present.
+      // If false, a top level close brace can also terminate the element.
+      static const char *
+      doElement(const char *&unparsed, const char *stop, const char *&start, const char *&end,
+		bool comma = true) {
+	// Skip initial white space
+	const char *tmp = unparsed;
+	while (unparsed != stop && isspace(*unparsed))
 	  unparsed++;
-	  break;
-	case '}':
-	  if (nBraces == 0)
-	    return esprintf("unbalanced braces - extra close brace for (%*s) (%zu)",
-			    (int)(stop - tmp), tmp, stop - tmp);
-	  if (--nBraces == 0 && !comma) {
-	    end = unparsed;
-	    goto break2;
+	start = unparsed;
+	end = stop;
+	unsigned nBraces = 0;
+	const char *last = start;
+	while (unparsed < stop && *unparsed)
+	  switch (*unparsed++) {
+	  case ',':
+	    if (nBraces == 0) {
+	      if (!comma)
+		return "unexpected comma when parsing arrays";
+	      end = unparsed - 1;
+	      goto break2;
+	    }
+	    break;
+	  case '\\':
+	    if (unparsed < stop)
+	      unparsed++;
+	    last = unparsed; // remember last white space to protect
+	    break;
+	  case '{':
+	    nBraces++; break;
+	  case '"':
+	    // We have a double-quoted string to skip.
+	    // !!! There is a very similar loop in parseString
+	    while (unparsed < stop && *unparsed && *unparsed != '"') {
+	      char dummy;
+	      if (parseOneChar(unparsed, stop, dummy))
+		return "bad double quoted string value";
+	    }
+	    if (unparsed >= stop || !*unparsed)
+	      return "unterminated double quoted string";
+	    unparsed++;
+	    break;
+	  case '}':
+	    if (nBraces == 0)
+	      return esprintf("unbalanced braces - extra close brace for (%*s) (%zu)",
+			      (int)(stop - tmp), tmp, stop - tmp);
+	    if (--nBraces == 0 && !comma) {
+	      end = unparsed;
+	      goto break2;
+	    }
 	  }
-	}
-    break2:
-      while (end > last && isspace(end[-1]))
-	end--;
-      return NULL;
+      break2:
+	while (end > last && isspace(end[-1]))
+	  end--;
+	return NULL;
+      }
     }
 
     Value::Value(const ValueType &vt, const Value *parent)
@@ -723,8 +647,9 @@ namespace OCPI {
     // Overloaded with the base case (parsing a whole value),
     // and adding an element to a sequence value
     const char *Value::
-    parse(const char *unparsed, const char *stop, bool add, const IdentResolver *resolver) {
-      setResolver(resolver);
+    parse(const char *unparsed, const char *stop, bool add, const IdentResolver *resolver, 
+	  bool *isVariable) {
+      Resolver r(resolver, isVariable);
       const char *err = NULL;
       if (!stop)
 	stop = unparsed + strlen(unparsed);
@@ -828,12 +753,11 @@ namespace OCPI {
     }
     const char *Value::
     parseExpressionValue(const char *start, const char *end, size_t nSeq, size_t nArray) {
-      ExprValue ev;
-      const IdentResolver *r = (const IdentResolver *)pthread_getspecific(s_resolverKey);
+      Resolver *r = getResolver();
       struct Intercept : public IdentResolver {
 	Value &value;
-	const IdentResolver *resolver;
-	Intercept(Value &v, const IdentResolver *a_r) : value(v), resolver(a_r) {}
+	Resolver *resolver;
+	Intercept(Value &v, Resolver *a_r) : value(v), resolver(a_r) {}
 	const char *getValue(const char *sym, ExprValue &val) const {
 	  if (value.m_vt->m_baseType == OA::OCPI_Enum)
 	    for (size_t n = 0; n < value.m_vt->m_nEnums; n++)
@@ -841,12 +765,17 @@ namespace OCPI {
 		val.setNumber(n);
 		return NULL;
 	      }
-	  return resolver ? resolver->getValue(sym, val) :
+	  return resolver && resolver->resolver ? resolver->resolver->getValue(sym, val) :
 	    "no symbols available for identifier in expression";
 	}
       } mine(*this, r);
-      const char *err = evalExpression(start, ev, &mine, end);
-      return err ? err : ev.getTypedValue(*this, nSeq * m_vt->m_nItems + nArray);
+      const char *err;
+      ExprValue ev;
+      if (!(err = evalExpression(start, ev, &mine, end)) &&
+	  !(err = ev.getTypedValue(*this, nSeq * m_vt->m_nItems + nArray)) &&
+	  r->isVariable)
+	*r->isVariable = ev.isVariable();
+      return err;
     }
 
     // A single value - not sequence or array

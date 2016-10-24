@@ -536,13 +536,15 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
   // Externalize all the device signals.
   unsigned n = 0;
   for (Instance *i = &m_assembly->m_instances[0]; n < m_assembly->m_instances.size(); i++, n++) {
-    for (SignalsIter si = i->worker->m_signals.begin(); si != i->worker->m_signals.end(); si++) {
+    for (SignalsIter si = i->m_worker->m_signals.begin(); si != i->m_worker->m_signals.end();
+	 si++) {
       Signal *s = new Signal(**si);
-      if (i->worker->m_type != Worker::Platform)
-	OU::format(s->m_name, "%s_%s", i->name, (**si).m_name.c_str());
+      if (i->m_worker->m_type != Worker::Platform)
+	OU::format(s->m_name, "%s_%s", i->cname(), (**si).m_name.c_str());
       m_signals.push_back(s);
       m_sigmap[s->cname()] = s;
-      ocpiDebug("Externalizing device signal '%s' for device '%s'", s->cname(), i->worker->m_implName);
+      ocpiDebug("Externalizing device signal '%s' for device '%s'", s->cname(),
+		i->m_worker->m_implName);
     }
   }
 }

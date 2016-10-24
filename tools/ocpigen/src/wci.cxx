@@ -9,7 +9,7 @@ WciPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
   : OcpPort(w, x, sp, ordinal, WCIPort, "ctl", err), m_timeout(0), m_resetWhileSuspended(false) {
   if (err)
     return;
-  OU::format(m_addrWidthExpr, "ocpi_port_%s_addr_width", cname());
+  OU::format(m_addrWidthExpr, "ocpi_port_%s_MAddr_width", cname());
   assert(m_master || !m_worker->m_wci);
   // WCI ports implicitly a clock to the worker in all cases, master or slave
   if (x && ezxml_cattr(x, "clock")) {
@@ -165,13 +165,14 @@ emitImplAliases(FILE *f, unsigned n, Language lang) {
   }
 }
 
+#if 0
 void WciPort::
 emitVerilogPortParameters(FILE *f) {
   // FIXME: This will not work with Verilog workers with multiple configurations with differing
   // property space sizes.
   fprintf(f, "  localparam ocpi_port_%s_addr_width = %zu;\n", cname(), ocp.MAddr.width);
 }
-
+#endif
 void WciPort::
 emitImplSignals(FILE *f) {
   Control &ctl = m_worker->m_ctl;
@@ -267,18 +268,20 @@ emitRecordInterface(FILE *f, const char *implName) {
   if (!m_master && !m_worker->m_assembly)
     OcpPort::emitRecordInterface(f, implName);
 }
+#if 0
 void WciPort::
 emitRecordInterfaceConstants(FILE *f) {
   fprintf(f, "  constant ocpi_port_%s_addr_width : positive;\n", cname());
 }
-
+#endif
 void
 emitConstant(FILE *f, const std::string &prefix, const char *name, size_t val, Language lang) {
   if (lang == VHDL)
-    fprintf(f, "  constant %s_%s : positive := %zu;\n", prefix.c_str(), name, val);
+    fprintf(f, "  constant %s_%s : natural := %zu;\n", prefix.c_str(), name, val);
   else
     fprintf(f, "  localparam %s_%s = %zu;\n", prefix.c_str(), name, val);
 }
+#if 0
 
 void WciPort::
 emitInterfaceConstants(FILE *f, Language lang) {
@@ -286,6 +289,7 @@ emitInterfaceConstants(FILE *f, Language lang) {
   std::string pref("ocpi_port_" + m_name);
   emitConstant(f, pref, "addr_width", ocp.MAddr.width, lang);
 }
+#endif
 // This cannot be a port method since it is needed when there are parameters
 // with NO CONTROL INTERFACE
 void Worker::

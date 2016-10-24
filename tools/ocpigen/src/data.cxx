@@ -3,6 +3,7 @@
 #include <assert.h>
 #include "OcpiUtilMisc.h"
 #include "wip.h"
+#include "assembly.h"
 #include "hdl.h"
 
 const char *DataPort::
@@ -349,6 +350,12 @@ finalize() {
   return NULL;
 }
 
+const char *DataPort::
+finalizeExternal(Worker &aw, Worker &/*iw*/, InstancePort &ip,
+		 bool &/*cantDataResetWhileSuspended*/) {
+  return ip.m_externalize ? aw.m_assembly->externalizePort(ip, cname(), NULL) : NULL;
+}
+
 void DataPort::
 emitPortDescription(FILE *f, Language lang) const {
   OcpPort::emitPortDescription(f, lang);
@@ -372,27 +379,22 @@ emitPortDescription(FILE *f, Language lang) const {
 }
 
 void DataPort::
-emitRecordInterfaceConstants(FILE */*f*/) {
-  // Before emitting the record, define the constants for the data path width.
-#if 0
-  fprintf(f,
-	  "\n"
-	  "  -- Constant declarations related to data width for port \"%s\"\n"
-	  "  constant ocpi_port_%s_data_width : natural;\n"
-	  "  constant ocpi_port_%s_MData_width : natural;\n"
-	  "  constant ocpi_port_%s_MByteEn_width : natural;\n"
-	  "  constant ocpi_port_%s_MDataInfo_width : natural;\n",
-	  cname(), cname(), cname(), cname(), cname());
-#endif
-}
-void DataPort::
-emitInterfaceConstants(FILE *f, Language lang) {
-  if (lang == Verilog)
-    emitVerilogPortParameters(f);
+emitRecordInterfaceConstants(FILE *f) {
+  OcpPort::emitRecordInterfaceConstants(f);
+  // This signal is available to worker code.
+  fprintf(f, "  constant ocpi_port_%s_data_width : natural;\n", cname());
 }
 #if 1
 void DataPort::
+emitInterfaceConstants(FILE *f, Language lang) {
+  OcpPort::emitInterfaceConstants(f, lang);
+  emitConstant(f, "ocpi_port_%s_data_width", lang, m_dataWidth);
+}
+#endif
+#if 1
+void DataPort::
 emitRecordInterface(FILE *f, const char *implName) {
+#if 0
 
   std::string width = m_dataWidthExpr;
   if (m_dataWidthExpr.empty())
@@ -413,6 +415,7 @@ emitRecordInterface(FILE *f, const char *implName) {
     extra = width;
   fprintf(f, "  constant ocpi_port_%s_MDataInfo_width : natural := %s;\n",
 	  cname(), extra.c_str());
+#endif
   OcpPort::emitRecordInterface(f, implName);
 }
 #endif
@@ -740,6 +743,7 @@ resolveExpressions(OCPI::Util::IdentResolver &ir) {
   return (err = OcpPort::resolveExpressions(ir)) ? err : finalize();
 }
 
+#if 0
 void DataPort::
 emitVerilogPortParameters(FILE *f) {
   std::string width = m_dataWidthExpr;
@@ -771,7 +775,7 @@ emitVerilogPortParameters(FILE *f) {
 	    "    ocpi_port_%s_data_width;\n",
 	    cname(), cname(), m_byteWidth, m_byteWidth, cname(), cname(), m_byteWidth, cname());
 }
-
+#endif
 Overlap::
 Overlap()
   : m_left(0), m_right(0), m_padding(None) {

@@ -455,29 +455,29 @@ parseInstance(Worker &parent, Instance &i, ezxml_t x) {
     Signal *s = m_sigmap.findSignal(base);
     if (!s)
       return OU::esprintf("Worker \"%s\" of instance \"%s\" has no signal \"%s\"",
-			  m_implName, i.name, name.c_str());
+			  m_implName, i.cname(), name.c_str());
     assert(!hasIndex || s->m_width);
     if (external.length()) {
       bool single;
       if (i.m_extmap.findSignal(*s, index, single))
 	return OU::esprintf("Duplicate signal \"%s\" for worker \"%s\" instance \"%s\"",
-			    name.c_str(), m_implName, i.name);
+			    name.c_str(), m_implName, i.cname());
       size_t dummy;
       if (i.m_extmap.findSignal(external, dummy) && s->m_direction == Signal::OUT)
 	return OU::esprintf("Multiple outputs drive external \"%s\" for worker \"%s\" "
-			    "instance \"%s\"", external.c_str(), m_implName, i.name);
+			    "instance \"%s\"", external.c_str(), m_implName, i.cname());
       Signal *ps = parent.m_sigmap.findSignal(external.c_str());
       if (!ps)
 	return OU::esprintf("External signal \"%s\" specified for signal \"%s\" of "
 			    "instance \"%s\" of worker \"%s\" is not an external signal of the "
-			    "assembly", external.c_str(), name.c_str(), i.name, m_implName);
+			    "assembly", external.c_str(), name.c_str(), i.cname(), m_implName);
       // If the board signal is bidirectional (can be anything), it should inherit
       // the direction of the device's signal
       if (ps->m_direction == Signal::BIDIRECTIONAL)
 	ps->m_direction = s->m_direction;
     }
     ocpiDebug("Instance '%s' signal '%s' index '%zu' mapped to '%s'",
-	      i.name, s->cname(), index, external.c_str());
+	      i.cname(), s->cname(), index, external.c_str());
     i.m_extmap.push_back(s, index, external, hasIndex);
   }
   return NULL;

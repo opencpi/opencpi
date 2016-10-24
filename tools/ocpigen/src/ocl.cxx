@@ -424,7 +424,7 @@ parseOclAssy() {
     *topAttrs[] = {IMPL_ATTRS, NULL},
     *instAttrs[] = {INST_ATTRS, NULL};
   // Do the generic assembly parsing, then to more specific to OCL
-  if ((err = a->parseAssy(m_xml, topAttrs, instAttrs, true, m_outDir)))
+  if ((err = a->parseAssy(m_xml, topAttrs, instAttrs, true)))
     return err;
   return NULL;
 }

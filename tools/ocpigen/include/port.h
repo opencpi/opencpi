@@ -79,6 +79,7 @@ public:
   inline const char *cname() const { return m_name.c_str(); }
   const char *doPattern(int n, unsigned wn, bool in, bool master, std::string &suff,
 			bool port = false);
+  void emitConstant(FILE *f, const char *nameFormat, Language lang, size_t n) const;
   virtual void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord,
 				bool inPackage, bool inWorker, const char *defaultIn = NULL,
 				const char *defaultOut = NULL);
@@ -116,7 +117,7 @@ public:
   virtual void emitSignals(FILE *f, Language lang, std::string &last, bool inPackage,
 			   bool inWorker, bool convert = false);
   virtual void emitVerilogSignals(FILE *f);
-  virtual void emitVerilogPortParameters(FILE *f);
+  //  virtual void emitVerilogPortParameters(FILE *f);
   virtual void emitVHDLShellPortMap(FILE *f, std::string &last);
   virtual void emitVHDLSignalWrapperPortMap(FILE *f, std::string &last);
   virtual void emitVHDLRecordWrapperSignals(FILE *f);

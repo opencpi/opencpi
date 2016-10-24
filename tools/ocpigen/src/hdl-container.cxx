@@ -203,42 +203,8 @@ addClient(std::string &assy, bool control, const char *client, const char *port)
 void UNoc::
 terminate(std::string &assy) {
   for (unsigned c = 0; c < m_channels.size(); c++) {
-#if 0
-    UNocChannel &unc = m_channels[c];
-    switch (unc.m_currentNode) {
-    case 1:
-      // Exactly one client.  We can avoid the node and no termination
-      // We assume the client redundantly ignores id mismatches
-      OU::formatAdd(assy,
-		    "  <connection>\n"
-		    "    <port instance='pfconfig' name='%s' index='%u'/>\n"
-		    "    <port instance='%s' %s/>\n"
-		    "  </connection>\n",
-		    m_name, c, unc.m_client.c_str(), unc.m_port.c_str());
-      break;
-    case 0:
-      // No clients, just loop back to the pf worker
-      OU::formatAdd(assy,
-		    "  <connection>\n"
-		    "    <port instance='pfconfig' name='%s' index='%u'/>\n"
-		    "    <port instance='pfconfig' name='%s_slave; index='%u'/>\n"
-		    "  </connection>\n",
-		    m_name, c, m_name, c);
-      break;
-    default:
-      // Multiple clients - provide a node to the last one
-#endif
       m_currentChannel = c;
       addClient(assy, false, NULL, NULL);
-#if 0
-      if (m_type != SDPPort)
-	OU::formatAdd(assy,
-		      "  <connection>\n"
-		      "    <port instance='%s_unoc%u_%u' name='down'/>\n"
-		      "    <port instance='pfconfig' name='%s_slave' index='%u'/>\n"
-		      "  </connection>\n",
-		      m_name, c, unc.m_currentNode - 1, m_name, c);
-#endif
   }
 }
 
@@ -344,20 +310,6 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
   for (DevInstancesIter di = m_config.m_devInstances.begin();
        di != m_config.m_devInstances.end(); di++)
     mapDevSignals(assy, *di, false);
-#if 0
-  // We must force platform signals to be mapped to themselves.
-  // FIXME: when platforms are devices, we could remap those signals too.
-  for (SignalsIter s = m_config.m_platform.Worker::m_signals.begin();
-       s != m_config.m_platform.Worker::m_signals.end(); s++) {
-#if 0
-    OU::formatAdd(assy, "    <signal name='%s' external='%s'/>\n",
-		  (*s)->cname(), (*s)->cname());
-#endif
-    Signal *es = new Signal(**s);
-    m_signals.push_back(es);
-    m_sigmap[(*s)->cname()] = es;
-  }
-#endif
   OU::formatAdd(assy, "  </instance>\n");
   // Connect the platform configuration to the control plane
   if (!m_config.m_noControl) {
@@ -554,53 +506,6 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
     }
   }
   m_xml = x;
-#if 0 // try this below
-  // During the parsing of the container assembly we KNOW what the platform is,
-  // but the platform config XML that might be parsed might think it is defaulting
-  // from the platform where it lives, so we temporarily set the global to the
-  // platform we know.
-  const char *save = platform;
-  platform = m_platform.cname();
-  if ((err = parseHdl()))
-    return;
-  platform = save;
-#endif
-#if 0 // this is now done in mapDevSignals
-  // Make all device instances signals external that are not mapped already
-  unsigned n = 0;
-  for (Instance *i = &m_assembly->m_instances[0]; n < m_assembly->m_instances.size(); i++, n++) {
-#if 0
-    Instance *emulator = NULL, *ii = m_assembly->m_instances;
-    for (unsigned nn = 0; nn < m_assembly->m_nInstances; nn++, ii++)
-      if (ii->worker->m_emulate &&
-	  !strcasecmp(ii->worker->m_emulate->m_implName, i->worker->m_implName) {
-	emulator = ii;
-	break;
-      }
-#endif
-    if (i->worker->m_emulate || i->m_emulated)
-      continue;
-    for (SignalsIter si = i->worker->m_signals.begin(); si != i->worker->m_signals.end(); si++) {
-      Signal &s = **si;
-      for (unsigned n = 0; s.m_width ? n < s.m_width : n == 0; n++) {
-	bool single;
-	const char *external = i->m_extmap.findSignal(s, n, single);
-	if (external) {
-	  assert(!*external || m_sigmap.find(external) != m_sigmap.end());
-	  if (!single) // if mapped whole, we're done with this (maybe vector) signal
-	    break;
-	} else {
-	  Signal *ns = new Signal(s);
-	  if (!i->worker->m_assembly)
-	    OU::format(ns->m_name, "%s_%s", i->name, s.cname());
-	  m_signals.push_back(ns);
-	  m_sigmap[ns->m_name.c_str()] = ns;
-	  break;
-	}
-      }
-    }
-  }
-#endif
   // For platform devices that are not instanced:
   //    Make all device signals external, and cause the outputs to be tied to zero.
   //    EXCEPT for device signals that are explicitly mapped to NULL, meaning they are
@@ -741,45 +646,6 @@ parseConnection(ezxml_t cx, ContConnect &c) {
   return NULL;
 }
 
-#if 0
-// Make a connection to an interconnect
-const char *HdlContainer::
-emitSDPConnection(std::string &assy, unsigned &unoc, size_t &index, const ContConnect &c) {
-  const char *iname = c.interconnect->cname();
-  Port *port = c.external ? c.external : c.port;
-  const char *dir = port->isDataProducer() ? "send" : "receive";
-  // instantiate sdp send or receive, and connect its wci
-		"  <connection>\n"
-		"    <port instance='%s_sdp_%s%u' name='ctl'/>\n"
-		"    <port instance='ocscp' name='wci' index='%zu'/>\n"
-		"  </connection>\n"
-		"  <connection>\n"
-		"    <port instance='%s_unoc%u' name='client'/>\n"
-		"    <port instance='%s_sdp_%s%u' name='sdp'/>\n"
-		"  </connection>\n",
-		iname, dir, unoc, dir, iname, m_config.sdpWidth(),
-		iname, dir, unoc, index,
-		iname, unoc, iname, dir, unoc); 
-  index++;
-  // Connect to the port
-  std::string other;
-  if (c.devInConfig)
-    OU::format(other, "%s_%s", c.devInstance->cname(), port->cname());
-  else
-    other = port->cname();
-  OU::formatAdd(assy,
-		"  <connection>\n"
-		"    <port instance='%s_sdp_%s%u' %s='%s'/>\n"
-		"    <port instance='%s' %s='%s'/>\n"
-		"  </connection>\n",
-		iname, dir, unoc,
-		port->isDataProducer() ? "to" : "from", port->isDataProducer() ? "in" : "out",
-		c.external ? m_appAssembly.m_implName :
-		(c.devInConfig ? "pfconfig" : c.devInstance->cname()),
-		port->isDataProducer() ? "from" : "to", other.c_str());
-  return NULL;
-}
-#endif
 // Make a connection to an interconnect
 const char *HdlContainer::
 emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContConnect &c) {
@@ -989,9 +855,9 @@ emitXmlConnections(FILE *f) {
       // Application is producing to an external consumer
       fprintf(f, "<connection from=\"%s/%s\" out=\"%s\" to=\"%s/%s\" in=\"%s\"/>\n",
 	      producer == ip ? "c" : producer == aap ? "a" : "p",
-	      producer->m_instance->name, producer->m_port->cname(),
+	      producer->m_instance->cname(), producer->m_port->cname(),
 	      consumer == ip ? "c" : consumer == aap ? "a" : "p",
-	      consumer->m_instance->name, consumer->m_port->cname());
+	      consumer->m_instance->cname(), consumer->m_port->cname());
     }
   }
 }
@@ -1008,13 +874,6 @@ mapDevSignals(std::string &assy, const DevInstance &di, bool inContainer) {
       const char *boardName;
       bool isSingle;
       if ((boardName = di.device.m_dev2bd.findSignal(**s, n, isSingle))) {
-#if 0
-	if (*boardName) {
-	  Signal *boardSig = di.device.m_board.m_extmap.findSignal(boardName);
-	  assert(boardSig);
-	  assert(di.device.m_board.m_bd2dev.findSignal(boardName));
-	}
-#endif
 	std::string devSig = (*s)->cname();
 	if ((*s)->m_width && isSingle)
 	  OU::formatAdd(devSig, "(%u)", n);

@@ -1168,7 +1168,7 @@ parseRccAssy() {
     *topAttrs[] = {IMPL_ATTRS, RCC_TOP_ATTRS, RCC_IMPL_ATTRS, NULL},
     *instAttrs[] = {INST_ATTRS, "reusable", NULL};
   // Do the generic assembly parsing, then to more specific to RCC
-  if ((err = a->parseAssy(m_xml, topAttrs, instAttrs, true, m_outDir)))
+  if ((err = a->parseAssy(m_xml, topAttrs, instAttrs, true)))
     return err;
   m_dynamic = true;
   return NULL;

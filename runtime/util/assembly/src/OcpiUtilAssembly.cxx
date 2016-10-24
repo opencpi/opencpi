@@ -345,6 +345,13 @@ namespace OCPI {
       return NULL;
     }
 
+    void Assembly::Property::
+    setValue(const char *name, const char *value) {
+      m_name = name;
+      m_value = value;
+      m_hasValue = true;
+    }
+
     const char *Assembly::MappedProperty::
     parse(ezxml_t px, Assembly &a) {
       const char *err;

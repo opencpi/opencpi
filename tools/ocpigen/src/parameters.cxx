@@ -8,6 +8,13 @@
 namespace OU=OCPI::Util;
 
 const char *Worker::
+addParamConfigSuffix(std::string &s) {
+  if (m_paramConfig && m_paramConfig->nConfig)
+    OU::formatAdd(s, "_c%zu", m_paramConfig->nConfig);
+  return s.c_str();
+}
+
+const char *Worker::
 findParamProperty(const char *name, OU::Property *&prop, size_t &nParam) {
   size_t n = 0;
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
@@ -529,14 +536,6 @@ setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig) {
   // So we have parameter configurations
   // FIXME: we could cache this parsing in one place, but workers can still be
   // parameterized by xml attribute values, so it can't simply be cached in a Worker object.
-#if 0
-  const char *slash = strrchr(m_file.c_str(), '/');
-  std::string dir;
-  if (slash)
-    dir.assign(m_file.c_str(), slash - m_file.c_str());
-  else
-    dir = "."; // FIXME: this needs to be in a search path or something?
-#endif
   if ((err = parseBuildFile(paramConfig == 0)))
     return err;
   if (m_paramConfigs.size() == 0) {

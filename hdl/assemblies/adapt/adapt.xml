@@ -1,0 +1,11 @@
+<HdlAssembly>
+  <Instance Worker="wsi_32_to_16" connect='wsi_16_to_32'/>
+  <Instance Worker="wsi_16_to_32"/>
+  <Instance Worker='nothing'/>
+  <Connection Name="in" External="consumer">
+    <Port Instance="wsi_32_to_16" Name="in"/>
+  </Connection>
+  <Connection Name="out" External="producer">
+    <Port Instance="wsi_16_to_32" Name="out"/>
+  </Connection>
+</HdlAssembly>

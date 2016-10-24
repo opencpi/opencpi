@@ -82,7 +82,7 @@ namespace OCPI {
     Property::~Property() {
     }
     // parse a value for this property, which may be a struct
-    // instance property values in an assembly.
+    // used for instance property values in an assembly, etc.
     const char *
     Property::parseValue(const char *unparsed, Value &value, const char *end,
 			 const IdentResolver *resolv) const {
@@ -90,7 +90,6 @@ namespace OCPI {
 	value.setType(*this);
       return value.parse(unparsed, end, false, resolv);
     }
-
     // FIXME find the caller and nuke this one
     const char *
     Property::parse(ezxml_t prop, unsigned ordinal) {
@@ -252,7 +251,7 @@ namespace OCPI {
 	if (m_hasValue)
 	  return esprintf("Property \"%s\" already has a non-default value which cannot be "
 			  "overridden", m_name.c_str());
-	if ((err = parseDefault(v, "propoerty", resolv)))
+	if ((err = parseDefault(v, "property", resolv)))
 	  return err;
 	m_hasValue = true;
       } else if (d && (err = parseDefault(d, "property", resolv)))

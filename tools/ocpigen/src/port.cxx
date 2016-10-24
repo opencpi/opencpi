@@ -71,6 +71,12 @@ Port(const Port &other, Worker &w, std::string &name, size_t count, const char *
     clock(NULL), clockPort(NULL), myClock(false), m_specXml(other.m_specXml)
 {
   err = NULL; // this is the base class for everything
+  for (PortsIter pi = w.m_ports.begin(); pi != w.m_ports.end(); pi++)
+    if (!strcasecmp(name.c_str(), (**pi).cname())) {
+      err = OU::esprintf("Duplicate port name \"%s\" for worker \"%s\"",
+			 name.c_str(), w.cname());
+      return;
+    }
   w.m_ports.push_back(this);
 }
 
@@ -380,16 +386,14 @@ emitRecordInterface(FILE */*f*/, const char */*implName*/) {}
 void Port::
 emitRecordInterfaceConstants(FILE *f) {
   if (m_count > 1 || m_countExpr.length())
-    fprintf(f, "  constant ocpi_port_%s_count : positive;\n", cname());
+    fprintf(f, "  constant ocpi_port_%s_count : natural;\n", cname());
 }
 // This not DEFAULT behavior, but basic/common behavior and should be called
 // first unless not needed
 void Port::
 emitInterfaceConstants(FILE *f, Language lang) {
-  if (m_count > 1 || m_countExpr.length()) {
-    std::string pref("ocpi_port_" + m_name);
-    emitConstant(f, pref, "count", m_count, lang);
-  }
+  if (m_count > 1 || m_countExpr.length())
+    emitConstant(f, "ocpi_port_%s_count", lang, m_count);
 }
 
 void Port::
@@ -456,8 +460,17 @@ void Port::
 emitVerilogSignals(FILE */*f*/) {}
 
 void Port::
-emitVerilogPortParameters(FILE */*f*/) {}
+emitConstant(FILE *f, const char *nameFormat, Language lang, size_t n) const {
+  std::string s;
+  OU::format(s, nameFormat, cname());
+  fprintf(f, "%s%s %s %zu;\n", lang == VHDL ? "  constant " : "localparam ", s.c_str(),
+	  lang == VHDL ? ": natural :=" : "=", n);
+}
 
+#if 0
+void Port::
+emitVerilogPortParameters(FILE */*f*/) {}
+#endif
 void Port::
 emitVHDLShellPortMap(FILE *f, std::string &last) {
   if (haveWorkerInputs()) {

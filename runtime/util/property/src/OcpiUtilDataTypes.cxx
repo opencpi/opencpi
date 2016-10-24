@@ -127,14 +127,19 @@ namespace OCPI {
       if (m_default)
 	delete m_default;
     }
+    // THis is called during normal parsing of a member, but also used after initial parsing
+    // of the member XML when a value is being overriden later.
     const char * Member::
     parseDefault(const char *defValue, const char *tag, const IdentResolver *resolv) {
       if (defValue) {
 	delete m_default;
 	m_default = new Value(*this);
-	const char *err = m_default->parse(defValue, NULL, false, resolv);
+	bool isVariable;
+	const char *err = m_default->parse(defValue, NULL, false, resolv, &isVariable);
 	if (err)
 	  return esprintf("for %s %s: %s", tag, m_name.c_str(), err);
+	if (isVariable)
+	  m_defaultExpr = defValue;
       }
       // FIXME: if any children (struct or type) have defaults, build a sparse default here
       return NULL;

@@ -141,7 +141,7 @@ ifeq ($(wildcard $f),)
   $(error There is no target setup file ($f) for platform $(OCPI_TARGET_PLATFORM).)
 else
  include $f
- $(warning File $f included for the target platform.)
+# $(warning File $f included for the target platform.)
 endif
 
 ################################################################################

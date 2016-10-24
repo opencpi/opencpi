@@ -813,6 +813,7 @@ create(const char *file, const std::string &parentFile, const char *package, con
   if (!err &&
       !(err = w->setParamConfig(instancePVs, paramConfig)) &&
       !(err = w->finalizeProperties()) &&
+      !(err = w->resolveExpressions()) &&
       w->m_model == HdlModel)
     err = w->finalizeHDL();
   if (err) {
@@ -822,8 +823,7 @@ create(const char *file, const std::string &parentFile, const char *package, con
     w->m_outDir = outDir;
     if (w->m_library) {
       std::string lib(w->m_library);
-      if (w->m_paramConfig && w->m_paramConfig->nConfig)
-	OU::formatAdd(lib, "_c%zu", w->m_paramConfig->nConfig);
+      w->addParamConfigSuffix(lib);
       addLibMap(lib.c_str());
     }
   }
@@ -1005,10 +1005,10 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
 
 // Base class has no worker level expressions, but does all the ports
 const char *Worker::
-resolveExpressions(OU::IdentResolver &ir) {
+resolveExpressions() {
   const char *err;
   for (PortsIter pi = m_ports.begin(); pi != m_ports.end(); pi++)
-    if ((err = (**pi).resolveExpressions(ir)))
+    if ((err = (**pi).resolveExpressions(*this)))
       return err;
   return NULL;
 }
@@ -1122,7 +1122,6 @@ emitArtXML(const char *wksFile) {
 
 const char *Worker::
 deriveOCP() {
-  //  printf("4095 %d 4096 %d\n", floorLog2(4095), floorLog2(4096));
   const char *err;
   for (unsigned i = 0; i < m_ports.size(); i++) {
     Port *p = m_ports[i];

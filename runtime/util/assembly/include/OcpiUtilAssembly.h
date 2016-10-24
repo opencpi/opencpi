@@ -88,6 +88,7 @@ namespace OCPI {
         Property() : m_hasValue(false) {}
 	const char *parse(ezxml_t x);
 	const char *setValue(ezxml_t px);
+	void setValue(const char *name, const char *value);
       };
       typedef std::vector<Property> Properties;
       struct Port;

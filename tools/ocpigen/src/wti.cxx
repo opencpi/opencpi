@@ -177,7 +177,7 @@ finalizeExternal(Worker &aw, Worker &/*iw*/, InstancePort &ip,
   // and less accurate...
   const char *err;
   if (!m_master && ip.m_attachments.empty() &&
-      (err = aw.m_assembly->externalizePort(ip, "wti", aw.m_assembly->m_nWti)))
+      (err = aw.m_assembly->externalizePort(ip, "wti", &aw.m_assembly->m_nWti)))
     return err;
   return NULL;
 }

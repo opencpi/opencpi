@@ -159,6 +159,7 @@ Compile_c=\
 Compile_cc=\
   $$(Gc++_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
   $$(call RccFinalCompilerOptions,CC,$$(RccTarget)) \
+  $$(ExtraCompilerOptionsCC_$$(RccTarget)) $(ignore for legacy)\
   $(RccIncludeDirsInternal:%=-I%) -o $$@ $$(RccParams) $$<
 Compile_cpp=$(Compile_cc)
 Compile_cxx=$(Compile_cc)
