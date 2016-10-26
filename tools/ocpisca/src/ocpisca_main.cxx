@@ -24,6 +24,7 @@ namespace OX = OCPI::Util::EzXml;
 #include "CmdOption.h"
 
 static int mymain(const char **ap) {
+
   OCPI::Driver::ManagerManager::suppressDiscovery();
   std::string file;  // the file that the application XML came from
   ezxml_t xml = NULL;
@@ -75,8 +76,9 @@ static int mymain(const char **ap) {
     app.genScaPrf(options.directory());
     app.genScaScd(options.directory());
     app.genScaSpd(options.directory());
-  } else
+  } else {
     options.bad("Missing filename for command");
+  }
   return 0;
 }
 

@@ -35,17 +35,23 @@ genScaSpd(const char *outDir) {
   uuid = OU::UUID::produceRandomUUID();
   id += OU::UUID::binaryToHex(uuid);
   x = SCA::addChild(root, "implementation", 1, NULL, "id", id.c_str());
-  ezxml_t cx = SCA::addChild(x, "code", 2, NULL, "type", "SharedLibrary");
-  SCA::addChild(cx, "localfile", 3, NULL, "name", "artifacts");
-  OU::format(s, "artifacts/%s.xml", m_assembly.name().c_str());
-  SCA::addChild(cx, "entrypoint", 3, s.c_str());
+  ezxml_t cx = SCA::addChild(x, "code", 2, NULL, "type", "Executable");
+  SCA::addChild(cx, "localfile", 3, NULL, "name", "cpp");
+  //  OU::format(s, "artifacts/%s.xml", m_assembly.name().c_str());
+  SCA::addChild(cx, "entrypoint", 3, "cpp/ocpirhexdev");
   SCA::addChild(x, "os", 2, NULL, "name", "Linux");
   ezxml_t c = 
     SCA::addChild(x, "compiler", 2, NULL, "name", "/usr/bin/gcc");
   ezxml_set_attr(c, "version", "4.4.7");
   SCA::addChild(x, "programminglanguage", 2, NULL, "name", "C++");
-
   SCA::addChild(x, "processor", 2, NULL, "name", "x86_64");
+
+  cx = SCA::addChild(x, "dependency", 2, NULL, "type", "runtime_requirements");
+  cx = SCA::addChild(cx, "softpkgref", 3, NULL, NULL, NULL);
+  SCA::addChild(cx, "localfile", 4, NULL, "name", "libs/libs.spd.xml");
+  SCA::addChild(cx, "implref", 4, NULL, "refid", "cpp");
+
+
   const char *xml = ezxml_toxml(root);
   if (fputs("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
 	    "<!DOCTYPE softpkg PUBLIC \"-//JTRS//DTD SCA V2.2.2 SPD//EN\" \"softpkg.dtd\">\n",
