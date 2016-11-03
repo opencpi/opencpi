@@ -43,7 +43,6 @@ namespace OCPI {
     namespace LSim {
       namespace OS = OCPI::OS;
       namespace OU = OCPI::Util;
-      namespace OE = OCPI::OS::Ether;
       namespace OH = OCPI::HDL;
       namespace OL = OCPI::Library;
       namespace OX = OCPI::Util::EzXml;
@@ -55,30 +54,34 @@ namespace OCPI {
 struct Fifo {
   std::string m_name;
   int m_rfd, m_wfd;
-  Fifo(std::string strName, bool iRead, const char *old, std::string &error)
-    : m_name(strName), m_rfd(-1), m_wfd(-1) { // , m_read(iRead) {
-    if (error.size())
-      return;
+  bool m_read;
+  Fifo(std::string strName, bool iRead) : m_name(strName), m_rfd(-1), m_wfd(-1), m_read(iRead) {
+  }
+  // Open is separate from construction so we can create the "device", but not create
+  // any files or directories until we actually use it.
+  bool
+  open(std::string &error) {
+    assert(m_rfd == -1 && m_wfd == -1);
     const char *name = m_name.c_str();
-    if (mkfifo(name, 0666))
+    if (::mkfifo(name, 0666))
       OU::format(error, "can't create fifo: %s (%s %d)", name, strerror(errno), errno);
-    else if ((m_rfd = open(name, O_RDONLY | O_NONBLOCK)) < 0)
+    else if ((m_rfd = ::open(name, O_RDONLY | O_NONBLOCK)) < 0)
       OU::format(error, "can't open fifo %s for reading (%s %d)", name, strerror(errno), errno);
-    else if (fcntl(m_rfd, F_SETFL, 0) != 0)
+    else if (::fcntl(m_rfd, F_SETFL, 0) != 0)
       OU::format(error, "can't set blocking flags on reading fifo %s (%s %d)", name,
-		 strerror(errno), errno);
-    else if ((m_wfd = open(name, O_WRONLY | O_NONBLOCK)) < 0)
+			 strerror(errno), errno);
+    else if ((m_wfd = ::open(name, O_WRONLY | O_NONBLOCK)) < 0)
       OU::format(error, "can't open fifo %s for writing (%s %d)", name, strerror(errno), errno);
-    else if (fcntl(m_wfd, F_SETFL, 0) != 0)
+    else if (::fcntl(m_wfd, F_SETFL, 0) != 0)
       OU::format(error, "can't set blocking flags on writing fifo %s (%s %d)", name,
 		 strerror(errno), errno);
-    if (old) {
-      unlink(old);
-      if (symlink(name, old) != 0)
-	OU::format(error, "can't symlink from %s to %s (%s %d)", old, name, strerror(errno), errno);
+    else {
+      ocpiDebug("Fifo %s created and opened for %s", name, m_read ? "reading" : "writing");
+      return false;
     }
-    ocpiDebug("Fifo %s created and opened for %s", name, iRead ? "reading" : "writing");
+    return true;
   }
+
   void close() {
     if (m_rfd >= 0) {
       ::close(m_rfd);
@@ -202,10 +205,10 @@ protected:
 	 unsigned simTicks, bool verbose, bool dump, std::string &error)
     : OH::Device("lsim:" + a_name, "ocpi-socket-rdma"),
       m_state(EMULATING),
-      m_req(simDir + "/request", false, NULL, error),
-      m_resp(simDir + "/response", true, NULL, error),
-      m_ctl(simDir + "/control", false, NULL, error),
-      m_ack(simDir + "/ack", false, NULL, error),
+      m_req(simDir + "/request", false),
+      m_resp(simDir + "/response", true),
+      m_ctl(simDir + "/control", false),
+      m_ack(simDir + "/ack", false),
       m_maxFd(-1), m_pid(0), m_exited(false), m_dcp(0), m_respLeft(0), m_simDir(simDir),
       m_platform(a_platform), m_script(script), m_verbose(verbose), m_dump(dump),
       m_spinning(false), m_sleepUsecs(sleepUsecs), m_simTicks(simTicks), m_spinCount(spinCount),
@@ -213,24 +216,46 @@ protected:
     if (error.length())
       return;
     FD_ZERO(&m_alwaysSet);
-    addFd(m_resp.m_rfd, true);
-    addFd(m_ack.m_rfd, false);
-    ocpiDebug("resp %d ack %d nfds %d", m_resp.m_rfd, m_ack.m_rfd, m_maxFd);
     initAdmin(*(OH::OccpAdminRegisters *)m_admin, m_platform.c_str(), m_uuid, &m_textUUID);
     if (verbose) {
       fprintf(stderr, "Simulation HDL device %s for %s (UUID %s)\n",
 	      m_name.c_str(), m_platform.c_str(), uuid());
       fflush(stderr);
     }
-    if (error.empty()) {
-      m_endpointSpecific = "ocpi-socket-rdma";
-      m_endpointSize = OH::SDP::Header::max_addressable_bytes * OH::SDP::Header::max_nodes;
-      cAccess().setAccess(NULL, this, OCPI_UTRUNCATE(RegisterOffset, 0));
-      // data offset is after the first node
-      dAccess().setAccess(NULL, this, OCPI_UTRUNCATE(RegisterOffset,
-						     OH::SDP::Header::max_addressable_bytes));
-      init(error);
+    m_endpointSpecific = "ocpi-socket-rdma";
+    m_endpointSize = OH::SDP::Header::max_addressable_bytes * OH::SDP::Header::max_nodes;
+    cAccess().setAccess(NULL, this, OCPI_UTRUNCATE(RegisterOffset, 0));
+    // data offset is after the first node
+    dAccess().setAccess(NULL, this, OCPI_UTRUNCATE(RegisterOffset,
+						   OH::SDP::Header::max_addressable_bytes));
+    init(error);
+    // Note we are emulating here, still not creating any file system dirs or fifos
+  }
+  bool
+  initFifos(std::string &error) {
+    // We do not clean this up - it is created on demand.
+    const char *slash = strrchr(m_simDir.c_str(), '/');
+    assert(slash);
+    size_t len = slash - m_simDir.c_str();
+    std::string parent;
+    parent.assign(m_simDir.c_str(), len);
+    // This is created on demand and not removed.
+    if (mkdir(parent.c_str(), 0777) != 0 && errno != EEXIST)
+      return OU::eformat(error, "Can't create directory for simulations: \"%s\"", parent.c_str());
+    if (mkdir(m_simDir.c_str(), 0777) != 0)
+      return errno == EEXIST ?
+	OU::eformat(error, "Directory for this simulation, \"%s\", already exists",
+		    m_simDir.c_str()) :
+	OU::eformat(error, "Can't create the new directory for this simulation: %s: %s (%d)",
+		    m_simDir.c_str(), strerror(errno), errno);
+    if (m_req.open(error) || m_resp.open(error) || m_ctl.open(error) || m_ack.open(error)) {
+      ocpiDebug("initFifos failed for simulator: %s : %s", m_name.c_str(), error.c_str());
+      return true;
     }
+    ocpiDebug("initFifos resp %d ack %d nfds %d", m_resp.m_rfd, m_ack.m_rfd, m_maxFd);
+    addFd(m_resp.m_rfd, true);
+    addFd(m_ack.m_rfd, false);
+    return false;
   }
   // We assume all sim platforms use SDP
   uint32_t
@@ -553,47 +578,6 @@ protected:
       }
       return false;
     }
-#if 0
-    // Read dataplane data and pass it to the right endpount
-
-    ssize_t nread = 0, room = sizeof(m_fromSdpBuf);
-    assert(!(room&3));
-    char *cp = m_fromSdpBuf;
-    do {
-      ssize_t n = read(m_resp.m_rfd, cp, room);
-      if (n == 0) {
-	OU::format(error, "SDP channel from simulator got EOF");
-	return true;
-      }
-      if (n < 0)
-	if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK)
-	  n = 0;
-	else {
-	  OU::format(error, "SDP channel from simulator broken: %s (%zd %d)",
-		     strerror(errno), n, errno);
-	  return true;
-	}
-      nread += n;
-      cp += n;
-      room -= n;
-    } while (nread == 0 || nread & 3);
-    std::string resp;
-    OU::format(resp, "Response from SDP: %zu bytes in %zu byte buffer: ",
-	       nread, sizeof(m_fromSdpBuf));
-    for (ssize_t nw = 0; nw < nread; nw += 4)
-      OU::formatAdd(resp, " %08x", ((uint32_t*)m_fromSdpBuf)[nw/4]);
-    ocpiDebug("%s", resp.c_str()); // overloaded version for std::string?
-    
-
-
-
-    try {
-      m_sdpSckt->send(m_fromSdpBuf, nread);
-    } catch (std::string &s) {
-      error = s;
-      return true;
-    }
-#endif
     return false;
   }
 
@@ -771,7 +755,10 @@ public:
 
   bool load(const char *file, std::string &error) {
     assert(m_state != LOADING || m_state != SERVING);
-    if (m_state != EMULATING) {
+    if (m_state == EMULATING) {
+      if (initFifos(error))
+	  return true;
+    } else {
       ocpiInfo("Shutting down previous simulation before (re)loading");
       shutdown();
     }
@@ -897,9 +884,11 @@ public:
 	if ((offset - offsetof(OccpSpace, worker)) >= sizeof(OccpWorker) * 2)
 	  throwit("Read/write offset out of range2: 0x%" PRIx64, offset);
 	else {
-	  offset -= offsetof(OccpSpace, worker);
+	  //	  offset -= offsetof(OccpSpace, worker);
 	  if (offset >= offsetof(OccpSpace, worker))
 	    offset -= offsetof(OccpSpace, worker);
+	  if (offset > sizeof(OccpWorker))
+	    offset -= sizeof(OccpWorker); // second worker?
 	  switch (offset) {
 	  case offsetof(OccpWorkerRegisters, initialize):
 	  case offsetof(OccpWorkerRegisters, start):
@@ -1056,10 +1045,50 @@ Driver::
 ~Driver() {
 }
 
-// We don't find anything automatically
+static const char *
+getPath(std::string &path) {
+  const char
+    *xenv = getenv("OCPI_CDK_DIR"),
+    *ppenv = getenv("OCPI_PROJECT_PATH");
+  if (!xenv)
+    return "The OCPI_CDK_DIR environment variable is not set";
+  if (ppenv)
+    OU::format(path, "%s:", ppenv);
+  path += xenv;
+  return NULL;
+}
+
+static const char *
+getSims(std::vector<std::string> &sims) {
+  std::string path;
+  const char *err;
+  if ((err = getPath(path)))
+    return err;
+  std::vector<std::string> pdirs;
+  sims.clear();
+  std::string first;
+  if (OU::searchPath(path.c_str(), "lib/platforms/*", first, "exports", &pdirs)) {
+    ocpiInfo("No HDL platforms found (no lib/platforms/*) in path %s", 
+	     path.c_str());
+    return NULL;
+  }
+  for (unsigned n = 0; n < pdirs.size(); n++) {
+    std::string sim;
+    OU::format(sim, "%s/runSimExec.%s", pdirs[n].c_str(), strrchr(pdirs[n].c_str(), '/') + 1);
+    bool isDir;
+    if (OS::FileSystem::exists(sim.c_str(), &isDir))
+      sims.push_back(pdirs[n]);
+  }
+  return NULL;
+}
+
 unsigned Driver::
-search(const OU::PValue */*params*/, const char **/*exclude*/, bool /*discoveryOnly*/,
-       std::string &/*error*/) {
+search(const OU::PValue *params, const char **excludes, bool discoveryOnly,
+       bool verbose, std::string &error) {
+  error.clear();
+  ocpiInfo("Searching for local HDL simulators.");
+  if (verbose)
+    printf("Searching for local HDL simulators.\n");
   const char *sims = getenv("OCPI_HDL_SIMULATORS");
   if (!sims)
     sims = getenv("OCPI_HDL_SIMULATOR");
@@ -1078,13 +1107,53 @@ search(const OU::PValue */*params*/, const char **/*exclude*/, bool /*discoveryO
       OA::ContainerManager::find("hdl", name.c_str(), NULL);
     }
     free(mylist);
+  } else {
+    std::vector<std::string> sims;
+    const char *err = getSims(sims);
+    if (err) {
+      OU::format(error, "Cannot find anuy simulation platforms: %s", err);
+      return 0;
+    }
+    unsigned count = 0;
+    for (unsigned n = 0; n < sims.size(); n++) {
+      const char *name = strrchr(sims[n].c_str(), '/') + 1;
+      std::string cmd;
+      OU::format(cmd, "sh %s/runSimExec.%s probe %s", sims[n].c_str(), name,
+		 verbose ? "-v" : "");
+      ocpiInfo("Testing whether the %s simulator is available and licensed", name);
+      //  FIXME: make this more of a utility
+      int rc = system(cmd.c_str());
+      std::string err;
+      switch (rc) {
+      case 127:
+	OU::format(err, "Couldn't start execution of command: %s", cmd.c_str()); break;
+	break;
+      case -1:
+	OU::format(err, "System error (%s, errno %d) while executing license validation command",
+			   strerror(errno), errno);
+	break;
+      default:
+	if (!WIFEXITED(rc))
+	  OU::format(err, "Error return %u/0x%x while executing license validation command", 
+		     rc, rc);
+	else if (WEXITSTATUS(rc) != 0)
+	  ocpiInfo("Check for simulator %s failed.", name);
+	else {
+	  OCPI::HDL::Device *dev = open(name, params, err);
+	  if (dev && !found(*dev, excludes, discoveryOnly, verbose, err))
+	    count++;
+	}
+	break;
+      }
+      if (error.empty())
+	error = err;
+    }
   }
   return 0;
 }
 
 OH::Device *Driver::
-open(const char *name, bool discovery, const OA::PValue *params, std::string &err) {
-  assert(!discovery);
+open(const char *name, const OA::PValue *params, std::string &err) {
   const char *cp;
   for (cp = name; *cp && !isdigit(*cp); cp++)
     ;
@@ -1093,7 +1162,13 @@ open(const char *name, bool discovery, const OA::PValue *params, std::string &er
   bool verbose = false;
   OU::findBool(params, "verbose", verbose);
   const char *dir = "simulations";
-  OU::findString(params, "directory", dir);
+  // Backward compatibility for old default of "simtest".
+  // If you don't mention it, and simtest exists, use it
+  if (!OU::findString(params, "directory", dir)) {
+    bool isDir;
+    if (OS::FileSystem::exists("simtest", &isDir) && isDir)
+      dir = "simTest";
+  }
   uint32_t simTicks = 10000000;
   OU::findULong(params, "simTicks", simTicks);
   return createDevice(name, platform, 20, 200000, simTicks, verbose, false, dir, err);
@@ -1103,56 +1178,26 @@ Device *Driver::
 createDevice(const std::string &name, const std::string &platform, uint8_t spinCount,
 	     unsigned sleepUsecs, unsigned simTicks, bool verbose, bool dump,
 	     const char *dir, std::string &error) {
-  const char
-    *xenv = getenv("OCPI_CDK_DIR"),
-    *ppenv = getenv("OCPI_PROJECT_PATH");
-  if (!xenv) {
-    error = "The OCPI_CDK_DIR environment variable is not set";
+  std::string path, script, actualPlatform;
+  const char *err;
+  if ((err = getPath(path))) {
+    error = err;
     return NULL;
   }
-  std::string path, script, actualPlatform;
-  if (ppenv)
-    OU::format(path, "%s:", ppenv);
-  path += xenv;
-  if (platform.empty()) {
-    // Find the first platform we can see.
-    // FIXME: somehow  skip those that aren't licensed or built? or is this implicit?
-    if (OU::searchPath(path.c_str(), "lib/platforms/*/runSimExec.*", script, "exports")) {
-      OU::format(error, "No simulation platforms found (no lib/platforms/*/runSimExec.*)");
-      return NULL;
-    }
-    actualPlatform = strrchr(script.c_str(), '.') + 1;
-  } else {
-    size_t len = platform.length();
-    actualPlatform.assign(platform.c_str(),
-			  !strcmp("_pf", platform.c_str() + len - 3) ? len - 3 : len);
-    std::string relScript;
-    OU::format(relScript, "lib/platforms/%s/runSimExec.%s", actualPlatform.c_str(),
-	       actualPlatform.c_str());
-    if (OU::searchPath(path.c_str(), relScript.c_str(), script, "exports")) {
-      OU::format(error, "No simulation platform found named %s (no %s)",
-		 platform.c_str(), relScript.c_str()); 
-      return NULL;
-    }
-  }
-  // We do not clean this up - it is created on demand.
-  if (mkdir(dir, 0777) != 0 && errno != EEXIST) {
-    OU::format(error, "Can't create directory for simulations: %s", dir);
+  size_t len = platform.length();
+  actualPlatform.assign(platform.c_str(),
+			!strcmp("_pf", platform.c_str() + len - 3) ? len - 3 : len);
+  std::string relScript;
+  OU::format(relScript, "lib/platforms/%s/runSimExec.%s", actualPlatform.c_str(),
+	     actualPlatform.c_str());
+  if (OU::searchPath(path.c_str(), relScript.c_str(), script, "exports")) {
+    OU::format(error, "No simulation platform found named %s (no %s)",
+	       platform.c_str(), relScript.c_str()); 
     return NULL;
   }
   std::string simDir;
   static unsigned n;
   OU::format(simDir, "%s/%s.%s.%u.%u", dir, actualPlatform.c_str(), name.c_str(), getpid(), n++);
-  if (mkdir(simDir.c_str(), 0777) != 0) {
-    if (errno == EEXIST)
-      OU::format(error,
-		 "Directory for this simulation, \"%s\", already exists",
-		 simDir.c_str());
-    else
-      OU::format(error, "Can't create the new directory for this simulation: %s",
-		 simDir.c_str());
-    return NULL;
-  }
   Device *d = new Device(name, simDir, actualPlatform, script, spinCount, sleepUsecs,
 			 simTicks, verbose, dump, error);
   if (error.empty()) {

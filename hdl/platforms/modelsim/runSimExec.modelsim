@@ -1,4 +1,32 @@
 #!/bin/sh
+function bad {
+  [ -n "$verbose" ] && echo $* && echo Probe for modelsim failed.
+  exit 1
+}
+
+[ "$1" = probe ] && {
+  verbose=$2
+  [ -n "$verbose" ] &&
+    echo Checking whether modelsim is available and licensed.
+  [ -z "$OCPI_MODELSIM_DIR" ] &&
+    bad The OCPI_MODELSIM_DIR environment variable is not set.
+  [ -z "$OCPI_MODELSIM_LICENSE_FILE" ] &&
+    bad The OCPI_MODELSIM_LICENSE_FILE environment variable is not set.
+  [ -d "$OCPI_MODELSIM_DIR" ] ||
+    bad The OCPI_MODELSIM_DIR directory $OCPI_MODELSIM_DIR does not exist as a directory.
+  [ -x "$OCPI_MODELSIM_DIR/bin/vsim" ] ||
+    bad No modelsim executable found at \"$OCPI_MODELSIM_DIR/bin/vsim\".
+  [ -n "$verbose" ] &&
+    echo Attempting to run modelsim/vsim with license file \"$OCPI_MODELSIM_LICENSE_FILE\".
+  LM_LICENSE_FILE=$OCPI_MODELSIM_LICENSE_FILE \
+    $OCPI_MODELSIM_DIR/bin/vsim -c < /dev/null > /dev/null
+  if [ $? = 0 ] ; then
+    [ -n "$verbose" ] && echo Modelsim is available and licensed.
+    exit 0
+  fi
+  [ -n "$verbose" ] && echo Modelsim/vsim command failed.
+  exit 1  
+}
 if [[ $OCPI_MODELSIM_DIR == "" ]]; then
    echo "The OCPI_MODELSIM_DIR environment variable is not set, and is required for modelsim executables."
    exit 1

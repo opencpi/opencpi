@@ -424,7 +424,7 @@ static void search(const char **) {
     vals[n++] = OA::PVEnd;
 #endif
 
-    OCPI::HDL::Driver::getSingleton().search(vals, NULL, true);
+    OCPI::HDL::Driver::getSingleton().search(vals, NULL, true, verbose);
 }
 static void probe(const char **) {
   dev->print();
@@ -843,8 +843,8 @@ unbram(const char **ap) {
     olength = 16*OH::ROM_NBYTES, // worst case output size
     inWords = OH::ROM_NWORDS,
     inBytes = inWords * sizeof(OH::RomWord);
-  OH::RomWord *in = nullptr, *u32p = nullptr;
-  unsigned char *out = nullptr;
+  OH::RomWord *in = NULL, *u32p = NULL;
+  unsigned char *out = NULL;
   for (unsigned n = 0; n < inWords; n++) {
     char line[34];
     line[32] = 0;
@@ -1306,7 +1306,7 @@ static OE::Socket *getSock() {
   OE::Socket *s = new OE::Socket(i, ocpi_data, NULL, 123, error);
   if (error.size()) {
     delete s;
-    s = nullptr;
+    s = NULL;
     bad("opening ethernet socket for data");
   }
   return s;
@@ -1682,11 +1682,16 @@ static void
 simulate(const char **ap) {
   OH::Sim::Server server(*ap, platform, OCPI_UTRUNCATE(uint8_t,spinCount), sleepUsecs,
 			 simTicks, verbose, simDump, isPublic, error);
+#if 1
+  ocpiBad("The ocpihdl simulate command is ignored, but sleeping for 10 hours");
+  OS::sleep(36000000);
+#else
   if (error.length())
     bad("Simulator server creation error");
   if (server.run(simExec, error))
     bad("Simulator server execution error");
   ocpiDebug("Simulation server finished: '%s'", error.c_str());
+#endif
 }
 
 static void

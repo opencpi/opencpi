@@ -105,7 +105,7 @@ HdlToolCompile=\
        $(and $(findstring $(HdlMode),platform), $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v) ;) \
   $(and $(filter %.vhd,$(IsimFiles)),\
     vhpcomp $(IsimArgs) $(filter %.vhd,$(IsimFiles)) ;)\
-  $(if $(filter worker platform config assembly,$(HdlMode)),\
+  $(if $(filter worker platform config assembly,$(HdlMode))$(HdlIsimProbe),\
     $(if $(HdlNoSimElaboration),, \
       echo verilog work $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v \
 	> $(Worker).prj; \

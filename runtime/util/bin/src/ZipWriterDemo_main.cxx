@@ -41,6 +41,10 @@
 #include <string>
 #include <memory>
 
+#ifdef OCPI_OS_VERSION_r5
+  #define unique_ptr auto_ptr
+#endif
+
 void
 copyFilesRecursively (OCPI::Util::Vfs::Vfs * fs1, const std::string & name1,
                       OCPI::Util::Vfs::Vfs * fs2, const std::string & name2)
@@ -77,7 +81,6 @@ copyFilesRecursively (OCPI::Util::Vfs::Vfs * fs1, const std::string & name1,
       std::cout << "done." << std::endl;
     }
   }
-
 }
 
 int

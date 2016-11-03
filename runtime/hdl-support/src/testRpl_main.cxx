@@ -57,6 +57,10 @@
 
 #include "fasttime_private.h"
 
+#ifdef OCPI_OS_VERSION_r5
+  #define unique_ptr auto_ptr
+#endif
+
 #define W(s) write(2, s, sizeof(s) - 1)
 
 namespace OA = OCPI::API;
@@ -592,7 +596,8 @@ int main(int argc, char *argv[])
     int ifd = -1, cfd = -1, ofd = -1;
     off_t bytes;
     static int16_t cosineBuf[4096];
-    std::unique_ptr<uint8_t> cbuf((uint8_t*) malloc(ioSize));
+    //    std::unique_ptr<uint8_t> cbuf((uint8_t*) malloc(ioSize));
+    uint8_t *cbuf = (uint8_t*)malloc(ioSize);
     if (file) {
       if ((ifd = open(file, O_RDONLY)) < 0 ||
 	  (cfd = open(file, O_RDONLY)) < 0 ||
@@ -698,12 +703,12 @@ int main(int argc, char *argv[])
 	  }
 	}
 	if (file && !ofile) {
-	  if ((n = read(cfd, cbuf.get(), nWant)) != (size_t)nWant) {
+	  if ((n = read(cfd, cbuf, nWant)) != (size_t)nWant) {
 	    fprintf(stderr, "Error reading input file for compare: wanted %zu, got %zd, errno %d\n",
 		    nWant, n, errno);
 	    return 1;
 	  }
-	  if (memcmp(cbuf.get(), data, nWant))
+	  if (memcmp(cbuf, data, nWant))
 	    oops = "Data mismatch on file data";
 	} else if (ofile) {
 	  struct {
