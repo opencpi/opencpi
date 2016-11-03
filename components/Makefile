@@ -71,6 +71,7 @@ Workers = \
     bias_spcm.hdl \
     bias_wide.hdl \
     bias.rcc \
+    gain.rcc \
     bias_cc.rcc \
     bias_param.rcc \
     hello_world.rcc \

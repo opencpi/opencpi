@@ -52,7 +52,7 @@ genScaScd(const char *outDir) {
 	   pi != (*ci).m_ports.end(); pi++) {
 	OU::Assembly::Role &r = (*pi).m_role;
 	assert(r.m_knownRole && !r.m_bidirectional);
-	const char *type = "dataDouble";
+	const char *type = "dataShort";
 	ezxml_t px = SCA::addChild(psx, r.m_provider ? "provides" : "uses", 3, NULL,
 				   "repid", repid(s, type, "BULKIO"),
 				   r.m_provider ? "providesname" : "usesname",
