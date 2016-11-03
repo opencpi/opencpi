@@ -242,7 +242,7 @@ all: $(ModelSpecificBuildHook)
 WkrTargetDirWild=$(OutDir)target-*$1
 
 # Function to generate final binary from target: $(call WkrBinary,target,config)
-WkrBinary=$(call WkrTargetDir,$1,$2)/$(WkrBinaryName)$(call BF,$2)
+WkrBinary=$(call WkrTargetDir,$1,$2)/$(WkrBinaryName)$(call BF,$1,$2)
 # Function to generate object file name from source: $(call WkrObject,src,target,config)
 WkrObject=$(call WkrTargetDir,$2,$3)/$(basename $(notdir $1))$(call OBJ,$3)
 
@@ -266,12 +266,12 @@ endef
 # $(call WkrWorkerDep,worker,target,config)
 define WkrWorkerDep
 
-  $(call WkrObject,$1,$2,$3): TargetDir=$(call WkrTargetDir,$2,$3)
-  $(call WkrObject,$1,$2,$3): $(CapModel)Target=$2
-  $(call WkrObject,$1,$2,$3): Worker=$1
-  $(call WkrObject,$1,$2,$3): \
-     $(call ImplHeaderFile,$1) \
-     $(foreach l,$(call $(CapModel)LibrariesInternal,$2),$$(call LibraryRefFile,$l,$2))
+  $$(call WkrObject,$1,$2,$3): TargetDir=$$(call WkrTargetDir,$2,$3)
+  $$(call WkrObject,$1,$2,$3): $(CapModel)Target=$2
+  $$(call WkrObject,$1,$2,$3): Worker=$1
+  $$(call WkrObject,$1,$2,$3): \
+     $$(call ImplHeaderFile,$1) \
+     $$(foreach l,$$(call $(CapModel)LibrariesInternal,$2),$$(call LibraryRefFile,$$l,$2))
 
 endef
 
@@ -279,33 +279,33 @@ endef
 # Function to do stuff per target per param config:
 #   $(call WkrDoTargetConfig,target,config))
 define WkrDoTargetConfig
-  -include $(call WkrTargetDir,$1,$2)/*.deps
+  -include $$(call WkrTargetDir,$1,$2)/*.deps
   # The target directory
-  $(call WkrTargetDir,$1,$2): | $(OutDir) $(GeneratedDir)
+  $$(call WkrTargetDir,$1,$2): | $$(OutDir) $$(GeneratedDir)
 	$(AT)mkdir $$@
   # If object files are separate from the final binary,
   # Make them individually, and then link them together
   ifdef ToolSeparateObjects
     $$(call OcpiDbgVar,CompiledSourceFiles)
     $$(foreach s,$$(CompiledSourceFiles),$$(eval $$(call WkrMakeObject,$$s,$1,$2)))
-    $(call WkrBinary,$1,$2): $(CapModel)Target=$1
+    $$(call WkrBinary,$1,$2): $(CapModel)Target=$1
     # Note the use of ls -o -g -l below is to not be affected by
     # user and group names with spaces.
-    $(call WkrBinary,$1,$2): $$$$(ObjectFiles_$1_$2) $$(call ArtifactXmlFile,$1,$2) \
-                            | $(call WkrTargetDir,$1,$2)
+    $$(call WkrBinary,$1,$2): $$$$(ObjectFiles_$1_$2) $$(call ArtifactXmlFile,$1,$2) \
+                            | $$(call WkrTargetDir,$1,$2)
 	$(AT)echo Linking final artifact file \"$$@\" and adding metadata to it...
-	$(AT)$(call LinkBinary,$$(ObjectFiles_$1_$2) $(OtherLibraries))
-	$(AT)if test -f "$(call ArtifactXmlFile,$1,$2)"; then \
-	  $(OCPI_CDK_DIR)/scripts/ocpixml add $$@ "$(call ArtifactXmlFile,$1,$2)"; \
+	$(AT)$$(call LinkBinary,$$(ObjectFiles_$1_$2) $$(OtherLibraries))
+	$(AT)if test -f "$$(call ArtifactXmlFile,$1,$2)"; then \
+	  $(OCPI_CDK_DIR)/scripts/ocpixml add $$@ "$$(call ArtifactXmlFile,$1,$2)"; \
 	fi
     # Make sure we actually make the final binary for this target
-    $(call OcpiDbg,Before all: WkrBinary is "$(call WkrBinary,$1,$2)")
-    $(eval $(call $(CapModel)WkrBinary,$1,$2))
-    all: $(call WkrBinary,$1,$2)
+    $$(call OcpiDbg,Before all: 1:$1 2:$2 RccTarget:$$(RccTarget). WkrBinary is "$$(call WkrBinary,$1,$2)")
+    $$(eval $$(call $(CapModel)WkrBinary,$1,$2))
+    all: $$(call WkrBinary,$1,$2)
   endif
 
   # If not an application, make the worker object files depend on the impl headers
-  $(foreach w,$(Workers),$(call WkrWorkerDep,$w,$1,$2))
+  $$(foreach w,$$(Workers),$$(call WkrWorkerDep,$$w,$1,$2))
 
 endef
 
@@ -325,7 +325,7 @@ endif
 # Export support - what we put into the (export) library above us
 
 ifndef WkrExportNames
-WkrExportNames+=$(WkrBinaryName)$(call BF,0)
+WkrExportNames+=$(WkrBinaryName)$(BF)
 endif
 ifdef LibDir
 # The default for things in the target dir to export into the component library's
@@ -373,7 +373,7 @@ define DoLinks
   LibDirs+=$(LibDir)/$1
   $(LibDir)/$1: | $(LibDir)
   $(foreach c,$(ParamConfigurations),\
-    $(foreach n,$(WkrExportNames),\
+    $(foreach n,$(call WkrExportNames,$1),\
      $(foreach b,$(basename $(notdir $n)),\
        $(foreach r,$(call RmRv,$b)$(if $(filter 0,$c),,_c$c),
          $(foreach l,$b$(if $(filter 0,$c),,_c$c),\

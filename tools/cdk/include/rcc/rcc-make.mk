@@ -37,6 +37,7 @@
 ifndef RCC_MAKE_MK
 RCC_MAKE_MK:=xxx
 include $(OCPI_CDK_DIR)/include/util.mk
+$(call OcpiDbg,Entering rcc-make.mk after util.mk)
 
 # This allows component library level RCC libraries to be fed down to workers,
 # via RccLibrariesInternal, while allowing the worker itself to have more libraries
@@ -48,35 +49,78 @@ override RccIncludeDirsInternal := \
   $(RccIncludeDirs) $(IncludeDirs) $(RccIncludeDirsInternal)
 $(call OcpiDbgVar,RccLibrariesInternal)
 $(call OcpiDbgVar,RccIncludeDirsInternal)
-ifndef RccTargets
-ifdef RccTarget
-RccTargets:=$(RccTarget)
-else
-RccTargets:=$(OCPI_TARGET_HOST)
-endif
-endif
-ifndef RccTarget
-RccTarget:=$(firstword $(RccTargets))
-endif
-
-$(call OcpiDbgVar,RccTargets)
 
 RccOs=$(word 1,$(subst -, ,$(or $1,$(RccTarget))))
 RccOsVersion=$(word 2,$(subst -, ,$1))
 RccArch=$(word 3,$(subst -, ,$1))
 
+$(call OcpiDbgVar,RccPlatforms)
+$(call OcpiDbgVar,RccTargets)
+
+ifdef RccPlatforms
+  # nothing here - we process later
+else ifdef RccPlatform
+  RccPlatforms:=$(RccPlatform)
+else ifdef RccTargets
+  # nothing to do here
+else ifdef RccTarget
+  RccTargets:=$(RccTarget)
+else ifeq ($(origin RccPlatforms),undefined)
+  RccPlatforms:=$(OCPI_TARGET_PLATFORM)
+endif
+
+$(call OcpiDbgVar,RccPlatforms)
+$(call OcpiDbgVar,RccTargets)
+
+ifdef RccPlatforms
+  ifdef RccTargets
+    $(error You cannot set both RccTarget(s) and RccPlatform(s))
+  endif
+  RccTargets:=
+  $(foreach p,$(RccPlatforms),\
+    $(foreach f,$(OCPI_CDK_DIR)/platforms/$p/target,\
+       $(if $(wildcard $f),\
+         $(foreach t,$(shell echo $$(< $f)),\
+           $(eval RccTargets+=$t)\
+           $(eval RccTarget_$p:=$t)),\
+         $(error RccPlatform $p is unknown, $t does not exist))))
+else
+  # Derive a platform from each target (somewhat expensive, but we have shortcuts)
+  # This can be deprecated or accelerated as it makes sense
+  # An easy accelerator would be to make the target an actual file in the platform's dir
+  # (A single wildcard then does it)
+  # We could also cache this
+  RccPlatforms:=
+  RccFound:=
+  $(foreach f,$(wildcard $(OCPI_CDK_DIR)/platforms/*/target),\
+    $(foreach p,$(notdir $(patsubst %/,%,$(dir $f))),\
+      $(foreach t,$(shell echo $$(< $f)),\
+        $(if $(findstring $t,$(RccTargets)),\
+          $(eval RccTarget_$p:=$t)\
+          $(eval RccPlatforms+=$p)\
+          $(eval RccFound+=$t)))))
+  $(foreach t,$(RccTargets),\
+     $(if $(findstring $t,$(RccFound)),,\
+        $(error The RccTarget $t is not the target for any software platform (in $(OCPI_CDK_DIR)/platforms))))
+endif
+
+$(call OcpiDbgVar,RccPlatforms)
+$(call OcpiDbgVar,RccTargets)
+
 # Read in all the tool sets indicated by the targets
 # 
 ifeq ($(filter clean cleanrcc,$(MAKECMDGOALS)),)
 
-$(foreach t,$(RccTargets),\
-  $(foreach m,$(if $(findstring $(OCPI_TOOL_HOST),$t),$t,$(OCPI_TOOL_HOST)=$t),\
-    $(if $(or $(wildcard $(OCPI_CDK_DIR)/include/rcc/$m.mk),$(strip \
-              $(wildcard $(OCPI_CDK_DIR)/platforms/$(OCPI_TARGET_PLATFORM)/$m.mk))),\
-       $(eval include $(OCPI_CDK_DIR)/include/rcc/$m.mk),\
-       $(if $(findstring =,$m),\
-         $(error There is no cross compiler defined from $(OCPI_TOOL_HOST) to $t),\
-         $(eval include $(OCPI_CDK_DIR)/include/rcc/default.mk)))))
+$(foreach p,$(RccPlatforms), \
+  $(foreach t,$(RccTarget_$p),\
+    $(foreach m,$(if $(findstring $(OCPI_TOOL_HOST),$t),$t,$(OCPI_TOOL_HOST)=$t),\
+        $(if $(strip \
+               $(foreach x,$(or $(wildcard $(OCPI_CDK_DIR)/include/rcc/$m.mk),\
+                                 $(wildcard $(OCPI_CDK_DIR)/platforms/$p/$m.mk)),\
+                 $(eval include $x)$x)),,\
+             $(if $(findstring =,$m),\
+               $(error There is no cross compiler defined from $(OCPI_TOOL_HOST) to $t for $p),\
+               $(eval include $(OCPI_CDK_DIR)/include/rcc/default.mk))))))
 
 endif
 endif

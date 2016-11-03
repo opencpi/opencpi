@@ -175,7 +175,7 @@ endif
 
 #FIXME  this registration should be somewhere else.
 ifndef OCPI_PREREQUISITES_LIBS
-  export OCPI_PREREQUISITES_LIBS:=lzma
+  export OCPI_PREREQUISITES_LIBS:=lzma gmp
 endif
 
 # FIXME is this necessary?
@@ -231,7 +231,7 @@ endif
 export OCPI_LD_FLAGS=\
   -L"$(OCPI_LIB_DIR)" $(OCPI_API_LIBS:%=-locpi_%) $(OCPI_EXTRA_LIBS:%=-l%) \
   $(foreach l,$(OCPI_PREREQUISITES_LIBS),\
-    $(OCPI_TARGET_PREREQUISITES_DIR)/$l/$(OCPI_TARGET_DIR)/lib/lib$l.$(OcpiDynamicSuffix) -l$l) \
+    $(OCPI_TARGET_PREREQUISITES_DIR)/$l/$(OCPI_TARGET_DIR)/lib/lib$l.$(OcpiDynamicSuffix)) \
   -Xlinker -rpath -Xlinker $(OCPI_TARGET_CDK_DIR)/lib/$(OCPI_TARGET_DIR) \
   -Xlinker -rpath -Xlinker $(OCPI_TARGET_PREREQUISITES_DIR)/lib/$(OCPI_TARGET_DIR) \
 

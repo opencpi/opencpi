@@ -49,7 +49,7 @@ endif
 Compile=$(HdlCompile)
 $(call OcpiDbgVar,HdlBin)
 $(infox LANGUAGE:$(HdlLanguage))
-BF=$(call OBJ,$1)
+BF=$(call OBJ,$2)
 #BF=$(HdlBin)
 #BF=$(if $(filter vhdl,$(HdlLanguage)),_rv)$(HdlBin)
 # This object suffix must include the paramconfig name because, at least for

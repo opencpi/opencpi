@@ -279,6 +279,7 @@ ReplaceIfDifferent=\
     else \
       cp -L -R -p $(1)/* $(2); \
     fi; \
+    touch $2; \
     break;\
   done
 ReplaceContentsIfDifferent=\
@@ -468,6 +469,7 @@ OcpiPrependEnvPath=\
 # This allows any path-related settings to be relative to the project dir
 define OcpiSetProject
   # This might already be set
+  $$(call OcpiDbg,Setting project to $1)
   OcpiTempProjDir:=$$(call OcpiAbsDir,$1)
   $$(infox OTPD:$1:$$(OcpiTempProjDir))
   ifdef OCPI_PROJECT_DIR
@@ -508,12 +510,17 @@ define OcpiSetProject
   # This variable is becoming obsolete - only used in legacy ocpiassets
   #  $$(call OcpiPrependEnvPath,OCPI_HDL_COMPONENT_LIBRARY_PATH,$$(OcpiTempProjDir)/hdl)
   # when executing applications, look in this project
-  $$(call OcpiPrependEnvPath,OCPI_LIBRARY_PATH,\
-     $$(OcpiTempProjDir)/components/lib/rcc \
-     $$(OcpiTempProjDir)/components/*.test/assemblies/*/container*/target-* \
-     $$(OcpiTempProjDir)/components/*/lib/rcc \
-     $$(OcpiTempProjDir)/components/*/*.test/assemblies/*/container*/target-* \
-     $$(OcpiTempProjDir)/hdl/assemblies/*/container*/target-*)
+  ifndef OCPI_PROJECT_ADDED_TARGET_DIRS
+    $$(warning Adding all target directories in the project to OCPI_LIBRARY_PATH)
+    $$(call OcpiPrependEnvPath,OCPI_LIBRARY_PATH,\
+       $$(OcpiTempProjDir)/components/lib/rcc \
+       $$(OcpiTempProjDir)/components/*.test/assemblies/*/container*/target-* \
+       $$(OcpiTempProjDir)/components/*/lib/rcc \
+       $$(OcpiTempProjDir)/components/*/*.test/assemblies/*/container*/target-* \
+       $$(OcpiTempProjDir)/hdl/assemblies/*/container*/target-*)
+    $$(warning All target directories in the project to OCPI_LIBRARY_PATH)
+    export OCPI_PROJECT_ADDED_TARGET_DIRS:=1
+  endif
 endef
 
 # Look into a directory in $1 and determine which type of directory it is by looking at the Makefile.
@@ -567,4 +574,5 @@ OcpiCheckPrereq=$(strip\
             $(and $3,$(if $(realpath $(OCPI_PREREQUISITES_INSTALL_DIR)/$1/$t/$3),,\
                          $(error For the $1 prerequisite package, $t/$3 is missing))))))
 
+$(call OcpiDbg,End of util.mk)
 endif # ifndef __UTIL_MK__
