@@ -1,0 +1,5 @@
+<application package='ocpi' >
+  <instance component='gain' externals='true'>
+    <property name='gainValue' value='0x2'/>
+  </instance>
+</application>
