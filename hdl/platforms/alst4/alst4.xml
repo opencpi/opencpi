@@ -8,7 +8,7 @@
   </device>
   <!-- This platform worker provides a data plane called "pcie" -->
   <unoc name="pcie" master='true'/>
-  <unoc name="pcie_slave"/>
+  <!-- <unoc name="pcie_slave"/> -->
   <property name="pciId" type='ushort' volatile='true'/>
   <property name="unocDropCount" type='uchar' volatile='true'/>
   <signal input="sys0_clk"/>

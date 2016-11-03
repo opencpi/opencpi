@@ -1,3 +1,4 @@
+<!-- ZedBoard Platform Worker -->
 <HdlPlatform Language="VHDL" spec='platform-spec'>
   <specproperty name='platform' value='zed'/>
   <!-- All platform workers must provide these two ports -->
@@ -10,32 +11,9 @@
     <property name='frequency' value='100e6'/>
   </device>
   <sdp name="zynq" master='true' count='4'/>
-  <!-- <sdp name="zynq_slave" count='4'/> -->
   <property name='useGP1' type='bool' parameter='1' default='false'/>
-  <property name='maxtrace' type='uchar' parameter='1' default='40'/>
   <property name="axi_error" type="bool" arraylength='4' volatile='true'/>
   <property name="sdpDropCount" type='uchar' volatile='true'/>
-  <property name="sdp_headers_in" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
-  <property name="sdp_data_in" type="Ulong" arraylength='maxtrace' volatile='true' debug='false'/>
-  <property name="sdp_headers_out" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
-  <property name="sdp_data_out" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
-  <property name="sdp_out_status" arraylength='maxtrace' volatile='true' debug='false'/>
-  <property name="sdp_header_count_in" volatile='true' debug='false'/>
-  <property name="sdp_header_count_out" volatile='true' debug='false'/>
-  <property name="sdp_count_in" volatile='true' writable='1' debug='false'/>
-  <property name="sdp_count_out" volatile='true' writable='1' debug='false'/>
-  <property name="axi_cacount" volatile='true' writable='1'  debug='false'/>
-  <property name="axi_cdcount" volatile='true' writable='1' debug='false'/>
-  <property name="axi_caddr" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
-  <property name="axi_cdata" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
-  <property name="axi_racount" volatile='true' writable='1' debug='false'/>
-  <property name="axi_raddr" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
-  <property name="axi_rdcount" volatile='true' writable='1' debug='false'/>
-  <property name="axi_rdata" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
-  <property name="axi_wacount" volatile='true' writable='1' debug='false'/>
-  <property name="axi_waddr" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
-  <property name="axi_wdcount" volatile='true' writable='1' debug='false'/>
-  <property name="axi_wdata" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
   <property name="debug_state" type="Ulonglong" arraylength='4' volatile='true' debug='false'/>
   <property name="debug_state1" type="Ulonglong" arraylength='4' volatile='true' debug='false'/>
   <property name="debug_state2" type="Ulonglong" arraylength='4' volatile='true' debug='false'/>
@@ -74,4 +52,26 @@
    <signal slot='DP0_C2M_N' platform=''/>
 
   </slot>
+  <property name='maxtrace' type='uchar' parameter='1' default='40'/>
+  <property name="sdp_headers_in" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="sdp_data_in" type="Ulong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="sdp_headers_out" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="sdp_data_out" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="sdp_out_status" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="sdp_header_count_in" volatile='true' debug='false'/>
+  <property name="sdp_header_count_out" volatile='true' debug='false'/>
+  <property name="sdp_count_in" volatile='true' writable='1' debug='false'/>
+  <property name="sdp_count_out" volatile='true' writable='1' debug='false'/>
+  <property name="axi_cacount" volatile='true' writable='1'  debug='false'/>
+  <property name="axi_cdcount" volatile='true' writable='1' debug='false'/>
+  <property name="axi_caddr" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="axi_cdata" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="axi_racount" volatile='true' writable='1' debug='false'/>
+  <property name="axi_raddr" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="axi_rdcount" volatile='true' writable='1' debug='false'/>
+  <property name="axi_rdata" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="axi_wacount" volatile='true' writable='1' debug='false'/>
+  <property name="axi_waddr" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="axi_wdcount" volatile='true' writable='1' debug='false'/>
+  <property name="axi_wdata" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
 </HdlPlatform>

@@ -114,10 +114,10 @@ begin
   --              down_in    => pcie_in,
   --              down_out   => pcie_out);
 
-  term_unoc : unoc_terminator
-    port    map(up_in      => pcie_slave_in,
-                up_out     => pcie_slave_out,
-                drop_count => props_out.unocDropCount);
+  -- term_unoc : unoc_terminator
+  --   port    map(up_in      => pcie_slave_in,
+  --               up_out     => pcie_slave_out,
+  --               drop_count => props_out.unocDropCount);
 
 
   ---- Here we need to adapt the unoc protocol to the occp protocol
@@ -138,7 +138,8 @@ begin
   props_out.nLEDs           <= to_ulong(led'length);      -- not including the gmii led
   props_out.UUID            <= metadata_in.UUID;
   props_out.romData         <= metadata_in.romData;
-  props_out.pciId          <= ushort_t(unsigned(pci_id));
+  props_out.pciId           <= ushort_t(unsigned(pci_id));
+  props_out.unocDropCount   <= pcie_in.dropCount;
   -- Settable properties - drive the leds that are not driven by hardware from the property
   led(6 downto 1)           <= std_logic_vector(props_in.leds(6 downto 1));
   led(led'left downto 8)    <= (others => '0');

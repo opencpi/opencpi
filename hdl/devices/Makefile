@@ -64,6 +64,7 @@ Workers = \
 	sdp2cp.hdl \
 	sdp_term.hdl \
         unoc2cp.hdl \
+        unoc_term.hdl \
 	ocdp.hdl \
 	flash.hdl \
 	lime_dac.hdl \

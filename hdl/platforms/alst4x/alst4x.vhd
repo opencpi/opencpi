@@ -78,10 +78,10 @@ begin
   pcie_out.id      <= pci_id;
   pcie_out.data    <= to_unoc(unoc_out_data);
 
-  term_unoc : unoc_terminator
-    port    map(up_in      => pcie_slave_in,
-                up_out     => pcie_slave_out,
-                drop_count => props_out.unocDropCount);
+  -- term_unoc : unoc_terminator
+  --   port    map(up_in      => pcie_slave_in,
+  --               up_out     => pcie_slave_out,
+  --               drop_count => props_out.unocDropCount);
 
   -- Output/readable properties
   props_out.dna             <= (others => '0');

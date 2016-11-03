@@ -12,7 +12,6 @@ library unisim; use unisim.vcomponents.all;
 library bsv;
 library sdp; use sdp.sdp.all, sdp.sdp_axi.all;
 architecture rtl of zed_worker is
-  constant ntrace  : natural := to_integer(maxtrace);
   constant whichGP : natural := to_integer(unsigned(from_bool(useGP1)));
   signal ps_m_axi_gp_in  : m_axi_gp_in_array_t(0 to C_M_AXI_GP_COUNT-1);  -- s2m
   signal ps_m_axi_gp_out : m_axi_gp_out_array_t(0 to C_M_AXI_GP_COUNT-1); -- m2s
@@ -26,6 +25,16 @@ architecture rtl of zed_worker is
   signal rst_n            : std_logic; -- the synchronized negative reset
   signal reset            : std_logic; -- our positive reset
   signal count            : unsigned(25 downto 0);
+  signal my_zynq_out      : zynq_out_array_t;
+  signal my_zynq_out_data : zynq_out_data_array_t;
+  signal dbg_state        : ulonglong_array_t(0 to 3);
+  signal dbg_state1       : ulonglong_array_t(0 to 3);
+  signal dbg_state2       : ulonglong_array_t(0 to 3);
+  signal dbg_state_r      : ulonglong_array_t(0 to 3);
+  signal dbg_state1_r     : ulonglong_array_t(0 to 3);
+  signal dbg_state2_r     : ulonglong_array_t(0 to 3);
+  -- debug state
+  constant ntrace  : natural := to_integer(maxtrace);
   signal zynq_in_seen     : std_logic;
   signal zynq_out_seen    : std_logic;
   signal sdp_starting_in  : bool_t;
@@ -51,14 +60,6 @@ architecture rtl of zed_worker is
   signal axi_raddr        : ulonglong_array_t(0 to ntrace-1);
   signal axi_wdata        : ulonglong_array_t(0 to ntrace-1);
   signal axi_waddr        : ulonglong_array_t(0 to ntrace-1);
-  signal my_zynq_out      : zynq_out_array_t;
-  signal my_zynq_out_data : zynq_out_data_array_t;
-  signal dbg_state        : ulonglong_array_t(0 to 3);
-  signal dbg_state1       : ulonglong_array_t(0 to 3);
-  signal dbg_state2       : ulonglong_array_t(0 to 3);
-  signal dbg_state_r      : ulonglong_array_t(0 to 3);
-  signal dbg_state1_r     : ulonglong_array_t(0 to 3);
-  signal dbg_state2_r     : ulonglong_array_t(0 to 3);
   signal sdp_seen_r       : bool_t;
   function fyv(b : std_logic) return std_logic_vector is
   variable v : std_logic_vector(0 downto 0);
@@ -131,6 +132,7 @@ begin
       );
   zynq_out               <= my_zynq_out;
   zynq_out_data          <= my_zynq_out_data;
+  props_out.sdpDropCount <= zynq_in(0).dropCount;
   props_out.debug_state  <= dbg_state_r;
   props_out.debug_state1 <= dbg_state1_r;
   props_out.debug_state2 <= dbg_state2_r;
@@ -152,37 +154,7 @@ begin
                   dbg_state1   => dbg_state1(i),
                   dbg_state2   => dbg_state2(i));
   end generate;
-  --dp1 : axinull
-  --  port map(
-  --    clk       => clk,
-  --    reset     => reset,
-  --    axi_in    => ps_axi_hp_out(1),
-  --    axi_out   => ps_axi_hp_in(1)
-  --    );
-  --dp2 : axinull
-  --  port map(
-  --    clk       => clk,
-  --    reset     => reset,
-  --    axi_in    => ps_axi_hp_out(2),
-  --    axi_out   => ps_axi_hp_in(2)
-  --    );
-  --dp3 : axinull
-  --  port map(
-  --    clk       => clk,
-  --    reset     => reset,
-  --    axi_in    => ps_axi_hp_out(3),
-  --    axi_out   => ps_axi_hp_in(3)
-  --    );
-
-  --term_sdp : sdp.sdp.sdp_term
-  --  generic map(sdp_width   => to_integer(sdp_width))
-  --  port    map(up_in       => zynq_slave_in,
-  --              up_in_data  => zynq_slave_in_data,
-  --              up_out      => zynq_slave_out,
-  --              up_out_data => zynq_slave_out_data,
-  --              drop_count  => props_out.sdpDropCount);
-  
-  -- Output/readable properties
+-- Output/readable properties
 --  props_out.platform        <= to_string("zed", props_out.platform'length-1);
   props_out.dna             <= (others => '0');
   props_out.nSwitches       <= (others => '0');
