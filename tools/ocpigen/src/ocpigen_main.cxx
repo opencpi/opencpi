@@ -94,6 +94,7 @@ add to tree.
   CMD_OPTION  (platform,  P,    String, NULL, "Specify the platform target for the artifact XML") \
   CMD_OPTION  (os,        O,    String, NULL, "Specify the operating system target for the artifact XML") \
   CMD_OPTION  (os_version,V,    String, NULL, "Specify the operating system version for the artifact XML") \
+  CMD_OPTION  (arch,      H,    String, NULL, "Specify the architecture for the artifact") \
   CMD_OPTION  (package,   p,    String, NULL, "Specify the HDL package for the worker") \
   CMD_OPTION  (pfconfig,  X,    String, NULL, "Parse top level platform/configuration attribute") \
   CMD_OPTION  (pfdir,     F,    String, NULL, "The directory where the current platform lives") \
@@ -209,6 +210,9 @@ main(int argc, const char **argv) {
       case 'V':
 	g_os_version = *++ap;
 	break;
+      case 'H':
+	g_arch = *++ap;
+	break;
       case 'p':
 	package = *++ap;
 	break;
@@ -296,9 +300,9 @@ main(int argc, const char **argv) {
 		      *ap, err);
 	    break;
 	  case RccModel:
-	    if (!g_os || !g_os_version || !g_platform) {
+	    if (!g_os || !g_os_version || !g_arch) {
 	      fprintf(stderr,
-		      "%s: Missing os/os_version/platform options for RCC artifact descriptor", *ap);
+		      "%s: Missing os/os_version/arch options for RCC artifact descriptor", *ap);
 	      return 1;
 	    }
 	    if ((err = w->emitArtXML(wksFile)))

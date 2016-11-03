@@ -347,7 +347,9 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
   // Initialize our instances based on the generic assembly instances
   for (unsigned n = 0; n < m_utilAssembly->nUtilInstances(); n++, i++) {
     OU::Assembly::Instance &ai = m_utilAssembly->utilInstance(n);
-    i->init(*this, ai.m_name.c_str(), ai.m_implName.c_str(), ai.xml(), ai.m_properties);
+    if ((err = 
+	 i->init(*this, ai.m_name.c_str(), ai.m_implName.c_str(), ai.xml(), ai.m_properties)))
+      return err;
     // If the instance in the OU::Assembly has "m_externals=true",
     // and this instance port has no connections in the OU::Assembly
     // then we add an external connection for the instance port. Prior to this,

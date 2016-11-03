@@ -207,7 +207,7 @@ closeDep() {
 static const char *
 dumpDeps(const char *top) {
   if (!depFile)
-    return nullptr;
+    return NULL;
   if (!depOut.is_open()) {
     depOut.open(depFile);
     if (!depOut.good())
@@ -223,7 +223,7 @@ dumpDeps(const char *top) {
        depOut << "\n" << it->first << ":\n";
   if (!depOut.flush().good())
     return OU::esprintf("Error writing to dependency file \"%s\".", depFile);
-  return nullptr;
+  return NULL;
 }
 
 // TODO: Make an iostream version of this call to move away from C-style FILE handles

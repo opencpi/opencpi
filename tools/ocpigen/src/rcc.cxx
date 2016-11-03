@@ -589,7 +589,7 @@ const char *Worker::
 emitImplRCC() {
   const char *err;
   FILE *f;
-  const char **slaveBaseTypes = nullptr;
+  const char **slaveBaseTypes = NULL;
   if (m_slave) {
     slaveBaseTypes = m_slave->m_baseTypes;
     m_slave->m_baseTypes = rccTypes;

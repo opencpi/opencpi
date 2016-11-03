@@ -158,7 +158,7 @@ parseHdlAssy() {
 	if (ip.m_port->isDataProducer()) {
 	  assert(from == NULL);
 	  from = &ip;
-	} else {
+	} else if (!ip.m_port->isDataBidirectional()) {
 	  assert(to == NULL);
 	  to = &ip;
 	}

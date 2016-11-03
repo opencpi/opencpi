@@ -775,8 +775,8 @@ extern const char
 	     bool param = false),
   *verilogValue(const OU::Value &v, std::string &value),
   *rccValue(OU::Value &v, std::string &value),
-  *g_platform, *g_device, *load, *g_os, *g_os_version, **libraries, **mappedLibraries, *assembly,
-  *attribute, *platformDir,
+  *g_platform, *g_device, *load, *g_os, *g_os_version, *g_arch, **libraries, **mappedLibraries,
+  *assembly, *attribute, *platformDir,
   *addLibMap(const char *),
   *findLibMap(const char *file), // returns mapped lib name from dir name of file or NULL
   *propertyTypes[],

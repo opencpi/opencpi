@@ -119,7 +119,7 @@ source $f
 export PATH=$OCPI_CDK_DIR/bin/$OCPI_TOOL_DIR:$PATH
 if test "$OCPI_LIBRARY_PATH" = ""; then
   # Default library path for RCC workers only
-  export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/lib/components:$OCPI_CDK_DIR/lib/platforms/$OCPI_TARGET_PLATFORM
+  export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/lib/components:$OCPI_CDK_DIR/lib/hdl/assemblies
 fi
 echo OCPI_CDK_DIR is $OCPI_CDK_DIR and OCPI_TOOL_HOST is $OCPI_TOOL_HOST
 

@@ -251,7 +251,9 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 	cp = &p;
       else if (p.m_type == SDPPort || p.m_type == NOCPort) {
 	icp = &p;
+#if 0
 	size_t len = p.m_name.length();
+
 	Port *slave = NULL;
 	for (PortsIter si = m_config.m_ports.begin(); si != m_config.m_ports.end(); si++) {
 	  Port &sp = **si;
@@ -262,6 +264,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 	  }
 	}
 	ocpiAssert(p.m_type == SDPPort || slave);
+#endif
 	uNocs.insert(std::make_pair(p.cname(),
 				    UNoc(p.cname(), p.m_type, m_config.sdpWidth(), p.m_count)));
       }

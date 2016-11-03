@@ -730,7 +730,7 @@ tempName(char *&temp, unsigned len, const char *fmt, ...) {
   va_list ap;
   if (temp)
     free(temp);
-  temp = nullptr; // suppress compiler warning
+  temp = NULL; // suppress compiler warning
   char *mytemp;
   va_start(ap, fmt);
   ocpiCheck(vasprintf(&mytemp, fmt, ap) >= 0);
