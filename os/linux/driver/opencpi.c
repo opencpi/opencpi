@@ -492,7 +492,7 @@ request_memory(struct file *file, ocpi_request_t *request) {
     log_debug("couldn't get allocation in first pass\n");
     // No memory in the list, try a kernel allocation
     if (request->actual > OPENCPI_MAXIMUM_MEMORY_ALLOCATION) {
-      log_err("memory request exceeded driver's specified limit of %ld",
+      log_err("memory request exceeded driver's specified limit of %ld\n",
 	      OPENCPI_MAXIMUM_MEMORY_ALLOCATION);
       break;
     }
@@ -503,7 +503,8 @@ request_memory(struct file *file, ocpi_request_t *request) {
       struct page *kpages = alloc_pages(GFP_KERNEL | __GFP_HIGHMEM, order);
       ocpi_address_t phys_addr = (ocpi_address_t)page_to_pfn(kpages) << PAGE_SHIFT;
       if (kpages == NULL) {
-	log_err("memory request of %ld could not be satified by the kernel", (unsigned long)request->actual);
+	log_err("memory request of %ld could not be satified by the kernel\n",
+		(unsigned long)request->actual);
 	break;
       }
       if (make_block(phys_addr, phys2bus(phys_addr), PAGE_SIZE << order, ocpi_kernel, true, ++opencpi_kernel_alloc_id) == NULL) {
@@ -1632,7 +1633,7 @@ opencpi_init(void) {
     if (make_block(0x40000000, 0x40000000, sizeof(OccpSpace), ocpi_mmio, false, 0) == NULL ||
         make_block(0x80000000, 0x80000000, sizeof(OccpSpace), ocpi_mmio, false, 0) == NULL)
       break;
-    log_debug("Control Plane physical address space for Zynq/PL/AXI GP0 and GP1 slave reserved");
+    log_debug("Control Plane physical addr space for Zynq/PL/AXI GP0 and GP1 slave reserved\n");
    {
 #if 0
      int

@@ -46,7 +46,7 @@ else
 #  if [ "$DNAME" = bin ] ; then
 #    DIR="$DIR/../lib"
 #  else
-    DIR=$OCPI_CDK_DIR/lib/$OCPI_TOOL_HOST
+    DIR=$OCPI_CDK_DIR/lib/$OCPI_TOOL_DIR
 #  fi
   if test -f /etc/ocpi-release; then
      LABEL=$(cat /etc/ocpi-release)

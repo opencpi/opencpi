@@ -669,9 +669,9 @@ namespace OCPI {
         msg.msg_iov = (iovec*)iov;
 	msg.msg_iovlen = iovlen;
 	ssize_t rlen = sendmsg(m_fd, &msg, 0);
-	ocpiDebug("Send packet length %zd, to %s/%s via %u, port %u returned %zd errno %u fd %u",
+	ocpiDebug("Send packet length %zd, to %s/%s via %u, port %u returned %zd errno %u (%s) fd %u",
 		  len, inet_ntoa(sa.in.sin_addr), addr.pretty(), ifc ? ifc->index : 0,
-		  ntohs(sa.in.sin_port), rlen, errno, m_fd);
+		  ntohs(sa.in.sin_port), rlen, errno, strerror(errno), m_fd);
 	if (rlen != (ssize_t)len) {
 	  setError(error, "sendto of %u bytes failed, returning %d", len, rlen);
 	  return false;
@@ -714,11 +714,9 @@ namespace OCPI {
       void IfScanner::
       reset() {
 	m_index = 0;
-        Opaque &o = *(Opaque *)m_opaque;
 #ifdef OCPI_OS_macos
+        Opaque &o = *(Opaque *)m_opaque;
 	o.ifm = (struct if_msghdr *)o.buffer;
-#else
-        o.ifnames->clear();
 #endif
       }
 

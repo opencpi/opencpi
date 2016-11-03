@@ -47,6 +47,12 @@
 
 #ifdef OCPI_OS_linux
 #include <sched.h>
+  #ifdef OCPI_OS_VERSION_r5
+    #ifndef __x86_64__
+      #error No support for RHEL5 on non-64-bit machines
+    #endif
+  #include <asm/vsyscall.h>
+#endif
 #else
 #include <sys/time.h> // for gettimeofday
 typedef uint64_t cpu_set_t;
@@ -229,8 +235,19 @@ CounterFreq::CounterFreq ()
   cpuid(0x80000007,ax,bx,cx,dx)
   //if tsc_invariant not present return - present in edx 0x80000007 bit 8
   if (!(dx&0x8)) {
-      return;
+    ocpiBad("OCPI::OS::Time subsystem cannot establish clock frequency");
+    return;
   }
+  const char *cp = strcasestr(tmp, "cpu MHz");
+  if (cp) {
+    cp += 7;
+    while (isspace(*cp) || *cp == ':')
+      cp++;
+    m_useHighResTimer = true;
+    m_counterFreq = (uint64_t)(atof(cp)*1e6);
+    return;
+  }
+
   size_t pointer;
   // TODO: changed to find model name and TSC invariant clock speed extracted
   if ((pointer = valueread.find("model name",0))) {
@@ -443,7 +460,14 @@ start ()
     }
 
     // Pin this process to the CPU we are currently on (AV-436)
-    const int cpu_id = sched_getcpu();
+    unsigned cpu_id;
+#ifdef OCPI_OS_VERSION_r5
+    typedef long (*vgetcpu_t)(unsigned int *cpu, unsigned int *node, unsigned long *tcache);
+    vgetcpu_t vgetcpu = (vgetcpu_t)VSYSCALL_ADDR(__NR_vgetcpu);
+    ocpiCheck(vgetcpu(&cpu_id, NULL, NULL) == 0);
+#else
+    cpu_id = sched_getcpu();
+#endif
     mask=org_mask;
     CPU_ZERO(&mask);                     // clears the cpuset
     CPU_SET(cpu_id, &mask);              // set only this CPU
@@ -593,7 +617,14 @@ getPrecision (ElapsedTime & prec)
     prec.set(0, 10000000); // 10ms - hah!
 #else
     struct timespec res;
-    ocpiCheck(clock_getres (OCPI_CLOCK_TYPE, &res) == 0);
+    clockid_t x = OCPI_CLOCK_TYPE;
+// This is due to clock_getres returning bad values for this clock
+// FIXME: check whether this is specific to centos6
+#if defined(CLOCK_MONOTONIC_RAW) && defined(CLOCK_MONOTONIC)
+    if (OCPI_CLOCK_TYPE == CLOCK_MONOTONIC_RAW)
+      x = CLOCK_MONOTONIC;
+#endif
+    ocpiCheck(clock_getres (x, &res) == 0);
     prec.set((uint32_t)res.tv_sec, (uint32_t)res.tv_nsec);
 #endif
   }

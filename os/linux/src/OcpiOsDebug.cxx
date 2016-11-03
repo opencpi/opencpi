@@ -102,6 +102,13 @@ namespace OCPI {
     }
     void
     logPrint(unsigned n, const char *fmt, ...) throw() {
+	va_list ap;
+	va_start(ap, fmt);
+	logPrintV(n, fmt, ap);
+	va_end(ap);
+    }
+    void
+    logPrintV(unsigned n, const char *fmt, va_list ap) throw() {
       if (logLevel != UINT_MAX && n > logLevel)
 	return;
       pthread_mutex_lock (&mine);
@@ -110,13 +117,11 @@ namespace OCPI {
 	logLevel = e ? atoi(e) : OCPI_LOG_WIERD;
       }
       if (n <= (unsigned)logLevel)  {
-	va_list ap;
-	va_start(ap, fmt);
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	fprintf(stderr, "OCPI(%2d:%u.%04u): ", n, (unsigned)(tv.tv_sec%1000), (unsigned)((tv.tv_usec+500)/1000));
+	fprintf(stderr, "OCPI(%2d:%3u.%04u): ", n, (unsigned)(tv.tv_sec%1000),
+		(unsigned)((tv.tv_usec+500)/1000));
 	vfprintf(stderr, fmt, ap);
-	va_end(ap);
 	if (fmt[strlen(fmt)-1] != '\n')
 	  fprintf(stderr, "\n");
 	fflush(stderr);
