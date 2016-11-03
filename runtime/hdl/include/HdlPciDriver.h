@@ -78,11 +78,12 @@ namespace OCPI {
 	//	map(uint32_t size, uint64_t &base, std::string &error);
 	unsigned
 	  search(const OCPI::Util::PValue *props, const char **exclude, bool discoveryOnly,
-		 std::string &error);
+		 bool verbose, std::string &error);
 	OCPI::HDL::Device *
 	open(const char *pciName, std::string &err);
 	// Callback when found
-	virtual bool found(OCPI::HDL::Device &dev, std::string &error) = 0;
+	virtual bool found(OCPI::HDL::Device &dev, const char **excludes, bool discoveryOnly,
+			   bool verbose, std::string &error) = 0;
       };
     }
   }

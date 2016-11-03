@@ -28,7 +28,7 @@ namespace OCPI {
   namespace Remote {
 
 const uint16_t REMOTE_PORT = 17171;
-const uint16_t REMOTE_NARGS = 6; // fields in the discovery entries
+const uint16_t REMOTE_NARGS = 7; // fields in the discovery entries
 extern const char *remote;
 const unsigned RETRIES = 3;
 const unsigned DELAYMS = 500;
@@ -225,7 +225,7 @@ class Container
   Client &m_client;
 public:
   Container(Client &client, const std::string &a_name,
-	    const char *a_model, const char *a_os, const char *a_osVersion,
+	    const char *a_model, const char *a_os, const char *a_osVersion, const char *a_arch,
 	    const char *a_platform, const char *a_dynamic, const OA::PValue* /*params*/)
     throw ( OU::EmbeddedException )
     : OC::ContainerBase<Driver,Container,Application,Artifact>(*this, a_name.c_str()),
@@ -233,6 +233,7 @@ public:
     m_model = a_model;
     m_os = a_os;
     m_osVersion = a_osVersion;
+    m_arch = a_arch;
     m_platform = a_platform;
     OX::parseBool(a_dynamic, NULL, &m_dynamic);
   }
@@ -354,10 +355,10 @@ public:
 	client = new Client(*this, server, *sock);
 	taken = true;
       }
-      ocpiDebug("Creating remote container: \"%s\", model %s, os %s, version %s, platform %s dynamic %s",
-		cname.c_str(), args[1], args[2], args[3], args[4], args[5]);
+      ocpiDebug("Creating remote container: \"%s\", model %s, os %s, version %s, arch %s, platform %s dynamic %s",
+		cname.c_str(), args[1], args[2], args[3], args[4], args[5], args[6]);
       Container &c = *new Container(*client, cname.c_str(), args[1], args[2], args[3], args[4],
-				    args[5], NULL);
+				    args[5], args[6], NULL);
       (void)&c;
     }
     sock = NULL;
@@ -461,8 +462,7 @@ public:
   // In this case we "discover" container servers, each of which serves us 
   // whatever containers are local to that server/system
   unsigned
-  search(const OA::PValue* props, const char **exclude, bool discoveryOnly)
-    throw ( OU::EmbeddedException ) {
+  search(const OA::PValue* props, const char **exclude, bool discoveryOnly, bool verbose) {
     if (g_suppressRemoteDiscovery)
       return 0;
     std::string error;

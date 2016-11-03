@@ -310,21 +310,14 @@
       }
 
       unsigned Driver::
-      search(const OU::PValue */*params*/, const char **exclude, bool /*discoveryOnly*/,
-	     std::string &error) {
+      search(const OU::PValue */*params*/, const char **exclude, bool discoveryOnly,
+	     bool verbose, std::string &error) {
 	// Opening implies canonicalizing the name, which is needed for excludes
+	ocpiInfo("Searching for local Zynq/PL HDL device.");
+	if (verbose)
+	  printf("Searching for local Zynq/PL HDL device.\n");
 	OCPI::HDL::Device *dev = open("0", true, error);
-	if (dev) {
-	  if (exclude)
-	    for (const char **ap = exclude; *ap; ap++)
-	      if (!strcmp(*ap, dev->name().c_str()))
-		goto skipit;
-	  if (!found(*dev, error))
-	    return 1;
-      skipit:
-	  delete dev;
-	}
-	return 0;
+	return dev && !found(*dev, exclude, discoveryOnly, verbose, error) ? 1 : 0;
       }
       
       OCPI::HDL::Device *Driver::

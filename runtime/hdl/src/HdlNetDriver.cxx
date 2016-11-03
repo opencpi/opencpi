@@ -467,10 +467,15 @@ namespace OCPI {
       }
 
       unsigned Driver::
-      search(const OU::PValue *props, const char **exclude, bool discoveryOnly, bool udp,
-	     std::string &error) {
+      search(const OU::PValue *props, const char **excludes, bool discoveryOnly, bool verbose,
+	     bool udp, std::string &error) {
 	if (getenv("OCPI_SUPPRESS_HDL_NETWORK_DISCOVERY"))
 	  return 0;
+	ocpiInfo("Searching for network-based HDL devices%s.",
+		 udp ? " using UDP" : " using L2 Ethernet");
+	if (verbose)
+	  printf("Searching for network-based HDL devices%s.\n",
+		 udp ? " using UDP" : " using L2 Ethernet");
 	unsigned count = 0;
 	OE::IfScanner ifs(error);
 	if (error.size())
@@ -487,7 +492,7 @@ namespace OCPI {
 	  if (eif.up && eif.connected && (!udp || eif.ipAddr.addrInAddr())) {
 	    OE::Address bcast(udp);
 	    ocpiDebug("Sending to broadcast/multicast: %s udp %u", bcast.pretty(), udp);
-	    count += tryIface(eif, bcast, exclude, NULL, discoveryOnly, &macs, error);
+	    count += tryIface(eif, bcast, excludes, NULL, discoveryOnly, &macs, error);
 	    if (error.size()) {
 	      ocpiDebug("Error during network discovery on '%s': %s",
 		       eif.name.c_str(), error.c_str());
@@ -506,15 +511,15 @@ namespace OCPI {
 	for (MacsIter mi = macs.begin(); mi != macs.end(); mi++) {
 	  ocpiInfo("Processing discovery for %s from network address %s",
 		   mi->first.c_str(), mi->second.first.pretty());
-	  Device *d;
-	  if ((d = createDevice(*mi->second.second, mi->second.first, discoveryOnly, error)))
-	    if (found(*d, error))
-	      delete d;
-	    else
-	      count++;
-	  else
+	  std::string err;
+	  Device *dev = createDevice(*mi->second.second, mi->second.first, discoveryOnly, err);
+	  if (dev && !found(*dev, excludes, discoveryOnly, verbose, err)) {
 	    ocpiInfo("error creating device for %s (MAC %s): %s", mi->second.first.pretty(),
 		     mi->first.c_str(), error.c_str());
+	    count++;
+	  }
+	  if (error.empty())
+	    error = err;
 	}
 	return count;
       }

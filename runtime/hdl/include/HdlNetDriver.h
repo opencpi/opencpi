@@ -80,11 +80,12 @@ namespace OCPI {
 	findSocket(OCPI::OS::Ether::Interface &ifc, bool discovery, std::string &error);
 	unsigned
 	search(const OCPI::Util::PValue *props, const char **exclude, bool discoveryOnly,
-	       bool udp, std::string &error);
+	       bool verbose, bool udp, std::string &error);
 	OCPI::HDL::Device *
 	open(const char *etherName, bool discovery, std::string &err);
-	// callback when found
-	virtual bool found(OCPI::HDL::Device &dev, std::string &error) = 0;
+	// Callback when found
+	virtual bool found(OCPI::HDL::Device &dev, const char **excludes, bool discoveryOnly,
+			   bool verbose, std::string &error) = 0;
       };
       class Device
 	: public OCPI::HDL::Device,

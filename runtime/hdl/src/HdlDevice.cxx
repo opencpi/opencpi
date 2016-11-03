@@ -57,7 +57,6 @@ namespace OCPI {
     // Also called after bitstream loading.
     bool Device::
     init(std::string &err) {
-      ocpiDebug("Probing Zynq PL device %p", this);
       m_isAlive = false;
       sig_t old = signal(SIGBUS, catchBusError); // FIXME: we could make this thread safe
       uint64_t magic = 0x0BAD1BADDEADBEEF;

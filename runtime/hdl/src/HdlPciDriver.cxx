@@ -365,45 +365,32 @@ namespace OCPI {
 	return false;
       }
       unsigned Driver::
-      search(const OU::PValue */*params*/, const char **exclude, bool /*discoveryOnly*/,
-	     std::string &error) {
+      search(const OU::PValue */*params*/, const char **excludes, bool discoveryOnly,
+	     bool verbose, std::string &error) {
+	ocpiInfo("Searching for local PCI-based HDL devices.");
+	if (verbose)
+	  printf("Searching for local PCI-based HDL devices.\n");
+	error.clear();
 	unsigned count = 0;
 	const char *dir = m_useDriver ? OCPI_DRIVER_PCI : OCPI_HDL_SYS_PCI_DIR;
 	DIR *pcid = opendir(dir);
-	if (!pcid) {
-#ifdef OCPI_OS_macos
-	    return 0;
-#else
-	  if (m_useDriver)
-	    return 0;
-	  OU::formatString(error, "can't open the %s directory for PCI search", dir);
-#endif
-	} else {
-	  std::string firstError;
-	  for (struct dirent *ent; (ent = readdir(pcid)) != NULL;)
+	if (pcid) {
+	  for (struct dirent *ent; (ent = readdir(pcid)) != NULL; )
 	    if (ent->d_name[0] != '.') {
-	      // Opening implies canonicalizing the name, which is needed for excludes
-	      OCPI::HDL::Device *dev;
-	      if ((dev = open(ent->d_name, error))) {
-		if (exclude)
-		  for (const char **ap = exclude; *ap; ap++)
-		    if (!strcmp(*ap, dev->name().c_str()))
-		      goto skipit; // continue(2);
-		if (!found(*dev, error))
-		  count++;
-	      }
-	      if (error.size()) {
-		if (firstError.empty())
-		  firstError = error;
-		error.clear();
-	      }
-	    skipit:
-	      ;
+	      std::string err;
+	      OCPI::HDL::Device *dev = open(ent->d_name, err);
+	      if (dev && !found(*dev, excludes, discoveryOnly, verbose, err))
+		count++;
+	      if (error.empty())
+		error = err;
 	    }
-	  closedir(pcid); // FIXME: try/catch?
-	  if (!count)
-	    error = firstError; // report the first error if we found nothing
-	}
+	  closedir(pcid);
+	} else if (!m_useDriver)
+#ifndef OCPI_OS_macos
+	  OU::format(error, "can't open the %s directory for PCI search", dir);
+#else
+	;
+#endif
 	return count;
       }
       

@@ -155,7 +155,7 @@ namespace OCPI {
 	    assert(getenv("OCPI_CDK_DIR"));
 	    OU::format(libDir, "%s/lib/%s-%s-%s", getenv("OCPI_CDK_DIR"),
 		       OCPI_CPP_STRINGIFY(OCPI_OS) + strlen("OCPI"),
-		       OCPI_CPP_STRINGIFY(OCPI_OS_VERSION), OCPI_CPP_STRINGIFY(OCPI_PLATFORM));
+		       OCPI_CPP_STRINGIFY(OCPI_OS_VERSION), OCPI_CPP_STRINGIFY(OCPI_ARCH));
 	    if (!OS::FileSystem::exists(libDir)) {
 	      OU::format(err, "when loading the \"%s\" \"%s\" driver, directory \"%s\" does not exist",
 			 d->name, m->name().c_str(), libDir.c_str());

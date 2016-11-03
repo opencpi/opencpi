@@ -36,6 +36,7 @@ namespace OCPI {
       std::string m_model;
       std::string m_os;
       std::string m_osVersion;
+      std::string m_arch; // This is for binaries that can run on multiple platforms
       std::string m_platform;
       std::string m_runtime;
       std::string m_runtimeVersion;

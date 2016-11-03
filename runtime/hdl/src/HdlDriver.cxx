@@ -74,7 +74,7 @@ namespace OCPI {
 	bus ? Zynq::Driver::open(which, forLoad, err) : 
 	ether ? Ether::Driver::open(which, discovery, err) :
 	sim ? Sim::Driver::open(which, discovery, err) : 
-	lsim ? LSim::Driver::open(which, discovery, params, err) : NULL;
+	lsim ? LSim::Driver::open(which, params, err) : NULL;
       ezxml_t config;
       if (forLoad && bus)
 	return dev;
@@ -90,50 +90,66 @@ namespace OCPI {
       unlock();
     }
 
-    // Return true on error or when the device is no longer needed
-    // Caller is reponsible for deleting the device on error
+    // A device has been found (and created).  Its ownership has been passed in to us,
+    // so we will delete it here if there is any error.
+    // Return true if error or if we otherwise discarded the device
+    // Assuming we are called possibly multiple times from a give driver's search method,
+    // record the first error seen.
     bool Driver::
-    found(Device &dev,  std::string &error) {
+    found(Device &dev, const char **excludes, bool discoveryOnly, bool verbose, 
+	  std::string &error) {
       ezxml_t config;
-      if (setup(dev, config, error))
-	return true;
-      bool printOnly;
-      if (OU::findBool(m_params, "printOnly", printOnly) && printOnly) {
-	dev.print();
-	return true;
+      error.clear();
+      if (excludes)
+	for (const char **ap = excludes; *ap; ap++)
+	  if (!strcasecmp(*ap, dev.name().c_str()))
+	    goto out;
+      if (!setup(dev, config, error)) {
+	bool printOnly = false;
+	if ((OU::findBool(m_params, "printOnly", printOnly) && printOnly))
+	  dev.print(); // fall through to delete
+	else {
+	  if (verbose)
+	    dev.print();
+	  if (!discoveryOnly)
+	    createContainer(dev, config, m_params); // no errors?
+	  return false;
+	}
       }
-      return createContainer(dev, config, m_params) == NULL;
+    out:
+      delete &dev;
+      return true;
     } 
 
     unsigned Driver::
-    search(const OA::PValue *params, const char **exclude, bool discoveryOnly) {
+    search(const OA::PValue *params, const char **exclude, bool discoveryOnly, bool verbose) {
       OU::SelfAutoMutex x(this); // protect m_params etc.
       unsigned count = 0;
       m_params = params;
       std::string error;
-      count += Zynq::Driver::search(params, exclude, discoveryOnly, error);
+      count += Zynq::Driver::search(params, exclude, discoveryOnly, verbose, error);
       if (error.size()) {
-	ocpiBad("In HDL Container driver, got PL search error: %s", error.c_str());
+	ocpiBad("In HDL Container driver, got Zynq search error: %s", error.c_str());
 	error.clear();
       }
-      count += Ether::Driver::search(params, exclude, discoveryOnly, false, error);
+      count += Ether::Driver::search(params, exclude, discoveryOnly, verbose, false, error);
       if (error.size()) {
 	ocpiBad("In HDL Container driver, got ethernet search error: %s", error.c_str());
 	error.clear();
       }
-      count += PCI::Driver::search(params, exclude, discoveryOnly, error);
+      count += PCI::Driver::search(params, exclude, discoveryOnly, verbose, error);
       if (error.size()) {
-	ocpiBad("In HDL Container driver, got pci search error: %s", error.c_str());
+	ocpiBad("In HDL Container driver, got PCI search error: %s", error.c_str());
 	error.clear();
       }
-      count += Sim::Driver::search(params, exclude, discoveryOnly, true, error);
+      count += Sim::Driver::search(params, exclude, discoveryOnly, verbose, true, error);
       if (error.size()) {
-	ocpiBad("In HDL Container driver, got sim/udp search error: %s", error.c_str());
+	ocpiBad("In HDL Container driver, got SIM/UDP search error: %s", error.c_str());
 	error.clear();
       }
-      count += LSim::Driver::search(params, exclude, discoveryOnly, error);
+      count += LSim::Driver::search(params, exclude, discoveryOnly, verbose, error);
       if (error.size()) {
-	ocpiBad("In HDL Container driver, got lsim/udp search error: %s", error.c_str());
+	ocpiBad("In HDL Container driver, got LSIM search error: %s", error.c_str());
 	error.clear();
       }
       return count;

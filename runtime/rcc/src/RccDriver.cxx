@@ -27,8 +27,8 @@ namespace OCPI {
     }
     // Per driver discovery routine to create devices
     unsigned Driver::
-    search(const OA::PValue* /* params */, const char **/* exclude */, bool /* discoveryOnly */)
-      throw ( OU::EmbeddedException ) {
+    search(const OA::PValue* /* params */, const char **/* exclude */, bool /* discoveryOnly */,
+	   bool /* verbose */) {
       std::string error;
       return probeContainer("rcc0", error, NULL) ? 1 : 0;
     }

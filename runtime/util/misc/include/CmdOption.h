@@ -93,6 +93,10 @@ namespace {
       assert(val_->m_vt->m_isSequence);                          \
       num = val_->m_nElements;                                   \
       return num ? val_->m_p##t : NULL;				 \
+    }								 \
+    OCPI::API::t *n() const {					 \
+      size_t unused;						 \
+      return n(unused);					         \
     }
     OCPI_OPTIONS
 #undef CMD_OPTION

@@ -550,7 +550,6 @@ file2String(std::string &out, const char *file, char replaceNewLine) {
   FILE *f = fopen(file, "r");
   long size;
   const char *err = NULL;
-
   if (f &&
       fseek(f, 0, SEEK_END) == 0 &&
       (size = ftell(f)) > 0 &&
@@ -754,34 +753,45 @@ baseName(const char *path, std::string &buf) {
 // Search for the given name in a colon separated path
 // Set the full constructed path in "result".
 // Use pattern matching (the file iterator) to enable the "item" to be wildcarded,
-// and return the first one found.
-// Return true on error
+// and return the first one found unless "all" is non-null in which case record them all
+// Return true on error: none found
 bool
-searchPath(const char *path, const char *item, std::string &result, const char *preferred) {
+searchPath(const char *path, const char *item, std::string &result, const char *preferred,
+	   std::vector<std::string> *all) {
   std::string copy(path), pattern(item);
   char *cp = &copy[0], *last;
+  result.clear();
   for (char *lp = strtok_r(cp, ":", &last); lp; lp = strtok_r(NULL, ":", &last)) {
     std::string dir(lp); // FIXME iterator should have constructor with char*
     bool isDir;
     if (!OS::FileSystem::exists(dir, &isDir) || !isDir)
       continue;
+    std::string found;
     if (preferred) {
       std::string pdir(dir + "/" + preferred);
       if (OS::FileSystem::exists(pdir, &isDir) || !isDir) {
-	OS::FileIterator fi(pdir, pattern);
-	if (!fi.end()) {
-	  result = fi.absoluteName();
-	  return false;
+	for (OS::FileIterator fi(pdir, pattern); !fi.end(); fi.next()) {
+	  found = fi.absoluteName();
+	  if (result.empty())
+	    result = found;
+	  if (all)
+	    all->push_back(found);
+	  else
+	    return false;
 	}
       }
     }
-    OS::FileIterator fi(dir, pattern);
-    if (!fi.end()) {
-      result = fi.absoluteName();
-      return false;
+    for (OS::FileIterator fi(dir, pattern); !fi.end(); fi.next()) {
+      found = fi.absoluteName();
+      if (result.empty())
+	result = found;
+      if (all)
+	all->push_back(found);
+      else
+	return false;
     }
   }
-  return true;
+  return result.empty();
 }
   }
 

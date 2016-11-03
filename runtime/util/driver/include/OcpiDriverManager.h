@@ -193,8 +193,9 @@ namespace OCPI {
       // Per driver discovery routine to create devices that are found,
       // excluding the ones named in the "exclude" list.
       virtual unsigned search(const PValue* props = NULL, const char **exclude = NULL,
-			      bool discoveryOnly = false) {
-	(void) props; (void) exclude; (void) discoveryOnly; return 0;
+			      bool discoveryOnly = false, bool verbose = false) {
+	(void) props; (void) exclude; (void) discoveryOnly; (void)verbose;
+	return 0;
       }
       // Probe for a particular device and return it if found, and creating it
       // if not yet created. Return NULL if it is not found.

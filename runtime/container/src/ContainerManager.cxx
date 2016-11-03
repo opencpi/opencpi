@@ -185,6 +185,8 @@ namespace DataTransfer {
     OCPI::Util::Uuid uuid;
     OCPI::Util::UuidString us;
     OCPI::Util::uuid2string(uuid, us);
+    std::string str;
+    OCPI::Util::searchPath(NULL, NULL, str, NULL, NULL);
     createHostSmemServices(loc);
     Msg::XferFactoryManager::getFactoryManager();
     OCPI::OS::Socket s;

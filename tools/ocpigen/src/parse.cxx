@@ -59,8 +59,8 @@ OCPI_PROPERTY_DATA_TYPES
 0};
 #undef OCPI_DATA_TYPE
 
-const char *g_platform = 0, *g_device = 0, *load = 0, *g_os = 0, *g_os_version = 0, *assembly = 0,
-  *attribute, *platformDir;
+const char *g_platform = 0, *g_device = 0, *load = 0, *g_os = 0, *g_os_version = 0, *g_arch = 0,
+  *assembly = 0, *attribute, *platformDir;
 
 Clock *Worker::
 addClock() {
@@ -1106,8 +1106,9 @@ emitArtXML(const char *wksFile) {
   if (g_os)         fprintf(f, " os=\"%s\"",        g_os);
   if (g_os_version) fprintf(f, " osVersion=\"%s\"", g_os_version);
   if (g_platform)   fprintf(f, " platform=\"%s\"",  g_platform);
+  if (g_arch)       fprintf(f, " arch=\"%s\"",  g_arch);
   if (g_device)     fprintf(f, " device=\"%s\"", g_device);
-  if (m_dynamic)  fprintf(f, " dynamic='1'");
+  if (m_dynamic)    fprintf(f, " dynamic='1'");
   fprintf(f, ">\n");
   emitXmlWorkers(f);
   emitXmlInstances(f);

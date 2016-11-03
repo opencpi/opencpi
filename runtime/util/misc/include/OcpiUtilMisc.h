@@ -54,6 +54,7 @@
 #include <string>
 #include <istream>
 #include <functional>
+#include <vector>
 
 #include "OcpiOsAssert.h"
 #include "OcpiOsEther.h"
@@ -431,7 +432,7 @@ namespace OCPI {
       // find item in colon-separated path, returning complete path in "result"
       // return true on error
       bool searchPath(const char *path, const char *item, std::string &result,
-		      const char *preferredSuffix = NULL);
+		      const char *preferredSuffix = NULL, std::vector<std::string> *all = NULL);
       // A convenience template for singletons possibly created at static construction
       // time (moved from OcpiDriverManager)
       template <class S> class Singleton {

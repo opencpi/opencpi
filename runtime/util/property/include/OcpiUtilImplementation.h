@@ -90,13 +90,14 @@ namespace OCPI {
     public:
       std::string
 	m_uuid,
-	m_os, m_osVersion,
+	m_os, m_osVersion, m_arch,
 	m_platform,
 	m_tool, m_toolVersion,
 	m_runtime, m_runtimeVersion;
       bool m_dynamic;
       inline const std::string &uuid() const { return m_uuid; }
       inline const std::string &platform() const { return m_platform; }
+      inline const std::string &arch() const { return m_arch; }
     protected:
       // Parse from target string
       void parse(const char *pString);

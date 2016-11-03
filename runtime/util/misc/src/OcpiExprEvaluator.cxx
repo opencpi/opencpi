@@ -37,6 +37,8 @@
 #include <cstdlib>
 #include <cassert>
 #include <limits>
+#include <cfloat>
+#include <cerrno>
 #include <gmpxx.h>
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
@@ -766,7 +768,7 @@ getTypedValue(Value &v, size_t index) const {
   case OA::OCPI_Float:
     if (!isNumber())
       return "A string value cannot be assigned to a float property";
-    if (m_internal->m_number < std::numeric_limits<float>::lowest() ||
+    if (m_internal->m_number < -std::numeric_limits<float>::max() ||
 	m_internal->m_number > std::numeric_limits<float>::max())
       return esprintf("Value %s out of range for type: float",
 		      mpfString(m_internal->m_number, s));
@@ -775,7 +777,7 @@ getTypedValue(Value &v, size_t index) const {
   case OA::OCPI_Double:
     if (!isNumber())
       return "A string value cannot be assigned to a double property";
-    if (m_internal->m_number < std::numeric_limits<double>::lowest() ||
+    if (m_internal->m_number < -std::numeric_limits<double>::max() ||
 	m_internal->m_number > std::numeric_limits<double>::max())
       return esprintf("Value %s out of range for type: double",
 		      mpfString(m_internal->m_number, s));
