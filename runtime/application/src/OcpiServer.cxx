@@ -22,9 +22,10 @@ namespace OCPI {
   namespace Application {
 
     Server::
-    Server(bool verbose, bool discoverable, OCPI::Library::Library &a_library, uint16_t port,
-	   bool remove, std::string &error)
-      : m_library(a_library), m_verbose(verbose), m_remove(remove), m_disc(NULL),
+    Server(bool verbose, bool discoverable, bool loopback, bool onlyloopback,
+	   OCPI::Library::Library &library, uint16_t port, bool remove, const char *addrFile,
+	   std::string &error)
+      : m_library(library), m_verbose(verbose), m_remove(remove), m_disc(NULL),
 	m_maxFd(-1), m_sleepUsecs(1000000) {
       if (!error.empty())
 	return;
@@ -41,77 +42,111 @@ namespace OCPI {
 	  return;
 	addFd(m_disc->fd(), true);
 	OE::Interface eif;
+	std::string loopName;
 	OE::Address udp(true, 17171);
 	ocpiInfo("Listening on all network interfaces to be discovered as a container server");
 	while (ifs.getNext(eif, error, NULL) && error.empty()) {
 	  if (eif.up && eif.connected && eif.ipAddr.addrInAddr()) {
-	    ocpiDebug("Interface \"%s\" up and connected and has IP address.",
-		      eif.name.c_str());
-	    if (m_name.empty())
+	    ocpiDebug("Interface \"%s\"(%u) up and connected and has IP address %s.",
+		      eif.name.c_str(), eif.index, eif.ipAddr.prettyInAddr());
+	    if (eif.loopback) {
+	      loopName = eif.ipAddr.prettyInAddr();
+	      if (!loopback && !onlyloopback)
+		continue;
+	    } else if (onlyloopback)
+	      continue;
+	    else if (m_name.empty())
 	      m_name = eif.ipAddr.prettyInAddr();
 	    OE::Socket *s = new OE::Socket(eif, ocpi_device, &udp, 0, error);
 	    if (!error.empty()) {
 	      delete s;
 	      return;
 	    }
+	    ocpiDebug("Creating discovery socket %p for responses on %s(%u) %u",
+		      s, eif.name.c_str(), eif.index, s->ifIndex());
 	    m_discSockets.push_back(s);
 	    addFd(s->fd(), true);
 	  }
 	}
 	if (m_discSockets.empty())
 	  error = "no network interfaces found";
+	else if (m_name.empty())
+	  m_name = loopName;
       }
       if (!error.empty())
 	return;
-      m_server.bind(port);
+      m_server.bind(port, false, false, onlyloopback);
       port = m_server.getPortNo();
       OE::Address a;
       m_server.getAddr(a);
       addFd(m_server.fd(), true);
-      // Note that m_name has the IP address of hte FIRST interface we found...
+      // Note that m_name has the IP address of the FIRST interface we found...
+      if (m_name.empty())
+	m_name = a.prettyInAddr();
       OU::formatAdd(m_name, ":%u", port);
       if (verbose) {
 	if (discoverable) {
 	  fprintf(stderr,
-		  "Container server at %s\n  TCP: %s, discoverable at UDP %s)\n"
+		  "Container server %s at %s, discoverable at UDP: %s\n"
 		  "  Using UDP discovery response addresses:\n",
 		  m_name.c_str(), a.pretty(), m_disc->ifAddr().pretty());
 	  for (DiscSocketsIter ci = m_discSockets.begin(); ci != m_discSockets.end(); ci++)
 	    fprintf(stderr, "    %s\n", (*ci)->ifAddr().pretty());
 	} else
-	  fprintf(stderr, "Container server at %s (IP: %s)\n", m_name.c_str(), a.pretty());
-	if (a.addrInAddr() == 0) {
-	  fprintf(stderr, "  Available TCP addresses are:\n");
-	  OE::IfScanner ifs(error);
-	  if (error.length())
-	    return;
-	  OE::Interface eif;
-	  size_t len = 0;
+	  fprintf(stderr, "Container server at %s\n", a.pretty());
+      }
+      FILE *safp = NULL;
+      if (addrFile && (safp = fopen(addrFile, "w")) == NULL) {
+	OU::format(error, "Can't open file \"%s\" for writing server addresses", addrFile);
+	return;
+      }
+      if (verbose || addrFile) {
+	OE::IfScanner ifs(error);
+	if (error.length())
+	  return;
+	OE::Interface eif;
+	size_t len = 0;
+	if (verbose) {
 	  for (unsigned n = 0; ifs.getNext(eif, error, NULL) && error.empty(); n++)
 	    if (eif.up && eif.connected && eif.ipAddr.addrInAddr() &&
 		eif.name.length() > len)
 	      len = eif.name.length();
 	  ifs.reset();
-	  for (unsigned n = 0; ifs.getNext(eif, error, NULL) && error.empty(); n++)
-	    if (eif.up && eif.connected && eif.ipAddr.addrInAddr()) {
-	      const char *pretty = eif.ipAddr.pretty();
-	      fprintf(stderr, "    On interface %s: %*s%.*s:%u\n", eif.name.c_str(),
-		      (int)(len - eif.name.length()), "",
-		      (int)(strchr(pretty, ':') - pretty), pretty, a.addrPort());
-	    }
+	  fprintf(stderr, "  Available TCP server addresses are:\n");
 	}
-	fprintf(stderr,
-		"Artifacts stored/cached in the directory \"%s\"; which will be %s on exit.\n",
-		m_library.libName().c_str(), m_remove ? "removed" : "retained");
-	fprintf(stderr, "Containers offered to clients are:\n");
+	for (unsigned n = 0; ifs.getNext(eif, error, NULL) && error.empty(); n++)
+	  if (eif.up && eif.connected && eif.ipAddr.addrInAddr() &&
+	      ((eif.loopback && (onlyloopback || loopback)) ||
+	       (!eif.loopback && !onlyloopback))) {
+	    const char *pretty = eif.ipAddr.pretty();
+	    std::string addr;
+	    OU::format(addr, "%.*s:%u", (int)(strchr(pretty, ':') - pretty), pretty,
+		       a.addrPort());
+	    if (verbose)
+	      fprintf(stderr, "    On interface %s: %*s%s\n", eif.name.c_str(),
+		      (int)(len - eif.name.length()), "", addr.c_str());
+	    if (addrFile)
+	      fprintf(safp, "%s\n", addr.c_str());
+	  }
+	if (verbose) {
+	  if (addrFile)
+	    fprintf(stderr, "Server IP addresses stored in file \"%s\", one per line.\n",
+		    addrFile);
+	  fprintf(stderr,
+		  "Artifacts stored/cached in the directory \"%s\"; which will be %s on exit.\n",
+		  m_library.libName().c_str(), m_remove ? "removed" : "retained");
+	  fprintf(stderr, "Containers offered to clients are:\n");
 	  OA::Container *ac;
 	  for (unsigned n = 0; (ac = OA::ContainerManager::get(n)); n++) {
 	    OC::Container &c = *static_cast<OC::Container *>(ac);
-	    fprintf(stderr, "  %2d: %s model %s os %s osVersion %s platform %s\n",
+	    fprintf(stderr, "  %2d: %s, model: %s, os: %s, osVersion: %s, platform: %s\n",
 		    n, c.name().c_str(), c.model().c_str(), c.os().c_str(),
 		    c.osVersion().c_str(), c.platform().c_str());
 	  }
-	fflush(stderr);
+	  fflush(stderr);
+	}
+	if (safp)
+	  fclose(safp);
       }
     }
     Server::~Server() {
@@ -193,8 +228,8 @@ namespace OCPI {
       OE::Address from;
       unsigned index = 0;
       if (m_disc->receive(rFrame, length, 0, from, error, &index)) {
-	ocpiDebug("Received container server discovery request from %s, length %zu",
-		  from.pretty(), length);
+	ocpiDebug("Received to %s container server discovery request from %s, length %zu, index %u",
+		  m_name.c_str(), from.pretty(), length, index);
 	if (index) {
 	  OE::Socket *s = NULL;
 	  for (DiscSocketsIter ci = m_discSockets.begin(); ci != m_discSockets.end(); ci++)
@@ -203,8 +238,8 @@ namespace OCPI {
 	      break;
 	    }
 	  if (!s) {
-	    OU::format(error, "can't find a client socket with interface %u", index);
-	    return true;
+	    ocpiInfo("received discovery from unsupported interface index %u, perhaps loopback not enabled?", index);
+	    return false;
 	  }
 	  char
 	    *start = (char *)rFrame.payload,
@@ -216,7 +251,8 @@ namespace OCPI {
 	  if (OR::Server::fillDiscoveryInfo(cp, left, error))
 	    return true;
 	  length = OE::MaxPacketSize - left;
-	  ocpiDebug("Container server discovery returns: \n%s---end of discovery", start);
+	  ocpiDebug("Container server %s discovery returns: \n%s---end of discovery",
+		    m_name.c_str(), start);
 	  return !s->send(rFrame, length, from, 0, NULL, error);
 	} else
 	  error = "No interface index for receiving discovery datagrams";

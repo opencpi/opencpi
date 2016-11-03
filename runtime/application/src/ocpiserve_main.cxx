@@ -12,18 +12,21 @@ namespace OU =  OCPI::Util;
 
 #define OCPI_OPTIONS_HELP \
   "Usage syntax is: ocpiserve [options]\n" \
-  "This command acts as a server allowing other systems to use this system's containers.\n"
+  "This command acts as a server allowing other systems to use this system's containers.\n" \
+  "Some option must be provided, e.g. -v, or -d, or -p.\n"
 #define OCPI_OPTIONS \
   CMD_OPTION(directory,  D,    String, "artifacts", "The directory used to capture artifact/executable files") \
-  CMD_OPTION(verbose,    v,    Bool,   "false", "Provide verbose output during operation") \
-  CMD_OPTION(loglevel,   l,    UChar,  "0",     "The logging level to be used during operation") \
-  CMD_OPTION(processors, n,    UShort,  "1",     "The number of software (rcc) containers to create") \
-  CMD_OPTION(remove,     r,    Bool,   "false", "Remove artifacts") \
-  CMD_OPTION(port,       p,    UShort, 0, "Explicit TCP port for server") \
-  CMD_OPTION(discoverable, d,  Bool,   "true", "Make server discoverable.") \
+  CMD_OPTION(verbose,    v,    Bool,    0,   "Provide verbose output during operation") \
+  CMD_OPTION(loglevel,   l,    UChar,   "0", "The logging level to be used during operation") \
+  CMD_OPTION(processors, n,    UShort,  "1", "The number of software (rcc) containers to create") \
+  CMD_OPTION(remove,     r,    Bool,    0,   "Remove artifacts") \
+  CMD_OPTION(port,       p,    UShort,  0,   "Explicit TCP port for server, zero for any") \
+  CMD_OPTION(discoverable, d,  Bool,    0,   "Make server discoverable, via UDP") \
+  CMD_OPTION(addresses , a,    String,  0,   "Write TCP addresses to this file, one per line") \
+  CMD_OPTION(loopback  , L,    Bool,    0,   "Include loopback network server address") \
+  CMD_OPTION(onlyloopback, O,  Bool,    0,   "Include ONLY loopback network server address") \
 
-// Others: socket number to use, whether to be discoverable, whether to be loopback/local only?
-
+// FIXME: local-only like ocpihdl simulate?
 #include "CmdOption.h"
 
 namespace OC = OCPI::Container;
@@ -66,11 +69,6 @@ static int mymain(const char **) {
   // The directory is not created until it is needed.
   OCPI::OS::logSetLevel(options.loglevel());
   setenv("OCPI_LIBRARY_PATH", options.directory(), 1);
-  for (unsigned n = 1; n < options.processors(); n++) {
-    std::string name;
-    OU::formatString(name, "rcc%d", n);
-    OA::ContainerManager::find("rcc", name.c_str());
-  }
   // Catch signals in order to delete the artifact cache
   if (options.remove()) {
     ocpiCheck(signal(SIGINT, sigint) != SIG_ERR);
@@ -79,9 +77,24 @@ static int mymain(const char **) {
   OCPI::Remote::g_suppressRemoteDiscovery = true;
   OCPI::Driver::ManagerManager::configure();
   assert(OCPI::Library::Library::s_firstLibrary);
+  for (unsigned n = 1; n < options.processors(); n++) {
+    std::string name;
+    OU::formatString(name, "rcc%d", n);
+    OA::ContainerManager::find("rcc", name.c_str());
+  }
+  const char *addrFile = options.addresses();
+  if (!addrFile)
+    addrFile = getenv("OCPI_SERVER_ADDRESSES_FILE");
+  if (!addrFile)
+    addrFile = getenv("OCPI_SERVER_ADDRESS_FILE"); // deprecated
+  if (options.verbose())
+    fprintf(stderr, "Discovery options:  discoverable: %u, loopback: %u, onlyloopback: %u\n",
+	    options.discoverable(), options.loopback(), options.onlyloopback());
   OCPI::Application::Server server(options.verbose(), options.discoverable(),
+				   options.loopback(), options.onlyloopback(),
 				   *OCPI::Library::Library::s_firstLibrary,
-				   options.port(), options.remove(), options.error());
+				   options.port(), options.remove(), addrFile,
+				   options.error());
   if (options.error().length() || server.run(options.error()))
     options.bad("Container server error");
   if (options.remove())

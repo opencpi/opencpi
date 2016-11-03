@@ -409,16 +409,18 @@ namespace OCPI {
       *cp = '\0'; // in case there are NO containers
       for (unsigned n = 0; (ac = OA::ContainerManager::get(n)); n++) {
 	OC::Container &c = *static_cast<OC::Container *>(ac);
-	size_t inserted =
-	  snprintf(cp, length, "%s|%s|%s|%s|%s|%c\n", c.name().c_str(), c.model().c_str(),
-		   c.os().c_str(), c.osVersion().c_str(), c.platform().c_str(),
+	std::string info;
+	OU::format(info, "%s|%s|%s|%s|%s|%s|%c|", c.name().c_str(), c.model().c_str(), c.os().c_str(),
+		   c.osVersion().c_str(), c.arch().c_str(), c.platform().c_str(),
 		   c.dynamic() ? '1' : '0');
-	if (inserted >= length) {
+	info += '\n';
+	if (info.length() >= length) {
 	  OU::format(error, "Too many containers, discovery buffer would overflow");
 	  return true;
 	}
-	cp += inserted;
-	length -= inserted;
+	strcpy(cp, info.c_str());
+	cp += info.length();
+	length -= info.length();
       }
       length--; // account for the null char of the last line
       return false;

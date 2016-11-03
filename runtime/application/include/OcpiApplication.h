@@ -65,6 +65,10 @@ namespace OCPI {
       OCPI::Library::Assembly &m_assembly;
 
       size_t m_nInstances;
+      struct Deployment {
+	unsigned candidate;            // running counter of where we are in candidates list
+	unsigned container;            // running counters for containers for candidate
+      } *m_deployments, *m_bestDeployments;
       // This structure is used during deployment planning.
       struct Instance {
 	const OCPI::Library::Implementation *m_impl; // The chosen, best implementation
@@ -74,19 +78,14 @@ namespace OCPI {
 	Instance();
 	~Instance();
       } *m_instances;
-      // The instance objects for the launcher
-      OCPI::Container::Launcher::Instances m_launchInstances;
-      OCPI::Container::Launcher::Connections m_launchConnections;
       struct Booking {
 	OCPI::Library::Artifact *m_artifact;
 	CMap m_usedImpls;         // which fixed implementations in the artifact are in use
 	Booking() : m_artifact(NULL), m_usedImpls(0) {}
       } *m_bookings;
-
-      struct Deployment {
-	unsigned candidate;            // running counter of where we are in candidates list
-	unsigned container;            // running counters for containers for candidate
-      } *m_deployments, *m_bestDeployments;
+      // The instance objects for the launcher
+      OCPI::Container::Launcher::Instances m_launchInstances;
+      OCPI::Container::Launcher::Connections m_launchConnections;
       // This class represents a mapping from an externally visible property of the assembly
       // to an individual property of an instance. It must be at this layer
       // (not util::assembly or library::assembly) because it potentially depends on the 

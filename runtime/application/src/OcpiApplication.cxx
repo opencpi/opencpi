@@ -549,7 +549,12 @@
 	 for (unsigned m = 0; m < i->m_nCandidates; m++) {
 	   m_curMap = 0;        // to accumulate containers suitable for this candidate
 	   m_curContainers = 0; // to count suitable containers for this candidate
-	   (void)OC::Manager::findContainers(*this, cs[m].impl->m_metadataImpl,
+	   OU::Worker &w = cs[m].impl->m_metadataImpl;
+	   ocpiInfo("Checking implementation %s model %s os %s version %s arch %s platform %s dynamic %u",
+		    w.name().c_str(), w.model().c_str(), w.attributes().m_os.c_str(),
+		    w.attributes().m_osVersion.c_str(), w.attributes().m_arch.c_str(),
+		    w.attributes().m_platform.c_str(), w.attributes().m_dynamic);
+	   (void)OC::Manager::findContainers(*this, w,
 					     container.empty() ? NULL : container.c_str());
 	   i->m_feasibleContainers[m] = m_curMap;
 	   sum |= m_curMap;
@@ -562,9 +567,10 @@
 	     for (unsigned m = 0; m < i->m_nCandidates; m++) {
 	       const OL::Implementation &lImpl = *cs[m].impl;
 	       OU::Worker &mImpl = lImpl.m_metadataImpl;
-	       fprintf(stderr, "  Name: %s, Model: %s, Platform: %s%s%s, File: %s\n",
+	       fprintf(stderr, "  Name: %s, Model: %s, Arch: %s, Platform: %s%s%s, File: %s\n",
 		       mImpl.name().c_str(),
 		       mImpl.model().c_str(),
+		       lImpl.m_artifact.arch().c_str(),
 		       lImpl.m_artifact.platform().c_str(),
 		       lImpl.m_staticInstance ? ", Artifact instance: " : "",
 		       lImpl.m_staticInstance ? ezxml_cattr(lImpl.m_staticInstance, "name") : "",

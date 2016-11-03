@@ -73,10 +73,10 @@
   CMD_OPTION(seconds,    t, Long,   0, "<seconds>\n" \
 	                               "specify seconds to wait for application to finish\n" \
                                        "if negative, wait up to that number of seconds\n")\
-  CMD_OPTION(list,       C, Bool,   0, "show available containers") \
-  CMD_OPTION(servers,    S, String, 0, "comma-separated list of servers to explicitly contact (no UDP discovery)") \
+  CMD_OPTION(list,       C, Bool,   0, "show available containers, even with no application xml file") \
+  CMD_OPTION_S(server,   S, String, 0, "a server to explicitly contact, without UDP discovery") \
   CMD_OPTION(remote,     R, Bool,   0, "discover/include/use remote containers") \
-  CMD_OPTION(exclude,    X, String, 0, "comma-separated list of containers to exclude from usage") \
+  CMD_OPTION_S(exclude,  X, String, 0, "a container to exclude from usage") \
   CMD_OPTION_S(transport,T, String, 0, "<instance-name>=<port-name>=<transport-name>\n" \
 	                               "set transport of connection at a port\n" \
 	                               "if no port name, then the single output port") \
@@ -89,8 +89,9 @@
   CMD_OPTION_S(buffersize, Z, String,0, "<instance-name>=<port-name>=<buffersize>\n" \
 	                               "set buffer size at a port\n" \
 	                               "if no port name, then the single output port") \
-  CMD_OPTION(artifacts,  A, String, 0, "comma-separated list of targets to print artifacts in path on stdout") \
-  CMD_OPTION(specs,      G, String, 0, "comma-separated list of targets to print specs in path on stdout") \
+  CMD_OPTION_S(target,   r, String, 0, "a target to use when printing artifacts or specs in path on stdout") \
+  CMD_OPTION(list_artifacts,, Bool, 0, "print artifacts in path on stdout, for targets specified with --target") \
+  CMD_OPTION(list_specs,,     Bool, 0, "print specs in path on stdout, for targets specified with --target") \
   CMD_OPTION(uncached,   U, Bool,   0, "dump cached properties uncached, ignoring cache") \
   CMD_OPTION(deployment, ,  String, 0, "XML file to read deployment from, avoid automatic deployment") \
   CMD_OPTION(deploy_out, ,  String, 0, "XML file to write deployment to") \
@@ -103,6 +104,9 @@
   CMD_OPTION(art_lib_path,L,String, 0, "Specify/override OCPI_LIBRARY_PATH") \
   CMD_OPTION(dumpPlatforms,M,Bool,  0, "dump platform and device worker properties") \
   CMD_OPTION(sim_ticks,  ,  ULong,  0, "simulator clock cycles to allow") \
+  CMD_OPTION(artifacts,  A, String, 0, "deprecated: comma-separated targets to print artifacts in path on stdout") \
+  CMD_OPTION(specs,      G, String, 0, "deprecated: comma-separated targets to print specs in path on stdout") \
+  CMD_OPTION(only_platforms,, Bool, 0, "modifies the list command to show only platforms")\
   /**/
 #include "CmdOption.h"
 #include "RemoteServer.h"
@@ -127,35 +131,191 @@ static const char *doServer(const char *server, void *) {
   static std::string error;
   return OR::useServer(server, options.verbose(), NULL, error) ? error.c_str() : NULL;
 }
-static bool specs;
-static const char *doTarget(const char *target, void *) {
+static void doTarget(const char *target, bool specs) {
   static std::string error;
   OL::Capabilities caps;
   const char *dash = strchr(target, '-');
   if (dash) {
-    caps.m_os.assign(target, dash - target);
-    target = ++dash;
-    dash = strchr(target, '-');
-    if (dash) {
-      caps.m_osVersion.assign(target, dash - target);
+    const char *dash1 = strchr(dash+1, '-');
+    if (dash1) {
+      caps.m_os.assign(target, dash - target);
       target = ++dash;
+      dash = strchr(target, '-');
+      if (dash) {
+	caps.m_osVersion.assign(target, dash - target);
+	target = ++dash;
+      }
+      caps.m_arch = target;
+    } else {
+      caps.m_osVersion.assign(target, dash - target);
+      caps.m_arch = ++dash;
     }
-    caps.m_platform = target;
   } else
     caps.m_platform = target;
   OL::Manager::printArtifacts(caps, specs);
-  return NULL;
 }
 
-#if 0
-static const char *arg(const char **&ap) {
-  if (ap[0][2])
-    return &ap[0][2];
-  if (!ap[1])
-    throw OU::Error("Missing argument to the -%c option", ap[0][1]);
-  return *++ap;
+// Return true on error
+static bool setup(const char *arg, ezxml_t &xml, std::string &error) {
+  const char *e = NULL;
+  std::string file;  // the file that the application XML came from
+  if (arg) {
+    if (options.artifacts() || options.list_artifacts() ||
+	options.specs() || options.list_specs())
+      return
+	OU::eformat(error,
+		    "can't request printing artifacts or specs and also specify an xml file (%s)", arg);
+    file = arg;
+    bool isDir;
+    if (!OS::FileSystem::exists(file, &isDir) || isDir) {
+      file += ".xml";
+      if (!OS::FileSystem::exists(file))
+	return OU::eformat(error, "file %s (or %s.xml) does not exist", arg, arg);
+    }
+    if ((e = OE::ezxml_parse_file(file.c_str(), xml)))
+      return OU::eformat(error, "parsing XML file %s: %s", file.c_str(), e);
+    if (!strcasecmp(ezxml_name(xml), "deployment")) {
+      file.clear();
+      OE::getOptionalString(xml, file, "application");
+      if (file.empty())
+	return
+	  OU::eformat(error,
+		      "Input file \"%s\" is a deployment file with no application attribute",
+		      arg);
+      if (!OS::FileSystem::exists(file)) {
+	file += ".xml";
+	if (!OS::FileSystem::exists(file))
+	  return OU::eformat(error, "application file %s (or %s) does not exist", file.c_str(),
+			     file.c_str());
+      }
+      if ((e = OE::ezxml_parse_file(file.c_str(), xml)))
+	return OU::eformat(error, "parsing XML file %s: %s", file.c_str(), e);
+    } else if (strcasecmp(ezxml_name(xml), "application"))
+      return OU::eformat(error, "file \"%s\" is a \"%s\" XML file.", file.c_str(),
+			 ezxml_name(xml));
+  } else if (options.artifacts() || options.list_artifacts() || options.specs() || options.list_specs()) {
+    // FIXME: no way to suppress all discovery EXCEPT one manager...
+    OCPI::Container::Manager::getSingleton().suppressDiscovery();
+    DataTransfer::getManager().suppressDiscovery();
+    const char **targets;
+    // ========= start backwards compatibility
+    struct Here {
+      std::list<std::string> stargets;
+      std::vector<const char *> ptargets;
+      static const char *addTarget(const char *target, void *arg) {
+	Here &me = *(Here *)arg;
+	me.stargets.push_back(target);
+	me.ptargets.push_back(me.stargets.back().c_str());
+	return NULL;
+      }
+    } here;
+    if (options.artifacts() || options.specs()) {
+      if ((options.artifacts() && 
+	   (e = OU::parseList(options.artifacts(), Here::addTarget, &here))) ||
+	  (options.specs() && 
+	   (e = OU::parseList(options.specs(), Here::addTarget, &here))))
+	return OU::eformat(error, "processing artifact target list (\"%s%s\"): %s",
+			   options.artifacts(), options.specs(), e);
+      here.ptargets.push_back(NULL);
+      targets = &here.ptargets[0];
+    } else
+    // ========= end backwards compatibility
+      targets = options.target();
+    for (const char **tp = targets; *tp; ++tp)
+      doTarget(*tp, options.specs() || options.list_specs());
+    return false;
+  } else if (options.list()) { // no xml here
+    OCPI::Library::Manager::getSingleton().suppressDiscovery();
+    DataTransfer::getManager().suppressDiscovery();
+  }
+  if (options.deployment())
+    OCPI::Library::Manager::getSingleton().suppressDiscovery();
+  if (!options.remote())
+    OR::g_suppressRemoteDiscovery = true;
+  (void)OA::ContainerManager::get(0); // force config before looking for servers
+  // server arguments and server environment variables are all used, no shadowing
+  size_t dumb;
+  for (const char **ap = options.server(dumb); ap && *ap; ap++)
+    if ((e = doServer(*ap, NULL)))
+      return OU::eformat(error, "when using server \"%s\": %s", *ap, e);
+  char *saddr = getenv("OCPI_SERVER_ADDRESSES");
+  if (!saddr)
+    saddr = getenv("OCPI_SERVER_ADDRESS");
+  if (saddr && (e = OU::parseList(saddr, doServer)))
+    return OU::eformat(error, "when using servers: %s", e);
+  OA::Container *c;
+  if (options.processors())
+    for (unsigned n = 1; n < options.processors(); n++) {
+      std::string name;
+      OU::formatString(name, "rcc%d", n);
+      OA::ContainerManager::find("rcc", name.c_str());
+    }
+  std::vector<OA::PValue> simParams;
+  if (options.sim_dir())
+    addParam("directory", options.sim_dir(), simParams);
+  if (options.sim_ticks())
+    simParams.push_back(OA::PVULong("simTicks", options.sim_ticks()));
+  if (options.verbose())
+    simParams.push_back(OA::PVBool("verbose", true));
+  if (options.dump())
+    simParams.push_back(OA::PVBool("dump", true));
+  if (simParams.size())
+    simParams.push_back(OA::PVEnd);
+  if (!options.simulator()) {
+    // If simulators are not mentioned explicitly (with -H), but are mentioned as
+    // platforms for some or all instances, create the container.
+    // Also, since simulators are not really registered yet, we just look for the
+    // trailing "sim" in the name.
+    typedef std::set<const char *, OU::ConstCharComp> Plats;
+    Plats plats;
+    for (const char **plat = options.platform(); plat && *plat; plat++) {
+      const char *eq = strrchr(*plat, '=');
+      eq = eq ? eq + 1 : *plat;
+      size_t len = strlen(eq);
+      if (len > 3 && !strcmp(eq + len - 3, "sim"))
+	plats.insert(eq);
+    }
+    for (Plats::const_iterator it = plats.begin(); it != plats.end(); it++) {
+      std::string name;
+      OU::format(name, "lsim:%s0", *it);
+      OA::ContainerManager::find("hdl", name.c_str(),
+				 simParams.size() ? &simParams[0] : NULL);
+    }	    
+  } else {
+    unsigned n = 0;
+    for (const char **sims = options.simulator(); *sims; sims++, n++) {
+      std::string name;
+      OU::format(name, "lsim:%s%d", *sims, n);
+      OA::ContainerManager::find("hdl", name.c_str(), simParams.size() ? &simParams[0] : NULL);
+    }
+  }
+  if (options.list()) {
+    (void)OA::ContainerManager::get(0); // force config/discovery
+    if (options.only_platforms()) {
+      std::set<std::string> plats;
+      for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)
+	plats.insert(c->platform());
+      for (std::set<std::string>::const_iterator i = plats.begin(); i != plats.end(); ++i)
+	printf("%s\n", i->c_str());
+    } else {
+      printf("Available containers:\n"
+	     " #  Model Platform       OS     OS-Version  Arch     Name\n");
+      for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)
+	printf("%2u  %-5s %-14s %-6s %-11s %-8s %s\n",
+	       n,  c->model().c_str(), c->platform().c_str(), c->os().c_str(),
+	       c->osVersion().c_str(), c->arch().c_str(), c->name().c_str());
+    }
+    fflush(stdout);
+  } else if (options.verbose()) {
+    for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)
+      fprintf(stderr, "%s%u: %s [model: %s os: %s platform: %s]",
+	      n ? ", " : "Available containers are:  ", n,
+	      c->name().c_str(), c->model().c_str(), c->os().c_str(), c->platform().c_str());
+    fprintf(stderr, "\n");
+  }
+  return false;
 }
-#endif
+
 static int mymain(const char **ap) {
   std::vector<OA::PValue> params;
 
@@ -202,143 +362,10 @@ static int mymain(const char **ap) {
   
   std::string file;  // the file that the application XML came from
   ezxml_t xml = NULL;
-  char *err = NULL;
-  try {
-    do { // break on error
-      const char *e;
-      if (*ap) {
-	if (options.artifacts()) {
-	  asprintf(&err, "Error: can't request artifact dump (-A) and specify an xml file (%s)\n",
-		   *ap);
-	  break;
-	}
-	file =*ap;
-	if (!OS::FileSystem::exists(file)) {
-	  file += ".xml";
-	  if (!OS::FileSystem::exists(file)) {
-	    asprintf(&err, "Error: file %s (or %s.xml) does not exist\n", *ap, *ap);
-	    break;
-	  }
-	}
-	if ((e = OE::ezxml_parse_file(file.c_str(), xml))) {
-	  asprintf(&err, "Error parsing XML file %s: %s\n", file.c_str(), e);
-	  break;
-	}
-	if (!strcasecmp(ezxml_name(xml), "deployment")) {
-	  file.clear();
-	  OE::getOptionalString(xml, file, "application");
-	  if (file.empty()) {
-	    asprintf(&err, "Input file, \"%s\" is a deployment file with no application attribute",
-		     *ap);
-	    break;
-	  }
-	  if (!OS::FileSystem::exists(file)) {
-	    file += ".xml";
-	    if (!OS::FileSystem::exists(file)) {
-	      asprintf(&err, "Error: application file %s (or %s) does not exist\n", file.c_str(),
-		       file.c_str());
-	      break;
-	    }
-	  }
-	  if ((e = OE::ezxml_parse_file(file.c_str(), xml))) {
-	    asprintf(&err, "Error parsing XML file %s: %s\n", file.c_str(), e);
-	    break;
-	  }
-	} else if (strcasecmp(ezxml_name(xml), "application")) {
-	  asprintf(&err, "Error: file \"%s\" is a \"%s\" XML file.\n", file.c_str(),
-		   ezxml_name(xml));
-	  break;
-	}
-      } else if (options.artifacts()) {
-	// FIXME: no way to suppress all discovery EXCEPT one manager...
-	OCPI::Container::Manager::getSingleton().suppressDiscovery();
-	DataTransfer::XferFactoryManager::getSingleton().suppressDiscovery();
-	if ((e = OU::parseList(options.artifacts(), doTarget)))
-	  asprintf(&err, "Error processing artifact target list (\"%s\"): %s\n",
-		   options.artifacts(), e);
-	break;
-      }
-      if (options.deployment())
-	OCPI::Library::Manager::getSingleton().suppressDiscovery();
-
-      if (!options.remote())
-	OR::g_suppressRemoteDiscovery = true;
-      if (options.servers()) {
-	if ((e = OU::parseList(options.servers(), doServer))) {
-	  asprintf(&err, "Error processing server list (\"%s\"): %s\n", options.servers(), e);
-	  break;
-	}
-      }
-      OA::Container *c;
-      if (options.processors())
-	for (unsigned n = 1; n < options.processors(); n++) {
-	  std::string name;
-	  OU::formatString(name, "rcc%d", n);
-	  OA::ContainerManager::find("rcc", name.c_str());
-	}
-    
-      std::vector<OA::PValue> simParams;
-      if (options.sim_dir())
-	addParam("directory", options.sim_dir(), simParams);
-      if (options.sim_ticks())
-	simParams.push_back(OA::PVULong("simTicks", options.sim_ticks()));
-      addParam("directory", options.sim_dir(), simParams);
-      if (options.verbose())
-	simParams.push_back(OA::PVBool("verbose", true));
-      if (options.dump())
-	simParams.push_back(OA::PVBool("dump", true));
-      if (simParams.size())
-	simParams.push_back(OA::PVEnd);
-      size_t nSims;
-      const char **sims = options.simulator(nSims);
-      if (!nSims) {
-	// If simulators are not mentioned explicitly (with -H), but are mentioned as
-	// platforms for some or all instances, create the container.
-	// Also, since simulators are not really registered yet, we just look for the
-	// trailing "sim" in the name.
-	typedef std::set<const char *, OU::ConstCharComp> Plats;
-	Plats plats;
-	for (const char **plat = options.platform(nSims); plat && *plat; plat++) {
-	  const char *eq = strrchr(*plat, '=');
-	  eq = eq ? eq + 1 : *plat;
-	  size_t len = strlen(eq);
-	  if (len > 3 && !strcmp(eq + len - 3, "sim"))
-	    plats.insert(eq);
-	}
-	for (Plats::const_iterator it = plats.begin(); it != plats.end(); it++) {
-	  std::string name;
-	  OU::format(name, "lsim:%s0", *it);
-	  OA::ContainerManager::find("hdl", name.c_str(),
-				     simParams.size() ? &simParams[0] : NULL);
-	}	    
-      } else
-	for (unsigned n = 0; n < nSims; n++) {
-	  std::string name;
-	  OU::format(name, "lsim:%s%d", sims[n], n);
-	  OA::ContainerManager::find("hdl", name.c_str(),
-				     simParams.size() ? &simParams[0] : NULL);
-	}
-      if (options.list()) {
-	if (!xml) {
-	  OCPI::Library::Manager::getSingleton().suppressDiscovery();
-	  DataTransfer::XferFactoryManager::getSingleton().suppressDiscovery();
-	}
-	(void)OA::ContainerManager::get(0); // force config
-	printf("Available containers:\n"
-	       " #  Model Platform    OS     OS Version  Name\n");
-	for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)
-	  printf("%2u  %-5s %-11s %-6s %-11s %s\n",
-		 n,  c->model().c_str(), c->platform().c_str(), c->os().c_str(),
-		 c->osVersion().c_str(), c->name().c_str());
-	fflush(stdout);
-      } else if (options.verbose()) {
-	for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)
-	  fprintf(stderr, "%s%s [model: %s os: %s platform: %s]", n ? ", " : "Available containers are: ",
-		  c->name().c_str(), c->model().c_str(), c->os().c_str(), c->platform().c_str());
-	fprintf(stderr, "\n");
-      }
-      if (!xml)
-	break;
+  std::string error;
+  if (setup(*ap, xml, error))
+    throw OU::Error("Error: %s", error.c_str());
+  if (xml) try {
       std::string name;
       OU::baseName(file.c_str(), name);
   
@@ -356,50 +383,44 @@ static int mymain(const char **ap) {
 	}
 	app.dumpDeployment(file.c_str(), dfile);
       }
-      if (options.no_execute())
-	break;
-      app.initialize();
-      if (options.verbose())
-	fprintf(stderr,
-		"Application established: containers, workers, connections all created\n"
-		"Communication with the application established\n");
-      app.start();
-      if (options.verbose())
-	fprintf(stderr, "Application started/running\n");
-      if (options.seconds()) {
-	int remaining = -options.seconds();
+      if (!options.no_execute()) {
+	app.initialize();
 	if (options.verbose())
-	  fprintf(stderr, "Waiting %s%u seconds for application to complete\n",
-		  (options.seconds() < 0) ? "up to " : "", abs(options.seconds()));
-	if (options.seconds() < 0) { // "Negative" time is "up to"
-	  bool cont = true;
-	  while (remaining-- && cont)
-	    cont = app.wait(1E6);
-	} else // Given a positive time
-	  sleep(options.seconds());
-	if (options.verbose() && remaining <= 0) // remaining would be negative if given positive seconds
-	  fprintf(stderr, "After %d seconds, stopping application...\n", abs(options.seconds()));
-	app.stop();
-      } else {
+	  fprintf(stderr,
+		  "Application established: containers, workers, connections all created\n"
+		  "Communication with the application established\n");
+	app.start();
 	if (options.verbose())
-	  fprintf(stderr, "Waiting for application to be finished (no timeout)\n");
-	app.wait();
-	if (options.verbose())
-	  fprintf(stderr, "Application finished\n");
+	  fprintf(stderr, "Application started/running\n");
+	if (options.seconds()) {
+	  int remaining = -options.seconds();
+	  if (options.verbose())
+	    fprintf(stderr, "Waiting %s%u seconds for application to complete\n",
+		    (options.seconds() < 0) ? "up to " : "", abs(options.seconds()));
+	  if (options.seconds() < 0) { // "Negative" time is "up to"
+	    bool cont = true;
+	    while (remaining-- && cont)
+	      cont = app.wait(1E6);
+	  } else // Given a positive time
+	    sleep(options.seconds());
+	  if (options.verbose() && remaining <= 0) // remaining would be negative if given positive seconds
+	    fprintf(stderr, "After %d seconds, stopping application...\n", abs(options.seconds()));
+	  app.stop();
+	} else {
+	  if (options.verbose())
+	    fprintf(stderr, "Waiting for application to be finished (no timeout)\n");
+	  app.wait();
+	  if (options.verbose())
+	    fprintf(stderr, "Application finished\n");
+	}
+	// In case the application specifically defines things to do that aren't in the destructor
+	app.finish();
       }
-      // In case the application specifically defines things to do that aren't in the destructor
-      app.finish();
-    } while(0);
   } catch (...) {
     ezxml_free(xml);
     throw;
   }
   ezxml_free(xml);
-  if (err) {
-    fprintf(stderr, "%s", err);
-    free(err);
-    return 1;
-  }
   return 0;
 }
 
