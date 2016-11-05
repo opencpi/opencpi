@@ -3,6 +3,7 @@ HdlLibraries+=sdp
 ExportFiles=runSimExec.isim probe.exe.tgz
 include $(OCPI_CDK_DIR)/include/hdl/hdl-platform.mk
 
+ifneq ($(findstring isim,$(HdlPlatforms)),)
 # Make the minimal simulation executable to run to verify licensing
 # since the xlicmgr tool is useless.  grrrr.
 probe.exe.tgz:
@@ -24,3 +25,4 @@ all: probe.exe.tgz
 clean::
 	rm -r -f tmp probe.exe.tgz
 
+endif
