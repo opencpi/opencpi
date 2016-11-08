@@ -165,7 +165,7 @@ addAssemblyParameters(OU::Assembly::Properties &aiprops) {
       assert(m_assyWorker.m_paramConfig);
       Param *p = &m_assyWorker.m_paramConfig->params[0];
       for (unsigned nn = 0; nn < m_assyWorker.m_paramConfig->params.size(); nn++, p++)
-	if (&ap == p->param && p->m_value != ap.m_default) {
+	if (&ap == p->m_param && !p->m_isDefault) {
 	  // We have a non-default-value parameter value in this assy wkr's configuration
 	  OU::Assembly::Property *aip = &aiprops[0];
 	  size_t n;
@@ -180,7 +180,7 @@ addAssemblyParameters(OU::Assembly::Properties &aiprops) {
 	    aip = &aiprops.back();
 	    aip->m_name = ap.m_name;
 	    aip->m_hasValue = true;
-	    aip->m_value = p->uValue;
+	    aip->m_value = p->m_uValue;
 	  }
 	}
     }
@@ -205,7 +205,7 @@ addInstanceParameters(const Worker &w, const OU::Assembly::Properties &aiprops,
 			  ap->m_name.c_str(), w.m_implName);
     // set up the ipv and parse the value
     ipv->property = p;
-    ipv->value.setType(*p);
+    ipv->value.setType(*p); // in case we are reusing it
     if ((err = ipv->property->parseValue(ap->m_value.c_str(), ipv->value)))
       return err;
     if (p->m_default) {
@@ -225,17 +225,17 @@ addParamConfigParameters(const ParamConfig &pc, const OU::Assembly::Properties &
   const Param *p = &pc.params[0];
   // For each parameter in the config
   for (unsigned nn = 0; nn < pc.params.size(); nn++, p++) {
-    if (!p->param) // an orphaned parameter if the number of them grew..
+    if (!p->m_param) // an orphaned parameter if the number of them grew..
       continue;
     const OU::Assembly::Property *ap = &aiprops[0];
     size_t n;
     for (n = aiprops.size(); n; n--, ap++)
-      if (!strcasecmp(ap->m_name.c_str(), p->param->m_name.c_str()))
+      if (!strcasecmp(ap->m_name.c_str(), p->m_param->m_name.c_str()))
 	break;
     if (n == 0) {
       // a setting in the param config is not mentioned explicitly
-      ipv->property = p->param;
-      ipv->value = *p->m_value;
+      ipv->property = p->m_param;
+      ipv->value = p->m_value;
       ipv++;
     }
   }
@@ -527,8 +527,8 @@ emitXmlWorker(FILE *f) {
       fprintf(f, " parameter='1'");
       OU::Value *v = 
 	m_paramConfig && prop->m_paramOrdinal < m_paramConfig->params.size() &&
-	m_paramConfig->params[prop->m_paramOrdinal].m_value ?
-	m_paramConfig->params[prop->m_paramOrdinal].m_value : prop->m_default;
+	!m_paramConfig->params[prop->m_paramOrdinal].m_isDefault ?
+	&m_paramConfig->params[prop->m_paramOrdinal].m_value : prop->m_default;
       if (v) {
 	std::string value;
 	v->unparse(value);

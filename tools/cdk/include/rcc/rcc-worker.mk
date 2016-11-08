@@ -102,7 +102,7 @@ define RccWkrBinary
 endef
 
 define RccWkrBinaryLink
-  $$(info RccWkrBinaryLink:$1:$2:$3:$4:$5 name:$$(call RccStaticName,$1,$4):$(LibDir)/$1/$5_s$$(call BF,$1))
+  $$(infox RccWkrBinaryLink:$1:$2:$3:$4:$5 name:$$(call RccStaticName,$1,$4):$(LibDir)/$1/$5_s$$(call BF,$1))
   ifeq ($$(call RccOs,$1),linux)
     $(LibDir)/$1/$5_s$$(call BF,$1): $$(call RccStaticPath,$1,$4) | $(LibDir)/$1
 	$(AT)echo Exporting worker binary for static executables: $$@ '->' $$<

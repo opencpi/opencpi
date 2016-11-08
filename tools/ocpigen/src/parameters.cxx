@@ -30,19 +30,20 @@ findParamProperty(const char *name, OU::Property *&prop, size_t &nParam) {
   return OU::esprintf("Parameter property not found: '%s'", name);
 }
 
-Param::Param() : m_value(NULL), newValue(NULL), param(NULL) {}
+Param::Param() : m_param(NULL), m_isDefault(false) {}
 
 const char *Param::
 parse(ezxml_t px, const OU::Property *argParam) {
   std::string xValue;
   const char *err;
-  newValue = new OU::Value(*argParam);
+  OU::Value newValue(*argParam);
   if ((err = OE::getRequiredString(px, xValue, "value")) ||
-      (err = argParam->parseValue(xValue.c_str(), *newValue)))
+      (err = argParam->parseValue(xValue.c_str(), newValue)))
     return err;
-  newValue->unparse(uValue);
+  newValue.unparse(m_uValue);
   m_value = newValue;
-  param = argParam;
+  m_isDefault = false;
+  m_param = argParam;
   return NULL;
 }
 
@@ -79,10 +80,12 @@ parse(ezxml_t cx, const ParamConfigs &configs) {
   size_t n = 0;
   for (PropertiesIter pi = m_worker.m_ctl.properties.begin(); pi != m_worker.m_ctl.properties.end(); pi++)
     if ((*pi)->m_isParameter) {
-      if (!params[n].param) {
-	params[n].param = *pi;
-	params[n].m_value = (*pi)->m_default;
-	(*pi)->m_default->unparse(params[n].uValue);
+      if (!params[n].m_param) {
+	params[n].m_param = *pi;
+	assert((*pi)->m_default);
+	params[n].m_value = *(*pi)->m_default; // assignment operator
+	params[n].m_value.unparse(params[n].m_uValue);
+	params[n].m_isDefault = true;
       }
       n++;
     }
@@ -95,7 +98,7 @@ getValue(const char *sym, OU::ExprValue &val) const {
   size_t nParam; // FIXME not needed since properties have m_paramOrdinal?
   const char *err;
   if ((err = m_worker.findParamProperty(sym, prop, nParam)) ||
-      (err = extractExprValue(*prop, *params[nParam].m_value, val)))
+      (err = extractExprValue(*prop, params[nParam].m_value, val)))
     return err;
   return NULL;
 }
@@ -120,7 +123,7 @@ write(FILE *xf, FILE *mf) {
     fprintf(xf, "  <configuration id='%s'>\n", id.c_str());
   for (unsigned n = 0; n < params.size(); n++) {
     Param &p = params[n];
-    if (p.param == NULL) {
+    if (p.m_param == NULL) {
       // This is a new parameter that was not in this (existing) param config.
       continue;
     }
@@ -129,18 +132,18 @@ write(FILE *xf, FILE *mf) {
       std::string val;
       if (m_worker.m_model == HdlModel) {
 	std::string typeDecl, type;
-	vhdlType(*p.param, typeDecl, type);
+	vhdlType(*p.m_param, typeDecl, type);
 	//	if (typeDecl.length())
 	//	  fprintf(mf, "ParamVHDLtype_%zu_%s:=type %s_t is %s;\n",
-	//		  nConfig, p.param->m_name.c_str(), p.param->m_name.c_str(), typeDecl.c_str());
+	//		  nConfig, p.m_param->m_name.c_str(), p.m_param->m_name.c_str(), typeDecl.c_str());
 	fprintf(mf, "ParamVHDL_%zu_%s:=constant %s : ",
-		nConfig, p.param->m_name.c_str(), p.param->m_name.c_str());
+		nConfig, p.m_param->m_name.c_str(), p.m_param->m_name.c_str());
 	//	if (typeDecl.length())
-	//	  fprintf(mf, "%s_t", p.param->m_name.c_str());
+	//	  fprintf(mf, "%s_t", p.m_param->m_name.c_str());
 	//	else
 	fprintf(mf, "%s", type.c_str());
 	fprintf(mf, " := ");
-	for (const char *cp = m_worker.hdlValue(p.param->m_name, *p.m_value, val, false, VHDL);
+	for (const char *cp = m_worker.hdlValue(p.m_param->m_name, p.m_value, val, false, VHDL);
 	     *cp; cp++) {
 	  if (*cp == '#' || (*cp == '\\' && !cp[1]))
 	    fputc('\\', mf);
@@ -148,9 +151,9 @@ write(FILE *xf, FILE *mf) {
 	}
 	fputs("\n", mf);
 	fprintf(mf, "ParamVerilog_%zu_%s:=parameter [%zu:0] %s = ",
-		nConfig, p.param->m_name.c_str(), rawBitWidth(*p.param) - 1,
-		p.param->m_name.c_str());
-	for (const char *cp = m_worker.hdlValue(p.param->m_name, *p.m_value, val, true, Verilog);
+		nConfig, p.m_param->m_name.c_str(), rawBitWidth(*p.m_param) - 1,
+		p.m_param->m_name.c_str());
+	for (const char *cp = m_worker.hdlValue(p.m_param->m_name, p.m_value, val, true, Verilog);
 	     *cp; cp++) {
 	  if (*cp == '#' || (*cp == '\\' && !cp[1]))
 	    fputc('\\', mf);
@@ -158,16 +161,16 @@ write(FILE *xf, FILE *mf) {
 	}
 	fputs("\n", mf);
       } else {
-	fprintf(mf, "Param_%zu_%s:=", nConfig, p.param->m_name.c_str());
-	for (const char *cp = m_worker.paramValue(*p.param, *p.m_value, val); *cp; cp++) {
+	fprintf(mf, "Param_%zu_%s:=", nConfig, p.m_param->m_name.c_str());
+	for (const char *cp = m_worker.paramValue(*p.m_param, p.m_value, val); *cp; cp++) {
 	  if (*cp == '#' || (*cp == '\\' && !cp[1]))
 	    fputc('\\', mf);
 	  fputc(*cp, mf);
 	}
 	fputs("\n", mf);
       }
-      fprintf(mf, "ParamMsg_%zu_%s:=", nConfig, p.param->m_name.c_str());
-      for (const char *cp = p.uValue.c_str(); *cp; cp++) {
+      fprintf(mf, "ParamMsg_%zu_%s:=", nConfig, p.m_param->m_name.c_str());
+      for (const char *cp = p.m_uValue.c_str(); *cp; cp++) {
 	if (*cp == '#' || (*cp == '\\' && !cp[1]))
 	  fputc('\\', mf);
 	fputc(*cp, mf);
@@ -175,9 +178,9 @@ write(FILE *xf, FILE *mf) {
       fputs("\n", mf);
     }
     if (xf) {
-      fprintf(xf, "    <parameter name='%s' value='", p.param->m_name.c_str());
+      fprintf(xf, "    <parameter name='%s' value='", p.m_param->m_name.c_str());
       std::string xml;
-      OU::encodeXmlAttrSingle(p.uValue, xml);
+      OU::encodeXmlAttrSingle(p.m_uValue, xml);
       fputs(xml.c_str(), xf);
       fputs("'/>\n", xf);
     }
@@ -200,19 +203,19 @@ writeConstants(FILE *gf, Language lang) {
   }
   for (unsigned n = 0; n < params.size(); n++) {
     Param &p = params[n];
-    if (p.param == NULL)
+    if (p.m_param == NULL)
       continue;
-    const OU::Property &pr = *p.param;
+    const OU::Property &pr = *p.m_param;
     std::string value;
     if (lang == VHDL) {
       std::string typeDecl, type;
       vhdlType(pr, typeDecl, type);
-      m_worker.hdlValue(pr.m_name, *p.m_value, value, false, VHDL);
+      m_worker.hdlValue(pr.m_name, p.m_value, value, false, VHDL);
       fprintf(gf, "  constant %s : %s := %s;\n",
-	      p.param->m_name.c_str(), type.c_str(), value.c_str());
+	      p.m_param->m_name.c_str(), type.c_str(), value.c_str());
     } else
       fprintf(gf, "  parameter [%zu:0] %s  = %s;\n", rawBitWidth(pr)-1, pr.m_name.c_str(),
-	      verilogValue(*p.m_value, value));
+	      verilogValue(p.m_value, value));
   }
   // This is static (not a port method) since it is needed when there are parameters with
   // no control interface.
@@ -229,7 +232,7 @@ equal(ParamConfig &other) {
   if (params.size() != other.params.size())
     return false;
   for (unsigned n = 0; n < params.size(); n++)
-    if (params[n].uValue != other.params[n].uValue)
+    if (params[n].m_uValue != other.params[n].m_uValue)
       return false;
   return true;
 }
@@ -326,13 +329,12 @@ doParam(ParamConfig &info, PropertiesIter pi, unsigned nParam, size_t &nConfig) 
     OU::Property &prop = **pi;
     pi++;
     nParam++;
-    for (unsigned n = 0; n < p.values.size(); n++) {
+    for (unsigned n = 0; n < p.m_values.size(); n++) {
       const char *err;
-      p.m_value = new OU::Value(prop);
       if ((err = prop.finalize(info, "property", false)) ||
-	  (err = prop.parseValue(p.values[n].c_str(), *p.m_value, NULL, &info)))
+	  (err = prop.parseValue(p.m_values[n].c_str(), p.m_value, NULL, &info)))
 	return err;
-      p.m_value->unparse(p.uValue); // make the canonical value
+      p.m_value.unparse(p.m_uValue); // make the canonical value
       if ((err = doParam(info, pi, nParam, nConfig)))
 	return err;
     }
@@ -450,22 +452,22 @@ emitToolParameters() {
       fprintf(stderr,
 	      "Warning: parameter '%s' ignored due to: %s\n", name.c_str(), err);
     else
-      addValues(*p, info.params[nParam].values, hasValues, ezxml_txt(px));
+      addValues(*p, info.params[nParam].m_values, hasValues, ezxml_txt(px));
   }
   // Fill in default values when there are no values specified for a given parameter.
   // i.e. for this parameter, make the single value for all configs the default value
   Param *par = &info.params[0];
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
     if ((*pi)->m_isParameter) {
-      par->param = *pi;
-      if (par->values.empty()) {
+      par->m_param = *pi;
+      if (par->m_values.empty()) {
 	if (!(*pi)->m_default)
 	  return OU::esprintf("The parameter property '%s' has no value and no default value",
 			      (*pi)->m_name.c_str());
 	//	assert((*pi)->m_default);
 	std::string sval;
 	(*pi)->m_default->unparse(sval);
-	par->values.push_back(sval);
+	par->m_values.push_back(sval);
       }
       par++;
     }
@@ -592,13 +594,13 @@ setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig) {
       if (ap->m_hasValue) {
 	Param *p = &pc->params[0];
 	for (unsigned nnn = 0; nnn < pc->params.size(); nnn++, p++)
-	  if (!strcasecmp(ap->m_name.c_str(), p->param->m_name.c_str())) {
+	  if (!strcasecmp(ap->m_name.c_str(), p->m_param->m_name.c_str())) {
 	    OU::Value apValue;
-	    if ((err = p->param->parseValue(ap->m_value.c_str(), apValue)))
+	    if ((err = p->m_param->parseValue(ap->m_value.c_str(), apValue)))
 	      return err;
 	    std::string apString;
 	    apValue.unparse(apString); // to get canonicalized value of APV
-	    if (apString != p->uValue)
+	    if (apString != p->m_uValue)
 	      goto nextConfig; // a mismatch - this paramconfig can't used
 	    break;
 	  }

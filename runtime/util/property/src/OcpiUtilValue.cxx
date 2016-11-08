@@ -155,6 +155,26 @@ namespace OCPI {
       init();
     }
 
+    // This is inefficient, but reliable.  FIXME?
+    Value &Value::
+    operator=(const Value &v) {
+      clear();
+      init();
+      if ((m_vt = v.m_vt)) {
+	assert(!v.m_parent);
+	std::string s;
+	v.unparse(s);
+	parse(s.c_str());
+      }
+      return *this;
+    }
+
+    Value::
+    Value(const Value &v)
+      : m_vt(s_vt), m_parent(s_parent) {
+      init();
+      *this = v;
+    }
     void Value::setType(const ValueType &vt) {
       m_vt = &vt;
       m_parent = NULL;

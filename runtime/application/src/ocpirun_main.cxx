@@ -100,7 +100,6 @@
   CMD_OPTION(libraries,  ,  String, 0, "Search path for source libraries, implying to search for possible source workers")\
   CMD_OPTION(build,      ,  String, 0, "Build any source workers deployed")\
   CMD_OPTION(sim_dir,    ,  String, "simulations", "Directory in which to run simulations")\
-  CMD_OPTION_S(simulator, H,String, 0, "Create a container with this HDL simulator")\
   CMD_OPTION(art_lib_path,L,String, 0, "Specify/override OCPI_LIBRARY_PATH") \
   CMD_OPTION(dumpPlatforms,M,Bool,  0, "dump platform and device worker properties") \
   CMD_OPTION(sim_ticks,  ,  ULong,  0, "simulator clock cycles to allow") \
@@ -108,6 +107,9 @@
   CMD_OPTION(specs,      G, String, 0, "deprecated: comma-separated targets to print specs in path on stdout") \
   CMD_OPTION(only_platforms,, Bool, 0, "modifies the list command to show only platforms")\
   /**/
+
+//  CMD_OPTION_S(simulator, H,String, 0, "Create a container with this HDL simulator")
+
 #include "CmdOption.h"
 #include "RemoteServer.h"
 
@@ -261,6 +263,7 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &error) {
     simParams.push_back(OA::PVBool("dump", true));
   if (simParams.size())
     simParams.push_back(OA::PVEnd);
+#if 0
   if (!options.simulator()) {
     // If simulators are not mentioned explicitly (with -H), but are mentioned as
     // platforms for some or all instances, create the container.
@@ -289,6 +292,7 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &error) {
       OA::ContainerManager::find("hdl", name.c_str(), simParams.size() ? &simParams[0] : NULL);
     }
   }
+#endif
   if (options.list()) {
     (void)OA::ContainerManager::get(0); // force config/discovery
     if (options.only_platforms()) {

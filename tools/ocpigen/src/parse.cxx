@@ -732,8 +732,8 @@ getValue(const char *sym, OU::ExprValue &val) const {
       if (!p.m_default)
 	return OU::esprintf("the '%s' parameter property has no value", sym);
       return extractExprValue(p,
-			      *(m_paramConfig ? m_paramConfig->params[p.m_paramOrdinal].m_value :
-				p.m_default),
+			      (m_paramConfig ? m_paramConfig->params[p.m_paramOrdinal].m_value :
+				*p.m_default),
 			      val);
     }
   return OU::esprintf("There is no property named '%s'", sym);

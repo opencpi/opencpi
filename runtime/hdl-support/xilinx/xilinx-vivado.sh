@@ -8,7 +8,7 @@ function XilinxBad {
 [ -z "$OCPI_XILINX_VIVADO_TOOLS_DIR" ] && {
   [ -z "$OCPI_XILINX_VIVADO_DIR" ] && {
     [ -z "$OCPI_XILINX_DIR" ] && OCPI_XILINX_DIR=/opt/Xilinx
-      [ ! -d "$OCPI_XILINX_DIR" ] && XilinxBad OCPI_XILINX_DIR value $OCPI_XILINX_DIR not found
+    [ ! -d "$OCPI_XILINX_DIR" ] && XilinxBad OCPI_XILINX_DIR value $OCPI_XILINX_DIR not found
     OCPI_XILINX_VIVADO_DIR=$OCPI_XILINX_DIR/Vivado
     [ ! -d "$OCPI_XILINX_VIVADO_DIR" ] &&
       XilinxBad OCPI_XILINX_VIVADO_DIR value $OCPI_XILINX_VIVADO_DIR not found

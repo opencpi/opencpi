@@ -180,7 +180,8 @@ ifndef HdlSkip
     ExportLinks:=$(ExportFiles:%=lib/%)
     exports: $(ExportLinks)
 
-    $(ExportLinks): | $(@:lib/%=%)
+    # order-only prereq should be something like $$(@:lib/%=%) but that doesn't work...
+    $(ExportLinks): | $(ExportFiles)
 	$(AT)mkdir -p lib
 	$(AT)ln -s ../$(@:lib/%=%) lib
 

@@ -16,11 +16,11 @@
 typedef std::vector<std::string> Values;
 
 struct Param {
-  OCPI::Util::Value *m_value;    // the specific value for the current configuration, perhaps the default
-  OCPI::Util::Value *newValue;  // non-default value
-  std::string uValue;  // unparsed value - the canonical value for comparison
-  Values values;       // the values for all configurations
-  const OCPI::Util::Property *param; // the property that is a parameter
+  OCPI::Util::Value           m_value;  // value for the current config, perhaps the default
+  std::string                 m_uValue; // unparsed value - the canonical value for comparison
+  Values                      m_values; // the values for all configurations
+  const OCPI::Util::Property *m_param;  // the property that is a parameter
+  bool                        m_isDefault; // is m_value from property default?
   const char *parse(ezxml_t px, const OCPI::Util::Property *argParam);
   Param();
 };

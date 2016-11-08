@@ -235,7 +235,7 @@ CounterFreq::CounterFreq ()
   cpuid(0x80000007,ax,bx,cx,dx)
   //if tsc_invariant not present return - present in edx 0x80000007 bit 8
   if (!(dx&0x8)) {
-    ocpiBad("OCPI::OS::Time subsystem cannot establish clock frequency");
+    //    ocpiBad("OCPI::OS::Time subsystem cannot establish clock frequency");
     return;
   }
   const char *cp = strcasestr(tmp, "cpu MHz");

@@ -60,5 +60,4 @@ echo ===========================================================================
 echo Installing the ad9361 library under /opt/opencpi/prerequisites
 scripts/install-ad9361.sh
 echo ================================================================================
-=======
 echo All OpenCPI prerequisites have been installed.

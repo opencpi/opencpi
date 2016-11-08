@@ -101,6 +101,8 @@ namespace OCPI {
       bool m_parsed;
       Value(const ValueType &vt, const Value* parent = Value::s_parent);
       Value();
+      Value &operator=(const Value &);
+      Value(const Value &v);
       virtual ~Value();
       void setType(const ValueType &vt);
     private:
