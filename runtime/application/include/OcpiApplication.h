@@ -176,6 +176,8 @@ namespace OCPI {
       bool wait(OCPI::OS::Timer *);
       void finish();
       ExternalPort &getPort(const char *, const OCPI::API::PValue *);
+      ExternalPort &getPort(unsigned index, std::string & name );
+      size_t getPortCount();
       friend struct Property;
       Worker &getPropertyWorker(const char *name);
       bool getProperty(unsigned ordinal, std::string &name, std::string &value, bool hex,
