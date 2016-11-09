@@ -112,16 +112,18 @@ namespace OCPI {
       OCPI::Container::Application **m_containerApps; // per used container, the container app
       // External ports - recorded until we know whether it will be ExternalPort, or remote port
       struct External {
-	OCPI::Container::Port &m_port; // The internal worker port
+	OCPI::Util::Port &m_metaPort;  // The metaport of the worker port
+	OCPI::Container::Port *m_port; // The internal worker port
 	const PValue *m_params; //  Connection parameters from the OU::Assembly
 	ExternalPort *m_external; // The external port created from connectExternal.
-	inline External(OCPI::Container::Port &port, const PValue *params)
-	  : m_port(port), m_params(params), m_external(NULL) {}
+	inline External(OCPI::Util::Port &mp, const PValue *params)
+	  : m_metaPort(mp), m_port(NULL), m_params(params), m_external(NULL) {}
       };
       typedef std::map<const char*, External, OCPI::Util::ConstCharComp> Externals;
       typedef std::pair<const char*, External> ExternalPair;
       typedef Externals::iterator ExternalsIter;
       Externals m_externals;
+      std::vector<External *> m_externalsOrdered; // to support ordinal-based navigation
       OCPI::Container::Worker *m_doneWorker;
       enum CMapPolicy {
 	RoundRobin,
@@ -140,7 +142,10 @@ namespace OCPI {
       void init(const OCPI::API::PValue *params);
       void initExternals(const OCPI::API::PValue *params);
       void initConnections();
+      void finalizeLaunchConnections();
       void initInstances();
+      void finalizeLaunchInstances();
+      OCPI::Util::Port *getMetaPort(unsigned n);
       // return our used-container ordinal
       unsigned addContainer(unsigned container, bool existOk = false);
       bool connectionsOk(OCPI::Library::Candidate &c, unsigned instNum);

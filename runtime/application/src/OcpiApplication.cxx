@@ -682,7 +682,7 @@ namespace OCPI {
       if ((err = m_assembly.checkInstanceParams("container", params, false)))
 	throw OU::Error("%s", err);
       // This array is sized and initialized here since it is needed for property finalization
-      m_launchInstances.resize(m_nInstances);
+      initInstances();
       // We are at the point where we need to either plan or import the deployment.
       const char *dfile = NULL;
       if (m_deployment || OU::findString(params, "deployment", dfile))
@@ -692,9 +692,9 @@ namespace OCPI {
       // All the implementation selection is done, so now do the final check of properties
       // since properties can be implementation specific
       finalizeProperties(params);
-      Instance *i = m_instances;
       if (m_verbose) {
 	fprintf(stderr, "Actual deployment is:\n");
+	Instance *i = m_instances;
 	for (unsigned n = 0; n < m_nInstances; n++, i++) {
 	  const OL::Implementation &impl = *i->m_impl;
 	  OC::Container &c = OC::Container::nthContainer(m_usedContainers[i->m_container]);
@@ -714,14 +714,19 @@ namespace OCPI {
       }
     }
     // Initialize our own database of connections from the OU::Assembly connections
+    // This can be done before any resources are actually allocated.  It is just
+    // building the launch database.  finalizeLaunchConnections must be done after
+    // containers are established for instances.
     void ApplicationI::
     initConnections() {
       m_launchConnections.resize(m_assembly.m_connections.size());
       OC::Launcher::Connection *lc = &m_launchConnections[0];
       for (OU::Assembly::ConnectionsIter ci = m_assembly.m_connections.begin();
 	   ci != m_assembly.m_connections.end(); ci++, lc++) {
+	OU::Assembly::Port *p = NULL;
 	for (OU::Assembly::Connection::PortsIter pi = (*ci).m_ports.begin();
 	     pi != (*ci).m_ports.end(); pi++) {
+	  p = &(*pi);
 	  OU::Assembly::Role &r = (*pi).m_role;
 	  assert(r.m_knownRole && !r.m_bidirectional);
 	  if (r.m_provider) {
@@ -738,11 +743,24 @@ namespace OCPI {
 	    lc->m_launchOut = &lc->m_instOut->m_container->launcher();
 	  }
 	}
+	assert(p);
 	for (OU::Assembly::ExternalsIter ei = (*ci).m_externals.begin();
 	     ei != (*ci).m_externals.end(); ei++) {
 	  assert(!lc->m_instIn || !lc->m_instOut);
 	  if (ei->m_url.length())
 	    lc->m_url = ei->m_url.c_str();
+	  else {
+	    // An external port of the assembly that is not bound to a URL
+	    // We capture the metaPort at this point.
+	    OU::Worker &w = m_instances[p->m_instance].m_impl->m_metadataImpl;
+	    const char *name = lc->m_instIn ? lc->m_nameOut : lc->m_nameIn;
+	    OU::Port &mp = *w.findMetaPort(name);
+	    m_externals.
+	      insert(ExternalPair(lc->m_instIn ? lc->m_nameOut : lc->m_nameIn,
+				  External(mp,
+					   lc->m_instIn ? lc->m_paramsOut : lc->m_paramsIn)));
+	    
+	  }
 	  if (lc->m_instIn) {
 	    lc->m_nameOut = ei->m_name.c_str();
 	    lc->m_paramsOut = ei->m_parameters;
@@ -752,13 +770,30 @@ namespace OCPI {
 	  }
 	}
       }
+      // Create an ordered set of pointers into the Externals
+      m_externalsOrdered.resize(m_externals.size());
+      External **e = &m_externalsOrdered[0];
+      for (ExternalsIter ei = m_externals.begin(); ei != m_externals.end(); ++ei)
+	*e++ = &(*ei).second;
     }
+    // Finalize the launch connections, which depends on containers being established
+    // for the instances.
+    void ApplicationI::
+    finalizeLaunchConnections() {
+      for (unsigned n = 0; n < m_launchConnections.size(); n++) {
+	OC::Launcher::Connection &lc = m_launchConnections[n];
+	if (lc.m_instIn)
+	  lc.m_launchIn = &lc.m_instIn->m_container->launcher();
+	if (lc.m_instOut)
+	  lc.m_launchOut = &lc.m_instOut->m_container->launcher();
+      }
+    }
+
     void ApplicationI::
     initInstances() {
+      m_launchInstances.resize(m_nInstances);
       OC::Launcher::Instance *i = &m_launchInstances[0];
       for (unsigned n = 0; n < m_nInstances; n++, i++) {
-	i->m_container = m_containers[m_instances[n].m_container];
-	i->m_containerApp = m_containerApps[m_instances[n].m_container];
 	i->m_name = m_assembly.instance(n).name();
 	i->m_impl = m_instances[n].m_impl;
 	OU::Assembly::Instance &ui = m_assembly.instance(n).m_utilInstance;
@@ -769,6 +804,17 @@ namespace OCPI {
 	  i->m_doneInstance = true;
       }
     }
+
+    // Do the part of initializing launch instances that depends on containers established.
+    void ApplicationI::
+    finalizeLaunchInstances() {
+      OC::Launcher::Instance *i = &m_launchInstances[0];
+      for (unsigned n = 0; n < m_nInstances; n++, i++) {
+	i->m_container = m_containers[m_instances[n].m_container];
+	i->m_containerApp = m_containerApps[m_instances[n].m_container];
+      }
+    }
+
     void ApplicationI::
     initExternals( const PValue * params ) {
       // Check that params that reference externals are valid.
@@ -783,6 +829,17 @@ namespace OCPI {
       return false;
     }
 
+    // Support querying the application for its ports for internal tools
+    // Return a pointer or null, based on ordinal
+    // The caller does:
+    //    OU::Port *p;
+    //    for(unsigned n = 0; app.getMetaPort(n); n++)
+    //       do-something-with-p
+    OU::Port *ApplicationI::
+    getMetaPort(unsigned n) {
+      return n >= m_externalsOrdered.size() ? NULL : &m_externalsOrdered[n]->m_metaPort;
+    }
+
     void ApplicationI::
     initialize() {
       m_nInstances = m_assembly.nInstances();
@@ -795,8 +852,8 @@ namespace OCPI {
 	m_containerApps[n] = static_cast<OC::Application*>(m_containers[n]->createApplication());
 	m_containerApps[n]->setApplication(&m_apiApplication);
       }
-      initInstances();
-      initConnections();
+      finalizeLaunchInstances();
+      finalizeLaunchConnections();
       typedef std::set<OC::Launcher *> Launchers;
       typedef Launchers::iterator LaunchersIter;
       Launchers launchers;
@@ -815,12 +872,13 @@ namespace OCPI {
       if (m_assembly.m_doneInstance != -1)
 	m_doneWorker = m_launchInstances[m_assembly.m_doneInstance].m_worker;
       OC::Launcher::Connection *c = &m_launchConnections[0];
+      // Associate application external ports with an actual worker ports
       for (unsigned n = 0; n < m_launchConnections.size(); n++, c++)
-	if (!c->m_url && (!c->m_instIn || !c->m_instOut))
-	  m_externals.
-	    insert(ExternalPair(c->m_instIn ? c->m_nameOut : c->m_nameIn,
-				External(*(c->m_input ? c->m_input : c->m_output),
-					 c->m_input ? c->m_paramsOut : c->m_paramsIn)));
+	if (!c->m_url && (!c->m_instIn || !c->m_instOut)) {
+	  ExternalsIter ei = m_externals.find(c->m_instIn ? c->m_nameOut : c->m_nameIn);
+	  assert(ei != m_externals.end());
+	  ei->second.m_port = c->m_input ? c->m_input : c->m_output;
+	}
       m_launched = true;
       if (m_assembly.m_doneInstance != -1)
 	m_doneWorker = m_launchInstances[m_assembly.m_doneInstance].m_worker;
@@ -894,7 +952,7 @@ namespace OCPI {
 	  ocpiInfo("Parameters ignored when getPort called for same port more than once");
       } else {
 	OU::PValueList pvs(ext.m_params, params);
-	ext.m_external = &ext.m_port.connectExternal(name, pvs);
+	ext.m_external = &ext.m_port->connectExternal(name, pvs);
       }
       return *ext.m_external;
     }
