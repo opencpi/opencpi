@@ -681,14 +681,15 @@ namespace OCPI {
       const char *err;
       if ((err = m_assembly.checkInstanceParams("container", params, false)))
 	throw OU::Error("%s", err);
-      // This array is sized and initialized here since it is needed for property finalization
-      initInstances();
       // We are at the point where we need to either plan or import the deployment.
       const char *dfile = NULL;
       if (m_deployment || OU::findString(params, "deployment", dfile))
 	importDeployment(dfile, m_deployment, params);
       else
 	planDeployment(params);
+      // This array is sized and initialized here since it is needed for property finalization
+      initInstances();
+      initConnections();
       // All the implementation selection is done, so now do the final check of properties
       // since properties can be implementation specific
       finalizeProperties(params);
@@ -711,6 +712,11 @@ namespace OCPI {
 		  impl.m_staticInstance ? ezxml_cattr(impl.m_staticInstance, "name") : "",
 		  impl.m_artifact.name().c_str(), tbuf);
 	}
+	fprintf(stderr, "External ports:\n");
+	OU::Port *p;
+	for (unsigned n = 0; (p = getMetaPort(n)); n++)
+	  fprintf(stderr, " %u: application port \"%s\" is %s\n", n, p->OU::Port::m_name.c_str(),
+		  p->m_provider ? "input" : "output");
       }
     }
     // Initialize our own database of connections from the OU::Assembly connections
@@ -734,13 +740,11 @@ namespace OCPI {
 	    lc->m_instIn = &m_launchInstances[pi->m_instance];
 	    lc->m_nameIn = pi->m_name.c_str();
 	    lc->m_paramsIn.add((*ci).m_parameters, pi->m_parameters);
-	    lc->m_launchIn = &lc->m_instIn->m_container->launcher();
 	  } else {
 	    assert(!lc->m_instOut);
 	    lc->m_instOut = &m_launchInstances[pi->m_instance];
 	    lc->m_nameOut = pi->m_name.c_str();
 	    lc->m_paramsOut.add((*ci).m_parameters, pi->m_parameters);
-	    lc->m_launchOut = &lc->m_instOut->m_container->launcher();
 	  }
 	}
 	assert(p);
@@ -753,13 +757,13 @@ namespace OCPI {
 	    // An external port of the assembly that is not bound to a URL
 	    // We capture the metaPort at this point.
 	    OU::Worker &w = m_instances[p->m_instance].m_impl->m_metadataImpl;
-	    const char *name = lc->m_instIn ? lc->m_nameOut : lc->m_nameIn;
-	    OU::Port &mp = *w.findMetaPort(name);
+	    const char *portName = lc->m_instIn ? lc->m_nameIn : lc->m_nameOut;
+	    OU::Port &mp = *w.findMetaPort(portName);
+	    ocpiDebug("Creating external port of application with name: %s, mp: %p", name, &mp);
 	    m_externals.
-	      insert(ExternalPair(lc->m_instIn ? lc->m_nameOut : lc->m_nameIn,
+	      insert(ExternalPair(name,
 				  External(mp,
 					   lc->m_instIn ? lc->m_paramsOut : lc->m_paramsIn)));
-	    
 	  }
 	  if (lc->m_instIn) {
 	    lc->m_nameOut = ei->m_name.c_str();
@@ -976,7 +980,7 @@ namespace OCPI {
 
       } else {
 	OU::PValueList pvs(ext.m_params, NULL);
-	ext.m_external = &ext.m_port.connectExternal(ei->first, pvs);
+	ext.m_external = &ext.m_port->connectExternal(ei->first, pvs);
       }
       name = ei->first;
       return *ext.m_external;
