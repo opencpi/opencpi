@@ -957,6 +957,36 @@ namespace OCPI {
       return *ext.m_external;
     }
 
+
+    ExternalPort &ApplicationI::getPort(unsigned index, std::string & name) {
+      if (!m_launched)
+	throw OU::Error("GetPort cannot be called until the application is initialized.");
+      if ( index >= m_externals.size() )
+	throw OU::Error("GetPort(int) Index out of range.");
+      std::map<const char*, External, OCPI::Util::ConstCharComp>::iterator ei;
+      unsigned c=0;
+      for ( ei=m_externals.begin(); ei!=m_externals.end(); ei++, c++ ){
+	if ( c == index )
+	  break;
+      }
+      if (ei == m_externals.end())
+	throw OU::Error("Unknown external port at index: \"%d\"", index);
+      External &ext = ei->second;
+      if (ext.m_external) {
+
+      } else {
+	OU::PValueList pvs(ext.m_params, NULL);
+	ext.m_external = &ext.m_port.connectExternal(ei->first, pvs);
+      }
+      name = ei->first;
+      return *ext.m_external;
+    }
+
+    size_t ApplicationI::getPortCount() {
+      return m_externals.size();
+    }
+
+
     Worker &ApplicationI::getPropertyWorker(const char *name) {
       Property *p = m_properties;
       for (unsigned n = 0; n < m_nProperties; n++, p++)
@@ -1128,6 +1158,14 @@ namespace OCPI {
     ExternalPort &Application::
     getPort(const char *name, const OA::PValue *params) {
       return m_application.getPort(name, params);
+    }
+    ExternalPort &Application::
+    getPort(unsigned index, std::string& name ) {
+      return m_application.getPort(index, name );
+    }
+    size_t Application::
+    getPortCount() {
+      return m_application.getPortCount();
     }
 
     bool Application::
