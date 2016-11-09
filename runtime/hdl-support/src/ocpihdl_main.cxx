@@ -1680,12 +1680,12 @@ sendRDMA(const char **ap) {
 
 static void
 simulate(const char **ap) {
-  OH::Sim::Server server(*ap, platform, OCPI_UTRUNCATE(uint8_t,spinCount), sleepUsecs,
-			 simTicks, verbose, simDump, isPublic, error);
 #if 1
-  ocpiBad("The ocpihdl simulate command is ignored, but sleeping for 10 hours");
+  ocpiBad("The ocpihdl simulate command is ignored, but we are sleeping for 10 hours");
   OS::sleep(36000000);
 #else
+  OH::Sim::Server server(*ap, platform, OCPI_UTRUNCATE(uint8_t,spinCount), sleepUsecs,
+			 simTicks, verbose, simDump, isPublic, error);
   if (error.length())
     bad("Simulator server creation error");
   if (server.run(simExec, error))

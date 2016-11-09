@@ -177,7 +177,7 @@ namespace OCPI {
 	transport = preferred;
       if (transport) {
 	unsigned n = 0;
-	newParams = new OU::PValue[toParams->length() + 2];
+	newParams = new OU::PValue[(toParams ? toParams->length() : 0) + 2];
 	for (const OU::PValue *p = toParams; p && p->name; p++, n++)
 	  newParams[n] = *p;
 	newParams[n].name = "transport";

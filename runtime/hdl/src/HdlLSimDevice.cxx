@@ -1111,7 +1111,7 @@ search(const OU::PValue *params, const char **excludes, bool discoveryOnly,
     std::vector<std::string> sims;
     const char *err = getSims(sims);
     if (err) {
-      OU::format(error, "Cannot find anuy simulation platforms: %s", err);
+      OU::format(error, "Cannot find any simulation platforms: %s", err);
       return 0;
     }
     unsigned count = 0;
