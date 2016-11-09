@@ -712,11 +712,13 @@ namespace OCPI {
 		  impl.m_staticInstance ? ezxml_cattr(impl.m_staticInstance, "name") : "",
 		  impl.m_artifact.name().c_str(), tbuf);
 	}
-	fprintf(stderr, "External ports:\n");
 	OU::Port *p;
-	for (unsigned n = 0; (p = getMetaPort(n)); n++)
+	for (unsigned n = 0; (p = getMetaPort(n)); n++) {
+	  if (n == 0)
+	    fprintf(stderr, "External ports:\n");
 	  fprintf(stderr, " %u: application port \"%s\" is %s\n", n, p->OU::Port::m_name.c_str(),
 		  p->m_provider ? "input" : "output");
+	}
       }
     }
     // Initialize our own database of connections from the OU::Assembly connections
@@ -759,9 +761,10 @@ namespace OCPI {
 	    OU::Worker &w = m_instances[p->m_instance].m_impl->m_metadataImpl;
 	    const char *portName = lc->m_instIn ? lc->m_nameIn : lc->m_nameOut;
 	    OU::Port &mp = *w.findMetaPort(portName);
-	    ocpiDebug("Creating external port of application with name: %s, mp: %p", name, &mp);
+	    ocpiDebug("Creating external port of application with name: %s, mp: %p", portName,
+		      &mp);
 	    m_externals.
-	      insert(ExternalPair(name,
+	      insert(ExternalPair(portName,
 				  External(mp,
 					   lc->m_instIn ? lc->m_paramsOut : lc->m_paramsIn)));
 	  }

@@ -615,9 +615,15 @@ namespace OCPI {
 	m_length = m_nTotal * sizeof(run);	       \
 	if (m_vt->m_isSequence || m_vt->m_arrayRank) { \
 	  run *old = m_p##pretty;                      \
-	  m_p##pretty = new run[m_nTotal];	       \
-          /* FIXME: type-specific default value? */    \
-          memset(m_p##pretty, 0, m_length);            \
+	  if (m_vt->m_baseType == OA::OCPI_String) {   \
+            /* NULL terminate sequences of strings */  \
+	    m_pString = new OA::CharP[m_nTotal+1];     \
+            memset(m_pString, 0, m_length+sizeof(run));\
+          } else {                                     \
+	    m_p##pretty = new run[m_nTotal];	       \
+            /* FIXME: type-specific default value? */  \
+            memset(m_p##pretty, 0, m_length);          \
+          }					       \
 	  if (add) {                                   \
 	    memcpy(m_p##pretty, old, oldLength);       \
 	    delete [] old;                             \
