@@ -1,4 +1,4 @@
-<ComponentSpec Name="split1x2">
+<ComponentSpec>
   <Properties>
     <Property Name="n_buffers_a" Volatile="true" Writable="false" Type="ULong"/>
     <Property Name="n_bytes_a" Volatile="true" Writable="false" Type="ULong"/>

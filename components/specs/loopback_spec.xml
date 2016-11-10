@@ -1,4 +1,4 @@
-<ComponentSpec Name="loopback">
+<ComponentSpec>
 
   <Properties>
     <Property Name="msgsProcessed" Readable="true" Writable="false"/>

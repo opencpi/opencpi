@@ -1,4 +1,4 @@
-<ComponentSpec Name="delay">
+<ComponentSpec>
   <Properties>
     <Property Name="dlyCtrl" Volatile="true" Writable="true" Type="ULong"/>
     <Property Name="dlyHoldoffBytes" Volatile="true" Writable="true" Type="ULong"/>

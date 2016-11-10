@@ -1,5 +1,5 @@
 <RccImplementation>
-  <ComponentSpec name='rspec'>
+  <ComponentSpec>
     <Property name='factor' initial='true'/>
     <DataInterfaceSpec name='in'/>
     <DataInterfaceSpec name='out' producer='true'/>

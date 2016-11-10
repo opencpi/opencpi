@@ -1,4 +1,4 @@
-<ComponentSpec Name="copy">
+<ComponentSpec>
   <DataInterfaceSpec Name="in"/>
   <DataInterfaceSpec Name="out" Producer="true"/>
 </ComponentSpec>

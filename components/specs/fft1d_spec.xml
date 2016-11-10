@@ -1,4 +1,4 @@
-<ComponentSpec Name="fft1d">
+<ComponentSpec>
   <Properties>
      <Property Name="direction" Type="ULong" Readable="true" Writable="true"/>
      <Property Name="log2n" Type="ULong" Readable="true" Writable="true"/>

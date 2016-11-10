@@ -1,4 +1,4 @@
-<ComponentSpec Name="ddc">
+<ComponentSpec>
   <Properties>
     <Property Name="ddcStatus" Readable="true"/>
     <Property Name="ddcCtrl" Readable="true" Writable="true"/>

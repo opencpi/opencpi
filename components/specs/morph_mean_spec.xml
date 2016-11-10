@@ -1,4 +1,4 @@
-<ComponentSpec Name="morph_mean">
+<ComponentSpec>
   <Properties>
      <Property Name="window_length" Type="ULong" Readable="true" Writable="true"/>
   </Properties>

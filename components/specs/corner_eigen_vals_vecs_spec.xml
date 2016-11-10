@@ -1,4 +1,4 @@
-<ComponentSpec Name="corner_eigen_vals_vecs">
+<ComponentSpec>
   <Properties>
     <Property Name="height" readable="true" writable="true"/>
     <Property Name="width" readable="true" writable="true"/>

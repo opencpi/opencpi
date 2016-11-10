@@ -6,7 +6,7 @@ being handled at the input must be passed to the output.
 
 -->
 
-<ComponentSpec name="fsk_mod_complex" >
+<ComponentSpec>
 
   <!-- Input data and control stream -->
   <DataInterfaceSpec Name="in" Producer="false">

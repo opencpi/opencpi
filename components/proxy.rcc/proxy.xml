@@ -1,5 +1,5 @@
 <RccWorker language="c++" slave="bias_cc.rcc" controloperations='start'>
-  <componentspec name="proxy"/>
+  <componentspec/>
   <property name='proxybias' initial='true'/>
   <!-- Insert any other implementation-specific information here -->
 </RccWorker>

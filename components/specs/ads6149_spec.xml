@@ -1,4 +1,4 @@
-<ComponentSpec Name="ads6149">
+<ComponentSpec>
   <Properties>
     <Property Name="Base" Type="ULong" ArraySize="1K"/>
     <xi:include href="ads61xxbt_props.xml"/>

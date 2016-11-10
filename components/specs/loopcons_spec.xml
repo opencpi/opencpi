@@ -1,4 +1,4 @@
-<ComponentSpec Name="loopcons">
+<ComponentSpec>
   <Properties>
     <Property Name="passFail" Readable="true" Writable="true"/>
     <Property Name="run2BufferCount" Readable="true" Writable="true"/>

@@ -84,7 +84,6 @@ begin
      -- check for EOF and do the right thing.
      procedure finish(msg : string) is begin
        report "EOF on input file: " & msg;
---       file_close(data_file);
        close_file(data_file, props_in.fileName);
        if its(props_in.suppressEOF) then
          finished_r <= true; -- nothing to do at this EOF except be finished

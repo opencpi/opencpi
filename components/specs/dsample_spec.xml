@@ -1,4 +1,4 @@
-<ComponentSpec Name="dsample">
+<ComponentSpec>
   <Properties>
      <Property Name="DValue" Type="ULong" Readable="true" Writable="true"/>
      <Property Name="DByte" Type="UChar" Readable="true" Writable="true"/>

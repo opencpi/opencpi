@@ -1,4 +1,4 @@
-<RccWorker name='ptest' language='c' spec='ptest_spec.xml'>
+<RccWorker language='c' spec='ptest_spec.xml'>
      <Property Name="sp0" Type="Bool" Readable="true" Writable="true" sequencelength="1"/>
      <Property Name="sp1" Type="Char" Volatile="true" Writable="true" sequencelength="2"/>
      <Property Name="sp2" Type="Double" Readable="true" Writable="true" sequencelength="3"/>

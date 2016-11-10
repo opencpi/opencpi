@@ -14,26 +14,26 @@ using namespace Cic_lpfilter_complex_ccWorkerTypes;
 class Cic_lpfilter_complex_ccWorker : public Cic_lpfilter_complex_ccWorkerBase {
   RCCResult run(bool /*timedout*/) {
     switch (in.opCode()) {
-    case Cstream_dataIq_OPERATION:
+    case Iqstream_with_syncIq_OPERATION:
       {
-	const Cstream_dataIqData *inIq = in.iq().data().data();
+	const Iqstream_with_syncIqData *inIq = in.iq().data().data();
 	size_t inLength = in.iq().data().size();
-	Cstream_dataIqData *outIq = out.iq().data().data();
+	Iqstream_with_syncIqData *outIq = out.iq().data().data();
 	size_t outLength = out.iq().data().capacity();
 	if (outLength > inLength)
 	  return setError("Output buffer size (%zu) smaller than input (%zu)");
 	out.iq().data().resize(inLength);
-	out.setOpCode(Cstream_dataIq_OPERATION);
+	out.setOpCode(Iqstream_with_syncIq_OPERATION);
 	printf("IQ Op: %d\n", inIq->I + inIq->Q);
 	break;
       }
-    case Cstream_dataTime_OPERATION:
+    case Iqstream_with_syncTime_OPERATION:
       {
 	const uint64_t &now = in.Time().time();
 	printf("Time Op: %llu\n", (unsigned long long)now);
 	break;
       }
-    case Cstream_dataSync_OPERATION:
+    case Iqstream_with_syncSync_OPERATION:
       printf("Sync Op:\n");
       break;
     }

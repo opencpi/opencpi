@@ -7,7 +7,7 @@ intial phase, fluh any buffers that it can and send a "Sync" message prior to ge
 
  -->
 
-<ComponentSpec name="dds_complex" >
+<ComponentSpec>
   <Properties>
 
 <!-- DDS advance rate in (radians per sample)/2Pi  Format: Qs0.31 

@@ -4,7 +4,7 @@ all: ddsTest
 	rm -f utTime.sh; ln -s ../unit.test/utTime.sh .
 
 ddsTest: ddsTest.cxx
-	$(Gc++_$(RccTarget)) -Wall -g -o $@ $(OCPI_EXPORT_DYNAMIC) -I$(OCPI_INC_DIR) -I$(OCPI_BASE_DIR)/runtime/util/misc/include $^ $(OCPI_LD_FLAGS) 
+	$(Gc++_$(RccTarget)) -Wall -g -o $@ $(OCPI_EXPORT_DYNAMIC) -I$(OCPI_INC_DIR) -I$(OCPI_BASE_DIR)/runtime/util/misc/include $^ $(OCPI_LD_FLAGS)
 
 # OCPI_LIBRARY_PATH is like LD_LIBRARY_PATH, but for OpenCPI components.
 

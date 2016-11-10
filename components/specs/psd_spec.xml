@@ -1,4 +1,4 @@
-<ComponentSpec Name="psd">
+<ComponentSpec>
   <Properties>
     <Property Name="psdStatus" Readable="true"/>
     <Property Name="psdCtrl" Readable="true" Writable="true"/>

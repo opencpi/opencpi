@@ -1,4 +1,4 @@
-<ComponentSpec Name="comparator_real">
+<ComponentSpec>
 
   <Properties>
     <Property Name="passed" type="bool" Volatile="true" Writable="true" />

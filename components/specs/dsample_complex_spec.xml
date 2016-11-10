@@ -8,7 +8,7 @@ Control events must be passed on to the output.
 
 -->
 
-<ComponentSpec name="dsample_complex" >
+<ComponentSpec>
 
   <Properties>
     <!-- Down sample factor  Format: unsigned integer > 0 -->

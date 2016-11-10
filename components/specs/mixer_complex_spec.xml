@@ -8,7 +8,7 @@ receives a "Sync" message it must perform the following steps.
         * Throw out all data on DDS input strean until "Sync" message is received.
 -->
 
-<ComponentSpec name="mixer_complex">
+<ComponentSpec>
 
   <!-- input stream that contains both data and sync  -->
   <DataInterfaceSpec Name="in_if" Producer="false">

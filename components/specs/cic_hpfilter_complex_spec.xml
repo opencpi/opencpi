@@ -8,7 +8,7 @@ This is a simple CIC half band highpass filter.
 
 -->
 
-<ComponentSpec name="cic_hpfilter_complex" >
+<ComponentSpec>
 
   <Properties>
     <!-- M - integer interpolation factor   Format: UShort   -->
