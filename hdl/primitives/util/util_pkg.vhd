@@ -49,8 +49,9 @@ end component cwd;
 
 -- The basic verilog function for getting at the cwd= "plusarg".
 component cwd_internal is
-   generic(length : natural := cwd_length);
-   port   (cwd    : out std_logic_vector(0 to length*8-1));
+   generic(length  : natural := cwd_length);
+   port   (cwd     : out std_logic_vector(0 to length*8-1);
+           len_err : out std_logic);
 end component cwd_internal;
 
 component TSINOUT_1 is
@@ -81,6 +82,12 @@ component SyncRegister is
       sD_IN  : in std_logic_vector(width-1 downto 0);      
       dD_OUT : out std_logic_vector(width-1 downto 0));
 end component SyncRegister;
+
+-- see Example 4/5 on page 31/32 of https://www.altera.com/content/dam/altera-www/global/en_US/pdfs/literature/an/an307.pdf
+component buffer_clock_global is
+  port (clk          : in  std_logic;
+        clk_buffered : out std_logic);
+end component buffer_clock_global;
 
 -- A convenience function to join a CWD to a filename
 function cwd_join(cwd : string_t; name : string_t) return string;
