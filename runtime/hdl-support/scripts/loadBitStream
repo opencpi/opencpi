@@ -82,6 +82,11 @@ fi
 # Get cable info - a list of <cable>=<serial-number>
 ################################################################################
 echo Scanning for JTAG cables...
+jtagpermissionscheck=`$jtagSupport 2>&1 | grep -i "unable to lock chain" | grep -i "insufficient port permissions"`
+if test "$jtagpermissionscheck" != ""; then
+  echo "User does not have permission for scanning JTAG cables. Contact your system administrator for permissions pertaining to <altera install location>/quartus/bin/jtagconfig"
+  exit 1
+fi
 cables=`$jtagSupport cables $temp 2>$temp.cables`
 if test $? != 0; then
   echo JTAG cable setup for platform \"$platform\" failed. See \"$temp.cables\".

@@ -21,13 +21,15 @@
      2. The Zipper can be restrapped so they are inputs to the card and driven by the FPGA to the lime.
         In this configuration there is no clock input to the FPGA at all.  The digital I/O clock is totally
         under the control of the FPGA.
-     3. It is theoretically possible to split the clocks so one is input and one is output.  Ugh.
+     3. It is theoretically possible to split the clocks so one is input and one is output.
      This file implements the default.
 -->
 <card type="fmc_lpc">
                                                  <!-- lime  lime       myriad       myriad  zipper
                                                        pin  name       name         RF pin  fmc_lpc -->
   <device worker='lime_adc'>
+    <property name='use_clk_out_p' value='0'/>
+    <property name='use_clk_in_p' value='1'/>
     <Signal name="rx_clk"     slot=''/>          <!--  17   rx_clk     rxclk           59    NONE - From SI5351 CLK2 to Myriad RF to Lime -->
     <Signal name="rx_clk_out" slot=''/>          <!--  40   rx_clk_out rx_clk_out    NONE    NONE -->
     <Signal name='rx_clk_in'  slot='LA02_P'/>    <!--  NONE            rxclk_c       NONE     H07 From SI5351 CLK3 to FMC -->
