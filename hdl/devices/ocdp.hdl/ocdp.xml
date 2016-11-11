@@ -1,5 +1,5 @@
 <HdlDevice language='vhdl' rawProperties='true' outer='true'>
-  <ComponentSpec name='ocdp'>
+  <ComponentSpec>
     <property name='nLocalBuffers' readable='true' writable='true'/>
     <property name='nRemoteBuffers' readable='true' writable='true'/>
     <property name='localBufferBase' readable='true' writable='true'/>

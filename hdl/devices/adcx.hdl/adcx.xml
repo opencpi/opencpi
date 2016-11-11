@@ -1,5 +1,5 @@
-<HdlDevice Name="adcx" Language="Verilog" Pattern="%w%M%0_">
-  <ComponentSpec Name="adcx">
+<HdlDevice Language="Verilog" Pattern="%w%M%0_">
+  <ComponentSpec>
     <DataInterfaceSpec Name="out" Producer="true" protocol='stream_protocol'/>
   </ComponentSpec>
     <Property Name="wsiMStatus" Readable="true" />

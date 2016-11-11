@@ -41,7 +41,7 @@ begin
     generic map(
       data_width    => 8,
       addr_width    => addr_width_c,
-      clock_divisor => 16
+      clock_divisor => to_integer(to_unsigned(from_float(CLK_FREQ_p)/3125000,16)) -- SPI clk = ~ 3.125MHz
       )
     port map(
       clk     => wci_clk,

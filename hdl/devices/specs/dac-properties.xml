@@ -1,5 +1,5 @@
 <!-- Properties common to all dac specs and workers -->
 <properties>
   <!-- Underrun happens dynamically, but can be reset -->
-  <property name="underrun" type="Bool" volatile="true" writable='true' default='0'/>
+  <property name="underrun" type="Bool" volatile="true" writable='true'/>
 </properties>

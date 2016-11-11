@@ -4,7 +4,7 @@
   <xi:include href='lime-iq-properties.xml'/>
 
   <!-- Ports -->
-  <StreamInterface Name="IN" DataWidth="32" optional='1' zerolengthmessages='1'/>
+  <StreamInterface Name="IN" DataWidth="32" optional='1'/>
 
   <!-- Clocks -->
   <Clock name='sample_clk'/>

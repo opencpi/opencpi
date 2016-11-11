@@ -3,7 +3,11 @@
      with a shared reset
      -->
 <HdlDevice language="vhdl">
-  <ComponentSpec nocontrol='true'/>
+  <ComponentSpec nocontrol='true'>
+    <!-- CLK_FREQ_p is divided by the desired SPI clock rate, in this case 3.125 MHz, 
+	 to produce a clock cycle count value, which is an input to the SPI module -->
+    <Property name="CLK_FREQ_p" type="float" parameter="1" readable="1" default="100e6"/>
+  </ComponentSpec>
   <!-- We have two raw property masters, the rx and tx workers for the xcvr chip -->
   <rawprop name='rprops' count='2' optional='true'/>
   <supports worker='lime_tx'>

@@ -1,5 +1,5 @@
-<HdlImplementation Name="dram" Language="Verilog" >
-  <ComponentSpec Name="dram">
+<HdlImplementation Language="Verilog" >
+  <ComponentSpec>
     <Properties>
       <property name="dramStatus" readable="true"/>
       <property name="drmCtrl" readable="true" writable="true"/>

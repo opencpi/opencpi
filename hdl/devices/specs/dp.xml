@@ -1,5 +1,5 @@
-<HdlImplementation Name="dp" Language="Verilog" >
-  <ComponentSpec Name="dp">
+<HdlImplementation Language="Verilog" >
+  <ComponentSpec>
     <Properties >
       <Property Name="Control" Type="ULong" Readable="true" Writable="true"/>
       <Property Name="Controlbyte" Type="UChar" Readable="true" Writable="true"/>
