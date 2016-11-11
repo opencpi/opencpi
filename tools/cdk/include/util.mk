@@ -41,22 +41,13 @@ override SHELL=/bin/bash
 export AT
 export OCPI_DEBUG_MAKE
 AT=@
-ifneq ($(wildcard $(OCPI_CDK_DIR)/include/autoconfig_import*),)
-# Import autotool/RPM-based settings
-# AV-815 temporary fix until AV-816
-ifneq ($(origin OCPI_TARGET_PLATFORM),undefined)
-  ifeq ($(OCPI_TARGET_PLATFORM),zed)
-    ifeq ($(OCPI_CROSS_HOST),)
-      OCPI_CROSS_HOST=arm-xilinx-linux-gnueabi
-    endif
-  endif
+
+# RPM-based options:
+-include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_TARGET_PLATFORM).mk
+ifneq (1,$(OCPI_AUTOCONFIG_IMPORTED))
+-include $(OCPI_CDK_DIR)/include/autoconfig_import.mk
 endif
-ifneq ($(OCPI_CROSS_HOST),)
-include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_CROSS_HOST).mk
-else
-include $(OCPI_CDK_DIR)/include/autoconfig_import.mk
-endif
-endif
+
 OCPI_DEBUG_MAKE=
 ifneq (,)
 define OcpiDoInclude
@@ -324,7 +315,7 @@ DYN_PREFIX=LD_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/$(OCPI_TOOL_DIR)
 endif
 #$(info OCDK $(OCPI_CDK_DIR))
 #DYN_PREFIX=
-OcpiGenTool=$(ToolsDir)/ocpigen $(patsubst %,-I"%",$(call Unique,$(XmlIncludeDirsInternal)))
+OcpiGenTool=$(OCPI_VALGRIND) $(ToolsDir)/ocpigen $(patsubst %,-I"%",$(call Unique,$(XmlIncludeDirsInternal)))
 OcpiGenArg=$(DYN_PREFIX) $(OcpiGenTool) $1 -M $(dir $@)$(@F).deps
 OcpiGen=$(call OcpiGenArg,)
 # Return stderr and the exit status as variables
@@ -506,9 +497,6 @@ define OcpiSetProject
             $$(and $$(filter library,$$(call OcpiGetDirType,$$d)),$$d))),\
       $$(OcpiTempProjDir)/components),\
     $$(call OcpiPrependEnvPath,OCPI_COMPONENT_LIBRARY_PATH,$$(patsubst %/,%,$$(dir $$l))))
-  # when looking for HDL component libraries, look in this project
-  # This variable is becoming obsolete - only used in legacy ocpiassets
-  #  $$(call OcpiPrependEnvPath,OCPI_HDL_COMPONENT_LIBRARY_PATH,$$(OcpiTempProjDir)/hdl)
   # when executing applications, look in this project
   ifndef OCPI_PROJECT_ADDED_TARGET_DIRS
     $$(warning Adding all target directories in the project to OCPI_LIBRARY_PATH)
@@ -518,7 +506,7 @@ define OcpiSetProject
        $$(OcpiTempProjDir)/components/*/lib/rcc \
        $$(OcpiTempProjDir)/components/*/*.test/assemblies/*/container*/target-* \
        $$(OcpiTempProjDir)/hdl/assemblies/*/container*/target-*)
-    $$(warning All target directories in the project to OCPI_LIBRARY_PATH)
+    $$(warning Adding all target directories in the project to OCPI_LIBRARY_PATH)
     export OCPI_PROJECT_ADDED_TARGET_DIRS:=1
   endif
 endef
@@ -573,6 +561,21 @@ OcpiCheckPrereq=$(strip\
                $(error The $1 prerequisite package is not build for target $t)))\
             $(and $3,$(if $(realpath $(OCPI_PREREQUISITES_INSTALL_DIR)/$1/$t/$3),,\
                          $(error For the $1 prerequisite package, $t/$3 is missing))))))
+
+define OcpiEnsureToolPlatform
+  ifndef OCPI_TOOL_HOST
+    GETPLATFORM=$(OCPI_CDK_DIR)/platforms/getPlatform.sh
+    vars:=$$(shell $$(GETPLATFORM) || echo 1 2 3 4 5 6)
+    ifneq ($$(words $$(vars)),5)
+      $$(error $$(OcpiThisFile): Could not determine the platform after running $$(GETPLATFORM)).
+    endif
+    export OCPI_TOOL_OS:=$$(word 1,$$(vars))
+    export OCPI_TOOL_OS_VERSION:=$$(word 2,$$(vars))
+    export OCPI_TOOL_ARCH:=$$(word 3,$$(vars))
+    export OCPI_TOOL_HOST:=$$(word 4,$$(vars))
+    export OCPI_TOOL_PLATFORM:=$$(word 5,$$(vars))
+  endif
+endef
 
 $(call OcpiDbg,End of util.mk)
 endif # ifndef __UTIL_MK__

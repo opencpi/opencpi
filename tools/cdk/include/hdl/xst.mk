@@ -434,7 +434,7 @@ DoXilinxPat=\
 	echo " "Details in $1.out; cd $2; $(call XilinxInit,$1.out);\
 	echo Command: $1 $3 >> $1.out; \
 	/usr/bin/time -f %E -o $1.time bash -c "$1 $3; RC=\$$$$?; $(ECHO) Exit status: \$$$$RC; $(ECHO) \$$$$RC > $1.status" >> $1.out 2>&1;\
-	(echo -n Time:; tr -d '\n' <$1.time; echo -n ' at '; date +%T) >> $1.out; \
+	(echo -n Elapsed time:; tr -d '\n' <$1.time; echo -n ', completed at '; date +%T) >> $1.out; \
 	$(call XilinxAfter,$1,$4)
 #AppBaseName=$(PlatformDir)/$(Worker)-$(HdlPlatform)
 PromName=$1/$2.mcs
@@ -450,7 +450,7 @@ ChipScopeName=$1/$2-csi.ngc
 PcfName=$1/$2.pcf
 #TopNgcName=$(HdlPlatformsDir)/$1/target-$(call HdlGetPart,$1)/$1.ngc
 
-OcpiXstTrceOptions=-v 20 -fastpaths
+OcpiXstTrceOptions=-v 200 -fastpaths
 # $(call HdlToolDoPlatform,1:<target-dir>,2:<app-name>,3:<app-core-name>,4:<pfconfig>,5:<platform-name>,6: paramconfig)
 define HdlToolDoPlatform_xst
 

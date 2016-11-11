@@ -47,10 +47,15 @@ RccSourceSuffix:=.$(Suffix_rcc_$(OcpiLanguage))
 RccImplSuffix=$(if $(filter c++,$(OcpiLanguage)),-worker.hh,_Worker.h)
 RccSkelSuffix=-skel$(RccSourceSuffix)
 OBJ:=.o
-override RccIncludeDirsInternal+=../include gen $(OCPI_CDK_DIR)/include/rcc
+override RccIncludeDirsInternal+=\
+ ../include gen \
+ $(OCPI_CDK_DIR)/include/rcc \
+ $(wildcard $(OCPI_CDK_DIR)/platforms/$(RccPlatform)/include)
 BF=$(BF_$(call RccOs,$1))
+# This is for backward compatibility
+RccDynamicLinkOptions=$(SharedLibLinkOptions)
 ifneq ($(OCPI_DEBUG),0)
-RccDynamicLinkOptions=-g
+RccDynamicLinkOptions+= -g
 endif
 # Linux values
 BF_linux=.so

@@ -19,7 +19,6 @@ else
   # Just to be sure it is exported
   export OCPI_CDK_DIR
 endif
-
 ifndef RPM_BUILD_ROOT
 # We run the OCPI_CDK_DIR through the shell to handle ~ (at least).
 OCPI_CDK_DIR:=$(shell echo $(OCPI_CDK_DIR))
@@ -31,7 +30,7 @@ ifneq ($(realpath $(OCPI_CDK_DIR)/include/ocpisetup.mk),$(realpath $(OcpiThisFil
 endif
 $(info OCPI_CDK_DIR has been set to $(OCPI_CDK_DIR) and verified to be sane.)
 endif
-
+include $(OCPI_CDK_DIR)/include/util.mk
 endif # The end of processing this file once - ifndef OCPISETUP_MK
 ################################################################################
 # OCPI_CDK_DIR has been established and verified.
@@ -49,18 +48,7 @@ ifeq ($(wildcard $(OCPI_CDK_DIR)/include/autoconfig_import*),)
   # Determine unset variables dynamically here, again with the goal of sane default
   # behavior with no environment requirements at all.
   # Setting just OCPI_TARGET_PLATFORM will do cross builds
-  ifndef OCPI_TOOL_HOST
-    GETPLATFORM=$(OCPI_CDK_DIR)/platforms/getPlatform.sh
-    vars:=$(shell $(GETPLATFORM) || echo 1 2 3 4 5 6)
-    ifneq ($(words $(vars)),5)
-      $(error $(OcpiThisFile): Could not determine the platform after running $(GETPLATFORM)).
-    endif  
-    export OCPI_TOOL_OS:=$(word 1,$(vars))
-    export OCPI_TOOL_OS_VERSION:=$(word 2,$(vars))
-    export OCPI_TOOL_ARCH:=$(word 3,$(vars))
-    export OCPI_TOOL_HOST:=$(word 4,$(vars))
-    export OCPI_TOOL_PLATFORM:=$(word 5,$(vars))
-  endif
+  $(eval $(OcpiEnsureToolPlatform))
   ifdef OCPI_USE_TOOL_MODES
     # Determine OCPI_TOOL_MODE if it is not set already
     ifndef OCPI_TOOL_MODE
@@ -112,20 +100,12 @@ ifeq ($(wildcard $(OCPI_CDK_DIR)/include/autoconfig_import*),)
     $(infox OCPI_TARGET_ARCH:$(OCPI_TARGET_ARCH))
   endif
 else
-  # Import and/or default RPM-based settings
-  # AV-815 temporary fix until AV-816
-  ifneq ($(origin OCPI_TARGET_PLATFORM),undefined)
-    ifeq ($(OCPI_TARGET_PLATFORM),zed)
-      ifeq ($(OCPI_CROSS_HOST),)
-        OCPI_CROSS_HOST=arm-xilinx-linux-gnueabi
-      endif
-    endif
+  # RPM-based options:
+  -include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_TARGET_PLATFORM).mk
+  ifneq (1,$(OCPI_AUTOCONFIG_IMPORTED))
+  -include $(OCPI_CDK_DIR)/include/autoconfig_import.mk
   endif
-  ifneq ($(OCPI_CROSS_HOST),)
-    include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_CROSS_HOST).mk
-  else
-    include $(OCPI_CDK_DIR)/include/autoconfig_import.mk
-  endif
+
 endif
 
 ################################################################################

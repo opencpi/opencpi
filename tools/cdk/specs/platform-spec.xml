@@ -1,6 +1,6 @@
 <!-- base specification for all platform workers
-     properties and signals are the ones that all platforms must support
-     Three categories:
+     properties and signals here are the ones that all platforms must support
+     These categories:
        1. parameters (i.e. that must and always will be parameters)
        2. non-parameters that must exist, in a proscribed order
        3. properties that could (and usually should) be parameters, but may not be

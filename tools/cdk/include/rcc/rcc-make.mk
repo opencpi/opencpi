@@ -37,7 +37,6 @@
 ifndef RCC_MAKE_MK
 RCC_MAKE_MK:=xxx
 include $(OCPI_CDK_DIR)/include/util.mk
-$(call OcpiDbg,Entering rcc-make.mk after util.mk)
 
 # This allows component library level RCC libraries to be fed down to workers,
 # via RccLibrariesInternal, while allowing the worker itself to have more libraries
@@ -57,6 +56,9 @@ RccArch=$(word 3,$(subst -, ,$1))
 $(call OcpiDbgVar,RccPlatforms)
 $(call OcpiDbgVar,RccTargets)
 
+# for a clean environment, ensure OCPI_TOOL_PLATFORM at least
+$(eval $(OcpiEnsureToolPlatform))
+
 ifdef RccPlatforms
   # nothing here - we process later
 else ifdef RccPlatform
@@ -66,7 +68,13 @@ else ifdef RccTargets
 else ifdef RccTarget
   RccTargets:=$(RccTarget)
 else ifeq ($(origin RccPlatforms),undefined)
-  RccPlatforms:=$(OCPI_TARGET_PLATFORM)
+  ifdef OCPI_TARGET_PLATFORM
+    RccPlatforms:=$(OCPI_TARGET_PLATFORM)
+  else ifdef OCPI_TOOL_PLATFORM
+    RccPlatforms:=$(OCPI_TOOL_PLATFORM)
+  else
+    $(error Unexpected failure to figure out which RCC compiler to use.)
+  endif
 endif
 
 $(call OcpiDbgVar,RccPlatforms)
@@ -106,6 +114,10 @@ endif
 
 $(call OcpiDbgVar,RccPlatforms)
 $(call OcpiDbgVar,RccTargets)
+
+# This should avoid confusion since they should not be used after this point
+override RccTarget:=
+override RccPlatform:=
 
 # Read in all the tool sets indicated by the targets
 # 

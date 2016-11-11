@@ -50,7 +50,7 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 $(call OcpiDbgVar,HdlPlatforms)
 # Theses next lines are similar to what worker.mk does
 ifneq ($(MAKECMDGOALS),clean)
-$(if $(wildcard $(CwdName).xml),,\
+$(if $(call OcpiExists,$(CwdName).xml),,\
   $(error The OWD for the platform and its worker, $(CwdName).xml, is missing))
 endif
 $(call OcpiDbgVar,HdlPlatforms)

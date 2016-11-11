@@ -93,7 +93,7 @@ define HdlSetWorkers
             $$(foreach d,$$(call HdlTargetComponentLibraries,$$(HdlTarget),HSW),\
                $$(call HdlExists,$$d/$$w$$(HdlBin))))),\
           $$(call FindRelative,.,$$f)),\
-	),$$(if $$(filter-out ocscp ocscp_rv metadata metadata_rv time_client time_client_rv unoc_node unoc_node_rv,$$w),$$(warning Warning: Worker $$w was not found in any of the component libraries)))))
+	),$$(if $$(filter-out ocscp ocscp_rv metadata metadata_rv time_client time_client_rv unoc_node unoc_node_rv,$$w),$$(warning Warning: Worker $$w was not found in any of the component libraries built for $$(HdlTarget))))))
    $$(infox Cores SubCores_$$(HdlTarget) is $$(origin SubCores_$$(HdlTarget)) $$(flavor SubCores_$$(HdlTarget)):$$(SubCores_$$(HdlTarget)))
 
 endef

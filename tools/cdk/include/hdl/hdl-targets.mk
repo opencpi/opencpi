@@ -26,7 +26,7 @@ HdlTargets_stratix4:=ep4sgx230k ep4sgx530k ep4sgx360
 HdlTargets_stratix5:=ep5sgsmd8k2
 #Testing: HdlTargets_test1=test2
 
-HdlSimTools=isim icarus verilator ghdl xsim modelsim 
+HdlSimTools=isim icarus verilator ghdl xsim modelsim
 
 # Tools are associated with the family or above
 HdlToolSet_ghdl:=ghdl
@@ -73,7 +73,7 @@ HdlAddPlatform=\
 HdlDoPlatform=\
   $(foreach p,$(notdir $1),\
     $(foreach d,$(if $(wildcard $1/lib/$p.mk),$1/lib,$1),\
-      $(if $(wildcard $d/hdl/$p.xml)$(wildcard $d/$p.xml),,$(error no $p.xml file found for platform under: $1))\
+      $(if $(filter clean%,$(MAKECMDGOALS))$(call OcpiExists,$d/hdl/$p.xml)$(call OcpiExists,$d/$p.xml),,$(error no $p.xml file found for platform under: $1))\
       $(if $(wildcard $d/$p.mk),,$(error no $p.mk file found under $1. $p not built?))\
       $(call HdlAddPlatform,$d,$p,$d)))
 
