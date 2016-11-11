@@ -43,9 +43,9 @@ architecture rtl of alst4_worker is
   end component pci_alst4;
 begin
   timebase_out.clk   <= sys0_clk;
-  timebase_out.reset <= not sys0_rstn;
-  timebase_out.ppsIn <= ppsExtIn;
-  ppsOut             <= timebase_in.ppsOut;
+  timebase_out.reset <= not ctl_rst_n;
+  timebase_out.ppsIn <= '0';
+
   -- Instantiate the PCI core, which will also provide back to us a 125MHz clock
   -- based on the incoming 250Mhz PCI clock (based on the backplane 100Mhz PCI clock).
   -- We will use that 125MHz clock as our control plane clock since that avoids
@@ -78,11 +78,6 @@ begin
   pcie_out.id      <= pci_id;
   pcie_out.data    <= to_unoc(unoc_out_data);
 
-  -- term_unoc : unoc_terminator
-  --   port    map(up_in      => pcie_slave_in,
-  --               up_out     => pcie_slave_out,
-  --               drop_count => props_out.unocDropCount);
-
   -- Output/readable properties
   props_out.dna             <= (others => '0');
   props_out.nSwitches       <= (others => '0');
@@ -100,4 +95,7 @@ begin
   metadata_out.clk          <= ctl_clk;
   metadata_out.romAddr      <= props_in.romAddr;
   metadata_out.romEn        <= props_in.romData_read;
+  -- Drive the card-present-in-slot booleans
+  props_out.hsmc_a_card_is_present <= not hsmc_a_psntn;
+  props_out.hsmc_b_card_is_present <= not hsmc_b_psntn;
 end rtl;

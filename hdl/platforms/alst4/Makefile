@@ -2,4 +2,5 @@
 Libraries=stratix4
 Cores=pcie_4243_hip_s4gx_gen2_x4_128
 ExportFiles=alst4.qsf alst4.sdc jtagSupport_alst4 loadFlash_alst4 testbias_alst4_base.bitz
+Configurations=base alst4_zipper_hsmc_alst4_port_b_rx alst4_zipper_hsmc_alst4_port_b_tx alst4_zipper_hsmc_alst4_port_b_rx_tx alst4_zipper_hsmc_alst4_port_a_rx alst4_zipper_hsmc_alst4_port_a_tx alst4_zipper_hsmc_alst4_port_a_rx_tx
 include $(OCPI_CDK_DIR)/include/hdl/hdl-platform.mk

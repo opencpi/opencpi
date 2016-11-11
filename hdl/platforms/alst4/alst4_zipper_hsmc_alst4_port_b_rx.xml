@@ -1,0 +1,3 @@
+<HdlConfig>
+  <device name='lime_adc' card='lime_zipper_hsmc_alst4' slot='HSMC_ALST4_B'/>
+</HdlConfig>

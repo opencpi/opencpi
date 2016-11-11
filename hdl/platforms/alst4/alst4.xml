@@ -3,14 +3,17 @@
   <!-- All platform workers must provide these two ports -->
   <metadata master='true'/> <!-- access to container metadata via the platform worker -->
   <timebase master='true'/> <!-- providing a timebase for the time service -->
+  <!-- Declare and parameterize the time_server device worker for this platform -->
   <device worker='time_server'>
     <property name='frequency' value='100e6'/>
   </device>
   <!-- This platform worker provides a data plane called "pcie" -->
   <unoc name="pcie" master='true'/>
-  <!-- <unoc name="pcie_slave"/> -->
   <property name="pciId" type='ushort' volatile='true'/>
   <property name="unocDropCount" type='uchar' volatile='true'/>
+  <property name="hsmc_a_card_is_present" type='bool' readable='true' volatile='true'/>
+  <property name="hsmc_b_card_is_present" type='bool' readable='true' volatile='true'/>
+
   <signal input="sys0_clk"/>
   <signal input='sys0_rstn'/>
   <signal input='pcie_clk'/>
@@ -18,7 +21,89 @@
   <signal input='pcie_rx' width='4'/>
   <signal output='pcie_tx' width='4'/>
   <signal output='led' width='16'/>
-  <signal input='ppsExtIn'/>
-  <signal output='ppsOut'/>
+  <signal input='hsmc_a_psntn'/> <!-- instead of using the slot signal, which would require a card for its use, disconnect the slot signal and instead use this platform worker signal (which may be utilized regardless of whether a card is included or not-->
+  <signal input='hsmc_b_psntn'/> <!-- instead of using the slot signal, which would require a card for its use, disconnect the slot signal and instead use this platform worker signal (which may be utilized regardless of whether a card is included or not-->
+
+  <!-- hsmc_alst4 type as opposed to regular old hsmc because the alst4 FPGA actually doesn't fully support the HSMC spec (some pins have restricted functionality as compared to the spec) -->
+  <slot name='HSMC_ALST4_A' type='hsmc_alst4'> 
+   <signal slot='XCVR_TXp7' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXp7' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_TXn7' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXn7' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_TXp6' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXp6' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_TXn6' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXn6' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_TXp5' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXp5' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_TXn5' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXn5' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_TXp4' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXp4' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_TXn4' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXn4' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_TXp3' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXp3' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_TXn3' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXn3' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_TXp2' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXp2' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_TXn2' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXn2' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_TXp1' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXp1' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_TXn1' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXn1' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_TXp0' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXp0' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_TXn0' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXn0' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='JTAG_TCK'  platform=''/>
+   <signal slot='JTAG_TMS'  platform=''/>
+   <signal slot='JTAG_TDO'  platform=''/>
+   <signal slot='JTAG_TDI'  platform=''/>
+   <signal slot='PSNTn'  platform=''/> <!-- instead of using this (slot) signal, which would require a card for its use, disconnect this signal and instead use a platform worker signal (which may be utilized regardless of whether a card is included or not-->
+
+  </slot>
+  <slot name='HSMC_ALST4_B' type='hsmc_alst4'>
+   <signal slot='XCVR_TXp7' platform=''/>
+   <signal slot='XCVR_RXp7' platform=''/>
+   <signal slot='XCVR_TXn7' platform=''/>
+   <signal slot='XCVR_RXn7' platform=''/>
+   <signal slot='XCVR_TXp6' platform=''/>
+   <signal slot='XCVR_RXp6' platform=''/>
+   <signal slot='XCVR_TXn6' platform=''/>
+   <signal slot='XCVR_RXn6' platform=''/>
+   <signal slot='XCVR_TXp5' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXp5' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_TXn5' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXn5' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_TXp4' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXp4' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_TXn4' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXn4' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_TXp3' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXp3' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_TXn3' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXn3' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_TXp2' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXp2' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_TXn2' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXn2' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_TXp1' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXp1' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_TXn1' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXn1' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_TXp0' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXp0' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_TXn0' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='XCVR_RXn0' platform=''/> <!-- leave this unconnected until we add support to alst4.qsf for these high-speed transceiver pin pairs -->
+   <signal slot='JTAG_TCK'  platform=''/>
+   <signal slot='JTAG_TMS'  platform=''/>
+   <signal slot='JTAG_TDO'  platform=''/>
+   <signal slot='JTAG_TDI'  platform=''/>
+   <signal slot='PSNTn'  platform=''/> <!-- instead of using this (slot) signal, which would require a card for its use, disconnect this signal and instead use a platform worker signal (which may be utilized regardless of whether a card is included or not-->
+  </slot>
+
 </HdlPlatform>
 
