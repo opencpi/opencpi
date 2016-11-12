@@ -1,0 +1,81 @@
+<!-- Definition of the lime HSMC dev kit card: EVB6002-6
+     1. Which devices workers are used.
+     2. How they are wired to the slot connector(s)
+     3. Which devices workers are required by which other device workers
+     4. How these dependent device workers are wired what they depend on. -->
+
+<card name='lime_hsmc' type='hsmc'>
+  <!-- base device required when either receive, transmit or both are present -->
+  <device name='limeSPI'>
+    <!-- Connections between device worker and slot -->
+    <signal name='SCLK'      pin='90'/> <!-- HSMC name is D33 -->
+    <signal name='SEN'       pin='84'/> <!-- HSMC name is D29 -->
+    <signal name='SDIO'      pin='85'/> <!-- HSMC name is D30 -->
+    <signal name='SDO'       pin='86'/> <!-- HSMC name is D31 -->
+    <signal name='RESET'     pin='83'/> <!-- HSMC name is D28 -->
+  </device>
+  <device name='limeTX'>
+    <!-- Connections between device worker and slot
+	 tx_clk is normally not connected
+	 it can also be connected to pin 39 (slot output signal CLKOUT0)
+	 it can also be connected to pin 97 (output on slot signal D38) -->
+    <signal name='tx_en'     pin='78'/> <!-- HSMC name is D25 -->
+    <signal name='tx_iq_sel' pin='80'/> <!-- HSMC name is D27 -->
+    <signal name='txd(0)'    pin='42'/> <!-- HSMC name is D1 -->
+    <signal name='txd(1)'    pin='44'/> <!-- HSMC name is D3 -->
+    <signal name='txd(2)'    pin='48'/> <!-- HSMC name is D5 -->
+    <signal name='txd(3)'    pin='50'/> <!-- HSMC name is D7 -->
+    <signal name='txd(4)'    pin='54'/> <!-- HSMC name is D9 -->
+    <signal name='txd(5)'    pin='56'/> <!-- HSMC name is D11 -->
+    <signal name='txd(6)'    pin='60'/> <!-- HSMC name is D13 -->
+    <signal name='txd(7)'    pin='62'/> <!-- HSMC name is D15 -->
+    <signal name='txd(8)'    pin='66'/> <!-- HSMC name is D17 -->
+    <signal name='txd(9)'    pin='68'/> <!-- HSMC name is D19 -->
+    <signal name='txd(10)'   pin='72'/> <!-- HSMC name is D21 -->
+    <signal name='txd(11)'   pin='74'/> <!-- HSMC name is D23 -->
+    <requires name='limeSPI'>
+      <!-- Connections between this device worker and a required device -->
+      <signal name='spi_present' to='tx_present'/>
+      <signal name='spi_reset'   to='tx_reset'/>
+      <signal name='spi_read'    to='tx_read'/>
+      <signal name='spi_write'   to='tx_write'/>
+      <signal name='spi_addr'    to='tx_addr'/>
+      <signal name='spi_wdata'   to='tx_wdata'/>
+      <signal name='spi_done'    to='rx_done'/>
+      <signal name='spi_rdata'   to='rdata'/>
+    </requires>
+  </device>
+
+  <device name='limeRX'>
+    <!-- Connections between device worker and slot
+	 rx_clk is an INPUT on pin 40 (slot input signal CLKIN0)
+	 it can also be connected using jumpers to pin 39 (slot output signal CLKOUT0)
+	 it can also be connected using jumpers to pin 97 (output on slot signal D38)
+	 it can also be connected using jumpers to pin 98 (input on slot signal D39) -->
+    <signal name='rx_clk'    pin='40'/> <!-- HSMC name is CLKIN0 -->
+    <signal name='rx_en'     pin='77'/> <!-- HSMC name is D24 -->
+    <signal name='rx_iq_sel' pin='79'/> <!-- HSMC name is D26 -->
+    <signal name='rxd(0)'    pin='43'/> <!-- HSMC name is D2 -->
+    <signal name='rxd(1)'    pin='41'/> <!-- HSMC name is D0 -->
+    <signal name='rxd(2)'    pin='49'/> <!-- HSMC name is D6 -->
+    <signal name='rxd(3)'    pin='47'/> <!-- HSMC name is D4 -->
+    <signal name='rxd(4)'    pin='55'/> <!-- HSMC name is D10 -->
+    <signal name='rxd(5)'    pin='53'/> <!-- HSMC name is D8 -->
+    <signal name='rxd(6)'    pin='61'/> <!-- HSMC name is D14 -->
+    <signal name='rxd(7)'    pin='59'/> <!-- HSMC name is D12 -->
+    <signal name='rxd(8)'    pin='67'/> <!-- HSMC name is D18 -->
+    <signal name='rxd(9)'    pin='65'/> <!-- HSMC name is D16 -->
+    <signal name='rxd(10)'   pin='73'/> <!-- HSMC name is D22 -->
+    <signal name='rxd(11)'   pin='71'/> <!-- HSMC name is D20 -->
+    <requires name='limeSPI'>
+      <!-- Connections between this device worker and a required device -->
+      <signal name='spi_present' to='rx_present'/>
+      <signal name='spi_reset'   to='rx_reset'/>
+      <signal name='spi_read'    to='rx_read'/>
+      <signal name='spi_write'   to='rx_write'/>
+      <signal name='spi_addr'    to='rx_addr'/>
+      <signal name='spi_wdata'   to='rx_wdata'/>
+      <signal name='spi_done'    to='rx_done'/>
+      <signal name='spi_rdata'   to='rdata'/>
+    </requires>
+  </device>

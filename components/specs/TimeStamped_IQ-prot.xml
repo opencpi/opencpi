@@ -1,0 +1,19 @@
+<Protocol> 
+  <Operation name="samples" >
+   <Argument name="iq" type="Struct" SequenceLength="4092">
+     <Member name="I" type="Short"/>
+     <Member name="Q" type="Short"/>
+   </Argument>
+  </Operation>
+  <Operation name="time">
+   <Argument name="sec" type="ulong"/>
+   <Argument name="fract_sec" type="ulonglong"/>
+  </Operation>
+  <Operation name="interval">
+   <!-- 1/sample_rate -->
+   <Argument name="delta_time" type="ulonglong"/>
+  </Operation>
+  <Operation name="flush"/>
+  <Operation name="sync"/>
+  <Operation name="done" />
+</Protocol>
