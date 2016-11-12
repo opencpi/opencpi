@@ -732,9 +732,9 @@
 	     (err = finalizePortParam(params, "xferrole")))
 	   throw OU::Error("Port parameter error: %s", err);
 	 finalizeProperties(params);
-	 Instance *i = m_instances;
 	 if (m_verbose) {
 	   fprintf(stderr, "Actual deployment is:\n");
+	   Instance *i = m_instances;
 	   for (unsigned n = 0; n < m_nInstances; n++, i++) {
 	     const OL::Implementation &impl = *i->m_impl;
 	     OC::Container &c = OC::Container::nthContainer(m_usedContainers[i->m_container]);

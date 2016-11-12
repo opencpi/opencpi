@@ -57,6 +57,9 @@ echo ===========================================================================
 echo Installing the LZMA compression library '(lzma)' under /opt/opencpi/prerequisites
 scripts/install-lzma.sh
 echo ================================================================================
+echo Installing the GMP numeric library '(gmp)' under /opt/opencpi/prerequisites
+scripts/install-gmp.sh
+echo ================================================================================
 echo Installing the ad9361 library under /opt/opencpi/prerequisites
 scripts/install-ad9361.sh
 echo ================================================================================

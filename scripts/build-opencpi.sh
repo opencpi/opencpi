@@ -9,6 +9,7 @@ if test "$OCPI_CDK_DIR" != ""; then
    fi
   fi
 else
+  export OCPI_TARGET_PLATFORM=$1
   # Initialize access to the core tree's export directory
   source scripts/core-init.sh
   # Initialize access to CDK

@@ -291,7 +291,7 @@ namespace OCPI {
 	      // but without it, the small negative number is not sign extended...
 	      // on MACOS gcc v4.0.1 with 64 bit off_t
 	      (second = lseek(fd, -(off_t)bufsize, SEEK_CUR)) != -1 &&
-	      (third = read(fd, buf, bufsize)) == bufsize) {
+	      (third = read(fd, buf, bufsize)) == (ssize_t)bufsize) {
 	    for (char *cp = &buf[bufsize-1]; cp >= buf; cp--)
 	      if (*cp == 'X' && isdigit(cp[1])) {
 		char *end;
@@ -369,9 +369,9 @@ namespace OCPI {
     bool Artifact::
     meetsCapabilities(const Capabilities &caps) {
       return
-	(caps.m_os.empty() || m_os == caps.m_os) &&
-	m_osVersion == caps.m_osVersion && m_arch == caps.m_arch ||
-	m_platform.size() && m_platform == caps.m_platform;
+	((caps.m_os.empty() || m_os == caps.m_os) &&
+	 m_osVersion == caps.m_osVersion && m_arch == caps.m_arch) ||
+	(m_platform.size() && m_platform == caps.m_platform);
     }
     bool Artifact::
     meetsRequirements (const Capabilities &caps,

@@ -209,7 +209,7 @@ class RunCondition {
   inline void disableTimeout() { m_timeout = false; }
   // Enable the timeout, setting its value
   inline void enableTimeout(uint32_t usecs) { m_timeout = true; m_usecs = usecs; }
-  // Enable the tinmeout, without changing its value
+  // Enable the timeout, without changing its value
   inline void enableTimeout() { m_timeout = true; }
   inline void setTimeout(uint32_t usecs) { m_usecs = usecs; }
   void setPortMasks(RCCPortMask first, ...);

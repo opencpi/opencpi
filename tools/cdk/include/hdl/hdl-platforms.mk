@@ -27,7 +27,7 @@ include $(OCPI_CDK_DIR)/include/util.mk
 $(OcpiIncludeProject)
 # FIXME: create an hdl-platforms.mk template to share among platform developers.
 # This variable specifies the local list of platforms that are active here.
-HdlMyPlatforms?=$(foreach d,$(filter-out %.txt %.mk test Makefile common README README.txt lib specs old,$(wildcard *)),$(and $(wildcard $d/$d.xml),$d))
+HdlMyPlatforms?=$(foreach d,$(filter-out %.txt %.mk test Makefile common README README.txt lib specs old,$(wildcard *)),$(and $(wildcard $d/$d.mk),$d))
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 ifndef HdlPlatforms
   ifndef HdlPlatform

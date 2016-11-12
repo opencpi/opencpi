@@ -18,7 +18,7 @@ runtime/library
 runtime/container
 runtime/hdl
 runtime/hdl-support
-runtime/ocl
+# runtime/ocl not ready for prime time
 runtime/rcc
 runtime/remote
 runtime/ctests
@@ -55,6 +55,7 @@ tests
 +tools/cdk/include/applications.mk include/
 +tools/cdk/include/application.mk include/
 # CDK scripts we need
++scripts/clean-env.sh scripts/
 +tools/cdk/scripts/makeStaticWorker scripts/
 +tools/cdk/scripts/ocpidriver scripts/
 +tools/cdk/scripts/ocpixml scripts/
@@ -107,7 +108,7 @@ tests
 # HDL related exclusions and additions
 # test executables to suppress
 -runtime/hdl-support/target-/testRpl
--runtime/hdl-support/target-/ocpinft
+# -runtime/hdl-support/target-/ocpinft
 # test scripts to suppress that we want to keep in the repo
 -runtime/hdl-support/scripts/testDMA
 -runtime/hdl-support/scripts/donft
@@ -132,4 +133,7 @@ tests
 +runtime/dataplane/rdma_drivers/socket/target-<target>/libocpi_socket.* lib/<target>/libocpi_sockets<suffix>
 ################################################################################
 # OCL related exclusions and additions
-+tools/cdk/include/ocl include/
+#+tools/cdk/include/ocl include/
+# Kernel module and main license files
++LICENSE.txt lib/<target>/
++LICENSE.txt

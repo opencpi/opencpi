@@ -324,13 +324,15 @@
       open(const char *busName, bool forLoad, std::string &error) {
 	std::string name("PL:");
 	name += busName;
-
 #if defined(OCPI_ARCH_arm) || defined(OCPI_ARCH_arm_cs)
 	Device *dev = new Device(*this, name, forLoad, error);
 	if (error.empty())
 	  return dev;
 	delete dev;
 	ocpiBad("When searching for PL device '%s': %s", busName, error.c_str());
+#else
+	(void)forLoad;
+	error.clear();
 #endif
 	return NULL;
       }

@@ -374,7 +374,7 @@ protected:
       OU::format(err, "Could not create simulator sub-process for: %s", m_exec.c_str());
       return true;
     default:
-      ocpiInfo("Simluator subprocess has pid: %u.", m_pid);
+      ocpiInfo("Simulator subprocess has pid: %u.", m_pid);
     }
     if (m_verbose)
       fprintf(stderr, "Simulator process (process id %u) started, with its output in %s/sim.out\n",
@@ -386,7 +386,7 @@ protected:
     ocpiCheck(write(m_ctl.m_wfd, msg, 2) == 2);
 #endif
     // Improve the odds of an immediate error giving a good error message by letting the sim run
-    ocpiInfo("Waiting for simulator to start before issueing any more credits.");
+    ocpiInfo("Waiting for simulator to start before issuing any more credits.");
     OS::sleep(100);
     ocpiCheck(signal(SIGINT, sigint) != SIG_ERR);
     for (unsigned n = 0; n < 1; n++)

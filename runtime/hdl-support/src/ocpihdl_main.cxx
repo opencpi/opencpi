@@ -40,7 +40,6 @@
 
 #include "lzma.h"
 #include "zlib.h"
-#include "OcpiNull.h"
 #include "OcpiOsMisc.h"
 #include "OcpiUuid.h"
 #include "OcpiUtilMisc.h"
@@ -1681,6 +1680,7 @@ sendRDMA(const char **ap) {
 static void
 simulate(const char **ap) {
 #if 1
+  (void)ap;
   ocpiBad("The ocpihdl simulate command is ignored, but we are sleeping for 10 hours");
   OS::sleep(36000000);
 #else
