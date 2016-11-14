@@ -131,6 +131,7 @@ tests
 +hdl/assemblies/*/container-*/target-*/*.bitz lib/hdl/assemblies/
 # for backward compatibility of system.xml files
 +runtime/dataplane/rdma_drivers/socket/target-<target>/libocpi_socket.* lib/<target>/libocpi_sockets<suffix>
++runtime/dataplane/rdma_drivers/socket/target-<target>/libocpi_socket_s.* lib/<target>/libocpi_sockets_s<suffix>
 ################################################################################
 # OCL related exclusions and additions
 #+tools/cdk/include/ocl include/

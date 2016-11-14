@@ -47,10 +47,14 @@ RccSourceSuffix:=.$(Suffix_rcc_$(OcpiLanguage))
 RccImplSuffix=$(if $(filter c++,$(OcpiLanguage)),-worker.hh,_Worker.h)
 RccSkelSuffix=-skel$(RccSourceSuffix)
 OBJ:=.o
+RccPrereqLibs=$(RccStaticPrereqLibs) $(RccDynamicPrereqLibs)
 override RccIncludeDirsInternal+=\
  ../include gen \
  $(OCPI_CDK_DIR)/include/rcc \
- $(wildcard $(OCPI_CDK_DIR)/platforms/$(RccPlatform)/include)
+ $(wildcard $(OCPI_CDK_DIR)/platforms/$(RccPlatform)/include) \
+ $(foreach l,$(RccPrereqLibs),\
+   $(OCPI_PREREQUISITES_DIR)/$l/$$(RccTarget)/include\
+   $(OCPI_PREREQUISITES_DIR)/$l/include)
 BF=$(BF_$(call RccOs,$1))
 # This is for backward compatibility
 RccDynamicLinkOptions=$(SharedLibLinkOptions)
@@ -80,6 +84,7 @@ override RccLibrariesInternal+=rcc application os
 ifeq ($(OCPI_USE_TARGET_MODES),1)
   export OCPI_TARGET_MODE:=$(if $(filter 1,$(OCPI_DYNAMIC)),d,s)$(if $(filter 1,$(OCPI_DEBUG)),d,o)
 endif
+Comma=,
 PatchElf=$(or $(OCPI_PREREQUISITES_INSTALL_DIR),/opt/opencpi/prerequisites)/patchelf/$(OCPI_TOOL_HOST)/bin/patchelf
 LinkBinary=$(G$(OcpiLanguage)_LINK_$(RccTarget)) $(call RccPrioritize,DynamicLinkOptions,$(OcpiLanguage),$(RccTarget)) -o $@ $1 \
 $(AEPLibraries) \
@@ -90,7 +95,14 @@ $(foreach l,$(RccLibrariesInternal) $(Libraries),\
             $(and $(wildcard $p$(SOEXT_$(call RccOs,))),-L $(dir $l)$(RccTarget) -l $(notdir $l)),\
             $(error No RCC library found for $l, tried $p$(AREXT_$(call RccOs,)) and $p$(SOEXT_$(call RccOs,))))), \
     $(and $(filter 1,$(OCPI_DYNAMIC)),-l ocpi_$l))) \
-  -L $(OCPI_CDK_DIR)/lib/$(RccTarget)$(and $(OCPI_TARGET_MODE),/d$(if $(filter 1,$(OCPI_DEBUG)),d,o))
+  -L $(OCPI_CDK_DIR)/lib/$(RccTarget)$(and $(OCPI_TARGET_MODE),/d$(if $(filter 1,$(OCPI_DEBUG)),d,o)) \
+  $(foreach l,$(RccStaticPrereqLibs),\
+    $(OCPI_PREREQUISITES_DIR)/$l/$(RccTarget)/lib/lib$l.a) \
+  $(and $(RccDynamicPrereqLibs),-Wl$(Comma)-rpath='$$ORIGIN') \
+  $(foreach l,$(RccDynamicPrereqLibs),\
+    $(OCPI_PREREQUISITES_DIR)/$l/$(RccTarget)/lib/lib$l$(SOEXT_$(call RccOs,))) \
+  $(foreach l,$(RccDynamicPrereqLibs),\
+    && cp $(OCPI_PREREQUISITES_DIR)/$l/$(RccTarget)/lib/lib$l$(SOEXT_$(call RccOs,)) $(@D))
 
 # $1 is target, $2 is configuration
 RccStaticName=$(WkrBinaryName)_s$(BF)

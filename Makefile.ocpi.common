@@ -89,7 +89,7 @@ xxMAIN_DRIVERS=\
   _ZN4OCPI3API12ExternalPortD0Ev \
   _ZN12DataTransfer22createHostSmemServicesERNS_8EndPointE
 
-OCPI_DRIVERS=hdl rcc pio dma socket
+OCPI_DRIVERS=hdl rcc pio dma socket remote
 
 # When linking main programs, allow dynamic libraries to have undefined symbols since
 # we don't want to care about indirect depenedencies.
@@ -131,7 +131,11 @@ ifeq ($(OCPI_OS),macos)
   BASICLIBS=
   CXXFLAGS += $(MACSTDLIB) -Wall -Wsequence-point  -Wparentheses -Wempty-body -Wformat-security \
               -Wformat -Wunused-variable -Wunused-parameter -Wsign-compare -Wno-dangling-else \
-              -Wno-logical-op-parentheses
+              -Wno-logical-op-parentheses \
+
+#	      -Wfloat-equal -Wextra -fno-strict-aliasing -Wuninitialized -Winit-self -Wshadow \
+#	      -Wno-conversion -Wsign-conversion -Wconversion
+
   # -Wuninitialized only usable with -O
   # not available on -Wunused-but-set-variable -Wignored-qualifiers -Wconversion-null -Wint-to-pointer-cast
   #CXXFLAGS += -Wall

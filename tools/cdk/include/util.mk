@@ -42,6 +42,10 @@ export AT
 export OCPI_DEBUG_MAKE
 AT=@
 
+ifndef OCPI_PREREQUISITES_DIR
+  export OCPI_PREREQUISITES_DIR=/opt/opencpi/prerequisites
+endif
+
 # RPM-based options:
 -include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_TARGET_PLATFORM).mk
 ifneq (1,$(OCPI_AUTOCONFIG_IMPORTED))
