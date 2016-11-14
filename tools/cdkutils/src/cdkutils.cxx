@@ -42,7 +42,6 @@
 #include <memory>
 #include <fstream>
 
-#include "OcpiNull.h"
 #include "OcpiUtilMisc.h"
 #include "cdkutils.h"
 

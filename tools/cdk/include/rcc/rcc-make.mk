@@ -81,6 +81,10 @@ $(call OcpiDbgVar,RccPlatforms)
 $(call OcpiDbgVar,RccTargets)
 
 ifdef RccPlatforms
+  override RccPlatforms:=$(filter-out $(ExcludePlatforms) $(RccExcludePlatforms),$(RccPlatforms))
+  ifneq ($(OnlyPlatforms)$(RccOnlyPlatforms),)
+    override RccPlatforms:=$(filter $(OnlyPlatforms) $(RccOnlyPlatforms),$(RccPlatforms))
+  endif
   ifdef RccTargets
     $(error You cannot set both RccTarget(s) and RccPlatform(s))
   endif

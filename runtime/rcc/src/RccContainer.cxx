@@ -70,6 +70,8 @@ Container(const char *a_name, const OA::PValue* /* params */)
 {
   m_model = "rcc";
   m_dynamic = OC::Manager::dynamic();
+  if (parent().m_platform.size())
+    m_platform = parent().m_platform;
 }
 
 

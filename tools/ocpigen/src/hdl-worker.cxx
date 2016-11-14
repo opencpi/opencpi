@@ -35,7 +35,6 @@
 #include <cstdio>
 #include <climits>
 
-#include "OcpiNull.h"
 #include "OcpiUtilMisc.h"
 #include "hdl.h"
 #include "assembly.h"

@@ -26,14 +26,17 @@ endif
 
 include $(OCPI_CDK_DIR)/include/ocpisetup.mk
 
-ifeq (@,AT)
+ifeq (@,$(AT))
   .SILENT: test clean exports components hdlprimitives hdlcomponents hdldevices hdladapters hdlcards hdlplatforms hdlassemblies cleanhdl rcc cleanrcc ocl cleanocl applications run cleancomponents cleanapplications cleanexports cleaneverything
 endif
 
 MaybeMake=if [ -d $1 ]; then $(MAKE) -C $1 $2; fi
 
 # Three parameters - $1 is before platform, $2 is after platform, $3 is call to $(MAKE)
-MaybeMakePlatforms=$(foreach p,$(HdlPlatform) $(HdlPlatforms),$(call MaybeMake,$1/$p/$2,$3) &&) true
+MaybeMakePlatforms=\
+$(foreach p,$(HdlPlatform) $(HdlPlatforms),\
+   echo =============Building platform $p/$2 for $3 &&\
+   $(call MaybeMake,$1/$p/$2,$3) &&) true
 
 .PHONY: all applications test clean exports components cleanhdl
 .PHONY: hdl hdlassemblies hdlprimitives hdlcomponents hdldevices hdladapters hdlplatforms hdlassemblies hdlportable

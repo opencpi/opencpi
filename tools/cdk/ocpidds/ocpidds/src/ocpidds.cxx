@@ -56,7 +56,6 @@
 #include <vector>
 #include <list>
 
-#include "OcpiNull.h"
 #include "OcpiOsFileSystem.h"
 #include "OcpiUtilDataTypes.h"
 #include "OcpiUtilProtocol.h"

@@ -8,18 +8,20 @@ namespace OCPI {
     extern const char *rcc;
     class Container;
     class Driver : public OCPI::Container::DriverBase<Driver, Container, rcc> {
-      //      OCPI::DataTransport::TransportGlobal *m_tpg_events, *m_tpg_no_events;
-      //      unsigned m_count;
+      friend class Container;
+    protected:
+      std::string m_platform;
     public:
       static pthread_key_t s_threadKey;
       Driver() throw();
+      ~Driver() throw();
       OCPI::Container::Container *
 	probeContainer(const char *which, std::string &error, const OCPI::API::PValue *props)
 	throw ( OCPI::Util::EmbeddedException );
       // Per driver discovery routine to create devices
       unsigned search(const OCPI::API::PValue*, const char **exclude, bool discoveryOnly,
 		      bool verbose);
-      ~Driver() throw ( );
+      void configure(ezxml_t x);
     };
   }
 }

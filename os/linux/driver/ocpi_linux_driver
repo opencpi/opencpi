@@ -24,6 +24,7 @@ RELOAD="/sbin/udevcontrol reload_rules"
 elif [ -x /sbin/udevadm ] ; then
 RELOAD="/sbin/udevadm control --reload-rules"
 elif [ -x /sbin/mdev ] ; then
+# Note: blank RELOAD used to assume mdev below
 RELOAD=
 SUDO=
 RULESFILE=mdev-$MODNAME.rules

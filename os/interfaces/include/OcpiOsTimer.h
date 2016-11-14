@@ -34,12 +34,10 @@
 
 
 // -*- c++ -*-
-
 #ifndef OCPI_OS_TIMER_H__
 #define OCPI_OS_TIMER_H__
 
 #include <OcpiOsDataTypes.h>
-
 /**
  * \file
  *
@@ -77,22 +75,20 @@ namespace OCPI {
 
     class Time {
     public:
+      static const uint32_t nsPerSecond = 1000000000;
+      static const uint64_t ticksPerSecond = 1ull << 32;
       typedef uint64_t TimeVal; // our base type for time where 1 == 1/2^32 of a second
     protected:
       TimeVal m_time;
     public:
-      static const uint32_t nsPerSecond = 1000000000;
-      static const uint64_t ticksPerSecond = 1ull << 32;
       inline uint32_t seconds() const { return (uint32_t)(m_time >> 32); }
       // This is rounded to the nearest nanosecond
       inline uint32_t nanoseconds() const {
-	return
-	  (uint32_t)
+	return (uint32_t)
 	  (((m_time & 0xffffffffll) * nsPerSecond + ticksPerSecond/2) / ticksPerSecond);
       }
       inline Time(uint32_t seconds_in, uint32_t nanoseconds_in) {
-	m_time = (((uint64_t)nanoseconds_in << 32) + nsPerSecond / 2) / nsPerSecond +
-	  ((uint64_t)seconds_in << 32);
+        set(seconds_in, nanoseconds_in);
       }
       inline Time() {}
       inline Time(TimeVal t) { m_time = t;}
@@ -133,11 +129,10 @@ namespace OCPI {
 	uint32_t lower, upper;
 	uint64_t accumulatedCounter;
       } tti;
-      Time expiration;
-	
-      bool running;
-      void init(bool start_now);
       uint64_t m_opaque[16];
+      Time expiration;
+      bool running;
+      void init(bool start);
     public:
       /**
        * Constructor.
@@ -172,6 +167,7 @@ namespace OCPI {
 
       void start ()
         throw ();
+
       /**
        * Stop the timer.
        *
@@ -182,6 +178,7 @@ namespace OCPI {
 
       ElapsedTime stop ()
         throw ();
+
       /**
        * Reset the timer.
        *
@@ -242,161 +239,7 @@ namespace OCPI {
         throw ();
   
     };
-
-#if 0
-    namespace
-    {
-      const static unsigned int nanoseconds_per_second = 1000000000;
-
-    } // End: namespace <unamed>
-
-    /**
-     * @brief
-     *   Greater than comparison of two ElapsedTime instances.
-     *
-     * @returns true if the ElapsedTime instance on the right hand
-     *          side represents an elapsed time that is greater than
-     *          the left hand side. Returns false otherwise.
-     */
-    inline
-    bool operator> ( const OCPI::OS::Timer::ElapsedTime& lhs,
-                     const OCPI::OS::Timer::ElapsedTime& rhs )
-      throw ( )
-    {
-      if ( lhs.seconds > rhs.seconds )
-      {
-        return true;
-      }
-
-      if ( lhs.seconds == rhs.seconds &&
-           lhs.nanoseconds > rhs.nanoseconds )
-      {
-        return true;
-      }
-
-      return false;
-    }
-    /**
-     * @brief
-     *   Less than comparison of two ElapsedTime instances.
-     *
-     * @returns true if the ElapsedTime instance on the right hand
-     *          side represents an elapsed time that is less than
-     *          the left hand side. Returns false otherwise.
-     */
-    inline
-    bool operator< ( const OCPI::OS::Timer::ElapsedTime& lhs,
-                     const OCPI::OS::Timer::ElapsedTime& rhs )
-      throw ( )
-    {
-      if ( lhs.seconds > rhs.seconds )
-      {
-        return false;
-      }
-
-      if ( lhs.seconds == rhs.seconds &&
-           lhs.nanoseconds > rhs.nanoseconds )
-      {
-        return false;
-      }
-
-      return true;
-    }
-
-    /**
-     * @brief
-     *   Equality test between two ElapsedTime.
-     *
-     * @returns true if the two ElapsedTime instances represent
-     *          the same amount of elapsed time. Returns false
-     *          otherwise.
-     */
-    inline
-    bool operator== ( const OCPI::OS::Timer::ElapsedTime& lhs,
-                      const OCPI::OS::Timer::ElapsedTime& rhs )
-      throw ( )
-    {
-      return ( lhs.seconds == rhs.seconds ) &&
-             ( lhs.nanoseconds == rhs.nanoseconds );
-    }
-
-    /**
-     * @brief
-     *   Inequality test between two ElapsedTime.
-     *
-     * @returns true if the two ElapsedTime instances represent a
-     *          different amount of elapsed time. Returns false
-     *          otherwise.
-     */
-    inline
-    bool operator!= ( const OCPI::OS::Timer::ElapsedTime& lhs,
-                      const OCPI::OS::Timer::ElapsedTime& rhs )
-      throw ( )
-    {
-      return ( lhs.seconds != rhs.seconds ) ||
-             ( lhs.nanoseconds != rhs.nanoseconds );
-    }
-
-    /**
-     * @brief
-     *   Adds two ElapsedTime instances.
-     *
-     * @returns Sum of the ElapsedTime instances.
-     */
-    inline
-    OCPI::OS::Timer::ElapsedTime operator+
-                                   ( const OCPI::OS::Timer::ElapsedTime& lhs,
-                                     const OCPI::OS::Timer::ElapsedTime& rhs )
-      throw ( )
-    {
-      OCPI::OS::Timer::ElapsedTime result;
-
-      result.seconds = lhs.seconds + rhs.seconds;
-
-      result.nanoseconds = lhs.nanoseconds + rhs.nanoseconds;
-
-      if ( result.nanoseconds >= nanoseconds_per_second )
-      {
-        result.nanoseconds -= nanoseconds_per_second;
-        result.seconds += 1;
-      }
-
-      return result;
-    }
-
-    /**
-     * @brief
-     *   Subtracts two ElapsedTime instances.
-     *
-     * @returns Difference between the ElapsedTime instances.
-     */
-    inline
-    OCPI::OS::Timer::ElapsedTime operator-
-                                   ( const OCPI::OS::Timer::ElapsedTime& lhs,
-                                     const OCPI::OS::Timer::ElapsedTime& rhs )
-      throw ( )
-    {
-      OCPI::OS::Timer::ElapsedTime result;
-
-      if ( lhs.nanoseconds > rhs.nanoseconds )
-      {
-        result.seconds  = lhs.seconds - rhs.seconds;
-        result.nanoseconds = lhs.nanoseconds - rhs.nanoseconds;
-      }
-      else
-      {
-        result.seconds = lhs.seconds - rhs.seconds - 1;
-
-        result.nanoseconds = lhs.nanoseconds +
-                             nanoseconds_per_second -
-                             rhs.nanoseconds;
-      }
-
-      return result;
-    }
-#endif
   } // End: namespace OS
-
 } // End: namespace OCPI
 
 #endif

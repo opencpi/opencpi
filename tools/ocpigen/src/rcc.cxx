@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <vector>
 
-#include "OcpiNull.h"
 #include "assembly.h"
 #include "rcc.h"
 

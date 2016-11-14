@@ -32,9 +32,6 @@
  */
 
 
-#include <OcpiOsTimer.h>
-#include <OcpiOsSizeCheck.h>
-#include <OcpiOsAssert.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -46,17 +43,21 @@
 #include <string>
 
 #ifdef OCPI_OS_linux
-#include <sched.h>
+  #include <sched.h>
   #ifdef OCPI_OS_VERSION_r5
     #ifndef __x86_64__
       #error No support for RHEL5 on non-64-bit machines
     #endif
-  #include <asm/vsyscall.h>
-#endif
+    #include <asm/vsyscall.h>
+  #endif
 #else
-#include <sys/time.h> // for gettimeofday
-typedef uint64_t cpu_set_t;
+  #include <sys/time.h> // for gettimeofday
+  typedef uint64_t cpu_set_t;
 #endif
+
+#include "OcpiOsTimer.h"
+#include "OcpiOsSizeCheck.h"
+#include "OcpiOsAssert.h"
 
 #ifndef OCPI_CLOCK_TYPE
   #ifdef CLOCK_MONOTONIC_RAW
@@ -69,17 +70,15 @@ namespace OCPI {
   namespace OS {
 
 Time Time::now() {
-  Time t;
 #ifdef __APPLE__
   struct timeval tv;
   gettimeofday(&tv, NULL);
-  t.set((uint32_t)tv.tv_sec, tv.tv_usec * 1000);
+  return Time((uint32_t)tv.tv_sec, tv.tv_usec * 1000);
 #else
   struct timespec ts;
   ocpiCheck(clock_gettime (OCPI_CLOCK_TYPE, &ts) == 0);
-  t.set((uint32_t)ts.tv_sec, (uint32_t)ts.tv_nsec);
+  return Time((uint32_t)ts.tv_sec, (uint32_t)ts.tv_nsec);
 #endif
-  return t;
 }
 /*
  * ----------------------------------------------------------------------

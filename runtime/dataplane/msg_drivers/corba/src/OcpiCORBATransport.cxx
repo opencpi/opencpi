@@ -128,7 +128,6 @@ namespace OCPI {
 	  off_t size = ftello(f);
 	  char *info = new char[size];
 	  fseeko(f, 0, SEEK_SET);
-	  fread(info, size, 1, f);
 	  if (fread(info, size, 1, f) != static_cast<size_t>(size)) {
             delete[] info;
             throw OU::Error("Error reading back from temp file for protocol processing");

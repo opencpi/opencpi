@@ -50,30 +50,29 @@
  */
 
 #include <inttypes.h>
-#include <string.h>
-#include <DtTransferInternal.h>
-#include <DtHandshakeControl.h>
-#include <OcpiPortMetaData.h>
-#include <OcpiParallelDataDistribution.h>
-#include <OcpiTransportConstants.h>
-#include <OcpiDataDistribution.h>
-#include <OcpiPort.h>
-#include <OcpiTransport.h>
-#include <OcpiCircuit.h>
-#include <OcpiBuffer.h>
-#include <OcpiPortSet.h>
-#include <OcpiTransferTemplate.h>
-#include <OcpiOutputBuffer.h>
-#include <OcpiInputBuffer.h>
-#include <OcpiTransferController.h>
-#include <OcpiTemplateGenerators.h>
-#include <OcpiList.h>
-#include <OcpiOsMisc.h>
-#include <OcpiOsAssert.h>
-#include <OcpiRDTInterface.h>
-#include <OcpiTimeEmit.h>
-#include <OcpiPullDataDriver.h>
-#include <OcpiTimeEmitCategories.h>
+#include "DtTransferInternal.h"
+#include "DtHandshakeControl.h"
+#include "OcpiPortMetaData.h"
+#include "OcpiParallelDataDistribution.h"
+#include "OcpiTransportConstants.h"
+#include "OcpiDataDistribution.h"
+#include "OcpiPort.h"
+#include "OcpiTransport.h"
+#include "OcpiCircuit.h"
+#include "OcpiBuffer.h"
+#include "OcpiPortSet.h"
+#include "OcpiTransferTemplate.h"
+#include "OcpiOutputBuffer.h"
+#include "OcpiInputBuffer.h"
+#include "OcpiTransferController.h"
+#include "OcpiTemplateGenerators.h"
+#include "OcpiList.h"
+#include "OcpiOsMisc.h"
+#include "OcpiOsAssert.h"
+#include "OcpiRDTInterface.h"
+#include "OcpiTimeEmit.h"
+#include "OcpiPullDataDriver.h"
+#include "OcpiTimeEmitCategories.h"
 
 using namespace OCPI::DataTransport;
 using namespace DataTransfer;

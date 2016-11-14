@@ -33,8 +33,31 @@
 #
 ########################################################################### #
 ThisMake := $(lastword $(MAKEFILE_LIST))
--include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_CROSS_HOST).mk
+
+# RPM-based options:
+-include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_TARGET_PLATFORM).mk
+ifneq (1,$(OCPI_AUTOCONFIG_IMPORTED))
 -include $(OCPI_CDK_DIR)/include/autoconfig_import.mk
+endif
+
+# AV-1571 - map arm_cs => arm
+ifeq ($(OCPI_TARGET_ARCH),arm_cs)
+  override OCPI_TARGET_ARCH=arm
+endif
+
+# (No longer blocks, but code left in as example if we need to block other platforms/drivers)
+#    .PHONY: all
+#    ifeq ($(OCPI_CROSS_HOST),arm-none-linux-gnueabi)
+#      $(warning Driver support not available for this platform (yet))
+#      .DEFAULT_GOAL := platform_not_supported
+#      all: platform_not_supported
+#    else
+#      all: installed
+#    endif
+#    .PHONY: platform_not_supported
+#    .SILENT: platform_not_supported
+#    platform_not_supported:
+#	true
 
 # To build modules outside of the kernel tree, we run "make"
 # in the kernel source tree; the Makefile there then includes this
@@ -105,12 +128,13 @@ MODFILE=$(MyTargetDir)/$(MODNAME)$(if $(ocpi_release),-$(ocpi_release)).ko
 URULESFILE=99-$(MODNAME).rules
 MRULESFILE=mdev-$(MODNAME).rules
 TMP_FILES=Module.markers Module.symvers .opencpi* opencpi.mod.* opencpi.o .tmp* modules.order
+
 .PHONY: all
-all:	installed
+all: installed
 
 $(MODFILE): opencpi.c $(shell echo $$(cd $(KERNELDIR); pwd -P))
 	$(AT)echo Building kernel module $(MODFILE)
-	$(and $(KERNELDIR),$(MAKE) -C $(KERNELDIR) M=$(PWD) modules)
+	$(and $(KERNELDIR),$(MAKE) -C $(KERNELDIR) M=$(PWD) V=2 modules)
 	$(AT)mkdir -p $(MyTargetDir)
 	$(AT)mv $(MODNAME).ko $(MODFILE)
 	$(AT)rm -rf $(TMP_FILES)
@@ -148,4 +172,5 @@ distclean: clean
 	rm -r -f target-*
 
 
-endif
+endif # ifdef KERNELRELEASE else..
+
