@@ -137,6 +137,7 @@ RccCompilerOptions=$(CompilerDebugFlags)
 else
 RccCompilerOptions=$(CompilerOptimizeFlags)
 endif
+$(foreach v,$(filter ExtraCompilerOptions%,$(.VARIABLES)),$(eval Rcc$v=$($v)))
 # Prepare the parameters for compile-command-line injection into the worker compilation
 RccParams=\
   $(foreach n,$(WorkerParamNames),\

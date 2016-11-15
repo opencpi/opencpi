@@ -36,7 +36,16 @@ case $1 in
      exit 1;
    fi
    SIZE=$(sh -c 'echo $2' `ls -o -g -l $2`)
-   head -c $((SIZE - NBACKUP)) $2 > $3
+   # head -c not in busybox
+   # head -c $((SIZE - NBACKUP)) $2 > $3
+   # this is slow
+   # dd bs=1 count=$((SIZE - NBACKUP)) if=$2 > $3 
+   # this is fast and ok with busybox
+   cp $2 $3 && dd if=/dev/null bs=1 seek=$((SIZE - NBACKUP)) of=$3 2> /dev/null || {
+     rm $3 2> /dev/null || true
+     echo Cannot write to output file: $3 >&2
+     exit 1
+   }
    ;;
   (add)
    if test $# != 3; then

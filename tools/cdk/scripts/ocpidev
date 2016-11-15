@@ -285,9 +285,9 @@ EOF
   fi
   if [ -n "$verbose" ]; then
     if [ -z $library ]; then
-      echo A new $2, \"$1\", has been created at the project level in $subdir/$file
+      echo A new $noun, \"$1\", has been created at the project level in $subdir/$file
     else
-      echo A new $2, \"$1\", has been created in library \"$library\" in $subdir/$file
+      echo A new $noun, \"$1\", has been created in library \"$library\" in $subdir/$file
     fi
   fi
   return 0

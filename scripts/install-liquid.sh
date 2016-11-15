@@ -48,8 +48,9 @@ $SEDINPLACE -e 's/char sinf, cosf, expf, cargf, cexpf, crealf, cimagf,/char sinf
   CFLAGS=-g CXXFLAGS=-g
 make
 make install
-mv $OCPI_PREREQUISITES_INSTALL_DIR/liquid/include/liquid/* $OCPI_PREREQUISITES_INSTALL_DIR/liquid/include
-rmdir $OCPI_PREREQUISITES_INSTALL_DIR/liquid/include/liquid
+# the recommendations from liquidsdr.org is to use #include "liquid/liquid.h" code per Aaron
+# mv $OCPI_PREREQUISITES_INSTALL_DIR/liquid/include/liquid/* $OCPI_PREREQUISITES_INSTALL_DIR/liquid/include
+# rmdir $OCPI_PREREQUISITES_INSTALL_DIR/liquid/include/liquid
 [ $OCPI_TOOL_HOST = $OCPI_TARGET_HOST ] && {
   mkdir -p $OCPI_PREREQUISITES_INSTALL_DIR/liquid/$OCPI_TARGET_HOST/bin
   for g in $generators; do

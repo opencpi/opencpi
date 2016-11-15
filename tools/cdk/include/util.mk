@@ -559,11 +559,11 @@ OcpiFindSubdirs=$(strip \
 OcpiHavePrereq=$(realpath $(OCPI_PREREQUISITES_INSTALL_DIR)/$1)
 OcpiPrereqDir=$(call OcpiHavePrereq,$1)
 OcpiCheckPrereq=$(strip\
-   $(if $(realpath $(OCPI_PREREQUISITES_INSTALL_DIR)/$1),,\
+   $(if $(realpath $(OCPI_PREREQUISITES_DIR)/$1),,\
       $(error The $1 prerequisite package is not installed)) \
-   $(and $2,$(foreach t,$2,$(if $(realpath $(OCPI_PREREQUISITES_INSTALL_DIR)/$1/$t,, \
+   $(and $2,$(foreach t,$2,$(if $(realpath $(OCPI_PREREQUISITES_DIR)/$1/$t,, \
                $(error The $1 prerequisite package is not build for target $t)))\
-            $(and $3,$(if $(realpath $(OCPI_PREREQUISITES_INSTALL_DIR)/$1/$t/$3),,\
+            $(and $3,$(if $(realpath $(OCPI_PREREQUISITES_DIR)/$1/$t/$3),,\
                          $(error For the $1 prerequisite package, $t/$3 is missing))))))
 
 define OcpiEnsureToolPlatform
