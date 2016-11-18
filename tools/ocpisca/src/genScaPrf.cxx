@@ -78,6 +78,13 @@ namespace OCPI {
 	throw OU::Error("Unsupported property data type \"%s\" (%u)",
 			OU::baseTypeNames[pr.m_baseType], pr.m_baseType);
       }
+
+
+      // JM: Force all external props to be strings
+      type = "string";
+
+
+
       if (type)
 	ezxml_set_attr(px, "type", type);
       if (allocation)

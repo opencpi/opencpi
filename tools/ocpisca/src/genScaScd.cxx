@@ -14,6 +14,56 @@ static const char *repid(std::string &s, const char *name, const char *module = 
   return OU::format(s, "IDL:%s/%s:1.0", module ? module : "CF", name);
 }
 
+
+static 
+std::string  mapType(  OCPI::API::BaseType &bt )
+{
+  std::string typeName("Unknown");
+  switch( bt ) {
+  case OCPI::API::OCPI_Short:
+    typeName = "dataShort";
+    break;
+  case OCPI::API::OCPI_Char:
+    typeName = "dataChar";
+    break;
+  case OCPI::API::OCPI_Double:
+    typeName = "dataDouble";
+    break;
+  case OCPI::API::OCPI_Float:
+    typeName = "dataFloat";
+    break;
+  case OCPI::API::OCPI_Long:
+    typeName = "dataLong";
+    break;
+  case OCPI::API::OCPI_ULong:
+    typeName = "dataULong";
+    break;
+  case OCPI::API::OCPI_UShort:
+    typeName = "dataUShort";
+    break;
+  case OCPI::API::OCPI_LongLong:
+    typeName = "dataLongLong";
+    break;
+  case OCPI::API::OCPI_ULongLong:
+    typeName = "dataULongLong";
+    break;
+
+    case OCPI::API::OCPI_UChar:
+    case OCPI::API::OCPI_scalar_type_limit:
+    case OCPI::API::OCPI_none:
+    case OCPI::API::OCPI_Bool:
+    case OCPI::API::OCPI_Enum:
+    case OCPI::API::OCPI_Type:
+    case OCPI::API::OCPI_String:
+    case OCPI::API::OCPI_Struct:
+      assert(0);
+      break;
+    }
+  return typeName;
+}
+
+
+
 void ApplicationI::
 genScaScd(const char *outDir) {
   FILE *f;
@@ -52,7 +102,18 @@ genScaScd(const char *outDir) {
 	   pi != (*ci).m_ports.end(); pi++) {
 	OU::Assembly::Role &r = (*pi).m_role;
 	assert(r.m_knownRole && !r.m_bidirectional);
-	const char *type = "dataShort";
+	const char *type;
+	OU::Port *p;
+	for (unsigned n=0; (p=getMetaPort(n)); n++) {
+	  size_t nOps = p->nOperations();
+	  // For now we only support 1 operation
+	  // For now we just use the first operation
+	  assert( nOps == 1 );
+	  OU::Operation & op = p->operations()[0];
+	  //	  printf("Member name = %s\n",  op.args()[0].m_name.c_str() );
+	  type = mapType( op.args()[0].m_baseType ).c_str();
+	  //	  printf("Type = %s\n",  type );
+	}
 	ezxml_t px = SCA::addChild(psx, r.m_provider ? "provides" : "uses", 3, NULL,
 				   "repid", repid(s, type, "BULKIO"),
 				   r.m_provider ? "providesname" : "usesname",
@@ -72,7 +133,7 @@ genScaScd(const char *outDir) {
 	  SCA::addChild(ix, "inheritsinterface", 3, NULL,
 			"repid", repid(s, "updateSRI", "BULKIO"));
 	}
-      }
+   }
   const char *xml = ezxml_toxml(root);
   if (fputs("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
 	    "<!DOCTYPE softwarecomponent PUBLIC \"-//JTRS//DTD SCA V2.2.2 SCD//EN\" "

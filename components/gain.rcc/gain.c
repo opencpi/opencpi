@@ -25,11 +25,9 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
 
   (void)timedOut;(void)newRunCondition;
   RCCPort
-    *in = &self->ports[GAIN_IN],
-    *out = &self->ports[GAIN_OUT];
+    *in = &self->ports[GAIN_INPUTPORT],
+    *out = &self->ports[GAIN_OUTPUTPORT];
   GainProperties *props = self->properties;
-
-  props->gainValue = 2;
  
  uint16_t
    *inData = in->current.data,

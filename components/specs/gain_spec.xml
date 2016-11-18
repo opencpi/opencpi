@@ -1,9 +1,9 @@
 <ComponentSpec Name="gain">
   <Property Name="gainValue" Initial="true" readable='true'/>
-  <DataInterfaceSpec Name="in">
+  <DataInterfaceSpec Name="inputport">
     <xi:include href="stream16_protocol.xml"/>
   </DataInterfaceSpec>
-  <DataInterfaceSpec Name="out" Producer="true">
+  <DataInterfaceSpec Name="outputport" Producer="true">
     <xi:include href="stream16_protocol.xml"/>
   </DataInterfaceSpec>
 </ComponentSpec>

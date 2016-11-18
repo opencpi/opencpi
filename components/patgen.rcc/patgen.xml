@@ -1,0 +1,6 @@
+<RccImplementation >
+  <xi:include href="patgen_spec.xml"/>
+  <property name="nextMeta" volatile='true'/>
+  <property name="nextData" volatile='true'/>
+  <specProperty name='metadataCount' volatile='true'/>
+</RccImplementation>
