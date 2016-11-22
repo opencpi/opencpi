@@ -883,6 +883,11 @@
 	   fprintf(stderr, "Property %2u: %s = \"%s\"%s\n", n, name.c_str(), value.c_str(),
 		   isParameter ? " (parameter)" : (isCached ? " (cached)" : ""));
      }
+     void ApplicationI::
+     startMasterSlave(bool isMaster, bool isSlave, bool isSource) {
+      for (unsigned n = 0; n < m_nContainers; n++)
+	m_containerApps[n]->startMasterSlave(isMaster, isSlave, isSource);
+     }
      void ApplicationI::start() {
        if (m_dump)
 	 dumpProperties(true, true, "initial");
@@ -890,15 +895,14 @@
 	 for (unsigned n = 0; n < m_nContainers; n++)
 	   m_containers[n]->dump(true, m_hex);
       ocpiDebug("Using %d containers to support the application", m_nContainers );
-      ocpiDebug("Starting master workers that are not slaves.");
-      for (unsigned n = 0; n < m_nContainers; n++)
-	m_containerApps[n]->startMasterSlave(true, false); // start masters that are not slaves
-      ocpiDebug("Starting master workers that are also slaves.");
-      for (unsigned n = 0; n < m_nContainers; n++)
-	m_containerApps[n]->startMasterSlave(true, true);  // start masters that are slaves
-      ocpiDebug("Starting workers that are not masters.");
-      for (unsigned n = 0; n < m_nContainers; n++)
-	m_containerApps[n]->startMasterSlave(false, false); // start non-masters
+      ocpiDebug("Starting master workers that are not slaves and not sources.");
+      startMasterSlave(true, false, false);
+      ocpiDebug("Starting master workers that are also slaves, but not sources.");
+      startMasterSlave(true, true, false);
+      ocpiDebug("Starting workers that are not masters and not sources.");
+      startMasterSlave(false, false, false);
+      ocpiDebug("Starting workers that are sources.");
+      startMasterSlave(false, false, true);
     };
     void ApplicationI::stop() {
       ocpiDebug("Stopping master workers that are not slaves.");

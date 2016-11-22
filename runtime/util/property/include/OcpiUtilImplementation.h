@@ -132,6 +132,7 @@ namespace OCPI {
       unsigned m_nPorts, m_nMemories; //, size , m_nTests
     private: // FIXME: make more of this stuff private
       size_t m_totalPropertySize;
+      bool   m_isSource;
       //      Test &findTest(unsigned int testId) const;
     public:
       unsigned m_nProperties;
@@ -146,6 +147,7 @@ namespace OCPI {
       inline const std::string &name() const { return m_name; }
       inline const std::string &slave() const { return m_slave; }
       inline const Attributes &attributes() const { return *m_attributes; }
+      inline bool isSource() const { return m_isSource; }
       const char *parse(ezxml_t xml, Attributes *attr = NULL);
       // These two use exceptions
       Property &findProperty(const char *id) const;

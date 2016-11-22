@@ -171,6 +171,7 @@ namespace OCPI {
       OCPI::Library::Assembly &assembly() { return m_assembly; }
       bool foundContainer(OCPI::Container::Container &i);
       void initialize();
+      void startMasterSlave(bool isMaster, bool isSlave, bool isSource);
       void start();
       void stop();
       bool wait(OCPI::OS::Timer *);

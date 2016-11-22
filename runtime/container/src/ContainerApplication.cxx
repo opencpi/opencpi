@@ -107,16 +107,13 @@ namespace OCPI {
     }
     // If not master, then we ignore slave, so there are three cases
     void Application::
-    startMasterSlave(bool isMaster, bool isSlave) {
+    startMasterSlave(bool isMaster, bool isSlave, bool isSource) {
       for (Worker *w = firstWorker(); w; w = w->nextWorker()) {
-	// FIXME: what is the issue with EXISTS? and why doesn't it apply to all cases?
-	assert(w->getState() != OU::Worker::EXISTS);
-	if ((w->getState() != OU::Worker::EXISTS && isMaster && w->slave() &&
-	     ((isSlave && w->hasMaster()) || (!isSlave && !w->hasMaster()))) ||
-	    (!isMaster && !w->slave())) {
-	  assert(w->getState() == OU::Worker::INITIALIZED);
+	assert(w->getState() == OU::Worker::INITIALIZED);
+	if (isSource == w->isSource() &&
+	    isMaster == (w->slave() != NULL) &&
+	    isSlave == w->hasMaster())
 	  w->start();
-	}
       }
     }
     // If not master, then we ignore slave, so there are three cases
@@ -151,12 +148,14 @@ namespace OCPI {
 	  return true;
       return false;
     }
+#if 0 // let's see if anyone uses this
     void Application::
     start() {
       startMasterSlave(true, false); // start masters that are not slaves
       startMasterSlave(true, true);  // start masters that are slaves
       startMasterSlave(false, false); // start non-masters
     }
+#endif
   }
   namespace API {
     ContainerApplication::~ContainerApplication(){}

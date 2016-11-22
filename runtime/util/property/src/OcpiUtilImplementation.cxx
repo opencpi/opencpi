@@ -44,8 +44,8 @@ namespace OCPI {
     namespace OE = OCPI::Util::EzXml;
     Worker::Worker()
       : m_attributes(NULL), m_ports(NULL), m_memories(NULL), m_nPorts(0), m_nMemories(0),
-        m_totalPropertySize(0), m_nProperties(0), m_properties(NULL), m_firstRaw(NULL),
-	m_xml(NULL), m_ordinal(0) {
+        m_totalPropertySize(0), m_isSource(false), m_nProperties(0), m_properties(NULL),
+	m_firstRaw(NULL), m_xml(NULL), m_ordinal(0) {
     }
 
     Worker::~Worker() {
@@ -136,9 +136,16 @@ namespace OCPI {
         if ((err = p->parse(x)))
           return esprintf("Invalid xml port description: %s", err);
       p = m_ports;
+      bool hasInput = false, hasOutput = false;
       for (unsigned nn = 0; nn < m_nPorts; nn++, p++)
 	if ((err = p->postParse()))
           return esprintf("Invalid xml port description: %s", err);
+        else if (p->m_provider) {
+	  if (!p->m_optional)
+	    hasInput = true;
+        } else
+	  hasOutput = true;
+      m_isSource = hasOutput && !hasInput;
       Memory* m = m_memories;
       for (x = ezxml_cchild(xml, "memory"); x; x = ezxml_next(x), m++ )
         if ((err = m->parse(x)))
