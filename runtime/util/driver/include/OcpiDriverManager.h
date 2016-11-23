@@ -247,7 +247,9 @@ namespace OCPI {
     protected:
       // This is the constructor that is called at static construction time.
       DriverBase<Man, DriBase, ConcDri, Dev, name>()
-      : DriBase(name) {}
+      : DriBase(name) {
+	ocpiInfo("Registering/constructing driver: %s", name);
+      }
     };
     // The template that concrete drivers should use to register themselves at
     // static construction time.  The template parameter is the concrete driver class.

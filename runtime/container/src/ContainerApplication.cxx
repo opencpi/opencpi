@@ -108,13 +108,15 @@ namespace OCPI {
     // If not master, then we ignore slave, so there are three cases
     void Application::
     startMasterSlave(bool isMaster, bool isSlave, bool isSource) {
-      for (Worker *w = firstWorker(); w; w = w->nextWorker()) {
-	assert(w->getState() == OU::Worker::INITIALIZED);
+      for (Worker *w = firstWorker(); w; w = w->nextWorker())
 	if (isSource == w->isSource() &&
 	    isMaster == (w->slave() != NULL) &&
-	    isSlave == w->hasMaster())
+	    isSlave == w->hasMaster()) {
+	  assert(w->getState() == OU::Worker::INITIALIZED);
+	  ocpiInfo("Starting worker: %s in container %s from %s/%s", w->name().c_str(),
+		   container().name().c_str(), w->implTag().c_str(), w->instTag().c_str());
 	  w->start();
-      }
+	}
     }
     // If not master, then we ignore slave, so there are three cases
     void Application::

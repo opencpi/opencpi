@@ -31,6 +31,7 @@ namespace OCPI {
     search(const OA::PValue* /* params */, const char **/* exclude */, bool /* discoveryOnly */,
 	   bool /* verbose */) {
       std::string error;
+      ocpiInfo("Searching for RCC containers, and implicitly finding one.");
       return probeContainer("rcc0", error, NULL) ? 1 : 0;
     }
     Driver::
