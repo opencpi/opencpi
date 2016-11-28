@@ -51,7 +51,7 @@ else
 endif
 
 ALLINC += $(OCPI_PREREQUISITES_DIR)/gmp/include \
-          $(OCPI_PREREQUISITES_DIR)/gmp/$(OCPI_TARGET_HOST)/include \
+          $(OCPI_PREREQUISITES_DIR)/gmp/$(OCPI_TARGET_DIR)/include \
           $(OCPIOS_EXPORTS) \
           $(LOGGER_EXPORTS)
 ALLLIBS += $(LOGGER_LIBS) \

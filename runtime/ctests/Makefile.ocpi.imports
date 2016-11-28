@@ -56,30 +56,8 @@ ALLLIBS += \
   $(OCPIOS_LIBS)
 
 PREQLIBS+=lzma
-# SYSLIBS += $(OCPI_LZMA_DIR)/$(OCPI_TARGET_HOST)/lib/lzma
 
-XXMAIN_DRIVERS+= \
-  _ZN4OCPI3RCC3rccE\
-  _ZN4OCPI7Library7CompLib9componentE\
-  _ZN4OCPI3HDL3hdlE\
-  _ZN4OCPI3DMA3dmaE\
-  _ZN4OCPI6Remote6remoteE\
-
-ifneq (,)
-DYNOBJS += \
-	../../../../runtime/library/$(OCPI_OUT_DIR)/OcpiComponentLibrary.obj \
-	../../../../runtime/container/rcc/$(OCPI_OUT_DIR)/OcpiRccDriver.obj \
-	../../../../runtime/dataplane/rdma_drivers/udp/$(OCPI_OUT_DIR)/DtDataGramUDPDriver.obj \
-	../../../../runtime/dataplane/rdma_drivers/datagram/$(OCPI_OUT_DIR)/DtDataGramXfer.obj \
-	../../../../runtime/dataplane/rdma_drivers/pio/$(OCPI_OUT_DIR)/DtPioXfer.obj \
-	../../../../runtime/dataplane/rdma_drivers/dma/$(OCPI_OUT_DIR)/DtDmaXfer.obj \
-	../../../../runtime/dataplane/rdma_drivers/socket/$(OCPI_OUT_DIR)/DtSocketsXfer.obj \
-	../../../../runtime/dataplane/rdma_drivers/datagram/$(OCPI_OUT_DIR)/DtDataGramEtherDriver.obj \
-
-ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
-	SYSLIBS += dl 
-endif
-
+ifdef never
 
 ifeq ($(OCPI_HAVE_OPENSPLICE__),1)
 LDFLAGS += -L$(OSPL_HOME)/lib 
@@ -91,15 +69,5 @@ ifeq ($(OCPI_HAVE_IBVERBS),1)
 DYNOBJS += ../../../../runtime/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtOfedXfer.obj 
 SYSLIBS += ibverbs	
 endif
-
-#ALLLIBS += $(RCC_CONTAINER_LIBS) $(CONTAINER_LIBS) $(DATA_TRANSPORT_LIBS) \
-	 $(LIBRARY_LIBS) $(MSG_TRANSPORT_LIBS) \
-	$(TX_DRIVER_SUPPORT_LIBS) $(DATA_TRANSFER_LIBS) \
-	$(UTIL_LIBS) $(LOGGER_LIBS) $(OCPIOS_LIBS) 
-
-ALLLIBS += $(CONTAINER_LIBS) $(DATA_TRANSPORT_LIBS) \
-	 $(LIBRARY_LIBS) $(MSG_TRANSPORT_LIBS) \
-	$(TX_DRIVER_SUPPORT_LIBS) $(DATA_TRANSFER_LIBS) \
-	$(UTIL_LIBS) $(LOGGER_LIBS) $(OCPIOS_LIBS) 
 
 endif

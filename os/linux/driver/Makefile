@@ -116,8 +116,8 @@ ifneq ($(MAKECMDGOALS),topclean)
   ifeq ($(strip $(MyLib)),)
     $(error OpenCPI libraries must be built before the driver is built)
   endif
-  ifeq ($(strip $(OCPI_TARGET_HOST)),)
-    $(error OCPI_TARGET_HOST not set. Have you built the OpenCPI libraries yet?)
+  ifeq ($(strip $(OCPI_TARGET_PLATFORM)),)
+    $(error OCPI_TARGET_PLATFORM not set. Have you built the OpenCPI libraries yet?)
   endif
 endif
 # This is what works with RHEL5

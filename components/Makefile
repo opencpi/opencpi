@@ -159,14 +159,6 @@ endif # OCPI_HAVE_OPENCL
 endif # OCPI_MINIMAL_BUILD
 endif # OCPI_CORE_BUILD
 
-
-# TODO: Need to figure out how to clean out the specs after given a list...
-
-
-ifndef RccTargets
-RccTargets=$(OCPI_TARGET_HOST)
-endif
-
 include $(OCPI_CDK_DIR)/include/library.mk
 
 loc:

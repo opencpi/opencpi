@@ -63,7 +63,7 @@ ALLDEFS += $(EXTRA_DEFS)
 ALLINC += $(wildcard ../../*/include) $(wildcard ../../*/idl) $(EXTRA_INCLUDES)
 
 ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
-ifneq ($(filter linux macos,$(OCPI_OS)),)
+ifneq ($(filter linux macos,$(OCPI_TARGET_OS)),)
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC
 endif

@@ -1,8 +1,8 @@
 #!/bin/sh
 # For cross compiling we assume:
 # 1. the cross tools are in the path
-# 2. OCPI_TARGET_HOST is set properly (our target scheme, not the gnu target scheme)
-# 3. OCPI_CROSS_TARGET is the gnu cross target
+# 2. OCPI_TARGET_DIR is set properly (our target scheme, not the gnu target scheme)
+# 3. OCPI_CROSS_HOST is the gnu cross target
 set -e
 OCPI_LIQUID_VERSION=v1.2.0
 source scripts/setup-install.sh
@@ -26,14 +26,14 @@ generators="\
 ./src/fec/gentab/reverse_byte_gentab \
 ./src/utility/gentab/count_ones_gentab \
 "
-if [ $OCPI_TOOL_HOST != $OCPI_TARGET_HOST ]; then
-    [ -f $OCPI_PREREQUISITES_INSTALL_DIR/liquid/$OCPI_TOOL_HOST/bin/reverse_byte_gentab ] || {
+if [ $OCPI_TOOL_PLATFORM != $OCPI_TARGET_PLATFORM ]; then
+    [ -f $OCPI_PREREQUISITES_INSTALL_DIR/liquid/$OCPI_TOOL_DIR/bin/reverse_byte_gentab ] || {
 	echo It appears that you have not built the liquid library for $OCPI_TOOL_PLATFORM yet.
 	echo This is required before trying to build this library for $OCPI_TARGET_PLATFORM.
 	exit 1
     }
     for g in $generators; do
-     cp $OCPI_PREREQUISITES_INSTALL_DIR/liquid/$OCPI_TOOL_HOST/bin/$(basename $g) $(dirname $g)
+     cp $OCPI_PREREQUISITES_INSTALL_DIR/liquid/$OCPI_TOOL_DIR/bin/$(basename $g) $(dirname $g)
     done
 fi
 ./reconf
@@ -43,7 +43,7 @@ $SEDINPLACE -e 's/char sinf, cosf, expf, cargf, cexpf, crealf, cimagf,/char sinf
 ./configure  \
   $crossConfig \
   --prefix=$OCPI_PREREQUISITES_INSTALL_DIR/liquid \
-  --exec-prefix=$OCPI_PREREQUISITES_INSTALL_DIR/liquid/$OCPI_TARGET_HOST \
+  --exec-prefix=$OCPI_PREREQUISITES_INSTALL_DIR/liquid/$OCPI_TARGET_DIR \
   --includedir=$OCPI_PREREQUISITES_INSTALL_DIR/liquid/include
   CFLAGS=-g CXXFLAGS=-g
 make
@@ -51,10 +51,10 @@ make install
 # the recommendations from liquidsdr.org is to use #include "liquid/liquid.h" code per Aaron
 # mv $OCPI_PREREQUISITES_INSTALL_DIR/liquid/include/liquid/* $OCPI_PREREQUISITES_INSTALL_DIR/liquid/include
 # rmdir $OCPI_PREREQUISITES_INSTALL_DIR/liquid/include/liquid
-[ $OCPI_TOOL_HOST = $OCPI_TARGET_HOST ] && {
-  mkdir -p $OCPI_PREREQUISITES_INSTALL_DIR/liquid/$OCPI_TARGET_HOST/bin
+[ $OCPI_TOOL_PLATFORM = $OCPI_TARGET_PLATFORM ] && {
+  mkdir -p $OCPI_PREREQUISITES_INSTALL_DIR/liquid/$OCPI_TARGET_DIR/bin
   for g in $generators; do
-    cp $g $OCPI_PREREQUISITES_INSTALL_DIR/liquid/$OCPI_TARGET_HOST/bin
+    cp $g $OCPI_PREREQUISITES_INSTALL_DIR/liquid/$OCPI_TARGET_DIR/bin
   done
 }
 exit 0

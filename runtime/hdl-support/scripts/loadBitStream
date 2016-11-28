@@ -30,8 +30,8 @@ if test "$OCPI_CDK_DIR" = ""; then
   exit 1
 fi
 source $OCPI_CDK_DIR/scripts/ocpibootstrap.sh
-if test "$OCPI_TOOL_HOST" = ""; then
-  echo Error: environment variable OCPI_TOOL_HOST is not set.
+if test "$OCPI_TOOL_DIR" = ""; then
+  echo Error: environment variable OCPI_TOOL_DIR is not set.
   exit 1
 fi
 if test ! -x /sys/bus/pci/devices/$pciDevice; then
@@ -54,7 +54,7 @@ fi
 # Here we have not checked the part or the position yet.
 # Do more generic work that does not depend on the platform-specifics
 echo Checking existing loaded bitstream on OpenCPI HDL device \"$device\"...
-ocf="$OCPI_CDK_DIR/scripts/sudo_ocpi $OCPI_CDK_DIR/bin/$OCPI_TOOL_HOST/ocfrp_check"
+ocf="$OCPI_CDK_DIR/scripts/sudo_ocpi $OCPI_CDK_DIR/bin/$OCPI_TOOL_DIR/ocfrp_check"
 $ocf $pciDevice
 if test $? != 0; then
    echo Existing loaded bitstream on device \"$device\" does not appear to be functional.

@@ -18,9 +18,6 @@
 # assume that directory is at the top of the CDK.
 # Otherwise, try the global default place.
 # In all cases do a final sanity check.
-# Note that this script will always be executed in a real CDK since
-# even when executed in a cleaned core tree, it will be called after an initial
-# export tree is created.
 if [ "$OCPI_CDK_DIR" = "" -o ! -d "$OCPI_CDK_DIR" ]; then # and any other sanity checks?
   [ -z "$OCPI_BOOTSTRAP" ] && echo Error:  ocpibootstrap.sh called without setting OCPI_BOOTSTRAP && exit 1
   [ ! -r "$OCPI_BOOTSTRAP" ] && echo Error:  ocpibootstrap.sh called with unreadable OCPI_BOOTSTRAP: $OCPI_BOOTSTRAP && exit 1
@@ -51,7 +48,7 @@ if [ "$OCPI_CDK_DIR" = "" -o ! -d "$OCPI_CDK_DIR" ]; then # and any other sanity
     exit 1
   fi
 fi
-if test "$OCPI_TOOL_HOST" = ""; then
+if test "$OCPI_TOOL_PLATFORM" = ""; then
   GETPLATFORM=$OCPI_CDK_DIR/platforms/getPlatform.sh
   if test ! -f $OCPI_CDK_DIR/platforms/getPlatform.sh; then
     echo Error:  ocpibootstrap.sh cannot find getPlatforms.sh    
@@ -73,20 +70,22 @@ fi
 # Determine OCPI_TOOL_MODE if it is not set already
 # It can be set to null to suppress these modes, and just use whatever has been
 # built without modes.
-if test "$OCPI_USE_TOOL_MODES" != ""; then
-  # OCPI_TOOL_MODE not set at all, just look for one
-  for i in sd so dd do; do
-    if test -x "$OCPI_CDK_DIR/$OCPI_TOOL_HOST/$i/ocpirun"; then
-      export OCPI_TOOL_MODE=$i
-      echo "Choosing tool mode "$i" since there are tool executables for it."
-      break
-    fi
-  done
+if test "$OCPI_USE_TOOL_MODES" = "1"; then
+  if test "$OCPI_TOOL_MODE" = ""; then
+    # OCPI_TOOL_MODE not set at all, just look for one
+    for i in sd so dd do; do
+      if test -x "$OCPI_CDK_DIR/$OCPI_TOOL_HOST/$i/ocpirun"; then
+        export OCPI_TOOL_MODE=$i
+        echo "Choosing tool mode "$i" since there are tool executables for it."
+        break
+      fi
+    done
+  fi
   if test "$OCPI_TOOL_MODE" = ""; then
     if test ! -x "$OCPI_CDK_DIR/bin/$OCPI_TOOL_HOST/ocpirun"; then
       echo "Could not find any OpenCPI executables in $OCPI_CDK_DIR/$OCPI_TOOL_HOST/*"
       if test "$OCPI_DEBUG" = 1; then do=d; else do=o; fi
-      if test "$OCPI_BUILD_SHARED_LIBRARIES" = 1; then sd=d; else sd=s; fi
+      if test "$OCPI_DYNAMIC" = 1; then sd=d; else sd=s; fi
       export OCPI_TOOL_MODE=$sd$do
       echo "Hopefully you are building OpenCPI from scratch.  Tool mode will be \"$OCPI_TOOL_MODE\"".
     else

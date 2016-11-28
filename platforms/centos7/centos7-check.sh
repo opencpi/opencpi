@@ -7,7 +7,6 @@ EOF
     echo $1 c7 $2
     exit 0
   fi
-  echo Cannot parse centos release from /etc/centos-release 1>&2
 fi
 exit 1
 

@@ -95,8 +95,8 @@ function make_filtered_link {
 if test "$*" = ""; then
   echo "Usage is: makeExportLinks.sh <target> <prefix>"
   echo "This script takes two arguments:"
-  echo "  <target> in the form of <os>-<version>-<machine>, e.g. linux-c6-x86_64"
-  echo "    It is commonly used with the value of the OCPI_TARGET_HOST environment variable."
+  echo "  <target> in the form of <os>-<version>-<machine>[/mm], e.g. linux-c6-x86_64"
+  echo "    It is commonly used with the value of the OCPI_TARGET_DIR environment variable."
   echo "  <prefix> is the prefix for all libraries in this project."
   echo '    For the CDK/core project, it is "ocpi_"'
   echo '    It is typically the project prefix followed by underscore'

@@ -380,7 +380,7 @@ int main(int argc, char *argv[])
       rccContainer = OA::ContainerManager::find("rcc");
 
     // Create an application on this container, no parameters at this time
-    std::unique_ptr<OA::ContainerApplication>
+    std::auto_ptr<OA::ContainerApplication>
       ap(rplContainer->createApplication( /* "testRPL" */ )),
       ap2(two ? rplContainer2->createApplication( /* "testRpl2" */ ) : 0),
       apRcc(rccFile ? rccContainer->createApplication() : 0);

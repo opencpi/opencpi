@@ -18,7 +18,7 @@ runtime/library
 runtime/container
 runtime/hdl
 runtime/hdl-support
-# runtime/ocl not ready for prime time
+runtime/ocl
 runtime/rcc
 runtime/remote
 runtime/ctests
@@ -62,6 +62,7 @@ tests
 +tools/cdk/scripts/sudo_ocpi scripts/
 +tools/cdk/scripts/ocpisetup.sh scripts/
 +tools/cdk/scripts/ocpibootstrap.sh scripts/
++tools/cdk/scripts/ocpitarget.sh scripts/
 +tools/cdk/scripts/ocpidev scripts/
 +tools/cdk/scripts/util.sh scripts/
 #+tools/cdk/scripts/makeExportLinks.sh scripts/

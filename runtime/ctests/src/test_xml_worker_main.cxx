@@ -178,30 +178,10 @@ int  main( int argc, char** argv)
 #endif
 
   try {
-#if 0
-  // Create an artifact
-#if 1
-  // Someday make this a utility function in ocpios FIXME
-  const char *target = getenv("OCPI_TARGET_HOST");
-  const char *suffix = getenv("OCPI_RCC_SUFFIX");
-  if (!target)
-    target = "linux-x86_64";
-  if (!suffix)
-    suffix = "so";
-  char *w1Url;
-  asprintf(&w1Url, "../../../components/lib/rcc/%s/zcworkers.%s",
-	   target, suffix);
-#else
-  const char * w1Url = "../../../components/lib/rcc/Linux-x86_64/zcworkers.so";
-#endif
-  OCPI::API::Worker & consumer = ca[0].app->createWorker( w1Url, NULL, "testConsumer", "ocpi.Consumer" );
-  OCPI::API::Worker & producer = ca[0].app->createWorker( w1Url, NULL, "testProducer", "ocpi.Producer" );
-#else
   // New library-based components
   OCPI::API::Worker
     & consumer = ca[0].app->createWorker("testConsumer", "ocpi.Consumer" ),
     & producer = ca[0].app->createWorker("testProducer", "ocpi.Producer" );
-#endif
   OCPI::API::Port & pout = producer.getPort( "Out" );
   OCPI::API::Port & cin = consumer.getPort( "In" );
 

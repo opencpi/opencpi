@@ -27,15 +27,13 @@
 
 # quick way to run all tests
 OCPI_RPM=$(rpm -q angryviper-devel 2>/dev/null | grep -v "not installed")
+  export OCPI_SMB_SIZE=3000000
 if test -z "${OCPI_RPM}"; then
   # run this in the binary executables directory by doing: ../src/run_tests.sh
-  export OCPI_RCC_TARGET=$OCPI_TARGET_HOST
-  export OCPI_SMB_SIZE=3000000
   export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/lib/components
 else
   #RPM-based install needs to copy to a directory that the user can read/write
-  export OCPI_RCC_TARGET=$(/opt/opencpi/cdk/platforms/getPlatform.sh | awk '{print $4}')
-  export OCPI_SMB_SIZE=3000000
+  targetDir=$(/opt/opencpi/cdk/platforms/getPlatform.sh | awk '{print $4}')
   export OCPI_LIBRARY_PATH=/opt/opencpi/cdk/components/lib/rcc/
   # export OCPI_LOG_LEVEL=11
   if test -z "${VG}"; then
@@ -45,17 +43,11 @@ else
     rm -rf ${DIR} || :
     mkdir ${DIR}
   fi
-  cp --target-directory=${DIR} /opt/opencpi/cdk/bin/${OCPI_RCC_TARGET}/ctests/*
+  cp --target-directory=${DIR} /opt/opencpi/cdk/bin/${targetDir}/ctests/*
   echo Copied all tests to ${DIR}
   cd ${DIR}
 fi
 
-if test "$OCPI_TARGET_OS" = macos; then
-  export OCPI_RCC_SUFFIX=dylib
-else
-  export OCPI_RCC_SUFFIX=so
-fi
-# tmp=/tmp/ocpictest$$
 failed=
 set -o pipefail
 out="2> /dev/null"

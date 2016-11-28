@@ -1,4 +1,4 @@
-# Setup to use the EDK.  This algorithm should be consistent with xilinx.mk in the cdk
+# Setup to use the EDK.  This algorithm should be consistent with xilinx-ise.mk in the cdk
 # Puts the EDK on standout
 function XilinxBad {
   echo Problem initializing XILINX environment: $* 1>&2

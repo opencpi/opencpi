@@ -41,7 +41,7 @@
 #include <string>
 #include <memory>
 
-#ifdef OCPI_OS_VERSION_r5
+#if defined(OCPI_OS_VERSION_r5)
   #define unique_ptr auto_ptr
 #endif
 
@@ -49,7 +49,7 @@ void
 copyFilesRecursively (OCPI::Util::Vfs::Vfs * fs1, const std::string & name1,
                       OCPI::Util::Vfs::Vfs * fs2, const std::string & name2)
 {
-  std::unique_ptr<OCPI::Util::Vfs::Iterator> it(fs1->list (name1));
+  std::auto_ptr<OCPI::Util::Vfs::Iterator> it(fs1->list (name1));
   std::string name;
   bool isDir;
 
@@ -118,7 +118,7 @@ main (int argc, char *argv[])
     return 1;
   }
 
-  std::unique_ptr<OCPI::Util::Vfs::Iterator> toAdd(localFs.list (patDirName, patRelName));
+  std::auto_ptr<OCPI::Util::Vfs::Iterator> toAdd(localFs.list (patDirName, patRelName));
   std::string name;
   bool isDir;
 

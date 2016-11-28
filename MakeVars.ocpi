@@ -41,8 +41,6 @@ MAKEVARS_OCPI:=1
 # Global settings.  These variables must be set.
 # ----------------------------------------------------------------------
 #
-# OCPI_OS:    What target to build for (and which subdirectory of ocpios
-#            to use).  Currently supported: winnt, linux, vxworksdkm.
 # OCPI_BASE_DIR:    The root directory for ocpi, i.e., the directory that
 #            contains this file.  Must be an absolute path.
 # OCPI_OUT_DIR:    If non-empty, all object and executable files are placed
@@ -67,59 +65,12 @@ MAKEVARS_OCPI:=1
 # ----------------------------------------------------------------------
 #
 
-
-ifdef never
-# #### Guess OCPI_OS if it is not provided ################################# #
-
-ifndef OCPI_OS
-  # Build from Cygwin for vxWorks DKM
-  ifeq ($(findstring Cygwin,$(shell uname -a)),Cygwin)
-    OCPI_OS=vxworksdkm
-  else ifeq ($(findstring windows32,$(shell uname -a)),windows32)
-    # Build from Windriver shell for vxWorks DKM
-    OCPI_OS=vxworksdkm
-  else
-    # Build under Linux for Linux
-    OCPI_OS=$(shell uname -s | tr A-Z a-z)
-  endif
-endif
-endif
-
-ifeq ($(OCPI_OS),macos)
+ifeq ($(OCPI_TARGET_OS),macos)
   OCPI_DYLIB_ENV:=DYLD_LIBRARY_PATH
   OCPI_DYLIB_EXT:=dylib
 else
   OCPI_DYLIB_ENV:=LD_LIBRARY_PATH
   OCPI_DYLIB_EXT:=so
-endif
-# #### Use Frank's directory if OCPI_BASE_DIR is not provided #################### #
-
-ifeq ($(origin OCPI_BASE_DIR),undefined)
-
-  ifeq ($(OCPI_OS),winnt)
-    OCPI_BASE_DIR = c:/Frank/soft/ocpi
-  endif
-
-  ifeq ($(OCPI_OS),linux)
-    OCPI_BASE_DIR = /view/jmiller_ocpi/vobs/ocpi
-  endif
-
-  ifeq ($(OCPI_OS),vxworksdkm)
-    OCPI_BASE_DIR = c:/Frank/soft/ocpi
-  endif
-
-endif
-
-#
-# Location of the OCPI view.  Only used for "make diff" at this point.
-#
-
-ifeq "$(VOBDIR)" ""
-  VOBDIR = /view/jmiller_ocpi/vobs/ocpi
-endif
-
-ifeq "$(DATAPLANE)" ""
-DATAPLANE=dataplane
 endif
 
 #
@@ -177,70 +128,6 @@ endif
 LDFLAGS = $(OCPI_LDFLAGS) $(EXTRA_LDFLAGS)
 CFLAGS := $(OCPI_TARGET_CFLAGS)
 CXXFLAGS := $(OCPI_TARGET_CXXFLAGS)
-
-#
-# ----------------------------------------------------------------------
-# WindRiver Workbench settings. Only used when $(OCPI_OS)=vxworksdkm.
-# ----------------------------------------------------------------------
-#
-# WIND_HOME: The root directory of the WindRiver directory on the PC
-#            used to build for VxWorks DKM or RTP.
-# WIND_BASE: The directory that contains the VxWorks-specific files,
-#            such as the header files at $(WIND_BASE)/target/h.
-# WIND_WORKBENCH: The directory that contains the Workbench files.
-# WIND_GNU_PATH: The directory that contains the GNU compiler.
-# WIND_HOST_TYPE: The type of the local host that runs the cross-build
-#            tools.  E.g., "x86-win32" or "x86-linux2", so that
-#            $(WIND_WORKBENCH)/$(WIND_HOST_TYPE)/bin contains the
-#            cross-build tools.
-# WIND_BUILD_SPEC: The type of target to build for.  Supported values
-#            are "PPC85XXgnu" and "SIMNTgnu".
-# ----------------------------------------------------------------------
-#
-
-ifeq "$(WIND_HOME)" ""
-  WIND_HOME := c:/Software/WindRiver
-endif
-
-WIND_BASE := $(WIND_HOME)/vxworks-6.3
-WIND_WORKBENCH := $(WIND_HOME)/workbench-2.5
-WIND_GNU_PATH := $(WIND_HOME)/gnu/3.4.4-vxworks-6.3
-ifeq "$(WIND_HOST_TYPE)" ""
-  WIND_HOST_TYPE := x86-win32
-endif
-WIND_BUILD_SPEC := PPC85XXgnu
-# WIND_BUILD_SPEC := SIMNTgnu
-
-#
-# ----------------------------------------------------------------------
-# Windows settings. Only used when $(OCPI_OS)=winnt
-# ----------------------------------------------------------------------
-#
-# WINNT_TOOLCHAIN: Set to "msvc" to build with MSVC++ (using the "cl"
-#            compiler), set to "mingw" to build with MinGW's gcc.
-#
-# ----------------------------------------------------------------------
-#
-
-WINNT_TOOLCHAIN = msvc
-
-#
-# ----------------------------------------------------------------------
-# Linux cross-compile settings. Only used when $(OCPI_OS)=linux and
-# $(OCPI_CROSS_HOST) is not the empty string.
-# ----------------------------------------------------------------------
-#
-# OCPI_CROSS_HOST: The target type.  $(OCPI_CROSS_HOST) is used as a prefix for
-#            the cross-build executables, e.g., $(OCPI_CROSS_HOST)-gcc for
-#            the C compiler.
-# OCPI_CROSS_BUILD_BIN_DIR: The directory that contains the cross-build tools,
-#            e.g., $(OCPI_CROSS_BUILD_BIN_DIR)/$(OCPI_CROSS_HOST)-gcc.
-#
-# ----------------------------------------------------------------------
-#
-
-#OCPI_CROSS_HOST=ppc74xx-linux
-#OCPI_CROSS_BUILD_BIN_DIR=/opt/timesys/toolchains/$(OCPI_CROSS_HOST)/bin
 
 #
 # ----------------------------------------------------------------------
@@ -350,13 +237,6 @@ DescendMake1=-C $(1) $(if $(filter /%,$(OCPI_BASE_DIR)),,OCPI_BASE_DIR=../$(OCPI
 DescendFile2=$(OCPI_BASE_DIR)/$(if $(filter /%,$(OCPI_BASE_DIR)),,../..)
 DescendFile1=$(OCPI_BASE_DIR)/$(if $(filter /%,$(OCPI_BASE_DIR)),,..)
 export AT=@
-# This is duplicated in ocpisetup.mk.  It is there for examples/executables.
-ifndef OCPI_TARGET_DIR
- ifeq ($(origin OCPI_TARGET_MODE),undefined)
-   export OCPI_TARGET_MODE:=$(if $(filter 1,$(OCPI_BUILD_SHARED_LIBRARIES)),d,s)$(if $(filter 1,$(OCPI_DEBUG)),d,o)
- endif
- export OCPI_TARGET_DIR=$(OCPI_TARGET_HOST)$(and $(OCPI_TARGET_MODE),/$(OCPI_TARGET_MODE))
-endif
 # This extra variable OCPI_OUT_DIR is to eventually support out-of-tree building.
 export OCPI_OUT_DIR=target-$(OCPI_TARGET_DIR)
 #$(info OCPI_TARGET_DIR is $(OCPI_TARGET_DIR), OCPI_TARGET_MODE is $(OCPI_TARGET_MODE))

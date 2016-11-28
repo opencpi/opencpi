@@ -6,8 +6,8 @@
 # Retrieve the reserved DMA memory value from the kernel command line
 # Note there might be multiple reservations, and we currently only support one (the first).
 
-if test "$OCPI_CDK_DIR" = "" -o "$OCPI_TOOL_HOST" = ""; then
-  echo Error: this script "($0)" cannot be run without OCPI_CDK_DIR and OCPI_TOOL_HOST.
+if test "$OCPI_CDK_DIR" = "" -o "$OCPI_TOOL_DIR" = ""; then
+  echo Error: this script "($0)" cannot be run without OCPI_CDK_DIR and OCPI_TOOL_DIR.
   exit 1
 fi
 if [ $# = 0 ]; then

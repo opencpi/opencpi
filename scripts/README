@@ -8,7 +8,14 @@ I.e. scripts that are never exported in the CDK and thus not needed by users
 The particular script install-prerequisites.sh installs all the external packages opencpi
 depends on, including those installed by "sudo yum install", and also those that require running
 the specific scripts here (e.g. scripts/install-gmp.sh) that download, configure, patch, build,
-and install (in /opt/prerequisites).
+and install (in /opt/opencpi/prerequisites).
 
-Some installation scripts here are optional, and not invoked by install-prerequisites.
+When ./scripts/install_prerequisites.sh is called with no arguments, it installs packages for
+host platform you are running on.  If you want installations for multiple development platforms
+(e.g. centos6 and centos7), you need to run the script in each environment.
+To make installations for cross-built (usually embedded) platforms, you can provide the name of
+the platform as an argument to the script (or set OCPI_TARGET_PLATFORM in your environment).
+
+Some installation scripts here are optional, and not invoked by install-prerequisites.sh.
+
 

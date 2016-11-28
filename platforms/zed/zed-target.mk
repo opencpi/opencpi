@@ -1,6 +1,6 @@
 # Setup to build this target
 OcpiThisFile=$(lastword $(MAKEFILE_LIST))
-OCPI_XILINX_EDK_DIR:=$(shell $(OCPI_CDK_DIR)/scripts/xilinx-edk.sh)
+OCPI_XILINX_EDK_DIR:=$(shell OCPI_CDK_DIR=$(OCPI_CDK_DIR) $(OCPI_CDK_DIR)/scripts/xilinx-edk.sh)
 f:=$(OCPI_XILINX_EDK_DIR)/gnu/arm/lin/bin
 ifeq ($(wildcard $f),)
   $(error When setting up to build for zed, OCPI_XILINX_EDK_DIR is "$(OCPI_XILINX_EDK_DIR)". Cannot find $f. Perhaps the EDK was not installed when Xilinx tools were installed?).
