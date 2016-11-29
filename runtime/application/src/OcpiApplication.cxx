@@ -896,13 +896,16 @@
 	   m_containers[n]->dump(true, m_hex);
       ocpiDebug("Using %d containers to support the application", m_nContainers );
       ocpiDebug("Starting master workers that are not slaves and not sources.");
-      startMasterSlave(true, false, false);
+      startMasterSlave(true, false, false);  // 4
       ocpiDebug("Starting master workers that are also slaves, but not sources.");
-      startMasterSlave(true, true, false);
+      startMasterSlave(true, true, false);   // 6
       ocpiDebug("Starting workers that are not masters and not sources.");
-      startMasterSlave(false, false, false);
+      startMasterSlave(false, false, false); // 0
+      startMasterSlave(false, true, false);  // 2
       ocpiDebug("Starting workers that are sources.");
-      startMasterSlave(false, false, true);
+      startMasterSlave(false, false, true);  // 1
+      startMasterSlave(false, true, true);   // 3
+      // Note: this does not start masters that are sources.
     };
     void ApplicationI::stop() {
       ocpiDebug("Stopping master workers that are not slaves.");
