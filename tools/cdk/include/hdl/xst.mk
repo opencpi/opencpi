@@ -35,7 +35,7 @@
 
 # This file has the HDL tool details for xst
 
-include $(OCPI_CDK_DIR)/include/hdl/xilinx-ise.mk
+include $(OCPI_CDK_DIR)/include/hdl/xilinx.mk
 
 ################################################################################
 # $(call HdlToolLibraryFile,target,libname)
@@ -392,10 +392,10 @@ HdlToolCompile=\
   $(and $(XstNeedIni),$(XstMakeLso))\
   $(and $(XstNeedIni),$(XstMakeIni))\
   $(XstMakeScr)\
-  $(call XilinxInit); xst -ifn $(XstScrFile) \
+  $(call OcpiXilinxIseInit); xst -ifn $(XstScrFile) \
   $(and $(PlatformCores), && mv $(Core).ngc temp.ngc && ngcbuild -sd .. temp.ngc $(Core).ngc)
 
-#  $(call XilinxInit); xst -ifn $(XstScrFile) && touch $(LibName) \
+#  $(call OcpiXilinxIseInit); xst -ifn $(XstScrFile) && touch $(LibName) \
 # optional creation of these doesn't work...
 #    $(XstMakeLso) $(XstMakeIni))\
 
@@ -403,7 +403,7 @@ HdlToolCompile=\
 # Plus we create the edif all the time...
 HdlToolPost=\
   if grep -q 'Number of errors   :    0 ' $(HdlLog); then \
-    ($(call XilinxInit); ngc2edif -log ngc2edif-$(Top).log -w $(Top).ngc) >> $(HdlLog) 2>&1 ; \
+    ($(call OcpiXilinxIseInit); ngc2edif -log ngc2edif-$(Top).log -w $(Top).ngc) >> $(HdlLog) 2>&1 ; \
     HdlExit=0; \
   else \
     HdlExit=1; \
@@ -419,7 +419,6 @@ HdlToolPost=\
 #
 ################################################################################
 # Generate the per-platform files into platform-specific target dirs
-# obsolete InitXilinx=. $(OCPI_XILINX_TOOLS_DIR)/settings64.sh > /dev/null
 XilinxAfter=set +e;grep -i error $1.out|grep -v '^WARNING:'|grep -i -v '[_a-z]error'; \
 	     if grep -q $2 $1.out; then \
 	       echo Time: `cat $1.time` at `date +%T`; \
@@ -431,7 +430,7 @@ XilinxAfter=set +e;grep -i error $1.out|grep -v '^WARNING:'|grep -i -v '[_a-z]er
 # Use default pattern to find error string in tool output
 DoXilinx=$(call DoXilinxPat,$1,$2,$3,'Number of error.*s: *0')
 DoXilinxPat=\
-	echo " "Details in $1.out; cd $2; $(call XilinxInit,$1.out);\
+	echo " "Details in $1.out; cd $2; $(call OcpiXilinxIseInit,$1.out);\
 	echo Command: $1 $3 >> $1.out; \
 	/usr/bin/time -f %E -o $1.time bash -c "$1 $3; RC=\$$$$?; $(ECHO) Exit status: \$$$$RC; $(ECHO) \$$$$RC > $1.status" >> $1.out 2>&1;\
 	(echo -n Elapsed time:; tr -d '\n' <$1.time; echo -n ', completed at '; date +%T) >> $1.out; \

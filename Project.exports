@@ -86,7 +86,7 @@ tests
 +tools/cdk/include/rcc/rcc-worker.mk include/rcc/
 +tools/cdk/include/rcc/default.mk include/rcc/
 # We export everything in tools/cdk/include/hdl, although we could be more careful...
-+tools/cdk/include/hdl include/hdl
++tools/cdk/include/hdl/* include/hdl/
 # These should be in a common-to-zynq-platforms dir in "platforms"...
 +tools/cdk/include/rcc/linux-c6-x86_64=linux-zynq-arm.mk include/rcc/
 +tools/cdk/include/rcc/linux-c7-x86_64=linux-zynq-arm.mk include/rcc/
@@ -114,8 +114,6 @@ tests
 -runtime/hdl-support/scripts/testDMA
 -runtime/hdl-support/scripts/donft
 -runtime/hdl-support/scripts/dmaTestBasic
-# All the HDL build scripts, no selectivity for now
-+tools/cdk/include/hdl include/
 # base vendor-specific scripts not in a platform and not in hdl-support
 +runtime/hdl-support/altera/loadFlash_altera scripts/
 +runtime/hdl-support/altera/probeJtag_altera scripts/
@@ -123,9 +121,7 @@ tests
 +runtime/hdl-support/xilinx/probeJtag_xilinx scripts/
 +runtime/hdl-support/xilinx/findJtagByESN_xilinx scripts/
 +runtime/hdl-support/xilinx/getESNfromUSB_xilinx scripts/
-+runtime/hdl-support/xilinx/xilinx-ise.sh scripts/
-+runtime/hdl-support/xilinx/xilinx-edk.sh scripts/
-+runtime/hdl-support/xilinx/xilinx-vivado.sh scripts/
++runtime/hdl-support/xilinx/xilinx.mk include/hdl/
 +runtime/hdl-support/scripts/loadFlash bin/<target>/
 +runtime/hdl-support/scripts/probeJtag bin/<target>/
 +runtime/hdl-support/scripts/ocpiview bin/<target>/

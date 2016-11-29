@@ -1,5 +1,5 @@
 # This make file fragment establishes environment variables for user Makefiles,
-# all based on OCPI_CDK_DIR, which might be set already, but may not.
+# all based on OCPI_CDK_DIR, which might be set already, but may not be.
 # If not set, it is assumed that this file is being included from its proper location
 # in a CDK and the CDK location is inferred from that.
 # This means that a user makefile could simply include this file however it wants and
@@ -20,15 +20,15 @@ else
   export OCPI_CDK_DIR
 endif
 ifndef RPM_BUILD_ROOT
-# We run the OCPI_CDK_DIR through the shell to handle ~ (at least).
-OCPI_CDK_DIR:=$(shell echo $(OCPI_CDK_DIR))
-ifeq ($(realpath $(OCPI_CDK_DIR)),)
-  $(error The OCPI_CDK_DIR variable, "$(OCPI_CDK_DIR)", points to a nonexistent directory)
-endif
-ifneq ($(realpath $(OCPI_CDK_DIR)/include/ocpisetup.mk),$(realpath $(OcpiThisFile)))
-  $(error Inconsistent usage of this file ($(OcpiThisFile)->$(realpath $(OcpiThisFile))) vs. OCPI_CDK_DIR ($(realpath $(OCPI_CDK_DIR)/include/ocpisetup.mk)))
-endif
-$(info OCPI_CDK_DIR has been set to $(OCPI_CDK_DIR) and verified to be sane.)
+  # We run the OCPI_CDK_DIR through the shell to handle ~ (at least).
+  OCPI_CDK_DIR:=$(shell echo $(OCPI_CDK_DIR))
+  ifeq ($(realpath $(OCPI_CDK_DIR)),)
+    $(error The OCPI_CDK_DIR variable, "$(OCPI_CDK_DIR)", points to a nonexistent directory)
+  endif
+  ifneq ($(realpath $(OCPI_CDK_DIR)/include/ocpisetup.mk),$(realpath $(OcpiThisFile)))
+    $(error Inconsistent usage of this file ($(OcpiThisFile)->$(realpath $(OcpiThisFile))) vs. OCPI_CDK_DIR ($(realpath $(OCPI_CDK_DIR)/include/ocpisetup.mk)))
+  endif
+  $(info OCPI_CDK_DIR has been set to $(OCPI_CDK_DIR) and verified to be sane.)
 endif
 include $(OCPI_CDK_DIR)/include/util.mk
 endif # The end of processing this file once - ifndef OCPISETUP_MK
@@ -40,7 +40,15 @@ endif # The end of processing this file once - ifndef OCPISETUP_MK
 CC = gcc
 CXX = c++
 LD = c++
-CXXFLAGS=-g -Wall -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS
+export OcpiDynamicSuffix=so
+export OcpiDynamicFlags=-shared
+ifndef OCPI_TARGET_CXXFLAGS
+  export OCPI_TARGET_CXXFLAGS=-g -Wall -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS -Wfloat-equal -fno-strict-aliasing -Wconversion -Wno-sign-conversion
+endif
+ifndef OCPI_TARGET_CFLAGS
+  export OCPI_TARGET_CFLAGS=-g -Wall -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS -Wfloat-equal -fno-strict-aliasing -Wconversion -Wno-sign-conversion -std=c99
+endif
+CXXFLAGS=$(OCPI_TARGET_CXXFLAGS)
 ARSUFFIX=a
 
 ifeq ($(wildcard $(OCPI_CDK_DIR)/include/autoconfig_import*),)

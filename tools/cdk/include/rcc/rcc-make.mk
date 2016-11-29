@@ -127,16 +127,23 @@ override RccPlatform:=
 # 
 ifeq ($(filter clean cleanrcc,$(MAKECMDGOALS)),)
 
+# include all the rcc compilation files for all target platforms
 $(foreach p,$(RccPlatforms), \
   $(foreach t,$(RccTarget_$p),\
-    $(foreach m,$(if $(findstring $(OCPI_TOOL_HOST),$t),$t,$(OCPI_TOOL_HOST)=$t),\
-        $(if $(strip \
-               $(foreach x,$(or $(wildcard $(OCPI_CDK_DIR)/include/rcc/$m.mk),\
-                                 $(wildcard $(OCPI_CDK_DIR)/platforms/$p/$m.mk)),\
-                 $(eval include $x)$x)),,\
-             $(if $(findstring =,$m),\
-               $(error There is no cross compiler defined from $(OCPI_TOOL_HOST) to $t for $p),\
-               $(eval include $(OCPI_CDK_DIR)/include/rcc/default.mk))))))
+    $(eval files:=)\
+    $(foreach m,$(if $(findstring $(OCPI_TOOL_PLATFORM),$p),rcc-$p,rcc-$(OCPI_TOOL_PLATFORM)=$p) \
+                $(if $(findstring $(OCPI_TOOL_HOST),$t),$t,$(OCPI_TOOL_HOST)=$t),\
+      $(eval files:=$(files) $(or $(wildcard $(OCPI_CDK_DIR)/include/rcc/$m.mk),\
+                                  $(wildcard $(OCPI_CDK_DIR)/platforms/$p/$m.mk)))\
+      $(and $(findstring =,$m),$(eval cross:=1)))\
+    $(foreach n,$(words $(files)),\
+       $(if $(filter 0,$n),\
+	  $(if $(cross),\
+             $(error There is no cross compiler defined from $(OCPI_TOOL_PLATFORM) to $p),\
+             $(eval include $(OCPI_CDK_DIR)/include/rcc/default.mk)),\
+	  $(if $(filter 1,$n), \
+             $(eval include $(files)),\
+             $(error More than one file defined for compiling $p to $p: $(files)))))))
 
 endif
 endif

@@ -1,8 +1,5 @@
 include $(OCPI_CDK_DIR)/include/util.mk
-# First find the Xilinx EDK, which we depend on.
-$(and $(call DoShell,$(OCPI_CDK_DIR)/scripts/xilinx-edk.sh,OCPI_XILINX_EDK_DIR),\
-  $(error Cannot establish OCPI_XILINX_EDK_DIR: $(OCPI_XILINX_EDX_DIR)))
-zynq_bin_dir=$(OCPI_XILINX_EDK_DIR)/gnu/arm/lin/bin
+zynq_bin_dir=$(OcpiXilinxEdkDir)/gnu/arm/lin/bin
 ifdef OCPI_CROSS_BUILD_BIN_DIR
   ifneq ($(zynq_bin_dir),$(OCPI_CROSS_BUILD_BIN_DIR))
     $(warning Overriding default zynq_bin_dir [$(zynq_bin_dir)] with [$(OCPI_CROSS_BUILD_BIN_DIR)])

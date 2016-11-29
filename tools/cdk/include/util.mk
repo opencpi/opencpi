@@ -580,6 +580,16 @@ define OcpiEnsureToolPlatform
     export OCPI_TOOL_PLATFORM:=$$(word 5,$$(vars))
   endif
 endef
+# First arg is a list of exported variables/patterns that must be present.
+# Second arg is a list of exported variables/patterns that may be present.
+# This arg is the command to execute
+OcpiShellWithEnv=$(shell $(foreach e,$1,\
+                           $(if $(filter $e,$(.VARIABLES)),\
+                             $(foreach v,$(filter $e,$(.VARIABLES)),$v=$($v)),\
+                             $(error for OcpiShellWithEnv, variable $v not set))) \
+                          $(foreach e,$2,\
+                            $(foreach v,$(filter $e,$(.VARIABLES)),$v=$($v))) \
+                         $3)
 
 $(call OcpiDbg,End of util.mk)
 endif # ifndef __UTIL_MK__

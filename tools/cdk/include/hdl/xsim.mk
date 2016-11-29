@@ -22,8 +22,7 @@
 #
 ########################################################################### #
 
-# This file has the HDL tool details for vivado sim
-include $(OCPI_CDK_DIR)/include/hdl/xilinx-vivado.mk
+include $(OCPI_CDK_DIR)/include/hdl/xilinx.mk
 
 ################################################################################
 # $(call HdlToolLibraryFile,target,libname)
@@ -126,16 +125,16 @@ XsimXelabArgs= # -noieeewarnings
   ) > xsim.ini ; \
 
 HdlToolCompile=\
-  $(XilinxVivadoInit); \
+  $(OcpiXilinxVivadoInit); \
   $(and $(filter %.vhd,$(XsimFiles)),\
     xvhdl $(XsimArgs) $(XsimLibs) $(filter %.vhd,$(XsimFiles)) ; ) \
   $(and $(filter %.v,$(XsimFiles))$(findstring $(HdlMode),platform),\
     xvlog $(XsimVerilogIncs) $(XsimArgs) $(XsimLibs) $(filter %.v,$(XsimFiles)) \
       $(and $(findstring $(HdlMode),platform),\
-        $(OCPI_XILINX_VIVADO_TOOLS_DIR)/data/verilog/src/glbl.v) ;) \
+        $(OcpiXilinxVivadoDir)/data/verilog/src/glbl.v) ;) \
   $(if $(filter worker platform config assembly,$(HdlMode)),\
     $(if $(HdlNoSimElaboration),, \
-      echo verilog work $(OCPI_XILINX_VIVADO_TOOLS_DIR)/data/verilog/src/glbl.v \
+      echo verilog work $(OcpiXilinxVivadoDir)/data/verilog/src/glbl.v \
 	> $(Worker).prj; \
       xelab $(WorkLib).$(WorkLib)$(and $(filter config,$(HdlMode)),_rv) work.glbl -v 2 \
              -prj $(Worker).prj -L unisims_ver -s $(Worker).exe -timescale 1ns/1ps \
@@ -164,8 +163,8 @@ define HdlToolDoPlatform_xsim
 # in that directory.
 $1/$3.tar:
 	$(AT)echo Building xsim simulation executable: "$$@" with details in $1/$3-xelab.out
-	$(AT)echo verilog work $(OCPI_XILINX_VIVADO_TOOLS_DIR)/data/verilog/src/glbl.v >$1/$3.prj
-	$(AT)(set -e; cd $1; $(XilinxVivadoInit); \
+	$(AT)echo verilog work $(OcpiXilinxVivadoDir)/data/verilog/src/glbl.v >$1/$3.prj
+	$(AT)(set -e; cd $1; $(OcpiXilinxVivadoInit); \
 	      xelab $3.$3 work.glbl -v 2 -debug typical -prj $3.prj \
               $(XsimXelabArgs) -lib $3=$3 $$(XsimLibs) -L unisims_ver -s $3;\
 	      tar cf $3.tar metadatarom.dat xsim.dir) > $1/$3-xelab.out 2>&1

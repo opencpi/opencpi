@@ -6,7 +6,6 @@
 # A single argument is required which will become OCPI_TARGET_PLATFORM.
 # If the single argument is empty, and OCPI_TARGET_PLATFORM is already set, it is used.
 # If the single argument is empty and OCPI_TARGET_PLATFORM is not set, OCPI_TOOL_PLATFORM is used.
-set -e
 if [ -z "$1" ]; then
   # Support legacy use of setting OCPI_TARGET_HOST, before platforms could be in projects
   if test "$OCPI_TARGET_PLATFORM" = ""; then
@@ -46,5 +45,7 @@ $(info export OCPI_TARGET_DIR=$(OCPI_TARGET_DIR);)
 $(info export OCPI_TARGET_MODE=$(OCPI_TARGET_MODE);)
 $(info export OCPI_CROSS_BUILD_BIN_DIR=$(OCPI_CROSS_BUILD_BIN_DIR);)
 $(info export OCPI_CROSS_HOST=$(OCPI_CROSS_HOST);)
+$(info export OCPI_TARGET_DYNAMIC_SUFFIX=$(OcpiDynamicSuffix);)
+$(info export OCPI_TARGET_DYNAMIC_FLAGS="$(OcpiDynamicFlags)";)
 EOF
 ) | grep 'export OCPI_')

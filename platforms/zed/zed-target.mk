@@ -1,9 +1,14 @@
 # Setup to build this target
+ifneq (zed,$(OCPI_TARGET_PLATFORM))
+  $(error OCPI_TARGET_PLATFORM="$(OCPI_TARGET_PLATFORM)" and not "zed", but attempting to import zed environment!)
+endif
 OcpiThisFile=$(lastword $(MAKEFILE_LIST))
-OCPI_XILINX_EDK_DIR:=$(shell OCPI_CDK_DIR=$(OCPI_CDK_DIR) $(OCPI_CDK_DIR)/scripts/xilinx-edk.sh)
-f:=$(OCPI_XILINX_EDK_DIR)/gnu/arm/lin/bin
+include $(OCPI_CDK_DIR)/include/hdl/xilinx.mk
+f:=$(OcpiXilinxEdkDir)/gnu/arm/lin/bin
 ifeq ($(wildcard $f),)
-  $(error When setting up to build for zed, OCPI_XILINX_EDK_DIR is "$(OCPI_XILINX_EDK_DIR)". Cannot find $f. Perhaps the EDK was not installed when Xilinx tools were installed?).
+  $(error When setting up to build for zed, cannot find $f. Perhaps the EDK was not installed\
+          when Xilinx tools were installed? The non-default Xilinx environment settings were: \
+          $(foreach v,$(filter OCPI_XILINX%,$(.VARIABLES)), $v=$($v)))
 endif
 export OCPI_CROSS_BUILD_BIN_DIR:=$f
 export OCPI_CROSS_HOST:=arm-xilinx-linux-gnueabi

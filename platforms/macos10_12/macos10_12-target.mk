@@ -2,6 +2,8 @@
 export OcpiLibraryPathEnv=DYLD_LIBRARY_PATH
 export OcpiRpathOrigin=@executable_path
 export OcpiDynamicSuffix=dylib
+export OcpiDynamicFlags=-dynamiclib
+# -install_name @rpath/$(notdir $@)
 export OCPI_OCL_LIBS=-locpi_ocl -framework OpenCL
 export OcpiAsNeeded=
 export OCPI_EXPORT_DYNAMIC=
