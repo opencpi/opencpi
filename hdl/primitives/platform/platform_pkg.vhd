@@ -268,7 +268,7 @@ type unoc_data_t is record
   be      : std_logic_vector(unoc_ndw_c*4-1 downto 0);
   payload : unoc_payload_t; -- on sof, headers are first 2 or 3 words
 end record unoc_data_t;
--- ugly - can't use 'left or any sort of sizeof() on records?
+-- can't use 'left or any sort of sizeof() on records?
 constant unoc_data_width : natural := 2 + unoc_hit_width_c + unoc_ndw_c*4 + unoc_ndw_c*32;
 function to_slv(d : unoc_data_t) return std_logic_vector;
 function to_unoc(v : std_logic_vector) return unoc_data_t;

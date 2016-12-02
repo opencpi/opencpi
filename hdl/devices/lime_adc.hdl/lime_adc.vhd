@@ -36,7 +36,7 @@ begin
              rx_clk_in when its(USE_CLK_IN_p) else
              ctl_in.clk when its(USE_CTL_CLK_p) else
              sample_clk;
-  not_adc_clk <= adc_clk;
+  not_adc_clk <= not adc_clk;
   rx_clk <= adc_clk when its(DRIVE_CLK_p) else '0';
 
   --Place ADC clock on global buffer for use in processing

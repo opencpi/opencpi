@@ -1,3 +1,6 @@
 <hdlconfig>
-  <device name='lime_dac' card='lime_zipper_hsmc_alst4' slot='HSMC_ALST4_B'/>
+  <device name="lime_dac" card="lime_zipper_hsmc_alst4" slot="hsmc_alst4_b"/>
+  <device name="si5351"   card="lime_zipper_hsmc_alst4" slot="hsmc_alst4_b"/> <!-- i2c bus -->
+  <device name="lime_tx"  card="lime_zipper_hsmc_alst4" slot="hsmc_alst4_b"/>
 </hdlconfig>
+

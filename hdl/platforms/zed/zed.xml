@@ -1,6 +1,8 @@
 <!-- ZedBoard Platform Worker -->
 <HdlPlatform Language="VHDL" spec='platform-spec'>
   <specproperty name='platform' value='zed'/>
+  <specproperty name="nSlots" value='1'/>
+  <specproperty name="slotNames" value='fmc_lpc'/>
   <!-- All platform workers must provide these two ports -->
   <metadata master='true'/> <!-- access to container metadata via the platform worker -->
   <timebase master='true'/> <!-- providing a timebase for the time service -->
@@ -14,11 +16,6 @@
   <property name='useGP1' type='bool' parameter='1' default='false'/>
   <property name="axi_error" type="bool" arraylength='4' volatile='true'/>
   <property name="sdpDropCount" type='uchar' volatile='true'/>
-  <property name="debug_state" type="Ulonglong" arraylength='4' volatile='true' debug='false'/>
-  <property name="debug_state1" type="Ulonglong" arraylength='4' volatile='true' debug='false'/>
-  <property name="debug_state2" type="Ulonglong" arraylength='4' volatile='true' debug='false'/>
-  <signal  output='led' width='8'/>
-
   <!-- The Zed FMC LPC slot.
        Unconnected LPC signals are:
        - DP0-C2M_P/N
@@ -30,28 +27,34 @@
   -->
   <slot name='FMC' type='fmc_lpc'>
     <!-- We only mention signals that don't have the canonical signal name -->
-   <signal slot='LA00_P_CC' platform='LA00_CC_P'/>
-   <signal slot='LA00_N_CC' platform='LA00_CC_N'/>
+    <signal slot='PRSNT_M2C_L' platform='PRSNT'/>
+    <signal slot='LA00_P_CC' platform='LA00_CC_P'/>
+    <signal slot='LA00_N_CC' platform='LA00_CC_N'/>
 
-   <signal slot='LA01_P_CC' platform='LA01_CC_P'/>
-   <signal slot='LA01_N_CC' platform='LA01_CC_N'/>
+    <signal slot='LA01_P_CC' platform='LA01_CC_P'/>
+    <signal slot='LA01_N_CC' platform='LA01_CC_N'/>
 
-   <signal slot='LA17_P_CC' platform='LA17_CC_P'/>
-   <signal slot='LA17_N_CC' platform='LA17_CC_N'/>
+    <signal slot='LA17_P_CC' platform='LA17_CC_P'/>
+    <signal slot='LA17_N_CC' platform='LA17_CC_N'/>
 
-   <signal slot='LA18_P_CC' platform='LA18_CC_P'/>
-   <signal slot='LA18_N_CC' platform='LA18_CC_N'/>
+    <signal slot='LA18_P_CC' platform='LA18_CC_P'/>
+    <signal slot='LA18_N_CC' platform='LA18_CC_N'/>
 
-   <signal slot='CLK0_M2C_N' platform='CLK0_N'/>
-   <signal slot='CLK0_M2C_P' platform='CLK0_P'/>
+    <signal slot='CLK0_M2C_N' platform='CLK0_N'/>
+    <signal slot='CLK0_M2C_P' platform='CLK0_P'/>
 
-   <signal slot='CLK1_M2C_N' platform='CLK1_N'/>
-   <signal slot='CLK1_M2C_P' platform='CLK1_P'/>
+    <signal slot='CLK1_M2C_N' platform='CLK1_N'/>
+    <signal slot='CLK1_M2C_P' platform='CLK1_P'/>
 
-   <signal slot='DP0_C2M_P' platform=''/>
-   <signal slot='DP0_C2M_N' platform=''/>
-
+    <signal slot='DP0_C2M_P' platform=''/>
+    <signal slot='DP0_C2M_N' platform=''/>
   </slot>
+  <signal  output='led' width='8'/>
+  <signal  input='fmc_prsnt'/>
+  <!-- debug stuff -->
+  <property name="debug_state" type="Ulonglong" arraylength='4' volatile='true' debug='false'/>
+  <property name="debug_state1" type="Ulonglong" arraylength='4' volatile='true' debug='false'/>
+  <property name="debug_state2" type="Ulonglong" arraylength='4' volatile='true' debug='false'/>
   <property name='maxtrace' type='uchar' parameter='1' default='40'/>
   <property name="sdp_headers_in" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
   <property name="sdp_data_in" type="Ulong" arraylength='maxtrace' volatile='true' debug='false'/>

@@ -155,7 +155,6 @@ begin
                   dbg_state2   => dbg_state2(i));
   end generate;
 -- Output/readable properties
---  props_out.platform        <= to_string("zed", props_out.platform'length-1);
   props_out.dna             <= (others => '0');
   props_out.nSwitches       <= (others => '0');
   props_out.switches        <= (others => '0');
@@ -164,7 +163,10 @@ begin
   props_out.nLEDs           <= to_ulong(0); --led'length);
   props_out.UUID            <= metadata_in.UUID;
   props_out.romData         <= metadata_in.romData;
-  -- props_out.pciId          <= ushort_t(unsigned(pci_id));
+  --props_out.slotCardIsPresent_length <= nSlots; -- TODO / FIXME comment back in once volatile sequence properties are fixed in codegen (which SHOULD result in this property being changed from an array to a sequence)
+  props_out.slotCardIsPresent <= (0 => not fmc_prsnt, -- active low, this coincides with index 0 of slotName property
+                                  others => '0');
+--  props_out.slotCardIsPresent(1 to 63) <= (others => '0'); -- TODO / FIXME remove this line once volatile sequence properties are fixed in codegen (which SHOULD result in this property being changed from an array to a sequence)
   -- Settable properties - drive the leds that are not driven by hardware from the property
   -- led(6 downto 1)           <= std_logic_vector(props_in.leds(6 downto 1));
   -- led(led'left downto 8)    <= (others => '0');

@@ -1,0 +1,8 @@
+<hdlconfig>
+  <device name="lime_adc" card="lime_zipper_fmc_lpc" slot="fmc_lpc"/>
+  <device name="lime_dac" card="lime_zipper_fmc_lpc" slot="fmc_lpc"/>
+  <device name="si5351"   card="lime_zipper_fmc_lpc" slot="fmc_lpc"/>
+  <device name="lime_rx"  card="lime_zipper_fmc_lpc" slot="fmc_lpc"/>
+  <device name="lime_tx"  card="lime_zipper_fmc_lpc" slot="fmc_lpc"/>
+</hdlconfig>
+

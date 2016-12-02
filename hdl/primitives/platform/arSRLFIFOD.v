@@ -63,8 +63,8 @@ module arSRLFIFOD (CLK,RST_N,ENQ,DEQ,FULL_N,EMPTY_N,D_IN,D_OUT,CLR);
       sfull  <= 1'b0;
       dempty <= 1'b1;
     end else begin
-      if (!ENQ &&  sdx) pos <= trunc(pos - 1); // UGH suppress warning
-      if ( ENQ && !sdx) pos <= trunc(pos + 1); // UGH suppress warning
+      if (!ENQ &&  sdx) pos <= trunc(pos - 1); // suppress warning
+      if ( ENQ && !sdx) pos <= trunc(pos + 1); // suppress warning
 
       sempty <= ((pos==0 && !ENQ)        || (pos==1 && (sdx&&!ENQ)));
       sfull <= ((pos==(depth-1) && !sdx) || (pos==(depth-2) && (ENQ&&!sdx)));

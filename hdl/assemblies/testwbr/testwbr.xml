@@ -1,4 +1,4 @@
-<HdlAssembly Name="testwbr">
+<HdlAssembly>
   <Property Name="hasDebugLogic" Parameter="true" Type="Bool" Default="true"/>
   <Instance Worker="sma.xml"/>
   <Instance Worker="bias.xml"/>

@@ -1,6 +1,6 @@
 <HdlContainer platform='zed'>
-<connection external='out' card='lime-zipper-fmc' device='lime_dac'/>
-<connection card='lime-zipper-fmc' device ='lime_adc' interconnect='zynq'/>
+<connection external='out' card='lime_zipper_fmc_lpc' device='lime_dac'/>
+<connection card='lime_zipper_fmc_lpc' device ='lime_adc' interconnect='zynq'/>
 <device worker='cstest' floating='1'>
   <signal name='observeadc(0)' platform='FMC_LA26_N'/>
   <signal name='observeadc(1)' platform='FMC_LA26_P'/>

@@ -14,7 +14,7 @@ else
   # Initialize access to the core tree's export directory
   source scripts/core-init.sh
   # Initialize access to CDK
-  OCPI_BOOTSTRAP=$exports/scripts/ocpibootstrap.sh; source $OCPI_BOOTSTRAP
+  OCPI_BOOTSTRAP=`pwd`/exports/scripts/ocpibootstrap.sh; source $OCPI_BOOTSTRAP
 fi
 echo ================================================================================
 echo We are running in `pwd` where the git clone of opencpi has been placed.

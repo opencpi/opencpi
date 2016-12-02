@@ -48,4 +48,10 @@
   <property name="switches" volatile='true'/>
   <!-- setting of leds in the platform, with readback -->
   <property name="LEDS" writable='true' readable='true'/>
+  <property name="nSlots" type="ULong" parameter="true" default="0"/>
+  <!-- A sequence of strings, where each index contains a description of the given index's slot. For an indication of whether a card is plugged into a given index's slot, see the same index in the slotCardIsPresent property. Example index contents are "FMC_LPC", "FMC_HPC", "HSMC", "HMSC_A", "HSMC_B". It is recommended that the index contents correspond to the PCB silk screen description near the intended slot. -->
+  <property name="slotNames" type="string" stringlength="32" parameter="true"/> <!-- TODO / FIXME make this a sequencelength of nslots -->
+  <!-- An array of booleans, where each index contains a indication whether a card is physically present in the given index's slot. For a description of a given index's slot, see the same index in the slotName property. Note that only a max of 64 slots are currently supported. -->
+  <property name="slotCardIsPresent" type="bool" volatile="true" arraylength="64"/> <!-- TODO / FIXME change to sequence once sequence problems fixed -->
+
 </ComponentSpec>
