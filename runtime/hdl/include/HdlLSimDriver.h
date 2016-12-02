@@ -40,16 +40,16 @@ namespace OCPI {
       private:
 	Device *createDevice(const std::string &name, const std::string &platform,
 			     uint8_t spinCount, unsigned sleepUsecs, unsigned simTicks,
-			     bool verbose, bool dump, const char *dir, std::string &error);
+			     const OCPI::Util::PValue *params, bool dump, const char *dir, std::string &error);
       public:
 	unsigned
 	search(const OCPI::Util::PValue *props, const char **exclude, bool discoveryOnly,
-	       bool verbose, std::string &error);
+	       std::string &error);
 	OCPI::HDL::Device *
 	open(const char *name, const OCPI::API::PValue *params, std::string &err);
 	// Callback when found
 	virtual bool found(OCPI::HDL::Device &dev, const char **excludes, bool discoveryOnly,
-			   bool verbose, std::string &error) = 0;
+			   std::string &error) = 0;
       };
     }
   }

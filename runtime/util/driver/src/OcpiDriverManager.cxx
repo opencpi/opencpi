@@ -65,8 +65,8 @@ namespace OCPI {
     }
     unsigned Manager::cleanupPosition() { return 1; }
     // Get the singleton ManagerManager, possibly constructing it.
-    ManagerManager *ManagerManager::getManagerManager() {
-      return &OU::Singleton<ManagerManager>::getSingleton();
+    ManagerManager &ManagerManager::getManagerManager() {
+      return OU::Singleton<ManagerManager>::getSingleton();
     }
     ManagerManager::ManagerManager()
       : m_configured(false), m_doNotDiscover(false), m_xml(NULL)
@@ -76,7 +76,7 @@ namespace OCPI {
     }
     // This is the static API method
     void ManagerManager::configure(const char *file) {
-      getManagerManager()->configureOnce(file);
+      getManagerManager().configureOnce(file);
     }
     static bool
     checkLibPath(std::string &path, std::string &dir, const char *name, bool mode, bool debug) {
@@ -87,7 +87,7 @@ namespace OCPI {
     }
 
     // This is NOT a static method
-    void ManagerManager::configureOnce(const char *file) {
+    void ManagerManager::configureOnce(const char *file, const OCPI::Util::PValue *params) {
       if (m_configured)
 	return;
       OCPI::Util::AutoMutex guard(m_mutex); 
@@ -202,7 +202,7 @@ namespace OCPI {
 	for (Manager *m = firstChild(); m; m = m->nextChild())
 	  if (m->shouldDiscover()) {
 	    ocpiDebug("Performing discovery for the %s manager", m->name().c_str());
-	    m->discover();
+	    m->discover(params);
 	  }
     }
     // Cleanup all managers

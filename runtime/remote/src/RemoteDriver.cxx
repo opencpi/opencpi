@@ -462,7 +462,7 @@ public:
   // In this case we "discover" container servers, each of which serves us 
   // whatever containers are local to that server/system
   unsigned
-  search(const OA::PValue* props, const char **exclude, bool discoveryOnly, bool /*verbose*/) {
+  search(const OA::PValue* props, const char **exclude, bool discoveryOnly) {
     if (g_suppressRemoteDiscovery)
       return 0;
     std::string error;

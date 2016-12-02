@@ -82,7 +82,7 @@ namespace OCPI {
       m_os = "";
       m_osVersion = "";
       m_platform = m_device.platform();
-      m_arch = "";
+      m_arch = m_device.arch();
       ocpiDebug("HDL Container for device %s constructed.  ESN: '%s' Platform/part is %s/%s.",
 		name().c_str(), m_device.esn().c_str(), m_device.platform().c_str(),
 		m_device.part().c_str());

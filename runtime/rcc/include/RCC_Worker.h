@@ -505,6 +505,8 @@ typedef struct {
    void setRunCondition(RunCondition *rc);
    virtual uint8_t *rawProperties(size_t &size) const;
    RCCResult setError(const char *fmt, ...);
+   bool willLog(unsigned level) const;
+   void log(unsigned level, const char *fmt, ...) throw() __attribute__((format(printf, 3, 4)));
    OCPI::API::Application &getApplication();
    // These below are called by the container, and NOT by the worker.
 

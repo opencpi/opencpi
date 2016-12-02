@@ -46,8 +46,8 @@ namespace OCPI {
       Device(Driver &driver, OE::Interface &ifc, std::string &a_name,
 	     OS::Ether::Address &devAddr, bool discovery, const char *data_proto,
 	     unsigned delayms, uint64_t ep_size, uint64_t controlOffset, uint64_t dataOffset,
-	     std::string &error)
-	: OCPI::HDL::Device(a_name, data_proto),
+	     const OU::PValue *params, std::string &error)
+	: OCPI::HDL::Device(a_name, data_proto, params),
 	  m_socket(NULL), m_devAddr(devAddr), m_discovery(discovery), m_delayms(delayms) {
 	// We need to get a socket to talk to this device.
 	// If we are at the ethernet level AND we don't a driver,
@@ -309,7 +309,8 @@ namespace OCPI {
       // Try a discovery (send and receive) on a socket.
       bool Driver::
       trySocket(OE::Interface &ifc, OE::Socket &s, OE::Address &addr, bool discovery,
-		const char **exclude, Macs *argMacs, Device **dev, std::string &error) {
+		const char **exclude, Macs *argMacs, Device **dev, 
+		const OU::PValue *params, std::string &error) {
 	// keep track of different discovery source addresses discovered when we broadcast.
 	ocpiDebug("Trying socket on interface %s to address %s",
 		  ifc.name.c_str(), addr.pretty());
@@ -376,7 +377,7 @@ namespace OCPI {
 	      } else {
 		// We were probing a single address
 		Device *d;
-		if ((d = createDevice(ifc, devAddr, discovery, error))) {
+		if ((d = createDevice(ifc, devAddr, discovery, params, error))) {
 		  assert(dev); // should be set if not broadcasting
 		  *dev = d;
 		  return 1;
@@ -404,14 +405,13 @@ namespace OCPI {
       tryIface(OE::Interface &ifc, OE::Address &devAddr, const char **exclude,
 	       Device **dev,   // optional output arg to return the found device when mac != NULL
 	       bool discovery, // is this about discovery? (broadcast *OR* specific probing)
-	       Macs *macs,
-	       std::string &error) {
+	       Macs *macs, const OU::PValue *params, std::string &error) {
 	error.clear();
 	unsigned count = 0;
 	if (devAddr.isEther()) {
 	  OE::Socket *s;
 	  if ((s = findSocket(ifc, discovery, error)))
-	    return trySocket(ifc, *s, devAddr, discovery, exclude, macs, dev, error); 
+	    return trySocket(ifc, *s, devAddr, discovery, exclude, macs, dev, params, error); 
 	  // not "ocpiBad" due to needing sudo for bare sockets without a driver
 	  ocpiDebug("Could not open socket on interface '%s' to reach device at '%s: %s",
 		    ifc.name.c_str(), devAddr.pretty(), error.c_str());
@@ -422,7 +422,7 @@ namespace OCPI {
 	  //	    ocpiInfo("Could not open udp interface for discovery: %s", error.c_str());
 	  //	  else 
 	  if (error.empty()) {
-	    count = trySocket(ifc, s, devAddr, discovery, exclude, macs, dev, error);
+	    count = trySocket(ifc, s, devAddr, discovery, exclude, macs, dev, params, error);
 	    if (error.length())
 	      ocpiInfo("Error in discovery for udp interface: %s", error.c_str());
 	  } else
@@ -432,7 +432,7 @@ namespace OCPI {
       }
 
       OCPI::HDL::Device *Driver::
-      open(const char *name, bool discovery, std::string &error) {
+      open(const char *name, bool discovery, const OU::PValue *params, std::string &error) {
 	const char *slash = strchr(name, '/');
 	std::string iName;
 	if (slash) {
@@ -454,7 +454,7 @@ namespace OCPI {
 	    while (ifs.getNext(eif, error, iName.size() ? iName.c_str() : NULL))
 	      if (eif.up && eif.connected) {
 		Device *dev;
-		if (tryIface(eif, addr, NULL, &dev, discovery, NULL, error) == 1)
+		if (tryIface(eif, addr, NULL, &dev, discovery, NULL, params, error) == 1)
 		  return dev;
 		else
 		  break;
@@ -467,21 +467,18 @@ namespace OCPI {
       }
 
       unsigned Driver::
-      search(const OU::PValue *props, const char **excludes, bool discoveryOnly, bool verbose,
-	     bool udp, std::string &error) {
-	if (getenv("OCPI_SUPPRESS_HDL_NETWORK_DISCOVERY"))
+      search(const OU::PValue *params, const char **excludes, bool discoveryOnly, bool udp,
+	     std::string &error) {
+	if (!getenv("OCPI_ENABLE_HDL_NETWORK_DISCOVERY"))
 	  return 0;
 	ocpiInfo("Searching for network-based HDL devices%s.",
-		 udp ? " using UDP" : " using L2 Ethernet");
-	if (verbose)
-	  printf("Searching for network-based HDL devices%s.\n",
 		 udp ? " using UDP" : " using L2 Ethernet");
 	unsigned count = 0;
 	OE::IfScanner ifs(error);
 	if (error.size())
 	  return 0;
 	const char *ifName = NULL;
-	OU::findString(props, "interface", ifName);
+	OU::findString(params, "interface", ifName);
 	OE::Interface eif;
 	Macs macs;
 	while (ifs.getNext(eif, error, ifName)) {
@@ -492,7 +489,7 @@ namespace OCPI {
 	  if (eif.up && eif.connected && (!udp || eif.ipAddr.addrInAddr())) {
 	    OE::Address bcast(udp);
 	    ocpiDebug("Sending to broadcast/multicast: %s udp %u", bcast.pretty(), udp);
-	    count += tryIface(eif, bcast, excludes, NULL, discoveryOnly, &macs, error);
+	    count += tryIface(eif, bcast, excludes, NULL, discoveryOnly, &macs, params, error);
 	    if (error.size()) {
 	      ocpiDebug("Error during network discovery on '%s': %s",
 		       eif.name.c_str(), error.c_str());
@@ -512,8 +509,9 @@ namespace OCPI {
 	  ocpiInfo("Processing discovery for %s from network address %s",
 		   mi->first.c_str(), mi->second.first.pretty());
 	  std::string err;
-	  Device *dev = createDevice(*mi->second.second, mi->second.first, discoveryOnly, err);
-	  if (dev && !found(*dev, excludes, discoveryOnly, verbose, err)) {
+	  Device *dev = createDevice(*mi->second.second, mi->second.first, discoveryOnly, params,
+				     err);
+	  if (dev && !found(*dev, excludes, discoveryOnly, err)) {
 	    ocpiInfo("error creating device for %s (MAC %s): %s", mi->second.first.pretty(),
 		     mi->first.c_str(), error.c_str());
 	    count++;

@@ -28,8 +28,7 @@ namespace OCPI {
     }
     // Per driver discovery routine to create devices
     unsigned Driver::
-    search(const OA::PValue* /* params */, const char **/* exclude */, bool /* discoveryOnly */,
-	   bool /* verbose */) {
+    search(const OA::PValue* /* params */, const char **/* exclude */, bool /* discoveryOnly */) {
       std::string error;
       ocpiInfo("Searching for RCC containers, and implicitly finding one.");
       return probeContainer("rcc0", error, NULL) ? 1 : 0;

@@ -26,13 +26,15 @@ namespace OCPI {
       ROM_HEADER_WORDS = 4,
       ROM_HEADER_BYTES = ROM_HEADER_WORDS * (unsigned)sizeof(RomWord);
     class Device {
+      friend class Driver;
       HdlUUID m_UUID;
       OCPI::Util::Uuid m_loadedUUID;
       const char *m_metadata;
       ezxml_t m_implXml;
       bool m_old;
     protected:
-      std::string m_name, m_platform, m_part, m_esn, m_position, m_loadParams, m_protocol;
+      std::string
+	m_name, m_platform, m_part, m_esn, m_position, m_loadParams, m_protocol, m_arch;
       // This is the protocol-specific part of the endpoint.
       std::string m_endpointSpecific;
       Access m_cAccess;
@@ -41,11 +43,13 @@ namespace OCPI {
       bool m_isAlive;
       WciControl *m_pfWorker, *m_tsWorker;
       bool m_isFailed; // protection during shutdown
+      bool m_verbose;
     public:
       uint32_t m_timeCorrection;
       DataTransfer::EndPoint *m_endPoint;
     protected:
-      Device(const std::string &name, const char *protocol = "");
+      Device(const std::string &name, const char *protocol = "", 
+	     const OCPI::Util::PValue *params = NULL);
     public:
       virtual ~Device();
       virtual bool init(std::string &error);
@@ -56,6 +60,7 @@ namespace OCPI {
       inline const char *protocol() const { return m_protocol.c_str(); }
       inline const std::string &name() const { return m_name; }
       inline const std::string &platform() const { return m_platform; }
+      inline const std::string &arch() const { return m_arch; }
       inline const std::string &esn() const { return m_esn; }
       inline const std::string &part() const { return m_part; }
       inline Access &cAccess() { return m_cAccess; };

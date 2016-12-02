@@ -110,6 +110,7 @@ namespace OCPI {
 
     void logSetLevel(unsigned n);
     unsigned logGetLevel();
+    bool logWillLog(unsigned n);
     void logPrint(unsigned n, const char *fmt, ...) throw() __attribute__((format(printf, 2, 3)));
     void logPrintV(unsigned n, const char *fmt, va_list ap) throw();
   }

@@ -202,22 +202,22 @@ protected:
   */
   Device(const std::string &a_name, const std::string &simDir, const std::string &a_platform,
 	 const std::string &script, uint8_t spinCount, unsigned sleepUsecs,
-	 unsigned simTicks, bool verbose, bool dump, std::string &error)
-    : OH::Device("lsim:" + a_name, "ocpi-socket-rdma"),
+	 unsigned simTicks, const OU::PValue *params, bool dump, std::string &error)
+    : OH::Device("lsim:" + a_name, "ocpi-socket-rdma", params),
       m_state(EMULATING),
       m_req(simDir + "/request", false),
       m_resp(simDir + "/response", true),
       m_ctl(simDir + "/control", false),
       m_ack(simDir + "/ack", false),
       m_maxFd(-1), m_pid(0), m_exited(false), m_dcp(0), m_respLeft(0), m_simDir(simDir),
-      m_platform(a_platform), m_script(script), m_verbose(verbose), m_dump(dump),
+      m_platform(a_platform), m_script(script), m_verbose(false), m_dump(dump),
       m_spinning(false), m_sleepUsecs(sleepUsecs), m_simTicks(simTicks), m_spinCount(spinCount),
       m_cumTicks(0), /* m_metadata(NULL), m_xml(NULL),*/ m_firstRun(true), m_lastTicks(0) {
     if (error.length())
       return;
     FD_ZERO(&m_alwaysSet);
     initAdmin(*(OH::OccpAdminRegisters *)m_admin, m_platform.c_str(), m_uuid, &m_textUUID);
-    if (verbose) {
+    if (m_verbose) {
       fprintf(stderr, "Simulation HDL device %s for %s (UUID %s)\n",
 	      m_name.c_str(), m_platform.c_str(), uuid());
       fflush(stderr);
@@ -268,31 +268,38 @@ protected:
   // If "hang", we wait for the process to end, and if it stops, we term+kill it.
   // Return true on bad unexpected things
   bool
-  mywait(pid_t pid, bool hang, std::string &error) {
+  mywait(bool hang, std::string &error) {
     int status;
     pid_t wpid;
+    assert(m_pid);
     do
-      wpid = waitpid(pid, &status, (hang ? 0 : WNOHANG) | WUNTRACED);
+      wpid = waitpid(m_pid, &status, (hang ? 0 : WNOHANG) | WUNTRACED);
     while (wpid == -1 && errno == EINTR);
     if (wpid == 0) // can't happen if hanging
       ;//    ocpiDebug("Wait returned 0 - subprocess running");
     else if ((int)wpid == -1) {
       if (errno == ECHILD)
-	OU::format(error, "simulator failed to start: look in sim.out");
+	OU::format(error, "simulator failed to start: look in %s/sim.out", m_dir.c_str());
       else
-	OU::format(error, "waitpid error %s (%d)", strerror(errno), errno);
+	OU::format(error, "unexpected waitpid error %s (%d)", strerror(errno), errno);
+      killpg(m_pid, SIGKILL); // probably nothing there, but just in case
+      m_pid = 0;
       return true;
     } else if (WIFEXITED(status)) {
+      killpg(m_pid, SIGKILL); // in case any orphaned children
+      m_pid = 0;
       int exitStatus = WEXITSTATUS(status);
       if (exitStatus > 10)
 	OU::format(error,
 		   "Simulation subprocess couldn't execute from simulator executable \"%s\" (got %s - %d)",
 		   m_exec.c_str(), strerror(exitStatus - 10), exitStatus - 10);
       else if (exitStatus)
-	OU::format(error, "Simulation subprocess for executable \"%s\" terminated with exit status %d",
-		   m_exec.c_str(), exitStatus);
-      else
+	OU::format(error, "Simulation subprocess for executable \"%s\" terminated with exit status %d: check %s/sim.out",
+		   m_exec.c_str(), exitStatus, m_dir.c_str());
+      else {
 	ocpiInfo("Simulation subprocess exited normally.  Hang %u", hang);
+	m_exited = true;
+      }
       if (hang) {
 	// If waiting for termination, its not our error
 	if (error.length()) {
@@ -302,6 +309,8 @@ protected:
       } else
 	return true;
     } else if (WIFSIGNALED(status)) {
+      killpg(m_pid, SIGKILL); // in case any orphaned children
+      m_pid = 0;
       int termSig = WTERMSIG(status);
       OU::format(error, "Simulation subprocess for executable \"%s\" terminated with signal %s (%d)",
 		 m_exec.c_str(), strsignal(termSig), termSig);
@@ -316,10 +325,10 @@ protected:
       ocpiInfo("Simulator subprocess for executable \"%s\" stopped with signal %s (%d)",
 	       m_exec.c_str(), strsignal(stopSig), stopSig);
       if (hang) {
-	kill(pid, SIGTERM);
+	killpg(m_pid, SIGTERM);
 	sleep(1);
-	kill(pid, SIGKILL);
-	return mywait(pid, true, error);
+	killpg(m_pid, SIGKILL);
+	return mywait(true, error);
       }
     }
     return false;
@@ -332,11 +341,11 @@ protected:
 
     std::string cwd = OS::FileSystem::cwd();
     OU::format(cmd,
-	       "D=\"%s\" && exec %s %s "
+	       "D=\"%s\" && exec %s %s %s "
 	       "\"sw2sim=${D}%s\" \"sim2sw=${D}%s\" \"ctl=${D}%s\" \"ack=${D}%s\" \"cwd=%s\"",
-	       dir.c_str(), m_script.c_str(), m_file.c_str(), m_req.m_name.c_str(),
-	       m_resp.m_name.c_str(), m_ctl.m_name.c_str(), m_ack.m_name.c_str(),
-	       cwd.c_str());
+	       dir.c_str(), m_script.c_str(), OS::logGetLevel() >= 8 ? "-v" : "", m_file.c_str(),
+	       m_req.m_name.c_str(), m_resp.m_name.c_str(), m_ctl.m_name.c_str(),
+	       m_ack.m_name.c_str(), cwd.c_str());
     if (m_dump)
       cmd += " bscvcd";
     if (m_verbose)
@@ -390,7 +399,7 @@ protected:
     OS::sleep(100);
     ocpiCheck(signal(SIGINT, sigint) != SIG_ERR);
     for (unsigned n = 0; n < 1; n++)
-      if (spin(err) || mywait(m_pid, false, err) || ack(err))
+      if (spin(err) || mywait(false, err) || ack(err))
 	return true;
     if (m_verbose)
       fprintf(stderr, "Simulator process is running.\n");
@@ -418,8 +427,8 @@ protected:
       ocpiInfo("Telling the simulator process (%u) to stop", m_pid);
       ocpiCheck(write(m_ctl.m_wfd, msg, 2) == 2);
       ocpiInfo("Waiting for simulator process to exit");
-      mywait(m_pid, true, error);
-      if (killpg(m_pid, SIGTERM) == 0) {
+      mywait(true, error);
+      if (m_pid && killpg(m_pid, SIGTERM) == 0) {
 	sleep(1);
 	killpg(m_pid, SIGKILL);
       }
@@ -488,14 +497,8 @@ protected:
 // return any execution spin credits provided.
   bool
   doit(std::string &error) {
-    if (m_pid && mywait(m_pid, false, error)) {
-      if (error.empty()) {
-	m_exited = true;
-	killpg(m_pid, SIGKILL);
-	m_pid = 0;
-      }
+    if (m_pid && mywait(false, error))
       return true;
-    }
     fd_set fds[1];
     *fds = m_alwaysSet;
     if (m_dcp)                    // only do this after SOME control op
@@ -754,6 +757,13 @@ public:
   }
 
   bool load(const char *file, std::string &error) {
+    if (myload(file, error)) {
+      m_isAlive = false;
+      return true;
+    }
+    return false;
+  }
+  bool myload(const char *file, std::string &error) {
     assert(m_state != LOADING || m_state != SERVING);
     if (m_state == EMULATING) {
       if (initFifos(error))
@@ -836,9 +846,11 @@ public:
       ocpiInfo("Successfully loaded bitstream file: \"%s\" for simulation", m_exec.c_str());
     }
     setState(SERVING);   // Were loaded or loading
-    if (start(error))
+    if (start(error)) {
+      std::string tmp(error);
       return OU::eformat(error, "Can't start \"%s\" simulator from \"%s\": %s",
-			 m_platform.c_str(), m_exec.c_str(), error.c_str());
+			 m_platform.c_str(), m_exec.c_str(), tmp.c_str());
+    }
     setState(RUNNING);   // Were loaded or loading
     return init(error);
   }
@@ -1083,12 +1095,11 @@ getSims(std::vector<std::string> &sims) {
 }
 
 unsigned Driver::
-search(const OU::PValue *params, const char **excludes, bool discoveryOnly,
-       bool verbose, std::string &error) {
+search(const OU::PValue *params, const char **excludes, bool discoveryOnly, std::string &error) {
   error.clear();
   ocpiInfo("Searching for local HDL simulators.");
-  if (verbose)
-    printf("Searching for local HDL simulators.\n");
+  bool verbose = false;
+  OU::findBool(params, "verbose", verbose);
   const char *sims = getenv("OCPI_HDL_SIMULATORS");
   if (!sims)
     sims = getenv("OCPI_HDL_SIMULATOR");
@@ -1118,9 +1129,9 @@ search(const OU::PValue *params, const char **excludes, bool discoveryOnly,
     for (unsigned n = 0; n < sims.size(); n++) {
       const char *name = strrchr(sims[n].c_str(), '/') + 1;
       std::string cmd;
-      OU::format(cmd, "sh %s/runSimExec.%s probe %s", sims[n].c_str(), name,
-		 verbose ? "-v" : "");
-      ocpiInfo("Testing whether the %s simulator is available and licensed", name);
+      OU::format(cmd, "sh %s/runSimExec.%s %s probe", sims[n].c_str(), name,
+		 OS::logGetLevel() >= 8 ? "-v" : "");
+      ocpiInfo("Checking whether the %s simulator is available and licensed", name);
       //  FIXME: make this more of a utility
       int rc = system(cmd.c_str());
       std::string err;
@@ -1140,7 +1151,7 @@ search(const OU::PValue *params, const char **excludes, bool discoveryOnly,
 	  ocpiInfo("Check for simulator %s failed.", name);
 	else {
 	  OCPI::HDL::Device *dev = open(name, params, err);
-	  if (dev && !found(*dev, excludes, discoveryOnly, verbose, err))
+	  if (dev && !found(*dev, excludes, discoveryOnly, err))
 	    count++;
 	}
 	break;
@@ -1171,12 +1182,12 @@ open(const char *name, const OA::PValue *params, std::string &err) {
   }
   uint32_t simTicks = 10000000;
   OU::findULong(params, "simTicks", simTicks);
-  return createDevice(name, platform, 20, 200000, simTicks, verbose, false, dir, err);
+  return createDevice(name, platform, 20, 200000, simTicks, params, false, dir, err);
 }
 
 Device *Driver::
 createDevice(const std::string &name, const std::string &platform, uint8_t spinCount,
-	     unsigned sleepUsecs, unsigned simTicks, bool verbose, bool dump,
+	     unsigned sleepUsecs, unsigned simTicks, const OU::PValue *params, bool dump,
 	     const char *dir, std::string &error) {
   std::string path, script, actualPlatform;
   const char *err;
@@ -1199,7 +1210,7 @@ createDevice(const std::string &name, const std::string &platform, uint8_t spinC
   static unsigned n;
   OU::format(simDir, "%s/%s.%s.%u.%u", dir, actualPlatform.c_str(), name.c_str(), getpid(), n++);
   Device *d = new Device(name, simDir, actualPlatform, script, spinCount, sleepUsecs,
-			 simTicks, verbose, dump, error);
+			 simTicks, params, dump, error);
   if (error.empty()) {
     Device::s_one = d;
     return d;

@@ -50,8 +50,9 @@
 	 Driver    &m_driver;
 	 uint8_t  *m_vaddr;
 	 friend class Driver;
-	 Device(Driver &driver, std::string &a_name, bool forLoad, std::string &err)
-	   : OCPI::HDL::Device(a_name, "ocpi-dma-pio"),
+	 Device(Driver &driver, std::string &a_name, bool forLoad, const OU::PValue *params,
+		std::string &err)
+	   : OCPI::HDL::Device(a_name, "ocpi-dma-pio", params),
 	     m_driver(driver), m_vaddr(NULL) {
 	   m_isAlive = false;
 	   m_endpointSize = sizeof(OccpSpace);
@@ -310,22 +311,27 @@
       }
 
       unsigned Driver::
-      search(const OU::PValue */*params*/, const char **exclude, bool discoveryOnly,
-	     bool verbose, std::string &error) {
+      search(const OU::PValue *params, const char **exclude, bool discoveryOnly,
+	     std::string &error) {
 	// Opening implies canonicalizing the name, which is needed for excludes
 	ocpiInfo("Searching for local Zynq/PL HDL device.");
+#if 0
+	bool verbose = false;
+	OU::findBool(params, "verbose", verbose);
 	if (verbose)
 	  printf("Searching for local Zynq/PL HDL device.\n");
-	OCPI::HDL::Device *dev = open("0", true, error);
-	return dev && !found(*dev, exclude, discoveryOnly, verbose, error) ? 1 : 0;
+#endif
+	OCPI::HDL::Device *dev = open("0", true, params, error);
+	return dev && !found(*dev, exclude, discoveryOnly, error) ? 1 : 0;
       }
       
       OCPI::HDL::Device *Driver::
-      open(const char *busName, bool forLoad, std::string &error) {
+      open(const char *busName, bool forLoad, const OU::PValue *params, std::string &error) {
+	(void)params;
 	std::string name("PL:");
 	name += busName;
 #if defined(OCPI_ARCH_arm) || defined(OCPI_ARCH_arm_cs)
-	Device *dev = new Device(*this, name, forLoad, error);
+	Device *dev = new Device(*this, name, forLoad, params, error);
 	if (error.empty())
 	  return dev;
 	delete dev;

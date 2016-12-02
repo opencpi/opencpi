@@ -1078,6 +1078,17 @@ OCPI_CONTROL_OPS
    RCCResult RCCUserWorker::beforeQuery() { return RCC_OK;}
    RCCResult RCCUserWorker::afterConfigure() { return RCC_OK;}
    uint8_t *RCCUserWorker::rawProperties(size_t &size) const { size = 0; return NULL; }
+   bool RCCUserWorker::willLog(unsigned level) const { return OS::logWillLog(level); }
+   void RCCUserWorker::log(unsigned level, const char *fmt, ...) throw() {
+     if (OS::logWillLog(level)) {
+       va_list ap;
+       std::string myfmt;
+       OU::format(myfmt,"%s: %s", m_worker.name().c_str(), fmt);
+       va_start(ap, fmt);
+       OS::logPrintV(level, myfmt.c_str(), ap);
+       va_end(ap);
+     }
+   }
    RCCResult RCCUserWorker::setError(const char *fmt, ...) {
      va_list ap;
      va_start(ap, fmt);

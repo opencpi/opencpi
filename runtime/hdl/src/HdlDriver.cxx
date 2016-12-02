@@ -70,10 +70,10 @@ namespace OCPI {
 	  pci = true;
       }
       Device *dev =
-	pci ? PCI::Driver::open(which, err) : 
-	bus ? Zynq::Driver::open(which, forLoad, err) : 
-	ether ? Ether::Driver::open(which, discovery, err) :
-	sim ? Sim::Driver::open(which, discovery, err) : 
+	pci ? PCI::Driver::open(which, params, err) : 
+	bus ? Zynq::Driver::open(which, forLoad, params, err) : 
+	ether ? Ether::Driver::open(which, discovery, params, err) :
+	sim ? Sim::Driver::open(which, discovery, params, err) : 
 	lsim ? LSim::Driver::open(which, params, err) : NULL;
       ezxml_t config;
       if (forLoad && bus)
@@ -96,8 +96,7 @@ namespace OCPI {
     // Assuming we are called possibly multiple times from a give driver's search method,
     // record the first error seen.
     bool Driver::
-    found(Device &dev, const char **excludes, bool discoveryOnly, bool verbose, 
-	  std::string &error) {
+    found(Device &dev, const char **excludes, bool discoveryOnly, std::string &error) {
       ezxml_t config;
       error.clear();
       if (excludes)
@@ -109,8 +108,10 @@ namespace OCPI {
 	if ((OU::findBool(m_params, "printOnly", printOnly) && printOnly))
 	  dev.print(); // fall through to delete
 	else {
-	  if (verbose)
+#if 0
+	  if (dev.m_verbose)
 	    dev.print();
+#endif
 	  if (!discoveryOnly)
 	    createContainer(dev, config, m_params); // no errors?
 	  return false;
@@ -122,32 +123,32 @@ namespace OCPI {
     } 
 
     unsigned Driver::
-    search(const OA::PValue *params, const char **exclude, bool discoveryOnly, bool verbose) {
+    search(const OA::PValue *params, const char **exclude, bool discoveryOnly) {
       OU::SelfAutoMutex x(this); // protect m_params etc.
       unsigned count = 0;
       m_params = params;
       std::string error;
-      count += Zynq::Driver::search(params, exclude, discoveryOnly, verbose, error);
+      count += Zynq::Driver::search(params, exclude, discoveryOnly, error);
       if (error.size()) {
 	ocpiBad("In HDL Container driver, got Zynq search error: %s", error.c_str());
 	error.clear();
       }
-      count += Ether::Driver::search(params, exclude, discoveryOnly, verbose, false, error);
+      count += Ether::Driver::search(params, exclude, discoveryOnly, false, error);
       if (error.size()) {
 	ocpiBad("In HDL Container driver, got ethernet search error: %s", error.c_str());
 	error.clear();
       }
-      count += PCI::Driver::search(params, exclude, discoveryOnly, verbose, error);
+      count += PCI::Driver::search(params, exclude, discoveryOnly, error);
       if (error.size()) {
 	ocpiBad("In HDL Container driver, got PCI search error: %s", error.c_str());
 	error.clear();
       }
-      count += Sim::Driver::search(params, exclude, discoveryOnly, verbose, true, error);
+      count += Sim::Driver::search(params, exclude, discoveryOnly, true, error);
       if (error.size()) {
 	ocpiBad("In HDL Container driver, got SIM/UDP search error: %s", error.c_str());
 	error.clear();
       }
-      count += LSim::Driver::search(params, exclude, discoveryOnly, verbose, error);
+      count += LSim::Driver::search(params, exclude, discoveryOnly, error);
       if (error.size()) {
 	ocpiBad("In HDL Container driver, got LSIM search error: %s", error.c_str());
 	error.clear();

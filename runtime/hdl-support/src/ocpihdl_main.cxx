@@ -418,12 +418,13 @@ static void search(const char **) {
     OA::PVarray vals(5);
     unsigned n = 0;
     vals[n++] = OA::PVBool("printOnly", true);
+    vals[n++] = OA::PVBool("verbose", verbose);
     if (interface)
       vals[n++] = OA::PVString("interface", interface);
     vals[n++] = OA::PVEnd;
 #endif
 
-    OCPI::HDL::Driver::getSingleton().search(vals, NULL, true, verbose);
+    OCPI::HDL::Driver::getSingleton().search(vals, NULL, true);
 }
 static void probe(const char **) {
   dev->print();

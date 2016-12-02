@@ -32,10 +32,8 @@ namespace OCPI {
       // are any container devices supported by this driver
       // It uses a generic PCI scanner to find candidates, and when found, calls the
       // "found" method.
-      unsigned search(const OCPI::API::PValue*, const char **exclude, bool discoveryOnly,
-		      bool verbose);
-      bool found(Device &dev, const char **excludes, bool discoveryOnly, bool verbose,
-		 std::string &error);
+      unsigned search(const OCPI::API::PValue*, const char **exclude, bool discoveryOnly);
+      bool found(Device &dev, const char **excludes, bool discoveryOnly, std::string &error);
       // Probe a specific container
       OCPI::Container::Container *probeContainer(const char *which, std::string &error,
 						 const OCPI::API::PValue *props);
@@ -45,7 +43,8 @@ namespace OCPI {
 
       // Create an actual container.
       static OCPI::Container::Container *
-      createContainer(Device &dev, ezxml_t config = NULL, const OCPI::Util::PValue *params = NULL);
+      createContainer(Device &dev, ezxml_t config = NULL,
+		      const OCPI::Util::PValue *params = NULL);
     };
   }
 }

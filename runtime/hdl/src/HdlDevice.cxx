@@ -35,10 +35,11 @@ namespace OCPI {
     // The derived class will set up accessors after this constructor is done
     // So we can't perform accesses until that time, which is the "init" call.
     Device::
-    Device(const std::string &a_name, const char *a_protocol)
+    Device(const std::string &a_name, const char *a_protocol, const OU::PValue *params)
       : m_metadata(NULL), m_implXml(NULL), m_old(false), m_name(a_name), m_protocol(a_protocol),
-	m_isAlive(true), m_pfWorker(NULL), m_tsWorker(NULL), m_isFailed(false),
+	m_isAlive(true), m_pfWorker(NULL), m_tsWorker(NULL), m_isFailed(false), m_verbose(false),
 	m_timeCorrection(0), m_endPoint(NULL) {
+      OU::findBool(params, "verbose", m_verbose);
       memset((void*)&m_UUID, 0, sizeof(m_UUID));
     }
     Device::

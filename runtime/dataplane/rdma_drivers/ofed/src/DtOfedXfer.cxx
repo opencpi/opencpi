@@ -351,8 +351,8 @@ namespace DataTransfer {
       void allocateEndpoints(std::vector<std::string> &l);
 
       // From driver base class
-      unsigned search(const OCPI::Util::PValue* props, const char **exclude, bool discoveryOnly,
-		      bool verbose);
+      unsigned
+      search(const OCPI::Util::PValue* props, const char **exclude, bool discoveryOnly);
 
     protected:
       //OCPI::OS::Mutex                  m_mutex;
@@ -515,8 +515,8 @@ namespace DataTransfer {
 
     unsigned 
     XferFactory::
-    search(const OCPI::Util::PValue* /*props*/, const char ** /*exclude*/, 
-	   bool /* discoveryOnly */, bool /*verbose*/) {
+    search(const OCPI::Util::PValue* /*props*/, const char ** /*exclude*/,
+	   bool /* discoveryOnly */) {
       int num_of_device;
       ibv_device **dev_list;
       ibv_device *ib_dev = NULL;

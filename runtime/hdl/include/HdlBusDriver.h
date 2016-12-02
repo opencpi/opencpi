@@ -49,12 +49,13 @@ namespace OCPI {
       public:
 	unsigned
 	search(const OCPI::Util::PValue *props, const char **exclude, bool discoveryOnly,
-	       bool verbose, std::string &error);
+	       std::string &error);
 	OCPI::HDL::Device *
-	open(const char *busName, bool forLoad, std::string &err);
+	open(const char *busName, bool forLoad, const OCPI::Util::PValue *params, 
+	     std::string &err);
 	// Callback when found
 	virtual bool found(OCPI::HDL::Device &dev, const char **excludes, bool discoveryOnly,
-			   bool verbose, std::string &error) = 0;
+			   std::string &error) = 0;
       };
     }
   }
