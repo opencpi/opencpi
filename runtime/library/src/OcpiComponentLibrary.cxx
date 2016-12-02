@@ -107,7 +107,7 @@ namespace OCPI {
 	  OL::Driver::configure(x);
 	}
 	unsigned search(const PValue* /*props*/, const char **/*exclude*/,
-			bool /* discoveryOnly */, bool /* verbose */) {
+			bool /* discoveryOnly */) {
 	  unsigned n = 0;
 	  // Now we look in the path environment variable
 	  // FIXME: canonicalize the names before dup matching? (i.e. realpath)??

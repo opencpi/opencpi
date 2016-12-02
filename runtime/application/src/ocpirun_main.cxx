@@ -117,6 +117,7 @@ namespace OA = OCPI::API;
 namespace OU = OCPI::Util;
 namespace OS = OCPI::OS;
 namespace OL = OCPI::Library;
+namespace OC = OCPI::Container;
 namespace OR = OCPI::Remote;
 namespace OE = OCPI::Util::EzXml;
 
@@ -227,14 +228,18 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &error) {
       doTarget(*tp, options.specs() || options.list_specs());
     return false;
   } else if (options.list()) { // no xml here
-    OCPI::Library::Manager::getSingleton().suppressDiscovery();
+    OL::Manager::getSingleton().suppressDiscovery();
     DataTransfer::getManager().suppressDiscovery();
   }
   if (options.deployment())
-    OCPI::Library::Manager::getSingleton().suppressDiscovery();
+    OL::Manager::getSingleton().suppressDiscovery();
   if (!options.remote())
     OR::g_suppressRemoteDiscovery = true;
-  (void)OA::ContainerManager::get(0); // force config before looking for servers
+  // force config before looking for servers
+  {
+    OA::PValue v[] = { OA::PVBool("verbose", options.verbose()), OA::PVEnd};
+    OCPI::Driver::ManagerManager::getManagerManager().configureOnce(NULL, v);
+  }
   // server arguments and server environment variables are all used, no shadowing
   size_t dumb;
   for (const char **ap = options.server(dumb); ap && *ap; ap++)

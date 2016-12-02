@@ -43,10 +43,10 @@ namespace OCPI {
 	bool m_sdpConnected;
       protected:
 	Device(Driver &driver, OS::Ether::Interface &ifc, std::string &a_name,
-	       OE::Address a_addr, bool discovery, std::string &error)
+	       OE::Address a_addr, bool discovery, const OU::PValue *params, std::string &error)
 	  : Net::Device(driver, ifc, a_name, a_addr, discovery, "ocpi-udp-rdma", 10000,
 			OH::SDP::Header::max_addressable_bytes * OH::SDP::Header::max_nodes,
-			0, OH::SDP::Header::max_addressable_bytes, error),
+			0, OH::SDP::Header::max_addressable_bytes, params, error),
 	    m_sdpConnected(false) {
 #if 0
 	  // Send the "flush all state - I am a new master" command.
@@ -282,10 +282,10 @@ namespace OCPI {
       }
       Net::Device *Driver::
       createDevice(OS::Ether::Interface &ifc, OS::Ether::Address &addr, bool discovery,
-		   std::string &error) {
+		   const OU::PValue *params, std::string &error) {
 	std::string name("sim:");
 	name += addr.pretty();
-	Device *d = new Device(*this, ifc, name, addr, discovery, error);
+	Device *d = new Device(*this, ifc, name, addr, discovery, params, error);
 	if (error.empty())
 	  return d;
 	delete d;

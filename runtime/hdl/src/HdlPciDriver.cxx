@@ -64,8 +64,8 @@ namespace OCPI {
 	int m_fd;
 	friend class Driver;
 	Device(std::string &a_name, int fd, ocpi_pci_t &pci, void *bar0, void *bar1,
-	       std::string &err)
-	  : OCPI::HDL::Device(a_name, "ocpi-dma-pio"), m_bar0(bar0), m_bar1(bar1),
+	       const OU::PValue *params, std::string &err)
+	  : OCPI::HDL::Device(a_name, "ocpi-dma-pio", params), m_bar0(bar0), m_bar1(bar1),
 	    m_bar0size(pci.size0), m_bar1size(pci.size1), m_fd(fd) {
 	  uint64_t endpointPaddr, controlOffset, bufferOffset, holeStartOffset, holeEndOffset;
 	  if (pci.bar0 < pci.bar1) {
@@ -365,11 +365,9 @@ namespace OCPI {
 	return false;
       }
       unsigned Driver::
-      search(const OU::PValue */*params*/, const char **excludes, bool discoveryOnly,
-	     bool verbose, std::string &error) {
+      search(const OU::PValue *params, const char **excludes, bool discoveryOnly,
+	     std::string &error) {
 	ocpiInfo("Searching for local PCI-based HDL devices.");
-	if (verbose)
-	  printf("Searching for local PCI-based HDL devices.\n");
 	error.clear();
 	unsigned count = 0;
 	const char *dir = m_useDriver ? OCPI_DRIVER_PCI : OCPI_HDL_SYS_PCI_DIR;
@@ -378,8 +376,8 @@ namespace OCPI {
 	  for (struct dirent *ent; (ent = readdir(pcid)) != NULL; )
 	    if (ent->d_name[0] != '.') {
 	      std::string err;
-	      OCPI::HDL::Device *dev = open(ent->d_name, err);
-	      if (dev && !found(*dev, excludes, discoveryOnly, verbose, err))
+	      OCPI::HDL::Device *dev = open(ent->d_name, params, err);
+	      if (dev && !found(*dev, excludes, discoveryOnly, err))
 		count++;
 	      if (error.empty())
 		error = err;
@@ -395,7 +393,7 @@ namespace OCPI {
       }
       
       OCPI::HDL::Device *Driver::
-      open(const char *pciName, std::string &error) {
+      open(const char *pciName, const OU::PValue *params, std::string &error) {
 	const char *cp;
 	for (cp = pciName; *cp && isdigit(*cp); cp++)
 	  ;
@@ -450,7 +448,7 @@ namespace OCPI {
 	    return NULL; // not really an error
 	}
 	if (error.empty()) {
-	  Device *dev = new Device(name, fd, pci, bar0, bar1, error);
+	  Device *dev = new Device(name, fd, pci, bar0, bar1, params, error);
 	  if (error.empty())
 	    return dev; // we have passed the fd into the device.
 	  delete dev;

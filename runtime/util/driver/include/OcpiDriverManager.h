@@ -82,9 +82,9 @@ namespace OCPI {
       ManagerManager();
       ~ManagerManager();
       static bool exiting() { return s_exiting; }
-      void configureOnce(const char *cf = NULL);
+      void configureOnce(const char *cf = NULL, const OCPI::Util::PValue *params = NULL);
       // This is public only for debugging, etc.
-      static ManagerManager *getManagerManager();
+      static ManagerManager &getManagerManager();
       // Use this method to do early what will be done anyway at static destruction
       static void cleanup();
       // Use this method to ensure first-time configuration AFTER static construction
@@ -92,7 +92,7 @@ namespace OCPI {
       // Report configuration errors
       static void configError(ezxml_t x, const char *fmt,...);
       // Global suppression of discovery
-      static inline void suppressDiscovery() { getManagerManager()->m_doNotDiscover = true; }
+      static inline void suppressDiscovery() { getManagerManager().m_doNotDiscover = true; }
     };
     // The base class for all (singleton) driver managers which are children of
     // ManagerManager. This is NOT directly inherited by derived managers. They
@@ -100,8 +100,8 @@ namespace OCPI {
     class Driver;
     class Manager : public Child<ManagerManager,Manager> {
       friend class ManagerManager;
-      bool m_doNotDiscover;
     protected:
+      bool m_doNotDiscover;
       Manager(const char *mname)
 	: Child<ManagerManager,Manager>
 	  (OCPI::Util::Singleton<ManagerManager>::getSingleton(), *this, mname),
@@ -111,11 +111,11 @@ namespace OCPI {
       // The default implementation just configures any drivers
       virtual void configure(ezxml_t x);
       // Discover all devices on all drivers, return device count.
-      virtual unsigned discover() = 0;
       virtual Driver *firstDriverBase() = 0;
       virtual unsigned cleanupPosition();
       bool shouldDiscover() const { return !m_doNotDiscover; }
     public:
+      virtual unsigned discover(const OCPI::Util::PValue *params = NULL) = 0;
       inline void suppressDiscovery() { m_doNotDiscover = true; }
       virtual ~Manager();
     };
@@ -157,10 +157,14 @@ namespace OCPI {
       Driver *firstDriverBase() {
 	return firstDriver();
       }
-      unsigned discover() {
+    public:
+      unsigned discover(const OCPI::Util::PValue *params) {
+	parent().configureOnce();
 	unsigned found  = 0;
-	for (DerivedDriver *dd = firstDriver(); dd; dd = dd->nextDriver())
-	  dd->search();
+	ocpiInfo("Performing discovery for all %s drivers", name().c_str());
+	if (!m_doNotDiscover)
+	  for (DerivedDriver *dd = firstDriver(); dd; dd = dd->nextDriver())
+	    dd->search(params, NULL, false);
 	return found;
       }
     };
@@ -186,15 +190,18 @@ namespace OCPI {
     protected:
       DriverType(const char *a_name, DriBase &d)
 	: Child<DriMgr,DriBase>(DriMgr::getSingleton(), d, a_name)
-      {}
+      {
+	ocpiInfo("Registering/constructing %s driver: %s", 
+		 Child<DriMgr,DriBase>::parent().name().c_str(), a_name);
+      }
     public:
       // Configure from system configuration XML
       //      virtual void configure(ezxml_t );//{}
       // Per driver discovery routine to create devices that are found,
       // excluding the ones named in the "exclude" list.
       virtual unsigned search(const PValue* props = NULL, const char **exclude = NULL,
-			      bool discoveryOnly = false, bool verbose = false) {
-	(void) props; (void) exclude; (void) discoveryOnly; (void)verbose;
+			      bool discoveryOnly = false) {
+	(void) props; (void) exclude; (void) discoveryOnly;
 	return 0;
       }
       // Probe for a particular device and return it if found, and creating it
@@ -248,7 +255,6 @@ namespace OCPI {
       // This is the constructor that is called at static construction time.
       DriverBase<Man, DriBase, ConcDri, Dev, name>()
       : DriBase(name) {
-	ocpiInfo("Registering/constructing driver: %s", name);
       }
     };
     // The template that concrete drivers should use to register themselves at
