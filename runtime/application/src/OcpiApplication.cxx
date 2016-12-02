@@ -308,7 +308,7 @@
 	   const OU::Assembly::Connection &c = *ci;
 	   if (c.m_externals.size()) {
 	     const OU::Assembly::External &e = c.m_externals.front();
-	     if (!strncasecmp(assign, e.m_name.c_str(), len)) {
+	     if (e.m_name.length() == len && !strncasecmp(assign, e.m_name.c_str(), len)) {
 	       assign = NULL;
 	       break;
 	     }

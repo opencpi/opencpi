@@ -371,8 +371,8 @@ namespace OCPI {
     // A common method used by constructors
     void Assembly::findImplementations(const OU::PValue *params) {
       const char *err;
-      if ((err = checkInstanceParams("model", params)) ||
-	  (err = checkInstanceParams("platform", params)))
+      if ((err = checkInstanceParams("model", params, false, true)) ||
+	  (err = checkInstanceParams("platform", params, false, true)))
 	throw OU::Error("%s", err);
       m_params = params; // for access by callback
       m_maxCandidates = 0;

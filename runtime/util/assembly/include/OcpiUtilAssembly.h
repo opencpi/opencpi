@@ -206,7 +206,8 @@ namespace OCPI {
       ~Assembly();
       const char
 	*findInstanceForParam(const char *pName, const char *&assign, unsigned &instn),
-	*checkInstanceParams(const char *pName, const PValue *params, bool checkMapped = false),
+	*checkInstanceParams(const char *pName, const PValue *params, bool checkMapped = false,
+			     bool singleAssignment = false),
         *addConnection(const char *name, Connection *&c),
         *getInstance(const char *name, unsigned &),
         *addPortConnection(unsigned from, const char *name, unsigned to, const char *toPort,

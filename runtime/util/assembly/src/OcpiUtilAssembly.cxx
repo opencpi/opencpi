@@ -31,6 +31,7 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <set>
 #include "OcpiUtilExceptionApi.h"
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilMisc.h"
@@ -171,11 +172,13 @@ namespace OCPI {
 	if ((err = i->parseConnection(ix, *this, params)))
 	  return err;
       // Check instance parameters that don't name instances properly
-      if ((err = checkInstanceParams("selection", params)) ||
+      // Set the last/fourth (singleAssignment) parameter to true for those that should
+      // only be a single assignment per  workers should only make a  once.
+      if ((err = checkInstanceParams("selection", params, false, true)) ||
 	  (err = checkInstanceParams("transport", params)) ||
 	  (err = checkInstanceParams("xferrole", params)) ||
 	  (err = checkInstanceParams("buffercount", params)) ||
-	  (err = checkInstanceParams("worker", params)) ||
+	  (err = checkInstanceParams("worker", params, false, true)) ||
 	  (err = checkInstanceParams("property", params, true)))
 	return err;
       return NULL;
@@ -201,25 +204,33 @@ namespace OCPI {
 		      assign, pName);
     }
 
+    // Error check parameters for that have instance names
     const char *Assembly::
-    checkInstanceParams(const char *pName, const PValue *params, bool checkMapped) {
-      // Error check instance assignment parameters for instances
+    checkInstanceParams(const char *pName, const PValue *params, bool checkMapped, 
+			bool singleAssignment) {
       const char *assign;
+      // Keep track of which instances we have seen for this parameter, using ordinals
+      std::set<unsigned> instancesSeen;
       for (unsigned n = 0; findAssignNext(params, pName, NULL, assign, n); ) {
 	const char *eq = strchr(assign, '=');
-	if (!eq)
+	if (!eq || !eq[1]) // empty values are not allowed for any instance params (so far)
 	  return esprintf("Parameter assignment '%s' is invalid. "
-			  "Format is: <instance>=<parameter-value>", assign);
+			  "Format is: [<instance>]=<parameter-value>", assign);
 	size_t len = eq - assign;
+	if (len == 0) // an empty assignment is ok as default for later ones
+	  continue;
 	for (unsigned nn = 0; assign && nn < m_instances.size(); nn++)
-	  if (!strncasecmp(assign, m_instances[nn].m_name.c_str(), len) &&
-	      assign[len] == '=')
+	  if (m_instances[nn].m_name.length() == len &&
+	      !strncasecmp(assign, m_instances[nn].m_name.c_str(), len)) {
+	    if (singleAssignment && !instancesSeen.insert(nn).second)
+	      return esprintf("%s assignment '%s' is a reassignment of that instance.",
+			      pName, assign);
 	    assign = NULL;
+	  }
 	if (assign && checkMapped) {
 	  MappedProperty *mp = &m_mappedProperties[0];
 	  for (size_t nn = m_mappedProperties.size(); assign && nn; nn--, mp++)
-	    if (!strncasecmp(assign, mp->m_name.c_str(), len) &&
-		assign[len] == '=')
+	    if (mp->m_name.length() == len && !strncasecmp(assign, mp->m_name.c_str(), len))
 	      assign = NULL;
 	}
 	if (assign)
