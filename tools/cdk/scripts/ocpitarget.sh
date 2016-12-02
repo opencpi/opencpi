@@ -36,7 +36,7 @@ else
   export OCPI_TARGET_PLATFORM=$1
 fi 
 unset `env | grep OCPI_TARGET | grep -v OCPI_TARGET_PLATFORM | sed 's/=.*//'`
-eval $(make -s -f $OCPI_CDK_DIR/include/ocpisetup.mk -f <(tee foo <<'EOF'
+eval $(make -s -f $OCPI_CDK_DIR/include/ocpisetup.mk -f <(cat <<'EOF'
 $(info export OCPI_TARGET_OS=$(OCPI_TARGET_OS);)
 $(info export OCPI_TARGET_OS_VERSION=$(OCPI_TARGET_OS_VERSION);)
 $(info export OCPI_TARGET_ARCH=$(OCPI_TARGET_ARCH);)

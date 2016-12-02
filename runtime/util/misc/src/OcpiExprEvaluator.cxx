@@ -542,7 +542,7 @@ parse(const char *buf, const char *end, ExprToken *&tokens, const IdentResolver 
 	  t->op = OpConstant;
 	  usesVariable = true;
 	  std::string s;
-	  ocpiDebug("Expression variable %s has value %s", sym.c_str(), t->value.getString(s));
+	  //ocpiDebug("Expression variable %s has value %s", sym.c_str(), t->value.getString(s));
 	}
       }
       // convert to string value or number value
@@ -607,8 +607,8 @@ const char *evalExpression(const char *start, ExprValue &val, const IdentResolve
   delete [] tokens;
   v->setInternal(val);
   std::string s;
-  ocpiDebug("Evaluating expression: %.*s err: \"%s\" value: \"%s\"",
-	    (int)(end - start), start, err ? err : "", val.getString(s));
+  //ocpiDebug("Evaluating expression: %.*s err: \"%s\" value: \"%s\"",
+  //	    (int)(end - start), start, err ? err : "", val.getString(s));
   return
     err ? esprintf("when parsing expression \"%.*s\": %s", (int)(end-start), start, err) :
     NULL;
@@ -631,8 +631,8 @@ parseExprNumber(const char *a, size_t &np, std::string *expr, const IdentResolve
       if (expr) {
 	expr->clear();
 	if (v.isVariable()) {
-	  ocpiDebug("Found an expression: '%s' that was based on variables. prev:'%s'",
-		    a, expr->c_str());
+	  //ocpiDebug("Found an expression: '%s' that was based on variables. prev:'%s'",
+	  //		    a, expr->c_str());
 	  *expr = a; // provide the expression to the caller in a string
 	}
       }
@@ -734,7 +734,7 @@ getTypedValue(Value &v, size_t index) const {
       tmp &= (uint32_t)-1;
       int32_t high32 = (int32_t)tmp.get_ui();
       uint64_t val = ((uint64_t)high32 << 32) | low32;
-      ocpiDebug("gettypedvalue from '%s' %" PRIu64, mpfString(m_internal->m_number, s), val);
+      //ocpiDebug("gettypedvalue from '%s' %" PRIu64, mpfString(m_internal->m_number, s), val);
       switch (v.m_vt->m_baseType) {
 #define DO_INT(pretty,x)							\
 	case OA::OCPI_##pretty:						   \

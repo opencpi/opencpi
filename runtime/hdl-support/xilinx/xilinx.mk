@@ -76,4 +76,11 @@ OcpiXilinxVivadoInit=\
   set -evx ; \
   . $(OcpiXilinxVivadoDir)/settings64.sh $(OcpiXilinxVivadoDir)
 
+# emit shell assignments - allowing errors etc.
+ifdef ShellIseVars
+all:
+  $(info OcpiXilinxIseDir=$(OcpiXilinxIseDir);\
+         OcpiXilinxLicenseFile=$(OcpiXilinxLicenseFile))
+endif
+
 endif

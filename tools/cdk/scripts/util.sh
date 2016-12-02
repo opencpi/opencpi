@@ -11,6 +11,26 @@ function findInProjectPath {
   return 1
 }
 
+# First arg is .mk file to use
+# second arg is Make arg to invoke the right output
+#    which can be an assignment or a target
+# third arg is verbose
+function setVarsFromMake {
+  local quiet
+  [ -z "$3" ] && quiet=1   
+  [ -z $(which make 2> /dev/null) ] && {
+    [ -n "$3" ] && echo The '"make"' command is not available. 2>&1
+    return 1
+  }
+  eval $(eval make -n -r -s -f $1 ShellIseVars=1 \
+	 ${quiet:+2>/dev/null} | grep '^[a-zA-Z_][a-zA-Z_]*=')
+}
+
+
+
+
+
+
 if [ "$1" == __test__ ] ; then
   if eval findInProjectPath $2 $3 result ; then
     echo good result is $result

@@ -1,4 +1,5 @@
 include $(OCPI_CDK_DIR)/include/util.mk
+include $(OCPI_CDK_DIR)/include/hdl/xilinx.mk
 zynq_bin_dir=$(OcpiXilinxEdkDir)/gnu/arm/lin/bin
 ifdef OCPI_CROSS_BUILD_BIN_DIR
   ifneq ($(zynq_bin_dir),$(OCPI_CROSS_BUILD_BIN_DIR))
