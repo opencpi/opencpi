@@ -22,13 +22,12 @@ Xilinx tool release associated with the tag unless it is between releases etc.
 EOF
   exit 1
 fi
+source $OCPI_CDK_DIR/scripts/util.sh
+setVarsFromMake $OCPI_CDK_DIR/include/hdl/xilinx.mk ShellIseVars=1 $verbose
 if test \
-  "$OCPI_XILINX_EDK_DIR" = "" -o \
+  "$OcpiXilinxEdkDir" = "" -o \
   "$OCPI_TARGET_KERNEL_DIR" = "" -o \
-  "$OCPI_XILINX_DIR" = "" -o \
-  "$OCPI_XILINX_VERSION" = "" -o \
-  ! -d "$OCPI_XILINX_EDK_DIR" -o \
-  ! -d "$OCPI_XILINX_DIR/$OCPI_XILINX_VERSION"; then
+  ! -d "$OcpiXilinxEdkDir" -o \
   echo Error: the OpenCPI build environment for Xilinx Zynq is not set up.
   exit 1
 fi

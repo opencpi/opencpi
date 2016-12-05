@@ -1,15 +1,25 @@
 #!/bin/bash
 
+source $OCPI_CDK_DIR/scripts/util.sh
+
+if test "$1" = "-v"; then
+  verbose=1
+  shift
+fi
 if test "$1" != ""; then
   cd $1
   shift
 fi
 
 if test -f isim.wdb; then
-  OCPI_XILINX_TOOLS_DIR=$($OCPI_CDK_DIR/scripts/xilinx-ise.sh) || exit 1
+  setVarsFromMake $OCPI_CDK_DIR/include/hdl/xilinx.mk ShellIseVars=1 $verbose
+  [ -z "$OcpiXilinxIseDir" -o -z "$OcpiXilinxLicenseFile" ] && {
+    echo Could not find the Xilinx ISE tools directory or license file. >&2
+    exit 1
+  }
   set -e 
-  . $OCPI_XILINX_TOOLS_DIR/settings64.sh > /dev/null
-  export LM_LICENSE_FILE=$OCPI_XILINX_LICENSE_FILE
+  . $OcpiXilinxIseDir/settings64.sh > /dev/null
+  export LM_LICENSE_FILE=$OcpiXilinxLicenseFile
   exec isimgui -view isim.wdb
 elif test -f vsim.wlf; then
   export LM_LICENSE_FILE=$OCPI_MODELSIM_LICENSE_FILE

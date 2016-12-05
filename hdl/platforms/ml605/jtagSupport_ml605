@@ -5,27 +5,27 @@
 # Be sure to write error messages to stderr since some funtions return
 # data on stdout
 ################################################################################
+source $OCPI_CDK_DIR/scripts/util.sh
 func=$1
 temp=$2
 dir=`dirname $0`
 #echo bitfile=$1 device=$2 part=$3 esn=$4 position=$5 temp=$6
-# Now we must find the USB port that has the right ESN.
-# If there is only one port, then "any" as serial number is ok.
-if test "$OCPI_XILINX_TOOLS_DIR" = ""; then
-  echo Error: environment variable OCPI_XILINX_TOOLS_DIR not set. 1>&2
+setVarsFromMake $OCPI_CDK_DIR/include/hdl/xilinx.mk ShellIseVars=1 $verbose
+[ -z "$OcpiXilinxIseDir" ] && {
+  echo Error: Could not find the directory for XILINX ISE Tools.
   exit 1
 fi
-source $OCPI_XILINX_TOOLS_DIR/settings64.sh 1>&2
+source $OcpiXilinxIseDir/settings64.sh 1>&2
 if test $? != 0; then
   echo Xilinx tools setup failed. 1>&2
   exit 1
 fi
-if test -x $OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact; then
-  imp="$OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact -batch"
-elif test -x $OCPI_XILINX_TOOLS_DIR/LabTools/bin/lin64/impact; then
-  imp="$OCPI_XILINX_TOOLS_DIR/LabTools/bin/lin64/impact -batch"
+if test -x $OcpiXilinxIseDir/ISE/bin/lin64/impact; then
+  imp="$OcpiXilinxIseDir/ISE/bin/lin64/impact -batch"
+elif test -x $OcpiXilinxIseDir/LabTools/bin/lin64/impact; then
+  imp="$OcpiXilinxIseDir/LabTools/bin/lin64/impact -batch"
 else
-  echo Error: Xilinx impact tool not found in either $OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64 nor $OCPI_XILINX_TOOLS_DIR/LabTools/bin/lin64 1>&2
+  echo Error: Xilinx impact tool not found in either $OcpiXilinxIseDir/ISE/bin/lin64 nor $OcpiXilinxIseDir/LabTools/bin/lin64 1>&2
   exit 1
 fi
 # impact expects to overwrite/create this file.  In the off chance that it exists

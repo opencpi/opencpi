@@ -1,17 +1,17 @@
 #!/bin/sh
+source $OCPI_CDK_DIR/scripts/util.sh
 function bad {
   [ -n "$verbose" ] && echo $* && echo Probe for Vivado xsim failed.
   exit 1
 }
 
+verbose=$2
 [ "$1" = probe ] && {
-  verbose=$2
-  [ -n "$verbose" ] &&
-  echo Checking whether Vivado xsim is available and licensed.
-  bad probing unimplemented for xsim.
+  bad Probing unimplemented for xsim.
 }
-OCPI_XILINX_VIVADO_TOOLS_DIR=$(source $OCPI_CDK_DIR/scripts/xilinx-vivado.sh)
-[ $? == 0 ] || exit 1
+setVarsFromMake $OCPI_CDK_DIR/include/hdl/xilinx.mk ShellIseVars=1 $verbose
+[ -z "$OcpiXilinxVivadoDir" ] && bad Could not find the directory for XILINX Vivado.
+
 set -e
 # Pass arguments to the settings script to override current args
 . $OCPI_XILINX_VIVADO_TOOLS_DIR/settings64.sh $OCPI_XILINX_VIVADO_TOOLS_DIR

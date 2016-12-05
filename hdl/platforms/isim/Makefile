@@ -7,16 +7,19 @@ ifneq ($(findstring isim,$(HdlPlatforms)),)
 # Make the minimal simulation executable to run to verify licensing
 # since the xlicmgr tool is useless.  grrrr.
 probe.exe.tgz:
-	( rm -r -f tmp && mkdir tmp && cd tmp && \
-	  source $$OCPI_XILINX_TOOLS_DIR/settings64.sh && \
-	  export LM_LICENSE_FILE=$$OCPI_XILINX_LICENSE_FILE && \
+	$(AT)echo Creating the tiny isim project for probing that isim is installed and licensed.
+	$(AT)echo Output is in target-isim/probe.out
+	$(AT)mkdir -p target-isim
+	$(AT)(rm -r -f tmp && mkdir tmp && cd tmp && \
+	  source $(OcpiXilinxIseDir)/settings64.sh && \
+	  export LM_LICENSE_FILE=$(OcpiXilinxLicenseFile) && \
 	  echo 'module probe(); endmodule' > probe.v && \
 	  vlogcomp -v 2 -work probe=probe probe.v && \
 	  fuse probe.probe -o probe.exe -lib probe=probe && \
           find . \( -name "*.[co]" -o -name "*.log" -o -name "*.xmsgs" -o -name "*.cmd" -o \
                     -name "*.html" \) -delete && \
 	  rm -f -r probe probe.v */*/work && \
-	  tar czf ../probe.exe.tgz probe.exe isim )
+	  tar czf ../probe.exe.tgz probe.exe isim) > target-isim/probe.out 2>&1
 
 #	  fuse probe.probe -v 2 -L unisims_ver -o probe.exe -lib probe=probe && \
 

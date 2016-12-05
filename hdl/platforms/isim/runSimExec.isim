@@ -1,6 +1,7 @@
-#!/bin/sh
+#!/bin/bash --noprofile
+source $OCPI_CDK_DIR/scripts/util.sh
 function bad {
-  [ -n "$verbose" ] && echo $* && echo Probe for isim failed.
+  [ -n "$verbose" ] && (echo $* ; echo Probe for isim failed.) 1>&2
   exit 1
 }
 
@@ -9,44 +10,43 @@ function cleanup {
 }
 trap cleanup EXIT
 
+[ "$1" = -v ] && {
+  verbose=1
+  shift
+}
 [ "$1" = probe ] && {
-  verbose=$2
-  [ -n "$verbose" ] &&
-    echo Checking whether isim is available and licensed.
-  OCPI_XILINX_TOOLS_DIR=$(source $OCPI_CDK_DIR/scripts/xilinx-ise.sh)
-  [ $? != 0 ] && bad Xilinx environment settings or installation is unusable.
-  [ -z "$OCPI_XILINX_TOOLS_DIR" ] &&
-    bad The OCPI_XILINX_TOOLS_DIR environment variable is not set.
-  [ -z "$OCPI_XILINX_LICENSE_FILE" ] &&
-    bad The OCPI_XILINX_LICENSE_FILE environment variable is not set.
-  [ -d "$OCPI_XILINX_TOOLS_DIR" ] ||
-    bad The OCPI_XILINX_TOOLS_DIR directory $OCPI_XILINX_TOOLS_DIR does not exist as a directory.
+  setVarsFromMake $OCPI_CDK_DIR/include/hdl/xilinx.mk ShellIseVars=1 $verbose
+  [ -z "$OcpiXilinxIseDir" ] && bad Could not find the directory for XILINX ISE.
+  [ -z "$OcpiXilinxLicenseFile" ] && bad Could not find the Xilinx license file.
   probefile=$(cd $(dirname $0); pwd)/probe.exe.tgz
   [ -f "$probefile" ] ||
-    bad Missing probe support file \"$probefile\".
-  [ -f $OCPI_XILINX_TOOLS_DIR/settings64.sh ] ||
-    bad No settings file in OCPI_XILINX_TOOLS_DIR: \"$OCPI_XILINX_TOOLS_DIR\".
-  [ -n "$verbose" ] && echo Running a tiny simulation to test isim.
+    bad Missing isim probe support file \"$probefile\".
+  [ -f $OcpiXilinxIseDir/settings64.sh ] ||
+    bad No Xilinx settings file in $OcpiXilinxIseDir.
+  [ -n "$verbose" ] && echo Attempting to run a tiny simulation to test isim.
   tmpdir=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir'` # stackoverflow 30091
   cd $tmpdir
   tar xzf $probefile
-  export LM_LICENSE_FILE=$OCPI_XILINX_LICENSE_FILE
-  source $OCPI_XILINX_TOOLS_DIR/settings64.sh $OCPI_XILINX_TOOLS_DIR > /dev/null
-#  ./probe.exe < /dev/null  
-  type=$(./probe.exe < /dev/null | \
+  export LM_LICENSE_FILE=$OcpiXilinxLicenseFile
+  source $OcpiXilinxIseDir/settings64.sh $OcpiXilinxIseDir > /dev/null
+  type=$(./probe.exe < /dev/null 2>/dev/null | \
 	 sed -n '/^.*This is a \(.*\) version of ISim.*$/s//\1/p')
   [ -n "$type" ] && {
-    [ -n "$verbose" ] && echo Found an ISim license of type: $type.
+    [ -n "$verbose" ] && echo Found an ISim license of type: $type. 1>&2
     exit 0
   }
- bad Found no ISim license after trying to run tiny simulation.
+  bad Found no ISim license after trying to run a tiny simulation.
 }
-OCPI_XILINX_TOOLS_DIR=$(source $OCPI_CDK_DIR/scripts/xilinx-ise.sh)
-[ $? == 0 ] || exit 1
+
+setVarsFromMake $OCPI_CDK_DIR/include/hdl/xilinx.mk ShellIseVars=1 $verbose
+[ -z "$OcpiXilinxIseDir" -o -z "$OcpiXilinxLicenseFile" ] && {
+  echo Could not find the directory or license file for XILINX ISE. 1>&2
+  exit 1
+}
 set -e
 # Pass arguments to the settings script to override current args
-. $OCPI_XILINX_TOOLS_DIR/settings64.sh $OCPI_XILINX_TOOLS_DIR
-export LM_LICENSE_FILE=$OCPI_XILINX_LICENSE_FILE
+. $OcpiXilinxIseDir/settings64.sh $OcpiXilinxIseDir
+export LM_LICENSE_FILE=$OcpiXilinxLicenseFile
 appname=$1
 shift
 for i in $*; do echo for $i; plusargs="$plusargs -testplusarg $i"; done
