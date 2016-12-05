@@ -27,8 +27,6 @@ architecture rtl of ml605_worker is
   signal sys1_rst_n             : std_logic;        -- reset for GBE clock
   signal pci_id                 : std_logic_vector(15 downto 0);
   -- unoc internal connections
---  signal pci2unoc, unoc2cp      : unoc_master_out_t;
---  signal unoc2pci, cp2unoc      : unoc_master_in_t;
   signal unoc_out_data          : std_logic_vector(unoc_data_width-1 downto 0);
 -- chipscope
   --signal control0               : std_logic_vector(35 downto 0);
@@ -105,30 +103,6 @@ begin
   pcie_out.reset_n <= ctl_rst_n;
   pcie_out.id      <= pci_id;
 
-  --cp_unoc : platform.unoc_node_defs.unoc_node_rv
-  --  generic map(control    => btrue)
-  --  port    map(up_in      => pci2unoc,
-  --              up_out     => unoc2pci,
-  --              client_in  => cp2unoc,
-  --              client_out => unoc2cp,
-  --              down_in    => pcie_in,
-  --              down_out   => pcie_out);
-
-  -- term_unoc : unoc_terminator
-  --   port    map(up_in      => pcie_slave_in,
-  --               up_out     => pcie_slave_out,
-  --               drop_count => props_out.unocDropCount);
-
-
-  ---- Here we need to adapt the unoc protocol to the occp protocol
-
-  --cp_adapt : unoc_cp_adapter
-  --  port    map(client_in  => unoc2cp,
-  --              client_out => cp2unoc,
-  --              cp_in    => cp_in,
-  --              cp_out   => cp_out);
-
-
   -- Output/readable properties
   props_out.dna             <= (others => '0');
   props_out.nSwitches       <= (others => '0');
@@ -140,6 +114,9 @@ begin
   props_out.romData         <= metadata_in.romData;
   props_out.pciId           <= ushort_t(unsigned(pci_id));
   props_out.unocDropCount   <= pcie_in.dropCount;
+  props_out.slotCardIsPresent <= (0 => not fmc_lpc_prsnt_m2c_l,
+                                  1 => not fmc_hpc_prsnt_m2c_l,
+                                  others => '0'); -- FIXME others not necessary when sequence
   -- Settable properties - drive the leds that are not driven by hardware from the property
   led(6 downto 1)           <= std_logic_vector(props_in.leds(6 downto 1));
   led(led'left downto 8)    <= (others => '0');

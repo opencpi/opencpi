@@ -96,6 +96,8 @@ begin
   metadata_out.romAddr      <= props_in.romAddr;
   metadata_out.romEn        <= props_in.romData_read;
   -- Drive the card-present-in-slot booleans
-  props_out.hsmc_a_card_is_present <= not hsmc_a_psntn;
-  props_out.hsmc_b_card_is_present <= not hsmc_b_psntn;
+  --props_out.slotCardIsPresent_length <= nSlots; -- TODO / FIXME comment back in once volatile sequence properties are fixed in codegen (which SHOULD result in this property being changed from an array to a sequence)
+  props_out.slotCardIsPresent <= (0 => not hsmc_a_psntn, -- this coincides with index 0 of slotName property
+                                  1 => not hsmc_b_psntn, -- this coincides with index 1 of slotName property
+                                  others => '0'); -- TODO / FIXME remove this line once volatile sequence properties are fixed in codegen (which SHOULD result in this property being changed from an array to a sequence)
 end rtl;
