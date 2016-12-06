@@ -140,7 +140,7 @@ emitVhdlShell(FILE *f, Port *wci) {
 	unsigned nn;
 	for (nn = 0; nn < m_protocol->nOperations(); nn++, op++)
 	  fprintf(f, "%s    %s_%s_op_e when to_integer(unsigned(%s_opcode_temp)) = %u",
-		  nn ? " else\n" : "", m_protocol->m_name.c_str(), op->name().c_str(), cname(), nn);
+		  nn ? " else\n" : "", m_protocol->m_name.c_str(), op->cname(), cname(), nn);
 	// If the protocol opcodes do not fill the space, fill it
 	if (nn < m_nOpcodes)
 	  for (unsigned o = 0; nn < m_nOpcodes; nn++, o++)
