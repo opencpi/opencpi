@@ -138,7 +138,7 @@ addClient(std::string &assy, bool control, const char *client, const char *port)
 		      "    <property name='sdp_width' value='%zu'/>\n"
 		      "  </instance>\n",
 		      node.c_str(), m_width);
-      else
+      else {
 	assert(unc.m_control || pos);
 	OU::formatAdd(assy,
 		      "  <instance name='%s' worker='unoc_node'>\n"
@@ -146,7 +146,9 @@ addClient(std::string &assy, bool control, const char *client, const char *port)
 		      "    <property name='position' value='%u'/>\n"
 		      "  </instance>\n",
 		      // We are assuming there is always an initial control node on unocs
-		      node.c_str(), unc.m_control ? "true" : "false", unc.m_control ? 0 : pos - 1);
+		      node.c_str(), unc.m_control ? "true" : "false", 
+		      unc.m_control ? 0 : pos - 1);
+      }
       // Connect the inserted node to its upstream master and its client.
       OU::formatAdd(assy,
 		    "  <connection>\n"
