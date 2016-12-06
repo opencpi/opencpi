@@ -661,7 +661,7 @@ initImplPorts(ezxml_t xml, const char *element, PortCreate &a_create) {
       ezxml_set_attr_d(xml, "name", name.c_str());
     }
 #endif
-    if (!a_create(*this, x, NULL, nTotal == 1 ? -1 : ordinal, err))
+    if (!a_create(*this, x, NULL, nTotal == 1 ? -1 : (int)ordinal, err))
       return err;
   }
   return NULL;

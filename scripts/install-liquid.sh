@@ -5,13 +5,15 @@
 # 3. OCPI_CROSS_HOST is the gnu cross target
 set -e
 OCPI_LIQUID_VERSION=v1.2.0
-source scripts/setup-install.sh
-mkdir -p liquid
-cd liquid
-rm -r -f liquid-dsp
-git clone https://github.com/jgaeddert/liquid-dsp.git
-cd liquid-dsp
-git checkout $OCPI_LIQUID_VERSION
+dir=liquid-dsp
+source ./scripts/setup-install.sh \
+       "$1" \
+       liquid \
+       $OCPI_LIQUID_VERSION \
+       https://github.com/jgaeddert/liquid-dsp.git \
+       $dir \
+       1
+echo PWD `pwd`
 SHARED=yes
 SEDINPLACE="sed --in-place"
 if test "$OCPI_TARGET_OS" = macos; then
@@ -36,15 +38,18 @@ if [ $OCPI_TOOL_PLATFORM != $OCPI_TARGET_PLATFORM ]; then
      cp $OCPI_PREREQUISITES_INSTALL_DIR/liquid/$OCPI_TOOL_DIR/bin/$(basename $g) $(dirname $g)
     done
 fi
-./reconf
+(echo Performing '"reconf"' on git repo; cd ..; ./reconf)
+base=$(basename `pwd`)
+echo Copying git repo for building in `pwd`
+(cd ..; cp -R $(ls . | grep -v $base) $base)
 # patches to ./configure to not run afoul of macos stronger error checking
-$SEDINPLACE -e 's/char malloc, realloc, free, memset,/char malloc(), realloc(), free(), memset(),/' configure
-$SEDINPLACE -e 's/char sinf, cosf, expf, cargf, cexpf, crealf, cimagf,/char sinf(), cosf(), expf(), cargf(), cexpf(), crealf(), cimagf(),/' configure
+$SEDINPLACE -e 's/char malloc, realloc, free, memset,/char malloc(), realloc(), free(), memset(),/' ./configure
+$SEDINPLACE -e 's/char sinf, cosf, expf, cargf, cexpf, crealf, cimagf,/char sinf(), cosf(), expf(), cargf(), cexpf(), crealf(), cimagf(),/' ./configure
 ./configure  \
   $crossConfig \
   --prefix=$OCPI_PREREQUISITES_INSTALL_DIR/liquid \
   --exec-prefix=$OCPI_PREREQUISITES_INSTALL_DIR/liquid/$OCPI_TARGET_DIR \
-  --includedir=$OCPI_PREREQUISITES_INSTALL_DIR/liquid/include
+  --includedir=$OCPI_PREREQUISITES_INSTALL_DIR/liquid/include \
   CFLAGS=-g CXXFLAGS=-g
 make
 make install

@@ -116,6 +116,12 @@ static int mymain(const char **ap) {
 	       val.getString(s));
 	if ((err = val.getTypedValue(v)))
 	  options.bad("When converting to %s: %s", options.type(), err);
+#if 0
+	// Print to show mismatched LSB due to rounding mode issue with gmp
+	static double pp=0.1;
+	printf("PP: %" PRIx64 " %.17e expr: %" PRIx64 " %.17e\n",
+	       *(uint64_t*)&pp, pp, *(uint64_t*)&v.m_Double, v.m_Double);
+#endif
 	v.unparse(s, NULL, false, options.hex());
 	printf("Converted value for type %s: %s\n", options.type(), s.c_str());
       }

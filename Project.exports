@@ -135,3 +135,13 @@ tests
 # Kernel module and main license files
 +LICENSE.txt lib/<target>/
 +LICENSE.txt
+################################################################################
+# automake related exclusions and additions
+# --- discuss with Aaron
+#+tools/cdk/include/autoconfig_import.mk include/
+# Until wildcards are supported, the cross-compiled platforms:
+#+tools/cdk/include/autoconfig_import-zed.mk include/
+#+tools/cdk/include/autoconfig_import-pico_t6a.mk include/
+# Macros and configuration wrapper:
+#+runtime/application/include/angryviper.h include/aci/
+#+runtime/application/include/angryviper.h include/rcc/

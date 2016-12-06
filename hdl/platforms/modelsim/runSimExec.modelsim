@@ -4,10 +4,11 @@ function bad {
   exit 1
 }
 
+[ "$1" = -v ] && {
+  verbose=1
+  shift
+}
 [ "$1" = probe ] && {
-  verbose=$2
-  [ -n "$verbose" ] &&
-    echo Checking whether modelsim is available and licensed.
   [ -z "$OCPI_MODELSIM_DIR" ] &&
     bad The OCPI_MODELSIM_DIR environment variable is not set.
   [ -z "$OCPI_MODELSIM_LICENSE_FILE" ] &&

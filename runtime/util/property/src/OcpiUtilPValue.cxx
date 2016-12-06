@@ -155,20 +155,25 @@ namespace OCPI {
     }
     bool 
     findAssign(const PValue *p, const char *name, const char *var, const char *&val) {
-      if (p)
-	for (; p->name; p++)
-	  if (!strcasecmp(p->name, name)) {
-	    if (p->type == OA::OCPI_String) {
-	      size_t len = p->vString[0] == '=' ? 0 : strlen(var);
-	      if (len == 0 ||
-		  (!strncasecmp(var, p->vString, len) && p->vString[len] == '=')) {
-		val = p->vString + len + 1;
-		return true;
-	      }
-	    } else
-	      throw ApiError("Parameter \"", name, "\" is not a string", NULL);
-	  }
-      return false;
+      val = NULL; // caller convenience
+      bool specific = false;
+      for (; p && p->name; p++)
+	if (!strcasecmp(p->name, name)) {
+	  if (p->type != OA::OCPI_String)
+	    throw Error("Parameter \"%s\" value for \"%s\" is not a string", var, name);
+	  if (p->vString[0] != '=') {
+	    size_t len = strlen(var);
+	    if (!strncasecmp(var, p->vString, len) && p->vString[len] == '=') {
+	      if (specific)
+		throw Error("Parameter \"%s\" for instance \"%s\" is specified more than once",
+			    name,  var);
+	      specific = true;
+	      val = p->vString + len + 1;
+	    }
+	  } else if (!specific)
+	    val = p->vString + 1;
+	}
+      return val != NULL;
     }
 
     bool 

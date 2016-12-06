@@ -11,5 +11,5 @@ Properties:
   <specproperty name="fileName" readable='true'/>
   <specproperty name="suppressEOF" readable='true'/>
   <specproperty name="messageSize" volatile='true'/>
-  <port name='out' buffersize='16k'/>
+  <port name='out' buffersize='8k'/>
 </RccImplementation>
