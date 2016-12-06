@@ -90,6 +90,7 @@ struct Board {
   SigMap      m_extmap;      // map from board signal name to platform/slot signal
   Signals     m_extsignals;  // board/slot signals
   Board(SigMap &sigmap, Signals &signals);
+  virtual ~Board() {}
   virtual const char *cname() const = 0;
   const Devices &devices() const { return m_devices; }
   const Device *findDevice(const char *name) const;

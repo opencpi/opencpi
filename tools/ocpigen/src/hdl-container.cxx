@@ -139,12 +139,14 @@ addClient(std::string &assy, bool control, const char *client, const char *port)
 		      "  </instance>\n",
 		      node.c_str(), m_width);
       else
+	assert(unc.m_control || pos);
 	OU::formatAdd(assy,
 		      "  <instance name='%s' worker='unoc_node'>\n"
 		      "    <property name='control' value='%s'/>\n"
 		      "    <property name='position' value='%u'/>\n"
 		      "  </instance>\n",
-		      node.c_str(), unc.m_control ? "true" : "false", pos);
+		      // We are assuming there is always an initial control node on unocs
+		      node.c_str(), unc.m_control ? "true" : "false", unc.m_control ? 0 : pos - 1);
       // Connect the inserted node to its upstream master and its client.
       OU::formatAdd(assy,
 		    "  <connection>\n"
@@ -706,16 +708,16 @@ emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContCon
     // 2. A DP/DMA module to stream to/from another place on the interconnect
     // 3. An SMA to adapt the WMI on the DP to the WSI that is needed (for now).
     OU::formatAdd(assy,
+		  "  <instance name='%s' worker='sma' adapter='%s' configure='%u'/>\n"
 		  "  <instance name='%s' worker='ocdp' interconnect='%s' configure='%u'>\n"
 		  "    <property name='includePull' value='%u'/>\n"
 		  "    <property name='includePush' value='%u'/>\n"
-		  "  </instance>\n"
-		  "  <instance name='%s' worker='sma' adapter='%s' configure='%u'/>\n",
-		  dma.c_str(), iname, unc.m_currentNode,
+		  "  </instance>\n",
+		  sma.c_str(), iname, port->isDataProducer() ? 2 : 1,
+                  dma.c_str(), iname, unc.m_currentNode,
 		  1, // port->u.wdi.isProducer ? 0 : 1,
-		  1, // port->u.wdi.isProducer ? 1 : 0,
-		  sma.c_str(), iname,
-		  port->isDataProducer() ? 2 : 1);
+		  1); // port->u.wdi.isProducer ? 1 : 0
+
     // connect the SMA to the WCI and connect the DP to the SMA, increment WCI count
     OU::formatAdd(assy,
 		  "  <connection>\n"

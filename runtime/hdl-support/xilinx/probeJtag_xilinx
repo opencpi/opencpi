@@ -11,7 +11,7 @@ setVarsFromMake $OCPI_CDK_DIR/include/hdl/xilinx.mk ShellIseVars=1 $verbose
 [ -z "$OcpiXilinxIseDir" ] && {
   echo Error: Could not find the directory for XILINX ISE Tools.
   exit 1
-fi
+}
 if test -x $OcpiXilinxIseDir/ISE/bin/lin64/impact; then
   imp="$OcpiXilinxIseDir/ISE/bin/lin64/impact"
 elif test -x $OcpiXilinxIseDir/LabTools/bin/lin64/impact; then

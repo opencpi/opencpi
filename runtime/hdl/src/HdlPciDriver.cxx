@@ -105,8 +105,9 @@ namespace OCPI {
 	    return isProvider ?
 	      (1 << OCPI::RDT::ActiveFlowControl) | (1 << OCPI::RDT::ActiveMessage) |
 	      (1 << OCPI::RDT::FlagIsMeta) :
-	      1 << OCPI::RDT::ActiveMessage;
-	  return (1 << OCPI::RDT::ActiveFlowControl) | (1 << OCPI::RDT::ActiveMessage);
+	      1 << OCPI::RDT::ActiveMessage; // fix this for peer-to-peer
+	  return 1 << OCPI::RDT::ActiveMessage;
+	  // return (1 << OCPI::RDT::ActiveFlowControl) | (1 << OCPI::RDT::ActiveMessage);
 	}
 	static int compu32(const void *a, const void *b) { return *(int32_t*)a - *(int32_t*)b; }
     // Set up the FPGAs clock, assuming it has no GPS.
