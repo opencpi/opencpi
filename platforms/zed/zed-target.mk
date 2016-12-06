@@ -13,7 +13,7 @@ endif
 export OCPI_CROSS_BUILD_BIN_DIR:=$f
 export OCPI_CROSS_HOST:=arm-xilinx-linux-gnueabi
 export OCPI_TARGET_CFLAGS:=-mfpu=neon-fp16 -mfloat-abi=softfp -march=armv7-a -mtune=cortex-a9 -Wall -Wfloat-equal -Wextra -fno-strict-aliasing -Wconversion -std=c99
-export OCPI_TARGET_CXXFLAGS:=-mfpu=neon-fp16 -mfloat-abi=softfp -march=armv7-a -mtune=cortex-a9 -Wall -Wfloat-equal -Wextra -fno-strict-aliasing -Wconversion -std=c++0x
+export OCPI_TARGET_CXXFLAGS:=$(OCPI_TARGET_CXXFLAGS) -mfpu=neon-fp16 -mfloat-abi=softfp -march=armv7-a -mtune=cortex-a9 -Wall -Wfloat-equal -Wextra -fno-strict-aliasing -Wconversion -std=c++0x
 export OCPI_LDFLAGS=
 export OCPI_SHARED_LIBRARIES_FLAGS=
 export CC:=$(OCPI_CROSS_BUILD_BIN_DIR)/$(OCPI_CROSS_HOST)-gcc
