@@ -93,7 +93,7 @@ fi
 mkdir -p ocpi-build-$OCPI_TARGET_DIR
 cd ocpi-build-$OCPI_TARGET_DIR
 if test "$OCPI_TARGET_PLATFORM" != "$OCPI_TOOL_PLATFORM"; then
-  if test -z "$OCPI_CROSS_BUILD_BIN_DIR" -o -z $OCPI_CROSS_HOST; then
+  if test -z "$OCPI_CROSS_BUILD_BIN_DIR" -o -z "$OCPI_CROSS_HOST"; then
       echo "Missing cross compilation variables (OCPI_CROSS_BUILD_BIN_DIR or OCPI_CROSS_HOST)."
       exit 1
   fi

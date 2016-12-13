@@ -21,7 +21,7 @@ if [ -z "$1" ]; then
         echo The value of $OCPI_TARGET_HOST does not match any known platform.
         exit 1
       fi
-      echo Warning:  the OCPI_TARGET_HOST environment variable was found set: it is deprecated; use OCPI_TARGET_PLATFORM instead, when cross-building.
+      echo 'Warning:  the OCPI_TARGET_HOST environment variable was found set: it is deprecated; use OCPI_TARGET_PLATFORM instead, when cross-building.'
     fi
   fi
   # End of legacy support for setting OCPI_TARGET_HOST
@@ -35,17 +35,7 @@ if [ -z "$1" ]; then
 else
   export OCPI_TARGET_PLATFORM=$1
 fi 
+# Ensure we are really starting fresh for this target
 unset `env | grep OCPI_TARGET | grep -v OCPI_TARGET_PLATFORM | sed 's/=.*//'`
-eval $(make -s -f $OCPI_CDK_DIR/include/ocpisetup.mk -f <(cat <<'EOF'
-$(info export OCPI_TARGET_OS=$(OCPI_TARGET_OS);)
-$(info export OCPI_TARGET_OS_VERSION=$(OCPI_TARGET_OS_VERSION);)
-$(info export OCPI_TARGET_ARCH=$(OCPI_TARGET_ARCH);)
-$(info export OCPI_TARGET_HOST=$(OCPI_TARGET_HOST);)
-$(info export OCPI_TARGET_DIR=$(OCPI_TARGET_DIR);)
-$(info export OCPI_TARGET_MODE=$(OCPI_TARGET_MODE);)
-$(info export OCPI_CROSS_BUILD_BIN_DIR=$(OCPI_CROSS_BUILD_BIN_DIR);)
-$(info export OCPI_CROSS_HOST=$(OCPI_CROSS_HOST);)
-$(info export OCPI_TARGET_DYNAMIC_SUFFIX=$(OcpiDynamicSuffix);)
-$(info export OCPI_TARGET_DYNAMIC_FLAGS="$(OcpiDynamicFlags)";)
-EOF
-) | grep 'export OCPI_')
+source $OCPI_CDK_DIR/scripts/util.sh
+setVarsFromMake $OCPI_CDK_DIR/include/ocpisetup.mk ShellTargetVars=1

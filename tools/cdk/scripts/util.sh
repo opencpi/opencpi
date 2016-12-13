@@ -22,7 +22,7 @@ function setVarsFromMake {
     [ -n "$3" ] && echo The '"make"' command is not available. 2>&1
     return 1
   }
-  eval $(eval make -n -r -s -f $1 ShellIseVars=1 \
+  eval $(eval make -n -r -s -f $1 $2 \
 	 ${quiet:+2>/dev/null} | grep '^[a-zA-Z_][a-zA-Z_]*=')
 }
 
