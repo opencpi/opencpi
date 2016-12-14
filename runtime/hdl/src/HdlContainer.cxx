@@ -146,6 +146,15 @@ namespace OCPI {
 	    throw OU::Error("After loading %s on HDL device %s, uuid is wrong.  Wanted: %s",
 			    name().c_str(), c.name().c_str(),
 			    lart.uuid().c_str());
+	  // make sure inserted adapters are started.
+	  OL::Implementation *i;
+	  for (unsigned n = 0; (i = lart.getImplementation(n)); n++)
+	    if (i->m_inserted) {
+	      WciControl wci(parent().hdlDevice(), i->m_metadataImpl.m_xml, i->m_staticInstance,
+			     NULL);
+	      wci.controlOperation(OU::Worker::OpInitialize);
+	      wci.controlOperation(OU::Worker::OpStart);
+	    }
 	}
       }
       ~Artifact() {}
@@ -744,6 +753,7 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
 
     // The port may be bidirectional.  If so we need to defer its direction.
     // FIXME: share all this parsing with the OU::Implementation code etc.
+    // FIXME: note that all this connectivity is in the artifact already
     OC::Port &Worker::
     createPort(const OU::Port &metaPort, const OA::PValue *props) {
       const char *myName = metaPort.m_name.c_str();
@@ -752,10 +762,10 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
       ezxml_t conn, ic = 0, icw = 0, ad = 0, adw = 0;
       for (conn = ezxml_cchild(myXml()->parent, "connection"); conn; conn = ezxml_next(conn)) {
         const char
-          *from = ezxml_cattr(conn,"from"), // instance with user port
-          *to = ezxml_cattr(conn,"to"),     // instance with provider port
-          *out = ezxml_cattr(conn, "out"),  // user port name
-          *in = ezxml_cattr(conn, "in");    // provider port name
+          *from = ezxml_cattr(conn, "from"), // instance with user port
+          *to = ezxml_cattr(conn, "to"),     // instance with provider port
+          *out = ezxml_cattr(conn, "out"),   // user port name
+          *in = ezxml_cattr(conn, "in");     // provider port name
         if (from && to && out && in) {
 	  bool iAmTo;
 	  if (!strcasecmp(instTag().c_str(), to) && !strcasecmp(in, myName))
@@ -764,6 +774,38 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
 	    iAmTo = false;
 	  else
 	    continue;
+	  // We have a connection.  Check to see if it is an inserted adapter which we skip over.
+          for (ezxml_t ix = ezxml_cchild(myXml()->parent, "instance"); ix; ix = ezxml_next(ix)) {
+            const char *ixName = ezxml_cattr(ix, "name");
+            if (ixName &&
+                ((iAmTo && !strcasecmp(ixName, from)) ||
+                 (!iAmTo && !strcasecmp(ixName, to))) ) {
+	      bool inserted = false;
+	      OE::getBoolean(ix, "inserted", &inserted);
+	      if (!inserted)
+		continue;
+	      // find the connection on the other side of the inserted adapter
+	      for (ezxml_t c = ezxml_cchild(myXml()->parent, "connection"); 
+		   ixName && c; c = ezxml_next(c)) {
+		const char
+		  *iFrom = ezxml_cattr(c, "from"), // instance with user port
+		  *iTo = ezxml_cattr(c, "to");     // instance with provider port
+		if (iAmTo && !strcasecmp(iTo, ixName)) {
+		  from = iFrom;
+		  to = ixName;
+		  ixName = NULL;
+		} else if (!iAmTo && !strcasecmp(iFrom, ixName)) {
+		  from = ixName;
+		  to = iTo;
+		  ixName = NULL;
+		}
+	      }
+	      if (ixName)
+		throw OU::Error("For port \"%s\": inserted adapter has no other connection",
+				myName);
+	      break;
+	    }
+	  }
           // We have a connection.  See if it is to a container adapter, which in turn would be
 	  // connected to an interconnect.  No other adapters are expected yet.
           for (ad = ezxml_cchild(myXml()->parent, "adapter"); ad; ad = ezxml_next(ad)) {

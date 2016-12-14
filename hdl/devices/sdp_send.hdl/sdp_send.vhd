@@ -62,7 +62,6 @@ architecture rtl of sdp_send_worker is
   signal buffer_avail_r    : buffer_count_t; -- how local many buffers are empty?
   signal buffer_consumed   : bool_t;         -- pulse for buffer consumption from sdp side
   ---- Metadata management
-  signal md_r              : ulong_array_t(0 to max_Buffers_c - 1); -- readback property
   signal md_in             : metadata_t;
   signal md_out            : metadata_t;
   signal md_out_slv        : std_logic_vector(metawidth_c-1 downto 0);
@@ -102,8 +101,12 @@ architecture rtl of sdp_send_worker is
   signal doorbell_fault_r    : bool_t;
   signal truncation_fault_r  : bool_t;
   signal operating_r         : bool_t; -- were we operating in the last cycle?
+  signal messageCount        : ulong_t;
+  signal truncatedMessage    : ulong_t; -- first one
+  signal truncatedData       : ulong_t; -- first one
   signal ctl_reset_n         : std_logic;
   signal sdp_reset_n         : std_logic;
+  signal taking              : bool_t;
   function be2bytes (be : std_logic_vector) return unsigned is
   begin
     for i in 0 to be'length-1 loop
@@ -126,16 +129,18 @@ begin
   will_write         <= can_take and in_in.ready and in_in.valid and not buffer_maxed_r;
   max_offset         <= props_in.buffer_size(bram_addr_t'left + 2 downto 2) - 1;
   -- Take even if bad write to send the truncation error in the metadata
-  in_out.take        <= can_take and in_in.ready and
-                        (in_in.valid or md_enq or (in_in.som and not in_in.valid));
+  taking             <= can_take and in_in.ready;
+  in_out.take        <= taking;
   ctl_out.finished   <= buffer_size_fault_r or doorbell_fault_r;
   props_out.faults   <= resize(buffer_size_fault_r & doorbell_fault_r & truncation_fault_r,
                                uchar_t'length);
   props_out.sdp_id   <= resize(sdp_in.id, props_out.sdp_id'length);
+  props_out.truncatedMessage <= truncatedMessage;
+  props_out.truncatedData    <= truncatedData;
   nbytes             <= be2bytes(in_in.byte_enable) when its(in_in.valid) else (others => '0');
   md_in.length       <= (resize(buffer_offset_r, meta_length_width_c) sll addr_shift_c) + nbytes;
   md_in.eof          <= not in_in.eom and not in_in.som and not in_in.valid;
-  md_in.truncate     <= (in_in.valid and buffer_maxed_r) or truncation_fault_r;
+  md_in.truncate     <= in_in.valid and buffer_maxed_r;
   md_in.opcode       <= in_in.opcode;
   md_enq             <= to_bool(its(can_take) and in_in.ready and in_in.eom);
   -- Instance the message data BRAM
@@ -218,6 +223,9 @@ begin
         buffer_size_fault_r <= bfalse;
         doorbell_fault_r    <= bfalse;
         truncation_fault_r  <= bfalse;
+        truncatedMessage    <= (others => '0');
+        truncatedData       <= (others => '0');
+        messageCount        <= (others => '0');
       elsif not operating_r then
         -- initialization on first transition to operating.  poor man's "start".
         if its(ctl_in.is_operating) then
@@ -230,6 +238,9 @@ begin
       elsif not ctl_in.is_operating then
         operating_r <= bfalse;
       else
+        if its(md_enq) then
+          messageCount <= messageCount + 1;
+        end if;
         if md_enq and not its(buffer_consumed) then
           buffer_avail_r <= buffer_avail_r - 1;
         end if;
@@ -239,17 +250,21 @@ begin
         if props_in.remote_doorbell_any_written and not flag_not_full = '1' then
           doorbell_fault_r <= '1'; -- this is really a debug thing.  Should not happen.
         end if;
-        if can_take and in_in.ready then
+        if its(taking) then
           if its(in_in.valid) then
             if its(buffer_maxed_r) then
+              if not truncation_fault_r then
+                truncatedMessage <= messageCount;
+              end if;
+              truncatedData <= truncatedData + 1;
               truncation_fault_r <= '1';
-            elsif buffer_offset_r = max_offset then
+            elsif buffer_offset_r = max_offset and not its(in_in.eom) then
               buffer_maxed_r <= btrue;
             else
               buffer_offset_r <= buffer_offset_r + 1;
             end if;
-          end if;
-          if in_in.eom or its(not in_in.eom and not in_in.som and not in_in.valid) then
+          end if; -- valid
+          if its(in_in.eom) then
             buffer_offset_r   <= (others => '0');
             buffer_maxed_r    <= bfalse;
             if buffer_index_r = props_in.buffer_count - 1 then

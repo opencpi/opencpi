@@ -123,6 +123,13 @@ namespace OCPI {
 			   m_utilInstance.m_name.c_str());
 		  goto rejected;
 	      }
+	      if (ap[n]) {
+		ocpiInfo("Rejected: the '%s' connection at instance '%s' is redundant: "
+			 " implicit port '%s' already has a connection.",
+			 (*pi)->m_role.m_provider ? "input" : "output",
+			 m_utilInstance.m_name.c_str(), p->m_name.c_str());
+		goto rejected;
+	      }
 	      ap[n] = *pi;
 	      found = true;
 	    }
@@ -136,6 +143,13 @@ namespace OCPI {
 	  p = ports;
 	  for (unsigned n = 0; n < m_nPorts; n++, p++)
 	    if (!strcasecmp(ports[n].m_name.c_str(), (*pi)->m_name.c_str())) {
+	      if (ap[n]) {
+		ocpiInfo("Rejected: the '%s' connection at instance '%s' is redundant: "
+			 " port '%s' already has a connection.",
+			 (*pi)->m_role.m_provider ? "input" : "output",
+			 m_utilInstance.m_name.c_str(), p->m_name.c_str());
+		goto rejected;
+	      }
 	      ap[n] = *pi;
 	      (*pi)->m_role.m_knownRole = true;
 	      (*pi)->m_role.m_provider = p->m_provider;
@@ -299,7 +313,7 @@ namespace OCPI {
 
       // Here is where we know about the assembly and thus can check for
       // some connectivity constraints.  If the implementation has hard-wired connections
-      // that are incompatible with the assembly, we ignore it.
+      // that are incompatible with the assembly, we reject it.
       if (i.m_externals) {
 	OU::Port::Mask m = 1;
 	for (unsigned n = 0; n < OU::Port::c_maxPorts; n++, m <<= 1)

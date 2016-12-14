@@ -62,6 +62,7 @@ namespace OCPI {
       OCPI::Util::Port::Mask m_externals, m_internals;
       Connection *m_connections;
       unsigned m_ordinal;                   // ordinal of worker within artifact
+      bool m_inserted;
       Implementation(Artifact &art, OCPI::Util::Worker &i, ezxml_t instance, unsigned ordinal);
       // Does this implementation satify the selection criteria?  and if so, what is the score?
       //      bool satisfiesSelection(const char *selection, unsigned &score);
@@ -112,6 +113,7 @@ namespace OCPI {
 			      const char *&inst,
 			      unsigned & score);
       Implementation *findImplementation(const char *specName, const char *staticInstance);
+      Implementation *getImplementation(unsigned n);
       inline ezxml_t xml() const { return m_xml; }
       virtual const std::string &name() const = 0;
       std::time_t mtime() const { return m_mtime; }

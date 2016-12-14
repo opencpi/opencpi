@@ -1,4 +1,8 @@
 <HdlDevice language="vhdl" spec='sdp-spec'>
+  <!-- the number of messages that preceded the first one that was truncated -->
+  <property name='truncatedMessage' volatile='1'/>
+  <!-- the total amount of data words that were truncated -->
+  <property name='truncatedData' volatile='1'/>
   <sdp name='sdp'/>
   <streaminterface implname='in'
 		   datawidth='sdp_width*32' numberofopcodes='256' datavaluewidth='8'

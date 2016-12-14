@@ -16,6 +16,7 @@ namespace OCPI {
       friend class Port;
       friend class Device;
       friend class Container;
+      friend class Artifact;
       const char *m_implName, *m_instName;
       mutable size_t m_window; // perfect use-case for mutable..
       bool m_hasControl;

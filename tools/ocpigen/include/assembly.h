@@ -63,6 +63,7 @@ struct Instance : public OU::IdentResolver {
   size_t m_config;
   ExtMap m_extmap;     // map for externals. FIXME: have HdlInstance class...
   bool   m_emulated;   // is this an instance of a device worker with an emulator?
+  bool   m_inserted;   // was this instance auto-inserted?
   Instance();
   const char *cname() const { return m_name.c_str(); }
   const char *init(OCPI::Util::Assembly::Instance *ai, ::Assembly &assy, const char *outDir);

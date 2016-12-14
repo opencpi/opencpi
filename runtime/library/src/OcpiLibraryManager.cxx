@@ -173,8 +173,11 @@ namespace OCPI {
     Implementation::
     Implementation(Artifact &art, OU::Worker &i, ezxml_t instance, unsigned ordinal)
 	: m_artifact(art), m_metadataImpl(i), m_staticInstance(instance),
-	  m_externals(0), m_internals(0), m_connections(NULL), m_ordinal(ordinal)
-    {}
+	  m_externals(0), m_internals(0), m_connections(NULL), m_ordinal(ordinal),
+	  m_inserted(false)
+    {
+      OE::getBoolean(instance, "inserted", &m_inserted);
+    }
     Implementation::
     ~Implementation() {
       delete [] m_connections;
@@ -183,7 +186,7 @@ namespace OCPI {
     void Implementation::
     setConnection(OU::Port &myPort, Implementation *otherImpl,
 		  OU::Port *otherPort) {
-      ocpiInfo("Setting connection in %s on %s port %s with other %s port %s",
+      ocpiDebug("Setting connection in %s on %s port %s with other %s port %s",
 	       m_artifact.name().c_str(), m_metadataImpl.name().c_str(), myPort.m_name.c_str(),
 	       otherImpl ? otherImpl->m_metadataImpl.name().c_str() : "none",
 	       otherPort ? otherPort->m_name.c_str() : "none");
@@ -351,6 +354,14 @@ namespace OCPI {
     }
 
     Implementation *Artifact::
+    getImplementation(unsigned n) {
+      unsigned nn = 0;
+      for (WorkerIter wi = m_workers.begin(); wi != m_workers.end(); ++wi, ++n)
+	if (nn == n)
+	  return wi->second;
+      return NULL;
+    }
+    Implementation *Artifact::
     findImplementation(const char *specName, const char *staticInstance) {
       WorkerRange range = m_workers.equal_range(specName);
       for (WorkerIter wi = range.first; wi != range.second; wi++) {
@@ -471,6 +482,30 @@ namespace OCPI {
 	} else if (toImpl)
 	  toImpl->setConnection(*toP);
       }
+      // Now that all the local instances are connected in the artifact, make a pass that
+      // removes any inserted adapters.
+      for (InstanceIter ii = instances.begin(); ii != instances.end(); ++ii) {
+	Implementation &i = *ii->second;
+	if (i.m_staticInstance)
+	  for (unsigned n = 0; n < i.m_metadataImpl.nPorts(); ++n)
+	    if (i.m_internals & (1<<n)) {
+	      Implementation &otherImpl = *i.m_connections[n].impl;
+	      if (otherImpl.m_inserted) {
+		// Big assumption that adapters only have two ports
+		unsigned other = i.m_connections[n].port->m_ordinal ? 0 : 1;
+		if (otherImpl.m_internals & (1 << other)) {
+		  i.m_connections[n] = otherImpl.m_connections[other];
+		  otherImpl.m_connections[other].impl = &i;
+		  otherImpl.m_connections[other].port = &i.m_metadataImpl.getPorts()[n];
+		} else {
+		  // other side of the adapter is external so this is external
+		  i.m_internals &= ~(1 << n);
+		  i.m_externals |= 1 << n;
+		}
+	      }
+	    }
+      }
+      
     }
     void Artifact::
     printSpecs(std::set<const char *, OCPI::Util::ConstCharComp> &specs) const {

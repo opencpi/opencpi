@@ -137,7 +137,7 @@ parseConnection(OU::Assembly::Connection &aConn) {
 Instance::
 Instance()
   : m_worker(NULL), m_clocks(NULL), m_iType(Application), m_attach(NULL), m_hasConfig(false),
-    m_config(0), m_emulated(false) {
+    m_config(0), m_emulated(false), m_inserted(false) {
 }
 
 const char *Instance::

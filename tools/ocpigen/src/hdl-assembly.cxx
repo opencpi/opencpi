@@ -77,6 +77,7 @@ insertAdapter(Connection &c, InstancePort &from, InstancePort &to) {
   // 1. Create the adapter instance and its ports
   m_instances.resize(m_instances.size()+1);
   Instance &i = m_instances.back();
+  i.m_inserted = true;
   // We create an OU::AssemblyInstance to feed the rest of the code.
   std::string name;
   OU::format(name, "%s_%s_2_%s_%s", from.m_instance->cname(), dpFrom.cname(),
@@ -102,13 +103,16 @@ insertAdapter(Connection &c, InstancePort &from, InstancePort &to) {
   a2c.m_count = 1;
   m_connections.push_back(&a2c);
   // 2c.Attach the adapter and the consumer to the new connection
-  assert(!strcmp("in", i.m_ports[0].m_port->cname()) ||
-	 !strcmp("out", i.m_ports[1].m_port->cname()));
-  if ((err = a2c.attachPort(i.m_ports[1], 0)) || // output from adapter
+  bool hasControl = i.m_ports[0].m_port->m_type == WCIPort;
+  InstancePort
+    &in = i.m_ports[hasControl ? 1 : 0],
+    &out = i.m_ports[hasControl ? 2 : 1];
+  assert(!strcmp("in", in.m_port->cname()) || !strcmp("out", out.m_port->cname()));
+  if ((err = a2c.attachPort(out, 0)) || // output from adapter
       (err = a2c.attachPort(to, 0)))
     return err;
   // 3. Attach the adapter as consumer of original connection
-  if ((err = c.attachPort(i.m_ports[0], 0)))
+  if ((err = c.attachPort(in, 0)))
     return err;
   return NULL;
 }
@@ -910,6 +914,8 @@ emitHdl(FILE *f, const char *prefix, size_t &index)
       fprintf(f, " ocdpOffset='0x%zx'", m_config * 32 * 1024);
   } else if (m_hasConfig)
     fprintf(f, " configure=\"%#lx\"", (unsigned long)m_config);
+  if (m_inserted)
+    fprintf(f, " inserted=\"1\"");
   fprintf(f, "/>\n");
 }
 
