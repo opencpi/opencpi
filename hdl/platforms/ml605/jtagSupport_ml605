@@ -11,21 +11,18 @@ temp=$2
 dir=`dirname $0`
 #echo bitfile=$1 device=$2 part=$3 esn=$4 position=$5 temp=$6
 setVarsFromMake $OCPI_CDK_DIR/include/hdl/xilinx.mk ShellIseVars=1 $verbose
-[ -z "$OcpiXilinxIseDir" ] && {
-  echo Error: Could not find the directory for XILINX ISE Tools.
+[ -z "$OcpiXilinxLabToolsDir" ] && {
+  echo Error: Could not find the directory for XILINX LabTools or ISE.
   exit 1
 }
-source $OcpiXilinxIseDir/settings64.sh 1>&2
+source $OcpiXilinxLabToolsDir/../settings64.sh 1>&2
 if test $? != 0; then
   echo Xilinx tools setup failed. 1>&2
   exit 1
 fi
-if test -x $OcpiXilinxIseDir/ISE/bin/lin64/impact; then
-  imp="$OcpiXilinxIseDir/ISE/bin/lin64/impact -batch"
-elif test -x $OcpiXilinxIseDir/LabTools/bin/lin64/impact; then
-  imp="$OcpiXilinxIseDir/LabTools/bin/lin64/impact -batch"
-else
-  echo Error: Xilinx impact tool not found in either $OcpiXilinxIseDir/ISE/bin/lin64 nor $OcpiXilinxIseDir/LabTools/bin/lin64 1>&2
+imp="$OcpiXilinxLabToolsDir/bin/lin64/impact"
+if test ! -x $imp; then
+  echo Error: Xilinx impact tool not found at $imp 1>&2
   exit 1
 fi
 # impact expects to overwrite/create this file.  In the off chance that it exists
@@ -55,7 +52,7 @@ function bad {
 ################################################################################
 case $func in
   (cables)
-    $imp  > $temp.log <<EOF
+    $imp -batch > $temp.log <<EOF
 listusbcables
 EOF
     # impact doesn't have reliable exit codes
@@ -74,7 +71,7 @@ EOF
     echo Finding cable position of part \"$part\" on cable at port \"$port\" 1>&2
     temps=$temp.part
     for pp in 1 2 3 4 5 6 7 8 9; do
-      $imp <<EOF 2> $temp.log 1>&2
+      $imp -batch <<EOF 2> $temp.log 1>&2
 setMode -bs
 setCable -p $port
 identify
@@ -113,7 +110,7 @@ EOF
        bitfile=$tempfile
        ;;
     esac
-    $imp <<EOF 2> $temp.log 1>&2
+    $imp -batch <<EOF 2> $temp.log 1>&2
 setMode -bs
 setCable -port $port
 Identify

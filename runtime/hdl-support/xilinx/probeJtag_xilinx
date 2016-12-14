@@ -8,16 +8,14 @@ if [[ $# == 0 ]]; then
 fi
 source $OCPI_CDK_DIR/scripts/util.sh
 setVarsFromMake $OCPI_CDK_DIR/include/hdl/xilinx.mk ShellIseVars=1 $verbose
-[ -z "$OcpiXilinxIseDir" ] && {
-  echo Error: Could not find the directory for XILINX ISE Tools.
+[ -z "$OcpiXilinxLabToolsDir" ] && {
+  echo Error: Could not find the directory for XILINX LabTools or ISE.
   exit 1
 }
-if test -x $OcpiXilinxIseDir/ISE/bin/lin64/impact; then
-  imp="$OcpiXilinxIseDir/ISE/bin/lin64/impact"
-elif test -x $OcpiXilinxIseDir/LabTools/bin/lin64/impact; then
-  imp="$OcpiXilinxIseDir/LabTools/bin/lin64/impact"
-else
-  echo Error: neither $OcpiXilinxIseDir/ISE/bin/lin64/impact nor $OcpiXilinxIseDir/LabTools/bin/lin64/impact was found
+
+imp="$OcpiXilinxLabToolsDir/bin/lin64/impact"
+if test ! -x $imp; then
+  echo Error: neither LabTools nor ISE available when trying $imp
   exit 1
 fi
 temp=/tmp/ocpibitstream$$

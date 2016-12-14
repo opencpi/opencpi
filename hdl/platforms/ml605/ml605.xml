@@ -49,8 +49,6 @@
    <signal slot='SDA' platform='IIC_SDA_LS'/>
   </slot>
   <slot name='FMC_HPC' type='fmc_hpc'>
-   <signal slot='PRSNT_M2C_L' platform=''/> <!-- instead of using this (slot) signal, which would require a card for its use, disconnect this signal and instead use a platform worker signal (which may be utilized regardless of whether a card is included or not-->
-
    <signal slot='LA00_P_CC' platform='LA00_CC_P'/>
    <signal slot='LA00_N_CC' platform='LA00_CC_N'/>
 
