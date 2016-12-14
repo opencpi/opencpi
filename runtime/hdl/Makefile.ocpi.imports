@@ -43,7 +43,7 @@ ALLINC += $(CONTAINER_EXPORTS) \
 	$(UTIL_EXPORTS) \
 	$(LOGGER_EXPORTS) \
 	$(OCPIOS_EXPORTS) \
-        $(OCPI_LZMA_DIR)/include
+        $(OCPI_PREREQUISITES_DIR)/lzma/include
 
 ALLLIBS += $(CONTAINER_LIBS) \
         $(LIBRARY_LIBS) \

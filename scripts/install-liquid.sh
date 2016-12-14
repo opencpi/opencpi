@@ -28,20 +28,20 @@ generators="\
 ./src/fec/gentab/reverse_byte_gentab \
 ./src/utility/gentab/count_ones_gentab \
 "
-if [ $OCPI_TOOL_PLATFORM != $OCPI_TARGET_PLATFORM ]; then
-    [ -f $OCPI_PREREQUISITES_INSTALL_DIR/liquid/$OCPI_TOOL_DIR/bin/reverse_byte_gentab ] || {
-	echo It appears that you have not built the liquid library for $OCPI_TOOL_PLATFORM yet.
-	echo This is required before trying to build this library for $OCPI_TARGET_PLATFORM.
-	exit 1
-    }
-    for g in $generators; do
-     cp $OCPI_PREREQUISITES_INSTALL_DIR/liquid/$OCPI_TOOL_DIR/bin/$(basename $g) $(dirname $g)
-    done
-fi
+[ $OCPI_TOOL_PLATFORM != $OCPI_TARGET_PLATFORM -a ! -f $OCPI_PREREQUISITES_INSTALL_DIR/liquid/$OCPI_TOOL_DIR/bin/reverse_byte_gentab ] && {
+  echo It appears that you have not built the liquid library for $OCPI_TOOL_PLATFORM yet.
+  echo This is required before trying to build this library for $OCPI_TARGET_PLATFORM, on $OCPI_TOOL_PLATFORM.
+  exit 1
+}
 (echo Performing '"reconf"' on git repo; cd ..; ./reconf)
 base=$(basename `pwd`)
 echo Copying git repo for building in `pwd`
 (cd ..; cp -R $(ls . | grep -v $base) $base)
+[ $OCPI_TOOL_PLATFORM != $OCPI_TARGET_PLATFORM ] && {
+  for g in $generators; do
+   cp $OCPI_PREREQUISITES_INSTALL_DIR/liquid/$OCPI_TOOL_DIR/bin/$(basename $g) $(dirname $g)
+  done
+}
 # patches to ./configure to not run afoul of macos stronger error checking
 $SEDINPLACE -e 's/char malloc, realloc, free, memset,/char malloc(), realloc(), free(), memset(),/' ./configure
 $SEDINPLACE -e 's/char sinf, cosf, expf, cargf, cexpf, crealf, cimagf,/char sinf(), cosf(), expf(), cargf(), cexpf(), crealf(), cimagf(),/' ./configure

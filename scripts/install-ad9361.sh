@@ -67,10 +67,12 @@ awk < $T -F '`' -v nxt=0 "
 # 3. Patch their API headers so they actually act like API headers
 #    I.e. the patched version doesn't pollute the caller's namespace
 ################################################################################
+echo Patching API headers
 dir=../ad9361/sw
+silent=-s
 # They use "malloc.h" which is non-standard.
 echo '#include <stdlib.h>' > malloc.h
-ed -s $dir/ad9361_api.h <<EOF
+ed $silent $dir/ad9361_api.h <<EOF
 /#include.*"util.h"/c
 #include <stdint.h>
 #include <ad9361.h>
@@ -78,7 +80,7 @@ ed -s $dir/ad9361_api.h <<EOF
 w ad9361_api.h
 EOF
 # Similarly for the low level API header
-ed -s $dir/ad9361.h <<EOF
+ed $silent $dir/ad9361.h <<EOF
 /#include.*"common.h"/c
 #ifndef COMMON_H_
 #define COMMON_H_
@@ -112,7 +114,7 @@ struct spi_device {
 .
 w ad9361.h
 EOF
-ed -s $dir/util.h <<EOF
+ed $silent $dir/util.h <<EOF
 /struct device {/
 .,.+1d
 1
