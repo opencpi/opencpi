@@ -85,6 +85,11 @@ MakeRawParams:= \
      echo "</parameter>";) \
    echo "</parameters>")
 
+# Get the (a) platform for this target if it is present.
+WkrGetPlatform=$(strip \
+  $(foreach v,$(filter $(CapModel)Target_%,$(.VARIABLES)),\
+    $(and $(filter $1,$(value $v)),$(v:$(CapModel)Target_%=%))))
+
 $(call OcpiDbgVar,XmlIncludeDirsInternal)
 # Here we add access to:
 # 0. The current directory
@@ -268,6 +273,7 @@ define WkrWorkerDep
 
   $$(call WkrObject,$1,$2,$3): TargetDir=$$(call WkrTargetDir,$2,$3)
   $$(call WkrObject,$1,$2,$3): $(CapModel)Target=$2
+  $$(call WkrObject,$1,$2,$3): $(CapModel)Platform=$$(call WkrGetPlatform,$2)
   $$(call WkrObject,$1,$2,$3): Worker=$1
   $$(call WkrObject,$1,$2,$3): \
      $$(call ImplHeaderFile,$1) \
@@ -289,6 +295,8 @@ define WkrDoTargetConfig
     $$(call OcpiDbgVar,CompiledSourceFiles)
     $$(foreach s,$$(CompiledSourceFiles),$$(eval $$(call WkrMakeObject,$$s,$1,$2)))
     $$(call WkrBinary,$1,$2): $(CapModel)Target=$1
+    $$(call WkrBinary,$1,$2): $(CapModel)Platform=$$(call WkrGetPlatform,$1)
+
     # Note the use of ls -o -g -l below is to not be affected by
     # user and group names with spaces.
     $$(call WkrBinary,$1,$2): $$$$(ObjectFiles_$1_$2) $$(call ArtifactXmlFile,$1,$2) \

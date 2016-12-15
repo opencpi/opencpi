@@ -85,9 +85,11 @@ ifdef RccPlatforms
   ifneq ($(OnlyPlatforms)$(RccOnlyPlatforms),)
     override RccPlatforms:=$(filter $(OnlyPlatforms) $(RccOnlyPlatforms),$(RccPlatforms))
   endif
-  ifdef RccTargets
-    $(error You cannot set both RccTarget(s) and RccPlatform(s))
-  endif
+  # We cannot perform this check since we may be inheriting changes made in a higher
+  # level Makefile.  If the user tries this, it is simply ignored.
+  # ifdef RccTargets
+  #   $(error You cannot set both RccTarget(s) and RccPlatform(s))
+  # endif
   RccTargets:=
   $(foreach p,$(RccPlatforms),\
     $(foreach f,$(OCPI_CDK_DIR)/platforms/$p/target,\
@@ -131,19 +133,20 @@ ifeq ($(filter clean cleanrcc,$(MAKECMDGOALS)),)
 $(foreach p,$(RccPlatforms), \
   $(foreach t,$(RccTarget_$p),\
     $(eval files:=)\
-    $(foreach m,$(if $(findstring $(OCPI_TOOL_PLATFORM),$p),rcc-$p,rcc-$(OCPI_TOOL_PLATFORM)=$p) \
+    $(eval cross:=)\
+    $(foreach m,$(if $(findstring $(OCPI_TOOL_PLATFORM),$p),rcc=$p,rcc=$(OCPI_TOOL_PLATFORM)=$p) \
                 $(if $(findstring $(OCPI_TOOL_HOST),$t),$t,$(OCPI_TOOL_HOST)=$t),\
       $(eval files:=$(files) $(or $(wildcard $(OCPI_CDK_DIR)/include/rcc/$m.mk),\
                                   $(wildcard $(OCPI_CDK_DIR)/platforms/$p/$m.mk)))\
-      $(and $(findstring =,$m),$(eval cross:=1)))\
+      $(and $(findstring =,$(subst rcc=,,$m)),$(eval cross:=1)))\
     $(foreach n,$(words $(files)),\
        $(if $(filter 0,$n),\
 	  $(if $(cross),\
              $(error There is no cross compiler defined from $(OCPI_TOOL_PLATFORM) to $p),\
              $(eval include $(OCPI_CDK_DIR)/include/rcc/default.mk)),\
-	  $(if $(filter 1,$n), \
-             $(eval include $(files)),\
-             $(error More than one file defined for compiling $p to $p: $(files)))))))
+	  $(if $(filter 1,$n),,\
+             $(warning More than one file defined for compiling $(OCPI_TOOL_PLATFORM) to $p, using $(word 1,$(files)), others are $(wordlist 2,$(words $(files)),$(files)).))\
+          $(eval include $(word 1,$(files)))))))
 
 endif
 endif

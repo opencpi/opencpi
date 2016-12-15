@@ -48,12 +48,13 @@ RccImplSuffix=$(if $(filter c++,$(OcpiLanguage)),-worker.hh,_Worker.h)
 RccSkelSuffix=-skel$(RccSourceSuffix)
 OBJ:=.o
 RccPrereqLibs=$(RccStaticPrereqLibs) $(RccDynamicPrereqLibs)
-override RccIncludeDirsInternal+=\
+# This is evaluated late, when RccTarget and RccPlatform are defined.
+RccIncludeDirsActual=$(RccIncludeDirsInternal)\
  ../include gen \
  $(OCPI_CDK_DIR)/include/rcc \
  $(wildcard $(OCPI_CDK_DIR)/platforms/$(RccPlatform)/include) \
  $(foreach l,$(RccPrereqLibs),\
-   $(OCPI_PREREQUISITES_DIR)/$l/$$(RccTarget)/include\
+   $(OCPI_PREREQUISITES_DIR)/$l/$(RccTarget)/include\
    $(OCPI_PREREQUISITES_DIR)/$l/include)
 BF=$(BF_$(call RccOs,$1))
 # This is for backward compatibility
@@ -85,7 +86,7 @@ ifeq ($(OCPI_USE_TARGET_MODES),1)
   export OCPI_TARGET_MODE:=$(if $(filter 1,$(OCPI_DYNAMIC)),d,s)$(if $(filter 1,$(OCPI_DEBUG)),d,o)
 endif
 Comma=,
-PatchElf=$(or $(OCPI_PREREQUISITES_INSTALL_DIR),/opt/opencpi/prerequisites)/patchelf/$(OCPI_TOOL_HOST)/bin/patchelf
+PatchElf=$(or $(OCPI_PREREQUISITES_DIR),/opt/opencpi/prerequisites)/patchelf/$(OCPI_TOOL_HOST)/bin/patchelf
 LinkBinary=$(G$(OcpiLanguage)_LINK_$(RccTarget)) $(call RccPrioritize,DynamicLinkOptions,$(OcpiLanguage),$(RccTarget)) -o $@ $1 \
 $(AEPLibraries) \
 $(foreach l,$(RccLibrariesInternal) $(Libraries),\
@@ -173,12 +174,12 @@ RccFinalCompilerOptions=\
 Compile_c=\
   $$(Gc_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
   $$(call RccFinalCompilerOptions,C,$$(RccTarget)) \
-  $(RccIncludeDirsInternal:%=-I%) -o $$@ $$(RccParams) $$<
+  $$(RccIncludeDirsActual:%=-I%) -o $$@ $$(RccParams) $$<
 Compile_cc=\
   $$(Gc++_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
   $$(call RccFinalCompilerOptions,CC,$$(RccTarget)) \
   $$(ExtraCompilerOptionsCC_$$(RccTarget)) $(ignore for legacy)\
-  $(RccIncludeDirsInternal:%=-I%) -o $$@ $$(RccParams) $$<
+  $$(RccIncludeDirsActual:%=-I%) -o $$@ $$(RccParams) $$<
 Compile_cpp=$(Compile_cc)
 Compile_cxx=$(Compile_cc)
 
