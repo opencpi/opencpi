@@ -1,0 +1,15 @@
+<!-- The default system XML for the Zed board.
+     There is no large block of DMA memory reserved currently, so we
+     must limit the DMA allocation size to what the driver will allow.
+     FIXME:  the driver actually knows this, and could communicate it somehow.
+-->
+<opencpi>
+  <container>
+    <rcc load='1'/>
+    <hdl load='1'/>
+  </container>
+  <transfer smbsize='128K'>
+    <pio load='1' smbsize='10M'/>
+    <dma load='1'/>
+  </transfer>
+</opencpi>
