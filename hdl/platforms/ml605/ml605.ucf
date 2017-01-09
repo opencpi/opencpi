@@ -1038,6 +1038,9 @@ NET "FMC_HPC_LA33_N"                LOC = "AH24";   ## G37 on J64
 NET "FMC_HPC_LA33_P"                LOC = "AH23";   ## G36 on J64
 NET "FMC_HPC_PG_M2C_LS"             LOC = "J27";    ## F1  on J64
 NET "FMC_HPC_PRSNT_M2C_L"           LOC = "AP25";   ## H2  on J64
+# The next two signals are in fact wired to the FMC HPC slot
+NET "IIC_SCL_MAIN_LS"               LOC = "AK9";    ## 2   on Q19
+NET "IIC_SDA_MAIN_LS"               LOC = "AE9";    ## 2   on Q20
 ##
 NET "FMC_LPC_CLK0_M2C_N"            LOC = "B10";    ## H5  on J63
 NET "FMC_LPC_CLK0_M2C_P"            LOC = "A10";    ## H4  on J63

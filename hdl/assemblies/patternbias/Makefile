@@ -22,6 +22,6 @@
 #
 ########################################################################### #
 
-Containers=lime_in lime_in_cont lime_inout_cont lime_split_cont zed_zipper_inout \
-           cstest_zed_zipper cstest_card zed_zipper_inout_zipper
+Containers=lime_in_cont_ml605 lime_in lime_in_cont lime_inout_cont lime_split_cont \
+           zed_zipper_inout cstest_zed_zipper cstest_card zed_zipper_inout_zipper
 include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk

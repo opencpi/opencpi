@@ -124,6 +124,8 @@
    <signal slot='HB17_N_CC' platform='HB17_CC_N'/>
 
    <signal slot='PG_M2C' platform='PG_M2C_LS'/> <!-- hardware level shifters on carrier -->
+   <signal slot='SCL' platform='/IIC_SCL_MAIN_LS'/>
+   <signal slot='SDA' platform='/IIC_SDA_MAIN_LS'/>
 
   </slot>
   <device worker='flash'/>

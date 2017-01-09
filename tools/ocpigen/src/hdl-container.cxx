@@ -503,8 +503,11 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
       if (ssi != sl.m_signals.end() && ssi->second.empty())
 	continue;
       Signal &sig = *new Signal(**si);
-      sig.m_name = sl.m_name + "_" + (ssi == sl.m_signals.end() ? (*si)->cname() :
-				      ssi->second.c_str());
+      if (ssi != sl.m_signals.end() && ssi->second.c_str()[0] == '/')
+	sig.m_name = &ssi->second.c_str()[1];
+      else
+	sig.m_name = sl.m_name + "_" + (ssi == sl.m_signals.end() ? (*si)->cname() :
+					ssi->second.c_str());
       if (!m_sigmap.findSignal(sig.m_name)) {
 	m_signals.push_back(&sig);
 	m_sigmap[sig.cname()] = &sig;
@@ -898,7 +901,9 @@ mapDevSignals(std::string &assy, const DevInstance &di, bool inContainer) {
 	  // Only set ename if this slot's signal is available on the platform.
 	  // I.e. that pin of the slot might not be connected to a signal available to the FPGA
 	  // in which case the device worker's signal will be unconnected.
-	  if (ssi == di.slot->m_signals.end() || ssi->second.c_str()[0])
+	  if (ssi != di.slot->m_signals.end() && ssi->second.c_str()[0] == '/')
+	    ename = &ssi->second.c_str()[1];
+	  else if (ssi == di.slot->m_signals.end() || ssi->second.c_str()[0])
 	    OU::format(ename, "%s_%s", di.slot->cname(),
 		       ssi == di.slot->m_signals.end()  ?
 		       slotSig->cname() : ssi->second.c_str());
