@@ -377,21 +377,27 @@ namespace OCPI {
       }
       return NULL;
     }
+    // Is this artifact for a container with these capabilities?
+    // I.e. caps is what I am looking for
     bool Artifact::
     meetsCapabilities(const Capabilities &caps) {
-      return
-	((caps.m_os.empty() || m_os == caps.m_os) &&
-	 m_osVersion == caps.m_osVersion && m_arch == caps.m_arch) ||
-	(m_platform.size() && m_platform == caps.m_platform);
+      if (caps.m_dynamic != m_dynamic)
+	return false;
+      if (caps.m_platform.size())
+	return m_platform == caps.m_platform;
+      assert(caps.m_arch.size());
+      return m_arch == caps.m_arch &&
+	(caps.m_os.empty() || m_os == caps.m_os) &&
+	(caps.m_osVersion.empty() || m_osVersion == caps.m_osVersion);
     }
     bool Artifact::
-    meetsRequirements (const Capabilities &caps,
-		       const char *specName,
-		       const OCPI::API::PValue * /*props*/,
-		       const char *selectCriteria,
-		       const OCPI::API::Connection * /*conns*/,
-		       const char *& /* artInst */,
-		       unsigned & score ) {
+    meetsRequirements(const Capabilities &caps,
+		      const char *specName,
+		      const OCPI::API::PValue * /*props*/,
+		      const char *selectCriteria,
+		      const OCPI::API::Connection * /*conns*/,
+		      const char *& /* artInst */,
+		      unsigned & score) {
       if (meetsCapabilities(caps)) {
 	WorkerRange range = m_workers.equal_range(specName);
 

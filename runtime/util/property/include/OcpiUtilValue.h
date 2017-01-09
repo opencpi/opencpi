@@ -144,9 +144,9 @@ namespace OCPI {
 	nextStringChar() = c;
 	return c;
       }
-      bool needsComma() const;
-      bool needsCommaDimension() const;
-      bool needsCommaElement() const;
+      bool needsComma() const { return m_vt->needsComma(); };
+      bool needsCommaDimension() const { return m_vt->needsCommaDimension(); };
+      bool needsCommaElement() const { return m_vt->needsCommaElement(); };
       void
         reserveStringSpace(size_t len, bool add),
 	generate(),

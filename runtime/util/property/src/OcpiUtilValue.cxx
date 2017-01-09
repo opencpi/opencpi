@@ -1106,6 +1106,7 @@ unparseString(std::string &s, const char *val, bool hex) const {
       unparseChar(s, *val++, hex);
   return false;
 }
+#if 0
 bool Value::needsComma() const {
   return m_vt->m_isSequence || m_vt->m_arrayRank != 0 || m_vt->m_baseType == OA::OCPI_Struct;
 }
@@ -1116,6 +1117,7 @@ bool Value::needsCommaDimension() const {
 bool Value::needsCommaElement() const {
   return m_vt->m_arrayRank != 0 || m_vt->m_baseType == OA::OCPI_Struct;
 }
+#endif
 bool Unparser::
 unparseStruct(std::string &s, StructValue val, Member *members, size_t nMembers, bool hex,
 	      char comma) const {
