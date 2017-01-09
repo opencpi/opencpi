@@ -134,9 +134,16 @@ static const char *doServer(const char *server, void *) {
   static std::string error;
   return OR::useServer(server, options.verbose(), NULL, error) ? error.c_str() : NULL;
 }
-static void doTarget(const char *target, bool specs) {
+static void doTarget(const char *a_target, bool specs) {
   static std::string error;
   OL::Capabilities caps;
+  std::string s;
+  const char *target = a_target, *slash = strrchr(a_target, '/');
+  if (slash) {
+    s.assign(a_target, slash - a_target);
+    target = s.c_str();
+    caps.m_dynamic = slash[1] == 'd';
+  }
   const char *dash = strchr(target, '-');
   if (dash) {
     const char *dash1 = strchr(dash+1, '-');
@@ -159,12 +166,11 @@ static void doTarget(const char *target, bool specs) {
 }
 
 // Return true on error
-static bool setup(const char *arg, ezxml_t &xml, std::string &error) {
+static bool setup(const char *arg, ezxml_t &xml, std::string &file, std::string &error) {
   const char *e = NULL;
-  std::string file;  // the file that the application XML came from
   if (arg) {
-    if (options.artifacts() || options.list_artifacts() ||
-	options.specs() || options.list_specs())
+    if (options.artifacts() || options.list_artifacts() || options.specs() || 
+	options.list_specs())
       return
 	OU::eformat(error,
 		    "can't request printing artifacts or specs and also specify an xml file (%s)", arg);
@@ -235,11 +241,20 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &error) {
     OL::Manager::getSingleton().suppressDiscovery();
   if (!options.remote())
     OR::g_suppressRemoteDiscovery = true;
+  // Establish simulator-related options to feed them to sims during discovery
+  std::vector<OA::PValue> simParams;
+  if (options.sim_dir())
+    addParam("directory", options.sim_dir(), simParams);
+  if (options.sim_ticks())
+    simParams.push_back(OA::PVULong("sim-ticks", options.sim_ticks()));
+  if (options.verbose())
+    simParams.push_back(OA::PVBool("verbose", true));
+  if (options.dump())
+    simParams.push_back(OA::PVBool("dump", true));
+  if (simParams.size())
+    simParams.push_back(OA::PVEnd);
   // force config before looking for servers
-  {
-    OA::PValue v[] = { OA::PVBool("verbose", options.verbose()), OA::PVEnd};
-    OCPI::Driver::ManagerManager::getManagerManager().configureOnce(NULL, v);
-  }
+  OCPI::Driver::ManagerManager::getManagerManager().configureOnce(NULL, &simParams[0]);
   // server arguments and server environment variables are all used, no shadowing
   size_t dumb;
   for (const char **ap = options.server(dumb); ap && *ap; ap++)
@@ -257,17 +272,6 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &error) {
       OU::formatString(name, "rcc%d", n);
       OA::ContainerManager::find("rcc", name.c_str());
     }
-  std::vector<OA::PValue> simParams;
-  if (options.sim_dir())
-    addParam("directory", options.sim_dir(), simParams);
-  if (options.sim_ticks())
-    simParams.push_back(OA::PVULong("simTicks", options.sim_ticks()));
-  if (options.verbose())
-    simParams.push_back(OA::PVBool("verbose", true));
-  if (options.dump())
-    simParams.push_back(OA::PVBool("dump", true));
-  if (simParams.size())
-    simParams.push_back(OA::PVEnd);
 #if 0
   if (!options.simulator()) {
     // If simulators are not mentioned explicitly (with -H), but are mentioned as
@@ -303,7 +307,7 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &error) {
     if (options.only_platforms()) {
       std::set<std::string> plats;
       for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)
-	plats.insert(c->platform());
+	plats.insert(c->model() + "-" + (c->dynamic() ? "1" : "0") + "-" + c->platform());
       for (std::set<std::string>::const_iterator i = plats.begin(); i != plats.end(); ++i)
 	printf("%s\n", i->c_str());
     } else {
@@ -372,7 +376,7 @@ static int mymain(const char **ap) {
   std::string file;  // the file that the application XML came from
   ezxml_t xml = NULL;
   std::string error;
-  if (setup(*ap, xml, error))
+  if (setup(*ap, xml, file, error))
     throw OU::Error("Error: %s", error.c_str());
   if (xml) try {
       std::string name;

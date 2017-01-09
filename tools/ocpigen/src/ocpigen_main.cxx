@@ -35,6 +35,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <memory>
+#include "OcpiDriverManager.h"
+#include "OcpiLibraryManager.h"
 #include "wip.h"
 /*
  * Notes:  For verilog, for consistency, we generate a module definition that is "included"
@@ -73,6 +75,7 @@ add to tree.
   "This argument can exclude the .xml suffix, which will be assumed.\n" \
   "XML file can be a worker, an assembly, a platform configuration, or a container.\n"
 #define OCPI_OPTIONS \
+  CMD_OPTION  (verbose,   v,    Bool,   NULL, "Be verbose") \
   CMD_OPTION  (defs,      d,    Bool,   NULL, "Generate the definition file (used for instantiation)") \
   CMD_OPTION  (impl,      i,    Bool,   NULL, "Generate the implementation header file (readonly)") \
   CMD_OPTION  (skel,      s,    Bool,   NULL, "Generate the implementation skeleton file (modified part)") \
@@ -98,6 +101,8 @@ add to tree.
   CMD_OPTION  (package,   p,    String, NULL, "Specify the HDL package for the worker") \
   CMD_OPTION  (pfconfig,  X,    String, NULL, "Parse top level platform/configuration attribute") \
   CMD_OPTION  (pfdir,     F,    String, NULL, "The directory where the current platform lives") \
+  CMD_OPTION  (gentest,   T,    Bool,   NULL, "Generate unit testing files, assemblies, apps")  \
+  CMD_OPTION  (gencases,  C,    Bool,   NULL, "Figure out which test cases to run on which platforms") \
 
 #include "CmdOption.h"
 
@@ -108,7 +113,7 @@ main(int argc, const char **argv) {
   const char *outDir = NULL, *wksFile = NULL, *package = NULL;
   bool
     doDefs = false, doImpl = false, doSkel = false, doAssy = false, doWrap = false,
-    doArt = false, doTop = false;
+    doArt = false, doTop = false, doTest = false, doCases = false, verbose = false;
   int doGenerics = -1;
   if (argc <= 1) {
     fprintf(stderr,
@@ -136,6 +141,7 @@ main(int argc, const char **argv) {
 	    " -I <dir>      Specify an include search directory for XML processing\n"
 	    " -M <file>     Specify the file to write makefile dependencies to\n"
 	    " -S <assembly> Specify the name of the assembly for a container\n"
+	    " -T            Generate test artifacts\n"
 	    );
     return 1;
   }
@@ -149,6 +155,9 @@ main(int argc, const char **argv) {
   for (const char **ap = argv+1; !err && *ap; ap++) {
     if (ap[0][0] == '-')
       switch (ap[0][1]) {
+      case 'v':
+	verbose = true;
+	break;
       case 'd':
 	doDefs = true;
 	break;
@@ -169,6 +178,12 @@ main(int argc, const char **argv) {
 	break;
       case 'X':
 	doTop = true;
+	break;
+      case 'T':
+	doTest = true;
+	break;
+      case 'C':
+	doCases = true;
 	break;
       case 'g':
 	doGenerics = atoi(&ap[0][2]);
@@ -231,6 +246,10 @@ main(int argc, const char **argv) {
       }
     else
       try {
+	setenv("OCPI_SYSTEM_CONFIG", "", 1);
+	OCPI::Driver::ManagerManager::suppressDiscovery();
+	if (doCases)
+	  OCPI::Library::getManager().enableDiscovery();
 	std::string parent;
 	if (doTop) {
 	  // This is to help the container build scripts extract the platform
@@ -256,6 +275,20 @@ main(int argc, const char **argv) {
 	    const char *slash = strchr(pf, '/');
 	    printf("%.*s %s\n",
 		   (int)(slash ? slash - pf : strlen(pf)), pf, slash ? slash + 1 : "base");
+	  }
+	  return 0;
+	}
+	if (doTest) {
+	  if ((err = createTests(*ap, package, outDir, verbose))) {
+	    fprintf(stderr, "%s\n", err);
+	    return 1;
+	  }
+	  return 0;
+	}
+	if (doCases) {
+	  if ((err = createCases(ap, package, outDir, verbose))) {
+	    fprintf(stderr, "%s\n", err);
+	    return 1;
 	  }
 	  return 0;
 	}

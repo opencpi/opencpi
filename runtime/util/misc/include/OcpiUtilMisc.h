@@ -338,10 +338,11 @@ namespace OCPI {
 	encodeXmlAttrSingle(const std::string &s, std::string &out, bool raw = false),
 	encodeDescriptor(const std::string &s, std::string &out),
 	decodeDescriptor(const char *info, std::string &s),
-	formatString(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
-	format(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
-	formatAdd(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
-	formatAddV(std::string &out, const char *fmt, va_list ap);
+	formatString(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+      const char
+	*format(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
+	*formatAdd(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
+	*formatAddV(std::string &out, const char *fmt, va_list ap);
       bool
 	// This one just returns true as a convenience for the error handling protocol
 	// that sets an error string and returns true if an error occurred.
@@ -350,10 +351,21 @@ namespace OCPI {
       const char
 	*parseList(const char *list, const char * (*doit)(const char *tok, void *arg),
 		   void *arg = NULL),
-	*file2String(std::string &out, const char *file, char replaceNewline = 0),
-	*string2File(const std::string &in, const char *file),
+	*file2String(std::string &out, const char *file, char replaceNewLine = 0),
+	*file2String(std::string &out, const char *file, const char *start, const char *middle, 
+		     const char *end),
+	*string2File(const std::string &in, const char *file, bool leaveExisting = false),
 	*evsprintf(const char *fmt, va_list ap),
 	*esprintf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+      inline const char *file2String(std::string &out, const std::string &file,
+				     char replaceNewLine = 0) {
+	return file2String(out, file.c_str(), replaceNewLine);
+      }
+      inline const char *string2File(const std::string &in, const std::string &file,
+				     bool leaveExisting = false) {
+	return string2File(in, file.c_str(), leaveExisting);
+      }
+
 
       // These are comparison object for use in STL classes
       struct ConstCharComp {

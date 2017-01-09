@@ -184,6 +184,7 @@ namespace OCPI {
     public:
       Instance &utilInstance(size_t n) { return m_instances[n]; }
       size_t nUtilInstances() { return m_instances.size(); }
+      const std::string &name() const { return m_name; }
       static unsigned s_count;
       std::string m_name;
       std::string m_package;

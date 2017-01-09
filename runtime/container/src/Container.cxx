@@ -85,10 +85,12 @@ namespace OCPI {
 	m_model == i.model() &&
 	m_os == i.attributes().m_os &&
 	m_osVersion == i.attributes().m_osVersion &&
-	((i.attributes().m_platform.length() &&
-	  m_platform == i.attributes().m_platform) ||
-	 (i.attributes().m_platform.empty() &&
-	  m_arch == i.attributes().m_arch)) &&
+	// if all three are present and match, on rcc, platform does not need to match.
+	// this eases the transition to software platforms having proper names
+	((m_model == "rcc" && m_os.length() && m_osVersion.length() && m_arch.length() &&
+	  m_arch == i.attributes().m_arch) ||
+	 (i.attributes().m_platform.length() && m_platform == i.attributes().m_platform) ||
+	 (i.attributes().m_platform.empty() && m_arch == i.attributes().m_arch)) &&
 	m_dynamic == i.attributes().m_dynamic;
       ocpiInfo("vs. container %s (%u) model %s os %s version %s arch %s platform %s dynamic %u ==> %s",
 		name().c_str(), m_ordinal, m_model.c_str(), m_os.c_str(), m_osVersion.c_str(),

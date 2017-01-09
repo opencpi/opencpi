@@ -188,7 +188,7 @@ addProperty(ezxml_t prop, bool includeImpl, bool anyIsBad)
   // Skip debug properties if the debug parameter is not present.
   if (!err) {
     if (!p->m_isParameter && anyIsBad)
-      return OU::esprintf("Property \"%s\" is not a parameter and so it invalid in this context",
+      return OU::esprintf("Property \"%s\" is not a parameter and is invalid in this context",
 			  p->m_name.c_str());
     // Now allow overrides of values.
     if (!strcasecmp(p->m_name.c_str(), "ocpi_debug"))

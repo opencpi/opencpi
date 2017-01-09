@@ -386,14 +386,22 @@ cd (const std::string & name)
 }
 
 void
-mkdir (const std::string & name)
+mkdir (const std::string & name, bool existsOk)
   throw (std::string)
 {
   std::string nativeName = toNativeName (name);
 
-  if (::mkdir (nativeName.c_str(), 0777)) {
-    throw Posix::getErrorMessage (errno);
+  bool isDir;
+  if (exists(name, &isDir)) {
+    if (existsOk) {
+      if (!isDir)
+	throw "when creating directory \"" + name + "\", a non-directory exists";
+      return;
+    }
+    throw "when creating directory \"" + name + "\", it already exists";
   }
+  if (::mkdir(nativeName.c_str(), 0777))
+    throw Posix::getErrorMessage(errno);
 }
 
 void
@@ -440,7 +448,7 @@ exists(const std::string & name, bool * isDir, uint64_t *size, std::time_t *mtim
   if ((info.st_mode & S_IFDIR) == S_IFDIR) {
     if (isDir)
       *isDir = true;
-  } else if ((info.st_mode & S_IFREG) == S_IFREG) {
+  } else if ((info.st_mode & S_IFREG) == S_IFREG || (info.st_mode & S_IFIFO) == S_IFIFO) {
     if (isDir)
       *isDir = false;
     if (size)

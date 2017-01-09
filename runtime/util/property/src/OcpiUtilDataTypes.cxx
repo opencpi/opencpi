@@ -83,6 +83,23 @@ namespace OCPI {
       }
       return true;
     }
+    // Return a type object that is a sequence of this type
+    // This is not a member function of ValueType because hierarchical types
+    // are based on members, which they should not be AFAICT
+    Member &Member::
+    sequenceType() const {
+      Member &newType = *new Member(*this);
+      if (m_isSequence) {
+	Member &seqType = *new Member();
+	seqType.m_baseType = OA::OCPI_Type;
+	seqType.m_type = &newType;
+	seqType.m_isSequence = true;
+	return seqType;
+      }
+      // easy case - just a copy adding the "sequence" attribute.
+      newType.m_isSequence = true;
+      return newType;
+    }
 
     Reader::Reader(){}
     Reader::~Reader(){}

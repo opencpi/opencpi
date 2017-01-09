@@ -189,6 +189,7 @@ namespace OCPI {
       // Find one good implementation, return true one is found that satisfies the criteria
       bool findImplementation(const char *specName, const char *selectCriteria, const Implementation *&impl);
     };
+    static inline Manager &getManager() { return Manager::getSingleton(); }
     // This is the base class for all library drivers
     class Driver : public OCPI::Driver::DriverType<Manager,Driver> {
       //      virtual Library *findLibrary(const char *url) = 0;

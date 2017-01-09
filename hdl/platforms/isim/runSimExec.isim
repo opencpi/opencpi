@@ -23,7 +23,7 @@ trap cleanup EXIT
     bad Missing isim probe support file \"$probefile\".
   [ -f $OcpiXilinxIseDir/settings64.sh ] ||
     bad No Xilinx settings file in $OcpiXilinxIseDir.
-  [ -n "$verbose" ] && echo Attempting to run a tiny simulation to test isim.
+  [ -n "$verbose" ] && echo Attempting to run a tiny simulation to test isim. 1>&2
   tmpdir=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir'` # stackoverflow 30091
   cd $tmpdir
   tar xzf $probefile

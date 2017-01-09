@@ -69,10 +69,17 @@ namespace OCPI {
       return OU::Singleton<ManagerManager>::getSingleton();
     }
     ManagerManager::ManagerManager()
-      : m_configured(false), m_doNotDiscover(false), m_xml(NULL)
+      : m_configured(false), m_xml(NULL)
     {}
     ManagerManager::~ManagerManager() {
       ezxml_free(m_xml);
+    }
+    // We suppress all Managers rather than setting a global so we can easily re-enable
+    // individual managers after doing this.
+    // This is a static method
+    void ManagerManager::suppressDiscovery() {
+      for (Manager *m = getManagerManager().firstChild(); m; m = m->nextChild())
+	m->suppressDiscovery();
     }
     // This is the static API method
     void ManagerManager::configure(const char *file) {
@@ -198,12 +205,11 @@ namespace OCPI {
       // The discovery happens in a second pass to make sure everything is configured before
       // anything is discovered so that one driver's discovery can depend on another type of
       // driver's configuration.
-      if (!m_doNotDiscover)
-	for (Manager *m = firstChild(); m; m = m->nextChild())
-	  if (m->shouldDiscover()) {
-	    ocpiDebug("Performing discovery for the %s manager", m->name().c_str());
-	    m->discover(params);
-	  }
+      for (Manager *m = firstChild(); m; m = m->nextChild())
+	if (m->shouldDiscover()) {
+	  ocpiDebug("Performing discovery for the %s manager", m->name().c_str());
+	  m->discover(params);
+	}
     }
     // Cleanup all managers
     bool ManagerManager::s_exiting = false;

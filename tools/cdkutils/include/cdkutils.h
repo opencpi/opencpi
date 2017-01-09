@@ -53,5 +53,5 @@ extern const char
 	     ezxml_t *xp, std::string &xfile, bool optional = false, bool search = true,
 	     bool nonExistentOK = false),
   *openOutput(const char *name, const char *outDir, const char *prefix, const char *suffix,
-	      const char *ext, const char *other, FILE *&f);
+	      const char *ext, const char *other, FILE *&f, std::string *path = NULL);
 #endif

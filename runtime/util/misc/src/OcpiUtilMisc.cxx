@@ -499,13 +499,14 @@ isXMLDocument (std::istream * istr)
   return result;
 }
 
-void 
+const char *
 formatAddV(std::string &out, const char *fmt, va_list ap) {
   char *cp;
   ocpiCheck(vasprintf(&cp, fmt, ap) >= 0);
   assert(cp); // or better generic memory exception
   out += cp;
   free(cp);
+  return out.c_str();
 }
 // FIXME remove this when all callers are fixed.
 void 
@@ -516,13 +517,14 @@ formatString(std::string &out, const char *fmt, ...) {
   formatAddV(out, fmt, ap);
   va_end(ap);
 }
-void 
+const char * 
 format(std::string &out, const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   out.clear();
   formatAddV(out, fmt, ap);
   va_end(ap);
+  return out.c_str();
 }
 bool 
 eformat(std::string &out, const char *fmt, ...) {
@@ -533,12 +535,13 @@ eformat(std::string &out, const char *fmt, ...) {
   va_end(ap);
   return true;
 }
-void 
+const char *
 formatAdd(std::string &out, const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   formatAddV(out, fmt, ap);
   va_end(ap);
+  return out.c_str();
 }
 
 // FIXME: Use vanilla C file I/O
@@ -547,6 +550,12 @@ formatAdd(std::string &out, const char *fmt, ...) {
 // 2. If "replaceNewLine" is non-zero, newlines are replaced with it, except the last one
 const char *
 file2String(std::string &out, const char *file, char replaceNewLine) {
+  char c[2] = { replaceNewLine, 0 };
+  return file2String(out, file, NULL, c[0] ? c : NULL, NULL);
+}
+const char *
+file2String(std::string &out, const char *file, const char *start, const char *middle, 
+	    const char *end) {
   FILE *f = fopen(file, "r");
   long size;
   const char *err = NULL;
@@ -569,27 +578,39 @@ file2String(std::string &out, const char *file, char replaceNewLine) {
 	// Trim initial white space
 	for (; n && isspace(*cp) && *cp != '\n'; n--, cp++)
 	  ;
-	if (n)
+	if (n) {
 	  initial = false;
+	  if (start)
+	    out = start;
+	}
       }
-      if (replaceNewLine) {
+      if (middle) {
 	if (newLine) {
-	  out += replaceNewLine;
+	  out += middle;
 	  newLine = false;
 	}
 	char *np = cp;
 	for (size_t nn = n; nn; nn--, np++)
 	  if (*np == '\n') {
+	    out.append(cp, np - cp);
 	    if (nn == 1)
 	      newLine = true, n--;
-	    else
-	      *np = replaceNewLine;
+	    else {
+	      cp = np + 1;
+	      out += middle;
+	    }
 	  }
-      }
-      out.append(cp, n);
+	if (!newLine) {
+	  out.append(cp, np - cp);
+	  cp = np + 1;
+	}
+      } else
+	out.append(cp, n);
     }
     if (ferror(f))
       err = "error reading file";
+    else if (end)
+      out += end;
   } else
     err = "file could not be open for reading";
    if (f)
@@ -601,7 +622,14 @@ file2String(std::string &out, const char *file, char replaceNewLine) {
   return NULL;
 }
 const char *
-string2File(const std::string &in, const char *file) {
+string2File(const std::string &in, const char *file, bool leaveExisting) {
+  bool isDir;
+  if (OS::FileSystem::exists(file, &isDir))
+    if (isDir)
+      return esprintf("error trying to write file when directory exists with that name: %s",
+		      file);
+    else if (leaveExisting)
+      return NULL;
   FILE *f = fopen(file, "w");
   size_t n = in.size();
 

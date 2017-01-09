@@ -67,6 +67,9 @@ include $(OCPI_CDK_DIR)/include/package.mk
 ifeq ($(origin Implementations),undefined)
 Implementations=$(foreach m,$(Models),$(wildcard *.$m))
 endif
+ifeq ($(filter clean%,$(MAKECMDGOALS)),)
+$(shell mkdir -p lib; (for i in $(filter-out %.test, $(Implementations)); do echo $$i; done) > lib/workers);
+endif
 # we need to factor the model-specifics our of here...
 XmImplementations=$(filter %.xm,$(Implementations))
 RccImplementations=$(filter %.rcc,$(Implementations))

@@ -288,7 +288,7 @@ init(::Assembly &assy, const char *iName, const char *wName, ezxml_t ix,
 			     assy.m_assyWorker.m_outDir, &assy.m_assyWorker,
 			     hasConfig ? NULL : &m_xmlProperties, paramConfig, err)))
       return OU::esprintf("for worker %s: %s", m_wName.c_str(), err);
-    assy.m_workers.push_back(w);
+    assy.m_workers.push_back(w); // preserve order
   }
   m_worker = w;
   // Determine instance type as far as we can now

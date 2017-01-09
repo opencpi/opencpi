@@ -25,6 +25,7 @@ runtime/ctests
 runtime/application
 tools/cdkutils
 tools/ocpigen
+#tools/ocpisca
 tools/cdk/ocpidds
 # tools/astyle
 tests
@@ -49,6 +50,7 @@ tests
 +tools/cdk/include/worker.mk include/
 +tools/cdk/include/xxx-worker.mk include/
 +tools/cdk/include/ocpisetup.mk include/
++tools/cdk/include/test.mk include/
 +tools/cdk/include/ocpisetup.mk
 +tools/cdk/include/libraries.mk include/
 +tools/cdk/include/project.mk include/
@@ -65,6 +67,9 @@ tests
 +tools/cdk/scripts/ocpitarget.sh scripts/
 +tools/cdk/scripts/ocpidev scripts/
 +tools/cdk/scripts/util.sh scripts/
++tools/cdk/scripts/testrunprep.sh scripts/
++tools/cdk/scripts/testrunremote.sh scripts/
++tools/cdk/scripts/setsid.py scripts/
 #+tools/cdk/scripts/makeExportLinks.sh scripts/
 +scripts/makeExportLinks.sh scripts/
 # user level scripts made available in the bin directory
@@ -125,6 +130,7 @@ tests
 +runtime/hdl-support/scripts/loadFlash bin/<target>/
 +runtime/hdl-support/scripts/probeJtag bin/<target>/
 +runtime/hdl-support/scripts/ocpiview bin/<target>/
+# Enable all local bitstreams to be seen in one place for convenience of OCPI_LIBRARY_PATH
 +hdl/assemblies/*/container-*/target-*/*.bitz lib/hdl/assemblies/
 # for backward compatibility of system.xml files
 +runtime/dataplane/rdma_drivers/socket/target-<target>/libocpi_socket.* lib/<target>/libocpi_sockets<suffix>

@@ -562,7 +562,7 @@ enum Model {
 typedef std::vector<Clock*> Clocks;
 typedef Clocks::const_iterator ClocksIter;
 typedef std::list<Worker *> Workers;
-typedef Workers::const_iterator WorkersIter;
+typedef Workers::iterator WorkersIter;
 class Assembly;
 class HdlDevice;
 struct Instance;
@@ -685,7 +685,8 @@ class Worker : public Parsed, public OU::IdentResolver {
     *deriveOCP(),
     *hdlValue(const std::string &name, const OU::Value &v, std::string &value,
 	      bool param = false, Language = NoLanguage),
-    *findParamProperty(const char *name, OU::Property *&prop, size_t &nParam),
+    *findParamProperty(const char *name, OU::Property *&prop, size_t &nParam,
+		       bool includeInitial = false),
     *addConfig(ParamConfig &info, size_t &nConfig),
     *doParam(ParamConfig &info, PropertiesIter pi, unsigned nParam, size_t &nConfig),
     *addParamConfigSuffix(std::string &s),
@@ -767,6 +768,8 @@ class Worker : public Parsed, public OU::IdentResolver {
   "name", "SizeOfConfigSpace", "ControlOperations", "Sub32BitConfigProperties"
 #define ASSY_ELEMS "instance", "connection", "external"
 extern const char
+  *createTests(const char *file, const char *package, const char *outDir, bool verbose),
+  *createCases(const char **args, const char *package, const char *outDir, bool verbose),
   *addLibrary(const char *lib),
   *extractExprValue(const OU::Property &p, const OU::Value &v, OU::ExprValue &val),
   *parseList(const char *list, const char * (*doit)(const char *tok, void *arg), void *arg),

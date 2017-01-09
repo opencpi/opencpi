@@ -40,12 +40,13 @@ namespace OCPI {
 	  
       class Driver;
 
+      typedef std::set<OS::FileSystem::FileId> FileIds; // unordered set cxx11 is better
       // Our concrete library class
       class Library : public OL::LibraryBase<Driver, Library, Artifact> {
-	std::set<OS::FileSystem::FileId> m_file_ids; // unordered set cxx11 is better
+	FileIds &m_fileIds;
 	friend class Driver;
-	Library(const char *a_name)
-	  : OL::LibraryBase<Driver,Library,Artifact>(*this, a_name) {
+	Library(const char *a_name, FileIds &ids)
+	  : OL::LibraryBase<Driver,Library,Artifact>(*this, a_name), m_fileIds(ids) {
 	}
 
 	public:
@@ -75,7 +76,9 @@ namespace OCPI {
 	    ocpiInfo("Path name found in OCPI_LIBRARY_PATH, \"%s\", "
 		     "is nonexistent, not a normal file, or a broken link.  It will be ignored",
 		     a_libName.c_str());
-	  else if (m_file_ids.insert(file_id).second) {
+	  else if (m_fileIds.insert(file_id).second) {
+	    ocpiInfo("Found ARTIFACT: %s id is: %016llx%016llx", a_libName.c_str(), 
+		     file_id.m_opaque[0], file_id.m_opaque[1]);
 	    // New id was inserted, and thus was not already there
 	    if (isDir) {
 	      OS::FileIterator dir(a_libName, "*");
@@ -101,6 +104,7 @@ namespace OCPI {
       const char *component = "component";
       class Driver
 	: public OCPI::Library::DriverBase<Driver, Library, component> {
+	FileIds m_fileIds;
       public:
 	void configure(ezxml_t x) {
 	  // First we call the base class, which loads explicit libraries.
@@ -120,7 +124,7 @@ namespace OCPI {
 		   lp = strtok_r(NULL, ":", &last)) {
 		ocpiInfo("Searching directory %s recursively, from OCPI_LIBRARY_PATH", lp);
 		// We have a library in the path.
-		(new Library(lp))->configure(NULL);
+		(new Library(lp, m_fileIds))->configure(NULL);
 		n++;
 	      }
 	    } catch (...) {
@@ -138,7 +142,7 @@ namespace OCPI {
 	OL::Artifact *addArtifact(const char *url, const OA::PValue *props) {
 	  Library *l = firstChild();
 	  if (!l)
-	    l = new Library(".");
+	    l = new Library(".", m_fileIds);
 	  return l->addArtifact(url, props);
 	}
       };

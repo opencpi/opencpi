@@ -19,9 +19,11 @@ struct Param {
   OCPI::Util::Value           m_value;  // value for the current config, perhaps the default
   std::string                 m_uValue; // unparsed value - the canonical value for comparison
   Values                      m_values; // the values for all configurations
+  OCPI::Util::Member         *m_valuesType; // the type (a sequence of these values).
+  Values                      m_uValues;
   const OCPI::Util::Property *m_param;  // the property that is a parameter
   bool                        m_isDefault; // is m_value from property default?
-  const char *parse(ezxml_t px, const OCPI::Util::Property *argParam);
+  const char *parse(ezxml_t px, const OCPI::Util::Property &prop);
   Param();
 };
 
@@ -41,7 +43,7 @@ class ParamConfig : public OCPI::Util::IdentResolver {
   ParamConfig(Worker &w);
   ParamConfig(const ParamConfig &);
   ParamConfig &operator=(const ParamConfig * p);
-  const char * parse(ezxml_t cx, const ParamConfigs &configs);
+  const char * parse(ezxml_t cx, const ParamConfigs &configs, bool includeInitial = false);
   void write(FILE *xf, FILE *mf);
   void writeConstants(FILE *gf, Language lang);
   // Is the given configuration the same as this one?

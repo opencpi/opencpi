@@ -228,10 +228,12 @@ dumpDeps(const char *top) {
 // TODO: Make an iostream version of this call to move away from C-style FILE handles
 const char *
 openOutput(const char *name, const char *outDir, const char *prefix, const char *suffix,
-	   const char *ext, const char *other, FILE *&f) {
+	   const char *ext, const char *other, FILE *&f, std::string *path) {
   std::string file;
   OU::format(file, "%s%s%s%s%s%s", outDir ? outDir : "", outDir ? "/" : "", prefix, name, suffix,
 	     ext);
+  if (path)
+    *path = file;
   ocpiDebug("openOutput attempting to write to %s", file.c_str());
   const char *err = NULL;
   f = NULL;

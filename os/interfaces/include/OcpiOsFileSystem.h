@@ -288,7 +288,7 @@ namespace OCPI {
        * not a directory, or if the parent directory is not writable.
        */
 
-      void mkdir (const std::string & name)
+      void mkdir (const std::string & name, bool existsOk = false)
         throw (std::string);
 
       /**

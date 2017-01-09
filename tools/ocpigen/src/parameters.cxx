@@ -15,40 +15,89 @@ addParamConfigSuffix(std::string &s) {
 }
 
 const char *Worker::
-findParamProperty(const char *name, OU::Property *&prop, size_t &nParam) {
+findParamProperty(const char *name, OU::Property *&prop, size_t &nParam, bool includeInitial) {
   size_t n = 0;
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
     if (!strcasecmp((*pi)->m_name.c_str(), name)) {
       prop = *pi;
-      if (prop->m_isParameter) {
+      if (prop->m_isParameter || (includeInitial && prop->m_isWritable)) {
 	nParam = n;
 	return NULL;
       } else
 	return OU::esprintf("The '%s' property is not a parameter", name);
-    } else if ((*pi)->m_isParameter)
+    } else if ((*pi)->m_isParameter || (includeInitial && (*pi)->m_isWritable))
       n++;
   return OU::esprintf("Parameter property not found: '%s'", name);
 }
 
-Param::Param() : m_param(NULL), m_isDefault(false) {}
+Param::Param() : m_valuesType(NULL), m_param(NULL), m_isDefault(false) {}
 
 const char *Param::
-parse(ezxml_t px, const OU::Property *argParam) {
+parse(ezxml_t px, const OU::Property &p) {
   std::string xValue;
   const char *err;
-  OU::Value newValue(*argParam);
-  if ((err = OE::getRequiredString(px, xValue, "value")) ||
-      (err = argParam->parseValue(xValue.c_str(), newValue)))
-    return err;
-  newValue.unparse(m_uValue);
-  m_value = newValue;
+  const char
+    *value = ezxml_cattr(px, "value"),
+    *values = ezxml_cattr(px, "values"),
+    *valueFile = ezxml_cattr(px, "valueFile"),
+    *valuesFile = ezxml_cattr(px, "valuesFile");
+  unsigned n = (value ? 1 : 0) + (values ? 1 : 0) + (valueFile ? 1 : 0) + (valuesFile ? 1 : 0);
+  if (n != 1)
+    return OU::esprintf("Exactly one attribute must be specified among: "
+			"value, values, valuefile, or valuesFile");
+  std::string fileValue;
+  if (valueFile) {
+    if ((err = (p.needsCommaElement() ? 
+		OU::file2String(fileValue, valueFile, "{", "},{", "}") :
+		OU::file2String(fileValue, valueFile, ','))))
+      return err;
+    value = fileValue.c_str();
+  } else if (valuesFile) {
+    if ((err = (p.needsComma() ? 
+		OU::file2String(fileValue, valuesFile, "{", "},{", "}") :
+		OU::file2String(fileValue, valuesFile, ','))))
+      return err;
+    values = fileValue.c_str();
+  }
+  m_param = &p;
   m_isDefault = false;
-  m_param = argParam;
+  if (values) {
+    // We need to create a new type that is a sequence of the original type
+    if (!m_valuesType) {
+      m_valuesType = &p.sequenceType();
+      m_valuesType->m_default = new OU::Value(*m_valuesType);
+    }
+    if ((err = m_valuesType->m_default->parse(values, NULL, false, NULL)))
+      return err;
+    m_valuesType->m_default->unparse(m_uValue);
+    m_uValues.clear();
+    m_uValues.resize(m_valuesType->m_default->m_nElements);
+    for (unsigned n = 0; n < m_valuesType->m_default->m_nElements; n++)
+      m_valuesType->m_default->elementUnparse(*m_valuesType->m_default, m_uValues[n], n, false,
+					      '\0', false, *m_valuesType->m_default);
+  } else {
+    OU::Value newValue;
+    if ((err = p.parseValue(value, newValue)))
+      return err;
+    newValue.unparse(m_uValue);
+    if (p.m_default) {
+      std::string defValue;
+      p.m_default->unparse(defValue);
+      if (defValue == m_uValue) {
+	m_isDefault = true;
+	m_value = *p.m_default;
+	return NULL;
+      }
+    }
+    m_value = newValue;
+  }
   return NULL;
 }
 
 ParamConfig::
-ParamConfig(Worker &w) : m_worker(w), nConfig(0), used(false) {}
+ParamConfig(Worker &w) : m_worker(w), nConfig(0), used(false) {
+  params.resize(w.m_ctl.properties.size());
+}
 
 ParamConfig::
 ParamConfig(const ParamConfig &other)
@@ -57,7 +106,7 @@ ParamConfig(const ParamConfig &other)
 }
 
 const char *ParamConfig::
-parse(ezxml_t cx, const ParamConfigs &configs) {
+parse(ezxml_t cx, const ParamConfigs &configs, bool includeInitial) {
   const char *err;
   if ((err = OE::getNumber(cx, "id", &nConfig, NULL, 0, false, true)))
     return err;
@@ -65,7 +114,9 @@ parse(ezxml_t cx, const ParamConfigs &configs) {
     if (configs[n]->nConfig == nConfig)
       return OU::esprintf("Duplicate configuration id %zu in build file", nConfig);
   OU::format(id, "%zu", nConfig);
-  params.resize(m_worker.m_ctl.nParameters);
+  // Note that this resize when including initial props, will overallocate, e.g. volatiles.
+  params.resize(includeInitial ? m_worker.m_ctl.properties.size() : 
+		m_worker.m_ctl.nParameters);
   for (ezxml_t px = ezxml_cchild(cx, "parameter"); px; px = ezxml_next(px)) {
     std::string name;
     size_t nParam;
@@ -73,17 +124,19 @@ parse(ezxml_t cx, const ParamConfigs &configs) {
     if ((err = OE::getRequiredString(px, name, "name")) ||
 	(err = m_worker.findParamProperty(name.c_str(), p, nParam)) ||
 	(err = p->finalize(*this, "property", false)) ||
-	(err = params[nParam].parse(px, p)))
+	(err = params[nParam].parse(px, *p)))
       return err;
   }
   // Fill in the default values that were not mentioned
   size_t n = 0;
   for (PropertiesIter pi = m_worker.m_ctl.properties.begin(); pi != m_worker.m_ctl.properties.end(); pi++)
-    if ((*pi)->m_isParameter) {
+    if ((*pi)->m_isParameter || (includeInitial && (*pi)->m_isWritable)) {
       if (!params[n].m_param) {
 	params[n].m_param = *pi;
-	assert((*pi)->m_default);
-	params[n].m_value = *(*pi)->m_default; // assignment operator
+	if ((*pi)->m_default)
+	  params[n].m_value = *(*pi)->m_default; // assignment operator
+	else
+	  params[n].m_value.setType(**pi);        // blank default value
 	params[n].m_value.unparse(params[n].m_uValue);
 	params[n].m_isDefault = true;
       }

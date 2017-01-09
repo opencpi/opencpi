@@ -88,6 +88,16 @@ namespace OCPI {
       // Return whether this value is fixed in size
       // If top == true, its ok for it to be a sequence
       bool isFixed(bool top = true) const;
+      bool needsComma() const {
+	return m_isSequence || m_arrayRank != 0 || m_baseType == OCPI::API::OCPI_Struct;
+      }
+      bool needsCommaDimension() const {
+	return m_baseType == OCPI::API::OCPI_Struct;
+      }
+      // This value is an element of a sequence.  Does it need to be wrapped in braces?
+      bool needsCommaElement() const {
+	return m_arrayRank != 0 || m_baseType == OCPI::API::OCPI_Struct;
+      }
     };
     const unsigned testMaxStringLength = 10;
     const unsigned maxDataTypeAlignment = sizeof(double); // max of all types we support
@@ -172,6 +182,7 @@ namespace OCPI {
       Member(const char *name, const char *abbrev, const char *description,
 	     OCPI::API::BaseType type, bool isSequence, const char *defaultValue);
       virtual ~Member();
+      Member &sequenceType() const;
       void printAttrs(FILE *f, const char *tag, unsigned indent = 0, bool suppressDefault = false);
       void printChildren(FILE *f, const char *tag, unsigned indent = 0);
       void printXML(FILE *f, const char *tag, unsigned indent);

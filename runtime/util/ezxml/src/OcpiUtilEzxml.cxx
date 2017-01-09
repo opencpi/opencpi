@@ -667,6 +667,15 @@ namespace OCPI {
 	return 0;
       }
       const char *
+      ezxml_children(ezxml_t xml, const char *tag, const char* (*func)(ezxml_t child, void *arg),
+		     void *arg) {
+	const char *err;
+	for (ezxml_t cx = ezxml_cchild(xml, tag); cx; cx = ezxml_cnext(cx))
+	  if ((err = func(cx, arg)))
+	    return err;
+	return NULL;
+      }
+      const char *
       ezxml_attrs(ezxml_t xml, const char* (*func)(const char *name, const char *value, void *arg), void *arg) {
 	const char *err;
 	for (char **ap = xml ? xml->attr : 0; ap && *ap; ap += 2)
