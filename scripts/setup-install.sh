@@ -73,7 +73,7 @@ if [ -n "$url" ]; then
       rm -r -f $diretory
     fi
     if test -d $directory; then
-      echo The source directory $directory exists, using it for this target:'  '$platform.
+      echo The distribution directory $directory exists, using it for this target:'  '$platform.
     else
       echo Unpacking download file $file into $directory.
       case $file in

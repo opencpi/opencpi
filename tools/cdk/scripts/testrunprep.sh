@@ -4,21 +4,8 @@
 # and prepare per-platform scripts to run test cases appropriate that platform
 # One argument is the relative pathname from the current project to here (cwd)
 
+source $OCPI_CDK_DIR/scripts/util.sh
 function getRemote {
-  # local host=$1
-  # shift
-  # local user=$1
-  # shift
-  # local passwd=$1
-  # shift
-  # pwfile=${host}-pw
-  # echo echo $passwd > $pwfile
-  # chmod a+x $pwfile
-  # export SSH_ASKPASS=./$pwfile
-  # set -o pipefail
-  # ./setsid.py ssh $user@$host 'sh -l -c "echo ==START== && ocpirun -C --only-platforms"' | \
-  #    sed '1,/==START==/d' || return 1     
-  # set +o pipefail
   set -o pipefail
   $OCPI_CDK_DIR/scripts/testrunremote.sh \
       $1 $2 $3 "echo ==START== && ocpirun -C --only-platforms" | sed '1,/==START==/d'
@@ -47,12 +34,20 @@ if [ -n "${OCPI_REMOTE_TEST_SYSTEMS}" ]; then
 fi
 export OCPI_LIBRARY_PATH=../lib/rcc:gen/assemblies:$OCPI_LIBRARY_PATH
 $ToolsDir/ocpigen -v -C ${localplatforms[@]} ${remoteplatforms[@]}
-(for p in ${localplatforms[@]##*-}; do
+(echo 'source $OCPI_CDK_DIR/scripts/util.sh'
+ for p in ${localplatforms[@]##*-}; do
    for f in run verify; do
      file=run/$p/$f.sh
      [ -f $file -a ! -x $file ] && chmod a+x $file
    done
-   echo "(cd ./run/$p; ./run.sh)"
+   [ -x run/$p/run.sh ] &&
+      cat <<-EOF
+	if ! isPresent $p \$ExcludePlatforms &&
+	    ( [ -z "\$OnlyPlatforms" ] || isPresent $p \$OnlyPlatforms ) then
+	  echo ================== Executing test cases for local platform $p
+	  (cd ./run/$p && ./run.sh)
+	fi
+	EOF
  done
  for p in ${remoteplatforms[@]##*-}; do
    for f in run verify; do
@@ -60,16 +55,27 @@ $ToolsDir/ocpigen -v -C ${localplatforms[@]} ${remoteplatforms[@]}
      [ -f $file -a ! -x $file ] && chmod a+x $file
    done
    phost=${p}_host puser=${p}_user ppasswd=${p}_passwd pdir=${p}_dir
-   echo "\$OCPI_CDK_DIR/scripts/testrunremote.sh ${!phost} ${!puser} ${!ppasswd} \\"
-   echo   "\"cd ${!pdir}/$1/run/$p; pwd; ./run.sh\""
+   [ -x run/$p/run.sh ] &&
+      cat <<-EOF
+	if ! isPresent $p \$ExcludePlatforms &&
+	    ( [ -z "\$OnlyPlatforms" ] || isPresent $p \$OnlyPlatforms ) then
+	  echo ================== Executing test cases for remote platform $p
+	  \$OCPI_CDK_DIR/scripts/testrunremote.sh ${!phost} ${!puser} ${!ppasswd} \\
+	  "cd ${!pdir}/$1/run/$p && ./run.sh"
+	fi
+	EOF
  done
 ) > run/runtests.sh
-(for p in ${localplatforms[@]##*-} ${remoteplatforms[@]##*-}; do
-   echo "(cd ./run/$p; ./verify.sh)"
+(echo 'source $OCPI_CDK_DIR/scripts/util.sh'
+ for p in ${localplatforms[@]##*-} ${remoteplatforms[@]##*-}; do
+   [ -x run/$p/verify.sh ] &&
+      cat <<-EOF
+	if ! isPresent $p \$ExcludePlatforms &&
+	    ( [ -z "\$OnlyPlatforms" ] || isPresent $p \$OnlyPlatforms ) then
+	  echo ================== Verifying for local platform $p
+	  (cd ./run/$p && ./verify.sh)
+	fi
+	EOF
  done) > run/verifytests.sh     
 chmod a+x run/*.sh
-
-
-
-
 chmod a+x run/runtests.sh

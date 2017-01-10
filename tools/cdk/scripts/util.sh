@@ -26,7 +26,13 @@ function setVarsFromMake {
 	 ${quiet:+2>/dev/null} | grep '^[a-zA-Z_][a-zA-Z_]*=')
 }
 
-
+function isPresent {
+    local key=$1
+    shift
+    local vals=($*)
+    for i in $*; do if [ "$key" = "$i" ]; then return 0; fi; done
+    return 1
+}
 
 
 

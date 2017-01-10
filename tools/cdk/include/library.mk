@@ -22,7 +22,7 @@ else
 endif
 include $(OCPI_CDK_DIR)/include/lib.mk
 
-run: $(TestImplementations)
+runtests run: $(TestImplementations)
 	$(AT)set -e; for i in $(TestImplementations); do \
 	  $(MAKE) --no-print-directory -C $i run ; \
 	done

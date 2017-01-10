@@ -45,6 +45,8 @@ echo Copying git repo for building in `pwd`
 # patches to ./configure to not run afoul of macos stronger error checking
 $SEDINPLACE -e 's/char malloc, realloc, free, memset,/char malloc(), realloc(), free(), memset(),/' ./configure
 $SEDINPLACE -e 's/char sinf, cosf, expf, cargf, cexpf, crealf, cimagf,/char sinf(), cosf(), expf(), cargf(), cexpf(), crealf(), cimagf(),/' ./configure
+$SEDINPLACE -e '/rpl_malloc/d' ./configure
+$SEDINPLACE -e '/rpl_realloc/d' ./configure
 ./configure  \
   $crossConfig \
   --prefix=$OCPI_PREREQUISITES_INSTALL_DIR/liquid \

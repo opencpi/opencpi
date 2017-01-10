@@ -501,6 +501,8 @@ define OcpiSetProject
             $$(and $$(filter library,$$(call OcpiGetDirType,$$d)),$$d))),\
       $$(OcpiTempProjDir)/components),\
     $$(call OcpiPrependEnvPath,OCPI_COMPONENT_LIBRARY_PATH,$$(patsubst %/,%,$$(dir $$l))))
+endef
+ifdef NEVER
   # when executing applications, look in this project
   ifndef OCPI_PROJECT_ADDED_TARGET_DIRS
     $$(warning Adding all target directories in the project to OCPI_LIBRARY_PATH)
@@ -513,8 +515,7 @@ define OcpiSetProject
     $$(warning Adding all target directories in the project to OCPI_LIBRARY_PATH)
     export OCPI_PROJECT_ADDED_TARGET_DIRS:=1
   endif
-endef
-
+endif
 # Look into a directory in $1 and determine which type of directory it is by looking at the Makefile.
 # Return null if there is no type to be found
 OcpiGetDirType=$(strip\

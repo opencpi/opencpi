@@ -120,6 +120,9 @@ run: all test
 	$(call MaybeMake,components,run)
 	$(call MaybeMake,applications,run)
 
+runtests:
+	$(call MaybeMake,components,runtests)
+
 cleancomponents:
 	$(call MaybeMake,components,clean)
 

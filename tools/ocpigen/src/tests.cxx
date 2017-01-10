@@ -1,4 +1,5 @@
 // Process the tests.xml file.
+#include <strings.h>
 #include <set>
 #include "OcpiOsDebugApi.h"
 #include "OcpiOSFileSystem.h"
@@ -163,8 +164,8 @@ namespace {
       if (lhs.second > rhs.second)
 	return true;
       for (unsigned p = 0; p < lhs.first->params.size(); ++p) {
-	if (lhs.first->params[p].m_param->m_isImpl)
-	  break;
+	//	if (lhs.first->params[p].m_param->m_isImpl)
+	//	  break;
 	int c = lhs.first->params[p].m_uValue.compare(rhs.first->params[p].m_uValue);
 	if (c < 0)
 	  return true;
@@ -479,12 +480,28 @@ namespace {
       ParamConfig &c = *m_subCases.back();
       if (n >= c.params.size())
 	return;
+      while (!c.params[n].m_param)
+	n++;
       Param &p = c.params[n];
+      
       for (unsigned nn = 0; nn < p.m_uValues.size(); ++nn) {
 	if (nn)
 	  m_subCases.push_back(new ParamConfig(c));
 	m_subCases.back()->params[n].m_uValue = p.m_uValues[nn];
 	doProp(n + 1);
+      }
+    }
+    void
+    print(FILE *out) {
+      fprintf(out, "Case %s:\n", m_name.c_str());
+      for (unsigned s = 0; s < m_subCases.size(); s++) {
+	fprintf(out, "  Subcase %02u:\n",s);
+	ParamConfig &pc = *m_subCases[s];
+	for (unsigned n = 0; n < pc.params.size(); n++) {
+	  Param &p = pc.params[n];
+	  if (p.m_param)
+	    fprintf(out, "    %s = %s\n", p.m_param->cname(), p.m_uValue.c_str());
+	}
       }
     }
     // Generate inputs: input files
@@ -680,11 +697,11 @@ namespace {
 	    OU::Property *wp = wci->second->findProperty(sp.m_param->cname());
 	    for (unsigned n = 0; n < wcfg.params.size(); n++) {
 	      Param &wp = wcfg.params[n];
-	      if (wp.m_param  && !strcasecmp(sp.m_param->cname(), wp.m_param->cname()))
+	      if (wp.m_param  && !strcasecmp(sp.m_param->cname(), wp.m_param->cname())) {
 		if (sp.m_uValue == wp.m_uValue)
 		  goto next;     // match - this subcase property is ok for this worker config
-		else
-		  goto skip_worker_config;     // mismatch - this worker config is rejected from subcase
+		goto skip_worker_config; // mismatch - this worker config rejected from subcase
+	      }
 	    }
 	    // The subcase property was not found as a parameter in the worker config
 	    if (wp) {
@@ -838,9 +855,9 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
   for (WorkersIter wi = workers.begin(); wi != workers.end(); ++wi) {
     Worker &w = **wi;
     for (unsigned c = 0; c < w.m_paramConfigs.size(); ++c) {
-      ocpiCheck(configs.insert(std::make_pair(w.m_paramConfigs[c], &w)).second);
       ocpiDebug("Inserting worker %s.%s/%p with new config %p/%zu", w.m_implName,
 		w.m_modelString, &w, w.m_paramConfigs[c], w.m_paramConfigs[c]->nConfig);
+      ocpiCheck(configs.insert(std::make_pair(w.m_paramConfigs[c], &w)).second);
     }
   }      
   // ================= 4. Derive the union set of values from all configurations
@@ -853,10 +870,34 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
       Param &p = pc.params[n];
       if (p.m_param == NULL)
 	continue;
-      OU::Property *prop;
+      assert(p.m_param->m_isParameter);
+      OU::Property *found;
       size_t pn;
-      if ((err = wFirst->findParamProperty(p.m_param->cname(), prop, pn, true)))
-	return err;
+      // It might be a non-param in wFirst, even though it is a parameter in another worker
+      if ((err = wFirst->findParamProperty(p.m_param->cname(), found, pn, true))) {
+	// Not in wFirst, must be impl-specific
+	assert(p.m_param->m_isImpl);
+	// See if it is here already
+	unsigned nn;
+	for (nn = 0; nn < globals.params.size(); nn++)
+	  if (globals.params[nn].m_param &&
+	      !strcasecmp(p.m_param->cname(), globals.params[nn].m_param->cname())) {
+	    assert(globals.params[nn].m_worker == wci->second);
+	    pn = nn;
+	    break;
+	  }
+	if (nn >= globals.params.size()) {
+	  pn = globals.params.size();
+	  globals.params.push_back(p); // add to end
+	  globals.params.back().m_worker = wci->second;// remember which worker it came from
+	}
+      } else if (wFirst == wci->second) {
+	if (found->m_isImpl && strncasecmp("ocpi_", found->cname(), 5))
+	  globals.params[pn].m_worker = wFirst;
+      } else {
+	assert(!strncasecmp("ocpi_", found->cname(), 5) ||
+	       (!globals.params[pn].m_param->m_isImpl && !found->m_isImpl));
+      }
       Param &gp = globals.params[pn];
       if (!gp.m_param)
 	gp.m_param = p.m_param;
@@ -874,20 +915,54 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
     next:;
     }
   }
+  // ================= 4a. Parse and collect global non-parameter property values from workers
+  for (WorkersIter wi = workers.begin(); wi != workers.end(); ++wi) {
+    Worker &w = **wi;
+    for (PropertiesIter pi = w.m_ctl.properties.begin(); pi != w.m_ctl.properties.end(); ++pi) {
+      OU::Property &p = **pi;
+      if (p.m_isParameter || !p.m_isWritable)
+	continue;
+      Param *found = NULL;
+      for (unsigned n = 0; n < globals.params.size(); n++) {
+	Param &param = globals.params[n];
+	if (param.m_param && !strcasecmp(param.m_param->cname(), p.cname())) {
+	  found = &param;
+	  break;
+	}
+      }
+      if (found) {
+	// Found in more than one worker
+	assert((p.m_isParameter && found->m_param->m_isParameter) || !found->m_param->m_isImpl ||
+	       !strncasecmp("ocpi_", p.cname(), 5));
+      } else {
+	globals.params.resize(globals.params.size()+1);
+	Param &param = globals.params.back();
+	param.m_param = &p;
+	if (p.m_isImpl)
+	  param.m_worker = &w;
+	if (p.m_default) {
+	  p.m_default->unparse(param.m_uValue);
+	  param.m_uValues.resize(1);
+	  param.m_uValues[0] = param.m_uValue;
+	}
+      }
+    }
+  }
   // ================= 5. Parse and collect global property values specified for all cases
   // Parse explicit/default property values to apply to all cases
   for (ezxml_t px = ezxml_cchild(xml, "property"); px; px = ezxml_cnext(px)) {
     std::string name;
-    OU::Property *p;
-    size_t n;
-    if ((err = OE::getRequiredString(px, name, "name")) ||
-	(err = wFirst->findParamProperty(name.c_str(), p, n, true)))
+    if ((err = OE::getRequiredString(px, name, "name")))
       return err;
-    if (p->m_isImpl)
-      return OU::esprintf("Implementation specific property value \"%s\" not supported.", 
-			  name.c_str());
-    Param &param = globals.params[n];
-    param.parse(px, *p);
+    for (unsigned n = 0; n < globals.params.size(); n++) {
+      Param &param = globals.params[n];
+      if (param.m_param && !strcasecmp(name.c_str(), param.m_param->cname())) {
+	param.parse(px, *param.m_param);
+	goto next2;
+      }
+    }
+    return OU::esprintf("There is no property named \"%s\" for any worker", name.c_str());
+  next2:;
   }
   // ================= 6. Parse and collect global platform values
   // Parse global platforms
@@ -943,15 +1018,25 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
   if (verbose)
     fprintf(stderr, "Writing discovered parameter combinations in \"%s\"\n", summary.c_str());
   FILE *out = fopen(summary.c_str(), "w");
-  fprintf(out, "Values common to all property combinations:\n");
+  fprintf(out, 
+	  "Values common to all property combinations:\n"
+	  "===========================================\n");
   for (unsigned n = 0; n < globals.params.size(); n++) {
     Param &p = globals.params[n];
     if (p.m_param == NULL || p.m_uValues.size() > 1)
       continue;
     p.m_uValue = p.m_uValues[0];
-    fprintf(out, "      %s = %s\n", p.m_param->cname(), p.m_uValues[0].c_str());
+    fprintf(out, "      %s = %s", p.m_param->cname(), p.m_uValues[0].c_str());
+    if (p.m_param->m_isImpl && strncasecmp("ocpi_", p.m_param->cname(), 5)) {
+      assert(p.m_worker);
+      fprintf(out, " (specific to worker %s.%s)", 
+	      p.m_worker->m_implName, p.m_worker->m_modelString);
+    }
+    fprintf(out, "\n");
   }
-  fprintf(out, "Property combinations:\n"
+  fprintf(out, "\n"
+	  "Property combinations/subcases that are default for all cases:\n"
+	  "==============================================================\n"
 	  "    ");
   for (unsigned n = 0; n < globals.params.size(); n++) {
     Param &p = globals.params[n];
@@ -961,10 +1046,12 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
   fprintf(out, "\n");
   bool first = true;
   doProp(globals, out, 0, 0, first);
-  fclose(out);
   // ================= 10. Generate HDL assemblies in gen/assemblies
   if (verbose)
     fprintf(stderr, "Generating required HDL assemblies in gen/assemblies\n");
+  bool hdlFileIO;
+  if ((err = OE::getBoolean(xml, "UseHdlFileIO", &hdlFileIO)))
+    return err;
   bool seenHDL = false;
   for (WorkersIter wi = workers.begin(); wi != workers.end(); ++wi) {
     Worker &w = **wi;
@@ -982,7 +1069,11 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
 	  OU::formatAdd(name, "_%u", c);
 	std::string dir("gen/assemblies/" + name);
 	OS::FileSystem::mkdir(dir, true);
-	OU::string2File("include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk\n", 
+	OU::string2File(hdlFileIO ?
+			"override HdlPlatform:=$(filter-out %sim,$(HdlPlatform))\n"
+			"override HdlPlatforms:=$(filter-out %sim,$(HdlPlatforms))\n"
+			"include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk\n" :
+			"include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk\n",
 			dir + "/Makefile", true);
 	std::string assy;
 	OU::format(assy,
@@ -991,33 +1082,35 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
 		   "</HdlAssembly>\n",
 		   w.m_implName, c);
 	OU::string2File(assy, dir + "/" + name + ".xml", true);
-	name += "_frw";
-	dir += "_frw";
-	OS::FileSystem::mkdir(dir, true);
-	OU::string2File("override HdlPlatform:=$(filter %sim,$(HdlPlatform))\n"
-			"override HdlPlatforms:=$(filter %sim,$(HdlPlatforms))\n"
-			"include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk\n",
-			dir + "/Makefile", true);
-	OU::format(assy,
-		   "<HdlAssembly>\n"
-		   "  <Instance Worker='%s' ParamConfig='%u'/>\n",
-		   w.m_implName, c);
-	for (PortsIter pi = w.m_ports.begin(); pi != w.m_ports.end(); ++pi) {
-	  Port &p = **pi;
-	  if (p.isData())
-	    OU::formatAdd(assy,
-			  "  <Instance name='%s_%s' Worker='file_%s'/>\n"
-			  "  <Connection>\n"
-			  "    <port instance='%s_%s' %s='%s'/>\n"
-			  "    <port instance='%s' %s='%s'/>\n"
-			  "  </Connection>\n",
-			  w.m_implName, p.cname(), p.isDataProducer() ? "write" : "read",
-			  w.m_implName, p.cname(), p.isDataProducer() ? "to" : "from",
-			  p.isDataProducer() ? "in" : "out",
-			  w.m_implName, p.isDataProducer() ? "from" : "to", p.cname());
+	if (hdlFileIO) {
+	  name += "_frw";
+	  dir += "_frw";
+	  OS::FileSystem::mkdir(dir, true);
+	  OU::string2File("override HdlPlatform:=$(filter %sim,$(HdlPlatform))\n"
+			  "override HdlPlatforms:=$(filter %sim,$(HdlPlatforms))\n"
+			  "include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk\n",
+			  dir + "/Makefile", true);
+	  OU::format(assy,
+		     "<HdlAssembly>\n"
+		     "  <Instance Worker='%s' ParamConfig='%u'/>\n",
+		     w.m_implName, c);
+	  for (PortsIter pi = w.m_ports.begin(); pi != w.m_ports.end(); ++pi) {
+	    Port &p = **pi;
+	    if (p.isData())
+	      OU::formatAdd(assy,
+			    "  <Instance name='%s_%s' Worker='file_%s'/>\n"
+			    "  <Connection>\n"
+			    "    <port instance='%s_%s' %s='%s'/>\n"
+			    "    <port instance='%s' %s='%s'/>\n"
+			    "  </Connection>\n",
+			    w.m_implName, p.cname(), p.isDataProducer() ? "write" : "read",
+			    w.m_implName, p.cname(), p.isDataProducer() ? "to" : "from",
+			    p.isDataProducer() ? "in" : "out",
+			    w.m_implName, p.isDataProducer() ? "from" : "to", p.cname());
+	  }
+	  assy += "</HdlAssembly>\n";
+	  OU::string2File(assy, dir + "/" + name + ".xml", true);
 	}
-	assy += "</HdlAssembly>\n";
-	OU::string2File(assy, dir + "/" + name + ".xml", true);
       }
     }
   }  
@@ -1026,12 +1119,20 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
     fprintf(stderr, "Writing discovered parameter combinations in \"%s\"\n", summary.c_str());
   if (verbose)
     fprintf(stderr, "Generating required input files in gen/inputs/\n");
+  fprintf(out,
+	  "\n"
+	  "Descriptions of the %zu case%s\n"
+	  "=============================\n", 
+	  cases.size(), cases.size() > 1 ? "s" : "");
   for (unsigned n = 0; n < cases.size(); n++) {
     cases[n]->m_subCases.push_back(new ParamConfig(globals));
     cases[n]->doProp(0);
+    cases[n]->print(out);
+  }
+  fclose(out);
+  for (unsigned n = 0; n < cases.size(); n++)
     if ((err = cases[n]->generateInputs()))
       return err;
-  }
   if (verbose)
     fprintf(stderr, "Generating required application xml files in gen/applications/\n");
   for (unsigned n = 0; n < cases.size(); n++)
@@ -1133,8 +1234,9 @@ createCases(const char **platforms, const char */*package*/, const char */*outDi
 			  "function docase {\n"
 			  "  echo Running $1 test case: \"$5\", subcase $6, on platform $2 using "
 			  "worker $4.$3...\n"
-			  "  ocpirun -m$1=$3 -w$1=$4 -P$1=$2  \\\n"
-			  "   %s ../../gen/applications/$5.$6.xml\n"
+			  "  ocpirun -v -m$1=$3 -w$1=$4 -P$1=$2  \\\n"
+			  "   %s ../../gen/applications/$5.$6.xml \\\n"
+			  "   > $5.$6.$4.$3.log 2>&1 \n"
 			  "}\n"
 			  "set -e\n",
 			  m_spec.c_str(), m_platform.c_str(), m_outputArgs.c_str());
@@ -1142,8 +1244,7 @@ createCases(const char **platforms, const char */*package*/, const char */*outDi
 			  "#!/bin/sh --noprofile\n"
 			  "echo Verifying test cases for %s on platform %s 1>&2\n"
 			  "function verify {\n"
-			  "  echo Verifying $1 test case: \"$5\", subcase $6, on platform $2 "
-			  "using worker $4.$3...\n"
+			  "  echo Verifying $1: \"$5\", subcase $6 using worker $4.$3...\n"
 			  "  ../../gen/applications/verify_$5.sh $6 %s\n"
 			  "}\n"
 			  "set -e\n",

@@ -31,7 +31,7 @@ override XmlIncludeDirsInternal:=\
    )
 
 # Primary goals for this Makefile, with "build" being the default (all)
-.PHONY: generate build prepare run
+.PHONY: generate build prepare run runonly verify verifyonly
 
 # Compatility
 .PHONY: test tests runtests generated
@@ -69,17 +69,22 @@ export OCPI_REMOTE_TEST_SYSTEMS=10.0.1.16=root=root=/mnt/net/Ventura/git/ocpiass
 
 # Prepare to run by looking for available containers and generating run scripts for the
 # current platform environment - this is context/platform sensitiive
-prepare: build
+prepare:
 	$(AT)echo Preparing for available platforms and available built workers and assemblies
 	$(AT)$(OCPI_CDK_DIR)/scripts/testrunprep.sh $(call FindRelative,$(OCPI_PROJECT_DIR),$(CURDIR))
 
-run: prepare
-	$(AT)echo Executing tests on available platforms: 
+runonly:
+	$(AT)echo Executing tests on available or specified platforms:
 	$(AT)./run/runtests.sh
 
-verify: run
+run: prepare runonly
+
+
+verifyonly:
 	$(AT)echo Verifying test outputs on available platforms: 
 	$(AT)./run/verifytests.sh
+
+verify: run verifyonly
 
 clean:
 	$(AT)rm -r -f gen run

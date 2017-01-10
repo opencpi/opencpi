@@ -15,6 +15,7 @@
 // parameter values are known (e.g. the length of an array in another parameter).
 typedef std::vector<std::string> Values;
 
+class Worker;
 struct Param {
   OCPI::Util::Value           m_value;  // value for the current config, perhaps the default
   std::string                 m_uValue; // unparsed value - the canonical value for comparison
@@ -23,6 +24,8 @@ struct Param {
   Values                      m_uValues;
   const OCPI::Util::Property *m_param;  // the property that is a parameter
   bool                        m_isDefault; // is m_value from property default?
+  Worker                      *m_worker; // the worker of this param
+                                         // when the paramconfig spams impls
   const char *parse(ezxml_t px, const OCPI::Util::Property &prop);
   Param();
 };

@@ -793,6 +793,7 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
 		if (iAmTo && !strcasecmp(iTo, ixName)) {
 		  from = iFrom;
 		  to = ixName;
+		  conn = c; // alias our connection to the real to-adapter connection
 		  ixName = NULL;
 		} else if (!iAmTo && !strcasecmp(iFrom, ixName)) {
 		  from = ixName;

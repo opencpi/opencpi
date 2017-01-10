@@ -137,7 +137,7 @@ tests
 +runtime/dataplane/rdma_drivers/socket/target-<target>/libocpi_socket_s.* lib/<target>/libocpi_sockets_s<suffix>
 ################################################################################
 # OCL related exclusions and additions
-#+tools/cdk/include/ocl include/
++tools/cdk/include/ocl include/
 # Kernel module and main license files
 +LICENSE.txt lib/<target>/
 +LICENSE.txt
