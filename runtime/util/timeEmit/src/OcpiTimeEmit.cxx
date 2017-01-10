@@ -106,7 +106,7 @@ namespace OCPI {
 	}
       }
       else {
-	getHeader().dumpOnExit = 1;
+	getHeader().dumpOnExit = 0;
       }
       getHeader().dumpFormat =  EmitFormatter::OCPIRAW;
       if ( ( tmp = getenv("OCPI_TIME_EMIT_DUMP_FILENAME") ) != NULL ) {

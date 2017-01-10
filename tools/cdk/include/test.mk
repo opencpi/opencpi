@@ -64,9 +64,6 @@ $(TESTXML):
 build: generate
 	$(AT)[ -d gen/assemblies ] && $(MAKE) -C gen/assemblies
 
-# This is the target to run tests
-export OCPI_REMOTE_TEST_SYSTEMS=10.0.1.16=root=root=/mnt/net/Ventura/git/ocpiassets-main
-
 # Prepare to run by looking for available containers and generating run scripts for the
 # current platform environment - this is context/platform sensitiive
 prepare:

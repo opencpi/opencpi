@@ -531,6 +531,9 @@ namespace {
 	    ocpiInfo("For case %s, executing generator %s for port %s: %s", m_name.c_str(),
 		     io.m_script.c_str(), io.m_port->cname(), cmd.c_str());
 	    int r;
+	    fprintf(stderr,
+		    "  Generating for %s.%02u port \"%s\" file: \"%s\"\n", 
+		    m_name.c_str(), s, io.m_port->cname(), file.c_str());
 	    if ((r = system(cmd.c_str())))
 	      return OU::esprintf("Error %d(0x%x) generating input file \"%s\" from command:  %s",
 				  r, r, file.c_str(), cmd.c_str());
@@ -642,7 +645,9 @@ namespace {
       OU::format(verify,
 		 "#!/bin/sh --noprofile\n"
 		 "# Verification script script for %s\n"
-		 "case $1 in\n",
+		 "subcase=$1\n"
+		 "shift\n"
+		 "case $subcase in\n",
 		 m_name.c_str());
       for (unsigned s = 0; s < m_subCases.size(); s++) {
 	OU::formatAdd(verify, "  (%02u)\n", s);
@@ -658,17 +663,24 @@ namespace {
 	OU::formatAdd(verify, "    ;;\n");
       }	
       OU::formatAdd(verify, 
-		    "esac\n"
-		    "shift\n");
+		    "esac\n");
       for (unsigned n = 0; n < m_ports.size(); n++) {
 	InputOutput &io = m_ports[n];
 	if (io.m_port->isDataProducer())
-	  if (io.m_script.size())
+	  if (io.m_script.size()) {
 	    OU::formatAdd(verify,
 			  "echo '  Verifying using output file(s): ' $*\n"
-			  "%s%s $*\n",
+			  "%s%s $*",
 			  io.m_script[0] == '/' ? "" : "../../",
 			  io.m_script.c_str());
+	    for (unsigned nn = 0; nn < m_ports.size(); nn++) {
+	      InputOutput &in = m_ports[nn];
+	      if (!in.m_port->isDataProducer())
+		OU::formatAdd(verify, " ../../gen/inputs/%s.$subcase.%s",
+			      m_name.c_str(), in.m_port->cname());
+	    }
+	    verify += "\n";
+	  }
       }
       OU::formatAdd(verify,
 		    "if [ $? = 0 ] ; then \n"
@@ -1056,17 +1068,38 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
   for (WorkersIter wi = workers.begin(); wi != workers.end(); ++wi) {
     Worker &w = **wi;
     if (w.m_model == HdlModel) {
-      if (!seenHDL) {
-	OS::FileSystem::mkdir("gen/assemblies", true);
-	OU::string2File("include $(OCPI_CDK_DIR)/include/hdl/hdl-assemblies.mk\n",
-			"gen/assemblies/Makefile", true);
-	seenHDL = true;
-      }
       assert(w.m_paramConfigs.size());
       for (unsigned c = 0; c < w.m_paramConfigs.size(); ++c) {
+	ParamConfig &pc = *w.m_paramConfigs[c];
+	// Make sure the configuration is in the test matrix (e.g. globals)
+	bool allOk = true;
+	for (unsigned n = 0; allOk && n < pc.params.size(); n++) {
+	  Param &p = pc.params[n];
+	  bool isOk = false;
+	  if (p.m_param)
+	    for (unsigned nn = 0; nn < globals.params.size(); nn++) {
+	      Param &gp = globals.params[nn];
+	      if (gp.m_param && !strcasecmp(p.m_param->cname(), gp.m_param->cname()))
+		for (unsigned v = 0; v < gp.m_uValues.size(); v++)
+		  if (p.m_uValue == gp.m_uValues[v]) {
+		    isOk = true;
+		    break;
+		  }
+	    }
+	  if (!isOk)
+	    allOk = false;
+	}
+	if (!allOk)
+	  continue; // skip this config - it is not in the test matrix
+	if (!seenHDL) {
+	  OS::FileSystem::mkdir("gen/assemblies", true);
+	  OU::string2File("include $(OCPI_CDK_DIR)/include/hdl/hdl-assemblies.mk\n",
+			  "gen/assemblies/Makefile", true);
+	  seenHDL = true;
+	}
 	std::string name(w.m_implName);
 	//	if (c != 0)
-	  OU::formatAdd(name, "_%u", c);
+	OU::formatAdd(name, "_%u", c);
 	std::string dir("gen/assemblies/" + name);
 	OS::FileSystem::mkdir(dir, true);
 	OU::string2File(hdlFileIO ?
