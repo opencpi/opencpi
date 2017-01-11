@@ -57,7 +57,10 @@ EOF
 # Put the C++ runtime library on the system
 cp $FROM/lib/libstdc++.so* lib
 # Record in the rootfs, which release we are actually running.
-cp $FROM/kernel-headers/ocpi-release etc/ocpi-release
+ocpi_kernel_release=$(< $FROM/kernel-headers/ocpi-release)
+echo xilinx$rel linux-x$rel-arm $ocpi_kernel_release > etc/opencpi-release
+# This is for backward compatibility
+echo $ocpi_kernel_release > etc/ocpi-release
 find . ! -name '\.' | fakeroot cpio -o -H newc | gzip > ../out.root.image.gz
 $FROM/mkimage \
   -A arm \
