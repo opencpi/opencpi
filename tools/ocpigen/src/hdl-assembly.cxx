@@ -452,7 +452,8 @@ createConnectionSignals(FILE *f, Language lang, size_t &unused) {
     
   // Input side: rare - generate signal when it aggregates members from others,
   // Like a WSI slave port array
-  if (m_port->m_count > 1 && (maxCount < m_port->m_count || m_attachments.size() > 1)) {
+  if (m_port->m_count > 1 &&
+      ((maxCount && maxCount < m_port->m_count) || m_attachments.size() > 1)) {
     emitConnectionSignal(f, false, lang);
     for (AttachmentsIter ai = m_attachments.begin(); ai != m_attachments.end(); ai++) {
       Connection &c = (*ai)->m_connection;
@@ -1023,7 +1024,7 @@ detach(Connection &c) {
 void InstancePort::
 emitTieoffAssignments(FILE *f) {
   // Tie off all indices with no connection
-  if (m_port->haveInputs() && m_port->m_count > 1)
+  if (m_port->haveInputs() && m_port->m_count > 1 && m_attachments.size())
     for (unsigned i = 0; i < m_port->m_count; i++) {
       bool connected = false;
       // For all connections to this port

@@ -968,7 +968,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
 	  globals.params[pn].m_worker = wFirst;
       } else {
 	assert(!strncasecmp("ocpi_", found->cname(), 5) ||
-	       (!globals.params[pn].m_param->m_isImpl && !found->m_isImpl));
+	       (!p.m_param->m_isImpl && !found->m_isImpl));
       }
       Param &gp = globals.params[pn];
       if (!gp.m_param)
@@ -1351,7 +1351,7 @@ createCases(const char **platforms, const char */*package*/, const char */*outDi
 			  "# docase <name> <platform> <model> <worker> <case> <subcase> <implprops>\n"
 			  "function docase {\n"
 			  "  echo Running $1 test case: \"$5\", subcase $6, on platform $2 using "
-			  "worker $4.$3...\n"
+			  "worker $4.$3... 1>&2\n"
 			  "  ocpirun -v -m$1=$3 -w$1=$4 -P$1=$2  \\\n"
 			  "   %s ../../gen/applications/$5.$6.xml \\\n"
 			  "   > $5.$6.$4.$3.log 2>&1 \n"

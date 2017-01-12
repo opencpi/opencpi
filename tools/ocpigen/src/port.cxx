@@ -521,7 +521,7 @@ emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *inden
   std::string in, out, index, empty;
   OU::format(in, typeNameIn.c_str(), "");
   OU::format(out, typeNameOut.c_str(), "");
-  Attachment *at = atts.front();
+  Attachment *at = atts.size() ? atts.front() : NULL;
   assert(!at || at->m_instPort.m_port == this);
   std::string mName, sName;
   Attachment *otherAt = NULL;
@@ -667,11 +667,11 @@ emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signa
 
 const char *RawPropPort::
 masterMissing() const {
-  return "wci.raw_prop_out_zero";
+  return m_count <= 1 ? "wci.raw_prop_out_zero" : "(others => wci.raw_prop_out_zero)";
 }
 const char *RawPropPort::
 slaveMissing() const {
-  return "wci.raw_prop_in_zero";
+  return m_count <= 1 ? "wci.raw_prop_in_zero" : "(others => wci.raw_prop_in_zero)";
 }
 
 
