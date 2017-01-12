@@ -624,12 +624,13 @@ file2String(std::string &out, const char *file, const char *start, const char *m
 const char *
 string2File(const std::string &in, const char *file, bool leaveExisting) {
   bool isDir;
-  if (OS::FileSystem::exists(file, &isDir))
+  if (OS::FileSystem::exists(file, &isDir)) {
     if (isDir)
       return esprintf("error trying to write file when directory exists with that name: %s",
 		      file);
     else if (leaveExisting)
       return NULL;
+  }
   FILE *f = fopen(file, "w");
   size_t n = in.size();
 

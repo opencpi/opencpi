@@ -2,7 +2,7 @@
 #include <strings.h>
 #include <set>
 #include "OcpiOsDebugApi.h"
-#include "OcpiOSFileSystem.h"
+#include "OcpiOsFileSystem.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
 #include "OcpiLibraryManager.h"
@@ -75,7 +75,7 @@ namespace {
   // FIXME: share this with the one in parse.cxx
   const char *
   getSpec(ezxml_t xml, const std::string &parent, const char *a_package, ezxml_t &spec,
-	  std::string &specFile, std::string &specName) {
+	  std::string &specFile, std::string &a_specName) {
     // xi:includes at this level are component specs, nothing else can be included
     spec = NULL;
     std::string name, file;
@@ -142,15 +142,15 @@ namespace {
     // Find the package even though the spec package might be specified already
     argPackage = a_package;
     if (strchr(name.c_str(), '.'))
-      specName = name;
+      a_specName = name;
     else {
-      if ((err = findPackage(spec, a_package, specName.c_str(), parent, specFile, specPackage)))
+      if ((err = findPackage(spec, a_package, a_specName.c_str(), parent, specFile, specPackage)))
 	return err;
-      specName = specPackage + "." + name;
+      a_specName = specPackage + "." + name;
     }
     if (verbose)
       fprintf(stderr, "Spec is \"%s\" in file \"%s\"\n", 
-	      specName.c_str(), specFile.c_str());
+	      a_specName.c_str(), specFile.c_str());
       return NULL;
   }
 
@@ -450,17 +450,19 @@ namespace {
       // Parse explicit property values for this case, which will override
       for (ezxml_t px = ezxml_cchild(x, "property"); px; px = ezxml_cnext(px)) {
 	std::string name;
-	OU::Property *p;
-	size_t n;
-	if ((err = OE::getRequiredString(px, name, "name")) ||
-	    (err = wFirst->findParamProperty(name.c_str(), p, n, true)))
+	if ((err = OE::getRequiredString(px, name, "name")))
 	  return err;
-	if (p->m_isImpl)
-	  return OU::esprintf("Implementation specific property value \"%s\" not supported.", 
-			      name.c_str());
-
-	Param &param = m_settings.params[n];
-	param.parse(px, *p);
+	bool found = false;
+	for (unsigned n = 0; n < m_settings.params.size(); n++) {
+	  Param &sp = m_settings.params[n];
+	  if (sp.m_param && !strcasecmp(sp.m_param->cname(), name.c_str())) {
+	    sp.parse(px, *sp.m_param);
+	    found = true;
+	    break;
+	  }
+	}
+	if (!found)
+	  return OU::esprintf("Property name \"%s\" not a worker or test property", name.c_str());
       }
       // We have all the port specs for this case.
       // What else about a case:
@@ -489,6 +491,62 @@ namespace {
 	  m_subCases.push_back(new ParamConfig(c));
 	m_subCases.back()->params[n].m_uValue = p.m_uValues[nn];
 	doProp(n + 1);
+      }
+    }
+    void
+    pruneSubCases() {
+      for (unsigned s = 0; s < m_subCases.size(); s++) {
+	ParamConfig &pc = *m_subCases[s];
+	// For each worker configuration, decide whether it can support the subcase.
+	// Note worker configs only have *parameters*, while subcases can have runtime properties
+	unsigned viableConfigs = 0;
+	for (WorkerConfigsIter wci = configs.begin(); wci != configs.end(); ++wci) {
+	  ParamConfig &wcfg = *wci->first;
+	  // For each property in the subcase, decide whether it conflicts with a *parameter*
+	  // in this worker config
+	  for (unsigned nn = 0; nn < pc.params.size(); nn++) {
+	    Param &sp = pc.params[nn];
+	    if (sp.m_param == NULL)
+	      continue;
+	    OU::Property *wprop = wci->second->findProperty(sp.m_param->cname());
+	    for (unsigned n = 0; n < wcfg.params.size(); n++) {
+	      Param &wparam = wcfg.params[n];
+	      if (wparam.m_param  && !strcasecmp(sp.m_param->cname(), wparam.m_param->cname())) {
+		if (sp.m_uValue == wparam.m_uValue)
+		  goto next;     // match - this subcase property is ok for this worker config
+		goto skip_worker_config; // mismatch - this worker config rejected from subcase
+	      }
+	    }
+	    // The subcase property was not found as a parameter in the worker config
+	    if (wprop) {
+	      // But it is a runtime property in the worker config so it is ok
+	      assert(!wprop->m_isParameter);
+	      continue;
+	    }
+	    // The subcase property was not in this worker at all, so it must be
+	    // implementation specific or a test property
+	    if (sp.m_param->m_isImpl) {
+	      if (sp.m_param->m_default) {
+		std::string uValue;
+		sp.m_param->m_default->unparse(uValue);
+		if (sp.m_uValue == uValue)
+		  // The subcase property is the default value so it is ok for the worker
+		  // to not have it at all.
+		  continue;
+	      }
+	      // The impl property is not the default so this worker config cannot be used
+	      goto skip_worker_config;
+	    }
+	    // The property is a test property which is ok
+	  next:;
+	  }
+	  viableConfigs++;
+	skip_worker_config:;
+	}
+	if (viableConfigs == 0) {
+	  m_subCases.erase(m_subCases.begin() + s);
+	  s--;
+	}
       }
     }
     void
@@ -579,10 +637,10 @@ namespace {
 	      if (nInputs > 1)
 		OU::formatAdd(app, " to='%s'",  m_ports[n].m_port->cname());
 	      app += ">\n";
-	      std::string file;
-	      OU::formatAdd(file, "../../gen/inputs/%s.%02u.%s", m_name.c_str(), s, 
+	      std::string l_file;
+	      OU::formatAdd(l_file, "../../gen/inputs/%s.%02u.%s", m_name.c_str(), s, 
 			    m_ports[n].m_port->cname());
-	      OU::formatAdd(app, "    <property name='filename' value='%s'/>\n", file.c_str());
+	      OU::formatAdd(app, "    <property name='filename' value='%s'/>\n", l_file.c_str());
 	      app += "  </instance>\n";
 	    }
 	OU::formatAdd(app, "  <instance component='%s'", wFirst->m_specName);
@@ -591,7 +649,7 @@ namespace {
 	app += ">\n";
 	for (unsigned n = 0; n < pc.params.size(); n++) {
 	  Param &p = pc.params[n];
-	  if (p.m_param) {
+	  if (p.m_param && !p.m_isTest) {
 	    if (p.m_param->m_isImpl && p.m_param->m_default) {
 	      std::string uValue;
 	      p.m_param->m_default->unparse(uValue);
@@ -706,34 +764,36 @@ namespace {
 	    Param &sp = pc.params[nn];
 	    if (sp.m_param == NULL)
 	      continue;
-	    OU::Property *wp = wci->second->findProperty(sp.m_param->cname());
+	    OU::Property *wprop = wci->second->findProperty(sp.m_param->cname());
 	    for (unsigned n = 0; n < wcfg.params.size(); n++) {
-	      Param &wp = wcfg.params[n];
-	      if (wp.m_param  && !strcasecmp(sp.m_param->cname(), wp.m_param->cname())) {
-		if (sp.m_uValue == wp.m_uValue)
+	      Param &wparam = wcfg.params[n];
+	      if (wparam.m_param  && !strcasecmp(sp.m_param->cname(), wparam.m_param->cname())) {
+		if (sp.m_uValue == wparam.m_uValue)
 		  goto next;     // match - this subcase property is ok for this worker config
 		goto skip_worker_config; // mismatch - this worker config rejected from subcase
 	      }
 	    }
 	    // The subcase property was not found as a parameter in the worker config
-	    if (wp) {
+	    if (wprop) {
 	      // But it is a runtime property in the worker config so it is ok
-	      assert(!wp->m_isParameter);
+	      assert(!wprop->m_isParameter);
 	      continue;
 	    }
 	    // The subcase property was not in this worker at all, so it must be
-	    // implementation specific
-	    assert(sp.m_param->m_isImpl);
-	    if (sp.m_param->m_default) {
-	      std::string uValue;
-	      sp.m_param->m_default->unparse(uValue);
-	      if (sp.m_uValue == uValue)
-		// The subcase property is the default value so it is ok for the worker
-		// to not have it at all.
-		continue;
+	    // implementation specific or a test property
+	    if (sp.m_param->m_isImpl) {
+	      if (sp.m_param->m_default) {
+		std::string uValue;
+		sp.m_param->m_default->unparse(uValue);
+		if (sp.m_uValue == uValue)
+		  // The subcase property is the default value so it is ok for the worker
+		  // to not have it at all.
+		  continue;
+	      }
+	      // The impl property is not the default so this worker config cannot be used
+	      goto skip_worker_config;
 	    }
-	    // The impl property is not the default so this worker config cannot be used
-	    goto skip_worker_config;
+	    // The property is a test property which is ok
 	  next:;
 	  }
 	  {
@@ -964,17 +1024,43 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
   // Parse explicit/default property values to apply to all cases
   for (ezxml_t px = ezxml_cchild(xml, "property"); px; px = ezxml_cnext(px)) {
     std::string name;
-    if ((err = OE::getRequiredString(px, name, "name")))
+    bool isTest;
+    if ((err = OE::getRequiredString(px, name, "name")) ||
+	(err = OE::getBoolean(px, "test", &isTest)))
       return err;
+    Param *param;
     for (unsigned n = 0; n < globals.params.size(); n++) {
-      Param &param = globals.params[n];
-      if (param.m_param && !strcasecmp(name.c_str(), param.m_param->cname())) {
-	param.parse(px, *param.m_param);
+      param = &globals.params[n];
+      if (param->m_param && !strcasecmp(name.c_str(), param->m_param->cname())) {
+	if (isTest)
+	  return OU::esprintf("The test property \"%s\" is already a worker property",
+			      name.c_str());
 	goto next2;
       }
     }
-    return OU::esprintf("There is no property named \"%s\" for any worker", name.c_str());
+    if (isTest) {
+      globals.params.resize(globals.params.size()+1);
+      param = &globals.params.back();
+      OU::Property *newp = new OU::Property();
+      param->m_param = newp;
+      param->m_isTest = true;
+      char *copy = ezxml_toxml(px);
+      // Make legel property definition XML out of this xml
+      ezxml_t propx;
+      if ((err = OE::ezxml_parse_str(copy, strlen(copy), propx)))
+	return err;
+      ezxml_set_attr(propx, "test", NULL);
+      ezxml_set_attr(propx, "value", NULL);
+      ezxml_set_attr(propx, "values", NULL);
+      ezxml_set_attr(propx, "valuefile", NULL);
+      ezxml_set_attr(propx, "valuesfile", NULL);
+      ezxml_set_attr(propx, "initial", "1");
+      if ((err = newp->Member::parse(propx, false, true, NULL, "property", 0)))
+	return err;
+    } else
+      return OU::esprintf("There is no property named \"%s\" for any worker", name.c_str());
   next2:;
+    param->parse(px, *param->m_param);
   }
   // ================= 6. Parse and collect global platform values
   // Parse global platforms
@@ -1148,21 +1234,20 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
     }
   }  
   // ================= 10. Generate subcases for each case, and generate outputs per subcase
-  if (verbose)
-    fprintf(stderr, "Writing discovered parameter combinations in \"%s\"\n", summary.c_str());
-  if (verbose)
-    fprintf(stderr, "Generating required input files in gen/inputs/\n");
   fprintf(out,
 	  "\n"
 	  "Descriptions of the %zu case%s\n"
 	  "=============================\n", 
 	  cases.size(), cases.size() > 1 ? "s" : "");
   for (unsigned n = 0; n < cases.size(); n++) {
-    cases[n]->m_subCases.push_back(new ParamConfig(globals));
+    cases[n]->m_subCases.push_back(new ParamConfig(cases[n]->m_settings));
     cases[n]->doProp(0);
+    cases[n]->pruneSubCases();
     cases[n]->print(out);
   }
   fclose(out);
+  if (verbose)
+    fprintf(stderr, "Generating required input files in gen/inputs/\n");
   for (unsigned n = 0; n < cases.size(); n++)
     if ((err = cases[n]->generateInputs()))
       return err;

@@ -30,7 +30,8 @@ findParamProperty(const char *name, OU::Property *&prop, size_t &nParam, bool in
   return OU::esprintf("Parameter property not found: '%s'", name);
 }
 
-Param::Param() : m_valuesType(NULL), m_param(NULL), m_isDefault(false), m_worker(NULL) {}
+Param::Param() : m_valuesType(NULL), m_param(NULL), m_isDefault(false), m_worker(NULL), 
+		 m_isTest(false) {}
 
 const char *Param::
 parse(ezxml_t px, const OU::Property &p) {
@@ -77,6 +78,7 @@ parse(ezxml_t px, const OU::Property &p) {
 					      '\0', false, *m_valuesType->m_default);
   } else {
     OU::Value newValue;
+    m_uValues.clear();
     if ((err = p.parseValue(value, newValue)))
       return err;
     newValue.unparse(m_uValue);

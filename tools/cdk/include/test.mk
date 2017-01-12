@@ -39,7 +39,6 @@ override XmlIncludeDirsInternal:=\
 test: build
 tests: build
 # runtests is the high level UI goal.  Inside here it is "run"
-runtests: run
 all: build
 generated: generate
 
@@ -52,7 +51,7 @@ TESTXML:=$(CwdName)-test.xml
 
 $(CASERPT): $(TESTXML)
 	$(AT)echo ========= Generating test assemblies, inputs and applications.
-	$(AT)$(OcpiGen) -v -T $< || (rm -r -f gen; exit 1)
+	$(AT)$(OcpiGen) -v -T $< || ($(RM) -r -f gen; exit 1)
 	$(AT)chmod a+x gen/applications/*.sh
 generate: $(CASERPT)
 
@@ -76,6 +75,7 @@ runonly:
 
 run: prepare runonly
 
+runtests: run verifyonly
 
 verifyonly:
 	$(AT)echo Verifying test outputs on available platforms: 

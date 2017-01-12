@@ -28,6 +28,7 @@
 #include <errno.h>
 #include <queue>
 #include <list>
+#include <set>
 #include <sys/wait.h>
 #include "OcpiOsFileSystem.h"
 #include "OcpiOsSemaphore.h"
@@ -177,7 +178,7 @@ class Device
   XferServices m_writeServices;
   XferServices m_readServices;
   std::string m_exec; // simulation executable local relative path name
-  bool m_verbose, m_dump, m_spinning;
+  bool m_dump, m_spinning;
   unsigned m_sleepUsecs, m_simTicks;
   uint8_t m_spinCount;
   uint64_t m_cumTicks;
@@ -210,7 +211,7 @@ protected:
       m_ctl(simDir + "/control", false),
       m_ack(simDir + "/ack", false),
       m_maxFd(-1), m_pid(0), m_exited(false), m_dcp(0), m_respLeft(0), m_simDir(simDir),
-      m_platform(a_platform), m_script(script), m_verbose(false), m_dump(dump),
+      m_platform(a_platform), m_script(script), m_dump(dump),
       m_spinning(false), m_sleepUsecs(sleepUsecs), m_simTicks(simTicks), m_spinCount(spinCount),
       m_cumTicks(0), /* m_metadata(NULL), m_xml(NULL),*/ m_firstRun(true), m_lastTicks(0) {
     if (error.length())
@@ -218,8 +219,8 @@ protected:
     FD_ZERO(&m_alwaysSet);
     initAdmin(*(OH::OccpAdminRegisters *)m_admin, m_platform.c_str(), m_uuid, &m_textUUID);
     if (m_verbose) {
-      fprintf(stderr, "Simulation HDL device %s for %s (UUID %s)\n",
-	      m_name.c_str(), m_platform.c_str(), uuid());
+      fprintf(stderr, "Simulation HDL device %s for %s (UUID %s, dir %s, ticks %u)\n",
+	      m_name.c_str(), m_platform.c_str(), uuid(), simDir.c_str(), simTicks);
       fflush(stderr);
     }
     m_endpointSpecific = "ocpi-socket-rdma";
@@ -1084,9 +1085,13 @@ getSims(std::vector<std::string> &sims) {
 	     path.c_str());
     return NULL;
   }
+  std::set<std::string> seen;
   for (unsigned n = 0; n < pdirs.size(); n++) {
+    std::string name(strrchr(pdirs[n].c_str(), '/') + 1);
+    if (!seen.insert(name).second)
+      continue;
     std::string sim;
-    OU::format(sim, "%s/runSimExec.%s", pdirs[n].c_str(), strrchr(pdirs[n].c_str(), '/') + 1);
+    OU::format(sim, "%s/runSimExec.%s", pdirs[n].c_str(), name.c_str());
     bool isDir;
     if (OS::FileSystem::exists(sim.c_str(), &isDir))
       sims.push_back(pdirs[n]);
@@ -1178,11 +1183,13 @@ open(const char *name, const OA::PValue *params, std::string &err) {
   if (!OU::findString(params, "directory", dir)) {
     bool isDir;
     if (OS::FileSystem::exists("simtest", &isDir) && isDir)
-      dir = "simTest";
+      dir = "simtest";
   }
-  uint32_t simTicks = 10000000;
-  OU::findULong(params, "simTicks", simTicks);
-  return createDevice(name, platform, 20, 200000, simTicks, params, false, dir, err);
+  uint32_t simTicks = 100000000, sleepUsecs = 200000;
+  uint8_t spinCount = 20;
+  OU::findULong(params, "sim-ticks", simTicks);
+  
+  return createDevice(name, platform, spinCount, sleepUsecs, simTicks, params, false, dir, err);
 }
 
 Device *Driver::

@@ -77,7 +77,7 @@ namespace OCPI {
 		     "is nonexistent, not a normal file, or a broken link.  It will be ignored",
 		     a_libName.c_str());
 	  else if (m_fileIds.insert(file_id).second) {
-	    ocpiInfo("Found ARTIFACT: %s id is: %016llx%016llx", a_libName.c_str(), 
+	    ocpiDebug("Found ARTIFACT: %s id is: %016" PRIx64 "%016" PRIx64, a_libName.c_str(), 
 		     file_id.m_opaque[0], file_id.m_opaque[1]);
 	    // New id was inserted, and thus was not already there
 	    if (isDir) {

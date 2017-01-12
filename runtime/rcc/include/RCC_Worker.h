@@ -545,8 +545,12 @@ typedef struct {
 			   bool *unreadablep = NULL, bool hex = false) {
      return m_worker.getProperty(ordinal, name, value, unreadablep, hex);
    }
-   void getRawPropertyBytes(size_t offset, uint8_t *buf, size_t count);
-   void setRawPropertyBytes(size_t offset, const uint8_t *buf, size_t count);
+   inline void getRawPropertyBytes(size_t offset, uint8_t *buf, size_t count) {
+     m_worker.getRawPropertyBytes(offset, buf, count);
+   }
+   inline void setRawPropertyBytes(size_t offset, const uint8_t *buf, size_t count) {
+     m_worker.setRawPropertyBytes(offset, buf, count);
+   }
  };
 }} // end of namespace OCPI::RCC
 #endif

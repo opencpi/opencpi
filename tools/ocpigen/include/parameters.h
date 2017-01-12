@@ -25,7 +25,8 @@ struct Param {
   const OCPI::Util::Property *m_param;  // the property that is a parameter
   bool                        m_isDefault; // is m_value from property default?
   Worker                      *m_worker; // the worker of this param
-                                         // when the paramconfig spams impls
+                                         // when the paramconfig spans impls
+  bool                        m_isTest;
   const char *parse(ezxml_t px, const OCPI::Util::Property &prop);
   Param();
 };
