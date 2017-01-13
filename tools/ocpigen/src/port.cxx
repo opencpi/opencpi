@@ -566,9 +566,15 @@ void Port::
 emitPortSignal(FILE *f, bool any, const char *indent, const std::string &fName,
 	       const std::string &aName, const std::string &index, bool /*output*/,
 	       const Port */*signalPort*/, bool /*external*/) {
-  fprintf(f, "%s%s => %s%s", any ? indent : "", fName.c_str(),
-	  aName.empty() ? (m_master ? slaveMissing() : masterMissing()) : aName.c_str(),
-	  index.c_str());
+  fprintf(f, "%s%s => ", any ? indent : "", fName.c_str());
+  if (aName.empty()) {
+    const char *missing = m_master ? slaveMissing() : masterMissing();
+    if (m_count <= 1)
+      fprintf(f, "%s", missing);
+    else
+      fprintf(f, "(others => %s)", missing);
+  } else
+    fprintf(f, "%s%s", aName.c_str(), index.c_str());
 }
 
 
@@ -667,11 +673,11 @@ emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signa
 
 const char *RawPropPort::
 masterMissing() const {
-  return m_count <= 1 ? "wci.raw_prop_out_zero" : "(others => wci.raw_prop_out_zero)";
+  return "wci.raw_prop_out_zero";
 }
 const char *RawPropPort::
 slaveMissing() const {
-  return m_count <= 1 ? "wci.raw_prop_in_zero" : "(others => wci.raw_prop_in_zero)";
+  return "wci.raw_prop_in_zero";
 }
 
 

@@ -20,7 +20,7 @@ function bad {
   [ -n "$verbose" ] &&
     echo Attempting to run modelsim/vsim with license file \"$OCPI_MODELSIM_LICENSE_FILE\".
   LM_LICENSE_FILE=$OCPI_MODELSIM_LICENSE_FILE \
-    $OCPI_MODELSIM_DIR/bin/vsim -c < /dev/null > /dev/null
+    $OCPI_MODELSIM_DIR/bin/vsim -l /dev/null -c < /dev/null > /dev/null
   if [ $? = 0 ] ; then
     [ -n "$verbose" ] && echo Modelsim is available and licensed.
     exit 0
