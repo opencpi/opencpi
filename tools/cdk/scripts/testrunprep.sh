@@ -72,7 +72,7 @@ $ToolsDir/ocpigen -v -C ${localplatforms[@]} ${remoteplatforms[@]}
       cat <<-EOF
 	if ! isPresent $p \$ExcludePlatforms &&
 	    ( [ -z "\$OnlyPlatforms" ] || isPresent $p \$OnlyPlatforms ) then
-	  echo ================== Verifying for local platform $p
+	  echo ================== Verifying for platform $p
 	  (cd ./run/$p && ./verify.sh)
 	fi
 	EOF

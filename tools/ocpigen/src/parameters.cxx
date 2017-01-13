@@ -91,6 +91,8 @@ parse(ezxml_t px, const OU::Property &p) {
 	return NULL;
       }
     }
+    m_uValues.resize(1);
+    m_uValues[0] = m_uValue;
     m_value = newValue;
   }
   return NULL;

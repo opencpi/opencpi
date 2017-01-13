@@ -249,13 +249,17 @@ namespace {
   struct InputOutput {
     std::string m_name, m_file, m_script;
     DataPort *m_port;
-    InputOutput() : m_port(NULL) {}
+    size_t m_messageSize;
+    InputOutput() : m_port(NULL), m_messageSize(0) {}
     const char *parse(ezxml_t x, std::vector<InputOutput> *inouts) {
       const char 
 	*name = ezxml_cattr(x, "name"),
 	*port = ezxml_cattr(x, "port"),
 	*file = ezxml_cattr(x, "file"),
-	*script = ezxml_cattr(x, "script");
+	*script = ezxml_cattr(x, "script"),
+	*err;
+      if ((err = OE::getNumber(x, "messageSize", &m_messageSize, 0, true, false)))
+	return err;
       bool isDir;
       if (file) {
 	if (script)
@@ -443,7 +447,13 @@ namespace {
 	    // no explicit reference to global input and no locally defined input
 	    InputOutput *ios = findIO(p, dp.isDataProducer() ? outputs : inputs);
 	    if (!ios)
-	      return OU::esprintf("No global %s defined for port: \"%s\"", tag, p.cname());
+	      if (dp.isDataProducer()) {
+		ios = new InputOutput;
+		ios->m_port = &dp;
+		fprintf(stderr, "Warning: no output file or script defined for port \"%s\"\n",
+			dp.cname());
+	      } else
+		return OU::esprintf("No global %s defined for port: \"%s\"", tag, p.cname());
 	    m_ports.push_back(*ios);
 	  }
 	}
@@ -463,6 +473,13 @@ namespace {
 	}
 	if (!found)
 	  return OU::esprintf("Property name \"%s\" not a worker or test property", name.c_str());
+      }
+      for (unsigned n = 0; n < m_settings.params.size(); n++) {
+	Param &sp = m_settings.params[n];
+	if (sp.m_param && sp.m_uValues.empty())
+	  return OU::esprintf("For case %s, there are no values specified for property: \"%s\"",
+			      m_name.c_str(), sp.m_param->cname());
+
       }
       // We have all the port specs for this case.
       // What else about a case:
@@ -634,13 +651,21 @@ namespace {
 	  for (unsigned n = 0; n < m_ports.size(); n++)
 	    if (!m_ports[n].m_port->isDataProducer()) {
 	      OU::formatAdd(app, "  <instance component='ocpi.file_read' connect='%s'", dut);
+	      InputOutput &io = m_ports[n];
 	      if (nInputs > 1)
-		OU::formatAdd(app, " to='%s'",  m_ports[n].m_port->cname());
+		OU::formatAdd(app, " to='%s'",  io.m_port->cname());
 	      app += ">\n";
 	      std::string l_file;
-	      OU::formatAdd(l_file, "../../gen/inputs/%s.%02u.%s", m_name.c_str(), s, 
-			    m_ports[n].m_port->cname());
+	      if (io.m_file.size())
+		OU::formatAdd(l_file, "%s%s", io.m_file[0] == '/' ? "" : "../../",
+			      io.m_file.c_str());
+	      else
+		OU::formatAdd(l_file, "../../gen/inputs/%s.%02u.%s", m_name.c_str(), s, 
+			      io.m_port->cname());
 	      OU::formatAdd(app, "    <property name='filename' value='%s'/>\n", l_file.c_str());
+	      if (io.m_messageSize)
+		OU::formatAdd(app, "    <property name='messageSize' value='%zu'/>\n",
+			      io.m_messageSize);
 	      app += "  </instance>\n";
 	    }
 	OU::formatAdd(app, "  <instance component='%s'", wFirst->m_specName);
@@ -738,7 +763,15 @@ namespace {
 			      m_name.c_str(), in.m_port->cname());
 	    }
 	    verify += "\n";
-	  }
+	  } else if (io.m_file.empty())
+	    OU::formatAdd(verify,
+			  "echo  ***No actual verification is being done.  Output is: $*\n");
+	  else
+	    OU::formatAdd(verify,
+			  "  echo Comparing output file \"$1\" to specified file: %s\n"
+			  "  cmp $1 %s%s\n",
+			  io.m_file.c_str(), io.m_file[0] == '/' ? "" : "../../", 
+			  io.m_file.c_str());
       }
       OU::formatAdd(verify,
 		    "if [ $? = 0 ] ; then \n"
