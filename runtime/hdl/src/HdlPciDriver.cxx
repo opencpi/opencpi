@@ -47,6 +47,7 @@
 #include "fasttime.h"
 
 #include "KernelDriver.h"
+#include "OcpiOsFileSystem.h"
 #include "HdlPciDriver.h"
 
 // This should be in OCPIOS.
@@ -248,8 +249,7 @@ namespace OCPI {
 
       Driver::
       Driver()
-	: m_pciMemFd(::open(OCPI_DRIVER_MEM, O_RDWR | O_SYNC)),
-	  m_useDriver(m_pciMemFd >= 0) {
+	: m_pciMemFd(-1), m_useDriver(OS::FileSystem::exists(OCPI_DRIVER_PCI)) {
       }
       Driver::
       ~Driver() {

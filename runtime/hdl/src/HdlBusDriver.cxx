@@ -182,6 +182,7 @@
 	// Load a bitstream
 	bool
 	load(const char *fileName, std::string &error) {
+	  ocpiDebug("Loading file \"%s\" on zynq FPGA", fileName);
 	  struct Xld { // struct allocated on the stack for easy cleanup
 	    int xfd, bfd;
 	    gzFile gz;
@@ -267,6 +268,7 @@
 	    return OU::eformat(error, "Error closing /dev/xdevcfg: %s(%u)",
 			       strerror(errno), errno);
 	  xld.xfd = -1;
+	  ocpiDebug("Loading complete, testing for programming done and initialization");
 	  return isProgrammed(error) ? init(error) : true;
 #if 0
 	  // We have written all the data from the file to the device.
