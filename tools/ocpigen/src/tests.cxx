@@ -446,7 +446,7 @@ namespace {
 	  if (!myIo) {
 	    // no explicit reference to global input and no locally defined input
 	    InputOutput *ios = findIO(p, dp.isDataProducer() ? outputs : inputs);
-	    if (!ios)
+	    if (!ios) {
 	      if (dp.isDataProducer()) {
 		ios = new InputOutput;
 		ios->m_port = &dp;
@@ -454,6 +454,7 @@ namespace {
 			dp.cname());
 	      } else
 		return OU::esprintf("No global %s defined for port: \"%s\"", tag, p.cname());
+	    }
 	    m_ports.push_back(*ios);
 	  }
 	}
@@ -749,7 +750,7 @@ namespace {
 		    "esac\n");
       for (unsigned n = 0; n < m_ports.size(); n++) {
 	InputOutput &io = m_ports[n];
-	if (io.m_port->isDataProducer())
+	if (io.m_port->isDataProducer()) {
 	  if (io.m_script.size()) {
 	    OU::formatAdd(verify,
 			  "echo '  Verifying using output file(s): ' $*\n"
@@ -772,6 +773,7 @@ namespace {
 			  "  cmp $1 %s%s\n",
 			  io.m_file.c_str(), io.m_file[0] == '/' ? "" : "../../", 
 			  io.m_file.c_str());
+	}
       }
       OU::formatAdd(verify,
 		    "if [ $? = 0 ] ; then \n"

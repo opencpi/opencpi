@@ -59,6 +59,19 @@ $(call OcpiDbgVar,RccTargets)
 # for a clean environment, ensure OCPI_TOOL_PLATFORM at least
 $(eval $(OcpiEnsureToolPlatform))
 
+# Allow the option of specifying an rcc platform by referencing the associated
+# HDL platform, but only incurring the overhead of this search when this variable
+# is specified.
+ifdef RccHdlPlatforms
+  include $(OCPI_CDK_DIR)/include/hdl/hdl-targets.mk
+  $(foreach p,$(RccHdlPlatforms),\
+     $(if $(filter $p,$(HdlAllPlatforms)),\
+       $(if $(HdlRccPlatform_$p),\
+         $(eval override RccPlatforms:=$(call Unique,$(RccPlatforms) $(HdlRccPlatform_$p))), \
+         $(error There is no RCC platform associated with the HDL platform: $p)),\
+       $(error There is no HDL platform named: $p, so no RCC platform for it)))
+endif
+
 ifdef RccPlatforms
   # nothing here - we process later
 else ifdef RccPlatform
