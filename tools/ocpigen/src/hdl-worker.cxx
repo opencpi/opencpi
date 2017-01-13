@@ -809,13 +809,12 @@ emitVhdlLibraries(FILE *f) {
 
 const char *Worker::
 emitVhdlPackageConstants(FILE *f) {
-  size_t decodeWidth = 0, rawBase = 0;
+  size_t rawBase = 0;
   char ops[OU::Worker::OpsLimit + 1 + 1];
   for (unsigned op = 0; op <= OU::Worker::OpsLimit; op++)
     ops[OU::Worker::OpsLimit - op] = '0';
   ops[OU::Worker::OpsLimit+1] = 0;
   if (m_wci) {
-    decodeWidth = m_wci->decodeWidth();
     for (unsigned op = 0; op <= OU::Worker::OpsLimit; op++)
       ops[OU::Worker::OpsLimit - op] = m_ctl.controlOps & (1 << op) ? '1' : '0';
     rawBase = m_ctl.rawProperties ?
@@ -862,8 +861,9 @@ emitVhdlPackageConstants(FILE *f) {
   }
   if (!m_noControl)
     fprintf(f,
-	    "  constant worker : ocpi.wci.worker_t := (%zu, %zu, \"%s\");\n",
-	    decodeWidth, rawBase, ops);
+	    "  constant worker : ocpi.wci.worker_t := "
+	    "(work.%s_constants.ocpi_port_%s_MAddr_width, %zu, \"%s\");\n",
+	    m_implName, m_wci->cname(), rawBase, ops);
   return NULL;
 }
 
