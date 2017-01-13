@@ -126,9 +126,8 @@ override RccTarget:=
 override RccPlatform:=
 
 # Read in all the tool sets indicated by the targets
-# 
+#
 ifeq ($(filter clean cleanrcc,$(MAKECMDGOALS)),)
-
 # include all the rcc compilation files for all target platforms
 $(foreach p,$(RccPlatforms), \
   $(foreach t,$(RccTarget_$p),\
@@ -147,6 +146,5 @@ $(foreach p,$(RccPlatforms), \
 	  $(if $(filter 1,$n),,\
              $(warning More than one file defined for compiling $(OCPI_TOOL_PLATFORM) to $p, using $(word 1,$(files)), others are $(wordlist 2,$(words $(files)),$(files)).))\
           $(eval include $(word 1,$(files)))))))
-
 endif
 endif

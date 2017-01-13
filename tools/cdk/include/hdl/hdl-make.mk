@@ -2,6 +2,7 @@
 # It is distinguishd from hdl-pre.mk in that it doesn't really mess with any variables
 # Thus HDL utility stuff goes here unless it is order sensitive, in which case it
 # is in hdl-pre.mk
+
 ifndef __HDL_MAKE_MK__
 __HDL_MAKE_MK__=x
 Model:=hdl
@@ -64,7 +65,6 @@ $(call OcpiDbgVar,HdlAllPlatformParts)
 # Families are either top level targets with nothing underneath or one level down
 HdlAllFamilies:=$(call Unique,$(foreach t,$(HdlTopTargets),$(or $(HdlTargets_$(t)),$(t))))
 $(call OcpiDbgVar,HdlAllFamilies)
-
 
 # Read the workers file and set things accordingly
 # 1. Set the instance list, which is a list of <worker-name>:<instance-name>

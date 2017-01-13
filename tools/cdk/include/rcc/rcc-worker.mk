@@ -144,7 +144,7 @@ RccParams=\
   $(foreach n,$(WorkerParamNames),\
 	     '-DPARAM_$n()=$(Param_$(ParamConfig)_$n)')
 
-# Given flag name, target and langauge and flag name, prioritize the flags, as defined:
+# Given flag name, target and language and flag name, prioritize the flags, as defined:
 # target and language
 # target
 # generic
@@ -246,7 +246,5 @@ $(foreach p,\
 %.o : %.cc
 %.o : %.cpp
 %.o : %.cxx
-
-
 
 endif

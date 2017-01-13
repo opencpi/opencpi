@@ -151,7 +151,8 @@ $(ArtifactXmlFile): $(RccAssemblyFile)
 
 $(DispatchSourceFile):
 	$(AT)echo Generating dispatch file: $@
-	$(AT)(echo "#include <RCC_Worker.h>";\
+	$(AT)(echo "/* Auto generated OpenCPI framework file - DO NOT EDIT - created by xm-worker.mk $(DateStamp) */";\
+	  echo "#include <RCC_Worker.h>";\
 	  echo "#define STR(foo) _STR(foo)";\
 	  echo "#define _STR(foo) #foo";\
 	  for w in $(Workers); do \

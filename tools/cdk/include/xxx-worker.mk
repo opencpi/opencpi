@@ -116,6 +116,7 @@ override XmlIncludeDirsInternal:=\
     $(OCPI_CDK_DIR)/lib/components \
     $(OCPI_CDK_DIR)/specs \
    )
+#     $(OCPI_CDK_DIR)/include/$(Model)
 
 #    $(foreach m,$(Models),../lib/$m)\
 #    $(foreach m,$(Models),$(OCPI_CDK_DIR)/lib/components/$m)\
@@ -260,6 +261,7 @@ define WkrMakeObject
   $(call WkrObject,$1,$2,$3): ParamConfig=$3
   $(call WkrObject,$1,$2,$3): \
      $1 $(ImplHeaderFiles)\
+     $$$$($(CapModel)CompileDependencies) $$$$($(CapModel)CompileDependencies_$2)\
      | $(call WkrTargetDir,$2,$3)
 	$(AT)echo Compiling $$< for target $2, configuration $3
 	$(AT)$(Compile_$(subst .,,$(suffix $1)))
@@ -299,7 +301,7 @@ define WkrDoTargetConfig
 
     # Note the use of ls -o -g -l below is to not be affected by
     # user and group names with spaces.
-    $$(call WkrBinary,$1,$2): $$$$(ObjectFiles_$1_$2) $$(call ArtifactXmlFile,$1,$2) \
+    $$(call WkrBinary,$1,$2): $$$$(ObjectFiles_$1_$2) $$(call ArtifactXmlFile,$1,$2) $$$$($(CapModel)LinkDependencies_$$$$($(CapModel)Target)) \
                             | $$(call WkrTargetDir,$1,$2)
 	$(AT)echo Linking final artifact file \"$$@\" and adding metadata to it...
 	$(AT)$$(call LinkBinary,$$(ObjectFiles_$1_$2) $$(OtherLibraries))
