@@ -758,6 +758,12 @@ public:
   }
 
   bool load(const char *file, std::string &error) {
+    static bool loaded = false;
+    if (loaded) {
+      error = "Multiple HDL simulator containers are not yet supported";
+      return true;
+    }
+    loaded = true;
     if (myload(file, error)) {
       m_isAlive = false;
       return true;
