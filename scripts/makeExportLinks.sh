@@ -255,7 +255,6 @@ for a in $additions; do
   # old way letting shell default glob do the work:
   # for src in $rawsrc; do
   targets=$(match_pattern "$rawsrc")
-  echo targets: from $rawsrc: $targets
   for src in $targets; do
   if [ -e $src ]; then
     dir=exports/${both[1]//<target>/$1}
