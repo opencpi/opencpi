@@ -113,6 +113,8 @@ ifneq ($(MAKECMDGOALS),clean)
 
         $(call HdlContBitZ,$1): | $(call HdlContBitZName,$1)
 	    $(AT)ln -s $(notdir $(call HdlContBitZName,$1)) $$@
+	    $(AT)$(OCPI_CDK_DIR)/scripts/maybeExport.sh - $$@
+
         all: $(call HdlContBitZName,$1) $(call HdlContBitZ,$1)
 
         # Invoke tool build: <target-dir>,<assy-name>,<core-file-name>,<config>,<platform>

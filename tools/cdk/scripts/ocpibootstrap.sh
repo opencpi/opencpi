@@ -57,9 +57,9 @@ if test "$OCPI_TOOL_PLATFORM" = ""; then
   read v0 v1 v2 v3 v4 <<EOF
 `${GETPLATFORM}`
 EOF
-  if test $? != 0; then
+  if test "$v0" == "" -o $? != 0; then
     echo Failed to determine runtime platform.
-    return 1
+    exit 1
   fi
   export OCPI_TOOL_OS=$v0
   export OCPI_TOOL_OS_VERSION=$v1

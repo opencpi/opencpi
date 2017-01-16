@@ -72,6 +72,7 @@ tests
 +tools/cdk/scripts/setsid.py scripts/
 #+tools/cdk/scripts/makeExportLinks.sh scripts/
 +scripts/makeExportLinks.sh scripts/
++tools/cdk/scripts/maybeExport.sh scripts/
 # user level scripts made available in the bin directory
 +tools/cdk/scripts/ocpixml bin/<target>/
 +tools/cdk/scripts/ocpidev bin/<target>/

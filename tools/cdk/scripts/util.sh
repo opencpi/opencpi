@@ -34,6 +34,35 @@ function isPresent {
     return 1
 }
 
+# This is a copy of a function from makeExportLinks.sh, due to bootstrapping issues
+# FIXME: allow makeExportLinks.sh to use this one
+function makeRelativeLink {
+  # echo make_relative_link $1 $2
+  # Figure out what the relative prefix should be
+  up=$(echo $2 | sed 's-[^/]*$--' | sed 's-[^/]*/-../-g')
+  link=${up}$1
+  if [ -L $2 ]; then
+    L=$(ls -l $2|sed 's/^.*-> *//')
+    if [ "$L" = "$link" ]; then
+      # echo Symbolic link already correct from $2 to $1.
+      return 0
+    else
+      echo Symbolic link wrong from $2 to $1 wrong \(was $L\), replacing it.
+      rm $2
+    fi
+  elif [ -e $2 ]; then
+    if [ -d $2 ]; then
+      echo Link $2 already exists, as a directory.
+    else
+      echo Link $2 already exists, as a regular file.
+    fi
+    echo '   ' when trying to link to $1
+    exit 1
+  fi
+  mkdir -p $(dirname $2)
+  # echo ln -s $link $2
+  ln -s $link $2
+}
 
 
 
