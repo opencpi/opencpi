@@ -69,6 +69,7 @@ tests
 +tools/cdk/scripts/util.sh scripts/
 +tools/cdk/scripts/testrunprep.sh scripts/
 +tools/cdk/scripts/testrunremote.sh scripts/
++tools/cdk/scripts/testrun.sh scripts/
 +tools/cdk/scripts/setsid.py scripts/
 #+tools/cdk/scripts/makeExportLinks.sh scripts/
 +scripts/makeExportLinks.sh scripts/

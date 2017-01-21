@@ -12,8 +12,11 @@ endif
 # We need the project dir because remote system mount dirs point to the project
 $(call OcpiIncludeProject,error)
 
+export Cases
+export KeepSimulations
 # This is to allow the spec to be found and any protocols it depends on
 # FIXME: These lines should be shared better - they are a copy
+ifeq ($(filter prepare run runtests runonly verify verifyonly view,$(MAKECMDGOALS)),)
 override XmlIncludeDirsInternal:=\
   $(call Unique,\
     . $(GeneratedDir) \
@@ -29,7 +32,7 @@ override XmlIncludeDirsInternal:=\
     $(OCPI_CDK_DIR)/lib/components \
     $(OCPI_CDK_DIR)/specs \
    )
-
+endif
 # Primary goals for this Makefile, with "build" being the default (all)
 .PHONY: generate build prepare run runonly verify verifyonly
 
@@ -66,20 +69,30 @@ build: generate
 # Prepare to run by looking for available containers and generating run scripts for the
 # current platform environment - this is context/platform sensitiive
 prepare:
-	$(AT)echo Preparing for available platforms and available built workers and assemblies
+	$(AT)echo Preparing for execution on available platforms with available built workers and assemblies.
 	$(AT)$(OCPI_CDK_DIR)/scripts/testrunprep.sh $(call FindRelative,$(OCPI_PROJECT_DIR),$(CURDIR))
 
 runonly:
 	$(AT)echo Executing tests on available or specified platforms:
-	$(AT)./run/runtests.sh
+	$(AT)if [ ! -e run/runtests.sh ]; then \
+	       echo Execution has not been prepared.  Use make prepare. ;\
+	       exit 1; \
+	     fi
+	$(AT)./run/runtests.sh run
 
 run: prepare runonly
 
-runtests: run verifyonly
+runtests: prepare
+	$(AT)echo Running and verifying test outputs on available platforms: 
+	$(AT)./run/runtests.sh run verify $(and $(View),view)
 
 verifyonly:
 	$(AT)echo Verifying test outputs on available platforms: 
-	$(AT)./run/verifytests.sh
+	$(AT)./run/runtests.sh verify $(and $(View),view)
+
+view:
+	$(AT)echo View test outputs on available platforms: 
+	$(AT)./run/runtests.sh view
 
 verify: run verifyonly
 

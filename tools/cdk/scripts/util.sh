@@ -34,6 +34,18 @@ function isPresent {
     return 1
 }
 
+# Is $1 ok with $2 being "only" and $3 being "exclude"
+function onlyExclude {
+  local key=$1
+  local only=$2
+  local exclude=$3
+  shift
+  if ! isPresent $key $exclude && ( [ -z "$only" ] || isPresent $key $only ) then
+     return 0
+  fi
+  return 1	 
+}
+
 # This is a copy of a function from makeExportLinks.sh, due to bootstrapping issues
 # FIXME: allow makeExportLinks.sh to use this one
 function makeRelativeLink {

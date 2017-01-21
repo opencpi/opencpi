@@ -247,7 +247,7 @@ namespace {
   }
 
   struct InputOutput {
-    std::string m_name, m_file, m_script;
+    std::string m_name, m_file, m_script, m_view;
     DataPort *m_port;
     size_t m_messageSize;
     InputOutput() : m_port(NULL), m_messageSize(0) {}
@@ -257,6 +257,7 @@ namespace {
 	*port = ezxml_cattr(x, "port"),
 	*file = ezxml_cattr(x, "file"),
 	*script = ezxml_cattr(x, "script"),
+	*view = ezxml_cattr(x, "view"),
 	*err;
       if ((err = OE::getNumber(x, "messageSize", &m_messageSize, 0, true, false)))
 	return err;
@@ -270,6 +271,8 @@ namespace {
 	m_file = file;
       } else if (script)
 	m_script = script;
+      if (view)
+	m_view = view;
       if (port) {
 	Port *p;
 	if (!(p = wFirst->findPort(port)))
@@ -720,7 +723,7 @@ namespace {
       }
       return NULL;
     }
-    // Generate application xml files
+    // Generate the verification script for this case
     const char *
     generateVerification() {
       std::string file;
@@ -728,59 +731,82 @@ namespace {
       std::string verify;
       OU::format(verify,
 		 "#!/bin/sh --noprofile\n"
-		 "# Verification script script for %s\n"
-		 "subcase=$1\n"
-		 "shift\n"
-		 "case $subcase in\n",
+		 "# Verification and/or viewing script for case: %s\n"
+		 "# Args are: <worker> <subcase> <verify> <view>\n"
+		 "function isPresent {\n"
+		 "  local key=$1\n"
+		 "  shift\n"
+		 "  local vals=($*)\n"
+		 "  for i in $*; do if [ \"$key\" = \"$i\" ]; then return 0; fi; done\n"
+		 "  return 1\n"
+		 "}\n"
+		 "worker=$1; shift\n"
+		 "subcase=$1; shift\n"
+		 "! isPresent run $* || run=run\n"
+		 "! isPresent view $* || view=view\n"
+		 "! isPresent verify $* || verify=verify\n"
+		 "if [ -n \"$verify\" ]; then\n"
+		 "  if [ -n \"$view\" ]; then\n"
+		 "    msg=\"Viewing and verifying\"\n"
+		 "  else\n"
+		 "    msg=Verifying\n"
+		 "  fi\n"
+		 "elif [ -n \"$view\" ]; then\n"
+		 "  msg=Viewing\n"
+		 "else\n"
+		 "  exit 1\n"
+		 "fi\n",
 		 m_name.c_str());
-      for (unsigned s = 0; s < m_subCases.size(); s++) {
-	OU::formatAdd(verify, "  (%02u)\n", s);
-	ParamConfig &pc = *m_subCases[s];
-	for (unsigned n = 0; n < pc.params.size(); n++) {
-	  Param &p = pc.params[n];
-	  if (p.m_param) {
-	    assert(!strchr(p.m_uValue.c_str(), '\''));
-	    OU::formatAdd(verify, "    export OCPI_TEST_%s='%s'\n",
-			  p.m_param->cname(), p.m_uValue.c_str());
-	  }
-	}
-	OU::formatAdd(verify, "    ;;\n");
-      }	
-      OU::formatAdd(verify, 
-		    "esac\n");
       for (unsigned n = 0; n < m_ports.size(); n++) {
 	InputOutput &io = m_ports[n];
 	if (io.m_port->isDataProducer()) {
-	  if (io.m_script.size()) {
+	  if (io.m_script.size() || io.m_view.size()) {
 	    OU::formatAdd(verify,
-			  "echo '  Verifying using output file(s): ' $*\n"
-			  "%s%s $*",
-			  io.m_script[0] == '/' ? "" : "../../",
-			  io.m_script.c_str());
+			  "echo '  '$msg case %s.$subcase for worker \"$worker\" using script on"
+			  " output file:  %s.$subcase.$worker.%s.out\n"
+			  "while read comp name value; do\n"
+			  "  [ $comp = \"%s\" ] && eval export OCPI_TEST_$name=\"$value\"\n"
+			  "done < %s.$subcase.$worker.props\n",
+			  m_name.c_str(), m_name.c_str(), io.m_port->cname(),
+			  strrchr(specName.c_str(), '.') + 1,  m_name.c_str());
+	    std::string inArgs;
 	    for (unsigned nn = 0; nn < m_ports.size(); nn++) {
 	      InputOutput &in = m_ports[nn];
 	      if (!in.m_port->isDataProducer())
-		OU::formatAdd(verify, " ../../gen/inputs/%s.$subcase.%s",
+		OU::formatAdd(inArgs, " ../../gen/inputs/%s.$subcase.%s",
 			      m_name.c_str(), in.m_port->cname());
 	    }
-	    verify += "\n";
-	  } else if (io.m_file.empty())
-	    OU::formatAdd(verify,
-			  "echo  ***No actual verification is being done.  Output is: $*\n");
-	  else
-	    OU::formatAdd(verify,
-			  "  echo Comparing output file \"$1\" to specified file: %s\n"
-			  "  cmp $1 %s%s\n",
-			  io.m_file.c_str(), io.m_file[0] == '/' ? "" : "../../", 
-			  io.m_file.c_str());
+	    if (io.m_view.size())
+	      OU::formatAdd(verify, "[ -z \"$view\" ] || %s%s %s.$subcase.$worker.%s.out %s\n",
+			    io.m_view[0] == '/' ? "" : "../../",
+			    io.m_view.c_str(), m_name.c_str(), io.m_port->cname(), 
+			    inArgs.c_str());
+	    if (io.m_script.size() || io.m_file.size()) {
+	      OU::formatAdd(verify, "[ -z \"$verify\" ] || {\n");
+	      if (io.m_script.size())
+		OU::formatAdd(verify, "  %s%s %s.$subcase.$worker.%s.out %s\n",
+			      io.m_script[0] == '/' ? "" : "../../",
+			      io.m_script.c_str(), m_name.c_str(), io.m_port->cname(),
+			      inArgs.c_str());
+	      else
+		OU::formatAdd(verify,
+			      "  echo Comparing output file \"$1\" to specified file: %s\n"
+			      "  cmp $1 %s%s\n",
+			      io.m_file.c_str(), io.m_file[0] == '/' ? "" : "../../", 
+			      io.m_file.c_str());
+	      OU::formatAdd(verify,
+			    "  if [ $? = 0 ] ; then \n"
+			    "    echo '  Verification for port %s: PASSED'\n"
+			    "  else\n"
+			    "    echo '  Verification for port %s: FAILED'\n"
+			    "  fi\n"
+			    "}\n", io.m_port->cname(), io.m_port->cname());
+	    } else
+	      OU::formatAdd(verify,
+			    "echo  ***No actual verification is being done.  Output is: $*\n");
+	  }
 	}
       }
-      OU::formatAdd(verify,
-		    "if [ $? = 0 ] ; then \n"
-		    "  echo '  Verification PASSED'\n"
-		    "else\n"
-		    "  echo '  Verification FAILED'\n"
-		    "fi\n");
       return OU::string2File(verify.c_str(), file.c_str(), false);
     }
     const char *
@@ -839,7 +865,7 @@ namespace {
 	    bool first = true;
 	    for (unsigned n = 0; n < m_ports.size(); n++)
 	      if (m_ports[n].m_port->isDataProducer()) {
-		OU::formatAdd(ports, "%s%s", first ? "" : ",", m_ports[n].m_port->cname());
+		OU::formatAdd(ports, "%s%s", first ? "" : " ", m_ports[n].m_port->cname());
 		first = false;
 	      }
 	    fprintf(out, "      <worker name='%s' model='%s' outputs='%s'/>\n",
@@ -1333,9 +1359,9 @@ createCases(const char **platforms, const char */*package*/, const char */*outDi
     }
     void doOutput(const char *output) {
       bool multiple = strchr(m_outputs, ',') != NULL;
-      OU::formatAdd(m_outputArgs, " -pfile_write%s%s=fileName=$5.$6.$4.%s.out",
+      OU::formatAdd(m_outputArgs, " -pfile_write%s%s=fileName=$5.$6.$4.$3.%s.out",
 		    multiple ? "_" : "", multiple ? output : "", output);
-      OU::formatAdd(m_verifyOutputs, " $5.$6.$4.%s.out", output);
+      OU::formatAdd(m_verifyOutputs, " %s", output);
     }
     static const char *doOutput(const char *output, void *me) {
       ((CallBack*)me)->doOutput(output);
@@ -1367,6 +1393,7 @@ createCases(const char **platforms, const char */*package*/, const char */*outDi
 		    OU::format(m_err, "Cannot open file \"%s\" for writing", file.c_str());
 		    return true;
 		  }
+#if 0
 		  file = dir + "/verify.sh";
 		  if (!(m_verify = fopen(file.c_str(), "w"))) {
 		    OU::format(m_err, "Cannot open file \"%s\" for writing", file.c_str());
@@ -1376,39 +1403,58 @@ createCases(const char **platforms, const char */*package*/, const char */*outDi
 		  m_outputArgs.clear();
 		  m_verifyOutputs.clear();
 		  OU::parseList(m_outputs, doOutput, this);
+#endif
 		  fprintf(m_run,
 			  "#!/bin/sh --noprofile\n"
 			  "# Note that this file runs on remote/embedded systems and thus\n"
 			  "# may not have access to the full development host environment\n"
+			  "source $OCPI_CDK_DIR/scripts/testrun.sh %s %s $* - %s\n",
+			  m_spec.c_str(), m_platform.c_str(), ezxml_cattr(wx, "outputs"));
+#if 0
+			  "function isPresent {\n"
+			  "  local key=$1\n"
+			  "  shift\n"
+			  "  local vals=($*)\n"
+			  "  for i in $*; do if [ \"$key\" = \"$i\" ]; then return 0; fi; done\n"
+			  "  return 1\n"
+			  "}\n"
 			  "echo Performing test cases for %s on platform %s 1>&2\n"
+			  "echo Functions performed in one pass are: $* 1>&2\n"
+			  "! isPresent run $* || run=run\n"
+			  "! isPresent view $* || view=view\n"
+			  "! isPresent verify $* || verify=verify\n"
 			  "export OCPI_LIBRARY_PATH="
 			  "../../../lib/rcc:../../gen/assemblies:$OCPI_CDK_DIR/lib/components/rcc\n"
 			  "# docase <name> <platform> <model> <worker> <case> <subcase> <implprops>\n"
 			  "function docase {\n"
-			  "  echo Running $1 test case: \"$5\", subcase $6, on platform $2 using "
+			  "  [ -z \"$Cases\" ] || {\n"
+			  "     local ok\n"
+			  "     for c in $Cases; do\n"
+			  "       [[ ($c == *.* && $c == $5.$6) || ($c != *.* && $c == $5) ]] && ok=1\n"
+			  "     done\n"
+			  "     [ -z \"$ok\" ] && return 0\n"
+			  "  }\n"
+			  "  [ -z \"$run\" ] || {\n"
+			  "    echo Running $1 test case: \"$5.$6\" on platform $2 using "
 			  "worker $4.$3... 1>&2\n"
-			  "  ocpirun -v -m$1=$3 -w$1=$4 -P$1=$2  \\\n"
-			  "   %s ../../gen/applications/$5.$6.xml \\\n"
-			  "   > $5.$6.$4.$3.log 2>&1 \n"
-			  "}\n"
-			  "set -e\n",
-			  m_spec.c_str(), m_platform.c_str(), m_outputArgs.c_str());
-		  fprintf(m_verify, 
-			  "#!/bin/sh --noprofile\n"
-			  "echo Verifying test cases for %s on platform %s 1>&2\n"
-			  "function verify {\n"
-			  "  echo Verifying $1: \"$5\", subcase $6 using worker $4.$3...\n"
-			  "  ../../gen/applications/verify_$5.sh $6 %s\n"
-			  "}\n"
-			  "set -e\n",
-			  m_spec.c_str(), m_platform.c_str(), m_verifyOutputs.c_str());
-		}		  
-		fprintf(m_run, "docase %s %s %s %s %s %02u\n",
-			m_component.c_str(), m_platform.c_str(), m_model.c_str(),
-			ezxml_cattr(wx, "name"), name, n);
+			  "    cmd=(ocpirun -d -v -m$1=$3 -w$1=$4 -P$1=$2"
+			  " --dump-file=$5.$6.$4.$3.props \\\n"
+			  "         %s ../../gen/applications/$5.$6.xml)\n"
+			  "    (echo ${cmd[@]}; time ${cmd[@]}) > $5.$6.$4.$3.log 2>&1 \n"
+			  "    [ $? = 0 -a -z \"$KeepSimulations\" ] && rm -r -f simulations\n"
+			  "  }\n"
+			  "  [ -z \"$view\" -a -z \"$verify\" ] || \n"
+			  "    ../../gen/applications/verify_$5.sh $4.$3 $6 $view $verify\n"
+			  "}\n",
+#endif
+		}
+		fprintf(m_run, "docase %s %s %s %02u\n",
+			m_model.c_str(), ezxml_cattr(wx, "name"), name, n);
+#if 0
 		fprintf(m_verify, "verify %s %s %s %s %s %02u\n",
 			m_component.c_str(), m_platform.c_str(), m_model.c_str(),
 			ezxml_cattr(wx, "name"), name, n);
+#endif
 #if 0
 		for (ezxml_t px = ezxml_cchild(wx, "property"); px; px = ezxml_cnext(px))
 		  fprintf(m_run, " -p%s=%s='%s'", m_component.c_str(), ezxml_cattr(px, "name"),
