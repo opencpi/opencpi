@@ -106,6 +106,7 @@
   CMD_OPTION(artifacts,  A, String, 0, "deprecated: comma-separated targets to print artifacts in path on stdout") \
   CMD_OPTION(specs,      G, String, 0, "deprecated: comma-separated targets to print specs in path on stdout") \
   CMD_OPTION(only_platforms,, Bool, 0, "modifies the list command to show only platforms")\
+  CMD_OPTION(dump_file,    , String,0, "dump properties in raw parsable format to this file") \
   /**/
 
 //  CMD_OPTION_S(simulator, H,String, 0, "Create a container with this HDL simulator")
@@ -350,6 +351,8 @@ static int mymain(const char **ap) {
     params.push_back(OA::PVBool("hex", true));
   if (options.dump())
     params.push_back(OA::PVBool("dump", true));
+  if (options.dump_file())
+    params.push_back(OA::PVString("dumpFile", options.dump_file()));
   if (options.dumpPlatforms())
     params.push_back(OA::PVBool("dumpPlatforms", true));
   {

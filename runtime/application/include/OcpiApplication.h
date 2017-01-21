@@ -62,6 +62,7 @@ namespace OCPI {
 
     class ApplicationI : public OCPI::Container::Callback {
       typedef OCPI::Container::Container::CMap CMap;
+      ezxml_t m_deployment;
       OCPI::Library::Assembly &m_assembly;
 
       size_t m_nInstances;
@@ -75,6 +76,7 @@ namespace OCPI {
 	unsigned m_container;                        // LOCAL ordinal - among those we are using
 	CMap *m_feasibleContainers;                  // map per candidate, from findContainers
 	size_t m_nCandidates;                        // convenience
+	const char *m_containerName;                 // used to avoid touching the container
 	Instance();
 	~Instance();
       } *m_instances;
@@ -109,15 +111,18 @@ namespace OCPI {
       OCPI::Container::Application **m_containerApps; // per used container, the container app
       // External ports - recorded until we know whether it will be ExternalPort, or remote port
       struct External {
-	Port &m_port; // The internal worker port
+	OCPI::Util::Port &m_metaPort;  // The metaport of the worker port
+	OCPI::Container::Port *m_port; // The internal worker port
 	const PValue *m_params; //  Connection parameters from the OU::Assembly
 	ExternalPort *m_external; // The external port created from connectExternal.
-	inline External(Port &port, const PValue *params)
-	  : m_port(port), m_params(params), m_external(NULL) {}
+	inline External(OCPI::Util::Port &mp, const PValue *params)
+	  : m_metaPort(mp), m_port(NULL), m_params(params), m_external(NULL) {}
       };
       typedef std::map<const char*, External, OCPI::Util::ConstCharComp> Externals;
       typedef std::pair<const char*, External> ExternalPair;
+      typedef Externals::iterator ExternalsIter;
       Externals m_externals;
+      std::vector<External *> m_externalsOrdered; // to support ordinal-based navigation
       OCPI::Container::Worker *m_doneWorker;
       enum CMapPolicy {
 	RoundRobin,
@@ -133,6 +138,7 @@ namespace OCPI {
       bool m_launched;
       bool m_verbose;
       bool m_dump;
+      std::string m_dumpFile;
       bool m_dumpPlatforms;
       Application &m_apiApplication;
 
@@ -140,7 +146,10 @@ namespace OCPI {
       void init(const OCPI::API::PValue *params);
       void initExternals(const OCPI::API::PValue *params);
       void initConnections();
+      void finalizeLaunchConnections();
       void initInstances();
+      void finalizeLaunchInstances();
+      OCPI::Util::Port *getMetaPort(unsigned n) const;
       // return our used-container ordinal
       unsigned addContainer(unsigned container, bool existOk = false);
       bool connectionsOk(OCPI::Library::Candidate &c, unsigned instNum);
@@ -157,7 +166,7 @@ namespace OCPI {
 				     const OCPI::Library::Implementation &impl,
 				     unsigned *&pn, OCPI::Util::Value *&pv);
       void planDeployment(const PValue *params);
-      void importDeployment(const char *file);
+      void importDeployment(const char *file, ezxml_t xml, const PValue *params);
     public:
       explicit ApplicationI(OCPI::API::Application &app, const char *file,
 			    const OCPI::API::PValue *params = NULL);
@@ -169,6 +178,7 @@ namespace OCPI {
 			    const OCPI::API::PValue *params = NULL);
       ~ApplicationI();
       OCPI::Library::Assembly &assembly() { return m_assembly; }
+      const std::string &name() const { return m_assembly.name(); }
       bool foundContainer(OCPI::Container::Container &i);
       void initialize();
       void startMasterSlave(bool isMaster, bool isSlave, bool isSource);
@@ -177,7 +187,11 @@ namespace OCPI {
       bool wait(OCPI::OS::Timer *);
       void finish();
       ExternalPort &getPort(const char *, const OCPI::API::PValue *);
+      ExternalPort &getPort(unsigned index, std::string & name );
+      size_t getPortCount();
       friend struct Property;
+      size_t nProperties() const { return m_nProperties; }
+      const OCPI::Util::Property *property(unsigned ordinal, std::string &name) const;
       Worker &getPropertyWorker(const char *name, const char *&pname);
       bool getProperty(unsigned ordinal, std::string &name, std::string &value, bool hex,
 		       bool *parp, bool *cachedp, bool uncached) const;
@@ -185,11 +199,18 @@ namespace OCPI {
       void setProperty(const char* worker_name, const char* prop_name, const char *value);
       void dumpDeployment(const char *appFile, const std::string &file);
       void dumpProperties(bool printParameters, bool printCached, const char *context) const;
+      void genScaPrf(const char *outDir) const;
+      void genScaScd(const char *outDir) const;
+      void genScaSpd(const char *outDir) const;
     };
     // This is here to avoid exposing the ezxml_t stuff to the API
     class ApplicationX : public Application {
     public:
       ApplicationX(ezxml_t xml, const char *name, const OCPI::API::PValue *params = NULL);
+      // Tool classes not for runtime
+      inline void genScaPrf(const char *outDir) const { m_application.genScaPrf(outDir); }
+      inline void genScaScd(const char *outDir) const { m_application.genScaScd(outDir); }
+      inline void genScaSpd(const char *outDir) const { m_application.genScaSpd(outDir); }
     };
   }
 }

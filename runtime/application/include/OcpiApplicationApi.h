@@ -41,14 +41,18 @@
  *    // wait until you are happy with the result...
  * }
  */
+#ifndef OCPIAPPLICATIONAPI_H
+#define OCPIAPPLICATIONAPI_H
 #include "OcpiContainerApi.h"
 
 namespace OCPI {
   namespace API {
     class ApplicationI;
+    class ApplicationX;
     class Application {
-      ApplicationI &m_application;
+      friend class ApplicationX;
     protected:
+      ApplicationI &m_application;
       Application(ApplicationI &);
     public:
 
@@ -59,6 +63,8 @@ namespace OCPI {
       explicit Application(Application & app, const OCPI::API::PValue *params = NULL);     
 
       virtual ~Application();
+      // INTERNAL ACCESSOR NOT SUPPORTED FOR API
+      const ApplicationI &applicationI() const { return m_application; }
       // This does the setup - creating/instantiating workers, 
       // setting initial properties, and making connections
       void initialize();
@@ -70,7 +76,10 @@ namespace OCPI {
       void finish();
       // Suspension, that can be resumed with "start".
       void stop();
+      const std::string &name() const;
       ExternalPort &getPort(const char *, const OCPI::API::PValue *params = NULL);
+      ExternalPort &getPort(unsigned index, std::string &name);
+      size_t getPortCount();
       bool getProperty(unsigned ordinal, std::string &name, std::string &value,
 		       bool hex = false, bool *parameterp = NULL, bool *cachedp = NULL,
 		       bool uncached = false);
@@ -91,3 +100,4 @@ namespace OCPI {
   }
 }
 
+#endif

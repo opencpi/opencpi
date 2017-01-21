@@ -48,21 +48,50 @@
  namespace OA = OCPI::API;
  namespace OCPI {
    namespace API {
+     // Deal with a deployment file referencing an app file
+     static OL::Assembly &
+     createLibraryAssembly(const char *file, ezxml_t &deployment, const PValue *params) {
+       std::string appFile(file);
+       deployment = NULL;
+       ezxml_t xml = NULL;
+       do {
+	 if (!OS::FileSystem::exists(appFile)) {
+	   appFile += ".xml";
+	   if (!OS::FileSystem::exists(appFile))
+	     throw OU::Error("Error: application file %s (or %s) does not exist\n", file,
+			     appFile.c_str());
+	 }
+	 const char *err = OE::ezxml_parse_file(appFile.c_str(), xml);
+	 if (err)
+	   throw OU::Error("Can't parse application XML file \"%s\": %s", appFile.c_str(), err);
+	 if (!strcasecmp(ezxml_name(xml), "deployment")) {
+	   if ((err = OE::getRequiredString(xml, appFile, "application")))
+	     throw OU::Error("For deployment XML file \"%s\": %s", file, err);
+	   deployment = xml;
+	 }
+       } while (deployment == xml);
+       std::string name;
+       OU::baseName(appFile.c_str(), name);
+       return *new OL::Assembly(xml, name.c_str(), params);
+     }
+
      ApplicationI::ApplicationI(Application &app, const char *file, const PValue *params)
-       : m_assembly(*new OL::Assembly(file, params)), m_apiApplication(app) {
+       : m_assembly(createLibraryAssembly(file, m_deployment, params)), m_apiApplication(app) {
        init(params);
      }
      ApplicationI::ApplicationI(Application &app, const std::string &string, const PValue *params)
-       : m_assembly(*new OL::Assembly(string, params)), m_apiApplication(app)  {
+       : m_deployment(NULL), m_assembly(*new OL::Assembly(string, params)),
+	 m_apiApplication(app)  {
        init(params);
      }
      ApplicationI::ApplicationI(Application &app, ezxml_t xml, const char *name,
 				const PValue *params)
-       : m_assembly(*new OL::Assembly(xml, name, params)), m_apiApplication(app)  {
+       : m_deployment(NULL), m_assembly(*new OL::Assembly(xml, name, params)),
+         m_apiApplication(app)  {
        init(params);
      }
      ApplicationI::ApplicationI(Application &app, OL::Assembly &assy, const PValue *params)
-       : m_assembly(assy), m_apiApplication(app) {
+       : m_deployment(NULL), m_assembly(assy), m_apiApplication(app) {
        m_assembly++;
        init(params);
      }
@@ -617,11 +646,12 @@
      }
      // The explicit way to figure out a deployment from a file
      void ApplicationI::
-     importDeployment(const char *file) {
-       ezxml_t xml;
-       const char *err = OE::ezxml_parse_file(file, xml);
-       if (err)
-	 throw OU::Error("Error parsing deployment file: %s", err);
+     importDeployment(const char *file, ezxml_t xml, const PValue *params) {
+       if (!xml) {
+ 	 const char *err = OE::ezxml_parse_file(file, xml);
+	 if (err)
+	   throw OU::Error("Error parsing deployment file: %s", err);
+       }
        if (!ezxml_name(xml) || strcasecmp(ezxml_name(xml), "deployment"))
 	 throw OU::Error("Invalid top level element \"%s\" in deployment file \"%s\"",
 			 ezxml_name(xml) ? ezxml_name(xml) : "", file);
@@ -644,10 +674,10 @@
 	   *spec = ezxml_cattr(xi, "spec"),
 	   *worker = ezxml_cattr(xi, "worker"),
 	   *model = ezxml_cattr(xi, "model"),
-	   *container = ezxml_cattr(xi, "container"),
 	   *artifact = ezxml_cattr(xi, "artifact"),
 	   *instance = ezxml_cattr(xi, "instance");
-	 if (!spec || !worker || !model || !container || !artifact)
+	 i->m_containerName = ezxml_cattr(xi, "container");
+         if (!spec || !worker || !model || !i->m_containerName || !artifact)
 	   throw
 	     OU::Error("Missing attributes for instance element \"%s\" in deployment file."
 		       "  All of spec/worker/model/container/artifact must be present.", iname);
@@ -666,10 +696,13 @@
 	 if (!m_assembly.instance(n).resolveUtilPorts(*impl, m_assembly))
 	   throw OU::Error("Port mismatch for instance \"%s\" in artifact \"%s\"",
 			   iname, artifact);
-	 OC::Container *c = OC::Manager::find(container);
+	 bool execution;
+	 if (OU::findBool(params, "execution", execution) && !execution)
+	   continue;
+	 OC::Container *c = OC::Manager::find(i->m_containerName);
 	 if (!c)
 	   throw OU::Error("For deployment instance \"%s\", container \"%s\" was not found",
-			   iname, container);
+			   iname, i->m_containerName);
 	 i->m_container = addContainer(c->ordinal(), true);
        }
      }
@@ -703,6 +736,9 @@
 	 m_dumpPlatforms = false;
 	 OU::findBool(params, "verbose", m_verbose);
 	 OU::findBool(params, "dump", m_dump);
+	 const char *dumpFile;
+	 if (OU::findString(params, "dumpFile", dumpFile))
+	   m_dumpFile = dumpFile;
 	 OU::findBool(params, "dumpPlatforms", m_dumpPlatforms);
 	 OU::findBool(params, "hex", m_hex);
 	 OU::findBool(params, "uncached", m_uncached);
@@ -716,14 +752,15 @@
 	 const char *err;
 	 if ((err = m_assembly.checkInstanceParams("container", params, false)))
 	   throw OU::Error("%s", err);
-	 // This array is sized and initialized here since it is needed for property finalization
-	 m_launchInstances.resize(m_nInstances);
 	 // We are at the point where we need to either plan or import the deployment.
-	 const char *dfile;
-	 if (OU::findString(params, "deployment", dfile))
-	   importDeployment(dfile);
+	 const char *dfile = NULL;
+	 if (m_deployment || OU::findString(params, "deployment", dfile))
+	   importDeployment(dfile, m_deployment, params);
 	 else
 	   planDeployment(params);
+	 // This array is sized and initialized here since it is needed for property finalization
+	 initInstances();
+	 initConnections();
 	 // All the implementation selection is done, so now do the final check of ports
 	 // and properties since they can be implementation specific
 	 if ((err = finalizePortParam(params, "buffercount")) ||
@@ -751,6 +788,13 @@
 		     impl.m_staticInstance ? ezxml_cattr(impl.m_staticInstance, "name") : "",
 		     impl.m_artifact.name().c_str(), tbuf);
 	   }
+	   OU::Port *p;
+	   for (unsigned n = 0; (p = getMetaPort(n)); n++) {
+	     if (n == 0)
+	       fprintf(stderr, "External ports:\n");
+	     fprintf(stderr, " %u: application port \"%s\" is %s\n", n, 
+		     p->OU::Port::m_name.c_str(), p->m_provider ? "input" : "output");
+	   }
 	 }
        } catch (...) {
 	 clear();
@@ -758,14 +802,19 @@
        }
      }
      // Initialize our own database of connections from the OU::Assembly connections
+     // This can be done before any resources are actually allocated.  It is just
+     // building the launch database.  finalizeLaunchConnections must be done after
+     // containers are established for instances.
      void ApplicationI::
      initConnections() {
        m_launchConnections.resize(m_assembly.m_connections.size());
        OC::Launcher::Connection *lc = &m_launchConnections[0];
        for (OU::Assembly::ConnectionsIter ci = m_assembly.m_connections.begin();
 	    ci != m_assembly.m_connections.end(); ci++, lc++) {
+	 OU::Assembly::Port *p = NULL;
 	 for (OU::Assembly::Connection::PortsIter pi = (*ci).m_ports.begin();
 	      pi != (*ci).m_ports.end(); pi++) {
+	   p = &(*pi);
 	   OU::Assembly::Role &r = (*pi).m_role;
 	   assert(r.m_knownRole && !r.m_bidirectional);
 	   if (r.m_provider) {
@@ -773,20 +822,32 @@
 	     lc->m_instIn = &m_launchInstances[pi->m_instance];
 	     lc->m_nameIn = pi->m_name.c_str();
 	     lc->m_paramsIn.add((*ci).m_parameters, pi->m_parameters);
-	     lc->m_launchIn = &lc->m_instIn->m_container->launcher();
 	   } else {
 	     assert(!lc->m_instOut);
 	     lc->m_instOut = &m_launchInstances[pi->m_instance];
 	     lc->m_nameOut = pi->m_name.c_str();
 	     lc->m_paramsOut.add((*ci).m_parameters, pi->m_parameters);
-	     lc->m_launchOut = &lc->m_instOut->m_container->launcher();
 	   }
 	 }
+	 assert(p);
 	 for (OU::Assembly::ExternalsIter ei = (*ci).m_externals.begin();
 	      ei != (*ci).m_externals.end(); ei++) {
 	   assert(!lc->m_instIn || !lc->m_instOut);
 	   if (ei->m_url.length())
 	     lc->m_url = ei->m_url.c_str();
+	   else {
+	     // An external port of the assembly that is not bound to a URL
+	     // We capture the metaPort at this point.
+	     OU::Worker &w = m_instances[p->m_instance].m_impl->m_metadataImpl;
+	     const char *portName = lc->m_instIn ? lc->m_nameIn : lc->m_nameOut;
+	     OU::Port &mp = *w.findMetaPort(portName);
+	     ocpiDebug("Creating external port of application with name: %s, mp: %p", portName,
+		       &mp);
+	     m_externals.
+	       insert(ExternalPair(portName,
+				   External(mp,
+					    lc->m_instIn ? lc->m_paramsOut : lc->m_paramsIn)));
+	   }
 	   if (lc->m_instIn) {
 	     lc->m_nameOut = ei->m_name.c_str();
 	     lc->m_paramsOut = ei->m_parameters;
@@ -796,13 +857,30 @@
 	   }
 	 }
        }
+       // Create an ordered set of pointers into the Externals
+       m_externalsOrdered.resize(m_externals.size());
+       External **e = &m_externalsOrdered[0];
+       for (ExternalsIter ei = m_externals.begin(); ei != m_externals.end(); ++ei)
+	 *e++ = &(*ei).second;
      }
+     // Finalize the launch connections, which depends on containers being established
+     // for the instances.
+     void ApplicationI::
+     finalizeLaunchConnections() {
+       for (unsigned n = 0; n < m_launchConnections.size(); n++) {
+	 OC::Launcher::Connection &lc = m_launchConnections[n];
+	 if (lc.m_instIn)
+	   lc.m_launchIn = &lc.m_instIn->m_container->launcher();
+	 if (lc.m_instOut)
+	   lc.m_launchOut = &lc.m_instOut->m_container->launcher();
+       }
+     }
+
      void ApplicationI::
      initInstances() {
+       m_launchInstances.resize(m_nInstances);
        OC::Launcher::Instance *i = &m_launchInstances[0];
        for (unsigned n = 0; n < m_nInstances; n++, i++) {
-	 i->m_container = m_containers[m_instances[n].m_container];
-	 i->m_containerApp = m_containerApps[m_instances[n].m_container];
 	 i->m_name = m_assembly.instance(n).name();
 	 i->m_impl = m_instances[n].m_impl;
 	 OU::Assembly::Instance &ui = m_assembly.instance(n).m_utilInstance;
@@ -813,6 +891,17 @@
 	   i->m_doneInstance = true;
        }
      }
+
+     // Do the part of initializing launch instances that depends on containers established.
+     void ApplicationI::
+     finalizeLaunchInstances() {
+       OC::Launcher::Instance *i = &m_launchInstances[0];
+       for (unsigned n = 0; n < m_nInstances; n++, i++) {
+	 i->m_container = m_containers[m_instances[n].m_container];
+	 i->m_containerApp = m_containerApps[m_instances[n].m_container];
+       }
+     }
+
      void ApplicationI::
      initExternals( const PValue * params ) {
        // Check that params that reference externals are valid.
@@ -827,6 +916,17 @@
        return false;
      }
 
+     // Support querying the application for its ports for internal tools
+     // Return a pointer or null, based on ordinal
+     // The caller does:
+     //    OU::Port *p;
+     //    for(unsigned n = 0; app.getMetaPort(n); n++)
+     //       do-something-with-p
+     OU::Port *ApplicationI::
+     getMetaPort(unsigned n) const {
+       return n >= m_externalsOrdered.size() ? NULL : &m_externalsOrdered[n]->m_metaPort;
+     }
+
      void ApplicationI::
      initialize() {
        m_nInstances = m_assembly.nInstances();
@@ -839,8 +939,8 @@
 	 m_containerApps[n] = static_cast<OC::Application*>(m_containers[n]->createApplication());
 	 m_containerApps[n]->setApplication(&m_apiApplication);
        }
-       initInstances();
-       initConnections();
+       finalizeLaunchInstances();
+       finalizeLaunchConnections();
        typedef std::set<OC::Launcher *> Launchers;
        typedef Launchers::iterator LaunchersIter;
        Launchers launchers;
@@ -859,18 +959,20 @@
        if (m_assembly.m_doneInstance != -1)
 	 m_doneWorker = m_launchInstances[m_assembly.m_doneInstance].m_worker;
        OC::Launcher::Connection *c = &m_launchConnections[0];
+       // Associate application external ports with an actual worker ports
        for (unsigned n = 0; n < m_launchConnections.size(); n++, c++)
-	 if (!c->m_url && (!c->m_instIn || !c->m_instOut))
-	   m_externals.
-	     insert(ExternalPair(c->m_instIn ? c->m_nameOut : c->m_nameIn,
-				 External(*(c->m_input ? c->m_input : c->m_output),
-					  c->m_input ? c->m_paramsOut : c->m_paramsIn)));
+	 if (!c->m_url && (!c->m_instIn || !c->m_instOut)) {
+	   ExternalsIter ei = m_externals.find(c->m_instIn ? c->m_nameOut : c->m_nameIn);
+	   assert(ei != m_externals.end());
+	   ei->second.m_port = c->m_input ? c->m_input : c->m_output;
+	 }
        m_launched = true;
        if (m_assembly.m_doneInstance != -1)
 	 m_doneWorker = m_launchInstances[m_assembly.m_doneInstance].m_worker;
      }
      void ApplicationI::
-     dumpProperties(bool printParameters, bool printCached, const char *context) const {
+     dumpProperties(bool printParameters, bool printCached, const char *context) const
+     {
        std::string name, value;
        bool isParameter, isCached;
        if (m_verbose)
@@ -938,6 +1040,7 @@
 
     // Stuff to do after "done" (or perhaps timeout)
     void ApplicationI::finish() {
+      const char *err;
       Property *p = m_properties;
       for (unsigned n = 0; n < m_nProperties; n++, p++)
 	if (p->m_dumpFile) {
@@ -945,8 +1048,7 @@
 	  m_launchInstances[p->m_instance].m_worker->
 	    getProperty(p->m_property, name, value, NULL, m_hex);
 	  value += '\n';
-	  const char *err = OU::string2File(value, p->m_dumpFile);
-	  if (err)
+	  if ((err = OU::string2File(value, p->m_dumpFile)))
 	    throw OU::Error("Error writing '%s' property to file: %s", name.c_str(), err);
 	}
       if (m_dump)
@@ -954,6 +1056,18 @@
       if (m_dumpPlatforms)
 	for (unsigned n = 0; n < m_nContainers; n++)
 	  m_containers[n]->dump(false, m_hex);
+      if (m_dumpFile.size()) {
+	std::string name, value, dump;
+	for (unsigned n = 0;
+	     getProperty(n, name, value, m_hex, NULL, NULL, m_uncached); n++) {
+	  for (unsigned i = 0; i < name.size(); i++)
+	    if (name[i] == '.')
+	      name[i] = ' ';
+	  OU::formatAdd(dump, "%s %s\n", name.c_str(), value.c_str());
+	}
+	if ((err = OU::string2File(dump, m_dumpFile)))
+	  throw OU::Error("error when dumping properties to a file: %s", err);
+      }
     }
 
     ExternalPort &ApplicationI::getPort(const char *name, const OA::PValue *params) {
@@ -968,9 +1082,37 @@
 	  ocpiInfo("Parameters ignored when getPort called for same port more than once");
       } else {
 	OU::PValueList pvs(ext.m_params, params);
-	ext.m_external = &ext.m_port.connectExternal(name, pvs);
+	ext.m_external = &ext.m_port->connectExternal(name, pvs);
       }
       return *ext.m_external;
+    }
+
+    ExternalPort &ApplicationI::getPort(unsigned index, std::string & name) {
+      if (!m_launched)
+	throw OU::Error("GetPort cannot be called until the application is initialized.");
+      if ( index >= m_externals.size() )
+	throw OU::Error("GetPort(int) Index out of range.");
+      std::map<const char*, External, OCPI::Util::ConstCharComp>::iterator ei;
+      unsigned c=0;
+      for ( ei=m_externals.begin(); ei!=m_externals.end(); ei++, c++ ){
+	if ( c == index )
+	  break;
+      }
+      if (ei == m_externals.end())
+	throw OU::Error("Unknown external port at index: \"%d\"", index);
+      External &ext = ei->second;
+      if (ext.m_external) {
+
+      } else {
+	OU::PValueList pvs(ext.m_params, NULL);
+	ext.m_external = &ext.m_port->connectExternal(ei->first, pvs);
+      }
+      name = ei->first;
+      return *ext.m_external;
+    }
+
+    size_t ApplicationI::getPortCount() {
+      return m_externals.size();
     }
 
     // The name might have a dot in it to separate instance from property name
@@ -1010,6 +1152,14 @@
     {
       m_readSync = m_info.m_readSync;
       m_writeSync = m_info.m_writeSync;
+    }
+
+     const OU::Property *ApplicationI::property(unsigned ordinal, std::string &name) const {
+      if (ordinal >= m_nProperties)
+	return NULL;
+      Property &p = m_properties[ordinal];
+      name = p.m_name;
+      return &m_launchInstances[p.m_instance].m_worker->property(p.m_property);
     }
 
     bool ApplicationI::getProperty(unsigned ordinal, std::string &name, std::string &value,
@@ -1151,9 +1301,20 @@
       m_application.finish();
     }
 
+    const std::string &Application::name() const {
+      return m_application.name();
+    }
     ExternalPort &Application::
     getPort(const char *name, const OA::PValue *params) {
       return m_application.getPort(name, params);
+    }
+    ExternalPort &Application::
+    getPort(unsigned index, std::string &name) {
+      return m_application.getPort(index, name);
+    }
+    size_t Application::
+    getPortCount() {
+      return m_application.getPortCount();
     }
 
     bool Application::getProperty(unsigned ordinal, std::string &name, std::string &value,
