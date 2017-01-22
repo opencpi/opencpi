@@ -18,8 +18,6 @@ target-*/
 *.deps
 gen/
 # temporary, until we rename targets
-xc5*/
-xc6*/
 *.old
 *.hold
 *.orig
@@ -30,5 +28,6 @@ a.out*
 .DS_Store
 timeData.raw
 lib/
-!tools/cdk/export/lib
-!/platforms/zed/**/OpenCPI-SD/opencpi/lib/
+run/
+!/platforms/xilinx*/opencpi-*-release*/**/lib
+!/platforms/xilinx*/opencpi-*-release*/**/*.so
