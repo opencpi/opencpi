@@ -43,10 +43,10 @@ LD = c++
 export OcpiDynamicSuffix=so
 export OcpiDynamicFlags=-shared
 ifndef OCPI_TARGET_CXXFLAGS
-  export OCPI_TARGET_CXXFLAGS=-g -Wall -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS -Wfloat-equal -fno-strict-aliasing -Wconversion -Wno-sign-conversion
+  export OCPI_TARGET_CXXFLAGS=-g -pipe -Wall -Wextra -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS -Wfloat-equal -fno-strict-aliasing -Wconversion -Wno-sign-conversion
 endif
 ifndef OCPI_TARGET_CFLAGS
-  export OCPI_TARGET_CFLAGS=-g -Wall -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS -Wfloat-equal -fno-strict-aliasing -Wconversion -Wno-sign-conversion -std=c99
+  export OCPI_TARGET_CFLAGS=-g -pipe -Wall -Wextra -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS -Wfloat-equal -fno-strict-aliasing -Wconversion -Wno-sign-conversion -std=c99
 endif
 CXXFLAGS=$(OCPI_TARGET_CXXFLAGS)
 ARSUFFIX=a

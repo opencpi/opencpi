@@ -57,8 +57,10 @@
 #include "OcpiHostFileMappingServices.h"
 #include "OcpiUtilMisc.h"
 
-#ifndef OCPI_OS_VERSION_zynq
-// This fails on zynq and we have not dug into it yet.
+#ifndef OCPI_ARCH_arm
+// This fails on xilinx zynq linux since /dev is its own file system that is tiny (64k), and
+// shm instances are just mapped files in /dev/shm.
+// We conditionalize on !ARCH=arm because there is no other way that is not version-specific.
 #define REAL_SHM 1
 #endif
 namespace DataTransfer {

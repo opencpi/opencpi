@@ -29,9 +29,14 @@ fi
 echo ====== Starting installation of package \"$package\" for platform \"$platform\".
 set -e
 if test -z "$OCPI_PREREQUISITES_INSTALL_DIR"; then
-  export OCPI_PREREQUISITES_INSTALL_DIR=/opt/opencpi/prerequisites
-  if test ! -d /opt/opencpi; then
-    echo "Error: /opt/opencpi does not exist and must be created first."
+  if test -n "$OCPI_PREREQUISITES_DIR"; then
+    export OCPI_PREREQUISITES_INSTALL_DIR=$OCPI_PREREQUISITES_DIR
+  else  
+    export OCPI_PREREQUISITES_INSTALL_DIR=/opt/opencpi/prerequisites
+  fi
+  dir="$(dirname $OCPI_PREREQUISITES_INSTALL_DIR)"
+  if test ! -d $dir; then
+    echo "Error: $dir does not exist and must be created first."
     echo "       With appropriate permissions, ideally not root-only."
     exit 1
   fi

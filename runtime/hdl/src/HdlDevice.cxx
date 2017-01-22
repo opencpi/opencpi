@@ -227,6 +227,13 @@ namespace OCPI {
 	m_platform.assign(m_UUID.platform, n);
       else if (m_UUID.platform[0] == '\240' && m_UUID.platform[1] == 0)
 	m_platform = "ml605";
+      if (!isprint(m_platform[0])) {
+	ocpiInfo("HDL Device '%s' responds, but the platform type name is garbage: ",
+		m_name.c_str());
+	error = "Platform name in admin space is garbage";
+	return true;
+      }
+	
       for (n = 0; m_UUID.device[n] && n < sizeof(m_UUID.device); n++)
 	;
       if (n > 2)

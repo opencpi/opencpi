@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash --noprofile
 
 # Populate the exports tree with the links that will be needed for later build stages,
 # and links that are only dependent on stable, non-generated source files etc.
@@ -25,7 +25,9 @@
 #  - consolidating files that are hard or soft linked into single (first in inode sort order) file
 #  - following links so that patterns can match against the link path
 function match_pattern {
-  echo $1 | grep -v '^./exports/' | xargs ls -L -i -d | sort -n -b -u | sed 's/^ *[0-9]* *//;s/^\.\///'
+  local matches=$(shopt -s nullglob; for i in $1; do echo $i | grep -v '#$' | grep -v '^./exports/'; done)
+  [ -z "$matches" ] && return 0
+  ls -L -i -d $matches 2>/dev/null | sort -n -b -u | sed 's/^ *[0-9]* *//;s/^\.\///'
 }
 
 # Check the exclusion in $1 against the path in $2

@@ -1094,7 +1094,7 @@ getSims(std::vector<std::string> &sims) {
   std::set<std::string> seen;
   for (unsigned n = 0; n < pdirs.size(); n++) {
     std::string name(strrchr(pdirs[n].c_str(), '/') + 1);
-    if (!seen.insert(name).second)
+    if (!seen.insert(name).second) // in case sim platform is in more than one project
       continue;
     std::string sim;
     OU::format(sim, "%s/runSimExec.%s", pdirs[n].c_str(), name.c_str());
@@ -1114,22 +1114,21 @@ search(const OU::PValue *params, const char **excludes, bool discoveryOnly, std:
   const char *sims = getenv("OCPI_HDL_SIMULATORS");
   if (!sims)
     sims = getenv("OCPI_HDL_SIMULATOR");
+  std::set<std::string> onlySims;
   if (sims) {
+    ocpiInfo("Restricting discovery of HDL simulators to: %s", sims);
     char
       *mylist = strdup(sims),
       *base = mylist,
       *last = 0,
       *tok;
-    for (unsigned n = 0; (tok = strtok_r(base, ", \t", &last)); base = NULL, n++) {
-      std::string name;
-      OU::format(name, "lsim:%s%d", tok, n);
-      // FIXME: parse options?
-      // very global:  always stick with colons in env vars or are commas ok too?
-      // Actually, use colons for PATHS, and commas for lists
-      OA::ContainerManager::find("hdl", name.c_str(), NULL);
-    }
+    for (unsigned n = 0; (tok = strtok_r(base, ", \t", &last)); base = NULL, n++)
+      onlySims.insert(tok);
     free(mylist);
-  } else {
+    if (onlySims.empty())
+      return 0;
+  }
+  {
     std::vector<std::string> sims;
     const char *err = getSims(sims);
     if (err) {
@@ -1139,6 +1138,11 @@ search(const OU::PValue *params, const char **excludes, bool discoveryOnly, std:
     unsigned count = 0;
     for (unsigned n = 0; n < sims.size(); n++) {
       const char *name = strrchr(sims[n].c_str(), '/') + 1;
+      if (!onlySims.empty() && onlySims.find(name) == onlySims.end()) {
+	ocpiInfo("Skipping simulator \"%s\" due to OCPI_HDL_SIMULATOR(S)", name);
+	continue;
+      }
+	
       std::string cmd;
       OU::format(cmd, "sh %s/runSimExec.%s %s probe", sims[n].c_str(), name,
 		 OS::logGetLevel() >= 8 ? "-v" : "");
