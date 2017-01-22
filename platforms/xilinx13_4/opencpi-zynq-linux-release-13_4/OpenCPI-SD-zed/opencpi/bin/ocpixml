@@ -1,0 +1,73 @@
+#!/bin/sh
+
+if test "$#" -lt 2; then
+  echo This script performs functions relating to the XML inside OpenCPI artifact files. >&2
+  echo Usage is: ocpixml '<command> <file> [<file2>]' >&2
+  echo Commands are: >&2
+  echo '  get   - extract the XML from the file to standard output.' >&2
+  echo '  strip - remove the XML from the file while copying it to <file2>.' >&2
+  echo '  add   - add the XML file <file2> to the file, in place. file2 can be '-' for standard input' >&2
+  exit 1
+fi
+if test "$1" = get -o "$1" = strip; then
+ if test ! -f "$2" -o ! -r "$2"; then
+   echo File \"$2\" is nonexistent or unreadable. >&2
+   exit 1
+ fi
+ LAST=`tail -c 20 $2 | tail -n 1`
+ if test "${LAST:0:1}" != "X"; then
+   echo This file \"$2\" is not an OpenCPI artifact file. 1>&2
+   exit 1
+ fi
+ NBACKUP=$((${#LAST} + 1 + ${LAST:1}))
+fi
+set -e
+case $1 in
+  (get)
+   if test $# != 2; then
+     echo Extraneous arguments after filename. >&2
+     exit 1;
+   fi
+   tail -c $NBACKUP $2 | dd bs=1 count=${LAST:1} 2> /dev/null
+   ;;
+  (strip)
+   if test $# != 3; then
+     echo Missing output file argument after filename. >&2
+     exit 1;
+   fi
+   SIZE=$(sh -c 'echo $2' `ls -o -g -l $2`)
+   # head -c not in busybox
+   # head -c $((SIZE - NBACKUP)) $2 > $3
+   # this is slow
+   # dd bs=1 count=$((SIZE - NBACKUP)) if=$2 > $3 
+   # this is fast and ok with busybox
+   cp $2 $3 && dd if=/dev/null bs=1 seek=$((SIZE - NBACKUP)) of=$3 2> /dev/null || {
+     rm $3 2> /dev/null || true
+     echo Cannot write to output file: $3 >&2
+     exit 1
+   }
+   ;;
+  (add)
+   if test $# != 3; then
+     echo Missing XML input file argument after artifact filename. >&2
+     exit 1;
+   fi
+   F=$3
+   if test "$3" = -; then
+     F=/tmp/ocpixml$$
+     cat - > $F
+   fi
+   (cat $F && sh -c 'echo X$2' `ls -o -g -l $F`) >> $2
+   if test "$3" = -; then
+     rm $F
+   fi
+   ;;
+  (*)
+   echo ocpixml: Unknown command \"$1\".  Valid commands are: get, strip, add. >&2
+   exit 1
+   ;;
+esac
+
+    
+    
+
