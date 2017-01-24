@@ -7,15 +7,15 @@
 namespace OA = OCPI::API;
 
 int
-main(int argc, char **argv) {
+main(int, char **) {
   try {
     OA::PValue pvs[] = { OA::PVString("model", "=rcc"), OA::PVEnd };
-    OA::Application app("<application>"
+    OA::Application app(std::string("<application>"
 			"  <instance component='copy' externals='true'>"
 			"    <property name='ocpi_debug' value='0'/>"
 			"  </instance>"
 			//			"  <external instance='copy' port='in' buffersize='4000'/>"
-			"</application>", pvs);
+		        "</application>"), pvs);
     app.initialize();
     OA::ExternalPort
       &pFromMe = app.getPort("in"),
