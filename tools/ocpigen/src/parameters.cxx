@@ -48,7 +48,7 @@ parse(ezxml_t px, const OU::Property &p) {
 			"value, values, valuefile, or valuesFile");
   std::string fileValue;
   if (valueFile) {
-    if ((err = (p.needsCommaElement() ? 
+    if ((err = (p.needsNewLineBraces() ?
 		OU::file2String(fileValue, valueFile, "{", "},{", "}") :
 		OU::file2String(fileValue, valueFile, ','))))
       return err;

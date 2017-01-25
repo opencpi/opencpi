@@ -98,6 +98,11 @@ namespace OCPI {
       bool needsCommaElement() const {
 	return m_arrayRank != 0 || m_baseType == OCPI::API::OCPI_Struct;
       }
+      bool needsNewLineBraces() const {
+	return (m_isSequence && m_arrayRank) || 
+	  (!m_isSequence && m_arrayRank > 1) ||
+	  (m_baseType == OCPI::API::OCPI_Struct && (m_isSequence || m_arrayRank));
+      }
     };
     const unsigned testMaxStringLength = 10;
     const unsigned maxDataTypeAlignment = sizeof(double); // max of all types we support
