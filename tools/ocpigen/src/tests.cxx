@@ -769,6 +769,32 @@ namespace {
 			  "done < %s.$subcase.$worker.props\n",
 			  m_name.c_str(), m_name.c_str(), io.m_port->cname(),
 			  strrchr(specName.c_str(), '.') + 1,  m_name.c_str());
+	    // Put the value of any test properties into the environment according to the subcase
+	    bool firstTest = true;
+	    for (unsigned s = 0; s < m_subCases.size(); s++) {
+	      bool firstSubCase = true;
+	      ParamConfig &pc = *m_subCases[s];
+	      for (unsigned nn = 0; nn < pc.params.size(); nn++) {
+		Param &sp = pc.params[nn];
+		if (sp.m_param && sp.m_isTest) {
+		  if (firstTest) {
+		    firstTest = false;
+		    OU::formatAdd(verify, "case $subcase in\n");
+		  }
+		  if (firstSubCase) {
+		    firstSubCase = false;
+		    OU::formatAdd(verify, "  (%02u)", s);
+		  } else
+		    verify += ";";
+		  OU::formatAdd(verify, " export OCPI_TEST_%s='%s'", 
+				sp.m_param->cname(), sp.m_uValue.c_str());
+		}
+	      }
+	      if (!firstSubCase)
+		verify += ";;\n";
+	    }
+	    if (!firstTest)
+	      verify += "esac\n";
 	    std::string inArgs;
 	    for (unsigned nn = 0; nn < m_ports.size(); nn++) {
 	      InputOutput &in = m_ports[nn];
