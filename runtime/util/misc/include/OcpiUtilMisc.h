@@ -354,7 +354,8 @@ namespace OCPI {
 	*file2String(std::string &out, const char *file, char replaceNewLine = 0),
 	*file2String(std::string &out, const char *file, const char *start, const char *middle, 
 		     const char *end),
-	*string2File(const std::string &in, const char *file, bool leaveExisting = false),
+	*string2File(const std::string &in, const char *file, bool leaveExisting = false,
+		     bool onlyIfDifferent = false),
 	*evsprintf(const char *fmt, va_list ap),
 	*esprintf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
       inline const char *file2String(std::string &out, const std::string &file,
@@ -362,8 +363,8 @@ namespace OCPI {
 	return file2String(out, file.c_str(), replaceNewLine);
       }
       inline const char *string2File(const std::string &in, const std::string &file,
-				     bool leaveExisting = false) {
-	return string2File(in, file.c_str(), leaveExisting);
+				     bool leaveExisting = false, bool onlyIfDifferent = false) {
+	return string2File(in, file.c_str(), leaveExisting, onlyIfDifferent);
       }
 
 

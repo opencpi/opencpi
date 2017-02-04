@@ -75,6 +75,7 @@ namespace OCPI {
       size_t m_nEnums;
       size_t m_nItems;                // total number of fixed items
       bool   m_fixedLayout;           // is this type fixed length in its parent?
+      bool   m_usesParameters;        // is this type dependent on parameters?
       std::string m_typeDef;          // If we were created from a typedef
       std::string m_format;
       // string references for array dimensions and lengths

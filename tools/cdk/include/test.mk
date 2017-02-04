@@ -47,16 +47,16 @@ generated: generate
 
 
 # This is the representative result file that says things are properly generated.
-CASERPT:=gen/cases.txt
+CASEXML:=gen/cases.xml
 
 # This is the input file describing this test suite
 TESTXML:=$(CwdName)-test.xml
 
-$(CASERPT): $(TESTXML)
+$(CASEXML): $(TESTXML)
 	$(AT)echo ========= Generating test assemblies, inputs and applications.
 	$(AT)$(OcpiGen) -v -T $< || ($(RM) -r -f gen; exit 1)
 	$(AT)chmod a+x gen/applications/*.sh
-generate: $(CASERPT)
+generate: $(CASEXML)
 
 .PHONY: testxml
 $(TESTXML):
@@ -97,4 +97,4 @@ view:
 verify: run verifyonly
 
 clean:
-	$(AT)rm -r -f gen run
+	$(AT)rm -r -f gen run *.pyc

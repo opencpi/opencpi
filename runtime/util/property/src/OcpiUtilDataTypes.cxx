@@ -52,7 +52,7 @@ namespace OCPI {
       : m_baseType(bt), m_arrayRank(0), m_nMembers(0), m_dataAlign(0), m_align(1), m_nBits(0),
 	m_elementBytes(0), m_isSequence(a_isSequence), m_nBytes(0), m_arrayDimensions(NULL),
 	m_stringLength(0), m_sequenceLength(0), m_members(NULL), m_type(NULL), m_enums(NULL),
-	m_nEnums(0), m_nItems(1), m_fixedLayout(true)
+	m_nEnums(0), m_nItems(1), m_fixedLayout(true), m_usesParameters(false)
     {}
     ValueType::~ValueType() {
       if (m_arrayDimensions)
@@ -251,6 +251,8 @@ namespace OCPI {
 	      return "StringLength cannot be zero";
 	  } else
 	    m_fixedLayout = false;
+	  if (!m_stringLengthExpr.empty())
+	    m_usesParameters = true;
 	}
       }
       if (ezxml_cattr(xm, "StringLength") && m_baseType != OA::OCPI_String)
@@ -295,7 +297,8 @@ namespace OCPI {
 	  m_nItems *= m_arrayDimensions[n];
 	}
       }
-
+      if (m_arrayRank && !m_arrayDimensionsExprs[0].empty())
+	m_usesParameters = true;
       if ((err = getExprNumber(xm, "SequenceLength", m_sequenceLength, &m_isSequence,
 			       &m_sequenceLengthExpr, resolver)) ||
 	  (!m_isSequence &&
@@ -309,6 +312,8 @@ namespace OCPI {
 	} else {
 	  m_fixedLayout = false;
 	}
+	if (!m_sequenceLengthExpr.empty())
+	  m_usesParameters = true;
       }
       // Process default values
       if (hasDefault && (err = parseDefault(ezxml_cattr(xm, hasDefault), tag, resolver)))

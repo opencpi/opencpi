@@ -27,7 +27,8 @@ struct Param {
   Worker                      *m_worker; // the worker of this param
                                          // when the paramconfig spans impls
   bool                        m_isTest;
-  const char *parse(ezxml_t px, const OCPI::Util::Property &prop);
+  std::string                 m_generate; // how to generate a value
+  const char *parse(ezxml_t px, const OCPI::Util::Property &prop, bool global = false);
   Param();
 };
 

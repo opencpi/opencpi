@@ -622,7 +622,7 @@ file2String(std::string &out, const char *file, const char *start, const char *m
   return NULL;
 }
 const char *
-string2File(const std::string &in, const char *file, bool leaveExisting) {
+string2File(const std::string &in, const char *file, bool leaveExisting, bool onlyIfDifferent) {
   bool isDir;
   if (OS::FileSystem::exists(file, &isDir)) {
     if (isDir)
@@ -630,6 +630,14 @@ string2File(const std::string &in, const char *file, bool leaveExisting) {
 		      file);
     else if (leaveExisting)
       return NULL;
+    if (onlyIfDifferent) {
+      const char *err;
+      std::string existing;
+      if ((err = file2String(existing, file)))
+	return err;
+      if (existing == in)
+	return NULL;
+    }
   }
   FILE *f = fopen(file, "w");
   size_t n = in.size();

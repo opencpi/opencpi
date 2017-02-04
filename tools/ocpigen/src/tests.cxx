@@ -57,7 +57,13 @@ namespace {
     }
     return NULL;
   }
-
+  const char *
+  remove(const std::string &name) {
+    int rv = ::system(std::string("rm -r -f " + name).c_str());
+    return rv ?
+      OU::esprintf("Error removing \"%s\" directory: %d", name.c_str(), rv) :
+      NULL;
+  }
   Workers workers;
   WorkersIter findWorker(const char *name, Workers &ws) {
     for (WorkersIter wi = ws.begin(); wi != ws.end(); ++wi)
@@ -480,7 +486,7 @@ namespace {
       }
       for (unsigned n = 0; n < m_settings.params.size(); n++) {
 	Param &sp = m_settings.params[n];
-	if (sp.m_param && sp.m_uValues.empty())
+	if (sp.m_param && sp.m_uValues.empty() && sp.m_generate.empty())
 	  return OU::esprintf("For case %s, there are no values specified for property: \"%s\"",
 			      m_name.c_str(), sp.m_param->cname());
 
@@ -503,10 +509,9 @@ namespace {
       ParamConfig &c = *m_subCases.back();
       if (n >= c.params.size())
 	return;
-      while (!c.params[n].m_param)
+      while (!c.params[n].m_param || !c.params[n].m_generate.empty())
 	n++;
       Param &p = c.params[n];
-      
       for (unsigned nn = 0; nn < p.m_uValues.size(); ++nn) {
 	if (nn)
 	  m_subCases.push_back(new ParamConfig(c));
@@ -583,51 +588,82 @@ namespace {
 	}
       }
     }
+    const char *
+    generateFile(bool &first, const char *dir, const char *type, unsigned s, 
+		 const std::string &name, const std::string &generate, const std::string &env,
+		 std::string &file) {
+      if (verbose && first) {
+	fprintf(stderr, "Generating for %s.%02u:\n", m_name.c_str(), s);
+	first = false;
+      }
+      // We have an input port that has a script to generate the file
+      file = "gen/";
+      file += dir;
+      OS::FileSystem::mkdir(file, true);
+      OU::formatAdd(file, "/%s.%02u.%s", m_name.c_str(), s, name.c_str());
+      std::string cmd;
+      OU::format(cmd, "%s %s%s %s", env.c_str(),
+		 strchr(generate.c_str(), '/') ? "" : "./", generate.c_str(), file.c_str());
+      ocpiInfo("For case %s.%02u, executing generator \"%s\" for %s %s: %s", m_name.c_str(), s,
+	       generate.c_str(), type, name.c_str(), cmd.c_str());
+      int r;
+      fprintf(stderr,
+	      "  Generating %s \"%s\" file: \"%s\"\n"
+	      "    Using command: %s\n",
+	      type, name.c_str(), file.c_str(), cmd.c_str() + env.length());
+      if ((r = system(cmd.c_str())))
+	return OU::esprintf("Error %d(0x%x) generating %s file \"%s\" from command:  %s",
+			    r, r, type, file.c_str(), cmd.c_str());
+      if (!OS::FileSystem::exists(file))
+	return OU::esprintf("No output from generating %s file \"%s\" from command:  %s", 
+			    type, file.c_str(), cmd.c_str());
+      return NULL;
+    }
     // Generate inputs: input files
     const char *
     generateInputs() {
+      const char *err;
       for (unsigned s = 0; s < m_subCases.size(); s++) {
+	bool first = true;
 	ParamConfig &pc = *m_subCases[s];
 	std::string env;
 	for (unsigned n = 0; n < pc.params.size(); n++) {
 	  Param &p = pc.params[n];
-	  if (p.m_param) {
+	  if (p.m_param && p.m_generate.empty()) {
 	    assert(!strchr(p.m_uValue.c_str(), '\''));
 	    OU::formatAdd(env, "OCPI_TEST_%s='%s' ", p.m_param->cname(), p.m_uValue.c_str());
+	  }
+	}
+	std::string file;
+	for (unsigned n = 0; n < pc.params.size(); n++) {
+	  Param &p = pc.params[n];
+	  if (p.m_param && !p.m_generate.empty()) {
+	    if ((err = generateFile(first, "properties", "property value", s, p.m_param->m_name,
+				    p.m_generate, env, file)) ||
+		(err = (p.m_param->needsNewLineBraces() ?
+			OU::file2String(p.m_uValue, file.c_str(), "{", "},{", "}") :
+			OU::file2String(p.m_uValue, file.c_str(), ','))))
+	      return err;
+	    OU::formatAdd(env, "OCPI_TEST_%s='%s' ", p.m_param->cname(), p.m_uValue.c_str());
+	    OU::formatAdd(env, "OCPI_TESTFILE_%s='%s' ", p.m_param->cname(), file.c_str());
+	    
 	  }
 	}
 	for (unsigned n = 0; n < m_ports.size(); n++) {
 	  InputOutput &io = m_ports[n];
 	  if (!io.m_port->isDataProducer() && io.m_script.size()) {
-	    // We have an input port that has a script to generate the file
-	    std::string file("gen/inputs");
-	    OS::FileSystem::mkdir(file, true);
-	    OU::formatAdd(file, "/%s.%02u.%s", m_name.c_str(), s, io.m_port->cname());
-	    std::string cmd;
-	    OU::format(cmd, "%s %s%s %s", env.c_str(),
-		       strchr(io.m_script.c_str(), '/') ? "" : "./", io.m_script.c_str(),
-		       file.c_str());
-	    ocpiInfo("For case %s, executing generator %s for port %s: %s", m_name.c_str(),
-		     io.m_script.c_str(), io.m_port->cname(), cmd.c_str());
-	    int r;
-	    fprintf(stderr,
-		    "  Generating for %s.%02u port \"%s\" file: \"%s\"\n", 
-		    m_name.c_str(), s, io.m_port->cname(), file.c_str());
-	    if ((r = system(cmd.c_str())))
-	      return OU::esprintf("Error %d(0x%x) generating input file \"%s\" from command:  %s",
-				  r, r, file.c_str(), cmd.c_str());
-	    if (!OS::FileSystem::exists(file))
-	      return OU::esprintf("No output from generating input file \"%s\" from "
-				  "command:  %s", file.c_str(), cmd.c_str());
-	      
+	    if ((err = generateFile(first, "inputs", "input port", s, io.m_port->m_name,
+				    io.m_script, env, file)))
+	      return err;
 	  }
 	}
       }
       return NULL;
     }
-    // Generate application xml files
+    // Generate application xml files, being careful not to write files that are
+    // not changing
     const char *
-    generateApplications() {
+    generateApplications(const std::string &dir, Strings &files) {
       const char *err;
       const char *dut = strrchr(wFirst->m_specName, '.');
       if (dut)
@@ -636,9 +672,11 @@ namespace {
 	dut = wFirst->m_specName;
       for (unsigned s = 0; s < m_subCases.size(); s++) {
 	ParamConfig &pc = *m_subCases[s];
-	std::string file("gen/applications");
-	OS::FileSystem::mkdir(file, true);
-	OU::formatAdd(file, "/%s.%02u.xml", m_name.c_str(), s);
+	OS::FileSystem::mkdir(dir, true);
+	std::string name;
+	OU::format(name, "%s.%02u.xml", m_name.c_str(), s);
+	files.insert(name);
+	std::string file(dir + "/" + name);;
 	unsigned nOutputs = 0, nInputs = 0;
 	for (unsigned n = 0; n < m_ports.size(); n++)
 	  if (m_ports[n].m_port->isDataProducer())
@@ -686,8 +724,13 @@ namespace {
 		continue;
 	    }
 	    assert(!strchr(p.m_uValue.c_str(), '\''));
-	    OU::formatAdd(app, "    <property name='%s' value='%s'/>\n",
-			  p.m_param->cname(), p.m_uValue.c_str());
+	    OU::formatAdd(app, "    <property name='%s' ", p.m_param->cname());
+	    if (p.m_generate.empty())
+	      OU::formatAdd(app, "value='%s'", p.m_uValue.c_str());
+	    else
+	      OU::formatAdd(app, "valueFile='../../gen/properties/%s.%02u.%s'",
+			    m_name.c_str(), s, p.m_param->cname());
+	    app += "/>\n";
 	  }
 	}
 	app += "  </instance>\n";
@@ -718,16 +761,18 @@ namespace {
 	app += "</application>\n";
 	ocpiDebug("Creating application file in %s containing:\n%s",
 		  file.c_str(), app.c_str());
-	if ((err = OU::string2File(app.c_str(), file.c_str(), false)))
+	if ((err = OU::string2File(app.c_str(), file.c_str(), false, true)))
 	  return err;
       }
       return NULL;
     }
     // Generate the verification script for this case
     const char *
-    generateVerification() {
-      std::string file;
-      OU::format(file, "gen/applications/verify_%s.sh", m_name.c_str());
+    generateVerification(const std::string &dir, Strings &files) {
+      std::string name;
+      OU::format(name, "verify_%s.sh", m_name.c_str());
+      files.insert(name);
+      std::string file(dir + "/" + name);
       std::string verify;
       OU::format(verify,
 		 "#!/bin/sh --noprofile\n"
@@ -822,10 +867,13 @@ namespace {
 			      io.m_file.c_str());
 	      OU::formatAdd(verify,
 			    "  if [ $? = 0 ] ; then \n"
+			    "    tput bold; tput setaf 2\n"
 			    "    echo '  Verification for port %s: PASSED'\n"
 			    "  else\n"
+			    "    tput bold; tput setaf 1\n"
 			    "    echo '  Verification for port %s: FAILED'\n"
 			    "  fi\n"
+			    "  tput sgr0\n"
 			    "}\n", io.m_port->cname(), io.m_port->cname());
 	    } else
 	      OU::formatAdd(verify,
@@ -833,7 +881,7 @@ namespace {
 	  }
 	}
       }
-      return OU::string2File(verify.c_str(), file.c_str(), false);
+      return OU::string2File(verify.c_str(), file.c_str(), false, true);
     }
     const char *
     generateCaseXml(FILE *out) {
@@ -1132,7 +1180,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
       param->m_param = newp;
       param->m_isTest = true;
       char *copy = ezxml_toxml(px);
-      // Make legel property definition XML out of this xml
+      // Make legal property definition XML out of this xml
       ezxml_t propx;
       if ((err = OE::ezxml_parse_str(copy, strlen(copy), propx)))
 	return err;
@@ -1147,7 +1195,8 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
     } else
       return OU::esprintf("There is no property named \"%s\" for any worker", name.c_str());
   next2:;
-    param->parse(px, *param->m_param);
+    if ((err = param->parse(px, *param->m_param, true)))
+      return err;
   }
   // ================= 6. Parse and collect global platform values
   // Parse global platforms
@@ -1208,7 +1257,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
 	  "===========================================\n");
   for (unsigned n = 0; n < globals.params.size(); n++) {
     Param &p = globals.params[n];
-    if (p.m_param == NULL || p.m_uValues.size() > 1)
+    if (p.m_param == NULL || p.m_uValues.size() > 1 || !p.m_generate.empty())
       continue;
     p.m_uValue = p.m_uValues[0];
     fprintf(out, "      %s = %s", p.m_param->cname(), p.m_uValues[0].c_str());
@@ -1238,6 +1287,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
   if ((err = OE::getBoolean(xml, "UseHdlFileIO", &hdlFileIO)))
     return err;
   bool seenHDL = false;
+  Strings assyDirs;
   for (WorkersIter wi = workers.begin(); wi != workers.end(); ++wi) {
     Worker &w = **wi;
     if (w.m_model == HdlModel) {
@@ -1280,14 +1330,14 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
 			"override HdlPlatforms:=$(filter-out %sim,$(HdlPlatforms))\n"
 			"include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk\n" :
 			"include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk\n",
-			dir + "/Makefile", true);
+			dir + "/Makefile", false, true);
 	std::string assy;
 	OU::format(assy,
 		   "<HdlAssembly>\n"
 		   "  <Instance Worker='%s' ParamConfig='%u' externals='true'/>\n"
 		   "</HdlAssembly>\n",
 		   w.m_implName, c);
-	OU::string2File(assy, dir + "/" + name + ".xml", true);
+	OU::string2File(assy, dir + "/" + name + ".xml", false, true);
 	if (hdlFileIO) {
 	  name += "_frw";
 	  dir += "_frw";
@@ -1315,7 +1365,12 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
 			    w.m_implName, p.isDataProducer() ? "from" : "to", p.cname());
 	  }
 	  assy += "</HdlAssembly>\n";
+	  
 	  OU::string2File(assy, dir + "/" + name + ".xml", true);
+	} else {
+	  dir += "_frw";
+	  if ((err = remove(dir)))
+	    return err;
 	}
       }
     }
@@ -1334,19 +1389,30 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
   }
   fclose(out);
   if (verbose)
-    fprintf(stderr, "Generating required input files in gen/inputs/\n");
+    fprintf(stderr, "Generating required input and property value files in gen/inputs/ and gen/properties/\n");
   for (unsigned n = 0; n < cases.size(); n++)
     if ((err = cases[n]->generateInputs()))
       return err;
+  std::string dir("gen/applications");
   if (verbose)
-    fprintf(stderr, "Generating required application xml files in gen/applications/\n");
+    fprintf(stderr, "Generating required application xml files in %s/\n", dir.c_str());
+  Strings appFiles;
   for (unsigned n = 0; n < cases.size(); n++)
-    if ((err = cases[n]->generateApplications()) ||
-	(err = cases[n]->generateVerification()))
+    if ((err = cases[n]->generateApplications(dir, appFiles)) ||
+	(err = cases[n]->generateVerification(dir, appFiles)))
       return err;
+  for (OS::FileIterator iter(dir, "*"); !iter.end(); iter.next())
+    if (appFiles.find(iter.relativeName()) == appFiles.end() &&
+	(err = remove(dir + "/" + iter.relativeName())))
+      return err;
+#if 1
+  if ((err = openOutput("cases", "gen", "", "", ".xml", NULL, out)))
+    return err;
+#else
   out = fopen("gen/cases.xml", "w");
   if (!out)
     return OU::esprintf("Failed to open summary XML file gen/cases.xml");
+#endif
   if (verbose)
     fprintf(stderr, "Generating summary gen/cases.xml file\n");
   fprintf(out, "<cases spec='%s'>\n", wFirst->m_specName);

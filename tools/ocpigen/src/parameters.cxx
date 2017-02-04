@@ -33,19 +33,30 @@ findParamProperty(const char *name, OU::Property *&prop, size_t &nParam, bool in
 Param::Param() : m_valuesType(NULL), m_param(NULL), m_isDefault(false), m_worker(NULL), 
 		 m_isTest(false) {}
 
+// the "global" argument is true when this parameter has a global setting across many other
+// configurations and so it cannot be given a value if it is dependent on other parameters for
+// its type (e.g. array dimensions)
 const char *Param::
-parse(ezxml_t px, const OU::Property &p) {
+parse(ezxml_t px, const OU::Property &p, bool global) {
   std::string xValue;
   const char *err;
   const char
+    *generate = ezxml_cattr(px, "generate"),
     *value = ezxml_cattr(px, "value"),
     *values = ezxml_cattr(px, "values"),
     *valueFile = ezxml_cattr(px, "valueFile"),
     *valuesFile = ezxml_cattr(px, "valuesFile");
-  unsigned n = (value ? 1 : 0) + (values ? 1 : 0) + (valueFile ? 1 : 0) + (valuesFile ? 1 : 0);
+  unsigned n = (value ? 1 : 0) + (values ? 1 : 0) + (valueFile ? 1 : 0) + (valuesFile ? 1 : 0) +
+    (generate ? 1 : 0);
   if (n != 1)
     return OU::esprintf("Exactly one attribute must be specified among: "
-			"value, values, valuefile, or valuesFile");
+			"value, values, valuefile, valuesFile, or (for tests) generate");
+  if (generate) {
+    m_generate = generate;
+    return NULL;
+  } else if (p.m_usesParameters && global)
+    return OU::esprintf("Property \"%s\" must be generated since its type depends on parameters",
+			p.cname());
   std::string fileValue;
   if (valueFile) {
     if ((err = (p.needsNewLineBraces() ?
@@ -62,8 +73,8 @@ parse(ezxml_t px, const OU::Property &p) {
   }
   m_param = &p;
   m_isDefault = false;
+  m_uValues.clear(); // forget previous values since we might be overriding them
   if (values) {
-    // We need to create a new type that is a sequence of the original type
     if (!m_valuesType) {
       m_valuesType = &p.sequenceType();
       m_valuesType->m_default = new OU::Value(*m_valuesType);
@@ -71,14 +82,12 @@ parse(ezxml_t px, const OU::Property &p) {
     if ((err = m_valuesType->m_default->parse(values, NULL, false, NULL)))
       return err;
     m_valuesType->m_default->unparse(m_uValue);
-    m_uValues.clear();
     m_uValues.resize(m_valuesType->m_default->m_nElements);
     for (unsigned n = 0; n < m_valuesType->m_default->m_nElements; n++)
       m_valuesType->m_default->elementUnparse(*m_valuesType->m_default, m_uValues[n], n, false,
 					      '\0', false, *m_valuesType->m_default);
   } else {
     OU::Value newValue;
-    m_uValues.clear();
     if ((err = p.parseValue(value, newValue)))
       return err;
     newValue.unparse(m_uValue);

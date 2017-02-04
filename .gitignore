@@ -27,6 +27,7 @@ a.out*
 \#*\#
 .DS_Store
 timeData.raw
+*.pyc
 lib/
 run/
 !/platforms/xilinx*/opencpi-*-release*/**/lib
