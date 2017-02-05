@@ -91,36 +91,7 @@ WkrGetPlatform=$(strip \
     $(and $(filter $1,$(value $v)),$(v:$(CapModel)Target_%=%))))
 
 $(call OcpiDbgVar,XmlIncludeDirsInternal)
-# Here we add access to:
-# 0. The current directory
-# 1. The generated directory
-# 2. What is locally set in the worker's Makefile (perhaps to override specs/protocols)
-# 3. What was passed from the library Makefile above (perhaps to override specs/protocols)
-# 4. The library's export directory to find other (slave or emulated) workers
-# 5. The library's specs directory
-# 6. Any other component library's XML dirs
-# 6. The standard component library for specs
-# 7. The standard component library's exports for proxy slaves
-override XmlIncludeDirsInternal:=\
-  $(call Unique,\
-    . $(GeneratedDir) \
-    $(IncludeDirs) $(XmlIncludeDirs) \
-    $(XmlIncludeDirsInternal) \
-    ../lib/$(Model)\
-    ../specs \
-    $(OcpiXmlComponentLibraries) \
-    $(foreach d,$(subst :, ,$(OCPI_XML_INCLUDE_PATH)),$(wildcard $d)) \
-    $(foreach d,$(OcpiGetProjectPath),$(wildcard $d/specs)) \
-    $(OCPI_CDK_DIR)/lib/components/hdl\
-    $(OCPI_CDK_DIR)/lib/components/$(Model)\
-    $(OCPI_CDK_DIR)/lib/components \
-    $(OCPI_CDK_DIR)/specs \
-   )
-#     $(OCPI_CDK_DIR)/include/$(Model)
-
-#    $(foreach m,$(Models),../lib/$m)\
-#    $(foreach m,$(Models),$(OCPI_CDK_DIR)/lib/components/$m)\
-
+$(call OcpiSetXmlIncludes)
 $(call OcpiDbgVar,XmlIncludeDirsInternal)
 
 -include $(GeneratedDir)/*.deps

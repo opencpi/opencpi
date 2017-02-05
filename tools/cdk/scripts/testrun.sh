@@ -40,7 +40,7 @@ function docase {
     echo Performing test cases for $spec on platform $platform 1>&2
     echo Functions performed in one pass are: $run $verify $view 1>&2
   }
-  failed=0
+  r=0
   [ -z "$run" ] || {
     local output outputs
     for o in ${ports[@]}; do
@@ -58,11 +58,16 @@ function docase {
     else
       (echo ${cmd[@]}; eval time env ${cmd[@]}) > $3.$4.$2.$1.log 2>&1 
     fi
-    failed=$?
-    [ $failed != 0 ] && echo Execution FAILED - see log in run/$platform/$3.$4.$2.$1.log 1>&2
+    r=$?
+    [ $r != 0 ] && {
+	tput setaf 2
+	echo Execution FAILED - see log in run/$platform/$3.$4.$2.$1.log 1>&2
+	tput sgr0
+	failed=1
+    }
   }
   [ -z "$view" -a -z "$verify" ] || 
-    if [ "$failed" = 0 ]; then
+    if [ "$r" = 0 ]; then
       ../../gen/applications/verify_$3.sh $2.$1 $4 $view $verify
     else
       echo Execution failed so verify or view not performed.

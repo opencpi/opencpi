@@ -40,7 +40,8 @@ if [ -n "${OCPI_REMOTE_TEST_SYSTEMS}" ]; then
 fi
 export OCPI_LIBRARY_PATH=../lib/rcc:gen/assemblies:$OCPI_LIBRARY_PATH
 $ToolsDir/ocpigen -v -C ${localplatforms[@]} ${remoteplatforms[@]}
-(echo 'source $OCPI_CDK_DIR/scripts/util.sh'
+(echo '#!/bin/bash --noprofile'
+ echo 'source $OCPI_CDK_DIR/scripts/util.sh'
  for p in ${localplatforms[@]##*-} ${remoteplatforms[@]##*-}; do
    for f in run verify; do
      file=run/$p/$f.sh
@@ -55,18 +56,4 @@ $ToolsDir/ocpigen -v -C ${localplatforms[@]} ${remoteplatforms[@]}
 	EOF
  done
 )  > run/runtests.sh
-for p in ${remoteplatforms[@]##*-}; do
-  for f in run verify; do
-    file=run/$p/$f.sh
-    [ -f $file -a ! -x $file ] && chmod a+x $file
-  done
-  phost=${p}_host puser=${p}_user ppasswd=${p}_passwd pdir=${p}_dir
-  [ -x run/$p/run.sh ] && {
-     cat <<-EOF > run/$p/runremote.sh
-	\$OCPI_CDK_DIR/scripts/testrunremote.sh ${!phost} ${!puser} ${!ppasswd} \\
-	"cd ${!pdir}/$1/run/$p && \$*"
-	EOF
-     chmod a+x run/$p/runremote.sh
-  }
-done
 chmod a+x run/*.sh

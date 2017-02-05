@@ -3,6 +3,13 @@
 
 $(if $(wildcard $(OCPI_CDK_DIR)),,$(error OCPI_CDK_DIR environment variable not set properly.))
 
+ifneq ($(origin OnlyPlatforms),undefined)
+  export OnlyPlatforms
+endif
+ifneq ($(origin ExcludePlatforms),undefined)
+  export ExcludePlatforms
+endif
+
 include $(OCPI_CDK_DIR)/include/util.mk
 
 ifneq ($(Model),test)
@@ -15,29 +22,15 @@ $(call OcpiIncludeProject,error)
 export Cases
 export KeepSimulations
 # This is to allow the spec to be found and any protocols it depends on
-# FIXME: These lines should be shared better - they are a copy
-ifeq ($(filter prepare run runtests runonly verify verifyonly view,$(MAKECMDGOALS)),)
-override XmlIncludeDirsInternal:=\
-  $(call Unique,\
-    . $(GeneratedDir) \
-    $(IncludeDirs) $(XmlIncludeDirs) \
-    $(XmlIncludeDirsInternal) \
-    ../lib/$(Model)\
-    ../specs \
-    $(OcpiXmlComponentLibraries) \
-    $(foreach d,$(subst :, ,$(OCPI_XML_INCLUDE_PATH)),$(wildcard $d)) \
-    $(foreach d,$(OcpiGetProjectPath),$(wildcard $d/specs)) \
-    $(OCPI_CDK_DIR)/lib/components/hdl\
-    $(OCPI_CDK_DIR)/lib/components/$(Model)\
-    $(OCPI_CDK_DIR)/lib/components \
-    $(OCPI_CDK_DIR)/specs \
-   )
+ifneq ($(if $(MAKECMDGOALS),$(filter build all generate generated,$(MAKECMDGOALS)),1),)
+  $(call OcpiSetXmlIncludes)
 endif
+
 # Primary goals for this Makefile, with "build" being the default (all)
-.PHONY: generate build prepare run runonly verify verifyonly
+.PHONY: generate build prepare runtests runonly verify verifyonly cleanrun
 
 # Compatility
-.PHONY: test tests runtests generated
+.PHONY: test tests generated
 # "make test" is a synonym for "making the tests", which is "build", which is the default
 test: build
 tests: build
@@ -87,8 +80,14 @@ runtests: prepare
 	$(AT)./run/runtests.sh run verify $(and $(View),view)
 
 verifyonly:
-	$(AT)echo Verifying test outputs on available platforms: 
-	$(AT)./run/runtests.sh verify $(and $(View),view)
+	$(AT)echo ========= Verifying test outputs on prepared platforms
+	$(AT)for d in run/*; do \
+	       [ -d $$d ] && \
+	       echo ================== Verifying test cases for platform $$(basename $$d) && \
+	       (cd $$d; ./run.sh verify $(and $(View),view)); \
+	     done
+
+#	$(AT)./run/runtests.sh verify $(and $(View),view)
 
 view:
 	$(AT)echo View test outputs on available platforms: 
@@ -96,5 +95,8 @@ view:
 
 verify: run verifyonly
 
-clean:
-	$(AT)rm -r -f gen run *.pyc
+cleanrun:
+	$(AT)rm -r -f run
+
+clean: cleanrun
+	$(AT)rm -r -f gen *.pyc

@@ -519,7 +519,7 @@ namespace {
 	doProp(n + 1);
       }
     }
-    void
+    const char *
     pruneSubCases() {
       for (unsigned s = 0; s < m_subCases.size(); s++) {
 	ParamConfig &pc = *m_subCases[s];
@@ -574,6 +574,10 @@ namespace {
 	  s--;
 	}
       }
+      return m_subCases.size() == 0 ?
+	OU::esprintf("For case %s, there are no valid parameter combinations for any worker", 
+		     m_name.c_str()) :
+	NULL;
     }
     void
     print(FILE *out) {
@@ -583,8 +587,13 @@ namespace {
 	ParamConfig &pc = *m_subCases[s];
 	for (unsigned n = 0; n < pc.params.size(); n++) {
 	  Param &p = pc.params[n];
-	  if (p.m_param)
-	    fprintf(out, "    %s = %s\n", p.m_param->cname(), p.m_uValue.c_str());
+	  if (p.m_param) {
+	    if (p.m_generate.empty())
+	      fprintf(out, "    %s = %s\n", p.m_param->cname(), p.m_uValue.c_str());
+	    else
+	      fprintf(out, "    %s = generated in file: gen/properties/%s.%02u.%s\n",
+		      p.m_param->cname(), m_name.c_str(), s, p.m_param->cname());
+	  }
 	}
       }
     }
@@ -866,12 +875,15 @@ namespace {
 			      io.m_file.c_str(), io.m_file[0] == '/' ? "" : "../../", 
 			      io.m_file.c_str());
 	      OU::formatAdd(verify,
-			    "  if [ $? = 0 ] ; then \n"
-			    "    tput bold; tput setaf 2\n"
+			    "  r=$?\n"
+			    "  tput bold\n"
+			    "  if [ $r = 0 ] ; then \n"
+			    "    tput setaf 2\n"
 			    "    echo '  Verification for port %s: PASSED'\n"
 			    "  else\n"
-			    "    tput bold; tput setaf 1\n"
+			    "    tput setaf 1\n"
 			    "    echo '  Verification for port %s: FAILED'\n"
+			    "    failed=1\n"
 			    "  fi\n"
 			    "  tput sgr0\n"
 			    "}\n", io.m_port->cname(), io.m_port->cname());
@@ -1384,7 +1396,8 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
   for (unsigned n = 0; n < cases.size(); n++) {
     cases[n]->m_subCases.push_back(new ParamConfig(cases[n]->m_settings));
     cases[n]->doProp(0);
-    cases[n]->pruneSubCases();
+    if ((err = cases[n]->pruneSubCases()))
+      return err;
     cases[n]->print(out);
   }
   fclose(out);
@@ -1444,8 +1457,10 @@ createCases(const char **platforms, const char */*package*/, const char */*outDi
       m_component = cp ? cp + 1 : spec;
     }
     ~CallBack() {
-      if (m_run)
+      if (m_run) {
+	fprintf(m_run, "exit $failed\n");
 	fclose(m_run);
+      }
       if (m_verify)
 	fclose(m_verify);
     }
@@ -1485,74 +1500,16 @@ createCases(const char **platforms, const char */*package*/, const char */*outDi
 		    OU::format(m_err, "Cannot open file \"%s\" for writing", file.c_str());
 		    return true;
 		  }
-#if 0
-		  file = dir + "/verify.sh";
-		  if (!(m_verify = fopen(file.c_str(), "w"))) {
-		    OU::format(m_err, "Cannot open file \"%s\" for writing", file.c_str());
-		    return true;
-		  }
-		  m_outputs = ezxml_cattr(wx, "outputs");
-		  m_outputArgs.clear();
-		  m_verifyOutputs.clear();
-		  OU::parseList(m_outputs, doOutput, this);
-#endif
 		  fprintf(m_run,
 			  "#!/bin/sh --noprofile\n"
 			  "# Note that this file runs on remote/embedded systems and thus\n"
 			  "# may not have access to the full development host environment\n"
+			  "failed=0\n"
 			  "source $OCPI_CDK_DIR/scripts/testrun.sh %s %s $* - %s\n",
 			  m_spec.c_str(), m_platform.c_str(), ezxml_cattr(wx, "outputs"));
-#if 0
-			  "function isPresent {\n"
-			  "  local key=$1\n"
-			  "  shift\n"
-			  "  local vals=($*)\n"
-			  "  for i in $*; do if [ \"$key\" = \"$i\" ]; then return 0; fi; done\n"
-			  "  return 1\n"
-			  "}\n"
-			  "echo Performing test cases for %s on platform %s 1>&2\n"
-			  "echo Functions performed in one pass are: $* 1>&2\n"
-			  "! isPresent run $* || run=run\n"
-			  "! isPresent view $* || view=view\n"
-			  "! isPresent verify $* || verify=verify\n"
-			  "export OCPI_LIBRARY_PATH="
-			  "../../../lib/rcc:../../gen/assemblies:$OCPI_CDK_DIR/lib/components/rcc\n"
-			  "# docase <name> <platform> <model> <worker> <case> <subcase> <implprops>\n"
-			  "function docase {\n"
-			  "  [ -z \"$Cases\" ] || {\n"
-			  "     local ok\n"
-			  "     for c in $Cases; do\n"
-			  "       [[ ($c == *.* && $c == $5.$6) || ($c != *.* && $c == $5) ]] && ok=1\n"
-			  "     done\n"
-			  "     [ -z \"$ok\" ] && return 0\n"
-			  "  }\n"
-			  "  [ -z \"$run\" ] || {\n"
-			  "    echo Running $1 test case: \"$5.$6\" on platform $2 using "
-			  "worker $4.$3... 1>&2\n"
-			  "    cmd=(ocpirun -d -v -m$1=$3 -w$1=$4 -P$1=$2"
-			  " --dump-file=$5.$6.$4.$3.props \\\n"
-			  "         %s ../../gen/applications/$5.$6.xml)\n"
-			  "    (echo ${cmd[@]}; time ${cmd[@]}) > $5.$6.$4.$3.log 2>&1 \n"
-			  "    [ $? = 0 -a -z \"$KeepSimulations\" ] && rm -r -f simulations\n"
-			  "  }\n"
-			  "  [ -z \"$view\" -a -z \"$verify\" ] || \n"
-			  "    ../../gen/applications/verify_$5.sh $4.$3 $6 $view $verify\n"
-			  "}\n",
-#endif
 		}
 		fprintf(m_run, "docase %s %s %s %02u\n",
 			m_model.c_str(), ezxml_cattr(wx, "name"), name, n);
-#if 0
-		fprintf(m_verify, "verify %s %s %s %s %s %02u\n",
-			m_component.c_str(), m_platform.c_str(), m_model.c_str(),
-			ezxml_cattr(wx, "name"), name, n);
-#endif
-#if 0
-		for (ezxml_t px = ezxml_cchild(wx, "property"); px; px = ezxml_cnext(px))
-		  fprintf(m_run, " -p%s=%s='%s'", m_component.c_str(), ezxml_cattr(px, "name"),
-			  ezxml_cattr(px, "value"));
-		fprintf(m_run, "\n");
-#endif
 	      }
 	}
 	accepted = true;
