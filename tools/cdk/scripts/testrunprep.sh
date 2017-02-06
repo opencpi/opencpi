@@ -56,4 +56,18 @@ $ToolsDir/ocpigen -v -C ${localplatforms[@]} ${remoteplatforms[@]}
 	EOF
  done
 )  > run/runtests.sh
+for p in ${remoteplatforms[@]##*-}; do
+  for f in run verify; do
+    file=run/$p/$f.sh
+    [ -f $file -a ! -x $file ] && chmod a+x $file
+  done
+  phost=${p}_host puser=${p}_user ppasswd=${p}_passwd pdir=${p}_dir
+  [ -x run/$p/run.sh ] && {
+     cat <<-EOF > run/$p/runremote.sh
+	\$OCPI_CDK_DIR/scripts/testrunremote.sh ${!phost} ${!puser} ${!ppasswd} \\
+	"cd ${!pdir}/$1/run/$p && \$*"
+	EOF
+     chmod a+x run/$p/runremote.sh
+  }
+done
 chmod a+x run/*.sh

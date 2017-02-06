@@ -487,7 +487,7 @@ define OcpiSetProject
   # I.e. where the project path looks for other projects, and their exports,
   # the current project is searched internally, not in exports
   # when looking for (non-slash) primitives, look in this project, not exports
-  $$(call OcpiPrependEnvPath,OCPI_HDL_PRIMITIVE_PATH,$$(OcpiTempProjDir)/hdl/primitives)
+  $$(call OcpiPrependEnvPath,OCPI_HDL_PRIMITIVE_PATH,$$(OcpiTempProjDir)/hdl/primitives/lib)
   # when looking for platforms, look in this project
   $$(call OcpiPrependEnvPath,OCPI_HDL_PLATFORM_PATH,$$(OcpiTempProjDir)/hdl/platforms)
   # when looking for XML specs and protocols, look in this project

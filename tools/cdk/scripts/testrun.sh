@@ -60,7 +60,7 @@ function docase {
     fi
     r=$?
     [ $r != 0 ] && {
-	tput setaf 2
+	tput setaf 1
 	echo Execution FAILED - see log in run/$platform/$3.$4.$2.$1.log 1>&2
 	tput sgr0
 	failed=1

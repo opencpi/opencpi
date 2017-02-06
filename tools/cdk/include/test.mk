@@ -27,7 +27,7 @@ ifneq ($(if $(MAKECMDGOALS),$(filter build all generate generated,$(MAKECMDGOALS
 endif
 
 # Primary goals for this Makefile, with "build" being the default (all)
-.PHONY: generate build prepare runtests runonly verify verifyonly cleanrun
+.PHONY: generate build prepare run runtests runonly verify verifyonly cleanrun
 
 # Compatility
 .PHONY: test tests generated

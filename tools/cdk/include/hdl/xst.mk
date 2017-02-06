@@ -392,7 +392,7 @@ HdlToolCompile=\
   $(and $(XstNeedIni),$(XstMakeLso))\
   $(and $(XstNeedIni),$(XstMakeIni))\
   $(XstMakeScr)\
-  $(call OcpiXilinxIseInit); xst -ifn $(XstScrFile) \
+  $(call OcpiXilinxIseInit); xst -ifn $(XstScrFile) && touch $(WorkLib)\
   $(and $(PlatformCores), && mv $(Core).ngc temp.ngc && ngcbuild -sd .. temp.ngc $(Core).ngc)
 
 #  $(call OcpiXilinxIseInit); xst -ifn $(XstScrFile) && touch $(LibName) \
