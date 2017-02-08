@@ -3,12 +3,19 @@
 
 $(if $(wildcard $(OCPI_CDK_DIR)),,$(error OCPI_CDK_DIR environment variable not set properly.))
 
-ifneq ($(origin OnlyPlatforms),undefined)
-  export OnlyPlatforms
+ifdef Case
+  override Cases+= $(Case)
 endif
-ifneq ($(origin ExcludePlatforms),undefined)
-  export ExcludePlatforms
+ifdef OnlyPlatform
+  override OnlyPlatforms+= $(OnlyPlatform)
 endif
+ifdef ExcludePlatform
+  override ExcludePlatforms+= $(ExcludePlatform)
+endif
+export OnlyPlatforms
+export ExcludePlatforms
+export Cases
+export KeepSimulations
 
 include $(OCPI_CDK_DIR)/include/util.mk
 
@@ -19,15 +26,13 @@ endif
 # We need the project dir because remote system mount dirs point to the project
 $(call OcpiIncludeProject,error)
 
-export Cases
-export KeepSimulations
 # This is to allow the spec to be found and any protocols it depends on
 ifneq ($(if $(MAKECMDGOALS),$(filter build all generate generated,$(MAKECMDGOALS)),1),)
   $(call OcpiSetXmlIncludes)
 endif
 
 # Primary goals for this Makefile, with "build" being the default (all)
-.PHONY: generate build prepare run runtests runonly verify verifyonly cleanrun
+.PHONY: generate build prepare run runtests runonly verify verifyonly cleanrun cleansim
 
 # Compatility
 .PHONY: test tests generated
@@ -47,8 +52,7 @@ TESTXML:=$(CwdName)-test.xml
 
 $(CASEXML): $(TESTXML)
 	$(AT)echo ========= Generating test assemblies, inputs and applications.
-	$(AT)$(OcpiGen) -v -T $< || ($(RM) -r -f gen; exit 1)
-	$(AT)chmod a+x gen/applications/*.sh
+	$(AT)$(OcpiGen) -v -T $< && chmod a+x gen/applications/*.sh
 generate: $(CASEXML)
 
 .PHONY: testxml
@@ -61,9 +65,11 @@ build: generate
 
 # Prepare to run by looking for available containers and generating run scripts for the
 # current platform environment - this is context/platform sensitiive
+# FIXME: there should be a function that simply returns the relative position within the project
+#        so we don't (here or elsewhere) have to recompute it
 prepare:
 	$(AT)echo Preparing for execution on available platforms with available built workers and assemblies.
-	$(AT)$(OCPI_CDK_DIR)/scripts/testrunprep.sh $(call FindRelative,$(OCPI_PROJECT_DIR),$(CURDIR))
+	$(AT)$(OCPI_CDK_DIR)/scripts/testrunprep.sh $(call FindRelative,$(realpath $(OCPI_PROJECT_DIR)),$(realpath $(CURDIR)))
 
 runonly:
 	$(AT)echo Executing tests on available or specified platforms:
@@ -73,18 +79,21 @@ runonly:
 	     fi
 	$(AT)./run/runtests.sh run
 
-run: prepare runonly
-
-runtests: prepare
+run runtests: prepare
 	$(AT)echo Running and verifying test outputs on available platforms: 
 	$(AT)./run/runtests.sh run verify $(and $(View),view)
 
+# only for verify only so we can use wildcard
+RunPlatforms=$(foreach p,$(filter-out $(ExcludePlatforms),$(notdir $(wildcard run/*))),\
+               $(if $(OnlyPlatforms),$(filter $p,$(OnlyPlatforms)),$p))
 verifyonly:
 	$(AT)echo ========= Verifying test outputs on prepared platforms
-	$(AT)for d in run/*; do \
-	       [ -d $$d ] && \
-	       echo ================== Verifying test cases for platform $$(basename $$d) && \
-	       (cd $$d; ./run.sh verify $(and $(View),view)); \
+	$(AT)for d in $(RunPlatforms); do \
+	       echo Considering platform $$d; \
+	       [ ! -x run/$$d/run.sh ] || \
+                (cd run/$$d; \
+	         echo ================== Verifying test cases for platform $$d && \
+	         ./run.sh verify $(and $(View),view)); \
 	     done
 
 #	$(AT)./run/runtests.sh verify $(and $(View),view)
@@ -97,6 +106,9 @@ verify: run verifyonly
 
 cleanrun:
 	$(AT)rm -r -f run
+
+cleansim:
+	$(AT)rm -r -f run/*/*.simulation
 
 clean: cleanrun
 	$(AT)rm -r -f gen *.pyc

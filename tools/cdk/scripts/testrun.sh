@@ -30,9 +30,11 @@ ports=($*)
 function docase {
   [ -z "$Cases" ] || {
      local ok
+     set -f
      for c in $Cases; do
-       [[ ($c == *.* && $c == $5.$6) || ($c != *.* && $c == $5) ]] && ok=1
+       [[ ($c == *.* && $3.$4 == $c) || ($c != *.* && $3 == $c) ]] && ok=1
      done
+     set +f
      [ -z "$ok" ] && return 0
   }
   [ -n "$header" ] || {
@@ -50,7 +52,7 @@ function docase {
     done
     echo Running $component test case: "$3.$4" on platform $platform using worker $2.$1... 1>&2
     cmd=('OCPI_LIBRARY_PATH=../../../lib/rcc:../../gen/assemblies:$OCPI_CDK_DIR/lib/components/rcc' \
-         ocpirun -l8 -d -v -m$component=$1 -w$component=$2 -P$component=$platform \
+         ocpirun -d -v -m$component=$1 -w$component=$2 -P$component=$platform \
 	         --sim-dir=$3.$4.$2.$1.simulation \
 		 --dump-file=$3.$4.$2.$1.props $outputs ../../gen/applications/$3.$4.xml)
     rm -f -r $3.$4.$2.$1.*
@@ -70,7 +72,7 @@ function docase {
   [ -z "$view" -a -z "$verify" ] || 
     if [ "$r" = 0 ]; then
       ../../gen/applications/verify_$3.sh $2.$1 $4 $view $verify
-      [ -n "$verify" -a $? = 0 -a -z "$KeepSimulations" ] && rm -r -f $3.$4.$2.$1.simulation
+      [ -n "$verify" -a $? = 0 -a "$KeepSimulations" != 1 ] && rm -r -f $3.$4.$2.$1.simulation
     else
       echo Execution failed so verify or view not performed.
     fi

@@ -2029,13 +2029,19 @@ emitImplHDL(bool wrap) {
 	    // String arrays require a wrapper to convert to the generic string_array_t
 	    fprintf(f, "end block; -- end of wrapper for writable string_array conversion\n");
 	  if (pr.m_baseType == OA::OCPI_Enum) {
+	    size_t bits = OU::bitsForMax(pr.m_nEnums - 1);
 	    fprintf(f,
 		    "  -- work around isim 14.6 bug since this did not work:\n"
 		    "  -- work.%%s_constants.%%s_t'val(to_integer(my_%%s_value));\n"
-		    "  with to_integer(my_%s_value) select props_to_worker.%s <= \n",
-		    name, name);
-	    for (unsigned nn = 0; nn < pr.m_nEnums; nn++)
-	      fprintf(f, "    %s_e when %u,\n", pr.m_enums[nn], nn);
+		    // "  with to_integer(my_%s_value) select props_to_worker.%s <= \n",
+		    "  with my_%s_value(%zu-1 downto 0) select props_to_worker.%s <= \n",
+		    name, bits, name);
+	    for (unsigned nn = 0; nn < pr.m_nEnums; nn++) {
+	      std::string val;
+	      for (unsigned b = 0; b < bits; b++)
+		val += nn & (1 << (bits-1-b)) ? "1" : "0";
+	      fprintf(f, "    %s_e when \"%s\",\n", pr.m_enums[nn], val.c_str());
+	    }
 	    fprintf(f, "    %s_e when others;\n", pr.m_enums[0]);
 	  } else if (pr.m_isReadable && !pr.m_isVolatile)
 	    fprintf(f, "  props_to_worker.%s <= my_%s_value;\n", name, name);

@@ -626,6 +626,11 @@ namespace {
       if (!OS::FileSystem::exists(file))
 	return OU::esprintf("No output from generating %s file \"%s\" from command:  %s", 
 			    type, file.c_str(), cmd.c_str());
+      const char *space = strchr(generate.c_str(), ' ');
+      std::string path;
+      path.assign(generate.c_str(), space ? space - generate.c_str() : generate.length());
+      if (OS::FileSystem::exists(path))
+	addDep(path.c_str(), true);
       return NULL;
     }
     // Generate inputs: input files
@@ -886,6 +891,7 @@ namespace {
 			    "    failed=1\n"
 			    "  fi\n"
 			    "  tput sgr0\n"
+			    "  exit $r\n"
 			    "}\n", io.m_port->cname(), io.m_port->cname());
 	    } else
 	      OU::formatAdd(verify,

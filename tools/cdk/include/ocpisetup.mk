@@ -170,9 +170,6 @@ endif
 ifndef OCPI_PREREQUISITES_INSTALL_DIR
   export OCPI_PREREQUISITES_INSTALL_DIR:=/opt/opencpi/prerequisites
 endif
-ifndef OCPI_LZMA_DIR
-  export OCPI_LZMA_DIR=$(OCPI_PREREQUISITES_DIR)/lzma
-endif
 ifndef OCPI_PATCHELF_DIR
   export OCPI_PATCHELF_DIR=$(OCPI_PREREQUISITES_DIR)/patchelf
 endif

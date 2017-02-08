@@ -17,4 +17,4 @@ source ./scripts/setup-install.sh \
   CFLAGS=-g CXXFLAGS=-g
 make
 make install
-echo ============= gmp for $OCPI_TARGET_PLATFORM built and installed in $OCPI_PREREQUISITES_INSTALL_DIR/lzma/$OCPI_TARGET_DIR
+echo ============= gmp for $OCPI_TARGET_PLATFORM built and installed in $OCPI_PREREQUISITES_INSTALL_DIR/gmp/$OCPI_TARGET_DIR

@@ -8,7 +8,7 @@ _XILINX_MK=1
 
 OcpiXilinxDir=$(strip $(foreach t,$(or $(OCPI_XILINX_DIR),/opt/Xilinx),$(infox TT is $t)\
 		 $(if $(shell test -d $t && echo 1),$t,\
-		    $(call $(or $1,error), Directory "$t", for OCPI_XILINX_DIR, not found))))
+		    $(call $(or $1,error), Directory "$t" for OCPI_XILINX_DIR not found))))
 
 OcpiXilinxLicenseFile=$(strip $(foreach t,$(or $(OCPI_XILINX_LICENSE_FILE),\
                                                $(call OcpiXilinxDir,$1)/Xilinx-License.lic),\
@@ -23,7 +23,7 @@ $(foreach t,$(OcpiXilinxDir),\
         $(if $(filter-out undefined,$(origin OCPI_XILINX_VERSION)),\
           $(foreach e,$(OCPI_XILINX_VERSION),\
             $(if $(shell test -d $t/$e && echo 1),$e,\
-              $(call $(or $1,error), Directory "$t/$e", for OCPI_XILINX_VERSION, not found))),\
+              $(call $(or $1,error), Directory "$t/$e" for OCPI_XILINX_VERSION not found))),\
           $(or $(shell for i in \
                         `shopt -s nullglob && echo $t/*  | tr ' ' '\n' | sort -n -r`; \
                        do \
@@ -38,25 +38,24 @@ $(foreach t,$(OcpiXilinxDir),\
 # We call this if all we really need is lab tools (e.g. impact)
 # First look for lab tools, then look for ise
 OcpiXilinxLabToolsDir=$(strip\
-$(foreach t,$(OcpiXilinxDir),$(info TOP:$t)\
-  $(foreach i,\
-    $(or $(OCPI_XILINX_LAB_TOOLS_DIR),\
-      $(foreach v,\
-        $(if $(filter-out undefined,$(origin OCPI_XILINX_VERSION)),\
-          $(foreach e,$(OCPI_XILINX_VERSION),\
-            $(if $(shell test -d $t/$e && echo 1),$e,\
-              $(call $(or $1,error), Directory "$t/$e", for OCPI_XILINX_VERSION, not found))),\
-          $(or $(shell for i in \
-                        `shopt -s nullglob && echo $t/*  | tr ' ' '\n' | sort -n -r`; \
-                       do \
-                         [ -d $$i -a -d $$i/LabTools ] && echo `basename $$i` && break; \
-                       done),\
-            $(call $(or $1,error), No version directory under $t/*/LabTools for Xilinx LabTools))),\
-        $(infox VV:$v)$(call OcpiXilinxDir,$1)/$v/LabTools)),\
-    $(infox II:$i.)\
-    $(if $(shell test -d $i/LabTools && echo 1),$i/LabTools,\
-      $(or $(foreach d,$(call OcpiXilinxIseDir,$1),$d/ISE),\
-        $(call $(or $1,error), Directory "$i", in OCPI_XILINX_LAB_TOOLS_DIR for LabTools, not found))))))
+$(if $(OCPI_XILINX_LAB_TOOLS_DIR),\
+  $(foreach d,$(OCPI_XILINX_LAB_TOOLS_DIR),\
+    $(or $(shell test -d $d/LabTools && echo $d/LabTools),\
+      $(call $(or $1,error),OCPI_XILINX_LAB_TOOLS_DIR, $d, missing or has no LabTools subdirectory))),\
+  $(foreach t,$(call OcpiXilinxDir,$1),$(info TOP:$t)\
+    $(foreach v,\
+      $(if $(filter-out undefined,$(origin OCPI_XILINX_VERSION)),\
+        $(foreach e,$(OCPI_XILINX_VERSION),\
+          $(or $(shell test -d $t/$e && echo $e),\
+            $(call $(or $1,error), Directory "$t/$e", for OCPI_XILINX_VERSION, not found))),\
+        $(or $(shell \
+               for i in `shopt -s nullglob && echo $t/*  | tr ' ' '\n' | sort -n -r`; \
+                 do \
+                   [ -d "$$i/LabTools" -o -d "$$i/ISE_DS" ] && echo `basename $$i` && break; \
+                 done),\
+            $(call $(or $1,error), No version directory under $t for Xilinx ISE or LabTools))),\
+      $(or $(wildcard $t/$v/LabTools/LabTools),$(wildcard $t/$v/ISE_DS/ISE),\
+        $(call $(or $1,error), Directory $t/$v has no ISE or LabTools under it))))))
 
 OcpiXilinxEdkDir=$(strip\
  $(foreach d,$(or $(OCPI_XILINX_EDK_DIR),$(call OcpiXilinxIseDir,$1)/EDK),\
@@ -101,14 +100,14 @@ OcpiXilinxVivadoInit=\
 
 # emit shell assignments - allowing errors etc.
 ifdef ShellIseVars
-
+XilinxCheck=ignore
 all:
 
-$(info OcpiXilinxIseDir=$(call OcpiXilinxIseDir,ignore);\
-       OcpiXilinxEdkDir=$(call OcpiXilinxEdkDir,ignore);\
-       OcpiXilinxLabToolsDir=$(call OcpiXilinxLabToolsDir,ignore);\
-       OcpiXilinxVivadoDir=$(call OcpiXilinxVivadoDir,ignore);\
-       OcpiXilinxLicenseFile=$(call OcpiXilinxLicenseFile,ignore))
+$(info OcpiXilinxIseDir=$(call OcpiXilinxIseDir,$(XilinxCheck));\
+       OcpiXilinxEdkDir=$(call OcpiXilinxEdkDir,$(XilinxCheck));\
+       OcpiXilinxLabToolsDir=$(call OcpiXilinxLabToolsDir,$(XilinxCheck));\
+       OcpiXilinxVivadoDir=$(call OcpiXilinxVivadoDir,$(XilinxCheck));\
+       OcpiXilinxLicenseFile=$(call OcpiXilinxLicenseFile,$(XilinxCheck)))
 
 endif
 
