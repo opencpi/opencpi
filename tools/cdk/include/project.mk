@@ -27,7 +27,7 @@ endif
 include $(OCPI_CDK_DIR)/include/ocpisetup.mk
 
 ifeq (@,$(AT))
-  .SILENT: test clean exports components hdlprimitives hdlcomponents hdldevices hdladapters hdlcards hdlplatforms hdlassemblies cleanhdl rcc cleanrcc ocl cleanocl applications run cleancomponents cleanapplications cleanexports cleaneverything
+  .SILENT: clean exports components hdlprimitives hdlcomponents hdldevices hdladapters hdlcards hdlplatforms hdlassemblies cleanhdl rcc cleanrcc ocl cleanocl applications run cleancomponents cleanapplications cleanexports cleaneverything $(OcpiTestGoals)
 endif
 
 MaybeMake=if [ -d $1 ]; then $(MAKE) -C $1 $2; fi
@@ -38,17 +38,18 @@ $(foreach p,$(HdlPlatform) $(HdlPlatforms),\
    echo =============Building platform $p/$2 for $3 &&\
    $(call MaybeMake,$1/$p/$2,$3) &&) true
 
-.PHONY: all applications test clean exports components cleanhdl
+.PHONY: all applications clean exports components cleanhdl $(OcpiTestGoals)
 .PHONY: hdl hdlassemblies hdlprimitives hdlcomponents hdldevices hdladapters hdlplatforms hdlassemblies hdlportable
 all: applications
 
 hdlassemblies applications: exports
 
-# Build tests where they might be found.
-test:
-	$(call MaybeMake,components,test)
-	$(call MaybeMake,hdl/devices,test)
-	$(call MaybeMake,hdl/platforms,test)
+# Perform test-related goals where they might be found.
+DoTests=$(foreach t,\
+          components hdl/devices hdl/adapters hdl/cards $(wildcard hdl/platforms/*/devices),\
+          $(call MaybeMake,$t,$1) &&) true
+$(OcpiTestGoals):
+	$(call DoTests,$@)
 
 clean: cleanhdl
 	$(call MaybeMake,components,clean)
@@ -77,7 +78,7 @@ hdladapters: hdlprimitives
 hdlcards: hdlprimitives
 	$(call MaybeMake,hdl/cards)
 
-hdlplatforms: hdldevices hdlcards
+hdlplatforms: hdldevices hdlcards hdladapters
 	$(call MaybeMake,hdl/platforms)
 	$(MAKE) exports
 
@@ -119,9 +120,6 @@ applications: rcc hdl
 run: all test
 	$(call MaybeMake,components,run)
 	$(call MaybeMake,applications,run)
-
-runtests:
-	$(call MaybeMake,components,runtests)
 
 cleancomponents:
 	$(call MaybeMake,components,clean)

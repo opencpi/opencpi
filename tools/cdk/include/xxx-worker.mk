@@ -151,7 +151,9 @@ ifeq ($(origin SkelFiles),undefined)
 endif
 
 # Making the skeleton may also make a default OWD
-.PHONY: skeleton
+# The "generate" goal is the generic one for workers, tests, etc.
+.PHONY: skeleton generate
+generate: skeleton
 skeleton:  $(ImplHeaderFiles) $(SkelFiles)
 all: skeleton
 
@@ -317,7 +319,7 @@ MyBBLibFile=$(infox MBB:$1:$2:$3)$(call BBLibFile,$1,$(call RmRv,$(basename $2))
 define DoLink
   $(infox DoLink:$1:$2:$3:$4:$5)
   $$(infox DoLink2:$1:$2:$3:$4:$5)
-  LibLinks+=$(LibDir)/$1/$3
+  BinLibLinks+=$(LibDir)/$1/$3
   ifeq ($(Model),hdl)
     $(LibDir)/$1/$(basename $3)-generics.vhd: | $(LibDir)/$1
 	$(AT)$$(call MakeSymLink2,$(call WkrTargetDir,$1,$4)/generics.vhd,$(LibDir)/$1,$(basename $3)-generics.vhd)
@@ -337,7 +339,7 @@ define DoLink
       $$(infox DLHTNB2:$1:$2:$3:$4==$$(call MyBBLibFile,$1,$2,$4))
     ifeq ($(and $(filter %_rv,$(basename $2)),$(filter 2,$(words $(HdlCores)))),)
       $$(infox DLHTNB:$1:$2:$3:$4==$$(call MyBBLibFile,$1,$2,$4))
-      LibLinks+=$(LibDir)/$1/$5
+      BinLibLinks+=$(LibDir)/$1/$5
       # This will actually be included/evaluated twice
       $(LibDir)/$1/$5: | $$$$(call MyBBLibFile,$1,$2,$4) $(LibDir)/$1
 	$(AT)echo Creating link from $$@ -\> $$(patsubst %/,%,$$(dir $$(call MyBBLibFile,$1,$2,$4))) to export the stub library.
@@ -387,7 +389,11 @@ else
 endif
 
 $(call OcpiDbgVar,LibLinks,Before all:)
-links: $$(LibLinks)
+$(call OcpiDbgVar,BinLibLinks,Before all:)
+.PHONY: links binlinks genlinks
+genlinks: $$(LibLinks)
+binlinks: $$(BinLibLinks)
+links: binlinks genlinks
 all: links
 $(LibDir) $(LibDirs):
 	$(AT)mkdir -p $@

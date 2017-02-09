@@ -68,8 +68,6 @@ HdlOtherDefsSuffix=$(HdlDefs)$(HdlOtherIncSuffix)
 HdlImplSuffix=-impl$(HdlIncSuffix)
 HdlOtherImplSuffix=-impl$(HdlOtherIncSuffix)
 
-.PHONY: links
-
 ifndef Tops
   ifdef Top
     Tops:=$(Top)
@@ -222,7 +220,7 @@ generated: skeleton  $(GeneratedSourceFiles)
 ifdef LibDir
 $(call OcpiDbg,Before all: "$(LibDir)/$(ImplXmlFile)")
 
-links: $(LibDir)/$(notdir $(ImplXmlFile))
+genlinks: $(LibDir)/$(notdir $(ImplXmlFile))
 
 $(LibDir)/$(notdir $(ImplXmlFile)): | $(LibDir)
 	$(AT)echo Creating link from $(LibDir) -\> $(ImplXmlFile) to expose the $(CwdName) implementation xml.
@@ -248,7 +246,7 @@ $(LibDir)/$1/$(Worker)$3$(HdlOtherSourceSuffix): \
 	$(AT)$$(call MakeSymLink2,$$<,$$(dir $$@),$$(notdir $$@))
 
 $(call OcpiDbg,Before all: "$(LibDir)/$(Worker)$(HdlSourceSuffix)")
-links: $(LibDir)/$1/$(Worker)$3$(HdlSourceSuffix) $(LibDir)/$1/$(Worker)$3$(HdlOtherSourceSuffix)
+genlinks: $(LibDir)/$1/$(Worker)$3$(HdlSourceSuffix) $(LibDir)/$1/$(Worker)$3$(HdlOtherSourceSuffix)
 
 endef
 

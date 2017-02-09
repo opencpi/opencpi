@@ -22,11 +22,20 @@ else
 endif
 include $(OCPI_CDK_DIR)/include/lib.mk
 
-.PHONY: run runtests
-runtests run: $(TestImplementations)
-	$(AT)set -e; for i in $(TestImplementations); do \
+.PHONY: generate run $(OcpiTestGoals)
+run: runtest # generic "run" runs test
+OldTests=$(foreach i,$(TestImplementations),\
+           $(shell [ -f $i/Makefile ] && grep -q '(OCPI_CDK_DIR)/include/test.mk' $i/Makefile || echo $i))
+$(filter-out test cleantest,$(OcpiTestGoals)):
+	$(AT)set -e; for i in $(filter-out $(OldTests),$(TestImplementations)); do \
 	  echo ==============================================================================;\
-	  echo ============= Running tests in $$i;\
-	  $(MAKE) --no-print-directory -C $$i run ; \
+	  echo ==== Performing goal \"$@\" for unit tests in $$i;\
+	  $(MAKE) --no-print-directory -C $$i $@ ; \
 	done
 
+# The ordering here assumes HDL cannot depend on RCC.
+generate:
+	$(call BuildModel,hdl,generate)
+	$(call BuildModel,ocl,generate)
+	$(call BuildModel,rcc,generate)
+	$(call BuildModel,test,generate)

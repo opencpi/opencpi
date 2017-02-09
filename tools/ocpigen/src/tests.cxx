@@ -821,7 +821,7 @@ namespace {
 	if (io.m_port->isDataProducer()) {
 	  if (io.m_script.size() || io.m_view.size()) {
 	    OU::formatAdd(verify,
-			  "echo '  '$msg case %s.$subcase for worker \"$worker\" using script on"
+			  "echo '    '$msg case %s.$subcase for worker \"$worker\" using script on"
 			  " output file:  %s.$subcase.$worker.%s.out\n"
 			  "while read comp name value; do\n"
 			  "  [ $comp = \"%s\" ] && eval export OCPI_TEST_$name=\"$value\"\n"
@@ -884,10 +884,10 @@ namespace {
 			    "  tput bold\n"
 			    "  if [ $r = 0 ] ; then \n"
 			    "    tput setaf 2\n"
-			    "    echo '  Verification for port %s: PASSED'\n"
+			    "    echo '    Verification for port %s: PASSED'\n"
 			    "  else\n"
 			    "    tput setaf 1\n"
-			    "    echo '  Verification for port %s: FAILED'\n"
+			    "    echo '    Verification for port %s: FAILED'\n"
 			    "    failed=1\n"
 			    "  fi\n"
 			    "  tput sgr0\n"
@@ -1500,7 +1500,7 @@ createCases(const char **platforms, const char */*package*/, const char */*outDi
 		  OS::FileSystem::mkdir(dir, true);
 		  std::string file(dir + "/run.sh");
 		  if (verbose)
-		    fprintf(stderr, "Generating run script for platform: %s\n",
+		    fprintf(stderr, "  Generating run script for platform: %s\n",
 			    m_platform.c_str());
 		  if (!(m_run = fopen(file.c_str(), "w"))) {
 		    OU::format(m_err, "Cannot open file \"%s\" for writing", file.c_str());

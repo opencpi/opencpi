@@ -32,17 +32,20 @@ ifneq ($(if $(MAKECMDGOALS),$(filter build all generate generated,$(MAKECMDGOALS
 endif
 
 # Primary goals for this Makefile, with "build" being the default (all)
-.PHONY: generate build prepare run runtests runonly verify verifyonly cleanrun cleansim
-
-# Compatility
-.PHONY: test tests generated
-# "make test" is a synonym for "making the tests", which is "build", which is the default
+# First global test goals
+.PHONY: $(OcpiTestGoals)
+# Next, generic goals
+.PHONY: run clean generate build
+# Next local test-only goals
+.PHONY: prepare runonly verify runnoprepare view
+# Map global goals to local goals
 test: build
+runtests: run
 tests: build
-# runtests is the high level UI goal.  Inside here it is "run"
+verifytest: verify
 all: build
-generated: generate
-
+runonlytest: runonly
+runtest: run
 
 # This is the representative result file that says things are properly generated.
 CASEXML:=gen/cases.xml
@@ -53,9 +56,9 @@ TESTXML:=$(CwdName)-test.xml
 $(CASEXML): $(TESTXML)
 	$(AT)echo ========= Generating test assemblies, inputs and applications.
 	$(AT)$(OcpiGen) -v -T $< && chmod a+x gen/applications/*.sh
+-include gen/*.deps
 generate: $(CASEXML)
 
-.PHONY: testxml
 $(TESTXML):
 	$(AT)[ -f $@ ] || echo '<tests/>' > $@
 
@@ -68,32 +71,43 @@ build: generate
 # FIXME: there should be a function that simply returns the relative position within the project
 #        so we don't (here or elsewhere) have to recompute it
 prepare:
-	$(AT)echo Preparing for execution on available platforms with available built workers and assemblies.
+	$(AT)echo ======== Preparing for execution on available platforms with available built workers and assemblies.
 	$(AT)$(OCPI_CDK_DIR)/scripts/testrunprep.sh $(call FindRelative,$(realpath $(OCPI_PROJECT_DIR)),$(realpath $(CURDIR)))
 
-runonly:
-	$(AT)echo Executing tests on available or specified platforms:
+runnoprepare:
+	$(AT)echo ======== Executing tests on available or specified platforms:
 	$(AT)if [ ! -e run/runtests.sh ]; then \
 	       echo Execution has not been prepared.  Use make prepare. ;\
 	       exit 1; \
 	     fi
 	$(AT)./run/runtests.sh run
 
-run runtests: prepare
-	$(AT)echo Running and verifying test outputs on available platforms: 
+runonly: prepare runnoprepare
+# runtests is for compatibility
+# run is generic (not just for tests)
+run: prepare
+	$(AT)echo ======== Running and verifying test outputs on available platforms: 
 	$(AT)./run/runtests.sh run verify $(and $(View),view)
 
 # only for verify only so we can use wildcard
 RunPlatforms=$(foreach p,$(filter-out $(ExcludePlatforms),$(notdir $(wildcard run/*))),\
                $(if $(OnlyPlatforms),$(filter $p,$(OnlyPlatforms)),$p))
-verifyonly:
-	$(AT)echo ========= Verifying test outputs on prepared platforms
-	$(AT)for d in $(RunPlatforms); do \
-	       echo Considering platform $$d; \
+verify:
+	$(AT)if [ ! -d run ]; then \
+	       echo No tests have been run so none can be verified.; \
+	       exit 0; \
+	     fi; \
+	     echo ======== Verifying test outputs on prepared platforms; \
+	     for d in $(RunPlatforms); do \
 	       [ ! -x run/$$d/run.sh ] || \
                 (cd run/$$d; \
-	         echo ================== Verifying test cases for platform $$d && \
-	         ./run.sh verify $(and $(View),view)); \
+		 props=(*.props); \
+		 if [ "$$props" = '*.props' ]; then \
+		   echo ============ No test case executions to verify for platform $$d; \
+		 else \
+	           echo ============ Verifying test cases for platform $$d && \
+	           ./run.sh verify $(and $(View),view); \
+		 fi); \
 	     done
 
 #	$(AT)./run/runtests.sh verify $(and $(View),view)
@@ -101,8 +115,6 @@ verifyonly:
 view:
 	$(AT)echo View test outputs on available platforms: 
 	$(AT)./run/runtests.sh view
-
-verify: run verifyonly
 
 cleanrun:
 	$(AT)rm -r -f run

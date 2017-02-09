@@ -623,4 +623,8 @@ $(eval override XmlIncludeDirsInternal:=\
    ))
 endef
 
+# Used wherever test goals are processed.  runtests is for compatibility
+# These are goals that *only* apply to testing.
+# .test directories also support more generic targets, in particular "clean" and "cleanrun"
+OcpiTestGoals=test cleantest runtest verifytest cleansim runtests runonlytest cleanrun
 endif # ifndef __UTIL_MK__

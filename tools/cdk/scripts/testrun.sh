@@ -8,6 +8,8 @@
 # Ports are the names of output ports
 
 #echo PARMS: $*
+tput=tput
+[ -z "$(which tput)" ] && tput=true 
 spec=$1; shift
 component=${spec##*.}
 platform=$1; shift
@@ -50,29 +52,41 @@ function docase {
       [ ${#ports[@]} != 1 ] && output+="_$o"
       outputs+="$output=fileName=$3.$4.$2.$1.$o.out"
     done
-    echo Running $component test case: "$3.$4" on platform $platform using worker $2.$1... 1>&2
+    echo '  'Executing $component test case: "$3.$4" on platform $platform using worker $2.$1... 1>&2
     cmd=('OCPI_LIBRARY_PATH=../../../lib/rcc:../../gen/assemblies:$OCPI_CDK_DIR/lib/components/rcc' \
          ocpirun -d -v -m$component=$1 -w$component=$2 -P$component=$platform \
 	         --sim-dir=$3.$4.$2.$1.simulation \
 		 --dump-file=$3.$4.$2.$1.props $outputs ../../gen/applications/$3.$4.xml)
     rm -f -r $3.$4.$2.$1.*
-    if [ -z "$remote" -a -x runremote.sh ]; then
-      ./runremote.sh "(echo ${cmd[@]}; time ${cmd[@]})" > $3.$4.$2.$1.log 2>&1
+    if [ "$TestVerbose" = 1 ]; then
+	out=/dev/stdout
     else
-      (echo ${cmd[@]}; eval time env ${cmd[@]}) > $3.$4.$2.$1.log 2>&1 
+	out=/dev/null
+    fi
+    set -o pipefail
+    if [ -z "$remote" -a -x runremote.sh ]; then
+      ./runremote.sh "(echo ${cmd[@]}; time ${cmd[@]})" 2>&1 | tee $3.$4.$2.$1.log > $out
+    else
+      (echo ${cmd[@]}; eval time env ${cmd[@]}) 2>&1 | tee $3.$4.$2.$1.log > $out
     fi
     r=$?
+    set +o pipefail
     [ $r != 0 ] && {
-	tput setaf 1
+	$tput setaf 1
 	echo Execution FAILED - see log in run/$platform/$3.$4.$2.$1.log 1>&2
-	tput sgr0
+	$tput sgr0
 	failed=1
+	return 0
     }
   }
   [ -z "$view" -a -z "$verify" ] || 
     if [ "$r" = 0 ]; then
-      ../../gen/applications/verify_$3.sh $2.$1 $4 $view $verify
-      [ -n "$verify" -a $? = 0 -a "$KeepSimulations" != 1 ] && rm -r -f $3.$4.$2.$1.simulation
+      if [ -f $3.$4.$2.$1.props ]; then
+        ../../gen/applications/verify_$3.sh $2.$1 $4 $view $verify
+        [ -n "$verify" -a $? = 0 -a "$KeepSimulations" != 1 ] && rm -r -f $3.$4.$2.$1.simulation
+      else
+        echo No execution to verify for $3.$4 using $2.$1 on platform $platform. 1>&2 
+      fi
     else
       echo Execution failed so verify or view not performed.
     fi

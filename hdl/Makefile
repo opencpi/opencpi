@@ -29,7 +29,7 @@ components: primitives
 devices: primitives
 	$(AT)$(call MyMake,devices)
 
-platforms: primitives devices
+platforms: devices adapters cards
 	$(AT)$(call MyMake,platforms)
 
 primitives:

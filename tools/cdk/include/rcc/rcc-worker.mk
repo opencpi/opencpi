@@ -125,7 +125,7 @@ define RccWkrBinaryLink
     $(LibDir)/$1/$5_s$$(call BF,$1): $$(call RccStaticPath,$1,$4) | $(LibDir)/$1
 	$(AT)echo Exporting worker binary for static executables: $$@ '->' $$<
 	$(AT)$$(call MakeSymLink2,$$<,$$(dir $$@),$$(notdir $$@))
-    LibLinks+=$(LibDir)/$1/$5_s$$(call BF,$1)
+    BinLibLinks+=$(LibDir)/$1/$5_s$$(call BF,$1)
   endif
 endef
 
