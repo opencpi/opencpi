@@ -40,6 +40,8 @@ fi
 # Determine where the driver lives, setting DIR and MODFILE
 if [ $# = 2 ] ; then # this is called from the makefile when we are loading what we are building
   DIR=./target-$OCPI_TOOL_DIR
+  # RPM-based gets called from within the directory already named after this kernel version:
+  case $(pwd) in *$(uname -r)) DIR=.; esac
 else
   # Determine the kernel release tag when there could be multiple drivers around
   # If the /etc/opencpi-release file exists, it tells us our own release tag and label for the driver
@@ -99,7 +101,7 @@ rmd () {
 
 if [ -d /sys/module/opencpi ] ; then
    case $1 in
-     (reload)
+     (reload|restart)
        echo The driver module is already loaded.  It will be unloaded.
        rmd
        ;;
@@ -107,7 +109,7 @@ if [ -d /sys/module/opencpi ] ; then
        echo The driver module is already loaded.  No action was taken.
        exit 0
        ;;
-     (unload)
+     (unload|stop)
        rmd
        echo The driver module was successfully unloaded.
        exit 0
@@ -117,10 +119,11 @@ if [ -d /sys/module/opencpi ] ; then
        exit 0
        ;;
   esac
-elif [ $1 = unload ] ; then
+elif test $1 = unload -o $1 = stop ; then
   echo The driver module is not loaded.  No action was taken.
   exit 0
 fi
+
 # AV-1715 - look for opencpi_memmap explicitly first
 MEMMAP=`tr ' ' '\n' < /proc/cmdline | grep -m 1 '^opencpi_memmap='`
 if [ "$MEMMAP" != "" ] ; then

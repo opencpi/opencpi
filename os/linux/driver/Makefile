@@ -34,6 +34,7 @@
 ########################################################################### #
 ThisMake := $(lastword $(MAKEFILE_LIST))
 
+.PHONY: all
 # RPM-based options:
 -include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_TARGET_PLATFORM).mk
 ifneq (1,$(OCPI_AUTOCONFIG_IMPORTED))
@@ -46,13 +47,12 @@ ifeq ($(OCPI_TARGET_ARCH),arm_cs)
 endif
 
 # (No longer blocks, but code left in as example if we need to block other platforms/drivers)
-#    .PHONY: all
 #    ifeq ($(OCPI_CROSS_HOST),arm-none-linux-gnueabi)
 #      $(warning Driver support not available for this platform (yet))
 #      .DEFAULT_GOAL := platform_not_supported
 #      all: platform_not_supported
 #    else
-#      all: installed
+all: installed
 #    endif
 #    .PHONY: platform_not_supported
 #    .SILENT: platform_not_supported
@@ -129,10 +129,7 @@ URULESFILE=99-$(MODNAME).rules
 MRULESFILE=mdev-$(MODNAME).rules
 TMP_FILES=Module.markers Module.symvers .opencpi* opencpi.mod.* opencpi.o .tmp* modules.order
 
-.PHONY: all
-all: installed
-
-$(MODFILE): opencpi.c $(shell echo $$(cd $(KERNELDIR); pwd -P))
+$(MODFILE): opencpi.c $(shell echo $$(cd $(KERNELDIR); pwd -P))  $(KERNELDIR)/include/config/auto.conf
 	$(AT)echo Building kernel module $(MODFILE)
 	$(and $(KERNELDIR),$(MAKE) -C $(KERNELDIR) M=$(PWD) V=2 modules)
 	$(AT)mkdir -p $(MyTargetDir)
@@ -171,6 +168,16 @@ topclean: clean
 distclean: clean
 	rm -r -f target-*
 
-
+# This file may be generated from an imported .config file.
+# In centos6/7 kernel headers it is already part of the yum-maintained kernel-headers package
+# and thus will not ever need to be built this way.
+# So this rule is saying that for some kernels, you can introduce a new or missing .config
+# file and generate the needed auto.conf file.
+# It is a bit scary to go into another package and cause changes there, but this simplifies
+# the process by just causing the right thing to happen as a side-effect of building our driver.
+# This rule also allows the local host tools (e.g. /scripts/basic/fixdep) to be compiled, if required
+.SILENT: $(KERNELDIR)/include/config/auto.conf
+$(KERNELDIR)/include/config/auto.conf:
+	make -C $(KERNELDIR) modules_prepare V=2 ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE)
 endif # ifdef KERNELRELEASE else..
 
