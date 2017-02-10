@@ -25,7 +25,7 @@ shift # get rid of the dash
 ports=($*)
 [ -z "$remote" -a -x runremote.sh -a -n "$run" -a -z "$verify" -a -z "$view" ] && {
     # If we are: only runnning, and running locally, and the platform is remote, run remotely
-    ./runremote.sh ./run.sh run remote
+    ./runremote.sh Cases="\"$Cases\"" ./run.sh run remote
     exit $?
 }
 # docase <name> <platform> <model> <worker> <case> <subcase> <implprops>
