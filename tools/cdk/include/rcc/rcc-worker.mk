@@ -77,7 +77,7 @@ OcpiLibDir=$(OCPI_CDK_DIR)/lib/$$(RccTarget)$(and $(OCPI_TARGET_MODE),/$(OCPI_TA
 # Add the libraries we know a worker might reference.
 override RccLibrariesInternal+=rcc application os
 
-ifeq ($(origin OCPI_TARGET_MODE),undefined)
+ifeq ($(OCPI_USE_TARGET_MODES),1)
   export OCPI_TARGET_MODE:=$(if $(filter 1,$(OCPI_BUILD_SHARED_LIBRARIES)),d,s)$(if $(filter 1,$(OCPI_DEBUG)),d,o)
 endif
 PatchElf=$(or $(OCPI_PREREQUISITES_INSTALL_DIR),/opt/opencpi/prerequisites)/patchelf/$(OCPI_TOOL_HOST)/bin/patchelf
