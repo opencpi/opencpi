@@ -87,7 +87,7 @@ namespace OCPI {
     // This list provides names and types and defaults
     PValue allPVParams[] = {
       PVString("transport"),
-      PVString("xferrole"),
+      PVString("transferRole"),
       PVString("DLLEntryPoint"),
       PVString("monitorIPAddress"),
       PVString("protocol"),

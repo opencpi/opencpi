@@ -88,7 +88,7 @@ namespace OCPI {
 	}
       }
       const char *s;
-      if (OU::findString(params, "xferRole", s)) {
+      if (OU::findString(params, "transferRole", s)) {
 	PortRole role;
 	if (!strcasecmp(s, "passive"))
 	  role = Passive;
@@ -101,9 +101,9 @@ namespace OCPI {
 	else if (!strcasecmp(s, "activeonly"))
 	  role = ActiveOnly;
 	else
-	  throw OU::Error("xferRole property must be passive|active|flowcontrol|activeonly");
+	  throw OU::Error("transferRole parameter must be passive|active|flowcontrol|activeonly");
 	if (!(getData().data.options & (1 << role)))
-	  throw OU::Error("xferRole of \"%s\" not supported by port \"%s\"",
+	  throw OU::Error("transferRole of \"%s\" not supported by port \"%s\"",
 			  s, mPort.m_name.c_str());
 	getData().data.role = role;
 	getData().data.options |= (1 << OCPI::RDT::MandatedRole);

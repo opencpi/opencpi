@@ -1197,7 +1197,7 @@ open(const char *name, const OA::PValue *params, std::string &err) {
   }
   uint32_t simTicks = 100000000, sleepUsecs = 200000;
   uint8_t spinCount = 20;
-  OU::findULong(params, "sim-ticks", simTicks);
+  OU::findULong(params, "simTicks", simTicks);
   
   return createDevice(name, platform, spinCount, sleepUsecs, simTicks, params, false, dir, err);
 }

@@ -144,7 +144,7 @@ mkParams(unsigned long bufferCount, size_t bufferSize, const char *xfer) {
   if (bufferSize)
     *p++ = OA::PVULong("bufferSize", (uint32_t)bufferSize);
   if (xfer)
-    *p++ = OA::PVString("xferRole", xfer);
+    *p++ = OA::PVString("transferRole", xfer);
   *p++ = OA::PVEnd;
   return params;
 }

@@ -131,6 +131,7 @@ namespace OCPI {
 		goto rejected;
 	      }
 	      ap[n] = *pi;
+	      (*pi)->m_name = p->m_name;
 	      found = true;
 	    }
 	  if (!found) {

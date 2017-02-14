@@ -176,8 +176,8 @@ namespace OCPI {
       // only be a single assignment per  workers should only make a  once.
       if ((err = checkInstanceParams("selection", params, false, true)) ||
 	  (err = checkInstanceParams("transport", params)) ||
-	  (err = checkInstanceParams("xferrole", params)) ||
-	  (err = checkInstanceParams("buffercount", params)) ||
+	  (err = checkInstanceParams("transferRole", params)) ||
+	  (err = checkInstanceParams("bufferCount", params)) ||
 	  (err = checkInstanceParams("worker", params, false, true)) ||
 	  (err = checkInstanceParams("property", params, true)))
 	return err;
@@ -674,8 +674,8 @@ namespace OCPI {
 #if 0 // this is done at the application level since we don't know port names herea
      {
 	const char *err, *iname = a.m_instances[instance].m_name.c_str();
-	if ((err = findPortValue(iname, name, "xferrole", params, m_parameters)) ||
-	    (err = findPortValue(iname, name, "buffercount", params, m_parameters)))
+	if ((err = findPortValue(iname, name, "transferRole", params, m_parameters)) ||
+	    (err = findPortValue(iname, name, "bufferCount", params, m_parameters)))
 	  return err;
 	m_name = name;
       }	

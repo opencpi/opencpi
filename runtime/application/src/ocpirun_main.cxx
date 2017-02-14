@@ -68,7 +68,7 @@
 	                               "connect external port to a specific device") \
   CMD_OPTION_S(url,      u, String, 0, "<external-name>=<URL>\n" \
 	                               "connect external port to a URL")\
-  CMD_OPTION(loglevel,   l, ULong,  0, "<log-level>\n" \
+  CMD_OPTION(log_level,  l, ULong,  0, "<log-level>\n" \
 	                               "set log level during execution, overriding OCPI_LOG_LEVEL")\
   CMD_OPTION(seconds,    t, Long,   0, "<seconds>\n" \
 	                               "specify seconds to wait for application to finish\n" \
@@ -80,13 +80,13 @@
   CMD_OPTION_S(transport,T, String, 0, "<instance-name>=<port-name>=<transport-name>\n" \
 	                               "set transport of connection at a port\n" \
 	                               "if no port name, then the single output port") \
-  CMD_OPTION_S(xferrole, , String, 0, "<instance-name>=<port-name>=<transport-role>\n" \
+  CMD_OPTION_S(transfer_role,,String,0, "<instance-name>=<port-name>=<transfer-role>\n" \
 	                               "set transport role at a port\n" \
 	                               "if no port name, then the single output port") \
-  CMD_OPTION_S(buffercount,B,String, 0, "<instance-name>=<port-name>=<buffercount>\n" \
+  CMD_OPTION_S(buffer_count,B,String,0, "<instance-name>=<port-name>=<buffercount>\n" \
 	                               "set buffercount at a port\n" \
 	                               "if no port name, then the single output port") \
-  CMD_OPTION_S(buffersize, Z, String,0, "<instance-name>=<port-name>=<buffersize>\n" \
+  CMD_OPTION_S(buffer_size, Z, String,0, "<instance-name>=<port-name>=<buffersize>\n" \
 	                               "set buffer size at a port\n" \
 	                               "if no port name, then the single output port") \
   CMD_OPTION_S(target,   r, String, 0, "a target to use when printing artifacts or specs in path on stdout") \
@@ -95,13 +95,10 @@
   CMD_OPTION(uncached,   U, Bool,   0, "dump cached properties uncached, ignoring cache") \
   CMD_OPTION(deployment, ,  String, 0, "XML file to read deployment from, avoid automatic deployment") \
   CMD_OPTION(deploy_out, ,  String, 0, "XML file to write deployment to") \
-  CMD_OPTION(no_execute, ,  Bool,   0, "Suppress execution, just determin deployment") \
-  CMD_OPTION(path,       ,  String, 0, "Search path for executable artifacts, overriding OCPI_LIBRARY_PATH environment") \
-  CMD_OPTION(libraries,  ,  String, 0, "Search path for source libraries, implying to search for possible source workers")\
-  CMD_OPTION(build,      ,  String, 0, "Build any source workers deployed")\
+  CMD_OPTION(no_execute, ,  Bool,   0, "Suppress execution, just determine deployment") \
+  CMD_OPTION(library_path,, String, 0, "Search path for executable artifacts, overriding OCPI_LIBRARY_PATH environment") \
   CMD_OPTION(sim_dir,    ,  String, "simulations", "Directory in which to run simulations")\
-  CMD_OPTION(art_lib_path,L,String, 0, "Specify/override OCPI_LIBRARY_PATH") \
-  CMD_OPTION(dumpPlatforms,M,Bool,  0, "dump platform and device worker properties") \
+  CMD_OPTION(dump_platforms,M,Bool, 0, "dump platform and device worker properties") \
   CMD_OPTION(sim_ticks,  ,  ULong,  0, "simulator clock cycles to allow") \
   CMD_OPTION(artifacts,  A, String, 0, "deprecated: comma-separated targets to print artifacts in path on stdout") \
   CMD_OPTION(specs,      G, String, 0, "deprecated: comma-separated targets to print specs in path on stdout") \
@@ -110,6 +107,8 @@
   /**/
 
 //  CMD_OPTION_S(simulator, H,String, 0, "Create a container with this HDL simulator")
+//  CMD_OPTION(libraries,  ,  String, 0, "Search path for source libraries, implying to search for possible source workers")
+//  CMD_OPTION(build,      ,  String, 0, "Build any source workers deployed")
 
 #include "CmdOption.h"
 #include "RemoteServer.h"
@@ -247,7 +246,7 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &file, std::string 
   if (options.sim_dir())
     addParam("directory", options.sim_dir(), simParams);
   if (options.sim_ticks())
-    simParams.push_back(OA::PVULong("sim-ticks", options.sim_ticks()));
+    simParams.push_back(OA::PVULong("simTicks", options.sim_ticks()));
   if (options.verbose())
     simParams.push_back(OA::PVBool("verbose", true));
   if (options.dump())
@@ -333,14 +332,14 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &file, std::string 
 static int mymain(const char **ap) {
   std::vector<OA::PValue> params;
 
-  if (options.art_lib_path()) {
+  if (options.library_path()) {
     std::string env("OCPI_LIBRARY_PATH=");
-    env += options.art_lib_path();
+    env += options.library_path();
     putenv(strdup(env.c_str()));
   }
   signal(SIGPIPE, SIG_IGN);
-  if (options.loglevel())
-    OCPI::OS::logSetLevel(options.loglevel());
+  if (options.log_level())
+    OCPI::OS::logSetLevel(options.log_level());
   if (!*ap && !options.list() && !options.artifacts())
     return options.usage();
   if (options.verbose())
@@ -353,7 +352,7 @@ static int mymain(const char **ap) {
     params.push_back(OA::PVBool("dump", true));
   if (options.dump_file())
     params.push_back(OA::PVString("dumpFile", options.dump_file()));
-  if (options.dumpPlatforms())
+  if (options.dump_platforms())
     params.push_back(OA::PVBool("dumpPlatforms", true));
   {
   size_t n;
@@ -367,9 +366,9 @@ static int mymain(const char **ap) {
   addParams("device", options.device(n), params);
   addParams("url", options.url(n), params);
   addParams("transport", options.transport(n), params);
-  addParams("xferrole", options.xferrole(n), params);
-  addParams("buffercount", options.buffercount(n), params);
-  addParams("buffersize", options.buffersize(n), params);
+  addParams("transferRole", options.transfer_role(n), params);
+  addParams("bufferCount", options.buffer_count(n), params);
+  addParams("bufferSize", options.buffer_size(n), params);
   }
   if (options.deployment())
     addParam("deployment", options.deployment(), params);

@@ -276,7 +276,7 @@ public:
 	  const char *estart;
 	  unsigned ebase;
 	  uint32_t emult;
-	  // We cannot allow implicit octal since %f and %g in sprintf isnert extra zeros
+	  // We cannot allow implicit octal since %f and %g in sprintf insert extra zeros
 	  if (*cp == '0' && isdigit(cp[1]) && cp <= last)
 	    cp++;
 	  if ((err = getNumber(cp, last, estart, end, ebase, emult, false, mbase)))
