@@ -35,7 +35,18 @@ int main(int argc, char **argv) {
     int     np[1]={5};
     cvFillPoly(img,poly,np,1,CV_RGB(128,128,128));
 
-
+#if 1
+    char *appString;
+    asprintf(&appString,
+	     "<application>\n"
+	     "  <instance component='bestfit' selection='throughput > %s' externals='1'/>\n"
+	     "</application>\n",
+	     argv[1]);
+    OA::Application app(appString);
+    app.initialize();
+    OA::ExternalPort &ep = app.getPort("out");
+    app.start();
+#else
     // Find a container to run our worker
     // (it returns a pointer since it might return NULL)
     OA::Container *c = OA::ContainerManager::find("rcc");
@@ -66,7 +77,7 @@ int main(int argc, char **argv) {
     OA::ExternalPort &ep = p.connectExternal();
 
     w.start(); // start the worker running
-
+#endif
     OA::ExternalBuffer *b;
     int current_x=0;
 #define X_SCALE 10

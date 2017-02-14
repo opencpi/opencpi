@@ -56,6 +56,34 @@ int main ( int argc, char* argv [ ] )
       IplImage* outImg = cvLoadImage( argv[1] );
       cvNamedWindow( "Output", CV_WINDOW_AUTOSIZE );
 
+#if 1
+    char *appString;
+    asprintf(&appString,
+	     "<application package='ocpi'>\n"
+	     "  <instance component='corner_eigen_vals_vecs' connect='min_eigen_val' externals='1'>\n"
+	     "    <property name='height' value='%u'/>\n"
+	     "    <property name='width' value='%u'/>\n"
+	     "  </instance>\n"
+	     "  <instance component='min_eigen_val' connect='good_features_to_track'>\n"
+	     "    <property name='height' value='%u'/>\n"
+	     "    <property name='width' value='%u'/>\n"
+	     "  </instance>\n"
+	     "  <instance component='good_features_to_track' externals='1'>\n"
+	     "    <property name='height' value='%u'/>\n"
+	     "    <property name='width' value='%u'/>\n"
+	     "    <property name='max_corners' value='50'/>\n"
+	     "    <property name='quality_level' value='0.03'/>\n"
+	     "    <property name='min_distance' value='5.0'/>\n"
+	     "  </instance>\n"
+	     "</application>\n",
+	     img->height, img->width, img->height, img->width, img->height, img->width);
+    OA::Application app(appString);
+    app.initialize();
+    OA::ExternalPort
+      &myOut = app.getPort("in"),
+      &myIn = app.getPort("out");
+    app.start();
+#else      
       /* ---- Create the RCC container and application -------------- */
       OA::Container *rcc_container = OA::ContainerManager::find("rcc");
       OA::ContainerApplication *rcc_application = rcc_container->createApplication( );
@@ -123,7 +151,7 @@ int main ( int argc, char* argv [ ] )
       rcc_application->start();
 
       printf(">>> DONE STARTING!\n");
-
+#endif
       // Output info
       uint8_t *odata;
       size_t olength;

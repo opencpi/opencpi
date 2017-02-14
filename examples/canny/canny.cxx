@@ -22,8 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <iostream>
 #include "cv.h"
-#include "OcpiContainerApi.h"
-#include "OcpiPValueApi.h"
+#include "OcpiApi.h"
 #include "highgui.h"
 
 namespace OA = OCPI::API;
@@ -58,6 +57,38 @@ int main ( int argc, char* argv [ ] )
         );
     cvNamedWindow( "Output", CV_WINDOW_AUTOSIZE );
 
+#if 1
+    char *appString;
+    asprintf(&appString,
+	     "<application package='ocpi'>\n"
+	     "  <instance component='sobel' name='sobel_x' connect='canny_partial' to='in_dx'>\n"
+	     "    <property name='height' value='%u'/>\n"
+	     "    <property name='width' value='%u'/>\n"
+	     "    <property name='xderiv' value='1'/>\n"
+	     "  </instance>\n"
+	     "  <external instance='sobel_x' port='in' name='in_x'/>\n"
+	     "  <instance component='sobel' name='sobel_y' connect='canny_partial' to='in_dy'>\n"
+	     "    <property name='height' value='%u'/>\n"
+	     "    <property name='width' value='%u'/>\n"
+	     "    <property name='xderiv' value='0'/>\n"
+	     "  </instance>\n"
+	     "  <external instance='sobel_y' port='in' name='in_y'/>\n"
+	     "  <instance component='canny_partial' externals='1'>\n"
+	     "    <property name='height' value='%u'/>\n"
+	     "    <property name='width' value='%u'/>\n"
+	     "    <property name='low_thresh' value='10'/>\n"
+	     "    <property name='high_thresh' value='100'/>\n"
+	     "  </instance>\n"
+	     "</application>\n",
+	     img->height, img->width, img->height, img->width, img->height, img->width);
+    OA::Application app(appString);
+    app.initialize();
+    OA::ExternalPort
+      &myOutX = app.getPort("in_x"),
+      &myOutY = app.getPort("in_y"),
+      &myIn = app.getPort("out");
+    app.start();
+#else
     /* ---- Create the RCC container and application -------------- */
     OA::Container *rcc_container = OA::ContainerManager::find("rcc");
     OA::PValue params[] = {OA::PVString("package", "ocpi"), OA::PVEnd};
@@ -127,7 +158,7 @@ int main ( int argc, char* argv [ ] )
 
     /* ---- Start all of the workers ------------------------------------- */
     rcc_application->start();
-
+#endif
     // Output info
     uint8_t *odata;
     size_t olength;
