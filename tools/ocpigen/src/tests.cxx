@@ -1,6 +1,7 @@
 // Process the tests.xml file.
 #include <strings.h>
 #include <set>
+#include <algorithm>
 #include "OcpiOsDebugApi.h"
 #include "OcpiOsFileSystem.h"
 #include "OcpiUtilMisc.h"
@@ -220,8 +221,10 @@ namespace {
     return err;
   }
   Worker *wFirst;
-  ParamConfigs defaultCases;
+#if 0
+  //  ParamConfigs defaultCases;
   
+  static unsigned ncase;
   void
   doProp(ParamConfig &globals, FILE *out, unsigned n, size_t len, bool &first) {
     for (;n < globals.params.size(); n++) {
@@ -237,21 +240,21 @@ namespace {
     Param &p = globals.params[n++];
     for (unsigned nn = 0; nn < p.m_uValues.size(); ++nn) {
       if (first) {
-	fprintf(out, "%3zu:", defaultCases.size());
-	defaultCases.push_back(new ParamConfig(*wFirst));
+	fprintf(out, "%3u:", ncase++);
+	//	defaultCases.push_back(new ParamConfig(*wFirst));
 	first = false;
       }
-      ParamConfig &c = *defaultCases.back();
-      c.params.resize(c.params.size()+1);
-      Param &param = c.params.back();
-      param.m_param = p.m_param;
-      param.m_uValue = p.m_uValues[nn];
+      //      ParamConfig &c = *defaultCases.back();
+      //      c.params.resize(c.params.size()+1);
+      //      Param &param = c.params.back();
+      //      param.m_param = p.m_param;
+      //      param.m_uValue = p.m_uValues[nn];
       fprintf(out, "%*s  %*s", nn ? (int)len : 0, "", (int)p.m_param->m_name.length(),
 	      p.m_uValues[nn].c_str());
       doProp(globals, out, n, len + p.m_param->m_name.length() + 2, first);
     }
   }
-
+#endif
   struct InputOutput {
     std::string m_name, m_file, m_script, m_view;
     DataPort *m_port;
@@ -582,6 +585,7 @@ namespace {
     void
     print(FILE *out) {
       fprintf(out, "Case %s:\n", m_name.c_str());
+      table(out);
       for (unsigned s = 0; s < m_subCases.size(); s++) {
 	fprintf(out, "  Subcase %02u:\n",s);
 	ParamConfig &pc = *m_subCases[s];
@@ -596,6 +600,52 @@ namespace {
 	  }
 	}
       }
+    }
+    void
+    table(FILE *out) {
+      std::vector<size_t> sizes(m_settings.params.size(), 0);
+      std::vector<const char *> last(m_settings.params.size(), NULL);
+      bool first = true;
+      for (unsigned n = 0; n < m_settings.params.size(); n++) {
+	Param &p = m_settings.params[n];
+	if (p.m_param && p.m_uValues.size() > 1) {
+	  sizes[n] = p.m_param->m_name.length() + 2;
+	  for (unsigned u = 0; u < p.m_uValues.size(); u++)
+	    sizes[n] = std::max(sizes[n], p.m_uValues[u].length());
+	  if (first) {
+	    fprintf(out, "  Summary of subcases\n");
+	    fprintf(out, "  Subcase # ");
+	    first = false;
+	  }
+	  fprintf(out, "  %-*s", (int)sizes[n], p.m_param->cname());
+	}
+      }
+      if (first)
+	return;
+      fprintf(out, "\n  ---------");
+      for (unsigned n = 0; n < m_settings.params.size(); n++) {
+	Param &p = m_settings.params[n];
+	if (p.m_param && p.m_uValues.size() > 1) {
+	  std::string dashes;
+	  dashes.assign(sizes[n], '-');
+	  fprintf(out, "  %s", dashes.c_str());
+	}
+      }
+      fprintf(out, "\n");
+      for (unsigned s = 0; s < m_subCases.size(); s++) {
+	fprintf(out, "%6u:   ", s);
+	ParamConfig &pc = *m_subCases[s];
+	for (unsigned n = 0; n < pc.params.size(); n++) {
+	  Param &p = pc.params[n];
+	  if (p.m_param && p.m_uValues.size() > 1) {
+	    fprintf(out, "  %*s", (int)sizes[n],
+		    last[n] && !strcmp(last[n], p.m_uValue.c_str()) ? "" : p.m_uValue.c_str());
+	    last[n] = p.m_uValue.c_str();
+	  }
+	}
+	fprintf(out, "\n");
+      }
+      fprintf(out, "\n");
     }
     const char *
     generateFile(bool &first, const char *dir, const char *type, unsigned s, 
@@ -1268,7 +1318,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
   std::string summary;
   OU::format(summary, "gen/cases.txt");
   if (verbose)
-    fprintf(stderr, "Writing discovered parameter combinations in \"%s\"\n", summary.c_str());
+    fprintf(stderr, "Writing cases/subcases report in \"%s\"\n", summary.c_str());
   FILE *out = fopen(summary.c_str(), "w");
   fprintf(out, 
 	  "Values common to all property combinations:\n"
@@ -1286,6 +1336,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
     }
     fprintf(out, "\n");
   }
+#if 0
   fprintf(out, "\n"
 	  "Property combinations/subcases that are default for all cases:\n"
 	  "==============================================================\n"
@@ -1298,6 +1349,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
   fprintf(out, "\n");
   bool first = true;
   doProp(globals, out, 0, 0, first);
+#endif
   // ================= 10. Generate HDL assemblies in gen/assemblies
   if (verbose)
     fprintf(stderr, "Generating required HDL assemblies in gen/assemblies\n");
@@ -1396,9 +1448,9 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
   // ================= 10. Generate subcases for each case, and generate outputs per subcase
   fprintf(out,
 	  "\n"
-	  "Descriptions of the %zu case%s\n"
-	  "=============================\n", 
-	  cases.size(), cases.size() > 1 ? "s" : "");
+	  "Descriptions of the %zu case%s and %s subcases:\n"
+	  "==============================================\n", 
+	  cases.size(), cases.size() > 1 ? "s" : "", cases.size() > 1 ? "their" : "its");
   for (unsigned n = 0; n < cases.size(); n++) {
     cases[n]->m_subCases.push_back(new ParamConfig(cases[n]->m_settings));
     cases[n]->doProp(0);
