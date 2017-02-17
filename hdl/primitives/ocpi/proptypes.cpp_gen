@@ -165,7 +165,7 @@ $end rtl;
 
 #define ENTITY_ARRAY(pretty,which,def,rng) \
 ENTITY_HEADER(pretty##_array,implementation of registered pretty property value - with write pulse)\
-$@@generic(worker : worker_t; property : property_t; default : pretty##_t := def); \
+$@@generic(worker : worker_t; property : property_t; default : pretty##_array_t); \
 $@@port (clk          : in std_logic;\
 $@@@@@@@@reset        : in bool_t;\
 $@@@@@@@@is_big_endian: in bool_t;\
@@ -180,7 +180,7 @@ $end entity;
 
 #define ENTITY_ARRAY_64(pretty,which,def,rng) \
 ENTITY_HEADER(pretty##_array,implementation of registered pretty property value - with write pulse)\
-$@@generic(worker : worker_t; property : property_t; default : pretty##_t := def); \
+$@@generic(worker : worker_t; property : property_t; default : pretty##_array_t); \
 $@@port (clk          : in std_logic;\
 $@@@@@@@@reset        : in bool_t;\
 $@@@@@@@@is_big_endian: in bool_t;\
@@ -198,13 +198,13 @@ $end entity;
 ENTITY_ARRAY(pretty,which,def,rng) \
 $architecture rtl of pretty##_array_property is \
 $@@signal base : natural;\
-begin\
+$begin\
 $@@base <= to_integer(offset);\
 $@@reg: process(Clk) is\
 $@@begin\
 $@@@@if rising_edge(clk) then\
 $@@@@@@if its(reset) then\
-$@@@@@@@@value <= (others => default);\
+$@@@@@@@@value <= default;\
 $@@@@@@@@written <= bfalse;\
 $@@@@@@@@any_written <= bfalse;\
 $@@@@@@elsif its(write_enable) then\
@@ -377,7 +377,7 @@ $@@reg: process(Clk) is\
 $@@begin\
 $@@@@if rising_edge(clk) then\
 $@@@@@@if its(reset) then\
-$@@@@@@@@value <= (others => default);\
+$@@@@@@@@value <= default;\
 $@@@@@@@@written <= bfalse;\
 $@@@@@@@@any_written <= bfalse;\
 $@@@@@@elsif its(write_enable) then\
@@ -420,7 +420,7 @@ $@@reg: process(Clk) is\
 $@@begin\
 $@@@@if rising_edge(clk) then\
 $@@@@@@if its(reset) then\
-$@@@@@@@@value <= (others => default);\
+$@@@@@@@@value <= default;\
 $@@@@@@@@written <= bfalse;\
 $@@@@@@@@any_written <= bfalse;\
 $@@@@@@elsif its(write_enable) then\
@@ -464,7 +464,7 @@ $@@reg: process(Clk) is\
 $@@begin\
 $@@@@if rising_edge(clk) then\
 $@@@@@@if its(reset) then\
-$@@@@@@@@value <= (others => default);\
+$@@@@@@@@value <= default;\
 $@@@@@@@@written <= bfalse;\
 $@@@@@@@@any_written <= bfalse;\
 $@@@@@@elsif its(write_enable) then\
@@ -489,7 +489,7 @@ $@@reg: process(Clk) is\
 $@@begin\
 $@@@@if rising_edge(clk) then\
 $@@@@@@if its(reset) then\
-$@@@@@@@@value <= (others => default);\
+$@@@@@@@@value <= default;\
 $@@@@@@@@written <= bfalse;\
 $@@@@@@@@any_written <= bfalse;\
 $@@@@@@elsif its(write_enable) then\
@@ -519,7 +519,7 @@ $end rtl;
 
 #define ENTITY_ARRAY_STRING(pretty,which,def,rng) \
 ENTITY_HEADER(pretty##_array,implementation of registered pretty property value - with write pulse)\
-$@@generic(worker : worker_t; property : property_t; default : pretty##_array_t := (def,def)); \
+$@@generic(worker : worker_t; property : property_t; default : pretty##_array_t); \
 $@@port (clk          : in std_logic;\
 $@@@@@@@@reset        : in bool_t;\
 $@@@@@@@@is_big_endian: in bool_t;\
@@ -538,6 +538,7 @@ $architecture rtl of string_array_property is\
 $@@constant nwords : natural := (property.string_length+4)/4;\
 $@@subtype string_words_t is data_a_t(0 to nwords * property.nitems-1);\
 $@@signal string_words : string_words_t;\
+$@@signal default_words : string_words_t;\
 $begin\
 $@@gen: for i in 0 to property.nitems-1 generate -- properties~left to 0 generate\
 $@@@@gen1:@@for j in 0 to nwords-1 generate\
@@ -546,14 +547,18 @@ $@@@@@@@value(i,j*4+k) <=\
 $@@@@@@@@@signed(string_words(i*nwords + j)((3-k)*8+7 downto (3-k)*8))\
 $@@@@@@@@@when its(is_big_endian) else\
 $@@@@@@@@@signed(string_words(i*nwords + j)(k*8+7 downto k*8));\
+$@@@@@@@default_words(i*nwords + j)(k*8+7 downto k*8) <=\
+$@@@@@@@@@slv(default(i,j*4+3-k))\
+$@@@@@@@@@when its(is_big_endian) else\
+$@@@@@@@@@slv(default(i,j*4+k));\
 $@@@@@@end generate gen2;\
 $@@@@end generate gen1;\
-$end generate gen;\
+$@@end generate gen;\
 $@@reg: process(Clk) is\
 $@@begin\
 $@@@@if rising_edge(clk) then\
 $@@@@@@if its(reset) then\
-$@@@@@@@@string_words(0) <= (others => '0');\
+$@@@@@@@@string_words <= default_words; --(0) <= (others => '0');\
 $@@@@@@@@written <= bfalse;\
 $@@@@@@@@any_written <= bfalse;\
 $@@@@@@elsif its(write_enable) then\

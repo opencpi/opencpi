@@ -1769,6 +1769,24 @@ emitImplHDL(bool wrap) {
 	    //	    else
 	      fprintf(f, "%s;\n", pr.m_baseType == OA::OCPI_Enum ? "ulong_t" : type.c_str());
 	  }
+	  if (!pr.m_isParameter && pr.m_isWritable && (pr.m_arrayRank || pr.m_isSequence)) {
+	    // Writable array/sequence properties need their default values defined in a
+	    // constant since the primitives for holding them take an unconstrained array
+	    // as a generic argument. FIXME: make this array-to-scalar a method elsewhere
+	    OU::ValueType vt(pr.m_baseType);
+	    vt.m_stringLength = pr.m_stringLength;
+	    const OU::Value def(vt);
+	    std::string vv;
+	    vhdlValue(NULL, pr.m_name.c_str(), pr.m_default ? *pr.m_default : def, vv, false);
+	    fprintf(f,
+		    "  -- Constant default value of array/sequence property\n"
+		    "  constant my_default_%s : %s := ", temp, type.c_str());
+	    if (pr.m_default)
+	      fprintf(f, "%s", vv.c_str());
+	    else
+	      fprintf(f, "(others => %s)", vv.c_str());
+	    fprintf(f, ";\n");
+	  }
 	  if (!pr.m_isParameter && pr.m_isVolatile && pr.m_baseType == OA::OCPI_Enum) {
 	    // We need a separate readback signal for volatile enumerations
 	    // This is the signal that will be decoded from the worker's enumeration
@@ -1939,6 +1957,17 @@ emitImplHDL(bool wrap) {
 		    "    port(val : out %s_array_t);\n"
                     "    port map(val => %s%s%s);\n"
 		    "    signal sa_temp : string_array_t(%s_array_t'range, 0 to %zu-1);\n"
+		    "    function defcnv return string_array_t is\n"
+		    "      variable sa_def : string_array_t(%s_array_t'range, 0 to %zu-1);\n"
+		    "    begin\n"
+		    "      -- convert default value to the generic string array type\n"
+		    "      for i in %s_array_t'range loop\n"
+		    "        for j in 0 to %zu-1 loop\n"
+		    "          sa_def(i,j) := my_default_%s_value(i)(j);\n"
+		    "        end loop;\n"
+		    "      end loop;\n"
+		    "      return sa_def;\n"
+		    "    end function defcnv;\n"
 		    "  begin\n"
 		    "    -- convert stored string array value to the specific type\n"
 		    "    g0: for i in %s_array_t'range generate\n"
@@ -1947,7 +1976,10 @@ emitImplHDL(bool wrap) {
 		    "      end generate g1;\n"
 		    "    end generate g0;\n",
 		    name, name, pr.m_isReadable ? "my_" : "props_to_worker.",
-		    name, pr.m_isReadable ? "_value" : "", name, OU::roundUp(pr.m_stringLength+4, 4), name);
+		    name, pr.m_isReadable ? "_value" : "", name,
+		    OU::roundUp(pr.m_stringLength+4, 4), name, 
+		    OU::roundUp(pr.m_stringLength+4, 4), name,
+		    pr.m_stringLength+1, name, name);
 	  fprintf(f, 
 		  "  %s_property : component ocpi.props.%s%s_property\n"
 		  "    generic map(worker       => work.%s_worker_defs.worker,\n"
@@ -1956,18 +1988,23 @@ emitImplHDL(bool wrap) {
 					  OA::OCPI_ULong : pr.m_baseType],
 		  pr.m_arrayRank || pr.m_isSequence ? "_array" : "",
 		  m_implName, m_implName, n);
-	  if (pr.m_default) {
+	  if (pr.m_default || pr.m_arrayRank || pr.m_isSequence) {
 	    fprintf(f,
 		    ",\n"
-		    "                default     => ");
-	    std::string vv;
-	    vhdlValue(NULL, pr.m_name.c_str(), *pr.m_default, vv, false);
-	    if (pr.m_baseType == OA::OCPI_Enum)
-	      fprintf(f, "to_ulong(%s_t'pos(%s))", pr.m_name.c_str(), vv.c_str());
-	    else
-	      fputs(vv.c_str(), f);
-	  }
-		
+		    "                default      => ");
+	    if (isStringArray)
+	      fprintf(f, "defcnv");
+	    else if (pr.m_arrayRank || pr.m_isSequence)
+	      fprintf(f, "my_default_%s_value", pr.m_name.c_str());
+	    else {
+	      std::string vv;
+	      vhdlValue(NULL, pr.m_name.c_str(), *pr.m_default, vv, false);
+	      if (pr.m_baseType == OA::OCPI_Enum)
+		fprintf(f, "to_ulong(%s_t'pos(%s))", pr.m_name.c_str(), vv.c_str());
+	      else
+		fputs(vv.c_str(), f);
+	    }
+	  }	
 	  fprintf(f,
 		  ")\n"
 		  "    port map(   clk          => inputs.Clk,\n"
@@ -2027,7 +2064,7 @@ emitImplHDL(bool wrap) {
 	  fprintf(f, ");\n");
 	  if (isStringArray)
 	    // String arrays require a wrapper to convert to the generic string_array_t
-	    fprintf(f, "end block; -- end of wrapper for writable string_array conversion\n");
+	    fprintf(f, "  end block; -- end of wrapper for writable string_array conversion\n");
 	  if (pr.m_baseType == OA::OCPI_Enum) {
 	    size_t bits = OU::bitsForMax(pr.m_nEnums - 1);
 	    fprintf(f,

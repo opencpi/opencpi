@@ -100,7 +100,7 @@ $--\
 $-- registered pretty property array value, with write pulse\
 $--\
 $component pretty##_array_property\
-$@@generic(worker : worker_t; property : property_t; default : pretty##_t := def);\
+$@@generic(worker : worker_t; property : property_t; default : pretty##_array_t);\
 $@@port (clk          : in std_logic;\
 $@@@@@@@@reset        : in bool_t;\
 $@@@@@@@@is_big_endian: in bool_t;\
@@ -131,7 +131,7 @@ $--\
 $-- registered pretty property array value, with write pulse\
 $--\
 $component pretty##_array_property\
-$@@generic(worker : worker_t; property : property_t; default : pretty##_t := def);\
+$@@generic(worker : worker_t; property : property_t; default : pretty##_array_t);\
 $@@port (clk          : in std_logic;\
 $@@@@@@@@reset        : in bool_t;\
 $@@@@@@@@is_big_endian: in bool_t;\
@@ -162,7 +162,7 @@ $--\
 $-- registered pretty property array value, with write pulse\
 $--\
 $component pretty##_array_property\
-$@@generic(worker : worker_t; property : property_t; default : pretty##_array_t := (def,def));\
+$@@generic(worker : worker_t; property : property_t; default : pretty##_array_t);\
 $@@port (clk          : in std_logic;\
 $@@@@@@@@reset        : in bool_t;\
 $@@@@@@@@is_big_endian: in bool_t;\

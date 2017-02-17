@@ -20,10 +20,11 @@
      <Property Name="ap5" Type="Long" Volatile="true" Writable="true" arraylength="6"/>
      <Property Name="ap6" Type="UChar" Readable="true" Writable="true" arraylength="7"/>
      <Property Name="ap7" Type="ULong" Volatile="true" Writable="true" arraylength="8"/>
-     <Property Name="ap8" Type="UShort" Readable="true" Writable="true" arraylength="9"/>
+     <Property Name="ap8" Type="UShort" Readable="true" Writable="true" arraylength="9" default='5,4,3'/>
      <Property Name="ap9" Type="LongLong"  Volatile="true" Writable="true" arraylength="10"/>
      <Property Name="ap10" Type="ULongLong" Readable="true" Writable="true" arraylength="11"/>
      <Property Name="ap11" Type="String" StringLength="20" Volatile="true" Writable="true" arraylength="12"/>
+     <Property Name="ap12" Type="String" StringLength="20" Readable="true" Writable="true" arraylength="12" default='a,b,c,f,e'/>
      <Property Name="pp0" Type="Bool" parameter='true' default='0'/>
   <Properties>
      <Property Name="pp1" Type="Char" parameter='true' default='1'/>
