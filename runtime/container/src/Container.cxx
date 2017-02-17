@@ -87,8 +87,10 @@ namespace OCPI {
 	m_osVersion == i.attributes().m_osVersion &&
 	// if all three are present and match, on rcc, platform does not need to match.
 	// this eases the transition to software platforms having proper names
-	((m_model == "rcc" && m_os.length() && m_osVersion.length() && m_arch.length() &&
-	  m_arch == i.attributes().m_arch) ||
+	((m_model == "rcc" && 
+	  m_os.length() && m_os == i.attributes().m_os &&
+	  m_osVersion.length() && m_osVersion == i.attributes().m_osVersion &&
+	  m_arch.length() && m_arch == i.attributes().m_arch) ||
 	 (i.attributes().m_platform.length() && m_platform == i.attributes().m_platform) ||
 	 (i.attributes().m_platform.empty() && m_arch == i.attributes().m_arch)) &&
 	m_dynamic == i.attributes().m_dynamic;
