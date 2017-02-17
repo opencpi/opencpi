@@ -4,7 +4,7 @@ Cores=pcie_4243_hip_s4gx_gen2_x4_128
 ExportFiles=alst4x.qsf alst4x.sdc jtagSupport_alst4x loadFlash_alst4x testbias_alst4x_base.bitz
 Configurations=\
   base $(basename $(notdir $(subst /alst4,/alst4x,$(wildcard ../alst4/alst4_zipper*.xml))))
-$(info CONF:$(Configurations))
+
 # FIXME: we need a better way to "clone" a platform
 # Unfortunately, the xml file must exist prior to dependencies, so we just do them all immediately
 ifeq ($(filter clean%,$(MAKECMDGOALS)),)
