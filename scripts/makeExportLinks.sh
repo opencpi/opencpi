@@ -116,7 +116,7 @@ if test "$*" = ""; then
   echo 'Thus it is run several times during the build process.'
   exit 1
 fi
-if [ "$1" == "-v" ]; then
+if [ "$1" = "-v" -o "$OCPI_EXPORTS_VERBOSE" = 1 ]; then
   verbose=yes
   [ -n "$verbose" ] && echo Setting verbose mode.    
   shift
@@ -206,12 +206,9 @@ for p in hdl/platforms/*; do
   fi
 done
 # If this project has platforms:
-#   Export the specs if there
 #   Export the lib subdir of each platform
 #   Export each platform's .mk file in a mk subdir for bootstrapping
 if [ -d hdl/platforms ]; then
-  [ -d hdl/platforms/specs ] &&
-    make_filtered_link hdl/platforms/specs exports/lib/platforms/specs platform
   for d in hdl/platforms/*; do
     p=$(basename $d)
     if [ -f hdl/platforms/$p/$p.mk ]; then
@@ -242,9 +239,6 @@ if [ -d hdl/primitives -a -f hdl/primitives/Makefile ]; then
     make_filtered_link hdl/primitives/lib/${name}_bb exports/lib/hdl/${name}_bb primitive
   done
 fi
-
-# Add the top level specs directory if it is there
-[ -d specs ] && make_filtered_link specs exports/specs
 
 # Add the ad-hoc export links
 set -f
