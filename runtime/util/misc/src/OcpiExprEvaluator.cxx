@@ -804,6 +804,8 @@ const char *ExprValue::setFromTypedValue(const Value &v) {
   case OA::OCPI_Long: m_internal->m_number = v.m_Long; break;
   case OA::OCPI_LongLong: int64_2_mpf(v.m_LongLong, m_internal->m_number); break;
   case OA::OCPI_ULongLong: uint64_2_mpf(v.m_ULongLong, m_internal->m_number); break;
+  case OA::OCPI_Float: m_internal->m_number = v.m_Float; break;
+  case OA::OCPI_Double: m_internal->m_number = v.m_Double; break;
   case OA::OCPI_String:
     m_internal->m_isString = true;
     m_internal->m_string = v.m_String;

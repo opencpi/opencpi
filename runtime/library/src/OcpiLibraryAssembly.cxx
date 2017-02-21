@@ -286,10 +286,10 @@ namespace OCPI {
 	  return false;
 	}
 	OU::Value aValue; // FIXME - save this and use it later
-	const char *err = uProp.parseValue(apValue, aValue);
+	const char *err = uProp.parseValue(apValue, aValue, NULL, &i.m_metadataImpl);
 	if (err) {
-	  ocpiInfo("Rejected: the value \"%s\" for the \"%s\" property, \"%s\", was invalid",
-		   apValue, uProp.m_isImpl ? "implementation" : "spec", apName);
+	  ocpiInfo("Rejected: the value \"%s\" for the \"%s\" property, \"%s\", was invalid: %s",
+		   apValue, uProp.m_isImpl ? "implementation" : "spec", apName, err);
 	  return false;
 	}
 	// We know the supplied value is valid.

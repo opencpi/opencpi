@@ -380,16 +380,18 @@ namespace OCPI {
       const char *cp = ezxml_cattr(px, "property");
       m_instPropName = cp ? cp : m_name.c_str();
       //      if (ezxml_cattr(px, "value") || ezxml_cattr(px, "valueFile") || ezxml_cattr(px, "dumpFile"))
-      a.m_instances[m_instance].addProperty(m_instPropName.c_str(), px);
-      return NULL;
+      return a.m_instances[m_instance].addProperty(m_instPropName.c_str(), px);
     }
 
     const char *Assembly::Property::
-    parse(ezxml_t px) {
+    parse(ezxml_t px, Assembly::Property *first) {
       const char *err;
       if ((err = OE::checkAttrs(px, "name", "value", "valuefile", "dumpFile", NULL)) ||
 	  (err = OE::getRequiredString(px, m_name, "name", "property")))
 	return err;
+      for (Property *p = first; p && p < this; p++)
+	if (!strcasecmp(p->m_name.c_str(), m_name.c_str()))
+	  return esprintf("Duplicate property \"%s\" in instance", m_name.c_str());
       return setValue(px);
     }
 
@@ -437,12 +439,12 @@ namespace OCPI {
       Property *p = &m_properties[0];
       size_t n;
       for (n = m_properties.size(); n ; n--, p++)
-	if (p->m_name == name)
-	  break;
-      if (!n) {
-	m_properties.resize(m_properties.size() + 1);
-	p = &m_properties.back();
-      }
+	if (!strcasecmp(p->m_name.c_str(), name))
+	  return esprintf("duplicate property value \"%s\" for instance \"%s\"",
+			  name, m_name.c_str());
+      m_properties.resize(m_properties.size() + 1);
+      p = &m_properties.back();
+      p->m_name = name;
       p->setValue(px);
       return NULL;
     }
@@ -565,7 +567,7 @@ namespace OCPI {
       m_properties.resize(OE::countChildren(ix, "property"));
       Property *p = &m_properties[0];
       for (ezxml_t px = ezxml_cchild(ix, "property"); px; px = ezxml_next(px), p++)
-	if ((err = p->parse(px)))
+	if ((err = p->parse(px, &m_properties[0])))
 	  return err;
       const char *propAssign;
       // Now deal with instance-based property parameters that might override the XML ones

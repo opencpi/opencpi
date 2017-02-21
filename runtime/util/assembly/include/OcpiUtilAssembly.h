@@ -86,7 +86,7 @@ namespace OCPI {
 	std::string m_value;
 	std::string m_dumpFile;
         Property() : m_hasValue(false) {}
-	const char *parse(ezxml_t x);
+	const char *parse(ezxml_t x, Property *first = NULL);
 	const char *setValue(ezxml_t px);
 	void setValue(const char *name, const char *value);
       };

@@ -326,7 +326,11 @@ namespace OCPI {
       const char *err;
       *pn = uProp.m_ordinal; // remember position in property list 
       pv->setType(uProp);    // set the data type of the Value from the metadata property
+#if 1
+      if ((err = uProp.parseValue(value, *pv, NULL, &impl.m_metadataImpl)))
+#else
       if ((err = pv->parse(value)))
+#endif
 	throw OU::Error("Value for property \"%s\" of instance \"%s\" of "
 			"component \"%s\" is invalid for its type: %s",
 			pName, name, impl.m_metadataImpl.specName().c_str(), err);
