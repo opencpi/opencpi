@@ -7,7 +7,7 @@
 
 namespace OA = OCPI::API;
 
-int main(int argc, char **argv) {
+int main(int /*argc*/, char **argv) {
   const char *size = "100", *selection = "", *nbuffers="2";
   if (argv[1]) {
     selection = argv[1];
@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
   }
   std::string hello =
     "<application done='file_write' package='ocpi'>"
-    "  <property name='top_bv' instance='bias' property='biasValue'/>"
+    "  <property name='top_bv' instance='bias' property='biasValue' dumpfile='sss'/>"
     "  <instance component='file_read'>"
     "    <property name='filename' value='test.input'/>"
     "    <property name='granularity' value='4'/>"
@@ -74,6 +74,7 @@ int main(int argc, char **argv) {
     fprintf(stderr, "Application started/running\n");
     app.wait();
     fprintf(stderr, "Application finished\n");
+    app.finish();
     std::string name, value;
     for (unsigned n = 0; app.getProperty(n, name, value); n++)
       fprintf(stderr, "Property %2u: %s = \"%s\"\n", n, name.c_str(), value.c_str());

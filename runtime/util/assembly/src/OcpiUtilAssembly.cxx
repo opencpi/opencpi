@@ -439,14 +439,20 @@ namespace OCPI {
       Property *p = &m_properties[0];
       size_t n;
       for (n = m_properties.size(); n ; n--, p++)
-	if (!strcasecmp(p->m_name.c_str(), name))
-	  return esprintf("duplicate property value \"%s\" for instance \"%s\"",
-			  name, m_name.c_str());
-      m_properties.resize(m_properties.size() + 1);
-      p = &m_properties.back();
-      p->m_name = name;
-      p->setValue(px);
-      return NULL;
+	if (!strcasecmp(p->m_name.c_str(), name)) {
+	  // Top level property matches a worker-specific setting
+	  // It is an error IF the top level property supplies a value that is already supplied
+	  if (p->m_hasValue && (ezxml_cattr(px, "value") || ezxml_cattr(px, "valueFile")))
+	    return esprintf("duplicate property value \"%s\" for instance \"%s\"",
+			    name, m_name.c_str());
+	  break;
+	}
+      if (!n) {
+	m_properties.resize(m_properties.size() + 1);
+	p = &m_properties.back();
+	p->m_name = name;
+      }
+      return p->setValue(px);
     }
 
 #if 0
