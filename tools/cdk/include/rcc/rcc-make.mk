@@ -62,6 +62,9 @@ $(eval $(OcpiEnsureToolPlatform))
 # Allow the option of specifying an rcc platform by referencing the associated
 # HDL platform, but only incurring the overhead of this search when this variable
 # is specified.
+ifdef RccHdlPlatform
+  override RccHdlPlatforms+= $(RccHdlPlatform)
+endif
 ifdef RccHdlPlatforms
   include $(OCPI_CDK_DIR)/include/hdl/hdl-targets.mk
   $(foreach p,$(RccHdlPlatforms),\
